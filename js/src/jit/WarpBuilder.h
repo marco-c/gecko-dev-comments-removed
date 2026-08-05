@@ -20,9 +20,7 @@ namespace jit {
 
 
 #define WARP_UNSUPPORTED_OPCODE_LIST(_)
-    \
-  _(ForceInterpreter)                    \
-  /* With */                             \
+                             \
   _(EnterWith)                           \
   _(LeaveWith)                           \
   /* Eval */                             \

@@ -13,7 +13,6 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Span.h"
-
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Utf8.h"
 #include "mozilla/Variant.h"
@@ -1844,12 +1843,6 @@ class JSScript : public js::BaseScript {
       return nullptr;
     }
     return immutableScriptData()->code();
-  }
-
-  bool hasForceInterpreterOp() const {
-    
-    MOZ_ASSERT(length() >= 1);
-    return JSOp(*code()) == JSOp::ForceInterpreter;
   }
 
   js::AllBytecodesIterable allLocations() {

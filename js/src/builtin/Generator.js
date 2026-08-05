@@ -96,19 +96,3 @@ function GeneratorReturn(val) {
     throw e;
   }
 }
-
-function InterpretGeneratorResume(gen, val, kind) {
-  
-  
-  
-  
-  forceInterpreter();
-  if (kind === "next") {
-    return resumeGenerator(gen, val, "next");
-  }
-  if (kind === "throw") {
-    return resumeGenerator(gen, val, "throw");
-  }
-  assert(kind === "return", "Invalid resume kind");
-  return resumeGenerator(gen, val, "return");
-}

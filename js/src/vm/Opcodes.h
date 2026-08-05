@@ -3590,16 +3590,6 @@
 
 
  \
-    MACRO(ForceInterpreter, force_interpreter, NULL, 1, 0, 0, JOF_BYTE) \
-    
-
-
-
-
-
-
-
- \
     MACRO(DebugCheckSelfHosted, debug_check_self_hosted, NULL, 1, 1, 1, JOF_BYTE) \
     
 
@@ -3625,6 +3615,7 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+  MACRO(241)                                   \
   MACRO(242)                                   \
   MACRO(243)                                   \
   MACRO(244)                                   \

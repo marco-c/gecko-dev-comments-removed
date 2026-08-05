@@ -7609,21 +7609,6 @@ bool BytecodeEmitter::emitSelfHostedResumeGenerator(CallNode* callNode) {
   return true;
 }
 
-bool BytecodeEmitter::emitSelfHostedForceInterpreter() {
-  
-  
-  MOZ_ASSERT(bytecodeSection().code().empty());
-
-  if (!emit1(JSOp::ForceInterpreter)) {
-    return false;
-  }
-  if (!emit1(JSOp::Undefined)) {
-    return false;
-  }
-
-  return true;
-}
-
 bool BytecodeEmitter::emitSelfHostedAllowContentIter(CallNode* callNode) {
   ListNode* argsList = callNode->args();
 
@@ -8522,7 +8507,6 @@ bool BytecodeEmitter::emitCallOrNew(CallNode* callNode, ValueUsage valueUsage) {
     
     
     
-    
     auto calleeName = calleeNode->as<NameNode>().name();
     if (calleeName == TaggedParserAtomIndex::WellKnown::callFunction()) {
       return emitSelfHostedCallFunction(callNode, JSOp::Call);
@@ -8536,9 +8520,6 @@ bool BytecodeEmitter::emitCallOrNew(CallNode* callNode, ValueUsage valueUsage) {
     }
     if (calleeName == TaggedParserAtomIndex::WellKnown::resumeGenerator()) {
       return emitSelfHostedResumeGenerator(callNode);
-    }
-    if (calleeName == TaggedParserAtomIndex::WellKnown::forceInterpreter()) {
-      return emitSelfHostedForceInterpreter();
     }
     if (calleeName == TaggedParserAtomIndex::WellKnown::allowContentIter()) {
       return emitSelfHostedAllowContentIter(callNode);
