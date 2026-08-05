@@ -10,6 +10,7 @@
 
 #include "CodecConfig.h"
 #include "MockJsepCodecPreferences.h"
+#include "api/rtp_parameters.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "jsapi/DefaultCodecPreferences.h"
@@ -475,6 +476,72 @@ TEST_F(JsepTrackTest, CheckForAnsweringWithExtmapAllowMixedWhenNotOffered) {
       SdpAttribute::kExtmapAllowMixedAttribute));
   Negotiate();
   SanityCheck();
+}
+
+
+static void AddExtmap(SdpMediaSection& aMsection, uint16_t aId,
+                      const std::string& aUri,
+                      const SdpDirectionAttribute::Direction aDir =
+                          SdpDirectionAttribute::kSendrecv) {
+  auto& attrs = aMsection.GetAttributeList();
+  auto extmap = MakeUnique<SdpExtmapAttributeList>();
+  
+  if (attrs.HasAttribute(SdpAttribute::kExtmapAttribute)) {
+    *extmap = attrs.GetExtmap();
+  }
+  extmap->PushEntry(aId, aDir, false 
+                    ,
+                    aUri);
+  attrs.SetAttribute(std::move(extmap));
+}
+
+
+
+TEST_F(JsepTrackTest, TwoByteExtIdKeptOnSendWhenExtmapAllowMixed) {
+  Init(SdpMediaSection::kVideo);
+  CreateOffer();
+  GetOffer().GetAttributeList().SetAttribute(
+      MakeUnique<SdpFlagAttribute>(SdpAttribute::kExtmapAllowMixedAttribute));
+  CreateAnswer();
+  const std::string uri = "urn:ietf:params:rtp-hdrext:toffset";
+  AddExtmap(GetAnswer(), 15, uri);
+  Negotiate();
+  ASSERT_TRUE(mSendAns.GetNegotiatedDetails());
+  ASSERT_NE(nullptr, mSendAns.GetNegotiatedDetails()->GetExt(uri));
+}
+
+
+
+TEST_F(JsepTrackTest, TwoByteExtIdDroppedFromSendWithoutExtmapAllowMixed) {
+  Init(SdpMediaSection::kVideo);
+  CreateOffer();
+  GetOffer().GetAttributeList().RemoveAttribute(
+      SdpAttribute::kExtmapAllowMixedAttribute);
+  CreateAnswer();
+  const std::string uri = "urn:ietf:params:rtp-hdrext:toffset";
+  AddExtmap(GetAnswer(), 15, uri);
+  Negotiate();
+  ASSERT_TRUE(mSendAns.GetNegotiatedDetails());
+  ASSERT_EQ(nullptr, mSendAns.GetNegotiatedDetails()->GetExt(uri));
+  
+  ASSERT_TRUE(mRecvAns.GetNegotiatedDetails());
+  ASSERT_NE(nullptr, mRecvAns.GetNegotiatedDetails()->GetExt(uri));
+}
+
+
+
+TEST_F(JsepTrackTest,
+       DependencyDescriptorDroppedFromSendWithoutExtmapAllowMixed) {
+  Init(SdpMediaSection::kVideo);
+  CreateOffer();
+  GetOffer().GetAttributeList().RemoveAttribute(
+      SdpAttribute::kExtmapAllowMixedAttribute);
+  CreateAnswer();
+  const std::string uri = webrtc::RtpExtension::kDependencyDescriptorUri;
+  AddExtmap(GetAnswer(), 5, uri);
+  Negotiate();
+  ASSERT_TRUE(mSendAns.GetNegotiatedDetails());
+  ASSERT_EQ(nullptr, mSendAns.GetNegotiatedDetails()->GetExt(uri));
 }
 
 TEST_F(JsepTrackTest, CheckForMismatchedAudioCodecAndVideoTrack) {
