@@ -6,10 +6,7 @@
   
   let commonFile = do_get_file("../head_common.js", false);
   let uri = Services.io.newFileURI(commonFile);
-  Services.scriptloader.loadSubScriptWithOptions(uri.spec, {
-    target: this,
-    allowUnsafeURL: true,
-  });
+  Services.scriptloader.loadSubScript(uri.spec, this);
 }
 
 

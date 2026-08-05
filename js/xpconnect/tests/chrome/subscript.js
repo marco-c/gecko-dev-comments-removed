@@ -1,7 +1,4 @@
 
 var ns = {};
-Services.scriptloader.loadSubScriptWithOptions(
-  base + "file_expandosharing.js",
-  { target: ns, allowUnsafeURL: true }
-);
+Services.scriptloader.loadSubScript(base + "file_expandosharing.js", ns);
 var checkFromESM = ns.checkFromESM;

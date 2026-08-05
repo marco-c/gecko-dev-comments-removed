@@ -29,14 +29,8 @@ add_task(
       
       
       
-      loadSubScriptWithOptions(SOURCE_URL, {
-        target: debuggee1,
-        allowUnsafeURL: true,
-      });
-      loadSubScriptWithOptions(SOURCE_URL, {
-        target: debuggee2,
-        allowUnsafeURL: true,
-      });
+      loadSubScript(SOURCE_URL, debuggee1);
+      loadSubScript(SOURCE_URL, debuggee2);
 
       await promise;
 
