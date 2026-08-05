@@ -2103,6 +2103,17 @@ var XULBrowserWindow = {
       ) {
         this.busyUI = true;
 
+        
+        
+        
+        if (
+          !Object.getOwnPropertyDescriptor(window, "gTrustPanelHandler").get
+        ) {
+          gTrustPanelHandler.resetIconForNavigation(
+            aRequest instanceof Ci.nsIChannel ? aRequest.URI : null
+          );
+        }
+
         if (this.spinCursorWhileBusy) {
           window.setCursor("progress");
         }
@@ -2174,6 +2185,14 @@ var XULBrowserWindow = {
       if (this.busyUI && aWebProgress.isTopLevel) {
         this.busyUI = false;
 
+        
+        
+        if (
+          !Object.getOwnPropertyDescriptor(window, "gTrustPanelHandler").get
+        ) {
+          gTrustPanelHandler.onNavigationComplete();
+        }
+
         if (this.spinCursorWhileBusy) {
           window.setCursor("auto");
         }
@@ -2226,6 +2245,15 @@ var XULBrowserWindow = {
 
     let isSameDocument =
       aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT;
+
+    
+    
+    if (
+      !isSameDocument &&
+      !Object.getOwnPropertyDescriptor(window, "gTrustPanelHandler").get
+    ) {
+      gTrustPanelHandler.resetIconForNavigation(aLocationURI);
+    }
     if (
       (location == "about:blank" &&
         BrowserUIUtils.checkEmptyPageOrigin(gBrowser.selectedBrowser)) ||
