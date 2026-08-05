@@ -747,7 +747,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   [[nodiscard]] bool emitPushResumeKind(GeneratorResumeKind kind);
 
-  [[nodiscard]] bool emitPropLHS(PropertyAccess* prop);
+  [[nodiscard]] bool emitPropLHS(NonOptonalPropertyAccessBase* prop);
   [[nodiscard]] bool emitPropIncDec(UnaryNode* incDec, ValueUsage valueUsage);
 
   
