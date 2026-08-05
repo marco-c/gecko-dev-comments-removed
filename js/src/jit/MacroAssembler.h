@@ -2139,6 +2139,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void testBigIntSet(Condition cond, const T& src,
                             Register dest) PER_SHARED_ARCH;
 
+  void testValueSet(Condition cond, const ValueOperand& lhs, const Value& rhs,
+                    Register dest) PER_ARCH;
+
  public:
   
   

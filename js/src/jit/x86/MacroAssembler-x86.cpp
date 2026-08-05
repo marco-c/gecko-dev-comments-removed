@@ -726,7 +726,7 @@ void MacroAssemblerX86::handleFailureWithHandlerTail(
 
   
   bind(&wasmCatch);
-  wasm::GenerateJumpToCatchHandler(asMasm(), esp, eax, ebx);
+  wasm::GenerateJumpToCatchHandler(asMasm(), esp, eax, ebx, ecx);
 }
 
 void MacroAssemblerX86::profilerEnterFrame(Register framePtr,
@@ -1100,6 +1100,25 @@ void MacroAssembler::branchTestNaNValue(Condition cond, const ValueOperand& val,
     cmp32(temp, Imm32(expected.toNunboxTag()));
     j(NotEqual, label);
   }
+}
+
+void MacroAssembler::testValueSet(Condition cond, const ValueOperand& lhs,
+                                  const Value& rhs, Register dest) {
+  MOZ_ASSERT(cond == Equal || cond == NotEqual);
+  MOZ_ASSERT(!rhs.isNaN());
+  MOZ_ASSERT(!lhs.aliases(dest));
+
+  if (rhs.isGCThing()) {
+    cmpPtrSet(cond, lhs.payloadReg(), ImmGCPtr(rhs.toGCThing()), dest);
+  } else {
+    cmpPtrSet(cond, lhs.payloadReg(), ImmWord(rhs.toNunboxPayload()), dest);
+  }
+
+  
+  Label done;
+  branchTest32(cond, dest, dest, &done);
+  cmp32Set(cond, lhs.typeReg(), Imm32(rhs.toNunboxTag()), dest);
+  bind(&done);
 }
 
 

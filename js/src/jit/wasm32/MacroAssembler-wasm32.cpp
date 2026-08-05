@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/wasm32/MacroAssembler-wasm32.h"
 
 namespace js::jit {
@@ -408,6 +406,11 @@ void MacroAssembler::branchTestValue(Condition cond, const ValueOperand& lhs,
 
 void MacroAssembler::branchTestNaNValue(Condition cond, const ValueOperand& val,
                                         Register temp, Label* label) {
+  MOZ_CRASH();
+}
+
+void MacroAssembler::testValueSet(Condition cond, const ValueOperand& lhs,
+                                  const Value& rhs, Register dest) {
   MOZ_CRASH();
 }
 
