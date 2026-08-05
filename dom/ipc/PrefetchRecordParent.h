@@ -75,6 +75,10 @@ class PrefetchRecordParent final : public PPrefetchRecordParent,
   
   void FirePrefetchStatusUpdated(bool aSuccess);
 
+  
+  
+  void MarkCanceled();
+
   void ActorDestroy(ActorDestroyReason aReason) override;
 
  private:

@@ -2217,6 +2217,42 @@ void WindowGlobalParent::NotifyPrefetchStateChanged(
     PrefetchRecordParent* aRec) {
   
   
+  
+  
+  
+}
+
+void WindowGlobalParent::DedupePrefetchRecords(
+    PrefetchRecordParent* aJustCompleted) {
+  
+  
+  
+  
+  
+  
+  
+  nsTArray<PPrefetchRecordParent*> managed;
+  ManagedPPrefetchRecordParent(managed);
+  for (auto* p : managed) {
+    auto* rec = static_cast<PrefetchRecordParent*>(p);
+    if (rec == aJustCompleted) {
+      continue;
+    }
+    if (rec->State() != PrefetchState::Completed) {
+      continue;
+    }
+    bool urlEquals = false;
+    if (rec->URL() && aJustCompleted->URL()) {
+      rec->URL()->Equals(aJustCompleted->URL(), &urlEquals);
+    }
+    if (urlEquals) {
+      LOG_SPECRULES(
+          ("WindowGlobalParent::DedupePrefetchRecords: this=%p evicting "
+           "older rec=%p",
+           this, rec));
+      rec->MarkCanceled();
+    }
+  }
 }
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(WindowGlobalParent)
