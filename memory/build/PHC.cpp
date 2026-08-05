@@ -1306,8 +1306,8 @@ class PtrKind {
     AllocPage,
   };
 
-  Tag mTag;
-  uintptr_t mIndex;  
+  Tag mTag = Tag::GuardPage;
+  uintptr_t mIndex = 0;  
 
  protected:
   

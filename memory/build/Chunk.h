@@ -169,7 +169,7 @@ struct arena_chunk_t {
 
   
   
-  uint16_t mDirtyRunHint;
+  uint16_t mDirtyRunHint = 0;
 
   bool mIsPurging = false;
   bool mDying = false;
