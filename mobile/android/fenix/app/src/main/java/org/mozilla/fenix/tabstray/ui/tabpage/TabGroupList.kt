@@ -84,7 +84,11 @@ fun TabGroupList(
                         .background(MaterialTheme.colorScheme.surfaceContainerLowest)
                         .tabListItemShapeStyling(
                             tabShapeInfo = tabShapeInfo,
-                            tab = group,
+                            selectionState = TabsTrayItemSelectionState(
+                                isFocused = group.isFocused,
+                                multiSelectEnabled = false,
+                                focusEnabled = true,
+                            ),
                         ),
                     selectionState = selectionState,
                     trailingContent = {
@@ -93,6 +97,7 @@ fun TabGroupList(
                             onDeleteTabGroupClick = { onDeleteTabGroupClick(group) },
                             onEditTabGroupClick = { onEditTabGroupClick(group) },
                             onCloseTabGroupClick = {},
+                            onUngroupTabGroupClick = {},
                         )
                     },
                 )
