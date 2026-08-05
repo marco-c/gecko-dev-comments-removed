@@ -6,13 +6,7 @@
 #ifndef WIDGET_GTK_GFXINFO_UTILS_h_
 #define WIDGET_GTK_GFXINFO_UTILS_h_
 
-
-#define OUTPUT_PIPE 1
 #define LOG_PIPE 2
-
-#include <fcntl.h>
-#include <stdio.h>
-#include <unistd.h>
 
 #include <cstdarg>
 
@@ -27,7 +21,7 @@ static void log(const char* format, ...) {
   va_end(args);
 }
 
-static int output_pipe = OUTPUT_PIPE;
+static int output_pipe = 1;
 static void close_logging() {
   
   
