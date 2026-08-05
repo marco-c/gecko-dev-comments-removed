@@ -118,10 +118,9 @@ async function runTestCase(testData, withTLSKeyLogging) {
   );
   await pageLoaded;
 
-  
-  
-  await TestUtils.waitForCondition(
-    () => fetchIconUrl(tab.ownerDocument, "trust-icon") === testData.icon,
+  Assert.equal(
+    fetchIconUrl(tab.ownerDocument, "trust-icon"),
+    testData.icon,
     `Trustpanel urlbar icon is correct for ${testData.url}`
   );
 
