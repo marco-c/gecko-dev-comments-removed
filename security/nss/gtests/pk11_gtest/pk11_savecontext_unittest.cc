@@ -25,11 +25,14 @@ class Pkcs11SaveContextTest : public ::testing::Test {
     ScopedPK11Context cx(PK11_CreateDigestContext(SEC_OID_SHA256));
     EXPECT_TRUE(cx);
     EXPECT_EQ(SECSuccess, PK11_DigestBegin(cx.get()));
-    EXPECT_EQ(SECSuccess, PK11_DigestOp(cx.get(), data.data(), data.size()));
+    EXPECT_EQ(SECSuccess,
+              PK11_DigestOp(cx.get(), data.data(),
+                            static_cast<unsigned int>(data.size())));
     std::vector<uint8_t> out(SHA256_LENGTH, 0);
     unsigned int outLen = 0;
     EXPECT_EQ(SECSuccess,
-              PK11_DigestFinal(cx.get(), out.data(), &outLen, out.size()));
+              PK11_DigestFinal(cx.get(), out.data(), &outLen,
+                               static_cast<unsigned int>(out.size())));
     EXPECT_EQ(SHA256_LENGTH, static_cast<int>(outLen));
     return out;
   }
@@ -41,7 +44,9 @@ TEST_F(Pkcs11SaveContextTest, SavedStateIsRestorable) {
   const std::vector<uint8_t> first(64, 0xa5);
   const std::vector<uint8_t> second(32, 0x5a);
 
-  std::vector<uint8_t> full(first);
+  std::vector<uint8_t> full;
+  full.reserve(first.size() + second.size());
+  full.insert(full.end(), first.begin(), first.end());
   full.insert(full.end(), second.begin(), second.end());
   const std::vector<uint8_t> reference = ReferenceDigest(full);
 
@@ -49,7 +54,8 @@ TEST_F(Pkcs11SaveContextTest, SavedStateIsRestorable) {
   ScopedPK11Context cx(PK11_CreateDigestContext(SEC_OID_SHA256));
   ASSERT_TRUE(cx);
   ASSERT_EQ(SECSuccess, PK11_DigestBegin(cx.get()));
-  ASSERT_EQ(SECSuccess, PK11_DigestOp(cx.get(), first.data(), first.size()));
+  ASSERT_EQ(SECSuccess, PK11_DigestOp(cx.get(), first.data(),
+                                      static_cast<unsigned int>(first.size())));
 
   unsigned char stackBuf[4096];
   int len = -1;
@@ -62,12 +68,14 @@ TEST_F(Pkcs11SaveContextTest, SavedStateIsRestorable) {
   ASSERT_TRUE(restored);
   ASSERT_EQ(SECSuccess, PK11_RestoreContext(restored.get(), stackBuf, len));
   ASSERT_EQ(SECSuccess,
-            PK11_DigestOp(restored.get(), second.data(), second.size()));
+            PK11_DigestOp(restored.get(), second.data(),
+                          static_cast<unsigned int>(second.size())));
 
   std::vector<uint8_t> out(SHA256_LENGTH, 0);
   unsigned int outLen = 0;
   ASSERT_EQ(SECSuccess,
-            PK11_DigestFinal(restored.get(), out.data(), &outLen, out.size()));
+            PK11_DigestFinal(restored.get(), out.data(), &outLen,
+                             static_cast<unsigned int>(out.size())));
   ASSERT_EQ(SHA256_LENGTH, static_cast<int>(outLen));
   EXPECT_EQ(reference, out);
 }
@@ -78,7 +86,8 @@ TEST_F(Pkcs11SaveContextTest, TooSmallBufferFails) {
   ScopedPK11Context cx(PK11_CreateDigestContext(SEC_OID_SHA256));
   ASSERT_TRUE(cx);
   ASSERT_EQ(SECSuccess, PK11_DigestBegin(cx.get()));
-  ASSERT_EQ(SECSuccess, PK11_DigestOp(cx.get(), data.data(), data.size()));
+  ASSERT_EQ(SECSuccess, PK11_DigestOp(cx.get(), data.data(),
+                                      static_cast<unsigned int>(data.size())));
 
   unsigned char tiny[1];
   int len = -1;

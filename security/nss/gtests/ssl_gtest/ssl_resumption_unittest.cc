@@ -453,7 +453,7 @@ TEST_P(TlsConnectGeneric, ServerSNICertTypeSwitch) {
   Connect();
   ScopedCERTCertificate cert2(SSL_PeerCertificate(client_->ssl_fd()));
   ASSERT_NE(nullptr, cert2.get());
-  CheckKeys(ssl_kea_ecdh, ssl_auth_ecdsa);
+  CheckKeys(ssl_auth_ecdsa);
   EXPECT_TRUE(SECITEM_ItemsAreEqual(&cert1->derCert, &cert2->derCert));
 }
 
@@ -613,7 +613,7 @@ TEST_P(TlsConnectGenericResumption, ResumeClientIncompatibleCipher) {
   client_->EnableSingleCipher(ChooseOneCipher(version_));
   Connect();
   SendReceive();
-  CheckKeys(ssl_kea_ecdh, ssl_auth_rsa_sign);
+  CheckKeys();
 
   Reset();
   ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
@@ -628,7 +628,7 @@ TEST_P(TlsConnectGenericResumption, ResumeClientIncompatibleCipher) {
   auto ticket_capture =
       MakeTlsFilter<TlsExtensionCapture>(client_, ticket_extension);
   Connect();
-  CheckKeys(ssl_kea_ecdh, ssl_auth_rsa_sign);
+  CheckKeys();
   EXPECT_EQ(0U, ticket_capture->extension().len());
 }
 
@@ -655,7 +655,7 @@ TEST_P(TlsConnectStream, ResumptionOverrideCipher) {
   server_->EnableSingleCipher(ChooseOneCipher(version_));
   Connect();
   SendReceive();
-  CheckKeys(ssl_kea_ecdh, ssl_auth_rsa_sign);
+  CheckKeys();
 
   Reset();
   ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
@@ -759,7 +759,7 @@ TEST_P(TlsConnectGenericPre13, TestResumptionOverrideVersion) {
   
   server_->EnableSingleCipher(TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA);
   Connect();
-  CheckKeys(ssl_kea_ecdh, ssl_auth_rsa_sign);
+  CheckKeys();
 
   Reset();
   ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
@@ -793,8 +793,7 @@ TEST_F(TlsConnectTest, TestTls13ResumptionTwice) {
       MakeTlsFilter<TlsExtensionCapture>(client_, ssl_tls13_pre_shared_key_xtn);
   Connect();
   SendReceive();
-  CheckKeys(ssl_kea_ecdh, ssl_grp_ec_curve25519, ssl_auth_rsa_sign,
-            ssl_sig_rsa_pss_rsae_sha256);
+  CheckKeys(ssl_auth_rsa_sign, ssl_sig_rsa_pss_rsae_sha256);
   
   DataBuffer initialTicket(c1->extension());
   ASSERT_LT(0U, initialTicket.len());
@@ -811,8 +810,7 @@ TEST_F(TlsConnectTest, TestTls13ResumptionTwice) {
   ExpectResumption(RESUME_TICKET);
   Connect();
   SendReceive();
-  CheckKeys(ssl_kea_ecdh, ssl_grp_ec_curve25519, ssl_auth_rsa_sign,
-            ssl_sig_rsa_pss_rsae_sha256);
+  CheckKeys(ssl_auth_rsa_sign, ssl_sig_rsa_pss_rsae_sha256);
   ASSERT_LT(0U, c2->extension().len());
 
   ScopedCERTCertificate cert2(SSL_PeerCertificate(client_->ssl_fd()));
@@ -1089,7 +1087,7 @@ TEST_F(TlsConnectTest, TestTls13ResumptionDowngrade) {
   Handshake();
 
   SendReceive();
-  CheckKeys();
+  CheckKeys(ssl_kea_ecdh);
 }
 
 TEST_F(TlsConnectTest, TestTls13ResumptionForcedDowngrade) {
@@ -1144,15 +1142,15 @@ TEST_P(TlsConnectGenericResumption, ReConnectTicket) {
   server_->EnableSingleCipher(ChooseOneCipher(version_));
   Connect();
   SendReceive();
-  CheckKeys(ssl_kea_ecdh, ssl_grp_ec_curve25519, ssl_auth_rsa_sign,
-            ssl_sig_rsa_pss_rsae_sha256);
+  CheckKeys(ssl_auth_rsa_sign, ssl_sig_rsa_pss_rsae_sha256);
   
   Reset();
   ConfigureSessionCache(RESUME_BOTH, RESUME_BOTH);
   ExpectResumption(RESUME_TICKET);
   Connect();
   
-  CheckKeysResumption(ssl_kea_ecdh, ssl_grp_none, ssl_grp_ec_curve25519,
+  CheckKeysResumption(GetDefaultKEA(), ssl_grp_none,
+                      GetDefaultGroupFromKEA(GetDefaultKEA()),
                       ssl_auth_rsa_sign, ssl_sig_rsa_pss_rsae_sha256);
 }
 
@@ -1161,13 +1159,13 @@ TEST_P(TlsConnectGenericPre13, ReConnectCache) {
   server_->EnableSingleCipher(ChooseOneCipher(version_));
   Connect();
   SendReceive();
-  CheckKeys(ssl_kea_ecdh, ssl_grp_ec_curve25519, ssl_auth_rsa_sign,
-            ssl_sig_rsa_pss_rsae_sha256);
+  CheckKeys(ssl_auth_rsa_sign, ssl_sig_rsa_pss_rsae_sha256);
   
   Reset();
   ExpectResumption(RESUME_SESSIONID);
   Connect();
-  CheckKeysResumption(ssl_kea_ecdh, ssl_grp_none, ssl_grp_ec_curve25519,
+  CheckKeysResumption(GetDefaultKEA(), ssl_grp_none,
+                      GetDefaultGroupFromKEA(GetDefaultKEA()),
                       ssl_auth_rsa_sign, ssl_sig_rsa_pss_rsae_sha256);
 }
 
@@ -1176,15 +1174,15 @@ TEST_P(TlsConnectGenericResumption, ReConnectAgainTicket) {
   server_->EnableSingleCipher(ChooseOneCipher(version_));
   Connect();
   SendReceive();
-  CheckKeys(ssl_kea_ecdh, ssl_grp_ec_curve25519, ssl_auth_rsa_sign,
-            ssl_sig_rsa_pss_rsae_sha256);
+  CheckKeys(ssl_auth_rsa_sign, ssl_sig_rsa_pss_rsae_sha256);
   
   Reset();
   ConfigureSessionCache(RESUME_BOTH, RESUME_BOTH);
   ExpectResumption(RESUME_TICKET);
   Connect();
   
-  CheckKeysResumption(ssl_kea_ecdh, ssl_grp_none, ssl_grp_ec_curve25519,
+  CheckKeysResumption(GetDefaultKEA(), ssl_grp_none,
+                      GetDefaultGroupFromKEA(GetDefaultKEA()),
                       ssl_auth_rsa_sign, ssl_sig_rsa_pss_rsae_sha256);
   
   Reset();
@@ -1192,7 +1190,8 @@ TEST_P(TlsConnectGenericResumption, ReConnectAgainTicket) {
   ExpectResumption(RESUME_TICKET, 2);
   Connect();
   
-  CheckKeysResumption(ssl_kea_ecdh, ssl_grp_none, ssl_grp_ec_curve25519,
+  CheckKeysResumption(GetDefaultKEA(), ssl_grp_none,
+                      GetDefaultGroupFromKEA(GetDefaultKEA()),
                       ssl_auth_rsa_sign, ssl_sig_rsa_pss_rsae_sha256);
 }
 
@@ -1269,6 +1268,60 @@ TEST_P(TlsConnectGenericResumptionToken, ConnectResumeGetInfo) {
   CheckConnected();
 
   SendReceive();
+}
+
+TEST_P(TlsConnectGenericResumptionToken, RefuseLongWrappedMasterSecret) {
+  ConfigureSessionCache(RESUME_BOTH, RESUME_BOTH);
+  client_->SetResumptionTokenCallback();
+  Connect();
+  SendReceive();
+
+  auto& token = client_->GetResumptionToken();
+  ASSERT_FALSE(token.empty());
+
+  
+  size_t off = 41;
+  
+  ASSERT_GE(token.size(), off + 3);
+  off += 3 + ((size_t(token[off]) << 16) | (size_t(token[off + 1]) << 8) |
+              size_t(token[off + 2]));
+  
+  ASSERT_GE(token.size(), off + 2);
+  off += 2 + ((size_t(token[off]) << 8) | size_t(token[off + 1]));
+  
+  ASSERT_GE(token.size(), off + 1);
+  off += 1 + size_t(token[off]);
+  
+  ASSERT_GE(token.size(), off + 1);
+  off += 1 + size_t(token[off]);
+  
+  ASSERT_GE(token.size(), off + 3);
+  off += 3 + ((size_t(token[off]) << 16) | (size_t(token[off + 1]) << 8) |
+              size_t(token[off + 2]));
+  
+  
+  off += 47;
+  
+  ASSERT_GE(token.size(), off + 1);
+  off += 1 + size_t(token[off]);
+  
+  off += 3;
+  
+  ASSERT_GE(token.size(), off + 1);
+  off += 1 + size_t(token[off]);
+  
+  std::vector<uint8_t> crafted(token.begin(),
+                               token.begin() + static_cast<ptrdiff_t>(off));
+  crafted.push_back(0xff);
+  crafted.insert(crafted.end(), token.begin() + static_cast<ptrdiff_t>(off + 1),
+                 token.end());
+
+  Reset();
+  StartConnect();
+  ASSERT_EQ(SECFailure,
+            SSL_SetResumptionToken(client_->ssl_fd(), crafted.data(),
+                                   static_cast<unsigned int>(crafted.size())));
+  EXPECT_EQ(SSL_ERROR_BAD_RESUMPTION_TOKEN_ERROR, PORT_GetError());
 }
 
 TEST_P(TlsConnectGenericResumptionToken, RefuseExpiredTicketClient) {
@@ -1517,6 +1570,144 @@ TEST_F(TlsConnectStreamTls13, ExternalTokenWithPeerId) {
   ExpectResumption(RESUME_TICKET);
   Connect();
   SendReceive();
+}
+
+TEST_F(TlsConnectStreamTls13, ResumptionTokenPeerIDNotNullTerminated) {
+  ConfigureSessionCache(RESUME_BOTH, RESUME_BOTH);
+  EXPECT_EQ(SECSuccess, SSL_SetSockPeerID(client_->ssl_fd(), "x"));
+  client_->SetResumptionTokenCallback();
+  Connect();
+  SendReceive();
+
+  const auto& token = client_->GetResumptionToken();
+  ASSERT_FALSE(token.empty());
+
+  size_t off = 41;
+  
+  ASSERT_GE(token.size(), off + 3);
+  off += 3 + ((size_t(token[off]) << 16) | (size_t(token[off + 1]) << 8) |
+              size_t(token[off + 2]));
+  
+  ASSERT_GE(token.size(), off + 2);
+  off += 2 + ((size_t(token[off]) << 8) | size_t(token[off + 1]));
+  
+  ASSERT_GE(token.size(), off + 1);
+  size_t peerIDLen = token[off];
+  ASSERT_GT(peerIDLen, 0U);
+
+  
+  
+  
+  std::vector<uint8_t> crafted(
+      token.begin(),
+      token.begin() + static_cast<ptrdiff_t>(off + 1 + peerIDLen));
+  std::fill(crafted.begin() + static_cast<ptrdiff_t>(off + 1), crafted.end(),
+            0x41);
+
+  Reset();
+  StartConnect();
+  EXPECT_EQ(SECFailure,
+            SSL_SetResumptionToken(client_->ssl_fd(), crafted.data(),
+                                   static_cast<unsigned int>(crafted.size())));
+  EXPECT_EQ(SSL_ERROR_BAD_RESUMPTION_TOKEN_ERROR, PORT_GetError());
+}
+
+TEST_F(TlsConnectStreamTls13, ResumptionTokenUrlSvrNameNotNullTerminated) {
+  ConfigureSessionCache(RESUME_BOTH, RESUME_BOTH);
+  client_->SetResumptionTokenCallback();
+  Connect();
+  SendReceive();
+
+  const auto& token = client_->GetResumptionToken();
+  ASSERT_FALSE(token.empty());
+
+  size_t off = 41;
+  
+  ASSERT_GE(token.size(), off + 3);
+  off += 3 + ((size_t(token[off]) << 16) | (size_t(token[off + 1]) << 8) |
+              size_t(token[off + 2]));
+  
+  ASSERT_GE(token.size(), off + 2);
+  off += 2 + ((size_t(token[off]) << 8) | size_t(token[off + 1]));
+  
+  ASSERT_GE(token.size(), off + 1);
+  off += 1 + size_t(token[off]);
+  
+  ASSERT_GE(token.size(), off + 1);
+  size_t urlLen = token[off];
+  ASSERT_GT(urlLen, 0U);
+
+  
+  
+  
+  std::vector<uint8_t> crafted(
+      token.begin(), token.begin() + static_cast<ptrdiff_t>(off + 1 + urlLen));
+  std::fill(crafted.begin() + static_cast<ptrdiff_t>(off + 1), crafted.end(),
+            0x41);
+
+  Reset();
+  StartConnect();
+  EXPECT_EQ(SECFailure,
+            SSL_SetResumptionToken(client_->ssl_fd(), crafted.data(),
+                                   static_cast<unsigned int>(crafted.size())));
+  EXPECT_EQ(SSL_ERROR_BAD_RESUMPTION_TOKEN_ERROR, PORT_GetError());
+}
+
+TEST_F(TlsConnectStreamTls13, ResumptionTokenSessionIDOverflow) {
+  ConfigureSessionCache(RESUME_BOTH, RESUME_BOTH);
+  client_->SetResumptionTokenCallback();
+  Connect();
+  SendReceive();
+
+  const auto& token = client_->GetResumptionToken();
+  ASSERT_FALSE(token.empty());
+
+  
+  
+  
+  
+  
+  
+  size_t off = 41;
+  
+  ASSERT_GE(token.size(), off + 3);
+  off += 3 + ((size_t(token[off]) << 16) | (size_t(token[off + 1]) << 8) |
+              size_t(token[off + 2]));
+  
+  ASSERT_GE(token.size(), off + 2);
+  off += 2 + ((size_t(token[off]) << 8) | size_t(token[off + 1]));
+  
+  ASSERT_GE(token.size(), off + 1);
+  off += 1 + size_t(token[off]);
+  
+  ASSERT_GE(token.size(), off + 1);
+  off += 1 + size_t(token[off]);
+  
+  ASSERT_GE(token.size(), off + 3);
+  off += 3 + ((size_t(token[off]) << 16) | (size_t(token[off + 1]) << 8) |
+              size_t(token[off + 2]));
+  
+  
+  
+  off += 46;
+  off += 1;  
+  
+  ASSERT_GE(token.size(), off + 1 + SSL3_SESSIONID_BYTES);
+  ASSERT_EQ(static_cast<uint8_t>(SSL3_SESSIONID_BYTES), token[off]);
+
+  
+  std::vector<uint8_t> crafted(token);
+  crafted[off] = 0xff;
+  
+  
+  crafted.resize(crafted.size() + (0xff - SSL3_SESSIONID_BYTES), 0);
+
+  Reset();
+  StartConnect();
+  EXPECT_EQ(SECFailure,
+            SSL_SetResumptionToken(client_->ssl_fd(), crafted.data(),
+                                   static_cast<unsigned int>(crafted.size())));
+  EXPECT_EQ(SSL_ERROR_BAD_RESUMPTION_TOKEN_ERROR, PORT_GetError());
 }
 
 }  

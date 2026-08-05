@@ -2,6 +2,8 @@
 
 
 
+#include <limits.h> 
+
 #include "plarena.h"
 
 #include "seccomon.h"
@@ -116,6 +118,14 @@ nsspkcs5_PBKDF1(const SECHashObject *hashObj, SECItem *salt, SECItem *pwd,
     SECStatus rv = SECFailure;
 
     if ((salt == NULL) || (pwd == NULL) || (iter < 0)) {
+        return NULL;
+    }
+
+    
+
+
+    if (salt->len >= UINT_MAX - pwd->len) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return NULL;
     }
 
@@ -330,8 +340,17 @@ nsspkcs5_PBKDF2_F(const SECHashObject *hashobj, SECItem *pwitem, SECItem *salt,
     unsigned int hLen = hashobj->length;
     SECStatus rv = SECFailure;
     unsigned char *last = NULL;
-    unsigned int lastLength = salt->len + 4;
+    unsigned int lastLength;
     unsigned int lastBufLength;
+
+    
+
+
+    if (salt->len >= UINT_MAX - 4) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        goto loser;
+    }
+    lastLength = salt->len + 4;
 
     cx = HMAC_Create(hashobj, pwitem->data, pwitem->len, PR_FALSE);
     if (cx == NULL) {
@@ -464,8 +483,17 @@ nsspkcs5_PKCS12PBE(const SECHashObject *hashObject,
         goto loser;
     }
 
+    if (salt->len >= UINT_MAX - bufferLength ||
+        pwitem->len >= UINT_MAX - bufferLength) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        goto loser;
+    }
     SLen = NSSPBE_ROUNDUP(salt->len, bufferLength);
     PLen = NSSPBE_ROUNDUP(pwitem->len, bufferLength);
+    if (SLen > UINT_MAX - PLen) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        goto loser;
+    }
     I.len = SLen + PLen;
     I.data = (unsigned char *)PORT_ArenaZAlloc(arena, I.len);
     if (I.data == NULL) {
@@ -1514,19 +1542,27 @@ sec_pkcs5_rc2(SECItem *key, SECItem *iv, SECItem *src, PRBool dummy,
 
                 
                 if ((rv == SECSuccess) && (encrypt != PR_TRUE)) {
-                    pad = dest->data[dest->len - 1];
-                    if ((pad > 0) && (pad <= 8)) {
-                        if (dest->data[dest->len - pad] != pad) {
-                            PORT_SetError(SEC_ERROR_BAD_PASSWORD);
-                            rv = SECFailure;
-                        } else {
-                            dest->len -= pad;
-                        }
-                    } else {
+                    
+
+                    if (dest->len < 8 ) {
                         PORT_SetError(SEC_ERROR_BAD_PASSWORD);
                         rv = SECFailure;
+                    } else {
+                        pad = dest->data[dest->len - 1];
+                        if ((pad > 0) && (pad <= 8)) {
+                            if (dest->data[dest->len - pad] != pad) {
+                                PORT_SetError(SEC_ERROR_BAD_PASSWORD);
+                                rv = SECFailure;
+                            } else {
+                                dest->len -= pad;
+                            }
+                        } else {
+                            PORT_SetError(SEC_ERROR_BAD_PASSWORD);
+                            rv = SECFailure;
+                        }
                     }
                 }
+                RC2_DestroyContext(ctxt, PR_TRUE);
             }
         }
     }
