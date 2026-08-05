@@ -877,6 +877,7 @@ class GCRuntime {
   void incrementalSlice(JS::SliceBudget& budget, JS::GCReason reason,
                         bool budgetWasIncreased);
 
+  bool shouldYieldAtEndOfMarkPhase() const;
   bool mightSweepInThisSlice(bool nonIncremental);
   void collectNurseryFromMajorGC(JS::GCReason reason);
   void collectNursery(JS::GCOptions options, JS::GCReason reason,
@@ -1291,7 +1292,7 @@ class GCRuntime {
 #endif
 
   
-  MainThreadData<bool> lastMarkSlice;
+  MainThreadData<bool> didYieldAtEndOfMarkPhase;
 
   
   MainThreadData<bool> safeToYield;

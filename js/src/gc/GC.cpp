@@ -219,8 +219,6 @@
 
 
 
-#include "gc/GC-inl.h"
-
 #include "mozilla/Attributes.h"
 #include "mozilla/glue/Debug.h"
 #include "mozilla/ScopeExit.h"
@@ -268,6 +266,7 @@
 #include "vm/SymbolType.h"
 #include "vm/Time.h"
 
+#include "gc/GC-inl.h"
 #include "gc/Heap-inl.h"
 #include "gc/Nursery-inl.h"
 #include "gc/ObjectKind-inl.h"
@@ -522,7 +521,7 @@ GCRuntime::GCRuntime(JSRuntime* rt)
       incrementalState(gc::State::NotActive),
       initialState(gc::State::NotActive),
       useZeal(false),
-      lastMarkSlice(false),
+      didYieldAtEndOfMarkPhase(false),
       safeToYield(true),
       markOnBackgroundThreadDuringSweeping(false),
       useBackgroundThreads(false),
@@ -3863,7 +3862,7 @@ void GCRuntime::checkGCStateNotInUse() {
   }
   MOZ_ASSERT(!hasDelayedMarking());
   MOZ_ASSERT(!hasAnyDeferredWeakMaps());
-  MOZ_ASSERT(!lastMarkSlice);
+  MOZ_ASSERT(!didYieldAtEndOfMarkPhase);
 
   MOZ_ASSERT(!disableBarriersForSweeping);
   MOZ_ASSERT(foregroundFinalizedArenas.ref().isNothing());
@@ -4157,7 +4156,7 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
         lifoBlocksToFree.ref().freeAll();
       }
 
-      lastMarkSlice = false;
+      didYieldAtEndOfMarkPhase = false;
       incrementalState = State::Finish;
 
 #ifdef DEBUG
@@ -4467,30 +4466,14 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
       assertNoMarkingWork();
 
       
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-      if (isIncremental && !lastMarkSlice) {
-        if ((markSliceCount > 1 && !zealModeControlsYieldPoint()) ||
-            (useZeal && hasZealMode(ZealMode::YieldBeforeSweeping))) {
-          lastMarkSlice = true;
-          break;
-        }
+      
+      if (shouldYieldAtEndOfMarkPhase()) {
+        didYieldAtEndOfMarkPhase = true;
+        break;
       }
 
       incrementalState = State::Sweep;
-      lastMarkSlice = false;
+      didYieldAtEndOfMarkPhase = false;
 
       beginSweepPhase(session);
 
@@ -4614,6 +4597,29 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
   MOZ_ASSERT(marker().markColor() == MarkColor::Black);
   MOZ_ASSERT(!rt->gcContext()->hasJitCodeToPoison());
 #endif
+}
+
+bool GCRuntime::shouldYieldAtEndOfMarkPhase() const {
+  
+  if (!isIncremental) {
+    return false;
+  }
+
+  
+  if (didYieldAtEndOfMarkPhase) {
+    return false;
+  }
+
+  
+  
+  if (zealModeControlsYieldPoint()) {
+    return useZeal && hasZealMode(ZealMode::YieldBeforeSweeping);
+  }
+
+  
+  
+  
+  return markSliceCount > 1;
 }
 
 void GCRuntime::collectNurseryFromMajorGC(JS::GCReason reason) {
@@ -5077,7 +5083,7 @@ MOZ_NEVER_INLINE GCRuntime::IncrementalResult GCRuntime::gcCycle(
 
 inline bool GCRuntime::mightSweepInThisSlice(bool nonIncremental) {
   MOZ_ASSERT(incrementalState < State::Sweep);
-  return nonIncremental || markSliceCount == 0 || lastMarkSlice ||
+  return nonIncremental || markSliceCount == 0 || didYieldAtEndOfMarkPhase ||
          zealModeControlsYieldPoint();
 }
 
