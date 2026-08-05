@@ -80,6 +80,10 @@ class SerialPortParent final : public PSerialPortParent {
   
   bool mSharingConnected = false;
   uint32_t mPipeCapacity = 0;
+  
+  
+  
+  bool mDetectParityErrors = false;
 
   
   
