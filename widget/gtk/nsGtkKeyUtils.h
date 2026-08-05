@@ -64,6 +64,13 @@ class KeymapWrapper {
   
 
 
+
+
+  [[nodiscard]] static bool StringHasOnlyOneGraphemeCluster(const nsAString&);
+
+  
+
+
   static uint32_t ComputeDOMKeyCode(const GdkEventKey* aGdkKeyEvent);
 
   
@@ -125,6 +132,12 @@ class KeymapWrapper {
 
 
   static uint32_t ComputeKeyModifiers(guint aGdkModifierState);
+
+  
+
+
+  [[nodiscard]] static bool EditorMayHandleKeyPressEventAsTextInput(
+      guint aGdkModifierState);
 
   
 

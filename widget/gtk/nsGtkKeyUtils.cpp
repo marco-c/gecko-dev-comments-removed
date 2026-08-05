@@ -25,6 +25,7 @@
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/Utf16.h"
+#include "mozilla/intl/Segmenter.h"
 #include "nsCRT.h"
 #include "nsContentUtils.h"
 #include "nsIBidiKeyboard.h"
@@ -323,6 +324,18 @@ KeymapWrapper::ModifierKey* KeymapWrapper::GetModifierKey(
     }
   }
   return nullptr;
+}
+
+
+bool KeymapWrapper::StringHasOnlyOneGraphemeCluster(const nsAString& aString) {
+  if (aString.IsEmpty()) {
+    return false;
+  }
+  if (aString.Length() == 1u) {
+    return true;
+  }
+  
+  return intl::GraphemeClusterBreakIteratorUtf16(aString).Next().isNothing();
 }
 
 
@@ -1107,6 +1120,13 @@ uint32_t KeymapWrapper::ComputeKeyModifiers(guint aGdkModifierState) {
 }
 
 
+bool KeymapWrapper::EditorMayHandleKeyPressEventAsTextInput(
+    guint aGdkModifierState) {
+  const Modifiers modifiers = ComputeKeyModifiers(aGdkModifierState);
+  return !(modifiers & (MODIFIER_CONTROL | MODIFIER_ALT | MODIFIER_META));
+}
+
+
 guint KeymapWrapper::ConvertWidgetModifierToGdkState(
     nsIWidget::NativeModifiers aNativeModifiers) {
   if (aNativeModifiers == nsIWidget::NativeModifiers::NO_MODIFIERS) {
@@ -1744,11 +1764,12 @@ void KeymapWrapper::HandleKeyPressEvent(nsWindow* aWindow,
   
   
   
+  
   WidgetKeyboardEvent keypressEvent(true, eKeyPress, aWindow);
   KeymapWrapper::InitKeyEvent(keypressEvent, aGdkKeyEvent, false);
   nsEventStatus status = nsEventStatus_eIgnore;
   if (keypressEvent.mKeyNameIndex != KEY_NAME_INDEX_USE_STRING ||
-      keypressEvent.mKeyValue.Length() == 1) {
+      KeymapWrapper::StringHasOnlyOneGraphemeCluster(keypressEvent.mKeyValue)) {
     if (textEventDispatcher->MaybeDispatchKeypressEvents(keypressEvent, status,
                                                          aGdkKeyEvent)) {
       MOZ_LOG(gKeyLog, LogLevel::Info,
