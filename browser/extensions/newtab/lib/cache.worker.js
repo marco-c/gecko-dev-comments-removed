@@ -35,8 +35,6 @@ importScripts("resource://gre/modules/workers/require.js");
   
   ChromeUtils = undefined;
 
-  
-  
   importScripts(
     "resource://newtab/data/content/vendor.bundle.js",
     "resource://newtab/data/content/activity-stream.bundle.js"
