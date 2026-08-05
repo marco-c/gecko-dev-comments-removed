@@ -69,7 +69,8 @@ void nsTableCellFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   if (aPrevInFlow) {
     
     nsTableCellFrame* cellFrame = (nsTableCellFrame*)aPrevInFlow;
-    mColIndex = cellFrame->mColIndex;
+    uint32_t colIndex = cellFrame->ColIndex();
+    SetColIndex(colIndex);
   } else {
     
     
@@ -233,17 +234,7 @@ void nsTableCellFrame::RemoveFrame(DestroyContext&, ChildListID, nsIFrame*) {
 }
 #endif
 
-void nsTableCellFrame::SetColIndex(int32_t aColIndex) {
-  MOZ_ASSERT(!GetPrevContinuation());
-  mColIndex = aColIndex;
-  
-  
-  
-  for (nsIFrame* cont = GetNextContinuation(); cont;
-       cont = cont->GetNextContinuation()) {
-    static_cast<nsTableCellFrame*>(cont)->mColIndex = aColIndex;
-  }
-}
+void nsTableCellFrame::SetColIndex(int32_t aColIndex) { mColIndex = aColIndex; }
 
 
 nsMargin nsTableCellFrame::GetUsedMargin() const {
