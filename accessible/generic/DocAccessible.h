@@ -880,17 +880,6 @@ class DocAccessible : public HyperTextAccessible,
 
   void MaybeFireEventsForChangedPopover(LocalAccessible* aAcc);
 
-  bool ShouldSendToParentProcess() const {
-    
-    
-    
-    
-    
-    
-    return IPCAccessibilityActive() &&
-           (nsAccessibilityService::IsRunningInParentProcess() || IsPrintDoc());
-  }
-
   PresShell* mPresShell;
 
   
