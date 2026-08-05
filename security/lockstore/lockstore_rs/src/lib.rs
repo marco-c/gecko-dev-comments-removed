@@ -18,6 +18,7 @@ use kvstore::{DatabaseError, StoreError};
 use nss_rs::Error as NssError;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use zeroize::ZeroizeOnDrop;
 
 pub const KEYSTORE_FILENAME: &str = "lockstore.keys.sqlite";
 pub const DATASTORE_FILENAME_PREFIX: &str = "lockstore.data.";
@@ -149,8 +150,10 @@ impl KekType {
 
 
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ZeroizeOnDrop)]
 pub struct LocalKekRecord {
+    
+    
     
     pub kek_bytes: Vec<u8>,
 }

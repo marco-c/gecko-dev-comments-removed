@@ -8,6 +8,7 @@ use nss_rs::aead::{Aead, AeadAlgorithms, Mode};
 use nss_rs::p11;
 use nss_rs::SymKey;
 use serde::{Deserialize, Serialize};
+use zeroize::Zeroizing;
 
 pub const DEFAULT_CIPHER_SUITE: CipherSuite = CipherSuite::Aes256Gcm;
 
@@ -100,8 +101,10 @@ fn random_bytes(size: usize) -> Vec<u8> {
     buf
 }
 
-pub fn generate_random_key(cipher_suite: CipherSuite) -> Vec<u8> {
-    random_bytes(cipher_suite.key_size())
+
+
+pub fn generate_random_key(cipher_suite: CipherSuite) -> Zeroizing<Vec<u8>> {
+    Zeroizing::new(random_bytes(cipher_suite.key_size()))
 }
 
 pub fn generate_random_nonce(cipher_suite: CipherSuite) -> Vec<u8> {
@@ -150,7 +153,10 @@ pub fn encrypt_with_symkey(
 
 
 
-pub fn decrypt_with_symkey(ciphertext: &[u8], key: &SymKey) -> Result<Vec<u8>, LockstoreError> {
+pub fn decrypt_with_symkey(
+    ciphertext: &[u8],
+    key: &SymKey,
+) -> Result<Zeroizing<Vec<u8>>, LockstoreError> {
     if ciphertext.is_empty() {
         return Err(LockstoreError::Decryption(
             "Ciphertext is empty".to_string(),
@@ -185,7 +191,7 @@ pub fn decrypt_with_symkey(ciphertext: &[u8], key: &SymKey) -> Result<Vec<u8>, L
         .decrypt(&aad, 0, actual_ciphertext)
         .map_err(|e| LockstoreError::Decryption(format!("Decryption failed: {}", e)))?;
 
-    Ok(plaintext)
+    Ok(Zeroizing::new(plaintext))
 }
 
 
@@ -210,7 +216,10 @@ pub fn encrypt_with_key(
 
 
 
-pub fn decrypt_with_key(ciphertext: &[u8], key: &[u8]) -> Result<Vec<u8>, LockstoreError> {
+pub fn decrypt_with_key(
+    ciphertext: &[u8],
+    key: &[u8],
+) -> Result<Zeroizing<Vec<u8>>, LockstoreError> {
     if ciphertext.is_empty() {
         return Err(LockstoreError::Decryption(
             "Ciphertext is empty".to_string(),
@@ -237,7 +246,10 @@ pub fn decrypt_with_key(ciphertext: &[u8], key: &[u8]) -> Result<Vec<u8>, Lockst
 
 
 
-pub fn zeroize(store: &Store, db_name: &str, key_name: &str) -> Result<(), LockstoreError> {
+
+
+
+pub fn zeroize_on_disk(store: &Store, db_name: &str, key_name: &str) -> Result<(), LockstoreError> {
     let db = Database::new(store, db_name);
     let key = Key::from(key_name);
     if let Some(value) = db.get(&key, &GetOptions::default())? {
@@ -251,7 +263,7 @@ pub fn zeroize(store: &Store, db_name: &str, key_name: &str) -> Result<(), Locks
 
 
 pub fn secure_delete(store: &Store, db_name: &str, key_name: &str) -> Result<(), LockstoreError> {
-    zeroize(store, db_name, key_name)?;
+    zeroize_on_disk(store, db_name, key_name)?;
     let db = Database::new(store, db_name);
     let key = Key::from(key_name);
     db.delete(&key)?;

@@ -25,6 +25,7 @@
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
+#include "secport.h"
 #include "xpcpublic.h"
 
 namespace mozilla::security::lockstore {
@@ -199,6 +200,83 @@ nsresult NewDOMPromise(JSContext* aCx, RefPtr<Promise>& aOut) {
 
 
 
+
+class ZeroizingCString {
+ public:
+  explicit ZeroizingCString(const nsACString& aSrc) : mStr(aSrc) {}
+  ZeroizingCString(ZeroizingCString&& aOther) = default;
+  ZeroizingCString& operator=(ZeroizingCString&& aOther) {
+    if (this != &aOther) {
+      Wipe();
+      mStr = std::move(aOther.mStr);
+    }
+    return *this;
+  }
+  ZeroizingCString(const ZeroizingCString&) = delete;
+  ZeroizingCString& operator=(const ZeroizingCString&) = delete;
+  ~ZeroizingCString() { Wipe(); }
+  const nsACString& Get() const { return mStr; }
+
+ private:
+  void Wipe() {
+    if (mStr.Length() > 0) {
+      PORT_SafeZero(mStr.BeginWriting(), mStr.Length());
+    }
+  }
+
+  nsCString mStr;
+};
+
+
+
+
+class ZeroizingByteArray {
+ public:
+  explicit ZeroizingByteArray(nsTArray<uint8_t>&& aArr)
+      : mArr(std::move(aArr)) {}
+  ZeroizingByteArray(ZeroizingByteArray&& aOther) = default;
+  ZeroizingByteArray& operator=(ZeroizingByteArray&& aOther) {
+    if (this != &aOther) {
+      Wipe();
+      mArr = std::move(aOther.mArr);
+    }
+    return *this;
+  }
+  ZeroizingByteArray(const ZeroizingByteArray&) = delete;
+  ZeroizingByteArray& operator=(const ZeroizingByteArray&) = delete;
+  ~ZeroizingByteArray() { Wipe(); }
+  const nsTArray<uint8_t>& Get() const { return mArr; }
+
+ private:
+  void Wipe() {
+    if (!mArr.IsEmpty()) {
+      PORT_SafeZero(mArr.Elements(), mArr.Length());
+    }
+  }
+
+  nsTArray<uint8_t> mArr;
+};
+
+
+
+
+template <typename T>
+const T& Unwrap(const T& aArg) {
+  return aArg;
+}
+inline const nsACString& Unwrap(const ZeroizingCString& aArg) {
+  return aArg.Get();
+}
+inline const nsTArray<uint8_t>& Unwrap(const ZeroizingByteArray& aArg) {
+  return aArg.Get();
+}
+
+
+
+
+
+
+
 template <typename... Storages, typename Result, typename... Args>
 nsresult ImplXpcomMethod(LockstoreService* aLockstore, JSContext* aCx,
                          Promise** aPromise,
@@ -220,7 +298,7 @@ nsresult ImplXpcomMethod(LockstoreService* aLockstore, JSContext* aCx,
       "LockstoreService::ImplXpcomMethod",
       [self = RefPtr{aLockstore}, aMethod, domHandle,
        ... args = std::forward<Storages>(aArgs)]() mutable {
-        auto result = (self.get()->*aMethod)(args...);
+        auto result = (self.get()->*aMethod)(Unwrap(args)...);
         NS_DispatchToMainThread(NS_NewRunnableFunction(
             "LockstoreService::ImplXpcomMethod::Resolve",
             [domHandle = std::move(domHandle),
@@ -413,7 +491,8 @@ LockstoreService::UnlockKek(const nsACString& aKekRef,
                             const nsACString& aSecret, uint64_t aTimeoutMs,
                             JSContext* aCx, Promise** aPromise) {
   return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoUnlockKek,
-                         nsCString{aKekRef}, nsCString{aSecret}, aTimeoutMs);
+                         nsCString{aKekRef}, ZeroizingCString{aSecret},
+                         aTimeoutMs);
 }
 
 NS_IMETHODIMP
@@ -446,7 +525,7 @@ LockstoreService::ImportDek(const nsACString& aCollection,
                             Promise** aPromise) {
   return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoImportDek,
                          nsCString{aCollection}, nsCString{aKekRef},
-                         aDekBytes.Clone(), aExtractable);
+                         ZeroizingByteArray{aDekBytes.Clone()}, aExtractable);
 }
 
 NS_IMETHODIMP
@@ -539,7 +618,7 @@ LockstoreService::CreateKek(const nsACString& aKekType,
                             JSContext* aCx, Promise** aPromise) {
   return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoCreateKek,
                          nsCString{aKekType}, nsCString{aIdentifier},
-                         nsCString{aSecret}, aCacheTimeoutMs);
+                         ZeroizingCString{aSecret}, aCacheTimeoutMs);
 }
 
 NS_IMETHODIMP
