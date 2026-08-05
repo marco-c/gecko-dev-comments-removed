@@ -6409,7 +6409,8 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
   
   Register callee = regs.takeAny();
   masm.unboxObject(
-      Address(genObj, AbstractGeneratorObject::offsetOfCalleeSlot()), callee);
+      Address(genObj, AbstractGeneratorObject::offsetOfCalleeOrModuleSlot()),
+      callee);
 
   
   Register callerStackPtr = regs.takeAny();
@@ -6588,7 +6589,8 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
 
   
   masm.unboxObject(
-      Address(genObj, AbstractGeneratorObject::offsetOfCalleeSlot()), scratch1);
+      Address(genObj, AbstractGeneratorObject::offsetOfCalleeOrModuleSlot()),
+      scratch1);
   masm.loadPrivate(Address(scratch1, JSFunction::offsetOfJitInfoOrScript()),
                    scratch1);
 

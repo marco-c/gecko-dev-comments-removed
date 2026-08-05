@@ -2803,8 +2803,7 @@ bool DebugAPI::onSingleStep(JSContext* cx) {
         
         MOZ_ASSERT(genObj.isSuspended());
 
-        if (genObj.callee().hasBaseScript() &&
-            genObj.callee().baseScript() == trappingScript &&
+        if (genObj.script() == trappingScript &&
             !frameObj.getReservedSlot(DebuggerFrame::ONSTEP_HANDLER_SLOT)
                  .isUndefined()) {
           suspendedStepperCount++;

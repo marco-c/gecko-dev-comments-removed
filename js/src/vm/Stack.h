@@ -502,10 +502,13 @@ class InterpreterFrame {
 
   
   
-  Value* resumeArgs() const {
+  Value* resumeArgs() {
     MOZ_ASSERT(isResumingGenerator());
-    MOZ_ASSERT(isFunctionFrame());
-    return argv() + numFormalArgs();
+    if (isFunctionFrame()) {
+      return argv() + numFormalArgs();
+    }
+    MOZ_ASSERT(isModuleFrame());
+    return reinterpret_cast<Value*>(this) - ResumeFrameArgs::NumSlots;
   }
 
   
@@ -863,7 +866,8 @@ class InterpreterStack {
   
   InterpreterFrame* pushExecuteFrame(JSContext* cx, HandleScript script,
                                      HandleObject envChain,
-                                     AbstractFramePtr evalInFrame);
+                                     AbstractFramePtr evalInFrame,
+                                     bool reserveResumeArgs = false);
 
   
   InterpreterFrame* pushInvokeFrame(JSContext* cx, const CallArgs& args,
