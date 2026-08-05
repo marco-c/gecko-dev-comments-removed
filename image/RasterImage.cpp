@@ -76,8 +76,6 @@ RasterImage::RasterImage(nsIURI* aURI )
 
 
 RasterImage::~RasterImage() {
-  mIsBeingDestroyed = true;
-
   
   
   if (!mSourceBuffer->IsComplete()) {
@@ -486,19 +484,21 @@ RasterImage::WillDrawOpaqueNow() {
 void RasterImage::OnSurfaceDiscarded(const SurfaceKey& aSurfaceKey) {
   MOZ_ASSERT(mProgressTracker);
 
-  if (mIsBeingDestroyed) {
-    return;
-  }
-
   bool animatedFramesDiscarded =
       aSurfaceKey.Playback() == PlaybackType::eAnimated;
 
   nsCOMPtr<nsIEventTarget> eventTarget = do_GetMainThread();
 
-  RefPtr<RasterImage> image = this;
-  nsCOMPtr<nsIRunnable> ev =
-      NS_NewRunnableFunction("RasterImage::OnSurfaceDiscarded", [=]() -> void {
-        image->OnSurfaceDiscardedInternal(animatedFramesDiscarded);
+  RefPtr<ProgressTracker> progressTracker = mProgressTracker;
+  nsCOMPtr<nsIRunnable> ev = NS_NewRunnableFunction(
+      "RasterImage::OnSurfaceDiscarded",
+      [progressTracker, animatedFramesDiscarded]() -> void {
+        RefPtr<Image> image = progressTracker->GetImage();
+        if (!image) {
+          return;
+        }
+        static_cast<RasterImage*>(image.get())
+            ->OnSurfaceDiscardedInternal(animatedFramesDiscarded);
       });
   eventTarget->Dispatch(ev.forget(), NS_DISPATCH_NORMAL);
 }

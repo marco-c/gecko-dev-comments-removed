@@ -380,8 +380,6 @@ class RasterImage final : public ImageResource,
   
   int32_t mDecodeCount;
 
-  Atomic<bool> mIsBeingDestroyed{false};
-
 #ifdef DEBUG
   uint32_t mFramesNotified;
 #endif
