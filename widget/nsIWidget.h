@@ -2310,8 +2310,8 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
-  virtual void NotifyCompositorScrollUpdate(
-      const mozilla::layers::CompositorScrollUpdate& aUpdate) {}
+  virtual void NotifyCompositorScrollUpdates(
+      const nsTArray<mozilla::layers::CompositorScrollUpdate>& aUpdates) {}
 
 #if defined(MOZ_WIDGET_ANDROID)
   
