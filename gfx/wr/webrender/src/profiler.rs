@@ -70,6 +70,9 @@ static PROFILER_PRESETS: &'static[(&'static str, &'static str)] = &[
     
     (&"Frame stats", &"Primitives,Visible primitives,Draw calls,Vertices,Color passes,Alpha passes,Rendered picture tiles,Rasterized glyphs"),
     
+    
+    (&"Frame build traversal", &"Primitives,Visibility visited prims,Prepare visited prims,Visible primitives,Prepare cmd targets,Prepare pictures, ,Visibility,Prepare"),
+    
     (&"Texture cache stats", &"Atlas textures mem, Standalone textures mem, Picture tiles mem, Render targets mem, Depth targets mem, Atlas items mem,
         Texture cache standalone pressure, Texture cache eviction count, Texture cache youngest evicted, ,
         Atlas RGBA8 linear pixels, Atlas RGBA8 glyphs pixels, Atlas A8 glyphs pixels, Atlas A8 pixels, Atlas A16 pixels, Atlas RGBA8 nearest pixels,
@@ -277,7 +280,22 @@ pub const COMPOSITOR_SURFACE_UNDERLAYS: usize = 131;
 pub const COMPOSITOR_SURFACE_OVERLAYS: usize = 132;
 pub const COMPOSITOR_SURFACE_BLITS: usize = 133;
 
-pub const NUM_PROFILER_EVENTS: usize = 134;
+
+
+
+pub const VISIBILITY_VISITED_PRIMS: usize = 134;
+
+
+
+pub const PREPARE_VISITED_PRIMS: usize = 135;
+
+
+
+pub const PREPARE_CMD_TARGETS: usize = 136;
+
+pub const PREPARE_PICTURES: usize = 137;
+
+pub const NUM_PROFILER_EVENTS: usize = 138;
 
 pub struct Profiler {
     counters: Vec<Counter>,
@@ -490,6 +508,11 @@ impl Profiler {
             int("Compositor surface underlays", "", COMPOSITOR_SURFACE_UNDERLAYS, Expected::none()),
             int("Compositor surface overlays", "", COMPOSITOR_SURFACE_OVERLAYS, Expected::none()),
             int("Compositor surface blits", "", COMPOSITOR_SURFACE_BLITS, Expected::none()),
+
+            int("Visibility visited prims", "", VISIBILITY_VISITED_PRIMS, Expected::none()),
+            int("Prepare visited prims", "", PREPARE_VISITED_PRIMS, Expected::none()),
+            int("Prepare cmd targets", "", PREPARE_CMD_TARGETS, Expected::none()),
+            int("Prepare pictures", "", PREPARE_PICTURES, Expected::none()),
         ];
 
         let mut counters = Vec::with_capacity(profile_counters.len());
