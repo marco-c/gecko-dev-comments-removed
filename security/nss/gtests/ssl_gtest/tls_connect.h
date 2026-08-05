@@ -84,11 +84,23 @@ class TlsConnectTestBase : public ::testing::Test {
   void CheckEarlyDataLimit(const std::shared_ptr<TlsAgent>& agent,
                            size_t expected_size);
   
+  SSLKEAType GetDefaultKEA(void) const;
+  
+  SSLAuthType GetDefaultAuth(void) const;
+  
+  SSLNamedGroup GetDefaultGroupFromKEA(SSLKEAType kea_type) const;
+  
+  SSLSignatureScheme GetDefaultSchemeFromAuth(SSLAuthType auth_type) const;
+
+  
   void CheckKeys(SSLKEAType kea_type, SSLNamedGroup kea_group,
                  SSLAuthType auth_type, SSLSignatureScheme sig_scheme) const;
   
+  void CheckKeys(SSLKEAType kea_type, SSLNamedGroup kea_group) const;
+  void CheckKeys(SSLAuthType auth_type, SSLSignatureScheme sig_scheme) const;
   void CheckKeys(SSLKEAType kea_type, SSLAuthType auth_type) const;
-  
+  void CheckKeys(SSLKEAType kea_type) const;
+  void CheckKeys(SSLAuthType auth_type) const;
   void CheckKeys() const;
   
   void CheckKeysResumption(SSLKEAType kea_type, SSLNamedGroup kea_group,
@@ -103,6 +115,7 @@ class TlsConnectTestBase : public ::testing::Test {
 
   void ConfigureVersion(uint16_t version);
   void SetExpectedVersion(uint16_t version);
+  uint16_t GetVersion(void) const { return version_; };
   
   void ExpectResumption(SessionResumptionMode expected,
                         uint8_t num_resumed = 1);
@@ -156,7 +169,8 @@ class TlsConnectTestBase : public ::testing::Test {
                 std::shared_ptr<TlsAgent>& server,
                 HpkeKemId kem_id = HpkeDhKemX25519Sha256,
                 bool expect_ech = true, bool set_client_config = true,
-                bool set_server_config = true, int maxConfigSize = 100);
+                bool set_server_config = true, int maxConfigSize = 100,
+                bool compress_xtns = true);
 
  protected:
   SSLProtocolVariant variant_;
