@@ -3824,6 +3824,11 @@ function CanCloseWindow() {
   return true;
 }
 
+
+
+
+let gLastWindowCloseTriggerHandled = false;
+
 function WindowIsClosing(event) {
   let source;
   if (event) {
@@ -3851,15 +3856,93 @@ function WindowIsClosing(event) {
   
   
   
-  if (CanCloseWindow()) {
-    
-    
-    
-    window.skipNextCanClose = true;
-    return true;
+  if (!CanCloseWindow()) {
+    return false;
   }
 
-  return false;
+  
+  
+  
+  window.skipNextCanClose = true;
+
+  let isLastWindow = !Array.from(browserWindows()).some(
+    w => !w.closed && w != window
+  );
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let isLastWindowNonMac = isLastWindow && AppConstants.platform != "macosx";
+  let shouldWarnForTabs =
+    Services.prefs.getBoolPref("browser.tabs.warnOnClose") &&
+    (isLastWindowNonMac
+      ? gBrowser.visibleTabs.length - gBrowser.pinnedTabCount >= 2
+      : gBrowser.openTabs.length > 1);
+
+  const { ASRouter } = ChromeUtils.importESModule(
+    "resource:///modules/asrouter/ASRouter.sys.mjs"
+  );
+  const { TaskbarTabsUtils } = ChromeUtils.importESModule(
+    "resource:///modules/taskbartabs/TaskbarTabsUtils.sys.mjs"
+  );
+  if (gLastWindowCloseTriggerHandled) {
+    
+    
+    
+    
+    Glean.messagingSystem.lastWindowCloseTriggerBypassed.add(1);
+  } else if (
+    isLastWindow &&
+    
+    
+    
+    !TaskbarTabsUtils.isTaskbarTabWindow(window) &&
+    !shouldWarnForTabs &&
+    ASRouter.initialized &&
+    
+    
+    ASRouter.hasMessageForTrigger("lastWindowClose")
+  ) {
+    
+    
+    
+    
+    
+    gLastWindowCloseTriggerHandled = true;
+    ASRouter.sendTriggerMessage(
+      {
+        browser: gBrowser.selectedBrowser,
+        id: "lastWindowClose",
+      },
+      
+      
+      true
+    )
+      .then(({ closedPromise }) => closedPromise)
+      .catch(e => console.error("ASRouter lastWindowClose trigger: ", e))
+      .finally(() => {
+        gLastWindowCloseTriggerHandled = false;
+        
+        
+        
+        
+        
+        
+        
+        
+        window.close();
+      });
+    return false;
+  }
+
+  return true;
 }
 
 
