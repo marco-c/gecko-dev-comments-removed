@@ -748,7 +748,11 @@ class AudioCallbackDriver final : public GraphDriver,
   RefPtr<CubebUtils::CubebHandle> mCubeb;
   
 
-  nsAutoRef<cubeb_stream> mAudioStream;
+
+
+
+  DataMutex<nsAutoRef<cubeb_stream>> mAudioStream{
+      "AudioCallbackDriver::mAudioStream"};
   
 
   const uint32_t mInputChannelCount;
