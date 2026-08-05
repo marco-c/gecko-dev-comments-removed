@@ -70,13 +70,14 @@ function makeRecordedEngagement({ exposures = null } = {}) {
 }
 
 
-function toWire({ built, internalDetails, exposures }) {
+function toWire({ built, internalDetails, visibleResults, exposures }) {
   return UrlbarTelemetryUtils.recordedEngagementToWire({
     built,
     method: "engagement",
     searchSource: internalDetails.searchSource,
     internalDetails,
     exposures,
+    visibleResults,
   });
 }
 
@@ -136,6 +137,14 @@ add_task(function test_recordedEngagement_roundtrip() {
     "picked result payload preserved"
   );
   Assert.equal(result.rowIndex, 2, "picked result rowIndex preserved");
+
+  
+  
+  Assert.equal(restored.visibleResults.length, 2, "visible results preserved");
+  Assert.ok(
+    restored.visibleResults.every(r => r instanceof UrlbarResult),
+    "visible results reconstructed as UrlbarResults"
+  );
 });
 
 add_task(function test_recordFromChild_records_engagement() {
