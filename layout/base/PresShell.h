@@ -515,11 +515,28 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
+  void ScrollByKeyboard(const layers::KeyboardScrollAction& aAction);
+
+  
+
+
+
+
+
+
+  void ScrollByKeyboard(const layers::KeyboardScrollAction& aAction,
+                        nsIFrame* aStartFrame);
+
+  
+
+
+
+
 
 
 
   ScrollContainerFrame* GetScrollContainerFrameForKeyboardScroll(
-      const layers::KeyboardScrollAction& aAction);
+      nsIFrame* aStartFrame, const layers::KeyboardScrollAction& aAction);
 
   
 
