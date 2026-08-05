@@ -12,7 +12,7 @@
 
 #![cfg_attr(
     all(
-        not(all(feature = "vulkan", not(target_arch = "wasm32"))),
+        not(all(feature = "vulkan", not(target_family = "wasm"))),
         not(all(feature = "metal", any(target_vendor = "apple"))),
         not(all(feature = "dx12", windows)),
         not(feature = "gles"),

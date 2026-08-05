@@ -1,9 +1,9 @@
-use wgt::{BufferAddress, BufferSize, Color};
-
 use super::{DrawCommandFamily, Rect};
 #[cfg(feature = "serde")]
 use crate::command::serde_object_reference_struct;
 use crate::command::{ArcReferences, ReferenceType};
+use alloc::vec::Vec;
+use wgt::{BufferAddress, BufferSize, Color};
 
 #[cfg(feature = "serde")]
 use macro_rules_attribute::apply;
@@ -27,7 +27,7 @@ pub enum RenderCommand<R: ReferenceType> {
     },
     SetVertexBuffer {
         slot: u32,
-        buffer: R::Buffer,
+        buffer: Option<R::Buffer>,
         offset: BufferAddress,
         size: Option<BufferSize>,
     },
@@ -51,19 +51,7 @@ pub enum RenderCommand<R: ReferenceType> {
         offset: u32,
 
         
-        size_bytes: u32,
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        values_offset: Option<u32>,
+        data: Vec<u32>,
     },
     Draw {
         vertex_count: u32,

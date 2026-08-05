@@ -941,7 +941,7 @@ impl super::Adapter {
         
         
         
-        #[cfg_attr(target_arch = "wasm32", allow(dropping_references))]
+        #[cfg_attr(target_family = "wasm", allow(dropping_references))]
         drop(gl);
 
         Some(crate::ExposedAdapter {

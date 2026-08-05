@@ -257,12 +257,21 @@ impl Surface for NativeSurface {
         let images = unsafe { functor.get_swapchain_images(raw) }
             .map_err(crate::vulkan::map_host_device_oom_err)?;
 
-        let fence = unsafe {
-            device
-                .shared
-                .raw
-                .create_fence(&vk::FenceCreateInfo::default(), None)
-                .map_err(crate::vulkan::map_host_device_oom_err)?
+        
+        
+        
+        
+        let fence = if cfg!(target_os = "windows") {
+            let raw = unsafe {
+                device
+                    .shared
+                    .raw
+                    .create_fence(&vk::FenceCreateInfo::default(), None)
+                    .map_err(crate::vulkan::map_host_device_oom_err)?
+            };
+            Some(raw)
+        } else {
+            None
         };
 
         
@@ -309,7 +318,7 @@ pub(crate) struct NativeSwapchain {
     device: Arc<DeviceShared>,
     images: Vec<vk::Image>,
     
-    fence: vk::Fence,
+    fence: Option<vk::Fence>,
     config: crate::SurfaceConfiguration,
 
     
@@ -382,7 +391,9 @@ impl Swapchain for NativeSwapchain {
             };
         };
 
-        unsafe { device.shared.raw.destroy_fence(self.fence, None) }
+        if let Some(fence) = self.fence {
+            unsafe { device.shared.raw.destroy_fence(fence, None) }
+        }
 
         
         for semaphore in self.acquire_semaphores.drain(..) {
@@ -455,6 +466,8 @@ impl Swapchain for NativeSwapchain {
             return Err(crate::SurfaceError::Timeout);
         }
 
+        let acquire_fence = self.fence.unwrap_or_else(vk::Fence::null);
+
         
         let (index, suboptimal) = match unsafe {
             profiling::scope!("vkAcquireNextImageKHR");
@@ -462,7 +475,7 @@ impl Swapchain for NativeSwapchain {
                 self.raw,
                 timeout_ns,
                 acquire_semaphore_guard.acquire,
-                self.fence,
+                acquire_fence,
             )
         } {
             
@@ -485,24 +498,19 @@ impl Swapchain for NativeSwapchain {
             }
         };
 
-        
-        
-        
-        
-        
-        
-        #[cfg(target_os = "windows")]
-        unsafe {
-            
-            self.device
-                .raw
-                .wait_for_fences(&[self.fence], true, timeout_ns)
-                .map_err(map_host_device_oom_and_lost_err)?;
+        if let Some(fence) = self.fence {
+            unsafe {
+                
+                self.device
+                    .raw
+                    .wait_for_fences(&[fence], true, timeout_ns)
+                    .map_err(map_host_device_oom_and_lost_err)?;
 
-            self.device
-                .raw
-                .reset_fences(&[self.fence])
-                .map_err(map_host_device_oom_and_lost_err)?;
+                self.device
+                    .raw
+                    .reset_fences(&[fence])
+                    .map_err(map_host_device_oom_and_lost_err)?;
+            }
         }
 
         drop(acquire_semaphore_guard);
