@@ -1279,9 +1279,12 @@ class PropertyRestrictions:
     
     
     
+    
     @staticmethod
     def placeholder(data):
         props = PropertyRestrictions.first_line(data)
+        for p in PropertyRestrictions.spec(data, "css-inline"):
+            props.discard(p)
         props.add("opacity")
         props.add("text-overflow")
         props.add("text-align")
