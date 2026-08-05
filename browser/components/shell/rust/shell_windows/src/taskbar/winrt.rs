@@ -76,7 +76,7 @@ pub(super) async fn pin_to_taskbar(
     fire_and_forget: bool,
     
     _main_guard: MainThreadGuard,
-) -> Result<PinResult, nsresult> {
+) -> Result<PinResult, WinRtPinError> {
     if let Err(_e) = *LAF_LOCK {
         
         
@@ -97,65 +97,59 @@ pub(super) async fn pin_to_taskbar(
         Err(_) => Some(aumid::Holder::set_aumid(aumid).await?),
     };
 
-    let manager = TaskbarManager::GetDefault().map_err(|e| {
-        log::debug!("TaskbarManager not available: {e:?}");
-        NS_ERROR_NOT_AVAILABLE
-    })?;
+    #[cfg(feature = "enable_tests")]
+    if xpcom::is_in_automation() {
+        
+        
+        
+        return test::pin_result_from_pref().unwrap_or(Ok(PinResult::Unknown));
+    }
 
-    async {
-        #[cfg(feature = "enable_tests")]
-        if xpcom::is_in_automation() {
-            
-            
-            
-            return Ok(PinResult::Unknown);
-        }
+    let manager = TaskbarManager::GetDefault().map_err(WinRtPinError::GetTaskbarManager)?;
 
-        let user_confirmed = manager.RequestPinCurrentAppAsync()?;
+    let user_confirmed = manager
+        .RequestPinCurrentAppAsync()
+        .map_err(WinRtPinError::ScheduleRequestPin)?;
 
-        if let Some(aumid_holder) = aumid_holder {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            moz_task::spawn_local("WinRT Pin Defer AUMID Restore", async {
-                use std::time::Duration;
-                if let Err(e) = async_timer::sleep(Duration::from_millis(100)).await {
-                    log::error!("Error delaying before restoring the default AUMID, incorrect app might prompt to pin: {e:?}");
-                }
+    if let Some(aumid_holder) = aumid_holder {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        moz_task::spawn_local("WinRT Pin Defer AUMID Restore", async {
+            use std::time::Duration;
+            if let Err(e) = async_timer::sleep(Duration::from_millis(100)).await {
+                log::error!("Error delaying before restoring the default AUMID, incorrect app might prompt to pin: {e:?}");
+            }
 
-                aumid_holder.restore_aumid();
-            })
-            .detach();
-        }
+            aumid_holder.restore_aumid();
+        })
+        .detach();
+    }
 
-        if fire_and_forget {
-            log::info!("Pin via WinRT with fire and forget ran to end.");
-            Ok(PinResult::Unknown)
-        } else if user_confirmed.await? {
-            log::info!("Pin via WinRT affirmed by user.");
-            Ok(PinResult::Pinned)
-        } else {
-            log::info!("Pin via WinRT rejected by user or system.");
-            Ok(PinResult::Rejected)
-        }
-    }.await.map_err(|e: WinError| {
-        log::error!("Error using TaskbarManager API: {e:?}");
-        nserror::NS_ERROR_UNEXPECTED
-    })
+    if fire_and_forget {
+        log::info!("Pin via WinRT with fire and forget ran to end.");
+        Ok(PinResult::Unknown)
+    } else if user_confirmed.await.map_err(WinRtPinError::RequestPin)? {
+        log::info!("Pin via WinRT affirmed by user.");
+        Ok(PinResult::Pinned)
+    } else {
+        log::info!("Pin via WinRT rejected by user or system.");
+        Ok(PinResult::Rejected)
+    }
 }
 
 mod aumid {
@@ -164,7 +158,6 @@ mod aumid {
     
 
     use futures::lock::{Mutex, MutexGuard};
-    use nserror::{NS_ERROR_UNEXPECTED, nsresult};
     use nsstring::{nsAString, nsString};
     use std::sync::LazyLock;
     use windows::{
@@ -177,7 +170,9 @@ mod aumid {
         core::{HSTRING, PCWSTR},
     };
 
-    static DEFAULT_AUMID: LazyLock<Result<Mutex<HSTRING>, nsresult>> = LazyLock::new(|| {
+    use super::WinRtPinError;
+
+    static DEFAULT_AUMID: LazyLock<Result<Mutex<HSTRING>, WinRtPinError>> = LazyLock::new(|| {
         
         
         
@@ -190,10 +185,7 @@ mod aumid {
                 Mutex::new(hstr)
             })
         }
-        .map_err(|e| {
-            log::error!("Failed to retrieve the current process AUMID: {e:?}");
-            NS_ERROR_UNEXPECTED
-        })
+        .map_err(WinRtPinError::GetAumid)
     });
 
     
@@ -206,9 +198,9 @@ mod aumid {
         
         
         #[must_use]
-        pub(super) async fn set_aumid(temp_aumid: &nsAString) -> Result<Self, nsresult> {
+        pub(super) async fn set_aumid(temp_aumid: &nsAString) -> Result<Self, WinRtPinError> {
             
-            let default_aumid_lock = DEFAULT_AUMID.as_ref().map_err(|e| *e)?.lock().await;
+            let default_aumid_lock = DEFAULT_AUMID.as_ref()?.lock().await;
             let original_aumid = &*default_aumid_lock;
 
             log::info!("Original process AUMID was {original_aumid}, setting it to {temp_aumid}");
@@ -220,10 +212,7 @@ mod aumid {
             unsafe {
                 SetCurrentProcessExplicitAppUserModelID(PCWSTR::from_raw(temp_aumid.as_ptr()))
             }
-            .map_err(|e| {
-                log::error!("Error setting the process AUMID: {e:?}");
-                NS_ERROR_UNEXPECTED
-            })?;
+            .map_err(WinRtPinError::SetAumid)?;
 
             Ok(Self { default_aumid_lock })
         }
@@ -246,5 +235,91 @@ mod aumid {
                 log::error!("Error restoring AUMID: {e:?}");
             }
         }
+    }
+}
+
+
+
+#[allow(dead_code)]
+#[derive(Clone, Debug)]
+pub(super) enum WinRtPinError {
+    GetAumid(WinError),
+    SetAumid(WinError),
+    GetTaskbarManager(WinError),
+    ScheduleRequestPin(WinError),
+    RequestPin(WinError),
+}
+
+impl WinRtPinError {
+    pub fn to_metric_taskbar_pin_winrt(&self) -> &'static str {
+        use WinRtPinError::*;
+        match self {
+            GetAumid(_) => "error_get_aumid",
+            SetAumid(_) => "error_set_aumid",
+            GetTaskbarManager(_) => "error_get_taskbar_manager",
+            ScheduleRequestPin(_) => "error_schedule_request_pin",
+            RequestPin(_) => "error_request_pin",
+        }
+    }
+}
+
+impl From<&WinRtPinError> for WinRtPinError {
+    fn from(e: &WinRtPinError) -> Self {
+        e.clone()
+    }
+}
+
+impl From<WinRtPinError> for nsresult {
+    fn from(e: WinRtPinError) -> Self {
+        use WinRtPinError::*;
+        match e {
+            GetAumid(_) | SetAumid(_) | ScheduleRequestPin(_) | RequestPin(_) => {
+                NS_ERROR_UNEXPECTED
+            }
+            GetTaskbarManager(_) => NS_ERROR_NOT_AVAILABLE,
+        }
+    }
+}
+
+#[cfg(feature = "enable_tests")]
+mod test {
+    
+
+    use nsstring::nsCString;
+    use windows::core::Error as WinError;
+    use xpcom::interfaces::nsIPrefBranch;
+
+    use super::PinResult::{self, *};
+    use super::WinRtPinError::{self, *};
+
+    
+    pub(super) fn pin_result_from_pref() -> Option<Result<PinResult, WinRtPinError>> {
+        let value = get_char_pref(c"browser.shell.taskbar.test.pinWinRtStubResult")?;
+        Some(match value.to_utf8().as_ref() {
+            "success_pinned" => Ok(Pinned),
+            "success_rejected" => Ok(Rejected),
+            "success_fire_and_forget" => Ok(Unknown),
+            "error_get_aumid" => Err(GetAumid(WinError::empty())),
+            "error_set_aumid" => Err(SetAumid(WinError::empty())),
+            "error_get_taskbar_manager" => Err(GetTaskbarManager(WinError::empty())),
+            "error_schedule_request_pin" => Err(ScheduleRequestPin(WinError::empty())),
+            "error_request_pin" => Err(RequestPin(WinError::empty())),
+            other => {
+                log::error!("Unknown pinWinrtStubResult pref value: {other}");
+                return None;
+            }
+        })
+    }
+
+    
+    
+    fn get_char_pref(name: &std::ffi::CStr) -> Option<nsCString> {
+        let mut value = nsCString::new();
+        let prefs = xpcom::get_service::<nsIPrefBranch>(c"@mozilla.org/preferences-service;1")?;
+        
+        unsafe { prefs.GetCharPref(name.as_ptr(), &mut *value) }
+            .to_result()
+            .ok()?;
+        Some(value)
     }
 }

@@ -84,6 +84,12 @@ pub(super) fn modify_taskbar(
     
     _main_guard: MainThreadGuard,
 ) -> Result<PinResult, nsresult> {
+    #[cfg(feature = "enable_tests")]
+    if xpcom::is_in_automation() {
+        
+        return Ok(PinResult::Unknown);
+    }
+
     
     let shortcut_path: nsString = shortcut_path.into();
 
@@ -118,12 +124,6 @@ pub(super) fn modify_taskbar(
         PinOp::Pin => (std::ptr::null(), *pidl),
         PinOp::UnPin => (*pidl, std::ptr::null()),
     };
-
-    #[cfg(feature = "enable_tests")]
-    if xpcom::is_in_automation() {
-        
-        return Ok(PinResult::Unknown);
-    }
 
     
     
