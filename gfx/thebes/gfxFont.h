@@ -926,8 +926,11 @@ class gfxShapedText {
     
     uint32_t SetCanBreakBefore(uint8_t aCanBreakBefore) {
       MOZ_ASSERT(aCanBreakBefore <= 3, "Bogus break-flags value!");
-      uint32_t breakMask = (uint32_t(aCanBreakBefore) << FLAGS_CAN_BREAK_SHIFT);
-      uint32_t toggle = breakMask ^ (mValue & FLAGS_CAN_BREAK_BEFORE);
+      
+      uint32_t breakMask = uint32_t(aCanBreakBefore) << FLAGS_CAN_BREAK_SHIFT;
+      
+      uint32_t toggle = (breakMask ^ mValue) & FLAGS_CAN_BREAK_BEFORE;
+      
       mValue ^= toggle;
       return toggle;
     }
