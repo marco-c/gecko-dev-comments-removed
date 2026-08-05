@@ -608,6 +608,7 @@ class HistoryMenu extends PlacesMenu {
       hiddenTabsMenu: "hiddenTabsMenu",
       undoWindowMenu: "historyUndoWindowMenu",
       syncTabsMenuitem: "sync-tabs-menuitem",
+      remoteTabsPromo: "historyRemoteTabsPromo",
     };
     for (let [key, elemId] of Object.entries(elements)) {
       this[key] = document.getElementById(elemId);
@@ -703,6 +704,21 @@ class HistoryMenu extends PlacesMenu {
     
     if (!this.syncTabsMenuitem) {
       return;
+    }
+
+    
+    
+    
+    
+    if (this.remoteTabsPromo) {
+      const promoState = gSync.getSyncPromoState(["tabs"]);
+      if (promoState) {
+        this.remoteTabsPromo.dataset.action = promoState;
+        this.remoteTabsPromo.hidden = false;
+        this.syncTabsMenuitem.hidden = true;
+        return;
+      }
+      this.remoteTabsPromo.hidden = true;
     }
 
     if (!PlacesUIUtils.shouldShowTabsFromOtherComputersMenuitem()) {
