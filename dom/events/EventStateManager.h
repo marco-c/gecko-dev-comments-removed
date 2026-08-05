@@ -277,6 +277,25 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   nsIContent* GetEventTargetContent(const WidgetEvent* = nullptr);
 
   
+
+
+
+
+
+  nsIContent* GetMouseDownTargetContent(MouseButton aMouseButton) const {
+    return GetLastMouseButtonPressInfo(aMouseButton).mDownContent;
+  }
+  
+
+
+
+
+
+  nsIContent* GetMouseUpTargetContent(MouseButton aMouseButton) const {
+    return GetLastMouseButtonPressInfo(aMouseButton).mUpContent;
+  }
+
+  
   static bool ManagesState(ElementState aState) {
     return aState == ElementState::ACTIVE || aState == ElementState::HOVER ||
            aState == ElementState::DRAGOVER ||
@@ -1362,13 +1381,35 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   already_AddRefed<EventStateManager> ESMFromContentOrThis(
       nsIContent* aContent);
 
-  struct LastMouseDownInfo {
-    nsCOMPtr<nsIContent> mLastMouseDownContent;
-    Maybe<FormControlType> mLastMouseDownInputControlType;
+  struct LastMouseButtonPressInfo {
+    void Clear() {
+      mConnectedDownContent = nullptr;
+      mDownContent = nullptr;
+      mUpContent = nullptr;
+      mDownInputControlType.reset();
+      mClickCount = 0;
+    }
+
+    
+    nsCOMPtr<nsIContent> mConnectedDownContent;
+    
+    
+    nsCOMPtr<nsIContent> mDownContent;
+    
+    
+    nsCOMPtr<nsIContent> mUpContent;
+
+    Maybe<FormControlType> mDownInputControlType;
     uint32_t mClickCount = 0;
   };
 
-  LastMouseDownInfo& GetLastMouseDownInfo(int16_t aButton);
+  const LastMouseButtonPressInfo& GetLastMouseButtonPressInfo(
+      int16_t aButton) const;
+  LastMouseButtonPressInfo& GetLastMouseButtonPressInfo(int16_t aButton) {
+    return const_cast<LastMouseButtonPressInfo&>(
+        const_cast<const EventStateManager*>(this)->GetLastMouseButtonPressInfo(
+            aButton));
+  }
 
   
   StyleCursorKind mLockCursor;
@@ -1412,9 +1453,9 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   uint16_t mGestureDownButtons;
   int16_t mGestureDownButton;
 
-  LastMouseDownInfo mLastLeftMouseDownInfo;
-  LastMouseDownInfo mLastMiddleMouseDownInfo;
-  LastMouseDownInfo mLastRightMouseDownInfo;
+  LastMouseButtonPressInfo mLastPrimaryButtonPressInfo;
+  LastMouseButtonPressInfo mLastMiddleButtonPressInfo;
+  LastMouseButtonPressInfo mLastSecondaryButtonPressInfo;
 
   nsCOMPtr<nsIContent> mActiveContent;
   nsCOMPtr<nsIContent> mHoverContent;

@@ -4135,16 +4135,66 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
               aVisitor.mEvent->IsTrusted() &&
               aVisitor.mEvent->AsMouseEvent()->mButton ==
                   MouseButton::ePrimary) {
+            const auto IsClickedOn = [&](const Element* aButton) {
+              if (!aButton) {
+                return false;
+              }
+              if (aButton == aVisitor.mEvent->mOriginalTarget) {
+                return true;
+              }
+              
+              
+              nsIContent* mouseUpContent =
+                  aVisitor.mPresContext->EventStateManager()
+                      ->GetMouseUpTargetContent(MouseButton::ePrimary);
+              if (!mouseUpContent) [[unlikely]] {
+                return false;
+              }
+              if (!mouseUpContent->IsElement()) {
+                
+                
+                
+                mouseUpContent = mouseUpContent->GetAsElementOrParentElement();
+              }
+              if (aButton != mouseUpContent) {
+                return false;
+              }
+              
+              
+              nsIContent* mouseDownContent =
+                  aVisitor.mPresContext->EventStateManager()
+                      ->GetMouseDownTargetContent(MouseButton::ePrimary);
+              if (!mouseDownContent || mouseDownContent->IsInComposedDoc()) {
+                return false;
+              }
+              if (!mouseDownContent->IsElement()) {
+                
+                
+                
+                mouseDownContent =
+                    mouseDownContent->GetAsElementOrParentElement();
+                if (!mouseDownContent) [[unlikely]] {
+                  return false;
+                }
+              }
+              MOZ_ASSERT_IF(
+                  mouseDownContent->AsElement()->GetPseudoElementType() ==
+                      mouseUpContent->AsElement()->GetPseudoElementType(),
+                  mouseDownContent->NodeInfo()->NameAtom() ==
+                      mouseUpContent->NodeInfo()->NameAtom());
+              return mouseDownContent->AsElement()->GetPseudoElementType() ==
+                     mouseUpContent->AsElement()->GetPseudoElementType();
+            };
             
             if (mType == FormControlType::InputSearch) {
               Element* button = GetTextEditorButton();
-              if (button && aVisitor.mEvent->mOriginalTarget == button) {
+              if (IsClickedOn(button)) {
                 SetUserInput(EmptyString(),
                              *nsContentUtils::GetSystemPrincipal());
               }
             } else if (mType == FormControlType::InputPassword) {
               Element* button = GetTextEditorButton();
-              if (button && aVisitor.mEvent->mOriginalTarget == button) {
+              if (IsClickedOn(button)) {
                 SetRevealPassword(!RevealPassword());
               }
             }
