@@ -20,6 +20,7 @@ using namespace gfx;
 StackingContextHelper::StackingContextHelper()
     : mBuilder(nullptr),
       mScale(1.0f, 1.0f),
+      mRasterScaleIsDegenerate(false),
       mAffectsClipPositioning(false),
       mDeferredTransformItem(nullptr) {}
 
@@ -42,8 +43,9 @@ MatrixScales ChooseScale(nsIFrame* aContainerFrame,
                          nsDisplayItem* aContainerItem,
                          const nsRect& aVisibleRect, float aXScale,
                          float aYScale, const Matrix& aTransform2d,
-                         bool aCanDraw2D) {
+                         bool aCanDraw2D, bool* aOutDegenerate) {
   MatrixScales scale;
+  *aOutDegenerate = false;
   
   if (aCanDraw2D && !aContainerFrame->Combines3DTransformWithAncestors() &&
       !aContainerFrame->HasPerspective()) {
@@ -104,8 +106,12 @@ MatrixScales ChooseScale(nsIFrame* aContainerFrame,
     }
     
     
+    
+    
+    
     if (fabs(scale.xScale) < 1e-8 || fabs(scale.yScale) < 1e-8) {
       scale = MatrixScales(1.0, 1.0);
+      *aOutDegenerate = true;
     }
   } else {
     scale = MatrixScales(1.0, 1.0);
@@ -127,6 +133,7 @@ StackingContextHelper::StackingContextHelper(
     const LayoutDeviceRect& aBounds)
     : mBuilder(&aBuilder),
       mScale(1.0f, 1.0f),
+      mRasterScaleIsDegenerate(false),
       mDeferredTransformItem(aParams.mDeferredTransformItem) {
   MOZ_ASSERT(!aContainerItem || aContainerItem->CreatesStackingContextHelper());
 
@@ -143,11 +150,18 @@ StackingContextHelper::StackingContextHelper(
 
       int32_t apd = aContainerFrame->PresContext()->AppUnitsPerDevPixel();
       nsRect r = LayoutDevicePixel::ToAppUnits(aBounds, apd);
+      bool degenerate = false;
       mScale = ChooseScale(aContainerFrame, aContainerItem, r,
                            aParentSC.mScale.xScale, aParentSC.mScale.yScale,
                            transform2d,
-                            true);
+                            true, &degenerate);
+      
+      
+      mRasterScaleIsDegenerate =
+          degenerate || aParentSC.mRasterScaleIsDegenerate;
     } else {
+      
+      
       mScale = gfx::MatrixScales(1.0f, 1.0f);
       mInheritedTransform = gfx::Matrix::Scaling(1.f, 1.f);
     }
@@ -170,6 +184,7 @@ StackingContextHelper::StackingContextHelper(
     mInheritedTransform = transform * aParentSC.mInheritedTransform;
     mScale =
         ScaleFactor<UnknownUnits, UnknownUnits>(resolution) * aParentSC.mScale;
+    mRasterScaleIsDegenerate = aParentSC.mRasterScaleIsDegenerate;
 
     MOZ_ASSERT(!aParams.mAnimated);
     mSnappingSurfaceTransform = transform * aParentSC.mSnappingSurfaceTransform;
@@ -191,6 +206,7 @@ StackingContextHelper::StackingContextHelper(
 
     mInheritedTransform = transform * aParentSC.mInheritedTransform;
     mScale = aParentSC.mScale * resolution;
+    mRasterScaleIsDegenerate = aParentSC.mRasterScaleIsDegenerate;
 
     MOZ_ASSERT(!aParams.mAnimated);
     mSnappingSurfaceTransform = transform * aParentSC.mSnappingSurfaceTransform;
@@ -198,6 +214,7 @@ StackingContextHelper::StackingContextHelper(
   } else {
     mInheritedTransform = aParentSC.mInheritedTransform;
     mScale = aParentSC.mScale;
+    mRasterScaleIsDegenerate = aParentSC.mRasterScaleIsDegenerate;
   }
 
   

@@ -1629,6 +1629,16 @@ void WebRenderCommandBuilder::DoGroupingForDisplayList(
     return;
   }
 
+  
+  
+  
+  
+  
+  if (aSc.HasDegenerateRasterScale()) {
+    GP("Skipping group with degenerate raster scale\n");
+    return;
+  }
+
   GP("DoGroupingForDisplayList\n");
 
   mClipManager.BeginList(aSc);
@@ -2484,6 +2494,13 @@ WebRenderCommandBuilder::GenerateFallbackData(
     nsDisplayItem* aItem, wr::DisplayListBuilder& aBuilder,
     wr::IpcResourceUpdateQueue& aResources, const StackingContextHelper& aSc,
     nsDisplayListBuilder* aDisplayListBuilder, LayoutDeviceRect& aImageRect) {
+  
+  
+  
+  if (aSc.HasDegenerateRasterScale()) {
+    return nullptr;
+  }
+
   Maybe<gfx::DeviceColor> highlight;
   if (StaticPrefs::gfx_webrender_debug_highlight_painted_layers()) {
     highlight.emplace(gfx::DeviceColor(1.0, 0.0, 0.0, 0.5));
@@ -2565,6 +2582,7 @@ WebRenderCommandBuilder::GenerateFallbackData(
   }
 
   auto visibleSize = visibleRect.Size();
+
   
   
   if (visibleSize.IsEmpty() || dtRect.IsEmpty()) {
@@ -2728,6 +2746,13 @@ Maybe<wr::ImageMask> WebRenderCommandBuilder::BuildWrMaskImage(
     wr::IpcResourceUpdateQueue& aResources, const StackingContextHelper& aSc,
     nsDisplayListBuilder* aDisplayListBuilder,
     const LayoutDeviceRect& aBounds) {
+  
+  
+  
+  if (aSc.HasDegenerateRasterScale()) {
+    return Nothing();
+  }
+
   RefPtr<WebRenderMaskData> maskData =
       CreateOrRecycleWebRenderUserData<WebRenderMaskData>(aMaskItem);
 

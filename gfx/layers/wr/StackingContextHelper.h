@@ -44,6 +44,15 @@ class MOZ_RAII StackingContextHelper {
   
   gfx::MatrixScales GetInheritedScale() const { return mScale; }
 
+  
+  
+  
+  
+  
+  
+  
+  bool HasDegenerateRasterScale() const { return mRasterScaleIsDegenerate; }
+
   const gfx::Matrix& GetInheritedTransform() const {
     return mInheritedTransform;
   }
@@ -76,6 +85,7 @@ class MOZ_RAII StackingContextHelper {
   
   
   gfx::Matrix mSnappingSurfaceTransform;
+  bool mRasterScaleIsDegenerate;
   bool mAffectsClipPositioning;
   Maybe<wr::WrSpatialId> mReferenceFrameId;
   Maybe<wr::SpaceAndClipChainHelper> mSpaceAndClipChainHelper;
