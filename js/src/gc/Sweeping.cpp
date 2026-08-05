@@ -1957,7 +1957,8 @@ IncrementalProgress GCRuntime::markDuringSweeping(JS::GCContext* gcx,
   MOZ_ASSERT(markTask.isIdle());
 
   
-  if (markOnBackgroundThreadDuringSweeping) {
+  
+  if (markOnBackgroundThreadDuringSweeping && !shouldYieldBeforeSweep(budget)) {
     if (!marker().isDrained() || hasDelayedMarking() ||
         hasAnyDeferredWeakMaps()) {
       AutoLockHelperThreadState lock;
@@ -1984,7 +1985,17 @@ IncrementalProgress GCRuntime::markDuringSweeping(JS::GCContext* gcx,
     return NotFinished;
   }
 
-  return result;
+  if (result == NotFinished) {
+    return NotFinished;
+  }
+
+  
+  
+  if (shouldYieldBeforeSweep(budget)) {
+    return NotFinished;
+  }
+
+  return Finished;
 }
 
 void GCRuntime::beginSweepPhase(AutoGCSession& session) {

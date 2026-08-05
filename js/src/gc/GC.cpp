@@ -3589,7 +3589,17 @@ IncrementalProgress GCRuntime::markPhase(SliceBudget& budget) {
     return NotFinished;
   }
 
-  return result;
+  if (result == NotFinished) {
+    return NotFinished;
+  }
+
+  
+  
+  if (shouldYieldBeforeSweep(budget)) {
+    return NotFinished;
+  }
+
+  return Finished;
 }
 
 IncrementalProgress GCRuntime::markSynchronously(
@@ -5087,6 +5097,13 @@ MOZ_NEVER_INLINE GCRuntime::IncrementalResult GCRuntime::gcCycle(
   MOZ_ASSERT_IF(result == IncrementalResult::Reset,
                 !isIncrementalGCInProgress());
   return result;
+}
+
+bool GCRuntime::shouldYieldBeforeSweep(const SliceBudget& budget) const {
+  
+  
+  return isIncremental && sliceReason == JS::GCReason::BG_TASK_FINISHED &&
+         !budget.idle;
 }
 
 #ifdef JS_GC_ZEAL
