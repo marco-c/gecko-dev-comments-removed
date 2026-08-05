@@ -24,9 +24,7 @@
 const kENTRYCOUNT = 10;
 
 function log_(msg) {
-  if (true) {
-    dump(">>>>>>>>>>>>> " + msg + "\n");
-  }
+  dump(">>>>>>>>>>>>> " + msg + "\n");
 }
 
 function run_test() {
