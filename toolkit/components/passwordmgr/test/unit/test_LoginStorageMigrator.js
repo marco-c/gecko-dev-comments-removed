@@ -29,12 +29,9 @@ const PREF_ATTEMPTS = "signon.storage.rust.migrationAttempts";
 
 
 
-
-
-
 function resetState() {
-  Services.prefs.setBoolPref(PREF_ENABLED, false);
-  Services.prefs.setBoolPref(PREF_ACTIVE, false);
+  Services.prefs.clearUserPref(PREF_ENABLED);
+  Services.prefs.clearUserPref(PREF_ACTIVE);
   Services.prefs.clearUserPref(PREF_ATTEMPTS);
   Services.fog.testResetFOG();
 }

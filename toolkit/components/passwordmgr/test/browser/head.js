@@ -282,13 +282,10 @@ async function checkOnlyLoginWasUsedTwice({ justChanged }) {
     "timeLastUsed bumped"
   );
   if (justChanged) {
-    
-    
-    
-    Assert.lessOrEqual(
-      logins[0].timePasswordChanged,
+    Assert.equal(
       logins[0].timeLastUsed,
-      "timePasswordChanged <= timeLastUsed"
+      logins[0].timePasswordChanged,
+      "timeLastUsed == timePasswordChanged"
     );
   } else {
     Assert.equal(
@@ -485,20 +482,14 @@ async function clearMessageCache(browser) {
 
 
 async function checkDoorhangerUsernamePassword(username, password) {
-  
-  await TestUtils.waitForCondition(
-    () => {
-      return (
-        document.getElementById("password-notification-username").value ==
-          username &&
-        document.getElementById("password-notification-password").value ==
-          password
-      );
-    },
-    "Wait for nsLoginManagerPrompter writeDataToUI() to update to the correct username/password values",
-    100,
-    100
-  );
+  await TestUtils.waitForCondition(() => {
+    return (
+      document.getElementById("password-notification-username").value ==
+        username &&
+      document.getElementById("password-notification-password").value ==
+        password
+    );
+  }, "Wait for nsLoginManagerPrompter writeDataToUI() to update to the correct username/password values");
 }
 
 

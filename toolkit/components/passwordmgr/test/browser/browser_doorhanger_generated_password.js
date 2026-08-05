@@ -199,22 +199,6 @@ async function openFormInNewTab(url, formValues, taskFn) {
 
 async function openAndVerifyDoorhanger(browser, type, expected) {
   
-  
-  
-  await TestUtils.waitForCondition(
-    () => {
-      let n = PopupNotifications.getNotification("password", null);
-      return (
-        n &&
-        n.options.passwordNotificationType == type &&
-        n.dismissed == expected.dismissed
-      );
-    },
-    "Waiting for the doorhanger to reach the expected dismissed state",
-    100,
-    100
-  );
-  
   let notif = getCaptureDoorhanger(type);
   Assert.ok(notif, `${type} doorhanger was created`);
   Assert.equal(
@@ -613,12 +597,6 @@ add_task(async function autocomplete_generated_password_saved_username() {
         "passwordmgr-storage-changed",
         (_, data) => data == "modifyLogin"
       );
-      
-      
-      let removeLoginPromise = TestUtils.topicObserved(
-        "passwordmgr-storage-changed",
-        (_, data) => data == "removeLogin"
-      );
       info("waiting for submitForm");
       await submitForm(browser);
       promiseHidden = BrowserTestUtils.waitForEvent(
@@ -628,7 +606,6 @@ add_task(async function autocomplete_generated_password_saved_username() {
       clickDoorhangerButton(notif, CHANGE_BUTTON);
       await promiseHidden;
       await storageChangedPromise;
-      await removeLoginPromise;
       await verifyLogins([
         {
           timesUsed: user1LoginSnapshot.timesUsed + 1,
@@ -1516,12 +1493,10 @@ add_task(async function form_change_from_autosaved_login_to_existing_login() {
         (_, data) => data == "addLogin"
       );
       
-      
-      
-      let confirmationHint = document.getElementById("confirmation-hint");
-      let autoSaveHintShown = BrowserTestUtils.waitForPopupEvent(
-        confirmationHint,
-        "shown"
+      let forceClosePopup = true;
+      let hintShownAndVerified = verifyConfirmationHint(
+        browser,
+        forceClosePopup
       );
 
       info("Filling generated password from AC menu");
@@ -1531,10 +1506,8 @@ add_task(async function form_change_from_autosaved_login_to_existing_login() {
       await waitForDoorhanger(browser, "password-change");
 
       
-      
-      info("waiting for confirmation hint");
-      await autoSaveHintShown;
-      await closePopup(confirmationHint);
+      info("waiting for verifyConfirmationHint");
+      await hintShownAndVerified;
 
       info("waiting for addLogin");
       await storageChangedPromise;

@@ -362,14 +362,7 @@ async function test_submit_telemetry(tc) {
         }
 
         info("Waiting for doorhanger");
-        let storageChangedPromise = TestUtils.topicObserved(
-          "passwordmgr-storage-changed"
-        );
         await clickDoorhangerButton(notif, REMEMBER_BUTTON);
-        
-        
-        
-        await storageChangedPromise;
       }
     );
   }
