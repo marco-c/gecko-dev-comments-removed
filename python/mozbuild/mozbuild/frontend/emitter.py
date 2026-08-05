@@ -78,6 +78,7 @@ from .data import (
     XPCOMComponentManifests,
     XPIDLModule,
 )
+from .l10n_manifest import emit_l10n_manifest_contexts
 from .reader import SandboxValidationError
 
 
@@ -176,6 +177,16 @@ class TreeMetadataEmitter(LoggingMixin):
 
             for o in emit_objs(objs):
                 yield o
+
+        
+        
+        
+        start = time.monotonic()
+        objs = emit_l10n_manifest_contexts(self, contexts)
+        self._emitter_time += time.monotonic() - start
+
+        for o in emit_objs(objs):
+            yield o
 
     def _emit_libs_derived(self, contexts):
         
