@@ -426,14 +426,51 @@ const ERROR_MARKER_NAMES = new Set([
   "console.warn",
   "JavaScript error",
   "JavaScript warning",
+  "TSan Error",
 ]);
 
 
 
 
 
+function repoPathForFrameFile(file) {
+  if (!file?.startsWith("hg:")) {
+    return null;
+  }
+
+  const parts = file.split(":");
+  return parts.length >= 4 ? parts.slice(2, -1).join(":") : null;
+}
+
+
+
+
+
+
+function resolveStackRepoFrame(thread, stackIndex) {
+  const { stackTable, frameTable, funcTable, stringArray } = thread;
+
+  for (let s = stackIndex; s != null; s = stackTable.prefix[s]) {
+    const frameIndex = stackTable.frame[s];
+    const fileId = funcTable.fileName[frameTable.func[frameIndex]];
+    const file = repoPathForFrameFile(
+      fileId != null ? stringArray[fileId] : null
+    );
+    if (file) {
+      return { file, line: frameTable.line[frameIndex] };
+    }
+  }
+
+  return null;
+}
+
+
+
+
+
 function extractErrorMarkers(profile) {
-  const { markers, stringArray } = profile.threads[0];
+  const thread = profile.threads[0];
+  const { markers, stringArray } = thread;
 
   
   const nameIdToName = new Map();
@@ -456,13 +493,28 @@ function extractErrorMarkers(profile) {
 
     
     
+    
     const data = markers.data[i];
+    let { message, file, line } = data;
+
+    
+    
+    
+    
+    if (name === "TSan Error") {
+      message = data.label ? `${data.kind}: ${data.label}` : data.kind;
+      const frame = resolveStackRepoFrame(thread, data.cause?.stack);
+      if (frame) {
+        ({ file, line } = frame);
+      }
+    }
+
     result.push({
       name,
-      message: normalizeMarkerMessage(data.message) || null,
+      message: normalizeMarkerMessage(message) || null,
       test: normalizeTestId(data.test) || null,
-      file: normalizeSourcePath(data.file) || null,
-      line: data.line ?? null,
+      file: normalizeSourcePath(file) || null,
+      line: line ?? null,
     });
   }
 
