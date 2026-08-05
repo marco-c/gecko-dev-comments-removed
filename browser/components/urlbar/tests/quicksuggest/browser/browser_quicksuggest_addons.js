@@ -153,6 +153,13 @@ add_task(async function basic() {
     await onLoad;
     Assert.ok(true, "Expected page is loaded");
 
+    
+    
+    
+    EventUtils.synthesizeMouseAtCenter(gBrowser.selectedTab, {
+      type: "mousemove",
+    });
+
     await PlacesUtils.history.clear();
   }
 });
