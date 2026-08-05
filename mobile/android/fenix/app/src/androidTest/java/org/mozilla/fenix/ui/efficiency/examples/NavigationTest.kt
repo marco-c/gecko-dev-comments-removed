@@ -49,7 +49,7 @@ class NavigationTest(
         fun data(): List<Any> {
             val runState = System.getProperty("testRunState")?.takeIf { it.isNotBlank() } ?: ""
 
-            // The test cases below are generated from navigation.planning.NavigationTestPlanner
+            // The test cases below are generated from navigation.NavigationTestPlanner
             val cases = listOf(
                 // pageName=BookmarksPage, property=bookmarks, paths=9
                 Case(
@@ -70,13 +70,6 @@ class NavigationTest(
                     label = "CollectionsPage",
                     testRailId = "TBD",
                     page = { collections },
-                    state = runState.ifBlank { "Navigation Reachability" },
-                ),
-                // pageName=CustomTabsPage, property=customTabs, paths=1
-                Case(
-                    label = "CustomTabsPage",
-                    testRailId = "TBD",
-                    page = { customTabs },
                     state = runState.ifBlank { "Navigation Reachability" },
                 ),
             )
