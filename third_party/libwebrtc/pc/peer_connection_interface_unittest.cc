@@ -622,6 +622,7 @@ class PeerConnectionFactoryForTest : public PeerConnectionFactory {
     
     
     dependencies.adm = FakeAudioCaptureModule::Create();
+    dependencies.env = CreateTestEnvironment();
     EnableMediaWithDefaults(dependencies);
     dependencies.event_log_factory = std::make_unique<RtcEventLogFactory>();
 

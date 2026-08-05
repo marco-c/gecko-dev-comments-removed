@@ -123,7 +123,8 @@ class SdpMungingTest : public ::testing::Test {
                                             Dav1dDecoderTemplateAdapter>>(),
             nullptr ,
             nullptr ,
-            nullptr )) {
+            nullptr ,
+            CreateTestFieldTrialsPtr())) {
     metrics::Reset();
   }
 
