@@ -3917,7 +3917,7 @@ Result<bool, nsresult> DidLatestShutdownFail(
 
 
 
-[[maybe_unused]] Result<OriginCacheMap, nsresult> LoadOriginCacheIntoMap(
+Result<OriginCacheMap, nsresult> LoadOriginCacheIntoMap(
     mozIStorageConnection& aConnection, PersistenceType aPersistenceType) {
   QM_TRY_INSPECT(
       const auto& stmt,
@@ -3989,6 +3989,39 @@ Result<bool, nsresult> DidLatestShutdownFail(
       }));
 
   return map;
+}
+
+
+
+
+Result<Ok, nsresult> DeleteStaleOriginRows(mozIStorageConnection& aConnection,
+                                           const OriginCacheMap& aMap) {
+  if (aMap.IsEmpty()) {
+    return Ok{};
+  }
+
+  mozStorageTransaction transaction(
+      &aConnection, false, mozIStorageConnection::TRANSACTION_IMMEDIATE);
+  QM_TRY(MOZ_TO_RESULT(transaction.Start()));
+
+  QM_TRY_INSPECT(
+      const auto& stmt,
+      MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
+          nsCOMPtr<mozIStorageStatement>, aConnection, CreateStatement,
+          "DELETE FROM origin "
+          "WHERE repository_id = :repository_id AND origin = :origin"_ns));
+
+  for (const auto& entry : aMap) {
+    const OriginCacheKey& key = entry.GetKey();
+    QM_TRY(MOZ_TO_RESULT(stmt->Reset()));
+    QM_TRY(MOZ_TO_RESULT(stmt->BindInt32ByName("repository_id"_ns, key.first)));
+    QM_TRY(MOZ_TO_RESULT(stmt->BindUTF8StringByName("origin"_ns, key.second)));
+    QM_TRY(MOZ_TO_RESULT(stmt->Execute()));
+  }
+
+  QM_TRY(MOZ_TO_RESULT(transaction.Commit()));
+
+  return Ok{};
 }
 
 }  
@@ -4441,6 +4474,12 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
     return statusKeeper;
   }
 #endif
+
+  
+  
+  if (cacheMap.IsActive()) {
+    QM_TRY(DeleteStaleOriginRows(*mStorageConnection, cacheMap));
+  }
 
   glean::quotamanager_initialize_repository::number_of_iterations
       .Get(PersistenceTypeToString(aPersistenceType))
