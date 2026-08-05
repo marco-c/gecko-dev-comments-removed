@@ -354,8 +354,10 @@ class ContentCacheInChild final : public ContentCache {
       const IMENotification::SelectionChangeDataBase& aSelectionChangeData);
 
  private:
-  bool QueryCharRect(nsIWidget* aWidget, uint32_t aOffset,
-                     LayoutDeviceIntRect& aCharRect) const;
+  
+  
+  bool QueryFirstCharFallbackRect(nsIWidget* aWidget,
+                                  LayoutDeviceIntRect& aCharRect) const;
   bool QueryCharRectArray(nsIWidget* aWidget, uint32_t aOffset,
                           uint32_t aLength, RectArray& aCharRectArray) const;
   bool CacheSelection(nsIWidget* aWidget,

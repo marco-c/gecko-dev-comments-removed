@@ -154,6 +154,10 @@ class EditContext final : public DOMEventTargetHelper, public SupportsWeakPtr {
   
   bool IsCanvas() const;
 
+  
+  
+  Maybe<LayoutDeviceIntRect> GetCharacterBound(uint32_t aOffset) const;
+
  private:
   EditContext(nsIGlobalObject* aGlobalObject, const EditContextInit& aInit,
               ErrorResult& aRv);
@@ -184,6 +188,16 @@ class EditContext final : public DOMEventTargetHelper, public SupportsWeakPtr {
   
   
   void UnsuppressNotifyingIME();
+
+  
+  
+  uint32_t CodepointRectsEndIndex() const {
+    
+    
+    CheckedUint32 end =
+        CheckedUint32(mCodepointRectsStartIndex) + mCodepointRects.Length();
+    return end.isValid() ? std::min(end.value(), TextLength()) : TextLength();
+  }
 
   friend std::ostream& operator<<(std::ostream& aStream,
                                   const EditContext& aEditContext);

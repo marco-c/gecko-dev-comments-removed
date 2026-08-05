@@ -1207,6 +1207,10 @@ class WidgetQueryContentEvent final : public WidgetGUIEvent {
     
     
     bool mRelativeToInsertionPoint = false;
+    
+    
+    
+    bool mIsFirstCharFallbackRect = false;
 
     Input() = default;
 
