@@ -28,7 +28,8 @@ namespace mozilla::net {
 
 nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
                                 nsIDNSService::DNSFlags aFlags,
-                                TypeRecordResultType& aResult, uint32_t& aTTL) {
+                                TypeRecordResultType& aResult, uint32_t& aTTL,
+                                nsACString& aAliasName) {
   nsAutoCString host(aHost);
   PDNS_RECORD result = nullptr;
   nsAutoCString cname;
@@ -117,22 +118,32 @@ nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
     }
 
     if (aResult.is<Nothing>() && !cname.IsEmpty()) {
+      
+      
+      aAliasName = cname;
       host = cname;
       cname.Truncate();
       continue;
     }
 
     if (aResult.is<Nothing>()) {
-      return NS_ERROR_UNKNOWN_HOST;
+      break;
     }
   }
 
   
   if (loopCount == 0) {
+    
+    aAliasName.Truncate();
     return NS_ERROR_UNKNOWN_HOST;
   }
 
   if (aResult.is<Nothing>()) {
+    if (!aAliasName.IsEmpty()) {
+      
+      
+      return NS_OK;
+    }
     
     return NS_ERROR_UNKNOWN_HOST;
   }

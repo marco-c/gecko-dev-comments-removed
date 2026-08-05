@@ -447,7 +447,8 @@ nsresult GetAddrInfo(const nsACString& aHost, uint16_t aAddressFamily,
 }
 
 bool FindHTTPSRecordOverride(const nsACString& aHost,
-                             TypeRecordResultType& aResult) {
+                             TypeRecordResultType& aResult,
+                             nsACString& aAliasName) {
   LOG("FindHTTPSRecordOverride aHost=%s", PromiseFlatCString(aHost).get());
   if (!gOverrideServiceUsed) {
     return false;
@@ -460,9 +461,14 @@ bool FindHTTPSRecordOverride(const nsACString& aHost,
   AutoReadLock lock(overrideService->mLock);
   auto overrides = overrideService->mHTTPSRecordOverrides.Lookup(aHost);
   if (!overrides) {
+    
+    
     return false;
   }
 
+  
+  
+  
   DNSPacket packet;
   nsAutoCString host(aHost);
 
@@ -477,17 +483,25 @@ bool FindHTTPSRecordOverride(const nsACString& aHost,
         return overrides->Length();
       });
   if (NS_FAILED(rv)) {
-    return false;
+    return true;
   }
 
   uint32_t ttl = 0;
-  rv = ParseHTTPSRecord(host, packet, aResult, ttl);
+  rv = ParseHTTPSRecord(host, packet, aResult, ttl, aAliasName);
+  if (NS_FAILED(rv)) {
+    
+    
+    
+    aResult = AsVariant(Nothing());
+    aAliasName.Truncate();
+  }
 
-  return NS_SUCCEEDED(rv);
+  return true;
 }
 
 nsresult ParseHTTPSRecord(nsCString& aHost, DNSPacket& aDNSPacket,
-                          TypeRecordResultType& aResult, uint32_t& aTTL) {
+                          TypeRecordResultType& aResult, uint32_t& aTTL,
+                          nsACString& aAliasName) {
   nsAutoCString cname;
   nsresult rv;
 
@@ -501,10 +515,21 @@ nsresult ParseHTTPSRecord(nsCString& aHost, DNSPacket& aDNSPacket,
     rv = aDNSPacket.Decode(aHost, TRRTYPE_HTTPSSVC, cname, true, resp, aResult,
                            additionalRecords, aTTL);
     if (NS_FAILED(rv)) {
+      
+      
+      if (rv == NS_ERROR_UNKNOWN_HOST && !aAliasName.IsEmpty()) {
+        return NS_OK;
+      }
+      
+      
+      aAliasName.Truncate();
       LOG("Decode failed %x", static_cast<uint32_t>(rv));
       return rv;
     }
     if (!cname.IsEmpty() && aResult.is<Nothing>()) {
+      
+      
+      aAliasName = cname;
       aHost = cname;
       cname.Truncate();
       continue;
@@ -512,23 +537,67 @@ nsresult ParseHTTPSRecord(nsCString& aHost, DNSPacket& aDNSPacket,
   }
 
   if (aResult.is<Nothing>()) {
+    if (!aAliasName.IsEmpty()) {
+      
+      return NS_OK;
+    }
     LOG("Result is nothing");
     
     return NS_ERROR_UNKNOWN_HOST;
   }
 
+  
+  
+  aAliasName.Truncate();
   return NS_OK;
 }
 
 nsresult ResolveHTTPSRecord(const nsACString& aHost,
                             nsIDNSService::DNSFlags aFlags,
                             TypeRecordResultType& aResult, uint32_t& aTTL) {
-  if (gOverrideServiceUsed) {
-    return FindHTTPSRecordOverride(aHost, aResult) ? NS_OK
-                                                   : NS_ERROR_UNKNOWN_HOST;
+  nsAutoCString host(aHost);
+
+  
+  
+  
+  constexpr uint32_t kMaxHTTPSAliasChain = 8;
+  for (uint32_t i = 0; i < kMaxHTTPSAliasChain; i++) {
+    aResult = AsVariant(Nothing());
+    nsAutoCString aliasName;
+    nsresult rv;
+    if (gOverrideServiceUsed &&
+        FindHTTPSRecordOverride(host, aResult, aliasName)) {
+      
+      rv = NS_OK;
+    } else {
+      rv = ResolveHTTPSRecordImpl(host, aFlags, aResult, aTTL, aliasName);
+    }
+
+    if (NS_FAILED(rv)) {
+      
+      
+      
+      aResult = AsVariant(Nothing());
+      return rv;
+    }
+
+    if (!aResult.is<Nothing>()) {
+      return NS_OK;
+    }
+
+    if (!aliasName.IsEmpty() &&
+        !aliasName.Equals(host, nsCaseInsensitiveCStringComparator)) {
+      LOG("ResolveHTTPSRecord following alias %s => %s", host.get(),
+          aliasName.get());
+      host = aliasName;
+      continue;
+    }
+
+    return NS_ERROR_UNKNOWN_HOST;
   }
 
-  return ResolveHTTPSRecordImpl(aHost, aFlags, aResult, aTTL);
+  LOG("ResolveHTTPSRecord alias chain too long");
+  return NS_ERROR_UNKNOWN_HOST;
 }
 
 nsresult CreateAndResolveMockHTTPSRecord(const nsACString& aHost,
@@ -587,7 +656,8 @@ nsresult CreateAndResolveMockHTTPSRecord(const nsACString& aHost,
     return rv;
   }
 
-  return ParseHTTPSRecord(host, packet, aResult, aTTL);
+  nsAutoCString aliasName;
+  return ParseHTTPSRecord(host, packet, aResult, aTTL, aliasName);
 }
 
 
@@ -671,7 +741,8 @@ NS_IMETHODIMP NativeDNSResolverOverride::ClearOverrides() {
 
 nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
                                 nsIDNSService::DNSFlags aFlags,
-                                TypeRecordResultType& aResult, uint32_t& aTTL) {
+                                TypeRecordResultType& aResult, uint32_t& aTTL,
+                                nsACString& aAliasName) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 

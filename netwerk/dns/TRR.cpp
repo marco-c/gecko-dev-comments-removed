@@ -722,7 +722,11 @@ nsresult TRR::FollowCname(nsIChannel* aChannel) {
 
   bool ra = mPacket && mPacket->RecursionAvailable().unwrapOr(false);
   LOG(("ra = %d", ra));
-  if (rv == NS_ERROR_UNKNOWN_HOST && ra) {
+  if (rv == NS_ERROR_UNKNOWN_HOST && ra && mType != TRRTYPE_HTTPSSVC) {
+    
+    
+    
+    
     
     
     LOG(("TRR::FollowCname not sending another request as RA flag is set."));

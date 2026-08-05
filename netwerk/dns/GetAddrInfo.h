@@ -77,12 +77,18 @@ nsresult ResolveHTTPSRecord(const nsACString& aHost,
 
 
 
+
+
+
+
 nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
                                 nsIDNSService::DNSFlags aFlags,
-                                TypeRecordResultType& aResult, uint32_t& aTTL);
+                                TypeRecordResultType& aResult, uint32_t& aTTL,
+                                nsACString& aAliasName);
 
 nsresult ParseHTTPSRecord(nsCString& aHost, DNSPacket& aDNSPacket,
-                          TypeRecordResultType& aResult, uint32_t& aTTL);
+                          TypeRecordResultType& aResult, uint32_t& aTTL,
+                          nsACString& aAliasName);
 
 
 nsresult CreateAndResolveMockHTTPSRecord(const nsACString& aHost,
@@ -112,7 +118,8 @@ class NativeDNSResolverOverride : public nsINativeDNSResolverOverride {
                                nsIDNSService::DNSFlags aFlags,
                                AddrInfo** aAddrInfo);
   friend bool FindHTTPSRecordOverride(const nsACString& aHost,
-                                      TypeRecordResultType& aResult);
+                                      TypeRecordResultType& aResult,
+                                      nsACString& aAliasName);
 };
 
 }  

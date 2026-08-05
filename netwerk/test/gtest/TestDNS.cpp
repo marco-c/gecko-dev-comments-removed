@@ -5,12 +5,19 @@
 
 
 
+#include "GetAddrInfo.h"
 #include "gtest/gtest.h"
 #include "mozilla/CondVar.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/Variant.h"
 #include "mozilla/gtest/MozAssertions.h"
+#include "mozilla/net/DNSByTypeRecord.h"
+#include "mozilla/net/DNSPacket.h"
 #include "nsHostRecord.h"
 #include "nsHostResolver.h"
+#include "nsINativeDNSResolverOverride.h"
+#include "nsServiceManagerUtils.h"
 #include "prthread.h"
 
 using namespace mozilla;
@@ -122,4 +129,100 @@ TEST(TestDNS, ResolveHostCallbackCanReenterResolveHost)
     PR_JoinThread(thread);
     resolver->Shutdown();
   }
+}
+
+namespace {
+
+void AppendU16(nsCString& aBuf, uint16_t aVal) {
+  aBuf += static_cast<char>((aVal >> 8) & 0xff);
+  aBuf += static_cast<char>(aVal & 0xff);
+}
+
+void AppendHTTPSHeader(nsCString& aBuf) {
+  AppendU16(aBuf, 0);       
+  AppendU16(aBuf, 0x8000);  
+  AppendU16(aBuf, 0);       
+  AppendU16(aBuf, 1);       
+  AppendU16(aBuf, 0);       
+  AppendU16(aBuf, 0);       
+}
+
+void AppendHTTPSAnswerHeader(nsCString& aBuf, const nsACString& aName) {
+  MOZ_ALWAYS_SUCCEEDS(DNSPacket::EncodeHost(aBuf, aName));
+  AppendU16(aBuf, 65);  
+  AppendU16(aBuf, 1);   
+  AppendU16(aBuf, 0);   
+  AppendU16(aBuf, 55);  
+}
+
+
+
+nsCString BuildHTTPSAliasPacket(const nsACString& aOrigin,
+                                const nsACString& aTarget) {
+  nsCString buf;
+  AppendHTTPSHeader(buf);
+  AppendHTTPSAnswerHeader(buf, aOrigin);
+  nsCString rdata;
+  AppendU16(rdata, 0);  
+  MOZ_ALWAYS_SUCCEEDS(DNSPacket::EncodeHost(rdata, aTarget));
+  AppendU16(buf, rdata.Length());  
+  buf.Append(rdata);
+  return buf;
+}
+
+
+nsCString BuildHTTPSServicePacket(const nsACString& aOrigin) {
+  nsCString buf;
+  AppendHTTPSHeader(buf);
+  AppendHTTPSAnswerHeader(buf, aOrigin);
+  nsCString rdata;
+  AppendU16(rdata, 1);             
+  rdata += '\0';                   
+  AppendU16(buf, rdata.Length());  
+  buf.Append(rdata);
+  return buf;
+}
+
+void AddHTTPSOverride(nsINativeDNSResolverOverride* aOverride,
+                      const nsACString& aHost, const nsCString& aPacket) {
+  aOverride->AddHTTPSRecordOverride(
+      aHost, reinterpret_cast<const uint8_t*>(aPacket.BeginReading()),
+      aPacket.Length());
+}
+
+}  
+
+
+
+
+
+TEST(TestDNS, HTTPSAliasSelfReferenceIsCaseInsensitive)
+{
+  nsCOMPtr<nsINativeDNSResolverOverride> override =
+      do_GetService("@mozilla.org/network/native-dns-override;1");
+  ASSERT_TRUE(override);
+
+  constexpr auto kMixed = "Ci-Self.example"_ns;
+  constexpr auto kLower = "ci-self.example"_ns;
+
+  
+  
+  AddHTTPSOverride(override, kMixed, BuildHTTPSAliasPacket(kMixed, kMixed));
+
+  
+  
+  
+  AddHTTPSOverride(override, kLower, BuildHTTPSServicePacket(kLower));
+
+  TypeRecordResultType result = AsVariant(Nothing());
+  uint32_t ttl = 0;
+  nsresult rv = ResolveHTTPSRecord(kMixed, nsIDNSService::RESOLVE_DEFAULT_FLAGS,
+                                   result, ttl);
+
+  EXPECT_TRUE(NS_FAILED(rv))
+      << "a case-only self-referencing HTTPS alias must not be followed";
+  EXPECT_TRUE(result.is<TypeRecordEmpty>())
+      << "no record should be surfaced for a self-referencing alias";
+
+  override->ClearOverrides();
 }
