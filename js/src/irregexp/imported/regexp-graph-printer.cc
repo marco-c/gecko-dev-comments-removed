@@ -1,12 +1,14 @@
-
-
-
+// Copyright 2026 the V8 project authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #ifdef V8_ENABLE_REGEXP_DIAGNOSTICS
 
 #include "irregexp/imported/regexp-graph-printer.h"
 
 #include <iomanip>
+#include <queue>
+#include <unordered_set>
 
 #include "irregexp/imported/regexp-ast-printer.h"
 #include "irregexp/imported/regexp-compiler.h"
@@ -24,7 +26,7 @@ class GraphPrinter::Scheduler final : public NodeVisitor {
   auto operator[](size_t index) { return schedule_[index]; }
   Node* at(size_t index) { return schedule_[index]; }
   const std::vector<Node*>& successors(Node* node) { return successors_[node]; }
-  
+  // Returns true iff |n1| is scheduled before |n2|.
   bool ScheduledBefore(const Node* n1, const Node* n2) {
     auto it1 = std::find(begin(), end(), n1);
     if (it1 == end()) return false;
@@ -38,8 +40,8 @@ class GraphPrinter::Scheduler final : public NodeVisitor {
 #undef DECLARE_VISIT
   void Visit(Node* node);
   void CreateSchedule(Node* root) {
-    
-    
+    // TODO(pthier): Improve schedule to reduce number of edges in printer (I.e.
+    // prefer to schedule success nodes directly after nodes).
     Visit(root);
     std::set<Node*> visited;
     std::queue<Node*> queue;
@@ -106,9 +108,9 @@ class GraphPrinter::Scheduler final : public NodeVisitor {
   std::unordered_set<Node*> visited_;
   std::vector<Node*> nodes_;
   std::unordered_map<Node*, std::set<Node*>> depends_on_;
-  
-  
-  
+  // This is not strictly necessary. We could also use the NodeVisitor again to
+  // iterate successors, but it's easier if we just have them independent of the
+  // node type in one place.
   std::unordered_map<Node*, std::vector<Node*>> successors_;
   std::vector<Node*> schedule_;
 };
@@ -126,7 +128,7 @@ void GraphPrinter::Scheduler::VisitSeqNode(SeqNode* node) {
 }
 
 void GraphPrinter::Scheduler::VisitOther(Node* node) {
-  
+  // Nothing to do.
 }
 
 void GraphPrinter::Scheduler::VisitEnd(EndNode* node) { VisitOther(node); }
@@ -175,11 +177,11 @@ void GraphPrinter::Scheduler::VisitText(TextNode* node) {
 
 namespace {
 
+// TODO(pthier): Some of the helpers are equal or at least very similar to
+// helpers in the Maglev graph printer. Factor out a common header.
 
-
-
-
-
+// Add a target to the target list in the first non-null position from the end.
+// This might have to extend the target list if there is no free spot.
 size_t AddTarget(std::vector<Node*>& targets, Node* target) {
   if (targets.size() == 0 || (targets.back() != nullptr)) {
     targets.push_back(target);
@@ -195,10 +197,10 @@ size_t AddTarget(std::vector<Node*>& targets, Node* target) {
   return i;
 }
 
-
-
-
-
+// If the target is not a fallthrough, add i to the target list in the first
+// non-null position from the end. This might have to extend the target list if
+// there is no free spot. Returns true if it was added, false if it was a
+// fallthrough.
 bool AddTargetIfNotNext(std::vector<Node*>& targets, Node* target, Node* next,
                         std::set<size_t>* arrows_starting_here = nullptr) {
   if (next == target) return false;
@@ -304,7 +306,7 @@ void PrintPadding(std::ostream& os, int max_node_id, std::string padding = " ",
   }
 }
 
-}  
+}  // namespace
 
 GraphPrinter::GraphPrinter(std::unique_ptr<NodePrinter<Node>> printer)
     : printer_(std::move(printer)) {}
@@ -437,7 +439,7 @@ void GraphPrinter::PrintVerticalArrows(Node* current) {
       saw_target = true;
     }
 
-    
+    // Only add the vertical connection if there was no other connection.
     if (c.connected == 0 && edges_[i].IsValid() && !will_print_below) {
       desired_color = (i % 6) + 1;
       c.AddVertical();
@@ -484,7 +486,7 @@ void GraphPrinter::PrintVerticalArrowsBelow(Node* current,
       }
     }
 
-    
+    // Only add the vertical connection if there was no other connection.
     if (c.connected == 0 && e.IsValid() && !EdgeEndsAt(e, current)) {
       desired_color = (i % 6) + 1;
       c.AddVertical();
@@ -518,7 +520,7 @@ void GraphPrinter::PrintGraph(Node* root) {
   schedule_->CreateSchedule(root);
   PreSizeTargets();
 
-  
+  // Print Graph.
   for (size_t i = 0; i < schedule_->size(); i++) {
     Node* node = schedule_->at(i);
     max_node_id_ = std::max(max_node_id_, labeller()->NodeId(node));
@@ -528,8 +530,8 @@ void GraphPrinter::PrintGraph(Node* root) {
       if (LoopChoiceNode* loop = successor->AsLoopChoiceNode();
           loop != nullptr) {
         if (loop->loop_node() == node) {
-          
-          
+          // The loop header is already a target, so we can get the target id
+          // and skip adding it as a target below.
           continue;
         }
       }
@@ -648,8 +650,8 @@ void GraphPrinter::PrintBoyerMooreLookahead(const BoyerMooreLookahead* bm) {
   }
 }
 
-}  
-}  
-}  
+}  // namespace regexp
+}  // namespace internal
+}  // namespace v8
 
-#endif  
+#endif  // V8_ENABLE_REGEXP_DIAGNOSTICS

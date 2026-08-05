@@ -1,8 +1,8 @@
+// Copyright 2011 the V8 project authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
-
-
-
-
+// A simple interpreter for the Irregexp byte code.
 
 #include "irregexp/imported/regexp-interpreter.h"
 
@@ -11,19 +11,19 @@
 #include "irregexp/imported/regexp-bytecodes-inl.h"
 #include "irregexp/imported/regexp-bytecodes.h"
 #include "irregexp/imported/regexp-macro-assembler.h"
-#include "irregexp/imported/regexp-stack.h"  
+#include "irregexp/imported/regexp-stack.h"  // For kMaximumStackSize.
 #include "irregexp/imported/regexp.h"
 
 #ifdef V8_INTL_SUPPORT
 #include "unicode/uchar.h"
-#endif  
+#endif  // V8_INTL_SUPPORT
 
-
-
+// Use token threaded dispatch iff the compiler supports computed gotos and the
+// build argument v8_enable_regexp_interpreter_threaded_dispatch was set.
 #if V8_HAS_COMPUTED_GOTO && \
     defined(V8_ENABLE_REGEXP_INTERPRETER_THREADED_DISPATCH)
 #define V8_USE_COMPUTED_GOTO 1
-#endif  
+#endif  // V8_HAS_COMPUTED_GOTO
 
 namespace v8 {
 namespace internal {
@@ -50,16 +50,16 @@ bool BackRefMatchesNoCase(Isolate* isolate, int from, int current, int len,
 
 bool BackRefMatchesNoCase(Isolate* isolate, int from, int current, int len,
                           base::Vector<const uint8_t> subject, bool unicode) {
-  
+  // For Latin1 characters the unicode flag makes no difference.
   for (int i = 0; i < len; i++) {
     unsigned int old_char = subject[from++];
     unsigned int new_char = subject[current++];
     if (old_char == new_char) continue;
-    
+    // Convert both characters to lower case.
     old_char |= 0x20;
     new_char |= 0x20;
     if (old_char != new_char) return false;
-    
+    // Not letters in the ASCII range and Latin-1 range.
     if (!(old_char - 'a' <= 'z' - 'a') &&
         !(old_char - 224 <= 254 - 224 && old_char != 247)) {
       return false;
@@ -74,8 +74,8 @@ void MaybeTraceInterpreter(const uint8_t* code_base, const uint8_t* pc,
                            uint32_t current_char, int bytecode_length,
                            const char* bytecode_name) {
   if (v8_flags.trace_regexp_bytecodes) {
-    
-    
+    // The behaviour of std::isprint is undefined if the value isn't
+    // representable as unsigned char.
     const bool is_single_char =
         current_char <= std::numeric_limits<unsigned char>::max();
     const bool printable = is_single_char ? std::isprint(current_char) : false;
@@ -88,7 +88,7 @@ void MaybeTraceInterpreter(const uint8_t* code_base, const uint8_t* pc,
     RegExpBytecodeDisassembleSingle(code_base, pc);
   }
 }
-#endif  
+#endif  // ENABLE_DISASSEMBLER
 
 template <class Char>
 constexpr int BitsPerChar() {
@@ -109,11 +109,11 @@ uint32_t Load4Characters(const base::Vector<const base::uc16>&, int) {
   UNREACHABLE();
 }
 
-
-
-
-
-
+// A simple abstraction over the backtracking stack used by the interpreter.
+//
+// Despite the name 'backtracking' stack, it's actually used as a generic stack
+// that stores both program counters (= offsets into the bytecode) and generic
+// integer values.
 class BacktrackStack {
  public:
   BacktrackStack() = default;
@@ -134,7 +134,7 @@ class BacktrackStack {
     return v;
   }
 
-  
+  // The 'sp' is the index of the first empty element in the stack.
   int sp() const { return static_cast<int>(data_.size()); }
   void set_sp(uint32_t new_sp) {
     DCHECK_LE(new_sp, sp());
@@ -142,8 +142,8 @@ class BacktrackStack {
   }
 
  private:
-  
-  
+  // Semi-arbitrary. Should be large enough for common cases to remain in the
+  // static stack-allocated backing store, but small enough not to waste space.
   static constexpr int kStaticCapacity = 64;
 
   using ValueT = int;
@@ -152,11 +152,11 @@ class BacktrackStack {
   static constexpr int kMaxSize = Stack::kMaximumStackSize / sizeof(ValueT);
 };
 
-
-
-
-
-
+// Registers used during interpreter execution. These consist of output
+// registers in indices [0, output_register_count[ which will contain matcher
+// results as a {start,end} index tuple for each capture (where the whole match
+// counts as implicit capture 0); and internal registers in indices
+// [output_register_count, total_register_count[.
 class InterpreterRegisters {
  public:
   using RegisterT = int;
@@ -168,10 +168,10 @@ class InterpreterRegisters {
         output_registers_(output_registers),
         total_register_count_(total_register_count),
         output_register_count_(output_register_count) {
-    
-    
+    // TODO(jgruber): Use int32_t consistently for registers. Currently, CSA
+    // uses int32_t while runtime uses int.
     static_assert(sizeof(int) == sizeof(int32_t));
-    SBXCHECK_GE(output_register_count, 2);  
+    SBXCHECK_GE(output_register_count, 2);  // At least 2 for the match itself.
     SBXCHECK_GE(total_register_count, output_register_count);
     SBXCHECK_LE(total_register_count, RegExpMacroAssembler::kMaxRegisterCount);
     DCHECK_NOT_NULL(output_registers);
@@ -193,7 +193,7 @@ class InterpreterRegisters {
   }
 
  private:
-  static constexpr int kStaticCapacity = 64;  
+  static constexpr int kStaticCapacity = 64;  // Arbitrary.
   base::SmallVector<RegisterT, kStaticCapacity> registers_;
   RegisterT* const output_registers_;
   const int total_register_count_;
@@ -203,15 +203,15 @@ class InterpreterRegisters {
 IrregexpInterpreter::Result ThrowStackOverflow(Isolate* isolate,
                                                RegExp::CallOrigin call_origin) {
   CHECK(call_origin == RegExp::CallOrigin::kFromRuntime);
-  
-  
-  AllowGarbageCollection yes_gc;
+  // We abort interpreter execution after the stack overflow is thrown, and thus
+  // allow allocation here despite the outer DisallowGarbageCollectionScope.
+  [[maybe_unused]] AllowGarbageCollection yes_gc;
   isolate->StackOverflow();
   return IrregexpInterpreter::EXCEPTION;
 }
 
-
-
+// Only throws if called from the runtime, otherwise just returns the EXCEPTION
+// status code.
 IrregexpInterpreter::Result MaybeThrowStackOverflow(
     Isolate* isolate, RegExp::CallOrigin call_origin) {
   if (call_origin == RegExp::CallOrigin::kFromRuntime) {
@@ -243,8 +243,8 @@ void UpdateCodeAndSubjectReferences(
   *subject_string_vector_out = subject_string->GetCharVector<Char>(no_gc);
 }
 
-
-
+// Runs all pending interrupts and updates unhandlified object references if
+// necessary.
 template <typename Char>
 IrregexpInterpreter::Result HandleInterrupts(
     Isolate* isolate, RegExp::CallOrigin call_origin,
@@ -258,11 +258,11 @@ IrregexpInterpreter::Result HandleInterrupts(
   bool js_has_overflowed = check.JsHasOverflowed();
 
   if (call_origin == RegExp::CallOrigin::kFromJs) {
-    
-    
-    
-    
-    
+    // Direct calls from JavaScript can be interrupted in two ways:
+    // 1. A real stack overflow, in which case we let the caller throw the
+    //    exception.
+    // 2. The stack guard was used to interrupt execution for another purpose,
+    //    forcing the call through the runtime system.
     if (js_has_overflowed) {
       return IrregexpInterpreter::EXCEPTION;
     } else if (check.InterruptRequested()) {
@@ -270,7 +270,7 @@ IrregexpInterpreter::Result HandleInterrupts(
     }
   } else {
     DCHECK(call_origin == RegExp::CallOrigin::kFromRuntime);
-    
+    // Prepare for possible GC.
     HandleScope handles(isolate);
     DirectHandle<TrustedByteArray> code_handle(*code_array_out, isolate);
     DirectHandle<String> subject_handle(*subject_string_out, isolate);
@@ -282,16 +282,16 @@ IrregexpInterpreter::Result HandleInterrupts(
           String::IsOneByteRepresentationUnderneath(*subject_string_out);
       Tagged<Object> result;
       {
-        AllowGarbageCollection yes_gc;
+        [[maybe_unused]] AllowGarbageCollection yes_gc;
         result = isolate->stack_guard()->HandleInterrupts();
       }
       if (IsExceptionHole(result)) {
         return IrregexpInterpreter::EXCEPTION;
       }
 
-      
-      
-      
+      // If we changed between a LATIN1 and a UC16 string, we need to
+      // restart regexp matching with the appropriate template instantiation of
+      // RawMatch.
       if (String::IsOneByteRepresentationUnderneath(*subject_handle) !=
           was_one_byte) {
         return IrregexpInterpreter::RETRY;
@@ -313,16 +313,16 @@ bool CheckBitInTable(const uint32_t current_char, const uint8_t* const table) {
   return (b & (1 << bit)) != 0;
 }
 
-
+// Returns true iff 0 <= index < length.
 bool IndexIsInBounds(int index, int length) {
   DCHECK_GE(length, 0);
   return static_cast<uintptr_t>(index) < static_cast<uintptr_t>(length);
 }
 
-
-
-
-
+// If computed gotos are supported by the compiler, we can get addresses to
+// labels directly in C/C++. Every bytecode handler has its own label and we
+// store the addresses in a dispatch table indexed by bytecode. To execute the
+// next handler we simply jump (goto) directly to its address.
 #if V8_USE_COMPUTED_GOTO
 #define BC_LABEL(name) BC_k##name:
 #define DECODE()                                                    \
@@ -334,24 +334,24 @@ bool IndexIsInBounds(int index, int length) {
 #define DISPATCH()  \
   pc = next_pc;     \
   goto* next_handler_addr
-
-
-
-#else  
+// Without computed goto support, we fall back to a simple switch-based
+// dispatch (A large switch statement inside a loop with a case for every
+// bytecode).
+#else  // V8_USE_COMPUTED_GOTO
 #define BC_LABEL(name) case Bytecode::k##name:
 #define DECODE() ((void)0)
 #define DISPATCH()  \
   pc = next_pc;     \
   goto switch_dispatch_continuation
-#endif  
+#endif  // V8_USE_COMPUTED_GOTO
 
-
-
-
-
-
-
-
+// ADVANCE/SET_PC_FROM_OFFSET are separated from DISPATCH, because ideally some
+// instructions can be executed between ADVANCE/SET_PC_FROM_OFFSET and DISPATCH.
+// We want those two macros as far apart as possible, because the goto in
+// DISPATCH is dependent on a memory load in ADVANCE/SET_PC_FROM_OFFSET. If we
+// don't hit the cache and have to fetch the next handler address from physical
+// memory, instructions between ADVANCE/SET_PC_FROM_OFFSET and DISPATCH can
+// potentially be executed unconditionally, reducing memory stall.
 #define ADVANCE()                             \
   next_pc = pc + Bytecodes::Size(current_bc); \
   DECODE()
@@ -360,7 +360,7 @@ bool IndexIsInBounds(int index, int length) {
   next_pc = code_base + offset;    \
   DECODE()
 
-
+// Current position mutations.
 #define SET_CURRENT_POSITION(value)                        \
   do {                                                     \
     current = (value);                                     \
@@ -368,8 +368,8 @@ bool IndexIsInBounds(int index, int length) {
   } while (false)
 #define ADVANCE_CURRENT_POSITION(by) SET_CURRENT_POSITION(current + (by))
 
-
-
+// These weird looking macros are required for clang-format and cpplint to not
+// interfere/complain about our logic of opening/closing blocks in our macros.
 #define OPEN_BLOCK {
 #define CLOSE_BLOCK }
 #define BYTECODES_START() OPEN_BLOCK
@@ -385,7 +385,7 @@ bool IndexIsInBounds(int index, int length) {
 #define BYTECODE(Name, ...) \
   CLOSE_BLOCK               \
   BC_LABEL(Name) OPEN_BLOCK INIT(Name __VA_OPT__(, ) __VA_ARGS__);
-#endif  
+#endif  // ENABLE_DISASSEMBLER
 
 #define INIT(Name, ...)                                                     \
   constexpr Bytecode current_bc = Bytecode::k##Name;                        \
@@ -426,7 +426,7 @@ bool CheckSpecialClassRanges(uint32_t current_char,
       base::Vector<const uint8_t> word_character_map =
           RegExpMacroAssembler::word_character_map();
       DCHECK_EQ(0,
-                word_character_map[0]);  
+                word_character_map[0]);  // Character '\0' is not a word char.
       return word_character_map[current_char] != 0;
       return true;
     }
@@ -439,7 +439,7 @@ bool CheckSpecialClassRanges(uint32_t current_char,
       base::Vector<const uint8_t> word_character_map =
           RegExpMacroAssembler::word_character_map();
       DCHECK_EQ(0,
-                word_character_map[0]);  
+                word_character_map[0]);  // Character '\0' is not a word char.
       return word_character_map[current_char] == 0;
     }
     case StandardCharacterSet::kDigit:
@@ -484,7 +484,7 @@ bool CheckSpecialClassRanges(uint32_t current_char,
   UNREACHABLE();
 }
 
-}  
+}  // namespace
 
 template <typename Char>
 IrregexpInterpreter::Result RawMatch(
@@ -497,25 +497,25 @@ IrregexpInterpreter::Result RawMatch(
 
 #if V8_USE_COMPUTED_GOTO
 
-  
-  
-  
-  
-  
+  // Maximum number of bytecodes that will be used (next power of 2 of actually
+  // defined bytecodes).
+  // All slots between the last actually defined bytecode and maximum id will be
+  // filled with kBreaks, indicating an invalid operation. This way using
+  // kBytecodeMask guarantees no OOB access to the dispatch table.
   constexpr int kPaddedBytecodeCount =
       base::bits::RoundUpToPowerOfTwo32(Bytecodes::kCount);
   constexpr int kBytecodeMask = kPaddedBytecodeCount - 1;
   static_assert(std::numeric_limits<uint8_t>::max() >= kBytecodeMask);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // We have to make sure that no OOB access to the dispatch table is possible
+  // and all values are valid label addresses. Otherwise jumps to arbitrary
+  // addresses could potentially happen. This is ensured as follows: Every index
+  // to the dispatch table gets masked using kBytecodeMask in DECODE(). This way
+  // we can only get values between 0 (only the least significant byte of an
+  // integer is used) and kPaddedBytecodeCount - 1 (kBytecodeMask is defined to
+  // be exactly this value). All entries from Bytecodes::kCount to
+  // kRegExpPaddedBytecodeCount are automatically filled with kBreak (invalid
+  // operation).
 
 #define DECLARE_DISPATCH_TABLE_ENTRY(name, ...) &&BC_k##name,
   static const void* const unsafe_dispatch_table[Bytecodes::kCount] = {
@@ -529,19 +529,19 @@ IrregexpInterpreter::Result RawMatch(
         std::array<const void*, kPaddedBytecodeCount> table;
 
         size_t i = 0;
-        
+        // Copy all valid Bytecodes to the dispatch table.
         for (; i < Bytecodes::kCount; ++i) {
           table[i] = unsafe_dispatch_table[i];
         }
-        
-        
+        // Fill dispatch table from last defined bytecode up to the next power
+        // of two with kBreak (invalid operation).
         for (; i < kPaddedBytecodeCount; ++i) {
           table[i] = filler_entry;
         }
         return table;
       }();
 
-#endif  
+#endif  // V8_USE_COMPUTED_GOTO
 
   const uint8_t* pc = (*code_array)->begin();
   const uint8_t* code_base = pc;
@@ -560,7 +560,7 @@ IrregexpInterpreter::Result RawMatch(
     DISPATCH();
 #else
     switch (Bytecodes::FromPtr(pc)) {
-#endif
+#endif  // V8_USE_COMPUTED_GOTO
     BYTECODES_START()
     BYTECODE(Break) { UNREACHABLE(); }
     BYTECODE(PushCurrentPosition) {
@@ -579,7 +579,7 @@ IrregexpInterpreter::Result RawMatch(
     }
     BYTECODE(PushRegister, register_index, stack_check) {
       ADVANCE();
-      USE(stack_check);  
+      USE(stack_check);  // Unused in interpreter.
       if (!backtrack_stack.push(registers[register_index])) {
         return MaybeThrowStackOverflow(isolate, call_origin);
       }
@@ -1055,9 +1055,9 @@ IrregexpInterpreter::Result RawMatch(
              bounds_check_offset, on_match, on_no_match) {
       while (IndexIsInBounds(current + bounds_check_offset, subject.length())) {
         current_char = subject[current + cp_offset];
-        
-        
-        
+        // The two if-statements below are split up intentionally, as combining
+        // them seems to result in register allocation behaving quite
+        // differently and slowing down the resulting code.
         if (char1 == current_char) {
           SET_PC_FROM_OFFSET(on_match);
           DISPATCH();
@@ -1076,7 +1076,7 @@ IrregexpInterpreter::Result RawMatch(
              on_failure) {
       DCHECK_GE(cp_offset, 0);
       DCHECK_GE(max_offset, cp_offset + 3);
-      
+      // We should only get here in 1-byte mode.
       DCHECK_EQ(1, sizeof(Char));
       while (IndexIsInBounds(current + max_offset, subject.length())) {
         int pos = current + cp_offset;
@@ -1102,12 +1102,12 @@ IrregexpInterpreter::Result RawMatch(
              bc4_cp_offset, bc5_characters, bc5_mask, bc5_on_equal,
              bc6_characters, bc6_mask, bc6_on_equal, bc7_characters, bc7_mask,
              fallthrough_jump_target) {
-      
+      // We should only get here in 1-byte mode.
       DCHECK_EQ(1, sizeof(Char));
 
       while (true) {
-        
-        
+        // bc0: kSkipUntilBitInTable
+        // on_match and on_no_match are constrained to jump to bc1.
         while (IndexIsInBounds(current + bc0_cp_offset, subject.length())) {
           current_char = subject[current + bc0_cp_offset];
           if (CheckBitInTable(current_char, bc0_table)) {
@@ -1116,53 +1116,53 @@ IrregexpInterpreter::Result RawMatch(
           ADVANCE_CURRENT_POSITION(bc0_advance_by);
         }
 
-        
+        // bc1: kLoad4CurrentChars
         if (!IndexIsInBounds(current + bc1_bounds_check_offset,
                              subject.length())) {
           SET_PC_FROM_OFFSET(bc1_on_failure);
           DISPATCH();
         }
 
-        
+        // Load 4 characters
         int pos = current + bc1_cp_offset;
         current_char = Load4Characters(subject, pos);
 
-        
-        
+        // bc2: AndCheck4Chars
+        // on_equal is constrained to jump to bc4.
         if (bc2_characters == (current_char & bc2_mask)) {
-          
-          
+          // bc4: Load4CurrentChars
+          // on_failure is constrained to jump to bc3 (AdvanceCpAndGoto).
           if (!IndexIsInBounds(current + bc4_bounds_check_offset,
                                subject.length())) {
-            
-            
+            // bc3: AdvanceCpAndGoto
+            // on_goto is constrained to jump back to bc0.
             ADVANCE_CURRENT_POSITION(bc3_by);
             continue;
           }
-          
+          // TODO(jgruber): Usually we can reuse some of the bytes loaded above.
           pos = current + bc4_cp_offset;
           current_char = Load4Characters(subject, pos);
 
-          
+          // bc5: AndCheck4Chars
           if (bc5_characters == (current_char & bc5_mask)) {
             SET_PC_FROM_OFFSET(bc5_on_equal);
             DISPATCH();
           }
-          
+          // bc6: AndCheck4Chars
           if (bc6_characters == (current_char & bc6_mask)) {
             SET_PC_FROM_OFFSET(bc6_on_equal);
             DISPATCH();
           }
-          
-          
+          // bc7: AndCheckNot4Chars
+          // on_not_equal is constrained to jump to bc3.
           if (bc7_characters == (current_char & bc7_mask)) {
             SET_PC_FROM_OFFSET(fallthrough_jump_target);
             DISPATCH();
           }
         }
 
-        
-        
+        // bc3: AdvanceCpAndGoto
+        // on_goto is constrained to jump back to bc0.
         ADVANCE_CURRENT_POSITION(bc3_by);
       }
 
@@ -1170,16 +1170,16 @@ IrregexpInterpreter::Result RawMatch(
     }
     BYTECODES_END()
 #if V8_USE_COMPUTED_GOTO
-
-
+// Lint gets confused a lot if we just use !V8_USE_COMPUTED_GOTO or ifndef
+// V8_USE_COMPUTED_GOTO here.
 #else
       default:
         UNREACHABLE();
     }
-  
-  
+  // Label we jump to in DISPATCH(). There must be no instructions between the
+  // end of the switch, this label and the end of the loop.
   switch_dispatch_continuation : {}
-#endif  
+#endif  // V8_USE_COMPUTED_GOTO
   }
 }
 
@@ -1197,9 +1197,9 @@ IrregexpInterpreter::Result RawMatch(
 #undef BC_LABEL
 #undef V8_USE_COMPUTED_GOTO
 
-}  
+}  // namespace
 
-
+// static
 int IrregexpInterpreter::Match(Isolate* isolate,
                                Tagged<IrRegExpData> regexp_data,
                                Tagged<String> subject_string,
@@ -1215,9 +1215,9 @@ int IrregexpInterpreter::Match(Isolate* isolate,
   Tagged<TrustedByteArray> code_array = regexp_data->bytecode(is_one_byte);
   int total_register_count = regexp_data->max_register_count();
 
-  
-  
-  
+  // MatchInternal only supports returning a single match per call. In global
+  // mode, i.e. when output_registers has space for more than one match, we
+  // need to keep running until all matches are filled in.
   int registers_per_match =
       JSRegExp::RegistersForCaptureCount(regexp_data->capture_count());
   DCHECK_LE(registers_per_match, output_register_count);
@@ -1251,7 +1251,7 @@ int IrregexpInterpreter::Match(Isolate* isolate,
         backtrack_limit);
 
     if (current_result == SUCCESS) {
-      
+      // Fall through.
     } else if (current_result == FAILURE) {
       break;
     } else {
@@ -1261,14 +1261,14 @@ int IrregexpInterpreter::Match(Isolate* isolate,
       return current_result;
     }
 
-    
+    // Found a match. Advance the index.
 
     num_matches++;
 
     int next_start_position = current_output_registers[1];
     if (next_start_position == current_output_registers[0]) {
-      
-      
+      // Zero-length matches.
+      // TODO(jgruber): Use AdvanceStringIndex based on flat contents instead.
       next_start_position = static_cast<int>(Utils::AdvanceStringIndex(
           subject_string, next_start_position, is_any_unicode));
       if (next_start_position > static_cast<int>(subject_string->length())) {
@@ -1290,20 +1290,20 @@ IrregexpInterpreter::Result IrregexpInterpreter::MatchInternal(
     RegExp::CallOrigin call_origin, uint32_t backtrack_limit) {
   DCHECK((*subject_string)->IsFlat());
 
-  
-  
-  
-  
-  
-  
+  // Note: Heap allocation *is* allowed in two situations if calling from
+  // Runtime:
+  // 1. When creating & throwing a stack overflow exception. The interpreter
+  //    aborts afterwards, and thus possible-moved objects are never used.
+  // 2. When handling interrupts. We manually relocate unhandlified references
+  //    after interrupts have run.
   DisallowGarbageCollection no_gc;
 
   base::uc16 previous_char = '\n';
   String::FlatContent subject_content =
       (*subject_string)->GetFlatContent(no_gc);
-  
-  
-  
+  // Because interrupts can result in GC and string content relocation, the
+  // checksum verification in FlatContent may fail even though this code is
+  // safe. See (2) above.
   subject_content.UnsafeDisableChecksumVerification();
   if (subject_content.IsOneByte()) {
     base::Vector<const uint8_t> subject_vector =
@@ -1327,17 +1327,17 @@ IrregexpInterpreter::Result IrregexpInterpreter::MatchInternal(
 
 #ifndef COMPILING_IRREGEXP_FOR_EXTERNAL_EMBEDDER
 
-
-
+// This method is called through an external reference from RegExpExecInternal
+// builtin.
 #ifdef V8_ENABLE_SANDBOX_HARDWARE_SUPPORT
-
+// Hardware sandboxing is incompatible with ASAN, see crbug.com/432168626.
 DISABLE_ASAN
-#endif  
+#endif  // V8_ENABLE_SANDBOX_HARDWARE_SUPPORT
 int IrregexpInterpreter::MatchForCallFromJs(
     Address subject, int32_t start_position, Address, Address,
     int* output_registers, int32_t output_register_count,
     RegExp::CallOrigin call_origin, Isolate* isolate, Address regexp_data) {
-  
+  // TODO(422992937): investigate running the interpreter in sandboxed mode.
   ExitSandboxScope unsandboxed;
 
   DCHECK_NOT_NULL(isolate);
@@ -1354,8 +1354,8 @@ int IrregexpInterpreter::MatchForCallFromJs(
       TrustedCast<TrustedObject>(Tagged<Object>(regexp_data)));
 
   if (regexp_data_obj->MarkedForTierUp()) {
-    
-    
+    // Returning RETRY will re-enter through runtime, where actual recompilation
+    // for tier-up takes place.
     return IrregexpInterpreter::RETRY;
   }
 
@@ -1363,7 +1363,7 @@ int IrregexpInterpreter::MatchForCallFromJs(
                output_register_count, start_position, call_origin);
 }
 
-#endif  
+#endif  // !COMPILING_IRREGEXP_FOR_EXTERNAL_EMBEDDER
 
 int IrregexpInterpreter::MatchForCallFromRuntime(
     Isolate* isolate, DirectHandle<IrRegExpData> regexp_data,
@@ -1374,6 +1374,6 @@ int IrregexpInterpreter::MatchForCallFromRuntime(
                RegExp::CallOrigin::kFromRuntime);
 }
 
-}  
-}  
-}  
+}  // namespace regexp
+}  // namespace internal
+}  // namespace v8
