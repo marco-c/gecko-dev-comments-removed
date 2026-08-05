@@ -111,12 +111,8 @@ wr::WrExternalImage RenderMacIOSurfaceTextureHost::Lock(uint8_t aChannelIndex,
   if (mGpuFence) {
     
     
-    auto timeout = TimeDuration::FromMilliseconds(10000);
-    auto start = TimeStamp::Now();
     AUTO_PROFILER_MARKER("Lock MacIOSurfaceTexture", GRAPHICS);
-    while (!mGpuFence->HasCompleted() && (TimeStamp::Now() - start) < timeout) {
-      PR_Sleep(PR_MillisecondsToInterval(1));
-    }
+    mGpuFence->ClientWait(TimeDuration::FromMilliseconds(10000));
   } else {
     PROFILER_MARKER_UNTYPED("No GpuFence", GRAPHICS);
   }
