@@ -2002,11 +2002,40 @@ class DiscoveryStreamAdminInner extends (external_React_default()).PureComponent
   constructor(props) {
     super(props);
     this.setState = this.setState.bind(this);
+    this.dismiss = this.dismiss.bind(this);
+    this.handleKeyDown = this.handleKeyDown.bind(this);
+  }
+  componentDidMount() {
+    globalThis.addEventListener("keydown", this.handleKeyDown);
+  }
+  componentWillUnmount() {
+    globalThis.removeEventListener("keydown", this.handleKeyDown);
+  }
+  dismiss() {
+    globalThis.location.hash = "";
+  }
+  handleKeyDown(e) {
+    if (e.key !== "Escape" || e.defaultPrevented) {
+      return;
+    }
+    
+    const tag = e.target?.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA") {
+      return;
+    }
+    this.dismiss();
   }
   render() {
     return external_React_default().createElement("div", {
       className: `discoverystream-admin ${this.props.collapsed ? "collapsed" : "expanded"}`
-    }, external_React_default().createElement("main", {
+    }, external_React_default().createElement("moz-button", {
+      className: "discoverystream-admin-close",
+      type: "icon ghost",
+      title: "Close devtools",
+      "aria-label": "Close devtools",
+      iconsrc: "chrome://global/skin/icons/close.svg",
+      onClick: this.dismiss
+    }), external_React_default().createElement("main", {
       className: "main-panel"
     }, external_React_default().createElement("h1", null, "Discovery Stream Admin"), external_React_default().createElement("p", {
       className: "helpLink"
