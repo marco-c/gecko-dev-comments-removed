@@ -96,6 +96,9 @@ struct InitData {
   
   bool mIsAnimationSuppressed = false;
   
+  
+  bool mIsInitialFullscreenSuppressed = false;
+  
   bool mHasRemoteContent = false;
   bool mAlwaysOnTop = false;
   PiPType mPiPType = PiPType::NoPiP;

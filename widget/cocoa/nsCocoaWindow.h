@@ -671,6 +671,9 @@ class nsCocoaWindow final : public nsIWidget {
   bool mAlwaysOnTop = false;
   bool mAspectRatioLocked = false;
   bool mIsAlert = false;  
+  
+  
+  bool mIsInitialFullscreenSuppressed = false;
   bool mWasShown = false;
 
   int32_t mNumModalDescendants = 0;

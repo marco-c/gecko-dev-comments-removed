@@ -4992,6 +4992,7 @@ nsresult nsCocoaWindow::Create(nsIWidget* aParent, const DesktopIntRect& aRect,
 
   mAlwaysOnTop = aInitData.mAlwaysOnTop;
   mIsAlert = aInitData.mIsAlert;
+  mIsInitialFullscreenSuppressed = aInitData.mIsInitialFullscreenSuppressed;
 
   nsresult rv = CreateNativeWindow(nsCocoaUtils::GeckoRectToCocoaRect(aRect),
                                    mBorderStyle, false, aInitData.mIsPrivate);
@@ -5516,9 +5517,11 @@ void nsCocoaWindow::Show(bool aState) {
     
     
     
+    
     bool savedValueForSupportsNativeFullscreen = GetSupportsNativeFullscreen();
     if (!mInFullScreenMode &&
-        ((mWindowType == WindowType::Popup) || mAlwaysOnTop || mIsAlert)) {
+        ((mWindowType == WindowType::Popup) || mAlwaysOnTop || mIsAlert ||
+         mIsInitialFullscreenSuppressed)) {
       SetSupportsNativeFullscreen(false);
     }
 

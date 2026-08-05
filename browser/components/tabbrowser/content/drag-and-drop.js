@@ -862,6 +862,14 @@
             gBrowser.TabMetrics.METRIC_SOURCE.DRAG_AND_DROP
           ),
         };
+        if (window.fullScreen) {
+          
+          
+          
+          
+          
+          props.suppressinitialfullscreen = 1;
+        }
         gBrowser.replaceTabsWithWindow(draggedTab, props);
       }
       event.stopPropagation();
