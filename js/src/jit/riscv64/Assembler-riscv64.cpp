@@ -996,18 +996,6 @@ int32_t Assembler::branchOffset(Label* L, OffsetSize bits,
 
   
   
-  if (bits < OffsetSize::kOffset32) {
-    
-    BufferOffset deadline(next_instr_offset.getOffset() +
-                          ImmBranchMaxForwardOffset(bits));
-    DEBUG_PRINTF("\tregisterBranchDeadline %d type %d\n", deadline.getOffset(),
-                 OffsetSizeToImmBranchRangeType(bits));
-    m_buffer.registerBranchDeadline(OffsetSizeToImmBranchRangeType(bits),
-                                    deadline);
-  }
-
-  
-  
   if (!L->used()) {
     L->use(next_instr_offset.getOffset());
     DEBUG_PRINTF("\tLabel  %p added to link: %d\n", L,
@@ -1064,12 +1052,21 @@ int32_t Assembler::branchOffset(Label* L) {
   return branchOffset(L, OffsetSize::kOffset32, next_instr_offset);
 }
 
-int32_t Assembler::branchOffset(Label* L, OffsetSize bits) {
+void Assembler::registerBranchDeadline(Label* L, OffsetSize bits,
+                                       BufferOffset next_instr_offset) {
   MOZ_ASSERT(bits < OffsetSize::kOffset32);
 
   
-  BufferOffset next_instr_offset = nextInstrOffset(1, 1);
-  return branchOffset(L, bits, next_instr_offset);
+  
+  if (!L->bound()) {
+    
+    BufferOffset deadline(next_instr_offset.getOffset() +
+                          ImmBranchMaxForwardOffset(bits));
+    DEBUG_PRINTF("\tregisterBranchDeadline %d type %d\n", deadline.getOffset(),
+                 OffsetSizeToImmBranchRangeType(bits));
+    m_buffer.registerBranchDeadline(OffsetSizeToImmBranchRangeType(bits),
+                                    deadline);
+  }
 }
 
 Assembler::Condition Assembler::InvertCondition(Condition cond) {

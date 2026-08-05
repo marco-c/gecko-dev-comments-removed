@@ -5202,7 +5202,10 @@ bool MacroAssemblerRiscv64::UseShortBranch(
     
     
     
-    int32_t offset = nextInstrOffset(1, 1).getOffset();
+    
+    
+    
+    int32_t offset = nextInstrOffset(1, 0).getOffset();
 
     
     if (is_intn(offset - L->offset(), bits)) {
@@ -5230,13 +5233,19 @@ void MacroAssemblerRiscv64::Branch(Label* L, JumpKind jumpKind) {
 }
 
 BufferOffset MacroAssemblerRiscv64::BranchShort(Label* L) {
-  AutoForbidPoolsAndNops afp(this, 1, 1);
+  
+  AutoForbidPoolsAndNops afp(this, 1, !L->bound());
+
+  BufferOffset next_instr_offset = nextInstrOffset(1, !L->bound());
+  int32_t offset = branchOffset(L, OffsetSize::kOffset21, next_instr_offset);
 
   LabelDoc doc = refLabel(L);
-  int32_t offset = branchOffset(L, OffsetSize::kOffset21);
-  BufferOffset bo = nextOffset();
-  Assembler::j(offset, doc);
-  return bo;
+  BufferOffset actualOffset = Assembler::j(offset, doc);
+  MOZ_ASSERT_IF(actualOffset.assigned(), next_instr_offset == actualOffset);
+
+  registerBranchDeadline(L, OffsetSize::kOffset21, next_instr_offset);
+
+  return actualOffset;
 }
 
 void MacroAssemblerRiscv64::Branch(Label* L, Condition cond, Register rs,
@@ -5275,62 +5284,69 @@ void MacroAssemblerRiscv64::BranchShort(Label* L, Condition cond, Register rs,
   MOZ_ASSERT(cond != Always);
   MOZ_ASSERT(rs != rt);
 
-  AutoForbidPoolsAndNops afp(this, 1, 1);
+  
+  AutoForbidPoolsAndNops afp(this, 1, !L->bound());
+
+  BufferOffset next_instr_offset = nextInstrOffset(1, !L->bound());
+  int32_t offset = branchOffset(L, OffsetSize::kOffset13, next_instr_offset);
 
   LabelDoc doc = refLabel(L);
-  int32_t offset = branchOffset(L, OffsetSize::kOffset13);
-
+  [[maybe_unused]] BufferOffset actualOffset;
   switch (cond) {
     case Equal:
-      Assembler::beq(rs, rt, offset, doc);
+      actualOffset = Assembler::beq(rs, rt, offset, doc);
       break;
     case NotEqual:
-      Assembler::bne(rs, rt, offset, doc);
+      actualOffset = Assembler::bne(rs, rt, offset, doc);
       break;
 
     
     case GreaterThan:
-      Assembler::bgt(rs, rt, offset, doc);
+      actualOffset = Assembler::bgt(rs, rt, offset, doc);
       break;
     case GreaterThanOrEqual:
-      Assembler::bge(rs, rt, offset, doc);
+      actualOffset = Assembler::bge(rs, rt, offset, doc);
       break;
     case LessThan:
-      Assembler::blt(rs, rt, offset, doc);
+      actualOffset = Assembler::blt(rs, rt, offset, doc);
       break;
     case LessThanOrEqual:
-      Assembler::ble(rs, rt, offset, doc);
+      actualOffset = Assembler::ble(rs, rt, offset, doc);
       break;
 
     
     case Above:
-      Assembler::bgtu(rs, rt, offset, doc);
+      actualOffset = Assembler::bgtu(rs, rt, offset, doc);
       break;
     case AboveOrEqual:
-      Assembler::bgeu(rs, rt, offset, doc);
+      actualOffset = Assembler::bgeu(rs, rt, offset, doc);
       break;
     case Below:
-      Assembler::bltu(rs, rt, offset, doc);
+      actualOffset = Assembler::bltu(rs, rt, offset, doc);
       break;
     case BelowOrEqual:
-      Assembler::bleu(rs, rt, offset, doc);
+      actualOffset = Assembler::bleu(rs, rt, offset, doc);
       break;
 
     default:
       MOZ_CRASH("UNREACHABLE");
   }
+
+  MOZ_ASSERT_IF(actualOffset.assigned(), next_instr_offset == actualOffset);
+
+  registerBranchDeadline(L, OffsetSize::kOffset13, next_instr_offset);
 }
 
 void MacroAssemblerRiscv64::BranchLong(Label* L) {
   AutoForbidPoolsAndNops afp(this, 2);
 
   
-  LabelDoc doc = refLabel(L);
   int32_t imm = branchOffset(L);
 
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
 
+  LabelDoc doc = refLabel(L);
   auto [Hi20, Lo12] = ToHigh20Low12(imm);
   auipc(scratch, Hi20);    
   jr(scratch, Lo12, doc);  
@@ -5339,25 +5355,31 @@ void MacroAssemblerRiscv64::BranchLong(Label* L) {
 CodeOffset MacroAssemblerRiscv64::BranchAndLink(Label* L) {
   mozilla::Maybe<AutoForbidNops> afn;
   if (UseShortBranch(L, ShortJump, OffsetSize::kOffset21, afn)) {
-    AutoForbidPoolsAndNops afp(this, 1, 1);
+    
+    AutoForbidPoolsAndNops afp(this, 1, !L->bound());
+
+    BufferOffset next_instr_offset = nextInstrOffset(1, !L->bound());
+    int32_t offset = branchOffset(L, OffsetSize::kOffset21, next_instr_offset);
 
     LabelDoc doc = refLabel(L);
-    int32_t offset = branchOffset(L, OffsetSize::kOffset21);
-    return jal(offset, doc);
+    [[maybe_unused]] BufferOffset actualOffset = jal(offset, doc);
+    MOZ_ASSERT_IF(actualOffset.assigned(), next_instr_offset == actualOffset);
+
+    registerBranchDeadline(L, OffsetSize::kOffset21, next_instr_offset);
+  } else {
+    AutoForbidPoolsAndNops afp(this, 2);
+
+    
+    int32_t imm = branchOffset(L);
+
+    UseScratchRegisterScope temps(this);
+    Register scratch = temps.Acquire();
+
+    LabelDoc doc = refLabel(L);
+    auto [Hi20, Lo12] = ToHigh20Low12(imm);
+    auipc(scratch, Hi20);      
+    jalr(scratch, Lo12, doc);  
   }
-
-  AutoForbidPoolsAndNops afp(this, 2);
-
-  
-  LabelDoc doc = refLabel(L);
-  int32_t imm = branchOffset(L);
-
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-
-  auto [Hi20, Lo12] = ToHigh20Low12(imm);
-  auipc(scratch, Hi20);      
-  jalr(scratch, Lo12, doc);  
 
   return CodeOffset(currentOffset());
 }
