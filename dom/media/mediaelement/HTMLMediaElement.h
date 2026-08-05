@@ -1647,6 +1647,12 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   nsCOMPtr<nsIURI> mLoadingSrc;
 
   
+  
+  
+  
+  nsCOMPtr<nsIURI> mLoadingSrcFinalURI;
+
+  
   nsCOMPtr<nsIPrincipal> mLoadingSrcTriggeringPrincipal;
 
   
