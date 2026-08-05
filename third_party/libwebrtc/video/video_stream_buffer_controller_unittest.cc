@@ -628,7 +628,7 @@ TEST_P(VideoStreamBufferControllerTest, TestStatsCallback) {
   EXPECT_CALL(stats_callback_, OnFrameBufferTimingsUpdated);
 
   
-  timing_.StopDecodeTimer(TimeDelta::Millis(1), clock_->CurrentTime());
+  timing_.UpdateDecodeTimeEstimate(TimeDelta::Millis(1), clock_->CurrentTime());
   StartNextDecodeForceKeyframe();
   buffer_->InsertFrame(test::FakeFrameBuilder().Id(0).Time(0).AsLast().Build());
   EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(test::WithId(0)));

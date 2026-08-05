@@ -146,8 +146,8 @@ void RenderingTracker::OnEncodedFrame(
   
   
   
-  video_timing_->StopDecodeTimer(TimeDelta::Zero(),
-                                 env_.clock().CurrentTime());
+  video_timing_->UpdateDecodeTimeEstimate(TimeDelta::Zero(),
+                                          env_.clock().CurrentTime());
 
   
   

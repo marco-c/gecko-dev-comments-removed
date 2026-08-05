@@ -98,12 +98,11 @@ class VCMTiming {
   
   
   
-  
   void UpdateCurrentDelay(Timestamp render_time, Timestamp actual_decode_time);
 
   
   
-  void StopDecodeTimer(TimeDelta decode_time, Timestamp now);
+  void UpdateDecodeTimeEstimate(TimeDelta decode_time, Timestamp now);
 
   
   
