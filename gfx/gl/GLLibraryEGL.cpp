@@ -680,6 +680,7 @@ bool GLLibraryEGL::Init(nsACString* const out_failureId) {
 
   
   mIsANGLE = IsExtensionSupported(EGLLibExtension::ANGLE_platform_angle);
+  mIsD3DANGLE = IsExtensionSupported(EGLLibExtension::ANGLE_platform_angle_d3d);
 
   
 

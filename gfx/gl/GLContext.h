@@ -231,6 +231,12 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
 
   virtual bool IsWARP() const { return false; }
 
+  
+
+
+
+  virtual bool IsD3DANGLE() const { return false; }
+
   virtual void GetWSIInfo(nsCString* const out) const = 0;
 
   
