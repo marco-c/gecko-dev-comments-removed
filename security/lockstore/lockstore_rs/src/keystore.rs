@@ -71,6 +71,24 @@ const DEK_PREFIX: &str = "lockstore::dek::";
 
 const PKCS11_WRAPPING_KEY_NICKNAME: &str = "lockstore::pkcs11-wrapping-key";
 
+
+
+
+
+
+
+const MAX_UNLOCK: Duration = Duration::from_secs(10 * 365 * 24 * 60 * 60);
+
+
+
+
+fn unlock_deadline(timeout: Duration) -> Instant {
+    let clamped = timeout.min(MAX_UNLOCK);
+    Instant::now()
+        .checked_add(clamped)
+        .unwrap_or_else(|| Instant::now() + MAX_UNLOCK)
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct WrappedDek {
     kek_type: KekType,
@@ -1135,7 +1153,7 @@ impl Keystore {
                         kek_ref.clone(),
                         CachedKek {
                             kek: std::mem::take(&mut kek_plaintext),
-                            expires_at: Instant::now() + cache_timeout,
+                            expires_at: unlock_deadline(cache_timeout),
                         },
                     );
                 }
@@ -1321,7 +1339,7 @@ impl Keystore {
             kek_ref.to_string(),
             CachedKek {
                 kek: kek_plaintext,
-                expires_at: Instant::now() + timeout,
+                expires_at: unlock_deadline(timeout),
             },
         );
 
@@ -1412,7 +1430,7 @@ impl Keystore {
             kek_ref.to_string(),
             CachedKek {
                 kek: kek_plaintext,
-                expires_at: Instant::now() + timeout,
+                expires_at: unlock_deadline(timeout),
             },
         );
         Ok(())
@@ -1676,3 +1694,27 @@ use std::sync::{OnceLock, Weak};
 
 
 static SHARED_KEYSTORES: OnceLock<Mutex<HashMap<PathBuf, Weak<Keystore>>>> = OnceLock::new();
+
+#[cfg(test)]
+mod tests {
+    use super::{unlock_deadline, MAX_UNLOCK};
+    use std::time::{Duration, Instant};
+
+    #[test]
+    fn unlock_deadline_extends_beyond_u32_ms() {
+        
+        
+        let beyond_u32 = Duration::from_millis(u32::MAX as u64 + 1);
+        let deadline = unlock_deadline(beyond_u32);
+        assert!(deadline > Instant::now() + Duration::from_secs(49 * 24 * 60 * 60));
+    }
+
+    #[test]
+    fn unlock_deadline_saturates_without_panic() {
+        
+        
+        let deadline = unlock_deadline(Duration::from_millis(u64::MAX));
+        assert!(deadline > Instant::now());
+        assert!(deadline <= Instant::now() + MAX_UNLOCK + Duration::from_secs(60));
+    }
+}
