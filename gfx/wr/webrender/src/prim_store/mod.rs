@@ -14,7 +14,7 @@ use crate::renderer::{GpuBufferAddress, GpuBufferHandle, GpuBufferWriterF};
 use crate::segment::EdgeMask;
 use crate::debug_item::{DebugItem, DebugMessage};
 use crate::debug_colors;
-use glyph_rasterizer::GlyphKey;
+use glyph_rasterizer::{GlyphKey, SubpixelDirection};
 use crate::gpu_types::{BrushFlags, BrushSegmentGpuData, QuadSegment};
 use crate::intern;
 use crate::picture::{PictureInstance, PictureScratch};
@@ -417,6 +417,35 @@ pub struct PrimitiveInstance {
     pub unsnapped_prim_rect: LayoutRect,
 }
 
+
+
+
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum ClipSnap {
+    
+    
+    Nearest,
+    
+    
+    Exact,
+    
+    
+    
+    Text(SnapRounding),
+}
+
+
+
+
+
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct SnapPolicy {
+    pub rect: SnapRounding,
+    pub clip: ClipSnap,
+}
+
 impl PrimitiveInstance {
     pub fn new(
         kind: PrimitiveKind,
@@ -437,17 +466,39 @@ impl PrimitiveInstance {
     
     
     
-    pub fn snap_rounding(&self, snaps: bool, data_stores: &DataStores) -> SnapRounding {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn snap_policy(&self, snaps: bool, data_stores: &DataStores) -> SnapPolicy {
         if !snaps {
-            return SnapRounding::RoundOut;
+            let clip = if let PrimitiveKind::TextRun { data_handle, .. } = self.kind {
+                ClipSnap::Text(match data_stores.text_run[data_handle].font.get_subpx_dir() {
+                    SubpixelDirection::Horizontal =>
+                        SnapRounding::RoundOutNonSubpx { subpx_horizontal: true },
+                    SubpixelDirection::Vertical =>
+                        SnapRounding::RoundOutNonSubpx { subpx_horizontal: false },
+                    SubpixelDirection::None => SnapRounding::RoundOut,
+                })
+            } else {
+                ClipSnap::Exact
+            };
+            return SnapPolicy { rect: SnapRounding::RoundOut, clip };
         }
-        match self.kind {
+        let rect = match self.kind {
             PrimitiveKind::LineDecoration { data_handle, .. } => SnapRounding::Line {
                 horizontal: data_stores.line_decoration[data_handle].kind.orientation
                     == LineOrientation::Horizontal,
             },
             _ => SnapRounding::Nearest,
-        }
+        };
+        SnapPolicy { rect, clip: ClipSnap::Nearest }
     }
 
     pub fn uid(&self) -> intern::ItemUid {

@@ -9,7 +9,7 @@ use std::fmt;
 
 use euclid::{Transform3D, Box2D, Point2D, Vector2D};
 
-use api::units::DeviceRect;
+use api::units::{DeviceRect, DevicePoint};
 use crate::spatial_tree::{CoordinateSystemId, SpatialTree, CoordinateSpaceMapping, SpatialNodeIndex, VisibleFace};
 use crate::surface::SurfaceInfo;
 use crate::util::project_rect;
@@ -359,6 +359,24 @@ impl SpaceSnapper {
                     SnapRounding::RoundOut => device_rect.round_out(),
                     SnapRounding::Line { horizontal } =>
                         snap_line_device_rect(&device_rect, horizontal ^ swap_xy),
+                    SnapRounding::RoundOutNonSubpx { subpx_horizontal } => {
+                        
+                        
+                        
+                        
+                        if subpx_horizontal ^ swap_xy {
+                            
+                            DeviceRect::new(
+                                DevicePoint::new(device_rect.min.x, device_rect.min.y.floor()),
+                                DevicePoint::new(device_rect.max.x, device_rect.max.y.ceil()),
+                            )
+                        } else {
+                            DeviceRect::new(
+                                DevicePoint::new(device_rect.min.x.floor(), device_rect.min.y),
+                                DevicePoint::new(device_rect.max.x.ceil(), device_rect.max.y),
+                            )
+                        }
+                    }
                 };
                 let unmapped: Box2D<f32, F> = scale_offset.unmap_rect(&snapped);
                 if swap_xy { swap_box_xy(&unmapped) } else { unmapped }
@@ -390,6 +408,14 @@ pub enum SnapRounding {
     
     
     Line { horizontal: bool },
+    
+    
+    
+    
+    
+    
+    
+    RoundOutNonSubpx { subpx_horizontal: bool },
 }
 
 
@@ -668,6 +694,76 @@ mod tests {
                 device,
             );
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    #[test]
+    fn test_round_out_non_subpx() {
+        let mut cst = SceneSpatialTree::new();
+        let root = cst.root_reference_frame_index();
+        let mut st = SpatialTree::new();
+        st.apply_updates(cst.end_frame_and_get_pending_updates());
+        st.update_tree(&SceneProperties::new());
+
+        
+        
+        let surface = SurfaceInfo::new(
+            root,
+            root,
+            WorldRect::from_origin_and_size(WorldPoint::zero(), WorldSize::new(1000.0, 1000.0)),
+            &st,
+            DevicePixelScale::new(1.0),
+            (1.0, 1.0),
+            (1.0, 1.0),
+            true,
+            false,
+        );
+        let mut snapper = SpaceSnapper::new(&surface, &st);
+        snapper.set_target_spatial_node(root, &st);
+
+        
+        let rect = LayoutRect::from_origin_and_size(
+            LayoutPoint::new(10.3, 40.7),
+            LayoutSize::new(50.3, 3.6),
+        );
+        let near = |a: f32, b: f32| (a - b).abs() < 0.01;
+
+        
+        let h = snapper.snap_rect_rounded(
+            &rect,
+            SnapRounding::RoundOutNonSubpx { subpx_horizontal: true },
+        );
+        assert!(near(h.min.x, 10.3) && near(h.max.x, 60.6), "X must stay exact, got {:?}", h);
+        assert!(near(h.min.y, 40.0) && near(h.max.y, 45.0), "Y must round out, got {:?}", h);
+        
+        assert!(h.min.y <= rect.min.y && h.max.y >= rect.max.y, "Y must not shrink, got {:?}", h);
+
+        
+        let v = snapper.snap_rect_rounded(
+            &rect,
+            SnapRounding::RoundOutNonSubpx { subpx_horizontal: false },
+        );
+        assert!(near(v.min.y, 40.7) && near(v.max.y, 44.3), "Y must stay exact, got {:?}", v);
+        assert!(near(v.min.x, 10.0) && near(v.max.x, 61.0), "X must round out, got {:?}", v);
+
+        
+        let b = snapper.snap_rect_rounded(&rect, SnapRounding::RoundOut);
+        assert!(
+            near(b.min.x, 10.0) && near(b.max.x, 61.0) && near(b.min.y, 40.0) && near(b.max.y, 45.0),
+            "both axes must round out, got {:?}",
+            b,
+        );
+
+        
+        
+        
+        let n = snapper.snap_rect_rounded(&rect, SnapRounding::Nearest);
+        assert!(near(n.max.y, 44.0), "Nearest rounds the fractional edge inward, got {:?}", n);
     }
 }
 

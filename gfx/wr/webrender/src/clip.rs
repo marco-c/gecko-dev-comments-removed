@@ -103,12 +103,12 @@ use crate::ellipse::Ellipse;
 use crate::intern;
 use crate::internal_types::{FastHashMap, FastHashSet, LayoutPrimitiveInfo};
 use crate::prim_store::{VisibleMaskImageTile};
-use crate::prim_store::{RectKey, PolygonKey};
+use crate::prim_store::{ClipSnap, RectKey, PolygonKey};
 use crate::render_task::RenderTask;
 use crate::render_task_graph::RenderTaskGraphBuilder;
 use crate::resource_cache::{ImageRequest, ResourceCache};
 use crate::scene_builder_thread::Interners;
-use crate::space::{SpaceMapper, SpaceSnapper};
+use crate::space::{SnapRounding, SpaceMapper, SpaceSnapper};
 use crate::util::{extract_inner_rect_safe, project_rect, MatrixHelpers, MaxRect, ScaleOffset};
 use euclid::approxeq::ApproxEq;
 use std::{iter, ops, u32, mem};
@@ -153,6 +153,7 @@ impl ClipTreeNode {
         &self,
         snapper: &mut SpaceSnapper,
         spatial_tree: &SpatialTree,
+        rounding: SnapRounding,
     ) -> LayoutRect {
         debug_assert!(self.spatial_node_index != SpatialNodeIndex::INVALID);
         snapper.set_target_spatial_node(self.spatial_node_index, spatial_tree);
@@ -162,9 +163,9 @@ impl ClipTreeNode {
             
             
             let anchor = self.unsnapped_clip_rect.inflate(outset, outset);
-            snapper.snap_rect(&anchor).inflate(-outset, -outset)
+            snapper.snap_rect_rounded(&anchor, rounding).inflate(-outset, -outset)
         } else {
-            snapper.snap_rect(&self.unsnapped_clip_rect)
+            snapper.snap_rect_rounded(&self.unsnapped_clip_rect, rounding)
         }
     }
 }
@@ -1510,6 +1511,7 @@ impl ClipStore {
         pic_spatial_node_index: SpatialNodeIndex,
         visibility_spatial_node_index: SpatialNodeIndex,
         snapper: &mut SpaceSnapper,
+        clip_snap: ClipSnap,
         clip_leaf_id: ClipLeafId,
         spatial_tree: &SpatialTree,
         clip_data_store: &ClipDataStore,
@@ -1529,17 +1531,28 @@ impl ClipStore {
         
         
         
-        let snaps = clip_leaf.prim_clip_root != ClipNodeId::INVALID;
+        
+        
         let mut local_clip_rect = clip_leaf.snapped_local_clip_rect;
         let mut current = clip_leaf.node_id;
 
         while current != clip_root && current != ClipNodeId::NONE {
             let node = clip_tree.get_node(current);
 
-            let clip_rect = if snaps {
-                node.snapped_clip_rect(snapper, spatial_tree)
-            } else {
-                node.unsnapped_clip_rect
+            let clip_rect = match clip_snap {
+                ClipSnap::Nearest =>
+                    node.snapped_clip_rect(snapper, spatial_tree, SnapRounding::Nearest),
+                
+                
+                
+                
+                
+                
+                
+                ClipSnap::Text(rounding) =>
+                    node.snapped_clip_rect(snapper, spatial_tree, rounding),
+                
+                ClipSnap::Exact => node.unsnapped_clip_rect,
             };
 
             if !add_clip_node_to_current_chain(
