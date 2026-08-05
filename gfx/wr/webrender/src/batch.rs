@@ -962,7 +962,10 @@ impl BatchBuilder {
                 "The primitive's bounding box is specified in a different coordinate system from the current batch!");
         }
 
-        let prim_instance = &prim_instances[draw_index.0 as usize];
+        
+        
+        
+        let prim_instance = &prim_instances[prim_info.prim_instance_index.0 as usize];
 
         match prim_instance.kind {
             PrimitiveKind::TextRun { data_handle, .. } => {

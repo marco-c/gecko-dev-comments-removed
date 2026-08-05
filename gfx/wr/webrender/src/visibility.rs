@@ -166,11 +166,30 @@ impl KindScratchHandle {
 
 
 
+
+
+
+
+pub type PrimitiveDrawIndex = storage::Index<PrimitiveDrawHeader>;
+
+
+
+
+
+
+
+
+pub fn draw_index_for_instance(
+    prim_instance_index: PrimitiveInstanceIndex,
+) -> PrimitiveDrawIndex {
+    storage::Index::from_u32(prim_instance_index.0)
+}
+
+
+
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct PrimitiveDrawHeader {
-    
-    
     
     
     

@@ -14,7 +14,8 @@ use crate::internal_types::{FrameAllocator, FrameMemory, FrameVec, TextureSource
 use crate::invalidation::compare::ImageDependency;
 use crate::tile_cache::{TileCacheInstance, TileSurface};
 use crate::tile_cache::TileId;
-use crate::prim_store::{DeferredResolve, PrimitiveInstanceIndex};
+use crate::prim_store::DeferredResolve;
+use crate::visibility::PrimitiveDrawIndex;
 use crate::resource_cache::{ImageRequest, ResourceCache};
 use crate::segment::EdgeMask;
 use crate::util::{extract_inner_rect_safe, Preallocator, ScaleOffset};
@@ -229,7 +230,10 @@ pub struct ExternalSurfaceDescriptor {
     pub update_params: Option<DeviceIntSize>,
     
     pub external_image_id: Option<ExternalImageId>,
-    pub prim_instance_index: PrimitiveInstanceIndex,
+    
+    
+    
+    pub draw_index: PrimitiveDrawIndex,
 }
 
 impl ExternalSurfaceDescriptor {
