@@ -109,7 +109,7 @@ impl RenderTaskCache {
         texture_cache: &mut TextureCache,
     ) {
         self.frame_id += 1;
-        profile_scope!("begin_frame");
+        tracy_rs::profile_scope!("begin_frame");
         
         
         
