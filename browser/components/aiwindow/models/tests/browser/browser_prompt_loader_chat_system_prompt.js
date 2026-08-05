@@ -18,6 +18,13 @@ let gChatModuleRecords;
 let gSkillNames;
 
 add_setup(async function read_real_chat_records() {
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.smartwindow.mistralRelease", false]],
+  });
+
   const records = await getRemoteClient().get();
   gChatParams = records.find(
     record =>

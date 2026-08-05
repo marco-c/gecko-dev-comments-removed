@@ -10,10 +10,6 @@ Services.scriptloader.loadSubScript(
 
 requestLongerTimeout(3);
 
-
-
-
-
 describe("Smart Window model selection", () => {
   let doc, win;
 
@@ -22,6 +18,8 @@ describe("Smart Window model selection", () => {
       set: [
         ["browser.preferences.aiControls", true],
         ["browser.smartwindow.enabled", true],
+        
+        ["browser.smartwindow.mistralRelease", false],
         ["browser.smartwindow.tos.consentTime", 1770830464],
       ],
     });

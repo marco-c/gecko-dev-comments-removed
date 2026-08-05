@@ -2340,7 +2340,7 @@ pref("browser.smartwindow.isDefaultWindow", false);
 pref("browser.smartwindow.firstrun.explainerURL", "https://www.firefox.com/smart-window/?v=product");
 pref("places.semanticHistory.smartwindow.featureGate", false);
 
-pref("browser.smartwindow.mistralRelease", false);
+pref("browser.smartwindow.mistralRelease", true);
 
 
 pref("browser.smartwindow.autoTabGrouping.enabled", false);

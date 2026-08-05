@@ -18,6 +18,8 @@ describe("Smart Window custom model settings", () => {
       set: [
         ["browser.preferences.aiControls", true],
         ["browser.smartwindow.enabled", true],
+        
+        ["browser.smartwindow.mistralRelease", false],
         ["browser.smartwindow.tos.consentTime", 1770830464],
       ],
     });
