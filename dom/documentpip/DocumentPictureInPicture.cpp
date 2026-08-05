@@ -291,6 +291,8 @@ already_AddRefed<Promise> DocumentPictureInPicture::RequestWindow(
 
   
   if (RefPtr<nsPIDOMWindowInner> lastOpenedWindow = mLastOpenedWindow) {
+    
+    OnPiPClosed();
     lastOpenedWindow->Close();
   }
 
@@ -317,12 +319,20 @@ already_AddRefed<Promise> DocumentPictureInPicture::RequestWindow(
 
   
   
+  MOZ_ASSERT(!bc->GetControlsDocumentPiP());
+  nsresult rv = bc->SetControlsDocumentPiP(true);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+  
+  
   
   RefPtr<BrowsingContext> pipTraversable;
-  nsresult rv = OpenPiPWindowUtility(
+  rv = OpenPiPWindowUtility(
       ownerWin->GetOuterWindow(), extent, bc->UsePrivateBrowsing(),
       aOptions.mDisallowReturnToOpener, getter_AddRefs(pipTraversable));
   if (NS_FAILED(rv)) {
+    rv = bc->SetControlsDocumentPiP(false);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
     aRv.ThrowUnknownError("Failed to create PIP window");
     return nullptr;
   }
@@ -333,10 +343,6 @@ already_AddRefed<Promise> DocumentPictureInPicture::RequestWindow(
 
   
   rv = pipTraversable->SetIsDocumentPiP(true);
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
-
-  MOZ_ASSERT(!bc->GetControlsDocumentPiP());
-  rv = bc->SetControlsDocumentPiP(true);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   
