@@ -2103,6 +2103,12 @@ var XULBrowserWindow = {
       ) {
         this.busyUI = true;
 
+        
+        
+        gTrustPanelHandler.resetIconForNavigation(
+          aRequest instanceof Ci.nsIChannel ? aRequest.URI : null
+        );
+
         if (this.spinCursorWhileBusy) {
           window.setCursor("progress");
         }
@@ -2174,6 +2180,9 @@ var XULBrowserWindow = {
       if (this.busyUI && aWebProgress.isTopLevel) {
         this.busyUI = false;
 
+        
+        gTrustPanelHandler.onNavigationComplete();
+
         if (this.spinCursorWhileBusy) {
           window.setCursor("auto");
         }
@@ -2226,6 +2235,11 @@ var XULBrowserWindow = {
 
     let isSameDocument =
       aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT;
+
+    
+    if (!isSameDocument) {
+      gTrustPanelHandler.resetIconForNavigation(aLocationURI);
+    }
     if (
       (location == "about:blank" &&
         BrowserUIUtils.checkEmptyPageOrigin(gBrowser.selectedBrowser)) ||
