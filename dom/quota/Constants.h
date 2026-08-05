@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_QUOTA_CONSTANTS_H_
 #define DOM_QUOTA_CONSTANTS_H_
 
@@ -76,7 +74,7 @@ const uint32_t kNoQuotaVersion = 0;
 
 
 
-const uint32_t kCurrentQuotaVersion = 1;
+const uint32_t kCurrentQuotaVersion = 2;
 
 }  
 
