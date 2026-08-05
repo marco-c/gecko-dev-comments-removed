@@ -7154,30 +7154,6 @@ StyleDirection ScrollContainerFrame::GetScrolledFrameDir() const {
 
 StyleDirection ScrollContainerFrame::GetScrolledFrameDir(
     const nsIFrame* aScrolledFrame, bool aForTextInput) {
-  
-  
-  if (aScrolledFrame->StyleTextReset()->mUnicodeBidi ==
-      StyleUnicodeBidi::Plaintext) {
-    if (aForTextInput) {
-      
-      
-      
-      
-      auto sr = aScrolledFrame->ScrollableOverflowRectRelativeToSelf();
-      auto leftOverflow = -sr.x;
-      auto rightOverflow = sr.XMost() - aScrolledFrame->GetRect().Width();
-      return leftOverflow > rightOverflow ? StyleDirection::Rtl
-                                          : StyleDirection::Ltr;
-    }
-    
-    
-    if (nsIFrame* child = aScrolledFrame->PrincipalChildList().FirstChild()) {
-      return nsBidiPresUtils::ParagraphDirection(child) ==
-                     intl::BidiDirection::LTR
-                 ? StyleDirection::Ltr
-                 : StyleDirection::Rtl;
-    }
-  }
   return aScrolledFrame->GetWritingMode().IsBidiLTR() ? StyleDirection::Ltr
                                                       : StyleDirection::Rtl;
 }
