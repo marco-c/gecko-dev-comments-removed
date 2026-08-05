@@ -782,7 +782,9 @@ class GCRuntime {
 
   
   
-  bool isSymbolReferencedByUncollectedZone(JS::Symbol* sym, MarkColor color);
+  CellColor isAtomReferencedByUncollectedZone(TenuredCell* atom);
+  template <typename T>
+  void maybeMarkWeaklyHeldAtom(T* atom);
 
   
 #ifdef DEBUG
@@ -973,7 +975,6 @@ class GCRuntime {
 
   template <class ZoneIterT>
   IncrementalProgress markWeakReferences(JS::SliceBudget& budget);
-  void markIncomingGraySymbolEdgesFromUncollectedZones();
   IncrementalProgress markWeakReferencesInCurrentGroup(JS::SliceBudget& budget);
   IncrementalProgress markGrayRoots(JS::SliceBudget& budget,
                                     gcstats::PhaseKind phase);
