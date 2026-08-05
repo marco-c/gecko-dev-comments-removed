@@ -384,6 +384,23 @@ nsresult BounceTrackingState::HasBounceTrackingStateForSite(
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(
+        !ShouldTrackPrincipal(principal) ||
+            principal->OriginAttributesRef().EqualsIgnoringFPD(
+                state->mOriginAttributes),
+        "BTP: active-site purge guard sees a live document whose container "
+        "differs from the cached BounceTrackingState OriginAttributes (Bug "
+        "2054941).");
+
+    
     nsAutoCString baseDomain;
     nsresult rv = principal->GetBaseDomain(baseDomain);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -417,6 +434,26 @@ nsresult BounceTrackingState::OnDocumentStartRequest(nsIChannel* aChannel) {
   nsCOMPtr<nsILoadInfo> loadInfo;
   nsresult rv = aChannel->GetLoadInfo(getter_AddRefs(loadInfo));
   NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  
+  
+  
+  
+  
+  
+#ifdef DEBUG
+  if (nsCOMPtr<nsIURI> channelURIForAssert;
+      NS_SUCCEEDED(aChannel->GetURI(getter_AddRefs(channelURIForAssert))) &&
+      channelURIForAssert &&
+      mozilla::net::SchemeIsHttpOrHttps(channelURIForAssert)) {
+    MOZ_ASSERT(
+        loadInfo->GetOriginAttributes().EqualsIgnoringFPD(mOriginAttributes),
+        "BTP: channel OriginAttributes (userContextId/PBM) diverged from the "
+        "cached BounceTrackingState OriginAttributes (Bug 2054941).");
+  }
+#endif
 
   
   
@@ -530,7 +567,26 @@ BounceTrackingState::OnStateChange(nsIWebProgress* aWebProgress,
       browsingContext->Canonical()->GetCurrentWindowGlobal();
   NS_ENSURE_TRUE(windowGlobalParent, NS_ERROR_FAILURE);
 
-  return OnDocumentLoaded(windowGlobalParent->DocumentPrincipal());
+  nsCOMPtr<nsIPrincipal> documentPrincipal =
+      windowGlobalParent->DocumentPrincipal();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(
+      !documentPrincipal || !ShouldTrackPrincipal(documentPrincipal) ||
+          documentPrincipal->OriginAttributesRef().EqualsIgnoringFPD(
+              mOriginAttributes),
+      "BTP: committed document OriginAttributes (userContextId/PBM) diverged "
+      "from the cached BounceTrackingState OriginAttributes (Bug 2054941).");
+
+  return OnDocumentLoaded(documentPrincipal);
 }
 
 NS_IMETHODIMP
