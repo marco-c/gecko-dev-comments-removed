@@ -49,19 +49,17 @@ nsresult GetCurrentProcessMemoryUsage(uint64_t* aResult) {
 }
 
 int GetCycleTimeFrequencyMHz() {
-  static const int frequency = []() {
-    
-    
-    
-    
-    if (!mozilla::has_constant_tsc() && !xpc::IsInAutomation()) {
-      return 0;
-    }
+  
+  
+  
+  
+  
+  
+  if (!mozilla::has_constant_tsc() && !xpc::IsInAutomation()) {
+    return 0;
+  }
 
-    return GetCpuFrequencyMHz();
-  }();
-
-  return frequency;
+  return GetCpuFrequencyMHz();
 }
 
 nsresult GetCpuTimeSinceProcessStartInMs(uint64_t* aResult) {
