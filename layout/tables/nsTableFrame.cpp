@@ -1764,9 +1764,7 @@ void nsTableFrame::Reflow(nsPresContext* aPresContext,
   
   
   
-  for (nsIFrame* kid : groups.mRowGroups) {
-    ConsiderChildOverflow(aDesiredSize.mOverflowAreas, kid);
-  }
+  UnionChildOverflow(aDesiredSize.mOverflowAreas);
 
   
   
@@ -1836,11 +1834,24 @@ void nsTableFrame::FixupPositionedTableParts(nsPresContext* aPresContext,
   
   
   aDesiredSize.SetOverflowAreasToDesiredBounds();
-  nsLayoutUtils::UnionChildOverflow(this, aDesiredSize.mOverflowAreas);
+  UnionChildOverflow(aDesiredSize.mOverflowAreas);
 }
 
-bool nsTableFrame::ComputeCustomOverflow(OverflowAreas& aOverflowAreas) {
-  return nsContainerFrame::ComputeCustomOverflow(aOverflowAreas);
+void nsTableFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas,
+                                      bool aAsIfScrolled) {
+  if (aAsIfScrolled || !DoesClipChildrenInBothAxes()) {
+    
+    for (nsIFrame* f : mFrames) {
+      if (f->IsTableColGroupFrame()) {
+        continue;
+      }
+      ConsiderChildOverflow(aOverflowAreas, f);
+    }
+    
+    
+    
+    
+  }
 }
 
 void nsTableFrame::ReflowTable(ReflowOutput& aDesiredSize,

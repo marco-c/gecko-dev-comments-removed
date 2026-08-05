@@ -2625,7 +2625,6 @@ class nsLayoutUtils {
 
 
 
-
   static void UnionChildOverflow(
       nsIFrame* aFrame, mozilla::OverflowAreas& aOverflowAreas,
       mozilla::FrameChildListIDs aSkipChildLists = {});

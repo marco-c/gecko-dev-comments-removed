@@ -512,7 +512,8 @@ class nsTableFrame : public nsContainerFrame {
                                    const nsRect& aOrigInkOverflow,
                                    bool aIsFirstReflow);
 
-  bool ComputeCustomOverflow(mozilla::OverflowAreas& aOverflowAreas) override;
+  void UnionChildOverflow(mozilla::OverflowAreas&,
+                          bool aAsIfScrolled = false) final;
 
   
   void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
