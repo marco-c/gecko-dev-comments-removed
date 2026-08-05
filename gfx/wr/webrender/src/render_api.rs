@@ -316,9 +316,15 @@ impl Transaction {
     
     
     
+    
+    
+    
+    
+    
     pub fn set_display_list(
         &mut self,
         epoch: Epoch,
+        namespace: IdNamespace,
         (pipeline_id, mut display_list): (PipelineId, BuiltDisplayList),
     ) {
         display_list.set_send_time_ns(zeitstempel::now());
@@ -327,6 +333,7 @@ impl Transaction {
                 display_list,
                 epoch,
                 pipeline_id,
+                namespace,
             }
         );
     }
@@ -847,6 +854,8 @@ pub enum SceneMsg {
         epoch: Epoch,
         
         pipeline_id: PipelineId,
+        
+        namespace: IdNamespace,
     },
     
     
