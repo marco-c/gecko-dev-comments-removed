@@ -1134,6 +1134,19 @@ void Statistics::sendGCTelemetry() {
     }
   }
 
+  {
+    
+    size_t usedBytes, freeBytes, adminBytes;
+    gc->bufferRuntime().getRetainedStats(&usedBytes, &freeBytes, &adminBytes);
+
+    size_t totalBytes = usedBytes + freeBytes + adminBytes;
+    if (totalBytes >= 2 * ChunkSize) {
+      double density = 100.0 * double(usedBytes) / double(totalBytes);
+      runtime->metrics().GC_BUFFER_ALLOC_HEAP_DENSITY(
+          std::clamp(density, 0.0, 100.0));
+    }
+  }
+
   
   bool usedParallelMarking = false;
   if (gc->isParallelMarkingEnabled()) {

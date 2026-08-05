@@ -251,6 +251,12 @@ class BufferAllocatorRuntime {
   
   mozilla::Atomic<size_t, mozilla::ReleaseAcquire> offThreadAccessCount;
 
+  
+  
+  MainThreadData<size_t> usedBytesInRetainedChunks;
+  MainThreadData<size_t> freeBytesInRetainedChunks;
+  MainThreadData<size_t> adminBytesInRetainedChunks;
+
  public:
   BufferAllocatorRuntime();
 
@@ -259,7 +265,14 @@ class BufferAllocatorRuntime {
   void incOffThreadCount();
   void decOffThreadCount();
 
+  
+  void getRetainedStats(size_t* usedBytesOut, size_t* freeBytesOut,
+                        size_t* adminBytesOut);
+  void resetRetainedStats();
+
  private:
+  void addRetainedStats(size_t usedBytes, size_t freeBytes, size_t adminBytes);
+
   bool needLockToAccessBufferMap() const;
 
   
