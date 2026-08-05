@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "api/candidate.h"
 #include "api/create_modular_peer_connection_factory.h"
 #include "api/enable_media_with_defaults.h"
@@ -62,6 +63,7 @@
 #include "rtc_base/thread.h"
 #include "rtc_base/virtual_socket_server.h"
 #include "test/create_test_environment.h"
+#include "test/create_test_field_trials.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/run_loop.h"
@@ -202,7 +204,16 @@ class PeerConnectionBundleBaseTest : public ::testing::Test {
     return CreatePeerConnection(RTCConfiguration());
   }
 
+  WrapperPtr CreatePeerConnection(absl::string_view field_trials) {
+    return CreatePeerConnection(RTCConfiguration(), field_trials);
+  }
+
   WrapperPtr CreatePeerConnection(const RTCConfiguration& config) {
+    return CreatePeerConnection(config, "");
+  }
+
+  WrapperPtr CreatePeerConnection(const RTCConfiguration& config,
+                                  absl::string_view field_trials) {
     
     
     
@@ -235,8 +246,12 @@ class PeerConnectionBundleBaseTest : public ::testing::Test {
     modified_config.set_port_allocator_flags(PORTALLOCATOR_DISABLE_TCP |
                                              PORTALLOCATOR_DISABLE_RELAY);
     modified_config.sdp_semantics = sdp_semantics_;
-    auto result = pc_factory->CreatePeerConnectionOrError(
-        modified_config, PeerConnectionDependencies(observer.get()));
+    PeerConnectionDependencies pc_deps(observer.get());
+    if (!field_trials.empty()) {
+      pc_deps.trials = CreateTestFieldTrialsPtr(field_trials);
+    }
+    auto result = pc_factory->CreatePeerConnectionOrError(modified_config,
+                                                          std::move(pc_deps));
     if (!result.ok()) {
       return nullptr;
     }
@@ -315,7 +330,9 @@ TEST_P(PeerConnectionBundleTest,
   config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyNegotiate;
   auto caller = CreatePeerConnectionWithAudioVideo(config);
   caller->network()->AddInterface(kCallerAddress);
-  auto callee = CreatePeerConnectionWithAudioVideo(config);
+  
+  auto callee = CreatePeerConnectionWithAudioVideo(
+      config, "WebRTC-NoSdpMangleAllowForTesting/Enabled,30/");
   callee->network()->AddInterface(kCalleeAddress);
 
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
@@ -839,7 +856,9 @@ TEST_P(PeerConnectionBundleTest, RemovingContentAndRejectBundleGroup) {
 
 
 TEST_P(PeerConnectionBundleTest, AddContentToBundleGroupInAnswerNotSupported) {
-  auto caller = CreatePeerConnectionWithAudioVideo();
+  
+  auto caller = CreatePeerConnectionWithAudioVideo(
+      "WebRTC-NoSdpMangleAllowForTesting/Enabled,33/");
   auto callee = CreatePeerConnectionWithAudioVideo();
 
   std::unique_ptr<SessionDescriptionInterface> offer = caller->CreateOffer();
@@ -938,7 +957,9 @@ TEST_F(PeerConnectionBundleTestUnifiedPlan,
 }
 
 TEST_F(PeerConnectionBundleTestUnifiedPlan, MultipleBundleGroups) {
-  auto caller = CreatePeerConnection();
+  
+  auto caller =
+      CreatePeerConnection("WebRTC-NoSdpMangleAllowForTesting/Enabled,33/");
   caller->AddAudioTrack("0_audio");
   caller->AddAudioTrack("1_audio");
   caller->AddVideoTrack("2_audio");
@@ -991,9 +1012,11 @@ TEST_F(PeerConnectionBundleTestUnifiedPlan, MultipleBundleGroups) {
 
 
 TEST_F(PeerConnectionBundleTestUnifiedPlan, AddNonBundledSection) {
+  
   RTCConfiguration config;
   config.bundle_policy = PeerConnectionInterface::kBundlePolicyMaxCompat;
-  auto caller = CreatePeerConnection(config);
+  auto caller = CreatePeerConnection(
+      config, "WebRTC-NoSdpMangleAllowForTesting/Enabled,33/");
   caller->AddAudioTrack("0_audio");
   caller->AddAudioTrack("1_audio");
   auto callee = CreatePeerConnection(config);

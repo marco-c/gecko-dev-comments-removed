@@ -356,7 +356,13 @@ TEST_F(PeerConnectionCongestionControlTest, CcfbGetsUsed) {
 }
 
 TEST_F(PeerConnectionCongestionControlTest, CcfbGetsUsedWithPrAnswer) {
-  SetFieldTrials("WebRTC-RFC8888CongestionControlFeedback/Enabled,offer:true/");
+  
+  
+  
+  
+  SetFieldTrials(
+      "WebRTC-RFC8888CongestionControlFeedback/Enabled,offer:true/"
+      "WebRTC-NoSdpMangleAllowForTesting/Enabled,71,86/");
   metrics::Reset();
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();

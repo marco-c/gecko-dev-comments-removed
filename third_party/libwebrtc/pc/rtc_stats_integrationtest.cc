@@ -1267,7 +1267,14 @@ TEST_F(RTCStatsIntegrationTest, ExperimentalPsnrStats) {
 }
 
 TEST_F(RTCStatsIntegrationTest, ExperimentalTransportCcfbStats) {
-  StartCall("WebRTC-RFC8888CongestionControlFeedback/Enabled,offer:true/");
+  
+  
+  
+  
+  
+  StartCall(
+      "WebRTC-RFC8888CongestionControlFeedback/Enabled,offer:true/"
+      "WebRTC-NoSdpMangleAllowForTesting/Enabled,71,86/");
 
   
   

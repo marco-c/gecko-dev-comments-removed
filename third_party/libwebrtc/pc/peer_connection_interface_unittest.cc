@@ -92,6 +92,7 @@
 #include "rtc_base/virtual_socket_server.h"
 #include "rtc_base/weak_ptr.h"
 #include "test/create_test_environment.h"
+#include "test/create_test_field_trials.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/run_loop.h"
@@ -703,11 +704,15 @@ class PeerConnectionInterfaceBaseTest : public ::testing::Test {
   
   
   void CreatePeerConnectionWithoutDtls() {
+    CreatePeerConnectionWithoutDtls("");
+  }
+
+  void CreatePeerConnectionWithoutDtls(absl::string_view field_trials) {
     RTCConfiguration config;
     PeerConnectionFactoryInterface::Options options;
     options.disable_encryption = true;
     pc_factory_->SetOptions(options);
-    CreatePeerConnection(config);
+    CreatePeerConnection(config, field_trials);
     options.disable_encryption = false;
     pc_factory_->SetOptions(options);
   }
@@ -732,6 +737,15 @@ class PeerConnectionInterfaceBaseTest : public ::testing::Test {
   }
 
   void CreatePeerConnection(const RTCConfiguration& config) {
+    CreatePeerConnection(config, "");
+  }
+
+  void CreatePeerConnection(absl::string_view field_trials) {
+    CreatePeerConnection(RTCConfiguration(), field_trials);
+  }
+
+  void CreatePeerConnection(const RTCConfiguration& config,
+                            absl::string_view field_trials) {
     if (pc_) {
       pc_->Close();
       ReleasePeerConnection();
@@ -760,6 +774,9 @@ class PeerConnectionInterfaceBaseTest : public ::testing::Test {
     PeerConnectionDependencies pc_dependencies(&observer_);
     pc_dependencies.cert_generator = std::move(cert_generator);
     pc_dependencies.allocator = std::move(port_allocator);
+    if (!field_trials.empty()) {
+      pc_dependencies.trials = CreateTestFieldTrialsPtr(field_trials);
+    }
     auto result = pc_factory_->CreatePeerConnectionOrError(
         modified_config, std::move(pc_dependencies));
     ASSERT_TRUE(result.ok());
@@ -2191,7 +2208,9 @@ TEST_P(PeerConnectionInterfaceTest, ReceiveFireFoxOffer) {
 
 
 TEST_P(PeerConnectionInterfaceTest, ReceiveUpdatedAudioOfferWithBadCodecs) {
-  CreatePeerConnectionWithoutDtls();
+  
+  CreatePeerConnectionWithoutDtls(
+      "WebRTC-NoSdpMangleAllowForTesting/Enabled,36/");
   AddAudioTrack("audio_label");
   CreateOfferAsLocalDescription();
 
@@ -2826,8 +2845,9 @@ RTC_ALLOW_PLAN_B_DEPRECATION_END()
 
 
 TEST_P(PeerConnectionInterfaceTest, RejectMediaContent) {
+  
   RTCConfiguration config;
-  CreatePeerConnection(config);
+  CreatePeerConnection(config, "WebRTC-NoSdpMangleAllowForTesting/Enabled,1/");
   
   
   CreateAndSetRemoteOffer(kSdpStringWithStream1PlanB);
@@ -2879,8 +2899,8 @@ RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN()
 
 
 TEST_F(PeerConnectionInterfaceTestPlanB, RemoveTrackThenRejectMediaContent) {
-  RTCConfiguration config;
-  CreatePeerConnection(config);
+  
+  CreatePeerConnection("WebRTC-NoSdpMangleAllowForTesting/Enabled,2/");
   CreateAndSetRemoteOffer(GetSdpStringWithStream1());
   MediaStreamInterface* remote_stream = observer_.remote_streams()->at(0);
   remote_stream->RemoveTrack(remote_stream->GetVideoTracks()[0]);
@@ -3174,8 +3194,10 @@ RTC_ALLOW_PLAN_B_DEPRECATION_END()
 
 TEST_P(PeerConnectionInterfaceTest,
        ChangeSsrcOnTrackInLocalSessionDescription) {
+  
   RTCConfiguration config;
-  CreatePeerConnection(config);
+  CreatePeerConnection(config,
+                       "WebRTC-NoSdpMangleAllowForTesting/Enabled,3,27/");
 
   AddAudioTrack(kAudioTracks[0]);
   AddVideoTrack(kVideoTracks[0]);
@@ -3400,7 +3422,8 @@ TEST_P(PeerConnectionInterfaceTest,
 
 TEST_P(PeerConnectionInterfaceTest, CurrentAndPendingDescriptions) {
   
-  CreatePeerConnection();
+  
+  CreatePeerConnection("WebRTC-NoSdpMangleAllowForTesting/Enabled,2/");
 
   
   
