@@ -23,11 +23,6 @@
 namespace webrtc {
 
 
-std::unique_ptr<TransformableVideoFrameInterface> CreateVideoSenderFrame();
-
-
-std::unique_ptr<TransformableVideoFrameInterface> CreateVideoReceiverFrame();
-
 
 RTC_EXPORT std::unique_ptr<TransformableAudioFrameInterface> CloneAudioFrame(
     TransformableAudioFrameInterface* original);
