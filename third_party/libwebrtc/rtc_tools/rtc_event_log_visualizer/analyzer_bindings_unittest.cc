@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
+#include "api/environment/force_test_environment.h"
 #include "rtc_base/system/file_wrapper.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
@@ -53,6 +54,11 @@ class RtcEventLogAnalyzerBindingsTest : public ::testing::Test {
 
  protected:
   std::vector<char> event_log_contents_;
+  
+  
+  
+  
+  AutoBypassTestEnvironmentCheck bypass_;
 };
 
 TEST_F(RtcEventLogAnalyzerBindingsTest, OutgoingBitrateChart) {
