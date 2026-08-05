@@ -1978,6 +1978,11 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
   explicit RDDSandboxPolicy(SandboxBrokerClient* aBroker) {
     mBroker = aBroker;
     mMayCreateShmem = true;
+#ifdef MOZ_ENABLE_VULKAN_VIDEO
+    if (aBroker) {
+      mBrokeredConnect = true;
+    }
+#endif
   }
 
 #ifndef ANDROID
@@ -2040,6 +2045,15 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
         
         
         
+#ifdef MOZ_ENABLE_VULKAN_VIDEO
+        
+        
+        
+        
+        if (mBrokeredConnect) {
+          return SandboxPolicyCommon::EvaluateSocketCall(aCall, aHasArgs);
+        }
+#endif
         return Some(Error(EACCES));
 
       default:
@@ -2177,6 +2191,13 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
             .Case(F_ADD_SEALS, Allow())
             .Default(SandboxPolicyCommon::EvaluateSyscall(sysno));
       }
+      
+      
+      
+      
+      case __NR_socket:
+      case __NR_connect:
+        return SandboxPolicyCommon::EvaluateSyscall(sysno);
 #endif
         
       default:
