@@ -1129,6 +1129,21 @@ nsresult WakeLockListener::Callback(const nsAString& topic,
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (backgroundLock && topic.Equals(u"video-playing"_ns)) {
+    shouldLock = false;
+  }
+
+  
+  
   SetState(topic, !backgroundLock,  false);
 
   
