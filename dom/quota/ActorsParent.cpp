@@ -3040,39 +3040,23 @@ nsresult QuotaManager::LoadQuota() {
         }
 
         if (mCacheUsable) {
-          
-          
-          
-          
-          
-          QM_TRY_INSPECT(const bool& shutdownFailed,
-                         DidLatestShutdownFail(*mStorageConnection));
-          if (shutdownFailed) {
-            return false;
-          }
-
           QM_TRY_INSPECT(
               const auto& stmt,
               CreateAndExecuteSingleStepStatement<
                   SingleStepResult::ReturnNullIfNoResult>(
-                  *mStorageConnection, "SELECT valid, build_id FROM cache"_ns));
+                  *mStorageConnection, "SELECT build_id FROM cache"_ns));
 
           QM_TRY(OkIf(stmt), Err(NS_ERROR_FILE_CORRUPTED));
 
-          QM_TRY_INSPECT(const int32_t& valid,
-                         MOZ_TO_RESULT_INVOKE_MEMBER(stmt, GetInt32, 0));
-
-          if (valid) {
-            if (!StaticPrefs::dom_quotaManager_caching_checkBuildId()) {
-              return true;
-            }
-
-            QM_TRY_INSPECT(const auto& buildId,
-                           MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
-                               nsAutoCString, stmt, GetUTF8String, 1));
-
-            return buildId == *gBuildId;
+          if (!StaticPrefs::dom_quotaManager_caching_checkBuildId()) {
+            return true;
           }
+
+          QM_TRY_INSPECT(const auto& buildId,
+                         MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(nsAutoCString, stmt,
+                                                           GetUTF8String, 0));
+
+          return buildId == *gBuildId;
         }
 
         return false;
