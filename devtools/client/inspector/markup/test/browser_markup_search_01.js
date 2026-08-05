@@ -249,6 +249,12 @@ add_task(async function () {
     "The ::backdrop element is selected"
   );
   checkHighlightedSearchResults(inspector, ["::backdrop"]);
+  
+  let onMarkupMutation = inspector.once("markupmutation");
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+    content.document.querySelector("dialog").close();
+  });
+  await onMarkupMutation;
 
   
   await searchInMarkupView(inspector, "my_before_text");
@@ -277,9 +283,20 @@ add_task(async function () {
   );
   checkHighlightedSearchResults(inspector, ["::picker-icon"]);
 
+  
+  
+  await showCustomizableSelectPicker(inspector, "select");
+  await searchInMarkupView(inspector, "::checkmark");
+  is(
+    inspector.selection.nodeFront.displayName,
+    "::checkmark",
+    "The ::checkmark element is selected"
+  );
+  checkHighlightedSearchResults(inspector, ["::checkmark"]);
+
   info("Search for view-transition pseudo elements");
   
-  const onMarkupMutation = inspector.once("markupmutation");
+  onMarkupMutation = inspector.once("markupmutation");
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
     const document = content.document;
     content.testTransition = document.startViewTransition(() => {

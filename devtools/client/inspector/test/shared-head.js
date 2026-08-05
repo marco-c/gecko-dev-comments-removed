@@ -1233,3 +1233,25 @@ async function assertDisplayedRulesCount(
   const ruleElements = view.element.querySelectorAll(".ruleview-rule");
   is(ruleElements.length, expected, message);
 }
+
+
+
+
+
+
+
+
+
+async function showCustomizableSelectPicker(inspector, selector) {
+  const onMarkupMutation = inspector.once("markupmutation");
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [selector], slctr => {
+    
+    for (const modal of content.document.querySelectorAll(":modal")) {
+      modal.close();
+    }
+    const selectEl = content.document.querySelector(slctr);
+    selectEl.scrollIntoView({ behavior: "instant" });
+    EventUtils.synthesizeMouseAtCenter(selectEl, {}, content);
+  });
+  await onMarkupMutation;
+}
