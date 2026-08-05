@@ -71,6 +71,13 @@ void EncoderOvershootDetector::SetTargetRate(DataRate target_bitrate,
 }
 
 void EncoderOvershootDetector::OnEncodedFrame(size_t bytes, int64_t time_ms) {
+  if (bytes == 0) {
+    if (time_last_update_ms_ != -1) {
+      time_last_update_ms_ = std::max(time_last_update_ms_, time_ms);
+    }
+    return;
+  }
+
   
   
   LeakBits(time_ms);

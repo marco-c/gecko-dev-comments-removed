@@ -64,6 +64,7 @@ class EncoderBitrateAdjuster {
   
   
   void OnEncodedFrame(DataSize size, int stream_index, int temporal_index);
+  void OnFrameDropped();
 
   void Reset();
 

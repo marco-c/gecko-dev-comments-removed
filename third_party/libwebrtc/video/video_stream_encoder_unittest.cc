@@ -8156,7 +8156,7 @@ TEST_F(VideoStreamEncoderTest, DropsFramesWhenEncoderOvershoots) {
     
     
     
-    overshoot_factor = 3.0;
+    overshoot_factor = 3.5;
   }
   fake_encoder_.SimulateOvershoot(overshoot_factor);
   video_stream_encoder_->WaitUntilTaskQueueIsIdle();
