@@ -94,6 +94,9 @@ class VoiceChannelFactoryInterface {
   virtual ~VoiceChannelFactoryInterface() = default;
 
   
+  
+  
+  
   virtual std::unique_ptr<VoiceMediaSendChannelInterface> CreateSendChannel(
       const Environment& env,
       Call* call,
@@ -102,6 +105,9 @@ class VoiceChannelFactoryInterface {
       const CryptoOptions& crypto_options,
       absl::AnyInvocable<void()> parameters_changed_callback = nullptr) = 0;
 
+  
+  
+  
   
   virtual std::unique_ptr<VoiceMediaReceiveChannelInterface>
   CreateReceiveChannel(const Environment& env,
@@ -155,6 +161,8 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface,
   virtual void Init() = 0;
   
   virtual void Terminate() = 0;
+  
+  virtual void ApplyGlobalOptions(const AudioOptions& options) = 0;
 
   
   virtual scoped_refptr<AudioState> GetAudioState() const = 0;

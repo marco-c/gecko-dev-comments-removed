@@ -122,8 +122,12 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
 
   
   
-  
   void ApplyOptions(const AudioOptions& options);
+  
+  
+  
+  
+  void ApplyGlobalOptions(const AudioOptions& options) override;
 
   AudioDeviceModule* adm();
   AudioProcessing* apm() const;

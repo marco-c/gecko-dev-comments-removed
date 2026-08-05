@@ -14,6 +14,7 @@
 #include <memory>
 #include <utility>
 
+#include "api/audio_options.h"
 #include "api/environment/environment.h"
 #include "api/packet_socket_factory.h"
 #include "api/peer_connection_interface.h"
@@ -119,6 +120,9 @@ class ConnectionContext final : public RefCountedNonVirtual<ConnectionContext> {
   
   void set_use_rtx(bool use_rtx) { use_rtx_ = use_rtx; }
 
+  
+  void ApplyGlobalAudioOptions(const AudioOptions& options);
+
  protected:
   friend class MediaEngineReference;
   
@@ -176,6 +180,10 @@ class ConnectionContext final : public RefCountedNonVirtual<ConnectionContext> {
   
   
   bool use_rtx_;
+
+  
+  
+  AudioOptions global_audio_options_ RTC_GUARDED_BY(worker_thread());
 };
 
 }  

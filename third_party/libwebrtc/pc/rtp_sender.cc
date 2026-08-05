@@ -1259,26 +1259,28 @@ void AudioRtpSender::SetSend() {
   if (stopped_) {
     return;
   }
-  AudioOptions options;
+  
+  
+  bool track_enabled = track_->enabled();
+  const AudioOptions* options_ptr = nullptr;
 #if !defined(WEBRTC_CHROMIUM_BUILD) && !defined(WEBRTC_WEBKIT_BUILD)
   
   
   
-  if (track_->enabled() && audio_track()->GetSource() &&
+  
+  AudioOptions options;
+  if (track_enabled && audio_track()->GetSource() &&
       !audio_track()->GetSource()->remote()) {
     options = audio_track()->GetSource()->options();
+    options_ptr = &options;
   }
 #endif
-
-  
-  
-  bool track_enabled = track_->enabled();
   InvalidateCache();
   bool success = worker_thread_->BlockingCall([&, ssrc = ssrc_] {
     RTC_DCHECK_RUN_ON(worker_thread_);
     return media_channel_
                ? voice_media_channel()->SetAudioSend(
-                     ssrc, track_enabled, &options, sink_adapter_.get())
+                     ssrc, track_enabled, options_ptr, sink_adapter_.get())
                : false;
   });
   if (!success) {
@@ -1298,8 +1300,7 @@ void AudioRtpSender::ClearSend() {
 
 void AudioRtpSender::ClearSend_w(uint32_t ssrc) {
   if (media_channel_) {
-    AudioOptions options;
-    voice_media_channel()->SetAudioSend(ssrc, false, &options, nullptr);
+    voice_media_channel()->SetAudioSend(ssrc, false, nullptr, nullptr);
   }
 }
 
