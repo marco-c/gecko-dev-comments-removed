@@ -2144,7 +2144,10 @@ nsresult nsMenuPopupFrame::AttributeChanged(int32_t aNameSpaceID,
     MoveToAttributePosition();
   }
 
-  if (aAttribute == nsGkAtoms::remote && GetWidget()) {
+  if ((aAttribute == nsGkAtoms::remote || aAttribute == nsGkAtoms::level) &&
+      GetWidget() && !IsOpen()) {
+    
+    
     
     
     
