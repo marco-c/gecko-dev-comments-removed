@@ -1724,7 +1724,7 @@ void FetchEventOp::RejectedCallback(JSContext* aCx,
   GetRequestURL(requestURL);
 
   AsyncLog(sourceSpec, line, column, "InterceptionRejectedResponseWithURL"_ns,
-           {std::move(requestURL), valueString});
+           {std::move(requestURL), std::move(valueString)});
 
   
   
