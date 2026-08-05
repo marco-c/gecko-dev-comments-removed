@@ -1192,13 +1192,12 @@ tls13_ChInnerAppendExtension(sslSocket *ss, PRUint16 extensionType,
             return SECSuccess;
         }
         
-        willCompress = ss->opt.enableEchXtnCompression &&
-                       (len == extensionData->len &&
+        willCompress = (len == extensionData->len &&
                         NSS_SecureMemcmp(buf, extensionData->buf, len) == 0);
         p = buf;
     } else {
         
-        willCompress = ss->opt.enableEchXtnCompression;
+        willCompress = PR_TRUE;
         p = extensionData->buf;
         len = extensionData->len;
     }
@@ -1344,10 +1343,11 @@ tls13_RandomizePsk(PRUint8 *buf, unsigned int len)
 
 
 
+
 SECStatus
 tls13_ConstructInnerExtensionsFromOuter(sslSocket *ss, sslBuffer *chOuterXtnsBuf,
                                         sslBuffer *chInnerXtns, sslBuffer *inOutPskXtn,
-                                        PRBool finalPass)
+                                        PRBool shouldCompress)
 {
     SECStatus rv;
     PRUint64 extensionType;
@@ -1361,8 +1361,8 @@ tls13_ConstructInnerExtensionsFromOuter(sslSocket *ss, sslBuffer *chOuterXtnsBuf
     PRUint16 called[MAX_EXTENSION_WRITERS] = { 0 }; 
     unsigned int nCalled = 0;
 
-    SSL_TRC(50, ("%d: TLS13[%d]: Constructing ECH inner extensions (%s pass)",
-                 SSL_GETPID(), ss->fd, finalPass ? "final" : "transcript"));
+    SSL_TRC(50, ("%d: TLS13[%d]: Constructing ECH inner extensions %s compression",
+                 SSL_GETPID(), ss->fd, shouldCompress ? "with" : "without"));
 
     
 
@@ -1429,7 +1429,7 @@ tls13_ConstructInnerExtensionsFromOuter(sslSocket *ss, sslBuffer *chOuterXtnsBuf
                     goto loser;
                 }
                 
-                if (finalPass) {
+                if (shouldCompress) {
                     ss->xtnData.echAdvertised[ss->xtnData.echNumAdvertised++] = extensionType;
                 }
                 break;
@@ -1463,12 +1463,12 @@ tls13_ConstructInnerExtensionsFromOuter(sslSocket *ss, sslBuffer *chOuterXtnsBuf
                     }
                 }
                 
-                if (finalPass) {
+                if (shouldCompress) {
                     ss->xtnData.echAdvertised[ss->xtnData.echNumAdvertised++] = extensionType;
                 }
                 break;
             case ssl_tls13_pre_shared_key_xtn:
-                if (inOutPskXtn && !finalPass) {
+                if (inOutPskXtn && !shouldCompress) {
                     rv = sslBuffer_AppendNumber(&pskXtn, extensionType, 2);
                     if (rv != SECSuccess) {
                         goto loser;
@@ -1500,7 +1500,7 @@ tls13_ConstructInnerExtensionsFromOuter(sslSocket *ss, sslBuffer *chOuterXtnsBuf
                     }
                 }
                 
-                if (finalPass) {
+                if (shouldCompress) {
                     ss->xtnData.echAdvertised[ss->xtnData.echNumAdvertised++] = extensionType;
                 }
                 break;
@@ -1509,7 +1509,7 @@ tls13_ConstructInnerExtensionsFromOuter(sslSocket *ss, sslBuffer *chOuterXtnsBuf
                 rv = tls13_ChInnerAppendExtension(ss, extensionType,
                                                   &extensionData,
                                                   &dupXtns, chInnerXtns,
-                                                  finalPass,
+                                                  shouldCompress,
                                                   called, &nCalled);
                 if (rv != SECSuccess) {
                     goto loser;
@@ -1519,7 +1519,7 @@ tls13_ConstructInnerExtensionsFromOuter(sslSocket *ss, sslBuffer *chOuterXtnsBuf
         }
     }
 
-    rv = tls13_WriteDupXtnsToChInner(finalPass, &dupXtns, chInnerXtns);
+    rv = tls13_WriteDupXtnsToChInner(shouldCompress, &dupXtns, chInnerXtns);
     if (rv != SECSuccess) {
         goto loser;
     }
@@ -1535,7 +1535,7 @@ tls13_ConstructInnerExtensionsFromOuter(sslSocket *ss, sslBuffer *chOuterXtnsBuf
         
 
 
-        if (finalPass) {
+        if (shouldCompress) {
             rv = sslBuffer_AppendBuffer(chInnerXtns, inOutPskXtn);
         } else {
             rv = sslBuffer_AppendBuffer(chInnerXtns, &pskXtn);
@@ -2210,7 +2210,7 @@ tls13_MaybeGreaseEch(sslSocket *ss, const sslBuffer *preamble, sslBuffer *buf)
     derivedData = PK11_DeriveWithFlags(hmacPrk, CKM_HKDF_DATA,
                                        &paramsi, CKM_HKDF_DATA,
                                        CKA_DERIVE, kNonPayloadLen + payloadLen,
-                                       0);
+                                       CKF_VERIFY);
     if (!derivedData) {
         goto loser;
     }
@@ -2537,6 +2537,16 @@ tls13_UnencodeChInner(sslSocket *ss, const SECItem *sidBytes, SECItem **echInner
     }
 
     
+    if (!ssl3_FindExtension(ss, ssl_tls13_outer_extensions_xtn)) {
+        rv = sslBuffer_AppendVariable(&unencodedChInner, tmpReadBuf.buf, tmpReadBuf.len, 2);
+        if (rv != SECSuccess) {
+            goto loser;
+        }
+        sslBuffer_Clear(&unencodedChInner);
+        return SECSuccess;
+    }
+
+    
     rv = sslBuffer_Skip(&unencodedChInner, 2, &xtnsOffset);
     if (rv != SECSuccess) {
         goto loser;
@@ -2804,7 +2814,6 @@ tls13_MaybeAcceptEch(sslSocket *ss, const SECItem *sidBytes, const PRUint8 *chOu
 
     
 
-    PORT_Assert(PR_CLIST_IS_EMPTY(&ss->ssl3.hs.echOuterExtensions));
     ssl3_MoveRemoteExtensions(&ss->ssl3.hs.echOuterExtensions, &ss->ssl3.hs.remoteExtensions);
 
     rv = tls13_UnencodeChInner(ss, sidBytes, &decryptedChInner);

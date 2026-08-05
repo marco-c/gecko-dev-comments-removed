@@ -1,0 +1,13 @@
+
+
+
+
+project = "NSS"
+extensions = []
+root_doc = "index"
+
+
+
+suppress_warnings = ["ref.ref"]
+
+exclude_patterns = []
