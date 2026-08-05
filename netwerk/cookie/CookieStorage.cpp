@@ -367,7 +367,7 @@ void CookieStorage::RemoveCookie(const nsACString& aBaseDomain,
     cookie = matchIter.Cookie();
 
     
-    if (cookie && !aFromHttp && cookie->IsHttpOnly()) {
+    if (!aFromHttp && cookie->IsHttpOnly()) {
       return;
     }
 
