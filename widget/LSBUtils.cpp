@@ -79,11 +79,11 @@ bool GetOSRelease(nsACString& aDistributor, nsACString& aDescription,
   }
   
   if (seen_id && !name.IsEmpty() && name.EqualsIgnoreCase(aDistributor)) {
-    aDistributor = name;
+    aDistributor = std::move(name);
   }
   
   if (!seen_version_id && !build_id.IsEmpty()) {
-    aRelease = build_id;
+    aRelease = std::move(build_id);
     seen_version_id = true;
   }
   
