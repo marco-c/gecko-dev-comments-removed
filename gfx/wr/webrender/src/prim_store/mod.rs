@@ -22,7 +22,7 @@ use crate::resource_cache::ImageProperties;
 use std::{hash, u32, usize};
 use crate::util::Recycler;
 use crate::internal_types::{FastHashSet, LayoutPrimitiveInfo};
-use crate::visibility::{draw_index_for_instance, PrimitiveDrawHeader, PrimitiveDrawIndex};
+use crate::visibility::{PrimitiveDrawHeader, PrimitiveDrawIndex};
 
 pub mod backdrop;
 pub mod borders;
@@ -518,7 +518,17 @@ pub struct PrimitiveFrameScratch {
     
     
     
+    
+    
+    
     draws: Vec<PrimitiveDrawHeader>,
+
+    
+    
+    
+    
+    
+    instance_to_draw: Vec<PrimitiveDrawIndex>,
 
     
     
@@ -559,6 +569,7 @@ impl Default for PrimitiveFrameScratch {
     fn default() -> Self {
         PrimitiveFrameScratch {
             draws: Vec::new(),
+            instance_to_draw: Vec::new(),
             pictures: storage::Storage::new(0),
             text_runs: storage::Storage::new(0),
             glyph_keys: GlyphKeyStorage::new(0),
@@ -576,7 +587,36 @@ impl PrimitiveFrameScratch {
     
     pub fn reset_draws(&mut self, prim_count: usize) {
         self.draws.clear();
-        self.draws.resize_with(prim_count, PrimitiveDrawHeader::new);
+        self.instance_to_draw.clear();
+        self.instance_to_draw.resize(prim_count, PrimitiveDrawIndex::INVALID);
+    }
+
+    
+    
+    pub fn push_draw(&mut self, header: PrimitiveDrawHeader) -> PrimitiveDrawIndex {
+        let prim_instance_index = header.prim_instance_index;
+        debug_assert!(prim_instance_index.0 != PrimitiveInstanceIndex::INVALID.0);
+
+        let draw_index = PrimitiveDrawIndex::from_u32(self.draws.len() as u32);
+        self.draws.push(header);
+        self.instance_to_draw[prim_instance_index.0 as usize] = draw_index;
+
+        draw_index
+    }
+
+
+    
+    pub fn draw_index_for_instance(
+        &self,
+        prim_instance_index: PrimitiveInstanceIndex,
+    ) -> Option<PrimitiveDrawIndex> {
+        let draw_index = self.instance_to_draw[prim_instance_index.0 as usize];
+
+        if draw_index == PrimitiveDrawIndex::INVALID {
+            None
+        } else {
+            Some(draw_index)
+        }
     }
 
     
@@ -592,25 +632,18 @@ impl PrimitiveFrameScratch {
     
     
     
-    
-    
-    
     pub fn draw_for_instance(
         &self,
         prim_instance_index: PrimitiveInstanceIndex,
-    ) -> &PrimitiveDrawHeader {
-        self.draw(draw_index_for_instance(prim_instance_index))
+    ) -> Option<&PrimitiveDrawHeader> {
+        self.draw_index_for_instance(prim_instance_index)
+            .map(|draw_index| self.draw(draw_index))
     }
 
-    pub fn draw_for_instance_mut(
-        &mut self,
-        prim_instance_index: PrimitiveInstanceIndex,
-    ) -> &mut PrimitiveDrawHeader {
-        self.draw_mut(draw_index_for_instance(prim_instance_index))
-    }
 
     pub fn recycle(&mut self, recycler: &mut Recycler) {
         recycler.recycle_vec(&mut self.draws);
+        recycler.recycle_vec(&mut self.instance_to_draw);
         self.pictures.recycle(recycler);
         self.text_runs.recycle(recycler);
         self.glyph_keys.recycle(recycler);

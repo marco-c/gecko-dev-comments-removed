@@ -120,6 +120,8 @@ bitflags! {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub enum DrawState {
     
+    
+    
     Unset,
     
     Culled,
@@ -170,27 +172,14 @@ impl KindScratchHandle {
 
 
 
+
 pub type PrimitiveDrawIndex = storage::Index<PrimitiveDrawHeader>;
-
-
-
-
-
-
-
-
-pub fn draw_index_for_instance(
-    prim_instance_index: PrimitiveInstanceIndex,
-) -> PrimitiveDrawIndex {
-    storage::Index::from_u32(prim_instance_index.0)
-}
 
 
 
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct PrimitiveDrawHeader {
-    
     
     
     
@@ -245,7 +234,11 @@ impl PrimitiveDrawHeader {
         }
     }
 
-    pub fn reset(&mut self) {
+    
+    
+    
+    
+    pub fn mark_culled(&mut self) {
         self.state = DrawState::Culled;
         self.clip_task_index = ClipTaskIndex::INVALID;
         self.kind_scratch = KindScratchHandle::None;
@@ -343,26 +336,6 @@ pub fn update_prim_visibility(
 
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        for idx in cluster.prim_range() {
-            let prim_instance_index = PrimitiveInstanceIndex(idx as u32);
-            let draw = frame_state
-                .scratch
-                .primitive
-                .frame
-                .draw_for_instance_mut(prim_instance_index);
-            draw.reset();
-            draw.prim_instance_index = prim_instance_index;
-        }
 
         
         if !cluster.flags.contains(ClusterFlags::IS_VISIBLE) {
@@ -401,12 +374,12 @@ pub fn update_prim_visibility(
             let policy = prim_instance.snap_policy(snaps, frame_state.data_stores);
             let snapped_local_rect =
                 snapper.snap_rect_rounded(&prim_instance.unsnapped_prim_rect, policy.rect);
-            frame_state
-                .scratch
-                .primitive
-                .frame
-                .draw_for_instance_mut(PrimitiveInstanceIndex(prim_instance_index as u32))
-                .snapped_local_rect = snapped_local_rect;
+
+            
+            
+            let mut draw = PrimitiveDrawHeader::new();
+            draw.prim_instance_index = PrimitiveInstanceIndex(prim_instance_index as u32);
+            draw.snapped_local_rect = snapped_local_rect;
 
             
             
@@ -463,12 +436,8 @@ pub fn update_prim_visibility(
 
                 if is_passthrough {
                     
-                    frame_state
-                        .scratch
-                        .primitive
-                        .frame
-                        .draw_for_instance_mut(PrimitiveInstanceIndex(prim_instance_index as u32))
-                        .state = DrawState::PassThrough;
+                    draw.state = DrawState::PassThrough;
+                    frame_state.scratch.primitive.frame.push_draw(draw);
 
                     continue;
                 } else {
@@ -480,12 +449,7 @@ pub fn update_prim_visibility(
 
             let local_coverage_rect = frame_state.data_stores.get_local_prim_coverage_rect(
                 prim_instance,
-                frame_state
-                    .scratch
-                    .primitive
-                    .frame
-                    .draw_for_instance(PrimitiveInstanceIndex(prim_instance_index as u32))
-                    .snapped_local_rect,
+                draw.snapped_local_rect,
                 &store.pictures,
                 frame_state.surfaces,
             );
@@ -523,12 +487,13 @@ pub fn update_prim_visibility(
                     continue;
                 }
             };
-            frame_state
-                .scratch
-                .primitive
-                .frame
-                .draw_for_instance_mut(PrimitiveInstanceIndex(prim_instance_index as u32))
-                .clip_chain = clip_chain;
+            draw.clip_chain = clip_chain;
+
+            
+            
+            
+            
+            let draw_index = frame_state.scratch.primitive.frame.push_draw(draw);
 
             let is_mix_blend_picture = |prim_instance: &PrimitiveInstance| {
                 if let PrimitiveKind::Picture { pic_index, .. } = prim_instance.kind {
@@ -544,25 +509,24 @@ pub fn update_prim_visibility(
             };
 
             if is_root_tile_cache && is_mix_blend_picture(prim_instance) {
-                let prim_clip_chain = &frame_state.scratch.primitive.frame.draw_for_instance(PrimitiveInstanceIndex(prim_instance_index as u32)).clip_chain;
                 if let Some(tile_cache) = tile_cache {
-                    tile_cache.mix_blend_pic_rects.push(prim_clip_chain.pic_coverage_rect);
+                    tile_cache.mix_blend_pic_rects.push(clip_chain.pic_coverage_rect);
                 }
             }
 
             {
                 let prim_surface_index = frame_state.surface_stack.last().unwrap().1;
-                let prim_clip_chain = &frame_state.scratch.primitive.frame.draw_for_instance(PrimitiveInstanceIndex(prim_instance_index as u32)).clip_chain;
 
                 
                 let surface = &mut frame_state.surfaces[prim_surface_index.0];
-                surface.clipped_local_rect = surface.clipped_local_rect.union(&prim_clip_chain.pic_coverage_rect);
+                surface.clipped_local_rect =
+                    surface.clipped_local_rect.union(&clip_chain.pic_coverage_rect);
             }
 
             let new_state = match tile_cache {
                 Some(tile_cache) => {
                     tile_cache.update_prim_dependencies(
-                        PrimitiveInstanceIndex(prim_instance_index as u32),
+                        draw_index,
                         prim_instance,
                         cluster.spatial_node_index,
                         
@@ -590,12 +554,7 @@ pub fn update_prim_visibility(
                     }
                 }
             };
-            frame_state
-                .scratch
-                .primitive
-                .frame
-                .draw_for_instance_mut(PrimitiveInstanceIndex(prim_instance_index as u32))
-                .state = new_state;
+            frame_state.scratch.primitive.frame.draw_mut(draw_index).state = new_state;
         }
     }
 

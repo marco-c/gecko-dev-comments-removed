@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use api::{
     AlphaType, ColorDepth, ColorF, ColorRange, ExternalImageData, ExternalImageType, ImageBufferKind, ImageKey as ApiImageKey, ImageRendering, YuvColorSpace, YuvFormat
@@ -25,8 +25,8 @@ use crate::resource_cache::ImageRequest;
 use crate::visibility::compute_conservative_visible_rect;
 use crate::{image_tiling, quad};
 
-
-
+// Key that identifies a unique (partial) image that is being
+// stored in the render task cache.
 #[derive(Debug, Copy, Clone, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -35,10 +35,10 @@ pub struct ImageCacheKey {
     pub texel_rect: Option<DeviceIntRect>,
 }
 
-
-
-
-
+// `StretchSizeKey` now lives in `webrender_api::key_types` so builder-side
+// interning keys can reference it. The resolved `StretchSize` below (and its
+// frame-build `resolve`) stay here. Re-exported to keep existing references
+// working.
 pub use api::key_types::StretchSizeKey;
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -61,9 +61,9 @@ impl From<StretchSizeKey> for StretchSize {
 }
 
 impl StretchSize {
-    
-    
-    
+    /// Resolve to the LayoutSize used for the GPU shader and tiling math.
+    /// Per-axis: an axis flagged `fills_*` resolves to the snapped prim
+    /// rect's extent on that axis; the other axis keeps the stored size.
     pub fn resolve(self, prim_rect: &LayoutRect) -> LayoutSize {
         let prim_size = prim_rect.size();
         LayoutSize::new(
@@ -73,8 +73,8 @@ impl StretchSize {
     }
 }
 
-
-
+// `Image` now lives in `webrender_api::interned_prims` so content-process
+// interning can hold it. Re-exported to keep existing references working.
 pub use api::interned_prims::Image;
 
 pub type ImageKey = PrimKey<Image>;
@@ -133,12 +133,12 @@ pub fn prepare_image_quads(
 
     let premultiplied = image_data.alpha_type == AlphaType::PremultipliedAlpha;
 
-    
-    
-    
-    
-    
-    
+    // Tighten the clip rect because decomposing the repeated image can
+    // produce primitives that are partially covering the original image
+    // rect and we want to clip these extra parts out.
+    // We also rely on having a tight clip rect in some cases other than
+    // tiled/repeated images, for example when rendering a snapshot image
+    // where the snapshot area is tighter than the rasterized area.
     let tight_clip_rect = clip_chain
         .local_clip_rect
         .intersection(&prim_rect)
@@ -157,7 +157,7 @@ pub fn prepare_image_quads(
 
 
     match image_properties.tiling {
-        
+        // Non-tiled (most common) path.
         None => {
             let size = frame_state.resource_cache.request_image(
                 request,
@@ -173,8 +173,8 @@ pub fn prepare_image_quads(
             );
 
             if let Some(external_image) = image_properties.external_image {
-                
-                
+                // On some devices we cannot render from an ImageBufferKind::TextureExternal
+                // source using most shaders, so must perform a copy to a regular texture first.
                 let requires_copy = frame_context.fb_config.external_images_require_copy
                     && external_image.image_type
                         == ExternalImageType::TextureHandle(ImageBufferKind::TextureExternal);
@@ -233,12 +233,16 @@ pub fn prepare_image_quads(
             );
         }
         Some(tile_size) => {
-            
-            
-            
+            // TODO: rename the blob's visible_rect into something that doesn't conflict
+            // with the terminology we use during culling since it's not really the same
+            // thing.
             let active_rect = image_properties.visible_rect;
             let visible_rect = compute_conservative_visible_rect(
-                &scratch.frame.draw_for_instance(prim_instance_index).clip_chain,
+                &scratch
+                    .frame
+                    .draw_for_instance(prim_instance_index)
+                    .expect("bug: preparing an image with no draw")
+                    .clip_chain,
                 frame_state.current_dirty_region().combined,
                 frame_state.current_dirty_region().visibility_spatial_node,
                 quad_transform.prim_spatial_node_index(),
@@ -380,23 +384,23 @@ impl IsVisible for Image {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/// Represents an adjustment to apply to an image primitive.
+/// This can be used to compensate for a difference between the bounds of
+/// the images expected by the primitive and the bounds that were actually
+/// drawn in the texture cache.
+///
+/// This happens when rendering snapshot images: A picture is marked so that
+/// a specific reference area in layout space can be rendered as an image.
+/// However, the bounds of the rasterized area of the picture typically differ
+/// from that reference area.
+///
+/// The adjustment is stored as 4 floats (x0, y0, x1, y1) that represent a
+/// transformation of the primitve's local rect such that:
+///
+/// ```ignore
+/// adjusted_rect.min = prim_rect.min + prim_rect.size() * (x0, y0);
+/// adjusted_rect.max = prim_rect.max + prim_rect.size() * (x1, y1);
+/// ```
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -408,7 +412,7 @@ pub struct AdjustedImageSource {
 }
 
 impl AdjustedImageSource {
-    
+    /// The "identity" adjustment.
     pub fn new() -> Self {
         AdjustedImageSource {
             x0: 0.0,
@@ -418,8 +422,8 @@ impl AdjustedImageSource {
         }
     }
 
-    
-    
+    /// An adjustment to render an image item defined in function of the `reference`
+    /// rect whereas the `actual` rect was cached instead.
     pub fn from_rects(reference: &LayoutRect, actual: &LayoutRect) -> Self {
         let ref_size = reference.size();
         let min_offset = reference.min.to_vector();
@@ -432,7 +436,7 @@ impl AdjustedImageSource {
         }
     }
 
-    
+    /// Adjust the primitive's local rect.
     pub fn map_local_rect(&self, rect: &LayoutRect) -> LayoutRect {
         let w = rect.width();
         let h = rect.height();
@@ -448,19 +452,19 @@ impl AdjustedImageSource {
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    /// The stretch size has to be adjusted as well because it is defined
+    /// using the snapshot area as reference but will stretch the rasterized
+    /// area instead.
+    ///
+    /// It has to be scaled by a factor of (adjusted.size() / prim_rect.size()).
+    /// We derive the formula in function of the adjustment factors:
+    ///
+    /// ```ignore
+    /// factor = (adjusted.max - adjusted.min) / (w, h)
+    ///        = (rect.max + (w, h) * (x1, y1) - (rect.min + (w, h) * (x0, y0))) / (w, h)
+    ///        = ((w, h) + (w, h) * (x1, y1) - (w, h) * (x0, y0)) / (w, h)
+    ///        = (1.0, 1.0) + (x1, y1) - (x0, y0)
+    /// ```
     pub fn map_stretch_size(&self, size: LayoutSize) -> LayoutSize {
         LayoutSize::new(
             size.width * (1.0 + self.x1 - self.x0),
@@ -469,10 +473,10 @@ impl AdjustedImageSource {
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
-
-
-
+// `YuvImage` now lives in `webrender_api::interned_prims` so content-process
+// interning can hold it. Re-exported to keep existing references working.
 pub use api::interned_prims::YuvImage;
 
 pub type YuvImageKey = PrimKey<YuvImage>;
@@ -507,10 +511,10 @@ impl From<YuvImage> for YuvImageData {
 }
 
 impl YuvImageData {
-    
-    
-    
-    
+    /// Update the GPU cache for a given primitive template. This may be called multiple
+    /// times per frame, by each primitive reference that refers to this interned
+    /// template. The initial request call to the GPU cache ensures that work is only
+    /// done if the cache entry is invalid (due to first use or eviction).
     pub fn update(
         &self,
         is_composited: bool,
@@ -599,12 +603,12 @@ impl IsVisible for YuvImage {
 #[cfg(target_pointer_width = "64")]
 fn test_struct_sizes() {
     use std::mem;
-    
-    
-    
-    
-    
-    
+    // The sizes of these structures are critical for performance on a number of
+    // talos stress tests. If you get a failure here on CI, there's two possibilities:
+    // (a) You made a structure smaller than it currently is. Great work! Update the
+    //     test expectations and move on.
+    // (b) You made a structure larger. This is not necessarily a problem, but should only
+    //     be done with care, and after checking if talos performance regresses badly.
     assert_eq!(mem::size_of::<Image>(), 36, "Image size changed");
     assert_eq!(mem::size_of::<ImageTemplate>(), 52, "ImageTemplate size changed");
     assert_eq!(mem::size_of::<ImageKey>(), 40, "ImageKey size changed");

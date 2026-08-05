@@ -964,7 +964,6 @@ impl BatchBuilder {
 
         
         
-        
         let prim_instance = &prim_instances[prim_info.prim_instance_index.0 as usize];
 
         match prim_instance.kind {

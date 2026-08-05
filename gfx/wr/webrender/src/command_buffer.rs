@@ -110,8 +110,6 @@ bitflags! {
 
 
 
-
-
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub enum PrimitiveCommand {
     Simple {
