@@ -1,8 +1,8 @@
-package org.mozilla.fenix.ui.efficiency.navigation.interaction
+package org.mozilla.fenix.ui.efficiency.navigation.reachability
 
 import org.mozilla.fenix.ui.efficiency.navigation.planning.ShardUtils
 
-object InteractionShardData {
+object NavigationShardData {
 
     fun loadShard(
         shardIndex: Int,
@@ -12,6 +12,6 @@ object InteractionShardData {
         shardIndex = shardIndex,
         shardCount = shardCount,
         runStateOverride = runStateOverride,
-        buildForShard = InteractionCaseFactory::buildInteractionCasesForShard,
+        buildForShard = NavigationCaseFactory::buildReachabilityCasesForShard,
     )
 }
