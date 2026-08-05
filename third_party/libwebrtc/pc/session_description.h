@@ -107,6 +107,13 @@ class MediaContentDescription {
 
   
   
+  bool receive_non_sender_rtt() const { return receive_non_sender_rtt_; }
+  void set_receive_non_sender_rtt(bool enable) {
+    receive_non_sender_rtt_ = enable;
+  }
+
+  
+  
   bool remote_estimate() const { return remote_estimate_; }
   void set_remote_estimate(bool remote_estimate) {
     remote_estimate_ = remote_estimate;
@@ -342,6 +349,7 @@ class MediaContentDescription {
  private:
   bool rtcp_mux_ = false;
   bool rtcp_reduced_size_ = false;
+  bool receive_non_sender_rtt_ = false;
   bool remote_estimate_ = false;
   bool rtcp_fb_ack_ccfb_ = false;
   int bandwidth_ = kAutoBandwidth;

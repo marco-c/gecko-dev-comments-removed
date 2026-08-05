@@ -101,6 +101,9 @@ const char kAttributeMsid[] = "msid";
 const char kAttributeBundleOnly[] = "bundle-only";
 const char kAttributeRtcpMux[] = "rtcp-mux";
 const char kAttributeRtcpReducedSize[] = "rtcp-rsize";
+const char kAttributeRtcpXr[] = "rtcp-xr";
+const char kRtcpXrFormatRcvrRtt[] = "rcvr-rtt";
+const char kRtcpXrFormatRcvrRttPrefix[] = "rcvr-rtt=";
 const char kAttributeSsrc[] = "ssrc";
 const char kSsrcAttributeCname[] = "cname";
 const char kAttributeExtmapAllowMixed[] = "extmap-allow-mixed";
@@ -1381,6 +1384,25 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
     AddLine(os.str(), message);
   }
 
+  
+  
+  if (media_desc->receive_non_sender_rtt()) {
+    InitAttrLine(kAttributeRtcpXr, &os);
+    os << kSdpDelimiterColon << kRtcpXrFormatRcvrRtt << "=all";
+    AddLine(os.str(), message);
+    
+    
+    
+    
+    
+    for (const Codec& codec : media_desc->codecs()) {
+      StringBuilder fb_os;
+      WriteRtcpFbHeader(codec.id, &fb_os);
+      fb_os << " " << kRtcpFbParamRrtr;
+      AddLine(fb_os.str(), message);
+    }
+  }
+
   if (media_desc->conference_mode()) {
     InitAttrLine(kAttributeXGoogleFlag, &os);
     os << kSdpDelimiterColon << kValueConference;
@@ -2535,6 +2557,14 @@ bool ParseRtcpFbAttribute(absl::string_view line,
   }
   const FeedbackParam feedback_param(id, param);
 
+  
+  
+  
+  if (id == kRtcpFbParamRrtr) {
+    media_desc->set_receive_non_sender_rtt(true);
+    return true;
+  }
+
   if (media_type == MediaType::AUDIO || media_type == MediaType::VIDEO) {
     UpdateCodec(media_desc, payload_type, feedback_param);
   }
@@ -2811,6 +2841,21 @@ bool ParseContent(absl::string_view message,
         media_desc->set_rtcp_mux(true);
       } else if (HasAttribute(*line, kAttributeRtcpReducedSize)) {
         media_desc->set_rtcp_reduced_size(true);
+      } else if (HasAttribute(*line, kAttributeRtcpXr)) {
+        
+        
+        
+        
+        std::string xr_value;
+        if (GetValue(*line, kAttributeRtcpXr, &xr_value, error)) {
+          for (absl::string_view format :
+               split(xr_value, kSdpDelimiterSpaceChar)) {
+            if (absl::StartsWith(format, kRtcpXrFormatRcvrRttPrefix)) {
+              media_desc->set_receive_non_sender_rtt(true);
+              break;
+            }
+          }
+        }
       } else if (HasAttribute(*line, kAttributeRtcpRemoteEstimate)) {
         media_desc->set_remote_estimate(true);
       } else if (HasAttribute(*line, kAttributeSframe)) {
