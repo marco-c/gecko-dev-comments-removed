@@ -364,13 +364,3 @@ pub unsafe extern "C" fn jxl_decoder_flush_pixels(
         Err(_) => JxlDecoderStatus::Error,
     }
 }
-
-
-
-#[no_mangle]
-pub unsafe extern "C" fn jxl_decoder_num_completed_passes(decoder: *const JxlApiDecoder) -> u32 {
-    debug_assert!(!decoder.is_null());
-    
-    let decoder = unsafe { &*decoder };
-    decoder.num_completed_passes() as u32
-}
