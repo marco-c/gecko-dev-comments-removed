@@ -64,14 +64,13 @@ class VCMTiming {
     TimeDelta current_delay = TimeDelta::Zero();
   };
 
-  VCMTiming(Clock* clock, const FieldTrialsView& field_trials);
+  VCMTiming(Clock* clock,
+            const FieldTrialsView& field_trials,
+            TimeDelta render_delay);
   virtual ~VCMTiming() = default;
 
   
   void Reset();
-
-  
-  void set_render_delay(TimeDelta render_delay);
 
   
   
