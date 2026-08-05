@@ -448,7 +448,8 @@ RTCErrorOr<RtpHeaderExtensionId> RtpHeaderExtensionPicker::SuggestMapping(
   
   for (RtpHeaderExtensionId id =
            RtpHeaderExtensionId::kOneByteHeaderExtensionMaxId;
-       id >= RtpHeaderExtensionId::kMinId; id = id.value() - 1) {
+       id >= RtpHeaderExtensionId::kMinId;
+       id = RtpHeaderExtensionId(id.value() - 1)) {
     if (!seen_ids_.contains(id)) {
       AddMapping(id, uri, encrypt);
       return id;

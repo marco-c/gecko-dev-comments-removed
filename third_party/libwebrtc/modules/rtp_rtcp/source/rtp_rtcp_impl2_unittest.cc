@@ -87,13 +87,9 @@ constexpr int kWidth = 320;
 constexpr int kHeight = 100;
 constexpr int kCaptureTimeMsToRtpTimestamp = 90;  
 constexpr TimeDelta kDefaultReportInterval = TimeDelta::Millis(1000);
-
-
-enum : int {
-  kAbsoluteSendTimeExtensionId = 1,
-  kTransportSequenceNumberExtensionId,
-  kTransmissionOffsetExtensionId,
-};
+constexpr RtpHeaderExtensionId kAbsoluteSendTimeExtensionId(1);
+constexpr RtpHeaderExtensionId kTransportSequenceNumberExtensionId(2);
+constexpr RtpHeaderExtensionId kTransmissionOffsetExtensionId(3);
 
 class RtcpRttStatsTestImpl : public RtcpRttStats {
  public:
