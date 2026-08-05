@@ -20,7 +20,6 @@
 namespace mozilla {
 
 class ProfileBufferChunkManagerWithLocalLimit;
-class ProfileChunkedBuffer;
 
 
 
@@ -65,14 +64,6 @@ namespace profiler::detail {
     Span<const char* const> aFilters,
     baseprofiler::BaseProfilerProcessId aPid =
         baseprofiler::profiler_current_process_id());
-
-
-
-
-
-
-[[nodiscard]] MFBT_API UniquePtr<ProfileChunkedBuffer> CopyToRightSizedBuffer(
-    const ProfileChunkedBuffer& aSource);
 
 }  
 
