@@ -14,6 +14,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 });
 
+const BASE64_PREFIX = "data:image/png;base64,";
 const STRINGS_URI = "devtools/shared/locales/screenshot.properties";
 const L10N = new LocalizationHelper(STRINGS_URI);
 
@@ -296,7 +297,7 @@ function saveToClipboard(base64URI) {
       Ci.imgITools
     );
 
-    const base64Data = base64URI.replace("data:image/png;base64,", "");
+    const base64Data = base64URI.replace(BASE64_PREFIX, "");
 
     const image = atob(base64Data);
     const img = imageTools.decodeImageFromBuffer(
@@ -352,6 +353,27 @@ async function getOutputDirectory() {
 
 
 
+function getImageDataAsBlobURL(base64Data) {
+  if (!base64Data.startsWith(BASE64_PREFIX)) {
+    
+    return null;
+  }
+
+  const data = Uint8Array.fromBase64(base64Data.slice(BASE64_PREFIX.length));
+  const imageBlob = new Blob([data], { type: "image/png" });
+  return URL.createObjectURL(imageBlob);
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -381,10 +403,14 @@ async function saveToFile(window, image) {
   const targetFile = new lazy.FileUtils.File(filename);
 
   
+  let blobURL = null;
   try {
+    blobURL = getImageDataAsBlobURL(image.data);
     const download = await lazy.Downloads.createDownload({
       source: {
-        url: image.data,
+        
+        
+        url: blobURL !== null ? blobURL : image.data,
         
         
         
@@ -408,6 +434,11 @@ async function saveToFile(window, image) {
       level: "error",
       text: L10N.getFormatStr("screenshotErrorSavingToFile", filename),
     };
+  } finally {
+    if (blobURL) {
+      
+      URL.revokeObjectURL(blobURL);
+    }
   }
 }
 
