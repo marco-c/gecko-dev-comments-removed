@@ -17,6 +17,7 @@
 #include "nsIAsyncShutdown.h"
 #include "nsIObserver.h"
 #include "nsISupportsImpl.h"
+#include "nsITimer.h"
 #include "nsWeakReference.h"
 
 namespace mozilla::places {
@@ -36,7 +37,6 @@ struct PendingQuery final {
  private:
   ~PendingQuery() = default;
 };
-
 
 
 
@@ -79,13 +79,6 @@ class ConcurrentConnection final : public nsIObserver,
 
 
   static Maybe<RefPtr<ConcurrentConnection>> GetInstance();
-
-  static bool IsSupportedProcessType();
-
-  
-
-
-  static void MaybeInterrupt();
 
   
 
@@ -162,6 +155,8 @@ class ConcurrentConnection final : public nsIObserver,
   nsresult AttachDatabase(const nsString& aFileName,
                           const nsCString& aSchemaName);
 
+  static void PlacesInitFallbackTimerCallback(nsITimer*, void* aClosure);
+
   ~ConcurrentConnection() = default;
 
   
@@ -205,6 +200,8 @@ class ConcurrentConnection final : public nsIObserver,
 
   nsRefPtrDeque<PendingQuery> mPendingQueries;
   nsRefPtrDeque<Runnable> mPendingRunnables;
+
+  nsCOMPtr<nsITimer> mPlacesInitFallbackTimer;
 
   
 

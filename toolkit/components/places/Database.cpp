@@ -28,7 +28,6 @@
 #include "ScopedNSSTypes.h"
 #include "Helpers.h"
 #include "nsFaviconService.h"
-#include "ConcurrentConnection.h"
 
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
@@ -630,15 +629,10 @@ nsresult Database::EnsureConnection() {
     rv = storage->OpenUnsharedDatabase(databaseFile,
                                        mozIStorageService::CONNECTION_DEFAULT,
                                        getter_AddRefs(mMainConn));
-    if (rv == NS_ERROR_STORAGE_IOERR) {
+    if (rv == NS_ERROR_STORAGE_IOERR || rv == NS_ERROR_FILE_IS_LOCKED ||
+        rv == NS_ERROR_STORAGE_BUSY) {
       
       
-      
-      
-      
-      
-      
-      ConcurrentConnection::MaybeInterrupt();
       rv = storage->OpenUnsharedDatabase(databaseFile,
                                          mozIStorageService::CONNECTION_DEFAULT,
                                          getter_AddRefs(mMainConn));
