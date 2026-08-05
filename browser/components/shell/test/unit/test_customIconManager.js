@@ -28,6 +28,13 @@ const {
   "moz-src:///browser/components/shell/CustomIconManager.sys.mjs"
 );
 
+
+
+
+const { SelectableProfileService } = ChromeUtils.importESModule(
+  "resource:///modules/profiles/SelectableProfileService.sys.mjs"
+);
+
 const PREF_ICON_ID = "browser.shell.customIcon.id";
 const TEST_AUMID = "Test.Firefox.AUMID";
 const TEST_SHORTCUTS = ["C:\\fake\\Desktop\\Nightly.lnk"];
@@ -64,12 +71,20 @@ let winTaskbarMock = {
 
 
 
+
+
+let spsInitStub;
+
+
+
 function resetMocks() {
   shellServiceMock.enumerateInstallShortcuts.reset();
   shellServiceMock.enumerateInstallShortcuts.resolves(TEST_SHORTCUTS.slice());
   shellServiceMock.setShortcutsIcon.reset();
   shellServiceMock.setShortcutsIcon.resolves();
   winTaskbarMock.setAllWindowIcons.reset();
+  spsInitStub.reset();
+  spsInitStub.resolves();
   Services.prefs.clearUserPref(PREF_ICON_ID);
   Services.fog.testResetFOG();
 }
@@ -95,7 +110,10 @@ add_setup(function () {
     winTaskbarMock
   );
 
+  spsInitStub = sinon.stub(SelectableProfileService, "init").resolves();
+
   registerCleanupFunction(() => {
+    spsInitStub.restore();
     MockRegistrar.unregister(taskbarCid);
     MockRegistrar.unregister(shellCid);
     Services.prefs.clearUserPref(PREF_ICON_ID);
@@ -514,6 +532,62 @@ add_task(
     Assert.ok(
       winTaskbarMock.setAllWindowIcons.notCalled,
       "no runtime work when no custom icon is recorded"
+    );
+  }
+);
+
+
+
+
+
+
+add_task(
+  skipOnMsix(),
+  async function test_ensureAppliedOrRevert_when_remoteProfileUpdated() {
+    resetMocks();
+
+    await CustomIconManager.ensureAppliedOrRevert(
+      true 
+    );
+
+    Assert.ok(
+      shellServiceMock.setShortcutsIcon.notCalled,
+      "Shortcuts were not modified if a remote profile cleared the icon"
+    );
+    Assert.ok(
+      winTaskbarMock.setAllWindowIcons.calledOnce,
+      "Runtime icon was modified if a remote profile cleared the icon"
+    );
+  }
+);
+
+
+
+
+
+
+
+
+
+add_task(
+  skipOnMsix(),
+  async function test_ensureAppliedOrRevert_waits_for_shared_pref_load() {
+    resetMocks();
+
+    spsInitStub.callsFake(async () => {
+      await Promise.resolve();
+      Services.prefs.setStringPref(PREF_ICON_ID, "retro2004");
+    });
+
+    await CustomIconManager.ensureAppliedOrRevert();
+
+    Assert.ok(
+      spsInitStub.calledOnce,
+      "The startup reconcile awaited SelectableProfileService.init()."
+    );
+    Assert.ok(
+      winTaskbarMock.setAllWindowIcons.calledOnceWithExactly(RETRO_RESOURCE_ID),
+      "The icon synced during init() was applied to runtime windows."
     );
   }
 );
