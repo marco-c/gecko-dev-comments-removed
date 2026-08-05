@@ -150,12 +150,21 @@ function compression_dictionary_promise_test(func, name, properties) {
 
 
 
-async function registerAltDictionaryAndWait(t) {
+
+
+
+
+
+async function registerAltDictionaryAndWait(t, dictionary_id) {
+  assert_true(typeof dictionary_id === 'string' && dictionary_id.length > 0,
+              'registerAltDictionaryAndWait requires a valid dictionary_id');
   const pattern = encodeURIComponent("/fetch/compression-dictionary/resources/echo-headers2.py");
-  await fetch(`${kRegisterDictionaryPath}?id=id2&match=${pattern}`);
-  assert_equals(
-      await waitUntilAvailableDictionaryHeader(t, {use_alt_path: true}),
-      kDefaultDictionaryHashBase64);
+  await fetch(
+      `${kRegisterDictionaryPath}?id=${dictionary_id}&match=${pattern}`);
+  const result = await waitUntilHeader(
+      t, 'dictionary-id',
+      {expected_header: `"${dictionary_id}"`, use_alt_path: true});
+  assert_equals(result, `"${dictionary_id}"`);
 }
 
 function navigateToTestWithCompressionDictionaryEarlyHints(test_url, dictionary_url) {
