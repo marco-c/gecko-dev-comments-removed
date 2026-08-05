@@ -118,80 +118,31 @@ inline void AtomRefRuntime::maybeUnmarkGrayAtomically(Zone* zone,
   MOZ_ASSERT(getRefColor(zone, symbol) == CellColor::Black);
 }
 
-template <typename T>
-inline void GCRuntime::maybeMarkWeaklyHeldAtom(T* atom) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  static_assert(std::is_same_v<T, JSAtom> || std::is_same_v<T, JS::Symbol>);
-
-  Zone* zone = atom->zoneFromAnyThread();
-  MOZ_ASSERT(zone->isAtomsZone());
-  if (!zone->isGCMarkingOrSweeping()) {
-    return;
-  }
-
-  CellColor refColor = isAtomReferencedByUncollectedZone(&atom->asTenured());
-  if (refColor == CellColor::White) {
-    return;
-  }
-
-  
-  
-  
-  MarkColor color = AsMarkColor(refColor);
-  (void)atom->asTenured().markIfUnmarked(color);
-  if constexpr (std::is_same_v<T, JS::Symbol>) {
-    if (JSAtom* description = atom->description()) {
-      (void)description->asTenured().markIfUnmarked(color);
-    }
-  }
-}
-
-inline CellColor GCRuntime::isAtomReferencedByUncollectedZone(
-    TenuredCell* atom) {
-  MOZ_ASSERT(atom->zoneFromAnyThread()->isAtomsZone());
+inline bool GCRuntime::isSymbolReferencedByUncollectedZone(JS::Symbol* sym,
+                                                           MarkColor color) {
+  MOZ_ASSERT(sym->zone()->isAtomsZone());
 
   if (!atomsUsedByUncollectedZones.ref()) {
-    return CellColor::White;
+    return false;
   }
 
   MOZ_ASSERT(atomsZone()->wasGCStarted());
 
-  size_t bit = AtomRefRuntime::getAtomBit(atom);
+  size_t bit = AtomRefRuntime::getAtomBit(sym);
   size_t blackBit = bit + size_t(ColorBit::BlackBit);
   size_t grayOrBlackBit = bit + size_t(ColorBit::GrayOrBlackBit);
   MOZ_ASSERT(grayOrBlackBit / JS_BITS_PER_WORD < atomReferences.allocatedWords);
 
   const DenseBitmap& bitmap = *atomsUsedByUncollectedZones.ref();
   if (grayOrBlackBit >= bitmap.count()) {
-    return CellColor::White;  
+    return false;  
   }
 
   if (bitmap.getBit(blackBit)) {
-    return CellColor::Black;
+    return true;
   }
 
-  if (bitmap.getBit(grayOrBlackBit)) {
-    return CellColor::Gray;
-  }
-
-  return CellColor::White;
+  return color == MarkColor::Gray && bitmap.getBit(grayOrBlackBit);
 }
 
 void AtomRefRuntime::recordChildren(Zone* zone, JSAtom*) {}

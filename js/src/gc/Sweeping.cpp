@@ -673,6 +673,8 @@ IncrementalProgress GCRuntime::markWeakReferences(
     }
   }
 
+  markIncomingGraySymbolEdgesFromUncollectedZones();
+
   bool markedAny = true;
   while (markedAny) {
     if (!marker().markUntilBudgetExhausted(budget)) {
@@ -693,6 +695,37 @@ IncrementalProgress GCRuntime::markWeakReferences(
   checkSlowEnter.release();  
 
   return Finished;
+}
+
+void GCRuntime::markIncomingGraySymbolEdgesFromUncollectedZones() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (marker().markColor() != MarkColor::Gray || !atomsZone()->isGCMarking()) {
+    return;
+  }
+
+  for (auto iter = atomsZone()->gcEphemeronEdges().iter(); !iter.done();
+       iter.next()) {
+    auto* symbol = iter.get().key()->as<JS::Symbol>();
+    if (isSymbolReferencedByUncollectedZone(symbol, marker().markColor())) {
+      TraceManuallyBarrieredEdge(marker().tracer(), &symbol,
+                                 "incoming symbol edge");
+      MOZ_ASSERT(symbol == iter.get().key());
+    }
+  }
 }
 
 IncrementalProgress GCRuntime::markWeakReferencesInCurrentGroup(
@@ -1718,6 +1751,14 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JS::GCContext* gcx,
     }
   }
 
+  
+  
+  
+  if (sweepingAtoms) {
+    AutoPhase ap(stats(), PhaseKind::UPDATE_ATOMS_BITMAP);
+    updateAtomsBitmap();
+  }
+
 #ifdef DEBUG
   
   
@@ -1804,12 +1845,7 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JS::GCContext* gcx,
     }
   }
 
-  
-  
-  
   if (sweepingAtoms) {
-    AutoPhase ap(stats(), PhaseKind::UPDATE_ATOMS_BITMAP);
-    updateAtomsBitmap();
     startSweepingAtomsTable();
   }
 

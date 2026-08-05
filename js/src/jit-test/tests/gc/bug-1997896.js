@@ -50,6 +50,5 @@ startgc();
 assertEq(gcstate(), 'NotActive');
 
 checkMarks(['gray', 'black', 'black']);
-
-assertEq(getAtomMarkColor(g1, i), 'black');
+assertEq(getAtomMarkColor(g1, i), 'gray');
 assertEq(getAtomMarkColor(g2, i), 'black');
