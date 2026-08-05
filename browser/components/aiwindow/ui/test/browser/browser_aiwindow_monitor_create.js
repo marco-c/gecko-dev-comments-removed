@@ -263,6 +263,9 @@ add_task(async function test_monitor_creation() {
   });
 
   
+  await MonitorAgent._resetForTesting();
+
+  
   const initialMonitors = await MonitorAgent.listMonitors();
   const initialCount = initialMonitors.length;
 
@@ -382,6 +385,10 @@ add_task(async function test_monitor_creation() {
     );
   } finally {
     BrowserTestUtils.removeTab(tab);
+
+    
+    await MonitorAgent._resetForTesting();
+
     await SpecialPowers.popPrefEnv();
   }
 });
