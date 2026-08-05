@@ -1388,7 +1388,9 @@ impl RenderBackend {
                         
                         
                         
-                        self.resource_cache.clear(ClearCache::all());
+                        for win in self.windows.values_mut() {
+                            win.resource_cache.clear(ClearCache::all());
+                        }
 
                         let documents: Vec<DocumentId> = self.documents.keys()
                             .cloned()
