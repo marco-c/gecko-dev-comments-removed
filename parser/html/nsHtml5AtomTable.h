@@ -5,12 +5,8 @@
 #ifndef nsHtml5AtomTable_h
 #define nsHtml5AtomTable_h
 
-#include "nsHashKeys.h"
-#include "nsTHashtable.h"
 #include "nsAtom.h"
 #include "nsISerialEventTarget.h"
-
-#define RECENTLY_USED_PARSER_ATOMS_SIZE 37
 
 
 
@@ -58,7 +54,9 @@ class nsHtml5AtomTable {
 #endif
 
  private:
-  RefPtr<nsAtom> mRecentlyUsedParserAtoms[RECENTLY_USED_PARSER_ATOMS_SIZE];
+  
+  constexpr static uint32_t kRecentlyUsedSize = 64;
+  RefPtr<nsAtom> mRecentlyUsedParserAtoms[kRecentlyUsedSize];
 #ifdef DEBUG
   nsCOMPtr<nsISerialEventTarget> mPermittedLookupEventTarget;
 #endif
