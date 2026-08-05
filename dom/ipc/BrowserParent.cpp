@@ -4265,6 +4265,18 @@ mozilla::ipc::IPCResult BrowserParent::RecvScrollRectIntoView(
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult BrowserParent::RecvScrollForKeyboard(
+    const KeyboardScrollAction& aAction) {
+  
+  
+  BrowserBridgeParent* bridge = GetBrowserBridgeParent();
+  if (!bridge || !bridge->CanSend()) {
+    return IPC_OK();
+  }
+  (void)bridge->SendScrollForKeyboard(aAction);
+  return IPC_OK();
+}
+
 mozilla::ipc::IPCResult BrowserParent::RecvIsWindowSupportingProtectedMedia(
     const uint64_t& aOuterWindowID,
     IsWindowSupportingProtectedMediaResolver&& aResolve) {

@@ -2861,13 +2861,32 @@ static SideBits KeyboardScrollActionToSide(
   return SideBits::eBottom;
 }
 
-ScrollContainerFrame* PresShell::GetScrollContainerFrameForKeyboardScroll(
+ScrollContainerFrame*
+PresShell::FindScrollContainerFrameForKeyboardScrollOrHandoff(
     nsIFrame* aStartFrame, const KeyboardScrollAction& aAction) {
   if (aStartFrame) {
     if (ScrollContainerFrame* scrollContainerFrame =
             nsLayoutUtils::GetNearestScrollContainerFrameToScrollTowards(
                 aStartFrame, KeyboardScrollActionToSide(aAction))) {
       return scrollContainerFrame;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  nsPresContext* inProcessRoot =
+      mPresContext->GetInProcessRootContentDocumentPresContext();
+  if (inProcessRoot && !inProcessRoot->IsRootContentDocumentCrossProcess()) {
+    
+    
+    if (PresShell* rootPresShell = inProcessRoot->GetPresShell()) {
+      if (BrowserChild* browserChild = BrowserChild::GetFrom(rootPresShell)) {
+        browserChild->SendScrollForKeyboard(aAction);
+      }
     }
   }
   return nullptr;
@@ -2892,7 +2911,7 @@ void PresShell::ScrollByKeyboard(const KeyboardScrollAction& aAction) {
 void PresShell::ScrollByKeyboard(const KeyboardScrollAction& aAction,
                                  nsIFrame* aStartFrame) {
   ScrollContainerFrame* scrollContainerFrame =
-      GetScrollContainerFrameForKeyboardScroll(aStartFrame, aAction);
+      FindScrollContainerFrameForKeyboardScrollOrHandoff(aStartFrame, aAction);
   if (!scrollContainerFrame) {
     
     

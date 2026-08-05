@@ -535,7 +535,12 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-  ScrollContainerFrame* GetScrollContainerFrameForKeyboardScroll(
+
+
+
+
+
+  ScrollContainerFrame* FindScrollContainerFrameForKeyboardScrollOrHandoff(
       nsIFrame* aStartFrame, const layers::KeyboardScrollAction& aAction);
 
   
