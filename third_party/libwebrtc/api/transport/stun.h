@@ -189,13 +189,6 @@ class StunMessage {
   
   bool IsLegacy() const;
 
-  [[deprecated]] void SetType(int type) { type_ = static_cast<uint16_t>(type); }
-  [[deprecated]] bool SetTransactionID(absl::string_view transaction_id) {
-    if (!IsValidTransactionId(transaction_id))
-      return false;
-    SetTransactionIdForTesting(transaction_id);
-    return true;
-  }
 
   
   
@@ -259,19 +252,9 @@ class StunMessage {
   
   static bool IsStunMethod(std::span<int> methods,
                            std::span<const uint8_t> data);
-  ABSL_DEPRECATE_AND_INLINE()
-  static bool IsStunMethod(std::span<int> methods,
-                           const char* data,
-                           size_t size) {
-    return IsStunMethod(methods, AsUint8Span(std::span(data, size)));
-  }
 
   
   static bool ValidateFingerprint(std::span<const uint8_t> data);
-  ABSL_DEPRECATE_AND_INLINE()
-  static bool ValidateFingerprint(const char* data, size_t size) {
-    return ValidateFingerprint(AsUint8Span(std::span(data, size)));
-  }
 
   
   static std::string GenerateTransactionId();
@@ -292,7 +275,7 @@ class StunMessage {
 
   
   
-  [[deprecated]] void SetStunMagicCookie(uint32_t val);
+  void SetStunMagicCookie(uint32_t val);
 
   
   void SetTransactionIdForTesting(absl::string_view transaction_id);
@@ -308,26 +291,11 @@ class StunMessage {
   
   static bool ValidateMessageIntegrityForTesting(const std::string& password,
                                                  std::span<const uint8_t> data);
-  ABSL_DEPRECATE_AND_INLINE()
-  static bool ValidateMessageIntegrityForTesting(const char* data,
-                                                 size_t size,
-                                                 const std::string& password) {
-    return ValidateMessageIntegrityForTesting(
-        password, AsUint8Span(std::span(data, size)));
-  }
 
   
   static bool ValidateMessageIntegrity32ForTesting(
       const std::string& password,
       std::span<const uint8_t> data);
-  ABSL_DEPRECATE_AND_INLINE()
-  static bool ValidateMessageIntegrity32ForTesting(
-      const char* data,
-      size_t size,
-      const std::string& password) {
-    return ValidateMessageIntegrity32ForTesting(
-        password, AsUint8Span(std::span(data, size)));
-  }
 
  protected:
   
@@ -543,9 +511,6 @@ class StunByteStringAttribute : public StunAttribute {
 
   StunAttributeValueType value_type() const override;
 
-  [[deprecated("Use array_view")]] const char* bytes() const {
-    return reinterpret_cast<const char*>(bytes_);
-  }
   
   
   absl::string_view string_view() const {
@@ -558,10 +523,6 @@ class StunByteStringAttribute : public StunAttribute {
   std::optional<std::vector<uint32_t>> GetUInt32Vector() const;
 
   void CopyBytes(std::span<const uint8_t> bytes);
-  ABSL_DEPRECATE_AND_INLINE()
-  void CopyBytes(const void* bytes, size_t length) {
-    CopyBytes(AsUint8Span(std::span(static_cast<const char*>(bytes), length)));
-  }
   void CopyBytes(absl::string_view bytes);
 
   uint8_t GetByte(size_t index) const;
@@ -707,8 +668,6 @@ enum TurnErrorType {
   STUN_ERROR_UNSUPPORTED_PROTOCOL = 442
 };
 
-[[deprecated("Use STUN_ERROR_SERVER_NOT_REACHABLE")]] extern const int
-    SERVER_NOT_REACHABLE_ERROR;
 
 extern const char STUN_ERROR_REASON_FORBIDDEN[];
 extern const char STUN_ERROR_REASON_ALLOCATION_MISMATCH[];
