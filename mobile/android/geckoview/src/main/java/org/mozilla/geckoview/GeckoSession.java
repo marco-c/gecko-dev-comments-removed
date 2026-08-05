@@ -474,9 +474,13 @@ public class GeckoSession {
           "GeckoViewHistory",
           this,
           new String[] {
-            "GeckoView:OnVisited", "GeckoView:GetVisited", "GeckoView:StateUpdated",
+            "GeckoView:OnVisited",
+            "GeckoView:GetVisited",
+            "GeckoView:GetHostVisitedSince",
+            "GeckoView:StateUpdated",
           }) {
         @Override
+        @OptIn(markerClass = ExperimentalGeckoViewApi.class)
         public void handleMessage(
             final HistoryDelegate delegate,
             final String event,
@@ -511,6 +515,22 @@ public class GeckoSession {
             result.accept(
                 visited -> callback.sendSuccess(visited),
                 exception -> callback.sendError("Failed to fetch visited statuses for URIs"));
+          } else if ("GeckoView:GetHostVisitedSince".equals(event)) {
+            final GeckoResult<Boolean> result =
+                delegate.hasVisitedHostSince(
+                    GeckoSession.this,
+                    message.getString("host"),
+                    message.getLong("after"),
+                    message.getLong("before"));
+
+            if (result == null) {
+              callback.sendSuccess(null);
+              return;
+            }
+
+            result.accept(
+                visited -> callback.sendSuccess(visited.booleanValue()),
+                exception -> callback.sendError("Failed to determine host visited status"));
           } else if ("GeckoView:StateUpdated".equals(event)) {
 
             final GeckoBundle update = message.getBundle("data");
@@ -8423,6 +8443,29 @@ public class GeckoSession {
     @UiThread
     default @Nullable GeckoResult<boolean[]> getVisited(
         @NonNull final GeckoSession session, @NonNull final String[] urls) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    @ExperimentalGeckoViewApi
+    @UiThread
+    default @Nullable GeckoResult<Boolean> hasVisitedHostSince(
+        @NonNull final GeckoSession session,
+        @NonNull final String host,
+        final long afterEpochMillis,
+        final long beforeEpochMillis) {
       return null;
     }
 
