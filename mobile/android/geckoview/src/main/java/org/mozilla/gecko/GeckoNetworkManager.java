@@ -11,9 +11,12 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.DhcpInfo;
+import android.net.LinkProperties;
+import android.net.Network;
 import android.net.Proxy;
 import android.net.ProxyInfo;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -73,6 +76,12 @@ public class GeckoNetworkManager extends BroadcastReceiver {
     disableNotifications,
     receivedUpdate
   }
+
+  
+  
+  private static volatile boolean sIsPrivateDnsActive = false;
+
+  private ConnectivityManager.NetworkCallback mNetworkCallback;
 
   private ManagerState mCurrentState = ManagerState.OffNoListeners;
   private ConnectionType mCurrentConnectionType = ConnectionType.NONE;
@@ -385,6 +394,16 @@ public class GeckoNetworkManager extends BroadcastReceiver {
       String host, int port, String pacFileUrl, String[] exclusionList);
 
   
+
+
+
+
+  @WrapForJNI(calledFrom = "gecko")
+  private static boolean isPrivateDnsActive() {
+    return sIsPrivateDnsActive;
+  }
+
+  
   private void sendNetworkStateToListeners(final Context context) {
     final boolean connectionTypeOrSubtypeChanged =
         mCurrentConnectionType != mPreviousConnectionType
@@ -435,17 +454,95 @@ public class GeckoNetworkManager extends BroadcastReceiver {
   }
 
   
-  private static void unregisterBroadcastReceiver(
+  private void unregisterBroadcastReceiver(
       final Context context, final BroadcastReceiver receiver) {
     context.unregisterReceiver(receiver);
+    unregisterNetworkCallback(context);
   }
 
   
-  private static void registerBroadcastReceiver(
-      final Context context, final BroadcastReceiver receiver) {
+  private void registerBroadcastReceiver(final Context context, final BroadcastReceiver receiver) {
     final IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
     filter.addAction(Proxy.PROXY_CHANGE_ACTION);
     context.registerReceiver(receiver, filter);
+    registerNetworkCallback(context);
+  }
+
+  
+
+
+
+
+  private void registerNetworkCallback(final Context context) {
+    if (mNetworkCallback != null) {
+      return;
+    }
+
+    final ConnectivityManager connectivityManager =
+        (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+    if (connectivityManager == null) {
+      return;
+    }
+
+    final ConnectivityManager.NetworkCallback callback =
+        new ConnectivityManager.NetworkCallback() {
+          @Override
+          public void onLinkPropertiesChanged(
+              @NonNull final Network network, @NonNull final LinkProperties linkProperties) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+              updatePrivateDnsState(linkProperties.isPrivateDnsActive());
+            }
+          }
+
+          @Override
+          public void onLost(@NonNull final Network network) {
+            updatePrivateDnsState(false);
+          }
+        };
+
+    try {
+      connectivityManager.registerDefaultNetworkCallback(callback);
+      mNetworkCallback = callback;
+    } catch (final RuntimeException e) {
+      
+      Log.e(LOGTAG, "Failed to register default network callback", e);
+    }
+  }
+
+  
+  private void unregisterNetworkCallback(final Context context) {
+    if (mNetworkCallback == null) {
+      return;
+    }
+
+    final ConnectivityManager connectivityManager =
+        (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+    if (connectivityManager != null) {
+      try {
+        connectivityManager.unregisterNetworkCallback(mNetworkCallback);
+      } catch (final RuntimeException e) {
+        
+      }
+    }
+    mNetworkCallback = null;
+  }
+
+  
+
+
+
+  private void updatePrivateDnsState(final boolean isActive) {
+    if (isActive == sIsPrivateDnsActive) {
+      return;
+    }
+    sIsPrivateDnsActive = isActive;
+
+    if (GeckoThread.isRunning()) {
+      onStatusChanged(LINK_DATA_CHANGED);
+    } else {
+      GeckoThread.queueNativeCall(
+          GeckoNetworkManager.class, "onStatusChanged", String.class, LINK_DATA_CHANGED);
+    }
   }
 
   private static int wifiDhcpGatewayAddress(final Context context) {

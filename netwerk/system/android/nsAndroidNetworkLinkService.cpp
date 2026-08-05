@@ -10,6 +10,7 @@
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/java/GeckoAppShellWrappers.h"
+#include "mozilla/java/GeckoNetworkManagerWrappers.h"
 #include "mozilla/jni/Utils.h"
 #include "nsIObserverService.h"
 #include "nsServiceManagerUtils.h"
@@ -183,7 +184,8 @@ nsAndroidNetworkLinkService::GetPlatformDNSIndications(
 
   
   
-  if (java::GeckoAppShell::IsPrivateDnsActive()) {
+  
+  if (java::GeckoNetworkManager::IsPrivateDnsActive()) {
     *aPlatformDNSIndications |= nsINetworkLinkService::PRIVATE_DNS_DETECTED;
   }
 
