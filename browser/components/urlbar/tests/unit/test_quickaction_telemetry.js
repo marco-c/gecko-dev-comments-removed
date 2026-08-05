@@ -7,8 +7,24 @@
 ChromeUtils.defineESModuleGetters(this, {
   ActionsProviderQuickActions:
     "moz-src:///browser/components/urlbar/ActionsProviderQuickActions.sys.mjs",
+  ResetProfile: "resource://gre/modules/ResetProfile.sys.mjs",
+  UpdateService: "resource://gre/modules/UpdateService.sys.mjs",
   UrlbarProviderActionsSearchMode:
     "moz-src:///browser/components/urlbar/UrlbarProviderActionsSearchMode.sys.mjs",
+});
+
+add_setup(function stubBrowserOnlyActionGates() {
+  
+  
+  
+  
+  
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(ResetProfile, "resetSupported").returns(false);
+  sandbox
+    .stub(UpdateService.prototype, "canUsuallyCheckForUpdates")
+    .get(() => false);
+  registerCleanupFunction(() => sandbox.restore());
 });
 
 add_task(async function test_inputLength_not_nan_in_search_mode() {
