@@ -1600,8 +1600,11 @@ impl Device {
         }
         info!("GL context {:?} {}.{}", gl.get_type(), gl_version[0], gl_version[1]);
 
+        let is_macos_native_gl = cfg!(target_os = "macos") &&
+            !renderer_name.starts_with("ANGLE");
+
         
-        let supports_texture_storage = allow_texture_storage_support && !cfg!(target_os = "macos") &&
+        let supports_texture_storage = allow_texture_storage_support && !is_macos_native_gl &&
             match gl.get_type() {
                 gl::GlType::Gl => supports_extension(&extensions, "GL_ARB_texture_storage"),
                 gl::GlType::Gles => true,
@@ -1767,10 +1770,6 @@ impl Device {
         
         let requires_texture_external_unbind = is_emulator;
 
-        let is_macos = cfg!(target_os = "macos");
-             
-             
-
         let is_windows_angle = cfg!(target_os = "windows")
             && renderer_name.starts_with("ANGLE");
         let is_adreno_3xx = renderer_name.starts_with("Adreno (TM) 3");
@@ -1787,7 +1786,8 @@ impl Device {
             
             
             StrideAlignment::Pixels(NonZeroUsize::new(64).unwrap())
-        } else if is_macos {
+        } else if is_macos_native_gl {
+            
             
             
             StrideAlignment::Bytes(NonZeroUsize::new(256).unwrap())
@@ -1803,7 +1803,9 @@ impl Device {
 
         
         
-        let supports_nonzero_pbo_offsets = !is_macos;
+        
+        
+        let supports_nonzero_pbo_offsets = !is_macos_native_gl;
 
         
         
