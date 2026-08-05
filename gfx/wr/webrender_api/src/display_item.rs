@@ -239,6 +239,11 @@ pub struct RoundedRectClipDisplayItem {
     pub id: ClipId,
     pub spatial_id: SpatialId,
     pub clip: ComplexClipRegion,
+    
+    
+    
+    
+    pub snap_outset: f32,
 }
 
 
