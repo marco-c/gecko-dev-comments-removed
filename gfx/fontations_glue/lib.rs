@@ -5,11 +5,11 @@
 
 
 extern crate skrifa;
+use skrifa::prelude::*;
 use std::slice;
 
 
 #[derive(Clone)]
-#[allow(unused)]
 pub struct SkrifaFontRef<'a>(skrifa::FontRef<'a>);
 
 
@@ -44,4 +44,11 @@ pub extern "C" fn skrifa_font_delete<'a>(font: *mut SkrifaFontRef) {
     if !font.is_null() {
         unsafe { drop(Box::from_raw(font)) };
     }
+}
+
+
+#[no_mangle]
+pub extern "C" fn skrifa_font_map_char_to_glyph(font: &SkrifaFontRef, unicode: u32) -> u32 {
+    let charmap = font.0.charmap();
+    charmap.map(unicode).unwrap_or(GlyphId::NOTDEF).into()
 }
