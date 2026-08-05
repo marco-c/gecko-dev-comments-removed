@@ -2,6 +2,9 @@
 
 
 
+#include <errno.h>
+#include <fcntl.h>
+
 #include <cstdio>
 #include <cstdlib>
 #if defined(__NetBSD__) || defined(__OpenBSD__)
@@ -11,10 +14,15 @@
 #else
 #  include <linux/videodev2.h>
 #endif
+#include <getopt.h>
+#include <stdint.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include <string.h>
-#include <stdint.h>
+
+#if defined(MOZ_ASAN) || defined(FUZZING)
+#  include <signal.h>
+#endif
 
 #include "mozilla/ScopeExit.h"
 
@@ -23,6 +31,9 @@
 #endif
 
 #include "mozilla/GfxInfoUtils.h"
+
+
+#define OUTPUT_PIPE 1
 
 
 
@@ -121,13 +132,54 @@ static void v4l2_check_device(const char* aVideoDevice) {
   record_value("V4L2_SUPPORTED\nTRUE\n");
 }
 
-int v4l2test(const char* aDevice) {
-  const char* env = getenv("MOZ_GFX_DEBUG");
-  enable_logging = env && *env == '1';
-  if (!enable_logging) {
-    close_logging();
+static void PrintUsage() {
+  printf(
+      "Firefox V4L2-M2M probe utility\n"
+      "\n"
+      "usage: v4l2test [options]\n"
+      "\n"
+      "Options:\n"
+      "\n"
+      "  -h --help                 show this message\n"
+      "  -d --device device        Probe a v4l2 device (e.g. /dev/video10)\n"
+      "\n");
+}
+
+int main(int argc, char** argv) {
+  struct option longOptions[] = {{"help", no_argument, nullptr, 'h'},
+                                 {"device", required_argument, nullptr, 'd'},
+                                 {nullptr, 0, nullptr, 0}};
+  const char* shortOptions = "hd:";
+  int c;
+  const char* device = nullptr;
+  while ((c = getopt_long(argc, argv, shortOptions, longOptions, nullptr)) !=
+         -1) {
+    switch (c) {
+      case 'd':
+        device = optarg;
+        break;
+      case 'h':
+      default:
+        break;
+    }
   }
-  v4l2_check_device(aDevice);
-  record_flush();
-  return EXIT_SUCCESS;
+
+  if (device) {
+#if defined(MOZ_ASAN) || defined(FUZZING)
+    
+    
+    signal(SIGSEGV, SIG_DFL);
+#endif
+    const char* env = getenv("MOZ_GFX_DEBUG");
+    enable_logging = env && *env == '1';
+    output_pipe = OUTPUT_PIPE;
+    if (!enable_logging) {
+      close_logging();
+    }
+    v4l2_check_device(device);
+    record_flush();
+    return EXIT_SUCCESS;
+  }
+  PrintUsage();
+  return 0;
 }
