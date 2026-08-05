@@ -680,10 +680,7 @@ class LinuxArtifactJob(ArtifactJob):
         "{product}/pingsender",
         "{product}/plugin-container",
         "{product}/updater",
-        "{product}/glxtest",
-        "{product}/v4l2test",
-        "{product}/vaapitest",
-        "{product}/vulkantest",
+        "{product}/gfxtest",
         "{product}/**/*.so",
         
         "{product}/**/*.sig",
@@ -783,6 +780,7 @@ class MacArtifactJob(ArtifactJob):
                 "XUL",
             ],
         ),
+        ("Contents/Library/LaunchServices", ["org.mozilla.dmgInstallHelper"]),
     )
 
     @property
