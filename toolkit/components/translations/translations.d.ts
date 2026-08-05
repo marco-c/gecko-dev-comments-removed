@@ -292,6 +292,14 @@ export type NodeVisibility = "in-viewport" | "beyond-viewport" | "hidden";
 
 
 
+export interface DocumentLanguageMetadata {
+  htmlLangAttribute: string;
+  textSample: string;
+}
+
+
+
+
 export interface LangTags {
   isDocLangTagSupported: boolean;
   docLangTag: string | null;
