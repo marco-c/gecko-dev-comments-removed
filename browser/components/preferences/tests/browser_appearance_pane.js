@@ -119,6 +119,22 @@ add_task(async function test_related_settings_tabs_browsing_link_navigates() {
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
+
+
+
+function autoTouchModeAvailable() {
+  if (AppConstants.MOZ_WIDGET_GTK) {
+    return true;
+  }
+  if (AppConstants.platform != "win") {
+    return false;
+  }
+  const { WindowsVersionInfo } = ChromeUtils.importESModule(
+    "resource://gre/modules/components-utils/WindowsVersionInfo.sys.mjs"
+  );
+  return WindowsVersionInfo.get({ throwOnError: false }).buildNumber < 22000;
+}
+
 async function withWindowDensityPane(callback) {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.nova.enabled", true]],
@@ -261,14 +277,17 @@ add_task(async function test_window_density_radio_updates_pref() {
 
 
 
+
+
 add_task(
-  async function test_window_density_clears_override_on_explicit_choice() {
+  async function test_window_density_preserves_auto_touch_on_explicit_choice() {
     await withWindowDensityPane(async ({ win }) => {
       let control = getSettingControl("uiDensity", win);
       await control.updateComplete;
 
       let gUIDensity = win.browsingContext.topChromeWindow.gUIDensity;
       let originalGetCurrentDensity = gUIDensity.getCurrentDensity;
+      
       
       gUIDensity.getCurrentDensity = () => ({
         mode: gUIDensity.MODE_TOUCH,
@@ -277,6 +296,7 @@ add_task(
       registerCleanupFunction(() => {
         gUIDensity.getCurrentDensity = originalGetCurrentDensity;
         Services.prefs.clearUserPref("browser.touchmode.auto");
+        Services.prefs.clearUserPref("browser.uidensity");
       });
 
       let selectOption = value => selectDensityOption(control, value);
@@ -286,36 +306,86 @@ add_task(
       is(
         Services.prefs.getIntPref("browser.uidensity"),
         1,
-        "Selecting compact while overridden sets browser.uidensity to 1"
-      );
-      is(
-        Services.prefs.getBoolPref("browser.touchmode.auto"),
-        false,
-        "Selecting compact while overridden clears the auto-touch override"
-      );
-
-      Services.prefs.setBoolPref("browser.touchmode.auto", true);
-      await selectOption("touch");
-      is(
-        Services.prefs.getBoolPref("browser.touchmode.auto"),
-        false,
-        "Selecting touch while overridden clears the auto-touch override"
-      );
-
-      Services.prefs.setBoolPref("browser.touchmode.auto", true);
-      await selectOption("auto");
-      is(
-        Services.prefs.getBoolPref("browser.touchmode.auto"),
-        true,
-        "Selecting automatic leaves the auto-touch behavior in place"
+        "Selecting compact sets browser.uidensity to 1"
       );
       ok(
-        !Services.prefs.prefHasUserValue("browser.uidensity"),
-        "Selecting automatic clears the browser.uidensity user value"
+        Services.prefs.getBoolPref("browser.touchmode.auto"),
+        "Selecting compact leaves browser.touchmode.auto untouched"
+      );
+
+      await selectOption("touch");
+      ok(
+        Services.prefs.getBoolPref("browser.touchmode.auto"),
+        "Selecting touch leaves browser.touchmode.auto untouched"
+      );
+
+      await selectOption("standard");
+      ok(
+        Services.prefs.getBoolPref("browser.touchmode.auto"),
+        "Selecting standard leaves browser.touchmode.auto untouched"
       );
     });
   }
 );
+
+
+
+
+
+
+
+
+add_task(async function test_window_density_auto_touch_checkbox_visibility() {
+  await withWindowDensityPane(async ({ win }) => {
+    let control = getSettingControl("uiDensity", win);
+    await control.updateComplete;
+
+    let available = autoTouchModeAvailable();
+    let selectOption = value => selectDensityOption(control, value);
+
+    async function assertCheckboxVisibility(standardSelected, desc) {
+      let checkbox = getSettingControl("uiDensityAutoTouchMode", win);
+      ok(checkbox, `auto-touch checkbox setting-control exists (${desc})`);
+      
+      
+      let expectVisible = standardSelected && available;
+      await TestUtils.waitForCondition(
+        () => checkbox.hidden === !expectVisible,
+        `auto-touch checkbox ${expectVisible ? "shown" : "hidden"}: ${desc}`
+      );
+      if (expectVisible) {
+        is_element_visible(checkbox, desc);
+      } else {
+        is_element_hidden(checkbox, desc);
+      }
+    }
+
+    
+    await selectOption("compact");
+    await assertCheckboxVisibility(false, "compact hides the checkbox");
+
+    
+    
+    await selectOption("standard");
+    await assertCheckboxVisibility(true, "standard shows the checkbox");
+
+    
+    
+    await selectOption("auto");
+    await assertCheckboxVisibility(false, "automatic hides the checkbox");
+
+    
+    
+    await selectOption("standard");
+    await assertCheckboxVisibility(
+      true,
+      "standard shows the checkbox across the auto boundary"
+    );
+
+    await selectOption("touch");
+    await assertCheckboxVisibility(false, "touch hides the checkbox");
+  });
+});
 
 add_task(async function test_browser_layout_group_in_tabs_browsing_pane() {
   await SpecialPowers.pushPrefEnv({

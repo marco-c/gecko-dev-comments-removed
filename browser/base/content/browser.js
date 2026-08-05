@@ -3376,13 +3376,31 @@ var gUIDensity = {
     return Boolean(state && state.launcherVisible && !state.launcherExpanded);
   },
 
+  
+  
+  _inTabletMode() {
+    if (AppConstants.platform != "win") {
+      return false;
+    }
+    return WindowsUIUtils.inWin10TabletMode || WindowsUIUtils.inWin11TabletMode;
+  },
+
   getCurrentDensity() {
     
     
-    if (AppConstants.platform == "win") {
-      const inTablet =
-        WindowsUIUtils.inWin10TabletMode || WindowsUIUtils.inWin11TabletMode;
-      if (inTablet && Services.prefs.getBoolPref(this.autoTouchModePref)) {
+    
+    
+    
+    
+    
+    if (this._inTabletMode()) {
+      const isAutomatic =
+        this.novaEnabled &&
+        !Services.prefs.prefHasUserValue(this.uiDensityPref);
+      const normalWithAutoTouch =
+        Services.prefs.getIntPref(this.uiDensityPref) == this.MODE_NORMAL &&
+        Services.prefs.getBoolPref(this.autoTouchModePref);
+      if (isAutomatic || normalWithAutoTouch) {
         return { mode: this.MODE_TOUCH, overridden: true };
       }
     }
@@ -3399,26 +3417,6 @@ var gUIDensity = {
       mode: Services.prefs.getIntPref(this.uiDensityPref),
       overridden: false,
     };
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  setUIDensity(mode) {
-    let overridden = this.getCurrentDensity().overridden;
-    Services.prefs.setIntPref(this.uiDensityPref, mode);
-    
-    
-    if (overridden) {
-      Services.prefs.setBoolPref(this.autoTouchModePref, false);
-    }
   },
 
   update(mode) {

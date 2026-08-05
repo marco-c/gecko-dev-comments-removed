@@ -168,6 +168,21 @@ add_task(async function test_touch_mode_menuitem() {
   });
 
   
+  
+  
+  
+  
+  const defaultBranch = Services.prefs.getDefaultBranch("");
+  const originalAutoTouchDefault =
+    defaultBranch.getBoolPref(PREF_AUTO_TOUCH_MODE);
+  CustomizableUI.getTestOnlyInternalProp(
+    "CustomizableUIInternal"
+  )._setAutoTouchModeDefault();
+  registerCleanupFunction(() =>
+    defaultBranch.setBoolPref(PREF_AUTO_TOUCH_MODE, originalAutoTouchDefault)
+  );
+
+  
   if (AppConstants.platform == "macosx") {
     is(
       document.getElementById("customization-uidensity-menuitem-touch"),
