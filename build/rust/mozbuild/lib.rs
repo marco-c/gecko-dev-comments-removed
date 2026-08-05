@@ -2,7 +2,7 @@
 
 
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 
 
@@ -17,4 +17,37 @@ pub const TOPSRCDIR: &Path = const_path(config::TOPSRCDIR);
 
 pub mod config {
     include!(env!("BUILDCONFIG_RS"));
+}
+
+
+
+
+pub fn link_nss() {
+    let dist = PathBuf::from(TOPOBJDIR).join("dist");
+    println!(
+        "cargo:rustc-link-search=native={}",
+        dist.join("bin").display()
+    );
+    if std::env::var("CARGO_CFG_TARGET_OS").unwrap() == "windows" {
+        println!(
+            "cargo:rustc-link-search=native={}",
+            dist.join("lib").display()
+        );
+    }
+
+    for lib in config::NSS_LINK_DYLIBS.iter() {
+        println!("cargo:rustc-link-lib=dylib={}", lib);
+    }
+}
+
+
+
+
+
+pub fn link_nss_rustlib() {
+    link_nss();
+    let dist_lib = PathBuf::from(TOPOBJDIR).join("dist").join("lib");
+    println!("cargo:rustc-link-search=native={}", dist_lib.display());
+    println!("cargo:rustc-link-lib=static=mozpkix");
+    println!("cargo:rustc-link-lib=static=pure_virtual");
 }
