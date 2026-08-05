@@ -212,6 +212,18 @@ class AbsoluteContainingBlock {
   void DrainPushedChildList(const nsIFrame* aDelegatingFrame);
 
   
+
+
+
+
+
+
+  enum class OnlyFirstInFlows : bool { No, Yes };
+  void PullAbsoluteFramesFrom(nsContainerFrame* aDelegatingFrame,
+                              nsIFrame* aContinuation,
+                              OnlyFirstInFlows aOnlyFirstInFlows);
+
+  
   nsFrameList mAbsoluteFrames;
 
   

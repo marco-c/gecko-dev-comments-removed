@@ -149,6 +149,26 @@ static LogicalSize* GetUnfragmentedSize(const ReflowInput& aCBReflowInput,
 
 
 
+static bool IsFirstInlineContinuationInFragmentainer(
+    const nsIFrame* aInlineFrame) {
+  MOZ_ASSERT(aInlineFrame->IsInlineFrameOrSubclass());
+  const nsBlockFrame* myBlock =
+      nsLayoutUtils::FindNearestBlockAncestor(aInlineFrame);
+  for (nsIFrame* prev =
+           nsLayoutUtils::GetPrevContinuationOrIBSplitSibling(aInlineFrame);
+       prev; prev = nsLayoutUtils::GetPrevContinuationOrIBSplitSibling(prev)) {
+    if (prev->IsBlockFrameOrSubclass()) {
+      
+      continue;
+    }
+    return nsLayoutUtils::FindNearestBlockAncestor(prev) != myBlock;
+  }
+  return true;
+}
+
+
+
+
 
 static nsIFrame* GetFirstInlineContinuationInPrevFragmentainer(
     const nsIFrame* aInlineFrame) {
@@ -259,6 +279,28 @@ void AbsoluteContainingBlock::DrainPushedChildList(
   }
 }
 
+void AbsoluteContainingBlock::PullAbsoluteFramesFrom(
+    nsContainerFrame* aDelegatingFrame, nsIFrame* aContinuation,
+    OnlyFirstInFlows aOnlyFirstInFlows) {
+  AbsoluteContainingBlock* absCB = aContinuation->GetAbsoluteContainingBlock();
+  MOZ_ASSERT(absCB,
+             "If this delegating frame has an absCB, aContinuation must "
+             "have one, too!");
+
+  absCB->DrainPushedChildList(aContinuation);
+
+  for (auto iter = absCB->GetChildList().begin();
+       iter != absCB->GetChildList().end();) {
+    
+    nsIFrame* const child = *iter++;
+    if (aOnlyFirstInFlows == OnlyFirstInFlows::No || !child->GetPrevInFlow()) {
+      absCB->StealFrame(child);
+      mAbsoluteFrames.AppendFrame(aDelegatingFrame, child);
+      child->RemoveStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW);
+    }
+  }
+}
+
 bool AbsoluteContainingBlock::PrepareAbsoluteFrames(
     nsContainerFrame* aDelegatingFrame) {
   if (const nsIFrame* prev =
@@ -274,27 +316,6 @@ bool AbsoluteContainingBlock::PrepareAbsoluteFrames(
     if (pushedFrames.NotEmpty()) {
       mAbsoluteFrames.InsertFrames(aDelegatingFrame, nullptr,
                                    std::move(pushedFrames));
-
-      
-      
-      
-      nsFrameList newPushedAbsoluteFrames;
-      for (auto iter = mAbsoluteFrames.begin();
-           iter != mAbsoluteFrames.end();) {
-        
-        nsIFrame* const child = *iter++;
-        nsIFrame* const childPrevInFlow = child->GetPrevInFlow();
-        if (childPrevInFlow &&
-            childPrevInFlow->GetParent() == aDelegatingFrame) {
-          mAbsoluteFrames.RemoveFrame(child);
-          newPushedAbsoluteFrames.AppendFrame(nullptr, child);
-        }
-      }
-      if (newPushedAbsoluteFrames.NotEmpty()) {
-        
-        mPushedAbsoluteFrames.InsertFrames(nullptr, nullptr,
-                                           std::move(newPushedAbsoluteFrames));
-      }
     }
   }
 
@@ -305,26 +326,59 @@ bool AbsoluteContainingBlock::PrepareAbsoluteFrames(
 
   
   
+  
+  
+  
+  
+  if (StaticPrefs::layout_abspos_fragment_aware_inline_cb_enabled() &&
+      aDelegatingFrame->IsInlineFrameOrSubclass() &&
+      IsFirstInlineContinuationInFragmentainer(aDelegatingFrame)) {
+    const nsBlockFrame* myBlock =
+        nsLayoutUtils::FindNearestBlockAncestor(aDelegatingFrame);
+    for (nsIFrame* next = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(
+             aDelegatingFrame);
+         next;
+         next = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(next)) {
+      if (next->IsBlockFrameOrSubclass()) {
+        
+        continue;
+      }
+      if (nsLayoutUtils::FindNearestBlockAncestor(next) != myBlock) {
+        
+        break;
+      }
+      PullAbsoluteFramesFrom(aDelegatingFrame, next, OnlyFirstInFlows::No);
+    }
+  }
+
+  
+  
   for (nsIFrame* next =
            GetFirstContinuationInNextFragmentainer(aDelegatingFrame);
        next; next = GetFirstContinuationInNextFragmentainer(next)) {
-    AbsoluteContainingBlock* nextAbsCB = next->GetAbsoluteContainingBlock();
-    MOZ_ASSERT(nextAbsCB,
-               "If this delegating frame has an absCB, |next| must "
-               "have one, too!");
+    PullAbsoluteFramesFrom(aDelegatingFrame, next, OnlyFirstInFlows::Yes);
+  }
 
-    nextAbsCB->DrainPushedChildList(next);
-
-    for (auto iter = nextAbsCB->GetChildList().begin();
-         iter != nextAbsCB->GetChildList().end();) {
-      
-      nsIFrame* const child = *iter++;
-      if (!child->GetPrevInFlow()) {
-        nextAbsCB->StealFrame(child);
-        mAbsoluteFrames.AppendFrame(aDelegatingFrame, child);
-        child->RemoveStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW);
-      }
+  
+  
+  
+  
+  nsFrameList newPushedAbsoluteFrames;
+  for (auto iter = mAbsoluteFrames.begin(); iter != mAbsoluteFrames.end();) {
+    
+    nsIFrame* const child = *iter++;
+    nsIFrame* const childPrevInFlow = child->GetPrevInFlow();
+    if (childPrevInFlow && childPrevInFlow->GetParent() == aDelegatingFrame) {
+      mAbsoluteFrames.RemoveFrame(child);
+      newPushedAbsoluteFrames.AppendFrame(nullptr, child);
     }
+  }
+  if (newPushedAbsoluteFrames.NotEmpty()) {
+    
+    
+    
+    mPushedAbsoluteFrames.InsertFrames(nullptr, nullptr,
+                                       std::move(newPushedAbsoluteFrames));
   }
 
   return HasAbsoluteFrames();
@@ -340,6 +394,16 @@ void AbsoluteContainingBlock::StealFrame(nsIFrame* aFrame) {
 #ifdef DEBUG
 void AbsoluteContainingBlock::SanityCheckChildListsBeforeReflow(
     const nsIFrame* aDelegatingFrame) const {
+  if (StaticPrefs::layout_abspos_fragment_aware_inline_cb_enabled() &&
+      aDelegatingFrame->IsInlineFrameOrSubclass() &&
+      !IsFirstInlineContinuationInFragmentainer(aDelegatingFrame)) {
+    
+    
+    MOZ_ASSERT(GetChildList().IsEmpty() && GetPushedChildList().IsEmpty(),
+               "A non-first inline continuation in a fragmentainer should not "
+               "have any abspos children!");
+  }
+
   
   
   
