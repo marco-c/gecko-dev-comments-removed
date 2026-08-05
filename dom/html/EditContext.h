@@ -123,7 +123,7 @@ class EditContext final : public DOMEventTargetHelper {
 
   MOZ_CAN_RUN_SCRIPT void FireTextFormatUpdate(const TextRangeArray* aRanges,
                                                uint32_t aCompositionOffset);
-  MOZ_CAN_RUN_SCRIPT nsresult FireCharacterBoundsUpdateAndGetRects(
+  MOZ_CAN_RUN_SCRIPT nsresult FireCharacterBoundsUpdateIfNeededAndGetRects(
       uint32_t aStart, uint32_t aEnd, nsTArray<LayoutDeviceIntRect>& aRects);
   
   
@@ -154,6 +154,10 @@ class EditContext final : public DOMEventTargetHelper {
 
   RefPtr<DOMRect> ToDOMRect(const Rect& aCopy) const;
   Rect ToRect(const DOMRect& aRect) const;
+  
+  
+  
+  Maybe<nsRect> GetControlBoundsOrClientRect() const;
 
   
   
@@ -168,6 +172,11 @@ class EditContext final : public DOMEventTargetHelper {
   nsTArray<Rect> mCodepointRects;
   Maybe<Rect> mControlBounds;
   Maybe<Rect> mSelectionBounds;
+  
+  
+  
+  
+  Maybe<nsRect> mControlBoundsAtLastUpdateCharacterBounds;
   RefPtr<nsTextNode> mText;
   uint32_t mSelectionStart = 0;
   uint32_t mSelectionEnd = 0;
@@ -176,6 +185,8 @@ class EditContext final : public DOMEventTargetHelper {
   bool mTextNextToCaretChangedByTextUpdateHandler = false;
   bool mExpectingCharacterBounds = false;
   bool mIsFiringTextUpdate = false;
+  
+  bool mCodepointRectsTextChanged = false;
 };
 
 }  

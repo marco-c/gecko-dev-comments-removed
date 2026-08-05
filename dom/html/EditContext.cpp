@@ -232,6 +232,10 @@ void EditContext::UpdateCharacterBounds(
   for (const auto& rect : aCharacterBounds) {
     mCodepointRects.AppendElement(ToRect(rect));
   }
+
+  mCodepointRectsTextChanged = false;
+  mControlBoundsAtLastUpdateCharacterBounds = GetControlBoundsOrClientRect();
+
   if (!mExpectingCharacterBounds && IsActive()) {
     
     
@@ -284,6 +288,13 @@ void EditContext::UpdateText(uint32_t aRangeStart, uint32_t aRangeEnd,
   mText->ReplaceData(start, end - start, aText, IgnoreErrors());
   
   
+  
+  
+  if (start < mCodepointRectsStartIndex + mCodepointRects.Length()) {
+    mCodepointRectsTextChanged = true;
+  }
+  
+  
   if (IsActive()) {
     if (IMEContentObserver* observer =
             IMEStateManager::GetActiveContentObserver()) {
@@ -291,7 +302,7 @@ void EditContext::UpdateText(uint32_t aRangeStart, uint32_t aRangeEnd,
           SelectionEndClamped() != prevSelectionEnd) {
         observer->EditContextSelectionChanged();
       }
-      observer->EditContextTextChanged(aRangeStart, aRangeEnd, aText);
+      observer->EditContextTextChanged(start, end, aText);
     }
   }
 }
@@ -500,7 +511,7 @@ static InlineDir ReverseInlineDir(InlineDir dir) {
   return InlineDir::LTR;
 }
 
-nsresult EditContext::FireCharacterBoundsUpdateAndGetRects(
+nsresult EditContext::FireCharacterBoundsUpdateIfNeededAndGetRects(
     uint32_t aStart, uint32_t aEnd, nsTArray<LayoutDeviceIntRect>& aRects) {
   MOZ_ASSERT(aRects.IsEmpty());
   aStart = std::min(aStart, TextLength());
@@ -576,12 +587,18 @@ nsresult EditContext::FireCharacterBoundsUpdateAndGetRects(
 
   RefPtr<nsPresContext> presContext = mText->OwnerDoc()->GetPresContext();
 
-  CharacterBoundsUpdateEventInit eventOptions;
-  eventOptions.mBubbles = false;
-  eventOptions.mCancelable = true;
-  eventOptions.mRangeStart = startExtendedToGraphemeCluster;
-  eventOptions.mRangeEnd = endExtendedToGraphemeCluster;
-  {
+  
+  
+  if (mCodepointRectsTextChanged ||
+      mControlBoundsAtLastUpdateCharacterBounds !=
+          GetControlBoundsOrClientRect() ||
+      aStart < mCodepointRectsStartIndex ||
+      aEnd > mCodepointRectsStartIndex + mCodepointRects.Length()) {
+    CharacterBoundsUpdateEventInit eventOptions;
+    eventOptions.mBubbles = false;
+    eventOptions.mCancelable = true;
+    eventOptions.mRangeStart = startExtendedToGraphemeCluster;
+    eventOptions.mRangeEnd = endExtendedToGraphemeCluster;
     AutoRestore restore(mExpectingCharacterBounds);
     mExpectingCharacterBounds = true;
     RefPtr event = CharacterBoundsUpdateEvent::Constructor(
@@ -659,6 +676,18 @@ Maybe<LayoutDeviceIntRect> EditContext::GetSelectionBounds() const {
   return Some(ToRootRelativeDeviceRect(*presContext, *mSelectionBounds));
 }
 
+Maybe<nsRect> EditContext::GetControlBoundsOrClientRect() const {
+  if (mControlBounds) {
+    CSSIntRect intRect;
+    mControlBounds->ToIntRect(&intRect);
+    return Some(Rect::ToAppUnits(intRect));
+  }
+  if (!mAssociatedElement || !mAssociatedElement->GetPrimaryFrame()) {
+    return Nothing();
+  }
+  return Some(mAssociatedElement->GetPrimaryFrame()->GetRect());
+}
+
 LayoutDeviceIntRect EditContext::FallbackBounds() const {
   if (Maybe<LayoutDeviceIntRect> bounds = GetSelectionBounds()) {
     return *bounds;
@@ -666,15 +695,14 @@ LayoutDeviceIntRect EditContext::FallbackBounds() const {
   if (Maybe<LayoutDeviceIntRect> bounds = GetControlBounds()) {
     return *bounds;
   }
-  if (NS_WARN_IF(!mAssociatedElement) ||
-      NS_WARN_IF(!mAssociatedElement->GetPrimaryFrame())) {
+  Maybe<nsRect> appUnitsRect = GetControlBoundsOrClientRect();
+  if (NS_WARN_IF(!appUnitsRect)) {
     
     return {0, 0, 1, 1};
   }
   nsPresContext* presContext =
       mAssociatedElement->GetPrimaryFrame()->PresContext();
-  nsRect appUnitsRect = mAssociatedElement->GetPrimaryFrame()->GetRect();
-  return ToRootRelativeDeviceRect(*presContext, appUnitsRect);
+  return ToRootRelativeDeviceRect(*presContext, *appUnitsRect);
 }
 
 }  

@@ -2023,8 +2023,8 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
       MOZ_ASSERT(aEvent->Succeeded());
       return NS_OK;
     }
-    rv = editContext->FireCharacterBoundsUpdateAndGetRects(offset, endOffset,
-                                                           rects);
+    rv = editContext->FireCharacterBoundsUpdateIfNeededAndGetRects(
+        offset, endOffset, rects);
     if (NS_SUCCEEDED(rv) && !rects.IsEmpty()) {
       LayoutDeviceIntRect lastRect = rects.LastElement();
       
@@ -2478,7 +2478,8 @@ nsresult ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent) {
       MOZ_ASSERT(aEvent->Succeeded());
       return NS_OK;
     }
-    rv = editContext->FireCharacterBoundsUpdateAndGetRects(start, end, rects);
+    rv = editContext->FireCharacterBoundsUpdateIfNeededAndGetRects(start, end,
+                                                                   rects);
     
     if (NS_SUCCEEDED(rv) && !rects.IsEmpty()) {
       
@@ -2980,7 +2981,7 @@ nsresult ContentEventHandler::OnQueryCharacterAtPoint(
     AutoTArray<LayoutDeviceIntRect, 8> rects;
     
     
-    rv = editContext->FireCharacterBoundsUpdateAndGetRects(
+    rv = editContext->FireCharacterBoundsUpdateIfNeededAndGetRects(
         0, editContext->TextLength(), rects);
     if (NS_SUCCEEDED(rv)) {
       for (size_t i : IntegerRange(0u, rects.Length())) {
