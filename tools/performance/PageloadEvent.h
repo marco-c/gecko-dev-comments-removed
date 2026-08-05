@@ -107,6 +107,9 @@ class PageloadEventData {
   mozilla::Maybe<nsCString> mDomain;
 
   
+  bool mIsFirstDailyLoad = false;
+
+  
   static uint32_t sPageLoadEventCounter;
 
  public:
@@ -118,6 +121,9 @@ class PageloadEventData {
   bool HasDomain() const {
     return mDomain.isSome() && !mDomain.value().IsEmpty();
   }
+  const nsACString& GetDomain() const { return mDomain.ref(); }
+
+  void SetIsFirstDailyLoad(bool aValue) { mIsFirstDailyLoad = aValue; }
 
   bool HasLoadTime() const { return loadTime.isSome(); }
 
