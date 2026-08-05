@@ -512,8 +512,10 @@ class MockAudioTransport : public test::MockAudioTransport {
 
 
 
-#if defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER) || \
-    defined(THREAD_SANITIZER) || defined(UNDEFINED_SANITIZER)
+
+#if defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER) ||   \
+    defined(THREAD_SANITIZER) || defined(UNDEFINED_SANITIZER) || \
+    defined(WEBRTC_LINUX)
 #define MAYBE_AudioDeviceTest DISABLED_AudioDeviceTest
 #else
 #define MAYBE_AudioDeviceTest AudioDeviceTest

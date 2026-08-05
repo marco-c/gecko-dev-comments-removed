@@ -10,24 +10,21 @@
 
 #include "modules/audio_coding/acm2/acm_receive_test.h"
 
-#include <stdio.h>
-
-#include <cstdint>
+#include <cstdio>
 #include <memory>
 #include <ostream>
 #include <utility>
 
-#include "api/array_view.h"
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "api/environment/environment_factory.h"
 #include "api/neteq/default_neteq_factory.h"
 #include "api/neteq/neteq.h"
 #include "api/scoped_refptr.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_coding/neteq/tools/audio_sink.h"
-#include "modules/audio_coding/neteq/tools/packet.h"
 #include "modules/audio_coding/neteq/tools/packet_source.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "test/create_test_environment.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -40,9 +37,10 @@ AcmReceiveTestOldApi::AcmReceiveTestOldApi(
     NumOutputChannels exptected_output_channels,
     scoped_refptr<AudioDecoderFactory> decoder_factory)
     : clock_(0),
-      neteq_(DefaultNetEqFactory().Create(CreateEnvironment(&clock_),
-                                          NetEq::Config(),
-                                          std::move(decoder_factory))),
+      neteq_(
+          DefaultNetEqFactory().Create(CreateTestEnvironment({.time = &clock_}),
+                                       NetEq::Config(),
+                                       std::move(decoder_factory))),
       packet_source_(packet_source),
       audio_sink_(audio_sink),
       output_freq_hz_(output_freq_hz),
@@ -90,10 +88,10 @@ void AcmReceiveTestOldApi::RegisterNetEqTestCodecs() {
 }
 
 void AcmReceiveTestOldApi::Run() {
-  for (std::unique_ptr<Packet> packet(packet_source_->NextPacket()); packet;
-       packet = packet_source_->NextPacket()) {
+  for (std::unique_ptr<RtpPacketReceived> packet = packet_source_->NextPacket();
+       packet != nullptr; packet = packet_source_->NextPacket()) {
     
-    while (clock_.TimeInMilliseconds() < packet->time_ms()) {
+    while (clock_.CurrentTime() < packet->arrival_time()) {
       AudioFrame output_frame;
       bool muted;
       EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_frame, &muted));
@@ -118,16 +116,14 @@ void AcmReceiveTestOldApi::Run() {
       AfterGetAudio();
     }
 
-    EXPECT_EQ(0, neteq_->InsertPacket(
-                     packet->header(),
-                     ArrayView<const uint8_t>(packet->payload(),
-                                              packet->payload_length_bytes()),
-                     clock_.CurrentTime()))
+    RTPHeader rtp_header;
+    packet->GetHeader(&rtp_header);
+    EXPECT_EQ(0, neteq_->InsertPacket(rtp_header, packet->payload(),
+                                      clock_.CurrentTime()))
         << "Failure when inserting packet:" << std::endl
-        << "  PT = " << static_cast<int>(packet->header().payloadType)
-        << std::endl
-        << "  TS = " << packet->header().timestamp << std::endl
-        << "  SN = " << packet->header().sequenceNumber;
+        << "  PT = " << static_cast<int>(packet->PayloadType()) << std::endl
+        << "  TS = " << packet->Timestamp() << std::endl
+        << "  SN = " << packet->SequenceNumber();
   }
 }
 
