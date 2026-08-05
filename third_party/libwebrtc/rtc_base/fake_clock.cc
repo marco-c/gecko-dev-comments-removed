@@ -16,7 +16,6 @@
 #include "api/units/timestamp.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/synchronization/mutex.h"
-#include "rtc_base/thread.h"
 #include "rtc_base/time_utils.h"
 
 namespace webrtc {
@@ -36,18 +35,6 @@ void FakeClock::AdvanceTime(TimeDelta delta) {
   RTC_DCHECK_GE(delta, TimeDelta::Zero());
   MutexLock lock(&lock_);
   time_ns_ += delta.ns();
-}
-
-void ThreadProcessingFakeClock::SetTime(Timestamp time) {
-  clock_.SetTime(time);
-  
-  
-  ThreadManager::ProcessAllMessageQueuesForTesting();
-}
-
-void ThreadProcessingFakeClock::AdvanceTime(TimeDelta delta) {
-  clock_.AdvanceTime(delta);
-  ThreadManager::ProcessAllMessageQueuesForTesting();
 }
 
 ScopedFakeClock::ScopedFakeClock() {
