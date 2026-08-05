@@ -2346,8 +2346,11 @@ void AppWindow::ApplyChromeFlags() {
 
   
   
-  IgnoredErrorResult rv;
-  root->SetAttribute(u"chromehidden"_ns, newvalue, rv);
+  root->SetAttribute(u"chromehidden"_ns, newvalue, IgnoreErrors());
+
+  if (mChromeFlags & nsIWebBrowserChrome::CHROME_NO_PERSISTENCE) {
+    root->SetAttribute(u"persist"_ns, u""_ns, IgnoreErrors());
+  }
 }
 
 NS_IMETHODIMP

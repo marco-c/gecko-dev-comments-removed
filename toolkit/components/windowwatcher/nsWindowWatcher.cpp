@@ -448,31 +448,6 @@ nsresult nsWindowWatcher::CreateChromeWindow(nsIWebBrowserChrome* aParentChrome,
   return NS_OK;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static void MaybeDisablePersistence(const SizeSpec& aSizeSpec,
-                                    nsIDocShellTreeOwner* aTreeOwner) {
-  if (!aTreeOwner) {
-    return;
-  }
-
-  if (aSizeSpec.SizeSpecified()) {
-    aTreeOwner->SetPersistence(false, false, false);
-  }
-}
-
 NS_IMETHODIMP
 nsWindowWatcher::OpenWindowWithRemoteTab(nsIRemoteTab* aRemoteTab,
                                          const WindowFeatures& aFeatures,
@@ -602,7 +577,6 @@ nsWindowWatcher::OpenWindowWithRemoteTab(nsIRemoteTab* aRemoteTab,
   
   MOZ_ASSERT(chromeContext->UseRemoteTabs());
 
-  MaybeDisablePersistence(sizeSpec, chromeTreeOwner);
   SizeOpenedWindow(chromeTreeOwner, parentWindowOuter, false, sizeSpec);
 
   nsCOMPtr<nsIRemoteTab> newBrowserParent;
@@ -1235,7 +1209,6 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   if (isNewToplevelWindow) {
     nsCOMPtr<nsIDocShellTreeOwner> newTreeOwner;
     targetDocShell->GetTreeOwner(getter_AddRefs(newTreeOwner));
-    MaybeDisablePersistence(sizeSpec, newTreeOwner);
     SizeOpenedWindow(newTreeOwner, aParent, isCallerChrome, sizeSpec);
   }
 
