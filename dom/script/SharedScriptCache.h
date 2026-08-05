@@ -46,7 +46,7 @@ class ScriptHashKey : public PLDHashEntryHdr {
         mKind(aKey.mKind),
         mCORSMode(aKey.mCORSMode),
         mReferrerPolicy(aKey.mReferrerPolicy),
-        mHintCharset(aKey.mHintCharset) {
+        mClassicScriptFallbackEncoding(aKey.mClassicScriptFallbackEncoding) {
     MOZ_COUNT_CTOR(ScriptHashKey);
   }
 
@@ -60,15 +60,16 @@ class ScriptHashKey : public PLDHashEntryHdr {
         mKind(std::move(aKey.mKind)),
         mCORSMode(std::move(aKey.mCORSMode)),
         mReferrerPolicy(std::move(aKey.mReferrerPolicy)),
-        mHintCharset(std::move(aKey.mHintCharset)) {
+        mClassicScriptFallbackEncoding(
+            std::move(aKey.mClassicScriptFallbackEncoding)) {
     MOZ_COUNT_CTOR(ScriptHashKey);
   }
 
-  ScriptHashKey(ScriptLoader* aLoader,
-                const JS::loader::ScriptLoadRequest* aRequest,
+  ScriptHashKey(ScriptLoader* aLoader, JS::loader::ScriptKind aKind,
                 mozilla::dom::ReferrerPolicy aReferrerPolicy,
                 const JS::loader::ScriptFetchOptions* aFetchOptions,
-                const nsCOMPtr<nsIURI> aURI);
+                const nsCOMPtr<nsIURI> aURI,
+                const Encoding* aClassicScriptFallbackEncoding);
   explicit ScriptHashKey(const ScriptLoadData& aLoadData);
 
   
@@ -80,7 +81,7 @@ class ScriptHashKey : public PLDHashEntryHdr {
   ScriptHashKey(nsIURI* aURI, nsIPrincipal* aPartitionPrincipal,
                 JS::loader::ScriptKind aKind, CORSMode aCORSMode,
                 mozilla::dom::ReferrerPolicy aReferrerPolicy,
-                const nsString& aHintCharset)
+                const Encoding* aClassicScriptFallbackEncoding)
       : PLDHashEntryHdr(),
         mURI(aURI),
         mPartitionPrincipal(aPartitionPrincipal),
@@ -88,7 +89,7 @@ class ScriptHashKey : public PLDHashEntryHdr {
         mKind(aKind),
         mCORSMode(aCORSMode),
         mReferrerPolicy(aReferrerPolicy),
-        mHintCharset(aHintCharset) {
+        mClassicScriptFallbackEncoding(aClassicScriptFallbackEncoding) {
     MOZ_COUNT_CTOR(ScriptHashKey);
   }
 
@@ -145,7 +146,7 @@ class ScriptHashKey : public PLDHashEntryHdr {
 
   
   
-  nsString mHintCharset;
+  const Encoding* mClassicScriptFallbackEncoding;
 };
 
 class ScriptLoadData final
