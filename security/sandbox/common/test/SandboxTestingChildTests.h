@@ -845,11 +845,22 @@ void RunTestsRDD(SandboxTestingChild* child) {
 
   RunTestsSched(child);
 
+#    ifdef MOZ_ENABLE_VULKAN_VIDEO
+  
+  
+  
+  
+  child->ErrnoValueTest("socket_inet"_ns, EAFNOSUPPORT,
+                        [] { return socket(AF_INET, SOCK_STREAM, 0); });
+  child->ErrnoValueTest("socket_unix"_ns, 0,
+                        [] { return socket(AF_UNIX, SOCK_STREAM, 0); });
+#    else
   child->ErrnoValueTest("socket_inet"_ns, EACCES,
                         [] { return socket(AF_INET, SOCK_STREAM, 0); });
 
   child->ErrnoValueTest("socket_unix"_ns, EACCES,
                         [] { return socket(AF_UNIX, SOCK_STREAM, 0); });
+#    endif
 
   child->ErrnoTest("uname"_ns, true, [] {
     struct utsname uts;

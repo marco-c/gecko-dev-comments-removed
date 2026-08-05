@@ -20,6 +20,10 @@
 #  include <linux/videodev2.h>
 #  include <sys/ioctl.h>
 #endif  
+#ifdef MOZ_ENABLE_VULKAN_VIDEO
+#  include "mozilla/Components.h"
+#  include "nsIGfxInfo.h"
+#endif  
 #ifdef MOZ_WIDGET_GTK
 #  include <glib.h>
 #endif
@@ -375,6 +379,30 @@ static void AddX11Dependencies(SandboxBroker::Policy* policy) {
   }
 #endif
 }
+
+#if defined(MOZ_WIDGET_GTK)
+static void AddWaylandDependencies(SandboxBroker::Policy* policy) {
+  static const bool kIsWayland =
+      mozilla::widget::GdkIsWaylandDisplay() && PR_GetEnv("WAYLAND_DISPLAY");
+  static const bool kIsXWayland = mozilla::widget::IsXWaylandProtocol();
+  if (kIsWayland || kIsXWayland) {
+    nsAutoCString waylandDisplayName(PR_GetEnv("WAYLAND_DISPLAY"));
+    nsAutoCString socketPath;
+    nsAutoCString xdgRuntimeDir(PR_GetEnv("XDG_RUNTIME_DIR"));
+    if (waylandDisplayName[0] == '/') {
+      socketPath = waylandDisplayName;
+    } else if (!xdgRuntimeDir.IsEmpty()) {
+      socketPath = nsPrintfCString("%s/%s", xdgRuntimeDir.get(),
+                                   waylandDisplayName.get());
+    }
+    
+    
+    if (!socketPath.IsEmpty()) {
+      policy->AddPath(SandboxBroker::MAY_CONNECT, socketPath.get());
+    }
+  }
+}
+#endif
 
 static void AddGLDependencies(SandboxBroker::Policy* policy) {
   
@@ -914,8 +942,6 @@ static void AddV4l2Dependencies(SandboxBroker::Policy* policy) {
 
 static void AddVulkanDependencies(SandboxBroker::Policy* policy) {
   
-  
-  
   policy->AddTree(rdonly, "/usr/share/vulkan/icd.d");
   policy->AddTree(rdonly, "/usr/local/share/vulkan/icd.d");
   policy->AddTree(rdonly, "/etc/vulkan/icd.d");
@@ -1025,7 +1051,26 @@ SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
   AddLdLibraryEnvPaths(policy.get());
 
 #ifdef MOZ_ENABLE_VULKAN_VIDEO
-  AddVulkanDependencies(policy.get());
+  
+  
+  
+  nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
+  int32_t vulkanStatus = nsIGfxInfo::FEATURE_STATUS_UNKNOWN;
+  nsAutoCString failureId;
+  if (gfxInfo &&
+      NS_SUCCEEDED(gfxInfo->GetFeatureStatus(
+          nsIGfxInfo::FEATURE_HARDWARE_VIDEO_DECODING_VULKAN, failureId,
+          &vulkanStatus)) &&
+      vulkanStatus == nsIGfxInfo::FEATURE_STATUS_OK) {
+    AddVulkanDependencies(policy.get());
+#  if defined(MOZ_WIDGET_GTK)
+    
+    
+    AddWaylandDependencies(policy.get());
+#  endif
+    
+    AddX11Dependencies(policy.get());
+  }
 #endif  
 
 #ifdef MOZ_ENABLE_V4L2
