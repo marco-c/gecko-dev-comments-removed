@@ -115,7 +115,6 @@ class WebRtcVideoEngine : public VideoEngineInterface {
       const Environment& env,
       Call* call,
       const MediaConfig& config,
-      const VideoOptions& options,
       const CryptoOptions& crypto_options) override;
 
   
@@ -200,9 +199,6 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
   void SetExtmapAllowMixed(bool extmap_allow_mixed) override {
     MediaChannelUtil::SetExtmapAllowMixed(extmap_allow_mixed);
   }
-  bool ExtmapAllowMixed() const override {
-    return MediaChannelUtil::ExtmapAllowMixed();
-  }
 
   
   void SetInterface(MediaChannelNetworkInterface* iface) override;
@@ -230,7 +226,6 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
   void OnReadyToSend(bool ready) override;
   void OnNetworkRouteChanged(absl::string_view transport_name,
                              const NetworkRoute& network_route) override;
-  bool SetOptions(const VideoOptions& options) override;
 
   
   
@@ -277,15 +272,6 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
   void SetEncoderToPacketizerFrameTransformer(
       uint32_t ssrc,
       scoped_refptr<FrameTransformerInterface> frame_transformer) override;
-  
-  bool SendCodecHasNack() const override {
-    RTC_DCHECK_RUN_ON(worker_thread_);
-    if (!send_codec()) {
-      return false;
-    }
-    return HasNack(send_codec()->codec);
-  }
-
  private:
   struct ChangedSenderParameters {
     
@@ -345,8 +331,6 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
     void SetEncoderSelector(
         scoped_refptr<VideoEncoderFactory::EncoderSelectorInterface>
             encoder_selector);
-
-    void SetOptions(const VideoOptions& options);
 
     void SetSend(bool send);
 
@@ -458,7 +442,7 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
   bool sending_ RTC_GUARDED_BY(worker_thread_);
   Call* const call_;
 
-  const MediaConfig::Video video_config_ RTC_GUARDED_BY(worker_thread_);
+  const MediaConfig::Video video_config_;
 
   
   std::map<uint32_t, WebRtcVideoSendStream*> send_streams_
@@ -479,11 +463,11 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
   
   BitrateConstraints bitrate_config_ RTC_GUARDED_BY(worker_thread_);
   VideoSenderParameters send_params_ RTC_GUARDED_BY(worker_thread_);
-  VideoOptions default_send_options_ RTC_GUARDED_BY(worker_thread_);
+  const VideoOptions default_send_options_;
   int64_t last_send_stats_log_ms_ RTC_GUARDED_BY(worker_thread_);
   
   
-  const CryptoOptions crypto_options_ RTC_GUARDED_BY(worker_thread_);
+  const CryptoOptions crypto_options_;
 
   
   absl::AnyInvocable<void(const std::set<uint32_t>&)>
@@ -504,7 +488,6 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
   WebRtcVideoReceiveChannel(const Environment& env,
                             Call* absl_nonnull call,
                             const MediaConfig& config,
-                            const VideoOptions& options,
                             const CryptoOptions& crypto_options,
                             VideoDecoderFactory* absl_nullable decoder_factory);
   ~WebRtcVideoReceiveChannel() override;
@@ -722,7 +705,7 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
   
   int default_recv_base_minimum_delay_ms_ RTC_GUARDED_BY(thread_checker_) = 0;
 
-  const MediaConfig::Video video_config_ RTC_GUARDED_BY(thread_checker_);
+  const MediaConfig::Video video_config_;
 
   
   
@@ -753,7 +736,7 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
   
   VideoReceiverParameters recv_params_ RTC_GUARDED_BY(thread_checker_);
   int64_t last_receive_stats_log_ms_ RTC_GUARDED_BY(thread_checker_);
-  const bool discard_unknown_ssrc_packets_ RTC_GUARDED_BY(thread_checker_);
+  const bool discard_unknown_ssrc_packets_;
   
   
   
@@ -761,7 +744,7 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
   StreamParams unsignaled_stream_params_ RTC_GUARDED_BY(thread_checker_);
   
   
-  const CryptoOptions crypto_options_ RTC_GUARDED_BY(thread_checker_);
+  const CryptoOptions crypto_options_;
 
   
   scoped_refptr<FrameTransformerInterface> unsignaled_frame_transformer_

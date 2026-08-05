@@ -212,7 +212,6 @@ class MediaSendChannelInterface {
   
   
   virtual void SetExtmapAllowMixed(bool extmap_allow_mixed) = 0;
-  virtual bool ExtmapAllowMixed() const = 0;
 
   
   virtual bool SetSend(bool send) = 0;
@@ -250,7 +249,6 @@ class MediaSendChannelInterface {
   
   virtual absl::AnyInvocable<RtpParameters(uint32_t)>
   GetRtpSendParametersCallback() const = 0;
-  virtual bool SendCodecHasNack() const = 0;
   
   virtual void SetSsrcListChangedCallback(
       absl::AnyInvocable<void(const std::set<uint32_t>&)> callback) = 0;
@@ -940,7 +938,6 @@ class VoiceMediaSendChannelInterface : public MediaSendChannelInterface {
   GetStatsTask() = 0;
   virtual bool SenderNackEnabled() const = 0;
   virtual bool SenderNonSenderRttEnabled() const = 0;
-  virtual bool SetOptions(const AudioOptions& options) = 0;
 };
 
 class VoiceMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
@@ -969,11 +966,9 @@ class VoiceMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
   
   virtual absl::AnyInvocable<std::optional<VoiceMediaReceiveInfo>()>
   GetStatsTask(bool reset_legacy) = 0;
-  virtual enum RtcpMode RtcpMode() const = 0;
   virtual void SetRtcpMode(enum RtcpMode mode) = 0;
   virtual void SetReceiveNackEnabled(bool enabled) = 0;
   virtual void SetReceiveNonSenderRttEnabled(bool enabled) = 0;
-  virtual bool SetOptions(const AudioOptions& options) = 0;
 };
 
 struct VideoSenderParameters : SenderParameters {
@@ -1006,7 +1001,6 @@ class VideoMediaSendChannelInterface : public MediaSendChannelInterface {
   virtual bool SetVideoSend(uint32_t ssrc,
                             const VideoOptions* options,
                             VideoSourceInterface<VideoFrame>* source) = 0;
-  virtual bool SetOptions(const VideoOptions& options) = 0;
   
   virtual void GenerateSendKeyFrame(uint32_t ssrc,
                                     const std::vector<std::string>& rids) = 0;

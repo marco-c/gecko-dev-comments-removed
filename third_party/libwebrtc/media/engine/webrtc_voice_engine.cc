@@ -2267,42 +2267,6 @@ RtpParameters WebRtcVoiceReceiveChannel::GetDefaultRtpReceiveParameters()
   return rtp_params;
 }
 
-bool WebRtcVoiceReceiveChannel::SetOptions(const AudioOptions& options) {
-  RTC_DCHECK_RUN_ON(worker_thread_);
-  RTC_LOG(LS_INFO) << "Setting voice channel options: " << options.ToString();
-
-  
-  
-  
-  options_.SetAll(options);
-
-  
-  if (options.audio_jitter_buffer_max_packets &&
-      std::max(20, *options.audio_jitter_buffer_max_packets) !=
-          audio_config_.audio_jitter_buffer_max_packets) {
-    audio_config_.audio_jitter_buffer_max_packets =
-        std::max(20, *options.audio_jitter_buffer_max_packets);
-    for (auto& [unused, stream] : recv_streams_) {
-      stream->SetJitterBufferMaxPackets(
-          audio_config_.audio_jitter_buffer_max_packets);
-    }
-  }
-  if (options.audio_jitter_buffer_fast_accelerate &&
-      *options.audio_jitter_buffer_fast_accelerate !=
-          audio_config_.audio_jitter_buffer_fast_accelerate) {
-    audio_config_.audio_jitter_buffer_fast_accelerate =
-        *options.audio_jitter_buffer_fast_accelerate;
-    for (auto& [unused, stream] : recv_streams_) {
-      stream->SetJitterBufferFastAccelerate(
-          audio_config_.audio_jitter_buffer_fast_accelerate);
-    }
-  }
-
-  RTC_LOG(LS_INFO) << "Set voice receive channel options. Current options: "
-                   << options_.ToString();
-  return true;
-}
-
 bool WebRtcVoiceReceiveChannel::SetRecvCodecs(
     const std::vector<Codec>& codecs_in) {
   RTC_DCHECK_RUN_ON(worker_thread_);
@@ -2898,11 +2862,6 @@ void WebRtcVoiceReceiveChannel::SetDepacketizerToDecoderFrameTransformer(
   }
   matching_stream->second->SetDepacketizerToDecoderFrameTransformer(
       std::move(frame_transformer));
-}
-
-RtcpMode WebRtcVoiceReceiveChannel::RtcpMode() const {
-  RTC_DCHECK_RUN_ON(worker_thread_);
-  return recv_rtcp_mode_;
 }
 
 bool WebRtcVoiceReceiveChannel::MaybeDeregisterUnsignaledRecvStream(
