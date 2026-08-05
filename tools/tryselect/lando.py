@@ -401,9 +401,20 @@ class LandoAPI:
         except json.JSONDecodeError:
             
             
-            response.raise_for_status()
-
             
+            
+            if response.status_code >= 400:
+                detail = (
+                    f"Lando returned HTTP {response.status_code} "
+                    f"({response.reason}) for {url}."
+                )
+                if response.status_code >= 500:
+                    detail += (
+                        " This is likely a transient server-side issue; "
+                        "please try again in a few moments."
+                    )
+                raise LandoAPIException(detail=detail)
+
             
             raise LandoAPIException(
                 detail="Response was not valid JSON yet status was valid."
