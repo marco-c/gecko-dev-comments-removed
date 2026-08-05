@@ -75,6 +75,16 @@ class nsSharedPageData {
   
   float mShrinkToFitRatio = 1.0f;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  float mMaxPageZoomRatio = 1.0f;
+
  private:
   const nsPagesPerSheetInfo* mPagesPerSheetInfo = nullptr;
 };
@@ -130,6 +140,11 @@ class nsPageSequenceFrame final : public nsContainerFrame {
 #ifdef DEBUG_FRAME_DUMP
   nsresult GetFrameName(nsAString& aResult) const override;
 #endif
+
+  void SetMaxPageZoomRatio(float ratio) {
+    MOZ_ASSERT(ratio >= 1.0f);
+    mPageData.mMaxPageZoomRatio = ratio;
+  }
 
  protected:
   nsPageSequenceFrame(ComputedStyle*, nsPresContext*);

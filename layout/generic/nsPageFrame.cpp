@@ -621,8 +621,6 @@ enum {
 
 static float OffsetToCenterPage(nscoord aContentSize, nscoord aSheetSize,
                                 float aScale, float aAppUnitsPerPixel) {
-  MOZ_ASSERT(aScale <= 1.0f && aScale > 0.0f,
-             "Scale must be in the range (0,1]");
   const unsigned centerPagePref = StaticPrefs::print_center_page_on_sheet();
   if (centerPagePref == kPrintCenterPageOnSheetNever) {
     return 0.0f;
@@ -692,6 +690,9 @@ static gfx::Matrix4x4 ComputePagesPerSheetAndPageSizeTransform(
     
     const float scale =
         pageFrame->ComputeSinglePPSPageSizeScale(contentPageSize);
+    MOZ_ASSERT(scale > 0.0f &&
+                   scale <= pageFrame->GetSharedPageData()->mMaxPageZoomRatio,
+               "Scale must be between 0 and the maximum page zoom ratio");
     const float centeringOffset = OffsetToCenterPage(
         contentPageSize.width, sheetSize.width, scale, aAppUnitsPerPixel);
 
@@ -846,6 +847,8 @@ float nsPageFrame::ComputeSinglePPSPageSizeScale(
     const nsSize aContentPageSize) const {
   MOZ_ASSERT(GetSharedPageData()->PagesPerSheetInfo()->mNumPages == 1,
              "Only intended for the pps==1 case");
+  MOZ_ASSERT(GetSharedPageData()->mMaxPageZoomRatio >= 1.0f,
+             "Max zoom ratio should be >= 1.0");
   MOZ_ASSERT(aContentPageSize == ComputePageSize(),
              "Incorrect content page size");
 
@@ -861,23 +864,22 @@ float nsPageFrame::ComputeSinglePPSPageSizeScale(
   
   
   
-  float scale = 1.0f;
-
   const nsSize sheetSize = sheet->GetSizeForChildren();
-  nscoord contentPageHeight = aContentPageSize.height;
   
-  if (aContentPageSize.width > sheetSize.width) {
-    scale *= float(sheetSize.width) / float(aContentPageSize.width);
-    contentPageHeight = NSToCoordRound(contentPageHeight * scale);
-  }
   
-  if (contentPageHeight > sheetSize.height) {
-    scale *= float(sheetSize.height) / float(contentPageHeight);
-  }
-  MOZ_ASSERT(
-      scale <= 1.0f,
-      "Page-size mismatches should only have caused us to scale down, not up.");
-  return scale;
+  
+  
+  
+  
+  
+  
+  
+  const float widthScale =
+      float(sheetSize.width) / float(aContentPageSize.width);
+  const float heightScale =
+      float(sheetSize.height) / float(aContentPageSize.height);
+  const float scale = std::min(widthScale, heightScale);
+  return std::min(scale, GetSharedPageData()->mMaxPageZoomRatio);
 }
 
 double nsPageFrame::GetPageOrientationRotation(nsSharedPageData* aPD) const {
