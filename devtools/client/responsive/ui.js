@@ -263,7 +263,16 @@ class ResponsiveUI extends EventEmitter {
     );
 
     
-    this.browserContainerEl.prepend(rdmFrame);
+    
+    const notificationBox = this.browserContainerEl.querySelector(
+      ".notificationbox-stack"
+    );
+    if (notificationBox) {
+      notificationBox.after(rdmFrame);
+    } else {
+      
+      this.browserContainerEl.prepend(rdmFrame);
+    }
 
     
     this.browserStackEl.append(this.screenBox);
