@@ -4,8 +4,8 @@
 
 use jxl::api::{
     Endianness, JxlBitstreamInput, JxlColorEncoding, JxlColorProfile, JxlColorType, JxlDataFormat,
-    JxlDecoderInner, JxlDecoderOptions, JxlOutputBuffer, JxlPixelFormat, ProcessingResult,
-    VisibleFrameInfo,
+    JxlDecoderInner, JxlDecoderOptions, JxlOutputBuffer, JxlPixelFormat, JxlPrimaries,
+    JxlTransferFunction, JxlWhitePoint, ProcessingResult, VisibleFrameInfo,
 };
 use jxl::headers::extra_channels::ExtraChannel;
 
@@ -138,6 +138,44 @@ impl JxlApiDecoder {
             }
         }
         &self.icc_profile_cache
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn get_output_cicp(&self) -> Option<(u8, u8, u8)> {
+        let JxlColorProfile::Simple(JxlColorEncoding::RgbColorSpace {
+            white_point,
+            primaries,
+            transfer_function,
+            rendering_intent,
+        }) = self.inner.output_color_profile()?
+        else {
+            return None;
+        };
+
+        let primaries_val: u8 = match (white_point, primaries) {
+            (JxlWhitePoint::D65, JxlPrimaries::SRGB) => 1,
+            (JxlWhitePoint::D65, JxlPrimaries::BT2100) => 9,
+            (JxlWhitePoint::D65, JxlPrimaries::P3) => 12,
+            (JxlWhitePoint::DCI, JxlPrimaries::P3) => 11,
+            _ => return None,
+        };
+        let transfer_val: u8 = match transfer_function {
+            JxlTransferFunction::BT709 => 1,
+            JxlTransferFunction::Linear => 8,
+            JxlTransferFunction::SRGB => 13,
+            JxlTransferFunction::PQ => 16,
+            JxlTransferFunction::DCI => 17,
+            JxlTransferFunction::HLG => 18,
+            
+            JxlTransferFunction::Gamma(_) => return None,
+        };
+
+        Some((primaries_val, transfer_val, *rendering_intent as u8))
     }
 
     

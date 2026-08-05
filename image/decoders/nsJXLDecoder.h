@@ -84,6 +84,13 @@ class nsJXLDecoder final : public Decoder {
   
   
   nsresult EnsureSurfacePipe();
+  
+  
+  
+  qcms_profile* MaybeCreateInputProfileFromCICP();
+  
+  
+  qcms_profile* MaybeCreateInputProfileFromICC();
   void BuildCMSTransform();
   nsresult FinishFrame();
   void FlushPartialFrame();
