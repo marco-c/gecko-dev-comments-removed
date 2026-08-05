@@ -1803,6 +1803,7 @@ UniquePtr<sandbox::bpf_dsl::Policy> GetContentSandboxPolicy(
 
 
 
+
 class GMPSandboxPolicy : public SandboxPolicyCommon {
   static intptr_t OpenTrap(const arch_seccomp_data& aArgs, void* aux) {
     const auto files = static_cast<const SandboxOpenedFiles*>(aux);
@@ -1867,20 +1868,6 @@ class GMPSandboxPolicy : public SandboxPolicyCommon {
     return 0;
   }
 
-  static intptr_t FcntlTrap(const arch_seccomp_data& aArgs, void* aux) {
-    const auto cmd = static_cast<int>(aArgs.args[1]);
-    switch (cmd) {
-        
-        
-      case F_GETFD:
-        return O_CLOEXEC;
-      case F_SETFD:
-        return 0;
-      default:
-        return -ENOSYS;
-    }
-  }
-
   const SandboxOpenedFiles* mFiles;
 
  public:
@@ -1926,8 +1913,6 @@ class GMPSandboxPolicy : public SandboxPolicyCommon {
       
       case __NR_uname:
         return Trap(UnameTrap, nullptr);
-      CASES_FOR_fcntl:
-        return Trap(FcntlTrap, nullptr);
 
       
       
