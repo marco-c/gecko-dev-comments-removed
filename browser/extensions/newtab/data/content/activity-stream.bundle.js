@@ -26480,6 +26480,16 @@ function ContentSection_extends() { return ContentSection_extends = Object.assig
 
 
 
+
+
+
+
+
+function hideThemePickerLabels(el) {
+  if (el) {
+    el.showLabels = false;
+  }
+}
 class ContentSection extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
@@ -26648,6 +26658,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       showSectionsMgmtPanel,
       
       novaEnabled,
+      browserNovaEnabled,
       wallpapersEnabled,
       toggleWidgetsManagementPanel,
       showWidgetsManagementPanel,
@@ -26683,7 +26694,17 @@ class ContentSection extends (external_React_default()).PureComponent {
     
     return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
       className: "home-section"
-    }, wallpapersEnabled && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
+    }, browserNovaEnabled && external_React_default().createElement("div", {
+      className: "appearance-section section"
+    }, external_React_default().createElement("h2", {
+      "data-l10n-id": "newtab-custom-appearance-section-title"
+    }), external_React_default().createElement("theme-picker", {
+      ref: hideThemePickerLabels,
+      layout: "compact",
+      installsource: "about:newtab"
+    }), external_React_default().createElement("moz-box-button", {
+      "data-l10n-id": "newtab-appearance-more-themes-button"
+    })), wallpapersEnabled && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
       className: "wallpapers-section"
     }, novaEnabled && external_React_default().createElement("moz-toggle", {
       id: "wallpapers-toggle",
@@ -26958,6 +26979,33 @@ class ContentSection extends (external_React_default()).PureComponent {
 const CustomizeMenu_PREF_NOVA_ENABLED = "nova.enabled";
 
 
+const THEME_PICKER_ELEMENTS = ["chrome://global/content/elements/moz-visual-picker.mjs", "chrome://global/content/elements/moz-segmented-control.mjs", "chrome://global/content/elements/theme-picker.mjs"];
+const THEME_PICKER_FTL = "locales-preview/theme-picker.ftl";
+let themePickerElementsLoaded = false;
+
+
+
+
+
+
+
+
+
+
+
+
+
+function loadThemePickerElements() {
+  if (themePickerElementsLoaded) {
+    return;
+  }
+  themePickerElementsLoaded = true;
+  document.l10n?.addResourceIds([THEME_PICKER_FTL]);
+  for (const url of THEME_PICKER_ELEMENTS) {
+    
+    import(url).catch(() => {});
+  }
+}
 class _CustomizeMenu extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
@@ -26978,8 +27026,16 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       subpanelOpen: isOpen
     });
   }
+  componentDidMount() {
+    if (this.props.showing && this.props.Prefs.values.browserNovaEnabled) {
+      loadThemePickerElements();
+    }
+  }
   componentDidUpdate(prevProps) {
     if (this.props.showing && !prevProps.showing) {
+      if (this.props.Prefs.values.browserNovaEnabled) {
+        loadThemePickerElements();
+      }
       if (!this.dialogRef.current?.open) {
         this.dialogRef.current?.showModal();
       }
@@ -27018,6 +27074,10 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
     const activationWindowClass = activationWindowVariant ? `activation-window-variant-${activationWindowVariant}` : "";
     
     const novaEnabled = this.props.Prefs.values[CustomizeMenu_PREF_NOVA_ENABLED];
+    
+    const {
+      browserNovaEnabled
+    } = this.props.Prefs.values;
     return external_React_default().createElement("span", null, external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.CSSTransition, {
       nodeRef: this.personalizeButtonRef,
       timeout: 300,
@@ -27103,6 +27163,7 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       toggleSectionsMgmtPanel: this.props.toggleSectionsMgmtPanel,
       showSectionsMgmtPanel: this.props.showSectionsMgmtPanel,
       novaEnabled: novaEnabled,
+      browserNovaEnabled: browserNovaEnabled,
       toggleWidgetsManagementPanel: this.props.toggleWidgetsManagementPanel,
       showWidgetsManagementPanel: this.props.showWidgetsManagementPanel,
       widgetsEnabled: this.props.widgetsEnabled
