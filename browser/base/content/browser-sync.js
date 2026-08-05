@@ -499,10 +499,8 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
       SyncedTabs.syncTabs().catch(ex => {
         console.error(ex);
       });
-      this._updateDeviceList();
-    } else {
-      this.devicesList.hidden = true;
     }
+    this._updateDeviceList();
   }
 
   _updateDeviceList() {
@@ -519,7 +517,7 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
 
     let clients;
     try {
-      clients = await SyncedTabs.getTabClients();
+      clients = await this._getMergedDeviceList();
     } catch (err) {
       console.error(err);
       return;
@@ -577,13 +575,74 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
   }
 
   _getDeviceForClient(client) {
-    return (
-      fxAccounts.device.recentDeviceList &&
-      fxAccounts.device.recentDeviceList.find(
-        d =>
-          d.id === Weave.Service.clientsEngine.getClientFxaDeviceId(client.id)
-      )
-    );
+    let devices = fxAccounts.device.recentDeviceList;
+    if (!devices) {
+      return undefined;
+    }
+    
+    
+    
+    
+    let fxaDeviceId =
+      Weave.Service.clientsEngine.getClientFxaDeviceId(client.id) || client.id;
+    return devices.find(d => d.id === fxaDeviceId);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  async _getMergedDeviceList() {
+    let clients = await SyncedTabs.getTabClients();
+    let devices = fxAccounts.device.recentDeviceList;
+    if (!devices) {
+      return clients;
+    }
+
+    let clientByFxaId = new Map();
+    for (let client of clients) {
+      let fxaDeviceId = Weave.Service.clientsEngine.getClientFxaDeviceId(
+        client.id
+      );
+      if (fxaDeviceId) {
+        clientByFxaId.set(fxaDeviceId, client);
+      }
+    }
+
+    let merged = [];
+    let matchedClients = new Set();
+    for (let device of devices) {
+      if (device.isCurrentDevice) {
+        continue;
+      }
+      let client = clientByFxaId.get(device.id);
+      if (client) {
+        matchedClients.add(client);
+        merged.push(client);
+      } else if (fxAccounts.commands.sendTab.isDeviceCompatible(device)) {
+        merged.push({
+          id: device.id,
+          name: device.name,
+          lastModified: device.lastAccessTime,
+          tabs: [],
+        });
+      }
+    }
+    for (let client of clients) {
+      if (!matchedClients.has(client)) {
+        merged.push(client);
+      }
+    }
+    return merged;
   }
 
   _createAllDevicesButton(clients) {
@@ -642,7 +701,17 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
       })
     );
     btn.addEventListener("click", e => {
-      this._showDeviceRecentTabs(client, device, btn, e);
+      
+      
+      
+      
+      
+      this._showDeviceRecentTabs(
+        client,
+        this._getDeviceForClient(client) ?? device,
+        btn,
+        e
+      );
     });
     return btn;
   }
@@ -769,16 +838,20 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
       "#PanelUI-fxa-device-view-all-tabs"
     );
 
-    tabsList.hidden = !hasTabs;
-    noTabsLabel.hidden = hasTabs;
-    footerSeparator.hidden = !hasTabs;
-    viewAllBtn.hidden = !hasTabs;
-    this._configureViewAllTabsButton(viewAllBtn, client);
-
     let sendPageBtn = panelNode.querySelector(
       "#PanelUI-fxa-device-send-current-page"
     );
     let canSendTab = this._canSendTabToDevice(device);
+
+    tabsList.hidden = !hasTabs;
+    noTabsLabel.hidden = hasTabs;
+    viewAllBtn.hidden = !hasTabs;
+    this._configureViewAllTabsButton(viewAllBtn, client);
+    
+    
+    
+    footerSeparator.hidden = !hasTabs && !canSendTab;
+
     sendPageBtn.hidden = !canSendTab;
     if (canSendTab) {
       this._configureSendPageButton(sendPageBtn, device, anchor);
