@@ -104,6 +104,12 @@ const COMMON_PREFERENCES = new Map([
   // (bug 1176798, bug 1177018, bug 1210465)
   ["apz.content_response_timeout", 60000],
 
+  // Use zero movement tolerance before a touch is treated as a pan, so that in
+  // automation touch events scroll from exactly the position they are dispatched
+  // without small movements first being absorbed.
+  ["apz.touch_move_tolerance", 0.0],
+  ["apz.touch_start_tolerance", 0.0],
+
   // Disable the profile backup service.
   ["browser.backup.enabled", false],
 
@@ -141,6 +147,9 @@ const COMMON_PREFERENCES = new Map([
   // Background thumbnails in particular cause grief, and disabling
   // thumbnails in general cannot hurt
   ["browser.pagethumbnails.capturing_disabled", true],
+
+  // Do not show the preonboarding modal/splash which can interfere with tests
+  ["browser.preonboarding.enabled", false],
 
   // Disable geolocation ping(#1)
   ["browser.region.network.url", ""],
