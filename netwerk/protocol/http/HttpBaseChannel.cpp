@@ -3989,6 +3989,13 @@ HttpBaseChannel::HTTPUpgrade(const nsACString& aProtocolName,
   NS_ENSURE_ARG(!aProtocolName.IsEmpty());
   NS_ENSURE_ARG_POINTER(aListener);
 
+  
+  
+  
+  if (!nsHttp::IsReasonableHeaderValue(aProtocolName)) {
+    return NS_ERROR_ILLEGAL_VALUE;
+  }
+
   mUpgradeProtocol = aProtocolName;
   mUpgradeProtocolCallback = aListener;
   return NS_OK;
