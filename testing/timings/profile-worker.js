@@ -51,6 +51,14 @@ function normalizeProfilePaths(string) {
 
 
 
+
+
+const PORT_REGEXP =
+  /(:\/\/(?:\[[^\]\s]*\]|[^\s/:'"`\\]+)|(?<![\w./])localhost):\d{2,5}(?![\w.])/g;
+
+
+
+
 const QUOTED_PATH_REGEXP =
   /[^\s'"`]*(?:checkouts[\\/]+gecko|build[\\/]+tests|obj-build|xpc-profile-[a-z0-9_]{8}|tmp[a-z0-9_]{8}\.mozrunner)[^\s'"`]*/g;
 
@@ -68,6 +76,13 @@ function normalizeMarkerMessage(message) {
       ?.replace(QUOTED_PATH_REGEXP, normalizeSourcePath)
       .replace(UUID_REGEXP, "<uuid>")
       
+      
+      
+      
+      .replace(/\bserver\d+\.conn\d+[\w./]*/g, actor =>
+        actor.replace(/\d+/g, "<n>")
+      )
+      
       .replace(/0x[0-9a-fA-F]+/g, "0x...")
       
       .replace(/\b\d+\.\d+\s*(ms|s|µs|us|ns)\b/g, "X$1")
@@ -75,11 +90,33 @@ function normalizeMarkerMessage(message) {
       
       
       
-      .replace(/\b(process(?:\s+id)?\s*:?\s*)\d+\b/gi, "$1<pid>")
+      
+      .replace(/\b(process(?:[\s_-]*id)?\s*[:=]?\s*)\d+\b/gi, "$1<pid>")
+      .replace(/\b(pid\s*[:=]\s*)\d+\b/gi, "$1<pid>")
+      
+      
+      
+      .replace(
+        /\b(childID|ContentParent: id|innerWindowId|outerWindowId|browsingContextId|windowId|tab ID)(\s*[:=]\s*)\d+/gi,
+        "$1$2<id>"
+      )
+      
+      
+      .replace(
+        /([?&](?:state|code|code_challenge|keys_jwk|token)=)[A-Za-z0-9_%+-]{8,}/g,
+        "$1<random>"
+      )
+      .replace(PORT_REGEXP, "$1:<port>")
       
       .replace(/\b\d{8,}\b/g, "<num>")
       
-      .replace(/\b[0-9a-fA-F]{8,}\b/g, "<addr>")
+      
+      
+      
+      .replace(
+        /\b(?=[0-9a-fA-F]*[a-fA-F])(?=[0-9a-fA-F]*\d)[0-9a-fA-F]{7,}\b/g,
+        "<addr>"
+      )
   );
 }
 
@@ -112,7 +149,14 @@ function normalizeSourcePath(file) {
   
   
   
-  return normalizeProfilePaths(normalized.replace(UUID_REGEXP, "<uuid>"));
+  normalized = normalizeProfilePaths(normalized.replace(UUID_REGEXP, "<uuid>"));
+
+  
+  
+  
+  return normalized
+    .replace(PORT_REGEXP, "$1:<port>")
+    .replace(/([?&](?:[\w.-]+=)?(?:0\.)?)\d{8,}\b/g, "$1<num>");
 }
 
 
