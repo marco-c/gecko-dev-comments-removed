@@ -42,6 +42,15 @@ add_task(async function () {
   let inRange = (val, min, max) => min <= val && val <= max;
 
   
+  
+  const kNewTabIconHeight = Services.prefs.getBoolPref(
+    "browser.nova.enabled",
+    false
+  )
+    ? 12
+    : 13;
+
+  
   await withPerfObserver(
     async function () {
       let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
@@ -71,7 +80,8 @@ add_task(async function () {
                     
                     
                     
-                    (r.h == 13 && r.w <= 2 * 13 + kMaxEmptyPixels) ||
+                    (r.h == kNewTabIconHeight &&
+                      r.w <= 2 * kNewTabIconHeight + kMaxEmptyPixels) ||
                     
                     (r.h == 2 && r.w == 2))
                 )
