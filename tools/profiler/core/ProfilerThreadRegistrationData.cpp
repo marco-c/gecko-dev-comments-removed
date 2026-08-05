@@ -286,9 +286,13 @@ void ThreadRegistrationLockedRWOnThread::ClearCycleCollectedJSContext() {
              !!mJsFrameBuffer);
 }
 
-void ThreadRegistrationLockedRWOnThread::PollJSSampling() {
+ThreadRegistrationLockedRWOnThread::JSSamplingChange
+ThreadRegistrationLockedRWOnThread::TakeJSSamplingChange() {
+  JSSamplingChange change;
   
   if (mCCJSContext) {
+    change.mContext = mCCJSContext->Context();
+    change.mAllocationsEnabled = JSAllocationsEnabled();
     
     
     
@@ -298,29 +302,43 @@ void ThreadRegistrationLockedRWOnThread::PollJSSampling() {
     
     
     
-    JSContext* cx = mCCJSContext->Context();
     if (mJSSampling == ACTIVE_REQUESTED) {
       mJSSampling = ACTIVE;
-      js::EnableContextProfilingStack(cx, true);
-
-      if (JSAllocationsEnabled()) {
-        
-        JS::EnableRecordingAllocations(cx, profiler_add_js_allocation_marker,
-                                       0.01);
-      }
-      js::RegisterContextProfilerMarkers(
-          cx, profiler_add_js_marker, profiler_add_js_interval,
-          profiler_add_js_flow, profiler_add_js_terminating_flow);
-
+      change.mAction = JSSamplingChange::Action::Start;
     } else if (mJSSampling == INACTIVE_REQUESTED) {
       mJSSampling = INACTIVE;
-      js::EnableContextProfilingStack(cx, false);
-
-      if (JSAllocationsEnabled()) {
-        JS::DisableRecordingAllocations(cx);
-      }
+      change.mAction = JSSamplingChange::Action::Stop;
     }
   }
+  return change;
+}
+
+ void ThreadRegistrationLockedRWOnThread::ApplyJSSamplingChange(
+    const JSSamplingChange& aChange) {
+  JSContext* cx = aChange.mContext;
+  if (aChange.mAction == JSSamplingChange::Action::Start) {
+    js::EnableContextProfilingStack(cx, true);
+
+    if (aChange.mAllocationsEnabled) {
+      
+      JS::EnableRecordingAllocations(cx, profiler_add_js_allocation_marker,
+                                     0.01);
+    }
+    js::RegisterContextProfilerMarkers(
+        cx, profiler_add_js_marker, profiler_add_js_interval,
+        profiler_add_js_flow, profiler_add_js_terminating_flow);
+
+  } else if (aChange.mAction == JSSamplingChange::Action::Stop) {
+    js::EnableContextProfilingStack(cx, false);
+
+    if (aChange.mAllocationsEnabled) {
+      JS::DisableRecordingAllocations(cx);
+    }
+  }
+}
+
+void ThreadRegistrationLockedRWOnThread::PollJSSampling() {
+  ApplyJSSamplingChange(TakeJSSamplingChange());
 }
 
 #ifdef NIGHTLY_BUILD
