@@ -181,6 +181,18 @@ class ServoCSSParser {
 
 
 
+  static bool ParseLengthPercentageForAbsoluteLengths(
+      const nsACString& aValue, StyleLengthPercentage& aResult);
+
+  
+
+
+
+
+
+
+
+
   static bool ParseTransformIntoMatrix(const nsACString& aValue,
                                        bool& aContains3DTransform,
                                        gfx::Matrix4x4& aResult);

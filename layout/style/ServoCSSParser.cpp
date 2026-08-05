@@ -88,6 +88,12 @@ bool ServoCSSParser::ParseViewTimelineInset(const nsACString& aValue,
 }
 
 
+bool ServoCSSParser::ParseLengthPercentageForAbsoluteLengths(
+    const nsACString& aValue, StyleLengthPercentage& aResult) {
+  return Servo_ParseLengthPercentageForAbsoluteLengths(&aValue, &aResult);
+}
+
+
 bool ServoCSSParser::ParseTransformIntoMatrix(const nsACString& aValue,
                                               bool& aContains3DTransform,
                                               gfx::Matrix4x4& aResult) {

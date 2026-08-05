@@ -9,6 +9,7 @@
 #include "mozilla/ServoCSSParser.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/dom/Animation.h"
+#include "mozilla/dom/CSSKeywordValue.h"
 #include "mozilla/dom/CSSUnitValue.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
@@ -55,6 +56,42 @@ already_AddRefed<ViewTimeline> ViewTimeline::MakeAnonymous(
 JSObject* ViewTimeline::WrapObject(JSContext* aCx,
                                    JS::Handle<JSObject*> aGivenProto) {
   return ViewTimeline_Binding::Wrap(aCx, this, aGivenProto);
+}
+
+static Maybe<StyleLengthPercentageOrAuto> ComputeStartOrEndInset(
+    const OwningUTF8StringOrCSSKeywordValueOrCSSNumericValue& aValue,
+    ErrorResult& aRv) {
+  
+  
+  
+  
+  
+  if (aValue.IsUTF8String()) {
+    const nsCString& s = aValue.GetAsUTF8String();
+    if (!s.LowerCaseEqualsLiteral("auto")) {
+      aRv.ThrowTypeError("Invalid inset keyword");
+      return Nothing();
+    }
+    return Some(StyleLengthPercentageOrAuto::Auto());
+  } else if (aValue.IsCSSKeywordValue()) {
+    nsAutoCString s;
+    aValue.GetAsCSSKeywordValue()->GetValue(s);
+    if (!s.LowerCaseEqualsLiteral("auto")) {
+      aRv.ThrowTypeError("Invalid inset keyword");
+      return Nothing();
+    }
+    return Some(StyleLengthPercentageOrAuto::Auto());
+  }
+
+  nsAutoCString s;
+  const CSSNumericValue& numeric = aValue.GetAsCSSNumericValue();
+  numeric.Stringify(s);
+  StyleLengthPercentage result;
+  if (!ServoCSSParser::ParseLengthPercentageForAbsoluteLengths(s, result)) {
+    aRv.ThrowTypeError("Invalid inset value");
+    return Nothing();
+  }
+  return Some(StyleLengthPercentageOrAuto::LengthPercentage(result));
 }
 
 
@@ -111,10 +148,24 @@ already_AddRefed<ViewTimeline> ViewTimeline::Constructor(
     
     
     
-    
-    
-    aRv.ThrowTypeError("Unsupported");
-    return nullptr;
+    const auto& sequence =
+        aOptions.mInset
+            .GetAsUTF8StringOrCSSKeywordValueOrCSSNumericValueSequence();
+    if (sequence.Length() == 0 || sequence.Length() > 2) {
+      aRv.ThrowTypeError("Invalid inset sequence");
+      return nullptr;
+    }
+    auto start = ComputeStartOrEndInset(sequence[0], aRv);
+    if (!start) {
+      return nullptr;
+    }
+    auto end = sequence.Length() == 2 ? ComputeStartOrEndInset(sequence[1], aRv)
+                                      : start;
+    if (!end) {
+      return nullptr;
+    }
+    inset.start = std::move(*start);
+    inset.end = std::move(*end);
   }
 
   
