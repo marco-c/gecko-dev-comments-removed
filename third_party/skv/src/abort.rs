@@ -85,11 +85,6 @@ pub struct AbortSignal {
 
 impl AbortSignal {
     
-    pub fn is_aborted(&self) -> bool {
-        matches!(&*self.state.lock().unwrap(), AbortState::Aborted)
-    }
-
-    
     
     pub async fn aborting<T, E, F>(self, f: F) -> Result<T, E>
     where
