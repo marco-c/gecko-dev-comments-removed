@@ -566,17 +566,16 @@ void HTMLSelectElement::SetLength(uint32_t aLength, ErrorResult& aRv) {
 bool HTMLSelectElement::MatchSelectedOptions(Element* aElement,
                                              int32_t ,
                                              nsAtom* ,
-                                             void* aData) {
+                                             void* ) {
+  
   HTMLOptionElement* option = HTMLOptionElement::FromNode(aElement);
-  return option &&
-         option->GetSelect() == static_cast<HTMLSelectElement*>(aData) &&
-         option->Selected();
+  return option && option->Selected();
 }
 
 HTMLCollection* HTMLSelectElement::SelectedOptions() {
   if (!mSelectedOptions) {
     mSelectedOptions = new ContentList(this, MatchSelectedOptions, nullptr,
-                                       this,  true);
+                                       nullptr,  true);
   }
   return mSelectedOptions;
 }
