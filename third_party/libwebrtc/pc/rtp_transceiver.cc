@@ -1141,6 +1141,7 @@ RtpTransceiver::GetStopTransceiverProcedure() {
 RTCError RtpTransceiver::SetCodecPreferences(
     std::span<RtpCodecCapability> codec_capabilities) {
   RTC_DCHECK(unified_plan_);
+  RTCError error = RTCError::OK();
   
   
   if (codec_capabilities.empty()) {
@@ -1148,17 +1149,21 @@ RTCError RtpTransceiver::SetCodecPreferences(
     sendrecv_codec_preferences_.clear();
     sendonly_codec_preferences_.clear();
     recvonly_codec_preferences_.clear();
-    return RTCError::OK();
+  } else {
+    
+    std::vector<RtpCodecCapability> codecs;
+    absl::c_remove_copy_if(codec_capabilities, std::back_inserter(codecs),
+                           [&codecs](const RtpCodecCapability& codec) {
+                             return absl::c_linear_search(codecs, codec);
+                           });
+    
+    
+    error = UpdateCodecPreferencesCaches(codecs);
   }
-  
-  std::vector<RtpCodecCapability> codecs;
-  absl::c_remove_copy_if(codec_capabilities, std::back_inserter(codecs),
-                         [&codecs](const RtpCodecCapability& codec) {
-                           return absl::c_linear_search(codecs, codec);
-                         });
-  
-  
-  return UpdateCodecPreferencesCaches(codecs);
+  if (error.ok() && on_negotiation_needed_) {
+    on_negotiation_needed_();
+  }
+  return error;
 }
 
 RTCError RtpTransceiver::UpdateCodecPreferencesCaches(
@@ -1331,6 +1336,10 @@ RTCError RtpTransceiver::SetHeaderExtensionsToNegotiate(
   for (size_t i = 0; i < header_extensions.size(); i++) {
     header_extensions_to_negotiate_[i].direction =
         header_extensions[i].direction;
+  }
+
+  if (on_negotiation_needed_) {
+    on_negotiation_needed_();
   }
 
   return RTCError::OK();

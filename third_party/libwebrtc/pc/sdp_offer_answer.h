@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/audio_options.h"
 #include "api/candidate.h"
@@ -60,6 +61,7 @@
 #include "pc/stream_collection.h"
 #include "pc/transceiver_list.h"
 #include "pc/webrtc_session_description_factory.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/containers/flat_map.h"
 #include "rtc_base/containers/flat_set.h"
 #include "rtc_base/operations_chain.h"
@@ -182,6 +184,10 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
 
   std::optional<bool> is_caller() const;
   bool HasNewIceCredentials();
+  
+  
+  
+  
   void UpdateNegotiationNeeded();
   void AllocateSctpSids();
   
@@ -640,10 +646,26 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
       RTC_GUARDED_BY(signaling_thread());
   std::unique_ptr<SessionDescriptionInterface> pending_remote_description_
       RTC_GUARDED_BY(signaling_thread());
+  
+  
   std::unique_ptr<SessionDescriptionInterface> last_created_offer_
       RTC_GUARDED_BY(signaling_thread());
   std::unique_ptr<SessionDescriptionInterface> last_created_answer_
       RTC_GUARDED_BY(signaling_thread());
+  
+  
+  uint64_t state_version_ RTC_GUARDED_BY(signaling_thread()) = 0;
+  
+  
+  
+  uint64_t last_created_offer_version_ RTC_GUARDED_BY(signaling_thread()) = 0;
+  uint64_t last_created_answer_version_ RTC_GUARDED_BY(signaling_thread()) = 0;
+#if RTC_DCHECK_IS_ON
+  PeerConnectionInterface::RTCOfferAnswerOptions last_created_offer_options_
+      RTC_GUARDED_BY(signaling_thread());
+  PeerConnectionInterface::RTCOfferAnswerOptions last_created_answer_options_
+      RTC_GUARDED_BY(signaling_thread());
+#endif
   SdpMungingType last_sdp_munging_type_ = SdpMungingType::kNoModification;
 
   PeerConnectionInterface::SignalingState signaling_state_
@@ -739,6 +761,17 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   SdpPayloadTypeSuggester pt_suggester_;
 
   int max_sctp_streams_;
+
+#if RTC_DCHECK_IS_ON
+  
+  
+  void VerifyCachedOffer(absl::AnyInvocable<void() &&> on_verified)
+      RTC_RUN_ON(signaling_thread());
+  
+  
+  void VerifyCachedAnswer(absl::AnyInvocable<void() &&> on_verified)
+      RTC_RUN_ON(signaling_thread());
+#endif
 
   WeakPtrFactory<SdpOfferAnswerHandler> weak_ptr_factory_
       RTC_GUARDED_BY(signaling_thread());
