@@ -10,8 +10,10 @@
 
 #include "Client.h"
 #include "ErrorList.h"
+#include "PLDHashTable.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/HashFunctions.h"
 #include "mozilla/InitializedOnce.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/Mutex.h"
@@ -289,8 +291,15 @@ class QuotaManager final : public BackgroundThreadObject {
 
 
 
-  void InitQuotaForOrigin(const FullOriginMetadata& aFullOriginMetadata,
-                          bool aDirectoryExists = true);
+  
+  
+  
+  
+  
+  void InitQuotaForOrigin(
+      const FullOriginMetadata& aFullOriginMetadata,
+      bool aDirectoryExists = true,
+      OriginCacheMap& aCacheMap = OriginCacheMap::Inactive());
 
   
   void DecreaseUsageForClient(const ClientMetadata& aClientMetadata,
@@ -962,7 +971,8 @@ class QuotaManager final : public BackgroundThreadObject {
       const nsCOMPtr<nsIFile>& aChildDirectory, const nsAutoString& aLeafName,
       PersistenceType aPersistenceType,
       nsTArray<struct RenameAndInitInfo>& aRenameAndInitInfos,
-      OriginFunc&& aOriginFunc);
+      OriginFunc&& aOriginFunc,
+      OriginCacheMap& aCacheMap = OriginCacheMap::Inactive());
 
   
   
@@ -971,15 +981,17 @@ class QuotaManager final : public BackgroundThreadObject {
       const nsCOMPtr<nsIFile>& aChildDirectory,
       PersistenceType aPersistenceType,
       nsTArray<RenameAndInitInfo>& aRenameAndInitInfos,
-      OriginFunc&& aOriginFunc);
+      OriginFunc&& aOriginFunc,
+      OriginCacheMap& aCacheMap = OriginCacheMap::Inactive());
 
   template <typename OriginFunc>
   nsresult InitializeRepository(PersistenceType aPersistenceType,
                                 OriginFunc&& aOriginFunc);
 
-  nsresult InitializeOrigin(nsIFile* aDirectory,
-                            const FullOriginMetadata& aFullOriginMetadata,
-                            bool aForGroup = false);
+  nsresult InitializeOrigin(
+      nsIFile* aDirectory, const FullOriginMetadata& aFullOriginMetadata,
+      bool aForGroup = false,
+      OriginCacheMap& aCacheMap = OriginCacheMap::Inactive());
 
   using OriginInfosFlatTraversable =
       nsTArray<NotNull<RefPtr<const OriginInfo>>>;
