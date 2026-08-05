@@ -9,6 +9,7 @@
 
 #include "nsSplittableFrame.h"
 
+#include "mozilla/DebugOnly.h"
 #include "mozilla/ReflowInput.h"
 #include "nsContainerFrame.h"
 #include "nsFieldSetFrame.h"
@@ -244,17 +245,36 @@ void nsSplittableFrame::UpdateFirstContinuationAndFirstInFlowCache() {
       }
     }
   } else {
-    
-    if (oldCachedFirstInFlow) {
+    if (GetPrevContinuation()) {
+      
+      
       
       
       
       
       for (nsSplittableFrame* f = this; f;
            f = static_cast<nsSplittableFrame*>(f->GetNextInFlow())) {
-        f->mFirstInFlow = nullptr;
+        f->mFirstInFlow = this;
+      }
+    } else {
+      
+      if (oldCachedFirstInFlow) {
+        
+        
+        
+        
+        for (nsSplittableFrame* f = this; f;
+             f = static_cast<nsSplittableFrame*>(f->GetNextInFlow())) {
+          f->mFirstInFlow = nullptr;
+        }
       }
     }
+
+    DebugOnly<nsSplittableFrame*> nextInFlow =
+        static_cast<nsSplittableFrame*>(GetNextInFlow());
+    MOZ_ASSERT(!nextInFlow || !nextInFlow->mFirstInFlow ||
+                   nextInFlow->mFirstInFlow == this,
+               "Our next-in-flow caches a stale first-in-flow!");
   }
 }
 
