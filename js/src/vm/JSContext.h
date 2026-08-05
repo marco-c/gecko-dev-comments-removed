@@ -632,10 +632,21 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   mozilla::Atomic<bool, mozilla::SequentiallyConsistent>
       suppressProfilerSampling;
 
+  
+  
+  
+  
+  
+  
+  mozilla::Atomic<bool, mozilla::SequentiallyConsistent>
+      allowProfilerScriptAccess_;
+
  public:
   bool isProfilerSamplingEnabled() const { return !suppressProfilerSampling; }
   void disableProfilerSampling() { suppressProfilerSampling = true; }
   void enableProfilerSampling() { suppressProfilerSampling = false; }
+  bool allowProfilerScriptAccess() const { return allowProfilerScriptAccess_; }
+  void setAllowProfilerScriptAccess(bool b) { allowProfilerScriptAccess_ = b; }
 
  private:
   js::wasm::Context wasm_;

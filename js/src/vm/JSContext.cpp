@@ -6,8 +6,6 @@
 
 
 
-#include "vm/JSContext-inl.h"
-
 #include "mozilla/CheckedInt.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/MemoryReporting.h"
@@ -15,6 +13,8 @@
 #include "mozilla/Utf8.h"  
 
 #include <string.h>
+
+#include "vm/JSContext-inl.h"
 #ifdef ANDROID
 #  include <android/log.h>
 #endif  
@@ -38,11 +38,13 @@
 #include "js/CharacterEncoding.h"
 #include "js/ContextOptions.h"        
 #include "js/ErrorInterceptor.h"      
+#include "js/friend/DumpFunctions.h"  
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/MicroTask.h"
 #include "js/friend/StackLimits.h"  
 #include "js/MemoryCallbacks.h"
 #include "js/Prefs.h"
+#include "js/Printer.h"  
 #include "js/Printf.h"
 #include "js/PropertyAndElement.h"  
 #include "js/Stack.h"  
@@ -52,9 +54,7 @@
 #include "util/NativeStack.h"
 #include "util/Text.h"
 #include "util/WindowsWrapper.h"
-#include "js/friend/DumpFunctions.h"  
-#include "js/Printer.h"               
-#include "vm/BytecodeUtil.h"          
+#include "vm/BytecodeUtil.h"  
 #include "vm/ErrorObject.h"
 #include "vm/ErrorReporting.h"
 #include "vm/FrameIter.h"
@@ -1176,6 +1176,7 @@ JSContext::JSContext(JSRuntime* runtime, const JS::ContextOptions& options)
       isEvaluatingModule(this, 0),
       frontendCollectionPool_(this),
       suppressProfilerSampling(false),
+      allowProfilerScriptAccess_(false),
       tempLifoAlloc_(this, (size_t)TEMP_LIFO_ALLOC_PRIMARY_CHUNK_SIZE,
                      js::MallocArena),
       debuggerMutations(this, 0),

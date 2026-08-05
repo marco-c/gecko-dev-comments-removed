@@ -74,6 +74,9 @@ IncrementalProgress GCRuntime::compactPhase(SliceBudget& sliceBudget,
   
   
   
+  
+  
+  
   AutoSuppressProfilerSampling suppressSampling(rt->mainContextFromOwnThread());
 
   ZoneList relocatedZones;

@@ -32,15 +32,31 @@ inline void GeckoProfilerThread::updatePC(JSContext* cx, JSScript* script,
 
 
 
+
+
+
+
+
+
+
+enum class ProfilerScriptAccess { Deny, Allow };
+
+
+
+
+
 class MOZ_RAII AutoSuppressProfilerSampling {
  public:
-  explicit AutoSuppressProfilerSampling(JSContext* cx);
+  explicit AutoSuppressProfilerSampling(
+      JSContext* cx,
+      ProfilerScriptAccess scriptAccess = ProfilerScriptAccess::Deny);
 
   ~AutoSuppressProfilerSampling();
 
  private:
   JSContext* cx_;
   bool previouslyEnabled_;
+  bool previousScriptAccess_;
 };
 
 MOZ_ALWAYS_INLINE

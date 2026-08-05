@@ -3,8 +3,6 @@
 
 
 
-#include "gc/Nursery-inl.h"
-
 #include "mozilla/DebugOnly.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Sprintf.h"
@@ -37,6 +35,7 @@
 #include "gc/BufferAllocator-inl.h"
 #include "gc/Heap-inl.h"
 #include "gc/Marking-inl.h"
+#include "gc/Nursery-inl.h"
 #include "gc/StableCellHasher-inl.h"
 #include "gc/StoreBuffer-inl.h"
 #include "vm/GeckoProfiler-inl.h"
@@ -1648,8 +1647,12 @@ void js::Nursery::swapSpaces() {
 void js::Nursery::traceRoots(AutoGCSession& session, TenuringTracer& mover) {
   {
     
+    
+    
+    
+    
     AutoSuppressProfilerSampling suppressProfiler(
-        runtime()->mainContextFromOwnThread());
+        runtime()->mainContextFromOwnThread(), ProfilerScriptAccess::Allow);
 
     
 

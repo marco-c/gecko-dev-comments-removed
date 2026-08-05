@@ -629,8 +629,17 @@ JS_PUBLIC_API JSScript* ProfilingStackFrame::script() const {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
   JSContext* cx = script->runtimeFromAnyThread()->mainContextFromAnyThread();
-  if (!cx->isProfilerSamplingEnabled()) {
+  if (!cx->isProfilerSamplingEnabled() && !cx->allowProfilerScriptAccess()) {
     return nullptr;
   }
 
@@ -640,7 +649,17 @@ JS_PUBLIC_API JSScript* ProfilingStackFrame::script() const {
 
 JS_PUBLIC_API JSFunction* ProfilingStackFrame::function() const {
   JSScript* script = this->script();
-  return script ? script->function() : nullptr;
+  if (!script) {
+    return nullptr;
+  }
+  
+  
+  
+  JSContext* cx = script->runtimeFromAnyThread()->mainContextFromAnyThread();
+  if (!cx->isProfilerSamplingEnabled()) {
+    return nullptr;
+  }
+  return script->function();
 }
 
 JS_PUBLIC_API jsbytecode* ProfilingStackFrame::pc() const {
@@ -661,8 +680,9 @@ int32_t ProfilingStackFrame::pcToOffset(JSScript* aScript, jsbytecode* aPc) {
 void ProfilingStackFrame::setPC(jsbytecode* pc) {
   MOZ_ASSERT(isJsFrame());
   JSScript* script = this->script();
-  MOZ_ASSERT(
-      script);  
+  
+  
+  MOZ_ASSERT(script);
   pcOffsetIfJS_ = pcToOffset(script, pc);
 }
 
@@ -739,17 +759,23 @@ js::RetrieveProfilerSourceContent(JSContext* cx, const char* filename) {
   return ProfilerJSSourceData();
 }
 
-AutoSuppressProfilerSampling::AutoSuppressProfilerSampling(JSContext* cx)
-    : cx_(cx), previouslyEnabled_(cx->isProfilerSamplingEnabled()) {
+AutoSuppressProfilerSampling::AutoSuppressProfilerSampling(
+    JSContext* cx, ProfilerScriptAccess scriptAccess)
+    : cx_(cx),
+      previouslyEnabled_(cx->isProfilerSamplingEnabled()),
+      previousScriptAccess_(cx->allowProfilerScriptAccess()) {
   if (previouslyEnabled_) {
     cx_->disableProfilerSampling();
   }
+  cx_->setAllowProfilerScriptAccess(scriptAccess ==
+                                    ProfilerScriptAccess::Allow);
 }
 
 AutoSuppressProfilerSampling::~AutoSuppressProfilerSampling() {
   if (previouslyEnabled_) {
     cx_->enableProfilerSampling();
   }
+  cx_->setAllowProfilerScriptAccess(previousScriptAccess_);
 }
 
 namespace JS {
