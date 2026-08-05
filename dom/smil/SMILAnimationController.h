@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SMIL_SMILANIMATIONCONTROLLER_H_
 #define DOM_SMIL_SMILANIMATIONCONTROLLER_H_
 
@@ -128,7 +126,11 @@ class SMILAnimationController final : public SMILTimeContainer {
   static void SampleTimedElement(mozilla::dom::SVGAnimationElement* aElement,
                                  TimeContainerHashtable* aActiveContainers);
 
-  static void AddAnimationToCompositorTable(
+  
+  
+  
+  
+  static bool AddAnimationToCompositorTable(
       mozilla::dom::SVGAnimationElement* aElement,
       SMILCompositorTable* aCompositorTable);
 

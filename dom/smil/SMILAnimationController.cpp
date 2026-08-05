@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SMILAnimationController.h"
 
 #include <algorithm>
@@ -281,13 +279,20 @@ void SMILAnimationController::DoSample(bool aSkipUnchangedContainers) {
   
   std::unique_ptr<SMILCompositorTable> currentCompositorTable(
       new SMILCompositorTable(0));
-  nsTArray<RefPtr<SVGAnimationElement>> animElems(
-      mAnimationElementTable.Count());
+
+  
+  
+  
+  
+  
+  
+  nsTArray<RefPtr<SVGAnimationElement>> animElems;
 
   for (SVGAnimationElement* animElem : mAnimationElementTable.Keys()) {
     SampleTimedElement(animElem, &activeContainers);
-    AddAnimationToCompositorTable(animElem, currentCompositorTable.get());
-    animElems.AppendElement(animElem);
+    if (AddAnimationToCompositorTable(animElem, currentCompositorTable.get())) {
+      animElems.AppendElement(animElem);
+    }
   }
   activeContainers.Clear();
 
@@ -481,13 +486,14 @@ void SMILAnimationController::SampleTimedElement(
 }
 
 
-void SMILAnimationController::AddAnimationToCompositorTable(
+bool SMILAnimationController::AddAnimationToCompositorTable(
     SVGAnimationElement* aElement, SMILCompositorTable* aCompositorTable) {
   
   SMILTargetIdentifier key;
-  if (!GetTargetIdentifierForAnimation(aElement, key))
+  if (!GetTargetIdentifierForAnimation(aElement, key)) {
     
-    return;
+    return false;
+  }
 
   SMILAnimationFunction& func = aElement->AnimationFunction();
 
@@ -499,21 +505,26 @@ void SMILAnimationController::AddAnimationToCompositorTable(
     
     SMILCompositor* result = aCompositorTable->PutEntry(key);
     result->AddAnimationFunction(&func);
-
-  } else if (func.HasChanged()) {
-    
-    
-    
-    
-    
-    SMILCompositor* result = aCompositorTable->PutEntry(key);
-    result->ToggleForceCompositing();
-
-    
-    
-    
-    func.ClearHasChanged();
+    return true;
   }
+
+  if (!func.HasChanged()) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  SMILCompositor* result = aCompositorTable->PutEntry(key);
+  result->ToggleForceCompositing();
+
+  
+  
+  
+  func.ClearHasChanged();
+  return true;
 }
 
 static inline bool IsTransformAttribute(const Element* aElement,
