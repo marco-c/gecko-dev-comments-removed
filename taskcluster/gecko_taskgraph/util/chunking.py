@@ -36,13 +36,23 @@ if os.path.exists(VARIANTS_YML):
     TEST_VARIANTS = load_yaml(VARIANTS_YML)
 
 
+
+
+
+
+
+
+
+
 WPT_SUBSUITES = {
     "canvas": ["html/canvas"],
     "webgpu": ["webgpu"],
-    "webcodecs": ["webcodecs"],
+    "webcodecs": [
+        "webcodecs",
+        "media-source/mse-for-webcodecs",
+    ],
     "eme": ["encrypted-media"],
 }
-
 
 
 def get_test_tags(config, env):
@@ -416,7 +426,11 @@ class DefaultLoader(BaseManifestLoader):
                         continue
 
                     manifest = t["manifest"]
-                    if any(x in manifest for x in subsuite_paths):
+                    if any(
+                        manifest.startswith("/" + x)
+                        or manifest.startswith("/_mozilla/" + x)
+                        for x in subsuite_paths
+                    ):
                         manifests.add(manifest)
             else:
                 all_subsuite_paths = [
@@ -429,7 +443,11 @@ class DefaultLoader(BaseManifestLoader):
                         continue
 
                     manifest = t["manifest"]
-                    if not any(path in manifest for path in all_subsuite_paths):
+                    if not any(
+                        manifest.startswith("/" + path)
+                        or manifest.startswith("/_mozilla/" + path)
+                        for path in all_subsuite_paths
+                    ):
                         manifests.add(manifest)
 
             return {

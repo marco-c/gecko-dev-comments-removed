@@ -12,10 +12,14 @@ from mozlint.pathutils import expand_exclusions
 
 
 
+
 WPT_SUBSUITE_PATHS = {
     "canvas": ["html/canvas"],
     "webgpu": ["webgpu"],
-    "webcodecs": ["webcodecs"],
+    "webcodecs": [
+        "webcodecs",
+        "media-source/mse-for-webcodecs",
+    ],
     "eme": ["encrypted-media"],
 }
 
@@ -70,7 +74,7 @@ def lint(paths, config, fix=None, **lintargs):
             url_dir = "/".join(rel_path.split("/")[:-1]) + "/"
 
             for subsuite, subsuite_paths in WPT_SUBSUITE_PATHS.items():
-                if not any(p in url_dir for p in subsuite_paths):
+                if not any(url_dir.startswith(p) for p in subsuite_paths):
                     continue
 
                 tags = _effective_tags(rel_path, mozpath.join(root, meta_root))
