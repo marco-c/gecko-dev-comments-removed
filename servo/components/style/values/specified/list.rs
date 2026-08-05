@@ -25,6 +25,7 @@ use style_traits::{ParseError, StyleParseErrorKind};
     ToTyped,
 )]
 #[repr(transparent)]
+#[typed(todo_derive_fields)]
 pub struct ListStyleType(pub CounterStyle);
 
 impl ListStyleType {
@@ -38,6 +39,12 @@ impl ListStyleType {
     #[inline]
     pub fn none() -> Self {
         Self(CounterStyle::None)
+    }
+
+    
+    #[inline]
+    pub fn is_name(&self, n: &crate::Atom) -> bool {
+        self.0.is_name(n)
     }
 
     
@@ -139,6 +146,7 @@ pub struct QuoteList(
     ToTyped,
 )]
 #[repr(C)]
+#[typed(todo_derive_fields)]
 pub enum Quotes {
     
     QuoteList(QuoteList),
