@@ -38,9 +38,6 @@ class TryTaskConfig(Schema, kw_only=True):
     gecko_profile_features: Optional[str] = None
     gecko_profile_threads: Optional[str] = None
     
-    
-    native_profiling: Optional[bool] = None
-    
     github: Optional[GitHubConfig] = None
     
     new_test_config: Optional[bool] = None
