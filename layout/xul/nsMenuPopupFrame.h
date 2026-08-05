@@ -232,7 +232,8 @@ class nsMenuPopupFrame final : public nsBlockFrame, public nsIWidgetListener {
   
   bool IsNoAutoHide() const;
 
-  PopupLevel GetPopupLevel() const { return GetPopupLevel(IsNoAutoHide()); }
+  
+  PopupLevel GetPopupLevel() const;
 
   
   
@@ -456,9 +457,6 @@ class nsMenuPopupFrame final : public nsBlockFrame, public nsIWidgetListener {
   void WillDispatchPopupPositioned() { mPendingPositionedEvent = false; }
 
  protected:
-  
-  PopupLevel GetPopupLevel(bool aIsNoAutoHide) const;
-
   void InitPositionFromAnchorAlign(const nsAString& aAnchor,
                                    const nsAString& aAlign);
 
