@@ -2,8 +2,6 @@
 
 
 
-#include "gc/Marking-inl.h"
-
 #include "mozilla/DebugOnly.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/MathAlgorithms.h"
@@ -28,6 +26,7 @@
 
 #include "gc/BufferAllocator-inl.h"
 #include "gc/GC-inl.h"
+#include "gc/Marking-inl.h"
 #include "gc/PrivateIterators-inl.h"
 #include "gc/TraceMethods-inl.h"
 #include "gc/WeakMap-inl.h"
@@ -775,6 +774,10 @@ void MarkingTracerT<opts>::markEphemeronEdges(EphemeronEdgeVector& edges,
   DebugOnly<size_t> initialLength = edges.length();
 
   for (auto& edge : edges) {
+    if (!edge.target()) {
+      continue;
+    }
+
     MarkColor targetColor = std::min(srcColor, MarkColor(edge.color()));
     MOZ_ASSERT(markColor() >= targetColor);
     if (targetColor == markColor()) {

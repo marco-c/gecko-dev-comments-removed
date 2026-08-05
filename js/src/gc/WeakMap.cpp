@@ -2,14 +2,13 @@
 
 
 
-#include "gc/WeakMap-inl.h"
-
 #include "gc/PublicIterators.h"
 #include "vm/JSObject.h"
 
 #include "gc/AtomMarking-inl.h"
 #include "gc/Marking-inl.h"
 #include "gc/StoreBuffer-inl.h"
+#include "gc/WeakMap-inl.h"
 
 using namespace js;
 using namespace js::gc;
@@ -118,8 +117,10 @@ bool WeakMapBase::addEphemeronEdgesForEntry(MarkColor mapColor,
     }
   }
 
-  if (value && !addEphemeronEdge(mapColor, key, value)) {
-    return false;
+  if (value || key->zone()->isAtomsZone()) {
+    if (!addEphemeronEdge(mapColor, key, value)) {
+      return false;
+    }
   }
 
   return true;
