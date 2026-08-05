@@ -231,6 +231,12 @@ public class TestRunnerActivity extends Activity {
         @Override
         public GeckoResult<GeckoSession> onNewTab(
             final WebExtension source, final WebExtension.CreateTabDetails details) {
+
+          
+          
+          
+          
+
           GeckoSessionSettings settings = null;
           if (details.cookieStoreId != null) {
             settings = new GeckoSessionSettings.Builder().contextId(details.cookieStoreId).build();
