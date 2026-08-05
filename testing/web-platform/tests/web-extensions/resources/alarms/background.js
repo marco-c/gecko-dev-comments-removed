@@ -7,7 +7,8 @@ browser.test.runTests([
   async function testAlarmsCreateAndGet() {
     await browser.alarms.clearAll();
     const now = Date.now();
-    browser.alarms.create(alarmName, {delayInMinutes: 10, periodInMinutes: 5});
+    await browser.alarms.create(alarmName,
+                                {delayInMinutes: 10, periodInMinutes: 5});
     const alarm = await browser.alarms.get(alarmName);
     browser.test.assertEq(typeof alarm, 'object',
                           'Retrieved alarm should be an object');
@@ -25,7 +26,7 @@ browser.test.runTests([
 
   async function testAlarmsGetAll() {
     await browser.alarms.clearAll();
-    browser.alarms.create(alarmName, {delayInMinutes: 10});
+    await browser.alarms.create(alarmName, {delayInMinutes: 10});
     const alarms = await browser.alarms.getAll();
     browser.test.assertTrue(Array.isArray(alarms),
                             'getAll should return an array');
@@ -39,7 +40,7 @@ browser.test.runTests([
 
   async function testAlarmsClear() {
     await browser.alarms.clearAll();
-    browser.alarms.create(alarmName, {delayInMinutes: 10});
+    await browser.alarms.create(alarmName, {delayInMinutes: 10});
     const cleared = await browser.alarms.clear(alarmName);
     browser.test.assertTrue(cleared,
                             'clear should return true for existing alarm');
@@ -54,8 +55,8 @@ browser.test.runTests([
 
   async function testAlarmsClearAll() {
     await browser.alarms.clearAll();
-    browser.alarms.create('alarm1', {delayInMinutes: 10});
-    browser.alarms.create('alarm2', {delayInMinutes: 10});
+    await browser.alarms.create('alarm1', {delayInMinutes: 10});
+    await browser.alarms.create('alarm2', {delayInMinutes: 10});
     const cleared = await browser.alarms.clearAll();
     browser.test.assertTrue(cleared, 'clearAll should return true');
     const alarms = await browser.alarms.getAll();
@@ -80,7 +81,7 @@ browser.test.runTests([
     });
 
     
-    browser.alarms.create(fireAlarmName, {when: Date.now() + 1000});
+    await browser.alarms.create(fireAlarmName, {when: Date.now() + 1000});
 
     const firedAlarm = await alarmPromise;
     browser.test.assertEq(firedAlarm.name, fireAlarmName,
@@ -91,10 +92,39 @@ browser.test.runTests([
   
 
 
+  async function testAlarmsCreateNames() {
+    
+    await browser.alarms.clearAll();
+    await browser.alarms.create(alarmName,
+                                {delayInMinutes: 10, periodInMinutes: 5});
+    const alarm1 = await browser.alarms.get(alarmName);
+    browser.test.assertEq(alarm1.name, alarmName, 'Alarm name should match');
+
+    
+    await browser.alarms.clearAll();
+    await browser.alarms.create(
+        {name: alarmName, delayInMinutes: 10, periodInMinutes: 5});
+    const alarm2 = await browser.alarms.get(alarmName);
+    browser.test.assertEq(alarm2.name, alarmName, 'Alarm name should match');
+
+    
+    await browser.alarms.clearAll();
+    await browser.alarms.create({delayInMinutes: 10, periodInMinutes: 5});
+    const alarm3 = await browser.alarms.get();
+    browser.test.assertEq('', alarm3.name, 'Alarm name should be empty');
+  },
+
+  
+
+
   function testAlarmsErrorCases() {
     
     browser.test.assertThrows(() =>
                                   browser.alarms.create('invalid', 'invalid'));
+
+    
+    browser.test.assertThrows(() => browser.alarms.create(
+                                  alarmName, {name: alarmName, delayInMinutes: 10}));
 
     
     browser.test.assertThrows(() => browser.alarms.get(123));
