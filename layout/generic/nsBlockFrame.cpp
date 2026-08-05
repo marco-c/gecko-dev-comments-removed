@@ -405,7 +405,7 @@ static void RecordReflowStatus(bool aChildIsBlock,
 
 NS_DECLARE_FRAME_PROPERTY_WITH_DTOR_NEVER_CALLED(OverflowLinesProperty,
                                                  nsBlockFrame::FrameLines)
-NS_DECLARE_FRAME_PROPERTY_FRAMELIST(OverflowOutOfFlowsProperty)
+NS_DECLARE_FRAME_PROPERTY_FRAMELIST(OverflowFloatsProperty)
 NS_DECLARE_FRAME_PROPERTY_FRAMELIST(FloatsProperty)
 NS_DECLARE_FRAME_PROPERTY_FRAMELIST(PushedFloatsProperty)
 NS_DECLARE_FRAME_PROPERTY_FRAMELIST(OutsideMarkerProperty)
@@ -463,10 +463,9 @@ void nsBlockFrame::Destroy(DestroyContext& aContext) {
     delete overflowLines;
   }
 
-  if (HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS)) {
-    SafelyDestroyFrameListProp(aContext, presShell,
-                               OverflowOutOfFlowsProperty());
-    RemoveStateBits(NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS);
+  if (HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_FLOATS)) {
+    SafelyDestroyFrameListProp(aContext, presShell, OverflowFloatsProperty());
+    RemoveStateBits(NS_BLOCK_HAS_OVERFLOW_FLOATS);
   }
 
   if (HasMarker()) {
@@ -710,8 +709,8 @@ const nsFrameList& nsBlockFrame::GetChildList(ChildListID aListID) const {
       FrameLines* overflowLines = GetOverflowLines();
       return overflowLines ? overflowLines->mFrames : nsFrameList::EmptyList();
     }
-    case FrameChildListID::OverflowOutOfFlow: {
-      const nsFrameList* list = GetOverflowOutOfFlows();
+    case FrameChildListID::OverflowFloats: {
+      const nsFrameList* list = GetOverflowFloats();
       return list ? *list : nsFrameList::EmptyList();
     }
     case FrameChildListID::Float: {
@@ -737,8 +736,8 @@ void nsBlockFrame::GetChildLists(nsTArray<ChildList>* aLists) const {
   if (overflowLines) {
     overflowLines->mFrames.AppendIfNonempty(aLists, FrameChildListID::Overflow);
   }
-  if (const nsFrameList* list = GetOverflowOutOfFlows()) {
-    list->AppendIfNonempty(aLists, FrameChildListID::OverflowOutOfFlow);
+  if (const nsFrameList* list = GetOverflowFloats()) {
+    list->AppendIfNonempty(aLists, FrameChildListID::OverflowFloats);
   }
   if (const nsFrameList* list = GetOutsideMarkerList()) {
     list->AppendIfNonempty(aLists, FrameChildListID::Marker);
@@ -1190,7 +1189,7 @@ bool nsBlockFrame::MaybeHasFloats() const {
   }
   
   
-  return HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS);
+  return HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_FLOATS);
 }
 
 
@@ -6470,38 +6469,37 @@ void nsBlockFrame::SetOverflowLines(FrameLines* aOverflowLines) {
   AddStateBits(NS_BLOCK_HAS_OVERFLOW_LINES);
 }
 
-nsFrameList* nsBlockFrame::GetOverflowOutOfFlows() const {
-  if (!HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS)) {
+nsFrameList* nsBlockFrame::GetOverflowFloats() const {
+  if (!HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_FLOATS)) {
     return nullptr;
   }
-  nsFrameList* result = GetProperty(OverflowOutOfFlowsProperty());
+  nsFrameList* result = GetProperty(OverflowFloatsProperty());
   NS_ASSERTION(result, "value should always be non-empty when state set");
   return result;
 }
 
-void nsBlockFrame::SetOverflowOutOfFlows(nsFrameList&& aList,
-                                         nsFrameList* aPropValue) {
-  MOZ_ASSERT(
-      HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS) == !!aPropValue,
-      "state does not match value");
+void nsBlockFrame::SetOverflowFloats(nsFrameList&& aList,
+                                     nsFrameList* aPropValue) {
+  MOZ_ASSERT(HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_FLOATS) == !!aPropValue,
+             "state does not match value");
 
   if (aList.IsEmpty()) {
-    if (!HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS)) {
+    if (!HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_FLOATS)) {
       return;
     }
-    nsFrameList* list = TakeProperty(OverflowOutOfFlowsProperty());
+    nsFrameList* list = TakeProperty(OverflowFloatsProperty());
     NS_ASSERTION(aPropValue == list, "prop value mismatch");
     list->Clear();
     list->Delete(PresShell());
-    RemoveStateBits(NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS);
-  } else if (HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS)) {
-    NS_ASSERTION(aPropValue == GetProperty(OverflowOutOfFlowsProperty()),
+    RemoveStateBits(NS_BLOCK_HAS_OVERFLOW_FLOATS);
+  } else if (HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_FLOATS)) {
+    NS_ASSERTION(aPropValue == GetProperty(OverflowFloatsProperty()),
                  "prop value mismatch");
     *aPropValue = std::move(aList);
   } else {
-    SetProperty(OverflowOutOfFlowsProperty(),
+    SetProperty(OverflowFloatsProperty(),
                 new (PresShell()) nsFrameList(std::move(aList)));
-    AddStateBits(NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS);
+    AddStateBits(NS_BLOCK_HAS_OVERFLOW_FLOATS);
   }
 }
 
@@ -6953,12 +6951,10 @@ void nsBlockFrame::RemoveFloat(nsIFrame* aFloat) {
   MOZ_ASSERT(aFloat);
 
   
-  
   MOZ_ASSERT(
       GetChildList(FrameChildListID::Float).ContainsFrame(aFloat) ||
           GetChildList(FrameChildListID::PushedFloats).ContainsFrame(aFloat) ||
-          GetChildList(FrameChildListID::OverflowOutOfFlow)
-              .ContainsFrame(aFloat),
+          GetChildList(FrameChildListID::OverflowFloats).ContainsFrame(aFloat),
       "aFloat is not our child or on an unexpected frame list");
 
   bool didStartRemovingFloat = false;
@@ -8862,7 +8858,7 @@ void nsBlockFrame::CheckFloats(BlockReflowState& aState) {
   }
 #endif
 
-  const nsFrameList* oofs = GetOverflowOutOfFlows();
+  const nsFrameList* oofs = GetOverflowFloats();
   if (oofs && oofs->NotEmpty()) {
     
     
@@ -9313,26 +9309,19 @@ void nsBlockFrame::VerifyLines(bool aFinalCheckOK) {
 
 void nsBlockFrame::VerifyOverflowSituation() {
   
-  
-  nsFrameList* oofs = GetOverflowOutOfFlows();
-  if (oofs) {
-    for (nsIFrame* f : *oofs) {
-      nsIFrame* nif = f->GetNextInFlow();
-      MOZ_ASSERT(!nif ||
-                 (!GetChildList(FrameChildListID::Float).ContainsFrame(nif) &&
-                  !mFrames.ContainsFrame(nif)));
-    }
+  for (nsIFrame* f : GetChildList(FrameChildListID::OverflowFloats)) {
+    nsIFrame* nif = f->GetNextInFlow();
+    MOZ_ASSERT(!nif ||
+               (!GetChildList(FrameChildListID::Float).ContainsFrame(nif) &&
+                !mFrames.ContainsFrame(nif)));
   }
 
   
-  oofs = GetPushedFloats();
-  if (oofs) {
-    for (nsIFrame* f : *oofs) {
-      nsIFrame* nif = f->GetNextInFlow();
-      MOZ_ASSERT(!nif ||
-                 (!GetChildList(FrameChildListID::Float).ContainsFrame(nif) &&
-                  !mFrames.ContainsFrame(nif)));
-    }
+  for (nsIFrame* f : GetChildList(FrameChildListID::PushedFloats)) {
+    nsIFrame* nif = f->GetNextInFlow();
+    MOZ_ASSERT(!nif ||
+               (!GetChildList(FrameChildListID::Float).ContainsFrame(nif) &&
+                !mFrames.ContainsFrame(nif)));
   }
 
   

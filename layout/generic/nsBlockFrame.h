@@ -1054,13 +1054,13 @@ class nsBlockFrame : public nsContainerFrame {
     nsFrameList mList;
 
     explicit nsAutoOOFFrameList(nsBlockFrame* aBlock)
-        : mPropValue(aBlock->GetOverflowOutOfFlows()), mBlock(aBlock) {
+        : mPropValue(aBlock->GetOverflowFloats()), mBlock(aBlock) {
       if (mPropValue) {
         mList = std::move(*mPropValue);
       }
     }
     ~nsAutoOOFFrameList() {
-      mBlock->SetOverflowOutOfFlows(std::move(mList), mPropValue);
+      mBlock->SetOverflowFloats(std::move(mList), mPropValue);
     }
 
    protected:
@@ -1069,10 +1069,10 @@ class nsBlockFrame : public nsContainerFrame {
   };
   friend struct nsAutoOOFFrameList;
 
-  nsFrameList* GetOverflowOutOfFlows() const;
+  nsFrameList* GetOverflowFloats() const;
 
   
-  void SetOverflowOutOfFlows(nsFrameList&& aList, nsFrameList* aPropValue);
+  void SetOverflowFloats(nsFrameList&& aList, nsFrameList* aPropValue);
 
   
   nsIFrame* GetMarker() const {
