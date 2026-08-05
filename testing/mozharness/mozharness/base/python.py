@@ -564,17 +564,12 @@ class VirtualenvMixin:
             if uv_executable := get_uv_executable():
                 self.run_command([uv_executable, "--version"])
 
-                
-                
-                python_path = os.environ.get(
-                    "MOZ_PYTHON_HOME", Path(sys.executable).parents[1]
-                )
                 uv_venv_creation_command = [
                     "uv",
                     "venv",
                     venv_path,
                     "--relocatable",
-                    f"--python={python_path}",
+                    f"--python={sys.executable}",
                     "--no-project",
                 ]
                 self.run_command(
