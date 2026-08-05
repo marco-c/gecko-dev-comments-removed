@@ -3631,30 +3631,50 @@ void LIRGenerator::visitInt32ToIntPtr(MInt32ToIntPtr* ins) {
   
   
   
-  if (ins->canBeNegative()) {
-    bool canBeNegative = false;
-    for (MUseDefIterator iter(ins); iter; iter++) {
-      if (iter.def()->isSpectreMaskIndex()) {
-        continue;
-      }
-      if (iter.def()->isLoadUnboxedScalar() ||
-          iter.def()->isStoreUnboxedScalar() ||
-          iter.def()->isLoadDataViewElement() ||
-          iter.def()->isStoreDataViewElement()) {
-        MOZ_ASSERT(iter.def()->indexOf(iter.use()) == 1,
-                   "unexpected non-index operand use");
-        continue;
-      }
-
+  
+  
+  
+  
+  
+  
+  
+  
+  bool canBeNegative = false;
+  bool canRedefine = true;
+  for (MUseDefIterator iter(ins); iter; iter++) {
+    MDefinition* def = iter.def();
+    size_t index = def->indexOf(iter.use());
+    if (def->isLoadUnboxedScalar() || def->isStoreUnboxedScalar() ||
+        def->isLoadDataViewElement() || def->isStoreDataViewElement()) {
+      
+      static_assert(MLoadUnboxedScalar::indexOperand == 1);
+      static_assert(MStoreUnboxedScalar::indexOperand == 1);
+      static_assert(MLoadDataViewElement::indexOperand == 1);
+      static_assert(MStoreDataViewElement::indexOperand == 1);
+      MOZ_RELEASE_ASSERT(index == 1);
+      continue;
+    }
+    if (def->isSpectreMaskIndex() && index == MSpectreMaskIndex::indexOperand) {
+      
+      continue;
+    }
+    if (def->isBoundsCheck() && index == MBoundsCheck::indexOperand) {
+      
+      
+      
       canBeNegative = true;
-      break;
+      continue;
     }
-    if (!canBeNegative) {
-      ins->setCanNotBeNegative();
-    }
+    
+    canBeNegative = true;
+    canRedefine = false;
+    break;
+  }
+  if (!canBeNegative) {
+    ins->setCanNotBeNegative();
   }
 
-  if (ins->canBeNegative()) {
+  if (ins->canBeNegative() || !canRedefine) {
     auto* lir = new (alloc()) LInt32ToIntPtr(useAnyAtStart(input));
     define(lir, ins);
   } else {

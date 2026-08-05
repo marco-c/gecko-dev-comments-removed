@@ -1138,7 +1138,9 @@ class MInstruction : public MDefinition, public InlineListNode<MInstruction> {
 
 
 
-#define NAMED_OPERAND_ACCESSOR(Index, Name) \
+
+#define NAMED_OPERAND_ACCESSOR(Index, Name)      \
+  static constexpr size_t Name##Operand = Index; \
   MDefinition* Name() const { return getOperand(Index); }
 #define NAMED_OPERAND_ACCESSOR_APPLY(Args) NAMED_OPERAND_ACCESSOR Args
 #define NAMED_OPERANDS(...) \

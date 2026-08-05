@@ -1178,9 +1178,6 @@ void CodeGenerator::visitFloat32ToInt32(LFloat32ToInt32* lir) {
 
 void CodeGenerator::visitInt32ToIntPtr(LInt32ToIntPtr* lir) {
 #ifdef JS_64BIT
-  
-  MOZ_ASSERT(lir->mir()->canBeNegative());
-
   Register output = ToRegister(lir->output());
   const LAllocation* input = lir->input();
   if (input->isGeneralReg()) {
