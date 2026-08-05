@@ -540,12 +540,6 @@ static void DisplayOverlayImageWhileVisible(
       return;
     }
 
-    if (!aElement->IsVisible()) {
-      
-      aTimer->Cancel();
-      return;
-    }
-
     if (!overlayImage->IsVisible()) {
       
       aTimer->Cancel();

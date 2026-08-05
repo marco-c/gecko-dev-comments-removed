@@ -40,18 +40,6 @@ class WindowsUIElement final {
 
 
 
-
-
-
-  bool IsVisible();
-
-  
-
-
-
-
-
-
   mozilla::Maybe<bool> IsMoving();
 
   
