@@ -2,8 +2,6 @@
 
 
 
-#include "vm/StringType-inl.h"
-
 #include "mozilla/DebugOnly.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/Latin1.h"
@@ -41,6 +39,7 @@
 
 #include "gc/Marking-inl.h"
 #include "vm/GeckoProfiler-inl.h"
+#include "vm/StringType-inl.h"
 
 using namespace js;
 
@@ -1143,7 +1142,7 @@ JSLinearString* JSRope::flattenInternal(JSRope* root) {
   CharT* pos = wholeChars;
 
   JSRope* parent = nullptr;
-  uint32_t parentFlag = 0;
+  uint32_t parentFlag = StringFlags::FLATTEN_FINISH_NODE;
 
 first_visit_node: {
   MOZ_ASSERT_IF(str != root, parent && parentFlag);
