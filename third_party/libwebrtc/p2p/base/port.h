@@ -268,9 +268,6 @@ class RTC_EXPORT Port : public PortInterface {
 
   
   
-  [[deprecated("Use SubscribeCandidateReadyCallback(const void* tag, ...)")]]
-  void SubscribeCandidateReadyCallback(
-      absl::AnyInvocable<void(Port*, const Candidate&)> callback);
   void SubscribeCandidateReadyCallback(
       const void* tag,
       absl::AnyInvocable<void(Port*, const Candidate&)> callback);
@@ -289,8 +286,6 @@ class RTC_EXPORT Port : public PortInterface {
 
   
   
-  [[deprecated("Use SubscribePortComplete(const void* tag, ...)")]]
-  void SubscribePortComplete(absl::AnyInvocable<void(Port*)> callback);
   void SubscribePortComplete(const void* tag,
                              absl::AnyInvocable<void(Port*)> callback);
   void NotifyPortComplete(Port* port) {
@@ -303,8 +298,6 @@ class RTC_EXPORT Port : public PortInterface {
   
   
   
-  [[deprecated("Use SubscribePortError(const void* tag, ...)")]]
-  void SubscribePortError(absl::AnyInvocable<void(Port*)> callback);
   void SubscribePortError(const void* tag,
                           absl::AnyInvocable<void(Port*)> callback);
   void NotifyPortError(Port* port) {
@@ -312,9 +305,6 @@ class RTC_EXPORT Port : public PortInterface {
     port_error_callback_list_.Send(this);
   }
 
-  [[deprecated("Use SubscribePortDestroyed(const void* tag, ...)")]]
-  void SubscribePortDestroyed(
-      std::function<void(PortInterface*)> callback) override;
   void SubscribePortDestroyed(
       const void* tag,
       std::function<void(PortInterface*)> callback) override;
