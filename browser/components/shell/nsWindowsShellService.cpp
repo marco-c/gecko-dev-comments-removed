@@ -52,6 +52,7 @@
 #include "nsUnicharUtils.h"
 #include "nsWindowsHelpers.h"
 #include "nsXULAppAPI.h"
+#include "Windows11TaskbarPinning.h"
 #include "WindowsDefaultBrowser.h"
 #include "WindowsUIElement.h"
 #include "WindowsUIOverlayImage.h"
@@ -1691,6 +1692,156 @@ NS_IMETHODIMP nsWindowsShellService::HasPinnableShortcut(
   return NS_OK;
 }
 
+static bool IsCurrentAppPinnedToTaskbarSync(const nsAString& aumid) {
+  
+  
+  
+
+  
+  
+  
+  
+  
+  if (widget::WinUtils::HasPackageIdentity()) {
+    auto pinWithWin11TaskbarAPIResults = IsCurrentAppPinnedToTaskbarWin11();
+    switch (pinWithWin11TaskbarAPIResults.result) {
+      case Win11PinToTaskBarResultStatus::NotPinned:
+        return false;
+        break;
+      case Win11PinToTaskBarResultStatus::AlreadyPinned:
+        return true;
+        break;
+      default:
+        
+        
+        
+        break;
+    }
+  }
+
+  
+  
+  
+  
+  
+  wchar_t exePath[MAXPATHLEN] = {};
+  wchar_t pbExePath[MAXPATHLEN] = {};
+
+  if (NS_WARN_IF(NS_FAILED(BinaryPath::GetLong(exePath)))) {
+    return false;
+  }
+
+  wcscpy_s(pbExePath, MAXPATHLEN, exePath);
+  if (!PathRemoveFileSpecW(pbExePath)) {
+    return false;
+  }
+  if (!PathAppendW(pbExePath, L"private_browsing.exe")) {
+    return false;
+  }
+
+  wchar_t folderChars[MAX_PATH] = {};
+  HRESULT hr = SHGetFolderPathW(nullptr, CSIDL_APPDATA, nullptr,
+                                SHGFP_TYPE_CURRENT, folderChars);
+  if (NS_WARN_IF(FAILED(hr))) {
+    return false;
+  }
+
+  nsAutoString folder;
+  folder.Assign(folderChars);
+  if (NS_WARN_IF(folder.IsEmpty())) {
+    return false;
+  }
+  if (folder[folder.Length() - 1] != '\\') {
+    folder.AppendLiteral("\\");
+  }
+  folder.AppendLiteral(
+      "Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar");
+  nsAutoString pattern;
+  pattern.Assign(folder);
+  pattern.AppendLiteral("\\*.lnk");
+
+  WIN32_FIND_DATAW findData = {};
+  HANDLE hFindFile = FindFirstFileW(pattern.get(), &findData);
+  if (hFindFile == INVALID_HANDLE_VALUE) {
+    (void)NS_WARN_IF(GetLastError() != ERROR_FILE_NOT_FOUND);
+    return false;
+  }
+  
+  
+
+  
+  bool isPinned = false;
+  do {
+    nsAutoString fileName;
+    fileName.Assign(folder);
+    fileName.AppendLiteral("\\");
+    fileName.Append(findData.cFileName);
+
+    
+    RefPtr<IShellLinkW> link;
+    HRESULT hr =
+        CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER,
+                         IID_IShellLinkW, getter_AddRefs(link));
+    if (NS_WARN_IF(FAILED(hr))) {
+      continue;
+    }
+
+    
+    RefPtr<IPersistFile> persist;
+    hr = link->QueryInterface(IID_IPersistFile, getter_AddRefs(persist));
+    if (NS_WARN_IF(FAILED(hr))) {
+      continue;
+    }
+
+    hr = persist->Load(fileName.get(), STGM_READ);
+    if (NS_WARN_IF(FAILED(hr))) {
+      continue;
+    }
+
+    
+    static_assert(MAXPATHLEN == MAX_PATH);
+    wchar_t storedExePath[MAX_PATH] = {};
+    
+    hr = link->GetPath(storedExePath, std::size(storedExePath), nullptr, 0);
+    if (FAILED(hr) || hr == S_FALSE) {
+      continue;
+    }
+    
+    
+    
+    if (wcsnicmp(storedExePath, exePath, MAXPATHLEN) == 0 ||
+        wcsnicmp(storedExePath, pbExePath, MAXPATHLEN) == 0) {
+      RefPtr<IPropertyStore> propStore;
+      hr = link->QueryInterface(IID_IPropertyStore, getter_AddRefs(propStore));
+      if (NS_WARN_IF(FAILED(hr))) {
+        continue;
+      }
+
+      PROPVARIANT pv;
+      hr = propStore->GetValue(PKEY_AppUserModel_ID, &pv);
+      if (NS_WARN_IF(FAILED(hr))) {
+        continue;
+      }
+
+      wchar_t storedAUMID[MAX_PATH];
+      hr = PropVariantToString(pv, storedAUMID, MAX_PATH);
+      PropVariantClear(&pv);
+      if (NS_WARN_IF(FAILED(hr))) {
+        continue;
+      }
+
+      if (aumid.Equals(storedAUMID)) {
+        isPinned = true;
+        break;
+      }
+    }
+  } while (FindNextFileW(hFindFile, &findData));
+
+  FindClose(hFindFile);
+
+  return isPinned;
+}
+
 static nsresult EnsureShellAppsFolderShortcut(
     const nsAString& aAppUserModelId) {
   MOZ_ASSERT(!NS_IsMainThread());
@@ -2045,10 +2196,27 @@ nsWindowsShellService::IsCurrentAppPinnedToTaskbar(
     return rv.StealNSResult();
   }
 
-  nsresult pinRv = shell_windows_taskbar_is_current_app_pinned(&aumid, promise);
-  if (NS_FAILED(pinRv)) {
-    return pinRv;
-  }
+  
+  
+  auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<dom::Promise>>(
+      "IsCurrentAppPinnedToTaskbar promise", promise);
+
+  
+  
+  nsAutoString capturedAumid(aumid);
+  NS_DispatchBackgroundTask(
+      NS_NewRunnableFunction(
+          "IsCurrentAppPinnedToTaskbar",
+          [capturedAumid, promiseHolder = std::move(promiseHolder)] {
+            bool isPinned = IsCurrentAppPinnedToTaskbarSync(capturedAumid);
+
+            NS_DispatchToMainThread(NS_NewRunnableFunction(
+                "IsCurrentAppPinnedToTaskbar callback",
+                [isPinned, promiseHolder = std::move(promiseHolder)] {
+                  promiseHolder.get()->get()->MaybeResolve(isPinned);
+                }));
+          }),
+      NS_DISPATCH_EVENT_MAY_BLOCK);
 
   promise.forget(aPromise);
   return NS_OK;

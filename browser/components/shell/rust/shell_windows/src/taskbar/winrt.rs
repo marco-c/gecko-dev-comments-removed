@@ -37,19 +37,16 @@
 
 
 
-
-
 use nserror::{NS_ERROR_NOT_AVAILABLE, NS_ERROR_UNEXPECTED, nsresult};
 use nsstring::nsAString;
 use std::sync::LazyLock;
 use windows::{ApplicationModel::Package, UI::Shell::TaskbarManager, core::Error as WinError};
 
+use super::PinResult;
 use crate::{
     limited_access_features::LimitedAccessFeatureService,
-    util::{async_timer, thread_guard::MainThreadGuard},
+    util::{async_timer, thread::MainThreadGuard},
 };
-
-use super::PinResult;
 
 static LAF_LOCK: LazyLock<Result<(), nsresult>> = LazyLock::new(|| {
     let svc = LimitedAccessFeatureService::new();
@@ -155,35 +152,6 @@ pub(super) async fn pin_to_taskbar(
     }
 }
 
-
-pub(super) async fn is_current_app_pinned(_: Package) -> Result<bool, IsPinnedError> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    let is_pinned = TaskbarManager::GetDefault()
-        .map_err(IsPinnedError::GetTaskbarManager)?
-        .IsCurrentAppPinnedAsync()
-        .map_err(IsPinnedError::ScheduleIsCurrentAppPinned)?
-        .await
-        .map_err(IsPinnedError::IsCurrentAppPinned)?;
-
-    Ok(is_pinned)
-}
-
 mod aumid {
     
     
@@ -283,7 +251,6 @@ pub(super) enum WinRtPinError {
 }
 
 impl WinRtPinError {
-    
     pub fn to_metric_taskbar_pin_winrt(&self) -> &'static str {
         use WinRtPinError::*;
         match self {
@@ -314,16 +281,6 @@ impl From<WinRtPinError> for nsresult {
     }
 }
 
-
-
-#[allow(dead_code)]
-#[derive(Debug)]
-pub(super) enum IsPinnedError {
-    GetTaskbarManager(WinError),
-    ScheduleIsCurrentAppPinned(WinError),
-    IsCurrentAppPinned(WinError),
-}
-
 #[cfg(feature = "enable_tests")]
 mod test {
     
@@ -332,10 +289,8 @@ mod test {
     use windows::core::Error as WinError;
     use xpcom::interfaces::nsIPrefBranch;
 
-    use super::{
-        PinResult::{self, *},
-        WinRtPinError::{self, *},
-    };
+    use super::PinResult::{self, *};
+    use super::WinRtPinError::{self, *};
 
     
     pub(super) fn pin_result_from_pref() -> Option<Result<PinResult, WinRtPinError>> {
@@ -356,6 +311,7 @@ mod test {
         })
     }
 
+    
     
     fn get_char_pref(name: &std::ffi::CStr) -> Option<nsCString> {
         let mut value = nsCString::new();

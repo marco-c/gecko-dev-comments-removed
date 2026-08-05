@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+#ifndef SHELL_WINDOWS11TASKBARPINNING_H_
+#define SHELL_WINDOWS11TASKBARPINNING_H_
+
+#include <wrl.h>
+#include <windows.h>  
+
+enum class Win11PinToTaskBarResultStatus {
+  Failed,
+  NotCurrentlyAllowed,
+  AlreadyPinned,
+  NotPinned,
+  Success,
+  NotSupported,
+};
+
+struct Win11PinToTaskBarResult {
+  HRESULT errorCode;
+  Win11PinToTaskBarResultStatus result;
+};
+
+Win11PinToTaskBarResult IsCurrentAppPinnedToTaskbarWin11();
+
+#endif  

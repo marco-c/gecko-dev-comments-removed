@@ -30,7 +30,6 @@
 
 
 
-
 use nserror::{
     nsresult, NS_ERROR_FILE_ACCESS_DENIED, NS_ERROR_FILE_NOT_FOUND, NS_ERROR_NOT_AVAILABLE,
 };
@@ -44,7 +43,7 @@ use windows::{
 };
 
 use super::PinResult;
-use crate::util::thread_guard::MainThreadGuard;
+use crate::util::thread::MainThreadGuard;
 
 pub(super) enum PinOp {
     Pin,
