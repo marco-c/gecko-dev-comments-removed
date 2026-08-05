@@ -36,6 +36,7 @@
 #include "p2p/base/transport_info.h"
 #include "p2p/test/test_turn_server.h"
 #include "pc/media_session.h"
+#include "pc/sctp_transport.h"
 #include "pc/session_description.h"
 #include "pc/test/fake_rtc_certificate_generator.h"
 #include "pc/test/integration_test_helpers.h"
@@ -59,9 +60,12 @@ namespace webrtc {
 namespace {
 
 using ::testing::Eq;
+using ::testing::IsEmpty;
 using ::testing::IsTrue;
 using ::testing::Ne;
+using ::testing::Not;
 using ::testing::NotNull;
+using ::testing::SizeIs;
 using ::testing::ValuesIn;
 
 
@@ -879,6 +883,112 @@ TEST_P(DataChannelIntegrationTest, AddSctpDataChannelInSubsequentOffer) {
       WaitUntil([&] { return caller()->data_observer()->last_message(); },
                 Eq(data)),
       IsRtcOk());
+}
+
+
+
+
+class DataChannelIntegrationTestWithSctpSnap
+    : public PeerConnectionIntegrationBaseTest {
+ protected:
+  DataChannelIntegrationTestWithSctpSnap()
+      : PeerConnectionIntegrationBaseTest(SdpSemantics::kUnifiedPlan) {
+    
+    SetFieldTrials("WebRTC-Sctp-Snap/Enabled/");
+  }
+};
+
+TEST_F(DataChannelIntegrationTestWithSctpSnap,
+       EarlyDataChannelPacketsAreBufferedUntilAnswerApplied) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+
+  
+  caller()->AddAudioVideoTracks();
+  callee()->AddAudioVideoTracks();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); }));
+  MediaExpectations media_expectations;
+  media_expectations.ExpectBidirectionalAudioAndVideo();
+  ASSERT_TRUE(ExpectNewFrames(media_expectations));
+
+  
+  
+  caller()->CreateDataChannel();
+  callee()->CreateDataChannel();
+  std::string captured_answer;
+  caller()->SetReceivedSdpMunger(
+      [&](std::unique_ptr<SessionDescriptionInterface>& sdp) {
+        sdp->ToString(&captured_answer);
+        sdp = nullptr;
+      });
+  caller()->CreateAndSetAndSignalOffer();
+  EXPECT_EQ(caller()->pc()->signaling_state(),
+            PeerConnectionInterface::kHaveLocalOffer);
+  EXPECT_THAT(captured_answer, Not(IsEmpty()));
+
+  
+  
+  ASSERT_TRUE(WaitUntil([&] {
+    auto transport = callee()->pc()->GetSctpTransport();
+    return transport &&
+           transport->Information().state() == SctpTransportState::kConnected;
+  }));
+  EXPECT_FALSE(caller()->data_observer()->IsOpen());
+  EXPECT_TRUE(callee()->data_observer()->IsOpen());
+
+  auto caller_cached_packet_count = [&]() -> size_t {
+    return network_thread()->BlockingCall([&]() -> size_t {
+      auto* sctp_transport =
+          static_cast<SctpTransport*>(caller()->pc()->GetSctpTransport().get());
+      if (!sctp_transport) {
+        return 0;
+      }
+      return sctp_transport->internal()->EarlyReceivedPacketCountForTesting();
+    });
+  };
+
+  
+  
+  EXPECT_TRUE(WaitUntil([&] { return caller_cached_packet_count() == 1u; }));
+
+  
+  
+  
+  
+  constexpr int kNumMessages = 64;
+  for (int i = 0; i < kNumMessages; ++i) {
+    callee()->data_channel()->Send(DataBuffer(std::to_string(i)));
+  }
+  EXPECT_TRUE(WaitUntil([&] { return caller_cached_packet_count() == 32u; }));
+
+  
+  
+  caller()->SetReceivedSdpMunger(nullptr);
+  caller()->ReceiveSdpMessage(SdpType::kAnswer, captured_answer);
+  ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); }));
+
+  ASSERT_THAT(WaitUntil([&] { return caller()->data_channels(); }, SizeIs(2)),
+              IsRtcOk());
+  for (const auto& observer : caller()->data_observers()) {
+    EXPECT_TRUE(WaitUntil([&] { return observer->IsOpen(); }));
+  }
+  ASSERT_THAT(WaitUntil([&] { return callee()->data_channels(); }, SizeIs(2)),
+              IsRtcOk());
+  for (const auto& observer : callee()->data_observers()) {
+    EXPECT_TRUE(WaitUntil([&] { return observer->IsOpen(); }));
+  }
+
+  
+  
+  
+  MockDataChannelObserver* receiver = caller()->data_observers().back().get();
+  ASSERT_TRUE(WaitUntil([&] {
+    return static_cast<int>(receiver->received_message_count()) == kNumMessages;
+  }));
+  for (int i = 0; i < kNumMessages; ++i) {
+    EXPECT_EQ(receiver->messages()[i].data, std::to_string(i));
+  }
 }
 
 

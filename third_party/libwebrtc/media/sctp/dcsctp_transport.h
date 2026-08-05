@@ -39,6 +39,7 @@
 #include "net/dcsctp/timer/task_queue_timeout.h"
 #include "p2p/base/packet_transport_internal.h"
 #include "p2p/dtls/dtls_transport_internal.h"
+#include "rtc_base/buffer.h"
 #include "rtc_base/containers/flat_map.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/network/received_packet.h"
@@ -79,6 +80,10 @@ class DcSctpTransport : public SctpTransportInternal,
   void SetBufferedAmountLowThreshold(int sid, size_t bytes) override;
 
   static std::vector<uint8_t> GenerateConnectionToken(const Environment& env);
+
+  
+  
+  size_t EarlyReceivedPacketCountForTesting() const override;
 
  private:
   
@@ -155,6 +160,15 @@ class DcSctpTransport : public SctpTransportInternal,
   static dcsctp::DcSctpOptions CreateDcSctpOptions(
       const SctpOptions& options,
       const FieldTrialsView& field_trials);
+
+  
+  
+  
+  
+  
+  static constexpr size_t kMaxEarlyReceivedPackets = 32;
+  std::vector<webrtc::Buffer> early_received_packets_
+      RTC_GUARDED_BY(network_thread_);
 };
 
 }  
