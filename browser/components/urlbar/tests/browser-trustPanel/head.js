@@ -1,0 +1,13 @@
+
+
+
+"use strict";
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/browser/components/urlbar/tests/browser/head-common.js",
+  this
+);
+
+registerCleanupFunction(async () => {
+  await UrlbarTestUtils.promisePopupClose(window);
+});
