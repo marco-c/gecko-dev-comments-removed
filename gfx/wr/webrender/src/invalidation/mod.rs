@@ -107,6 +107,8 @@ pub enum InvalidationReason {
     ScaleChanged,
     
     SurfaceContentChanged,
+    
+    CancelUnderlay,
 }
 
 
