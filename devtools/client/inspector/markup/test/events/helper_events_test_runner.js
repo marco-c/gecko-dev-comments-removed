@@ -136,11 +136,9 @@ async function checkEventsForNode(test, inspector) {
     
     header.scrollIntoView();
 
-    const onEventTooltipReady = tooltip.once("event-tooltip-ready");
     
-    
-    header.click();
-    await onEventTooltipReady;
+    EventUtils.synthesizeMouse(header, 2, 2, {}, type.documentGlobal);
+    await tooltip.once("event-tooltip-ready");
 
     is(
       header.classList.contains("content-expanded") &&

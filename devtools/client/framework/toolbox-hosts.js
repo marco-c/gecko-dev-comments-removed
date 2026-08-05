@@ -4,7 +4,6 @@
 
 "use strict";
 
-const { debounce } = require("resource://devtools/shared/debounce");
 const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 
 loader.lazyRequireGetter(
@@ -137,10 +136,9 @@ class BottomHost extends BaseInBrowserHost {
     this.heightPref = "devtools.toolbox.footer.height";
   }
 
-  #docShell;
   #destroyed;
-  #gridLinesString;
   #splitter;
+  #resizeObserver;
 
   
 
@@ -154,7 +152,6 @@ class BottomHost extends BaseInBrowserHost {
     );
     this.#splitter.setAttribute("resizebefore", "none");
     this.#splitter.setAttribute("resizeafter", "sibling");
-    this.#splitter.setAttribute("orient", "vertical");
 
     this.#splitter.setAttribute("tabindex", "0");
     this.#splitter.setAttribute("role", "separator");
@@ -163,42 +160,19 @@ class BottomHost extends BaseInBrowserHost {
     this._createFrame();
     this.#splitter.setAttribute("aria-controls", this.frame.id);
     this.#splitter.setAttribute("aria-orientation", "vertical");
-    this.#splitter.addEventListener(
-      "command",
-      this.#updateSplitterAriaValuenow
-    );
 
     const height = Math.min(
       Services.prefs.getIntPref(this.heightPref),
       this._browserContainer.clientHeight - MIN_PAGE_SIZE
     );
     this.frame.style.height = `${height}px`;
+    this.#resizeObserver = new this.hostTab.documentGlobal.ResizeObserver(
+      this.#onFrameResize
+    );
+    this.#resizeObserver.observe(this.frame);
+
     this._browserContainer.append(this.#splitter, this.frame);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    this.#docShell = this._browserContainer.documentGlobal.docShell;
-    this.#docShell.addWeakReflowObserver(this);
-
-    this.#updateSplitterAriaAttributesAndFrameMaxHeight();
   }
-
-  QueryInterface = ChromeUtils.generateQI([
-    "nsIReflowObserver",
-    "nsISupportsWeakReference",
-  ]);
-
-  reflow = () => this.#onReflow();
-  reflowInterruptible = () => this.#onReflow();
 
   async finalizeCreation() {
     await gDevToolsBrowser.loadBrowserStyleSheet(this.hostTab.documentGlobal);
@@ -207,96 +181,25 @@ class BottomHost extends BaseInBrowserHost {
     focusTab(this.hostTab);
   }
 
-  #updateSplitterAriaValuenow = () => {
+  #onFrameResize = () => {
+    const global = this.hostTab.documentGlobal;
     this.#splitter.setAttribute(
       "aria-valuenow",
-      parseFloat(this.frame.style.height)
+      global.windowUtils.getBoundsWithoutFlushing(this.frame).height
     );
-  };
-
-  
-
-
-
-
-
-
-  #getGridLines = () => {
-    if (!this._browserContainer) {
-      return null;
-    }
-
-    const gridFragments = this._browserContainer.getGridFragments();
-    
-    
-    if (!gridFragments.length) {
-      return null;
-    }
-    
-    let str = "";
-    for (const line of gridFragments[0].rows.lines) {
-      str += `${line.start}\n`;
-    }
-    return str;
-  };
-
-  #onReflow = debounce(() => {
-    if (
-      this.#destroyed ||
-      
-      
-      this.#splitter.hasAttribute("dragging")
-    ) {
-      return;
-    }
-
-    const str = this.#getGridLines();
-    if (str === null || str === this.#gridLinesString) {
-      return;
-    }
-    this.#gridLinesString = str;
-    this.#updateSplitterAriaAttributesAndFrameMaxHeight();
-  }, 100);
-
-  #updateSplitterAriaAttributesAndFrameMaxHeight = () => {
-    const global = this.hostTab.documentGlobal;
     const minHeight = parseFloat(global.getComputedStyle(this.frame).minHeight);
     this.#splitter.setAttribute("aria-valuemin", minHeight);
     
     
-    
-    let maxHeight = global.windowUtils.getBoundsWithoutFlushing(
-      this._browserContainer
-    ).height;
-    for (const el of this._browserContainer.childNodes) {
-      if (
-        el === this.frame ||
-        
-        el === this.#splitter ||
-        el.hasAttribute("hidden")
-      ) {
-        continue;
-      }
-
-      if (el.classList.contains("browserStack")) {
-        maxHeight -= parseFloat(global.getComputedStyle(el).minHeight);
-        continue;
-      }
-      maxHeight -= global.windowUtils.getBoundsWithoutFlushing(el).height;
-    }
-
+    const browserStackEl =
+      this._browserContainer.querySelector(".browserStack");
+    const browserStackElMinHeight = parseFloat(
+      global.getComputedStyle(browserStackEl).minHeight
+    );
+    const maxHeight =
+      global.windowUtils.getBoundsWithoutFlushing(this._browserContainer)
+        .height - browserStackElMinHeight;
     this.#splitter.setAttribute("aria-valuemax", maxHeight);
-    this.frame.style.maxHeight = `${maxHeight}px`;
-    this.#updateFrameHeightIfNeeded();
-    this.#updateSplitterAriaValuenow();
-  };
-
-  #updateFrameHeightIfNeeded = () => {
-    const frameHeight = parseFloat(this.frame.style.height);
-    const frameMaxHeight = parseFloat(this.frame.style.maxHeight);
-    if (frameHeight > frameMaxHeight) {
-      this.frame.style.height = this.frame.style.maxHeight;
-    }
   };
 
   
@@ -310,17 +213,13 @@ class BottomHost extends BaseInBrowserHost {
       if (!isNaN(height)) {
         Services.prefs.setIntPref(this.heightPref, height);
       }
-      this.#docShell.removeWeakReflowObserver(this);
 
-      this.#splitter.removeEventListener(
-        "command",
-        this.#updateSplitterAriaValuenow
-      );
+      this.#resizeObserver.disconnect();
       this.#splitter.remove();
       this.frame.remove();
-
-      this.#docShell = null;
       this.frame = null;
+
+      this.#resizeObserver = null;
       this.#splitter = null;
 
       super.destroy();
@@ -340,45 +239,40 @@ class SidebarHost extends BaseInBrowserHost {
     this.widthPref = "devtools.toolbox.sidebar.width";
   }
 
-  #browserContainerResizeObserver;
+  #browserPanel;
   #destroyed;
+  #resizeObserver;
   #splitter;
 
   
 
 
   createElements() {
+    this.#browserPanel = this._gBrowser.getPanel(this.hostTab.linkedBrowser);
     const { ownerDocument } = this.hostTab;
 
-    const dockedCls = this.type === "left" ? "docked-left" : "docked-right";
     this.#splitter = ownerDocument.createXULElement("splitter");
-    this.#splitter.classList.add(
-      "devtools-toolbox-splitter",
-      "for-side-host",
-      dockedCls
-    );
+    this.#splitter.classList.add("devtools-toolbox-splitter", "for-side-host");
     this.#splitter.setAttribute("resizebefore", "none");
     this.#splitter.setAttribute("resizeafter", "none");
-    this.#splitter.setAttribute("orient", "horizontal");
 
     this.#splitter.setAttribute("tabindex", "0");
     this.#splitter.setAttribute("role", "separator");
     this.#splitter.setAttribute("data-l10n-id", "tab-devtools-splitter");
 
     this._createFrame();
-    this.frame.classList.add(dockedCls);
     this.#splitter.setAttribute("aria-controls", this.frame.id);
     this.#splitter.setAttribute("aria-orientation", "horizontal");
-    this.#splitter.addEventListener(
-      "command",
-      this.#updateSplitterAriaValuenow
-    );
 
     const width = Math.min(
       Services.prefs.getIntPref(this.widthPref),
-      this._browserContainer.clientWidth - MIN_PAGE_SIZE
+      this.#browserPanel.clientWidth - MIN_PAGE_SIZE
     );
     this.frame.style.width = `${width}px`;
+    this.#resizeObserver = new this.hostTab.documentGlobal.ResizeObserver(
+      this.#onFrameResize
+    );
+    this.#resizeObserver.observe(this.frame);
 
     
     const topWindow = this.hostTab.documentGlobal;
@@ -387,16 +281,13 @@ class SidebarHost extends BaseInBrowserHost {
 
     if ((isLTR && this.type == "right") || (!isLTR && this.type == "left")) {
       this.#splitter.setAttribute("resizeafter", "sibling");
-      this._browserContainer.append(this.#splitter, this.frame);
+      this.#browserPanel.appendChild(this.#splitter);
+      this.#browserPanel.appendChild(this.frame);
     } else {
       this.#splitter.setAttribute("resizebefore", "sibling");
-      this._browserContainer.prepend(this.frame, this.#splitter);
+      this.#browserPanel.insertBefore(this.frame, this._browserContainer);
+      this.#browserPanel.insertBefore(this.#splitter, this._browserContainer);
     }
-    this.#browserContainerResizeObserver =
-      new this.hostTab.documentGlobal.ResizeObserver(
-        this.#updateSplitterAriaAttributesAndFrameMaxWidth
-      );
-    this.#browserContainerResizeObserver.observe(this._browserContainer);
   }
 
   async finalizeCreation() {
@@ -406,48 +297,41 @@ class SidebarHost extends BaseInBrowserHost {
     focusTab(this.hostTab);
   }
 
-  #updateSplitterAriaValuenow = () => {
-    const frameWidth = parseFloat(this.frame.style.width);
-    this.#splitter.setAttribute("aria-valuenow", frameWidth);
+  #onFrameResize = () => {
+    const global = this.hostTab.documentGlobal;
+    const frameWidth = global.windowUtils.getBoundsWithoutFlushing(
+      this.frame
+    ).width;
 
     
     
-    this.hostTab.documentGlobal.document
+    global.document
       .getElementById("tabbrowser-tabbox")
       .style.setProperty(
         "--devtools-toolbox-width",
         `${Math.round(frameWidth)}px`
       );
-  };
 
-  #updateSplitterAriaAttributesAndFrameMaxWidth = () => {
-    const global = this.hostTab.documentGlobal;
+    this.#splitter.setAttribute("aria-valuenow", frameWidth);
     const minWidth = parseFloat(global.getComputedStyle(this.frame).minWidth);
     this.#splitter.setAttribute("aria-valuemin", minWidth);
 
     
     
+    
+    const browserSibarContainerEl = this._browserContainer.closest(
+      ".browserSidebarContainer"
+    );
     const browserStackEl =
       this._browserContainer.querySelector(".browserStack");
     const browserStackElMinWidth = parseFloat(
       global.getComputedStyle(browserStackEl).minWidth
     );
     const maxWidth =
-      global.windowUtils.getBoundsWithoutFlushing(this._browserContainer)
+      global.windowUtils.getBoundsWithoutFlushing(browserSibarContainerEl)
         .width - browserStackElMinWidth;
 
     this.#splitter.setAttribute("aria-valuemax", maxWidth);
-    this.frame.style.maxWidth = `${maxWidth}px`;
-    this.#updateFrameWidthIfNeeded();
-    this.#updateSplitterAriaValuenow();
-  };
-
-  #updateFrameWidthIfNeeded = () => {
-    const frameWidth = parseFloat(this.frame.style.width);
-    const frameMaxWidth = parseFloat(this.frame.style.maxWidth);
-    if (frameWidth > frameMaxWidth) {
-      this.frame.style.width = this.frame.style.maxWidth;
-    }
   };
 
   
@@ -466,17 +350,12 @@ class SidebarHost extends BaseInBrowserHost {
         .getElementById("tabbrowser-tabbox")
         .style.removeProperty("--devtools-toolbox-width");
 
-      this.#browserContainerResizeObserver.disconnect();
-
-      this.#splitter.removeEventListener(
-        "command",
-        this.#updateSplitterAriaValuenow
-      );
+      this.#resizeObserver.disconnect();
       this.#splitter.remove();
-
       this.frame.remove();
+      this.#browserPanel = null;
 
-      this.#browserContainerResizeObserver = null;
+      this.#resizeObserver = null;
       this.#splitter = null;
       this.frame = null;
 

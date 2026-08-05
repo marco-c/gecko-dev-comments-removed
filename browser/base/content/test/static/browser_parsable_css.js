@@ -150,13 +150,10 @@ let propNameAllowlist = [
 
   
   {
-    propName: "--browser-container-z-index-devtools-toolbox",
+    propName: "--browser-stack-z-index-devtools-splitter",
     isFromDevTools: false,
   },
-  {
-    propName: "--browser-container-z-index-devtools-splitter",
-    isFromDevTools: false,
-  },
+  { propName: "--browser-stack-z-index-rdm-toolbar", isFromDevTools: false },
 
   
   
