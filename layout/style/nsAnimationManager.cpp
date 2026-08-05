@@ -275,10 +275,25 @@ static void UpdateOldAnimationPropertiesWithNew(
   }
 }
 
+static bool ScopedNameLooselyMatches(
+    const dom::ShadowRoot* aTargetShadowRoot,
+    const Element* aTimelineElement, StyleCascadeLevel aTimelineCascadeLevel) {
+  const auto* timelineShadowRoot =
+      Servo_GetShadowRootForScoped(aTimelineElement, aTimelineCascadeLevel);
+  for (auto* root = aTargetShadowRoot; root; root = root->Host()->GetContainingShadow()) {
+    
+    if (root == timelineShadowRoot) { return true; }
+  }
+  
+  return !timelineShadowRoot;
+}
+
 static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
     dom::Document* aDocument, const NonOwningAnimationTarget& aTarget,
     const dom::ScopedTimelineName& aName) {
   auto* presContext = aDocument->GetPresContext();
+  const auto* targetShadowRoot =
+      Servo_GetShadowRootForScoped(aTarget.mElement, aName.mCascadeLevel);
   const auto* timelineManager =
       presContext ? presContext->TimelineManager() : nullptr;
   
@@ -286,7 +301,7 @@ static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
   
   
   for (Element* e = aTarget.mElement->GetPseudoElement(aTarget.mPseudoRequest);
-       e; e = e->GetFlattenedTreeParentElement()) {
+       e; e = e->GetParentElementCrossingShadowRoot()) {
     
     
     
@@ -296,8 +311,9 @@ static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
     if (auto* collection =
             TimelineCollection<ScrollTimeline>::Get(element, pseudo)) {
       auto result = collection->Lookup(aName.mName);
-      
-      if (result.mTimeline) {
+      if (result.mTimeline &&
+          ScopedNameLooselyMatches(targetShadowRoot, element,
+                                   result.mCascadeLevel)) {
         return result.mTimeline.forget();
       }
     }
@@ -305,8 +321,9 @@ static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
     if (auto* collection =
             TimelineCollection<ViewTimeline>::Get(element, pseudo)) {
       auto result = collection->Lookup(aName.mName);
-      
-      if (result.mTimeline) {
+      if (result.mTimeline &&
+          ScopedNameLooselyMatches(targetShadowRoot, element,
+                                   result.mCascadeLevel)) {
         return result.mTimeline.forget();
       }
     }
@@ -315,6 +332,10 @@ static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
       continue;
     }
 
+    
+    
+    
+    
     
     if (auto scopedTimeline =
             timelineManager->GetScopedTimeline(e, aName.mName)) {
