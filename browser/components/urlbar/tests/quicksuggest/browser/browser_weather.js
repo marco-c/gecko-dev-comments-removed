@@ -73,6 +73,15 @@ async function doShowLessFrequentlyCapReachedManySearches() {
     gURLBar.view.isOpen,
     "The view should remain open clicking the command"
   );
+
+  
+  
+  await BrowserTestUtils.waitForMutationCondition(
+    details.element.row,
+    { attributes: true, attributeFilter: ["feedback-acknowledgment"] },
+    () => details.element.row.hasAttribute("feedback-acknowledgment")
+  );
+
   Assert.ok(
     details.element.row.hasAttribute("feedback-acknowledgment"),
     "Row should have feedback acknowledgment after clicking command"
@@ -137,12 +146,22 @@ async function doDismissTest(command) {
   let dismissalPromise = TestUtils.topicObserved(
     "quicksuggest-dismissals-changed"
   );
+
+  
+  
+  
+  let promiseRemoved = UrlbarTestUtils.promiseControllerNotification(
+    window,
+    "onQueryResultRemoved"
+  );
+
   await UrlbarTestUtils.openResultMenuAndClickItem(window, command, {
     resultIndex: EXPECTED_RESULT_INDEX,
     openByMouse: true,
   });
   info("Awaiting dismissal promise");
   await dismissalPromise;
+  await promiseRemoved;
 
   Assert.ok(
     !UrlbarPrefs.get("suggest.weather"),
@@ -249,6 +268,15 @@ async function doSessionOngoingCommandTest(command) {
     gURLBar.view.isOpen,
     "The view should remain open clicking the command"
   );
+
+  
+  
+  await BrowserTestUtils.waitForMutationCondition(
+    details.element.row,
+    { attributes: true, attributeFilter: ["feedback-acknowledgment"] },
+    () => details.element.row.hasAttribute("feedback-acknowledgment")
+  );
+
   Assert.ok(
     details.element.row.hasAttribute("feedback-acknowledgment"),
     "Row should have feedback acknowledgment after clicking command"
