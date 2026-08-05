@@ -7,6 +7,7 @@
 
 
 
+#include "mozilla/ProfileChunkedBuffer.h"
 #include "mozilla/ProfilerPlatformMacros.h"
 #include "mozilla/ProfilerThreadPlatformData.h"
 #include "mozilla/ProfilerThreadRegistration.h"
@@ -5366,6 +5367,34 @@ TEST(GeckoProfiler, NoMarkerStacks)
   profiler_stop();
 
   ASSERT_TRUE(!profiler_get_profile());
+}
+
+TEST(GeckoProfiler, CaptureBacktraceIsRightSized)
+{
+  const char* filters[] = {"GeckoMain"};
+
+  profiler_start(PROFILER_DEFAULT_ENTRIES, PROFILER_DEFAULT_INTERVAL,
+                 ProfilerFeature::StackWalk, filters, std::size(filters), 0);
+
+  mozilla::UniquePtr<mozilla::ProfileChunkedBuffer> backtrace =
+      profiler_capture_backtrace();
+  ASSERT_TRUE(!!backtrace);
+
+  
+  
+  
+  mozilla::Maybe<size_t> bufferLength = backtrace->BufferLength();
+  ASSERT_TRUE(bufferLength.isSome());
+  EXPECT_LT(
+      *bufferLength,
+      size_t(mozilla::ProfileBufferChunkManager::scExpectedMaximumStackSize));
+
+  
+  mozilla::ProfileChunkedBuffer::State state = backtrace->GetState();
+  EXPECT_GT(state.mRangeEnd, state.mRangeStart);
+  EXPECT_EQ(state.mFailedPutBytes, 0u);
+
+  profiler_stop();
 }
 
 
