@@ -165,6 +165,8 @@ const intptr_t kPointerAlignmentMask = kPointerAlignment - 1;
 const intptr_t kDoubleAlignment = 8;
 const intptr_t kDoubleAlignmentMask = kDoubleAlignment - 1;
 
+constexpr uint8_t xlen = (uint8_t(sizeof(void*) * 8));
+
 
 
 using sreg_t = int64_t;
