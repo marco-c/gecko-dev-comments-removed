@@ -13,19 +13,22 @@
 #include "pc/session_description.h"
 #include "test/gtest.h"
 
+namespace webrtc {
+namespace {
+
 TEST(RtcpMuxFilterTest, IsActiveSender) {
-  webrtc::RtcpMuxFilter filter;
+  RtcpMuxFilter filter;
   
   EXPECT_FALSE(filter.IsActive());
   EXPECT_FALSE(filter.IsProvisionallyActive());
   EXPECT_FALSE(filter.IsFullyActive());
   
-  filter.SetOffer(true, webrtc::CS_LOCAL);
+  filter.SetOffer(true, CS_LOCAL);
   EXPECT_FALSE(filter.IsActive());
   EXPECT_FALSE(filter.IsProvisionallyActive());
   EXPECT_FALSE(filter.IsFullyActive());
   
-  filter.SetAnswer(true, webrtc::CS_REMOTE);
+  filter.SetAnswer(true, CS_REMOTE);
   EXPECT_TRUE(filter.IsActive());
   EXPECT_FALSE(filter.IsProvisionallyActive());
   EXPECT_TRUE(filter.IsFullyActive());
@@ -33,40 +36,40 @@ TEST(RtcpMuxFilterTest, IsActiveSender) {
 
 
 TEST(RtcpMuxFilterTest, ReceivePrAnswer) {
-  webrtc::RtcpMuxFilter filter;
-  filter.SetOffer(true, webrtc::CS_LOCAL);
+  RtcpMuxFilter filter;
+  filter.SetOffer(true, CS_LOCAL);
   
-  EXPECT_TRUE(filter.SetProvisionalAnswer(true, webrtc::CS_REMOTE));
+  EXPECT_TRUE(filter.SetProvisionalAnswer(true, CS_REMOTE));
   
   EXPECT_TRUE(filter.IsActive());
   EXPECT_TRUE(filter.IsProvisionallyActive());
   EXPECT_FALSE(filter.IsFullyActive());
   
-  EXPECT_TRUE(filter.SetProvisionalAnswer(false, webrtc::CS_REMOTE));
+  EXPECT_TRUE(filter.SetProvisionalAnswer(false, CS_REMOTE));
   
   EXPECT_FALSE(filter.IsActive());
   EXPECT_FALSE(filter.IsProvisionallyActive());
   EXPECT_FALSE(filter.IsFullyActive());
   
-  EXPECT_TRUE(filter.SetAnswer(true, webrtc::CS_REMOTE));
+  EXPECT_TRUE(filter.SetAnswer(true, CS_REMOTE));
   EXPECT_TRUE(filter.IsActive());
   EXPECT_FALSE(filter.IsProvisionallyActive());
   EXPECT_TRUE(filter.IsFullyActive());
 }
 
 TEST(RtcpMuxFilterTest, IsActiveReceiver) {
-  webrtc::RtcpMuxFilter filter;
+  RtcpMuxFilter filter;
   
   EXPECT_FALSE(filter.IsActive());
   EXPECT_FALSE(filter.IsProvisionallyActive());
   EXPECT_FALSE(filter.IsFullyActive());
   
-  filter.SetOffer(true, webrtc::CS_REMOTE);
+  filter.SetOffer(true, CS_REMOTE);
   EXPECT_FALSE(filter.IsActive());
   EXPECT_FALSE(filter.IsProvisionallyActive());
   EXPECT_FALSE(filter.IsFullyActive());
   
-  filter.SetAnswer(true, webrtc::CS_LOCAL);
+  filter.SetAnswer(true, CS_LOCAL);
   EXPECT_TRUE(filter.IsActive());
   EXPECT_FALSE(filter.IsProvisionallyActive());
   EXPECT_TRUE(filter.IsFullyActive());
@@ -74,20 +77,20 @@ TEST(RtcpMuxFilterTest, IsActiveReceiver) {
 
 
 TEST(RtcpMuxFilterTest, SendPrAnswer) {
-  webrtc::RtcpMuxFilter filter;
-  filter.SetOffer(true, webrtc::CS_REMOTE);
+  RtcpMuxFilter filter;
+  filter.SetOffer(true, CS_REMOTE);
   
-  EXPECT_TRUE(filter.SetProvisionalAnswer(true, webrtc::CS_LOCAL));
+  EXPECT_TRUE(filter.SetProvisionalAnswer(true, CS_LOCAL));
   EXPECT_TRUE(filter.IsActive());
   EXPECT_TRUE(filter.IsProvisionallyActive());
   EXPECT_FALSE(filter.IsFullyActive());
   
-  EXPECT_TRUE(filter.SetProvisionalAnswer(false, webrtc::CS_LOCAL));
+  EXPECT_TRUE(filter.SetProvisionalAnswer(false, CS_LOCAL));
   EXPECT_FALSE(filter.IsActive());
   EXPECT_FALSE(filter.IsProvisionallyActive());
   EXPECT_FALSE(filter.IsFullyActive());
   
-  EXPECT_TRUE(filter.SetAnswer(true, webrtc::CS_LOCAL));
+  EXPECT_TRUE(filter.SetAnswer(true, CS_LOCAL));
   EXPECT_TRUE(filter.IsActive());
   EXPECT_FALSE(filter.IsProvisionallyActive());
   EXPECT_TRUE(filter.IsFullyActive());
@@ -97,97 +100,100 @@ TEST(RtcpMuxFilterTest, SendPrAnswer) {
 
 
 TEST(RtcpMuxFilterTest, EnableFilterDuringUpdate) {
-  webrtc::RtcpMuxFilter filter;
+  RtcpMuxFilter filter;
   EXPECT_FALSE(filter.IsActive());
-  EXPECT_TRUE(filter.SetOffer(false, webrtc::CS_REMOTE));
-  EXPECT_TRUE(filter.SetAnswer(false, webrtc::CS_LOCAL));
+  EXPECT_TRUE(filter.SetOffer(false, CS_REMOTE));
+  EXPECT_TRUE(filter.SetAnswer(false, CS_LOCAL));
   EXPECT_FALSE(filter.IsActive());
 
-  EXPECT_TRUE(filter.SetOffer(true, webrtc::CS_REMOTE));
-  EXPECT_TRUE(filter.SetAnswer(true, webrtc::CS_LOCAL));
+  EXPECT_TRUE(filter.SetOffer(true, CS_REMOTE));
+  EXPECT_TRUE(filter.SetAnswer(true, CS_LOCAL));
   EXPECT_TRUE(filter.IsActive());
 
-  EXPECT_FALSE(filter.SetOffer(false, webrtc::CS_REMOTE));
-  EXPECT_FALSE(filter.SetAnswer(false, webrtc::CS_LOCAL));
+  EXPECT_FALSE(filter.SetOffer(false, CS_REMOTE));
+  EXPECT_FALSE(filter.SetAnswer(false, CS_LOCAL));
   EXPECT_TRUE(filter.IsActive());
 }
 
 
 TEST(RtcpMuxFilterTest, SetOfferTwice) {
-  webrtc::RtcpMuxFilter filter;
+  RtcpMuxFilter filter;
 
-  EXPECT_TRUE(filter.SetOffer(true, webrtc::CS_REMOTE));
-  EXPECT_TRUE(filter.SetOffer(true, webrtc::CS_REMOTE));
-  EXPECT_TRUE(filter.SetAnswer(true, webrtc::CS_LOCAL));
+  EXPECT_TRUE(filter.SetOffer(true, CS_REMOTE));
+  EXPECT_TRUE(filter.SetOffer(true, CS_REMOTE));
+  EXPECT_TRUE(filter.SetAnswer(true, CS_LOCAL));
   EXPECT_TRUE(filter.IsActive());
 
-  webrtc::RtcpMuxFilter filter2;
-  EXPECT_TRUE(filter2.SetOffer(false, webrtc::CS_LOCAL));
-  EXPECT_TRUE(filter2.SetOffer(false, webrtc::CS_LOCAL));
-  EXPECT_TRUE(filter2.SetAnswer(false, webrtc::CS_REMOTE));
+  RtcpMuxFilter filter2;
+  EXPECT_TRUE(filter2.SetOffer(false, CS_LOCAL));
+  EXPECT_TRUE(filter2.SetOffer(false, CS_LOCAL));
+  EXPECT_TRUE(filter2.SetAnswer(false, CS_REMOTE));
   EXPECT_FALSE(filter2.IsActive());
 }
 
 
 TEST(RtcpMuxFilterTest, EnableFilterTwiceDuringUpdate) {
-  webrtc::RtcpMuxFilter filter;
+  RtcpMuxFilter filter;
 
-  EXPECT_TRUE(filter.SetOffer(true, webrtc::CS_REMOTE));
-  EXPECT_TRUE(filter.SetAnswer(true, webrtc::CS_LOCAL));
+  EXPECT_TRUE(filter.SetOffer(true, CS_REMOTE));
+  EXPECT_TRUE(filter.SetAnswer(true, CS_LOCAL));
   EXPECT_TRUE(filter.IsActive());
 
-  EXPECT_TRUE(filter.SetOffer(true, webrtc::CS_REMOTE));
-  EXPECT_TRUE(filter.SetAnswer(true, webrtc::CS_LOCAL));
+  EXPECT_TRUE(filter.SetOffer(true, CS_REMOTE));
+  EXPECT_TRUE(filter.SetAnswer(true, CS_LOCAL));
   EXPECT_TRUE(filter.IsActive());
 }
 
 
 TEST(RtcpMuxFilterTest, KeepFilterDisabledDuringUpdate) {
-  webrtc::RtcpMuxFilter filter;
+  RtcpMuxFilter filter;
 
-  EXPECT_TRUE(filter.SetOffer(false, webrtc::CS_REMOTE));
-  EXPECT_TRUE(filter.SetAnswer(false, webrtc::CS_LOCAL));
+  EXPECT_TRUE(filter.SetOffer(false, CS_REMOTE));
+  EXPECT_TRUE(filter.SetAnswer(false, CS_LOCAL));
   EXPECT_FALSE(filter.IsActive());
 
-  EXPECT_TRUE(filter.SetOffer(false, webrtc::CS_REMOTE));
-  EXPECT_TRUE(filter.SetAnswer(false, webrtc::CS_LOCAL));
+  EXPECT_TRUE(filter.SetOffer(false, CS_REMOTE));
+  EXPECT_TRUE(filter.SetAnswer(false, CS_LOCAL));
   EXPECT_FALSE(filter.IsActive());
 }
 
 
 TEST(RtcpMuxFilterTest, SetActiveCantDeactivate) {
-  webrtc::RtcpMuxFilter filter;
+  RtcpMuxFilter filter;
 
   filter.SetActive();
   EXPECT_TRUE(filter.IsActive());
 
-  EXPECT_FALSE(filter.SetOffer(false, webrtc::CS_LOCAL));
+  EXPECT_FALSE(filter.SetOffer(false, CS_LOCAL));
   EXPECT_TRUE(filter.IsActive());
-  EXPECT_TRUE(filter.SetOffer(true, webrtc::CS_LOCAL));
-  EXPECT_TRUE(filter.IsActive());
-
-  EXPECT_FALSE(filter.SetProvisionalAnswer(false, webrtc::CS_REMOTE));
-  EXPECT_TRUE(filter.IsActive());
-  EXPECT_TRUE(filter.SetProvisionalAnswer(true, webrtc::CS_REMOTE));
+  EXPECT_TRUE(filter.SetOffer(true, CS_LOCAL));
   EXPECT_TRUE(filter.IsActive());
 
-  EXPECT_FALSE(filter.SetAnswer(false, webrtc::CS_REMOTE));
+  EXPECT_FALSE(filter.SetProvisionalAnswer(false, CS_REMOTE));
   EXPECT_TRUE(filter.IsActive());
-  EXPECT_TRUE(filter.SetAnswer(true, webrtc::CS_REMOTE));
-  EXPECT_TRUE(filter.IsActive());
-
-  EXPECT_FALSE(filter.SetOffer(false, webrtc::CS_REMOTE));
-  EXPECT_TRUE(filter.IsActive());
-  EXPECT_TRUE(filter.SetOffer(true, webrtc::CS_REMOTE));
+  EXPECT_TRUE(filter.SetProvisionalAnswer(true, CS_REMOTE));
   EXPECT_TRUE(filter.IsActive());
 
-  EXPECT_FALSE(filter.SetProvisionalAnswer(false, webrtc::CS_LOCAL));
+  EXPECT_FALSE(filter.SetAnswer(false, CS_REMOTE));
   EXPECT_TRUE(filter.IsActive());
-  EXPECT_TRUE(filter.SetProvisionalAnswer(true, webrtc::CS_LOCAL));
+  EXPECT_TRUE(filter.SetAnswer(true, CS_REMOTE));
   EXPECT_TRUE(filter.IsActive());
 
-  EXPECT_FALSE(filter.SetAnswer(false, webrtc::CS_LOCAL));
+  EXPECT_FALSE(filter.SetOffer(false, CS_REMOTE));
   EXPECT_TRUE(filter.IsActive());
-  EXPECT_TRUE(filter.SetAnswer(true, webrtc::CS_LOCAL));
+  EXPECT_TRUE(filter.SetOffer(true, CS_REMOTE));
+  EXPECT_TRUE(filter.IsActive());
+
+  EXPECT_FALSE(filter.SetProvisionalAnswer(false, CS_LOCAL));
+  EXPECT_TRUE(filter.IsActive());
+  EXPECT_TRUE(filter.SetProvisionalAnswer(true, CS_LOCAL));
+  EXPECT_TRUE(filter.IsActive());
+
+  EXPECT_FALSE(filter.SetAnswer(false, CS_LOCAL));
+  EXPECT_TRUE(filter.IsActive());
+  EXPECT_TRUE(filter.SetAnswer(true, CS_LOCAL));
   EXPECT_TRUE(filter.IsActive());
 }
+
+}  
+}  

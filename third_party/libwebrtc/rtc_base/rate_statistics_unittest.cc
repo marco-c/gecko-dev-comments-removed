@@ -17,9 +17,9 @@
 
 #include "test/gtest.h"
 
+namespace webrtc {
 namespace {
 
-using webrtc::RateStatistics;
 
 constexpr int64_t kWindowMs = 500;
 
@@ -360,5 +360,7 @@ TEST_F(RateStatisticsTest, Handles25Fps) {
     now_ms += kTimeDelta;
   }
 }
+
+}  
 
 }  

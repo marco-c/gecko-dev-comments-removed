@@ -28,12 +28,15 @@
 #include "rtc_tools/rtc_event_log_visualizer/proto/chart.pb.h"
 #endif
 
+namespace webrtc {
+namespace {
+
 class RtcEventLogAnalyzerBindingsTest : public ::testing::Test {
   void SetUp() override {
     
-    std::string file_name = webrtc::test::ResourcePath(
-        "rtc_event_log/rtc_event_log_500kbps", "binarypb");
-    webrtc::FileWrapper file = webrtc::FileWrapper::OpenReadOnly(file_name);
+    std::string file_name =
+        test::ResourcePath("rtc_event_log/rtc_event_log_500kbps", "binarypb");
+    FileWrapper file = FileWrapper::OpenReadOnly(file_name);
     ASSERT_TRUE(file.is_open());
 
     std::optional<size_t> file_size = file.FileSize();
@@ -65,7 +68,7 @@ TEST_F(RtcEventLogAnalyzerBindingsTest, OutgoingBitrateChart) {
   ASSERT_GT(output_size, 0u);
 
   
-  webrtc::analytics::ChartCollection collection;
+  analytics::ChartCollection collection;
   bool success = collection.ParseFromString(
       absl::string_view(output.data(), static_cast<int>(output_size)));
   ASSERT_TRUE(success);
@@ -87,7 +90,7 @@ TEST_F(RtcEventLogAnalyzerBindingsTest, NetWorkDelayFeedbackChart) {
   ASSERT_GT(output_size, 0u);
 
   
-  webrtc::analytics::ChartCollection collection;
+  analytics::ChartCollection collection;
   bool success = collection.ParseFromString(
       absl::string_view(output.data(), static_cast<int>(output_size)));
   ASSERT_TRUE(success);
@@ -111,3 +114,6 @@ TEST_F(RtcEventLogAnalyzerBindingsTest, OutputbufferTooSmall) {
   
   ASSERT_EQ(output_size, 0u);
 }
+
+}  
+}  
