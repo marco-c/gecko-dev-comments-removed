@@ -15,6 +15,7 @@
 #include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/DOMRect.h"
 #include "mozilla/dom/PWindowGlobalParent.h"
+#include "mozilla/dom/PrefetchMatchWaiter.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalActor.h"
 #include "mozilla/dom/WindowGlobalActorsBinding.h"
@@ -439,6 +440,23 @@ class WindowGlobalParent final : public WindowContext,
   
   dom::PrefetchRecordParent* FindMatchingPrefetchRecord(nsIURI* aURI);
 
+  
+  
+  
+  
+  RefPtr<PrefetchMatchPromise> WaitForMatchingPrefetchRecord(
+      nsIURI* aURI, TimeDuration aTimeout);
+
+  
+  
+  
+  
+  
+  
+  bool HasPotentialPrefetchMatch(nsIURI* aURI);
+
+  void RemoveWaiter(PrefetchMatchWaiter* aWaiter);
+
   void UpdateFullscreenKeyboardLockStatus(FullscreenKeyboardLock aStatus);
 
  private:
@@ -526,6 +544,7 @@ class WindowGlobalParent final : public WindowContext,
   
   
   RefPtr<WindowGlobalParent> mPageUseCountersWindow;
+  nsTArray<RefPtr<PrefetchMatchWaiter>> mPrefetchWaiters;
 
   
   UniquePtr<PageUseCounters> mPageUseCounters;
