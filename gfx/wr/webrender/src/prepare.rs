@@ -369,7 +369,7 @@ fn prepare_prim_for_render(
             prepare_box_shadow(
                 &prim_data.kind,
                 &prim_data.common,
-                &prim_instance.unsnapped_prim_rect,
+                &prim_data.common.prim_rect,
                 &prim_info.clip_chain,
                 &mut quad_transform,
                 frame_context,
@@ -471,7 +471,7 @@ fn prepare_prim_for_render(
             
             
             
-            let local_rect = prim_instance.unsnapped_prim_rect;
+            let local_rect = prim_data.common.prim_rect;
 
             let surface = &frame_state.surfaces[pic_context.surface_index.0];
 
