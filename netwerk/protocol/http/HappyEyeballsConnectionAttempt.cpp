@@ -193,9 +193,12 @@ nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
   
   
   
+  
+  
+  const bool http3Only = mConnInfo->GetHttp3Only();
   happy_eyeballs::HttpVersions httpVersions{
-       true,
-       StaticPrefs::network_http_http2_enabled(),
+       !http3Only,
+       !http3Only && StaticPrefs::network_http_http2_enabled(),
        nsHttpHandler::IsHttp3Enabled() &&
           !(mCaps & NS_HTTP_DISALLOW_HTTP3),
   };

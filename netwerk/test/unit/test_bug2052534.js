@@ -147,6 +147,8 @@ function resetConnections() {
 
 
 
+
+
 async function ensureAltSvcMapping() {
   override.clearHostOverride(ALT_HOST);
   override.addIPOverride(ALT_HOST, "127.0.0.1");
@@ -167,12 +169,15 @@ async function ensureAltSvcMapping() {
   Services.console.registerListener(mappingObserver);
 
   for (let i = 0; i < 10 && !sawMapping; i++) {
-    await resetConnections();
     let r = await openChan("http3-test", {
       altSvc: altRoute,
       flags: CL_ALLOW_UNKNOWN_CL,
     });
     info(`attempt ${i}: status=${r.status} Alt-Used="${r.altUsed}"`);
+    if (!sawMapping) {
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
   }
 
   Services.console.unregisterListener(mappingObserver);

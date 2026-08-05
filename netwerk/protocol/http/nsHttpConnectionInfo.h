@@ -312,6 +312,13 @@ class nsHttpConnectionInfo final : public ARefBase {
   void SetHasIPHintAddress(bool aHasIPHint) { mHasIPHintAddress = aHasIPHint; }
   bool HasIPHintAddress() const { return mHasIPHintAddress; }
 
+  
+  
+  
+  
+  void SetHttp3Only(bool aHttp3Only) { mHttp3Only = aHttp3Only; }
+  bool GetHttp3Only() const { return mHttp3Only; }
+
   void SetEchConfig(const nsACString& aEchConfig) { mEchConfig = aEchConfig; }
   const nsCString& GetEchConfig() const { return mEchConfig; }
 
@@ -362,6 +369,7 @@ class nsHttpConnectionInfo final : public ARefBase {
   bool mWebTransport = false;
 
   bool mHasIPHintAddress = false;
+  bool mHttp3Only = false;
   nsCString mEchConfig;
 
   uint64_t mWebTransportId = 0;  

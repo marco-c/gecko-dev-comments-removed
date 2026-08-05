@@ -151,10 +151,15 @@ nsresult HappyEyeballsTransaction::ReadSegments(nsAHttpSegmentReader* aReader,
 nsresult HappyEyeballsTransaction::WriteSegments(nsAHttpSegmentWriter* aWriter,
                                                  uint32_t aCount,
                                                  uint32_t* aCountWritten) {
+  LOG(("HappyEyeballsTransaction::WriteSegments %p mState=%d", this,
+       (uint32_t)mState));
   
   
   
-  if (mState == State::Closed) {
+  
+  
+  
+  if (mState != State::Adopted) {
     return NS_BASE_STREAM_CLOSED;
   }
   MOZ_ASSERT_UNREACHABLE("Should not be called");

@@ -111,6 +111,11 @@ class ConnectionEntry : public SupportsWeakPtr {
   Http3ConnectionStatsParams GetHttp3ConnectionStatsData();
   void LogConnections();
 
+  
+  
+  
+  
+  
   const RefPtr<nsHttpConnectionInfo> mConnInfo;
 
   bool AvailableForDispatchNow();

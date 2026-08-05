@@ -228,9 +228,27 @@ void AltSvcMapping::ProcessHeader(
         RefPtr<nsHttpConnectionInfo> ci;
         aMapping->GetConnectionInfo(getter_AddRefs(ci), proxyInfo,
                                     originAttributes);
-        if (ci->HashKey().Equals(aTransConnInfo->HashKey())) {
-          LOG(("The transaction's conninfo is the same, no need to validate"));
+        
+        
+        
+        
+        
+        
+        
+        
+        bool sameHashKey = ci->HashKey().Equals(aTransConnInfo->HashKey());
+        if (ci->IsHttp3()) {
+          if (sameHashKey &&
+              ci->GetRoutedHost().Equals(aTransConnInfo->GetRoutedHost()) &&
+              ci->RoutedPort() == aTransConnInfo->RoutedPort() &&
+              ci->GetNPNToken().Equals(aTransConnInfo->GetNPNToken())) {
+            aDontValidate = true;
+          }
+        } else if (sameHashKey) {
           aDontValidate = true;
+        }
+        if (aDontValidate) {
+          LOG(("The transaction's conninfo is the same, no need to validate"));
         }
       }
     }
@@ -908,6 +926,11 @@ void AltSvcCache::UpdateAltServiceMapping(
 
   if (StaticPrefs::network_http_happy_eyeballs_enabled()) {
     ci->SetHappyEyeballsEnabled(true);
+    
+    
+    if (map->IsHttp3()) {
+      ci->SetHttp3Only(true);
+    }
   }
 
   MOZ_ASSERT(map->HTTPS());

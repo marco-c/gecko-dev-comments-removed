@@ -3710,11 +3710,18 @@ void nsHttpConnectionMgr::DoSpeculativeConnectionInternal(
   bool allow1918 = aTrans->Allow1918() ? *aTrans->Allow1918() : false;
 
   bool keepAlive = aTrans->Caps() & NS_HTTP_ALLOW_KEEPALIVE;
+  
+  
+  
+  
+  
+  bool wantsFirstH3Connection =
+      aTrans->ConnectionInfo()->IsHttp3() && !aEnt->HasActiveH3Connection();
   if (mNumDnsAndConnectSockets < parallelSpeculativeConnectLimit &&
       ((ignoreIdle &&
         (aEnt->IdleConnectionsLength() < parallelSpeculativeConnectLimit)) ||
        !aEnt->IdleConnectionsLength()) &&
-      !(keepAlive && aEnt->RestrictConnections()) &&
+      (wantsFirstH3Connection || !(keepAlive && aEnt->RestrictConnections())) &&
       !AtActiveConnectionLimit(aEnt, aTrans->Caps())) {
     nsresult rv = aEnt->CreateDnsAndConnectSocket(aTrans, aTrans->Caps(), true,
                                                   false, allow1918, nullptr);
