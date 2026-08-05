@@ -7,6 +7,7 @@
 #include "WebTransportDatagramsWritable.h"
 
 #include "mozilla/dom/WebTransport.h"
+#include "mozilla/dom/WebTransportDatagramDuplexStream.h"
 #include "mozilla/dom/WebTransportDatagramsWritableBinding.h"
 #include "mozilla/dom/WebTransportLog.h"
 #include "mozilla/dom/WebTransportSendGroup.h"
@@ -14,7 +15,8 @@
 namespace mozilla::dom {
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(WebTransportDatagramsWritable,
-                                   WritableStream, mTransport, mSendGroup)
+                                   WritableStream, mTransport, mSendGroup,
+                                   mAlgorithms)
 NS_IMPL_ADDREF_INHERITED(WebTransportDatagramsWritable, WritableStream)
 NS_IMPL_RELEASE_INHERITED(WebTransportDatagramsWritable, WritableStream)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(WebTransportDatagramsWritable)
@@ -41,7 +43,7 @@ WebTransportDatagramsWritable::~WebTransportDatagramsWritable() {
 already_AddRefed<WebTransportDatagramsWritable>
 WebTransportDatagramsWritable::Create(
     JSContext* aCx, nsIGlobalObject* aGlobal, WebTransport* aTransport,
-    UnderlyingSinkAlgorithmsWrapper& aAlgorithms, double aHighWaterMark,
+    WebTransportDatagramDuplexStream* aDatagrams, double aHighWaterMark,
     WebTransportSendGroup* aSendGroup, int64_t aSendOrder, ErrorResult& aRv) {
   
   
@@ -53,7 +55,22 @@ WebTransportDatagramsWritable::Create(
   
   
   
-  datagramsWritable->SetUpNative(aCx, aAlgorithms, Some(aHighWaterMark),
+  
+  
+  
+  RefPtr<OutgoingDatagramStreamAlgorithms> algorithms =
+      new OutgoingDatagramStreamAlgorithms(aDatagrams, aSendGroup, aSendOrder);
+
+  
+  
+  if (aDatagrams->mOutgoingAlgorithms) {
+    algorithms->SetChild(aDatagrams->mOutgoingAlgorithms->GetChild());
+  }
+
+  datagramsWritable->mAlgorithms = algorithms;
+
+  
+  datagramsWritable->SetUpNative(aCx, *algorithms, Some(aHighWaterMark),
                                  nullptr, aRv);
   if (aRv.Failed()) {
     return nullptr;
@@ -81,13 +98,17 @@ void WebTransportDatagramsWritable::SetSendGroup(
        aSendGroup));
   
   mSendGroup = aSendGroup;
-  
+  if (mAlgorithms) {
+    mAlgorithms->SetSendGroup(aSendGroup);
+  }
 }
 
 void WebTransportDatagramsWritable::SetSendOrder(int64_t aSendOrder) {
-  LOG(("WebTransportDatagramsWritable::SetSendOrder"));
+  LOG(("WebTransportDatagramsWritable::SetSendOrder %" PRId64, aSendOrder));
   mSendOrder = aSendOrder;
-  
+  if (mAlgorithms) {
+    mAlgorithms->SetSendOrder(aSendOrder);
+  }
 }
 
 }  
