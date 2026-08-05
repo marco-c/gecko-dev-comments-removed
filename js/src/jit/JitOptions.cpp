@@ -413,6 +413,8 @@ DefaultJitOptions::DefaultJitOptions() {
   
   
   SET_DEFAULT(regexp_optimization, true);
+  SET_DEFAULT(regexp_masked_dispatch, true);
+  SET_DEFAULT(regexp_simd_in_rc, true);
   
   
   SET_DEFAULT(regexp_quick_check, true);
