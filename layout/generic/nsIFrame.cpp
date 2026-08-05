@@ -799,6 +799,10 @@ static void UpdateGeneratedContentTextIfNeeded(
   if (!aFrame->IsGeneratedContentFrame()) {
     return;
   }
+  
+  if (aFrame->GetPrevContinuation()) {
+    return;
+  }
   nsIContent* content = aFrame->GetContent();
   if (!content || !content->IsRootOfNativeAnonymousSubtree()) {
     return;
@@ -838,10 +842,6 @@ static void UpdateGeneratedContentTextIfNeeded(
 }
 
 void nsIFrame::HandlePrimaryFrameStyleChange(ComputedStyle* aOldStyle) {
-  if (aOldStyle) {
-    UpdateGeneratedContentTextIfNeeded(this, aOldStyle);
-  }
-
   const nsStyleDisplay* disp = StyleDisplay();
   const nsStyleDisplay* oldDisp =
       aOldStyle ? aOldStyle->StyleDisplay() : nullptr;
@@ -1312,17 +1312,18 @@ void nsIFrame::MarkNeedsDisplayItemRebuild() {
 
 
 void nsIFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
-#ifdef ACCESSIBILITY
-  
-  
-  
-  
   if (aOldComputedStyle) {
+#ifdef ACCESSIBILITY
+    
+    
+    
+    
     if (nsAccessibilityService* accService = GetAccService()) {
       accService->NotifyOfComputedStyleChange(PresShell(), mContent);
     }
-  }
 #endif
+    UpdateGeneratedContentTextIfNeeded(this, aOldComputedStyle);
+  }
 
   MaybeScheduleReflowSVGNonDisplayText(this);
 
