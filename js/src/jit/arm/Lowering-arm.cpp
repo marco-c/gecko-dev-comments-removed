@@ -10,6 +10,7 @@
 #include "jit/Lowering.h"
 #include "jit/MIR-wasm.h"
 #include "jit/MIR.h"
+
 #include "jit/shared/Lowering-shared-inl.h"
 
 using namespace js;
@@ -47,8 +48,8 @@ void LIRGenerator::visitBox(MBox* box) {
 
   
   if (IsFloatingPointType(inner->type())) {
-    defineBox(new (alloc()) LBoxFloatingPoint(
-                  useRegisterAtStart(inner), tempCopy(inner, 0), inner->type()),
+    defineBox(new (alloc())
+                  LBoxFloatingPoint(useRegister(inner), inner->type()),
               box);
     return;
   }
