@@ -61,7 +61,7 @@ class TimelineManager {
 
  private:
   template <typename TimelineType>
-  using Timelines = nsTArray<RefPtr<TimelineType>>;
+  using Timelines = nsTArray<TimelineEntry<TimelineType>>;
   
   
   

@@ -52,6 +52,11 @@ class nsAnimationManager final
                                     mozilla::dom::CSSAnimation* aAnimation);
 
   void UpdateDeferredTimelineChanges();
+  
+
+
+
+
   void UpdateNamedTimelineAnimations(
       const nsTArray<RefPtr<const nsAtom>>& aChanged);
   void UpdateAllNamedTimelineAnimations();

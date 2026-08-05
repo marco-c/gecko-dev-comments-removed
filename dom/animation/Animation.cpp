@@ -178,7 +178,7 @@ already_AddRefed<Animation> Animation::Constructor(
 
   RefPtr<Animation> animation = new Animation(global);
   
-  animation->SetTimelineNoUpdate(timeline, nullptr, FromJS::Yes);
+  animation->SetTimelineNoUpdate(timeline, {}, FromJS::Yes);
   animation->SetEffectNoUpdate(aEffect);
 
   return animation.forget();
@@ -300,14 +300,15 @@ void Animation::SetTimelineFromJS(AnimationTimeline* aTimeline) {
   TimelineWillSetFromJS();
   
   const auto prevTimelineName = GetTimelineName();
-  SetTimeline(aTimeline, nullptr, FromJS::Yes);
-  if (prevTimelineName) {
-    RemovedNamedTimelineReferenceFromJS(prevTimelineName);
+  SetTimeline(aTimeline, {}, FromJS::Yes);
+  if (prevTimelineName.mName) {
+    RemovedNamedTimelineReferenceFromJS(prevTimelineName.mName);
   }
 }
 
 bool Animation::SetTimeline(AnimationTimeline* aTimeline,
-                            const nsAtom* aTimelineName, FromJS aFromJS) {
+                            const ScopedTimelineName& aTimelineName,
+                            FromJS aFromJS) {
   const auto updated = SetTimelineNoUpdate(aTimeline, aTimelineName, aFromJS);
   PostUpdate();
   return updated;
@@ -315,7 +316,7 @@ bool Animation::SetTimeline(AnimationTimeline* aTimeline,
 
 
 bool Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
-                                    const nsAtom* aTimelineName,
+                                    const ScopedTimelineName& aTimelineName,
                                     FromJS aFromJS) {
   if (aFromJS == FromJS::No && TimelineOverridenByJS()) {
     return false;
@@ -326,7 +327,7 @@ bool Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
   if (mTimeline == aTimeline) {
     
     if (mTimelineName != aTimelineName) {
-      mTimelineName = aTimelineName;
+      mTimelineName = OwningScopedTimelineName{aTimelineName};
     }
     
     return false;
@@ -373,7 +374,7 @@ bool Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
     oldTimeline->RemoveAnimation(this);
   }
   mTimeline = aTimeline;
-  mTimelineName = aTimelineName;
+  mTimelineName = OwningScopedTimelineName{aTimelineName};
   
   
   if (mEffect) {

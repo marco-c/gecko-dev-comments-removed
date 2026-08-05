@@ -21,6 +21,7 @@
 #include "mozilla/dom/AnimationBinding.h"  
 #include "mozilla/dom/AnimationTimeline.h"
 #include "mozilla/dom/CSSNumericValueBindingFwd.h"
+#include "mozilla/dom/TimelineName.h"
 #include "nsCycleCollectionParticipant.h"
 
 struct JSContext;
@@ -134,10 +135,11 @@ class Animation : public DOMEventTargetHelper,
   AnimationTimeline* GetTimeline() const { return mTimeline; }
   
   
-  bool SetTimeline(AnimationTimeline* aTimeline, const nsAtom* aTimelineName,
-                   FromJS aFromJS);
+  bool SetTimeline(AnimationTimeline* aTimeline,
+                   const ScopedTimelineName& aTimelineName, FromJS aFromJS);
   bool SetTimelineNoUpdate(AnimationTimeline* aTimeline,
-                           const nsAtom* aTimelineName, FromJS aFromJS);
+                           const ScopedTimelineName& aTimelineName,
+                           FromJS aFromJS);
 
   const AnimationRange& GetTimelineRange() const { return mTimelineRange; }
   void SetTimelineRange(AnimationRange&& aRange);
@@ -465,7 +467,9 @@ class Animation : public DOMEventTargetHelper,
 
   void AutoAlignStartTime();
 
-  const nsAtom* GetTimelineName() const { return mTimelineName; }
+  ScopedTimelineName GetTimelineName() const {
+    return ScopedTimelineName{mTimelineName};
+  }
 
   bool HasFiniteTimeline() const {
     return mTimeline && !mTimeline->IsMonotonicallyIncreasing();
@@ -661,7 +665,9 @@ class Animation : public DOMEventTargetHelper,
   
   
   
-  RefPtr<const nsAtom> mTimelineName;
+  
+  
+  OwningScopedTimelineName mTimelineName;
 };
 
 }  
