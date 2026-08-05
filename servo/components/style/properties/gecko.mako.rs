@@ -1514,7 +1514,7 @@ pub mod system_font {
                     keyword_info: KeywordInfo::none()
                 },
                 font_weight: system.weight,
-                font_stretch: system.stretch,
+                font_width: system.width,
                 font_style: system.style,
                 system_font: *self,
             };

@@ -27,7 +27,7 @@
 
 class gfxDWriteFontFamily final : public gfxFontFamily {
  public:
-  typedef mozilla::FontStretch FontStretch;
+  typedef mozilla::FontWidth FontWidth;
   typedef mozilla::FontSlantStyle FontSlantStyle;
   typedef mozilla::FontWeight FontWeight;
 
@@ -106,8 +106,7 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
                                        : FontSlantStyle::NORMAL));
     mStyleRange = SlantStyleRange(style);
 
-    mStretchRange =
-        StretchRange(FontStretchFromDWriteStretch(aFont->GetStretch()));
+    mWidthRange = WidthRange(FontWidthFromDWriteStretch(aFont->GetStretch()));
 
     int weight = mozilla::RoundUpToMultiple(aFont->GetWeight() - 50, 100);
     weight = std::clamp(weight, 100, 900);
@@ -128,7 +127,7 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
 
 
   gfxDWriteFontEntry(const nsACString& aFaceName, IDWriteFont* aFont,
-                     WeightRange aWeight, StretchRange aStretch,
+                     WeightRange aWeight, WidthRange aWidth,
                      SlantStyleRange aStyle)
       : gfxFontEntry(aFaceName),
         mFont(aFont),
@@ -138,7 +137,7 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
         mHasVariations(false),
         mHasVariationsInitialized(false) {
     mWeightRange = aWeight;
-    mStretchRange = aStretch;
+    mWidthRange = aWidth;
     mStyleRange = aStyle;
     mIsLocalUserFont = true;
     mIsCJK = UNINITIALIZED_VALUE;
@@ -156,7 +155,7 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
 
   gfxDWriteFontEntry(const nsACString& aFaceName, IDWriteFontFile* aFontFile,
                      gfxDWriteFontFileStream* aFontFileStream,
-                     WeightRange aWeight, StretchRange aStretch,
+                     WeightRange aWeight, WidthRange aWidth,
                      SlantStyleRange aStyle)
       : gfxFontEntry(aFaceName),
         mFont(nullptr),
@@ -167,7 +166,7 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
         mHasVariations(false),
         mHasVariationsInitialized(false) {
     mWeightRange = aWeight;
-    mStretchRange = aStretch;
+    mWidthRange = aWidth;
     mStyleRange = aStyle;
     mIsDataUserFont = true;
     mIsCJK = UNINITIALIZED_VALUE;
@@ -396,11 +395,11 @@ class gfxDWriteFontList final : public gfxPlatformFontList {
   already_AddRefed<gfxFontEntry> LookupLocalFont(
       FontVisibilityProvider* aFontVisibilityProvider,
       const nsACString& aFontName, WeightRange aWeightForEntry,
-      StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry) override;
+      WidthRange aWidthForEntry, SlantStyleRange aStyleForEntry) override;
 
   already_AddRefed<gfxFontEntry> MakePlatformFont(
       const nsACString& aFontName, WeightRange aWeightForEntry,
-      StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry,
+      WidthRange aWidthForEntry, SlantStyleRange aStyleForEntry,
       const uint8_t* aFontData, uint32_t aLength) override;
 
   IDWriteGdiInterop* GetGDIInterop() { return mGDIInterop; }

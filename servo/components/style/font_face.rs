@@ -18,11 +18,10 @@ use std::fmt::{self, Write};
 use style_traits::{CssStringWriter, CssWriter, ParseError, StyleParseErrorKind, ToCss};
 
 pub use crate::properties::font_face::{DescriptorId, DescriptorParser, Descriptors};
-pub use crate::values::computed::font::{FamilyName, FontStretch, FontStyle};
+pub use crate::values::computed::font::{FamilyName, FontStyle, FontWidth};
 pub use crate::values::specified::font::{
-    AbsoluteFontWeight, FontFeatureSettings, FontLanguageOverride,
-    FontStretch as SpecifiedFontStretch, FontVariationSettings, MetricsOverride,
-    SpecifiedFontStyle,
+    AbsoluteFontWeight, FontFeatureSettings, FontLanguageOverride, FontVariationSettings,
+    FontWidth as SpecifiedFontWidth, MetricsOverride, SpecifiedFontStyle,
 };
 
 
@@ -373,32 +372,32 @@ impl FontWeightRange {
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
-pub struct FontStretchRange(pub SpecifiedFontStretch, pub SpecifiedFontStretch);
-impl_range!(FontStretchRange, SpecifiedFontStretch);
+pub struct FontWidthRange(pub SpecifiedFontWidth, pub SpecifiedFontWidth);
+impl_range!(FontWidthRange, SpecifiedFontWidth);
 
 
 
 #[repr(C)]
 #[allow(missing_docs)]
 #[derive(Clone, Debug, Deserialize, Hash, MallocSizeOf, PartialEq, Serialize)]
-pub struct ComputedFontStretchRange(pub FontStretch, pub FontStretch);
+pub struct ComputedFontWidthRange(pub FontWidth, pub FontWidth);
 
-impl FontStretchRange {
+impl FontWidthRange {
     
     
-    pub fn compute(&self) -> Option<ComputedFontStretchRange> {
-        fn compute_stretch(s: &SpecifiedFontStretch) -> Option<FontStretch> {
+    pub fn compute(&self) -> Option<ComputedFontWidthRange> {
+        fn compute_width(s: &SpecifiedFontWidth) -> Option<FontWidth> {
             match *s {
-                SpecifiedFontStretch::Keyword(ref kw) => Some(kw.compute()),
-                SpecifiedFontStretch::Stretch(ref p) => {
-                    Some(FontStretch::from_percentage(p.compute()?.0))
+                SpecifiedFontWidth::Keyword(ref kw) => Some(kw.compute()),
+                SpecifiedFontWidth::Width(ref p) => {
+                    Some(FontWidth::from_percentage(p.compute()?.0))
                 },
-                SpecifiedFontStretch::System(..) => unreachable!(),
+                SpecifiedFontWidth::System(..) => unreachable!(),
             }
         }
 
-        let (min, max) = sort_range(compute_stretch(&self.0)?, compute_stretch(&self.1)?);
-        Some(ComputedFontStretchRange(min, max))
+        let (min, max) = sort_range(compute_width(&self.0)?, compute_width(&self.1)?);
+        Some(ComputedFontWidthRange(min, max))
     }
 }
 
