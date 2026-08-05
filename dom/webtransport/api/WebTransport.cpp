@@ -980,6 +980,23 @@ already_AddRefed<ReadableStream> WebTransport::IncomingUnidirectionalStreams() {
   return do_AddRef(mIncomingUnidirectionalStreams);
 }
 
+already_AddRefed<WebTransportSendGroup> WebTransport::CreateSendGroup(
+    ErrorResult& aRv) {
+  LOG(("WebTransport::CreateSendGroup() called"));
+  
+  
+  
+  if (mState == WebTransportState::CLOSED ||
+      mState == WebTransportState::FAILED || !mChild) {
+    aRv.ThrowInvalidStateError("WebTransport closed or failed");
+    return nullptr;
+  }
+  
+  RefPtr<WebTransportSendGroup> group =
+      new WebTransportSendGroup(mGlobal, this);
+  return group.forget();
+}
+
 
 
 void WebTransport::Cleanup(WebTransportError* aError,
