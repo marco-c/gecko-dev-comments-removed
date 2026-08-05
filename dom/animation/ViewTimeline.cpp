@@ -57,33 +57,6 @@ JSObject* ViewTimeline::WrapObject(JSContext* aCx,
   return ViewTimeline_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-static MOZ_CAN_RUN_SCRIPT Maybe<StyleViewTimelineInset>
-ParseAndComputeInsetString(const nsACString& aInsetString, Element* aSubject,
-                           const Document* aDocument) {
-  if (!aSubject) {
-    
-    return Some(StyleViewTimelineInset());
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<const ComputedStyle> style = nsComputedDOMStyle::GetComputedStyle(
-      aSubject, PseudoStyleRequest::NotPseudo());
-  const StylePerDocumentStyleData* rawData =
-      aDocument->EnsureStyleSet().RawData();
-  StyleViewTimelineInset inset;
-  if (!ServoCSSParser::ParseAndComputeViewTimelineInset(
-          aInsetString, aSubject, style, rawData, inset)) {
-    return Nothing();
-  }
-  return Some(std::move(inset));
-}
-
 
 already_AddRefed<ViewTimeline> ViewTimeline::Constructor(
     const GlobalObject& aGlobal, const ViewTimelineOptions& aOptions,
@@ -120,15 +93,13 @@ already_AddRefed<ViewTimeline> ViewTimeline::Constructor(
   if (aOptions.mInset.IsUTF8String()) {
     
     
-    Maybe<StyleViewTimelineInset> value = ParseAndComputeInsetString(
-        aOptions.mInset.GetAsUTF8String(), subject, doc);
-    if (!value) {
+    if (!ServoCSSParser::ParseViewTimelineInset(
+            aOptions.mInset.GetAsUTF8String(), inset)) {
       
       
       aRv.ThrowTypeError("Invalid inset string");
       return nullptr;
     }
-    inset = std::move(*value);
   } else {
     if (!StaticPrefs::layout_css_typed_om_enabled()) {
       
@@ -156,6 +127,11 @@ already_AddRefed<ViewTimeline> ViewTimeline::Constructor(
   RefPtr<ViewTimeline> result = MakeAndAddRef<ViewTimeline>(
       doc, scroller, axis, subject, PseudoStyleType::NotPseudo, inset);
   if (subject) {
+    
+    
+    if (Document* doc = subject->GetComposedDoc()) {
+      doc->FlushPendingNotifications(FlushType::Layout);
+    }
     
     
     result->UpdateCachedCurrentTime();

@@ -168,10 +168,9 @@ class ServoCSSParser {
 
 
 
-  static bool ParseAndComputeViewTimelineInset(
-      const nsACString& aValue, const dom::Element* aSubject,
-      const ComputedStyle* aStyle, const StylePerDocumentStyleData* aRawData,
-      StyleViewTimelineInset& aResult);
+
+  static bool ParseViewTimelineInset(const nsACString& aValue,
+                                     StyleViewTimelineInset& aResult);
 
   
 
