@@ -19,13 +19,16 @@ EXPORTS.mozilla.dom += [
 
 if CONFIG["OS_TARGET"] == "WINNT":
     SOURCES += [
+        "Win32SerialParityCheckStream.cpp",
         "Win32SerialPlatformService.cpp",
     ]
     OS_LIBS += [
         "cfgmgr32",
         "setupapi",
     ]
-elif CONFIG["OS_TARGET"] == "Darwin" or CONFIG["OS_TARGET"] == "Linux":
+elif (CONFIG["OS_TARGET"] == "Darwin" and CONFIG["TARGET_OS"] != "iOS") or CONFIG[
+    "OS_TARGET"
+] == "Linux":
     UNIFIED_SOURCES += [
         "PosixSerialPlatformService.cpp",
     ]
