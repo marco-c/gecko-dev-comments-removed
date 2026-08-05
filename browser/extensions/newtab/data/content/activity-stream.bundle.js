@@ -23743,6 +23743,7 @@ function useWidgetDnD({
   return {
     effectiveOrder,
     draggedId: mouse.draggedId,
+    previewOrder: mouse.previewOrder,
     previewOrderMap,
     handleDragStart: mouse.handleDragStart,
     handleDragOver: mouse.handleDragOver,
@@ -23752,7 +23753,151 @@ function useWidgetDnD({
   };
 }
 ;
+
+
+
+
+
+const REORDER_FLIP_MS = 160;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function createReorderFlip({
+  childSelector,
+  skipSelector = null,
+  durationMs = REORDER_FLIP_MS
+} = {}) {
+  let prevRects = new Map();
+  let slideUntil = 0;
+  return {
+    
+    
+    isAnimating() {
+      return performance.now() < slideUntil;
+    },
+    sync(container, {
+      enabled = true,
+      reset = false
+    } = {}) {
+      if (!container) {
+        return;
+      }
+      const items = [...container.querySelectorAll(childSelector)];
+
+      
+      for (const el of items) {
+        el.style.transition = "none";
+        el.style.transform = "";
+      }
+      const newRects = new Map(items.map(el => [el, el.getBoundingClientRect()]));
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (enabled && !reset && !reduceMotion) {
+        const moved = [];
+        for (const el of items) {
+          if (skipSelector && el.matches(skipSelector)) {
+            continue;
+          }
+          const prev = prevRects.get(el);
+          if (!prev) {
+            continue;
+          }
+          const next = newRects.get(el);
+          const dx = prev.left - next.left;
+          const dy = prev.top - next.top;
+          if (!dx && !dy) {
+            continue;
+          }
+          
+          el.style.transform = `translate(${dx}px, ${dy}px)`;
+          moved.push(el);
+        }
+        if (moved.length) {
+          
+          
+          void container.offsetWidth;
+          for (const el of moved) {
+            el.style.transition = `transform ${durationMs}ms ease`;
+            el.style.transform = "";
+          }
+          slideUntil = performance.now() + durationMs;
+        }
+      }
+      prevRects = newRects;
+    }
+  };
+}
+
+
+
+
+
+
+
+
+function useReorderFlip({
+  orderKey,
+  resetKey = null,
+  enabled = true,
+  childSelector,
+  skipSelector = null
+} = {}) {
+  const containerRef = (0,external_React_namespaceObject.useRef)(null);
+  const engineRef = (0,external_React_namespaceObject.useRef)(null);
+  const orderRef = (0,external_React_namespaceObject.useRef)(orderKey);
+  if (!engineRef.current) {
+    engineRef.current = createReorderFlip({
+      childSelector,
+      skipSelector
+    });
+  }
+  (0,external_React_namespaceObject.useLayoutEffect)(() => {
+    const orderChanged = orderKey !== orderRef.current;
+    orderRef.current = orderKey;
+    engineRef.current.sync(containerRef.current, {
+      enabled,
+      reset: !orderChanged
+    });
+    
+    
+  }, [orderKey, enabled, resetKey]);
+  return containerRef;
+}
+;
 function Widgets_extends() { return Widgets_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, Widgets_extends.apply(null, arguments); }
+
 
 
 
@@ -23921,6 +24066,7 @@ function Widgets() {
   const {
     effectiveOrder,
     draggedId,
+    previewOrder,
     previewOrderMap,
     handleDragStart,
     handleDragOver,
@@ -23931,6 +24077,21 @@ function Widgets() {
     widgetOrder,
     prefs,
     dispatch
+  });
+
+  
+  
+  
+  
+  
+  
+  const flipKey = (previewOrder || effectiveOrder).join(",");
+  const widgetsContainerRef = useReorderFlip({
+    orderKey: flipKey,
+    resetKey: draggedId,
+    enabled: novaEnabled,
+    childSelector: "[data-widget-id]",
+    skipSelector: ".is-dragging"
   });
   const anyWidgetInRow = WIDGET_REGISTRY.some(w => widgetEnabledMap[w.id]) || !novaEnabled && weatherForecastEnabled;
   const allWidgetsAdded = WIDGET_REGISTRY.filter(w => isWidgetAddable(w, prefs)).every(w => prefs[w.enabledPref]);
@@ -24244,6 +24405,7 @@ function Widgets() {
     dispatch: dispatch
   }), external_React_default().createElement("div", {
     id: "widgets-container",
+    ref: widgetsContainerRef,
     className: `widgets-container${isMaximized ? " is-maximized" : ""}`,
     "data-row-collapsed": isCollapsed ? "" : undefined
   }, effectiveOrder.map(id => {
