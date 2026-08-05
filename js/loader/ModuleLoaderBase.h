@@ -484,7 +484,6 @@ class ModuleLoaderBase : public nsISupports {
   
   void AddToResolvedModuleSet(
       mozilla::UniquePtr<SpecifierResolutionRecord> aRecord,
-      ScriptFetchInfo* aFetchInfo = nullptr,
       Handle<Value> aHostDefined = UndefinedHandleValue);
 
   void ResetPreloadFlag(nsIURI* aURI);

@@ -218,7 +218,7 @@ bool ModuleLoaderBase::HostLoadImportedModule(
     
     
     
-    loader->AddToResolvedModuleSet(std::move(record), fetchInfo, aHostDefined);
+    loader->AddToResolvedModuleSet(std::move(record), aHostDefined);
   }
 
   ModuleType moduleType = GetModuleRequestType(aCx, aModuleRequest);
@@ -1166,25 +1166,21 @@ static ModuleLoadRequest* GetPreloadRootModuleRequest(
 
 void ModuleLoaderBase::AddToResolvedModuleSet(
     UniquePtr<SpecifierResolutionRecord> aRecord,
-    ScriptFetchInfo* aFetchInfo ,
     Handle<Value> aHostDefined ) {
   
   if (!mLoader->IsImportMapSupported()) {
     return;
   }
 
-  bool isPreloadModule = aFetchInfo && aFetchInfo->IsForModuleScript() &&
-                         aFetchInfo->IsForModulePreload();
-
   
   
   
-  
-  MOZ_ASSERT_IF(isPreloadModule, !aHostDefined.isUndefined());
-  if (isPreloadModule) {
+  if (!aHostDefined.isUndefined()) {
     RefPtr<ModuleLoadRequest> root = GetPreloadRootModuleRequest(aHostDefined);
-    AddToPreloadedResolvedSet(root, std::move(aRecord));
-    return;
+    if (root->mLoadContext->IsPreload()) {
+      AddToPreloadedResolvedSet(root, std::move(aRecord));
+      return;
+    }
   }
 
   
