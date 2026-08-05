@@ -33,8 +33,9 @@
 
 
 #include "jit/riscv64/base/base-assembler-riscv.h"
-#include "jit/riscv64/base/Integer.h"
+
 #include "jit/riscv64/Architecture-riscv64.h"
+#include "jit/riscv64/base/Integer.h"
 
 namespace js {
 namespace jit {
