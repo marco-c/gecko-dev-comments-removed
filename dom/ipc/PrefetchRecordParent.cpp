@@ -5,7 +5,12 @@
 
 #include "mozilla/dom/PrefetchRecordParent.h"
 
+#include "mozilla/dom/PrefetchLog.h"
+
 namespace mozilla::dom {
+
+
+LazyLogModule gSpeculationRulesLog("SpeculationRules");
 
 mozilla::ipc::IPCResult PrefetchRecordParent::RecvCancel() {
   
