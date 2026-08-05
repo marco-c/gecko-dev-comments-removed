@@ -1001,8 +1001,9 @@ void MediaTransportHandler::OnGatheringStateChange(
 }
 
 void MediaTransportHandler::OnConnectionStateChange(
-    const std::string& aTransportId, dom::RTCIceTransportState aState) {
-  mConnectionStateChange.Notify(aTransportId, aState);
+    const std::string& aTransportId, dom::RTCIceTransportState aState,
+    const Maybe<dom::IceCandidateAttributePair>& aSelectedPair) {
+  mConnectionStateChange.Notify(aTransportId, aState, aSelectedPair);
 }
 
 void MediaTransportHandler::OnPacketReceived(std::string&& aTransportId,
@@ -1624,7 +1625,22 @@ static mozilla::dom::RTCIceTransportState toDomIceTransportState(
 
 void MediaTransportHandlerSTS::OnConnectionStateChange(
     NrIceMediaStream* aIceStream, NrIceCtx::ConnectionState aState) {
-  OnConnectionStateChange(aIceStream->GetId(), toDomIceTransportState(aState));
+  
+  
+  
+  
+  Maybe<dom::IceCandidateAttributePair> selectedPair;
+  std::string localAttr;
+  std::string remoteAttr;
+  
+  
+  if (NS_SUCCEEDED(
+          aIceStream->GetActivePairAsAttributes(1, &localAttr, &remoteAttr))) {
+    selectedPair = Some(dom::IceCandidateAttributePair(nsCString(localAttr),
+                                                       nsCString(remoteAttr)));
+  }
+  OnConnectionStateChange(aIceStream->GetId(), toDomIceTransportState(aState),
+                          selectedPair);
 }
 
 
@@ -1720,8 +1736,8 @@ void MediaTransportHandlerSTS::OnStateChange(TransportLayer* aLayer,
 
   
   
-  MediaTransportHandler::OnStateChange(aLayer->flow_id(), aState,
-                                       std::move(remoteCerts), error);
+  MediaTransportHandler::OnStateChange(
+      aLayer->flow_id(), aState, std::move(remoteCerts), std::move(error));
 }
 
 void MediaTransportHandlerSTS::OnRtcpStateChange(TransportLayer* aLayer,
@@ -1733,7 +1749,8 @@ void MediaTransportHandlerSTS::OnRtcpStateChange(TransportLayer* aLayer,
     error = Some(GetErrorInfo(*dtlsLayer));
   }
 
-  MediaTransportHandler::OnRtcpStateChange(aLayer->flow_id(), aState, error);
+  MediaTransportHandler::OnRtcpStateChange(aLayer->flow_id(), aState,
+                                           std::move(error));
 }
 
 void MediaTransportHandlerSTS::PacketReceived(TransportLayer* aLayer,
