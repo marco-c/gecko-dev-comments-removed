@@ -141,20 +141,6 @@ class TrustPanel {
 
   #clearFxaOauthClientCache = false;
   #breachAlertStoragePromise = null;
-  #trackerCount = null;
-  
-  
-  
-  #trackerCountPromise = null;
-  #isFirstVisit = false;
-  
-
-
-
-
-
-
-  #firstVisitPromise = Promise.resolve();
 
   
 
@@ -247,7 +233,7 @@ class TrustPanel {
       return; 
     }
 
-    this.showPopup({ event, reason: "shieldButtonClicked" });
+    this.showPopup({ event, openingReason: "shieldButtonClicked" });
   }
 
   async onContentBlockingEvent(
@@ -266,8 +252,6 @@ class TrustPanel {
     
     this.anyDetected = false;
     this.#lastEvent = event;
-    this.#trackerCount = null;
-    this.#trackerCountPromise = null;
 
     
     this.hasException =
@@ -285,7 +269,6 @@ class TrustPanel {
       this.anyDetected = this.anyDetected || blocker.isDetected(event);
     }
 
-    void this.#updateToolbarTrackerCount();
     if (this.#popup) {
       await this.#updatePopup();
     }
@@ -369,17 +352,13 @@ class TrustPanel {
     });
 
     const applicableBreaches = await this.#getApplicableBreaches(this.#host);
-    const [hasMonitorAccountOrStoredPasswords, blockedTrackersCount] =
-      await Promise.all([
-        this.#hasMonitorAccountOrStoredPasswords(),
-        this.#computeTrackerCount(),
-      ]);
+    const hasMonitorAccountOrStoredPasswords =
+      await this.#hasMonitorAccountOrStoredPasswords();
     Glean.trustpanel.opened.record({
       breach_status: getBreachedStatus({
         breaches: applicableBreaches,
         hasMonitorAccountOrStoredPasswords,
       }),
-      trackers_blocked: blockedTrackersCount > 0,
     });
   }
 
@@ -410,11 +389,6 @@ class TrustPanel {
     this.#qwacStatusPromise = null;
     this.#pageExtensionPolicy = WebExtensionPolicy.getByURI(uri);
     this.#breachedStatus = null;
-    this.#trackerCount = null;
-    this.#trackerCountPromise = null;
-    this.#isFirstVisit = false;
-    
-    
     
     this.#updateUrlbarIcon();
 
@@ -426,9 +400,6 @@ class TrustPanel {
     
     
     void this.#checkForBreaches(uri);
-
-    this.#firstVisitPromise = this.#markFirstVisit();
-    void this.#updateToolbarTrackerCount();
   }
 
   
@@ -482,13 +453,8 @@ class TrustPanel {
     if (this.#isAboutNetErrorPage || this.#isCertUserOverridden) {
       targetClasses.add("warning");
     }
-    if (this.#isFirstVisit) {
-      targetClasses.add("first-visit");
-    }
-    
-    if (this.#trackerCount > 0) {
-      targetClasses.add("has-blocked-trackers");
-    }
+
+    icon.className = "";
 
     
     if (targetClasses.has("breached")) {
@@ -502,17 +468,7 @@ class TrustPanel {
       }
     }
 
-    
-    
-    
-    let appliedIconClasses = [...icon.classList];
-    for (let cls of appliedIconClasses) {
-      if (!targetClasses.has(cls)) {
-        icon.classList.remove(cls);
-      }
-    }
     icon.classList.add(...targetClasses);
-
     icon.setAttribute("tooltiptext", this.#tooltipText());
     icon.classList.toggle("chickletShown", this.#isInternalSecurePage);
   }
@@ -636,88 +592,6 @@ class TrustPanel {
     await this.#updateBlockerView();
   }
 
-  #computeTrackerCount() {
-    if (this.#trackerCountPromise) {
-      return this.#trackerCountPromise;
-    }
-    this.#trackerCountPromise = (async () => {
-      let count = this.#fetchSmartBlocked().length;
-      for (let blocker of Object.values(this.#blockers)) {
-        if (blocker.isBlocking(this.#lastEvent)) {
-          count += await blocker.getBlockerCount();
-        }
-      }
-      return count;
-    })();
-    return this.#trackerCountPromise;
-  }
-
-  async #markFirstVisit() {
-    if (!this.#uriHasHost) {
-      this.#isFirstVisit = false;
-      this.#updateUrlbarIcon();
-      return;
-    }
-    const uri = this.#uri;
-    const revHost = uri.host.split("").reverse().join("") + ".";
-    const conn = await PlacesUtils.promiseDBConnection();
-    const rows = await conn.executeCached(
-      
-      
-      
-      
-      `SELECT 1 FROM moz_historyvisits v
-         JOIN moz_places h ON h.id = v.place_id
-         WHERE h.rev_host = :revHost
-         AND v.visit_date < ((strftime('%s', 'now') - 20) * 1000000)
-         LIMIT 1`,
-      {
-        revHost,
-      }
-    );
-    if (!this.#uriHasHost || this.#uri.host !== uri.host) {
-      
-      return;
-    }
-    this.#isFirstVisit = rows.length === 0;
-    this.#updateUrlbarIcon();
-  }
-
-  async #updateToolbarTrackerCount() {
-    const uri = this.#uri;
-    const [count] = await Promise.all([
-      this.#computeTrackerCount(),
-      this.#firstVisitPromise,
-    ]);
-    if (this.#uri !== uri) {
-      return;
-    }
-    
-    
-    
-    this.#trackerCount = count;
-    const iconContainer = document.getElementById("trust-icon-container");
-    if (count > 0 && !UrlbarPrefs.get("trackerCountShown")) {
-      
-      
-      UrlbarPrefs.set("trackerCountShown", true);
-    }
-    const trackerCountLongform = document.getElementById(
-      "trust-icon-tracker-count-longform"
-    );
-    if (trackerCountLongform) {
-      document.l10n.setArgs(trackerCountLongform, { count });
-    }
-    const trackerCountShortform = document.getElementById(
-      "trust-icon-tracker-count-shortform"
-    );
-    if (trackerCountShortform) {
-      trackerCountShortform.textContent = count;
-    }
-    document.l10n.setArgs(iconContainer, { count });
-    this.#updateUrlbarIcon();
-  }
-
   async #updateBlockerView() {
     
     
@@ -729,19 +603,18 @@ class TrustPanel {
     const event = this.#lastEvent;
     const updateId = ++this.#blockerViewUpdateId;
 
+    let count = this.#fetchSmartBlocked().length;
     let blocked = [];
     let detected = [];
+
     for (let blocker of Object.values(this.#blockers)) {
       if (blocker.isBlocking(event)) {
         blocked.push(blocker);
+        count += await blocker.getBlockerCount();
       } else if (blocker.isDetected(event)) {
         detected.push(blocker);
       }
     }
-
-    
-    
-    const count = await this.#computeTrackerCount();
 
     
     if (updateId !== this.#blockerViewUpdateId) {
