@@ -2,132 +2,24 @@
 
 
 
-#include <arm_neon.h>
 
-#include "Swizzle.h"
+#include "SwizzleNEON.h"      
+#include "SwizzleGeneric.h"
+
 
 namespace mozilla {
 namespace gfx {
 
-
-static MOZ_ALWAYS_INLINE uint16x8_t LoadRemainder_NEON(const uint8_t* aSrc,
-                                                       size_t aLength) {
-  const uint32_t* src32 = reinterpret_cast<const uint32_t*>(aSrc);
-  uint32x4_t dst32;
-  if (aLength >= 2) {
-    
-    dst32 = vcombine_u32(vld1_u32(src32), vdup_n_u32(0));
-    
-    if (aLength >= 3) {
-      dst32 = vld1q_lane_u32(src32 + 2, dst32, 2);
-    }
-  } else {
-    
-    dst32 = vld1q_lane_u32(src32, vdupq_n_u32(0), 0);
-  }
-  return vreinterpretq_u16_u32(dst32);
-}
-
-
-static MOZ_ALWAYS_INLINE void StoreRemainder_NEON(uint8_t* aDst, size_t aLength,
-                                                  const uint16x8_t& aSrc) {
-  uint32_t* dst32 = reinterpret_cast<uint32_t*>(aDst);
-  uint32x4_t src32 = vreinterpretq_u32_u16(aSrc);
-  if (aLength >= 2) {
-    
-    vst1_u32(dst32, vget_low_u32(src32));
-    
-    if (aLength >= 3) {
-      vst1q_lane_u32(dst32 + 2, src32, 2);
-    }
-  } else {
-    
-    vst1q_lane_u32(dst32, src32, 0);
-  }
-}
-
-
-template <bool aSwapRB, bool aOpaqueAlpha>
-static MOZ_ALWAYS_INLINE uint16x8_t
-PremultiplyVector_NEON(const uint16x8_t& aSrc) {
-  
-  const uint16x8_t mask = vdupq_n_u16(0x00FF);
-  uint16x8_t rb = vandq_u16(aSrc, mask);
-  
-  if (aSwapRB) {
-    rb = vrev32q_u16(rb);
-  }
-  
-  uint16x8_t ga = vshrq_n_u16(aSrc, 8);
-
-  
-  uint16x8_t alphas = vtrnq_u16(ga, ga).val[1];
-
-  
-  rb = vmlaq_u16(mask, rb, alphas);
-  rb = vsraq_n_u16(rb, rb, 8);
-
-  
-  if (!aOpaqueAlpha) {
-    ga = vorrq_u16(ga, vreinterpretq_u16_u32(vdupq_n_u32(0x00FF0000)));
-  }
-  
-  ga = vmlaq_u16(mask, ga, alphas);
-  ga = vsraq_n_u16(ga, ga, 8);
-  
-  if (aOpaqueAlpha) {
-    ga = vorrq_u16(ga, vreinterpretq_u16_u32(vdupq_n_u32(0xFF000000)));
-  }
-
-  
-  return vsriq_n_u16(ga, rb, 8);
-}
-
-template <bool aSwapRB, bool aOpaqueAlpha>
-static MOZ_ALWAYS_INLINE void PremultiplyChunk_NEON(const uint8_t*& aSrc,
-                                                    uint8_t*& aDst,
-                                                    int32_t aAlignedRow,
-                                                    int32_t aRemainder) {
-  
-  for (const uint8_t* end = aSrc + aAlignedRow; aSrc < end;) {
-    uint16x8_t px = vld1q_u16(reinterpret_cast<const uint16_t*>(aSrc));
-    px = PremultiplyVector_NEON<aSwapRB, aOpaqueAlpha>(px);
-    vst1q_u16(reinterpret_cast<uint16_t*>(aDst), px);
-    aSrc += 4 * 4;
-    aDst += 4 * 4;
-  }
-
-  
-  if (aRemainder) {
-    uint16x8_t px = LoadRemainder_NEON(aSrc, aRemainder);
-    px = PremultiplyVector_NEON<aSwapRB, aOpaqueAlpha>(px);
-    StoreRemainder_NEON(aDst, aRemainder, px);
-  }
-}
-
 template <bool aSwapRB, bool aOpaqueAlpha>
 void PremultiplyRow_NEON(const uint8_t* aSrc, uint8_t* aDst, int32_t aLength) {
-  int32_t alignedRow = 4 * (aLength & ~3);
-  int32_t remainder = aLength & 3;
-  PremultiplyChunk_NEON<aSwapRB, aOpaqueAlpha>(aSrc, aDst, alignedRow,
-                                               remainder);
+  PremultiplyRow_SIMD<mozneon, aSwapRB, aOpaqueAlpha>(aSrc, aDst, aLength);
 }
 
 template <bool aSwapRB, bool aOpaqueAlpha>
 void Premultiply_NEON(const uint8_t* aSrc, int32_t aSrcGap, uint8_t* aDst,
                       int32_t aDstGap, IntSize aSize) {
-  int32_t alignedRow = 4 * (aSize.width & ~3);
-  int32_t remainder = aSize.width & 3;
-  
-  aSrcGap += 4 * remainder;
-  aDstGap += 4 * remainder;
-
-  for (int32_t height = aSize.height; height > 0; height--) {
-    PremultiplyChunk_NEON<aSwapRB, aOpaqueAlpha>(aSrc, aDst, alignedRow,
-                                                 remainder);
-    aSrc += aSrcGap;
-    aDst += aDstGap;
-  }
+  Premultiply_SIMD<mozneon, aSwapRB, aOpaqueAlpha>(aSrc, aSrcGap, aDst, aDstGap,
+                                                   aSize);
 }
 
 
@@ -163,7 +55,7 @@ template void Premultiply_NEON<true, true>(const uint8_t*, int32_t, uint8_t*,
 #define UNPREMULQ_NEON_8(x) UNPREMULQ_NEON_4(x), UNPREMULQ_NEON_4((x) + 4)
 #define UNPREMULQ_NEON_16(x) UNPREMULQ_NEON_8(x), UNPREMULQ_NEON_8((x) + 8)
 #define UNPREMULQ_NEON_32(x) UNPREMULQ_NEON_16(x), UNPREMULQ_NEON_16((x) + 16)
-static const uint32_t sUnpremultiplyTable_NEON[256] = {0,
+extern const uint32_t sUnpremultiplyTable_NEON[256] = {0,
                                                        UNPREMULQ_NEON(1),
                                                        UNPREMULQ_NEON_2(2),
                                                        UNPREMULQ_NEON_4(4),
@@ -177,114 +69,16 @@ static const uint32_t sUnpremultiplyTable_NEON[256] = {0,
                                                        UNPREMULQ_NEON_32(192),
                                                        UNPREMULQ_NEON_32(224)};
 
-
-
-template <bool aSwapRB>
-static MOZ_ALWAYS_INLINE uint16x8_t
-UnpremultiplyVector_NEON(const uint16x8_t& aSrc) {
-  
-  uint16x8_t rb = vandq_u16(aSrc, vdupq_n_u16(0x00FF));
-  
-  if (aSwapRB) {
-    rb = vrev32q_u16(rb);
-  }
-
-  
-  uint16x8_t ga = vshrq_n_u16(aSrc, 8);
-  
-  int a1 = vgetq_lane_u16(ga, 1);
-  int a2 = vgetq_lane_u16(ga, 3);
-  int a3 = vgetq_lane_u16(ga, 5);
-  int a4 = vgetq_lane_u16(ga, 7);
-
-  
-  
-  uint16x8_t q1234 = vreinterpretq_u16_u32(vld1q_lane_u32(
-      &sUnpremultiplyTable_NEON[a4],
-      vld1q_lane_u32(
-          &sUnpremultiplyTable_NEON[a3],
-          vld1q_lane_u32(
-              &sUnpremultiplyTable_NEON[a2],
-              vld1q_lane_u32(&sUnpremultiplyTable_NEON[a1], vdupq_n_u32(0), 0),
-              1),
-          2),
-      3));
-  
-  
-  
-  uint16x8x2_t q1234lohi = vtrnq_u16(q1234, q1234);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  rb = vhaddq_u16(
-      vmulq_u16(rb, q1234lohi.val[1]),
-      vreinterpretq_u16_s16(vqdmulhq_s16(
-          vreinterpretq_s16_u16(rb), vreinterpretq_s16_u16(q1234lohi.val[0]))));
-
-  
-  ga = vhaddq_u16(
-      vmulq_u16(ga, q1234lohi.val[1]),
-      vreinterpretq_u16_s16(vqdmulhq_s16(
-          vreinterpretq_s16_u16(ga), vreinterpretq_s16_u16(q1234lohi.val[0]))));
-
-  
-  
-  return vbslq_u16(vreinterpretq_u16_u32(vdupq_n_u32(0xFF000000)), aSrc,
-                   vsliq_n_u16(rb, ga, 8));
-}
-
-template <bool aSwapRB>
-static MOZ_ALWAYS_INLINE void UnpremultiplyChunk_NEON(const uint8_t*& aSrc,
-                                                      uint8_t*& aDst,
-                                                      int32_t aAlignedRow,
-                                                      int32_t aRemainder) {
-  
-  for (const uint8_t* end = aSrc + aAlignedRow; aSrc < end;) {
-    uint16x8_t px = vld1q_u16(reinterpret_cast<const uint16_t*>(aSrc));
-    px = UnpremultiplyVector_NEON<aSwapRB>(px);
-    vst1q_u16(reinterpret_cast<uint16_t*>(aDst), px);
-    aSrc += 4 * 4;
-    aDst += 4 * 4;
-  }
-
-  
-  if (aRemainder) {
-    uint16x8_t px = LoadRemainder_NEON(aSrc, aRemainder);
-    px = UnpremultiplyVector_NEON<aSwapRB>(px);
-    StoreRemainder_NEON(aDst, aRemainder, px);
-  }
-}
-
 template <bool aSwapRB>
 void UnpremultiplyRow_NEON(const uint8_t* aSrc, uint8_t* aDst,
                            int32_t aLength) {
-  int32_t alignedRow = 4 * (aLength & ~3);
-  int32_t remainder = aLength & 3;
-  UnpremultiplyChunk_NEON<aSwapRB>(aSrc, aDst, alignedRow, remainder);
+  UnpremultiplyRow_SIMD<mozneon, aSwapRB>(aSrc, aDst, aLength);
 }
 
 template <bool aSwapRB>
 void Unpremultiply_NEON(const uint8_t* aSrc, int32_t aSrcGap, uint8_t* aDst,
                         int32_t aDstGap, IntSize aSize) {
-  int32_t alignedRow = 4 * (aSize.width & ~3);
-  int32_t remainder = aSize.width & 3;
-  
-  aSrcGap += 4 * remainder;
-  aDstGap += 4 * remainder;
-
-  for (int32_t height = aSize.height; height > 0; height--) {
-    UnpremultiplyChunk_NEON<aSwapRB>(aSrc, aDst, alignedRow, remainder);
-    aSrc += aSrcGap;
-    aDst += aDstGap;
-  }
+  Unpremultiply_SIMD<mozneon, aSwapRB>(aSrc, aSrcGap, aDst, aDstGap, aSize);
 }
 
 
@@ -295,83 +89,16 @@ template void Unpremultiply_NEON<false>(const uint8_t*, int32_t, uint8_t*,
 template void Unpremultiply_NEON<true>(const uint8_t*, int32_t, uint8_t*,
                                        int32_t, IntSize);
 
-
-template <bool aSwapRB, bool aOpaqueAlpha>
-static MOZ_ALWAYS_INLINE uint16x8_t SwizzleVector_NEON(const uint16x8_t& aSrc) {
-  
-  
-  
-  return vbslq_u16(
-      vdupq_n_u16(0x00FF), vrev32q_u16(aSrc),
-      aOpaqueAlpha
-          ? vorrq_u16(aSrc, vreinterpretq_u16_u32(vdupq_n_u32(0xFF000000)))
-          : aSrc);
-}
-
-#if 0
-
-
-
-
-template<>
-static MOZ_ALWAYS_INLINE uint16x8_t
-SwizzleVector_NEON<false, true>(const uint16x8_t& aSrc)
-{
-  
-  return vorrq_u16(aSrc, vreinterpretq_u16_u32(vdupq_n_u32(0xFF000000)));
-}
-
-template<>
-static MOZ_ALWAYS_INLINE uint16x8_t
-SwizzleVector_NEON<false, false>(const uint16x8_t& aSrc)
-{
-  return aSrc;
-}
-#endif
-
-template <bool aSwapRB, bool aOpaqueAlpha>
-static MOZ_ALWAYS_INLINE void SwizzleChunk_NEON(const uint8_t*& aSrc,
-                                                uint8_t*& aDst,
-                                                int32_t aAlignedRow,
-                                                int32_t aRemainder) {
-  
-  for (const uint8_t* end = aSrc + aAlignedRow; aSrc < end;) {
-    uint16x8_t px = vld1q_u16(reinterpret_cast<const uint16_t*>(aSrc));
-    px = SwizzleVector_NEON<aSwapRB, aOpaqueAlpha>(px);
-    vst1q_u16(reinterpret_cast<uint16_t*>(aDst), px);
-    aSrc += 4 * 4;
-    aDst += 4 * 4;
-  }
-
-  
-  if (aRemainder) {
-    uint16x8_t px = LoadRemainder_NEON(aSrc, aRemainder);
-    px = SwizzleVector_NEON<aSwapRB, aOpaqueAlpha>(px);
-    StoreRemainder_NEON(aDst, aRemainder, px);
-  }
-}
-
 template <bool aSwapRB, bool aOpaqueAlpha>
 void SwizzleRow_NEON(const uint8_t* aSrc, uint8_t* aDst, int32_t aLength) {
-  int32_t alignedRow = 4 * (aLength & ~3);
-  int32_t remainder = aLength & 3;
-  SwizzleChunk_NEON<aSwapRB, aOpaqueAlpha>(aSrc, aDst, alignedRow, remainder);
+  SwizzleRow_SIMD<mozneon, aSwapRB, aOpaqueAlpha>(aSrc, aDst, aLength);
 }
 
 template <bool aSwapRB, bool aOpaqueAlpha>
 void Swizzle_NEON(const uint8_t* aSrc, int32_t aSrcGap, uint8_t* aDst,
                   int32_t aDstGap, IntSize aSize) {
-  int32_t alignedRow = 4 * (aSize.width & ~3);
-  int32_t remainder = aSize.width & 3;
-  
-  aSrcGap += 4 * remainder;
-  aDstGap += 4 * remainder;
-
-  for (int32_t height = aSize.height; height > 0; height--) {
-    SwizzleChunk_NEON<aSwapRB, aOpaqueAlpha>(aSrc, aDst, alignedRow, remainder);
-    aSrc += aSrcGap;
-    aDst += aDstGap;
-  }
+  Swizzle_SIMD<mozneon, aSwapRB, aOpaqueAlpha>(aSrc, aSrcGap, aDst, aDstGap,
+                                               aSize);
 }
 
 
@@ -383,62 +110,8 @@ template void Swizzle_NEON<true, true>(const uint8_t*, int32_t, uint8_t*,
                                        int32_t, IntSize);
 
 template <bool aSwapRB>
-void UnpackRowRGB24(const uint8_t* aSrc, uint8_t* aDst, int32_t aLength);
-
-template <bool aSwapRB>
 void UnpackRowRGB24_NEON(const uint8_t* aSrc, uint8_t* aDst, int32_t aLength) {
-  
-  
-  
-  
-  if (aLength < 6) {
-    UnpackRowRGB24<aSwapRB>(aSrc, aDst, aLength);
-    return;
-  }
-
-  
-  
-  int32_t alignedRow = (aLength - 2) & ~3;
-  int32_t remainder = aLength - alignedRow;
-
-  const uint8_t* src = aSrc + alignedRow * 3;
-  uint8_t* dst = aDst + alignedRow * 4;
-
-  
-  UnpackRowRGB24<aSwapRB>(src, dst, remainder);
-
-  uint8x8_t masklo;
-  uint8x8_t maskhi;
-  if (aSwapRB) {
-    static const uint8_t masklo_data[] = {2, 1, 0, 0, 5, 4, 3, 0};
-    static const uint8_t maskhi_data[] = {4, 3, 2, 0, 7, 6, 5, 0};
-    masklo = vld1_u8(masklo_data);
-    maskhi = vld1_u8(maskhi_data);
-  } else {
-    static const uint8_t masklo_data[] = {0, 1, 2, 0, 3, 4, 5, 0};
-    static const uint8_t maskhi_data[] = {2, 3, 4, 0, 5, 6, 7, 0};
-    masklo = vld1_u8(masklo_data);
-    maskhi = vld1_u8(maskhi_data);
-  }
-
-  uint8x16_t alpha = vreinterpretq_u8_u32(vdupq_n_u32(0xFF000000));
-
-  
-  src -= 4 * 3;
-  dst -= 4 * 4;
-  while (src >= aSrc) {
-    uint8x16_t px = vld1q_u8(src);
-    
-    uint8x8_t pxlo = vtbl1_u8(vget_low_u8(px), masklo);
-    
-    uint8x8_t pxhi =
-        vtbl1_u8(vext_u8(vget_low_u8(px), vget_high_u8(px), 4), maskhi);
-    px = vcombine_u8(pxlo, pxhi);
-    px = vorrq_u8(px, alpha);
-    vst1q_u8(dst, px);
-    src -= 4 * 3;
-    dst -= 4 * 4;
-  }
+  UnpackRowRGB24_SIMD<mozneon, aSwapRB>(aSrc, aDst, aLength);
 }
 
 
