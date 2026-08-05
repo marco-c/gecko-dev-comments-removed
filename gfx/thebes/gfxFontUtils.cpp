@@ -668,7 +668,9 @@ uint32_t gfxFontUtils::MapCharToGlyphFormat4(const uint8_t* aBuf,
   const AutoSwap_PRUint16* idRangeOffset = &idDelta[segCount];
 
   
-  const uint8_t* const limit = aBuf + aLength;
+  
+  const uint8_t* const limit =
+      aBuf + std::min(aLength, uint32_t(cmap4->length));
   if ((const uint8_t*)(&idRangeOffset[segCount]) > limit) {
     return 0;  
   }
