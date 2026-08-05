@@ -721,6 +721,24 @@ const actionUtils = {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const PREF_WIDGETS_LISTS_ENABLED = "widgets.lists.enabled";
 const PREF_WIDGETS_TIMER_ENABLED = "widgets.focusTimer.enabled";
 const PREF_WIDGETS_WEATHER_ENABLED = "widgets.weather.enabled";
@@ -1163,6 +1181,24 @@ function widgetLabel(id) {
   const spaced = id.replace(/([A-Z])/g, " $1");
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
+
+
+
+
+
+const WIDGET_EXTRA_FEATURES = {
+  pictureOfTheDay: [{
+    pref: "widgets.pictureOfTheDay.setAsWallpaper.enabled",
+    label: "Set as wallpaper"
+  }],
+  sportsWidget: [{
+    pref: "widgets.sportsWidget.live.enabled",
+    label: "Live scores"
+  }, {
+    pref: "widgets.sportsWidget.celebrations.enabled",
+    label: "Celebrations"
+  }]
+};
 const Row = props => external_React_default().createElement("tr", _extends({
   className: "message-item"
 }, props), props.children);
@@ -1239,6 +1275,8 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     this.handleWidgetsSystemToggle = this.handleWidgetsSystemToggle.bind(this);
     this.handleWidgetToggle = this.handleWidgetToggle.bind(this);
     this.handleWidgetsToggleAll = this.handleWidgetsToggleAll.bind(this);
+    this.handleResetWidgetInteractions = this.handleResetWidgetInteractions.bind(this);
+    this.handleResetWidgetsToDefaults = this.handleResetWidgetsToDefaults.bind(this);
     this.toggleIABBanners = this.toggleIABBanners.bind(this);
     this.handleAllizomToggle = this.handleAllizomToggle.bind(this);
     this.sendConversionEvent = this.sendConversionEvent.bind(this);
@@ -1506,6 +1544,22 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       otherPrefs
     } = this.props;
     return Boolean(otherPrefs[PREF_WIDGETS_SYSTEM_ENABLED] && WIDGET_REGISTRY.every(widget => otherPrefs[widget.systemEnabledPref]));
+  }
+  clearPrefs(prefNames) {
+    for (const prefName of prefNames) {
+      this.props.dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.CLEAR_PREF,
+        data: {
+          name: prefName
+        }
+      }));
+    }
+  }
+  handleResetWidgetInteractions() {
+    this.clearPrefs(Object.keys(this.props.otherPrefs).filter(prefName => /^widgets\..+\.interaction$/.test(prefName)));
+  }
+  handleResetWidgetsToDefaults() {
+    this.clearPrefs(Object.keys(this.props.otherPrefs).filter(prefName => prefName.startsWith("widgets.")));
   }
   sendConversionEvent() {
     const detail = {
@@ -1903,16 +1957,34 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       className: "admin-button-row"
     }, external_React_default().createElement("moz-button", {
       onClick: this.handleWidgetsToggleAll
-    }, this.areAllWidgetsEnabled() ? "Disable all" : "Enable all")), external_React_default().createElement("hr", null), WIDGET_REGISTRY.map(widget => external_React_default().createElement("div", {
-      className: "toggle-wrapper",
+    }, this.areAllWidgetsEnabled() ? "Disable all" : "Enable all"), external_React_default().createElement("moz-button", {
+      onClick: this.handleResetWidgetInteractions
+    }, "Reset interaction"), external_React_default().createElement("moz-button", {
+      type: "destructive",
+      onClick: this.handleResetWidgetsToDefaults
+    }, "Reset to defaults")), external_React_default().createElement("hr", null), WIDGET_REGISTRY.map(widget => external_React_default().createElement((external_React_default()).Fragment, {
       key: widget.id
+    }, external_React_default().createElement("div", {
+      className: "toggle-wrapper"
     }, external_React_default().createElement("moz-toggle", {
       id: widget.systemEnabledPref,
       pressed: this.props.otherPrefs[widget.systemEnabledPref] || null,
       disabled: !widgetsSystemEnabled || null,
       ontoggle: this.handleWidgetToggle,
       label: widgetLabel(widget.id)
-    })))), external_React_default().createElement("h3", null, "Layout"), layout.map((row, rowIndex) => external_React_default().createElement("div", {
+    })), (WIDGET_EXTRA_FEATURES[widget.id] || []).map(feature => external_React_default().createElement("div", {
+      className: "toggle-wrapper",
+      key: feature.pref,
+      style: {
+        marginInlineStart: "var(--space-large)"
+      }
+    }, external_React_default().createElement("moz-toggle", {
+      id: feature.pref,
+      pressed: this.props.otherPrefs[feature.pref] || null,
+      disabled: !widgetsSystemEnabled || null,
+      ontoggle: this.handleWidgetToggle,
+      label: feature.label
+    })))))), external_React_default().createElement("h3", null, "Layout"), layout.map((row, rowIndex) => external_React_default().createElement("div", {
       key: `row-${rowIndex}`
     }, row.components.map((component, componentIndex) => external_React_default().createElement("div", {
       key: `component-${componentIndex}`,
