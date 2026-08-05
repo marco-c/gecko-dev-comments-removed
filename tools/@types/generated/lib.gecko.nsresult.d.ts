@@ -229,6 +229,9 @@ interface nsIXPCComponents_Results {
   NS_ERROR_FACTORY_EXISTS: 0xc1f30100;
 
   
+  NS_ERROR_INVALID_SIGNATURE: 0x804b003a;
+
+  
 
   
   NS_BASE_STREAM_CLOSED: 0x80470002;
