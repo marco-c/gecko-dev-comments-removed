@@ -260,6 +260,8 @@ namespace detail {
 
 
 
+
+
 nsDependentCSubstring GetTreeBase(const nsLiteralCString& aPath,
                                   const nsLiteralCString& aRelativePath) {
   MOZ_ASSERT(StringEndsWith(aPath, aRelativePath));
@@ -269,16 +271,10 @@ nsDependentCSubstring GetTreeBase(const nsLiteralCString& aPath,
 nsDependentCSubstring GetSourceTreeBase() {
   static constexpr auto thisSourceFileRelativePath =
       "/dom/quota/QuotaCommon.cpp"_sp;
+  static constexpr NormalizedSourcePath normalizedFile(__FILE__);
 
-  return GetTreeBase(nsLiteralCString(__FILE__), thisSourceFileRelativePath);
-}
-
-nsDependentCSubstring GetObjdirDistIncludeTreeBase(
-    const nsLiteralCString& aQuotaCommonHPath) {
-  static constexpr auto quotaCommonHSourceFileRelativePath =
-      "/mozilla/dom/quota/QuotaCommon.h"_sp;
-
-  return GetTreeBase(aQuotaCommonHPath, quotaCommonHSourceFileRelativePath);
+  return GetTreeBase(nsLiteralCString(normalizedFile.value),
+                     thisSourceFileRelativePath);
 }
 
 static constexpr auto kSourceFileRelativePathMap =
@@ -356,18 +352,19 @@ nsDependentCSubstring MakeSourceFileRelativePath(
 
   static const auto sourceTreeBase = GetSourceTreeBase();
 
-  if (MOZ_LIKELY(StringBeginsWith(aSourceFilePath, sourceTreeBase))) {
-    return Substring(aSourceFilePath, sourceTreeBase.Length() + 1);
-  }
-
+  
+  
   
   
   static const auto objdirDistIncludeTreeBase = GetObjdirDistIncludeTreeBase();
 
-  if (MOZ_LIKELY(
-          StringBeginsWith(aSourceFilePath, objdirDistIncludeTreeBase))) {
+  if (StringBeginsWith(aSourceFilePath, objdirDistIncludeTreeBase)) {
     return MapDistIncludePathToSource(
         Substring(aSourceFilePath, objdirDistIncludeTreeBase.Length() + 1));
+  }
+
+  if (MOZ_LIKELY(StringBeginsWith(aSourceFilePath, sourceTreeBase))) {
+    return Substring(aSourceFilePath, sourceTreeBase.Length() + 1);
   }
 
   nsCString::const_iterator begin, end;

@@ -483,32 +483,37 @@ struct IpcFailCustomRetVal {
     static_assert(false, "Did you forget arguments?"); \
   } while (0)
 
+#define QM_NORMALIZED_FILE \
+  mozilla::dom::quota::NormalizedSourcePath(__FILE__).value
+
 #ifdef DEBUG
 #  define QM_HANDLE_ERROR(expr, error, severity) \
-    HandleError(#expr, error, __FILE__, __LINE__, severity)
+    HandleError(#expr, error, QM_NORMALIZED_FILE, __LINE__, severity)
 #else
 #  define QM_HANDLE_ERROR(expr, error, severity) \
-    HandleError("Unavailable", error, __FILE__, __LINE__, severity)
+    HandleError("Unavailable", error, QM_NORMALIZED_FILE, __LINE__, severity)
 #endif
 
 #ifdef DEBUG
-#  define QM_HANDLE_ERROR_RETURN_NOTHING(expr, error, severity) \
-    HandleErrorReturnNothing(#expr, error, __FILE__, __LINE__, severity)
+#  define QM_HANDLE_ERROR_RETURN_NOTHING(expr, error, severity)          \
+    HandleErrorReturnNothing(#expr, error, QM_NORMALIZED_FILE, __LINE__, \
+                             severity)
 #else
-#  define QM_HANDLE_ERROR_RETURN_NOTHING(expr, error, severity) \
-    HandleErrorReturnNothing("Unavailable", error, __FILE__, __LINE__, severity)
+#  define QM_HANDLE_ERROR_RETURN_NOTHING(expr, error, severity)        \
+    HandleErrorReturnNothing("Unavailable", error, QM_NORMALIZED_FILE, \
+                             __LINE__, severity)
 #endif
 
 #ifdef DEBUG
 #  define QM_HANDLE_ERROR_WITH_CLEANUP_RETURN_NOTHING(expr, error, severity, \
                                                       cleanup)               \
-    HandleErrorWithCleanupReturnNothing(#expr, error, __FILE__, __LINE__,    \
-                                        severity, cleanup)
-#else
-#  define QM_HANDLE_ERROR_WITH_CLEANUP_RETURN_NOTHING(expr, error, severity, \
-                                                      cleanup)               \
-    HandleErrorWithCleanupReturnNothing("Unavailable", error, __FILE__,      \
+    HandleErrorWithCleanupReturnNothing(#expr, error, QM_NORMALIZED_FILE,    \
                                         __LINE__, severity, cleanup)
+#else
+#  define QM_HANDLE_ERROR_WITH_CLEANUP_RETURN_NOTHING(expr, error, severity, \
+                                                      cleanup)               \
+    HandleErrorWithCleanupReturnNothing(                                     \
+        "Unavailable", error, QM_NORMALIZED_FILE, __LINE__, severity, cleanup)
 #endif
 
 
@@ -1365,7 +1370,23 @@ Result<SingleStepSuccessType<ResultHandling>, nsresult>
 CreateAndExecuteSingleStepStatement(mozIStorageConnection& aConnection,
                                     const nsACString& aStatementString);
 
+
+
+
+template <size_t N>
+struct NormalizedSourcePath {
+  char value[N];
+  explicit constexpr NormalizedSourcePath(const char (&aSrc)[N]) : value() {
+    for (size_t i = 0; i < N; ++i) {
+      value[i] = (aSrc[i] == '\\') ? '/' : aSrc[i];
+    }
+  }
+};
+
 namespace detail {
+
+nsDependentCSubstring GetTreeBase(const nsLiteralCString& aPath,
+                                  const nsLiteralCString& aRelativePath);
 
 
 
@@ -1377,9 +1398,15 @@ nsDependentCSubstring GetSourceTreeBase();
 
 
 
+template <
+    NormalizedSourcePath QuotaCommonHPath = NormalizedSourcePath(__FILE__)>
+nsDependentCSubstring GetObjdirDistIncludeTreeBase() {
+  static constexpr auto quotaCommonHSourceFileRelativePath =
+      "/mozilla/dom/quota/QuotaCommon.h"_ns;
 
-nsDependentCSubstring GetObjdirDistIncludeTreeBase(
-    const nsLiteralCString& aQuotaCommonHPath = nsLiteralCString(__FILE__));
+  return GetTreeBase(nsLiteralCString(QuotaCommonHPath.value),
+                     quotaCommonHSourceFileRelativePath);
+}
 
 nsDependentCSubstring MakeSourceFileRelativePath(
     const nsACString& aSourceFilePath);
