@@ -266,11 +266,7 @@ pref("browser.uitour.surveyDuration", 7200);
 sticky_pref("browser.uidensity", 0);
 
 
-
-
-
-
-sticky_pref("browser.touchmode.auto", false);
+pref("browser.touchmode.auto", true);
 
 
 

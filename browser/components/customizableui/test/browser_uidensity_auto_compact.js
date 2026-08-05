@@ -465,22 +465,13 @@ add_task(async function test_compact_shrinks_launcher_padding() {
 
   await withNewWindow(async win => {
     let medium = cssVar(win, "--space-medium");
-    
-    
-    
-    
-    let expectedNormal = Services.prefs.getBoolPref(
-      "browser.nova.enabled",
-      false
-    )
-      ? "4px"
-      : `round(${medium}, 0.5px)`;
+    let roundedMedium = `round(${medium}, 0.5px)`;
 
     win.gUIDensity.update(win.gUIDensity.MODE_NORMAL);
     is(
       cssVar(win, "--sidebar-launcher-button-padding-inline"),
-      expectedNormal,
-      "Launcher button padding matches the normal-density value"
+      roundedMedium,
+      "Launcher button padding matches --space-medium in normal density"
     );
 
     win.gUIDensity.update(win.gUIDensity.MODE_COMPACT);
