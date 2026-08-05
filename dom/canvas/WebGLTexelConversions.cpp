@@ -66,12 +66,15 @@ class WebGLImageConverter {
       case WebGLTexelFormat::RGBA8:
       case WebGLTexelFormat::RGBA16F:
       case WebGLTexelFormat::RGBA32F:
+      case WebGLTexelFormat::RGBX8:
       case WebGLTexelFormat::BGRX8:
       case WebGLTexelFormat::BGRA8:
         return 4;
       default:
-        MOZ_ASSERT(false, "Unknown texel format. Coding mistake?");
-        return 0;
+        
+        
+        
+        MOZ_CRASH("GFX: Unknown texel format. Coding mistake?");
     }
   }
 
@@ -115,6 +118,7 @@ class WebGLImageConverter {
     const bool CanSrcFormatComeFromDOMElementOrImageData =
         SrcFormat == WebGLTexelFormat::BGRA8 ||
         SrcFormat == WebGLTexelFormat::BGRX8 ||
+        SrcFormat == WebGLTexelFormat::RGBX8 ||
         SrcFormat == WebGLTexelFormat::A8 ||
         SrcFormat == WebGLTexelFormat::RGB565 ||
         SrcFormat == WebGLTexelFormat::RGBA8;
@@ -193,9 +197,13 @@ class WebGLImageConverter {
 
     static auto inColorSpace2 = gfx::ToColorSpace2(SrcColorSpace);
     static auto outColorSpace2 = gfx::ToColorSpace2(DstColorSpace);
+    static auto inTransferFunction = gfx::TransferFunction::SRGB;
+    static auto outTransferFunction = gfx::TransferFunction::SRGB;
 
-    auto inColorProfile = gl::GLBlitHelper::ToColorProfileDesc(inColorSpace2);
-    auto outColorProfile = gl::GLBlitHelper::ToColorProfileDesc(outColorSpace2);
+    auto inColorProfile =
+        gl::GLBlitHelper::ToColorProfileDesc(inColorSpace2, inTransferFunction);
+    auto outColorProfile = gl::GLBlitHelper::ToColorProfileDesc(
+        outColorSpace2, outTransferFunction);
 
     const auto conversion = color::ColorProfileConversionDesc::From({
         .src = *inColorProfile,
