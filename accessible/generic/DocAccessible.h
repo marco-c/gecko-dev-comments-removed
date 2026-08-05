@@ -721,7 +721,10 @@ class DocAccessible : public HyperTextAccessible,
 
 
 
-  bool PruneOrInsertSubtree(nsIContent* aRoot);
+
+
+
+  bool PruneOrInsertSubtree(nsIContent* aRoot, bool aIsInsertRoot = true);
 
  protected:
   
