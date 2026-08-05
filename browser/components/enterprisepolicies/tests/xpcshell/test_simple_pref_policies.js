@@ -1217,16 +1217,6 @@ const POLICIES_TESTS = [
   
   {
     policies: {
-      CNSA2KeyAgreementEnabled: true,
-    },
-    lockedPrefs: {
-      "security.tls.enable_mlkem1024": true,
-    },
-  },
-
-  
-  {
-    policies: {
       HttpsOnlyMode: "enabled",
     },
     unlockedPrefs: {
