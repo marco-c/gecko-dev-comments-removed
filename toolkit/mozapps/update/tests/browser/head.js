@@ -558,10 +558,13 @@ function runDoorhangerUpdateTest(params, steps) {
       expectedStateOverride,
     } = step;
     return (async function () {
-      if (!params.popupShown && !PanelUI.isNotificationPanelOpen) {
-        await BrowserTestUtils.waitForEvent(
+      if (!params.popupShown) {
+        
+        
+        
+        await BrowserTestUtils.waitForPopupEvent(
           PanelUI.notificationPanel,
-          "popupshown"
+          "shown"
         );
       }
       const shownNotificationId = AppMenuNotifications.activeNotification.id;
@@ -1319,10 +1322,14 @@ function runAboutPrefsUpdateTest(params, steps) {
       setUpdateURL(updateURL);
     }
 
-    tab = await BrowserTestUtils.openNewForegroundTab(
-      gBrowser,
-      "about:preferences"
+    let settingsRedesignEnabled = Services.prefs.getBoolPref(
+      "browser.settings-redesign.enabled",
+      false
     );
+    let prefUrl = settingsRedesignEnabled
+      ? "about:preferences#about"
+      : "about:preferences";
+    tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, prefUrl);
     registerCleanupFunction(async () => {
       await BrowserTestUtils.removeTab(tab);
     });
