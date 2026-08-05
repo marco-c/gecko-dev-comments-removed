@@ -49,6 +49,8 @@ class ScopedOperationsBatcher {
 
   RTCError Run();
 
+  bool IsEmpty() const;
+
   
   
   void Add(SimpleBatchTask task);
