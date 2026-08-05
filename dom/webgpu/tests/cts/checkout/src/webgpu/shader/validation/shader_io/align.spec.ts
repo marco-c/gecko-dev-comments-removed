@@ -220,6 +220,13 @@ g.test('required_alignment')
         if (t.type.name === 'array<u32>' && t.address_space !== 'storage') {
           return false;
         }
+        
+        if (
+          (t.type.name.startsWith('array') || t.type.name === 'S') &&
+          t.address_space === 'immediate'
+        ) {
+          return false;
+        }
         return true;
       })
   )
