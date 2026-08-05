@@ -69,7 +69,21 @@ MediaResult FFmpegAudioEncoder<LIBAV_VER>::InitEncoder() {
   
   
   mInputSampleRate = AssertedCast<int>(mConfig.mSampleRate);
-  if (codec->supported_samplerates) {
+  const int* supportedSampleRatesList = nullptr;
+#if LIBAVCODEC_VERSION_MAJOR >= 63
+  
+  if (mLib->avcodec_get_supported_config) {
+    const void* configs = nullptr;
+    if (mLib->avcodec_get_supported_config(mCodecContext, codec,
+                                           AV_CODEC_CONFIG_SAMPLE_RATE, 0,
+                                           &configs, nullptr) >= 0) {
+      supportedSampleRatesList = static_cast<const int*>(configs);
+    }
+  }
+#else
+  supportedSampleRatesList = codec->supported_samplerates;
+#endif
+  if (supportedSampleRatesList) {
     
     
     
@@ -77,7 +91,7 @@ MediaResult FFmpegAudioEncoder<LIBAV_VER>::InitEncoder() {
     
     
     AutoTArray<int, 16> supportedSampleRates;
-    IterateZeroTerminated(codec->supported_samplerates,
+    IterateZeroTerminated(supportedSampleRatesList,
                           [&supportedSampleRates](int aRate) mutable {
                             supportedSampleRates.AppendElement(aRate);
                           });

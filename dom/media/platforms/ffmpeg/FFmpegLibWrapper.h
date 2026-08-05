@@ -9,7 +9,7 @@
 
 
 
-#define FFMPEG_MAX_MAJOR_VERSION 62
+#define FFMPEG_MAX_MAJOR_VERSION 63
 #define FFMPEG_MAX_MAJOR_VERSION_STR_HELPER(x) #x
 #define FFMPEG_MAX_MAJOR_VERSION_STR(x) FFMPEG_MAX_MAJOR_VERSION_STR_HELPER(x)
 
@@ -183,6 +183,11 @@ struct MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS FFmpegLibWrapper {
   
   const AVCodecHWConfig* (*avcodec_get_hw_config)(const AVCodec* codec,
                                                   int index);
+  
+  int (*avcodec_get_supported_config)(const AVCodecContext* avctx,
+                                      const AVCodec* codec, int config,
+                                      unsigned flags, const void** out_configs,
+                                      int* out_num_configs);
   
   AVBufferRef* (*av_hwdevice_ctx_alloc)(int);
   int (*av_hwdevice_ctx_init)(AVBufferRef* ref);
