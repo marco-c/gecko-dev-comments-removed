@@ -51,6 +51,10 @@ class VideoFrame {
   
   already_AddRefed<Image> CloneAsBlackImage() const;
 
+  
+  
+  static already_AddRefed<Image> CloneAsBlackImage(const gfx::IntSize& aSize);
+
  protected:
   
   
