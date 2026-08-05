@@ -28,6 +28,11 @@ use winit::keyboard::{Key, NamedKey};
 use winit::raw_window_handle::{HasWindowHandle, RawWindowHandle};
 use winit::window::Window;
 
+
+
+
+pub const AU_PER_DEV_PX: f32 = 60.0;
+
 struct Notifier {
     events_proxy: winit::event_loop::EventLoopProxy<()>,
 }
@@ -262,7 +267,7 @@ impl<'a, E: Example> ApplicationHandler for App<'a, E> {
         let pipeline_id = PipelineId(0, 0);
         let mut builder = DisplayListBuilder::new(pipeline_id);
         let mut txn = Transaction::new();
-        builder.begin();
+        builder.begin(AU_PER_DEV_PX);
 
         self.example.render(
             &mut api,
@@ -402,7 +407,7 @@ impl<'a, E: Example> ApplicationHandler for App<'a, E> {
 
         if custom_event {
             let mut builder = DisplayListBuilder::new(self.pipeline_id);
-            builder.begin();
+            builder.begin(AU_PER_DEV_PX);
 
             self.example.render(
                 api,
