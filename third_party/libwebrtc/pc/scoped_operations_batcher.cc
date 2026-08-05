@@ -19,7 +19,6 @@
 #include "api/rtc_error.h"
 #include "api/sequence_checker.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {
@@ -30,10 +29,7 @@ ScopedOperationsBatcher::ScopedOperationsBatcher(Thread* target_thread)
 }
 
 ScopedOperationsBatcher::~ScopedOperationsBatcher() {
-  RTCError error = Run();
-  if (!error.ok()) {
-    RTC_LOG(LS_ERROR) << "Batcher failed: " << error.message();
-  }
+  Run();
 }
 
 RTCError ScopedOperationsBatcher::Run() {
@@ -58,6 +54,7 @@ RTCError ScopedOperationsBatcher::Run() {
 
   RTCError error = RTCError::OK();
   while (task_idx < tasks_.size()) {
+    size_t previous_task_idx = task_idx;
     target_thread_->BlockingCall([&] {
       while (task_idx < tasks_.size()) {
         if (auto* void_task = std::get_if<SimpleBatchTask>(&tasks_[task_idx])) {
@@ -87,7 +84,16 @@ RTCError ScopedOperationsBatcher::Run() {
         }
       }
     });
+    
+    
+    
+    
+    
+    if (error.ok() && task_idx == previous_task_idx) {
+      error = RTCError::InternalError("Thread was prematurely terminated");
+    }
     if (!error.ok()) {
+      RTC_LOG_ERROR(error);
       break;
     }
   }

@@ -56,20 +56,14 @@
 #ifndef PC_PROXY_H_
 #define PC_PROXY_H_
 
-#include <stddef.h>
-
-#include <memory>
-#include <string>
+#include <cstddef>
+#include <string>  
 #include <tuple>
-#include <type_traits>
 #include <utility>
 
-#include "api/make_ref_counted.h"
-#include "api/scoped_refptr.h"
-#include "api/task_queue/task_queue_base.h"
+#include "absl/cleanup/cleanup.h"
 #include "rtc_base/event.h"
-#include "rtc_base/string_utils.h"
-#include "rtc_base/system/rtc_export.h"
+#include "rtc_base/string_utils.h"  
 #include "rtc_base/thread.h"
 #include "rtc_base/trace_event.h"
 
@@ -117,9 +111,11 @@ class MethodCall {
     if (t->IsCurrent()) {
       Invoke(std::index_sequence_for<Args...>());
     } else {
-      t->PostTask([this] {
+      
+      
+      absl::Cleanup cleanup = [this] { event_.Set(); };
+      t->PostTask([this, cleanup = std::move(cleanup)] {
         Invoke(std::index_sequence_for<Args...>());
-        event_.Set();
       });
       event_.Wait(Event::kForever);
     }
@@ -152,9 +148,11 @@ class ConstMethodCall {
     if (t->IsCurrent()) {
       Invoke(std::index_sequence_for<Args...>());
     } else {
-      t->PostTask([this] {
+      
+      
+      absl::Cleanup cleanup = [this] { event_.Set(); };
+      t->PostTask([this, cleanup = std::move(cleanup)] {
         Invoke(std::index_sequence_for<Args...>());
-        event_.Set();
       });
       event_.Wait(Event::kForever);
     }

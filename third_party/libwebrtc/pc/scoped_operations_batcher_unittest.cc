@@ -15,12 +15,25 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
+#include "api/function_view.h"
+#include "api/location.h"
 #include "api/rtc_error.h"
+#include "rtc_base/null_socket_server.h"
 #include "rtc_base/thread.h"
 #include "test/gtest.h"
 
 namespace webrtc {
 namespace {
+
+class FakeQuittingThread : public Thread {
+ public:
+  FakeQuittingThread() : Thread(std::make_unique<NullSocketServer>()) {}
+
+  void BlockingCallImpl(FunctionView<void()> functor,
+                        const Location& location) override {
+    
+  }
+};
 
 TEST(ScopedOperationsBatcherTest, ExecutesTasksOnTargetThread) {
   auto target_thread = Thread::Create();
@@ -162,6 +175,27 @@ TEST(ScopedOperationsBatcherTest, IsEmptyReflectsTaskCount) {
 
   EXPECT_TRUE(batcher.Run().ok());
   EXPECT_TRUE(batcher.IsEmpty());
+}
+
+TEST(ScopedOperationsBatcherTest, AbortsGracefullyWhenTargetThreadQuits) {
+  FakeQuittingThread target_thread;
+  target_thread.Start();
+
+  ScopedOperationsBatcher batcher(&target_thread);
+  batcher.Add([] {});
+
+  
+  RTCError error = batcher.Run();
+  EXPECT_FALSE(error.ok());
+  EXPECT_EQ(error.type(), RTCErrorType::INTERNAL_ERROR);
+
+  
+  
+  
+  
+  
+  
+  target_thread.Stop();
 }
 
 }  
