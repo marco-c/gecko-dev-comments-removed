@@ -131,8 +131,9 @@
                   this.richlistbox.hasAttribute("pointerselected") &&
                   !this.richlistbox.contains(event.relatedTarget)
                 ) {
+                  lazy.AutoCompleteParent.getCurrentActor()?.clearAutoCompletePreview();
                   this.mousedOverIndex = -1;
-                  this.selectedIndex = -1;
+                  this._setSelectedIndex(-1, false, true);
                 }
                 break;
               }
@@ -182,7 +183,7 @@
       this._setSelectedIndex(val, false);
     }
 
-    _setSelectedIndex(val, pointer) {
+    _setSelectedIndex(val, pointer, clearedByPointerLeave = false) {
       const changed = val != this.richlistbox.selectedIndex;
       if (changed) {
         this._previousSelectedIndex = this.richlistbox.selectedIndex;
@@ -219,8 +220,10 @@
       if (this.mPopupOpen && this.maxResults > this.maxRows) {
         
         
+        
         this.richlistbox.ensureElementIsVisible(
-          this.richlistbox.selectedItem || this.richlistbox.firstElementChild
+          this.richlistbox.selectedItem ||
+            (clearedByPointerLeave ? null : this.richlistbox.firstElementChild)
         );
       }
     }
