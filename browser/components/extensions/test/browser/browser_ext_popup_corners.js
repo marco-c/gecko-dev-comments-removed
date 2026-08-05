@@ -1,6 +1,12 @@
-
-
 "use strict";
+
+
+const novaEnabled = Services.prefs.getBoolPref(
+  "browser.nova.enabled",
+  true 
+);
+
+info(`Run with Nova browser styles ${novaEnabled ? "enabled" : "disabled"}`);
 
 add_task(async function testPopupBorderRadius() {
   let extension = ExtensionTestUtils.loadExtension({
@@ -35,10 +41,13 @@ add_task(async function testPopupBorderRadius() {
   await extension.startup();
 
   let widget = getBrowserActionWidget(extension);
+
+  let defaultRadius = novaEnabled ? "24px" : "8px";
+
   
   
   
-  let expectedRadius = widget.disallowSubView ? "8px" : "0px";
+  let expectedRadius = widget.disallowSubView ? defaultRadius : "0px";
 
   async function testPanel(browser, standAlone = true) {
     let panel = getPanelForNode(browser);
