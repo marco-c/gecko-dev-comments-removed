@@ -47,16 +47,6 @@ class SctpTransportInternal {
   
   
   
-  [[deprecated("Call with SctpOptions")]]
-  virtual bool Start(int local_sctp_port,
-                     int remote_sctp_port,
-                     int max_message_size) {
-    return Start({
-        .local_port = local_sctp_port,
-        .remote_port = remote_sctp_port,
-        .max_message_size = max_message_size,
-    });
-  }
 
   
   
