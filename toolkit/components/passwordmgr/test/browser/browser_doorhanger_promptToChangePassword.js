@@ -139,6 +139,12 @@ async function promptToChangePasswordTest(testData) {
       await updateDoorhangerInputValues(testData.promptTextboxValues);
 
       let mainActionButton = getDoorhangerButton(notif, CHANGE_BUTTON);
+      
+      
+      await TestUtils.waitForCondition(
+        () => mainActionButton.label == testData.expectedButtonLabel,
+        `Waiting for button label to become '${testData.expectedButtonLabel}'`
+      );
       Assert.equal(
         mainActionButton.label,
         testData.expectedButtonLabel,
@@ -158,6 +164,16 @@ async function promptToChangePasswordTest(testData) {
       await promiseHidden;
       info("Waiting for storagePromise");
       await storagePromise;
+
+      
+      
+      
+      await TestUtils.waitForCondition(
+        async () =>
+          (await Services.logins.getAllLogins()).length ==
+          testData.expectedResultLogins.length,
+        "Waiting for the expected number of stored logins"
+      );
 
       
       await cleanupDoorhanger(notif);
@@ -627,7 +643,10 @@ let tests = [
         savedLoginsByName.bobABC.timeLastUsed,
         "Check timeLastUsed did change"
       );
-      todo_is(
+      
+      
+      
+      Assert.equal(
         finalLogins[0].timePasswordChanged,
         savedLoginsByName.bobABC.timePasswordChanged,
         "Check timePasswordChanged didn't change"

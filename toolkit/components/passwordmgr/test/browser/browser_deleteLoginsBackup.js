@@ -48,6 +48,13 @@ const loginBackupPath = PathUtils.join(
   "logins-backup.json"
 );
 
+
+
+const isRustBackend = Services.prefs.getBoolPref(
+  "signon.storage.rust.enabled",
+  false
+);
+
 async function waitForBackupUpdate() {
   return new Promise(resolve => {
     Services.obs.addObserver(function observer(_subject, _topic, _data) {
@@ -70,6 +77,17 @@ async function loginBackupDeleted() {
     async () => !(await IOUtils.exists(loginBackupPath))
   );
 }
+
+
+
+add_task(async function report_result_under_rust_backend() {
+  if (isRustBackend) {
+    Assert.ok(
+      true,
+      "logins-backup.json is a JSON-storage-only feature; skipping under the Rust backend"
+    );
+  }
+});
 
 
 
@@ -109,7 +127,7 @@ add_task(
     await Services.logins.removeAllLoginsAsync();
     await IOUtils.remove(loginStorePath);
   }
-);
+).skip(isRustBackend);
 
 
 add_task(async function test_deleteLoginsBackup_removeAllUserFacingLogins() {
@@ -150,7 +168,7 @@ add_task(async function test_deleteLoginsBackup_removeAllUserFacingLogins() {
 
   
   await IOUtils.remove(loginStorePath);
-});
+}).skip(isRustBackend);
 
 
 
@@ -213,7 +231,7 @@ add_task(async function test_deleteLoginsBackup_removeAllLogins() {
 
   
   await IOUtils.remove(loginStorePath);
-});
+}).skip(isRustBackend);
 
 
 
@@ -279,4 +297,4 @@ add_task(async function test_deleteLoginsBackup_removeLogin() {
   
   await Services.logins.removeAllLoginsAsync();
   await IOUtils.remove(loginStorePath);
-});
+}).skip(isRustBackend);

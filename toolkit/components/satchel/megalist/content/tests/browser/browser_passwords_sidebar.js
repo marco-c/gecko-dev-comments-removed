@@ -133,13 +133,13 @@ add_task(async function test_login_line_commands() {
   Services.fog.testResetFOG();
   await Services.fog.testFlushAllChildren();
 
-  await addLocalOriginLogin();
+  await addNavigableOriginLogin();
   const passwordsSidebar = await openPasswordsSidebar();
   await checkAllLoginsRendered(passwordsSidebar);
   const list = passwordsSidebar.querySelector(".passwords-list");
   const card = list.querySelector("password-card");
   const expectedPasswordCard = {
-    originLine: { value: "about:preferences#privacy" },
+    originLine: { value: "https://example.com/" },
     usernameLine: { value: "john" },
     passwordLine: { value: "pass4" },
   };
@@ -280,12 +280,15 @@ add_task(async function test_passwords_menu_external_links() {
   ok(true, "support link opened.");
 
   BrowserTestUtils.removeTab(helpTab);
-  
-  
-  
   LoginTestUtils.clearData();
+  
+  
   BrowserTestUtils.addTab(gBrowser, "about:blank");
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  for (const tab of [...gBrowser.tabs]) {
+    if (tab.linkedBrowser?.currentURI?.spec.startsWith("about:preferences")) {
+      BrowserTestUtils.removeTab(tab);
+    }
+  }
   SidebarController.hide();
 });
 

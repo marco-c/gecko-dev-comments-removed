@@ -45,7 +45,7 @@ add_task(async function test_context_menu_populate_password_noSchemeUpgrades() {
 
       
       let popupMenu = document.getElementById("fill-login-popup");
-      checkMenu(popupMenu, 2);
+      await checkMenu(popupMenu, 2);
 
       await closePopup(CONTEXT_MENU);
     }
@@ -68,7 +68,7 @@ add_task(async function test_context_menu_populate_password_schemeUpgrades() {
 
       
       let popupMenu = document.getElementById("fill-login-popup");
-      checkMenu(popupMenu, 3);
+      await checkMenu(popupMenu, 3);
 
       await closePopup(CONTEXT_MENU);
     }
@@ -95,7 +95,7 @@ add_task(
 
         
         let popupMenu = document.getElementById("fill-login-popup");
-        checkMenu(popupMenu, 2);
+        await checkMenu(popupMenu, 2);
 
         await closePopup(CONTEXT_MENU);
       }
@@ -122,7 +122,7 @@ add_task(
 
         
         let popupMenu = document.getElementById("fill-login-popup");
-        checkMenu(popupMenu, 3);
+        await checkMenu(popupMenu, 3);
 
         await closePopup(CONTEXT_MENU);
       }
@@ -150,7 +150,7 @@ add_task(
 
         
         let popupMenu = document.getElementById("fill-login-popup");
-        checkMenu(popupMenu, 2);
+        await checkMenu(popupMenu, 2);
 
         await closePopup(CONTEXT_MENU);
       }
@@ -177,7 +177,7 @@ add_task(
 
         
         let popupMenu = document.getElementById("fill-login-popup");
-        checkMenu(popupMenu, 3);
+        await checkMenu(popupMenu, 3);
 
         await closePopup(CONTEXT_MENU);
       }
@@ -607,12 +607,22 @@ async function assertContextMenuFill(
 
 
 
-function checkMenu(contextMenu, expectedCount) {
+async function checkMenu(contextMenu, expectedCount) {
   let logins = loginList().filter(login => {
     return LoginHelper.isOriginMatching(login.origin, TEST_ORIGIN, {
       schemeUpgrades: Services.prefs.getBoolPref("signon.schemeUpgrades"),
     });
   });
+  
+  
+  
+  await TestUtils.waitForCondition(() => {
+    let items = [...CONTEXT_MENU.getElementsByClassName("context-login-item")];
+    return (
+      items.length == expectedCount &&
+      logins.every(l => items.some(m => l.username == m.label))
+    );
+  }, "Waiting for the context menu to be populated with login items");
   
   let menuitems = [
     ...CONTEXT_MENU.getElementsByClassName("context-login-item"),
