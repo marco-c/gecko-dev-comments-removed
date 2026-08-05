@@ -10,6 +10,18 @@ PromiseTestUtils.allowMatchingRejectionsGlobally(
   /Message manager disconnected/
 );
 
+
+const novaEnabled = Services.prefs.getBoolPref(
+  "browser.nova.enabled",
+  true 
+);
+
+info(`Run with Nova browser styles ${novaEnabled ? "enabled" : "disabled"}`);
+
+const EXPECTED_DEFAULT_THEME_NAME = novaEnabled
+  ? "Default"
+  : "System theme — auto";
+
 add_task(async function test_management_themes() {
   await BuiltInThemes.ensureBuiltInThemes();
 
@@ -137,14 +149,14 @@ add_task(async function test_management_themes() {
   );
   is(
     await extension.awaitMessage("onDisabled"),
-    "System theme — auto",
+    EXPECTED_DEFAULT_THEME_NAME,
     "default disabled"
   );
 
   extension.sendMessage("test");
   is(
     await extension.awaitMessage("onEnabled"),
-    "System theme — auto",
+    EXPECTED_DEFAULT_THEME_NAME,
     "default enabled"
   );
   is(
@@ -159,7 +171,7 @@ add_task(async function test_management_themes() {
   );
   is(
     await extension.awaitMessage("onDisabled"),
-    "System theme — auto",
+    EXPECTED_DEFAULT_THEME_NAME,
     "default disabled"
   );
   await extension.awaitMessage("done");
@@ -168,7 +180,7 @@ add_task(async function test_management_themes() {
 
   is(
     await extension.awaitMessage("onEnabled"),
-    "System theme — auto",
+    EXPECTED_DEFAULT_THEME_NAME,
     "default enabled"
   );
   await extension.unload();
