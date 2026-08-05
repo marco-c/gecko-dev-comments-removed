@@ -122,10 +122,7 @@ class nsAtom {
   const uint32_t mHash;
 };
 
-
-
-
-class nsStaticAtom : public nsAtom {
+class nsStaticAtom final : public nsAtom {
  public:
   
   

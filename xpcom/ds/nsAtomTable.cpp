@@ -462,7 +462,8 @@ void NS_InitAtomTable() {
   
   
   gAtomTable = new nsAtomTable();
-  gAtomTable->RegisterStaticAtoms(nsGkAtoms::sAtoms, nsGkAtoms::sAtomsLen);
+  gAtomTable->RegisterStaticAtoms(nsGkAtoms::detail::gGkAtoms.mAtoms,
+                                  nsGkAtoms::kStaticAtomCount);
   gStaticAtomsDone = true;
 }
 

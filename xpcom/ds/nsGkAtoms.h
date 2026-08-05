@@ -6,6 +6,7 @@
 #define nsGkAtoms_h_
 
 #include "nsAtom.h"
+#include "mozilla/StaticAtoms.h"
 
 
 
@@ -36,124 +37,21 @@
 
 
 
+namespace nsGkAtoms {
 
+inline nsStaticAtom* GetAtomByIndex(size_t aIndex) {
+  MOZ_ASSERT(aIndex < kStaticAtomCount);
+  return const_cast<nsStaticAtom*>(&detail::gGkAtoms.mAtoms[aIndex]);
+}
 
-
-
-
-
-
-
-
-
-namespace mozilla {
-namespace detail {
-
-
-
-
-
-
-
-struct GkAtoms {
-
-
-
-
-
-
-
-
-#define GK_ATOM(name_, value_) const char16_t name_##_string[sizeof(value_)];
-#include "nsGkAtomList.h"
-#undef GK_ATOM
-
-  
-  enum class Atoms {
-
-
-
-
-
-
-#define GK_ATOM(name_, value_) name_,
-#include "nsGkAtomList.h"
-#undef GK_ATOM
-    AtomsCount
-  };
-
-  const nsStaticAtom mAtoms[static_cast<size_t>(Atoms::AtomsCount)];
-};
-
-
-
-
-
-#if defined(__GNUC__) && !defined(__clang__)
-extern NS_EXTERNAL_VIS const GkAtoms gGkAtoms;
-#else
-extern const GkAtoms gGkAtoms;
-#endif
+inline size_t IndexOf(const nsStaticAtom* atom) {
+  nsStaticAtom* firstAtom = GetAtomByIndex(0);
+  size_t ret = atom - firstAtom;
+  MOZ_ASSERT(ret < kStaticAtomCount);
+  return ret;
+}
 
 }  
-}  
-
-
-class nsGkAtoms {
- private:
-  friend void NS_InitAtomTable();
-
-  
-  
-  static const nsStaticAtom* const sAtoms;
-
-  
-  static constexpr size_t sAtomsLen =
-      static_cast<size_t>(mozilla::detail::GkAtoms::Atoms::AtomsCount);
-
- public:
-  static nsStaticAtom* GetAtomByIndex(size_t aIndex) {
-    MOZ_ASSERT(aIndex < sAtomsLen);
-    return const_cast<nsStaticAtom*>(&sAtoms[aIndex]);
-  }
-
-  static size_t IndexOf(const nsStaticAtom* atom) {
-    nsStaticAtom* firstAtom = GetAtomByIndex(0);
-    size_t ret = atom - firstAtom;
-    MOZ_ASSERT(ret < sAtomsLen);
-    return ret;
-  }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define GK_ATOM(name_, value_)                                      \
-  static constexpr nsStaticAtom* name_ = const_cast<nsStaticAtom*>( \
-      &mozilla::detail::gGkAtoms.mAtoms[static_cast<size_t>(        \
-          mozilla::detail::GkAtoms::Atoms::name_)]);
-#include "nsGkAtomList.h"
-#undef GK_ATOM
-};
 
 inline bool nsAtom::IsEmpty() const { return this == nsGkAtoms::_empty; }
 
