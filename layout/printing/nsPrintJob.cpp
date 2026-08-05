@@ -835,17 +835,6 @@ nsresult nsPrintJob::SetupToPrintContent() {
 
   
   
-  
-  {
-    PresShell* const presShell = mPrintObject->mPresShell;
-    if (nsContentUtils::IsPDFJS(presShell->GetDocument()->GetPrincipal())) {
-      const float pageZoomRatio = std::max(mPrintObject->mZoomRatio, 1.0f);
-      presShell->GetPageSequenceFrame()->SetMaxPageZoomRatio(pageZoomRatio);
-    }
-  }
-
-  
-  
   if (didReconstruction) {
     FirePrintPreviewUpdateEvent();
     
