@@ -1402,13 +1402,20 @@ IPCResult BrowserParent::RecvNewWindowGlobal(
   
   
   EnumSet<ValidatePrincipalOptions> validationOptions = {};
-  
-  
-  if (docURI->SchemeIs("chrome") ||
-      (xpc::IsInAutomation() && NS_IsAboutBlank(docURI) && parentWgp &&
-       parentWgp->Manager() == this &&
-       parentWgp->DocumentPrincipal()->IsSystemPrincipal())) {
-    validationOptions += ValidatePrincipalOptions::AllowSystem;
+  if (xpc::IsInAutomation()) {
+    
+    bool isChromeReftest = false;
+    if (docURI->SchemeIs("chrome")) {
+      nsAutoCString host;
+      docURI->GetHost(host);
+      isChromeReftest = host.EqualsLiteral("reftest");
+    }
+
+    if (isChromeReftest ||
+        (NS_IsAboutBlank(docURI) && parentWgp && parentWgp->Manager() == this &&
+         parentWgp->DocumentPrincipal()->IsSystemPrincipal())) {
+      validationOptions += ValidatePrincipalOptions::AllowSystem;
+    }
   }
   if (!Manager()->ValidatePrincipal(aInit.principal(), validationOptions)) {
     return ContentParent::PrincipalValidationIpcFail(aInit.principal(), this,

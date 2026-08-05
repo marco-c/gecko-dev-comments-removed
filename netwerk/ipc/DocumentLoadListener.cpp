@@ -2452,14 +2452,23 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
     
     
     EnumSet<ValidatePrincipalOptions> validationOptions = {};
-    
-    
-    if (docURI->SchemeIs("chrome") ||
-        (xpc::IsInAutomation() && NS_IsAboutBlank(docURI) &&
-         GetParentWindowContext() &&
-         GetParentWindowContext()->Manager()->Manager() == contentParent &&
-         GetParentWindowContext()->DocumentPrincipal()->IsSystemPrincipal())) {
-      validationOptions += ValidatePrincipalOptions::AllowSystem;
+    if (xpc::IsInAutomation()) {
+      
+      bool isChromeReftest = false;
+      if (docURI->SchemeIs("chrome")) {
+        nsAutoCString host;
+        docURI->GetHost(host);
+        isChromeReftest = host.EqualsLiteral("reftest");
+      }
+
+      if (isChromeReftest ||
+          (NS_IsAboutBlank(docURI) && GetParentWindowContext() &&
+           GetParentWindowContext()->Manager()->Manager() == contentParent &&
+           GetParentWindowContext()
+               ->DocumentPrincipal()
+               ->IsSystemPrincipal())) {
+        validationOptions += ValidatePrincipalOptions::AllowSystem;
+      }
     }
     if (!contentParent->ValidatePrincipal(unsandboxedPrincipal,
                                           validationOptions)) {
