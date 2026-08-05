@@ -213,12 +213,8 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayOOL(
       MaxNurseryTrailerSize);
   if (MOZ_UNLIKELY(!oolAlloc)) {
     
-
-    
-    
     arrayObj->numElements_ = 0;
-    arrayObj->data_ = arrayObj->inlineArrayData<uint8_t>();
-    MOZ_ASSERT(arrayObj->isDataInline());
+    arrayObj->data_ = nullptr;
     return nullptr;
   }
 
