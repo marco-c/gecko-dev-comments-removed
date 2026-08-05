@@ -115,6 +115,18 @@ media::DecodeSupportSet PDMFactorySupport::IsSupported(
 }
 
 
+RefPtr<PDMSupportsDecoderPromise> PDMFactorySupport::IsSupportedAsync(
+    const SupportDecoderParams& aParams) {
+  RefPtr<PDMFactorySupport> support = Instance();
+  if (!support) {
+    
+    return PDMSupportsDecoderPromise::CreateAndResolve(
+        media::DecodeSupportSet{}, __func__);
+  }
+  return support->SupportsAsync(aParams);
+}
+
+
 RefPtr<PDMFactorySupport> PDMFactorySupport::Instance() {
   
   if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {

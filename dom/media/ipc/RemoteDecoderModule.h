@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef include_dom_media_ipc_RemoteDecoderModule_h
 #define include_dom_media_ipc_RemoteDecoderModule_h
 #include "PlatformDecoderModule.h"
@@ -28,6 +26,9 @@ class RemoteDecoderModule : public PlatformDecoderModule {
   media::DecodeSupportSet Supports(
       const SupportDecoderParams& aParams,
       DecoderDoctorDiagnostics* aDiagnostics) const override;
+
+  RefPtr<SupportsDecoderPromise> SupportsAsync(
+      const SupportDecoderParams& aParams) const override;
 
   RefPtr<CreateDecoderPromise> AsyncCreateDecoder(
       const CreateDecoderParams& aParams) override;

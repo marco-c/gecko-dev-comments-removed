@@ -2,8 +2,6 @@
 
 
 
-
-
 #if !defined(PlatformDecoderModule_h_)
 #  define PlatformDecoderModule_h_
 
@@ -452,6 +450,20 @@ class PlatformDecoderModule {
 
   using CreateDecoderPromise = MozPromise<RefPtr<MediaDataDecoder>, MediaResult,
                                            true>;
+
+  using SupportsDecoderPromise =
+      MozPromise<media::DecodeSupportSet, nsresult,  true>;
+
+  
+  
+  
+  
+  
+  virtual RefPtr<SupportsDecoderPromise> SupportsAsync(
+      const SupportDecoderParams& aParams) const {
+    return SupportsDecoderPromise::CreateAndResolve(Supports(aParams, nullptr),
+                                                    __func__);
+  }
 
  protected:
   PlatformDecoderModule() = default;
