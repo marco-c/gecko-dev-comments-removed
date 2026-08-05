@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_QUOTA_DIRECTORYMETADATA_H_
 #define DOM_QUOTA_DIRECTORYMETADATA_H_
 
@@ -25,6 +23,25 @@ class Result;
 namespace mozilla::dom::quota {
 
 struct OriginStateMetadata;
+
+namespace DirectoryMetadataFlags {
+
+
+enum : uint32_t {
+  None        = 0,
+  Initialized = 1 << 0,
+  Accessed    = 1 << 1,
+  Dirty       = 1 << 2,
+  Persisted   = 1 << 3,
+};
+
+
+}  
+
+
+
+
+
 
 
 

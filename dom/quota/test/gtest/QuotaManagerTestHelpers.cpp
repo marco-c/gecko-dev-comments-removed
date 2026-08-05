@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "QuotaManagerTestHelpers.h"
 
 #include "mozilla/dom/quota/CommonMetadata.h"
@@ -54,6 +52,7 @@ FullOriginMetadata GetFullOriginMetadata(const nsCString& aOriginSuffix,
   return {
       GetOriginMetadata(aOriginSuffix, aGroupNoSuffix, aOriginNoSuffix),
       OriginStateMetadata{ 0,  0,
+                           false,
                            false,
                            false},
       ClientUsageArray(),  0, kCurrentQuotaVersion};

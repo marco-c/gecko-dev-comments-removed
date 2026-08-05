@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "QuotaManagerTestHelpers.h"
 #include "gtest/gtest.h"
 #include "mozilla/dom/quota/CommonMetadata.h"
@@ -118,14 +116,14 @@ TEST(DOM_Quota_CommonMetadata, OriginStateMetadata_Equals)
 
   OriginStateMetadata originStateMetadata1 = OriginStateMetadata(
        0,  0,
-       false,  false);
+       false,  false,  false);
 
   {
     
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
          0,  0,
-         false,  false);
+         false,  false,  false);
 
     EXPECT_TRUE(originStateMetadata1.Equals(originStateMetadata2));
   }
@@ -135,7 +133,7 @@ TEST(DOM_Quota_CommonMetadata, OriginStateMetadata_Equals)
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
          1,  0,
-         false,  false);
+         false,  false,  false);
 
     EXPECT_FALSE(originStateMetadata1.Equals(originStateMetadata2));
   }
@@ -145,7 +143,7 @@ TEST(DOM_Quota_CommonMetadata, OriginStateMetadata_Equals)
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
          0,  1,
-         false,  false);
+         false,  false,  false);
 
     EXPECT_FALSE(originStateMetadata1.Equals(originStateMetadata2));
   }
@@ -155,7 +153,7 @@ TEST(DOM_Quota_CommonMetadata, OriginStateMetadata_Equals)
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
          0,  0,
-         true,  false);
+         true,  false,  false);
 
     EXPECT_FALSE(originStateMetadata1.Equals(originStateMetadata2));
   }
@@ -165,7 +163,7 @@ TEST(DOM_Quota_CommonMetadata, OriginStateMetadata_Equals)
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
          0,  0,
-         false,  true);
+         false,  true,  false);
 
     EXPECT_FALSE(originStateMetadata1.Equals(originStateMetadata2));
   }
@@ -193,7 +191,7 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_Equals)
 
   OriginStateMetadata originStateMetadata1 = OriginStateMetadata(
        0,  0,
-       false,  false);
+       false,  false,  false);
 
   FullOriginMetadata fullOriginMetadata1(originMetadata1, originStateMetadata1,
                                          ClientUsageArray(),  0,
@@ -210,7 +208,7 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_Equals)
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
          0,  0,
-         false,  false);
+         false,  false,  false);
 
     FullOriginMetadata fullOriginMetadata2(
         originMetadata2, originStateMetadata2, ClientUsageArray(),
@@ -231,7 +229,7 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_Equals)
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
          0,  0,
-         false,  false);
+         false,  false,  false);
 
     FullOriginMetadata fullOriginMetadata2(
         originMetadata2, originStateMetadata2, ClientUsageArray(),
@@ -251,7 +249,7 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_Equals)
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
          0,  0,
-         false,  false);
+         false,  false,  false);
 
     FullOriginMetadata fullOriginMetadata2(
         originMetadata2, originStateMetadata2, ClientUsageArray(),
@@ -271,7 +269,7 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_Equals)
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
          1,  0,
-         false,  false);
+         false,  false,  false);
 
     FullOriginMetadata fullOriginMetadata2(
         originMetadata2, originStateMetadata2, ClientUsageArray(),
@@ -291,7 +289,7 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_Equals)
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
          0,  0,
-         false,  false);
+         false,  false,  false);
 
     FullOriginMetadata fullOriginMetadata2(
         originMetadata2, originStateMetadata2,
@@ -312,7 +310,7 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_Equals)
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
          0,  0,
-         false,  false);
+         false,  false,  false);
 
     FullOriginMetadata fullOriginMetadata2(
         originMetadata2, originStateMetadata2, ClientUsageArray(),
@@ -332,7 +330,7 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_Equals)
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
          0,  0,
-         false,  false);
+         false,  false,  false);
 
     FullOriginMetadata fullOriginMetadata2(
         originMetadata2, originStateMetadata2, ClientUsageArray(),
@@ -352,7 +350,7 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_EqualsIgnoringOriginState)
 
   OriginStateMetadata originStateMetadata1 = OriginStateMetadata(
        0,  0,
-       false,  false);
+       false,  false,  false);
 
   FullOriginMetadata fullOriginMetadata1(originMetadata1, originStateMetadata1,
                                          ClientUsageArray(),  0,
@@ -368,7 +366,7 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_EqualsIgnoringOriginState)
 
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
          0,  0,
-         false,  false);
+         false,  false,  false);
 
     FullOriginMetadata fullOriginMetadata2(
         originMetadata2, originStateMetadata2, ClientUsageArray(),
@@ -382,7 +380,7 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_EqualsIgnoringOriginState)
     
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
          1,  0,
-         false,  false);
+         false,  false,  false);
 
     FullOriginMetadata fullOriginMetadata2(
         originMetadata1, originStateMetadata2, ClientUsageArray(),
@@ -396,7 +394,7 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_EqualsIgnoringOriginState)
     
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
          0,  1,
-         false,  false);
+         false,  false,  false);
 
     FullOriginMetadata fullOriginMetadata2(
         originMetadata1, originStateMetadata2, ClientUsageArray(),
@@ -410,7 +408,7 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_EqualsIgnoringOriginState)
     
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
          0,  0,
-         true,  false);
+         true,  false,  false);
 
     FullOriginMetadata fullOriginMetadata2(
         originMetadata1, originStateMetadata2, ClientUsageArray(),
@@ -424,7 +422,7 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_EqualsIgnoringOriginState)
     
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
          0,  0,
-         false,  true);
+         false,  true,  false);
 
     FullOriginMetadata fullOriginMetadata2(
         originMetadata1, originStateMetadata2, ClientUsageArray(),
@@ -438,7 +436,7 @@ TEST(DOM_Quota_CommonMetadata, FullOriginMetadata_EqualsIgnoringOriginState)
     
     OriginStateMetadata originStateMetadata2 = OriginStateMetadata(
          0,  0,
-         false,  false);
+         false,  false,  false);
 
     FullOriginMetadata fullOriginMetadata2(
         originMetadata1, originStateMetadata2, ClientUsageArray(),

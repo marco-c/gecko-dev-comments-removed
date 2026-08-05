@@ -3685,7 +3685,7 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
     FullOriginMetadata fullOriginMetadata = FullOriginMetadata{
         originMetadata,
         OriginStateMetadata{timestamp, maintenanceDate, accessed,
-                             true},
+                             true,  false},
         ClientUsageArray(),  0, kCurrentQuotaVersion};
 
     if (aQuotaManager.IsTemporaryStorageInitializedInternal()) {

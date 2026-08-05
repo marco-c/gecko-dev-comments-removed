@@ -3543,22 +3543,24 @@ QuotaManager::GetOrCreateTemporaryOriginDirectory(
     
     
 
-    auto [timestamp, maintenanceDate, accessed, persisted] =
+    auto [timestamp, maintenanceDate, accessed, persisted, dirty] =
         WithOriginInfo(aOriginMetadata, [](const auto& originInfo) {
           const int64_t timestamp = originInfo->LockedAccessTime();
           const int32_t maintenanceDate = originInfo->LockedMaintenanceDate();
           const bool accessed = originInfo->LockedAccessed();
           const bool persisted = originInfo->LockedPersisted();
+          const bool dirty = originInfo->LockedDirty();
 
           originInfo->LockedDirectoryCreated();
 
           return std::make_tuple(timestamp, maintenanceDate, accessed,
-                                 persisted);
+                                 persisted, dirty);
         });
 
     FullOriginMetadata fullOriginMetadata{
         aOriginMetadata,
-        OriginStateMetadata{timestamp, maintenanceDate, accessed, persisted},
+        OriginStateMetadata{timestamp, maintenanceDate, accessed, persisted,
+                            dirty},
         ClientUsageArray(),  0, kCurrentQuotaVersion};
 
     
@@ -6398,7 +6400,8 @@ QuotaManager::EnsurePersistentOriginIsInitializedInternal(
                                     
                                     Date::FromTimestamp(timestamp).ToDays(),
                                      false,
-                                     true},
+                                     true,
+                                     false},
                 ClientUsageArray(),  0, kCurrentQuotaVersion};
 
             
@@ -6598,6 +6601,7 @@ QuotaManager::EnsureTemporaryOriginIsInitializedInternal(
         OriginStateMetadata{
              timestamp,
              Date::FromTimestamp(timestamp).ToDays(),
+             false,
              false,
              false},
         ClientUsageArray(),  0, kCurrentQuotaVersion};
@@ -10151,6 +10155,7 @@ nsresult RestoreDirectoryMetadata2Helper::ProcessOriginDirectory(
               
               Date::FromTimestamp(aOriginProps.mTimestamp).ToDays(),
                true,
+               false,
                false},
           ClientUsageArray(),  0, kNoQuotaVersion})));
 

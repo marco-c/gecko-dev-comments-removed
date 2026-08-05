@@ -2,12 +2,9 @@
 
 
 
-
-
 #include "DirectoryMetadata.h"
 
 #include "mozilla/Result.h"
-#include "mozilla/TypedEnumBits.h"
 #include "mozilla/dom/quota/Assertions.h"
 #include "mozilla/dom/quota/CommonMetadata.h"
 #include "mozilla/dom/quota/QuotaCommon.h"
@@ -18,18 +15,6 @@
 
 namespace mozilla::dom::quota {
 
-
-
-enum class DirectoryMetadataFlags : uint32_t {
-  None        = 0,
-  Initialized = 1 << 0,
-  Accessed    = 1 << 1,
-};
-
-
-
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DirectoryMetadataFlags)
-
 Result<OriginStateMetadata, nsresult> ReadDirectoryMetadataHeader(
     nsIBinaryInputStream& aStream) {
   AssertIsOnIOThread();
@@ -39,21 +24,29 @@ Result<OriginStateMetadata, nsresult> ReadDirectoryMetadataHeader(
   QM_TRY_UNWRAP(originStateMetadata.mLastAccessTime,
                 MOZ_TO_RESULT_INVOKE_MEMBER(aStream, Read64));
 
-  QM_TRY_UNWRAP(originStateMetadata.mPersisted,
-                MOZ_TO_RESULT_INVOKE_MEMBER(aStream, ReadBoolean));
+  QM_TRY_INSPECT(const bool& persistedByte,
+                 MOZ_TO_RESULT_INVOKE_MEMBER(aStream, ReadBoolean));
 
   QM_TRY_INSPECT(const uint32_t& rawFlags,
                  MOZ_TO_RESULT_INVOKE_MEMBER(aStream, Read32));
 
-  auto flags = static_cast<DirectoryMetadataFlags>(rawFlags);
+  
+  
+  
+  
+  if (rawFlags == 0) {
+    originStateMetadata.mAccessed = true;
+    originStateMetadata.mDirty = true;
+  } else {
+    originStateMetadata.FromMetadataFlags(rawFlags);
+  }
 
   
   
   
   
-  originStateMetadata.mAccessed =
-      rawFlags == 0 || (flags & DirectoryMetadataFlags::Accessed) !=
-                           DirectoryMetadataFlags::None;
+  
+  originStateMetadata.mPersisted = persistedByte;
 
   QM_TRY_UNWRAP(originStateMetadata.mLastMaintenanceDate,
                 MOZ_TO_RESULT_INVOKE_MEMBER(aStream, Read32));
@@ -73,14 +66,8 @@ nsresult WriteDirectoryMetadataHeader(
   
   
   
-  auto flags =
-      DirectoryMetadataFlags::Initialized |
-      (aOriginStateMetadata.mAccessed ? DirectoryMetadataFlags::Accessed
-                                      : DirectoryMetadataFlags::None);
-
-  auto rawFlags = static_cast<uint32_t>(flags);
-
-  QM_TRY(MOZ_TO_RESULT(aStream.Write32(rawFlags)));
+  QM_TRY(
+      MOZ_TO_RESULT(aStream.Write32(aOriginStateMetadata.ToMetadataFlags())));
 
   QM_TRY(MOZ_TO_RESULT(
       aStream.Write32(aOriginStateMetadata.mLastMaintenanceDate)));
