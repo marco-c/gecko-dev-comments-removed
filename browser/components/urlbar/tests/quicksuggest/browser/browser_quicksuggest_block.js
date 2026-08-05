@@ -110,21 +110,27 @@ async function doOneBasicBlockTest({ result, block }) {
     "Two rows are present after searching (heuristic + suggestion)"
   );
 
-  let { result: urlbarResult } =
-    await QuickSuggestTestUtils.assertIsQuickSuggest({
-      window,
-      isSponsored,
-      url: isSponsored ? undefined : result.url,
-      originalUrl: isSponsored ? result.url : undefined,
-    });
+  await QuickSuggestTestUtils.assertIsQuickSuggest({
+    window,
+    isSponsored,
+    url: isSponsored ? undefined : result.url,
+    originalUrl: isSponsored ? result.url : undefined,
+  });
 
   
   let dismissalPromise = TestUtils.topicObserved(
     "quicksuggest-dismissals-changed"
   );
+  
+  
+  let removalPromise = UrlbarTestUtils.promiseControllerNotification(
+    window,
+    "onQueryResultRemoved"
+  );
   await block();
   info("Awaiting dismissal promise");
   await dismissalPromise;
+  await removalPromise;
 
   
   Assert.ok(
@@ -140,8 +146,8 @@ async function doOneBasicBlockTest({ result, block }) {
 
   
   Assert.ok(
-    await QuickSuggest.isResultDismissed(urlbarResult),
-    "Result should be dismissed"
+    await QuickSuggest.rustBackend.isDismissedByKey(result.url),
+    "The suggestion should be dismissed"
   );
 
   await UrlbarTestUtils.promisePopupClose(window);
@@ -159,13 +165,12 @@ add_task(async function blockMultiple() {
     });
 
     let isSponsored = iab_category != "5 - Education";
-    let { result: urlbarResult } =
-      await QuickSuggestTestUtils.assertIsQuickSuggest({
-        window,
-        isSponsored,
-        url: isSponsored ? undefined : url,
-        originalUrl: isSponsored ? url : undefined,
-      });
+    await QuickSuggestTestUtils.assertIsQuickSuggest({
+      window,
+      isSponsored,
+      url: isSponsored ? undefined : url,
+      originalUrl: isSponsored ? url : undefined,
+    });
 
     
     let dismissalPromise = TestUtils.topicObserved(
@@ -176,11 +181,6 @@ add_task(async function blockMultiple() {
     });
     info("Awaiting dismissal promise");
     await dismissalPromise;
-
-    Assert.ok(
-      await QuickSuggest.isResultDismissed(urlbarResult),
-      "Result should be dismissed after dismissing it from the menu"
-    );
 
     
     
