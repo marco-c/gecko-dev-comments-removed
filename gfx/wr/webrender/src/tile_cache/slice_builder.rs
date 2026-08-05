@@ -570,11 +570,11 @@ fn create_tile_cache(
             match clip_node_data.key.kind {
                 ClipItemKeyKind::ImageMask(..) |
                 ClipItemKeyKind::Rectangle(ClipMode::ClipOut) |
-                ClipItemKeyKind::RoundedRectangle(_, ClipMode::ClipOut) => {
+                ClipItemKeyKind::RoundedRectangle(_, _, ClipMode::ClipOut) => {
                     
                     false
                 }
-                ClipItemKeyKind::RoundedRectangle(radius, ClipMode::Clip) => {
+                ClipItemKeyKind::RoundedRectangle(radius, _, ClipMode::Clip) => {
                     
                     
                     let br = clamped_radius(&BorderRadius::from(radius), node.unsnapped_clip_rect.size());
@@ -612,7 +612,7 @@ fn create_tile_cache(
                 let can_combine = match (accumulated_rounded_rect, clip_node_data.key.kind) {
                     (
                         Some((acc_rect, acc_radius)),
-                        ClipItemKeyKind::RoundedRectangle(radius, ClipMode::Clip),
+                        ClipItemKeyKind::RoundedRectangle(radius, _, ClipMode::Clip),
                     ) => {
                         let radius = clamped_radius(&BorderRadius::from(radius), node.unsnapped_clip_rect.size());
                         intersect_rounded_rects(
@@ -633,7 +633,7 @@ fn create_tile_cache(
                     
                     shared_clip_node_id = current_node_id;
                     rounded_rect_count = 1;
-                    if let ClipItemKeyKind::RoundedRectangle(radius, ClipMode::Clip) = clip_node_data.key.kind {
+                    if let ClipItemKeyKind::RoundedRectangle(radius, _, ClipMode::Clip) = clip_node_data.key.kind {
                         let radius = clamped_radius(&BorderRadius::from(radius), node.unsnapped_clip_rect.size());
                         accumulated_rounded_rect = Some((node.unsnapped_clip_rect, radius));
                     }

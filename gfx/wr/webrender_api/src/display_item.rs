@@ -2126,6 +2126,12 @@ pub struct ComplexClipRegion {
     pub radii: BorderRadius,
     
     
+    
+    
+    
+    pub inset: LayoutSideOffsets,
+    
+    
     pub mode: ClipMode,
 }
 
@@ -2214,9 +2220,10 @@ impl ComplexClipRegion {
     pub fn new(
         rect: LayoutRect,
         radii: BorderRadius,
+        inset: LayoutSideOffsets,
         mode: ClipMode,
     ) -> Self {
-        ComplexClipRegion { rect, radii, mode }
+        ComplexClipRegion { rect, radii, inset, mode }
     }
 }
 

@@ -87,7 +87,8 @@ impl HitTestClipNode {
             ClipItemKeyKind::Rectangle(mode) => {
                 HitTestRegion::Rectangle(clip_rect, mode)
             }
-            ClipItemKeyKind::RoundedRectangle(radius, mode) => {
+            ClipItemKeyKind::RoundedRectangle(radius, _, mode) => {
+                
                 HitTestRegion::RoundedRectangle(clip_rect, radius.into(), mode)
             }
             ClipItemKeyKind::ImageMask(_, polygon_handle) => {
