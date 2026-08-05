@@ -162,6 +162,8 @@ class JVM {
   
   
   static JVM* GetInstance();
+  
+  static bool IsInitialized();
 
   
   
