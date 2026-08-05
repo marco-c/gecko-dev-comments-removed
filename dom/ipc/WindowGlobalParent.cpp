@@ -49,6 +49,7 @@
 #include "mozilla/dom/PBackgroundSessionStorageCache.h"
 #include "mozilla/dom/ParentProcessChannelHandle.h"
 #include "mozilla/dom/PrefetchLog.h"
+#include "mozilla/dom/PrefetchMatchWaiter.h"
 #include "mozilla/dom/PrefetchRecordParent.h"
 #include "mozilla/dom/SerialManagerParent.h"
 #include "mozilla/dom/UseCounterMetrics.h"
@@ -2213,13 +2214,88 @@ WindowGlobalParent::AllocPPrefetchRecordParent(
   return actor.forget();
 }
 
+RefPtr<PrefetchMatchPromise> WindowGlobalParent::WaitForMatchingPrefetchRecord(
+    nsIURI* aURI, TimeDuration aTimeout) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  if (PrefetchRecordParent* match = FindMatchingPrefetchRecord(aURI)) {
+    LOG_SPECRULES(
+        ("WindowGlobalParent::WaitForMatchingPrefetchRecord: "
+         "this=%p fast match rec=%p",
+         this, match));
+    return PrefetchMatchPromise::CreateAndResolve(RefPtr{match}, __func__);
+  }
+
+  
+  
+  
+  if (!HasPotentialPrefetchMatch(aURI)) {
+    LOG_SPECRULES(
+        ("WindowGlobalParent::WaitForMatchingPrefetchRecord: "
+         "this=%p no potential records, resolving nullptr",
+         this));
+    return PrefetchMatchPromise::CreateAndResolve(nullptr, __func__);
+  }
+
+  
+  
+  
+  RefPtr<PrefetchMatchWaiter> waiter =
+      PrefetchMatchWaiter::Create(this, aURI, aTimeout);
+  mPrefetchWaiters.AppendElement(waiter);
+  LOG_SPECRULES(
+      ("WindowGlobalParent::WaitForMatchingPrefetchRecord: "
+       "this=%p registered waiter=%p",
+       this, waiter.get()));
+  return waiter->Promise();
+}
+
+bool WindowGlobalParent::HasPotentialPrefetchMatch(nsIURI* aURI) {
+  
+  
+  
+  
+  
+  nsTArray<PPrefetchRecordParent*> managed;
+  ManagedPPrefetchRecordParent(managed);
+  for (auto* p : managed) {
+    auto* rec = static_cast<PrefetchRecordParent*>(p);
+    if (rec->State() == PrefetchState::Ongoing &&
+        rec->IsExpectedToMatch(aURI)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void WindowGlobalParent::RemoveWaiter(PrefetchMatchWaiter* aWaiter) {
+  mPrefetchWaiters.RemoveElement(aWaiter);
+  LOG_SPECRULES(
+      ("WindowGlobalParent::RemoveWaiter: this=%p waiter=%p "
+       "remaining=%zu",
+       this, aWaiter, mPrefetchWaiters.Length()));
+}
+
 void WindowGlobalParent::NotifyPrefetchStateChanged(
     PrefetchRecordParent* aRec) {
   
   
   
   
-  
+  for (RefPtr<PrefetchMatchWaiter>& waiter : mPrefetchWaiters.Clone()) {
+    waiter->OnRecordStateChanged(aRec);
+  }
 }
 
 
