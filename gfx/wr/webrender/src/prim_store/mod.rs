@@ -9,12 +9,12 @@ use crate::clip::ClipLeafId;
 use crate::render_backend::DataStores;
 use crate::space::SnapRounding;
 use crate::quad::QuadTileClassifier;
-use crate::renderer::{GpuBufferAddress, GpuBufferHandle, GpuBufferWriterF};
+use crate::renderer::GpuBufferHandle;
 use crate::segment::EdgeMask;
 use crate::debug_item::{DebugItem, DebugMessage};
 use crate::debug_colors;
 use glyph_rasterizer::{GlyphKey, SubpixelDirection};
-use crate::gpu_types::{BrushFlags, BrushSegmentGpuData, QuadSegment};
+use crate::gpu_types::QuadSegment;
 use crate::intern;
 use crate::picture::{PictureInstance, PictureScratch};
 use crate::render_task_graph::RenderTaskId;
@@ -37,7 +37,7 @@ pub mod interned;
 pub mod storage;
 
 use backdrop::{BackdropCaptureDataHandle, BackdropRenderDataHandle};
-use borders::{ImageBorderDataHandle, ImageBorderScratch, NormalBorderDataHandle};
+use borders::{ImageBorderDataHandle, NormalBorderDataHandle};
 use gradient::{LinearGradientDataHandle, RadialGradientDataHandle, ConicGradientDataHandle};
 use image::{ImageDataHandle, ImageScratch, VisibleImageTile, YuvImageDataHandle};
 use line_dec::LineDecorationDataHandle;
@@ -45,8 +45,6 @@ use picture::PictureDataHandle;
 use rectangle::RectangleDataHandle;
 use text_run::{TextRunDataHandle, TextRunScratch};
 use crate::box_shadow::BoxShadowDataHandle;
-
-pub const VECS_PER_SEGMENT: usize = 2;
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -263,46 +261,6 @@ pub enum ClipMaskKind {
     None,
     
     Clipped,
-}
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Clone, MallocSizeOf)]
-pub struct BrushSegment {
-    pub local_rect: LayoutRect,
-    pub may_need_clip_mask: bool,
-    pub edge_flags: EdgeMask,
-    pub extra_data: [f32; 4],
-    pub brush_flags: BrushFlags,
-}
-
-impl BrushSegment {
-    pub fn new(
-        local_rect: LayoutRect,
-        may_need_clip_mask: bool,
-        edge_flags: EdgeMask,
-        extra_data: [f32; 4],
-        brush_flags: BrushFlags,
-    ) -> Self {
-        Self {
-            local_rect,
-            may_need_clip_mask,
-            edge_flags,
-            extra_data,
-            brush_flags,
-        }
-    }
-
-    pub fn gpu_data(&self) -> BrushSegmentGpuData {
-        BrushSegmentGpuData {
-            local_rect: self.local_rect,
-            extra_data: self.extra_data,
-        }
-    }
-
-    pub fn write_gpu_blocks(&self, writer: &mut GpuBufferWriterF) {
-        writer.push(&self.gpu_data());
-    }
 }
 
 
@@ -546,18 +504,8 @@ impl PrimitiveInstance {
     }
 }
 
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[derive(Debug)]
-pub struct BrushSegmentation {
-    pub gpu_data: GpuBufferAddress,
-    pub segments_range: SegmentsRange,
-}
-
 pub type GlyphKeyStorage = storage::Storage<GlyphKey>;
-pub type SegmentStorage = storage::Storage<BrushSegment>;
-pub type SegmentsRange = storage::Range<BrushSegment>;
-pub type SegmentInstanceStorage = storage::Storage<BrushSegmentation>;
-pub type SegmentInstanceIndex = storage::Index<BrushSegmentation>;
+
 
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -599,23 +547,6 @@ pub struct PrimitiveFrameScratch {
 
     
     
-    
-    
-    pub segments: SegmentStorage,
-
-    
-    
-    
-    
-    pub segment_instances: SegmentInstanceStorage,
-
-    
-    
-    
-    pub image_border: storage::Storage<ImageBorderScratch>,
-
-    
-    
     pub clip_mask_instances: Vec<ClipMaskKind>,
 
     
@@ -640,9 +571,6 @@ impl Default for PrimitiveFrameScratch {
             visible_image_tiles: storage::Storage::new(0),
             text_runs: storage::Storage::new(0),
             glyph_keys: GlyphKeyStorage::new(0),
-            segments: SegmentStorage::new(0),
-            segment_instances: SegmentInstanceStorage::new(0),
-            image_border: storage::Storage::new(0),
             clip_mask_instances: Vec::new(),
             debug_items: Vec::new(),
             required_sub_graphs: FastHashSet::default(),
@@ -660,9 +588,6 @@ impl PrimitiveFrameScratch {
         self.visible_image_tiles.recycle(recycler);
         self.text_runs.recycle(recycler);
         self.glyph_keys.recycle(recycler);
-        self.segments.recycle(recycler);
-        self.segment_instances.recycle(recycler);
-        self.image_border.recycle(recycler);
         recycler.recycle_vec(&mut self.clip_mask_instances);
         recycler.recycle_vec(&mut self.debug_items);
         recycler.recycle_vec(&mut self.quad_direct_segments);
@@ -675,9 +600,6 @@ impl PrimitiveFrameScratch {
         self.visible_image_tiles.clear();
         self.text_runs.clear();
         self.glyph_keys.clear();
-        self.segments.clear();
-        self.segment_instances.clear();
-        self.image_border.clear();
 
         
         
