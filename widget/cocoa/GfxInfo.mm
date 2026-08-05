@@ -545,10 +545,7 @@ nsresult GfxInfo::GetFeatureStatusImpl(
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
         aFailureId = "FEATURE_FAILURE_METAL_ANGLE_MULTIPLE_GPUS";
       } else {
-        
-        
-        *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
-        aFailureId = "FEATURE_FAILURE_METAL_ANGLE_UNIMPLEMENTED";
+        *aStatus = nsIGfxInfo::FEATURE_STATUS_OK;
       }
       return NS_OK;
     } else if (aFeature == nsIGfxInfo::FEATURE_WEBRENDER_ANGLE_METAL) {
