@@ -7,13 +7,16 @@
 
 
 
-use crate::util::thread_guard::MainThreadGuard;
-use nserror::nsresult;
-use nsstring::nsAString;
-use xpcom::interfaces::nsIWindowsShellService;
+use nserror::{NS_ERROR_FAILURE, NS_ERROR_UNEXPECTED, nsresult};
+use nsstring::{nsAString, nsString};
+use windows::ApplicationModel::Package;
+use xpcom::interfaces::{nsIWinTaskbar, nsIWindowsShellService};
+
+use crate::util::thread_guard::{self, MainThreadGuard};
 
 mod com;
 mod ffi;
+mod shortcut;
 mod winrt;
 
 
@@ -67,8 +70,55 @@ async fn pin_app(
 }
 
 
+async fn is_pinned(aumid: &nsAString) -> Result<bool, nsresult> {
+    match Package::Current() {
+        Ok(package) => {
+            if !matches_default_aumid(&aumid)? {
+                
+                
+                return Err(NS_ERROR_FAILURE);
+            }
+
+            winrt::is_current_app_pinned(package).await.map_err(|e| {
+                log::error!(
+                    "Error checking whether the current app is pinned to the taskbar: {e:?}"
+                );
+                NS_ERROR_FAILURE
+            })
+        }
+        Err(_) => {
+            let aumid = nsString::from(aumid);
+
+            thread_guard::spawn_background_guard(
+                "shell_windows::taskbar::is_pinned",
+                async move |bg_guard| shortcut::is_app_pinned(&aumid.to_string(), bg_guard),
+            )
+            .await
+            .map_err(|e| {
+                log::error!(
+                    "Error checking whether the current app is pinned to the taskbar: {e:?}"
+                );
+                NS_ERROR_FAILURE
+            })
+        }
+    }
+}
+
+
 fn unpin_shortcut(shortcut_path: &nsAString, main_guard: MainThreadGuard) -> Result<(), nsresult> {
     com::modify_taskbar(com::PinOp::UnPin, shortcut_path, main_guard).map(|_| ())
+}
+
+
+fn matches_default_aumid(aumid: &nsAString) -> Result<bool, nsresult> {
+    let taskbar = xpcom::create_instance::<nsIWinTaskbar>(c"@mozilla.org/windows-taskbar;1")
+        .ok_or(NS_ERROR_UNEXPECTED)?;
+
+    let mut default_aumid = nsString::new();
+    
+    unsafe { taskbar.GetDefaultGroupId(&mut *default_aumid) }.to_result()?;
+
+    Ok(*aumid == default_aumid)
 }
 
 
