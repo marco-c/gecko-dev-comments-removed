@@ -2,12 +2,13 @@
 
 
 
+#include "vm/Interpreter.h"
+
 #include "gc/PublicIterators.h"
 #include "gc/Zone.h"
 #include "jit/JitRuntime.h"
 #include "jit/JitZone.h"
 #include "jit/Linker.h"
-#include "vm/Interpreter.h"
 
 #include "gc/Marking-inl.h"
 #include "gc/WeakMap-inl.h"
@@ -45,8 +46,17 @@ void JitRuntime::generateBaselineInterpreterEntryTrampoline(
       FramePointer, BaselineInterpreterEntryFrameLayout::offsetOfCalleeToken());
   masm.loadPtr(calleeTokenAddr, callee);
 
+  Address descriptorAddr(
+      FramePointer, BaselineInterpreterEntryFrameLayout::offsetOfDescriptor());
+
   
   masm.loadNumActualArgs(FramePointer, nargs);
+
+  
+  
+  Label resuming, argsCounted, argsPushed;
+  masm.branchTest32(Assembler::NonZero, descriptorAddr,
+                    Imm32(FrameDescriptor::IsResumingGenerator), &resuming);
 
   Label notFunction;
   {
@@ -75,6 +85,31 @@ void JitRuntime::generateBaselineInterpreterEntryTrampoline(
     masm.addPtr(scratch, nargs);
   }
   masm.bind(&notFunction);
+  masm.jump(&argsCounted);
+
+  
+  
+  
+  Label moduleResume;
+  masm.bind(&resuming);
+  {
+#ifdef DEBUG
+    Label argcOk;
+    masm.branchTest32(Assembler::Zero, nargs, nargs, &argcOk);
+    masm.assumeUnreachable("Resume frames have numActualArgs == 0");
+    masm.bind(&argcOk);
+#endif
+
+    masm.branchTestPtr(Assembler::NonZero, callee, Imm32(CalleeTokenScriptBit),
+                       &moduleResume);
+
+    
+    
+    masm.andPtr(Imm32(uint32_t(CalleeTokenMask)), callee, scratch);
+    masm.loadFunctionArgCount(scratch, nargs);
+    masm.addPtr(Imm32(ResumeFrameArgs::NumSlots), nargs);
+  }
+  masm.bind(&argsCounted);
 
   
   masm.alignJitStackBasedOnNArgs(nargs,  false);
@@ -98,14 +133,44 @@ void JitRuntime::generateBaselineInterpreterEntryTrampoline(
     masm.subPtr(Imm32(sizeof(Value)), argPtr);
     masm.branchPtr(Assembler::Above, argPtr, scratch, &loop);
   }
+  masm.jump(&argsPushed);
+
+  masm.bind(&moduleResume);
+  {
+    
+    
+    masm.alignJitStackBasedOnNumValues(ResumeFrameArgs::NumSlots);
+
+    
+    static_assert(sizeof(BaselineInterpreterEntryFrameLayout) ==
+                  sizeof(JitFrameLayout));
+    constexpr size_t base =
+        BaselineInterpreterEntryFrameLayout::offsetOfModuleResumeSlots();
+    for (uint32_t slot = ResumeFrameArgs::NumSlots; slot > 0; slot--) {
+      size_t offset = base + ResumeFrameArgs::offsetOfSlot(slot - 1);
+      masm.pushValue(Address(FramePointer, int32_t(offset)));
+    }
+  }
+  masm.bind(&argsPushed);
 
   
   masm.push(callee);
 
   
+  
+  
+  Label descriptorPushed, notResuming;
+  masm.branchTest32(Assembler::Zero, descriptorAddr,
+                    Imm32(FrameDescriptor::IsResumingGenerator), &notResuming);
+  masm.push(FrameDescriptor(FrameType::BaselineInterpreterEntry,  0,
+                             false,
+                             true));
+  masm.jump(&descriptorPushed);
+  masm.bind(&notResuming);
   masm.loadNumActualArgs(FramePointer, scratch);
   masm.pushFrameDescriptorForJitCall(FrameType::BaselineInterpreterEntry,
                                      scratch, scratch);
+  masm.bind(&descriptorPushed);
 
   
   uint8_t* blinterpAddr = baselineInterpreter().codeRaw();
