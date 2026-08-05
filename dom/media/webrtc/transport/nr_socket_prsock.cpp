@@ -748,6 +748,7 @@ int NrSocket::sendto(const void* msg, size_t len, int flags,
   
   
   
+  
   if (IsForbiddenAddress(to)) {
     
     _status = 0;
@@ -1279,6 +1280,15 @@ int NrUdpSocketIpc::sendto(const void* msg, size_t len, int flags,
 
   if (state_ != NR_CONNECTED) {
     return R_INTERNAL;
+  }
+
+  
+  
+  
+  
+  
+  if (IsForbiddenAddress(to)) {
+    return 0;
   }
 
   int r;
