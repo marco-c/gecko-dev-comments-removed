@@ -194,14 +194,62 @@ class ProcessStreamingContext final : public mozilla::FailureLatch {
 
   
   
+  
+  
+  struct ThreadStreamingId {
+    ProfilerThreadId mThreadId;
+    mozilla::Maybe<uint64_t> mUnregisteredPosition;
+  };
+
+  
+  
+  
+  
   ThreadStreamingContext* GetThreadStreamingContext(
-      const ProfilerThreadId& aThreadId) {
-    for (size_t i = 0; i < mTIDList.length(); ++i) {
-      if (mTIDList[i] == aThreadId) {
-        return &mThreadStreamingContextList[i];
+      const ProfilerThreadId& aThreadId, uint64_t aEntryPosition) {
+    mozilla::Maybe<size_t> index =
+        SelectStreamingContextIndex(mThreadIds, aThreadId, aEntryPosition);
+    return index ? &mThreadStreamingContextList[*index] : nullptr;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static mozilla::Maybe<size_t> SelectStreamingContextIndex(
+      const mozilla::Vector<ThreadStreamingId>& aThreadIds,
+      const ProfilerThreadId& aThreadId, uint64_t aEntryPosition) {
+    mozilla::Maybe<size_t> best;
+    for (size_t i = 0; i < aThreadIds.length(); ++i) {
+      if (aThreadIds[i].mThreadId != aThreadId) {
+        continue;
+      }
+      const mozilla::Maybe<uint64_t>& end = aThreadIds[i].mUnregisteredPosition;
+      if (end && *end < aEntryPosition) {
+        
+        continue;
+      }
+      if (!best) {
+        best = mozilla::Some(i);
+        continue;
+      }
+      
+      
+      const mozilla::Maybe<uint64_t>& bestEnd =
+          aThreadIds[*best].mUnregisteredPosition;
+      if (end && (!bestEnd || *end < *bestEnd)) {
+        best = mozilla::Some(i);
       }
     }
-    return nullptr;
+    return best;
   }
 
   const mozilla::TimeStamp& ProcessStartTime() const {
@@ -220,7 +268,8 @@ class ProcessStreamingContext final : public mozilla::FailureLatch {
  private:
   
   
-  mozilla::Vector<ProfilerThreadId> mTIDList;
+  
+  mozilla::Vector<ThreadStreamingId> mThreadIds;
   
   mozilla::Vector<ThreadStreamingContext> mThreadStreamingContextList;
 
