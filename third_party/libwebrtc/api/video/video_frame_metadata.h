@@ -68,10 +68,10 @@ class RTC_EXPORT VideoFrameMetadata {
   void SetTemporalIndex(int temporal_index);
 
   
-  
+  [[deprecated("Use GetDependencies instead")]]
   std::span<const int64_t> GetFrameDependencies() const;
   
-  
+  [[deprecated("Use SetDependencies instead")]]
   void SetFrameDependencies(std::span<const int64_t> frame_dependencies);
   std::optional<std::span<const int64_t>> GetDependencies() const;
   void SetDependencies(std::optional<std::span<const int64_t>> dependencies);
