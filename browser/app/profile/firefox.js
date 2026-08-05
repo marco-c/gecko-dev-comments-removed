@@ -1235,10 +1235,6 @@ pref("browser.ctrlTab.sortByRecentlyUsed", false);
 
 
 
-pref("browser.ctrlTab.maxPreviews", 7);
-
-
-
 
 pref("browser.bookmarks.autoExportHTML",          false);
 
