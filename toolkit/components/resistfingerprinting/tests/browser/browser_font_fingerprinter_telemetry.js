@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 const TEST_PATH = getRootDirectory(gTestPath).replace(
@@ -12,56 +11,38 @@ const TEST_PATH = getRootDirectory(gTestPath).replace(
 const TEST_PAGE_NORMAL = TEST_PATH + "empty.html";
 const TEST_PAGE_FINGERPRINTER = TEST_PATH + "font-fingerprinter.html";
 
-const TELEMETRY_FONT_FINGERPRINTING_PER_TAB = "FONT_FINGERPRINTING_PER_TAB";
+
+const KEY_NO_FINGERPRINTING = "false";
+const KEY_FINGERPRINTING = "true";
 
 async function clearTelemetry() {
-  Services.telemetry.getSnapshotForHistograms("main", true );
-  Services.telemetry
-    .getHistogramById(TELEMETRY_FONT_FINGERPRINTING_PER_TAB)
-    .clear();
-}
-
-async function getHistogram(histogram_id, bucket, checkCntFn) {
-  let histogram;
-
   
-  await TestUtils.waitForCondition(() => {
-    let histograms = Services.telemetry.getSnapshotForHistograms(
-      "main",
-      false 
-    ).parent;
-
-    histogram = histograms[histogram_id];
-
-    let checkRes = false;
-
-    if (histogram) {
-      checkRes = checkCntFn ? checkCntFn(histogram.values[bucket]) : true;
-    }
-
-    return checkRes;
-  });
-
-  return histogram.values[bucket] || 0;
+  Services.fog.testResetFOG();
 }
 
-async function checkHistogram(histogram_id, bucket, expectedCnt) {
-  let cnt = await getHistogram(histogram_id, bucket, cnt => {
-    if (cnt === undefined) {
-      cnt = 0;
-    }
-
-    return cnt == expectedCnt;
+async function getLabeledCounter(label, checkCntFn) {
+  
+  let value = 0;
+  await TestUtils.waitForCondition(() => {
+    value =
+      Glean.contentblocking.fontFingerprintingPerTab[label].testGetValue();
+    return checkCntFn ? checkCntFn(value) : value > 0;
   });
+  return value;
+}
 
-  is(cnt, expectedCnt, "There should be expected count in telemetry.");
+async function checkLabeledCounter(label, expectedCnt) {
+  let cnt = await getLabeledCounter(label, v => {
+    return (v ?? 0) == expectedCnt;
+  });
+  is(cnt, expectedCnt, "Expected count in Glean labeled counter.");
 }
 
 add_setup(async function () {
   await clearTelemetry();
 });
 
-add_task(async function test_canvas_fingerprinting_telemetry() {
+add_task(async function test_font_fingerprinting_telemetry_normal() {
   let promiseWindowDestroyed = BrowserUtils.promiseObserved(
     "window-global-destroyed"
   );
@@ -74,12 +55,12 @@ add_task(async function test_canvas_fingerprinting_telemetry() {
 
   
   
-  await checkHistogram(TELEMETRY_FONT_FINGERPRINTING_PER_TAB, 0 , 1);
+  await checkLabeledCounter(KEY_NO_FINGERPRINTING, 1);
 
   await clearTelemetry();
 });
 
-add_task(async function test_canvas_fingerprinting_telemetry() {
+add_task(async function test_font_fingerprinting_telemetry_fingerprinter() {
   let promiseWindowDestroyed = BrowserUtils.promiseObserved(
     "window-global-destroyed"
   );
@@ -91,7 +72,7 @@ add_task(async function test_canvas_fingerprinting_telemetry() {
   await promiseWindowDestroyed;
 
   
-  await checkHistogram(TELEMETRY_FONT_FINGERPRINTING_PER_TAB, 1 , 1);
+  await checkLabeledCounter(KEY_FINGERPRINTING, 1);
 
   await clearTelemetry();
 });
