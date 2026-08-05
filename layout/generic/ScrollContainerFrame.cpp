@@ -5886,19 +5886,6 @@ void ScrollContainerFrame::DidSetComputedStyle(
 
   const bool disableOverlayScrollbars =
       [&](const RefPtr<ComputedStyle>& style) {
-        if (mIsRoot) {
-#ifdef MOZ_WIDGET_ANDROID
-          const bool isOnMobileOrRDMPane = true;
-#else
-          const bool isOnMobileOrRDMPane = PresShell()->InRDMPane();
-#endif
-          
-          
-          if (isOnMobileOrRDMPane &&
-              PresContext()->IsRootContentDocumentCrossProcess()) {
-            return false;
-          }
-        }
         
         
         if (!style) {
