@@ -4,16 +4,46 @@
 
 
 
+use std::fmt::Debug;
+
 use neqo_common::Encoder;
-use neqo_crypto::AuthenticationStatus;
 use neqo_transport::StreamType;
+use nss::AuthenticationStatus;
 use test_fixture::{default_client, default_server, now};
 
-use crate::frames::{
-    FrameReader, HFrame, StreamReaderConnectionWrapper, WebTransportFrame, reader::FrameDecoder,
+use crate::{
+    Error,
+    frames::{
+        FrameReader, HFrame, StreamReaderConnectionWrapper, WebTransportFrame, reader::FrameDecoder,
+    },
 };
 
-pub fn enc_dec<T: FrameDecoder<T>>(d: &Encoder, st: &str, remaining: usize) -> T {
+fn add_extra_byte(st: &str) -> Encoder {
+    let e_in = Encoder::from_hex(st);
+    let mut dec = e_in.as_decoder();
+    let frame_type = dec.decode_varint().unwrap();
+    let len = dec.decode_varint().unwrap();
+
+    let mut e_out = Encoder::with_capacity(e_in.len() + 1);
+    
+    e_out.encode_varint(frame_type);
+    e_out.encode_varint(len + 1);
+    e_out.encode(dec.decode_remainder());
+    
+    e_out.encode_byte(b' ');
+    e_out
+}
+
+
+
+
+
+pub fn enc_dec<T: FrameDecoder<T> + Debug>(
+    d: &Encoder,
+    st: &str,
+    remaining: usize,
+    greedy: bool,
+) -> T {
     
     let d2 = Encoder::from_hex(st);
     assert_eq!(d.as_ref(), &d2.as_ref()[..d.as_ref().len()]);
@@ -57,20 +87,38 @@ pub fn enc_dec<T: FrameDecoder<T>>(d: &Encoder, st: &str, remaining: usize) -> T
     let (amount, _) = conn_c.stream_recv(stream_id, &mut buf).unwrap();
     assert_eq!(amount, remaining);
 
+    
+    
+    
+    let e_out = add_extra_byte(st);
+    conn_s.stream_send(stream_id, e_out.as_ref()).unwrap();
+    let dgram = conn_s.process_output(now()).dgram();
+    drop(conn_c.process(dgram, now()));
+
+    let res = fr.receive::<T>(
+        &mut StreamReaderConnectionWrapper::new(&mut conn_c, stream_id),
+        now(),
+    );
+    if greedy {
+        assert!(res.is_ok());
+    } else {
+        assert!(matches!(res, Err(Error::HttpFrame)), "{res:?}");
+    }
+
     frame.unwrap()
 }
 
-pub fn enc_dec_hframe(f: &HFrame, st: &str, remaining: usize) {
+pub fn enc_dec_hframe(f: &HFrame, st: &str, remaining: usize, greedy: bool) {
     let mut d = Encoder::default();
     f.encode(&mut d);
-    let frame = enc_dec::<HFrame>(&d, st, remaining);
+    let frame = enc_dec::<HFrame>(&d, st, remaining, greedy);
     assert_eq!(*f, frame);
 }
 
-pub fn enc_dec_wtframe(f: &WebTransportFrame, st: &str, remaining: usize) {
+pub fn enc_dec_wtframe(f: &WebTransportFrame, st: &str, remaining: usize, greedy: bool) {
     let mut d = Encoder::default();
     f.encode(&mut d);
-    let frame = enc_dec::<WebTransportFrame>(&d, st, remaining);
+    let frame = enc_dec::<WebTransportFrame>(&d, st, remaining, greedy);
     assert_eq!(*f, frame);
 }
 

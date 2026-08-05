@@ -13,6 +13,7 @@
 
 use std::time::Duration;
 
+use neqo_common::to_u64;
 use test_fixture::now;
 
 use super::{RTT, make_cc_newreno};
@@ -107,7 +108,7 @@ fn issue_876() {
 
     
     for p in &sent_packets[..6] {
-        cc.on_packet_sent(p, now, false);
+        cc.on_packet_sent(p, now);
     }
     assert_eq!(cc.acked_bytes(), 0);
     cwnd_is_default(&cc);
@@ -129,7 +130,7 @@ fn issue_876() {
     assert_eq!(cc.bytes_in_flight(), 5 * cc.max_datagram_size() - 2);
 
     
-    cc.on_packet_sent(&sent_packets[6], now, false);
+    cc.on_packet_sent(&sent_packets[6], now);
     assert!(!cc.recovery_packet());
     cwnd_is_halved(&cc);
     assert_eq!(cc.acked_bytes(), 0);
@@ -183,7 +184,7 @@ fn issue_1465() {
     };
     let mut send_next = |cc: &mut ClassicCongestionController<ClassicSlowStart, NewReno>, now| {
         let p = next_packet(now);
-        cc.on_packet_sent(&p, now, false);
+        cc.on_packet_sent(&p, now);
         p
     };
 
@@ -255,4 +256,38 @@ fn issue_1465() {
 #[test]
 fn new_reno_display() {
     assert_eq!(NewReno::default().to_string(), "NewReno");
+}
+
+#[test]
+fn congestion_avoidance_no_two_mss_cap() {
+    
+    let mut cc = make_cc_newreno();
+    let mut cc_stats = CongestionControlStats::default();
+    let now = now();
+    let mtu = cc.max_datagram_size();
+
+    
+    
+    
+    let cwnd0 = cc.cwnd();
+    cc.set_ssthresh(cwnd0);
+
+    
+    
+    
+    let n = 3 * (cwnd0 / mtu) + 1;
+    let mut pkts = Vec::with_capacity(n);
+    for pn in 0..to_u64(n) {
+        let p = sent::make_packet(pn, now, mtu);
+        cc.on_packet_sent(&p, now);
+        pkts.push(p);
+    }
+
+    
+    cc.on_packets_acked(&pkts, &RttEstimate::new(RTT), now + RTT, &mut cc_stats);
+
+    
+    
+    assert_eq!(cc.cwnd(), cwnd0 + 3 * mtu);
+    assert_eq!(cc.acked_bytes(), mtu);
 }

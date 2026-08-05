@@ -10,13 +10,13 @@ mod common;
 
 use std::time::{Duration, Instant};
 
-use neqo_common::{Datagram, event::Provider as _, qtrace};
-use neqo_crypto::{AuthenticationStatus, ResumptionToken};
+use neqo_common::{Datagram, event::Provider as _, expect_usize, qtrace};
 use neqo_http3::{
     Header, Http3Client, Http3ClientEvent, Http3OrWebTransportStream, Http3Parameters, Http3Server,
     Http3ServerEvent, Http3State, Priority,
 };
 use neqo_transport::{CloseReason, ConnectionParameters, Error, Output, StreamType};
+use nss::{AuthenticationStatus, ResumptionToken};
 use test_fixture::*;
 
 const RESPONSE_DATA: &[u8] = &[0x61, 0x62, 0x63];
@@ -221,7 +221,6 @@ fn response_103() {
 
 
 
-#[expect(clippy::cast_possible_truncation, reason = "OK in a test.")]
 #[test]
 fn data_writable_events_low_watermark() -> Result<(), Box<dyn std::error::Error>> {
     const STREAM_LIMIT: u64 = 5000;
@@ -286,7 +285,7 @@ fn data_writable_events_low_watermark() -> Result<(), Box<dyn std::error::Error>
     exchange_packets(&mut hconn_c, &mut hconn_s, false, None);
 
     
-    assert_eq!(request.available()?, STREAM_LIMIT as usize);
+    assert_eq!(request.available()?, expect_usize(STREAM_LIMIT));
 
     
     

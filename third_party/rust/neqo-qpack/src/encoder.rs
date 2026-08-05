@@ -54,6 +54,9 @@ pub struct Encoder {
     max_blocked_streams: u16,
     
     
+    max_tracked_streams: usize,
+    
+    
     
     
     unacked_header_blocks: HashMap<StreamId, VecDeque<HashSet<u64>>>,
@@ -73,6 +76,7 @@ impl Encoder {
             instruction_reader: DecoderInstructionReader::default(),
             local_stream: LocalStreamState::NoStream,
             max_blocked_streams: 0,
+            max_tracked_streams: qpack_settings.max_tracked_streams,
             unacked_header_blocks: HashMap::default(),
             blocked_stream_cnt: 0,
             use_huffman,
@@ -171,32 +175,40 @@ impl Encoder {
         Ok(())
     }
 
-    fn header_ack(&mut self, stream_id: StreamId) {
+    fn header_ack(&mut self, stream_id: StreamId) -> Res<()> {
         self.stats.header_acks_recv += 1;
+        
+        
+        
+        
+        
+        
+        let hb_list = self
+            .unacked_header_blocks
+            .get_mut(&stream_id)
+            .ok_or(Error::DecoderStream)?;
         let mut new_acked = self.table.get_acked_inserts_cnt();
-        if let Some(hb_list) = self.unacked_header_blocks.get_mut(&stream_id) {
-            if let Some(ref_list) = hb_list.pop_back() {
-                #[expect(
-                    clippy::iter_over_hash_type,
-                    reason = "OK to loop over unACKed blocks in an undefined order."
-                )]
-                for iter in ref_list {
-                    self.table.remove_ref(iter);
-                    if iter >= new_acked {
-                        new_acked = iter + 1;
-                    }
+        if let Some(ref_list) = hb_list.pop_back() {
+            #[expect(
+                clippy::iter_over_hash_type,
+                reason = "OK to loop over unACKed blocks in an undefined order."
+            )]
+            for iter in ref_list {
+                self.table.remove_ref(iter);
+                if iter >= new_acked {
+                    new_acked = iter + 1;
                 }
-            } else {
-                debug_assert!(false, "We should have at least one header block");
             }
-            if hb_list.is_empty() {
-                self.unacked_header_blocks.remove(&stream_id);
-            }
+        } else {
+            debug_assert!(false, "We should have at least one header block");
+        }
+        if hb_list.is_empty() {
+            self.unacked_header_blocks.remove(&stream_id);
         }
         if new_acked > self.table.get_acked_inserts_cnt() {
-            self.insert_count_instruction(new_acked - self.table.get_acked_inserts_cnt())
-                .expect("This should neve happen");
+            self.insert_count_instruction(new_acked - self.table.get_acked_inserts_cnt())?;
         }
+        Ok(())
     }
 
     fn stream_cancellation(&mut self, stream_id: StreamId) {
@@ -230,6 +242,12 @@ impl Encoder {
         qdebug!("[{self}] call instruction {instruction:?}");
         match instruction {
             DecoderInstruction::InsertCountIncrement { increment } => {
+                
+                
+                
+                if increment == 0 {
+                    return Err(Error::DecoderStream);
+                }
                 qlog::qpack_read_insert_count_increment_instruction(
                     qlog,
                     increment,
@@ -239,10 +257,7 @@ impl Encoder {
 
                 self.insert_count_instruction(increment)
             }
-            DecoderInstruction::HeaderAck { stream_id } => {
-                self.header_ack(stream_id);
-                Ok(())
-            }
+            DecoderInstruction::HeaderAck { stream_id } => self.header_ack(stream_id),
             DecoderInstruction::StreamCancellation { stream_id } => {
                 self.stream_cancellation(stream_id);
                 Ok(())
@@ -372,8 +387,7 @@ impl Encoder {
                 hb_list
                     .iter()
                     .flatten()
-                    .max()
-                    .is_some_and(|max_ref| *max_ref >= self.table.get_acked_inserts_cnt())
+                    .any(|index| *index >= self.table.get_acked_inserts_cnt())
             })
     }
 
@@ -410,8 +424,16 @@ impl Encoder {
         let mut encoded_h =
             HeaderEncoder::new(self.table.base(), self.use_huffman, self.max_entries);
 
-        let stream_is_blocker = self.is_stream_blocker(stream_id);
-        let can_block = self.blocked_stream_cnt < self.max_blocked_streams || stream_is_blocker;
+        
+        let stream_was_blocking = self.is_stream_blocker(stream_id);
+        let can_track = stream_was_blocking
+            || self.unacked_header_blocks.contains_key(&stream_id)
+            || self.unacked_header_blocks.len() < self.max_tracked_streams;
+
+        
+        
+        let can_block = stream_was_blocking
+            || (can_track && self.blocked_stream_cnt < self.max_blocked_streams);
 
         let mut ref_entries = HashSet::default();
 
@@ -420,11 +442,16 @@ impl Encoder {
             let value = iter.value();
             qtrace!("encoding {name:x?} {value:x?}");
 
+            let found = if can_track {
+                self.table.lookup(&name, value, can_block)
+            } else {
+                HeaderTable::static_lookup(&name, value)
+            };
             if let Some(LookupResult {
                 index,
                 static_table,
                 value_matches,
-            }) = self.table.lookup(&name, value, can_block)
+            }) = found
             {
                 qtrace!(
                     "[{self}] found a {} entry, value-match={value_matches}",
@@ -474,7 +501,7 @@ impl Encoder {
 
         encoded_h.encode_header_block_prefix();
 
-        if !stream_is_blocker {
+        if !stream_was_blocking {
             
             if let Some(max_ref) = ref_entries.iter().max()
                 && *max_ref >= self.table.get_acked_inserts_cnt()
@@ -554,6 +581,7 @@ fn map_stream_send_atomic_error(err: &TransportError) -> Error {
 mod tests {
     use std::time::Instant;
 
+    use neqo_common::expect_usize;
     use neqo_transport::{ConnectionParameters, StreamId, StreamType};
     use test_fixture::{
         CountingConnectionIdGenerator, DEFAULT_ALPN, default_client, default_server, handshake,
@@ -637,6 +665,7 @@ mod tests {
                 max_table_size_encoder: 1500,
                 max_table_size_decoder: 0,
                 max_blocked_streams: 0,
+                max_tracked_streams: 4096,
             },
             huffman,
         );
@@ -679,11 +708,9 @@ mod tests {
     const CAP_INSTRUCTION_1000: &[u8] = &[0x02, 0x3f, 0xc9, 0x07];
     const CAP_INSTRUCTION_1500: &[u8] = &[0x02, 0x3f, 0xbd, 0x0b];
 
-    const HEADER_CONTENT_LENGTH: &[u8] = &[
-        0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68,
-    ];
-    const VALUE_1: &[u8] = &[0x31, 0x32, 0x33, 0x34];
-    const VALUE_2: &[u8] = &[0x31, 0x32, 0x33, 0x34, 0x35];
+    const HEADER_CONTENT_LENGTH: &[u8] = b"content-length";
+    const VALUE_1: &[u8] = b"1234";
+    const VALUE_2: &[u8] = b"12345";
 
     
     const HEADER_CONTENT_LENGTH_VALUE_1_NAME_LITERAL: &[u8] = &[
@@ -1006,6 +1033,51 @@ mod tests {
     #[test]
     fn stream_canceled() {
         test_insertion_blocked_on_waiting_for_header_ack_or_stream_cancel(1);
+    }
+
+    
+    
+    
+    
+    #[test]
+    fn insert_count_increment_zero_is_rejected() {
+        let mut encoder = connect(false);
+
+        
+        encoder
+            .peer_conn
+            .stream_send(encoder.recv_stream_id, &[0x00])
+            .unwrap();
+        let out = encoder.peer_conn.process_output(now());
+        encoder.conn.process_input(out.dgram().unwrap(), now());
+        assert_eq!(
+            encoder
+                .encoder
+                .read_instructions(&mut encoder.conn, encoder.recv_stream_id, now()),
+            Err(Error::DecoderStream)
+        );
+    }
+
+    
+    
+    #[test]
+    fn header_ack_without_outstanding_block_is_rejected() {
+        let mut encoder = connect(false);
+
+        
+        
+        encoder
+            .peer_conn
+            .stream_send(encoder.recv_stream_id, HEADER_ACK_STREAM_ID_1)
+            .unwrap();
+        let out = encoder.peer_conn.process_output(now());
+        encoder.conn.process_input(out.dgram().unwrap(), now());
+        assert_eq!(
+            encoder
+                .encoder
+                .read_instructions(&mut encoder.conn, encoder.recv_stream_id, now()),
+            Err(Error::DecoderStream)
+        );
     }
 
     fn assert_is_index_to_dynamic(buf: &[u8]) {
@@ -1698,5 +1770,109 @@ mod tests {
         recv_instruction(&mut encoder, STREAM_CANCELED_ID_1, now());
 
         recv_instruction(&mut encoder, &[0x01], now());
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[test]
+    fn unacked_header_blocks_are_capped() {
+        const CAP: u64 = 5;
+
+        let mut encoder = connect(false);
+
+        
+        encoder.encoder.set_max_blocked_streams(0).unwrap();
+        encoder.encoder.max_tracked_streams = expect_usize(CAP);
+        assert!(encoder.encoder.set_max_capacity(200).is_ok());
+        encoder.send_instructions(CAP_INSTRUCTION_200);
+
+        encoder.insert(
+            HEADER_CONTENT_LENGTH,
+            VALUE_1,
+            HEADER_CONTENT_LENGTH_VALUE_1_NAME_LITERAL,
+        );
+        recv_instruction(&mut encoder, &[0x01], now());
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 0);
+        assert_eq!(encoder.encoder.unacked_header_blocks.len(), 0);
+
+        
+        
+        
+        for i in 0..CAP + 10 {
+            let buf = encoder.encoder.encode_header_block(
+                &mut encoder.conn,
+                &[Header::new(
+                    String::from_utf8_lossy(HEADER_CONTENT_LENGTH),
+                    VALUE_1,
+                )],
+                StreamId::new(i * 4),
+            );
+            
+            if i < CAP {
+                assert_is_index_to_dynamic(&buf);
+            } else {
+                assert_is_index_to_static_name_only(&buf);
+            }
+        }
+
+        
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 0);
+        assert_eq!(
+            encoder.encoder.unacked_header_blocks.len(),
+            expect_usize(CAP)
+        );
+    }
+
+    
+    #[test]
+    fn tracked_stream_bypasses_tracked_cap() {
+        const CAP: usize = 1;
+
+        let mut encoder = connect(false);
+
+        encoder.encoder.set_max_blocked_streams(10).unwrap();
+        encoder.encoder.max_tracked_streams = CAP;
+        assert!(encoder.encoder.set_max_capacity(200).is_ok());
+        encoder.send_instructions(CAP_INSTRUCTION_200);
+
+        
+        
+        let buf = encoder.encoder.encode_header_block(
+            &mut encoder.conn,
+            &[Header::new("name1", "value1")],
+            STREAM_1,
+        );
+        assert_is_index_to_dynamic_post(&buf);
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
+        assert_eq!(encoder.encoder.unacked_header_blocks.len(), CAP);
+
+        
+        let buf = encoder.encoder.encode_header_block(
+            &mut encoder.conn,
+            &[Header::new("name2", "value2")],
+            STREAM_2,
+        );
+        assert_is_literal_value_literal_name(&buf);
+        assert_eq!(encoder.encoder.unacked_header_blocks.len(), CAP);
+
+        
+        let buf = encoder.encoder.encode_header_block(
+            &mut encoder.conn,
+            &[Header::new("name3", "value3")],
+            STREAM_1,
+        );
+        assert_is_index_to_dynamic_post(&buf);
+        assert_eq!(encoder.encoder.unacked_header_blocks.len(), CAP);
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
     }
 }

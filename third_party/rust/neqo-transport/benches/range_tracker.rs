@@ -11,41 +11,38 @@
 
 use std::hint::black_box;
 
-use criterion::{Criterion, criterion_group, criterion_main};
+use criterion::{BatchSize, Criterion, criterion_group, criterion_main};
+use neqo_common::to_u64;
 use neqo_transport::send_stream::RangeTracker;
 
-const CHUNK: u64 = 1000;
-const END: u64 = 100_000;
-fn build_coalesce(len: u64) -> RangeTracker {
+const CHUNK: usize = 1000;
+
+fn build_coalesce(count: usize) -> RangeTracker {
     let mut used = RangeTracker::default();
-    let chunk = usize::try_from(CHUNK).expect("should fit");
-    used.mark_acked(0, chunk);
-    used.mark_sent(CHUNK, usize::try_from(END).expect("should fit"));
+    used.mark_acked(0, CHUNK); 
     
-    for i in 2..=len {
-        
-        used.mark_acked(i * CHUNK, chunk);
+    used.mark_sent(to_u64(CHUNK), 2 * count * CHUNK);
+    
+    
+    for i in 1..=count {
+        used.mark_acked(to_u64(2 * i * CHUNK), CHUNK);
     }
     used
 }
 
-fn coalesce(c: &mut Criterion, count: u64) {
-    let chunk = usize::try_from(CHUNK).expect("should fit");
-    c.bench_function(
-        &format!("coalesce_acked_from_zero {count}+1 entries"),
-        |b| {
-            b.iter_batched_ref(
-                || build_coalesce(count),
-                black_box(|used: &mut RangeTracker| {
-                    used.mark_acked(CHUNK, chunk);
-                    let tail = (count + 1) * CHUNK;
-                    used.mark_sent(tail, chunk);
-                    used.mark_acked(tail, chunk);
-                }),
-                criterion::BatchSize::SmallInput,
-            );
-        },
-    );
+fn coalesce(c: &mut Criterion, count: usize) {
+    c.bench_function(&format!("coalesce_acked_from_zero {count} ranges"), |b| {
+        b.iter_batched_ref(
+            || build_coalesce(count),
+            
+            
+            |used: &mut RangeTracker| {
+                used.mark_acked(to_u64(CHUNK), 2 * count * CHUNK);
+                black_box(used);
+            },
+            BatchSize::SmallInput,
+        );
+    });
 }
 
 fn benchmark_coalesce(c: &mut Criterion) {
@@ -55,5 +52,110 @@ fn benchmark_coalesce(c: &mut Criterion) {
     coalesce(c, 1000);
 }
 
-criterion_group!(benches, benchmark_coalesce);
+
+
+fn mark_sent_sequential(c: &mut Criterion) {
+    const SENDS: usize = 1_000;
+    c.bench_function("RangeTracker::mark_sent sequential", |b| {
+        b.iter_batched(
+            RangeTracker::default,
+            |mut rt| {
+                for i in 0..SENDS {
+                    rt.mark_sent(to_u64(i * CHUNK), CHUNK);
+                }
+                black_box(rt)
+            },
+            BatchSize::SmallInput,
+        );
+    });
+}
+
+
+
+fn mark_sent_retransmit(c: &mut Criterion) {
+    const SENDS: usize = 500;
+    c.bench_function("RangeTracker::mark_sent retransmit", |b| {
+        b.iter_batched(
+            || {
+                let mut rt = RangeTracker::default();
+                for i in 0..SENDS {
+                    rt.mark_sent(to_u64(i * CHUNK), CHUNK);
+                }
+                
+                for i in (0..SENDS).step_by(10) {
+                    rt.mark_as_lost(to_u64(i * CHUNK), CHUNK);
+                }
+                rt
+            },
+            |mut rt| {
+                
+                for i in (0..SENDS).step_by(10) {
+                    rt.mark_sent(to_u64(i * CHUNK), CHUNK);
+                }
+                black_box(rt)
+            },
+            BatchSize::SmallInput,
+        );
+    });
+}
+
+
+
+
+fn mark_acked_gap_empty_covered(c: &mut Criterion) {
+    const SENDS: usize = 500;
+    c.bench_function("RangeTracker::mark_acked gap-ack empty-covered", |b| {
+        b.iter_batched(
+            || {
+                let mut rt = RangeTracker::default();
+                
+                rt.mark_sent(0, SENDS * CHUNK);
+                rt
+            },
+            |mut rt| {
+                
+                for i in (1..SENDS).step_by(2) {
+                    rt.mark_acked(to_u64(i * CHUNK), CHUNK);
+                }
+                black_box(rt)
+            },
+            BatchSize::SmallInput,
+        );
+    });
+}
+
+
+
+fn mark_acked_fragmented(c: &mut Criterion) {
+    const SENDS: usize = 500;
+    c.bench_function("RangeTracker::mark_acked fragmented", |b| {
+        b.iter_batched(
+            || {
+                let mut rt = RangeTracker::default();
+                
+                for i in (0..SENDS).step_by(2) {
+                    rt.mark_sent(to_u64(i * CHUNK), CHUNK);
+                }
+                rt
+            },
+            |mut rt| {
+                
+                for i in (0..SENDS).step_by(2) {
+                    rt.mark_acked(to_u64(i * CHUNK), CHUNK);
+                }
+                black_box(rt)
+            },
+            BatchSize::SmallInput,
+        );
+    });
+}
+
+criterion_group!(
+    benches,
+    benchmark_coalesce,
+    mark_sent_sequential,
+    mark_sent_retransmit,
+    mark_acked_gap_empty_covered,
+    mark_acked_fragmented,
+);
 criterion_main!(benches);

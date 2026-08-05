@@ -56,8 +56,11 @@ impl NewStreamType {
                 
                 
                 
-                if <HFrame as FrameDecoder<HFrame>>::is_known_type(HFrameType(stream_type))
-                    && HFrameType(stream_type) != HFrameType::HEADERS
+                let frame_type = HFrameType(stream_type);
+                
+                <HFrame as FrameDecoder<HFrame>>::frame_type_allowed(frame_type)?;
+                if <HFrame as FrameDecoder<HFrame>>::is_known_type(frame_type)
+                    && frame_type != HFrameType::HEADERS
                 {
                     Err(Error::HttpFrame)
                 } else {
@@ -125,9 +128,8 @@ impl NewStreamHeadReader {
                     }
                 }
             }
-        } else {
-            Ok((None, false))
         }
+        Ok((None, false))
     }
 
     pub fn get_type(&mut self, conn: &mut Connection) -> Res<Option<NewStreamType>> {
@@ -444,6 +446,22 @@ mod tests {
             &Err(Error::HttpFrame),
             true,
         );
+    }
+
+    #[test]
+    fn decode_stream_reserved_frame_type() {
+        
+        
+        
+        for reserved in HFrameType::RESERVED {
+            let mut t = Test::new(StreamType::BiDi, Role::Server);
+            t.decode(
+                &[u64::from(*reserved)],
+                false,
+                &Err(Error::HttpFrameUnexpected),
+                true,
+            );
+        }
     }
 
     #[test]

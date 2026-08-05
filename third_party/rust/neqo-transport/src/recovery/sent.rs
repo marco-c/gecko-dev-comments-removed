@@ -7,9 +7,8 @@
 
 
 use std::{
-    collections::BTreeMap,
+    collections::VecDeque,
     ops::RangeInclusive,
-    rc::Rc,
     time::{Duration, Instant},
 };
 
@@ -36,7 +35,7 @@ pub struct Packet {
     ack_eliciting: bool,
     time_sent: Instant,
     primary_path: bool,
-    tokens: Rc<recovery::Tokens>,
+    tokens: recovery::Tokens,
 
     loss_info: Option<LossInfo>,
     
@@ -47,7 +46,7 @@ pub struct Packet {
 
 impl Packet {
     #[must_use]
-    pub fn new(
+    pub const fn new(
         pt: packet::Type,
         pn: packet::Number,
         time_sent: Instant,
@@ -61,7 +60,7 @@ impl Packet {
             time_sent,
             ack_eliciting,
             primary_path: true,
-            tokens: Rc::new(tokens),
+            tokens,
             loss_info: None,
             pto: false,
             len,
@@ -127,8 +126,8 @@ impl Packet {
 
     
     #[must_use]
-    pub fn tokens(&self) -> &recovery::Tokens {
-        self.tokens.as_ref()
+    pub const fn tokens(&self) -> &recovery::Tokens {
+        &self.tokens
     }
 
     
@@ -214,7 +213,7 @@ impl Packet {
 #[derive(Debug, Default)]
 pub struct Packets {
     
-    packets: BTreeMap<u64, Packet>,
+    packets: VecDeque<Packet>,
 }
 
 impl Packets {
@@ -229,11 +228,15 @@ impl Packets {
     }
 
     pub fn track(&mut self, packet: Packet) {
-        self.packets.insert(packet.pn, packet);
+        debug_assert!(
+            self.packets.back().is_none_or(|last| last.pn < packet.pn),
+            "packet numbers must be monotonically increasing"
+        );
+        self.packets.push_back(packet);
     }
 
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Packet> {
-        self.packets.values_mut()
+        self.packets.iter_mut()
     }
 
     
@@ -243,100 +246,58 @@ impl Packets {
     pub fn take_ranges<R>(&mut self, acked_ranges: R) -> Vec<Packet>
     where
         R: IntoIterator<Item = RangeInclusive<packet::Number>>,
-        R::IntoIter: ExactSizeIterator,
     {
         let mut result = Vec::new();
 
         
         
-        let mut packets = std::mem::take(&mut self.packets);
-
+        
+        
+        
+        
         let mut previous_range_start: Option<packet::Number> = None;
 
         for range in acked_ranges {
-            
-            
-            
-            let after_acked_range = packets.split_off(&(*range.end() + 1));
-
-            
-            
-            
-            let acked_range = packets.split_off(range.start());
-
-            
-            
-            
-            
-            
-            
-            debug_assert!(previous_range_start.is_none_or(|s| s > *range.end()));
+            debug_assert!(
+                previous_range_start.is_none_or(|s| s > *range.end()),
+                "ACK ranges must be in descending order per RFC 9000 \u{a7}19.3.1"
+            );
             previous_range_start = Some(*range.start());
 
-            
-            
-            
-            
-            if self.packets.is_empty() {
-                
-                
-                self.packets = after_acked_range;
-            } else {
-                
-                
-                self.packets.extend(after_acked_range);
+            let start_idx = self.packets.partition_point(|p| p.pn < *range.start());
+            let end_idx = self.packets.partition_point(|p| p.pn <= *range.end());
+            if start_idx == end_idx {
+                continue;
             }
-
-            
-            result.extend(acked_range.into_values().rev());
+            result.extend(self.packets.drain(start_idx..end_idx).rev());
         }
-
-        
-        
-        
-        
-        
-        self.packets.extend(packets);
-
         result
     }
 
     
     pub fn drain_all(&mut self) -> impl Iterator<Item = Packet> + use<> {
-        std::mem::take(&mut self.packets).into_values()
+        std::mem::take(&mut self.packets).into_iter()
     }
 
     
     
     pub fn remove_expired(&mut self, now: Instant, cd: Duration) -> usize {
-        let mut it = self.packets.iter();
-        
-        if it.next().is_some_and(|(_, p)| p.expired(now, cd)) {
-            
-            let to_remove = if let Some(first_keep) =
-                it.find_map(|(i, p)| if p.expired(now, cd) { None } else { Some(*i) })
-            {
-                
-                let keep = self.packets.split_off(&first_keep);
-                std::mem::replace(&mut self.packets, keep)
-            } else {
-                
-                std::mem::take(&mut self.packets)
-            };
-            to_remove
-                .into_values()
-                .filter(Packet::ack_eliciting)
-                .count()
-        } else {
-            0
+        if self.packets.front().is_none_or(|p| !p.expired(now, cd)) {
+            return 0;
         }
+        let keep_from = self.packets.partition_point(|p| p.expired(now, cd));
+        debug_assert!(self.packets.range(keep_from..).all(|p| !p.expired(now, cd)));
+        self.packets
+            .drain(..keep_from)
+            .filter(Packet::ack_eliciting)
+            .count()
     }
 }
 
 
 #[cfg(test)]
 #[must_use]
-pub fn make_packet(pn: packet::Number, sent_time: Instant, len: usize) -> Packet {
+pub const fn make_packet(pn: packet::Number, sent_time: Instant, len: usize) -> Packet {
     Packet::new(
         packet::Type::Short,
         pn,
@@ -349,6 +310,11 @@ pub fn make_packet(pn: packet::Number, sent_time: Instant, len: usize) -> Packet
 
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
+#[allow(
+    clippy::allow_attributes,
+    clippy::single_range_in_vec_init,
+    reason = "TODO: false positive in clippy 1.98-nightly; re-check when bumping MSRV"
+)]
 mod tests {
     use std::{
         cell::OnceCell,
@@ -403,13 +369,11 @@ mod tests {
     }
 
     fn remove_one(pkts: &mut Packets, idx: packet::Number) {
-        assert_eq!(pkts.len(), 3);
         let store = pkts.take_ranges([idx..=idx]);
         let mut it = store.into_iter();
         assert_eq!(idx, it.next().unwrap().pn());
         assert!(it.next().is_none());
         drop(it);
-        assert_eq!(pkts.len(), 2);
     }
 
     fn assert_zero_and_two<'a, 'b: 'a>(
@@ -421,28 +385,14 @@ mod tests {
     }
 
     #[test]
-    fn iterate_skipped() {
+    fn iterate() {
         let mut pkts = pkts();
-        for (i, p) in pkts.packets.values().enumerate() {
+        for (i, p) in pkts.iter_mut().enumerate() {
             assert_eq!(i, usize::try_from(p.pn).unwrap());
         }
         remove_one(&mut pkts, 1);
 
-        
         assert_zero_and_two(pkts.iter_mut());
-
-        {
-            
-            let store = pkts.take_ranges([0..=2]);
-            let mut it = store.into_iter();
-            assert_eq!(it.next().unwrap().pn(), 2);
-            assert_eq!(it.next().unwrap().pn(), 0);
-            assert!(it.next().is_none());
-        };
-
-        
-        assert_eq!(pkts.packets.len(), 0);
-        assert_eq!(pkts.len(), 0);
     }
 
     #[test]
@@ -481,6 +431,32 @@ mod tests {
         let mut pkts = Packets::default();
         pkts.track(pkt(0));
         assert!(pkts.take_ranges([1..=1]).is_empty());
+    }
+
+    
+    
+    
+    
+    #[test]
+    fn take_ranges_multi() {
+        
+        let mut pkts = Packets::default();
+        for i in 0..6 {
+            pkts.track(pkt(i));
+        }
+        
+        let acked = pkts.take_ranges([4..=5, 1..=2]);
+
+        
+        let pns: Vec<u32> = acked.iter().map(|p| u32::try_from(p.pn).unwrap()).collect();
+        assert_eq!(pns, [5, 4, 2, 1]);
+
+        
+        let remaining: Vec<u32> = pkts
+            .iter_mut()
+            .map(|p| u32::try_from(p.pn).unwrap())
+            .collect();
+        assert_eq!(remaining, [0, 3]);
     }
 
     #[test]

@@ -6,7 +6,7 @@
 
 use std::{cmp::max, collections::HashMap, fmt::Debug};
 
-use neqo_common::{event::Provider as _, qdebug};
+use neqo_common::{Role, event::Provider as _, qdebug, to_u64};
 use test_fixture::now;
 
 use super::{
@@ -20,7 +20,7 @@ use crate::{
     frame::FrameType,
     packet,
     send_stream::{self, OrderGroup},
-    streams::{SendOrder, StreamOrder},
+    streams::SendOrder,
     tparams::{TransportParameter, TransportParameterId::*},
 };
 
@@ -156,34 +156,37 @@ fn sendorder_test(order_of_sendorder: &[Option<SendOrder>]) {
     }
     assert_eq!(*server.state(), State::Confirmed);
 
-    let stream_ids = server
-        .events()
-        .filter_map(|evt| match evt {
-            ConnectionEvent::RecvStreamReadable { stream_id, .. } => Some(stream_id),
-            _ => None,
-        })
-        .enumerate()
-        .map(|(a, b)| (b, a))
-        .collect::<HashMap<_, _>>();
+    
+    let mut reception_order = Vec::new();
+    for evt in server.events() {
+        if let ConnectionEvent::RecvStreamReadable { stream_id } = evt
+            && !reception_order.contains(&stream_id)
+        {
+            reception_order.push(stream_id);
+        }
+    }
+
+    
+    assert_eq!(reception_order.len(), ordered.len());
 
     
     
-
     
     
     
-    ordered.sort_unstable_by_key(|(stream_id, sendorder)| {
-        (
-            StreamOrder {
-                sendorder: *sendorder,
-            },
-            stream_ids[stream_id],
-        )
-    });
-    
-    
-    for (i, (stream_id, _sendorder)) in ordered.iter().enumerate() {
-        assert_eq!(i, stream_ids[stream_id]);
+    let sendorder_of: HashMap<StreamId, Option<SendOrder>> = ordered.iter().copied().collect();
+    let mut prev_order: Option<SendOrder> = None;
+    for stream_id in &reception_order {
+        let Some(order) = sendorder_of[stream_id] else {
+            continue;
+        };
+        if let Some(prev) = prev_order {
+            assert!(
+                order <= prev,
+                "stream with sendOrder {order} delivered after higher sendOrder {prev}"
+            );
+        }
+        prev_order = Some(order);
     }
 }
 
@@ -345,9 +348,7 @@ fn sending_max_data() {
     const SMALL_MAX_DATA: usize = 2048;
 
     let mut client = default_client();
-    let mut server = new_server(
-        ConnectionParameters::default().max_data(u64::try_from(SMALL_MAX_DATA).unwrap()),
-    );
+    let mut server = new_server(ConnectionParameters::default().max_data(to_u64(SMALL_MAX_DATA)));
 
     connect(&mut client, &mut server);
 
@@ -394,7 +395,7 @@ fn max_data() {
     server
         .set_local_tparam(
             InitialMaxData,
-            TransportParameter::Integer(u64::try_from(SMALL_MAX_DATA).unwrap()),
+            TransportParameter::Integer(to_u64(SMALL_MAX_DATA)),
         )
         .unwrap();
 
@@ -453,9 +454,7 @@ fn exceed_max_data() {
     const SMALL_MAX_DATA: usize = 1024;
 
     let mut client = default_client();
-    let mut server = new_server(
-        ConnectionParameters::default().max_data(u64::try_from(SMALL_MAX_DATA).unwrap()),
-    );
+    let mut server = new_server(ConnectionParameters::default().max_data(to_u64(SMALL_MAX_DATA)));
 
     connect(&mut client, &mut server);
 
@@ -562,6 +561,48 @@ fn illegal_stream_related_frames() {
             
             test_with_illegal_frame(&[frame_type.into(), stream_id, 0, 0]);
         }
+    }
+}
+
+#[test]
+
+
+
+fn wrong_directional_stream_frames() {
+    
+    
+    fn client_rejects(frame_type: FrameType, stream_creator: Role) {
+        let mut client = default_client();
+        let mut server = default_server();
+        connect(&mut client, &mut server);
+        let creator = match stream_creator {
+            Role::Client => &mut client,
+            Role::Server => &mut server,
+        };
+        let stream_id = creator.stream_create(StreamType::UniDi).unwrap().as_u64();
+        
+        let dgram = send_with_extra(
+            &mut server,
+            Writer(vec![frame_type.into(), stream_id, 0, 0, 0]),
+            now(),
+        );
+        client.process_input(dgram, now());
+        assert_error(&client, &CloseReason::Transport(Error::StreamState));
+    }
+
+    
+    for frame_type in [
+        FrameType::ResetStream,
+        FrameType::ResetStreamAt,
+        FrameType::Stream,
+        FrameType::StreamDataBlocked,
+    ] {
+        client_rejects(frame_type, Role::Client);
+    }
+
+    
+    for frame_type in [FrameType::StopSending, FrameType::MaxStreamData] {
+        client_rejects(frame_type, Role::Server);
     }
 }
 
@@ -1012,7 +1053,7 @@ fn change_flow_control(stream_type: StreamType, new_fc: u64) {
     
     let stream_id = server.stream_create(stream_type).unwrap();
     let written1 = server.stream_send(stream_id, &[0x0; 10000]).unwrap();
-    assert_eq!(u64::try_from(written1).unwrap(), RECV_BUFFER_START);
+    assert_eq!(to_u64(written1), RECV_BUFFER_START);
 
     
     let out = server.process_output(now());
@@ -1030,7 +1071,7 @@ fn change_flow_control(stream_type: StreamType, new_fc: u64) {
     
     let written2 = server.stream_send(stream_id, &[0x0; 10000]).unwrap();
     if RECV_BUFFER_START < new_fc {
-        assert_eq!(u64::try_from(written2).unwrap(), new_fc - RECV_BUFFER_START);
+        assert_eq!(to_u64(written2), new_fc - RECV_BUFFER_START);
     } else {
         assert_eq!(written2, 0);
     }
@@ -1043,13 +1084,13 @@ fn change_flow_control(stream_type: StreamType, new_fc: u64) {
     
     let mut buf = [0x0; 10000];
     let (read, _) = client.stream_recv(stream_id, &mut buf).unwrap();
-    assert_eq!(u64::try_from(read).unwrap(), max(RECV_BUFFER_START, new_fc));
+    assert_eq!(to_u64(read), max(RECV_BUFFER_START, new_fc));
 
     let out4 = client.process_output(now());
     drop(server.process(out4.dgram(), now()));
 
     let written3 = server.stream_send(stream_id, &[0x0; 10000]).unwrap();
-    assert_eq!(u64::try_from(written3).unwrap(), new_fc);
+    assert_eq!(to_u64(written3), new_fc);
 }
 
 #[test]
@@ -1069,9 +1110,7 @@ fn session_flow_control_stop_sending_state_recv() {
     const SMALL_MAX_DATA: usize = 1024;
 
     let mut client = default_client();
-    let mut server = new_server(
-        ConnectionParameters::default().max_data(u64::try_from(SMALL_MAX_DATA).unwrap()),
-    );
+    let mut server = new_server(ConnectionParameters::default().max_data(to_u64(SMALL_MAX_DATA)));
 
     connect(&mut client, &mut server);
 
@@ -1118,9 +1157,7 @@ fn session_flow_control_stop_sending_state_size_known() {
     const SMALL_MAX_DATA: usize = 1024;
 
     let mut client = default_client();
-    let mut server = new_server(
-        ConnectionParameters::default().max_data(u64::try_from(SMALL_MAX_DATA).unwrap()),
-    );
+    let mut server = new_server(ConnectionParameters::default().max_data(to_u64(SMALL_MAX_DATA)));
 
     connect(&mut client, &mut server);
 
@@ -1169,9 +1206,7 @@ fn session_flow_control_stop_sending_state_data_recvd() {
     const SMALL_MAX_DATA: usize = 1024;
 
     let mut client = default_client();
-    let mut server = new_server(
-        ConnectionParameters::default().max_data(u64::try_from(SMALL_MAX_DATA).unwrap()),
-    );
+    let mut server = new_server(ConnectionParameters::default().max_data(to_u64(SMALL_MAX_DATA)));
 
     connect(&mut client, &mut server);
 
@@ -1214,9 +1249,7 @@ fn session_flow_control_affects_all_streams() {
     const SMALL_MAX_DATA: usize = 1024;
 
     let mut client = default_client();
-    let mut server = new_server(
-        ConnectionParameters::default().max_data(u64::try_from(SMALL_MAX_DATA).unwrap()),
-    );
+    let mut server = new_server(ConnectionParameters::default().max_data(to_u64(SMALL_MAX_DATA)));
 
     connect(&mut client, &mut server);
 

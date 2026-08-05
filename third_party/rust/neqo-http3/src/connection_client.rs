@@ -15,21 +15,24 @@ use std::{
 };
 
 use neqo_common::{
-    Datagram, Decoder, Encoder, Header, MessageType, Role, event::Provider as EventProvider, hex,
-    hex_with_len, qdebug, qinfo, qlog::Qlog, qtrace, qwarn,
+    Datagram, Decoder, Encoder, Header, MessageType, Role,
+    event::Provider as EventProvider,
+    hex::{Hex, HexWithLen},
+    qdebug, qinfo,
+    qlog::Qlog,
+    qtrace, qwarn,
 };
-use neqo_crypto::{AuthenticationStatus, ResumptionToken, SecretAgentInfo, agent::CertificateInfo};
 use neqo_qpack::Stats as QpackStats;
 use neqo_transport::{
-    AppError, Connection, ConnectionEvent, ConnectionId, ConnectionIdGenerator, DatagramTracking,
-    Output, OutputBatch, Stats as TransportStats, StreamId, StreamType, Version, ZeroRttState,
-    recv_stream, send_stream, streams::SendOrder,
+    AppError, Connection, ConnectionEvent, ConnectionId, ConnectionIdGenerator, Output,
+    OutputBatch, Stats as TransportStats, StreamId, StreamType, Version, ZeroRttState,
 };
+use nss::{AuthenticationStatus, ResumptionToken, SecretAgentInfo, agent::CertificateInfo};
 
 use crate::{
     Error, Http3Parameters, Http3StreamType, NewStreamType, Priority, PriorityHandler, PushId,
-    ReceiveOutput, Res,
-    client_events::{Http3ClientEvent, Http3ClientEvents},
+    ReceiveOutput, Res, SendGroupId,
+    client_events::{Http3ClientEvent, Http3ClientEvents, WebTransportEvent},
     connection::{Http3Connection, Http3State, RequestDescription},
     features::ConnectType,
     frames::HFrame,
@@ -55,10 +58,6 @@ const fn alpn_from_quic_version(version: Version) -> &'static str {
         Version::Draft29 => "h3-29",
     }
 }
-
-
-
-
 
 
 
@@ -339,6 +338,28 @@ impl Http3Client {
         }
     }
 
+    pub(crate) const fn connection(&self) -> &Connection {
+        &self.conn
+    }
+
+    pub(crate) const fn connection_mut(&mut self) -> &mut Connection {
+        &mut self.conn
+    }
+
+    pub(crate) const fn handler(&self) -> &Http3Connection {
+        &self.base_handler
+    }
+
+    pub(crate) const fn connection_and_handler(
+        &mut self,
+    ) -> (&mut Connection, &mut Http3Connection) {
+        (&mut self.conn, &mut self.base_handler)
+    }
+
+    pub(crate) const fn client_events(&self) -> &Http3ClientEvents {
+        &self.events
+    }
+
     
     #[must_use]
     pub fn state(&self) -> Http3State {
@@ -420,7 +441,7 @@ impl Http3Client {
         let Some(settings_slice) = dec.decode_vvec() else {
             return Err(Error::InvalidResumptionToken);
         };
-        qtrace!("[{self}]   settings {}", hex_with_len(settings_slice));
+        qtrace!("[{self}]   settings {}", HexWithLen::new(settings_slice));
         let mut dec_settings = Decoder::from(settings_slice);
         let mut settings = HSettings::default();
         Error::map_error(
@@ -428,7 +449,7 @@ impl Http3Client {
             Error::InvalidResumptionToken,
         )?;
         let tok = dec.decode_remainder();
-        qtrace!("[{self}]   Transport token {}", hex(tok));
+        qtrace!("[{self}]   Transport token {}", Hex::new(tok));
         self.conn.enable_resumption(now, tok)?;
         if self.conn.state().closed() {
             let state = self.conn.state().clone();
@@ -587,7 +608,7 @@ impl Http3Client {
     
     
     pub fn cancel_fetch(&mut self, stream_id: StreamId, error: AppError) -> Res<()> {
-        qinfo!("[{self}] reset_stream {stream_id} error={error}");
+        qdebug!("[{self}] reset_stream {stream_id} error={error}");
         self.base_handler
             .cancel_fetch(stream_id, error, &mut self.conn)
     }
@@ -598,7 +619,6 @@ impl Http3Client {
     
     
     pub fn stream_close_send(&mut self, stream_id: StreamId, now: Instant) -> Res<()> {
-        qdebug!("[{self}] Close sending side stream={stream_id}");
         self.base_handler
             .stream_close_send(&mut self.conn, stream_id, now)
     }
@@ -607,7 +627,6 @@ impl Http3Client {
     
     
     pub fn stream_reset_send(&mut self, stream_id: StreamId, error: AppError) -> Res<()> {
-        qinfo!("[{self}] stream_reset_send {stream_id} error={error}");
         self.base_handler
             .stream_reset_send(&mut self.conn, stream_id, error)
     }
@@ -615,8 +634,20 @@ impl Http3Client {
     
     
     
+    
+    
+    
+    
+    
+    pub fn stream_commit(&mut self, stream_id: StreamId, now: Instant) -> Res<()> {
+        self.base_handler
+            .stream_commit(&mut self.conn, stream_id, now)
+    }
+
+    
+    
+    
     pub fn stream_stop_sending(&mut self, stream_id: StreamId, error: AppError) -> Res<()> {
-        qinfo!("[{self}] stream_stop_sending {stream_id} error={error}");
         self.base_handler
             .stream_stop_sending(&mut self.conn, stream_id, error)
     }
@@ -703,238 +734,6 @@ impl Http3Client {
             .ok_or(Error::InvalidStreamId)?;
         self.conn.stream_keep_alive(stream_id, true)?;
         self.read_data(now, stream_id, buf)
-    }
-
-    
-
-    
-    
-    
-    
-    pub fn webtransport_create_session<T>(
-        &mut self,
-        now: Instant,
-        target: T,
-        headers: &[Header],
-    ) -> Res<StreamId>
-    where
-        T: RequestTarget,
-    {
-        let output = self.base_handler.webtransport_create_session(
-            &mut self.conn,
-            Box::new(self.events.clone()),
-            target,
-            headers,
-        );
-
-        if let Err(e) = &output
-            && e.connection_error()
-        {
-            self.close(now, e.code(), "");
-        }
-        output
-    }
-
-    
-    
-    
-    
-    pub fn connect_udp_create_session<T>(
-        &mut self,
-        now: Instant,
-        target: T,
-        headers: &[Header],
-    ) -> Res<StreamId>
-    where
-        T: RequestTarget,
-    {
-        let output = self.base_handler.connect_udp_create_session(
-            &mut self.conn,
-            Box::new(self.events.clone()),
-            target,
-            headers,
-        );
-
-        if let Err(e) = &output
-            && e.connection_error()
-        {
-            self.close(now, e.code(), "");
-        }
-        output
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn webtransport_close_session(
-        &mut self,
-        session_id: StreamId,
-        error: u32,
-        message: &str,
-        now: Instant,
-    ) -> Res<()> {
-        self.base_handler.webtransport_close_session(
-            &mut self.conn,
-            session_id,
-            error,
-            message,
-            now,
-        )
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn connect_udp_close_session(
-        &mut self,
-        session_id: StreamId,
-        error: u32,
-        message: &str,
-        now: Instant,
-    ) -> Res<()> {
-        self.base_handler
-            .connect_udp_close_session(&mut self.conn, session_id, error, message, now)
-    }
-
-    
-    
-    
-    
-    pub fn webtransport_create_stream(
-        &mut self,
-        session_id: StreamId,
-        stream_type: StreamType,
-    ) -> Res<StreamId> {
-        self.base_handler.webtransport_create_stream_local(
-            &mut self.conn,
-            session_id,
-            stream_type,
-            Box::new(self.events.clone()),
-            Box::new(self.events.clone()),
-        )
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    pub fn webtransport_send_datagram<I: Into<DatagramTracking>>(
-        &mut self,
-        session_id: StreamId,
-        buf: &[u8],
-        id: I,
-        now: Instant,
-    ) -> Res<()> {
-        qtrace!("webtransport_send_datagram session:{session_id:?}");
-        self.base_handler
-            .webtransport_send_datagram(session_id, &mut self.conn, buf, id, now)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    pub fn connect_udp_send_datagram<I: Into<DatagramTracking>>(
-        &mut self,
-        session_id: StreamId,
-        buf: &[u8],
-        id: I,
-        now: Instant,
-    ) -> Res<()> {
-        qtrace!("connect_udp_send_datagram session:{session_id:?}");
-        self.base_handler
-            .connect_udp_send_datagram(session_id, &mut self.conn, buf, id, now)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn webtransport_max_datagram_size(&self, session_id: StreamId) -> Res<u64> {
-        Ok(self.conn.max_datagram_size()?
-            - u64::try_from(Encoder::varint_len(session_id.as_u64()))
-                .map_err(|_| Error::Internal)?)
-    }
-
-    
-    
-    
-    
-    
-    pub fn webtransport_set_sendorder(
-        &mut self,
-        stream_id: StreamId,
-        sendorder: Option<SendOrder>,
-    ) -> Res<()> {
-        Http3Connection::stream_set_sendorder(&mut self.conn, stream_id, sendorder)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    pub fn webtransport_set_fairness(&mut self, stream_id: StreamId, fairness: bool) -> Res<()> {
-        Http3Connection::stream_set_fairness(&mut self.conn, stream_id, fairness)
-    }
-
-    
-    
-    
-    
-    
-    pub fn webtransport_send_stream_stats(
-        &mut self,
-        stream_id: StreamId,
-    ) -> Res<send_stream::Stats> {
-        self.base_handler
-            .send_streams_mut()
-            .get_mut(&stream_id)
-            .ok_or(Error::InvalidStreamId)?
-            .stats(&mut self.conn)
-    }
-
-    
-    
-    
-    
-    
-    pub fn webtransport_recv_stream_stats(
-        &mut self,
-        stream_id: StreamId,
-    ) -> Res<recv_stream::Stats> {
-        self.base_handler
-            .recv_streams_mut()
-            .get_mut(&stream_id)
-            .ok_or(Error::InvalidStreamId)?
-            .stats(&mut self.conn)
     }
 
     
@@ -1169,7 +968,8 @@ impl Http3Client {
                 }
                 ConnectionEvent::SendStreamComplete { .. }
                 | ConnectionEvent::OutgoingDatagramOutcome { .. }
-                | ConnectionEvent::IncomingDatagramDropped => {}
+                | ConnectionEvent::SconeUpdated(_)
+                | ConnectionEvent::PathMigrated { .. } => {}
             }
         }
         Ok(())
@@ -1314,6 +1114,26 @@ impl Http3Client {
         }
 
         
+        
+        
+        
+        
+        
+        
+        if !matches!(
+            self.base_handler.state(),
+            Http3State::Closing(..) | Http3State::Closed(..)
+        ) {
+            for session_id in self.base_handler.drain_webtransport_sessions() {
+                self.events.insert(Http3ClientEvent::WebTransport(
+                    WebTransportEvent::Draining {
+                        stream_id: session_id,
+                    },
+                ));
+            }
+        }
+
+        
         let send_ids: Vec<StreamId> = self
             .base_handler
             .send_streams()
@@ -1359,9 +1179,51 @@ impl Http3Client {
         self.conn.stats()
     }
 
-    #[must_use]
-    pub const fn webtransport_enabled(&self) -> bool {
-        self.base_handler.webtransport_enabled()
+    
+    
+    
+    
+    
+    
+    
+    pub fn webtransport_create_send_group(&mut self, session_id: StreamId) -> Res<SendGroupId> {
+        self.base_handler.webtransport_create_send_group(session_id)
+    }
+
+    
+    
+    
+    
+    
+    pub fn webtransport_validate_send_group(
+        &self,
+        session_id: StreamId,
+        group_id: SendGroupId,
+    ) -> Res<bool> {
+        self.base_handler
+            .webtransport_validate_send_group(session_id, group_id)
+    }
+
+    
+    
+    
+    
+    
+    pub fn webtransport_create_stream_with_send_group(
+        &mut self,
+        session_id: StreamId,
+        stream_type: StreamType,
+        send_group: Option<SendGroupId>,
+    ) -> Res<StreamId> {
+        self.base_handler
+            .webtransport_create_stream_local_with_send_group(
+                &mut self.conn,
+                session_id,
+                stream_type,
+                Box::new(self.events.clone()),
+                Box::new(self.events.clone()),
+                send_group,
+            )
     }
 }
 
@@ -1387,13 +1249,13 @@ mod tests {
     use std::time::Duration;
 
     use http::Uri;
-    use neqo_common::{Datagram, Decoder, Encoder, event::Provider as _, qtrace};
-    use neqo_crypto::{AllowZeroRtt, AntiReplay, ResumptionToken};
+    use neqo_common::{Datagram, Decoder, Encoder, event::Provider as _, qtrace, to_u64};
     use neqo_qpack as qpack;
     use neqo_transport::{
         CloseReason, ConnectionEvent, ConnectionParameters, INITIAL_LOCAL_MAX_STREAM_DATA,
         MIN_INITIAL_PACKET_SIZE, Output, State, StreamId, StreamType, Version,
     };
+    use nss::{AllowZeroRtt, AntiReplay, ResumptionToken};
     use test_fixture::{
         CountingConnectionIdGenerator, DEFAULT_ADDR, DEFAULT_ALPN_H3, DEFAULT_KEYS,
         DEFAULT_SERVER_NAME, anti_replay, default_server_h3, fixture_init, new_server, now,
@@ -1506,11 +1368,10 @@ mod tests {
             )
             .unwrap();
             let qpack = Rc::new(RefCell::new(qpack::Encoder::new(
-                &qpack::Settings {
-                    max_table_size_encoder: max_table_size,
-                    max_table_size_decoder: max_table_size,
-                    max_blocked_streams,
-                },
+                &qpack::Settings::default()
+                    .max_table_size_encoder(max_table_size)
+                    .max_table_size_decoder(max_table_size)
+                    .max_blocked_streams(max_blocked_streams),
                 true,
             )));
             Self {
@@ -1528,11 +1389,10 @@ mod tests {
 
         pub fn new_with_conn(conn: Connection) -> Self {
             let qpack = Rc::new(RefCell::new(qpack::Encoder::new(
-                &qpack::Settings {
-                    max_table_size_encoder: 128,
-                    max_table_size_decoder: 128,
-                    max_blocked_streams: 0,
-                },
+                &qpack::Settings::default()
+                    .max_table_size_encoder(128)
+                    .max_table_size_decoder(128)
+                    .max_blocked_streams(0),
                 true,
             )));
             Self {
@@ -1703,7 +1563,7 @@ mod tests {
             assert!(dec.decode_vvec().unwrap().len() < 8);
 
             assert_eq!(dec.decode_varint().unwrap(), 0xd); 
-            assert_eq!(dec.decode_vvec().unwrap(), &[5]);
+            assert_eq!(dec.decode_vvec().unwrap(), &[4]);
 
             assert_eq!(dec.remaining(), 0);
             assert!(!fin);
@@ -2995,7 +2855,7 @@ mod tests {
     }
 
     fn alloc_buffer(size: usize) -> (Vec<u8>, Vec<u8>) {
-        let data_frame = HFrame::Data { len: size as u64 };
+        let data_frame = HFrame::Data { len: to_u64(size) };
         let mut enc = Encoder::default();
         data_frame.encode(&mut enc);
 
@@ -4076,7 +3936,7 @@ mod tests {
 
         let mut enc = Encoder::with_capacity(UNKNOWN_FRAME_LEN + 4);
         enc.encode_varint(1028_u64); 
-        enc.encode_varint(UNKNOWN_FRAME_LEN as u64);
+        enc.encode_len(UNKNOWN_FRAME_LEN);
         let mut buf: Vec<_> = enc.into();
         buf.resize(UNKNOWN_FRAME_LEN + buf.len(), 0);
         _ = server.conn.stream_send(request_stream_id, &buf).unwrap();
@@ -5462,7 +5322,7 @@ mod tests {
             &mut client,
             &mut server,
             request_stream_id,
-            PushId::new(5),
+            PushId::new(4),
         );
 
         send_push_promise_and_exchange_packets(
@@ -5480,7 +5340,7 @@ mod tests {
             &mut client,
             &[
                 PushPromiseInfo {
-                    push_id: PushId::new(5),
+                    push_id: PushId::new(4),
                     ref_stream_id: request_stream_id,
                 },
                 PushPromiseInfo {
@@ -5506,7 +5366,7 @@ mod tests {
             &mut client,
             &mut server,
             request_stream_id,
-            PushId::new(5),
+            PushId::new(4),
         );
 
         send_push_data_and_exchange_packets(&mut client, &mut server, PushId::new(3), true);
@@ -5521,7 +5381,7 @@ mod tests {
             &mut client,
             &[
                 PushPromiseInfo {
-                    push_id: PushId::new(5),
+                    push_id: PushId::new(4),
                     ref_stream_id: request_stream_id,
                 },
                 PushPromiseInfo {
@@ -5548,19 +5408,19 @@ mod tests {
             &mut client,
             &mut server,
             request_stream_id,
-            PushId::new(5),
+            PushId::new(4),
         );
-        send_push_data_and_exchange_packets(&mut client, &mut server, PushId::new(5), true);
+        send_push_data_and_exchange_packets(&mut client, &mut server, PushId::new(4), true);
         assert_eq!(client.state(), Http3State::Connected);
 
         
         read_response_and_push_events(
             &mut client,
             &[PushPromiseInfo {
-                push_id: PushId::new(5),
+                push_id: PushId::new(4),
                 ref_stream_id: request_stream_id,
             }],
-            &[PushId::new(5)],
+            &[PushId::new(4)],
             request_stream_id,
         );
 
@@ -5594,7 +5454,7 @@ mod tests {
             &mut client,
             &mut server,
             request_stream_id,
-            PushId::new(5),
+            PushId::new(4),
         );
 
         
@@ -5608,18 +5468,18 @@ mod tests {
             &mut client,
             &mut server,
             request_stream_id_2,
-            PushId::new(5),
+            PushId::new(4),
         );
 
         read_response_and_push_events(
             &mut client,
             &[
                 PushPromiseInfo {
-                    push_id: PushId::new(5),
+                    push_id: PushId::new(4),
                     ref_stream_id: request_stream_id,
                 },
                 PushPromiseInfo {
-                    push_id: PushId::new(5),
+                    push_id: PushId::new(4),
                     ref_stream_id: request_stream_id_2,
                 },
             ],
@@ -5639,9 +5499,9 @@ mod tests {
             &mut client,
             &mut server,
             request_stream_id,
-            PushId::new(5),
+            PushId::new(4),
         );
-        send_push_data_and_exchange_packets(&mut client, &mut server, PushId::new(5), true);
+        send_push_data_and_exchange_packets(&mut client, &mut server, PushId::new(4), true);
 
         
         let request_stream_id_2 = make_request(&mut client, false, &[]);
@@ -5654,22 +5514,22 @@ mod tests {
             &mut client,
             &mut server,
             request_stream_id_2,
-            PushId::new(5),
+            PushId::new(4),
         );
 
         read_response_and_push_events(
             &mut client,
             &[
                 PushPromiseInfo {
-                    push_id: PushId::new(5),
+                    push_id: PushId::new(4),
                     ref_stream_id: request_stream_id,
                 },
                 PushPromiseInfo {
-                    push_id: PushId::new(5),
+                    push_id: PushId::new(4),
                     ref_stream_id: request_stream_id_2,
                 },
             ],
-            &[PushId::new(5)],
+            &[PushId::new(4)],
             request_stream_id,
         );
         assert_eq!(client.state(), Http3State::Connected);
@@ -5686,18 +5546,17 @@ mod tests {
             &mut client,
             &mut server,
             request_stream_id,
-            PushId::new(5),
+            PushId::new(4),
         );
-        
-        send_push_data_and_exchange_packets(&mut client, &mut server, PushId::new(5), true);
+        send_push_data_and_exchange_packets(&mut client, &mut server, PushId::new(4), true);
 
         read_response_and_push_events(
             &mut client,
             &[PushPromiseInfo {
-                push_id: PushId::new(5),
+                push_id: PushId::new(4),
                 ref_stream_id: request_stream_id,
             }],
-            &[PushId::new(5)],
+            &[PushId::new(4)],
             request_stream_id,
         );
 
@@ -5712,7 +5571,7 @@ mod tests {
             &mut client,
             &mut server,
             request_stream_id_2,
-            PushId::new(5),
+            PushId::new(4),
         );
 
         
@@ -5731,7 +5590,7 @@ mod tests {
             &mut client,
             &mut server,
             request_stream_id,
-            PushId::new(6),
+            PushId::new(5),
         );
 
         assert_closed(&client, &Error::HttpId);
@@ -5744,7 +5603,7 @@ mod tests {
         let (mut client, mut server) = connect();
 
         
-        send_push_data_and_exchange_packets(&mut client, &mut server, PushId::new(6), true);
+        send_push_data_and_exchange_packets(&mut client, &mut server, PushId::new(5), true);
 
         assert_closed(&client, &Error::HttpId);
     }
@@ -5756,7 +5615,7 @@ mod tests {
         let (mut client, mut server, _request_stream_id) = connect_and_send_request(true);
 
         
-        send_cancel_push_and_exchange_packets(&mut client, &mut server, PushId::new(6));
+        send_cancel_push_and_exchange_packets(&mut client, &mut server, PushId::new(5));
 
         assert_closed(&client, &Error::HttpId);
     }
@@ -5767,13 +5626,14 @@ mod tests {
         
         let (mut client, _, _) = connect_and_send_request(true);
 
-        assert_eq!(client.cancel_push(PushId::new(6)), Err(Error::HttpId));
+        assert_eq!(client.cancel_push(PushId::new(5)), Err(Error::HttpId));
         assert_eq!(client.state(), Http3State::Connected);
     }
 
     #[test]
     fn max_push_id_frame_update_is_sent() {
-        const MAX_PUSH_ID_FRAME: &[u8] = &[0xd, 0x1, 0x8];
+        
+        const MAX_PUSH_ID_FRAME: &[u8] = &[0xd, 0x1, 0x7];
 
         
         let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
@@ -5823,8 +5683,8 @@ mod tests {
         assert_eq!(&buf[..3], MAX_PUSH_ID_FRAME);
 
         
-        send_push_promise(&mut server.conn, request_stream_id, PushId::new(8));
-        send_push_data(&mut server.conn, PushId::new(8), true);
+        send_push_promise(&mut server.conn, request_stream_id, PushId::new(7));
+        send_push_data(&mut server.conn, PushId::new(7), true);
 
         let out = server.conn.process_output(now());
         let out = client.process(out.dgram(), now());
@@ -5835,10 +5695,10 @@ mod tests {
         read_response_and_push_events(
             &mut client,
             &[PushPromiseInfo {
-                push_id: PushId::new(8),
+                push_id: PushId::new(7),
                 ref_stream_id: request_stream_id,
             }],
-            &[PushId::new(8)],
+            &[PushId::new(7)],
             request_stream_id,
         );
 
@@ -6639,7 +6499,7 @@ mod tests {
         let mut d = Encoder::default();
         hframe.encode(&mut d);
         let d_frame = HFrame::Data {
-            len: u64::try_from(data.len()).unwrap(),
+            len: to_u64(data.len()),
         };
         d_frame.encode(&mut d);
         d.encode(data);

@@ -18,7 +18,7 @@ use enum_map::EnumMap;
 use neqo_common::{Dscp, Ecn, qdebug};
 use strum::IntoEnumIterator as _;
 
-use crate::{ecn, packet, version::Version};
+use crate::{cc::CongestionTrigger, ecn, packet, version::Version};
 
 #[derive(Default, Clone, PartialEq, Eq)]
 pub struct FrameStats {
@@ -28,6 +28,7 @@ pub struct FrameStats {
     pub crypto: usize,
     pub stream: usize,
     pub reset_stream: usize,
+    pub reset_stream_at: usize,
     pub stop_sending: usize,
 
     pub ping: usize,
@@ -68,8 +69,8 @@ impl Debug for FrameStats {
         )?;
         writeln!(
             f,
-            "    stream {} reset {} stop {}",
-            self.stream, self.reset_stream, self.stop_sending,
+            "    stream {} reset {} reset_at {} stop {}",
+            self.stream, self.reset_stream, self.reset_stream_at, self.stop_sending,
         )?;
         writeln!(
             f,
@@ -101,6 +102,7 @@ impl FrameStats {
             + self.crypto
             + self.stream
             + self.reset_stream
+            + self.reset_stream_at
             + self.stop_sending
             + self.ping
             + self.padding
@@ -134,12 +136,28 @@ pub struct DatagramStats {
     pub dropped_queue_full: usize,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SlowStartExitReason {
     
-    CongestionEvent,
+    CongestionEvent(CongestionTrigger),
     
     Heuristic,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SlowStartExitStats {
+    
+    
+    pub reason: SlowStartExitReason,
+    
+    
+    pub detection_cwnd: usize,
+    
+    
+    pub exit_cwnd: usize,
+    
+    
+    pub bytes_in_flight: usize,
 }
 
 
@@ -173,11 +191,7 @@ pub struct CongestionControlStats {
     pub congestion_events: CongestionEventStats,
     
     
-    
-    pub slow_start_exit_cwnd: Option<usize>,
-    
-    
-    pub slow_start_exit_reason: Option<SlowStartExitReason>,
+    pub slow_start_exit: Option<SlowStartExitStats>,
     
     
     
@@ -380,10 +394,6 @@ pub struct Stats {
     
     pub frame_tx: FrameStats,
 
-    
-    
-    pub incoming_datagram_dropped: usize,
-
     pub datagram_tx: DatagramStats,
 
     pub cc: CongestionControlStats,
@@ -475,7 +485,9 @@ impl Debug for Stats {
         writeln!(
             f,
             "    final_cwnd {:?} ss_exit_cwnd {:?} ss_exit_reason {:?}",
-            self.cc.cwnd, self.cc.slow_start_exit_cwnd, self.cc.slow_start_exit_reason
+            self.cc.cwnd,
+            self.cc.slow_start_exit.as_ref().map(|e| e.exit_cwnd),
+            self.cc.slow_start_exit.as_ref().map(|e| &e.reason),
         )?;
         writeln!(
             f,
@@ -590,7 +602,7 @@ fn debug() {
   frames rx:
     crypto 0 done 0 token 0 close 0
     ack 0 (max 0) ping 0 padding 0
-    stream 0 reset 0 stop 0
+    stream 0 reset 0 reset_at 0 stop 0
     max: stream 0 data 0 stream_data 0
     blocked: stream 0 data 0 stream_data 0
     datagram 0
@@ -599,7 +611,7 @@ fn debug() {
   frames tx:
     crypto 0 done 0 token 0 close 0
     ack 0 (max 0) ping 0 padding 0
-    stream 0 reset 0 stop 0
+    stream 0 reset 0 reset_at 0 stop 0
     max: stream 0 data 0 stream_data 0
     blocked: stream 0 data 0 stream_data 0
     datagram 0

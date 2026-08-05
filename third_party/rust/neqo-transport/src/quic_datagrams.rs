@@ -8,7 +8,7 @@
 
 use std::{cmp::min, collections::VecDeque};
 
-use neqo_common::{Buffer, Encoder, qdebug};
+use neqo_common::{Buffer, Encoder, qdebug, to_u64};
 
 use crate::{
     ConnectionEvents, Error, Res, Stats,
@@ -67,9 +67,6 @@ pub struct QuicDatagrams {
     remote_datagram_size: u64,
     max_queued_outgoing_datagrams: usize,
     
-    
-    max_queued_incoming_datagrams: usize,
-    
     datagrams: VecDeque<QuicDatagram>,
     conn_events: ConnectionEvents,
 }
@@ -78,14 +75,12 @@ impl QuicDatagrams {
     pub fn new(
         local_datagram_size: u64,
         max_queued_outgoing_datagrams: usize,
-        max_queued_incoming_datagrams: usize,
         conn_events: ConnectionEvents,
     ) -> Self {
         Self {
             local_datagram_size,
             remote_datagram_size: 0,
             max_queued_outgoing_datagrams,
-            max_queued_incoming_datagrams,
             datagrams: VecDeque::with_capacity(max_queued_outgoing_datagrams),
             conn_events,
         }
@@ -112,8 +107,7 @@ impl QuicDatagrams {
             let len = dgram.as_ref().len();
             if len + DATAGRAM_FRAME_TYPE_VARINT_LEN <= builder.remaining() {
                 
-                let length_len =
-                    Encoder::varint_len(u64::try_from(len).expect("usize fits in u64"));
+                let length_len = Encoder::varint_len(to_u64(len));
                 
                 if builder.remaining()
                     >= DATAGRAM_FRAME_TYPE_VARINT_LEN
@@ -164,7 +158,7 @@ impl QuicDatagrams {
         tracking: DatagramTracking,
         stats: &mut Stats,
     ) -> Res<()> {
-        if u64::try_from(data.len())? > self.remote_datagram_size {
+        if to_u64(data.len()) > self.remote_datagram_size {
             qdebug!(
                 "QUIC datagram exceeds remote limit, dropping it, datagram size {}, remote datagram size limit {}.",
                 data.len(),
@@ -187,12 +181,14 @@ impl QuicDatagrams {
         Ok(())
     }
 
-    pub fn handle_datagram(&self, data: &[u8], stats: &mut Stats) -> Res<()> {
-        if self.local_datagram_size < u64::try_from(data.len())? {
+    pub fn handle_datagram(&self, data: &[u8]) -> Res<()> {
+        
+        
+        
+        if self.local_datagram_size == 0 || self.local_datagram_size < to_u64(data.len()) {
             return Err(Error::ProtocolViolation);
         }
-        self.conn_events
-            .add_datagram(self.max_queued_incoming_datagrams, data, stats);
+        self.conn_events.add_datagram(data);
         Ok(())
     }
 }

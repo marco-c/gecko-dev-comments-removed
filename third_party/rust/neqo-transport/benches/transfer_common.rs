@@ -4,9 +4,10 @@
 
 
 
-use std::time::Duration;
+use std::{hint::black_box, time::Duration};
 
-use criterion::{BenchmarkGroup, Criterion};
+use criterion::{BatchSize::SmallInput, Criterion, Throughput};
+use neqo_common::to_u64;
 use neqo_transport::{ConnectionParameters, State};
 use test_fixture::{
     boxed,
@@ -18,13 +19,13 @@ use test_fixture::{
 };
 
 const DELAY: Duration = Duration::from_millis(10);
-pub const TRANSFER_AMOUNT: usize = 1 << 22; 
+const TRANSFER_AMOUNT: usize = 1 << 22; 
 
 const FIXED_SEED: &str = "62df6933ba1f543cece01db8f27fb2025529b27f93df39e19f006e1db3b8c843";
 
 
 #[must_use]
-pub fn setup(label: &str, seed: Option<&str>, pacing: bool) -> ReadySimulator {
+fn setup(label: &str, seed: Option<&str>, pacing: bool) -> ReadySimulator {
     let nodes = boxed![
         Node::new_client(
             ConnectionParameters::default()
@@ -56,13 +57,7 @@ pub fn setup(label: &str, seed: Option<&str>, pacing: bool) -> ReadySimulator {
 
 
 
-
-
-pub fn benchmark<M>(c: &mut Criterion, mut measure: M)
-where
-    M: FnMut(&mut BenchmarkGroup<'_, criterion::measurement::WallTime>, &str, Option<&str>, bool),
-{
-    
+pub fn bench(c: &mut Criterion, name_prefix: &str) {
     let env_seed = std::env::var("SIMULATION_SEED").ok();
     let configs: [(&str, Option<&str>); 2] = [
         ("varying-seeds", env_seed.as_deref()),
@@ -71,9 +66,16 @@ where
 
     let mut group = c.benchmark_group("transfer");
     group.noise_threshold(0.03);
+    group.throughput(Throughput::Bytes(to_u64(TRANSFER_AMOUNT)));
     for (label, seed) in configs {
         for pacing in [false, true] {
-            measure(&mut group, label, seed, pacing);
+            group.bench_function(&format!("{name_prefix}/pacing-{pacing}/{label}"), |b| {
+                b.iter_batched(
+                    || setup(label, seed, pacing),
+                    |sim| black_box(sim.run()),
+                    SmallInput,
+                );
+            });
         }
     }
     group.finish();

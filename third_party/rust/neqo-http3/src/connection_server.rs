@@ -11,14 +11,12 @@ use std::{
 };
 
 use neqo_common::{Header, MessageType, Role, event::Provider as _, qdebug, qinfo, qtrace};
-use neqo_transport::{
-    AppError, Connection, ConnectionEvent, DatagramTracking, StreamId, StreamType,
-};
+use neqo_transport::{AppError, Connection, ConnectionEvent, StreamId};
 
 use crate::{
     Error, Http3Parameters, Http3StreamType, NewStreamType, Priority, PriorityHandler,
     ReceiveOutput, Res,
-    connection::{Http3Connection, Http3State, SessionAcceptAction},
+    connection::{Http3Connection, Http3State},
     frames::HFrame,
     recv_message::{RecvMessage, RecvMessageInfo},
     send_message::SendMessage,
@@ -50,6 +48,18 @@ impl Http3ServerHandler {
     #[must_use]
     pub fn state(&self) -> Http3State {
         self.base_handler.state().clone()
+    }
+
+    pub(crate) const fn base_handler_mut(&mut self) -> &mut Http3Connection {
+        &mut self.base_handler
+    }
+
+    pub(crate) const fn server_events(&self) -> &Http3ServerConnEvents {
+        &self.events
+    }
+
+    pub(crate) const fn mark_needs_processing(&mut self) {
+        self.needs_processing = true;
     }
 
     
@@ -159,125 +169,23 @@ impl Http3ServerHandler {
     }
 
     
-    pub(crate) fn webtransport_session_accept(
+    
+    
+    
+    
+    pub fn stream_commit(
         &mut self,
-        conn: &mut Connection,
         stream_id: StreamId,
-        accept: &SessionAcceptAction,
+        conn: &mut Connection,
         now: Instant,
     ) -> Res<()> {
-        self.needs_processing = true;
-        self.base_handler.webtransport_session_accept(
-            conn,
-            stream_id,
-            Box::new(self.events.clone()),
-            accept,
-            now,
-        )
+        self.base_handler.stream_commit(conn, stream_id, now)
     }
 
-    
-    pub(crate) fn connect_udp_session_accept(
-        &mut self,
-        conn: &mut Connection,
-        stream_id: StreamId,
-        accept: &SessionAcceptAction,
-        now: Instant,
-    ) -> Res<()> {
-        self.needs_processing = true;
-        self.base_handler.connect_udp_session_accept(
-            conn,
-            stream_id,
-            Box::new(self.events.clone()),
-            accept,
-            now,
-        )
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn webtransport_close_session(
-        &mut self,
-        conn: &mut Connection,
-        session_id: StreamId,
-        error: u32,
-        message: &str,
-        now: Instant,
-    ) -> Res<()> {
-        self.needs_processing = true;
+    pub(crate) fn validate_extended_connect_session(&self, session_id: StreamId) -> Res<()> {
         self.base_handler
-            .webtransport_close_session(conn, session_id, error, message, now)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn connect_udp_close_session(
-        &mut self,
-        conn: &mut Connection,
-        session_id: StreamId,
-        error: u32,
-        message: &str,
-        now: Instant,
-    ) -> Res<()> {
-        self.needs_processing = true;
-        self.base_handler
-            .connect_udp_close_session(conn, session_id, error, message, now)
-    }
-
-    pub fn webtransport_create_stream(
-        &mut self,
-        conn: &mut Connection,
-        session_id: StreamId,
-        stream_type: StreamType,
-    ) -> Res<StreamId> {
-        self.needs_processing = true;
-        self.base_handler.webtransport_create_stream_local(
-            conn,
-            session_id,
-            stream_type,
-            Box::new(self.events.clone()),
-            Box::new(self.events.clone()),
-        )
-    }
-
-    pub fn webtransport_send_datagram<I: Into<DatagramTracking>>(
-        &mut self,
-        conn: &mut Connection,
-        session_id: StreamId,
-        buf: &[u8],
-        id: I,
-        now: Instant,
-    ) -> Res<()> {
-        self.needs_processing = true;
-        self.base_handler
-            .webtransport_send_datagram(session_id, conn, buf, id, now)
-    }
-
-    pub fn connect_udp_send_datagram<I: Into<DatagramTracking>>(
-        &mut self,
-        conn: &mut Connection,
-        session_id: StreamId,
-        buf: &[u8],
-        id: I,
-        now: Instant,
-    ) -> Res<()> {
-        self.needs_processing = true;
-        self.base_handler
-            .connect_udp_send_datagram(session_id, conn, buf, id, now)
+            .validate_extended_connect_session(session_id)
+            .map(|_| ())
     }
 
     
@@ -297,6 +205,13 @@ impl Http3ServerHandler {
     
     pub(crate) fn next_event(&self) -> Option<Http3ServerConnEvent> {
         self.events.next_event()
+    }
+
+    
+    pub(crate) fn queue_goaway(&mut self, stream_id: StreamId) {
+        self.base_handler
+            .queue_control_frame(&HFrame::Goaway { stream_id });
+        self.needs_processing = true;
     }
 
     
@@ -376,7 +291,8 @@ impl Http3ServerHandler {
                 ConnectionEvent::SendStreamComplete { .. }
                 | ConnectionEvent::SendStreamCreatable { .. }
                 | ConnectionEvent::OutgoingDatagramOutcome { .. }
-                | ConnectionEvent::IncomingDatagramDropped => {}
+                | ConnectionEvent::SconeUpdated(_)
+                | ConnectionEvent::PathMigrated { .. } => {}
             }
         }
         Ok(())

@@ -300,6 +300,9 @@ impl<'a> HeaderDecoder<'a> {
                 }
                 req_insert_cnt -= full_range;
             }
+            if req_insert_cnt == 0 {
+                return Err(Error::Decompression);
+            }
             Ok(req_insert_cnt)
         }
     }
@@ -923,6 +926,28 @@ mod tests {
         assert_eq!(
             Error::Decompression,
             decoder_h.decode_header_block(&table, 1000, 0).unwrap_err()
+        );
+    }
+
+    
+    
+    
+    
+    #[test]
+    fn req_insert_count_reconstructed_to_zero() {
+        let table = HeaderTable::new(false);
+        let mut decoder_h = HeaderDecoder::new(&[0x01, 0x00]);
+        assert_eq!(
+            Error::Decompression,
+            decoder_h.decode_header_block(&table, 1000, 0).unwrap_err()
+        );
+
+        
+        
+        let mut decoder_h = HeaderDecoder::new(&[0x00, 0x00]);
+        assert_eq!(
+            HeaderDecoderResult::Headers(Vec::new()),
+            decoder_h.decode_header_block(&table, 1000, 0).unwrap()
         );
     }
 

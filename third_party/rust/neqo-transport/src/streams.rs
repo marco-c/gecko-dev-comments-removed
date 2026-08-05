@@ -27,13 +27,36 @@ use crate::{
     tparams::{
         TransportParameterId::{
             InitialMaxData, InitialMaxStreamDataBidiLocal, InitialMaxStreamDataBidiRemote,
-            InitialMaxStreamDataUni, InitialMaxStreamsBidi, InitialMaxStreamsUni,
+            InitialMaxStreamDataUni, InitialMaxStreamsBidi, InitialMaxStreamsUni, ResetStreamAt,
         },
         TransportParametersHandler,
     },
 };
 
 pub type SendOrder = i64;
+
+
+
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct SendGroupId(u64);
+
+impl SendGroupId {
+    
+    
+    
+    #[must_use]
+    pub const fn new(id: u64) -> Self {
+        Self(id)
+    }
+
+    
+    #[must_use]
+    pub const fn as_u64(self) -> u64 {
+        self.0
+    }
+}
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct StreamOrder {
@@ -112,6 +135,7 @@ impl Streams {
 
     
     
+    #[expect(clippy::too_many_lines, reason = "Yep, but it's a nice big match.")]
     pub fn input_frame(&mut self, frame: &Frame, stats: &mut FrameStats) -> Res<()> {
         match frame {
             Frame::ResetStream {
@@ -120,9 +144,38 @@ impl Streams {
                 final_size,
             } => {
                 stats.reset_stream += 1;
+                
+                
+                if stream_id.is_send_only(self.role) {
+                    return Err(Error::StreamState);
+                }
                 if self.obtain_stream(*stream_id)?.1.is_some() {
+                    
                     self.recv
-                        .reset(*stream_id, *application_error_code, *final_size)?;
+                        .reset(*stream_id, *application_error_code, *final_size, 0)?;
+                }
+            }
+            Frame::ResetStreamAt {
+                stream_id,
+                application_error_code,
+                final_size,
+                reliable_size,
+            } => {
+                stats.reset_stream_at += 1;
+                
+                if !self.tps.borrow().local().get_empty(ResetStreamAt) {
+                    return Err(Error::ProtocolViolation);
+                }
+                if stream_id.is_send_only(self.role) {
+                    return Err(Error::StreamState);
+                }
+                if self.obtain_stream(*stream_id)?.1.is_some() {
+                    self.recv.reset(
+                        *stream_id,
+                        *application_error_code,
+                        *final_size,
+                        *reliable_size,
+                    )?;
                 }
             }
             Frame::StopSending {
@@ -130,9 +183,17 @@ impl Streams {
                 application_error_code,
             } => {
                 stats.stop_sending += 1;
+                
+                
+                if stream_id.is_recv_only(self.role) {
+                    return Err(Error::StreamState);
+                }
                 self.events
                     .send_stream_stop_sending(*stream_id, *application_error_code);
                 if let (Some(ss), _) = self.obtain_stream(*stream_id)? {
+                    
+                    
+                    ss.drop_commitment();
                     ss.reset(*application_error_code);
                 }
             }
@@ -144,6 +205,11 @@ impl Streams {
                 ..
             } => {
                 stats.stream += 1;
+                
+                
+                if stream_id.is_send_only(self.role) {
+                    return Err(Error::StreamState);
+                }
                 if let (_, Some(rs)) = self.obtain_stream(*stream_id)? {
                     rs.inbound_stream_frame(*fin, *offset, data)?;
                 }
@@ -162,6 +228,11 @@ impl Streams {
                     *maximum_stream_data
                 );
                 stats.max_stream_data += 1;
+                
+                
+                if stream_id.is_recv_only(self.role) {
+                    return Err(Error::StreamState);
+                }
                 if let (Some(ss), _) = self.obtain_stream(*stream_id)? {
                     ss.set_max_stream_data(*maximum_stream_data);
                 }
@@ -439,6 +510,12 @@ impl Streams {
     
     pub fn set_fairness(&mut self, stream_id: StreamId, fairness: bool) -> Res<()> {
         self.send.set_fairness(stream_id, fairness)
+    }
+
+    
+    
+    pub fn set_sendgroup(&mut self, stream_id: StreamId, group_id: Option<SendGroupId>) -> Res<()> {
+        self.send.set_sendgroup(stream_id, group_id)
     }
 
     

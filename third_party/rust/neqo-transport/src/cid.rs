@@ -15,7 +15,11 @@ use std::{
     rc::Rc,
 };
 
-use neqo_common::{Buffer, Decoder, Encoder, hex, hex_with_len, qdebug, qinfo};
+use neqo_common::{
+    Buffer, Decoder, Encoder, expect_usize,
+    hex::{Hex, HexWithLen},
+    qdebug, qinfo, to_u64,
+};
 use nss::{random, randomize};
 use smallvec::{SmallVec, smallvec};
 
@@ -100,13 +104,14 @@ impl Deref for ConnectionId {
 
 impl Debug for ConnectionId {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "CID {}", hex_with_len(&self.cid))
+        f.write_str("CID ")?;
+        HexWithLen::fmt(f, &self.cid)
     }
 }
 
 impl Display for ConnectionId {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{}", hex(&self.cid))
+        Hex::fmt(f, &self.cid)
     }
 }
 
@@ -123,13 +128,14 @@ pub struct ConnectionIdRef<'a> {
 
 impl Debug for ConnectionIdRef<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "CID {}", hex_with_len(self.cid))
+        f.write_str("CID ")?;
+        HexWithLen::fmt(f, self.cid)
     }
 }
 
 impl Display for ConnectionIdRef<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{}", hex(self.cid))
+        Hex::fmt(f, self.cid)
     }
 }
 
@@ -452,6 +458,11 @@ impl ConnectionIdManager {
     pub const ACTIVE_LIMIT: usize = 8;
 
     
+    
+    
+    pub const MAX_RETIRE_QUEUE: usize = 2 * Self::ACTIVE_LIMIT;
+
+    
     const SEQNO_ODCID: u64 = u64::MAX;
 
     
@@ -513,7 +524,14 @@ impl ConnectionIdManager {
         self.connection_ids.contains(cid)
     }
 
-    pub fn retire(&mut self, seqno: u64) {
+    pub fn retire(&mut self, seqno: u64) -> Res<()> {
+        
+        
+        
+        if seqno >= self.next_seqno {
+            return Err(Error::ProtocolViolation);
+        }
+
         
 
         let empty_cid = seqno == Self::SEQNO_EMPTY
@@ -528,6 +546,7 @@ impl ConnectionIdManager {
             self.connection_ids.retire(seqno);
             self.lost_new_connection_id.retain(|cid| cid.seqno != seqno);
         }
+        Ok(())
     }
 
     
@@ -546,10 +565,8 @@ impl ConnectionIdManager {
 
     pub fn set_limit(&mut self, limit: u64) {
         debug_assert!(limit >= 2);
-        self.limit = min(
-            Self::ACTIVE_LIMIT,
-            usize::try_from(limit).unwrap_or(Self::ACTIVE_LIMIT),
-        );
+        
+        self.limit = expect_usize(min(to_u64(Self::ACTIVE_LIMIT), limit));
     }
 
     pub fn write_frames<B: Buffer>(

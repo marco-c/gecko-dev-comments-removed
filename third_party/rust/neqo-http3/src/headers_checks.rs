@@ -114,7 +114,14 @@ pub fn headers_valid(headers: &[Header], message_type: MessageType) -> Res<()> {
             _ = bytes.next();
         }
 
-        if bytes.any(|b| matches!(b, 0 | 0x10 | 0x13 | 0x3a | 0x41..=0x5a)) {
+        if bytes.any(|b| matches!(b, 0 | 0x0a | 0x0d | 0x3a | 0x41..=0x5a)) {
+            return Err(Error::InvalidHeader); 
+        }
+
+        
+        
+        
+        if header.value().iter().any(|b| matches!(b, 0 | 0x0a | 0x0d)) {
             return Err(Error::InvalidHeader); 
         }
     }
@@ -290,6 +297,55 @@ mod tests {
             Header::new(":path", "/index.html"),
         ];
         assert!(headers_valid(&headers, MessageType::Request).is_ok());
+    }
+
+    #[test]
+    fn reject_cr_lf_in_field_name() {
+        
+        
+        
+        for bad in ["x\rname", "x\nname", "x\r\nname"] {
+            let headers = vec![
+                Header::new(":method", "GET"),
+                Header::new(":scheme", "https"),
+                Header::new(":path", "/"),
+                Header::new(bad, "value"),
+            ];
+            assert!(headers_valid(&headers, MessageType::Request).is_err());
+        }
+
+        
+        let headers = vec![
+            Header::new(":method", "GET"),
+            Header::new(":scheme", "https"),
+            Header::new(":path", "/"),
+            Header::new("xname", "value"),
+        ];
+        assert!(headers_valid(&headers, MessageType::Request).is_ok());
+    }
+
+    #[test]
+    fn reject_cr_lf_nul_in_field_value() {
+        
+        
+        
+        for bad in [b"v\rx".as_slice(), b"v\nx", b"v\r\nx", b"v\0x"] {
+            let headers = vec![
+                Header::new(":method", "GET"),
+                Header::new(":scheme", "https"),
+                Header::new(":path", "/"),
+                Header::new("name", bad),
+            ];
+            assert!(headers_valid(&headers, MessageType::Request).is_err());
+        }
+
+        
+        let headers = vec![
+            Header::new(":method", "GET"),
+            Header::new(":scheme", "https"),
+            Header::new(":path", b"/\r\nx".as_slice()),
+        ];
+        assert!(headers_valid(&headers, MessageType::Request).is_err());
     }
 
     #[test]

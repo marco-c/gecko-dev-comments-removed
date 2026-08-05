@@ -13,8 +13,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use neqo_common::{Buffer, Encoder, Tos, datagram, hex, qdebug, qinfo, qlog::Qlog, qtrace, qwarn};
-use neqo_crypto::random;
+use neqo_common::{
+    Buffer, Encoder, Tos, datagram, hex::Hex, qdebug, qinfo, qlog::Qlog, qtrace, qwarn,
+};
+use nss::random;
 
 use crate::{
     ConnectionParameters, Stats,
@@ -26,6 +28,7 @@ use crate::{
     pmtud::Pmtud,
     recovery::{self, sent},
     rtt::{RttEstimate, RttSource},
+    scone::{Bitrate, Scone},
     sender::PacketSender,
     stateless_reset::Token as Srt,
     stats::FrameStats,
@@ -324,7 +327,12 @@ impl Paths {
     
     
     #[must_use]
-    pub fn path_response(&mut self, response: [u8; 8], now: Instant, stats: &mut Stats) -> bool {
+    pub fn path_response(
+        &mut self,
+        response: [u8; 8],
+        now: Instant,
+        stats: &mut Stats,
+    ) -> Option<PathRef> {
         
         
         for p in &self.paths {
@@ -339,12 +347,12 @@ impl Paths {
                     if self.pmtud {
                         primary.borrow_mut().pmtud_mut().start(now, stats);
                     }
-                    return true;
+                    return Some(primary);
                 }
                 break;
             }
         }
-        false
+        None
     }
 
     
@@ -387,6 +395,12 @@ impl Paths {
                 true
             }
         });
+    }
+
+    
+    
+    pub(crate) const fn retire_queue_len(&self) -> usize {
+        self.to_retire.len()
     }
 
     
@@ -547,6 +561,8 @@ pub struct Path {
     
     ecn_info: ecn::Info,
     
+    scone: Option<Scone>,
+    
     qlog: Qlog,
 }
 
@@ -604,6 +620,7 @@ impl Path {
             received_bytes: 0,
             sent_bytes: 0,
             ecn_info: ecn::Info::default(),
+            scone: None,
             qlog,
         }
     }
@@ -666,6 +683,26 @@ impl Path {
         qdebug!("[{self}] Path validated {now:?}");
         self.state = ProbeState::Valid;
         self.validated = Some(now);
+    }
+
+    
+    
+    pub fn update_scone(&mut self, now: Instant, signal: Option<Bitrate>) -> Option<Bitrate> {
+        let updated = if let Some(s) = &mut self.scone {
+            s.update(now, signal)
+        } else if let Some(rate) = signal
+            && rate.is_set()
+        {
+            self.scone = Some(Scone::new(now, rate));
+            true
+        } else {
+            false
+        };
+        if updated && self.is_primary() {
+            self.scone.as_ref().map(Scone::rate)
+        } else {
+            None
+        }
     }
 
     
@@ -825,7 +862,10 @@ impl Path {
         }
         
         let resp_sent = if let Some(challenge) = self.challenge.take() {
-            qtrace!("[{self}] Responding to path challenge {}", hex(challenge));
+            qtrace!(
+                "[{self}] Responding to path challenge {}",
+                Hex::new(challenge)
+            );
             builder.encode_frame(FrameType::PathResponse, |b| {
                 b.encode(&challenge[..]);
             });

@@ -17,7 +17,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use neqo_common::{Datagram, Decoder, qdebug};
+use neqo_common::{Datagram, Decoder, event::Provider as _, qdebug, to_u64};
 use test_fixture::{
     DEFAULT_ADDR, DEFAULT_ADDR_V4,
     assertions::{assert_v4_path, assert_v6_path},
@@ -31,8 +31,9 @@ use super::{
     zero_len_cid_client,
 };
 use crate::{
-    CloseReason, ConnectionId, ConnectionIdDecoder as _, ConnectionIdGenerator, ConnectionIdRef,
-    ConnectionParameters, EmptyConnectionIdGenerator, Error, MIN_INITIAL_PACKET_SIZE,
+    CloseReason, ConnectionEvent, ConnectionId, ConnectionIdDecoder as _, ConnectionIdGenerator,
+    ConnectionIdRef, ConnectionParameters, EmptyConnectionIdGenerator, Error,
+    MIN_INITIAL_PACKET_SIZE,
     cid::ConnectionIdManager,
     connection::tests::{
         assert_path_challenge_min_len, connect, send_something_paced, send_with_extra,
@@ -434,6 +435,11 @@ fn migrate_immediate() {
     client
         .migrate(Some(DEFAULT_ADDR_V4), Some(DEFAULT_ADDR_V4), true, now)
         .unwrap();
+    assert!(client.events().any(|e| matches!(
+        e,
+        ConnectionEvent::PathMigrated { local, remote }
+        if local == DEFAULT_ADDR_V4 && remote == DEFAULT_ADDR_V4
+    )));
 
     let client1 = send_something(&mut client, now);
     assert_v4_path(&client1, true); 
@@ -447,6 +453,11 @@ fn migrate_immediate() {
     
     let server1 = server.process(Some(client1), now).dgram().unwrap();
     assert_v4_path(&server1, true);
+    assert!(
+        server
+            .events()
+            .any(|e| matches!(e, ConnectionEvent::PathMigrated { .. }))
+    );
     let server2 = server.process_output(now).dgram().unwrap();
     assert_v6_path(&server2, true);
 
@@ -655,6 +666,11 @@ fn migration(mut client: Connection) {
 
     
     client.process_input(resp, now);
+    assert!(client.events().any(|e| matches!(
+        e,
+        ConnectionEvent::PathMigrated { local, remote }
+        if local == DEFAULT_ADDR_V4 && remote == DEFAULT_ADDR_V4
+    )));
     assert_eq!(client.stats().frame_rx.path_challenge, 1);
     let migrate_client = send_something(&mut client, now);
     assert_v4_path(&migrate_client, true); 
@@ -937,11 +953,12 @@ fn preferred_address_client() {
         )
         .unwrap();
 
+    
     connect_fail(
         &mut client,
         &mut server,
-        Error::Peer(Error::TransportParameter.code()),
-        Error::TransportParameter,
+        Error::Peer(256 + 47),  
+        Error::CryptoAlert(47), 
     );
 }
 
@@ -1055,24 +1072,41 @@ fn migration_invalid_address() {
 
 
 
-struct RetireAll {
+struct NewConnectionIds {
+    count: u64,
     cid_gen: Rc<RefCell<dyn ConnectionIdGenerator>>,
 }
 
-impl crate::connection::test_internal::FrameWriter for RetireAll {
+impl NewConnectionIds {
+    
+    
+    const SEQNO: u64 = 100;
+
+    fn new(count: u64, cid_gen: Rc<RefCell<dyn ConnectionIdGenerator>>) -> Self {
+        Self { count, cid_gen }
+    }
+
+    
+    
+    fn retire_all(cid_gen: Rc<RefCell<dyn ConnectionIdGenerator>>) -> Self {
+        Self::new(1, cid_gen)
+    }
+}
+
+impl crate::connection::test_internal::FrameWriter for NewConnectionIds {
     fn write_frames(&mut self, builder: &mut packet::Builder<&mut Vec<u8>>) {
-        
-        
-        
-        
-        const SEQNO: u64 = 100;
-        let cid = self.cid_gen.borrow_mut().generate_cid().unwrap();
-        builder
-            .encode_varint(FrameType::NewConnectionId)
-            .encode_varint(SEQNO)
-            .encode_varint(SEQNO) 
-            .encode_vec(1, &cid)
-            .encode([0x7f; 16]);
+        for i in 0..self.count {
+            let seqno = Self::SEQNO + i;
+            let cid = self.cid_gen.borrow_mut().generate_cid().unwrap();
+            let mut srt = [0; 16];
+            srt[..8].copy_from_slice(&seqno.to_be_bytes());
+            builder
+                .encode_varint(FrameType::NewConnectionId)
+                .encode_varint(seqno)
+                .encode_varint(seqno) 
+                .encode_vec(1, &cid)
+                .encode(srt);
+        }
     }
 }
 
@@ -1094,10 +1128,9 @@ fn retire_all() {
 
     let original_cid = ConnectionId::from(get_cid(&send_something(&mut client, now())));
 
-    let ncid = send_with_extra(&mut server, RetireAll { cid_gen }, now());
-
     let new_cid_before = client.stats().frame_rx.new_connection_id;
     let retire_cid_before = client.stats().frame_tx.retire_connection_id;
+    let ncid = send_with_extra(&mut server, NewConnectionIds::retire_all(cid_gen), now());
     client.process_input(ncid, now());
     let retire = send_something(&mut client, now());
     assert_eq!(
@@ -1110,6 +1143,76 @@ fn retire_all() {
     );
 
     assert_ne!(get_cid(&retire), original_cid);
+}
+
+
+
+
+
+
+#[test]
+fn retire_cid_queue_bounded() {
+    let mut client = default_client();
+    let cid_gen: Rc<RefCell<dyn ConnectionIdGenerator>> =
+        Rc::new(RefCell::new(CountingConnectionIdGenerator::default()));
+    let mut server = Connection::new_server(
+        test_fixture::DEFAULT_KEYS,
+        test_fixture::DEFAULT_ALPN,
+        Rc::clone(&cid_gen),
+        ConnectionParameters::default(),
+    )
+    .unwrap();
+    connect_force_idle(&mut client, &mut server);
+
+    
+    
+    
+    
+    
+    
+    let count = to_u64(ConnectionIdManager::MAX_RETIRE_QUEUE) + 1;
+    let ncids = send_with_extra(&mut server, NewConnectionIds::new(count, cid_gen), now());
+    client.process_input(ncids, now());
+
+    assert!(matches!(
+        client.state(),
+        State::Closing {
+            error: CloseReason::Transport(Error::ConnectionIdLimitExceeded),
+            ..
+        }
+    ));
+}
+
+
+struct RetireUnissued(u64);
+
+impl crate::connection::test_internal::FrameWriter for RetireUnissued {
+    fn write_frames(&mut self, builder: &mut packet::Builder<&mut Vec<u8>>) {
+        builder
+            .encode_varint(FrameType::RetireConnectionId)
+            .encode_varint(self.0);
+    }
+}
+
+
+
+#[test]
+fn retire_unissued_connection_id() {
+    let mut client = default_client();
+    let mut server = default_server();
+    connect_force_idle(&mut client, &mut server);
+
+    
+    
+    let retire = send_with_extra(&mut server, RetireUnissued(1000), now());
+    client.process_input(retire, now());
+    assert!(matches!(
+        client.state(),
+        State::Closing {
+            error: CloseReason::Transport(Error::ProtocolViolation),
+            ..
+        }
+    ));
 }
 
 
@@ -1144,7 +1247,7 @@ fn retire_prior_to_migration_failure() {
 
     
     
-    let retire_all = send_with_extra(&mut server, RetireAll { cid_gen }, now());
+    let retire_all = send_with_extra(&mut server, NewConnectionIds::retire_all(cid_gen), now());
 
     let resp = server.process(Some(probe), now()).dgram().unwrap();
     assert_v4_path(&resp, true);
@@ -1199,7 +1302,7 @@ fn retire_prior_to_migration_success() {
 
     
     
-    let retire_all = send_with_extra(&mut server, RetireAll { cid_gen }, now());
+    let retire_all = send_with_extra(&mut server, NewConnectionIds::retire_all(cid_gen), now());
 
     let resp = server.process(Some(probe), now()).dgram().unwrap();
     assert_v4_path(&resp, true);
@@ -1238,7 +1341,7 @@ fn error_on_new_path_with_no_connection_id() {
 
     let cid_gen: Rc<RefCell<dyn ConnectionIdGenerator>> =
         Rc::new(RefCell::new(CountingConnectionIdGenerator::default()));
-    let retire_all = send_with_extra(&mut server, RetireAll { cid_gen }, now());
+    let retire_all = send_with_extra(&mut server, NewConnectionIds::retire_all(cid_gen), now());
 
     client.process_input(retire_all, now());
 

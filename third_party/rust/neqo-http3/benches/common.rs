@@ -4,31 +4,48 @@
 
 
 
-use std::time::Duration;
+use std::{hint::black_box, time::Duration};
 
-use criterion::{BenchmarkGroup, Criterion};
+use criterion::{BatchSize::SmallInput, Criterion, Throughput};
+use neqo_common::to_u64;
 use test_fixture::{
     boxed, fixture_init,
     sim::{
         ReadySimulator, Simulator,
         http3_connection::{Node, Requests, Responses},
-        network::{Delay, TailDrop},
+        network::{Aqm, Delay, TailDrop},
     },
 };
 
 const RTT: Duration = Duration::from_millis(10);
 
 
+
+
+
+
 const BENCHMARK_PARAMS: [(usize, usize); 3] = [(1, 1_000), (1_000, 1), (1_000, 1_000)];
 
 
-pub fn setup(streams: usize, data_size: usize) -> ReadySimulator {
+
+
+
+const FC_BENCHMARK_PARAMS: [(usize, usize); 2] = [
+    (1, 4 * 1024 * 1024),  
+    (10, 1 * 1024 * 1024), 
+];
+
+fn setup_with_link(
+    streams: usize,
+    data_size: usize,
+    link: impl Fn() -> TailDrop,
+) -> ReadySimulator {
     let nodes = boxed![
         Node::default_client(boxed![Requests::new(streams, data_size)]),
-        TailDrop::dsl_uplink(),
+        link(),
         Delay::new(RTT),
         Node::default_server(boxed![Responses::new(streams, data_size)]),
-        TailDrop::dsl_uplink(),
+        link(),
         Delay::new(RTT),
     ];
     Simulator::new("", nodes).setup()
@@ -38,15 +55,55 @@ pub fn setup(streams: usize, data_size: usize) -> ReadySimulator {
 
 
 
-pub fn benchmark<M>(c: &mut Criterion, mut measure: M)
-where
-    M: FnMut(&mut BenchmarkGroup<'_, criterion::measurement::WallTime>, usize, usize),
-{
-    fixture_init();
+fn setup(streams: usize, data_size: usize) -> ReadySimulator {
+    setup_with_link(streams, data_size, TailDrop::dsl_uplink)
+}
 
-    let mut group = c.benchmark_group("streams");
-    for (streams, data_size) in BENCHMARK_PARAMS {
-        measure(&mut group, streams, data_size);
+
+
+
+
+
+fn setup_flow_controlled(streams: usize, data_size: usize) -> ReadySimulator {
+    
+    
+    setup_with_link(streams, data_size, || {
+        TailDrop::new(100_000_000, 2_000_000, Aqm::None, Duration::ZERO)
+    })
+}
+
+type SetupFn = fn(usize, usize) -> ReadySimulator;
+
+
+const CONFIGS: [(&str, SetupFn, &[(usize, usize)]); 2] = [
+    ("streams", setup, &BENCHMARK_PARAMS),
+    (
+        "streams-flow-controlled",
+        setup_flow_controlled,
+        &FC_BENCHMARK_PARAMS,
+    ),
+];
+
+
+
+pub fn bench(c: &mut Criterion, name_prefix: &str) {
+    fixture_init();
+    for (group_name, setup_fn, params) in CONFIGS {
+        let mut group = c.benchmark_group(group_name);
+        group.noise_threshold(0.03);
+        for &(streams, data_size) in params {
+            group.throughput(Throughput::Bytes(to_u64(streams * data_size)));
+            group.bench_function(
+                &format!("{name_prefix}/{streams}-streams/each-{data_size}-bytes"),
+                |b| {
+                    b.iter_batched(
+                        || setup_fn(streams, data_size),
+                        |sim| black_box(sim.run()),
+                        SmallInput,
+                    );
+                },
+            );
+        }
+        group.finish();
     }
-    group.finish();
 }

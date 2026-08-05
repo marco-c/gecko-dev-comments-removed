@@ -11,8 +11,8 @@ use std::{
     time::{Duration, Instant},
 };
 
-use neqo_common::{Buffer, Decoder, Encoder, Role, qinfo, qtrace};
-use neqo_crypto::{
+use neqo_common::{Buffer, Decoder, Encoder, Role, expect_usize, qinfo, qtrace};
+use nss::{
     constants::{TLS_AES_128_GCM_SHA256, TLS_VERSION_1_3},
     selfencrypt::SelfEncrypt,
 };
@@ -185,15 +185,13 @@ impl AddressValidation {
         let peer_addr = Self::encode_aad(peer_address, retry);
         let data = self.self_encrypt.open(peer_addr.as_ref(), token).ok()?;
         let mut dec = Decoder::new(&data);
-        match dec.decode_uint::<u32>() {
-            Some(d) => {
-                let end = self.start_time + Duration::from_millis(u64::from(d));
-                if end < now {
-                    qtrace!("Expired token: {end:?} vs. {now:?}");
-                    return None;
-                }
+        {
+            let d = dec.decode_uint::<u32>()?;
+            let end = self.start_time + Duration::from_millis(u64::from(d));
+            if end < now {
+                qtrace!("Expired token: {end:?} vs. {now:?}");
+                return None;
             }
-            None => return None,
         }
         Some(ConnectionId::from(dec.decode_remainder()))
     }
@@ -210,7 +208,7 @@ impl AddressValidation {
             .zip(TOKEN_IDENTIFIER_RETRY.iter())
             .map(|(a, b)| (a ^ b).count_ones())
             .sum();
-        usize::try_from(difference).expect("u32 fits in usize") < TOKEN_IDENTIFIER_RETRY.len()
+        expect_usize(difference) < TOKEN_IDENTIFIER_RETRY.len()
     }
 
     pub fn validate(
@@ -401,7 +399,7 @@ struct NewTokenFrameStatus {
 }
 
 impl NewTokenFrameStatus {
-    fn len(&self) -> usize {
+    const fn len(&self) -> usize {
         1 + Encoder::vvec_len(self.token.len())
     }
 }
