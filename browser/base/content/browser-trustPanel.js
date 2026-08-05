@@ -680,7 +680,10 @@ class TrustPanel {
       
       return;
     }
-    this.#isFirstVisit = rows.length === 0;
+    
+    
+    this.#isFirstVisit =
+      rows.length === 0 || !UrlbarPrefs.get("trackerCountShown");
     this.#updateUrlbarIcon();
   }
 
