@@ -10062,17 +10062,24 @@ nsresult nsDocShell::CompleteInitialAboutBlankLoad(
   nsresult rv;
   
   
+  
+  
   BrowsingContext* top = mBrowsingContext->Top();
   if (top == mBrowsingContext) {
+    
+    
     aLoadInfo->SetIsThirdPartyContextToTopWindow(false);
   } else {
-    bool thirdParty = true;
-    if (Document* topDoc = top->GetExtantDocument();
-        topDoc && aLoadState->PrincipalToInherit()) {
+    if (Document* topDoc = top->GetDocument()) {
+      bool thirdParty = false;
       (void)topDoc->GetPrincipal()->IsThirdPartyPrincipal(
           aLoadState->PrincipalToInherit(), &thirdParty);
+      aLoadInfo->SetIsThirdPartyContextToTopWindow(thirdParty);
+    } else {
+      
+      
+      aLoadInfo->SetIsThirdPartyContextToTopWindow(true);
     }
-    aLoadInfo->SetIsThirdPartyContextToTopWindow(thirdParty);
   }
 
   if (!mDocumentViewer) {
@@ -11228,11 +11235,9 @@ void nsDocShell::UpdateActiveEntry(
     
     mActiveEntry = MakeUnique<SessionHistoryInfo>(*previousActiveEntry, aURI);
   } else {
-    Document* doc = GetDocument();
-    MOZ_ASSERT(doc);
     mActiveEntry = MakeUnique<SessionHistoryInfo>(
-        aURI, aTriggeringPrincipal, doc->NodePrincipal(), nullptr,
-        aPolicyContainer, mContentTypeHint);
+        aURI, aTriggeringPrincipal, nullptr, nullptr, aPolicyContainer,
+        mContentTypeHint);
   }
   mActiveEntry->SetOriginalURI(aOriginalURI);
   mActiveEntry->SetUnstrippedURI(nullptr);
