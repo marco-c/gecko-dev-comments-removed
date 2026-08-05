@@ -75,9 +75,60 @@ add_task(async function () {
   
   
   
-  const a = idle.idleTime;
-  const b = idle.idleTime;
-  Assert.equal(b, a, "rapid successive reads return the same cached value");
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  async function freshRuns() {
+    if (!(await IOUtils.exists(logFile))) {
+      return [];
+    }
+    const text = await IOUtils.readUTF8(logFile);
+    const runs = [];
+    let run = null;
+    for (const m of text.matchAll(
+      /returns cached \(fresh\) (\d+)|(Async handler got)/g
+    )) {
+      if (m[2]) {
+        run = null; 
+      } else {
+        if (!run) {
+          runs.push((run = []));
+        }
+        run.push(parseInt(m[1], 10));
+      }
+    }
+    return runs;
+  }
+
+  
+  await TestUtils.waitForCondition(
+    async () => {
+      void idle.idleTime;
+      return (await freshRuns()).some(r => r.length >= 2 && r.at(-1) > r[0]);
+    },
+    "fresh-cache idle time advances with the wall clock (bug 2053041)",
+    100,
+    100
+  );
+
+  for (const run of await freshRuns()) {
+    for (let i = 1; i < run.length; i++) {
+      Assert.greaterOrEqual(
+        run[i],
+        run[i - 1],
+        "fresh-cache idle time is non-decreasing within a cache sample"
+      );
+    }
+  }
 
   
   
