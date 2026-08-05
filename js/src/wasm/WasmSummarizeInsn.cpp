@@ -37,11 +37,9 @@ namespace wasm {
 
 
 
-#if defined(DEBUG)
 
 
-
-#  if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86)
+#if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86)
 
 
 static bool ModRMisM(uint8_t modrm) {
@@ -640,7 +638,7 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
 
 
 
-#  elif defined(JS_CODEGEN_ARM64)
+#elif defined(JS_CODEGEN_ARM64)
 
 Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   
@@ -648,8 +646,8 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
 
   const uint32_t insn = *(uint32_t*)insnAddr;
 
-#    define INSN(_maxIx, _minIx) \
-      ((insn >> (_minIx)) & ((uint32_t(1) << ((_maxIx) - (_minIx) + 1)) - 1))
+#  define INSN(_maxIx, _minIx) \
+    ((insn >> (_minIx)) & ((uint32_t(1) << ((_maxIx) - (_minIx) + 1)) - 1))
 
   
   if (insn == 0xD4A00000) {
@@ -970,7 +968,7 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
     return Some(TrapMachineInsn::Atomic);
   }
 
-#    undef INSN
+#  undef INSN
 
   
 
@@ -989,7 +987,7 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
 
 
 
-#  elif defined(JS_CODEGEN_ARM)
+#elif defined(JS_CODEGEN_ARM)
 
 Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   
@@ -1004,8 +1002,8 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
 
   const uint32_t insn = *(uint32_t*)insnAddr;
 
-#    define INSN(_maxIx, _minIx) \
-      ((insn >> (_minIx)) & ((uint32_t(1) << ((_maxIx) - (_minIx) + 1)) - 1))
+#  define INSN(_maxIx, _minIx) \
+    ((insn >> (_minIx)) & ((uint32_t(1) << ((_maxIx) - (_minIx) + 1)) - 1))
 
   
   if (insn == 0xE7F000F0) {
@@ -1167,7 +1165,7 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
     }
   }
 
-#    undef INSN
+#  undef INSN
 
   
 
@@ -1186,7 +1184,7 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
 
 
 
-#  elif defined(JS_CODEGEN_RISCV64)
+#elif defined(JS_CODEGEN_RISCV64)
 
 Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   
@@ -1194,8 +1192,8 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
 
   const uint32_t insn = *(uint32_t*)insnAddr;
 
-#    define INSN(_maxIx, _minIx) \
-      ((insn >> (_minIx)) & ((uint32_t(1) << ((_maxIx) - (_minIx) + 1)) - 1))
+#  define INSN(_maxIx, _minIx) \
+    ((insn >> (_minIx)) & ((uint32_t(1) << ((_maxIx) - (_minIx) + 1)) - 1))
   
   if (insn ==
       (RO_CSRRWI | csr_cycle << kCsrShift | kWasmTrapCode << kRs1Shift)) {
@@ -1276,14 +1274,14 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
     }
   }
 
-#    undef INSN
+#  undef INSN
 
   return Nothing();
 }
 
 
 
-#  elif defined(JS_CODEGEN_LOONG64)
+#elif defined(JS_CODEGEN_LOONG64)
 
 Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   
@@ -1291,8 +1289,8 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
 
   const uint32_t insn = *(uint32_t*)insnAddr;
 
-#    define INSN(_maxIx, _minIx) \
-      ((insn >> (_minIx)) & ((uint32_t(1) << ((_maxIx) - (_minIx) + 1)) - 1))
+#  define INSN(_maxIx, _minIx) \
+    ((insn >> (_minIx)) & ((uint32_t(1) << ((_maxIx) - (_minIx) + 1)) - 1))
 
   
   
@@ -1448,14 +1446,14 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
     }
   }
 
-#    undef INSN
+#  undef INSN
 
   return Nothing();
 }
 
 
 
-#  elif defined(JS_CODEGEN_MIPS64)
+#elif defined(JS_CODEGEN_MIPS64)
 
 Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   
@@ -1463,8 +1461,8 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
 
   const uint32_t insn = *(uint32_t*)insnAddr;
 
-#    define INSN(_maxIx, _minIx) \
-      ((insn >> (_minIx)) & ((uint32_t(1) << ((_maxIx) - (_minIx) + 1)) - 1))
+#  define INSN(_maxIx, _minIx) \
+    ((insn >> (_minIx)) & ((uint32_t(1) << ((_maxIx) - (_minIx) + 1)) - 1))
 
   
   
@@ -1727,13 +1725,13 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
     }
   }
 
-#    undef INSN
+#  undef INSN
   return Nothing();
 }
 
 
 
-#  elif defined(JS_CODEGEN_NONE)
+#elif defined(JS_CODEGEN_NONE)
 
 Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   MOZ_CRASH();
@@ -1741,11 +1739,9 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
 
 
 
-#  else
+#else
 
-#    error "SummarizeTrapInstruction: not implemented on this architecture"
-
-#  endif  
+#  error "SummarizeTrapInstruction: not implemented on this architecture"
 
 #endif  
 

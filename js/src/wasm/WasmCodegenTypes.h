@@ -167,7 +167,8 @@ enum class TrapMachineInsn {
   
   
   
-  Atomic
+  Atomic,
+  INVALID
 };
 using TrapMachineInsnVector =
     mozilla::Vector<TrapMachineInsn, 0, SystemAllocPolicy>;
