@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DOMSVGNumber.h"
 
 #include "DOMSVGAnimatedNumberList.h"
@@ -26,10 +24,7 @@ namespace mozilla::dom {
 NS_IMPL_CYCLE_COLLECTION_CLASS(DOMSVGNumber)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(DOMSVGNumber)
-  
-  if (tmp->mList) {
-    tmp->mList->mItems[tmp->mListIndex] = nullptr;
-  }
+  tmp->CleanupWeakRefs();
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mList)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mParent)
@@ -72,6 +67,18 @@ DOMSVGNumber::DOMSVGNumber(SVGSVGElement* aParent)
       mAttrEnum(0),
       mIsAnimValItem(false),
       mValue(0.0f) {}
+
+void DOMSVGNumber::CleanupWeakRefs() {
+  
+  
+  
+  
+  if (mList) {
+    MOZ_RELEASE_ASSERT(mList->mItems[mListIndex] == this,
+                       "Clearing out the wrong list index...?");
+    mList->mItems[mListIndex] = nullptr;
+  }
+}
 
 float DOMSVGNumber::Value() {
   if (mIsAnimValItem && HasOwner()) {

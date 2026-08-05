@@ -128,10 +128,10 @@ class DOMSVGPointList final : public nsISupports, public nsWrapperCache {
 
 
 
+
   uint32_t LengthNoFlush() const {
-    MOZ_ASSERT(
-        mItems.Length() == 0 || mItems.Length() == InternalList().Length(),
-        "DOM wrapper's list length is out of sync");
+    MOZ_ASSERT(mItems.IsEmpty() || mItems.Length() <= InternalList().Length(),
+               "DOM wrapper's list length is out of sync");
     return mItems.Length();
   }
 
@@ -226,7 +226,7 @@ class DOMSVGPointList final : public nsISupports, public nsWrapperCache {
   
   already_AddRefed<DOMSVGPoint> GetItemAt(uint32_t aIndex);
 
-  void MaybeInsertNullInAnimValListAt(uint32_t aIndex);
+  bool MaybeInsertNullInAnimValListAt(uint32_t aIndex);
   void MaybeRemoveItemFromAnimValListAt(uint32_t aIndex);
 
   void RemoveFromTearoffTable();

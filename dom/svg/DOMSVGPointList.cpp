@@ -280,10 +280,13 @@ already_AddRefed<DOMSVGPoint> DOMSVGPointList::InsertItemBefore(
 
   aIndex = std::min(aIndex, LengthNoFlush());
 
-  AutoChangePointListNotifier notifier(this);
   
-  MaybeInsertNullInAnimValListAt(aIndex);
+  if (!MaybeInsertNullInAnimValListAt(aIndex)) {
+    aRv.ThrowIndexSizeError("List too long");
+    return nullptr;
+  }
 
+  AutoChangePointListNotifier notifier(this);
   InternalList().InsertItem(aIndex, domItem->ToPoint());
   MOZ_ALWAYS_TRUE(mItems.InsertElementAt(aIndex, domItem, fallible));
 
@@ -374,23 +377,28 @@ already_AddRefed<DOMSVGPoint> DOMSVGPointList::GetItemAt(uint32_t aIndex) {
   return result.forget();
 }
 
-void DOMSVGPointList::MaybeInsertNullInAnimValListAt(uint32_t aIndex) {
+bool DOMSVGPointList::MaybeInsertNullInAnimValListAt(uint32_t aIndex) {
   MOZ_ASSERT(!IsAnimValList(), "call from baseVal to animVal");
 
   if (!AnimListMirrorsBaseList()) {
-    return;
+    return true;
   }
-
   
   DOMSVGPointList* animVal =
       GetDOMWrapperIfExists(InternalAList().GetAnimValKey());
-
   MOZ_ASSERT(animVal, "AnimListMirrorsBaseList() promised a non-null animVal");
+
+  if (animVal->mItems.Length() >= DOMSVGPoint::MaxListIndex()) {
+    return false;
+  }
+
   MOZ_ASSERT(animVal->mItems.Length() == mItems.Length(),
              "animVal list not in sync!");
   MOZ_ALWAYS_TRUE(animVal->mItems.InsertElementAt(aIndex, nullptr, fallible));
 
   UpdateListIndicesFromIndex(animVal->mItems, aIndex + 1);
+
+  return true;
 }
 
 void DOMSVGPointList::MaybeRemoveItemFromAnimValListAt(uint32_t aIndex) {

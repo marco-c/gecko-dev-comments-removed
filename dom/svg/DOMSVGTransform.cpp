@@ -33,10 +33,7 @@ SVGMatrixTearoffTable() {
 NS_IMPL_CYCLE_COLLECTION_CLASS(DOMSVGTransform)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(DOMSVGTransform)
-  
-  if (tmp->mList) {
-    tmp->mList->mItems[tmp->mListIndex] = nullptr;
-  }
+  tmp->CleanupWeakRefs();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mList)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -107,10 +104,17 @@ DOMSVGTransform::~DOMSVGTransform() {
     SVGMatrixTearoffTable().RemoveTearoff(this);
     NS_RELEASE(matrix);
   }
+  CleanupWeakRefs();
+}
+
+void DOMSVGTransform::CleanupWeakRefs() {
+  
   
   
   
   if (mList) {
+    MOZ_RELEASE_ASSERT(mList->mItems[mListIndex] == this,
+                       "Clearing out the wrong list index...?");
     mList->mItems[mListIndex] = nullptr;
   }
 }

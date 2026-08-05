@@ -129,6 +129,13 @@ class DOMSVGTransform final : public nsWrapperCache {
   ~DOMSVGTransform();
 
   
+
+
+
+
+  void CleanupWeakRefs();
+
+  
   friend class dom::SVGMatrix;
   bool IsAnimVal() const { return mIsAnimValItem; }
   void SetMatrix(const gfxMatrix& aMatrix);

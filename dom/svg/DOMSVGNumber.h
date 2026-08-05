@@ -38,14 +38,14 @@ class DOMSVGNumber final : public nsWrapperCache {
   template <class T>
   friend class AutoChangeNumberListNotifier;
 
-  ~DOMSVGNumber() {
-    
-    
-    
-    if (mList) {
-      mList->mItems[mListIndex] = nullptr;
-    }
-  }
+  ~DOMSVGNumber() { CleanupWeakRefs(); }
+
+  
+
+
+
+
+  void CleanupWeakRefs();
 
  public:
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(DOMSVGNumber)

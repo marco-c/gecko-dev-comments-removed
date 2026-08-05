@@ -98,8 +98,9 @@ class DOMSVGTransformList final : public nsISupports, public nsWrapperCache {
 
 
 
+
   uint32_t LengthNoFlush() const {
-    MOZ_ASSERT(mItems.IsEmpty() || mItems.Length() == InternalList().Length(),
+    MOZ_ASSERT(mItems.IsEmpty() || mItems.Length() <= InternalList().Length(),
                "DOM wrapper's list length is out of sync");
     return mItems.Length();
   }
@@ -177,7 +178,7 @@ class DOMSVGTransformList final : public nsISupports, public nsWrapperCache {
   
   already_AddRefed<dom::DOMSVGTransform> GetItemAt(uint32_t aIndex);
 
-  void MaybeInsertNullInAnimValListAt(uint32_t aIndex);
+  bool MaybeInsertNullInAnimValListAt(uint32_t aIndex);
   void MaybeRemoveItemFromAnimValListAt(uint32_t aIndex);
 
   
