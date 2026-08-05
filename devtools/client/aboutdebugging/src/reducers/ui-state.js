@@ -36,6 +36,9 @@ function UiState(
     showProfilerDialog: false,
     showHiddenAddons,
     temporaryInstallError: null,
+    
+    
+    temporaryInstallErrorCount: 0,
   };
 }
 
@@ -98,7 +101,10 @@ function uiReducer(state = UiState(), action) {
 
     case TEMPORARY_EXTENSION_INSTALL_FAILURE: {
       const { error } = action;
-      return Object.assign({}, state, { temporaryInstallError: error });
+      return Object.assign({}, state, {
+        temporaryInstallError: error,
+        temporaryInstallErrorCount: state.temporaryInstallErrorCount + 1,
+      });
     }
 
     default:
