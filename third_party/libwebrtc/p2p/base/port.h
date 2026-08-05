@@ -198,8 +198,6 @@ class RTC_EXPORT Port : public PortInterface {
 
 
 
-  [[deprecated("Pass via PortParametersRef")]] void SetIceTiebreaker(
-      uint64_t tiebreaker) override;
   uint64_t IceTiebreaker() const override;
 
   bool SharedSocket() const override;
@@ -603,7 +601,7 @@ class RTC_EXPORT Port : public PortInterface {
   bool enable_port_packets_ RTC_GUARDED_BY(thread_);
   IceRole ice_role_ RTC_GUARDED_BY(thread_);
   
-  uint64_t ice_tiebreaker_ RTC_GUARDED_BY(thread_);
+  const uint64_t ice_tiebreaker_;
   bool shared_socket_ RTC_GUARDED_BY(thread_);
 
   
