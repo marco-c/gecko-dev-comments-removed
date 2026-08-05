@@ -3193,10 +3193,21 @@ var gUIDensity = {
   uiDensityPref: "browser.uidensity",
   autoTouchModePref: "browser.touchmode.auto",
   autoCompactThresholdPref: "browser.compactmode.auto.threshold",
+  
+  
+  
+  rfpWindowSizingPrefs: [
+    "privacy.resistFingerprinting",
+    "privacy.resistFingerprinting.pbmode",
+    "privacy.resistFingerprinting.letterboxing",
+  ],
   knownPrefs: new Set([
     "browser.uidensity",
     "browser.touchmode.auto",
     "browser.compactmode.auto.threshold",
+    "privacy.resistFingerprinting",
+    "privacy.resistFingerprinting.pbmode",
+    "privacy.resistFingerprinting.letterboxing",
   ]),
 
   
@@ -3217,6 +3228,9 @@ var gUIDensity = {
     Services.prefs.addObserver(this.uiDensityPref, this);
     Services.prefs.addObserver(this.autoTouchModePref, this);
     Services.prefs.addObserver(this.autoCompactThresholdPref, this);
+    for (let pref of this.rfpWindowSizingPrefs) {
+      Services.prefs.addObserver(pref, this);
+    }
     window.addEventListener("resize", this);
 
     this._sidebarShownHandler = () => this.update();
@@ -3240,6 +3254,9 @@ var gUIDensity = {
     Services.prefs.removeObserver(this.uiDensityPref, this);
     Services.prefs.removeObserver(this.autoTouchModePref, this);
     Services.prefs.removeObserver(this.autoCompactThresholdPref, this);
+    for (let pref of this.rfpWindowSizingPrefs) {
+      Services.prefs.removeObserver(pref, this);
+    }
     window.removeEventListener("resize", this);
     if (this._sidebarShownHandler) {
       window.removeEventListener("SidebarShown", this._sidebarShownHandler);
@@ -3293,6 +3310,19 @@ var gUIDensity = {
     
     
     if (!window.toolbar.visible) {
+      return false;
+    }
+    
+    
+    
+    
+    
+    
+    if (
+      this.rfpWindowSizingPrefs.some(pref =>
+        Services.prefs.getBoolPref(pref, false)
+      )
+    ) {
       return false;
     }
     const threshold = parseFloat(
