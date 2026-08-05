@@ -653,6 +653,13 @@ pref("browser.urlbar.showSearchSuggestionsFirst", true);
 
 
 
+pref("browser.urlbar.smartbar.showSearchSuggestionsFirst", false);
+
+
+pref("browser.urlbar.smartbar.maxResults", 7);
+
+
+
 pref("browser.urlbar.maxCharsForSearchSuggestions", 100);
 
 pref("browser.urlbar.trimURLs", true);
@@ -1754,6 +1761,11 @@ pref("services.sync.prefs.sync.browser.tabs.warnOnOpen", true);
 pref("services.sync.prefs.sync.browser.taskbar.previews.enable", true);
 pref("services.sync.prefs.sync.browser.urlbar.maxRichResults", true);
 pref("services.sync.prefs.sync.browser.urlbar.showSearchSuggestionsFirst", true);
+pref("services.sync.prefs.sync.browser.urlbar.smartbar.maxResults", true);
+pref(
+  "services.sync.prefs.sync.browser.urlbar.smartbar.showSearchSuggestionsFirst",
+  true
+);
 pref("services.sync.prefs.sync.browser.urlbar.suggest.bookmark", true);
 pref("services.sync.prefs.sync.browser.urlbar.suggest.history", true);
 pref("services.sync.prefs.sync.browser.urlbar.suggest.openpage", true);
@@ -1868,13 +1880,6 @@ pref("browser.newtab.preload", true);
 
 
 
-#if !defined(XP_WIN) && !defined(XP_MACOSX)
-  pref("browser.preonboarding.enabled", false);
-#endif
-
-
-
-
 pref("termsofuse.acceptedVersion", 0);
 
 pref("termsofuse.acceptedDate", "0");
@@ -1894,6 +1899,14 @@ pref("termsofuse.minimumVersion", 4);
   pref("termsofuse.bypassNotification", false);
 #else
   pref("termsofuse.bypassNotification", true);
+#endif
+
+
+
+#ifdef MOZILLA_OFFICIAL
+  pref("browser.bypassAutoTriggerActions", false);
+#else
+  pref("browser.bypassAutoTriggerActions", true);
 #endif
 
 
@@ -2146,10 +2159,7 @@ pref("browser.aboutwelcome.screens", "");
 
 
 
-
-#if defined(XP_MACOSX) || defined(XP_WIN)
-  pref("browser.aboutwelcome.experimentsGate.enabled", true);
-#endif
+pref("browser.aboutwelcome.experimentsGate.enabled", true);
 
 
 
