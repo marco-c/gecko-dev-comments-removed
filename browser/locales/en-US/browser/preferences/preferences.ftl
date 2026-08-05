@@ -1718,6 +1718,29 @@ autofill-addresses-manage-addresses-title =
 addresses-no-addresses-stored-message =
     .label = No addresses added
 
+personal-info-group =
+    .label = Personal info
+autofill-personal-info-checkbox-message =
+    .label = Save and autofill personal info
+autofill-personal-info-manage-button =
+    .label = Manage personal info
+passports-list-header =
+    .label = Passports
+passports-delete-passport-button-label =
+    .aria-label = Delete
+passports-edit-passport-button-label =
+    .aria-label = Edit
+passports-delete-passport-prompt-title = Delete this passport?
+passports-delete-passport-prompt-confirm-button = Delete
+passports-delete-passport-prompt-cancel-button = Cancel
+autofill-passports-add-button = Add new passport
+autofill-personal-info-manage-title =
+    .heading = Manage personal info
+
+# This message is displayed when no passports are stored in Firefox
+passports-no-passports-stored-message =
+    .label = No passports added
+
 pane-passwords-autofill-title2 = Passwords and autofill
   .title = Passwords and autofill
 preferences-passwords-autofill-header =
@@ -2706,13 +2729,13 @@ security-privacy-issue-warning-safe-browsing =
   .label = Dangerous and deceptive content is not blocked
   .description = Your exposure to scams and malware from websites is increased.
 
-security-privacy-issue-warning-doh =
+security-privacy-issue-warning-doh2 =
   .label = DNS over HTTPS is disabled
-  .description = DNS over HTTPS hides what sites you visit from your network provider.
+  .description = DNS over HTTPS helps hide what sites you’re about to visit from your network provider.
 
-security-privacy-issue-warning-ech =
+security-privacy-issue-warning-ech2 =
   .label = Encrypted Client Hello is disabled
-  .description = Encrypted Client Hello hides what sites you visit from your network provider.
+  .description = Encrypted Client Hello helps hide what sites you’re about to visit from your network provider.
 
 security-privacy-issue-warning-proxy-autodetection =
   .label = Proxy auto-configuration is enabled
