@@ -51,93 +51,83 @@ const vendorOptimization = {
   ],
 };
 
-module.exports = (env = {}) => {
+module.exports = (env = {}) => [
   
-  
-  const contentPath = env.outputPath
-    ? path.resolve(env.outputPath)
-    : absolute("data/content");
-
-  return [
-    
-    Object.assign({}, baseConfig(env), {
-      name: "vendor",
-      entry: absolute("content-src/vendor.mjs"),
-      output: {
-        path: contentPath,
-        filename: "vendor.bundle.js",
-      },
-      devtool: false,
-      optimization: vendorOptimization,
-      plugins: [
-        new webpack.DefinePlugin({
-          "process.env.NODE_ENV": JSON.stringify(
-            env.development ? "development" : "production"
-          ),
-        }),
-        new webpack.BannerPlugin(
-          `THIS FILE IS AUTO-GENERATED: ${path.basename(__filename)}`
+  Object.assign({}, baseConfig(env), {
+    name: "vendor",
+    entry: absolute("content-src/vendor.mjs"),
+    output: {
+      path: absolute("data/content"),
+      filename: "vendor.bundle.js",
+    },
+    devtool: false,
+    optimization: vendorOptimization,
+    plugins: [
+      new webpack.DefinePlugin({
+        "process.env.NODE_ENV": JSON.stringify(
+          env.development ? "development" : "production"
         ),
-      ],
-    }),
-    
-    Object.assign({}, baseConfig(env), {
-      name: "activity-stream",
-      entry: absolute("content-src/activity-stream.jsx"),
-      output: {
-        path: contentPath,
-        filename: "activity-stream.bundle.js",
-        library: {
-          name: "NewtabRenderUtils",
-          type: "var",
-        },
+      }),
+      new webpack.BannerPlugin(
+        `THIS FILE IS AUTO-GENERATED: ${path.basename(__filename)}`
+      ),
+    ],
+  }),
+  
+  Object.assign({}, baseConfig(env), {
+    name: "activity-stream",
+    entry: absolute("content-src/activity-stream.jsx"),
+    output: {
+      path: absolute("data/content"),
+      filename: "activity-stream.bundle.js",
+      library: {
+        name: "NewtabRenderUtils",
+        type: "var",
       },
-      externalsType: "window",
-      externals: {
-        react: "React",
-        "react-dom": "ReactDOM",
-        "react-dom/client": {
-          root: "ReactDOM",
-          commonjs: "react-dom/client",
-          commonjs2: "react-dom/client",
-        },
-        "react-dom/server.browser": {
-          root: "ReactDOMServer",
-          commonjs: "react-dom/server.browser",
-          commonjs2: "react-dom/server.browser",
-        },
-        "prop-types": "PropTypes",
-        "react-transition-group": "ReactTransitionGroup",
-        "react-redux": "ReactRedux",
-        redux: "Redux",
+    },
+    externalsType: "window",
+    externals: {
+      react: "React",
+      "react-dom": "ReactDOM",
+      "react-dom/client": {
+        root: "ReactDOM",
+        commonjs: "react-dom/client",
+        commonjs2: "react-dom/client",
       },
-      plugins: [
-        new webpack.DefinePlugin({
-          "process.env.NODE_ENV": JSON.stringify(
-            env.development ? "development" : "production"
-          ),
-        }),
-        new ResourceUriPlugin({
-          resourcePathRegExes: [
-            [new RegExp("^resource://newtab/"), path.join(__dirname, "./")],
-            [
-              new RegExp("^resource:///modules/topsites/"),
-              path.join(__dirname, "../../components/topsites/"),
-            ],
-            [
-              new RegExp("^resource:///modules/Dedupe.sys.mjs"),
-              path.join(__dirname, "../../modules/Dedupe.sys.mjs"),
-            ],
+      "react-dom/server.browser": {
+        root: "ReactDOMServer",
+        commonjs: "react-dom/server.browser",
+        commonjs2: "react-dom/server.browser",
+      },
+      "prop-types": "PropTypes",
+      "react-transition-group": "ReactTransitionGroup",
+      "react-redux": "ReactRedux",
+      redux: "Redux",
+    },
+    plugins: [
+      new webpack.DefinePlugin({
+        "process.env.NODE_ENV": JSON.stringify(
+          env.development ? "development" : "production"
+        ),
+      }),
+      new ResourceUriPlugin({
+        resourcePathRegExes: [
+          [new RegExp("^resource://newtab/"), path.join(__dirname, "./")],
+          [
+            new RegExp("^resource:///modules/topsites/"),
+            path.join(__dirname, "../../components/topsites/"),
           ],
-        }),
-        new MozSrcUriPlugin({
-          baseDir: path.join(__dirname, "..", "..", ".."),
-        }),
-        new webpack.BannerPlugin(
-          `THIS FILE IS AUTO-GENERATED: ${path.basename(__filename)}`
-        ),
-        new webpack.optimize.ModuleConcatenationPlugin(),
-      ],
-    }),
-  ];
-};
+          [
+            new RegExp("^resource:///modules/Dedupe.sys.mjs"),
+            path.join(__dirname, "../../modules/Dedupe.sys.mjs"),
+          ],
+        ],
+      }),
+      new MozSrcUriPlugin({ baseDir: path.join(__dirname, "..", "..", "..") }),
+      new webpack.BannerPlugin(
+        `THIS FILE IS AUTO-GENERATED: ${path.basename(__filename)}`
+      ),
+      new webpack.optimize.ModuleConcatenationPlugin(),
+    ],
+  }),
+];
