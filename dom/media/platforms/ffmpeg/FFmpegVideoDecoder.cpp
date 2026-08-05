@@ -434,7 +434,18 @@ int FFmpegVideoDecoder<LIBAV_VER>::ChooseVulkanPixelFormatFromContext(
           (mVulkanDecoder.mDrmModifiers[0] == DRM_FORMAT_MOD_LINEAR) &&
           (mVulkanDecoder.mDrmModifiers.size() == 1);
     }
-    if (VulkanDirectDecodeExportEnabled() && !drmModsAreLinearOrEmpty) {
+    
+    
+    
+    
+    if (VulkanDirectDecodeExportEnabled() &&
+        mVulkanDecoder.mForcedNvidiaBlockLinear) {
+      FFMPEGV_LOG(
+          "[VULKAN] Direct export disabled: forced NVIDIA BL after "
+          "ImageFormatProperties2 left only LINEAR");
+    }
+    if (VulkanDirectDecodeExportEnabled() &&
+        !mVulkanDecoder.mForcedNvidiaBlockLinear && !drmModsAreLinearOrEmpty) {
       AVVulkanFramesContext* hwfc = (AVVulkanFramesContext*)frames_ctx->hwctx;
       void* const originalCreatePnext = hwfc->create_pnext;
       int formatCount = 0;

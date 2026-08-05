@@ -120,6 +120,8 @@ struct FFmpegVulkanVideoDecoder {
       '\0',
   };
   bool mDecoderMatchesCompositor = false;
+  
+  bool mForcedNvidiaBlockLinear = false;
   ~FFmpegVulkanVideoDecoder();
   void Cleanup();
 
