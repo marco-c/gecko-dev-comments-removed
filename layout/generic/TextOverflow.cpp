@@ -127,11 +127,11 @@ class nsDisplayTextOverflowMarker final : public nsPaintedDisplayItem {
  public:
   nsDisplayTextOverflowMarker(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                               const nsRect& aRect, nscoord aAscent,
-                              const StyleTextOverflowSide& aStyle,
+                              const StyleAtomString* aString,
                               gfxTextRun* aTextRun)
       : nsPaintedDisplayItem(aBuilder, aFrame),
         mRect(aRect),
-        mStyle(aStyle),
+        mString(aString),
         mAscent(aAscent),
         mTextRun(aTextRun) {
     MOZ_COUNT_CTOR(nsDisplayTextOverflowMarker);
@@ -174,7 +174,7 @@ class nsDisplayTextOverflowMarker final : public nsPaintedDisplayItem {
   NS_DISPLAY_DECL_NAME("TextOverflow", TYPE_TEXT_OVERFLOW)
  private:
   nsRect mRect;  
-  const StyleTextOverflowSide mStyle;
+  const StyleAtomString* mString;
   nscoord mAscent;              
   RefPtr<gfxTextRun> mTextRun;  
 };
@@ -227,14 +227,14 @@ void nsDisplayTextOverflowMarker::PaintTextToContext(
     return;
   }
 
-  if (mStyle.IsEllipsis()) [[unlikely]] {
+  if (!mString) [[unlikely]] {
     
     return;
   }
 
   RefPtr<nsFontMetrics> fm =
       nsLayoutUtils::GetInflatedFontMetricsForFrame(mFrame);
-  nsDependentAtomString str16(mStyle.AsString().AsAtom());
+  nsDependentAtomString str16(mString->AsAtom());
   nsLayoutUtils::DrawString(mFrame, *fm, aCtx, str16.get(), str16.Length(), pt);
 }
 
@@ -316,6 +316,13 @@ TextOverflow::TextOverflow(nsDisplayListBuilder* aBuilder,
   }
   
   
+}
+
+LogicalRect TextOverflow::GetLogicalScrollableOverflowRectRelativeToBlock(
+    nsIFrame* aFrame) const {
+  return LogicalRect(
+      mBlockWM, aFrame->ScrollableOverflowRect() + aFrame->GetOffsetTo(mBlock),
+      mBlockSize);
 }
 
 
@@ -486,7 +493,7 @@ LogicalRect TextOverflow::ExamineLineFrames(nsLineBox* aLine,
     }
     if (pos.I(mBlockWM) >= scrollRange.IEnd(mBlockWM)) {
       
-      if (!mIEnd.mHasBlockEllipsis) {
+      if (!mIEnd.HasBlockEllipsis()) {
         suppressIEnd = true;
       }
     }
@@ -532,7 +539,7 @@ LogicalRect TextOverflow::ExamineLineFrames(nsLineBox* aLine,
   const bool iendWantsTextOverflowMarker =
       !suppressIEnd && lineRect.IEnd(mBlockWM) > contentArea.IEnd(mBlockWM);
   const bool iendWantsBlockEllipsisMarker =
-      !suppressIEnd && mIEnd.mHasBlockEllipsis;
+      !suppressIEnd && mIEnd.HasBlockEllipsis();
   const bool iendWantsMarker =
       iendWantsTextOverflowMarker || iendWantsBlockEllipsisMarker;
   if (!istartWantsMarker && !iendWantsMarker) {
@@ -631,7 +638,7 @@ LogicalRect TextOverflow::ExamineLineFrames(nsLineBox* aLine,
       
       
       
-      if (mIEnd.IsNeeded() && mIEnd.mActive && mIEnd.mHasBlockEllipsis) {
+      if (mIEnd.IsNeeded() && mIEnd.mActive && mIEnd.HasBlockEllipsis()) {
         NS_ASSERTION(nonSnappedContentArea.IStart(mBlockWM) >
                          aAlignmentEdges->mIEndOuter,
                      "Expected the alignment edge for the out of view content "
@@ -649,8 +656,10 @@ LogicalRect TextOverflow::ExamineLineFrames(nsLineBox* aLine,
     } else {
       guessIStart = mIStart.mActive && mIStart.IsNeeded();
       guessIEnd = mIEnd.mActive && mIEnd.IsNeeded();
+      const auto* blockEllipsis = mIEnd.mBlockEllipsis;
       mIStart.Reset();
       mIEnd.Reset();
+      mIEnd.mBlockEllipsis = blockEllipsis;
       aFramesToHide->Clear();
     }
     NS_ASSERTION(pass == 0, "2nd pass should never guess wrong");
@@ -666,15 +675,17 @@ LogicalRect TextOverflow::ExamineLineFrames(nsLineBox* aLine,
 
 void TextOverflow::ProcessLine(const nsDisplayListSet& aLists, nsLineBox* aLine,
                                uint32_t aLineNumber) {
-  if (mIStart.mStyle->IsClip() && mIEnd.mStyle->IsClip() &&
-      !aLine->HasLineClampEllipsis()) {
+  if (mIStart.mTextOverflowStyle->IsClip() &&
+      mIEnd.mTextOverflowStyle->IsClip() && !aLine->HasLineClampEllipsis()) {
     return;
   }
 
   mIStart.Reset();
-  mIStart.mActive = !mIStart.mStyle->IsClip();
+  mIStart.mActive = !mIStart.mTextOverflowStyle->IsClip();
   mIEnd.Reset();
-  mIEnd.mHasBlockEllipsis = aLine->HasLineClampEllipsis();
+  if (aLine->HasLineClampEllipsis()) {
+    mIEnd.mBlockEllipsis = mBlock->GetLineClampBlockEllipsis();
+  }
   mIEnd.mActive = !mIEnd.IsSuppressed(mInLineClampContext);
 
   FrameHashtable framesToHide(64);
@@ -724,7 +735,7 @@ void TextOverflow::ProcessLine(const nsDisplayListSet& aLists, nsLineBox* aLine,
     
     
     
-    if (mIEnd.mHasBlockEllipsis) {
+    if (mIEnd.HasBlockEllipsis()) {
       insideMarkersArea = LogicalRect(mBlockWM, alignmentEdges.mIEndOuter,
                                       insideMarkersArea.BStart(mBlockWM), 0, 1);
     }
@@ -896,8 +907,8 @@ void TextOverflow::CreateMarkers(const nsLineBox* aLine, bool aCreateIStart,
 
     mMarkerList.AppendNewToTopWithIndex<nsDisplayTextOverflowMarker>(
         mBuilder, mBlock,  (aLineNumber << 1) + 0, markerRect,
-        aLine->GetLogicalAscent(), *mIStart.mStyle,
-        mIStart.mStyle->IsEllipsis() ? GetEllipsisTextRun() : nullptr);
+        aLine->GetLogicalAscent(), mIStart.String(),
+        mIStart.IsEllipsis() ? GetEllipsisTextRun() : nullptr);
   }
 
   if (aCreateIEnd) {
@@ -914,12 +925,8 @@ void TextOverflow::CreateMarkers(const nsLineBox* aLine, bool aCreateIStart,
 
     mMarkerList.AppendNewToTopWithIndex<nsDisplayTextOverflowMarker>(
         mBuilder, mBlock,  (aLineNumber << 1) + 1, markerRect,
-        aLine->GetLogicalAscent(),
-        mIEnd.mHasBlockEllipsis ? StyleTextOverflowSide::Ellipsis()
-                                : *mIEnd.mStyle,
-        mIEnd.mHasBlockEllipsis || mIEnd.mStyle->IsEllipsis()
-            ? GetEllipsisTextRun()
-            : nullptr);
+        aLine->GetLogicalAscent(), mIEnd.String(),
+        mIEnd.IsEllipsis() ? GetEllipsisTextRun() : nullptr);
   }
 }
 
@@ -937,10 +944,7 @@ void TextOverflow::Marker::SetupString(nsIFrame* aFrame) {
 
   
   
-  
-  
-  
-  if (HasBlockEllipsis(aFrame) || mStyle->IsEllipsis()) {
+  if (IsEllipsis()) {
     RefPtr<gfxTextRun> textRun = MakeEllipsisTextRun(aFrame);
     if (textRun) {
       mISize = textRun->GetAdvanceWidth();
@@ -948,12 +952,14 @@ void TextOverflow::Marker::SetupString(nsIFrame* aFrame) {
       mISize = 0;
     }
   } else {
+    const StyleAtomString* string = String();
+    MOZ_ASSERT(string);
     UniquePtr<gfxContext> rc =
         aFrame->PresShell()->CreateReferenceRenderingContext();
     RefPtr<nsFontMetrics> fm =
         nsLayoutUtils::GetInflatedFontMetricsForFrame(aFrame);
     mISize = nsLayoutUtils::AppUnitWidthOfStringBidi(
-        nsDependentAtomString(mStyle->AsString().AsAtom()), aFrame, *fm, *rc);
+        nsDependentAtomString(string->AsAtom()), aFrame, *fm, *rc);
   }
   mIntrinsicISize = mISize;
   mInitialized = true;
