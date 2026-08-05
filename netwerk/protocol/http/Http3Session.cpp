@@ -979,13 +979,7 @@ nsresult Http3Session::ProcessEvents() {
             mStreamIdHash.InsertOrUpdate(wtStream->StreamId(),
                                          std::move(wtStream));
           } break;
-          case WebTransportEventExternal::Tag::Draining:
-            LOG(
-                ("Http3Session::ProcessEvents - "
-                 "WebTransportEventExternal::Tag::Draining [this=%p]",
-                 this));
-            break;
-          case WebTransportEventExternal::Tag::Datagram:
+          case WebTransportEventExternal::Tag::Datagram: {
             LOG(
                 ("Http3Session::ProcessEvents - "
                  "WebTransportEventExternal::Tag::Datagram [this=%p]",
@@ -1008,6 +1002,15 @@ nsresult Http3Session::ProcessEvents() {
             }
 
             wt->OnDatagramReceived(std::move(data));
+          } break;
+          case WebTransportEventExternal::Tag::Draining:
+            LOG((
+                "Http3Session::ProcessEvents - "
+                "WebTransportEventExternal::Tag::Draining sessionId=0x%" PRIx64,
+                event.web_transport._0.draining.session_id));
+            
+            
+            
             break;
         }
       } break;
