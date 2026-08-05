@@ -99,6 +99,33 @@ add_task(function test_providerType_roundtrip() {
   );
 });
 
+add_task(function test_fromWire_skips_payload_validation() {
+  let result = makeUrlResult();
+
+  
+  
+  
+  
+  let wire = result.toWire();
+  wire.payload = { ...wire.payload, internalField: { some: "object" } };
+
+  
+  Assert.throws(
+    () => new UrlbarResult(wire),
+    /./,
+    "constructing with validation rejects the internal payload field"
+  );
+
+  
+  
+  let restored = UrlbarResult.fromWire(structuredClone(wire));
+  Assert.deepEqual(
+    restored.payload.internalField,
+    { some: "object" },
+    "fromWire preserves the internal payload field without re-validating"
+  );
+});
+
 add_task(function test_queryContext_roundtrip() {
   let context = createContext("foo bar", { providers: ["test"] });
   let heuristic = makeUrlResult({ heuristic: true });
