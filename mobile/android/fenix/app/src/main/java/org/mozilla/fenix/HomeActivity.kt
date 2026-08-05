@@ -37,6 +37,7 @@ import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.text.layoutDirection
 import androidx.core.view.doOnLayout
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.NavDirections
@@ -442,6 +443,11 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             super.onCreate(savedInstanceState)
         }
 
+        // Must run after the edge-to-edge capable theme is applied by
+        // `setupTheme` (or installSplashScreen). It must also be run before
+        // the `setContent` starts attaching fragments.
+        EdgeToEdgeFragmentLifecycleCallbacks.register(supportFragmentManager, window)
+
         // Checks if Activity is currently in PiP mode if launched from external intents, then exits it
         checkAndExitPiP()
 
@@ -479,9 +485,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             storage = DefaultSplashScreenStorage(components.settings),
             showSplashScreen = { installSplashScreen().setKeepOnScreenCondition(it) },
             onSplashScreenFinished = { result ->
-                // Before the splashscreen ends the application has a different theme not supporting edge to edge.
-                EdgeToEdgeFragmentLifecycleCallbacks.register(supportFragmentManager, window)
-
                 if (result.sendTelemetry) {
                     SplashScreen.firstLaunchExtended.record(
                         SplashScreen.FirstLaunchExtendedExtra(dataFetched = result.wasDataFetched),
@@ -590,7 +593,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             extensionsProcessDisabledForegroundController,
             extensionsProcessDisabledBackgroundController,
             serviceWorkerSupport,
-            aboutHomeBinding,
             crashReporterBinding,
             defaultTopSitesBinding,
             TopSitesRefresher(
@@ -607,6 +609,8 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             translationsAIControllableFeatureRegistrar,
             ipProtectionPrompter,
         )
+
+        addAboutHomeBinding(lifecycle)
 
         if (!isCustomTabIntent(intent)) {
             lifecycle.addObserver(webExtensionPromptFeature)
@@ -1442,6 +1446,11 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         }
 
         navController.navigate(NavGraphDirections.actionStartupHome())
+    }
+
+    @VisibleForTesting
+    internal open fun addAboutHomeBinding(lifecycle: Lifecycle) {
+        lifecycle.addObserver(aboutHomeBinding)
     }
 
     final override fun attachBaseContext(base: Context) {
