@@ -331,14 +331,10 @@ impl IsVisible for NormalBorderPrim {
 
 
 
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Clone, Eq, MallocSizeOf, PartialEq, Hash)]
-pub struct ImageBorder {
-    #[ignore_malloc_size_of = "Arc"]
-    pub request: ImageRequest,
-    pub nine_patch: NinePatchDescriptor,
-}
+
+
+
+pub use api::interned_prims::ImageBorder;
 
 pub type ImageBorderKey = PrimKey<ImageBorder>;
 
@@ -485,7 +481,11 @@ impl From<ImageBorderKey> for ImageBorderTemplate {
         ImageBorderTemplate {
             common,
             kind: ImageBorderData {
-                request: key.kind.request,
+                request: ImageRequest {
+                    key: key.kind.key,
+                    rendering: key.kind.rendering,
+                    tile: key.kind.tile,
+                },
                 nine_patch: key.kind.nine_patch,
             }
         }
