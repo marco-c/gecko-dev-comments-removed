@@ -54,6 +54,10 @@
 #  include "ShutdownLayer.h"
 #endif
 
+#if defined(MOZ_WIDGET_ANDROID)
+#  include "AndroidNetworkBlockedReason.h"
+#endif
+
 
 #include "private/pprio.h"
 #if defined(XP_WIN)
@@ -2179,6 +2183,17 @@ void nsSocketTransport::OnSocketReady(PRFileDesc* fd, int16_t outFlags) {
   if (outFlags == -1) {
     SOCKET_LOG(("socket timeout expired\n"));
     mCondition = NS_ERROR_NET_TIMEOUT;
+#if defined(MOZ_WIDGET_ANDROID)
+    
+    
+    
+    
+    
+    if (mState == STATE_CONNECTING &&
+        IsConnectBlockedByAndroidLocalNetworkPermission(fd)) {
+      mCondition = NS_ERROR_OS_LOCAL_NETWORK_ACCESS_DENIED;
+    }
+#endif
     return;
   }
 
@@ -2258,6 +2273,15 @@ void nsSocketTransport::OnSocketReady(PRFileDesc* fd, int16_t outFlags) {
             !mProxyHost.IsEmpty()) {
           mCondition = NS_ERROR_PROXY_CONNECTION_REFUSED;
         }
+#if defined(MOZ_WIDGET_ANDROID)
+        
+        
+        
+        
+        else if (IsConnectBlockedByAndroidLocalNetworkPermission(fd)) {
+          mCondition = NS_ERROR_OS_LOCAL_NETWORK_ACCESS_DENIED;
+        }
+#endif
         SOCKET_LOG(("  connection failed! [reason=%" PRIx32 "]\n",
                     static_cast<uint32_t>(mCondition)));
       }

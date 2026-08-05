@@ -365,6 +365,14 @@ with modules["NETWORK"]:
     
     
     errors["NS_ERROR_HTTP2_FALLBACK_TO_HTTP1"] = FAILURE(94)
+    
+    
+    
+    
+    
+    
+    
+    errors["NS_ERROR_OS_LOCAL_NETWORK_ACCESS_DENIED"] = FAILURE(95)
 
     
     
