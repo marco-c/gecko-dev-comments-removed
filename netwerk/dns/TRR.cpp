@@ -714,7 +714,7 @@ nsresult TRR::FollowCname(nsIChannel* aChannel) {
   }
 
   
-  mCname = cname;
+  mCname = std::move(cname);
   if (NS_SUCCEEDED(rv) && HasUsableResponse()) {
     ReturnData(aChannel);
     return NS_OK;

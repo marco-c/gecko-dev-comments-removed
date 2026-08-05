@@ -1835,7 +1835,7 @@ void NetlinkService::CalculateNetworkID() {
       } else {
         glean::network::id.AccumulateSingleSample(4);  
       }
-      mNetworkId = output;
+      mNetworkId = std::move(output);
       idChanged = true;
     } else {
       

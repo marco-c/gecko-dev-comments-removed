@@ -735,7 +735,7 @@ DictionaryCacheEntry::OnStopRequest(nsIRequest* request, nsresult result) {
   
   nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
       "DictionaryCacheEntry::OnStopRequest",
-      [self = RefPtr{this}, result, computedHash,
+      [self = RefPtr{this}, result, computedHash = std::move(computedHash),
        pendingData = std::move(pendingData)]() mutable {
         nsresult finalResult = result;
         bool shouldRemoveDictionary = false;

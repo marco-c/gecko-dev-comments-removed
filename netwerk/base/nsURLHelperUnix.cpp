@@ -27,7 +27,7 @@ nsresult net_GetURLSpecFromActualFile(nsIFile* aFile, nsACString& result) {
   if (nativePath == ePath) {
     CopyUTF16toUTF8(path, ePath);
   } else {
-    ePath = nativePath;
+    ePath = std::move(nativePath);
   }
 
   nsAutoCString escPath;
@@ -44,7 +44,7 @@ nsresult net_GetURLSpecFromActualFile(nsIFile* aFile, nsACString& result) {
   
   
   escPath.ReplaceSubstring(";", "%3b");
-  result = escPath;
+  result = std::move(escPath);
   return NS_OK;
 }
 
