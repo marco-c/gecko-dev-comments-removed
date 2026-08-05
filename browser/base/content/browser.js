@@ -3194,10 +3194,12 @@ var gUIDensity = {
     
     
     
-    let sidebarMainContainer = document.getElementById("sidebar-main");
-    if (sidebarMainContainer) {
+    
+    
+    let sidebarContainer = document.getElementById("sidebar-container");
+    if (sidebarContainer) {
       this._sidebarStateObserver = new MutationObserver(() => this.update());
-      this._sidebarStateObserver.observe(sidebarMainContainer, {
+      this._sidebarStateObserver.observe(sidebarContainer, {
         attributes: true,
         attributeFilter: ["hidden", "sidebar-launcher-expanded"],
       });
@@ -3314,7 +3316,18 @@ var gUIDensity = {
       return false;
     }
     const state = SidebarController._state;
-    return Boolean(state && state.launcherVisible && !state.launcherExpanded);
+    if (!state?.launcherVisible) {
+      return false;
+    }
+    
+    
+    
+    
+    
+    if (SidebarController.sidebarRevampVisibility === "expand-on-hover") {
+      return true;
+    }
+    return !state.launcherExpanded;
   },
 
   

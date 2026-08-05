@@ -52,6 +52,32 @@ function cssVar(win, name) {
     .trim();
 }
 
+
+
+
+
+
+
+
+
+
+async function withLauncherWidthCheckOnly(win, callback) {
+  let { gUIDensity } = win;
+  let originalRefHeight = gUIDensity.AUTO_COMPACT_REFERENCE_TABSTRIP_HEIGHT;
+  let originalRefWidth =
+    gUIDensity.AUTO_COMPACT_REFERENCE_SIDEBAR_LAUNCHER_WIDTH;
+  gUIDensity.AUTO_COMPACT_REFERENCE_TABSTRIP_HEIGHT = 0;
+  gUIDensity.AUTO_COMPACT_REFERENCE_SIDEBAR_LAUNCHER_WIDTH = win.innerWidth;
+  Services.prefs.setCharPref(PREF_THRESHOLD, below(1));
+  try {
+    await callback();
+  } finally {
+    gUIDensity.AUTO_COMPACT_REFERENCE_TABSTRIP_HEIGHT = originalRefHeight;
+    gUIDensity.AUTO_COMPACT_REFERENCE_SIDEBAR_LAUNCHER_WIDTH = originalRefWidth;
+    Services.prefs.clearUserPref(PREF_THRESHOLD);
+  }
+}
+
 add_task(async function test_auto_compact_engages_in_small_window() {
   await SpecialPowers.pushPrefEnv({
     set: [[PREF_NOVA, true]],
@@ -372,10 +398,6 @@ add_task(async function test_sidebar_launcher_collapsed_requires_revamp() {
   });
 });
 
-
-
-
-
 add_task(async function test_collapsed_launcher_width_triggers_compact() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -402,31 +424,7 @@ add_task(async function test_collapsed_launcher_width_triggers_compact() {
       "The launcher is visible and collapsed"
     );
 
-    
-    
-    
-    
-    
-    
-    let originalRefWidth =
-      win.gUIDensity.AUTO_COMPACT_REFERENCE_SIDEBAR_LAUNCHER_WIDTH;
-    win.gUIDensity.AUTO_COMPACT_REFERENCE_SIDEBAR_LAUNCHER_WIDTH =
-      win.innerWidth;
-    try {
-      let hRatio =
-        win.gUIDensity.AUTO_COMPACT_REFERENCE_TABSTRIP_HEIGHT / win.innerHeight;
-      let wRatio =
-        win.gUIDensity.AUTO_COMPACT_REFERENCE_SIDEBAR_LAUNCHER_WIDTH /
-        win.innerWidth;
-      Assert.greater(
-        wRatio,
-        hRatio,
-        "Launcher-width ratio isolates the width check from the height check"
-      );
-
-      
-      
-      Services.prefs.setCharPref(PREF_THRESHOLD, String((hRatio + wRatio) / 2));
+    await withLauncherWidthCheckOnly(win, async () => {
       win.gUIDensity.update();
       Assert.ok(
         isCompact(win),
@@ -443,11 +441,7 @@ add_task(async function test_collapsed_launcher_width_triggers_compact() {
       );
 
       win.SidebarController._state.launcherExpanded = false;
-    } finally {
-      win.gUIDensity.AUTO_COMPACT_REFERENCE_SIDEBAR_LAUNCHER_WIDTH =
-        originalRefWidth;
-      Services.prefs.clearUserPref(PREF_THRESHOLD);
-    }
+    });
   });
 
   await SpecialPowers.popPrefEnv();
@@ -527,6 +521,100 @@ add_task(async function test_compact_shrinks_vertical_tab_margin() {
     );
 
     win.gUIDensity.update(win.gUIDensity.MODE_NORMAL);
+  });
+
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_closing_sidebar_disengages_compact() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [PREF_NOVA, true],
+      ["sidebar.revamp", true],
+      ["sidebar.verticalTabs", false],
+      ["sidebar.visibility", "hide-on-close"],
+    ],
+    clear: [[PREF_UI_DENSITY]],
+  });
+
+  await withNewWindow(async win => {
+    await TestUtils.waitForCondition(
+      () => win.SidebarController?.initialized,
+      "SidebarController is initialized"
+    );
+
+    
+    win.SidebarController._state.launcherVisible = false;
+
+    await withLauncherWidthCheckOnly(win, async () => {
+      await TestUtils.waitForCondition(
+        () => !isCompact(win),
+        "Window starts non-compact with the launcher hidden"
+      );
+      Assert.ok(!isCompact(win), "Not compact while the sidebar is closed");
+
+      await win.SidebarController.show("viewHistorySidebar");
+      await TestUtils.waitForCondition(
+        () => isCompact(win),
+        "Compact engages when the panel makes the collapsed launcher visible"
+      );
+      Assert.ok(isCompact(win), "Compact engages when the panel opens");
+
+      win.SidebarController.hide();
+      await TestUtils.waitForCondition(
+        () => !isCompact(win),
+        "Compact disengages once the panel is closed and the launcher hidden"
+      );
+      Assert.ok(!isCompact(win), "Compact disengages when the panel closes");
+    });
+  });
+
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+
+add_task(async function test_expand_on_hover_keeps_compact() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [PREF_NOVA, true],
+      ["sidebar.revamp", true],
+      ["sidebar.verticalTabs", true],
+      ["sidebar.visibility", "expand-on-hover"],
+    ],
+    clear: [[PREF_UI_DENSITY]],
+  });
+
+  await withNewWindow(async win => {
+    await TestUtils.waitForCondition(
+      () => win.SidebarController?.initialized,
+      "SidebarController is initialized"
+    );
+
+    win.SidebarController._state.launcherVisible = true;
+    win.SidebarController._state.launcherExpanded = false;
+
+    await withLauncherWidthCheckOnly(win, async () => {
+      await TestUtils.waitForCondition(
+        () => isCompact(win),
+        "Compact engages via the collapsed-launcher width check"
+      );
+
+      win.SidebarController._state.launcherExpanded = true;
+      await TestUtils.waitForCondition(
+        () => win.SidebarController._state.launcherExpanded,
+        "The launcher reports itself expanded"
+      );
+      Assert.ok(
+        win.gUIDensity._isSidebarLauncherCollapsed(),
+        "A hover-expanded launcher still counts as collapsed"
+      );
+      Assert.ok(isCompact(win), "Compact stays engaged while hover-expanded");
+
+      win.SidebarController._state.launcherExpanded = false;
+      Assert.ok(isCompact(win), "Compact stays engaged once un-hovered");
+    });
   });
 
   await SpecialPowers.popPrefEnv();
