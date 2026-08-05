@@ -748,12 +748,16 @@ void nsTimerImpl::Fire(uint64_t aTimerSeq) {
       [&](const FuncCallback& f) { f.mFunc(timer, f.mClosure); },
       [&](const ClosureCallback& c) { c(timer); });
 
-  TimeStamp now = TimeStamp::Now();
+  MOZ_LOG(GetTimerLog(), LogLevel::Debug,
+          ("[this=%p] Took %fms to fire timer callback\n", this,
+           (TimeStamp::Now() - fireTime).ToMilliseconds()));
 
   MutexAutoLock lock(mMutex);
   
   if (aTimerSeq == mTimerSeq) {
     if (IsRepeating()) {
+      const TimeStamp now = TimeStamp::Now();
+
       
       if (IsSlack()) {
         mTimeout = now + mDelay;
@@ -781,10 +785,6 @@ void nsTimerImpl::Fire(uint64_t aTimerSeq) {
   }
 
   --mFiring;
-
-  MOZ_LOG(GetTimerLog(), LogLevel::Debug,
-          ("[this=%p] Took %fms to fire timer callback\n", this,
-           (now - fireTime).ToMilliseconds()));
 }
 
 
