@@ -8329,13 +8329,7 @@ void PromiseObject::dumpOwnStringContent(js::GenericPrinter& out) const {}
     return false;
   }
 
-  if (!iter.isFunctionFrame() && iter.isModuleFrame()) {
-    
-    
-    
-    return false;
-  }
-
+  MOZ_ASSERT(iter.isFunctionFrame(), "CanSkipAwait is only used for functions");
   MOZ_ASSERT(iter.calleeTemplate()->isAsync());
 
   

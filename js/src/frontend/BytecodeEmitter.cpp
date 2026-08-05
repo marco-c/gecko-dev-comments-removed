@@ -6640,20 +6640,26 @@ bool BytecodeEmitter::emitAwaitInInnermostScope(UnaryNode* awaitNode) {
 }
 
 bool BytecodeEmitter::emitAwaitInScope(EmitterScope& currentScope) {
-  if (!emit1(JSOp::CanSkipAwait)) {
-    
-    return false;
-  }
+  
+  
+  
+  mozilla::Maybe<InternalIfEmitter> ifCanSkip;
+  if (sc->isFunctionBox()) {
+    if (!emit1(JSOp::CanSkipAwait)) {
+      
+      return false;
+    }
 
-  if (!emit1(JSOp::MaybeExtractAwaitValue)) {
-    
-    return false;
-  }
+    if (!emit1(JSOp::MaybeExtractAwaitValue)) {
+      
+      return false;
+    }
 
-  InternalIfEmitter ifCanSkip(this);
-  if (!ifCanSkip.emitThen(IfEmitter::ConditionKind::Negative)) {
-    
-    return false;
+    ifCanSkip.emplace(this);
+    if (!ifCanSkip->emitThen(IfEmitter::ConditionKind::Negative)) {
+      
+      return false;
+    }
   }
 
   if (sc->asSuspendableContext()->needsPromiseResult()) {
@@ -6680,11 +6686,12 @@ bool BytecodeEmitter::emitAwaitInScope(EmitterScope& currentScope) {
     return false;
   }
 
-  if (!ifCanSkip.emitEnd()) {
-    return false;
+  if (ifCanSkip.isSome()) {
+    if (!ifCanSkip->emitEnd()) {
+      return false;
+    }
+    MOZ_ASSERT(ifCanSkip->popped() == 0);
   }
-
-  MOZ_ASSERT(ifCanSkip.popped() == 0);
 
   return true;
 }
