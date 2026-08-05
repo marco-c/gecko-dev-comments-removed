@@ -1,0 +1,34 @@
+
+
+
+
+
+#ifndef mozilla_net_PrefetchCookieCopier_h
+#define mozilla_net_PrefetchCookieCopier_h
+
+#include "mozilla/OriginAttributes.h"
+#include "nsString.h"
+
+namespace mozilla::net {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void CopyPrefetchCookies(const nsString& aIsolatedPartitionKey,
+                         const OriginAttributes& aDestAttrs);
+
+}  
+
+#endif  
