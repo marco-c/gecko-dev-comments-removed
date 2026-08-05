@@ -29,5 +29,16 @@ browser.test.runTests([
         browser.test.assertEq(typeof platformInfo, "object")
         browser.test.assertEq(typeof platformInfo.os, "string")
         browser.test.assertEq(typeof platformInfo.arch, "string")
+    },
+    async function browserRuntimeGetVersion() {
+        const version = browser.runtime.getVersion()
+        browser.test.assertEq(typeof version, "string")
+        
+        
+        browser.test.assertTrue(version === "1.01" || version === "1.1")
+        if (browser.management && browser.management.getSelf) {
+            const extensionInfo = await browser.management.getSelf()
+            browser.test.assertEq(version, extensionInfo.version)
+        }
     }
 ])
