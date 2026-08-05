@@ -6,6 +6,40 @@
 
 const { logTest } = require("./utils/profiling");
 
+const EAGERNESS_LEVELS = ["immediate", "eager", "moderate", "conservative"];
+const SOURCES = ["document", "list"];
+
+
+
+
+async function navigateWithPrefetch(commands, eagerness, selector, dwellMs) {
+  switch (eagerness) {
+    case "immediate":
+      
+      await commands.wait.byTime(dwellMs);
+      await commands.mouse.singleClick.bySelector(selector);
+      break;
+    case "eager":
+    case "moderate":
+      
+      await commands.mouse.moveTo.bySelector(selector);
+      await commands.wait.byTime(dwellMs);
+      await commands.mouse.singleClick.bySelector(selector);
+      break;
+    case "conservative":
+      
+      
+      await commands.mouse.clickAndHold.bySelector(selector);
+      await commands.wait.byTime(dwellMs);
+      await commands.mouse.clickAndHold.releaseAtSelector(selector);
+      break;
+    default:
+      throw new Error(
+        `speculation-rules-prefetch: unknown eagerness "${eagerness}"`
+      );
+  }
+}
+
 module.exports = logTest(
   "speculation rules prefetch",
   async function (context, commands) {
@@ -18,20 +52,35 @@ module.exports = logTest(
     }
 
     const buttonId = context.options.browsertime.button_id || "btn-a";
+    const eagerness = context.options.browsertime.eagerness || "moderate";
+    if (!EAGERNESS_LEVELS.includes(eagerness)) {
+      throw new Error(
+        `speculation-rules-prefetch: unsupported eagerness "${eagerness}"; ` +
+          `expected one of ${EAGERNESS_LEVELS.join(", ")}`
+      );
+    }
+    const source = context.options.browsertime.source || "document";
+    if (!SOURCES.includes(source)) {
+      throw new Error(
+        `speculation-rules-prefetch: unsupported source "${source}"; ` +
+          `expected one of ${SOURCES.join(", ")}`
+      );
+    }
     
     const dwellMs = Number(context.options.browsertime.dwell_ms ?? 1000);
 
     context.log.info(
-      `speculation-rules-prefetch: button=${buttonId}, dwell_ms=${dwellMs}`
+      `speculation-rules-prefetch: button=${buttonId}, source=${source}, ` +
+        `eagerness=${eagerness}, dwell_ms=${dwellMs}`
     );
 
-    await commands.navigate(`${serverUrl}/landing.html`);
+    await commands.navigate(
+      `${serverUrl}/landing.html?eagerness=${eagerness}&source=${source}`
+    );
     await commands.wait.byTime(250);
 
     await commands.measure.start();
-    await commands.mouse.moveTo.bySelector(`#${buttonId}`);
-    await commands.wait.byTime(dwellMs);
-    await commands.mouse.singleClick.bySelector(`#${buttonId}`);
+    await navigateWithPrefetch(commands, eagerness, `#${buttonId}`, dwellMs);
     await commands.wait.byTime(2500);
     await commands.measure.stop();
 

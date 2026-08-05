@@ -4,6 +4,7 @@
 
 import threading
 import time
+import urllib.parse
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -16,14 +17,49 @@ LOG = RaptorLogger(component="raptor-browsertime")
 
 TARGET_STALL_MS = 500
 
-SPECULATION_RULES_TAG = """<script type="speculationrules">
-{
-  "prefetch": [{
-    "source": "document",
-    "where": { "href_matches": "/target.html*" },
-    "eagerness": "moderate"
-  }]
+
+
+
+ALLOWED_EAGERNESS = ("immediate", "eager", "moderate", "conservative")
+DEFAULT_EAGERNESS = "moderate"
+
+
+
+
+ALLOWED_SOURCES = ("document", "list")
+DEFAULT_SOURCE = "document"
+
+
+ACTION_HINTS = {
+    "immediate": "Prefetch starts on load; click a button to navigate.",
+    "eager": "Hover a button to trigger prefetch, then click.",
+    "moderate": "Hover a button to trigger prefetch, then click.",
+    "conservative": "Press and hold a button to trigger prefetch, then release.",
 }
+
+
+SPECULATION_RULES_TEMPLATE = """<script type="speculationrules">
+{{
+  "prefetch": [{{
+    "source": "document",
+    "where": {{ "href_matches": "/target.html*" }},
+    "eagerness": "{eagerness}"
+  }}]
+}}
+</script>
+"""
+
+
+
+SPECULATION_RULES_LIST_TEMPLATE = """<script type="speculationrules">
+{{
+  "prefetch": [{{
+    "source": "list",
+    "urls": ["/target.html?item=a", "/target.html?item=b",
+             "/target.html?item=c", "/target.html?item=d"],
+    "eagerness": "{eagerness}"
+  }}]
+}}
 </script>
 """
 
@@ -102,9 +138,9 @@ LANDING_HTML_TEMPLATE = """<!doctype html>
   <h1>Speculation Rules Prefetch Demo</h1>
   <p class="subtitle">
     Inline <code>&lt;script type="speculationrules"&gt;</code> with
-    <strong>moderate</strong> eagerness fires prefetch after ~200&nbsp;ms
-    of sustained hover on a matching link.
-    Target pages have a <strong>{stall_ms}&nbsp;ms</strong> server stall.
+    <strong>{eagerness}</strong> eagerness controls when a matching link is
+    prefetched. Target pages have a <strong>{stall_ms}&nbsp;ms</strong> server
+    stall.
   </p>
   <div class="buttons">
     <a id="btn-a" class="btn" href="/target.html?item=a">Alpha</a>
@@ -112,7 +148,7 @@ LANDING_HTML_TEMPLATE = """<!doctype html>
     <a id="btn-c" class="btn" href="/target.html?item=c">Gamma</a>
     <a id="btn-d" class="btn" href="/target.html?item=d">Delta</a>
   </div>
-  <footer>Hover a button to trigger prefetch, then click.</footer>
+  <footer>{action_hint}</footer>
 </div>
 </body>
 </html>
@@ -258,12 +294,31 @@ class _Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        path = self.path.split("?", 1)[0]
+        parsed = urllib.parse.urlparse(self.path)
+        path = parsed.path
         if path in ("/", "/landing.html"):
+            query = urllib.parse.parse_qs(parsed.query)
+            requested = query.get("eagerness", [DEFAULT_EAGERNESS])[0]
+            eagerness = (
+                requested if requested in ALLOWED_EAGERNESS else DEFAULT_EAGERNESS
+            )
+            requested_source = query.get("source", [DEFAULT_SOURCE])[0]
+            source = (
+                requested_source
+                if requested_source in ALLOWED_SOURCES
+                else DEFAULT_SOURCE
+            )
+            template = (
+                SPECULATION_RULES_LIST_TEMPLATE
+                if source == "list"
+                else SPECULATION_RULES_TEMPLATE
+            )
             self._send(
                 LANDING_HTML_TEMPLATE.format(
-                    rules=SPECULATION_RULES_TAG,
+                    rules=template.format(eagerness=eagerness),
                     stall_ms=TARGET_STALL_MS,
+                    eagerness=eagerness,
+                    action_hint=ACTION_HINTS[eagerness],
                 )
             )
         elif path == "/target.html":
