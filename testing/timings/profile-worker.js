@@ -15,6 +15,113 @@ function normalizeMessage(message) {
     .replace(/Test ran for \d+s/g, "Test ran for Xs");
 }
 
+
+
+const UUID_REGEXP =
+  /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/g;
+
+
+
+
+
+
+
+
+
+
+
+
+
+const PROFILE_PATH_REGEXP =
+  /((?:[a-z-]{2,}:)+\/*)?[^\s'"`]*(?:xpc-profile-[a-z0-9_]{8}|tmp[a-z0-9_]{8}\.mozrunner)([^\s'"`]*)/g;
+
+
+
+
+
+
+function normalizeProfilePaths(string) {
+  return string.replace(
+    PROFILE_PATH_REGEXP,
+    (match, scheme = "", inProfile) =>
+      `${scheme}<profile>${inProfile.replace(/\\+/g, "/")}`
+  );
+}
+
+
+
+
+const QUOTED_PATH_REGEXP =
+  /[^\s'"`]*(?:checkouts[\\/]+gecko|build[\\/]+tests|obj-build|xpc-profile-[a-z0-9_]{8}|tmp[a-z0-9_]{8}\.mozrunner)[^\s'"`]*/g;
+
+
+
+
+
+
+function normalizeMarkerMessage(message) {
+  return (
+    normalizeMessage(message)
+      
+      
+      
+      ?.replace(QUOTED_PATH_REGEXP, normalizeSourcePath)
+      .replace(UUID_REGEXP, "<uuid>")
+      
+      .replace(/0x[0-9a-fA-F]+/g, "0x...")
+      
+      .replace(/\b\d+\.\d+\s*(ms|s|µs|us|ns)\b/g, "X$1")
+      
+      
+      
+      
+      .replace(/\b(process(?:\s+id)?\s*:?\s*)\d+\b/gi, "$1<pid>")
+      
+      .replace(/\b\d{8,}\b/g, "<num>")
+      
+      .replace(/\b[0-9a-fA-F]{8,}\b/g, "<addr>")
+  );
+}
+
+
+
+
+function normalizeSourcePath(file) {
+  if (!file) {
+    return file;
+  }
+
+  
+  
+  let normalized = file.replace(/\\+/g, "/");
+
+  
+  
+  
+  
+  
+  
+  
+  for (const prefix of ["checkouts/gecko/", "build/tests/", "obj-build/"]) {
+    const index = normalized.lastIndexOf(prefix);
+    if (index !== -1) {
+      normalized = normalized.slice(index + prefix.length);
+    }
+  }
+
+  
+  
+  
+  return normalizeProfilePaths(normalized.replace(UUID_REGEXP, "<uuid>"));
+}
+
+
+
+
+function normalizeTestId(test) {
+  return test?.includes(":") ? test.split(":")[1] : test;
+}
+
 function formatTaskMessage(taskId, message) {
   return `      Task ${taskId}: ${message}`;
 }
@@ -252,11 +359,7 @@ function extractTestTimings(profile) {
         }
       }
 
-      
-      
-      if (testPath && testPath.includes(":")) {
-        testPath = testPath.split(":")[1];
-      }
+      testPath = normalizeTestId(testPath);
     } else if (data.type === "Text") {
       
       testPath = data.text;
@@ -312,6 +415,58 @@ function extractTestTimings(profile) {
   }
 
   return timings;
+}
+
+
+
+const ERROR_MARKER_NAMES = new Set([
+  "C++ warning",
+  "C++ assertion",
+  "console.error",
+  "console.warn",
+  "JavaScript error",
+  "JavaScript warning",
+]);
+
+
+
+
+
+function extractErrorMarkers(profile) {
+  const { markers, stringArray } = profile.threads[0];
+
+  
+  const nameIdToName = new Map();
+  for (const name of ERROR_MARKER_NAMES) {
+    const id = stringArray.indexOf(name);
+    if (id !== -1) {
+      nameIdToName.set(id, name);
+    }
+  }
+  if (nameIdToName.size === 0) {
+    return [];
+  }
+
+  const result = [];
+  for (let i = 0; i < markers.length; i++) {
+    const name = nameIdToName.get(markers.name[i]);
+    if (!name) {
+      continue;
+    }
+
+    
+    
+    const data = markers.data[i];
+    result.push({
+      name,
+      message: normalizeMarkerMessage(data.message) || null,
+      test: normalizeTestId(data.test) || null,
+      file: normalizeSourcePath(data.file) || null,
+      line: data.line ?? null,
+    });
+  }
+
+  return result;
 }
 
 
@@ -419,6 +574,7 @@ async function processJob(job) {
   }
 
   const resourceUsage = extractResourceUsage(profile);
+  const markers = extractErrorMarkers(profile);
 
   
   
@@ -444,6 +600,7 @@ async function processJob(job) {
     startTime,
     timings,
     resourceUsage,
+    markers,
     commitId,
   };
 }
