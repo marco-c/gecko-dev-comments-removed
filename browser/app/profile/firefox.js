@@ -2105,7 +2105,6 @@ pref("browser.newtabpage.activity-stream.discoverystream.pocket-feed-parameters"
 pref("browser.newtabpage.activity-stream.discoverystream.merino-feed-experiment", false);
 
 
-pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.locale-thumbs-config", "en-US, en-GB, en-CA");
 
 pref("browser.newtabpage.activity-stream.telemetry.privatePing.enabled", true);
 
@@ -2118,16 +2117,6 @@ pref("browser.newtabpage.activity-stream.telemetry.privatePing.inferredInterests
 
 
 pref("browser.newtabpage.activity-stream.telemetry.surfaceId", "");
-
-
-#ifdef EARLY_BETA_OR_EARLIER
-  pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.region-thumbs-config", "US, CA");
-#else
-  pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.region-thumbs-config", "US");
-#endif
-
-
-pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.searchTopsitesCompact", true);
 
 
 pref("browser.newtabpage.activity-stream.discoverystream.publisherFavicon.enabled", true);
