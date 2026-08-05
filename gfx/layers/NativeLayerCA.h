@@ -292,7 +292,7 @@ struct NativeLayerCARepresentation {
     return mWrappingCALayerHasExtent ? mWrappingCALayer : nullptr;
   }
 
-  bool EnqueueSurface(IOSurfaceRef aSurfaceRef);
+  bool EnqueueSurface(IOSurfaceRef aSurfaceRef, bool aIsHDR);
 
   
   
@@ -312,8 +312,8 @@ struct NativeLayerCARepresentation {
                     float aBackingScale, bool aSurfaceIsFlipped,
                     gfx::SamplingFilter aSamplingFilter, bool aSpecializeVideo,
                     const CFTypeRefPtr<IOSurfaceRef>& aFrontSurface,
-                    const Maybe<gfx::DeviceColor>& aColor, bool aIsDRM,
-                    bool aIsVideo);
+                    const Maybe<gfx::DeviceColor>& aColor, bool aIsVideo,
+                    bool aIsDRM, bool aIsHDR);
 
   
   
@@ -351,6 +351,7 @@ struct NativeLayerCARepresentation {
   bool mMutatedSamplingFilter : 1;
   bool mMutatedSpecializeVideo : 1;
   bool mMutatedIsDRM : 1;
+  bool mMutatedIsHDR : 1;
   
 };
 
