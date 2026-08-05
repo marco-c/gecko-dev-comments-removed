@@ -437,6 +437,10 @@ int SimulcastEncoderAdapter::InitEncode(
   
   
   
+  
+  
+  
+  
   bool separate_encoders_needed =
       is_mixed_codec ||
       !encoder_context->encoder().GetEncoderInfo().supports_simulcast ||
