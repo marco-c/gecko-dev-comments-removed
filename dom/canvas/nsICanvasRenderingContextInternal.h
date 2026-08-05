@@ -149,6 +149,13 @@ class nsICanvasRenderingContextInternal : public nsISupports,
     return GetSurfaceSnapshot();
   }
 
+  virtual bool SupportAsyncSnapshot() { return false; };
+
+  virtual RefPtr<mozilla::dom::HTMLCanvasElement::SurfaceSnapshotPromise>
+  GetSurfaceSnapshotAsync() {
+    return nullptr;
+  }
+
   
   
   
