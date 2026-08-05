@@ -64,13 +64,6 @@ class KeymapWrapper {
   
 
 
-
-
-  [[nodiscard]] static bool StringHasOnlyOneGraphemeCluster(const nsAString&);
-
-  
-
-
   static uint32_t ComputeDOMKeyCode(const GdkEventKey* aGdkKeyEvent);
 
   
@@ -136,12 +129,6 @@ class KeymapWrapper {
   
 
 
-  [[nodiscard]] static bool EditorMayHandleKeyPressEventAsTextInput(
-      guint aGdkModifierState);
-
-  
-
-
 
   static guint ConvertWidgetModifierToGdkState(
       nsIWidget::NativeModifiers aNativeModifiers);
@@ -161,13 +148,8 @@ class KeymapWrapper {
 
 
 
-
-
-
   static void InitKeyEvent(WidgetKeyboardEvent& aKeyEvent,
-                           GdkEventKey* aGdkKeyEvent,
-                           const nsAString& aCommitCharReceivedByIMContext,
-                           bool aIsProcessedByIME);
+                           GdkEventKey* aGdkKeyEvent, bool aIsProcessedByIME);
 
   
 
@@ -191,13 +173,10 @@ class KeymapWrapper {
 
 
 
-
-
-
-  static bool DispatchKeyDownOrKeyUpEvent(
-      nsWindow* aWindow, GdkEventKey* aGdkKeyEvent,
-      const nsAString& aStringReceivedByIMContext, bool aIsProcessedByIME,
-      bool* aIsCancelled);
+  static bool DispatchKeyDownOrKeyUpEvent(nsWindow* aWindow,
+                                          GdkEventKey* aGdkKeyEvent,
+                                          bool aIsProcessedByIME,
+                                          bool* aIsCancelled);
 
   
 
@@ -456,13 +435,6 @@ class KeymapWrapper {
 
 
   uint32_t GetUnmodifiedCharCodeFor(const GdkEventKey* aGdkKeyEvent);
-
-  
-
-
-
-  static uint32_t GetCharCodeOrUnmodifiedCharCodeFor(
-      const GdkEventKey* aGdkKeyEvent);
 
   
 

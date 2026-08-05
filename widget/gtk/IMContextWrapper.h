@@ -108,16 +108,6 @@ class IMContextWrapper final : public TextEventDispatcherListener {
                               bool aKeyboardEventWasDispatched = false);
 
   
-
-
-
-
-
-  const nsString& GetCommittedGraphemeCluster() const {
-    return mGraphemeClusterFallbackToKeyEvent;
-  }
-
-  
   nsresult EndIMEComposition(nsWindow* aCaller);
   void SetInputContext(nsWindow* aCaller, const InputContext* aContext,
                        const InputContextAction* aAction);
@@ -141,51 +131,28 @@ class IMContextWrapper final : public TextEventDispatcherListener {
     Unknown,
   };
 
-  friend auto format_as(const IMContextID aIMContextID) {
-    switch (aIMContextID) {
-      case IMContextID::Fcitx:
-        return "Fcitx";
-      case IMContextID::Fcitx5:
-        return "Fcitx5";
-      case IMContextID::IBus:
-        return "IBus";
-      case IMContextID::IIIMF:
-        return "IIIMF";
-      case IMContextID::Scim:
-        return "Scim";
-      case IMContextID::Uim:
-        return "Uim";
-      case IMContextID::Wayland:
-        return "Wayland";
-      case IMContextID::Unknown:
-        return "Unknown";
-    }
-    MOZ_ASSERT_UNREACHABLE("Add new case for the new IM support");
-    return "Unknown";
-  }
   friend std::ostream& operator<<(std::ostream& aStream,
                                   const IMContextID& aIMContextID) {
-    return aStream << format_as(aIMContextID);
-  }
-
-  [[nodiscard]] static guint GetAsyncSynthesizedEventStateFlag(
-      IMContextID aIMContextID) {
     switch (aIMContextID) {
-      case IMContextID::IBus:
-        
-        constexpr static guint IBUS_IGNORED_MASK = 1 << 25;
-        return IBUS_IGNORED_MASK;
       case IMContextID::Fcitx:
+        return aStream << "Fcitx";
       case IMContextID::Fcitx5:
-        
-        constexpr static guint FcitxKeyState_IgnoredMask = 1 << 25;
-        return FcitxKeyState_IgnoredMask;
-      default:
-        return 0;
+        return aStream << "Fcitx5";
+      case IMContextID::IBus:
+        return aStream << "IBus";
+      case IMContextID::IIIMF:
+        return aStream << "IIIMF";
+      case IMContextID::Scim:
+        return aStream << "Scim";
+      case IMContextID::Uim:
+        return aStream << "Uim";
+      case IMContextID::Wayland:
+        return aStream << "Wayland";
+      case IMContextID::Unknown:
+        return aStream << "Unknown";
     }
-  }
-  [[nodiscard]] guint GetAsyncSynthesizedEventStateFlag() const {
-    return GetAsyncSynthesizedEventStateFlag(mIMContextID);
+    MOZ_ASSERT_UNREACHABLE("Add new case for the new IM support");
+    return aStream << "Unknown";
   }
 
   
@@ -262,7 +229,8 @@ class IMContextWrapper final : public TextEventDispatcherListener {
   nsString mSelectedStringRemovedByComposition;
 
   
-  GdkEventKey* mHandlingKeyEvent = nullptr;
+  
+  GdkEventKey* mProcessingKeyEvent;
 
   
 
@@ -278,233 +246,55 @@ class IMContextWrapper final : public TextEventDispatcherListener {
     
 
 
-    void Push(const GdkEventKey* aEvent) {
+    void PutEvent(const GdkEventKey* aEvent) {
       GdkEventKey* newEvent = reinterpret_cast<GdkEventKey*>(
           gdk_event_copy(reinterpret_cast<const GdkEvent*>(aEvent)));
       newEvent->state &= GDK_MODIFIER_MASK;
       mEvents.AppendElement(newEvent);
-      mState.AppendElement();
     }
-
-    struct KeyEventState {
-      
-      
-      bool mReceived = false;
-      
-      bool mHandledSomething = false;
-      
-      bool mProcessed = false;
-
-      friend inline auto format_as(const KeyEventState& aState) {
-        return fmt::format(
-            "{{ mProcessed={}, mHandledSomething={}, mReceived={} }}",
-            TrueOrFalse(aState.mProcessed),
-            TrueOrFalse(aState.mHandledSomething),
-            TrueOrFalse(aState.mReceived));
-      }
-    };
 
     
 
 
-    void AsyncEventReceived(const GdkEventKey* aEvent) {
-      const size_t index = IndexOf(aEvent);
+
+    void RemoveEvent(const GdkEventKey* aEvent) {
+      size_t index = IndexOf(aEvent);
       if (NS_WARN_IF(index == GdkEventKeyQueue::NoIndex())) {
         return;
       }
-      mState[index].mReceived = true;
-    }
-
-    
-
-
-    void HandledSomething(const GdkEventKey* aEvent) {
-      if (!aEvent) {
-        return;
-      }
-      const size_t index = IndexOf(aEvent);
-      if (index == GdkEventKeyQueue::NoIndex()) {
-        return;
-      }
-      mState[index].mHandledSomething = true;
-    }
-
-    
-    void Processed(const GdkEventKey* aEvent) {
-      if (!aEvent) {
-        return;
-      }
-      const size_t index = IndexOf(aEvent);
-      if (index == GdkEventKeyQueue::NoIndex()) {
-        return;
-      }
-      mState[index].mProcessed = true;
-    }
-
-    void MarkEventAsProcessedIfHandled(const GdkEventKey* aEvent) {
-      const size_t index = IndexOf(aEvent);
-      if (index == NoIndex()) {
-        return;
-      }
-      if (mState[index].mHandledSomething) {
-        mState[index].mProcessed = true;
-      }
-    }
-
-    bool MarkNonReceivedButHandledEventsAsProcessed() {
-      bool ret = false;
-      for (auto& state : mState) {
-        if (!state.mReceived && state.mHandledSomething && !state.mProcessed) {
-          state.mProcessed = true;
-          ret = true;
-        }
-      }
-      return ret;
-    }
-
-    void RemoveProcessedEvents() {
-      const size_t count = [&]() {
-        size_t len = 0;
-        for (const auto& state : mState) {
-          if (!state.mProcessed) {
-            break;
-          }
-          len++;
-        }
-        return len;
-      }();
-      if (count) {
-        mEvents.RemoveElementsAt(0, count);
-        mState.RemoveElementsAt(0, count);
-      }
+      mEvents.RemoveElementAt(index);
     }
 
     
 
 
 
-    std::pair<const GdkEventKey*, const KeyEventState*>
-    GetCorrespondingNonProcessedKeyPressEvent(const GdkEventKey* aEvent) const {
+    const GdkEventKey* GetCorrespondingKeyPressEvent(
+        const GdkEventKey* aEvent) const {
       MOZ_ASSERT(aEvent->type == GDK_KEY_RELEASE);
-      for (const size_t i : IntegerRange(mEvents.Length())) {
-        const auto& pendingKeyEvent = mEvents[i];
-        const auto& state = mState[i];
-        if (!state.mProcessed && pendingKeyEvent->type == GDK_KEY_PRESS &&
-            aEvent->hardware_keycode == pendingKeyEvent->hardware_keycode &&
-            pendingKeyEvent->time <= aEvent->time) {
-          return {pendingKeyEvent.get(), &state};
+      for (const GUniquePtr<GdkEventKey>& pendingKeyEvent : mEvents) {
+        if (pendingKeyEvent->type == GDK_KEY_PRESS &&
+            aEvent->hardware_keycode == pendingKeyEvent->hardware_keycode) {
+          return pendingKeyEvent.get();
         }
       }
-      return {nullptr, nullptr};
+      return nullptr;
     }
 
     
 
 
-
-    std::pair<const GdkEventKey*, const KeyEventState*>
-    GetFirstNonHandledEvent() const {
-      const size_t index = [&]() {
-        size_t i = 0;
-        for (const auto& state : mState) {
-          if (!state.mProcessed && !state.mHandledSomething) {
-            return i;
-          }
-          i++;
-        }
-        return NoIndex();
-      }();
-      if (index == NoIndex()) {
-        return {nullptr, nullptr};
+    GdkEventKey* GetFirstEvent() const {
+      if (mEvents.IsEmpty()) {
+        return nullptr;
       }
-      MOZ_ASSERT(!mState[index].mProcessed);
-      return {mEvents[index].get(), &mState[index]};
+      return mEvents[0].get();
     }
 
-    
-
-
-    std::pair<const GdkEventKey*, const KeyEventState*>
-    GetFirstNonProcessedEvent() const {
-      const size_t index = [&]() {
-        size_t i = 0;
-        for (const auto& state : mState) {
-          if (!state.mProcessed) {
-            return i;
-          }
-          i++;
-        }
-        return NoIndex();
-      }();
-      if (index == NoIndex()) {
-        return {nullptr, nullptr};
-      }
-      MOZ_ASSERT(!mState[index].mProcessed);
-      return {mEvents[index].get(), &mState[index]};
-    }
-
-    
-
-
-    GUniquePtr<GdkEventKey> MakeCopyOfFirstNonProcessedEvent() const {
-      GdkEventKey* const firstEvent =
-          const_cast<GdkEventKey*>(GetFirstNonProcessedEvent().first);
-      GUniquePtr<GdkEventKey> copy;
-      if (firstEvent) {
-        copy.reset(reinterpret_cast<GdkEventKey*>(
-            gdk_event_copy(reinterpret_cast<GdkEvent*>(firstEvent))));
-      }
-      return copy;
-    }
-
-    
-
-
-    std::pair<const GdkEventKey*, const KeyEventState*>
-    GetLatestNonProcessedEvent() const {
-      const size_t index = [&]() {
-        size_t i = mState.Length();
-        for (const auto& state : Reversed(mState)) {
-          if (!state.mProcessed) {
-            return i - 1;
-          }
-          i--;
-        }
-        return NoIndex();
-      }();
-      if (index >= mState.Length()) {
-        return {nullptr, nullptr};
-      }
-      MOZ_ASSERT(!mState[index].mProcessed);
-      return {mEvents[index].get(), &mState[index]};
-    }
-
-    [[nodiscard]] bool HasNonProcessedEvents() const {
-      if (mState.IsEmpty()) {
-        return false;
-      }
-      for (const auto& state : Reversed(mState)) {
-        if (!state.mProcessed) {
-          return true;
-        }
-      }
-      return false;
-    }
+    bool IsEmpty() const { return mEvents.IsEmpty(); }
 
     static size_t NoIndex() { return nsTArray<GdkEventKey*>::NoIndex; }
-
-    [[nodiscard]] size_t CountOfPendingEvents() const {
-      size_t count = 0;
-      for (const auto& state : mState) {
-        if (!state.mProcessed) {
-          count++;
-        }
-      }
-      return count;
-    }
-
-    [[nodiscard]] size_t CountOfAllEvents() const { return mEvents.Length(); }
-
+    size_t Length() const { return mEvents.Length(); }
     size_t IndexOf(const GdkEventKey* aEvent) const {
       static_assert(!(GDK_MODIFIER_MASK & (1 << 24)),
                     "We assumes 25th bit is used by some IM, but used by GDK");
@@ -527,25 +317,12 @@ class IMContextWrapper final : public TextEventDispatcherListener {
       return GdkEventKeyQueue::NoIndex();
     }
 
-    const KeyEventState& KeyEventStateAt(size_t aIndex) const {
-      MOZ_ASSERT(aIndex <= mState.Length());
-      return mState[aIndex];
-    }
-
-    std::string FormatAs(const IMContextID aIMContextID) const;
-
    private:
-    AutoTArray<GUniquePtr<GdkEventKey>, 4> mEvents;
-    AutoTArray<KeyEventState, 4> mState;
+    nsTArray<GUniquePtr<GdkEventKey>> mEvents;
   };
   
   
-  GdkEventKeyQueue mPendingKeyEvents;
-
-  
-
-
-  class AutoHandlingCompositionSignalHelper;
+  GdkEventKeyQueue mPostingKeyEvents;
 
   static guint16 sWaitingSynthesizedKeyPressHardwareKeyCode;
 
@@ -655,7 +432,7 @@ class IMContextWrapper final : public TextEventDispatcherListener {
   
   
   
-  nsString mGraphemeClusterFallbackToKeyEvent = VoidString();
+  bool mFallbackToKeyEvent;
   
   
   
@@ -698,19 +475,6 @@ class IMContextWrapper final : public TextEventDispatcherListener {
   
   
   bool mMaybeInDeadKeySequence;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   
@@ -757,7 +521,7 @@ class IMContextWrapper final : public TextEventDispatcherListener {
   gboolean OnRetrieveSurroundingNative(GtkIMContext* aContext);
   gboolean OnDeleteSurroundingNative(GtkIMContext* aContext, gint aOffset,
                                      gint aNChars);
-  void OnCommitCompositionNative(GtkIMContext*, const gchar*);
+  void OnCommitCompositionNative(GtkIMContext* aContext, const gchar* aString);
   void OnChangeCompositionNative(GtkIMContext* aContext);
   void OnStartCompositionNative(GtkIMContext* aContext);
   void OnEndCompositionNative(GtkIMContext* aContext);
