@@ -568,7 +568,7 @@ void RenderCompositorNativeOGL::DoFlush() {
     
     if (egl->IsExtensionSupported(
             gl::EGLExtension::ANGLE_metal_commands_scheduled_sync)) {
-      EGLSync sync = egl->fCreateSync(
+      EGLSync sync = egl->fCreateSyncKHR(
           LOCAL_EGL_SYNC_METAL_COMMANDS_SCHEDULED_ANGLE, nullptr);
       if (!sync) {
         gfxCriticalNote
