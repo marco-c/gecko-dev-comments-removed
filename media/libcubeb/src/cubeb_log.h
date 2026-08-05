@@ -23,12 +23,25 @@ extern "C" {
   (__builtin_strrchr(__FILE__, '/') ? __builtin_strrchr(__FILE__, '/') + 1     \
                                     : __FILE__)
 #endif
-#else
+
+#else 
+
 #define PRINTF_FORMAT(fmt, args)
 #include <string.h>
+
+#if defined(_WIN32)
+
+#define __FILENAME__                                                           \
+  (strrchr(__FILE__, '\\')                                                     \
+       ? strrchr(__FILE__, '\\') + 1                                           \
+       : (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__))
+
+#else 
 #define __FILENAME__                                                           \
   (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
-#endif
+
+#endif 
+#endif 
 
 void
 cubeb_log_set(cubeb_log_level log_level, cubeb_log_callback log_callback);
