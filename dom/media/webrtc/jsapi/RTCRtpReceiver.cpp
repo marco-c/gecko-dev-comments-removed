@@ -512,6 +512,22 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal(
               local.mDiscardedPackets.Construct(videoStats->packets_discarded);
               local.mBytesReceived.Construct(
                   videoStats->rtp_stats.packet_counter.payload_bytes);
+              aConduit->GetAssociatedRemoteRtxSSRC().apply([&](const auto
+                                                                   rtxSsrc) {
+                local.mRtxSsrc.Construct(rtxSsrc);
+                
+                
+                
+                if (videoStats->rtx_rtp_stats) {
+                  local.mRetransmittedPacketsReceived.Construct(
+                      videoStats->rtx_rtp_stats->packet_counter.packets);
+                  local.mRetransmittedBytesReceived.Construct(
+                      videoStats->rtx_rtp_stats->packet_counter.payload_bytes);
+                } else {
+                  local.mRetransmittedPacketsReceived.Construct(0);
+                  local.mRetransmittedBytesReceived.Construct(0);
+                }
+              });
 
               
               local.mNackCount.Construct(

@@ -29,7 +29,15 @@ const statsExpectedByType = {
       "jitterBufferEmittedCount",
       "transportId",
     ],
-    optional: ["remoteId", "nackCount", "qpSum", "estimatedPlayoutTimestamp"],
+    optional: [
+      "remoteId",
+      "nackCount",
+      "qpSum",
+      "estimatedPlayoutTimestamp",
+      "rtxSsrc",
+      "retransmittedPacketsReceived",
+      "retransmittedBytesReceived",
+    ],
     localVideoOnly: [
       "firCount",
       "pliCount",
@@ -98,7 +106,7 @@ const statsExpectedByType = {
       "retransmittedBytesSent",
       "transportId",
     ],
-    optional: ["nackCount", "qpSum", "rid"],
+    optional: ["nackCount", "qpSum", "rid", "rtxSsrc"],
     localAudioOnly: [],
     localVideoOnly: [
       "framesEncoded",
@@ -790,6 +798,44 @@ function pedanticChecks(report) {
       
       
       
+      
+      if (stat.rtxSsrc !== undefined) {
+        ok(
+          stat.rtxSsrc > 0,
+          `${stat.type}.rtxSsrc is a sane ssrc. value=${stat.rtxSsrc}`
+        );
+
+        ok(
+          stat.retransmittedPacketsReceived >= 0 &&
+            stat.retransmittedPacketsReceived < 10 ** 5,
+          `${stat.type}.retransmittedPacketsReceived is a sane number for a ` +
+            `short ${stat.kind} test. value=${stat.retransmittedPacketsReceived}`
+        );
+
+        ok(
+          stat.retransmittedBytesReceived >= 0 &&
+            stat.retransmittedBytesReceived < 10 ** 9,
+          `${stat.type}.retransmittedBytesReceived is a sane number for a ` +
+            `short ${stat.kind} test. value=${stat.retransmittedBytesReceived}`
+        );
+      } else {
+        
+        ok(
+          stat.retransmittedPacketsReceived === undefined,
+          `${stat.type}.retransmittedPacketsReceived is undefined if rtx is not negotiated.` +
+            `value=${stat.retransmittedPacketsReceived}`
+        );
+
+        ok(
+          stat.retransmittedBytesReceived === undefined &&
+            `${stat.type}.retransmittedBytesReceived is undefined if rtx is not negotiated.` +
+              `value=${stat.retransmittedBytesReceived}`
+        );
+      }
+
+      
+      
+      
       if (stat.inner.kind != "video") {
         expectations.localVideoOnly.forEach(field => {
           ok(
@@ -805,6 +851,7 @@ function pedanticChecks(report) {
             stat.type + " has field " + field + " when kind is video"
           );
         });
+
         
         ok(
           stat.discardedPackets < 100,
@@ -1059,6 +1106,18 @@ function pedanticChecks(report) {
           stat.rid === undefined,
           `${stat.type}.rid" MUST NOT exist for audio. value=${stat.rid}`
         );
+        ok(
+          stat.rtxSsrc === undefined,
+          `${stat.type}.rtxSsrc" MUST NOT exist for audio. value=${stat.rtxSsrc}`
+        );
+        ok(
+          stat.retransmittedBytesSent === 0,
+          `${stat.type}.retransmittedBytesSent is 0 audio. value=${stat.retransmittedBytesSent}`
+        );
+        ok(
+          stat.retransmittedPacketsSent === 0,
+          `${stat.type}.retransmittedPacketsSent is 0 for audio. value=${stat.retransmittedPacketsSent}`
+        );
       } else {
         let numSendVideoStreamsForMid = 0;
         report.forEach(r => {
@@ -1081,6 +1140,15 @@ function pedanticChecks(report) {
             stat.rid,
             undefined,
             `${stat.type}.rid" does exist for simulcast video. value=${stat.rid}`
+          );
+        }
+        
+        
+        
+        if (stat.rtxSsrc !== undefined) {
+          ok(
+            stat.rtxSsrc > 0,
+            `${stat.type}.rtxSsrc is a sane ssrc. value=${stat.rtxSsrc}`
           );
         }
       }
