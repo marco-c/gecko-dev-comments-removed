@@ -240,7 +240,8 @@ class GCLocProviderPriv final : public nsIGeolocationProvider,
   void DoShutdownClearCallback(bool aDestroying);
 
   nsresult FallbackToMLS(MLSFallback::FallbackReason aReason);
-  void StopMLSFallback();
+  void StopMLSFallback(MLSFallback::ShutdownReason aReason =
+                           MLSFallback::ShutdownReason::ProviderShutdown);
 
   void WatchStart();
 
@@ -330,14 +331,26 @@ void GCLocProviderPriv::Update(nsIDOMGeoPosition* aPosition) {
 
 void GCLocProviderPriv::UpdateLastPosition() {
   MOZ_DIAGNOSTIC_ASSERT(mLastPosition, "No last position to update");
-  if (mMLSFallbackTimer) {
+
+  bool hadPendingTimer = !!mMLSFallbackTimer;
+  bool hadActiveFallback = !!mMLSFallback;
+
+  StopPositionTimer();
+  StopMLSFallbackTimer();
+  
+  
+  
+  
+  
+  StopMLSFallback(MLSFallback::ShutdownReason::ProviderResponded);
+  if (hadPendingTimer && !hadActiveFallback) {
+    
     
     glean::geolocation::fallback
         .EnumGet(glean::geolocation::FallbackLabel::eNone)
         .Add();
   }
-  StopPositionTimer();
-  StopMLSFallbackTimer();
+
   Update(mLastPosition);
 }
 
@@ -353,15 +366,13 @@ nsresult GCLocProviderPriv::FallbackToMLS(MLSFallback::FallbackReason aReason) {
   return NS_OK;
 }
 
-void GCLocProviderPriv::StopMLSFallback() {
+void GCLocProviderPriv::StopMLSFallback(MLSFallback::ShutdownReason aReason) {
   if (!mMLSFallback) {
     return;
   }
   GCL_LOG(Debug, "Clearing MLS fallback");
-  if (mMLSFallback) {
-    mMLSFallback->Shutdown(MLSFallback::ShutdownReason::ProviderShutdown);
-    mMLSFallback = nullptr;
-  }
+  mMLSFallback->Shutdown(aReason);
+  mMLSFallback = nullptr;
 }
 
 void GCLocProviderPriv::NotifyError(int aError) {
