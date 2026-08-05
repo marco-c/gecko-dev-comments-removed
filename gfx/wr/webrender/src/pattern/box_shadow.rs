@@ -18,6 +18,11 @@ pub struct BoxShadowPatternData {
     
     
     
+    
+    pub content_device_size: DeviceSize,
+    
+    
+    
     pub dest_rect_size: LayoutSize,
     
     
@@ -38,7 +43,7 @@ impl PatternBuilder for BoxShadowPatternData {
         _ctx: &PatternBuilderContext,
         state: &mut PatternBuilderState,
     ) -> Pattern {
-        let mut writer = state.frame_gpu_data.f32.write_blocks(6);
+        let mut writer = state.frame_gpu_data.f32.write_blocks(7);
         writer.push_one([
             self.shadow_rect_alloc_size.width,
             self.shadow_rect_alloc_size.height,
@@ -74,6 +79,12 @@ impl PatternBuilder for BoxShadowPatternData {
             self.element_radius.shape_top_right,
             self.element_radius.shape_bottom_right,
             self.element_radius.shape_bottom_left,
+        ]);
+        writer.push_one([
+            self.content_device_size.width,
+            self.content_device_size.height,
+            0.0,
+            0.0,
         ]);
         let addr = writer.finish();
 

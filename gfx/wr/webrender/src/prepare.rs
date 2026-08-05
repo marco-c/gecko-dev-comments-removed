@@ -459,10 +459,11 @@ fn prepare_prim_for_render(
             
             
             
-            let sigma_rounded = (blur_radius_dp * content_scale.0).round();
-            let sigma_for_n = if sigma_rounded == 0.0 { blur_radius_dp * content_scale.0 } else { sigma_rounded };
-            let n_downscales = if sigma_for_n > MAX_BLUR_STD_DEVIATION {
-                (sigma_for_n / MAX_BLUR_STD_DEVIATION).log2().ceil() as u32
+            
+            
+            let sigma = blur_radius_dp * content_scale.0;
+            let n_downscales = if sigma > MAX_BLUR_STD_DEVIATION {
+                (sigma / MAX_BLUR_STD_DEVIATION).log2().ceil() as u32
             } else {
                 0
             };
@@ -470,19 +471,28 @@ fn prepare_prim_for_render(
 
             
             
-            let cache_size = to_cache_size(shadow_rect_alloc_size, &mut content_scale);
+            let cache_size_rounded = to_cache_size(shadow_rect_alloc_size, &mut content_scale);
 
             
             
             
-            let blur_std_dev = if sigma_rounded == 0.0 {
-                blur_radius_dp * content_scale.0
-            } else {
-                sigma_rounded / (1u32 << n_downscales) as f32
-            };
+            
+            
+            
+            
+            
+            let content_device_size = shadow_rect_alloc_size * content_scale;
+            let cache_size = DeviceIntSize::new(
+                cache_size_rounded.width.max(content_device_size.width.ceil() as i32),
+                cache_size_rounded.height.max(content_device_size.height.ceil() as i32),
+            );
+
+            
+            
+            let blur_std_dev = blur_radius_dp * content_scale.0;
             debug_assert!(
                 blur_std_dev <= MAX_BLUR_STD_DEVIATION + 1e-3,
-                "BoxShadow sigma {blur_std_dev} exceeds MAX_BLUR_STD_DEVIATION after Opt B \
+                "BoxShadow sigma {blur_std_dev} exceeds MAX_BLUR_STD_DEVIATION \
                  (n_downscales={n_downscales}, content_scale={})",
                 content_scale.0,
             );
@@ -566,6 +576,7 @@ fn prepare_prim_for_render(
                 color: shadow_data.color,
                 render_task: task_id,
                 shadow_rect_alloc_size,
+                content_device_size,
                 dest_rect_size,
                 dest_rect_offset,
                 clip_mode: shadow_data.clip_mode,
