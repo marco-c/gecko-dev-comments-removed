@@ -13,6 +13,7 @@
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/net/DashboardTypes.h"
 #include "nsClassHashtable.h"
 #include "nsIAsyncShutdown.h"
 #include "nsIFile.h"
@@ -114,9 +115,29 @@ class SSLTokensCache : public nsIMemoryReporter,
   static nsTArray<uint8_t> SerializeForIPC();
 
   
-  static void DeserializeFromIPC(mozilla::Span<const uint8_t> aData);
   
-  static void DeserializeFromIPCAsync(mozilla::ipc::ByteBuf&& aBuf);
+  static void DeserializeFromIPC(mozilla::Span<const uint8_t> aData,
+                                 bool aRestored);
+  
+  static void DeserializeFromIPCAsync(mozilla::ipc::ByteBuf&& aBuf,
+                                      bool aRestored);
+
+  
+  static void GetAllRecords(nsTArray<SSLTokensCacheRecordInfo>& aOut);
+
+  
+  
+  
+  
+  static void ReplaceAllRecords(nsTArray<SSLTokensCacheRecordInfo>&& aRecords);
+
+  
+  
+  
+  static bool DecodeCompressedPayload(mozilla::Span<const uint8_t> aCompressed,
+                                      nsTArray<uint8_t>& aToken,
+                                      SessionCacheInfo& aInfo,
+                                      uint32_t* aDecompressedLength = nullptr);
 
 #ifdef ENABLE_TESTS
   
@@ -189,15 +210,28 @@ class SSLTokensCache : public nsIMemoryReporter,
   
   
   
+  static UniquePtr<TokenCacheRecord> MakeRecord(
+      const nsACString& aKey, PRTime aExpirationTime, uint8_t aOverridableError,
+      bool aRestored, nsTArray<uint8_t>&& aCompressedPayload);
+
+  
+  
+  
   
   static bool PutFromPersisted(const SslTokensPersistedRecord* aRec,
-                               uint32_t aExpectedGen);
+                               uint32_t aExpectedGen, bool aRestored);
 
   struct LoadCtx {
     uint32_t loadGen;
     uint32_t count = 0;
   };
   static void LoadCallback(void* aCtx, const SslTokensPersistedRecord* aRec);
+  
+  
+  struct PersistedPutCtx {
+    uint32_t loadGen;
+    bool restored;
+  };
   static nsDependentCSubstring BasePartFromKey(const nsACString& aKey);
   static nsDependentCSubstring HostFromBasePart(
       const nsDependentCSubstring& aBasePart);
@@ -214,10 +248,18 @@ class SSLTokensCache : public nsIMemoryReporter,
       MOZ_REQUIRES(sLock);
   static nsTArray<uint8_t> SerializeSnapshotLocked() MOZ_REQUIRES(sLock);
   
+  
+  
+  
+  void CollectRecordInfosLocked(nsTArray<SSLTokensCacheRecordInfo>& aOut,
+                                bool aFilterForPersistence) const
+      MOZ_REQUIRES(sLock);
+  
   template <typename Pred>
   void RemoveMatchingLocked(Pred&& aPredicate) MOZ_REQUIRES(sLock);
   
-  static void PutFromPersistedCallback(void*,
+  
+  static void PutFromPersistedCallback(void* aCtx,
                                        const SslTokensPersistedRecord* aRec);
 
   class TokenCacheRecord {
@@ -236,6 +278,9 @@ class SSLTokensCache : public nsIMemoryReporter,
     
     uint8_t mOverridableError = 0;
     uint64_t mId = 0;
+    
+    
+    bool mRestored = false;
   };
 
   class TokenCacheEntry {
