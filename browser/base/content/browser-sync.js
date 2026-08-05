@@ -1209,7 +1209,13 @@ var gSync = {
       document,
       "PanelUI-fxa-menu-sync-status-button"
     ).addEventListener("click", e =>
-      this._showSecureSyncSubpanel(e.currentTarget, e)
+      this._onSyncStatusButtonClick(e.currentTarget, e)
+    );
+    PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-sync-status-off-button"
+    ).addEventListener("click", e =>
+      this.openPrefsFromFxaMenu("sync_settings", e.currentTarget)
     );
     PanelMultiView.getViewNode(
       document,
@@ -1352,6 +1358,111 @@ var gSync = {
       })
     );
     PanelUI.showSubView("PanelUI-fxa-menu-secure-sync-subpanel", anchor, event);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  _updateSyncStatusButton(state) {
+    const btn = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-sync-status-button"
+    );
+    const titleEl = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-sync-status-title"
+    );
+    const descEl = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-sync-status-description"
+    );
+    const offCard = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-sync-status-off-card"
+    );
+    const offTitleEl = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-sync-status-off-title"
+    );
+    const offDescEl = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-sync-status-off-description"
+    );
+
+    const syncOn =
+      state.status == UIState.STATUS_SIGNED_IN && state.syncEnabled;
+    const signedIn = state.status == UIState.STATUS_SIGNED_IN;
+    
+    
+    const syncOffCard = signedIn && !state.syncEnabled;
+
+    offCard.hidden = !syncOffCard;
+    if (syncOffCard) {
+      btn.hidden = true;
+      offTitleEl.setAttribute(
+        "value",
+        this.fluentStrings.formatValueSync("fxa-menu-sync-status-off")
+      );
+      offDescEl.setAttribute(
+        "value",
+        this.fluentStrings.formatValueSync("fxa-menu-sync-off-data-description")
+      );
+      return;
+    }
+
+    
+    
+    btn.classList.toggle("subviewbutton-nav", syncOn);
+
+    let titleId = syncOn
+      ? "fxa-menu-sync-status-on"
+      : "fxa-menu-sync-status-off";
+    titleEl.setAttribute("value", this.fluentStrings.formatValueSync(titleId));
+
+    if (syncOn) {
+      descEl.classList.remove("fxa-menu-sync-status-description-error");
+      let lastSyncDate = this.formatLastSyncDate(state.lastSync);
+      if (lastSyncDate) {
+        descEl.setAttribute(
+          "value",
+          this.fluentStrings.formatValueSync("appmenu-fxa-last-sync", {
+            time: lastSyncDate,
+          })
+        );
+      } else {
+        descEl.removeAttribute("value");
+      }
+    } else {
+      descEl.classList.add("fxa-menu-sync-status-description-error");
+      descEl.setAttribute(
+        "value",
+        this.fluentStrings.formatValueSync(
+          "fxa-menu-sync-off-signin-description"
+        )
+      );
+    }
+
+    btn.hidden = false;
+  },
+
+  _onSyncStatusButtonClick(anchor, event) {
+    const state = UIState.get();
+    if (state.status == UIState.STATUS_SIGNED_IN && state.syncEnabled) {
+      this._showSecureSyncSubpanel(anchor, event);
+    } else if (state.status == UIState.STATUS_SIGNED_IN) {
+      
+      this.openPrefsFromFxaMenu("sync_settings", anchor);
+    } else {
+      
+      this.openFxAEmailFirstPageFromFxaMenu(anchor);
+    }
   },
 
   onCommand(button) {
@@ -1672,6 +1783,7 @@ var gSync = {
 
     
     syncStatusBtn.hidden = true;
+    signedInContainer.prepend(syncStatusBtn);
     syncSetupEl.setAttribute("hidden", "true");
     signedInContainer.hidden = false;
     fxaMenuAccountButtonEl.classList.remove("subviewbutton-nav");
@@ -1741,14 +1853,16 @@ var gSync = {
         profilesSeparator.remove();
         secureSyncHeader.remove();
 
-        profilesSeparator.hidden = true;
-        secureSyncHeader.hidden = true;
+        profilesSeparator.hidden = false;
+        secureSyncHeader.hidden = false;
 
         signedInContainer.after(secureSyncHeader);
         signedInContainer.after(profilesSeparator);
         signedInContainer.after(profileButtonsContainer);
         signedInContainer.after(profilesHeaderLabel);
         signedInContainer.after(profilesHeaderSeparator);
+
+        secureSyncHeader.after(syncStatusBtn);
 
         break;
 
@@ -1758,7 +1872,6 @@ var gSync = {
         headerTitleL10nId = "account-disconnected2";
         headerDescription = state.displayName || state.email;
         mainWindowEl.style.removeProperty("--avatar-image-url");
-        syncSetupEl.removeAttribute("hidden");
         break;
 
       case UIState.STATUS_NOT_VERIFIED:
@@ -1766,7 +1879,6 @@ var gSync = {
         stateValue = "unverified";
         headerTitleL10nId = "account-finish-account-setup";
         headerDescription = state.displayName || state.email;
-        syncSetupEl.removeAttribute("hidden");
         break;
 
       case UIState.STATUS_SIGNED_IN:
@@ -1780,38 +1892,7 @@ var gSync = {
         );
         signOutSeparator.hidden = false;
         signedInContainer.hidden = false;
-
-        if (state.syncEnabled) {
-          syncSetupEl.setAttribute("hidden", "true");
-          syncSetupSeparator.setAttribute("hidden", "true");
-          const titleEl = PanelMultiView.getViewNode(
-            document,
-            "PanelUI-fxa-menu-sync-status-title"
-          );
-          const descEl = PanelMultiView.getViewNode(
-            document,
-            "PanelUI-fxa-menu-sync-status-description"
-          );
-          titleEl.setAttribute(
-            "value",
-            this.fluentStrings.formatValueSync("fxa-menu-sync-status-on")
-          );
-          let lastSyncDate = this.formatLastSyncDate(state.lastSync);
-          if (lastSyncDate) {
-            descEl.setAttribute(
-              "value",
-              this.fluentStrings.formatValueSync("appmenu-fxa-last-sync", {
-                time: lastSyncDate,
-              })
-            );
-          } else {
-            descEl.removeAttribute("value");
-          }
-          syncStatusBtn.hidden = false;
-        } else {
-          syncSetupEl.removeAttribute("hidden");
-          syncStatusBtn.hidden = true;
-        }
+        syncSetupSeparator.setAttribute("hidden", "true");
 
         
         profilesHeaderSeparator.remove();
@@ -1840,6 +1921,8 @@ var gSync = {
         );
         break;
     }
+
+    this._updateSyncStatusButton(state);
 
     
     mainWindowEl.setAttribute("fxastatus", stateValue);
@@ -3372,8 +3455,14 @@ var gSync = {
     VpnPanelEl.hidden = !vpnEnabled;
 
     
-    PanelMultiView.getViewNode(document, "PanelUI-products-separator").hidden =
-      !monitorEnabled && !relayEnabled && !vpnEnabled;
+    
+    
+    let privacyToolsSeparatorEl = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-privacy-tools-separator"
+    );
+    privacyToolsSeparatorEl.hidden = !servicesContainerEl.hidden;
+
     mainPanelEl.hidden = false;
   },
 
