@@ -593,7 +593,15 @@ class DisplayListBuilder final {
              const Maybe<usize>& aEnd);
   void DumpSerializedDisplayList();
 
-  void Begin();
+  
+  
+  
+  
+  
+  
+  
+  
+  void Begin(int32_t aAppUnitsPerDevPixel);
   void End(wr::BuiltDisplayList& aOutDisplayList);
   void End(layers::DisplayListData& aOutTransaction);
 

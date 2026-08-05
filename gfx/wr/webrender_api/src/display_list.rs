@@ -213,6 +213,13 @@ pub struct BuiltDisplayListDescriptor {
     total_clip_nodes: usize,
     
     total_spatial_nodes: usize,
+    
+    
+    
+    
+    
+    
+    pub off_grid_coords: u32,
 }
 
 
@@ -530,6 +537,11 @@ impl BuiltDisplayList {
 
     pub fn total_spatial_nodes(&self) -> usize {
         self.descriptor.total_spatial_nodes
+    }
+
+    
+    pub fn off_grid_coords(&self) -> u32 {
+        self.descriptor.off_grid_coords
     }
 
     pub fn iter(&self) -> BuiltDisplayListIter {
@@ -887,6 +899,118 @@ pub enum DisplayListSection {
     Data,
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+struct AuOffset {
+    x: i32,
+    y: i32,
+}
+
+impl AuOffset {
+    const ZERO: Self = AuOffset { x: 0, y: 0 };
+
+    fn is_zero(&self) -> bool {
+        self.x == 0 && self.y == 0
+    }
+}
+
+impl std::ops::Add for AuOffset {
+    type Output = Self;
+    fn add(self, o: Self) -> Self {
+        AuOffset { x: self.x + o.x, y: self.y + o.y }
+    }
+}
+
+impl std::ops::Sub for AuOffset {
+    type Output = Self;
+    fn sub(self, o: Self) -> Self {
+        AuOffset { x: self.x - o.x, y: self.y - o.y }
+    }
+}
+
+
+
+
+const MAX_EXACT_AU: f64 = (1i64 << 24) as f64;
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug)]
+pub struct AuGrid {
+    per_px: f32,
+    per_px_f64: f64,
+}
+
+impl AuGrid {
+    pub fn new(au_per_dev_px: f32) -> Self {
+        assert!(au_per_dev_px > 0.0, "app units per device pixel must be positive");
+        AuGrid { per_px: au_per_dev_px, per_px_f64: au_per_dev_px as f64 }
+    }
+
+    
+    
+    
+    fn to_au(&self, v: f32, off_grid: &mut u32) -> f64 {
+        let scaled = v as f64 * self.per_px_f64;
+        let rounded = scaled.round();
+        if (scaled - rounded).abs() > 1.0e-3 {
+            *off_grid += 1;
+        }
+        rounded
+    }
+
+    fn from_au(&self, au: f64) -> f32 {
+        if au.abs() <= MAX_EXACT_AU {
+            
+            
+            au as f32 / self.per_px
+        } else {
+            (au / self.per_px_f64) as f32
+        }
+    }
+
+    fn add(&self, v: f32, off_au: i32, off_grid: &mut u32) -> f32 {
+        self.from_au(self.to_au(v, off_grid) + off_au as f64)
+    }
+
+    fn point(&self, p: LayoutPoint, off: AuOffset, off_grid: &mut u32) -> LayoutPoint {
+        LayoutPoint::new(self.add(p.x, off.x, off_grid), self.add(p.y, off.y, off_grid))
+    }
+
+    fn rect(&self, r: LayoutRect, off: AuOffset, off_grid: &mut u32) -> LayoutRect {
+        LayoutRect {
+            min: self.point(r.min, off, off_grid),
+            max: self.point(r.max, off, off_grid),
+        }
+    }
+
+    
+    fn vec_to_au(&self, v: LayoutVector2D, off_grid: &mut u32) -> AuOffset {
+        AuOffset {
+            x: self.to_au(v.x, off_grid) as i32,
+            y: self.to_au(v.y, off_grid) as i32,
+        }
+    }
+}
+
 pub struct DisplayListBuilder {
     payload: DisplayListPayload,
     pub pipeline_id: PipelineId,
@@ -907,11 +1031,21 @@ pub struct DisplayListBuilder {
     
     
     
-    spatial_offsets: HashMap<di::SpatialId, LayoutVector2D>,
+    spatial_offsets: HashMap<di::SpatialId, AuOffset>,
     
     
     
-    last_scroll_offset: Option<(di::SpatialId, LayoutVector2D)>,
+    last_scroll_offset: Option<(di::SpatialId, AuOffset)>,
+    
+    
+    
+    
+    au_grid: AuGrid,
+    
+    
+    
+    
+    off_grid_coords: u32,
     
     
     glyph_scratch: Vec<GlyphInstance>,
@@ -966,6 +1100,9 @@ impl DisplayListBuilder {
             state: BuildState::Idle,
             spatial_offsets: HashMap::new(),
             last_scroll_offset: None,
+            
+            au_grid: AuGrid::new(60.0),
+            off_grid_coords: 0,
             glyph_scratch: Vec::new(),
             shadow_capture: Vec::new(),
             pending_shadows: Vec::new(),
@@ -983,6 +1120,7 @@ impl DisplayListBuilder {
         self.serialized_content_buffer = None;
         self.spatial_offsets.clear();
         self.last_scroll_offset = None;
+        self.off_grid_coords = 0;
         self.shadow_capture.clear();
         self.pending_shadows.clear();
     }
@@ -1198,7 +1336,7 @@ impl DisplayListBuilder {
         let item = di::DisplayItem::Rectangle(di::RectangleDisplayItem {
             common,
             color: PropertyBinding::Value(color),
-            bounds: bounds.translate(offset),
+            bounds: self.shift_rect(bounds, offset),
         });
         self.push_item(&item);
     }
@@ -1213,7 +1351,7 @@ impl DisplayListBuilder {
         let item = di::DisplayItem::Rectangle(di::RectangleDisplayItem {
             common,
             color,
-            bounds: bounds.translate(offset),
+            bounds: self.shift_rect(bounds, offset),
         });
         self.push_item(&item);
     }
@@ -1246,7 +1384,7 @@ impl DisplayListBuilder {
         style: di::LineStyle,
     ) {
         let (common, offset) = self.normalize_common(common);
-        let area = area.translate(offset);
+        let area = self.shift_rect(*area, offset);
 
         let item = di::DisplayItem::Line(di::LineDisplayItem {
             common,
@@ -1273,7 +1411,7 @@ impl DisplayListBuilder {
         let (common, offset) = self.normalize_common(common);
         let item = di::DisplayItem::Image(di::ImageDisplayItem {
             common,
-            bounds: bounds.translate(offset),
+            bounds: self.shift_rect(bounds, offset),
             image_key: key,
             image_rendering,
             alpha_type,
@@ -1298,7 +1436,7 @@ impl DisplayListBuilder {
         let (common, offset) = self.normalize_common(common);
         let item = di::DisplayItem::RepeatingImage(di::RepeatingImageDisplayItem {
             common,
-            bounds: bounds.translate(offset),
+            bounds: self.shift_rect(bounds, offset),
             image_key: key,
             stretch_size,
             tile_spacing,
@@ -1324,7 +1462,7 @@ impl DisplayListBuilder {
         let (common, offset) = self.normalize_common(common);
         let item = di::DisplayItem::YuvImage(di::YuvImageDisplayItem {
             common,
-            bounds: bounds.translate(offset),
+            bounds: self.shift_rect(bounds, offset),
             yuv_data,
             color_depth,
             color_space,
@@ -1346,7 +1484,7 @@ impl DisplayListBuilder {
         let (common, offset) = self.normalize_common(common);
         let item = di::DisplayItem::Text(di::TextDisplayItem {
             common,
-            bounds: bounds.translate(offset),
+            bounds: self.shift_rect(bounds, offset),
             color,
             font_key,
             glyph_options,
@@ -1434,7 +1572,7 @@ impl DisplayListBuilder {
         let (common, offset) = self.normalize_common(common);
         let item = di::DisplayItem::Border(di::BorderDisplayItem {
             common,
-            bounds: bounds.translate(offset),
+            bounds: self.shift_rect(bounds, offset),
             details,
             widths,
         });
@@ -1475,7 +1613,7 @@ impl DisplayListBuilder {
         let (common, eso_offset) = self.normalize_common(common);
         let item = di::DisplayItem::BoxShadow(di::BoxShadowDisplayItem {
             common,
-            box_bounds: box_bounds.translate(eso_offset),
+            box_bounds: self.shift_rect(box_bounds, eso_offset),
             offset,
             color,
             blur_radius,
@@ -1639,7 +1777,7 @@ impl DisplayListBuilder {
         let (common, offset) = self.normalize_common(common);
         let item = di::DisplayItem::Gradient(di::GradientDisplayItem {
             common,
-            bounds: bounds.translate(offset),
+            bounds: self.shift_rect(bounds, offset),
             gradient,
             tile_size,
             tile_spacing,
@@ -1662,7 +1800,7 @@ impl DisplayListBuilder {
         let (common, offset) = self.normalize_common(common);
         let item = di::DisplayItem::RadialGradient(di::RadialGradientDisplayItem {
             common,
-            bounds: bounds.translate(offset),
+            bounds: self.shift_rect(bounds, offset),
             gradient,
             tile_size,
             tile_spacing,
@@ -1685,7 +1823,7 @@ impl DisplayListBuilder {
         let (common, offset) = self.normalize_common(common);
         let item = di::DisplayItem::ConicGradient(di::ConicGradientDisplayItem {
             common,
-            bounds: bounds.translate(offset),
+            bounds: self.shift_rect(bounds, offset),
             gradient,
             tile_size,
             tile_spacing,
@@ -1707,7 +1845,7 @@ impl DisplayListBuilder {
 
         let descriptor = di::SpatialTreeItem::ReferenceFrame(di::ReferenceFrameDescriptor {
             parent_spatial_id,
-            origin: origin + parent_offset,
+            origin: self.shift_point(origin, parent_offset),
             reference_frame: di::ReferenceFrame {
                 transform_style,
                 transform: di::ReferenceTransformBinding::Static {
@@ -1719,7 +1857,7 @@ impl DisplayListBuilder {
         });
         self.push_spatial_tree_item(&descriptor);
         
-        self.record_scroll_offset(id, LayoutVector2D::zero());
+        self.record_scroll_offset(id, AuOffset::ZERO);
 
         let item = di::DisplayItem::PushReferenceFrame(di::ReferenceFrameDisplayListItem {
         });
@@ -1741,7 +1879,7 @@ impl DisplayListBuilder {
 
         let descriptor = di::SpatialTreeItem::ReferenceFrame(di::ReferenceFrameDescriptor {
             parent_spatial_id,
-            origin: origin + parent_offset,
+            origin: self.shift_point(origin, parent_offset),
             reference_frame: di::ReferenceFrame {
                 transform_style: di::TransformStyle::Flat,
                 transform: di::ReferenceTransformBinding::Computed {
@@ -1759,7 +1897,7 @@ impl DisplayListBuilder {
         });
         self.push_spatial_tree_item(&descriptor);
         
-        self.record_scroll_offset(id, LayoutVector2D::zero());
+        self.record_scroll_offset(id, AuOffset::ZERO);
 
         let item = di::DisplayItem::PushReferenceFrame(di::ReferenceFrameDisplayListItem {
         });
@@ -1882,15 +2020,17 @@ impl DisplayListBuilder {
         spatial_id: di::SpatialId,
     ) {
         let offset = self.accumulated_scroll_offset(spatial_id);
-        if offset == LayoutVector2D::zero() {
+        if offset.is_zero() {
             self.push_filters(filters, filter_datas);
             return;
         }
 
         let mut filters = filters.to_vec();
+        let grid = self.au_grid;
+        let off_grid = &mut self.off_grid_coords;
         for filter in &mut filters {
             if let Some(node) = filter.svgfe_node_mut() {
-                node.subregion = node.subregion.translate(offset);
+                node.subregion = grid.rect(node.subregion, offset, off_grid);
             }
         }
         self.push_filters(&filters, filter_datas);
@@ -1942,7 +2082,7 @@ impl DisplayListBuilder {
     
     
     
-    fn accumulated_scroll_offset(&mut self, spatial_id: di::SpatialId) -> LayoutVector2D {
+    fn accumulated_scroll_offset(&mut self, spatial_id: di::SpatialId) -> AuOffset {
         if let Some((cached_id, cached_offset)) = self.last_scroll_offset {
             if cached_id == spatial_id {
                 return cached_offset;
@@ -1951,14 +2091,14 @@ impl DisplayListBuilder {
         let offset = self.spatial_offsets
             .get(&spatial_id)
             .copied()
-            .unwrap_or_else(LayoutVector2D::zero);
+            .unwrap_or(AuOffset::ZERO);
         self.last_scroll_offset = Some((spatial_id, offset));
         offset
     }
 
     
     
-    fn record_scroll_offset(&mut self, spatial_id: di::SpatialId, offset: LayoutVector2D) {
+    fn record_scroll_offset(&mut self, spatial_id: di::SpatialId, offset: AuOffset) {
         self.spatial_offsets.insert(spatial_id, offset);
     }
 
@@ -1966,7 +2106,25 @@ impl DisplayListBuilder {
     
     
     fn normalize_rect(&mut self, rect: LayoutRect, spatial_id: di::SpatialId) -> LayoutRect {
-        rect.translate(self.accumulated_scroll_offset(spatial_id))
+        let offset = self.accumulated_scroll_offset(spatial_id);
+        self.shift_rect(rect, offset)
+    }
+
+    
+    fn shift_rect(&mut self, rect: LayoutRect, offset: AuOffset) -> LayoutRect {
+        if offset.is_zero() {
+            return rect;
+        }
+        let grid = self.au_grid;
+        grid.rect(rect, offset, &mut self.off_grid_coords)
+    }
+
+    fn shift_point(&mut self, point: LayoutPoint, offset: AuOffset) -> LayoutPoint {
+        if offset.is_zero() {
+            return point;
+        }
+        let grid = self.au_grid;
+        grid.point(point, offset, &mut self.off_grid_coords)
     }
 
     
@@ -1975,10 +2133,10 @@ impl DisplayListBuilder {
     fn normalize_common(
         &mut self,
         common: &di::CommonItemProperties,
-    ) -> (di::CommonItemProperties, LayoutVector2D) {
+    ) -> (di::CommonItemProperties, AuOffset) {
         let offset = self.accumulated_scroll_offset(common.spatial_id);
         let mut common = *common;
-        common.clip_rect = common.clip_rect.translate(offset);
+        common.clip_rect = self.shift_rect(common.clip_rect, offset);
         (common, offset)
     }
 
@@ -1994,6 +2152,16 @@ impl DisplayListBuilder {
     ) -> di::SpatialId {
         let parent_offset = self.accumulated_scroll_offset(parent_space);
         let scroll_frame_id = self.generate_spatial_index();
+        
+        
+        
+        
+        
+        
+        let eso_au = {
+            let grid = self.au_grid;
+            grid.vec_to_au(external_scroll_offset, &mut self.off_grid_coords)
+        };
 
         
         
@@ -2009,7 +2177,7 @@ impl DisplayListBuilder {
         });
 
         self.push_spatial_tree_item(&descriptor);
-        self.record_scroll_offset(scroll_frame_id, parent_offset + external_scroll_offset);
+        self.record_scroll_offset(scroll_frame_id, parent_offset + eso_au);
 
         scroll_frame_id
     }
@@ -2040,7 +2208,7 @@ impl DisplayListBuilder {
         let offset = self.accumulated_scroll_offset(spatial_id);
 
         let mut image_mask = image_mask;
-        image_mask.rect = image_mask.rect.translate(offset);
+        image_mask.rect = self.shift_rect(image_mask.rect, offset);
 
         let item = di::DisplayItem::ImageMaskClip(di::ImageMaskClipDisplayItem {
             id,
@@ -2055,8 +2223,11 @@ impl DisplayListBuilder {
         
         if points.len() >= 3 {
             self.push_item(&di::DisplayItem::SetPoints);
-            if offset != LayoutVector2D::zero() {
-                let shifted: Vec<LayoutPoint> = points.iter().map(|p| *p + offset).collect();
+            if !offset.is_zero() {
+                let grid = self.au_grid;
+                let off_grid = &mut self.off_grid_coords;
+                let shifted: Vec<LayoutPoint> =
+                    points.iter().map(|p| grid.point(*p, offset, off_grid)).collect();
                 self.push_iter(&shifted);
             } else {
                 self.push_iter(points);
@@ -2131,13 +2302,18 @@ impl DisplayListBuilder {
         
         
         let parent_offset = self.accumulated_scroll_offset(parent_spatial_id);
-        let node_offset = parent_offset - previously_applied_offset;
+        
+        let pao_au = {
+            let grid = self.au_grid;
+            grid.vec_to_au(previously_applied_offset, &mut self.off_grid_coords)
+        };
+        let node_offset = parent_offset - pao_au;
         let id = self.generate_spatial_index();
 
         let descriptor = di::SpatialTreeItem::StickyFrame(di::StickyFrameDescriptor {
             parent_spatial_id,
             id,
-            bounds: frame_rect.translate(node_offset),
+            bounds: self.shift_rect(frame_rect, node_offset),
             margins,
             vertical_offset_bounds,
             horizontal_offset_bounds,
@@ -2159,8 +2335,8 @@ impl DisplayListBuilder {
     ) {
         let offset = self.accumulated_scroll_offset(space_and_clip.spatial_id);
         let item = di::DisplayItem::Iframe(di::IframeDisplayItem {
-            bounds: bounds.translate(offset),
-            clip_rect: clip_rect.translate(offset),
+            bounds: self.shift_rect(bounds, offset),
+            clip_rect: self.shift_rect(clip_rect, offset),
             space_and_clip: *space_and_clip,
             pipeline_id,
             ignore_missing_pipeline,
@@ -2408,11 +2584,18 @@ impl DisplayListBuilder {
         })
     }
 
-    pub fn begin(&mut self) {
+    
+    
+    
+    
+    
+    
+    pub fn begin(&mut self, au_per_dev_px: f32) {
         assert_eq!(self.state, BuildState::Idle);
         self.state = BuildState::Build;
         self.builder_start_time = zeitstempel::now();
         self.reset();
+        self.au_grid = AuGrid::new(au_per_dev_px);
     }
 
     pub fn end(&mut self) -> (PipelineId, BuiltDisplayList) {
@@ -2457,6 +2640,7 @@ impl DisplayListBuilder {
                     send_start_time: end_time,
                     total_clip_nodes: self.next_clip_index,
                     total_spatial_nodes: self.next_spatial_index,
+                    off_grid_coords: self.off_grid_coords,
                 },
                 payload,
             },
