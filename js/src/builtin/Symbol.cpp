@@ -3,10 +3,10 @@
 
 
 #include "builtin/Symbol.h"
-#include "js/Symbol.h"
 
 #include "js/friend/ErrorMessages.h"  
 #include "js/PropertySpec.h"
+#include "js/Symbol.h"
 #include "vm/PlainObject.h"  
 #include "vm/SymbolType.h"
 
@@ -32,7 +32,7 @@ SymbolObject* SymbolObject::create(JSContext* cx, JS::HandleSymbol symbol) {
   if (!obj) {
     return nullptr;
   }
-  obj->setPrimitiveValue(symbol);
+  obj->initPrimitiveValue(symbol);
   return obj;
 }
 
