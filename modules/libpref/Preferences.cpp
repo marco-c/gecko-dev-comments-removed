@@ -802,6 +802,11 @@ class Pref {
       if (!ValueMatches(PrefValueKind::Default, type, value)) {
         
         mDefaultValue.Replace(mHasDefaultValue, Type(), type, value);
+        
+        
+        if (mHasUserValue && !IsType(type)) {
+          ClearUserValue();
+        }
         SetType(type);
         mHasDefaultValue = true;
         defaultValueChanged = true;
