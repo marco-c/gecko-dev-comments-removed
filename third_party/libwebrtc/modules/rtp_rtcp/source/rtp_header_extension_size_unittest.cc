@@ -9,6 +9,7 @@
 
 #include "modules/rtp_rtcp/source/rtp_header_extension_size.h"
 
+#include "api/rtp_header_extension_id.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "test/gtest.h"
@@ -18,9 +19,9 @@ namespace {
 
 
 
-constexpr int kId = 1;
+constexpr RtpHeaderExtensionId kId(1);
 
-constexpr int kIdForceTwoByteHeader = 15;
+constexpr RtpHeaderExtensionId kIdForceTwoByteHeader(15);
 
 TEST(RtpHeaderExtensionSizeTest, ReturnsZeroIfNoExtensionsAreRegistered) {
   constexpr RtpExtensionSize kExtensionSizes[] = {
@@ -59,7 +60,7 @@ TEST(RtpHeaderExtensionSizeTest, SumsSeveralExtensions) {
       {.type = RtpStreamId::kId, .value_size = 2}};
   RtpHeaderExtensionMap registered;
   registered.Register<RtpMid>(kId);
-  registered.Register<RtpStreamId>(14);
+  registered.Register<RtpStreamId>(RtpHeaderExtensionId(14));
 
   
   
@@ -84,8 +85,8 @@ TEST(RtpHeaderExtensionSizeTest, LargeValueForce2BytesHeader) {
       {.type = RtpMid::kId, .value_size = 17},
       {.type = RtpStreamId::kId, .value_size = 4}};
   RtpHeaderExtensionMap registered;
-  registered.Register<RtpMid>(1);
-  registered.Register<RtpStreamId>(2);
+  registered.Register<RtpMid>(RtpHeaderExtensionId(1));
+  registered.Register<RtpStreamId>(RtpHeaderExtensionId(2));
 
   
   
