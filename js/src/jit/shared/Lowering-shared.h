@@ -154,7 +154,12 @@ class LIRGeneratorShared {
 
   
   
-  LAllocation useRegisterOrIndexConstant(MDefinition* mir, Scalar::Type type);
+  LAllocation useRegisterOrIndexConstant(MDefinition* mir, Scalar::Type type,
+                                         bool useAtStart = false);
+  LAllocation useRegisterOrIndexConstantAtStart(MDefinition* mir,
+                                                Scalar::Type type) {
+    return useRegisterOrIndexConstant(mir, type,  true);
+  }
 
   inline LUse useRegisterForTypedLoad(MDefinition* mir, MIRType type);
 
