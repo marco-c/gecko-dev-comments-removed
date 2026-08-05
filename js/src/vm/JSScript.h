@@ -700,8 +700,8 @@ class ScriptSource {
   
   
   
-  static void getSourceProperties(ScriptSource* ss, bool* hasSourceText,
-                                  bool* retrievable, bool* isTwoByteString);
+  void getSourceProperties(bool* hasSourceText, bool* retrievable,
+                           bool* isTwoByteString);
 
   
   template <typename Unit>
