@@ -4053,6 +4053,11 @@ pref("extensions.formautofill.creditCards.heuristics.fathom.confidenceThreshold"
 
 pref("extensions.formautofill.creditCards.heuristics.fathom.testConfidence", "0");
 
+
+
+pref("extensions.formautofill.passports.supported", "off");
+pref("extensions.formautofill.passports.enabled", false);
+
 pref("extensions.formautofill.loglevel", "Warn");
 
 
