@@ -136,6 +136,11 @@ var gExceptionPaths = [
   "chrome://browser/skin/illustrations/yelpRealtime-opt-in.svg",
 ];
 
+if (AppConstants.platform == "win") {
+  
+  gExceptionPaths.push("resource://gre-resources/gfxsanity/");
+}
+
 
 
 if (AppConstants.platform == "macosx") {
