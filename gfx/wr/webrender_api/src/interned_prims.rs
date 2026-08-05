@@ -24,6 +24,24 @@ use crate::key_types::{
 };
 use crate::units::LayoutSideOffsetsAu;
 use app_units::Au;
+use malloc_size_of::MallocSizeOf;
+
+
+
+
+
+
+#[derive(Debug, Clone, Eq, MallocSizeOf, PartialEq, Hash, Serialize, Deserialize)]
+pub struct PrimKey<T: MallocSizeOf> {
+    pub common: PrimKeyCommonData,
+    pub kind: T,
+}
+
+impl<T: MallocSizeOf> PrimKey<T> {
+    pub fn new(common: PrimKeyCommonData, kind: T) -> Self {
+        PrimKey { common, kind }
+    }
+}
 
 #[derive(Debug, Clone, Eq, MallocSizeOf, PartialEq, Hash, Serialize, Deserialize)]
 pub struct RectanglePrim {
