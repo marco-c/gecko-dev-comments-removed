@@ -23,7 +23,7 @@ namespace {
 
 
 
-const uint32_t kMaxRandomNumber = 102400;
+const uint32_t kMaxRandomNumber = 1048576;
 
 }  
 

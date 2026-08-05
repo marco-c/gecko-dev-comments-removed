@@ -43,7 +43,7 @@ namespace {
 
 
 
-const int64_t kRoundUpNumber = 20480;
+const int64_t kRoundUpNumber = 131072;
 
 
 
@@ -412,7 +412,7 @@ nsresult BodyDeleteOrphanedFiles(
               });
 
               nsID id;
-              QM_TRY(OkIf(id.Parse(PromiseFlatCString(leafName).get())), true);
+              QM_TRY(OkIf(id.Parse(leafName)), true);
 
               if (!aKnownBodyIds.Contains(id)) {
                 return true;
