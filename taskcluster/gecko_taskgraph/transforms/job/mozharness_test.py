@@ -395,32 +395,17 @@ def mozharness_test_on_generic_worker(config, job, taskdesc):
         }
 
     if is_windows:
-        script = "mozharness\\scripts\\" + normpath(mozharness["script"])
-        if job.get("use-python", "system") == "system":
-            py_binary = "c:\\mozilla-build\\python3\\python3.exe"
-            mh_command = [py_binary, "-u", script]
-        else:
-            
-            
-            
-            
-            
-            
-            py_binary = "python3"
-            mh_command = ["env", "python3", "-u", script]
+        py_binary = "c:\\mozilla-build\\{python}\\{python}.exe".format(python="python3")
+        mh_command = [
+            py_binary,
+            "-u",
+            "mozharness\\scripts\\" + normpath(mozharness["script"]),
+        ]
     elif is_bitbar or is_lambda:
         py_binary = "python3"
         mh_command = ["bash", f"./{bitbar_script}"]
     elif is_macosx:
-        if job.get("use-python", "system") == "system":
-            py_binary = "/usr/local/bin/{}".format("python3")
-        else:
-            
-            
-            
-            
-            
-            py_binary = "python3"
+        py_binary = "/usr/local/bin/{}".format("python3")
         mh_command = [
             py_binary,
             "-u",
@@ -428,13 +413,11 @@ def mozharness_test_on_generic_worker(config, job, taskdesc):
         ]
     else:
         
-        if job.get("use-python", "system") == "system":
-            py_binary = "/usr/bin/python3"
-        else:
-            
-            
-            py_binary = "python3"
+        py_binary = "/usr/bin/{}".format("python3")
         mh_command = [
+            
+            
+            
             py_binary,
             "-u",
             "mozharness/scripts/" + mozharness["script"],
