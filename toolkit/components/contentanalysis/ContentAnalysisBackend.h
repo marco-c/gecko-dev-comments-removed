@@ -10,6 +10,11 @@
 #include "nsISupportsImpl.h"
 #include "nsStringFwd.h"
 
+namespace content_analysis::sdk {
+class ContentAnalysisRequest;
+class ContentAnalysisResponse;
+}  
+
 namespace mozilla::contentanalysis {
 
 class ContentAnalysisDiagnosticInfo;
@@ -85,7 +90,27 @@ class ContentAnalysisBackend {
 
  protected:
   virtual ~ContentAnalysisBackend() = default;
+
+  
+  
+  
+  
+  
+  virtual nsresult ConvertRequestToProtobuf(
+      nsIContentAnalysisRequest* aRequest,
+      content_analysis::sdk::ContentAnalysisRequest* aOut);
+
+  
+  
+  
+  static already_AddRefed<ContentAnalysisResponse> ConvertResponseFromProtobuf(
+      content_analysis::sdk::ContentAnalysisResponse&& aResponse,
+      const nsCString& aUserActionId);
 };
+
+
+
+already_AddRefed<ContentAnalysisBackend> CreateBackend();
 
 }  
 

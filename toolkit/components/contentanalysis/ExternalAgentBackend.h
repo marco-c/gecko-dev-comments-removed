@@ -10,6 +10,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
 #include "mozilla/StaticString.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/glean/ContentanalysisMetrics.h"
 #include "nsCOMPtr.h"
 #include "nsError.h"
@@ -56,6 +57,13 @@ class ExternalAgentBackend final : public ContentAnalysisBackend {
  protected:
   ~ExternalAgentBackend() override;
 
+  
+  
+  
+  nsresult ConvertRequestToProtobuf(
+      nsIContentAnalysisRequest* aRequest,
+      content_analysis::sdk::ContentAnalysisRequest* aOut) override;
+
  private:
   
   
@@ -90,7 +98,8 @@ class ExternalAgentBackend final : public ContentAnalysisBackend {
       content_analysis::sdk::ContentAnalysisRequest&& aRequest,
       bool aAutoAcknowledge,
       const std::shared_ptr<content_analysis::sdk::Client>& aClient,
-      bool aTestOnlyIgnoreCanceled = false);
+      bool aTestOnlyIgnoreCanceled = false,
+      std::shared_ptr<void> aPrintDataHandle = nullptr);
 
   void HandleResponseFromAgent(
       content_analysis::sdk::ContentAnalysisResponse&& aResponse);
@@ -103,17 +112,16 @@ class ExternalAgentBackend final : public ContentAnalysisBackend {
     glean::TimerId mTimerId;
     nsCString mAnalysisTypeStr;
     bool mAutoAcknowledge;
+    
+    
+    
+    
+    
+    
+    std::shared_ptr<void> mPrintDataHandle;
   };
-  DataMutex<nsTHashMap<nsCString, BasicRequestInfo>>
+  DataMutex<nsTHashMap<nsCString, UniquePtr<BasicRequestInfo>>>
       mRequestTokenToBasicRequestInfoMap;
-
-  
-  
-  
-  
-  static already_AddRefed<ContentAnalysisResponse> ConvertResponseFromProtobuf(
-      content_analysis::sdk::ContentAnalysisResponse&& aResponse,
-      const nsCString& aUserActionId);
 
   
   static bool IsContentAnalysisShutDown();

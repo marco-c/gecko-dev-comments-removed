@@ -6,7 +6,6 @@
 #include "ContentAnalysisBackend.h"
 #include "ContentAnalysisIPCTypes.h"
 #include "ContentAnalysisShared.h"
-#include "ExternalAgentBackend.h"
 
 #include "base/process_util.h"
 #include "GMPUtils.h"  
@@ -46,14 +45,6 @@
 
 #include <algorithm>
 #include <string>
-
-#ifdef XP_WIN
-#  include <windows.h>
-#  define SECURITY_WIN32 1
-#  include <security.h>
-#  include "mozilla/NativeNt.h"
-#  include "mozilla/WinDllServices.h"
-#endif  
 
 namespace mozilla::contentanalysis {
 
@@ -157,11 +148,7 @@ bool SourceIsSameTab(nsIContentAnalysisRequest* aRequest) {
 }
 
 namespace mozilla::contentanalysis {
-ContentAnalysisRequest::~ContentAnalysisRequest() {
-#ifdef XP_WIN
-  CloseHandle(mPrintDataHandle);
-#endif
-}
+ContentAnalysisRequest::~ContentAnalysisRequest() = default;
 
 NS_IMETHODIMP
 ContentAnalysisRequest::GetAnalysisType(AnalysisType* aAnalysisType) {
@@ -188,31 +175,15 @@ ContentAnalysisRequest::GetFilePath(nsAString& aFilePath) {
 }
 
 NS_IMETHODIMP
-ContentAnalysisRequest::GetPrintDataHandle(uint64_t* aPrintDataHandle) {
-#ifdef XP_WIN
-  uintptr_t printDataHandle = reinterpret_cast<uintptr_t>(mPrintDataHandle);
-  uint64_t printDataValue = static_cast<uint64_t>(printDataHandle);
-  *aPrintDataHandle = printDataValue;
-  return NS_OK;
-#else
-  return NS_ERROR_NOT_IMPLEMENTED;
-#endif
-}
-
-NS_IMETHODIMP
 ContentAnalysisRequest::GetPrinterName(nsAString& aPrinterName) {
   aPrinterName = mPrinterName;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-ContentAnalysisRequest::GetPrintDataSize(uint64_t* aPrintDataSize) {
-#ifdef XP_WIN
-  *aPrintDataSize = mPrintDataSize;
+ContentAnalysisRequest::GetPrintData(nsTArray<uint8_t>& aPrintData) {
+  aPrintData = mPrintData.Clone();
   return NS_OK;
-#else
-  return NS_ERROR_NOT_IMPLEMENTED;
-#endif
 }
 
 NS_IMETHODIMP
@@ -373,6 +344,7 @@ ContentAnalysisRequest::ContentAnalysisRequest(
   if (aStringIsFilePath) {
     mFilePath = std::move(aString);
   } else {
+    MOZ_ASSERT(!aString.IsEmpty());
     mTextContent = std::move(aString);
   }
   if (mOperationTypeForDisplay == OperationType::eUpload ||
@@ -398,29 +370,14 @@ ContentAnalysisRequest::ContentAnalysisRequest(
       mSourceWindowGlobal(aSourceWindowGlobal) {}
 
 ContentAnalysisRequest::ContentAnalysisRequest(
-    const nsTArray<uint8_t> aPrintData, nsCOMPtr<nsIURI> aUrl,
-    nsString aPrinterName, Reason aReason,
-    dom::WindowGlobalParent* aWindowGlobalParent)
+    nsTArray<uint8_t> aPrintData, nsCOMPtr<nsIURI> aUrl, nsString aPrinterName,
+    Reason aReason, dom::WindowGlobalParent* aWindowGlobalParent)
     : mAnalysisType(AnalysisType::ePrint),
       mReason(aReason),
       mUrl(std::move(aUrl)),
       mPrinterName(std::move(aPrinterName)),
-      mWindowGlobalParent(aWindowGlobalParent) {
-#ifdef XP_WIN
-  LARGE_INTEGER dataContentLength;
-  dataContentLength.QuadPart = static_cast<LONGLONG>(aPrintData.Length());
-  mPrintDataHandle = ::CreateFileMappingW(
-      INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, dataContentLength.HighPart,
-      dataContentLength.LowPart, nullptr);
-  if (mPrintDataHandle) {
-    mozilla::nt::AutoMappedView view(mPrintDataHandle, FILE_MAP_ALL_ACCESS);
-    memcpy(view.as<uint8_t>(), aPrintData.Elements(), aPrintData.Length());
-    mPrintDataSize = aPrintData.Length();
-  }
-#else
-  MOZ_ASSERT_UNREACHABLE(
-      "Content Analysis is not supported on non-Windows platforms");
-#endif
+      mWindowGlobalParent(aWindowGlobalParent),
+      mPrintData(std::move(aPrintData)) {
   
   MOZ_ASSERT(aReason == nsIContentAnalysisRequest::Reason::ePrintPreviewPrint ||
              aReason == nsIContentAnalysisRequest::Reason::eSystemDialogPrint);
@@ -450,13 +407,7 @@ RefPtr<ContentAnalysisRequest> ContentAnalysisRequest::Clone(
   MOZ_ALWAYS_SUCCEEDS(aRequest->GetPrinterName(clone->mPrinterName));
   MOZ_ALWAYS_SUCCEEDS(aRequest->GetWindowGlobalParent(
       getter_AddRefs(clone->mWindowGlobalParent)));
-#ifdef XP_WIN
-  uint64_t printDataValue;
-  MOZ_ALWAYS_SUCCEEDS(aRequest->GetPrintDataHandle(&printDataValue));
-  uintptr_t printDataHandle = static_cast<uint64_t>(printDataValue);
-  clone->mPrintDataHandle = reinterpret_cast<HANDLE>(printDataHandle);
-  MOZ_ALWAYS_SUCCEEDS(aRequest->GetPrintDataSize(&clone->mPrintDataSize));
-#endif
+  MOZ_ALWAYS_SUCCEEDS(aRequest->GetPrintData(clone->mPrintData));
   MOZ_ALWAYS_SUCCEEDS(aRequest->GetSourceWindowGlobal(
       getter_AddRefs(clone->mSourceWindowGlobal)));
   
@@ -780,7 +731,7 @@ ContentAnalysis::ContentAnalysis() : mSetByEnterprise(false) {
   }
   obsServ->AddObserver(this, "xpcom-shutdown-threads", false);
 
-  mBackend = MakeRefPtr<ExternalAgentBackend>();
+  mBackend = contentanalysis::CreateBackend();
 
   
   
@@ -2562,7 +2513,6 @@ ContentAnalysis::ShowBlockedRequestDialog(nsIContentAnalysisRequest* aRequest) {
   return NS_OK;
 }
 
-#if defined(XP_WIN)
 RefPtr<ContentAnalysis::PrintAllowedPromise>
 ContentAnalysis::PrintToPDFToDetermineIfPrintAllowed(
     dom::CanonicalBrowsingContext* aBrowsingContext,
@@ -2762,7 +2712,6 @@ ContentAnalysis::PrintToPDFToDetermineIfPrintAllowed(
           });
   return promise;
 }
-#endif
 
 static nsresult CheckClipboard(
     ContentAnalysisCallback* aCallback, Maybe<int32_t> aClipboardSequenceNumber,

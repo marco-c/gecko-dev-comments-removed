@@ -10,25 +10,18 @@
 
 #include "GMPUtils.h"  
 #include "mozilla/Assertions.h"
-#include "mozilla/CheckedInt.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_browser.h"
-#include "mozilla/dom/CanonicalBrowsingContext.h"
-#include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/glean/ContentanalysisMetrics.h"
 #include "nsIObserverService.h"
-#include "nsITransferable.h"
 #include "nsString.h"
 #include "nsThreadPool.h"
 
 #include <sstream>
 
 #ifdef XP_WIN
-#  define SECURITY_WIN32 1
-#  include <security.h>
 #  include "mozilla/WinDllServices.h"
 #endif
 
@@ -84,229 +77,71 @@ const uint32_t kShutdownThreadpoolTimeoutMs = 2 * 1000;
 
 namespace mozilla::contentanalysis {
 
-static nsresult ConvertToProtobuf(
-    nsIClientDownloadResource* aIn,
-    content_analysis::sdk::ClientDownloadRequest_Resource* aOut) {
-  nsString url;
-  nsresult rv = aIn->GetUrl(url);
-  NS_ENSURE_SUCCESS(rv, rv);
-  aOut->set_url(NS_ConvertUTF16toUTF8(url).get());
 
-  uint32_t resourceType;
-  rv = aIn->GetType(&resourceType);
-  NS_ENSURE_SUCCESS(rv, rv);
-  aOut->set_type(
-      static_cast<content_analysis::sdk::ClientDownloadRequest_ResourceType>(
-          resourceType));
 
-  return NS_OK;
-}
 
-#if defined(DEBUG)
-static bool IsRequestReadyForAgent(nsIContentAnalysisRequest* aRequest) {
-  NS_ENSURE_TRUE(aRequest, false);
 
-  
-  
-  RefPtr<dom::WindowGlobalParent> windowGlobal;
-  NS_ENSURE_SUCCESS(
-      aRequest->GetWindowGlobalParent(getter_AddRefs(windowGlobal)), false);
 
-  
-  nsCOMPtr<dom::DataTransfer> dataTransfer;
-  NS_ENSURE_SUCCESS(aRequest->GetDataTransfer(getter_AddRefs(dataTransfer)),
-                    false);
-  NS_ENSURE_TRUE(!dataTransfer, false);
 
-  
-  nsCOMPtr<nsITransferable> transferable;
-  NS_ENSURE_SUCCESS(aRequest->GetTransferable(getter_AddRefs(transferable)),
-                    false);
-  NS_ENSURE_TRUE(!transferable, false);
-
-  nsCString userActionId;
-  NS_ENSURE_SUCCESS(aRequest->GetUserActionId(userActionId), false);
-  NS_ENSURE_TRUE(!userActionId.IsEmpty(), false);
-
-  int64_t userActionRequestsCount;
-  NS_ENSURE_SUCCESS(
-      aRequest->GetUserActionRequestsCount(&userActionRequestsCount), false);
-  NS_ENSURE_TRUE(userActionRequestsCount, false);
-
-  nsCOMPtr<nsIURI> url;
-  NS_ENSURE_SUCCESS(aRequest->GetUrl(getter_AddRefs(url)), false);
-  if (!url) {
-    
-    NS_ENSURE_TRUE(windowGlobal, false);
-    url = ContentAnalysis::GetURIForBrowsingContext(
-        windowGlobal->Canonical()->GetBrowsingContext());
-    NS_ENSURE_TRUE(url, false);
-  }
-
-  return true;
-}
-#endif  
-
-static nsresult ConvertToProtobuf(
-    nsIContentAnalysisRequest* aIn,
+nsresult ExternalAgentBackend::ConvertRequestToProtobuf(
+    nsIContentAnalysisRequest* aRequest,
     content_analysis::sdk::ContentAnalysisRequest* aOut) {
-  MOZ_ASSERT(IsRequestReadyForAgent(aIn));
+  nsresult rv =
+      ContentAnalysisBackend::ConvertRequestToProtobuf(aRequest, aOut);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   nsIContentAnalysisRequest::AnalysisType analysisType;
-  nsresult rv = aIn->GetAnalysisType(&analysisType);
+  rv = aRequest->GetAnalysisType(&analysisType);
   NS_ENSURE_SUCCESS(rv, rv);
-  auto connector =
-      static_cast<content_analysis::sdk::AnalysisConnector>(analysisType);
-  aOut->set_analysis_connector(connector);
-
-  nsIContentAnalysisRequest::Reason reason;
-  rv = aIn->GetReason(&reason);
-  NS_ENSURE_SUCCESS(rv, rv);
-  auto sdkReason =
-      static_cast<content_analysis::sdk::ContentAnalysisRequest::Reason>(
-          reason);
-  aOut->set_reason(sdkReason);
-
-  nsCString requestToken;
-  rv = aIn->GetRequestToken(requestToken);
-  NS_ENSURE_SUCCESS(rv, rv);
-  aOut->set_request_token(requestToken.get(), requestToken.Length());
-  nsCString userActionId;
-  rv = aIn->GetUserActionId(userActionId);
-  NS_ENSURE_SUCCESS(rv, rv);
-  aOut->set_user_action_id(userActionId.get(), userActionId.Length());
-  int64_t userActionRequestsCount;
-  rv = aIn->GetUserActionRequestsCount(&userActionRequestsCount);
-  NS_ENSURE_SUCCESS(rv, rv);
-  aOut->set_user_action_requests_count(userActionRequestsCount);
-
-  int32_t timeout = StaticPrefs::browser_contentanalysis_agent_timeout();
-  
-  
-  timeout = std::max(timeout, 1);
-  uint32_t timeoutMultiplier;
-  rv = aIn->GetTimeoutMultiplier(&timeoutMultiplier);
-  NS_ENSURE_SUCCESS(rv, rv);
-  timeoutMultiplier = std::max(timeoutMultiplier, static_cast<uint32_t>(1));
-  auto checkedTimeout = CheckedInt64(time(nullptr)) +
-                        timeout * userActionRequestsCount * timeoutMultiplier;
-  if (!checkedTimeout.isValid()) {
-    return NS_ERROR_FAILURE;
-  }
-  aOut->set_expires_at(checkedTimeout.value());
-
-  const std::string tag = "dlp";  
-  *aOut->add_tags() = tag;
 
   auto* requestData = aOut->mutable_request_data();
 
-  RefPtr<dom::WindowGlobalParent> windowGlobal;
-  rv = aIn->GetWindowGlobalParent(getter_AddRefs(windowGlobal));
-  NS_ENSURE_SUCCESS(rv, rv);
-  nsCOMPtr<nsIURI> url;
-  rv = aIn->GetUrl(getter_AddRefs(url));
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (!url) {
-    
-    MOZ_ASSERT(windowGlobal);
-    
-    url = ContentAnalysis::GetURIForBrowsingContext(
-        windowGlobal->Canonical()->GetBrowsingContext());
-    
-    MOZ_ASSERT(url);
-  }
-  nsCString urlString;
-  rv = url->GetSpec(urlString);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (!urlString.IsEmpty()) {
-    requestData->set_url(urlString.get());
-  }
-
-  if (windowGlobal) {
-    nsString title;
-    windowGlobal->GetDocumentTitle(title);
-    requestData->set_tab_title(NS_ConvertUTF16toUTF8(title).get());
-  }
-
-  nsString email;
-  rv = aIn->GetEmail(email);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (!email.IsEmpty()) {
-    requestData->set_email(NS_ConvertUTF16toUTF8(email).get());
-  }
-
-  nsCString sha256Digest;
-  rv = aIn->GetSha256Digest(sha256Digest);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (!sha256Digest.IsEmpty()) {
-    requestData->set_digest(sha256Digest.get());
-  }
-
   if (analysisType == nsIContentAnalysisRequest::AnalysisType::ePrint) {
 #if XP_WIN
-    uint64_t printDataHandle;
-    MOZ_TRY(aIn->GetPrintDataHandle(&printDataHandle));
+    nsTArray<uint8_t> printData;
+    MOZ_TRY(aRequest->GetPrintData(printData));
+    
+    
+    
+    
+    
+    LARGE_INTEGER dataContentLength;
+    dataContentLength.QuadPart = static_cast<LONGLONG>(printData.Length());
+    HANDLE printDataHandle = ::CreateFileMappingW(
+        INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE,
+        dataContentLength.HighPart, dataContentLength.LowPart, nullptr);
     if (!printDataHandle) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
-    aOut->mutable_print_data()->set_handle(printDataHandle);
-
-    uint64_t printDataSize;
-    MOZ_TRY(aIn->GetPrintDataSize(&printDataSize));
-    aOut->mutable_print_data()->set_size(printDataSize);
+    {
+      mozilla::nt::AutoMappedView view(printDataHandle, FILE_MAP_ALL_ACCESS);
+      memcpy(view.as<uint8_t>(), printData.Elements(), printData.Length());
+    }
+    aOut->mutable_print_data()->set_handle(
+        static_cast<uint64_t>(reinterpret_cast<uintptr_t>(printDataHandle)));
+    aOut->mutable_print_data()->set_size(printData.Length());
 
     nsString printerName;
-    MOZ_TRY(aIn->GetPrinterName(printerName));
+    MOZ_TRY(aRequest->GetPrinterName(printerName));
     requestData->mutable_print_metadata()->set_printer_name(
         NS_ConvertUTF16toUTF8(printerName).get());
+    return NS_OK;
 #else
     return NS_ERROR_NOT_IMPLEMENTED;
 #endif
-  } else {
-    nsString filePath;
-    rv = aIn->GetFilePath(filePath);
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (!filePath.IsEmpty()) {
-      std::string filePathStr = NS_ConvertUTF16toUTF8(filePath).get();
-      aOut->set_file_path(filePathStr);
-      auto filename = filePathStr.substr(filePathStr.find_last_of("/\\") + 1);
-      if (!filename.empty()) {
-        requestData->set_filename(filename);
-      }
-    } else {
-      nsString textContent;
-      rv = aIn->GetTextContent(textContent);
-      NS_ENSURE_SUCCESS(rv, rv);
-      MOZ_ASSERT(!textContent.IsEmpty());
-      aOut->set_text_content(NS_ConvertUTF16toUTF8(textContent).get());
-    }
   }
 
-#ifdef XP_WIN
-  ULONG userLen = 0;
-  GetUserNameExW(NameSamCompatible, nullptr, &userLen);
-  if (GetLastError() == ERROR_MORE_DATA && userLen > 0) {
-    auto user = mozilla::MakeUnique<wchar_t[]>(userLen);
-    if (GetUserNameExW(NameSamCompatible, user.get(), &userLen)) {
-      auto* clientMetadata = aOut->mutable_client_metadata();
-      auto* browser = clientMetadata->mutable_browser();
-      browser->set_machine_user(NS_ConvertUTF16toUTF8(user.get()).get());
-    }
-  }
-#endif
-
-  nsTArray<RefPtr<nsIClientDownloadResource>> resources;
-  rv = aIn->GetResources(resources);
+  nsString filePath;
+  rv = aRequest->GetFilePath(filePath);
   NS_ENSURE_SUCCESS(rv, rv);
-  if (!resources.IsEmpty()) {
-    auto* pbClientDownloadRequest = requestData->mutable_csd();
-    for (auto& nsResource : resources) {
-      rv = ConvertToProtobuf(nsResource.get(),
-                             pbClientDownloadRequest->add_resources());
-      NS_ENSURE_SUCCESS(rv, rv);
+  if (!filePath.IsEmpty()) {
+    std::string filePathStr = NS_ConvertUTF16toUTF8(filePath).get();
+    aOut->set_file_path(filePathStr);
+    auto filename = filePathStr.substr(filePathStr.find_last_of("/\\") + 1);
+    if (!filename.empty()) {
+      requestData->set_filename(filename);
     }
   }
-
   return NS_OK;
 }
 
@@ -419,40 +254,6 @@ static void LogRequest(
 #undef ADD_FIELD
 
   LOGD("%s", ss.str().c_str());
-}
-
-
-already_AddRefed<ContentAnalysisResponse>
-ExternalAgentBackend::ConvertResponseFromProtobuf(
-    content_analysis::sdk::ContentAnalysisResponse&& aResponse,
-    const nsCString& aUserActionId) {
-  ContentAnalysisResponse::Action action =
-      ContentAnalysisResponse::Action::eUnspecified;
-  for (const auto& result : aResponse.results()) {
-    if (!result.has_status() ||
-        result.status() !=
-            content_analysis::sdk::ContentAnalysisResponse::Result::SUCCESS) {
-      return nullptr;
-    }
-    
-    for (const auto& rule : result.triggered_rules()) {
-      action = static_cast<ContentAnalysisResponse::Action>(std::max(
-          static_cast<uint32_t>(action), static_cast<uint32_t>(rule.action())));
-    }
-  }
-
-  
-  if (action == ContentAnalysisResponse::Action::eUnspecified) {
-    action = ContentAnalysisResponse::Action::eAllow;
-  }
-
-  const auto& requestToken = aResponse.request_token();
-  nsCString requestTokenStr;
-  requestTokenStr.Assign(requestToken.data(), requestToken.size());
-
-  return MakeRefPtr<ContentAnalysisResponse>(action, requestTokenStr,
-                                             aUserActionId)
-      .forget();
 }
 
 static void LogResponse(
@@ -945,8 +746,28 @@ nsresult ExternalAgentBackend::Analyze(
 
   
   content_analysis::sdk::ContentAnalysisRequest pbRequest;
-  nsresult rv = ConvertToProtobuf(aRequest, &pbRequest);
+  nsresult rv = ConvertRequestToProtobuf(aRequest, &pbRequest);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::shared_ptr<void> printDataHandleGuard;
+#ifdef XP_WIN
+  if (pbRequest.has_print_data() && pbRequest.print_data().handle()) {
+    printDataHandleGuard = std::shared_ptr<void>(
+        reinterpret_cast<HANDLE>(
+            static_cast<uintptr_t>(pbRequest.print_data().handle())),
+        [](void* aHandle) { ::CloseHandle(aHandle); });
+  }
+#endif
 
   LOGD("Issuing ContentAnalysisRequest for token %s", requestToken.get());
   LogRequest(&pbRequest);
@@ -992,12 +813,13 @@ nsresult ExternalAgentBackend::Analyze(
   CallClientWithRetry<std::nullptr_t>(
       __func__,
       [self = RefPtr{this}, userActionId = userActionId,
-       pbRequest = std::move(pbRequest), aAutoAcknowledge, ignoreCanceled](
+       pbRequest = std::move(pbRequest), aAutoAcknowledge, ignoreCanceled,
+       printDataHandleGuard](
           std::shared_ptr<content_analysis::sdk::Client> client) mutable {
         MOZ_ASSERT(!NS_IsMainThread());
-        return self->DoAnalyzeRequest(std::move(userActionId),
-                                      std::move(pbRequest), aAutoAcknowledge,
-                                      client, ignoreCanceled);
+        return self->DoAnalyzeRequest(
+            std::move(userActionId), std::move(pbRequest), aAutoAcknowledge,
+            client, ignoreCanceled, printDataHandleGuard);
       })
       ->Then(
           GetMainThreadSerialEventTarget(), __func__, []() {  },
@@ -1024,7 +846,7 @@ Result<std::nullptr_t, nsresult> ExternalAgentBackend::DoAnalyzeRequest(
     content_analysis::sdk::ContentAnalysisRequest&& aRequest,
     bool aAutoAcknowledge,
     const std::shared_ptr<content_analysis::sdk::Client>& aClient,
-    bool aTestOnlyIgnoreCanceled) {
+    bool aTestOnlyIgnoreCanceled, std::shared_ptr<void> aPrintDataHandle) {
   MOZ_ASSERT(!NS_IsMainThread());
   RefPtr<ContentAnalysis> owner =
       ContentAnalysis::GetContentAnalysisFromService();
@@ -1076,12 +898,16 @@ Result<std::nullptr_t, nsresult> ExternalAgentBackend::DoAnalyzeRequest(
   {
     
     
+    
+    
+    
     auto map = mRequestTokenToBasicRequestInfoMap.Lock();
     map->InsertOrUpdate(
         nsCString(aRequest.request_token()),
-        ExternalAgentBackend::BasicRequestInfo{aUserActionId, timerId,
-                                               std::move(analysisConnectorName),
-                                               aAutoAcknowledge});
+        MakeUnique<ExternalAgentBackend::BasicRequestInfo>(
+            ExternalAgentBackend::BasicRequestInfo{
+                aUserActionId, timerId, std::move(analysisConnectorName),
+                aAutoAcknowledge, std::move(aPrintDataHandle)}));
   }
 
   LOGD(
@@ -1092,15 +918,15 @@ Result<std::nullptr_t, nsresult> ExternalAgentBackend::DoAnalyzeRequest(
   if (err != 0) {
     LOGE("DoAnalyzeRequest got err=%d for request_token=%s, user_action_id=%s",
          err, aRequest.request_token().c_str(), aUserActionId.get());
-    Maybe<ExternalAgentBackend::BasicRequestInfo> entry;
+    Maybe<UniquePtr<ExternalAgentBackend::BasicRequestInfo>> entry;
     {
       auto map = mRequestTokenToBasicRequestInfoMap.Lock();
       entry = map->Extract(nsCString(aRequest.request_token()));
     }
     if (entry.isSome()) {
       glean::content_analysis::response_duration_by_analysis_type
-          .Get(entry->mAnalysisTypeStr)
-          .Cancel(std::move(entry->mTimerId));
+          .Get((*entry)->mAnalysisTypeStr)
+          .Cancel(std::move((*entry)->mTimerId));
     }
 
     return Err(NS_ERROR_FAILURE);
@@ -1145,7 +971,8 @@ void ExternalAgentBackend::HandleResponseFromAgent(
                                    responseArray.Elements());
         }
 
-        Maybe<ExternalAgentBackend::BasicRequestInfo> maybeBasicRequestInfo;
+        Maybe<UniquePtr<ExternalAgentBackend::BasicRequestInfo>>
+            maybeBasicRequestInfo;
         {
           auto map = self->mRequestTokenToBasicRequestInfoMap.Lock();
           maybeBasicRequestInfo =
@@ -1160,9 +987,9 @@ void ExternalAgentBackend::HandleResponseFromAgent(
           return;
         }
         glean::content_analysis::response_duration_by_analysis_type
-            .Get(maybeBasicRequestInfo->mAnalysisTypeStr)
-            .StopAndAccumulate(std::move(maybeBasicRequestInfo->mTimerId));
-        nsCString userActionId = maybeBasicRequestInfo->mUserActionId;
+            .Get((*maybeBasicRequestInfo)->mAnalysisTypeStr)
+            .StopAndAccumulate(std::move((*maybeBasicRequestInfo)->mTimerId));
+        nsCString userActionId = (*maybeBasicRequestInfo)->mUserActionId;
 
         RefPtr<ContentAnalysisResponse> response =
             ConvertResponseFromProtobuf(std::move(aResponse), userActionId);
@@ -1171,8 +998,8 @@ void ExternalAgentBackend::HandleResponseFromAgent(
           return;
         }
 
-        owner->HandleResponseFromAgent(response,
-                                       maybeBasicRequestInfo->mAutoAcknowledge);
+        owner->HandleResponseFromAgent(
+            response, (*maybeBasicRequestInfo)->mAutoAcknowledge);
       }));
 }
 
