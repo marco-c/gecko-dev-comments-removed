@@ -2217,9 +2217,7 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
       } else {
         
         
-        MOZ_ASSERT(REGS.stackDepth() == 0 ||
-                   (JSOp(*REGS.pc) == JSOp::Await &&
-                    !REGS.fp()->isResumedGenerator()));
+        MOZ_ASSERT(REGS.stackDepth() == 0 || JSOp(*REGS.pc) == JSOp::Await);
       }
       goto exit;
     }

@@ -267,7 +267,7 @@ class InterpreterFrame {
   enum Flags : uint32_t {
     CONSTRUCTING = 0x1, 
 
-    RESUMED_GENERATOR = 0x2, 
+    
 
     
     HAS_INITIAL_ENV =
@@ -662,9 +662,6 @@ class InterpreterFrame {
 
   bool isConstructing() const { return !!(flags_ & CONSTRUCTING); }
 
-  void setResumedGenerator() { flags_ |= RESUMED_GENERATOR; }
-  bool isResumedGenerator() const { return !!(flags_ & RESUMED_GENERATOR); }
-
   
 
 
@@ -753,8 +750,7 @@ class InterpreterRegs {
 
   void popInlineFrame() {
     pc = fp_->prevpc();
-    unsigned spForNewTarget =
-        fp_->isResumedGenerator() ? 0 : fp_->isConstructing();
+    unsigned spForNewTarget = fp_->isConstructing();
     
     
     
