@@ -62,16 +62,11 @@ impl PatternBuilder for ConicGradientTemplate {
     ) -> Pattern {
         
         
-        let no_scale = DeviceVector2D::one();
-
-        
-        
         
         let center = self.center + ctx.prim_origin.to_vector() + offset;
 
         conic_gradient_pattern(
             center,
-            no_scale,
             self.params.angle,
             self.params.start_offset,
             self.params.end_offset,

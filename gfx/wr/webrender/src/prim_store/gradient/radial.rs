@@ -64,16 +64,11 @@ impl PatternBuilder for RadialGradientTemplate {
     ) -> Pattern {
         
         
-        let no_scale = DeviceVector2D::one();
-
-        
-        
         
         let center = self.center.cast_unit() + ctx.prim_origin.to_vector() + offset;
 
         radial_gradient_pattern(
             center,
-            no_scale,
             self.params.start_radius,
             self.params.end_radius,
             self.params.ratio_xy,
