@@ -753,7 +753,14 @@ void DcSctpTransport::OnTransportReadPacket(
 
   RTC_DLOG(LS_VERBOSE) << debug_name_ << "->OnTransportReadPacket(), length="
                        << packet.payload().size() << " socket=" << !!socket_;
-  if (socket_) {
+  
+  
+  
+  
+  bool snap_pending_connect = socket_ != nullptr && local_init_.has_value() &&
+                              remote_init_.has_value() &&
+                              socket_->state() == dcsctp::SocketState::kClosed;
+  if (socket_ && !snap_pending_connect) {
     socket_->ReceivePacket(packet.payload());
     return;
   }
