@@ -600,6 +600,22 @@ class nsLayoutUtils {
   static mozilla::ScrollContainerFrame* GetNearestScrollableFrameForDirection(
       nsIFrame* aFrame, mozilla::layers::ScrollDirections aDirections);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  static mozilla::ScrollContainerFrame*
+  GetNearestScrollContainerFrameToScrollTowards(nsIFrame* aFrame,
+                                                mozilla::SideBits aSideBits);
+
   enum {
     
 
