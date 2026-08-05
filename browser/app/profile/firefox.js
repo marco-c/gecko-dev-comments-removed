@@ -309,9 +309,6 @@ pref("browser.shell.setDefaultPDFHandler", true);
 pref("browser.shell.setDefaultPDFHandler.onlyReplaceBrowsers", true);
 
 
-pref("browser.shell.checkDefaultPDF", true);
-
-
 pref("browser.shell.checkDefaultPDF.silencedByUser", false);
 
 
