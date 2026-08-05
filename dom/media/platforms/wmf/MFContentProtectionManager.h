@@ -35,7 +35,7 @@ class MFContentProtectionManager
   MFContentProtectionManager();
   ~MFContentProtectionManager();
 
-  HRESULT RuntimeClassInitialize();
+  HRESULT RuntimeClassInitialize(nsISerialEventTarget* aManagerThread);
 
   void Shutdown();
 
@@ -71,8 +71,7 @@ class MFContentProtectionManager
   
   
   
-  void SetNotifyWaitingForKeyCallback(std::function<void()>&& aCallback,
-                                      nsISerialEventTarget* aManagerThread);
+  void SetNotifyWaitingForKeyCallback(std::function<void()>&& aCallback);
 
   MFCDMProxy* GetCDMProxy() const { return mCDMProxy; }
 
@@ -80,12 +79,21 @@ class MFContentProtectionManager
   HRESULT SetPMPServer(
       ABI::Windows::Media::Protection::IMediaProtectionPMPServer* aPMPServer);
 
+  void AssertOnManagerThread() const;
+
   void NotifyWaitingForKey();
-  static void WaitingForKeyTimerCallback(nsITimer* aTimer, void* aClosure);
+
+  void ArmWaitingForKeyTimer();
+  void CancelWaitingForKeyTimer();
 
   RefPtr<MFCDMProxy> mCDMProxy;
   std::function<void()> mNotifyWaitingForKeyCb;
+
+  
+  
   nsCOMPtr<nsISerialEventTarget> mManagerThread;
+
+  
   nsCOMPtr<nsITimer> mWaitingForKeyTimer;
 
   Microsoft::WRL::ComPtr<ABI::Windows::Foundation::Collections::IPropertySet>
