@@ -1,0 +1,15 @@
+
+
+
+
+
+
+"use strict";
+
+
+document.body.textContent = "popup-pbm=" + browser.extension.inIncognitoContext;
+
+
+
+
+
