@@ -8,8 +8,8 @@
 
 
 
-#ifndef API_SFRAME_SFRAME_DECRYPTER_INTERFACE_H_
-#define API_SFRAME_SFRAME_DECRYPTER_INTERFACE_H_
+#ifndef API_SFRAME_SFRAME_DECRYPTOR_INTERFACE_H_
+#define API_SFRAME_SFRAME_DECRYPTOR_INTERFACE_H_
 
 #include <cstdint>
 #include <span>
@@ -20,7 +20,7 @@
 namespace webrtc {
 
 
-class SframeDecrypterInterface : public RefCountInterface {
+class SframeDecryptorInterface : public RefCountInterface {
  public:
   virtual RTCError AddDecryptionKey(uint64_t key_id,
                                     std::span<const uint8_t> key_material) = 0;
@@ -28,7 +28,7 @@ class SframeDecrypterInterface : public RefCountInterface {
   virtual RTCError RemoveDecryptionKey(uint64_t key_id) = 0;
 
  protected:
-  ~SframeDecrypterInterface() override = default;
+  ~SframeDecryptorInterface() override = default;
 };
 
 }  

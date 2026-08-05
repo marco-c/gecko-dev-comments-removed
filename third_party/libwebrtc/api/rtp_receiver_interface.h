@@ -28,7 +28,7 @@
 #include "api/rtc_error.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
-#include "api/sframe/sframe_decrypter_interface.h"
+#include "api/sframe/sframe_decryptor_interface.h"
 #include "api/sframe/sframe_types.h"
 #include "api/transport/rtp/rtp_source.h"
 #include "rtc_base/checks.h"
@@ -139,8 +139,8 @@ class RTC_EXPORT RtpReceiverInterface : public RefCountInterface,
   
   
   
-  virtual RTCErrorOr<scoped_refptr<SframeDecrypterInterface>>
-  CreateSframeDecrypterOrError(SframeCipherSuite cipher_suite) {
+  virtual RTCErrorOr<scoped_refptr<SframeDecryptorInterface>>
+  CreateSframeDecryptorOrError(SframeCipherSuite cipher_suite) {
     RTC_DCHECK_NOTREACHED();
     return RTCError();
   }

@@ -8,8 +8,8 @@
 
 
 
-#ifndef API_SFRAME_SFRAME_ENCRYPTER_INTERFACE_H_
-#define API_SFRAME_SFRAME_ENCRYPTER_INTERFACE_H_
+#ifndef API_SFRAME_SFRAME_ENCRYPTOR_INTERFACE_H_
+#define API_SFRAME_SFRAME_ENCRYPTOR_INTERFACE_H_
 
 #include <cstdint>
 #include <span>
@@ -20,19 +20,19 @@
 
 namespace webrtc {
 
-struct SframeEncrypterInit {
+struct SframeEncryptorInit {
   SframeMode mode;
   SframeCipherSuite cipher_suite;
 };
 
 
-class SframeEncrypterInterface : public RefCountInterface {
+class SframeEncryptorInterface : public RefCountInterface {
  public:
   virtual RTCError SetEncryptionKey(uint64_t key_id,
                                     std::span<const uint8_t> key_material) = 0;
 
  protected:
-  ~SframeEncrypterInterface() override = default;
+  ~SframeEncryptorInterface() override = default;
 };
 
 }  
