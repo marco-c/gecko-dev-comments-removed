@@ -1155,6 +1155,83 @@ static void UnpackRowRGB24_To_ARGB(const uint8_t* aSrc, uint8_t* aDst,
 #define UNPACK_ROW_RGB_TO_ARGB(aDstFormat) \
   FORMAT_CASE_ROW(SurfaceFormat::R8G8B8, aDstFormat, UnpackRowRGB24_To_ARGB)
 
+
+
+
+
+
+
+template <bool aSwapRB, bool aInverted, uint32_t aDstRGBShift,
+          uint32_t aDstAShift>
+static void SwizzleCmykRowFallback(const uint8_t* aSrc, uint8_t* aDst,
+                                   int32_t aLength) {
+  
+  
+  
+
+  
+  
+  
+  
+
+  
+  
+  
+
+  
+  
+  
+  
+  const uint8_t* end = aSrc + 4 * aLength;
+  do {
+    
+    
+    
+    uint32_t color = *reinterpret_cast<const uint32_t*>(aSrc);
+    if constexpr (aInverted) {
+      color = ~color;
+    }
+
+    uint32_t k = color >> 24;
+
+    
+    uint32_t cy = color & 0x00FF00FF;
+    
+    if constexpr (aSwapRB) {
+      cy = (cy >> 16) | (cy << 16);
+    }
+    
+    
+    
+    
+    
+    cy = cy * k;
+    cy = (cy + ((cy >> 8) & 0x00FF00FF) + 0x00010001) & 0xFF00FF00;
+
+    
+    uint32_t mk = (color >> 8) & 0x00FF00FF;
+    mk = mk * k;
+    mk = (mk + ((mk >> 8) & 0x00FF00FF) + 0x00010001) & 0xFF00FF00;
+
+    
+    
+    
+    *reinterpret_cast<uint32_t*>(aDst) = (cy >> (8 - aDstRGBShift)) |
+                                         ((mk & 0x0000FF00) << aDstRGBShift) |
+                                         (0xFF << aDstAShift);
+
+    aSrc += 4;
+    aDst += 4;
+  } while (aSrc < end);
+}
+
+#define SWIZZLE_CMYK_ROW(aSrcFormat, aDstFormat)                          \
+  FORMAT_CASE_ROW(                                                        \
+      aSrcFormat, aDstFormat,                                             \
+      SwizzleCmykRowFallback<                                             \
+          ShouldSwapRB(aSrcFormat, aDstFormat), ShouldInvert(aSrcFormat), \
+          RGBBitShift(aDstFormat), AlphaBitShift(aDstFormat)>)
+
 bool SwizzleData(const uint8_t* aSrc, int32_t aSrcStride,
                  SurfaceFormat aSrcFormat, uint8_t* aDst, int32_t aDstStride,
                  SurfaceFormat aDstFormat, const IntSize& aSize,
@@ -1507,6 +1584,11 @@ SwizzleRowFn SwizzleRow(SurfaceFormat aSrcFormat, SurfaceFormat aDstFormat,
 
     PACK_ROW_RGB(SurfaceFormat::R8G8B8, PackRowToRGB24)
     PACK_ROW_RGB(SurfaceFormat::B8G8R8, PackRowToRGB24)
+
+    SWIZZLE_CMYK_ROW(SurfaceFormat::CMYK, SurfaceFormat::B8G8R8X8)
+    SWIZZLE_CMYK_ROW(SurfaceFormat::CMYK, SurfaceFormat::B8G8R8A8)
+    SWIZZLE_CMYK_ROW(SurfaceFormat::InvertedCMYK, SurfaceFormat::B8G8R8X8)
+    SWIZZLE_CMYK_ROW(SurfaceFormat::InvertedCMYK, SurfaceFormat::B8G8R8A8)
 
     default:
       break;

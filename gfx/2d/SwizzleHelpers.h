@@ -40,6 +40,11 @@ namespace mozilla::gfx {
 
 
 
+static constexpr bool ShouldInvert(SurfaceFormat aFormat) {
+  return aFormat == SurfaceFormat::InvertedCMYK;
+}
+
+
 static constexpr MOZ_ALWAYS_INLINE bool IsBGRFormat(SurfaceFormat aFormat) {
   return aFormat == SurfaceFormat::B8G8R8A8 ||
          (std::endian::native == std::endian::little &&
