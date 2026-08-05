@@ -43,6 +43,38 @@ async function enterFullscreenAndWaitForHiddenToolbox() {
   await onToolboxHidden;
 }
 
+async function showNavToolbox() {
+  if (!FullScreen.navToolboxHidden) {
+    return;
+  }
+  
+  
+  
+  
+  
+  EventUtils.synthesizeMouse(document.documentElement, 5, 5, {
+    type: "mousemove",
+  });
+  let onToolboxShown = TestUtils.topicObserved(
+    "fullscreen-nav-toolbox",
+    (subject, data) => data == "shown"
+  );
+  FullScreen.showNavToolbox();
+  await onToolboxShown;
+}
+
+async function hideNavToolbox() {
+  if (FullScreen.navToolboxHidden) {
+    return;
+  }
+  let onToolboxHidden = TestUtils.topicObserved(
+    "fullscreen-nav-toolbox",
+    (subject, data) => data == "hidden"
+  );
+  FullScreen.hideNavToolbox();
+  await onToolboxHidden;
+}
+
 async function exitFullscreen() {
   let onFullscreen = BrowserTestUtils.waitForEvent(window, "fullscreen");
   document.getElementById("View:FullScreen").doCommand();
@@ -78,12 +110,7 @@ add_task(async function test_f11_fullscreen_hides_sidebar() {
   );
 
   
-  let onToolboxShown = TestUtils.topicObserved(
-    "fullscreen-nav-toolbox",
-    (subject, data) => data == "shown"
-  );
-  FullScreen.showNavToolbox();
-  await onToolboxShown;
+  await showNavToolbox();
 
   
   ok(
@@ -96,12 +123,7 @@ add_task(async function test_f11_fullscreen_hides_sidebar() {
   );
 
   
-  let onToolboxHidden = TestUtils.topicObserved(
-    "fullscreen-nav-toolbox",
-    (subject, data) => data == "hidden"
-  );
-  FullScreen.hideNavToolbox();
-  await onToolboxHidden;
+  await hideNavToolbox();
 
   ok(
     document.documentElement.hasAttribute("fullscreenNavToolboxHidden"),
@@ -139,12 +161,7 @@ add_task(async function test_mouse_target_rect_excludes_sidebar() {
 
   
   
-  let onToolboxShown = TestUtils.topicObserved(
-    "fullscreen-nav-toolbox",
-    (subject, data) => data == "shown"
-  );
-  FullScreen.showNavToolbox();
-  await onToolboxShown;
+  await showNavToolbox();
 
   ok(BrowserTestUtils.isVisible(sidebarMain), "Sidebar main is visible");
 
@@ -197,12 +214,7 @@ add_task(async function test_mouse_target_rect_has_initial_value() {
 
   await enterFullscreenAndWaitForHiddenToolbox();
 
-  let onToolboxShown = TestUtils.topicObserved(
-    "fullscreen-nav-toolbox",
-    (subject, data) => data == "shown"
-  );
-  FullScreen.showNavToolbox();
-  await onToolboxShown;
+  await showNavToolbox();
 
   const targetRect = FullScreen.getMouseTargetRect();
   ok(
@@ -233,9 +245,18 @@ add_task(async function test_f11_keeps_panel_sidebar_visible() {
     "Nav toolbox is hidden in fullscreen"
   );
 
-  ok(
-    !BrowserTestUtils.isVisible(sidebarLauncher),
-    "Sidebar launcher is hidden when the nav toolbox is hidden"
+  
+  
+  
+  Assert.equal(
+    getComputedStyle(sidebarLauncher).contentVisibility,
+    "hidden",
+    "Sidebar launcher's contents are skipped when the nav toolbox is hidden"
+  );
+  Assert.equal(
+    sidebarLauncher.getBoundingClientRect().width,
+    0,
+    "Sidebar launcher takes no space when the nav toolbox is hidden"
   );
 
   await SidebarTestUtils.showPanel(window, "viewBookmarksSidebar");
