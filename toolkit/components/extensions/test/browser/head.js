@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 const BACKGROUND =
@@ -72,6 +73,17 @@ function waitForTransition(element, propertyName) {
       return event.target == element && event.propertyName == propertyName;
     }
   );
+}
+
+
+
+
+
+async function waitForThemeRestyle(triggerThemeChange) {
+  let lookAndFeelChanged = TestUtils.topicObserved("look-and-feel-changed");
+  await triggerThemeChange();
+  await lookAndFeelChanged;
+  await new Promise(resolve => window.requestAnimationFrame(resolve));
 }
 
 function getToolboxBackgroundColor() {

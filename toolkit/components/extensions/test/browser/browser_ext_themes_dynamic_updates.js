@@ -34,17 +34,6 @@ function imageDataFromDataURI(dataURIString) {
   ).buffer;
 }
 
-
-
-
-async function resetThemeAndWaitForRestyle(extension) {
-  let lookAndFeelChanged = TestUtils.topicObserved("look-and-feel-changed");
-  extension.sendMessage("reset-theme");
-  await extension.awaitMessage("theme-reset");
-  await lookAndFeelChanged;
-  await new Promise(resolve => window.requestAnimationFrame(resolve));
-}
-
 function validateTheme(
   backgroundImage,
   accentColor,
@@ -162,7 +151,10 @@ add_task(async function test_dynamic_theme_updates() {
 
   validateTheme("image2.png", ACCENT_COLOR_2, TEXT_COLOR_2, true);
 
-  await resetThemeAndWaitForRestyle(extension);
+  await waitForThemeRestyle(async () => {
+    extension.sendMessage("reset-theme");
+    await extension.awaitMessage("theme-reset");
+  });
 
   let { color } = rootCS;
   let backgroundImage = toolboxCS.backgroundImage;
@@ -229,7 +221,10 @@ add_task(async function test_dynamic_theme_updates_with_data_url() {
 
   validateTheme(BACKGROUND_2, ACCENT_COLOR_2, TEXT_COLOR_2, true);
 
-  await resetThemeAndWaitForRestyle(extension);
+  await waitForThemeRestyle(async () => {
+    extension.sendMessage("reset-theme");
+    await extension.awaitMessage("theme-reset");
+  });
 
   let { color } = rootCS;
   let backgroundImage = toolboxCS.backgroundImage;
