@@ -11,10 +11,6 @@ AddonTestUtils.createAppInfo(
   "49"
 );
 
-const { TelemetryController } = ChromeUtils.importESModule(
-  "resource://gre/modules/TelemetryController.sys.mjs"
-);
-
 add_setup({ skip_if: () => IS_ANDROID_BUILD }, function test_setup() {
   
   do_get_profile();
@@ -23,10 +19,8 @@ add_setup({ skip_if: () => IS_ANDROID_BUILD }, function test_setup() {
   Services.fog.initializeFOG();
 });
 
-add_task(async function test_setup() {
+add_setup(async function test_setup() {
   
-  
-  await TelemetryController.testSetup();
   await AddonTestUtils.promiseStartupManager();
 });
 

@@ -7,7 +7,6 @@ const { AddonTestUtils } = ChromeUtils.importESModule(
 );
 
 AddonTestUtils.initMochitest(this);
-AddonTestUtils.hookAMTelemetryEvents();
 
 const ID_PERMS = "update_perms@tests.mozilla.org";
 const ID_ORIGINS = "update_origins@tests.mozilla.org";
@@ -101,28 +100,12 @@ async function testNoPrompt(origUrl, id) {
 
   
   
-  const amEvents = AddonTestUtils.getAMTelemetryEvents();
-  const updateEventsSteps = amEvents
-    .filter(evt => {
-      return evt.method === "update" && evt.extra && evt.extra.addon_id == id;
-    })
-    .map(evt => {
-      return evt.extra.step;
-    });
-
   let expected = [
     "started",
     "download_started",
     "download_completed",
     "completed",
   ];
-  
-  Assert.deepEqual(
-    expected,
-    updateEventsSteps,
-    "Got the steps from the collected telemetry events"
-  );
-
   Assert.deepEqual(
     expected,
     AddonTestUtils.getAMGleanEvents("update", { addon_id: id }).map(

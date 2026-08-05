@@ -5,10 +5,6 @@
 
 
 
-const { TelemetryTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TelemetryTestUtils.sys.mjs"
-);
-
 const { AboutAddonsTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/AboutAddonsTestUtils.sys.mjs"
 );
