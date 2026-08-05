@@ -243,7 +243,7 @@ static void UpdateOldAnimationPropertiesWithNew(
   }
 
   if (aOld.GetTimelineRange() != aTimelineRange) {
-    aOld.SetTimelineRange(std::move(aTimelineRange));
+    aOld.SetTimelineRange(std::move(aTimelineRange), Animation::FromJS::No);
     animationChanged = true;
   }
 
@@ -461,7 +461,7 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
     
     UpdateOldAnimationPropertiesWithNew(
         *oldAnim, std::move(timing), std::move(keyframes), isStylePaused,
-        oldAnim->GetOverriddenProperties(), aBuilder, timeline, timelineName,
+        oldAnim->PropertiesOverridenByJS(), aBuilder, timeline, timelineName,
         composition, std::move(range), aTimelineNamesToAnimationMap);
     
     
@@ -484,7 +484,7 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
 
   animation->SetTimelineNoUpdate(timeline, timelineName, Animation::FromJS::No);
   animation->SetEffectNoUpdate(effect);
-  animation->SetTimelineRangeNoUpdate(std::move(range));
+  animation->SetTimelineRangeNoUpdate(std::move(range), Animation::FromJS::No);
 
   if (isStylePaused) {
     animation->PauseFromStyle();
