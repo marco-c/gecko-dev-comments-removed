@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_net_WebrtcTCPSocketParent_h
 #define mozilla_net_WebrtcTCPSocketParent_h
 
@@ -39,9 +37,6 @@ class WebrtcTCPSocketParent : public PWebrtcTCPSocketParent,
   void OnClose(nsresult aReason) override;
   void OnConnected(const nsACString& aProxyType) override;
   void OnRead(nsTArray<uint8_t>&& bytes) override;
-
-  void AddIPDLReference() { AddRef(); }
-  void ReleaseIPDLReference() { Release(); }
 
  protected:
   virtual ~WebrtcTCPSocketParent();
