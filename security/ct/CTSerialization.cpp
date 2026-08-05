@@ -3,10 +3,12 @@
 
 
 #include "CTSerialization.h"
-#include "CTUtils.h"
 
 #include <stdint.h>
+
 #include <type_traits>
+
+#include "CTUtils.h"
 
 namespace mozilla {
 namespace ct {

@@ -3,7 +3,6 @@
 
 
 #include "Sandbox.h"
-
 #include "mozilla/Preferences.h"
 #include "mozilla/SandboxSettings.h"
 #include "mozilla/dom/ContentChild.h"

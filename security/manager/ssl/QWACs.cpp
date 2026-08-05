@@ -2,8 +2,6 @@
 
 
 
-#include "nsIX509CertDB.h"
-
 #include "CryptoTask.h"
 #include "QWACTrustDomain.h"
 #include "mozilla/dom/Promise.h"
@@ -13,6 +11,7 @@
 #include "mozpkix/pkixtypes.h"
 #include "mozpkix/pkixutil.h"
 #include "nsIX509Cert.h"
+#include "nsIX509CertDB.h"
 #include "nsNSSCertificateDB.h"
 
 using namespace mozilla::pkix;

@@ -4,9 +4,10 @@
 #ifndef mozilla_SandboxBrokerUtils_h
 #define mozilla_SandboxBrokerUtils_h
 
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
+
 #include "sandbox/linux/system_headers/linux_syscalls.h"
 
 

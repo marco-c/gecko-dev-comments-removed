@@ -5,13 +5,13 @@
 #ifndef mozilla_Sandbox_h
 #define mozilla_Sandbox_h
 
+#include <vector>
+
 #include "mozilla/Maybe.h"
 #include "mozilla/Types.h"
 #include "mozilla/UniquePtrExtensions.h"
-#include "nsXULAppAPI.h"
-#include <vector>
-
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
+#include "nsXULAppAPI.h"
 
 
 

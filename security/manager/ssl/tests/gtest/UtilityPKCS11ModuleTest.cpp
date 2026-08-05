@@ -7,8 +7,8 @@
 #endif  
 
 #include "gtest/gtest.h"
-#include "mozilla/gtest/ipc/TestUtilityProcess.h"
 #include "mozilla/gtest/WaitFor.h"
+#include "mozilla/gtest/ipc/TestUtilityProcess.h"
 #include "mozilla/ipc/UtilityProcessManager.h"
 #include "mozilla/psm/PKCS11ModuleParent.h"
 #include "nsThreadUtils.h"

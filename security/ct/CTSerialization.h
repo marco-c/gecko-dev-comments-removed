@@ -7,9 +7,9 @@
 
 #include <vector>
 
+#include "SignedCertificateTimestamp.h"
 #include "mozpkix/Input.h"
 #include "mozpkix/Result.h"
-#include "SignedCertificateTimestamp.h"
 
 
 

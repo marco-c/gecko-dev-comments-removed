@@ -2,11 +2,10 @@
 
 
 
-#include "mozISandboxReporter.h"
-#include "SandboxReporter.h"
-
 #include <time.h>
 
+#include "SandboxReporter.h"
+#include "mozISandboxReporter.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Components.h"
 #include "nsCOMPtr.h"

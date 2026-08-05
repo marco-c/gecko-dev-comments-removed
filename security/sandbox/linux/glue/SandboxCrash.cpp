@@ -7,13 +7,11 @@
 
 
 
-#include "SandboxInternal.h"
-
-#include "SandboxLogging.h"
-
-#include <unistd.h>
 #include <sys/syscall.h>
+#include <unistd.h>
 
+#include "SandboxInternal.h"
+#include "SandboxLogging.h"
 #include "mozilla/StackWalk.h"
 #include "mozilla/dom/Exceptions.h"
 #include "nsContentUtils.h"

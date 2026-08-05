@@ -2,18 +2,18 @@
 
 
 
-#include "mozilla/Assertions.h"
-#include "mozilla/Atomics.h"
-#include "mozilla/Types.h"
-
 #include <dlfcn.h>
-#include <signal.h>
 #include <errno.h>
+#include <signal.h>
 #include <stdio.h>
 #include <sys/inotify.h>
 #ifdef MOZ_X11
 #  include <X11/Xlib.h>
 #endif
+
+#include "mozilla/Assertions.h"
+#include "mozilla/Atomics.h"
+#include "mozilla/Types.h"
 
 
 extern mozilla::Atomic<int> gSeccompTsyncBroadcastSignum;

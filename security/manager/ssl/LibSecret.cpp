@@ -7,12 +7,13 @@
 
 #include <gio/gio.h>
 #include <gmodule.h>
+
 #include <memory>
 
+#include "MainThreadUtils.h"
 #include "mozilla/Base64.h"
 #include "mozilla/GUniquePtr.h"
 #include "mozilla/Logging.h"
-#include "MainThreadUtils.h"
 #include "prlink.h"
 
 
@@ -88,11 +89,15 @@ nsresult MaybeLoadLibSecret() {
     return NS_ERROR_NOT_SAME_THREAD;
   }
 
+  MOZ_ASSERT(!libsecret, "libsecret should not be loaded more than once");
+  if (libsecret) {
+    return NS_ERROR_ALREADY_INITIALIZED;
+  }
+
+  libsecret = PR_LoadLibrary("libsecret-1.so.0");
   if (!libsecret) {
-    libsecret = PR_LoadLibrary("libsecret-1.so.0");
-    if (!libsecret) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
+    return NS_ERROR_NOT_AVAILABLE;
+  }
 
 
 
@@ -112,13 +117,12 @@ nsresult MaybeLoadLibSecret() {
     libsecret = nullptr;                                                 \
     return NS_ERROR_NOT_AVAILABLE;                                       \
   }
-    FIND_FUNCTION_SYMBOL(secret_password_clear_sync);
-    FIND_FUNCTION_SYMBOL(secret_password_lookup_sync);
-    FIND_FUNCTION_SYMBOL(secret_password_store_sync);
-    FIND_FUNCTION_SYMBOL(secret_password_free);
-    FIND_FUNCTION_SYMBOL(secret_error_get_quark);
+  FIND_FUNCTION_SYMBOL(secret_password_clear_sync);
+  FIND_FUNCTION_SYMBOL(secret_password_lookup_sync);
+  FIND_FUNCTION_SYMBOL(secret_password_store_sync);
+  FIND_FUNCTION_SYMBOL(secret_password_free);
+  FIND_FUNCTION_SYMBOL(secret_error_get_quark);
 #undef FIND_FUNCTION_SYMBOL
-  }
 
   return NS_OK;
 }

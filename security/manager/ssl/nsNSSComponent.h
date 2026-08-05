@@ -6,8 +6,6 @@
 #ifndef _nsNSSComponent_h_
 #define _nsNSSComponent_h_
 
-#include "nsINSSComponent.h"
-
 #include "EnterpriseRoots.h"
 #include "ScopedNSSTypes.h"
 #include "SharedCertVerifier.h"
@@ -15,6 +13,7 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
+#include "nsINSSComponent.h"
 #include "nsIObserver.h"
 #include "nsISerialEventTarget.h"
 #include "nsNSSCallbacks.h"
@@ -23,9 +22,12 @@
 #include "sslt.h"
 
 #ifdef XP_WIN
-#  include <windows.h>  
+
+
+#  include <windows.h>
 #  include <wincrypt.h>
-#endif  
+
+#endif
 
 class nsIDOMWindow;
 class nsIPrompt;

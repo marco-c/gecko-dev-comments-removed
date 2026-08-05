@@ -2,9 +2,8 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include "broker/SandboxBroker.h"
+#include "gtest/gtest.h"
 
 namespace mozilla {
 

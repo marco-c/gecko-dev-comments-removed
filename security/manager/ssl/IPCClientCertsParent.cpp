@@ -3,12 +3,12 @@
 
 
 #include "IPCClientCertsParent.h"
+
 #include "ScopedNSSTypes.h"
-#include "nsNetCID.h"
+#include "mozilla/SyncRunnable.h"
 #include "nsNSSComponent.h"
 #include "nsNSSIOLayer.h"
-
-#include "mozilla/SyncRunnable.h"
+#include "nsNetCID.h"
 
 namespace mozilla::psm {
 

@@ -3,8 +3,6 @@
 
 
 #include "SandboxInfo.h"
-#include "SandboxLogging.h"
-#include "LinuxSched.h"
 
 #include <errno.h>
 #include <stdlib.h>
@@ -14,6 +12,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "LinuxSched.h"
+#include "SandboxLogging.h"
 #include "base/posix/eintr_wrapper.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/SandboxSettings.h"
@@ -99,8 +99,8 @@ static bool HasUserNamespaceSupport() {
       "/proc/self/ns/net",
       "/proc/self/ns/ipc",
   };
-  for (size_t i = 0; i < std::size(paths); ++i) {
-    if (access(paths[i], F_OK) == -1) {
+  for (auto path : paths) {
+    if (access(path, F_OK) == -1) {
       MOZ_ASSERT(errno == ENOENT);
       return false;
     }

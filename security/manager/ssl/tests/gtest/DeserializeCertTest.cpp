@@ -2,14 +2,13 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include "TransportSecurityInfo.h"
+#include "gtest/gtest.h"
+#include "mozilla/Maybe.h"
 #include "nsCOMPtr.h"
 #include "nsITransportSecurityInfo.h"
 #include "nsIX509Cert.h"
 #include "nsString.h"
-#include "mozilla/Maybe.h"
 
 using namespace mozilla;
 using namespace mozilla::psm;

@@ -5,21 +5,20 @@
 #include "PublicKeyPinningService.h"
 
 #include "RootCertificateTelemetryUtils.h"
+#include "StaticHPKPins.h"  
 #include "mozilla/Base64.h"
 #include "mozilla/BinarySearch.h"
 #include "mozilla/Casting.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Span.h"
 #include "mozilla/StaticPrefs_security.h"
+#include "mozpkix/pkixtypes.h"
+#include "mozpkix/pkixutil.h"
 #include "nsDependentString.h"
 #include "nsServiceManagerUtils.h"
 #include "nsSiteSecurityService.h"
-#include "mozpkix/pkixtypes.h"
-#include "mozpkix/pkixutil.h"
 #include "seccomon.h"
 #include "sechash.h"
-
-#include "StaticHPKPins.h"  
 
 using namespace mozilla;
 using namespace mozilla::pkix;

@@ -2,20 +2,18 @@
 
 
 
+#include "SandboxProfiler.h"
+
 #include <time.h>
 #include <unistd.h>
 
 #include "SandboxInfo.h"
-
 #include "SandboxProfilerChild.h"
-#include "SandboxProfiler.h"
-
-#include "public/GeckoTraceEvent.h"
-
 #include "mozilla/Atomics.h"
 #include "mozilla/DebugOnly.h"
-#include "mozilla/StaticPtr.h"
 #include "mozilla/PodOperations.h"
+#include "mozilla/StaticPtr.h"
+#include "public/GeckoTraceEvent.h"
 
 namespace mozilla {
 

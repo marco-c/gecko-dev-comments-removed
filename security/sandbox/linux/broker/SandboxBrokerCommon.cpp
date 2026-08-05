@@ -4,6 +4,14 @@
 
 #include "SandboxBrokerCommon.h"
 
+#include <errno.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include <array>  
+
 #include "mozilla/Assertions.h"
 
 
@@ -13,13 +21,6 @@
 #else
 #  define AUTO_PROFILER_THREAD_SLEEP
 #endif
-
-#include <array>  
-#include <errno.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <string.h>
 
 #ifndef MSG_CMSG_CLOEXEC
 #  ifdef XP_LINUX

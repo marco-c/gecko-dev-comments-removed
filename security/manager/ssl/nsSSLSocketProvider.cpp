@@ -3,10 +3,11 @@
 
 
 
-#include "mozilla/BasePrincipal.h"
 #include "nsSSLSocketProvider.h"
-#include "nsNSSIOLayer.h"
+
+#include "mozilla/BasePrincipal.h"
 #include "nsError.h"
+#include "nsNSSIOLayer.h"
 
 using mozilla::OriginAttributes;
 

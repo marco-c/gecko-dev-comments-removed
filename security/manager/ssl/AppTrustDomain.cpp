@@ -7,14 +7,14 @@
 #include "MainThreadUtils.h"
 #include "cert_storage/src/cert_storage.h"
 
-#include "seccomon.h"
 #include "certt.h"
+#include "seccomon.h"
 
+#include "NSSCertDBTrustDomain.h"
 #include "certdb.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozpkix/pkixnss.h"
-#include "NSSCertDBTrustDomain.h"
 #include "nsComponentManagerUtils.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsIContentSignatureVerifier.h"
@@ -26,10 +26,10 @@
 
 #include "xpcshell.inc"
 
-#include "addons-public.inc"
 #include "addons-public-intermediate.inc"
-#include "addons-stage.inc"
+#include "addons-public.inc"
 #include "addons-stage-intermediate.inc"
+#include "addons-stage.inc"
 
 #include "content-signature-dev.inc"
 #include "content-signature-local.inc"

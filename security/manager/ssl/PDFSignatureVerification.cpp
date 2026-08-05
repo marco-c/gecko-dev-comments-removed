@@ -2,19 +2,17 @@
 
 
 
-#include "cms.h"
-#include "nsNSSCertificateDB.h"
-#include "nsNSSCertificate.h"
 #include "AppSignatureVerification.h"
 #include "CryptoTask.h"
 #include "PDFTrustDomain.h"
-
+#include "cms.h"
+#include "mozilla/dom/Promise.h"
 #include "mozpkix/pkix.h"
 #include "mozpkix/pkixnss.h"
 #include "mozpkix/pkixtypes.h"
 #include "mozpkix/pkixutil.h"
-
-#include "mozilla/dom/Promise.h"
+#include "nsNSSCertificate.h"
+#include "nsNSSCertificateDB.h"
 
 using namespace mozilla;
 using namespace mozilla::pkix;

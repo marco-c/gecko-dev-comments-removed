@@ -4,10 +4,10 @@
 
 #include <string>
 
-#include "gtest/gtest.h"
-#include "gtest/MozGTestBench.h"  
-#include "nss.h"
 #include "ScopedNSSTypes.h"
+#include "gtest/MozGTestBench.h"  
+#include "gtest/gtest.h"
+#include "nss.h"
 
 namespace nss_test {
 

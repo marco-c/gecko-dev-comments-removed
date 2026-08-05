@@ -3,12 +3,13 @@
 
 
 #include "SandboxTestingParent.h"
+
 #include "SandboxTestingThread.h"
-#include "nsIObserverService.h"
-#include "mozilla/ipc/Endpoint.h"
 #include "mozilla/Services.h"
 #include "mozilla/SyncRunnable.h"
+#include "mozilla/ipc/Endpoint.h"
 #include "nsDirectoryServiceUtils.h"
+#include "nsIObserverService.h"
 
 namespace mozilla {
 

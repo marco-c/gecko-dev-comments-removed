@@ -2,14 +2,13 @@
 
 
 
-#include "MultiLogCTVerifier.h"
-
 #include <stdint.h>
 
 #include "CTLogVerifier.h"
 #include "CTObjectsExtractor.h"
 #include "CTSerialization.h"
 #include "CTTestUtils.h"
+#include "MultiLogCTVerifier.h"
 #include "gtest/gtest.h"
 #include "nss.h"
 

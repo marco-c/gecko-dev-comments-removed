@@ -2,18 +2,21 @@
 
 
 
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
-
-#include <string>
 #include <windows.h>
 
+#include <string>
+
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "nsLiteralString.h"
 #include "nsWindowsHelpers.h"
-#include "sandbox/win/src/sandbox.h"
 #include "sandbox/win/src/app_container.h"
 #include "sandbox/win/src/policy_engine_opcodes.h"
+#include "sandbox/win/src/sandbox.h"
+
+
 #include "../src/sandboxbroker/ConfigHelpers.h"
+
 
 using namespace sandbox;
 using mozilla::sandboxing::UserFontConfigHelper;

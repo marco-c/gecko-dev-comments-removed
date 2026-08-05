@@ -9,14 +9,14 @@
 #ifndef OSKeyStore_h
 #define OSKeyStore_h
 
+#include <memory>
+#include <vector>
+
+#include "ScopedNSSTypes.h"
 #include "nsCOMPtr.h"
 #include "nsIOSKeyStore.h"
 #include "nsISerialEventTarget.h"
 #include "nsString.h"
-#include "ScopedNSSTypes.h"
-
-#include <memory>
-#include <vector>
 
 class AbstractOSKeyStore {
  public:
@@ -69,7 +69,8 @@ class OSKeyStore final : public nsIOSKeyStore {
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOSKEYSTORE
 
-  OSKeyStore();
+  static already_AddRefed<OSKeyStore> GetSingleton();
+
   nsresult GenerateSecret(const nsACString& aLabel,
                            nsACString& aRecoveryPhrase);
   nsresult SecretAvailable(const nsACString& aLabel,
@@ -88,6 +89,7 @@ class OSKeyStore final : public nsIOSKeyStore {
                          uint8_t** outBytes);
 
  private:
+  OSKeyStore();
   ~OSKeyStore() = default;
 
   std::unique_ptr<AbstractOSKeyStore> mKs;

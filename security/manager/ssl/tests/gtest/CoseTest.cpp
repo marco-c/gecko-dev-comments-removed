@@ -2,23 +2,21 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include <assert.h>
-#include <stdint.h>
-#include <cstddef>
-#include <cstring>
-
+#include <cert.h>
 #include <keyhi.h>
 #include <nss.h>
 #include <pk11pub.h>
-
 #include <pkcs11t.h>
 #include <secmodt.h>
-#include <cert.h>
+#include <stdint.h>
+
+#include <cstddef>
+#include <cstring>
 
 #include "ScopedNSSTypes.h"
 #include "cosec.h"
+#include "gtest/gtest.h"
 
 namespace mozilla {
 
