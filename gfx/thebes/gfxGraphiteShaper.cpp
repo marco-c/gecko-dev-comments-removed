@@ -295,6 +295,9 @@ nsresult gfxGraphiteShaper::SetGlyphsFromSegment(
     return NS_ERROR_ILLEGAL_VALUE;
   }
   
+  
+  uint32_t minBaseChar = 0;
+  
   for (uint32_t i = 0; i <= cIndex; ++i) {
     
     
@@ -331,11 +334,12 @@ nsresult gfxGraphiteShaper::SetGlyphsFromSegment(
         "nscoord values. But, these will not result in safety issues.");
 
     
-    uint32_t offs =
-        CopyAndVerifyOrFail(c.baseChar, val < aLength, &failedVerify);
+    uint32_t offs = CopyAndVerifyOrFail(
+        c.baseChar, val < aLength && val >= minBaseChar, &failedVerify);
     if (failedVerify) {
       return NS_ERROR_ILLEGAL_VALUE;
     }
+    minBaseChar = offs + 1;
 
     
     
