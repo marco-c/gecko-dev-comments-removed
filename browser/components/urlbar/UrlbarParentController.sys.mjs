@@ -50,7 +50,7 @@ ChromeUtils.defineLazyGetter(lazy, "logger", () =>
  * - onQueryResults(queryContext)
  * - onQueryCancelled(queryContext)
  * - onQueryFinished(queryContext)
- * - onQueryResultRemoved(index)
+ * - onQueryResultRemoved(resultId)
  * - onViewOpen()
  * - onViewClose()
  */
@@ -446,8 +446,15 @@ export class UrlbarParentController {
    *
    * @param {UrlbarResult} result
    *   The result to remove.
+   * @param {object} [options]
+   *   Options object.
+   * @param {object} [options.acknowledgeDismissalL10n]
+   *   When the result is being dismissed, the l10n for the acknowledgment tip
+   *   that should replace its row. Passed through to the view rather than set on
+   *   the result so the result stays identical on both sides of the actor
+   *   boundary.
    */
-  removeResult(result) {
+  removeResult(result, { acknowledgeDismissalL10n } = {}) {
     if (!result || result.heuristic) {
       return;
     }
@@ -458,14 +465,18 @@ export class UrlbarParentController {
     }
     let { queryContext } = this._lastQueryContextWrapper;
 
-    let index = queryContext.results.indexOf(result);
+    let index = queryContext.results.findIndex(r => r.id === result.id);
     if (index < 0) {
       console.error("Failed to find the selected result in the results");
       return;
     }
 
     queryContext.results.splice(index, 1);
-    this.notify(lazy.UrlbarShared.NOTIFICATIONS.QUERY_RESULT_REMOVED, index);
+    this.notify(
+      lazy.UrlbarShared.NOTIFICATIONS.QUERY_RESULT_REMOVED,
+      result.id,
+      acknowledgeDismissalL10n
+    );
   }
 
   /**
