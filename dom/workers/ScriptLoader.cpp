@@ -188,6 +188,18 @@ nsresult ChannelFromScriptURL(
       rv = loadInfo->SetCspEventListener(cspEventListener);
       NS_ENSURE_SUCCESS(rv, rv);
     }
+
+    
+    
+    
+    if (aWorkerPrivate) {
+      uint64_t bcID = aWorkerPrivate->AssociatedBrowsingContextID();
+      if (bcID) {
+        nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+        rv = loadInfo->SetAssociatedBrowsingContextID(bcID);
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+    }
   }
 
   if (aReferrerInfo) {
