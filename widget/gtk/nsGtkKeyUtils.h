@@ -440,6 +440,13 @@ class KeymapWrapper {
 
 
 
+  static uint32_t GetCharCodeOrUnmodifiedCharCodeFor(
+      const GdkEventKey* aGdkKeyEvent);
+
+  
+
+
+
 
 
 
