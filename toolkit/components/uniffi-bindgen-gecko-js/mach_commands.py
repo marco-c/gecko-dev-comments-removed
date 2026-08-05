@@ -3,12 +3,17 @@
 
 
 import argparse
+import logging
 import os
 import subprocess
 import sys
-from enum import Enum
+import textwrap
+from collections import namedtuple
 
+import mozpack.path as mozpath
 from mach.decorators import Command, CommandArgument, SubCommand
+from mozbuild.backend.configenvironment import ConfigEnvironment
+from mozbuild.util import get_rust_build_kind
 
 CPP_PATH = "toolkit/components/uniffi-js/GeneratedScaffolding.cpp"
 JS_DIR = "toolkit/components/uniffi-bindgen-gecko-js/components/generated"
@@ -16,100 +21,104 @@ FIXTURE_JS_DIR = "toolkit/components/uniffi-bindgen-gecko-js/tests/generated"
 DOCS_PATH = "docs/rust-components/api/js/"
 
 
-"""Library to generate bindings from"""
+UniffiTargets = namedtuple(
+    "UniffiTargets", ["binary_path", "library_path", "fixtures_library_path"]
+)
 
 
-class SourceLibrary(Enum):
-    GKRUST_UNIFFI_COMPONENTS = "gkrust-uniffi-components"
-    UNIFFI_BINDINGS_BINDGEN_TESTS = "uniffi-bindgen-gecko-js-test-fixtures"
+def _uniffi_objdir(topsrcdir):
+    return mozpath.join(topsrcdir, "obj-uniffi-generate")
 
 
-def cargo_args_for_library(source_library):
-    if source_library == SourceLibrary.GKRUST_UNIFFI_COMPONENTS:
-        return []
-    elif source_library == SourceLibrary.UNIFFI_BINDINGS_BINDGEN_TESTS:
-        return ["--all-features"]
-    raise ValueError(source_library)
+def _ensure_uniffi_mozconfig(uniffi_objdir):
+    if not os.path.isdir(uniffi_objdir):
+        os.makedirs(uniffi_objdir)
+
+    mozconfig_path = mozpath.join(uniffi_objdir, "mozconfig")
+    contents = textwrap.dedent(
+        f"""\
+        ac_add_options --enable-application=browser
+        ac_add_options --enable-appservices-in-tree
+
+        mk_add_options MOZ_OBJDIR={uniffi_objdir}
+        """
+    )
+
+    if os.path.isfile(mozconfig_path):
+        with open(mozconfig_path, encoding="utf-8") as f:
+            if f.read() == contents:
+                return mozconfig_path
+
+    with open(mozconfig_path, "w", encoding="utf-8") as f:
+        f.write(contents)
+    return mozconfig_path
 
 
-def cargo_env_and_release_dir(command_context):
-    """Environment and release directory for building the UniFFI cargo packages.
-
-    Build into the objdir (via CARGO_TARGET_DIR) so the `mozbuild` crate's build
-    script -- pulled into the graph through ohttp's `app-svc` feature -- can
-    locate `config.status`, which it looks for among the ancestors of OUT_DIR.
-    A plain `target/` in the source tree has no such ancestor, so the build
-    would otherwise fail with `BUILDCONFIG_RS not defined`. This mirrors how the
-    rest of the build system invokes cargo.
-    """
-    env = dict(os.environ)
-    env["CARGO_TARGET_DIR"] = command_context.topobjdir
-    return env, os.path.join(command_context.topobjdir, "release")
-
-
-def build_gkrust_uniffi_library(command_context, source_library):
-    uniffi_root = crate_root(command_context)
-    print("Building gkrust-uniffi-components")
-    cmdline = [
-        "cargo",
-        "build",
-        "--release",
-        "--manifest-path",
-        os.path.join(command_context.topsrcdir, "Cargo.toml"),
-        "--package",
-        source_library.value,
-    ] + cargo_args_for_library(source_library)
-    print(cmdline)
+def build_uniffi_targets(command_context):
     
-    
-    
-    
-    
-    if "NSS_DIR" not in os.environ and "MOZ_TOPOBJDIR" not in os.environ:
-        print(
-            "warning: NSS build environment not detected; building the UniFFI "
-            + "library may fail to link against NSS. Run "
-            + "[app-services-repo]libs/verify-desktop-environment.sh to "
-            + "configure it.",
-            file=sys.stderr,
-        )
-    env, out_dir = cargo_env_and_release_dir(command_context)
-    subprocess.check_call(cmdline, cwd=uniffi_root, env=env)
-    print()
+    uniffi_objdir = _uniffi_objdir(command_context.topsrcdir)
+    mozconfig_path = _ensure_uniffi_mozconfig(uniffi_objdir)
 
-    basename = format(source_library.value.replace("-", "_"))
-    filename_candidates = [
-        
-        f"lib{basename}.a",
-        
-        f"{basename}.lib",
-        
-        f"{basename}.a",
-        f"lib{basename}.lib",
-    ]
-    for filename in filename_candidates:
-        candidate = os.path.join(out_dir, filename)
-        if os.path.exists(candidate):
-            return candidate
-    raise Exception(f"Can't find gkrust_uniffi library in {out_dir}")
+    command_context.log(
+        logging.WARNING,
+        "uniffi-generate",
+        {"objdir": uniffi_objdir},
+        "Using dedicated uniffi objdir: {objdir}",
+    )
 
+    env = os.environ.copy()
+    env["MOZCONFIG"] = mozconfig_path
+    mach_path = mozpath.join(command_context.topsrcdir, "mach")
 
-def build_uniffi_bindgen_gecko_js(command_context):
-    uniffi_root = crate_root(command_context)
-    print("Building uniffi-bindgen-gecko-js")
-    cmdline = [
-        "cargo",
-        "build",
-        "--release",
-        "--manifest-path",
-        os.path.join(command_context.topsrcdir, "Cargo.toml"),
-        "--package",
-        "uniffi-bindgen-gecko-js",
-    ]
-    env, release_dir = cargo_env_and_release_dir(command_context)
-    subprocess.check_call(cmdline, cwd=uniffi_root, env=env)
-    print()
-    return os.path.join(release_dir, "uniffi-bindgen-gecko-js")
+    subprocess.check_call(
+        [sys.executable, mach_path, "configure"],
+        env=env,
+        cwd=command_context.topsrcdir,
+    )
+    subprocess.check_call(
+        [
+            sys.executable,
+            mach_path,
+            "build",
+            "pre-export",
+            "export",
+            "recurse_uniffi-target",
+        ],
+        env=env,
+        cwd=command_context.topsrcdir,
+    )
+
+    config = ConfigEnvironment.from_config_status(
+        mozpath.join(uniffi_objdir, "config.status")
+    )
+    substs = config.substs
+    rust_build_kind = get_rust_build_kind(substs)
+
+    binary_path = mozpath.join(
+        uniffi_objdir, "dist", "host", "bin", "uniffi-bindgen-gecko-js"
+    )
+
+    
+    lib_prefix = substs["LIB_PREFIX"]
+    lib_suffix = substs["LIB_SUFFIX"]
+    library_path = mozpath.join(
+        uniffi_objdir,
+        substs["RUST_TARGET"],
+        rust_build_kind,
+        f"{lib_prefix}gkrust_uniffi_components.{lib_suffix}",
+    )
+    fixtures_library_path = mozpath.join(
+        uniffi_objdir,
+        substs["RUST_TARGET"],
+        rust_build_kind,
+        f"{lib_prefix}uniffi_bindgen_gecko_js_test_fixtures.{lib_suffix}",
+    )
+
+    return UniffiTargets(
+        binary_path=binary_path,
+        library_path=library_path,
+        fixtures_library_path=fixtures_library_path,
+    )
 
 
 @Command(
@@ -123,33 +132,20 @@ def uniffi(command_context, *runargs, **lintargs):
     return 1
 
 
-def crate_root(command_context):
-    return os.path.join(
-        command_context.topsrcdir, "toolkit", "components", "uniffi-bindgen-gecko-js"
-    )
-
-
 @SubCommand(
     "uniffi",
     "generate",
     description="Generate/regenerate bindings",
 )
 def generate_command(command_context):
-    library_path = build_gkrust_uniffi_library(
-        command_context,
-        SourceLibrary.GKRUST_UNIFFI_COMPONENTS,
-    )
-    fixtures_library_path = build_gkrust_uniffi_library(
-        command_context,
-        SourceLibrary.UNIFFI_BINDINGS_BINDGEN_TESTS,
-    )
-    binary_path = build_uniffi_bindgen_gecko_js(command_context)
+    uniffi_targets = build_uniffi_targets(command_context)
+
     cmdline = [
-        binary_path,
+        uniffi_targets.binary_path,
         "--library-path",
-        library_path,
+        uniffi_targets.library_path,
         "--fixtures-library-path",
-        fixtures_library_path,
+        uniffi_targets.fixtures_library_path,
         "generate",
         "--js-dir",
         JS_DIR,
@@ -171,21 +167,14 @@ def generate_command(command_context):
 )
 @CommandArgument("args", nargs=argparse.REMAINDER)
 def pipeline_command(command_context, args):
-    library_path = build_gkrust_uniffi_library(
-        command_context,
-        SourceLibrary.GKRUST_UNIFFI_COMPONENTS,
-    )
-    fixtures_library_path = build_gkrust_uniffi_library(
-        command_context,
-        SourceLibrary.UNIFFI_BINDINGS_BINDGEN_TESTS,
-    )
-    binary_path = build_uniffi_bindgen_gecko_js(command_context)
+    uniffi_targets = build_uniffi_targets(command_context)
+
     cmdline = [
-        binary_path,
+        uniffi_targets.binary_path,
         "--library-path",
-        library_path,
+        uniffi_targets.library_path,
         "--fixtures-library-path",
-        fixtures_library_path,
+        uniffi_targets.fixtures_library_path,
         "pipeline",
     ] + args
     subprocess.check_call(cmdline, cwd=command_context.topsrcdir)
