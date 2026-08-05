@@ -1994,7 +1994,6 @@ void GCRuntime::beginSweepPhase(AutoGCSession& session) {
 
 
 
-  MOZ_ASSERT(preparedForSweepInThisSlice);
   MOZ_ASSERT(!abortSweepAfterCurrentGroup);
   MOZ_ASSERT(!markOnBackgroundThreadDuringSweeping);
 
@@ -2684,33 +2683,6 @@ bool GCRuntime::initSweepActions() {
   return sweepActions != nullptr;
 }
 
-void GCRuntime::prepareForSweepSlice() {
-  
-  
-  
-  
-  
-
-  
-  if (storeBuffer().mayHavePointersToDeadCells()) {
-    collectNurseryFromMajorGC(sliceReason);
-  }
-
-  
-  
-  rt->mainContextFromOwnThread()->traceWrapperGCRooters(marker().tracer());
-
-  
-  
-
-  if (state() == State::Mark &&
-      hasZealMode(ZealMode::IncrementalMarkingValidator)) {
-    collectNurseryFromMajorGC(JS::GCReason::EVICT_NURSERY);
-  }
-
-  preparedForSweepInThisSlice = true;
-}
-
 
 
 
@@ -2735,10 +2707,6 @@ class js::gc::AutoUpdateBarriersForSweeping {
 };
 
 IncrementalProgress GCRuntime::sweepPhase(SliceBudget& budget) {
-  MOZ_ASSERT(preparedForSweepInThisSlice);
-  MOZ_ASSERT_IF(storeBuffer().isEnabled(),
-                !storeBuffer().mayHavePointersToDeadCells());
-
   
   
   
@@ -2761,6 +2729,12 @@ IncrementalProgress GCRuntime::sweepPhase(SliceBudget& budget) {
     auto [_, helperThreadBudget] = budgetConcurrentMarking(budget);
     maybeStartConcurrentMarking(helperThreadBudget);
     return NotFinished;
+  }
+
+  
+  
+  if (storeBuffer().mayHavePointersToDeadCells()) {
+    collectNurseryFromMajorGC(JS::GCReason::EVICT_NURSERY);
   }
 
   JS::GCContext* gcx = rt->gcContext();

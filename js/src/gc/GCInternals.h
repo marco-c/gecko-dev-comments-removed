@@ -146,15 +146,13 @@ class MOZ_RAII AutoRunParallelTask : public GCParallelTask {
 
 class MOZ_RAII AutoStopVerifyingBarriers {
   GCRuntime* gc;
-  bool restartPreVerifier;
+  bool restartPreVerifier = false;
 
  public:
   AutoStopVerifyingBarriers(JSRuntime* rt, bool isShutdown) : gc(&rt->gc) {
     if (gc->isVerifyPreBarriersEnabled()) {
       gc->endVerifyPreBarriers();
       restartPreVerifier = !isShutdown;
-    } else {
-      restartPreVerifier = false;
     }
   }
 
@@ -163,18 +161,18 @@ class MOZ_RAII AutoStopVerifyingBarriers {
     
     
     
-    gcstats::PhaseKind outer = gc->stats().currentPhaseKind();
-    if (outer != gcstats::PhaseKind::NONE) {
-      gc->stats().endPhase(outer);
-    }
-    MOZ_ASSERT(gc->stats().currentPhaseKind() == gcstats::PhaseKind::NONE);
-
     if (restartPreVerifier) {
-      gc->startVerifyPreBarriers();
-    }
+      gcstats::PhaseKind outer = gc->stats().currentPhaseKind();
+      if (outer != gcstats::PhaseKind::NONE) {
+        gc->stats().endPhase(outer);
+      }
+      MOZ_ASSERT(gc->stats().currentPhaseKind() == gcstats::PhaseKind::NONE);
 
-    if (outer != gcstats::PhaseKind::NONE) {
-      gc->stats().beginPhase(outer);
+      gc->startVerifyPreBarriers();
+
+      if (outer != gcstats::PhaseKind::NONE) {
+        gc->stats().beginPhase(outer);
+      }
     }
   }
 };
