@@ -18,6 +18,7 @@
 
 #include "api/field_trials_view.h"
 #include "api/sequence_checker.h"
+#include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "api/video/video_frame.h"
@@ -86,6 +87,15 @@ class VCMTiming {
   void set_playout_delay(const VideoPlayoutDelay& playout_delay);
 
   
+  virtual void OnCompleteTemporalUnit(uint32_t rtp_timestamp,
+                                      Timestamp receive_time);
+  void OnDecodableTemporalUnit(uint32_t rtp_timestamp,
+                               DataSize superframe_size,
+                               Timestamp max_receive_time,
+                               bool was_retransmitted);
+  void UpdateRtt(TimeDelta rtt);
+
+  
   
   
   
@@ -94,11 +104,6 @@ class VCMTiming {
   
   
   void StopDecodeTimer(TimeDelta decode_time, Timestamp now);
-
-  
-  
-  virtual void OnCompleteTemporalUnit(uint32_t rtp_timestamp,
-                                      Timestamp receive_time);
 
   
   
