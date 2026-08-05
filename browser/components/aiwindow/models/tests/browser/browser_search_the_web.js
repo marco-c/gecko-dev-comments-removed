@@ -230,6 +230,7 @@ add_task(async function test_search_the_web_end_to_end() {
         ...expectedAnswer,
         searched_urls: [pageUrl],
         read_urls: [pageUrl],
+        requiresSearchHandoff: false,
       },
       "The workflow returns the validated answer and code-tracked URLs"
     );
@@ -523,90 +524,49 @@ add_task(async function test_search_the_web_no_results_returns_failure() {
   }
 });
 
-add_task(async function test_search_the_web_offers_run_search_fallback() {
-  
-  
-  
-  
-  
+add_task(async function test_search_the_web_second_call_escalates_to_handoff() {
   
   
   
   
   await pushSearchPrefs();
+
   const mockSearchManager = new MockSearchManager();
+  const conversation = new ChatConversation({
+    pageUrl: new URL("https://example.com"),
+    pageMeta: {},
+  });
 
-  const { AIWindow } = ChromeUtils.importESModule(
-    "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs"
-  );
-  const isAIWindowActiveStub = sinon
-    .stub(AIWindow, "isAIWindowActive")
-    .callsFake(win => win === window);
-
-  const requestBodies = [];
   try {
-    await withServer(
-      {
-        toolCall: {
-          name: "search_the_web",
-          args: JSON.stringify({ query: "weather" }),
-        },
-        followupChunks: ["Here is what I found."],
-        onRequest: body => requestBodies.push(body),
-      },
-      async () => {
-        const engine = await openAIEngine.build({
-          model: TEST_MODEL,
-          serviceType: SERVICE_TYPES.AI,
-          purpose: PURPOSES.CHAT,
-          flowId: null,
-          feature: MODEL_FEATURES.CHAT,
-        });
-        const conversation = new ChatConversation({
-          pageUrl: new URL("https://example.com"),
-          pageMeta: {},
-        });
-        conversation.engine = engine;
-        conversation.addUserMessage(
-          "what's the weather",
-          "https://example.com",
-          0
-        );
-        conversation.addAssistantMessage("text", "");
-
-        const chatPromise = Chat.fetchWithHistory({ conversation });
-        (await mockSearchManager.captureRequest()).respond({ results: [] });
-        await chatPromise;
-      }
+    const firstPromise = runSearchTheWeb({ query: "weather" }, conversation);
+    (await mockSearchManager.captureRequest()).respond({ results: [] });
+    const first = await firstPromise;
+    Assert.equal(
+      first.requiresSearchHandoff,
+      false,
+      "The first call answers in chat (ANSWER), not a handoff"
+    );
+    Assert.equal(
+      conversation._searchTheWebTurn,
+      conversation.currentTurnIndex(),
+      "The first call marks the current turn as having searched"
     );
 
-    const firstTools = (
-      requestBodies.find(body => Array.isArray(body.tools))?.tools ?? []
-    ).map(tool => tool.function?.name);
-    Assert.ok(
-      firstTools.includes("search_the_web"),
-      "search_the_web is offered on the first turn"
+    
+    
+    
+    const second = await runSearchTheWeb(
+      { query: "weather again" },
+      conversation
     );
-    Assert.ok(
-      !firstTools.includes("run_search"),
-      "run_search is not offered up front"
+    Assert.equal(
+      second.requiresSearchHandoff,
+      true,
+      "A second call in the same turn escalates to the handoff"
     );
 
-    const lastTools = (
-      requestBodies.filter(body => Array.isArray(body.tools)).at(-1)?.tools ??
-      []
-    ).map(tool => tool.function?.name);
-    Assert.ok(
-      lastTools.includes("run_search"),
-      "run_search is offered as a fallback after search_the_web runs"
-    );
-    Assert.ok(
-      !lastTools.includes("search_the_web"),
-      "search_the_web is removed once it has run"
-    );
     mockSearchManager.assertAllRequestsHandled();
   } finally {
-    isAIWindowActiveStub.restore();
     mockSearchManager.rejectAllRequests();
     mockSearchManager.cleanupMocks();
     await SpecialPowers.popPrefEnv();
