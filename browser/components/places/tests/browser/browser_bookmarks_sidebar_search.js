@@ -93,11 +93,11 @@ add_task(async function testTree() {
     PlacesUtils.tagging.tagURI(url, ["test"]);
   }
 
-  await withSidebarTree("bookmarks", function () {
+  await withSidebarTree("bookmarks", async function () {
     
-    assertBookmarks("example.com");
+    await assertBookmarks("example.com");
     
-    assertBookmarks("test");
+    await assertBookmarks("test");
   });
 
   
