@@ -529,12 +529,14 @@ impl GlyphInstance {
         subpx_offset_x: u8,
         subpx_offset_y: u8,
         is_packed_glyph: bool,
+        is_bitmap_strike: bool,
     ) -> PrimitiveInstanceData {
         
         
         
         
-        let packed_flags = (((is_packed_glyph as u32) & 0x1) << 26)
+        let packed_flags = (((is_bitmap_strike as u32) & 0x1) << 27)
+            | (((is_packed_glyph as u32) & 0x1) << 26)
             | (((subpx_dir as u32) & 0x3) << 24)
             | (((subpx_offset_y as u32) & 0x3) << 22)
             | (((subpx_offset_x as u32) & 0x3) << 20)

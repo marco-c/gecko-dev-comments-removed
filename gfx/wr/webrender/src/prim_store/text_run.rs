@@ -522,8 +522,18 @@ impl TextRunTemplate {
             }))
         } else if let Some(anchor_world) = anchor_world {
             
-            let anchor_device = anchor_world * dps;
-
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             
             
             
@@ -540,12 +550,7 @@ impl TextRunTemplate {
                     .unwrap_or(anchor_world);
                 let device_pen = glyph_world * dps;
 
-                
-                
-                
-                
-                let snapped = (device_pen + snap_bias).floor();
-                glyph_offsets.push(snapped - anchor_device);
+                glyph_offsets.push(device_pen.to_vector());
 
                 GlyphKey::new(src.index, device_pen, subpx_dir)
             }))

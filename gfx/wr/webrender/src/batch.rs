@@ -1020,6 +1020,18 @@ impl BatchBuilder {
 
                         let subpx_dir = subpx_dir.limit_by(glyph_format);
 
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        let is_bitmap_strike = matches!(
+                            glyph_format,
+                            GlyphFormat::Bitmap | GlyphFormat::ColorBitmap
+                        );
+
                         let textures = BatchTextures::prim_textured(
                             texture_id,
                             clip_mask_texture_id,
@@ -1071,10 +1083,14 @@ impl BatchBuilder {
                         
                         
                         let tight_bounding_rect = {
-                            let snap_bias = match subpx_dir {
-                                SubpixelDirection::None => DeviceVector2D::new(0.5, 0.5),
-                                SubpixelDirection::Horizontal => DeviceVector2D::new(0.125, 0.5),
-                                SubpixelDirection::Vertical => DeviceVector2D::new(0.5, 0.125),
+                            let snap_bias = if is_bitmap_strike {
+                                DeviceVector2D::new(0.5, 0.5)
+                            } else {
+                                match subpx_dir {
+                                    SubpixelDirection::None => DeviceVector2D::new(0.5, 0.5),
+                                    SubpixelDirection::Horizontal => DeviceVector2D::new(0.125, 0.5),
+                                    SubpixelDirection::Vertical => DeviceVector2D::new(0.5, 0.125),
+                                }
                             };
                             let text_offset = LayoutVector2D::zero();
 
@@ -1189,6 +1205,7 @@ impl BatchBuilder {
                                 glyph.subpx_offset_x,
                                 glyph.subpx_offset_y,
                                 glyph.is_packed_glyph,
+                                is_bitmap_strike,
                             ));
                         }
                     },
