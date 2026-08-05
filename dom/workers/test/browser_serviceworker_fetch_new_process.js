@@ -12,6 +12,12 @@ const TEST_BLOB_CONTENTS = `I'm a disk-backed test blob! Hooray!`;
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
+      
+      
+      
+      ["browser.tabs.remote.separatePrivilegedMozillaWebContentProcess", true],
+      ["browser.tabs.remote.separatedMozillaDomains", "example.org"],
+      ["dom.ipc.processCount.privilegedmozilla", 1],
       ["dom.ipc.processPrelaunch.enabled", false],
       ["dom.serviceWorkers.enabled", true],
       ["dom.serviceWorkers.testing.enabled", true],
@@ -329,32 +335,35 @@ add_task(async function test() {
 
   let initialSums = getSWTelemetrySums();
 
+  
+  
+  
+  await do_test_sw("example.org", "privilegedmozilla", "synthetic", null);
+
+  
+  
+  
+  
   const fileBlob = await makeFileBlob(TEST_BLOB_CONTENTS);
+  await do_test_sw("example.org", "privilegedmozilla", "synthetic", fileBlob);
+
+  
+  
+  
+  
+  
+  await do_test_sw("example.org", "privilegedmozilla", "fetch", fileBlob);
+
+  
+  await do_test_sw("example.org", "privilegedmozilla", "clone", fileBlob);
 
   
   if (Services.appinfo.fissionAutostart) {
     
     const isolateUrl = "example.com";
     const isolateRemoteType = `webServiceWorker=https://` + isolateUrl;
-    
-    
     await do_test_sw(isolateUrl, isolateRemoteType, "synthetic", null);
-
-    
-    
-    
-    
     await do_test_sw(isolateUrl, isolateRemoteType, "synthetic", fileBlob);
-
-    
-    
-    
-    
-    
-    await do_test_sw(isolateUrl, isolateRemoteType, "fetch", fileBlob);
-
-    
-    await do_test_sw(isolateUrl, isolateRemoteType, "clone", fileBlob);
   }
   let telemetrySums = getSWTelemetrySums();
   info(JSON.stringify(telemetrySums));
