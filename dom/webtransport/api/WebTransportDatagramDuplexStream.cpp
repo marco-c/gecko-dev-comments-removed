@@ -7,10 +7,7 @@
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/dom/WebTransport.h"
-#include "mozilla/dom/WebTransportDatagramsWritable.h"
 #include "mozilla/dom/WebTransportLog.h"
-#include "mozilla/dom/WebTransportSendGroup.h"
 
 namespace mozilla::dom {
 
@@ -122,56 +119,6 @@ void WebTransportDatagramDuplexStream::SetOutgoingHighWaterMark(
   }
   
   mOutgoingHighWaterMark = aWaterMark;
-}
-
-already_AddRefed<WebTransportDatagramsWritable>
-WebTransportDatagramDuplexStream::CreateWritable(
-    const WebTransportSendOptions& aOptions, ErrorResult& aRv) {
-  LOG(("WebTransportDatagramDuplexStream::CreateWritable() called"));
-  
-
-  
-  if (!mWebTransport) {
-    aRv.ThrowInvalidStateError("WebTransport is not available");
-    return nullptr;
-  }
-
-  
-  
-  auto state = mWebTransport->mState;
-  if (state == WebTransport::WebTransportState::CLOSED ||
-      state == WebTransport::WebTransportState::FAILED) {
-    aRv.ThrowInvalidStateError("WebTransport closed or failed");
-    return nullptr;
-  }
-
-  
-
-  
-  
-  if (aOptions.mSendGroup &&
-      aOptions.mSendGroup->GetTransport() != mWebTransport) {
-    aRv.ThrowInvalidStateError(
-        "sendGroup does not belong to the same WebTransport");
-    return nullptr;
-  }
-
-  
-  int64_t sendOrder = aOptions.mSendOrder;
-
-  
-  
-  AutoEntryScript aes(mGlobal, "WebTransportCreateWritable");
-  JSContext* cx = aes.cx();
-  RefPtr<WebTransportDatagramsWritable> writableStream =
-      WebTransportDatagramsWritable::Create(
-          cx, mGlobal, mWebTransport, this, mOutgoingHighWaterMark,
-          aOptions.mSendGroup, sendOrder, aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-
-  return writableStream.forget();
 }
 
 void WebTransportDatagramDuplexStream::NewDatagramReceived(
@@ -302,7 +249,7 @@ void IncomingDatagramStreamAlgorithms::NotifyDatagramAvailable() {
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(OutgoingDatagramStreamAlgorithms,
                                    UnderlyingSinkAlgorithmsWrapper, mDatagrams,
-                                   mSendGroup, mWaitConnectPromise)
+                                   mWaitConnectPromise)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(OutgoingDatagramStreamAlgorithms)
 NS_INTERFACE_MAP_END_INHERITING(UnderlyingSinkAlgorithmsWrapper)
@@ -350,9 +297,8 @@ already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallbackImpl(
     
     
     LOG(("Sending Datagram, size = %zu", data.Length()));
-    uint64_t sendGroupId = mSendGroup ? mSendGroup->GetGroupId() : 0;
     mChild->SendOutgoingDatagram(
-        std::move(data), now, sendGroupId, mSendOrder,
+        std::move(data), now,
         [promise](nsresult&&) {
           
           LOG(("Datagram was sent"));
@@ -384,13 +330,9 @@ void OutgoingDatagramStreamAlgorithms::SetChild(WebTransportChild* aChild) {
   LOG(("Setting child in datagrams"));
   mChild = aChild;
   if (mWaitConnect) {
-    uint64_t sendGroupId = mSendGroup ? mSendGroup->GetGroupId() : 0;
-    LOG(("Sending queued datagram sendGroup = %" PRIu64
-         ", sendOrder = %" PRId64,
-         sendGroupId, mSendOrder));
+    LOG(("Sending queued datagram"));
     mChild->SendOutgoingDatagram(
-        mWaitConnect->mBuffer, mWaitConnect->mTimeStamp, sendGroupId,
-        mSendOrder,
+        mWaitConnect->mBuffer, mWaitConnect->mTimeStamp,
         [promise = mWaitConnectPromise](nsresult&&) {
           LOG_VERBOSE(("Early Datagram was sent"));
           promise->MaybeResolveWithUndefined();

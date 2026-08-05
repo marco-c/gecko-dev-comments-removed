@@ -74,13 +74,3 @@ def stream_reset(session: WebTransportSession,
     :param error_code: The reason of the reset.
     """
     pass
-
-
-
-
-
-
-
-
-
-

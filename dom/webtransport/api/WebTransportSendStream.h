@@ -14,7 +14,6 @@ class DataPipeSender;
 namespace mozilla::dom {
 
 class WebTransport;
-class WebTransportSendGroup;
 
 class WebTransportSendStream final : public WritableStream {
  public:
@@ -26,21 +25,17 @@ class WebTransportSendStream final : public WritableStream {
 
   static already_AddRefed<WebTransportSendStream> Create(
       WebTransport* aWebTransport, nsIGlobalObject* aGlobal, uint64_t aStreamId,
-      mozilla::ipc::DataPipeSender* aSender, int64_t aSendOrder,
-      WebTransportSendGroup* aSendGroup, ErrorResult& aRv);
+      mozilla::ipc::DataPipeSender* aSender, Maybe<int64_t> aSendOrder,
+      ErrorResult& aRv);
 
   
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
   
-  int64_t SendOrder() { return mSendOrder; }
+  Nullable<int64_t> GetSendOrder() { return mSendOrder; }
 
-  void SetSendOrder(int64_t aSendOrder);
-
-  WebTransportSendGroup* GetSendGroup() { return mSendGroup; }
-
-  void SetSendGroup(WebTransportSendGroup* aSendGroup, ErrorResult& aRv);
+  void SetSendOrder(Nullable<int64_t> aSendOrder);
 
   already_AddRefed<Promise> GetStats();
 
@@ -52,9 +47,8 @@ class WebTransportSendStream final : public WritableStream {
   
   
   RefPtr<WebTransport> mTransport;
-  RefPtr<WebTransportSendGroup> mSendGroup;
   uint64_t mStreamId;
-  int64_t mSendOrder;
+  Nullable<int64_t> mSendOrder;
 };
 }  
 

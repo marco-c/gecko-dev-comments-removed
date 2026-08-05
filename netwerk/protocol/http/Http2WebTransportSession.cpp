@@ -83,26 +83,9 @@ nsresult Http2WebTransportSessionImpl::ExportKeyingMaterial(
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-nsresult Http2WebTransportSessionImpl::RegisterSendGroup(uint64_t aGroupId) {
-  
-  return NS_OK;
-}
-
-void Http2WebTransportSessionImpl::GetNegotiatedProtocol(
-    nsACString& aProtocol) {
-  
-  aProtocol.Truncate();
-}
-
 void Http2WebTransportSessionImpl::SendDatagram(nsTArray<uint8_t>&& aData,
-                                                uint64_t aTrackingId,
-                                                uint64_t aSendGroupId,
-                                                int64_t aSendOrder) {
-  LOG(("Http2WebTransportSessionImpl::SendDatagram %p, sendGroup=%" PRIu64
-       ", sendOrder=%" PRId64,
-       this, aSendGroupId, aSendOrder));
-  
-  
+                                                uint64_t aTrackingId) {
+  LOG(("Http2WebTransportSession::SendDatagram %p", this));
 
   Capsule capsule = Capsule::WebTransportDatagram(std::move(aData));
 
