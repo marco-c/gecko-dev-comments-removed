@@ -3,13 +3,14 @@
 
 
 #include "AutoMemMap.h"
-#include "ScriptPreloader-inl.h"
 
-#include "mozilla/Try.h"
 #include "mozilla/ipc/FileDescriptor.h"
-#include "nsIFile.h"
+#include "mozilla/Try.h"
 
 #include <private/pprio.h>
+
+#include "nsIFile.h"
+#include "ScriptPreloader-inl.h"
 
 namespace mozilla {
 namespace loader {
@@ -63,6 +64,9 @@ Result<Ok, nsresult> AutoMemMap::initInternal(PRFileMapProtect prot,
     
     
     
+    if (maybeSize > UINT32_MAX) {
+      return Err(NS_ERROR_INVALID_ARG);
+    }
     size_ = maybeSize;
   } else {
     
