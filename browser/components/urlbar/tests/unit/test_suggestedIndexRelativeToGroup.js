@@ -17,20 +17,20 @@ const MAX_RESULTS = 10;
 const RESULT_GROUPS = {
   children: [
     {
-      group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
+      group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
       flexChildren: true,
       children: [
         {
           flex: 1,
-          group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
+          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
         },
         {
           flex: 1,
-          group: UrlbarShared.RESULT_GROUP.GENERAL,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
         },
         {
           flex: 1,
-          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
         },
       ],
     },
@@ -87,24 +87,24 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: 0,
-          group: UrlbarShared.RESULT_GROUP.GENERAL,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
         },
       ],
       expected: [
         {
-          group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
+          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
           count: 4,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.GENERAL,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
           suggestedIndex: 0,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.GENERAL,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
           count: 2,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
           
           
           offset: 4,
@@ -118,24 +118,24 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: -1,
-          group: UrlbarShared.RESULT_GROUP.GENERAL,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
         },
       ],
       expected: [
         {
-          group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
+          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
           count: 4,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.GENERAL,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
           count: 2,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.GENERAL,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
           suggestedIndex: -1,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
           
           
           offset: 4,
@@ -149,24 +149,24 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: 0,
-          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
         },
       ],
       expected: [
         {
-          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
           suggestedIndex: 0,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
+          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
           count: 3,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.GENERAL,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
           count: 3,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
           
           
           offset: 3,
@@ -180,27 +180,27 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: -1,
-          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
         },
       ],
       expected: [
         {
-          group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
+          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
           count: 3,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.GENERAL,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
           count: 3,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
           
           
           offset: 3,
           count: 3,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
           suggestedIndex: -1,
         },
       ],
@@ -211,32 +211,32 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: 0,
-          group: UrlbarShared.RESULT_GROUP.GENERAL,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
         },
         {
           suggestedIndex: -1,
-          group: UrlbarShared.RESULT_GROUP.GENERAL,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
         },
       ],
       expected: [
         {
-          group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
+          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
           count: 4,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.GENERAL,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
           suggestedIndex: 0,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.GENERAL,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
           count: 1,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.GENERAL,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
           suggestedIndex: -1,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
           
           
           offset: 4,
@@ -250,35 +250,35 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: 0,
-          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
         },
         {
           suggestedIndex: -1,
-          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
         },
       ],
       expected: [
         {
-          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
           suggestedIndex: 0,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
+          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
           count: 3,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.GENERAL,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
           count: 3,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
           
           
           offset: 3,
           count: 2,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
           suggestedIndex: -1,
         },
       ],
@@ -289,32 +289,32 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: 0,
-          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
         },
         {
           suggestedIndex: 0,
-          group: UrlbarShared.RESULT_GROUP.GENERAL,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
         },
       ],
       expected: [
         {
-          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
           suggestedIndex: 0,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
+          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
           count: 3,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.GENERAL,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
           suggestedIndex: 0,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.GENERAL,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
           count: 2,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
           
           
           offset: 3,
@@ -329,16 +329,16 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: -1,
-          group: UrlbarShared.RESULT_GROUP.GENERAL,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
         },
       ],
       expected: [
         {
-          group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
+          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
           count: 9,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.GENERAL,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
           suggestedIndex: -1,
         },
       ],
@@ -351,12 +351,12 @@ add_task(async function test() {
         children: [
           {
             flex: 2,
-            group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
+            group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
           },
           {
             flex: 1,
-            group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
-            children: [{ group: UrlbarShared.RESULT_GROUP.GENERAL }],
+            group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+            children: [{ group: UrlbarUtils.RESULT_GROUP.GENERAL }],
           },
         ],
       },
@@ -364,16 +364,16 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: -1,
-          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
         },
       ],
       expected: [
         {
-          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
           count: 9,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
           suggestedIndex: -1,
         },
       ],
@@ -385,19 +385,19 @@ add_task(async function test() {
         children: [
           {
             maxResultCount: 1,
-            children: [{ group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST }],
+            children: [{ group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST }],
           },
           {
             flexChildren: true,
             children: [
               {
                 flex: 2,
-                group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
+                group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
               },
               {
                 flex: 1,
-                group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
-                children: [{ group: UrlbarShared.RESULT_GROUP.GENERAL }],
+                group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+                children: [{ group: UrlbarUtils.RESULT_GROUP.GENERAL }],
               },
             ],
           },
@@ -409,7 +409,7 @@ add_task(async function test() {
           type: UrlbarShared.RESULT_TYPE.SEARCH,
           source: UrlbarShared.RESULT_SOURCE.SEARCH,
           heuristic: true,
-          group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST,
+          group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
           payload: {
             engine: "test",
             suggestion: "foo",
@@ -432,26 +432,26 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: -1,
-          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
         },
       ],
       expected: [
         {
-          group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST,
+          group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
           count: 1,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.SUGGESTED_INDEX,
+          group: UrlbarUtils.RESULT_GROUP.SUGGESTED_INDEX,
           suggestedIndex: 1,
           resultSpan: 2,
           count: 1,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
           count: 6,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
           suggestedIndex: -1,
         },
       ],
@@ -463,16 +463,16 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: -1,
-          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
         },
       ],
       expected: [
         {
-          group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
+          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
           count: 1,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.GENERAL,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
           count: 1,
         },
         
@@ -485,20 +485,20 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: -1,
-          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
         },
       ],
       expected: [
         {
-          group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
+          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
           count: 1,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.GENERAL,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
           count: 1,
         },
         {
-          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
           suggestedIndex: -1,
         },
       ],

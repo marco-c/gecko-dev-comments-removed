@@ -112,18 +112,18 @@ function setResultGroups(groups) {
       {
         maxResultCount: 1,
         children: [
-          { group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST },
-          { group: UrlbarShared.RESULT_GROUP.HEURISTIC_EXTENSION },
-          { group: UrlbarShared.RESULT_GROUP.HEURISTIC_SEARCH_TIP },
-          { group: UrlbarShared.RESULT_GROUP.HEURISTIC_OMNIBOX },
-          { group: UrlbarShared.RESULT_GROUP.HEURISTIC_AUTOFILL },
-          { group: UrlbarShared.RESULT_GROUP.HEURISTIC_TOKEN_ALIAS_ENGINE },
-          { group: UrlbarShared.RESULT_GROUP.HEURISTIC_FALLBACK },
+          { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST },
+          { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_EXTENSION },
+          { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_SEARCH_TIP },
+          { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_OMNIBOX },
+          { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_AUTOFILL },
+          { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TOKEN_ALIAS_ENGINE },
+          { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_FALLBACK },
         ],
       },
       
       {
-        group: UrlbarShared.RESULT_GROUP.OMNIBOX,
+        group: UrlbarUtils.RESULT_GROUP.OMNIBOX,
       },
       ...groups,
     ],
@@ -778,28 +778,28 @@ add_task(async function mixup_frecency() {
     {
       maxResultCount: 1,
       children: [
-        { group: UrlbarShared.RESULT_GROUP.FORM_HISTORY },
-        { group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION },
+        { group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY },
+        { group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION },
       ],
     },
     
     {
       maxResultCount: 5,
-      group: UrlbarShared.RESULT_GROUP.GENERAL,
+      group: UrlbarUtils.RESULT_GROUP.GENERAL,
     },
     
     {
       maxResultCount: 1,
       children: [
-        { group: UrlbarShared.RESULT_GROUP.FORM_HISTORY },
-        { group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION },
+        { group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY },
+        { group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION },
       ],
     },
     
-    { group: UrlbarShared.RESULT_GROUP.GENERAL },
+    { group: UrlbarUtils.RESULT_GROUP.GENERAL },
     
-    { group: UrlbarShared.RESULT_GROUP.FORM_HISTORY },
-    { group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION },
+    { group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY },
+    { group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION },
   ]);
 
   

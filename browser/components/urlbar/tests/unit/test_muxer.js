@@ -283,7 +283,7 @@ add_task(async function test_deduplicate_for_unitConversion() {
   const searchProvider = registerBasicTestProvider(
     [searchSuggestion],
     null,
-    UrlbarShared.PROVIDER_TYPE.PROFILE
+    UrlbarUtils.PROVIDER_TYPE.PROFILE
   );
 
   const unitConversionSuggestion = new UrlbarResult({
@@ -300,7 +300,7 @@ add_task(async function test_deduplicate_for_unitConversion() {
   const unitConversion = registerBasicTestProvider(
     [unitConversionSuggestion],
     null,
-    UrlbarShared.PROVIDER_TYPE.PROFILE,
+    UrlbarUtils.PROVIDER_TYPE.PROFILE,
     "UrlbarProviderUnitConversion"
   );
 
@@ -359,11 +359,11 @@ add_task(async function test_badHeuristicGroups_multiple_0() {
       
       {
         maxResultCount: 2,
-        children: [{ group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST }],
+        children: [{ group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST }],
       },
       
       {
-        group: UrlbarShared.RESULT_GROUP.GENERAL,
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
       },
     ],
     [BAD_HEURISTIC_RESULTS_FIRST_HEURISTIC, ...BAD_HEURISTIC_RESULTS_GENERAL]
@@ -375,11 +375,11 @@ add_task(async function test_badHeuristicGroups_multiple_1() {
     [
       
       {
-        children: [{ group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST }],
+        children: [{ group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST }],
       },
       
       {
-        group: UrlbarShared.RESULT_GROUP.GENERAL,
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
       },
     ],
     [BAD_HEURISTIC_RESULTS_FIRST_HEURISTIC, ...BAD_HEURISTIC_RESULTS_GENERAL]
@@ -392,11 +392,11 @@ add_task(async function test_badHeuristicGroups_multiple_2() {
       
       {
         maxResultCount: 2,
-        group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST,
+        group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
       },
       
       {
-        group: UrlbarShared.RESULT_GROUP.GENERAL,
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
       },
     ],
     [BAD_HEURISTIC_RESULTS_FIRST_HEURISTIC, ...BAD_HEURISTIC_RESULTS_GENERAL]
@@ -408,11 +408,11 @@ add_task(async function test_badHeuristicGroups_multiple_3() {
     [
       
       {
-        group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST,
+        group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
       },
       
       {
-        group: UrlbarShared.RESULT_GROUP.GENERAL,
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
       },
     ],
     [BAD_HEURISTIC_RESULTS_FIRST_HEURISTIC, ...BAD_HEURISTIC_RESULTS_GENERAL]
@@ -425,16 +425,16 @@ add_task(async function test_badHeuristicGroups_multiple_4() {
       
       {
         maxResultCount: 1,
-        children: [{ group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST }],
+        children: [{ group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST }],
       },
       
       {
-        group: UrlbarShared.RESULT_GROUP.GENERAL,
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
       },
       
       {
         maxResultCount: 1,
-        children: [{ group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST }],
+        children: [{ group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST }],
       },
     ],
     [BAD_HEURISTIC_RESULTS_FIRST_HEURISTIC, ...BAD_HEURISTIC_RESULTS_GENERAL]
@@ -446,15 +446,15 @@ add_task(async function test_badHeuristicGroups_multiple_5() {
     [
       
       {
-        children: [{ group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST }],
+        children: [{ group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST }],
       },
       
       {
-        group: UrlbarShared.RESULT_GROUP.GENERAL,
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
       },
       
       {
-        children: [{ group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST }],
+        children: [{ group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST }],
       },
     ],
     [BAD_HEURISTIC_RESULTS_FIRST_HEURISTIC, ...BAD_HEURISTIC_RESULTS_GENERAL]
@@ -467,16 +467,16 @@ add_task(async function test_badHeuristicGroups_multiple_6() {
       
       {
         maxResultCount: 1,
-        group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST,
+        group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
       },
       
       {
-        group: UrlbarShared.RESULT_GROUP.GENERAL,
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
       },
       
       {
         maxResultCount: 1,
-        group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST,
+        group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
       },
     ],
     [BAD_HEURISTIC_RESULTS_FIRST_HEURISTIC, ...BAD_HEURISTIC_RESULTS_GENERAL]
@@ -488,15 +488,15 @@ add_task(async function test_badHeuristicGroups_multiple_7() {
     [
       
       {
-        group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST,
+        group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
       },
       
       {
-        group: UrlbarShared.RESULT_GROUP.GENERAL,
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
       },
       
       {
-        group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST,
+        group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
       },
     ],
     [BAD_HEURISTIC_RESULTS_FIRST_HEURISTIC, ...BAD_HEURISTIC_RESULTS_GENERAL]
@@ -508,12 +508,12 @@ add_task(async function test_badHeuristicsGroups_notFirst_0() {
     [
       
       {
-        group: UrlbarShared.RESULT_GROUP.GENERAL,
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
       },
       
       {
         maxResultCount: 1,
-        children: [{ group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST }],
+        children: [{ group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST }],
       },
     ],
     [...BAD_HEURISTIC_RESULTS_GENERAL]
@@ -525,11 +525,11 @@ add_task(async function test_badHeuristicsGroups_notFirst_1() {
     [
       
       {
-        group: UrlbarShared.RESULT_GROUP.GENERAL,
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
       },
       
       {
-        children: [{ group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST }],
+        children: [{ group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST }],
       },
     ],
     [...BAD_HEURISTIC_RESULTS_GENERAL]
@@ -541,12 +541,12 @@ add_task(async function test_badHeuristicsGroups_notFirst_2() {
     [
       
       {
-        group: UrlbarShared.RESULT_GROUP.GENERAL,
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
       },
       
       {
         maxResultCount: 1,
-        group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST,
+        group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
       },
     ],
     [...BAD_HEURISTIC_RESULTS_GENERAL]
@@ -558,11 +558,11 @@ add_task(async function test_badHeuristicsGroups_notFirst_3() {
     [
       
       {
-        group: UrlbarShared.RESULT_GROUP.GENERAL,
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
       },
       
       {
-        group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST,
+        group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
       },
     ],
     [...BAD_HEURISTIC_RESULTS_GENERAL]
@@ -575,15 +575,15 @@ add_task(async function test_badHeuristicsGroups_notFirst_4() {
       
       {
         maxResultCount: 1,
-        group: UrlbarShared.RESULT_GROUP.GENERAL,
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
       },
       
       {
-        group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST,
+        group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
       },
       
       {
-        group: UrlbarShared.RESULT_GROUP.GENERAL,
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
       },
     ],
     [...BAD_HEURISTIC_RESULTS_GENERAL]
