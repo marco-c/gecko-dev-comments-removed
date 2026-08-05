@@ -2339,6 +2339,9 @@ pref("places.semanticHistory.smartwindow.featureGate", false);
 pref("browser.smartwindow.mistralRelease", true);
 
 
+pref("places.semanticHistory.smartwindow.distanceThreshold", "0.6");
+
+
 pref("browser.smartwindow.autoTabGrouping.enabled", false);
 pref("browser.smartwindow.autoTabGrouping.maxGroups", 3);
 pref("browser.smartwindow.autoTabGrouping.minTabsPerGroup", 2);
