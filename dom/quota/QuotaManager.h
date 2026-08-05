@@ -421,6 +421,8 @@ class QuotaManager final : public BackgroundThreadObject {
       DirtyTrackingAutoLock& aProofOfLock,
       const OriginStateMetadata& aStateMetadata);
 
+  void FlushDirtyOriginInfos() {  }
+
  private:
   nsresult EnsureStorageIsInitializedInternal();
 
@@ -554,12 +556,16 @@ class QuotaManager final : public BackgroundThreadObject {
     return mTemporaryStorageInitialized;
   }
 
+  void RegisterDirtyOriginInfo(DirtyTrackingAutoLock& ) {}
+
  private:
   nsresult InitializeTemporaryStorageInternal();
 
   nsresult EnsureTemporaryStorageIsInitializedInternal();
 
-  void RegisterDirtyOriginInfo(DirtyTrackingAutoLock& ) {}
+  nsresult InitializeFlushTimer();
+
+  void UninitializeFlushTimer();
 
  public:
   RefPtr<BoolPromise> InitializeAllTemporaryOrigins();
@@ -1152,6 +1158,8 @@ class QuotaManager final : public BackgroundThreadObject {
   
   nsTHashMap<nsUint64HashKey, NotNull<DirectoryLockImpl*>>
       mDirectoryLockIdTable;
+
+  nsCOMPtr<nsITimer> mFlushDirtyOriginInfosTimer;
 
   
   struct BackgroundThreadAccessible {
