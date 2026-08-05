@@ -52,12 +52,15 @@ add_task(async function () {
 
   async function promiseLoadURL() {
     return new Promise(resolve => {
-      sandbox.stub(gURLBar, "_loadURL").callsFake(function () {
-        sandbox.restore();
-        
-        
-        resolve(Array.from(arguments).slice(0, 3));
-      });
+      sandbox
+        .stub(gURLBar.controller, "loadURL")
+        .callsFake(({ url, where }) => {
+          sandbox.restore();
+          
+          
+          resolve([url, where]);
+          return {};
+        });
     });
   }
 
@@ -113,11 +116,12 @@ add_task(async function no_heuristic_test() {
 
   async function promiseLoadURL() {
     return new Promise(resolve => {
-      sinon.stub(gURLBar, "_loadURL").callsFake(function () {
-        gURLBar._loadURL.restore();
+      sinon.stub(gURLBar.controller, "loadURL").callsFake(({ url, where }) => {
+        gURLBar.controller.loadURL.restore();
         
         
-        resolve(Array.from(arguments).slice(0, 3));
+        resolve([url, where]);
+        return {};
       });
     });
   }

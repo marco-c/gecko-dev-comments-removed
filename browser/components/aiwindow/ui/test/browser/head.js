@@ -784,6 +784,7 @@ async function waitForSmartbarAction(browser, expectedAction) {
 
 
 
+
 async function stubLoadURL(browser, { captureURL = false } = {}) {
   await SpecialPowers.spawn(browser, [captureURL], async capture => {
     const aiWindow = content.document.querySelector("ai-window");
@@ -796,12 +797,13 @@ async function stubLoadURL(browser, { captureURL = false } = {}) {
     if (capture) {
       content._stubLoadURLCalled = false;
       content._stubLoadedURL = null;
-      smartbar._loadURL = url => {
+      smartbar.controller.loadURL = ({ url }) => {
         content._stubLoadURLCalled = true;
         content._stubLoadedURL = url;
+        return {};
       };
     } else {
-      smartbar._loadURL = () => {};
+      smartbar.controller.loadURL = () => ({});
     }
   });
 }
