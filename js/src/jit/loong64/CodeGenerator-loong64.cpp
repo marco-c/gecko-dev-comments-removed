@@ -1053,38 +1053,68 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
   Register tmp = ToRegister(ins->temp0());
   int32_t shift = ins->shift();
   MOZ_ASSERT(0 <= shift && shift <= 31);
+  const bool negativeDivisor = ins->negativeDivisor();
+  MDiv* mir = ins->mir();
+
+  if (!mir->isTruncated() && negativeDivisor) {
+    
+    bailoutTest32(Assembler::Zero, lhs, lhs, ins->snapshot());
+  }
 
   if (shift != 0) {
-    MDiv* mir = ins->mir();
     if (!mir->isTruncated()) {
       
       
       masm.as_slli_w(tmp, lhs, (32 - shift));
-      bailoutCmp32(Assembler::NonZero, tmp, tmp, ins->snapshot());
+      bailoutTest32(Assembler::NonZero, tmp, tmp, ins->snapshot());
     }
 
-    if (!mir->canBeNegativeDividend()) {
-      
-      masm.as_srai_w(dest, lhs, shift);
-      return;
-    }
-
-    
-    
-    
-    if (shift > 1) {
-      masm.as_srai_w(tmp, lhs, 31);
-      masm.as_srli_w(tmp, tmp, (32 - shift));
-      masm.add32(lhs, tmp);
+    if (mir->isUnsigned()) {
+      masm.as_srli_w(dest, lhs, shift);
     } else {
-      masm.as_srli_w(tmp, lhs, (32 - shift));
-      masm.add32(lhs, tmp);
-    }
+      if (mir->canBeNegativeDividend() && mir->isTruncated()) {
+        
+        
+        
+        if (shift > 1) {
+          masm.as_srai_w(tmp, lhs, 31);
+          masm.as_srli_w(tmp, tmp, (32 - shift));
+        } else {
+          masm.as_srli_w(tmp, lhs, (32 - shift));
+        }
+        masm.add32(lhs, tmp);
 
-    
-    masm.as_srai_w(dest, tmp, shift);
+        
+        masm.as_srai_w(dest, tmp, shift);
+      } else {
+        
+        masm.as_srai_w(dest, lhs, shift);
+      }
+
+      if (negativeDivisor) {
+        masm.neg32(dest);
+      }
+    }
   } else {
-    masm.move32(lhs, dest);
+    if (negativeDivisor) {
+      
+      if (mir->trapOnError()) {
+        Label ok;
+        masm.branch32(Assembler::NotEqual, lhs, Imm32(INT32_MIN), &ok);
+        masm.wasmTrap(wasm::Trap::IntegerOverflow, mir->trapSiteDesc());
+        masm.bind(&ok);
+      } else if (!mir->isTruncated()) {
+        bailoutCmp32(Assembler::Equal, lhs, Imm32(INT32_MIN), ins->snapshot());
+      }
+      masm.as_sub_w(dest, zero, lhs);
+    } else {
+      if (mir->isUnsigned() && !mir->isTruncated()) {
+        
+        
+        bailoutTest32(Assembler::Signed, lhs, lhs, ins->snapshot());
+      }
+      masm.move32(lhs, dest);
+    }
   }
 }
 
