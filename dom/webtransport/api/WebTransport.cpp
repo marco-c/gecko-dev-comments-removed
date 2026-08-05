@@ -255,12 +255,7 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   
   
   
-  
-  
-  
-  if (aOptions.mProtocols.Length() != 0) {
-    
-  }
+  nsTArray<nsString> protocols;
 
   
   
@@ -392,7 +387,7 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   backgroundChild
       ->SendCreateWebTransportParent(
           aURL, principal, mBrowsingContextID, ipcClientInfo, dedicated,
-          requireUnreliable, (uint32_t)congestionControl,
+          requireUnreliable, (uint32_t)congestionControl, protocols,
           std::move(aServerCertHashes), std::move(parentEndpoint))
       ->Then(GetCurrentSerialEventTarget(), __func__,
              [self = RefPtr{this}](
@@ -669,6 +664,11 @@ void WebTransport::GetProtocol(nsAString& aProtocol) { aProtocol = mProtocol; }
 void WebTransport::ResolveDraining() {
   LOG(("ResolveDraining() called"));
   mDraining->MaybeResolveWithUndefined();
+}
+
+void WebTransport::SetNegotiatedProtocol(const nsACString& aProtocol) {
+  LOG(("SetNegotiatedProtocol: %s", PromiseFlatCString(aProtocol).get()));
+  CopyUTF8toUTF16(aProtocol, mProtocol);
 }
 
 void WebTransport::RemoteClosed(bool aCleanly, const uint32_t& aCode,
