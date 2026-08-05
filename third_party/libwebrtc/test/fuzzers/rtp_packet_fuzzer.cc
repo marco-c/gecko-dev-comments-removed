@@ -55,7 +55,8 @@ void FuzzOneInput(FuzzDataHelper fuzz_data) {
       
       
       
-      extensions.RegisterByType(local_id++, extension_type);
+      extensions.RegisterByType(RtpHeaderExtensionId(local_id++),
+                                extension_type);
     }
   }
 

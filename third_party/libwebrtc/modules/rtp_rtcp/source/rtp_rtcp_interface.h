@@ -221,8 +221,9 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
                                           RtpHeaderExtensionId id) = 0;
   
   
-  ABSL_DEPRECATE_AND_INLINE()
-  void RegisterRtpHeaderExtension(absl::string_view uri, int id) {
+  [[deprecated]] ABSL_REFACTOR_INLINE void RegisterRtpHeaderExtension(
+      absl::string_view uri,
+      int id) {
     RegisterRtpHeaderExtension(uri, RtpHeaderExtensionId(id));
   }
 

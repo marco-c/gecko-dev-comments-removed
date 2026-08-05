@@ -314,21 +314,22 @@ struct RTC_EXPORT RtpHeaderExtensionCapability {
                                RtpTransceiverDirection direction);
   
   
-  ABSL_DEPRECATE_AND_INLINE()
-  RtpHeaderExtensionCapability(absl::string_view uri, int preferred_id)
+  [[deprecated]] ABSL_REFACTOR_INLINE RtpHeaderExtensionCapability(
+      absl::string_view uri,
+      int preferred_id)
       : RtpHeaderExtensionCapability(uri, RtpHeaderExtensionId(preferred_id)) {}
-  ABSL_DEPRECATE_AND_INLINE()
-  RtpHeaderExtensionCapability(absl::string_view uri,
-                               int preferred_id,
-                               RtpTransceiverDirection direction)
+  [[deprecated]] ABSL_REFACTOR_INLINE RtpHeaderExtensionCapability(
+      absl::string_view uri,
+      int preferred_id,
+      RtpTransceiverDirection direction)
       : RtpHeaderExtensionCapability(uri,
                                      RtpHeaderExtensionId(preferred_id),
                                      direction) {}
-  ABSL_DEPRECATE_AND_INLINE()
-  RtpHeaderExtensionCapability(absl::string_view uri,
-                               int preferred_id,
-                               bool preferred_encrypt,
-                               RtpTransceiverDirection direction)
+  [[deprecated]] ABSL_REFACTOR_INLINE RtpHeaderExtensionCapability(
+      absl::string_view uri,
+      int preferred_id,
+      bool preferred_encrypt,
+      RtpTransceiverDirection direction)
       : RtpHeaderExtensionCapability(uri,
                                      RtpHeaderExtensionId(preferred_id),
                                      preferred_encrypt,
@@ -374,11 +375,12 @@ struct RTC_EXPORT RtpExtension {
   RtpExtension(absl::string_view uri, RtpHeaderExtensionId id, bool encrypt);
   
   
-  ABSL_DEPRECATE_AND_INLINE()
-  RtpExtension(absl::string_view uri, int id)
+  [[deprecated]] ABSL_REFACTOR_INLINE RtpExtension(absl::string_view uri,
+                                                   int id)
       : RtpExtension(uri, RtpHeaderExtensionId(id)) {}
-  ABSL_DEPRECATE_AND_INLINE()
-  RtpExtension(absl::string_view uri, int id, bool encrypt)
+  [[deprecated]] ABSL_REFACTOR_INLINE RtpExtension(absl::string_view uri,
+                                                   int id,
+                                                   bool encrypt)
       : RtpExtension(uri, RtpHeaderExtensionId(id), encrypt) {}
   ~RtpExtension();
 
@@ -508,14 +510,14 @@ struct RTC_EXPORT RtpExtension {
 
   
   
-  ABSL_DEPRECATE_AND_INLINE()
-  static constexpr RtpHeaderExtensionId kMinId = RtpHeaderExtensionId::kMinId;
-  ABSL_DEPRECATE_AND_INLINE()
-  static constexpr RtpHeaderExtensionId kMaxId = RtpHeaderExtensionId::kMaxId;
+  [[deprecated]] ABSL_REFACTOR_INLINE static constexpr RtpHeaderExtensionId
+      kMinId = RtpHeaderExtensionId::kMinId;
+  [[deprecated]] ABSL_REFACTOR_INLINE static constexpr RtpHeaderExtensionId
+      kMaxId = RtpHeaderExtensionId::kMaxId;
   static constexpr int kMaxValueSize = 255;
-  ABSL_DEPRECATE_AND_INLINE()
-  static constexpr RtpHeaderExtensionId kOneByteHeaderExtensionMaxId =
-      RtpHeaderExtensionId::kOneByteHeaderExtensionMaxId;
+  [[deprecated]] ABSL_REFACTOR_INLINE static constexpr RtpHeaderExtensionId
+      kOneByteHeaderExtensionMaxId =
+          RtpHeaderExtensionId::kOneByteHeaderExtensionMaxId;
   static constexpr int kOneByteHeaderExtensionMaxValueSize = 16;
 
   std::string uri;

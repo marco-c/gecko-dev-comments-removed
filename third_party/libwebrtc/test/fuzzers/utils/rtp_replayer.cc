@@ -80,7 +80,7 @@ void RtpReplayer::Replay(
     
     
     
-    extensions.RegisterByType(i, extension_type);
+    extensions.RegisterByType(RtpHeaderExtensionId(i), extension_type);
   }
 
   
