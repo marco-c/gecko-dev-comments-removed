@@ -933,7 +933,7 @@ impl PictureInstance {
             
             let mut cmd_buffer_targets = Vec::new();
             for child in list {
-                let draw = &scratch.frame.draws[child.anchor.draw_index.0 as usize];
+                let draw = scratch.frame.draw(child.anchor.draw_index);
                 if frame_state.surface_builder.get_cmd_buffer_targets_for_prim(
                     draw,
                     &mut cmd_buffer_targets,

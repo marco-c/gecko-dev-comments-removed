@@ -2213,7 +2213,7 @@ impl TileCacheInstance {
         
         tracy_rs::profile_scope!("update_prim_dependencies");
         let prim_surface_index = surface_stack.last().unwrap().1;
-        let prim_clip_chain = scratch.frame.draws[prim_instance_index.0 as usize].clip_chain;
+        let prim_clip_chain = scratch.frame.draw_for_instance(prim_instance_index).clip_chain;
         let prim_clip_chain = &prim_clip_chain;
 
         
@@ -2447,9 +2447,9 @@ impl TileCacheInstance {
                     }
                 }
 
-                let draw_idx = prim_instance_index.0 as usize;
+                let draw_idx = draw_index_for_instance(prim_instance_index);
                 if let Ok(kind) = promotion_result {
-                    scratch.frame.draws[draw_idx].compositor_surface_kind = kind;
+                    scratch.frame.draw_mut(draw_idx).compositor_surface_kind = kind;
 
                     if kind == CompositorSurfaceKind::Overlay {
                         profile.inc(profiler::COMPOSITOR_SURFACE_OVERLAYS);
@@ -2460,7 +2460,7 @@ impl TileCacheInstance {
                 } else {
                     
                     self.report_promotion_failure(promotion_result, pic_coverage_rect, false);
-                    scratch.frame.draws[draw_idx].compositor_surface_kind = CompositorSurfaceKind::Blit;
+                    scratch.frame.draw_mut(draw_idx).compositor_surface_kind = CompositorSurfaceKind::Blit;
                 }
 
                 if image_key.common.flags.contains(PrimitiveFlags::PREFER_COMPOSITOR_SURFACE) {
@@ -2569,9 +2569,9 @@ impl TileCacheInstance {
                 
                 
                 
-                let draw_idx = prim_instance_index.0 as usize;
+                let draw_idx = draw_index_for_instance(prim_instance_index);
                 if let Ok(kind) = promotion_result {
-                    scratch.frame.draws[draw_idx].compositor_surface_kind = kind;
+                    scratch.frame.draw_mut(draw_idx).compositor_surface_kind = kind;
                     if kind == CompositorSurfaceKind::Overlay {
                         profile.inc(profiler::COMPOSITOR_SURFACE_OVERLAYS);
                         return DrawState::Culled;
@@ -2581,7 +2581,7 @@ impl TileCacheInstance {
                 } else {
                     
                     self.report_promotion_failure(promotion_result, pic_coverage_rect, false);
-                    scratch.frame.draws[draw_idx].compositor_surface_kind = CompositorSurfaceKind::Blit;
+                    scratch.frame.draw_mut(draw_idx).compositor_surface_kind = CompositorSurfaceKind::Blit;
                     if prim_data.common.flags.contains(PrimitiveFlags::PREFER_COMPOSITOR_SURFACE) {
                         profile.inc(profiler::COMPOSITOR_SURFACE_BLITS);
                     }
@@ -2589,7 +2589,7 @@ impl TileCacheInstance {
 
                 
                 
-                let kind = scratch.frame.draws[draw_idx].compositor_surface_kind;
+                let kind = scratch.frame.draw(draw_idx).compositor_surface_kind;
                 if kind == CompositorSurfaceKind::Blit ||
                     kind == CompositorSurfaceKind::Underlay &&
                     self.slice_flags.contains(SliceFlags::IS_ATOMIC) {
@@ -3072,7 +3072,7 @@ impl TileCacheInstance {
             if !cancel_underlays.is_empty() {
                 for desc in cancel_underlays {
                     
-                    let draw = &mut scratch.frame.draws[desc.draw_index.0 as usize];
+                    let draw = scratch.frame.draw_mut(desc.draw_index);
                     debug_assert!(matches!(
                         prim_instances[draw.prim_instance_index.0 as usize].kind,
                         PrimitiveKind::YuvImage { .. }

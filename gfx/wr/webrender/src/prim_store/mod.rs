@@ -22,7 +22,7 @@ use crate::resource_cache::ImageProperties;
 use std::{hash, u32, usize};
 use crate::util::Recycler;
 use crate::internal_types::{FastHashSet, LayoutPrimitiveInfo};
-use crate::visibility::PrimitiveDrawHeader;
+use crate::visibility::{draw_index_for_instance, PrimitiveDrawHeader, PrimitiveDrawIndex};
 
 pub mod backdrop;
 pub mod borders;
@@ -516,7 +516,9 @@ pub struct PrimitiveFrameScratch {
     
     
     
-    pub draws: Vec<PrimitiveDrawHeader>,
+    
+    
+    draws: Vec<PrimitiveDrawHeader>,
 
     
     
@@ -570,6 +572,43 @@ impl Default for PrimitiveFrameScratch {
 }
 
 impl PrimitiveFrameScratch {
+    
+    
+    pub fn reset_draws(&mut self, prim_count: usize) {
+        self.draws.clear();
+        self.draws.resize_with(prim_count, PrimitiveDrawHeader::new);
+    }
+
+    
+    
+    pub fn draw(&self, draw_index: PrimitiveDrawIndex) -> &PrimitiveDrawHeader {
+        &self.draws[draw_index.0 as usize]
+    }
+
+    pub fn draw_mut(&mut self, draw_index: PrimitiveDrawIndex) -> &mut PrimitiveDrawHeader {
+        &mut self.draws[draw_index.0 as usize]
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn draw_for_instance(
+        &self,
+        prim_instance_index: PrimitiveInstanceIndex,
+    ) -> &PrimitiveDrawHeader {
+        self.draw(draw_index_for_instance(prim_instance_index))
+    }
+
+    pub fn draw_for_instance_mut(
+        &mut self,
+        prim_instance_index: PrimitiveInstanceIndex,
+    ) -> &mut PrimitiveDrawHeader {
+        self.draw_mut(draw_index_for_instance(prim_instance_index))
+    }
+
     pub fn recycle(&mut self, recycler: &mut Recycler) {
         recycler.recycle_vec(&mut self.draws);
         self.pictures.recycle(recycler);

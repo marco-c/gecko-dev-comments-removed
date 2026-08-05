@@ -326,11 +326,7 @@ impl FrameBuilder {
         
         
         
-        scratch.primitive.frame.draws.clear();
-        scratch.primitive.frame.draws.resize_with(
-            scene.prim_instances.len(),
-            crate::visibility::PrimitiveDrawHeader::new,
-        );
+        scratch.primitive.frame.reset_draws(scene.prim_instances.len());
 
         
         
