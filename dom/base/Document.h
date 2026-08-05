@@ -277,7 +277,6 @@ class ShadowRoot;
 class SimpleContentList;
 class SpeculationRules;
 class SpeculationRuleSet;
-class SpeculationRulesManager;
 class SVGDocument;
 class SVGElement;
 class SVGSVGElement;
@@ -3060,16 +3059,6 @@ class Document : public nsINode,
   bool IsDNSPrefetchAllowed() const { return mAllowDNSPrefetch; }
 
   
-  
-  SpeculationRulesManager* EnsureSpeculationRulesManager();
-
-  
-  
-  SpeculationRulesManager* GetSpeculationRulesManager() const {
-    return mSpeculationRulesManager.get();
-  }
-
-  
 
 
 
@@ -4852,9 +4841,6 @@ class Document : public nsINode,
 
   
   UniquePtr<ServoStyleSet> mStyleSet;
-
-  
-  UniquePtr<SpeculationRulesManager> mSpeculationRulesManager;
 
  protected:
   

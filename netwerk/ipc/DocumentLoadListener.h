@@ -410,14 +410,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   dom::WindowGlobalParent* GetParentWindowContext() const;
 
-  
-  
-  
-  
-  
-  
-  void TryActivateFromPrefetch(nsIURI* aURI);
-
   void AddURIVisit(nsIChannel* aChannel, uint32_t aLoadFlags);
   bool HasCrossOriginOpenerPolicyMismatch() const;
   void ApplyPendingFunctions(nsIParentChannel* aChannel) const;

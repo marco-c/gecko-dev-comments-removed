@@ -30,7 +30,6 @@
 #include "mozilla/dom/ContentProcessManager.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ParentProcessChannelHandle.h"
-#include "mozilla/dom/PrefetchLog.h"
 #include "mozilla/dom/ProcessIsolation.h"
 #include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/RemoteWebProgressRequest.h"
@@ -43,7 +42,6 @@
 #include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/net/HttpChannelParent.h"
-#include "mozilla/net/PrefetchCookieCopier.h"
 #include "mozilla/net/RedirectChannelRegistrar.h"
 #include "nsContentSecurityManager.h"
 #include "nsContentSecurityUtils.h"
@@ -56,7 +54,6 @@
 #include "nsExternalHelperAppService.h"
 #include "nsHttpChannel.h"
 #include "nsIBrowser.h"
-#include "nsICachingChannel.h"
 #include "nsIClassifiedChannel.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsINetworkInterceptController.h"
@@ -571,61 +568,6 @@ WindowGlobalParent* DocumentLoadListener::GetParentWindowContext() const {
   return mParentWindowContext;
 }
 
-void DocumentLoadListener::TryActivateFromPrefetch(nsIURI* aURI) {
-  
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT(mIsDocumentLoad);
-
-  
-  
-  
-  
-  auto* documentContext = GetDocumentBrowsingContext();
-  if (!documentContext) {
-    return;
-  }
-
-  
-  
-  auto* sourceWGP = documentContext->GetCurrentWindowGlobal();
-  if (!sourceWGP) {
-    return;
-  }
-
-  dom::PrefetchRecordParent* rec = sourceWGP->FindMatchingPrefetchRecord(aURI);
-  if (!rec) {
-    return;
-  }
-
-  LOG_SPECRULES(
-      ("DocumentLoadListener::TryActivateFromPrefetch: [%p] found rec=%p "
-       "for url=%s",
-       this, rec, aURI->GetSpecOrDefault().get()));
-
-  
-  
-  
-  
-  
-  net::CopyPrefetchCookies(
-      rec->IsolatedPartitionKey(),
-      sourceWGP->DocumentPrincipal()->OriginAttributesRef());
-
-  if (mTiming) {
-    mTiming->SetWasActivatedFromNavigationalPrefetch();
-  }
-
-  LOG_SPECRULES(
-      ("DocumentLoadListener::TryActivateFromPrefetch: [%p] activated from "
-       "prefetch cache for rec=%p",
-       this, rec));
-}
-
 bool CheckRecursiveLoad(CanonicalBrowsingContext* aLoadingContext,
                         nsDocShellLoadState* aLoadState, bool aIsDocumentLoad) {
   if (!aLoadState->ShouldCheckForRecursion()) {
@@ -1036,17 +978,6 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
                                         loadingContext, aLoadState->TypeHint(),
                                         mIsDocumentLoad);
   openInfo->Prepare();
-
-  
-  
-  
-  if (mIsDocumentLoad) {
-    nsCOMPtr<nsIURI> channelURI;
-    if (NS_SUCCEEDED(mChannel->GetURI(getter_AddRefs(channelURI))) &&
-        channelURI) {
-      TryActivateFromPrefetch(channelURI);
-    }
-  }
 
 #ifdef ANDROID
   RefPtr<MozPromise<bool, bool, false>> promise;
