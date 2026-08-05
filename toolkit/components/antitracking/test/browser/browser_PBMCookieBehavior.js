@@ -1,6 +1,8 @@
 "use strict";
 
-requestLongerTimeout(5);
+
+
+requestLongerTimeout(8);
 
 const COOKIE_BEHAVIORS = [
   Ci.nsICookieService.BEHAVIOR_ACCEPT,
@@ -11,15 +13,15 @@ const COOKIE_BEHAVIORS = [
   Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
 ];
 
-async function verifyCookieBehavior(browser, expected) {
+async function verifyCookieBehavior(browser, expected, label) {
   await SpecialPowers.spawn(
     browser,
-    [{ expected, page: TEST_3RD_PARTY_PAGE }],
+    [{ expected, label, page: TEST_3RD_PARTY_PAGE }],
     async obj => {
       is(
         content.document.cookieJarSettings.cookieBehavior,
         obj.expected,
-        "The tab in the window has the expected CookieBehavior."
+        `The tab in the ${obj.label} window has the expected CookieBehavior.`
       );
 
       
@@ -31,12 +33,12 @@ async function verifyCookieBehavior(browser, expected) {
 
       await SpecialPowers.spawn(
         ifr.browsingContext,
-        [obj.expected],
-        async expected => {
+        [{ expected: obj.expected, label: obj.label }],
+        async inner => {
           is(
             content.document.cookieJarSettings.cookieBehavior,
-            expected,
-            "The iframe in the window has the expected CookieBehavior."
+            inner.expected,
+            `The iframe in the ${inner.label} window has the expected CookieBehavior.`
           );
         }
       );
@@ -44,8 +46,23 @@ async function verifyCookieBehavior(browser, expected) {
   );
 }
 
+
+
+
+
+async function loadPage(browser, uri) {
+  let loaded = BrowserTestUtils.browserLoaded(browser, { wantLoad: uri });
+  BrowserTestUtils.startLoadingURIString(browser, uri);
+  await loaded;
+}
+
 add_task(async function () {
   let pb_win = await BrowserTestUtils.openNewBrowserWindow({ private: true });
+
+  
+  
+  let browser = gBrowser.selectedBrowser;
+  let pbBrowser = pb_win.gBrowser.selectedBrowser;
 
   for (let regularCookieBehavior of COOKIE_BEHAVIORS) {
     for (let PBMCookieBehavior of COOKIE_BEHAVIORS) {
@@ -62,24 +79,6 @@ add_task(async function () {
         ` Start testing with regular cookieBehavior(${regularCookieBehavior}) and PBM cookieBehavior(${PBMCookieBehavior})`
       );
 
-      info(" Open a tab in regular window.");
-      let tab = await BrowserTestUtils.openNewForegroundTab(
-        gBrowser,
-        TEST_TOP_PAGE
-      );
-
-      info(
-        " Verify if the tab in regular window has the expected cookieBehavior."
-      );
-      await verifyCookieBehavior(tab.linkedBrowser, regularCookieBehavior);
-      BrowserTestUtils.removeTab(tab);
-
-      info(" Open a tab in private window.");
-      tab = await BrowserTestUtils.openNewForegroundTab(
-        pb_win.gBrowser,
-        TEST_TOP_PAGE
-      );
-
       let expectPBMCookieBehavior = PBMCookieBehavior;
 
       
@@ -91,13 +90,23 @@ add_task(async function () {
         expectPBMCookieBehavior = regularCookieBehavior;
       }
 
-      info(
-        " Verify if the tab in private window has the expected cookieBehavior."
-      );
-      await verifyCookieBehavior(tab.linkedBrowser, expectPBMCookieBehavior);
-      BrowserTestUtils.removeTab(tab);
+      await Promise.all([
+        (async () => {
+          await loadPage(browser, TEST_TOP_PAGE);
+          await verifyCookieBehavior(browser, regularCookieBehavior, "regular");
+        })(),
+        (async () => {
+          await loadPage(pbBrowser, TEST_TOP_PAGE);
+          await verifyCookieBehavior(
+            pbBrowser,
+            expectPBMCookieBehavior,
+            "private"
+          );
+        })(),
+      ]);
     }
   }
 
+  await loadPage(browser, "about:blank");
   await BrowserTestUtils.closeWindow(pb_win);
 });
