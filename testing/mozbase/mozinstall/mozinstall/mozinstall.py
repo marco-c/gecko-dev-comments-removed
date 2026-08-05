@@ -312,20 +312,45 @@ def _install_dmg(src, dest_app):
 
     app_dir = None
     try:
-        
-        
-        
-        app_dir = (
-            subprocess
-            .check_output(
-                f'hdiutil attach -noautoopen -nobrowse -readonly "{src}"'
-                "| grep /Volumes/ | awk 'BEGIN{FS=\"\t\"} {print $3}'",
-                shell=True,
+        macos_major = int(str(mozinfo.os_version).split(".")[0])
+        if macos_major >= 27:
+            
+            
+            
+            output = subprocess.check_output(
+                [
+                    "diskutil",
+                    "image",
+                    "attach",
+                    "--plist",
+                    "--readOnly",
+                    "--nobrowse",
+                    src,
+                ],
                 stderr=subprocess.STDOUT,
             )
-            .strip()
-            .decode("utf-8")
-        )
+            entities = plistlib.loads(output)["system-entities"]
+            app_dir = next(
+                (e["mount-point"] for e in entities if "mount-point" in e), None
+            )
+            if not app_dir:
+                raise InstallError(f"No mounted volume found for {src}")
+        else:
+            
+            
+            
+            
+            app_dir = (
+                subprocess
+                .check_output(
+                    f'hdiutil attach -noautoopen -nobrowse -readonly "{src}"'
+                    "| grep /Volumes/ | awk 'BEGIN{FS=\"\t\"} {print $3}'",
+                    shell=True,
+                    stderr=subprocess.STDOUT,
+                )
+                .strip()
+                .decode("utf-8")
+            )
 
         app_name = None
         for entry in os.listdir(app_dir):
