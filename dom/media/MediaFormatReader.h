@@ -693,6 +693,7 @@ class MediaFormatReader final
     bool mHasReportedVideoHardwareSupportTelemtry = false;
 
     
+    
     class FrameRateEstimator {
      public:
       double Rate() const {
@@ -700,18 +701,28 @@ class MediaFormatReader final
         return mMeanDuration.empty() ? 0.0 : 1.0 / mMeanDuration.mean();
       }
 
-      void Observe(const media::TimeUnit& aDuration) {
-        if (!aDuration.IsValid() || !aDuration.IsPositive() ||
-            aDuration.IsInfinite()) {
+      void Observe(const MediaRawData& aSample) {
+        
+        if (aSample.mTrackInfo &&
+            (mSourceID.isNothing() ||
+             mSourceID.ref() != aSample.mTrackInfo->GetID())) {
+          Reset();
+          mSourceID = Some(aSample.mTrackInfo->GetID());
+        }
+
+        const media::TimeUnit& duration = aSample.mDuration;
+        if (!duration.IsValid() || !duration.IsPositive() ||
+            duration.IsInfinite()) {
           return;
         }
-        mMeanDuration.insert(aDuration.ToSeconds());
+        mMeanDuration.insert(duration.ToSeconds());
       }
 
       void Reset() { mMeanDuration.reset(); }
 
      private:
       CumulativeAverage<double> mMeanDuration;
+      Maybe<uint32_t> mSourceID;
     } mFrameRateEstimator;
   };
 
