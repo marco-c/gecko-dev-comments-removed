@@ -3682,6 +3682,8 @@ pref("browser.ml.checkForMemory", true);
 
 pref("browser.ml.overridePipelineOptions", "{}");
 
+pref("browser.ml.pageExtractor.headlessTimeoutMs", 15000);
+
 
 
 
