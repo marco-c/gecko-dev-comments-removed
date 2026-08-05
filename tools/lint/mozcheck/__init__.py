@@ -31,13 +31,24 @@ def _get_mozcheck_target_dir(root, topobjdir):
 
 
 def _find_mozcheck_binary(log, root, topobjdir=None):
-    fetches = os.environ.get("MOZ_FETCHES_DIR")
     exe = ".exe" if sys.platform == "win32" else ""
 
-    if fetches:
-        path = os.path.join(fetches, "mozcheck", "mozcheck" + exe)
-        if os.path.isfile(path):
-            return path
+    
+    
+    
+    
+    try:
+        from mozbuild.bootstrap import bootstrap_toolchain
+
+        binary = bootstrap_toolchain(f"mozcheck/mozcheck{exe}")
+    except (Exception, SystemExit) as e:
+        
+        
+        binary = None
+        if log:
+            log.warning(f"Failed to fetch prebuilt mozcheck: {e}")
+    if binary:
+        return binary
 
     target_dir = _get_mozcheck_target_dir(root, topobjdir)
     target_binary = os.path.join(target_dir, "release", "mozcheck" + exe)
@@ -46,24 +57,18 @@ def _find_mozcheck_binary(log, root, topobjdir=None):
 
     crate_dir = os.path.join(root, "tools", "lint", "mozcheck")
 
-    cargo = "cargo"
-    if fetches:
-        candidate = os.path.join(fetches, "rustc", "bin", "cargo")
-        if os.path.isfile(candidate) or os.path.isfile(candidate + ".exe"):
-            cargo = candidate
-
     if log:
         log.info("Building mozcheck from source...")
     try:
         subprocess.run(
-            [cargo, "build", "--release", "--target-dir", target_dir],
+            ["cargo", "build", "--release", "--target-dir", target_dir],
             cwd=crate_dir,
             check=True,
             capture_output=True,
         )
     except (subprocess.CalledProcessError, FileNotFoundError) as e:
         if log:
-            log.error("Failed to build mozcheck: %s", e)
+            log.error(f"Failed to build mozcheck: {e}")
         return None
 
     if os.path.isfile(target_binary):
@@ -88,7 +93,7 @@ def lint(paths, config, fix=None, **lintargs):
         raise LintException(
             "mozcheck binary is unavailable: could not locate a prebuilt "
             "binary (MOZ_FETCHES_DIR/mozcheck) and the source build failed. "
-            "Ensure the linter task fetches the linux64-mozcheck toolchain, "
+            "Ensure the linter task fetches the relevant mozcheck toolchain, "
             "or that cargo is available locally."
         )
 
@@ -123,9 +128,7 @@ def lint(paths, config, fix=None, **lintargs):
 
     if proc.returncode != 0 and proc.stderr:
         log.warning(
-            "mozcheck exited with code %d: %s",
-            proc.returncode,
-            proc.stderr.strip(),
+            f"mozcheck exited with code {proc.returncode}: {proc.stderr.strip()}"
         )
 
     results = []
