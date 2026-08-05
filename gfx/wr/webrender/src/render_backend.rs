@@ -234,20 +234,6 @@ impl DataStores {
         }
     }
 
-    
-    
-    
-    
-    pub fn prim_rect(
-        &self,
-        prim_inst: &PrimitiveInstance,
-    ) -> LayoutRect {
-        match prim_inst.kind {
-            PrimitiveKind::Picture { .. } => LayoutRect::zero(),
-            _ => self.as_common_data(prim_inst).prim_rect,
-        }
-    }
-
     pub fn as_common_data(
         &self,
         prim_inst: &PrimitiveInstance
