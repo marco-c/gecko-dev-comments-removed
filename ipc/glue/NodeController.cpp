@@ -316,6 +316,12 @@ void NodeController::DropPeer(NodeName aNodeName) {
 void NodeController::ContactRemotePeer(const NodeName& aNode,
                                        UniquePtr<Event> aEvent) {
   
+  if (XRE_GetAsyncIOEventTarget()->IsOnCurrentThread() &&
+      MessageLoop::current() && !MessageLoop::current()->IsAcceptingTasks()) {
+    return;
+  }
+
+  
   
   bool needsRelay = false;
 #if defined(XP_WIN) || defined(XP_DARWIN)
