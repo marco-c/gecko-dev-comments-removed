@@ -1477,6 +1477,11 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
   MOZ_ALWAYS_SUCCEEDS(net_ExtractURLScheme(originNoSuffix, originScheme));
 
   
+  if (originScheme == "chrome"_ns) {
+    return false;
+  }
+
+  
   
   if (originScheme == "resource"_ns) {
     return true;
