@@ -460,7 +460,17 @@ pub fn prepare_repeatable_quad(
     let repetitions = crate::image_tiling::repetitions(&desc.local_rect, &visible_rect, stride);
     for tile in repetitions {
         let tile_rect = LayoutRect::from_origin_and_size(tile.origin, stretch_size);
-        let clip_rect = desc.local_clip_rect.intersection_unchecked(&tile_rect);
+        
+        
+        
+        
+        
+        let clip_rect = desc.local_clip_rect
+            .intersection_unchecked(&tile_rect)
+            .intersection_unchecked(&desc.local_rect);
+        if clip_rect.is_empty() {
+            continue;
+        }
         let pattern_offset = tile.origin - desc.local_rect.min;
         let pattern = pattern_builder.build(
             None,
