@@ -25,7 +25,9 @@ def find_vscode_or_vscodium_cmd(ide):
     
     
     
-    path = shutil.which("code")
+    
+    
+    path = shutil.which("code" if ide == "vscode" else "codium")
     if path is not None:
         return [path]
 
