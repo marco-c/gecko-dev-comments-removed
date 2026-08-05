@@ -3528,6 +3528,10 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
         error = "clientSocketMisconfiguration";
         break;
       case NS_ERROR_NET_RESET:
+      case NS_ERROR_OS_LOCAL_NETWORK_ACCESS_DENIED:
+        
+        
+        
         
         
         error = "netReset";
@@ -6151,6 +6155,7 @@ nsresult nsDocShell::FilterStatusForErrorPage(
 
   if (aStatus == NS_ERROR_NET_TIMEOUT ||
       aStatus == NS_ERROR_NET_TIMEOUT_EXTERNAL ||
+      aStatus == NS_ERROR_OS_LOCAL_NETWORK_ACCESS_DENIED ||
       aStatus == NS_ERROR_NET_EMPTY_RESPONSE ||
       aStatus == NS_ERROR_NET_ERROR_RESPONSE ||
       aStatus == NS_ERROR_PROXY_GATEWAY_TIMEOUT ||
