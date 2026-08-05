@@ -7,9 +7,11 @@
 #include <functional>
 
 #include "GPUVideoImage.h"
+#include "MediaCodecsSupport.h"
 #include "PDMFactory.h"
 #include "PlatformEncoderModule.h"
 #include "ipc/EnumSerializer.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/PRemoteMediaManagerChild.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
 #include "mozilla/layers/VideoBridgeUtils.h"
@@ -63,6 +65,11 @@ class RemoteMediaManagerChild final
                            const media::MediaCodecsSupported& aSupported);
 
   
+  
+  
+  using CodecSupportPromise = GenericNonExclusivePromise;
+
+  
   static media::DecodeSupportSet Supports(
       RemoteMediaIn aLocation, const SupportDecoderParams& aParams,
       DecoderDoctorDiagnostics* aDiagnostics);
@@ -78,6 +85,14 @@ class RemoteMediaManagerChild final
 
   static media::EncodeSupportSet Supports(RemoteMediaIn aLocation,
                                           CodecType aCodec);
+
+  
+  
+  
+  
+  
+  static RefPtr<CodecSupportPromise> EnsureCodecSupportFor(
+      RemoteMediaIn aLocation, bool aForceRefresh = false);
   static RefPtr<PlatformEncoderModule::CreateEncoderPromise> InitializeEncoder(
       RefPtr<RemoteMediaDataEncoder>&& aEncoder, const EncoderConfig& aConfig);
 
