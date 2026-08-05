@@ -151,7 +151,7 @@ static LogicalSize* GetUnfragmentedSize(const ReflowInput& aCBReflowInput,
 
 
 static nsIFrame* GetFirstInlineContinuationInPrevFragmentainer(
-    nsIFrame* aInlineFrame) {
+    const nsIFrame* aInlineFrame) {
   MOZ_ASSERT(aInlineFrame->IsInlineFrameOrSubclass());
   
   
@@ -191,7 +191,7 @@ static nsIFrame* GetFirstInlineContinuationInPrevFragmentainer(
 
 
 static nsIFrame* GetFirstInlineContinuationInNextFragmentainer(
-    nsIFrame* aInlineFrame) {
+    const nsIFrame* aInlineFrame) {
   MOZ_ASSERT(aInlineFrame->IsInlineFrameOrSubclass());
   const nsBlockFrame* myBlock =
       nsLayoutUtils::FindNearestBlockAncestor(aInlineFrame);
@@ -214,7 +214,8 @@ static nsIFrame* GetFirstInlineContinuationInNextFragmentainer(
 
 
 
-static nsIFrame* GetFirstContinuationInPrevFragmentainer(nsIFrame* aFrame) {
+static nsIFrame* GetFirstContinuationInPrevFragmentainer(
+    const nsIFrame* aFrame) {
   return StaticPrefs::layout_abspos_fragment_aware_inline_cb_enabled() &&
                  aFrame->IsInlineFrameOrSubclass()
              ? GetFirstInlineContinuationInPrevFragmentainer(aFrame)
@@ -222,7 +223,8 @@ static nsIFrame* GetFirstContinuationInPrevFragmentainer(nsIFrame* aFrame) {
 }
 
 
-static nsIFrame* GetFirstContinuationInNextFragmentainer(nsIFrame* aFrame) {
+static nsIFrame* GetFirstContinuationInNextFragmentainer(
+    const nsIFrame* aFrame) {
   return StaticPrefs::layout_abspos_fragment_aware_inline_cb_enabled() &&
                  aFrame->IsInlineFrameOrSubclass()
              ? GetFirstInlineContinuationInNextFragmentainer(aFrame)

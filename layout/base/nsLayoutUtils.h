@@ -1459,7 +1459,7 @@ class nsLayoutUtils {
   
 
 
-  static nsBlockFrame* FindNearestBlockAncestor(nsIFrame* aFrame);
+  static nsBlockFrame* FindNearestBlockAncestor(const nsIFrame* aFrame);
 
   
 
