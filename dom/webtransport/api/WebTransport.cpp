@@ -42,6 +42,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(WebTransport)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIncomingBidirectionalAlgorithm)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDatagrams)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mReady)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDraining)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mClosed)
   for (const auto& hashEntry : tmp->mSendStreams.Values()) {
     NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mSendStreams entry item");
@@ -65,6 +66,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(WebTransport)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mIncomingBidirectionalAlgorithm)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDatagrams)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mReady)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mDraining)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mClosed)
   if (tmp->mChild) {
     tmp->mChild->Shutdown(false);
@@ -284,6 +286,9 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   
   
   mReady = Promise::CreateInfallible(mGlobal);
+
+  
+  mDraining = Promise::CreateInfallible(mGlobal);
 
   
   mClosed = Promise::CreateInfallible(mGlobal);
@@ -659,6 +664,11 @@ WebTransportCongestionControl WebTransport::CongestionControl() {
 }
 
 void WebTransport::GetProtocol(nsAString& aProtocol) { aProtocol = mProtocol; }
+
+void WebTransport::ResolveDraining() {
+  LOG(("ResolveDraining() called"));
+  mDraining->MaybeResolveWithUndefined();
+}
 
 void WebTransport::RemoteClosed(bool aCleanly, const uint32_t& aCode,
                                 const nsACString& aReason) {

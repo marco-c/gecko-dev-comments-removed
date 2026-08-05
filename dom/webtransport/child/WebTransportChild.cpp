@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/WebTransportChild.h"
 
 #include "mozilla/dom/WebTransport.h"
@@ -65,6 +63,14 @@ void WebTransportChild::CloseAll() {
   if (mTransport) {
     RefPtr<WebTransport> self(mTransport);
     self->NewDatagramReceived(std::move(aData), aRecvTimeStamp);
+  }
+  return IPC_OK();
+}
+
+::mozilla::ipc::IPCResult WebTransportChild::RecvDraining() {
+  if (mTransport) {
+    RefPtr<WebTransport> self(mTransport);
+    self->ResolveDraining();
   }
   return IPC_OK();
 }

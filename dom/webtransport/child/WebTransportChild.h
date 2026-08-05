@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_WEBTRANSPORT_WEBTRANSPORTCHILD_H_
 #define DOM_WEBTRANSPORT_WEBTRANSPORTCHILD_H_
 
@@ -43,6 +41,8 @@ class WebTransportChild : public PWebTransportChild {
 
   ::mozilla::ipc::IPCResult RecvIncomingDatagram(
       nsTArray<uint8_t>&& aData, const TimeStamp& aRecvTimeStamp);
+
+  ::mozilla::ipc::IPCResult RecvDraining();
 
   ::mozilla::ipc::IPCResult RecvOnStreamResetOrStopSending(
       const uint64_t& aStreamId, const StreamResetOrStopSendingError& aError);
