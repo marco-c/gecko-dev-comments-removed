@@ -1,0 +1,24 @@
+
+
+
+
+#ifndef mozilla_webrender_MetalDeviceManager_h
+#define mozilla_webrender_MetalDeviceManager_h
+
+#include <cstdint>
+
+#include "mozilla/Maybe.h"
+
+namespace mozilla::wr {
+
+class MetalDeviceManager {
+ public:
+  
+  
+  
+  static Maybe<uint64_t> GetSystemDefaultDeviceRegistryId();
+};
+
+}  
+
+#endif  

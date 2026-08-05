@@ -54,6 +54,12 @@
 #  include "mozilla/WidgetUtilsGtk.h"
 #endif
 
+#ifdef XP_DARWIN
+#  include "GLContextEGL.h"
+#  include "GLLibraryEGL.h"
+#  include "mozilla/webrender/MetalDeviceManager.h"
+#endif
+
 using namespace mozilla;
 
 static already_AddRefed<gl::GLContext> CreateGLContext(nsACString& aError);
@@ -1648,16 +1654,9 @@ WebRenderProgramCache::~WebRenderProgramCache() {
 
 }  
 
-#ifdef XP_WIN
+#if defined(XP_WIN) || defined(XP_DARWIN)
 static already_AddRefed<gl::GLContext> CreateGLContextANGLE(
     nsACString& aError) {
-  const RefPtr<ID3D11Device> d3d11Device =
-      gfx::DeviceManagerDx::Get()->GetCompositorDevice();
-  if (!d3d11Device) {
-    aError.Assign("RcANGLE(no compositor device for EGLDisplay)"_ns);
-    return nullptr;
-  }
-
   nsCString failureId;
   const auto lib = gl::GLLibraryEGL::Get(&failureId);
   if (!lib) {
@@ -1666,7 +1665,34 @@ static already_AddRefed<gl::GLContext> CreateGLContextANGLE(
     return nullptr;
   }
 
+#  if defined(XP_WIN)
+  const RefPtr<ID3D11Device> d3d11Device =
+      gfx::DeviceManagerDx::Get()->GetCompositorDevice();
+  if (!d3d11Device) {
+    aError.Assign("RcANGLE(no compositor device for EGLDisplay)"_ns);
+    return nullptr;
+  }
+
   const auto egl = lib->CreateDisplay(d3d11Device.get());
+#  elif defined(XP_DARWIN)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  auto registryId = wr::MetalDeviceManager::GetSystemDefaultDeviceRegistryId();
+  if (!registryId) {
+    aError.Assign("RcANGLE(no Metal device for EGLDisplay)"_ns);
+    return nullptr;
+  }
+  const auto egl = lib->CreateDisplayForMetalDevice(*registryId);
+#  endif
+
   if (!egl) {
     aError.Assign(nsPrintfCString("RcANGLE(create EGLDisplay failed: %s)",
                                   failureId.get()));
@@ -1749,7 +1775,11 @@ static already_AddRefed<gl::GLContext> CreateGLContext(nsACString& aError) {
     gl = CreateGLContextEGL();
   }
 #elif XP_DARWIN
-  gl = CreateGLContextCGL();
+  if (gfx::gfxVars::UseWebRenderANGLE()) {
+    gl = CreateGLContextANGLE(aError);
+  } else {
+    gl = CreateGLContextCGL();
+  }
 #endif
 
   wr::RenderThread::MaybeEnableGLDebugMessage(gl);
