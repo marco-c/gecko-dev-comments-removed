@@ -192,18 +192,6 @@ TEST(ByteBufferTest, TestReadWriteBuffer) {
   buffer.Clear();
 
   
-  
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  buffer.WriteBytes(write_bytes, 3);
-#pragma clang diagnostic pop
-  ByteBufferReader read_buf75(buffer);
-  EXPECT_TRUE(read_buf75.ReadBytes(read_bytes));
-  EXPECT_THAT(read_bytes, ElementsAreArray(write_bytes));
-  EXPECT_EQ(read_buf75.Length(), 0U);
-  buffer.Clear();
-
-  
   uint8_t* write_dst = buffer.ReserveWriteBuffer(3);
   memcpy(write_dst, write_bytes, 3);
   ByteBufferReader read_buf8(buffer);

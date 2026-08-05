@@ -143,10 +143,7 @@ class DtlsTransportInternal : public PacketTransportInternal {
 
   
   
-  template <typename F>
-  [[deprecated]] void SubscribeDtlsHandshakeError(F&& callback) {
-    dtls_handshake_error_callback_list_.AddReceiver(std::forward<F>(callback));
-  }
+
   template <typename F>
   void SubscribeDtlsHandshakeError(void* tag, F&& callback) {
     dtls_handshake_error_callback_list_.AddReceiver(tag,
