@@ -1349,17 +1349,6 @@ already_AddRefed<Promise> nsImageLoadingContent::RecognizeCurrentImageText(
             auto& textRecognitionResult = aValue.ResolveValue();
             Element* el = ilc->AsContent()->AsElement();
 
-            
-            
-            
-            if (Preferences::GetBool("dom.text-recognition.shadow-dom-enabled",
-                                     false)) {
-              el->AttachAndSetUAShadowRoot(Element::NotifyUAWidget::Yes);
-              TextRecognition::FillShadow(*el->GetShadowRoot(),
-                                          textRecognitionResult);
-              el->NotifyUAWidgetSetupOrChange();
-            }
-
             nsTArray<ImageText> imageTexts(
                 textRecognitionResult.quads().Length());
             
