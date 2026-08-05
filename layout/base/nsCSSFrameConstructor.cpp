@@ -4940,51 +4940,33 @@ void nsCSSFrameConstructor::AddFrameConstructionItems(
 
 
 
-static bool ShouldSuppressFrameInListboxSelect(const nsIContent* aParent,
-                                               const nsIContent& aChild) {
-  if (!aParent ||
-      !aParent->IsAnyOfHTMLElements(nsGkAtoms::select, nsGkAtoms::optgroup,
-                                    nsGkAtoms::option)) {
+
+static bool ShouldSuppressFrameForSelect(const nsIContent* aParent,
+                                         const nsIContent& aChild) {
+  if (!aParent) {
     return false;
   }
 
-  if (const auto* select = HTMLSelectElement::FromNode(aParent);
-      select && select->IsCombobox()) {
-    return false;
-  }
-
-  
   if (aChild.IsRootOfNativeAnonymousSubtree()) {
+    
     return false;
   }
 
-  
-  
   if (aParent->IsHTMLElement(nsGkAtoms::option)) {
+    
+    
+    
+    
     return aParent->AsElement()->HasNonEmptyAttr(nsGkAtoms::label);
   }
 
-  
-  
-  
-  
-  if (aChild.GetParent() != aParent) {
-    return true;
+  if (const auto* select = HTMLSelectElement::FromNode(aParent)) {
+    
+    return !select->IsCombobox() && aChild.IsText() &&
+           aParent == aChild.GetParent();
   }
 
-  
-  if (aChild.IsAnyOfHTMLElements(nsGkAtoms::option, nsGkAtoms::hr)) {
-    return false;
-  }
-
-  
-  if (aChild.IsHTMLElement(nsGkAtoms::optgroup) &&
-      aParent->IsHTMLElement(nsGkAtoms::select)) {
-    return false;
-  }
-
-  
-  return true;
+  return false;
 }
 
 const nsCSSFrameConstructor::FrameConstructionData*
@@ -5135,7 +5117,7 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
   }
 
   nsIContent* parent = aParentFrame ? aParentFrame->GetContent() : nullptr;
-  if (ShouldSuppressFrameInListboxSelect(parent, *aContent)) {
+  if (ShouldSuppressFrameForSelect(parent, *aContent)) {
     return;
   }
 
