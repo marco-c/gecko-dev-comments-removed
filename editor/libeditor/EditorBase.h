@@ -218,6 +218,13 @@ class EditorBase : public nsIEditor,
   
 
 
+
+
+  nsFrameSelection* GetEditableFrameSelection() const;
+
+  
+
+
   [[nodiscard]] nsIContent* GetSelectionAncestorLimiter() const {
     Selection* selection = GetSelection(SelectionType::eNormal);
     return selection ? selection->GetAncestorLimiter() : nullptr;

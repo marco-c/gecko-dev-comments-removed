@@ -1073,11 +1073,11 @@ dom::EditContext* HTMLEditor::ComputeEditContext() const {
       !EditContext::IsAnyAttached()) {
     return nullptr;
   }
-  if (auto* element = nsGenericHTMLElement::FromNodeOrNull(
-          ComputeEditingHost(LimitInBodyElement::No))) {
-    return element->GetEditContext();
+  Document* document = GetDocument();
+  if (!document) {
+    return nullptr;
   }
-  return nullptr;
+  return document->GetActiveEditContext();
 }
 
 bool HTMLEditor::IsFiringTextUpdate() const {
@@ -7289,6 +7289,15 @@ Element* HTMLEditor::ComputeEditingHostInternal(
     }
     
     
+    
+    if (EditContext* editContext = document->GetActiveEditContext()) {
+      MOZ_ASSERT(
+          editContext->GetAssociatedElement(),
+          "EditContext should not be active without an associated element.");
+      return editContext->GetAssociatedElement();
+    }
+    
+    
     nsIContent* selectionCommonAncestor = nullptr;
     for (uint32_t i : IntegerRange(SelectionRef().RangeCount())) {
       nsRange* range = SelectionRef().GetRangeAt(i);
@@ -7600,6 +7609,10 @@ bool HTMLEditor::IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent) const {
 Result<widget::IMEState, nsresult> HTMLEditor::GetPreferredIMEState() const {
   
   bool enableIME = [&]() {
+    if (ComputeEditContext()) {
+      
+      return true;
+    }
     if (IsReadonly()) {
       return false;
     }

@@ -754,6 +754,11 @@ NS_IMETHODIMP EditorBase::GetIsSelectionEditable(bool* aIsSelectionEditable) {
 }
 
 bool EditorBase::IsSelectionEditable() {
+  if (ComputeEditContext()) {
+    
+    
+    return true;
+  }
   AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return false;
@@ -879,6 +884,13 @@ nsresult EditorBase::GetSelection(SelectionType aSelectionType,
                               ToRawSelectionType(aSelectionType)))
                     .take();
   return NS_WARN_IF(!*aSelection) ? NS_ERROR_FAILURE : NS_OK;
+}
+
+nsFrameSelection* EditorBase::GetEditableFrameSelection() const {
+  EditContext* editContext = GetEditActionEditContext();
+  return editContext && editContext->IsCanvas()
+             ? nullptr
+             : SelectionRef().GetFrameSelection();
 }
 
 nsresult EditorBase::DoTransactionInternal(nsITransaction* aTransaction) {
@@ -1988,6 +2000,15 @@ nsresult EditorBase::PasteAsAction(nsIClipboard::ClipboardType aClipboardType,
       }
     }
     
+    if (RefPtr<Document> document = GetDocument()) {
+      
+      
+      
+      
+      
+      
+      document->UpdateTextEditContext();
+    }
     editActionData.UpdateEditContext();
   } else {
     
@@ -6534,7 +6555,7 @@ void EditorBase::AutoCaretBidiLevelManager::Init(
 
   
   RefPtr<nsFrameSelection> frameSelection =
-      aEditorBase.SelectionRef().GetFrameSelection();
+      aEditorBase.GetEditableFrameSelection();
   if (NS_WARN_IF(!frameSelection)) {
     mFailed = true;
     return;
@@ -6574,7 +6595,7 @@ void EditorBase::AutoCaretBidiLevelManager::MaybeUpdateCaretBidiLevel(
     return;
   }
   RefPtr<nsFrameSelection> frameSelection =
-      aEditorBase.SelectionRef().GetFrameSelection();
+      aEditorBase.GetEditableFrameSelection();
   MOZ_ASSERT(frameSelection);
   frameSelection->SetCaretBidiLevelAndMaybeSchedulePaint(
       mNewCaretBidiLevel.value());
@@ -6591,7 +6612,7 @@ void EditorBase::UndefineCaretBidiLevel() const {
 
 
 
-  nsFrameSelection* frameSelection = SelectionRef().GetFrameSelection();
+  nsFrameSelection* frameSelection = GetEditableFrameSelection();
   if (frameSelection) {
     frameSelection->UndefineCaretBidiLevel();
   }

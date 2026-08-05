@@ -349,6 +349,39 @@ Result<nsRange*, nsresult> ContentEventHandler::InitRootContent(
   
   MOZ_ASSERT(aNormalSelection.Type() == SelectionType::eNormal);
 
+  EditContext* editContext = mDocument->GetActiveEditContext();
+
+  auto getRangeInRootElement = [&]() MOZ_NEVER_INLINE_DEBUG -> nsRange* {
+    nsFrameSelection* const fs = aNormalSelection.GetFrameSelection();
+    if (NS_WARN_IF(!fs)) {
+      return nullptr;
+    }
+    for (const uint32_t i : IntegerRange(aNormalSelection.RangeCount())) {
+      nsRange* const range = aNormalSelection.GetRangeAt(i);
+      MOZ_ASSERT(range);
+      if (fs->RangeInLimiters(*range)) {
+        return range;
+      }
+      
+      
+      if (!editContext) {
+        NS_WARNING(fmt::format("{} (index: {}) is not in the limiters {}",
+                               RefPtr{range}, i, fs->LimitersRef())
+                       .c_str());
+      }
+    }
+    return nullptr;
+  };
+
+  
+  
+  if (editContext) {
+    MOZ_ASSERT(editContext->GetAssociatedElement(),
+               "Should always have an associated element if active.");
+    mRootElement = editContext->GetAssociatedElement();
+    return getRangeInRootElement();
+  }
+
   const auto SetRootElementWithNoRanges = [&]() -> Result<nsRange*, nsresult> {
     
     
@@ -376,23 +409,7 @@ Result<nsRange*, nsresult> ContentEventHandler::InitRootContent(
 
   
   
-  nsRange* const rangeInRootElement = [&]() MOZ_NEVER_INLINE_DEBUG -> nsRange* {
-    nsFrameSelection* const fs = aNormalSelection.GetFrameSelection();
-    if (NS_WARN_IF(!fs)) {
-      return nullptr;
-    }
-    for (const uint32_t i : IntegerRange(aNormalSelection.RangeCount())) {
-      nsRange* const range = aNormalSelection.GetRangeAt(i);
-      MOZ_ASSERT(range);
-      if (fs->RangeInLimiters(*range)) {
-        return range;
-      }
-      NS_WARNING(fmt::format("{} (index: {}) is not in the limiters {}",
-                             RefPtr{range}, i, fs->LimitersRef())
-                     .c_str());
-    }
-    return nullptr;
-  }();
+  nsRange* const rangeInRootElement = getRangeInRootElement();
   if (!rangeInRootElement) {
     return SetRootElementWithNoRanges();
   }

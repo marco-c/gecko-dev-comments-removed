@@ -900,6 +900,11 @@ void EditContext::NotifyActiveEditContextChanged(Document& aDocument) {
   
 }
 
+bool EditContext::IsCanvas() const {
+  return mAssociatedElement &&
+         mAssociatedElement->IsHTMLElement(nsGkAtoms::canvas);
+}
+
 std::ostream& operator<<(std::ostream& aStream,
                          const EditContext& aEditContext) {
   nsAutoString debugText;

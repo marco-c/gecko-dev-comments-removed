@@ -263,6 +263,10 @@ void HTMLEditor::OnStartToHandleTopLevelEditSubAction(
 
   
   const bool cacheInlineStyles = [&]() {
+    if (GetEditActionEditContext()) {
+      
+      return false;
+    }
     switch (aTopLevelEditSubAction) {
       case EditSubAction::eInsertText:
       case EditSubAction::eInsertTextComingFromIME:
@@ -685,6 +689,12 @@ Result<EditActionResult, nsresult> HTMLEditor::CanHandleHTMLEditSubAction(
     return Err(NS_ERROR_EDITOR_DESTROYED);
   }
 
+  if (GetEditActionEditContext()) {
+    
+    
+    return EditActionResult::IgnoredResult();
+  }
+
   
   if (!SelectionRef().RangeCount()) {
     return EditActionResult::CanceledResult();
@@ -1034,11 +1044,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
   if (RefPtr editContext = GetEditActionEditContext()) {
     uint32_t start = editContext->SelectionStart();
     uint32_t end = editContext->SelectionEnd();
-    RefPtr<nsFrameSelection> frameSelection =
-        SelectionRef().GetFrameSelection();
-    if (NS_WARN_IF(!frameSelection)) {
-      return Err(NS_ERROR_FAILURE);
-    }
+    RefPtr<nsFrameSelection> frameSelection = GetEditableFrameSelection();
     if (InsertingTextForComposition(aPurpose)) {
       MOZ_ASSERT(mComposition);
       if (mComposition->GetContainerTextNode()) {
@@ -1062,7 +1068,8 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
     
     
     
-    if (!editContext->WasTextNextToCaretChangedByTextUpdateHandler()) {
+    if (frameSelection &&
+        !editContext->WasTextNextToCaretChangedByTextUpdateHandler()) {
       frameSelection->SetHint(CaretAssociationHint::Before);
     }
     return EditActionResult::HandledResult();
