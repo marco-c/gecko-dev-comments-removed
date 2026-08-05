@@ -195,6 +195,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "AudioScheduledSourceNode", insecureContext: true },
   
+  { name: "AudioSession", insecureContext: true, nightly: true },
+  
   { name: "AudioWorklet", insecureContext: false },
   
   { name: "AudioWorkletNode", insecureContext: false },
