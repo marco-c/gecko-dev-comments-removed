@@ -46,7 +46,11 @@ static mozilla::LazyLogModule sAudioSessionLog("AudioSession");
 
 
 
-class AudioSession final : public IAudioSessionEvents {
+
+
+
+
+class WinAudioSession final : public IAudioSessionEvents {
  public:
   static void Create(nsString&& aDisplayName, nsString&& aIconPath,
                      nsID&& aSessionGroupingParameter) {
@@ -67,8 +71,8 @@ class AudioSession final : public IAudioSessionEvents {
     
     
     RefPtr session =
-        new AudioSession(std::move(aDisplayName), std::move(aIconPath),
-                         std::move(aSessionGroupingParameter));
+        new WinAudioSession(std::move(aDisplayName), std::move(aIconPath),
+                            std::move(aSessionGroupingParameter));
     session->Start();
     sService = std::move(session);
     LOGD("Created AudioSession.");
@@ -144,12 +148,12 @@ class AudioSession final : public IAudioSessionEvents {
   }
 
  private:
-  AudioSession(nsString&& aDisplayName, nsString&& aIconPath,
-               nsID&& aSessionGroupingParameter) MOZ_REQUIRES(sMutex)
+  WinAudioSession(nsString&& aDisplayName, nsString&& aIconPath,
+                  nsID&& aSessionGroupingParameter) MOZ_REQUIRES(sMutex)
       : mDisplayName(aDisplayName),
         mIconPath(aIconPath),
         mSessionGroupingParameter(aSessionGroupingParameter) {}
-  ~AudioSession() {
+  ~WinAudioSession() {
     
     MOZ_ASSERT(!mAudioSessionControl);
     LOGD("AudioSession object was destroyed.");
@@ -170,11 +174,11 @@ class AudioSession final : public IAudioSessionEvents {
 
   
   
-  static StaticRefPtr<AudioSession> sService MOZ_GUARDED_BY(sMutex);
+  static StaticRefPtr<WinAudioSession> sService MOZ_GUARDED_BY(sMutex);
 };
 
- StaticMutex AudioSession::sMutex;
- StaticRefPtr<AudioSession> AudioSession::sService;
+ StaticMutex WinAudioSession::sMutex;
+ StaticRefPtr<WinAudioSession> WinAudioSession::sService;
 
 void CreateAudioSession() {
   MOZ_ASSERT(XRE_IsParentProcess());
@@ -223,8 +227,9 @@ void CreateAudioSession() {
                                    iconPath = std::move(iconPath),
                                    sessionGroupingParameter = std::move(
                                        sessionGroupingParameter)]() mutable {
-              AudioSession::Create(std::move(displayName), std::move(iconPath),
-                                   std::move(sessionGroupingParameter));
+              WinAudioSession::Create(std::move(displayName),
+                                      std::move(iconPath),
+                                      std::move(sessionGroupingParameter));
             }));
       }));
 }
@@ -241,14 +246,14 @@ void DestroyAudioSession() {
 
   LOGD("DestroyAudioSession");
   MOZ_ASSERT(AppShutdown::IsShutdownImpending());
-  AudioSession::Destroy();
+  WinAudioSession::Destroy();
 }
 
-NS_IMPL_ADDREF(AudioSession)
-NS_IMPL_RELEASE(AudioSession)
+NS_IMPL_ADDREF(WinAudioSession)
+NS_IMPL_RELEASE(WinAudioSession)
 
 STDMETHODIMP
-AudioSession::QueryInterface(REFIID iid, void** ppv) {
+WinAudioSession::QueryInterface(REFIID iid, void** ppv) {
   const IID IID_IAudioSessionEvents = __uuidof(IAudioSessionEvents);
   if ((IID_IUnknown == iid) || (IID_IAudioSessionEvents == iid)) {
     *ppv = static_cast<IAudioSessionEvents*>(this);
@@ -259,7 +264,7 @@ AudioSession::QueryInterface(REFIID iid, void** ppv) {
   return E_NOINTERFACE;
 }
 
-void AudioSession::Start() {
+void WinAudioSession::Start() {
   MOZ_ASSERT(mscom::IsCurrentThreadMTA());
 
   const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
@@ -334,7 +339,7 @@ void AudioSession::Start() {
   scopeExit.release();
 }
 
-void AudioSession::Stop(bool aShouldRestart) {
+void WinAudioSession::Stop(bool aShouldRestart) {
   
   
   
@@ -374,7 +379,7 @@ void AudioSession::Stop(bool aShouldRestart) {
         
         agileAsc = nullptr;
         NS_DispatchBackgroundTask(NS_NewCancelableRunnableFunction(
-            "RestartAudioSession", [] { AudioSession::MaybeRestart(); }));
+            "RestartAudioSession", [] { WinAudioSession::MaybeRestart(); }));
       }));
 }
 
