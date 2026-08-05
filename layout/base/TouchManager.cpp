@@ -121,12 +121,21 @@ nsIFrame* TouchManager::SetupTarget(WidgetTouchEvent* aEvent,
       doc && doc->RenderingSuppressedForViewTransitions();
 
   nsIFrame* target = aFrame;
+  const bool isNewTouchSession = aEvent->mTouches.Length() == 1;
   for (int32_t i = aEvent->mTouches.Length(); i;) {
     --i;
     dom::Touch* touch = aEvent->mTouches[i];
 
     int32_t id = touch->Identifier();
-    if (TouchManager::HasCapturedTouch(id)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!isNewTouchSession && TouchManager::HasCapturedTouch(id)) {
       
       
       touch->mChanged = false;
