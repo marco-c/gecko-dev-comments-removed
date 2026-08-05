@@ -2711,6 +2711,24 @@ void QuotaManager::InitQuotaForOrigin(
   AssertIsOnIOThread();
   MOZ_ASSERT(IsBestEffortPersistenceType(aFullOriginMetadata.mPersistenceType));
 
+  
+  
+  
+  
+  
+  bool cacheRowMatches = false;
+  if (aCacheMap.IsActive()) {
+    OriginCacheKey key(aFullOriginMetadata.mPersistenceType,
+                       aFullOriginMetadata.mOrigin);
+    Maybe<FullOriginMetadata> cachedMetadata = aCacheMap.Extract(key);
+    if (cachedMetadata.isSome()) {
+      cachedMetadata->CopyIntrinsicFieldsFrom(aFullOriginMetadata);
+      if (cachedMetadata->Equals(aFullOriginMetadata)) {
+        cacheRowMatches = true;
+      }
+    }
+  }
+
   MutexAutoLock lock(mQuotaMutex);
 
   RefPtr<GroupInfo> groupInfo = LockedGetOrCreateGroupInfo(
@@ -2750,7 +2768,8 @@ void QuotaManager::InitQuotaForOrigin(
   
   
   
-  if (aFullOriginMetadata.mDirty && aFullOriginMetadata.mOriginUsage > 0 &&
+  if (!cacheRowMatches && aFullOriginMetadata.mDirty &&
+      aFullOriginMetadata.mOriginUsage > 0 &&
       !mUsageModificationDisabled.load()) {
     originInfo->mMetadataDirty = true;
     auto* message = new UnboundedMPSCQueue<RefPtr<OriginInfo>>::Message();

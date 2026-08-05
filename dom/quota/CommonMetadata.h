@@ -192,6 +192,14 @@ struct FullOriginMetadata : OriginMetadata, OriginStateMetadata {
 
   
   
+  void CopyIntrinsicFieldsFrom(const FullOriginMetadata& aOther) {
+    mStorageOrigin = aOther.mStorageOrigin;
+    mIsPrivate = aOther.mIsPrivate;
+    mQuotaVersion = aOther.mQuotaVersion;
+  }
+
+  
+  
   
   FullOriginMetadata Clone() const {
     return {static_cast<const OriginMetadata&>(*this),
