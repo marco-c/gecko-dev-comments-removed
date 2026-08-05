@@ -98,6 +98,7 @@ def main(args=sys.argv[1:]):
             extra_profiler_run=args.extra_profiler_run,
             etw_profile=args.etw_profile,
             samply_profile=args.samply_profile,
+            perf_profile=args.perf_profile,
             symbols_path=args.symbols_path,
             host=args.host,
             live_sites=args.live_sites,
@@ -176,7 +177,12 @@ def main(args=sys.argv[1:]):
 
     
     
-    profiling = any([args.gecko_profile, args.simpleperf, args.samply_profile])
+    profiling = any([
+        args.gecko_profile,
+        args.simpleperf,
+        args.samply_profile,
+        args.perf_profile,
+    ])
     if profiling and args.run_local:
         if os.environ.get("DISABLE_PROFILE_LAUNCH", "0") == "1":
             LOG.info(
