@@ -1,0 +1,40 @@
+
+
+
+
+
+#ifndef mozilla_dom_SpeculationRulesManager_h
+#define mozilla_dom_SpeculationRulesManager_h
+
+#include "mozilla/dom/PrefetchRecordChild.h"
+#include "nsTArray.h"
+
+namespace mozilla::dom {
+
+
+
+
+
+
+
+
+
+
+
+class SpeculationRulesManager final {
+ public:
+  SpeculationRulesManager() = default;
+  ~SpeculationRulesManager() = default;
+
+  
+  void RemoveRecord(PrefetchRecordChild* aRecord);
+
+ private:
+  
+  
+  nsTArray<RefPtr<PrefetchRecordChild>> mPrefetchRecords;
+};
+
+}  
+
+#endif  
