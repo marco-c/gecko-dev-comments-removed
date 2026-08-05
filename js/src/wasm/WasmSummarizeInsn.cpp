@@ -1670,23 +1670,23 @@ SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
 
 #elif defined(JS_CODEGEN_LOONG64)
 
-Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
+SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
   
-  MOZ_ASSERT(0 == (uintptr_t(insnAddr) & 3));
+  MOZ_ASSERT(insn.isU32aligned());
 
-  const uint32_t insn = *(uint32_t*)insnAddr;
+  const uint32_t insnBits = insn.getU32LittleEndian(0);
 
 #  define INSN(_maxIx, _minIx) \
-    ((insn >> (_minIx)) & ((uint32_t(1) << ((_maxIx) - (_minIx) + 1)) - 1))
+    ((insnBits >> (_minIx)) & ((uint32_t(1) << ((_maxIx) - (_minIx) + 1)) - 1))
 
   
   
 
   
   
-  if (insn == 0x002A0006) {
+  if (insnBits == 0x002A0006) {
     static_assert(WasmTrapInstructionLength == 4);
-    return Some(TrapMachineInsn::OfficialUD);
+    return SummarizeResult(TrapMachineInsn::OfficialUD, 4);
   }
 
   
@@ -1694,52 +1694,52 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
     switch (INSN(25, 22)) {
       
       case 0b0000:
-        return Some(TrapMachineInsn::Load8);
+        return SummarizeResult(TrapMachineInsn::Load8, 4);
       
       case 0b0001:
-        return Some(TrapMachineInsn::Load16);
+        return SummarizeResult(TrapMachineInsn::Load16, 4);
       
       case 0b0010:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
       
       case 0b0011:
-        return Some(TrapMachineInsn::Load64);
+        return SummarizeResult(TrapMachineInsn::Load64, 4);
       
       case 0b0100:
-        return Some(TrapMachineInsn::Store8);
+        return SummarizeResult(TrapMachineInsn::Store8, 4);
       
       case 0b0101:
-        return Some(TrapMachineInsn::Store16);
+        return SummarizeResult(TrapMachineInsn::Store16, 4);
       
       case 0b0110:
-        return Some(TrapMachineInsn::Store32);
+        return SummarizeResult(TrapMachineInsn::Store32, 4);
       
       case 0b0111:
-        return Some(TrapMachineInsn::Store64);
+        return SummarizeResult(TrapMachineInsn::Store64, 4);
       
       case 0b1000:
-        return Some(TrapMachineInsn::Load8);
+        return SummarizeResult(TrapMachineInsn::Load8, 4);
       
       case 0b1001:
-        return Some(TrapMachineInsn::Load16);
+        return SummarizeResult(TrapMachineInsn::Load16, 4);
       
       case 0b1010:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
       
       case 0b1011:
         break;
       
       case 0b1100:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
       
       case 0b1101:
-        return Some(TrapMachineInsn::Store32);
+        return SummarizeResult(TrapMachineInsn::Store32, 4);
       
       case 0b1110:
-        return Some(TrapMachineInsn::Load64);
+        return SummarizeResult(TrapMachineInsn::Load64, 4);
       
       case 0b1111:
-        return Some(TrapMachineInsn::Store64);
+        return SummarizeResult(TrapMachineInsn::Store64, 4);
       default:
         break;
     }
@@ -1750,52 +1750,52 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
     switch (INSN(21, 18)) {
       
       case 0b0000:
-        return Some(TrapMachineInsn::Load8);
+        return SummarizeResult(TrapMachineInsn::Load8, 4);
       
       case 0b0001:
-        return Some(TrapMachineInsn::Load16);
+        return SummarizeResult(TrapMachineInsn::Load16, 4);
       
       case 0b0010:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
       
       case 0b0011:
-        return Some(TrapMachineInsn::Load64);
+        return SummarizeResult(TrapMachineInsn::Load64, 4);
       
       case 0b0100:
-        return Some(TrapMachineInsn::Store8);
+        return SummarizeResult(TrapMachineInsn::Store8, 4);
       
       case 0b0101:
-        return Some(TrapMachineInsn::Store16);
+        return SummarizeResult(TrapMachineInsn::Store16, 4);
       
       case 0b0110:
-        return Some(TrapMachineInsn::Store32);
+        return SummarizeResult(TrapMachineInsn::Store32, 4);
       
       case 0b0111:
-        return Some(TrapMachineInsn::Store64);
+        return SummarizeResult(TrapMachineInsn::Store64, 4);
       
       case 0b1000:
-        return Some(TrapMachineInsn::Load8);
+        return SummarizeResult(TrapMachineInsn::Load8, 4);
       
       case 0b1001:
-        return Some(TrapMachineInsn::Load16);
+        return SummarizeResult(TrapMachineInsn::Load16, 4);
       
       case 0b1010:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
       
       case 0b1011:
         break;
       
       case 0b1100:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
       
       case 0b1101:
-        return Some(TrapMachineInsn::Load64);
+        return SummarizeResult(TrapMachineInsn::Load64, 4);
       
       case 0b1110:
-        return Some(TrapMachineInsn::Store32);
+        return SummarizeResult(TrapMachineInsn::Store32, 4);
       
       case 0b1111:
-        return Some(TrapMachineInsn::Store64);
+        return SummarizeResult(TrapMachineInsn::Store64, 4);
       default:
         break;
     }
@@ -1808,22 +1808,22 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
     switch (INSN(26, 24)) {
       
       case 0b000:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
       
       case 0b010:
-        return Some(TrapMachineInsn::Load64);
+        return SummarizeResult(TrapMachineInsn::Load64, 4);
       
       case 0b100:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
       
       case 0b101:
-        return Some(TrapMachineInsn::Store32);
+        return SummarizeResult(TrapMachineInsn::Store32, 4);
       
       case 0b110:
-        return Some(TrapMachineInsn::Load64);
+        return SummarizeResult(TrapMachineInsn::Load64, 4);
       
       case 0b111:
-        return Some(TrapMachineInsn::Store64);
+        return SummarizeResult(TrapMachineInsn::Store64, 4);
       default:
         break;
         
@@ -1836,7 +1836,7 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
 
 #  undef INSN
 
-  return Nothing();
+  return SummarizeResult();
 }
 
 
