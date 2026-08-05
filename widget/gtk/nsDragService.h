@@ -294,7 +294,6 @@ class nsDragSession : public nsBaseDragSession {
   
   RefPtr<DragData> GetDragData(GdkAtom aRequestedFlavor);
   virtual bool GetDragDataImpl(GdkAtom aRequestedFlavor) = 0;
-
 };
 
 
