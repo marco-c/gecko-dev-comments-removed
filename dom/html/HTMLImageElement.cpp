@@ -121,14 +121,16 @@ bool HTMLImageElement::Draggable() const {
                       nsGkAtoms::_false, eIgnoreCase);
 }
 
-bool HTMLImageElement::Complete() {
-  
-  
+
+
+
+
+bool HTMLImageElement::Complete() const {
   if (!HasAttr(nsGkAtoms::srcset) && !HasNonEmptyAttr(nsGkAtoms::src)) {
     return true;
   }
 
-  if (mPendingRequest || mPendingImageLoadTask) {
+  if (mPendingRequest || HasPendingAlwaysLoadImageTask()) {
     return false;
   }
 
