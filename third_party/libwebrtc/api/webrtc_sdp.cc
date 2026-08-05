@@ -134,6 +134,10 @@ const char kAttributeMaxMessageSize[] = "max-message-size";
 const int kDefaultSctpMaxMessageSize = 65536;
 
 
+
+constexpr size_t kMaxSsrcsPerGroup = 32;
+
+
 const char kAttributeSctpSnap[] = "sctp-init";
 
 
@@ -2188,6 +2192,10 @@ bool ParseSsrcGroupAttribute(absl::string_view line,
   const size_t expected_min_fields = 2;
   if (fields.size() < expected_min_fields) {
     return ParseFailedExpectMinFieldNum(line, expected_min_fields, error);
+  }
+  
+  if (fields.size() - 1 > kMaxSsrcsPerGroup) {
+    return ParseFailed(line, "Too many SSRCs in ssrc-group", error);
   }
   std::string semantics;
   if (!GetValue(fields[0], kAttributeSsrcGroup, &semantics, error)) {
