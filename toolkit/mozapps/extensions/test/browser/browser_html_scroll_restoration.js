@@ -95,10 +95,11 @@ function isLayoutStable(win) {
   
   for (let bar of win.document.querySelectorAll("moz-message-bar")) {
     
+    
     if (
       !win
         .getComputedStyle(bar)
-        .getPropertyValue("--message-bar-background-color")
+        .getPropertyValue("--message-bar-icon-close-url")
     ) {
       return false;
     }

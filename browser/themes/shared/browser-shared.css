@@ -176,7 +176,7 @@ body {
     --chrome-block-radius: 10px;
 
     &[uidensity="compact"] {
-      --chrome-window-gap: 0;
+      --chrome-window-gap: 0px;
     }
 
     @media (-moz-platform: linux) {
@@ -603,10 +603,13 @@ body {
 
   @media -moz-pref("browser.nova.enabled") {
     :root:not([lwtheme]) & {
-      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-      border-top: 1px solid var(--chrome-content-separator-color);
       background-color: var(--toolbar-background-color);
       color: var(--toolbar-text-color);
+
+      &:not([collapsed]) {
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+        border-top: 1px solid var(--chrome-content-separator-color);
+      }
     }
   }
 
@@ -1554,11 +1557,6 @@ popupnotificationcontent {
   border-radius: var(--border-radius-medium);
   padding-inline-end: var(--toolbarbutton-padding-inner);
 
-  /* Toggle button should only have padding-inline-end if #PanelUI-button both visible and rendered next to it */
-  :root:not([aiwindow-first-run]) &:has(+ #PanelUI-button) {
-    padding: 0 var(--smartwindow-ai-toggle-padding, var(--space-xsmall));
-  }
-
   > .toolbarbutton-icon {
     padding: var(--toolbarbutton-padding-inner);
 
@@ -1717,7 +1715,7 @@ popupnotificationcontent {
   }
 
   #urlbar-container,
-  #nav-bar-customization-target > *:not(#sidebar-button),
+  #nav-bar-customization-target > *:not(#sidebar-button, #ai-window-toggle),
   #nav-bar-overflow-button {
     visibility: hidden;
   }
