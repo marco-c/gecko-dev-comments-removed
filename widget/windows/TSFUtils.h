@@ -139,6 +139,11 @@ class TSFUtils final {
       0x4308,
       {0xbc, 0xbf, 0x2e, 0x73, 0x93, 0x98, 0xe2, 0x34}};
 
+  
+  
+  static const GUID& TSATTRID_Text_VerticalWriting_Ref();
+  static const GUID& TSATTRID_Text_Orientation_Ref();
+
   constexpr static TsViewCookie sDefaultView = 1;
 
   
@@ -181,38 +186,6 @@ class TSFUtils final {
 
 
   [[nodiscard]] static bool ShouldSetInputScopeOfURLBarToDefault();
-
-  
-  
-  enum AttrIndex {
-    
-    NotSupported = -1,
-
-    
-    InputScope = 0,
-    DocumentURL,
-
-    
-    NUM_OF_SUPPORTED_ATTRS_IN_EMPTY_TEXT_STORE,
-
-    
-    TextVerticalWriting = NUM_OF_SUPPORTED_ATTRS_IN_EMPTY_TEXT_STORE,
-    TextOrientation,
-
-    
-    NUM_OF_SUPPORTED_ATTRS,
-  };
-
-  
-
-
-  [[nodiscard]] static AttrIndex GetRequestedAttrIndex(
-      const TS_ATTRID& aAttrID);
-
-  
-
-
-  [[nodiscard]] static TS_ATTRID GetAttrID(AttrIndex aIndex);
 
   
 

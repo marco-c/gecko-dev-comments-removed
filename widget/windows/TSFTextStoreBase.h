@@ -118,14 +118,53 @@ class TSFTextStoreBase : public ITextStoreACP {
   
   virtual void DidLockGranted() {}
 
-  using AttrIndices = EnumSet<TSFUtils::AttrIndex>;
+  
+  
+  enum class AttrIndex : int8_t {
+    
+    NotSupported = -1,
+
+    
+    InputScope = 0,
+    DocumentURL,
+
+    
+    NumberOfSupportedAttrsInEmptyTextStore,
+
+    
+    TextVerticalWriting = NumberOfSupportedAttrsInEmptyTextStore,
+    TextOrientation,
+
+    
+    NumberOfSupportedAttrs,
+  };
+  constexpr static size_t NUM_OF_SUPPORTED_ATTRS_IN_EMPTY_TEXT_STORE =
+      static_cast<size_t>(AttrIndex::NumberOfSupportedAttrsInEmptyTextStore);
+  constexpr static size_t NUM_OF_SUPPORTED_ATTRS =
+      static_cast<size_t>(AttrIndex::NumberOfSupportedAttrs);
+
+  [[nodiscard]] size_t GetNumberOfSupportedAttrs() const {
+    return IsEditable() ? NUM_OF_SUPPORTED_ATTRS
+                        : NUM_OF_SUPPORTED_ATTRS_IN_EMPTY_TEXT_STORE;
+  }
+
+  
+
+
+  [[nodiscard]] AttrIndex GetRequestedAttrIndex(const TS_ATTRID& aAttrID) const;
+
+  
+
+
+  [[nodiscard]] TS_ATTRID GetAttrID(AttrIndex aIndex) const;
+
+  using AttrIndices = EnumSet<AttrIndex>;
   constexpr static auto NothingChanged = AttrIndices{};
-  constexpr static auto OnlyURLChanged =
-      AttrIndices{TSFUtils::AttrIndex::DocumentURL};
+  constexpr static auto OnlyURLChanged = AttrIndices{AttrIndex::DocumentURL};
   constexpr static auto OnlyInputScopeChanged =
-      AttrIndices{TSFUtils::AttrIndex::InputScope};
-  constexpr static auto URLAndInputScopeChanged = AttrIndices{
-      TSFUtils::AttrIndex::DocumentURL, TSFUtils::AttrIndex::InputScope};
+      AttrIndices{AttrIndex::InputScope};
+  constexpr static auto URLAndInputScopeChanged =
+      AttrIndices{AttrIndex::DocumentURL, AttrIndex::InputScope};
   
 
 
@@ -157,11 +196,9 @@ class TSFTextStoreBase : public ITextStoreACP {
   void PrintExposingURL(const char* aPrefix) const;
 
   HRESULT HandleRequestAttrs(DWORD aFlags, ULONG aFilterCount,
-                             const TS_ATTRID* aFilterAttrs,
-                             int32_t aNumOfSupportedAttrs);
+                             const TS_ATTRID* aFilterAttrs);
   HRESULT RetrieveRequestedAttrsInternal(ULONG ulCount, TS_ATTRVAL* paAttrVals,
-                                         ULONG* pcFetched,
-                                         int32_t aNumOfSupportedAttrs);
+                                         ULONG* pcFetched);
 
   
 
@@ -216,7 +253,7 @@ class TSFTextStoreBase : public ITextStoreACP {
   
   nsString mDocumentURL;
 
-  bool mRequestedAttrs[TSFUtils::NUM_OF_SUPPORTED_ATTRS] = {false};
+  bool mRequestedAttrs[NUM_OF_SUPPORTED_ATTRS] = {false};
 
   bool mRequestedAttrValues = false;
 
