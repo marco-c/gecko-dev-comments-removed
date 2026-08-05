@@ -66,18 +66,15 @@ static bool IsFullyClipped(nsTextFrame* aFrame, nscoord aLeft, nscoord aRight,
                                          aSnappedRight);
 }
 
-static bool IsInlineAxisOverflowVisible(nsIFrame* aFrame) {
-  MOZ_ASSERT(aFrame && aFrame->IsBlockFrameOrSubclass(),
-             "expected a block frame");
-
-  nsIFrame* f = aFrame;
+static bool IsInlineAxisOverflowVisible(nsBlockFrame& aFrame) {
+  nsIFrame* f = &aFrame;
   while (f && f->Style()->IsAnonBox() && !f->IsScrollContainerFrame()) {
     f = f->GetParent();
   }
   if (!f) {
     return true;
   }
-  auto overflow = aFrame->GetWritingMode().IsVertical()
+  auto overflow = aFrame.GetWritingMode().IsVertical()
                       ? f->StyleDisplay()->mOverflowY
                       : f->StyleDisplay()->mOverflowX;
   return overflow == StyleOverflow::Visible;
@@ -148,7 +145,7 @@ class nsDisplayTextOverflowMarker final : public nsPaintedDisplayItem {
     return nsLayoutUtils::GetTextShadowRectsUnion(mRect, mFrame);
   }
 
-  virtual nsRect GetComponentAlphaBounds(
+  nsRect GetComponentAlphaBounds(
       nsDisplayListBuilder* aBuilder) const override {
     if (gfxPlatform::GetPlatform()->RespectsFontStyleSmoothing()) {
       
@@ -162,12 +159,12 @@ class nsDisplayTextOverflowMarker final : public nsPaintedDisplayItem {
     return GetBounds(aBuilder, &snap);
   }
 
-  virtual void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
+  void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
 
   void PaintTextToContext(gfxContext* aCtx, imgDrawingParams& aImgParams,
                           const nsPoint& aOffsetFromRect);
 
-  virtual bool CreateWebRenderCommands(
+  bool CreateWebRenderCommands(
       mozilla::wr::DisplayListBuilder& aBuilder,
       mozilla::wr::IpcResourceUpdateQueue& aResources,
       const StackingContextHelper& aSc,
@@ -806,6 +803,13 @@ static bool BlockCanHaveLineClampEllipsis(nsBlockFrame* aBlockFrame,
   return aBlockFrame->HasLineClampEllipsis();
 }
 
+static bool IsTextInputScrolledContent(nsIFrame* aFrame) {
+  return aFrame &&
+         aFrame->Style()->GetPseudoType() ==
+             PseudoStyleType::MozScrolledContent &&
+         aFrame->GetParent()->IsTextInputFrame();
+}
+
 
 bool TextOverflow::CanHaveOverflowMarkers(nsBlockFrame* aBlockFrame,
                                           BeforeReflow aBeforeReflow) {
@@ -815,30 +819,57 @@ bool TextOverflow::CanHaveOverflowMarkers(nsBlockFrame* aBlockFrame,
   }
 
   
-  if (HasClippedTextOverflow(aBlockFrame) ||
-      IsInlineAxisOverflowVisible(aBlockFrame)) {
+  if (HasClippedTextOverflow(aBlockFrame)) {
     return false;
   }
 
   
   
-  if (aBlockFrame->IsComboboxControlFrame()) {
+  
+  
+  
+  if (aBlockFrame->IsComboboxControlFrame() ||
+      IsTextInputScrolledContent(aBlockFrame)) {
+    return false;
+  }
+
+  
+  if (aBlockFrame->Style()->GetPseudoType() ==
+      PseudoStyleType::MozTextControlEditingRoot) {
+    MOZ_ASSERT(IsInlineAxisOverflowVisible(*aBlockFrame),
+               "The control editing root must create overflow");
+    MOZ_DIAGNOSTIC_ASSERT(IsTextInputScrolledContent(aBlockFrame->GetParent()));
+    auto* scc = static_cast<ScrollContainerFrame*>(
+        aBlockFrame->GetParent()->GetParent());
+    if (scc->GetScrollPosition() != nsPoint()) {
+      return false;
+    }
+    if (scc->GetContent()->AsElement()->State().HasState(
+            dom::ElementState::FOCUS)) {
+      
+      
+      
+      
+      
+      return false;
+    }
+  } else if (IsInlineAxisOverflowVisible(*aBlockFrame)) {
+    
     return false;
   }
 
   
   RefPtr<nsCaret> caret = aBlockFrame->PresShell()->GetActiveCaret();
   if (caret && caret->IsVisible()) {
-    RefPtr<dom::Selection> domSelection = caret->GetSelection();
-    if (domSelection) {
-      nsCOMPtr<nsIContent> content =
-          nsIContent::FromNodeOrNull(domSelection->GetFocusNode());
-      if (content &&
-          content->IsInclusiveDescendantOf(aBlockFrame->GetContent())) {
+    if (dom::Selection* sel = caret->GetSelection()) {
+      auto* content = nsIContent::FromNodeOrNull(sel->GetFocusNode());
+      if (content && content->IsShadowIncludingInclusiveDescendantOf(
+                         aBlockFrame->GetContent())) {
         return false;
       }
     }
   }
+
   return true;
 }
 
