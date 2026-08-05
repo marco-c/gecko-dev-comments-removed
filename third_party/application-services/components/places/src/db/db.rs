@@ -211,7 +211,10 @@ impl Drop for PlacesDb {
             
             return;
         }
-        let res = self.db.execute_batch("PRAGMA optimize(0x02);");
+        
+        
+        
+        let res = self.db.execute_batch("PRAGMA optimize(0x12);");
         if let Err(e) = res {
             warn!("Failed to execute pragma optimize (DB locked?): {}", e);
         }

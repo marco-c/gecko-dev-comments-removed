@@ -9,13 +9,13 @@ use crate::enrollment::{
     EnrolledFeature, EnrolledFeatureConfig, ExperimentEnrollment, map_features_by_feature_id,
 };
 use crate::error::{NimbusError, Result, warn};
-use crate::evaluator::{ExperimentAvailable, is_experiment_available};
+use crate::evaluator::{CanEnrollResult, can_enroll};
 use crate::stateful::enrollment::get_enrollments;
 use crate::stateful::firefox_labs::FirefoxLabsMetadata;
 use crate::stateful::gecko_prefs::GeckoPrefStore;
 use crate::stateful::persistence::{Database, StoreId, Writer};
 use crate::targeting::NimbusTargetingHelper;
-use crate::{EnrolledExperiment, Experiment};
+use crate::{AvailableRandomizationUnits, EnrolledExperiment, Experiment};
 
 
 
@@ -219,6 +219,7 @@ impl DatabaseCache {
 
     pub fn get_available_firefox_labs_metadata(
         &self,
+        available_randomization_units: &AvailableRandomizationUnits,
         targeting_helper: &NimbusTargetingHelper,
         coenrolling_feature_ids: &[String],
     ) -> Result<Vec<FirefoxLabsMetadata>> {
@@ -237,13 +238,12 @@ impl DatabaseCache {
                     }
 
                     let enrolled = data.experiments_by_slug.contains_key(&experiment.slug);
+                    let enrollable = matches!(
+                        can_enroll(available_randomization_units, targeting_helper, experiment,),
+                        CanEnrollResult::Enrollable { .. }
+                    );
 
-                    
-                    
-                    
-                    
-                    if is_experiment_available(targeting_helper, experiment, true)
-                        == ExperimentAvailable::Available
+                    if enrollable
                         && (enrolled
                             || (features_available(
                                 experiment,

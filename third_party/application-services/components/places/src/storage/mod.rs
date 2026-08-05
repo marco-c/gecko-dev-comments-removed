@@ -292,7 +292,11 @@ pub fn run_maintenance_vacuum(conn: &PlacesDb) -> Result<()> {
 
 
 pub fn run_maintenance_optimize(conn: &PlacesDb) -> Result<()> {
-    conn.execute_one("PRAGMA optimize")?;
+    
+    
+    
+    
+    conn.execute_one("PRAGMA optimize(0x10012)")?;
     Ok(())
 }
 

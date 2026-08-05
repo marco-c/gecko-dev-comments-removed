@@ -1459,72 +1459,76 @@ mod event_store_tests {
         let th = NimbusTargetingHelper::from(store);
 
         assert!(
-            th.eval_jexl(format!("'{event_id}'|eventSum('Minutes') >= 0"))
+            th.eval_jexl(&format!("'{event_id}'|eventSum('Minutes') >= 0"))
                 .is_err()
         );
-        assert!(th.eval_jexl(format!("'{event_id}'|eventSum('Minutes', 1) == 1"))?);
-        assert!(th.eval_jexl(format!("'{event_id}'|eventSum('Minutes', 1, 1) == 0"))?);
+        assert!(th.eval_jexl(&format!("'{event_id}'|eventSum('Minutes', 1) == 1"))?);
+        assert!(th.eval_jexl(&format!("'{event_id}'|eventSum('Minutes', 1, 1) == 0"))?);
 
         
-        assert!(th.eval_jexl(format!("'{event_id}'|eventSum('Minutes', 1, 24 * 60) == 0"))?);
+        assert!(th.eval_jexl(&format!(
+            "'{event_id}'|eventSum('Minutes', 1, 24 * 60) == 0"
+        ))?);
         
-        assert!(th.eval_jexl(format!("'{event_id}'|eventSum('Minutes', 24 * 60) == 1"))?);
+        assert!(th.eval_jexl(&format!("'{event_id}'|eventSum('Minutes', 24 * 60) == 1"))?);
 
         assert!(
-            th.eval_jexl(format!("'{event_id}'|eventSum('Years') >= 0"))
+            th.eval_jexl(&format!("'{event_id}'|eventSum('Years') >= 0"))
                 .is_err()
         );
-        assert!(th.eval_jexl(format!("'{event_id}'|eventSum('Years', 1) == 1"))?);
-        assert!(th.eval_jexl(format!("'{event_id}'|eventSum('Years', 1, 1) == 0"))?);
+        assert!(th.eval_jexl(&format!("'{event_id}'|eventSum('Years', 1) == 1"))?);
+        assert!(th.eval_jexl(&format!("'{event_id}'|eventSum('Years', 1, 1) == 0"))?);
 
         assert!(
-            th.eval_jexl(format!("'{event_id}'|eventCountNonZero('Minutes') >= 0"))
+            th.eval_jexl(&format!("'{event_id}'|eventCountNonZero('Minutes') >= 0"))
                 .is_err()
         );
-        assert!(th.eval_jexl(format!("'{event_id}'|eventCountNonZero('Minutes', 1) == 1"))?);
-        assert!(th.eval_jexl(format!(
+        assert!(th.eval_jexl(&format!(
+            "'{event_id}'|eventCountNonZero('Minutes', 1) == 1"
+        ))?);
+        assert!(th.eval_jexl(&format!(
             "'{event_id}'|eventCountNonZero('Minutes', 1, 1) == 0"
         ))?);
 
         assert!(
-            th.eval_jexl(format!(
+            th.eval_jexl(&format!(
                 "'{event_id}'|eventAveragePerInterval('Minutes') >= 0"
             ))
             .is_err()
         );
-        assert!(th.eval_jexl(format!(
+        assert!(th.eval_jexl(&format!(
             "'{event_id}'|eventAveragePerInterval('Minutes', 1) == 1"
         ))?);
-        assert!(th.eval_jexl(format!(
+        assert!(th.eval_jexl(&format!(
             "'{event_id}'|eventAveragePerInterval('Minutes', 1, 1) == 0"
         ))?);
 
         assert!(
-            th.eval_jexl(format!(
+            th.eval_jexl(&format!(
                 "'{event_id}'|eventAveragePerNonZeroInterval('Minutes') >= 0"
             ))
             .is_err()
         );
-        assert!(th.eval_jexl(format!(
+        assert!(th.eval_jexl(&format!(
             "'{event_id}'|eventAveragePerNonZeroInterval('Minutes', 1) >= 0"
         ))?);
-        assert!(th.eval_jexl(format!(
+        assert!(th.eval_jexl(&format!(
             "'{event_id}'|eventAveragePerNonZeroInterval('Minutes', 1, 1) >= 0"
         ))?);
 
         
-        assert!(th.eval_jexl(format!("'{event_id}'|eventLastSeen('Minutes') == 0"))?);
+        assert!(th.eval_jexl(&format!("'{event_id}'|eventLastSeen('Minutes') == 0"))?);
         
-        assert!(th.eval_jexl(format!("'{event_id}'|eventLastSeen('Minutes', 1) > 60"))?);
+        assert!(th.eval_jexl(&format!("'{event_id}'|eventLastSeen('Minutes', 1) > 60"))?);
         
         assert!(
-            th.eval_jexl(format!("'{event_id}'|eventLastSeen('Minutes', 1, 1) >= 0"))
+            th.eval_jexl(&format!("'{event_id}'|eventLastSeen('Minutes', 1, 1) >= 0"))
                 .is_err()
         );
 
         
         
-        assert!(th.eval_jexl(format!(
+        assert!(th.eval_jexl(&format!(
             "'{event_id}'|eventLastSeen('Minutes', 24 * 60) > 24 * 60"
         ))?);
 
