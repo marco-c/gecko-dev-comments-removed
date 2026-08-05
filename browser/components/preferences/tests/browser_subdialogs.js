@@ -431,7 +431,6 @@ add_task(async function background_click_should_close_dialog() {
   
   
   
-  
   info("clicking the overlay background");
   
   
@@ -442,8 +441,8 @@ add_task(async function background_click_should_close_dialog() {
     tab.linkedBrowser,
     function () {
       return BrowserTestUtils.synthesizeMouseAtPoint(
-        2,
-        2,
+        20,
+        20,
         {},
         tab.linkedBrowser
       );
