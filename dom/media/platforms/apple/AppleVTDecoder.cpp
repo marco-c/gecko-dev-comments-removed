@@ -339,6 +339,7 @@ AppleVTDecoder::AppleFrameRef* AppleVTDecoder::CreateAppleFrameRef(
 }
 
 void AppleVTDecoder::SetSeekThreshold(const media::TimeUnit& aTime) {
+  MonitorAutoLock mon(mMonitor);
   if (aTime.IsValid()) {
     mSeekTargetThreshold = Some(aTime);
   } else {
@@ -438,12 +439,15 @@ void AppleVTDecoder::OutputFrame(CVPixelBufferRef aImage,
   }
 
   bool useNullSample = false;
-  if (mSeekTargetThreshold.isSome()) {
-    if ((aFrameRef.composition_timestamp + aFrameRef.duration) <
-        mSeekTargetThreshold.ref()) {
-      useNullSample = true;
-    } else {
-      mSeekTargetThreshold.reset();
+  {
+    MonitorAutoLock mon(mMonitor);
+    if (mSeekTargetThreshold.isSome()) {
+      if ((aFrameRef.composition_timestamp + aFrameRef.duration) <
+          mSeekTargetThreshold.ref()) {
+        useNullSample = true;
+      } else {
+        mSeekTargetThreshold.reset();
+      }
     }
   }
 
@@ -575,6 +579,28 @@ void AppleVTDecoder::OutputFrame(CVPixelBufferRef aImage,
                                 data, kCVAttachmentMode_ShouldPropagate);
         }
       }
+    }
+
+    
+    
+    CFStringRef colorSpaceName = nullptr;
+    if (__builtin_available(macOS 11.0, *)) {
+      if (mTransferFunction == gfx::TransferFunction::PQ) {
+        colorSpaceName = kCGColorSpaceITUR_2100_PQ;
+      } else if (mTransferFunction == gfx::TransferFunction::HLG) {
+        colorSpaceName = kCGColorSpaceITUR_2100_HLG;
+      }
+    }
+    if (!colorSpaceName) {
+      colorSpaceName = mColorPrimaries == gfx::ColorSpace2::BT2020
+                           ? kCGColorSpaceITUR_2020
+                           : kCGColorSpaceITUR_709;
+    }
+    AutoCFTypeRef<CGColorSpaceRef> colorSpace(
+        CGColorSpaceCreateWithName(colorSpaceName));
+    if (colorSpace) {
+      CVBufferSetAttachment(aImage, kCVImageBufferCGColorSpaceKey, colorSpace,
+                            kCVAttachmentMode_ShouldPropagate);
     }
 
     CFTypeRefPtr<IOSurfaceRef> surface =
