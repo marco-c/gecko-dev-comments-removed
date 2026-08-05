@@ -29,6 +29,7 @@ struct ScreamFeedback {
   int num_ce_marked_packets = 0;
   int num_lost_packets = 0;
   int num_recovered_packets = 0;
+  DataSize received = DataSize::Zero();
 
   
   

@@ -150,6 +150,13 @@ struct ScreamV2Parameters {
   
   
   FieldTrialParameter<bool> enable_alr;
+  
+  
+  
+  FieldTrialParameter<double> alr_threshold;
+
+  
+  FieldTrialParameter<TimeDelta> received_rate_window;
 };
 
 }  

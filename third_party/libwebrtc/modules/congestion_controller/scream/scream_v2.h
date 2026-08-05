@@ -67,6 +67,8 @@ class ScreamV2 {
   
   DataSize max_allowed_ref_window() const;
 
+  DataRate received_rate() const { return received_rate_; }
+
   
   double l4s_alpha() const { return l4s_alpha_; }
 
@@ -126,6 +128,7 @@ class ScreamV2 {
   void UpdateRefWindow(const ScreamFeedback& parsed);
   void UpdateFeedbackHoldTime(const ScreamFeedback& parsed);
   void UpdateTargetRate(const ScreamFeedback& parsed);
+  void UpdateReceiveRate(const ScreamFeedback& parsed);
 
   const Environment env_;
   const ScreamV2Parameters params_;
@@ -160,6 +163,9 @@ class ScreamV2 {
   Timestamp last_data_in_flight_update_ = Timestamp::MinusInfinity();
   DataSize max_data_in_flight_this_rtt_ = DataSize::Zero();
   DataSize max_data_in_flight_prev_rtt_ = DataSize::Zero();
+  DataRate received_rate_ = DataRate::Zero();
+  DataSize accumulated_received_bytes_ = DataSize::Zero();
+  Timestamp last_received_rate_update_time_ = Timestamp::MinusInfinity();
 
   
   
