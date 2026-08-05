@@ -135,6 +135,9 @@ static void Divide64WithConstant(MacroAssembler& masm, LDivOrMod* ins) {
   UseScratchRegisterScope temps(masm);
   const Register temp = temps.Acquire();
 
+  
+  MOZ_ASSERT(!std::has_single_bit(mozilla::Abs(d)));
+
   const auto* const mir = ins->mir();
 
   
@@ -183,6 +186,9 @@ static void UnsignedDivide64WithConstant(MacroAssembler& masm,
 
   UseScratchRegisterScope temps(masm);
   const Register temp = temps.Acquire();
+
+  
+  MOZ_ASSERT(!std::has_single_bit(d));
 
   const auto rmc = ReciprocalMulConstants::computeUnsignedDivisionConstants(d);
 
@@ -627,6 +633,92 @@ void CodeGenerator::visitModConstantI64(LModConstantI64* ins) {
   
   masm.ma_mul_d(output, output, ImmWord(uint64_t(d)));
   masm.as_sub_d(output, lhs, output);
+}
+
+void CodeGenerator::visitDivPowTwoI64(LDivPowTwoI64* ins) {
+  const Register numerator = ToRegister(ins->numerator());
+  const Register output = ToRegister(ins->output());
+  const int32_t shift = ins->shift();
+  MOZ_ASSERT(0 <= shift && shift <= 63);
+  const bool negativeDivisor = ins->negativeDivisor();
+  const MDiv* const mir = ins->mir();
+
+  if (shift != 0) {
+    if (mir->isUnsigned()) {
+      masm.as_srli_d(output, numerator, shift);
+    } else {
+      if (mir->canBeNegativeDividend()) {
+        UseScratchRegisterScope temps(masm);
+        const Register temp = temps.Acquire();
+
+        
+        
+        
+        if (shift > 1) {
+          masm.as_srai_d(temp, numerator, 63);
+          masm.as_srli_d(temp, temp, 64 - shift);
+        } else {
+          masm.as_srli_d(temp, numerator, 64 - shift);
+        }
+        masm.as_add_d(temp, temp, numerator);
+        masm.as_srai_d(output, temp, shift);
+      } else {
+        masm.as_srai_d(output, numerator, shift);
+      }
+
+      if (negativeDivisor) {
+        masm.as_sub_d(output, zero, output);
+      }
+    }
+    return;
+  }
+
+  if (negativeDivisor) {
+    
+    Label ok;
+    masm.branchPtr(Assembler::NotEqual, numerator, ImmWord(INT64_MIN), &ok);
+    masm.wasmTrap(wasm::Trap::IntegerOverflow, mir->trapSiteDesc());
+    masm.bind(&ok);
+    masm.as_sub_d(output, zero, numerator);
+  } else {
+    masm.movePtr(numerator, output);
+  }
+}
+
+void CodeGenerator::visitModPowTwoI64(LModPowTwoI64* ins) {
+  const Register input = ToRegister(ins->input());
+  const Register output = ToRegister(ins->output());
+  const int32_t shift = ins->shift();
+  MOZ_ASSERT(0 <= shift && shift <= 63);
+  const MMod* const mir = ins->mir();
+  const bool canBeNegative = !mir->isUnsigned() && mir->canBeNegativeDividend();
+
+  if (shift == 0) {
+    masm.movePtr(zero, output);
+    return;
+  }
+
+  Label negative;
+  if (canBeNegative) {
+    
+    masm.ma_b(input, input, &negative, Assembler::Signed, ShortJump);
+  }
+
+  
+  masm.as_bstrpick_d(output, input, shift - 1, 0);
+
+  if (canBeNegative) {
+    Label done;
+    masm.ma_b(&done, ShortJump);
+
+    
+    masm.bind(&negative);
+    masm.as_sub_d(output, zero, input);
+    masm.as_bstrpick_d(output, output, shift - 1, 0);
+    masm.as_sub_d(output, zero, output);
+
+    masm.bind(&done);
+  }
 }
 
 void CodeGenerator::visitUDivConstantI64(LUDivConstantI64* ins) {
