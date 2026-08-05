@@ -5821,6 +5821,13 @@ class MacroAssembler : public MacroAssemblerSpecific {
                       Label* fail);
 
   
+  
+  
+  
+  void equalStrings(JSOp op, Register input, const JSOffThreadAtom* str,
+                    Register result, Label* fail);
+
+  
   void typeOfObject(Register objReg, Register scratch, Label* slow,
                     Label* isObject, Label* isCallable, Label* isUndefined);
 

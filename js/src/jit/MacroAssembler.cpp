@@ -2,8 +2,6 @@
 
 
 
-#include "jit/MacroAssembler-inl.h"
-
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Latin1.h"
 #include "mozilla/MathAlgorithms.h"
@@ -56,6 +54,7 @@
 #include "wasm/WasmTypeDef.h"
 #include "wasm/WasmValidate.h"
 
+#include "jit/MacroAssembler-inl.h"
 #include "jit/TemplateObject-inl.h"
 #include "vm/BytecodeUtil-inl.h"
 #include "vm/Interpreter-inl.h"
@@ -1419,6 +1418,80 @@ void MacroAssembler::compareStrings(JSOp op, Register left, Register right,
 
     bind(&done);
   }
+}
+
+void MacroAssembler::equalStrings(JSOp op, Register input,
+                                  const JSOffThreadAtom* str, Register result,
+                                  Label* fail) {
+  MOZ_ASSERT(IsEqualityOp(op));
+  MOZ_ASSERT(str->isAtom());
+  MOZ_ASSERT(input != result);
+
+  bool isEqual = op == JSOp::Eq || op == JSOp::StrictEq;
+  auto cond = JSOpToCondition(op, false);
+
+  if (str->empty()) {
+    cmp32Set(cond, Address(input, JSString::offsetOfLength()), Imm32(0),
+             result);
+    return;
+  }
+
+  
+  Label notPointerEqual, done;
+  branchPtr(Assembler::NotEqual, input, ImmGCPtr(str), &notPointerEqual);
+  {
+    move32(Imm32(isEqual), result);
+    jump(&done);
+  }
+  bind(&notPointerEqual);
+  {
+    Label setNotEqualResult;
+
+    
+    branchTest32(Assembler::NonZero, Address(input, JSString::offsetOfFlags()),
+                 Imm32(StringFlags::ATOM_BIT), &setNotEqualResult);
+
+    if (str->hasTwoByteChars()) {
+      
+      JS::AutoCheckCannotGC nogc;
+      if (!mozilla::IsUtf16Latin1(str->twoByteRange(nogc))) {
+        branchLatin1String(input, &setNotEqualResult);
+      }
+    }
+
+    
+    branch32(Assembler::NotEqual, Address(input, JSString::offsetOfLength()),
+             Imm32(str->length()), &setNotEqualResult);
+
+    Label compareChars;
+    Label* compareCharsOrFail =
+        canCompareStringCharsInline(str) ? &compareChars : fail;
+
+    Label forwardedPtrEqual;
+    tryFastAtomize(input, result, result, compareCharsOrFail);
+    {
+      
+      cmpPtrSet(cond, result, ImmGCPtr(str), result);
+      jump(&done);
+    }
+
+    bind(&setNotEqualResult);
+    move32(Imm32(!isEqual), result);
+
+    if (canCompareStringCharsInline(str)) {
+      jump(&done);
+      bind(&compareChars);
+
+      
+      Register stringChars = result;
+      loadStringCharsForCompare(input, str, stringChars, fail);
+
+      
+      compareStringChars(op, stringChars, str, result);
+    }
+  }
+
+  bind(&done);
 }
 
 void MacroAssembler::loadStringChars(Register str, Register dest,
