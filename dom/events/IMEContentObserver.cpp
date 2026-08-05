@@ -622,7 +622,17 @@ bool IMEContentObserver::IsObservingElement(const nsPresContext& aPresContext,
     return !aElement->IsInDesignMode() &&
            aElement == mRootEditableNodeOrTextControlElement;
   }
-  if (!mRootEditableNodeOrTextControlElement) {
+  if (!mRootEditableNodeOrTextControlElement || !mRootElement) [[unlikely]] {
+    return false;
+  }
+  
+  
+  
+  
+  
+  
+  if (!mRootElement->IsInclusiveDescendantOf(
+          mRootEditableNodeOrTextControlElement)) [[unlikely]] {
     return false;
   }
   
