@@ -2343,6 +2343,10 @@ pref("browser.smartwindow.worldcup.endpointURL", "https://merino.services.mozill
 pref("browser.smartwindow.worldcup.timeoutMs", 2000);
 
 
+pref("browser.smartwindow.searchQuery.endpointURL", "https://mlpa-prod-prod-mozilla.global.ssl.fastly.net/v1/search");
+pref("browser.smartwindow.searchQuery.apiKey", "");
+
+
 pref("browser.smartwindow.chatHistory.loglevel", "Error");
 pref("browser.smartwindow.chatStore.loglevel", "Error");
 pref("browser.smartwindow.conversation.logLevel", "Error");
