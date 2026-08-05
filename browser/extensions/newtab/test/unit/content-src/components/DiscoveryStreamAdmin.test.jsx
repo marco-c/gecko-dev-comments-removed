@@ -4,6 +4,7 @@ import {
   DiscoveryStreamAdminUI,
   ToggleStoryButton,
 } from "content-src/components/DiscoveryStreamAdmin/DiscoveryStreamAdmin";
+import { WIDGET_REGISTRY } from "common/WidgetsRegistry.mjs";
 import React from "react";
 import { shallow } from "enzyme";
 
@@ -149,27 +150,17 @@ describe("DiscoveryStreamAdmin", () => {
       const spocText = pre.text();
       assert.equal(spocText, '{\n  "id": 12345\n}');
     });
-    it("should fire restorePrefDefaults with DISCOVERY_STREAM_CONFIG_RESET_DEFAULTS", () => {
+    it("should fire refresh cache with DISCOVERY_STREAM_DEV_REFRESH_CACHE", () => {
       wrapper.find("button").at(0).simulate("click");
       assert.calledWith(
         dispatch,
         ac.OnlyToMain({
-          type: at.DISCOVERY_STREAM_CONFIG_RESET_DEFAULTS,
-        })
-      );
-    });
-    it("should fire config change with DISCOVERY_STREAM_CONFIG_CHANGE", () => {
-      wrapper.find("button").at(1).simulate("click");
-      assert.calledWith(
-        dispatch,
-        ac.OnlyToMain({
-          type: at.DISCOVERY_STREAM_CONFIG_CHANGE,
-          data: { enabled: true },
+          type: at.DISCOVERY_STREAM_DEV_REFRESH_CACHE,
         })
       );
     });
     it("should fire expireCache with DISCOVERY_STREAM_DEV_EXPIRE_CACHE", () => {
-      wrapper.find("button").at(2).simulate("click");
+      wrapper.find("button").at(1).simulate("click");
       assert.calledWith(
         dispatch,
         ac.OnlyToMain({
@@ -178,7 +169,7 @@ describe("DiscoveryStreamAdmin", () => {
       );
     });
     it("should fire systemTick with DISCOVERY_STREAM_DEV_SYSTEM_TICK", () => {
-      wrapper.find("button").at(3).simulate("click");
+      wrapper.find("button").at(2).simulate("click");
       assert.calledWith(
         dispatch,
         ac.OnlyToMain({
@@ -187,7 +178,7 @@ describe("DiscoveryStreamAdmin", () => {
       );
     });
     it("should fire idleDaily with DISCOVERY_STREAM_DEV_IDLE_DAILY", () => {
-      wrapper.find("button").at(4).simulate("click");
+      wrapper.find("button").at(3).simulate("click");
       assert.calledWith(
         dispatch,
         ac.OnlyToMain({
@@ -204,19 +195,6 @@ describe("DiscoveryStreamAdmin", () => {
         })
       );
     });
-    it("should fire setConfigValue with DISCOVERY_STREAM_CONFIG_SET_VALUE", () => {
-      const configName = "name";
-      const configValue = "value";
-      wrapper.instance().setConfigValue(configName, configValue);
-      assert.calledWith(
-        dispatch,
-        ac.OnlyToMain({
-          type: at.DISCOVERY_STREAM_CONFIG_SET_VALUE,
-          data: { name: configName, value: configValue },
-        })
-      );
-    });
-
     describe("inferred personalization overrides controls", () => {
       beforeEach(() => {
         wrapper = shallow(
@@ -275,8 +253,7 @@ describe("DiscoveryStreamAdmin", () => {
         assert.calledWith(
           dispatch,
           ac.OnlyToMain({
-            type: at.DISCOVERY_STREAM_CONFIG_CHANGE,
-            data: { enabled: true },
+            type: at.DISCOVERY_STREAM_DEV_REFRESH_CACHE,
           })
         );
       });
@@ -394,6 +371,105 @@ describe("DiscoveryStreamAdmin", () => {
           .first();
         assert.equal(resetButton.prop("disabled"), null);
       });
+    });
+  });
+
+  describe("#Widgets", () => {
+    let dispatch;
+    beforeEach(() => {
+      dispatch = sandbox.stub();
+      wrapper = shallow(
+        <DiscoveryStreamAdminUI
+          dispatch={dispatch}
+          otherPrefs={{ "widgets.system.enabled": false }}
+          state={{
+            DiscoveryStream: {
+              config: { enabled: true },
+              layout: [],
+              spocs: { frequency_caps: [] },
+              feeds: { data: {} },
+              blocks: {},
+              impressions: { feed: {} },
+            },
+            Weather: { suggestions: [] },
+            InferredPersonalization: {
+              inferredInterests: {},
+              coarseInferredInterests: {},
+              coarsePrivateInferredInterests: {},
+              debugFeatures: null,
+            },
+          }}
+        />
+      );
+    });
+
+    it("should flip widgets.system.enabled from the master toggle", () => {
+      wrapper
+        .find("#widgets-system-enabled")
+        .props()
+        .ontoggle({ target: { pressed: true } });
+      assert.calledWith(dispatch, ac.SetPref("widgets.system.enabled", true));
+    });
+
+    it("should flip a widget's system pref from its toggle", () => {
+      wrapper
+        .find('[id="widgets.system.lists.enabled"]')
+        .props()
+        .ontoggle({
+          target: { id: "widgets.system.lists.enabled", pressed: true },
+        });
+      assert.calledWith(
+        dispatch,
+        ac.SetPref("widgets.system.lists.enabled", true)
+      );
+    });
+
+    it("should disable per-widget toggles when the widget system is off", () => {
+      assert.equal(
+        wrapper.find('[id="widgets.system.lists.enabled"]').prop("disabled"),
+        true
+      );
+    });
+
+    const getToggleAllAction = () =>
+      dispatch.args.map(([a]) => a).find(a => a.type === at.SET_MULTIPLE_PREFS);
+
+    it("should enable the system and every widget from the Enable all button", () => {
+      wrapper
+        .find("button")
+        .filterWhere(node => node.text() === "Enable all")
+        .first()
+        .simulate("click");
+      const action = getToggleAllAction();
+      assert.ok(action, "dispatched SET_MULTIPLE_PREFS");
+      assert.propertyVal(action.data.values, "widgets.system.enabled", true);
+      assert.propertyVal(
+        action.data.values,
+        "widgets.system.lists.enabled",
+        true
+      );
+    });
+
+    it("should disable the system and every widget from the Disable all button", () => {
+      const allEnabledPrefs = { "widgets.system.enabled": true };
+      for (const widget of WIDGET_REGISTRY) {
+        allEnabledPrefs[widget.systemEnabledPref] = true;
+      }
+      wrapper.setProps({ otherPrefs: allEnabledPrefs });
+
+      wrapper
+        .find("button")
+        .filterWhere(node => node.text() === "Disable all")
+        .first()
+        .simulate("click");
+      const action = getToggleAllAction();
+      assert.ok(action, "dispatched SET_MULTIPLE_PREFS");
+      assert.propertyVal(action.data.values, "widgets.system.enabled", false);
+      assert.propertyVal(
+        action.data.values,
+        "widgets.system.lists.enabled",
+        false
+      );
     });
   });
 

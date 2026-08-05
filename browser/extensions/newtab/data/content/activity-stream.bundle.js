@@ -647,12 +647,491 @@ const actionUtils = {
 };
 
 ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const PREF_WIDGETS_LISTS_ENABLED = "widgets.lists.enabled";
+const PREF_WIDGETS_TIMER_ENABLED = "widgets.focusTimer.enabled";
+const PREF_WIDGETS_WEATHER_ENABLED = "widgets.weather.enabled";
+const PREF_LISTS_SIZE = "widgets.lists.size";
+const PREF_FOCUS_TIMER_SIZE = "widgets.focusTimer.size";
+const PREF_WEATHER_SIZE = "widgets.weather.size";
+const PREF_WIDGETS_ORDER = "widgets.order";
+const PREF_WIDGETS_SYSTEM_LISTS_ENABLED = "widgets.system.lists.enabled";
+const PREF_WIDGETS_SYSTEM_TIMER_ENABLED =
+  "widgets.system.focusTimer.enabled";
+const PREF_WIDGETS_SYSTEM_WEATHER_ENABLED =
+  "widgets.system.weather.enabled";
+const PREF_WIDGETS_SPORTS_WIDGET_ENABLED =
+  "widgets.sportsWidget.enabled";
+const PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
+const PREF_WIDGETS_SYSTEM_SPORTS_WIDGET_ENABLED =
+  "widgets.system.sportsWidget.enabled";
+const PREF_WIDGETS_CLOCKS_ENABLED = "widgets.clocks.enabled";
+const PREF_CLOCKS_SIZE = "widgets.clocks.size";
+const PREF_WIDGETS_SYSTEM_CLOCKS_ENABLED =
+  "widgets.system.clocks.enabled";
+const PREF_WIDGETS_PRIVACY_ENABLED = "widgets.privacy.enabled";
+const PREF_PRIVACY_SIZE = "widgets.privacy.size";
+const PREF_WIDGETS_SYSTEM_PRIVACY_ENABLED =
+  "widgets.system.privacy.enabled";
+const PREF_WIDGETS_CROSSWORD_ENABLED = "widgets.crossword.enabled";
+const PREF_CROSSWORD_SIZE = "widgets.crossword.size";
+const PREF_WIDGETS_SYSTEM_CROSSWORD_ENABLED =
+  "widgets.system.crossword.enabled";
+const PREF_WIDGETS_STOCKS_ENABLED = "widgets.stocks.enabled";
+const PREF_STOCKS_SIZE = "widgets.stocks.size";
+const PREF_WIDGETS_SYSTEM_STOCKS_ENABLED =
+  "widgets.system.stocks.enabled";
+const PREF_CROSSWORD_ENDPOINT = "widgets.crossword.endpoint";
+const PREF_WIDGETS_PICTURE_OF_THE_DAY_ENABLED =
+  "widgets.pictureOfTheDay.enabled";
+const PREF_PICTURE_OF_THE_DAY_SIZE = "widgets.pictureOfTheDay.size";
+const PREF_WIDGETS_SYSTEM_PICTURE_OF_THE_DAY_ENABLED =
+  "widgets.system.pictureOfTheDay.enabled";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const WIDGET_REGISTRY = [
+  {
+    id: "pictureOfTheDay",
+    telemetryName: "picture_of_the_day",
+    order: 0,
+    enabledPref: PREF_WIDGETS_PICTURE_OF_THE_DAY_ENABLED,
+    sizePref: PREF_PICTURE_OF_THE_DAY_SIZE,
+    defaultSize: "medium",
+    validSizes: ["medium", "large"],
+    hasSidebar: false,
+    systemEnabledPref: PREF_WIDGETS_SYSTEM_PICTURE_OF_THE_DAY_ENABLED,
+    trainhopEnabledKey: "pictureOfTheDayEnabled",
+    trainhopSizeKey: "pictureOfTheDaySize",
+    trainhopSidebarKey: null,
+    widgetsSettingsVisibleKey: "pictureOfTheDayVisible",
+    widgetsSettingsEnabledKey: "pictureOfTheDayEnabled",
+    trainhopNamespace: "widgetPictureOfTheDay",
+  },
+  {
+    id: "sportsWidget",
+    telemetryName: "sports",
+    order: 1,
+    enabledPref: PREF_WIDGETS_SPORTS_WIDGET_ENABLED,
+    sizePref: PREF_SPORTS_WIDGET_SIZE,
+    defaultSize: "medium",
+    validSizes: ["medium", "large"],
+    hasSidebar: false,
+    systemEnabledPref: PREF_WIDGETS_SYSTEM_SPORTS_WIDGET_ENABLED,
+    trainhopEnabledKey: "sportsWidgetEnabled",
+    trainhopSizeKey: "sportsWidgetSize",
+    trainhopSidebarKey: null,
+    widgetsSettingsVisibleKey: "sportsWidgetVisible",
+    widgetsSettingsEnabledKey: "sportsWidgetEnabled",
+  },
+  {
+    id: "clocks",
+    telemetryName: "clocks",
+    order: 2,
+    enabledPref: PREF_WIDGETS_CLOCKS_ENABLED,
+    sizePref: PREF_CLOCKS_SIZE,
+    defaultSize: "medium",
+    validSizes: ["small", "medium", "large"],
+    hasSidebar: false,
+    systemEnabledPref: PREF_WIDGETS_SYSTEM_CLOCKS_ENABLED,
+    trainhopEnabledKey: "clocksEnabled",
+    trainhopSizeKey: "clocksSize",
+    trainhopSidebarKey: null,
+    widgetsSettingsVisibleKey: "clocksVisible",
+    widgetsSettingsEnabledKey: "clocksEnabled",
+  },
+  {
+    id: "lists",
+    telemetryName: "lists",
+    order: 3,
+    enabledPref: PREF_WIDGETS_LISTS_ENABLED,
+    sizePref: PREF_LISTS_SIZE,
+    defaultSize: "medium",
+    validSizes: ["small", "medium", "large"],
+    hasSidebar: false,
+    systemEnabledPref: PREF_WIDGETS_SYSTEM_LISTS_ENABLED,
+    trainhopEnabledKey: "listsEnabled",
+    trainhopSizeKey: "listsSize",
+    trainhopSidebarKey: null,
+    widgetsSettingsVisibleKey: "listsVisible",
+    widgetsSettingsEnabledKey: "listsEnabled",
+  },
+  {
+    id: "focusTimer",
+    telemetryName: "focus_timer",
+    order: 4,
+    enabledPref: PREF_WIDGETS_TIMER_ENABLED,
+    sizePref: PREF_FOCUS_TIMER_SIZE,
+    defaultSize: "medium",
+    validSizes: ["small", "medium", "large"],
+    hasSidebar: false,
+    systemEnabledPref: PREF_WIDGETS_SYSTEM_TIMER_ENABLED,
+    trainhopEnabledKey: "timerEnabled",
+    trainhopSizeKey: "timerSize",
+    trainhopSidebarKey: null,
+    widgetsSettingsVisibleKey: "focusTimerVisible",
+    widgetsSettingsEnabledKey: "focusTimerEnabled",
+  },
+  {
+    id: "weather",
+    telemetryName: "weather",
+    order: 5,
+    enabledPref: PREF_WIDGETS_WEATHER_ENABLED,
+    sizePref: PREF_WEATHER_SIZE,
+    defaultSize: "small",
+    validSizes: ["small", "medium", "large"],
+    hasSidebar: true,
+    systemEnabledPref: PREF_WIDGETS_SYSTEM_WEATHER_ENABLED,
+    trainhopEnabledKey: "weatherEnabled",
+    trainhopSizeKey: "weatherSize",
+    trainhopSidebarKey: "weatherSidebar",
+    widgetsSettingsVisibleKey: "weatherVisible",
+    widgetsSettingsEnabledKey: "weatherEnabled",
+  },
+  {
+    id: "privacy",
+    telemetryName: "privacy",
+    order: 6,
+    enabledPref: PREF_WIDGETS_PRIVACY_ENABLED,
+    sizePref: PREF_PRIVACY_SIZE,
+    defaultSize: "medium",
+    validSizes: ["medium", "large"],
+    hasSidebar: false,
+    systemEnabledPref: PREF_WIDGETS_SYSTEM_PRIVACY_ENABLED,
+    trainhopEnabledKey: "privacyEnabled",
+    trainhopSizeKey: "privacySize",
+    trainhopSidebarKey: null,
+    widgetsSettingsVisibleKey: "privacyVisible",
+    widgetsSettingsEnabledKey: "privacyEnabled",
+  },
+  {
+    id: "crossword",
+    telemetryName: "crossword",
+    order: 7,
+    enabledPref: PREF_WIDGETS_CROSSWORD_ENABLED,
+    sizePref: PREF_CROSSWORD_SIZE,
+    defaultSize: "medium",
+    validSizes: ["medium", "large"],
+    hasSidebar: false,
+    systemEnabledPref: PREF_WIDGETS_SYSTEM_CROSSWORD_ENABLED,
+    trainhopEnabledKey: "crosswordEnabled",
+    trainhopSizeKey: "crosswordSize",
+    trainhopSidebarKey: null,
+    widgetsSettingsVisibleKey: "crosswordVisible",
+    widgetsSettingsEnabledKey: "crosswordEnabled",
+  },
+  {
+    id: "stocks",
+    telemetryName: "stocks",
+    order: 8,
+    enabledPref: PREF_WIDGETS_STOCKS_ENABLED,
+    sizePref: PREF_STOCKS_SIZE,
+    defaultSize: "medium",
+    validSizes: ["small", "medium", "large"],
+    hasSidebar: false,
+    systemEnabledPref: PREF_WIDGETS_SYSTEM_STOCKS_ENABLED,
+    trainhopEnabledKey: "stocksEnabled",
+    trainhopSizeKey: "stocksSize",
+    trainhopSidebarKey: null,
+    widgetsSettingsVisibleKey: "stocksVisible",
+    widgetsSettingsEnabledKey: "stocksEnabled",
+  },
+];
+
+
+
+
+
+
+
+
+function getWidgetOrder(orderPref) {
+  const registryIds = WIDGET_REGISTRY.map(w => w.id);
+  if (!orderPref) {
+    return registryIds;
+  }
+  const seen = new Set();
+  const saved = orderPref
+    .split(",")
+    .filter(id => registryIds.includes(id) && !seen.has(id) && seen.add(id));
+  const appended = registryIds.filter(id => !seen.has(id));
+  return [...saved, ...appended];
+}
+
+
+
+
+
+
+
+
+function resolveWidgetOrder(prefs) {
+  const userOrder = prefs[PREF_WIDGETS_ORDER];
+  if (userOrder) {
+    return getWidgetOrder(userOrder);
+  }
+  const trainhopOrder = prefs.trainhopConfig?.widgets?.order;
+  if (trainhopOrder) {
+    return getWidgetOrder(trainhopOrder);
+  }
+  return getWidgetOrder(null);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function isWidgetAddable(widget, prefs) {
+  return Boolean(
+    (widget.trainhopNamespace &&
+      prefs.trainhopConfig?.[widget.trainhopNamespace]?.visible) ||
+    prefs.trainhopConfig?.widgets?.[widget.trainhopEnabledKey] ||
+    prefs.trainhopConfig?.widgetsSettings?.[widget.widgetsSettingsVisibleKey] ||
+    prefs[widget.systemEnabledPref]
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function isWidgetToggleVisible(widget, prefs) {
+  return Boolean(
+    isWidgetAddable(widget, prefs) ||
+    prefs.widgetsConfig?.[widget.trainhopEnabledKey]
+  );
+}
+
+
+
+
+
+
+
+
+
+
+function isWidgetsContainerVisible(prefs) {
+  return Boolean(
+    prefs["widgets.system.enabled"] ||
+    prefs.widgetsConfig?.enabled ||
+    prefs.trainhopConfig?.widgets?.enabled ||
+    prefs.trainhopConfig?.widgetsSettings?.enabled
+  );
+}
+
+
+
+
+
+
+
+
+
+
+function isWidgetEnabled(widget, prefs, widgetsEnabled) {
+  return Boolean(
+    widgetsEnabled &&
+    isWidgetAddable(widget, prefs) &&
+    prefs[widget.enabledPref]
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function resolveWidgetSize(widget, prefs) {
+  const userPref = prefs[widget.sizePref];
+  if (userPref) {
+    return userPref;
+  }
+  const dedicatedSize = widget.trainhopNamespace
+    ? prefs.trainhopConfig?.[widget.trainhopNamespace]?.size
+    : null;
+  const trainhopSize = widget.trainhopSizeKey
+    ? prefs.trainhopConfig?.widgets?.[widget.trainhopSizeKey]
+    : null;
+  return dedicatedSize || trainhopSize || widget.defaultSize;
+}
+
+
+
+
+
+
+
+
+
+
+function resolveWidgetHasSidebar(widget, prefs) {
+  if (widget.trainhopSidebarKey) {
+    const override = prefs.trainhopConfig?.widgets?.[widget.trainhopSidebarKey];
+    if (override !== undefined) {
+      return override;
+    }
+  }
+  return widget.hasSidebar;
+}
+
+
+
+
+
+
+
+
+
+
+function resolveCrosswordEndpoint(prefs) {
+  return (
+    prefs.trainhopConfig?.widgets?.crosswordEndpoint ||
+    prefs[PREF_CROSSWORD_ENDPOINT]
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+function getHideAllTargets(prefs, widgetEnabledMap) {
+  return WIDGET_REGISTRY.filter(
+    w => !resolveWidgetHasSidebar(w, prefs) || widgetEnabledMap[w.id]
+  ).map(w => ({
+    enabledPref: w.enabledPref,
+    telemetryName: w.telemetryName,
+    active: !!widgetEnabledMap[w.id],
+  }));
+}
+
+;
 const external_ReactRedux_namespaceObject = window["ReactRedux"];
 ;
 const external_React_namespaceObject = window["React"];
 var external_React_default = __webpack_require__.n(external_React_namespaceObject);
 ;
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+
 
 
 
@@ -676,6 +1155,14 @@ const PREF_UNIFIED_ADS_ENDPOINT = "unifiedAds.endpoint";
 const PREF_ALLOWED_ENDPOINTS = "discoverystream.endpoints";
 const PREF_OHTTP_CONFIG = "discoverystream.ohttp.configURL";
 const PREF_OHTTP_RELAY = "discoverystream.ohttp.relayURL";
+const PREF_WIDGETS_SYSTEM_ENABLED = "widgets.system.enabled";
+
+
+
+function widgetLabel(id) {
+  const spaced = id.replace(/([A-Z])/g, " $1");
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
 const Row = props => external_React_default().createElement("tr", _extends({
   className: "message-item"
 }, props), props.children);
@@ -749,6 +1236,9 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     this.handleDebugOverrideChange = this.handleDebugOverrideChange.bind(this);
     this.handleResetAllOverrides = this.handleResetAllOverrides.bind(this);
     this.handleSectionsToggle = this.handleSectionsToggle.bind(this);
+    this.handleWidgetsSystemToggle = this.handleWidgetsSystemToggle.bind(this);
+    this.handleWidgetToggle = this.handleWidgetToggle.bind(this);
+    this.handleWidgetsToggleAll = this.handleWidgetsToggleAll.bind(this);
     this.toggleIABBanners = this.toggleIABBanners.bind(this);
     this.handleAllizomToggle = this.handleAllizomToggle.bind(this);
     this.sendConversionEvent = this.sendConversionEvent.bind(this);
@@ -993,6 +1483,29 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     } = e.target;
     this.props.dispatch(actionCreators.SetPref(PREF_SECTIONS_ENABLED, pressed));
     this.props.dispatch(actionCreators.SetPref("discoverystream.sections.cards.enabled", pressed));
+  }
+  handleWidgetsSystemToggle(e) {
+    this.props.dispatch(actionCreators.SetPref(PREF_WIDGETS_SYSTEM_ENABLED, e.target.pressed));
+  }
+  handleWidgetToggle(e) {
+    
+    this.props.dispatch(actionCreators.SetPref(e.target.id, e.target.pressed));
+  }
+  handleWidgetsToggleAll() {
+    const value = !this.areAllWidgetsEnabled();
+    const values = {
+      [PREF_WIDGETS_SYSTEM_ENABLED]: value
+    };
+    for (const widget of WIDGET_REGISTRY) {
+      values[widget.systemEnabledPref] = value;
+    }
+    this.props.dispatch(actionCreators.SetMultiplePrefs(values));
+  }
+  areAllWidgetsEnabled() {
+    const {
+      otherPrefs
+    } = this.props;
+    return Boolean(otherPrefs[PREF_WIDGETS_SYSTEM_ENABLED] && WIDGET_REGISTRY.every(widget => otherPrefs[widget.systemEnabledPref]));
   }
   sendConversionEvent() {
     const detail = {
@@ -1272,7 +1785,13 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       className: "min"
     }, "spocs endpoint"), external_React_default().createElement("td", null, spocsEndpoint)), external_React_default().createElement(Row, null, external_React_default().createElement("td", {
       className: "min"
-    }, "Data last fetched"), external_React_default().createElement("td", null, relativeTime(spocs.lastUpdated))))), external_React_default().createElement("h4", null, "Spoc data"), external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, spocsData.map(spoc => this.renderStoryData(spoc)))), external_React_default().createElement("h4", null, "Spoc frequency caps"), external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, spocs.frequency_caps.map(spoc => this.renderStoryData(spoc)))));
+    }, "Data last fetched"), external_React_default().createElement("td", null, relativeTime(spocs.lastUpdated))))), external_React_default().createElement("button", {
+      className: "button",
+      style: {
+        marginBlockStart: "var(--space-large)"
+      },
+      onClick: this.sendConversionEvent
+    }, "Send conversion event"), external_React_default().createElement("h4", null, "Spoc data"), external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, spocsData.map(spoc => this.renderStoryData(spoc)))), external_React_default().createElement("h4", null, "Spoc frequency caps"), external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, spocs.frequency_caps.map(spoc => this.renderStoryData(spoc)))));
   }
   onStoryToggle(story) {
     const {
@@ -1329,6 +1848,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     const mediumRectangleEnabledPressed = mediumRectangleEnabled && spocPlacements.includes("newtab_rectangle");
     const billboardPressed = billboardsEnabled && spocPlacements.includes("newtab_billboard");
     const leaderboardPressed = leaderboardEnabled && spocPlacements.includes("newtab_leaderboard");
+    const widgetsSystemEnabled = this.props.otherPrefs[PREF_WIDGETS_SYSTEM_ENABLED];
     return external_React_default().createElement("div", null, external_React_default().createElement("button", {
       className: "button",
       onClick: this.refreshCache
@@ -1380,10 +1900,28 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       pressed: mediumRectangleEnabledPressed || null,
       ontoggle: this.toggleIABBanners,
       label: "Enable IAB Medium Rectangle (MREC)"
-    }))), external_React_default().createElement("button", {
+    }))), external_React_default().createElement("details", {
+      className: "details-section"
+    }, external_React_default().createElement("summary", null, "Widgets"), external_React_default().createElement("div", {
+      className: "toggle-wrapper"
+    }, external_React_default().createElement("moz-toggle", {
+      id: "widgets-system-enabled",
+      pressed: widgetsSystemEnabled || null,
+      ontoggle: this.handleWidgetsSystemToggle,
+      label: "Enable widget system"
+    })), external_React_default().createElement("button", {
       className: "button",
-      onClick: this.sendConversionEvent
-    }, "Send conversion event"), external_React_default().createElement("h3", null, "Layout"), layout.map((row, rowIndex) => external_React_default().createElement("div", {
+      onClick: this.handleWidgetsToggleAll
+    }, this.areAllWidgetsEnabled() ? "Disable all" : "Enable all"), external_React_default().createElement("hr", null), WIDGET_REGISTRY.map(widget => external_React_default().createElement("div", {
+      className: "toggle-wrapper",
+      key: widget.id
+    }, external_React_default().createElement("moz-toggle", {
+      id: widget.systemEnabledPref,
+      pressed: this.props.otherPrefs[widget.systemEnabledPref] || null,
+      disabled: !widgetsSystemEnabled || null,
+      ontoggle: this.handleWidgetToggle,
+      label: widgetLabel(widget.id)
+    })))), external_React_default().createElement("h3", null, "Layout"), layout.map((row, rowIndex) => external_React_default().createElement("div", {
       key: `row-${rowIndex}`
     }, row.components.map((component, componentIndex) => external_React_default().createElement("div", {
       key: `component-${componentIndex}`,
@@ -13085,484 +13623,6 @@ function CardSections({
 
 
 const BaseContext = external_React_default().createContext({});
-;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const PREF_WIDGETS_LISTS_ENABLED = "widgets.lists.enabled";
-const PREF_WIDGETS_TIMER_ENABLED = "widgets.focusTimer.enabled";
-const PREF_WIDGETS_WEATHER_ENABLED = "widgets.weather.enabled";
-const PREF_LISTS_SIZE = "widgets.lists.size";
-const PREF_FOCUS_TIMER_SIZE = "widgets.focusTimer.size";
-const PREF_WEATHER_SIZE = "widgets.weather.size";
-const PREF_WIDGETS_ORDER = "widgets.order";
-const PREF_WIDGETS_SYSTEM_LISTS_ENABLED = "widgets.system.lists.enabled";
-const PREF_WIDGETS_SYSTEM_TIMER_ENABLED =
-  "widgets.system.focusTimer.enabled";
-const PREF_WIDGETS_SYSTEM_WEATHER_ENABLED =
-  "widgets.system.weather.enabled";
-const PREF_WIDGETS_SPORTS_WIDGET_ENABLED =
-  "widgets.sportsWidget.enabled";
-const PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
-const PREF_WIDGETS_SYSTEM_SPORTS_WIDGET_ENABLED =
-  "widgets.system.sportsWidget.enabled";
-const PREF_WIDGETS_CLOCKS_ENABLED = "widgets.clocks.enabled";
-const PREF_CLOCKS_SIZE = "widgets.clocks.size";
-const PREF_WIDGETS_SYSTEM_CLOCKS_ENABLED =
-  "widgets.system.clocks.enabled";
-const PREF_WIDGETS_PRIVACY_ENABLED = "widgets.privacy.enabled";
-const PREF_PRIVACY_SIZE = "widgets.privacy.size";
-const PREF_WIDGETS_SYSTEM_PRIVACY_ENABLED =
-  "widgets.system.privacy.enabled";
-const PREF_WIDGETS_CROSSWORD_ENABLED = "widgets.crossword.enabled";
-const PREF_CROSSWORD_SIZE = "widgets.crossword.size";
-const PREF_WIDGETS_SYSTEM_CROSSWORD_ENABLED =
-  "widgets.system.crossword.enabled";
-const PREF_WIDGETS_STOCKS_ENABLED = "widgets.stocks.enabled";
-const PREF_STOCKS_SIZE = "widgets.stocks.size";
-const PREF_WIDGETS_SYSTEM_STOCKS_ENABLED =
-  "widgets.system.stocks.enabled";
-const PREF_CROSSWORD_ENDPOINT = "widgets.crossword.endpoint";
-const PREF_WIDGETS_PICTURE_OF_THE_DAY_ENABLED =
-  "widgets.pictureOfTheDay.enabled";
-const PREF_PICTURE_OF_THE_DAY_SIZE = "widgets.pictureOfTheDay.size";
-const PREF_WIDGETS_SYSTEM_PICTURE_OF_THE_DAY_ENABLED =
-  "widgets.system.pictureOfTheDay.enabled";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const WIDGET_REGISTRY = [
-  {
-    id: "pictureOfTheDay",
-    telemetryName: "picture_of_the_day",
-    order: 0,
-    enabledPref: PREF_WIDGETS_PICTURE_OF_THE_DAY_ENABLED,
-    sizePref: PREF_PICTURE_OF_THE_DAY_SIZE,
-    defaultSize: "medium",
-    validSizes: ["medium", "large"],
-    hasSidebar: false,
-    systemEnabledPref: PREF_WIDGETS_SYSTEM_PICTURE_OF_THE_DAY_ENABLED,
-    trainhopEnabledKey: "pictureOfTheDayEnabled",
-    trainhopSizeKey: "pictureOfTheDaySize",
-    trainhopSidebarKey: null,
-    widgetsSettingsVisibleKey: "pictureOfTheDayVisible",
-    widgetsSettingsEnabledKey: "pictureOfTheDayEnabled",
-    trainhopNamespace: "widgetPictureOfTheDay",
-  },
-  {
-    id: "sportsWidget",
-    telemetryName: "sports",
-    order: 1,
-    enabledPref: PREF_WIDGETS_SPORTS_WIDGET_ENABLED,
-    sizePref: PREF_SPORTS_WIDGET_SIZE,
-    defaultSize: "medium",
-    validSizes: ["medium", "large"],
-    hasSidebar: false,
-    systemEnabledPref: PREF_WIDGETS_SYSTEM_SPORTS_WIDGET_ENABLED,
-    trainhopEnabledKey: "sportsWidgetEnabled",
-    trainhopSizeKey: "sportsWidgetSize",
-    trainhopSidebarKey: null,
-    widgetsSettingsVisibleKey: "sportsWidgetVisible",
-    widgetsSettingsEnabledKey: "sportsWidgetEnabled",
-  },
-  {
-    id: "clocks",
-    telemetryName: "clocks",
-    order: 2,
-    enabledPref: PREF_WIDGETS_CLOCKS_ENABLED,
-    sizePref: PREF_CLOCKS_SIZE,
-    defaultSize: "medium",
-    validSizes: ["small", "medium", "large"],
-    hasSidebar: false,
-    systemEnabledPref: PREF_WIDGETS_SYSTEM_CLOCKS_ENABLED,
-    trainhopEnabledKey: "clocksEnabled",
-    trainhopSizeKey: "clocksSize",
-    trainhopSidebarKey: null,
-    widgetsSettingsVisibleKey: "clocksVisible",
-    widgetsSettingsEnabledKey: "clocksEnabled",
-  },
-  {
-    id: "lists",
-    telemetryName: "lists",
-    order: 3,
-    enabledPref: PREF_WIDGETS_LISTS_ENABLED,
-    sizePref: PREF_LISTS_SIZE,
-    defaultSize: "medium",
-    validSizes: ["small", "medium", "large"],
-    hasSidebar: false,
-    systemEnabledPref: PREF_WIDGETS_SYSTEM_LISTS_ENABLED,
-    trainhopEnabledKey: "listsEnabled",
-    trainhopSizeKey: "listsSize",
-    trainhopSidebarKey: null,
-    widgetsSettingsVisibleKey: "listsVisible",
-    widgetsSettingsEnabledKey: "listsEnabled",
-  },
-  {
-    id: "focusTimer",
-    telemetryName: "focus_timer",
-    order: 4,
-    enabledPref: PREF_WIDGETS_TIMER_ENABLED,
-    sizePref: PREF_FOCUS_TIMER_SIZE,
-    defaultSize: "medium",
-    validSizes: ["small", "medium", "large"],
-    hasSidebar: false,
-    systemEnabledPref: PREF_WIDGETS_SYSTEM_TIMER_ENABLED,
-    trainhopEnabledKey: "timerEnabled",
-    trainhopSizeKey: "timerSize",
-    trainhopSidebarKey: null,
-    widgetsSettingsVisibleKey: "focusTimerVisible",
-    widgetsSettingsEnabledKey: "focusTimerEnabled",
-  },
-  {
-    id: "weather",
-    telemetryName: "weather",
-    order: 5,
-    enabledPref: PREF_WIDGETS_WEATHER_ENABLED,
-    sizePref: PREF_WEATHER_SIZE,
-    defaultSize: "small",
-    validSizes: ["small", "medium", "large"],
-    hasSidebar: true,
-    systemEnabledPref: PREF_WIDGETS_SYSTEM_WEATHER_ENABLED,
-    trainhopEnabledKey: "weatherEnabled",
-    trainhopSizeKey: "weatherSize",
-    trainhopSidebarKey: "weatherSidebar",
-    widgetsSettingsVisibleKey: "weatherVisible",
-    widgetsSettingsEnabledKey: "weatherEnabled",
-  },
-  {
-    id: "privacy",
-    telemetryName: "privacy",
-    order: 6,
-    enabledPref: PREF_WIDGETS_PRIVACY_ENABLED,
-    sizePref: PREF_PRIVACY_SIZE,
-    defaultSize: "medium",
-    validSizes: ["medium", "large"],
-    hasSidebar: false,
-    systemEnabledPref: PREF_WIDGETS_SYSTEM_PRIVACY_ENABLED,
-    trainhopEnabledKey: "privacyEnabled",
-    trainhopSizeKey: "privacySize",
-    trainhopSidebarKey: null,
-    widgetsSettingsVisibleKey: "privacyVisible",
-    widgetsSettingsEnabledKey: "privacyEnabled",
-  },
-  {
-    id: "crossword",
-    telemetryName: "crossword",
-    order: 7,
-    enabledPref: PREF_WIDGETS_CROSSWORD_ENABLED,
-    sizePref: PREF_CROSSWORD_SIZE,
-    defaultSize: "medium",
-    validSizes: ["medium", "large"],
-    hasSidebar: false,
-    systemEnabledPref: PREF_WIDGETS_SYSTEM_CROSSWORD_ENABLED,
-    trainhopEnabledKey: "crosswordEnabled",
-    trainhopSizeKey: "crosswordSize",
-    trainhopSidebarKey: null,
-    widgetsSettingsVisibleKey: "crosswordVisible",
-    widgetsSettingsEnabledKey: "crosswordEnabled",
-  },
-  {
-    id: "stocks",
-    telemetryName: "stocks",
-    order: 8,
-    enabledPref: PREF_WIDGETS_STOCKS_ENABLED,
-    sizePref: PREF_STOCKS_SIZE,
-    defaultSize: "medium",
-    validSizes: ["small", "medium", "large"],
-    hasSidebar: false,
-    systemEnabledPref: PREF_WIDGETS_SYSTEM_STOCKS_ENABLED,
-    trainhopEnabledKey: "stocksEnabled",
-    trainhopSizeKey: "stocksSize",
-    trainhopSidebarKey: null,
-    widgetsSettingsVisibleKey: "stocksVisible",
-    widgetsSettingsEnabledKey: "stocksEnabled",
-  },
-];
-
-
-
-
-
-
-
-
-function getWidgetOrder(orderPref) {
-  const registryIds = WIDGET_REGISTRY.map(w => w.id);
-  if (!orderPref) {
-    return registryIds;
-  }
-  const seen = new Set();
-  const saved = orderPref
-    .split(",")
-    .filter(id => registryIds.includes(id) && !seen.has(id) && seen.add(id));
-  const appended = registryIds.filter(id => !seen.has(id));
-  return [...saved, ...appended];
-}
-
-
-
-
-
-
-
-
-function resolveWidgetOrder(prefs) {
-  const userOrder = prefs[PREF_WIDGETS_ORDER];
-  if (userOrder) {
-    return getWidgetOrder(userOrder);
-  }
-  const trainhopOrder = prefs.trainhopConfig?.widgets?.order;
-  if (trainhopOrder) {
-    return getWidgetOrder(trainhopOrder);
-  }
-  return getWidgetOrder(null);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function isWidgetAddable(widget, prefs) {
-  return Boolean(
-    (widget.trainhopNamespace &&
-      prefs.trainhopConfig?.[widget.trainhopNamespace]?.visible) ||
-    prefs.trainhopConfig?.widgets?.[widget.trainhopEnabledKey] ||
-    prefs.trainhopConfig?.widgetsSettings?.[widget.widgetsSettingsVisibleKey] ||
-    prefs[widget.systemEnabledPref]
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function isWidgetToggleVisible(widget, prefs) {
-  return Boolean(
-    isWidgetAddable(widget, prefs) ||
-    prefs.widgetsConfig?.[widget.trainhopEnabledKey]
-  );
-}
-
-
-
-
-
-
-
-
-
-
-function isWidgetsContainerVisible(prefs) {
-  return Boolean(
-    prefs["widgets.system.enabled"] ||
-    prefs.widgetsConfig?.enabled ||
-    prefs.trainhopConfig?.widgets?.enabled ||
-    prefs.trainhopConfig?.widgetsSettings?.enabled
-  );
-}
-
-
-
-
-
-
-
-
-
-
-function isWidgetEnabled(widget, prefs, widgetsEnabled) {
-  return Boolean(
-    widgetsEnabled &&
-    isWidgetAddable(widget, prefs) &&
-    prefs[widget.enabledPref]
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function resolveWidgetSize(widget, prefs) {
-  const userPref = prefs[widget.sizePref];
-  if (userPref) {
-    return userPref;
-  }
-  const dedicatedSize = widget.trainhopNamespace
-    ? prefs.trainhopConfig?.[widget.trainhopNamespace]?.size
-    : null;
-  const trainhopSize = widget.trainhopSizeKey
-    ? prefs.trainhopConfig?.widgets?.[widget.trainhopSizeKey]
-    : null;
-  return dedicatedSize || trainhopSize || widget.defaultSize;
-}
-
-
-
-
-
-
-
-
-
-
-function resolveWidgetHasSidebar(widget, prefs) {
-  if (widget.trainhopSidebarKey) {
-    const override = prefs.trainhopConfig?.widgets?.[widget.trainhopSidebarKey];
-    if (override !== undefined) {
-      return override;
-    }
-  }
-  return widget.hasSidebar;
-}
-
-
-
-
-
-
-
-
-
-
-function resolveCrosswordEndpoint(prefs) {
-  return (
-    prefs.trainhopConfig?.widgets?.crosswordEndpoint ||
-    prefs[PREF_CROSSWORD_ENDPOINT]
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-function getHideAllTargets(prefs, widgetEnabledMap) {
-  return WIDGET_REGISTRY.filter(
-    w => !resolveWidgetHasSidebar(w, prefs) || widgetEnabledMap[w.id]
-  ).map(w => ({
-    enabledPref: w.enabledPref,
-    telemetryName: w.telemetryName,
-    active: !!widgetEnabledMap[w.id],
-  }));
-}
-
 ;
 
 
