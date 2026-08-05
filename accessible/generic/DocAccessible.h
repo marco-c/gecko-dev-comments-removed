@@ -457,6 +457,17 @@ class DocAccessible : public HyperTextAccessible,
   void ARIAAttributeDefaultChanged(dom::Element* aElement, nsAtom* aAttribute,
                                    AttrModType aModType);
 
+  bool ShouldSendToParentProcess() const {
+    
+    
+    
+    
+    
+    
+    return IPCAccessibilityActive() &&
+           (nsAccessibilityService::IsRunningInParentProcess() || IsPrintDoc());
+  }
+
  protected:
   virtual ~DocAccessible();
 
