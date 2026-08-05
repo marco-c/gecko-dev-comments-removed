@@ -142,6 +142,28 @@ async function assertChatInputStaysChat(input) {
 
     const { called } = await getStubLoadURLResult(browser);
     Assert.ok(!called, `_loadURL should NOT be called for input "${input}"`);
+
+    
+    
+    await mockEngineManager.respondTo({
+      purpose: "chat",
+      response: "Second response from mock.",
+    });
+
+    
+    
+    
+    await SpecialPowers.spawn(browser, [], async () => {
+      const aiWindow = content.document.querySelector("ai-window");
+      const inputCta = ContentTaskUtils.querySelectorDeep(
+        aiWindow,
+        "#ai-window-smartbar input-cta"
+      );
+      await ContentTaskUtils.waitForCondition(
+        () => inputCta.getAttribute("action") != "stop",
+        "Smartbar should return to idle before teardown"
+      );
+    });
   } finally {
     await BrowserTestUtils.closeWindow(win);
     restoreSignIn();
@@ -159,7 +181,7 @@ add_task(async function test_chat_active_locked_action_wins_over_chat() {
   try {
     await enterChatActiveState(browser, mockEngineManager);
 
-    await stubLoadURL(browser, { captureURL: true });
+    await stubOpenSERP(browser);
 
     
     
@@ -169,14 +191,15 @@ add_task(async function test_chat_active_locked_action_wins_over_chat() {
 
     await submitSmartbar(browser);
 
-    const { called, url } = await getStubLoadURLResult(browser);
+    const searchResult = await getStubOpenSERPResult(browser);
     Assert.ok(
-      called,
+      searchResult.called,
       "A locked search action should submit as a search even in chat-active mode"
     );
-    Assert.ok(
-      url.includes("cats"),
-      `Search URL should contain the query: ${url}`
+    Assert.equal(
+      searchResult.terms,
+      "tell me about cats",
+      `Should have correct search terms`
     );
   } finally {
     await BrowserTestUtils.closeWindow(win);
