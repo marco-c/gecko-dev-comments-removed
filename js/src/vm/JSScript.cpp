@@ -889,9 +889,8 @@ class ScriptSource::LoadSourceMatcher {
   }
 };
 
-
-bool ScriptSource::loadSource(JSContext* cx, ScriptSource* ss, bool* loaded) {
-  return ss->data.match(LoadSourceMatcher(cx, ss, loaded));
+bool ScriptSource::tryLoadSource(JSContext* cx, bool* loaded) {
+  return data.match(LoadSourceMatcher(cx, this, loaded));
 }
 
 

@@ -693,8 +693,7 @@ class ScriptSource {
   
   
   
-  
-  static bool loadSource(JSContext* cx, ScriptSource* ss, bool* loaded);
+  bool tryLoadSource(JSContext* cx, bool* loaded);
 
   
   
