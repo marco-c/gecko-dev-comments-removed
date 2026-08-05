@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifdef MOZILLA_INTERNAL_API
 #  ifndef mozilla_EventDispatcher_h_
 #    define mozilla_EventDispatcher_h_
@@ -97,9 +95,11 @@ class MOZ_STACK_CLASS EventChainVisitor {
 
 
 
+
   uint16_t mItemFlags;
 
   
+
 
 
 
