@@ -152,6 +152,35 @@ pub(super) async fn pin_to_taskbar(
     }
 }
 
+
+pub(super) async fn is_current_app_pinned(_: Package) -> Result<bool, IsPinnedError> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    let is_pinned = TaskbarManager::GetDefault()
+        .map_err(IsPinnedError::GetTaskbarManager)?
+        .IsCurrentAppPinnedAsync()
+        .map_err(IsPinnedError::ScheduleIsCurrentAppPinned)?
+        .await
+        .map_err(IsPinnedError::IsCurrentAppPinned)?;
+
+    Ok(is_pinned)
+}
+
 mod aumid {
     
     
@@ -279,6 +308,16 @@ impl From<WinRtPinError> for nsresult {
             GetTaskbarManager(_) => NS_ERROR_NOT_AVAILABLE,
         }
     }
+}
+
+
+
+#[allow(dead_code)]
+#[derive(Debug)]
+pub(super) enum IsPinnedError {
+    GetTaskbarManager(WinError),
+    ScheduleIsCurrentAppPinned(WinError),
+    IsCurrentAppPinned(WinError),
 }
 
 #[cfg(feature = "enable_tests")]
