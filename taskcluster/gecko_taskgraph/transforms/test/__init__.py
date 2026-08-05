@@ -376,7 +376,13 @@ class TestDescriptionSchema(Schema, kw_only=True):
     
     supports_artifact_builds: TOptional[bool] = None
     
-    use_python: TOptional[JobDescriptionSchema.__annotations__["use_python"]] = None  
+    use_python: TOptional[  
+        optionally_keyed_by(
+            "test-platform",
+            JobDescriptionSchema.__annotations__["use_python"],
+            use_msgspec=True,
+        )
+    ] = None
     
     use_uv: TOptional[bool] = None
     
@@ -501,6 +507,7 @@ def resolve_keys(config, tasks):
         "test-manifest-loader",
         "timeoutfactor",
         "use-caches",
+        "use-python",
     )
     for task in tasks:
         for key in keys:
