@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
+import android.os.Build
 import androidx.core.content.ContextCompat
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.ext.registerReceiverCompat
@@ -38,6 +39,7 @@ object Performance {
         disableTrackingProtectionPopups(context)
         disableFirstTimePWAPopup(context)
         disableOpenInApp(context)
+        disableS2SCfr(context)
     }
 
     /**
@@ -49,6 +51,10 @@ object Performance {
     private fun isPerformanceTest(intent: Intent, context: Context): Boolean {
         if (!intent.getBooleanExtra(EXTRA_IS_PERFORMANCE_TEST, false)) {
             return false
+        }
+
+        if (isEmulator()) {
+            return true
         }
 
         val batteryStatus = context.registerReceiverCompat(
@@ -73,6 +79,18 @@ object Performance {
         }
         return false
     }
+
+     /* Returns whether Fenix is running on an Android emulator rather
+     * than a physical device. Regular charging checks don't work on a virtual device.
+     */
+    private fun isEmulator(): Boolean =
+        Build.FINGERPRINT.startsWith("generic") ||
+            Build.FINGERPRINT.startsWith("unknown") ||
+            Build.HARDWARE.contains("goldfish") ||
+            Build.HARDWARE.contains("ranchu") ||
+            Build.PRODUCT.contains("sdk") ||
+            Build.PRODUCT.contains("emulator") ||
+            Build.MODEL.contains("Android SDK built for")
 
     /**
      * Bypasses the onboarding screen on launch
@@ -101,5 +119,9 @@ object Performance {
     private fun disableOpenInApp(context: Context) {
         context.components.settings.openLinksInExternalApp =
             context.getString(R.string.pref_key_open_links_in_apps_never)
+    }
+
+    private fun disableS2SCfr(context: Context) {
+        context.components.settings.shakeToSummarizeToolbarCfrShown = true
     }
 }
