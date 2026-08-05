@@ -4,6 +4,8 @@
 #ifndef mozilla_intl_LineBreaker_h_
 #define mozilla_intl_LineBreaker_h_
 
+#include "mozilla/Span.h"
+
 #include <cstdint>
 
 #define NS_LINEBREAKER_NEED_MORE_TEXT -1
@@ -25,17 +27,16 @@ class LineBreaker final {
   
   
   
-  
-  static void ComputeBreakPositions(const char16_t* aText, uint32_t aLength,
+  static void ComputeBreakPositions(Span<const char16_t> aText,
                                     WordBreakRule aWordBreak,
                                     LineBreakRule aLevel,
                                     bool aIsChineseOrJapanese,
-                                    uint8_t* aBreakBefore);
-  static void ComputeBreakPositions(const uint8_t* aText, uint32_t aLength,
+                                    Span<uint8_t> aBreakBefore);
+  static void ComputeBreakPositions(Span<const uint8_t> aText,
                                     WordBreakRule aWordBreak,
                                     LineBreakRule aLevel,
                                     bool aIsChineseOrJapanese,
-                                    uint8_t* aBreakBefore);
+                                    Span<uint8_t> aBreakBefore);
 
   static void Shutdown();
 };
