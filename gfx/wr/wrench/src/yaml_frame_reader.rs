@@ -349,11 +349,6 @@ pub struct YamlFrameReader {
 
     
     
-    
-    device_pixel_scale: f32,
-
-    
-    
     user_clip_id_map: HashMap<u64, ClipId>,
     user_clipchain_id_map: HashMap<u64, ClipChainId>,
     user_spatial_id_map: HashMap<u64, SpatialId>,
@@ -385,7 +380,6 @@ impl YamlFrameReader {
             font_render_mode: None,
             snapshots: HashMap::new(),
             allow_mipmaps: false,
-            device_pixel_scale: 1.0,
             image_map: HashMap::new(),
             user_clip_id_map: HashMap::new(),
             user_clipchain_id_map: HashMap::new(),
@@ -525,31 +519,6 @@ impl YamlFrameReader {
         self.spatial_id_stack.push(SpatialId::root_scroll_node(pipeline_id));
 
         builder.begin();
-
-        
-        
-        
-        
-        
-        let dppx_reference_frame = if send_transaction && self.device_pixel_scale != 1.0 {
-            let scale = self.device_pixel_scale;
-            let ref_frame_id = builder.push_reference_frame(
-                LayoutPoint::zero(),
-                *self.spatial_id_stack.last().unwrap(),
-                TransformStyle::Flat,
-                PropertyBinding::Value(LayoutTransform::scale(scale, scale, 1.0)),
-                ReferenceFrameKind::Transform {
-                    is_2d_scale_translation: true,
-                    should_snap: false,
-                    paired_with_perspective: false,
-                },
-            );
-            self.spatial_id_stack.push(ref_frame_id);
-            true
-        } else {
-            false
-        };
-
         let mut info = CommonItemProperties {
             clip_rect: LayoutRect::zero(),
             clip_chain_id: ClipChainId::INVALID,
@@ -557,12 +526,6 @@ impl YamlFrameReader {
             flags: PrimitiveFlags::default(),
         };
         self.add_stacking_context_from_yaml(builder, wrench, yaml, IsRoot(true), &mut info);
-
-        if dppx_reference_frame {
-            self.spatial_id_stack.pop().unwrap();
-            builder.pop_reference_frame();
-        }
-
         let (pipeline, payload) = builder.end();
         self.display_lists.push(DisplayList {
             pipeline,
@@ -847,10 +810,6 @@ impl YamlFrameReader {
 
     pub fn allow_mipmaps(&mut self, allow_mipmaps: bool) {
         self.allow_mipmaps = allow_mipmaps;
-    }
-
-    pub fn set_device_pixel_scale(&mut self, scale: f32) {
-        self.device_pixel_scale = scale;
     }
 
     pub fn set_font_render_mode(&mut self, render_mode: Option<FontRenderMode>) {
