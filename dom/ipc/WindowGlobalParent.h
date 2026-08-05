@@ -433,6 +433,12 @@ class WindowGlobalParent final : public WindowContext,
   void NotifyPrefetchStateChanged(dom::PrefetchRecordParent* aRec);
   void DedupePrefetchRecords(dom::PrefetchRecordParent* aJustCompleted);
 
+  
+  
+  
+  
+  dom::PrefetchRecordParent* FindMatchingPrefetchRecord(nsIURI* aURI);
+
   void UpdateFullscreenKeyboardLockStatus(FullscreenKeyboardLock aStatus);
 
  private:
