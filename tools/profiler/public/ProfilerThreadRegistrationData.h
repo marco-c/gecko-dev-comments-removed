@@ -540,25 +540,7 @@ class ThreadRegistrationLockedRWOnThread
   void ClearCycleCollectedJSContext();
 
   
-  
-  
   void PollJSSampling();
-
-  
-  
-  
-  
-  
-  
-  
-  struct JSSamplingChange {
-    enum class Action { None, Start, Stop };
-    Action mAction = Action::None;
-    JSContext* mContext = nullptr;
-    bool mAllocationsEnabled = false;
-  };
-  [[nodiscard]] JSSamplingChange TakeJSSamplingChange();
-  static void ApplyJSSamplingChange(const JSSamplingChange& aChange);
 
  public:
   ThreadRegistrationLockedRWOnThread(const char* aName, const void* aStackTop)

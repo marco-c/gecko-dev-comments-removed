@@ -6122,21 +6122,15 @@ void profiler_init_signal_handlers() {
 static void PollJSSamplingForCurrentThread() {
   
   
-  
-  
-  
-  
   MOZ_ASSERT(!PSAutoLock::IsLockedOnCurrentThread());
 
-  ThreadRegistration::LockedRWOnThread::JSSamplingChange change;
   ThreadRegistration::WithOnThreadRef(
-      [&change](ThreadRegistration::OnThreadRef aOnThreadRef) {
+      [](ThreadRegistration::OnThreadRef aOnThreadRef) {
         aOnThreadRef.WithLockedRWOnThread(
-            [&change](ThreadRegistration::LockedRWOnThread& aThreadData) {
-              change = aThreadData.TakeJSSamplingChange();
+            [](ThreadRegistration::LockedRWOnThread& aThreadData) {
+              aThreadData.PollJSSampling();
             });
       });
-  ThreadRegistration::LockedRWOnThread::ApplyJSSamplingChange(change);
 }
 
 void profiler_init(void* aStackTop) {
