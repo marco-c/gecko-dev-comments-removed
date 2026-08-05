@@ -21,12 +21,15 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(RTCSctpTransport)
 NS_INTERFACE_MAP_END_INHERITING(DOMEventTargetHelper)
 
 RTCSctpTransport::RTCSctpTransport(nsPIDOMWindowInner* aWindow,
-                                   RTCDtlsTransport& aDtlsTransport,
-                                   double aMaxMessageSize,
+                                   const Nullable<double> aMaxMessageSize,
                                    const Nullable<uint16_t>& aMaxChannels)
     : DOMEventTargetHelper(aWindow),
       mState(RTCSctpTransportState::Connecting),
-      mDtlsTransport(&aDtlsTransport),
+      
+      
+      
+      
+      mDtlsTransport(nullptr),
       mMaxMessageSize(aMaxMessageSize),
       mMaxChannels(aMaxChannels) {}
 

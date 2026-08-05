@@ -3019,12 +3019,19 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
         if (aSdpType == dom::RTCSdpType::Rollback) {
           
           RestoreStateForRollback();
-        } else if (!(aRemote && aSdpType == dom::RTCSdpType::Offer)) {
+        } else {
           
           
           
           
-          UpdateRTCDtlsTransports();
+          UpdateRTCSctpTransport();
+          
+          
+          
+          
+          if (!(aRemote && aSdpType == dom::RTCSdpType::Offer)) {
+            UpdateRTCDtlsTransports();
+          }
         }
 
         
@@ -4316,53 +4323,63 @@ void PeerConnectionImpl::EnsureTransports(const JsepSession& aSession) {
 }
 
 void PeerConnectionImpl::UpdateRTCDtlsTransports() {
+  mJsepSession->ForEachTransceiver([this,
+                                    self = RefPtr<PeerConnectionImpl>(this)](
+                                       const JsepTransceiver& jsepTransceiver) {
+    std::string transportId = jsepTransceiver.mTransport.mTransportId;
+    RefPtr<dom::RTCDtlsTransport> dtlsTransport;
+    if (!transportId.empty()) {
+      nsCString key(transportId.data(), transportId.size());
+      dtlsTransport =
+          mTransportIdToRTCDtlsTransport.GetOrInsertNew(key, GetParentObject());
+    }
+
+    if (jsepTransceiver.GetMediaType() == SdpMediaSection::kApplication) {
+      if (mSctpTransport) {
+        mSctpTransport->SetTransport(dtlsTransport.get());
+      }
+    } else {
+      RefPtr<dom::RTCRtpTransceiver> domTransceiver =
+          GetTransceiver(jsepTransceiver.GetUuid());
+      if (domTransceiver) {
+        domTransceiver->SetDtlsTransport(dtlsTransport);
+      }
+    }
+  });
+}
+
+void PeerConnectionImpl::UpdateRTCSctpTransport() {
+  
   
   MaybeInitializeDataChannel();
 
   
   
-  RefPtr<dom::RTCSctpTransport> oldSctp = mSctpTransport.forget();
+  
+  
+  mJsepSession->ForEachTransceiver([&](const JsepTransceiver& jsepTransceiver) {
+    if (jsepTransceiver.GetMediaType() == SdpMediaSection::kApplication) {
+      
+      
+      
+      
+      
+      Nullable<double> maxMessageSize;
+      if (mDataConnection) {
+        maxMessageSize.SetValue(mDataConnection->GetMaxMessageSize());
+      }
 
-  mJsepSession->ForEachTransceiver(
-      [this, self = RefPtr<PeerConnectionImpl>(this),
-       oldSctp](const JsepTransceiver& jsepTransceiver) {
-        std::string transportId = jsepTransceiver.mTransport.mTransportId;
-        RefPtr<dom::RTCDtlsTransport> dtlsTransport;
-        if (!transportId.empty()) {
-          nsCString key(transportId.data(), transportId.size());
-          dtlsTransport = mTransportIdToRTCDtlsTransport.GetOrInsertNew(
-              key, GetParentObject());
-        }
-
-        if (jsepTransceiver.GetMediaType() == SdpMediaSection::kApplication) {
-          
-          
-          
-          if (!dtlsTransport || !mDataConnection) {
-            return;
-          }
-
-          double maxMessageSize = mDataConnection->GetMaxMessageSize();
-          Nullable<uint16_t> maxChannels;
-
-          if (!oldSctp) {
-            mSctpTransport = MakeRefPtr<RTCSctpTransport>(
-                GetParentObject(), *dtlsTransport, maxMessageSize, maxChannels);
-          } else {
-            
-            oldSctp->SetTransport(*dtlsTransport);
-            oldSctp->SetMaxMessageSize(maxMessageSize);
-            oldSctp->SetMaxChannels(maxChannels);
-            mSctpTransport = oldSctp;
-          }
-        } else {
-          RefPtr<dom::RTCRtpTransceiver> domTransceiver =
-              GetTransceiver(jsepTransceiver.GetUuid());
-          if (domTransceiver) {
-            domTransceiver->SetDtlsTransport(dtlsTransport);
-          }
-        }
-      });
+      
+      if (!mSctpTransport) {
+        
+        Nullable<uint16_t> maxChannels;
+        mSctpTransport = MakeRefPtr<RTCSctpTransport>(
+            GetParentObject(), maxMessageSize, maxChannels);
+      } else {
+        mSctpTransport->SetMaxMessageSize(maxMessageSize);
+      }
+    }
+  });
 }
 
 void PeerConnectionImpl::SaveStateForRollback() {
@@ -4372,7 +4389,7 @@ void PeerConnectionImpl::SaveStateForRollback() {
     
     
     mLastStableSctpTransport = mSctpTransport;
-    mLastStableSctpDtlsTransport = mSctpTransport->Transport();
+    mLastStableSctpDtlsTransport = mSctpTransport->GetTransport();
   } else {
     mLastStableSctpTransport = nullptr;
     mLastStableSctpDtlsTransport = nullptr;
@@ -4390,7 +4407,9 @@ void PeerConnectionImpl::RestoreStateForRollback() {
 
   mSctpTransport = mLastStableSctpTransport;
   if (mSctpTransport) {
-    mSctpTransport->SetTransport(*mLastStableSctpDtlsTransport);
+    
+    
+    mSctpTransport->SetTransport(mLastStableSctpDtlsTransport.get());
   }
 }
 
@@ -4403,8 +4422,8 @@ PeerConnectionImpl::GetActiveTransports() const {
     }
   }
 
-  if (mSctpTransport && mSctpTransport->Transport()) {
-    result.insert(mSctpTransport->Transport());
+  if (mSctpTransport && mSctpTransport->GetTransport()) {
+    result.insert(mSctpTransport->GetTransport());
   }
   return result;
 }

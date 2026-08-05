@@ -217,8 +217,9 @@ class PeerConnectionImpl final
   virtual const std::string& GetName();
 
   
-  void IceConnectionStateChange(const std::string& aTransportId,
-                                dom::RTCIceTransportState state);
+  void IceConnectionStateChange(
+      const std::string& aTransportId, dom::RTCIceTransportState state,
+      const Maybe<dom::IceCandidateAttributePair>& aSelectedPair);
   void IceGatheringStateChange(const std::string& aTransportId,
                                dom::RTCIceGathererState state);
   void OnCandidateFound(const std::string& aTransportId,
@@ -821,6 +822,11 @@ class PeerConnectionImpl final
   void EnsureTransports(const JsepSession& aSession);
 
   void UpdateRTCDtlsTransports();
+  
+  
+  
+  
+  void UpdateRTCSctpTransport();
   void SaveStateForRollback();
   void RestoreStateForRollback();
   std::set<RefPtr<dom::RTCDtlsTransport>> GetActiveTransports() const;
