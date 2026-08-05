@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+#include "pc/simulcast_sdp_serializer.h"
+#include "test/fuzzers/fuzz_data_helper.h"
+
+namespace webrtc {
+void FuzzOneInput(FuzzDataHelper fuzz_data) {
+  SimulcastSdpSerializer deserializer;
+  deserializer.DeserializeSimulcastDescription(fuzz_data.ReadString());
+}
+}  

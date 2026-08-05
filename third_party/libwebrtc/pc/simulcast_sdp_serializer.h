@@ -11,6 +11,7 @@
 #ifndef PC_SIMULCAST_SDP_SERIALIZER_H_
 #define PC_SIMULCAST_SDP_SERIALIZER_H_
 
+#include <cstddef>
 #include <string>
 
 #include "absl/strings/string_view.h"
@@ -20,6 +21,11 @@
 #include "pc/simulcast_description.h"
 
 namespace webrtc {
+
+
+
+
+inline constexpr size_t kMaxSimulcastRids = 16;
 
 
 

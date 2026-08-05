@@ -10,12 +10,12 @@
 
 #include "pc/simulcast_sdp_serializer.h"
 
-#include <stddef.h>
-
+#include <cstddef>
 #include <map>
 #include <string>
 #include <vector>
 
+#include "api/rtc_error.h"
 #include "media/base/codec.h"
 #include "media/base/rid_description.h"
 #include "pc/session_description.h"
@@ -240,6 +240,48 @@ const char* kSimulcastMalformedStrings[] = {
 INSTANTIATE_TEST_SUITE_P(SimulcastDeserializationErrors,
                          SimulcastSdpSerializerTest,
                          ValuesIn(kSimulcastMalformedStrings));
+
+
+
+TEST_F(SimulcastSdpSerializerTest, DeserializeDuplicateRidsAcrossLayers) {
+  std::string simulcast_str = "send 1;1";
+  SimulcastDescription expected;
+  expected.send_layers().AddLayer(SimulcastLayer("1", false));
+  expected.send_layers().AddLayer(SimulcastLayer("1", false));
+  TestDeserialization(simulcast_str, expected);
+}
+
+
+
+TEST_F(SimulcastSdpSerializerTest, DeserializeDuplicateRidsAcrossAlternatives) {
+  std::string simulcast_str = "send 1,2;1";
+  SimulcastDescription expected;
+  expected.send_layers().AddLayerWithAlternatives(
+      {SimulcastLayer("1", false), SimulcastLayer("2", false)});
+  expected.send_layers().AddLayer(SimulcastLayer("1", false));
+  TestDeserialization(simulcast_str, expected);
+}
+
+
+
+TEST_F(SimulcastSdpSerializerTest, DeserializeDuplicateRidsWithinAlternatives) {
+  std::string simulcast_str = "send 1,1";
+  SimulcastDescription expected;
+  expected.send_layers().AddLayerWithAlternatives(
+      {SimulcastLayer("1", false), SimulcastLayer("1", false)});
+  TestDeserialization(simulcast_str, expected);
+}
+
+
+TEST_F(SimulcastSdpSerializerTest, DeserializeTooManyRids) {
+  SimulcastSdpSerializer deserializer;
+  
+  std::string too_many_rids =
+      "send r0;r1;r2;r3;r4;r5;r6;r7;r8;r9;r10;r11;r12;r13;r14;r15;r16";
+  RTCErrorOr<SimulcastDescription> result =
+      deserializer.DeserializeSimulcastDescription(too_many_rids);
+  EXPECT_FALSE(result.ok());
+}
 
 
 TEST_F(SimulcastSdpSerializerTest, Serialize_SimpleCase) {
