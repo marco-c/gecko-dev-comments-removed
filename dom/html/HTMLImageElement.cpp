@@ -436,6 +436,8 @@ bool HTMLImageElement::IsHTMLFocusable(IsFocusableFlags aFlags,
 }
 
 nsresult HTMLImageElement::BindToTree(BindContext& aContext, nsINode& aParent) {
+  const bool wasInPicture = IsInPicture();
+
   MOZ_TRY(nsGenericHTMLElement::BindToTree(aContext, aParent));
 
   nsImageLoadingContent::BindToTree(aContext, aParent);
@@ -443,13 +445,13 @@ nsresult HTMLImageElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   UpdateFormOwner();
 
   UpdateAutoSizeObserver();
-  
-  
-  if (IsInPicture()) {
+  if (IsInPicture() && !wasInPicture) {
     if (!mInDocResponsiveContent) {
       aContext.OwnerDoc().AddResponsiveContent(this);
       mInDocResponsiveContent = true;
     }
+    
+    
     mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
     UpdateSourceSyncAndQueueImageTask(false,  false);
   }
