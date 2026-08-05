@@ -95,11 +95,9 @@ class MOZ_STACK_CLASS EventChainVisitor {
 
 
 
-
   uint16_t mItemFlags;
 
   
-
 
 
 

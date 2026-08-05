@@ -111,6 +111,8 @@ EventListenerManager* nsWindowRoot::GetExistingListenerManager() const {
 void nsWindowRoot::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   aVisitor.mCanHandle = true;
   aVisitor.mForceContentDispatch = true;  
+  
+  aVisitor.mItemData = static_cast<nsISupports*>(mWindow);
   aVisitor.SetParentTarget(mParent, false);
 
   
