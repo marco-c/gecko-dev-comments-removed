@@ -45,22 +45,42 @@ void CroppingWindowCapturer::SetSharedMemoryFactory(
   window_capturer_->SetSharedMemoryFactory(std::move(shared_memory_factory));
 }
 
+void CroppingWindowCapturer::EnsureScreenCapturer() {
+  if (screen_capturer_) {
+    return;
+  }
+
+  screen_capturer_ = DesktopCapturer::CreateRawScreenCapturer(options_);
+  if (excluded_window_) {
+    screen_capturer_->SetExcludedWindow(excluded_window_);
+  }
+  screen_capturer_->Start(this);
+}
+
 void CroppingWindowCapturer::CaptureFrame() {
   if (ShouldUseScreenCapturer()) {
     
     
-    last_window_rect_ = GetWindowRectInVirtualScreen();
-    if (!screen_capturer_) {
-      screen_capturer_ = DesktopCapturer::CreateRawScreenCapturer(options_);
-      if (excluded_window_) {
-        screen_capturer_->SetExcludedWindow(excluded_window_);
-      }
-      screen_capturer_->Start(this);
+    
+    
+    
+    
+    
+    
+    
+    
+    const auto current_rect = GetWindowRectInVirtualScreen();
+    const bool has_moved = !last_window_rect_.equals(current_rect);
+    last_window_rect_ = current_rect;
+
+    if (!has_moved) {
+      EnsureScreenCapturer();
+      screen_capturer_->CaptureFrame();
+      return;
     }
-    screen_capturer_->CaptureFrame();
-  } else {
-    window_capturer_->CaptureFrame();
   }
+
+  window_capturer_->CaptureFrame();
 }
 
 void CroppingWindowCapturer::SetExcludedWindow(WindowId window) {
