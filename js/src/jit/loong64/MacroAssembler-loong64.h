@@ -229,17 +229,6 @@ class MacroAssemblerLOONG64 : public Assembler {
   void ma_cselnz(Register rd, Register rs1, Register rs2, Register rc,
                  Register rtmp);
 
-  void moveIfZero(Register dst, Register src, Register cond) {
-    UseScratchRegisterScope temps(*this);
-    Register scratch = temps.Acquire();
-    ma_cselz(dst, src, dst, cond, scratch);
-  }
-  void moveIfNotZero(Register dst, Register src, Register cond) {
-    UseScratchRegisterScope temps(*this);
-    Register scratch = temps.Acquire();
-    ma_cselnz(dst, src, dst, cond, scratch);
-  }
-
   
   
   
