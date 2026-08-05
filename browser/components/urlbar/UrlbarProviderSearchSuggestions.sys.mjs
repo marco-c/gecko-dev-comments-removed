@@ -79,10 +79,10 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
   }
 
   /**
-   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
+   * @returns {Values<typeof lazy.UrlbarShared.PROVIDER_TYPE>}
    */
   get type() {
-    return UrlbarUtils.PROVIDER_TYPE.NETWORK;
+    return lazy.UrlbarShared.PROVIDER_TYPE.NETWORK;
   }
 
   /**
@@ -517,10 +517,10 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
         let titleHighlight;
         if (tail && entry.tailOffsetIndex >= 0) {
           title = tail;
-          titleHighlight = UrlbarUtils.HIGHLIGHT.SUGGESTED;
+          titleHighlight = lazy.UrlbarShared.HIGHLIGHT.SUGGESTED;
         } else if (suggestion) {
           title = suggestion;
-          titleHighlight = UrlbarUtils.HIGHLIGHT.SUGGESTED;
+          titleHighlight = lazy.UrlbarShared.HIGHLIGHT.SUGGESTED;
         } else {
           title = query;
         }
@@ -662,15 +662,22 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
     let resultsToRemove = controller.view.visibleResults.filter(
       result => result.payload.trending
     );
-    if (resultsToRemove.length) {
-      // Show an acknowledgement tip for the first result.
-      resultsToRemove[0].acknowledgeDismissalL10n = {
-        id: "urlbar-trending-dismissal-acknowledgment",
-      };
-    }
+    // Show an acknowledgement tip for the first result.
+    let acknowledgedResult = resultsToRemove[0];
     // Remove results in reverse order so the acknowledgment tip isn't removed.
     resultsToRemove.reverse();
-    resultsToRemove.forEach(result => controller.removeResult(result));
+    resultsToRemove.forEach(result =>
+      controller.removeResult(
+        result,
+        result == acknowledgedResult
+          ? {
+              acknowledgeDismissalL10n: {
+                id: "urlbar-trending-dismissal-acknowledgment",
+              },
+            }
+          : undefined
+      )
+    );
   }
 }
 
@@ -690,7 +697,7 @@ function makeFormHistoryResult(queryContext, engine, entry) {
         "awesome-bar-result-menu",
     },
     highlights: {
-      suggestion: UrlbarUtils.HIGHLIGHT.SUGGESTED,
+      suggestion: lazy.UrlbarShared.HIGHLIGHT.SUGGESTED,
     },
   });
 }

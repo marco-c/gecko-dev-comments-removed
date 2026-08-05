@@ -140,9 +140,9 @@ class UrlbarProvider {
     return "UrlbarProviderBase";
   }
   /**
-   * The type of the provider, must be one of UrlbarUtils.PROVIDER_TYPE.
+   * The type of the provider, must be one of UrlbarShared.PROVIDER_TYPE.
    *
-   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
+   * @returns {Values<typeof UrlbarShared.PROVIDER_TYPE>}
    * @abstract
    */
   get type() {
@@ -284,7 +284,7 @@ user and handling their input.
 % The View is a replaceable component, as such what is described here is a
 % reference for the default View, but may not be valid for other implementations.
 
-### {searchfox}`UrlbarInput.sys.mjs <browser/components/urlbar/UrlbarInput.sys.mjs>`
+### {searchfox}`UrlbarInput.mjs <browser/components/urlbar/content/UrlbarInput.mjs>`
 
 Implements an input box *View*, owns an *UrlbarView*.
 

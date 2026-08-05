@@ -36,7 +36,7 @@ add_task(async function extension() {
       let url = "http://example.com/extension-test";
       let provider = new UrlbarTestUtils.TestProvider({
         name: "ExtensionTest",
-        type: UrlbarUtils.PROVIDER_TYPE.EXTENSION,
+        type: UrlbarShared.PROVIDER_TYPE.EXTENSION,
         results: [
           new UrlbarResult({
             type: UrlbarShared.RESULT_TYPE.URL,
@@ -55,7 +55,7 @@ add_task(async function extension() {
       
       let heuristic = await search({
         value: "test",
-        expectedGroup: UrlbarUtils.RESULT_GROUP.HEURISTIC_EXTENSION,
+        expectedGroup: UrlbarShared.RESULT_GROUP.HEURISTIC_EXTENSION,
       });
       Assert.equal(heuristic.payload.url, url, "Heuristic URL is correct");
 
@@ -93,7 +93,7 @@ add_task(async function omnibox() {
     
     let heuristic = await search({
       value: "omniboxtest foo",
-      expectedGroup: UrlbarUtils.RESULT_GROUP.HEURISTIC_OMNIBOX,
+      expectedGroup: UrlbarShared.RESULT_GROUP.HEURISTIC_OMNIBOX,
     });
     Assert.equal(
       heuristic.payload.keyword,
@@ -149,7 +149,7 @@ add_task(async function engineAlias() {
         
         let heuristic = await search({
           value: "test foo",
-          expectedGroup: UrlbarUtils.RESULT_GROUP.HEURISTIC_FALLBACK,
+          expectedGroup: UrlbarShared.RESULT_GROUP.HEURISTIC_FALLBACK,
         });
         Assert.equal(
           heuristic.payload.engine,
@@ -192,7 +192,7 @@ add_task(async function bookmarkKeyword() {
       
       let heuristic = await search({
         value: "bm foo",
-        expectedGroup: UrlbarUtils.RESULT_GROUP.HEURISTIC_BOOKMARK_KEYWORD,
+        expectedGroup: UrlbarShared.RESULT_GROUP.HEURISTIC_BOOKMARK_KEYWORD,
       });
       Assert.equal(
         heuristic.payload.keyword,
@@ -226,7 +226,7 @@ add_task(async function autofill() {
       
       let heuristic = await search({
         value: "ex",
-        expectedGroup: UrlbarUtils.RESULT_GROUP.HEURISTIC_AUTOFILL,
+        expectedGroup: UrlbarShared.RESULT_GROUP.HEURISTIC_AUTOFILL,
       });
       Assert.ok(heuristic.autofill, "Heuristic is autofill");
       let heuristicURL = "http://example.com/";
@@ -254,7 +254,7 @@ add_task(async function fallback_unknownURL() {
     let url = "http://example.com/unknown-url";
     let heuristic = await search({
       value: url,
-      expectedGroup: UrlbarUtils.RESULT_GROUP.HEURISTIC_FALLBACK,
+      expectedGroup: UrlbarShared.RESULT_GROUP.HEURISTIC_FALLBACK,
     });
     Assert.equal(heuristic.payload.url, url, "Heuristic URL is correct");
 
@@ -273,7 +273,7 @@ add_task(async function fallback_searchRestrictionToken() {
         
         let heuristic = await search({
           value: UrlbarShared.RESTRICT_TOKENS.SEARCH + " foo",
-          expectedGroup: UrlbarUtils.RESULT_GROUP.HEURISTIC_FALLBACK,
+          expectedGroup: UrlbarShared.RESULT_GROUP.HEURISTIC_FALLBACK,
         });
         Assert.equal(
           heuristic.payload.engine,
@@ -313,7 +313,7 @@ add_task(async function fallback_search() {
         
         let heuristic = await search({
           value: "foo",
-          expectedGroup: UrlbarUtils.RESULT_GROUP.HEURISTIC_FALLBACK,
+          expectedGroup: UrlbarShared.RESULT_GROUP.HEURISTIC_FALLBACK,
         });
         Assert.equal(
           heuristic.payload.engine,
@@ -347,7 +347,7 @@ add_task(async function pickNonHeuristic() {
       
       let heuristic = await search({
         value: "ex",
-        expectedGroup: UrlbarUtils.RESULT_GROUP.HEURISTIC_AUTOFILL,
+        expectedGroup: UrlbarShared.RESULT_GROUP.HEURISTIC_AUTOFILL,
       });
       Assert.ok(heuristic.autofill, "Heuristic is autofill");
       Assert.equal(

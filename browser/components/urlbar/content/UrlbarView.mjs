@@ -20,6 +20,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarSearchOneOffs:
     "moz-src:///browser/components/urlbar/UrlbarSearchOneOffs.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
@@ -561,10 +562,16 @@ export class UrlbarView {
     if (!row) {
       return;
     }
+    // Compare against the row's own result rather than `result`: across the
+    // actor boundary `result` is a wire copy, so an identity check would always
+    // fail. This still guards against the row's result changing during the
+    // async l10n fetch below, though it can't confirm the row still matches the
+    // dismissed result -- that needs a stable result id (Bug 2052875).
+    let { result: rowResult } = row;
 
     let l10n = { id: "urlbar-feedback-acknowledgment" };
     await this.#l10nCache.ensure(l10n);
-    if (row.result != result) {
+    if (row.result != rowResult) {
       return;
     }
 
@@ -1083,14 +1090,20 @@ export class UrlbarView {
    * This assumes that the result rows are in index order.
    *
    * @param {number} index The index of the result that has been removed.
+   * @param {object} [acknowledgeDismissalL10n]
+   *   The dismissal-acknowledgment l10n the dismissing provider set on the
+   *   result, supplied by the caller. It isn't read from this row's result
+   *   because the provider sets it after the results were serialized to this
+   *   process, so this row's result -- a query-time snapshot -- never received
+   *   it. Undefined when the row is removed without acknowledgment.
    */
-  onQueryResultRemoved(index) {
+  onQueryResultRemoved(index, acknowledgeDismissalL10n) {
     let rowToRemove = this.#rows.children[index];
 
     let { result } = rowToRemove;
-    if (result.acknowledgeDismissalL10n) {
+    if (acknowledgeDismissalL10n) {
       // Replace the result's row with a dismissal acknowledgment tip.
-      this.#acknowledgeDismissal(result, result.acknowledgeDismissalL10n);
+      this.#acknowledgeDismissal(result, acknowledgeDismissalL10n);
       return;
     }
 
@@ -1106,9 +1119,9 @@ export class UrlbarView {
     if (index >= this.#queryContext.results.length) {
       newSelectionIndex = this.#queryContext.results.length - 1;
     }
-    if (newSelectionIndex >= 0) {
-      this.selectedRowIndex = newSelectionIndex;
-    }
+    // A negative index clears the selection, which resets the input value
+    // when no results remain.
+    this.selectedRowIndex = newSelectionIndex;
   }
 
   openResultMenu(result, anchor) {
@@ -2634,7 +2647,7 @@ export class UrlbarView {
       (result.type == UrlbarShared.RESULT_TYPE.SEARCH ||
         result.type == UrlbarShared.RESULT_TYPE.KEYWORD)
     ) {
-      return lazy.UrlbarUtils.ICON.HISTORY;
+      return lazy.UrlbarShared.ICON.HISTORY;
     }
 
     if (iconUrlOverride) {
@@ -2655,17 +2668,17 @@ export class UrlbarView {
       result.type == UrlbarShared.RESULT_TYPE.SEARCH &&
       result.payload.trending
     ) {
-      return lazy.UrlbarUtils.ICON.TRENDING;
+      return lazy.UrlbarShared.ICON.TRENDING;
     }
 
     if (
       result.type == UrlbarShared.RESULT_TYPE.SEARCH ||
       result.type == UrlbarShared.RESULT_TYPE.KEYWORD
     ) {
-      return lazy.UrlbarUtils.ICON.SEARCH_GLASS;
+      return lazy.UrlbarShared.ICON.SEARCH_GLASS;
     }
 
-    return lazy.UrlbarUtils.ICON.DEFAULT;
+    return lazy.UrlbarShared.ICON.DEFAULT;
   }
 
   #getBlobUrlForResult(result, blob) {
@@ -3980,7 +3993,7 @@ export class UrlbarView {
 
     let localSearchMode;
     if (source) {
-      localSearchMode = lazy.UrlbarUtils.LOCAL_SEARCH_MODES.find(
+      localSearchMode = lazy.UrlbarShared.LOCAL_SEARCH_MODES.find(
         m => m.source == source
       );
     }
@@ -4099,7 +4112,7 @@ export class UrlbarView {
         if (item._originalActionSetter) {
           item._originalActionSetter();
           if (result.heuristic) {
-            favicon.src = result.payload.icon || lazy.UrlbarUtils.ICON.DEFAULT;
+            favicon.src = result.payload.icon || lazy.UrlbarShared.ICON.DEFAULT;
           }
         } else {
           console.error("An item is missing the action setter");
@@ -4120,7 +4133,7 @@ export class UrlbarView {
       if (!iconOverride && (localSearchMode || engine)) {
         // For one-offs without an icon, do not allow restyled URL results to
         // use their own icons.
-        iconOverride = lazy.UrlbarUtils.ICON.SEARCH_GLASS;
+        iconOverride = lazy.UrlbarShared.ICON.SEARCH_GLASS;
       }
       if (
         result.heuristic ||

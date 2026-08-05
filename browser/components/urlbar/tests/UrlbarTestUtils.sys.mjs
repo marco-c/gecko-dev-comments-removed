@@ -841,6 +841,31 @@ class UrlbarInputTestUtils {
   }
 
   /**
+   * Returns a promise that resolves the next time the given controller
+   * notification is dispatched. Useful for awaiting an effect that arrives
+   * asynchronously on the actor message path (e.g. a result dismissal) while
+   * resolving synchronously on the in-process path. Register it before
+   * triggering the effect.
+   *
+   * @param {ChromeWindow} win The window containing the urlbar.
+   * @param {string} notification The listener method name, e.g.
+   *   "onQueryResultRemoved".
+   * @returns {Promise<any[]>} Resolves with the notification's arguments.
+   */
+  promiseControllerNotification(win, notification) {
+    let { controller } = this.#urlbar(win);
+    return new Promise(resolve => {
+      let listener = {
+        [notification](...args) {
+          controller.removeListener(listener);
+          resolve(args);
+        },
+      };
+      controller.addListener(listener);
+    });
+  }
+
+  /**
    * Open the input field context menu and run a task on it.
    *
    * @param {ChromeWindow} win the current window
@@ -1017,7 +1042,7 @@ class UrlbarInputTestUtils {
       expectedSearchMode.isGeneralPurposeEngine = isGeneralPurposeEngine;
     }
 
-    // expectedSearchMode may come from UrlbarUtils.LOCAL_SEARCH_MODES.  The
+    // expectedSearchMode may come from UrlbarShared.LOCAL_SEARCH_MODES.  The
     // objects in that array include useful metadata like icon URIs and pref
     // names that are not usually included in actual search mode objects.  For
     // convenience, ignore those properties if they aren't also present in the
@@ -1923,7 +1948,7 @@ class TestProvider extends UrlbarProvider {
    *   An array of UrlbarResult objects that will be the provider's results.
    * @param {string} [options.name]
    *   The provider's name.  Provider names should be unique.
-   * @param {Values<typeof UrlbarUtils.PROVIDER_TYPE>} [options.type]
+   * @param {Values<typeof lazy.UrlbarShared.PROVIDER_TYPE>} [options.type]
    *   The provider's type.
    * @param {number} [options.priority]
    *   The provider's priority.  Built-in providers have a priority of zero.
@@ -1957,7 +1982,7 @@ class TestProvider extends UrlbarProvider {
   constructor({
     results = [],
     name = "TestProvider" + Services.uuid.generateUUID(),
-    type = UrlbarUtils.PROVIDER_TYPE.PROFILE,
+    type = lazy.UrlbarShared.PROVIDER_TYPE.PROFILE,
     priority = 0,
     addTimeout = 0,
     getViewTemplate = null,
@@ -1988,7 +2013,7 @@ class TestProvider extends UrlbarProvider {
     // As this has been a common source of mistakes, auto-upgrade the provider
     // type to heuristic if any result is heuristic.
     if (!type && this.results?.some(r => r.heuristic)) {
-      this._type = UrlbarUtils.PROVIDER_TYPE.HEURISTIC;
+      this._type = lazy.UrlbarShared.PROVIDER_TYPE.HEURISTIC;
     }
 
     if (getViewTemplate) {

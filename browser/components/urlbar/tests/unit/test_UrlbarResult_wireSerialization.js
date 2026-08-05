@@ -88,13 +88,13 @@ add_task(function test_providerType_roundtrip() {
   let result = makeSearchResult();
   
   
-  result.providerType = UrlbarUtils.PROVIDER_TYPE.PROFILE;
+  result.providerType = UrlbarShared.PROVIDER_TYPE.PROFILE;
 
   let restored = roundTrip(result);
 
   Assert.equal(
     restored.providerType,
-    UrlbarUtils.PROVIDER_TYPE.PROFILE,
+    UrlbarShared.PROVIDER_TYPE.PROFILE,
     "set-only providerType preserved"
   );
 });
