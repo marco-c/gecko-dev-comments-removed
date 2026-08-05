@@ -39,6 +39,27 @@ function run_test() {
 
   
   
+  
+  
+  currentSpec = "moz-icon://foo.?size=16";
+  uri = ioService.newURI(currentSpec);
+  iconURI = uri.QueryInterface(Ci.nsIMozIconURI);
+  Assert.equal(iconURI.fileExtension, ".");
+
+  
+  currentSpec = "moz-icon://.?size=16";
+  uri = ioService.newURI(currentSpec);
+  iconURI = uri.QueryInterface(Ci.nsIMozIconURI);
+  Assert.equal(iconURI.fileExtension, ".");
+
+  
+  currentSpec = "moz-icon://foo?size=16";
+  uri = ioService.newURI(currentSpec);
+  iconURI = uri.QueryInterface(Ci.nsIMozIconURI);
+  Assert.equal(iconURI.fileExtension, "");
+
+  
+  
   currentSpec = "moz-icon://foo.html?size=3";
   try {
     uri = ioService.newURI(currentSpec);

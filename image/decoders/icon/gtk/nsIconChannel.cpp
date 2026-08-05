@@ -205,7 +205,12 @@ static nsresult GetIconWithGIO(nsIMozIconURI* aIconURI, ByteBuf* aDataOut) {
       if (ms) {
         nsAutoCString fileExt;
         aIconURI->GetFileExtension(fileExt);
-        ms->GetTypeFromExtension(fileExt, type);
+        
+        
+        
+        const uint32_t dotlessIndex =
+            !fileExt.IsEmpty() && fileExt.First() == '.' ? 1 : 0;
+        ms->GetTypeFromExtension(Substring(fileExt, dotlessIndex), type);
       }
     }
     mozilla::GUniquePtr<gchar> ctype;

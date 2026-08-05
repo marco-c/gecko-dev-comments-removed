@@ -155,8 +155,14 @@ static nsresult ExtractIconPathInfoFromUrl(nsIURI* aUrl,
         do_GetService(NS_MIMESERVICE_CONTRACTID, &rv));
     NS_ENSURE_SUCCESS(rv, rv);
 
+    
+    
+    const uint32_t dotlessIndex =
+        !fileExt.IsEmpty() && fileExt.First() == '.' ? 1 : 0;
+
     nsAutoCString defFileExt;
-    mimeService->GetPrimaryExtension(contentType, fileExt, defFileExt);
+    mimeService->GetPrimaryExtension(
+        contentType, Substring(fileExt, dotlessIndex), defFileExt);
     
     
     
