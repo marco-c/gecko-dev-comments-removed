@@ -93,7 +93,7 @@ add_task(async function viewContainsStaleRows() {
 
   
   info("Waiting for the search to stop... ");
-  await gURLBar.lastQueryContextPromise;
+  let queryContext = await gURLBar.lastQueryContextPromise;
 
   
   Assert.ok(
@@ -107,8 +107,6 @@ add_task(async function viewContainsStaleRows() {
 
   
   
-  Assert.ok(gURLBar.controller._lastQueryContextWrapper);
-  let { queryContext } = gURLBar.controller._lastQueryContextWrapper;
   Assert.ok(queryContext);
   Assert.equal(queryContext.results.length, halfResults + 1);
 
