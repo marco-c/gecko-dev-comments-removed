@@ -161,8 +161,13 @@ class KeymapWrapper {
 
 
 
+
+
+
   static void InitKeyEvent(WidgetKeyboardEvent& aKeyEvent,
-                           GdkEventKey* aGdkKeyEvent, bool aIsProcessedByIME);
+                           GdkEventKey* aGdkKeyEvent,
+                           const nsAString& aCommitCharReceivedByIMContext,
+                           bool aIsProcessedByIME);
 
   
 
@@ -186,10 +191,13 @@ class KeymapWrapper {
 
 
 
-  static bool DispatchKeyDownOrKeyUpEvent(nsWindow* aWindow,
-                                          GdkEventKey* aGdkKeyEvent,
-                                          bool aIsProcessedByIME,
-                                          bool* aIsCancelled);
+
+
+
+  static bool DispatchKeyDownOrKeyUpEvent(
+      nsWindow* aWindow, GdkEventKey* aGdkKeyEvent,
+      const nsAString& aStringReceivedByIMContext, bool aIsProcessedByIME,
+      bool* aIsCancelled);
 
   
 
