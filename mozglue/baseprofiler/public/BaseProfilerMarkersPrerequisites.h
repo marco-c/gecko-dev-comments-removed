@@ -829,6 +829,11 @@ class MarkerSchema {
     
     
     Decimal,
+    
+    
+    
+    
+    Hexadecimal,
 
     
     
