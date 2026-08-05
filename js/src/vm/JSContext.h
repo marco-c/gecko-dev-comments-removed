@@ -998,11 +998,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   
   js::ContextData<bool> canSkipEnqueuingJobs;
 
-  
-  
-  
-  js::ContextData<uint32_t> asyncResumeDepth;
-
   js::ContextData<JS::PromiseRejectionTrackerCallback>
       promiseRejectionTrackerCallback;
   js::ContextData<void*> promiseRejectionTrackerCallbackData;

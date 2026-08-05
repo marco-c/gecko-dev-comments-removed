@@ -324,17 +324,6 @@ class AsyncFunctionGeneratorObject : public AbstractGeneratorObject {
   }
 };
 
-
-class MOZ_RAII AutoAsyncResumeDepth {
-  JSContext* cx_;
-
- public:
-  explicit AutoAsyncResumeDepth(JSContext* cx) : cx_(cx) {
-    cx_->asyncResumeDepth++;
-  }
-  ~AutoAsyncResumeDepth() { cx_->asyncResumeDepth--; }
-};
-
 }  
 
 #endif 

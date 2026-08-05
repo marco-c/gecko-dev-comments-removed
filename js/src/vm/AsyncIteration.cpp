@@ -7,7 +7,6 @@
 #include "builtin/Promise.h"  
 #include "js/friend/ErrorMessages.h"  
 #include "js/PropertySpec.h"
-#include "vm/AsyncFunction.h"  
 #include "vm/CompletionKind.h"
 #include "vm/FunctionFlags.h"  
 #include "vm/GeneratorObject.h"
@@ -1220,8 +1219,6 @@ bool js::AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
 [[nodiscard]] static bool AsyncGeneratorResume(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator,
     CompletionKind completionKind, HandleValue argument) {
-  AutoAsyncResumeDepth autoDepth(cx);
-
   
   JS::Rooted<JS::Value> resumeArgument(cx, argument);
   while (true) {
