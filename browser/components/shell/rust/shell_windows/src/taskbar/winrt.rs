@@ -37,16 +37,19 @@
 
 
 
+
+
 use nserror::{NS_ERROR_NOT_AVAILABLE, NS_ERROR_UNEXPECTED, nsresult};
 use nsstring::nsAString;
 use std::sync::LazyLock;
 use windows::{ApplicationModel::Package, UI::Shell::TaskbarManager, core::Error as WinError};
 
-use super::PinResult;
 use crate::{
     limited_access_features::LimitedAccessFeatureService,
     util::{async_timer, thread_guard::MainThreadGuard},
 };
+
+use super::PinResult;
 
 static LAF_LOCK: LazyLock<Result<(), nsresult>> = LazyLock::new(|| {
     let svc = LimitedAccessFeatureService::new();
@@ -280,6 +283,7 @@ pub(super) enum WinRtPinError {
 }
 
 impl WinRtPinError {
+    
     pub fn to_metric_taskbar_pin_winrt(&self) -> &'static str {
         use WinRtPinError::*;
         match self {
@@ -328,8 +332,10 @@ mod test {
     use windows::core::Error as WinError;
     use xpcom::interfaces::nsIPrefBranch;
 
-    use super::PinResult::{self, *};
-    use super::WinRtPinError::{self, *};
+    use super::{
+        PinResult::{self, *},
+        WinRtPinError::{self, *},
+    };
 
     
     pub(super) fn pin_result_from_pref() -> Option<Result<PinResult, WinRtPinError>> {
@@ -350,7 +356,6 @@ mod test {
         })
     }
 
-    
     
     fn get_char_pref(name: &std::ffi::CStr) -> Option<nsCString> {
         let mut value = nsCString::new();
