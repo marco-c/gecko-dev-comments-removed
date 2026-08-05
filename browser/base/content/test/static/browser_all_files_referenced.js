@@ -71,8 +71,8 @@ var gExceptionPaths = [
 
   
   
-  "resource://usercontext-content/builtin-themes/",
-  "resource://usercontext-content/extra-themes-previews/",
+  "resource://builtin-themes/",
+  "resource://extra-themes-previews/",
 
   
   "chrome://browser/content/pagedata/schemas/",
