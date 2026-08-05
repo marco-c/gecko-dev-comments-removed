@@ -2747,6 +2747,33 @@ pub extern "C" fn neqo_http3conn_webtransport_register_send_group(
 
 
 
+#[no_mangle]
+pub extern "C" fn neqo_http3conn_webtransport_session_protocol(
+    conn: &mut NeqoHttp3Conn,
+    session_id: u64,
+    protocol: &mut nsACString,
+) -> nsresult {
+    match conn
+        .conn
+        .webtransport_session_protocol(StreamId::from(session_id))
+    {
+        Ok(Some(p)) => {
+            protocol.assign(&p);
+            NS_OK
+        }
+        Ok(None) => {
+            
+            
+            unsafe {
+                protocol.set_length(0);
+            }
+            NS_OK
+        }
+        Err(_) => NS_ERROR_UNEXPECTED,
+    }
+}
+
+
 
 
 
