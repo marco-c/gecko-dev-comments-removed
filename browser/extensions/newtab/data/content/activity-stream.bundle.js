@@ -1192,7 +1192,7 @@ class ToggleStoryButton extends (external_React_default()).PureComponent {
     this.props.onClick(this.props.story);
   }
   render() {
-    return external_React_default().createElement("button", {
+    return external_React_default().createElement("moz-button", {
       onClick: this.handleClick
     }, "collapse/open");
   }
@@ -1546,8 +1546,8 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
         id: "weather-query",
         onChange: this.handleWeatherUpdate,
         value: this.weatherQuery
-      }), external_React_default().createElement("button", {
-        type: "submit"
+      }), external_React_default().createElement("moz-button", {
+        onClick: this.handleWeatherSubmit
       }, "Submit")), external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, suggestions.map(suggestion => external_React_default().createElement("tr", {
         className: "message-item",
         key: suggestion.city_name
@@ -1606,11 +1606,9 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       className: "inferred-overrides-title"
     }, "Inferred Personalization"), external_React_default().createElement("div", {
       className: "inferred-overrides-actions"
-    }, external_React_default().createElement("button", {
-      className: "button",
+    }, external_React_default().createElement("moz-button", {
       onClick: this.refreshInferredPersonalizationAndDebug
-    }, "Recompute Interest Vector"), external_React_default().createElement("button", {
-      className: "button",
+    }, "Recompute Interest Vector"), external_React_default().createElement("moz-button", {
       onClick: this.refreshCache
     }, "Refresh Story Cache"))), external_React_default().createElement("div", {
       className: "inferred-overrides-last-refreshed"
@@ -1635,8 +1633,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       className: "inferred-overrides-refresh-row"
     }, external_React_default().createElement("td", {
       colSpan: "3"
-    }, external_React_default().createElement("button", {
-      className: "button",
+    }, external_React_default().createElement("moz-button", {
       disabled: hasAnyNonZeroOverride ? null : true,
       onClick: this.handleResetAllOverrides
     }, "Reset overrides"))), external_React_default().createElement(Row, {
@@ -1708,8 +1705,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     const {
       blocks
     } = this.props.state.DiscoveryStream;
-    return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("h4", null, "Blocks"), external_React_default().createElement("button", {
-      className: "button",
+    return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("h4", null, "Blocks"), external_React_default().createElement("moz-button", {
       onClick: this.resetBlocks
     }, "Reset Blocks"), " ", external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, Object.keys(blocks).map(key => {
       return external_React_default().createElement(Row, {
@@ -1785,8 +1781,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       className: "min"
     }, "spocs endpoint"), external_React_default().createElement("td", null, spocsEndpoint)), external_React_default().createElement(Row, null, external_React_default().createElement("td", {
       className: "min"
-    }, "Data last fetched"), external_React_default().createElement("td", null, relativeTime(spocs.lastUpdated))))), external_React_default().createElement("button", {
-      className: "button",
+    }, "Data last fetched"), external_React_default().createElement("td", null, relativeTime(spocs.lastUpdated))))), external_React_default().createElement("moz-button", {
       style: {
         marginBlockStart: "var(--space-large)"
       },
@@ -1849,28 +1844,23 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     const billboardPressed = billboardsEnabled && spocPlacements.includes("newtab_billboard");
     const leaderboardPressed = leaderboardEnabled && spocPlacements.includes("newtab_leaderboard");
     const widgetsSystemEnabled = this.props.otherPrefs[PREF_WIDGETS_SYSTEM_ENABLED];
-    return external_React_default().createElement("div", null, external_React_default().createElement("button", {
-      className: "button",
+    return external_React_default().createElement("div", null, external_React_default().createElement("div", {
+      className: "admin-button-row"
+    }, external_React_default().createElement("moz-button", {
       onClick: this.refreshCache
-    }, "Refresh Cache"), external_React_default().createElement("br", null), external_React_default().createElement("button", {
-      className: "button",
+    }, "Refresh Cache"), external_React_default().createElement("moz-button", {
       onClick: this.expireCache
-    }, "Expire Cache"), " ", external_React_default().createElement("button", {
-      className: "button",
+    }, "Expire Cache"), external_React_default().createElement("moz-button", {
       onClick: this.systemTick
-    }, "Trigger System Tick"), " ", external_React_default().createElement("button", {
-      className: "button",
+    }, "Trigger System Tick"), external_React_default().createElement("moz-button", {
       onClick: this.idleDaily
-    }, "Trigger Idle Daily"), external_React_default().createElement("br", null), external_React_default().createElement("button", {
-      className: "button",
+    }, "Trigger Idle Daily"), external_React_default().createElement("moz-button", {
       onClick: this.syncRemoteSettings
-    }, "Sync Remote Settings"), " ", external_React_default().createElement("button", {
-      className: "button",
+    }, "Sync Remote Settings"), external_React_default().createElement("moz-button", {
       onClick: this.refreshTopicSelectionCache
-    }, "Refresh Topic selection count"), external_React_default().createElement("br", null), external_React_default().createElement("button", {
-      className: "button",
+    }, "Refresh Topic selection count"), external_React_default().createElement("moz-button", {
       onClick: this.showPlaceholder
-    }, "Show Placeholder Cards"), " ", external_React_default().createElement("div", {
+    }, "Show Placeholder Cards")), external_React_default().createElement("div", {
       className: "toggle-wrapper"
     }, external_React_default().createElement("moz-toggle", {
       id: "sections-toggle",
@@ -1909,10 +1899,11 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       pressed: widgetsSystemEnabled || null,
       ontoggle: this.handleWidgetsSystemToggle,
       label: "Enable widget system"
-    })), external_React_default().createElement("button", {
-      className: "button",
+    })), external_React_default().createElement("div", {
+      className: "admin-button-row"
+    }, external_React_default().createElement("moz-button", {
       onClick: this.handleWidgetsToggleAll
-    }, this.areAllWidgetsEnabled() ? "Disable all" : "Enable all"), external_React_default().createElement("hr", null), WIDGET_REGISTRY.map(widget => external_React_default().createElement("div", {
+    }, this.areAllWidgetsEnabled() ? "Disable all" : "Enable all")), external_React_default().createElement("hr", null), WIDGET_REGISTRY.map(widget => external_React_default().createElement("div", {
       className: "toggle-wrapper",
       key: widget.id
     }, external_React_default().createElement("moz-toggle", {
