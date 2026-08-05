@@ -140,6 +140,16 @@ impl IdNamespace {
 
 
 
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, Ord, PartialOrd)]
+pub struct RenderBackendId(pub u32);
+
+
+
+
+
+
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize, PeekPoke)]
 pub struct DocumentId {

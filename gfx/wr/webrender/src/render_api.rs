@@ -21,10 +21,19 @@ use crate::api::{HitTestResult, HitTesterRequest, ApiHitTester, PropertyValue, D
 use crate::api::{SampledScrollOffset, TileSize, NotificationRequest, DebugFlags};
 use crate::api::{GlyphDimensionRequest, GlyphIndexRequest, GlyphIndex, GlyphDimensions};
 use crate::api::{FontInstanceOptions, FontInstancePlatformOptions, FontVariation, RenderReasons};
+use crate::api::{RenderBackendId, RenderNotifier};
 use crate::api::DEFAULT_TILE_SIZE;
 use crate::api::units::*;
 use crate::api_resources::ApiResources;
-use glyph_rasterizer::SharedFontResources;
+use crate::api::ImageFormat;
+use crate::bump_allocator::ChunkPool;
+use crate::device::{TextureFilter, TextureFormatPair};
+use crate::frame_builder::FrameBuilderConfig;
+use crate::internal_types::{ResultMsg, SwizzleSettings};
+use crate::texture_cache::TextureCacheConfig;
+use crate::AsyncPropertySampler;
+use glyph_rasterizer::{GlyphRasterThread, SharedFontResources};
+use rayon::ThreadPool;
 use crate::scene_builder_thread::{SceneBuilderRequest, SceneBuilderResult};
 use crate::intern::InterningMemoryReport;
 use crate::profiler::{self, TransactionProfile};
@@ -997,13 +1006,75 @@ pub enum DebugCommand {
 }
 
 
+
+
+
+
+
+
+
+pub struct WindowRegistration {
+    
+    pub id: RenderBackendId,
+    
+    
+    pub result_tx: Sender<ResultMsg>,
+    
+    pub notifier: Box<dyn RenderNotifier>,
+    
+    pub sampler: Option<Box<dyn AsyncPropertySampler + Send>>,
+    
+    
+    pub resource_cache: ResourceCacheInit,
+    
+    pub chunk_pool: Arc<ChunkPool>,
+    
+    pub frame_config: FrameBuilderConfig,
+    
+    pub debug_flags: DebugFlags,
+}
+
+
+
+pub struct ResourceCacheInit {
+    
+    pub max_internal_texture_size: i32,
+    
+    pub image_tiling_threshold: i32,
+    
+    pub color_cache_formats: TextureFormatPair<ImageFormat>,
+    
+    pub swizzle_settings: Option<SwizzleSettings>,
+    
+    pub texture_cache_config: TextureCacheConfig,
+    
+    pub picture_tile_size: api::units::DeviceIntSize,
+    
+    pub picture_texture_filter: TextureFilter,
+    
+    pub workers: Arc<ThreadPool>,
+    
+    pub dedicated_glyph_raster_thread: Option<GlyphRasterThread>,
+    
+    pub supports_r8_texture_upload: bool,
+    
+    pub fonts: SharedFontResources,
+    
+    pub blob_image_handler: Option<Box<dyn crate::api::BlobImageHandler>>,
+    
+    pub enable_multithreading: bool,
+}
+
+
 pub enum ApiMsg {
     
     CloneApi(Sender<IdNamespace>),
     
     CloneApiByClient(IdNamespace),
     
-    AddDocument(DocumentId, DeviceIntSize),
+    UnregisterWindow(RenderBackendId),
+    
+    AddDocument(DocumentId, DeviceIntSize, RenderBackendId),
     
     UpdateDocuments(Vec<Box<TransactionMsg>>),
     
@@ -1021,6 +1092,7 @@ impl fmt::Debug for ApiMsg {
         f.write_str(match *self {
             ApiMsg::CloneApi(..) => "ApiMsg::CloneApi",
             ApiMsg::CloneApiByClient(..) => "ApiMsg::CloneApiByClient",
+            ApiMsg::UnregisterWindow(..) => "ApiMsg::UnregisterWindow",
             ApiMsg::AddDocument(..) => "ApiMsg::AddDocument",
             ApiMsg::UpdateDocuments(..) => "ApiMsg::UpdateDocuments",
             ApiMsg::MemoryPressure => "ApiMsg::MemoryPressure",
@@ -1039,6 +1111,9 @@ pub struct RenderApiSender {
     api_sender: Sender<ApiMsg>,
     scene_sender: Sender<SceneBuilderRequest>,
     low_priority_scene_sender: Sender<SceneBuilderRequest>,
+    
+    
+    backend_id: RenderBackendId,
     blob_image_handler: Option<Box<dyn BlobImageHandler>>,
     fonts: SharedFontResources,
 }
@@ -1049,6 +1124,7 @@ impl RenderApiSender {
         api_sender: Sender<ApiMsg>,
         scene_sender: Sender<SceneBuilderRequest>,
         low_priority_scene_sender: Sender<SceneBuilderRequest>,
+        backend_id: RenderBackendId,
         blob_image_handler: Option<Box<dyn BlobImageHandler>>,
         fonts: SharedFontResources,
     ) -> Self {
@@ -1056,9 +1132,15 @@ impl RenderApiSender {
             api_sender,
             scene_sender,
             low_priority_scene_sender,
+            backend_id,
             blob_image_handler,
             fonts,
         }
+    }
+
+    
+    pub fn backend_id(&self) -> RenderBackendId {
+        self.backend_id
     }
 
     
@@ -1071,6 +1153,7 @@ impl RenderApiSender {
             api_sender: self.api_sender.clone(),
             scene_sender: self.scene_sender.clone(),
             low_priority_scene_sender: self.low_priority_scene_sender.clone(),
+            backend_id: self.backend_id,
             namespace_id,
             next_id: Cell::new(ResourceId(0)),
             resources: ApiResources::new(
@@ -1092,6 +1175,7 @@ impl RenderApiSender {
             api_sender: self.api_sender.clone(),
             scene_sender: self.scene_sender.clone(),
             low_priority_scene_sender: self.low_priority_scene_sender.clone(),
+            backend_id: self.backend_id,
             namespace_id,
             next_id: Cell::new(ResourceId(0)),
             resources: ApiResources::new(
@@ -1107,6 +1191,7 @@ pub struct RenderApi {
     api_sender: Sender<ApiMsg>,
     scene_sender: Sender<SceneBuilderRequest>,
     low_priority_scene_sender: Sender<SceneBuilderRequest>,
+    backend_id: RenderBackendId,
     namespace_id: IdNamespace,
     next_id: Cell<ResourceId>,
     resources: ApiResources,
@@ -1116,6 +1201,11 @@ impl RenderApi {
     
     pub fn get_namespace_id(&self) -> IdNamespace {
         self.namespace_id
+    }
+
+    
+    pub fn backend_id(&self) -> RenderBackendId {
+        self.backend_id
     }
 
     
@@ -1130,6 +1220,7 @@ impl RenderApi {
             self.api_sender.clone(),
             self.scene_sender.clone(),
             self.low_priority_scene_sender.clone(),
+            self.backend_id,
             self.resources.blob_image_handler.as_ref().map(|handler| handler.create_similar()),
             self.resources.get_fonts(),
         )
@@ -1159,7 +1250,7 @@ impl RenderApi {
         
         
         self.api_sender.send(
-            ApiMsg::AddDocument(document_id, initial_size)
+            ApiMsg::AddDocument(document_id, initial_size, self.backend_id)
         ).unwrap();
         self.scene_sender.send(
             SceneBuilderRequest::AddDocument(document_id, initial_size)
