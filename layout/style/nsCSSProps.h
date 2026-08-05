@@ -60,6 +60,7 @@ class nsCSSProps {
 
   
   
+  
   static NonCustomCSSPropertyId LookupPropertyByIDLName(
       const nsACString& aPropertyIDLName, EnabledState aEnabled);
 
@@ -157,8 +158,9 @@ class nsCSSProps {
  private:
   static bool gPropertyEnabled[eCSSProperty_COUNT_with_aliases];
   
-  static const char* const kIDLNameTable[eCSSProperty_COUNT];
-  static const int32_t kIDLNameSortPositionTable[eCSSProperty_COUNT];
+  static const char* const kIDLNameTable[eCSSProperty_COUNT_with_aliases];
+  static const int32_t
+      kIDLNameSortPositionTable[eCSSProperty_COUNT_with_aliases];
 
  public:
   
@@ -172,9 +174,8 @@ class nsCSSProps {
 
 
   static const char* PropertyIDLName(NonCustomCSSPropertyId aProperty) {
-    MOZ_ASSERT(
-        aProperty != eCSSProperty_UNKNOWN && aProperty < eCSSProperty_COUNT,
-        "out of range");
+    MOZ_ASSERT(aProperty != eCSSProperty_UNKNOWN);
+    MOZ_ASSERT(aProperty < eCSSProperty_COUNT_with_aliases);
     return kIDLNameTable[aProperty];
   }
 
@@ -183,17 +184,15 @@ class nsCSSProps {
 
 
   static int32_t PropertyIDLNameSortPosition(NonCustomCSSPropertyId aProperty) {
-    MOZ_ASSERT(
-        aProperty != eCSSProperty_UNKNOWN && aProperty < eCSSProperty_COUNT,
-        "out of range");
+    MOZ_ASSERT(aProperty != eCSSProperty_UNKNOWN);
+    MOZ_ASSERT(aProperty < eCSSProperty_COUNT_with_aliases);
     return kIDLNameSortPositionTable[aProperty];
   }
 
   static bool IsEnabled(NonCustomCSSPropertyId aProperty,
                         EnabledState aEnabled) {
-    MOZ_ASSERT(aProperty != eCSSProperty_UNKNOWN &&
-                   aProperty < eCSSProperty_COUNT_with_aliases,
-               "out of range");
+    MOZ_ASSERT(aProperty != eCSSProperty_UNKNOWN);
+    MOZ_ASSERT(aProperty < eCSSProperty_COUNT_with_aliases);
     
     
     MOZ_ASSERT_IF(!XRE_IsParentProcess(),
