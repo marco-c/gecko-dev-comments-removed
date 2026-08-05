@@ -95,12 +95,13 @@ browser.test.runTests([
       url: testUrl,
     });
     await browser.bookmarks.remove(node.id);
-    try {
-      await browser.bookmarks.get(node.id);
-      browser.test.fail('get should reject for removed bookmark');
-    } catch (e) {
-      
-    }
+    
+    
+    
+    return browser.bookmarks.get(node.id).then(
+        () =>
+            Promise.reject(new Error('get should reject for removed bookmark')),
+        () => {} );
   },
 
   
