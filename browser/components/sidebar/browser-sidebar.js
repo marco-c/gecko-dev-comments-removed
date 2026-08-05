@@ -559,7 +559,7 @@ var SidebarController = {
       
       document.getElementById("sidebar-header").hidden = true;
       if (!this._mainResizeObserverAdded) {
-        this._mainResizeObserver.observe(this.sidebarMain);
+        this._mainResizeObserver.observe(this.sidebarContainer);
         this._mainResizeObserverAdded = true;
       }
       if (!this._browserResizeObserver) {
@@ -673,6 +673,11 @@ var SidebarController = {
       this._mainResizeObserver = null;
     }
 
+    if (this._maxWidthUpdateTask) {
+      this._maxWidthUpdateTask.finalize();
+      this._maxWidthUpdateTask = null;
+    }
+
     if (this.revampComponentsLoaded) {
       
       
@@ -700,13 +705,45 @@ var SidebarController = {
 
 
   _handleLauncherResize(entry) {
-    this._state.launcherWidth = entry.contentBoxSize[0].inlineSize;
+    this._state.launcherWidth = entry.borderBoxSize[0].inlineSize;
     if (this.isLauncherDragging) {
       this._state.launcherDragActive = true;
     }
     if (this._state.visibilitySetting === "expand-on-hover") {
       this.setLauncherCollapsedWidth();
     }
+  },
+
+  requestMaxWidthUpdate() {
+    if (!this._maxWidthUpdateTask) {
+      this._maxWidthUpdateTask = new DeferredTask(
+        () => this._updateLauncherAndPanelMaxWidths(),
+        0
+      );
+    }
+    this._maxWidthUpdateTask.arm();
+  },
+
+  
+
+
+
+  async _updateLauncherAndPanelMaxWidths() {
+    const launcherEl = this.sidebarContainer;
+    const panelEl = this._box;
+    if (!this._state.launcherExpanded || !this._state.panelOpen) {
+      
+      launcherEl.style.removeProperty("max-width");
+      panelEl.style.removeProperty("max-width");
+      return;
+    }
+    const { launcherWidth, panelMinWidth } =
+      await window.promiseDocumentFlushed(() => ({
+        launcherWidth: launcherEl.getBoundingClientRect().width,
+        panelMinWidth: parseFloat(getComputedStyle(panelEl).minWidth),
+      }));
+    launcherEl.style.maxWidth = `calc(75vw - ${panelMinWidth}px)`;
+    panelEl.style.maxWidth = `calc(75vw - ${launcherWidth}px)`;
   },
 
   getUIState() {
@@ -1773,7 +1810,7 @@ var SidebarController = {
     if (!this._panelResizeObserver) {
       this._panelResizeObserver = new ResizeObserver(
         ([entry]) =>
-          (this._state.panelWidth = entry.contentBoxSize[0].inlineSize)
+          (this._state.panelWidth = entry.borderBoxSize[0].inlineSize)
       );
     }
     this._panelResizeObserver.observe(this._box);
