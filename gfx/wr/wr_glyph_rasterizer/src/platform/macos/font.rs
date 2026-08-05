@@ -3,7 +3,7 @@
 
 
 use api::{ColorF, ColorU, FontKey, FontRenderMode, FontSize, GlyphDimensions};
-use api::{FontInstanceFlags, FontVariation, NativeFontHandle};
+use api::{FontInstanceFlags, FontTemplate, FontVariation, NativeFontHandle};
 use core_foundation::data::CFData;
 use core_foundation::base::TCFType;
 use core_foundation::dictionary::CFDictionary;
@@ -258,6 +258,15 @@ impl FontContext {
             Ok(cg_font) => cg_font,
         };
         self.ct_font_descs.insert(*font_key, ct_font_desc);
+    }
+
+    
+    
+    
+    
+    
+    pub fn has_bitmap_strikes(_template: &FontTemplate) -> bool {
+        true
     }
 
     pub fn add_native_font(&mut self, font_key: &FontKey, native_font_handle: NativeFontHandle) {

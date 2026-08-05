@@ -259,6 +259,7 @@ impl TextRunTemplate {
         transform: &LayoutToWorldTransform,
         allow_subpixel: bool,
         raster_space: RasterSpace,
+        has_bitmap_strikes: bool,
     ) -> (FontInstance, f32) {
         
         
@@ -290,8 +291,25 @@ impl TextRunTemplate {
         
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         let (use_subpixel_aa, transform_glyphs, texture_padding, oversized) = if raster_space != RasterSpace::Screen ||
-            transform.has_2d_plane_perspective() || !transform.has_2d_inverse()
+            transform.has_2d_plane_perspective() || !transform.has_2d_inverse() ||
+            has_bitmap_strikes
         {
             (false, false, true, device_font_size > FONT_SIZE_LIMIT)
         } else if transform.exceeds_2d_scale((FONT_SIZE_LIMIT / device_font_size) as f64) {
@@ -431,12 +449,22 @@ impl TextRunTemplate {
             spatial_tree,
         );
 
+        
+        
+        
+        
+        
+        let has_bitmap_strikes = !transform.is_2d_scale_translation()
+            && self.font.flags.contains(FontInstanceFlags::EMBEDDED_BITMAPS)
+            && resource_cache.font_has_bitmap_strikes(self.font.font_key);
+
         let (used_font, raster_scale) = Self::compute_font_instance(
             &self.font,
             surface,
             transform,
             allow_subpixel,
             raster_space,
+            has_bitmap_strikes,
         );
 
         let subpx_dir = used_font.get_subpx_dir();

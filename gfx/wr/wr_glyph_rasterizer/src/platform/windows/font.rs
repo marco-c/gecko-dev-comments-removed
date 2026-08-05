@@ -3,7 +3,7 @@
 
 
 use api::{FontInstanceFlags, FontKey, FontRenderMode, FontVariation};
-use api::{ColorU, GlyphDimensions, NativeFontHandle};
+use api::{ColorU, FontTemplate, GlyphDimensions, NativeFontHandle};
 use crate::gamma_lut::{ColorLut, GammaLut};
 use crate::rasterizer::{FontInstance, FontTransform, GlyphKey};
 use crate::rasterizer::{GlyphFormat, GlyphRasterError, GlyphRasterResult, RasterizedGlyph};
@@ -182,6 +182,15 @@ impl FontContext {
         
         debug!("DWrite WR failed to load font from data, using Arial instead");
         self.add_font_descriptor(font_key, &DEFAULT_FONT_DESCRIPTOR);
+    }
+
+    
+    
+    
+    
+    
+    pub fn has_bitmap_strikes(_template: &FontTemplate) -> bool {
+        true
     }
 
     pub fn add_native_font(&mut self, font_key: &FontKey, font_handle: NativeFontHandle) {

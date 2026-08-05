@@ -407,6 +407,23 @@ impl FontContext {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn has_bitmap_strikes(template: &FontTemplate) -> bool {
+        let cached = match FONT_CACHE.lock().unwrap().add_font(template.clone()) {
+            Ok(font) => font,
+            Err(_) => return false,
+        };
+        let cached = cached.lock().unwrap();
+        (unsafe { (*cached.face).face_flags } & (FT_FACE_FLAG_FIXED_SIZES as FT_Long)) != 0
+    }
+
     pub fn delete_font(&mut self, font_key: &FontKey) {
         if let Some(cached) = self.fonts.remove(font_key) {
             

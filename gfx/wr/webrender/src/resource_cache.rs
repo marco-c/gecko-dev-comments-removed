@@ -482,6 +482,13 @@ pub struct ResourceCache {
     
     
     
+    
+    
+    font_bitmap_strikes: FastHashMap<FontKey, bool>,
+
+    
+    
+    
     pending_image_requests: FastHashSet<ImageRequest>,
 
     rasterized_blob_images: FastHashMap<BlobImageKey, RasterizedBlob>,
@@ -541,6 +548,7 @@ impl ResourceCache {
                 weak_fonts: WeakTable::new(),
             },
             cached_glyph_dimensions: FastHashMap::default(),
+            font_bitmap_strikes: FastHashMap::default(),
             texture_cache,
             picture_textures,
             state: State::Idle,
@@ -931,16 +939,26 @@ impl ResourceCache {
             self.resources.weak_fonts.insert(Arc::downgrade(data));
             self.font_templates_memory += data.len();
         }
+        let has_bitmap_strikes = self.glyph_rasterizer.template_has_bitmap_strikes(&template);
+        self.font_bitmap_strikes.insert(font_key, has_bitmap_strikes);
         self.glyph_rasterizer.add_font(font_key, template.clone());
         self.resources.fonts.templates.add_font(font_key, template);
     }
 
     pub fn delete_font_template(&mut self, font_key: FontKey) {
         self.glyph_rasterizer.delete_font(font_key);
+        self.font_bitmap_strikes.remove(&font_key);
         if let Some(FontTemplate::Raw(data, _)) = self.resources.fonts.templates.delete_font(&font_key) {
             self.font_templates_memory -= data.len();
         }
         self.cached_glyphs.delete_fonts(&[font_key]);
+    }
+
+    
+    
+    
+    pub fn font_has_bitmap_strikes(&self, font_key: FontKey) -> bool {
+        self.font_bitmap_strikes.get(&font_key).copied().unwrap_or(false)
     }
 
     pub fn delete_font_instance(&mut self, instance_key: FontInstanceKey) {

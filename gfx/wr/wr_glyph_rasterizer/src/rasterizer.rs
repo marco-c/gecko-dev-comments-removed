@@ -1611,6 +1611,15 @@ impl GlyphRasterizer {
         self.fonts.contains(&font_key)
     }
 
+    
+    
+    
+    
+    
+    pub fn template_has_bitmap_strikes(&self, template: &FontTemplate) -> bool {
+        FontContext::has_bitmap_strikes(template)
+    }
+
     pub fn get_glyph_dimensions(
         &mut self,
         font: &FontInstance,
