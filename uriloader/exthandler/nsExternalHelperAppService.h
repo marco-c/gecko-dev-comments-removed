@@ -37,6 +37,10 @@ class nsITransfer;
 class nsIPrincipal;
 class MaybeCloseWindowHelper;
 
+namespace mozilla::dom {
+class WindowContext;
+}  
+
 #define EXTERNAL_APP_HANDLER_IID \
   {0x50eb7479, 0x71ff, 0x4ef8, {0xb3, 0x1e, 0x3b, 0x59, 0xc8, 0xab, 0xb9, 0x24}}
 
@@ -134,6 +138,29 @@ class nsExternalHelperAppService : public nsIExternalHelperAppService,
   static bool ExternalProtocolIsBlockedBySandbox(
       mozilla::dom::BrowsingContext* aBrowsingContext,
       const bool aHasValidUserGestureActivation);
+
+  
+
+
+
+
+
+
+
+  static bool SchemeRequiresUserActivationToLaunch(const nsACString& aScheme);
+
+  
+
+
+
+
+
+
+
+
+
+  static void MaybeConsumeUserActivationForExternalScheme(
+      mozilla::dom::WindowContext* aWindowContext, const nsACString& aScheme);
 
   
 
@@ -313,7 +340,8 @@ class nsExternalAppHandler final : public nsIStreamListener,
                        mozilla::dom::BrowsingContext* aBrowsingContext,
                        nsIInterfaceRequestor* aWindowContext,
                        nsExternalHelperAppService* aExtProtSvc,
-                       const nsAString& aSuggestedFileName, uint32_t aReason,
+                       const nsAString& aSuggestedFileName,
+                       nsIHelperAppLauncherDialog::reason aReason,
                        bool aForceSave);
 
   
@@ -407,7 +435,7 @@ class nsExternalAppHandler final : public nsIStreamListener,
 
 
 
-  uint32_t mReason;
+  nsIHelperAppLauncherDialog::reason mReason;
 
   
 
