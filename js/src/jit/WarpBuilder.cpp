@@ -3449,6 +3449,72 @@ static MInstruction* TryCompare(TempAllocator& alloc, JSOp jsop,
   return nullptr;
 }
 
+
+static MInstruction* TryStrictConstantCompare(TempAllocator& alloc, JSOp jsop,
+                                              MDefinition* lhs,
+                                              MDefinition* rhs) {
+  
+  if (!IsStrictEqualityOp(jsop)) {
+    return nullptr;
+  }
+
+  
+  if (!lhs->isConstant() && !rhs->isConstant()) {
+    return nullptr;
+  }
+
+  auto strictCompare = [&](MConstant* cst,
+                           MDefinition* operand) -> MInstruction* {
+    
+    
+    if (cst->type() == MIRType::Int32) {
+      cst->setImplicitlyUsedUnchecked();
+      return MStrictConstantCompareInt32::New(alloc, operand, cst->toInt32(),
+                                              jsop);
+    }
+
+    
+    if (cst->type() == MIRType::String) {
+      cst->setImplicitlyUsedUnchecked();
+      return MStrictConstantCompareString::New(alloc, operand, cst->toString(),
+                                               jsop);
+    }
+
+    
+    if (cst->type() == MIRType::Object) {
+      cst->setImplicitlyUsedUnchecked();
+      return MStrictConstantCompareObject::New(alloc, operand, &cst->toObject(),
+                                               jsop);
+    }
+
+    
+    if (cst->type() == MIRType::Undefined) {
+      return MCompare::New(alloc, operand, cst, jsop,
+                           MCompare::Compare_Undefined);
+    }
+
+    
+    if (cst->type() == MIRType::Null) {
+      return MCompare::New(alloc, operand, cst, jsop, MCompare::Compare_Null);
+    }
+
+    
+    return nullptr;
+  };
+
+  if (lhs->isConstant()) {
+    if (auto* ins = strictCompare(lhs->toConstant(), rhs)) {
+      return ins;
+    }
+  }
+  if (rhs->isConstant()) {
+    if (auto* ins = strictCompare(rhs->toConstant(), lhs)) {
+      return ins;
+    }
+  }
+  return nullptr;
+}
+
 bool WarpBuilder::buildIC(BytecodeLocation loc, CacheKind kind,
                           std::initializer_list<MDefinition*> inputs) {
   MOZ_ASSERT(loc.opHasIC());
@@ -3539,6 +3605,15 @@ bool WarpBuilder::buildIC(BytecodeLocation loc, CacheKind kind,
       
       
       if (auto* ins = TryCompare(alloc(), loc.getOp(), lhs, rhs)) {
+        current->add(ins);
+        current->push(ins);
+        return true;
+      }
+
+      
+      
+      if (auto* ins =
+              TryStrictConstantCompare(alloc(), loc.getOp(), lhs, rhs)) {
         current->add(ins);
         current->push(ins);
         return true;
