@@ -15,6 +15,7 @@
 #include "js/loader/ScriptLoadRequestList.h"
 #include "js/loader/ScriptLoaderInterface.h"
 #include "mozilla/CORSMode.h"
+#include "mozilla/Encoding.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/dom/ScriptLoadContext.h"
@@ -488,7 +489,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
       RequestPriority aRequestPriority, const SRIMetadata& aIntegrity,
       ReferrerPolicy aReferrerPolicy,
       JS::loader::ParserMetadata aParserMetadata,
-      ScriptLoadRequestType aRequestType);
+      ScriptLoadRequestType aRequestType,
+      const nsAString* aMaybePreloadCharset);
 
   
 
@@ -498,7 +500,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
       ReferrerPolicy aReferrerPolicy, ScriptFetchOptions* aFetchOptions,
       nsIURI* aURI, ScriptLoadRequest* aRequest,
       nsIScriptElement* aElement = nullptr, const nsAString& aNonce = u""_ns,
-      ScriptLoadRequestType aRequestType = ScriptLoadRequestType::External);
+      ScriptLoadRequestType aRequestType = ScriptLoadRequestType::External,
+      const Encoding* aClassicScriptFallbackEncoding = nullptr);
 
   
 
@@ -756,6 +759,13 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   static nsCString& BytecodeMimeTypeFor(const ScriptLoadRequest* aRequest);
   static nsCString& BytecodeMimeTypeFor(
       const JS::loader::LoadedScript* aLoadedScript);
+
+  
+  
+  
+  const Encoding* GetClassicScriptFallbackEncoding(
+      nsIScriptElement* aMaybeScriptElement,
+      const nsAString* aMaybePreloadCharset);
 
   
   
