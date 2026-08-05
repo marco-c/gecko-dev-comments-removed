@@ -906,6 +906,15 @@ long AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
   uint32_t prefilledFrameCount = mScratchBuffer.Empty(mBuffer);
 
   if (mFirstCallbackIteration && !mTargetIterationTimeStamp.IsNull()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
     MediaTime renderingTime =
         MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(SecondsToMediaTime(
             (iterationStartTimeStamp - mTargetIterationTimeStamp).ToSeconds()));
@@ -916,7 +925,8 @@ long AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
       
       
       
-      prefilledFrameCount = AssertedCast<uint32_t>(aFrames - renderingTime);
+      prefilledFrameCount = AssertedCast<uint32_t>(
+          aFrames - std::max<MediaTime>(0, renderingTime));
       mBuffer.WriteSilence(prefilledFrameCount);
     }
   }
