@@ -5391,8 +5391,7 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
   
   
   const uint32_t badFlags = nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW |
-                            nsIWebBrowserChrome::CHROME_NON_PRIVATE_WINDOW |
-                            nsIWebBrowserChrome::CHROME_PRIVATE_LIFETIME;
+                            nsIWebBrowserChrome::CHROME_NON_PRIVATE_WINDOW;
   if (!!(aChromeFlags & badFlags)) {
     return IPC_FAIL(this, "Forbidden aChromeFlags passed");
   }
