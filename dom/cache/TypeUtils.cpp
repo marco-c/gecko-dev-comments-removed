@@ -208,6 +208,9 @@ void TypeUtils::ToCacheResponseWithoutBody(CacheResponse& aOut,
 
   aOut.paddingInfo() = aIn.GetPaddingInfo();
   aOut.paddingSize() = aIn.GetPaddingSize();
+
+  
+  aOut.credentials() = aIn.GetCredentialsMode();
 }
 
 void TypeUtils::ToCacheResponse(JSContext* aCx, CacheResponse& aOut,
