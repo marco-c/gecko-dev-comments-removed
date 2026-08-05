@@ -26,7 +26,13 @@ class ZeroOutputProcessor extends AudioWorkletProcessor {
     let startIndex = this._framesCaptured;
     let endIndex = startIndex + kRenderQuantumFrames;
     for (let i = 0; i < this._buffer.length; ++i) {
-      this._buffer[i].subarray(startIndex, endIndex).set(input[i]);
+      
+      
+      if (input && input[i]) {
+        this._buffer[i].subarray(startIndex, endIndex).set(input[i]);
+      } else {
+        this._buffer[i].subarray(startIndex, endIndex).fill(0);
+      }
     }
     this._framesCaptured = endIndex;
 
