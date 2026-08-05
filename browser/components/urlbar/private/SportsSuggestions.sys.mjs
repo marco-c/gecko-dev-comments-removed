@@ -82,20 +82,20 @@ export class SportsSuggestions extends RealtimeSuggestProvider {
       {
         name: `home-team-score-${index}`,
         tag: "span",
-        classList: ["urlbarView-sports-score"],
+        classList: ["urlbarView-sports-score", "urlbarView-sports-score-home"],
       },
       {
         tag: "span",
         classList: ["urlbarView-realtime-description-separator-dot"],
       },
       {
-        name: `away-team-name-${index}`,
-        tag: "span",
-      },
-      {
         name: `away-team-score-${index}`,
         tag: "span",
-        classList: ["urlbarView-sports-score"],
+        classList: ["urlbarView-sports-score", "urlbarView-sports-score-away"],
+      },
+      {
+        name: `away-team-name-${index}`,
+        tag: "span",
       },
     ];
   }
@@ -192,11 +192,12 @@ export class SportsSuggestions extends RealtimeSuggestProvider {
     let {
       formattedDate,
       formattedTime,
-      parseDateResult: { daysUntil, zonedNow },
+      parseDateResult: { daysAgo, zonedNow },
     } = lazy.UrlbarUtils.formatDate(date, {
       // If the item has an icon, the date chiclet won't be shown, so show the
       // absolute date in the bottom part of the row.
-      forceAbsoluteDate: !!item.home_team?.icon || !!item.away_team?.icon,
+      forceMonthAndDayWhenAbsolute:
+        !!item.home_team?.icon || !!item.away_team?.icon,
       includeTimeZone: true,
       capitalizeRelativeDate: true,
     });
@@ -294,7 +295,7 @@ export class SportsSuggestions extends RealtimeSuggestProvider {
           },
         },
       };
-    } else if (daysUntil == 0 && item.status_type == "past") {
+    } else if (daysAgo == 0 && item.status_type == "past") {
       statusUpdate = {
         [`status-${i}`]: {
           l10n: {
