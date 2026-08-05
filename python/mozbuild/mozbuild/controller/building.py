@@ -1484,7 +1484,7 @@ class BuildDriver(MozbuildObject):
                             message = "Build argument '{target}' is a subdirectory and was ignored."
                             
                             
-                            if not is_running_under_coding_agent:
+                            if not is_running_under_coding_agent():
                                 message += (
                                     "\nUse --allow-subdirectory-build to override."
                                 )
