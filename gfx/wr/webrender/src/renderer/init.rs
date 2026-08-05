@@ -169,6 +169,13 @@ pub struct WebRenderOptions {
     
     
     pub shared_font_namespace: Option<IdNamespace>,
+    
+    
+    
+    
+    
+    
+    pub shared_fonts: Option<crate::glyph_rasterizer::SharedFontResources>,
     pub testing: bool,
     
     
@@ -270,6 +277,7 @@ impl Default for WebRenderOptions {
             support_low_priority_transactions: false,
             namespace_alloc_by_client: false,
             shared_font_namespace: None,
+            shared_fonts: None,
             testing: false,
             gpu_supports_fast_clears: false,
             allow_dual_source_blending: true,
@@ -600,12 +608,22 @@ pub fn create_webrender_instance(
 
     
     
-    let font_namespace = if namespace_alloc_by_client {
-        options.shared_font_namespace.expect("Shared font namespace must be allocated by client")
+    
+    
+    
+    
+    
+    
+    let fonts = if let Some(fonts) = options.shared_fonts.take() {
+        fonts
     } else {
-        RenderBackend::next_namespace_id()
+        let font_namespace = if namespace_alloc_by_client {
+            options.shared_font_namespace.expect("Shared font namespace must be allocated by client")
+        } else {
+            RenderBackend::next_namespace_id()
+        };
+        SharedFontResources::new(font_namespace)
     };
-    let fonts = SharedFontResources::new(font_namespace);
 
     let blob_image_handler = options.blob_image_handler.take();
     let scene_builder_hooks = options.scene_builder_hooks.take();
