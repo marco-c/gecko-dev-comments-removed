@@ -2,12 +2,12 @@
 
 
 
-#include "gc/BufferAllocator-inl.h"
-
 #include "mozilla/Likely.h"
 #include "mozilla/ScopeExit.h"
 
 #include <bit>
+
+#include "gc/BufferAllocator-inl.h"
 
 #ifdef XP_DARWIN
 #  include <mach/mach_init.h>
@@ -1805,8 +1805,8 @@ bool LargeBuffer::isPointerWithinAllocation(void* ptr) const {
 #ifdef DEBUG
 
 void BufferAllocator::checkGCStateNotInUse() {
-  maybeMergeSweptData();
-  AutoLock lock(runtime());  
+  MaybeLock lock;
+  maybeMergeSweptData(lock);
   checkGCStateNotInUse(lock);
 }
 
