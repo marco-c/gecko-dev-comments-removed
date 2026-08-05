@@ -6458,7 +6458,7 @@ static void AdjustAndPushBevel(wr::DisplayListBuilder& aBuilder,
   
   aBuilder.PushBorder(bevelRect, bevelRect, aBackfaceIsVisible, borderWidths,
                       wrsides, wr::EmptyBorderRadius(),
-                      wr::AntialiasBorder::No);
+                      wr::EmptyLayoutSideOffsets(), wr::AntialiasBorder::No);
 }
 
 static void CreateWRCommandsForBeveledBorder(

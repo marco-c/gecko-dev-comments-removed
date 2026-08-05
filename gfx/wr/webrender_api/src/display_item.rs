@@ -418,6 +418,17 @@ pub struct NormalBorder {
     pub top: BorderSide,
     pub bottom: BorderSide,
     pub radius: BorderRadius,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub inset: LayoutSideOffsets,
+
     
     
     
