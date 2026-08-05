@@ -69,6 +69,10 @@ enum Stat {
   
   STAT_BIGINTS_PROMOTED,
 
+  
+  
+  STAT_MARK_STACK_MAX_CAPACITY,
+
   STAT_LIMIT
 };
 

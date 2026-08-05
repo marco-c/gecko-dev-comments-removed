@@ -195,6 +195,13 @@ class MarkStack {
   [[nodiscard]] bool init();
   [[nodiscard]] bool resetStackCapacity();
 
+  
+  size_t highWaterMark() const;
+
+  
+  
+  void resetHighWaterMark();
+
   template <typename T>
   [[nodiscard]] bool push(T* ptr);
   void infalliblePush(const SlotsOrElementsRange& range);
@@ -257,6 +264,9 @@ class MarkStack {
 
   
   MainThreadOrGCTaskData<size_t> capacity_;
+
+  
+  MainThreadOrGCTaskData<size_t> highWaterMark_;
 
   
   MainThreadOrGCTaskData<size_t> topIndex_;
@@ -596,6 +606,9 @@ class GCMarker {
   [[nodiscard]] bool initStack();
   void resetStackCapacity();
   void freeStack();
+
+  size_t stackHighWaterMark() const;
+  void resetStackHighWaterMark();
 
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
