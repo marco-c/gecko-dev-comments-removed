@@ -93,6 +93,7 @@ fn unlock_deadline(timeout: Duration) -> Instant {
 struct WrappedDek {
     kek_type: KekType,
     kek_ref: String,
+    #[serde(rename = "wrapped_dek")]
     dek: Vec<u8>,
 }
 
