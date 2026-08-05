@@ -6,20 +6,54 @@
 
 
 
-
-USE_LIBS += ["nss"]
-
 UNIFIED_SOURCES += [
     "stub.cpp",
 ]
 
+megazord_rust_features = ["mozbuild-rustlib"]
+
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
-    RustLibrary("megazord")
+    RustLibrary("megazord", features=megazord_rust_features)
 else:
-    RustLibrary("megazord", output_category="uniffi-target")
+    RustLibrary(
+        "megazord",
+        features=megazord_rust_features,
+        output_category="uniffi-target",
+    )
 
+
+
+RUST_TEST_FEATURES = ["nss-as/mozbuild-rustlib"]
 
 RUST_TESTS = [
+    "logins",
     "megazord",
+    "rc_crypto",
+]
+
+
+
+USE_LIBS += [
+    "mozglue",
+    "nss",
+]
+
+if CONFIG["OS_TARGET"] == "Linux":
+    USE_LIBS += [
+        "freeblpriv3",
+    ]
+
+
+USE_LIBS += [
+    
+    "freebl3",
+    
+    "softokn3",
+]
+
+
+USE_LIBS += [
+    "mozpkix",
+    "pure_virtual",
 ]
