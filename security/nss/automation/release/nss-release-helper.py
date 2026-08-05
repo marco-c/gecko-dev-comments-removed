@@ -679,7 +679,7 @@ def generate_release_notes_index(args):
     esr_underscore = version_string_to_underscore(esr_version)
 
     
-    release_dir = "doc/rst/releases"
+    release_dir = "doc/src/releases"
     if not os.path.exists(release_dir):
         exit_with_failure(f"Release notes directory not found: {release_dir}")
 
@@ -688,8 +688,8 @@ def generate_release_notes_index(args):
     for filename in os.listdir(release_dir):
         if (
             filename.startswith("nss_")
-            and filename.endswith(".rst")
-            and filename != "index.rst"
+            and filename.endswith(".md")
+            and filename != "index.md"
         ):
             release_files.append(filename)
 
@@ -697,7 +697,7 @@ def generate_release_notes_index(args):
     
     def version_key(filename):
         
-        parts = filename.replace("nss_", "").replace(".rst", "").split("_")
+        parts = filename.replace("nss_", "").replace(".md", "").split("_")
         
         return [int(p) for p in parts]
 
@@ -707,29 +707,29 @@ def generate_release_notes_index(args):
     toctree_lines = "\n".join([f"   {f}" for f in release_files])
 
     
-    index_content = f""".. _mozilla_projects_nss_releases:
+    index_content = f"""(mozilla-projects-nss-releases)=
 
-Release Notes
-=============
+# Release Notes
 
+```{{eval-rst}}
 .. toctree::
    :maxdepth: 0
    :glob:
    :hidden:
 
 {toctree_lines}
+```
 
-.. note::
+:::{{note}}
+**NSS {latest_version}** is the latest version of NSS.
+Complete release notes are available here: {{ref}}`mozilla_projects_nss_nss_{latest_underscore}_release_notes`
 
-   **NSS {latest_version}** is the latest version of NSS.
-   Complete release notes are available here: :ref:`mozilla_projects_nss_nss_{latest_underscore}_release_notes`
-
-   **NSS {esr_version} (ESR)** is the latest ESR version of NSS.
-   Complete release notes are available here: :ref:`mozilla_projects_nss_nss_{esr_underscore}_release_notes`
-
+**NSS {esr_version} (ESR)** is the latest ESR version of NSS.
+Complete release notes are available here: {{ref}}`mozilla_projects_nss_nss_{esr_underscore}_release_notes`
+:::
 """
 
-    index_file = os.path.join(release_dir, "index.rst")
+    index_file = os.path.join(release_dir, "index.md")
     with open(index_file, "w") as f:
         f.write(index_content)
 
@@ -754,7 +754,7 @@ def release_nss(args):
     version_underscore = version_string_to_underscore(version_string)
     branch_name = f"NSS_{major}_{minor}_BRANCH"
     rtm_tag = f"NSS_{version_underscore}_RTM"
-    release_note_file = f"doc/rst/releases/nss_{version_underscore}.rst"
+    release_note_file = f"doc/src/releases/nss_{version_underscore}.md"
 
     print_separator()
     print("RELEASE NSS")
@@ -861,7 +861,7 @@ def release_nss(args):
     print_separator()
 
     input(
-        "Are you making an ESR release? If so, please manually edit doc/rst/releases/index.rst to adjust the ESR / main version note. Press enter when done."
+        "Are you making an ESR release? If so, please manually edit doc/src/releases/index.md to adjust the ESR / main version note. Press enter when done."
     )
 
     

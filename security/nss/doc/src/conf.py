@@ -1,0 +1,19 @@
+
+
+
+
+project = "NSS"
+extensions = ["myst_parser"]
+root_doc = "index"
+
+
+source_suffix = {
+    ".md": "markdown",
+}
+
+
+
+
+suppress_warnings = ["ref.ref", "myst.xref_missing"]
+
+exclude_patterns = []
