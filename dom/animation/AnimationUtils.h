@@ -23,8 +23,10 @@ class EffectSet;
 class ErrorResult;
 
 namespace dom {
+class Animation;
 class Document;
 class Element;
+struct KeyframeAnimationOptions;
 }  
 
 class AnimationUtils {
@@ -65,6 +67,14 @@ class AnimationUtils {
   
   static bool ValidateCSSNumberishTime(const dom::CSSNumberish& aValue,
                                        bool aProgressBased, ErrorResult& aRv);
+
+  
+  
+  
+  
+  static bool ApplyKeyframeAnimationRange(
+      const dom::KeyframeAnimationOptions& aOptions, dom::Animation* aAnimation,
+      ErrorResult& aRv);
 
   
   

@@ -7,8 +7,11 @@
 #include "mozilla/EffectSet.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/dom/AnimatableBinding.h"
 #include "mozilla/dom/Animation.h"
+#include "mozilla/dom/CSSKeywordValue.h"
 #include "mozilla/dom/CSSNumericValueBinding.h"
+#include "mozilla/dom/CSSNumericValue.h"
 #include "mozilla/dom/CSSUnitValue.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/KeyframeEffect.h"
@@ -214,6 +217,107 @@ bool AnimationUtils::ValidateCSSNumberishTime(const CSSNumberish& aValue,
     }
   }
 
+  return true;
+}
+
+namespace {
+
+using TimelineRangeValue =
+    OwningTimelineRangeOffsetOrCSSNumericValueOrCSSKeywordValueOrUTF8String;
+
+
+
+
+bool IsNormalTimelineRange(const TimelineRangeValue& aValue) {
+  
+  
+  if (aValue.IsUTF8String()) {
+    return aValue.GetAsUTF8String().LowerCaseEqualsLiteral("normal");
+  }
+  if (aValue.IsCSSKeywordValue()) {
+    nsAutoCString value;
+    aValue.GetAsCSSKeywordValue()->GetValue(value);
+    return value.LowerCaseEqualsLiteral("normal");
+  }
+  return false;
+}
+
+
+
+
+bool TimelineRangeValueToCss(const TimelineRangeValue& aValue,
+                             nsACString& aOut) {
+  if (aValue.IsCSSKeywordValue()) {
+    
+    
+    return false;
+  }
+
+  if (aValue.IsUTF8String()) {
+    aOut = aValue.GetAsUTF8String();
+    return true;
+  }
+
+  if (aValue.IsCSSNumericValue()) {
+    
+    aValue.GetAsCSSNumericValue()->Stringify(aOut);
+    return true;
+  }
+
+  const TimelineRangeOffset& offset = aValue.GetAsTimelineRangeOffset();
+  nsAutoCString result;
+  if (offset.mRangeName.WasPassed() && !offset.mRangeName.Value().IsVoid()) {
+    result.Append(offset.mRangeName.Value());
+  }
+  if (offset.mOffset.WasPassed()) {
+    nsAutoCString offsetStr;
+    offset.mOffset.Value().Stringify(offsetStr);
+    if (!result.IsEmpty()) {
+      result.Append(' ');
+    }
+    result.Append(offsetStr);
+  }
+  
+  
+  if (result.IsEmpty()) {
+    aOut.AssignLiteral("normal");
+  } else {
+    aOut = result;
+  }
+  return true;
+}
+
+}  
+
+
+bool AnimationUtils::ApplyKeyframeAnimationRange(
+    const KeyframeAnimationOptions& aOptions, Animation* aAnimation,
+    ErrorResult& aRv) {
+  const bool startIsNormal = IsNormalTimelineRange(aOptions.mRangeStart);
+  const bool endIsNormal = IsNormalTimelineRange(aOptions.mRangeEnd);
+  if (startIsNormal && endIsNormal) {
+    return true;
+  }
+
+  
+  AnimationRange range;
+  nsAutoCString css;
+  if (!startIsNormal) {
+    if (!TimelineRangeValueToCss(aOptions.mRangeStart, css) ||
+        !Servo_ParseAnimationRangeStart(&css, &range.mStart)) {
+      aRv.ThrowTypeError("Invalid animation range start");
+      return false;
+    }
+  }
+  if (!endIsNormal) {
+    if (!TimelineRangeValueToCss(aOptions.mRangeEnd, css) ||
+        !Servo_ParseAnimationRangeEnd(&css, &range.mEnd)) {
+      aRv.ThrowTypeError("Invalid animation range end");
+      return false;
+    }
+  }
+
+  aAnimation->SetTimelineRange(std::move(range));
   return true;
 }
 
