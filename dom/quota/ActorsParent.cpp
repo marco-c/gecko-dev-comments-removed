@@ -491,12 +491,7 @@ nsresult UpgradeCacheFrom2To3(mozIStorageConnection& aConnection) {
 }
 
 Result<bool, nsresult> DidLatestShutdownFail(
-    mozIStorageConnection& aConnection) {
-  AssertIsOnIOThread();
-  
-
-  return false;
-}
+    mozIStorageConnection& aConnection);
 
 Result<bool, nsresult> UpgradeCacheFrom3To4(
     mozIStorageConnection& aConnection) {
@@ -3053,6 +3048,17 @@ nsresult QuotaManager::LoadQuota() {
         }
 
         if (mCacheUsable) {
+          
+          
+          
+          
+          
+          QM_TRY_INSPECT(const bool& shutdownFailed,
+                         DidLatestShutdownFail(*mStorageConnection));
+          if (shutdownFailed) {
+            return false;
+          }
+
           QM_TRY_INSPECT(
               const auto& stmt,
               CreateAndExecuteSingleStepStatement<
@@ -3835,6 +3841,29 @@ Result<Ok, nsresult> UpdateFullOriginMetadataPrincipalProperties(
 
   return Ok{};
 }
+
+namespace {
+
+Result<bool, nsresult> DidLatestShutdownFail(
+    mozIStorageConnection& aConnection) {
+  
+  
+  
+  
+  QM_TRY_INSPECT(const auto& stmt,
+                 CreateAndExecuteSingleStepStatement<
+                     SingleStepResult::ReturnNullIfNoResult>(
+                     aConnection, "SELECT valid FROM cache"_ns));
+
+  QM_TRY(OkIf(stmt), Err(NS_ERROR_FILE_CORRUPTED));
+
+  QM_TRY_INSPECT(const int32_t& valid,
+                 MOZ_TO_RESULT_INVOKE_MEMBER(stmt, GetInt32, 0));
+
+  return !valid;
+}
+
+}  
 
 Result<FullOriginMetadata, nsresult> QuotaManager::LoadFullOriginMetadata(
     nsIFile* aDirectory, PersistenceType aPersistenceType) {
