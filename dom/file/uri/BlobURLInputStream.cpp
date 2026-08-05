@@ -392,20 +392,21 @@ void BlobURLInputStream::RetrieveBlobData(const MutexAutoLock& aProofOfLock) {
 
   
   
-  if (XRE_IsParentProcess()) {
-    RefPtr<BlobImpl> blobImpl;
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<BlobImpl> blobImpl;
+  BlobURLProtocolHandler::GetDataEntry(
+      mBlobURLSpec, getter_AddRefs(blobImpl), loadingPrincipal,
+      triggeringPrincipal, loadInfo->GetOriginAttributes(),
+      loadInfo->GetInnerWindowID(), NS_ConvertUTF16toUTF8(partKey),
+      true );
 
-    
-    
-    if (!BlobURLProtocolHandler::GetDataEntry(
-            mBlobURLSpec, getter_AddRefs(blobImpl), loadingPrincipal,
-            triggeringPrincipal, loadInfo->GetOriginAttributes(),
-            loadInfo->GetInnerWindowID(), NS_ConvertUTF16toUTF8(partKey),
-            true )) {
-      NS_WARNING("Failed to get data entry principal. URL revoked?");
-      return;
-    }
-
+  if (blobImpl) {
     mError = StoreBlobImplStream(blobImpl.forget(), aProofOfLock);
     if (NS_WARN_IF(NS_FAILED(mError))) {
       return;
@@ -420,6 +421,13 @@ void BlobURLInputStream::RetrieveBlobData(const MutexAutoLock& aProofOfLock) {
     WaitOnUnderlyingStream(aProofOfLock);
 
     cleanupOnEarlyExit.release();
+    return;
+  }
+
+  if (XRE_IsParentProcess()) {
+    
+    
+    NS_WARNING("Failed to get data entry principal. URL revoked?");
     return;
   }
 
