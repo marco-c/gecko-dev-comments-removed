@@ -102,12 +102,6 @@ std::vector<TimeDelta> RtcpRttCalculator::OnIncomingExtendedReports(
     }
     if (auto it = outgoing_xrs_.find({sender_ssrc, last_rr});
         it != outgoing_xrs_.end()) {
-      if (block.delay_since_last_rr == 0) {
-        
-        
-        
-        continue;
-      }
       TimeDelta delay_since_last_rr =
           CompactNtpIntervalToTimeDelta(block.delay_since_last_rr);
       
@@ -145,11 +139,6 @@ std::vector<TimeDelta> RtcpRttCalculator::ProcessReportBlocks(
     }
     if (auto it = outgoing_srs_.find({sender_ssrc, last_sr});
         it != outgoing_srs_.end()) {
-      if (block.delay_since_last_sr() == 0) {
-        
-        
-        continue;
-      }
       TimeDelta delay_since_last_sr =
           CompactNtpIntervalToTimeDelta(block.delay_since_last_sr());
       
