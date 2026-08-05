@@ -3640,7 +3640,7 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
 
   int32_t tabIndex = forward ? 1 : 0;
   nsCOMPtr<nsIContent> focusedContent = startContent;
-  bool skipFocusedContent = false;
+  bool startingFromDescendantOfFocusedContent = false;
   if (startContent) {
     nsIFrame* frame = startContent->GetPrimaryFrame();
     tabIndex = (frame && !startContent->IsHTMLElement(nsGkAtoms::area))
@@ -3654,12 +3654,9 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
                                                 getter_AddRefs(startContent),
                                                 &considerStartingPoint);
       
-      
-      
-      skipFocusedContent = true;
-      
       MOZ_ASSERT(startContent);
       if (focusedContent != startContent) {
+        startingFromDescendantOfFocusedContent = true;
         
         ignoreTabIndex = true;
         if (considerStartingPoint && startContent->IsElement() &&
@@ -3848,7 +3845,17 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
 
       
       if (nextFocus) {
-        if (skipFocusedContent && nextFocus == focusedContent) {
+        if (startingFromDescendantOfFocusedContent && tabIndex >= 0 &&
+            ignoreTabIndex &&
+            !nextFocus->IsInclusiveFlatTreeDescendantOf(focusedContent)) {
+          
+          
+          
+          ignoreTabIndex = false;
+          continue;
+        }
+        if (startingFromDescendantOfFocusedContent &&
+            nextFocus == focusedContent) {
           
           
           
@@ -3860,7 +3867,7 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
           
           
           
-          skipFocusedContent = false;
+          startingFromDescendantOfFocusedContent = false;
           continue;
         }
 
