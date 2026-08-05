@@ -65,6 +65,8 @@
 #include "MediaStreamTrack.h"
 #include "RTCDataChannel.h"
 #include "RTCDtlsTransport.h"
+#include "RTCIceCandidate.h"
+#include "RTCIceCandidatePair.h"
 #include "RTCSctpTransport.h"
 #include "VideoStreamTrack.h"
 #include "WebrtcGlobalInformation.h"
@@ -1780,15 +1782,25 @@ PeerConnectionImpl::AddIceCandidate(
     const dom::Nullable<unsigned short>& aLevel) {
   PC_AUTO_ENTER_API_CALL(true);
 
-  if (mForceIceTcp &&
-      std::string::npos != std::string(aCandidate).find(" UDP ")) {
-    CSFLogError(LOGTAG, "Blocking remote UDP candidate: %s", aCandidate);
+  
+  
+
+  
+  
+  
+  std::string candidate(aCandidate);
+  if (candidate.find("a=") == 0) {
+    candidate = candidate.substr(2);
+  }
+
+  if (mForceIceTcp && std::string::npos != candidate.find(" UDP ")) {
+    CSFLogError(LOGTAG, "Blocking remote UDP candidate: %s", candidate.c_str());
     return NS_OK;
   }
 
   STAMP_TIMECARD(mTimeCard, "Add Ice Candidate");
 
-  CSFLogDebug(LOGTAG, "AddIceCandidate: %s %s", aCandidate, aUfrag);
+  CSFLogDebug(LOGTAG, "AddIceCandidate: %s %s", candidate.c_str(), aUfrag);
 
   std::string transportId;
   Maybe<unsigned short> level;
@@ -1800,15 +1812,15 @@ PeerConnectionImpl::AddIceCandidate(
       "AddIceCandidate is chained, which means it should never "
       "run while an sRD/sLD is in progress");
   JsepSession::Result result = mJsepSession->AddRemoteIceCandidate(
-      aCandidate, aMid, level, aUfrag, &transportId);
+      candidate, aMid, level, aUfrag, &transportId);
 
   if (!result.mError.isSome()) {
     
     
     
     if (mSignalingState == RTCSignalingState::Stable && !transportId.empty()) {
-      AddIceCandidate(aCandidate, transportId, aUfrag);
-      mRawTrickledCandidates.push_back(aCandidate);
+      AddIceCandidate(candidate, transportId, aUfrag);
+      mRawTrickledCandidates.push_back(candidate);
     }
     
     GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
@@ -1829,7 +1841,7 @@ PeerConnectionImpl::AddIceCandidate(
     CSFLogError(LOGTAG,
                 "Failed to incorporate remote candidate into SDP:"
                 " res = %u, candidate = %s, level = %i, error = %s",
-                static_cast<unsigned>(*result.mError), aCandidate,
+                static_cast<unsigned>(*result.mError), candidate.c_str(),
                 level.valueOr(-1), errorString.c_str());
 
     GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
@@ -1924,7 +1936,7 @@ void PeerConnectionImpl::OnDtlsStateChange(
   for (const auto& cert : aRemoteCerts) {
     certsCopy.AppendElement(cert.Clone());
   }
-  dtlsTransport->UpdateState(aState, std::move(certsCopy), aError);
+  dtlsTransport->UpdateState(aState, std::move(certsCopy), std::move(aError));
   
   
   
@@ -1950,7 +1962,7 @@ void PeerConnectionImpl::OnDtlsStateChange(
 void PeerConnectionImpl::OnRtcpStateChange(const std::string& aTransportId,
                                            TransportLayer::State aState,
                                            Maybe<dom::RTCErrorParams> aError) {
-  OnDtlsStateChange(aTransportId, aState, {}, aError);
+  OnDtlsStateChange(aTransportId, aState, {}, std::move(aError));
 }
 
 RTCPeerConnectionState PeerConnectionImpl::GetNewConnectionState() const {
@@ -3363,8 +3375,11 @@ void PeerConnectionImpl::SendLocalIceCandidateToContent(
                               ObString(ufrag.c_str()), rv);
 }
 
+
+
 void PeerConnectionImpl::IceConnectionStateChange(
-    const std::string& aTransportId, dom::RTCIceTransportState domState) {
+    const std::string& aTransportId, dom::RTCIceTransportState domState,
+    const Maybe<dom::IceCandidateAttributePair>& aSelectedPair) {
   MOZ_ASSERT(NS_IsMainThread(), "Wrong thread");
 
   
@@ -3393,7 +3408,7 @@ void PeerConnectionImpl::IceConnectionStateChange(
   }
 
   
-  
+  bool selectedCandidatePairChanged = false;
 
   
   bool transportIceConnectionStateChanged = false;
@@ -3404,38 +3419,76 @@ void PeerConnectionImpl::IceConnectionStateChange(
   
   bool connectionStateChanged = false;
 
-  if (transport->State() == domState) {
-    return;
+  
+  
+  RefPtr<RTCIceCandidatePair> oldPair = transport->GetSelectedCandidatePair();
+  bool noChange = false;
+  if (!oldPair && aSelectedPair.isNothing()) {
+    noChange = true;
+  } else if (oldPair && aSelectedPair.isSome()) {
+    
+    noChange = oldPair->Local()->CandidateInternal().EqualsASCII(
+                   aSelectedPair->local().get()) &&
+               oldPair->Remote()->CandidateInternal().EqualsASCII(
+                   aSelectedPair->remote().get());
+  }
+
+  if (!noChange) {
+    
+    
+    
+    
+    RefPtr<RTCIceCandidatePair> newCandidatePair;
+    if (aSelectedPair.isSome()) {
+      nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(mWindow);
+      RefPtr<RTCIceCandidate> local =
+          RTCIceCandidate::FromAttribute(global, aSelectedPair->local());
+      RefPtr<RTCIceCandidate> remote = RTCIceCandidate::FromAttribute(
+          global, aSelectedPair->remote(), true);
+      newCandidatePair = new RTCIceCandidatePair(global, local, remote);
+    }
+
+    
+    transport->SetSelectedCandidatePair(newCandidatePair);
+
+    
+    selectedCandidatePairChanged = true;
   }
 
   
-
   
-  
-  transport->SetState(domState);
-
-  
-  transportIceConnectionStateChanged = true;
-
-  
-  
-  if (UpdateIceConnectionState()) {
+  if (transport->State() != domState) {
     
     
-    connectionIceConnectionStateChanged = true;
+    transport->SetState(domState);
+
+    
+    transportIceConnectionStateChanged = true;
+
+    
+    
+    
+    if (UpdateIceConnectionState()) {
+      
+      
+      connectionIceConnectionStateChanged = true;
+    }
+
+    
+    
+    
+    if (UpdateConnectionState()) {
+      
+      
+      connectionStateChanged = true;
+    }
   }
 
   
   
-  if (UpdateConnectionState()) {
-    
-    
-    connectionStateChanged = true;
+  if (selectedCandidatePairChanged) {
+    transport->FireSelectedCandidatePairChangeEvent();
   }
-
-  
-  
-  
 
   
   
