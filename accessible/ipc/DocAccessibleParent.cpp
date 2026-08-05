@@ -405,7 +405,12 @@ void DocAccessibleParent::ShutdownOrPrepareForMove(RemoteAccessible* aAcc) {
     
     
     auto children{std::move(aAcc->mChildren)};
-    for (RemoteAccessible* child : children) {
+    for (RefPtr<RemoteAccessible>& childRef : children) {
+      RemoteAccessible* child = childRef.get();
+      
+      
+      
+      childRef = nullptr;
       if (child == aAcc) {
         MOZ_ASSERT_UNREACHABLE(
             "Somehow an accessible got added as a child of itself!");
@@ -1182,6 +1187,11 @@ void DocAccessibleParent::Destroy() {
     }
     ProxyDestroyed(acc);
     
+    
+    
+    
+    acc->mChildren.Clear();
+    acc->mDoc = nullptr;
     iter.Remove();
   }
 
@@ -1556,7 +1566,9 @@ DocAccessibleParent::CollectReports(nsIHandleReportCallback* aHandleReport,
   return NS_OK;
 }
 
-NS_IMPL_ISUPPORTS(DocAccessibleParent, nsIMemoryReporter);
+NS_IMPL_QUERY_INTERFACE(DocAccessibleParent, nsIMemoryReporter)
+NS_IMPL_ADDREF_INHERITED(DocAccessibleParent, RemoteAccessible)
+NS_IMPL_RELEASE_INHERITED(DocAccessibleParent, RemoteAccessible)
 
 #ifdef MOZ_ENABLE_SKIA_PDF
 mozilla::ipc::IPCResult DocAccessibleParent::RecvPrinting() {

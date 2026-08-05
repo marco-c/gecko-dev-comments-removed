@@ -71,7 +71,13 @@ void RemoteAccessible::Shutdown() {
   
   uint32_t childCount = mChildren.Length();
   if (!IsOuterDoc()) {
-    for (uint32_t idx = 0; idx < childCount; idx++) mChildren[idx]->Shutdown();
+    for (uint32_t idx = 0; idx < childCount; idx++) {
+      RemoteAccessible* child = mChildren[idx].get();
+      
+      
+      mChildren[idx] = nullptr;
+      child->Shutdown();
+    }
   } else {
     if (childCount > 1) {
       MOZ_CRASH("outer doc has too many documents!");
@@ -81,9 +87,20 @@ void RemoteAccessible::Shutdown() {
   }
 
   mChildren.Clear();
-  ProxyDestroyed(static_cast<RemoteAccessible*>(this));
   
-  mDoc->RemoveAccessible(static_cast<RemoteAccessible*>(this));
+  
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(int32_t(mRefCnt) == 1,
+                        "RemoteAccessible has an unexpected extra reference "
+                        "at shutdown");
+  ProxyDestroyed(static_cast<RemoteAccessible*>(this));
+  DocAccessibleParent* doc = mDoc;
+  mDoc = nullptr;
+  
+  
+  doc->RemoveAccessible(static_cast<RemoteAccessible*>(this));
 }
 
 void RemoteAccessible::SetChildDoc(DocAccessibleParent* aChildDoc) {
