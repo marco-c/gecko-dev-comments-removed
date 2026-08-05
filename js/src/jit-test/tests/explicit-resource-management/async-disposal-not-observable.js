@@ -1,5 +1,3 @@
-
-
 let called = 0;
 
 async function testDisposalMethodOnlyExtractedOnce() {

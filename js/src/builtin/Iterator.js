@@ -220,7 +220,6 @@ function WrapForValidIteratorReturn() {
   return callContentFunction(returnMethod, iterator);
 }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 
 
 
@@ -241,7 +240,6 @@ function IteratorDispose() {
 
   
 }
-#endif
 
 
 

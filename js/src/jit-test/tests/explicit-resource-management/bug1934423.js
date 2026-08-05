@@ -1,5 +1,3 @@
-
-
 gczeal(8,18);
 {
   const values = [];

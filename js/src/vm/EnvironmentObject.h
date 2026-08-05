@@ -526,9 +526,6 @@ extern PropertyName* EnvironmentCoordinateNameSlow(JSScript* script,
 
 
 
-
-
-
 class EnvironmentObject : public NativeObject {
  protected:
   
@@ -586,7 +583,6 @@ class EnvironmentObject : public NativeObject {
 #endif 
 };
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 class DisposableEnvironmentObject : public EnvironmentObject {
  protected:
   static constexpr uint32_t DISPOSABLE_RESOURCE_STACK_SLOT = 1;
@@ -609,7 +605,6 @@ class DisposableEnvironmentObject : public EnvironmentObject {
     return getFixedSlotOffset(DISPOSABLE_RESOURCE_STACK_SLOT);
   }
 };
-#endif
 
 class CallObject : public EnvironmentObject {
  protected:
@@ -715,17 +710,9 @@ class VarEnvironmentObject : public EnvironmentObject {
   bool isForNonStrictEval() const { return scope().kind() == ScopeKind::Eval; }
 };
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 class ModuleEnvironmentObject : public DisposableEnvironmentObject {
-#else
-class ModuleEnvironmentObject : public EnvironmentObject {
-#endif
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   static constexpr uint32_t MODULE_SLOT =
       DisposableEnvironmentObject::RESERVED_SLOTS;
-#else
-  static constexpr uint32_t MODULE_SLOT = 1;
-#endif
 
   static const ObjectOps objectOps_;
   static const JSClassOps classOps_;
@@ -735,15 +722,11 @@ class ModuleEnvironmentObject : public EnvironmentObject {
 
   static const JSClass class_;
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   
   
   
   static constexpr uint32_t RESERVED_SLOTS =
       DisposableEnvironmentObject::RESERVED_SLOTS + 2;
-#else
-  static constexpr uint32_t RESERVED_SLOTS = 2;
-#endif
 
   static constexpr ObjectFlags OBJECT_FLAGS = {ObjectFlag::NotExtensible,
                                                ObjectFlag::QualifiedVarObj};
@@ -844,34 +827,22 @@ class WasmFunctionCallObject : public EnvironmentObject {
 
 
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 class LexicalEnvironmentObject : public DisposableEnvironmentObject {
-#else
-class LexicalEnvironmentObject : public EnvironmentObject {
-#endif
  protected:
   
   
   
   
   
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   static constexpr uint32_t THIS_VALUE_OR_SCOPE_SLOT =
       DisposableEnvironmentObject::RESERVED_SLOTS;
-#else
-  static constexpr uint32_t THIS_VALUE_OR_SCOPE_SLOT = 1;
-#endif
 
  public:
   static const JSClass class_;
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   
   static constexpr uint32_t RESERVED_SLOTS =
       DisposableEnvironmentObject::RESERVED_SLOTS + 2;
-#else
-  static constexpr uint32_t RESERVED_SLOTS = 2;
-#endif
 
  protected:
   static LexicalEnvironmentObject* create(JSContext* cx,
@@ -1577,13 +1548,11 @@ inline bool JSObject::is<js::EnvironmentObject>() const {
          is<js::RuntimeLexicalErrorObject>();
 }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 template <>
 inline bool JSObject::is<js::DisposableEnvironmentObject>() const {
   return is<js::LexicalEnvironmentObject>() ||
          is<js::ModuleEnvironmentObject>();
 }
-#endif
 
 template <>
 inline bool JSObject::is<js::ScopedLexicalEnvironmentObject>() const {

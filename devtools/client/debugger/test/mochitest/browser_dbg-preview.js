@@ -111,10 +111,7 @@ add_task(async function () {
     { line: 126, column: 6, expression: "worker", result: "Worker" },
   ]);
 
-  
-  
-  
-  if (AppConstants.ENABLE_EXPLICIT_RESOURCE_MANAGEMENT) {
+  {
     info("Check that preview works in a script with `using` keyword");
 
     const onPaused = waitForPaused(dbg);

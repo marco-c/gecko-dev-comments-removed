@@ -279,7 +279,6 @@ class TokenStreamShared {
  protected:
   
   
-  
   static constexpr size_t ntokens = 4;
 
   static constexpr unsigned ntokensMask = ntokens - 1;
@@ -288,12 +287,8 @@ class TokenStreamShared {
   friend class TokenStreamPosition;
 
  public:
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   
   static constexpr unsigned maxLookahead = 3;
-#else
-  static constexpr unsigned maxLookahead = 2;
-#endif
 
   using Modifier = Token::Modifier;
   static constexpr Modifier SlashIsDiv = Token::SlashIsDiv;

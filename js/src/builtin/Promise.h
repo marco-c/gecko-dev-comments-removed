@@ -77,14 +77,12 @@ enum class PromiseHandler : uint32_t {
   
   AsyncFromSyncIteratorClose,
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   
   
   
   
   
   AsyncIteratorDisposeAwaitFulfilled,
-#endif
 
   
   Limit
@@ -295,11 +293,9 @@ bool AbruptRejectPromise(JSContext* cx, JS::CallArgs& args,
                          JS::Handle<JSObject*> promiseObj,
                          JS::Handle<JSObject*> reject);
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 [[nodiscard]] bool InternalAsyncIteratorDisposeAwait(
     JSContext* cx, JS::Handle<JS::Value> value,
     JS::Handle<JSObject*> resultPromise);
-#endif
 }  
 
 #endif  

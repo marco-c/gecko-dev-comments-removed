@@ -33,9 +33,7 @@ struct BytecodeEmitter;
 
 
 class MOZ_STACK_CLASS WhileEmitter {
-#if defined(ENABLE_DECORATORS) || defined(ENABLE_EXPLICIT_RESOURCE_MANAGEMENT)
  protected:
-#endif
   BytecodeEmitter* bce_;
 
   mozilla::Maybe<LoopControl> loopInfo_;
@@ -85,7 +83,6 @@ class MOZ_STACK_CLASS WhileEmitter {
   [[nodiscard]] bool emitEnd();
 };
 
-#if defined(ENABLE_DECORATORS) || defined(ENABLE_EXPLICIT_RESOURCE_MANAGEMENT)
 
 
 class MOZ_STACK_CLASS InternalWhileEmitter : public WhileEmitter {
@@ -93,7 +90,6 @@ class MOZ_STACK_CLASS InternalWhileEmitter : public WhileEmitter {
   explicit InternalWhileEmitter(BytecodeEmitter* bce) : WhileEmitter(bce) {}
   [[nodiscard]] bool emitCond();
 };
-#endif
 
 } 
 } 

@@ -79,10 +79,8 @@ enum class DeclarationKind : uint8_t {
   Var,
   Let,
   Const,
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   Using,
   AwaitUsing,
-#endif
   Class,  
   Import,
   BodyLevelFunction,
@@ -124,11 +122,9 @@ static inline BindingKind DeclarationKindToBindingKind(DeclarationKind kind) {
     case DeclarationKind::Const:
       return BindingKind::Const;
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     case DeclarationKind::AwaitUsing:
     case DeclarationKind::Using:
       return BindingKind::Using;
-#endif
 
     case DeclarationKind::Import:
       return BindingKind::Import;
@@ -186,7 +182,6 @@ class DeclaredNameInfo {
         closedOver_(bool(closedOver)),
         privateNameKind_(PrivateNameKind::None),
         placement_(FieldPlacement::Unspecified) {
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     
     
     
@@ -194,7 +189,6 @@ class DeclaredNameInfo {
     if (kind == DeclarationKind::Using || kind == DeclarationKind::AwaitUsing) {
       closedOver_ = true;
     }
-#endif
   }
 
   

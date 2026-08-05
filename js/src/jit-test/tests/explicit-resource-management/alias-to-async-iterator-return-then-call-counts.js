@@ -1,5 +1,3 @@
-
-
 let thenGetterCalls = 0;
 const thenVal = Promise.prototype.then;
 Object.defineProperty(Promise.prototype, "then", {

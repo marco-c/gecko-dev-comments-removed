@@ -1,5 +1,3 @@
-
-
 load(libdir + "asserts.js");
 
 class CustomError1 extends Error {}

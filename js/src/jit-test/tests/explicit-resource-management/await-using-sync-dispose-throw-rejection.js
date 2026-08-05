@@ -1,5 +1,3 @@
-
-
 {
   let called = false;
   async function testSyncThrowIsRejection() {

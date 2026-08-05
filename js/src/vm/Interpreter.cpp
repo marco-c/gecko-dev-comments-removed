@@ -6,8 +6,6 @@
 
 
 
-#include "vm/Interpreter-inl.h"
-
 #include "mozilla/DebugOnly.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Maybe.h"
@@ -43,10 +41,10 @@
 #include "vm/BigIntType.h"
 #include "vm/BytecodeUtil.h"  
 #include "vm/ConstantCompareOperand.h"
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-#  include "vm/ErrorObject.h"
-#endif
+
+#include "vm/Interpreter-inl.h"
 #include "vm/EqualityOperations.h"  
+#include "vm/ErrorObject.h"
 #include "vm/GeneratorObject.h"
 #include "vm/Iteration.h"
 #include "vm/JSContext.h"
@@ -61,16 +59,12 @@
 #include "vm/StringType.h"
 #include "vm/ThrowMsgKind.h"     
 #include "vm/TypeofEqOperand.h"  
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-#  include "vm/UsingHint.h"
-#endif
+#include "vm/UsingHint.h"
 #include "builtin/Boolean-inl.h"
 #include "debugger/DebugAPI-inl.h"
 #include "gc/WeakMap-inl.h"
 #include "vm/ArgumentsObject-inl.h"
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-#  include "vm/DisposableRecord-inl.h"
-#endif
+#include "vm/DisposableRecord-inl.h"
 #include "vm/EnvironmentObject-inl.h"
 #include "vm/GeckoProfiler-inl.h"
 #include "vm/JSScript-inl.h"
@@ -1624,7 +1618,6 @@ void js::ReportInNotObjectError(JSContext* cx, HandleValue lref,
                             InformalValueTypeName(rref));
 }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 
 
 
@@ -1761,7 +1754,6 @@ bool js::AddDisposableResourceToCapability(JSContext* cx,
   return NewbornArrayPush(cx, disposeCapability,
                           JS::ObjectValue(*disposableRecord));
 }
-#endif
 
 bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
                                                            RunState& state) {
@@ -2114,7 +2106,6 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
     }
     END_CASE(LeaveWith)
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     CASE(AddDisposable) {
       ReservedRooted<JSObject*> env(&rootObject0,
                                     REGS.fp()->environmentChain());
@@ -2166,7 +2157,6 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
       PUSH_OBJECT(*errorObj);
     }
     END_CASE(CreateSuppressedError)
-#endif
 
     CASE(Return) {
       POP_RETURN_VALUE();
@@ -5307,12 +5297,10 @@ bool js::ThrowCheckIsObject(JSContext* cx, CheckIsObjectKind kind) {
                                 JSMSG_DECORATOR_INVALID_RETURN_TYPE);
       break;
 #endif
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     case CheckIsObjectKind::Disposable:
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_DISPOSABLE_NOT_OBJ);
       break;
-#endif
     default:
       MOZ_CRASH("Unknown kind");
   }

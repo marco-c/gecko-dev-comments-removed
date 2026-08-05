@@ -219,12 +219,6 @@ add_task(async function testInlinePreviews() {
 
 add_task(async function testInlinePreviewsWithExplicitResourceManagement() {
   await pushPref("devtools.debugger.features.inline-preview", true);
-  
-  
-  
-  if (!AppConstants.ENABLE_EXPLICIT_RESOURCE_MANAGEMENT) {
-    return;
-  }
   const dbg = await initDebugger("doc-inline-preview.html");
 
   const onPaused = waitForPaused(dbg);

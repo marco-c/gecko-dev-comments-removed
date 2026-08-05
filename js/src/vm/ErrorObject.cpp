@@ -3,8 +3,6 @@
 
 
 
-#include "vm/ErrorObject-inl.h"
-
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DebugOnly.h"
@@ -54,6 +52,7 @@
 #include "vm/ToSource.h"  
 
 #include "vm/Compartment-inl.h"
+#include "vm/ErrorObject-inl.h"
 #include "vm/JSContext-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/ObjectOperations-inl.h"
@@ -76,9 +75,7 @@ const JSClass ErrorObject::protoClasses[JSEXN_ERROR_LIMIT] = {
     IMPLEMENT_ERROR_PROTO_CLASS(EvalError),
     IMPLEMENT_ERROR_PROTO_CLASS(RangeError),
     IMPLEMENT_ERROR_PROTO_CLASS(ReferenceError),
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     IMPLEMENT_ERROR_PROTO_CLASS(SuppressedError),
-#endif
     IMPLEMENT_ERROR_PROTO_CLASS(SyntaxError),
     IMPLEMENT_ERROR_PROTO_CLASS(TypeError),
     IMPLEMENT_ERROR_PROTO_CLASS(URIError),
@@ -137,9 +134,7 @@ IMPLEMENT_NATIVE_ERROR_PROPERTIES(AggregateError)
 IMPLEMENT_NATIVE_ERROR_PROPERTIES(EvalError)
 IMPLEMENT_NATIVE_ERROR_PROPERTIES(RangeError)
 IMPLEMENT_NATIVE_ERROR_PROPERTIES(ReferenceError)
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 IMPLEMENT_NATIVE_ERROR_PROPERTIES(SuppressedError)
-#endif
 IMPLEMENT_NATIVE_ERROR_PROPERTIES(SyntaxError)
 IMPLEMENT_NATIVE_ERROR_PROPERTIES(TypeError)
 IMPLEMENT_NATIVE_ERROR_PROPERTIES(URIError)
@@ -181,9 +176,7 @@ const ClassSpec ErrorObject::classSpecs[JSEXN_ERROR_LIMIT] = {
     IMPLEMENT_NATIVE_ERROR_SPEC(EvalError),
     IMPLEMENT_NATIVE_ERROR_SPEC(RangeError),
     IMPLEMENT_NATIVE_ERROR_SPEC(ReferenceError),
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     IMPLEMENT_NATIVE_ERROR_SPEC(SuppressedError),
-#endif
     IMPLEMENT_NATIVE_ERROR_SPEC(SyntaxError),
     IMPLEMENT_NATIVE_ERROR_SPEC(TypeError),
     IMPLEMENT_NATIVE_ERROR_SPEC(URIError),
@@ -227,9 +220,7 @@ const JSClass ErrorObject::classes[JSEXN_ERROR_LIMIT] = {
     IMPLEMENT_ERROR_CLASS(EvalError),
     IMPLEMENT_ERROR_CLASS(RangeError),
     IMPLEMENT_ERROR_CLASS(ReferenceError),
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     IMPLEMENT_ERROR_CLASS(SuppressedError),
-#endif
     IMPLEMENT_ERROR_CLASS(SyntaxError),
     IMPLEMENT_ERROR_CLASS(TypeError),
     IMPLEMENT_ERROR_CLASS(URIError),
@@ -266,11 +257,7 @@ static ErrorObject* CreateErrorObject(JSContext* cx, const CallArgs& args,
   
   
   bool hasOptions =
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
       args.get(messageArg + 1).isObject() && exnType != JSEXN_SUPPRESSEDERR;
-#else
-      args.get(messageArg + 1).isObject();
-#endif
 
   Rooted<mozilla::Maybe<Value>> cause(cx, mozilla::Nothing());
   if (hasOptions) {
@@ -358,10 +345,8 @@ static bool Error(JSContext* cx, unsigned argc, Value* vp) {
   MOZ_ASSERT(exnType != JSEXN_AGGREGATEERR,
              "AggregateError has its own constructor function");
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   MOZ_ASSERT(exnType != JSEXN_SUPPRESSEDERR,
              "SuppressedError has its own constuctor function");
-#endif
 
   JSProtoKey protoKey =
       JSCLASS_CACHED_PROTO_KEY(&ErrorObject::classes[exnType]);
@@ -428,7 +413,6 @@ static bool AggregateError(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 
 
 
@@ -480,7 +464,6 @@ static bool SuppressedError(JSContext* cx, unsigned argc, Value* vp) {
   args.rval().setObject(*obj);
   return true;
 }
-#endif
 
 
 JSObject* ErrorObject::createProto(JSContext* cx, JSProtoKey key) {
@@ -521,14 +504,10 @@ JSObject* ErrorObject::createConstructor(JSContext* cx, JSProtoKey key) {
     if (type == JSEXN_AGGREGATEERR) {
       native = AggregateError;
       nargs = 2;
-    }
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-    else if (type == JSEXN_SUPPRESSEDERR) {
+    } else if (type == JSEXN_SUPPRESSEDERR) {
       native = SuppressedError;
       nargs = 3;
-    }
-#endif
-    else {
+    } else {
       native = Error;
       nargs = 1;
     }
@@ -741,43 +720,6 @@ JSErrorReport* js::ErrorObject::getOrCreateErrorReport(JSContext* cx) {
   return copy.release();
 }
 
-static bool FindErrorInstanceOrPrototype(JSContext* cx, HandleObject obj,
-                                         MutableHandleObject result) {
-  
-  
-  
-  
-  
-  
-  
-  
-
-  RootedObject curr(cx, obj);
-  RootedObject target(cx);
-  do {
-    target = CheckedUnwrapStatic(curr);
-    if (!target) {
-      ReportAccessDenied(cx);
-      return false;
-    }
-    if (IsErrorProtoKey(StandardProtoKeyOrNull(target))) {
-      result.set(target);
-      return true;
-    }
-
-    if (!GetPrototype(cx, curr, &curr)) {
-      return false;
-    }
-  } while (curr);
-
-  
-  
-  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                            JSMSG_INCOMPATIBLE_PROTO, "Error", "(get stack)",
-                            obj->getClass()->name);
-  return false;
-}
-
 static MOZ_ALWAYS_INLINE bool IsObject(HandleValue v) { return v.isObject(); }
 
 
@@ -789,10 +731,9 @@ bool js::ErrorObject::getStack(JSContext* cx, unsigned argc, Value* vp) {
 
 
 bool js::ErrorObject::getStack_impl(JSContext* cx, const CallArgs& args) {
-  RootedObject thisObj(cx, &args.thisv().toObject());
-
-  RootedObject obj(cx);
-  if (!FindErrorInstanceOrPrototype(cx, thisObj, &obj)) {
+  RootedObject obj(cx, CheckedUnwrapStatic(&args.thisv().toObject()));
+  if (!obj) {
+    ReportAccessDenied(cx);
     return false;
   }
 

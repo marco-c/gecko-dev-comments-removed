@@ -1,5 +1,3 @@
-
-
 let catchCalled = false;
 async function testAsyncDisposeAwaitUsingAwaited() {
   await using x = {

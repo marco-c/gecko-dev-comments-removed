@@ -1,5 +1,3 @@
-
-
 let disposed = false;
 async function testDisposalWithRejectedPromise() {
   using x = {

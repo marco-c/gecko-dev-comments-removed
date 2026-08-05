@@ -1,9 +1,3 @@
-
-
-load(libdir + "asserts.js");
-
-
-
 load(libdir + "asserts.js");
 
 {

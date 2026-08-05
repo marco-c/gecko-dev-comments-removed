@@ -1,5 +1,3 @@
-
-
 load(libdir + "asserts.js");
 
 let called1 = false, called2 = false;

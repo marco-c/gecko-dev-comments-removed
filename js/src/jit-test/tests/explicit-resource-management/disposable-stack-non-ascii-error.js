@@ -1,5 +1,3 @@
-
-
 {
   try {
     const d = new DisposableStack();

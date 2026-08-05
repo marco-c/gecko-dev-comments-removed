@@ -1,5 +1,3 @@
-
-
 globalThis.called = false;
 
 const m = parseModule(`

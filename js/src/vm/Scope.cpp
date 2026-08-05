@@ -47,10 +47,8 @@ const char* js::BindingKindString(BindingKind kind) {
       return "synthetic";
     case BindingKind::PrivateMethod:
       return "private method";
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     case BindingKind::Using:
       return "using";
-#endif
   }
   MOZ_CRASH("Bad BindingKind");
 }
@@ -949,9 +947,7 @@ void BaseAbstractBindingIter<NameT>::init(
           0,
           0,
           0,
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
           data.length,
-#endif
           data.length,
           data.length,
           CanHaveEnvironmentSlots | flags,
@@ -972,15 +968,12 @@ void BaseAbstractBindingIter<NameT>::init(
     
     
     
-    
     init( 0,
           0,
           0,
           0,
           slotInfo.constStart,
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
           slotInfo.usingStart,
-#endif
           data.length,
           data.length,
           CanHaveFrameSlots | CanHaveEnvironmentSlots | flags,
@@ -1015,9 +1008,7 @@ void BaseAbstractBindingIter<NameT>::init(
         0,
         0,
         0,
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
         0,
-#endif
         0,
         slotInfo.privateMethodStart,
         CanHaveFrameSlots | CanHaveEnvironmentSlots,
@@ -1056,9 +1047,7 @@ void BaseAbstractBindingIter<NameT>::init(
         slotInfo.varStart,
         length,
         length,
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
         length,
-#endif
         length,
         length,
         flags,
@@ -1089,9 +1078,7 @@ void BaseAbstractBindingIter<NameT>::init(VarScope::AbstractData<NameT>& data,
         0,
         length,
         length,
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
         length,
-#endif
         length,
         length,
         CanHaveFrameSlots | CanHaveEnvironmentSlots,
@@ -1122,9 +1109,7 @@ void BaseAbstractBindingIter<NameT>::init(
         0,
         slotInfo.letStart,
         slotInfo.constStart,
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
         data.length,
-#endif
         data.length,
         data.length,
         CannotHaveSlots,
@@ -1168,9 +1153,7 @@ void BaseAbstractBindingIter<NameT>::init(EvalScope::AbstractData<NameT>& data,
         0,
         length,
         length,
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
         length,
-#endif
         length,
         length,
         flags,
@@ -1200,16 +1183,13 @@ void BaseAbstractBindingIter<NameT>::init(
   
   
   
-  
   init(
        slotInfo.varStart,
        slotInfo.varStart,
        slotInfo.varStart,
        slotInfo.letStart,
        slotInfo.constStart,
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
        slotInfo.usingStart,
-#endif
        data.length,
        data.length,
        CanHaveFrameSlots | CanHaveEnvironmentSlots,
@@ -1240,9 +1220,7 @@ void BaseAbstractBindingIter<NameT>::init(
         0,
         length,
         length,
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
         length,
-#endif
         length,
         length,
         CanHaveFrameSlots | CanHaveEnvironmentSlots,
@@ -1273,9 +1251,7 @@ void BaseAbstractBindingIter<NameT>::init(
         0,
         length,
         length,
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
         length,
-#endif
         length,
         length,
         CanHaveFrameSlots | CanHaveEnvironmentSlots,

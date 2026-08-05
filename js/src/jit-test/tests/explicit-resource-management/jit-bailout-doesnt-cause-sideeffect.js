@@ -1,5 +1,3 @@
-
-
 function foo(d, o) {
   using x = d;
   return o.prop;

@@ -2,11 +2,11 @@
 
 
 
-#include "frontend/ParseContext-inl.h"
-
 #include "frontend/CompilationStencil.h"  
 #include "frontend/Parser.h"              
 #include "js/friend/ErrorMessages.h"      
+
+#include "frontend/ParseContext-inl.h"
 
 using mozilla::Maybe;
 using mozilla::Nothing;
@@ -31,12 +31,10 @@ const char* DeclarationKindString(DeclarationKind kind) {
       return "let";
     case DeclarationKind::Const:
       return "const";
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     case DeclarationKind::Using:
       return "using";
     case DeclarationKind::AwaitUsing:
       return "await using";
-#endif
     case DeclarationKind::Class:
       return "class";
     case DeclarationKind::Import:

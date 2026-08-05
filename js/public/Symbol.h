@@ -7,13 +7,12 @@
 #ifndef js_Symbol_h
 #define js_Symbol_h
 
-#include "js/shadow/Symbol.h"  
-
 #include <stddef.h>  
 #include <stdint.h>  
 
 #include "jstypes.h"  
 
+#include "js/shadow/Symbol.h"  
 #include "js/TypeDecls.h"
 
 namespace JS {
@@ -48,22 +47,22 @@ extern JS_PUBLIC_API Symbol* GetSymbolFor(JSContext* cx, Handle<JSString*> key);
 extern JS_PUBLIC_API JSString* GetSymbolDescription(Handle<Symbol*> symbol);
 
 
-#define JS_FOR_EACH_WELL_KNOWN_SYMBOL(MACRO)      \
-  MACRO(isConcatSpreadable)                       \
-  MACRO(iterator)                                 \
-  MACRO(match)                                    \
-  MACRO(replace)                                  \
-  MACRO(search)                                   \
-  MACRO(species)                                  \
-  MACRO(hasInstance)                              \
-  MACRO(split)                                    \
-  MACRO(toPrimitive)                              \
-  MACRO(toStringTag)                              \
-  MACRO(unscopables)                              \
-  MACRO(asyncIterator)                            \
-  MACRO(matchAll)                                 \
-  IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(dispose)) \
-  IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(asyncDispose))
+#define JS_FOR_EACH_WELL_KNOWN_SYMBOL(MACRO) \
+  MACRO(isConcatSpreadable)                  \
+  MACRO(iterator)                            \
+  MACRO(match)                               \
+  MACRO(replace)                             \
+  MACRO(search)                              \
+  MACRO(species)                             \
+  MACRO(hasInstance)                         \
+  MACRO(split)                               \
+  MACRO(toPrimitive)                         \
+  MACRO(toStringTag)                         \
+  MACRO(unscopables)                         \
+  MACRO(asyncIterator)                       \
+  MACRO(matchAll)                            \
+  MACRO(dispose)                             \
+  MACRO(asyncDispose)
 
 enum class SymbolCode : uint32_t {
 

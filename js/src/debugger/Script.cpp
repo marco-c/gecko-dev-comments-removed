@@ -2,8 +2,6 @@
 
 
 
-#include "debugger/Script-inl.h"
-
 #include "mozilla/Maybe.h"   
 #include "mozilla/Span.h"    
 #include "mozilla/Vector.h"  
@@ -48,6 +46,7 @@
 #include "wasm/WasmJS.h"              
 #include "wasm/WasmTypeDecls.h"       
 
+#include "debugger/Script-inl.h"
 #include "gc/Marking-inl.h"       
 #include "vm/BytecodeUtil-inl.h"  
 #include "vm/JSAtomUtils-inl.h"   
@@ -1496,9 +1495,7 @@ static bool BytecodeIsEffectful(JSScript* script, size_t offset) {
     case JSOp::Yield:
     case JSOp::Await:
     case JSOp::CanSkipAwait:
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     case JSOp::AddDisposable:
-#endif
       return true;
 
     case JSOp::Nop:
@@ -1518,10 +1515,8 @@ static bool BytecodeIsEffectful(JSScript* script, size_t offset) {
     case JSOp::Try:
     case JSOp::Throw:
     case JSOp::ThrowWithStack:
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     case JSOp::TakeDisposeCapability:
     case JSOp::CreateSuppressedError:
-#endif
     case JSOp::Goto:
     case JSOp::TableSwitch:
     case JSOp::Case:

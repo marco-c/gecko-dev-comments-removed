@@ -320,21 +320,16 @@ add_task(async function () {
         );
       },
     },
-  ];
-
-  
-  
-  if (AppConstants.ENABLE_EXPLICIT_RESOURCE_MANAGEMENT) {
-    TEST_DATA.push({
+    {
       desc: `SuppressedError`,
       expression: `throw new SuppressedError(
-          new Error("foo"),
-          new Error("bar"),
-          "the suppressed error message"
-        )`,
+        new Error("foo"),
+        new Error("bar"),
+        "the suppressed error message"
+      )`,
       expected: `Uncaught SuppressedError: the suppressed error message`,
-    });
-  }
+    },
+  ];
 
   for (const { desc, expression, expected, assert } of TEST_DATA) {
     info(`Check error: ${desc}`);

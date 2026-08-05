@@ -36,7 +36,6 @@ bool ForOfLoopControl::emitBeginCodeNeedingIteratorClose(BytecodeEmitter* bce) {
   return true;
 }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 bool ForOfLoopControl::prepareForForOfLoopIteration(
     BytecodeEmitter* bce, const EmitterScope* headLexicalEmitterScope,
     bool hasAwaitUsing) {
@@ -47,7 +46,6 @@ bool ForOfLoopControl::prepareForForOfLoopIteration(
   }
   return true;
 }
-#endif
 
 bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
   if (!tryCatch_->emitCatch(TryEmitter::ExceptionStack::Yes)) {
@@ -55,7 +53,6 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
     return false;
   }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   
   
   
@@ -83,7 +80,6 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
       return false;
     }
   }
-#endif
 
   unsigned slotFromTop = bce->bytecodeSection().stackDepth() - iterDepth_;
   if (!bce->emitDupAt(slotFromTop)) {
@@ -126,7 +122,6 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
       
       return false;
     }
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     if (forOfDisposalEmitter_.isSome()) {
       if (!bce->emit1(JSOp::Swap)) {
         
@@ -141,7 +136,6 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
         return false;
       }
     }
-#endif
     if (!bce->emitDupAt(slotFromTop + 1)) {
       
       return false;
@@ -222,7 +216,6 @@ bool ForOfLoopControl::emitPrepareForNonLocalJumpFromScope(
 
   *tryNoteStart = bce->bytecodeSection().offset();
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   
   
   
@@ -233,7 +226,6 @@ bool ForOfLoopControl::emitPrepareForNonLocalJumpFromScope(
     
     return false;
   }
-#endif
 
   if (!bce->emit1(JSOp::Dup)) {
     
@@ -245,12 +237,10 @@ bool ForOfLoopControl::emitPrepareForNonLocalJumpFromScope(
     return false;
   }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   if (!disposeBeforeIterClose.emitEnd()) {
     
     return false;
   }
-#endif
 
   if (isTarget) {
     
