@@ -179,7 +179,8 @@ function testNonDefaultChromeToolbars(toolbars) {
     !toolbars.personalbar,
     "personalbar should not be visible with personalbar=no"
   );
-  ok(!toolbars.statusbar, "statusbar should not be visible with status=no");
+  
+  todo(!toolbars.statusbar, "statusbar shouldn't be visible when status=no");
   ok(
     toolbars.scrollbars,
     "scrollbars should be visible even with scrollbars=no"

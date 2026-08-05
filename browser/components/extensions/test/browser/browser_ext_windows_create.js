@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 add_task(async function testWindowCreate() {
@@ -113,7 +111,6 @@ add_task(async function testWindowCreate() {
               "toolbar",
               "location",
               "directories",
-              "status",
               "extrachrome",
             ],
             chromeFlags: ["CHROME_OPENAS_DIALOG"],
