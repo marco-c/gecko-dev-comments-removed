@@ -248,4 +248,20 @@ class nsTAutoStringN : public nsTString<T> {
 
 
 
+#define USRSCTP_SYSCTL_SET_DEF(__field, __prefix)    \
+  int usrsctp_sysctl_set_##__field(uint32_t value) { \
+    if (value > __prefix##_MAX) {                    \
+      errno = EINVAL;                                \
+      return (-1);                                   \
+    } else {                                         \
+      SCTP_BASE_SYSCTL(__field) = value;             \
+      return (0);                                    \
+    }                                                \
+  }
+
+
+
+
+
+
 #define GOOGLE_CHECK(expr) assert(!!(expr))
