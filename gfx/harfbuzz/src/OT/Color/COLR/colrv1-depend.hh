@@ -1,0 +1,132 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef OT_COLOR_COLR_COLRV1_DEPEND_HH
+#define OT_COLOR_COLR_COLRV1_DEPEND_HH
+
+#include "../../../hb-open-type.hh"
+#include "COLR.hh"
+
+
+
+
+
+namespace OT {
+
+
+HB_INTERNAL void PaintColrLayers::dependv1 (hb_colrv1_depend_context_t* c) const
+{
+  const LayerList &paint_offset_lists = c->get_colr_table ()->get_layerList ();
+  for (unsigned i = firstLayerIndex; i < firstLayerIndex + numLayers; i++)
+  {
+    const Paint &paint = paint_offset_lists.get_paint (i);
+    paint.dispatch (c);
+  }
+}
+
+HB_INTERNAL void PaintGlyph::dependv1 (hb_colrv1_depend_context_t* c) const
+{
+  
+  
+  
+  
+  if (gid != c->source_gid)
+    c->depend_data->add_depend(c->source_gid, HB_OT_TAG_COLR, gid);
+  (this+paint).dispatch (c);
+}
+
+HB_INTERNAL void PaintColrGlyph::dependv1 (hb_colrv1_depend_context_t* c) const
+{
+  const COLR *colr_table = c->get_colr_table ();
+  const BaseGlyphPaintRecord* baseglyph_paintrecord = colr_table->get_base_glyph_paintrecord (gid);
+  if (!baseglyph_paintrecord) return;
+  c->depend_data->add_depend(c->source_gid, HB_OT_TAG_COLR, gid);
+
+  const BaseGlyphList &baseglyph_list = colr_table->get_baseglyphList ();
+  (&baseglyph_list+baseglyph_paintrecord->paint).dispatch (c);
+}
+
+template <template<typename> class Var>
+HB_INTERNAL void PaintTransform<Var>::dependv1 (hb_colrv1_depend_context_t* c) const
+{
+  (this+src).dispatch (c);
+}
+
+HB_INTERNAL void PaintTranslate::dependv1 (hb_colrv1_depend_context_t* c) const
+{
+  (this+src).dispatch (c);
+}
+
+HB_INTERNAL void PaintScale::dependv1 (hb_colrv1_depend_context_t* c) const
+{
+  (this+src).dispatch (c);
+}
+
+HB_INTERNAL void PaintScaleAroundCenter::dependv1 (hb_colrv1_depend_context_t* c) const
+{
+  (this+src).dispatch (c);
+}
+
+HB_INTERNAL void PaintScaleUniform::dependv1 (hb_colrv1_depend_context_t* c) const
+{
+  (this+src).dispatch (c);
+}
+
+HB_INTERNAL void PaintScaleUniformAroundCenter::dependv1 (hb_colrv1_depend_context_t* c) const
+{
+  (this+src).dispatch (c);
+}
+
+HB_INTERNAL void PaintRotate::dependv1 (hb_colrv1_depend_context_t* c) const
+{
+  (this+src).dispatch (c);
+}
+
+HB_INTERNAL void PaintRotateAroundCenter::dependv1 (hb_colrv1_depend_context_t* c) const
+{
+  (this+src).dispatch (c);
+}
+
+HB_INTERNAL void PaintSkew::dependv1 (hb_colrv1_depend_context_t* c) const
+{
+  (this+src).dispatch (c);
+}
+
+HB_INTERNAL void PaintSkewAroundCenter::dependv1 (hb_colrv1_depend_context_t* c) const
+{
+  (this+src).dispatch (c);
+}
+
+HB_INTERNAL void PaintComposite::dependv1 (hb_colrv1_depend_context_t* c) const
+{
+  (this+src).dispatch (c);
+  (this+backdrop).dispatch (c);
+}
+
+
+} 
+
+
+#endif 

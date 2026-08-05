@@ -174,6 +174,31 @@ typedef hb_bool_t (*hb_paint_color_glyph_func_t) (hb_paint_funcs_t *funcs,
 
 
 
+typedef void (*hb_paint_fill_glyph_func_t) (hb_paint_funcs_t *funcs,
+                                            void *paint_data,
+                                            hb_codepoint_t glyph,
+                                            hb_font_t *font,
+                                            hb_bool_t is_foreground,
+                                            hb_color_t color,
+                                            void *user_data);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -866,6 +891,23 @@ hb_paint_funcs_set_color_glyph_func (hb_paint_funcs_t                *funcs,
 
 
 HB_EXTERN void
+hb_paint_funcs_set_fill_glyph_func (hb_paint_funcs_t           *funcs,
+                                    hb_paint_fill_glyph_func_t  func,
+                                    void                       *user_data,
+                                    hb_destroy_func_t           destroy);
+
+
+
+
+
+
+
+
+
+
+
+
+HB_EXTERN void
 hb_paint_funcs_set_push_clip_glyph_func (hb_paint_funcs_t                *funcs,
                                          hb_paint_push_clip_glyph_func_t  func,
                                          void                            *user_data,
@@ -1116,6 +1158,13 @@ HB_EXTERN hb_bool_t
 hb_paint_color_glyph (hb_paint_funcs_t *funcs, void *paint_data,
                       hb_codepoint_t glyph,
                       hb_font_t *font);
+
+HB_EXTERN void
+hb_paint_fill_glyph (hb_paint_funcs_t *funcs, void *paint_data,
+                     hb_codepoint_t glyph,
+                     hb_font_t *font,
+                     hb_bool_t is_foreground,
+                     hb_color_t color);
 
 HB_EXTERN void
 hb_paint_push_clip_glyph (hb_paint_funcs_t *funcs, void *paint_data,

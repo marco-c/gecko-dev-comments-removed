@@ -80,9 +80,8 @@ propagate_attachment_offsets (hb_glyph_position_t *pos,
 {
   
 
-  int chain = pos[i].attach_chain(), type = pos[i].attach_type();
-  if (likely (!chain))
-    return;
+  int chain = pos[i].attach_chain();
+  int type = pos[i].attach_type();
 
   pos[i].attach_chain() = 0;
 
@@ -94,7 +93,8 @@ propagate_attachment_offsets (hb_glyph_position_t *pos,
   if (unlikely (!nesting_level))
     return;
 
-  propagate_attachment_offsets (pos, len, j, direction, nesting_level - 1);
+  if (pos[j].attach_chain())
+    propagate_attachment_offsets (pos, len, j, direction, nesting_level - 1);
 
   assert (!!(type & GPOS_impl::ATTACH_TYPE_MARK) ^ !!(type & GPOS_impl::ATTACH_TYPE_CURSIVE));
 
@@ -107,20 +107,42 @@ propagate_attachment_offsets (hb_glyph_position_t *pos,
   }
   else 
   {
-    pos[i].x_offset += pos[j].x_offset;
-    pos[i].y_offset += pos[j].y_offset;
-
-    assert (j < i);
-    if (HB_DIRECTION_IS_FORWARD (direction))
-      for (unsigned int k = j; k < i; k++) {
-        pos[i].x_offset -= pos[k].x_advance;
-        pos[i].y_offset -= pos[k].y_advance;
-      }
+    if (HB_DIRECTION_IS_HORIZONTAL (direction))
+      pos[i].x_offset += pos[j].x_offset;
     else
-      for (unsigned int k = j + 1; k < i + 1; k++) {
-        pos[i].x_offset += pos[k].x_advance;
-        pos[i].y_offset += pos[k].y_advance;
-      }
+      pos[i].y_offset += pos[j].y_offset;
+
+    
+    if (j < i)
+    {
+      
+
+      if (HB_DIRECTION_IS_FORWARD (direction))
+	for (unsigned int k = j; k < i; k++) {
+	  pos[i].x_offset -= pos[k].x_advance;
+	  pos[i].y_offset -= pos[k].y_advance;
+	}
+      else
+	for (unsigned int k = j + 1; k < i + 1; k++) {
+	  pos[i].x_offset += pos[k].x_advance;
+	  pos[i].y_offset += pos[k].y_advance;
+	}
+    }
+    else 
+    {
+      
+
+      if (HB_DIRECTION_IS_FORWARD (direction))
+	for (unsigned int k = i; k < j; k++) {
+	  pos[i].x_offset += pos[k].x_advance;
+	  pos[i].y_offset += pos[k].y_advance;
+	}
+      else
+	for (unsigned int k = i + 1; k < j + 1; k++) {
+	  pos[i].x_offset -= pos[k].x_advance;
+	  pos[i].y_offset -= pos[k].y_advance;
+	}
+    }
   }
 }
 
@@ -149,8 +171,20 @@ GPOS::position_finish_offsets (hb_font_t *font, hb_buffer_t *buffer)
 
   
   if (buffer->scratch_flags & HB_BUFFER_SCRATCH_FLAG_HAS_GPOS_ATTACHMENT)
-    for (unsigned i = 0; i < len; i++)
-      propagate_attachment_offsets (pos, len, i, direction);
+  {
+    auto *pos = buffer->pos;
+    
+    if (HB_DIRECTION_IS_FORWARD (direction))
+    {
+      for (unsigned i = 0; i < len; i++)
+	if (pos[i].attach_chain())
+	  propagate_attachment_offsets (pos, len, i, direction);
+    } else {
+      for (unsigned i = len; i-- > 0; )
+	if (pos[i].attach_chain())
+	  propagate_attachment_offsets (pos, len, i, direction);
+    }
+  }
 
   if (unlikely (font->slant_xy) &&
       HB_DIRECTION_IS_HORIZONTAL (direction))

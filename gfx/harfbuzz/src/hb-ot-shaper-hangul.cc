@@ -69,12 +69,21 @@ override_features_hangul (hb_ot_shape_planner_t *plan)
   
 
 
-  plan->map.disable_feature (HB_TAG('c','a','l','t'));
+
+
+
+
+
+
+
+
+  plan->map.add_feature (HB_TAG('c','a','l','t'));
 }
 
 struct hangul_shape_plan_t
 {
   hb_mask_t mask_array[HANGUL_FEATURE_COUNT];
+  hb_mask_t calt_mask;
 };
 
 static void *
@@ -86,6 +95,8 @@ data_create_hangul (const hb_ot_shape_plan_t *plan)
 
   for (unsigned int i = 0; i < HANGUL_FEATURE_COUNT; i++)
     hangul_plan->mask_array[i] = plan->map.get_1_mask (hangul_features[i]);
+
+  hangul_plan->calt_mask = plan->map.get_1_mask (HB_TAG('c','a','l','t'));
 
   return hangul_plan;
 }
@@ -405,7 +416,14 @@ setup_masks_hangul (const hb_ot_shape_plan_t *plan,
     unsigned int count = buffer->len;
     hb_glyph_info_t *info = buffer->info;
     for (unsigned int i = 0; i < count; i++, info++)
+    {
       info->mask |= hangul_plan->mask_array[info->hangul_shaping_feature()];
+
+      
+      hb_codepoint_t u = info->codepoint;
+      if (isL (u) || isV (u) || isT (u))
+	info->mask &= ~hangul_plan->calt_mask;
+    }
   }
 
   HB_BUFFER_DEALLOCATE_VAR (buffer, hangul_shaping_feature);

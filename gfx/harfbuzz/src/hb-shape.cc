@@ -316,7 +316,7 @@ hb_shape_justify (hb_font_t          *font,
 
   
   unsigned text_len = buffer->len;
-  auto *text_info = (hb_glyph_info_t *) hb_malloc (text_len * sizeof (buffer->info[0]));
+  auto *text_info = (hb_glyph_info_t *) hb_malloc2 (text_len, sizeof (buffer->info[0]));
   if (unlikely (text_len && !text_info))
     return false;
   hb_memcpy (text_info, buffer->info, text_len * sizeof (buffer->info[0]));

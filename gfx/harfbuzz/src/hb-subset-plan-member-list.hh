@@ -65,6 +65,7 @@ HB_SUBSET_PLAN_MEMBER (hb_set_t, _glyphset)
 HB_SUBSET_PLAN_MEMBER (hb_set_t, _glyphset_gsub)
 HB_SUBSET_PLAN_MEMBER (hb_set_t, _glyphset_mathed)
 HB_SUBSET_PLAN_MEMBER (hb_set_t, _glyphset_colred)
+HB_SUBSET_PLAN_MEMBER (hb_set_t, _glyphset_cmaped)
 
 
 HB_SUBSET_PLAN_MEMBER (hb_map_t, gsub_lookups)
@@ -132,6 +133,20 @@ HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<hb_tag_t, TripleDistances>), axes_triple_
 
 
 HB_SUBSET_PLAN_MEMBER (hb_map_t, axes_index_map)
+
+
+HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<hb_tag_t, Triple>), old_intermediates)
+
+
+
+
+
+HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<hb_tag_t, Triple>), avar2_reachable_ranges)
+
+
+
+
+HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<hb_tag_t, double>), avar2_self_contained)
 
 
 HB_SUBSET_PLAN_MEMBER (hb_map_t, axes_old_index_tag_map)

@@ -379,6 +379,17 @@ hb_resolve_graph_overflows (hb_tag_t table_tag,
         DEBUG_MSG (SUBSET_REPACK, nullptr, "Extensions promotion failed.");
         return false;
       }
+
+      
+      
+      sorted_graph.sort_shortest_distance_if_needed ();
+      if (sorted_graph.in_error ())
+      {
+        DEBUG_MSG (SUBSET_REPACK, nullptr, "Sorted graph in error state.");
+        return false;
+      }
+
+      if (!graph::will_overflow (sorted_graph)) return true;
     }
 
     DEBUG_MSG (SUBSET_REPACK, nullptr, "Assigning spaces to 32 bit subgraphs.");

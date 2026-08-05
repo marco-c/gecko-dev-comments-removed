@@ -39,6 +39,19 @@
 #include <functional>
 #include <new>
 
+static HB_ALWAYS_INLINE void *
+hb_malloc2 (size_t nmemb, size_t size)
+{
+  if (size && nmemb > SIZE_MAX / size) return nullptr;
+  return hb_malloc (nmemb * size);
+}
+static HB_ALWAYS_INLINE void *
+hb_realloc2 (void *ptr, size_t nmemb, size_t size)
+{
+  if (size && nmemb > SIZE_MAX / size) return nullptr;
+  return hb_realloc (ptr, nmemb * size);
+}
+
 
 
 
@@ -876,6 +889,18 @@ struct
   (hb_min (hb_max (std::forward<T> (x), std::forward<T2> (min)), std::forward<T3> (max)))
 }
 HB_FUNCOBJ (hb_clamp);
+
+
+
+
+template <typename T>
+static inline T
+hb_clamp_to (double v)
+{
+  return (T) hb_clamp (v,
+		       (double) hb_int_min (T),
+		       (double) hb_int_max (T));
+}
 
 
 

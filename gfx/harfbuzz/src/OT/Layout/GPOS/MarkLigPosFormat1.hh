@@ -92,6 +92,17 @@ struct MarkLigPosFormat1_2
 
   const Coverage &get_coverage () const { return this+markCoverage; }
 
+  static inline bool accept (hb_buffer_t *buffer, unsigned idx)
+  {
+    
+
+
+
+
+    return !_hb_glyph_info_multiplied (&buffer->info[idx]) ||
+	   0 == _hb_glyph_info_get_lig_comp (&buffer->info[idx]);
+  }
+
   bool apply (hb_ot_apply_context_t *c) const
   {
     TRACE_APPLY (this);
@@ -113,6 +124,13 @@ struct MarkLigPosFormat1_2
     for (j = buffer->idx; j > c->last_base_until; j--)
     {
       auto match = skippy_iter.match (buffer->info[j - 1]);
+      if (match == skippy_iter.MATCH)
+      {
+        
+	if (!accept (buffer, j - 1) &&
+	    NOT_COVERED == (this+ligatureCoverage).get_coverage  (buffer->info[j - 1].codepoint))
+	  match = skippy_iter.SKIP;
+      }
       if (match == skippy_iter.MATCH)
       {
 	c->last_base = (signed) j - 1;

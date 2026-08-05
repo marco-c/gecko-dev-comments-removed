@@ -169,6 +169,9 @@ struct hb_subset_plan_t
   
   mutable bool has_gdef_varstore;
 
+  
+  bool has_avar2;
+
 #define HB_SUBSET_PLAN_MEMBER(Type, Name) Type Name;
 #include "hb-subset-plan-member-list.hh"
 #undef HB_SUBSET_PLAN_MEMBER
