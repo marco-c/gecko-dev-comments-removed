@@ -2016,29 +2016,29 @@ double StyleDistance(const mozilla::SlantStyleRange& aRange,
   return kReverse + kNegate + (minAngle - targetAngle);
 }
 
-double StretchDistance(const mozilla::StretchRange& aRange,
-                       const mozilla::StyleFontStretch& aTargetStretch) {
+double WidthDistance(const mozilla::WidthRange& aRange,
+                     const mozilla::StyleFontWidth& aTargetWidth) {
   const double kReverseDistance = 1000.0;
 
-  mozilla::FontStretch minStretch = aRange.Min();
-  mozilla::FontStretch maxStretch = aRange.Max();
+  mozilla::FontWidth minWidth = aRange.Min();
+  mozilla::FontWidth maxWidth = aRange.Max();
 
   
   
   
   
   
-  if (aTargetStretch < minStretch) {
-    if (aTargetStretch > mozilla::FontStretch::NORMAL) {
-      return minStretch.ToFloat() - aTargetStretch.ToFloat();
+  if (aTargetWidth < minWidth) {
+    if (aTargetWidth > mozilla::FontWidth::NORMAL) {
+      return minWidth.ToFloat() - aTargetWidth.ToFloat();
     }
-    return (minStretch.ToFloat() - aTargetStretch.ToFloat()) + kReverseDistance;
+    return (minWidth.ToFloat() - aTargetWidth.ToFloat()) + kReverseDistance;
   }
-  if (aTargetStretch > maxStretch) {
-    if (aTargetStretch <= mozilla::FontStretch::NORMAL) {
-      return aTargetStretch.ToFloat() - maxStretch.ToFloat();
+  if (aTargetWidth > maxWidth) {
+    if (aTargetWidth <= mozilla::FontWidth::NORMAL) {
+      return aTargetWidth.ToFloat() - maxWidth.ToFloat();
     }
-    return (aTargetStretch.ToFloat() - maxStretch.ToFloat()) + kReverseDistance;
+    return (aTargetWidth.ToFloat() - maxWidth.ToFloat()) + kReverseDistance;
   }
   return 0.0;
 }

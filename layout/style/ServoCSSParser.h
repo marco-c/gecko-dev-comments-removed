@@ -25,7 +25,7 @@ class ServoStyleSet;
 struct URLExtraData;
 struct StyleAbsoluteColor;
 struct StyleFontFamilyList;
-struct StyleFontStretch;
+struct StyleFontWidth;
 struct StyleFontWeight;
 struct StyleFontStyle;
 struct StyleLockedDeclarationBlock;
@@ -213,9 +213,8 @@ class ServoCSSParser {
 
   static bool ParseFontShorthandForMatching(
       const nsACString& aValue, URLExtraData* aUrl, StyleFontFamilyList& aList,
-      StyleFontStyle& aStyle, StyleFontStretch& aStretch,
-      StyleFontWeight& aWeight, float* aSize = nullptr,
-      bool* aSmallCaps = nullptr);
+      StyleFontStyle& aStyle, StyleFontWidth& aWidth, StyleFontWeight& aWeight,
+      float* aSize = nullptr, bool* aSmallCaps = nullptr);
 
   
 

@@ -25,7 +25,7 @@ use std::fmt::{self, Write};
 use style_traits::{CssString, CssWriter, ToCss};
 use thin_vec::ThinVec;
 
-pub use specified::ImageRendering;
+pub use specified::{ImageDecoding, ImageRendering};
 
 
 

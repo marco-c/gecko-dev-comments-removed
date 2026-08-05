@@ -17,7 +17,7 @@ struct gfxFontStyle;
 
 
 struct nsFont final {
-  typedef mozilla::FontStretch FontStretch;
+  typedef mozilla::FontWidth FontWidth;
   typedef mozilla::FontSlantStyle FontSlantStyle;
   typedef mozilla::FontWeight FontWeight;
 
@@ -48,7 +48,7 @@ struct nsFont final {
   
   FontSlantStyle style = FontSlantStyle::NORMAL;
   FontWeight weight = FontWeight::NORMAL;
-  FontStretch stretch = FontStretch::NORMAL;
+  FontWidth width = FontWidth::NORMAL;
 
   
   

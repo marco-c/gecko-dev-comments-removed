@@ -993,7 +993,7 @@ pub trait MatchMethods: TElement {
         font_property_changed!(clone_font_family)
             || font_property_changed!(clone_font_style)
             || font_property_changed!(clone_font_weight)
-            || font_property_changed!(clone_font_stretch)
+            || font_property_changed!(clone_font_width)
     }
 
     
