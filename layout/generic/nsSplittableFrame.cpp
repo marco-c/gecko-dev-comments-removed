@@ -27,6 +27,9 @@ void nsSplittableFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     
     SetPrevInFlow(aPrevInFlow);
     aPrevInFlow->SetNextInFlow(this);
+  } else {
+    mFirstContinuation = this;
+    mFirstInFlow = this;
   }
   nsIFrame::Init(aContent, aParent, aPrevInFlow);
 }
@@ -227,11 +230,12 @@ void nsSplittableFrame::UpdateFirstContinuationAndFirstInFlowCache() {
       
       
       
-      for (nsSplittableFrame* f = this; f;
+      for (auto* f = static_cast<nsSplittableFrame*>(GetNextContinuation()); f;
            f = static_cast<nsSplittableFrame*>(f->GetNextContinuation())) {
         f->mFirstContinuation = nullptr;
       }
     }
+    mFirstContinuation = this;
   }
 
   nsIFrame* oldCachedFirstInFlow = mFirstInFlow;
@@ -263,11 +267,12 @@ void nsSplittableFrame::UpdateFirstContinuationAndFirstInFlowCache() {
         
         
         
-        for (nsSplittableFrame* f = this; f;
+        for (auto* f = static_cast<nsSplittableFrame*>(GetNextInFlow()); f;
              f = static_cast<nsSplittableFrame*>(f->GetNextInFlow())) {
           f->mFirstInFlow = nullptr;
         }
       }
+      mFirstInFlow = this;
     }
 
     DebugOnly<nsSplittableFrame*> nextInFlow =
