@@ -423,12 +423,12 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  static GraphTime RoundUpToEndOfAudioBlock(GraphTime aTime);
+  static MediaTime RoundUpToEndOfAudioBlock(MediaTime aTime);
   
 
 
 
-  static GraphTime RoundUpToNextAudioBlock(GraphTime aTime);
+  static MediaTime RoundUpToNextAudioBlock(MediaTime aTime);
   
 
 
