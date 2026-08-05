@@ -1126,7 +1126,6 @@ void MacroAssemblerLOONG64::ma_b(Address addr, ImmGCPtr imm, Label* label,
 
 void MacroAssemblerLOONG64::ma_bl(Label* label) {
   LabelDoc target = refLabel(label);
-  spew("branch .Llabel %p\n", label);
   if (label->bound()) {
     
     
@@ -1146,7 +1145,6 @@ void MacroAssemblerLOONG64::ma_bl(Label* label) {
   
   m_buffer.ensureSpace(5 * sizeof(uint32_t));
 
-  spew("bal .Llabel %p\n", label);
   BufferOffset bo = emit(getBranchCode(BranchIsCall).encode(), target);
   writeInst(nextInChain);
   if (!oom()) {
@@ -1162,9 +1160,6 @@ void MacroAssemblerLOONG64::branchWithCode(InstImm code, Label* label,
                                            JumpKind jumpKind,
                                            Register scratch) {
   LabelDoc target = refLabel(label);
-  
-  
-  spew("branch .Llabel %p", label);
   MOZ_ASSERT(code.encode() !=
              InstImm(op_jirl, BOffImm16(0), zero, ra).encode());
   InstImm inst_beq = InstImm(op_beq, BOffImm16(0), zero, zero);
@@ -1209,7 +1204,6 @@ void MacroAssemblerLOONG64::branchWithCode(InstImm code, Label* label,
     
     
     
-    spew("invert branch .Llabel %p", label);
     InstImm code_r = invertBranch(code, BOffImm16(5 * sizeof(uint32_t)));
     emit(code_r.encode());
     addLongJump(nextOffset(), BufferOffset(label->offset()));
@@ -2825,7 +2819,7 @@ CodeOffset MacroAssembler::farJumpWithPatch() {
   as_jirl(zero, scratch, BOffImm16(0));
   
   CodeOffset farJump(currentOffset());
-  spew(".space 32bit initValue 0xffff ffff");
+  comment(".space 32bit [0xffff'ffff]");
   writeInst(UINT32_MAX);
   return farJump;
 }

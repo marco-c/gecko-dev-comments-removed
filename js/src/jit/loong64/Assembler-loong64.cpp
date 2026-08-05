@@ -1713,7 +1713,6 @@ BufferOffset AssemblerLOONG64::as_fstx_d(FloatRegister fd, Register rj,
 
 
 void AssemblerLOONG64::bind(Label* label, BufferOffset boff) {
-  spew(".set Llabel %p", label);
   
   
   BufferOffset dest = boff.assigned() ? boff : nextOffset();
@@ -1741,7 +1740,6 @@ void AssemblerLOONG64::bind(Label* label, BufferOffset boff) {
 }
 
 void AssemblerLOONG64::retarget(Label* label, Label* target) {
-  spew("retarget %p -> %p", label, target);
   if (label->used() && !oom()) {
     if (target->bound()) {
       bind(label, BufferOffset(target));
