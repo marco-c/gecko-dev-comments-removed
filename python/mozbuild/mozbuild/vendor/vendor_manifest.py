@@ -21,6 +21,7 @@ import mozpack.path as mozpath
 import requests
 
 from mozbuild.base import MozbuildObject
+from mozbuild.vendor.host_base import TagNotFound
 from mozbuild.vendor.rewrite_mozbuild import (
     MozBuildRewriteException,
     add_file_to_moz_build_file,
@@ -180,7 +181,16 @@ class VendorManifest(MozbuildObject):
             
             new_revision, timestamp = self.source_host.upstream_commit("HEAD")
         elif ref_type == "tag":
-            new_revision, timestamp = self.source_host.upstream_tag(revision)
+            try:
+                new_revision, timestamp = self.source_host.upstream_tag(revision)
+            except TagNotFound:
+                
+                
+                
+                
+                if not re.fullmatch(r"[0-9a-fA-F]{7,40}", revision):
+                    raise
+                new_revision, timestamp = self.source_host.upstream_commit(revision)
         else:
             new_revision, timestamp = self.source_host.upstream_commit(revision)
 
