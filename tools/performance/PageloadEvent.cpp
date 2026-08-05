@@ -144,6 +144,27 @@ static bool DomainMatchesWildcard(char* cn, const char* hn,
 
 
 
+static bool IsAllowedFullHostname(const nsACString& aHost) {
+  static constexpr std::string_view kFullHostnameAllowlist[] = {
+      "docs.google.com",    "mail.google.com",   "news.google.com",
+      "drive.google.com",   "meet.google.com",   "calendar.google.com",
+      "www.google.com",     "m.facebook.com",    "support.microsoft.com",
+      "scholar.google.com", "ads.google.com",    "play.google.com",
+      "mail.yahoo.com",     "search.yahoo.com",  "search.yahoo.co.jp",
+      "photos.google.com",  "gemini.google.com",
+  };
+  for (const auto& allowed : kFullHostnameAllowlist) {
+    if (aHost.EqualsASCII(allowed.data(), allowed.size())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+
+
+
 
 
 
@@ -181,6 +202,15 @@ bool PageloadEventData::MaybeSetPublicRegistrableDomain(nsCOMPtr<nsIURI> aURI,
   rv = tldService->HasKnownPublicSuffix(aURI, &hasKnownPublicSuffix);
   if (NS_FAILED(rv) || !hasKnownPublicSuffix) {
     return false;
+  }
+
+  
+  
+  nsAutoCString host;
+  rv = aURI->GetAsciiHost(host);
+  if (NS_SUCCEEDED(rv) && IsAllowedFullHostname(host)) {
+    mDomain = mozilla::Some(host);
+    return true;
   }
 
   
