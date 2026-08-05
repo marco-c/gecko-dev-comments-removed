@@ -660,8 +660,33 @@ function init_all() {
   });
 }
 
+
+
+
+
 function onHashChange() {
-  gotoPref(null, "Hash");
+  
+
+
+
+
+
+  let restoredQuery =
+    document.location.hash === "#searchResults" &&
+    history.state?.searchQuery &&
+    !gSearchResultsPane.searchInput.value
+      ? history.state.searchQuery
+      : null;
+  if (restoredQuery) {
+    gSearchResultsPane.searchInput.value = restoredQuery;
+  }
+  gotoPref(null, "Hash").then(() => {
+    if (restoredQuery) {
+      gSearchResultsPane.searchFunction({
+        target: gSearchResultsPane.searchInput,
+      });
+    }
+  });
 }
 
 function onBeforeunload() {
@@ -803,9 +828,10 @@ async function gotoPref(
     }
   }
   
-  
-  
-  
+
+
+
+
   let historyEntryId =
     (aShowReason == "Hash" && history.state?.historyEntryId) ||
     scrollOffsets.newHistoryEntryId();
@@ -861,14 +887,17 @@ async function gotoPref(
   } else if (aShowReason == "Click" && prevCategory) {
     previousCategory = internalPrefCategoryNameToFriendlyName(prevCategory);
   }
-  window.history.replaceState(
-    {
-      historyEntryId,
-      category: internalPrefCategoryNameToFriendlyName(category),
-      previousCategory,
-    },
-    document.title
-  );
+  
+  
+  let prevState =
+    history.state && typeof history.state === "object" ? history.state : null;
+  let newState = {
+    ...prevState,
+    historyEntryId,
+    category: internalPrefCategoryNameToFriendlyName(category),
+    previousCategory,
+  };
+  window.history.replaceState(newState, document.title);
 
   let categoryInfo = gCategoryInits.get(category);
   if (!categoryInfo) {
