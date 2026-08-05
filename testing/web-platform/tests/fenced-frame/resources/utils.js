@@ -24,62 +24,7 @@ function getRemoteContextURL(origin) {
   return new URL(REMOTE_EXECUTOR_URL, origin);
 }
 
-async function runSelectRawURL(
-    href, resolve_to_config = false, register_beacon = false) {
-  try {
-    await sharedStorage.worklet.addModule(
-      "/shared-storage/resources/simple-module.js");
-  } catch (e) {
-    
-    
-    
-    
-    
-  }
-  let operation = {url: href};
-  if (register_beacon) {
-    operation.reportingMetadata = {
-      'reserved.top_navigation_start':
-          BEACON_URL + '?type=reserved.top_navigation_start',
-      'reserved.top_navigation_commit':
-          BEACON_URL + '?type=reserved.top_navigation_commit',
-    };
-  }
-  return await sharedStorage.selectURL(
-      'test-url-selection-operation', [operation], {
-        data: {'mockResult': 0},
-        resolveToConfig: resolve_to_config,
-        keepAlive: true,
-      });
-}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function runSelectURL(
-    href, keylist = [], resolve_to_config = false, register_beacon = false) {
-  const full_url = generateURL(href, keylist);
-  return await runSelectRawURL(full_url, resolve_to_config, register_beacon);
-}
 
 async function generateURNFromFledgeRawURL(
     href, nested_urls, resolve_to_config = false, ad_with_size = false,
@@ -170,7 +115,7 @@ async function generateURNFromFledgeRawURL(
 
 
 async function generateURNFromFledge(
-    href, keylist, nested_urls = [], resolve_to_config = false,
+    href, keylist = [], nested_urls = [], resolve_to_config = false,
     ad_with_size = false, requested_size = null, register_beacon = false) {
   const full_url = generateURL(href, keylist);
   return generateURNFromFledgeRawURL(
@@ -302,12 +247,11 @@ async function attachOpaqueContext(
     components_list.push(component_url);
   }
 
-  const id = await (
-      generator_api == 'fledge' ?
-          generateURNFromFledge(
-              url, [], components_list, resolve_to_config, ad_with_size,
-              requested_size, register_beacon) :
-          runSelectURL(url, [], resolve_to_config, register_beacon));
+  assert_equals(generator_api, 'fledge',
+                'Only FLEDGE is supported for opaque context');
+  const id = await generateURNFromFledge(url, [], components_list,
+                                         resolve_to_config, ad_with_size,
+                                         requested_size, register_beacon);
   const object = object_constructor(id);
   return buildRemoteContextForObject(object, uuid, html);
 }
@@ -317,7 +261,7 @@ function attachPotentiallyOpaqueContext(
     register_beacon, frame_constructor, html, headers, origin,
     component_origin, num_components) {
   generator_api = generator_api.toLowerCase();
-  if (generator_api == 'fledge' || generator_api == 'sharedstorage') {
+  if (generator_api == 'fledge') {
     return attachOpaqueContext(
         generator_api, resolve_to_config, ad_with_size, requested_size,
         register_beacon, frame_constructor, html, headers, origin,
