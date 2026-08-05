@@ -24,6 +24,7 @@
 #include "fdlibm.h"
 
 #include "builtin/Math.h"
+#include "gc/GC.h"
 #include "jit/AtomicOperations.h"
 #include "jit/InlinableNatives.h"
 #include "jit/JitRuntime.h"
@@ -607,8 +608,10 @@ static WasmExceptionObject* GetOrWrapWasmException(JitActivation* activation,
   
   
   
-  if (activation->isWasmTrapping() &&
-      activation->wasmTrapData().trap != Trap::ThrowReported
+  bool isTrapThrowReported =
+      activation->isWasmTrapping() &&
+      activation->wasmTrapData().trap == Trap::ThrowReported;
+  if (activation->isWasmTrapping() && !isTrapThrowReported
 #ifdef ENABLE_WASM_JSPI
       && activation->wasmTrapData().trap != Trap::ThrowSuspendError
 #endif
@@ -618,6 +621,11 @@ static WasmExceptionObject* GetOrWrapWasmException(JitActivation* activation,
 
   if (cx->isThrowingOverRecursed() || cx->isThrowingOutOfMemory()) {
     return nullptr;
+  }
+
+  mozilla::Maybe<gc::AutoSuppressGC> suppress;
+  if (isTrapThrowReported) {
+    suppress.emplace(cx);
   }
 
   
@@ -807,7 +815,11 @@ void wasm::HandleExceptionWasm(JSContext* cx, JitFrameIter& iter,
 #ifdef ENABLE_WASM_JSPI
   
   
-  wasm::ContStack* wasmPreviousStack = nullptr;
+  
+  
+  
+  
+  wasm::ContStack* wasmPreviousStack = iter.asWasm().unwoundContStack();
 #endif
 
   for (; !iter.done() && iter.isWasm(); ++iter) {
