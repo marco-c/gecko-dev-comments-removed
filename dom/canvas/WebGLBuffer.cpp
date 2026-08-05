@@ -79,21 +79,8 @@ void WebGLBuffer::BufferData(const GLenum target, const uint64_t size,
                              const void* const maybeData, const GLenum usage,
                              bool allowUninitialized) {
   
-  bool sizeValid = CheckedInt<GLsizeiptr>(size).isValid();
-
-  if (mContext->gl->WorkAroundDriverBugs()) {
-    
-#if defined(XP_MACOSX) || defined(MOZ_WIDGET_GTK)
-    sizeValid &= CheckedInt<int32_t>(size).isValid();
-#endif
-
-    
-    if (mContext->gl->IsANGLE()) {
-      
-      
-      sizeValid &= CheckedInt<int32_t>(size).isValid();
-    }
-  }
+  
+  bool sizeValid = CheckedInt<int32_t>(size).isValid();
 
   if (!sizeValid) {
     mContext->ErrorOutOfMemory("Size not valid for platform: %" PRIu64, size);
@@ -119,7 +106,7 @@ void WebGLBuffer::BufferData(const GLenum target, const uint64_t size,
   UniqueBuffer newIndexCache;
   const bool needsIndexCache = mContext->mNeedsIndexValidation ||
                                mContext->mMaybeNeedsLegacyVertexAttrib0Handling;
-  if (target == LOCAL_GL_ELEMENT_ARRAY_BUFFER && needsIndexCache) {
+  if (mContent == WebGLBuffer::Kind::ElementArray && needsIndexCache) {
     newIndexCache = UniqueBuffer::Take(malloc(AssertedCast<size_t>(size)));
     if (!newIndexCache) {
       mContext->ErrorOutOfMemory("Failed to alloc index cache.");
