@@ -23097,7 +23097,7 @@ const PictureOfTheDay_PictureOfTheDay = ({
   const [imageFailed, setImageFailed] = (0,external_React_namespaceObject.useState)(false);
   (0,external_React_namespaceObject.useEffect)(() => {
     setImageFailed(false);
-  }, [pictureData.imageUrl]);
+  }, [pictureData.thumbnailUrl]);
 
   
   
@@ -23112,7 +23112,7 @@ const PictureOfTheDay_PictureOfTheDay = ({
   
   
   const isSetAsWallpaper = Boolean(prefs["newtabWallpapers.user.enabled"]) && pictureDate === prefs["widgets.pictureOfTheDay.wallpaperActive"];
-  const hasPicture = Boolean(pictureData.imageUrl) && !dismissed && !imageFailed;
+  const hasPicture = Boolean(pictureData.thumbnailUrl) && !dismissed && !imageFailed;
 
   
   
@@ -23345,7 +23345,7 @@ const PictureOfTheDay_PictureOfTheDay = ({
   };
   const pictureImage = external_React_default().createElement("img", {
     className: "picture-of-the-day-image",
-    src: pictureData.imageUrl,
+    src: pictureData.thumbnailUrl,
     alt: imageAlt,
     onError: () => setImageFailed(true)
   });
