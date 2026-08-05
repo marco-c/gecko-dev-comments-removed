@@ -182,9 +182,7 @@ PayloadTypePicker::PayloadTypePicker() {
 
       
       
-      
-      
-      {.format = {"reserved-do-not-use", 1, 0}, .payload_type = 102},
+
       {.format = {kCnCodecName, 16000, 1}, .payload_type = 105},
       {.format = {kCnCodecName, 32000, 1}, .payload_type = 106},
       {.format = {kOpusCodecName,
