@@ -237,15 +237,8 @@ IceServerParser::ParseStunTurnUri(const nsACString& aUri) {
   return result;
 }
 
-
-constexpr uint16_t gGoodWebrtcPortList[] = {
-    53,    
-    3478,  
-    5349,  
-};
-
-static bool IsPortAllowed(uint16_t aPort) {
-  for (const auto port : gGoodWebrtcPortList) {
+bool IsWebrtcPortAllowed(uint16_t aPort) {
+  for (const auto port : IceServerParser::kGoodWebrtcPortList) {
     if (aPort == port) {
       return true;
     }
@@ -291,7 +284,7 @@ IceServerParser::Parse(const nsTArray<dom::RTCIceServer>& aIceServers) {
       StunTurnUri uri = parseResult.unwrap();
 
       
-      if (!IsPortAllowed(uri.mPort)) {
+      if (!IsWebrtcPortAllowed(uri.mPort)) {
         ErrorResult rv;
         rv.ThrowSyntaxError(
             nsFmtCString("'{}' uses a port that is blocked", utf8Url));

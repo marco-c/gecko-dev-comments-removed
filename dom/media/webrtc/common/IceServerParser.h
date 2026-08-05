@@ -15,6 +15,14 @@ namespace mozilla {
 
 class IceServerParser {
  public:
+  
+  
+  static constexpr uint16_t kGoodWebrtcPortList[] = {
+      53,    
+      3478,  
+      5349,  
+  };
+
   enum class StunTurnScheme : uint8_t {
     Stun,
     Stuns,
@@ -65,6 +73,11 @@ class IceServerParser {
   static Result<nsTArray<ParsedIceServer>, ErrorResult> Parse(
       const nsTArray<dom::RTCIceServer>& aIceServers);
 };
+
+
+
+
+bool IsWebrtcPortAllowed(uint16_t aPort);
 
 }  
 
