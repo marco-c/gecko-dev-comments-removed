@@ -1,0 +1,20 @@
+
+
+
+
+
+#include "mozilla/dom/PrefetchRecordParent.h"
+
+namespace mozilla::dom {
+
+mozilla::ipc::IPCResult PrefetchRecordParent::RecvCancel() {
+  
+  
+  return IPC_OK();
+}
+
+void PrefetchRecordParent::ActorDestroy(ActorDestroyReason aReason) {
+  
+}
+
+}  
