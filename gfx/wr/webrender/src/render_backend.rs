@@ -2355,6 +2355,8 @@ impl RenderBackend {
             
             
             
+            
+            
             data_stores.reconcile_from_interners(&interners);
 
             let properties_name = format!("properties-{}-{}", id.namespace_id.0, id.id);
