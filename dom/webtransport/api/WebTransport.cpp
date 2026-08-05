@@ -255,6 +255,16 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   
   
   
+  if (aOptions.mProtocols.Length() != 0) {
+    
+  }
+
+  
+  
+  
+  
+  
+  
   mDatagrams = new WebTransportDatagramDuplexStream(mGlobal, this);
   mDatagrams->Init(aError);
   if (aError.Failed()) {
@@ -647,6 +657,8 @@ WebTransportCongestionControl WebTransport::CongestionControl() {
   
   return WebTransportCongestionControl::Default;
 }
+
+void WebTransport::GetProtocol(nsAString& aProtocol) { aProtocol = mProtocol; }
 
 void WebTransport::RemoteClosed(bool aCleanly, const uint32_t& aCode,
                                 const nsACString& aReason) {
