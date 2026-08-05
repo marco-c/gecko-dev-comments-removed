@@ -862,6 +862,15 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
   
   
   
+  
+  
+  if (aStatus == NS_ERROR_DOCUMENT_LOAD_LISTENER_NO_PARENT_CHANNEL) {
+    return;
+  }
+
+  
+  
+  
   if (RefPtr<mozilla::dom::BrowsingContext> targetBC =
           aLoadInfo->GetTargetBrowsingContext()) {
     if (targetBC->IsDiscarded() && aCanceled) {

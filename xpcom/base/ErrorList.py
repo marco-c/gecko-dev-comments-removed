@@ -384,6 +384,12 @@ with modules["NETWORK"]:
     
     
     errors["NS_ERROR_DOCSHELL_DYING"] = FAILURE(78)
+    
+    
+    
+    
+    
+    errors["NS_ERROR_DOCUMENT_LOAD_LISTENER_NO_PARENT_CHANNEL"] = FAILURE(79)
 
     
 
