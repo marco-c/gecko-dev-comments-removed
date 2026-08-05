@@ -7,15 +7,10 @@
 
 
 
-use crate::util::thread_guard::{self, MainThreadGuard};
-use nserror::{
-    NS_ERROR_NOT_AVAILABLE, NS_ERROR_NOT_SAME_THREAD, NS_ERROR_UNEXPECTED, NS_OK, nsresult,
-};
-use nsstring::{nsAString, nsString};
-use xpcom::{
-    Promise, RefPtr,
-    interfaces::{nsIWindowsShellService, nsIWritableVariant},
-};
+use crate::util::thread_guard::MainThreadGuard;
+use nserror::nsresult;
+use nsstring::nsAString;
+use xpcom::interfaces::nsIWindowsShellService;
 
 mod com;
 mod ffi;
@@ -42,23 +37,9 @@ impl From<PinResult> for u8 {
     }
 }
 
-impl TryFrom<PinResult> for RefPtr<nsIWritableVariant> {
-    type Error = nsresult;
 
-    fn try_from(result: PinResult) -> Result<Self, Self::Error> {
-        let variant = xpcom::create_instance::<nsIWritableVariant>(c"@mozilla.org/variant;1")
-            .ok_or_else(|| {
-                log::error!("Failed to create writable variant.");
-                NS_ERROR_UNEXPECTED
-            })?;
-
-        
-        unsafe { variant.SetAsUint8(result.into()) }
-            .to_result()
-            .inspect_err(|e| log::error!("Failed to set Uint8 on nsIWritableVariant: {e:?}"))?;
-
-        Ok(variant)
-    }
+fn can_pin(main_guard: MainThreadGuard) -> bool {
+    winrt::is_pinning_allowed() || com::is_pinning_available(main_guard)
 }
 
 
@@ -83,6 +64,11 @@ async fn pin_app(
         
         com::modify_taskbar(com::PinOp::Pin, shortcut_path, main_guard)
     })
+}
+
+
+fn unpin_shortcut(shortcut_path: &nsAString, main_guard: MainThreadGuard) -> Result<(), nsresult> {
+    com::modify_taskbar(com::PinOp::UnPin, shortcut_path, main_guard).map(|_| ())
 }
 
 
