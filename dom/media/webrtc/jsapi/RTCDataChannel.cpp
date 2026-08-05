@@ -7,6 +7,7 @@
 #include "DataChannel.h"
 #include "DataChannelLog.h"
 #include "RTCDataChannelDeclarations.h"
+#include "RTCError.h"
 #include "base/basictypes.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/EventListenerManager.h"
@@ -15,6 +16,9 @@
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/MessageEvent.h"
 #include "mozilla/dom/MessageEventBinding.h"
+#include "mozilla/dom/PMediaTransport.h"
+#include "mozilla/dom/RTCErrorEvent.h"
+#include "mozilla/dom/RTCErrorEventBinding.h"
 #include "mozilla/dom/RTCStatsReportBinding.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/ToJSValue.h"
@@ -540,7 +544,7 @@ void RTCDataChannel::AnnounceOpen() {
   }
 }
 
-void RTCDataChannel::AnnounceClosed() {
+void RTCDataChannel::AnnounceClosed(Maybe<RTCErrorParams> aError) {
   MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
   
   
@@ -566,6 +570,16 @@ void RTCDataChannel::AnnounceClosed() {
   
   
   
+  
+  if (aError) {
+    RTCErrorEventInit init;
+    init.mError = MakeRefPtr<RTCError>(std::move(aError->errorInit()),
+                                       nsCString(std::move(aError->message())));
+    RefPtr<RTCErrorEvent> event =
+        RTCErrorEvent::Constructor(this, u"error"_ns, std::move(init));
+    event->SetTrusted(true);
+    DispatchEvent(*event, IgnoreErrors());
+  }
 
   
   OnSimpleEvent(u"close"_ns);

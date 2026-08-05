@@ -549,6 +549,10 @@ let interfaceNamesInGlobalScope = [
   
   { name: "RTCEncodedVideoFrame", insecureContext: true },
   
+  { name: "RTCError", insecureContext: true },
+  
+  { name: "RTCErrorEvent", insecureContext: true },
+  
   { name: "RTCRtpScriptTransformer", insecureContext: true },
   
   { name: "RTCTransformEvent", insecureContext: true },
