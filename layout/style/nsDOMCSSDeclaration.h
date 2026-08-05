@@ -69,6 +69,12 @@ class nsDOMCSSDeclaration : public nsICSSDeclaration {
 
 
 
+  virtual void GetPropertyValue(const mozilla::CSSPropertyId& aPropertyId,
+                                nsACString& aValue);
+  
+
+
+
   virtual void GetPropertyValue(const NonCustomCSSPropertyId aPropId,
                                 nsACString& aValue);
 
@@ -103,6 +109,8 @@ class nsDOMCSSDeclaration : public nsICSSDeclaration {
   bool HasLonghandProperty(const nsACString& propertyName) override;
   void RemoveProperty(const nsACString& propertyName, nsACString& _retval,
                       mozilla::ErrorResult& aRv) override;
+  void RemoveProperty(const mozilla::CSSPropertyId& aPropertyId,
+                      mozilla::ErrorResult& aRv);
   void GetPropertyPriority(const nsACString& propertyName,
                            nsACString& aPriority) override;
   void SetProperty(const nsACString& propertyName, const nsACString& value,
@@ -185,11 +193,6 @@ class nsDOMCSSDeclaration : public nsICSSDeclaration {
 
   nsresult SetPropertyTypedValue(const mozilla::CSSPropertyId& aPropId,
                                  const nsACString& aPropValue);
-
-  void RemovePropertyInternal(NonCustomCSSPropertyId aPropId,
-                              mozilla::ErrorResult& aRv);
-  void RemovePropertyInternal(const nsACString& aPropert,
-                              mozilla::ErrorResult& aRv);
 
   virtual void GetPropertyChangeClosure(
       mozilla::DeclarationBlockMutationClosure* aClosure,
