@@ -2,8 +2,6 @@
 
 
 
-#include "debugger/Debugger-inl.h"
-
 #include "mozilla/Attributes.h"        
 #include "mozilla/DebugOnly.h"         
 #include "mozilla/DoublyLinkedList.h"  
@@ -32,6 +30,8 @@
 #include "debugger/DebuggerMemory.h"  
 #include "debugger/DebugScript.h"     
 #include "debugger/Environment.h"     
+
+#include "debugger/Debugger-inl.h"
 #ifdef MOZ_EXECUTION_TRACING
 #  include "debugger/ExecutionTracer.h"  
 #endif
@@ -3111,9 +3111,16 @@ void Debugger::slowPathPromiseHook(JSContext* cx, Hook hook,
 }
 
 
-void DebugAPI::slowPathOnNewPromise(JSContext* cx,
+bool DebugAPI::slowPathOnNewPromise(JSContext* cx,
                                     Handle<PromiseObject*> promise) {
   Debugger::slowPathPromiseHook(cx, Debugger::OnNewPromise, promise);
+
+  if (promise->state() != JS::PromiseState::Pending) {
+    JS_ReportErrorASCII(cx, "Debugger hook violates the promise invariant");
+    return false;
+  }
+
+  return true;
 }
 
 

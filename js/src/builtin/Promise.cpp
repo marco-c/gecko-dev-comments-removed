@@ -2157,7 +2157,9 @@ enum GetCapabilitiesExecutorSlots {
 
   
   
-  DebugAPI::onNewPromise(cx, promise);
+  if (!DebugAPI::onNewPromise(cx, promise)) {
+    return nullptr;
+  }
 
   
   return promise;
@@ -2188,7 +2190,9 @@ enum GetCapabilitiesExecutorSlots {
 
   
   
-  DebugAPI::onNewPromise(cx, promise);
+  if (!DebugAPI::onNewPromise(cx, promise)) {
+    return nullptr;
+  }
 
   
   return promise;
@@ -3510,7 +3514,9 @@ PromiseObject* PromiseObject::create(JSContext* cx, HandleObject executor,
   }
 
   
-  DebugAPI::onNewPromise(cx, promise);
+  if (!DebugAPI::onNewPromise(cx, promise)) {
+    return nullptr;
+  }
 
   
   return promise;
