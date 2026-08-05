@@ -7,7 +7,7 @@ from base_python_support import BasePythonSupport
 
 
 
-TIME_METRICS = ["Runtime", "Startup", "First", "Worst", "Average"]
+TIME_METRICS = ["Runtime", "Startup", "First", "Worst", "Average", "MainRun", "Stdlib"]
 
 
 class JetStreamSupport(BasePythonSupport):
