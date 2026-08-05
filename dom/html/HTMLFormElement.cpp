@@ -810,6 +810,10 @@ nsresult HTMLFormElement::SubmitSubmission(
     return NS_OK;
   }
 
+  if (doc->GetSandboxFlags() & SANDBOXED_FORMS) {
+    return NS_OK;
+  }
+
   
   
   

@@ -306,12 +306,11 @@ void EndSubmitClick(EventChainVisitor& aVisitor) {
 
 
 void HTMLButtonElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
+  auto endSubmit = MakeScopeExit([&] { EndSubmitClick(aVisitor); });
+
   if (!aVisitor.mPresContext) {
-    
     return;
   }
-
-  auto endSubmit = MakeScopeExit([&] { EndSubmitClick(aVisitor); });
 
   
   if (IsDisabled()) {
