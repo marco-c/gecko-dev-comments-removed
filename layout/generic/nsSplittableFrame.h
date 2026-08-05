@@ -165,6 +165,10 @@ class nsSplittableFrame : public nsIFrame {
 
 
 
+
+
+
+
   nsIFrame* mFirstContinuation = nullptr;
   nsIFrame* mFirstInFlow = nullptr;
 };
