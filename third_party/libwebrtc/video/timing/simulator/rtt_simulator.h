@@ -68,7 +68,7 @@ class RttSimulator : public CallStatsObserver {
 
   
   RtcpRttCalculator rtt_calculator_ RTC_GUARDED_BY(sequence_checker_);
-  webrtc::internal::CallStats call_stats_ RTC_GUARDED_BY(sequence_checker_);
+  internal::CallStats call_stats_ RTC_GUARDED_BY(sequence_checker_);
 
   
   SimulatedRttCallback& simulated_rtt_cb_;

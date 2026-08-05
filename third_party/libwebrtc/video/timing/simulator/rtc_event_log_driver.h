@@ -33,8 +33,12 @@
 #include "rtc_base/thread_annotations.h"
 #include "test/time_controller/simulated_time_task_queue_controller.h"
 #include "video/timing/simulator/rtp_packet_simulator.h"
+#include "video/timing/simulator/rtt_simulator.h"
 
 namespace webrtc::video_timing_simulator {
+
+
+
 
 
 
@@ -74,6 +78,8 @@ class RtcEventLogDriver {
     virtual void InsertSimulatedPacket(
         const RtpPacketSimulator::SimulatedPacket& simulated_packet) = 0;
     
+    virtual void UpdateMaxRtt(TimeDelta max_rtt) = 0;
+    
     virtual void Close() = 0;
   };
 
@@ -104,6 +110,19 @@ class RtcEventLogDriver {
   }
 
  private:
+  class RttCallbackAdapter : public SimulatedRttCallback {
+   public:
+    explicit RttCallbackAdapter(RtcEventLogDriver* absl_nonnull driver)
+        : driver_(*driver) {}
+    ~RttCallbackAdapter() override = default;
+    void OnMaxRttUpdate(TimeDelta max_rtt) override {
+      driver_.UpdateMaxRtt(max_rtt);
+    }
+
+   private:
+    RtcEventLogDriver& driver_;
+  };
+
   
   
   
@@ -117,6 +136,18 @@ class RtcEventLogDriver {
   
   void OnLoggedVideoRecvConfig(const LoggedVideoRecvConfig& config);
   void OnLoggedRtpPacketIncoming(const LoggedRtpPacketIncoming& packet);
+  void OnLoggedRtcpPacketSenderReportOutgoing(
+      const LoggedRtcpPacketSenderReport& packet);
+  void OnLoggedRtcpPacketExtendedReportsOutgoing(
+      const LoggedRtcpPacketExtendedReports& packet);
+  void OnLoggedRtcpPacketSenderReportIncoming(
+      const LoggedRtcpPacketSenderReport& packet);
+  void OnLoggedRtcpPacketReceiverReportIncoming(
+      const LoggedRtcpPacketReceiverReport& packet);
+  void OnLoggedRtcpPacketExtendedReportsIncoming(
+      const LoggedRtcpPacketExtendedReports& packet);
+
+  void UpdateMaxRtt(TimeDelta max_rtt);
 
   
   void TeardownOnQueue() RTC_RUN_ON(simulator_queue_);
@@ -135,6 +166,8 @@ class RtcEventLogDriver {
   std::optional<Timestamp> prev_log_timestamp_;
   std::unique_ptr<TaskQueueBase, TaskQueueDeleter> simulator_queue_;
   RtpPacketSimulator packet_simulator_ RTC_GUARDED_BY(simulator_queue_);
+  RttCallbackAdapter rtt_callback_adapter_ RTC_GUARDED_BY(simulator_queue_);
+  std::unique_ptr<RttSimulator> rtt_simulator_ RTC_GUARDED_BY(simulator_queue_);
   
   absl::flat_hash_map<uint32_t, std::unique_ptr<StreamInterface>> streams_
       RTC_GUARDED_BY(simulator_queue_);
