@@ -1678,11 +1678,8 @@ class Column {
       ].map(cell => cell.clientHeight);
 
       
-      cellHeights.sort((a, b) => a - b);
-
-      
       for (let i = 1; i < cellHeights.length; i++) {
-        if (cellHeights[i] !== cellHeights[i - 1]) {
+        if (cellHeights[i] !== cellHeights[0]) {
           
           for (const rowId in this.items) {
             this.table.syncRowHeight(rowId);
