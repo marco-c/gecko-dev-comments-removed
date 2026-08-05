@@ -985,6 +985,10 @@ static void AddVulkanDependencies(SandboxBroker::Policy* policy) {
     policy->AddPath(rdwr, nsPrintfCString("/dev/nvidia%d", i).get(),
                     SandboxBroker::Policy::AddIfExistsNow);
   }
+  
+  
+  
+  policy->AddPath(rdwr, "/dev/udmabuf", SandboxBroker::Policy::AddAlways);
 }
 #endif  
 

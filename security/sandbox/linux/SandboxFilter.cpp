@@ -2092,6 +2092,10 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
 #ifdef MOZ_ENABLE_VULKAN_VIDEO
         static constexpr unsigned long kNvidiaRmType =
             static_cast<unsigned long>('m') << _IOC_TYPESHIFT;
+        
+        
+        static constexpr unsigned long kUdmabufType =
+            static_cast<unsigned long>('u') << _IOC_TYPESHIFT;
 #endif
         
         
@@ -2113,6 +2117,7 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
             .ElseIf(shifted_type == kDmaBufType, Allow())
 #ifdef MOZ_ENABLE_VULKAN_VIDEO
             .ElseIf(shifted_type == kNvidiaRmType, Allow())
+            .ElseIf(shifted_type == kUdmabufType, Allow())
 #endif
 #ifdef MOZ_ENABLE_V4L2
             .ElseIf(shifted_type == kVideoType, Allow())
@@ -2189,8 +2194,11 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
         return Allow();
       CASES_FOR_fcntl: {
         Arg<int> cmd(1);
+        
+        
         return Switch(cmd)
             .Case(F_ADD_SEALS, Allow())
+            .Case(F_GET_SEALS, Allow())
             .Default(SandboxPolicyCommon::EvaluateSyscall(sysno));
       }
       
