@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_File_h
 #define mozilla_dom_File_h
 
@@ -74,6 +72,12 @@ class File final : public Blob {
   
   static already_AddRefed<Promise> CreateFromNsIFile(
       const GlobalObject& aGlobal, nsIFile* aData,
+      const ChromeFilePropertyBag& aBag, SystemCallerGuarantee aGuarantee,
+      ErrorResult& aRv);
+
+  
+  static already_AddRefed<File> CreateFromNsIInputStream(
+      const GlobalObject& aGlobal, nsIInputStream* aInputStream, uint64_t aSize,
       const ChromeFilePropertyBag& aBag, SystemCallerGuarantee aGuarantee,
       ErrorResult& aRv);
 

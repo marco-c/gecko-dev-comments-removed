@@ -115,8 +115,11 @@ public class IntentUtils {
     }
 
     final Uri data = intent.getData();
-    if (data != null && "file".equals(normalizeUriScheme(data).getScheme())) {
-      return null;
+    if (data != null) {
+      final String scheme = normalizeUriScheme(data).getScheme();
+      if ("file".equals(scheme) || "fido".equals(scheme)) {
+        return null;
+      }
     }
 
     
@@ -230,7 +233,8 @@ public class IntentUtils {
         @NonNull final Uri uri,
         @NonNull final String displayName,
         @NonNull final String mimeType,
-        final long lastModified) {
+        final long lastModified,
+        final long size) {
       if (filePath == null) {
         this.filePath = "";
       } else {
@@ -241,6 +245,7 @@ public class IntentUtils {
       this.displayName = displayName;
       this.mimeType = mimeType;
       this.lastModified = lastModified;
+      this.size = size;
     }
 
     
@@ -256,6 +261,7 @@ public class IntentUtils {
       bundle.putString("name", this.displayName);
       bundle.putString("type", this.mimeType);
       bundle.putLong("lastModified", this.lastModified);
+      bundle.putLong("size", this.size);
 
       return bundle;
     }
@@ -275,7 +281,9 @@ public class IntentUtils {
           .append(", mimeType=")
           .append(this.mimeType)
           .append(", lastModified=")
-          .append(this.lastModified);
+          .append(this.lastModified)
+          .append(", size=")
+          .append(this.size);
       return sb.toString();
     }
 
@@ -296,6 +304,9 @@ public class IntentUtils {
 
     
     public final long lastModified;
+
+    
+    public final long size;
   }
 
   private static void queryTreeDocumentUri(
@@ -317,6 +328,7 @@ public class IntentUtils {
           DocumentsContract.Document.COLUMN_DISPLAY_NAME,
           DocumentsContract.Document.COLUMN_MIME_TYPE,
           DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+          DocumentsContract.Document.COLUMN_SIZE,
         };
     try (Cursor cursor =
         cr.query(uri, columns,  null,  null,  null)) {
@@ -326,7 +338,10 @@ public class IntentUtils {
         }
 
         final String docId = cursor.getString(0);
+        
+        
         final String mimeType = cursor.isNull(2) ? "" : cursor.getString(2);
+        
         final String displayName = cursor.isNull(1) ? "" : cursor.getString(1);
         final boolean isDirectory = DocumentsContract.Document.MIME_TYPE_DIR.equals(mimeType);
         if (isDirectory) {
@@ -338,12 +353,15 @@ public class IntentUtils {
         }
 
         final Uri docUri = DocumentsContract.buildDocumentUriUsingTree(uri, docId);
+        
         final long lastModified = cursor.isNull(3) ? 0 : cursor.getLong(3);
+        
+        final long size = cursor.isNull(4) ? -1 : cursor.getLong(4);
 
         final String filePath = resolveDocumentUri(context, docUri);
         children.add(
             new ContentMetaData(
-                filePath, relativePath, docUri, displayName, mimeType, lastModified));
+                filePath, relativePath, docUri, displayName, mimeType, lastModified, size));
       }
     } catch (final UnsupportedOperationException e) {
       Log.e(LOGTAG, "Failed to query child documents", e);
