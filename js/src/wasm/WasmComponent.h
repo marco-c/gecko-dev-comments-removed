@@ -1081,7 +1081,7 @@ class ComponentInstance {
   const SharedComponent component_;
 
   using CoreInstanceVector =
-      GCVector<WasmInstanceObject*, 0, SystemAllocPolicy>;
+      GCVector<HeapPtr<WasmInstanceObject*>, 0, SystemAllocPolicy>;
   
   
   
