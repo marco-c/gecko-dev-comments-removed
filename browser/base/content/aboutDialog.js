@@ -27,26 +27,22 @@ if (AppConstants.MOZ_UPDATER) {
 function init() {
   let defaults = Services.prefs.getDefaultBranch(null);
   let distroId = defaults.getCharPref("distribution.id", "");
-  if (distroId) {
-    let distroAbout = defaults.getStringPref("distribution.about", "");
-    
-    if (distroAbout) {
-      let distroField = document.getElementById("distribution");
-      distroField.value = distroAbout;
-      distroField.style.display = "block";
-    }
-    
-    
-    if (!distroId.startsWith("mozilla-") || distroAbout) {
-      let distroVersion = defaults.getCharPref("distribution.version", "");
-      if (distroVersion) {
-        distroId += " - " + distroVersion;
-      }
+  let distroAbout = defaults.getStringPref("distribution.about", "");
+  
+  
+  if (distroId && distroAbout) {
+    let distroField = document.getElementById("distribution");
+    distroField.value = distroAbout;
+    distroField.style.display = "block";
 
-      let distroIdField = document.getElementById("distributionId");
-      distroIdField.value = distroId;
-      distroIdField.style.display = "block";
+    let distroVersion = defaults.getCharPref("distribution.version", "");
+    if (distroVersion) {
+      distroId += " - " + distroVersion;
     }
+
+    let distroIdField = document.getElementById("distributionId");
+    distroIdField.value = distroId;
+    distroIdField.style.display = "block";
   }
 
   
