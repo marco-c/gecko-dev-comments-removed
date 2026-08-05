@@ -11,10 +11,19 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "nsBaseDragService.h"
+#include "nsCOMArray.h"
 #include "nsClipboard.h"
+#include "nsIObserver.h"
 #include "nsITimer.h"
 
+class nsICookieJarSettings;
 class nsWindow;
+
+namespace mozilla {
+namespace gfx {
+class SourceSurface;
+}
+}  
 
 class DragData final {
  public:
@@ -85,9 +94,10 @@ class DragData final {
 
 
 
-class nsDragSession : public nsBaseDragSession {
+class nsDragSession : public nsBaseDragSession, public nsIObserver {
  public:
   NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_NSIOBSERVER
 
   
   NS_IMETHOD SetCanDrop(bool aCanDrop) override;
@@ -105,6 +115,7 @@ class nsDragSession : public nsBaseDragSession {
 
   MOZ_CAN_RUN_SCRIPT nsresult
   EndDragSessionImpl(bool aDoneDrag, uint32_t aKeyModifiers) override;
+  MOZ_CAN_RUN_SCRIPT void EndDragSessionMainThread();
 
   class AutoEventLoop {
     RefPtr<nsDragSession> mSession;
@@ -178,6 +189,10 @@ class nsDragSession : public nsBaseDragSession {
   
   virtual bool IsTargetContextList(void) = 0;
 
+  static gboolean TaskRemoveTempFiles(gpointer data);
+
+  bool RemoveTempFiles();
+
   
   
   void SetDragActionGtk(GdkDragAction aGdkAction);
@@ -227,6 +242,14 @@ class nsDragSession : public nsBaseDragSession {
   guint mTaskSource = 0;
 
   
+  nsCOMArray<nsIFile> mTemporaryFiles;
+  
+  guint mTempFileTimerID;
+  
+  
+  nsTArray<nsCString> mTempFileUrls;
+
+  
   static int sEventLoopDepth;
 
   
@@ -259,8 +282,50 @@ class nsDragSession : public nsBaseDragSession {
   nsDragSession();
 
   
+  MOZ_CAN_RUN_SCRIPT virtual nsresult InvokeDragSessionImpl(
+      nsIWidget* aWidget, nsIArray* anArrayTransferables,
+      const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
+      uint32_t aActionType) override;
+
+  
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD InvokeDragSession(
+      nsIWidget* aWidget, nsINode* aDOMNode, nsIPrincipal* aPrincipal,
+      nsIPolicyContainer* aPolicyContainer,
+      nsICookieJarSettings* aCookieJarSettings, nsIArray* anArrayTransferables,
+      uint32_t aActionType, nsContentPolicyType aContentPolicyType) override;
+
+  
   
   virtual nsWindow* GetMostRecentDestWindow() = 0;
+
+  
+
+  
+  
+  
+  void SourceEndDragSession(GdkDragContext* aContext, gint aResult);
+  void SourceDataGet(GtkWidget* widget, GdkDragContext* context,
+                     GtkSelectionData* selection_data, guint32 aTime);
+  bool SourceDataGetText(nsITransferable* aItem, const nsACString& aMIMEType,
+                         bool aNeedToDoConversionToPlainText,
+                         GtkSelectionData* aSelectionData);
+  bool SourceDataGetImage(nsITransferable* aItem,
+                          GtkSelectionData* aSelectionData);
+  bool SourceDataGetXDND(nsITransferable* aItem, GdkDragContext* aContext,
+                         GtkSelectionData* aSelectionData);
+  void SourceDataGetUriList(GdkDragContext* aContext,
+                            GtkSelectionData* aSelectionData,
+                            uint32_t aDragItems);
+  bool SourceDataAppendURLFileItem(nsACString& aURI, nsITransferable* aItem);
+  bool SourceDataAppendURLItem(nsITransferable* aItem, bool aExternalDrop,
+                               nsACString& aURI);
+  void SourceBeginDrag(GdkDragContext* aContext);
+
+  
+  void SetDragIcon(GdkDragContext* aContext);
+
+  void MarkAsActive() { mActive = true; }
+  bool IsActive() const { return mActive; }
 
  protected:
   virtual ~nsDragSession();
@@ -283,6 +348,26 @@ class nsDragSession : public nsBaseDragSession {
   
   RefPtr<DragData> GetDragData(GdkAtom aRequestedFlavor);
   virtual bool GetDragDataImpl(GdkAtom aRequestedFlavor) = 0;
+
+  
+  
+  bool SetAlphaPixmap(mozilla::gfx::SourceSurface* aPixbuf,
+                      GdkDragContext* aContext, int32_t aXOffset,
+                      int32_t aYOffset,
+                      const mozilla::LayoutDeviceIntRect& dragRect);
+
+  
+
+  
+  GtkWidget* mHiddenWidget;
+  
+  
+  bool mActive = false;
+
+  
+  GtkTargetList* GetSourceList(void);
+
+  nsresult CreateTempFile(nsITransferable* aItem, nsACString& aURI);
 };
 
 
