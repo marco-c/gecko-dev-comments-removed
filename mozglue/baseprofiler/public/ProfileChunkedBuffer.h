@@ -960,11 +960,18 @@ class ProfileChunkedBuffer {
     
     
     
-    mChunkManager->RequestChunk(
+    auto chunkReceiver =
         [requestedChunkHolder = RefPtr<RequestedChunkRefCountedHolder>(
              mRequestedChunkHolder)](UniquePtr<ProfileBufferChunk> aChunk) {
           requestedChunkHolder->AddRequestedChunk(std::move(aChunk));
-        });
+        };
+    
+    
+    
+    
+    static_assert(sizeof(chunkReceiver) <= sizeof(void*),
+                  "The chunk receiver should only capture one RefPtr");
+    mChunkManager->RequestChunk(std::move(chunkReceiver));
   }
 
   [[nodiscard]] bool HandleRequestedChunk_IsPending(

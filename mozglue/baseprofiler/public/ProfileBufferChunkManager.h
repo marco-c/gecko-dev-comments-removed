@@ -5,6 +5,7 @@
 #ifndef ProfileBufferChunkManager_h
 #define ProfileBufferChunkManager_h
 
+#include "mozilla/MoveOnlyFunction.h"
 #include "mozilla/ProfileBufferChunk.h"
 #include "mozilla/ScopeExit.h"
 
@@ -50,8 +51,15 @@ class ProfileBufferChunkManager {
 
   
   
+  
+  
+  
+  
+  
+  
   virtual void RequestChunk(
-      std::function<void(UniquePtr<ProfileBufferChunk>)>&& aChunkReceiver) = 0;
+      MoveOnlyFunction<void(UniquePtr<ProfileBufferChunk>)>&&
+          aChunkReceiver) = 0;
 
   
   

@@ -72,7 +72,7 @@ class ProfileBufferChunkManagerWithLocalLimit final
     return std::move(chunkAndUpdate.first);
   }
 
-  void RequestChunk(std::function<void(UniquePtr<ProfileBufferChunk>)>&&
+  void RequestChunk(MoveOnlyFunction<void(UniquePtr<ProfileBufferChunk>)>&&
                         aChunkReceiver) final {
     AUTO_PROFILER_STATS(Local_RequestChunk);
     baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
@@ -87,7 +87,7 @@ class ProfileBufferChunkManagerWithLocalLimit final
 
   void FulfillChunkRequests() final {
     AUTO_PROFILER_STATS(Local_FulfillChunkRequests);
-    std::function<void(UniquePtr<ProfileBufferChunk>)> chunkReceiver;
+    MoveOnlyFunction<void(UniquePtr<ProfileBufferChunk>)> chunkReceiver;
     ChunkAndUpdate chunkAndUpdate = [&]() -> ChunkAndUpdate {
       baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
       if (!mChunkReceiver) {
@@ -428,7 +428,7 @@ class ProfileBufferChunkManagerWithLocalLimit final
 
   
   
-  std::function<void(UniquePtr<ProfileBufferChunk>)> mChunkReceiver;
+  MoveOnlyFunction<void(UniquePtr<ProfileBufferChunk>)> mChunkReceiver;
 
   
   
