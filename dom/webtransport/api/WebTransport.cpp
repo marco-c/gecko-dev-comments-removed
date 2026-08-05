@@ -994,6 +994,12 @@ already_AddRefed<WebTransportSendGroup> WebTransport::CreateSendGroup(
   
   RefPtr<WebTransportSendGroup> group =
       new WebTransportSendGroup(mGlobal, this);
+  
+  
+  uint64_t groupId = mNextSendGroupId++;
+  group->SetGroupId(groupId);
+  LOG(("CreateSendGroup assigned ID: %" PRIu64, groupId));
+  mChild->SendCreateSendGroup(groupId);
   return group.forget();
 }
 
