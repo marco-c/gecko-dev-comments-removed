@@ -419,10 +419,22 @@ IPCResult WebTransportParent::RecvExportKeyingMaterial(
     return IPC_OK();
   }
 
-  
-  
-  
-  aResolver(nsTArray<uint8_t>());
+  nsTArray<uint8_t> context;
+  if (aContext.isSome()) {
+    context = std::move(aContext.ref());
+  }
+
+  nsTArray<uint8_t> keyingMaterial;
+  nsresult rv = mWebTransport->ExportKeyingMaterial(aLabel, context, keyingMaterial);
+
+  if (NS_FAILED(rv)) {
+    LOG(("ExportKeyingMaterial failed with rv=0x%08x", static_cast<uint32_t>(rv)));
+    aResolver(nsTArray<uint8_t>());
+    return IPC_OK();
+  }
+
+  LOG(("ExportKeyingMaterial succeeded, returning %zu bytes", keyingMaterial.Length()));
+  aResolver(std::move(keyingMaterial));
   return IPC_OK();
 }
 
