@@ -1,8 +1,6 @@
 
 
 
-const TOPIC_BROWSERGLUE_TEST = "browser-glue-test";
-const TOPICDATA_BROWSERGLUE_TEST = "force-ui-migration";
 const UI_VERSION = 147;
 const CONTENT_BLOCKER_PERM_TYPES = [
   "other",
@@ -28,8 +26,8 @@ const CONTENT_BLOCKER_PERM_TYPES = [
   "speculative",
 ];
 
-const gBrowserGlue = Cc["@mozilla.org/browser/browserglue;1"].getService(
-  Ci.nsIObserver
+const { ProfileDataUpgrader } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/ProfileDataUpgrader.sys.mjs"
 );
 
 
@@ -40,7 +38,6 @@ add_task(async function test_removeContentBlockerPerms() {
   });
 
   Services.perms.removeAll();
-  Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
 
   let pm = Services.perms;
 
@@ -72,11 +69,7 @@ add_task(async function test_removeContentBlockerPerms() {
   );
 
   
-  gBrowserGlue.observe(
-    null,
-    TOPIC_BROWSERGLUE_TEST,
-    TOPICDATA_BROWSERGLUE_TEST
-  );
+  ProfileDataUpgrader.upgrade(UI_VERSION, UI_VERSION + 1);
 
   
   remaining_perms = pm.getAllByTypes(CONTENT_BLOCKER_PERM_TYPES);

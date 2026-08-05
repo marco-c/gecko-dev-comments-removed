@@ -11,24 +11,20 @@
 
 
 
-const TOPIC_BROWSERGLUE_TEST = "browser-glue-test";
-const TOPICDATA_BROWSERGLUE_TEST = "force-ui-migration";
 
-const gBrowserGlue = Cc["@mozilla.org/browser/browserglue;1"].getService(
-  Ci.nsIObserver
+const { ProfileDataUpgrader } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/ProfileDataUpgrader.sys.mjs"
 );
 
 
 
-Services.prefs.setIntPref("browser.migration.version", 1);
+
+const OLD_VERSION = 1;
+const NEW_VERSION = 999999;
 
 add_task(async function test_no_errors() {
   
-  gBrowserGlue.observe(
-    null,
-    TOPIC_BROWSERGLUE_TEST,
-    TOPICDATA_BROWSERGLUE_TEST
-  );
+  ProfileDataUpgrader.upgrade(OLD_VERSION, NEW_VERSION);
 
   Assert.ok(true, "should have run the migration with no errors");
 });
