@@ -1385,12 +1385,28 @@ void PeerConnectionImpl::NotifyDataChannelClosed(DataChannel*) {
   mDataChannelsClosed++;
 }
 
-void PeerConnectionImpl::NotifySctpConnected() {
+void PeerConnectionImpl::NotifySctpConnected(Maybe<uint16_t> aMaxChannels) {
   if (!mSctpTransport) {
     MOZ_ASSERT(false);
     return;
   }
 
+  
+  
+  if (aMaxChannels.isSome()) {
+    mSctpTransport->SetMaxChannels(Nullable<uint16_t>(*aMaxChannels));
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
   mSctpTransport->UpdateState(RTCSctpTransportState::Connected);
 }
 
@@ -4371,6 +4387,7 @@ void PeerConnectionImpl::UpdateRTCSctpTransport() {
 
       
       if (!mSctpTransport) {
+        
         
         Nullable<uint16_t> maxChannels;
         mSctpTransport = MakeRefPtr<RTCSctpTransport>(

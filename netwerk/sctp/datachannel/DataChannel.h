@@ -162,7 +162,7 @@ class DataChannelConnection : public net::NeckoTargetHolder {
     virtual void NotifyDataChannelClosed(DataChannel* aChannel) = 0;
 
     
-    virtual void NotifySctpConnected() = 0;
+    virtual void NotifySctpConnected(Maybe<uint16_t> aMaxChannels) = 0;
 
     
     virtual void NotifySctpClosed() = 0;
@@ -191,6 +191,10 @@ class DataChannelConnection : public net::NeckoTargetHolder {
   virtual void OnStreamOpen(uint16_t stream) = 0;
   
   virtual bool RaiseStreamLimitTo(uint16_t aNewLimit) = 0;
+  
+  
+  
+  virtual uint16_t GetStreamIdCeiling() const = 0;
   
   
   

@@ -4,6 +4,8 @@
 
 #include "DataChannelDcSctp.h"
 
+#include <algorithm>
+
 #include "DataChannelLog.h"
 #include "mozilla/Components.h"
 #include "mozilla/RandomNum.h"
@@ -11,13 +13,22 @@
 
 namespace mozilla {
 
+
+
+
+static constexpr uint16_t kDcSctpMaxStreams = 65535;
+
 DataChannelConnectionDcSctp::DataChannelConnectionDcSctp(
     DataConnectionListener* aListener, nsISerialEventTarget* aTarget,
     MediaTransportHandler* aHandler)
     : DataChannelConnection(aListener, aTarget, aHandler) {
   
   
-  mNegotiatedIdLimit = MAX_NUM_STREAMS;
+  mNegotiatedIdLimit = kDcSctpMaxStreams;
+}
+
+uint16_t DataChannelConnectionDcSctp::GetStreamIdCeiling() const {
+  return kDcSctpMaxStreams;
 }
 
 void DataChannelConnectionDcSctp::Destroy() {
@@ -38,6 +49,7 @@ void DataChannelConnectionDcSctp::Destroy() {
 bool DataChannelConnectionDcSctp::RaiseStreamLimitTo(uint16_t aNewLimit) {
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
   DC_DEBUG(("%s: %p", __func__, this));
+  
   
   
   return true;
@@ -303,6 +315,17 @@ void DataChannelConnectionDcSctp::OnConnected() {
   DataChannelConnectionState state = GetState();
   
   if (state == DataChannelConnectionState::Connecting) {
+    
+    
+    
+    
+    
+    if (std::optional<dcsctp::Metrics> metrics = mDcSctp->GetMetrics()) {
+      mNegotiatedIdLimit =
+          std::min(metrics->negotiated_maximum_incoming_streams,
+                   metrics->negotiated_maximum_outgoing_streams);
+    }
+
     SetState(DataChannelConnectionState::Open);
 
     OnConnected();
