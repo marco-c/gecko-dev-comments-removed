@@ -32,14 +32,6 @@ pub trait JxlBitstreamInput {
         }
         Ok(skipped)
     }
-
-    
-    
-    
-    
-    fn unconsume(&mut self, _count: usize) -> Result<(), Error> {
-        Ok(())
-    }
 }
 
 impl JxlBitstreamInput for &[u8] {
@@ -74,9 +66,5 @@ impl<R: Read + Seek> JxlBitstreamInput for BufReader<R> {
         let cur = self.stream_position()?;
         self.seek(SeekFrom::Current(bytes as i64))
             .map(|x| x.saturating_sub(cur) as usize)
-    }
-
-    fn unconsume(&mut self, count: usize) -> Result<(), Error> {
-        self.seek_relative(-(count as i64))
     }
 }

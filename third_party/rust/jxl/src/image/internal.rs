@@ -6,7 +6,6 @@
 use std::{
     alloc::{Layout, alloc, alloc_zeroed, dealloc},
     fmt::Debug,
-    mem::MaybeUninit,
     ptr::null_mut,
 };
 
@@ -31,8 +30,7 @@ pub(super) struct RawImageBuffer {
     
     
     
-    
-    buf: *mut MaybeUninit<u8>,
+    buf: *mut u8,
     bytes_per_row: usize,
     num_rows: usize,
     bytes_between_rows: usize,
@@ -82,10 +80,8 @@ impl RawImageBuffer {
     
     
     
-    
-    
     pub(super) unsafe fn new_from_ptr(
-        buf: *mut MaybeUninit<u8>,
+        buf: *mut u8,
         num_rows: usize,
         bytes_per_row: usize,
         bytes_between_rows: usize,
@@ -130,9 +126,8 @@ impl RawImageBuffer {
     
     
     
-    
     #[inline(always)]
-    pub(super) unsafe fn row_mut(&mut self, row: usize) -> &mut [MaybeUninit<u8>] {
+    pub(super) unsafe fn row_mut(&mut self, row: usize) -> &mut [u8] {
         
         unsafe { self.distinct_rows_mut([row])[0] }
     }
@@ -141,12 +136,11 @@ impl RawImageBuffer {
     
     
     
-    
     #[inline(always)]
     pub(super) unsafe fn distinct_rows_mut<I: DistinctRowsIndexes>(
         &mut self,
         rows: I,
-    ) -> I::Output<'_, MaybeUninit<u8>> {
+    ) -> I::Output<'_, u8> {
         
         
         unsafe { rows.get_rows_mut(self) }
@@ -156,7 +150,7 @@ impl RawImageBuffer {
     
     
     #[inline(always)]
-    pub(super) unsafe fn row(&self, row: usize) -> &[MaybeUninit<u8>] {
+    pub(super) unsafe fn row(&self, row: usize) -> &[u8] {
         assert!(row < self.num_rows);
         let start = row * self.bytes_between_rows;
         
@@ -201,7 +195,15 @@ impl RawImageBuffer {
     
     
     
-    pub(super) fn try_allocate(byte_size: (usize, usize), uninit: bool) -> Result<RawImageBuffer> {
+    
+    
+    
+    
+    
+    pub(super) unsafe fn try_allocate(
+        byte_size: (usize, usize),
+        copy_from: Option<&RawImageBuffer>,
+    ) -> Result<RawImageBuffer> {
         let (bytes_per_row, num_rows) = byte_size;
         
         
@@ -223,26 +225,34 @@ impl RawImageBuffer {
             .unwrap();
         assert_ne!(allocation_len, 0);
         let layout = Layout::from_size_align(allocation_len, CACHE_LINE_BYTE_SIZE).unwrap();
-        
-        let memory = unsafe {
-            if uninit {
-                alloc(layout)
-            } else {
-                alloc_zeroed(layout)
+        let memory = if let Some(src) = copy_from {
+            
+            let memory = unsafe { alloc(layout) };
+            if memory.is_null() {
+                return Err(Error::ImageOutOfMemory(bytes_per_row, num_rows));
             }
+            assert_eq!(src.byte_size(), byte_size);
+            assert_eq!(src.bytes_per_row, bytes_per_row);
+            assert_eq!(src.bytes_between_rows, bytes_between_rows);
+            assert_eq!(src.num_rows, num_rows);
+            let data_len = src.minimum_allocation_size();
+            
+            
+            
+            unsafe { std::ptr::copy_nonoverlapping(src.buf, memory, data_len) };
+            memory
+        } else {
+            
+            let memory = unsafe { alloc_zeroed(layout) };
+            if memory.is_null() {
+                return Err(Error::ImageOutOfMemory(bytes_per_row, num_rows));
+            }
+            memory
         };
-        if memory.is_null() {
-            return Err(Error::ImageOutOfMemory(bytes_per_row, num_rows));
-        }
         
         
         Ok(unsafe {
-            RawImageBuffer::new_from_ptr(
-                memory as *mut MaybeUninit<u8>,
-                num_rows,
-                bytes_per_row,
-                bytes_between_rows,
-            )
+            RawImageBuffer::new_from_ptr(memory, num_rows, bytes_per_row, bytes_between_rows)
         })
     }
 
@@ -258,23 +268,9 @@ impl RawImageBuffer {
     
     
     pub(super) unsafe fn try_clone(&self) -> Result<Self> {
-        let out = RawImageBuffer::try_allocate(self.byte_size(), true)?;
-        assert_eq!(self.bytes_per_row, out.bytes_per_row);
-        assert_eq!(self.bytes_between_rows, out.bytes_between_rows);
-        assert_eq!(self.num_rows, out.num_rows);
-        let data_len = self.minimum_allocation_size();
-        assert_eq!(
-            self.minimum_allocation_size(),
-            out.minimum_allocation_size()
-        );
-        if data_len != 0 {
-            
-            
-            unsafe {
-                std::ptr::copy_nonoverlapping(self.buf, out.buf, data_len);
-            }
-        }
-        Ok(out)
+        
+        
+        unsafe { RawImageBuffer::try_allocate(self.byte_size(), Some(self)) }
     }
 
     
@@ -287,7 +283,7 @@ impl RawImageBuffer {
             let layout = Layout::from_size_align(allocation_len, CACHE_LINE_BYTE_SIZE).unwrap();
             
             unsafe {
-                dealloc(self.buf as *mut u8, layout);
+                dealloc(self.buf, layout);
             }
         }
     }
@@ -300,18 +296,12 @@ pub trait DistinctRowsIndexes {
     
     
     
-    
-    unsafe fn get_rows_mut<'a>(
-        &self,
-        image: &'a mut RawImageBuffer,
-    ) -> Self::Output<'a, MaybeUninit<u8>>;
+    unsafe fn get_rows_mut<'a>(&self, image: &'a mut RawImageBuffer) -> Self::Output<'a, u8>;
 
     
     
     
-    unsafe fn transmute_rows<'a, T: 'static>(
-        rows: Self::Output<'a, MaybeUninit<u8>>,
-    ) -> Self::Output<'a, T>;
+    unsafe fn transmute_rows<'a, T: 'static>(rows: Self::Output<'a, u8>) -> Self::Output<'a, T>;
 }
 
 #[allow(private_interfaces)]
@@ -319,10 +309,7 @@ impl<const S: usize> DistinctRowsIndexes for [usize; S] {
     type Output<'a, T: 'static> = [&'a mut [T]; S];
 
     #[inline(always)]
-    unsafe fn get_rows_mut<'a>(
-        &self,
-        image: &'a mut RawImageBuffer,
-    ) -> Self::Output<'a, MaybeUninit<u8>> {
+    unsafe fn get_rows_mut<'a>(&self, image: &'a mut RawImageBuffer) -> Self::Output<'a, u8> {
         for i in 0..S {
             assert!(self[i] < image.num_rows);
             for j in i + 1..S {
@@ -347,9 +334,7 @@ impl<const S: usize> DistinctRowsIndexes for [usize; S] {
     }
 
     #[inline(always)]
-    unsafe fn transmute_rows<'a, T: 'static>(
-        rows: Self::Output<'a, MaybeUninit<u8>>,
-    ) -> Self::Output<'a, T> {
+    unsafe fn transmute_rows<'a, T: 'static>(rows: Self::Output<'a, u8>) -> Self::Output<'a, T> {
         rows.map(|row| {
             
             unsafe {

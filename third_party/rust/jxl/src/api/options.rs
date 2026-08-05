@@ -3,8 +3,6 @@
 
 
 
-use crate::api::JxlCms;
-
 pub enum JxlProgressiveMode {
     
     Eager,
@@ -22,7 +20,6 @@ pub struct JxlDecoderOptions {
     pub desired_intensity_target: Option<f32>,
     pub skip_preview: bool,
     pub progressive_mode: JxlProgressiveMode,
-    pub cms: Option<Box<dyn JxlCms>>,
     
     
     
@@ -55,7 +52,6 @@ impl Default for JxlDecoderOptions {
             skip_preview: true,
             desired_intensity_target: None,
             progressive_mode: JxlProgressiveMode::Pass,
-            cms: None,
             sample_limit: None,
             high_precision: false,
             premultiply_output: false,

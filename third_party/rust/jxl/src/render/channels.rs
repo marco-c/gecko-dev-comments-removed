@@ -3,7 +3,7 @@
 
 
 
-use crate::util::SmallVec;
+use crate::util::{SmallVec, StackOnly};
 
 
 
@@ -13,7 +13,7 @@ use crate::util::SmallVec;
 
 pub struct Channels<'a, T> {
     
-    pub(crate) row_data: SmallVec<&'a [T], 32>,
+    pub(crate) row_data: SmallVec<&'a [T], 32, StackOnly>,
     num_channels: usize,
     pub(crate) rows_per_channel: usize,
 }
@@ -26,7 +26,7 @@ impl<'a, T> Channels<'a, T> {
     
     
     pub fn new(
-        row_data: SmallVec<&'a [T], 32>,
+        row_data: SmallVec<&'a [T], 32, StackOnly>,
         num_channels: usize,
         rows_per_channel: usize,
     ) -> Self {
@@ -74,7 +74,7 @@ impl<'a, T> std::ops::Index<usize> for Channels<'a, T> {
 
 pub struct ChannelsMut<'a, T> {
     
-    pub(crate) row_data: SmallVec<&'a mut [T], 8>,
+    pub(crate) row_data: SmallVec<&'a mut [T], 8, StackOnly>,
     num_channels: usize,
     pub(crate) rows_per_channel: usize,
 }
@@ -87,7 +87,7 @@ impl<'a, T> ChannelsMut<'a, T> {
     
     
     pub fn new(
-        row_data: SmallVec<&'a mut [T], 8>,
+        row_data: SmallVec<&'a mut [T], 8, StackOnly>,
         num_channels: usize,
         rows_per_channel: usize,
     ) -> Self {

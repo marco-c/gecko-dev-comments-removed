@@ -5,19 +5,17 @@
 
 #[cfg(test)]
 use crate::api::FrameCallback;
-use crate::{
-    api::{JxlFrameHeader, VisibleFrameInfo, VisibleFrameSeekTarget},
-    error::{Error, Result},
-};
+use crate::api::{JxlFrameHeader, VisibleFrameInfo, VisibleFrameSeekTarget};
 
 use super::{JxlBasicInfo, JxlColorProfile, JxlDecoderOptions, JxlPixelFormat};
-use crate::container::frame_index::FrameIndexBox;
 use box_parser::BoxParser;
 use codestream_parser::CodestreamParser;
 
 mod box_parser;
 mod codestream_parser;
 mod process;
+
+pub use box_parser::BoxParserCheckpoint;
 
 
 pub struct JxlDecoderInner {
@@ -41,39 +39,27 @@ impl JxlDecoderInner {
         self.codestream_parser.frame_callback = Some(callback);
     }
 
-    #[cfg(test)]
-    pub fn decoded_frames(&self) -> usize {
-        self.codestream_parser.decoded_frames
-    }
-
-    
-    
-    
     
     pub fn basic_info(&self) -> Option<&JxlBasicInfo> {
-        self.codestream_parser.embedded_color_profile.as_ref()?;
-        self.codestream_parser.basic_info.as_ref()
+        if self.codestream_parser.image_info.is_complete() {
+            Some(self.codestream_parser.image_info.basic_info())
+        } else {
+            None
+        }
     }
 
     
     pub fn embedded_color_profile(&self) -> Option<&JxlColorProfile> {
-        self.codestream_parser.embedded_color_profile.as_ref()
+        if self.codestream_parser.image_info.is_complete() {
+            Some(self.codestream_parser.image_info.embedded_color_profile())
+        } else {
+            None
+        }
     }
 
     
     pub fn output_color_profile(&self) -> Option<&JxlColorProfile> {
         self.codestream_parser.output_color_profile.as_ref()
-    }
-
-    
-    
-    pub fn set_output_color_profile(&mut self, profile: JxlColorProfile) -> Result<()> {
-        if let (JxlColorProfile::Icc(_), None) = (&profile, &self.options.cms) {
-            return Err(Error::ICCOutputNoCMS);
-        }
-        self.codestream_parser.output_color_profile = Some(profile);
-        self.codestream_parser.output_color_profile_set_by_user = true;
-        Ok(())
     }
 
     pub fn current_pixel_format(&self) -> Option<&JxlPixelFormat> {
@@ -84,19 +70,25 @@ impl JxlDecoderInner {
         
         
         self.codestream_parser.pixel_format = Some(pixel_format);
-        self.codestream_parser.update_default_output_color_profile();
+        self.codestream_parser.update_default_output_options();
     }
 
     pub fn frame_header(&self) -> Option<JxlFrameHeader> {
-        let frame_header = self.codestream_parser.frame.as_ref()?.header();
+        if !self.codestream_parser.has_frame() {
+            return None;
+        }
+        let frame_header = self.codestream_parser.frame_info.current_frame_header()?;
         
         
         
-        let size = self.codestream_parser.basic_info.as_ref()?.size;
+        let size = self.codestream_parser.image_info.basic_info().size;
         Some(JxlFrameHeader {
             name: frame_header.name.clone(),
             duration: self
                 .codestream_parser
+                .image_info
+                .file_header()
+                .image_metadata
                 .animation
                 .as_ref()
                 .map(|anim| frame_header.duration(anim)),
@@ -104,77 +96,31 @@ impl JxlDecoderInner {
         })
     }
 
-    
-    
-    pub fn num_completed_passes(&self) -> Option<usize> {
-        Some(self.codestream_parser.num_completed_passes())
-    }
-
-    
-    
-    
-    
-    
-    
-    pub fn reset(&mut self) {
-        
-        self.box_parser = BoxParser::new();
-        self.codestream_parser = CodestreamParser::new();
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn rewind(&mut self) -> bool {
-        self.box_parser = BoxParser::new();
-        self.codestream_parser.rewind().is_some()
-    }
-
     pub fn has_more_frames(&self) -> bool {
-        self.codestream_parser.has_more_frames
-    }
-
-    
-    pub fn frame_index(&self) -> Option<&FrameIndexBox> {
-        self.box_parser.frame_index.as_ref()
+        self.codestream_parser.has_more_frames()
     }
 
     
     pub fn scanned_frames(&self) -> &[VisibleFrameInfo] {
-        &self.codestream_parser.scanned_frames
+        self.codestream_parser.scanned_frames()
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     pub fn start_new_frame(&mut self, seek_target: VisibleFrameSeekTarget) {
         self.box_parser
-            .reset_for_codestream_seek(seek_target.remaining_in_box);
-        self.codestream_parser
-            .start_new_frame(seek_target.visible_frames_to_skip);
+            .reset_to_checkpoint(seek_target.box_parser_checkpoint);
+        self.codestream_parser.start_new_frame(
+            seek_target.visible_frames_to_skip,
+            seek_target.box_parser_checkpoint.consumed_codestream,
+        );
     }
 
     #[cfg(test)]
     pub(crate) fn set_use_simple_pipeline(&mut self, u: bool) {
         self.codestream_parser.set_use_simple_pipeline(u);
+    }
+
+    pub fn file_length(&self) -> Option<u64> {
+        self.codestream_parser.file_length
     }
 }
 
@@ -203,5 +149,24 @@ mod tests {
         }
 
         panic!("failed to reach image-info state while parsing cmyk_layers.jxl");
+    }
+
+    
+    
+    
+    #[test]
+    fn ooo_jxlp_with_trailing_bytes_does_not_hang() {
+        let data = include_bytes!("../../../tests/testdata/ooo_jxlp_with_trailing_bytes.jxl");
+
+        let mut decoder = JxlDecoderInner::new(JxlDecoderOptions::default());
+        let mut input = data.as_slice();
+        let result = decoder.process(&mut input, None);
+        assert!(
+            matches!(
+                result,
+                Ok(crate::api::ProcessingResult::NeedsMoreInput { .. })
+            ),
+            "{result:?}"
+        );
     }
 }

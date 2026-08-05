@@ -3,9 +3,6 @@
 
 
 
-#[cfg(test)]
-pub mod test;
-
 mod atomic_refcell;
 mod bits;
 mod cacheline;

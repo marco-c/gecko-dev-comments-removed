@@ -159,7 +159,6 @@ impl<T: ImageDataType> Image<T> {
     #[inline(always)]
     pub fn distinct_full_rows_mut<I: DistinctRowsIndexes>(&mut self, rows: I) -> I::Output<'_, T> {
         
-        
         let rows = unsafe { self.raw.data.distinct_rows_mut(rows) };
         
         

@@ -3,701 +3,376 @@
 
 
 
-use std::{
-    collections::{HashSet, VecDeque},
-    io::IoSliceMut,
+use crate::{
+    api::{
+        JxlColorProfile, JxlDecoderOptions, JxlOutputBuffer, JxlPixelFormat,
+        inner::{
+            box_parser::CodestreamInput,
+            codestream_parser::{
+                frame_info::FrameInfo, frame_scan_info::FrameScanInfo, image_info::ImageInfo,
+            },
+            process::SmallBuffer,
+        },
+    },
+    error::{Error, Result},
 };
-
-use sections::SectionState;
 
 #[cfg(test)]
 use crate::api::FrameCallback;
-use crate::{
-    api::{
-        JxlBasicInfo, JxlBitstreamInput, JxlColorEncoding, JxlColorProfile, JxlDataFormat,
-        JxlDecoderOptions, JxlOutputBuffer, JxlPixelFormat, VisibleFrameInfo,
-        VisibleFrameSeekTarget,
-        inner::{box_parser::BoxParser, process::SmallBuffer},
-    },
-    error::{Error, Result},
-    frame::{DecoderState, Frame, Section},
-    headers::{Animation, FileHeader, frame_header::FrameHeader, toc::IncrementalTocReader},
-    icc::IncrementalIccReader,
-};
 
-mod non_section;
-mod sections;
+mod frame_info;
+mod frame_scan_info;
+mod image_info;
 
-struct SectionBuffer {
-    len: usize,
-    data: Vec<u8>,
-    section: Section,
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ProcessMode {
+    
+    Process,
+    
+    SkipOutput,
+    
+    
+    Skip(bool),
 }
 
-#[derive(Clone, Copy)]
-struct FrameStartInfo {
-    file_offset: usize,
-    remaining_in_box: u64,
-    visible_count_before: usize,
+impl ProcessMode {
+    fn notify_user(&self) -> bool {
+        *self == ProcessMode::Process || *self == ProcessMode::Skip(true)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ParserState {
+    FileHeader,
+    ColorEncoding,
+    FrameHeader {
+        is_preview: bool,
+    },
+    Toc {
+        is_preview: bool,
+    },
+    Sections {
+        is_preview: bool,
+        process_mode: ProcessMode,
+    },
+    Finished,
+}
+
+fn check_size_limit(
+    pixel_limit: Option<usize>,
+    (xs, ys): (usize, usize),
+    num_ec: usize,
+) -> Result<()> {
+    if let Some(limit) = pixel_limit {
+        let xs = xs.max(16); 
+        let total_pixels = xs.saturating_mul(ys).saturating_mul(3 + num_ec);
+        if total_pixels >= limit {
+            return Err(Error::ImageSizeTooLarge(xs, ys));
+        }
+    };
+    Ok(())
+}
+
+fn validate_output_buffers(
+    output_buffers: &[JxlOutputBuffer],
+    pixel_format: Option<&JxlPixelFormat>,
+) -> Result<()> {
+    let px = pixel_format.unwrap();
+    let expected_len = std::iter::once(&px.color_data_format)
+        .chain(px.extra_channel_format.iter())
+        .filter(|x| x.is_some())
+        .count();
+    if output_buffers.len() != expected_len {
+        return Err(Error::WrongBufferCount(output_buffers.len(), expected_len));
+    }
+    Ok(())
 }
 
 pub(super) struct CodestreamParser {
-    
-    pub(super) file_header: Option<FileHeader>,
-    notified_image_info: bool,
-    icc_parser: Option<IncrementalIccReader>,
-    
-    decoder_state: Option<DecoderState>,
-    pub(super) basic_info: Option<JxlBasicInfo>,
-    pub(super) animation: Option<Animation>,
-    pub(super) embedded_color_profile: Option<JxlColorProfile>,
-    pub(super) output_color_profile: Option<JxlColorProfile>,
-    pub(super) pixel_format: Option<JxlPixelFormat>,
-    xyb_encoded: bool,
-    is_gray: bool,
-    pub(super) output_color_profile_set_by_user: bool,
+    state: ParserState,
 
     
-    
-    frame_header: Option<FrameHeader>,
-    toc_parser: Option<IncrementalTocReader>,
-    pub(super) frame: Option<Frame>,
+    pub image_info: ImageInfo,
+    pub frame_info: FrameInfo,
+    frame_scan_info: FrameScanInfo,
 
     
-    non_section_buf: SmallBuffer,
-    non_section_bit_offset: u8,
-    sections: VecDeque<SectionBuffer>,
-    ready_section_data: usize,
-    skip_sections: bool,
+    pub file_length: Option<u64>,
+
     
-    process_without_output: bool,
+    local_buffer: SmallBuffer,
+    header_needed_bytes: Option<usize>,
+
     
-    preview_done: bool,
+    pub output_color_profile: Option<JxlColorProfile>,
+    pub pixel_format: Option<JxlPixelFormat>,
+
     
     
     visible_frames_to_skip: usize,
 
-    section_state: SectionState,
-
-    
-    lf_global_section: Option<SectionBuffer>,
-    lf_sections: Vec<SectionBuffer>,
-    hf_global_section: Option<SectionBuffer>,
-    
-    hf_sections: Vec<Vec<Option<SectionBuffer>>>,
-    
-    candidate_hf_sections: HashSet<usize>,
-
-    
-    
-    pub(super) pixels_dirty: bool,
-
-    pub(super) has_more_frames: bool,
-
-    header_needed_bytes: Option<u64>,
-
-    
-    
-    pub(super) scanned_frames: Vec<VisibleFrameInfo>,
-    
-    visible_frame_index: usize,
-    
-    
-    frame_starts: Vec<FrameStartInfo>,
-    
-    
-    reference_slot_decode_start: [Option<usize>; DecoderState::MAX_STORED_FRAMES],
-    
-    
-    lf_slot_decode_start: [Option<usize>; DecoderState::NUM_LF_FRAMES],
-    
-    
-    current_frame_file_offset: usize,
-    
-    
-    current_frame_remaining_in_box: u64,
-
-    
-    did_seek: bool,
-
     #[cfg(test)]
     pub frame_callback: Option<Box<FrameCallback>>,
-    #[cfg(test)]
-    pub decoded_frames: usize,
 }
 
 impl CodestreamParser {
     pub(super) fn new() -> Self {
         Self {
-            file_header: None,
-            notified_image_info: false,
-            icc_parser: None,
-            decoder_state: None,
-            basic_info: None,
-            animation: None,
-            embedded_color_profile: None,
+            image_info: ImageInfo::new(),
+            state: ParserState::FileHeader,
             output_color_profile: None,
             pixel_format: None,
-            xyb_encoded: false,
-            is_gray: false,
-            output_color_profile_set_by_user: false,
-            frame_header: None,
-            toc_parser: None,
-            frame: None,
-            non_section_buf: SmallBuffer::new(4096),
-            non_section_bit_offset: 0,
-            sections: VecDeque::new(),
-            ready_section_data: 0,
-            skip_sections: false,
-            process_without_output: false,
-            preview_done: false,
-            visible_frames_to_skip: 0,
-            section_state: SectionState::new(0, 0),
-            lf_global_section: None,
-            lf_sections: vec![],
-            hf_global_section: None,
-            hf_sections: vec![],
-            candidate_hf_sections: HashSet::new(),
-            pixels_dirty: false,
-            has_more_frames: true,
+            local_buffer: SmallBuffer::new(4096),
             header_needed_bytes: None,
-            scanned_frames: Vec::new(),
-            visible_frame_index: 0,
-            frame_starts: Vec::new(),
-            reference_slot_decode_start: [None; DecoderState::MAX_STORED_FRAMES],
-            lf_slot_decode_start: [None; DecoderState::NUM_LF_FRAMES],
-            current_frame_file_offset: 0,
-            current_frame_remaining_in_box: u64::MAX,
-            did_seek: false,
+            frame_info: FrameInfo::new(),
+            visible_frames_to_skip: 0,
+            frame_scan_info: FrameScanInfo::new(),
+            file_length: None,
             #[cfg(test)]
             frame_callback: None,
-            #[cfg(test)]
-            decoded_frames: 0,
         }
-    }
-
-    fn has_visible_frame(&self) -> bool {
-        if let Some(frame) = &self.frame {
-            frame.header().is_visible()
-        } else {
-            false
-        }
-    }
-
-    
-    
-    fn record_frame_info(&mut self) {
-        let frame = match self.frame.as_ref() {
-            Some(f) => f,
-            None => return,
-        };
-        let header = frame.header();
-
-        let current_frame_index = self.frame_starts.len();
-        let is_visible = header.is_visible();
-        self.frame_starts.push(FrameStartInfo {
-            file_offset: self.current_frame_file_offset,
-            remaining_in_box: self.current_frame_remaining_in_box,
-            visible_count_before: self.visible_frame_index,
-        });
-
-        let mut decode_start_frame_index = current_frame_index;
-
-        
-        
-        
-        let mut used_reference_slots = [false; DecoderState::MAX_STORED_FRAMES];
-        if header.needs_blending() {
-            for blending_info in header
-                .ec_blending_info
-                .iter()
-                .chain(std::iter::once(&header.blending_info))
-            {
-                let source = blending_info.source as usize;
-                assert!(
-                    source < DecoderState::MAX_STORED_FRAMES,
-                    "invalid blending source slot {source}, max {}",
-                    DecoderState::MAX_STORED_FRAMES - 1
-                );
-                used_reference_slots[source] = true;
-            }
-        }
-        if header.has_patches() {
-            used_reference_slots.fill(true);
-        }
-
-        for (slot, used) in used_reference_slots.iter().enumerate() {
-            if *used && let Some(dep_start) = self.reference_slot_decode_start[slot] {
-                decode_start_frame_index = decode_start_frame_index.min(dep_start);
-            }
-        }
-
-        if header.has_lf_frame() {
-            let lf_slot = header.lf_level as usize;
-            assert!(
-                lf_slot < DecoderState::NUM_LF_FRAMES,
-                "invalid lf slot {lf_slot}, max {}",
-                DecoderState::NUM_LF_FRAMES - 1
-            );
-            if let Some(dep_start) = self.lf_slot_decode_start[lf_slot] {
-                decode_start_frame_index = decode_start_frame_index.min(dep_start);
-            }
-        }
-
-        if is_visible {
-            let duration_ticks = header.duration;
-            let duration_ms = if let Some(ref anim) = self.animation {
-                if anim.tps_numerator > 0 {
-                    (duration_ticks as f64) * 1000.0 * (anim.tps_denominator as f64)
-                        / (anim.tps_numerator as f64)
-                } else {
-                    0.0
-                }
-            } else {
-                0.0
-            };
-
-            let decode_start = self.frame_starts[decode_start_frame_index];
-            let seek_target = VisibleFrameSeekTarget {
-                decode_start_file_offset: decode_start.file_offset as u64,
-                remaining_in_box: decode_start.remaining_in_box,
-                visible_frames_to_skip: self
-                    .visible_frame_index
-                    .saturating_sub(decode_start.visible_count_before),
-            };
-            let is_keyframe = seek_target.visible_frames_to_skip == 0;
-
-            self.scanned_frames.push(VisibleFrameInfo {
-                index: self.visible_frame_index,
-                duration_ms,
-                duration_ticks,
-                file_offset: self.current_frame_file_offset,
-                is_last: header.is_last,
-                is_keyframe,
-                seek_target,
-                name: header.name.clone(),
-            });
-
-            self.visible_frame_index += 1;
-        }
-
-        
-        if header.can_be_referenced {
-            let slot = header.save_as_reference as usize;
-            assert!(
-                slot < DecoderState::MAX_STORED_FRAMES,
-                "invalid save_as_reference slot {slot}, max {}",
-                DecoderState::MAX_STORED_FRAMES - 1
-            );
-            self.reference_slot_decode_start[slot] = Some(decode_start_frame_index);
-        }
-
-        if header.lf_level != 0 {
-            let slot = (header.lf_level - 1) as usize;
-            assert!(
-                slot < DecoderState::NUM_LF_FRAMES,
-                "invalid lf save slot {slot}, max {}",
-                DecoderState::NUM_LF_FRAMES - 1
-            );
-            self.lf_slot_decode_start[slot] = Some(decode_start_frame_index);
-        }
-    }
-
-    
-    pub(super) fn num_completed_passes(&self) -> usize {
-        self.section_state.num_completed_passes()
     }
 
     #[cfg(test)]
     pub(crate) fn set_use_simple_pipeline(&mut self, u: bool) {
-        self.decoder_state
-            .as_mut()
-            .unwrap()
-            .set_use_simple_pipeline(u);
+        self.frame_info.use_simple_pipeline = u;
     }
 
-    
-    pub(super) fn rewind(&mut self) -> Option<JxlPixelFormat> {
-        let pixel_format = self.pixel_format.take();
-        *self = Self::new();
-        self.pixel_format = pixel_format.clone();
-        pixel_format
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    pub(super) fn start_new_frame(&mut self, visible_frames_to_skip: usize) {
-        self.frame_header = None;
-        self.toc_parser = None;
-        self.frame = None;
-        self.non_section_buf = SmallBuffer::new(4096);
-        self.non_section_bit_offset = 0;
-        self.sections.clear();
-        self.ready_section_data = 0;
-        self.skip_sections = false;
-        self.process_without_output = false;
+    pub(super) fn start_new_frame(
+        &mut self,
+        visible_frames_to_skip: usize,
+        consumed_codestream: u64,
+    ) {
+        self.frame_info.clear(true);
+        self.local_buffer = SmallBuffer::new(4096);
+        self.local_buffer.mark_consumed(consumed_codestream);
         self.visible_frames_to_skip = visible_frames_to_skip;
-        self.section_state = SectionState::new(0, 0);
-        self.lf_global_section = None;
-        self.lf_sections.clear();
-        self.hf_global_section = None;
-        self.hf_sections.clear();
-        self.candidate_hf_sections.clear();
-        self.has_more_frames = true;
+        self.state = ParserState::FrameHeader { is_preview: false };
         self.header_needed_bytes = None;
-        self.did_seek = true;
+    }
+
+    pub(super) fn has_more_frames(&self) -> bool {
+        self.state != ParserState::Finished
+    }
+
+    fn refill_and_parse<T>(
+        &mut self,
+        input: &mut CodestreamInput,
+        mut do_parse: impl FnMut(&mut Self, &mut CodestreamInput) -> Result<T>,
+    ) -> Result<T> {
+        loop {
+            let c = self.local_buffer.refill(|buf| input.read(buf))?;
+
+            if let Some(mut need) = self.header_needed_bytes.take() {
+                need = need.saturating_sub(c);
+                if need > 0 {
+                    self.header_needed_bytes = Some(need);
+                    let enlarge = !self.local_buffer.can_read_more();
+                    if enlarge {
+                        self.local_buffer.enlarge();
+                    }
+                    if c > 0 || enlarge {
+                        continue;
+                    }
+                    return Err(Error::OutOfBounds(need));
+                }
+            }
+
+            let range = self.local_buffer.range();
+            let res = do_parse(self, input);
+            match res {
+                Ok(val) => {
+                    self.header_needed_bytes = None;
+                    return Ok(val);
+                }
+                Err(Error::OutOfBounds(n)) => {
+                    let new_range = self.local_buffer.range();
+                    let enlarge = new_range == range && !self.local_buffer.can_read_more();
+                    if enlarge {
+                        self.local_buffer.enlarge();
+                    }
+                    self.header_needed_bytes = Some(n);
+                    if c > 0 || enlarge {
+                        continue;
+                    }
+                    return Err(Error::OutOfBounds(n));
+                }
+                Err(e) => return Err(e),
+            }
+        }
     }
 
     pub(super) fn process(
         &mut self,
-        box_parser: &mut BoxParser,
-        input: &mut dyn JxlBitstreamInput,
+        input: &mut CodestreamInput,
         decode_options: &JxlDecoderOptions,
         mut output_buffers: Option<&mut [JxlOutputBuffer]>,
-        do_flush: bool,
     ) -> Result<()> {
         if let Some(output_buffers) = &output_buffers {
-            let px = self.pixel_format.as_ref().unwrap();
-            let expected_len = std::iter::once(&px.color_data_format)
-                .chain(px.extra_channel_format.iter())
-                .filter(|x| x.is_some())
-                .count();
-            if output_buffers.len() != expected_len {
-                return Err(Error::WrongBufferCount(output_buffers.len(), expected_len));
-            }
+            validate_output_buffers(output_buffers, self.pixel_format.as_ref())?;
         }
-        
+
         loop {
-            if !self.sections.is_empty() {
-                let regular_frame = self.has_visible_frame();
-                
-                
-                
-                let can_be_referenced = self
-                    .frame
-                    .as_ref()
-                    .is_some_and(|f| f.header().can_be_referenced);
-                if decode_options.scan_frames_only
-                    || (!self.process_without_output
-                        && output_buffers.is_none()
-                        && !can_be_referenced)
-                {
-                    self.skip_sections = true;
+            match self.state {
+                ParserState::FileHeader => {
+                    self.refill_and_parse(input, |c, _| {
+                        c.local_buffer.with_br(|br, bits| {
+                            c.image_info.parse_file_header(decode_options, br, bits)
+                        })
+                    })?;
+                    self.state = ParserState::ColorEncoding;
                 }
 
-                if !self.skip_sections {
-                    
-                    let mut readable_section_data = (self.non_section_buf.len()
-                        + input.available_bytes()?
-                        + self.ready_section_data)
-                        .max(1);
-                    
-                    for buf in self.sections.iter_mut() {
-                        if buf.data.is_empty() {
-                            buf.data.resize(buf.len, 0);
-                        }
-                        readable_section_data =
-                            readable_section_data.saturating_sub(buf.data.len());
-                        if readable_section_data == 0 {
-                            break;
-                        }
-                    }
-                    
-                    let mut available_codestream = match box_parser.get_more_codestream(input) {
-                        Err(Error::OutOfBounds(_)) => 0,
-                        Ok(c) => c as usize,
-                        Err(e) => return Err(e),
+                ParserState::ColorEncoding => {
+                    self.refill_and_parse(input, |c, _| {
+                        c.local_buffer
+                            .with_br(|br, bits| c.image_info.parse_color_encoding(br, bits))
+                    })?;
+                    self.update_default_output_options();
+                    self.state = ParserState::FrameHeader {
+                        is_preview: self.image_info.has_preview(),
                     };
-                    let mut section_buffers = vec![];
-                    let mut ready = self.ready_section_data;
-                    for buf in self.sections.iter_mut() {
-                        if buf.data.is_empty() {
-                            break;
-                        }
-                        let len = buf.data.len();
-                        if len > ready {
-                            let readable = (available_codestream + ready).min(len);
-                            section_buffers.push(IoSliceMut::new(&mut buf.data[ready..readable]));
-                            available_codestream =
-                                available_codestream.saturating_sub(readable - ready);
-                            if available_codestream == 0 {
-                                break;
-                            }
-                        }
-                        ready = ready.saturating_sub(len);
-                    }
-                    let mut buffers = &mut section_buffers[..];
-                    loop {
-                        let num = if !box_parser.box_buffer.is_empty() {
-                            box_parser.box_buffer.take(buffers)
-                        } else {
-                            let num = input.read(buffers)?;
-                            box_parser.mark_file_consumed(num);
-                            num
-                        };
-                        self.ready_section_data += num;
-                        box_parser.consume_codestream(num as u64);
-                        IoSliceMut::advance_slices(&mut buffers, num);
-                        if num == 0 || buffers.is_empty() {
-                            break;
-                        }
-                    }
-                    match self.process_sections(decode_options, &mut output_buffers, do_flush) {
-                        Ok(None) => Ok(()),
-                        Ok(Some(missing)) => Err(Error::OutOfBounds(missing)),
-                        Err(Error::OutOfBounds(_)) => Err(Error::SectionTooShort),
-                        Err(err) => Err(err),
-                    }?;
-                } else {
-                    let total_size = self.sections.iter().map(|x| x.len).sum::<usize>();
-                    loop {
-                        let to_skip = total_size - self.ready_section_data;
-                        if to_skip == 0 {
-                            break;
-                        }
-                        let available_codestream = box_parser.get_more_codestream(input)? as usize;
-                        let to_skip = to_skip.min(available_codestream);
-                        let skipped = if !box_parser.box_buffer.is_empty() {
-                            box_parser.box_buffer.consume(to_skip)
-                        } else {
-                            let skipped = input.skip(to_skip)?;
-                            box_parser.mark_file_consumed(skipped);
-                            skipped
-                        };
-                        box_parser.consume_codestream(skipped as u64);
-                        self.ready_section_data += skipped;
-                        if skipped == 0 {
-                            break;
-                        }
-                    }
-                    if self.ready_section_data < total_size {
-                        return Err(Error::OutOfBounds(total_size - self.ready_section_data));
-                    } else {
-                        self.sections.clear();
-                        
-                        let frame = self
-                            .frame
-                            .take()
-                            .expect("frame must be set when skip_sections is true");
-                        if let Some(decoder_state) = frame.finalize()? {
-                            self.decoder_state = Some(decoder_state);
-                        } else {
-                            self.has_more_frames = false;
-                            
-                            
-                            return Ok(());
-                        }
-                        self.skip_sections = false;
-                    }
-                }
-                if self.sections.is_empty() {
-                    
-                    
-                    
-                    let was_skipping = self.process_without_output;
-                    self.process_without_output = false;
-                    if regular_frame && !was_skipping {
-                        return Ok(());
-                    }
-                    continue;
-                }
-            } else {
-                
-                assert!(self.frame.is_none());
-                if !self.has_more_frames {
-                    
-                    
-                    assert!(do_flush);
                     return Ok(());
                 }
 
-                
-                
-                
-                
-                let mut capture_frame_start =
-                    self.decoder_state.is_some() && self.frame_header.is_none();
+                ParserState::FrameHeader { is_preview } => {
+                    self.refill_and_parse(input, |c, input| {
+                        c.frame_scan_info.set_current_frame_checkpoint(
+                            input
+                                .box_parser()
+                                .state_checkpoint(c.local_buffer.consumed())?,
+                        );
 
-                
-                
-                loop {
-                    let available_codestream = match box_parser.get_more_codestream(input) {
-                        Err(Error::OutOfBounds(_)) => 0,
-                        Ok(c) => c,
-                        Err(e) => return Err(e),
+                        c.local_buffer.with_br(|br, bits| {
+                            c.frame_info.parse_frame_header(
+                                is_preview,
+                                decode_options,
+                                c.image_info.file_header(),
+                                br,
+                                bits,
+                            )
+                        })
+                    })?;
+                    self.state = ParserState::Toc { is_preview };
+                }
+
+                ParserState::Toc { is_preview } => {
+                    let toc = self.refill_and_parse(input, |c, _| {
+                        c.local_buffer
+                            .with_br(|br, bits| c.frame_info.parse_toc(br, bits))
+                    })?;
+
+                    
+                    let mut process_mode = ProcessMode::Process;
+
+                    if is_preview && decode_options.skip_preview {
+                        process_mode = ProcessMode::Skip(false);
+                    }
+
+                    if !self.frame_info.current_frame_header().unwrap().is_visible() {
+                        process_mode = ProcessMode::SkipOutput;
+                    } else if self.visible_frames_to_skip > 0 {
+                        self.visible_frames_to_skip -= 1;
+                        process_mode = ProcessMode::SkipOutput;
+                    }
+
+                    if decode_options.scan_frames_only && process_mode == ProcessMode::Process {
+                        process_mode = ProcessMode::Skip(true);
+                    }
+
+                    self.state = ParserState::Sections {
+                        is_preview,
+                        process_mode,
                     };
 
-                    if capture_frame_start {
-                        
-                        
-                        
-                        self.current_frame_file_offset = (box_parser.total_file_consumed as usize)
-                            .saturating_sub(self.non_section_buf.len())
-                            .saturating_sub(box_parser.box_buffer.len());
-
-                        
-                        
-                        self.current_frame_remaining_in_box = if available_codestream > u64::MAX / 2
-                        {
-                            u64::MAX
-                        } else {
-                            available_codestream.saturating_add(self.non_section_buf.len() as u64)
-                        };
-                        capture_frame_start = false;
+                    
+                    if !is_preview {
+                        self.frame_scan_info.record(
+                            self.frame_info.current_frame_header().unwrap(),
+                            &self.image_info.file_header().image_metadata.animation,
+                        );
                     }
 
-                    let c = self.non_section_buf.refill(
-                        |buf| {
-                            if !box_parser.box_buffer.is_empty() {
-                                Ok(box_parser.box_buffer.take(buf))
-                            } else {
-                                let read = input.read(buf)?;
-                                box_parser.mark_file_consumed(read);
-                                Ok(read)
-                            }
-                        },
-                        Some(available_codestream as usize),
-                    )? as u64;
-                    box_parser.consume_codestream(c);
+                    self.frame_info.make_frame(
+                        &mut self.local_buffer,
+                        toc,
+                        self.image_info.file_header(),
+                        decode_options,
+                        self.pixel_format.as_ref().unwrap(),
+                        self.output_color_profile.as_ref().unwrap(),
+                        process_mode,
+                    )?;
 
-                    
-                    
-                    if let Some(needed) = self.header_needed_bytes.as_mut() {
-                        *needed = needed.saturating_sub(c);
-                        if *needed > 0 {
-                            if !self.non_section_buf.can_read_more() {
-                                self.non_section_buf.enlarge();
-                            }
-                            
-                            if input.available_bytes().unwrap_or(0) > 0 {
-                                continue;
-                            } else {
-                                return Err(Error::OutOfBounds(*needed as usize));
-                            }
-                        }
+                    if !matches!(process_mode, ProcessMode::Skip(..)) {
+                        self.frame_info.dequeue_ready_sections();
                     }
 
-                    let range = self.non_section_buf.range();
-
-                    match self.process_non_section(decode_options) {
-                        Ok(()) => {
-                            self.header_needed_bytes = None;
-                            break;
-                        }
-                        Err(Error::OutOfBounds(n)) => {
-                            let new_range = self.non_section_buf.range();
-                            
-                            
-                            if new_range == range && !self.non_section_buf.can_read_more() {
-                                self.non_section_buf.enlarge();
-                            }
-                            self.header_needed_bytes = Some(n as u64);
-                            
-                            if input.available_bytes().unwrap_or(0) > 0 {
-                                continue;
-                            } else {
-                                return Err(Error::OutOfBounds(n));
-                            }
-                        }
-                        Err(e) => return Err(e),
-                    }
-                }
-
-                if (!self.notified_image_info && self.decoder_state.is_some())
-                    && self.frame_header.is_none()
-                {
-                    self.notified_image_info = true;
-                    
-                    return Ok(());
-                }
-                if self.frame.is_some() {
-                    
-                    let is_preview_frame = !self.preview_done
-                        && self
-                            .basic_info
-                            .as_ref()
-                            .is_some_and(|info| info.preview_size.is_some());
-                    if is_preview_frame {
-                        self.preview_done = true;
-                        if decode_options.skip_preview {
-                            self.process_without_output = true;
-                            continue;
-                        }
-                    }
-
-                    
-                    if !is_preview_frame && !self.did_seek {
-                        self.record_frame_info();
-                    }
-
-                    if self.has_visible_frame() {
-                        if self.visible_frames_to_skip > 0 {
-                            
-                            
-                            
-                            self.visible_frames_to_skip -= 1;
-                            self.process_without_output = true;
-                            continue;
-                        }
-                        
+                    if process_mode.notify_user() {
                         return Ok(());
-                    } else {
-                        self.process_without_output = true;
-                        continue;
                     }
                 }
-            }
+
+                ParserState::Sections {
+                    is_preview,
+                    process_mode,
+                } => {
+                    if matches!(process_mode, ProcessMode::Skip(..)) {
+                        self.frame_info
+                            .skip_sections(input, &mut self.local_buffer)?;
+                    } else {
+                        self.frame_info
+                            .fill_sections(input, &mut self.local_buffer)?;
+
+                        match self.frame_info.process_sections(
+                            &mut output_buffers,
+                            self.output_color_profile.as_ref().unwrap(),
+                            self.pixel_format.as_ref().unwrap(),
+                        ) {
+                            Ok(None) => Ok(()),
+                            Ok(Some(missing)) => Err(Error::OutOfBounds(missing)),
+                            Err(Error::OutOfBounds(_)) => Err(Error::SectionTooShort),
+                            Err(err) => Err(err),
+                        }?;
+                    }
+
+                    #[cfg(test)]
+                    {
+                        let num_frames = self.scanned_frames().len();
+                        if let Some(frame) = self.frame_info.frame() {
+                            self.frame_callback.as_mut().map_or(Ok(()), |cb| {
+                                cb(self.image_info.file_header(), frame, num_frames)
+                            })?;
+                        }
+                    }
+
+                    let is_last = self.frame_info.current_frame_header().unwrap().is_last;
+                    self.frame_info.clear(is_last);
+                    if !is_last {
+                        self.state = ParserState::FrameHeader { is_preview };
+                    } else if is_preview {
+                        self.state = ParserState::FrameHeader { is_preview: false };
+                    } else {
+                        self.state = ParserState::Finished;
+                        self.file_length = Some(
+                            input
+                                .box_parser()
+                                .total_bytes_consumed(self.local_buffer.consumed()),
+                        );
+                    }
+
+                    if process_mode.notify_user() {
+                        return Ok(());
+                    }
+                }
+
+                ParserState::Finished => {
+                    panic!("API usage error: called process() on completed file")
+                }
+            };
         }
     }
 
-    pub(super) fn update_default_output_color_profile(&mut self) {
-        
-        if self.output_color_profile_set_by_user {
-            return;
-        }
-
-        let embedded_color_profile = self.embedded_color_profile.as_ref().unwrap();
-        let pixel_format = self.pixel_format.as_ref().unwrap();
-
-        
-        
-        
-        
-        
-        let output_color_profile = if self.xyb_encoded {
-            
-            let base_encoding = if embedded_color_profile.can_output_to() {
-                match &embedded_color_profile {
-                    JxlColorProfile::Simple(enc) => enc.clone(),
-                    JxlColorProfile::Icc(_) => {
-                        unreachable!("can_output_to returns false for ICC")
-                    }
-                }
-            } else {
-                let data_format = pixel_format
-                    .color_data_format
-                    .unwrap_or(JxlDataFormat::U8 { bit_depth: 8 });
-                let is_float = matches!(
-                    data_format,
-                    JxlDataFormat::F32 { .. } | JxlDataFormat::F16 { .. }
-                );
-                if is_float {
-                    JxlColorEncoding::linear_srgb(self.is_gray)
-                } else {
-                    JxlColorEncoding::srgb(self.is_gray)
-                }
-            };
-
-            JxlColorProfile::Simple(base_encoding)
-        } else {
-            embedded_color_profile.clone()
-        };
-        self.output_color_profile = Some(output_color_profile);
+    pub fn has_frame(&self) -> bool {
+        matches!(self.state, ParserState::Sections { .. })
     }
 }

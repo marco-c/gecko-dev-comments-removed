@@ -3,7 +3,7 @@
 
 
 
-use std::{fmt::Debug, marker::PhantomData, mem::MaybeUninit};
+use std::{fmt::Debug, marker::PhantomData};
 
 use super::{RawImageRectMut, Rect, internal::RawImageBuffer};
 
@@ -26,7 +26,7 @@ impl<'a> JxlOutputBuffer<'a> {
     
     
     pub unsafe fn new_from_ptr(
-        buf: *mut MaybeUninit<u8>,
+        buf: *mut u8,
         num_rows: usize,
         bytes_per_row: usize,
         bytes_between_rows: usize,
@@ -36,7 +36,12 @@ impl<'a> JxlOutputBuffer<'a> {
             
             
             inner: unsafe {
-                RawImageBuffer::new_from_ptr(buf, num_rows, bytes_per_row, bytes_between_rows)
+                RawImageBuffer::new_from_ptr(
+                    buf.cast(),
+                    num_rows,
+                    bytes_per_row,
+                    bytes_between_rows,
+                )
             },
             _ph: PhantomData,
         }
@@ -51,24 +56,8 @@ impl<'a> JxlOutputBuffer<'a> {
         }
     }
 
-    
-    
-    pub fn new_uninit(
-        buf: &'a mut [MaybeUninit<u8>],
-        num_rows: usize,
-        bytes_per_row: usize,
-    ) -> Self {
-        Self::new_uninit_with_stride(buf, num_rows, bytes_per_row, bytes_per_row)
-    }
-
-    pub fn new(buf: &'a mut [u8], num_rows: usize, bytes_per_row: usize) -> Self {
-        Self::new_with_stride(buf, num_rows, bytes_per_row, bytes_per_row)
-    }
-
-    
-    
-    pub fn new_uninit_with_stride(
-        buf: &'a mut [MaybeUninit<u8>],
+    pub fn new_with_stride(
+        buf: &'a mut [u8],
         num_rows: usize,
         bytes_per_row: usize,
         byte_stride: usize,
@@ -87,20 +76,8 @@ impl<'a> JxlOutputBuffer<'a> {
         unsafe { Self::new_from_ptr(buf.as_mut_ptr(), num_rows, bytes_per_row, byte_stride) }
     }
 
-    pub fn new_with_stride(
-        buf: &'a mut [u8],
-        num_rows: usize,
-        bytes_per_row: usize,
-        byte_stride: usize,
-    ) -> Self {
-        Self::new_uninit_with_stride(
-            
-            
-            unsafe { std::slice::from_raw_parts_mut(buf.as_mut_ptr().cast(), buf.len()) },
-            num_rows,
-            bytes_per_row,
-            byte_stride,
-        )
+    pub fn new(buf: &'a mut [u8], num_rows: usize, bytes_per_row: usize) -> Self {
+        Self::new_with_stride(buf, num_rows, bytes_per_row, bytes_per_row)
     }
 
     pub(crate) fn reborrow(lender: &'a mut JxlOutputBuffer<'_>) -> JxlOutputBuffer<'a> {
@@ -111,22 +88,9 @@ impl<'a> JxlOutputBuffer<'a> {
         }
     }
 
-    
-    
-    pub(crate) unsafe fn row_mut(&mut self, row: usize) -> &mut [MaybeUninit<u8>] {
-        
+    pub(crate) fn row_mut(&mut self, row: usize) -> &mut [u8] {
         
         unsafe { self.inner.row_mut(row) }
-    }
-
-    #[inline]
-    pub fn write_bytes(&mut self, row: usize, col: usize, bytes: &[u8]) {
-        
-        
-        let slice = unsafe { self.inner.row_mut(row) };
-        for (w, s) in slice.iter_mut().skip(col).zip(bytes.iter().copied()) {
-            w.write(s);
-        }
     }
 
     pub fn byte_size(&self) -> (usize, usize) {

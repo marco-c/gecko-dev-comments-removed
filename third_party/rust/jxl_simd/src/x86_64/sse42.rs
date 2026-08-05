@@ -8,7 +8,6 @@ use crate::{U32SimdVec, impl_f32_array_interface};
 use super::super::{F32SimdVec, I32SimdVec, SimdDescriptor, SimdMask, U8SimdVec, U16SimdVec};
 use std::{
     arch::x86_64::*,
-    mem::MaybeUninit,
     ops::{
         Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div,
         DivAssign, Mul, MulAssign, Neg, Sub, SubAssign,
@@ -98,9 +97,7 @@ pub struct F32VecSse42(__m128, Sse42Descriptor);
 #[repr(transparent)]
 pub struct MaskSse42(__m128, Sse42Descriptor);
 
-
-
-unsafe impl F32SimdVec for F32VecSse42 {
+impl F32SimdVec for F32VecSse42 {
     type Descriptor = Sse42Descriptor;
 
     const LEN: usize = 4;
@@ -122,10 +119,10 @@ unsafe impl F32SimdVec for F32VecSse42 {
     }
 
     #[inline(always)]
-    fn store_interleaved_2_uninit(a: Self, b: Self, dest: &mut [MaybeUninit<f32>]) {
+    fn store_interleaved_2(a: Self, b: Self, dest: &mut [f32]) {
         #[target_feature(enable = "sse4.2")]
         #[inline]
-        fn store_interleaved_2_impl(a: __m128, b: __m128, dest: &mut [MaybeUninit<f32>]) {
+        fn store_interleaved_2_impl(a: __m128, b: __m128, dest: &mut [f32]) {
             assert!(dest.len() >= 2 * F32VecSse42::LEN);
             
             
@@ -133,7 +130,7 @@ unsafe impl F32SimdVec for F32VecSse42 {
             let hi = _mm_unpackhi_ps(a, b);
             
             unsafe {
-                let dest_ptr = dest.as_mut_ptr().cast::<f32>();
+                let dest_ptr = dest.as_mut_ptr();
                 _mm_storeu_ps(dest_ptr, lo);
                 _mm_storeu_ps(dest_ptr.add(4), hi);
             }
@@ -144,15 +141,10 @@ unsafe impl F32SimdVec for F32VecSse42 {
     }
 
     #[inline(always)]
-    fn store_interleaved_3_uninit(a: Self, b: Self, c: Self, dest: &mut [MaybeUninit<f32>]) {
+    fn store_interleaved_3(a: Self, b: Self, c: Self, dest: &mut [f32]) {
         #[target_feature(enable = "sse4.2")]
         #[inline]
-        fn store_interleaved_3_impl(
-            a: __m128,
-            b: __m128,
-            c: __m128,
-            dest: &mut [MaybeUninit<f32>],
-        ) {
+        fn store_interleaved_3_impl(a: __m128, b: __m128, c: __m128, dest: &mut [f32]) {
             assert!(dest.len() >= 3 * F32VecSse42::LEN);
             
             
@@ -186,7 +178,7 @@ unsafe impl F32SimdVec for F32VecSse42 {
             
             
             unsafe {
-                let dest_ptr = dest.as_mut_ptr().cast::<f32>();
+                let dest_ptr = dest.as_mut_ptr();
                 _mm_storeu_ps(dest_ptr, out0);
                 _mm_storeu_ps(dest_ptr.add(4), out1);
                 _mm_storeu_ps(dest_ptr.add(8), out2);
@@ -198,22 +190,10 @@ unsafe impl F32SimdVec for F32VecSse42 {
     }
 
     #[inline(always)]
-    fn store_interleaved_4_uninit(
-        a: Self,
-        b: Self,
-        c: Self,
-        d: Self,
-        dest: &mut [MaybeUninit<f32>],
-    ) {
+    fn store_interleaved_4(a: Self, b: Self, c: Self, d: Self, dest: &mut [f32]) {
         #[target_feature(enable = "sse4.2")]
         #[inline]
-        fn store_interleaved_4_impl(
-            a: __m128,
-            b: __m128,
-            c: __m128,
-            d: __m128,
-            dest: &mut [MaybeUninit<f32>],
-        ) {
+        fn store_interleaved_4_impl(a: __m128, b: __m128, c: __m128, d: __m128, dest: &mut [f32]) {
             assert!(dest.len() >= 4 * F32VecSse42::LEN);
             
             let ab_lo = _mm_unpacklo_ps(a, b); 
@@ -229,7 +209,7 @@ unsafe impl F32SimdVec for F32VecSse42 {
 
             
             unsafe {
-                let dest_ptr = dest.as_mut_ptr().cast::<f32>();
+                let dest_ptr = dest.as_mut_ptr();
                 _mm_storeu_ps(dest_ptr, out0);
                 _mm_storeu_ps(dest_ptr.add(4), out1);
                 _mm_storeu_ps(dest_ptr.add(8), out2);
@@ -989,9 +969,7 @@ impl U32SimdVec for U32VecSse42 {
 #[repr(transparent)]
 pub struct U8VecSse42(__m128i, Sse42Descriptor);
 
-
-
-unsafe impl U8SimdVec for U8VecSse42 {
+impl U8SimdVec for U8VecSse42 {
     type Descriptor = Sse42Descriptor;
     const LEN: usize = 16;
 
@@ -1018,10 +996,10 @@ unsafe impl U8SimdVec for U8VecSse42 {
     }
 
     #[inline(always)]
-    fn store_interleaved_2_uninit(a: Self, b: Self, dest: &mut [MaybeUninit<u8>]) {
+    fn store_interleaved_2(a: Self, b: Self, dest: &mut [u8]) {
         #[target_feature(enable = "sse4.2")]
         #[inline]
-        fn store_interleaved_2_impl(a: __m128i, b: __m128i, dest: &mut [MaybeUninit<u8>]) {
+        fn store_interleaved_2_impl(a: __m128i, b: __m128i, dest: &mut [u8]) {
             assert!(dest.len() >= 2 * U8VecSse42::LEN);
             let lo = _mm_unpacklo_epi8(a, b);
             let hi = _mm_unpackhi_epi8(a, b);
@@ -1037,15 +1015,10 @@ unsafe impl U8SimdVec for U8VecSse42 {
     }
 
     #[inline(always)]
-    fn store_interleaved_3_uninit(a: Self, b: Self, c: Self, dest: &mut [MaybeUninit<u8>]) {
+    fn store_interleaved_3(a: Self, b: Self, c: Self, dest: &mut [u8]) {
         #[target_feature(enable = "sse4.2")]
         #[inline]
-        fn store_interleaved_3_impl(
-            a: __m128i,
-            b: __m128i,
-            c: __m128i,
-            dest: &mut [MaybeUninit<u8>],
-        ) {
+        fn store_interleaved_3_impl(a: __m128i, b: __m128i, c: __m128i, dest: &mut [u8]) {
             assert!(dest.len() >= 3 * U8VecSse42::LEN);
 
             
@@ -1095,13 +1068,7 @@ unsafe impl U8SimdVec for U8VecSse42 {
     }
 
     #[inline(always)]
-    fn store_interleaved_4_uninit(
-        a: Self,
-        b: Self,
-        c: Self,
-        d: Self,
-        dest: &mut [MaybeUninit<u8>],
-    ) {
+    fn store_interleaved_4(a: Self, b: Self, c: Self, d: Self, dest: &mut [u8]) {
         #[target_feature(enable = "sse4.2")]
         #[inline]
         fn store_interleaved_4_impl(
@@ -1109,7 +1076,7 @@ unsafe impl U8SimdVec for U8VecSse42 {
             b: __m128i,
             c: __m128i,
             d: __m128i,
-            dest: &mut [MaybeUninit<u8>],
+            dest: &mut [u8],
         ) {
             assert!(dest.len() >= 4 * U8VecSse42::LEN);
             
@@ -1142,9 +1109,7 @@ unsafe impl U8SimdVec for U8VecSse42 {
 #[repr(transparent)]
 pub struct U16VecSse42(__m128i, Sse42Descriptor);
 
-
-
-unsafe impl U16SimdVec for U16VecSse42 {
+impl U16SimdVec for U16VecSse42 {
     type Descriptor = Sse42Descriptor;
     const LEN: usize = 8;
 
@@ -1171,10 +1136,10 @@ unsafe impl U16SimdVec for U16VecSse42 {
     }
 
     #[inline(always)]
-    fn store_interleaved_2_uninit(a: Self, b: Self, dest: &mut [MaybeUninit<u16>]) {
+    fn store_interleaved_2(a: Self, b: Self, dest: &mut [u16]) {
         #[target_feature(enable = "sse4.2")]
         #[inline]
-        fn store_interleaved_2_impl(a: __m128i, b: __m128i, dest: &mut [MaybeUninit<u16>]) {
+        fn store_interleaved_2_impl(a: __m128i, b: __m128i, dest: &mut [u16]) {
             assert!(dest.len() >= 2 * U16VecSse42::LEN);
             let lo = _mm_unpacklo_epi16(a, b);
             let hi = _mm_unpackhi_epi16(a, b);
@@ -1190,15 +1155,10 @@ unsafe impl U16SimdVec for U16VecSse42 {
     }
 
     #[inline(always)]
-    fn store_interleaved_3_uninit(a: Self, b: Self, c: Self, dest: &mut [MaybeUninit<u16>]) {
+    fn store_interleaved_3(a: Self, b: Self, c: Self, dest: &mut [u16]) {
         #[target_feature(enable = "sse4.2")]
         #[inline]
-        fn store_interleaved_3_impl(
-            a: __m128i,
-            b: __m128i,
-            c: __m128i,
-            dest: &mut [MaybeUninit<u16>],
-        ) {
+        fn store_interleaved_3_impl(a: __m128i, b: __m128i, c: __m128i, dest: &mut [u16]) {
             assert!(dest.len() >= 3 * U16VecSse42::LEN);
 
             
@@ -1248,13 +1208,7 @@ unsafe impl U16SimdVec for U16VecSse42 {
     }
 
     #[inline(always)]
-    fn store_interleaved_4_uninit(
-        a: Self,
-        b: Self,
-        c: Self,
-        d: Self,
-        dest: &mut [MaybeUninit<u16>],
-    ) {
+    fn store_interleaved_4(a: Self, b: Self, c: Self, d: Self, dest: &mut [u16]) {
         #[target_feature(enable = "sse4.2")]
         #[inline]
         fn store_interleaved_4_impl(
@@ -1262,7 +1216,7 @@ unsafe impl U16SimdVec for U16VecSse42 {
             b: __m128i,
             c: __m128i,
             d: __m128i,
-            dest: &mut [MaybeUninit<u16>],
+            dest: &mut [u16],
         ) {
             assert!(dest.len() >= 4 * U16VecSse42::LEN);
             

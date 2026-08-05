@@ -13,14 +13,10 @@ use crate::{
         internal::{ChannelInfo, Stage},
         low_memory_pipeline::{helpers::get_distinct_indices, run_stage::ExtraInfo},
     },
-    util::{ShiftRightCeil, SmallVec, mirror, tracing_wrappers::*},
+    util::{ChannelVec, ShiftRightCeil, mirror, tracing_wrappers::*},
 };
 
 use super::{LowMemoryRenderPipeline, row_buffers::RowBuffer};
-
-
-
-pub(super) type ChannelVec<T> = SmallVec<T, 8>;
 
 fn apply_x_padding(
     input_type: DataTypeTag,

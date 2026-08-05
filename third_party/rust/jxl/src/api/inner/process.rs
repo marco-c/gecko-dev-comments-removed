@@ -9,10 +9,13 @@ use std::{
 };
 
 use crate::error::Result;
-
-use crate::api::{JxlBitstreamInput, JxlDecoderInner, JxlOutputBuffer, ProcessingResult};
-
-
+use crate::{
+    api::{
+        JxlBitstreamInput, JxlDecoderInner, JxlOutputBuffer, ProcessingResult,
+        inner::box_parser::CodestreamInput,
+    },
+    bit_reader::BitReader,
+};
 
 
 
@@ -21,13 +24,14 @@ use crate::api::{JxlBitstreamInput, JxlDecoderInner, JxlOutputBuffer, Processing
 pub(super) struct SmallBuffer {
     buf: Vec<u8>,
     range: Range<usize>,
+    consumed: u64,
+    bit_offset: u8,
 }
 
 impl SmallBuffer {
     pub(super) fn refill(
         &mut self,
-        mut get_input: impl FnMut(&mut [IoSliceMut]) -> Result<usize, std::io::Error>,
-        max: Option<usize>,
+        mut get_input: impl FnMut(&mut [IoSliceMut]) -> Result<usize>,
     ) -> Result<usize> {
         let mut total = 0;
         loop {
@@ -42,15 +46,7 @@ impl SmallBuffer {
             if self.range.len() >= self.buf.len() / 2 {
                 break;
             }
-            let stop = if let Some(max) = max {
-                self.range
-                    .end
-                    .saturating_add(max.saturating_sub(total))
-                    .min(self.buf.len())
-            } else {
-                self.buf.len()
-            };
-            let num = get_input(&mut [IoSliceMut::new(&mut self.buf[self.range.end..stop])])?;
+            let num = get_input(&mut [IoSliceMut::new(&mut self.buf[self.range.end..])])?;
             total += num;
             self.range.end += num;
             if num == 0 {
@@ -70,22 +66,36 @@ impl SmallBuffer {
             let len = self.range.len().min(buf.len());
             
             buf[..len].copy_from_slice(&self.buf[self.range.start..self.range.start + len]);
-            self.range.start += len;
+            self.consume(len);
             num += len;
         }
         num
     }
 
-    pub(super) fn consume(&mut self, amount: usize) -> usize {
-        let amount = amount.min(self.range.len());
+    pub(super) fn consume(&mut self, amount: usize) {
+        assert!(
+            amount <= self.range.len(),
+            "consuming {amount} with {} available!",
+            self.range.len()
+        );
         self.range.start += amount;
-        amount
+        self.consumed += amount as u64;
+    }
+
+    pub(super) fn mark_consumed(&mut self, amount: u64) {
+        self.consumed += amount;
+    }
+
+    pub(super) fn consumed(&self) -> u64 {
+        self.consumed
     }
 
     pub(super) fn new(initial_size: usize) -> Self {
         Self {
             buf: vec![0; initial_size],
             range: 0..0,
+            consumed: 0,
+            bit_offset: 0,
         }
     }
 
@@ -100,6 +110,19 @@ impl SmallBuffer {
 
     pub(super) fn can_read_more(&self) -> bool {
         self.buf.len() > self.len() * 2 && self.range.end < self.buf.len()
+    }
+
+    pub(super) fn with_br<T>(
+        &mut self,
+        mut fun: impl FnMut(&mut BitReader, &mut usize) -> Result<T>,
+    ) -> Result<T> {
+        let mut br = BitReader::new(self);
+        br.skip_bits(self.bit_offset as usize)?;
+        let mut bits = br.total_bits_read();
+        let ret = fun(&mut br, &mut bits);
+        self.consume(bits / 8);
+        self.bit_offset = (bits % 8) as u8;
+        ret
     }
 }
 
@@ -123,11 +146,9 @@ impl JxlDecoderInner {
         buffers: Option<&mut [JxlOutputBuffer]>,
     ) -> Result<ProcessingResult<(), ()>> {
         ProcessingResult::new(self.codestream_parser.process(
-            &mut self.box_parser,
-            input,
+            &mut CodestreamInput::new(&mut self.box_parser, input),
             &self.options,
             buffers,
-            false,
         ))
     }
 
@@ -136,18 +157,19 @@ impl JxlDecoderInner {
     
     
     pub fn flush_pixels(&mut self, buffers: &mut [JxlOutputBuffer]) -> Result<bool> {
-        let mut input: &[u8] = &[];
-        match self.codestream_parser.process(
-            &mut self.box_parser,
-            &mut input,
-            &self.options,
-            Some(buffers),
-            true,
-        ) {
+        let Some(profile) = self.codestream_parser.output_color_profile.as_ref() else {
+            return Ok(false);
+        };
+        let Some(pixel_format) = self.codestream_parser.pixel_format.as_ref() else {
+            return Ok(false);
+        };
+        match self
+            .codestream_parser
+            .frame_info
+            .do_flush(buffers, profile, pixel_format)
+        {
             Ok(()) | Err(crate::error::Error::OutOfBounds(_)) => {
-                let updated = self.codestream_parser.pixels_dirty;
-                self.codestream_parser.pixels_dirty = false;
-                Ok(updated)
+                Ok(self.codestream_parser.get_and_clear_pixels_dirty())
             }
             Err(e) => Err(e),
         }

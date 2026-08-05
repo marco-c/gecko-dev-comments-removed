@@ -61,6 +61,8 @@ pub struct LowMemoryRenderPipeline {
     
     
     scratch_channel_buffers: Vec<Vec<OwnedRawImage>>,
+    
+    group_scratch_buffers_limit: Option<usize>,
 }
 
 impl RenderPipeline for LowMemoryRenderPipeline {
@@ -277,6 +279,7 @@ impl RenderPipeline for LowMemoryRenderPipeline {
                 .iter()
                 .map(|x| x.init_local_state(0)) 
                 .collect::<Result<_>>()?,
+            group_scratch_buffers_limit: shared.group_scratch_buffers_limit,
             shared,
             downsampling_for_stage,
             opaque_alpha_buffers,
@@ -417,7 +420,13 @@ impl RenderPipeline for LowMemoryRenderPipeline {
     }
 
     fn mark_group_to_rerender(&mut self, g: usize) {
-        self.input_buffers[g].is_ready = false;
+        let all_finalized = (0..self.shared.num_channels())
+            .filter(|&c| self.shared.channel_is_used[c])
+            .all(|c| self.shared.group_chan_complete[g][c]);
+        
+        if !all_finalized {
+            self.input_buffers[g].is_ready = false;
+        }
     }
 
     fn box_inout_stage<S: super::RenderPipelineInOutStage>(

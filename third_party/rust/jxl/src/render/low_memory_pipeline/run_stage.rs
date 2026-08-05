@@ -9,9 +9,8 @@ use crate::{
     render::{
         Channels, ChannelsMut, RunInPlaceStage,
         internal::{PipelineBuffer, RunInOutStage},
-        low_memory_pipeline::render_group::ChannelVec,
     },
-    util::{ShiftRightCeil, SmallVec, mirror, tracing_wrappers::*},
+    util::{ChannelVec, ShiftRightCeil, SmallVec, StackOnly, mirror, tracing_wrappers::*},
 };
 
 use super::{
@@ -106,21 +105,19 @@ impl<T: RenderPipelineInOutStage> RunInOutStage<RowBuffer> for T {
         
         let input_rows_per_channel = (2 * Self::BORDER.1 + 1) as usize;
         let num_channels = input_buffers.len();
-        let mut input_row_data = SmallVec::new();
+        let mut input_row_data: SmallVec<&[T::InputT], 32, StackOnly> = SmallVec::new();
         for x in input_buffers.iter() {
-            for iy in -ibordery..=ibordery {
-                input_row_data.push(
-                    &x.get_row::<T::InputT>(mirror(current_row as isize + iy, image_height))
-                        [xstart - Self::BORDER.0 as usize..],
-                );
-            }
+            input_row_data.extend((-ibordery..=ibordery).map(|iy| {
+                &x.get_row::<T::InputT>(mirror(current_row as isize + iy, image_height))
+                    [xstart - Self::BORDER.0 as usize..]
+            }));
         }
         let input_rows = Channels::new(input_row_data, num_channels, input_rows_per_channel);
 
         
         let output_rows_per_channel = 1 << T::SHIFT.1;
         let num_output_channels = output_buffers.len();
-        let mut output_row_data = SmallVec::new();
+        let mut output_row_data: SmallVec<&mut [T::OutputT], 8, StackOnly> = SmallVec::new();
         
         if output_rows_per_channel == 1 {
             
@@ -132,11 +129,11 @@ impl<T: RenderPipelineInOutStage> RunInOutStage<RowBuffer> for T {
             }
         } else {
             for x in output_buffers.iter_mut() {
-                let rows = x.get_rows_mut::<T::OutputT>(
+                x.get_rows_mut::<T::OutputT, _>(
                     (current_row << T::SHIFT.1)..((current_row + 1) << T::SHIFT.1),
                     RowBuffer::x0_offset::<T::OutputT>() - (xpre << T::SHIFT.0),
+                    &mut output_row_data,
                 );
-                output_row_data.extend_sv(rows);
             }
         }
         let mut output_rows = ChannelsMut::new(

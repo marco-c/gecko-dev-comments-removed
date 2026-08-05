@@ -1362,36 +1362,6 @@ impl fmt::Display for JxlColorProfile {
     }
 }
 
-pub trait JxlCmsTransformer {
-    
-    
-    
-    
-    fn do_transform(&mut self, input: &[f32], output: &mut [f32]) -> Result<()>;
-
-    
-    
-    
-    
-    fn do_transform_inplace(&mut self, inout: &mut [f32]) -> Result<()>;
-}
-
-pub trait JxlCms {
-    
-    
-    
-    
-    
-    fn initialize_transforms(
-        &self,
-        n: usize,
-        max_pixels_per_transform: usize,
-        input: JxlColorProfile,
-        output: JxlColorProfile,
-        intensity_target: f32,
-    ) -> Result<(usize, Vec<Box<dyn JxlCmsTransformer + Send>>)>;
-}
-
 
 fn write_u32_be(slice: &mut [u8], pos: usize, value: u32) -> Result<(), Error> {
     if pos.checked_add(4).is_none_or(|end| end > slice.len()) {

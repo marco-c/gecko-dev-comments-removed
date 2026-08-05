@@ -37,10 +37,13 @@ impl OwnedRawImage {
         Ok(Self {
             
             
-            data: RawImageBuffer::try_allocate(
-                (byte_size.0 + padding.0, byte_size.1 + padding.1),
-                false,
-            )?,
+            
+            data: unsafe {
+                RawImageBuffer::try_allocate(
+                    (byte_size.0 + padding.0, byte_size.1 + padding.1),
+                    None,
+                )?
+            },
             offset,
             padding,
         })
@@ -86,11 +89,8 @@ impl OwnedRawImage {
         let offset = self.offset;
         let end = offset.0 + self.byte_size().0;
         
-        
-        let row = &mut unsafe { self.data.row_mut(row + offset.1) }[offset.0..end];
-        
-        
-        unsafe { std::slice::from_raw_parts_mut(row.as_mut_ptr().cast::<u8>(), row.len()) }
+        let row = unsafe { self.data.row_mut(row + offset.1) };
+        &mut row[offset.0..end]
     }
 
     #[inline(always)]
@@ -98,10 +98,8 @@ impl OwnedRawImage {
         let offset = self.offset;
         let end = offset.0 + self.byte_size().0;
         
-        let row = &unsafe { self.data.row(row + offset.1) }[offset.0..end];
-        
-        
-        unsafe { std::slice::from_raw_parts(row.as_ptr().cast::<u8>(), row.len()) }
+        let row = unsafe { self.data.row(row + offset.1) };
+        &row[offset.0..end]
     }
 
     pub fn byte_size(&self) -> (usize, usize) {
@@ -150,10 +148,7 @@ impl<'a> RawImageRect<'a> {
     #[inline(always)]
     pub fn row(&self, row: usize) -> &[u8] {
         
-        let row = unsafe { self.data.row(row) };
-        
-        
-        unsafe { std::slice::from_raw_parts(row.as_ptr().cast::<u8>(), row.len()) }
+        unsafe { self.data.row(row) }
     }
 
     pub fn rect(&self, rect: Rect) -> RawImageRect<'a> {
@@ -181,11 +176,7 @@ impl<'a> RawImageRectMut<'a> {
     #[inline(always)]
     pub fn row(&mut self, row: usize) -> &mut [u8] {
         
-        
-        let row = unsafe { self.data.row_mut(row) };
-        
-        
-        unsafe { std::slice::from_raw_parts_mut(row.as_mut_ptr().cast::<u8>(), row.len()) }
+        unsafe { self.data.row_mut(row) }
     }
 
     pub fn rect_mut(&'_ mut self, rect: Rect) -> RawImageRectMut<'_> {

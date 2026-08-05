@@ -3,7 +3,7 @@
 
 
 
-use crate::render::low_memory_pipeline::render_group::ChannelVec;
+use crate::util::ChannelVec;
 
 
 

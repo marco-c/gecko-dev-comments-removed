@@ -65,6 +65,20 @@ impl Orientation {
         }
     }
 
+    
+    
+    
+    
+    
+    pub fn display_row_step(&self) -> (isize, isize) {
+        match self {
+            Orientation::Identity | Orientation::FlipVertical => (1, 0),
+            Orientation::FlipHorizontal | Orientation::Rotate180 => (-1, 0),
+            Orientation::Transpose | Orientation::Rotate90Cw => (0, 1),
+            Orientation::AntiTranspose | Orientation::Rotate90Ccw => (0, -1),
+        }
+    }
+
     pub fn display_pixel(&self, (x, y): (usize, usize), size: (usize, usize)) -> (usize, usize) {
         match self {
             Orientation::Identity => (x, y),

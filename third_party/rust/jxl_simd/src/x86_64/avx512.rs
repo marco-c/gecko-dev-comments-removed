@@ -9,7 +9,6 @@ use super::super::{
 use crate::{Sse42Descriptor, U32SimdVec, impl_f32_array_interface};
 use std::{
     arch::x86_64::*,
-    mem::MaybeUninit,
     ops::{
         Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div,
         DivAssign, Mul, MulAssign, Neg, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
@@ -107,9 +106,7 @@ pub struct F32VecAvx512(__m512, Avx512Descriptor);
 #[repr(transparent)]
 pub struct MaskAvx512(__mmask16, Avx512Descriptor);
 
-
-
-unsafe impl F32SimdVec for F32VecAvx512 {
+impl F32SimdVec for F32VecAvx512 {
     type Descriptor = Avx512Descriptor;
 
     const LEN: usize = 16;
@@ -131,10 +128,10 @@ unsafe impl F32SimdVec for F32VecAvx512 {
     }
 
     #[inline(always)]
-    fn store_interleaved_2_uninit(a: Self, b: Self, dest: &mut [MaybeUninit<f32>]) {
+    fn store_interleaved_2(a: Self, b: Self, dest: &mut [f32]) {
         #[target_feature(enable = "avx512f")]
         #[inline]
-        fn store_interleaved_2_impl(a: __m512, b: __m512, dest: &mut [MaybeUninit<f32>]) {
+        fn store_interleaved_2_impl(a: __m512, b: __m512, dest: &mut [f32]) {
             assert!(dest.len() >= 2 * F32VecAvx512::LEN);
             
             
@@ -155,7 +152,7 @@ unsafe impl F32SimdVec for F32VecAvx512 {
 
             
             unsafe {
-                let dest_ptr = dest.as_mut_ptr().cast::<f32>();
+                let dest_ptr = dest.as_mut_ptr();
                 _mm512_storeu_ps(dest_ptr, out0);
                 _mm512_storeu_ps(dest_ptr.add(16), out1);
             }
@@ -166,15 +163,10 @@ unsafe impl F32SimdVec for F32VecAvx512 {
     }
 
     #[inline(always)]
-    fn store_interleaved_3_uninit(a: Self, b: Self, c: Self, dest: &mut [MaybeUninit<f32>]) {
+    fn store_interleaved_3(a: Self, b: Self, c: Self, dest: &mut [f32]) {
         #[target_feature(enable = "avx512f")]
         #[inline]
-        fn store_interleaved_3_impl(
-            a: __m512,
-            b: __m512,
-            c: __m512,
-            dest: &mut [MaybeUninit<f32>],
-        ) {
+        fn store_interleaved_3_impl(a: __m512, b: __m512, c: __m512, dest: &mut [f32]) {
             assert!(dest.len() >= 3 * F32VecAvx512::LEN);
 
             let idx_ab0 = _mm512_setr_epi32(0, 16, 0, 1, 17, 0, 2, 18, 0, 3, 19, 0, 4, 20, 0, 5);
@@ -198,7 +190,7 @@ unsafe impl F32SimdVec for F32VecAvx512 {
 
             
             unsafe {
-                let dest_ptr = dest.as_mut_ptr().cast::<f32>();
+                let dest_ptr = dest.as_mut_ptr();
                 _mm512_storeu_ps(dest_ptr, out0);
                 _mm512_storeu_ps(dest_ptr.add(16), out1);
                 _mm512_storeu_ps(dest_ptr.add(32), out2);
@@ -210,22 +202,10 @@ unsafe impl F32SimdVec for F32VecAvx512 {
     }
 
     #[inline(always)]
-    fn store_interleaved_4_uninit(
-        a: Self,
-        b: Self,
-        c: Self,
-        d: Self,
-        dest: &mut [MaybeUninit<f32>],
-    ) {
+    fn store_interleaved_4(a: Self, b: Self, c: Self, d: Self, dest: &mut [f32]) {
         #[target_feature(enable = "avx512f")]
         #[inline]
-        fn store_interleaved_4_impl(
-            a: __m512,
-            b: __m512,
-            c: __m512,
-            d: __m512,
-            dest: &mut [MaybeUninit<f32>],
-        ) {
+        fn store_interleaved_4_impl(a: __m512, b: __m512, c: __m512, d: __m512, dest: &mut [f32]) {
             assert!(dest.len() >= 4 * F32VecAvx512::LEN);
             
             
@@ -297,7 +277,7 @@ unsafe impl F32SimdVec for F32VecAvx512 {
 
             
             unsafe {
-                let dest_ptr = dest.as_mut_ptr().cast::<f32>();
+                let dest_ptr = dest.as_mut_ptr();
                 _mm512_storeu_ps(dest_ptr, out0);
                 _mm512_storeu_ps(dest_ptr.add(16), out1);
                 _mm512_storeu_ps(dest_ptr.add(32), out2);
@@ -434,7 +414,7 @@ unsafe impl F32SimdVec for F32VecAvx512 {
 
             
             unsafe {
-                let ptr = dest.as_mut_ptr().cast::<f32>();
+                let ptr = dest.as_mut_ptr();
                 _mm512_storeu_ps(ptr, out0);
                 _mm512_storeu_ps(ptr.add(16), out1);
                 _mm512_storeu_ps(ptr.add(32), out2);
@@ -805,7 +785,7 @@ unsafe impl F32SimdVec for F32VecAvx512 {
         #[inline]
         fn store_f16_bits_impl(v: __m512, dest: &mut [u16]) {
             assert!(dest.len() >= F32VecAvx512::LEN);
-            let bits = _mm512_cvtps_ph::<{ _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC }>(v);
+            let bits = _mm512_cvtps_ph::<{ _MM_FROUND_TO_NEAREST_INT }>(v);
             
             unsafe { _mm256_storeu_si256(dest.as_mut_ptr().cast(), bits) };
         }
@@ -1276,9 +1256,7 @@ impl U32SimdVec for U32VecAvx512 {
 #[repr(transparent)]
 pub struct U8VecAvx512(__m512i, Avx512Descriptor);
 
-
-
-unsafe impl U8SimdVec for U8VecAvx512 {
+impl U8SimdVec for U8VecAvx512 {
     type Descriptor = Avx512Descriptor;
     const LEN: usize = 64;
 
@@ -1305,10 +1283,10 @@ unsafe impl U8SimdVec for U8VecAvx512 {
     }
 
     #[inline(always)]
-    fn store_interleaved_2_uninit(a: Self, b: Self, dest: &mut [MaybeUninit<u8>]) {
+    fn store_interleaved_2(a: Self, b: Self, dest: &mut [u8]) {
         #[target_feature(enable = "avx512f,avx512bw")]
         #[inline]
-        fn impl_u8_2(a: __m512i, b: __m512i, dest: &mut [MaybeUninit<u8>]) {
+        fn impl_u8_2(a: __m512i, b: __m512i, dest: &mut [u8]) {
             assert!(dest.len() >= 2 * U8VecAvx512::LEN);
             let lo = _mm512_unpacklo_epi8(a, b);
             let hi = _mm512_unpackhi_epi8(a, b);
@@ -1329,10 +1307,10 @@ unsafe impl U8SimdVec for U8VecAvx512 {
     }
 
     #[inline(always)]
-    fn store_interleaved_3_uninit(a: Self, b: Self, c: Self, dest: &mut [MaybeUninit<u8>]) {
+    fn store_interleaved_3(a: Self, b: Self, c: Self, dest: &mut [u8]) {
         #[target_feature(enable = "avx512f,avx512bw")]
         #[inline]
-        fn impl_u8_3(a: __m512i, b: __m512i, c: __m512i, dest: &mut [MaybeUninit<u8>]) {
+        fn impl_u8_3(a: __m512i, b: __m512i, c: __m512i, dest: &mut [u8]) {
             assert!(dest.len() >= 3 * U8VecAvx512::LEN);
 
             let mask_a0 = _mm512_broadcast_i32x4(_mm_setr_epi8(
@@ -1412,16 +1390,10 @@ unsafe impl U8SimdVec for U8VecAvx512 {
     }
 
     #[inline(always)]
-    fn store_interleaved_4_uninit(
-        a: Self,
-        b: Self,
-        c: Self,
-        d: Self,
-        dest: &mut [MaybeUninit<u8>],
-    ) {
+    fn store_interleaved_4(a: Self, b: Self, c: Self, d: Self, dest: &mut [u8]) {
         #[target_feature(enable = "avx512f,avx512bw")]
         #[inline]
-        fn impl_u8_4(a: __m512i, b: __m512i, c: __m512i, d: __m512i, dest: &mut [MaybeUninit<u8>]) {
+        fn impl_u8_4(a: __m512i, b: __m512i, c: __m512i, d: __m512i, dest: &mut [u8]) {
             assert!(dest.len() >= 4 * U8VecAvx512::LEN);
             let ab_lo = _mm512_unpacklo_epi8(a, b);
             let ab_hi = _mm512_unpackhi_epi8(a, b);
@@ -1467,9 +1439,7 @@ unsafe impl U8SimdVec for U8VecAvx512 {
 #[repr(transparent)]
 pub struct U16VecAvx512(__m512i, Avx512Descriptor);
 
-
-
-unsafe impl U16SimdVec for U16VecAvx512 {
+impl U16SimdVec for U16VecAvx512 {
     type Descriptor = Avx512Descriptor;
     const LEN: usize = 32;
 
@@ -1496,10 +1466,10 @@ unsafe impl U16SimdVec for U16VecAvx512 {
     }
 
     #[inline(always)]
-    fn store_interleaved_2_uninit(a: Self, b: Self, dest: &mut [MaybeUninit<u16>]) {
+    fn store_interleaved_2(a: Self, b: Self, dest: &mut [u16]) {
         #[target_feature(enable = "avx512f,avx512bw")]
         #[inline]
-        fn impl_u16_2(a: __m512i, b: __m512i, dest: &mut [MaybeUninit<u16>]) {
+        fn impl_u16_2(a: __m512i, b: __m512i, dest: &mut [u16]) {
             assert!(dest.len() >= 2 * U16VecAvx512::LEN);
             let lo = _mm512_unpacklo_epi16(a, b);
             let hi = _mm512_unpackhi_epi16(a, b);
@@ -1520,10 +1490,10 @@ unsafe impl U16SimdVec for U16VecAvx512 {
     }
 
     #[inline(always)]
-    fn store_interleaved_3_uninit(a: Self, b: Self, c: Self, dest: &mut [MaybeUninit<u16>]) {
+    fn store_interleaved_3(a: Self, b: Self, c: Self, dest: &mut [u16]) {
         #[target_feature(enable = "avx512f,avx512bw")]
         #[inline]
-        fn impl_u16_3(a: __m512i, b: __m512i, c: __m512i, dest: &mut [MaybeUninit<u16>]) {
+        fn impl_u16_3(a: __m512i, b: __m512i, c: __m512i, dest: &mut [u16]) {
             assert!(dest.len() >= 3 * U16VecAvx512::LEN);
 
             let mask_a0 = _mm512_broadcast_i32x4(_mm_setr_epi8(
@@ -1606,22 +1576,10 @@ unsafe impl U16SimdVec for U16VecAvx512 {
     }
 
     #[inline(always)]
-    fn store_interleaved_4_uninit(
-        a: Self,
-        b: Self,
-        c: Self,
-        d: Self,
-        dest: &mut [MaybeUninit<u16>],
-    ) {
+    fn store_interleaved_4(a: Self, b: Self, c: Self, d: Self, dest: &mut [u16]) {
         #[target_feature(enable = "avx512f,avx512bw")]
         #[inline]
-        fn impl_u16_4(
-            a: __m512i,
-            b: __m512i,
-            c: __m512i,
-            d: __m512i,
-            dest: &mut [MaybeUninit<u16>],
-        ) {
+        fn impl_u16_4(a: __m512i, b: __m512i, c: __m512i, d: __m512i, dest: &mut [u16]) {
             assert!(dest.len() >= 4 * U16VecAvx512::LEN);
             let ab_lo = _mm512_unpacklo_epi16(a, b);
             let ab_hi = _mm512_unpackhi_epi16(a, b);
