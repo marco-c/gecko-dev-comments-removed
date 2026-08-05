@@ -261,6 +261,13 @@ class TreeMetadataEmitter(LoggingMixin):
         
         
         for lib in self._static_linking_shared:
+            
+            
+            
+            
+            
+            if isinstance(lib, RustTests):
+                continue
             if all(isinstance(o, StaticLibrary) for o in recurse_refs(lib)):
                 shared_libs = sorted(
                     l.basename
@@ -378,7 +385,14 @@ class TreeMetadataEmitter(LoggingMixin):
         
         if (
             not isinstance(
-                obj, (StaticLibrary, HostLibrary, HostSharedLibrary, BaseRustProgram)
+                obj,
+                (
+                    StaticLibrary,
+                    HostLibrary,
+                    HostSharedLibrary,
+                    BaseRustProgram,
+                    RustTests,
+                ),
             )
             and obj.cxx_link
         ):
@@ -494,7 +508,7 @@ class TreeMetadataEmitter(LoggingMixin):
                 context,
             )
 
-        elif isinstance(obj, StaticLibrary) and isinstance(
+        elif isinstance(obj, (StaticLibrary, RustTests)) and isinstance(
             candidates[0], SharedLibrary
         ):
             self._static_linking_shared.add(obj)
@@ -1666,7 +1680,10 @@ class TreeMetadataEmitter(LoggingMixin):
             
             features = context.get("RUST_TEST_FEATURES", [])
 
-            yield RustTests(context, rust_tests, features)
+            rust_tests_obj = RustTests(context, rust_tests, features)
+            
+            self._linkage.append((context, rust_tests_obj, "USE_LIBS"))
+            yield rust_tests_obj
 
         for obj in self._process_test_manifests(context):
             yield obj
