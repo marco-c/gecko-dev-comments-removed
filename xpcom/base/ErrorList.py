@@ -92,6 +92,7 @@ modules["WIN32"] = Mod(44)
 modules["WDBA"] = Mod(45)
 modules["DOM_QM"] = Mod(46)
 modules["CLIPBOARD"] = Mod(47)
+modules["DOM_SERIAL"] = Mod(48)
 
 
 
@@ -1266,6 +1267,13 @@ with modules["DOM_QM"]:
 
 with modules["CLIPBOARD"]:
     errors["NS_ERROR_CLIPBOARD_TOO_BIG"] = FAILURE(1)
+
+
+
+
+with modules["DOM_SERIAL"]:
+    
+    errors["NS_ERROR_DOM_SERIAL_PARITY_ERROR"] = FAILURE(1)
 
 
 

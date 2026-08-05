@@ -70,6 +70,9 @@ enum DOM4ErrorTypeCodeMap {
 
   
   NotAllowedError = 0,
+
+  
+  ParityError = 0,
 };
 
 #define DOM4_MSG_DEF(name, message, nsresult) \
