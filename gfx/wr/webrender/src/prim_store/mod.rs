@@ -196,7 +196,7 @@ pub use api::key_types::PolygonKey;
 
 
 
-pub use api::key_types::{PointKey, SizeKey, VectorKey};
+pub use api::key_types::VectorKey;
 
 
 

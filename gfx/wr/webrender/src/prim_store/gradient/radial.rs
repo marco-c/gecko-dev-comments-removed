@@ -17,11 +17,11 @@ use crate::intern::{Internable, InternDebug, Handle as InternHandle};
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{InternablePrimitive};
 use crate::prim_store::{PrimitiveKind, PrimitiveOpacity};
-use crate::prim_store::{PrimKeyCommonData, PrimTemplateCommonData, PrimitiveStore};
-use crate::prim_store::{NinePatchDescriptor, PointKey, SizeKey};
+use crate::prim_store::{PrimTemplateCommonData, PrimitiveStore};
+use crate::prim_store::NinePatchDescriptor;
 
 use std::ops::{Deref, DerefMut};
-use super::{stops_and_min_alpha, GradientStopKey};
+use super::stops_and_min_alpha;
 
 
 
@@ -29,39 +29,9 @@ use super::{stops_and_min_alpha, GradientStopKey};
 pub use api::key_types::RadialGradientParams;
 
 
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Clone, Eq, PartialEq, Hash, MallocSizeOf)]
-pub struct RadialGradientKey {
-    pub common: PrimKeyCommonData,
-    pub extend_mode: ExtendMode,
-    pub center: PointKey,
-    pub params: RadialGradientParams,
-    
-    
-    pub stretch_ratio: SizeKey,
-    pub stops: Vec<GradientStopKey>,
-    pub tile_spacing: SizeKey,
-    pub nine_patch: Option<Box<NinePatchDescriptor>>,
-}
 
-impl RadialGradientKey {
-    pub fn new(
-        info: &LayoutPrimitiveInfo,
-        radial_grad: RadialGradient,
-    ) -> Self {
-        RadialGradientKey {
-            common: info.into(),
-            extend_mode: radial_grad.extend_mode,
-            center: radial_grad.center,
-            params: radial_grad.params,
-            stretch_ratio: radial_grad.stretch_ratio,
-            stops: radial_grad.stops,
-            tile_spacing: radial_grad.tile_spacing,
-            nine_patch: radial_grad.nine_patch,
-        }
-    }
-}
+
+pub use api::interned_prims::RadialGradientKey;
 
 impl InternDebug for RadialGradientKey {}
 
@@ -171,7 +141,7 @@ impl InternablePrimitive for RadialGradient {
         self,
         info: &LayoutPrimitiveInfo,
     ) -> RadialGradientKey {
-        RadialGradientKey::new(info, self)
+        RadialGradientKey::new(info.into(), self)
     }
 
     fn make_instance_kind(
