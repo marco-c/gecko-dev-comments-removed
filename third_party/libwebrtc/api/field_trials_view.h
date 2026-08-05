@@ -46,6 +46,10 @@ class RTC_EXPORT FieldTrialsView {
 
   
   
+  virtual bool IsTest() const { return false; }
+
+  
+  
   
   
   

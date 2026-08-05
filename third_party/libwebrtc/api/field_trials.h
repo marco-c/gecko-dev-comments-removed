@@ -50,7 +50,10 @@ class FieldTrials : public FieldTrialsRegistry {
 
   
   
-  explicit FieldTrials(absl::string_view s);
+  explicit FieldTrials(absl::string_view s) : FieldTrials(s, false) {}
+  
+  
+  FieldTrials(absl::string_view s, bool is_test);
 
   FieldTrials(const FieldTrials&);
   FieldTrials(FieldTrials&&);
@@ -87,6 +90,8 @@ class FieldTrials : public FieldTrialsRegistry {
 #endif
   }
 
+  bool IsTest() const override { return is_test_; }
+
  private:
   explicit FieldTrials(flat_map<std::string, std::string> key_value_map)
       : key_value_map_(std::move(key_value_map)) {}
@@ -102,6 +107,9 @@ class FieldTrials : public FieldTrialsRegistry {
 #endif
 
   flat_map<std::string, std::string> key_value_map_;
+  
+  
+  bool is_test_ = false;
 };
 
 template <typename Sink>
@@ -114,6 +122,9 @@ void AbslStringify(Sink& sink, const FieldTrials& self) {
     
     
     sink.Append("//");
+    if (self.is_test_) {
+      sink.Append("Test");
+    }
   }
 }
 
