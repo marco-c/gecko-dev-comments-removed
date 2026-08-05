@@ -3207,7 +3207,11 @@ void QuotaManager::UnloadQuota() {
 
           auto metadata = originInfo->LockedFlattenToFullOriginMetadata();
           metadata.mDirty = false;
-          QM_WARNONLY_TRY(mOriginUpserter->Refresh(metadata));
+          QM_WARNONLY_TRY_UNWRAP(auto originDirectory,
+                                 GetOriginDirectory(metadata));
+          if (originDirectory) {
+            CreateDirectoryMetadata2(*originDirectory.ref(), metadata);
+          }
         }
 
         groupInfo->LockedRemoveOriginInfos();
@@ -3581,6 +3585,12 @@ nsresult QuotaManager::CreateDirectoryMetadata2(
 
   QM_TRY(ArtificialFailure(
       nsIQuotaArtificialFailure::CATEGORY_CREATE_DIRECTORY_METADATA2));
+
+  if (!aFullOriginMetadata.mIsPrivate) {
+    MOZ_ASSERT(mOriginUpserter, "We must have an origin upserter here");
+    
+    QM_WARNONLY_TRY(mOriginUpserter->Refresh(aFullOriginMetadata));
+  }
 
   QM_TRY_INSPECT(const auto& file, MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
                                        nsCOMPtr<nsIFile>, aDirectory, Clone));
@@ -4394,21 +4404,8 @@ nsresult QuotaManager::InitializeOrigin(
       
       
 
-      if (fullOriginMetadata.EqualsIgnoringOriginState(aFullOriginMetadata)) {
-        
-        
-
-        QM_TRY(MOZ_TO_RESULT(
-            SaveDirectoryMetadataHeader(*aDirectory, fullOriginMetadata)));
-
-      } else {
-        
-        
-        
-
-        QM_TRY(MOZ_TO_RESULT(
-            CreateDirectoryMetadata2(*aDirectory, fullOriginMetadata)));
-      }
+      QM_TRY(MOZ_TO_RESULT(
+          CreateDirectoryMetadata2(*aDirectory, fullOriginMetadata)));
     }
 
     InitQuotaForOrigin(fullOriginMetadata);
