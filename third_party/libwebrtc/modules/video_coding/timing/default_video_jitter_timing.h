@@ -16,9 +16,9 @@
 
 #include "api/environment/environment.h"
 #include "api/field_trials_view.h"
-#include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "api/video/timing/video_jitter_timing_interface.h"
 #include "modules/video_coding/timing/inter_frame_delay_variation_calculator.h"
 #include "modules/video_coding/timing/jitter_estimator.h"
 #include "modules/video_coding/timing/timestamp_extrapolator.h"
@@ -26,31 +26,29 @@
 
 namespace webrtc {
 
-class DefaultVideoJitterTiming {
+class DefaultVideoJitterTiming : public VideoJitterTimingInterface {
  public:
   explicit DefaultVideoJitterTiming(const Environment& env);
   
   DefaultVideoJitterTiming(Clock* clock, const FieldTrialsView& field_trials);
-  ~DefaultVideoJitterTiming() = default;
+  ~DefaultVideoJitterTiming() override;
 
   
-  void Reset();
+  void Reset() override;
 
   
-  void OnCompleteTemporalUnit(uint32_t rtp_timestamp, Timestamp receive_time);
+  void OnCompleteFrame(uint32_t rtp_timestamp, Timestamp receive_time) override;
 
   
-  std::optional<Timestamp> ExtrapolateLocalTime(uint32_t rtp_timestamp) const;
+  std::optional<Timestamp> LocalTime(uint32_t rtp_timestamp) const override;
 
   
   
-  std::optional<TimeDelta> OnDecodableTemporalUnit(uint32_t rtp_timestamp,
-                                                   DataSize superframe_size,
-                                                   Timestamp max_receive_time,
-                                                   bool was_retransmitted);
+  std::optional<TimeDelta> OnDecodableTemporalUnit(
+      const TemporalUnitInfo& info) override;
 
   
-  void UpdateRtt(TimeDelta rtt);
+  void OnNetworkUpdate(const NetworkInfo& info) override;
 
  private:
   Clock* const clock_;
