@@ -3282,7 +3282,7 @@ void QuotaManager::UnloadQuota() {
                                  GetOriginDirectory(metadata));
           if (originDirectory) {
             DebugOnly<nsresult> rv =
-                CreateDirectoryMetadata2(*originDirectory.ref(), metadata);
+                SettleDirectoryMetadata2(*originDirectory.ref(), metadata);
             MOZ_ASSERT(NS_FAILED(rv) == metadata.mDirty);
           }
         }
@@ -3643,9 +3643,6 @@ QuotaManager::GetOrCreateTemporaryOriginDirectory(
 
     QM_TRY(MOZ_TO_RESULT(
         CreateDirectoryMetadata2(*directory, fullOriginMetadata)));
-    
-    
-    MOZ_ASSERT(!fullOriginMetadata.mDirty);
   }
 
   return std::move(directory);
@@ -3665,20 +3662,6 @@ nsresult QuotaManager::CreateDirectoryMetadata2(
 
   QM_TRY(ArtificialFailure(
       nsIQuotaArtificialFailure::CATEGORY_CREATE_DIRECTORY_METADATA2));
-
-  
-  
-  
-  
-  
-  aFullOriginMetadata.mDirty = false;
-  auto resetBackToDirty = MakeScopeExit(
-      [&aFullOriginMetadata]() { aFullOriginMetadata.mDirty = true; });
-
-  if (!aFullOriginMetadata.mIsPrivate) {
-    MOZ_ASSERT(mOriginUpserter, "We must have an origin upserter here");
-    QM_TRY(mOriginUpserter->Refresh(aFullOriginMetadata));
-  }
 
   QM_TRY_INSPECT(const auto& file, MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
                                        nsCOMPtr<nsIFile>, aDirectory, Clone));
@@ -3730,6 +3713,30 @@ nsresult QuotaManager::CreateDirectoryMetadata2(
 
   QM_TRY(MOZ_TO_RESULT(
       file->RenameTo(nullptr, nsLiteralString(METADATA_V2_FILE_NAME))));
+
+  
+  
+  
+  
+  
+  if (!aFullOriginMetadata.mIsPrivate) {
+    MOZ_ASSERT(mOriginUpserter, "We must have an origin upserter here");
+    QM_TRY(mOriginUpserter->Refresh(aFullOriginMetadata));
+  }
+
+  return NS_OK;
+}
+
+nsresult QuotaManager::SettleDirectoryMetadata2(
+    nsIFile& aDirectory, FullOriginMetadata& aFullOriginMetadata) {
+  AssertIsOnIOThread();
+
+  aFullOriginMetadata.mDirty = false;
+  auto resetBackToDirty = MakeScopeExit(
+      [&aFullOriginMetadata]() { aFullOriginMetadata.mDirty = true; });
+
+  QM_TRY(
+      MOZ_TO_RESULT(CreateDirectoryMetadata2(aDirectory, aFullOriginMetadata)));
 
   resetBackToDirty.release();
 
@@ -4039,12 +4046,8 @@ Result<FullOriginMetadata, nsresult> QuotaManager::LoadFullOriginMetadata(
                  MaybeUpdateLastAccessTimeForOrigin(fullOriginMetadata));
 
   if (groupUpdated || lastAccessTimeUpdated) {
-    
-    
     QM_TRY(MOZ_TO_RESULT(
-        CreateDirectoryMetadata2(*aDirectory, fullOriginMetadata)));
-    
-    
+        SettleDirectoryMetadata2(*aDirectory, fullOriginMetadata)));
     MOZ_ASSERT(!fullOriginMetadata.mDirty);
   }
 
@@ -4670,21 +4673,10 @@ nsresult QuotaManager::InitializeOrigin(
     fullOriginMetadata.mOriginUsage = usage.value();
     fullOriginMetadata.mClientUsages = clientUsages;
 
-    if (StaticPrefs::
-            dom_quotaManager_originInitialization_updateOriginMetadata() &&
-        !fullOriginMetadata.Equals(aFullOriginMetadata)) {
-      
-      
-      
-
-      QM_TRY(MOZ_TO_RESULT(
-          CreateDirectoryMetadata2(*aDirectory, fullOriginMetadata)));
-      
-      
-      
-      
-      
-      MOZ_ASSERT(!fullOriginMetadata.mDirty);
+    
+    
+    if (!fullOriginMetadata.Equals(aFullOriginMetadata)) {
+      fullOriginMetadata.mDirty = true;
     }
 
     InitQuotaForOrigin(fullOriginMetadata,  true,
@@ -5979,13 +5971,10 @@ void QuotaManager::FlushDirtyOriginInfos() {
     const nsCOMPtr<nsIFile>& directory = directoryResult.inspect();
 
     if (NS_WARN_IF(NS_FAILED(
-            CreateDirectoryMetadata2(*directory, fullOriginMetadata)))) {
+            SettleDirectoryMetadata2(*directory, fullOriginMetadata)))) {
       itemsToRequeue.AppendElement(std::move(info));
       continue;
     }
-    
-    
-    
     MOZ_ASSERT(!fullOriginMetadata.mDirty);
 
     info->LockedSetClean();
@@ -6786,10 +6775,6 @@ QuotaManager::EnsurePersistentOriginIsInitializedInternal(
             
             QM_TRY(MOZ_TO_RESULT(
                 CreateDirectoryMetadata2(*directory, fullOriginMetadata)));
-            
-            
-            
-            MOZ_ASSERT(!fullOriginMetadata.mDirty);
 
             return fullOriginMetadata;
           }
@@ -7028,11 +7013,6 @@ QuotaManager::EnsureTemporaryOriginIsInitializedInternal(
       
       QM_TRY(MOZ_TO_RESULT(
           CreateDirectoryMetadata2(*directory, fullOriginMetadata)));
-      
-      
-      
-      
-      MOZ_ASSERT(!fullOriginMetadata.mDirty);
 
       
       InitQuotaForOrigin(fullOriginMetadata);

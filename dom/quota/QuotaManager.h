@@ -309,6 +309,10 @@ class QuotaManager final : public BackgroundThreadObject {
   nsresult CreateDirectoryMetadata2(nsIFile& aDirectory,
                                     FullOriginMetadata& aFullOriginMetadata);
 
+  
+  nsresult SettleDirectoryMetadata2(nsIFile& aDirectory,
+                                    FullOriginMetadata& aFullOriginMetadata);
+
   nsresult RestoreDirectoryMetadata2(nsIFile* aDirectory);
 
   
