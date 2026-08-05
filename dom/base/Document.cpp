@@ -6880,13 +6880,11 @@ void Document::UpdateTextEditContext() {
     oldActiveEditContext->Deactivate();
   }
   
-  if (newActiveEditContext) {
-    
-    
-    
-  }
-  
   mActiveEditContext = newActiveEditContext;
+  
+  
+  
+  EditContext::NotifyActiveEditContextChanged(*this);
 }
 
 void Document::MaybeDispatchCheckKeyPressEventModelEvent() {

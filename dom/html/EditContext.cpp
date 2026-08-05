@@ -23,6 +23,7 @@
 #include "mozilla/dom/TextUpdateEvent.h"
 #include "mozilla/intl/Segmenter.h"
 #include "nsDOMCSSDeclaration.h"
+#include "nsFocusManager.h"
 #include "nsGenericHTMLElement.h"
 #include "nsLayoutUtils.h"
 #include "nsTextNode.h"
@@ -703,6 +704,32 @@ LayoutDeviceIntRect EditContext::FallbackBounds() const {
   nsPresContext* presContext =
       mAssociatedElement->GetPrimaryFrame()->PresContext();
   return ToRootRelativeDeviceRect(*presContext, *appUnitsRect);
+}
+
+
+void EditContext::NotifyActiveEditContextChanged(Document& aDocument) {
+  RefPtr<HTMLEditor> editor = aDocument.GetHTMLEditor();
+  if (!editor) {
+    return;
+  }
+
+  RefPtr<Element> focusedElement = editor->GetFocusedElement();
+  if (!focusedElement ||
+      focusedElement != IMEStateManager::GetFocusedElement()) {
+    
+    
+    
+    
+    return;
+  }
+  auto newStateOrError = editor->GetPreferredIMEState();
+  
+  MOZ_ASSERT(newStateOrError.isOk(),
+             "HTMLEditor::GetPreferredIMEState() failed");
+  const widget::IMEState defaultState(widget::IMEEnabled::Disabled);
+  IMEStateManager::UpdateIMEState(newStateOrError.unwrapOr(defaultState),
+                                  focusedElement, *editor);
+  
 }
 
 }  

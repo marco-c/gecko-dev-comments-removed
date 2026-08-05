@@ -865,7 +865,8 @@ nsresult HTMLEditor::OnFocus(const nsINode& aOriginalEventTargetNode) {
   mIsInDesignMode = aOriginalEventTargetNode.IsInDesignMode();
   if (StaticPrefs::dom_editcontext_enabled() && EditContext::IsAnyAttached()) {
     
-    aOriginalEventTargetNode.OwnerDoc()->UpdateTextEditContext();
+    RefPtr doc = aOriginalEventTargetNode.OwnerDoc();
+    doc->UpdateTextEditContext();
   }
 
   return NS_OK;
@@ -1026,7 +1027,8 @@ nsresult HTMLEditor::OnBlur(const EventTarget* aEventTarget) {
   if (StaticPrefs::dom_editcontext_enabled() && EditContext::IsAnyAttached() &&
       eventTargetAsElement) {
     
-    eventTargetAsElement->OwnerDoc()->UpdateTextEditContext();
+    RefPtr doc = eventTargetAsElement->OwnerDoc();
+    doc->UpdateTextEditContext();
   }
 
   return rv;

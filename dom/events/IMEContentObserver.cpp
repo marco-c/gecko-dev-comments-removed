@@ -23,6 +23,7 @@
 #include "mozilla/TextEvents.h"
 #include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/EditContext.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Selection.h"
 #include "nsAtom.h"
@@ -261,20 +262,30 @@ bool IMEContentObserver::InitWithEditor(nsPresContext& aPresContext,
 
   RefPtr<PresShell> presShell = aPresContext.GetPresShell();
 
-  RefPtr selection = GetSelection();
-  if (NS_WARN_IF(!selection)) {
-    return false;
-  }
+  if (EditContext* editContext = aEditorBase.ComputeEditContext()) {
+    mIsForEditContext = true;
+    
+    
+    
+    mRootElement = editContext->GetAssociatedElement();
+    MOZ_ASSERT(mRootElement,
+               "Active EditContext should always have an associated element.");
+  } else {
+    RefPtr selection = GetSelection();
+    if (NS_WARN_IF(!selection)) {
+      return false;
+    }
 
-  mRootElement = ComputeRootElement(presShell);
-  
-  
-  if (!mRootElement && IsForDesignMode()) {
-    return false;
-  }
-  
-  if (NS_WARN_IF(!mRootElement)) {
-    return false;
+    mRootElement = ComputeRootElement(presShell);
+    
+    
+    if (!mRootElement && IsForDesignMode()) {
+      return false;
+    }
+    
+    if (NS_WARN_IF(!mRootElement)) {
+      return false;
+    }
   }
 
   if (mEditorBase->IsTextEditor()) {
@@ -390,7 +401,7 @@ void IMEContentObserver::ObserveEditableNode() {
   
   
   
-  if (!mRootElement->HasFlag(ELEMENT_HAS_EDIT_CONTEXT)) {
+  if (!mIsForEditContext) {
     mRootElement->AddMutationObserver(this);
     
     
@@ -537,6 +548,14 @@ bool IMEContentObserver::IsObserving(const nsPresContext& aPresContext,
   
   
   else if (!mIsTextControl) {
+    return false;
+  }
+  const bool hasEditContext =
+      aElement && aElement->HasFlag(ELEMENT_HAS_EDIT_CONTEXT);
+  if (hasEditContext != mIsForEditContext) {
+    
+    
+    
     return false;
   }
   return IsObservingElement(aPresContext, aElement);
@@ -738,7 +757,7 @@ void IMEContentObserver::OnSelectionChange(Selection& aSelection) {
   if (!mIsObserving || !mWidget) {
     return;
   }
-  if (mRootElement->HasFlag(ELEMENT_HAS_EDIT_CONTEXT)) {
+  if (mIsForEditContext) {
     
     
     

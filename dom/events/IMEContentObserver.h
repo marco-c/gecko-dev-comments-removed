@@ -159,6 +159,16 @@ class IMEContentObserver final : public nsStubMutationObserver,
                                            const EditorBase& aEditorBase) const;
   bool IsObserving(const TextComposition& aTextComposition) const;
   bool WasInitializedWith(const EditorBase& aEditorBase) const {
+    
+    
+    
+    
+    
+    
+    if (!!aEditorBase.ComputeEditContext() != mIsForEditContext) {
+      return false;
+    }
+
     return mEditorBase == &aEditorBase;
   }
   bool IsEditorHandlingEventForComposition() const;
@@ -865,6 +875,7 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
   bool mIsObserving = false;
   bool mIsTextControl = false;
+  bool mIsForEditContext = false;
   bool mIMEHasFocus = false;
   bool mNeedsToNotifyIMEOfFocusSet = false;
   bool mNeedsToNotifyIMEOfTextChange = false;

@@ -452,7 +452,8 @@ void nsGenericHTMLElement::SetEditContext(mozilla::dom::EditContext* aContext,
     ChangeEditableState(delta);
   }
   
-  OwnerDoc()->UpdateTextEditContext();
+  RefPtr doc = OwnerDoc();
+  doc->UpdateTextEditContext();
 }
 
 bool nsGenericHTMLElement::InNavQuirksMode(Document* aDoc) {
