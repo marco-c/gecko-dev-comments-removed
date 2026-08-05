@@ -942,6 +942,7 @@ function synthesizeTouch(
     rectX = [rect.left];
     rectY = [rect.top];
   }
+
   const offsetX = (() => {
     if (Array.isArray(aOffsetX)) {
       let ret = [];
@@ -952,6 +953,7 @@ function synthesizeTouch(
     }
     return aOffsetX + rectX[0];
   })();
+
   const offsetY = (() => {
     if (Array.isArray(aOffsetY)) {
       let ret = [];
@@ -962,8 +964,40 @@ function synthesizeTouch(
     }
     return aOffsetY + rectY[0];
   })();
+
   return synthesizeTouchAtPoint(offsetX, offsetY, aEvent, aWindow, aCallback);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function synthesizeTouchAtCenter(aTarget, aEvent, aWindow, aCallback) {
+  const rect = aTarget.getBoundingClientRect();
+
+  return synthesizeTouchAtPoint(
+    rect.left + rect.width / 2,
+    rect.top + rect.height / 2,
+    aEvent,
+    aWindow,
+    aCallback
+  );
+}
+
 
 
 
@@ -1014,6 +1048,7 @@ function synthesizeTouchAtPoint(
       throw new Error(`${aName} is different length array`);
     }
   }
+
   const leftArray = (() => {
     if (Array.isArray(aLeft)) {
       for (let i = 0; i < aLeft.length; i++) {
@@ -1023,6 +1058,7 @@ function synthesizeTouchAtPoint(
     }
     return new Array(arrayLength).fill(_EU_roundDevicePixels(aLeft));
   })();
+
   const topArray = (() => {
     if (Array.isArray(aTop)) {
       throwExceptionIfDifferentLengthArray(aTop, "aTop");
@@ -1033,6 +1069,7 @@ function synthesizeTouchAtPoint(
     }
     return new Array(arrayLength).fill(_EU_roundDevicePixels(aTop));
   })();
+
   const idArray = (() => {
     if ("id" in aEvent && Array.isArray(aEvent.id)) {
       throwExceptionIfDifferentLengthArray(aEvent.id, "aEvent.id");
@@ -1045,6 +1082,7 @@ function synthesizeTouchAtPoint(
     }
     return ret;
   })();
+
   function getSameLengthArrayOfEventProperty(aProperty, aDefaultValue) {
     if (aProperty in aEvent && Array.isArray(aEvent[aProperty])) {
       throwExceptionIfDifferentLengthArray(
@@ -1056,6 +1094,7 @@ function synthesizeTouchAtPoint(
     }
     return new Array(arrayLength).fill(aEvent[aProperty] || aDefaultValue);
   }
+
   const rxArray = getSameLengthArrayOfEventProperty("rx", 1);
   const ryArray = getSameLengthArrayOfEventProperty("ry", 1);
   const angleArray = getSameLengthArrayOfEventProperty("angle", 0);
@@ -1110,29 +1149,8 @@ function synthesizeTouchAtPoint(
 
   _EU_maybeWrap(aWindow).synthesizeTouchEvent("touchstart", ...args);
   _EU_maybeWrap(aWindow).synthesizeTouchEvent("touchend", ...args, aCallback);
+
   return false;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function synthesizeTouchAtCenter(aTarget, aEvent, aWindow, aCallback) {
-  var rect = aTarget.getBoundingClientRect();
-  return synthesizeTouchAtPoint(
-    rect.left + rect.width / 2,
-    rect.top + rect.height / 2,
-    aEvent,
-    aWindow,
-    aCallback
-  );
 }
 
 
