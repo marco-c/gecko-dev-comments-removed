@@ -7600,7 +7600,7 @@ nsresult QuotaManager::FlagOriginInfoAsDirtyOnDisk(
     
     
     runnable->Run();
-    return sharedState->mResult;
+    return sharedState->WaitForResult();
   }
 
   nsresult rv = mIOThread->get()->Dispatch(runnable, NS_DISPATCH_NORMAL);
