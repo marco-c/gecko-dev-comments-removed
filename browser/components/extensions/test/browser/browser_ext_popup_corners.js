@@ -8,6 +8,14 @@ const novaEnabled = Services.prefs.getBoolPref(
 
 info(`Run with Nova browser styles ${novaEnabled ? "enabled" : "disabled"}`);
 
+
+
+
+
+const isLinuxWithoutCSDTransparency =
+  AppConstants.platform == "linux" &&
+  !window.matchMedia("(-moz-gtk-csd-transparency-available)").matches;
+
 add_task(async function testPopupBorderRadius() {
   let extension = ExtensionTestUtils.loadExtension({
     background() {
@@ -47,7 +55,12 @@ add_task(async function testPopupBorderRadius() {
   
   
   
-  let expectedRadius = widget.disallowSubView ? defaultRadius : "0px";
+  
+  
+  let expectedRadius =
+    !widget.disallowSubView || isLinuxWithoutCSDTransparency
+      ? "0px"
+      : defaultRadius;
 
   async function testPanel(browser, standAlone = true) {
     let panel = getPanelForNode(browser);
@@ -82,19 +95,23 @@ add_task(async function testPopupBorderRadius() {
         is(
           viewStyle[prop],
           panelStyle[prop],
-          `Panel and view ${prop} should be the same`
+          `Panel and view ${prop} should be the same (${expectedRadius})`
         );
         is(
           bodyStyle.get(prop),
           panelStyle[prop],
-          `Panel and body ${prop} should be the same`
+          `Panel and body ${prop} should be the same (${expectedRadius})`
         );
       } else {
-        is(viewStyle[prop], expectedRadius, `View node ${prop} should be 0px`);
+        is(
+          viewStyle[prop],
+          expectedRadius,
+          `View node ${prop} should be ${expectedRadius}`
+        );
         is(
           bodyStyle.get(prop),
           expectedRadius,
-          `Body node ${prop} should be 0px`
+          `Body node ${prop} should be ${expectedRadius}`
         );
       }
     }
