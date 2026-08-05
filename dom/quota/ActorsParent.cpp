@@ -2608,8 +2608,7 @@ void QuotaManager::Shutdown() {
 
   
 
-  ScopedLogExtraInfo scope{ScopedLogExtraInfo::kTagContextTainted,
-                           "dom::quota::QuotaManager::Shutdown"_ns};
+  QM_SCOPED_CONTEXT("dom::quota::QuotaManager::Shutdown"_ns);
   GECKO_TRACE_SCOPE("dom::quota", "QuotaManager::Shutdown");
 
   
@@ -3573,9 +3572,8 @@ QuotaManager::GetOrCreateTemporaryOriginDirectory(
   MOZ_ASSERT(IsTemporaryGroupInitializedInternal(aOriginMetadata));
   MOZ_ASSERT(IsTemporaryOriginInitializedInternal(aOriginMetadata));
 
-  ScopedLogExtraInfo scope{
-      ScopedLogExtraInfo::kTagContextTainted,
-      "dom::quota::QuotaManager::GetOrCreateTemporaryOriginDirectory"_ns};
+  QM_SCOPED_CONTEXT(
+      "dom::quota::QuotaManager::GetOrCreateTemporaryOriginDirectory"_ns);
 
   
   
