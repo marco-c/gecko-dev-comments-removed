@@ -10,6 +10,8 @@
 
 #include "libyuv/rotate_argb.h"
 
+#include <limits.h>
+
 #include "libyuv/convert.h"
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"
@@ -84,7 +86,7 @@ static int ARGBRotate90(const uint8_t* src_argb,
   
   
   
-  src_argb += src_stride_argb * (height - 1);
+  src_argb += (ptrdiff_t)src_stride_argb * (height - 1);
   src_stride_argb = -src_stride_argb;
   return ARGBTranspose(src_argb, src_stride_argb, dst_argb, dst_stride_argb,
                        width, height);
@@ -99,7 +101,7 @@ static int ARGBRotate270(const uint8_t* src_argb,
   
   
   
-  dst_argb += dst_stride_argb * (width - 1);
+  dst_argb += (ptrdiff_t)dst_stride_argb * (width - 1);
   dst_stride_argb = -dst_stride_argb;
   return ARGBTranspose(src_argb, src_stride_argb, dst_argb, dst_stride_argb,
                        width, height);
@@ -112,8 +114,8 @@ static int ARGBRotate180(const uint8_t* src_argb,
                          int width,
                          int height) {
   
-  const uint8_t* src_bot = src_argb + src_stride_argb * (height - 1);
-  uint8_t* dst_bot = dst_argb + dst_stride_argb * (height - 1);
+  const uint8_t* src_bot = src_argb + (ptrdiff_t)src_stride_argb * (height - 1);
+  uint8_t* dst_bot = dst_argb + (ptrdiff_t)dst_stride_argb * (height - 1);
   int half_height = (height + 1) >> 1;
   int y;
   void (*ARGBMirrorRow)(const uint8_t* src_argb, uint8_t* dst_argb, int width) =
@@ -222,14 +224,15 @@ int ARGBRotate(const uint8_t* src_argb,
                int width,
                int height,
                enum RotationMode mode) {
-  if (!src_argb || width <= 0 || height == 0 || !dst_argb) {
+  if (!src_argb || width <= 0 || height == 0 || height == INT_MIN ||
+      !dst_argb) {
     return -1;
   }
 
   
   if (height < 0) {
     height = -height;
-    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_argb = src_argb + (ptrdiff_t)(height - 1) * src_stride_argb;
     src_stride_argb = -src_stride_argb;
   }
 
