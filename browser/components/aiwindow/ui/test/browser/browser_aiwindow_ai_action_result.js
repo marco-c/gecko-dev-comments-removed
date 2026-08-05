@@ -73,7 +73,9 @@ add_task(async function test_toggle_expand_collapse() {
         "Expanded section should not be present when collapsed"
       );
 
-      shadow.querySelector(".action-result-header").click();
+      const header = shadow.querySelector(".action-result-header");
+      header.getBoundingClientRect();
+      header.click();
       await el.updateComplete;
 
       Assert.ok(
@@ -86,7 +88,8 @@ add_task(async function test_toggle_expand_collapse() {
         "isExpanded should be true after toggle"
       );
 
-      shadow.querySelector(".action-result-header").click();
+      header.getBoundingClientRect();
+      header.click();
       await el.updateComplete;
 
       Assert.ok(
@@ -272,6 +275,108 @@ add_task(async function test_mixed_l10n_and_plain_strings() {
       Assert.ok(
         rowLabels[1].hasAttribute("data-l10n-id"),
         "L10n row should have data-l10n-id"
+      );
+    });
+  });
+});
+
+add_task(async function test_toggle_dispatches_event() {
+  await withTestPage(async browser => {
+    await setProps(browser, { label: "Closed tabs", isExpanded: false });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const el = content.document.getElementById("test-action-result");
+      const shadow = el.shadowRoot;
+
+      const events = [];
+      el.addEventListener("action-result-toggle", e =>
+        events.push(e.detail?.isExpanded)
+      );
+
+      const header = shadow.querySelector(".action-result-header");
+      header.getBoundingClientRect();
+      header.click();
+      await el.updateComplete;
+      header.getBoundingClientRect();
+      header.click();
+      await el.updateComplete;
+
+      Assert.deepEqual(
+        events,
+        [true, false],
+        "action-result-toggle should fire on each click with the new isExpanded value"
+      );
+    });
+  });
+});
+
+add_task(async function test_loading_state_shimmer_and_swap() {
+  await withTestPage(async browser => {
+    
+    await setProps(browser, { label: "Searching tabs", isLoading: true });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const el = content.document.getElementById("test-action-result");
+      const shadow = el.shadowRoot;
+
+      Assert.ok(
+        el.hasAttribute("is-loading"),
+        "is-loading is reflected while loading"
+      );
+      Assert.ok(
+        el.hasAttribute("shimmering"),
+        "shimmering treatment is applied while loading"
+      );
+      Assert.equal(
+        shadow.querySelector(".action-result-label").textContent.trim(),
+        "Searching tabs",
+        "The pending label is shown while loading"
+      );
+      
+      Assert.equal(
+        content.getComputedStyle(
+          shadow.querySelector(".action-result-header"),
+          "::after"
+        ).display,
+        "none",
+        "The expand chevron is hidden while loading"
+      );
+    });
+
+    
+    
+    await setProps(browser, { label: "Completed 2 steps", isLoading: false });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const el = content.document.getElementById("test-action-result");
+      const shadow = el.shadowRoot;
+
+      await ContentTaskUtils.waitForCondition(
+        () => !el.hasAttribute("shimmering"),
+        "shimmering clears once the sweep finishes"
+      );
+
+      Assert.ok(
+        !el.hasAttribute("is-loading"),
+        "is-loading is removed once completed"
+      );
+      Assert.ok(
+        !el.hasAttribute("settling"),
+        "settling is cleared once completed"
+      );
+      Assert.equal(
+        shadow.querySelector(".action-result-label").textContent.trim(),
+        "Completed 2 steps",
+        "The label swaps to the completed text after the sweep"
+      );
+      
+      Assert.notEqual(
+        content.getComputedStyle(
+          shadow.querySelector(".action-result-header"),
+          "::after"
+        ).display,
+        "none",
+        "The expand chevron is shown again once completed"
       );
     });
   });
