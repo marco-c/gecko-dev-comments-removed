@@ -72,6 +72,10 @@ already_AddRefed<DOMMatrix> CSSTransformComponent::ToMatrix(ErrorResult& aRv) {
   
   auto matrix = [this](ErrorResult& aRv) -> RefPtr<DOMMatrix> {
     switch (GetTransformComponentType()) {
+      case TransformComponentType::Translate: {
+        return GetAsCSSTranslate().ToMatrix(aRv);
+      }
+
       default:
         aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
         return nullptr;
