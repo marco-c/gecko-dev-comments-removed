@@ -23,6 +23,8 @@ const askChatMenu = [
   
   "",
   null,
+  "---",
+  null,
 ];
 
 async function openMenuAndPaste(browser, useFormatting) {

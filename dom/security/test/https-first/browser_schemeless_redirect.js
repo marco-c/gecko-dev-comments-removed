@@ -1,14 +1,14 @@
-/* Any copyright is dedicated to the Public Domain.
-   https://creativecommons.org/publicdomain/zero/1.0/ */
+
+
 
 "use strict";
 
-/* eslint-disable @microsoft/sdl/no-insecure-url */
 
-// Test that schemeless HTTPS-First doesn't try to upgrade redirected loads that
-// orginially did originate from the address bar (Bug 1937386). If it would
-// upgrade those loads, that would result in a false NS_ERROR_REDIRECT_LOOP
-// error.
+
+
+
+
+
 
 ChromeUtils.defineLazyGetter(this, "UrlbarTestUtils", () => {
   const { UrlbarTestUtils: module } = ChromeUtils.importESModule(
