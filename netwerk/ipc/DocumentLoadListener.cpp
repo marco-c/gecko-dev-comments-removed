@@ -627,6 +627,10 @@ void DocumentLoadListener::TryActivateFromPrefetch(nsIURI* aURI) {
   
   
   
+  if (mTiming) {
+    mTiming->SetWasActivatedFromNavigationalPrefetch();
+  }
+
   nsLoadFlags loadFlags = 0;
   mChannel->GetLoadFlags(&loadFlags);
   DebugOnly<nsresult> rv = mChannel->SetLoadFlags(
