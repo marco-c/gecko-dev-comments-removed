@@ -564,17 +564,12 @@ class VirtualenvMixin:
             if uv_executable := get_uv_executable():
                 self.run_command([uv_executable, "--version"])
 
-                
-                
-                python_path = os.environ.get(
-                    "MOZ_PYTHON_HOME", Path(sys.executable).parents[1]
-                )
                 uv_venv_creation_command = [
                     "uv",
                     "venv",
                     venv_path,
                     "--relocatable",
-                    f"--python={python_path}",
+                    f"--python={sys.executable}",
                     "--no-project",
                 ]
                 self.run_command(
@@ -837,6 +832,7 @@ class ResourceMonitoringMixin(PerfherderResourceOptionsMixin):
             self._resource_monitor.start()
 
             upload_dir = self.query_abs_dirs()["abs_blob_upload_dir"]
+            os.makedirs(upload_dir, exist_ok=True)
             self._resource_profile_path = os.path.join(
                 upload_dir, "profile_resource-usage.json"
             )
