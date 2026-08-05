@@ -50,6 +50,12 @@ void AudioSessionManager::SetTypeOverride(uint64_t aBrowsingContextId,
 }
 
 void AudioSessionManager::NotifyAudibilityChanged(uint64_t aBrowsingContextId) {
+  if (mInterruptedBcIds.Contains(aBrowsingContextId)) {
+    
+    
+    LOG("NotifyAudibilityChanged bc={} held: interrupted", aBrowsingContextId);
+    return;
+  }
   const bool bcIsAudibleNow = mController->IsBcAudible(aBrowsingContextId);
   auto existing = mAudioSessions.Lookup(aBrowsingContextId);
   const bool bcWasAudible =
