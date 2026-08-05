@@ -60,8 +60,10 @@ class CSSTransformComponent : public nsISupports, public nsWrapperCache {
   
   bool Is2D() const;
 
+  
   void SetIs2D(bool aArg);
 
+  
   already_AddRefed<DOMMatrix> ToMatrix(ErrorResult& aRv);
 
   void Stringify(nsACString&);

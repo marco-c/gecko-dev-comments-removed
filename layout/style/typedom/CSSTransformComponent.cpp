@@ -17,6 +17,7 @@
 #include "mozilla/dom/CSSSkewY.h"
 #include "mozilla/dom/CSSTransformComponentBinding.h"
 #include "mozilla/dom/CSSTranslate.h"
+#include "mozilla/dom/DOMMatrix.h"
 #include "nsCycleCollectionParticipant.h"
 
 namespace mozilla::dom {
@@ -50,11 +51,39 @@ JSObject* CSSTransformComponent::WrapObject(JSContext* aCx,
 
 bool CSSTransformComponent::Is2D() const { return mIs2D; }
 
-void CSSTransformComponent::SetIs2D(bool aArg) {}
+
+void CSSTransformComponent::SetIs2D(bool aArg) {
+  switch (GetTransformComponentType()) {
+    
+    case TransformComponentType::Skew:
+    case TransformComponentType::SkewX:
+    case TransformComponentType::SkewY:
+    
+    case TransformComponentType::Perspective:
+      break;
+
+    default:
+      mIs2D = aArg;
+  }
+}
+
 
 already_AddRefed<DOMMatrix> CSSTransformComponent::ToMatrix(ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_INITIALIZED);
-  return nullptr;
+  
+  auto matrix = [this](ErrorResult& aRv) -> RefPtr<DOMMatrix> {
+    switch (GetTransformComponentType()) {
+      default:
+        aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+        return nullptr;
+    }
+  }(aRv);
+
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  
+  return matrix.forget();
 }
 
 void CSSTransformComponent::Stringify(nsACString& aRetVal) {
