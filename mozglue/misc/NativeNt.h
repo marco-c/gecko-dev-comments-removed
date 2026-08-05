@@ -11,6 +11,7 @@
 #include <winternl.h>
 
 #include <algorithm>
+#include <type_traits>
 #include <utility>
 
 #include "mozilla/Attributes.h"
@@ -540,6 +541,27 @@ struct CodeViewRecord70 {
   char pdbFileName[1];
 };
 
+
+
+
+
+
+
+
+template <typename T>
+constexpr size_t PointeeSize() {
+  static_assert(std::is_pointer_v<T>,
+                "RVAToPtr and friends resolve an RVA to a pointer, so T must "
+                "be a pointer type");
+
+  using Pointee = std::remove_pointer_t<T>;
+  if constexpr (std::is_void_v<Pointee> || std::is_function_v<Pointee>) {
+    return 1;
+  } else {
+    return sizeof(Pointee);
+  }
+}
+
 class MOZ_RAII PEHeaders final {
   
 
@@ -624,19 +646,47 @@ class MOZ_RAII PEHeaders final {
 
 
 
-  template <typename T, typename R>
+  template <typename T, typename R, size_t Size = PointeeSize<T>()>
   T RVAToPtr(void* aBase, R aRva) const {
     if (!mImageLimit) {
       return nullptr;
     }
 
+    
+    
+    
+    char* imageBase = reinterpret_cast<char*>(mMzHeader);
     char* absAddress = reinterpret_cast<char*>(aBase) + aRva;
-    if (absAddress < reinterpret_cast<char*>(mMzHeader) ||
-        absAddress > reinterpret_cast<char*>(mImageLimit)) {
+    if (absAddress < imageBase) {
       return nullptr;
     }
 
-    return reinterpret_cast<T>(absAddress);
+    return RVAToPtrChecked<T>(static_cast<uintptr_t>(absAddress - imageBase),
+                              Size);
+  }
+
+  
+
+
+
+
+
+  template <typename T, typename R>
+  T RVAToPtrChecked(R aRva, size_t aSize) const {
+    if (!mImageLimit || !aSize) {
+      return nullptr;
+    }
+
+    uintptr_t base = reinterpret_cast<uintptr_t>(mMzHeader);
+    
+    uintptr_t available = reinterpret_cast<uintptr_t>(mImageLimit) - base + 1u;
+
+    uintptr_t rva = static_cast<uintptr_t>(aRva);
+    if (rva >= available || aSize > available - rva) {
+      return nullptr;
+    }
+
+    return reinterpret_cast<T>(base + rva);
   }
 
   Maybe<Range<const uint8_t>> GetBounds() const {
@@ -933,16 +983,45 @@ class MOZ_RAII PEHeaders final {
   }
 
   const CodeViewRecord70* GetPdbInfo() const {
-    PIMAGE_DEBUG_DIRECTORY debugDirectory =
-        GetImageDirectoryEntry<PIMAGE_DEBUG_DIRECTORY>(
-            IMAGE_DIRECTORY_ENTRY_DEBUG);
+    PIMAGE_DATA_DIRECTORY dirEntry =
+        GetImageDirectoryEntryPtr(IMAGE_DIRECTORY_ENTRY_DEBUG);
+    if (!dirEntry || dirEntry->Size < sizeof(IMAGE_DEBUG_DIRECTORY)) {
+      return nullptr;
+    }
+
+    auto debugDirectory = RVAToPtrChecked<PIMAGE_DEBUG_DIRECTORY>(
+        dirEntry->VirtualAddress, sizeof(IMAGE_DEBUG_DIRECTORY));
     if (!debugDirectory) {
       return nullptr;
     }
 
-    const CodeViewRecord70* debugInfo =
-        RVAToPtr<CodeViewRecord70*>(debugDirectory->AddressOfRawData);
-    return (debugInfo && debugInfo->signature == 'SDSR') ? debugInfo : nullptr;
+    
+    
+    constexpr size_t kMinRecordSize =
+        offsetof(CodeViewRecord70, pdbFileName) + 1;
+    if (debugDirectory->SizeOfData < kMinRecordSize) {
+      return nullptr;
+    }
+
+    auto debugInfo = RVAToPtrChecked<const CodeViewRecord70*>(
+        debugDirectory->AddressOfRawData, debugDirectory->SizeOfData);
+    if (!debugInfo || debugInfo->signature != 'SDSR') {
+      return nullptr;
+    }
+
+    
+    
+    const size_t nameCapacity =
+        debugDirectory->SizeOfData - offsetof(CodeViewRecord70, pdbFileName);
+    for (size_t i = 0; i < nameCapacity; ++i) {
+      if (!debugInfo->pdbFileName[i]) {
+        
+        return debugInfo;
+      }
+    }
+
+    
+    return nullptr;
   }
 
  private:
