@@ -311,12 +311,6 @@ class MacroAssemblerLOONG64 : public Assembler {
                             Label* overflow);
 
   
-  
-  
-  void ma_mod_mask(Register src, Register dest, Register hold, Register remain,
-                   int32_t shift, Label* negZero = nullptr);
-
-  
   void ma_b(Register lhs, Register rhs, Label* l, Condition c,
             JumpKind jumpKind = LongJump,
             Register scratch = Register::Invalid());
