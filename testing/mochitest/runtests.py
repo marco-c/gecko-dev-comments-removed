@@ -2143,6 +2143,25 @@ toolbar#nav-bar {
             self.log.error(str(e))
             return None
 
+        
+        
+        
+        
+        
+        
+        
+        
+        if not mozinfo.info["tsan"] and mozinfo.info["os"] != "android":
+            browserEnv.setdefault("MOZ_PROFILER_STARTUP", "1")
+            browserEnv.setdefault(
+                "MOZ_PROFILER_STARTUP_FEATURES",
+                "java,js,screenshots,processcpu,ipcmessages,memory",
+            )
+
+            
+            
+            browserEnv.setdefault("MOZ_PROFILER_STARTUP_INTERVAL", "10")
+
         if (
             "MOZ_PROFILER_STARTUP_FEATURES" not in browserEnv
             or "nativeallocations"
@@ -2154,6 +2173,16 @@ toolbar#nav-bar {
 
         
         
+        if options.profiler or options.profilerSaveOnly:
+            
+            
+            
+            
+            if "MOZ_PROFILER_STARTUP_FEATURES" not in os.environ:
+                browserEnv["MOZ_PROFILER_STARTUP_FEATURES"] = "default"
+            if "MOZ_PROFILER_STARTUP_INTERVAL" not in os.environ:
+                browserEnv.pop("MOZ_PROFILER_STARTUP_INTERVAL", None)
+
         if options.profiler:
             if "MOZ_PROFILER_SHUTDOWN" not in os.environ:
                 
