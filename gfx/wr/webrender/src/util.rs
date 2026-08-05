@@ -4,7 +4,7 @@
 
 use api::BorderRadius;
 use api::units::*;
-use euclid::{Point2D, Rect, Box2D, Size2D};
+use euclid::{Point2D, Rect, Box2D, Size2D, SideOffsets2D};
 use euclid::{Transform2D, Transform3D, Vector2D};
 use plane_split::{Clipper, Polygon};
 use std::{i32, f32, fmt, ptr};
@@ -398,17 +398,49 @@ pub fn pack_as_float(value: u32) -> f32 {
 fn extract_inner_rect_impl<U>(
     rect: &Box2D<f32, U>,
     radii: &BorderRadius,
+    inset: &SideOffsets2D<f32, U>,
     k: f32,
 ) -> Option<Box2D<f32, U>> {
     
     
     
 
-    let xl = (k * radii.top_left.width.max(radii.bottom_left.width)).ceil();
-    let xr = (rect.width() - k * radii.top_right.width.max(radii.bottom_right.width)).floor();
-    let yt = (k * radii.top_left.height.max(radii.top_right.height)).ceil();
+    
+    
+    
+    
+
+    let mut top_left_width = radii.top_left.width;
+    let mut top_left_height = radii.top_left.height;
+    let mut top_right_width = radii.top_right.width;
+    let mut top_right_height = radii.top_right.height;
+    let mut bottom_left_width = radii.bottom_left.width;
+    let mut bottom_left_height = radii.bottom_left.height;
+    let mut bottom_right_width = radii.bottom_right.width;
+    let mut bottom_right_height = radii.bottom_right.height;
+
+    if radii.shape_top_left < 1.0 {
+        top_left_width += inset.top;
+        top_left_height += inset.left;
+    }
+    if radii.shape_top_right < 1.0 {
+        top_right_width += inset.top;
+        top_right_height += inset.right;
+    }
+    if radii.shape_bottom_left < 1.0 {
+        bottom_left_width += inset.bottom;
+        bottom_left_height += inset.left;
+    }
+    if radii.shape_bottom_right < 1.0 {
+        bottom_right_width += inset.bottom;
+        bottom_right_height += inset.right;
+    }
+
+    let xl = (k * top_left_width.max(bottom_left_width)).ceil();
+    let xr = (rect.width() - k * top_right_width.max(bottom_right_width)).floor();
+    let yt = (k * top_left_height.max(top_right_height)).ceil();
     let yb =
-        (rect.height() - k * radii.bottom_left.height.max(radii.bottom_right.height)).floor();
+        (rect.height() - k * bottom_left_height.max(bottom_right_height)).floor();
 
     if xl <= xr && yt <= yb {
         Some(Box2D::from_origin_and_size(
@@ -422,18 +454,16 @@ fn extract_inner_rect_impl<U>(
 
 
 
-
-
-
 pub fn extract_inner_rect_safe<U>(
     rect: &Box2D<f32, U>,
     radii: &BorderRadius,
+    inset: &SideOffsets2D<f32, U>,
 ) -> Option<Box2D<f32, U>> {
     
     
     
     
-    extract_inner_rect_impl(rect, radii, 1.0)
+    extract_inner_rect_impl(rect, radii, inset, 1.0)
 }
 
 
@@ -442,9 +472,18 @@ pub fn extract_inner_rect_safe<U>(
 pub fn extract_inner_rect_k<U>(
     rect: &Box2D<f32, U>,
     radii: &BorderRadius,
+    inset: &SideOffsets2D<f32, U>,
     k: f32,
 ) -> Option<Box2D<f32, U>> {
-    extract_inner_rect_impl(rect, radii, k)
+    
+    
+    
+    
+    if radii.shapes_all_round() {
+        extract_inner_rect_impl(rect, radii, inset, k)
+    } else {
+        extract_inner_rect_impl(rect, radii, inset, 1.0)
+    }
 }
 
 #[cfg(test)]
