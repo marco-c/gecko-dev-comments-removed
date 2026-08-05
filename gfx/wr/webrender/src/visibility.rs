@@ -320,7 +320,7 @@ pub fn update_prim_visibility(
     let mut clip_snapper = snapper.clone();
 
     for cluster in &pic.prim_list.clusters {
-        tracy_rs::profile_scope!("cluster");
+        profile_scope!("cluster");
 
         
         
