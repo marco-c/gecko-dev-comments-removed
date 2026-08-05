@@ -270,15 +270,6 @@ size_t js::WasmArrayObject::sizeOfExcludingThis() const {
 
 void WasmArrayObject::obj_trace(JSTracer* trc, JSObject* object) {
   WasmArrayObject& arrayObj = object->as<WasmArrayObject>();
-  uint8_t* data = arrayObj.data_;
-
-  
-  
-  if (!data) {
-    MOZ_ASSERT(arrayObj.numElements_ == 0);
-    return;
-  }
-
   if (!arrayObj.isDataInline()) {
     OOLDataHeader* oolHeader = oolDataHeaderFromDataPointer(arrayObj.data_);
     OOLDataHeader* prior = oolHeader;
@@ -297,7 +288,8 @@ void WasmArrayObject::obj_trace(JSTracer* trc, JSObject* object) {
   uint32_t numElements = arrayObj.numElements_;
   uint32_t elemSize = arrayType.elementType().size();
   for (uint32_t i = 0; i < numElements; i++) {
-    AnyRef* elementPtr = reinterpret_cast<AnyRef*>(data + i * elemSize);
+    AnyRef* elementPtr =
+        reinterpret_cast<AnyRef*>(arrayObj.data_ + i * elemSize);
     TraceManuallyBarrieredEdge(trc, elementPtr, "wasm-array-element");
   }
 }
