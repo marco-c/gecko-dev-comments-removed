@@ -1344,6 +1344,19 @@ function isLikelyFocusChange(rects, frame) {
     
     return true;
   }
+  
+  
+  
+  
+  if (
+    Services.prefs.getBoolPref("browser.nova.enabled", false) &&
+    rects.length &&
+    rects.every(
+      r => r.x1 == 0 && r.y1 == 0 && r.w >= frame.width && r.h >= frame.height
+    )
+  ) {
+    return true;
+  }
   return false;
 }
 
