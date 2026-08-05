@@ -781,6 +781,11 @@ class WorkerPrivate final
   
   WorkerPrivate* GetParent() const { return mParent; }
 
+  nsISerialEventTarget* GetSchedulingEventTarget() {
+    WorkerPrivate* parent = GetParent();
+    return parent ? parent->ControlEventTarget() : MainThreadEventTarget();
+  }
+
   
   
   WorkerPrivate* GetTopLevelWorker() const {

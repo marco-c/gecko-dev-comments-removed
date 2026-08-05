@@ -44,8 +44,10 @@ class RuntimeService final : public nsIObserver {
       return mActiveServiceWorkers.Length();
     }
 
+    
     bool HasNoWorkers() const {
-      return ActiveWorkerCount() == 0 && ActiveServiceWorkerCount() == 0;
+      return ActiveWorkerCount() == 0 && ActiveServiceWorkerCount() == 0 &&
+             mQueuedWorkers.IsEmpty();
     }
   };
 
@@ -91,6 +93,13 @@ class RuntimeService final : public nsIObserver {
   bool RegisterWorker(WorkerPrivate& aWorkerPrivate);
 
   void UnregisterWorker(WorkerPrivate& aWorkerPrivate);
+
+  
+  
+  
+  
+  void MaybeScheduleQueuedWorker(const nsACString& aDomain,
+                                 WorkerPrivate* aParent);
 
   void CancelWorkersForWindow(const nsPIDOMWindowInner& aWindow);
 
