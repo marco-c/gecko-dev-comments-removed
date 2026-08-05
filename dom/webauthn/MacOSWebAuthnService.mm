@@ -217,7 +217,14 @@ API_AVAILABLE(macos(13.3))
 API_AVAILABLE(macos(13.3))
 @interface MacOSAuthenticatorPresentationContextProvider
     : NSObject <ASAuthorizationControllerPresentationContextProviding>
-@property(nonatomic, strong) NSWindow* window;
+
+
+
+
+
+
+
+@property(nonatomic) NSInteger windowNumber;
 @end
 
 namespace mozilla::dom {
@@ -577,11 +584,11 @@ NSDictionary<NSData*, ASAuthorizationPublicKeyCredentialPRFAssertionInputValues*
 @end
 
 @implementation MacOSAuthenticatorPresentationContextProvider
-@synthesize window = window;
+@synthesize windowNumber = windowNumber;
 
 - (ASPresentationAnchor)presentationAnchorForAuthorizationController:
     (ASAuthorizationController*)controller {
-  return window;
+  return [NSApp windowWithWindowNumber:windowNumber];
 }
 @end
 
@@ -982,7 +989,7 @@ void MacOSWebAuthnService::PerformRequests(
   MOZ_ASSERT(!mPresentationContextProvider);
   mPresentationContextProvider =
       [[MacOSAuthenticatorPresentationContextProvider alloc] init];
-  mPresentationContextProvider.window = window;
+  mPresentationContextProvider.windowNumber = window.windowNumber;
   mAuthorizationController.presentationContextProvider =
       mPresentationContextProvider;
 
