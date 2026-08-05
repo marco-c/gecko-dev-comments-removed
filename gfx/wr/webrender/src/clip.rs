@@ -112,6 +112,7 @@ use crate::space::{SnapRounding, SpaceMapper, SpaceSnapper};
 use crate::util::{extract_inner_rect_safe, project_rect, MatrixHelpers, MaxRect, ScaleOffset};
 use euclid::approxeq::ApproxEq;
 use std::{iter, ops, u32, mem};
+use std::hash::{Hash, Hasher};
 
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -132,7 +133,7 @@ pub struct ClipTreeNode {
     
     
     
-    pub snap_outset: Au,
+    pub snap_outset: f32,
     pub parent: ClipNodeId,
 
     children: FastHashMap<ClipEntry, ClipNodeId>,
@@ -157,7 +158,7 @@ impl ClipTreeNode {
     ) -> LayoutRect {
         debug_assert!(self.spatial_node_index != SpatialNodeIndex::INVALID);
         snapper.set_target_spatial_node(self.spatial_node_index, spatial_tree);
-        let outset = self.snap_outset.to_f32_px();
+        let outset = self.snap_outset;
         if outset != 0.0 {
             
             
@@ -260,7 +261,7 @@ impl ClipTree {
                     handle: ClipDataHandle::INVALID,
                     spatial_node_index: SpatialNodeIndex::INVALID,
                     unsnapped_clip_rect: LayoutRect::zero(),
-                    snap_outset: Au(0),
+                    snap_outset: 0.0,
                     children: FastHashMap::default(),
                     parent: ClipNodeId::NONE,
                 }
@@ -278,7 +279,7 @@ impl ClipTree {
             handle: ClipDataHandle::INVALID,
             spatial_node_index: SpatialNodeIndex::INVALID,
             unsnapped_clip_rect: LayoutRect::zero(),
-            snap_outset: Au(0),
+            snap_outset: 0.0,
             children: FastHashMap::default(),
             parent: ClipNodeId::NONE,
         });
@@ -488,7 +489,7 @@ impl ClipTree {
 }
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, MallocSizeOf)]
+#[derive(Copy, Clone, PartialEq, MallocSizeOf)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ClipEntry {
@@ -496,7 +497,22 @@ pub struct ClipEntry {
     pub spatial_node_index: SpatialNodeIndex,
     pub clip_rect: RectKey,
     
-    pub snap_outset: Au,
+    
+    
+    
+    
+    pub snap_outset: f32,
+}
+
+impl Eq for ClipEntry {}
+
+impl Hash for ClipEntry {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.handle.hash(state);
+        self.spatial_node_index.hash(state);
+        self.clip_rect.hash(state);
+        self.snap_outset.to_bits().hash(state);
+    }
 }
 
 
@@ -587,7 +603,7 @@ impl ClipTreeBuilder {
         spatial_node_index: SpatialNodeIndex,
         clip_rect: LayoutRect,
     ) {
-        self.clip_map.insert(id, ClipEntry { handle, spatial_node_index, clip_rect: clip_rect.into(), snap_outset: Au(0) });
+        self.clip_map.insert(id, ClipEntry { handle, spatial_node_index, clip_rect: clip_rect.into(), snap_outset: 0.0 });
     }
 
     
@@ -597,7 +613,7 @@ impl ClipTreeBuilder {
         handle: ClipDataHandle,
         spatial_node_index: SpatialNodeIndex,
         clip_rect: LayoutRect,
-        snap_outset: Au,
+        snap_outset: f32,
     ) {
         self.clip_map.insert(id, ClipEntry { handle, spatial_node_index, clip_rect: clip_rect.into(), snap_outset });
     }
@@ -610,7 +626,7 @@ impl ClipTreeBuilder {
         spatial_node_index: SpatialNodeIndex,
         clip_rect: LayoutRect,
     ) {
-        self.clip_map.insert(id, ClipEntry { handle, spatial_node_index, clip_rect: clip_rect.into(), snap_outset: Au(0) });
+        self.clip_map.insert(id, ClipEntry { handle, spatial_node_index, clip_rect: clip_rect.into(), snap_outset: 0.0 });
     }
 
     
