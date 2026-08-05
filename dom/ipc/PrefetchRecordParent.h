@@ -6,12 +6,18 @@
 #ifndef mozilla_dom_PrefetchRecordParent_h
 #define mozilla_dom_PrefetchRecordParent_h
 
+#include "mozilla/OriginAttributes.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/PPrefetchRecordParent.h"
 #include "mozilla/dom/PrefetchTypes.h"
 #include "nsCOMPtr.h"
 #include "nsIChannel.h"
+#include "nsIChannelEventSink.h"
+#include "nsIInputStream.h"
+#include "nsIInterfaceRequestor.h"
 #include "nsIReferrerInfo.h"
+#include "nsIRequestObserver.h"
+#include "nsIStreamListener.h"
 #include "nsIURI.h"
 #include "nsString.h"
 #include "nsTArray.h"
@@ -24,13 +30,23 @@ namespace mozilla::dom {
 
 
 
-class PrefetchRecordParent final : public PPrefetchRecordParent {
+class PrefetchRecordParent final : public PPrefetchRecordParent,
+                                   public nsIStreamListener,
+                                   public nsIInterfaceRequestor,
+                                   public nsIChannelEventSink {
  public:
-  NS_INLINE_DECL_REFCOUNTING(PrefetchRecordParent, override)
-
-  PrefetchRecordParent() = default;
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIREQUESTOBSERVER
+  NS_DECL_NSISTREAMLISTENER
+  NS_DECL_NSIINTERFACEREQUESTOR
+  NS_DECL_NSICHANNELEVENTSINK
 
   
+  
+  
+  
+  void Init(const SpeculativePrefetchArgs& aArgs);
+
   
   
   
@@ -51,14 +67,17 @@ class PrefetchRecordParent final : public PPrefetchRecordParent {
   const nsString& NoVarySearchHint() const { return mNoVarySearchHint; }
 
   
-  
   mozilla::ipc::IPCResult RecvCancel();
 
-  
   void ActorDestroy(ActorDestroyReason aReason) override;
 
  private:
-  ~PrefetchRecordParent() = default;
+  bool IsCrossOriginToDocument(nsIURI* aURI) const;
+  void PopulateIsolatedPartitionKey(mozilla::OriginAttributes& aAttrs);
+  void ConfigureSecPurpose(nsIChannel* aChannel);
+  bool PrefetchIPAnonymizationPolicyRequiresAnonymity(nsIURI* aURI) const;
+  void AppendRedirectChainEntry(nsIURI* aURI);
+  void FillResponseOnLastEntry(nsIChannel* aChannel);
 
   
   
@@ -76,6 +95,12 @@ class PrefetchRecordParent final : public PPrefetchRecordParent {
   nsString mSourcePartitionKey;
   nsString mIsolatedPartitionKey;
   bool mHadConflictingCredentials = false;
+
+  
+  uint64_t mBytesReceived = 0;
+
+ protected:
+  ~PrefetchRecordParent() = default;
 };
 
 }  
