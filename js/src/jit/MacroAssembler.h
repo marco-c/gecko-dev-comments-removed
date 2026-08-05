@@ -906,6 +906,11 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                             bool hasInlineICScript = false);
 
   
+  
+  inline void branchIfNotActivationEntryFrame(Register scratch,
+                                              Label* notEntryFrame);
+
+  
   inline void loadNumActualArgs(Register framePtr, Register dest);
 
   

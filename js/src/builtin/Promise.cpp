@@ -8315,39 +8315,13 @@ void PromiseObject::dumpOwnStringContent(js::GenericPrinter& out) const {}
 
 
 
-[[nodiscard]] static bool IsTopMostAsyncFunctionCall(JSContext* cx) {
-  
-  
-  if (cx->asyncResumeDepth > 1) {
-    return false;
-  }
 
-  FrameIter iter(cx);
 
-  
-  if (iter.done()) {
-    return false;
-  }
 
-  MOZ_ASSERT(iter.isFunctionFrame(), "CanSkipAwait is only used for functions");
-  MOZ_ASSERT(iter.calleeTemplate()->isAsync());
 
-  
-  
-  if (!cx->activation()->enteredForGeneratorResume()) {
-    return false;
-  }
 
-  ++iter;
 
-  
-  if (iter.done()) {
-    MOZ_ASSERT(cx->asyncResumeDepth <= 1);
-    return true;
-  }
 
-  return false;
-}
 
 [[nodiscard]] bool js::CanSkipAwait(JSContext* cx, HandleValue val,
                                     bool* canSkip) {
@@ -8356,10 +8330,24 @@ void PromiseObject::dumpOwnStringContent(js::GenericPrinter& out) const {}
     return true;
   }
 
-  if (!IsTopMostAsyncFunctionCall(cx)) {
+  
+  
+  Activation* act = cx->activation();
+  if (!act->enteredForGeneratorResume() || act->prev()) {
     *canSkip = false;
     return true;
   }
+
+  
+#ifdef DEBUG
+  FrameIter iter(cx);
+  MOZ_ASSERT(!iter.done());
+  MOZ_ASSERT(iter.isFunctionFrame(), "CanSkipAwait is only used for functions");
+  MOZ_ASSERT(iter.calleeTemplate()->isAsync());
+  ++iter;
+  MOZ_ASSERT(iter.done());
+  MOZ_ASSERT(cx->asyncResumeDepth <= 1);
+#endif
 
   
   

@@ -2481,6 +2481,10 @@ bool WarpBuilder::build_CheckResumeKind(BytecodeLocation loc) {
 }
 
 bool WarpBuilder::build_CanSkipAwait(BytecodeLocation loc) {
+  
+  
+  MOZ_ASSERT(!inlineCallInfo());
+
   MDefinition* val = current->pop();
 
   MCanSkipAwait* canSkip = MCanSkipAwait::New(alloc(), val);

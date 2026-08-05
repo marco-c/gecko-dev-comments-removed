@@ -3786,9 +3786,13 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
 
     CASE(CanSkipAwait) {
       ReservedRooted<Value> val(&rootValue0, REGS.sp[-1]);
-      bool canSkip;
-      if (!CanSkipAwait(cx, val, &canSkip)) {
-        goto error;
+      
+      
+      bool canSkip = false;
+      if (REGS.fp() == activation.entryFrame()) {
+        if (!CanSkipAwait(cx, val, &canSkip)) {
+          goto error;
+        }
       }
 
       PUSH_BOOLEAN(canSkip);
