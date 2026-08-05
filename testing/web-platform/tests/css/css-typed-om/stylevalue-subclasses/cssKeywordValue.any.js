@@ -1,12 +1,7 @@
-<!doctype html>
-<meta charset="utf-8">
-<title>CSSKeywordValue Constructor</title>
-<link rel="help" href="https://drafts.css-houdini.org/css-typed-om-1/#dom-csskeywordvalue-csskeywordvalue">
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<body>
-<div id="log"></div>
-<script>
+
+
+
+
 'use strict';
 
 const gTestArguments = [
@@ -25,5 +20,3 @@ for (const args of gTestArguments) {
                   'value is same as given by constructor');
   }, `CSSKeywordValue can be constructed from ${args.description}`);
 }
-
-</script>

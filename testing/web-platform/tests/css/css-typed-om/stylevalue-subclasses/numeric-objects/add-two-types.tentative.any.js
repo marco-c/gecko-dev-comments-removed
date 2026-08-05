@@ -1,13 +1,8 @@
-<!doctype html>
-<meta charset="utf-8">
-<title>Adding Two Numeric Types</title>
-<link rel="help" href="https://drafts.css-houdini.org/css-typed-om-1/#add-two-types">
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="../../resources/testhelper.js"></script>
-<body>
-<div id="log">
-<script>
+
+
+
+
+
 'use strict';
 
 const gAddTypesMathValueSubclasses = [
@@ -18,9 +13,9 @@ const gAddTypesMathValueSubclasses = [
 ];
 
 for (const { subclass, clamp } of gAddTypesMathValueSubclasses) {
-  // CSSMathClamp takes (min, val, max); the other subclasses take a
-  // variadic list. For the type-addition tests we only need two distinct
-  // input types, so pass b twice for clamp to fill the third slot.
+  
+  
+  
   const construct = clamp
     ? (a, b) => new subclass(a, b, b)
     : (a, b) => new subclass(a, b);
@@ -72,5 +67,3 @@ for (const { subclass, clamp } of gAddTypesMathValueSubclasses) {
     assert_numeric_type_equals(result.type(), { length: 1, percentHint: 'length' });
   }, 'Adding two types with the same percent hint in the ' + subclass.name + ' constructor returns a type with that percent hint');
 }
-
-</script>

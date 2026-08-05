@@ -1,0 +1,11 @@
+
+
+
+
+'use strict';
+
+
+test(() => {
+  const result = new CSSUnparsedValue(['']);
+  assert_equals('', result.toString()); 
+}, `Don't crash when serializing empty CSSUnparsedValue`);

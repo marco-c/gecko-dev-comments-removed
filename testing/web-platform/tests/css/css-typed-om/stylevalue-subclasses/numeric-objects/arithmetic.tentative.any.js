@@ -1,16 +1,13 @@
-<!doctype html>
-<meta charset="utf-8">
-<title>Arithmetic operations on CSSNumericValue tests</title>
-<link rel="help" href="https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-add">
-<link rel="help" href="https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-sub">
-<link rel="help" href="https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-mul">
-<link rel="help" href="https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-div">
-<link rel="help" href="https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-min">
-<link rel="help" href="https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-max">
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="../../resources/testhelper.js"></script>
-<script>
+
+
+
+
+
+
+
+
+
+
 'use strict';
 
 const gArithmeticOps = [
@@ -29,7 +26,7 @@ for (const {methodName, mathType} of gArithmeticOps) {
   }, 'Calling CSSUnitValue.' + methodName + ' with no arguments returns itself');
 
   test(() => {
-    // Use an arithmetic expression that can't be simplified to a CSSUnitValue
+    
     const mathValue = new mathType(CSS.px(1), CSS.percent(1));
     const result = mathValue[methodName]();
     assert_style_value_equals(result, mathValue);
@@ -164,5 +161,3 @@ for (const methodName of ["mul", "div"]) {
       assert_throws_js(TypeError, () => a[methodName](b));
     }, 'CSSNumericValue.' + methodName + ' should throw TypeError when the types are different.');
 }
-
-</script>

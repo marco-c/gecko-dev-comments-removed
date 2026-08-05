@@ -1,11 +1,16 @@
-<meta charset="utf-8">
-<title>CSSNumericValue.to tests</title>
-<link rel="help" href="https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-to">
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="../../resources/testhelper.js"></script>
-<script>
+
+
+
+
+
 'use strict';
+
+test(() => {
+  const value = new CSSUnitValue(10, 'px');
+  assert_true(value instanceof CSSUnitValue);
+  assert_true(value instanceof CSSNumericValue);
+  assert_true(value instanceof CSSStyleValue);
+}, 'CSSUnitValue is a CSSNumericValue and a CSSStyleValue');
 
 test(() => {
   assert_throws_dom("SyntaxError", () => CSS.px(1).to('lemon'));
@@ -25,14 +30,14 @@ test(() => {
 
 test(() => {
   for (const unit of gValidUnits) {
-    // FIXME(778495): Remove this check onec all the units are supported.
+    
     if (CSS[unit])
       assert_style_value_equals(CSS[unit](1).to(unit), CSS[unit](1));
   }
 }, 'Converting a CSSUnitValue to its own unit returns itself');
 
-// TODO(776173): cssUnitValue_toMethod.html has more comprehensive tests of converting
-// within the same base type. Merge those tests into here.
+
+
 test(() => {
   assert_style_value_equals(CSS.cm(1).to('px'), CSS.px(37.7952755));
 }, 'Converting a CSSUnitValue to its canonical unit returns correct value');
@@ -89,7 +94,7 @@ test(() => {
 }, 'Converting a CSSMathInvert to a single unit inverts its value and units');
 
 test(() => {
-  // max((1s * 1s *  1px * 1px) / (1s * 1px), 2000ms * 2em) / 1em - min(500ms, 1s)
+  
   const expr = new CSSMathSum(
     new CSSMathProduct(
       new CSSMathMax(
@@ -111,5 +116,3 @@ test(() => {
 
   assert_style_value_equals(expr.to('ms'), CSS.ms(3500));
 }, 'Converting a complex expression to a single unit');
-
-</script>
