@@ -207,6 +207,11 @@ class MockCubebStream {
   Maybe<cubeb_state> State() const MOZ_EXCLUDES(mMutex);
 
   void SetDriftFactor(float aDriftFactor) MOZ_EXCLUDES(mMutex);
+  
+  
+  
+  
+  void SetOutputLatencyFrames(uint32_t aFrames) MOZ_EXCLUDES(mMutex);
   void ForceError() MOZ_EXCLUDES(mMutex);
   void ForceDeviceChanged() MOZ_EXCLUDES(mMutex);
   void Thaw() MOZ_EXCLUDES(mMutex);
@@ -308,6 +313,9 @@ class MockCubebStream {
   bool mForceDeviceChanged MOZ_GUARDED_BY(mMutex) = false;
   bool mDestroyed MOZ_GUARDED_BY(mMutex) = false;
   uint64_t mPosition MOZ_GUARDED_BY(mMutex) = 0;
+  
+  
+  uint32_t mOutputLatencyFrames MOZ_GUARDED_BY(mMutex) = 0;
   AudioGenerator<AudioDataValue> mAudioGenerator MOZ_GUARDED_BY(mMutex);
   AudioVerifier<AudioDataValue> mAudioVerifier MOZ_GUARDED_BY(mMutex);
 
@@ -487,6 +495,13 @@ class MockCubeb {
 
   
   
+  
+  void SetDefaultOutputLatencyFrames(uint32_t aFrames) {
+    mDefaultOutputLatencyFrames = aFrames;
+  }
+
+  
+  
   static void ThreadFunction_s(MockCubeb* aContext) {
     aContext->ThreadFunction();
   }
@@ -513,6 +528,8 @@ class MockCubeb {
   int mInputProcessingParamsApplyRv = CUBEB_OK;
   const RunningMode mRunningMode;
   Atomic<bool> mStreamInitErrorState;
+  
+  Atomic<uint32_t> mDefaultOutputLatencyFrames{0};
   
   Atomic<bool> mStreamStartFreezeEnabled{false};
   
