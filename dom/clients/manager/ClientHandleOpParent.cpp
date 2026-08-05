@@ -2,16 +2,19 @@
 
 
 
-
-
 #include "ClientHandleOpParent.h"
 
 #include "ClientHandleParent.h"
 #include "ClientSourceParent.h"
+#include "ClientValidation.h"
 #include "mozilla/dom/PClientManagerParent.h"
 #include "mozilla/dom/ipc/StructuredCloneData.h"
+#include "mozilla/ipc/BackgroundParent.h"
 
 namespace mozilla::dom {
+
+using mozilla::ipc::BackgroundParent;
+using mozilla::ipc::IPCResult;
 
 ClientSourceParent* ClientHandleOpParent::GetSource() const {
   auto handle = static_cast<ClientHandleParent*>(Manager());
@@ -23,9 +26,16 @@ void ClientHandleOpParent::ActorDestroy(ActorDestroyReason aReason) {
   mSourcePromiseRequestHolder.DisconnectIfExists();
 }
 
-void ClientHandleOpParent::Init(ClientOpConstructorArgs&& aArgs) {
+IPCResult ClientHandleOpParent::Init(ClientOpConstructorArgs&& aArgs) {
   RefPtr<ClientHandleParent> handle =
       static_cast<ClientHandleParent*>(Manager());
+
+  if (!IsValidClientOpConstructorArgs(
+          aArgs,
+          BackgroundParent::GetRemoteType(handle->Manager()->Manager()))) {
+    return IPC_FAIL(this, "Invalid ClientOpConstructorArgs!");
+  }
+
   handle->EnsureSource()
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
@@ -62,6 +72,8 @@ void ClientHandleOpParent::Init(ClientOpConstructorArgs&& aArgs) {
             return;
           })
       ->Track(mSourcePromiseRequestHolder);
+
+  return IPC_OK();
 }
 
 }  

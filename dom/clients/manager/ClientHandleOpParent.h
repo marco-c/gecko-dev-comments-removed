@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef _mozilla_dom_ClientHandleOpParent_h
 #define _mozilla_dom_ClientHandleOpParent_h
 
@@ -27,7 +25,7 @@ class ClientHandleOpParent final : public PClientHandleOpParent {
   ClientHandleOpParent() = default;
   ~ClientHandleOpParent() = default;
 
-  void Init(ClientOpConstructorArgs&& aArgs);
+  mozilla::ipc::IPCResult Init(ClientOpConstructorArgs&& aArgs);
 };
 
 }  

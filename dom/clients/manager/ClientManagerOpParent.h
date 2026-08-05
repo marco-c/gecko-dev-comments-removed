@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef _mozilla_dom_ClientManagerOpParent_h
 #define _mozilla_dom_ClientManagerOpParent_h
 
@@ -12,13 +10,16 @@
 namespace mozilla::dom {
 
 class ClientManagerService;
+class ThreadsafeContentParentHandle;
 
 class ClientManagerOpParent final : public PClientManagerOpParent {
   RefPtr<ClientManagerService> mService;
   MozPromiseRequestHolder<ClientOpPromise> mPromiseRequestHolder;
 
   template <typename Method, typename... Args>
-  void DoServiceOp(Method aMethod, Args&&... aArgs);
+  void DoServiceOp(Method aMethod,
+                   ThreadsafeContentParentHandle* aContentParentHandle,
+                   Args&&... aArgs);
 
   
   void ActorDestroy(ActorDestroyReason aReason) override;
@@ -27,7 +28,9 @@ class ClientManagerOpParent final : public PClientManagerOpParent {
   explicit ClientManagerOpParent(ClientManagerService* aService);
   ~ClientManagerOpParent() = default;
 
-  void Init(const ClientOpConstructorArgs& aArgs);
+  mozilla::ipc::IPCResult Init(
+      const ClientOpConstructorArgs& aArgs,
+      ThreadsafeContentParentHandle* aContentParentHandle);
 };
 
 }  
