@@ -1159,11 +1159,17 @@ RefPtr<dom::RTCStatsPromise> MediaTransportHandlerSTS::GetIceStats(
               
               transport.mDtlsState = dom::RTCDtlsTransportState::New;
               auto transportIt = mTransports.find(stream->GetId());
+              
+              
+              
+              
+              transport.mDtlsRole.Construct(dom::RTCDtlsRole::Unknown);
               if (transportIt != mTransports.end() &&
                   transportIt->second.mFlow) {
                 if (auto* dtlsLayer = static_cast<TransportLayerDtls*>(
                         transportIt->second.mFlow->GetLayer(
                             TransportLayerDtls::ID()))) {
+                  transport.mDtlsRole.Reset();
                   transport.mDtlsRole.Construct(
                       dtlsLayer->role() == TransportLayerDtls::CLIENT
                           ? dom::RTCDtlsRole::Client
