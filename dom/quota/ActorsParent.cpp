@@ -3091,20 +3091,20 @@ nsresult QuotaManager::LoadQuota() {
           
           
           
-          
-          
-          
-          
 
-          if (fullOriginMetadata.mAccessed) {
+          if (fullOriginMetadata.mDirty) {
             QM_TRY(
                 RestoreMetadataFromDiskAndInitializeOrigin(fullOriginMetadata));
-          } else {
+          } else if (IsBestEffortPersistenceType(
+                         
+                         fullOriginMetadata.mPersistenceType)) {
             MaybeCollectUnaccessedOrigin(fullOriginMetadata);
 
-            AddTemporaryOrigin(fullOriginMetadata);
+            if (fullOriginMetadata.mAccessed) {
+              AddTemporaryOrigin(fullOriginMetadata);
 
-            InitQuotaForOrigin(fullOriginMetadata);
+              InitQuotaForOrigin(fullOriginMetadata);
+            }
           }
 
           return Ok{};
@@ -3256,6 +3256,10 @@ void QuotaManager::UnloadQuota() {
           }
 
           if (originInfo->mIsPrivate) {
+            continue;
+          }
+
+          if (!originInfo->LockedDirty()) {
             continue;
           }
 
