@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef ImageToI420Converter_h
 #define ImageToI420Converter_h
 
@@ -20,6 +19,16 @@ enum class SurfaceFormat : int8_t;
 namespace layers {
 class Image;
 }  
+
+
+
+static constexpr int32_t kMaxConvertImageDimension = 32768;
+
+
+inline bool IsImageDimensionSupportedForConversion(const gfx::IntSize& aSize) {
+  return aSize.width < kMaxConvertImageDimension &&
+         aSize.height < kMaxConvertImageDimension;
+}
 
 
 
