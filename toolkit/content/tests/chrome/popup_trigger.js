@@ -8,6 +8,10 @@ var gScreenX = -1,
 var gCachedEvent = null;
 var gCachedEvent2 = null;
 
+
+
+const CACHE_EVENT_OFFSET = 10;
+
 function cacheEvent(modifiers) {
   var cachedEvent = null;
 
@@ -16,7 +20,12 @@ function cacheEvent(modifiers) {
   };
 
   window.addEventListener("mousedown", mouseFn);
-  synthesizeMouse(document.documentElement, 0, 0, modifiers);
+  synthesizeMouse(
+    document.documentElement,
+    CACHE_EVENT_OFFSET,
+    CACHE_EVENT_OFFSET,
+    modifiers
+  );
   window.removeEventListener("mousedown", mouseFn);
 
   return cachedEvent;
@@ -38,8 +47,8 @@ function runTests() {
   
   
   gCachedEvent = cacheEvent({ shiftKey: true });
-  gScreenX = gCachedEvent.screenX;
-  gScreenY = gCachedEvent.screenY;
+  gScreenX = gCachedEvent.screenX - CACHE_EVENT_OFFSET;
+  gScreenY = gCachedEvent.screenY - CACHE_EVENT_OFFSET;
   gCachedEvent2 = cacheEvent({
     altKey: true,
     ctrlKey: true,
