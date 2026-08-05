@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_NOTIFICATION_NOTIFICATIONPARENT_H_
 #define DOM_NOTIFICATION_NOTIFICATIONPARENT_H_
 
@@ -14,17 +12,6 @@
 namespace mozilla::dom::notification {
 
 enum class CloseMode;
-
-enum class AlertTopic : uint8_t {
-  Disable,
-  Settings,
-  Click,
-  Show,
-  
-  
-  Finished,
-  Closed,
-};
 
 struct NotificationParentArgs {
   NotNull<nsCOMPtr<nsIPrincipal>> mPrincipal;
@@ -42,7 +29,9 @@ class NotificationParent final : public PNotificationParent,
  public:
   NS_DECL_ISUPPORTS
 
-  nsresult HandleAlertTopic(AlertTopic aTopic);
+  nsresult OnAlertShow();
+  nsresult FireClickEvent();
+  nsresult OnAlertFinished(bool aIsClosed);
   IPCResult RecvShow(Maybe<IPCImage>&& aIcon, ShowResolver&& aResolver);
   IPCResult RecvClose();
 
@@ -57,7 +46,6 @@ class NotificationParent final : public PNotificationParent,
   ~NotificationParent() = default;
 
   nsresult Show(Maybe<IPCImage>&& aIcon);
-  nsresult FireClickEvent();
 
   void Unregister();
 
