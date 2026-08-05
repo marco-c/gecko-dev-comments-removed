@@ -1363,15 +1363,18 @@ function sortMarkerStringTables(dataStructure) {
 
 
 
-function totalMarkerOccurrences(markers) {
-  let total = 0;
-  for (const groupCounts of markers.counts) {
-    for (const count of groupCounts) {
-      total += count;
+function markerOccurrencesByName({ tables, messages, markers }) {
+  const occurrences = {};
+  for (let g = 0; g < markers.messageIds.length; g++) {
+    const nameId = messages.markerNameIds[markers.messageIds[g]];
+    const name = tables.markerNames[nameId];
+    for (const count of markers.counts[g]) {
+      occurrences[name] = (occurrences[name] || 0) + count;
     }
   }
-  return total;
+  return occurrences;
 }
+
 
 
 
@@ -1379,14 +1382,17 @@ function totalMarkerOccurrences(markers) {
 
 function saveMarkerData(markerData, filePath) {
   if (!markerData) {
-    return;
+    return false;
   }
 
   try {
     saveJsonFile(markerData, filePath);
   } catch (error) {
     console.error(`Error saving ${filePath}:`, error);
+    return false;
   }
+
+  return true;
 }
 
 
@@ -1567,7 +1573,7 @@ async function processJobsAndCreateData(
           jobCount: jobs.length,
           processedJobCount: jobResults.length,
           invalidJobCount,
-          markerCount: totalMarkerOccurrences(markerStructure.markers),
+          markerCounts: markerOccurrencesByName(markerStructure),
         },
         tables: markerStructure.tables,
         messages: markerStructure.messages,
@@ -1751,6 +1757,14 @@ async function fetchPreviousRunData() {
             };
           }
         }
+        if (previousStats.markerCounts) {
+          entry.markerCounts = {};
+          for (const [name, counts] of Object.entries(
+            previousStats.markerCounts
+          )) {
+            entry.markerCounts[name] = counts[i];
+          }
+        }
         dailyStatsMap.set(date, entry);
       }
     }
@@ -1868,9 +1882,7 @@ async function processDateData(
           saveJsonFile(timings, timingsPath);
           saveJsonFile(resources, resourcesPath);
           
-          if (errors) {
-            saveJsonFile(errors, errorsPath);
-          }
+          const savedErrors = saveMarkerData(errors, errorsPath);
 
           calculateStatsFromData(
             timings,
@@ -1879,6 +1891,9 @@ async function processDateData(
             failedJobsCount,
             flavorJobCounts
           );
+          if (savedErrors) {
+            recordMarkerCounts(targetDate, errors);
+          }
           return;
         }
       } else {
@@ -1925,7 +1940,10 @@ async function processDateData(
       flavorJobCounts
     );
 
-    saveMarkerData(output.markerData, errorsPath);
+    
+    if (saveMarkerData(output.markerData, errorsPath)) {
+      recordMarkerCounts(targetDate, output.markerData);
+    }
   } catch (error) {
     console.error(`Error processing ${targetDate}:`, error);
   }
@@ -2665,6 +2683,9 @@ function calculateStatsFromData(
     failedJobs: failedJobsCount,
     invalidJobs: testData.metadata.invalidJobCount || 0,
     ignoredJobs: ignoredJobsCount,
+    
+    
+    markerCounts: dailyStatsMap.get(targetDate)?.markerCounts,
   };
 
   const trackFlavors = HARNESS === "mochitest";
@@ -2762,6 +2783,14 @@ function calculateStatsFromData(
   return stats;
 }
 
+
+
+
+function recordMarkerCounts(targetDate, markerData) {
+  dailyStatsMap.get(targetDate).markerCounts =
+    markerData?.metadata.markerCounts;
+}
+
 async function saveStatsFile() {
   console.log(`\n=== Generating statistics summary file ===`);
 
@@ -2811,6 +2840,24 @@ async function saveStatsFile() {
     }
   }
 
+  
+  const allMarkerNames = new Set();
+  for (const date of allDates) {
+    const { markerCounts } = dailyStatsMap.get(date);
+    if (markerCounts) {
+      for (const name of Object.keys(markerCounts)) {
+        allMarkerNames.add(name);
+      }
+    }
+  }
+
+  if (allMarkerNames.size > 0) {
+    output.markerCounts = {};
+    for (const name of [...allMarkerNames].sort()) {
+      output.markerCounts[name] = [];
+    }
+  }
+
   for (const date of allDates) {
     const stats = dailyStatsMap.get(date);
     output.totalTestRuns.push(stats.totalTestRuns);
@@ -2837,6 +2884,14 @@ async function saveStatsFile() {
         );
         output.flavors[flavor].failedJobs.push(fStats?.failedJobs || 0);
         output.flavors[flavor].ignoredJobs.push(fStats?.ignoredJobs || 0);
+      }
+    }
+
+    
+    
+    if (output.markerCounts) {
+      for (const name of Object.keys(output.markerCounts)) {
+        output.markerCounts[name].push(stats.markerCounts?.[name] || 0);
       }
     }
   }
