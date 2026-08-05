@@ -119,18 +119,7 @@ static char* jitDumpBuffer = nullptr;
 static bool IsPerfProfiling() { return JitDumpFilePtr != nullptr; }
 #endif
 
-AutoLockPerfSpewer::AutoLockPerfSpewer() {
-  
-  
-  
-  
-  JSContext* cx = TlsContext.get();
-  if (cx) {
-    asps.emplace(cx);
-  }
-
-  PerfMutex.lock();
-}
+AutoLockPerfSpewer::AutoLockPerfSpewer() { PerfMutex.lock(); }
 
 AutoLockPerfSpewer::~AutoLockPerfSpewer() { PerfMutex.unlock(); }
 
