@@ -19,8 +19,6 @@ THIRDPARTY_USED_IN_FIREFOX = [
     "rnnoise",
 ]
 
-LIBWEBRTC_DIR = os.path.normpath("third_party/libwebrtc")
-
 
 
 def get_excluded_files():
@@ -225,7 +223,7 @@ def make_googlesource_url(target, commit):
         )
 
 
-def fetch(target, url):
+def fetch(target, url, destination_dir):
     print(f"Fetching commit from {url}")
     req = requests.get(url)
     if req.status_code == 200:
@@ -237,7 +235,7 @@ def fetch(target, url):
             file=sys.stderr,
         )
         sys.exit(1)
-    with open(os.path.join(LIBWEBRTC_DIR, "README.mozilla.last-vendor"), "w") as f:
+    with open(os.path.join(destination_dir, "README.mozilla.last-vendor"), "w") as f:
         
         f.write(f"# ./mach python {' '.join(sys.argv[0:])}\n")
         f.write(
@@ -255,10 +253,10 @@ def reset_local_repo(path, commit):
     run_git("git clean -xffd", path)
 
 
-def fetch_local(target, path, commit):
+def fetch_local(target, path, commit, destination_dir):
     reset_local_repo(path, commit)
 
-    with open(os.path.join(LIBWEBRTC_DIR, "README.mozilla.last-vendor"), "w") as f:
+    with open(os.path.join(destination_dir, "README.mozilla.last-vendor"), "w") as f:
         
         f.write(f"# ./mach python {' '.join(sys.argv[0:])}\n")
         f.write(
@@ -315,7 +313,7 @@ def source_listdir(target_path, from_local):
     return entries
 
 
-def unpack(target, from_local=None, commit=None):
+def unpack(target, destination_dir, from_local=None, commit=None):
     target_archive = target + ".tar.gz"
     if from_local:
         
@@ -335,7 +333,7 @@ def unpack(target, from_local=None, commit=None):
         libwebrtc_used_in_firefox = source_listdir(target_path, from_local)
         for path in libwebrtc_used_in_firefox:
             try:
-                shutil.rmtree(os.path.join(LIBWEBRTC_DIR, path))
+                shutil.rmtree(os.path.join(destination_dir, path))
             except FileNotFoundError:
                 pass
             except NotADirectoryError:
@@ -360,7 +358,7 @@ def unpack(target, from_local=None, commit=None):
         
         for path in source_listdir(target_path, from_local):
             shutil.move(
-                os.path.join(target_path, path), os.path.join(LIBWEBRTC_DIR, path)
+                os.path.join(target_path, path), os.path.join(destination_dir, path)
             )
 
         if from_local:
@@ -384,7 +382,7 @@ def unpack(target, from_local=None, commit=None):
         
         
         for path in forced_used_in_firefox:
-            dest_path = os.path.join(LIBWEBRTC_DIR, path)
+            dest_path = os.path.join(destination_dir, path)
             dir_path = os.path.dirname(dest_path)
             if not os.path.exists(dir_path):
                 os.makedirs(dir_path)
@@ -399,7 +397,7 @@ def unpack(target, from_local=None, commit=None):
         build_used_in_firefox = source_listdir(target_path, from_local)
         for path in build_used_in_firefox:
             try:
-                shutil.rmtree(os.path.join(LIBWEBRTC_DIR, path))
+                shutil.rmtree(os.path.join(destination_dir, path))
             except FileNotFoundError:
                 pass
             except NotADirectoryError:
@@ -408,7 +406,7 @@ def unpack(target, from_local=None, commit=None):
         for path in source_listdir(target_path, from_local):
             shutil.move(
                 os.path.join(target_path, path),
-                os.path.join(LIBWEBRTC_DIR, path),
+                os.path.join(destination_dir, path),
             )
 
     elif target == "third_party":
@@ -417,7 +415,7 @@ def unpack(target, from_local=None, commit=None):
         
         for path in THIRDPARTY_USED_IN_FIREFOX:
             try:
-                shutil.rmtree(os.path.join(LIBWEBRTC_DIR, path))
+                shutil.rmtree(os.path.join(destination_dir, path))
             except FileNotFoundError:
                 pass
             except NotADirectoryError:
@@ -431,7 +429,7 @@ def unpack(target, from_local=None, commit=None):
         for path in THIRDPARTY_USED_IN_FIREFOX:
             shutil.move(
                 os.path.join(target_path, path),
-                os.path.join(LIBWEBRTC_DIR, path),
+                os.path.join(destination_dir, path),
             )
 
     elif target == "abseil-cpp":
@@ -445,7 +443,7 @@ def unpack(target, from_local=None, commit=None):
         abseil_used_in_firefox = os.listdir(abseil_path)
         for path in abseil_used_in_firefox:
             try:
-                shutil.rmtree(os.path.join(LIBWEBRTC_DIR, path))
+                shutil.rmtree(os.path.join(destination_dir, path))
             except FileNotFoundError:
                 pass
             except NotADirectoryError:
@@ -454,7 +452,7 @@ def unpack(target, from_local=None, commit=None):
         for path in os.listdir(abseil_path):
             shutil.move(
                 os.path.join(target_path, target, path),
-                os.path.join(LIBWEBRTC_DIR, path),
+                os.path.join(destination_dir, path),
             )
 
 
@@ -478,23 +476,41 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     
+    
     if args.target == "build":
-        LIBWEBRTC_DIR = os.path.normpath("third_party/chromium/build")
+        destination_dir = os.path.normpath("third_party/chromium/build")
     elif args.target == "third_party":
-        LIBWEBRTC_DIR = os.path.join(LIBWEBRTC_DIR, "third_party")
+        destination_dir = os.path.join(
+            os.path.normpath("third_party/libwebrtc"), "third_party"
+        )
     elif args.target == "abseil-cpp":
-        LIBWEBRTC_DIR = os.path.normpath("third_party/abseil-cpp")
+        destination_dir = os.path.normpath("third_party/abseil-cpp")
+    else:
+        destination_dir = os.path.normpath("third_party/libwebrtc")
 
-    os.makedirs(LIBWEBRTC_DIR, exist_ok=True)
+    os.makedirs(destination_dir, exist_ok=True)
 
     if not args.skip_fetch:
         if args.from_github:
-            fetch(args.target, make_github_url(args.from_github, args.commit))
+            fetch(
+                args.target,
+                make_github_url(args.from_github, args.commit),
+                destination_dir,
+            )
         elif args.from_googlesource:
-            fetch(args.target, make_googlesource_url(args.target, args.commit))
+            fetch(
+                args.target,
+                make_googlesource_url(args.target, args.commit),
+                destination_dir,
+            )
         elif args.from_local:
-            fetch_local(args.target, args.from_local, args.commit)
-    unpack(args.target, from_local=args.from_local, commit=args.commit)
+            fetch_local(args.target, args.from_local, args.commit, destination_dir)
+    unpack(
+        args.target,
+        destination_dir,
+        from_local=args.from_local,
+        commit=args.commit,
+    )
     if args.from_local:
         
         
