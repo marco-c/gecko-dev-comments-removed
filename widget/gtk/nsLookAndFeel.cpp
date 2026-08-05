@@ -110,7 +110,12 @@ static float GetGtkTextScaleFactor() {
   if (!s) {
     return 1.0f;
   }
-  return float(gdk_screen_get_resolution(s) / 96.0);
+  
+  const gdouble resolution = gdk_screen_get_resolution(s);
+  if (resolution <= 0.0) {
+    return 1.0f;
+  }
+  return float(resolution / 96.0);
 }
 
 static bool sCSDAvailable;
