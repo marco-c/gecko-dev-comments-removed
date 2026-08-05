@@ -301,8 +301,12 @@ void EditContext::UpdateCharacterBounds(
     mCodepointRects.AppendElement(ToRect(rect));
   }
 
-  mCodepointRectsTextChanged = false;
-  mControlBoundsAtLastUpdateCharacterBounds = GetControlBoundsOrClientRect();
+  
+  
+  
+  
+  
+  mLastRequestedCharacterBoundsRange = {};
 
   if (!mExpectingCharacterBounds && IsActive()) {
     
@@ -553,7 +557,7 @@ void EditContext::FireTextFormatUpdate(const TextRangeArray* aRanges,
   eventOptions.mBubbles = false;
   eventOptions.mCancelable = true;
   if (aRanges) {
-    for (const TextRange& range : *aRanges) {
+    for (const mozilla::TextRange& range : *aRanges) {
       if (range.Length() == 0) {
         
         continue;
@@ -618,6 +622,29 @@ void EditContext::UnsuppressNotifyingIME() {
   }
 }
 
+bool EditContext::ShouldFireNewCharacterBoundsUpdateForRange(
+    TextRange aRange) const {
+  if (mCodepointRectsTextChanged) {
+    
+    return true;
+  }
+  if (mControlBoundsAtLastCharacterBoundsUpdate !=
+      GetControlBoundsOrClientRect()) {
+    
+    return true;
+  }
+  if (aRange.IsContainedIn(mCodepointRectsStartIndex,
+                           CodepointRectsEndIndex())) {
+    
+    return false;
+  }
+  if (aRange.IsContainedIn(mLastRequestedCharacterBoundsRange)) {
+    
+    return false;
+  }
+  return true;
+}
+
 nsresult EditContext::FireCharacterBoundsUpdateIfNeeded(
     uint32_t aStart, uint32_t aEnd,
     AutoSuppressIMENotifications* aSuppressIMENotifications) {
@@ -675,13 +702,18 @@ nsresult EditContext::FireCharacterBoundsUpdateIfNeeded(
 
   
   
-  if (!(mCodepointRectsTextChanged ||
-        mControlBoundsAtLastUpdateCharacterBounds !=
-            GetControlBoundsOrClientRect() ||
-        aStart < mCodepointRectsStartIndex ||
-        aEnd > CodepointRectsEndIndex())) {
+  
+  const TextRange requestRange(startExtendedToGraphemeCluster,
+                               endExtendedToGraphemeCluster);
+  if (!ShouldFireNewCharacterBoundsUpdateForRange(requestRange)) {
     return NS_OK;
   }
+  
+  
+  
+  mControlBoundsAtLastCharacterBoundsUpdate = GetControlBoundsOrClientRect();
+  mLastRequestedCharacterBoundsRange = requestRange;
+  mCodepointRectsTextChanged = false;
 
   if (aSuppressIMENotifications) {
     

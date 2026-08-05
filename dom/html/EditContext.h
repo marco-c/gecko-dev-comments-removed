@@ -201,6 +201,22 @@ class EditContext final : public DOMEventTargetHelper, public SupportsWeakPtr {
 
   friend std::ostream& operator<<(std::ostream& aStream,
                                   const EditContext& aEditContext);
+  struct TextRange {
+    uint32_t mStart = 0;
+    uint32_t mEnd = 0;
+    bool operator==(const TextRange&) const = default;
+    [[nodiscard]] bool IsContainedIn(uint32_t aStart, uint32_t aEnd) const {
+      return mStart >= aStart && mEnd <= aEnd;
+    }
+    [[nodiscard]] bool IsContainedIn(const TextRange& aOther) const {
+      return IsContainedIn(aOther.mStart, aOther.mEnd);
+    }
+  };
+
+  
+  
+  
+  bool ShouldFireNewCharacterBoundsUpdateForRange(TextRange aRange) const;
 
   RefPtr<nsGenericHTMLElement> mAssociatedElement;
   RefPtr<nsGenericHTMLElement> mTextContainer;
@@ -215,11 +231,12 @@ class EditContext final : public DOMEventTargetHelper, public SupportsWeakPtr {
   
   
   
-  Maybe<nsRect> mControlBoundsAtLastUpdateCharacterBounds;
+  Maybe<nsRect> mControlBoundsAtLastCharacterBoundsUpdate;
   RefPtr<nsTextNode> mText;
   uint32_t mSelectionStart = 0;
   uint32_t mSelectionEnd = 0;
   uint32_t mCodepointRectsStartIndex = 0;
+  TextRange mLastRequestedCharacterBoundsRange;
   bool mIsComposing = false;
   bool mTextNextToCaretChangedByTextUpdateHandler = false;
   bool mExpectingCharacterBounds = false;
