@@ -216,3 +216,20 @@ async function assertRuleCount(editor, expected) {
   });
   is(parseInt(element.textContent, 10), expected, "the rule count is correct");
 }
+
+
+
+
+
+
+
+
+
+function getSupportsFile(path) {
+  const cr = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(
+    Ci.nsIChromeRegistry
+  );
+  const uri = Services.io.newURI(CHROME_URL_ROOT + path);
+  const fileurl = cr.convertChromeURL(uri);
+  return fileurl.QueryInterface(Ci.nsIFileURL);
+}
