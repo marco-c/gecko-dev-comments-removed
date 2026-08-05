@@ -7,12 +7,6 @@
 
 
 
-const { PromptTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/PromptTestUtils.sys.mjs"
-);
-const BASE_URL =
-  "http://mochi.test:8888/browser/browser/components/urlbar/tests/browser/";
-
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
