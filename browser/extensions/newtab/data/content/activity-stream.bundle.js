@@ -2031,13 +2031,26 @@ function CollapseToggle(props) {
     devtoolsCollapsed
   } = props;
   const label = `${devtoolsCollapsed ? "Expand" : "Collapse"} devtools`;
-  return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("button", {
+  
+  
+  
+  const novaEnabled = props.Prefs?.values?.["nova.enabled"];
+  const className = `discoverystream-admin-toggle ${devtoolsCollapsed ? "expanded" : "collapsed"}`;
+  const onToggleClick = () => {
+    globalThis.location.hash = devtoolsCollapsed ? "#devtools" : "";
+  };
+  return external_React_default().createElement((external_React_default()).Fragment, null, novaEnabled ? external_React_default().createElement("moz-button", {
+    type: "icon",
+    className: className,
     title: label,
     "aria-label": label,
-    className: `discoverystream-admin-toggle ${devtoolsCollapsed ? "expanded" : "collapsed"}`,
-    onClick: () => {
-      globalThis.location.hash = devtoolsCollapsed ? "#devtools" : "";
-    }
+    iconsrc: "chrome://global/skin/icons/developer.svg",
+    onClick: onToggleClick
+  }) : external_React_default().createElement("button", {
+    title: label,
+    "aria-label": label,
+    className: `${className} classic-enabled`,
+    onClick: onToggleClick
   }, external_React_default().createElement("div", null, external_React_default().createElement("img", {
     role: "presentation",
     src: "chrome://global/skin/icons/developer.svg"
