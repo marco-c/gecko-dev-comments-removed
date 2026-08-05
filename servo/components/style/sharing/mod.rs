@@ -92,9 +92,10 @@ mod checks;
 
 
 
-
-
 pub const SHARING_CACHE_SIZE: usize = 32;
+
+
+const SHARING_MAX_LEVELS: usize = 8;
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -310,21 +311,12 @@ impl ValidationData {
 
 
 
-
-
-
 #[derive(Debug)]
-pub struct StyleSharingCandidate<E: TElement> {
+pub struct StyleSharingCandidate<E> {
     
     element: E,
     validation_data: ValidationData,
     considered_nontrivial_scoped_style: bool,
-}
-
-struct FakeCandidate {
-    _element: usize,
-    _validation_data: ValidationData,
-    _may_contain_scoped_style: bool,
 }
 
 impl<E: TElement> Deref for StyleSharingCandidate<E> {
@@ -481,15 +473,6 @@ impl<E: TElement> StyleSharingTarget<E> {
         let bloom_filter = &context.thread_local.bloom_filter;
         let selector_caches = &mut context.thread_local.selector_caches;
 
-        if cache.dom_depth != bloom_filter.matching_depth() {
-            debug!(
-                "Can't share style, because DOM depth changed from {:?} to {:?}, element: {:?}",
-                cache.dom_depth,
-                bloom_filter.matching_depth(),
-                self.element
-            );
-            return None;
-        }
         debug_assert_eq!(
             bloom_filter.current_parent(),
             self.element.traversal_parent()
@@ -505,12 +488,15 @@ impl<E: TElement> StyleSharingTarget<E> {
 }
 
 struct SharingCacheBase<Candidate> {
+    
+    dom_depth: usize,
     entries: LRUCache<Candidate, SHARING_CACHE_SIZE>,
 }
 
 impl<Candidate> Default for SharingCacheBase<Candidate> {
     fn default() -> Self {
         Self {
+            dom_depth: 0,
             entries: LRUCache::default(),
         }
     }
@@ -519,6 +505,7 @@ impl<Candidate> Default for SharingCacheBase<Candidate> {
 impl<Candidate> SharingCacheBase<Candidate> {
     fn clear(&mut self) {
         self.entries.clear();
+        self.dom_depth = 0
     }
 
     fn is_empty(&self) -> bool {
@@ -558,11 +545,11 @@ impl<E: TElement> SharingCache<E> {
 
 
 type SharingCache<E> = SharingCacheBase<StyleSharingCandidate<E>>;
-type TypelessSharingCache = SharingCacheBase<FakeCandidate>;
+type TypelessSharingCache = SharingCacheBase<StyleSharingCandidate<usize>>;
 
 thread_local! {
     // See the comment on bloom.rs about why do we leak this.
-    static SHARING_CACHE_KEY: &'static AtomicRefCell<TypelessSharingCache> =
+    static SHARING_CACHE_KEY: &'static AtomicRefCell<[TypelessSharingCache; SHARING_MAX_LEVELS]> =
         Box::leak(Default::default());
 }
 
@@ -571,15 +558,16 @@ thread_local! {
 
 
 
+
+
+
+
 pub struct StyleSharingCache<E: TElement> {
     
-    cache_typeless: AtomicRefMut<'static, TypelessSharingCache>,
+    
+    cache_typeless: AtomicRefMut<'static, [TypelessSharingCache; SHARING_MAX_LEVELS]>,
     
     marker: PhantomData<SendElement<E>>,
-    
-    
-    
-    dom_depth: usize,
 }
 
 impl<E: TElement> Drop for StyleSharingCache<E> {
@@ -589,14 +577,8 @@ impl<E: TElement> Drop for StyleSharingCache<E> {
 }
 
 impl<E: TElement> StyleSharingCache<E> {
-    #[allow(dead_code)]
-    fn cache(&self) -> &SharingCache<E> {
-        let base: &TypelessSharingCache = &*self.cache_typeless;
-        unsafe { mem::transmute(base) }
-    }
-
-    fn cache_mut(&mut self) -> &mut SharingCache<E> {
-        let base: &mut TypelessSharingCache = &mut *self.cache_typeless;
+    fn cache_mut_at(&mut self, index: usize) -> &mut SharingCache<E> {
+        let base: &mut TypelessSharingCache = &mut self.cache_typeless[index % SHARING_MAX_LEVELS];
         unsafe { mem::transmute(base) }
     }
 
@@ -617,12 +599,10 @@ impl<E: TElement> StyleSharingCache<E> {
             mem::align_of::<TypelessSharingCache>()
         );
         let cache = SHARING_CACHE_KEY.with(|c| c.borrow_mut());
-        debug_assert!(cache.is_empty());
-
+        debug_assert!(cache.iter().all(|c| c.is_empty()));
         StyleSharingCache {
             cache_typeless: cache,
             marker: PhantomData,
-            dom_depth: 0,
         }
     }
 
@@ -676,15 +656,16 @@ impl<E: TElement> StyleSharingCache<E> {
             element, parent
         );
 
-        if self.dom_depth != dom_depth {
+        let cache = self.cache_mut_at(dom_depth);
+        if cache.dom_depth != dom_depth {
             debug!(
                 "Clearing cache because depth changed from {:?} to {:?}, element: {:?}",
-                self.dom_depth, dom_depth, element
+                cache.dom_depth, dom_depth, element
             );
-            self.clear();
-            self.dom_depth = dom_depth;
+            cache.clear();
+            cache.dom_depth = dom_depth;
         }
-        self.cache_mut().insert(
+        cache.insert(
             *element,
             validation_data_holder,
             style
@@ -696,7 +677,9 @@ impl<E: TElement> StyleSharingCache<E> {
 
     
     pub fn clear(&mut self) {
-        self.cache_mut().clear();
+        for c in &mut *self.cache_typeless {
+            c.clear();
+        }
     }
 
     
@@ -728,7 +711,17 @@ impl<E: TElement> StyleSharingCache<E> {
             return None;
         }
 
-        self.cache_mut().entries.lookup(|candidate| {
+        let dom_depth = bloom_filter.matching_depth();
+        let cache = self.cache_mut_at(dom_depth);
+        if cache.dom_depth != dom_depth {
+            debug!(
+                "{:?} Cannot share style: cache holds depth {:?}, not {:?}",
+                target.element, cache.dom_depth, dom_depth
+            );
+            return None;
+        }
+
+        cache.entries.lookup(|candidate| {
             Self::test_candidate(
                 target,
                 candidate,
@@ -749,6 +742,7 @@ impl<E: TElement> StyleSharingCache<E> {
         shared_context: &SharedStyleContext,
     ) -> Option<ResolvedElementStyles> {
         debug_assert!(target.matches_user_and_content_rules());
+        debug_assert!(candidate.element.matches_user_and_content_rules());
 
         
         
@@ -831,13 +825,6 @@ impl<E: TElement> StyleSharingCache<E> {
             return None;
         }
 
-        if target.matches_user_and_content_rules()
-            != candidate.element.matches_user_and_content_rules()
-        {
-            trace!("Miss: User and Author Rules");
-            return None;
-        }
-
         
         if checks::may_match_different_id_rules(shared, target.element, candidate.element) {
             trace!("Miss: ID Attr");
@@ -906,12 +893,18 @@ impl<E: TElement> StyleSharingCache<E> {
         inherited: &ComputedValues,
         inputs: &CascadeInputs,
         target: E,
+        dom_depth: usize,
     ) -> Option<PrimaryStyle> {
         if shared_context.options.disable_style_sharing_cache {
             return None;
         }
 
-        self.cache_mut().entries.lookup(|candidate| {
+        let cache = self.cache_mut_at(dom_depth);
+        if cache.dom_depth != dom_depth {
+            return None;
+        }
+
+        cache.entries.lookup(|candidate| {
             debug_assert_ne!(candidate.element, target);
             if !candidate.parent_style_identity().eq(inherited) {
                 return None;
