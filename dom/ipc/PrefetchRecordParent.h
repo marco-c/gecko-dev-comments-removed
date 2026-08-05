@@ -79,6 +79,19 @@ class PrefetchRecordParent final : public PPrefetchRecordParent,
   
   void MarkCanceled();
 
+  
+  
+  
+  
+  bool MatchesURL(nsIURI* aURL) const;
+
+  
+  
+  
+  
+  
+  bool IsExpectedToMatch(nsIURI* aURL) const;
+
   void ActorDestroy(ActorDestroyReason aReason) override;
 
  private:

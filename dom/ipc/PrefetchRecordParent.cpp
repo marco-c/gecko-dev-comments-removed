@@ -10,6 +10,7 @@
 #include "mozilla/dom/PrefetchLog.h"
 #include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/WindowGlobalParent.h"
+#include "mozilla/net/NoVarySearchUtils.h"
 #include "nsContentPolicyUtils.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIHttpChannel.h"
@@ -202,6 +203,58 @@ void PrefetchRecordParent::FillResponseOnLastEntry(nsIChannel* aChannel) {
   if (NS_SUCCEEDED(http->GetResponseHeader("No-Vary-Search"_ns, nvsHeader))) {
     last.mNoVarySearchHeader = nvsHeader;
   }
+}
+
+bool PrefetchRecordParent::MatchesURL(nsIURI* aURL) const {
+  
+  
+  
+  
+  bool eq = false;
+  if (mURL) {
+    mURL->Equals(aURL, &eq);
+  }
+  if (eq) {
+    return true;
+  }
+
+  
+  
+  
+  if (mState != PrefetchState::Completed || mRedirectChain.IsEmpty()) {
+    return false;
+  }
+  
+  
+  const ExchangeRecord& first = mRedirectChain[0];
+  net::NoVarySearchData data =
+      net::ParseNoVarySearchHeader(first.mNoVarySearchHeader);
+  
+  
+  return net::URLsAreEquivalentModuloVariationConfig(mURL, aURL, data);
+}
+
+bool PrefetchRecordParent::IsExpectedToMatch(nsIURI* aURL) const {
+  
+  
+  
+  
+  if (MatchesURL(aURL)) {
+    return true;
+  }
+
+  
+  
+  
+  if (mNoVarySearchHint.IsEmpty()) {
+    return false;
+  }
+  
+  net::NoVarySearchData hint =
+      net::ParseNoVarySearchHeader(NS_ConvertUTF16toUTF8(mNoVarySearchHint));
+  
+  
+  return net::URLsAreEquivalentModuloVariationConfig(mURL, aURL, hint);
 }
 
 nsString PrefetchRecordParent::ComputePartitionKeyForChannel(
