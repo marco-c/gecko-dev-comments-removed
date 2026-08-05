@@ -355,7 +355,7 @@ mozilla::ipc::IPCResult SerialPortParent::RecvDrain(DrainResolver&& aResolver) {
   
   
   
-  auto completeDrain = [portId = mPortId, aResolver]() {
+  auto completeDrain = [portId = mPortId, aResolver = std::move(aResolver)]() {
     RefPtr<SerialPlatformService> service =
         SerialPlatformService::GetInstance();
     nsresult rv = NS_ERROR_FAILURE;

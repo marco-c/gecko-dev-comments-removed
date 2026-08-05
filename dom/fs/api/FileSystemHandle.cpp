@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FileSystemHandle.h"
 
 #include "FileSystemDirectoryHandle.h"
@@ -184,8 +182,9 @@ already_AddRefed<Promise> FileSystemHandle::Move(const fs::EntryId& aParentId,
   
   
   promise->AddCallbacksWithCycleCollectedArgs(
-      [newMetadata](JSContext* aCx, JS::Handle<JS::Value> aValue,
-                    ErrorResult& aRv, FileSystemHandle* aHandle) {
+      [newMetadata = std::move(newMetadata)](
+          JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv,
+          FileSystemHandle* aHandle) {
         
         LOG(("Changing FileSystemHandle name from %s to %s",
              NS_ConvertUTF16toUTF8(aHandle->mMetadata.entryName()).get(),

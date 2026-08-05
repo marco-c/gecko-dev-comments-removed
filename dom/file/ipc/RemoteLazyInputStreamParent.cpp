@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RemoteLazyInputStreamParent.h"
 
 #include "RemoteLazyInputStreamStorage.h"
@@ -105,7 +103,7 @@ mozilla::ipc::IPCResult RemoteLazyInputStreamParent::RecvLengthNeeded(
   }
 
   InputStreamLengthHelper::GetAsyncLength(
-      stream, [aResolver, id = mID](int64_t aLength) {
+      stream, [aResolver = std::move(aResolver), id = mID](int64_t aLength) {
         MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose,
                 ("Parent::RecvLengthNeeded async resolve %" PRId64 "! %s",
                  aLength, nsIDToCString(id).get()));

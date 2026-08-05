@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/IdentityNetworkHelpers.h"
 
 namespace mozilla::dom {
@@ -76,8 +74,8 @@ IdentityNetworkHelpers::FetchConfigHelper(
     return result;
   }
   serviceResult->AddCallbacksWithCycleCollectedArgs(
-      [result, aWellKnownConfig](JSContext* aCx, JS::Handle<JS::Value> aValue,
-                                 ErrorResult&) {
+      [result, aWellKnownConfig = std::move(aWellKnownConfig)](
+          JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult&) {
         IdentityProviderAPIConfig value;
         bool success = value.Init(aCx, aValue);
         if (!success) {

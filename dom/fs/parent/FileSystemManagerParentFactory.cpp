@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FileSystemManagerParentFactory.h"
 
 #include "mozilla/OriginAttributes.h"
@@ -71,7 +69,7 @@ mozilla::ipc::IPCResult CreateFileSystemManagerParent(
       originMetadata)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [origin = originMetadata.mOrigin,
+          [origin = std::move(originMetadata.mOrigin),
            parentEndpoint = std::move(aParentEndpoint), backgroundActor,
            aResolver](const fs::Registered<fs::data::FileSystemDataManager>&
                           dataManager) mutable {

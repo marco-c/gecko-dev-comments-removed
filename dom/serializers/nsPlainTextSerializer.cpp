@@ -1477,7 +1477,7 @@ void nsPlainTextSerializer::CurrentLine::CreateQuotesAndIndent(
 
       quotes.Append(char16_t(' '));
     }
-    aResult = quotes;
+    aResult = std::move(quotes);
   }
 
   
