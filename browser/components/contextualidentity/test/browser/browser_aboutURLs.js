@@ -17,7 +17,6 @@ add_task(async function () {
     
     "credits",
     "logins",
-    "referrals",
     "rights",
     
     
