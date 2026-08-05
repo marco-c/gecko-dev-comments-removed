@@ -145,7 +145,7 @@ def view_gecko_profile_from_raptor():
     
     LOG_GECKO = RaptorLogger(component="raptor-view-gecko-profile")
 
-    profile_zip_path = os.environ.get("RAPTOR_LATEST_GECKO_PROFILE_ARCHIVE", None)
+    profile_zip_path = os.environ.get("RAPTOR_LATEST_PROFILE", None)
     if profile_zip_path is None or not os.path.exists(profile_zip_path):
         LOG_GECKO.info(
             "No local raptor gecko profiles were found so not "

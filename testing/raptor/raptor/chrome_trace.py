@@ -125,7 +125,7 @@ class ChromeTrace(RaptorProfiling):
         
         
         
-        os.environ["RAPTOR_LATEST_GECKO_PROFILE_ARCHIVE"] = str(
+        os.environ["RAPTOR_LATEST_PROFILE"] = str(
             self.profile_arcname
         )  
 

@@ -226,7 +226,7 @@ class GeckoProfile(RaptorProfiling):
 
         
         
-        os.environ["RAPTOR_LATEST_GECKO_PROFILE_ARCHIVE"] = self.profile_arcname
+        os.environ["RAPTOR_LATEST_PROFILE"] = self.profile_arcname
 
     def clean(self):
         """
