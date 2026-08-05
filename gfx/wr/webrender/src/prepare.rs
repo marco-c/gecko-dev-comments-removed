@@ -6,15 +6,14 @@
 
 
 
-use api::{BoxShadowClipMode, ColorF, DebugFlags, ExtendMode, ExternalImageData, ExternalImageType, GradientStop, ImageBufferKind};
-use api::ClipMode;
+use api::{ColorF, DebugFlags, ExtendMode, ExternalImageData, ExternalImageType, GradientStop, ImageBufferKind};
 use crate::border_image::prepare_border_image_nine_patch;
 use crate::pattern::cutout::Cutout;
 use crate::render_task_graph::RenderTaskId;
-use crate::util::{ScaleOffset, clamp_to_scale_factor};
+use crate::util::ScaleOffset;
 use crate::util::MaxRect;
-use crate::box_shadow::{BoxShadowCacheKey, BLUR_SAMPLE_SCALE};
-use crate::pattern::box_shadow::BoxShadowPatternData;
+use crate::box_shadow::prepare_box_shadow;
+
 use crate::pattern::gradient::linear_gradient_pattern;
 use crate::pattern::{Pattern, PatternBuilder, PatternBuilderContext, PatternBuilderState};
 use crate::prim_store::gradient::{decompose_axis_aligned_gradient, linear_gradient_decomposes};
@@ -23,7 +22,7 @@ use api::units::*;
 use euclid::Scale;
 use crate::composite::CompositorSurfaceKind;
 use crate::command_buffer::{CommandBufferIndex, PrimitiveCommand};
-use crate::border;
+
 use crate::clip::ClipNodeRange;
 use crate::pattern::image::{ImagePattern, ShadowPattern};
 use crate::pattern::filter::BlendFilterPattern;
@@ -35,8 +34,8 @@ use crate::space::SpaceMapper;
 use crate::renderer::{BlendMode, GpuBufferAddress};
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureContext, PictureState};
-use crate::gpu_types::{BlurEdgeMode, UvRectKind};
-use crate::render_target::RenderTargetKind;
+use crate::gpu_types::UvRectKind;
+
 use crate::internal_types::{FastHashMap, PlaneSplitAnchor, Filter};
 use crate::picture::{ClusterFlags, PictureCompositeMode, PictureInstance, PictureScratch};
 use crate::picture::{PrimitiveList, PrimitiveCluster, SurfaceIndex, SubpixelMode, Picture3DContext};
@@ -44,10 +43,10 @@ use crate::tile_cache::{SliceId, TileCacheInstance};
 use crate::prim_store::*;
 use crate::quad::{self, QuadTransformState};
 use crate::render_backend::DataStores;
-use crate::render_task_cache::RenderTaskCacheKeyKind;
-use crate::render_task_cache::{RenderTaskCacheKey, to_cache_size, RenderTaskParent};
-use crate::render_task::{EmptyTask, RenderTask, RenderTaskKind, MAX_BLUR_STD_DEVIATION};
-use crate::space::SpaceSnapper;
+
+
+use crate::render_task::{EmptyTask, RenderTask, RenderTaskKind};
+
 use crate::visibility::{DrawState, KindScratchHandle};
 
 
@@ -237,7 +236,7 @@ fn prepare_prim_for_render(
     store: &mut PrimitiveStore,
     prim_instance_index: usize,
     cluster: &mut PrimitiveCluster,
-    quad_transform: &mut QuadTransformState,
+    mut quad_transform: &mut QuadTransformState,
     pic_context: &PictureContext,
     pic_state: &mut PictureState,
     frame_context: &FrameBuildingContext,
@@ -350,257 +349,22 @@ fn prepare_prim_for_render(
             profile_scope!("BoxShadow");
 
             let prim_data = &data_stores.box_shadow[*data_handle];
-            let shadow_data = &prim_data.kind;
-            let blur_radius = shadow_data.blur_radius;
 
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            let blur_offset = (BLUR_SAMPLE_SCALE * blur_radius).ceil();
-            let unsnapped_element_rect = match shadow_data.clip_mode {
-                BoxShadowClipMode::Outset => prim_instance.unsnapped_prim_rect
-                    .inflate(-blur_offset, -blur_offset)
-                    .inflate(-shadow_data.spread_amount, -shadow_data.spread_amount)
-                    .translate(-shadow_data.box_offset),
-                BoxShadowClipMode::Inset => prim_instance.unsnapped_prim_rect,
-            };
-            let element_rect = {
-                
-                
-                let mut snapper = SpaceSnapper::new(
-                    &frame_state.surfaces[pic_context.surface_index.0],
-                    frame_context.spatial_tree,
-                );
-                snapper.set_target_spatial_node(prim_spatial_node_index, frame_context.spatial_tree);
-                snapper.snap_rect(&unsnapped_element_rect)
-            };
-            let inner_shadow_rect = element_rect
-                .translate(shadow_data.box_offset)
-                .inflate(shadow_data.spread_amount, shadow_data.spread_amount);
-            let outer_shadow_rect = inner_shadow_rect.inflate(blur_offset, blur_offset);
-            
-            
-            
-            
-            
-            let prim_rect = match shadow_data.clip_mode {
-                BoxShadowClipMode::Outset => outer_shadow_rect,
-                BoxShadowClipMode::Inset => element_rect,
-            };
-
-            let shadow_rect_size = inner_shadow_rect.size();
-            let mut shadow_radius = shadow_data.shadow_radius;
-            border::ensure_no_corner_overlap(&mut shadow_radius, shadow_rect_size);
-
-            let blur_region = (BLUR_SAMPLE_SCALE * blur_radius).ceil();
-
-            let max_corner_width = shadow_radius.top_left.width
-                .max(shadow_radius.bottom_left.width)
-                .max(shadow_radius.top_right.width)
-                .max(shadow_radius.bottom_right.width);
-            let max_corner_height = shadow_radius.top_left.height
-                .max(shadow_radius.bottom_left.height)
-                .max(shadow_radius.top_right.height)
-                .max(shadow_radius.bottom_right.height);
-
-            let used_corner_width = max_corner_width.max(blur_region);
-            let used_corner_height = max_corner_height.max(blur_region);
-
-            let min_shadow_rect_size = LayoutSize::new(
-                2.0 * used_corner_width + blur_region,
-                2.0 * used_corner_height + blur_region,
-            );
-
-            
-            
-            let src_rect_size = LayoutSize::new(
-                if shadow_rect_size.width >= min_shadow_rect_size.width {
-                    min_shadow_rect_size.width
-                } else {
-                    shadow_rect_size.width
-                },
-                if shadow_rect_size.height >= min_shadow_rect_size.height {
-                    min_shadow_rect_size.height
-                } else {
-                    shadow_rect_size.height
-                },
-            );
-
-            
-            
-            
-            let shadow_rect_alloc_size = LayoutSize::new(
-                2.0 * blur_region + src_rect_size.width,
-                2.0 * blur_region + src_rect_size.height,
-            );
-
-            
-            let blur_radius_dp = blur_radius * 0.5;
-            let mut content_scale = LayoutToWorldScale::new(1.0) * device_pixel_scale;
-            content_scale.0 = clamp_to_scale_factor(content_scale.0, false);
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            let sigma = blur_radius_dp * content_scale.0;
-            let n_downscales = if sigma > MAX_BLUR_STD_DEVIATION {
-                (sigma / MAX_BLUR_STD_DEVIATION).log2().ceil() as u32
-            } else {
-                0
-            };
-            content_scale.0 /= (1u32 << n_downscales) as f32;
-
-            
-            
-            let cache_size_rounded = to_cache_size(shadow_rect_alloc_size, &mut content_scale);
-
-            
-            
-            
-            
-            
-            
-            
-            
-            let content_device_size = shadow_rect_alloc_size * content_scale;
-            let cache_size = DeviceIntSize::new(
-                cache_size_rounded.width.max(content_device_size.width.ceil() as i32),
-                cache_size_rounded.height.max(content_device_size.height.ceil() as i32),
-            );
-
-            
-            
-            let blur_std_dev = blur_radius_dp * content_scale.0;
-            debug_assert!(
-                blur_std_dev <= MAX_BLUR_STD_DEVIATION + 1e-3,
-                "BoxShadow sigma {blur_std_dev} exceeds MAX_BLUR_STD_DEVIATION \
-                 (n_downscales={n_downscales}, content_scale={})",
-                content_scale.0,
-            );
-
-            let bs_cache_key = BoxShadowCacheKey {
-                blur_radius_dp: Au::from_f32_px(blur_std_dev),
-                clip_mode: shadow_data.clip_mode,
-                original_alloc_size: (shadow_rect_alloc_size * content_scale).round().to_i32(),
-                br_top_left: (shadow_radius.top_left * content_scale).round().to_i32(),
-                br_top_right: (shadow_radius.top_right * content_scale).round().to_i32(),
-                br_bottom_right: (shadow_radius.bottom_right * content_scale).round().to_i32(),
-                br_bottom_left: (shadow_radius.bottom_left * content_scale).round().to_i32(),
-                shape_top_left: shadow_radius.shape_top_left.to_bits(),
-                shape_top_right: shadow_radius.shape_top_right.to_bits(),
-                shape_bottom_right: shadow_radius.shape_bottom_right.to_bits(),
-                shape_bottom_left: shadow_radius.shape_bottom_left.to_bits(),
-                device_pixel_scale: Au::from_f32_px(content_scale.0),
-            };
-
-            
-            
-            let minimal_shadow_rect_origin = LayoutPoint::new(blur_region, blur_region);
-            let minimal_shadow_rect = LayoutRect::from_origin_and_size(
-                minimal_shadow_rect_origin,
-                src_rect_size,
-            );
-            let device_pixel_scale_for_task = DevicePixelScale::new(content_scale.0);
-
-            let task_id = frame_state.resource_cache.request_render_task(
-                Some(RenderTaskCacheKey {
-                    origin: DeviceIntPoint::zero(),
-                    size: cache_size,
-                    kind: RenderTaskCacheKeyKind::BoxShadow(bs_cache_key),
-                }),
-                false,
-                RenderTaskParent::Surface,
-                &mut frame_state.frame_gpu_data.f32,
-                frame_state.rg_builder,
-                &mut frame_state.surface_builder,
-                &mut |rg_builder, _| {
-                    let mask_task_id = rg_builder.add().init(RenderTask::new_dynamic(
-                        cache_size,
-                        RenderTaskKind::new_rounded_rect_mask(
-                            minimal_shadow_rect,
-                            shadow_radius,
-                            ClipMode::Clip,
-                            device_pixel_scale_for_task,
-                        ),
-                    ));
-
-                    RenderTask::new_blur(
-                        DeviceSize::new(blur_std_dev, blur_std_dev),
-                        mask_task_id,
-                        rg_builder,
-                        RenderTargetKind::Alpha,
-                        None,
-                        cache_size,
-                        BlurEdgeMode::Duplicate,
-                    )
-                }
-            );
-
-            
-            
-            
-            let dest_rect = outer_shadow_rect;
-            let dest_rect_offset = LayoutVector2D::new(
-                dest_rect.min.x - prim_rect.min.x,
-                dest_rect.min.y - prim_rect.min.y,
-            );
-            let dest_rect_size = dest_rect.size();
-
-            let mut element_radius = shadow_data.element_radius;
-            border::ensure_no_corner_overlap(&mut element_radius, element_rect.size());
-            let element_offset_rel_prim = LayoutVector2D::new(
-                element_rect.min.x - prim_rect.min.x,
-                element_rect.min.y - prim_rect.min.y,
-            );
-
-            let pattern = BoxShadowPatternData {
-                color: shadow_data.color,
-                render_task: task_id,
-                shadow_rect_alloc_size,
-                content_device_size,
-                dest_rect_size,
-                dest_rect_offset,
-                clip_mode: shadow_data.clip_mode,
-                element_offset_rel_prim,
-                element_size: element_rect.size(),
-                element_radius,
-            };
-
-            quad::prepare_quad(
-                &pattern,
-                &prim_rect,
-                &prim_info.clip_chain.local_clip_rect,
-                prim_data.common.aligned_aa_edges,
-                prim_data.common.transformed_aa_edges,
-                prim_instance_index,
-                &None,
+            prepare_box_shadow(
+                &prim_data.kind,
+                &prim_data.common,
+                &prim_instance.unsnapped_prim_rect,
                 &prim_info.clip_chain,
-                quad_transform,
+                &mut quad_transform,
                 frame_context,
                 pic_context,
-                targets,
-                &data_stores.clip,
                 frame_state,
                 scratch,
+                prim_spatial_node_index,
+                device_pixel_scale,
+                prim_instance_index,
+                targets,
+                data_stores,
             );
 
             return;
