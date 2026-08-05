@@ -382,18 +382,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
-    public @Deprecated @DeprecationSchedule(id = "disable-ship-removal", version = 153) @NonNull
-    Builder disableShip(final boolean value) {
-      return this;
-    }
-
-    
-
-
-
-
-
-
 
 
 
@@ -776,6 +764,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<Boolean>("signon.autofillForms", true);
    final PrefWithoutDefault<String> mFirefoxRelay =
       new PrefWithoutDefault<>("signon.firefoxRelay.feature");
+   final PrefWithoutDefault<String> mIpProtectionAuthProvider =
+      new PrefWithoutDefault<>("toolkit.ipProtection.android.authProvider");
    final Pref<Boolean> mAutomaticallyOfferPopup =
       new Pref<Boolean>("browser.translations.automaticallyPopup", true);
    final Pref<Boolean> mHttpsOnly =
@@ -2081,6 +2071,46 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   }
 
   
+  @Retention(RetentionPolicy.SOURCE)
+  @StringDef(value = {IP_PROTECTION_AUTH_PROVIDER_FXA, IP_PROTECTION_AUTH_PROVIDER_GPI})
+  public @interface IpProtectionAuthProvider {}
+
+  
+  public static final String IP_PROTECTION_AUTH_PROVIDER_FXA = "fxa";
+
+  
+  public static final String IP_PROTECTION_AUTH_PROVIDER_GPI = "gpi";
+
+  
+
+
+
+
+
+
+
+  @ExperimentalGeckoViewApi
+  public @Nullable @IpProtectionAuthProvider String getIpProtectionAuthProvider() {
+    return mIpProtectionAuthProvider.get();
+  }
+
+  
+
+
+
+
+
+
+
+
+  @ExperimentalGeckoViewApi
+  public @NonNull GeckoRuntimeSettings setIpProtectionAuthProvider(
+      @NonNull final @IpProtectionAuthProvider String provider) {
+    mIpProtectionAuthProvider.commit(provider);
+    return this;
+  }
+
+  
 
 
 
@@ -2389,22 +2419,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   public @NonNull GeckoRuntimeSettings setUserCharacteristicPingCurrentVersion(final int version) {
     mUserCharacteristicPingCurrentVersion.commit(version);
     return this;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  public @Deprecated @DeprecationSchedule(id = "disable-ship-removal", version = 153) @Nullable
-  Boolean getDisableShip() {
-    return false;
   }
 
   

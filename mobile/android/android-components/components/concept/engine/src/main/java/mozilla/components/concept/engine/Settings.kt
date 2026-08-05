@@ -108,6 +108,14 @@ abstract class Settings {
     open var queryParameterStrippingStripList: String by UnsupportedSetting()
 
     /**
+     * Setting to control whether the content blocking database is enabled.
+     *
+     * When enabled, the engine persists tracking protection blocking events to a database that
+     * can be queried for aggregate statistics (e.g., total trackers blocked, events by date range).
+     */
+    open var useContentBlockingDatabase: Boolean by UnsupportedSetting()
+
+    /**
      * Setting to intercept and override requests.
      */
     open var requestInterceptor: RequestInterceptor? by UnsupportedSetting()
@@ -232,6 +240,11 @@ abstract class Settings {
      * Setting to control the Firefox Relay feature state.
      */
     open var firefoxRelay: Engine.FirefoxRelayMode? by UnsupportedSetting()
+
+    /**
+     * Setting to control the IP Protection auth provider ("fxa" or "gpi").
+     */
+    open var ipProtectionAuthProvider: String? by UnsupportedSetting()
 
     /**
      * Setting to force the ability to scale the content
@@ -493,6 +506,7 @@ data class DefaultSettings(
     override var queryParameterStrippingPrivateBrowsing: Boolean = false,
     override var queryParameterStrippingAllowList: String = "",
     override var queryParameterStrippingStripList: String = "",
+    override var useContentBlockingDatabase: Boolean = false,
     override var emailTrackerBlockingPrivateBrowsing: Boolean = false,
     override var userCharacteristicPingCurrentVersion: Int = 0,
     override var webContentIsolationStrategy: WebContentIsolationStrategy? =
