@@ -6777,7 +6777,28 @@ QuotaManager::EnsureTemporaryOriginIsInitializedInternal(
         ClientUsageArray(),  0, kCurrentQuotaVersion};
 
     if (!aCreateIfNonExistent) {
-      InitQuotaForOrigin(fullOriginMetadata,  false);
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      bool directoryExists = false;
+      QM_TRY(MOZ_TO_RESULT(directory->Exists(&directoryExists)));
+      if (directoryExists) {
+        QM_TRY_INSPECT(const auto& metadata,
+                       LoadFullOriginMetadataWithRestore(directory));
+
+        AddTemporaryOrigin(metadata);
+
+        QM_TRY(MOZ_TO_RESULT(InitializeOrigin(directory, metadata)));
+      } else {
+        InitQuotaForOrigin(fullOriginMetadata,  false);
+      }
 
       return std::pair(std::move(directory), false);
     }
@@ -8150,7 +8171,19 @@ Result<PrincipalInfo, nsresult> QuotaManager::ParseOrigin(
 }
 
 
-void QuotaManager::InvalidateQuotaCache() { gInvalidateQuotaCache = true; }
+void QuotaManager::InvalidateQuotaCache() {
+  
+  
+  
+  
+  
+  
+  
+  if (!StaticPrefs::dom_quotaManager_caching_checkBuildId()) {
+    return;
+  }
+  gInvalidateQuotaCache = true;
+}
 
 OriginMetadataArray QuotaManager::GetTemporaryOrigins(
     PersistenceType aPersistenceType) const {
