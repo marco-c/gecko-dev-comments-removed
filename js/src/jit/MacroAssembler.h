@@ -6225,7 +6225,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  void alignJitStackBasedOnNArgs(Register nargs, bool countIncludesThis);
+  
+  void alignJitStackBasedOnNArgs(Register nargs, bool countIncludesThis,
+                                 uint32_t extraArgs = 0);
   void alignJitStackBasedOnNArgs(uint32_t argc, bool countIncludesThis);
 
   inline void assertStackAlignment(uint32_t alignment, int32_t offset = 0);

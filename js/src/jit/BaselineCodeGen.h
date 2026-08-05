@@ -120,6 +120,9 @@ class BaselineCodeGen {
                          Register scratch2);
 
   
+  void loadResumeArgsBase(Register dest);
+
+  
   void loadGlobalLexicalEnvironment(Register dest);
   void pushGlobalLexicalEnvironmentValue(ValueOperand scratch);
 
@@ -184,10 +187,6 @@ class BaselineCodeGen {
   template <typename F>
   [[nodiscard]] bool emitTestScriptFlag(JSScript::MutableFlags flag, bool value,
                                         const F& emit, Register scratch);
-
-  [[nodiscard]] bool emitEnterGeneratorCode(Register script,
-                                            Register resumeIndex,
-                                            Register scratch);
 
   void emitInterpJumpToResumeEntry(Register script, Register resumeIndex,
                                    Register scratch);
@@ -277,6 +276,9 @@ class BaselineCodeGen {
   [[nodiscard]] bool initEnvironmentChain();
 
   [[nodiscard]] bool emitHandleCodeCoverageAtPrologue();
+
+  void emitGeneratorResumePrologue();
+  void emitGeneratorResumePrologueBody();
 
   void emitInitFrameFields(Register nonFunctionEnv);
   [[nodiscard]] bool emitIsDebuggeeCheck();
@@ -494,6 +496,10 @@ class BaselineInterpreterHandler {
   NonAssertingLabel interpretOpWithPCReg_;
 
   
+  
+  NonAssertingLabel generatorResumePrologue_;
+
+  
   using CodeOffsetVector = Vector<uint32_t, 0, SystemAllocPolicy>;
   CodeOffsetVector debugInstrumentationOffsets_;
 
@@ -520,6 +526,7 @@ class BaselineInterpreterHandler {
 
   Label* interpretOpLabel() { return &interpretOp_; }
   Label* interpretOpWithPCRegLabel() { return &interpretOpWithPCReg_; }
+  Label* generatorResumePrologueLabel() { return &generatorResumePrologue_; }
 
   Label* codeCoverageAtPrologueLabel() { return &codeCoverageAtPrologueLabel_; }
   Label* codeCoverageAtPCLabel() { return &codeCoverageAtPCLabel_; }
@@ -609,6 +616,7 @@ class BaselineInterpreterGenerator final : private BaselineInterpreterCodeGen {
   [[nodiscard]] bool emitDebugTrap();
 
   void emitOutOfLineCodeCoverageInstrumentation();
+  void emitOutOfLineGeneratorResumePrologue();
 };
 
 }  

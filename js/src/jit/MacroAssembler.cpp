@@ -4676,7 +4676,8 @@ void MacroAssembler::linkProfilerCallSites(JitCode* code) {
 }
 
 void MacroAssembler::alignJitStackBasedOnNArgs(Register nargs,
-                                               bool countIncludesThis) {
+                                               bool countIncludesThis,
+                                               uint32_t extraArgs) {
   
   assertStackAlignment(sizeof(Value), 0);
 
@@ -4706,8 +4707,10 @@ void MacroAssembler::alignJitStackBasedOnNArgs(Register nargs,
   
   
   
+  
+  uint32_t staticArgs = extraArgs + !countIncludesThis;
   Assembler::Condition condition =
-      countIncludesThis ? Assembler::NonZero : Assembler::Zero;
+      (staticArgs % 2) == 0 ? Assembler::NonZero : Assembler::Zero;
 
   Label alignmentIsOffset, end;
   branchTestPtr(condition, nargs, Imm32(1), &alignmentIsOffset);
