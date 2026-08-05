@@ -354,9 +354,20 @@ struct MOZ_STACK_CLASS JS_PUBLIC_API ErrorReportBuilder {
   explicit ErrorReportBuilder(JSContext* cx);
   ~ErrorReportBuilder();
 
-  enum SniffingBehavior { WithSideEffects, NoSideEffects };
+  enum SniffingBehavior {
+    WithSideEffects,
+    NoSideEffects,
+    NoSideEffectsListPropertyNames
+  };
 
   
+
+
+
+
+
+
+
 
 
 

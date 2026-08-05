@@ -807,7 +807,12 @@ void Promise::ReportRejectedPromise(JSContext* aCx,
     } else {
       
       JS::ExceptionStack exnStack(aCx, unwrapped, resolutionSite);
-      if (!report.init(aCx, exnStack, JS::ErrorReportBuilder::NoSideEffects)) {
+      
+      
+      
+      if (!report.init(
+              aCx, exnStack,
+              JS::ErrorReportBuilder::NoSideEffectsListPropertyNames)) {
         JS_ClearPendingException(aCx);
         return;
       }

@@ -1348,19 +1348,24 @@ NS_IMETHODIMP CycleCollectedJSContext::NotifyUnhandledRejections::Run() {
     
     
     
+    
+    
+    bool suppressReporting = false;
     if (!JS::GetPromiseIsHandled(promiseObj)) {
       auto& observers = cccx->mUncaughtRejectionObservers;
       for (size_t j = 0; j < observers.Length(); ++j) {
         RefPtr<UncaughtRejectionObserver> obs =
             static_cast<UncaughtRejectionObserver*>(observers[j].get());
-        obs->OnLeftUncaught(promiseObj, IgnoreErrors());
+        if (obs->OnLeftUncaught(promiseObj, IgnoreErrors())) {
+          suppressReporting = true;
+        }
       }
     }
 
     
     
     
-    if (!defaultPrevented) {
+    if (!defaultPrevented && !suppressReporting) {
       JSAutoRealm ar(cccx->Context(), promiseObj);
       Promise::ReportRejectedPromise(cccx->Context(), promiseObj);
     }

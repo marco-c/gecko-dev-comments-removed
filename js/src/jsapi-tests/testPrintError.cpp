@@ -2,14 +2,12 @@
 
 
 
-
-
-
 #include <cstdio>  
+#include <string>
 
 #include "js/ErrorReport.h"  
-#include "js/Warnings.h"     
-
+#include "js/Exception.h"  
+#include "js/Warnings.h"   
 #include "jsapi-tests/tests.h"
 
 class AutoStreamBuffer {
@@ -123,3 +121,52 @@ BEGIN_TEST(testPrintError_UTF16CodeUnits) {
 END_TEST(testPrintError_UTF16CodeUnits)
 
 #undef BURRITO
+
+
+
+static std::string StealUncaughtToString(
+    JSContext* cx, JS::ErrorReportBuilder::SniffingBehavior behavior) {
+  JS::ExceptionStack exnStack(cx);
+  MOZ_RELEASE_ASSERT(JS::StealPendingExceptionStack(cx, &exnStack));
+
+  JS::ErrorReportBuilder builder(cx);
+  MOZ_RELEASE_ASSERT(builder.init(cx, exnStack, behavior));
+  return std::string(builder.toStringResult().c_str());
+}
+
+BEGIN_TEST(testPrintError_UncaughtObjectPreview) {
+  static constexpr auto ListNames =
+      JS::ErrorReportBuilder::NoSideEffectsListPropertyNames;
+  static constexpr auto NoSideEffects = JS::ErrorReportBuilder::NoSideEffects;
+
+  
+  
+  
+  CHECK(!execDontReport("throw {reason: 'boom'};", __FILE__, __LINE__));
+  CHECK(StealUncaughtToString(cx, ListNames) ==
+        "uncaught exception: Object (reason)");
+
+  CHECK(!execDontReport("throw {name: 'foo', message: 'bar'};", __FILE__,
+                        __LINE__));
+  CHECK(StealUncaughtToString(cx, ListNames) ==
+        "uncaught exception: Object (message, name)");
+
+  
+  CHECK(!execDontReport("throw {};", __FILE__, __LINE__));
+  CHECK(StealUncaughtToString(cx, ListNames) == "uncaught exception: Object");
+
+  
+  CHECK(!execDontReport("throw {get reason() { return 'boom'; }};", __FILE__,
+                        __LINE__));
+  CHECK(StealUncaughtToString(cx, ListNames) ==
+        "uncaught exception: Object (reason)");
+
+  
+  
+  CHECK(!execDontReport("throw {reason: 'boom'};", __FILE__, __LINE__));
+  CHECK(StealUncaughtToString(cx, NoSideEffects) ==
+        "uncaught exception: Object");
+
+  return true;
+}
+END_TEST(testPrintError_UncaughtObjectPreview)
