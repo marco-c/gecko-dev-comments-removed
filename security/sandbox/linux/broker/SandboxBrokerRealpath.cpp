@@ -36,15 +36,19 @@
 static char sccsid[] = "@(#)realpath.c	8.1 (Berkeley) 2/16/94";
 #endif 
 #include <errno.h>
+#include <fcntl.h>
+#include <linux/magic.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <sys/vfs.h>
 #include <unistd.h>
 
 #include "SandboxBroker.h"
 #include "SandboxLogging.h"
 #include "base/strings/string_util.h"
+#include "mozilla/UniquePtrExtensions.h"
 
 
 
@@ -59,6 +63,34 @@ static size_t my_strlcat(char* s1, const char* s2, size_t len) {
 }
 
 namespace mozilla {
+
+static ssize_t SafeReadlink(const char* __restrict path, char* __restrict buf,
+                            size_t bufsiz) {
+  
+  if (strncmp(path, "/proc/", 6) == 0) {
+    errno = EPERM;
+    return -1;
+  }
+
+  
+  UniqueFileHandle fd{open(path, O_PATH | O_NOFOLLOW)};
+  if (!fd) {
+    return -1;
+  }
+
+  
+  struct statfs sf;
+  if (fstatfs(fd.get(), &sf) != 0) {
+    return -1;
+  }
+  if (sf.f_type == PROC_SUPER_MAGIC) {
+    errno = EPERM;
+    return -1;
+  }
+
+  
+  return readlinkat(fd.get(), "", buf, bufsiz);
+}
 
 
 
@@ -223,7 +255,7 @@ char* SandboxBroker::SymlinkPath(const Policy* policy,
         *perms |= link_path_perms;
       }
       
-      slen = readlink(resolved, symlink, sizeof(symlink) - 1);
+      slen = SafeReadlink(resolved, symlink, sizeof(symlink) - 1);
       if (slen < 0) {
         if (m) free(resolved);
         return (nullptr);
