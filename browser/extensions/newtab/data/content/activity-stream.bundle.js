@@ -23269,17 +23269,7 @@ const PictureOfTheDay_PictureOfTheDay = ({
   
   const canOpenSource = Boolean(pictureData.sourceUrl);
   const handleOpenSource = () => {
-    if (!pictureData.sourceUrl) {
-      return;
-    }
     (0,external_ReactRedux_namespaceObject.batch)(() => {
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.OPEN_LINK,
-        data: {
-          url: pictureData.sourceUrl,
-          where: "tab"
-        }
-      }));
       recordUserAction("open_source", {
         source: "widget"
       });
@@ -23291,17 +23281,7 @@ const PictureOfTheDay_PictureOfTheDay = ({
   
   const canOpenLicense = Boolean(pictureData.licenseUrl);
   const handleOpenLicense = () => {
-    if (!pictureData.licenseUrl) {
-      return;
-    }
     (0,external_ReactRedux_namespaceObject.batch)(() => {
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.OPEN_LINK,
-        data: {
-          url: pictureData.licenseUrl,
-          where: "tab"
-        }
-      }));
       recordUserAction("open_license", {
         source: "widget"
       });
@@ -23325,18 +23305,18 @@ const PictureOfTheDay_PictureOfTheDay = ({
       }));
     }
     if (canOpenSource) {
-      parts.push(external_React_default().createElement("button", {
+      parts.push(external_React_default().createElement("a", {
         key: "source",
-        type: "button",
+        href: pictureData.sourceUrl,
         className: "picture-of-the-day-attribution-link picture-of-the-day-source-link",
         "data-l10n-id": "newtab-picture-attribution-source-link",
         onClick: handleOpenSource
       }));
     }
     if (pictureData.licenseLabel) {
-      parts.push(canOpenLicense ? external_React_default().createElement("button", {
+      parts.push(canOpenLicense ? external_React_default().createElement("a", {
         key: "license",
-        type: "button",
+        href: pictureData.licenseUrl,
         className: "picture-of-the-day-attribution-link picture-of-the-day-source-link",
         "data-l10n-id": "newtab-picture-attribution-license",
         "data-l10n-args": JSON.stringify({
@@ -23433,8 +23413,8 @@ const PictureOfTheDay_PictureOfTheDay = ({
     onClick: handleLearnMore
   })))), hasPicture ? external_React_default().createElement("div", {
     className: "picture-of-the-day-populated"
-  }, canOpenSource ? external_React_default().createElement("button", {
-    type: "button",
+  }, canOpenSource ? external_React_default().createElement("a", {
+    href: pictureData.sourceUrl,
     className: "picture-of-the-day-image-link",
     onClick: handleOpenSource
   }, pictureImage) : pictureImage, external_React_default().createElement("div", {
