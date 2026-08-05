@@ -25,6 +25,7 @@ const {
   AboutNewTabResourceMapping,
   BUILTIN_ADDON_ID,
   TRAINHOP_NIMBUS_FEATURE_ID,
+  TRAINHOP_NIMBUS_DEPLOYMENT_FEATURE_ID,
   TRAINHOP_NIMBUS_FIRST_STARTUP_FEATURE_ID,
   TRAINHOP_XPI_BASE_URL_PREF,
   TRAINHOP_SCHEDULED_UPDATE_STATE_TIMEOUT_PREF,
@@ -93,7 +94,13 @@ add_setup(async function nimbusTestsSetup() {
 
 
 
-async function setupNimbusTrainhopAddon({ updateAddonVersion }) {
+
+
+
+async function setupNimbusTrainhopAddon({
+  updateAddonVersion,
+  featureId = TRAINHOP_NIMBUS_DEPLOYMENT_FEATURE_ID,
+}) {
   info(`Setting up simulated train-hop add-on version ${updateAddonVersion}`);
   let fakeNewTabXPI = AddonTestUtils.createTempWebExtensionFile({
     manifest: {
@@ -111,7 +118,7 @@ async function setupNimbusTrainhopAddon({ updateAddonVersion }) {
     },
   });
 
-  const xpi_download_path = "data/newtab.xpi";
+  const xpi_download_path = `data/${updateAddonVersion}/newtab.xpi`;
 
   server.registerFile(`/${xpi_download_path}`, fakeNewTabXPI, () => {
     info(`Server got request for ${xpi_download_path}`);
@@ -125,16 +132,18 @@ async function setupNimbusTrainhopAddon({ updateAddonVersion }) {
   await ExperimentAPI.ready();
   const nimbusFeatureCleanup = await NimbusTestUtils.enrollWithFeatureConfig(
     {
-      featureId: TRAINHOP_NIMBUS_FEATURE_ID,
+      featureId,
       value: fakeNimbusVariables,
     },
     { isRollout: true }
   );
   
   Assert.deepEqual(
-    NimbusFeatures[TRAINHOP_NIMBUS_FEATURE_ID].getAllVariables(),
+    NimbusFeatures[featureId]
+      .getAllEnrollments()
+      .find(e => e.value.addon_version === updateAddonVersion)?.value,
     fakeNimbusVariables,
-    "Got the expected variables from the nimbus feature"
+    "Got the expected enrollment for the nimbus feature"
   );
 
   return { fakeNimbusVariables, nimbusFeatureCleanup };
@@ -214,39 +223,79 @@ async function asyncAssertNimbusTrainhopAddonStaged({ updateAddonVersion }) {
 
 
 
-function assertTrainhopAddonNimbusExposure({ expectedExposure }) {
-  const enrollmentMetadata =
-    NimbusFeatures[TRAINHOP_NIMBUS_FEATURE_ID].getEnrollmentMetadata();
-  Assert.deepEqual(
+
+
+
+function assertTrainhopAddonNimbusExposure({
+  expectedExposure,
+  featureId = TRAINHOP_NIMBUS_DEPLOYMENT_FEATURE_ID,
+}) {
+  const exposureEvents =
     Glean.nimbusEvents.exposure
       .testGetValue("events")
       ?.map(ev => ev.extra)
-      .filter(ev => ev.feature_id == TRAINHOP_NIMBUS_FEATURE_ID) ?? [],
-    expectedExposure
-      ? [
-          {
-            feature_id: TRAINHOP_NIMBUS_FEATURE_ID,
-            branch: enrollmentMetadata.branch,
-            experiment: enrollmentMetadata.slug,
-          },
-        ]
-      : [],
-    expectedExposure
-      ? "Got the expected exposure Glean event for the newtabTrainhopAddon Nimbus feature"
-      : "Got no exposure Glean event for the newtabTrainhopAddon as expected"
+      .filter(ev => ev.feature_id == featureId) ?? [];
+
+  if (!expectedExposure) {
+    Assert.deepEqual(
+      exposureEvents,
+      [],
+      `Got no exposure Glean event for ${featureId} as expected`
+    );
+    return;
+  }
+
+  const allMeta = NimbusFeatures[featureId].getAllEnrollmentMetadata();
+  Assert.equal(
+    allMeta.length,
+    1,
+    "Expected exactly one active enrollment when asserting exposure"
   );
+  const enrollmentMetadata = allMeta[0];
+  Assert.deepEqual(
+    exposureEvents,
+    [
+      {
+        feature_id: featureId,
+        branch: enrollmentMetadata.branch,
+        experiment: enrollmentMetadata.slug,
+      },
+    ],
+    `Got the expected exposure Glean event for the ${featureId} Nimbus feature`
+  );
+}
+
+
+
+
+
+
+
+function trainhopEffectiveVersionPref() {
+  const original = Services.prefs.getStringPref(
+    "browser.newtabpage.trainhopAddon.version",
+    ""
+  );
+  const deployment = Services.prefs.getStringPref(
+    "browser.newtabpage.trainhopAddonDeployment.version",
+    ""
+  );
+  if (!original) {
+    return deployment;
+  }
+  if (!deployment) {
+    return original;
+  }
+  return Services.vc.compare(original, deployment) >= 0 ? original : deployment;
 }
 
 function assertTrainhopAddonVersionPref(expectedTrainhopAddonVersion) {
   Assert.equal(
-    Services.prefs.getStringPref(
-      "browser.newtabpage.trainhopAddon.version",
-      ""
-    ),
+    trainhopEffectiveVersionPref(),
     expectedTrainhopAddonVersion,
     expectedTrainhopAddonVersion
-      ? "Expect browser.newtab.trainhopAddon.version about:config pref to be set while client is enrolled"
-      : "Expect browser.newtab.trainhopAddon.version about:config pref to be empty while client is unenrolled"
+      ? "Expect the effective train-hop add-on version (max of the original and deployment prefs) to be set while client is enrolled"
+      : "Expect the effective train-hop add-on version to be empty while client is unenrolled"
   );
 }
 
