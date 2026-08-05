@@ -616,26 +616,14 @@ void DocumentLoadListener::TryActivateFromPrefetch(nsIURI* aURI) {
       rec->IsolatedPartitionKey(),
       sourceWGP->DocumentPrincipal()->OriginAttributesRef());
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   if (mTiming) {
     mTiming->SetWasActivatedFromNavigationalPrefetch();
   }
 
-  nsLoadFlags loadFlags = 0;
-  mChannel->GetLoadFlags(&loadFlags);
-  DebugOnly<nsresult> rv = mChannel->SetLoadFlags(
-      loadFlags | nsICachingChannel::LOAD_ONLY_FROM_CACHE);
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
+  LOG_SPECRULES(
+      ("DocumentLoadListener::TryActivateFromPrefetch: [%p] activated from "
+       "prefetch cache for rec=%p",
+       this, rec));
 }
 
 bool CheckRecursiveLoad(CanonicalBrowsingContext* aLoadingContext,
