@@ -653,6 +653,8 @@ let interfaceNamesInGlobalScope = [
   
   "WebTransportDatagramDuplexStream",
   
+  "WebTransportDatagramsWritable",
+  
   "WebTransportError",
   
   "WebTransportReceiveStream",

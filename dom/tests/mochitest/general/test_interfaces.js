@@ -1751,6 +1751,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "WebTransportDatagramDuplexStream", insecureContext: false },
   
+  { name: "WebTransportDatagramsWritable", insecureContext: false },
+  
   { name: "WebTransportError", insecureContext: false },
   
   { name: "WebTransportReceiveStream", insecureContext: false },
