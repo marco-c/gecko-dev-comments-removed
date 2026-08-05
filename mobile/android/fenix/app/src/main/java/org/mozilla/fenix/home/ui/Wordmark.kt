@@ -5,7 +5,6 @@
 package org.mozilla.fenix.home.ui
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -17,7 +16,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
@@ -33,30 +31,17 @@ internal val ResourceId = SemanticsPropertyKey<Int>("ResourceId")
 internal var SemanticsPropertyReceiver.resourceId by ResourceId
 
 @Composable
-internal fun WordmarkLogo(
-    onLogoClicked: () -> Unit,
-    isSportsWidgetEnabled: Boolean,
-) {
-    val wordmarkResourceId = if (isSportsWidgetEnabled) R.attr.fenixWordmarkSportLogo else R.attr.fenixWordmarkLogo
-    val sportsLogoContentDescription = stringResource(R.string.sports_widget_country_selector_title)
+internal fun WordmarkLogo() {
     Image(
         modifier = Modifier
             .height(40.dp)
             .semantics {
                 testTagsAsResourceId = true
                 testTag = HOMEPAGE_WORDMARK_LOGO
-                resourceId = wordmarkResourceId
-                if (isSportsWidgetEnabled) {
-                    contentDescription = sportsLogoContentDescription
-                }
+                resourceId = R.attr.fenixWordmarkLogo
             }
-            .clickable(onClick = onLogoClicked)
             .padding(end = 10.dp),
-        painter = painterResource(
-            getAttr(
-                wordmarkResourceId,
-            ),
-        ),
+        painter = painterResource(getAttr(R.attr.fenixWordmarkLogo)),
         contentDescription = null,
     )
 }
