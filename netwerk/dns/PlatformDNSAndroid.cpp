@@ -27,6 +27,12 @@ typedef int (*android_res_nquery_ptr)(net_handle_t network, const char* dname,
                                       uint32_t flags);
 static Atomic<android_res_nquery_ptr> sAndroidResNQuery;
 
+
+
+typedef int (*android_res_nresult_ptr)(int fd, int* rcode, uint8_t* answer,
+                                       size_t anslen);
+static Atomic<android_res_nresult_ptr> sAndroidResNResult;
+
 #define LOG(msg, ...) \
   MOZ_LOG(gGetAddrInfoLog, LogLevel::Debug, ("[DNS]: " msg, ##__VA_ARGS__))
 
@@ -46,13 +52,14 @@ nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
   if (!sLibLoading.exchange(true)) {
     
     if (__builtin_available(android 29, *)) {
-      sAndroidResNQuery = android_res_nquery;  
+      sAndroidResNQuery = android_res_nquery;    
+      sAndroidResNResult = android_res_nresult;  
     } else {
       LOG("No android_res_nquery symbol");
     }
   }
 
-  if (!sAndroidResNQuery) {
+  if (!sAndroidResNQuery || !sAndroidResNResult) {
     LOG("nquery not loaded");
     
     return NS_ERROR_UNKNOWN_HOST;
@@ -93,19 +100,18 @@ nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
           return -1;
         }
 
-        ssize_t len = recv(fd, response, DNSPacket::MAX_SIZE - 1, 0);
-        if (len <= 8) {
-          LOG("size too small %zd", len);
-          return len < 0 ? len : -1;
-        }
-
         
         
-        for (int i = 0; i < len - 8; i++) {
-          response[i] = response[i + 8];
+        int rcode = 0;
+        int len =
+            sAndroidResNResult(fd, &rcode, response, DNSPacket::MAX_SIZE - 1);
+        fd = -1;
+        if (len < 0) {
+          LOG("android_res_nresult failed %d", len);
+          return len;
         }
 
-        return len - 8;
+        return len;
       });
   mozilla::glean::networking::dns_native_https_call_time.AccumulateRawDuration(
       TimeStamp::Now() - startTime);
