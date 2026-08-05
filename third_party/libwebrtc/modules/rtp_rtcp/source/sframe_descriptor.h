@@ -11,6 +11,8 @@
 #ifndef MODULES_RTP_RTCP_SOURCE_SFRAME_DESCRIPTOR_H_
 #define MODULES_RTP_RTCP_SOURCE_SFRAME_DESCRIPTOR_H_
 
+#include <cstddef>
+
 namespace webrtc {
 
 
@@ -37,6 +39,13 @@ enum class SframeEncryptionLevel {
 
 
 struct SFrameDescriptor {
+  
+  static constexpr size_t kSize = 1;
+  
+  static constexpr size_t kSBit = 7;
+  static constexpr size_t kEBit = 6;
+  static constexpr size_t kTBit = 5;
+
   bool start = false;
   bool end = false;
   SframeEncryptionLevel encryption_level =
