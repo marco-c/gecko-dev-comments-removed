@@ -693,7 +693,11 @@ struct TypedArray_base : public SpiderMonkeyInterfaceObjectStorage,
 #endif
     JS::AutoBrittleMode abm(jsapi.cx());
     if (!JS::EnsureNonInlineArrayBufferOrView(jsapi.cx(), mImplObj)) {
-      MOZ_CRASH("small oom when moving inline data out-of-line");
+      
+      
+      
+      
+      MOZ_CRASH("failed to make ArrayBuffer data be stored separately");
     }
     LengthPinner pinner(this);
 

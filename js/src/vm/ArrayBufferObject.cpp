@@ -2,7 +2,6 @@
 
 
 
-#include "vm/ArrayBufferObject-inl.h"
 #include "vm/ArrayBufferObject.h"
 
 #include "mozilla/Assertions.h"
@@ -16,6 +15,8 @@
 #include <algorithm>  
 #include <memory>     
 #include <string.h>
+
+#include "vm/ArrayBufferObject-inl.h"
 #if !defined(XP_WIN) && !defined(__wasi__)
 #  include <sys/mman.h>
 #endif
@@ -3104,16 +3105,34 @@ bool ArrayBufferObject::ensureNonInline(JSContext* cx,
     return true;
   }
 
+  BufferContents inlineContents = buffer->contents();
+  if (inlineContents.kind() != INLINE_DATA) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(
+        !(buffer->isLengthPinned() && cx->brittleMode),
+        "nested pin of out-of-line ArrayBuffer: safe, but suggests unexpected "
+        "re-entrant access to the buffer outside the enclosing pinned region");
+    return true;
+  }
+
   if (buffer->isLengthPinned()) {
+    
+    
+    
+    
+    
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_ARRAYBUFFER_LENGTH_PINNED);
     MOZ_DIAGNOSTIC_ASSERT(!cx->brittleMode, "ArrayBuffer length pinned");
     return false;
-  }
-
-  BufferContents inlineContents = buffer->contents();
-  if (inlineContents.kind() != INLINE_DATA) {
-    return true;
   }
 
   size_t nbytes = buffer->maxByteLength();
