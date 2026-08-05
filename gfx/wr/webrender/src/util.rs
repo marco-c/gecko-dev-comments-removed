@@ -123,7 +123,21 @@ pub trait MatrixHelpers<Src, Dst> {
     
     
     
-    fn has_2d_plane_perspective(&self) -> bool;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn is_2d_on_z_plane(&self) -> bool;
     fn has_2d_inverse(&self) -> bool;
     
     
@@ -189,9 +203,21 @@ impl<Src, Dst> MatrixHelpers<Src, Dst> for Transform3D<f32, Src, Dst> {
          (self.m44 - 1.0).abs() > NEARLY_ZERO
     }
 
-    fn has_2d_plane_perspective(&self) -> bool {
-         self.m14.abs() > NEARLY_ZERO ||
-         self.m24.abs() > NEARLY_ZERO
+    fn is_2d_on_z_plane(&self) -> bool {
+        if self.m14.abs() > NEARLY_ZERO ||
+           self.m24.abs() > NEARLY_ZERO ||
+           (self.m44 - 1.0).abs() > NEARLY_ZERO {
+            return false;
+        }
+
+        let z_in = self.m31.abs() > NEARLY_ZERO ||
+                   self.m32.abs() > NEARLY_ZERO ||
+                   self.m34.abs() > NEARLY_ZERO;
+        let z_out = self.m13.abs() > NEARLY_ZERO ||
+                    self.m23.abs() > NEARLY_ZERO ||
+                    self.m43.abs() > NEARLY_ZERO;
+
+        !z_in || !z_out
     }
 
     fn has_2d_inverse(&self) -> bool {
@@ -498,6 +524,34 @@ pub mod test {
     use crate::clip::{is_left_of_line, polygon_contains_point};
     use crate::prim_store::PolygonKey;
     use api::FillRule;
+
+    #[test]
+    fn is_2d_on_z_plane() {
+        
+        
+        
+        let flat_perspective = Transform3D::new(
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            -7.9, -1.8375, 1.0, -0.025,
+            0.0, 0.0, 0.0, 1.0,
+        );
+        let translate_z = Transform3D::translation(0.0, 0.0, 5.0);
+        
+        let perspective_and_translate_z = translate_z.then(&flat_perspective);
+        let rotate_y = Transform3D::rotation(0.0, 1.0, 0.0, Angle::degrees(35.0));
+        let mut w_scale = Transform3D::identity();
+        w_scale.m44 = 2.0;
+
+        assert!(flat_perspective.is_2d_on_z_plane());
+        assert!(translate_z.is_2d_on_z_plane());
+        assert!(Transform3D::scale(2.0, 3.0, 4.0).is_2d_on_z_plane());
+        assert!(!perspective_and_translate_z.is_2d_on_z_plane());
+        assert!(!rotate_y.is_2d_on_z_plane());
+        assert!(!w_scale.is_2d_on_z_plane());
+        assert!(!Transform3D::perspective(40.0).pre_translate(
+            euclid::vec3(0.0, 0.0, 1.0)).is_2d_on_z_plane());
+    }
 
     #[test]
     fn inverse_project() {
