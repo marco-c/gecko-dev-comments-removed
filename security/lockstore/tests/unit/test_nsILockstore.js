@@ -101,7 +101,7 @@ add_task(async function test_create_dek_duplicate_rejects() {
   await Assert.rejects(
     ls.createDek("rt", KEK_LOCAL, false, 32),
     /NS_ERROR_FAILURE/,
-    "createDek on an existing collection rejects"
+    "createDek on an existing dekName rejects"
   );
 });
 
@@ -110,7 +110,7 @@ add_task(async function test_create_dek_empty_args_rejected() {
   await Assert.rejects(
     ls.createDek("", KEK_LOCAL, false, 32),
     INVALID_ARG_RE,
-    "createDek with empty collection rejects"
+    "createDek with empty dekName rejects"
   );
   await Assert.rejects(
     ls.createDek("col", "", false, 32),
@@ -146,7 +146,7 @@ add_task(async function test_encrypt_empty_args_rejected() {
   await Assert.rejects(
     ls.encrypt("", KEK_LOCAL, bytes("x")),
     INVALID_ARG_RE,
-    "encrypt with empty collection rejects"
+    "encrypt with empty dekName rejects"
   );
   await Assert.rejects(
     ls.encrypt("rt", "", bytes("x")),
@@ -160,7 +160,7 @@ add_task(async function test_encrypt_no_dek_rejected() {
   await Assert.rejects(
     ls.encrypt("never-created", KEK_LOCAL, bytes("x")),
     /NS_ERROR_NOT_AVAILABLE/,
-    "encrypt against a collection without a DEK rejects"
+    "encrypt against a dekName without a DEK rejects"
   );
 });
 
@@ -170,7 +170,7 @@ add_task(async function test_decrypt_empty_args_rejected() {
   await Assert.rejects(
     ls.decrypt("", KEK_LOCAL, ct),
     INVALID_ARG_RE,
-    "decrypt with empty collection rejects"
+    "decrypt with empty dekName rejects"
   );
   await Assert.rejects(
     ls.decrypt("rt", "", ct),
@@ -191,7 +191,7 @@ add_task(async function test_decrypt_no_dek_rejected() {
   await Assert.rejects(
     ls.decrypt("never-created", KEK_LOCAL, [1, 2, 3, 4, 5, 6, 7, 8, 9]),
     /NS_ERROR_NOT_AVAILABLE/,
-    "decrypt against a collection without a DEK rejects"
+    "decrypt against a dekName without a DEK rejects"
   );
 });
 
@@ -233,7 +233,7 @@ add_task(async function test_decrypt_with_wrong_kek_rejects() {
   await Assert.rejects(
     ls.decrypt("local-only", KEK_PASSWORD, ct),
     /NS_ERROR_NOT_AVAILABLE/,
-    "decrypt under a KEK that does not wrap the collection rejects"
+    "decrypt under a KEK that does not wrap the dekName rejects"
   );
   
   await ls.deleteDek("local-only");
@@ -249,8 +249,8 @@ add_task(async function test_list_deks_and_delete() {
 
   await ls.deleteDek("one");
   const after = await ls.listDeks();
-  Assert.ok(!after.includes("one"), "deleted collection disappears");
-  Assert.ok(after.includes("two"), "other collection remains");
+  Assert.ok(!after.includes("one"), "deleted dekName disappears");
+  Assert.ok(after.includes("two"), "other dekName remains");
 
   
   await Assert.rejects(
@@ -261,7 +261,7 @@ add_task(async function test_list_deks_and_delete() {
   await Assert.rejects(
     ls.deleteDek("never-existed"),
     /NS_ERROR_NOT_AVAILABLE/,
-    "deleteDek on missing collection rejects"
+    "deleteDek on missing dekName rejects"
   );
 });
 
@@ -294,12 +294,12 @@ add_task(async function test_listKeks_round_trip() {
   await Assert.rejects(
     ls.listKeks("never-created"),
     /NS_ERROR_NOT_AVAILABLE/,
-    "listKeks against an unknown collection rejects NotAvailable"
+    "listKeks against an unknown dekName rejects NotAvailable"
   );
   await Assert.rejects(
     ls.listKeks(""),
     /NS_ERROR_NOT_AVAILABLE/,
-    "listKeks with empty arg rejects with NotAvailable (collection lookup fails)"
+    "listKeks with empty arg rejects with NotAvailable (dekName lookup fails)"
   );
 
   await ls.deleteDek("keks-rt");
@@ -308,9 +308,9 @@ add_task(async function test_listKeks_round_trip() {
 add_task(async function test_delete_dek_nonexistent_rejects() {
   const ls = getService();
   await Assert.rejects(
-    ls.deleteDek("never-existed-coll"),
+    ls.deleteDek("never-existed-dekName"),
     /NS_ERROR_NOT_AVAILABLE/,
-    "deleteDek on a missing collection rejects"
+    "deleteDek on a missing dekName rejects"
   );
 });
 
@@ -328,9 +328,9 @@ add_task(async function test_delete_dek_succeeds() {
 add_task(async function test_delete_dek_nonexistent_rejects() {
   const ls = getService();
   await Assert.rejects(
-    ls.deleteDek("never-existed-coll-2"),
+    ls.deleteDek("never-existed-dekName-2"),
     /NS_ERROR_NOT_AVAILABLE/,
-    "deleteDek on a missing collection rejects"
+    "deleteDek on a missing dekName rejects"
   );
 });
 
@@ -505,15 +505,15 @@ add_task(async function test_remove_kek_not_present_rejects() {
   );
 });
 
-add_task(async function test_add_kek_missing_collection_rejects() {
+add_task(async function test_add_kek_missing_dekName_rejects() {
   const ls = getService();
   if (!ls.isKekUnlocked(KEK_PASSWORD)) {
     await ls.unlockKek(KEK_PASSWORD, PW, 60000);
   }
   await Assert.rejects(
-    ls.addKek("never-created-coll", KEK_LOCAL, KEK_PASSWORD),
+    ls.addKek("never-created-dekName", KEK_LOCAL, KEK_PASSWORD),
     /NS_ERROR_NOT_AVAILABLE/,
-    "addKek against a collection without a DEK rejects"
+    "addKek against a dekName without a DEK rejects"
   );
 });
 
@@ -522,7 +522,7 @@ add_task(async function test_add_kek_empty_args_rejected() {
   await Assert.rejects(
     ls.addKek("", KEK_LOCAL, KEK_PASSWORD),
     INVALID_ARG_RE,
-    "addKek with empty collection rejects"
+    "addKek with empty dekName rejects"
   );
   await Assert.rejects(
     ls.addKek("multi", "", KEK_PASSWORD),
@@ -541,7 +541,7 @@ add_task(async function test_remove_kek_empty_args_rejected() {
   await Assert.rejects(
     ls.removeKek("", KEK_LOCAL),
     INVALID_ARG_RE,
-    "removeKek with empty collection rejects"
+    "removeKek with empty dekName rejects"
   );
   await Assert.rejects(
     ls.removeKek("multi", ""),
@@ -663,32 +663,39 @@ add_task(async function test_concurrent_encrypts_serialised() {
 add_task(async function test_concurrent_mixed_ops() {
   const ls = getService();
   
-  const colls = ["mix-a", "mix-b", "mix-c"];
-  await Promise.all(colls.map(c => ls.createDek(c, KEK_LOCAL, false, 32)));
+  const dekNames = ["mix-a", "mix-b", "mix-c"];
+  await Promise.all(dekNames.map(c => ls.createDek(c, KEK_LOCAL, false, 32)));
 
-  const collsAfter = await ls.listDeks();
-  for (const c of colls) {
-    Assert.ok(collsAfter.includes(c), `${c} present after concurrent create`);
+  const dekNamesAfter = await ls.listDeks();
+  for (const c of dekNames) {
+    Assert.ok(
+      dekNamesAfter.includes(c),
+      `${c} present after concurrent create`
+    );
   }
 
   
   const cts = await Promise.all(
-    colls.map(c => ls.encrypt(c, KEK_LOCAL, bytes(c)))
+    dekNames.map(c => ls.encrypt(c, KEK_LOCAL, bytes(c)))
   );
 
   
   const rounds = await Promise.all(
-    colls.map((c, i) => ls.decrypt(c, KEK_LOCAL, cts[i]))
+    dekNames.map((c, i) => ls.decrypt(c, KEK_LOCAL, cts[i]))
   );
-  for (let i = 0; i < colls.length; i++) {
-    Assert.equal(str(rounds[i]), colls[i], `${colls[i]} round-trips correctly`);
+  for (let i = 0; i < dekNames.length; i++) {
+    Assert.equal(
+      str(rounds[i]),
+      dekNames[i],
+      `${dekNames[i]} round-trips correctly`
+    );
   }
 
   
-  await Promise.all(colls.map(c => ls.deleteDek(c)));
-  const collsFinal = await ls.listDeks();
-  for (const c of colls) {
-    Assert.ok(!collsFinal.includes(c), `${c} cleaned up`);
+  await Promise.all(dekNames.map(c => ls.deleteDek(c)));
+  const dekNamesFinal = await ls.listDeks();
+  for (const c of dekNames) {
+    Assert.ok(!dekNamesFinal.includes(c), `${c} cleaned up`);
   }
 });
 
@@ -731,7 +738,7 @@ add_task(async function test_import_dek_empty_args_rejected() {
   await Assert.rejects(
     ls.importDek("", KEK_LOCAL, dek, true),
     INVALID_ARG_RE,
-    "importDek with empty collection rejects"
+    "importDek with empty dekName rejects"
   );
   await Assert.rejects(
     ls.importDek("c", "", dek, true),
@@ -752,7 +759,7 @@ add_task(async function test_import_dek_duplicate_rejected() {
   await Assert.rejects(
     ls.importDek("dup", KEK_LOCAL, dek, true),
     /NS_ERROR_FAILURE/,
-    "importDek on an existing collection rejects"
+    "importDek on an existing dekName rejects"
   );
   await ls.deleteDek("dup");
 });
@@ -782,9 +789,9 @@ add_task(async function test_is_dek_extractable_false() {
 add_task(async function test_is_dek_extractable_missing_rejected() {
   const ls = getService();
   await Assert.rejects(
-    ls.isDekExtractable("never-existed-coll"),
+    ls.isDekExtractable("never-existed-dekName"),
     /NS_ERROR_NOT_AVAILABLE/,
-    "isDekExtractable on a missing collection rejects"
+    "isDekExtractable on a missing dekName rejects"
   );
 });
 
@@ -806,7 +813,7 @@ add_task(async function test_switch_kek_round_trip() {
   Assert.deepEqual(
     refs,
     [KEK_PASSWORD],
-    "only the new kekRef wraps the collection after switch"
+    "only the new kekRef wraps the dekName after switch"
   );
 
   Assert.equal(
@@ -818,7 +825,7 @@ add_task(async function test_switch_kek_round_trip() {
   await Assert.rejects(
     ls.decrypt("switch-rt", KEK_LOCAL, ct),
     /NS_ERROR_NOT_AVAILABLE/,
-    "old kekRef no longer wraps the collection"
+    "old kekRef no longer wraps the dekName"
   );
 
   await ls.deleteDek("switch-rt");
@@ -840,7 +847,7 @@ add_task(async function test_switch_kek_empty_args_rejected() {
   await Assert.rejects(
     ls.switchKek("", KEK_LOCAL, KEK_PASSWORD),
     INVALID_ARG_RE,
-    "switchKek with empty collection rejects"
+    "switchKek with empty dekName rejects"
   );
   await Assert.rejects(
     ls.switchKek("c", "", KEK_PASSWORD),
@@ -854,12 +861,12 @@ add_task(async function test_switch_kek_empty_args_rejected() {
   );
 });
 
-add_task(async function test_switch_kek_missing_collection_rejected() {
+add_task(async function test_switch_kek_missing_dekName_rejected() {
   const ls = getService();
   await Assert.rejects(
     ls.switchKek("never-existed", KEK_LOCAL, KEK_PASSWORD),
     /NS_ERROR_NOT_AVAILABLE/,
-    "switchKek on a missing collection rejects"
+    "switchKek on a missing dekName rejects"
   );
 });
 

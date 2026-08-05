@@ -18,7 +18,7 @@ using namespace mozilla::security::lockstore;
 
 namespace {
 
-nsCString UniqueCollection(const char* aPrefix) {
+nsCString UniqueDekName(const char* aPrefix) {
   
   
   
@@ -136,47 +136,47 @@ TEST_F(LockstoreServiceTest, SingletonIdentity) {
 
 
 TEST_F(LockstoreServiceTest, CreateAndDeleteDek) {
-  nsCString coll = UniqueCollection("create-delete");
+  nsCString dekName = UniqueDekName("create-delete");
 
   RunOnBackground([&]() {
     EXPECT_NS_SUCCEEDED(mService->DoCreateDek(
-        coll, mLocalKek, false, 32));
+        dekName, mLocalKek, false, 32));
 
-    auto collectionsResult = mService->DoListDeks();
-    ASSERT_TRUE(collectionsResult.isOk());
-    auto collections = collectionsResult.unwrap();
+    auto dekNamesResult = mService->DoListDeks();
+    ASSERT_TRUE(dekNamesResult.isOk());
+    auto dekNames = dekNamesResult.unwrap();
     bool found = false;
-    for (const auto& c : collections) {
-      if (c == coll) {
+    for (const auto& c : dekNames) {
+      if (c == dekName) {
         found = true;
         break;
       }
     }
-    EXPECT_TRUE(found) << "Created collection should appear in listCollections";
+    EXPECT_TRUE(found) << "Created dekName should appear in listDeks";
 
-    EXPECT_NS_SUCCEEDED(mService->DoDeleteDek(coll));
+    EXPECT_NS_SUCCEEDED(mService->DoDeleteDek(dekName));
 
     
-    EXPECT_EQ(mService->DoDeleteDek(coll), NS_ERROR_NOT_AVAILABLE);
+    EXPECT_EQ(mService->DoDeleteDek(dekName), NS_ERROR_NOT_AVAILABLE);
   });
 }
 
 TEST_F(LockstoreServiceTest, CreateDek_DuplicateRejects) {
-  nsCString coll = UniqueCollection("dup");
+  nsCString dekName = UniqueDekName("dup");
   RunOnBackground([&]() {
     EXPECT_NS_SUCCEEDED(mService->DoCreateDek(
-        coll, mLocalKek, false, 32));
+        dekName, mLocalKek, false, 32));
 
-    EXPECT_EQ(mService->DoCreateDek(coll, mLocalKek, false,
+    EXPECT_EQ(mService->DoCreateDek(dekName, mLocalKek, false,
                                     32),
               NS_ERROR_FAILURE)
-        << "createDek on an existing collection must reject";
+        << "createDek on an existing dekName must reject";
 
-    mService->DoDeleteDek(coll);
+    mService->DoDeleteDek(dekName);
   });
 }
 
-TEST_F(LockstoreServiceTest, CreateDek_RejectsEmptyCollection) {
+TEST_F(LockstoreServiceTest, CreateDek_RejectsEmptyDekName) {
   RunOnBackground([&]() {
     EXPECT_EQ(mService->DoCreateDek(""_ns, mLocalKek, false,
                                     32),
@@ -185,9 +185,9 @@ TEST_F(LockstoreServiceTest, CreateDek_RejectsEmptyCollection) {
 }
 
 TEST_F(LockstoreServiceTest, CreateDek_RejectsEmptyKekRef) {
-  nsCString coll = UniqueCollection("empty-kek");
+  nsCString dekName = UniqueDekName("empty-kek");
   RunOnBackground([&]() {
-    EXPECT_EQ(mService->DoCreateDek(coll, ""_ns, false,
+    EXPECT_EQ(mService->DoCreateDek(dekName, ""_ns, false,
                                     32),
               NS_ERROR_INVALID_ARG);
   });
@@ -202,9 +202,9 @@ TEST_F(LockstoreServiceTest, ListDeks_ContainsCreated) {
   
   
   
-  nsCString a = UniqueCollection("list-a");
-  nsCString b = UniqueCollection("list-b");
-  nsCString c = UniqueCollection("list-c");
+  nsCString a = UniqueDekName("list-a");
+  nsCString b = UniqueDekName("list-b");
+  nsCString c = UniqueDekName("list-c");
   RunOnBackground([&]() {
     EXPECT_NS_SUCCEEDED(mService->DoCreateDek(
         a, mLocalKek, false, 32));
@@ -220,9 +220,9 @@ TEST_F(LockstoreServiceTest, ListDeks_ContainsCreated) {
     for (const auto& n : list) {
       names.insert(n);
     }
-    EXPECT_TRUE(names.count(a)) << "listCollections missing " << a.get();
-    EXPECT_TRUE(names.count(b)) << "listCollections missing " << b.get();
-    EXPECT_TRUE(names.count(c)) << "listCollections missing " << c.get();
+    EXPECT_TRUE(names.count(a)) << "listDeks missing " << a.get();
+    EXPECT_TRUE(names.count(b)) << "listDeks missing " << b.get();
+    EXPECT_TRUE(names.count(c)) << "listDeks missing " << c.get();
 
     mService->DoDeleteDek(a);
     mService->DoDeleteDek(b);
@@ -235,31 +235,31 @@ TEST_F(LockstoreServiceTest, ListDeks_ContainsCreated) {
 
 
 TEST_F(LockstoreServiceTest, ListKeks_ReflectsCreateDek) {
-  nsCString coll = UniqueCollection("keks-create");
+  nsCString dekName = UniqueDekName("keks-create");
   RunOnBackground([&]() {
     EXPECT_NS_SUCCEEDED(mService->DoCreateDek(
-        coll, mLocalKek, false, 32));
+        dekName, mLocalKek, false, 32));
 
-    auto refsResult = mService->DoListKeks(coll);
+    auto refsResult = mService->DoListKeks(dekName);
     ASSERT_TRUE(refsResult.isOk());
     auto refs = refsResult.unwrap();
     ASSERT_EQ(refs.Length(), 1u);
     EXPECT_EQ(refs[0], mLocalKek);
 
-    mService->DoDeleteDek(coll);
+    mService->DoDeleteDek(dekName);
   });
 }
 
 TEST_F(LockstoreServiceTest, ListKeks_RejectsNoDek) {
-  nsCString coll = UniqueCollection("keks-missing");
+  nsCString dekName = UniqueDekName("keks-missing");
   RunOnBackground([&]() {
-    auto refsResult = mService->DoListKeks(coll);
+    auto refsResult = mService->DoListKeks(dekName);
     EXPECT_TRUE(refsResult.isErr());
     EXPECT_EQ(refsResult.unwrapErr(), NS_ERROR_NOT_AVAILABLE);
   });
 }
 
-TEST_F(LockstoreServiceTest, ListKeks_RejectsEmptyCollection) {
+TEST_F(LockstoreServiceTest, ListKeks_RejectsEmptyDekName) {
   RunOnBackground([&]() {
     auto refsResult = mService->DoListKeks(""_ns);
     EXPECT_TRUE(refsResult.isErr());
@@ -276,17 +276,18 @@ TEST_F(LockstoreServiceTest, ListKeks_RejectsEmptyCollection) {
 
 
 TEST_F(LockstoreServiceTest, EncryptDecryptRoundtrip) {
-  nsCString coll = UniqueCollection("roundtrip");
+  nsCString dekName = UniqueDekName("roundtrip");
   RunOnBackground([&]() {
     EXPECT_NS_SUCCEEDED(mService->DoCreateDek(
-        coll, mLocalKek, false, 32));
+        dekName, mLocalKek, false, 32));
 
-    auto ctResult = mService->DoEncrypt(coll, mLocalKek, Bytes("hello world"));
+    auto ctResult =
+        mService->DoEncrypt(dekName, mLocalKek, Bytes("hello world"));
     ASSERT_TRUE(ctResult.isOk());
     auto ciphertext = ctResult.unwrap();
     EXPECT_GT(ciphertext.Length(), 0u);
 
-    auto ptResult = mService->DoDecrypt(coll, mLocalKek, ciphertext);
+    auto ptResult = mService->DoDecrypt(dekName, mLocalKek, ciphertext);
     ASSERT_TRUE(ptResult.isOk());
     auto plaintext = ptResult.unwrap();
     nsCString joined;
@@ -295,18 +296,18 @@ TEST_F(LockstoreServiceTest, EncryptDecryptRoundtrip) {
     }
     EXPECT_STREQ(joined.get(), "hello world");
 
-    mService->DoDeleteDek(coll);
+    mService->DoDeleteDek(dekName);
   });
 }
 
 TEST_F(LockstoreServiceTest, Encrypt_YieldsUniqueCiphertexts) {
-  nsCString coll = UniqueCollection("nonce");
+  nsCString dekName = UniqueDekName("nonce");
   RunOnBackground([&]() {
     EXPECT_NS_SUCCEEDED(mService->DoCreateDek(
-        coll, mLocalKek, false, 32));
+        dekName, mLocalKek, false, 32));
 
-    auto a = mService->DoEncrypt(coll, mLocalKek, Bytes("same"));
-    auto b = mService->DoEncrypt(coll, mLocalKek, Bytes("same"));
+    auto a = mService->DoEncrypt(dekName, mLocalKek, Bytes("same"));
+    auto b = mService->DoEncrypt(dekName, mLocalKek, Bytes("same"));
     ASSERT_TRUE(a.isOk());
     ASSERT_TRUE(b.isOk());
     auto ctA = a.unwrap();
@@ -314,17 +315,17 @@ TEST_F(LockstoreServiceTest, Encrypt_YieldsUniqueCiphertexts) {
     EXPECT_NE(ctA, ctB) << "Repeated encrypts of the same plaintext must "
                            "yield distinct ciphertexts (random nonce)";
 
-    mService->DoDeleteDek(coll);
+    mService->DoDeleteDek(dekName);
   });
 }
 
 TEST_F(LockstoreServiceTest, Decrypt_CorruptedCiphertextRejects) {
-  nsCString coll = UniqueCollection("corrupt");
+  nsCString dekName = UniqueDekName("corrupt");
   RunOnBackground([&]() {
     EXPECT_NS_SUCCEEDED(mService->DoCreateDek(
-        coll, mLocalKek, false, 32));
+        dekName, mLocalKek, false, 32));
 
-    auto ctResult = mService->DoEncrypt(coll, mLocalKek, Bytes("payload"));
+    auto ctResult = mService->DoEncrypt(dekName, mLocalKek, Bytes("payload"));
     ASSERT_TRUE(ctResult.isOk());
     auto ct = ctResult.unwrap();
     
@@ -332,97 +333,97 @@ TEST_F(LockstoreServiceTest, Decrypt_CorruptedCiphertextRejects) {
       ct[ct.Length() / 2] ^= 0xff;
     }
 
-    auto ptResult = mService->DoDecrypt(coll, mLocalKek, ct);
+    auto ptResult = mService->DoDecrypt(dekName, mLocalKek, ct);
     EXPECT_TRUE(ptResult.isErr());
 
-    mService->DoDeleteDek(coll);
+    mService->DoDeleteDek(dekName);
   });
 }
 
 TEST_F(LockstoreServiceTest, Decrypt_TruncatedCiphertextRejects) {
-  nsCString coll = UniqueCollection("trunc");
+  nsCString dekName = UniqueDekName("trunc");
   RunOnBackground([&]() {
     EXPECT_NS_SUCCEEDED(mService->DoCreateDek(
-        coll, mLocalKek, false, 32));
+        dekName, mLocalKek, false, 32));
 
-    auto ctResult = mService->DoEncrypt(coll, mLocalKek, Bytes("payload"));
+    auto ctResult = mService->DoEncrypt(dekName, mLocalKek, Bytes("payload"));
     ASSERT_TRUE(ctResult.isOk());
     auto ct = ctResult.unwrap();
     if (ct.Length() > 8) {
       ct.SetLength(ct.Length() / 2);
     }
 
-    auto ptResult = mService->DoDecrypt(coll, mLocalKek, ct);
+    auto ptResult = mService->DoDecrypt(dekName, mLocalKek, ct);
     EXPECT_TRUE(ptResult.isErr());
 
-    mService->DoDeleteDek(coll);
+    mService->DoDeleteDek(dekName);
   });
 }
 
 TEST_F(LockstoreServiceTest, Decrypt_WrongKekRejects) {
-  nsCString coll = UniqueCollection("wrong-kek");
+  nsCString dekName = UniqueDekName("wrong-kek");
   RunOnBackground([&]() {
     EXPECT_NS_SUCCEEDED(mService->DoCreateDek(
-        coll, mLocalKek, false, 32));
+        dekName, mLocalKek, false, 32));
 
-    auto ctResult = mService->DoEncrypt(coll, mLocalKek, Bytes("payload"));
+    auto ctResult = mService->DoEncrypt(dekName, mLocalKek, Bytes("payload"));
     ASSERT_TRUE(ctResult.isOk());
     auto ct = ctResult.unwrap();
 
-    auto ptResult = mService->DoDecrypt(coll, mOtherKek, ct);
+    auto ptResult = mService->DoDecrypt(dekName, mOtherKek, ct);
     EXPECT_TRUE(ptResult.isErr());
 
-    mService->DoDeleteDek(coll);
+    mService->DoDeleteDek(dekName);
   });
 }
 
 TEST_F(LockstoreServiceTest, Encrypt_NoDekRejects) {
-  nsCString coll = UniqueCollection("no-dek");
+  nsCString dekName = UniqueDekName("no-dek");
   RunOnBackground([&]() {
-    auto ctResult = mService->DoEncrypt(coll, mLocalKek, Bytes("payload"));
+    auto ctResult = mService->DoEncrypt(dekName, mLocalKek, Bytes("payload"));
     EXPECT_TRUE(ctResult.isErr());
   });
 }
 
 TEST_F(LockstoreServiceTest, Encrypt_RejectsEmptyArgs) {
-  nsCString coll = UniqueCollection("empty-enc");
+  nsCString dekName = UniqueDekName("empty-enc");
   RunOnBackground([&]() {
     EXPECT_NS_SUCCEEDED(mService->DoCreateDek(
-        coll, mLocalKek, false, 32));
+        dekName, mLocalKek, false, 32));
 
     EXPECT_TRUE(mService->DoEncrypt(""_ns, mLocalKek, Bytes("x")).isErr());
-    EXPECT_TRUE(mService->DoEncrypt(coll, ""_ns, Bytes("x")).isErr());
+    EXPECT_TRUE(mService->DoEncrypt(dekName, ""_ns, Bytes("x")).isErr());
 
-    mService->DoDeleteDek(coll);
+    mService->DoDeleteDek(dekName);
   });
 }
 
 TEST_F(LockstoreServiceTest, Decrypt_NoDekRejects) {
-  nsCString coll = UniqueCollection("no-dek-dec");
+  nsCString dekName = UniqueDekName("no-dek-dec");
   RunOnBackground([&]() {
     nsTArray<uint8_t> bogus;
     bogus.AppendElements(static_cast<const uint8_t*>(
                              reinterpret_cast<const uint8_t*>("\0\0\0\0\0\0")),
                          6);
-    auto ptResult = mService->DoDecrypt(coll, mLocalKek, bogus);
+    auto ptResult = mService->DoDecrypt(dekName, mLocalKek, bogus);
     EXPECT_TRUE(ptResult.isErr());
   });
 }
 
 TEST_F(LockstoreServiceTest, Decrypt_RejectsEmptyArgs) {
-  nsCString coll = UniqueCollection("empty-dec");
+  nsCString dekName = UniqueDekName("empty-dec");
   RunOnBackground([&]() {
     EXPECT_NS_SUCCEEDED(mService->DoCreateDek(
-        coll, mLocalKek, false, 32));
+        dekName, mLocalKek, false, 32));
 
-    auto ctResult = mService->DoEncrypt(coll, mLocalKek, Bytes("x"));
+    auto ctResult = mService->DoEncrypt(dekName, mLocalKek, Bytes("x"));
     ASSERT_TRUE(ctResult.isOk());
     auto ct = ctResult.unwrap();
 
     EXPECT_TRUE(mService->DoDecrypt(""_ns, mLocalKek, ct).isErr());
-    EXPECT_TRUE(mService->DoDecrypt(coll, ""_ns, ct).isErr());
+    EXPECT_TRUE(mService->DoDecrypt(dekName, ""_ns, ct).isErr());
 
-    mService->DoDeleteDek(coll);
+    mService->DoDeleteDek(dekName);
   });
 }
 
@@ -430,53 +431,55 @@ TEST_F(LockstoreServiceTest, Decrypt_RejectsEmptyArgs) {
 
 
 
-TEST_F(LockstoreServiceTest, AddKek_RejectsMissingCollection) {
-  nsCString coll = UniqueCollection("addkek-missing");
+TEST_F(LockstoreServiceTest, AddKek_RejectsMissingDekName) {
+  nsCString dekName = UniqueDekName("addkek-missing");
   RunOnBackground([&]() {
-    EXPECT_EQ(mService->DoAddKek(coll, mLocalKek, mOtherKek),
+    EXPECT_EQ(mService->DoAddKek(dekName, mLocalKek, mOtherKek),
               NS_ERROR_NOT_AVAILABLE);
   });
 }
 
 TEST_F(LockstoreServiceTest, AddKek_RejectsEmptyArgs) {
-  nsCString coll = UniqueCollection("addkek-empty");
+  nsCString dekName = UniqueDekName("addkek-empty");
   RunOnBackground([&]() {
     EXPECT_NS_SUCCEEDED(mService->DoCreateDek(
-        coll, mLocalKek, false, 32));
+        dekName, mLocalKek, false, 32));
 
     EXPECT_EQ(mService->DoAddKek(""_ns, mLocalKek, mOtherKek),
               NS_ERROR_INVALID_ARG);
-    EXPECT_EQ(mService->DoAddKek(coll, ""_ns, mOtherKek), NS_ERROR_INVALID_ARG);
-    EXPECT_EQ(mService->DoAddKek(coll, mLocalKek, ""_ns), NS_ERROR_INVALID_ARG);
+    EXPECT_EQ(mService->DoAddKek(dekName, ""_ns, mOtherKek),
+              NS_ERROR_INVALID_ARG);
+    EXPECT_EQ(mService->DoAddKek(dekName, mLocalKek, ""_ns),
+              NS_ERROR_INVALID_ARG);
 
-    mService->DoDeleteDek(coll);
+    mService->DoDeleteDek(dekName);
   });
 }
 
 TEST_F(LockstoreServiceTest, RemoveKek_RejectsEmptyArgs) {
-  nsCString coll = UniqueCollection("rmkek-empty");
+  nsCString dekName = UniqueDekName("rmkek-empty");
   RunOnBackground([&]() {
     EXPECT_NS_SUCCEEDED(mService->DoCreateDek(
-        coll, mLocalKek, false, 32));
+        dekName, mLocalKek, false, 32));
 
     EXPECT_EQ(mService->DoRemoveKek(""_ns, mLocalKek), NS_ERROR_INVALID_ARG);
-    EXPECT_EQ(mService->DoRemoveKek(coll, ""_ns), NS_ERROR_INVALID_ARG);
+    EXPECT_EQ(mService->DoRemoveKek(dekName, ""_ns), NS_ERROR_INVALID_ARG);
 
-    mService->DoDeleteDek(coll);
+    mService->DoDeleteDek(dekName);
   });
 }
 
 TEST_F(LockstoreServiceTest, RemoveKek_LastWrappingRejects) {
-  nsCString coll = UniqueCollection("rmkek-last");
+  nsCString dekName = UniqueDekName("rmkek-last");
   RunOnBackground([&]() {
     EXPECT_NS_SUCCEEDED(mService->DoCreateDek(
-        coll, mLocalKek, false, 32));
+        dekName, mLocalKek, false, 32));
 
     
     
-    EXPECT_EQ(mService->DoRemoveKek(coll, mLocalKek), NS_ERROR_FAILURE);
+    EXPECT_EQ(mService->DoRemoveKek(dekName, mLocalKek), NS_ERROR_FAILURE);
 
-    mService->DoDeleteDek(coll);
+    mService->DoDeleteDek(dekName);
   });
 }
 
@@ -489,10 +492,10 @@ TEST_F(LockstoreServiceTest, ConcurrentEncryptsAllResolveUnique) {
   
   
   
-  nsCString coll = UniqueCollection("concurrent");
+  nsCString dekName = UniqueDekName("concurrent");
   RunOnBackground([&]() {
     EXPECT_NS_SUCCEEDED(mService->DoCreateDek(
-        coll, mLocalKek, false, 32));
+        dekName, mLocalKek, false, 32));
   });
 
   constexpr size_t N = 8;
@@ -503,8 +506,8 @@ TEST_F(LockstoreServiceTest, ConcurrentEncryptsAllResolveUnique) {
   for (size_t i = 0; i < N; ++i) {
     MOZ_ALWAYS_SUCCEEDS(NS_DispatchBackgroundTask(NS_NewRunnableFunction(
         "ConcurrentEncryptsAllResolveUnique::worker",
-        [this, &coll, &results, &doneCount, i]() {
-          auto r = mService->DoEncrypt(coll, mLocalKek, Bytes("same-input"));
+        [this, &dekName, &results, &doneCount, i]() {
+          auto r = mService->DoEncrypt(dekName, mLocalKek, Bytes("same-input"));
           if (r.isOk()) {
             results[i] = r.unwrap();
           }
@@ -532,7 +535,7 @@ TEST_F(LockstoreServiceTest, ConcurrentEncryptsAllResolveUnique) {
   EXPECT_EQ(seen.size(), N)
       << "Every concurrent encrypt must produce a unique ciphertext";
 
-  RunOnBackground([&]() { mService->DoDeleteDek(coll); });
+  RunOnBackground([&]() { mService->DoDeleteDek(dekName); });
 }
 
 TEST_F(LockstoreServiceTest, ConcurrentMixedOpsAllComplete) {
@@ -540,15 +543,15 @@ TEST_F(LockstoreServiceTest, ConcurrentMixedOpsAllComplete) {
   
   
   constexpr size_t N = 4;
-  nsTArray<nsCString> colls;
+  nsTArray<nsCString> dekNames;
   for (size_t i = 0; i < N; ++i) {
-    colls.AppendElement(UniqueCollection("mix"));
+    dekNames.AppendElement(UniqueDekName("mix"));
   }
 
   
   std::atomic<size_t> createDone{0};
   for (size_t i = 0; i < N; ++i) {
-    const nsCString& c = colls[i];
+    const nsCString& c = dekNames[i];
     MOZ_ALWAYS_SUCCEEDS(NS_DispatchBackgroundTask(NS_NewRunnableFunction(
         "ConcurrentMixedOps::create", [this, &c, &createDone]() {
           EXPECT_NS_SUCCEEDED(mService->DoCreateDek(
@@ -565,7 +568,7 @@ TEST_F(LockstoreServiceTest, ConcurrentMixedOpsAllComplete) {
   
   std::atomic<size_t> roundtripDone{0};
   for (size_t i = 0; i < N; ++i) {
-    const nsCString& c = colls[i];
+    const nsCString& c = dekNames[i];
     MOZ_ALWAYS_SUCCEEDS(NS_DispatchBackgroundTask(NS_NewRunnableFunction(
         "ConcurrentMixedOps::roundtrip", [this, &c, &roundtripDone]() {
           auto ctResult = mService->DoEncrypt(c, mLocalKek, Bytes("payload"));
@@ -591,7 +594,7 @@ TEST_F(LockstoreServiceTest, ConcurrentMixedOpsAllComplete) {
   
   std::atomic<size_t> deleteDone{0};
   for (size_t i = 0; i < N; ++i) {
-    const nsCString& c = colls[i];
+    const nsCString& c = dekNames[i];
     MOZ_ALWAYS_SUCCEEDS(NS_DispatchBackgroundTask(NS_NewRunnableFunction(
         "ConcurrentMixedOps::delete", [this, &c, &deleteDone]() {
           EXPECT_NS_SUCCEEDED(mService->DoDeleteDek(c));
@@ -609,9 +612,9 @@ TEST_F(LockstoreServiceTest, ConcurrentMixedOpsAllComplete) {
     auto remainingResult = mService->DoListDeks();
     ASSERT_TRUE(remainingResult.isOk());
     auto remaining = remainingResult.unwrap();
-    for (const auto& c : colls) {
+    for (const auto& c : dekNames) {
       for (const auto& r : remaining) {
-        EXPECT_NE(r, c) << "Collection " << c.get()
+        EXPECT_NE(r, c) << "DekName " << c.get()
                         << " should be gone but is still listed";
       }
     }
