@@ -2,9 +2,9 @@
 
 
 
-
-
 #include "FileSystemDatabaseManagerVersion002.h"
+
+#include <limits>
 
 #include "ErrorList.h"
 #include "FileSystemContentTypeGuess.h"
@@ -27,6 +27,7 @@
 #include "mozilla/dom/quota/QuotaManager.h"
 #include "mozilla/dom/quota/QuotaObject.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
+#include "mozilla/dom/quota/ScopedLogExtraInfo.h"
 
 namespace mozilla::dom::fs::data {
 
@@ -362,7 +363,7 @@ Result<FileId, QMResult> GetNextFreeFileId(
 
     auto Increase = [](IdBuffer& aIn) {
       for (int i = 0; i < bufferSize; ++i) {
-        if (1u + aIn[i] != 0u) {
+        if (aIn[i] < std::numeric_limits<IntegerType>::max()) {
           ++aIn[i];
           return;
         }
@@ -779,6 +780,10 @@ nsresult FileSystemDatabaseManagerVersion002::MergeFileId(
   QM_TRY(MOZ_TO_RESULT(stmt.BindFileIdByName("fileId"_ns, aFileId)));
 
   QM_TRY(MOZ_TO_RESULT(stmt.Execute()));
+
+  const quota::ScopedLogExtraInfo scope{
+      quota::ScopedLogExtraInfo::kTagContextTainted,
+      "FileSystemMergeFileId::CommitFailed"_ns};
 
   if (!maybeOldFileId) {
     
