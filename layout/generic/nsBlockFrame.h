@@ -711,8 +711,6 @@ class nsBlockFrame : public nsContainerFrame {
 
   bool IsInLineClampContext() const { return !!GetLineClampRoot(); }
 
-  const mozilla::StyleBlockEllipsis* GetLineClampBlockEllipsis() const;
-
   
 
 

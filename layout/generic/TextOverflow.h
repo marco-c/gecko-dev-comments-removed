@@ -154,7 +154,12 @@ class TextOverflow final {
   };
 
   LogicalRect GetLogicalScrollableOverflowRectRelativeToBlock(
-      nsIFrame* aFrame) const;
+      nsIFrame* aFrame) const {
+    return LogicalRect(
+        mBlockWM,
+        aFrame->ScrollableOverflowRect() + aFrame->GetOffsetTo(mBlock),
+        mBlockSize);
+  }
 
   
 
@@ -254,7 +259,7 @@ class TextOverflow final {
 
   LogicalRect mContentArea;
   nsDisplayListBuilder* mBuilder;
-  nsBlockFrame* mBlock;
+  nsIFrame* mBlock;
   ScrollContainerFrame* mScrollContainerFrame;
   nsDisplayList mMarkerList;
   nsSize mBlockSize;
@@ -270,10 +275,10 @@ class TextOverflow final {
     void Init(const StyleTextOverflowSide& aStyle) {
       mInitialized = false;
       mISize = 0;
-      mTextOverflowStyle = &aStyle;
+      mStyle = &aStyle;
       mIntrinsicISize = 0;
       mHasOverflow = false;
-      mBlockEllipsis = nullptr;
+      mHasBlockEllipsis = false;
       mActive = false;
       mEdgeAligned = false;
     }
@@ -285,39 +290,15 @@ class TextOverflow final {
 
     bool IsSuppressed(bool aInLineClampContext) const {
       if (aInLineClampContext) {
-        return !HasBlockEllipsis();
+        return !mHasBlockEllipsis;
       }
-      return mTextOverflowStyle->IsClip();
+      return mStyle->IsClip();
     }
-    bool IsNeeded() const { return mHasOverflow || HasBlockEllipsis(); }
+    bool IsNeeded() const { return mHasOverflow || mHasBlockEllipsis; }
     void Reset() {
       mHasOverflow = false;
-      mBlockEllipsis = nullptr;
+      mHasBlockEllipsis = false;
       mEdgeAligned = false;
-    }
-
-    bool HasBlockEllipsis() const {
-      if (!mBlockEllipsis || mBlockEllipsis->IsNoEllipsis()) {
-        return false;
-      }
-      return !mBlockEllipsis->IsString() ||
-             !mBlockEllipsis->AsString().AsAtom()->IsEmpty();
-    }
-
-    bool IsEllipsis() const {
-      if (mBlockEllipsis) {
-        return mBlockEllipsis->IsEllipsis();
-      }
-      return mTextOverflowStyle->IsEllipsis();
-    }
-
-    const StyleAtomString* String() const {
-      if (mBlockEllipsis) {
-        return mBlockEllipsis->IsString() ? &mBlockEllipsis->AsString()
-                                          : nullptr;
-      }
-      return mTextOverflowStyle->IsString() ? &mTextOverflowStyle->AsString()
-                                            : nullptr;
     }
 
     
@@ -326,12 +307,11 @@ class TextOverflow final {
     nscoord mIntrinsicISize;
     
     
-    const StyleTextOverflowSide* mTextOverflowStyle;
+    const StyleTextOverflowSide* mStyle;
     
     bool mHasOverflow;
     
-    
-    const StyleBlockEllipsis* mBlockEllipsis = nullptr;
+    bool mHasBlockEllipsis;
     
     bool mInitialized;
     
