@@ -9,6 +9,10 @@
 #include "nsISupportsImpl.h"
 
 namespace mozilla {
+namespace gl {
+class GLContext;
+}
+
 namespace layers {
 
 class GpuFence {
@@ -17,6 +21,9 @@ class GpuFence {
 
   virtual bool HasCompleted() = 0;
   virtual bool ClientWait(TimeDuration aTimeout) = 0;
+  
+  
+  virtual bool ServerWait(gl::GLContext* aGL, TimeDuration aTimeout) = 0;
 
  protected:
   GpuFence() = default;
