@@ -372,7 +372,8 @@ void SMRegExpMacroAssembler::CheckBitInTable(Handle<ByteArray> table,
 
 void SMRegExpMacroAssembler::SkipUntilBitInTable(
     int cp_offset, Handle<ByteArray> table, Handle<ByteArray> nibble_table,
-    int advance_by, Label* on_match, Label* on_no_match) {
+    int advance_by, int bounds_check_offset, Label* on_match,
+    Label* on_no_match) {
   
   
   
@@ -387,8 +388,7 @@ void SMRegExpMacroAssembler::SkipUntilBitInTable(
 
   js::jit::Label scalarRepeat;
   masm_.bind(&scalarRepeat);
-  CheckPosition(cp_offset, on_no_match);
-  LoadCurrentCharacterUnchecked(cp_offset, 1);
+  LoadCurrentCharacter(cp_offset, on_no_match, true, 1, bounds_check_offset);
 
   Register index = current_character_;
   if (mode_ != LATIN1 || kTableMask != String::kMaxOneByteCharCode) {
@@ -807,31 +807,6 @@ void SMRegExpMacroAssembler::IfRegisterLT(int reg, int comparand,
 void SMRegExpMacroAssembler::IfRegisterEqPos(int reg, Label* if_eq) {
   masm_.branchPtr(Assembler::Equal, register_location(reg), current_position_,
                   LabelOrBacktrack(if_eq));
-}
-
-
-
-
-
-
-void SMRegExpMacroAssembler::LoadCurrentCharacterImpl(int cp_offset,
-                                                      Label* on_end_of_input,
-                                                      bool check_bounds,
-                                                      int characters,
-                                                      int eats_at_least) {
-  
-  
-  MOZ_ASSERT(eats_at_least >= characters);
-  MOZ_ASSERT(cp_offset < (1 << 30));  
-
-  if (check_bounds) {
-    if (cp_offset >= 0) {
-      CheckPosition(cp_offset + eats_at_least - 1, on_end_of_input);
-    } else {
-      CheckPosition(cp_offset, on_end_of_input);
-    }
-  }
-  LoadCurrentCharacterUnchecked(cp_offset, characters);
 }
 
 
