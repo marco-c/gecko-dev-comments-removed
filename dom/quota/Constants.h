@@ -76,6 +76,15 @@ const uint32_t kNoQuotaVersion = 0;
 
 const uint32_t kCurrentQuotaVersion = 2;
 
+
+
+
+const uint32_t kMinUsableQuotaVersion = 1;
+
+constexpr bool IsInitializableQuotaVersion(uint32_t aVersion) {
+  return aVersion >= kMinUsableQuotaVersion && aVersion <= kCurrentQuotaVersion;
+}
+
 }  
 
 #endif  
