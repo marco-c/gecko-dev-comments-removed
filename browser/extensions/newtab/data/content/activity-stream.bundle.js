@@ -17345,9 +17345,13 @@ function Weather_Weather({
   const weatherOptIn = prefs["system.showWeatherOptIn"];
   const nimbusWeatherOptInEnabled = prefs.trainhopConfig?.weather?.weatherOptInEnabled;
   const isOptInEnabled = weatherOptIn || nimbusWeatherOptInEnabled;
-  const optInDisplayed = prefs["weather.optInDisplayed"];
   const optInUserChoice = prefs["weather.optInAccepted"];
-  const showOptInState = isOptInEnabled && optInDisplayed && !optInUserChoice;
+  
+  
+  
+  
+  
+  const showOptInState = isOptInEnabled && !optInUserChoice;
   const {
     searchActive
   } = weatherData;
