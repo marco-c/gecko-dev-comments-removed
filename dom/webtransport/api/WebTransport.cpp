@@ -888,6 +888,14 @@ already_AddRefed<Promise> WebTransport::CreateBidirectionalStreamInternal(
   }
 
   
+  
+  
+  if (aSendGroup && aSendGroup->GetTransport() != this) {
+    aRv.ThrowInvalidStateError("sendGroup belongs to a different WebTransport");
+    return nullptr;
+  }
+
+  
   RefPtr<WebTransportSendGroup> sendGroup = aSendGroup;
   int64_t sendOrder = aSendOrder;
   
@@ -964,6 +972,14 @@ already_AddRefed<Promise> WebTransport::CreateUnidirectionalStreamInternal(
   if (mState == WebTransportState::CLOSED ||
       mState == WebTransportState::FAILED || !mChild) {
     aRv.ThrowInvalidStateError("WebTransport closed or failed");
+    return nullptr;
+  }
+
+  
+  
+  
+  if (aSendGroup && aSendGroup->GetTransport() != this) {
+    aRv.ThrowInvalidStateError("sendGroup belongs to a different WebTransport");
     return nullptr;
   }
 
