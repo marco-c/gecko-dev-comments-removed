@@ -55,12 +55,6 @@ async function renderPromo({
     return false;
   }
 
-  
-  
-  const dismissBtn = container.querySelector(
-    ".promo-dismiss, #nova-dismiss-btn"
-  );
-
   const onLinkClick = async event => {
     event.preventDefault();
 
@@ -78,7 +72,7 @@ async function renderPromo({
     await RPMSendQuery("SpecialMessageActionDispatch", promoButton.action);
   };
 
-  const onDismissBtnClick = () => {
+  const onDismiss = () => {
     window.ASRouterMessage({
       type: "BLOCK_MESSAGE_BY_ID",
       data: { id: messageId },
@@ -87,8 +81,10 @@ async function renderPromo({
     container.remove();
   };
 
-  if (dismissBtn && messageId) {
-    dismissBtn.addEventListener("click", onDismissBtnClick, { once: true });
+  if (!novaEnabled && messageId) {
+    container
+      .querySelector(".promo-dismiss")
+      ?.addEventListener("click", onDismiss, { once: true });
   }
 
   
@@ -107,6 +103,8 @@ async function renderPromo({
       promoHeader,
       promoImageLarge,
       onLinkClick,
+      onDismiss,
+      dismissable: !!messageId,
     });
   } else {
     renderLegacyPromo({
@@ -174,6 +172,8 @@ async function renderNovaPromo({
   promoHeader,
   promoImageLarge,
   onLinkClick,
+  onDismiss,
+  dismissable,
 }) {
   const promoEl = container.querySelector("#nova-promo");
   const linkEl = container.querySelector("#nova-promo-link");
@@ -183,6 +183,18 @@ async function renderNovaPromo({
   
   await customElements.whenDefined("moz-promo");
   await customElements.whenDefined("moz-button");
+
+  promoEl.dismissable = dismissable;
+  if (dismissable) {
+    promoEl.addEventListener(
+      "promo:user-dismissed",
+      event => {
+        event.preventDefault();
+        onDismiss();
+      },
+      { once: true }
+    );
+  }
 
   if (promoHeader) {
     promoEl.heading = await resolvePromoText(promoHeader);
