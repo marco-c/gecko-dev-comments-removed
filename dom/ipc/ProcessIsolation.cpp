@@ -1048,20 +1048,14 @@ Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
 
     
     
-    
     if (preferredRemoteType == NOT_REMOTE_TYPE) {
       MOZ_LOG(gProcessIsolationLog, LogLevel::Debug,
               ("Loading system principal shared worker in parent process"));
       behavior = IsolationBehavior::Parent;
-    } else if (preferredRemoteType == PRIVILEGEDABOUT_REMOTE_TYPE) {
-      MOZ_LOG(gProcessIsolationLog, LogLevel::Debug,
-              ("Loading system principal shared worker in privilegedabout "
-               "process"));
-      behavior = IsolationBehavior::PrivilegedAbout;
     } else {
-      MOZ_LOG(gProcessIsolationLog, LogLevel::Warning,
-              ("Cannot load system-principal shared worker in "
-               "non-privilegedabout content process"));
+      MOZ_LOG(
+          gProcessIsolationLog, LogLevel::Warning,
+          ("Cannot load system-principal shared worker in content process"));
       return Err(NS_ERROR_UNEXPECTED);
     }
   } else {
@@ -1565,7 +1559,18 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
   
   
   if (typePrefix != FISSION_WEB_REMOTE_TYPE &&
+      typePrefix != WITH_COOP_COEP_REMOTE_TYPE &&
       typePrefix != SERVICEWORKER_REMOTE_TYPE) {
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  if (typePrefix == WITH_COOP_COEP_REMOTE_TYPE &&
+      !mozilla::FissionAutostart()) {
     return true;
   }
 
