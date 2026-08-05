@@ -51,6 +51,7 @@ const kEnumerantValues = [
   'storage',
   'uniform',
   'handle',
+  'immediate',
 
   
   'rgba8unorm',

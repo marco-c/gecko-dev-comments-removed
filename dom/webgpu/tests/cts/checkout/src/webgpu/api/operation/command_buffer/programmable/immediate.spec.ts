@@ -488,7 +488,7 @@ g.test('basic_execution')
       encoderType,
       pipeline,
       encoder => {
-        encoder.setImmediates!(0, inputData);
+        encoder.setImmediates(0, inputData);
       },
       expected
     );
@@ -525,17 +525,17 @@ g.test('update_data')
       encodeFn: (enc, bindGroup) => {
         
         enc.setBindGroup(0, bindGroup, [0]);
-        enc.setImmediates!(0, new Uint32Array([1, 2, 3, 4]));
+        enc.setImmediates(0, new Uint32Array([1, 2, 3, 4]));
         dispatchOrDraw(encoderType, enc);
 
         
         enc.setBindGroup(0, bindGroup, [256]);
-        enc.setImmediates!(0, new Uint32Array([5, 6, 7, 8]));
+        enc.setImmediates(0, new Uint32Array([5, 6, 7, 8]));
         dispatchOrDraw(encoderType, enc);
 
         
         enc.setBindGroup(0, bindGroup, [512]);
-        enc.setImmediates!(4, new Uint32Array([9, 10]));
+        enc.setImmediates(4, new Uint32Array([9, 10]));
         dispatchOrDraw(encoderType, enc);
       },
     });
@@ -666,11 +666,11 @@ g.test('pipeline_switch')
         
         setPipeline(encoderType, enc, pipelineA);
         enc.setBindGroup(0, bindGroup, [0]);
-        enc.setImmediates!(0, new Uint32Array([1, 2, 3, 4]));
+        enc.setImmediates(0, new Uint32Array([1, 2, 3, 4]));
 
         
         setPipeline(encoderType, enc, pipelineB);
-        enc.setImmediates!(0, immDataB, undefined, immDataSizeB);
+        enc.setImmediates(0, immDataB, undefined, immDataSizeB);
         dispatchOrDraw(encoderType, enc);
       });
 
@@ -686,11 +686,11 @@ g.test('pipeline_switch')
       const renderTarget = encodeForPassType(t, encoderType, commandEncoder, enc => {
         setPipeline(encoderType, enc, pipelineA);
         enc.setBindGroup(0, bindGroup, [0]);
-        enc.setImmediates!(0, new Uint32Array([1, 2, 3, 4]));
+        enc.setImmediates(0, new Uint32Array([1, 2, 3, 4]));
 
         
         setPipeline(encoderType, enc, pipelineB);
-        enc.setImmediates!(0, immDataB, undefined, immDataSizeB);
+        enc.setImmediates(0, immDataB, undefined, immDataSizeB);
         dispatchOrDraw(encoderType, enc);
       })!;
 
@@ -759,7 +759,7 @@ g.test('use_max_immediate_size')
       encoderType,
       pipeline,
       encoder => {
-        encoder.setImmediates!(0, data);
+        encoder.setImmediates(0, data);
       },
       [0xdeadbeef, 0xcafebabe]
     );
@@ -891,10 +891,10 @@ g.test('typed_array_arguments')
         enc.setBindGroup(0, bindGroup, [0]);
 
         
-        enc.setImmediates!(0, clearData);
+        enc.setImmediates(0, clearData);
 
         
-        enc.setImmediates!(0, arr, dataOffset, dataSize);
+        enc.setImmediates(0, arr, dataOffset, dataSize);
 
         if (encoderType === 'compute pass') {
           dispatchOrDraw(encoderType, enc);
@@ -929,11 +929,11 @@ g.test('multiple_updates_before_draw_or_dispatch')
       pipeline,
       encoder => {
         
-        encoder.setImmediates!(0, new Uint32Array([1, 2, 3, 4]));
+        encoder.setImmediates(0, new Uint32Array([1, 2, 3, 4]));
         
-        encoder.setImmediates!(4, new Uint32Array([5, 6]));
+        encoder.setImmediates(4, new Uint32Array([5, 6]));
         
-        encoder.setImmediates!(12, new Uint32Array([7]));
+        encoder.setImmediates(12, new Uint32Array([7]));
       },
       [1, 5, 6, 7]
     );
@@ -969,7 +969,7 @@ g.test('render_pass_and_bundle_mix')
     });
     bundleEncoder.setPipeline(pipeline);
     bundleEncoder.setBindGroup(0, bindGroup, [0]);
-    bundleEncoder.setImmediates!(0, new Uint32Array([1, 10]));
+    bundleEncoder.setImmediates(0, new Uint32Array([1, 10]));
     bundleEncoder.draw(1);
     const bundle = bundleEncoder.finish();
 
@@ -996,7 +996,7 @@ g.test('render_pass_and_bundle_mix')
     
     pass.setPipeline(pipeline);
     pass.setBindGroup(0, bindGroup, [256]);
-    pass.setImmediates!(0, new Uint32Array([2, 20]));
+    pass.setImmediates(0, new Uint32Array([2, 20]));
     pass.draw(1);
 
     pass.end();
@@ -1061,7 +1061,7 @@ g.test('render_bundle_isolation')
     });
     bundleEncoderA.setPipeline(pipeline);
     bundleEncoderA.setBindGroup(0, bindGroup, [0]);
-    bundleEncoderA.setImmediates!(0, new Uint32Array([1, 2]));
+    bundleEncoderA.setImmediates(0, new Uint32Array([1, 2]));
     bundleEncoderA.draw(1);
     const bundleA = bundleEncoderA.finish();
 
@@ -1071,7 +1071,7 @@ g.test('render_bundle_isolation')
     });
     bundleEncoderB.setPipeline(pipeline);
     bundleEncoderB.setBindGroup(0, bindGroup, [256]);
-    bundleEncoderB.setImmediates!(0, new Uint32Array([3, 4]));
+    bundleEncoderB.setImmediates(0, new Uint32Array([3, 4]));
     bundleEncoderB.draw(1);
     const bundleB = bundleEncoderB.finish();
 
