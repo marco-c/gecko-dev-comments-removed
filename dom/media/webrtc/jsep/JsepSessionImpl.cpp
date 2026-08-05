@@ -746,6 +746,37 @@ JsepSession::Result JsepSessionImpl::SetLocalDescription(
                           << "\nSDP=\n"
                           << sdp);
 
+  
+  if (type == kJsepSdpOffer && mState == kJsepStateHaveLocalOffer) {
+    
+    SetLocalDescription(kJsepSdpRollback, "");
+    MOZ_ASSERT(mState == kJsepStateStable);
+  }
+
+  
+  switch (type) {
+    case kJsepSdpOffer:
+      if (mState != kJsepStateStable) {
+        JSEP_SET_ERROR("Cannot set a local offer in " << mState);
+        return dom::PCError::InvalidStateError;
+      }
+      break;
+    case kJsepSdpAnswer:
+    case kJsepSdpPranswer:
+      if (mState != kJsepStateHaveRemoteOffer &&
+          mState != kJsepStateHaveLocalPranswer) {
+        JSEP_SET_ERROR("Cannot set a local answer in " << mState);
+        return dom::PCError::InvalidStateError;
+      }
+      break;
+    case kJsepSdpRollback:
+      if (mState != kJsepStateHaveLocalOffer) {
+        JSEP_SET_ERROR("Cannot rollback a local offer in " << mState);
+        return dom::PCError::InvalidStateError;
+      }
+  }
+
+  
   switch (type) {
     case kJsepSdpOffer:
       if (!mGeneratedOffer) {
@@ -755,11 +786,6 @@ JsepSession::Result JsepSessionImpl::SetLocalDescription(
       }
       if (sdp.empty()) {
         sdp = mGeneratedOffer->ToString();
-      }
-      if (mState == kJsepStateHaveLocalOffer) {
-        
-        SetLocalDescription(kJsepSdpRollback, "");
-        MOZ_ASSERT(mState == kJsepStateStable);
       }
       break;
     case kJsepSdpAnswer:
@@ -774,39 +800,14 @@ JsepSession::Result JsepSessionImpl::SetLocalDescription(
       }
       break;
     case kJsepSdpRollback:
-      if (mState != kJsepStateHaveLocalOffer) {
-        JSEP_SET_ERROR("Cannot rollback local description in "
-                       << GetStateStr(mState));
-        
-        
-        return dom::PCError::InvalidStateError;
-      }
-
-      mPendingLocalDescription.reset();
-      SetState(kJsepStateStable);
-      RollbackLocalOffer();
-      return Result();
+      break;
   }
 
-  switch (mState) {
-    case kJsepStateStable:
-      if (type != kJsepSdpOffer) {
-        JSEP_SET_ERROR("Cannot set local answer in state "
-                       << GetStateStr(mState));
-        return dom::PCError::InvalidStateError;
-      }
-      break;
-    case kJsepStateHaveRemoteOffer:
-      if (type != kJsepSdpAnswer && type != kJsepSdpPranswer) {
-        JSEP_SET_ERROR("Cannot set local offer in state "
-                       << GetStateStr(mState));
-        return dom::PCError::InvalidStateError;
-      }
-      break;
-    default:
-      JSEP_SET_ERROR("Cannot set local offer or answer in state "
-                     << GetStateStr(mState));
-      return dom::PCError::InvalidStateError;
+  if (type == kJsepSdpRollback) {
+    mPendingLocalDescription.reset();
+    SetState(kJsepStateStable);
+    RollbackLocalOffer();
+    return Result();
   }
 
   UniquePtr<Sdp> parsed;

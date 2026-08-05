@@ -6382,7 +6382,7 @@ TEST_F(JsepSessionTest, SetLocalAnswerInHaveLocalOffer) {
   
   JsepSession::Result result =
       mSessionOff->SetLocalDescription(kJsepSdpAnswer, offer);
-  ASSERT_EQ(dom::PCError::InvalidModificationError, *result.mError);
+  ASSERT_EQ(dom::PCError::InvalidStateError, *result.mError);
   ASSERT_EQ(kJsepStateHaveLocalOffer, mSessionOff->GetState());
 }
 
@@ -6414,7 +6414,7 @@ TEST_F(JsepSessionTest, SetLocalOfferInHaveRemoteOffer) {
   
   JsepSession::Result result =
       mSessionAns->SetLocalDescription(kJsepSdpOffer, offer);
-  ASSERT_EQ(dom::PCError::InvalidModificationError, *result.mError);
+  ASSERT_EQ(dom::PCError::InvalidStateError, *result.mError);
   ASSERT_EQ(kJsepStateHaveRemoteOffer, mSessionAns->GetState());
 }
 
