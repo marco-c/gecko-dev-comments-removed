@@ -1565,8 +1565,15 @@ impl ClipStore {
                 
                 
                 
-                ClipSnap::Text(rounding) =>
-                    node.snapped_clip_rect(snapper, spatial_tree, rounding),
+                
+                
+                
+                
+                
+                
+                
+                ClipSnap::Text(_) =>
+                    node.snapped_clip_rect(snapper, spatial_tree, SnapRounding::RoundOut),
                 
                 ClipSnap::Exact => node.unsnapped_clip_rect,
             };
