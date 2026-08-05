@@ -4,6 +4,8 @@
 
 "use strict";
 
+const UPGRADE_NOT_AVAILABLE_PREF = "browser.ipProtection.upgradeNotAvailable";
+
 const MOCK_LOCATIONS_LIST = [
   { code: "US", available: true },
   { code: "CA", available: true },
@@ -118,27 +120,73 @@ add_task(async function test_locations_tab_nav_without_promo() {
 
 
 
+
+
 add_task(async function test_locations_tab_nav_upgrade_not_available() {
-  let { backButton, firstListItem, promoButton } = await openLocationsSubview({
-    hasUpgraded: false,
-    upgradeNotAvailable: true,
+  
+
+
+
+  let assertPromoSkipped = async (locationsView, description) => {
+    Assert.ok(
+      !locationsView.querySelector("moz-promo moz-button"),
+      `promo button should not be present ${description}`
+    );
+
+    let backButton = locationsView.querySelector(".subviewbutton-back");
+    let firstListItem = locationsView.querySelector(".location-item");
+
+    backButton.focus();
+
+    await expectFocusAfterKey("Tab", firstListItem);
+    await expectFocusAfterKey("Tab", backButton);
+
+    await expectFocusAfterKey("Shift+Tab", firstListItem);
+    await expectFocusAfterKey("Shift+Tab", backButton);
+  };
+
+  let setUpgradeNotAvailable = async (locationsView, value) => {
+    Services.prefs.setBoolPref(UPGRADE_NOT_AVAILABLE_PREF, value);
+    let locationsEl = locationsView.querySelector(
+      IPProtectionPanel.LOCATIONS_TAGNAME
+    );
+    await locationsEl.updateComplete;
+  };
+
+  await SpecialPowers.pushPrefEnv({
+    set: [[UPGRADE_NOT_AVAILABLE_PREF, true]],
   });
 
+  let { locationsView } = await openLocationsSubview({ hasUpgraded: false });
+
+  await assertPromoSkipped(locationsView, "when the pref is set on startup");
+
+  
+  await setUpgradeNotAvailable(locationsView, false);
+
+  let promoButton = locationsView.querySelector("moz-promo moz-button");
   Assert.ok(
-    !promoButton,
-    "promo button should not be present when upgradeNotAvailable is true"
+    promoButton,
+    "promo button should be present after the pref is cleared at runtime"
   );
+
+  let backButton = locationsView.querySelector(".subviewbutton-back");
+  let firstListItem = locationsView.querySelector(".location-item");
 
   backButton.focus();
 
   await expectFocusAfterKey("Tab", firstListItem);
+  await expectFocusAfterKey("Tab", promoButton);
   await expectFocusAfterKey("Tab", backButton);
 
-  await expectFocusAfterKey("Shift+Tab", firstListItem);
-  await expectFocusAfterKey("Shift+Tab", backButton);
+  
+  await setUpgradeNotAvailable(locationsView, true);
+
+  await assertPromoSkipped(locationsView, "after the pref is set at runtime");
 
   await closePanel();
   cleanupService();
+  await SpecialPowers.popPrefEnv();
 });
 
 

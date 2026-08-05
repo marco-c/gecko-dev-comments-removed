@@ -46,6 +46,7 @@ import {
   LINKS,
   SIGNIN_DATA,
 } from "chrome://browser/content/ipprotection/ipprotection-constants.mjs";
+import { getSitePrincipal } from "chrome://browser/content/ipprotection/ipprotection-utils.mjs";
 
 const BANDWIDTH_THRESHOLD_PREF = "browser.ipProtection.bandwidthThreshold";
 const BANDWIDTH_WARNING_DISMISSED_PREF =
@@ -1017,6 +1018,10 @@ export class IPProtectionPanel {
   }
 
   #addPrefObserver() {
+    Services.prefs.addObserver(
+      UPGRADE_NOT_AVAILABLE_PREF,
+      this.handlePrefChange
+    );
     Services.prefs.addObserver(EGRESS_LOCATION_PREF, this.handlePrefChange);
     Services.prefs.addObserver(
       BANDWIDTH_WARNING_DISMISSED_PREF,
@@ -1025,6 +1030,10 @@ export class IPProtectionPanel {
   }
 
   #removePrefObserver() {
+    Services.prefs.removeObserver(
+      UPGRADE_NOT_AVAILABLE_PREF,
+      this.handlePrefChange
+    );
     Services.prefs.removeObserver(EGRESS_LOCATION_PREF, this.handlePrefChange);
     Services.prefs.removeObserver(
       BANDWIDTH_WARNING_DISMISSED_PREF,
@@ -1033,20 +1042,30 @@ export class IPProtectionPanel {
   }
 
   #handlePrefChange(_subject, _topic, data) {
-    if (data === EGRESS_LOCATION_PREF) {
-      const value = Services.prefs.getStringPref(EGRESS_LOCATION_PREF, "");
-      this.setState({
-        location: value || null,
-      });
-    } else if (data === BANDWIDTH_WARNING_DISMISSED_PREF) {
-      if (!this.#shouldShowBandwidthWarning()) {
-        this.setState({ bandwidthWarning: false });
-      }
+    switch (data) {
+      case EGRESS_LOCATION_PREF:
+        this.setState({
+          location:
+            Services.prefs.getStringPref(EGRESS_LOCATION_PREF, "") || null,
+        });
+        return;
+      case BANDWIDTH_WARNING_DISMISSED_PREF:
+        if (!this.#shouldShowBandwidthWarning()) {
+          this.setState({ bandwidthWarning: false });
+        }
+        return;
+      case UPGRADE_NOT_AVAILABLE_PREF:
+        this.setState({
+          upgradeNotAvailable: Services.prefs.getBoolPref(
+            UPGRADE_NOT_AVAILABLE_PREF,
+            false
+          ),
+        });
     }
   }
 
   /**
-   * Gets siteData by reading the current content principal.
+   * Gets siteData by reading the current URL bar's URI.
    *
    * @returns {object|null}
    *  An object with data relevant to a site (eg. isExclusion),
@@ -1056,7 +1075,7 @@ export class IPProtectionPanel {
    */
 
   #getSiteData() {
-    const principal = this.gBrowser?.contentPrincipal;
+    const principal = getSitePrincipal(this.gBrowser);
     if (!principal || !lazy.IPPExceptionsManager.canManage(principal)) {
       return null;
     }
@@ -1170,13 +1189,13 @@ export class IPProtectionPanel {
       });
     } else if (event.type == "IPProtection:UserEnableVPNForSite") {
       const win = event.target.documentGlobal;
-      const principal = win?.gBrowser.contentPrincipal;
+      const principal = getSitePrincipal(win?.gBrowser);
 
       lazy.IPPExceptionsManager.setExclusion(principal, false);
       Glean.ipprotection.exclusionToggled.record({ excluded: false });
     } else if (event.type == "IPProtection:UserDisableVPNForSite") {
       const win = event.target.documentGlobal;
-      const principal = win?.gBrowser.contentPrincipal;
+      const principal = getSitePrincipal(win?.gBrowser);
 
       lazy.IPPExceptionsManager.setExclusion(principal, true);
       Glean.ipprotection.exclusionToggled.record({ excluded: true });
