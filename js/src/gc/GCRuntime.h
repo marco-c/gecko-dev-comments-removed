@@ -1178,7 +1178,7 @@ class GCRuntime {
   HelperThreadLockData<GCParallelTaskList> queuedParallelTasks;
 
   
-  AtomMarkingRuntime atomMarking;
+  AtomRefRuntime atomReferences;
   MainThreadOrGCTaskData<UniquePtr<DenseBitmap>> atomsUsedByUncollectedZones;
 
   

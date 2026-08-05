@@ -198,7 +198,7 @@ ArrayObject* js::GetFunctionParameterNamesArray(JSContext* cx,
       if (JSAtom* atom = fi.name()) {
         
         if (IsIdentifier(atom)) {
-          cx->markAtom(atom);
+          cx->recordRef(atom);
           names[i].setString(atom);
         }
       }
@@ -2378,7 +2378,7 @@ bool Debugger::fireNativeCall(JSContext* cx, const CallArgs& args,
       reasonAtom = cx->names().set;
       break;
   }
-  MOZ_ASSERT(AtomIsMarked(cx->zone(), reasonAtom));
+  MOZ_ASSERT(ZoneHasRef(cx->zone(), reasonAtom));
 
   RootedValue reasonval(cx, StringValue(reasonAtom));
 
@@ -6627,7 +6627,7 @@ bool Debugger::CallData::findSourceURLs() {
         
         
         MOZ_ASSERT(v.isString() && v.toString()->isAtom());
-        cx->markAtomValue(v);
+        cx->recordRefToValue(v);
 
         if (!NewbornArrayPush(cx, result, v)) {
           return false;

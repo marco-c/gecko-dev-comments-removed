@@ -474,7 +474,7 @@ Arena* GCRuntime::releaseSomeEmptyArenas(Zone* zone, Arena* emptyArenas) {
   for (size_t i = 0; i < count; i++) {
     Arena* arena = arenasToRelease[i];
     if (isAtomsZone) {
-      atomMarking.freeIndex(atomsBitmapIndexes[i], lock);
+      atomReferences.freeIndex(atomsBitmapIndexes[i], lock);
     }
     arena->chunk()->releaseArena(this, arena, lock);
   }
@@ -1390,12 +1390,13 @@ static size_t ImmediateSweepWeakCache(GCRuntime* gc,
 }
 
 void GCRuntime::updateAtomsBitmap() {
-  atomMarking.refineZoneBitmapsForCollectedZones(this);
+  atomReferences.refineZoneBitmapsForCollectedZones(this);
 
   
   auto& atomsToMark = atomsUsedByUncollectedZones.ref();
   if (atomsToMark) {
-    atomMarking.markAtomsUsedByUncollectedZones(this, std::move(atomsToMark));
+    atomReferences.markAtomsUsedByUncollectedZones(this,
+                                                   std::move(atomsToMark));
   }
 
   

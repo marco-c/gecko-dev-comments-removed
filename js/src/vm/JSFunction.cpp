@@ -6,8 +6,6 @@
 
 
 
-#include "vm/JSFunction-inl.h"
-
 #include "mozilla/Maybe.h"
 
 #include "jsapi.h"
@@ -54,7 +52,9 @@
 #include "vm/StringObject.h"
 #include "wasm/WasmCode.h"
 #include "wasm/WasmInstance.h"
+
 #include "vm/Interpreter-inl.h"
+#include "vm/JSFunction-inl.h"
 #include "vm/JSScript-inl.h"
 
 using namespace js;
@@ -1393,15 +1393,38 @@ static bool CreateDynamicFunction(JSContext* cx, const CallArgs& args,
       }
 
       
-      str = ToString<CanGC>(cx, args[i]);
-      if (!str) {
-        return false;
+      
+      
+      
+      
+      
+      
+      str = nullptr;
+
+      
+      
+      if (args[i].isObject()) {
+        JS::Rooted<JSObject*> obj(cx, &args[i].toObject());
+        if (!cx->getCodeForEval(obj, &str)) {
+          return false;
+        }
       }
 
+      
+      
+      if (!str) {
+        str = ToString<CanGC>(cx, args[i]);
+        if (!str) {
+          return false;
+        }
+      }
+
+      
       if (!parameterStrings.append(str)) {
         return false;
       }
 
+      
       
       if (!sb.append(str)) {
         return false;
@@ -1430,12 +1453,36 @@ static bool CreateDynamicFunction(JSContext* cx, const CallArgs& args,
   }
 
   JS::RootedValue bodyArg(cx);
-  RootedString bodyString(cx);
+
+  
+  
+  
+  
+  
+  
+  
+  JS::Rooted<JSString*> bodyString(cx);
   if (args.length() > 0) {
-    
     bodyArg = args[args.length() - 1];
-    bodyString = ToString<CanGC>(cx, bodyArg);
-    if (!bodyString || !sb.append(bodyString)) {
+
+    
+    
+    if (bodyArg.isObject()) {
+      JS::Rooted<JSObject*> obj(cx, &bodyArg.toObject());
+      if (!cx->getCodeForEval(obj, &bodyString)) {
+        return false;
+      }
+    }
+
+    
+    if (!bodyString) {
+      bodyString = ToString<CanGC>(cx, bodyArg);
+      if (!bodyString) {
+        return false;
+      }
+    }
+
+    if (!sb.append(bodyString)) {
       return false;
     }
   }
@@ -1456,6 +1503,16 @@ static bool CreateDynamicFunction(JSContext* cx, const CallArgs& args,
   }
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool canCompileStrings = cx->bypassCSPForDebugger;
 
   if (!canCompileStrings &&
@@ -1471,6 +1528,7 @@ static bool CreateDynamicFunction(JSContext* cx, const CallArgs& args,
     return false;
   }
 
+  
   
   AutoStableStringChars linearChars(cx);
   if (!linearChars.initTwoByte(cx, functionText)) {

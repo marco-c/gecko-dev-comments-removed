@@ -1,40 +1,39 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "mozilla/Assertions.h"  // for AssertionConditionType
+#include "mozilla/Maybe.h"       // for Maybe, Some, Nothing
+#include "mozilla/Vector.h"      // for Vector
 
+#include <string.h>  // for strlen, size_t
 
+#include "debugger/Debugger.h"  // for Env, Debugger, ValueToIdentifier
+#include "debugger/Object.h"    // for DebuggerObject
+#include "debugger/Script.h"    // for DebuggerScript
+#include "gc/Tracer.h"    // for TraceManuallyBarrieredCrossCompartmentEdge
+#include "js/CallArgs.h"  // for CallArgs
+#include "js/friend/ErrorMessages.h"  // for GetErrorMessage, JSMSG_*
+#include "js/HeapAPI.h"               // for IsInsideNursery
+#include "js/RootingAPI.h"            // for Rooted, MutableHandle
+#include "util/Identifier.h"          // for IsIdentifier
+#include "vm/Compartment.h"           // for Compartment
+#include "vm/JSAtomUtils.h"           // for Atomize
+#include "vm/JSContext.h"             // for JSContext
+#include "vm/JSFunction.h"            // for JSFunction
+#include "vm/JSObject.h"              // for JSObject, RequireObject,
+#include "vm/NativeObject.h"          // for NativeObject, JSObject::is
+#include "vm/Realm.h"                 // for AutoRealm, ErrorCopier
+#include "vm/Scope.h"                 // for ScopeKind, ScopeKindString
+#include "vm/StringType.h"            // for JSAtom
 
 #include "debugger/Environment-inl.h"
-
-#include "mozilla/Assertions.h"  
-#include "mozilla/Maybe.h"       
-#include "mozilla/Vector.h"      
-
-#include <string.h>  
-
-#include "debugger/Debugger.h"  
-#include "debugger/Object.h"    
-#include "debugger/Script.h"    
-#include "gc/Tracer.h"    
-#include "js/CallArgs.h"  
-#include "js/friend/ErrorMessages.h"  
-#include "js/HeapAPI.h"               
-#include "js/RootingAPI.h"            
-#include "util/Identifier.h"          
-#include "vm/Compartment.h"           
-#include "vm/JSAtomUtils.h"           
-#include "vm/JSContext.h"             
-#include "vm/JSFunction.h"            
-#include "vm/JSObject.h"              
-#include "vm/NativeObject.h"          
-#include "vm/Realm.h"                 
-#include "vm/Scope.h"                 
-#include "vm/StringType.h"            
-
 #include "gc/StableCellHasher-inl.h"
-#include "vm/Compartment-inl.h"        
-#include "vm/EnvironmentObject-inl.h"  
-#include "vm/JSObject-inl.h"  
-#include "vm/ObjectOperations-inl.h"  
-#include "vm/Realm-inl.h"             
+#include "vm/Compartment-inl.h"        // for Compartment::wrap
+#include "vm/EnvironmentObject-inl.h"  // for JSObject::enclosingEnvironment
+#include "vm/JSObject-inl.h"  // for IsInternalFunctionObject, NewObjectWithGivenProtoAndKind
+#include "vm/ObjectOperations-inl.h"  // for HasProperty, GetProperty
+#include "vm/Realm-inl.h"             // for AutoRealm::AutoRealm
 
 namespace js {
 class GlobalObject;
@@ -57,8 +56,8 @@ const JSClass DebuggerEnvironment::class_ = {
 };
 
 void DebuggerEnvironment::trace(JSTracer* trc) {
-  
-  
+  // There is a barrier on private pointers, so the Unbarriered marking
+  // is okay.
   if (Env* referent = maybeReferent()) {
     TraceManuallyBarrieredCrossCompartmentEdge(trc, this, &referent,
                                                "Debugger.Environment referent");
@@ -114,7 +113,7 @@ struct MOZ_STACK_CLASS DebuggerEnvironment::CallData {
 };
 
 template <DebuggerEnvironment::CallData::Method MyMethod>
-
+/* static */
 bool DebuggerEnvironment::CallData::ToNative(JSContext* cx, unsigned argc,
                                              Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -129,7 +128,7 @@ bool DebuggerEnvironment::CallData::ToNative(JSContext* cx, unsigned argc,
   return (data.*MyMethod)();
 }
 
-
+/* static */
 bool DebuggerEnvironment::construct(JSContext* cx, unsigned argc, Value* vp) {
   JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_NO_CONSTRUCTOR,
                             "Debugger.Environment");
@@ -366,7 +365,7 @@ const JSFunctionSpec DebuggerEnvironment::methods_[] = {
     JS_FS_END,
 };
 
-
+/* static */
 NativeObject* DebuggerEnvironment::initClass(JSContext* cx,
                                              Handle<GlobalObject*> global,
                                              HandleObject dbgCtor) {
@@ -374,7 +373,7 @@ NativeObject* DebuggerEnvironment::initClass(JSContext* cx,
                    properties_, methods_, nullptr, nullptr);
 }
 
-
+/* static */
 DebuggerEnvironment* DebuggerEnvironment::create(
     JSContext* cx, HandleObject proto, HandleObject referent,
     Handle<NativeObject*> debugger) {
@@ -391,9 +390,9 @@ DebuggerEnvironment* DebuggerEnvironment::create(
   return obj;
 }
 
-
+/* static */
 DebuggerEnvironmentType DebuggerEnvironment::type() const {
-  
+  // Don't bother switching compartments just to check env's type.
   if (IsDeclarative(referent())) {
     return DebuggerEnvironmentType::Declarative;
   }
@@ -415,7 +414,7 @@ mozilla::Maybe<ScopeKind> DebuggerEnvironment::scopeKind() const {
 
 bool DebuggerEnvironment::getParent(
     JSContext* cx, MutableHandle<DebuggerEnvironment*> result) const {
-  
+  // Don't bother switching compartments just to get env's parent.
   Rooted<Env*> parent(cx, referent()->enclosingEnvironment());
   if (!parent) {
     result.set(nullptr);
@@ -429,7 +428,7 @@ bool DebuggerEnvironment::getObject(
     JSContext* cx, MutableHandle<DebuggerObject*> result) const {
   MOZ_ASSERT(type() != DebuggerEnvironmentType::Declarative);
 
-  
+  // Don't bother switching compartments just to get env's object.
   RootedObject object(cx);
   if (IsDebugEnvironmentWrapper<WithEnvironmentObject>(referent())) {
     object.set(&referent()
@@ -487,7 +486,7 @@ bool DebuggerEnvironment::isOptimized() const {
          referent()->as<DebugEnvironmentProxy>().isOptimizedOut();
 }
 
-
+/* static */
 bool DebuggerEnvironment::getNames(JSContext* cx,
                                    Handle<DebuggerEnvironment*> environment,
                                    MutableHandleIdVector result) {
@@ -510,13 +509,13 @@ bool DebuggerEnvironment::getNames(JSContext* cx,
   });
 
   for (size_t i = 0; i < result.length(); ++i) {
-    cx->markAtom(result[i].toAtom());
+    cx->recordRef(result[i].toAtom());
   }
 
   return true;
 }
 
-
+/* static */
 bool DebuggerEnvironment::find(JSContext* cx,
                                Handle<DebuggerEnvironment*> environment,
                                HandleId id,
@@ -530,9 +529,9 @@ bool DebuggerEnvironment::find(JSContext* cx,
     Maybe<AutoRealm> ar;
     ar.emplace(cx, env);
 
-    cx->markId(id);
+    cx->recordRefToId(id);
 
-    
+    // This can trigger resolve hooks.
     ErrorCopier ec(ar);
     for (; env; env = env->enclosingEnvironment()) {
       bool found;
@@ -553,7 +552,7 @@ bool DebuggerEnvironment::find(JSContext* cx,
   return dbg->wrapEnvironment(cx, env, result);
 }
 
-
+/* static */
 bool DebuggerEnvironment::getVariable(JSContext* cx,
                                       Handle<DebuggerEnvironment*> environment,
                                       HandleId id, MutableHandleValue result) {
@@ -566,9 +565,9 @@ bool DebuggerEnvironment::getVariable(JSContext* cx,
     Maybe<AutoRealm> ar;
     ar.emplace(cx, referent);
 
-    cx->markId(id);
+    cx->recordRefToId(id);
 
-    
+    // This can trigger getters.
     ErrorCopier ec(ar);
 
     bool found;
@@ -580,10 +579,10 @@ bool DebuggerEnvironment::getVariable(JSContext* cx,
       return true;
     }
 
-    
-    
-    
-    
+    // For DebugEnvironmentProxys, we get sentinel values for optimized out
+    // slots and arguments instead of throwing (the default behavior).
+    //
+    // See wrapDebuggeeValue for how the sentinel values are wrapped.
     if (referent->is<DebugEnvironmentProxy>()) {
       Rooted<DebugEnvironmentProxy*> env(
           cx, &referent->as<DebugEnvironmentProxy>());
@@ -597,9 +596,9 @@ bool DebuggerEnvironment::getVariable(JSContext* cx,
     }
   }
 
-  
-  
-  
+  // When we've faked up scope chain objects for optimized-out scopes,
+  // declarative environments may contain internal JSFunction objects, which
+  // we shouldn't expose to the user.
   if (result.isObject()) {
     RootedObject obj(cx, &result.toObject());
     if (obj->is<JSFunction>() &&
@@ -610,7 +609,7 @@ bool DebuggerEnvironment::getVariable(JSContext* cx,
   return dbg->wrapDebuggeeValue(cx, result);
 }
 
-
+/* static */
 bool DebuggerEnvironment::setVariable(JSContext* cx,
                                       Handle<DebuggerEnvironment*> environment,
                                       HandleId id, HandleValue value_) {
@@ -630,12 +629,12 @@ bool DebuggerEnvironment::setVariable(JSContext* cx,
     if (!cx->compartment()->wrap(cx, &value)) {
       return false;
     }
-    cx->markId(id);
+    cx->recordRefToId(id);
 
-    
+    // This can trigger setters.
     ErrorCopier ec(ar);
 
-    
+    // Make sure the environment actually has the specified binding.
     bool found;
     if (!HasProperty(cx, referent, id, &found)) {
       return false;
@@ -646,7 +645,7 @@ bool DebuggerEnvironment::setVariable(JSContext* cx,
       return false;
     }
 
-    
+    // Just set the property.
     if (!SetProperty(cx, referent, id, value)) {
       return false;
     }

@@ -369,7 +369,7 @@ class JSFunction : public js::NativeObject {
   }
 
   void initAtom(JSAtom* atom) {
-    MOZ_ASSERT_IF(atom, js::AtomIsMarked(zone(), atom));
+    MOZ_ASSERT_IF(atom, js::ZoneHasRef(zone(), atom));
     MOZ_ASSERT(getFixedSlot(AtomSlot).isUndefined());
     if (atom) {
       initFixedSlot(AtomSlot, JS::StringValue(atom));
@@ -377,7 +377,7 @@ class JSFunction : public js::NativeObject {
   }
 
   void setAtom(JSAtom* atom) {
-    MOZ_ASSERT_IF(atom, js::AtomIsMarked(zone(), atom));
+    MOZ_ASSERT_IF(atom, js::ZoneHasRef(zone(), atom));
     setFixedSlot(AtomSlot, atom ? JS::StringValue(atom) : JS::UndefinedValue());
   }
 

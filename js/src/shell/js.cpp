@@ -65,6 +65,7 @@
 #include "jsapi.h"
 #include "jsfriendapi.h"
 #include "jstypes.h"
+
 #include "fmt/format.h"
 #ifndef JS_WITHOUT_NSPR
 #  include "prerror.h"
@@ -9134,7 +9135,7 @@ static bool CopyExpandoProperties(JSContext* cx, HandleObject target,
     MOZ_ASSERT(desc.isSome());
 
     JSAutoRealm dstRealm(cx, target);
-    cx->markId(id);
+    cx->recordRefToId(id);
     RootedId wrappedId(cx, id);
     if (!cx->compartment()->wrap(cx, &desc)) {
       return false;

@@ -25,7 +25,7 @@ class GCRuntime;
 
 
 
-class AtomMarkingRuntime {
+class AtomRefRuntime {
   
   js::MainThreadData<Vector<size_t, 0, SystemAllocPolicy>> freeArenaIndexes;
 
@@ -33,15 +33,15 @@ class AtomMarkingRuntime {
   js::GCLockData<Vector<size_t, 0, SystemAllocPolicy>> pendingFreeArenaIndexes;
   mozilla::Atomic<bool, mozilla::Relaxed> hasPendingFreeArenaIndexes;
 
-  inline void markChildren(Zone* zone, JSAtom*);
-  inline void markChildren(Zone* zone, JS::Symbol* symbol);
+  inline void recordChildren(Zone* zone, JSAtom*);
+  inline void recordChildren(Zone* zone, JS::Symbol* symbol);
 
  public:
   
   
   mozilla::Atomic<size_t, mozilla::SequentiallyConsistent> allocatedWords;
 
-  AtomMarkingRuntime() : allocatedWords(0) {}
+  AtomRefRuntime() : allocatedWords(0) {}
 
   
   size_t allocateIndex(GCRuntime* gc);
@@ -91,41 +91,42 @@ class AtomMarkingRuntime {
  public:
   
   template <typename T>
-  void markAtom(JSContext* cx, T* thing);
+  void recordRef(JSContext* cx, T* thing);
 
   
   
   template <typename T, bool Fallible>
-  MOZ_ALWAYS_INLINE bool inlinedMarkAtomInternal(Zone* zone, T* thing);
+  MOZ_ALWAYS_INLINE bool inlinedRecordRefInternal(Zone* zone, T* thing);
   template <typename T>
-  MOZ_ALWAYS_INLINE void inlinedMarkAtom(Zone* zone, T* thing);
+  MOZ_ALWAYS_INLINE void inlinedRecordRef(Zone* zone, T* thing);
   template <typename T>
-  [[nodiscard]] MOZ_ALWAYS_INLINE bool inlinedMarkAtomFallible(Zone* zone,
-                                                               T* thing);
+  [[nodiscard]] MOZ_ALWAYS_INLINE bool inlinedRecordRefFallible(Zone* zone,
+                                                                T* thing);
 
-  void markId(JSContext* cx, jsid id);
-  void markAtomValue(JSContext* cx, const Value& value);
-
-  
-  template <typename T>
-  CellColor getAtomMarkColor(Zone* zone, T* thing);
+  void recordRefToId(JSContext* cx, jsid id);
+  void recordRefToValue(JSContext* cx, const Value& value);
 
   
   template <typename T>
-  bool atomIsMarked(Zone* zone, T* thing) {
-    return getAtomMarkColor(zone, thing) != CellColor::White;
+  CellColor getRefColor(Zone* zone, T* thing);
+
+  
+  template <typename T>
+  bool hasRef(Zone* zone, T* thing) {
+    return getRefColor(zone, thing) != CellColor::White;
   }
 
   
   
-  CellColor getAtomMarkColorForIndex(Zone* zone, size_t bitIndex);
+  CellColor getRefColorForIndex(Zone* zone, size_t bitIndex);
 
+  
   
   void maybeUnmarkGrayAtomically(Zone* zone, JS::Symbol* symbol);
 
 #ifdef DEBUG
-  bool idIsMarked(Zone* zone, jsid id);
-  bool valueIsMarked(Zone* zone, const Value& value);
+  bool hasRefToId(Zone* zone, jsid id);
+  bool hasRefToValue(Zone* zone, const Value& value);
 #endif
 };
 

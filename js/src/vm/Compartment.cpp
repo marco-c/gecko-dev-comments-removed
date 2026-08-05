@@ -2,8 +2,6 @@
 
 
 
-#include "vm/Compartment-inl.h"
-
 #include "mozilla/MemoryReporting.h"
 
 #include <stddef.h>
@@ -29,6 +27,7 @@
 
 #include "gc/Marking-inl.h"
 #include "gc/WeakMap-inl.h"
+#include "vm/Compartment-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/Realm-inl.h"
 #include "vm/StringType-inl.h"
@@ -171,7 +170,7 @@ bool Compartment::wrap(JSContext* cx, MutableHandleString strp) {
 
 
   if (str->isAtom()) {
-    cx->markAtom(&str->asAtom());
+    cx->recordRef(&str->asAtom());
     return true;
   }
 

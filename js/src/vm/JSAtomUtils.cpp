@@ -6,8 +6,6 @@
 
 
 
-#include "vm/JSAtomUtils-inl.h"
-
 #include "mozilla/HashFunctions.h"  
 #include "mozilla/RangedPtr.h"
 
@@ -29,7 +27,9 @@
 #include "vm/StringType.h"
 #include "vm/SymbolType.h"
 #include "vm/WellKnownAtom.h"  
+
 #include "gc/AtomMarking-inl.h"
+#include "vm/JSAtomUtils-inl.h"
 #include "vm/JSContext-inl.h"
 #include "vm/Realm-inl.h"
 #include "vm/StringType-inl.h"
@@ -385,7 +385,7 @@ AtomizeAndCopyCharsNonStaticValidLengthFromLookup(
     if (cachedAtom) {
       
       
-      MOZ_ASSERT(AtomIsMarked(zone, cachedAtom));
+      MOZ_ASSERT(ZoneHasRef(zone, cachedAtom));
       return cachedAtom;
     }
   }
@@ -408,7 +408,7 @@ AtomizeAndCopyCharsNonStaticValidLengthFromLookup(
   }
 
   if (MOZ_UNLIKELY(
-          !cx->atomMarking().inlinedMarkAtomFallible(cx->zone(), atom))) {
+          !cx->atomReferences().inlinedRecordRefFallible(cx->zone(), atom))) {
     ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -685,7 +685,7 @@ JSAtom* js::AtomizeStringSlow(JSContext* cx, JSString* str) {
         
         
         
-        cx->markAtom(atom);
+        cx->recordRef(atom);
         str->tryReplaceWithAtomRef(atom);
         return atom;
       }

@@ -2,8 +2,6 @@
 
 
 
-#include "debugger/Frame-inl.h"
-
 #include "mozilla/Assertions.h"  
 #include "mozilla/HashTable.h"   
 #include "mozilla/Maybe.h"       
@@ -73,7 +71,8 @@
 #include "wasm/WasmJS.h"           
 #include "wasm/WasmStacks.h"       
 
-#include "debugger/Debugger-inl.h"    
+#include "debugger/Debugger-inl.h"  
+#include "debugger/Frame-inl.h"
 #include "gc/WeakMap-inl.h"           
 #include "vm/Compartment-inl.h"       
 #include "vm/JSContext-inl.h"         
@@ -991,7 +990,7 @@ static WithEnvironmentObject* CreateBindingsEnv(
   JS::Rooted<JS::Value> val(cx);
   for (size_t i = 0; i < bindingKeys.length(); i++) {
     id = bindingKeys[i];
-    cx->markId(id);
+    cx->recordRefToId(id);
     val = bindingValues[i];
     if (!cx->compartment()->wrap(cx, &val) ||
         !NativeDefineDataProperty(cx, bindingsObj, id, val, 0)) {
