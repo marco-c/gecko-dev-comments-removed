@@ -546,6 +546,10 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvInitMediaEngine(
     aResolver(0);
     return IPC_OK();
   }
+  if (MOZ_UNLIKELY(mIsMediaEngineInitialized)) {
+    MOZ_ASSERT_UNREACHABLE("MFMediaEngine must not be initialized twice");
+    return IPC_FAIL(this, "MFMediaEngine must not be initialized twice");
+  }
   
   
   if (aInfo.preload()) {
@@ -554,6 +558,7 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvInitMediaEngine(
   }
   RETURN_PARAM_IF_FAILED(
       SetMediaInfo(aInfo.mediaInfo(), aInfo.encryptedCustomIdent()), IPC_OK());
+  mIsMediaEngineInitialized = true;
   aResolver(mMediaEngineId);
   return IPC_OK();
 }

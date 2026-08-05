@@ -145,6 +145,8 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
   MediaEventListener mRequestSampleListener;
   bool mIsCreatedMediaEngine = false;
   
+  bool mIsMediaEngineInitialized = false;
+  
   
   
   
