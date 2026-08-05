@@ -518,6 +518,7 @@ WebTransportParent::OnSessionReady(uint64_t aSessionId) {
        aSessionId, this));
 
   mSessionReady = true;
+  mSessionId = aSessionId;
 
   
   
