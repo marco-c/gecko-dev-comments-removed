@@ -173,6 +173,16 @@ class IPProtectionWidget {
       return null;
     }
 
+    // If there's no panel at this point, create an instance.
+    // This occurs when we want to call `IPProtectionPanel.enroll` before
+    // `onBeforeCreated` runs.
+    // Eg. click "Get Started" in settings after a browser restart,
+    // while the widget is in Customize Mode.
+    if (!this.#panels.has(window)) {
+      let panel = new lazy.IPProtectionPanel(window);
+      this.#panels.set(window, panel);
+    }
+
     return this.#panels.get(window);
   }
 
@@ -257,7 +267,7 @@ class IPProtectionWidget {
   #onBeforeCreated(doc) {
     let { documentGlobal } = doc;
     if (documentGlobal && !this.#panels.has(documentGlobal)) {
-      let panel = new lazy.IPProtectionPanel(documentGlobal, this.variant);
+      let panel = new lazy.IPProtectionPanel(documentGlobal);
       this.#panels.set(documentGlobal, panel);
     }
   }
@@ -302,6 +312,22 @@ class IPProtectionWidget {
       "IPProtectionService:StateChanged",
       this.handleEvent
     );
+  }
+
+  /**
+   * Uninits and forgets the panel and toolbar button for a closed window.
+   *
+   * @param {Window} window - the window being closed.
+   */
+  onWindowClosed(window) {
+    if (this.#panels.has(window)) {
+      this.#panels.get(window).uninit();
+      this.#panels.delete(window);
+    }
+    if (this.#toolbarButtons.has(window)) {
+      this.#toolbarButtons.get(window).uninit();
+      this.#toolbarButtons.delete(window);
+    }
   }
 
   async onWidgetRemoved(widgetId) {
