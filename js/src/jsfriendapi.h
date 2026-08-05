@@ -631,7 +631,30 @@ class MOZ_STACK_CLASS JS_PUBLIC_API AutoAssertNoContentJS {
 
 
 
-extern JS_PUBLIC_API uint64_t GetMemoryUsageForZone(JS::Zone* zone);
+extern JS_PUBLIC_API size_t GetMemoryUsageForZone(JS::Zone* zone);
+
+
+
+
+
+
+extern JS_PUBLIC_API size_t GetGCHeapSizeForZone(JS::Zone* zone);
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API size_t GetMallocHeapSizeForZone(JS::Zone* zone);
+
+
+
+
+
+extern JS_PUBLIC_API size_t GetJITHeapSizeForZone(JS::Zone* zone);
 
 enum class MemoryUse : uint8_t;
 
