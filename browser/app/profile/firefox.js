@@ -3682,8 +3682,7 @@ pref("browser.contentsharing.enabled", false);
 
 pref("browser.referrals.enabled", false);
 
-
-pref("browser.referrals.code", "", locked);
+pref("browser.referrals.code", "");
 
 
 pref("distribution.mozillaonline.ignore", true);
