@@ -1921,8 +1921,8 @@ void IMContextWrapper::OnCommitCompositionCallback(GtkIMContext* aContext,
 void IMContextWrapper::OnCommitCompositionNative(GtkIMContext* aContext,
                                                  const gchar* aUTF8Char) {
   const gchar emptyStr = 0;
-  const gchar* commitString = aUTF8Char ? aUTF8Char : &emptyStr;
-  NS_ConvertUTF8toUTF16 utf16CommitString(commitString);
+  const gchar* utf8CommitString = aUTF8Char ? aUTF8Char : &emptyStr;
+  const NS_ConvertUTF8toUTF16 utf16CommitString(utf8CommitString);
 
   
   
@@ -1938,13 +1938,23 @@ void IMContextWrapper::OnCommitCompositionNative(GtkIMContext* aContext,
       mProcessingKeyEvent = mPostingKeyEvents.GetFirstEvent();
     }
   }
+  const bool editorMayTreatKeyPressAsTypingText =
+      mProcessingKeyEvent && mProcessingKeyEvent->type == GDK_KEY_PRESS &&
+      KeymapWrapper::EditorMayHandleKeyPressEventAsTextInput(
+          mProcessingKeyEvent->state);
 
-  MOZ_LOG(gIMELog, LogLevel::Info,
-          ("0x%p OnCommitCompositionNative(aContext=0x%p), "
-           "current context=0x%p, active context=0x%p, commitString=\"%s\", "
-           "mProcessingKeyEvent=0x%p, IsComposingOn(aContext)=%s",
-           this, aContext, GetCurrentContext(), GetActiveContext(),
-           commitString, mProcessingKeyEvent, ToChar(IsComposingOn(aContext))));
+  MOZ_LOG_FMT(
+      gIMELog, LogLevel::Info,
+      "{} OnCommitCompositionNative(aContext={}), "
+      "current context={}, active context={}, utf8CommitString=\"{}\", "
+      "mProcessingKeyEvent={}, mPostingKeyEvents.Length()={}, "
+      "IsComposingOn(aContext)={}, editorMayTreatKeyPressAsTypingText={}",
+      static_cast<void*>(this), static_cast<void*>(aContext),
+      static_cast<void*>(GetCurrentContext()),
+      static_cast<void*>(GetActiveContext()), utf8CommitString,
+      static_cast<void*>(mProcessingKeyEvent), mPostingKeyEvents.Length(),
+      TrueOrFalse(IsComposingOn(aContext)),
+      TrueOrFalse(editorMayTreatKeyPressAsTypingText));
 
   
   if (!IsValidContext(aContext)) {
@@ -1955,89 +1965,84 @@ void IMContextWrapper::OnCommitCompositionNative(GtkIMContext* aContext,
     return;
   }
 
-  
-  
-  
-  
-  
-  if (!IsComposingOn(aContext) && utf16CommitString.IsEmpty()) {
-    MOZ_LOG(gIMELog, LogLevel::Warning,
-            ("0x%p   OnCommitCompositionNative(), Warning, does nothing "
-             "because has not started composition and commit string is empty",
-             this));
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  if (!IsComposingOn(aContext) && mProcessingKeyEvent &&
-      mProcessingKeyEvent->type == GDK_KEY_PRESS &&
-      aContext == GetCurrentContext()) {
-    char keyval_utf8[8]; 
-    gint keyval_utf8_len;
-    guint32 keyval_unicode;
-
-    keyval_unicode = gdk_keyval_to_unicode(mProcessingKeyEvent->keyval);
-    keyval_utf8_len = g_unichar_to_utf8(keyval_unicode, keyval_utf8);
-    keyval_utf8[keyval_utf8_len] = '\0';
-
+  if (!IsComposingOn(aContext)) {
     
     
     
-    if (!strcmp(commitString, keyval_utf8)) {
-      MOZ_LOG(gIMELog, LogLevel::Info,
-              ("0x%p   OnCommitCompositionNative(), "
-               "we'll send normal key event",
+    
+    
+    if (utf16CommitString.IsEmpty()) {
+      MOZ_LOG(gIMELog, LogLevel::Warning,
+              ("0x%p   OnCommitCompositionNative(), Warning, does nothing "
+               "because has not started composition and commit string is empty",
                this));
-      mFallbackToKeyEvent = true;
       return;
     }
 
-    
-    
-    
-    if (mMaybeInDeadKeySequence && utf16CommitString.Length() == 1) {
-      WidgetKeyboardEvent keyEvent(true, eKeyDown, mLastFocusedWindow);
-      KeymapWrapper::InitKeyEvent(keyEvent, mProcessingKeyEvent, false);
-      if (keyEvent.mKeyNameIndex == KEY_NAME_INDEX_USE_STRING) {
-        mMaybeInDeadKeySequence = false;
-        keyEvent.mKeyValue = utf16CommitString;
-        if (DispatchKeyEventsForCommittedCharacter(keyEvent, false)) {
+    if (KeymapWrapper::StringHasOnlyOneGraphemeCluster(utf16CommitString) &&
+        aContext == GetCurrentContext()) {
+      if (editorMayTreatKeyPressAsTypingText) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (maybeRestoreProcessingKeyEvent.isNothing()) {
+          MOZ_LOG(gIMELog, LogLevel::Info,
+                  ("0x%p   OnCommitCompositionNative(), "
+                   "we'll send normal key event",
+                   this));
+          mFallbackToKeyEvent = true;
           return;
         }
+
+        
+        
+        
+        if (mMaybeInDeadKeySequence) {
+          WidgetKeyboardEvent keyEvent(true, eKeyDown, mLastFocusedWindow);
+          KeymapWrapper::InitKeyEvent(keyEvent, mProcessingKeyEvent, false);
+          if (keyEvent.mKeyNameIndex == KEY_NAME_INDEX_USE_STRING) {
+            mMaybeInDeadKeySequence = false;
+            keyEvent.mKeyValue = utf16CommitString;
+            if (DispatchKeyEventsForCommittedCharacter(keyEvent, false)) {
+              return;
+            }
+          }
+        }
+      } else if (!mProcessingKeyEvent) {
+        
+        
+        
+        if (mIsKeySnooped) {
+          WidgetKeyboardEvent keyEvent(true, eKeyDown, mLastFocusedWindow);
+          KeymapWrapper::InitKeyEventFromCommitString(keyEvent,
+                                                      utf16CommitString);
+          if (keyEvent.mKeyCode) {
+            MOZ_LOG(
+                gIMELog, LogLevel::Info,
+                ("0x%p   OnCommitCompositionNative(), "
+                 "dispatching synthesized key events for Wayland text-input "
+                 "character='%c' (keyCode=0x%02X)",
+                 this, static_cast<char>(utf16CommitString.CharAt(0)),
+                 keyEvent.mKeyCode));
+
+            
+            if (DispatchKeyEventsForCommittedCharacter(keyEvent, true)) {
+              return;
+            }
+          }
+        }
       }
-    }
-  }
+    }  
+       
+  }  
 
-  
-  
-  
-  if (!IsComposingOn(aContext) && mIsKeySnooped && !mProcessingKeyEvent &&
-      utf16CommitString.Length() == 1 && aContext == GetCurrentContext()) {
-    WidgetKeyboardEvent keyEvent(true, eKeyDown, mLastFocusedWindow);
-    KeymapWrapper::InitKeyEventFromCommitString(keyEvent, utf16CommitString);
-    if (keyEvent.mKeyCode) {
-      MOZ_LOG(gIMELog, LogLevel::Info,
-              ("0x%p   OnCommitCompositionNative(), "
-               "dispatching synthesized key events for Wayland text-input "
-               "character='%c' (keyCode=0x%02X)",
-               this, static_cast<char>(utf16CommitString.CharAt(0)),
-               keyEvent.mKeyCode));
-
-      
-      if (DispatchKeyEventsForCommittedCharacter(keyEvent, true)) {
-        return;
-      }
-    }
-  }
-
-  NS_ConvertUTF8toUTF16 str(commitString);
-  
-  DispatchCompositionCommitEvent(aContext, &str);
+  DispatchCompositionCommitEvent(aContext, &utf16CommitString);
 }
 
 void IMContextWrapper::GetCompositionString(GtkIMContext* aContext,
