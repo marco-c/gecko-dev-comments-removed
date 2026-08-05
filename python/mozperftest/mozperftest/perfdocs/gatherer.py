@@ -25,7 +25,7 @@ frameworks = {
 }
 
 
-ALLOWED_STATIC_FILETYPES = ("rst", "png")
+ALLOWED_STATIC_FILETYPES = ("md", "png")
 
 
 class Gatherer:
@@ -98,9 +98,9 @@ class Gatherer:
                 
                 if file in {"config.yml", "config.yaml"}:
                     matched["yml"] = file
-                elif file == "index.rst":
+                elif file == "index.md":
                     matched["rst"] = file
-                elif file == "metrics.rst":
+                elif file == "metrics.md":
                     matched["metrics"] = file
                 elif file.split(".")[-1] in ALLOWED_STATIC_FILETYPES:
                     matched["static"].append(file)
