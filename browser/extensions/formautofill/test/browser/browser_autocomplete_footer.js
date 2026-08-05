@@ -122,9 +122,20 @@ add_task(async function test_click_on_footer() {
         true
       );
       
-      await TestUtils.waitForCondition(() =>
-        BrowserTestUtils.isVisible(optionButton)
-      );
+      
+      
+      await TestUtils.waitForCondition(() => {
+        if (!BrowserTestUtils.isVisible(optionButton)) {
+          return false;
+        }
+        const listRect = itemsBox.getBoundingClientRect();
+        const footerRect = optionButton.getBoundingClientRect();
+        return (
+          footerRect.height &&
+          footerRect.top >= listRect.top &&
+          footerRect.bottom <= listRect.bottom
+        );
+      }, "the footer to be inside the list");
       EventUtils.synthesizeMouseAtCenter(optionButton, {});
       info(`expecting tab: about:preferences#privacy opened`);
       const prefTab = await prefTabPromise;
