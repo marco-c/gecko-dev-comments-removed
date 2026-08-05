@@ -15,6 +15,11 @@ const CLONED_ATTRS = ["command", "oncommand", "onclick", "key", "disabled"];
 
 
 
+const NAV_REPURPOSED_IDS = new Set(["help_reportBrokenSite"]);
+
+
+
+
 
 
 add_task(async function test_help_panel_cloning() {
@@ -62,6 +67,12 @@ add_task(async function test_help_panel_cloning() {
 
     
     for (let attr of CLONED_ATTRS) {
+      if (
+        (attr == "command" || attr == "oncommand") &&
+        NAV_REPURPOSED_IDS.has(helpMenuPopupItem.id)
+      ) {
+        continue;
+      }
       if (attr == "oncommand" && helpMenuPopupItem.hasAttribute("command")) {
         
         
