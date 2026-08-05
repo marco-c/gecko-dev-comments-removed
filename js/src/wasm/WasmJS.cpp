@@ -5453,6 +5453,10 @@ class CompileStreamTask : public PromiseHelperTask, public JS::StreamConsumer {
   ExclusiveWaitableData<StreamState> streamState_;
 
   
+  
+  size_t bytesLength_;
+
+  
   const bool instantiate_;
   const PersistentRootedObject importObj_;
 
@@ -5542,6 +5546,22 @@ class CompileStreamTask : public PromiseHelperTask, public JS::StreamConsumer {
   }
 
   bool consumeChunk(const uint8_t* begin, size_t length) override {
+    
+    if (length > MaxModuleBytes - bytesLength_) {
+      
+      
+      if (streamState_.lock().get() == Env) {
+        return rejectAndDestroyBeforeHelperThreadStarted(StreamOOMCode);
+      }
+      return rejectAndDestroyAfterHelperThreadStarted(StreamOOMCode);
+    }
+    bytesLength_ += length;
+    return consumeChunkImpl(begin, length);
+  }
+
+  
+  
+  bool consumeChunkImpl(const uint8_t* begin, size_t length) {
     switch (streamState_.lock().get()) {
       case Env: {
         if (!envBytes_->append(begin, length)) {
@@ -5579,7 +5599,7 @@ class CompileStreamTask : public PromiseHelperTask, public JS::StreamConsumer {
         streamState_.lock().get() = Code;
 
         if (extraBytes) {
-          return consumeChunk(begin + length - extraBytes, extraBytes);
+          return consumeChunkImpl(begin + length - extraBytes, extraBytes);
         }
 
         return true;
@@ -5603,7 +5623,7 @@ class CompileStreamTask : public PromiseHelperTask, public JS::StreamConsumer {
         streamState_.lock().get() = Tail;
 
         if (uint32_t extraBytes = length - copyLength) {
-          return consumeChunk(begin + copyLength, extraBytes);
+          return consumeChunkImpl(begin + copyLength, extraBytes);
         }
 
         return true;
@@ -5733,6 +5753,7 @@ class CompileStreamTask : public PromiseHelperTask, public JS::StreamConsumer {
                     HandleObject importObj)
       : PromiseHelperTask(cx, promise),
         streamState_(mutexid::WasmStreamStatus, Env),
+        bytesLength_(0),
         instantiate_(instantiate),
         importObj_(cx, importObj),
         compileArgs_(&compileArgs),
