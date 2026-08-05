@@ -13,7 +13,6 @@
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
-#include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/RandomNum.h"
 #include "mozilla/ScopeExit.h"
@@ -973,36 +972,6 @@ static const char kExternalProtocolDefaultPref[] =
     "network.protocol-handler.external-default";
 
 
-bool nsExternalHelperAppService::SchemeRequiresUserActivationToLaunch(
-    const nsACString& aScheme) {
-  if (!StaticPrefs::network_protocol_handler_prompt_without_user_activation()) {
-    return false;
-  }
-
-  
-  
-  
-  nsAutoCString externalPref(kExternalProtocolPrefPrefix);
-  externalPref += aScheme;
-  return Preferences::GetBool(externalPref.get(), false);
-}
-
-
-void nsExternalHelperAppService::MaybeConsumeUserActivationForExternalScheme(
-    mozilla::dom::WindowContext* aWindowContext, const nsACString& aScheme) {
-  
-  
-  
-  
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT(!aWindowContext || aWindowContext->IsInProcess());
-  if (aWindowContext && SchemeRequiresUserActivationToLaunch(aScheme)) {
-    aWindowContext->ConsumeTransientUserGestureActivation();
-  }
-}
-
-
 nsresult nsExternalHelperAppService::EscapeURI(nsIURI* aURI, nsIURI** aResult) {
   MOZ_ASSERT(aURI);
   MOZ_ASSERT(aResult);
@@ -1208,7 +1177,7 @@ nsExternalHelperAppService::LoadURI(nsIURI* aURI,
   return chooser->HandleURI(
       handler, escapedURI,
       aRedirectPrincipal ? aRedirectPrincipal : aTriggeringPrincipal,
-      aBrowsingContext, aTriggeredExternally, aHasValidUserGestureActivation);
+      aBrowsingContext, aTriggeredExternally);
 }
 
 

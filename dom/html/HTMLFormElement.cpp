@@ -33,7 +33,6 @@
 #include "nsDocShell.h"
 #include "nsDocShellLoadState.h"
 #include "nsError.h"
-#include "nsExternalHelperAppService.h"
 #include "nsFocusManager.h"
 #include "nsGkAtoms.h"
 #include "nsHTMLDocument.h"
@@ -879,19 +878,6 @@ nsresult HTMLFormElement::SubmitSubmission(
     const bool hasValidUserGestureActivation =
         doc->HasValidTransientUserGestureActivation();
     loadState->SetHasValidUserGestureActivation(hasValidUserGestureActivation);
-
-    
-    
-    
-    
-    
-    
-    
-    if (nsAutoCString scheme; NS_SUCCEEDED(actionURI->GetScheme(scheme))) {
-      nsExternalHelperAppService::MaybeConsumeUserActivationForExternalScheme(
-          doc->GetWindowContext(), scheme);
-    }
-
     loadState->SetTextDirectiveUserActivation(
         doc->ConsumeTextDirectiveUserActivation() ||
         hasValidUserGestureActivation);

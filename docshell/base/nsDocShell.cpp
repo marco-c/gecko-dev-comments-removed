@@ -124,7 +124,6 @@
 #include "nsIDOMWindow.h"
 #include "nsIEditingSession.h"
 #include "nsIEffectiveTLDService.h"
-#include "nsExternalHelperAppService.h"
 #include "nsIExternalProtocolService.h"
 #include "nsIFormPOSTActionChannel.h"
 #include "nsIFrame.h"
@@ -12250,19 +12249,6 @@ nsresult nsDocShell::OnLinkClick(
   const bool hasValidUserGestureActivation =
       ownerDoc->HasValidTransientUserGestureActivation();
   loadState->SetHasValidUserGestureActivation(hasValidUserGestureActivation);
-
-  
-  
-  
-  
-  
-  
-  
-  if (nsAutoCString scheme; NS_SUCCEEDED(aURI->GetScheme(scheme))) {
-    nsExternalHelperAppService::MaybeConsumeUserActivationForExternalScheme(
-        ownerDoc->GetWindowContext(), scheme);
-  }
-
   loadState->SetTextDirectiveUserActivation(
       ownerDoc->ConsumeTextDirectiveUserActivation() ||
       hasValidUserGestureActivation);
@@ -12376,19 +12362,13 @@ nsresult nsDocShell::OnLinkClickSync(nsIContent* aContent,
         nsresult rv =
             extProtService->IsExposedProtocol(scheme.get(), &isExposed);
         if (NS_SUCCEEDED(rv) && !isExposed) {
-          
-          
-          
-          
-          
-          
-          bool hasValidUserGestureActivation =
-              aLoadState->HasValidUserGestureActivation();
-          return extProtService->LoadURI(aLoadState->URI(), triggeringPrincipal,
-                                         nullptr, mBrowsingContext,
-                                         
-                                         false, hasValidUserGestureActivation,
-                                          false);
+          return extProtService->LoadURI(
+              aLoadState->URI(), triggeringPrincipal, nullptr, mBrowsingContext,
+              
+              false,
+              
+              aContent->OwnerDoc()->HasValidTransientUserGestureActivation(),
+               false);
         }
       }
     }

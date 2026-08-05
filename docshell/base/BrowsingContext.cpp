@@ -77,7 +77,6 @@
 #include "nsIXULRuntime.h"
 
 #include "mozilla/dom/WorkerCommon.h"
-#include "nsExternalHelperAppService.h"
 #include "nsDocShell.h"
 #include "nsDocShellLoadState.h"
 #include "nsFocusManager.h"
@@ -2594,16 +2593,6 @@ void BrowsingContext::Navigate(
     WindowContext* context = source->GetWindowContext();
     loadState->SetHasValidUserGestureActivation(
         context && context->HasValidTransientUserGestureActivation());
-
-    
-    
-    
-    
-    nsAutoCString scheme;
-    if (NS_SUCCEEDED(aURI->GetScheme(scheme))) {
-      nsExternalHelperAppService::MaybeConsumeUserActivationForExternalScheme(
-          context, scheme);
-    }
   };
 
   

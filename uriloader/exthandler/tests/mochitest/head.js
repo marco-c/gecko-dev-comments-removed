@@ -250,51 +250,6 @@ async function waitForProtocolAppChooserDialog(browser, state) {
   );
 }
 
-
-
-
-
-
-
-
-
-
-
-
-async function waitForProtocolDialog(browser, state) {
-  let eventStr = state ? "dialogopen" : "dialogclose";
-
-  let eventTarget;
-  if (browser.tabContainer) {
-    eventTarget = browser.tabContainer.ownerDocument.documentElement;
-  } else {
-    let tabDialogBox = browser.documentGlobal.gBrowser.getTabDialogBox(browser);
-    eventTarget = tabDialogBox.getTabDialogManager()._dialogStack;
-  }
-
-  let checkFn;
-  if (state) {
-    checkFn = dialogEvent =>
-      [
-        "chrome://mozapps/content/handling/appChooser.xhtml",
-        "chrome://mozapps/content/handling/permissionDialog.xhtml",
-      ].includes(dialogEvent.detail.dialog?._openedURL);
-  }
-
-  let event = await BrowserTestUtils.waitForEvent(
-    eventTarget,
-    eventStr,
-    true,
-    checkFn
-  );
-
-  let { dialog } = event.detail;
-  if (!state) {
-    await dialog._closingPromise;
-  }
-  return dialog;
-}
-
 async function promiseDownloadFinished(list, stopFromOpening) {
   return new Promise(resolve => {
     list.addView({
@@ -576,18 +531,6 @@ function runExtProtocolSandboxTest(options) {
     "https://example.com"
   );
 
-  
-  
-  
-  
-  let hasUserActivation =
-    triggerMethod == undefined ||
-    triggerMethod == "trustedClick" ||
-    triggerMethod == "trustedLocationAPI";
-  let waitForDialog = hasUserActivation
-    ? waitForProtocolAppChooserDialog
-    : waitForProtocolPermissionDialog;
-
   info("runSandboxTest options: " + JSON.stringify(options));
   return BrowserTestUtils.withNewTab(
     testPath + "/protocol_custom_sandbox_helper.sjs",
@@ -607,7 +550,10 @@ function runExtProtocolSandboxTest(options) {
           "Should not show the dialog for iframe with sandbox " + sandbox
         );
       } else {
-        let dialogWindowOpenPromise = waitForDialog(browser, true);
+        let dialogWindowOpenPromise = waitForProtocolAppChooserDialog(
+          browser,
+          true
+        );
         await navigateExternalProtoFromIframe(
           browser,
           sandbox,
@@ -619,7 +565,10 @@ function runExtProtocolSandboxTest(options) {
         ok(dialog, "Should show the dialog for sandbox " + sandbox);
 
         
-        let dialogWindowClosePromise = waitForDialog(browser, false);
+        let dialogWindowClosePromise = waitForProtocolAppChooserDialog(
+          browser,
+          false
+        );
 
         dialog.close();
         await dialogWindowClosePromise;
