@@ -68,9 +68,6 @@ enum class LaunchStatus {
   DelegateIsSetup,
   CollectingURLs,
   CollectedURLs,
-  
-  
-  Running
 };
 
 static LaunchStatus sLaunchStatus = LaunchStatus::Initial;
@@ -148,22 +145,44 @@ void InitializeMacApp() {
 
   sLaunchStatus = LaunchStatus::CollectingURLs;
   if (!gfxPlatform::IsHeadless()) {
+    
+    
+    CFRunLoopObserverRef observer = CFRunLoopObserverCreate(
+        kCFAllocatorDefault, kCFRunLoopBeforeWaiting,  false,
+         0,
+        [](CFRunLoopObserverRef aObserver, CFRunLoopActivity, void*) {
+          CFRunLoopObserverInvalidate(aObserver);
+          CFRelease(aObserver);
+
+          
+          
+          [NSApp stop:NSApp];
+
+          
+          
+          
+          
+          [NSApp postEvent:[NSEvent
+                               otherEventWithType:NSEventTypeApplicationDefined
+                                         location:NSMakePoint(0, 0)
+                                    modifierFlags:0
+                                        timestamp:0
+                                     windowNumber:0
+                                          context:nullptr
+                                          subtype:kEventSubtypeNone
+                                            data1:0
+                                            data2:0]
+                   atStart:NO];
+        },
+        nullptr);
+    CFRunLoopAddObserver(CFRunLoopGetCurrent(), observer,
+                         kCFRunLoopCommonModes);
     [NSApp run];
   }
   sLaunchStatus = LaunchStatus::CollectedURLs;
 }
 
 nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
-
-void StartupURLCollectionComplete() {
-  MOZ_ASSERT(sLaunchStatus == LaunchStatus::CollectedURLs,
-             "Expected CollectedURLs state when completing startup URL "
-             "collection");
-  if (sLaunchStatus != LaunchStatus::CollectedURLs) {
-    return;
-  }
-  sLaunchStatus = LaunchStatus::Running;
-}
 
 @implementation MacApplicationDelegate
 
@@ -299,32 +318,6 @@ void StartupURLCollectionComplete() {
        forKey:@"NSFullScreenMenuItemEverywhere"];
 }
 
-- (void)applicationDidFinishLaunching:(NSNotification*)notification {
-  if (sLaunchStatus == LaunchStatus::CollectingURLs) {
-    
-    
-    
-    
-    
-    
-    [NSApp stop:self];
-
-    
-    
-    
-    [NSApp postEvent:[NSEvent otherEventWithType:NSEventTypeApplicationDefined
-                                        location:NSMakePoint(0, 0)
-                                   modifierFlags:0
-                                       timestamp:0
-                                    windowNumber:0
-                                         context:nullptr
-                                         subtype:kEventSubtypeNone
-                                           data1:0
-                                           data2:0]
-             atStart:NO];
-  }
-}
-
 
 
 - (NSApplicationTerminateReply)applicationShouldTerminate:
@@ -398,7 +391,7 @@ void StartupURLCollectionComplete() {
     }
 
     const char* const urlString = [[url absoluteString] UTF8String];
-    if (sLaunchStatus != LaunchStatus::Running) {
+    if (sLaunchStatus == LaunchStatus::CollectingURLs) {
       StartupURLs().AppendElement(urlString);
       bufferedURLs = true;
       continue;
