@@ -990,20 +990,6 @@ SECStatus CanFalseStartCallback(PRFileDesc* fd, void* client_data,
   return SECSuccess;
 }
 
-
-
-
-
-
-
-static unsigned int ECCCurve(uint32_t bits) {
-  return bits == 255   ? 29  
-         : bits == 256 ? 23  
-         : bits == 384 ? 24  
-         : bits == 521 ? 25  
-                       : 0;  
-}
-
 static void AccumulateCipherSuite(const SSLChannelInfo& channelInfo) {
   uint32_t value;
   
@@ -1117,6 +1103,39 @@ const nsLiteralCString KeyExchangeAlgorithmNameFromType(SSLKEAType keaType) {
   }
 }
 
+const nsLiteralCString ECNameFromNamedGroup(SSLNamedGroup namedGroup) {
+  switch (namedGroup) {
+    case ssl_grp_ec_secp256r1:
+      return "p256"_ns;
+    case ssl_grp_ec_secp384r1:
+      return "p384"_ns;
+    case ssl_grp_ec_secp521r1:
+      return "p521"_ns;
+    case ssl_grp_ec_curve25519:
+      return "curve25519"_ns;
+    default:
+      MOZ_ASSERT_UNREACHABLE("unhandled or invalid group");
+      return "__other__"_ns;
+  }
+}
+
+const nsLiteralCString ECNameFromSignatureScheme(
+    SSLSignatureScheme signatureScheme) {
+  switch (signatureScheme) {
+    case ssl_sig_ecdsa_secp256r1_sha256:
+      return "p256"_ns;
+    case ssl_sig_ecdsa_secp384r1_sha384:
+      return "p384"_ns;
+    case ssl_sig_ecdsa_secp521r1_sha512:
+      return "p521"_ns;
+    case ssl_sig_ed25519:
+      return "curve25519"_ns;
+    default:
+      MOZ_ASSERT_UNREACHABLE("unhandled or invalid signature scheme");
+      return "__other__"_ns;
+  }
+}
+
 void HandshakeCallback(PRFileDesc* fd, void* client_data) {
   
   
@@ -1165,8 +1184,9 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
 
   if (infoObject->IsFullHandshake()) {
     if (channelInfo.keaType == ssl_kea_ecdh) {
-      glean::ssl::kea_ecdhe_curve_full.AccumulateSingleSample(
-          ECCCurve(channelInfo.keaKeyBits));
+      glean::tls::kea_ecdhe_curve
+          .Get(ECNameFromNamedGroup(channelInfo.keaGroup))
+          .Add();
     }
 
     glean::ssl::auth_algorithm_full.AccumulateSingleSample(
@@ -1175,8 +1195,9 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
     
     if (channelInfo.keaType != ssl_kea_rsa &&
         channelInfo.authType == ssl_auth_ecdsa) {
-      glean::ssl::auth_ecdsa_curve_full.AccumulateSingleSample(
-          ECCCurve(channelInfo.authKeyBits));
+      glean::tls::auth_ecdsa_curve
+          .Get(ECNameFromSignatureScheme(channelInfo.signatureScheme))
+          .Add();
     }
   }
 
