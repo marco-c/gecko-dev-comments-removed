@@ -319,6 +319,8 @@ impl Filter {
 
     pub fn as_int(&self) -> i32 {
         
+        
+        
         match *self {
             Filter::Identity => 0, 
             Filter::Contrast(..) => 0,
