@@ -59,17 +59,7 @@ class ThreadProcessingFakeClock : public ClockInterface {
 
 
 
-class ScopedBaseFakeClock : public FakeClock {
- public:
-  ScopedBaseFakeClock();
-  ~ScopedBaseFakeClock() override;
-
- private:
-  ClockInterface* prev_clock_;
-};
-
-
-class ScopedFakeClock : public ThreadProcessingFakeClock {
+class ScopedFakeClock : public FakeClock {
  public:
   ScopedFakeClock();
   ~ScopedFakeClock() override;
@@ -80,15 +70,5 @@ class ScopedFakeClock : public ThreadProcessingFakeClock {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::FakeClock;
-using ::webrtc::ScopedBaseFakeClock;
-using ::webrtc::ScopedFakeClock;
-using ::webrtc::ThreadProcessingFakeClock;
-}  
-#endif  
 
 #endif  
