@@ -685,6 +685,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "WebTransportReceiveStream", insecureContext: false },
   
+  { name: "WebTransportSendGroup", insecureContext: false },
+  
   { name: "WebTransportSendStream", insecureContext: false },
   
   { name: "Worker", insecureContext: true },

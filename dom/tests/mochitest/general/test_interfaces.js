@@ -1269,6 +1269,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "RTCIceCandidate", insecureContext: true },
   
+  { name: "RTCIceCandidatePair", insecureContext: true },
+  
   { name: "RTCIceTransport", insecureContext: true },
   
   { name: "RTCPeerConnection", insecureContext: true },
@@ -1752,6 +1754,8 @@ let interfaceNamesInGlobalScope = [
   { name: "WebTransportError", insecureContext: false },
   
   { name: "WebTransportReceiveStream", insecureContext: false },
+  
+  { name: "WebTransportSendGroup", insecureContext: false },
   
   { name: "WebTransportSendStream", insecureContext: false },
   

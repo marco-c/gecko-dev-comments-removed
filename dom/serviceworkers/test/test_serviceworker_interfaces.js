@@ -657,6 +657,8 @@ let interfaceNamesInGlobalScope = [
   
   "WebTransportReceiveStream",
   
+  "WebTransportSendGroup",
+  
   "WebTransportSendStream",
   
   "WindowClient",
