@@ -16,6 +16,7 @@ partials_transforms = TransformSequence()
 
 
 LEGACY_PARTIALS_PROJECTS = {
+    "mozilla-beta",
     "mozilla-release",
     "mozilla-esr115",
     "mozilla-esr140",
