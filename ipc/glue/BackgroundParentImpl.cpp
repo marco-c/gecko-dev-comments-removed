@@ -461,6 +461,21 @@ BackgroundParentImpl::AllocPBackgroundSessionStorageServiceParent() {
   return MakeAndAddRef<mozilla::dom::BackgroundSessionStorageServiceParent>();
 }
 
+mozilla::ipc::IPCResult
+BackgroundParentImpl::RecvPBackgroundSessionStorageServiceConstructor(
+    mozilla::dom::PBackgroundSessionStorageServiceParent* aActor) {
+  AssertIsInMainProcess();
+  AssertIsOnBackgroundThread();
+
+  
+  
+  if (BackgroundParent::IsOtherProcessActor(this)) {
+    return IPC_FAIL(aActor, "Wrong actor");
+  }
+
+  return IPC_OK();
+}
+
 mozilla::ipc::IPCResult BackgroundParentImpl::RecvCreateFileSystemManagerParent(
     const PrincipalInfo& aPrincipalInfo,
     Endpoint<PFileSystemManagerParent>&& aParentEndpoint,
