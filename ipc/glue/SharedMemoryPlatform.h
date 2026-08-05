@@ -53,7 +53,9 @@ class Platform {
 
 
 
-  static bool IsSafeToMap(const PlatformHandle& aHandle);
+
+
+  static bool IsSafeToMap(const PlatformHandle& aHandle, uint64_t aSize);
 
   
 
