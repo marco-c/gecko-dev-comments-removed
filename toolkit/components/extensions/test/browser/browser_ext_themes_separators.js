@@ -1,6 +1,14 @@
 "use strict";
 
 
+const novaEnabled = Services.prefs.getBoolPref(
+  "browser.nova.enabled",
+  true 
+);
+
+info(`Run with Nova browser styles ${novaEnabled ? "enabled" : "disabled"}`);
+
+
 
 
 add_task(async function test_support_separator_properties() {
@@ -64,12 +72,20 @@ add_task(async function test_support_separator_properties() {
     "No vertical separator on app menu"
   );
 
-  let separatorColor = Services.prefs.getBoolPref("sidebar.revamp", false)
-    ? window.getComputedStyle(
-        document.querySelector("#tabbrowser-tabbox .browserContainer")
-      ).outlineColor
-    : window.getComputedStyle(document.querySelector("#navigator-toolbox"))
-        .borderBottomColor;
+  let separatorColor;
+
+  if (novaEnabled) {
+    separatorColor = window.getComputedStyle(
+      document.querySelector("#tabbrowser-tabbox .browserContainer")
+    ).borderColor;
+  } else {
+    separatorColor = Services.prefs.getBoolPref("sidebar.revamp", false)
+      ? window.getComputedStyle(
+          document.querySelector("#tabbrowser-tabbox .browserContainer")
+        ).outlineColor
+      : window.getComputedStyle(document.querySelector("#navigator-toolbox"))
+          .borderBottomColor;
+  }
   Assert.equal(
     separatorColor,
     `rgb(${hexToRGB(SEPARATOR_BOTTOM_COLOR).join(", ")})`,
