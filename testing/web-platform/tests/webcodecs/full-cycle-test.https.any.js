@@ -41,8 +41,7 @@ promise_setup(async () => {
       codec: 'vp09.02.10.10',
       hasEmbeddedColorSpace: true,
       hardwareAcceleration: 'prefer-software',
-      
-      
+      outputPixelFormat: 'I420P10',
     },
     '?vp9_444_p1': {
       codec: 'vp09.01.10.08.03',
@@ -54,8 +53,7 @@ promise_setup(async () => {
       codec: 'vp09.03.10.10.03',
       hasEmbeddedColorSpace: true,
       hardwareAcceleration: 'prefer-software',
-      
-      
+      outputPixelFormat: 'I444P10',
     },
     '?h264_avc': {
       codec: 'avc1.42001E',
