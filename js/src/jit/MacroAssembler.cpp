@@ -4733,6 +4733,10 @@ void MacroAssembler::alignJitStackBasedOnNArgs(Register nargs,
 
 void MacroAssembler::alignJitStackBasedOnNArgs(uint32_t argc,
                                                bool countIncludesThis) {
+  alignJitStackBasedOnNumValues(argc + !countIncludesThis);
+}
+
+void MacroAssembler::alignJitStackBasedOnNumValues(uint32_t numValues) {
   
   assertStackAlignment(sizeof(Value), 0);
 
@@ -4743,8 +4747,7 @@ void MacroAssembler::alignJitStackBasedOnNArgs(uint32_t argc,
   }
 
   
-  uint32_t nArgs = argc + !countIncludesThis;
-  if (nArgs % 2 == 0) {
+  if (numValues % 2 == 0) {
     
     andToStackPtr(Imm32(~(JitStackAlignment - 1)));
   } else {

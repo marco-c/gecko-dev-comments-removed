@@ -6620,17 +6620,13 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
   masm.pushValue(Address(callerStackPtr, sizeof(Value)));
 
   
-  Label loop, loopDone;
-  masm.branchTest32(Assembler::Zero, scratch1, scratch1, &loopDone);
+  
+  Label loop;
   masm.bind(&loop);
   {
     masm.pushValue(UndefinedValue());
-    masm.branchSub32(Assembler::NonZero, Imm32(1), scratch1, &loop);
+    masm.branchSub32(Assembler::NotSigned, Imm32(1), scratch1, &loop);
   }
-  masm.bind(&loopDone);
-
-  
-  masm.pushValue(UndefinedValue());
 
 #ifdef DEBUG
   

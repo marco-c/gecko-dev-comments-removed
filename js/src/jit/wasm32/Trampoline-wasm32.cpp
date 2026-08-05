@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/Bailouts.h"
 #include "jit/BaselineIC.h"
 #include "jit/JitRuntime.h"
@@ -12,7 +10,9 @@
 using namespace js;
 using namespace js::jit;
 
-void JitRuntime::generateEnterJIT(JSContext*, MacroAssembler&) { MOZ_CRASH(); }
+void JitRuntime::generateEnterJIT(JSContext*, MacroAssembler&, EnterJitMode) {
+  MOZ_CRASH();
+}
 
 
 mozilla::Maybe<::JS::ProfilingFrameIterator::RegisterState>

@@ -45,10 +45,15 @@ enum EnterJitEbpArgumentOffset {
 
 
 
-void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
+void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
+                                  EnterJitMode mode) {
   AutoCreatedBy acb(masm, "JitRuntime::generateEnterJIT");
 
-  enterJITOffset_ = startTrampolineCode(masm);
+  if (mode == EnterJitMode::GeneratorResume) {
+    enterJITGeneratorResumeOffset_ = startTrampolineCode(masm);
+  } else {
+    enterJITOffset_ = startTrampolineCode(masm);
+  }
 
   masm.assertStackAlignment(ABIStackAlignment,
                             -int32_t(sizeof(uintptr_t)) );
@@ -64,29 +69,37 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.push(esi);
   masm.push(edi);
 
-  Register reg_argc = eax;
-  masm.loadPtr(Address(ebp, ARG_ARGC), reg_argc);
+  if (mode == EnterJitMode::GeneratorResume) {
+    Register reg_argv = ebx;
+    masm.loadPtr(Address(ebp, ARG_ARGV), reg_argv);
+    Register reg_token = edx;
+    masm.loadPtr(Address(ebp, ARG_CALLEETOKEN), reg_token);
+    generateEnterJitResumeShared(masm, reg_argv, reg_token, eax, ecx);
+  } else {
+    Register reg_argc = eax;
+    masm.loadPtr(Address(ebp, ARG_ARGC), reg_argc);
 
-  Register reg_argv = ebx;
-  masm.loadPtr(Address(ebp, ARG_ARGV), reg_argv);
+    Register reg_argv = ebx;
+    masm.loadPtr(Address(ebp, ARG_ARGV), reg_argv);
 
-  Register reg_token = edx;
-  masm.loadPtr(Address(ebp, ARG_CALLEETOKEN), reg_token);
+    Register reg_token = edx;
+    masm.loadPtr(Address(ebp, ARG_CALLEETOKEN), reg_token);
 
-  generateEnterJitShared(masm, reg_argc, reg_argv, reg_token, ecx, esi, edi);
+    generateEnterJitShared(masm, reg_argc, reg_argv, reg_token, ecx, esi, edi);
 
-  
-  masm.mov(Operand(ebp, ARG_RESULT), eax);
-  masm.unboxInt32(Address(eax, 0x0), eax);
-  masm.pushFrameDescriptorForJitCall(FrameType::CppToJSJit, eax, eax);
+    
+    masm.mov(Operand(ebp, ARG_RESULT), eax);
+    masm.unboxInt32(Address(eax, 0x0), eax);
+    masm.pushFrameDescriptorForJitCall(FrameType::CppToJSJit, eax, eax);
 
-  
-  
-  masm.loadPtr(Address(ebp, ARG_STACKFRAME), OsrFrameReg);
+    
+    
+    masm.loadPtr(Address(ebp, ARG_STACKFRAME), OsrFrameReg);
+  }
 
   CodeLabel returnLabel;
   Label oomReturnLabel;
-  {
+  if (mode != EnterJitMode::GeneratorResume) {
     
     AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
     MOZ_ASSERT(!regs.has(ebp));
@@ -177,7 +190,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
 
   masm.call(Address(ebp, ARG_JITCODE));
 
-  {
+  if (mode != EnterJitMode::GeneratorResume) {
     
     masm.bind(&returnLabel);
     masm.addCodeLabel(returnLabel);

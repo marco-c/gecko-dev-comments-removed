@@ -74,10 +74,15 @@ static const LiveRegisterSet AllRegs =
 
 
 
-void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
+void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
+                                  EnterJitMode mode) {
   AutoCreatedBy acb(masm, "JitRuntime::generateEnterJIT");
 
-  enterJITOffset_ = startTrampolineCode(masm);
+  if (mode == EnterJitMode::GeneratorResume) {
+    enterJITGeneratorResumeOffset_ = startTrampolineCode(masm);
+  } else {
+    enterJITOffset_ = startTrampolineCode(masm);
+  }
 
   masm.assertStackAlignment(ABIStackAlignment,
                             -int32_t(sizeof(uintptr_t)) );
@@ -138,17 +143,23 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   
   
 
-  masm.movq(token, r12);
-  generateEnterJitShared(masm, reg_argc, reg_argv, r12, r13, r14, r15);
+  if (mode == EnterJitMode::GeneratorResume) {
+    masm.movq(token, r12);
+    generateEnterJitResumeShared(masm, reg_argv, r12, r13, r14);
+  } else {
+    masm.movq(token, r12);
+    generateEnterJitShared(masm, reg_argc, reg_argv, r12, r13, r14, r15);
 
-  
-  masm.movq(result, reg_argc);
-  masm.unboxInt32(Operand(reg_argc, 0), reg_argc);
-  masm.pushFrameDescriptorForJitCall(FrameType::CppToJSJit, reg_argc, reg_argc);
+    
+    masm.movq(result, reg_argc);
+    masm.unboxInt32(Operand(reg_argc, 0), reg_argc);
+    masm.pushFrameDescriptorForJitCall(FrameType::CppToJSJit, reg_argc,
+                                       reg_argc);
+  }
 
   CodeLabel returnLabel;
   Label oomReturnLabel;
-  {
+  if (mode != EnterJitMode::GeneratorResume) {
     
     AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
     MOZ_ASSERT(!regs.has(rbp));
@@ -236,7 +247,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   
   masm.callJitNoProfiler(reg_code);
 
-  {
+  if (mode != EnterJitMode::GeneratorResume) {
     
     masm.bind(&returnLabel);
     masm.addCodeLabel(returnLabel);

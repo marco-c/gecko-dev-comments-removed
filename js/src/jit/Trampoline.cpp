@@ -9,6 +9,7 @@
 #include "jit/MacroAssembler.h"
 #include "vm/JitActivation.h"
 #include "vm/JSContext.h"
+#include "vm/Stack.h"  
 
 #include "jit/MacroAssembler-inl.h"
 
@@ -373,5 +374,77 @@ void JitRuntime::generateEnterJitShared(MacroAssembler& masm, Register argcReg,
 
   
   masm.push(calleeTokenReg);
+}
+
+void JitRuntime::generateEnterJitResumeShared(MacroAssembler& masm,
+                                              Register argvReg,
+                                              Register calleeTokenReg,
+                                              Register scratch,
+                                              Register scratch2) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  auto pushResumeArgs = [&]() {
+    
+    for (uint32_t slot = ResumeFrameArgs::NumSlots; slot > 0; slot--) {
+      masm.pushValue(Address(argvReg, ResumeFrameArgs::offsetOfSlot(slot - 1)));
+    }
+  };
+
+  
+  
+  
+  if constexpr (sizeof(uintptr_t) < sizeof(Value)) {
+    masm.andToStackPtr(Imm32(~(int32_t(sizeof(Value)) - 1)));
+  }
+
+  Label module, frameDone;
+  masm.branchTestPtr(Assembler::NonZero, calleeTokenReg,
+                     Imm32(CalleeTokenScriptBit), &module);
+  {
+    Register fun = scratch;
+    masm.movePtr(calleeTokenReg, fun);
+    masm.andPtr(Imm32(uint32_t(CalleeTokenMask)), fun);
+
+    Register nformals = scratch2;
+    masm.loadFunctionArgCount(fun, nformals);
+    masm.alignJitStackBasedOnNArgs(nformals,  false,
+                                    ResumeFrameArgs::NumSlots);
+
+    pushResumeArgs();
+
+    
+    
+    Label formalLoop;
+    masm.bind(&formalLoop);
+    masm.pushValue(UndefinedValue());
+    masm.branchSub32(Assembler::NotSigned, Imm32(1), nformals, &formalLoop);
+
+    masm.jump(&frameDone);
+  }
+  masm.bind(&module);
+  {
+    
+    
+    masm.alignJitStackBasedOnNumValues(ResumeFrameArgs::NumSlots);
+    pushResumeArgs();
+  }
+  masm.bind(&frameDone);
+
+  masm.push(calleeTokenReg);
+  masm.push(FrameDescriptor(FrameType::CppToJSJit,  0,
+                             false,
+                             true));
 }
 #endif  

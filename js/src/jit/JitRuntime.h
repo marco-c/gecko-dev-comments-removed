@@ -140,6 +140,9 @@ class JitRuntime {
   WriteOnceData<uint32_t> enterJITOffset_{0};
 
   
+  WriteOnceData<uint32_t> enterJITGeneratorResumeOffset_{0};
+
+  
   WriteOnceData<uint32_t> bailoutHandlerOffset_{0};
 
   
@@ -249,11 +252,17 @@ class JitRuntime {
   void generateExceptionTailStub(MacroAssembler& masm, Label* profilerExitTail,
                                  Label* bailoutTail);
   void generateBailoutTailStub(MacroAssembler& masm, Label* bailoutTail);
-  void generateEnterJIT(JSContext* cx, MacroAssembler& masm);
+
+  enum class EnterJitMode { Normal, GeneratorResume };
+  void generateEnterJIT(JSContext* cx, MacroAssembler& masm, EnterJitMode mode);
   void generateEnterJitShared(MacroAssembler& masm, Register argcReg,
                               Register argvReg, Register calleeTokenReg,
                               Register scratch, Register scratch2,
                               Register scratch3);
+  void generateEnterJitResumeShared(MacroAssembler& masm, Register argvReg,
+                                    Register calleeTokenReg, Register scratch,
+                                    Register scratch2);
+
   void generateBailoutHandler(MacroAssembler& masm, Label* bailoutTail);
   void generateInvalidator(MacroAssembler& masm, Label* bailoutTail);
   uint32_t generatePreBarrier(JSContext* cx, MacroAssembler& masm,
@@ -396,6 +405,10 @@ class JitRuntime {
   EnterJitCode enterJit() const {
     return JS_DATA_TO_FUNC_PTR(EnterJitCode,
                                trampolineCode(enterJITOffset_).value);
+  }
+  EnterJitCode enterJitGeneratorResume() const {
+    return JS_DATA_TO_FUNC_PTR(
+        EnterJitCode, trampolineCode(enterJITGeneratorResumeOffset_).value);
   }
 
   

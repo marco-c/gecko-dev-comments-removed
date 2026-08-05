@@ -275,10 +275,8 @@ void AbstractGeneratorObject::resume(JSContext* cx,
   
   
   MOZ_ASSERT_IF(fp->isFunctionFrame(), fp->numActualArgs() == 0);
-  Value* resumeArgs = fp->resumeArgs();
-  resumeArgs[ResumeFrameArgs::ResumeValueSlot] = arg;
-  resumeArgs[ResumeFrameArgs::GeneratorSlot] = ObjectValue(*genObj);
-  resumeArgs[ResumeFrameArgs::ResumeKindSlot] = Int32Value(int32_t(resumeKind));
+  ResumeFrameArgs::init(fp->resumeArgs(), arg, ObjectValue(*genObj),
+                        resumeKind);
 
   if (genObj->hasArgsObj()) {
     fp->initArgsObj(genObj->argsObj());

@@ -10,8 +10,10 @@
 #include "jit/JitRuntime.h"
 #include "jit/PerfSpewer.h"
 #include "jit/VMFunctions.h"
+#include "util/Memory.h"       
 #include "vm/JitActivation.h"  
 #include "vm/JSContext.h"
+#include "vm/Stack.h"  
 
 #include "jit/MacroAssembler-inl.h"
 
@@ -24,10 +26,15 @@ using namespace js::jit;
 
 
 
-void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
+void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
+                                  EnterJitMode mode) {
   AutoCreatedBy acb(masm, "JitRuntime::generateEnterJIT");
 
-  enterJITOffset_ = startTrampolineCode(masm);
+  if (mode == EnterJitMode::GeneratorResume) {
+    enterJITGeneratorResumeOffset_ = startTrampolineCode(masm);
+  } else {
+    enterJITOffset_ = startTrampolineCode(masm);
+  }
 
   const Register reg_code = IntArgReg0;      
   const Register reg_argc = IntArgReg1;      
@@ -69,109 +76,200 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   
   masm.assertStackAlignment(JitStackAlignment);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  if (mode == EnterJitMode::GeneratorResume) {
+    
+    
+    
+    
+    
+    
+    
+    
+    Label notFunction, doneResume;
+    masm.branchTest32(Assembler::NonZero, reg_callee,
+                      Imm32(CalleeTokenScriptBit), &notFunction);
+    {
+      
+      
+      Register nformals = r19;
+      masm.andPtr(Imm32(uint32_t(CalleeTokenMask)), reg_callee, nformals);
+      masm.loadFunctionArgCount(nformals, nformals);
 
-  
-  Label notFunction;
-  Register actual_args = r19;
-  masm.branchTest32(Assembler::NonZero, reg_callee, Imm32(CalleeTokenScriptBit),
-                    &notFunction);
-  masm.andPtr(Imm32(uint32_t(CalleeTokenMask)), reg_callee, actual_args);
-  masm.loadFunctionArgCount(actual_args, actual_args);
-  masm.max32(actual_args, reg_argc, actual_args);
+      
+      
+      
+      Register frame_size = r20;
+      Register scratch = r21;
+      Register scratch2 = r22;
+      uint32_t extraSlots =
+          3 + ResumeFrameArgs::NumSlots;  
+      masm.add32(Imm32(extraSlots + 1), nformals, frame_size);
+      masm.and32(Imm32(~1), frame_size);
+      masm.touchFrameValues(frame_size, scratch, scratch2);
 
-  
-  
-  
-  
-  Register frame_size = r20;
-  Register scratch = r21;
-  Register scratch2 = r22;
-  uint32_t extraSlots = 4;
-  masm.add32(Imm32(extraSlots + 1), actual_args, frame_size);
-  masm.and32(Imm32(~1), frame_size);
+      
+      masm.lshift32(Imm32(3), frame_size);
+      masm.subFromStackPtr(frame_size);
 
-  
-  masm.touchFrameValues(frame_size, scratch, scratch2);
+      
+      
+      ARMRegister dest(r23, 64);
+      ARMRegister arg(scratch, 64);
+      ARMRegister count(scratch2, 64);
+      masm.Add(dest, sp, Operand(2 * sizeof(uintptr_t)));
+      masm.Mov(arg, int64_t(UndefinedValue().asRawBits()));
+      masm.Add(count, ARMRegister(nformals, 64), Operand(1));  
 
-  
-  masm.lshift32(Imm32(3), frame_size);
-  masm.subFromStackPtr(frame_size);
+      Label undefLoop;
+      masm.bind(&undefLoop);
+      masm.Str(arg, MemOperand(dest, Operand(8), vixl::PostIndex));
+      masm.Subs(count, count, Operand(1));
+      masm.B(&undefLoop, vixl::Condition::NonZero);
 
-  
-  
-  
-  
-  ARMRegister dest(r23, 64);
-  ARMRegister arg(scratch, 64);
-  ARMRegister tmp_argc(scratch2, 64);
-  ARMRegister argc(reg_argc, 64);
-  ARMRegister argv(reg_argv, 64);
-  masm.Add(dest, sp, Operand(2 * sizeof(uintptr_t)));
-  masm.Add(tmp_argc, argc, Operand(1));
-  masm.Sub(argv, argv, Operand(sizeof(Value)));  
+      for (uint32_t i = 0; i < ResumeFrameArgs::NumSlots; i++) {
+        masm.Ldr(arg,
+                 MemOperand(ARMRegister(reg_argv, 64), i * sizeof(JS::Value)));
+        masm.Str(arg, MemOperand(dest, Operand(8), vixl::PostIndex));
+      }
+      masm.jump(&doneResume);
+    }
+    masm.bind(&notFunction);
+    {
+      
+      
+      
+      
+      
+      constexpr uint32_t moduleSlots =
+          AlignBytes(2 + ResumeFrameArgs::NumSlots, 2u);
+      masm.subFromStackPtr(Imm32(moduleSlots * sizeof(uintptr_t)));
 
-  Label argLoop;
-  masm.bind(&argLoop);
-  
-  masm.Ldr(arg, MemOperand(argv, Operand(8), vixl::PostIndex));
-  
-  masm.Str(arg, MemOperand(dest, Operand(8), vixl::PostIndex));
-  
-  masm.Subs(tmp_argc, tmp_argc, Operand(1));
-  
-  masm.B(&argLoop, vixl::Condition::NonZero);
+      ARMRegister dest(r23, 64);
+      ARMRegister arg(r21, 64);
+      masm.Add(dest, sp, Operand(2 * sizeof(uintptr_t)));
+      for (uint32_t i = 0; i < ResumeFrameArgs::NumSlots; i++) {
+        masm.Ldr(arg,
+                 MemOperand(ARMRegister(reg_argv, 64), i * sizeof(JS::Value)));
+        masm.Str(arg, MemOperand(dest, Operand(8), vixl::PostIndex));
+      }
+    }
+    masm.bind(&doneResume);
 
-  
-  
-  Label noUndef;
-  const ARMRegister missing_args(scratch2, 64);
-  masm.Subs(missing_args, ARMRegister(actual_args, 64), argc);
-  masm.B(&noUndef, vixl::Condition::Zero);
+    
+    Register descriptor = r19;
+    masm.move32(
+        Imm32(int32_t(FrameDescriptor(FrameType::CppToJSJit,  0,
+                                       false,
+                                       true)
+                          .value())),
+        descriptor);
+    masm.Str(ARMRegister(descriptor, 64), MemOperand(sp, 0));
+    masm.Str(ARMRegister(reg_callee, 64), MemOperand(sp, sizeof(uintptr_t)));
+  } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
-  Label undefLoop;
-  masm.Mov(arg, int64_t(UndefinedValue().asRawBits()));
-  masm.bind(&undefLoop);
-  
-  masm.Str(arg, MemOperand(dest, Operand(8), vixl::PostIndex));
-  
-  masm.Subs(missing_args, missing_args, Operand(1));
-  
-  masm.B(&undefLoop, vixl::Condition::NonZero);
-  masm.bind(&noUndef);
+    
+    Label notFunction;
+    Register actual_args = r19;
+    masm.branchTest32(Assembler::NonZero, reg_callee,
+                      Imm32(CalleeTokenScriptBit), &notFunction);
+    masm.andPtr(Imm32(uint32_t(CalleeTokenMask)), reg_callee, actual_args);
+    masm.loadFunctionArgCount(actual_args, actual_args);
+    masm.max32(actual_args, reg_argc, actual_args);
 
-  
-  Label doneArgs;
-  masm.branchTest32(Assembler::Zero, reg_callee,
-                    Imm32(CalleeToken_FunctionConstructing), &doneArgs);
-  masm.Ldr(arg, MemOperand(argv));
-  masm.Str(arg, MemOperand(dest));
-  masm.jump(&doneArgs);
-  masm.bind(&notFunction);
+    
+    
+    
+    
+    Register frame_size = r20;
+    Register scratch = r21;
+    Register scratch2 = r22;
+    uint32_t extraSlots = 4;
+    masm.add32(Imm32(extraSlots + 1), actual_args, frame_size);
+    masm.and32(Imm32(~1), frame_size);
 
-  
-  
-  const int32_t nonFunctionFrameSize = 2 * sizeof(uintptr_t);
-  static_assert(nonFunctionFrameSize % JitStackAlignment == 0);
-  masm.subFromStackPtr(Imm32(nonFunctionFrameSize));
-  masm.bind(&doneArgs);
+    
+    masm.touchFrameValues(frame_size, scratch, scratch2);
 
-  
-  masm.unboxInt32(Address(reg_vp, 0), scratch);
-  masm.makeFrameDescriptorForJitCall(FrameType::CppToJSJit, scratch, scratch);
-  masm.Str(ARMRegister(scratch, 64), MemOperand(sp, 0));
-  masm.Str(ARMRegister(reg_callee, 64), MemOperand(sp, sizeof(uintptr_t)));
+    
+    masm.lshift32(Imm32(3), frame_size);
+    masm.subFromStackPtr(frame_size);
+
+    
+    
+    
+    
+    ARMRegister dest(r23, 64);
+    ARMRegister arg(scratch, 64);
+    ARMRegister tmp_argc(scratch2, 64);
+    ARMRegister argc(reg_argc, 64);
+    ARMRegister argv(reg_argv, 64);
+    masm.Add(dest, sp, Operand(2 * sizeof(uintptr_t)));
+    masm.Add(tmp_argc, argc, Operand(1));
+    masm.Sub(argv, argv, Operand(sizeof(Value)));  
+
+    Label argLoop;
+    masm.bind(&argLoop);
+    
+    masm.Ldr(arg, MemOperand(argv, Operand(8), vixl::PostIndex));
+    
+    masm.Str(arg, MemOperand(dest, Operand(8), vixl::PostIndex));
+    
+    masm.Subs(tmp_argc, tmp_argc, Operand(1));
+    
+    masm.B(&argLoop, vixl::Condition::NonZero);
+
+    
+    
+    Label noUndef;
+    const ARMRegister missing_args(scratch2, 64);
+    masm.Subs(missing_args, ARMRegister(actual_args, 64), argc);
+    masm.B(&noUndef, vixl::Condition::Zero);
+
+    Label undefLoop;
+    masm.Mov(arg, int64_t(UndefinedValue().asRawBits()));
+    masm.bind(&undefLoop);
+    
+    masm.Str(arg, MemOperand(dest, Operand(8), vixl::PostIndex));
+    
+    masm.Subs(missing_args, missing_args, Operand(1));
+    
+    masm.B(&undefLoop, vixl::Condition::NonZero);
+    masm.bind(&noUndef);
+
+    
+    Label doneArgs;
+    masm.branchTest32(Assembler::Zero, reg_callee,
+                      Imm32(CalleeToken_FunctionConstructing), &doneArgs);
+    masm.Ldr(arg, MemOperand(argv));
+    masm.Str(arg, MemOperand(dest));
+    masm.jump(&doneArgs);
+    masm.bind(&notFunction);
+
+    
+    
+    const int32_t nonFunctionFrameSize = 2 * sizeof(uintptr_t);
+    static_assert(nonFunctionFrameSize % JitStackAlignment == 0);
+    masm.subFromStackPtr(Imm32(nonFunctionFrameSize));
+    masm.bind(&doneArgs);
+
+    
+    masm.unboxInt32(Address(reg_vp, 0), scratch);
+    masm.makeFrameDescriptorForJitCall(FrameType::CppToJSJit, scratch, scratch);
+    masm.Str(ARMRegister(scratch, 64), MemOperand(sp, 0));
+    masm.Str(ARMRegister(reg_callee, 64), MemOperand(sp, sizeof(uintptr_t)));
+  }
 
   
   
@@ -181,7 +279,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.checkStackAlignment();
 
   Label osrReturnPoint;
-  {
+  if (mode != EnterJitMode::GeneratorResume) {
     
 
     AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
@@ -265,8 +363,10 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   
   masm.callJitNoProfiler(reg_code);
 
-  
-  masm.bind(&osrReturnPoint);
+  if (mode != EnterJitMode::GeneratorResume) {
+    
+    masm.bind(&osrReturnPoint);
+  }
 
   
   
