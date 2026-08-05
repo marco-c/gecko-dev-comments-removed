@@ -11,6 +11,10 @@
 #  include <signal.h>
 #endif
 
+#ifdef MOZ_WAYLAND
+#  include <gdk/gdk.h>
+#endif
+
 int glxtest(bool aWayland, int aOutputFd);
 
 #ifdef MOZ_ENABLE_VAAPI
@@ -64,6 +68,12 @@ static int RunGlx(int argc, char** argv) {
         outputFd = atoi(optarg);
         break;
       case 'h':
+#ifdef MOZ_WAYLAND
+        
+        
+        
+        gdk_display_get_default();
+#endif
         PrintUsage();
         return 0;
       default:
