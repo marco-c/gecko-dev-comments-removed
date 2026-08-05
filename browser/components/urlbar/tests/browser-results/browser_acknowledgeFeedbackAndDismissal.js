@@ -115,6 +115,14 @@ add_task(async function acknowledgeFeedbackAndDismissal() {
     resultIndex: RESULT_INDEX,
   });
 
+  
+  
+  await BrowserTestUtils.waitForMutationCondition(
+    details.element.row,
+    { attributes: true, attributeFilter: ["feedback-acknowledgment"] },
+    () => details.element.row.hasAttribute("feedback-acknowledgment")
+  );
+
   Assert.equal(
     gTestProvider.commandCount[FEEDBACK_COMMAND],
     1,
@@ -275,10 +283,21 @@ async function doDismissTest({
   let resultCount = UrlbarTestUtils.getResultCount(window);
 
   
+  
+  
+  
+  let promiseRemoved = UrlbarTestUtils.promiseControllerNotification(
+    window,
+    "onQueryResultRemoved"
+  );
+
+  
   await UrlbarTestUtils.openResultMenuAndClickItem(window, command, {
     resultIndex,
     openByMouse: true,
   });
+
+  await promiseRemoved;
 
   Assert.equal(
     gTestProvider.commandCount[command],
@@ -430,16 +449,18 @@ class TestProvider extends UrlbarTestUtils.TestProvider {
           controller.view.acknowledgeFeedback(details.result);
           break;
         case DISMISS_ONE_COMMAND:
-          details.result.acknowledgeDismissalL10n = {
-            id: "firefox-suggest-dismissal-acknowledgment-one",
-          };
-          controller.removeResult(details.result);
+          controller.removeResult(details.result, {
+            acknowledgeDismissalL10n: {
+              id: "firefox-suggest-dismissal-acknowledgment-one",
+            },
+          });
           break;
         case DISMISS_ALL_COMMAND:
-          details.result.acknowledgeDismissalL10n = {
-            id: "urlbar-result-dismissal-acknowledgment-all",
-          };
-          controller.removeResult(details.result);
+          controller.removeResult(details.result, {
+            acknowledgeDismissalL10n: {
+              id: "urlbar-result-dismissal-acknowledgment-all",
+            },
+          });
           break;
       }
     }
