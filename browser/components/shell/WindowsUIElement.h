@@ -22,7 +22,7 @@ namespace mozilla {
 
 class WindowsUIElement final {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WindowsUIElement)
+  NS_INLINE_DECL_REFCOUNTING(WindowsUIElement)
 
   
 
@@ -32,6 +32,18 @@ class WindowsUIElement final {
 
   explicit WindowsUIElement(HWND aWindow,
                             RefPtr<IUIAutomationElement> aElement);
+
+  
+
+
+
+
+
+
+
+
+
+  bool IsVisible();
 
   
 
