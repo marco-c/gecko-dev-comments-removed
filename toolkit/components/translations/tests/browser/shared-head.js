@@ -103,6 +103,16 @@ const ALWAYS_TRANSLATE_LANGS_PREF =
 const NEVER_TRANSLATE_LANGS_PREF =
   "browser.translations.neverTranslateLanguages";
 const USE_LEXICAL_SHORTLIST_PREF = "browser.translations.useLexicalShortlist";
+const DOCUMENT_LANGUAGE_METADATA_LOAD_TIMEOUT_MS_PREF =
+  "dom.document_language_metadata.load_timeout_ms";
+const DOCUMENT_LANGUAGE_METADATA_RETRY_DELAY_BASE_MS_PREF =
+  "dom.document_language_metadata.retry_delay_base_ms";
+const DOCUMENT_LANGUAGE_METADATA_TEXT_SAMPLE_MIN_CODE_UNITS = 1500;
+const DOCUMENT_LANGUAGE_METADATA_TEXT_SAMPLE_TARGET_CODE_UNITS = 4096;
+const DOCUMENT_LANGUAGE_METADATA_TEST_PREFS = [
+  [DOCUMENT_LANGUAGE_METADATA_RETRY_DELAY_BASE_MS_PREF, 10],
+  [DOCUMENT_LANGUAGE_METADATA_LOAD_TIMEOUT_MS_PREF, 50],
+];
 
 
 
@@ -258,6 +268,108 @@ async function loadNewPage(browser, url) {
 
 
 
+async function requestDocumentLanguageMetadata(browser) {
+  const windowGlobal = browser.browsingContext?.currentWindowGlobal;
+  if (!windowGlobal) {
+    return null;
+  }
+
+  return windowGlobal.requestDocumentLanguageMetadata({
+    textSampleMinCodeUnits:
+      DOCUMENT_LANGUAGE_METADATA_TEXT_SAMPLE_MIN_CODE_UNITS,
+    textSampleTargetCodeUnits:
+      DOCUMENT_LANGUAGE_METADATA_TEXT_SAMPLE_TARGET_CODE_UNITS,
+  });
+}
+
+
+
+
+
+
+
+
+async function waitForDocumentLanguageMetadata(
+  browser,
+  { htmlLangAttribute = null } = {}
+) {
+  let metadata = null;
+  await TestUtils.waitForCondition(async () => {
+    metadata = await requestDocumentLanguageMetadata(browser);
+    if (!metadata || metadata.textSample == null) {
+      return false;
+    }
+    return (
+      htmlLangAttribute == null ||
+      metadata.htmlLangAttribute === htmlLangAttribute
+    );
+  }, "Waiting for document-language metadata.");
+
+  return metadata;
+}
+
+
+
+
+
+
+
+async function waitForTranslationsLanguageState(browser) {
+  let langTags = null;
+  await TestUtils.waitForCondition(async () => {
+    let actor;
+    try {
+      actor = TranslationsParent.getTranslationsActor(browser);
+    } catch {
+      return false;
+    }
+
+    langTags = await actor.getLangTags();
+    return !!langTags;
+  }, "Waiting for TranslationsParent language state.");
+
+  return langTags;
+}
+
+
+
+
+
+
+
+
+
+async function getLangTagsForLangTagTestPage(browser, langTag) {
+  const html = String.raw;
+  const { url, serverClosed } = serveOnce(html`
+    <!doctype html>
+    <html lang=${langTag}>
+      <head>
+        <meta charset="utf-8" />
+        <title>Translations Lang Tag Test</title>
+      </head>
+      <body>
+        <h1>Translations language tag test page</h1>
+        <p>
+          This page provides stable text while tests vary the initial HTML
+          language tag.
+        </p>
+      </body>
+    </html>
+  `);
+
+  await loadNewPage(browser, url);
+  await serverClosed;
+  await waitForDocumentLanguageMetadata(browser, {
+    htmlLangAttribute: langTag,
+  });
+  return waitForTranslationsLanguageState(browser);
+}
+
+
+
+
+
 
 
 
@@ -306,8 +418,9 @@ async function openAboutTranslations({
       ["browser.translations.logLevel", "All"],
       ["browser.translations.mostRecentTargetLanguages", ""],
       ["dom.events.testing.asyncClipboard", true],
-      [USE_LEXICAL_SHORTLIST_PREF, false],
       ["layout.css.text-transform.uppercase-eszett.enabled", false],
+      [USE_LEXICAL_SHORTLIST_PREF, false],
+      ...DOCUMENT_LANGUAGE_METADATA_TEST_PREFS,
       ...(prefs ?? []),
     ],
   });
@@ -2133,6 +2246,7 @@ async function createTranslationsDoc(
       ["browser.translations.enable", true],
       ["browser.translations.logLevel", "All"],
       [USE_LEXICAL_SHORTLIST_PREF, false],
+      ...DOCUMENT_LANGUAGE_METADATA_TEST_PREFS,
     ],
   });
 
@@ -2446,6 +2560,93 @@ function getTranslationsParent(win = window) {
 
 
 
+
+
+function hasTranslationParentActor(browsingContext) {
+  return !!browsingContext?.currentWindowGlobal?.getExistingActor(
+    "Translations"
+  );
+}
+
+
+
+
+
+
+
+
+function hasTranslationChildActor(browser = gBrowser.selectedBrowser) {
+  return SpecialPowers.spawn(browser, [], () => {
+    return !!content.windowGlobalChild.getExistingActor("Translations");
+  });
+}
+
+
+
+
+
+
+
+
+function hasTranslationChildActorInBrowsingContext(browsingContext) {
+  return SpecialPowers.spawn(browsingContext, [], () => {
+    return !!content.windowGlobalChild.getExistingActor("Translations");
+  });
+}
+
+
+
+
+
+
+
+
+function waitForTranslationChildActor(browser, message) {
+  return waitForCondition(
+    async () => hasTranslationChildActor(browser),
+    message
+  );
+}
+
+
+
+
+
+
+
+
+function waitForTranslationParentActorInBrowsingContext(
+  browsingContext,
+  message
+) {
+  return waitForCondition(
+    () => hasTranslationParentActor(browsingContext),
+    message
+  );
+}
+
+
+
+
+
+
+
+
+function waitForTranslationChildActorInBrowsingContext(
+  browsingContext,
+  message
+) {
+  return waitForCondition(
+    async () => hasTranslationChildActorInBrowsingContext(browsingContext),
+    message
+  );
+}
+
+
+
+
+
+
 async function closeAllOpenPanelsAndMenus(win) {
   await closeFullPagePanelSettingsMenuIfOpen(win);
   await closeFullPageTranslationsPanelIfOpen(win);
@@ -2542,6 +2743,7 @@ async function setupActorTest({
       ["browser.translations.enable", true],
       ["browser.translations.logLevel", "All"],
       [USE_LEXICAL_SHORTLIST_PREF, false],
+      ...DOCUMENT_LANGUAGE_METADATA_TEST_PREFS,
       ...(prefs ?? []),
     ],
   });
@@ -2930,6 +3132,7 @@ async function loadTestPage({
         ["browser.translations.neverTranslateLanguages", ""],
         ["browser.translations.mostRecentTargetLanguages", ""],
         [USE_LEXICAL_SHORTLIST_PREF, false],
+        ...DOCUMENT_LANGUAGE_METADATA_TEST_PREFS,
         
         
         
@@ -4315,6 +4518,7 @@ async function setupAboutPreferences(
       ["identity.fxaccounts.account.device.name", ""],
       [USE_LEXICAL_SHORTLIST_PREF, false],
       ["browser.settings-redesign.enabled", true],
+      ...DOCUMENT_LANGUAGE_METADATA_TEST_PREFS,
       ...prefs,
     ],
   });
