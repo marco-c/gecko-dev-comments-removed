@@ -3673,6 +3673,12 @@ pref("widget.support-xdg-config", true, locked);
 pref("browser.contentsharing.enabled", false);
 
 
+pref("browser.referrals.enabled", false);
+
+
+pref("browser.referrals.code", "", locked);
+
+
 pref("distribution.mozillaonline.ignore", true);
 
 #ifdef XP_MACOSX
