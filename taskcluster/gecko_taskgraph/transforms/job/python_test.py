@@ -23,6 +23,9 @@ class PythonTestSchema(Schema, kw_only=True):
     
     
     prepend_env: Optional[dict[str, str]] = None
+    
+    
+    clone_with: Optional[Literal["hg", "git"]] = "hg"
 
 
 defaults = {

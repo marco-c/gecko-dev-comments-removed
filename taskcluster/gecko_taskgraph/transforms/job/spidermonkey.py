@@ -24,6 +24,9 @@ class SmRunSchema(Schema, kw_only=True):
     
     workdir: Optional[str] = None
     tooltool_downloads: Union[bool, Literal["public", "internal"]]
+    
+    
+    clone_with: Optional[Literal["hg", "git"]] = "hg"
 
     def __post_init__(self):
         if self.tooltool_downloads is True:

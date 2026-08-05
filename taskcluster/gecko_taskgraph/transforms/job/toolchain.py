@@ -60,6 +60,9 @@ class ToolchainRunSchema(Schema, kw_only=True):
     
     toolchain_extract: Optional[bool] = None
     
+    
+    clone_with: Optional[Literal["hg", "git"]] = "hg"
+    
     workdir: Optional[str] = None
 
     def __post_init__(self):

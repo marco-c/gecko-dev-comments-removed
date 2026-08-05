@@ -67,6 +67,9 @@ class MozharnessRunSchema(Schema, kw_only=True):
     use_caches: Optional[Union[bool, list[str]]] = None
     
     
+    clone_with: Optional[Literal["hg", "git"]] = "hg"
+    
+    
     use_simple_package: bool
     
     

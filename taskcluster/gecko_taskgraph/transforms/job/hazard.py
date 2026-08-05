@@ -30,6 +30,9 @@ class HazRunSchema(Schema, kw_only=True):
     
     secrets: Optional[Union[bool, list[str]]] = None
     
+    
+    clone_with: Optional[Literal["hg", "git"]] = "hg"
+    
     workdir: Optional[str] = None
 
 

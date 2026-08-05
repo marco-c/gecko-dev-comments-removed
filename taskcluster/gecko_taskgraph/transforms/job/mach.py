@@ -29,6 +29,9 @@ class MachSchema(Schema, kw_only=True):
     workdir: Optional[str] = None
     
     use_caches: Optional[Union[bool, list[str]]] = None
+    
+    
+    clone_with: Optional[Literal["hg", "git"]] = "hg"
 
 
 defaults = {
