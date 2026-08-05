@@ -319,7 +319,13 @@ nsAtomSubTable& nsAtomTable::SelectSubTable(AtomTableKey& aKey) {
   
   static_assert((kNumSubTables & (kNumSubTables - 1)) == 0,
                 "must be power of two");
-  return mSubTables[aKey.mHash & (kNumSubTables - 1)];
+  constexpr uint32_t kSubTableShift =
+      mozilla::kHashNumberBits - mozilla::CeilingLog2(kNumSubTables);
+  
+  constexpr uint32_t kSubTableMultiplier = 0xcc9e2d51;
+  return mSubTables[mozilla::WrappingMultiply(aKey.mHash,
+                                              kSubTableMultiplier) >>
+                    kSubTableShift];
 }
 
 void nsAtomTable::AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf,
