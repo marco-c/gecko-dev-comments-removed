@@ -25,6 +25,9 @@ const { NodeHTTPServer } = ChromeUtils.importESModule(
 var { setTimeout } = ChromeUtils.importESModule(
   "resource://gre/modules/Timer.sys.mjs"
 );
+const { TestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/TestUtils.sys.mjs"
+);
 
 const override = Cc["@mozilla.org/network/native-dns-override;1"].getService(
   Ci.nsINativeDNSResolverOverride
@@ -295,6 +298,7 @@ add_task(
       Ci.nsISSLTokensCache
     );
     await nss.asyncClearSSLExternalAndInternalSessionCache();
+    let nssTest = nss.QueryInterface(Ci.nsISSLTokensCacheTest);
 
     override.clearOverrides();
     override.addIPOverride(host, "127.0.0.1");
@@ -308,12 +312,16 @@ add_task(
 
       
       
-      await new Promise(r => setTimeout(r, 1000));
+      await TestUtils.waitForCondition(
+        () => nssTest.countSSLTokens() >= 1,
+        "waiting for warm-up session ticket to be cached"
+      );
 
       
       
+      Services.obs.notifyObservers(null, "net:cancel-all-connections");
       
-      await new Promise(r => setTimeout(r, 3000));
+      await new Promise(r => setTimeout(r, 200));
 
       
       Services.prefs.setBoolPref(
