@@ -12,11 +12,41 @@ var gGfxUtils = {
 
   init() {
     if (Services.prefs.getBoolPref("gfx.webrender.debug.enable-capture")) {
-      document.getElementById("wrCaptureCmd").removeAttribute("disabled");
-      document
-        .getElementById("wrToggleCaptureSequenceCmd")
-        .removeAttribute("disabled");
+      this.registerCaptureShortcuts();
     }
+  },
+
+  
+
+
+
+
+
+
+  registerCaptureShortcuts() {
+    
+    
+    let keyset = document.createXULElement("keyset");
+    keyset.id = "gfxDebugKeyset";
+
+    for (let [command, macKey, key] of [
+      ["wrCaptureCmd", "3", "#"],
+      ["wrToggleCaptureSequenceCmd", "6", "^"],
+    ]) {
+      let keyElement = document.createXULElement("key");
+      keyElement.id = `key_${command}`;
+      keyElement.setAttribute("command", command);
+      if (AppConstants.platform == "macosx") {
+        keyElement.setAttribute("key", macKey);
+        keyElement.setAttribute("modifiers", "control,shift");
+      } else {
+        keyElement.setAttribute("key", key);
+        keyElement.setAttribute("modifiers", "control");
+      }
+      keyset.appendChild(keyElement);
+    }
+
+    document.documentElement.appendChild(keyset);
   },
 
   
