@@ -564,11 +564,17 @@ class VirtualenvMixin:
             if uv_executable := get_uv_executable():
                 self.run_command([uv_executable, "--version"])
 
-                uv_venv_creation_command = [
-                    "uv",
-                    "venv",
-                    venv_path,
-                    "--relocatable",
+                uv_venv_creation_command = ["uv", "venv", venv_path]
+                
+                
+                
+                
+                
+                
+                
+                if not self._is_darwin():
+                    uv_venv_creation_command.append("--relocatable")
+                uv_venv_creation_command += [
                     f"--python={sys.executable}",
                     "--no-project",
                 ]
