@@ -27,8 +27,13 @@ const TEXT_TRACK_FONT_SIZE_PREF =
   "media.videocontrols.picture-in-picture.display-text-tracks.size";
 const IMPROVED_CONTROLS_ENABLED_PREF =
   "media.videocontrols.picture-in-picture.improved-video-controls.enabled";
+const PLAYBACK_SPEED_ENABLED_PREF =
+  "media.videocontrols.picture-in-picture.playback-speed.enabled";
 const SEETHROUGH_MODE_ENABLED_PREF =
   "media.videocontrols.picture-in-picture.seethrough-mode.enabled";
+
+
+const RATE_EPSILON = 0.001;
 
 
 
@@ -145,6 +150,10 @@ function setTimestamp(timeString) {
 
 function setVolume(volume) {
   Player.setVolume(volume);
+}
+
+function setPlaybackRate(playbackRate) {
+  Player.setPlaybackRateState(playbackRate);
 }
 
 function closeFromForeground() {
@@ -317,6 +326,16 @@ let Player = {
       });
     }
 
+    this.playbackRateSlider.addEventListener("input", event => {
+      this.requestPlaybackRate(parseFloat(event.target.value));
+    });
+
+    for (let preset of document.querySelectorAll(".playback-rate-preset")) {
+      preset.addEventListener("click", () => {
+        this.requestPlaybackRate(parseFloat(preset.dataset.rate));
+      });
+    }
+
     document
       .querySelector("#subtitles-toggle")
       .addEventListener("change", () => {
@@ -353,6 +372,11 @@ let Player = {
 
       this.scrubber.hidden = false;
       this.timestamp.hidden = false;
+
+      if (Services.prefs.getBoolPref(PLAYBACK_SPEED_ENABLED_PREF, false)) {
+        this.playbackRateButton.hidden = false;
+        this.setPlaybackRateState(this._playbackRate);
+      }
 
       const controlsBottomGradient = document.getElementById(
         "controls-bottom-gradient"
@@ -466,6 +490,15 @@ let Player = {
             if (isSettingsPanelInFocus) {
               document.getElementById("closed-caption").focus();
             }
+          } else if (!this.playbackRatePanel.classList.contains("hide")) {
+            
+            let isPlaybackRatePanelInFocus = this.playbackRatePanel.contains(
+              document.activeElement
+            );
+            this.togglePlaybackRatePanel({ forceHide: true });
+            if (isPlaybackRatePanelInFocus) {
+              this.playbackRateButton.focus();
+            }
           } else if (this.isFullscreen) {
             
             document.exitFullscreen();
@@ -473,6 +506,9 @@ let Player = {
             
             this.onClose(this.isUnpipWithoutPauseShortcut(event));
           }
+        } else if (event.key == "<" || event.key == ">") {
+          
+          this.cyclePlaybackRate(event.key == ">" ? 1 : -1);
         } else if (
           Services.prefs.getBoolPref(KEYBOARD_CONTROLS_ENABLED_PREF, false) &&
           (event.keyCode != KeyEvent.DOM_VK_SPACE || !event.target.id)
@@ -572,6 +608,7 @@ let Player = {
 
       case "draggableregionleftmousedown": {
         this.toggleSubtitlesSettingsPanel({ forceHide: true });
+        this.togglePlaybackRatePanel({ forceHide: true });
         break;
       }
     }
@@ -689,6 +726,138 @@ let Player = {
     this.audioScrubber.value = volume;
   },
 
+  
+  
+  SHORTCUT_PLAYBACK_RATES: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+
+  _playbackRate: 1,
+
+  
+
+
+
+
+
+
+  setPlaybackRateState(playbackRate) {
+    if (!Number.isFinite(playbackRate) || playbackRate <= 0) {
+      return;
+    }
+    this._playbackRate = playbackRate;
+    let rounded = Math.round(playbackRate * 100) / 100;
+    this.playbackRateSlider.value = rounded;
+    document.l10n.setAttributes(
+      document.getElementById("playback-rate-value"),
+      "pictureinpicture-playback-rate-value",
+      { rate: rounded }
+    );
+    for (let preset of document.querySelectorAll(".playback-rate-preset")) {
+      preset.setAttribute(
+        "aria-pressed",
+        Math.abs(parseFloat(preset.dataset.rate) - playbackRate) < RATE_EPSILON
+      );
+    }
+  },
+
+  
+
+
+
+
+  requestPlaybackRate(playbackRate) {
+    this.setPlaybackRateState(playbackRate);
+    this.actor.sendAsyncMessage("PictureInPicture:SetPlaybackRate", {
+      playbackRate,
+    });
+  },
+
+  
+
+
+
+
+
+  cyclePlaybackRate(direction) {
+    const rates = this.SHORTCUT_PLAYBACK_RATES;
+    let index;
+    if (direction > 0) {
+      index = rates.findIndex(rate => rate > this._playbackRate + RATE_EPSILON);
+      if (index == -1) {
+        index = 0;
+      }
+    } else {
+      index = rates.findLastIndex(
+        rate => rate < this._playbackRate - RATE_EPSILON
+      );
+      if (index == -1) {
+        index = rates.length - 1;
+      }
+    }
+    this.requestPlaybackRate(rates[index]);
+  },
+
+  
+
+
+
+
+
+
+
+  alignPanelArrow(panel, button) {
+    let arrow = panel.querySelector(".arrow");
+    let panelRect = panel.getBoundingClientRect();
+    let buttonRect = button.getBoundingClientRect();
+    
+    
+    
+    let offset =
+      buttonRect.left +
+      buttonRect.width / 2 -
+      panelRect.left -
+      arrow.offsetWidth / 2;
+    arrow.style.left = `${Math.max(0, offset)}px`;
+  },
+
+  
+
+
+
+
+
+
+
+
+  togglePlaybackRatePanel(options) {
+    let panelVisible = !this.playbackRatePanel.classList.contains("hide");
+    if (options?.forceHide || panelVisible) {
+      this.playbackRatePanel.classList.add("hide");
+      this.playbackRateButton.setAttribute("aria-expanded", false);
+      this.controls.removeAttribute(DONTHIDE_ATTRIBUTE);
+
+      if (
+        this.controls.hasAttribute(KEYING_ATTRIBUTE) ||
+        this.isCurrentHover ||
+        this.controls.hasAttribute(SHOWING_ATTRIBUTE)
+      ) {
+        return;
+      }
+
+      this.hideVideoControls();
+    } else {
+      this.toggleSubtitlesSettingsPanel({ forceHide: true });
+      this.playbackRatePanel.classList.remove("hide");
+      this.playbackRateButton.setAttribute("aria-expanded", true);
+      this.alignPanelArrow(this.playbackRatePanel, this.playbackRateButton);
+      this.controls.setAttribute(DONTHIDE_ATTRIBUTE, true);
+      this.showVideoControls();
+
+      if (options?.isKeyboard) {
+        this.playbackRateSlider.focus();
+      }
+    }
+  },
+
   closePipWindow(closeData) {
     
     Services.prefs.setBoolPref(
@@ -748,6 +917,16 @@ let Player = {
         break;
       }
 
+      case "playbackRate": {
+        let options = {};
+        if (event.inputSource == MouseEvent.MOZ_SOURCE_KEYBOARD) {
+          options.isKeyboard = true;
+        }
+        this.togglePlaybackRatePanel(options);
+        
+        return;
+      }
+
       case "unpip": {
         PictureInPicture.focusTabAndClosePip(window, this.actor);
         break;
@@ -791,6 +970,9 @@ let Player = {
     if (!this.settingsPanel.contains(event.target)) {
       this.toggleSubtitlesSettingsPanel({ forceHide: true });
     }
+    if (!this.playbackRatePanel.contains(event.target)) {
+      this.togglePlaybackRatePanel({ forceHide: true });
+    }
   },
 
   
@@ -818,8 +1000,10 @@ let Player = {
 
       this.hideVideoControls();
     } else {
+      this.togglePlaybackRatePanel({ forceHide: true });
       this.settingsPanel.classList.remove("hide");
       this.closedCaptionButton.setAttribute("aria-expanded", true);
+      this.alignPanelArrow(this.settingsPanel, this.closedCaptionButton);
       this.controls.setAttribute(DONTHIDE_ATTRIBUTE, true);
       this.showVideoControls();
 
@@ -894,7 +1078,8 @@ let Player = {
     if (
       event.target.parentElement?.parentElement?.classList?.contains(
         "font-size-selection"
-      )
+      ) ||
+      this.playbackRatePanel.contains(event.target)
     ) {
       return;
     }
@@ -1226,6 +1411,7 @@ let Player = {
 
   onResize() {
     this.toggleSubtitlesSettingsPanel({ forceHide: true });
+    this.togglePlaybackRatePanel({ forceHide: true });
     this.resizeDebouncer.disarm();
     this.resizeDebouncer.arm();
   },
@@ -1279,6 +1465,25 @@ let Player = {
     delete this.closedCaptionButton;
     return (this.closedCaptionButton =
       document.getElementById("closed-caption"));
+  },
+
+  get playbackRateButton() {
+    delete this.playbackRateButton;
+    return (this.playbackRateButton = document.getElementById("playbackRate"));
+  },
+
+  get playbackRatePanel() {
+    delete this.playbackRatePanel;
+    return (this.playbackRatePanel = document.getElementById(
+      "playbackRateSettings"
+    ));
+  },
+
+  get playbackRateSlider() {
+    delete this.playbackRateSlider;
+    return (this.playbackRateSlider = document.getElementById(
+      "playback-rate-slider"
+    ));
   },
 
   get settingsPanel() {
