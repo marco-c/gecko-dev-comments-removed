@@ -16,8 +16,9 @@
 
 namespace mozilla {
 namespace dom {
+class BrowserParent;
 class CanonicalBrowsingContext;
-}
+}  
 
 namespace a11y {
 
@@ -97,6 +98,12 @@ class DocAccessibleParent : public RemoteAccessible,
   dom::CanonicalBrowsingContext* GetBrowsingContext() const {
     return mBrowsingContext;
   }
+
+  
+
+
+
+  dom::BrowserParent* Manager() const;
 
   
 
