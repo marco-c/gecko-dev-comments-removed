@@ -79,7 +79,6 @@ impl PatternBuilder for RadialGradientTemplate {
             self.params.ratio_xy,
             self.extend_mode,
             &self.stops,
-            ctx.fb_config.is_software,
             state.frame_gpu_data,
         )
     }

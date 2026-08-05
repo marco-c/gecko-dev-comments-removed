@@ -73,7 +73,6 @@ impl PatternBuilder for LinearGradientTemplate {
             end + offset,
             self.extend_mode,
             &self.stops,
-            ctx.fb_config.is_software,
             state.frame_gpu_data,
         )
     }
