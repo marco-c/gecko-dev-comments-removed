@@ -315,9 +315,8 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   
   
   
-  
   void RunSelectednessSettingAlgorithm(bool aNotify = true,
-                                       bool aInsertionOrRemovalSteps = false,
+                                       bool aSkipSelectedcontentUpdate = false,
                                        IgnoredOptionList aIgnored = {});
 
   
@@ -334,6 +333,10 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   
   MOZ_CAN_RUN_SCRIPT void UpdateDescendantSelectedContentElements();
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT void RunPendingSelectedContentUpdate();
   
   MOZ_CAN_RUN_SCRIPT void UpdateSelectedContentElement(
       HTMLSelectedContentElement* aSelectedContent);

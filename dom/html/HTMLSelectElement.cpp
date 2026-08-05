@@ -1032,9 +1032,8 @@ void HTMLSelectElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
 }
 
 
-
 void HTMLSelectElement::RunSelectednessSettingAlgorithm(
-    bool aNotify, bool aInsertionOrRemovalSteps, IgnoredOptionList aIgnored) {
+    bool aNotify, bool aSkipSelectedcontentUpdate, IgnoredOptionList aIgnored) {
   
   if (Multiple()) {
     UpdateValueMissingValidityState(aIgnored);
@@ -1095,7 +1094,7 @@ void HTMLSelectElement::RunSelectednessSettingAlgorithm(
   
   
   
-  if (updateSelectedcontent && !aInsertionOrRemovalSteps) {
+  if (updateSelectedcontent && !aSkipSelectedcontentUpdate) {
     ScheduleSelectedContentUpdate();
   }
 }
@@ -1644,7 +1643,8 @@ void HTMLSelectElement::ContentWillBeRemoved(nsIContent* aChild,
   }
   if (anySelected) {
     RunSelectednessSettingAlgorithm(true,
-                                    true, options);
+                                    true,
+                                    options);
   }
   if (IsInComposedDoc() && IsCombobox()) {
     OptionValueMightHaveChanged(aChild);
@@ -2674,7 +2674,7 @@ class SelectedContentUpdateMicrotask final : public MicroTaskRunnable {
   explicit SelectedContentUpdateMicrotask(HTMLSelectElement* aSelect)
       : mSelect(aSelect) {}
   MOZ_CAN_RUN_SCRIPT void Run(AutoSlowOperation& aAso) override {
-    MOZ_KnownLive(mSelect)->UpdateDescendantSelectedContentElements();
+    MOZ_KnownLive(mSelect)->RunPendingSelectedContentUpdate();
   }
 
  private:
@@ -2710,11 +2710,19 @@ void HTMLSelectElement::ScheduleSelectedContentUpdateScriptRunner(
   }
   mSelectedContentUpdatePending = true;
   nsContentUtils::AddScriptRunner(NewRunnableMethod(
-      "HTMLSelectElement::UpdateDescendantSelectedContentElements", this,
-      &HTMLSelectElement::UpdateDescendantSelectedContentElements));
+      "HTMLSelectElement::RunPendingSelectedContentUpdate", this,
+      &HTMLSelectElement::RunPendingSelectedContentUpdate));
 }
 
-
+void HTMLSelectElement::RunPendingSelectedContentUpdate() {
+  
+  
+  
+  
+  if (mSelectedContentUpdatePending) {
+    UpdateDescendantSelectedContentElements();
+  }
+}
 
 
 void HTMLSelectElement::UpdateDescendantSelectedContentElements() {
@@ -2762,7 +2770,6 @@ void HTMLSelectElement::UpdateSelectedContentElement(
   RefPtr<HTMLOptionElement> option =
       selectedIndex >= 0 ? Item(static_cast<uint32_t>(selectedIndex)) : nullptr;
 
-  
   
   if (!option) {
     aSelectedContent->ClearContent();

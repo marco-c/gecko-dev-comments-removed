@@ -105,7 +105,18 @@ void HTMLOptionElement::SetSelected(bool aValue) {
     }
 
     
-    select->SetOptionsSelectedByIndex(index, index, mask);
+    if (select->SetOptionsSelectedByIndex(index, index, mask)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      select->ScheduleSelectedContentUpdateScriptRunner(
+           true);
+    }
   } else {
     SetSelectedInternal(aValue, true);
   }
@@ -181,7 +192,13 @@ void HTMLOptionElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
   
   
   
-  select->SetOptionsSelectedByIndex(index, index, mask);
+  if (select->SetOptionsSelectedByIndex(index, index, mask)) {
+    
+    
+    
+    select->ScheduleSelectedContentUpdateScriptRunner(
+         true);
+  }
 
   
   
