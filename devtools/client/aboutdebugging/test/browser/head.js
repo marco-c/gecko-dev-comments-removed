@@ -591,3 +591,40 @@ async function disconnectFromLocalFirefox({
   await waitUntilUsbDeviceIsUnplugged(deviceName, doc);
 }
 
+
+async function assertDebugTargetCollapsed(paneEl, title) {
+  info("Check debug target is collapsed");
+  
+  const targetEl = paneEl.querySelector(".qa-debug-target-pane__collapsable");
+  is(targetEl.closest("details").open, false, "Debug target pane is collapsed");
+  
+  const titleEl = paneEl.querySelector(".qa-debug-target-pane-title");
+  const expectedTitle = `${title} (${
+    targetEl.querySelectorAll(".qa-debug-target-item").length
+  })`;
+  is(
+    titleEl.textContent,
+    expectedTitle,
+    `Collapsed title "${title}" is correct`
+  );
+}
+
+
+async function assertDebugTargetExpanded(paneEl, title) {
+  info("Check debug target is expanded");
+
+  
+  const targetEl = paneEl.querySelector(".qa-debug-target-pane__collapsable");
+  is(targetEl.closest("details").open, true, "Debug target pane is expanded");
+  
+  const titleEl = paneEl.querySelector(".qa-debug-target-pane-title");
+  const expectedTitle = `${title} (${
+    targetEl.querySelectorAll(".qa-debug-target-item").length
+  })`;
+  is(
+    titleEl.textContent,
+    expectedTitle,
+    `Expanded title "${title}" is correct`
+  );
+}
+
