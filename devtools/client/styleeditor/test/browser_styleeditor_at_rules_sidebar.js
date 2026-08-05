@@ -41,8 +41,6 @@ add_task(async function () {
   
   await pushPref("layout.css.properties-and-values.enabled", true);
   
-  await pushPref("layout.css.anchor-positioning.enabled", true);
-  
   await pushPref("layout.css.custom-media.enabled", true);
 
   const { ui } = await openStyleEditorForURL(TESTCASE_URI);

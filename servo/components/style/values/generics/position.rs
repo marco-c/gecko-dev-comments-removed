@@ -31,13 +31,23 @@ use crate::values::computed::ToComputedValue;
 
 
 
+
+pub trait IsTreeScoped {
+    
+    
+    fn is_tree_scoped(&self) -> bool {
+        true
+    }
+}
+
+
+
 #[repr(C)]
 #[derive(
     Clone,
     Copy,
     Debug,
     MallocSizeOf,
-    PartialEq,
     SpecifiedValueInfo,
     ToAnimatedValue,
     ToCss,
@@ -47,13 +57,29 @@ use crate::values::computed::ToComputedValue;
     Serialize,
     Deserialize,
 )]
-#[typed_value(derive_fields)]
 pub struct TreeScoped<T> {
     
     pub value: T,
     
     #[css(skip)]
     pub scope: CascadeLevel,
+}
+
+impl<T: IsTreeScoped + PartialEq> PartialEq for TreeScoped<T> {
+    fn eq(&self, other: &Self) -> bool {
+        let tree_scoped = self.value.is_tree_scoped();
+        if tree_scoped != other.value.is_tree_scoped() {
+            
+            return false;
+        }
+        let scopes_equal = self.scope == other.scope;
+        if !scopes_equal && tree_scoped {
+            
+            return false;
+        }
+        
+        self.value == other.value
+    }
 }
 
 impl<T> TreeScoped<T> {
@@ -87,7 +113,11 @@ where
     }
 }
 
-impl<T: ToComputedValue> ToComputedValue for TreeScoped<T> {
+impl<T> ToComputedValue for TreeScoped<T>
+where
+    T: ToComputedValue + IsTreeScoped,
+    T::ComputedValue: IsTreeScoped,
+{
     type ComputedValue = TreeScoped<T::ComputedValue>;
     fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
         TreeScoped {
@@ -312,6 +342,7 @@ pub enum PreferredRatio<N> {
     ToTyped,
 )]
 #[repr(C)]
+#[typed(todo_derive_fields)]
 pub struct GenericAspectRatio<N> {
     
     #[animation(constant)]
@@ -368,7 +399,6 @@ impl<N> ToAnimatedZero for AspectRatio<N> {
     ToTyped,
 )]
 #[repr(C)]
-#[typed_value(derive_fields)]
 pub enum GenericInset<P, LP> {
     
     LengthPercentage(LP),
@@ -393,10 +423,7 @@ where
 {
     fn collect_completion_keywords(f: style_traits::KeywordsCollectFn) {
         LP::collect_completion_keywords(f);
-        f(&["auto"]);
-        if static_prefs::pref!("layout.css.anchor-positioning.enabled") {
-            f(&["anchor", "anchor-size"]);
-        }
+        f(&["auto", "anchor", "anchor-size"]);
     }
 }
 
@@ -439,6 +466,7 @@ pub use self::GenericInset as Inset;
     ToTyped,
 )]
 #[repr(C)]
+#[typed(todo_derive_fields)]
 pub struct GenericAnchorFunction<Percentage, Fallback> {
     
     
