@@ -173,10 +173,6 @@ class ResponsePanel extends Component {
 
 
   handleJSONResponse(mimeType, response) {
-    
-    
-    
-    const limit = Services.prefs.getIntPref("devtools.netmonitor.bodyLimit");
     const { request } = this.props;
 
     
@@ -184,10 +180,7 @@ class ResponsePanel extends Component {
     
     
     
-    if (
-      request.truncated ||
-      (limit > 0 && limit <= request.responseContent.content.size)
-    ) {
+    if (request.truncated) {
       const result = {};
       result.error = RESPONSE_TRUNCATED;
       return result;

@@ -636,11 +636,7 @@ class TextPropertyEditor {
       },
       inStartingStyleRule: this.rule.isInStartingStyle(),
       isValid: this.isValid(),
-      cssExplainersEnabled:
-        this.ruleView.cssExplainersEnabled &&
-        
-        
-        this.rule.domRule.supportsCssExplainers,
+      cssExplainersEnabled: this.ruleView.cssExplainersEnabled,
       siblingCount: this.rule.siblingCount,
       siblingIndex: this.rule.siblingIndex,
     };

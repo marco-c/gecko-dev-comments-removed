@@ -426,9 +426,6 @@ class StyleRuleActor extends Actor {
         
         
         canSetRuleText: this.canSetRuleText,
-        
-        
-        hasGetCssExplainersData: true,
       },
     };
 
