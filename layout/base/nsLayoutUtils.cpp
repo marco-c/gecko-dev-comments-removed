@@ -1228,7 +1228,8 @@ static bool IsFrameAfter(const nsIFrame* aFrame1, const nsIFrame* aFrame2) {
 
 int32_t nsLayoutUtils::DoCompareTreePosition(const nsIFrame* aFrame1,
                                              const nsIFrame* aFrame2,
-                                             const nsIFrame* aCommonAncestor) {
+                                             const nsIFrame* aCommonAncestor,
+                                             CompareTreePositionFlags aFlags) {
   MOZ_ASSERT(aFrame1, "aFrame1 must not be null");
   MOZ_ASSERT(aFrame2, "aFrame2 must not be null");
 
@@ -1236,14 +1237,15 @@ int32_t nsLayoutUtils::DoCompareTreePosition(const nsIFrame* aFrame1,
   const nsIFrame* nonCommonAncestor =
       FillAncestors(aFrame2, aCommonAncestor, &frame2Ancestors);
   return DoCompareTreePosition(aFrame1, aFrame2, frame2Ancestors,
-                               nonCommonAncestor ? aCommonAncestor : nullptr);
+                               nonCommonAncestor ? aCommonAncestor : nullptr,
+                               aFlags);
 }
 
 
 int32_t nsLayoutUtils::DoCompareTreePosition(
     const nsIFrame* aFrame1, const nsIFrame* aFrame2,
     const nsTArray<const nsIFrame*>& aFrame2Ancestors,
-    const nsIFrame* aCommonAncestor) {
+    const nsIFrame* aCommonAncestor, CompareTreePositionFlags aFlags) {
   MOZ_ASSERT(aFrame1, "aFrame1 must not be null");
   MOZ_ASSERT(aFrame2, "aFrame2 must not be null");
 
@@ -1261,8 +1263,8 @@ int32_t nsLayoutUtils::DoCompareTreePosition(
     
     
     
-    const int32_t oppositeResult =
-        DoCompareTreePosition(aFrame2, aFrame1, frame1Ancestors, nullptr);
+    const int32_t oppositeResult = DoCompareTreePosition(
+        aFrame2, aFrame1, frame1Ancestors, nullptr, aFlags);
     return -oppositeResult;
   }
 
@@ -1297,7 +1299,14 @@ int32_t nsLayoutUtils::DoCompareTreePosition(
   if (IsFrameAfter(ancestor1, ancestor2)) {
     return 1;
   }
-  NS_WARNING("Frames were in different child lists???");
+  
+  
+  
+  
+  NS_WARNING_ASSERTION(
+      aFlags &
+          CompareTreePositionFlags::FramesMayBeInDifferentOrIncompleteTrees,
+      "Frames were in different child lists?");
   return 0;
 }
 
