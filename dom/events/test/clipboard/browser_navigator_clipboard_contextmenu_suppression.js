@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 requestLongerTimeout(2);
 
@@ -366,15 +364,21 @@ if (
         set: [["middlemouse.paste", true]],
       });
 
+      
+      
+      
+      
+      AccessibilityUtils.setEnv({
+        mustHaveAccessibleRule: false,
+      });
       await SpecialPowers.spawn(browser, [], async () => {
-        EventUtils.synthesizeMouse(
+        EventUtils.synthesizeMouseAtCenter(
           content.document.documentElement,
-          1,
-          1,
           { button: 1 },
           content.window
         );
       });
+      AccessibilityUtils.resetEnv();
     },
     true,
     "middle click"
