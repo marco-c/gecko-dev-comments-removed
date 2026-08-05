@@ -103,6 +103,7 @@ pub(super) async fn pin_to_taskbar(
     })?;
 
     async {
+        #[cfg(feature = "enable_tests")]
         if xpcom::is_in_automation() {
             
             
