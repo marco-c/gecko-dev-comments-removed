@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AudioWorkletNode.h"
 
 #include "AudioDestinationNode.h"
@@ -767,7 +765,10 @@ already_AddRefed<AudioWorkletNode> AudioWorkletNode::Constructor(
   
   JS::CloneDataPolicy cloneDataPolicy;
   cloneDataPolicy.allowIntraClusterClonableSharedObjects();
-  cloneDataPolicy.allowSharedMemoryObjects();
+  nsIGlobalObject* currentGlobal = xpc::CurrentNativeGlobal(cx);
+  if (currentGlobal->IsSharedMemoryAllowed()) {
+    cloneDataPolicy.allowSharedMemoryObjects();
+  }
 
   
   
