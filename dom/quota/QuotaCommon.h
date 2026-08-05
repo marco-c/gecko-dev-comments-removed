@@ -1378,6 +1378,8 @@ nsDependentCSubstring GetSourceTreeBase();
 
 
 
+
+
 nsDependentCSubstring GetObjdirDistIncludeTreeBase(
     const nsLiteralCString& aQuotaCommonHPath = nsLiteralCString(__FILE__));
 

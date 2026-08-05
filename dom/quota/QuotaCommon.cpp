@@ -260,6 +260,8 @@ namespace detail {
 
 
 
+
+
 nsDependentCSubstring GetTreeBase(const nsLiteralCString& aPath,
                                   const nsLiteralCString& aRelativePath) {
   MOZ_ASSERT(StringEndsWith(aPath, aRelativePath));
@@ -356,10 +358,8 @@ nsDependentCSubstring MakeSourceFileRelativePath(
 
   static const auto sourceTreeBase = GetSourceTreeBase();
 
-  if (MOZ_LIKELY(StringBeginsWith(aSourceFilePath, sourceTreeBase))) {
-    return Substring(aSourceFilePath, sourceTreeBase.Length() + 1);
-  }
-
+  
+  
   
   
   static const auto objdirDistIncludeTreeBase = GetObjdirDistIncludeTreeBase();
@@ -368,6 +368,10 @@ nsDependentCSubstring MakeSourceFileRelativePath(
           StringBeginsWith(aSourceFilePath, objdirDistIncludeTreeBase))) {
     return MapDistIncludePathToSource(
         Substring(aSourceFilePath, objdirDistIncludeTreeBase.Length() + 1));
+  }
+
+  if (MOZ_LIKELY(StringBeginsWith(aSourceFilePath, sourceTreeBase))) {
+    return Substring(aSourceFilePath, sourceTreeBase.Length() + 1);
   }
 
   nsCString::const_iterator begin, end;
