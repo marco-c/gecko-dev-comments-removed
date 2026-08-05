@@ -1290,12 +1290,6 @@ var gSync = {
 
     EnsureFxAccountsWebChannel();
 
-    
-    PanelMultiView.getViewNode(
-      document,
-      "appMenu-fxa-sign-in-promo-button"
-    ).addEventListener("click", this);
-
     let fxaPanelView = PanelMultiView.getViewNode(document, "PanelUI-fxa");
     fxaPanelView.addEventListener("ViewShowing", this);
     fxaPanelView.addEventListener("ViewHiding", this);
@@ -1626,11 +1620,6 @@ var gSync = {
         break;
       case "PanelUI-fxa-menu-sign-in-promo-button":
         this.openFxAEmailFirstPageFromFxaMenu(button);
-        break;
-      case "appMenu-fxa-sign-in-promo-button":
-        
-        this.openFxAEmailFirstPageFromFxaMenu(button);
-        PanelUI.hide();
         break;
       case "PanelUI-fxa-menu-account-signout-button":
         this.disconnect();
