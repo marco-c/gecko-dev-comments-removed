@@ -2773,6 +2773,11 @@ pref("browser.tabs.fadeOutUnloadedTabs", false);
 pref("browser.tabs.splitView.enabled", true);
 pref("browser.tabs.splitview.hasUsed", false);
 
+pref("browser.tabs.splitview.trigger.delay_ms", 15000);
+
+
+pref("browser.tabs.splitview.trigger.createCount", 0);
+
 
 pref("browser.tabs.remoteSVGIconDecoding", true);
 
