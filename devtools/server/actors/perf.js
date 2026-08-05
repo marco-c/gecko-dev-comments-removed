@@ -54,6 +54,16 @@ exports.PerfActor = class PerfActor extends Actor {
 
   #previouslyRetrievedAdditionalInformationPromise = null;
 
+  
+
+
+
+
+
+
+
+  #startedByDevTools = false;
+
   constructor(conn) {
     super(conn, perfSpec);
 
@@ -73,6 +83,11 @@ exports.PerfActor = class PerfActor extends Actor {
     if (!IS_SUPPORTED_PLATFORM) {
       return;
     }
+
+    if (this.#startedByDevTools && Services.profiler.IsActive()) {
+      Services.profiler.StopProfiler();
+    }
+
     Services.obs.removeObserver(this._observer, "profiler-started");
     Services.obs.removeObserver(this._observer, "profiler-stopped");
   }
@@ -108,6 +123,7 @@ exports.PerfActor = class PerfActor extends Actor {
       return false;
     }
 
+    this.#startedByDevTools = true;
     return true;
   }
 
@@ -266,6 +282,7 @@ exports.PerfActor = class PerfActor extends Actor {
         break;
       }
       case "profiler-stopped":
+        this.#startedByDevTools = false;
         this.emit(topic);
         break;
     }

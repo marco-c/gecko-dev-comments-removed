@@ -38,8 +38,6 @@
 
 
 
-
-
 "use strict";
 
 const {
@@ -80,25 +78,6 @@ class ProfilerEventHandling extends PureComponent {
     this.props.perfFront.on("profiler-stopped", reportProfilerStopped);
   }
 
-  componentWillUnmount() {
-    switch (this.props.recordingState) {
-      case "not-yet-known":
-      case "available-to-record":
-      case "request-to-stop-profiler":
-      case "request-to-get-profile-and-stop-profiler":
-        
-        break;
-
-      case "recording":
-      case "request-to-start-recording":
-        this.props.perfFront.stopProfilerAndDiscardProfile();
-        break;
-
-      default:
-        throw new Error("Unhandled recording state.");
-    }
-  }
-
   render() {
     return null;
   }
@@ -110,7 +89,6 @@ class ProfilerEventHandling extends PureComponent {
 
 function mapStateToProps(state) {
   return {
-    recordingState: selectors.getRecordingState(state),
     isSupportedPlatform: selectors.getIsSupportedPlatform(state),
   };
 }
