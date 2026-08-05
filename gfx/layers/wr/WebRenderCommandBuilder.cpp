@@ -2782,10 +2782,18 @@ Maybe<wr::ImageMask> WebRenderCommandBuilder::BuildWrMaskImage(
   
   
   
+  
+  
+  
+  
   LayoutDeviceRect imageRect;
   if (StaticPrefs::layout_disable_pixel_alignment()) {
-    imageRect = LayoutDeviceRect::FromAppUnits(
-        bounds.Intersect(aMaskItem->GetBuildingRect()), appUnitsPerDevPixel);
+    LayoutDeviceRect coverage =
+        LayoutDeviceRect::FromAppUnits(aMaskItem->GetBuildingRect(),
+                                       appUnitsPerDevPixel)
+            .Union(LayerRect(visibleRect) / layerScale);
+    imageRect = LayoutDeviceRect::FromAppUnits(bounds, appUnitsPerDevPixel)
+                    .Intersect(coverage);
   } else {
     imageRect = LayerRect(visibleRect) / layerScale;
   }
