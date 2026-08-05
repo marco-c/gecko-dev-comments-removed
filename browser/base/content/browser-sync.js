@@ -1151,23 +1151,6 @@ var gSync = {
     }
   },
 
-  
-  
-  
-  handleSyncPromoAction(action, entryPoint) {
-    switch (action) {
-      case "signin":
-        this.openFxAEmailFirstPage(entryPoint);
-        break;
-      case "turnonsync":
-        this.openSyncSetupForEntryPoint(entryPoint);
-        break;
-      case "connectdevice":
-        this.openConnectAnotherDevice(entryPoint);
-        break;
-    }
-  },
-
   shouldHideSendContextMenuItems(enabled) {
     return !enabled || !this.FXA_ENABLED;
   },
