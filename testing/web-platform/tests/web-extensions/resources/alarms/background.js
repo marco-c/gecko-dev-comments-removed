@@ -117,14 +117,28 @@ browser.test.runTests([
   
 
 
+
+
+  function testAlarmsCreateNameBothWaysError() {
+    
+    
+    
+    return browser.alarms
+        .create(alarmName, {name: alarmName, delayInMinutes: 10})
+        .then(() => Promise.reject(
+                  new Error('create should reject when name is passed twice')),
+              () => {} );
+  },
+
+  
+
+
+
+
   function testAlarmsErrorCases() {
     
     browser.test.assertThrows(() =>
                                   browser.alarms.create('invalid', 'invalid'));
-
-    
-    browser.test.assertThrows(() => browser.alarms.create(
-                                  alarmName, {name: alarmName, delayInMinutes: 10}));
 
     
     browser.test.assertThrows(() => browser.alarms.get(123));
