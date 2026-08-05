@@ -984,6 +984,32 @@ ToastNotificationHandler::FindNotificationByTag(const nsAString& aWindowsTag,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 HRESULT
 ToastNotificationHandler::OnDismiss(
     const ComPtr<IToastNotification>& notification,
@@ -1001,6 +1027,9 @@ ToastNotificationHandler::OnDismiss(
   nsAutoString tag(tagPtr, len);
 
   if (FindNotificationByTag(tag, mAumid)) {
+    if (mAlertCallbacks) {
+      mAlertCallbacks->OnAlertDismissedFromForeground();
+    }
     return S_OK;
   }
 
