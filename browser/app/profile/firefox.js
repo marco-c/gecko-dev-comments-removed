@@ -2481,10 +2481,6 @@ pref("media.contextmenu.video-overlay-detection", true);
 
 
 
-pref("browser.translation.neverForLanguages", "");
-
-
-
 pref("browser.translations.enable", true);
 
 
