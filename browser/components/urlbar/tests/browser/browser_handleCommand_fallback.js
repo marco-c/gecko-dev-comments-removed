@@ -7,6 +7,10 @@
 
 
 
+const { UrlbarParentController } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs"
+);
+
 const TEST_STRINGS = [
   "test",
   "test/",
@@ -86,10 +90,10 @@ add_task(async function () {
     }
     promise = promiseLoadURL();
     gURLBar.value = value;
-    let spy = sinon.spy(UrlbarUtils, "getHeuristicResultFor");
+    let spy = sinon.spy(gURLBar.controller, "resolveFallbackNavigation");
     EventUtils.synthesizeKey("KEY_Enter");
     spy.restore();
-    Assert.ok(spy.called, "invoked getHeuristicResultFor");
+    Assert.ok(spy.called, "invoked resolveFallbackNavigation");
     Assert.deepEqual(await promise, args, "Check arguments are coherent");
     gURLBar.handleRevert();
   }
@@ -98,23 +102,19 @@ add_task(async function () {
 
 
 add_task(async function no_heuristic_test() {
-  sandbox = sinon.createSandbox();
-
-  let stub = sandbox
-    .stub(UrlbarUtils, "getHeuristicResultFor")
-    .callsFake(async function () {
-      throw new Error("I failed!");
-    });
+  let stub = sinon
+    .stub(UrlbarParentController.prototype, "getHeuristicResult")
+    .rejects(new Error("I failed!"));
 
   registerCleanupFunction(async () => {
-    sandbox.restore();
+    stub.restore();
     await UrlbarTestUtils.formHistory.clear();
   });
 
   async function promiseLoadURL() {
     return new Promise(resolve => {
-      sandbox.stub(gURLBar, "_loadURL").callsFake(function () {
-        sandbox.restore();
+      sinon.stub(gURLBar, "_loadURL").callsFake(function () {
+        gURLBar._loadURL.restore();
         
         
         resolve(Array.from(arguments).slice(0, 3));
@@ -134,9 +134,10 @@ add_task(async function no_heuristic_test() {
     let promise = promiseLoadURL();
     gURLBar.value = value;
     EventUtils.synthesizeKey("KEY_Enter");
-    Assert.ok(stub.called, "invoked getHeuristicResultFor");
+    
     
     
     new URL((await promise)[0]);
+    Assert.ok(stub.called, "invoked getHeuristicResult");
   }
 });

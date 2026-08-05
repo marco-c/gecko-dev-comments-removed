@@ -7,6 +7,10 @@
 
 
 
+const { UrlbarParentController } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs"
+);
+
 add_setup(async function () {
   sandbox = sinon.createSandbox();
 
@@ -24,12 +28,16 @@ async function checkShortcutLoading(modifierKeys) {
 
   
   
-  let original = UrlbarUtils.getHeuristicResultFor;
+  
+  
+  let entered = Promise.withResolvers();
+  let original = UrlbarParentController.prototype.getHeuristicResult;
   sandbox
-    .stub(UrlbarUtils, "getHeuristicResultFor")
-    .callsFake(async searchString => {
+    .stub(UrlbarParentController.prototype, "getHeuristicResult")
+    .callsFake(async function (queryContext) {
+      entered.resolve();
       await deferred.promise;
-      return original.call(this, searchString);
+      return original.call(this, queryContext);
     });
 
   
@@ -40,9 +48,11 @@ async function checkShortcutLoading(modifierKeys) {
   gURLBar.userTypedValue = true;
   EventUtils.synthesizeKey("KEY_Enter", modifierKeys);
 
+  
+  await entered.promise;
   Assert.ok(
-    UrlbarUtils.getHeuristicResultFor.calledOnce,
-    "should have called getHeuristicResultFor"
+    UrlbarParentController.prototype.getHeuristicResult.calledOnce,
+    "should have called getHeuristicResult"
   );
 
   
