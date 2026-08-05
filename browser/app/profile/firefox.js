@@ -81,6 +81,11 @@ pref("browser.dictionaries.download.url", "https://addons.mozilla.org/%LOCALE%/f
 
 
 
+
+pref("browser.aboutaddons.novaThemesPickerEnabled", true);
+
+
+
 pref("app.update.checkInstallTime", true);
 
 
