@@ -81,6 +81,9 @@
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "ogg/ogg.h"
+#ifdef XP_MACOSX
+#  include "mozilla/MacAutoreleasePool.h"
+#endif
 
 using base::AtExitManager;
 using mozilla::ipc::IOThreadParent;
@@ -196,6 +199,13 @@ EXPORT_XPCOM_API(nsresult)
 NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
              nsIDirectoryServiceProvider* aAppFileLocationProvider,
              bool aInitJSContext) {
+#ifdef XP_MACOSX
+  
+  
+  
+  mozilla::MacAutoreleasePool pool;
+#endif
+
   static bool sInitialized = false;
   if (sInitialized) {
     XPCOM_INIT_FATAL("!sInitialized", NS_ERROR_FAILURE)
