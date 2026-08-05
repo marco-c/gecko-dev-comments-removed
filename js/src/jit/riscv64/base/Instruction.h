@@ -124,13 +124,13 @@ class InstructionBase {
   }
 
   
-  inline BaseOpcode BaseOpcodeValue() const {
+  inline enum BaseOpcode BaseOpcodeValue() const {
     return static_cast<enum BaseOpcode>(
         Bits(kBaseOpcodeShift + kBaseOpcodeBits - 1, kBaseOpcodeShift));
   }
 
   
-  inline BaseOpcode BaseOpcodeFieldRaw() const {
+  inline enum BaseOpcode BaseOpcodeFieldRaw() const {
     return static_cast<enum BaseOpcode>(InstructionBits() & kBaseOpcodeMask);
   }
 
