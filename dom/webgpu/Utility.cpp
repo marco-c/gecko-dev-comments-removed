@@ -584,6 +584,9 @@ ffi::WGPUMultisampleState ConvertMultisampleState(
 ffi::WGPUBlendComponent ConvertBlendComponent(
     const dom::GPUBlendComponent& aDesc) {
   ffi::WGPUBlendComponent desc = {};
+  
+  
+  
   desc.src_factor = ffi::WGPUBlendFactor(aDesc.mSrcFactor);
   desc.dst_factor = ffi::WGPUBlendFactor(aDesc.mDstFactor);
   desc.operation = ffi::WGPUBlendOperation(aDesc.mOperation);
