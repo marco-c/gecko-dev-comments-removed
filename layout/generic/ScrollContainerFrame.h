@@ -255,6 +255,13 @@ class ScrollContainerFrame : public nsContainerFrame,
 
 
 
+  Sides SidesToScrollForUserInputEvents() const;
+
+  
+
+
+
+
 
 
 
