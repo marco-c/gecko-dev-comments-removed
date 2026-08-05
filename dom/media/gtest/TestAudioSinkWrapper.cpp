@@ -312,10 +312,13 @@ class AudioSinkWrapperReuseTest : public ::testing::Test {
   
   
   
+  
+  
   MockCubebStream::KeepProcessing DriveCallback(long aFrames) {
     for (int i = 0; i < kMaxStartRetries; ++i) {
       auto r = mStream->ManualDataCallback(aFrames);
       if (r != MockCubebStream::KeepProcessing::InvalidState) {
+        ProcessPending();
         return r;
       }
       ProcessPending();
@@ -340,7 +343,6 @@ class AudioSinkWrapperReuseTest : public ::testing::Test {
     for (int i = 0;
          i < kMaxDrainCallbacks && played.Length() < aExpectedSamples; ++i) {
       auto r = DriveCallback(kCallbackFrames);
-      ProcessPending();
       played.AppendElements(TakeRecorded());
       if (r != MockCubebStream::KeepProcessing::Yes) {
         break;
@@ -375,7 +377,6 @@ class AudioSinkWrapperReuseTest : public ::testing::Test {
     MOZ_RELEASE_ASSERT(mStream);
     mStream->SetOutputRecordingEnabled(true);
     DriveCallback(aPlayFrames);
-    ProcessPending();
     nsTArray<AudioDataValue> prePlayed = TakeRecorded();
     SeekAndSupplyPostSeekAudio(aPostFrames, aPostValue, aTarget);
     return prePlayed;
