@@ -539,11 +539,6 @@ nsresult GfxInfo::GetFeatureStatusImpl(
         
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_OS_VERSION;
         aFailureId = "FEATURE_FAILURE_METAL_ANGLE_MACOS_VERSION";
-      } else if (mNumGPUsDetected > 1) {
-        
-        
-        *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
-        aFailureId = "FEATURE_FAILURE_METAL_ANGLE_MULTIPLE_GPUS";
       } else {
         *aStatus = nsIGfxInfo::FEATURE_STATUS_OK;
       }
