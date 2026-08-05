@@ -1013,7 +1013,8 @@ void ReportInternalError(const char* aFile, uint32_t aLine, const char* aStr) {
 
 namespace {
 
-bool gInvalidateQuotaCache = false;
+Atomic<QuotaManager::CacheInvalidationLevel> gInvalidateQuotaCache{
+    QuotaManager::CacheInvalidationLevel::None};
 StaticAutoPtr<nsString> gBasePath;
 StaticAutoPtr<nsString> gStorageName;
 StaticAutoPtr<nsCString> gBuildId;
@@ -4906,7 +4907,10 @@ nsresult QuotaManager::MaybeRemoveLocalStorageDataAndArchive(
 
   QM_TRY(MOZ_TO_RESULT(MaybeRemoveLocalStorageDirectories()));
 
-  InvalidateQuotaCache();
+  
+  
+  
+  InvalidateQuotaCache(CacheInvalidationLevel::Hard);
 
   
   
@@ -5692,10 +5696,18 @@ nsresult QuotaManager::EnsureStorageIsInitializedInternal() {
 
     QM_TRY_UNWRAP(mCacheUsable, MaybeCreateOrUpgradeCache(*connection));
 
-    if (mCacheUsable && gInvalidateQuotaCache) {
-      QM_TRY(InvalidateCache(*connection));
+    
+    
+    
+    const auto invalidationLevel = gInvalidateQuotaCache.exchange(
+        QuotaManager::CacheInvalidationLevel::None);
+    const bool shouldInvalidateCache =
+        (invalidationLevel == QuotaManager::CacheInvalidationLevel::Hard) ||
+        (invalidationLevel == QuotaManager::CacheInvalidationLevel::Soft &&
+         StaticPrefs::dom_quotaManager_caching_checkBuildId());
 
-      gInvalidateQuotaCache = false;
+    if (mCacheUsable && shouldInvalidateCache) {
+      QM_TRY(InvalidateCache(*connection));
     }
 
     uint32_t pauseOnIOThreadMs =
@@ -8218,18 +8230,23 @@ Result<PrincipalInfo, nsresult> QuotaManager::ParseOrigin(
 }
 
 
-void QuotaManager::InvalidateQuotaCache() {
-  
-  
-  
-  
-  
-  
-  
-  if (!StaticPrefs::dom_quotaManager_caching_checkBuildId()) {
-    return;
+void QuotaManager::InvalidateQuotaCache(CacheInvalidationLevel aLevel) {
+  switch (aLevel) {
+    case CacheInvalidationLevel::None:
+      MOZ_ASSERT_UNREACHABLE("Pass Soft or Hard");
+      return;
+    case CacheInvalidationLevel::Soft: {
+      
+      CacheInvalidationLevel expected = CacheInvalidationLevel::None;
+      gInvalidateQuotaCache.compareExchange(expected,
+                                            CacheInvalidationLevel::Soft);
+      return;
+    }
+    case CacheInvalidationLevel::Hard:
+      
+      gInvalidateQuotaCache = CacheInvalidationLevel::Hard;
+      return;
   }
-  gInvalidateQuotaCache = true;
 }
 
 OriginMetadataArray QuotaManager::GetTemporaryOrigins(

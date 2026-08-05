@@ -769,7 +769,26 @@ class QuotaManager final : public BackgroundThreadObject {
   
   static Result<PrincipalInfo, nsresult> ParseOrigin(const nsACString& aOrigin);
 
-  static void InvalidateQuotaCache();
+  
+  
+  
+  
+  
+  enum class CacheInvalidationLevel : uint32_t {
+    
+    
+    None = 0,
+    
+    
+    
+    
+    Soft = 1,
+    
+    
+    Hard = 2,
+  };
+
+  static void InvalidateQuotaCache(CacheInvalidationLevel aLevel);
 
   OriginMetadataArray GetTemporaryOrigins(
       PersistenceType aPersistenceType) const;
