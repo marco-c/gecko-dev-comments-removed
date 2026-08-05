@@ -1,6 +1,6 @@
 import mozunit
 
-LINTER = "rumdl"
+LINTER = "md"
 
 
 
