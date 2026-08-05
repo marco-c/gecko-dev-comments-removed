@@ -19,6 +19,7 @@
 
 #include "api/environment/environment.h"
 #include "api/environment/environment_factory.h"
+#include "api/rtp_header_extension_id.h"
 #include "api/rtp_parameters.h"
 #include "modules/include/module_fec_types.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -34,13 +35,12 @@ namespace webrtc {
 
 namespace {
 
-using test::fec::AugmentedPacket;
 using test::fec::AugmentedPacketGenerator;
 
 constexpr int kFlexfecPayloadType = 123;
 constexpr uint32_t kMediaSsrc = 1234;
 constexpr uint32_t kFlexfecSsrc = 5678;
-const char kNoMid[] = "";
+constexpr char kNoMid[] = "";
 const std::vector<RtpExtension> kNoRtpHeaderExtensions;
 const std::vector<RtpExtensionSize> kNoRtpHeaderExtensionSizes;
 
@@ -74,10 +74,8 @@ std::unique_ptr<RtpPacketToSend> GenerateSingleFlexfecPacket(
   AugmentedPacketGenerator packet_generator(kMediaSsrc);
   packet_generator.NewFrame(kNumPackets);
   for (size_t i = 0; i < kNumPackets; ++i) {
-    std::unique_ptr<AugmentedPacket> packet =
-        packet_generator.NextPacket(i, kPayloadLength);
-    RtpPacketToSend rtp_packet(nullptr);  
-    rtp_packet.Parse(packet->data);
+    RtpPacketToSend rtp_packet =
+        packet_generator.NextPacket<RtpPacketToSend>(i, kPayloadLength);
     sender->AddPacketAndGenerateFec(rtp_packet);
   }
   std::vector<std::unique_ptr<RtpPacketToSend>> fec_packets =
@@ -146,10 +144,8 @@ TEST(FlexfecSenderTest, ProtectTwoFramesWithOneFecPacket) {
   for (size_t i = 0; i < kNumFrames; ++i) {
     packet_generator.NewFrame(kNumPacketsPerFrame);
     for (size_t j = 0; j < kNumPacketsPerFrame; ++j) {
-      std::unique_ptr<AugmentedPacket> packet =
-          packet_generator.NextPacket(i, kPayloadLength);
-      RtpPacketToSend rtp_packet(nullptr);
-      rtp_packet.Parse(packet->data);
+      RtpPacketToSend rtp_packet =
+          packet_generator.NextPacket<RtpPacketToSend>(i, kPayloadLength);
       sender.AddPacketAndGenerateFec(rtp_packet);
     }
   }
@@ -186,10 +182,8 @@ TEST(FlexfecSenderTest, ProtectTwoFramesWithTwoFecPackets) {
   for (size_t i = 0; i < kNumFrames; ++i) {
     packet_generator.NewFrame(kNumPacketsPerFrame);
     for (size_t j = 0; j < kNumPacketsPerFrame; ++j) {
-      std::unique_ptr<AugmentedPacket> packet =
-          packet_generator.NextPacket(i, kPayloadLength);
-      RtpPacketToSend rtp_packet(nullptr);
-      rtp_packet.Parse(packet->data);
+      RtpPacketToSend rtp_packet =
+          packet_generator.NextPacket<RtpPacketToSend>(i, kPayloadLength);
       sender.AddPacketAndGenerateFec(rtp_packet);
     }
     std::vector<std::unique_ptr<RtpPacketToSend>> fec_packets =
@@ -227,7 +221,7 @@ TEST(FlexfecSenderTest, RegisterAbsoluteSendTimeRtpHeaderExtension) {
   SimulatedClock clock(kInitialSimulatedClockTime);
   const Environment env = CreateEnvironment(&clock);
   const std::vector<RtpExtension> kRtpHeaderExtensions{
-      {RtpExtension::kAbsSendTimeUri, 1}};
+      {RtpExtension::kAbsSendTimeUri, RtpHeaderExtensionId(1)}};
   FlexfecSender sender(env, kFlexfecPayloadType, kFlexfecSsrc, kMediaSsrc,
                        kNoMid, kRtpHeaderExtensions, kNoRtpHeaderExtensionSizes,
                        nullptr );
