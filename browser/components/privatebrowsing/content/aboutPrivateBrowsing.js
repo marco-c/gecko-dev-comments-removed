@@ -133,13 +133,25 @@ async function renderPromo({
 
 
 
+
+
+
+
+
 async function resolvePromoText(value) {
   if (!value) {
     return "";
   }
   const fluentId = value.replace(/^fluent:/, "");
   if (fluentId !== value) {
-    return document.l10n.formatValue(fluentId);
+    try {
+      return (await document.l10n.formatValue(fluentId)) ?? "";
+    } catch (e) {
+      
+      
+      console.error(e);
+      return "";
+    }
   }
   return value;
 }

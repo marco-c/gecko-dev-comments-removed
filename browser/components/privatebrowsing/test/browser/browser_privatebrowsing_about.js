@@ -138,21 +138,50 @@ add_task(async function test_search_icon_legacy() {
 
 
 
+
 add_task(async function test_search_icon() {
   let { win, tab } = await openAboutPrivateBrowsing();
 
-  await SpecialPowers.spawn(tab, [], async function () {
-    let handoffUI = content.document.querySelector("content-search-handoff-ui");
-    let btn = handoffUI.shadowRoot.querySelector(".search-handoff-button");
-    await handoffUI.updateComplete;
+  await SpecialPowers.spawn(
+    tab,
+    [isNovaEnabled()],
+    async function (novaEnabled) {
+      let handoffUI = content.document.querySelector(
+        "content-search-handoff-ui"
+      );
+      let btn = handoffUI.shadowRoot.querySelector(".search-handoff-button");
+      await handoffUI.updateComplete;
 
-    let computedStyle = content.window.getComputedStyle(btn);
-    is(
-      computedStyle.backgroundImage,
-      `url("chrome://global/skin/icons/search-glass.svg")`,
-      "Got the searchglass icon"
-    );
-  });
+      let computedStyle = content.window.getComputedStyle(btn);
+
+      const searchGlass = `url("chrome://global/skin/icons/search-glass.svg")`;
+
+      if (!novaEnabled) {
+        is(
+          computedStyle.backgroundImage,
+          searchGlass,
+          "Got the searchglass icon"
+        );
+        return;
+      }
+
+      
+      
+      await ContentTaskUtils.waitForCondition(
+        () =>
+          content.window
+            .getComputedStyle(btn)
+            .backgroundImage.startsWith("url("),
+        "Search icon should get set."
+      );
+      let bg = content.window.getComputedStyle(btn).backgroundImage;
+      isnot(bg, searchGlass, "Nova does not pin the searchglass icon");
+      ok(
+        /^url\("(blob:|chrome:)/.test(bg),
+        "Handoff button shows the engine icon under Nova"
+      );
+    }
+  );
 
   await BrowserTestUtils.closeWindow(win);
 });
