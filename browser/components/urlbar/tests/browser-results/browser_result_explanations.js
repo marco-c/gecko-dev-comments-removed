@@ -49,6 +49,8 @@ add_setup(async function () {
 
 
 add_task(async function hover() {
+  hoverInput();
+
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: SEARCH_STRING,
@@ -79,6 +81,8 @@ add_task(async function hover() {
 
 
 add_task(async function selection() {
+  hoverInput();
+
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: SEARCH_STRING,
@@ -232,6 +236,8 @@ async function doTest(tests) {
   );
 
   for (let { url, formattedDate, expected } of tests) {
+    hoverInput();
+
     formatDateStub.returns(formattedDate);
 
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -384,6 +390,8 @@ add_task(async function bookmarkKeyword() {
 });
 
 async function doBookmarkTest({ url, value, providerName }) {
+  hoverInput();
+
   await UrlbarTestUtils.promiseAutocompleteResultPopup({ window, value });
 
   let details = await getDetailsByUrl(url);
@@ -409,4 +417,17 @@ async function doBookmarkTest({ url, value, providerName }) {
   });
 
   await UrlbarTestUtils.promisePopupClose(window);
+}
+
+
+
+
+
+
+function hoverInput() {
+  EventUtils.synthesizeMouseAtCenter(
+    gURLBar.inputField,
+    { type: "mouseover" },
+    window
+  );
 }
