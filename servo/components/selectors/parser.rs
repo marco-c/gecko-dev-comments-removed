@@ -34,9 +34,6 @@ use to_shmem_derive::ToShmem;
 
 pub trait PseudoElement: Sized + ToCss {
     
-    type Impl: SelectorImpl;
-
-    
     
     fn accepts_state_pseudo_classes(&self) -> bool {
         false
@@ -81,9 +78,6 @@ pub trait PseudoElement: Sized + ToCss {
 
 pub trait NonTSPseudoClass: Sized + ToCss {
     
-    type Impl: SelectorImpl;
-
-    
     fn is_active_or_hover(&self) -> bool;
 
     
@@ -93,7 +87,8 @@ pub trait NonTSPseudoClass: Sized + ToCss {
 
     fn visit<V>(&self, _visitor: &mut V) -> bool
     where
-        V: SelectorVisitor<Impl = Self::Impl>,
+        V: SelectorVisitor,
+        <V as SelectorVisitor>::Impl: SelectorImpl<NonTSPseudoClass = Self>,
     {
         true
     }
@@ -246,10 +241,10 @@ macro_rules! with_all_bounds {
 
             /// non tree-structural pseudo-classes
             /// (see: https://drafts.csswg.org/selectors/#structural-pseudos)
-            type NonTSPseudoClass: $($CommonBounds)* + NonTSPseudoClass<Impl = Self>;
+            type NonTSPseudoClass: $($CommonBounds)* + NonTSPseudoClass;
 
             /// pseudo-elements
-            type PseudoElement: $($CommonBounds)* + PseudoElement<Impl = Self>;
+            type PseudoElement: $($CommonBounds)* + PseudoElement;
 
             /// Whether attribute hashes should be collected for filtering
             /// purposes.
@@ -3789,8 +3784,6 @@ pub mod tests {
     }
 
     impl parser::PseudoElement for PseudoElement {
-        type Impl = DummySelectorImpl;
-
         fn accepts_state_pseudo_classes(&self) -> bool {
             true
         }
@@ -3813,8 +3806,6 @@ pub mod tests {
     }
 
     impl parser::NonTSPseudoClass for PseudoClass {
-        type Impl = DummySelectorImpl;
-
         #[inline]
         fn is_active_or_hover(&self) -> bool {
             matches!(*self, PseudoClass::Active | PseudoClass::Hover)
