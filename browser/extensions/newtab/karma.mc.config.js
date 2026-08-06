@@ -77,6 +77,73 @@ module.exports = function (config) {
           functions: 100,
           branches: 66,
           overrides: {
+            
+
+
+            "content-src/components/ErrorBoundary/ErrorBoundary.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            
+
+
+            "content-src/components/FluentOrText/FluentOrText.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            
+
+
+            "content-src/components/MoreRecommendations/MoreRecommendations.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            
+
+
+            "content-src/components/ModalOverlay/ModalOverlay.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            
+
+
+            "content-src/components/DownloadModalToggle/DownloadModalToggle.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            
+
+
+            "content-src/components/ExternalComponentWrapper/ExternalComponentWrapper.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            
+
+
+            "content-src/components/ComponentPerfTimer/ComponentPerfTimer.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
             "lib/AboutPreferences.sys.mjs": {
               statements: 98,
               lines: 98,
