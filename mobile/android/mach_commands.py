@@ -125,24 +125,111 @@ def android_checkstyle_REMOVED(command_context):
     return 1
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GRADLE_DEPENDENCY_PASSES = (
+    (".", ()),
+    ("mobile/android/fenix", ()),
+    ("mobile/android/focus-android", ()),
+    ("mobile/android/android-components", ()),
+)
+
+
+
+
+GECKO_GRADLE_PROJECTS = (
+    "annotations",
+    "geckoview",
+    "geckoview_example",
+    "messaging_example",
+    "port_messaging_example",
+    "test_runner",
+)
+
+
+
+
+DEPENDENCY_INVENTORY = "verification-metadata.dryrun.xml"
+DEPENDENCY_INVENTORY_DIR = "dependency-inventories"
+
+
+
+
+ENUMERATION_FLAGS = [
+    "--no-configuration-cache",
+    "--write-verification-metadata",
+    "sha256",
+    "--dry-run",
+]
+
+
 @SubCommand(
     "android",
     "gradle-dependencies",
     """Collect Android Gradle dependencies.
     See http://firefox-source-docs.mozilla.org/build/buildsystem/toolchains.html#firefox-for-android-with-gradle""",  
 )
+@CommandArgument(
+    "--gecko-only",
+    action="store_true",
+    help="Only enumerate the Gecko-side projects of the top-level build, for "
+    "the geckoview-lite artifact.",
+)
 @CommandArgument("args", nargs=argparse.REMAINDER)
-def android_gradle_dependencies(command_context, args):
+def android_gradle_dependencies(command_context, gecko_only, args):
+    from pathlib import Path
+
+    passes = ((".", GECKO_GRADLE_PROJECTS),) if gecko_only else GRADLE_DEPENDENCY_PASSES
+
+    topsrcdir = Path(command_context.topsrcdir)
     
     
-    
-    gradle(
-        command_context,
-        command_context.substs["GRADLE_ANDROID_DEPENDENCIES_TASKS"]
-        + ["--continue"]
-        + args,
-        verbose=True,
-    )
+    inventories = topsrcdir / "gradle" / DEPENDENCY_INVENTORY_DIR
+    if inventories.exists():
+        shutil.rmtree(inventories)
+    inventories.mkdir(parents=True)
+
+    for root, projects in passes:
+        
+        inventory = topsrcdir / root / "gradle" / DEPENDENCY_INVENTORY
+        inventory.unlink(missing_ok=True)
+
+        tasks = [f":{project}:help" for project in projects] or ["help"]
+        ret = gradle(
+            command_context,
+            tasks + ENUMERATION_FLAGS + args,
+            verbose=True,
+            topsrcdir=str(topsrcdir / root),
+        )
+        if ret:
+            return ret
+
+        if not inventory.is_file():
+            command_context.log(
+                logging.ERROR,
+                "gradle-dependencies",
+                {"root": root, "inventory": str(inventory)},
+                "The enumeration pass for {root} wrote no {inventory}. Is "
+                "--write-verification-metadata still in ENUMERATION_FLAGS?",
+            )
+            return 1
+
+        
+        
+        name = "top-level" if root == "." else root.replace("/", "-")
+        shutil.copyfile(inventory, inventories / f"{name}.xml")
 
     return 0
 
