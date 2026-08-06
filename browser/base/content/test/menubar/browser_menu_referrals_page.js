@@ -2,6 +2,11 @@
 
 "use strict";
 
+registerCleanupFunction(() => {
+  Services.prefs.unlockPref("browser.referrals.code");
+  Services.prefs.clearUserPref("browser.referrals.code");
+});
+
 add_task(async function test_applicationMenu_referralsPage() {
   
   Services.prefs.setBoolPref("browser.referrals.enabled", true);
