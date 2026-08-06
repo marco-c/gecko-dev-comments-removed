@@ -122,10 +122,10 @@ void NativeKeyBindings::Init(NativeKeyBindingsType aType) {
   SEL_TO_COMMAND(moveForwardAndModifySelection:, Command::SelectCharNext);
   SEL_TO_COMMAND(moveLeft:, Command::CharPrevious);
   SEL_TO_COMMAND(moveLeftAndModifySelection:, Command::SelectCharPrevious);
-  SEL_TO_COMMAND(moveParagraphBackwardAndModifySelection:,
-                 Command::SelectBeginParagraph);
-  SEL_TO_COMMAND(moveParagraphForwardAndModifySelection:,
-                 Command::SelectEndParagraph);
+  
+  
+  
+  
   SEL_TO_COMMAND(moveRight:, Command::CharNext);
   SEL_TO_COMMAND(moveRightAndModifySelection:, Command::SelectCharNext);
   SEL_TO_COMMAND(moveToBeginningOfDocument:, Command::MoveTop);
@@ -307,6 +307,23 @@ void NativeKeyBindings::AppendEditCommandsForSelector(
     
     aCommands.AppendElement(static_cast<CommandInt>(Command::WordPrevious));
     aCommands.AppendElement(static_cast<CommandInt>(Command::SelectWordNext));
+  } else if (aSelector == ToObjcSelectorPtr(@selector(
+                              moveParagraphBackwardAndModifySelection:))) {
+    
+    
+    
+    
+    aCommands.AppendElement(
+        static_cast<CommandInt>(Command::SelectCharPrevious));
+    aCommands.AppendElement(
+        static_cast<CommandInt>(Command::SelectBeginParagraph));
+  } else if (aSelector == ToObjcSelectorPtr(@selector(
+                              moveParagraphForwardAndModifySelection:))) {
+    
+    
+    aCommands.AppendElement(static_cast<CommandInt>(Command::SelectCharNext));
+    aCommands.AppendElement(
+        static_cast<CommandInt>(Command::SelectEndParagraph));
   }
 }
 
