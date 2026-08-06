@@ -882,8 +882,27 @@ bool DisplayPortUtils::MaybeCreateDisplayPortInFirstScrollFrameEncountered(
     nsIFrame* aFrame, nsDisplayListBuilder* aBuilder) {
   
   
+  
+  
+  
+  
+  
+  
+  
   if (XRE_IsParentProcess() && aFrame->GetContent() &&
       aFrame->GetContent()->GetID() == nsGkAtoms::tabbrowser_arrowscrollbox) {
+    for (nsIFrame* child : aFrame->PrincipalChildList()) {
+      if (!child->IsScrollContainerOrSubclass()) {
+        continue;
+      }
+      ScrollContainerFrame* sf = static_cast<ScrollContainerFrame*>(child);
+      if (MaybeCreateDisplayPort(aBuilder, sf, RepaintMode::Repaint)) {
+        
+        sf->SetIsFirstScrollableFrameSequenceNumber(
+            Some(nsDisplayListBuilder::GetPaintSequenceNumber()));
+        return true;
+      }
+    }
     return false;
   }
   if (aFrame->IsScrollContainerOrSubclass()) {
