@@ -7,6 +7,7 @@
 #include "vm/Iteration.h"
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
@@ -98,6 +99,9 @@ class PropertyEnumerator {
   bool enumeratingProtoChain_ = false;
   bool forObjectKeys_ = false;
 
+  bool hasOwnDenseElements_ = false;
+  bool hasDenseElementsFromProto_ = false;
+
   enum class IndicesState {
     
     
@@ -143,6 +147,9 @@ class PropertyEnumerator {
   uint32_t ownPropertyCount() const { return ownPropertyCount_; }
 
   void setForObjectKeys(bool value) { forObjectKeys_ = value; }
+
+  bool hasOwnDenseElements() const { return hasOwnDenseElements_; }
+  bool hasDenseElementsFromProto() const { return hasDenseElementsFromProto_; }
 
  private:
   template <bool CheckForDuplicates>
@@ -317,6 +324,11 @@ bool PropertyEnumerator::enumerateNativeProperties(JSContext* cx) {
         if (!enumerate<CheckForDuplicates>(cx, PropertyKey::Int(i),
                                             true, index)) {
           return false;
+        }
+        if (enumeratingProtoChain_) {
+          hasDenseElementsFromProto_ = true;
+        } else {
+          hasOwnDenseElements_ = true;
         }
       }
     }
@@ -639,6 +651,11 @@ bool PropertyEnumerator::snapshot(JSContext* cx) {
   bool checkForDuplicates = !(flags_ & JSITER_OWNONLY);
 
   do {
+    if (enumeratingProtoChain_ &&
+        ObjectMayHaveExtraIndexedOwnProperties(obj_)) {
+      hasDenseElementsFromProto_ = true;
+    }
+
     if (obj_->getClass()->getNewEnumerate()) {
       markIndicesUnsupported();
 
@@ -1248,6 +1265,7 @@ static PropertyIteratorObject* GetIteratorImpl(JSContext* cx, HandleObject obj,
   bool supportsIndices = false;
   uint32_t ownPropertyCount = 0;
 
+  mozilla::DebugOnly<bool> hasIndexedPropertiesFromProto = false;
   if (MOZ_UNLIKELY(obj->is<ProxyObject>())) {
     if (!Proxy::enumerate(cx, obj, &keys)) {
       return nullptr;
@@ -1262,27 +1280,31 @@ static PropertyIteratorObject* GetIteratorImpl(JSContext* cx, HandleObject obj,
     ownPropertyCount = enumerator.ownPropertyCount();
     MOZ_ASSERT_IF(wantIndices && supportsIndices,
                   keys.length() == indices.length());
-  }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (obj->is<NativeObject>() &&
-      obj->as<NativeObject>().getDenseInitializedLength() > 0) {
-    if (forObjectKeys) {
-      supportsIndices = false;
-    } else {
-      obj->as<NativeObject>().markDenseElementsMaybeInIteration();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (obj->is<NativeObject>()) {
+      if (enumerator.hasOwnDenseElements()) {
+        if (forObjectKeys) {
+          supportsIndices = false;
+        } else {
+          obj->as<NativeObject>().markDenseElementsMaybeInIteration();
+        }
+      }
+      if (enumerator.hasDenseElementsFromProto()) {
+        hasIndexedPropertiesFromProto = true;
+      }
     }
   }
 
@@ -1304,10 +1326,8 @@ static PropertyIteratorObject* GetIteratorImpl(JSContext* cx, HandleObject obj,
       IndicesAreValid(&obj->as<NativeObject>(), iterobj->getNativeIterator()));
 
 #ifdef DEBUG
-  if (obj->is<NativeObject>()) {
-    if (PrototypeMayHaveIndexedProperties(&obj->as<NativeObject>())) {
-      iterobj->getNativeIterator()->setMaybeHasIndexedPropertiesFromProto();
-    }
+  if (hasIndexedPropertiesFromProto) {
+    iterobj->getNativeIterator()->setMaybeHasIndexedPropertiesFromProto();
   }
 #endif
 
