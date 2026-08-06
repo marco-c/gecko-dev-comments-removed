@@ -90,6 +90,17 @@ const MOCK_RS_RECORDS = [
   }))
   
   
+  .map(record =>
+    record.feature === "memories-relevant-context"
+      ? {
+          ...record,
+          prompts:
+            "# Existing Memories\n\n## Existing Memories\n{relevantMemoriesList}",
+        }
+      : record
+  )
+  
+  
   .concat([
     {
       kind: "params",
