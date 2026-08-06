@@ -147,7 +147,9 @@ static void GenerateCmykPixel(bool aInverted, SurfaceFormat aDstFormat,
                               uint8_t aC, uint8_t aM, uint8_t aY, uint8_t aK,
                               uint8_t* aDst) {
   uint32_t iC = aC, iM = aM, iY = aY, iK = aK;
-  if (aInverted) {
+
+  
+  if (!aInverted) {
     iC = 255 - iC;
     iM = 255 - iM;
     iY = 255 - iY;
@@ -967,7 +969,9 @@ TEST(Moz2D, SwizzleRow)
 
 TEST(Moz2D, SwizzleRowCmyk)
 {
-  const uint8_t in_cmyk[10 * 4] = {
+  
+  
+  const uint8_t in_inverted_cmyk[10 * 4] = {
       200, 50,  10,  255,  
       200, 50,  10,  0,    
       255, 255, 255, 255,  
@@ -982,7 +986,7 @@ TEST(Moz2D, SwizzleRowCmyk)
   uint8_t out[10 * 4];
 
   
-  const uint8_t check_bgrx[10 * 4] = {
+  const uint8_t check_inverted_bgrx[10 * 4] = {
        10, 50, 200, 255,  0,  0,  0, 255, 255, 255, 255, 255,
         0,  0,   0, 255, 64, 64, 64, 255,   0,   0, 255, 255,
       255,  0,   0, 255,  1,  1,  1, 255,   1,   1,   1, 255,
@@ -990,7 +994,7 @@ TEST(Moz2D, SwizzleRowCmyk)
   };
 
   
-  const uint8_t check_inverted_bgrx[10 * 4] = {
+  const uint8_t check_bgrx[10 * 4] = {
         0,   0,   0, 255, 245, 205,  55, 255, 0,  0,   0, 255,
       255, 255, 255, 255,  63,  63,  63, 255, 0,  0,   0, 255,
         0,   0,   0, 255, 126, 126, 126, 255, 0,  0,   0, 255,
@@ -1002,7 +1006,7 @@ TEST(Moz2D, SwizzleRowCmyk)
     SwizzleRowFn func = RowFnFor(SwizzleOp::Copy, SurfaceFormat::CMYK,
                                  SurfaceFormat::B8G8R8X8, arch);
     if (func) {
-      func(in_cmyk, out, 10);
+      func(in_inverted_cmyk, out, 10);
       EXPECT_TRUE(ArrayEqual(out, check_bgrx));
     } else {
       EXPECT_NE(arch, SwizzleArch::eAny);
@@ -1012,7 +1016,7 @@ TEST(Moz2D, SwizzleRowCmyk)
     func = RowFnFor(SwizzleOp::Copy, SurfaceFormat::InvertedCMYK,
                     SurfaceFormat::B8G8R8X8, arch);
     if (func) {
-      func(in_cmyk, out, 10);
+      func(in_inverted_cmyk, out, 10);
       EXPECT_TRUE(ArrayEqual(out, check_inverted_bgrx));
     } else {
       EXPECT_NE(arch, SwizzleArch::eAny);

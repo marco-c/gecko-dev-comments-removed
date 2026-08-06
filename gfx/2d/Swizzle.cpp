@@ -1212,36 +1212,38 @@ static void SwizzleCmykRowFallback(const uint8_t* aSrc, uint8_t* aDst,
     
     
     uint32_t color = *reinterpret_cast<const uint32_t*>(aSrc);
-    if constexpr (aInverted) {
+
+    
+    if constexpr (!aInverted) {
       color = ~color;
     }
 
-    uint32_t k = color >> 24;
+    uint32_t ik = color >> 24;
 
     
-    uint32_t cy = color & 0x00FF00FF;
+    uint32_t icy = color & 0x00FF00FF;
     
     if constexpr (aSwapRB) {
-      cy = (cy >> 16) | (cy << 16);
+      icy = (icy >> 16) | (icy << 16);
     }
     
     
     
     
     
-    cy = cy * k;
-    cy = (cy + ((cy >> 8) & 0x00FF00FF) + 0x00010001) & 0xFF00FF00;
+    icy = icy * ik;
+    icy = (icy + ((icy >> 8) & 0x00FF00FF) + 0x00010001) & 0xFF00FF00;
 
     
-    uint32_t mk = (color >> 8) & 0x00FF00FF;
-    mk = mk * k;
-    mk = (mk + ((mk >> 8) & 0x00FF00FF) + 0x00010001) & 0xFF00FF00;
+    uint32_t imk = (color >> 8) & 0x00FF00FF;
+    imk = imk * ik;
+    imk = (imk + ((imk >> 8) & 0x00FF00FF) + 0x00010001) & 0xFF00FF00;
 
     
     
     
-    *reinterpret_cast<uint32_t*>(aDst) = (cy >> (8 - aDstRGBShift)) |
-                                         ((mk & 0x0000FF00) << aDstRGBShift) |
+    *reinterpret_cast<uint32_t*>(aDst) = (icy >> (8 - aDstRGBShift)) |
+                                         ((imk & 0x0000FF00) << aDstRGBShift) |
                                          (0xFF << aDstAShift);
 
     aSrc += 4;

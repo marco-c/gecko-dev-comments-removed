@@ -198,7 +198,7 @@ static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> SwizzleCmykVector_SIMD(
     const xsimd::batch<uint8_t, Arch>& aSrc) {
   xsimd::batch<uint8_t, Arch> src;
   
-  if constexpr (aInverted) {
+  if constexpr (!aInverted) {
     src = ~aSrc;
   } else {
     src = aSrc;
@@ -206,22 +206,22 @@ static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> SwizzleCmykVector_SIMD(
   
   auto px16 = xsimd::bitwise_cast<uint16_t>(src);
   const xsimd::batch<uint16_t, Arch> lowByte(0x00FF);
-  auto cy = px16 & lowByte;
+  auto icy = px16 & lowByte;
   
-  auto mk = px16 >> 8;
-  auto k16 = ExtractAlpha_SIMD<Arch>(src, mk);
+  auto imk = px16 >> 8;
+  auto ik16 = ExtractAlpha_SIMD<Arch>(src, imk);
   
   
-  cy = cy * k16;
-  cy = (cy + (cy >> 8) + xsimd::batch<uint16_t, Arch>(1)) >> 8;
-  mk = mk * k16;
-  mk = (mk + (mk >> 8) + xsimd::batch<uint16_t, Arch>(1)) >> 8;
+  icy = icy * ik16;
+  icy = (icy + (icy >> 8) + xsimd::batch<uint16_t, Arch>(1)) >> 8;
+  imk = imk * ik16;
+  imk = (imk + (imk >> 8) + xsimd::batch<uint16_t, Arch>(1)) >> 8;
   
   if constexpr (aSwapRB) {
-    cy = SwapRB16_SIMD<Arch>(cy);
+    icy = SwapRB16_SIMD<Arch>(icy);
   }
   
-  return OpaqueAlpha_SIMD<Arch>(xsimd::bitwise_cast<uint8_t>(cy | (mk << 8)));
+  return OpaqueAlpha_SIMD<Arch>(xsimd::bitwise_cast<uint8_t>(icy | (imk << 8)));
 }
 
 template <class Arch, bool aSwapRB, bool aInverted>
