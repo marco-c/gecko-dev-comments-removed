@@ -27,6 +27,10 @@
 
 
 
+
+
+
+
 from __future__ import print_function
 import contextlib
 import os
@@ -96,6 +100,14 @@ def optimized_build():
 
 def set_osmesa_env(bin_path):
     """Set proper LD_LIBRARY_PATH and DRIVE for software rendering on Linux and OSX"""
+    
+    
+    
+    
+    
+    cache_dir = path.abspath(path.join(bin_path, 'mesa-shader-cache'))
+    os.environ.setdefault("MESA_SHADER_CACHE_DIR", cache_dir)
+    os.environ.setdefault("MESA_GLSL_CACHE_DIR", cache_dir)
     base = find_dep_path_newest('osmesa-src', bin_path)
     osmesa_path = path.join(base, "out", "mesa", "src", "gallium", "targets", "osmesa")
     os.environ["GALLIUM_DRIVER"] = "llvmpipe"
