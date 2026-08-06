@@ -5409,12 +5409,8 @@ void nsGlobalWindowOuter::ResizeByOuter(int32_t aWidthDif, int32_t aHeightDif,
   auto scale = CSSToDevScaleForBaseWindow(treeOwnerAsWin);
   CSSIntSize cssSize = RoundedToInt(size / scale);
 
-  
-  
-  cssSize.width = int32_t(
-      std::clamp<int64_t>(int64_t(cssSize.width) + aWidthDif, 0, INT32_MAX));
-  cssSize.height = int32_t(
-      std::clamp<int64_t>(int64_t(cssSize.height) + aHeightDif, 0, INT32_MAX));
+  cssSize.width += aWidthDif;
+  cssSize.height += aHeightDif;
 
   if (mBrowsingContext->GetIsDocumentPiP()) {
     if (Maybe<CSSIntRect> screen =
