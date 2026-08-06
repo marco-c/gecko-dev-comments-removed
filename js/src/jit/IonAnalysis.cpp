@@ -14,7 +14,6 @@
 #include "jit/DominatorTree.h"
 #include "jit/MIRGenerator.h"
 #include "jit/MIRGraph.h"
-#include "js/HashTable.h"
 
 #include "vm/BytecodeUtil-inl.h"
 
@@ -2486,83 +2485,47 @@ static MObjectToIterator* FindObjectToIteratorUse(MDefinition* ins) {
   return nullptr;
 }
 
-using IteratorMoreSet =
-    InlineSet<MIteratorMore*, 8, DefaultHasher<MIteratorMore*>,
-              BackgroundSystemAllocPolicy>;
-
-static bool FindSafeIteratorMoreInstructions(MIRGraph& graph,
-                                             IteratorMoreSet& safeIterMores) {
+static bool IteratorMoreIsUsedInsideLoop(MInstruction* use,
+                                         MIteratorMore* iterMore) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
 
-  using InstructionVector =
-      Vector<MInstruction*, 8, BackgroundSystemAllocPolicy>;
-
-  auto hasDominatingIteratorEnd = [](const InstructionVector& iteratorEnds,
-                                     MInstruction* access) {
-    for (MInstruction* iteratorEnd : iteratorEnds) {
-      if (iteratorEnd->dominates(access)) {
+  MBasicBlock* block = use->block();
+  MInstructionReverseIterator ins = block->rbegin(use);
+  while (true) {
+    for (; ins != block->rend(); ins++) {
+      if (*ins == iterMore) {
         return true;
       }
-    }
-    return false;
-  };
-
-  for (MBasicBlockIterator block(graph.begin()); block != graph.end();
-       block++) {
-    for (MInstructionIterator ins(block->begin()); ins != block->end(); ins++) {
-      if (!ins->isObjectToIterator()) {
-        continue;
-      }
-
-      InstructionVector iteratorMores;
-      InstructionVector iteratorEnds;
-      bool hasPhiUse = false;
-
-      for (MUseDefIterator uses(*ins); uses; uses++) {
-        MDefinition* def = uses.def();
-        if (def->isIteratorMore()) {
-          if (!iteratorMores.append(def->toInstruction())) {
-            return false;
-          }
-        } else if (def->isIteratorEnd()) {
-          if (!iteratorEnds.append(def->toInstruction())) {
-            return false;
-          }
-        } else if (def->isLoadIteratorElement() ||
-                   def->isObjectKeysFromIterator() || def->isIteratorLength() ||
-                   def->isPostWriteBarrier() || def->isStoreElement()) {
-          continue;
-        } else if (def->isPhi()) {
-          hasPhiUse = true;
-          break;
-        } else {
-          MOZ_CRASH("Unexpected ObjectToIterator use");
-        }
-      }
-      if (hasPhiUse) {
-        continue;
-      }
-
-      for (MInstruction* iterMore : iteratorMores) {
-        bool hasUnsafeUse = false;
-        for (MUseDefIterator iterMoreUses(iterMore); iterMoreUses;
-             iterMoreUses++) {
-          MDefinition* def = iterMoreUses.def();
-          if (def->isInstruction() &&
-              hasDominatingIteratorEnd(iteratorEnds, def->toInstruction())) {
-            hasUnsafeUse = true;
-            break;
-          }
-        }
-        if (!hasUnsafeUse && !safeIterMores.put(iterMore->toIteratorMore())) {
-          return false;
-        }
+      if (ins->isIteratorEnd()) {
+        return false;
       }
     }
+
+    
+    
+    MOZ_RELEASE_ASSERT(block->numPredecessors() > 0);
+    block = block->getPredecessor(0);
+    ins = block->rbegin();
   }
-
-  return true;
 }
 
 bool jit::OptimizeIteratorIndices(const MIRGenerator* mir, MIRGraph& graph) {
@@ -2572,11 +2535,6 @@ bool jit::OptimizeIteratorIndices(const MIRGenerator* mir, MIRGraph& graph) {
   auto hasNoDominatorInfo = [&](MBasicBlock* block) {
     return block->id() >= numInitialBlocks;
   };
-
-  IteratorMoreSet safeIteratorMores;
-  if (!FindSafeIteratorMoreInstructions(graph, safeIteratorMores)) {
-    return false;
-  }
 
   for (ReversePostorderIterator blockIter = graph.rpoBegin();
        blockIter != graph.rpoEnd();) {
@@ -2669,7 +2627,6 @@ bool jit::OptimizeIteratorIndices(const MIRGenerator* mir, MIRGraph& graph) {
       MDefinition* iterElementIndex = nullptr;
       if (idVal->isIteratorMore()) {
         auto* iterNext = idVal->toIteratorMore();
-
         if (!iterNext->iterator()->isObjectToIterator()) {
           continue;
         }
@@ -2679,7 +2636,7 @@ bool jit::OptimizeIteratorIndices(const MIRGenerator* mir, MIRGraph& graph) {
             SkipIterObjectUnbox(receiver)) {
           continue;
         }
-        if (!safeIteratorMores.has(iterNext)) {
+        if (!IteratorMoreIsUsedInsideLoop(ins, iterNext)) {
           continue;
         }
       } else if (supportObjectKeys && SkipBox(idVal)->isLoadIteratorElement()) {
