@@ -61,6 +61,7 @@
 #include "mozilla/layout/RemoteLayerTreeOwner.h"
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/net/NeckoChild.h"
+#include "mozilla/widget/Screen.h"
 #include "nsCOMPtr.h"
 #include "nsContentPermissionHelper.h"
 #include "nsContentUtils.h"
@@ -1091,6 +1092,27 @@ mozilla::ipc::IPCResult BrowserParent::RecvSetDimensions(
     aRequest.mY.apply(rescaleFunc);
     aRequest.mWidth.apply(rescaleFunc);
     aRequest.mHeight.apply(rescaleFunc);
+  }
+
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIWidget> mainWidget;
+  treeOwnerAsWin->GetMainWidget(getter_AddRefs(mainWidget));
+  if (mainWidget) {
+    if (RefPtr<widget::Screen> screen = mainWidget->GetWidgetScreen()) {
+      const LayoutDeviceIntSize availSize = screen->GetAvailRect().Size();
+      auto clampTo = [](Maybe<LayoutDeviceIntCoord>& aValue, int32_t aMax) {
+        if (aValue) {
+          *aValue = std::min<int32_t>(*aValue, aMax);
+        }
+      };
+      clampTo(aRequest.mWidth, 2 * availSize.width);
+      clampTo(aRequest.mHeight, 2 * availSize.height);
+    }
   }
 
   
