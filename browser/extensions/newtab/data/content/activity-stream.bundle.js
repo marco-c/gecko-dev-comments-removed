@@ -9508,6 +9508,47 @@ function TopSitesHoverCard({
 
 
 
+
+function Badge({
+  link
+}) {
+  const enabled = (0,external_ReactRedux_namespaceObject.useSelector)(isWebNotificationsEnabled);
+  const count = (0,external_ReactRedux_namespaceObject.useSelector)(state => getNotificationIdsForUrl(state, link?.url).length);
+  if (!enabled || !count) {
+    return null;
+  }
+  return external_React_default().createElement("div", {
+    className: "top-site-web-notification"
+  }, count);
+}
+
+
+
+
+
+
+
+
+
+function TopSiteWebNotification({
+  link
+}) {
+  const store = external_React_default().useContext(external_ReactRedux_namespaceObject.ReactReduxContext);
+  if (!store) {
+    return null;
+  }
+  return external_React_default().createElement(Badge, {
+    link: link
+  });
+}
+
+;
+
+
+
+
+
+
 const TopSiteImpressionWrapper_VISIBLE = "visible";
 const TopSiteImpressionWrapper_VISIBILITY_CHANGE_EVENT = "visibilitychange";
 
@@ -9626,6 +9667,7 @@ TopSiteImpressionWrapper.defaultProps = {
 };
 ;
 function TopSite_extends() { return TopSite_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, TopSite_extends.apply(null, arguments); }
+
 
 
 
@@ -9981,6 +10023,8 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       className: "tile",
       "aria-hidden": true
     }, external_React_default().createElement("div", {
+      className: "icon-stack"
+    }, external_React_default().createElement("div", {
       className: selectedColor ? "icon-wrapper letter-fallback" : "icon-wrapper",
       "data-fallback": letterFallback,
       style: selectedColor ? {
@@ -9993,6 +10037,8 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       className: "top-site-icon default-icon",
       "data-fallback": smallFaviconStyle ? "" : letterFallback,
       style: smallFaviconStyle
+    })), external_React_default().createElement(TopSiteWebNotification, {
+      link: link
     }))), link.isPinned && external_React_default().createElement("div", {
       className: "icon icon-pin-small"
     }), external_React_default().createElement("div", {
@@ -27197,6 +27243,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       pocketRegion,
       mayHaveInferredPersonalization,
       mayHaveWeather,
+      mayHaveWebNotifications,
       mayHaveWidgets,
       mayHaveTimerWidget,
       mayHaveListsWidget,
@@ -27232,7 +27279,8 @@ class ContentSection extends (external_React_default()).PureComponent {
       pocketEnabled,
       weatherEnabled,
       showInferredPersonalizationEnabled,
-      topSitesRowsCount
+      topSitesRowsCount,
+      webNotificationsEnabled
     } = enabledSections;
     const {
       timerEnabled,
@@ -27428,7 +27476,15 @@ class ContentSection extends (external_React_default()).PureComponent {
       value: String(num),
       "data-l10n-id": "newtab-custom-row-selector2",
       "data-l10n-args": `{"num": ${num}}`
-    })))))))),
+    })))), mayHaveWebNotifications && external_React_default().createElement("div", {
+      className: "more-information"
+    }, external_React_default().createElement("moz-toggle", {
+      id: "web-notifications-toggle",
+      pressed: webNotificationsEnabled || null,
+      ontoggle: this.onPreferenceSelect,
+      "data-preference": "showWebNotifications",
+      "data-l10n-id": "newtab-custom-web-notifications-toggle"
+    })))))),
     
     novaEnabled && mayHaveWidgets && external_React_default().createElement("span", {
       className: "divider",
@@ -27712,6 +27768,7 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       mayHaveTopicSections: this.props.mayHaveTopicSections,
       mayHaveInferredPersonalization: this.props.mayHaveInferredPersonalization,
       mayHaveWeather: this.props.mayHaveWeather,
+      mayHaveWebNotifications: this.props.mayHaveWebNotifications,
       mayHaveWidgets: this.props.mayHaveWidgets,
       mayHaveWeatherForecast: this.props.mayHaveWeatherForecast,
       weatherDisplay: this.props.weatherDisplay,
@@ -30026,6 +30083,7 @@ class BaseContent extends (external_React_default()).PureComponent {
       pocketEnabled: prefs["feeds.section.topstories"],
       showInferredPersonalizationEnabled: prefs[Base_PREF_INFERRED_PERSONALIZATION_USER],
       topSitesRowsCount: prefs.topSitesRows,
+      webNotificationsEnabled: prefs.showWebNotifications,
       weatherEnabled: novaEnabled ? prefs["widgets.weather.enabled"] : prefs.showWeather
     };
     const pocketRegion = prefs["feeds.system.topstories"];
@@ -30034,6 +30092,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     
     
     const mayHaveWeather = prefs["system.showWeather"] || prefs.trainhopConfig?.weather?.enabled || prefs.trainhopConfig?.widgetsSettings?.weatherVisible;
+    const mayHaveWebNotifications = prefs["system.showWebNotifications"];
     const supportUrl = prefs["support.url"];
 
     
@@ -30189,6 +30248,7 @@ class BaseContent extends (external_React_default()).PureComponent {
         mayHaveTopicSections: mayHavePersonalizedTopicSections,
         mayHaveInferredPersonalization: mayHaveInferredPersonalization,
         mayHaveWeather: mayHaveWeather,
+        mayHaveWebNotifications: mayHaveWebNotifications,
         mayHaveWidgets: mayHaveWidgets,
         mayHaveTimerWidget: mayHaveTimerWidget,
         mayHaveListsWidget: mayHaveListsWidget,
@@ -30285,6 +30345,7 @@ class BaseContent extends (external_React_default()).PureComponent {
       mayHaveTopicSections: mayHavePersonalizedTopicSections,
       mayHaveInferredPersonalization: mayHaveInferredPersonalization,
       mayHaveWeather: mayHaveWeather,
+      mayHaveWebNotifications: mayHaveWebNotifications,
       mayHaveWidgets: mayHaveWidgets,
       mayHaveTimerWidget: mayHaveTimerWidget,
       mayHaveListsWidget: mayHaveListsWidget,
