@@ -1094,6 +1094,27 @@ mozilla::ipc::IPCResult BrowserParent::RecvSetDimensions(
   }
 
   
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIWidget> mainWidget;
+  treeOwnerAsWin->GetMainWidget(getter_AddRefs(mainWidget));
+  if (mainWidget) {
+    if (RefPtr<widget::Screen> screen = mainWidget->GetWidgetScreen()) {
+      const LayoutDeviceIntSize availSize = screen->GetAvailRect().Size();
+      auto clampTo = [](Maybe<LayoutDeviceIntCoord>& aValue, int32_t aMax) {
+        if (aValue) {
+          *aValue = std::min<int32_t>(*aValue, aMax);
+        }
+      };
+      clampTo(aRequest.mWidth, 2 * availSize.width);
+      clampTo(aRequest.mHeight, 2 * availSize.height);
+    }
+  }
+
+  
   nsCOMPtr<nsIWebBrowserChrome> webBrowserChrome = do_GetInterface(treeOwner);
   NS_ENSURE_TRUE(webBrowserChrome, IPC_OK());
   webBrowserChrome->SetDimensions(std::move(aRequest));
