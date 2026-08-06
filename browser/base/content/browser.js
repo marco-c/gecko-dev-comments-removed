@@ -2251,6 +2251,7 @@ var XULBrowserWindow = {
     
     if (
       !isSameDocument &&
+      !aIsSimulated &&
       !Object.getOwnPropertyDescriptor(window, "gTrustPanelHandler").get
     ) {
       gTrustPanelHandler.resetIconForNavigation(aLocationURI);
