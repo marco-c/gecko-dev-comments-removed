@@ -90,8 +90,7 @@ add_task(async () => {
   
   checkHitResult(
     hitTest({ x: 50, y: 50 }, popup),
-    
-    APZHitResultFlags.VISIBLE | APZHitResultFlags.APZ_AWARE_LISTENERS,
+    APZHitResultFlags.VISIBLE,
     SpecialPowers.DOMWindowUtils.getViewId(popup),
     SpecialPowers.DOMWindowUtils.getLayersId(popup),
     "`position:fixed` popup"

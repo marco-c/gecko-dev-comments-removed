@@ -16,6 +16,7 @@
     DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
     KeyboardLockUtils: "resource://gre/modules/KeyboardLockUtils.sys.mjs",
     ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
+    XPCOMUtils: "resource://gre/modules/XPCOMUtils.sys.mjs",
   });
 
   const DIRECTION_BACKWARD = -1;
@@ -814,19 +815,43 @@
   const ARIA_FOCUSED_CLASS_NAME = "tablist-keyboard-focus";
 
   class TabsBase extends MozElements.BaseControl {
+    #scrollHandler = event => {
+      if (event.detail > 0) {
+        this.advanceSelectedTab(DIRECTION_FORWARD, false, event);
+      } else {
+        this.advanceSelectedTab(DIRECTION_BACKWARD, false, event);
+      }
+      
+      
+      event.preventDefault();
+      event.stopPropagation();
+    };
+
     constructor() {
       super();
 
-      this.addEventListener("DOMMouseScroll", event => {
-        if (Services.prefs.getBoolPref("toolkit.tabbox.switchByScrolling")) {
-          if (event.detail > 0) {
-            this.advanceSelectedTab(DIRECTION_FORWARD, false, event);
-          } else {
-            this.advanceSelectedTab(DIRECTION_BACKWARD, false, event);
-          }
-          event.stopPropagation();
-        }
-      });
+      imports.XPCOMUtils.defineLazyPreferenceGetter(
+        this,
+        "switchByScrolling",
+        "toolkit.tabbox.switchByScrolling",
+        false,
+        () => this.updateWheelListeners()
+      );
+      this.updateWheelListeners();
+    }
+
+    
+
+
+
+
+
+    updateWheelListeners() {
+      if (this.switchByScrolling) {
+        this.addEventListener("DOMMouseScroll", this.#scrollHandler);
+      } else {
+        this.removeEventListener("DOMMouseScroll", this.#scrollHandler);
+      }
     }
 
     

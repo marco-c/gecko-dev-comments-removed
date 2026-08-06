@@ -67,7 +67,6 @@
       this.arrowScrollbox = document.getElementById(
         "tabbrowser-arrowscrollbox"
       );
-      this.arrowScrollbox.addEventListener("wheel", this, true);
       this.arrowScrollbox.addEventListener("underflow", this);
       this.arrowScrollbox.addEventListener("overflow", this);
       this.pinnedTabsContainer = document.getElementById(
@@ -186,6 +185,9 @@
         "browser.tabs.closeTabByDblclick",
         false
       );
+
+      
+      this.updateWheelListeners();
 
       XPCOMUtils.defineLazyPreferenceGetter(
         this,
@@ -749,11 +751,27 @@
       this.tabDragAndDrop.handle_dragleave(event);
     }
 
+    
+
+
+
     on_wheel(event) {
-      if (
-        Services.prefs.getBoolPref("toolkit.tabbox.switchByScrolling", false)
-      ) {
-        event.stopImmediatePropagation();
+      
+      
+      event.stopImmediatePropagation();
+    }
+
+    updateWheelListeners() {
+      super.updateWheelListeners();
+
+      if (!this.arrowScrollbox) {
+        
+        return;
+      }
+      if (this.switchByScrolling) {
+        this.arrowScrollbox.addEventListener("wheel", this, true);
+      } else {
+        this.arrowScrollbox.removeEventListener("wheel", this, true);
       }
     }
 

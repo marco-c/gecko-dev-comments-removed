@@ -51,31 +51,36 @@ async function scrolling_works(useVerticalTabs, uiDensity) {
     "First tab should be scrolled into view."
   );
 
+  let startPosition = arrowScrollbox.scrollPosition;
+
   
-  EventUtils.synthesizeWheel(
-    arrowScrollbox,
-    10,
-    10,
-    {
-      wheel: true,
-      deltaY: 1,
-      deltaMode: WheelEvent.DOM_DELTA_LINE,
-    },
-    win
-  );
+  
+  for (let i = 0; i < 3; i++) {
+    EventUtils.synthesizeWheel(
+      arrowScrollbox,
+      10,
+      10,
+      {
+        wheel: true,
+        deltaY: 1,
+        deltaMode: WheelEvent.DOM_DELTA_LINE,
+      },
+      win
+    );
+  }
 
   
   try {
-    await TestUtils.waitForCondition(() => {
-      return arrowScrollbox._elementFromPoint(firstPoint) != firstScrollableTab;
-    });
+    await TestUtils.waitForCondition(
+      () => arrowScrollbox.scrollPosition > startPosition
+    );
   } catch (ex) {
     Assert.ok(false, `Failed to see scroll, error: ${ex}`);
   }
-  Assert.notEqual(
-    win.gBrowser.tabs.indexOf(arrowScrollbox._elementFromPoint(firstPoint)),
-    win.gBrowser.tabs.indexOf(firstScrollableTab),
-    "First tab should be scrolled out of view."
+  Assert.greater(
+    arrowScrollbox.scrollPosition,
+    startPosition,
+    "Tab strip should have scrolled."
   );
 
   await SpecialPowers.popPrefEnv();
