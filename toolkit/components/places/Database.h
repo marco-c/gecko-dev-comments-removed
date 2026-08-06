@@ -132,8 +132,6 @@ class Database final : public nsIObserver, public nsSupportsWeakReference {
     return mMainConn;
   }
 
-  bool IsConnectionOpen() const { return !!mMainConn; }
-
   
 
 
