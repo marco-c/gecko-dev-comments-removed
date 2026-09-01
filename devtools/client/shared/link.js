@@ -34,6 +34,7 @@ function _getTopWindow() {
 
 
 
+
 exports.openDocLink = async function (url, options) {
   const top = _getTopWindow();
   if (!top) {
@@ -41,6 +42,7 @@ exports.openDocLink = async function (url, options) {
   }
   top.openWebLinkIn(url, "tab", options);
 };
+
 
 
 
@@ -68,6 +70,7 @@ exports.openContentLink = async function (url, options = {}) {
   }
   top.openWebLinkIn(url, "tab", options);
 };
+
 
 
 
