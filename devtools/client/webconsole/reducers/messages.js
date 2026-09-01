@@ -604,9 +604,17 @@ function messages(
           ...networkMessagesUpdateById,
         },
       };
-      let hasNetworkError = null;
+      let hasNetworkError = false;
+      let hasUpdatesForMessageInState = false;
       for (const message of action.messages) {
         const { id } = message;
+        
+        if (!updatedState.mutableMessagesById.has(id)) {
+          continue;
+        }
+
+        hasUpdatesForMessageInState = true;
+
         updatedState.mutableMessagesById.set(id, message);
         updatedState.networkMessagesUpdateById[id] = {
           ...(updatedState.networkMessagesUpdateById[id] || {}),
@@ -616,6 +624,12 @@ function messages(
         if (isMessageNetworkError(message)) {
           hasNetworkError = true;
         }
+      }
+
+      
+      
+      if (!hasUpdatesForMessageInState) {
+        return state;
       }
 
       
