@@ -80,7 +80,7 @@ where
     while child + 1 < heap.len() {
         
         
-        child += less_than(&heap[child + 1], &heap[child]) as usize;
+        child += usize::from(less_than(&heap[child + 1], &heap[child]));
 
         
         if !less_than(&heap[child], &heap[pos]) {

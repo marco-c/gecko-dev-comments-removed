@@ -300,11 +300,11 @@ where
     #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
         
-        size_hint::add_scalar(self.iter.size_hint(), self.top.is_some() as usize)
+        size_hint::add_scalar(self.iter.size_hint(), usize::from(self.top.is_some()))
     }
 
     fn count(self) -> usize {
-        self.iter.count() + (self.top.is_some() as usize)
+        self.iter.count() + usize::from(self.top.is_some())
     }
 
     fn last(self) -> Option<Self::Item> {
@@ -523,7 +523,7 @@ where
 }
 
 
-pub fn take_while_ref<I, F>(iter: &mut I, f: F) -> TakeWhileRef<I, F>
+pub fn take_while_ref<I, F>(iter: &mut I, f: F) -> TakeWhileRef<'_, I, F>
 where
     I: Iterator + Clone,
 {
@@ -629,7 +629,7 @@ pub trait HasCombination<I>: Sized {
 
 pub fn tuple_combinations<T, I>(iter: I) -> TupleCombinations<I, T>
 where
-    I: Iterator + Clone,
+    I: Iterator,
     I::Item: Clone,
     T: HasCombination<I>,
 {

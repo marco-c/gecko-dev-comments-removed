@@ -1,6 +1,5 @@
 
 
-
 use std::cmp;
 
 
@@ -85,6 +84,7 @@ pub fn min(a: SizeHint, b: SizeHint) -> SizeHint {
     };
     (lower, upper)
 }
+
 
 #[test]
 fn mul_size_hints() {

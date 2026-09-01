@@ -47,44 +47,46 @@ where
 
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Position {
+pub struct Position {
     
-    First,
+    pub is_first: bool,
     
-    Middle,
+    pub is_last: bool,
+}
+
+impl Position {
     
-    Last,
+    pub fn is_exactly_one(self) -> bool {
+        self.is_first && self.is_last
+    }
+
     
-    Only,
+    pub fn is_middle(self) -> bool {
+        !self.is_first && !self.is_last
+    }
+
+    
+    pub fn is_first(self) -> bool {
+        self.is_first
+    }
+
+    
+    pub fn is_last(self) -> bool {
+        self.is_last
+    }
 }
 
 impl<I: Iterator> Iterator for WithPosition<I> {
     type Item = (Position, I::Item);
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self.peekable.next() {
-            Some(item) => {
-                if !self.handled_first {
-                    
-                    self.handled_first = true;
-                    
-                    
-                    match self.peekable.peek() {
-                        Some(_) => Some((Position::First, item)),
-                        None => Some((Position::Only, item)),
-                    }
-                } else {
-                    
-                    
-                    match self.peekable.peek() {
-                        Some(_) => Some((Position::Middle, item)),
-                        None => Some((Position::Last, item)),
-                    }
-                }
-            }
-            
-            None => None,
-        }
+        let item = self.peekable.next()?;
+
+        let is_last = self.peekable.peek().is_none();
+        let is_first = !self.handled_first;
+        self.handled_first = true;
+
+        Some((Position { is_first, is_last }, item))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -102,18 +104,36 @@ impl<I: Iterator> Iterator for WithPosition<I> {
                 match self.peekable.next() {
                     Some(second) => {
                         let first = std::mem::replace(&mut head, second);
-                        init = f(init, (Position::First, first));
+                        let position = Position {
+                            is_first: true,
+                            is_last: false,
+                        };
+                        init = f(init, (position, first));
                     }
-                    None => return f(init, (Position::Only, head)),
+                    None => {
+                        let position = Position {
+                            is_first: true,
+                            is_last: true,
+                        };
+                        return f(init, (position, head));
+                    }
                 }
             }
             
             init = self.peekable.fold(init, |acc, mut item| {
                 std::mem::swap(&mut head, &mut item);
-                f(acc, (Position::Middle, item))
+                let position = Position {
+                    is_first: false,
+                    is_last: false,
+                };
+                f(acc, (position, item))
             });
+            let position = Position {
+                is_first: false,
+                is_last: true,
+            };
             
-            init = f(init, (Position::Last, head));
+            init = f(init, (position, head));
         }
         init
     }

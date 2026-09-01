@@ -1,4 +1,5 @@
 #![warn(missing_docs, clippy::default_numeric_fallback)]
+#![warn(missing_debug_implementations)]
 #![crate_name = "itertools"]
 #![cfg_attr(not(feature = "use_std"), no_std)]
 #![doc(test(attr(deny(warnings), allow(deprecated, unstable_name_collisions))))]
@@ -63,11 +64,13 @@ use alloc::{collections::VecDeque, string::String, vec::Vec};
 pub use either::Either;
 
 use core::borrow::Borrow;
+#[cfg(feature = "use_std")]
+use core::hash::BuildHasher;
 use std::cmp::Ordering;
 #[cfg(feature = "use_std")]
-use std::collections::HashMap;
-#[cfg(feature = "use_std")]
 use std::collections::HashSet;
+#[cfg(feature = "use_std")]
+use std::collections::{hash_map::RandomState, HashMap};
 use std::fmt;
 #[cfg(feature = "use_alloc")]
 use std::fmt::Write;
@@ -96,6 +99,8 @@ pub mod structs {
         FilterOk, Interleave, InterleaveShortest, MapInto, MapOk, Positions, Product, PutBack,
         TakeWhileRef, TupleCombinations, Update, WhileSome,
     };
+    pub use crate::all_equal_value_err::AllEqualValueError;
+    pub use crate::array_impl::{ArrayWindows, CircularArrayWindows};
     #[cfg(feature = "use_alloc")]
     pub use crate::combinations::{ArrayCombinations, Combinations};
     #[cfg(feature = "use_alloc")]
@@ -153,6 +158,8 @@ pub mod traits {
     pub use crate::tuple_impl::HomogeneousTuple;
 }
 
+#[cfg(feature = "use_alloc")]
+use crate::combinations_with_replacement::ArrayCombinationsWithReplacement;
 pub use crate::concat_impl::concat;
 pub use crate::cons_tuples_impl::cons_tuples;
 pub use crate::diff::diff_with;
@@ -171,12 +178,14 @@ pub use crate::unziptuple::{multiunzip, MultiUnzip};
 pub use crate::with_position::Position;
 pub use crate::ziptuple::multizip;
 mod adaptors;
+mod array_impl;
 mod either_or_both;
 pub use crate::either_or_both::EitherOrBoth;
 #[doc(hidden)]
 pub mod free;
 #[doc(inline)]
 pub use crate::free::*;
+mod all_equal_value_err;
 #[cfg(feature = "use_alloc")]
 mod combinations;
 #[cfg(feature = "use_alloc")]
@@ -328,7 +337,20 @@ macro_rules! izip {
 
     
     ( @closure $p:pat => ( $($tup:tt)* ) , $_iter:expr $( , $tail:expr )* ) => {
-        $crate::izip!(@closure ($p, b) => ( $($tup)*, b ) $( , $tail )*)
+        $crate::izip!(@closure (b, $p) => ( b, $($tup)* ) $( , $tail )*)
+    };
+
+    
+    ( @ no_map @ $first:expr $(,)?) => {
+        $crate::__std_iter::IntoIterator::into_iter($first)
+    };
+
+    
+    ( @ no_map @ $first:expr, $($rest:expr),+ $(,)?) => {
+        $crate::__std_iter::Iterator::zip(
+            $crate::__std_iter::IntoIterator::into_iter($first),
+            $crate::izip!(@ no_map @ $($rest),+)
+        )
     };
 
     
@@ -346,16 +368,13 @@ macro_rules! izip {
 
     
     ( $first:expr $( , $rest:expr )* $(,)* ) => {
-        {
-            let iter = $crate::__std_iter::IntoIterator::into_iter($first);
-            $(
-                let iter = $crate::__std_iter::Iterator::zip(iter, $rest);
-            )*
-            $crate::__std_iter::Iterator::map(
-                iter,
-                $crate::izip!(@closure a => (a) $( , $rest )*)
-            )
-        }
+        $crate::__std_iter::Iterator::map(
+            $crate::__std_iter::Iterator::zip(
+                $crate::__std_iter::IntoIterator::into_iter($first),
+                $crate::izip!(@ no_map @ $($rest),+)
+            ),
+            $crate::izip!(@closure a => (a) $( , $rest )*)
+        )
     };
 }
 
@@ -609,6 +628,28 @@ pub trait Itertools: Iterator {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     fn zip_eq<J>(self, other: J) -> ZipEq<Self, J::IntoIter>
     where
@@ -618,7 +659,6 @@ pub trait Itertools: Iterator {
         zip_eq(self, other)
     }
 
-    
     
     
     
@@ -705,6 +745,15 @@ pub trait Itertools: Iterator {
         self.chunk_by(key)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -874,6 +923,126 @@ pub trait Itertools: Iterator {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn array_windows<const N: usize>(self) -> ArrayWindows<Self, N>
+    where
+        Self: Sized,
+        Self::Item: Clone,
+    {
+        array_impl::array_windows(self)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn circular_array_windows<const N: usize>(self) -> CircularArrayWindows<Self, N>
+    where
+        Self: Sized,
+        Self::Item: Clone,
+    {
+        array_impl::circular_array_windows(self)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "use_alloc")]
     fn tee(self) -> (Tee<Self>, Tee<Self>)
     where
@@ -883,6 +1052,9 @@ pub trait Itertools: Iterator {
         tee::new(self)
     }
 
+    
+    
+    
     
     
     
@@ -1135,6 +1307,7 @@ pub trait Itertools: Iterator {
         merge_join_by(self, other, cmp_fn)
     }
 
+    
     
     
     
@@ -1406,7 +1579,33 @@ pub trait Itertools: Iterator {
         Self: Sized,
         Self::Item: Eq + Hash,
     {
-        duplicates_impl::duplicates(self)
+        duplicates_impl::duplicates_with_hasher(self, RandomState::new())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn duplicates_with_hasher<S>(self, hash_builder: S) -> Duplicates<Self, S>
+    where
+        Self: Sized,
+        Self::Item: Eq + Hash,
+        S: BuildHasher,
+    {
+        duplicates_impl::duplicates_with_hasher(self, hash_builder)
     }
 
     
@@ -1433,7 +1632,38 @@ pub trait Itertools: Iterator {
         V: Eq + Hash,
         F: FnMut(&Self::Item) -> V,
     {
-        duplicates_impl::duplicates_by(self, f)
+        duplicates_impl::duplicates_by_with_hasher(self, f, RandomState::new())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn duplicates_by_with_hasher<V, F, S>(
+        self,
+        f: F,
+        hash_builder: S,
+    ) -> DuplicatesBy<Self, V, F, S>
+    where
+        Self: Sized,
+        V: Eq + Hash,
+        F: FnMut(&Self::Item) -> V,
+        S: BuildHasher,
+    {
+        duplicates_impl::duplicates_by_with_hasher(self, f, hash_builder)
     }
 
     
@@ -1460,7 +1690,33 @@ pub trait Itertools: Iterator {
         Self: Sized,
         Self::Item: Clone + Eq + Hash,
     {
-        unique_impl::unique(self)
+        unique_impl::unique_with_hasher(self, RandomState::new())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn unique_with_hasher<S>(self, hash_builder: S) -> Unique<Self, S>
+    where
+        Self: Sized,
+        Self::Item: Clone + Eq + Hash,
+        S: BuildHasher,
+    {
+        unique_impl::unique_with_hasher(self, hash_builder)
     }
 
     
@@ -1488,7 +1744,7 @@ pub trait Itertools: Iterator {
         V: Eq + Hash,
         F: FnMut(&Self::Item) -> V,
     {
-        unique_impl::unique_by(self, f)
+        unique_impl::unique_by_with_hasher(self, f, RandomState::new())
     }
 
     
@@ -1503,7 +1759,34 @@ pub trait Itertools: Iterator {
     
     
     
-    fn peeking_take_while<F>(&mut self, accept: F) -> PeekingTakeWhile<Self, F>
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn unique_by_with_hasher<V, F, S>(self, f: F, hash_builder: S) -> UniqueBy<Self, V, F, S>
+    where
+        Self: Sized,
+        V: Eq + Hash,
+        F: FnMut(&Self::Item) -> V,
+        S: BuildHasher,
+    {
+        unique_impl::unique_by_with_hasher(self, f, hash_builder)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn peeking_take_while<F>(&mut self, accept: F) -> PeekingTakeWhile<'_, Self, F>
     where
         Self: Sized + PeekingNext,
         F: FnMut(&Self::Item) -> bool,
@@ -1528,8 +1811,7 @@ pub trait Itertools: Iterator {
     
     
     
-    
-    fn take_while_ref<F>(&mut self, accept: F) -> TakeWhileRef<Self, F>
+    fn take_while_ref<F>(&mut self, accept: F) -> TakeWhileRef<'_, Self, F>
     where
         Self: Clone,
         F: FnMut(&Self::Item) -> bool,
@@ -1665,9 +1947,10 @@ pub trait Itertools: Iterator {
     
     
     
+    #[deprecated(note = "Use .array_combinations() instead", since = "0.15.0")]
     fn tuple_combinations<T>(self) -> TupleCombinations<Self, T>
     where
-        Self: Sized + Clone,
+        Self: Sized,
         Self::Item: Clone,
         T: adaptors::HasCombination<Self>,
     {
@@ -1715,7 +1998,7 @@ pub trait Itertools: Iterator {
     #[cfg(feature = "use_alloc")]
     fn array_combinations<const K: usize>(self) -> ArrayCombinations<Self, K>
     where
-        Self: Sized + Clone,
+        Self: Sized,
         Self::Item: Clone,
     {
         combinations::array_combinations(self)
@@ -1791,7 +2074,35 @@ pub trait Itertools: Iterator {
     {
         combinations_with_replacement::combinations_with_replacement(self, k)
     }
-
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_alloc")]
+    fn array_combinations_with_replacement<const K: usize>(
+        self,
+    ) -> ArrayCombinationsWithReplacement<Self, K>
+    where
+        Self: Sized,
+        Self::Item: Clone,
+    {
+        combinations_with_replacement::array_combinations_with_replacement(self)
+    }
     
     
     
@@ -1903,6 +2214,13 @@ pub trait Itertools: Iterator {
         pad_tail::pad_using(self, min, f)
     }
 
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -2231,15 +2549,15 @@ pub trait Itertools: Iterator {
     
     
     #[allow(clippy::type_complexity)]
-    fn all_equal_value(&mut self) -> Result<Self::Item, Option<(Self::Item, Self::Item)>>
+    fn all_equal_value(&mut self) -> Result<Self::Item, AllEqualValueError<Self::Item>>
     where
         Self: Sized,
         Self::Item: PartialEq,
     {
-        let first = self.next().ok_or(None)?;
+        let first = self.next().ok_or(AllEqualValueError(None))?;
         let other = self.find(|x| x != &first);
         if let Some(other) = other {
-            Err(Some((first, other)))
+            Err(AllEqualValueError(Some([first, other])))
         } else {
             Ok(first)
         }
@@ -2266,7 +2584,32 @@ pub trait Itertools: Iterator {
         Self: Sized,
         Self::Item: Eq + Hash,
     {
-        let mut used = HashSet::new();
+        self.all_unique_with_hasher(RandomState::new())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn all_unique_with_hasher<S>(&mut self, hash_builder: S) -> bool
+    where
+        Self: Sized,
+        Self::Item: Eq + Hash,
+        S: BuildHasher,
+    {
+        let mut used = HashSet::with_hasher(hash_builder);
         self.all(move |elt| used.insert(elt))
     }
 
@@ -2344,6 +2687,7 @@ pub trait Itertools: Iterator {
 
     
     
+    #[must_use = "if you really need to exhaust the iterator, consider `.for_each(drop)` instead"]
     #[cfg(feature = "use_alloc")]
     fn collect_vec(self) -> Vec<Self::Item>
     where
@@ -2431,10 +2775,10 @@ pub trait Itertools: Iterator {
                 
                 let (lower, _) = self.size_hint();
                 let mut result = String::with_capacity(sep.len() * lower);
-                write!(&mut result, "{}", first_elt).unwrap();
+                write!(&mut result, "{first_elt}").unwrap();
                 self.for_each(|elt| {
                     result.push_str(sep);
-                    write!(&mut result, "{}", elt).unwrap();
+                    write!(&mut result, "{elt}").unwrap();
                 });
                 result
             }
@@ -2456,7 +2800,7 @@ pub trait Itertools: Iterator {
     
     
     
-    fn format(self, sep: &str) -> Format<Self>
+    fn format(self, sep: &str) -> Format<'_, Self>
     where
         Self: Sized,
     {
@@ -2495,7 +2839,7 @@ pub trait Itertools: Iterator {
     
     
     
-    fn format_with<F>(self, sep: &str, format: F) -> FormatWith<Self, F>
+    fn format_with<F>(self, sep: &str, format: F) -> FormatWith<'_, Self, F>
     where
         Self: Sized,
         F: FnMut(Self::Item, &mut dyn FnMut(&dyn fmt::Display) -> fmt::Result) -> fmt::Result,
@@ -2825,7 +3169,7 @@ pub trait Itertools: Iterator {
         Self: Sized,
         F: FnMut(B, Self::Item) -> FoldWhile<B>,
     {
-        use Result::{Err as Break, Ok as Continue};
+        use core::ops::ControlFlow::{Break, Continue};
 
         let result = self.try_fold(
             init,
@@ -3700,7 +4044,36 @@ pub trait Itertools: Iterator {
         Self: Iterator<Item = (K, V)> + Sized,
         K: Hash + Eq,
     {
-        group_map::into_group_map(self)
+        group_map::into_group_map_with_hasher(self, RandomState::new())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn into_group_map_with_hasher<K, V, S>(self, hash_builder: S) -> HashMap<K, Vec<V>, S>
+    where
+        Self: Iterator<Item = (K, V)> + Sized,
+        K: Hash + Eq,
+        S: BuildHasher,
+    {
+        group_map::into_group_map_with_hasher(self, hash_builder)
     }
 
     
@@ -3737,7 +4110,52 @@ pub trait Itertools: Iterator {
         K: Hash + Eq,
         F: FnMut(&V) -> K,
     {
-        group_map::into_group_map_by(self, f)
+        group_map::into_group_map_by_with_hasher(self, f, RandomState::new())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn into_group_map_by_with_hasher<K, V, F, S>(
+        self,
+        f: F,
+        hash_builder: S,
+    ) -> HashMap<K, Vec<V>, S>
+    where
+        Self: Iterator<Item = V> + Sized,
+        K: Hash + Eq,
+        F: FnMut(&V) -> K,
+        S: BuildHasher,
+    {
+        group_map::into_group_map_by_with_hasher(self, f, hash_builder)
     }
 
     
@@ -3755,7 +4173,21 @@ pub trait Itertools: Iterator {
         Self: Iterator<Item = (K, V)> + Sized,
         K: Hash + Eq,
     {
-        grouping_map::new(self)
+        grouping_map::new(self, RandomState::new())
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn into_grouping_map_with_hasher<K, V, S>(self, hash_builder: S) -> GroupingMap<Self, S>
+    where
+        Self: Iterator<Item = (K, V)> + Sized,
+        K: Hash + Eq,
+        S: BuildHasher,
+    {
+        grouping_map::new(self, hash_builder)
     }
 
     
@@ -3773,7 +4205,32 @@ pub trait Itertools: Iterator {
         K: Hash + Eq,
         F: FnMut(&V) -> K,
     {
-        grouping_map::new(grouping_map::new_map_for_grouping(self, key_mapper))
+        grouping_map::new(
+            grouping_map::new_map_for_grouping(self, key_mapper),
+            RandomState::new(),
+        )
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn into_grouping_map_by_with_hasher<K, V, F, S>(
+        self,
+        key_mapper: F,
+        hash_builder: S,
+    ) -> GroupingMapBy<Self, F, S>
+    where
+        Self: Iterator<Item = V> + Sized,
+        K: Hash + Eq,
+        F: FnMut(&V) -> K,
+        S: BuildHasher,
+    {
+        grouping_map::new(
+            grouping_map::new_map_for_grouping(self, key_mapper),
+            hash_builder,
+        )
     }
 
     
@@ -4005,6 +4462,23 @@ pub trait Itertools: Iterator {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn minmax(self) -> MinMaxResult<Self::Item>
     where
         Self: Sized,
@@ -4013,6 +4487,27 @@ pub trait Itertools: Iterator {
         minmax::minmax_impl(self, |_| (), |x, y, _, _| x < y)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -4033,6 +4528,27 @@ pub trait Itertools: Iterator {
         minmax::minmax_impl(self, key, |_, _, xk, yk| xk < yk)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -4483,7 +4999,19 @@ pub trait Itertools: Iterator {
         Self: Sized,
         Self::Item: Eq + Hash,
     {
-        let mut counts = HashMap::new();
+        self.counts_with_hasher(RandomState::new())
+    }
+
+    
+    
+    #[cfg(feature = "use_std")]
+    fn counts_with_hasher<S>(self, hash_builder: S) -> HashMap<Self::Item, usize, S>
+    where
+        Self: Sized,
+        Self::Item: Eq + Hash,
+        S: BuildHasher,
+    {
+        let mut counts = HashMap::with_hasher(hash_builder);
         self.for_each(|item| *counts.entry(item).or_default() += 1);
         counts
     }
@@ -4528,7 +5056,20 @@ pub trait Itertools: Iterator {
         K: Eq + Hash,
         F: FnMut(Self::Item) -> K,
     {
-        self.map(f).counts()
+        self.counts_by_with_hasher(f, RandomState::new())
+    }
+
+    
+    
+    #[cfg(feature = "use_std")]
+    fn counts_by_with_hasher<K, F, S>(self, f: F, hash_builder: S) -> HashMap<K, usize, S>
+    where
+        Self: Sized,
+        K: Eq + Hash,
+        F: FnMut(Self::Item) -> K,
+        S: BuildHasher,
+    {
+        self.map(f).counts_with_hasher(hash_builder)
     }
 
     
@@ -4581,6 +5122,95 @@ pub trait Itertools: Iterator {
             _ => Err(sh),
         }
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn strip_prefix<Prefix>(
+        self,
+        prefix: Prefix,
+    ) -> Result<Self, StripPrefixError<Self, Prefix::IntoIter, Self::Item>>
+    where
+        Self: Sized,
+        Prefix: IntoIterator,
+        Self::Item: PartialEq<Prefix::Item>,
+    {
+        self.strip_prefix_by(prefix, |a, b| a == b)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn strip_prefix_by<Prefix, F>(
+        mut self,
+        prefix: Prefix,
+        mut eq: F,
+    ) -> Result<Self, StripPrefixError<Self, Prefix::IntoIter, Self::Item>>
+    where
+        Self: Sized,
+        Prefix: IntoIterator,
+        F: FnMut(&Self::Item, &Prefix::Item) -> bool,
+    {
+        let mut prefix = prefix.into_iter();
+        match prefix.by_ref().try_for_each(|wanted| match self.next() {
+            Some(got) if eq(&got, &wanted) => Ok(()),
+            got => Err((got, wanted)),
+        }) {
+            Ok(()) => Ok(self),
+            Err(mismatch) => Err(StripPrefixError {
+                iterator: self,
+                prefix,
+                mismatch,
+            }),
+        }
+    }
+}
+
+
+
+
+
+
+
+#[derive(Debug, Clone)]
+pub struct StripPrefixError<I, Prefix: Iterator, T> {
+    
+    
+    pub iterator: I,
+    
+    
+    pub prefix: Prefix,
+    
+    
+    pub mismatch: (Option<T>, Prefix::Item),
 }
 
 impl<T> Itertools for T where T: Iterator + ?Sized {}
