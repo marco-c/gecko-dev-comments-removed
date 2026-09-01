@@ -105,7 +105,26 @@ nsresult UrlClassifierCommon::GetTopWindowURI(nsIChannel* aChannel,
     return NS_ERROR_FAILURE;
   }
 
-  uri.forget(aURI);
+  if (!NS_IsAboutBlank(uri)) {
+    uri.forget(aURI);
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  nsIPrincipal* principal = wgp->DocumentPrincipal();
+  if (!principal || !principal->GetIsContentPrincipal()) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsCOMPtr<nsIURI> principalURI = principal->GetURI();
+  if (!principalURI) {
+    return NS_ERROR_FAILURE;
+  }
+
+  principalURI.forget(aURI);
   return NS_OK;
 }
 
