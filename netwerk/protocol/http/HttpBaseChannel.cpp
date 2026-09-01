@@ -4609,26 +4609,27 @@ already_AddRefed<nsILoadInfo> HttpBaseChannel::CloneLoadInfoForRedirect(
     
     nsCOMPtr<nsILoadContext> loadContext;
     NS_QueryNotificationCallbacks(this, loadContext);
-    OriginAttributes docShellAttrs;
+    OriginAttributes attrs;
     if (loadContext) {
-      loadContext->GetOriginAttributes(docShellAttrs);
+      loadContext->GetOriginAttributes(attrs);
     }
 
-    OriginAttributes attrs = newLoadInfo->GetOriginAttributes();
+    OriginAttributes channelAttrs = newLoadInfo->GetOriginAttributes();
+
+    
+    
+    attrs.mUserContextId = channelAttrs.mUserContextId;
 
     MOZ_ASSERT(
-        docShellAttrs.mUserContextId == attrs.mUserContextId,
-        "docshell and necko should have the same userContextId attribute.");
-    MOZ_ASSERT(
-        docShellAttrs.mPrivateBrowsingId == attrs.mPrivateBrowsingId,
+        attrs.mPrivateBrowsingId == channelAttrs.mPrivateBrowsingId,
         "docshell and necko should have the same privateBrowsingId attribute.");
-    MOZ_ASSERT(docShellAttrs.mGeckoViewSessionContextId ==
-                   attrs.mGeckoViewSessionContextId,
+    MOZ_ASSERT(attrs.mGeckoViewSessionContextId ==
+                   channelAttrs.mGeckoViewSessionContextId,
                "docshell and necko should have the same "
                "geckoViewSessionContextId attribute");
 
-    attrs = std::move(docShellAttrs);
     attrs.SetFirstPartyDomain(true, aNewURI);
+
     newLoadInfo->SetOriginAttributes(attrs);
 
     
