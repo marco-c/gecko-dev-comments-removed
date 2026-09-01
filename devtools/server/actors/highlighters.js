@@ -54,6 +54,9 @@ exports.CustomHighlighterActor = class CustomHighligherActor extends Actor {
   
 
 
+
+
+
   constructor(parent, typeName) {
     super(parent.conn, customHighlighterSpec);
 
@@ -87,6 +90,8 @@ exports.CustomHighlighterActor = class CustomHighligherActor extends Actor {
         "Custom " + typeName + "highlighter cannot be created in a XUL window"
       );
     }
+
+    parent.manage(this);
   }
 
   destroy() {
