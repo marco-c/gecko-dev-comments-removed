@@ -207,34 +207,41 @@ void StickyScrollContainer::ComputeStickyLimits(nsIFrame* aFrame,
   }
 
   
+  
+  
+  
+  
+  
+  
+  const nsPoint frameOffset = aFrame->GetPosition() - rect.TopLeft();
+
+  aContain->MoveBy(frameOffset);
+
+  
   if (computedOffsets->top != NS_AUTOOFFSET) {
     aStick->SetTopEdge(mScrollPosition.y + sfPadding.top +
-                       effectiveOffsets.top - sfOffset.y);
+                       effectiveOffsets.top - sfOffset.y + frameOffset.y);
   }
 
   
   if (computedOffsets->bottom != NS_AUTOOFFSET) {
     aStick->SetBottomEdge(mScrollPosition.y + sfPadding.top + sfSize.height -
-                          effectiveOffsets.bottom - rect.height - sfOffset.y);
+                          effectiveOffsets.bottom - rect.height - sfOffset.y +
+                          frameOffset.y);
   }
 
   
   if (computedOffsets->left != NS_AUTOOFFSET) {
     aStick->SetLeftEdge(mScrollPosition.x + sfPadding.left +
-                        effectiveOffsets.left - sfOffset.x);
+                        effectiveOffsets.left - sfOffset.x + frameOffset.x);
   }
 
   
   if (computedOffsets->right != NS_AUTOOFFSET) {
     aStick->SetRightEdge(mScrollPosition.x + sfPadding.left + sfSize.width -
-                         effectiveOffsets.right - rect.width - sfOffset.x);
+                         effectiveOffsets.right - rect.width - sfOffset.x +
+                         frameOffset.x);
   }
-
-  
-  
-  nsPoint frameOffset = aFrame->GetPosition() - rect.TopLeft();
-  aStick->MoveBy(frameOffset);
-  aContain->MoveBy(frameOffset);
 }
 
 nsPoint StickyScrollContainer::ComputePosition(nsIFrame* aFrame) const {
