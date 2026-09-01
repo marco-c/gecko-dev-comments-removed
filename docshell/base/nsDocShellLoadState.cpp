@@ -14,7 +14,6 @@
 #include "nsIURLQueryStringStripper.h"
 #include "nsIXULRuntime.h"
 #include "nsAboutProtocolUtils.h"
-#include "nsContentUtils.h"
 #include "nsNetUtil.h"
 #include "nsQueryObject.h"
 #include "ReferrerInfo.h"
@@ -217,19 +216,12 @@ nsDocShellLoadState::nsDocShellLoadState(
       
       mSpeculativeListener = originalState->TakeSpeculativeListener();
       MOZ_ASSERT(mHasSpeculativeListener == !!mSpeculativeListener);
-    } else {
-      if (!nsContentUtils::IsProcessSpecificIdFrom(mLoadIdentifier,
-                                                   cp->ChildID())) {
-        aActor->FatalError("nsDocShellLoadState with invalid load identifier");
-        return;
-      }
-      if (mTriggeringRemoteType != cp->GetRemoteType()) {
-        
-        
-        aActor->FatalError(
-            "nsDocShellLoadState with invalid triggering remote type");
-        return;
-      }
+    } else if (mTriggeringRemoteType != cp->GetRemoteType()) {
+      
+      
+      aActor->FatalError(
+          "nsDocShellLoadState with invalid triggering remote type");
+      return;
     }
 
     if (!mTriggeringRemoteType.IsNotRemote()) {
