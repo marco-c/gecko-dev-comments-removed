@@ -2,8 +2,6 @@
 
 
 
-#include "jit/JitFrames-inl.h"
-
 #include "mozilla/ScopeExit.h"
 
 #include <algorithm>
@@ -31,11 +29,13 @@
 #include "vm/JSFunction.h"
 #include "vm/JSObject.h"
 #include "vm/JSScript.h"
+#include "vm/Stack.h"  
 #include "wasm/WasmBuiltins.h"
 #include "wasm/WasmInstance.h"
 
 #include "builtin/Sorting-inl.h"
 #include "debugger/DebugAPI-inl.h"
+#include "jit/JitFrames-inl.h"
 #include "jit/JSJitFrameIter-inl.h"
 #include "vm/GeckoProfiler-inl.h"
 #include "vm/JSScript-inl.h"
@@ -259,6 +259,23 @@ static void OnLeaveIonFrame(JSContext* cx, const InlineFrameIterator& frame,
 static void HandleExceptionIon(JSContext* cx, const InlineFrameIterator& frame,
                                ResumeFromException* rfe,
                                bool* hitBailoutException) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (frame.frame().jsFrame()->isResumingGenerator()) {
+    MOZ_ASSERT(!frame.more(), "the resume path has no calls to inline");
+    MOZ_ASSERT(!cx->isClosingGenerator());
+    return;
+  }
+
   if (ShouldBailoutForDebugger(cx, frame, *hitBailoutException)) {
     
     
@@ -592,6 +609,18 @@ static void HandleExceptionBaseline(JSContext* cx, JSJitFrameIter& frame,
 
   jsbytecode* pc;
   frame.baselineScriptAndPc(nullptr, &pc);
+
+  if (frame.baselineFrame()->isResumingGenerator()) {
+    
+    
+    
+    
+    
+    MOZ_ASSERT(pc == frame.baselineFrame()->script()->code());
+    EnsureUnwoundJitExitFrame(cx->activation()->asJit(),
+                              frame.baselineFrame()->framePrefix());
+    return;
+  }
 
   
   
@@ -942,6 +971,14 @@ uintptr_t* JitFrameLayout::slotRef(SafepointSlotEntry where) {
   return (uintptr_t*)((uint8_t*)thisAndActualArgs() + where.slot);
 }
 
+JS::Value* JitFrameLayout::resumeArgs() {
+  MOZ_ASSERT(isResumingGenerator());
+  if (!CalleeTokenIsFunction(calleeToken())) {
+    return moduleResumeArgs();
+  }
+  return actualArgs() + CalleeTokenToFunction(calleeToken())->nargs();
+}
+
 #ifdef DEBUG
 void ExitFooterFrame::assertValidVMFunctionId() const {
   MOZ_ASSERT(data_ >= uintptr_t(ExitFrameType::VMFunction));
@@ -971,6 +1008,13 @@ static void TraceThisAndArguments(JSTracer* trc, const JSJitFrameIter& frame,
   
   
   
+
+  
+  
+  if (layout->isResumingGenerator()) {
+    TraceRootRange(trc, ResumeFrameArgs::NumSlots, layout->resumeArgs(),
+                   "jit-resume-args");
+  }
 
   if (!CalleeTokenIsFunction(layout->calleeToken())) {
     return;
@@ -1618,7 +1662,6 @@ RInstructionResults& RInstructionResults::operator=(RInstructionResults&& rhs) {
 }
 
 
-RInstructionResults::~RInstructionResults() = default;
 
 bool RInstructionResults::init(JSContext* cx, uint32_t numResults) {
   if (numResults) {

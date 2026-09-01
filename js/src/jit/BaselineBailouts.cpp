@@ -211,6 +211,7 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
 #endif
 
   bool isPrologueBailout();
+  bool isGeneratorResumePrologueBailout();
   jsbytecode* getResumePC();
   void* getStubReturnAddress();
 
@@ -1187,7 +1188,11 @@ bool BaselineStackBuilder::finishLastFrame() {
   
   
   uint8_t* resumeAddr;
-  if (isPrologueBailout()) {
+  if (isGeneratorResumePrologueBailout()) {
+    JitSpew(JitSpew_BaselineBailouts, "      Redoing the generator resume.");
+    blFrame()->setInterpreterFieldsForPrologue(script_);
+    resumeAddr = baselineInterp.bailoutResumePrologueEntryAddr();
+  } else if (isPrologueBailout()) {
     JitSpew(JitSpew_BaselineBailouts, "      Resuming into prologue.");
     MOZ_ASSERT(pc_ == script_->code());
     blFrame()->setInterpreterFieldsForPrologue(script_);
@@ -1392,6 +1397,18 @@ jsbytecode* BaselineStackBuilder::getResumePC() {
   }
 
   return slowerPc;
+}
+
+bool BaselineStackBuilder::isGeneratorResumePrologueBailout() {
+  
+  
+  if (!frame_->isResumingGenerator()) {
+    return false;
+  }
+  MOZ_RELEASE_ASSERT(isOutermostFrame());
+  MOZ_RELEASE_ASSERT(script_->isGenerator() || script_->isAsync());
+  MOZ_RELEASE_ASSERT(!excInfo_);
+  return true;
 }
 
 bool BaselineStackBuilder::isPrologueBailout() {

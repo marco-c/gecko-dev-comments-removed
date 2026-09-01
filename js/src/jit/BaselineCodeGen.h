@@ -53,12 +53,20 @@ class BaselineCodeGen {
   
   NonAssertingLabel bailoutPrologue_;
 
+  
+  
+  NonAssertingLabel bailoutResumePrologue_;
+
   CodeOffset profilerEnterFrameToggleOffset_;
   CodeOffset profilerExitFrameToggleOffset_;
 
   
   
   CodeOffset bailoutPrologueOffset_;
+
+  
+  
+  CodeOffset bailoutResumePrologueOffset_;
 
   
   
@@ -122,6 +130,8 @@ class BaselineCodeGen {
   
   void loadResumeArgsBase(Register dest);
 
+  void setInterpreterPCToScriptStart(Register script, Register scratch);
+
   
   void loadGlobalLexicalEnvironment(Register dest);
   void pushGlobalLexicalEnvironmentValue(ValueOperand scratch);
@@ -168,9 +178,6 @@ class BaselineCodeGen {
   }
 
   bool emitSuspend(JSOp op);
-
-  [[nodiscard]] bool emitAfterYieldDebugInstrumentation(Register scratch);
-  [[nodiscard]] bool emitDebugAfterYield();
 
   
   
@@ -269,7 +276,11 @@ class BaselineCodeGen {
 
   [[nodiscard]] bool emitPrologue();
   [[nodiscard]] bool emitEpilogue();
-  [[nodiscard]] bool emitStackCheck();
+  
+  
+  template <typename F>
+  [[nodiscard]] bool emitStackCheck(RetAddrEntry::Kind kind, Register scratch1,
+                                    Register scratch2, const F& emitAfterCall);
   [[nodiscard]] bool emitDebugPrologue();
   [[nodiscard]] bool emitDebugEpilogue();
 
@@ -277,11 +288,15 @@ class BaselineCodeGen {
 
   [[nodiscard]] bool emitHandleCodeCoverageAtPrologue();
 
-  void emitGeneratorResumePrologue();
-  void emitGeneratorResumePrologueBody();
+  [[nodiscard]] bool emitGeneratorResumePrologue();
+  [[nodiscard]] bool emitGeneratorResumePrologueBody();
 
   void emitInitFrameFields(Register nonFunctionEnv);
-  [[nodiscard]] bool emitIsDebuggeeCheck();
+  
+  
+  
+  template <typename F>
+  [[nodiscard]] bool emitIsDebuggeeCheck(const F& emitAfterCall);
   void emitInitializeLocals();
 
   void emitProfilerEnterFrame();
@@ -616,7 +631,7 @@ class BaselineInterpreterGenerator final : private BaselineInterpreterCodeGen {
   [[nodiscard]] bool emitDebugTrap();
 
   void emitOutOfLineCodeCoverageInstrumentation();
-  void emitOutOfLineGeneratorResumePrologue();
+  [[nodiscard]] bool emitOutOfLineGeneratorResumePrologue();
 };
 
 }  

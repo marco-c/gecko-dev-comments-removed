@@ -170,6 +170,13 @@ bool jit::ReorderInstructions(MIRGenerator* mir, MIRGraph& graph) {
         if (prev->isSetInitializedLength()) {
           break;
         }
+        if (prev->isClearResumingGeneratorFlag()) {
+          
+          
+          
+          
+          break;
+        }
 
         
         bool isUse = false;

@@ -120,6 +120,9 @@ class RetAddrEntry {
     StackCheck,
 
     
+    ResumeStackCheck,
+
+    
     InterruptCheck,
 
     
@@ -501,6 +504,10 @@ class BaselineInterpreter {
   uint32_t bailoutPrologueOffset_ = 0;
 
   
+  
+  uint32_t bailoutResumePrologueOffset_ = 0;
+
+  
   uint32_t profilerEnterToggleOffset_ = 0;
   uint32_t profilerExitToggleOffset_ = 0;
 
@@ -539,7 +546,9 @@ class BaselineInterpreter {
 
   void init(JitCode* code, uint32_t interpretOpOffset,
             uint32_t interpretOpNoDebugTrapOffset,
-            uint32_t bailoutPrologueOffset, uint32_t profilerEnterToggleOffset,
+            uint32_t bailoutPrologueOffset,
+            uint32_t bailoutResumePrologueOffset,
+            uint32_t profilerEnterToggleOffset,
             uint32_t profilerExitToggleOffset, uint32_t debugTrapHandlerOffset,
             CodeOffsetVector&& debugInstrumentationOffsets,
             CodeOffsetVector&& debugTrapOffsets,
@@ -560,6 +569,9 @@ class BaselineInterpreter {
   }
   uint8_t* bailoutPrologueEntryAddr() const {
     return codeAtOffset(bailoutPrologueOffset_);
+  }
+  uint8_t* bailoutResumePrologueEntryAddr() const {
+    return codeAtOffset(bailoutResumePrologueOffset_);
   }
 
   uint8_t* retAddrForIC(JSOp op) const;

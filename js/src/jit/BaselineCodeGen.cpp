@@ -6994,6 +6994,10 @@ bool BaselineCodeGen<Handler>::emitPrologue() {
 
   masm.subFromStackPtr(Imm32(BaselineFrame::Size()));
 
+  
+  
+  masm.bind(&bailoutResumePrologue_);
+
   if (!emitGeneratorResumePrologue()) {
     return false;
   }
@@ -7294,6 +7298,13 @@ bool BaselineInterpreterGenerator::emitInterpreterLoop() {
   masm.jump(&bailoutPrologue_);
 
   
+  bailoutResumePrologueOffset_ = CodeOffset(masm.currentOffset());
+  restoreInterpreterPCReg();
+  masm.moveToStackPtr(FramePointer);
+  masm.subFromStackPtr(Imm32(BaselineFrame::Size()));
+  masm.jump(&bailoutResumePrologue_);
+
+  
   
   {
     JitCode* handlerCode = runtime->jitRuntime()->debugTrapHandler(
@@ -7461,7 +7472,7 @@ bool BaselineInterpreterGenerator::generate(JSContext* cx,
 
     interpreter.init(
         code, interpretOpOffset_, interpretOpNoDebugTrapOffset_,
-        bailoutPrologueOffset_.offset(),
+        bailoutPrologueOffset_.offset(), bailoutResumePrologueOffset_.offset(),
         profilerEnterFrameToggleOffset_.offset(),
         profilerExitFrameToggleOffset_.offset(), debugTrapHandlerOffset_,
         std::move(handler.debugInstrumentationOffsets()),
