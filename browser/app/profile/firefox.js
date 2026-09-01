@@ -2415,11 +2415,6 @@ pref("browser.smartwindow.agent.supportedRegions", "US,CA");
 
 
 
-pref("browser.smartwindow.worldcup.enabled", false);
-pref("browser.smartwindow.worldcup.endpointURL", "https://merino.services.mozilla.com");
-pref("browser.smartwindow.worldcup.timeoutMs", 2000);
-
-
 pref("browser.smartwindow.searchQuery.endpointURL", "https://mlpa-prod-prod-mozilla.freetls.fastly.net/v1/search");
 pref("browser.smartwindow.searchQuery.apiKey", "");
 
