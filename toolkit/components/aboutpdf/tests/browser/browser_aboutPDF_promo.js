@@ -120,11 +120,7 @@ async function openPromoWithMockedShellService(sandbox, { becomesDefault }) {
 
 
 function clickSetDefault(tab) {
-  return BrowserTestUtils.synthesizeMouseAtCenter(
-    "#set-default",
-    {},
-    tab.linkedBrowser
-  );
+  return clickInAboutPDF(tab, "#set-default");
 }
 
 add_task(async function testSetDefaultHidesPromoWhenConfirmed() {
