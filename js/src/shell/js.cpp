@@ -951,6 +951,23 @@ JSObject* NewShellWindowProxy(JSContext* cx, JS::HandleObject global) {
 
 
 
+static JSObject* ShellWrapObjectCallback(JSContext* cx,
+                                         JS::HandleObject existing,
+                                         JS::HandleObject obj) {
+  MOZ_ASSERT(!obj->is<js::WrapperObject>() || js::IsWindowProxy(obj));
+  if (existing) {
+    return js::Wrapper::Renew(existing, obj,
+                              &js::CrossCompartmentWrapper::singleton);
+  }
+  return js::Wrapper::New(cx, obj, &js::CrossCompartmentWrapper::singleton);
+}
+
+static const JSWrapObjectCallbacks ShellWrapObjectCallbacks = {
+    ShellWrapObjectCallback, nullptr};
+
+
+
+
 
 
 
@@ -12821,6 +12838,8 @@ int main(int argc, char** argv) {
 
   JS_SetTrustedPrincipals(cx, &ShellPrincipals::fullyTrusted);
   JS_SetSecurityCallbacks(cx, &ShellPrincipals::securityCallbacks);
+
+  JS_SetWrapObjectCallbacks(cx, &ShellWrapObjectCallbacks);
 
   JS_AddInterruptCallback(cx, ShellInterruptCallback);
 

@@ -1000,7 +1000,16 @@ void ProxyObject::renew(const BaseProxyHandler* handler, const Value& priv) {
   MOZ_ASSERT(hasDynamicPrototype());
 
   setHandler(handler);
+
   setCrossCompartmentPrivate(priv);
+  
+  
+  
+  if (isTenured() && zone()->wasGCStarted() && priv.isGCThing() &&
+      !priv.toGCThing()->isTenured()) {
+    runtimeFromMainThread()->gc.storeBuffer().setMayHavePointersToDeadCells();
+  }
+
   for (size_t i = 0; i < numReservedSlots(); i++) {
     setReservedSlot(i, UndefinedValue());
   }
