@@ -1405,49 +1405,15 @@ const RENDER_TIMEOUT_MS = 15000;
 
 
 
-
-
-
-
-function waitForMutationBounded(
-  target,
-  options,
-  checkFn,
-  label,
-  timeoutMs = RENDER_TIMEOUT_MS
-) {
-  let timer;
-  const timeout = new Promise((_, reject) => {
-    timer = setTimeout(
-      () => reject(new Error(`Timed out waiting for: ${label}`)),
-      timeoutMs
-    );
-  });
-  return Promise.race([
-    BrowserTestUtils.waitForMutationCondition(target, options, checkFn),
-    timeout,
-  ]).finally(() => clearTimeout(timer));
-}
-
-
-
-
-
-
-
-
-
-
-
 function getAIChatBrowser(browser) {
-  return waitForMutationBounded(
+  return BrowserTestUtils.waitForMutationCondition(
     browser.contentDocument.documentElement,
     { childList: true, subtree: true },
     () =>
       browser.contentDocument
         ?.querySelector("ai-window")
         ?.shadowRoot?.querySelector("#aichat-browser"),
-    "ai-window #aichat-browser"
+    { msg: "ai-window #aichat-browser", timeout: RENDER_TIMEOUT_MS }
   );
 }
 
