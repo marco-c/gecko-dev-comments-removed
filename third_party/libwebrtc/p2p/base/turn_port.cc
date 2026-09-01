@@ -984,7 +984,7 @@ void TurnPort::HandleRefreshError() {
   request_manager_.Clear();
   state_ = STATE_RECEIVEONLY;
   
-  for (auto kv : connections()) {
+  for (auto& kv : connections()) {
     kv.second->FailAndPrune();
   }
 }

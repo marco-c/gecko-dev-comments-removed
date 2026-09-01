@@ -199,7 +199,7 @@ Connection* Port::GetConnection(const SocketAddress& remote_addr) {
   RTC_DCHECK_RUN_ON(thread_);
   AddressMap::const_iterator iter = connections_.find(remote_addr);
   if (iter != connections_.end())
-    return iter->second;
+    return iter->second.get();
   else
     return nullptr;
 }
@@ -332,21 +332,31 @@ void Port::SubscribePortError(const void* tag,
 
 void Port::AddOrReplaceConnection(Connection* conn) {
   RTC_DCHECK_RUN_ON(thread_);
-  auto ret = connections_.insert(
-      std::make_pair(conn->remote_candidate().address(), conn));
   
   
-  if (ret.second == false && ret.first->second != conn) {
-    RTC_LOG(LS_WARNING)
-        << ToString()
-        << ": A new connection was created on an existing remote address. "
-           "New remote candidate: "
-        << conn->remote_candidate().ToSensitiveString();
-    std::unique_ptr<Connection> old_conn = absl::WrapUnique(ret.first->second);
-    ret.first->second = conn;
-    HandleConnectionDestroyed(old_conn.get());
-    old_conn->Shutdown();
+  
+  
+
+  auto [iter, inserted] =
+      connections_.try_emplace(conn->remote_candidate().address(), nullptr);
+  if (inserted) {
+    
+    iter->second = absl::WrapUnique(conn);
+    return;
   }
+
+  
+  RTC_CHECK_NE(iter->second.get(), conn);
+  
+  RTC_LOG(LS_WARNING)
+      << ToString()
+      << ": A new connection was created on an existing remote address. "
+         "New remote candidate: "
+      << conn->remote_candidate().ToSensitiveString();
+  std::unique_ptr<Connection> old_conn = std::move(iter->second);
+  iter->second = absl::WrapUnique(conn);
+  HandleConnectionDestroyed(old_conn.get());
+  old_conn->Shutdown();
 }
 
 void Port::OnReadPacket(const ReceivedIpPacket& packet, ProtocolType proto) {
@@ -608,7 +618,6 @@ void Port::DestroyAllConnections() {
   RTC_DCHECK_RUN_ON(thread_);
   for (auto& [unused, connection] : connections_) {
     connection->Shutdown();
-    delete connection;
   }
   connections_.clear();
 }
@@ -926,17 +935,31 @@ void Port::EnablePortPackets() {
   enable_port_packets_ = true;
 }
 
-bool Port::OnConnectionDestroyed(Connection* conn) {
+void Port::DestroyConnectionInternal(Connection* conn, bool async) {
   RTC_DCHECK_RUN_ON(thread_);
-  if (connections_.erase(conn->remote_candidate().address()) == 0) {
+  auto iter = connections_.find(conn->remote_candidate().address());
+  if (iter == connections_.end() || iter->second.get() != conn) {
     
     
     
     RTC_DCHECK_NOTREACHED() << "Calling Destroy recursively?";
-    return false;
+    return;
   }
+  std::unique_ptr<Connection> owned_conn = std::move(iter->second);
+  connections_.erase(iter);
 
-  HandleConnectionDestroyed(conn);
+  HandleConnectionDestroyed(owned_conn.get());
+  owned_conn->Shutdown();
+
+  if (async) {
+    
+    
+    
+    
+    
+    
+    thread_->PostTask([owned_conn = std::move(owned_conn)]() {});
+  }
 
   
   
@@ -946,27 +969,6 @@ bool Port::OnConnectionDestroyed(Connection* conn) {
   if (connections_.empty()) {
     last_time_all_connections_removed_ = env_.clock().TimeInMilliseconds();
     PostDestroyIfDead(true);
-  }
-
-  return true;
-}
-
-void Port::DestroyConnectionInternal(Connection* conn, bool async) {
-  RTC_DCHECK_RUN_ON(thread_);
-  if (!OnConnectionDestroyed(conn))
-    return;
-
-  conn->Shutdown();
-  if (async) {
-    
-    
-    
-    
-    
-    
-    thread_->PostTask([conn = absl::WrapUnique(conn)]() {});
-  } else {
-    delete conn;
   }
 }
 

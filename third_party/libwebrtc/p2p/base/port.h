@@ -14,7 +14,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <map>
 #include <memory>
 #include <optional>
 #include <set>
@@ -39,6 +38,7 @@
 #include "p2p/base/transport_description.h"
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/callback_list.h"
+#include "rtc_base/containers/flat_map.h"
 #include "rtc_base/dscp.h"
 #include "rtc_base/net_helper.h"
 #include "rtc_base/network.h"
@@ -311,7 +311,7 @@ class RTC_EXPORT Port : public PortInterface {
   void SendPortDestroyed(Port* port);
   
   
-  typedef std::map<SocketAddress, Connection*> AddressMap;
+  using AddressMap = flat_map<SocketAddress, std::unique_ptr<Connection>>;
   const AddressMap& connections() { return connections_; }
 
   
@@ -530,10 +530,6 @@ class RTC_EXPORT Port : public PortInterface {
   
   
   
-  
-  
-  bool OnConnectionDestroyed(Connection* conn);
-
   
   
   void DestroyConnectionInternal(Connection* conn, bool async);
