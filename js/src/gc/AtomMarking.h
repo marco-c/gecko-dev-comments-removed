@@ -33,6 +33,9 @@ class AtomRefRuntime {
   js::GCLockData<Vector<size_t, 0, SystemAllocPolicy>> pendingFreeArenaIndexes;
   mozilla::Atomic<bool, mozilla::Relaxed> hasPendingFreeArenaIndexes;
 
+  
+  AtomRefLock atomRefLock;
+
  public:
   
   
@@ -86,7 +89,8 @@ class AtomRefRuntime {
   void refineZoneBitmapForCollectedZone(Zone* zone, Arena* arena);
 
   template <typename T>
-  MOZ_ALWAYS_INLINE bool inlinedRecordRefInternal(Zone* zone, T* thing);
+  MOZ_ALWAYS_INLINE bool inlinedRecordRefInternal(Zone* zone, T* thing,
+                                                  const AutoMarkingLock& lock);
 
  public:
   

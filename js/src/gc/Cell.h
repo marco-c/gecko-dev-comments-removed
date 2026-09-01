@@ -1000,6 +1000,11 @@ class MarkingLock : public LightLock {
   MarkingLock() : LightLock(js::mutexid::GCMarkingLock) {}
 };
 
+class AtomRefLock : public LightLock {
+ public:
+  AtomRefLock() : LightLock(js::mutexid::GCAtomRefLock) {}
+};
+
 
 
 
@@ -1011,7 +1016,7 @@ class MarkingLock : public LightLock {
 
 class MOZ_RAII AutoMarkingLock {
 #ifdef JS_GC_CONCURRENT_MARKING
-  MarkingLock* lock = nullptr;
+  LightLock* lock = nullptr;
   JSRuntime* runtime = nullptr;
 #endif
 
@@ -1020,7 +1025,7 @@ class MOZ_RAII AutoMarkingLock {
 
  public:
   
-  AutoMarkingLock(JS::Zone* zone, MarkingLock& markingLock) {
+  AutoMarkingLock(JS::Zone* zone, LightLock& markingLock) {
 #ifdef JS_GC_CONCURRENT_MARKING
     auto* shadowZone = JS::shadow::Zone::from(zone);
     if (shadowZone->needsMarkingBarrier(JS::shadow::Zone::Concurrent)) {
@@ -1032,7 +1037,10 @@ class MOZ_RAII AutoMarkingLock {
   }
 
   
-  inline AutoMarkingLock(JSTracer* trc, MarkingLock& markingLock);
+  inline AutoMarkingLock(JSTracer* trc, LightLock& markingLock);
+
+  
+  inline AutoMarkingLock(JSRuntime* rt, LightLock& markingLock);
 
   ~AutoMarkingLock() {
 #ifdef JS_GC_CONCURRENT_MARKING
