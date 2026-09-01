@@ -372,6 +372,33 @@ add_task(async function test_generatePassword_subdomain_rule() {
   }
 });
 
+
+
+add_task(async function test_generatePassword_idn_rule() {
+  const TEST_ORIGIN = Services.io.newURI("https://ält.example.org");
+  Assert.notEqual(
+    TEST_ORIGIN.displayHost,
+    TEST_ORIGIN.asciiHost,
+    "The test origin is displayed as an IDN, not as punycode"
+  );
+
+  const TEST_RULES = "minlength: 8; maxlength: 8;";
+  await LoginTestUtils.remoteSettings.setupImprovedPasswordRules(
+    TEST_ORIGIN.asciiHost,
+    TEST_RULES
+  );
+
+  let PRMP = new PasswordRulesManagerParent();
+  let generatedPassword = await PRMP.generatePassword(TEST_ORIGIN);
+  Assert.equal(
+    generatedPassword.length,
+    8,
+    "The rules of the IDN origin were applied"
+  );
+
+  await LoginTestUtils.remoteSettings.cleanImprovedPasswordRules();
+});
+
 add_task(async function test_improved_password_rules_telemetry() {
   
   Services.prefs.setBoolPref("signon.generation.available", true);

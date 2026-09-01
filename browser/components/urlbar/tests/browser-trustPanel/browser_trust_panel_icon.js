@@ -1,9 +1,9 @@
-/* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
 
-/**
- * Test TrustPanel Breach Icon logic.
- */
+
+
+
+
+
 
 "use strict";
 
@@ -16,11 +16,11 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 const TRACKING_PAGE =
-  // eslint-disable-next-line sdl/no-insecure-url
+  
   "http://tracking.example.org/browser/browser/base/content/test/protectionsUI/trackingPage.html";
 
 const TEST_BREACH = {
-  // Make sure the breach is a recent one, since breaches older than a year are not taken into account:
+  
   AddedDate: Temporal.Now.plainDateTimeISO().toString(),
   BreachDate: Temporal.Now.plainDateISO().toString(),
   Domain: "example.org",
@@ -54,15 +54,15 @@ add_setup(async function setup() {
     ],
   });
 
-  // Wait a tick to ensure any initial about:blank background fetches
-  // complete BEFORE we reset the cache.
-  /* eslint-disable mozilla/no-arbitrary-setTimeout */
+  
+  
+  
   await new Promise(r => setTimeout(r, 500));
 
   registerCleanupFunction(async () => {
-    // The trust icon lives in the (chrome) urlbar, so its animations can outlive
-    // the tab that triggered them. Let them finish so vsync is disabled before
-    // the harness's end-of-file teardown check.
+    
+    
+    
     await Promise.all(
       trustIconContainer()
         .getAnimations({ subtree: true })
@@ -214,6 +214,52 @@ add_task(async function test_breached_urlbar_icon_animation_logic() {
   }
 });
 
+
+
+
+add_task(async function test_breached_idn_site() {
+  const IDN_ASCII_HOST = "xn--hxajbheg2az3al.xn--jxalpdlp";
+  const IDN_URL = `https://${IDN_ASCII_HOST}/`;
+
+  Assert.notEqual(
+    Services.io.newURI(IDN_URL).displayHost,
+    IDN_ASCII_HOST,
+    "The test site is displayed as an IDN, not as punycode"
+  );
+
+  const db = RemoteSettings("fxmonitor-breaches").db;
+  await db.create(
+    {
+      ...TEST_BREACH,
+      id: "idn-guid",
+      Domain: IDN_ASCII_HOST,
+    },
+    { useRecordId: true }
+  );
+  await db.importChanges({}, Date.now());
+
+  const tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: IDN_URL,
+    waitForLoad: true,
+  });
+
+  try {
+    await waitForTrustIconClass(
+      "breached",
+      "Waiting for breached class on the IDN site"
+    );
+
+    await Promise.all(
+      trustIconContainer()
+        .getAnimations({ subtree: true })
+        .map(anim => anim.finished.catch(() => {}))
+    );
+  } finally {
+    await BrowserTestUtils.removeTab(tab);
+  }
+});
+
 add_task(async function test_no_trackers_blocked() {
   const tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
@@ -245,8 +291,8 @@ add_task(async function test_trackerCountShown_pref() {
   });
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
-    // See trackingAPI.js - this postMessage causes it to inject an iframe with
-    // one of the blocked tracking hosts:
+    
+    
     content.postMessage("cryptomining", "*");
   });
 
@@ -273,8 +319,8 @@ add_task(async function test_blocked_trackers_updates_toolbar() {
   });
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
-    // See trackingAPI.js - this postMessage causes it to inject an iframe with
-    // one of the blocked tracking hosts:
+    
+    
     content.postMessage("cryptomining", "*");
   });
 
@@ -323,8 +369,8 @@ add_task(async function test_multiple_blockers_count() {
   });
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
-    // See trackingAPI.js - this postMessage causes it to inject an iframe with
-    // one of the blocked tracking hosts:
+    
+    
     content.postMessage("cryptomining", "*");
   });
 
@@ -357,8 +403,8 @@ add_task(async function test_blocked_trackers_cleared_on_navigation() {
   });
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
-    // See trackingAPI.js - this postMessage causes it to inject an iframe with
-    // one of the blocked tracking hosts:
+    
+    
     content.postMessage("cryptomining", "*");
   });
 
@@ -418,8 +464,8 @@ add_task(async function test_tracker_count_cache_cleared_on_navigation() {
     "has-blocked-trackers should be absent after navigating to a clean page"
   );
 
-  // The count text updates once the scanning hold resolves (it's hidden behind
-  // the scanning shield until then), so wait for it rather than reading eagerly.
+  
+  
   await TestUtils.waitForCondition(
     () =>
       document.getElementById("trust-icon-tracker-count-shortform")
@@ -440,8 +486,8 @@ add_task(async function test_first_visit_class_on_first_visit() {
   });
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
-    // See trackingAPI.js - this postMessage causes it to inject an iframe with
-    // one of the blocked tracking hosts:
+    
+    
     content.postMessage("cryptomining", "*");
   });
 
@@ -475,15 +521,15 @@ add_task(async function test_tracker_count_hidden_when_feature_gate_disabled() {
 
   try {
     await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
-      // See trackingAPI.js - this postMessage causes it to inject an iframe with
-      // one of the blocked tracking hosts:
+      
+      
       content.postMessage("cryptomining", "*");
     });
 
-    // Unfortunately #updateToolbarTrackerCount is asynchronous and, when the
-    // tracker count is disabled, doesn't result in observable effects that we
-    // can await:
-    // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+    
+    
+    
+    
     await new Promise(r => setTimeout(r, 500));
 
     Assert.ok(
@@ -514,10 +560,10 @@ add_task(async function test_tracker_count_hidden_when_pref_disabled() {
       content.postMessage("cryptomining", "*");
     });
 
-    // Unfortunately #updateToolbarTrackerCount is asynchronous and, when the
-    // tracker count is disabled, doesn't result in observable effects that we
-    // can await:
-    // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+    
+    
+    
+    
     await new Promise(r => setTimeout(r, 500));
 
     Assert.ok(
@@ -541,9 +587,9 @@ add_task(async function test_scanning_shield_at_navigation_start() {
 
   await waitForTrustIconClass("secure", "Waiting for secure icon");
 
-  // Simulate navigation start: the icon must drop to the neutral scanning
-  // shield immediately and must NOT keep showing the secure check-mark before
-  // the blocker check has run.
+  
+  
+  
   gTrustPanelHandler.resetIconForNavigation();
 
   Assert.ok(
@@ -590,8 +636,8 @@ add_task(async function test_reset_icon_same_vs_cross_host() {
 
   await waitForTrustIconClass("secure", "Waiting for resolved secure icon");
 
-  // A navigation to a subdomain of the same site (different host, same base
-  // domain) preserves the resolved icon: no re-scan.
+  
+  
   gTrustPanelHandler.resetIconForNavigation(
     Services.io.newURI("https://www.example.com/other")
   );
@@ -604,8 +650,8 @@ add_task(async function test_reset_icon_same_vs_cross_host() {
     "Same-site navigation keeps the resolved secure state"
   );
 
-  // A navigation to a different site (different base domain) drops back to
-  // the scanning shield.
+  
+  
   gTrustPanelHandler.resetIconForNavigation(
     Services.io.newURI("https://example.org/")
   );
@@ -628,8 +674,8 @@ add_task(async function test_same_site_navigation_preserves_state() {
 
   await waitForTrustIconClass("secure", "Initial page resolves to secure");
 
-  // Navigate within the same site; the icon must stay resolved (no scanning,
-  // no re-animation) rather than re-scanning.
+  
+  
   const loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   BrowserTestUtils.startLoadingURIString(
     tab.linkedBrowser,
@@ -660,8 +706,8 @@ add_task(
     });
 
     await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
-      // See trackingAPI.js - this postMessage causes it to inject an iframe with
-      // one of the blocked tracking hosts:
+      
+      
       content.postMessage("cryptomining", "*");
     });
 
@@ -675,10 +721,10 @@ add_task(
       "Count shows 1 before the same-site navigation"
     );
 
-    // Navigate within the same site (same host, new query). The new page blocks
-    // no tracker, so its recomputed count starts at 0 -- but the highlight pill
-    // and its count must be preserved rather than flickering off / dropping to
-    // 0 between pages of the same site.
+    
+    
+    
+    
     const loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
     BrowserTestUtils.startLoadingURIString(
       tab.linkedBrowser,
@@ -717,16 +763,16 @@ add_task(async function test_scanning_does_not_mask_breach() {
     waitForLoad: true,
   });
 
-  // A breached page is a definitive state and must show through, rather than
-  // being replaced by the scanning shield.
+  
+  
   await waitForTrustIconClass("breached", "Waiting for breached class");
   Assert.ok(
     !trustIconContainer().classList.contains("scanning"),
     "Breach shows through instead of the scanning shield"
   );
 
-  // Let the breach pulse animation finish before teardown, otherwise it can
-  // leave the compositor's vsync enabled when the test file ends.
+  
+  
   await Promise.all(
     trustIconContainer()
       .getAnimations({ subtree: true })
@@ -750,8 +796,8 @@ add_task(async function test_no_scanning_when_feature_disabled() {
 
   await waitForTrustIconClass("secure", "Waiting for secure icon");
 
-  // With the tracker feature off there is no behavior change: navigation
-  // start leaves the secure icon untouched.
+  
+  
   gTrustPanelHandler.resetIconForNavigation();
 
   Assert.ok(
@@ -771,10 +817,10 @@ add_task(async function test_no_first_visit_class_on_return_visit() {
   await PlacesUtils.history.clear();
   Services.prefs.setBoolPref("browser.urlbar.trackerCountShown", true);
 
-  // Add a visit to the tracking host from more than 20 seconds ago so that
-  // #markFirstVisit treats this as a return visit.
+  
+  
   await PlacesTestUtils.addVisits({
-    // eslint-disable-next-line sdl/no-insecure-url
+    
     uri: "http://tracking.example.org/",
     visitDate: new Date(Date.now() - 60 * 1000),
   });
@@ -787,8 +833,8 @@ add_task(async function test_no_first_visit_class_on_return_visit() {
 
   try {
     await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
-      // See trackingAPI.js - this postMessage causes it to inject an iframe with
-      // one of the blocked tracking hosts:
+      
+      
       content.postMessage("cryptomining", "*");
     });
 
@@ -811,10 +857,10 @@ add_task(
     Services.prefs.clearUserPref("browser.urlbar.trackerCountShown");
     await PlacesUtils.history.clear();
 
-    // Add a visit older than 20 seconds so #markFirstVisit would treat this as a
-    // return visit based on history alone.
+    
+    
     await PlacesTestUtils.addVisits({
-      // eslint-disable-next-line sdl/no-insecure-url
+      
       uri: "http://tracking.example.org/",
       visitDate: new Date(Date.now() - 60 * 1000),
     });
@@ -867,9 +913,9 @@ add_task(async function test_tab_switch_preserves_resolved_secure_icon() {
     waitForLoad: true,
   });
 
-  // Returning must keep the check-mark, not re-enter scanning. Assert
-  // synchronously: scanning self-resolves in seconds, so a polled wait would
-  // miss the flash of the shield the user actually sees.
+  
+  
+  
   await BrowserTestUtils.switchTab(gBrowser, noTrackerTab);
   Assert.ok(
     trustIconContainer().classList.contains("secure"),
@@ -1023,10 +1069,10 @@ add_task(async function test_tracker_count_shown_glean_event_first_visit() {
 add_task(async function test_tracker_count_shown_glean_event_return_visit() {
   await PlacesUtils.history.clear();
 
-  // Add a past visit so that #markFirstVisit treats this as a return visit
-  // (it only counts visits older than 20 seconds).
+  
+  
   await PlacesTestUtils.addVisits({
-    // eslint-disable-next-line sdl/no-insecure-url
+    
     uri: "http://tracking.example.org/",
     visitDate: new Date(Date.now() - 60 * 1000),
   });
@@ -1093,7 +1139,7 @@ add_task(
       await Services.fog.testFlushAllChildren();
       Services.fog.testResetFOG();
 
-      // Trigger the tracker count on the first tab.
+      
       await BrowserTestUtils.switchTab(gBrowser, trackerTab);
       await SpecialPowers.spawn(trackerTab.linkedBrowser, [], () => {
         content.postMessage("cryptomining", "*");
@@ -1110,7 +1156,7 @@ add_task(
         "Event recorded once after first appearance of the tracker count"
       );
 
-      // Switch to the other tab (also a tracking page) and trigger its trackers.
+      
       await BrowserTestUtils.switchTab(gBrowser, otherTab);
       await SpecialPowers.spawn(otherTab.linkedBrowser, [], () => {
         content.postMessage("cryptomining", "*");
@@ -1127,7 +1173,7 @@ add_task(
         "Event also recorded for the other tab"
       );
 
-      // Switch back to the first tab.
+      
       await BrowserTestUtils.switchTab(gBrowser, trackerTab);
       await waitForTrustIconClass(
         "has-blocked-trackers",
