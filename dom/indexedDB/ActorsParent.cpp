@@ -9216,17 +9216,16 @@ Factory::AllocPBackgroundIDBFactoryRequestParent(
     return nullptr;
   }
 
-  if (NS_AUUF_OR_WARN_IF(
-          principalInfo.type() == PrincipalInfo::TSystemPrincipalInfo &&
-          metadata.persistenceType() != PERSISTENCE_TYPE_PERSISTENT)) {
-    return nullptr;
-  }
+  
 
-  if (NS_AUUF_OR_WARN_IF(
-          principalInfo.type() == PrincipalInfo::TContentPrincipalInfo &&
-          QuotaManager::IsOriginInternal(
-              principalInfo.get_ContentPrincipalInfo().originNoSuffix()) &&
-          metadata.persistenceType() != PERSISTENCE_TYPE_PERSISTENT)) {
+
+
+
+
+
+  if (metadata.persistenceType() !=
+      IDBFactory::GetPersistenceType(principalInfo)) {
+    IPC_FAIL(this, "Persistence type does not match principal!");
     return nullptr;
   }
 
