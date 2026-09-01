@@ -34,6 +34,11 @@ CHROME_SYMBOL_SERVER = (
 )
 
 
+
+
+MICROSOFT_SYMBOL_SERVER = "https://msdl.microsoft.com/download/symbols"
+
+
 class ETWProfile(RaptorProfiling):
     """Record kernel ETW traces (.etl) using xperf (via pre-configured
     scheduled tasks), then use Samply to convert and symbolicate them
@@ -188,6 +193,8 @@ class ETWProfile(RaptorProfiling):
             "--presymbolicate",
             "--breakpad-symbol-server",
             "https://symbols.mozilla.org/",
+            "--windows-symbol-server",
+            MICROSOFT_SYMBOL_SERVER,
         ]
 
         moz_fetch = Path(os.environ["MOZ_FETCHES_DIR"])
