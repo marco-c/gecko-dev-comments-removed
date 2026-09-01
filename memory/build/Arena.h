@@ -300,6 +300,7 @@ struct arena_t : public BaseAllocClass {
   
   
   
+  
   mozilla::DoublyLinkedList<arena_chunk_t, mozilla::DirtyChunkListTrait> mSpares
       MOZ_GUARDED_BY(mLock);
 
@@ -651,6 +652,16 @@ struct arena_t : public BaseAllocClass {
         : mArena(arena), mChunk(chunk), mPurgeStats(stats) {}
   };
 
+ private:
+  arena_chunk_t* PurgeGetSpareChunk(mozilla::PurgeStats& aStats);
+  arena_chunk_t* PurgeGetDirtyChunk(PurgeCondition aCond,
+                                    mozilla::PurgeStats& aStats);
+
+  ArenaPurgeResult PurgeDirtyPages(
+      arena_chunk_t* aChunk, PurgeCondition aCond, mozilla::PurgeStats& aStats,
+      const mozilla::Maybe<std::function<bool()>>& aKeepGoing);
+
+ public:
   void HardPurge();
 
   
