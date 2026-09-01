@@ -6338,13 +6338,6 @@ nsresult XREMain::XRE_mainRun() {
   
   cmdLine = nullptr;
 
-#ifdef ACCESSIBILITY
-  
-  
-  
-  a11y::MaybeStartForceEnabled();
-#endif
-
   {
     rv = appStartup->Run();
     if (NS_FAILED(rv)) {
