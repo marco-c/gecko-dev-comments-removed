@@ -980,7 +980,8 @@ void RTCRtpTransceiver::ToDomHeaderExtensions(
   aDetails.ForEachRTPHeaderExtension(
       [&](const SdpExtmapAttributeList::Extmap& aExtmap) {
         RTCRtpHeaderExtensionParameters ext;
-        ext.mUri.Construct(NS_ConvertUTF8toUTF16(aExtmap.extensionname));
+        ext.mUri.Construct(
+            NS_ConvertUTF8toUTF16(aExtmap.extensionname.c_str()));
         ext.mId.Construct(aExtmap.entry);
         
         
@@ -1008,6 +1009,7 @@ void RTCRtpTransceiver::SetCodecPreferences(
   nsTArray<RTCRtpCodec> aCodecsFiltered;
   OverrideRtxPreference rtxOverride =
       OverrideRtxPreference::OverrideWithDisabled;
+  ;
   bool useableCodecs = false;
 
   
@@ -1074,17 +1076,13 @@ void RTCRtpTransceiver::SetCodecPreferences(
   
   
 
-  mPreferredCodecs.Clear();
-  AutoTArray<UniquePtr<JsepCodecDescription>, 16> defaultCodecs;
+  mPreferredCodecs.clear();
+  std::vector<UniquePtr<JsepCodecDescription>> defaultCodecs;
 
   if (kind.EqualsLiteral("video")) {
-    EnumerateDefaultVideoCodecs(
-        &defaultCodecs,
-        DefaultCodecPreferencesWithRtxOverride(mPc->mPrefs, rtxOverride));
+    PeerConnectionImpl::GetDefaultVideoCodecs(defaultCodecs, rtxOverride);
   } else if (kind.EqualsLiteral("audio")) {
-    EnumerateDefaultAudioCodecs(
-        &defaultCodecs,
-        DefaultCodecPreferencesWithRtxOverride(mPc->mPrefs, rtxOverride));
+    PeerConnectionImpl::GetDefaultAudioCodecs(defaultCodecs);
   }
 
   if (!aCodecsFiltered.IsEmpty()) {
@@ -1124,13 +1122,13 @@ void RTCRtpTransceiver::SetCodecPreferences(
         if ((mimeType.Find(defaultCodec->mName) != kNotFound) &&
             (inputCodec.mClockRate == defaultCodec->mClock) && channelsMatch &&
             sdpFmtpLinesMatch) {
-          mPreferredCodecs.EmplaceBack(defaultCodec->Clone());
+          mPreferredCodecs.emplace_back(defaultCodec->Clone());
           break;
         }
       }
     }
   } else {
-    mPreferredCodecs = std::move(defaultCodecs);
+    mPreferredCodecs.swap(defaultCodecs);
     mPreferredCodecsInUse = false;
   }
 }
