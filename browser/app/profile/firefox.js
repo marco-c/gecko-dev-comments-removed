@@ -2374,6 +2374,12 @@ pref("browser.smartwindow.mistralRelease", true);
 pref("places.semanticHistory.smartwindow.distanceThreshold", "0.6");
 
 
+pref("browser.smartwindow.aitab.enabled", false);
+
+
+pref("browser.smartwindow.aitab.viewerURL", "");
+
+
 pref("browser.smartwindow.autoTabGrouping.enabled", true);
 pref("browser.smartwindow.autoTabGrouping.maxGroups", 3);
 pref("browser.smartwindow.autoTabGrouping.minTabsPerGroup", 2);
