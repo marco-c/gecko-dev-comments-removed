@@ -1303,7 +1303,7 @@ html {
 }
 
 .onboardingContainer:has(theme-picker) .content-tile {
-  max-width: 450px;
+  max-width: 470px;
   padding-bottom: var(--space-large);
 }
 
@@ -3267,6 +3267,14 @@ html {
   .onboardingContainer .text-link:active {
     text-decoration: none;
   }
+}
+.onboardingContainer .inline-icon {
+  -moz-context-properties: fill;
+  fill: currentColor;
+  block-size: 1.2em;
+  inline-size: auto;
+  vertical-align: middle;
+  margin-inline: 0.15em;
 }
 .onboardingContainer .welcome-text {
   display: flex;

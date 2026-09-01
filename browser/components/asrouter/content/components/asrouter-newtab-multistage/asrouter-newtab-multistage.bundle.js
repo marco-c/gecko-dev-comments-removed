@@ -54,6 +54,46 @@ const ZAP_SIZE_THRESHOLD = 160;
 
 
 
+function pickConfigurableStyles(source) {
+  const style = {};
+  for (const styleProp of CONFIGURABLE_STYLES) {
+    if (source[styleProp] !== undefined) {
+      style[styleProp] = source[styleProp];
+    }
+  }
+  return style;
+}
+
+
+
+
+function resolveImageSrc({
+  imageURL,
+  rtlImageURL
+}) {
+  const isRTL = typeof document !== "undefined" && document.documentElement.matches(":dir(rtl)");
+  return isRTL && rtlImageURL ? rtlImageURL : imageURL;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -126,16 +166,26 @@ const Localized = ({
       ref: zapRef
     }, text.zap));
   }
+
+  
+  
+  
+  if (text.string_id && text.inline_icons) {
+    for (const [l10nName, icon] of Object.entries(text.inline_icons)) {
+      textNodes.push(external_React_default().createElement("img", {
+        key: l10nName,
+        "data-l10n-name": l10nName,
+        className: "inline-icon",
+        src: resolveImageSrc(icon)
+      }));
+    }
+  }
   if (text.aria_label) {
     props["aria-label"] = text.aria_label;
   }
 
   
-  CONFIGURABLE_STYLES.forEach(style => {
-    if (text[style] !== undefined) {
-      props.style[style] = text[style];
-    }
-  });
+  Object.assign(props.style, pickConfigurableStyles(text));
   return external_React_default().cloneElement(
   
   children ?? external_React_default().createElement("span", null), props,
@@ -864,6 +914,15 @@ function renderSegment(segment, index, handleAction) {
   if (typeof segment === "string") {
     return segment;
   }
+  if (segment?.imageURL) {
+    return external_React_default().createElement("img", {
+      key: index,
+      className: "inline-icon",
+      src: resolveImageSrc(segment),
+      alt: segment.alt ?? "",
+      style: pickConfigurableStyles(segment)
+    });
+  }
   if (segment?.href) {
     const action = {
       type: "OPEN_URL",
@@ -932,15 +991,9 @@ const LinkParagraph = props => {
   }, [handleParagraphAction]);
   const paragraphClassName = text_content?.font_styles === "legal" ? "legal-paragraph" : "link-paragraph";
   if (Array.isArray(text)) {
-    const style = {};
-    for (const styleProp of CONFIGURABLE_STYLES) {
-      if (text_content[styleProp] !== undefined) {
-        style[styleProp] = text_content[styleProp];
-      }
-    }
     return external_React_default().createElement("p", {
       className: paragraphClassName,
-      style: style
+      style: pickConfigurableStyles(text_content)
     }, text.map((segment, index) => renderSegment(segment, index, handleAction)));
   }
   return external_React_default().createElement(Localized, {
