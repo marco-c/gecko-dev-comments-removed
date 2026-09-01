@@ -15,7 +15,10 @@
 
 
 #include "wasm/WasmGC.h"
+
 #include "wasm/WasmInstance.h"
+
+#include "wasm/WasmSummarizeInsn.h"
 #include "jit/MacroAssembler-inl.h"
 
 using namespace js;
@@ -251,13 +254,13 @@ void wasm::EmitWasmPreBarrierGuard(MacroAssembler& masm, Register instance,
                     skipBarrier);
 
   
-  FaultingCodeOffset fco = masm.loadPtr(addr, scratch);
+  FaultingCodeRange fcr = masm.loadPtr(addr, scratch);
   masm.branchWasmAnyRefIsGCThing(false, scratch, skipBarrier);
 
   
   if (trapSiteDesc) {
-    masm.append(wasm::Trap::NullPointerDereference,
-                TrapMachineInsnForLoadWord(), fco.get(), *trapSiteDesc);
+    masm.appendAndVerify(wasm::Trap::NullPointerDereference,
+                         TrapMachineInsnForLoadWord(), fcr, *trapSiteDesc);
   }
 }
 
@@ -405,47 +408,125 @@ void wasm::CheckWholeCellLastElementCache(MacroAssembler& masm,
 }
 
 #ifdef DEBUG
-bool wasm::IsPlausibleStackMapKey(const uint8_t* nextPC) {
+bool wasm::IsPlausibleStackMapKey(const uint8_t* base,
+                                  uint32_t stackmapOffset) {
+  
+  const uint8_t* nextPC = base + size_t(stackmapOffset);
+
+  
+  
+  
+  
+  
+
 #  if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86)
   const uint8_t* insn = nextPC;
-  return (insn[-2] == 0x0F && insn[-1] == 0x0B) ||           
-         (insn[-2] == 0xFF && (insn[-1] & 0xF8) == 0xD0) ||  
-         insn[-5] == 0xE8;                                   
-
-#  elif defined(JS_CODEGEN_ARM)
-  const uint32_t* insn = (const uint32_t*)nextPC;
-  return ((uintptr_t(insn) & 3) == 0) &&            
-         (insn[-1] == 0xe7f000f0 ||                 
-          (insn[-1] & 0xfffffff0) == 0xe12fff30 ||  
-          (insn[-1] & 0x0f000000) == 0x0b000000);  
+  if ((insn[-2] == 0xFF && (insn[-1] & 0xF8) == 0xD0) ||  
+      insn[-5] == 0xE8) {                                 
+    return true;
+  }
 
 #  elif defined(JS_CODEGEN_ARM64)
-  const uint32_t hltInsn = 0xd4a00000;
+  if ((uintptr_t(nextPC) & 3) != 0) {
+    return false;  
+  }
   const uint32_t* insn = (const uint32_t*)nextPC;
-  return ((uintptr_t(insn) & 3) == 0) &&
-         (insn[-1] == hltInsn ||                    
-          (insn[-1] & 0xfffffc1f) == 0xd63f0000 ||  
-          (insn[-1] & 0xfc000000) == 0x94000000);   
+  if (((insn[-1] & 0xfffffc1f) == 0xd63f0000) ||  
+      ((insn[-1] & 0xfc000000) == 0x94000000)) {  
+    return true;
+  }
+
+#  elif defined(JS_CODEGEN_ARM)
+  if ((uintptr_t(nextPC) & 3) != 0) {
+    return false;  
+  }
+  const uint32_t* insn = (const uint32_t*)nextPC;
+  if (((insn[-1] & 0xfffffff0) == 0xe12fff30) ||  
+      ((insn[-1] & 0x0f000000) == 0x0b000000)) {  
+    return true;
+  }
+
+#  elif defined(JS_CODEGEN_RISCV64)
+  if ((uintptr_t(nextPC) & 3) != 0) {
+    return false;  
+  }
+  const uint32_t* insn = (const uint32_t*)nextPC;
+  if (((insn[-1] & kBaseOpcodeMask) == JALR) ||  
+      ((insn[-1] & kBaseOpcodeMask) == JAL) ||   
+      ((insn[-2] & kBaseOpcodeMask) == JAL &&
+       insn[-1] == 0x00000013 )) {  
+    return true;
+  }
 
 #  elif defined(JS_CODEGEN_MIPS64)
   
   
+  
+  
+  
   return true;
+
 #  elif defined(JS_CODEGEN_LOONG64)
   
   return true;
-#  elif defined(JS_CODEGEN_RISCV64)
-  const uint32_t* insn = reinterpret_cast<const uint32_t*>(nextPC);
-  return (((uintptr_t(insn) & 3) == 0) &&
-          ((insn[-1] == 0x00006037 && insn[-2] == 0x00100073) ||  
-           ((insn[-1] & kBaseOpcodeMask) == JALR) ||              
-           ((insn[-1] & kBaseOpcodeMask) == JAL) ||               
-           ((insn[-2] & kBaseOpcodeMask) == JAL &&
-            insn[-1] == 0x00000013 ) ||  
-           (insn[-1] == 0xc0035073)));  
+
 #  else
-  MOZ_CRASH("IsValidStackMapKey: requires implementation on this platform");
+  MOZ_CRASH(
+      "IsValidStackMapKey: call-instruction identification "
+      "requires implementation on this platform");
 #  endif
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  uint32_t minLen =
+      std::min(stackmapOffset, FaultingCodeRange::minInsnLength());
+  uint32_t maxLen =
+      std::min(stackmapOffset, FaultingCodeRange::maxInsnLength());
+
+  uint32_t len = 0;
+  bool found = false;
+  SummarizeResult summary;
+
+  
+  
+  for (len = minLen; len <= maxLen; len++) {
+    const uint8_t* maybeTrappingInsn = (uint8_t*)nextPC - len;
+    summary = SummarizeTrapInstruction(maybeTrappingInsn);
+    if (!summary.identified()) {
+      
+      continue;
+    }
+    if (summary.length() != len) {
+      
+      continue;
+    }
+    
+    found = true;
+    MOZ_ASSERT(maybeTrappingInsn + len == nextPC);
+    break;
+  }
+
+  if (!found) {
+    
+    
+    
+    
+    
+    return false;
+  }
+
+  
+  MOZ_ASSERT(summary.kind() != TrapMachineInsn::INVALID);
+  return true;
 }
 #endif
 
@@ -454,7 +535,7 @@ void StackMaps::checkInvariants(const uint8_t* base) const {
   
   
   for (auto iter = codeOffsetToStackMap_.iter(); !iter.done(); iter.next()) {
-    MOZ_ASSERT(IsPlausibleStackMapKey(base + iter.get().key()),
+    MOZ_ASSERT(IsPlausibleStackMapKey(base, iter.get().key()),
                "wasm stackmap does not reference a valid insn");
   }
 #endif

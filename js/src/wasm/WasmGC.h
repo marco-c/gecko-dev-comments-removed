@@ -281,7 +281,7 @@ class StackMaps {
   
   
   
-  LifoAlloc stackMaps_;
+  LifoAlloc stackMaps_{4096, js::BackgroundMallocArena};
   
   StackMapHashMap codeOffsetToStackMap_;
 
@@ -297,7 +297,7 @@ class StackMaps {
 #endif
 
  public:
-  StackMaps() : stackMaps_(4096, js::BackgroundMallocArena) {}
+  StackMaps() = default;
 
   
   
@@ -629,7 +629,31 @@ void CheckWholeCellLastElementCache(jit::MacroAssembler& masm,
 
 
 
-bool IsPlausibleStackMapKey(const uint8_t* nextPC);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool IsPlausibleStackMapKey(const uint8_t* base, uint32_t stackmapOffset);
 #endif
 
 }  
