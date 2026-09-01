@@ -1101,12 +1101,13 @@ CanvasRenderingContext2D::ContextState::ContextState(const ContextState& aOther)
       gradientStyles(aOther.gradientStyles),
       patternStyles(aOther.patternStyles),
       colorStyles(aOther.colorStyles),
-      font(aOther.font),
+      specifiedFont(aOther.specifiedFont),
+      resolvedFont(aOther.resolvedFont),
       textAlign(aOther.textAlign),
       textBaseline(aOther.textBaseline),
       textDirection(aOther.textDirection),
       fontKerning(aOther.fontKerning),
-      fontStretch(aOther.fontStretch),
+      fontWidth(aOther.fontWidth),
       fontVariantCaps(aOther.fontVariantCaps),
       textRendering(aOther.textRendering),
       letterSpacing(aOther.letterSpacing),
@@ -4212,6 +4213,21 @@ static float QuantizeFontSize(float aSize) {
   return d - t;
 }
 
+bool CanvasRenderingContext2D::FontIsUnchanged(const nsACString& aFont,
+                                               gfxUserFontSet* aFontSet) {
+  
+  
+  
+  
+  
+  
+  
+  const ContextState& state = CurrentState();
+  return state.fontGroup && state.specifiedFont == aFont &&
+         (!aFontSet || aFontSet->GetRebuildGeneration() ==
+                           state.fontGroup->GetRebuildGeneration());
+}
+
 bool CanvasRenderingContext2D::SetFontInternal(const nsACString& aFont,
                                                ErrorResult& aError) {
   RefPtr<PresShell> presShell = GetPresShell();
@@ -4220,6 +4236,14 @@ bool CanvasRenderingContext2D::SetFontInternal(const nsACString& aFont,
   }
 
   nsPresContext* c = presShell->GetPresContext();
+  c->Document()->FlushUserFontSet();
+
+  
+  
+  if (FontIsUnchanged(aFont, c->GetUserFontSet())) {
+    return true;
+  }
+
   FontStyleCacheKey key{aFont, CurrentState().resolvedFontLang,
                         c->RestyleManager()->GetRestyleGeneration()};
   auto entry = mFontStyleCache.Lookup(key);
@@ -4267,36 +4291,36 @@ bool CanvasRenderingContext2D::SetFontInternal(const nsACString& aFont,
   
   
   
-  switch (CurrentState().fontStretch) {
+  switch (CurrentState().fontWidth) {
     case CanvasFontStretch::Normal:
       
       break;
     case CanvasFontStretch::Ultra_condensed:
-      resizedFont.stretch = StyleFontStretch::ULTRA_CONDENSED;
+      resizedFont.width = StyleFontWidth::ULTRA_CONDENSED;
       break;
     case CanvasFontStretch::Extra_condensed:
-      resizedFont.stretch = StyleFontStretch::EXTRA_CONDENSED;
+      resizedFont.width = StyleFontWidth::EXTRA_CONDENSED;
       break;
     case CanvasFontStretch::Condensed:
-      resizedFont.stretch = StyleFontStretch::CONDENSED;
+      resizedFont.width = StyleFontWidth::CONDENSED;
       break;
     case CanvasFontStretch::Semi_condensed:
-      resizedFont.stretch = StyleFontStretch::SEMI_CONDENSED;
+      resizedFont.width = StyleFontWidth::SEMI_CONDENSED;
       break;
     case CanvasFontStretch::Semi_expanded:
-      resizedFont.stretch = StyleFontStretch::SEMI_EXPANDED;
+      resizedFont.width = StyleFontWidth::SEMI_EXPANDED;
       break;
     case CanvasFontStretch::Expanded:
-      resizedFont.stretch = StyleFontStretch::EXPANDED;
+      resizedFont.width = StyleFontWidth::EXPANDED;
       break;
     case CanvasFontStretch::Extra_expanded:
-      resizedFont.stretch = StyleFontStretch::EXTRA_EXPANDED;
+      resizedFont.width = StyleFontWidth::EXTRA_EXPANDED;
       break;
     case CanvasFontStretch::Ultra_expanded:
-      resizedFont.stretch = StyleFontStretch::ULTRA_EXPANDED;
+      resizedFont.width = StyleFontWidth::ULTRA_EXPANDED;
       break;
     default:
-      MOZ_ASSERT_UNREACHABLE("unknown stretch value");
+      MOZ_ASSERT_UNREACHABLE("unknown width value");
       break;
   }
 
@@ -4332,8 +4356,6 @@ bool CanvasRenderingContext2D::SetFontInternal(const nsACString& aFont,
       break;
   }
 
-  c->Document()->FlushUserFontSet();
-
   nsFontMetrics::Params params;
   params.language = CurrentState().resolvedFontLang;
   params.explicitLanguage = CurrentState().explicitLang;
@@ -4347,7 +4369,8 @@ bool CanvasRenderingContext2D::SetFontInternal(const nsACString& aFont,
   gfxFontGroup* newFontGroup = metrics->GetThebesFontGroup();
   CurrentState().fontGroup = newFontGroup;
   NS_ASSERTION(CurrentState().fontGroup, "Could not get font group");
-  CurrentState().font = data.mUsedFont;
+  CurrentState().specifiedFont = aFont;
+  CurrentState().resolvedFont = data.mUsedFont;
   CurrentState().fontFont = fontStyle->mFont;
   CurrentState().fontFont.size = fontStyle->mSize;
   CurrentState().fontComputedStyle = data.mStyle;
@@ -4381,8 +4404,8 @@ static void SerializeFontForCanvas(const StyleFontFamilyList& aList,
   }
 
   
-  if (!aStyle.stretch.IsNormal() &&
-      Servo_FontStretch_SerializeKeyword(&aStyle.stretch, &aUsedFont)) {
+  if (!aStyle.width.IsNormal() &&
+      Servo_FontWidth_SerializeKeyword(&aStyle.width, &aUsedFont)) {
     aUsedFont.Append(" ");
   }
 
@@ -4425,13 +4448,19 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
 
   
   
+  if (FontIsUnchanged(aFont, fontFaceSetImpl)) {
+    return true;
+  }
+
+  
+  
   
   StyleFontFamilyList list;
   gfxFontStyle fontStyle;
   float size = 0.0f;
   bool smallCaps = false;
   if (!ServoCSSParser::ParseFontShorthandForMatching(
-          aFont, urlExtraData, list, fontStyle.style, fontStyle.stretch,
+          aFont, urlExtraData, list, fontStyle.style, fontStyle.width,
           fontStyle.weight, &size, &smallCaps)) {
     return false;
   }
@@ -4441,36 +4470,37 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
   fontStyle.allowForceGDIClassic = false;
 #endif
 
-  switch (CurrentState().fontStretch) {
+  auto& state = CurrentState();
+  switch (state.fontWidth) {
     case CanvasFontStretch::Normal:
       
       break;
     case CanvasFontStretch::Ultra_condensed:
-      fontStyle.stretch = StyleFontStretch::ULTRA_CONDENSED;
+      fontStyle.width = StyleFontWidth::ULTRA_CONDENSED;
       break;
     case CanvasFontStretch::Extra_condensed:
-      fontStyle.stretch = StyleFontStretch::EXTRA_CONDENSED;
+      fontStyle.width = StyleFontWidth::EXTRA_CONDENSED;
       break;
     case CanvasFontStretch::Condensed:
-      fontStyle.stretch = StyleFontStretch::CONDENSED;
+      fontStyle.width = StyleFontWidth::CONDENSED;
       break;
     case CanvasFontStretch::Semi_condensed:
-      fontStyle.stretch = StyleFontStretch::SEMI_CONDENSED;
+      fontStyle.width = StyleFontWidth::SEMI_CONDENSED;
       break;
     case CanvasFontStretch::Semi_expanded:
-      fontStyle.stretch = StyleFontStretch::SEMI_EXPANDED;
+      fontStyle.width = StyleFontWidth::SEMI_EXPANDED;
       break;
     case CanvasFontStretch::Expanded:
-      fontStyle.stretch = StyleFontStretch::EXPANDED;
+      fontStyle.width = StyleFontWidth::EXPANDED;
       break;
     case CanvasFontStretch::Extra_expanded:
-      fontStyle.stretch = StyleFontStretch::EXTRA_EXPANDED;
+      fontStyle.width = StyleFontWidth::EXTRA_EXPANDED;
       break;
     case CanvasFontStretch::Ultra_expanded:
-      fontStyle.stretch = StyleFontStretch::ULTRA_EXPANDED;
+      fontStyle.width = StyleFontWidth::ULTRA_EXPANDED;
       break;
     default:
-      MOZ_ASSERT_UNREACHABLE("unknown stretch value");
+      MOZ_ASSERT_UNREACHABLE("unknown width value");
       break;
   }
 
@@ -4479,7 +4509,7 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
   
   
   
-  switch (CurrentState().fontVariantCaps) {
+  switch (state.fontVariantCaps) {
     case CanvasFontVariantCaps::Normal:
       fontStyle.variantCaps = smallCaps ? NS_FONT_VARIANT_CAPS_SMALL_CAPS
                                         : NS_FONT_VARIANT_CAPS_NORMAL;
@@ -4512,7 +4542,7 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
 
   
   gfxFontFeature setting{TRUETYPE_TAG('k', 'e', 'r', 'n'), 0};
-  switch (CurrentState().fontKerning) {
+  switch (state.fontKerning) {
     case CanvasFontKerning::None:
       setting.mValue = 0;
       fontStyle.featureSettings.AppendElement(setting);
@@ -4526,23 +4556,29 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
       break;
   }
 
+  nsAutoCString newFont;
+  SerializeFontForCanvas(list, fontStyle, newFont);
   
-  gfxFontGroup* fontGroup = new gfxFontGroup(
-      mOffscreenCanvas,  
-      list,              
-      &fontStyle,        
-      CurrentState().resolvedFontLang, CurrentState().explicitLang,
-      nullptr,          
-      fontFaceSetImpl,  
-      1.0,              
-      StyleFontVariantEmoji::Normal);
-  auto& state = CurrentState();
-  state.fontGroup = fontGroup;
-  SerializeFontForCanvas(list, fontStyle, state.font);
-  state.fontFont = nsFont(StyleFontFamily{list, false, false},
-                          StyleCSSPixelLength::FromPixels(size));
-  state.fontFont.variantCaps = fontStyle.variantCaps;
-  state.fontComputedStyle = nullptr;
+  
+  if (!state.fontGroup || state.resolvedFont != newFont ||
+      (fontFaceSetImpl && fontFaceSetImpl->GetRebuildGeneration() !=
+                              state.fontGroup->GetRebuildGeneration())) {
+    state.fontGroup = MakeRefPtr<gfxFontGroup>(
+        mOffscreenCanvas,  
+        list,              
+        &fontStyle,        
+        CurrentState().resolvedFontLang, CurrentState().explicitLang,
+        nullptr,          
+        fontFaceSetImpl,  
+        1.0,              
+        StyleFontVariantEmoji::Normal);
+    state.specifiedFont = aFont;
+    state.resolvedFont = newFont;
+    state.fontFont = nsFont(StyleFontFamily{list, false, false},
+                            StyleCSSPixelLength::FromPixels(size));
+    state.fontFont.variantCaps = fontStyle.variantCaps;
+    state.fontComputedStyle = nullptr;
+  }
   return true;
 }
 
@@ -5451,7 +5487,7 @@ gfxFontGroup* CanvasRenderingContext2D::GetCurrentFontStyle() {
   
   
   
-  nsAutoCString currentFont(CurrentState().font);
+  nsAutoCString currentFont(CurrentState().resolvedFont);
   if (currentFont.IsEmpty()) {
     currentFont = kDefaultFontStyle;
   }
@@ -5467,12 +5503,12 @@ gfxFontGroup* CanvasRenderingContext2D::GetCurrentFontStyle() {
     gfxFloat devToCssSize = gfxFloat(perDevPixel) / gfxFloat(perCSSPixel);
     const auto* sans =
         Servo_FontFamily_Generic(StyleGenericFontFamily::SansSerif);
-    CurrentState().fontGroup = new gfxFontGroup(
+    CurrentState().fontGroup = MakeRefPtr<gfxFontGroup>(
         visProvider, sans->families, &style, language, explicitLanguage,
         presContext ? presContext->GetTextPerfMetrics() : nullptr, nullptr,
         devToCssSize, StyleFontVariantEmoji::Normal);
     if (CurrentState().fontGroup) {
-      CurrentState().font = kDefaultFontStyle;
+      CurrentState().resolvedFont = kDefaultFontStyle;
     } else {
       NS_ERROR("Default canvas font is invalid");
     }
