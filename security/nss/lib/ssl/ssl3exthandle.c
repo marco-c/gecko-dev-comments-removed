@@ -1659,17 +1659,13 @@ ssl3_SendSigAlgsXtn(const sslSocket *ss, TLSExtensionData *xtnData,
     }
 
     PRUint16 minVersion;
-    PRUint16 maxVersion;
     if (ss->sec.isServer) {
-        maxVersion = ss->version; 
         minVersion = ss->version; 
     } else {
-        maxVersion = ss->vrange.max; 
         minVersion = ss->vrange.min; 
     }
 
-    SECStatus rv = ssl3_EncodeSigAlgs(ss, maxVersion, minVersion,
-                                      PR_TRUE ,
+    SECStatus rv = ssl3_EncodeSigAlgs(ss, minVersion, PR_TRUE ,
                                       ss->opt.enableGrease, buf);
     if (rv != SECSuccess) {
         return SECFailure;

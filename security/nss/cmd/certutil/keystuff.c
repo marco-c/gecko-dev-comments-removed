@@ -517,7 +517,6 @@ CERTUTIL_GeneratePrivateKey(KeyType keytype, PK11SlotInfo *slot, int size,
     CK_MECHANISM_TYPE mechanism;
     PK11RSAGenParams rsaparams;
     SECKEYPQGParams *dsaparams = NULL;
-    CK_ULONG paramSet;
     void *params;
     SECKEYPrivateKey *privKey = NULL;
 
@@ -570,50 +569,6 @@ CERTUTIL_GeneratePrivateKey(KeyType keytype, PK11SlotInfo *slot, int size,
             if ((params = (void *)getECParams(pqgFile)) == NULL)
                 return NULL;
             break;
-        case mldsaKey:
-            mechanism = CKM_ML_DSA_KEY_PAIR_GEN;
-            
-            paramSet = 0;
-            if (pqgFile) {
-                if (PORT_Strcasecmp(pqgFile, "ML-DSA-44") == 0) {
-                    paramSet = CKP_ML_DSA_44;
-                } else if (PORT_Strcasecmp(pqgFile, "ML-DSA-65") == 0) {
-                    paramSet = CKP_ML_DSA_65;
-                } else if (PORT_Strcasecmp(pqgFile, "ML-DSA-87") == 0) {
-                    paramSet = CKP_ML_DSA_87;
-                } else {
-                    
-
-                    return NULL;
-                }
-            } else
-                switch (size) {
-                    
-
-                    case 44:
-                    case 2560:
-                        paramSet = CKP_ML_DSA_44;
-                        break;
-                    case 65:
-                    case 4032:
-                        paramSet = CKP_ML_DSA_65;
-                        break;
-                    case 87:
-                    case 4896:
-                        paramSet = CKP_ML_DSA_87;
-                        break;
-                    default:
-                        
-                        return NULL;
-                }
-            
-
-            if (paramSet == 0) {
-                return NULL;
-            }
-            params = &paramSet;
-            break;
-
         default:
             return NULL;
     }

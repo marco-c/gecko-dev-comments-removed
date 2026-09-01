@@ -374,8 +374,6 @@ ssl3_ExtensionAdvertisedClientHelloInner(const sslSocket *ss, PRUint16 ex_type)
 SECStatus
 ssl3_ParseExtensions(sslSocket *ss, PRUint8 **b, PRUint32 *length)
 {
-    PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
-
     
     ssl3_DestroyRemoteExtensions(&ss->ssl3.hs.remoteExtensions);
 
@@ -506,10 +504,6 @@ ssl3_HandleParsedExtensions(sslSocket *ss, SSLHandshakeType message)
                              (message == ssl_hs_certificate_request) ||
                              (message == ssl_hs_new_session_ticket);
     PRCList *cursor;
-
-    
-
-    PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
 
     switch (message) {
         case ssl_hs_client_hello:
@@ -1173,10 +1167,6 @@ tls_ClientHelloExtensionPermutationSetup(sslSocket *ss)
     const size_t buildersSize = (sizeof(sslExtensionBuilder) * buildersLen);
     
     const size_t permutationLen = buildersLen - 2;
-
-    
-
-    PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
 
     
     PR_ASSERT(!ss->ssl3.hs.chExtensionPermutation);

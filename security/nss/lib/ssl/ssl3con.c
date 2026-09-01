@@ -71,7 +71,6 @@ PRBool ssl_IsRsaPssSignatureScheme(SSLSignatureScheme scheme);
 PRBool ssl_IsRsaeSignatureScheme(SSLSignatureScheme scheme);
 PRBool ssl_IsRsaPkcs1SignatureScheme(SSLSignatureScheme scheme);
 PRBool ssl_IsDsaSignatureScheme(SSLSignatureScheme scheme);
-PRBool ssl_IsMldsaSignatureScheme(SSLSignatureScheme scheme);
 static SECStatus ssl3_UpdateDefaultHandshakeHashes(sslSocket *ss,
                                                    const unsigned char *b,
                                                    unsigned int l);
@@ -200,10 +199,7 @@ static const SSLSignatureScheme defaultSignatureSchemes[] = {
     ssl_sig_dsa_sha256,
     ssl_sig_dsa_sha384,
     ssl_sig_dsa_sha512,
-    ssl_sig_dsa_sha1,
-    ssl_sig_mldsa44,
-    ssl_sig_mldsa65,
-    ssl_sig_mldsa87,
+    ssl_sig_dsa_sha1
 };
 PR_STATIC_ASSERT(PR_ARRAY_SIZE(defaultSignatureSchemes) <=
                  MAX_SIGNATURE_SCHEMES);
@@ -353,8 +349,7 @@ static const ssl3CipherSuiteDef cipher_suite_defs[] = {
 static const CK_MECHANISM_TYPE auth_alg_defs[] = {
     CKM_INVALID_MECHANISM, 
     CKM_RSA_PKCS,          
-    CKM_DSA,
-              
+    CKM_DSA,  
     CKM_INVALID_MECHANISM, 
     CKM_ECDSA,             
     CKM_ECDH1_DERIVE,      
@@ -362,10 +357,7 @@ static const CK_MECHANISM_TYPE auth_alg_defs[] = {
     CKM_RSA_PKCS,          
     CKM_RSA_PKCS_PSS,      
     CKM_HKDF_DATA,         
-    CKM_INVALID_MECHANISM, 
-    CKM_ML_DSA,            
-    CKM_ML_DSA,            
-    CKM_ML_DSA,            
+    CKM_INVALID_MECHANISM  
 };
 PR_STATIC_ASSERT(PR_ARRAY_SIZE(auth_alg_defs) == ssl_auth_size);
 
@@ -916,14 +908,6 @@ ssl_HasCert(const sslSocket *ss, PRUint16 maxVersion, SSLAuthType authType)
     if (authType == ssl_auth_null || authType == ssl_auth_psk || authType == ssl_auth_tls13_any) {
         return PR_TRUE;
     }
-    
-    if (maxVersion < SSL_LIBRARY_VERSION_TLS_1_3 &&
-        (authType == ssl_auth_mldsa44 ||
-         authType == ssl_auth_mldsa65 ||
-         authType == ssl_auth_mldsa87)) {
-        return PR_FALSE;
-    }
-
     for (cursor = PR_NEXT_LINK(&ss->serverCerts);
          cursor != &ss->serverCerts;
          cursor = PR_NEXT_LINK(cursor)) {
@@ -996,22 +980,13 @@ ssl_SchemePolicyOK(SSLSignatureScheme scheme, PRUint32 require)
 
 
 static PRBool
-ssl_SignatureSchemeAccepted(PRUint16 maxVersion,
-                            PRUint16 minVersion,
+ssl_SignatureSchemeAccepted(PRUint16 minVersion,
                             SSLSignatureScheme scheme,
                             PRBool forCert)
 {
     
     if (ssl_IsRsaPssSignatureScheme(scheme)) {
         if (!PK11_TokenExists(auth_alg_defs[ssl_auth_rsa_pss])) {
-            return PR_FALSE;
-        }
-    } else if (ssl_IsMldsaSignatureScheme(scheme)) {
-        
-        if (maxVersion < SSL_LIBRARY_VERSION_TLS_1_3) {
-            return PR_FALSE;
-        }
-        if (!PK11_TokenExists(CKM_ML_DSA)) {
             return PR_FALSE;
         }
     } else if (!forCert && ssl_IsRsaPkcs1SignatureScheme(scheme)) {
@@ -1062,7 +1037,7 @@ ssl_CheckSignatureSchemes(sslSocket *ss)
 
     
     for (unsigned int i = 0; i < ss->ssl3.signatureSchemeCount; ++i) {
-        if (ssl_SignatureSchemeAccepted(ss->vrange.max, ss->vrange.min,
+        if (ssl_SignatureSchemeAccepted(ss->vrange.min,
                                         ss->ssl3.signatureSchemes[i],
                                         PR_FALSE )) {
             return SECSuccess;
@@ -1093,8 +1068,7 @@ ssl_HasSignatureScheme(const sslSocket *ss, SSLAuthType authType)
         PRBool acceptable = authType == schemeAuthType ||
                             (schemeAuthType == ssl_auth_rsa_pss &&
                              authType == ssl_auth_rsa_sign);
-        if (acceptable && ssl_SignatureSchemeAccepted(ss->version, ss->version,
-                                                      scheme, PR_FALSE )) {
+        if (acceptable && ssl_SignatureSchemeAccepted(ss->version, scheme, PR_FALSE )) {
             return PR_TRUE;
         }
     }
@@ -4548,12 +4522,6 @@ ssl3_AuthTypeToOID(SSLAuthType authType)
             return SEC_OID_ANSIX962_EC_PUBLIC_KEY;
         case ssl_auth_dsa:
             return SEC_OID_ANSIX9_DSA_SIGNATURE;
-        case ssl_auth_mldsa44:
-            return SEC_OID_ML_DSA_44;
-        case ssl_auth_mldsa65:
-            return SEC_OID_ML_DSA_65;
-        case ssl_auth_mldsa87:
-            return SEC_OID_ML_DSA_87;
         default:
             break;
     }
@@ -4589,10 +4557,6 @@ ssl_SignatureSchemeToHashType(SSLSignatureScheme scheme)
         case ssl_sig_dsa_sha512:
             return ssl_hash_sha512;
         case ssl_sig_rsa_pkcs1_sha1md5:
-            return ssl_hash_none; 
-        case ssl_sig_mldsa44:
-        case ssl_sig_mldsa65:
-        case ssl_sig_mldsa87:
             return ssl_hash_none; 
         case ssl_sig_none:
         case ssl_sig_ed25519:
@@ -4646,10 +4610,6 @@ ssl_SignatureSchemeValid(SSLSignatureScheme scheme, SECOidTag spkiOid,
         
 
         return spkiOid != SEC_OID_ANSIX962_EC_PUBLIC_KEY;
-    } else {
-        if (ssl_IsMldsaSignatureScheme(scheme)) {
-            return PR_FALSE;
-        }
     }
     return PR_TRUE;
 }
@@ -4746,31 +4706,18 @@ ssl_SignatureSchemeFromSpki(const CERTSubjectPublicKeyInfo *spki,
 {
     SECOidTag spkiOid = SECOID_GetAlgorithmTag(&spki->algorithm);
 
-    *scheme = ssl_sig_none;
-    switch (spkiOid) {
-        case SEC_OID_PKCS1_RSA_PSS_SIGNATURE:
-            return ssl_SignatureSchemeFromPssSpki(spki, scheme);
-        case SEC_OID_ANSIX962_EC_PUBLIC_KEY:
-            
-
-
-
-            if (isTls13) {
-                return ssl_SignatureSchemeFromEcSpki(spki, scheme);
-            }
-            break;
-        case SEC_OID_ML_DSA_44:
-            *scheme = ssl_sig_mldsa44;
-            break;
-        case SEC_OID_ML_DSA_65:
-            *scheme = ssl_sig_mldsa65;
-            break;
-        case SEC_OID_ML_DSA_87:
-            *scheme = ssl_sig_mldsa87;
-            break;
-        default:
-            break;
+    if (spkiOid == SEC_OID_PKCS1_RSA_PSS_SIGNATURE) {
+        return ssl_SignatureSchemeFromPssSpki(spki, scheme);
     }
+
+    
+
+
+    if (isTls13 && spkiOid == SEC_OID_ANSIX962_EC_PUBLIC_KEY) {
+        return ssl_SignatureSchemeFromEcSpki(spki, scheme);
+    }
+
+    *scheme = ssl_sig_none;
     return SECSuccess;
 }
 
@@ -4876,9 +4823,6 @@ ssl_IsSupportedSignatureScheme(SSLSignatureScheme scheme)
         case ssl_sig_ecdsa_secp256r1_sha256:
         case ssl_sig_ecdsa_secp384r1_sha384:
         case ssl_sig_ecdsa_secp521r1_sha512:
-        case ssl_sig_mldsa44:
-        case ssl_sig_mldsa65:
-        case ssl_sig_mldsa87:
         case ssl_sig_dsa_sha1:
         case ssl_sig_dsa_sha256:
         case ssl_sig_dsa_sha384:
@@ -4961,21 +4905,6 @@ ssl_IsDsaSignatureScheme(SSLSignatureScheme scheme)
     return PR_FALSE;
 }
 
-PRBool
-ssl_IsMldsaSignatureScheme(SSLSignatureScheme scheme)
-{
-    switch (scheme) {
-        case ssl_sig_mldsa44:
-        case ssl_sig_mldsa65:
-        case ssl_sig_mldsa87:
-            return PR_TRUE;
-
-        default:
-            return PR_FALSE;
-    }
-    return PR_FALSE;
-}
-
 SSLAuthType
 ssl_SignatureSchemeToAuthType(SSLSignatureScheme scheme)
 {
@@ -5004,17 +4933,6 @@ ssl_SignatureSchemeToAuthType(SSLSignatureScheme scheme)
         case ssl_sig_dsa_sha384:
         case ssl_sig_dsa_sha512:
             return ssl_auth_dsa;
-        
-
-
-
-
-        case ssl_sig_mldsa44:
-            return ssl_auth_mldsa44;
-        case ssl_sig_mldsa65:
-            return ssl_auth_mldsa65;
-        case ssl_sig_mldsa87:
-            return ssl_auth_mldsa87;
 
         default:
             PORT_Assert(0);
@@ -8960,7 +8878,7 @@ ssl3_ServerCallSNICallback(sslSocket *ss)
     int ret = 0;
 
 #ifdef SSL_SNI_ALLOW_NAME_CHANGE_2HS
-#error ("No longer allowed to set SSL_SNI_ALLOW_NAME_CHANGE_2HS")
+#error("No longer allowed to set SSL_SNI_ALLOW_NAME_CHANGE_2HS")
 #endif
     if (!ssl3_ExtensionNegotiated(ss, ssl_server_name_xtn)) {
         if (ss->firstHsDone) {
@@ -10589,14 +10507,13 @@ ssl3_SendServerKeyExchange(sslSocket *ss)
 }
 
 SECStatus
-ssl3_EncodeSigAlgs(const sslSocket *ss, PRUint16 maxVersion, PRUint16 minVersion,
-                   PRBool forCert, PRBool grease, sslBuffer *buf)
+ssl3_EncodeSigAlgs(const sslSocket *ss, PRUint16 minVersion, PRBool forCert,
+                   PRBool grease, sslBuffer *buf)
 {
     SSLSignatureScheme filtered[MAX_SIGNATURE_SCHEMES] = { 0 };
     unsigned int filteredCount = 0;
 
-    SECStatus rv = ssl3_FilterSigAlgs(ss, maxVersion, minVersion,
-                                      PR_FALSE, forCert,
+    SECStatus rv = ssl3_FilterSigAlgs(ss, minVersion, PR_FALSE, forCert,
                                       PR_ARRAY_SIZE(filtered),
                                       filtered, &filteredCount);
     if (rv != SECSuccess) {
@@ -10673,8 +10590,8 @@ ssl3_EncodeFilteredSigAlgs(const sslSocket *ss, const SSLSignatureScheme *scheme
 
 
 SECStatus
-ssl3_FilterSigAlgs(const sslSocket *ss, PRUint16 maxVersion, PRUint16 minVersion,
-                   PRBool disableRsae, PRBool forCert,
+ssl3_FilterSigAlgs(const sslSocket *ss, PRUint16 minVersion, PRBool disableRsae,
+                   PRBool forCert,
                    unsigned int maxSchemes, SSLSignatureScheme *filteredSchemes,
                    unsigned int *numFilteredSchemes)
 {
@@ -10691,7 +10608,7 @@ ssl3_FilterSigAlgs(const sslSocket *ss, PRUint16 maxVersion, PRUint16 minVersion
         if (disableRsae && ssl_IsRsaeSignatureScheme(ss->ssl3.signatureSchemes[i])) {
             continue;
         }
-        if (ssl_SignatureSchemeAccepted(maxVersion, minVersion,
+        if (ssl_SignatureSchemeAccepted(minVersion,
                                         ss->ssl3.signatureSchemes[i],
                                         allowUnsortedPkcs1)) {
             filteredSchemes[(*numFilteredSchemes)++] = ss->ssl3.signatureSchemes[i];
@@ -10702,10 +10619,10 @@ ssl3_FilterSigAlgs(const sslSocket *ss, PRUint16 maxVersion, PRUint16 minVersion
             if (disableRsae && ssl_IsRsaeSignatureScheme(ss->ssl3.signatureSchemes[i])) {
                 continue;
             }
-            if (!ssl_SignatureSchemeAccepted(maxVersion, minVersion,
+            if (!ssl_SignatureSchemeAccepted(minVersion,
                                              ss->ssl3.signatureSchemes[i],
                                              PR_FALSE) &&
-                ssl_SignatureSchemeAccepted(maxVersion, minVersion,
+                ssl_SignatureSchemeAccepted(minVersion,
                                             ss->ssl3.signatureSchemes[i],
                                             PR_TRUE)) {
                 filteredSchemes[(*numFilteredSchemes)++] = ss->ssl3.signatureSchemes[i];
@@ -10748,7 +10665,7 @@ ssl3_SendCertificateRequest(sslSocket *ss)
 
     length = 1 + certTypesLength + 2 + calen;
     if (isTLS12) {
-        rv = ssl3_EncodeSigAlgs(ss, ss->version, ss->version, PR_TRUE ,
+        rv = ssl3_EncodeSigAlgs(ss, ss->version, PR_TRUE ,
                                 PR_FALSE , &sigAlgsBuf);
         if (rv != SECSuccess) {
             return rv;
@@ -11953,11 +11870,6 @@ ssl_SetAuthKeyBits(sslSocket *ss, const SECKEYPublicKey *pubKey)
 
                 minKey = ss->sec.authKeyBits;
             }
-            break;
-        case mldsaKey:
-            
-
-            minKey = ss->sec.authKeyBits;
             break;
 
         default:
@@ -13243,7 +13155,7 @@ ssl3_HandleHandshake(sslSocket *ss, sslBuffer *origBuf)
     origBuf->len = 0; 
     return SECSuccess;
 
-loser: {
+loser : {
     
     unsigned int consumed = origBuf->len - buf.len;
     PORT_Assert(consumed == buf.buf - origBuf->buf);

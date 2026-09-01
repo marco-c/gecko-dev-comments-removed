@@ -57,20 +57,6 @@ tls_GetSignatureAlgorithmId(PLArenaPool *arena, SSLSignatureScheme scheme,
             algTag = SEC_OID_ANSIX962_ECDSA_SHA512_SIGNATURE;
             hashAlgTag = SEC_OID_SHA512;
             break;
-        
-
-        case ssl_sig_mldsa44:
-            algTag = SEC_OID_ML_DSA_44;
-            hashAlgTag = SEC_OID_ML_DSA_44;
-            break;
-        case ssl_sig_mldsa65:
-            algTag = SEC_OID_ML_DSA_65;
-            hashAlgTag = SEC_OID_ML_DSA_65;
-            break;
-        case ssl_sig_mldsa87:
-            algTag = SEC_OID_ML_DSA_87;
-            hashAlgTag = SEC_OID_ML_DSA_87;
-            break;
 
         
 

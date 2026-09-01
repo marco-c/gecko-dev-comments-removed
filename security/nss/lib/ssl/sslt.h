@@ -158,10 +158,6 @@ typedef enum {
     ssl_sig_dsa_sha512 = 0x0602,
     ssl_sig_ecdsa_sha1 = 0x0203,
 
-    ssl_sig_mldsa44 = 0x0904,
-    ssl_sig_mldsa65 = 0x0905,
-    ssl_sig_mldsa87 = 0x0906,
-
     
 
 
@@ -191,9 +187,6 @@ typedef enum {
     ssl_auth_rsa_pss = 8,    
     ssl_auth_psk = 9,
     ssl_auth_tls13_any = 10,
-    ssl_auth_mldsa44 = 11, 
-    ssl_auth_mldsa65 = 12, 
-    ssl_auth_mldsa87 = 13,
     ssl_auth_size 
 } SSLAuthType;
 

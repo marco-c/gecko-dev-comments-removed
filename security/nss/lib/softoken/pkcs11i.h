@@ -516,7 +516,7 @@ struct SFTKItemTemplateStr {
 
 
 #define sftk_SlotFromSession(sp) ((sp)->slot)
-#define sftk_isToken(id) (((id) & SFTK_TOKEN_MASK) == SFTK_TOKEN_MAGIC)
+#define sftk_isToken(id) (((id)&SFTK_TOKEN_MASK) == SFTK_TOKEN_MAGIC)
 
 
 #define SFTK_SESSION_OBJECT_TYPE 0xFFFFFFFFU
@@ -535,7 +535,7 @@ struct SFTKItemTemplateStr {
 
 
 #define sftk_hash(value, size) \
-    ((PRUint32)((value) * SHMULTIPLIER) & (size - 1))
+    ((PRUint32)((value)*SHMULTIPLIER) & (size - 1))
 #define sftkqueue_add(element, id, head, hash_size) \
     {                                               \
         int tmp = sftk_hash(id, hash_size);         \

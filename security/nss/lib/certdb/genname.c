@@ -1069,8 +1069,8 @@ cert_ExtractDNEmailAddrs(CERTGeneralName *name, PLArenaPool *arena)
                     goto loser;
                 nameList = cert_CombineNamesLists(nameList, newName);
             } 
-        } 
-    } 
+        }     
+    }         
     
     (void)cert_CombineNamesLists(name, nameList);
     
@@ -1581,10 +1581,11 @@ done:
         siBuffer, (unsigned char *)str, sizeof(str) - 1 \
     }
 
-#define NAME_CONSTRAINTS_ENTRY(CA)               \
-    {                                            \
-        STRING_TO_SECITEM(CA##_SUBJECT_DN),      \
-        STRING_TO_SECITEM(CA##_NAME_CONSTRAINTS) \
+#define NAME_CONSTRAINTS_ENTRY(CA)                   \
+    {                                                \
+        STRING_TO_SECITEM(CA##_SUBJECT_DN)           \
+        ,                                            \
+            STRING_TO_SECITEM(CA##_NAME_CONSTRAINTS) \
     }
 
 

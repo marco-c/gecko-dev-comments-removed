@@ -47,7 +47,7 @@ static const AVATestValues kAVATestStrings[] = {
     {"CN=Somebody,L=Set,O=Up,C=US,1=The,2=Bomb", true},
     {"OID.2.5.4.6=😑", true},
     {"2.5.4.6=😑", true},
-    {"OID.moocow=😑", false},     
+    {"OID.moocow=😑", false},      
     {"3.2=bad", false},           
     {"256.257=bad", false},       
     {"YO=LO", false},             

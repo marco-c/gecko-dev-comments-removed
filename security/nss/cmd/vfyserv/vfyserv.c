@@ -231,7 +231,7 @@ handle_connection(PRFileDesc *sslSocket, int connection)
     return SECSuccess; 
 }
 
-#define BYTE(n, i) (((i) >> ((n) * 8)) & 0xff)
+#define BYTE(n, i) (((i) >> ((n)*8)) & 0xff)
 
 
 

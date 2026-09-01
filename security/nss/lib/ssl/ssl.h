@@ -38,7 +38,7 @@ SSL_IMPORT const PRUint16 SSL_NumImplementedCiphers;
 SSL_IMPORT PRUint16 SSL_GetNumImplementedCiphers(void);
 
 
-#define SSL_IS_SSL2_CIPHER(which) (((which) & 0xfff0) == 0xff00)
+#define SSL_IS_SSL2_CIPHER(which) (((which)&0xfff0) == 0xff00)
 
 
 

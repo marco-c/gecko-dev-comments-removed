@@ -380,7 +380,7 @@ CERT_DecodeCertPackage(char *certbuf,
     }
 
 
-notder: {
+notder : {
     unsigned char *certbegin = NULL;
     unsigned char *certend = NULL;
     char *pc;

@@ -695,7 +695,7 @@ cert_IsRootCert(CERTCertificate *cert)
                 if (!SECITEM_ItemsAreEqual(&cert->derIssuer, caName)) {
                     return PR_FALSE;
                 } 
-            } 
+            }     
         }
         if (cert->authKeyID->authCertSerialNumber.len > 0) {
             if (!SECITEM_ItemsAreEqual(

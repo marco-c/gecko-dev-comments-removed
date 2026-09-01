@@ -221,16 +221,16 @@ TEST_P(TlsConnectGenericPre13, P384PriorityFromModelSocket) {
 
 class TlsKeyExchangeGroupCapture : public TlsHandshakeFilter {
  public:
-  TlsKeyExchangeGroupCapture(const std::shared_ptr<TlsAgent>& a)
+  TlsKeyExchangeGroupCapture(const std::shared_ptr<TlsAgent> &a)
       : TlsHandshakeFilter(a, {kTlsHandshakeServerKeyExchange}),
         group_(ssl_grp_none) {}
 
   SSLNamedGroup group() const { return group_; }
 
  protected:
-  virtual PacketFilter::Action FilterHandshake(const HandshakeHeader& header,
-                                               const DataBuffer& input,
-                                               DataBuffer* output) {
+  virtual PacketFilter::Action FilterHandshake(const HandshakeHeader &header,
+                                               const DataBuffer &input,
+                                               DataBuffer *output) {
     uint32_t value = 0;
     EXPECT_TRUE(input.Read(0, 1, &value));
     EXPECT_EQ(3U, value) << "curve type has to be 3";
@@ -541,13 +541,13 @@ TEST_P(TlsKeyExchangeTest13, MultipleClientShares) {
 
 class ECCClientKEXFilter : public TlsHandshakeFilter {
  public:
-  ECCClientKEXFilter(const std::shared_ptr<TlsAgent>& client)
+  ECCClientKEXFilter(const std::shared_ptr<TlsAgent> &client)
       : TlsHandshakeFilter(client, {kTlsHandshakeClientKeyExchange}) {}
 
  protected:
-  virtual PacketFilter::Action FilterHandshake(const HandshakeHeader& header,
-                                               const DataBuffer& input,
-                                               DataBuffer* output) {
+  virtual PacketFilter::Action FilterHandshake(const HandshakeHeader &header,
+                                               const DataBuffer &input,
+                                               DataBuffer *output) {
     
     output->Allocate(1);
     output->Write(0, 0U, 1);  
@@ -558,13 +558,13 @@ class ECCClientKEXFilter : public TlsHandshakeFilter {
 
 class ECCServerKEXFilter : public TlsHandshakeFilter {
  public:
-  ECCServerKEXFilter(const std::shared_ptr<TlsAgent>& server)
+  ECCServerKEXFilter(const std::shared_ptr<TlsAgent> &server)
       : TlsHandshakeFilter(server, {kTlsHandshakeServerKeyExchange}) {}
 
  protected:
-  virtual PacketFilter::Action FilterHandshake(const HandshakeHeader& header,
-                                               const DataBuffer& input,
-                                               DataBuffer* output) {
+  virtual PacketFilter::Action FilterHandshake(const HandshakeHeader &header,
+                                               const DataBuffer &input,
+                                               DataBuffer *output) {
     
     output->Allocate(4);
     output->Write(0, 3U, 1);  
@@ -591,16 +591,16 @@ TEST_P(TlsConnectGenericPre13, ConnectECDHEmptyClientPoint) {
 
 class ECCServerKEXDamager : public TlsHandshakeFilter {
  public:
-  ECCServerKEXDamager(const std::shared_ptr<TlsAgent>& server, ECType ec_type,
+  ECCServerKEXDamager(const std::shared_ptr<TlsAgent> &server, ECType ec_type,
                       SSLNamedGroup named_curve)
       : TlsHandshakeFilter(server, {kTlsHandshakeServerKeyExchange}),
         ec_type_(ec_type),
         named_curve_(named_curve) {}
 
  protected:
-  virtual PacketFilter::Action FilterHandshake(const HandshakeHeader& header,
-                                               const DataBuffer& input,
-                                               DataBuffer* output) {
+  virtual PacketFilter::Action FilterHandshake(const HandshakeHeader &header,
+                                               const DataBuffer &input,
+                                               DataBuffer *output) {
     size_t offset = 0;
     output->Allocate(5);
     offset = output->Write(offset, ec_type_, 1);
@@ -671,7 +671,7 @@ TEST_P(TlsConnectTls12, ConnectIncorrectSigAlg) {
 }
 
 static void CheckSkeSigScheme(
-    std::shared_ptr<TlsHandshakeRecorder>& capture_ske,
+    std::shared_ptr<TlsHandshakeRecorder> &capture_ske,
     uint16_t expected_scheme) {
   TlsParser parser(capture_ske->buffer());
   uint32_t tmp = 0;

@@ -113,12 +113,12 @@ struct sidCacheEntryStr {
              PRInt32 srvNameIndex;
              PRUint8 srvNameHash[SHA256_LENGTH]; 
              PRUint16 namedCurve;
-         } ssl3;
+} ssl3;
 
-        
-        struct {
-             PRUint8 filler[116]; 
-        } forceSize;
+
+struct {
+     PRUint8 filler[116]; 
+} forceSize;
     } u;
 };
 typedef struct sidCacheEntryStr sidCacheEntry;
@@ -129,7 +129,7 @@ struct certCacheEntryStr {
     PRUint16 sessionIDLength;                
     PRUint8 sessionID[SSL3_SESSIONID_BYTES]; 
     PRUint8 cert[SSL_MAX_CACHED_CERT_LEN];   
-}; 
+};                                           
 typedef struct certCacheEntryStr certCacheEntry;
 
 struct sidCacheLockStr {
@@ -241,8 +241,8 @@ static PRBool isMultiProcess = PR_FALSE;
 #define MAX_SID_CACHE_LOCKS 256
 #endif
 
-#define SID_HOWMANY(val, size) (((val) + ((size) - 1)) / (size))
-#define SID_ROUNDUP(val, size) ((size) * SID_HOWMANY((val), (size)))
+#define SID_HOWMANY(val, size) (((val) + ((size)-1)) / (size))
+#define SID_ROUNDUP(val, size) ((size)*SID_HOWMANY((val), (size)))
 
 static sslPID myPid;
 static PRUint32 ssl_max_sid_cache_locks = MAX_SID_CACHE_LOCKS;
@@ -1551,7 +1551,7 @@ LockPoller(void *arg)
                 }
             }
         } 
-    } 
+    }     
 }
 
 
