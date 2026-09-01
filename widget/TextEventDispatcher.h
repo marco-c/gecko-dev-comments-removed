@@ -144,7 +144,14 @@ class TextEventDispatcher final {
   
 
 
-  bool IsDispatchingEvent() const { return mDispatchingEvent > 0; }
+  [[nodiscard]] bool IsDispatchingEvent() const { return mDispatchingEvent; }
+
+  
+
+
+  [[nodiscard]] bool IsDispatching(const WidgetEvent& aEvent) const {
+    return mDispatchingEvent && mDispatchingEvent->IsDispatching(aEvent);
+  }
 
   
 
@@ -406,8 +413,31 @@ class TextEventDispatcher final {
   };
   PendingComposition mPendingComposition;
 
+  class MOZ_STACK_CLASS AutoDispatchingEvent {
+   public:
+    AutoDispatchingEvent(TextEventDispatcher& aDispatcher, WidgetEvent& aEvent)
+        : mDispatcher(aDispatcher),
+          mPrevDispatchingEvent(aDispatcher.mDispatchingEvent),
+          mEvent(aEvent) {
+      mDispatcher->mDispatchingEvent = this;
+    }
+    ~AutoDispatchingEvent() {
+      mDispatcher->mDispatchingEvent = mPrevDispatchingEvent;
+    }
+
+    bool IsDispatching(const WidgetEvent& aEvent) const {
+      return &mEvent == &aEvent ||
+             (mPrevDispatchingEvent &&
+              mPrevDispatchingEvent->IsDispatching(aEvent));
+    }
+
+   private:
+    const OwningNonNull<TextEventDispatcher> mDispatcher;
+    const AutoDispatchingEvent* const mPrevDispatchingEvent;
+    const WidgetEvent& mEvent;
+  };
   
-  uint16_t mDispatchingEvent;
+  const AutoDispatchingEvent* mDispatchingEvent = nullptr;
 
   enum InputTransactionType : uint8_t {
     

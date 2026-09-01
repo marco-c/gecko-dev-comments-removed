@@ -384,7 +384,12 @@ void TextComposition::DispatchCompositionEvent(
   
   if (mRequestedToCommitOrCancel && !aIsSynthesized) {
     *aStatus = nsEventStatus_eConsumeNoDefault;
-    return;
+    
+    
+    
+    if (!mBrowserParent) {
+      return;
+    }
   }
 
   
@@ -719,6 +724,16 @@ nsresult TextComposition::RequestToCommit(nsIWidget* aWidget, bool aDiscard) {
     }
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     nsresult rv = aWidget->NotifyIME(
         IMENotification(aDiscard ? REQUEST_TO_CANCEL_COMPOSITION
                                  : REQUEST_TO_COMMIT_COMPOSITION));
@@ -730,10 +745,23 @@ nsresult TextComposition::RequestToCommit(nsIWidget* aWidget, bool aDiscard) {
   mRequestedToCommitOrCancel = true;
 
   
+  
   if (Destroyed()) {
     return NS_OK;
   }
 
+  
+  
+  
+  if (mBrowserParent) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  
   
   nsAutoString data(aDiscard ? EmptyString() : lastData);
   if (data == mLastData) {

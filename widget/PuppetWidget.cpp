@@ -264,22 +264,11 @@ nsEventStatus PuppetWidget::DispatchEvent(WidgetGUIEvent* aEvent) {
   if (aEvent->mClass == eCompositionEventClass ||
       aEvent->mClass == eKeyboardEventClass) {
     TextEventDispatcher* dispatcher = GetTextEventDispatcher();
-    
-    
-    
-    
-    
-    
-    if (!dispatcher->IsDispatchingEvent() &&
-        !(mNativeTextEventDispatcherListener &&
-          !aEvent->mFlags.mIsSynthesizedForTests)) {
-      DebugOnly<nsresult> rv =
-          dispatcher->BeginInputTransactionFor(aEvent, this);
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rv),
-          "The text event dispatcher should always succeed to start input "
-          "transaction for the event");
-    }
+    DebugOnly<nsresult> rv = dispatcher->BeginInputTransactionFor(aEvent, this);
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "The text event dispatcher should always succeed to start input "
+        "transaction for the event");
   }
 
   return nsIWidget::DispatchEvent(aEvent);

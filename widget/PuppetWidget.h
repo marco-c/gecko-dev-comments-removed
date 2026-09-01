@@ -176,6 +176,14 @@ class PuppetWidget final : public nsIWidget,
                        const InputContextAction& aAction) override;
   InputContext GetInputContext() override;
   NativeIMEContext GetNativeIMEContext() override;
+  
+
+
+
+
+  [[nodiscard]] bool HasExternalNativeTextEventDispatcherListener() const {
+    return mNativeTextEventDispatcherListener;
+  }
   TextEventDispatcherListener* GetNativeTextEventDispatcherListener() override {
     return mNativeTextEventDispatcherListener
                ? mNativeTextEventDispatcherListener.get()
