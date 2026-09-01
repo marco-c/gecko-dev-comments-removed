@@ -103,6 +103,9 @@ pref("browser.download.forbid_open_with", false);
 pref("dom.editcontext.suppress_notifying_ime_timeout", 300);
 
 
+pref("dom.editcontext.suppress_notifying_ime_timeout_focus", 100);
+
+
 pref("dom.indexedDB.logging.enabled", true);
 
 pref("dom.indexedDB.logging.details", true);
@@ -3292,8 +3295,12 @@ pref("network.trr.builtin-excluded-domains", "localhost,local");
 
 pref("network.lna.etp.enabled", true);
 
-pref("captivedetect.canonicalURL", "http://detectportal.firefox.com/canonical.html");
-pref("captivedetect.canonicalContent", "<meta http-equiv=\"refresh\" content=\"0;url=https://support.mozilla.org/kb/captive-portal\"/>");
+
+
+
+
+pref("captivedetect.canonicalURL", "http://detectportal.firefox.com/generate_204");
+pref("captivedetect.canonicalContent", "");
 pref("captivedetect.maxWaitingTime", 5000);
 pref("captivedetect.pollingTime", 3000);
 pref("captivedetect.maxRetryCount", 5);
@@ -4098,40 +4105,6 @@ pref("extensions.formautofill.heuristics.autofillSameOriginWithTop", true);
 pref("toolkit.osKeyStore.loglevel", "Warn");
 
 pref("extensions.formautofill.supportRTL", false);
-
-
-pref("cookiebanners.listService.logLevel", "Error");
-
-
-pref("cookiebanners.bannerClicking.logLevel", "Error");
-
-
-
-pref("cookiebanners.bannerClicking.enabled", true);
-
-
-pref("cookiebanners.bannerClicking.testing", false);
-
-
-
-pref("cookiebanners.bannerClicking.timeoutAfterLoad", 5000);
-
-
-
-pref("cookiebanners.bannerClicking.timeoutAfterDOMContentLoaded", 20000);
-
-
-
-pref("cookiebanners.bannerClicking.pollingInterval", 500);
-
-
-
-
-
-pref("cookiebanners.listService.testRules", "[]");
-
-
-pref("cookiebanners.listService.testSkipRemoteSettings", false);
 
 
 
