@@ -5547,13 +5547,11 @@ void MacroAssembler::randomDouble(Register rng, FloatRegister dest,
   load64(state0Addr, s1Reg);
 
   
-  move64(s1Reg, s0Reg);
-  lshift64(Imm32(23), s1Reg);
+  lshift64(Imm32(23), s1Reg, s0Reg);
   xor64(s0Reg, s1Reg);
 
   
-  move64(s1Reg, s0Reg);
-  rshift64(Imm32(17), s1Reg);
+  rshift64(Imm32(17), s1Reg, s0Reg);
   xor64(s0Reg, s1Reg);
 
   
@@ -10293,8 +10291,7 @@ void MacroAssembler::hashAndScrambleValue(ValueOperand value, Register result,
   
 #ifdef JS_PUNBOX64
   auto r64 = Register64(temp);
-  move64(value.toRegister64(), r64);
-  rshift64Arithmetic(Imm32(32), r64);
+  rshift64Arithmetic(Imm32(32), value.toRegister64(), r64);
 #else
   move32(value.typeReg(), temp);
 #endif
@@ -11054,8 +11051,7 @@ void MacroAssembler::fuzzilliHashDouble(FloatRegister src, Register result,
 
 #  ifdef JS_PUNBOX64
   
-  move64(r64, Register64(result));
-  rshift64(Imm32(32), Register64(result));
+  rshift64(Imm32(32), r64, Register64(result));
 #  endif
 
   

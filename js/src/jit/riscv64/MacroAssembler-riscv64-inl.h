@@ -1593,6 +1593,12 @@ void MacroAssembler::lshift64(Imm32 imm, Register64 dest) {
   MOZ_ASSERT(0 <= imm.value && imm.value < 64);
   slli(dest.reg, dest.reg, imm.value);
 }
+
+void MacroAssembler::lshift64(Imm32 imm, Register64 src, Register64 dest) {
+  MOZ_ASSERT(0 <= imm.value && imm.value < 64);
+  slli(dest.reg, src.reg, imm.value);
+}
+
 void MacroAssembler::lshiftPtr(Register shift, Register dest) {
   sll(dest, dest, shift);
 }
@@ -1946,6 +1952,12 @@ void MacroAssembler::rshift64Arithmetic(Imm32 imm, Register64 dest) {
   srai(dest.reg, dest.reg, imm.value);
 }
 
+void MacroAssembler::rshift64Arithmetic(Imm32 imm, Register64 src,
+                                        Register64 dest) {
+  MOZ_ASSERT(0 <= imm.value && imm.value < 64);
+  srai(dest.reg, src.reg, imm.value);
+}
+
 void MacroAssembler::rshift64Arithmetic(Register shift, Register64 dest) {
   sra(dest.reg, dest.reg, shift);
 }
@@ -1957,6 +1969,11 @@ void MacroAssembler::rshift64(Register shift, Register64 dest) {
 void MacroAssembler::rshift64(Imm32 imm, Register64 dest) {
   MOZ_ASSERT(0 <= imm.value && imm.value < 64);
   srli(dest.reg, dest.reg, imm.value);
+}
+
+void MacroAssembler::rshift64(Imm32 imm, Register64 src, Register64 dest) {
+  MOZ_ASSERT(0 <= imm.value && imm.value < 64);
+  srli(dest.reg, src.reg, imm.value);
 }
 
 void MacroAssembler::rshiftPtrArithmetic(Imm32 imm, Register dest) {
@@ -2036,31 +2053,31 @@ void MacroAssembler::sqrtFloat32(FloatRegister src, FloatRegister dest) {
   fsqrt_s(dest, src);
 }
 
-FaultingCodeOffset MacroAssembler::storeFloat16(FloatRegister src,
-                                                const Address& dest, Register) {
+FaultingCodeRange MacroAssembler::storeFloat16(FloatRegister src,
+                                               const Address& dest, Register) {
   return ma_storeFloat16(src, dest);
 }
-FaultingCodeOffset MacroAssembler::storeFloat16(FloatRegister src,
-                                                const BaseIndex& dest,
-                                                Register) {
+FaultingCodeRange MacroAssembler::storeFloat16(FloatRegister src,
+                                               const BaseIndex& dest,
+                                               Register) {
   return ma_storeFloat16(src, dest);
 }
 
-FaultingCodeOffset MacroAssembler::storeFloat32(FloatRegister src,
-                                                const Address& addr) {
-  return ma_storeFloat(src, addr);
-}
-FaultingCodeOffset MacroAssembler::storeFloat32(FloatRegister src,
-                                                const BaseIndex& addr) {
-  return ma_storeFloat(src, addr);
-}
-
-FaultingCodeOffset MacroAssembler::storeDouble(FloatRegister src,
+FaultingCodeRange MacroAssembler::storeFloat32(FloatRegister src,
                                                const Address& addr) {
+  return ma_storeFloat(src, addr);
+}
+FaultingCodeRange MacroAssembler::storeFloat32(FloatRegister src,
+                                               const BaseIndex& addr) {
+  return ma_storeFloat(src, addr);
+}
+
+FaultingCodeRange MacroAssembler::storeDouble(FloatRegister src,
+                                              const Address& addr) {
   return ma_storeDouble(src, addr);
 }
-FaultingCodeOffset MacroAssembler::storeDouble(FloatRegister src,
-                                               const BaseIndex& addr) {
+FaultingCodeRange MacroAssembler::storeDouble(FloatRegister src,
+                                              const BaseIndex& addr) {
   return ma_storeDouble(src, addr);
 }
 

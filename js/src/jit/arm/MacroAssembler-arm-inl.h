@@ -754,6 +754,15 @@ void MacroAssembler::lshift64(Imm32 imm, Register64 dest) {
   }
 }
 
+void MacroAssembler::lshift64(Imm32 imm, Register64 src, Register64 dest) {
+  MOZ_ASSERT(0 <= imm.value && imm.value < 64);
+  MOZ_ASSERT(dest.low != src.high);
+  if (src != dest) {
+    move64(src, dest);
+  }
+  lshift64(imm, dest);
+}
+
 void MacroAssembler::lshift64(Register unmaskedShift, Register64 dest) {
   
   
@@ -865,6 +874,16 @@ void MacroAssembler::rshift64Arithmetic(Imm32 imm, Register64 dest) {
   }
 }
 
+void MacroAssembler::rshift64Arithmetic(Imm32 imm, Register64 src,
+                                        Register64 dest) {
+  MOZ_ASSERT(0 <= imm.value && imm.value < 64);
+  MOZ_ASSERT(dest.low != src.high);
+  if (src != dest) {
+    move64(src, dest);
+  }
+  rshift64Arithmetic(imm, dest);
+}
+
 void MacroAssembler::rshift64Arithmetic(Register unmaskedShift,
                                         Register64 dest) {
   Label proceed;
@@ -928,6 +947,15 @@ void MacroAssembler::rshift64(Imm32 imm, Register64 dest) {
     ma_lsr(Imm32(imm.value - 32), dest.high, dest.low);
     ma_mov(Imm32(0), dest.high);
   }
+}
+
+void MacroAssembler::rshift64(Imm32 imm, Register64 src, Register64 dest) {
+  MOZ_ASSERT(0 <= imm.value && imm.value < 64);
+  MOZ_ASSERT(dest.low != src.high);
+  if (src != dest) {
+    move64(src, dest);
+  }
+  rshift64(imm, dest);
 }
 
 void MacroAssembler::rshift64(Register unmaskedShift, Register64 dest) {
@@ -2631,49 +2659,49 @@ void MacroAssembler::spectreBoundsCheckPtr(Register index,
 
 
 
-FaultingCodeOffset MacroAssembler::storeDouble(FloatRegister src,
-                                               const Address& addr) {
+FaultingCodeRange MacroAssembler::storeDouble(FloatRegister src,
+                                              const Address& addr) {
   ScratchRegisterScope scratch(*this);
   BufferOffset offset = ma_vstr(src, addr, scratch);
-  return FaultingCodeOffset(offset.getOffset());
+  return FaultingCodeRange(offset.getOffset());
 }
-FaultingCodeOffset MacroAssembler::storeDouble(FloatRegister src,
-                                               const BaseIndex& addr) {
+FaultingCodeRange MacroAssembler::storeDouble(FloatRegister src,
+                                              const BaseIndex& addr) {
   ScratchRegisterScope scratch(*this);
   SecondScratchRegisterScope scratch2(*this);
   uint32_t scale = Imm32::ShiftOf(addr.scale).value;
   BufferOffset offset = ma_vstr(src, addr.base, addr.index, scratch, scratch2,
                                 scale, addr.offset);
-  return FaultingCodeOffset(offset.getOffset());
+  return FaultingCodeRange(offset.getOffset());
 }
 
-FaultingCodeOffset MacroAssembler::storeFloat32(FloatRegister src,
-                                                const Address& addr) {
+FaultingCodeRange MacroAssembler::storeFloat32(FloatRegister src,
+                                               const Address& addr) {
   ScratchRegisterScope scratch(*this);
   BufferOffset offset = ma_vstr(src.asSingle(), addr, scratch);
-  return FaultingCodeOffset(offset.getOffset());
+  return FaultingCodeRange(offset.getOffset());
 }
-FaultingCodeOffset MacroAssembler::storeFloat32(FloatRegister src,
-                                                const BaseIndex& addr) {
+FaultingCodeRange MacroAssembler::storeFloat32(FloatRegister src,
+                                               const BaseIndex& addr) {
   ScratchRegisterScope scratch(*this);
   SecondScratchRegisterScope scratch2(*this);
   uint32_t scale = Imm32::ShiftOf(addr.scale).value;
   BufferOffset offset = ma_vstr(src.asSingle(), addr.base, addr.index, scratch,
                                 scratch2, scale, addr.offset);
-  return FaultingCodeOffset(offset.getOffset());
+  return FaultingCodeRange(offset.getOffset());
 }
 
-FaultingCodeOffset MacroAssembler::storeFloat16(FloatRegister src,
-                                                const Address& dest,
-                                                Register scratch) {
+FaultingCodeRange MacroAssembler::storeFloat16(FloatRegister src,
+                                               const Address& dest,
+                                               Register scratch) {
   ma_vxfer(src, scratch);
 
   
   return store16(scratch, dest);
 }
-FaultingCodeOffset MacroAssembler::storeFloat16(FloatRegister src,
-                                                const BaseIndex& dest,
-                                                Register scratch) {
+FaultingCodeRange MacroAssembler::storeFloat16(FloatRegister src,
+                                               const BaseIndex& dest,
+                                               Register scratch) {
   ma_vxfer(src, scratch);
 
   
