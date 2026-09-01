@@ -3362,8 +3362,10 @@ ImgDrawResult nsCSSBorderImageRenderer::DrawBorderImage(
   
   
   CSSSizeOrRatio intrinsicSize = mImageRenderer.ComputeIntrinsicSize();
-  Maybe<nsSize> svgViewportSize =
-      intrinsicSize.CanComputeConcreteSize() ? Nothing() : Some(mImageSize);
+  Maybe<CSSSize> svgViewportSize =
+      intrinsicSize.CanComputeConcreteSize()
+          ? Nothing()
+          : Some(CSSSize::FromAppUnits(mImageSize));
   bool hasIntrinsicRatio = intrinsicSize.HasRatio();
 
   

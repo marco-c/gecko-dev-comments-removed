@@ -66,18 +66,36 @@ nsIFrame* SVGDocumentWrapper::GetRootLayoutFrame() const {
   return rootElem ? rootElem->GetPrimaryFrame() : nullptr;
 }
 
-void SVGDocumentWrapper::UpdateViewportBounds(const nsIntSize& aViewportSize) {
+void SVGDocumentWrapper::UpdateViewportBounds(const CSSSize& aViewportSize) {
   MOZ_ASSERT(!mIgnoreInvalidation, "shouldn't be reentrant");
   mIgnoreInvalidation = true;
+
+  
+  
+  
+  
+  
+  const auto intSize =
+      LayoutDeviceIntSize::Ceil(aViewportSize.width, aViewportSize.height);
+  const nsSize maybeFractionalSize = CSSPixel::ToAppUnits(aViewportSize);
 
   LayoutDeviceIntRect currentBounds;
   mViewer->GetBounds(currentBounds);
 
+  bool changed = false;
+  if (currentBounds.Size() != intSize) {
+    mViewer->SetBounds(LayoutDeviceIntRect(LayoutDeviceIntPoint(), intSize));
+    changed = true;
+  }
+
+  if (RefPtr ps = GetPresShell();
+      ps && ps->GetLayoutViewportSize() != maybeFractionalSize) {
+    ps->SetLayoutViewportSize(maybeFractionalSize,  false);
+    changed = true;
+  }
+
   
-  if (currentBounds.Size().ToUnknownSize() != aViewportSize) {
-    mViewer->SetBounds(LayoutDeviceIntRect(
-        LayoutDeviceIntPoint(),
-        LayoutDeviceIntSize::FromUnknownSize(aViewportSize)));
+  if (changed) {
     FlushLayout();
   }
 

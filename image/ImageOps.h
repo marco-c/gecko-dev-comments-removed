@@ -7,6 +7,7 @@
 #define mozilla_image_ImageOps_h
 
 #include "ImageMetadata.h"
+#include "Units.h"
 #include "nsCOMPtr.h"
 #include "nsRect.h"
 
@@ -62,10 +63,10 @@ class ImageOps {
 
   static already_AddRefed<Image> Clip(
       Image* aImage, nsIntRect aClip,
-      const Maybe<nsSize>& aSVGViewportSize = Nothing());
+      const Maybe<CSSSize>& aSVGViewportSize = Nothing());
   static already_AddRefed<imgIContainer> Clip(
       imgIContainer* aImage, nsIntRect aClip,
-      const Maybe<nsSize>& aSVGViewportSize = Nothing());
+      const Maybe<CSSSize>& aSVGViewportSize = Nothing());
 
   
 

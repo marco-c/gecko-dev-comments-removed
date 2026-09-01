@@ -65,7 +65,7 @@ class ClippedImage : public ImageWrapper {
 
  protected:
   ClippedImage(Image* aImage, nsIntRect aClip,
-               const Maybe<nsSize>& aSVGViewportSize);
+               const Maybe<CSSSize>& aSVGViewportSize);
 
   virtual ~ClippedImage();
 
@@ -84,10 +84,10 @@ class ClippedImage : public ImageWrapper {
   
   UniquePtr<ClippedImageCachedSurface> mCachedSurface;
 
-  nsIntRect mClip;                    
-  Maybe<bool> mShouldClip;            
-  Maybe<nsIntSize> mSVGViewportSize;  
-                                      
+  nsIntRect mClip;                  
+  Maybe<bool> mShouldClip;          
+  Maybe<CSSSize> mSVGViewportSize;  
+                                    
   friend class DrawSingleTileCallback;
   friend class ImageOps;
 };

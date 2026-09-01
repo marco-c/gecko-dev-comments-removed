@@ -5,8 +5,6 @@
 #include "ClippedImage.h"
 
 #include <algorithm>
-#include <cmath>
-#include <new>  
 #include <utility>
 
 #include "ImageRegion.h"
@@ -113,15 +111,11 @@ class DrawSingleTileCallback : public gfxDrawingCallback {
 };
 
 ClippedImage::ClippedImage(Image* aImage, nsIntRect aClip,
-                           const Maybe<nsSize>& aSVGViewportSize)
-    : ImageWrapper(aImage), mClip(aClip) {
+                           const Maybe<CSSSize>& aSVGViewportSize)
+    : ImageWrapper(aImage), mClip(aClip), mSVGViewportSize(aSVGViewportSize) {
   MOZ_ASSERT(aImage != nullptr, "ClippedImage requires an existing Image");
   MOZ_ASSERT_IF(aSVGViewportSize,
                 aImage->GetType() == imgIContainer::TYPE_VECTOR);
-  if (aSVGViewportSize) {
-    mSVGViewportSize =
-        Some(aSVGViewportSize->ToNearestPixels(AppUnitsPerCSSPixel()));
-  }
 }
 
 ClippedImage::~ClippedImage() = default;
@@ -141,7 +135,9 @@ bool ClippedImage::ShouldClip() {
       mShouldClip.emplace(false);
     } else if (mSVGViewportSize && !mSVGViewportSize->IsEmpty()) {
       
-      nsIntRect svgViewportRect(nsIntPoint(0, 0), *mSVGViewportSize);
+      nsIntRect svgViewportRect(
+          nsIntPoint(0, 0),
+          CSSIntSize::Ceil(*mSVGViewportSize).ToUnknownSize());
 
       mClip = mClip.Intersect(svgViewportRect);
 
@@ -375,10 +371,11 @@ ImgDrawResult ClippedImage::DrawSingleTile(
              "Shouldn't need to create a surface");
 
   gfxRect clip(mClip.X(), mClip.Y(), mClip.Width(), mClip.Height());
-  nsIntSize size(aSize), innerSize(aSize);
+  nsIntSize size(aSize);
+  nsIntSize innerSize(aSize);
   bool needScale = false;
   if (mSVGViewportSize && !mSVGViewportSize->IsEmpty()) {
-    innerSize = *mSVGViewportSize;
+    innerSize = CSSIntSize::Ceil(*mSVGViewportSize).ToUnknownSize();
     needScale = true;
   } else if (NS_SUCCEEDED(InnerImage()->GetWidth(&innerSize.width)) &&
              NS_SUCCEEDED(InnerImage()->GetHeight(&innerSize.height))) {
@@ -407,28 +404,15 @@ ImgDrawResult ClippedImage::DrawSingleTile(
   gfxContextMatrixAutoSaveRestore saveMatrix(aContext);
   aContext->Multiply(gfxMatrix::Translation(-clip.X(), -clip.Y()));
 
-  auto unclipViewport = [&](const SVGImageContext& aOldContext) {
-    
-    
-    
-    
-    
-    SVGImageContext context(aOldContext);
-    auto oldViewport = aOldContext.GetViewportSize();
-    if (oldViewport) {
-      CSSIntSize newViewport;
-      newViewport.width =
-          ceil(oldViewport->width * double(innerSize.width) / mClip.Width());
-      newViewport.height =
-          ceil(oldViewport->height * double(innerSize.height) / mClip.Height());
-      context.SetViewportSize(Some(newViewport));
-    }
-    return context;
-  };
+  
+  
+  SVGImageContext innerContext(aSVGContext);
+  if (needScale && aSVGContext.GetViewportSize()) {
+    innerContext.SetViewportSize(Some(CSSSize(size.width, size.height)));
+  }
 
   return InnerImage()->Draw(aContext, size, region, aWhichFrame,
-                            aSamplingFilter, unclipViewport(aSVGContext),
-                            aFlags, aOpacity);
+                            aSamplingFilter, innerContext, aFlags, aOpacity);
 }
 
 NS_IMETHODIMP
@@ -455,16 +439,15 @@ nsIntSize ClippedImage::OptimalImageSizeForDest(const gfxSize& aDest,
                                                  aSamplingFilter, aFlags);
   }
 
-  int32_t imgWidth, imgHeight;
+  IntSize innerSize;
   bool needScale = false;
   bool forceUniformScaling = false;
   if (mSVGViewportSize && !mSVGViewportSize->IsEmpty()) {
-    imgWidth = mSVGViewportSize->width;
-    imgHeight = mSVGViewportSize->height;
+    innerSize = CSSIntSize::Ceil(*mSVGViewportSize).ToUnknownSize();
     needScale = true;
     forceUniformScaling = (aFlags & imgIContainer::FLAG_FORCE_UNIFORM_SCALING);
-  } else if (NS_SUCCEEDED(InnerImage()->GetWidth(&imgWidth)) &&
-             NS_SUCCEEDED(InnerImage()->GetHeight(&imgHeight))) {
+  } else if (NS_SUCCEEDED(InnerImage()->GetWidth(&innerSize.width)) &&
+             NS_SUCCEEDED(InnerImage()->GetHeight(&innerSize.height))) {
     needScale = true;
   }
 
@@ -483,22 +466,22 @@ nsIntSize ClippedImage::OptimalImageSizeForDest(const gfxSize& aDest,
 
     
     
-    gfxSize desiredSize(double(imgWidth) * scale.width,
-                        double(imgHeight) * scale.height);
-    nsIntSize innerDesiredSize = InnerImage()->OptimalImageSizeForDest(
+    gfxSize desiredSize(double(innerSize.width) * scale.width,
+                        double(innerSize.height) * scale.height);
+    IntSize innerDesiredSize = InnerImage()->OptimalImageSizeForDest(
         desiredSize, aWhichFrame, aSamplingFilter, aFlags);
 
     
     
     
     IntSize finalScale =
-        IntSize::Ceil(double(innerDesiredSize.width) / imgWidth,
-                      double(innerDesiredSize.height) / imgHeight);
+        IntSize::Ceil(double(innerDesiredSize.width) / innerSize.width,
+                      double(innerDesiredSize.height) / innerSize.height);
     return mClip.Size() * finalScale;
   }
 
-  MOZ_ASSERT(false,
-             "If ShouldClip() led us to draw then we should never get here");
+  MOZ_ASSERT_UNREACHABLE(
+      "If ShouldClip() led us to draw then we should never get here");
   return InnerImage()->OptimalImageSizeForDest(aDest, aWhichFrame,
                                                aSamplingFilter, aFlags);
 }
