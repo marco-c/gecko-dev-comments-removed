@@ -14,7 +14,6 @@
 #include "MediaTimer.h"
 #include "MediaTrackGraph.h"
 #include "TimeUnits.h"
-#include "gtest/MozGtestFriend.h"
 #include "mozilla/SPSCQueue.h"
 #include "mozilla/StateMirroring.h"
 #include "mozilla/TimeStamp.h"
@@ -224,8 +223,6 @@ class AudioDecoderInputTrack final : public ProcessedMediaTrack {
   bool mSentAllData = false;
 
   
-  FRIEND_TEST(AudioDecoderInputTrack, LimitsLargeRateTransposeOutput);
-
   std::unique_ptr<RLBoxSoundTouch> mTimeStretcher;
 
   
