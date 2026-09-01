@@ -55,7 +55,7 @@ class InputQueueIterator {
   using Iterator = nsTArray<UniquePtr<QueuedInput>>::iterator;
 
  public:
-  InputQueueIterator() : mCurrent(), mEnd() {}  
+  InputQueueIterator() = default;  
   InputQueueIterator(Iterator aCurrent, Iterator aEnd)
       : mCurrent(aCurrent), mEnd(aEnd) {}
 

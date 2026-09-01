@@ -74,7 +74,7 @@ struct AsyncImagePipelineOps {
       : mTransaction(aTransaction) {}
   
   
-  ~AsyncImagePipelineOps();
+  ~AsyncImagePipelineOps() = default;
 
   void HandleOps(wr::TransactionBuilder& aTxn);
 

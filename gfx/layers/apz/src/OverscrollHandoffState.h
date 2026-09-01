@@ -30,7 +30,7 @@ class AsyncPanZoomController;
 class OverscrollHandoffChain {
  protected:
   
-  ~OverscrollHandoffChain();
+  ~OverscrollHandoffChain() = default;
 
  public:
   

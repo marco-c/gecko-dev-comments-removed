@@ -39,7 +39,7 @@ struct Pointer {
  public:
   static Pointer Null() { return Pointer(); }
 
-  Pointer() : mBlockAndOffset(kNullValue) {}
+  Pointer() = default;
 
   Pointer(uint32_t aBlock, uint32_t aOffset)
       : mBlockAndOffset((aBlock << kBlockShift) | aOffset) {
@@ -103,7 +103,7 @@ struct Pointer {
   
   
   
-  std::atomic<uint32_t> mBlockAndOffset;
+  std::atomic<uint32_t> mBlockAndOffset{kNullValue};
 };
 
 
@@ -176,7 +176,7 @@ struct Face {
 #endif
     bool mFixedPitch;                  
     mozilla::WeightRange mWeight;      
-    mozilla::StretchRange mStretch;    
+    mozilla::WidthRange mWidth;        
     mozilla::SlantStyleRange mStyle;   
     RefPtr<gfxCharacterMap> mCharMap;  
   };
@@ -191,7 +191,7 @@ struct Face {
 #endif
         mFixedPitch(aData.mFixedPitch),
         mWeight(aData.mWeight),
-        mStretch(aData.mStretch),
+        mWidth(aData.mWidth),
         mStyle(aData.mStyle),
         mCharacterMap(Pointer::Null()) {
   }
@@ -210,7 +210,7 @@ struct Face {
 #endif
   bool mFixedPitch;
   mozilla::WeightRange mWeight;
-  mozilla::StretchRange mStretch;
+  mozilla::WidthRange mWidth;
   mozilla::SlantStyleRange mStyle;
   Pointer mCharacterMap;
 };
