@@ -4,8 +4,26 @@
 
 
 
-function createPaymentMethodIdentifierUrl(testId) {
+
+
+function createPaymentMethodIdentifierUrl(testId, options = {}) {
   const url = new URL(`https://${location.host}/payment-method-manifest/resources/payment-method-identifier.py`);
+  url.searchParams.set('id', testId);
+  if (options.link !== undefined) {
+    const links = Array.isArray(options.link) ? options.link : [options.link];
+    links.forEach(l => url.searchParams.append('link', l));
+  }
+  return url.href;
+}
+
+
+
+
+
+
+
+function createPaymentMethodManifestUrl(testId) {
+  const url = new URL(`https://${location.host}/payment-method-manifest/resources/payment-method-manifest.py`);
   url.searchParams.set('id', testId);
   return url.href;
 }
