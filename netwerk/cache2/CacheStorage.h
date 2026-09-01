@@ -98,6 +98,12 @@ class CacheStorage : public nsICacheStorage {
  protected:
   virtual ~CacheStorage() = default;
 
+  
+  
+  nsresult AsyncOpenInternal(nsIURI* aURI, const nsACString& aIdExtension,
+                             uint32_t aFlags,
+                             nsICacheEntryOpenCallback* aCallback);
+
   RefPtr<LoadContextInfo> mLoadContextInfo;
   bool mWriteToDisk : 1;
   bool mSkipSizeCheck : 1;

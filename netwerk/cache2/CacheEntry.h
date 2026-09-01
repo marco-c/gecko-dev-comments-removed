@@ -19,6 +19,7 @@
 #include "nsIOutputStream.h"
 #include "nsIRunnable.h"
 #include "nsITransportSecurityInfo.h"
+#include "nsIURI.h"
 #include "nsRefPtrHashtable.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
@@ -51,7 +52,7 @@ class CacheEntry final : public nsIRunnable,
 
   static uint64_t GetNextId();
 
-  CacheEntry(const nsACString& aStorageID, const nsACString& aURI,
+  CacheEntry(const nsACString& aStorageID, nsIURI* aURI,
              const nsACString& aEnhanceID, bool aUseDisk, bool aSkipSizeCheck,
              bool aPin);
 
@@ -113,7 +114,7 @@ class CacheEntry final : public nsIRunnable,
   uint32_t GetMetadataMemoryConsumption();
   nsCString const& GetStorageID() const { return mStorageID; }
   nsCString const& GetEnhanceID() const { return mEnhanceID; }
-  nsCString const& GetURI() const { return mURI; }
+  nsIURI* GetURI() const { return mURI; }
   
   bool IsUsingDisk() const { return mUseDisk; }
   bool IsReferenced() const MOZ_NO_THREAD_SAFETY_ANALYSIS;
@@ -343,7 +344,8 @@ class CacheEntry final : public nsIRunnable,
   
   Atomic<nsresult, ReleaseAcquire> mFileStatus{NS_ERROR_NOT_INITIALIZED};
   
-  nsCString const mURI;
+  
+  nsCOMPtr<nsIURI> const mURI;
   nsCString const mEnhanceID;
   nsCString const mStorageID;
 

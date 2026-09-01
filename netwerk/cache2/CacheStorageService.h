@@ -142,8 +142,7 @@ class CacheStorageService final : public nsICacheStorageService,
   static void GetCacheEntryInfo(CacheEntry* aEntry,
                                 EntryInfoCallback* aCallback);
 
-  nsresult GetCacheIndexEntryAttrs(CacheStorage const* aStorage,
-                                   const nsACString& aURI,
+  nsresult GetCacheIndexEntryAttrs(CacheStorage const* aStorage, nsIURI* aURI,
                                    const nsACString& aIdExtension,
                                    bool* aHasAltData, uint32_t* aFileSizeKb);
 
@@ -252,7 +251,7 @@ class CacheStorageService final : public nsICacheStorageService,
 
 
 
-  nsresult AddStorageEntry(CacheStorage const* aStorage, const nsACString& aURI,
+  nsresult AddStorageEntry(CacheStorage const* aStorage, nsIURI* aURI,
                            const nsACString& aIdExtension, uint32_t aFlags,
                            CacheEntryHandle** aResult);
 
@@ -260,16 +259,14 @@ class CacheStorageService final : public nsICacheStorageService,
 
 
 
-  nsresult CheckStorageEntry(CacheStorage const* aStorage,
-                             const nsACString& aURI,
+  nsresult CheckStorageEntry(CacheStorage const* aStorage, nsIURI* aURI,
                              const nsACString& aIdExtension, bool* aResult);
 
   
 
 
 
-  nsresult DoomStorageEntry(CacheStorage const* aStorage,
-                            const nsACString& aURI,
+  nsresult DoomStorageEntry(CacheStorage const* aStorage, nsIURI* aURI,
                             const nsACString& aIdExtension,
                             nsICacheEntryDoomCallback* aCallback);
 
@@ -340,8 +337,7 @@ class CacheStorageService final : public nsICacheStorageService,
   nsresult DoomStorageEntries(const nsACString& aContextKey,
                               nsILoadContextInfo* aContext, bool aDiskStorage,
                               bool aPin, nsICacheEntryDoomCallback* aCallback);
-  nsresult AddStorageEntry(const nsACString& aContextKey,
-                           const nsACString& aURI,
+  nsresult AddStorageEntry(const nsACString& aContextKey, nsIURI* aURI,
                            const nsACString& aIdExtension, bool aWriteToDisk,
                            bool aSkipSizeCheck, bool aPin, uint32_t aFlags,
                            CacheEntryHandle** aResult);
