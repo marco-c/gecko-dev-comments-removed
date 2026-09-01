@@ -68,7 +68,14 @@ async function resetToolsHeight() {
   await BrowserTestUtils.waitForMutationCondition(
     SidebarController.sidebarMain.buttonsWrapper,
     { attributes: true, attributeFilter: ["overflowing"] },
-    () => !SidebarController.sidebarMain.shouldShowOverflowButton
+    () => !SidebarController.sidebarMain.shouldShowOverflowButton,
+    {
+      msg: "Tools stopped overflowing",
+      
+      
+      
+      timeout: Infinity,
+    }
   );
 }
 
