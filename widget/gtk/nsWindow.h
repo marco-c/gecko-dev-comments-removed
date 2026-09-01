@@ -184,7 +184,6 @@ class nsWindow : public nsIWidget {
                                 const LayoutDeviceIntRect& aRect,
                                 const InitData&) override;
   void Destroy() override;
-  float GetDPI() override;
   double GetDefaultScaleInternal() override;
   uint32_t GetMaxTouchPoints() const override;
   mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() const override;
@@ -541,6 +540,9 @@ class nsWindow : public nsIWidget {
   void ConfigureToplevelWindow();
   virtual void ConfigureToplevelWindowNative() {};
 
+  
+  virtual void OnMapNative() {};
+
   virtual void EnableVSyncSource() {};
   virtual void DisableVSyncSource() {};
 
@@ -770,6 +772,7 @@ class nsWindow : public nsIWidget {
 
   float mLastMotionPressure = 0.0f;
 
+  
   InputRegion mInputRegion;
 
   bool DragInProgress(void);
