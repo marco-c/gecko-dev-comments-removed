@@ -497,14 +497,13 @@ void PeerConnectionCtx::AddPeerConnection(const std::string& aKey,
     audioStateConfig.audio_device_module =
         new webrtc::RefCountedObject<FakeAudioDeviceModule>();
 
-    constexpr bool supportTailDispatch = true;
     
     
     
     
     auto callWorkerThread = CreateWebrtcTaskQueueWrapper(
         GetMediaThreadPool(MediaThreadType::WEBRTC_CALL_THREAD),
-        "CallWorker"_ns, supportTailDispatch);
+        "CallWorker"_ns, TailDispatchPolicy::ConsistentOrdering);
 
     auto trials = MakeUnique<MozTrialsConfig>();
 

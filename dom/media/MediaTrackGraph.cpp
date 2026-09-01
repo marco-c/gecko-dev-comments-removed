@@ -1599,7 +1599,7 @@ auto MediaTrackGraphImpl::OneIterationImpl(
       MOZ_ASSERT(mGraph->mTaskDispatcher.isNothing());
 
       sCurrentThreadTLS.set(mGraph);
-      mTaskDispatcher.emplace(aGraph,  true);
+      mTaskDispatcher.emplace(aGraph, aGraph->mTailDispatchPolicy);
       mGraph->mTaskDispatcher.emplace(*mTaskDispatcher);
     }
     ~DispatchGuard() {
@@ -3412,7 +3412,7 @@ MediaTrackGraphImpl::MediaTrackGraphImpl(uint64_t aWindowID,
                                          AudioDeviceID aPrimaryOutputDeviceID,
                                          AbstractThread* aMainThread)
     : MediaTrackGraph(aSampleRate, aPrimaryOutputDeviceID),
-      AbstractThread(true),
+      AbstractThread(TailDispatchPolicy::TargetAtomicity),
       mWindowID(aWindowID),
       mFirstCycleBreaker(0)
       
