@@ -57,3 +57,5 @@ static void JNI_NetworkTester_DestroyTestController(JNIEnv* jni,
 }
 
 }  
+
+DEFINE_JNI(NetworkTester)

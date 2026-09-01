@@ -122,3 +122,5 @@ void InstallHandlers() {
 }  
 }  
 }  
+
+DEFINE_JNI(NativeTestWebrtc)
