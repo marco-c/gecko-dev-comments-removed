@@ -4329,6 +4329,43 @@ bool gfxFont::InitMetricsFromSfntTables(Metrics& aMetrics) {
   return true;
 }
 
+#if MOZ_FONTATIONS
+bool gfxFont::InitMetricsFromSkrifa(Metrics& aMetrics) {
+  mIsValid = false;
+
+  const auto* skf = mFontEntry->GetSkrifaFont();
+  if (!skf) {
+    return false;
+  }
+
+  SkrifaLocation* location =
+      skrifa_font_resolve_variations_to_location(skf, &mStyle.variationSettings);
+  SkrifaMetrics metrics;
+  skrifa_font_get_metrics(skf, GetAdjustedSize(), location, &metrics);
+  skrifa_location_delete(location);
+
+  
+  mFUnitsConvFactor = metrics.scale_factor;
+  aMetrics.maxAdvance = metrics.max_advance;
+  aMetrics.aveCharWidth = metrics.ave_char_width;
+  aMetrics.maxAscent = metrics.max_ascent;
+  aMetrics.maxDescent = -metrics.max_descent;  
+  aMetrics.externalLeading = metrics.external_leading;
+
+  
+  
+  aMetrics.underlineOffset = metrics.underline_offset;
+  aMetrics.underlineSize = metrics.underline_size;
+  aMetrics.strikeoutOffset = metrics.strikeout_offset;
+  aMetrics.strikeoutSize = metrics.strikeout_size;
+  aMetrics.xHeight = metrics.x_height;
+  aMetrics.capHeight = metrics.cap_height;
+
+  mIsValid = true;
+  return true;
+}
+#endif
+
 static double RoundToNearestMultiple(double aValue, double aFraction) {
   return floor(aValue / aFraction + 0.5) * aFraction;
 }
@@ -4835,7 +4872,7 @@ gfxFontStyle::gfxFontStyle()
       baselineOffset(0.0f),
       languageOverride{0},
       weight(FontWeight::NORMAL),
-      stretch(FontStretch::NORMAL),
+      width(FontWidth::NORMAL),
       style(FontSlantStyle::NORMAL),
       variantCaps(NS_FONT_VARIANT_CAPS_NORMAL),
       variantSubSuper(NS_FONT_VARIANT_POSITION_NORMAL),
@@ -4853,23 +4890,20 @@ gfxFontStyle::gfxFontStyle()
       noFallbackVariantFeatures(true) {
 }
 
-gfxFontStyle::gfxFontStyle(FontSlantStyle aStyle, FontWeight aWeight,
-                           FontStretch aStretch, gfxFloat aSize,
-                           const FontSizeAdjust& aSizeAdjust, bool aSystemFont,
-                           bool aPrinterFont,
+gfxFontStyle::gfxFontStyle(
+    FontSlantStyle aStyle, FontWeight aWeight, FontWidth aWidth, gfxFloat aSize,
+    const FontSizeAdjust& aSizeAdjust, bool aSystemFont, bool aPrinterFont,
 #ifdef XP_WIN
-                           bool aAllowForceGDIClassic,
+    bool aAllowForceGDIClassic,
 #endif
-                           bool aAllowWeightSynthesis,
-                           StyleFontSynthesisStyle aStyleSynthesis,
-                           bool aAllowSmallCapsSynthesis,
-                           bool aUsePositionSynthesis,
-                           StyleFontLanguageOverride aLanguageOverride)
+    bool aAllowWeightSynthesis, StyleFontSynthesisStyle aStyleSynthesis,
+    bool aAllowSmallCapsSynthesis, bool aUsePositionSynthesis,
+    StyleFontLanguageOverride aLanguageOverride)
     : size(aSize),
       baselineOffset(0.0f),
       languageOverride(aLanguageOverride),
       weight(aWeight),
-      stretch(aStretch),
+      width(aWidth),
       style(aStyle),
       variantCaps(NS_FONT_VARIANT_CAPS_NORMAL),
       variantSubSuper(NS_FONT_VARIANT_POSITION_NORMAL),
@@ -4935,7 +4969,7 @@ PLDHashNumber gfxFontStyle::Hash() const {
                       : mozilla::HashBytes(variationSettings.Elements(),
                                            variationSettings.Length() *
                                                sizeof(gfxFontVariation));
-  return mozilla::AddToHash(hash, systemFont, style.Raw(), stretch.Raw(),
+  return mozilla::AddToHash(hash, systemFont, style.Raw(), width.Raw(),
                             weight.Raw(), size, int32_t(sizeAdjust * 1000.0f));
 }
 

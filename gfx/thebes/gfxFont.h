@@ -2403,6 +2403,12 @@ class gfxFont {
   
   bool InitMetricsFromSfntTables(Metrics& aMetrics);
 
+#if MOZ_FONTATIONS
+  
+  
+  bool InitMetricsFromSkrifa(Metrics& aMetrics);
+#endif
+
   
   
   void CalculateDerivedMetrics(Metrics& aMetrics);
