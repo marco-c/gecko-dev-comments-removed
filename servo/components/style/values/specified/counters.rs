@@ -96,17 +96,17 @@ fn parse_counters(
 
         let value = match input.try_parse(|input| Integer::parse(context, input)) {
             Ok(start) => {
-                if matches!(start.get(), Some(v) if v == i32::min_value()) {
+                if start.get() == Some(i32::MIN) {
                     
                     
                     
-                    Integer::new(i32::min_value() + 1)
+                    Integer::new(i32::MIN + 1)
                 } else {
                     start
                 }
             },
             _ => Integer::new(if is_reversed {
-                i32::min_value()
+                i32::MIN
             } else {
                 counter_type.default_value()
             }),

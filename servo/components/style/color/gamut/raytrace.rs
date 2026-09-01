@@ -174,10 +174,10 @@ impl AbsoluteColor {
         let bmax = [1.0, 1.0, 1.0];
 
         
-        let mut tfar = std::f32::INFINITY;
+        let mut tfar = f32::INFINITY;
 
         
-        let mut tnear = std::f32::NEG_INFINITY;
+        let mut tnear = f32::NEG_INFINITY;
 
         
         let mut direction = [0.0, 0.0, 0.0];

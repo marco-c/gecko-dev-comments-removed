@@ -20,7 +20,6 @@ use crate::svg_filter::{FilterGraphNode, FilterGraphOp, FilterGraphPictureRefere
 use rustc_hash::FxHasher;
 use plane_split::BspSplitter;
 use smallvec::SmallVec;
-use std::{usize, i32};
 use std::collections::{HashMap, HashSet};
 use std::f32;
 use std::hash::BuildHasherDefault;
@@ -187,7 +186,7 @@ pub struct PlaneSplitAnchor {
     pub draw_index: PrimitiveDrawIndex,
     
     
-    pub local_rect: LayoutRect,
+    pub pattern_rect: LayoutRect,
 }
 
 impl PlaneSplitAnchor {
@@ -198,7 +197,7 @@ impl PlaneSplitAnchor {
         PlaneSplitAnchor {
             spatial_node_index,
             draw_index,
-            local_rect: LayoutRect::zero(),
+            pattern_rect: LayoutRect::zero(),
         }
     }
 }
@@ -208,7 +207,7 @@ impl Default for PlaneSplitAnchor {
         PlaneSplitAnchor {
             spatial_node_index: SpatialNodeIndex::INVALID,
             draw_index: PrimitiveDrawIndex::INVALID,
-            local_rect: LayoutRect::zero(),
+            pattern_rect: LayoutRect::zero(),
         }
     }
 }

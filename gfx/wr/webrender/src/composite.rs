@@ -22,7 +22,7 @@ use crate::util::{extract_inner_rect_safe, Preallocator, ScaleOffset};
 use crate::tile_cache::PictureCacheDebugInfo;
 use crate::device::Device;
 use crate::space::SpaceMapper;
-use std::{ops, u64, os::raw::c_void, hash};
+use std::{ops, os::raw::c_void, hash};
 use std::num::NonZeroUsize;
 
 
@@ -241,8 +241,8 @@ impl ExternalSurfaceDescriptor {
     pub fn get_occluder_rect(
         &self,
         local_clip_rect: &PictureRect,
-        map_pic_to_world: &SpaceMapper<PicturePixel, WorldPixel>,
-    ) -> Option<WorldRect> {
+        map_pic_to_root: &SpaceMapper<PicturePixel, DevicePixel>,
+    ) -> Option<DeviceRect> {
         let local_surface_rect = self
             .local_rect
             .intersection(&self.local_clip_rect)
@@ -251,7 +251,7 @@ impl ExternalSurfaceDescriptor {
             });
 
         local_surface_rect.map(|local_surface_rect| {
-            map_pic_to_world
+            map_pic_to_root
                 .map(&local_surface_rect)
                 .expect("bug: unable to map external surface to world space")
         })
@@ -848,7 +848,7 @@ impl CompositeState {
     pub fn register_occluder(
         &mut self,
         z_id: ZBufferId,
-        rect: WorldRect,
+        rect: DeviceRect,
         compositor_clip: Option<CompositorClipIndex>,
     ) {
         let rect = match compositor_clip {
@@ -874,9 +874,9 @@ impl CompositeState {
             }
         };
 
-        let world_rect = rect.round().to_i32();
+        let device_rect = rect.round().to_i32();
 
-        self.occluders.push(world_rect, z_id);
+        self.occluders.push(device_rect, z_id);
     }
 
     
@@ -1308,7 +1308,7 @@ impl CompositeState {
             for (i, occluder) in self.occluders.occluders.iter().enumerate() {
                 pt.new_level(format!("occluder {}", i));
                 pt.add_item(format!("{:?}", occluder.z_id));
-                pt.add_item(format!("{:?}", occluder.world_rect.to_rect()));
+                pt.add_item(format!("{:?}", occluder.device_rect.to_rect()));
                 pt.end_level();
             }
             pt.end_level();
@@ -1777,7 +1777,7 @@ pub trait PartialPresentCompositor {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 struct Occluder {
     z_id: ZBufferId,
-    world_rect: WorldIntRect,
+    device_rect: DeviceIntRect,
 }
 
 
@@ -1849,8 +1849,8 @@ impl Occluders {
         }
     }
 
-    fn push(&mut self, world_rect: WorldIntRect, z_id: ZBufferId) {
-        self.occluders.push(Occluder { world_rect, z_id });
+    fn push(&mut self, device_rect: DeviceIntRect, z_id: ZBufferId) {
+        self.occluders.push(Occluder { device_rect, z_id });
     }
 
     
@@ -1858,7 +1858,7 @@ impl Occluders {
     pub fn is_tile_occluded(
         &mut self,
         z_id: ZBufferId,
-        world_rect: WorldRect,
+        device_rect: DeviceRect,
     ) -> bool {
         
         
@@ -1873,11 +1873,11 @@ impl Occluders {
         
 
         
-        let world_rect = world_rect.round().to_i32();
-        let ref_area = world_rect.area();
+        let device_rect = device_rect.round().to_i32();
+        let ref_area = device_rect.area();
 
         
-        let cover_area = self.area(z_id, &world_rect);
+        let cover_area = self.area(z_id, &device_rect);
         debug_assert!(cover_area <= ref_area);
 
         
@@ -1889,7 +1889,7 @@ impl Occluders {
     fn area(
         &mut self,
         z_id: ZBufferId,
-        clip_rect: &WorldIntRect,
+        clip_rect: &DeviceIntRect,
     ) -> i32 {
         
         
@@ -1906,7 +1906,7 @@ impl Occluders {
             if occluder.z_id.0 < z_id.0 {
                 
                 
-                if let Some(rect) = occluder.world_rect.intersection(clip_rect) {
+                if let Some(rect) = occluder.device_rect.intersection(clip_rect) {
                     let x0 = rect.min.x;
                     let x1 = x0 + rect.width();
                     self.scratch.events.push(OcclusionEvent::new(rect.min.y, OcclusionEventKind::Begin, x0, x1));

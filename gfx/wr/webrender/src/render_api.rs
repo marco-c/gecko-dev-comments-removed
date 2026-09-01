@@ -9,7 +9,6 @@ use std::fmt;
 use std::marker::PhantomData;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::u32;
 use api::{MinimapData, SnapshotImageKey};
 use crate::api::channel::{Sender, single_msg_channel, unbounded_channel};
 use crate::api::{BuiltDisplayList, IdNamespace, ExternalScrollId, Parameter, BoolParameter};
@@ -316,9 +315,15 @@ impl Transaction {
     
     
     
+    
+    
+    
+    
+    
     pub fn set_display_list(
         &mut self,
         epoch: Epoch,
+        namespace: IdNamespace,
         (pipeline_id, mut display_list): (PipelineId, BuiltDisplayList),
     ) {
         display_list.set_send_time_ns(zeitstempel::now());
@@ -327,6 +332,7 @@ impl Transaction {
                 display_list,
                 epoch,
                 pipeline_id,
+                namespace,
             }
         );
     }
@@ -847,6 +853,8 @@ pub enum SceneMsg {
         epoch: Epoch,
         
         pipeline_id: PipelineId,
+        
+        namespace: IdNamespace,
     },
     
     

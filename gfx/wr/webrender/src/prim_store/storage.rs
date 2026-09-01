@@ -2,7 +2,7 @@
 
 
 
-use std::{ops, marker::PhantomData, u32};
+use std::{ops, marker::PhantomData};
 use crate::util::Recycler;
 
 #[derive(Debug, Hash)]
@@ -34,7 +34,7 @@ impl<T> PartialEq for Index<T> {
 
 impl<T> Index<T> {
     fn new(idx: usize) -> Self {
-        debug_assert!(idx < u32::max_value() as usize);
+        debug_assert!(idx < u32::MAX as usize);
         Index(idx as u32, PhantomData)
     }
 

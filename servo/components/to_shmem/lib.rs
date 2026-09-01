@@ -15,7 +15,6 @@
 use std::alloc::Layout;
 use std::collections::HashSet;
 use std::ffi::CString;
-use std::isize;
 use std::marker::PhantomData;
 use std::mem::{self, ManuallyDrop};
 use std::num::Wrapping;
@@ -142,7 +141,7 @@ impl SharedMemoryBuilder {
 
         
         let start = self.index.checked_add(padding).unwrap();
-        assert!(start <= std::isize::MAX as usize); 
+        assert!(start <= isize::MAX as usize); 
 
         
         let end = start.checked_add(layout.size()).unwrap();

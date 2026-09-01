@@ -20,7 +20,7 @@
 
 
 
-use std::{fmt, u32};
+use std::fmt;
 use std::marker::PhantomData;
 
 #[derive(Debug, Copy, Clone, MallocSizeOf, PartialEq)]

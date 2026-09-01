@@ -7,7 +7,6 @@ use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use log::trace;
 use std::io::Cursor;
 use std::io::Write;
-use std::u8;
 
 
 

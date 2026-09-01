@@ -41,13 +41,12 @@ use std::process;
 use std::ptr;
 use std::sync::atomic;
 use std::sync::atomic::Ordering::{Acquire, Relaxed, Release};
-use std::{isize, usize};
 
 
 
 
 
-const MAX_REFCOUNT: usize = (isize::MAX) as usize;
+const MAX_REFCOUNT: usize = isize::MAX as usize;
 
 
 

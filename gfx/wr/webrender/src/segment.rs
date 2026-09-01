@@ -4,7 +4,7 @@
 
 use api::{BorderRadius, ClipMode};
 use api::units::*;
-use std::{cmp, usize};
+use std::cmp;
 use crate::util::extract_inner_rect_safe;
 use smallvec::SmallVec;
 
@@ -208,16 +208,14 @@ impl SegmentBuilder {
 
     pub fn initialize(
         &mut self,
-        local_rect: LayoutRect,
+        bounds: LayoutRect,
         inner_rect: Option<LayoutRect>,
-        local_clip_rect: LayoutRect,
     ) {
         self.items.clear();
         self.inner_rect = inner_rect;
-        self.bounding_rect = Some(local_rect);
+        self.bounding_rect = Some(bounds);
 
-        self.push_clip_rect(local_rect, None, None, ClipMode::Clip);
-        self.push_clip_rect(local_clip_rect, None, None, ClipMode::Clip);
+        self.push_clip_rect(bounds, None, None, ClipMode::Clip);
 
         
         
@@ -644,9 +642,8 @@ mod test {
     ) {
         let mut sb = SegmentBuilder::new();
         sb.initialize(
-            local_rect,
+            local_rect.intersection_unchecked(&local_clip_rect),
             inner_rect,
-            local_clip_rect,
         );
         sb.push_clip_rect(local_rect, None, None, ClipMode::Clip);
         sb.push_clip_rect(local_clip_rect, None, None, ClipMode::Clip);
