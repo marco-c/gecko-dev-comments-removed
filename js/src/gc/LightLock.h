@@ -7,7 +7,6 @@
 #define gc_LightLock_h
 
 #include "mozilla/Atomics.h"
-#include "mozilla/ThreadLocal.h"
 
 #include "js/TypeDecls.h"
 #include "threading/ConditionVariable.h"
@@ -21,9 +20,6 @@ extern void TSANMemoryAcquireFence(JSRuntime* runtime);
 extern void TSANMemoryReleaseFence(JSRuntime* runtime);
 #endif
 
-#ifdef DEBUG
-extern MOZ_THREAD_LOCAL(bool) TlsLightLockHeld;
-#endif
 
 
 
@@ -40,9 +36,7 @@ extern MOZ_THREAD_LOCAL(bool) TlsLightLockHeld;
 
 
 
-
-
-class LightLock {
+class LightLock : public MutexBase {
   enum StateBits : uint32_t {
     
     IsLocked = Bit(0),
@@ -61,39 +55,24 @@ class LightLock {
   
   mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> state;
 
-#ifdef DEBUG
-  ThreadId holdingThread_;
-#endif
-
  public:
+  explicit LightLock(const MutexId& id) : MutexBase(id) {}
+
   void lock(JSRuntime* runtime) {
-    MOZ_ASSERT(!TlsLightLockHeld.get());
-    MOZ_ASSERT(holdingThread_ != ThreadId::ThisThreadId());
+    preLockChecks();
     if (MOZ_UNLIKELY(!state.compareExchange(UnlockedState, LockedState))) {
       lockSlow(runtime);
     }
-#ifdef DEBUG
     MOZ_ASSERT(isLocked());
-    MOZ_ASSERT(holdingThread_ == ThreadId());
-    holdingThread_ = ThreadId::ThisThreadId();
-    TlsLightLockHeld.set(true);
-#endif
+    postLockChecks();
   }
   void lockSlow(JSRuntime* runtime);
 
   void unlock(JSRuntime* runtime) {
-#ifdef DEBUG
-    MOZ_ASSERT(isLocked());
-    MOZ_ASSERT(TlsLightLockHeld.get());
-    MOZ_ASSERT(holdingThread_ == ThreadId::ThisThreadId());
-    holdingThread_ = ThreadId();
-#endif
+    preUnlockChecks();
     if (MOZ_UNLIKELY(!state.compareExchange(LockedState, UnlockedState))) {
       unlockSlow(runtime);
     }
-#ifdef DEBUG
-    TlsLightLockHeld.set(false);
-#endif
   }
   void unlockSlow(JSRuntime* runtime);
 

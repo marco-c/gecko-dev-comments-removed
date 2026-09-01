@@ -18,17 +18,7 @@
 
 using namespace js;
 
-#ifdef DEBUG
-
-MOZ_THREAD_LOCAL(bool) js::TlsLightLockHeld;
-#endif
-
-js::LightLockRuntime::LightLockRuntime() : mutex(mutexid::GCLightLock) {
-#ifdef DEBUG
-  TlsLightLockHeld.infallibleInit();
-  TlsLightLockHeld.set(false);
-#endif
-}
+js::LightLockRuntime::LightLockRuntime() : mutex(mutexid::GCLightLock) {}
 
 
 LightLockRuntime* js::LightLockRuntime::from(JSRuntime* runtime) {
