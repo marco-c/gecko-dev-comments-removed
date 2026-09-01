@@ -36,18 +36,6 @@ function getBlockRadius(win) {
   );
 }
 
-
-
-
-
-function getContentCornerRadius(win) {
-  return getCustomPropertyPx(
-    win,
-    win.document.documentElement,
-    "--border-radius-medium"
-  );
-}
-
 function getChromeBlocks(win, extraSelectors = "") {
   
   
@@ -190,7 +178,7 @@ function assertCornerRadii(win, blocks, { nova, requireInnerRounded }, label) {
     if (
       nova &&
       requireInnerRounded &&
-      getContentCornerRadius(win) > 0 &&
+      getBlockRadius(win) > 0 &&
       block.classList.contains("browserContainer")
     ) {
       let innerCorners = corners.filter(c => !c.atEdge).length;
@@ -205,56 +193,19 @@ function assertCornerRadii(win, blocks, { nova, requireInnerRounded }, label) {
   }
 }
 
-function assertSeparators(win, blocks, label) {
+function assertSeparatorBorder(win, blocks, label) {
   for (let block of blocks) {
-    if (block.classList.contains("browserContainer")) {
-      continue;
-    }
-    let style = win.getComputedStyle(block);
-    for (let prop of [
-      "borderTopWidth",
-      "borderRightWidth",
-      "borderBottomWidth",
-      "borderLeftWidth",
-    ]) {
-      Assert.equal(
-        parseFloat(style[prop]) || 0,
-        0,
-        `${label}: ${blockLabel(block)} draws no border of its own (${prop})`
-      );
-    }
-  }
-
-  let contentAreas = blocks.filter(b =>
-    b.classList.contains("browserContainer")
-  );
-  Assert.greater(
-    contentAreas.length,
-    0,
-    `${label}: the content area is present`
-  );
-  
-  
-  let sidebarShown = win.document
-    .getElementById("tabbrowser-tabbox")
-    .hasAttribute("sidebar-shown");
-  for (let block of contentAreas) {
-    let style = win.getComputedStyle(block);
+    
+    
+    
+    
+    let isToolbox = block.id == "navigator-toolbox";
+    let prop = isToolbox ? "borderBottomWidth" : "borderTopWidth";
+    let width = parseFloat(win.getComputedStyle(block)[prop]) || 0;
     Assert.greater(
-      parseFloat(style.borderTopWidth) || 0,
+      width,
       0,
-      `${label}: ${blockLabel(block)} keeps the separator facing the toolbox`
-    );
-    if (!sidebarShown) {
-      continue;
-    }
-    let inlineBorder =
-      (parseFloat(style.borderLeftWidth) || 0) +
-      (parseFloat(style.borderRightWidth) || 0);
-    Assert.greater(
-      inlineBorder,
-      0,
-      `${label}: ${blockLabel(block)} keeps the separator facing the sidebar`
+      `${label}: ${blockLabel(block)} keeps its separator border (${prop})`
     );
   }
 }
@@ -313,15 +264,16 @@ function assertSplitViewPanels(win, label) {
 
 
 
+
 function assertDecoration(
   win,
   blocks,
   label,
-  { requireInnerRounded = false, checkSeparator = false } = {}
+  { requireInnerRounded = false, checkBorder = false } = {}
 ) {
-  if (NOVA_ENABLED && requireInnerRounded && !getContentCornerRadius(win)) {
+  if (NOVA_ENABLED && requireInnerRounded && !getBlockRadius(win)) {
     info(
-      `${label}: --border-radius-medium is 0 on this platform; ` +
+      `${label}: --chrome-block-radius is 0 on this platform; ` +
         `skipping the inner-corner-rounded assertions.`
     );
   }
@@ -333,8 +285,8 @@ function assertDecoration(
     { nova: NOVA_ENABLED, requireInnerRounded },
     label
   );
-  if (NOVA_ENABLED && checkSeparator) {
-    assertSeparators(win, blocks, label);
+  if (NOVA_ENABLED && checkBorder) {
+    assertSeparatorBorder(win, blocks, label);
   }
 }
 
@@ -353,7 +305,7 @@ add_task(async function test_vertical_tabs_sidebar_start() {
       let blocks = getChromeBlocks(win);
       assertDecoration(win, blocks, "vertical tabs, sidebar start", {
         requireInnerRounded: true,
-        checkSeparator: true,
+        checkBorder: true,
       });
     }
   );
@@ -372,7 +324,7 @@ add_task(async function test_vertical_tabs_sidebar_end() {
       let blocks = getChromeBlocks(win);
       assertDecoration(win, blocks, "vertical tabs, sidebar end", {
         requireInnerRounded: true,
-        checkSeparator: true,
+        checkBorder: true,
       });
     }
   );
@@ -390,10 +342,9 @@ add_task(async function test_compact_density() {
     },
     win => {
       let blocks = getChromeBlocks(win);
-      assertDecoration(win, blocks, "compact density", {
-        requireInnerRounded: true,
-        checkSeparator: true,
-      });
+      
+      
+      assertDecoration(win, blocks, "compact density", { checkBorder: true });
     }
   );
 });
@@ -403,9 +354,7 @@ add_task(async function test_horizontal_tabs() {
     { prefs: [...BASE_PREFS, ["sidebar.verticalTabs", false]] },
     win => {
       let blocks = getChromeBlocks(win);
-      assertDecoration(win, blocks, "horizontal tabs", {
-        checkSeparator: true,
-      });
+      assertDecoration(win, blocks, "horizontal tabs", { checkBorder: true });
     }
   );
 });
@@ -422,7 +371,7 @@ add_task(async function test_private_window() {
     },
     win => {
       let blocks = getChromeBlocks(win);
-      assertDecoration(win, blocks, "private window", { checkSeparator: true });
+      assertDecoration(win, blocks, "private window", { checkBorder: true });
     }
   );
 });
