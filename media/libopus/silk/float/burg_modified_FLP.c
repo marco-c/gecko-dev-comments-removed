@@ -67,7 +67,7 @@ silk_float silk_burg_modified_FLP(
     silk_memcpy( C_last_row, C_first_row, SILK_MAX_ORDER_LPC * sizeof( double ) );
 
     
-    CAb[ 0 ] = CAf[ 0 ] = C0 + FIND_LPC_COND_FAC * C0 + 1e-9f;
+    CAb[ 0 ] = CAf[ 0 ] = C0 + FIND_LPC_COND_FAC * C0 + 1e-1;
     invGain = 1.0f;
     reached_max_gain = 0;
     for( n = 0; n < D; n++ ) {

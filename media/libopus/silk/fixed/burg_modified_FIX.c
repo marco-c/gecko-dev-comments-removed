@@ -68,7 +68,8 @@ void silk_burg_modified_c(
     celt_assert( subfr_length * nb_subfr <= MAX_FRAME_SIZE );
 
     
-    C0_64 = silk_inner_prod16( x, x, subfr_length*nb_subfr, arch );
+
+    C0_64 = silk_inner_prod16( x, x, subfr_length*nb_subfr, arch ) + 1;
     lz = silk_CLZ64(C0_64);
     rshifts = 32 + 1 + N_BITS_HEAD_ROOM - lz;
     if (rshifts > MAX_RSHIFTS) rshifts = MAX_RSHIFTS;
