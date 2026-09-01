@@ -19,6 +19,7 @@
 #include <optional>
 #include <set>
 #include <span>
+#include <utility>
 #include <vector>
 
 #include "api/crypto/frame_decryptor_interface.h"
@@ -164,12 +165,6 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   }
 
   
-  bool OnReceivedPayloadData(CopyOnWriteBuffer codec_payload,
-                             const RtpPacketReceived& rtp_packet,
-                             const RTPVideoHeader& video,
-                             int times_nacked);
-
-  
   void OnRecoveredPacket(const RtpPacketReceived& packet) override;
 
   
@@ -243,6 +238,15 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
       const;
   std::optional<RtpRtcpInterface::NonSenderRttStats> GetNonSenderRttStats()
       const;
+
+  
+  
+  void OnReceivedPayloadDataForTesting(CopyOnWriteBuffer codec_payload,
+                                       const RtpPacketReceived& rtp_packet,
+                                       const RTPVideoHeader& video) {
+    OnReceivedPayloadData(std::move(codec_payload), rtp_packet, video,
+                          0);
+  }
 
   
   
@@ -326,9 +330,20 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   enum ParseGenericDependenciesResult {
     kStashPacket,
     kDropPacket,
+    kNewVideoStructure,  
     kHasGenericDescriptor,
     kNoGenericDescriptor
   };
+
+  enum class StashResult {
+    kIgnore,   
+    kStash,    
+    kUnstash,  
+  };
+  StashResult OnReceivedPayloadData(CopyOnWriteBuffer codec_payload,
+                                    const RtpPacketReceived& rtp_packet,
+                                    const RTPVideoHeader& video,
+                                    int times_nacked);
 
   
   
