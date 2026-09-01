@@ -783,6 +783,10 @@ PresShell::~PresShell() {
 
   MOZ_ASSERT(!mAllocatedPointers || mAllocatedPointers->IsEmpty(),
              "Some pres arena objects were not freed");
+  MOZ_ASSERT(mContentVisibilityAutoFrames.IsEmpty(),
+             "All content-visibility:auto frames should be unregistered");
+  MOZ_ASSERT(mContentVisibilityHiddenCount == 0,
+             "All content-visibility:hidden frames should be unregistered");
 
   mFrameConstructor = nullptr;
 }
@@ -12255,8 +12259,7 @@ void PresShell::MaybeReflowForInflationScreenSizeChange() {
   if (nsCOMPtr<nsIDocShell> docShell = pc->GetDocShell()) {
     nsTArray<nsCOMPtr<nsIDocumentViewer>> array;
     AppendSubtree(docShell, array);
-    for (uint32_t i = 0, iEnd = array.Length(); i < iEnd; ++i) {
-      nsCOMPtr<nsIDocumentViewer> viewer = array[i];
+    for (const auto& viewer : array) {
       if (RefPtr<PresShell> descendantPresShell = viewer->GetPresShell()) {
         nsIFrame* rootFrame = descendantPresShell->GetRootFrame();
         if (rootFrame) {
@@ -13001,6 +13004,7 @@ void PresShell::EndPaint() {
       if (PerformanceMainThread* perf =
               presContext->GetPerformanceMainThread()) {
         perf->FinalizeLCPEntriesForText();
+        perf->FinalizeContainerTimingEntries();
       }
     }
   }

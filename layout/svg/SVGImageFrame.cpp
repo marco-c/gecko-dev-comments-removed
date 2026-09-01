@@ -19,6 +19,7 @@
 #include "mozilla/SVGUtils.h"
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/dom/LargestContentfulPaint.h"
+#include "mozilla/dom/PerformanceContainerTiming.h"
 #include "mozilla/dom/SVGImageElement.h"
 #include "mozilla/image/WebRenderImageProvider.h"
 #include "mozilla/layers/RenderRootStateManager.h"
@@ -360,7 +361,7 @@ void SVGImageFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
 
     nscoord appUnitsPerDevPx = PresContext()->AppUnitsPerDevPixel();
     uint32_t flags = aImgParams.imageFlags;
-    if (mForceSyncDecoding) {
+    if (mForceSyncDecoding || UsedImageDecoding() == StyleImageDecoding::Sync) {
       flags |= imgIContainer::FLAG_SYNC_DECODE;
     }
 
@@ -382,9 +383,13 @@ void SVGImageFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
                                      devPxSize, appUnitsPerDevPx));
       nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest();
       if (currentRequest) {
+        Element* element = GetContent()->AsElement();
+
+        ContainerTimingHelpers::MaybeProcessPaintForContainer(element, this,
+                                                              destRect);
         LCPHelpers::FinalizeLCPEntryForImage(
-            GetContent()->AsElement(),
-            static_cast<imgRequestProxy*>(currentRequest.get()), destRect);
+            element, static_cast<imgRequestProxy*>(currentRequest.get()),
+            destRect);
       }
 
       
@@ -475,7 +480,7 @@ bool SVGImageFrame::CreateWebRenderCommands(
   }
 
   uint32_t flags = aDisplayListBuilder->GetImageDecodeFlags();
-  if (mForceSyncDecoding) {
+  if (mForceSyncDecoding || UsedImageDecoding() == StyleImageDecoding::Sync) {
     flags |= imgIContainer::FLAG_SYNC_DECODE;
   }
 
@@ -623,11 +628,17 @@ bool SVGImageFrame::CreateWebRenderCommands(
       region);
 
   if (nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest()) {
-    LCPHelpers::FinalizeLCPEntryForImage(
-        GetContent()->AsElement(),
-        static_cast<imgRequestProxy*>(currentRequest.get()),
+    Element* element = GetContent()->AsElement();
+    nsRect rectRelativeToSelf =
         LayoutDeviceRect::ToAppUnits(destRect, appUnitsPerDevPx) -
-            toReferenceFrame);
+        toReferenceFrame;
+
+    ContainerTimingHelpers::MaybeProcessPaintForContainer(element, this,
+                                                          rectRelativeToSelf);
+
+    LCPHelpers::FinalizeLCPEntryForImage(
+        element, static_cast<imgRequestProxy*>(currentRequest.get()),
+        rectRelativeToSelf);
   }
 
   RefPtr<image::WebRenderImageProvider> provider;
@@ -848,7 +859,13 @@ SVGBBox SVGImageFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
 
   auto* element = static_cast<SVGImageElement*>(GetContent());
 
-  return element->GeometryBounds(aToBBoxUserspace);
+  Rect rect = element->GeometryBounds(aToBBoxUserspace);
+
+  if (aFlags.contains(SVGBBoxFlag::DisregardCSSZoom)) {
+    rect.Scale(1 / Style()->EffectiveZoom().ToFloat());
+  }
+
+  return rect;
 }
 
 
