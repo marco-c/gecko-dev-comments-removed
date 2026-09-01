@@ -694,6 +694,10 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   bool SetFontInternal(const nsACString& aFont, mozilla::ErrorResult& aError);
 
   
+  
+  bool FontIsUnchanged(const nsACString& aFont, gfxUserFontSet* aFontSet);
+
+  
   bool SetFontInternalDisconnected(const nsACString& aFont,
                                    mozilla::ErrorResult& aError);
 
@@ -858,7 +862,7 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
     
     GetCurrentFontStyle();
 
-    return CurrentState().font;
+    return CurrentState().resolvedFont;
   }
 
   bool UseSoftwareRendering() const;
@@ -1107,7 +1111,8 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
         patternStyles;
     EnumeratedArray<Style, nscolor, size_t(Style::MAX)> colorStyles;
 
-    nsCString font;
+    nsCString specifiedFont;  
+    nsCString resolvedFont;   
     CanvasTextAlign textAlign = CanvasTextAlign::Start;
     CanvasTextBaseline textBaseline = CanvasTextBaseline::Alphabetic;
     CanvasDirection textDirection = CanvasDirection::Inherit;
