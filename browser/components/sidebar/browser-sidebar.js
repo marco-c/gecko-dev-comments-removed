@@ -1408,6 +1408,8 @@ var SidebarController = {
     let animations = [];
     let sidebarOnLeft = this._positionStart != RTL_UI;
     let sidebarShift = 0;
+    let novaTranslate = 0;
+    const novaMode = Services.prefs.getBoolPref("browser.nova.enabled", false);
     
     
     
@@ -1455,6 +1457,57 @@ var SidebarController = {
 
       
       
+      
+      
+      
+      if (novaMode) {
+        if (isSidebar) {
+          novaTranslate = sidebarOnLeft
+            ? -(to.width - from.width)
+            : to.width - from.width;
+          
+          
+          if (widthGrowth < 0) {
+            el.style.minWidth = el.style.maxWidth = from.width + "px";
+            el.style["margin-" + (sidebarOnLeft ? "right" : "left")] =
+              widthGrowth + "px";
+          }
+          const clipAmount = Math.abs(widthGrowth);
+          const fromClip = sidebarOnLeft
+            ? `inset(0 ${widthGrowth > 0 ? clipAmount : 0}px 0 0)`
+            : `inset(0 0 0 ${widthGrowth > 0 ? clipAmount : 0}px)`;
+          const toClip = sidebarOnLeft
+            ? `inset(0 ${widthGrowth < 0 ? clipAmount : 0}px 0 0)`
+            : `inset(0 0 0 ${widthGrowth < 0 ? clipAmount : 0}px)`;
+          animations.push(
+            el.animate([{ clipPath: fromClip }, { clipPath: toClip }], options)
+          );
+
+          
+          
+          
+          if (!sidebarOnLeft && clipAmount > 0) {
+            animations.push(
+              this.sidebarMain.animate(
+                [
+                  { translate: `${widthGrowth > 0 ? clipAmount : 0}px 0 0` },
+                  { translate: `${widthGrowth < 0 ? clipAmount : 0}px 0 0` },
+                ],
+                options
+              )
+            );
+          }
+        } else {
+          animations.push(
+            el.animate(
+              [{ translate: `${novaTranslate}px 0 0` }, { translate: "0" }],
+              options
+            )
+          );
+        }
+        continue;
+      }
+
       if (widthGrowth < 0) {
         el.style.minWidth = el.style.maxWidth = from.width + "px";
         el.style["margin-" + (sidebarOnLeft ? "right" : "left")] =
