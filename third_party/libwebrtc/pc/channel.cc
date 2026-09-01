@@ -843,11 +843,21 @@ RTCError BaseChannel::SetRemoteContent_w(const MediaContentDescription* content,
                                                    : RtcpMode::kCompound);
     voice_media_receive_channel()->SetReceiveNackEnabled(
         voice_media_send_channel()->SenderNackEnabled());
+    
+    
+    
     voice_media_receive_channel()->SetReceiveNonSenderRttEnabled(
-        voice_media_send_channel()->SenderNonSenderRttEnabled());
+        content->receive_non_sender_rtt());
   }
 
   RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(0);
+
+  if (media_type_ == MediaType::VIDEO) {
+    
+    
+    video_media_receive_channel()->SetReceiveNonSenderRttEnabled(
+        content->receive_non_sender_rtt());
+  }
 
   error = UpdateRemoteStreams_w(content, type);
 

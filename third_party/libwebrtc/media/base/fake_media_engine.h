@@ -718,6 +718,7 @@ class FakeVideoMediaReceiveChannel
   bool HasSink(uint32_t ssrc) const;
 
   void SetReceive(bool ) override {}
+  void SetReceiveNonSenderRttEnabled(bool ) override {}
 
   bool HasSource(uint32_t ssrc) const;
   bool AddRecvStream(const StreamParams& sp) override;

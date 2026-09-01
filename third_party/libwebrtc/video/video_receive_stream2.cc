@@ -616,6 +616,17 @@ VideoReceiveStreamInterface::Stats VideoReceiveStream2::GetStats() const {
 
   
   
+  std::optional<RtpRtcpInterface::NonSenderRttStats> non_sender_rtt_stats =
+      rtp_video_stream_receiver_.GetNonSenderRttStats();
+  if (non_sender_rtt_stats) {
+    stats.round_trip_time = non_sender_rtt_stats->round_trip_time;
+    stats.round_trip_time_measurements =
+        non_sender_rtt_stats->round_trip_time_measurements;
+    stats.total_round_trip_time = non_sender_rtt_stats->total_round_trip_time;
+  }
+
+  
+  
   
   rtp_video_stream_receiver_.RemoteRTCPSenderInfo(
       &stats.rtcp_sender_packets_sent, &stats.rtcp_sender_octets_sent,
