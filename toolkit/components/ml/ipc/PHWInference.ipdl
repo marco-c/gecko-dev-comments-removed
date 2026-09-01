@@ -23,6 +23,26 @@ protocol PHWInference
     async IsModelAvailable(nsCString task,
                            nsCString id) returns (bool available);
 
+    
+    
+    
+    async IsModelInstalled(nsCString task,
+                           nsCString id) returns (bool installed);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    async InstallModel(nsCString task,
+                       nsCString id,
+                       uint64_t innerWindowId,
+                       ContentParentId contentId) returns (bool success);
+
   child:
     
     async NewContentHWInferenceManager(Endpoint<PHWInferenceManagerParent> endpoint,

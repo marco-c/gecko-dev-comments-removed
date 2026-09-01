@@ -21,6 +21,11 @@ class HWInferenceManagerParent final : public PHWInferenceManagerParent {
 
   void ActorDestroy(ActorDestroyReason aReason) override;
 
+  
+  
+  
+  dom::ContentParentId ContentId() const { return mContentId; }
+
  private:
   explicit HWInferenceManagerParent(dom::ContentParentId aContentId);
   ~HWInferenceManagerParent() = default;
