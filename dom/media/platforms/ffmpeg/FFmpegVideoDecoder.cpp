@@ -349,6 +349,20 @@ bool FFmpegVideoDecoder<LIBAV_VER>::CreateVAAPIDeviceContext() {
 }
 
 #  if LIBAVCODEC_VERSION_MAJOR >= 60 && !defined(FFVPX_VERSION)
+static uint32_t VulkanTransferQueueFamily(const AVVulkanDeviceContext* aVkCtx) {
+#    if LIBAVCODEC_VERSION_MAJOR >= 63
+  
+  for (int i = 0; i < aVkCtx->nb_qf; i++) {
+    if (aVkCtx->qf[i].flags & VK_QUEUE_TRANSFER_BIT) {
+      return (uint32_t)std::max(aVkCtx->qf[i].idx, 0);
+    }
+  }
+  return 0;
+#    else
+  return (uint32_t)std::max<int>(aVkCtx->queue_family_tx_index, 0);
+#    endif
+}
+
 bool FFmpegVideoDecoder<LIBAV_VER>::CreateVulkanDeviceContext(
     const StaticMutexAutoLock& aProofOfLock) {
   nsAutoCString rendererNode(gfx::gfxVars::DrmRenderDevice());
@@ -391,7 +405,25 @@ bool FFmpegVideoDecoder<LIBAV_VER>::CreateVulkanDeviceContext(
   AVHWDeviceContext* devCtx = (AVHWDeviceContext*)mVulkanDeviceContext->data;
   AVVulkanDeviceContext* vkCtx = (AVVulkanDeviceContext*)devCtx->hwctx;
   mVulkanDecoder.LoadInstanceFunctions(vkCtx->get_proc_addr, vkCtx->inst,
-                                       vkCtx->phys_dev);
+                                       vkCtx->phys_dev,
+                                       mVulkanDeviceHolder->Generation());
+
+  
+  
+  
+  
+  
+  VkDeviceQueueCreateFlags queueCreateFlags = 0;
+#    if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(60, 32, 100)
+  queueCreateFlags = vkCtx->queue_flags;
+#    endif
+  if (!mVulkanDecoder.InitCtx(
+          vkCtx->act_dev, vkCtx->phys_dev, vkCtx->get_proc_addr, vkCtx->inst,
+          mVulkanDeviceHolder->Generation(), VulkanTransferQueueFamily(vkCtx),
+          queueCreateFlags)) {
+    FFMPEG_LOG("Failed to init Vulkan Context structure");
+    return false;
+  }
 
   return true;
 }
@@ -2115,6 +2147,8 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageVAAPI(
   if (mInfo.mTransferFunction) {
     surface->SetTransferFunction(mInfo.mTransferFunction.value());
   }
+  surface->SetWPChromaLocation(
+      AVChromaLocationToWPChromaLocation(mFrame->chroma_location));
 
   FFMPEG_LOG(
       "VA-API frame pts={} dts={} duration={} color space {}/{} transfer {}",
@@ -2186,21 +2220,21 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageVulkan(
 
   auto* devCtx = (AVHWDeviceContext*)mVulkanDeviceContext->data;
   auto* vkDevCtx = (AVVulkanDeviceContext*)devCtx->hwctx;
-  uint32_t txQueueFamily = 0;
-#    if LIBAVCODEC_VERSION_MAJOR >= 63
   
-  for (int i = 0; i < vkDevCtx->nb_qf; i++) {
-    if (vkDevCtx->qf[i].flags & VK_QUEUE_TRANSFER_BIT) {
-      txQueueFamily = (uint32_t)std::max(vkDevCtx->qf[i].idx, 0);
-      break;
-    }
-  }
-#    else
-  txQueueFamily = (uint32_t)std::max<int>(vkDevCtx->queue_family_tx_index, 0);
+  
+  
+  
+  
+  
+  
+  VkDeviceQueueCreateFlags queueCreateFlags = 0;
+#    if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(60, 32, 100)
+  queueCreateFlags = vkDevCtx->queue_flags;
 #    endif
-  if (!mVulkanDecoder.InitCtx(vkDevCtx->act_dev, vkDevCtx->phys_dev,
-                              vkDevCtx->get_proc_addr, vkDevCtx->inst,
-                              txQueueFamily)) {
+  if (!mVulkanDecoder.InitCtx(
+          vkDevCtx->act_dev, vkDevCtx->phys_dev, vkDevCtx->get_proc_addr,
+          vkDevCtx->inst, mVulkanDeviceHolder->Generation(),
+          VulkanTransferQueueFamily(vkDevCtx), queueCreateFlags)) {
     return MediaResult(
         NS_ERROR_DOM_MEDIA_FATAL_ERR,
         RESULT_DETAIL("Failed to init Vulkan Context structure"));
@@ -2334,6 +2368,8 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageVulkan(
   if (mInfo.mTransferFunction) {
     surface->SetTransferFunction(mInfo.mTransferFunction.value());
   }
+  surface->SetWPChromaLocation(
+      AVChromaLocationToWPChromaLocation(mFrame->chroma_location));
 
   RefPtr<VideoData> vp = VideoData::CreateFromImage(
       mInfo.mDisplay, aOffset, TimeUnit::FromMicroseconds(aPts),
