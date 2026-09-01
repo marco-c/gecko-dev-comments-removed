@@ -1562,8 +1562,7 @@ FilterInstance::FilterInstance(
       filterToUserSpace * GetUserSpaceToFrameSpaceInCSSPxTransform();
   
   mFrameSpaceInCSSPxToFilterSpaceTransform =
-      mFilterSpaceToFrameSpaceInCSSPxTransform;
-  mFrameSpaceInCSSPxToFilterSpaceTransform.Invert();
+      mFilterSpaceToFrameSpaceInCSSPxTransform.Inverse();
 
   nsIntRect targetBounds;
   if (aPreFilterInkOverflowRectOverride) {
@@ -1817,9 +1816,8 @@ void FilterInstance::BuildSourceImage(DrawTarget* aDest,
   
   
   gfxContext ctx(offscreenDT);
-  gfxMatrix devPxToCssPxTM = SVGUtils::GetCSSPxToDevPxMatrix(mTargetFrame);
-  DebugOnly<bool> invertible = devPxToCssPxTM.Invert();
-  MOZ_ASSERT(invertible);
+  gfxMatrix devPxToCssPxTM =
+      SVGUtils::GetCSSPxToDevPxMatrix(mTargetFrame).Inverse();
   ctx.SetMatrixDouble(devPxToCssPxTM * mPaintTransform *
                       gfxMatrix::Translation(-neededRect.TopLeft()));
 

@@ -517,8 +517,7 @@ static MaskPaintResult CreateAndPaintMaskSurface(
         ctx.GetDrawTarget(), aParams.frame, cssPxToDevPxMatrix, aOpacity,
         svgReset->mMask.mLayers[0].mMaskMode, aParams.imgParams);
     paintResult.maskSurface = aMaskFrames[0]->GetMaskForMaskedFrame(params);
-    paintResult.maskTransform = ctx.CurrentMatrix();
-    paintResult.maskTransform.Invert();
+    paintResult.maskTransform = ctx.CurrentMatrix().Inverse();
     if (!paintResult.maskSurface) {
       paintResult.transparentBlackMask = true;
     }
@@ -829,8 +828,7 @@ void PaintMaskAndClipPathInternal(const PaintFramesParams& aParams,
     if (shouldPushMask) {
       
       
-      Matrix maskTransform = context.CurrentMatrix();
-      maskTransform.Invert();
+      Matrix maskTransform = context.CurrentMatrix().Inverse();
 
       autoGroupForBlend.PushGroupForBlendBack(
           gfxContentType::COLOR_ALPHA,
@@ -1098,7 +1096,8 @@ bool PaintFrameCallback::operator()(gfxContext* aContext,
                                     const gfxRect& aFillRect,
                                     const SamplingFilter aSamplingFilter,
                                     const gfxMatrix& aTransform) {
-  if (mFrame->HasAnyStateBits(NS_FRAME_DRAWING_AS_PAINTSERVER)) {
+  if (mFrame->HasAnyStateBits(NS_FRAME_DRAWING_AS_PAINTSERVER) ||
+      aTransform.IsSingular()) {
     return false;
   }
 
@@ -1109,11 +1108,7 @@ bool PaintFrameCallback::operator()(gfxContext* aContext,
   
   aContext->Clip(aFillRect);
 
-  gfxMatrix invmatrix = aTransform;
-  if (!invmatrix.Invert()) {
-    return false;
-  }
-  aContext->Multiply(invmatrix);
+  aContext->Multiply(aTransform.Inverse());
 
   
   
