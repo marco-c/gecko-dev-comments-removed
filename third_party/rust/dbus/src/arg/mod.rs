@@ -7,75 +7,110 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 mod msgarg;
 mod basic_impl;
 mod variantstruct_impl;
 mod array_impl;
 
-pub use self::msgarg::{Arg, FixedArray, Get, DictKey, Append, RefArg, AppendAll, ReadAll, cast, cast_mut};
+pub mod messageitem;
+
+pub use self::msgarg::{Arg, FixedArray, Get, DictKey, Append, RefArg, AppendAll, ReadAll, ArgAll,
+    cast, cast_mut, prop_cast, PropMap};
 pub use self::array_impl::{Array, Dict};
 pub use self::variantstruct_impl::Variant;
 
 use std::{fmt, mem, ptr, error};
-use {ffi, Message, Signature, Path, OwnedFd};
+use crate::{ffi, Message, Signature, Path};
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_void, c_int};
+#[cfg(unix)]
+use std::os::unix::io::{AsRawFd, FromRawFd};
+use std::collections::VecDeque;
+
+fn check(f: &str, i: u32) { if i == 0 { panic!("D-Bus error: '{}' failed", f) }}
+
+fn ffi_iter() -> ffi::DBusMessageIter {
+    
+    unsafe { mem::zeroed() }
+}
+
+#[cfg(feature = "stdfd")]
+pub use std::os::unix::io::OwnedFd;
 
 
-fn check(f: &str, i: u32) { if i == 0 { panic!("D-Bus error: '{}' failed", f) }} 
 
-fn ffi_iter() -> ffi::DBusMessageIter { unsafe { mem::zeroed() }} 
+#[cfg(not(feature = "stdfd"))]
+#[derive(Debug, PartialEq, PartialOrd)]
+pub struct OwnedFd {
+    #[cfg(unix)]
+    fd: std::os::unix::io::RawFd
+}
+
+#[cfg(all(unix,not(feature = "stdfd")))]
+mod owned_fd_impl {
+    use super::OwnedFd;
+    use std::os::unix::io::{RawFd, AsRawFd, FromRawFd, IntoRawFd};
+
+    impl OwnedFd {
+        
+        
+        
+        
+        pub unsafe fn new(fd: RawFd) -> OwnedFd {
+            OwnedFd { fd: fd }
+        }
+
+        
+        pub fn into_fd(self) -> RawFd {
+            let s = self.fd;
+            ::std::mem::forget(self);
+            s
+        }
+
+        
+        pub fn try_clone(&self) -> Result<Self, &'static str> {
+            let x = unsafe { libc::dup(self.fd) };
+            if x == -1 { Err("Duplicating file descriptor failed") }
+            else { Ok(unsafe { OwnedFd::new(x) }) }
+        }
+    }
+
+    impl Drop for OwnedFd {
+        fn drop(&mut self) {
+            unsafe { libc::close(self.fd); }
+        }
+    }
+
+    impl AsRawFd for OwnedFd {
+        fn as_raw_fd(&self) -> RawFd {
+            self.fd
+        }
+    }
+
+    impl IntoRawFd for OwnedFd {
+        fn into_raw_fd(self) -> RawFd {
+            self.into_fd()
+        }
+    }
+
+    impl FromRawFd for OwnedFd {
+        unsafe fn from_raw_fd(fd: RawFd) -> Self { OwnedFd::new(fd) }
+    }
+}
+
+#[cfg(not(feature = "stdfd"))]
+impl Clone for OwnedFd {
+    #[cfg(unix)]
+    fn clone(&self) -> OwnedFd {
+        self.try_clone().unwrap()
+    }
+
+    #[cfg(windows)]
+    fn clone(&self) -> OwnedFd {
+        OwnedFd {}
+    }
+}
+
 
 #[derive(Clone, Copy)]
 
@@ -83,7 +118,7 @@ pub struct IterAppend<'a>(ffi::DBusMessageIter, &'a Message);
 
 impl<'a> IterAppend<'a> {
     
-    pub fn new(m: &'a mut Message) -> IterAppend<'a> { 
+    pub fn new(m: &'a mut Message) -> IterAppend<'a> {
         let mut i = ffi_iter();
         unsafe { ffi::dbus_message_iter_init_append(m.ptr(), &mut i) };
         IterAppend(i, m)
@@ -166,7 +201,7 @@ pub struct Iter<'a>(ffi::DBusMessageIter, &'a Message, u32);
 
 impl<'a> Iter<'a> {
     
-    pub fn new(m: &'a Message) -> Iter<'a> { 
+    pub fn new(m: &'a Message) -> Iter<'a> {
         let mut i = ffi_iter();
         unsafe { ffi::dbus_message_iter_init(m.ptr(), &mut i) };
         Iter(i, m, 0)
@@ -180,31 +215,26 @@ impl<'a> Iter<'a> {
     
     
     
-    
-    
-    
-    
-    
-    pub fn get_refarg(&mut self) -> Option<Box<RefArg + 'static>> {
+    pub fn get_refarg(&mut self) -> Option<Box<dyn RefArg + 'static>> {
         Some(match self.arg_type() {
-	    ArgType::Array => array_impl::get_array_refarg(self),
-	    ArgType::Variant => Box::new(Variant::new_refarg(self).unwrap()),
-	    ArgType::Boolean => Box::new(self.get::<bool>().unwrap()),
-	    ArgType::Invalid => return None,
-	    ArgType::String => Box::new(self.get::<String>().unwrap()),
-	    ArgType::DictEntry => unimplemented!(),
-	    ArgType::Byte => Box::new(self.get::<u8>().unwrap()),
-	    ArgType::Int16 => Box::new(self.get::<i16>().unwrap()),
-	    ArgType::UInt16 => Box::new(self.get::<u16>().unwrap()),
-	    ArgType::Int32 => Box::new(self.get::<i32>().unwrap()),
-	    ArgType::UInt32 => Box::new(self.get::<u32>().unwrap()),
-	    ArgType::Int64 => Box::new(self.get::<i64>().unwrap()),
-	    ArgType::UInt64 => Box::new(self.get::<u64>().unwrap()),
-	    ArgType::Double => Box::new(self.get::<f64>().unwrap()),
-	    ArgType::UnixFd => Box::new(self.get::<OwnedFd>().unwrap()),
-	    ArgType::Struct => Box::new(self.recurse(ArgType::Struct).unwrap().collect::<Vec<_>>()),
-	    ArgType::ObjectPath => Box::new(self.get::<Path>().unwrap().into_static()),
-	    ArgType::Signature => Box::new(self.get::<Signature>().unwrap().into_static()),
+            ArgType::Array => array_impl::get_array_refarg(self),
+            ArgType::Variant => Box::new(Variant::new_refarg(self).unwrap()),
+            ArgType::Boolean => Box::new(self.get::<bool>().unwrap()),
+            ArgType::Invalid => return None,
+            ArgType::String => Box::new(self.get::<String>().unwrap()),
+            ArgType::DictEntry => unimplemented!(),
+            ArgType::Byte => Box::new(self.get::<u8>().unwrap()),
+            ArgType::Int16 => Box::new(self.get::<i16>().unwrap()),
+            ArgType::UInt16 => Box::new(self.get::<u16>().unwrap()),
+            ArgType::Int32 => Box::new(self.get::<i32>().unwrap()),
+            ArgType::UInt32 => Box::new(self.get::<u32>().unwrap()),
+            ArgType::Int64 => Box::new(self.get::<i64>().unwrap()),
+            ArgType::UInt64 => Box::new(self.get::<u64>().unwrap()),
+            ArgType::Double => Box::new(self.get::<f64>().unwrap()),
+            ArgType::UnixFd => Box::new(self.get::<std::fs::File>().unwrap()),
+            ArgType::Struct => Box::new(self.recurse(ArgType::Struct).unwrap().collect::<VecDeque<_>>()),
+            ArgType::ObjectPath => Box::new(self.get::<Path>().unwrap().into_static()),
+            ArgType::Signature => Box::new(self.get::<Signature>().unwrap().into_static()),
         })
     }
 
@@ -214,7 +244,7 @@ impl<'a> Iter<'a> {
             let c = ffi::dbus_message_iter_get_signature(&mut self.0);
             assert!(c != ptr::null_mut());
             let cc = CStr::from_ptr(c);
-            let r = Signature::new(cc.to_bytes());
+            let r = Signature::new(std::str::from_utf8(cc.to_bytes()).unwrap());
             ffi::dbus_free(c as *mut c_void);
             r.unwrap()
         }
@@ -233,7 +263,7 @@ impl<'a> Iter<'a> {
     
     pub fn next(&mut self) -> bool {
         self.2 += 1;
-        unsafe { ffi::dbus_message_iter_next(&mut self.0) != 0 } 
+        unsafe { ffi::dbus_message_iter_next(&mut self.0) != 0 }
     }
 
     
@@ -264,8 +294,8 @@ impl<'a> Iter<'a> {
     
     
     pub fn read<T: Arg + Get<'a>>(&mut self) -> Result<T, TypeMismatchError> {
-        let r = try!(self.get().ok_or_else(||
-             TypeMismatchError { expected: T::ARG_TYPE, found: self.arg_type(), position: self.2 }));
+        let r = self.get().ok_or_else(||
+             TypeMismatchError { expected: T::ARG_TYPE, found: self.arg_type(), position: self.2 })?;
         self.next();
         Ok(r)
     }
@@ -301,7 +331,7 @@ impl<'a> fmt::Debug for Iter<'a> {
 }
 
 impl<'a> Iterator for Iter<'a> {
-    type Item = Box<RefArg + 'static>;
+    type Item = Box<dyn RefArg + 'static>;
     fn next(&mut self) -> Option<Self::Item> {
         let r = self.get_refarg();
         if r.is_some() { self.next(); }
@@ -353,7 +383,7 @@ pub enum ArgType {
     Signature = ffi::DBUS_TYPE_SIGNATURE as u8,
 }
 
-const ALL_ARG_TYPES: [(ArgType, &'static str); 18] =
+const ALL_ARG_TYPES: [(ArgType, &str); 18] =
     [(ArgType::Variant, "Variant"),
     (ArgType::Array, "Array/Dict"),
     (ArgType::Struct, "Struct"),
@@ -361,7 +391,7 @@ const ALL_ARG_TYPES: [(ArgType, &'static str); 18] =
     (ArgType::DictEntry, "Dict entry"),
     (ArgType::ObjectPath, "Path"),
     (ArgType::Signature, "Signature"),
-    (ArgType::UnixFd, "OwnedFd"),
+    (ArgType::UnixFd, "File"),
     (ArgType::Boolean, "bool"),
     (ArgType::Byte, "u8"),
     (ArgType::Int16, "i16"),
@@ -377,6 +407,11 @@ impl ArgType {
     
     pub fn as_str(self) -> &'static str {
         ALL_ARG_TYPES.iter().skip_while(|a| a.0 != self).next().unwrap().1
+    }
+
+    
+    pub fn all() -> Vec<Self> {
+        ALL_ARG_TYPES.iter().map(|x| x.0).collect()
     }
 
     
@@ -414,13 +449,12 @@ impl TypeMismatchError {
 
 impl error::Error for TypeMismatchError {
     fn description(&self) -> &str { "D-Bus argument type mismatch" }
-    fn cause(&self) -> Option<&error::Error> { None }
+    fn cause(&self) -> Option<&dyn error::Error> { None }
 }
 
 impl fmt::Display for TypeMismatchError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} at position {}: expected {}, found {}",
-            (self as &error::Error).description(),
+        write!(f, "D-Bus argument type mismatch at position {}: expected {}, found {}",
             self.position, self.expected.as_str(),
             if self.expected == self.found { "same but still different somehow" } else { self.found.as_str() }
         )
@@ -430,11 +464,11 @@ impl fmt::Display for TypeMismatchError {
 
 #[allow(dead_code)]
 fn test_compile() {
-    let mut q = IterAppend::new(unsafe { mem::transmute(0usize) });
+    let mut msg = Message::new_signal("/", "a.b", "C").unwrap();
+    let mut q = IterAppend::new(&mut msg);
 
     q.append(5u8);
     q.append(Array::new(&[5u8, 6, 7]));
     q.append((8u8, &[9u8, 6, 7][..]));
     q.append(Variant((6u8, 7u8)));
 }
-

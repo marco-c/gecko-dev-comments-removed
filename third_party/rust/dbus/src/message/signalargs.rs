@@ -1,0 +1,103 @@
+use crate::arg;
+use crate::{Message, MessageType};
+use crate::message::MatchRule;
+use crate::strings::{BusName, Path, Interface, Member};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub trait SignalArgs {
+    
+    const NAME: &'static str;
+
+    
+    const INTERFACE: &'static str;
+
+    
+    fn to_emit_message(&self, path: &Path) -> Message where Self: arg::AppendAll {
+        let mut m = Message::signal(path, &Interface::from(Self::INTERFACE), &Member::from(Self::NAME));
+        arg::AppendAll::append(self, &mut arg::IterAppend::new(&mut m));
+        m
+    }
+
+    
+    
+    
+    #[allow(clippy::if_same_then_else)]
+    fn from_message(m: &Message) -> Option<Self> where Self: Sized + arg::ReadAll {
+        if m.msg_type() != MessageType::Signal { None }
+        else if m.interface().as_ref().map(|x| &**x) != Some(Self::INTERFACE) { None }
+        else if m.member().as_ref().map(|x| &**x) != Some(Self::NAME) { None }
+        else {
+            arg::ReadAll::read(&mut m.iter_init()).ok()
+        }
+    }
+
+    
+    
+    
+    fn match_rule<'a>(sender: Option<&'a BusName>, path: Option<&'a Path>) -> MatchRule<'a> {
+        let mut m: MatchRule = Default::default();
+        m.sender = sender.cloned();
+        m.path = path.cloned();
+        m.msg_type = Some(MessageType::Signal);
+        m.interface = Some(Self::INTERFACE.into());
+        m.member = Some(Self::NAME.into());
+        m
+    }
+
+
+    
+    
+    
+    fn match_str(sender: Option<&BusName>, path: Option<&Path>) -> String {
+        Self::match_rule(sender, path).match_str()
+    }
+}
+
+#[test]
+fn intf_removed() {
+    use crate::blocking::LocalConnection;
+    use crate::blocking::stdintf::org_freedesktop_dbus::ObjectManagerInterfacesRemoved as IR;
+    use std::{time::Duration, cell::Cell, rc::Rc};
+    let c = LocalConnection::new_session().unwrap();
+
+    let mr = IR::match_rule(Some(&c.unique_name().into()), Some(&"/hello".into())).static_clone();
+    println!("Match: {:?}", mr);
+
+    let ir = IR { object: "/hello".into(), interfaces: vec!("ABC.DEF".into(), "GHI.JKL".into()) };
+    let ir_msg = ir.to_emit_message(&"/hello".into());
+    let done = Rc::new(Cell::new(false));
+    let done2 = done.clone();
+
+    c.add_match(mr, move |ir2: IR, _, _| {
+        assert_eq!(ir2.object, ir.object);
+        assert_eq!(ir2.interfaces, ir.interfaces);
+        done2.set(true);
+        false
+    }).unwrap();
+    use crate::channel::Sender;
+    c.send(ir_msg).expect("Failed to send message");
+    while !done.get() { c.process(Duration::from_millis(1000)).unwrap(); }
+}

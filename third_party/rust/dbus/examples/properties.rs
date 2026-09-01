@@ -1,9 +1,7 @@
-extern crate dbus;
+use dbus::{blocking::Connection, arg};
+use std::time::Duration;
 
-use dbus::{Connection, BusType, stdintf, arg};
-use std::collections::HashMap;
-
-fn print_refarg(value: &arg::RefArg) {
+fn print_refarg(value: &dyn arg::RefArg) {
     
     
     if let Some(s) = value.as_str() { println!("{}", s); }
@@ -11,18 +9,18 @@ fn print_refarg(value: &arg::RefArg) {
     else { println!("{:?}", value); }
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     
-    let c = Connection::get_private(BusType::Session).unwrap();
-    let p = c.with_path("org.mpris.MediaPlayer2.rhythmbox", "/org/mpris/MediaPlayer2", 5000);
-    use stdintf::org_freedesktop_dbus::Properties;
+    let c = Connection::new_session()?;
+    let p = c.with_proxy("org.mpris.MediaPlayer2.rhythmbox", "/org/mpris/MediaPlayer2", Duration::from_millis(5000));
+    use dbus::blocking::stdintf::org_freedesktop_dbus::Properties;
 
     
 
     
 
-    let metadata: HashMap<String, arg::Variant<Box<arg::RefArg>>> = p.get("org.mpris.MediaPlayer2.Player", "Metadata").unwrap();
+    let metadata: arg::PropMap = p.get("org.mpris.MediaPlayer2.Player", "Metadata")?;
 
     println!("Option 1:");
 
@@ -32,10 +30,16 @@ fn main() {
         print_refarg(&value);
     }
 
+    
+    
+    let title: Option<&String> = arg::prop_cast(&metadata, "xesam:title");
+    if let Some(title) = title {
+        println!("The title is: {}", title);
+    }
 
     
 
-    let metadata: Box<arg::RefArg> = p.get("org.mpris.MediaPlayer2.Player", "Metadata").unwrap();
+    let metadata: Box<dyn arg::RefArg> = p.get("org.mpris.MediaPlayer2.Player", "Metadata")?;
 
     
     let mut iter = metadata.as_iter().unwrap();
@@ -47,4 +51,6 @@ fn main() {
         let value = iter.next().unwrap();
         print_refarg(&value);
     }
+
+    Ok(())
 }

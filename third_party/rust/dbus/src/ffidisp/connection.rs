@@ -1,182 +1,14 @@
-use super::{Error, ffi, to_c_str, c_str_to_slice, Watch, Message, MessageType, BusName, Path, ConnPath};
-use super::{RequestNameReply, ReleaseNameReply, BusType};
-use super::watch::WatchList;
+
+
+use crate::{Error, Message, MessageType, c_str_to_slice, channel::WatchFd, ffi, to_c_str};
+use crate::ffidisp::ConnPath;
 use std::{fmt, mem, ptr, thread, panic, ops};
-use std::collections::VecDeque;
+use std::{collections::VecDeque, time::Duration};
 use std::cell::{Cell, RefCell};
-use std::os::unix::io::RawFd;
 use std::os::raw::{c_void, c_char, c_int, c_uint};
+use crate::strings::{BusName, Path};
+use super::{Watch, WatchList, MessageCallback, ConnectionItem, MsgHandler, MsgHandlerList, MessageReply, BusType};
 
-
-
-
-pub type MessageCallback = Box<FnMut(&Connection, Message) -> bool + 'static>;
-
-#[repr(C)]
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
-
-
-
-pub enum DBusNameFlag {
-    
-    AllowReplacement = ffi::DBUS_NAME_FLAG_ALLOW_REPLACEMENT as isize,
-    
-    ReplaceExisting = ffi::DBUS_NAME_FLAG_REPLACE_EXISTING as isize,
-    
-    DoNotQueue = ffi::DBUS_NAME_FLAG_DO_NOT_QUEUE as isize,
-}
-
-impl DBusNameFlag {
-    
-    pub fn value(self) -> u32 { self as u32 }
-}
-
-
-
-#[derive(Debug)]
-pub enum ConnectionItem {
-    
-    Nothing,
-    
-    MethodCall(Message),
-    
-    Signal(Message),
-    
-    MethodReturn(Message),
-}
-
-impl From<Message> for ConnectionItem {
-    fn from(m: Message) -> Self {
-        let mtype = m.msg_type();
-        match mtype {
-            MessageType::Signal => ConnectionItem::Signal(m),
-            MessageType::MethodReturn => ConnectionItem::MethodReturn(m),
-            MessageType::Error => ConnectionItem::MethodReturn(m),
-            MessageType::MethodCall => ConnectionItem::MethodCall(m),
-            _ => panic!("unknown message type {:?} received from D-Bus", mtype),
-        }
-    }
-}
-
-
-
-pub struct ConnectionItems<'a> {
-    c: &'a Connection,
-    timeout_ms: Option<i32>,
-    end_on_timeout: bool,
-    handlers: MsgHandlerList,
-}
-
-impl<'a> ConnectionItems<'a> {
-    
-    
-    
-    pub fn with<H: 'static + MsgHandler>(mut self, h: H) -> Self {
-        self.handlers.push(Box::new(h)); self
-    }
-
-    
-    fn process_handlers(&mut self, ci: &ConnectionItem) -> bool {
-        let m = match *ci {
-            ConnectionItem::MethodReturn(ref msg) => msg,
-            ConnectionItem::Signal(ref msg) => msg,
-            ConnectionItem::MethodCall(ref msg) => msg,
-            ConnectionItem::Nothing => return false,
-        };
-
-        msghandler_process(&mut self.handlers, m, &self.c)
-    }
-
-    
-    
-    
-    pub fn msg_handlers(&mut self) -> &mut Vec<Box<MsgHandler>> { &mut self.handlers }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn new(conn: &'a Connection, io_timeout: Option<i32>, end_on_timeout: bool) -> Self {
-        ConnectionItems {
-            c: conn,
-            timeout_ms: io_timeout,
-            end_on_timeout: end_on_timeout,
-            handlers: Vec::new(),
-        }
-    }
-}
-
-impl<'a> Iterator for ConnectionItems<'a> {
-    type Item = ConnectionItem;
-    fn next(&mut self) -> Option<ConnectionItem> {
-        loop {
-            if self.c.i.filter_cb.borrow().is_none() { panic!("ConnectionItems::next called recursively or with a MessageCallback set to None"); }
-            let i: Option<ConnectionItem> = self.c.next_msg().map(|x| x.into());
-            if let Some(ci) = i {
-                if !self.process_handlers(&ci) { return Some(ci); }
-            }
-
-            if let Some(t) = self.timeout_ms {
-		let r = unsafe { ffi::dbus_connection_read_write_dispatch(self.c.conn(), t as c_int) };
-		self.c.check_panic();
-		if !self.c.i.pending_items.borrow().is_empty() { continue };
-		if r == 0 { return None; }
-            }
-
-            let r = unsafe { ffi::dbus_connection_dispatch(self.c.conn()) };
-            self.c.check_panic();
-
-            if !self.c.i.pending_items.borrow().is_empty() { continue };
-            if r == ffi::DBusDispatchStatus::DataRemains { continue };
-            if r == ffi::DBusDispatchStatus::Complete { return if self.end_on_timeout { None } else { Some(ConnectionItem::Nothing) } };
-            panic!("dbus_connection_dispatch failed");
-        }
-    }
-}
-
-
-#[derive(Debug, Clone)]
-pub struct ConnMsgs<C> {
-    
-    pub conn: C,
-    
-    
-    
-    
-    pub timeout_ms: Option<u32>,
-}
-
-impl<C: ops::Deref<Target = Connection>> Iterator for ConnMsgs<C> {
-    type Item = Message;
-    fn next(&mut self) -> Option<Self::Item> {
-        
-        loop {
-            let iconn = &self.conn.i;
-            if iconn.filter_cb.borrow().is_none() { panic!("ConnMsgs::next called recursively or with a MessageCallback set to None"); }
-            let i = self.conn.next_msg();
-            if let Some(ci) = i { return Some(ci); }
-
-            if let Some(t) = self.timeout_ms {
-		let r = unsafe { ffi::dbus_connection_read_write_dispatch(self.conn.conn(), t as c_int) };
-		self.conn.check_panic();
-		if !iconn.pending_items.borrow().is_empty() { continue };
-		if r == 0 { return None; }
-            }
-
-            let r = unsafe { ffi::dbus_connection_dispatch(self.conn.conn()) };
-            self.conn.check_panic();
-
-            if !iconn.pending_items.borrow().is_empty() { continue };
-            if r == ffi::DBusDispatchStatus::DataRemains { continue };
-            if r == ffi::DBusDispatchStatus::Complete { return None }
-            panic!("dbus_connection_dispatch failed");
-        }
-    }
-}
 
 
 
@@ -185,7 +17,7 @@ struct IConnection {
     conn: Cell<*mut ffi::DBusConnection>,
     pending_items: RefCell<VecDeque<Message>>,
     watches: Option<Box<WatchList>>,
-    handlers: RefCell<MsgHandlerList>,
+    handlers: RefCell<super::MsgHandlerList>,
 
     filter_cb: RefCell<Option<MessageCallback>>,
     filter_cb_panic: RefCell<thread::Result<()>>,
@@ -196,7 +28,7 @@ pub struct Connection {
     i: Box<IConnection>,
 }
 
-pub fn conn_handle(c: &Connection) -> *mut ffi::DBusConnection {
+pub (crate) fn conn_handle(c: &Connection) -> *mut ffi::DBusConnection {
     c.i.conn.get()
 }
 
@@ -226,8 +58,8 @@ extern "C" fn filter_message_cb(conn: *mut ffi::DBusConnection, msg: *mut ffi::D
     });
 
     match r {
-        Ok(false) => ffi::DBusHandlerResult::NotYetHandled, 
-        Ok(true) => ffi::DBusHandlerResult::Handled, 
+        Ok(false) => ffi::DBusHandlerResult::NotYetHandled,
+        Ok(true) => ffi::DBusHandlerResult::Handled,
         Err(e) => {
             *i.filter_cb_panic.borrow_mut() = Err(e);
             ffi::DBusHandlerResult::Handled
@@ -275,10 +107,20 @@ impl Connection {
     }
 
     
+    
+    
+    pub fn new_session() -> Result<Connection, Error> { Self::get_private(BusType::Session) }
+
+    
+    
+    
+    pub fn new_system() -> Result<Connection, Error> { Self::get_private(BusType::System) }
+
+    
     pub fn get_private(bus: BusType) -> Result<Connection, Error> {
         let mut e = Error::empty();
         let conn = unsafe { ffi::dbus_bus_get_private(bus, e.get_mut()) };
-        if conn == ptr::null_mut() {
+        if conn.is_null() {
             return Err(e)
         }
         Self::conn_from_ptr(conn)
@@ -290,7 +132,7 @@ impl Connection {
     pub fn open_private(address: &str) -> Result<Connection, Error> {
         let mut e = Error::empty();
         let conn = unsafe { ffi::dbus_connection_open_private(to_c_str(address).as_ptr(), e.get_mut()) };
-        if conn == ptr::null_mut() {
+        if conn.is_null() {
             return Err(e)
         }
         Self::conn_from_ptr(conn)
@@ -321,7 +163,7 @@ impl Connection {
             ffi::dbus_connection_send_with_reply_and_block(self.conn(), msg.ptr(),
                 timeout_ms as c_int, e.get_mut())
         };
-        if response == ptr::null_mut() {
+        if response.is_null() {
             return Err(e);
         }
         Ok(Message::from_ptr(response, false))
@@ -376,7 +218,7 @@ impl Connection {
     
     
     
-    pub fn extract_handler(&self) -> Option<Box<MsgHandler>> {
+    pub fn extract_handler(&self) -> Option<Box<dyn MsgHandler>> {
         self.i.handlers.borrow_mut().pop()
     }
 
@@ -390,7 +232,7 @@ impl Connection {
     
     
     
-    pub fn iter(&self, timeout_ms: i32) -> ConnectionItems {
+    pub fn iter(&self, timeout_ms: i32) -> ConnectionItems<'_> {
         ConnectionItems::new(self, Some(timeout_ms), false)
     }
 
@@ -449,7 +291,7 @@ impl Connection {
     }
 
     
-    pub fn register_name(&self, name: &str, flags: u32) -> Result<RequestNameReply, Error> {
+    pub fn register_name(&self, name: &str, flags: u32) -> Result<super::RequestNameReply, Error> {
         let mut e = Error::empty();
         let n = to_c_str(name);
         let r = unsafe { ffi::dbus_bus_request_name(self.conn(), n.as_ptr(), flags, e.get_mut()) };
@@ -457,13 +299,14 @@ impl Connection {
     }
 
     
-    pub fn release_name(&self, name: &str) -> Result<ReleaseNameReply, Error> {
+    pub fn release_name(&self, name: &str) -> Result<super::ReleaseNameReply, Error> {
         let mut e = Error::empty();
         let n = to_c_str(name);
         let r = unsafe { ffi::dbus_bus_release_name(self.conn(), n.as_ptr(), e.get_mut()) };
         if r == -1 { Err(e) } else { Ok(unsafe { mem::transmute(r) }) }
     }
 
+    
     
     
     
@@ -495,11 +338,10 @@ impl Connection {
     
     
     
-    pub fn watch_handle(&self, fd: RawFd, flags: c_uint) -> ConnectionItems {
+    pub fn watch_handle(&self, fd: WatchFd, flags: c_uint) -> ConnectionItems<'_> {
         self.i.watches.as_ref().unwrap().watch_handle(fd, flags);
         ConnectionItems::new(self, None, true)
     }
-
 
     
     pub fn with_path<'a, D: Into<BusName<'a>>, P: Into<Path<'a>>>(&'a self, dest: D, path: P, timeout_ms: i32) ->
@@ -591,7 +433,7 @@ impl Connection {
     
     
     
-    pub fn set_watch_callback(&self, f: Box<Fn(Watch) + Send>) { self.i.watches.as_ref().unwrap().set_on_update(f); }
+    pub fn set_watch_callback(&self, f: Box<dyn Fn(Watch) + Send>) { self.i.watches.as_ref().unwrap().set_on_update(f); }
 
     fn check_panic(&self) {
         let p = mem::replace(&mut *self.i.filter_cb_panic.borrow_mut(), Ok(()));
@@ -627,61 +469,21 @@ impl fmt::Debug for Connection {
     }
 }
 
-#[derive(Clone, Debug)]
-
-
-
-
-pub enum MsgHandlerType {
-    
-    All,
-    
-    MsgType(MessageType),
-    
-    Reply(u32),
+impl crate::channel::Sender for Connection {
+    fn send(&self, msg: Message) -> Result<u32, ()> { Connection::send(self, msg) }
 }
 
-impl MsgHandlerType {
-    fn matches_msg(&self, m: &Message) -> bool {
-        match *self {
-            MsgHandlerType::All => true,
-            MsgHandlerType::MsgType(t) => m.msg_type() == t,
-            MsgHandlerType::Reply(serial) => {
-                let t = m.msg_type();
-                ((t == MessageType::MethodReturn) || (t == MessageType::Error)) && (m.get_reply_serial() == Some(serial))
-            }
-        }
+impl crate::blocking::BlockingSender for Connection {
+    fn send_with_reply_and_block(&self, msg: Message, timeout: Duration) -> Result<Message, Error> {
+        Connection::send_with_reply_and_block(self, msg, timeout.as_millis() as i32)
     }
 }
 
 
-pub trait MsgHandler {
-    
-    
-    
-    fn handler_type(&self) -> MsgHandlerType;
-
-    
-    fn handle_msg(&mut self, _msg: &Message) -> Option<MsgHandlerResult> { None }
-}
-
-
-#[derive(Debug, Default)]
-pub struct MsgHandlerResult {
-    
-    pub handled: bool,
-    
-    pub done: bool,
-    
-    pub reply: Vec<Message>,
-}
-
-type MsgHandlerList = Vec<Box<MsgHandler>>;
-
 fn msghandler_process(v: &mut MsgHandlerList, m: &Message, c: &Connection) -> bool {
     let mut ii: isize = -1;
     loop {
-        ii += 1; 
+        ii += 1;
         let i = ii as usize;
         if i >= v.len() { return false };
 
@@ -695,24 +497,123 @@ fn msghandler_process(v: &mut MsgHandlerList, m: &Message, c: &Connection) -> bo
 }
 
 
+pub struct ConnectionItems<'a> {
+    c: &'a Connection,
+    timeout_ms: Option<i32>,
+    end_on_timeout: bool,
+    handlers: MsgHandlerList,
+}
 
+impl<'a> ConnectionItems<'a> {
+    
+    
+    
+    pub fn with<H: 'static + MsgHandler>(mut self, h: H) -> Self {
+        self.handlers.push(Box::new(h)); self
+    }
 
-pub struct MessageReply<F>(Option<F>, u32);
-
-impl<'a, F: FnOnce(Result<&Message, Error>) + 'a> MsgHandler for MessageReply<F> {
-    fn handler_type(&self) -> MsgHandlerType { MsgHandlerType::Reply(self.1) }
-    fn handle_msg(&mut self, msg: &Message) -> Option<MsgHandlerResult> {
-        let e = match msg.msg_type() {
-            MessageType::MethodReturn => Ok(msg),
-            MessageType::Error => Err(msg.set_error_from_msg().unwrap_err()),
-            _ => unreachable!(),
+    
+    fn process_handlers(&mut self, ci: &ConnectionItem) -> bool {
+        let m = match *ci {
+            ConnectionItem::MethodReturn(ref msg) => msg,
+            ConnectionItem::Signal(ref msg) => msg,
+            ConnectionItem::MethodCall(ref msg) => msg,
+            ConnectionItem::Nothing => return false,
         };
-        debug_assert_eq!(msg.get_reply_serial(), Some(self.1));
-        self.0.take().unwrap()(e);
-        return Some(MsgHandlerResult { handled: true, done: true, reply: Vec::new() })
+
+        msghandler_process(&mut self.handlers, m, &self.c)
+    }
+
+    
+    
+    
+    pub fn msg_handlers(&mut self) -> &mut Vec<Box<dyn MsgHandler>> { &mut self.handlers }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(conn: &'a Connection, io_timeout: Option<i32>, end_on_timeout: bool) -> Self {
+        ConnectionItems {
+            c: conn,
+            timeout_ms: io_timeout,
+            end_on_timeout: end_on_timeout,
+            handlers: Vec::new(),
+        }
     }
 }
 
+impl<'a> Iterator for ConnectionItems<'a> {
+    type Item = ConnectionItem;
+    fn next(&mut self) -> Option<ConnectionItem> {
+        loop {
+            if self.c.i.filter_cb.borrow().is_none() { panic!("ConnectionItems::next called recursively or with a MessageCallback set to None"); }
+            let i: Option<ConnectionItem> = self.c.next_msg().map(|x| x.into());
+            if let Some(ci) = i {
+                if !self.process_handlers(&ci) { return Some(ci); }
+            }
+
+            if let Some(t) = self.timeout_ms {
+                let r = unsafe { ffi::dbus_connection_read_write_dispatch(self.c.conn(), t as c_int) };
+                self.c.check_panic();
+                if !self.c.i.pending_items.borrow().is_empty() { continue };
+                if r == 0 { return None; }
+            }
+
+            let r = unsafe { ffi::dbus_connection_dispatch(self.c.conn()) };
+            self.c.check_panic();
+
+            if !self.c.i.pending_items.borrow().is_empty() { continue };
+            if r == ffi::DBusDispatchStatus::DataRemains { continue };
+            if r == ffi::DBusDispatchStatus::Complete { return if self.end_on_timeout { None } else { Some(ConnectionItem::Nothing) } };
+            panic!("dbus_connection_dispatch failed");
+        }
+    }
+}
+
+
+#[derive(Debug, Clone)]
+pub struct ConnMsgs<C> {
+    
+    pub conn: C,
+    
+    
+    
+    
+    pub timeout_ms: Option<u32>,
+}
+
+impl<C: ops::Deref<Target = Connection>> Iterator for ConnMsgs<C> {
+    type Item = Message;
+    fn next(&mut self) -> Option<Self::Item> {
+
+        loop {
+            let iconn = &self.conn.i;
+            if iconn.filter_cb.borrow().is_none() { panic!("ConnMsgs::next called recursively or with a MessageCallback set to None"); }
+            let i = self.conn.next_msg();
+            if let Some(ci) = i { return Some(ci); }
+
+            if let Some(t) = self.timeout_ms {
+                let r = unsafe { ffi::dbus_connection_read_write_dispatch(self.conn.conn(), t as c_int) };
+                self.conn.check_panic();
+                if !iconn.pending_items.borrow().is_empty() { continue };
+                if r == 0 { return None; }
+            }
+
+            let r = unsafe { ffi::dbus_connection_dispatch(self.conn.conn()) };
+            self.conn.check_panic();
+
+            if !iconn.pending_items.borrow().is_empty() { continue };
+            if r == ffi::DBusDispatchStatus::DataRemains { continue };
+            if r == ffi::DBusDispatchStatus::Complete { return None }
+            panic!("dbus_connection_dispatch failed");
+        }
+    }
+}
 
 #[test]
 fn message_reply() {
@@ -724,10 +625,9 @@ fn message_reply() {
     let quit2 = quit.clone();
     let reply = c.send_with_reply(m, move |result| {
         let r = result.unwrap();
-        let _: ::arg::Array<&str, _>  = r.get1().unwrap();
+        let _: crate::arg::Array<&str, _>  = r.get1().unwrap();
         quit2.set(true);
     }).unwrap();
     for _ in c.iter(1000).with(reply) { if quit.get() { return; } }
     assert!(false);
 }
-

@@ -70,7 +70,10 @@ int32_t atp_free_handle(atp_handle *handle);
 
 
 
+
+
 #ifdef __linux__
+
 
 
 
@@ -97,7 +100,9 @@ atp_handle *atp_promote_thread_to_real_time(atp_thread_info *thread_info);
 
 
 
+
 int32_t atp_demote_thread_from_real_time(atp_thread_info* thread_info);
+
 
 
 
@@ -130,6 +135,7 @@ void atp_serialize_thread_info(atp_thread_info *thread_info, uint8_t *bytes);
 
 
 atp_thread_info* atp_deserialize_thread_info(uint8_t *bytes);
+
 
 
 

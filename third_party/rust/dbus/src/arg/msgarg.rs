@@ -1,9 +1,10 @@
 #![allow(dead_code)]
 
-use {Signature, Message, arg::TypeMismatchError};
+use crate::{Signature, arg::TypeMismatchError, arg::Variant};
 use std::{fmt, any};
 use std::sync::Arc;
-use std::rc::Rc;
+
+use std::collections::{HashMap, VecDeque};
 
 use super::{Iter, IterAppend, ArgType};
 
@@ -14,24 +15,31 @@ pub trait Arg {
     
     const ARG_TYPE: ArgType;
     
-    
-    
-    #[deprecated(note = "Use associated constant ARG_TYPE instead")]
-    fn arg_type() -> ArgType { return Self::ARG_TYPE; }
-    
     fn signature() -> Signature<'static>;
 }
 
 
-pub trait Append: Sized {
+pub trait ArgAll {
     
-    fn append(self, &mut IterAppend);
+    #[allow(non_camel_case_types)] 
+    type strs;
+    
+    fn strs_sig<F: FnMut(&'static str, Signature<'static>)>(a: Self::strs, f: F);
 }
 
 
-pub trait AppendAll: Sized {
+pub trait Append {
     
-    fn append(self, &mut IterAppend);
+    fn append(self, ia: &mut IterAppend) where Self: Sized { self.append_by_ref(ia) }
+
+    
+    fn append_by_ref(&self, _: &mut IterAppend);
+}
+
+
+pub trait AppendAll {
+    
+    fn append(&self, _: &mut IterAppend);
 }
 
 
@@ -48,27 +56,24 @@ pub trait ReadAll: Sized {
 
 
 
-pub trait RefArg: fmt::Debug {
+pub trait RefArg: fmt::Debug + Send + Sync {
     
     fn arg_type(&self) -> ArgType;
     
     fn signature(&self) -> Signature<'static>;
     
-    fn append(&self, &mut IterAppend);
+    fn append(&self, _: &mut IterAppend);
+    
+    
+    
+    fn as_any(&self) -> &dyn any::Any where Self: 'static;
+    
+	
     
     
     
     
-    fn as_any(&self) -> &any::Any where Self: 'static;
-    
-    
-    
-    
-    
-    
-    
-    
-    fn as_any_mut(&mut self) -> &mut any::Any where Self: 'static;
+    fn as_any_mut(&mut self) -> &mut dyn any::Any where Self: 'static;
     
     
     
@@ -92,32 +97,60 @@ pub trait RefArg: fmt::Debug {
     
     
     
+    
     #[inline]
-    fn as_iter<'a>(&'a self) -> Option<Box<Iterator<Item=&'a RefArg> + 'a>> { None }
+    fn as_iter<'a>(&'a self) -> Option<Box<dyn Iterator<Item=&'a dyn RefArg> + 'a>> { None }
+    
+    
+    
+    
+    #[inline]
+    fn as_static_inner(&self, _index: usize) -> Option<&(dyn RefArg + 'static)> where Self: 'static { None }
     
     
     
     
     
     
-    fn box_clone(&self) -> Box<RefArg + 'static> { unimplemented!()  }
+    fn box_clone(&self) -> Box<dyn RefArg + 'static>;
+
+    
+    
+    
+    fn array_clone(_arg: &[Self]) -> Option<Box<dyn RefArg + 'static>> where Self: Sized { None }
 }
 
-impl<'a> Get<'a> for Box<RefArg> {
+impl<'a> Get<'a> for Box<dyn RefArg> {
     fn get(i: &mut Iter<'a>) -> Option<Self> { i.get_refarg() }
 }
 
 
-#[inline]
-pub fn cast<'a, T: 'static>(a: &'a (RefArg + 'static)) -> Option<&'a T> { a.as_any().downcast_ref() }
-
-
-
-
 
 
 #[inline]
-pub fn cast_mut<'a, T: 'static>(a: &'a mut (RefArg + 'static)) -> Option<&'a mut T> { a.as_any_mut().downcast_mut() }
+pub fn cast<'a, T: 'static>(a: &'a (dyn RefArg + 'static)) -> Option<&'a T> { a.as_any().downcast_ref() }
+
+
+
+
+
+
+
+
+#[inline]
+pub fn cast_mut<'a, T: 'static>(a: &'a mut (dyn RefArg + 'static)) -> Option<&'a mut T> { a.as_any_mut().downcast_mut() }
+
+
+pub type PropMap = HashMap<String, Variant<Box<dyn RefArg + 'static>>>;
+
+
+
+
+
+
+pub fn prop_cast<'a, T: 'static>(map: &'a PropMap, key: &str) -> Option<&'a T> {
+    map.get(key).and_then(|v| cast(&v.0))
+}
 
 
 
@@ -135,8 +168,8 @@ impl<'a, T: Arg> Arg for &'a T {
     const ARG_TYPE: ArgType = T::ARG_TYPE;
     fn signature() -> Signature<'static> { T::signature() }
 }
-impl<'a, T: Append + Clone> Append for &'a T {
-    fn append(self, i: &mut IterAppend) { self.clone().append(i) }
+impl<'a, T: Append> Append for &'a T {
+    fn append_by_ref(&self, i: &mut IterAppend) { (&**self).append_by_ref(i) }
 }
 impl<'a, T: DictKey> DictKey for &'a T {}
 
@@ -148,9 +181,9 @@ impl<'a, T: RefArg + ?Sized> RefArg for &'a T {
     #[inline]
     fn append(&self, i: &mut IterAppend) { (&**self).append(i) }
     #[inline]
-    fn as_any(&self) -> &any::Any where T: 'static { (&**self).as_any() }
+    fn as_any(&self) -> &dyn any::Any where T: 'static { (&**self).as_any() }
     #[inline]
-    fn as_any_mut(&mut self) -> &mut any::Any where T: 'static { unreachable!() }
+    fn as_any_mut(&mut self) -> &mut dyn any::Any where T: 'static { unreachable!() }
     #[inline]
     fn as_i64(&self) -> Option<i64> { (&**self).as_i64() }
     #[inline]
@@ -160,9 +193,11 @@ impl<'a, T: RefArg + ?Sized> RefArg for &'a T {
     #[inline]
     fn as_str(&self) -> Option<&str> { (&**self).as_str() }
     #[inline]
-    fn as_iter<'b>(&'b self) -> Option<Box<Iterator<Item=&'b RefArg> + 'b>> { (&**self).as_iter() }
+    fn as_iter<'b>(&'b self) -> Option<Box<dyn Iterator<Item=&'b dyn RefArg> + 'b>> { (&**self).as_iter() }
     #[inline]
-    fn box_clone(&self) -> Box<RefArg + 'static> { (&**self).box_clone() }
+    fn as_static_inner(&self, index: usize) -> Option<&(dyn RefArg + 'static)> where Self: 'static { (&**self).as_static_inner(index) }
+    #[inline]
+    fn box_clone(&self) -> Box<dyn RefArg + 'static> { (&**self).box_clone() }
 }
 
 
@@ -178,9 +213,9 @@ impl<T: RefArg + ?Sized> RefArg for $t<T> {
     #[inline]
     fn append(&self, i: &mut IterAppend) { (&**self).append(i) }
     #[inline]
-    fn as_any(&self) -> &any::Any where T: 'static { (&**self).as_any() }
+    fn as_any(&self) -> &dyn any::Any where T: 'static { (&**self).as_any() }
     #[inline]
-    fn as_any_mut<'a>(&'a mut $ss) -> &'a mut any::Any where T: 'static { $make_mut.as_any_mut() }
+    fn as_any_mut(&mut $ss) -> &mut dyn any::Any where T: 'static { $make_mut.as_any_mut() }
     #[inline]
     fn as_i64(&self) -> Option<i64> { (&**self).as_i64() }
     #[inline]
@@ -190,9 +225,11 @@ impl<T: RefArg + ?Sized> RefArg for $t<T> {
     #[inline]
     fn as_str(&self) -> Option<&str> { (&**self).as_str() }
     #[inline]
-    fn as_iter<'a>(&'a self) -> Option<Box<Iterator<Item=&'a RefArg> + 'a>> { (&**self).as_iter() }
+    fn as_iter<'a>(&'a self) -> Option<Box<dyn Iterator<Item=&'a dyn RefArg> + 'a>> { (&**self).as_iter() }
     #[inline]
-    fn box_clone(&self) -> Box<RefArg + 'static> { (&**self).box_clone() }
+    fn as_static_inner(&self, index: usize) -> Option<&(dyn RefArg + 'static)> where Self: 'static { (&**self).as_static_inner(index) }
+    #[inline]
+    fn box_clone(&self) -> Box<dyn RefArg + 'static> { (&**self).box_clone() }
 }
 impl<T: DictKey> DictKey for $t<T> {}
 
@@ -201,68 +238,33 @@ impl<T: Arg> Arg for $t<T> {
     fn signature() -> Signature<'static> { T::signature() }
 }
 impl<'a, T: Get<'a>> Get<'a> for $t<T> {
-    fn get(i: &mut Iter<'a>) -> Option<Self> { T::get(i).map(|v| $t::new(v)) }
+    fn get(i: &mut Iter<'a>) -> Option<Self> { T::get(i).map($t::new) }
 }
 
     }
 }
 
 impl<T: Append> Append for Box<T> {
-    fn append(self, i: &mut IterAppend) { let q: T = *self; q.append(i) }
+    fn append_by_ref(&self, i: &mut IterAppend) { (&**self).append_by_ref(i) }
 }
 
 deref_impl!(Box, self, &mut **self );
-deref_impl!(Rc, self, Rc::get_mut(self).unwrap());
+
 deref_impl!(Arc, self, Arc::get_mut(self).unwrap());
 
-
-
-
-
-
-pub trait ArgBuilder: Sized {
-    
-    type strs;
-    
-    fn strs_sig<F: FnMut(&'static str, Signature<'static>)>(a: Self::strs, f: F);
-    
-    fn read(msg: &Message) -> Result<Self, TypeMismatchError>;
-    
-    fn append(self, msg: &mut Message);
-}
-
-impl ArgBuilder for () {
-    type strs = ();
-    fn strs_sig<F: FnMut(&'static str, Signature<'static>)>(_: Self::strs, _: F) {}
-    fn read(_: &Message) -> Result<Self, TypeMismatchError> { Ok(()) }
-    fn append(self, _: &mut Message) {}
-}
-
-macro_rules! argbuilder_impl {
+macro_rules! argall_impl {
     ($($n: ident $t: ident $s: ty,)+) => {
 
-impl<$($t: Arg + Append + for<'z> Get<'z>),*> ArgBuilder for ($($t,)*) {
-    type strs = ($(&'static $s,)*); 
+impl<$($t: Arg),*> ArgAll for ($($t,)*) {
+    type strs = ($(&'static $s,)*);
     fn strs_sig<Q: FnMut(&'static str, Signature<'static>)>(z: Self::strs, mut q: Q) {
         let ( $($n,)*) = z;
         $( q($n, $t::signature()); )*
     }
-
-    fn read(msg: &Message) -> Result<Self, TypeMismatchError> {
-        let mut ii = msg.iter_init();
-        $( let $n = ii.read()?; )*
-        Ok(($( $n, )* ))
-    }
-
-    fn append(self, msg: &mut Message) {
-        let ( $($n,)*) = self;
-        let mut ia = IterAppend::new(msg);
-        $( ia.append($n); )*
-    }
 }
 
 impl<$($t: Append),*> AppendAll for ($($t,)*) {
-    fn append(self, ia: &mut IterAppend) {
+    fn append(&self, ia: &mut IterAppend) {
         let ( $($n,)*) = self;
         $( ia.append($n); )*
     }
@@ -279,59 +281,115 @@ impl<$($t: Arg + for<'z> Get<'z>),*> ReadAll for ($($t,)*) {
     }
 }
 
-argbuilder_impl!(a A str,);
-argbuilder_impl!(a A str, b B str,);
-argbuilder_impl!(a A str, b B str, c C str,);
-argbuilder_impl!(a A str, b B str, c C str, d D str,);
-argbuilder_impl!(a A str, b B str, c C str, d D str, e E str,);
-argbuilder_impl!(a A str, b B str, c C str, d D str, e E str, f F str,);
-argbuilder_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str,);
-argbuilder_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str,);
-argbuilder_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str, i I str,);
-argbuilder_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str, i I str, j J str,);
+impl ArgAll for () {
+    type strs = ();
+    fn strs_sig<F: FnMut(&'static str, Signature<'static>)>(_: Self::strs, _: F) {}
+}
 
+impl AppendAll for () {
+    fn append(&self, _: &mut IterAppend) {}
+}
+
+impl ReadAll for () {
+    fn read(_: &mut Iter) -> Result<Self, TypeMismatchError> {
+        Ok(())
+    }
+}
+
+
+
+
+
+impl AppendAll for VecDeque<Box<dyn RefArg>> {
+    fn append(&self, ia: &mut IterAppend) {
+        for arg in self {
+            arg.append(ia);
+        }
+    }
+}
+
+
+
+
+impl ReadAll for VecDeque<Box<dyn RefArg>> {
+    fn read(ii: &mut Iter) -> Result<Self, TypeMismatchError> {
+        let mut r = VecDeque::new();
+        while let Some(arg) = ii.get_refarg() {
+            r.push_back(arg);
+            ii.next();
+        }
+        Ok(r)
+    }
+}
+
+
+argall_impl!(a A str,);
+argall_impl!(a A str, b B str,);
+argall_impl!(a A str, b B str, c C str,);
+argall_impl!(a A str, b B str, c C str, d D str,);
+argall_impl!(a A str, b B str, c C str, d D str, e E str,);
+argall_impl!(a A str, b B str, c C str, d D str, e E str, f F str,);
+argall_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str,);
+argall_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str,);
+argall_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str, i I str,);
+argall_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str, i I str, j J str,);
+argall_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str, i I str, j J str, k K str,);
+argall_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str, i I str, j J str, k K str, l L str,);
+argall_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str, i I str, j J str, k K str, l L str, m M str,);
+argall_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str, i I str, j J str, k K str, l L str, m M str, n N str,);
+argall_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str, i I str, j J str, k K str, l L str, m M str, n N str, o O str,);
+argall_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str, i I str, j J str, k K str, l L str, m M str, n N str, o O str, p P str,);
+argall_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str, i I str, j J str, k K str, l L str, m M str, n N str, o O str, p P str, r R str,);
+argall_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str, i I str, j J str, k K str, l L str, m M str, n N str, o O str, p P str, r R str, s S str,);
+argall_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str, i I str, j J str, k K str, l L str, m M str, n N str, o O str, p P str, r R str, s S str, t T str,);
+argall_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str, i I str, j J str, k K str, l L str, m M str, n N str, o O str, p P str, r R str, s S str, t T str, u U str,);
+argall_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str, i I str, j J str, k K str, l L str, m M str, n N str, o O str, p P str, r R str, s S str, t T str, u U str, v V str,);
+argall_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str, i I str, j J str, k K str, l L str, m M str, n N str, o O str, p P str, r R str, s S str, t T str, u U str, v V str, w W str,);
+argall_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str, i I str, j J str, k K str, l L str, m M str, n N str, o O str, p P str, r R str, s S str, t T str, u U str, v V str, w W str, x X str,);
+argall_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str, i I str, j J str, k K str, l L str, m M str, n N str, o O str, p P str, r R str, s S str, t T str, u U str, v V str, w W str, x X str, y Y str,);
+argall_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str, i I str, j J str, k K str, l L str, m M str, n N str, o O str, p P str, r R str, s S str, t T str, u U str, v V str, w W str, x X str, y Y str, z Z str,);
 
 
 #[cfg(test)]
 mod test {
-    extern crate tempdir;
-
-    use {Connection, ConnectionItem, Message, BusType, Path, Signature};
-    use arg::{Array, Variant, Dict, Iter, ArgType, TypeMismatchError, RefArg, cast};
+    use crate::{channel::{Channel, BusType}, Message, Path, Signature};
+    use crate::message::MessageType;
+    use crate::arg::{Array, Variant, Dict, Iter, ArgType, TypeMismatchError, RefArg, cast};
 
     use std::collections::HashMap;
 
     #[test]
     fn refarg() {
-        let c = Connection::get_private(BusType::Session).unwrap();
-        c.register_object_path("/mooh").unwrap();
-        let m = Message::new_method_call(&c.unique_name(), "/mooh", "com.example.hello", "Hello").unwrap();
+        let c = Channel::get_private(BusType::Session).unwrap();
+        let m = Message::new_method_call(c.unique_name().unwrap(), "/mooh", "com.example.hello", "Hello").unwrap();
 
-        let mut vv: Vec<Variant<Box<RefArg>>> = vec!();
+        let mut vv: Vec<Variant<Box<dyn RefArg>>> = vec!();
         vv.push(Variant(Box::new(5i32)));
         vv.push(Variant(Box::new(String::from("Hello world"))));
         let m = m.append_ref(&vv);
 
         let (f1, f2) = (false, 7u64);
-        let mut v: Vec<&RefArg> = vec!();
+        let mut v: Vec<&dyn RefArg> = vec!();
         v.push(&f1);
         v.push(&f2);
         let m = m.append_ref(&v);
         let vi32 = vec![7i32, 9i32];
         let vstr: Vec<String> = ["This", "is", "dbus", "rs"].iter().map(|&s| s.into()).collect();
-        let m = m.append_ref(&[&vi32 as &RefArg, &vstr as &RefArg]);
+        let m = m.append_ref(&[&vi32 as &dyn RefArg, &vstr as &dyn RefArg]);
         let mut map = HashMap::new();
         map.insert(true, String::from("Yes"));
         map.insert(false, String::from("No"));
-        let m = m.append_ref(&[&map as &RefArg, &1.5f64 as &RefArg]);
+        let m = m.append_ref(&[&map as &dyn RefArg, &1.5f64 as &dyn RefArg]);
 
         c.send(m).unwrap();
 
-        for n in c.iter(1000) {
-            if let ConnectionItem::MethodCall(m) = n {
-                let rv: Vec<Box<RefArg + 'static>> = m.iter_init().collect();
+        loop {
+            if let Some(m) = c.blocking_pop_message(std::time::Duration::from_millis(1000)).unwrap() {
+                if m.msg_type() != MessageType::MethodCall { continue; }
+
+                let rv: Vec<Box<dyn RefArg + 'static>> = m.iter_init().collect();
                 println!("Receiving {:?}", rv);
-                let rv0: &Variant<Box<RefArg>> = cast(&rv[0]).unwrap(); 
+                let rv0: &Variant<Box<dyn RefArg>> = cast(&rv[0]).unwrap();
                 let rv00: &i32 = cast(&rv0.0).unwrap();
                 assert_eq!(rv00, &5i32);
                 assert_eq!(Some(&false), rv[2].as_any().downcast_ref::<bool>());
@@ -361,15 +419,15 @@ mod test {
 
     #[test]
     fn message_types() {
-        let c = Connection::get_private(BusType::Session).unwrap();
-        c.register_object_path("/hello").unwrap();
-        let m = Message::new_method_call(&c.unique_name(), "/hello", "com.example.hello", "Hello").unwrap();
+        let c = Channel::get_private(BusType::Session).unwrap();
+
+        let m = Message::new_method_call(c.unique_name().unwrap(), "/hello", "com.example.hello", "Hello").unwrap();
         let m = m.append1(2000u16);
-        let m = m.append1(Array::new(&vec![129u8, 5, 254]));
+        let m = m.append1(&Array::new(&vec![129u8, 5, 254]));
         let m = m.append2(Variant(&["Hello", "world"][..]), &[32768u16, 16u16, 12u16][..]);
         let m = m.append3(-1i32, &*format!("Hello world"), -3.14f64);
         let m = m.append1((256i16, Variant(18_446_744_073_709_551_615u64)));
-        let m = m.append2(Path::new("/a/valid/path").unwrap(), Signature::new("a{sv}").unwrap());
+        let m = m.append2(Path::new("/a/valid/path").unwrap(), &Signature::new("a{sv}").unwrap());
         let mut z = HashMap::new();
         z.insert(123543u32, true);
         z.insert(0u32, false);
@@ -378,48 +436,189 @@ mod test {
         println!("Sending {}", sending);
         c.send(m).unwrap();
 
-        for n in c.iter(1000) {
-            match n {
-                ConnectionItem::MethodCall(m) => {
-                    use super::Arg;
-                    let receiving = format!("{:?}", m.iter_init());
-                    println!("Receiving {}", receiving);
-                    assert_eq!(sending, receiving);
+        loop {
+            if let Some(m) = c.blocking_pop_message(std::time::Duration::from_millis(1000)).unwrap() {
+                if m.msg_type() != MessageType::MethodCall { continue; }
+                use super::Arg;
+                let receiving = format!("{:?}", m.iter_init());
+                println!("Receiving {}", receiving);
+                assert_eq!(sending, receiving);
 
-                    assert_eq!(2000u16, m.get1().unwrap());
-                    assert_eq!(m.get2(), (Some(2000u16), Some(&[129u8, 5, 254][..])));
-                    assert_eq!(m.read2::<u16, bool>().unwrap_err(),
-                        TypeMismatchError { position: 1, found: ArgType::Array, expected: ArgType::Boolean });
+                assert_eq!(2000u16, m.get1().unwrap());
+                assert_eq!(m.get2(), (Some(2000u16), Some(&[129u8, 5, 254][..])));
+                assert_eq!(m.read2::<u16, bool>().unwrap_err(),
+                    TypeMismatchError { position: 1, found: ArgType::Array, expected: ArgType::Boolean });
 
-                    let mut g = m.iter_init();
-                    let e = g.read::<u32>().unwrap_err();
-                    assert_eq!(e.pos(), 0);
-                    assert_eq!(e.expected_arg_type(), ArgType::UInt32);
-                    assert_eq!(e.found_arg_type(), ArgType::UInt16);
+                let mut g = m.iter_init();
+                let e = g.read::<u32>().unwrap_err();
+                assert_eq!(e.pos(), 0);
+                assert_eq!(e.expected_arg_type(), ArgType::UInt32);
+                assert_eq!(e.found_arg_type(), ArgType::UInt16);
 
-                    assert!(g.next() && g.next());
-                    let v: Variant<Iter> = g.get().unwrap();
-                    let mut viter = v.0;
-                    assert_eq!(viter.arg_type(), Array::<&str,()>::ARG_TYPE);
-                    let a: Array<&str, _> = viter.get().unwrap();
-                    assert_eq!(a.collect::<Vec<&str>>(), vec!["Hello", "world"]);
+                assert!(g.next() && g.next());
+                let v: Variant<Iter> = g.get().unwrap();
+                let mut viter = v.0;
+                assert_eq!(viter.arg_type(), Array::<&str,()>::ARG_TYPE);
+                let a: Array<&str, _> = viter.get().unwrap();
+                assert_eq!(a.collect::<Vec<&str>>(), vec!["Hello", "world"]);
 
-                    assert!(g.next());
-                    assert_eq!(g.get::<u16>(), None); 
-                    assert!(g.next() && g.next() && g.next() && g.next());
+                assert!(g.next());
+                assert_eq!(g.get::<u16>(), None); 
+                assert!(g.next() && g.next() && g.next() && g.next());
 
-                    assert_eq!(g.get(), Some((256i16, Variant(18_446_744_073_709_551_615u64))));
-                    assert!(g.next());
-                    assert_eq!(g.get(), Some(Path::new("/a/valid/path").unwrap()));
-                    assert!(g.next());
-                    assert_eq!(g.get(), Some(Signature::new("a{sv}").unwrap()));
-                    assert!(g.next());
-                    let d: Dict<u32, bool, _> = g.get().unwrap();
-                    let z2: HashMap<_, _> = d.collect();
-                    assert_eq!(z, z2);
-                    break;
+                assert_eq!(g.get(), Some((256i16, Variant(18_446_744_073_709_551_615u64))));
+                assert!(g.next());
+                assert_eq!(g.get(), Some(Path::new("/a/valid/path").unwrap()));
+                assert!(g.next());
+                assert_eq!(g.get(), Some(Signature::new("a{sv}").unwrap()));
+                assert!(g.next());
+                let d: Dict<u32, bool, _> = g.get().unwrap();
+                let z2: HashMap<_, _> = d.collect();
+                assert_eq!(z, z2);
+                break;
+            }
+        }
+    }
+
+    #[test]
+    fn cast_vecs() {
+        let c = Channel::get_private(BusType::Session).unwrap();
+
+        let m = Message::new_method_call(c.unique_name().unwrap(), "/hello", "com.example.hello", "Hello").unwrap();
+        macro_rules! append_array {
+            ($m:expr, $t:ty) => {
+                $m.append1(Variant(&Array::<&$t, _>::new(&vec![Default::default()])))
+            };
+        }
+        let m = append_array!(m, bool);
+        let m = append_array!(m, u8);
+        let m = append_array!(m, u16);
+        let m = append_array!(m, i16);
+        let m = append_array!(m, u32);
+        let m = append_array!(m, i32);
+        let m = append_array!(m, f64);
+        let m = append_array!(m, String);
+        c.send(m).unwrap();
+        loop {
+            if let Some(m) = c.blocking_pop_message(std::time::Duration::from_millis(1000)).unwrap() {
+                if m.msg_type() != MessageType::MethodCall {
+                    continue;
                 }
-                _ => println!("Got {:?}", n),
+                let mut i = m.iter_init();
+                let mut i2 = m.iter_init();
+
+                macro_rules! check_array {
+                    ($t:ty) => {
+                        let array: Variant<Box<dyn RefArg>> = i.read().unwrap();
+                        assert_eq!(
+                            cast::<Vec<$t>>(&(array.0)),
+                            Some(&vec![Default::default()]),
+                            "a variant containing an array of {0} should be castable to a Vec<{0}>",
+                            std::any::type_name::<$t>()
+                        );
+                        let refarg = i2.get_refarg().unwrap();
+                        println!("refarg {:?}", refarg);
+                        let cloned = refarg.box_clone();
+                        println!("cloned: {:?}", cloned);
+                        let st_inner = refarg.as_static_inner(0).unwrap();
+                        println!("st_inner {:?}", st_inner);
+                        i2.next();
+                        assert_eq!(cast::<Vec<$t>>(st_inner), Some(&vec![Default::default()]));
+                        let cl_inner = refarg.as_static_inner(0).unwrap();
+                        assert_eq!(cast::<Vec<$t>>(cl_inner), Some(&vec![Default::default()]));
+                    };
+                }
+                check_array!(bool);
+                check_array!(u8);
+                check_array!(u16);
+                check_array!(i16);
+                check_array!(u32);
+                check_array!(i32);
+                check_array!(f64);
+                check_array!(String);
+                break;
+            }
+        }
+    }
+
+    #[test]
+    fn cast_dicts() {
+        let c = Channel::get_private(BusType::Session).unwrap();
+
+        let m = Message::new_method_call(
+            c.unique_name().unwrap(),
+            "/hello",
+            "com.example.hello",
+            "Hello",
+        )
+        .unwrap();
+        macro_rules! append_dict_variant {
+            ($m:expr, $k:ty, $v:ty) => {{
+                let mut map: HashMap<$k, Variant<Box<dyn RefArg>>> = HashMap::new();
+                map.insert(Default::default(), Variant(Box::new(<$v>::default())));
+                $m.append1(Variant(&map))
+            }};
+        }
+        let m = append_dict_variant!(m, bool, bool);
+        let m = append_dict_variant!(m, u8, u8);
+        let m = append_dict_variant!(m, u16, u16);
+        let m = append_dict_variant!(m, i16, i16);
+        let m = append_dict_variant!(m, u32, u32);
+        let m = append_dict_variant!(m, i32, i32);
+        let m = append_dict_variant!(m, u64, u64);
+        let m = append_dict_variant!(m, i64, i64);
+        let m = append_dict_variant!(m, u8, f64);
+        let m = append_dict_variant!(m, String, String);
+        c.send(m).unwrap();
+        loop {
+            if let Some(m) = c
+                .blocking_pop_message(std::time::Duration::from_millis(1000))
+                .unwrap()
+            {
+                if m.msg_type() != MessageType::MethodCall {
+                    continue;
+                }
+                let mut i = m.iter_init();
+                let mut i2 = m.iter_init();
+
+                macro_rules! check_dict_variant {
+                    ($k:ty, $v:ty) => {
+                        let map: Variant<Box<dyn RefArg>> = i.read().unwrap();
+                        let expected_key: $k = Default::default();
+                        let expected_value: $v = Default::default();
+                        let cast_map = cast::<HashMap<$k, Variant<Box<dyn RefArg>>>>(&map.0);
+                        assert!(cast_map.is_some(),
+                            "a variant containing a dict of {0} to Variant({1}) should be castable to a HashMap<{0}, Variant<Box<dyn RefArg>>>",
+                            std::any::type_name::<$k>(),
+                            std::any::type_name::<$v>()
+                        );
+                        let cast_map_value = cast_map.unwrap().get(&expected_key).unwrap();
+                        assert_eq!(
+                            cast::<$v>(&cast_map_value.0),
+                            Some(&expected_value),
+                            "a variant {0:?} containing a {1} should be castable to {1}",
+                            cast_map_value,
+                            std::any::type_name::<$v>()
+                        );
+                        let refarg = i2.get_refarg().unwrap();
+                        println!("refarg {:?}", refarg);
+                        let st_inner = refarg.as_static_inner(0).unwrap();
+                        println!("st_inner {:?}", st_inner);
+                        i2.next();
+                        assert!(cast::<HashMap<$k, Variant<Box<dyn RefArg>>>>(st_inner).is_some());
+                    };
+                }
+                check_dict_variant!(bool, bool);
+                check_dict_variant!(u8, u8);
+                check_dict_variant!(u16, u16);
+                check_dict_variant!(i16, i16);
+                check_dict_variant!(u32, u32);
+                check_dict_variant!(i32, i32);
+                check_dict_variant!(u64, u64);
+                check_dict_variant!(i64, i64);
+                check_dict_variant!(u8, f64);
+                check_dict_variant!(String, String);
+                break;
             }
         }
     }

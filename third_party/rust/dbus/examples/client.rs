@@ -1,14 +1,22 @@
-extern crate dbus;
+use dbus::blocking::Connection;
+use std::time::Duration;
 
-use dbus::{Connection, BusType, Message};
-use dbus::arg::Array;
-
-fn main() {
-    let c = Connection::get_private(BusType::Session).unwrap();
-    let m = Message::new_method_call("org.freedesktop.DBus", "/", "org.freedesktop.DBus", "ListNames").unwrap();
-    let r = c.send_with_reply_and_block(m, 2000).unwrap();
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     
-    let arr: Array<&str, _>  = r.get1().unwrap();
-    for name in arr { println!("{}", name); }
+    let conn = Connection::new_session()?;
+
+    
+    
+    let proxy = conn.with_proxy("org.freedesktop.DBus", "/", Duration::from_millis(5000));
+
+    
+    
+    
+    let (names,): (Vec<String>,) = proxy.method_call("org.freedesktop.DBus", "ListNames", ())?;
+
+    
+    for name in names { println!("{}", name); }
+
+    Ok(())
 }
 
