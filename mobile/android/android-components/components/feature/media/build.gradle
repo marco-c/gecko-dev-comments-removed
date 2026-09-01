@@ -5,7 +5,6 @@
 plugins {
     id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
-    alias(libs.plugins.python.envs.plugin)
     id 'org.mozilla.nimbus-gradle-plugin'
 }
 
@@ -22,7 +21,7 @@ dependencies {
     implementation project(':components:support-utils')
     implementation project(':components:ui-icons')
 
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.androidx.media
     implementation libs.kotlinx.coroutines
 

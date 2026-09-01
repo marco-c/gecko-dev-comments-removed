@@ -17,7 +17,6 @@ plugins {
     alias(libs.plugins.dependency.analysis)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.python.envs.plugin)
 }
 
 android {
@@ -72,7 +71,7 @@ dependencies {
 
     implementation libs.androidx.appcompat
     implementation libs.androidx.constraintlayout
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.androidx.recyclerview
     implementation libs.androidx.room.runtime
     ksp libs.androidx.room.compiler
