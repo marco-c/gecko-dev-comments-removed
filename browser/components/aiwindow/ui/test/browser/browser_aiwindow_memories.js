@@ -75,11 +75,12 @@ describe("MemoriesSchedulers scheduling from AIWindow", () => {
       testWin = null;
     });
 
-    it("calls maybeRunAndSchedule during init when window is AI Window", () => {
+    it("calls maybeRunAndSchedule during init when window is AI Window", async () => {
       testWin.document.documentElement.setAttribute("ai-window", "");
 
       AIWindow.uninit();
       AIWindow.init(testWin);
+      await testWin.delayedStartupPromise;
 
       Assert.ok(stub.calledOnce, "called once during AI Window init");
     });
@@ -89,6 +90,21 @@ describe("MemoriesSchedulers scheduling from AIWindow", () => {
       AIWindow.init(testWin);
 
       Assert.ok(stub.notCalled, "not called during classic window init");
+    });
+
+    it("still calls maybeRunAndSchedule for a later AI window even if an earlier window init() saw wasn't one", async () => {
+      
+      
+      
+      testWin.document.documentElement.setAttribute("ai-window", "");
+
+      AIWindow.init(testWin);
+      await testWin.delayedStartupPromise;
+
+      Assert.ok(
+        stub.calledOnce,
+        "called for a later AI window despite an earlier non-AI window init()"
+      );
     });
   });
 });
