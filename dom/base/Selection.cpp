@@ -2892,6 +2892,23 @@ void Selection::CollapseInternal(InLimiter aInLimiter,
     return;
   }
 
+  RefPtr<nsRange> range = nsRange::Create(aPoint.GetContainer());
+  result = range->CollapseTo(aPoint);
+  if (NS_FAILED(result)) {
+    aRv.Throw(result);
+    return;
+  }
+
+  
+  
+  
+  
+  result = range->RegisterSelection(*this);
+  if (NS_FAILED(result)) {
+    aRv.Throw(result);
+    return;
+  }
+
   
   Clear(presContext);
 
@@ -2901,13 +2918,6 @@ void Selection::CollapseInternal(InLimiter aInLimiter,
   
   frameSelection->SetHint(ComputeCaretAssociationHint(
       frameSelection->GetHint(), frameSelection->GetCaretBidiLevel(), aPoint));
-
-  RefPtr<nsRange> range = nsRange::Create(aPoint.GetContainer());
-  result = range->CollapseTo(aPoint);
-  if (NS_FAILED(result)) {
-    aRv.Throw(result);
-    return;
-  }
 
 #ifdef DEBUG_SELECTION
   nsCOMPtr<nsIContent> content = do_QueryInterface(aPoint.GetContainer());
@@ -2922,8 +2932,16 @@ void Selection::CollapseInternal(InLimiter aInLimiter,
   result = AddRangesForSelectableNodes(range, &maybeRangeIndex,
                                        DispatchSelectstartEvent::Maybe);
   if (NS_FAILED(result)) {
+    range->UnregisterSelection(*this);
     aRv.Throw(result);
     return;
+  }
+  if (maybeRangeIndex.isNothing()) {
+    
+    
+    
+    
+    range->UnregisterSelection(*this);
   }
   SetAnchorFocusRange(0);
   SelectFrames(presContext, *range, true);
