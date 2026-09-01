@@ -518,3 +518,15 @@ function runUnsupportedPropertyTests(propertyName, testExamples) {
     testUnsupportedValue(propertyName, cssText);
   }
 }
+
+
+
+
+
+function runInvalidKeywordTests(propertyName, keywords) {
+  for (const keyword of keywords) {
+    const keywordExample = createKeywordExample(keyword);
+    testPropertyInvalid(propertyName, keywordExample.examples,
+                        keywordExample.description);
+  }
+}
