@@ -8102,7 +8102,23 @@ void nsTextFrame::DrawTextRunAndDecorations(Range aRange,
     }
     clipRect.emplace(x, y, w, h);
     clipRect->Scale(1 / app);
-    clipRect->Round();
+    
+    
+    
+    
+    
+    
+    
+    gfxRect inlineRounded = *clipRect;
+    inlineRounded.Round();
+    clipRect->RoundOut();
+    if (verticalDec) {
+      clipRect->y = inlineRounded.y;
+      clipRect->height = inlineRounded.height;
+    } else {
+      clipRect->x = inlineRounded.x;
+      clipRect->width = inlineRounded.width;
+    }
   }
 
   typedef gfxFont::Metrics Metrics;
