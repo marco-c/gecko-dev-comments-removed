@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 loadTestSubscript("head_devtools.js");
@@ -258,7 +256,18 @@ add_task(async function test_devtools_network_on_request_finished() {
   await extension.awaitMessage("devtools-page-loaded");
 
   
-  await extension.sendMessage("addOnRequestFinishedListener");
+  
+  
+  
+  
+  
+  
+  extension.sendMessage("addOnRequestFinishedListener");
+  const netMonitorAPI = await toolbox.getNetMonitorAPI();
+  await TestUtils.waitForCondition(
+    () => netMonitorAPI.hasRequestFinishedListeners(),
+    "Wait for the extension onRequestFinished listener to be registered"
+  );
 
   
   await navigateToolboxTarget(extension, toolbox);
