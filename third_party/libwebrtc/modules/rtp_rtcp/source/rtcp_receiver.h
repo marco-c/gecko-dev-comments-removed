@@ -338,8 +338,7 @@ class RTCPReceiver final {
   
   RttStats rtts_ RTC_GUARDED_BY(rtcp_receiver_lock_);
   
-  flat_map<uint32_t, NonSenderRttStats> non_sender_rtts_
-      RTC_GUARDED_BY(rtcp_receiver_lock_);
+  NonSenderRttStats non_sender_rtts_ RTC_GUARDED_BY(rtcp_receiver_lock_);
 
   
   flat_map<uint32_t, ReportBlockData> received_report_blocks_
