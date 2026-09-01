@@ -444,9 +444,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
       RTC_GUARDED_BY(worker_queue_);
 
   
-  const bool default_limits_allowed_;
-
-  
   
   QpParser qp_parser_;
   const bool qp_parsing_allowed_;
