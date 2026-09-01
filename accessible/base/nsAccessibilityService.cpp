@@ -2261,7 +2261,7 @@ EPlatformDisabledState PlatformDisabledState() {
   return ReadPlatformDisabledState();
 }
 
-void MaybeStartForceEnabled() {
+void MaybeStartForceEnabled(bool aAsync) {
   if (!XRE_IsParentProcess()) {
     
     return;
@@ -2274,7 +2274,24 @@ void MaybeStartForceEnabled() {
   if (GetAccService()) {
     return;
   }
-  GetOrCreateAccService(nsAccessibilityService::ePlatformAPI);
+  if (!aAsync) {
+    GetOrCreateAccService(nsAccessibilityService::ePlatformAPI);
+    return;
+  }
+  static bool sIsPending = false;
+  if (sIsPending) {
+    
+    return;
+  }
+  NS_DispatchToMainThread(
+      NS_NewRunnableFunction("a11y::MaybeStartForceEnabled", [] {
+        
+        
+        
+        MaybeStartForceEnabled(false);
+        sIsPending = false;
+      }));
+  sIsPending = true;
 }
 
 EPlatformDisabledState ReadPlatformDisabledState() {
@@ -2290,13 +2307,20 @@ EPlatformDisabledState ReadPlatformDisabledState() {
 }
 
 void PrefChanged(const char* aPref, void* aClosure) {
-  if (ReadPlatformDisabledState() == ePlatformIsDisabled) {
+  EPlatformDisabledState disabledState = ReadPlatformDisabledState();
+  if (disabledState == ePlatformIsDisabled) {
     
     nsAccessibilityService* accService =
         nsAccessibilityService::gAccessibilityService;
     if (accService && !nsAccessibilityService::IsShutdown()) {
       accService->Shutdown();
     }
+  } else if (disabledState == ePlatformIsForceEnabled) {
+    
+    
+    
+    
+    MaybeStartForceEnabled( true);
   }
 }
 
