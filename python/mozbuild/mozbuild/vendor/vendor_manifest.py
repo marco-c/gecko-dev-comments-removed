@@ -869,19 +869,18 @@ class VendorManifest(MozbuildObject):
 
         
         
-        source_suffixes = [".cc", ".c", ".cpp", ".S", ".asm"]
-        header_suffixes = [".h", ".hpp"]
+        source_suffixes = (".cc", ".c", ".cpp", ".S", ".asm")
+        header_suffixes = (".h", ".hpp")
+        tracked_suffixes = source_suffixes + header_suffixes
 
         files_removed = self.repository.get_changed_files(diff_filter="D")
         files_added = self.repository.get_changed_files(diff_filter="A")
 
         
-        files_added = [
-            f for f in files_added if any([f.endswith(s) for s in source_suffixes])
-        ]
-        header_files_to_add = [
-            f for f in files_added if any([f.endswith(s) for s in header_suffixes])
-        ]
+        files_added = [f for f in files_added if f.endswith(source_suffixes)]
+        
+        files_removed = [f for f in files_removed if f.endswith(tracked_suffixes)]
+        header_files_to_add = [f for f in files_added if f.endswith(header_suffixes)]
         if add_to_exports:
             files_added += header_files_to_add
         elif header_files_to_add:
