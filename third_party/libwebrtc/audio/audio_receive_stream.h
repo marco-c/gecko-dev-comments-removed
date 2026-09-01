@@ -157,15 +157,6 @@ class AudioReceiveStreamImpl final : public webrtc::AudioReceiveStreamInterface,
 
   const Environment env_;
   RTC_NO_UNIQUE_ADDRESS SequenceChecker worker_thread_checker_;
-  
-  
-  
-  
-  
-  
-  
-  RTC_NO_UNIQUE_ADDRESS SequenceChecker packet_sequence_checker_{
-      SequenceChecker::kDetached};
   webrtc::AudioReceiveStreamInterface::Config config_;
   const scoped_refptr<webrtc::AudioState> audio_state_;
   const std::unique_ptr<voe::ChannelReceiveInterface> channel_receive_;
@@ -173,7 +164,7 @@ class AudioReceiveStreamImpl final : public webrtc::AudioReceiveStreamInterface,
   bool playing_ RTC_GUARDED_BY(worker_thread_checker_) = false;
 
   std::unique_ptr<RtpStreamReceiverInterface> rtp_stream_receiver_
-      RTC_GUARDED_BY(packet_sequence_checker_);
+      RTC_GUARDED_BY(worker_thread_checker_);
 };
 }  
 
