@@ -36,7 +36,7 @@ ChromeUtils.defineESModuleGetters(this, {
   PanelMultiView:
     "moz-src:///browser/components/customizableui/PanelMultiView.sys.mjs",
   RecentlyClosedTabsAndWindowsMenuUtils:
-    "resource:///modules/sessionstore/RecentlyClosedTabsAndWindowsMenuUtils.sys.mjs",
+    "moz-src:///browser/components/sessionstore/RecentlyClosedTabsAndWindowsMenuUtils.sys.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
@@ -2162,12 +2162,13 @@ var BookmarkingUI = {
     for (let ev of aEvents) {
       switch (ev.type) {
         case "bookmark-added":
-          
-          if (this._itemGuids.size == 0) {
-            if (ev.url && ev.url == this._uri.spec) {
+          if (!ev.isTagging && ev.url && ev.url == this._uri.spec) {
+            
+            if (!this._itemGuids.has(ev.guid)) {
               
-              if (!this._itemGuids.has(ev.guid)) {
-                this._itemGuids.add(ev.guid);
+              let wasStarred = this._itemGuids.size > 0;
+              this._itemGuids.add(ev.guid);
+              if (!wasStarred) {
                 isStarUpdateNeeded = true;
               }
             }
