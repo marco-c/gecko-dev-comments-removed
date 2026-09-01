@@ -3649,6 +3649,7 @@ static ArrayObject* SingleElementStringArray(JSContext* cx,
 }
 
 
+
 static ArrayObject* SplitHelper(JSContext* cx, Handle<JSLinearString*> str,
                                 uint32_t limit, Handle<JSLinearString*> sep) {
   size_t strLength = str->length();
@@ -3657,14 +3658,12 @@ static ArrayObject* SplitHelper(JSContext* cx, Handle<JSLinearString*> str,
 
   
   if (strLength == 0) {
-    
-    int match = StringMatch(str, sep, 0);
+    return SingleElementStringArray(cx, str);
+  }
 
-    
-    if (match != -1) {
-      return NewDenseEmptyArray(cx);
-    }
-
+  
+  int matchIndex = StringMatch(str, sep, 0);
+  if (matchIndex == -1) {
     
     return SingleElementStringArray(cx, str);
   }
@@ -3679,51 +3678,14 @@ static ArrayObject* SplitHelper(JSContext* cx, Handle<JSLinearString*> str,
   AutoSelectGCHeap gcHeap(cx);
 
   
-  size_t lastEndIndex = 0;
+  size_t searchStart = 0;
 
   
-  size_t index = 0;
-
-  
-  while (index != strLength) {
+  while (true) {
     
-    int match = StringMatch(str, sep, index);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (match == -1) {
-      break;
-    }
-
-    
-    size_t endIndex = match + sepLength;
-
-    
-    if (endIndex == lastEndIndex) {
-      index++;
-      continue;
-    }
-
-    
-    MOZ_ASSERT(lastEndIndex < endIndex);
-    MOZ_ASSERT(sepLength <= strLength);
-    MOZ_ASSERT(lastEndIndex + sepLength <= endIndex);
-
-    
-    size_t subLength = size_t(endIndex - sepLength - lastEndIndex);
-    JSString* sub =
-        NewDependentString(cx, str, lastEndIndex, subLength, gcHeap);
+    size_t endIndex = matchIndex + sepLength;
+    size_t subLength = size_t(endIndex - sepLength - searchStart);
+    JSString* sub = NewDependentString(cx, str, searchStart, subLength, gcHeap);
 
     
     if (!sub || !NewbornArrayPush(cx, substrings, StringValue(sub))) {
@@ -3736,15 +3698,23 @@ static ArrayObject* SplitHelper(JSContext* cx, Handle<JSLinearString*> str,
     }
 
     
-    index = endIndex;
+    searchStart = endIndex;
 
     
-    lastEndIndex = index;
+    if (searchStart + sepLength > strLength) {
+      break;
+    }
+
+    
+    matchIndex = StringMatch(str, sep, searchStart);
+    if (matchIndex == -1) {
+      break;
+    }
   }
 
   
-  size_t subLength = strLength - lastEndIndex;
-  JSString* sub = NewDependentString(cx, str, lastEndIndex, subLength, gcHeap);
+  size_t subLength = strLength - searchStart;
+  JSString* sub = NewDependentString(cx, str, searchStart, subLength, gcHeap);
 
   
   if (!sub || !NewbornArrayPush(cx, substrings, StringValue(sub))) {
