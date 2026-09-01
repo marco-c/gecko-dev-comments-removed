@@ -5,7 +5,8 @@ function assertAnimationTriggerSupport() {
   assert_true(document.documentElement.style.animationTrigger !== undefined);
 }
 
-const setScrollTop = (scroller, y) => {
+const setScrollTop = async (scroller, y) => {
+  if (scroller.scrollTop == y) return;
   const scrollend_promise =
     waitForScrollEndFallbackToDelayWithoutScrollEvent(scroller);
   scroller.scrollTop = y;
@@ -54,9 +55,7 @@ function getRangeBoundariesForTest(trigger_start, trigger_end,
 
 
 function runAndWaitForTriggerResponse(callback) {
-  return runAndWaitForFrameUpdate(() => {
-    callback();
-  }).then(waitForNextFrame);
+  return runAndWaitForFrameUpdate(callback).then(waitForNextFrame);
 }
 
 
@@ -66,7 +65,7 @@ function runAndWaitForTriggerResponse(callback) {
 
 const enter = (rangeBoundaries) => {
   return runAndWaitForTriggerResponse(() => {
-    rangeBoundaries.enterTriggerRange();
+    return rangeBoundaries.enterTriggerRange();
   });
 }
 
@@ -78,9 +77,9 @@ const enter = (rangeBoundaries) => {
 const exit = (rangeBoundaries, exitAbove = true) => {
   return runAndWaitForTriggerResponse(() => {
     if (exitAbove) {
-      rangeBoundaries.exitExitRangeAbove();
+      return rangeBoundaries.exitExitRangeAbove();
     } else {
-      rangeBoundaries.exitExitRangeBelow();
+      return rangeBoundaries.exitExitRangeBelow();
     }
   });
 }
