@@ -2776,9 +2776,11 @@ void nsLineLayout::VerticalAlignFrames(PerSpanData* psd) {
       
       
       
-      nscoord contentOver = spanFramePFD->mAscent;
-      nscoord contentUnder =
-          spanFramePFD->mBounds.BSize(lineWM) - spanFramePFD->mAscent;
+      nscoord contentOver =
+          spanFramePFD->mAscent - spanFramePFD->mBorderPadding.BStart(lineWM);
+      nscoord contentUnder = spanFramePFD->mBounds.BSize(lineWM) -
+                             spanFramePFD->mAscent -
+                             spanFramePFD->mBorderPadding.BEnd(lineWM);
       const StyleTextBoxEdge& textBoxEdge =
           spanFrame->StyleText()->mTextBoxEdge;
       RefPtr<nsFontMetrics> fm =
