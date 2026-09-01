@@ -516,13 +516,6 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
   nsCOMPtr<EventTarget> chromeHandler = window->GetChromeEventHandler();
   docShell->SetChromeEventHandler(chromeHandler);
 
-  
-  
-  if (mIsTopLevel) {
-    nsContentUtils::SetScrollbarsVisibility(
-        docShell, !!(mChromeFlags & nsIWebBrowserChrome::CHROME_SCROLLBARS));
-  }
-
   nsWeakPtr weakPtrThis = do_GetWeakReference(
       static_cast<nsIBrowserChild*>(this));  
   ContentReceivedInputBlockCallback callback(
@@ -1134,8 +1127,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvInitRendering(
 mozilla::ipc::IPCResult BrowserChild::RecvScrollbarPreferenceChanged(
     ScrollbarPreference aPreference) {
   MOZ_ASSERT(!mIsTopLevel,
-             "Scrollbar visibility should be derived from chrome flags for "
-             "top-level windows");
+             "Top-level windows use the default scrollbar preference");
   if (nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation())) {
     nsDocShell::Cast(docShell)->SetScrollbarPreference(aPreference);
   }

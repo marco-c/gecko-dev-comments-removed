@@ -2275,31 +2275,10 @@ void AppWindow::EnableParent(bool aEnable) {
   }
 }
 
-void AppWindow::SetContentScrollbarVisibility(bool aVisible) {
-  nsCOMPtr<nsPIDOMWindowOuter> contentWin(
-      do_GetInterface(mPrimaryContentShell));
-  if (!contentWin) {
-    return;
-  }
-
-  nsContentUtils::SetScrollbarsVisibility(contentWin->GetDocShell(), aVisible);
-}
-
 void AppWindow::ApplyChromeFlags() {
   nsCOMPtr<dom::Element> root = GetWindowDOMElement();
   if (!root) {
     return;
-  }
-
-  if (mChromeLoaded) {
-    
-    
-    
-    
-
-    
-    SetContentScrollbarVisibility(mChromeFlags &
-                                  nsIWebBrowserChrome::CHROME_SCROLLBARS);
   }
 
   
