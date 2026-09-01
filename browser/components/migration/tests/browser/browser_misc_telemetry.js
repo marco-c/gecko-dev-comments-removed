@@ -29,11 +29,10 @@ add_task(async function test_uninstaller_migration() {
 
   await BrowserTestUtils.waitForEvent(wizardWin, "MigrationWizard:Ready");
 
-  let scalars = TelemetryTestUtils.getProcessScalars("parent", false, true);
-  TelemetryTestUtils.assertScalar(
-    scalars,
-    "migration.uninstaller_profile_refresh",
-    1
+  Assert.strictEqual(
+    Glean.migration.uninstallerProfileRefresh.testGetValue(),
+    true,
+    "Uninstaller profile refresh telemetry should be set"
   );
 
   Assert.equal(
