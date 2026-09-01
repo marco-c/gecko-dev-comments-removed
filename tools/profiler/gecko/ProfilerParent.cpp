@@ -21,6 +21,7 @@
 #include "mozilla/RefPtr.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
+#include "nsXULAppAPI.h"
 
 #include <utility>
 
@@ -529,6 +530,10 @@ void ProfileBufferGlobalController::HandleChunkManagerNonFinalUpdate(
 
 ProfilerParentTracker* ProfilerParentTracker::GetInstance() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+  if (!XRE_IsParentProcess()) {
+    return nullptr;
+  }
 
   
   
