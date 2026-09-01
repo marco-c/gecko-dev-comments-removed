@@ -15,6 +15,9 @@
 
 #include "absl/base/nullability.h"
 #include "api/audio/neural_residual_echo_estimator.h"
+#include "api/audio/tflite_model_handle.h"
+#include "api/environment/environment.h"
+#include "api/scoped_refptr.h"
 #include "rtc_base/system/rtc_export.h"
 #include "third_party/tflite/src/tensorflow/lite/model_builder.h"
 
@@ -35,6 +38,18 @@ absl_nullable std::unique_ptr<NeuralResidualEchoEstimator>
 CreateNeuralResidualEchoEstimator(const tflite::FlatBufferModel* model,
                                   const tflite::OpResolver* absl_nonnull
                                       op_resolver);
+
+
+
+
+
+
+RTC_EXPORT
+absl_nonnull std::unique_ptr<NeuralResidualEchoEstimator>
+CreateNeuralResidualEchoEstimatorAsync(
+    const Environment& env,
+    scoped_refptr<TfliteModelHandle> model_handle,
+    std::unique_ptr<tflite::OpResolver> op_resolver);
 
 }  
 

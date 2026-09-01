@@ -50,10 +50,22 @@ class ResidualEchoEstimator {
       std::span<std::array<float, kFftLengthBy2Plus1>> R2_unbounded);
 
   
-  bool IsMlReeActive() const { return is_ml_ree_active_; }
+  
+  bool IsMlReeActive() const { return ml_ree_state_ == MlReeState::kActive; }
 
  private:
   enum class ReverbType { kLinear, kNonLinear };
+
+  
+  enum class MlReeState {
+    
+    
+    kUninitialized,
+    
+    kInitialized,
+    
+    kActive
+  };
 
   
   void Reset();
@@ -87,7 +99,7 @@ class ResidualEchoEstimator {
   std::array<int, kFftLengthBy2Plus1> X2_noise_floor_counter_;
   ReverbModel echo_reverb_;
   NeuralResidualEchoEstimator* neural_residual_echo_estimator_;
-  bool is_ml_ree_active_ = false;
+  MlReeState ml_ree_state_ = MlReeState::kUninitialized;
 };
 
 }  

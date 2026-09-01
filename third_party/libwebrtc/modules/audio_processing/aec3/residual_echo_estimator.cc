@@ -206,15 +206,20 @@ void ResidualEchoEstimator::Estimate(
 
   const size_t num_capture_channels = R2.size();
 
-  is_ml_ree_active_ = neural_residual_echo_estimator_ != nullptr &&
-                      aec_state.UsableLinearEstimate();
+  if (neural_residual_echo_estimator_ != nullptr &&
+      neural_residual_echo_estimator_->IsInitialized()) {
+    ml_ree_state_ = aec_state.UsableLinearEstimate() ? MlReeState::kActive
+                                                     : MlReeState::kInitialized;
+  }
+
   
   UpdateRenderNoisePower(render_buffer);
 
   
   
   
-  if (neural_residual_echo_estimator_ != nullptr) {
+  if (ml_ree_state_ != MlReeState::kUninitialized) {
+    RTC_DCHECK(neural_residual_echo_estimator_);
     constexpr int kNeuralDelayHeadroomMs = 12;
     constexpr int kNeuralDelayHeadroomBlocks =
         kNeuralDelayHeadroomMs / kBlockSizeMs;
@@ -238,7 +243,7 @@ void ResidualEchoEstimator::Estimate(
   }
 
   
-  if (!is_ml_ree_active_) {
+  if (ml_ree_state_ != MlReeState::kActive) {
     if (aec_state.UsableLinearEstimate()) {
       
       

@@ -23,9 +23,15 @@ class Block;
 
 
 
+
 class NeuralResidualEchoEstimator {
  public:
   virtual ~NeuralResidualEchoEstimator() {}
+
+  
+  
+  
+  virtual bool IsInitialized() = 0;
 
   
   
