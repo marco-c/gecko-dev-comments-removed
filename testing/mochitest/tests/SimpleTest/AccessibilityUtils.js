@@ -5,6 +5,9 @@
 "use strict";
 
 
+const ClickChecks = this.ClickChecks;
+
+
 
 
 
@@ -825,6 +828,28 @@ this.AccessibilityUtils = (function () {
 
 
 
+
+
+
+  function notOpenPopupAncestor(accessible) {
+    if (!matchState(accessible, STATE_INVISIBLE)) {
+      return null;
+    }
+
+    const popup = ClickChecks.popupAncestor(accessible.DOMNode);
+    return popup && popup.state != "open" ? popup : null;
+  }
+
+  
+
+
+
+
+
+
+
+
+
   function a11yWarn(message, { DOMNode }) {
     SimpleTest.todo(false, buildMessage(message, DOMNode));
   }
@@ -861,7 +886,14 @@ this.AccessibilityUtils = (function () {
       const ariaRoles = getAriaRoles(accessible);
       
       if (!ariaRoles.includes("combobox") && !ariaRoles.includes("listbox")) {
-        a11yFail("Node is not focusable via the accessibility API", accessible);
+        const notOpenPopup = notOpenPopupAncestor(accessible);
+        a11yFail(
+          notOpenPopup
+            ? `Node is inside ${ClickChecks.describePopup(notOpenPopup)}, ` +
+                `so it is not focusable`
+            : "Node is not focusable via the accessibility API",
+          accessible
+        );
       }
 
       return;

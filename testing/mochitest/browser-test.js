@@ -349,6 +349,7 @@ function Tester(aTests, structuredLogger, aCallback) {
 
   
   
+  
   this._scriptLoader.loadSubScript(
     "chrome://mochikit/content/tests/SimpleTest/ClickChecks.js",
     this.EventUtils
