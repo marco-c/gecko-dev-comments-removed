@@ -12,7 +12,9 @@
 #include "nsFaviconService.h"
 #include "nsStringStream.h"
 #include "nsStreamUtils.h"
+#include "nsBaseChannel.h"
 #include "nsIChannel.h"
+#include "nsIChannelEventSink.h"
 #include "nsIFaviconService.h"
 #include "nsIIOService.h"
 #include "nsILoadInfo.h"
@@ -47,7 +49,7 @@ static nsresult GetFaviconMetadata(
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  nsCOMPtr<nsIFavicon> favicon = aResult.ResolveValue();
+  const nsCOMPtr<nsIFavicon>& favicon = aResult.ResolveValue();
   if (!favicon) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -258,9 +260,20 @@ nsresult PageIconProtocolHandler::NewChannelInternal(nsIURI* aURI,
           
           
           
-          channel->SetContentType(nsLiteralCString(FAVICON_DEFAULT_MIMETYPE));
-          channel->SetContentLength(-1);
-          (void)StreamDefaultFavicon(uri, loadInfo, pipeOut);
+          nsCOMPtr<nsIChannel> defaultIconChannel;
+          nsresult rv = MakeDefaultFaviconChannel(
+              uri, loadInfo, getter_AddRefs(defaultIconChannel));
+          if (NS_SUCCEEDED(rv)) {
+            auto* baseChannel = static_cast<nsBaseChannel*>(channel.get());
+            rv = baseChannel->Redirect(defaultIconChannel,
+                                       nsIChannelEventSink::REDIRECT_INTERNAL,
+                                       true);
+          }
+          if (NS_FAILED(rv)) {
+            channel->CancelWithReason(NS_BINDING_ABORTED,
+                                      "PageIconProtocolHandler: no favicon"_ns);
+          }
+          
         }
       });
 

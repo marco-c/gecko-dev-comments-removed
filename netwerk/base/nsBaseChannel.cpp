@@ -156,8 +156,23 @@ nsresult nsBaseChannel::ContinueRedirect() {
   mRedirectChannel = nullptr;
 
   
+  
+  
+  
+  
+  
+  
+  
   Cancel(NS_BINDING_REDIRECTED);
   ChannelDone();
+  mCancelableAsyncRequest = nullptr;
+  mPumpingData = false;
+  if (mLoadGroup) {
+    mLoadGroup->RemoveRequest(this, nullptr, mStatus);
+    mLoadGroup = nullptr;
+  }
+  mCallbacks = nullptr;
+  CallbacksChanged();
 
   return NS_OK;
 }
