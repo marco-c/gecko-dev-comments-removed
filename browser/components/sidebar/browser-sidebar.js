@@ -1923,24 +1923,7 @@ var SidebarController = {
       return;
     }
 
-    const preferredHeight = this._state.launcherExpanded
-      ? this._state.expandedPinnedTabsHeight
-      : this._state.collapsedPinnedTabsHeight;
-
-    if (!preferredHeight) {
-      
-      
-      this._pinnedTabsContainer.style.height = "";
-      return;
-    }
-
-    let itemsWrapperHeight = window.windowUtils.getBoundsWithoutFlushing(
-      this._pinnedTabsItemsWrapper
-    ).height;
-
-    
-    const clampedHeight = Math.min(preferredHeight, itemsWrapperHeight);
-    this._pinnedTabsContainer.style.height = `${clampedHeight}px`;
+    this._state.updatePinnedTabsHeight();
   },
 
   async updatePinnedTabsHeightAfterReflow() {
