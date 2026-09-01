@@ -2471,6 +2471,9 @@ pref("identity.fxaccounts.remote.oauth.uri", "https://oauth.accounts.firefox.com
 pref("identity.fxaccounts.pairing.enabled", true);
 
 
+pref("identity.fxaccounts.pairing.version", 1);
+
+
 pref("identity.fxaccounts.remote.pairing.uri", "wss://channelserver.services.mozilla.com");
 
 
