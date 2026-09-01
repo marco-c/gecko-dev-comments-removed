@@ -86,6 +86,9 @@ LEVEL_STYLE = {
     "LOC": ("purple", False),
     "OK": ("green", False),
     "ERR": ("vermillion", True),
+    
+    
+    "SKIP": ("orange", False),
     "WARN": ("orange", True),
     "INFO": ("gray", False),
     "SHOT": ("sky", False),
