@@ -78,9 +78,6 @@ async function WnpTest({
   expectedPostUpdatePage,
   expectUpdatePing,
 }) {
-  const archiveChecker = new TelemetryArchiveTesting.Checker();
-  await archiveChecker.promiseInit();
-
   if (origPlatformVersion) {
     logTestInfo(`Setting original platformVersion to ${origPlatformVersion}`);
     Services.prefs.setCharPref(PREF_MSTONE, origPlatformVersion);
@@ -176,6 +173,28 @@ async function WnpTest({
       `platformBuildID=${Services.appinfo.platformBuildID}`
   );
 
+  let pingSubmitted = false;
+  if (expectUpdatePing) {
+    GleanPings.update.testBeforeNextSubmit(reason => {
+      pingSubmitted = true;
+      Assert.equal("success", reason);
+      is(
+        origPlatformVersion,
+        Glean.update.previousVersion.testGetValue(),
+        "Update Ping should have correct previousVersion"
+      );
+      is(
+        origBuildId,
+        Glean.update.previousBuildId.testGetValue(),
+        "Update Ping should have correct previousBuildId"
+      );
+    });
+  } else {
+    
+    
+    
+    logTestInfo(`Not checking the update ping in this test`);
+  }
   await reloadUpdateManagerData(false);
 
   if (expectedPostUpdatePage) {
@@ -191,26 +210,9 @@ async function WnpTest({
     logTestInfo(`Not checking Post Update Page in this test`);
   }
 
-  if (expectUpdatePing) {
-    const updatePing = await waitForUpdatePing(archiveChecker, [
-      [["payload", "reason"], "success"],
-    ]);
-    is(
-      updatePing.payload.previousVersion,
-      origPlatformVersion,
-      "Update Ping should have correct previousVersion"
-    );
-    is(
-      updatePing.payload.previousBuildId,
-      origBuildId,
-      "Update Ping should have correct previousBuildId"
-    );
-  } else {
-    
-    
-    
-    logTestInfo(`Not checking the update ping in this test`);
-  }
+  
+  
+  await TestUtils.waitForCondition(() => pingSubmitted || !expectUpdatePing);
 }
 
 add_task(async function test_WhatsNewPage() {
