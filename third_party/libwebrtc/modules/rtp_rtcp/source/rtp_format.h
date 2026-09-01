@@ -62,7 +62,7 @@ class RtpPacketizer {
 
   
   
-  static std::vector<int> SplitAboutEqually(int payload_len,
+  static std::vector<int> SplitAboutEqually(size_t payload_size,
                                             const PayloadSizeLimits& limits);
 };
 }  
