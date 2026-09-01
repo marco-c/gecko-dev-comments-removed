@@ -536,7 +536,7 @@ add_task(async function test() {
       
       let index = results.findIndex(
         r =>
-          UrlbarUtils.getResultGroup(r) == group &&
+          UrlbarShared.getResultGroup(r) == group &&
           r.suggestedIndex === suggestedIndex
       );
       Assert.notEqual(
