@@ -575,7 +575,6 @@ static void chunk_record(void* aChunk, size_t aSize, ChunkType aType) {
       
       
       
-      
       return;
     }
     node = xnode.release();

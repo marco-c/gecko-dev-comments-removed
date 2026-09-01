@@ -2507,10 +2507,7 @@ class AllocInfo {
     if (mSize <= gMaxLargeClass) {
       return mChunk->mArena;
     }
-    
-    
-    
-    
+
     
     
     
