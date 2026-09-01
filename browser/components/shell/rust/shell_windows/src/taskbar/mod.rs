@@ -10,7 +10,10 @@
 use nserror::{NS_ERROR_FAILURE, NS_ERROR_UNEXPECTED, nsresult};
 use nsstring::{nsAString, nsString};
 use windows::ApplicationModel::Package;
-use xpcom::interfaces::{nsIWinTaskbar, nsIWindowsShellService};
+use xpcom::{
+    RefPtr,
+    interfaces::{nsIWinTaskbar, nsIWindowsRegKey, nsIWindowsShellService},
+};
 
 use crate::util::thread_guard::{self, MainThreadGuard};
 
@@ -42,6 +45,11 @@ impl From<PinResult> for u8 {
 
 
 fn can_pin(main_guard: MainThreadGuard) -> bool {
+    if let Some((policy, hive)) = find_policy_disabling_pin() {
+        log::info!("Pinning disabled by policy {policy:?} in hive {hive:?}.");
+        return false;
+    }
+
     winrt::is_pinning_allowed() || com::is_pinning_available(main_guard)
 }
 
@@ -136,4 +144,85 @@ fn record_winrt_pin_telemetry(pin_result: &Result<PinResult, winrt::WinRtPinErro
     taskbar::pin_winrt.record(PinWinrtExtra {
         result: Some(metric_extra.into()),
     });
+}
+
+#[derive(Clone, Copy, Debug)]
+enum PinPolicy {
+    NoPinningToTaskbar,
+    TaskbarNoPinnedList,
+}
+
+impl PinPolicy {
+    fn to_reg_value_name(self) -> &'static str {
+        match self {
+            PinPolicy::NoPinningToTaskbar => "NoPinningToTaskbar",
+            PinPolicy::TaskbarNoPinnedList => "TaskbarNoPinnedList",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+enum Hive {
+    HKCU,
+    HKLM,
+}
+
+impl Hive {
+    fn to_root_key(self) -> u32 {
+        match self {
+            Hive::HKCU => nsIWindowsRegKey::ROOT_KEY_CURRENT_USER,
+            Hive::HKLM => nsIWindowsRegKey::ROOT_KEY_LOCAL_MACHINE,
+        }
+    }
+}
+
+const PIN_POLICIES: [(PinPolicy, Hive); 3] = [
+    
+    
+    
+    
+    
+    (PinPolicy::NoPinningToTaskbar, Hive::HKCU),
+    
+    
+    
+    
+    (PinPolicy::TaskbarNoPinnedList, Hive::HKCU),
+    (PinPolicy::TaskbarNoPinnedList, Hive::HKLM),
+];
+
+
+fn find_policy_disabling_pin() -> Option<&'static (PinPolicy, Hive)> {
+    PIN_POLICIES
+        .iter()
+        .find(|policy| read_pin_policy(policy.1, policy.0).is_some_and(|enabled| enabled != 0))
+}
+
+
+
+fn read_pin_policy(hive: Hive, policy: PinPolicy) -> Option<u32> {
+    let explorer_policy_subkey = nsString::from(r"Software\Policies\Microsoft\Windows\Explorer");
+
+    let reg: RefPtr<nsIWindowsRegKey> =
+        xpcom::create_instance(c"@mozilla.org/windows-registry-key;1")?;
+
+    
+    unsafe {
+        reg.Open(
+            hive.to_root_key(),
+            &*explorer_policy_subkey,
+            nsIWindowsRegKey::ACCESS_QUERY_VALUE,
+        )
+    }
+    .to_result()
+    .ok()?;
+
+    let value_name = nsString::from(policy.to_reg_value_name());
+    let mut value = 0u32;
+    
+    unsafe { reg.ReadIntValue(&*value_name, &mut value) }
+        .to_result()
+        .ok()?;
+
+    Some(value)
 }
