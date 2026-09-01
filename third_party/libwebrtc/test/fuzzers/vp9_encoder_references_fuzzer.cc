@@ -95,7 +95,8 @@ class FrameValidator : public EncodedImageCallback {
  private:
   
   
-  static constexpr size_t kMaxFrameHistorySize = 32;
+  
+  static constexpr size_t kMaxFrameHistorySize = 256;
   struct LayerFrame {
     int64_t frame_id;
     int64_t picture_id;
