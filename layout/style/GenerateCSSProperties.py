@@ -582,6 +582,8 @@ def gen_css_properties_js(output):
         "-moz-box-collapse",                  
         "-moz-line-scroll-amount",            
         "-moz-image-decoding",                
+        "-moz-scrollbar-inset-block",         
+        "-moz-scrollbar-inset-inline",        
         "-moz-subtree-hidden-only-visually",  
         "-moz-user-focus",                    
         "-moz-window-input-region-margin",    

@@ -10,7 +10,7 @@ use crate::values::computed::length::{LengthPercentage, NonNegativeLength};
 use crate::values::computed::{Context, Integer, Number, ToComputedValue};
 use crate::values::generics::box_::{
     GenericBaselineShift, GenericContainIntrinsicSize, GenericLineClamp, GenericOverflowClipMargin,
-    GenericPerspective,
+    GenericPerspective, GenericScrollbarInset,
 };
 use crate::values::generics::GreaterThanOrEqualToOne;
 use crate::values::specified::box_ as specified;
@@ -30,6 +30,9 @@ pub type BaselineShift = GenericBaselineShift<LengthPercentage>;
 
 
 pub type OverflowClipMargin = GenericOverflowClipMargin<NonNegativeLength>;
+
+
+pub type ScrollbarInset = GenericScrollbarInset<NonNegativeLength>;
 
 
 pub type ContainIntrinsicSize = GenericContainIntrinsicSize<NonNegativeLength>;

@@ -306,9 +306,6 @@ pub struct GenericLineClamp<I> {
     
     #[animation(constant)]
     pub webkit_legacy: bool,
-    
-    #[animation(constant)]
-    pub serialize_webkit_legacy: bool,
 }
 
 pub use self::GenericLineClamp as LineClamp;
@@ -320,7 +317,6 @@ impl<I> LineClamp<I> {
             max_lines: MaxLines::none(),
             block_ellipsis: BlockEllipsis::Ellipsis,
             webkit_legacy: false,
-            serialize_webkit_legacy: false,
         }
     }
 
@@ -346,10 +342,7 @@ impl<I: ToCss> ToCss for LineClamp<I> {
         if !self.block_ellipsis.is_ellipsis() {
             writer.item(&self.block_ellipsis)?;
         }
-        if self.webkit_legacy
-            && self.serialize_webkit_legacy
-            && static_prefs::pref!("layout.css.line-clamp.enabled")
-        {
+        if self.webkit_legacy && static_prefs::pref!("layout.css.line-clamp.enabled") {
             writer.raw_item("-webkit-legacy")?;
         }
         Ok(())
@@ -503,6 +496,56 @@ impl<L: Zero + ToCss> ToCss for OverflowClipMargin<L> {
         if !self.offset.is_zero() {
             dest.write_char(' ')?;
             self.offset.to_css(dest)?;
+        }
+        Ok(())
+    }
+}
+
+
+
+
+
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(C)]
+pub struct GenericScrollbarInset<L> {
+    
+    pub start: L,
+    
+    pub end: L,
+}
+
+pub use self::GenericScrollbarInset as ScrollbarInset;
+
+impl<L: Zero> ScrollbarInset<L> {
+    
+    pub fn zero() -> Self {
+        Self {
+            start: Zero::zero(),
+            end: Zero::zero(),
+        }
+    }
+}
+
+impl<L: PartialEq + ToCss> ToCss for ScrollbarInset<L> {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        self.start.to_css(dest)?;
+        if self.end != self.start {
+            dest.write_char(' ')?;
+            self.end.to_css(dest)?;
         }
         Ok(())
     }

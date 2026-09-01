@@ -177,6 +177,7 @@ void nsSubDocumentFrame::UpdateEmbeddedBrowsingContextDependentData() {
   }
   MaybeUpdateRemoteStyle();
   MaybeUpdateEmbedderColorScheme();
+  MaybeUpdateEmbedderScrollbarInset();
   MaybeUpdateEmbedderZoom();
   PropagateIsUnderHiddenEmbedderElement(
       PresShell()->IsUnderHiddenEmbedderElement() ||
@@ -775,6 +776,36 @@ void nsSubDocumentFrame::MaybeUpdateEmbedderColorScheme() {
   (void)bc->SetEmbedderColorSchemes(schemes);
 }
 
+void nsSubDocumentFrame::MaybeUpdateEmbedderScrollbarInset() {
+  nsFrameLoader* fl = mFrameLoader.get();
+  if (!fl) {
+    return;
+  }
+
+  BrowsingContext* bc = fl->GetExtantBrowsingContext();
+  if (!bc) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  const WritingMode wm = GetWritingMode();
+  nsPresContext* pc = PresContext();
+  const nsMargin physical =
+      StyleDisplay()->GetScrollbarInset(wm).GetPhysicalMargin(wm);
+
+  const LayoutDeviceIntMargin inset = LayoutDevicePixel::FromAppUnitsRounded(
+      physical, pc->AppUnitsPerDevPixel());
+  if (bc->GetEmbedderScrollbarInset() == inset) {
+    return;
+  }
+
+  (void)bc->SetEmbedderScrollbarInset(inset);
+}
+
 void nsSubDocumentFrame::MaybeUpdateEmbedderZoom() {
   nsFrameLoader* fl = mFrameLoader.get();
   if (!fl) {
@@ -850,6 +881,7 @@ void nsSubDocumentFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
     
     
     MaybeUpdateEmbedderColorScheme();
+    MaybeUpdateEmbedderScrollbarInset();
     MaybeUpdateRemoteStyle(aOldComputedStyle);
     if (aOldComputedStyle->EffectiveZoom() != Style()->EffectiveZoom()) {
       MaybeUpdateEmbedderZoom();
