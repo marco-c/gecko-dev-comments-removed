@@ -1653,7 +1653,9 @@ nsresult nsUrlClassifierRealTimeLookupHandler::StartRealTimeLookup(
   NS_ENSURE_TRUE(uri, NS_ERROR_FAILURE);
 
   rv = CreateFeatureHolders(uri);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
 
   nsUrlClassifierUtils* utilsService = nsUrlClassifierUtils::GetInstance();
   if (NS_WARN_IF(!utilsService)) {
@@ -1687,7 +1689,7 @@ nsresult nsUrlClassifierRealTimeLookupHandler::CreateFeatureHolders(
 
   
   if (realTimeFeatures.IsEmpty()) {
-    return NS_ERROR_FAILURE;
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
   
@@ -1704,7 +1706,7 @@ nsresult nsUrlClassifierRealTimeLookupHandler::CreateFeatureHolders(
 
   
   if (localListFeatures.IsEmpty()) {
-    return NS_ERROR_FAILURE;
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
   
@@ -2142,6 +2144,12 @@ nsUrlClassifierDBService::Classify(nsIPrincipal* aPrincipal,
     }
 
     rv = handler->StartRealTimeLookup(aPrincipal);
+    if (rv == NS_ERROR_NOT_AVAILABLE) {
+      
+      
+      *aResult = false;
+      return NS_OK;
+    }
     NS_ENSURE_SUCCESS(rv, rv);
 
     *aResult = true;
