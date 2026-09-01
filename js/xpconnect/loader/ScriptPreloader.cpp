@@ -379,8 +379,8 @@ nsresult ScriptPreloader::Observe(nsISupports* subject, const char* topic,
     
     if (mCacheData->initialized()) {
       
-      (void)madvise(mCacheData->get<uint8_t>().get(), mCacheData->size(),
-                    MADV_COLD);
+      uint8_t* ptr = const_cast<uint8_t*>(mCacheData->get<uint8_t>().get());
+      (void)madvise(ptr, mCacheData->size(), MADV_COLD);
     }
 #endif
 
