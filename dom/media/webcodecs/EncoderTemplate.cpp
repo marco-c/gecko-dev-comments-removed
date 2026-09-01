@@ -1230,8 +1230,8 @@ void EncoderTemplate<EncoderType>::PushEncodeRequest(
 
   
   const size_t batchSize =
-      (StaticPrefs::media_use_remote_encoder_video() && mActiveConfig &&
-       IsH264CodecString(mActiveConfig->mCodec))
+      (StaticPrefs::media_use_remote_encoder_video_platform() &&
+       mActiveConfig && IsH264CodecString(mActiveConfig->mCodec))
           ? std::max<size_t>(
                 StaticPrefs::dom_media_webcodecs_batch_encoding_size(), 1)
           : 1;
