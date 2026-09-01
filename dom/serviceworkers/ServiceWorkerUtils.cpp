@@ -66,7 +66,7 @@ bool ServiceWorkersEnabled(JSContext* aCx, JSObject* aGlobal) {
     
     
     if (!StaticPrefs::extensions_serviceWorkerRegister_allowed()) {
-      if (principal->GetIsAddonPrincipal()) {
+      if (principal->GetIsAddonOrExpandedAddonPrincipal()) {
         return false;
       }
     }
@@ -219,59 +219,6 @@ void CheckMayLoadOnMainThread(ErrorResult& aRv,
 
 }  
 
-static bool hasValidURISchemes(nsIURI* aURI, bool isExtension) {
-  if (isExtension) {
-    return aURI->SchemeIs("moz-extension");
-  };
-  return net::SchemeIsHttpOrHttps(aURI);
-}
-
-void ServiceWorkerScopeIsValid(nsIPrincipal* aPrincipal, nsIURI* aScopeURI,
-                               ErrorResult& aRv) {
-  bool isExtension =
-      aPrincipal->GetIsAddonPrincipal() &&
-      StaticPrefs::extensions_backgroundServiceWorker_enabled_AtStartup();
-
-  
-  
-  
-  if (!hasValidURISchemes(aScopeURI, isExtension)) {
-    auto message = !isExtension
-                       ? "Scope URL's scheme is not 'http' or 'https'"_ns
-                       : "Scope URL's scheme is not 'moz-extension'"_ns;
-    aRv.ThrowTypeError(message);
-    return;
-  }
-
-  
-  
-  
-  
-  CheckForSlashEscapedCharsInPath(aScopeURI, "scope URL", aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
-    return;
-  }
-
-  
-  
-  
-  if (!aPrincipal->IsSameOrigin(aScopeURI)) {
-    
-    
-    aRv.ThrowSecurityError("Non-same-origin scope URL");
-    return;
-  }
-
-  
-  
-  nsAutoCString ref;
-  (void)aScopeURI->GetRef(ref);
-  if (NS_WARN_IF(!ref.IsEmpty())) {
-    aRv.ThrowSecurityError("Non-empty fragment on scope URL");
-    return;
-  }
-}
-
 void ServiceWorkerScopeAndScriptAreValid(const ClientInfo& aClientInfo,
                                          nsIURI* aScopeURI, nsIURI* aScriptURI,
                                          ErrorResult& aRv,
@@ -285,16 +232,20 @@ void ServiceWorkerScopeAndScriptAreValid(const ClientInfo& aClientInfo,
     return;
   }
 
+  auto hasHTTPScheme = [](nsIURI* aURI) -> bool {
+    return net::SchemeIsHttpOrHttps(aURI);
+  };
+  auto hasMozExtScheme = [](nsIURI* aURI) -> bool {
+    return aURI->SchemeIs("moz-extension");
+  };
+
   nsCOMPtr<nsIPrincipal> principal = principalOrErr.unwrap();
 
-  bool isExtension =
-      principal->GetIsAddonPrincipal() &&
-      StaticPrefs::extensions_backgroundServiceWorker_enabled_AtStartup();
+  auto isExtension = principal->GetIsAddonOrExpandedAddonPrincipal();
+  auto hasValidURISchemes = !isExtension ? hasHTTPScheme : hasMozExtScheme;
 
   
-  
-  
-  if (!hasValidURISchemes(aScriptURI, isExtension)) {
+  if (!hasValidURISchemes(aScriptURI)) {
     auto message = !isExtension
                        ? "Script URL's scheme is not 'http' or 'https'"_ns
                        : "Script URL's scheme is not 'moz-extension'"_ns;
@@ -303,22 +254,35 @@ void ServiceWorkerScopeAndScriptAreValid(const ClientInfo& aClientInfo,
   }
 
   
-  
-  
-  
   CheckForSlashEscapedCharsInPath(aScriptURI, "script URL", aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
 
   
-  
-  ServiceWorkerScopeIsValid(principal, aScopeURI, aRv);
-  if (aRv.Failed()) {
+  if (!hasValidURISchemes(aScopeURI)) {
+    auto message = !isExtension
+                       ? "Scope URL's scheme is not 'http' or 'https'"_ns
+                       : "Scope URL's scheme is not 'moz-extension'"_ns;
+    aRv.ThrowTypeError(message);
     return;
   }
 
+  
+  CheckForSlashEscapedCharsInPath(aScopeURI, "scope URL", aRv);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return;
+  }
+
+  
+  
   nsAutoCString ref;
+  (void)aScopeURI->GetRef(ref);
+  if (NS_WARN_IF(!ref.IsEmpty())) {
+    aRv.ThrowSecurityError("Non-empty fragment on scope URL");
+    return;
+  }
+
   (void)aScriptURI->GetRef(ref);
   if (NS_WARN_IF(!ref.IsEmpty())) {
     aRv.ThrowSecurityError("Non-empty fragment on script URL");

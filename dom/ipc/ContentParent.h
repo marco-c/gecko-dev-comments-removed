@@ -664,8 +664,6 @@ class ContentParent final : public PContentParent,
       nsIPrincipal* aPrincipal,
       const EnumSet<ValidatePrincipalOptions>& aOptions = {});
 
-  nsIDOMProcessParent* ProcessParent() override { return this; }
-
   void OnCompositorDeviceReset() override;
 
   
