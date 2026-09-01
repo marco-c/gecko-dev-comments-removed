@@ -45,6 +45,9 @@ function createEngineStore(isPrivate) {
       },
     },
   });
+  
+  
+  childController.engineStore.initialized = false;
   return childController.engineStore;
 }
 
