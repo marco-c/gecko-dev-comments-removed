@@ -2,17 +2,19 @@
 
 
 
-
 #ifndef mozilla_Services_h
 #define mozilla_Services_h
 
-#include "nsCOMPtr.h"
-#include "nscore.h"
+#include "mozilla/AlreadyAddRefed.h"
+
 class nsIObserverService;
 
-#ifdef MOZILLA_INTERNAL_API
-namespace mozilla {
-namespace services {
+namespace mozilla::services {
+
+
+
+
+
 
 
 
@@ -20,7 +22,7 @@ namespace services {
 
 
 already_AddRefed<nsIObserverService> GetObserverService();
+
 }  
-}  
-#endif  
+
 #endif  
