@@ -49,7 +49,9 @@ class URLQueryStringStripper final : public nsIObserver,
 
   
   
-  bool ShouldStripParam(const nsACString& aHost, const nsACString& aName);
+  bool ShouldStripParam(const nsACString& aHost,
+                        const nsACString& aSchemelessSite,
+                        const nsACString& aName);
   
   
   
@@ -68,7 +70,8 @@ class URLQueryStringStripper final : public nsIObserver,
   nsTHashSet<nsCString> mList;
   nsTHashSet<nsCString> mAllowList;
   nsCOMPtr<nsIURLQueryStrippingListService> mListService;
-  nsTHashMap<nsCString, dom::StripRule> mStripOnShareMap;
+  nsTHashMap<nsCString, dom::StripRule> mStripOnShareOriginMap;
+  nsTHashMap<nsCString, dom::StripRule> mStripOnShareSchemelessSiteMap;
   Maybe<dom::StripRule> mStripOnShareGlobal;
   bool mIsInitialized;
   
