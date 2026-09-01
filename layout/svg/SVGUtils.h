@@ -380,8 +380,7 @@ class SVGUtils final {
 
 
 
-  static bool GetNonScalingStrokeTransform(const nsIFrame* aFrame,
-                                           gfxMatrix* aUserToOuterSVG);
+  static Maybe<gfxMatrix> GetNonScalingStrokeTransform(const nsIFrame* aFrame);
 
   
 
