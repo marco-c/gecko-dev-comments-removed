@@ -20,4 +20,4 @@ void findBindingToJavaConstant(clang::ASTContext &C, clang::VarDecl &field);
 
 void emitBindingAttributes(llvm::json::OStream &json, const clang::Decl &decl);
 
-#endif  
+#endif 
