@@ -12669,8 +12669,7 @@ bool nsDocShell::ServiceWorkerAllowedToControlWindow(nsIPrincipal* aPrincipal,
       StorageAllowedForNewWindow(aPrincipal, aURI, parentInner);
 
   
-  
-  if (StaticPrefs::privacy_partition_serviceWorkers() && parentInner) {
+  if (parentInner) {
     RefPtr<Document> doc = parentInner->GetExtantDoc();
 
     if (doc && StoragePartitioningEnabled(storage, doc->CookieJarSettings())) {

@@ -2,15 +2,12 @@
 
 
 
-
-
 #include "ClientChannelHelper.h"
 
 #include "ClientManager.h"
 #include "ClientSource.h"
 #include "MainThreadUtils.h"
 #include "mozilla/AntiTrackingUtils.h"
-#include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/dom/ClientsBinding.h"
 #include "mozilla/dom/ServiceWorkerDescriptor.h"
@@ -113,9 +110,7 @@ class ClientChannelHelper : public nsIInterfaceRequestor,
             nsCOMPtr<nsIPrincipal> foreignPartitionedPrincipal;
             rv = StoragePrincipalHelper::GetPrincipal(
                 aNewChannel,
-                StaticPrefs::privacy_partition_serviceWorkers()
-                    ? StoragePrincipalHelper::eForeignPartitionedPrincipal
-                    : StoragePrincipalHelper::eRegularPrincipal,
+                StoragePrincipalHelper::eForeignPartitionedPrincipal,
                 getter_AddRefs(foreignPartitionedPrincipal));
             NS_ENSURE_SUCCESS(rv, rv);
             reservedClient.reset();
@@ -143,10 +138,7 @@ class ClientChannelHelper : public nsIInterfaceRequestor,
 
       nsCOMPtr<nsIPrincipal> foreignPartitionedPrincipal;
       rv = StoragePrincipalHelper::GetPrincipal(
-          aNewChannel,
-          StaticPrefs::privacy_partition_serviceWorkers()
-              ? StoragePrincipalHelper::eForeignPartitionedPrincipal
-              : StoragePrincipalHelper::eRegularPrincipal,
+          aNewChannel, StoragePrincipalHelper::eForeignPartitionedPrincipal,
           getter_AddRefs(foreignPartitionedPrincipal));
       NS_ENSURE_SUCCESS(rv, rv);
 
@@ -312,10 +304,7 @@ nsresult AddClientChannelHelperInternal(nsIChannel* aChannel,
 
   nsCOMPtr<nsIPrincipal> channelForeignPartitionedPrincipal;
   nsresult rv = StoragePrincipalHelper::GetPrincipal(
-      aChannel,
-      StaticPrefs::privacy_partition_serviceWorkers()
-          ? StoragePrincipalHelper::eForeignPartitionedPrincipal
-          : StoragePrincipalHelper::eRegularPrincipal,
+      aChannel, StoragePrincipalHelper::eForeignPartitionedPrincipal,
       getter_AddRefs(channelForeignPartitionedPrincipal));
   NS_ENSURE_SUCCESS(rv, rv);
 
