@@ -1011,7 +1011,7 @@ LayoutDeviceIntRect RemoteAccessible::BoundsWithOffset(
 
     if (aOffset.isSome()) {
       
-      nsRect internalRect = *aOffset;
+      const nsRect& internalRect = *aOffset;
       bounds.SetRectX(bounds.x + internalRect.x, internalRect.width);
       bounds.SetRectY(bounds.y + internalRect.y, internalRect.height);
     }
