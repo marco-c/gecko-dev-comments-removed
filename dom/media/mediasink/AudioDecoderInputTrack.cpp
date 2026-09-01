@@ -7,6 +7,7 @@
 #include "MediaData.h"
 #include "RLBoxSoundTouch.h"
 #include "Tracing.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_media.h"
 
@@ -75,8 +76,14 @@ bool AudioDecoderInputTrack::ConvertAudioDataToSegment(
     mResamplerChannelCount = 0;
   }
   if (mInputSampleRate != Graph()->GraphRate()) {
-    aSegment.ResampleChunks(mResampler, &mResamplerChannelCount,
-                            mInputSampleRate, Graph()->GraphRate());
+    nsresult rv =
+        aSegment.ResampleChunks(mResampler, &mResamplerChannelCount,
+                                mInputSampleRate, Graph()->GraphRate());
+    if (NS_FAILED(rv)) {
+      LOG("Failed to resample audio ({} -> {}); dropping segment",
+          mInputSampleRate, Graph()->GraphRate());
+      return false;
+    }
   }
   return aSegment.GetDuration() > 0;
 }
@@ -346,6 +353,9 @@ void AudioDecoderInputTrack::HandleSPSCData(SPSCData& aData) {
   if (aData.IsClearFutureData()) {
     LOG("Clear future data");
     mBufferedData.Clear();
+    if (mTimeStretcher) {
+      mTimeStretcher->clear();
+    }
     if (!Ended()) {
       LOG("Clear EOS");
       mReceivedEOS = false;
@@ -440,7 +450,14 @@ TrackTime AudioDecoderInputTrack::FillDataToTimeStretcher(
       
       return false;
     }
-    const uint32_t bufferLength = channels * aChunk->GetDuration();
+    CheckedInt<uint32_t> checkedBufferLength =
+        CheckedInt<uint32_t>(channels) * aChunk->GetDuration();
+    if (!checkedBufferLength.isValid()) {
+      LOG("Invalid interleave buffer length for channels={} duration={}",
+          channels, aChunk->GetDuration());
+      return true;
+    }
+    const uint32_t bufferLength = checkedBufferLength.value();
     if (bufferLength > mInterleavedBuffer.Capacity()) {
       mInterleavedBuffer.SetCapacity(bufferLength);
     }
@@ -544,7 +561,14 @@ TrackTime AudioDecoderInputTrack::GetDataFromTimeStretcher(
 
   
   const uint32_t channelCount = GetChannelCountForTimeStretcher();
-  const uint32_t bufferLength = channelCount * available;
+  CheckedInt<uint32_t> checkedBufferLength =
+      CheckedInt<uint32_t>(channelCount) * available;
+  if (!checkedBufferLength.isValid()) {
+    LOG("Invalid interleave buffer length for channels={} available={}",
+        channelCount, available);
+    return 0;
+  }
+  const uint32_t bufferLength = checkedBufferLength.value();
   if (bufferLength > mInterleavedBuffer.Capacity()) {
     mInterleavedBuffer.SetCapacity(bufferLength);
   }
