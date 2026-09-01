@@ -26,6 +26,10 @@ export type GetTextOptions = Partial<{
   _forceRemoveBoilerplate: boolean;
   
   sourceUrl: string;
+  
+  
+  
+  useSimpleText: boolean;
 }>;
 
 export type CanvasSnapshot = {
