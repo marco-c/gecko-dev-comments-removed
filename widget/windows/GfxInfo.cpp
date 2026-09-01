@@ -1509,9 +1509,9 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
 
     
 
-    APPEND_TO_DRIVER_BLOCKLIST_RANGE_GPU2(
-        OperatingSystem::Windows7, DeviceFamily::Bug1137716,
-        GfxDriverInfo::optionalFeatures,
+    APPEND_TO_DRIVER_BLOCKLIST_RANGE_ADAPTER(
+        OperatingSystem::Windows7, AdapterMatch::Secondary,
+        DeviceFamily::Bug1137716, GfxDriverInfo::optionalFeatures,
         nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_BETWEEN_INCLUSIVE,
         V(8, 17, 12, 5730), V(8, 17, 12, 6901), "FEATURE_FAILURE_BUG_1137716",
         "Nvidia driver > 8.17.12.6901");

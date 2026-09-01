@@ -328,6 +328,17 @@ static VersionComparisonOp BlocklistComparatorToComparisonOp(
   return DRIVER_COMPARISON_IGNORED;
 }
 
+static AdapterMatch BlocklistValueToAdapterMatch(
+    const nsAString& adapterMatch) {
+#define GFXINFO_ADAPTER_MATCH(id, name)    \
+  if (adapterMatch.Equals(u##name##_ns)) { \
+    return AdapterMatch::id;               \
+  }
+#include "mozilla/widget/GfxInfoAdapterMatchDefs.inc"
+#undef GFXINFO_ADAPTER_MATCH
+  return AdapterMatch::Unknown;
+}
+
 
 
 
@@ -464,6 +475,11 @@ static bool BlocklistEntryToDriverInfo(const nsACString& aBlocklistEntry,
       nsTArray<nsCString> devices;
       ParseString(value, ',', devices);
       aDriverInfo->mDevices = BlocklistDevicesToDeviceFamily(devices);
+    } else if (key.EqualsLiteral("adapterMatch")) {
+      aDriverInfo->mAdapterMatch = BlocklistValueToAdapterMatch(dataValue);
+      if (aDriverInfo->mAdapterMatch == AdapterMatch::Unknown) {
+        return false;
+      }
     }
     
   }
@@ -843,16 +859,6 @@ int32_t GfxInfoBase::FindBlocklistedDeviceInList(
 
     
     
-    
-    
-    
-    uint32_t infoIndex = info[i]->mGpu2 ? 1 : 0;
-    if (adapterInfoFailed[infoIndex]) {
-      continue;
-    }
-
-    
-    
     if (!MatchingOperatingSystems(info[i]->mOperatingSystem, os)) {
       continue;
     }
@@ -899,33 +905,6 @@ int32_t GfxInfoBase::FindBlocklistedDeviceInList(
       continue;
     }
 
-    if (!DoesVendorMatch(info[i]->mAdapterVendor, adapterVendorID[infoIndex])) {
-      continue;
-    }
-
-    if (!DoesDriverVendorMatch(info[i]->mDriverVendor,
-                               adapterDriverVendor[infoIndex])) {
-      continue;
-    }
-
-    if (info[i]->mDevices && !info[i]->mDevices->IsEmpty()) {
-      nsresult rv = info[i]->mDevices->Contains(adapterDeviceID[infoIndex]);
-      if (rv == NS_ERROR_NOT_AVAILABLE) {
-        
-        continue;
-      }
-      if (rv != NS_OK) {
-        
-        
-        if (aForAllowing) {
-          continue;
-        }
-        break;
-      }
-    }
-
-    bool match = false;
-
     if (!info[i]->mHardware.IsEmpty() &&
         !info[i]->mHardware.Equals(Hardware())) {
       continue;
@@ -941,71 +920,133 @@ int32_t GfxInfoBase::FindBlocklistedDeviceInList(
       continue;
     }
 
+    auto fnMatchAdapter = [&](uint32_t aAdapterIndex) -> bool {
+      if (adapterInfoFailed[aAdapterIndex]) {
+        return false;
+      }
+      if (!DoesVendorMatch(info[i]->mAdapterVendor,
+                           adapterVendorID[aAdapterIndex])) {
+        return false;
+      }
+
+      if (!DoesDriverVendorMatch(info[i]->mDriverVendor,
+                                 adapterDriverVendor[aAdapterIndex])) {
+        return false;
+      }
+
+      if (info[i]->mDevices && !info[i]->mDevices->IsEmpty()) {
+        nsresult rv =
+            info[i]->mDevices->Contains(adapterDeviceID[aAdapterIndex]);
+        if (rv == NS_ERROR_NOT_AVAILABLE) {
+          
+          return false;
+        }
+        if (rv != NS_OK) {
+          
+          
+          if (aForAllowing) {
+            return false;
+          }
+          return true;
+        }
+      }
+
 #if defined(XP_WIN) || defined(ANDROID) || defined(MOZ_WIDGET_GTK)
-    switch (info[i]->mComparisonOp) {
-      case DRIVER_LESS_THAN:
-        match = driverVersion[infoIndex] < info[i]->mDriverVersion;
-        break;
-      case DRIVER_BUILD_ID_LESS_THAN:
-        match = (driverVersion[infoIndex] & 0xFFFF) < info[i]->mDriverVersion;
-        break;
-      case DRIVER_LESS_THAN_OR_EQUAL:
-        match = driverVersion[infoIndex] <= info[i]->mDriverVersion;
-        break;
-      case DRIVER_BUILD_ID_LESS_THAN_OR_EQUAL:
-        match = (driverVersion[infoIndex] & 0xFFFF) <= info[i]->mDriverVersion;
-        break;
-      case DRIVER_GREATER_THAN:
-        match = driverVersion[infoIndex] > info[i]->mDriverVersion;
-        break;
-      case DRIVER_GREATER_THAN_OR_EQUAL:
-        match = driverVersion[infoIndex] >= info[i]->mDriverVersion;
-        break;
-      case DRIVER_EQUAL:
-        match = driverVersion[infoIndex] == info[i]->mDriverVersion;
-        break;
-      case DRIVER_NOT_EQUAL:
-        match = driverVersion[infoIndex] != info[i]->mDriverVersion;
-        break;
-      case DRIVER_BETWEEN_EXCLUSIVE:
-        match = driverVersion[infoIndex] > info[i]->mDriverVersion &&
-                driverVersion[infoIndex] < info[i]->mDriverVersionMax;
-        break;
-      case DRIVER_BETWEEN_INCLUSIVE:
-        match = driverVersion[infoIndex] >= info[i]->mDriverVersion &&
-                driverVersion[infoIndex] <= info[i]->mDriverVersionMax;
-        break;
-      case DRIVER_BETWEEN_INCLUSIVE_START:
-        match = driverVersion[infoIndex] >= info[i]->mDriverVersion &&
-                driverVersion[infoIndex] < info[i]->mDriverVersionMax;
-        break;
-      case DRIVER_COMPARISON_IGNORED:
-        
-        match = true;
-        break;
-      default:
-        NS_WARNING("Bogus op in GfxDriverInfo");
-        break;
-    }
+      bool match = false;
+      switch (info[i]->mComparisonOp) {
+        case DRIVER_LESS_THAN:
+          match = driverVersion[aAdapterIndex] < info[i]->mDriverVersion;
+          break;
+        case DRIVER_BUILD_ID_LESS_THAN:
+          match =
+              (driverVersion[aAdapterIndex] & 0xFFFF) < info[i]->mDriverVersion;
+          break;
+        case DRIVER_LESS_THAN_OR_EQUAL:
+          match = driverVersion[aAdapterIndex] <= info[i]->mDriverVersion;
+          break;
+        case DRIVER_BUILD_ID_LESS_THAN_OR_EQUAL:
+          match = (driverVersion[aAdapterIndex] & 0xFFFF) <=
+                  info[i]->mDriverVersion;
+          break;
+        case DRIVER_GREATER_THAN:
+          match = driverVersion[aAdapterIndex] > info[i]->mDriverVersion;
+          break;
+        case DRIVER_GREATER_THAN_OR_EQUAL:
+          match = driverVersion[aAdapterIndex] >= info[i]->mDriverVersion;
+          break;
+        case DRIVER_EQUAL:
+          match = driverVersion[aAdapterIndex] == info[i]->mDriverVersion;
+          break;
+        case DRIVER_NOT_EQUAL:
+          match = driverVersion[aAdapterIndex] != info[i]->mDriverVersion;
+          break;
+        case DRIVER_BETWEEN_EXCLUSIVE:
+          match = driverVersion[aAdapterIndex] > info[i]->mDriverVersion &&
+                  driverVersion[aAdapterIndex] < info[i]->mDriverVersionMax;
+          break;
+        case DRIVER_BETWEEN_INCLUSIVE:
+          match = driverVersion[aAdapterIndex] >= info[i]->mDriverVersion &&
+                  driverVersion[aAdapterIndex] <= info[i]->mDriverVersionMax;
+          break;
+        case DRIVER_BETWEEN_INCLUSIVE_START:
+          match = driverVersion[aAdapterIndex] >= info[i]->mDriverVersion &&
+                  driverVersion[aAdapterIndex] < info[i]->mDriverVersionMax;
+          break;
+        case DRIVER_COMPARISON_IGNORED:
+          
+          match = true;
+          break;
+        default:
+          NS_WARNING("Bogus op in GfxDriverInfo");
+          break;
+      }
 #else
-    
-    
-    match = true;
+      
+      
+      bool match = true;
 #endif
 
-    if (match || info[i]->mDriverVersion == GfxDriverInfo::allDriverVersions) {
-      if (info[i]->mFeature == GfxDriverInfo::allFeatures ||
-          info[i]->mFeature == aFeature ||
-          (info[i]->mFeature == GfxDriverInfo::optionalFeatures &&
-           OnlyAllowFeatureOnKnownConfig(aFeature))) {
-        status = info[i]->mFeatureStatus;
-        if (!info[i]->mRuleId.IsEmpty()) {
-          aFailureId = info[i]->mRuleId.get();
-        } else {
-          aFailureId = "FEATURE_FAILURE_DL_BLOCKLIST_NO_ID";
+      if (match ||
+          info[i]->mDriverVersion == GfxDriverInfo::allDriverVersions) {
+        if (info[i]->mFeature == GfxDriverInfo::allFeatures ||
+            info[i]->mFeature == aFeature ||
+            (info[i]->mFeature == GfxDriverInfo::optionalFeatures &&
+             OnlyAllowFeatureOnKnownConfig(aFeature))) {
+          status = info[i]->mFeatureStatus;
+          if (!info[i]->mRuleId.IsEmpty()) {
+            aFailureId = info[i]->mRuleId.get();
+          } else {
+            aFailureId = "FEATURE_FAILURE_DL_BLOCKLIST_NO_ID";
+          }
+          return true;
+        }
+      }
+
+      return false;
+    };
+
+    
+    bool matched = false;
+    switch (info[i]->mAdapterMatch) {
+      case AdapterMatch::Primary:
+        matched = fnMatchAdapter( 0);
+        break;
+      case AdapterMatch::Secondary:
+        matched = fnMatchAdapter( 1);
+        break;
+      case AdapterMatch::Any:
+        matched = fnMatchAdapter( 0);
+        if (!matched) {
+          matched = fnMatchAdapter( 1);
         }
         break;
-      }
+      default:
+        MOZ_ASSERT_UNREACHABLE("Unhandled adapter match!");
+        break;
+    }
+
+    if (matched) {
+      break;
     }
   }
 

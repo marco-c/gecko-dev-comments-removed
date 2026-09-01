@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+GFXINFO_ADAPTER_MATCH(Primary, "PRIMARY")
+
+GFXINFO_ADAPTER_MATCH(Secondary, "SECONDARY")
+
+GFXINFO_ADAPTER_MATCH(Any, "ANY")
