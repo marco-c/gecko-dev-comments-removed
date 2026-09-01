@@ -225,6 +225,10 @@ CacheFileHandle::~CacheFileHandle() {
 }
 
 void CacheFileHandle::Log() {
+  if (!LOG_ENABLED()) {
+    return;
+  }
+
   nsAutoCString leafName;
   if (mFile) {
     mFile->GetNativeLeafName(leafName);
@@ -1295,7 +1299,11 @@ void CacheFileIOManager::ShutdownInternal() {
     
     
 
-    if (!h->IsSpecialFile() && !h->mIsDoomed && !h->mFileExists) {
+    
+    
+    
+    if (!h->IsSpecialFile() && !h->mIsDoomed && !h->mFileExists &&
+        !CacheObserver::IsPastShutdownIOLag()) {
       CacheIndex::RemoveEntry(h->Hash(), h->Key());
     }
 
