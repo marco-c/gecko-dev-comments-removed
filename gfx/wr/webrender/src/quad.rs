@@ -58,9 +58,12 @@ pub struct QuadCacheKey {
 #[derive(Copy, Clone, Debug)]
 pub struct QuadDescriptor {
     
-    pub local_rect: LayoutRect,
     
-    pub local_clip_rect: LayoutRect,
+    
+    
+    pub pattern_rect: LayoutRect,
+    
+    pub bounds: LayoutRect,
     
     
     
@@ -218,7 +221,7 @@ pub fn prepare_quad(
 ) {
     let pattern_ctx = PatternBuilderContext {
         spatial_tree: frame_context.spatial_tree,
-        prim_origin: desc.local_rect.min,
+        prim_origin: desc.pattern_rect.min,
     };
 
     let pattern = pattern_builder.build(
@@ -282,7 +285,7 @@ pub fn prepare_repeatable_quad(
 ) {
     let pattern_ctx = PatternBuilderContext {
         spatial_tree: frame_context.spatial_tree,
-        prim_origin: desc.local_rect.min,
+        prim_origin: desc.pattern_rect.min,
     };
 
     let pattern = pattern_builder.build(
@@ -311,8 +314,8 @@ pub fn prepare_repeatable_quad(
         ),
     };
 
-    let needs_repetition = stretch_size.width < desc.local_rect.width()
-        || stretch_size.height < desc.local_rect.height();
+    let needs_repetition = stretch_size.width < desc.pattern_rect.width()
+        || stretch_size.height < desc.pattern_rect.height();
 
     if !needs_repetition {
         
@@ -320,12 +323,13 @@ pub fn prepare_repeatable_quad(
         
         
         
+        
+        
         let stretched_desc = QuadDescriptor {
-            local_rect: LayoutRect::from_origin_and_size(
-                desc.local_rect.min,
+            pattern_rect: LayoutRect::from_origin_and_size(
+                desc.pattern_rect.min,
                 stretch_size,
             ),
-            local_clip_rect: desc.local_clip_rect.intersection_unchecked(&desc.local_rect),
             ..*desc
         };
 
@@ -350,7 +354,7 @@ pub fn prepare_repeatable_quad(
     }
 
     let pattern_rect = LayoutRect::from_origin_and_size(
-        desc.local_rect.min,
+        desc.pattern_rect.min,
         stretch_size,
     );
 
@@ -364,7 +368,7 @@ pub fn prepare_repeatable_quad(
 
     
     
-    let num_repetitions = desc.local_rect.area() / stretch_size.area();
+    let num_repetitions = desc.pattern_rect.area() / stretch_size.area();
     let repeat_using_a_shader = src_task_id.is_some()
         || (num_repetitions > 16.0 && surface_rect.width() < 1024.0 && surface_rect.height() < 1024.0)
         || (num_repetitions > 64.0 && surface_rect.area() < 1024.0 * 1024.0);
@@ -454,24 +458,20 @@ pub fn prepare_repeatable_quad(
         frame_state.current_dirty_region().visibility_spatial_node,
         transform.prim_spatial_node_index(),
         frame_context.spatial_tree,
-    ).intersection_unchecked(&desc.local_clip_rect);
+    ).intersection_unchecked(&desc.bounds);
 
     let stride = stretch_size + tile_spacing;
-    let repetitions = crate::image_tiling::repetitions(&desc.local_rect, &visible_rect, stride);
+    let repetitions = crate::image_tiling::repetitions(&desc.pattern_rect, &visible_rect, stride);
     for tile in repetitions {
         let tile_rect = LayoutRect::from_origin_and_size(tile.origin, stretch_size);
         
         
         
-        
-        
-        let clip_rect = desc.local_clip_rect
-            .intersection_unchecked(&tile_rect)
-            .intersection_unchecked(&desc.local_rect);
-        if clip_rect.is_empty() {
+        let tile_bounds = desc.bounds.intersection_unchecked(&tile_rect);
+        if tile_bounds.is_empty() {
             continue;
         }
-        let pattern_offset = tile.origin - desc.local_rect.min;
+        let pattern_offset = tile.origin - desc.pattern_rect.min;
         let pattern = pattern_builder.build(
             None,
             pattern_offset,
@@ -486,8 +486,8 @@ pub fn prepare_repeatable_quad(
             strategy,
             &pattern,
             &QuadDescriptor {
-                local_rect: tile_rect,
-                local_clip_rect: clip_rect,
+                pattern_rect: tile_rect,
+                bounds: tile_bounds,
                 aligned_aa_edges: desc.aligned_aa_edges & tile.edge_flags,
                 transformed_aa_edges: desc.transformed_aa_edges & tile.edge_flags,
             },
@@ -526,7 +526,7 @@ pub fn prepare_border_nine_patch(
 ) {
     let pattern_ctx = PatternBuilderContext {
         spatial_tree: frame_context.spatial_tree,
-        prim_origin: desc.local_rect.min,
+        prim_origin: desc.pattern_rect.min,
     };
 
     let pattern = pattern_builder.build(
@@ -553,12 +553,12 @@ pub fn prepare_border_nine_patch(
     let scales = transform.scale_factors();
     let base_indirect_transform = ScaleOffset::from_scale(scales.into());
 
-    nine_patch.for_each_segment(&desc.local_rect, &mut|dst_rect, src_rect, side, _repeat_h, _repeat_v| {
+    nine_patch.for_each_segment(&desc.pattern_rect, &mut|dst_rect, src_rect, side, _repeat_h, _repeat_v| {
         
-        let min_x = desc.local_rect.min.x + stretch_size.width * src_rect.uv0.x;
-        let min_y = desc.local_rect.min.y + stretch_size.height * src_rect.uv0.y;
-        let max_x = desc.local_rect.min.x + stretch_size.width * src_rect.uv1.x;
-        let max_y = desc.local_rect.min.y + stretch_size.height * src_rect.uv1.y;
+        let min_x = desc.pattern_rect.min.x + stretch_size.width * src_rect.uv0.x;
+        let min_y = desc.pattern_rect.min.y + stretch_size.height * src_rect.uv0.y;
+        let max_x = desc.pattern_rect.min.x + stretch_size.width * src_rect.uv1.x;
+        let max_y = desc.pattern_rect.min.y + stretch_size.height * src_rect.uv1.y;
         let pattern_rect = LayoutRect {
             min: point2(min_x, min_y),
             max: point2(max_x, max_y),
@@ -611,8 +611,10 @@ pub fn prepare_border_nine_patch(
             strategy,
             &img_pattern,
             &QuadDescriptor {
-                local_rect: *dst_rect,
-                local_clip_rect: desc.local_clip_rect,
+                pattern_rect: *dst_rect,
+                
+                
+                bounds: desc.bounds.intersection_unchecked(dst_rect),
                 aligned_aa_edges: desc.aligned_aa_edges & side,
                 transformed_aa_edges: desc.transformed_aa_edges & side,
             },
@@ -671,7 +673,7 @@ fn prepare_quad_impl(
     let mut quad_flags = QuadFlags::empty();
 
     
-    let prim_size = desc.local_rect.size();
+    let prim_size = desc.bounds.size();
     if prim_size.width > MIN_AA_SEGMENTS_SIZE && prim_size.height > MIN_AA_SEGMENTS_SIZE {
         quad_flags |= QuadFlags::USE_AA_SEGMENTS;
     }
@@ -687,10 +689,9 @@ fn prepare_quad_impl(
         desc.transformed_aa_edges
     };
 
-    let local_bounds = desc.local_clip_rect
-        .intersection_unchecked(&desc.local_rect)
+    let local_bounds = desc.bounds
         .intersection_unchecked(&clip_chain.local_clip_rect);
-    let local_pattern_rect = desc.local_rect;
+    let local_pattern_rect = desc.pattern_rect;
 
     
     
@@ -1498,15 +1499,15 @@ fn get_prim_render_strategy(
 
 
 fn adjust_indirect_pattern_resolution(
-    local_rect: &LayoutRect,
+    pattern_rect: &LayoutRect,
     max_device_size: f32,
     device_rect: &mut DeviceRect,
     indirect_transform: &mut ScaleOffset,
 ) {
     
     
-    let valid = local_rect.width() > 0.0
-        && local_rect.height() > 0.0
+    let valid = pattern_rect.width() > 0.0
+        && pattern_rect.height() > 0.0
         && indirect_transform.scale.x != 0.0
         && indirect_transform.scale.y != 0.0;
 
@@ -1517,21 +1518,21 @@ fn adjust_indirect_pattern_resolution(
     
     while device_rect.width() > max_device_size {
         indirect_transform.scale.x *= 0.5;
-        *device_rect = indirect_transform.map_rect(local_rect);
+        *device_rect = indirect_transform.map_rect(pattern_rect);
     }
     while device_rect.height() > max_device_size {
         indirect_transform.scale.y *= 0.5;
-        *device_rect = indirect_transform.map_rect(local_rect);
+        *device_rect = indirect_transform.map_rect(pattern_rect);
     }
 
     
     while device_rect.width() <= 0.5 {
         indirect_transform.scale.x *= 2.0;
-        *device_rect = indirect_transform.map_rect(local_rect);
+        *device_rect = indirect_transform.map_rect(pattern_rect);
     }
     while device_rect.height() <= 0.5 {
         indirect_transform.scale.y *= 2.0;
-        *device_rect = indirect_transform.map_rect(local_rect);
+        *device_rect = indirect_transform.map_rect(pattern_rect);
     }
 }
 
@@ -1808,7 +1809,7 @@ pub fn write_rounded_rect_clip_blocks(
     radius: &BorderRadius,
     inset: LayoutSideOffsets,
     mode: ClipMode,
-) -> (GpuBufferAddress, bool) {
+) -> (GpuBufferAddress, bool, bool) {
     let radius = clamped_radius(radius, clip_rect.size());
 
     if radius.can_use_fast_path_in(&clip_rect) {
@@ -1822,9 +1823,11 @@ pub fn write_rounded_rect_clip_blocks(
         ]);
         writer.push_one([mode as i32 as f32, 0.0, 0.0, 0.0]);
 
-        (writer.finish(), true)
+        (writer.finish(), true, false)
     } else {
-        let mut writer = gpu_buffer.write_blocks(6);
+        let superellipse = !radius.shapes_all_round();
+        let block_count = if superellipse { 6 } else { 4 };
+        let mut writer = gpu_buffer.write_blocks(block_count);
         writer.push_one(clip_rect);
         writer.push_one([
             radius.top_left.width,
@@ -1839,15 +1842,17 @@ pub fn write_rounded_rect_clip_blocks(
             radius.bottom_right.height,
         ]);
         writer.push_one([mode as i32 as f32, 0.0, 0.0, 0.0]);
-        writer.push_one([
-            radius.shape_top_left,
-            radius.shape_top_right,
-            radius.shape_bottom_right,
-            radius.shape_bottom_left,
-        ]);
-        writer.push_one(inset);
+        if superellipse {
+            writer.push_one([
+                radius.shape_top_left,
+                radius.shape_top_right,
+                radius.shape_bottom_right,
+                radius.shape_bottom_left,
+            ]);
+            writer.push_one(inset);
+        }
 
-        (writer.finish(), false)
+        (writer.finish(), false, superellipse)
     }
 }
 
@@ -1866,7 +1871,7 @@ pub fn prepare_clip_task(
     rg_builder: &mut RenderTaskGraphBuilder,
     sub_tasks: &mut SubTaskRange,
 ) {
-    let (clip_address, fast_path) = match clip_item.kind {
+    let (clip_address, fast_path, superellipse) = match clip_item.kind {
         ClipItemKind::RoundedRectangle { radius, inset, mode } => {
             write_rounded_rect_clip_blocks(
                 gpu_buffer,
@@ -1883,7 +1888,7 @@ pub fn prepare_clip_task(
             writer.push_one([mode as i32 as f32, 0.0, 0.0, 0.0]);
             let clip_address = writer.finish();
 
-            (clip_address, true)
+            (clip_address, true, false)
         }
         ClipItemKind::Image { .. } => {
             let transform_id = transforms.gpu.get_id_with_post_scale(
@@ -2034,6 +2039,7 @@ pub fn prepare_clip_task(
             clip_space,
             needs_scissor_rect,
             rounded_rect_fast_path: fast_path,
+            rounded_rect_superellipse: superellipse,
         }),
     );
 }
@@ -2123,7 +2129,7 @@ fn write_prim_blocks(
 
 pub fn write_device_prim_blocks(
     builder: &mut GpuBufferBuilderF,
-    prim_rect: &DeviceRect,
+    bounds: &DeviceRect,
     pattern_rect: &DeviceRect,
     pattern_base_color: ColorF,
     pattern_texture_input: RenderTaskId,
@@ -2132,7 +2138,7 @@ pub fn write_device_prim_blocks(
 ) -> GpuBufferAddress {
     write_prim_blocks_impl(
         builder,
-        prim_rect.to_untyped(),
+        bounds.to_untyped(),
         pattern_rect.to_untyped(),
         pattern_base_color,
         pattern_texture_input,
@@ -2164,8 +2170,7 @@ pub fn write_layout_prim_blocks(
 fn write_prim_blocks_impl(
     builder: &mut GpuBufferBuilderF,
     
-    
-    prim_rect: LayoutOrDeviceRect,
+    bounds: LayoutOrDeviceRect,
     pattern_rect: LayoutOrDeviceRect,
     pattern_base_color: ColorF,
     pattern_texture_input: RenderTaskId,
@@ -2175,7 +2180,7 @@ fn write_prim_blocks_impl(
     let mut writer = builder.write_blocks(5 + segments.len() * 2);
 
     writer.push(&QuadPrimitive {
-        bounds: prim_rect,
+        bounds,
         pattern_rect,
         input_task: pattern_texture_input,
         pattern_scale_offset,
@@ -2413,7 +2418,7 @@ impl QuadTileClassifier {
             .min(MAX_TILES_PER_QUAD_X as f32)
             .max(1.0)
             .ceil() as usize;
-        let y_tiles = (rect.width() / MIN_QUAD_SPLIT_SIZE)
+        let y_tiles = (rect.height() / MIN_QUAD_SPLIT_SIZE)
             .min(MAX_TILES_PER_QUAD_Y as f32)
             .max(1.0)
             .ceil() as usize;

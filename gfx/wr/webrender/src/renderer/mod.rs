@@ -837,6 +837,9 @@ pub struct Renderer {
 
     max_primitive_instance_count: usize,
     enable_instancing: bool,
+    
+    
+    use_shared_instance_buffer: bool,
 
     
     
@@ -2122,26 +2125,49 @@ impl Renderer {
 
         let chunk_size = if self.debug_flags.contains(DebugFlags::DISABLE_BATCHING) {
             1
+        } else if self.use_shared_instance_buffer {
+            
+            vertex::SHARED_INSTANCE_BUFFER_SIZE / vao.instance_stride()
         } else if vertex_array_kind == VertexArrayKind::Primitive {
             self.max_primitive_instance_count
         } else {
             data.len()
         };
 
-        for chunk in data.chunks(chunk_size) {
-            if self.enable_instancing {
-                self.device
-                    .update_vao_instances(vao, chunk, ONE_TIME_USAGE_HINT, None);
-                self.device
-                    .draw_indexed_triangles_instanced_u16(6, chunk.len() as i32);
-            } else {
-                self.device
-                    .update_vao_instances(vao, chunk, ONE_TIME_USAGE_HINT, NonZeroUsize::new(4));
-                self.device
-                    .draw_indexed_triangles(6 * chunk.len() as i32);
+        if self.use_shared_instance_buffer {
+            let instance_stride = vao.instance_stride();
+            for chunk in data.chunks(chunk_size) {
+                let offset = self
+                    .vaos
+                    .shared_instance_buffer
+                    .as_mut()
+                    .expect("shared instance buffer mode enabled but no shared buffer")
+                    .push_instances(&mut self.device, chunk);
+                let base_instance = (offset / instance_stride) as u32;
+                self.device.draw_indexed_triangles_instanced_base_instance_u16(
+                    6,
+                    chunk.len() as i32,
+                    base_instance,
+                );
+                self.profile.inc(profiler::DRAW_CALLS);
+                stats.total_draw_calls += 1;
             }
-            self.profile.inc(profiler::DRAW_CALLS);
-            stats.total_draw_calls += 1;
+        } else {
+            for chunk in data.chunks(chunk_size) {
+                if self.enable_instancing {
+                    self.device
+                        .update_vao_instances(vao, chunk, ONE_TIME_USAGE_HINT, None);
+                    self.device
+                        .draw_indexed_triangles_instanced_u16(6, chunk.len() as i32);
+                } else {
+                    self.device
+                        .update_vao_instances(vao, chunk, ONE_TIME_USAGE_HINT, NonZeroUsize::new(4));
+                    self.device
+                        .draw_indexed_triangles(6 * chunk.len() as i32);
+                }
+                self.profile.inc(profiler::DRAW_CALLS);
+                stats.total_draw_calls += 1;
+            }
         }
 
         self.profile.add(profiler::VERTICES, 6 * data.len());
@@ -2413,6 +2439,50 @@ impl Renderer {
                 self.device.enable_scissor();
 
                 for (scissor_rect, instances) in &masks.mask_instances_fast_with_scissor {
+                    self.device.set_scissor_rect(draw_target.to_framebuffer_rect(*scissor_rect));
+
+                    self.draw_instanced_batch(
+                        instances,
+                        VertexArrayKind::Mask,
+                        &BatchTextures::empty(),
+                        stats,
+                    );
+                }
+
+                self.device.disable_scissor();
+            }
+
+            if !masks.mask_instances_superellipse.is_empty() {
+                self.shaders.borrow_mut().ps_mask_superellipse().bind(
+                    &mut self.device,
+                    projection,
+                    None,
+                    &mut self.renderer_errors,
+                    &mut self.profile,
+                    &mut self.command_log,
+                );
+
+                self.draw_instanced_batch(
+                    &masks.mask_instances_superellipse,
+                    VertexArrayKind::Mask,
+                    &BatchTextures::empty(),
+                    stats,
+                );
+            }
+
+            if !masks.mask_instances_superellipse_with_scissor.is_empty() {
+                self.shaders.borrow_mut().ps_mask_superellipse().bind(
+                    &mut self.device,
+                    projection,
+                    None,
+                    &mut self.renderer_errors,
+                    &mut self.profile,
+                    &mut self.command_log,
+                );
+
+                self.device.enable_scissor();
+
+                for (scissor_rect, instances) in &masks.mask_instances_superellipse_with_scissor {
                     self.device.set_scissor_rect(draw_target.to_framebuffer_rect(*scissor_rect));
 
                     self.draw_instanced_batch(
