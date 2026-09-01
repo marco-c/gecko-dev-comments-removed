@@ -9,6 +9,7 @@
 
 
 #include <limits.h>
+#include <stdio.h>
 
 #include <memory>
 
@@ -66,9 +67,10 @@ class VpxPostProcDownAndAcrossMbRowTest
 };
 
 void VpxPostProcDownAndAcrossMbRowTest::Run() {
-  mb_post_proc_down_and_across_(
-      src_image_->TopLeftPixel(), dst_image_->TopLeftPixel(),
-      src_image_->stride(), dst_image_->stride(), block_width_, flimits_, 16);
+  mb_post_proc_down_and_across_(src_image_->TopLeftPixel(),
+                                dst_image_->TopLeftPixel(),
+                                src_image_->stride(), dst_image_->stride(),
+                                block_width_, flimits_, block_height_);
 }
 
 
@@ -125,99 +127,129 @@ TEST_P(VpxPostProcDownAndAcrossMbRowTest, CheckCvsAssembly) {
   
   
   
-  block_width_ = 136;
-  block_height_ = 16;
-
-  
-  
-  Buffer<uint8_t> src_image =
-      Buffer<uint8_t>(block_width_, block_height_, 2, 2, 10, 2);
-  ASSERT_TRUE(src_image.Init());
-
-  
-  
-  
-  
-  
-  Buffer<uint8_t> dst_image =
-      Buffer<uint8_t>(block_width_, block_height_, 8, 8, 16, 8);
-  ASSERT_TRUE(dst_image.Init());
-  Buffer<uint8_t> dst_image_ref =
-      Buffer<uint8_t>(block_width_, block_height_, 8);
-  ASSERT_TRUE(dst_image_ref.Init());
-
-  
-  
-  
-  const int flimits_width = block_width_ % 16 ? block_width_ + 8 : block_width_;
-  flimits_ = reinterpret_cast<uint8_t *>(vpx_memalign(16, flimits_width));
+  static constexpr int kWidths[] = { 8, 16, 24, 32, 136 };
+  static constexpr int kHeights[] = { 8, 16 };
 
   ACMRandom rnd;
   rnd.Reset(ACMRandom::DeterministicSeed());
-  
-  
-  
-  src_image.SetPadding(10);
-  src_image.Set(&rnd, &ACMRandom::Rand8);
 
-  for (int blocks = 0; blocks < block_width_; blocks += 8) {
-    (void)memset(flimits_, 0, sizeof(*flimits_) * flimits_width);
+  for (int width : kWidths) {
+    for (int height : kHeights) {
+      char str[8];
+      snprintf(str, sizeof(str), "%dx%d", width, height);
+      SCOPED_TRACE(str);
+      block_width_ = width;
+      block_height_ = height;
 
-    for (int f = 0; f < 255; f++) {
-      (void)memset(flimits_ + blocks, f, sizeof(*flimits_) * 8);
-      dst_image.Set(0);
-      dst_image_ref.Set(0);
+      
+      
+      
+      Buffer<uint8_t> src_image =
+          Buffer<uint8_t>(block_width_, block_height_, 2, 2, 10, 2);
+      ASSERT_TRUE(src_image.Init());
 
-      vpx_post_proc_down_and_across_mb_row_c(
-          src_image.TopLeftPixel(), dst_image_ref.TopLeftPixel(),
-          src_image.stride(), dst_image_ref.stride(), block_width_, flimits_,
-          block_height_);
-      ASM_REGISTER_STATE_CHECK(mb_post_proc_down_and_across_(
-          src_image.TopLeftPixel(), dst_image.TopLeftPixel(),
-          src_image.stride(), dst_image.stride(), block_width_, flimits_,
-          block_height_));
+      
+      
+      
+      
+      
+      Buffer<uint8_t> dst_image =
+          Buffer<uint8_t>(block_width_, block_height_, 8, 8, 16, 8);
+      ASSERT_TRUE(dst_image.Init());
+      Buffer<uint8_t> dst_image_ref =
+          Buffer<uint8_t>(block_width_, block_height_, 8);
+      ASSERT_TRUE(dst_image_ref.Init());
 
-      ASSERT_TRUE(dst_image.CheckValues(dst_image_ref));
+      
+      
+      
+      const int flimits_width =
+          block_width_ % 16 ? block_width_ + 8 : block_width_;
+      flimits_ = reinterpret_cast<uint8_t *>(vpx_memalign(16, flimits_width));
+
+      
+      
+      
+      src_image.SetPadding(10);
+      src_image.Set(&rnd, &ACMRandom::Rand8);
+
+      for (int blocks = 0; blocks < block_width_; blocks += 8) {
+        (void)memset(flimits_, 0, sizeof(*flimits_) * flimits_width);
+
+        for (int f = 0; f < 255; f++) {
+          (void)memset(flimits_ + blocks, f, sizeof(*flimits_) * 8);
+          dst_image.Set(0);
+          dst_image_ref.Set(0);
+
+          vpx_post_proc_down_and_across_mb_row_c(
+              src_image.TopLeftPixel(), dst_image_ref.TopLeftPixel(),
+              src_image.stride(), dst_image_ref.stride(), block_width_,
+              flimits_, block_height_);
+          ASM_REGISTER_STATE_CHECK(mb_post_proc_down_and_across_(
+              src_image.TopLeftPixel(), dst_image.TopLeftPixel(),
+              src_image.stride(), dst_image.stride(), block_width_, flimits_,
+              block_height_));
+
+          ASSERT_TRUE(dst_image.CheckValues(dst_image_ref));
+        }
+      }
+
+      vpx_free(flimits_);
     }
   }
-
-  vpx_free(flimits_);
 }
 
 TEST_P(VpxPostProcDownAndAcrossMbRowTest, DISABLED_Speed) {
-  
-  block_width_ = 16;
-  block_height_ = 16;
+  static constexpr struct {
+    int width;
+    int height;
+  } kSizes[] = {
+    { 16, 16 },
+    { 136, 16 },
+    { 24, 8 },
+    { 8, 8 },
+  };
 
-  
-  Buffer<uint8_t> src_image = Buffer<uint8_t>(block_width_, block_height_, 2);
-  ASSERT_TRUE(src_image.Init());
-  this->src_image_ = &src_image;
+  for (const auto &size : kSizes) {
+    block_width_ = size.width;
+    block_height_ = size.height;
 
-  
-  
-  
-  Buffer<uint8_t> dst_image =
-      Buffer<uint8_t>(block_width_, block_height_, 8, 16, 8, 8);
-  ASSERT_TRUE(dst_image.Init());
-  this->dst_image_ = &dst_image;
+    
+    Buffer<uint8_t> src_image =
+        Buffer<uint8_t>(block_width_, block_height_, 2, 2, 10, 2);
+    ASSERT_TRUE(src_image.Init());
+    this->src_image_ = &src_image;
 
-  flimits_ = reinterpret_cast<uint8_t *>(vpx_memalign(16, block_width_));
-  (void)memset(flimits_, 255, block_width_);
+    
+    
+    
+    
+    Buffer<uint8_t> dst_image =
+        Buffer<uint8_t>(block_width_, block_height_, 8, 8, 16, 8);
+    ASSERT_TRUE(dst_image.Init());
+    this->dst_image_ = &dst_image;
 
-  
-  
-  
-  src_image.SetPadding(10);
-  src_image.Set(1);
+    const int flimits_width =
+        block_width_ % 16 ? block_width_ + 8 : block_width_;
+    flimits_ = reinterpret_cast<uint8_t *>(vpx_memalign(16, flimits_width));
+    (void)memset(flimits_, 255, flimits_width);
 
-  
-  dst_image.Set(99);
+    
+    
+    
+    src_image.SetPadding(10);
+    src_image.Set(1);
 
-  RunNTimes(INT16_MAX);
-  PrintMedian("16x16");
+    
+    dst_image.Set(99);
 
-  vpx_free(flimits_);
+    char title[32];
+    snprintf(title, sizeof(title), "%dx%d", block_width_, block_height_);
+    RunNTimes(INT16_MAX);
+    PrintMedian(title);
+
+    vpx_free(flimits_);
+  }
 }
 
 class VpxMbPostProcAcrossIpTest
