@@ -17,6 +17,12 @@
 #  include "mozilla/psm/PPKCS11Module.h"
 #endif  
 
+
+
+nsresult DoChangePassword(const mozilla::UniquePK11SlotInfo& slot,
+                          const nsACString& oldPassword,
+                          const nsACString& newPassword);
+
 class PKCS11Token : public nsIPKCS11Token {
  public:
   NS_DECL_ISUPPORTS
