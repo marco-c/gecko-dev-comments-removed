@@ -389,6 +389,11 @@ async function waitForDoorhanger(browser, type) {
     }
     return notif;
   }, `Waiting for a ${type} notification`);
+  
+  
+  if (!notif.dismissed) {
+    await BrowserTestUtils.waitForPopupEvent(PopupNotifications.panel, "shown");
+  }
   return notif;
 }
 
