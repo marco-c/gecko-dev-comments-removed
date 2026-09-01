@@ -368,28 +368,38 @@ nsresult nsServerSocket::InitWithAddressInternal(const PRNetAddr* aAddr,
     return ErrorAccordingToNSPR(PR_GetError());
   }
 
-#if defined(XP_WIN)
-  
-  
-  if (aDualStack) {
-    PROsfd osfd = PR_FileDesc2NativeHandle(mFD);
-    if (osfd != -1) {
-      int disable = 0;
-      setsockopt(osfd, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&disable,
-                 sizeof(disable));
-    }
-  }
-#else
-  (void)aDualStack;
-#endif
-
   PR_SetFDInheritable(mFD, false);
 
   PRSocketOptionData opt;
 
+#if defined(XP_WIN)
+  {
+    PROsfd osfd = PR_FileDesc2NativeHandle(mFD);
+    if (osfd != -1) {
+      
+      
+      if (aDualStack) {
+        int disable = 0;
+        setsockopt(osfd, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&disable,
+                   sizeof(disable));
+      }
+
+      
+      
+      
+      
+      int enable = 1;
+      setsockopt(osfd, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, (char*)&enable,
+                 sizeof(enable));
+    }
+  }
+#else
+  (void)aDualStack;
+
   opt.option = PR_SockOpt_Reuseaddr;
   opt.value.reuse_addr = true;
   PR_SetSocketOption(mFD, &opt);
+#endif
 
   opt.option = PR_SockOpt_Nonblocking;
   opt.value.non_blocking = true;

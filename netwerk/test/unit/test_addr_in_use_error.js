@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 var CC = Components.Constructor;
@@ -13,12 +12,6 @@ const ServerSocket = CC(
 );
 
 function testAddrInUse() {
-  
-  
-  if (mozinfo.os == "win") {
-    return;
-  }
-
   
   
   let listener = ServerSocket(-1, true, -1);
