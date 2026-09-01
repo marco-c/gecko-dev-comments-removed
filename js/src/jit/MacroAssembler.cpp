@@ -40,6 +40,7 @@
 #include "vm/DateTime.h"
 #include "vm/Float16.h"
 #include "vm/FunctionFlags.h"  
+#include "vm/GeneratorObject.h"
 #include "vm/Iteration.h"
 #include "vm/JSContext.h"
 #include "vm/JSFunction.h"
@@ -51,6 +52,7 @@
 #include "wasm/WasmInstance.h"
 #include "wasm/WasmInstanceData.h"
 #include "wasm/WasmMemory.h"
+#include "wasm/WasmSummarizeInsn.h"
 #include "wasm/WasmTypeDef.h"
 #include "wasm/WasmValidate.h"
 
@@ -6083,6 +6085,22 @@ void MacroAssembler::branchIfObjectNotExtensible(Register obj, Register scratch,
                Imm32(uint32_t(ObjectFlag::NotExtensible)), label);
 }
 
+void MacroAssembler::branchIfNotSuspendedGenerator(Register obj,
+                                                   Register scratch,
+                                                   Register spectreRegToZero,
+                                                   Label* label) {
+  
+  branchTestObjClass(Assembler::NotEqual, obj, &GeneratorObject::class_,
+                     scratch, spectreRegToZero, label);
+
+  
+  
+  Address addr(obj, AbstractGeneratorObject::offsetOfResumeIndexSlot());
+  fallibleUnboxInt32(addr, scratch, label);
+  branch32(Assembler::AboveOrEqual, scratch,
+           Imm32(AbstractGeneratorObject::RESUME_INDEX_RUNNING), label);
+}
+
 void MacroAssembler::branchTestObjectNeedsProxyResultValidation(
     Condition cond, Register obj, Register scratch, Label* label) {
   MOZ_ASSERT(cond == Assembler::Zero || cond == Assembler::NonZero);
@@ -6111,13 +6129,87 @@ void MacroAssembler::branchTestObjectNeedsProxyResultValidation(
   bind(&done);
 }
 
+uint8_t MacroAssembler::getByteAtOffset(size_t offset) const {
+  MOZ_ASSERT(offset < readableSize());
+#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+  return const_cast<X86Encoding::BaseAssemblerSpecific&>(masm).getByteAtOffset(
+      offset);
+#elif defined(JS_CODEGEN_ARM64)
+  
+  Instruction* ii = const_cast<MacroAssembler&>(*this).getInstructionAt(
+      BufferOffset(offset & ~size_t(3)));
+  return ((uint8_t*)ii)[offset & 3];
+#elif defined(JS_CODEGEN_ARM)
+  
+  Instruction* ii = const_cast<MacroAssembler&>(*this).editSrc(
+      BufferOffset(offset & ~size_t(3)));
+  return ((uint8_t*)ii)[offset & 3];
+#elif defined(JS_CODEGEN_RISCV64)
+  
+  Instruction* ii = const_cast<MacroAssembler&>(*this).getInstructionAt(
+      BufferOffset(offset & ~size_t(3)));
+  return ((uint8_t*)ii)[offset & 3];
+#elif defined(JS_CODEGEN_NONE)
+  MOZ_CRASH();
+#else
+#  error "Implement me"
+#endif
+}
+
+
+class InstructionBytesFromMasm : public wasm::InstructionBytes {
+  const MacroAssembler& masm_;
+  uint32_t baseOffset_ = 0;
+
+ public:
+  explicit InstructionBytesFromMasm(const MacroAssembler& masm,
+                                    uint32_t baseOffset)
+      : masm_(masm), baseOffset_(baseOffset) {
+    MOZ_ASSERT(baseOffset < masm.readableSize());
+  }
+  bool isU32aligned() const override { return (baseOffset_ & 3) == 0; }
+  uint8_t get(size_t offset) const override {
+    MOZ_ASSERT(offset < 16);
+    return masm_.getByteAtOffset(baseOffset_ + offset);
+  }
+};
+
+mozilla::Atomic<uint32_t> ctr(0);
+void MacroAssembler::appendAndVerify(wasm::Trap trap,
+                                     wasm::TrapMachineInsn insn,
+                                     FaultingCodeRange fcr,
+                                     const wasm::TrapSiteDesc& desc) {
+#ifdef DEBUG
+  
+  
+  
+  if (!oom() && fcr.isValid()) {
+    InstructionBytesFromMasm insnSource(*this, fcr.offset());
+    wasm::SummarizeResult summary = SummarizeTrapInstruction(insnSource);
+    
+    MOZ_ASSERT(summary.identified());
+    
+    MOZ_ASSERT(summary.kind() == insn);
+    MOZ_ASSERT(summary.length() == fcr.length());
+  }
+#endif
+
+  appendNoVerify(trap, insn, fcr, desc);
+}
+
+void MacroAssembler::appendAndVerify(const wasm::MemoryAccessDesc& access,
+                                     wasm::TrapMachineInsn insn,
+                                     FaultingCodeRange fcr) {
+  appendAndVerify(wasm::Trap::OutOfBounds, insn, fcr, access.trapDesc());
+}
+
 void MacroAssembler::wasmTrap(wasm::Trap trap,
                               const wasm::TrapSiteDesc& trapSiteDesc) {
-  FaultingCodeOffset fco = wasmTrapInstruction();
+  FaultingCodeRange fcr = wasmTrapInstruction();
   MOZ_ASSERT_IF(!oom(),
-                currentOffset() - fco.get() == WasmTrapInstructionLength);
+                currentOffset() - fcr.get() == WasmTrapInstructionLength);
 
-  append(trap, wasm::TrapMachineInsn::OfficialUD, fco.get(), trapSiteDesc);
+  appendAndVerify(trap, wasm::TrapMachineInsn::OfficialUD, fcr, trapSiteDesc);
 }
 
 uint32_t MacroAssembler::wasmReserveStackChecked(uint32_t amount, Label* fail) {
@@ -6958,10 +7050,11 @@ void MacroAssembler::wasmCallRef(const wasm::CallSiteDesc& desc,
   size_t instanceSlotOffset = FunctionExtended::offsetOfExtendedSlot(
       FunctionExtended::WASM_INSTANCE_SLOT);
   static_assert(FunctionExtended::WASM_INSTANCE_SLOT < wasm::NullPtrGuardSize);
-  FaultingCodeOffset fco =
+  FaultingCodeRange fcr =
       loadPtr(Address(calleeFnObj, instanceSlotOffset), newInstanceTemp);
-  append(wasm::Trap::NullPointerDereference, wasm::TrapMachineInsnForLoadWord(),
-         fco.get(), desc.toTrapSiteDesc());
+  appendAndVerify(wasm::Trap::NullPointerDereference,
+                  wasm::TrapMachineInsnForLoadWord(), fcr,
+                  desc.toTrapSiteDesc());
   branchPtr(Assembler::Equal, InstanceReg, newInstanceTemp, &fastCall);
 
   storePtr(InstanceReg,
@@ -7023,10 +7116,11 @@ void MacroAssembler::wasmReturnCallRef(
   size_t instanceSlotOffset = FunctionExtended::offsetOfExtendedSlot(
       FunctionExtended::WASM_INSTANCE_SLOT);
   static_assert(FunctionExtended::WASM_INSTANCE_SLOT < wasm::NullPtrGuardSize);
-  FaultingCodeOffset fco =
+  FaultingCodeRange fcr =
       loadPtr(Address(calleeFnObj, instanceSlotOffset), newInstanceTemp);
-  append(wasm::Trap::NullPointerDereference, wasm::TrapMachineInsnForLoadWord(),
-         fco.get(), desc.toTrapSiteDesc());
+  appendAndVerify(wasm::Trap::NullPointerDereference,
+                  wasm::TrapMachineInsnForLoadWord(), fcr,
+                  desc.toTrapSiteDesc());
   branchPtr(Assembler::Equal, InstanceReg, newInstanceTemp, &fastCall);
 
   storePtr(InstanceReg,
@@ -7124,11 +7218,11 @@ BranchWasmRefIsSubtypeRegisters MacroAssembler::regsForBranchWasmRefIsSubtype(
   }
 }
 
-FaultingCodeOffset MacroAssembler::branchWasmRefIsSubtype(
+FaultingCodeRange MacroAssembler::branchWasmRefIsSubtype(
     Register ref, wasm::MaybeRefType sourceType, wasm::RefType destType,
     Label* label, bool onSuccess, bool signalNullChecks, Register superSTV,
     Register scratch1, Register scratch2) {
-  FaultingCodeOffset result = FaultingCodeOffset();
+  FaultingCodeRange result = FaultingCodeRange();
   switch (destType.hierarchy()) {
     case wasm::RefTypeHierarchy::Any: {
       result = branchWasmRefIsSubtypeAny(
@@ -7156,7 +7250,7 @@ FaultingCodeOffset MacroAssembler::branchWasmRefIsSubtype(
   return result;
 }
 
-FaultingCodeOffset MacroAssembler::branchWasmRefIsSubtypeAny(
+FaultingCodeRange MacroAssembler::branchWasmRefIsSubtypeAny(
     Register ref, wasm::RefType sourceType, wasm::RefType destType,
     Label* label, bool onSuccess, bool signalNullChecks, Register superSTV,
     Register scratch1, Register scratch2) {
@@ -7208,13 +7302,13 @@ FaultingCodeOffset MacroAssembler::branchWasmRefIsSubtypeAny(
   bool canOmitNullCheck = signalNullChecks && !destType.isNullable() &&
                           (willLoadShape || willLoadSTV);
 
-  FaultingCodeOffset fco = FaultingCodeOffset();
-  auto trackFCO = [&](FaultingCodeOffset newFco) {
-    if (signalNullChecks && !destType.isNullable() && !fco.isValid()) {
-      fco = newFco;
+  FaultingCodeRange fcr = FaultingCodeRange();
+  auto trackFCR = [&](FaultingCodeRange newFcr) {
+    if (signalNullChecks && !destType.isNullable() && !fcr.isValid()) {
+      fcr = newFcr;
     }
   };
-  auto fcoLogicCheck = mozilla::DebugOnly(mozilla::MakeScopeExit([&]() {
+  auto fcrLogicCheck = mozilla::DebugOnly(mozilla::MakeScopeExit([&]() {
     
     
     
@@ -7223,12 +7317,12 @@ FaultingCodeOffset MacroAssembler::branchWasmRefIsSubtypeAny(
     
     
     
-    MOZ_ASSERT_IF(signalNullChecks && fco.isValid(), canOmitNullCheck);
-    MOZ_ASSERT_IF(signalNullChecks && !fco.isValid(), !canOmitNullCheck);
+    MOZ_ASSERT_IF(signalNullChecks && fcr.isValid(), canOmitNullCheck);
+    MOZ_ASSERT_IF(signalNullChecks && !fcr.isValid(), !canOmitNullCheck);
 
     
     
-    MOZ_ASSERT_IF(!signalNullChecks, !fco.isValid());
+    MOZ_ASSERT_IF(!signalNullChecks, !fcr.isValid());
   }));
 
   
@@ -7244,14 +7338,14 @@ FaultingCodeOffset MacroAssembler::branchWasmRefIsSubtypeAny(
   if (destType.isNone()) {
     finishFail();
     MOZ_ASSERT(!willLoadShape && !willLoadSTV);
-    return fco;
+    return fcr;
   }
 
   if (destType.isAny()) {
     
     finishSuccess();
     MOZ_ASSERT(!willLoadShape && !willLoadSTV);
-    return fco;
+    return fcr;
   }
 
   
@@ -7266,7 +7360,7 @@ FaultingCodeOffset MacroAssembler::branchWasmRefIsSubtypeAny(
       
       finishFail();
       MOZ_ASSERT(!willLoadShape && !willLoadSTV);
-      return fco;
+      return fcr;
     }
   }
 
@@ -7277,7 +7371,7 @@ FaultingCodeOffset MacroAssembler::branchWasmRefIsSubtypeAny(
     branchWasmAnyRefIsObjectOrNull(false, ref, failLabel);
 
     MOZ_ASSERT(willLoadShape);
-    trackFCO(branchObjectIsWasmGcObject(false, ref, scratch1, failLabel));
+    trackFCR(branchObjectIsWasmGcObject(false, ref, scratch1, failLabel));
   } else {
     MOZ_ASSERT(!willLoadShape);
   }
@@ -7286,7 +7380,7 @@ FaultingCodeOffset MacroAssembler::branchWasmRefIsSubtypeAny(
     
     finishSuccess();
     MOZ_ASSERT(!willLoadSTV);
-    return fco;
+    return fcr;
   }
 
   
@@ -7298,7 +7392,7 @@ FaultingCodeOffset MacroAssembler::branchWasmRefIsSubtypeAny(
   
 
   MOZ_ASSERT(willLoadSTV);
-  trackFCO(
+  trackFCR(
       loadPtr(Address(ref, int32_t(WasmGcObject::offsetOfSuperTypeVector())),
               scratch1));
   if (destType.isTypeRef()) {
@@ -7306,7 +7400,7 @@ FaultingCodeOffset MacroAssembler::branchWasmRefIsSubtypeAny(
     branchWasmSTVIsSubtype(scratch1, superSTV, scratch2, destType.typeDef(),
                            label, onSuccess);
     bind(&fallthrough);
-    return fco;
+    return fcr;
   }
 
   
@@ -7318,7 +7412,7 @@ FaultingCodeOffset MacroAssembler::branchWasmRefIsSubtypeAny(
   branch32(onSuccess ? Assembler::Equal : Assembler::NotEqual, scratch1,
            Imm32(int32_t(destType.typeDefKind())), label);
   bind(&fallthrough);
-  return fco;
+  return fcr;
 }
 
 void MacroAssembler::branchWasmRefIsSubtypeFunc(
@@ -7749,22 +7843,22 @@ void MacroAssembler::convertStringToWasmAnyRef(Register src, Register dest) {
   orPtr(Imm32(int32_t(wasm::AnyRefTag::String)), src, dest);
 }
 
-FaultingCodeOffset MacroAssembler::branchObjectIsWasmGcObject(bool isGcObject,
-                                                              Register src,
-                                                              Register scratch,
-                                                              Label* label) {
+FaultingCodeRange MacroAssembler::branchObjectIsWasmGcObject(bool isGcObject,
+                                                             Register src,
+                                                             Register scratch,
+                                                             Label* label) {
   constexpr uint32_t ShiftedMask = (Shape::kindMask() << Shape::kindShift());
   constexpr uint32_t ShiftedKind =
       (uint32_t(Shape::Kind::WasmGC) << Shape::kindShift());
   MOZ_ASSERT(src != scratch);
 
-  FaultingCodeOffset fco =
+  FaultingCodeRange fcr =
       loadPtr(Address(src, JSObject::offsetOfShape()), scratch);
   load32(Address(scratch, Shape::offsetOfImmutableFlags()), scratch);
   and32(Imm32(ShiftedMask), scratch);
   branch32(isGcObject ? Assembler::Equal : Assembler::NotEqual, scratch,
            Imm32(ShiftedKind), label);
-  return fco;
+  return fcr;
 }
 
 void MacroAssembler::wasmNewStructObject(Register instance, Register result,
@@ -8359,7 +8453,7 @@ void MacroAssembler::emitPreBarrierFastPath(MIRType type, Register temp1,
   branchTestPtr(Assembler::NonZero, temp2, temp1, noBarrier);
 }
 
-void MacroAssembler::emitWeapMapBarrierFastPath(ValueOperand value,
+void MacroAssembler::emitWeakMapBarrierFastPath(ValueOperand value,
                                                 Register cell, Register temp1,
                                                 Register temp2, Register temp3,
                                                 Register temp4,
@@ -8509,11 +8603,11 @@ void MacroAssembler::loadWasmPinnedRegsFromInstance(
 #ifdef WASM_HAS_HEAPREG
   static_assert(wasm::Instance::offsetOfMemory0Base() < 4096,
                 "We count only on the low page being inaccessible");
-  FaultingCodeOffset fco = loadPtr(
+  FaultingCodeRange fcr = loadPtr(
       Address(InstanceReg, wasm::Instance::offsetOfMemory0Base()), HeapReg);
   if (trapSiteDesc) {
-    append(wasm::Trap::IndirectCallToNull, wasm::TrapMachineInsnForLoadWord(),
-           fco.get(), *trapSiteDesc);
+    appendAndVerify(wasm::Trap::IndirectCallToNull,
+                    wasm::TrapMachineInsnForLoadWord(), fcr, *trapSiteDesc);
   }
 #else
   MOZ_ASSERT(!trapSiteDesc);
