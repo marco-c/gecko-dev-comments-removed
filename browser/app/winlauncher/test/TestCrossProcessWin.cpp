@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <thread>
 #include <winternl.h>
 
@@ -70,6 +68,7 @@ class SharedSectionTestHelper {
            (offsetof(SharedSection::Layout, mFirstBlockEntry) +
             sizeof(DllBlockInfo));
   }
+  static HANDLE GetSectionHandle() { return SharedSection::sSectionHandle; }
 };
 }  
 
@@ -524,6 +523,18 @@ class ChildProcess final {
     if (result.inspectErr() !=
         WindowsError::FromWin32Error(ERROR_ACCESS_DENIED)) {
       PrintLauncherError(result, "The readonly section was writable");
+      return 1;
+    }
+
+    
+    HANDLE writableHandle;
+    if (::DuplicateHandle(
+            nt::kCurrentProcess, SharedSectionTestHelper::GetSectionHandle(),
+            nt::kCurrentProcess, &writableHandle, GENERIC_WRITE, FALSE, 0)) {
+      ::CloseHandle(writableHandle);
+      printf(
+          "TEST-FAILED | TestCrossProcessWin | "
+          "The handle was writable.\n");
       return 1;
     }
 
