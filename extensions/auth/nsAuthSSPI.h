@@ -8,6 +8,7 @@
 #include "nsAuth.h"
 #include "nsIAuthModule.h"
 #include "nsString.h"
+#include "mozilla/UniquePtrExtensions.h"
 
 #include <windows.h>
 
@@ -41,6 +42,11 @@ class nsAuthSSPI final : public nsIAuthModule {
 
  private:
   nsresult MakeSN(const nsACString& principal, nsCString& result);
+
+  
+  
+  nsresult MakeChannelBindings(mozilla::UniqueFreePtr<char>& aBuffer,
+                               uint32_t& aBufferLength);
 
   CredHandle mCred;
   CtxtHandle mCtxt;
