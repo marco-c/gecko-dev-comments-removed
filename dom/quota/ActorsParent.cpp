@@ -2760,9 +2760,21 @@ void QuotaManager::InitQuotaForOrigin(
   
   
   
-  if (!cacheRowMatches && aFullOriginMetadata.mDirty &&
-      aFullOriginMetadata.mOriginUsage > 0 &&
-      !mUsageModificationDisabled.load()) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!cacheRowMatches &&
+      (aFullOriginMetadata.mDirty || !aCacheMap.IsActive()) &&
+      aFullOriginMetadata.mOriginUsage > 0) {
     originInfo->mMetadataDirty = true;
     auto* message = new UnboundedMPSCQueue<RefPtr<OriginInfo>>::Message();
     message->data = originInfo;
@@ -2989,10 +3001,17 @@ nsresult QuotaManager::LoadQuota() {
             "last_access_time, last_maintenance_date, metadata_flags "
             "FROM origin"_ns));
 
+    
+    
+    
+    
+    OriginCacheMap cacheMap;
+    cacheMap.Activate();
+
     QM_TRY(quota::CollectWhileHasResult(
         *stmt,
-        [this, &MaybeCollectUnaccessedOrigin,
-         &aDirtyOrigins](auto& stmt) -> Result<Ok, nsresult> {
+        [this, &MaybeCollectUnaccessedOrigin, &aDirtyOrigins,
+         &cacheMap](auto& stmt) -> Result<Ok, nsresult> {
           QM_TRY_INSPECT(const int32_t& repositoryId,
                          MOZ_TO_RESULT_INVOKE_MEMBER(stmt, GetInt32, 0));
 
@@ -3078,7 +3097,11 @@ nsresult QuotaManager::LoadQuota() {
             if (fullOriginMetadata.mAccessed) {
               AddTemporaryOrigin(fullOriginMetadata);
 
-              InitQuotaForOrigin(fullOriginMetadata);
+              cacheMap.InsertOrUpdate(fullOriginMetadata.mPersistenceType,
+                                      fullOriginMetadata.mOrigin,
+                                      fullOriginMetadata.Clone());
+              InitQuotaForOrigin(fullOriginMetadata,
+                                  true, cacheMap);
             }
           }
 
