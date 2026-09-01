@@ -299,6 +299,8 @@ public interface EglBase {
   
   void detachCurrent();
 
+  default void setDetachSurfaceOnRelease(boolean detach) {}
+
   void swapBuffers();
 
   void swapBuffers(long presentationTimeStampNs);

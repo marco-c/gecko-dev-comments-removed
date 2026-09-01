@@ -36,6 +36,7 @@ class EglBase10Impl implements EglBase10 {
 
   private EGLSurface eglSurface = EGL10.EGL_NO_SURFACE;
   private EglConnection eglConnection;
+  private boolean detachSurfaceOnRelease = false;
 
   
   private static class Context implements EglBase10.Context {
@@ -192,6 +193,11 @@ class EglBase10Impl implements EglBase10 {
   }
 
   @Override
+  public void setDetachSurfaceOnRelease(boolean detach) {
+    this.detachSurfaceOnRelease = detach;
+  }
+
+  @Override
   public void createSurface(Surface surface) {
     
     
@@ -280,7 +286,8 @@ class EglBase10Impl implements EglBase10 {
     int[] surfaceAttribs = {EGL10.EGL_NONE};
     eglSurface = egl.eglCreateWindowSurface(
         eglConnection.getDisplay(), eglConnection.getConfig(), nativeWindow, surfaceAttribs);
-    if (eglSurface == EGL10.EGL_NO_SURFACE) {
+    if (eglSurface == null || eglSurface == EGL10.EGL_NO_SURFACE) {
+      eglSurface = EGL10.EGL_NO_SURFACE;
       throw new GLException(egl.eglGetError(),
           "Failed to create window surface: 0x" + Integer.toHexString(egl.eglGetError()));
     }
@@ -302,7 +309,8 @@ class EglBase10Impl implements EglBase10 {
     int[] surfaceAttribs = {EGL10.EGL_WIDTH, width, EGL10.EGL_HEIGHT, height, EGL10.EGL_NONE};
     eglSurface = egl.eglCreatePbufferSurface(
         eglConnection.getDisplay(), eglConnection.getConfig(), surfaceAttribs);
-    if (eglSurface == EGL10.EGL_NO_SURFACE) {
+    if (eglSurface == null || eglSurface == EGL10.EGL_NO_SURFACE) {
+      eglSurface = EGL10.EGL_NO_SURFACE;
       throw new GLException(egl.eglGetError(),
           "Failed to create pixel buffer surface with size " + width + "x" + height + ": 0x"
               + Integer.toHexString(egl.eglGetError()));
@@ -339,6 +347,12 @@ class EglBase10Impl implements EglBase10 {
   @Override
   public void releaseSurface() {
     if (eglSurface != EGL10.EGL_NO_SURFACE) {
+      if (detachSurfaceOnRelease) {
+        EGL10 egl = eglConnection.getEgl();
+        if (eglSurface.equals(egl.eglGetCurrentSurface(EGL10.EGL_DRAW))) {
+          detachCurrent();
+        }
+      }
       eglConnection.getEgl().eglDestroySurface(eglConnection.getDisplay(), eglSurface);
       eglSurface = EGL10.EGL_NO_SURFACE;
     }
