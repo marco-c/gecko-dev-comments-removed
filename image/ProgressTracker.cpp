@@ -313,45 +313,47 @@ void SyncNotifyInternal(const T& aObservers, bool aHasImage, Progress aProgress,
   typedef imgINotificationObserver I;
   ImageObserverNotifier<T> notify(aObservers);
 
-  if (aProgress & FLAG_SIZE_AVAILABLE) {
-    notify([](IProgressObserver* aObs) { aObs->Notify(I::SIZE_AVAILABLE); });
-  }
+  
+  
+  
+  
+  
+  notify([&](IProgressObserver* aObs) {
+    if (aProgress & FLAG_SIZE_AVAILABLE) {
+      aObs->Notify(I::SIZE_AVAILABLE);
+    }
 
-  if (aHasImage) {
-    
-    
-    
-    
-    if (!aDirtyRect.IsEmpty()) {
-      notify([&](IProgressObserver* aObs) {
+    if (aHasImage) {
+      
+      
+      
+      
+      if (!aDirtyRect.IsEmpty()) {
         aObs->Notify(I::FRAME_UPDATE, &aDirtyRect);
-      });
+      }
+
+      if (aProgress & FLAG_FRAME_COMPLETE) {
+        aObs->Notify(I::FRAME_COMPLETE);
+      }
+
+      if (aProgress & FLAG_HAS_TRANSPARENCY) {
+        aObs->Notify(I::HAS_TRANSPARENCY);
+      }
+
+      if (aProgress & FLAG_IS_ANIMATED) {
+        aObs->Notify(I::IS_ANIMATED);
+      }
     }
 
-    if (aProgress & FLAG_FRAME_COMPLETE) {
-      notify([](IProgressObserver* aObs) { aObs->Notify(I::FRAME_COMPLETE); });
+    if (aProgress & FLAG_DECODE_COMPLETE) {
+      MOZ_ASSERT(aHasImage, "Stopped decoding without ever having an image?");
+      aObs->Notify(I::DECODE_COMPLETE);
     }
 
-    if (aProgress & FLAG_HAS_TRANSPARENCY) {
-      notify(
-          [](IProgressObserver* aObs) { aObs->Notify(I::HAS_TRANSPARENCY); });
-    }
-
-    if (aProgress & FLAG_IS_ANIMATED) {
-      notify([](IProgressObserver* aObs) { aObs->Notify(I::IS_ANIMATED); });
-    }
-  }
-
-  if (aProgress & FLAG_DECODE_COMPLETE) {
-    MOZ_ASSERT(aHasImage, "Stopped decoding without ever having an image?");
-    notify([](IProgressObserver* aObs) { aObs->Notify(I::DECODE_COMPLETE); });
-  }
-
-  if (aProgress & FLAG_LOAD_COMPLETE) {
-    notify([=](IProgressObserver* aObs) {
+    if (aProgress & FLAG_LOAD_COMPLETE) {
       aObs->OnLoadComplete(aProgress & FLAG_LAST_PART_COMPLETE);
-    });
-  }
+    }
+  });
 }
 
 void ProgressTracker::SyncNotifyProgress(Progress aProgress,
