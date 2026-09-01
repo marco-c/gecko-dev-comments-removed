@@ -17,6 +17,11 @@
 #include "nsTArray.h"
 #include "nsUnicharUtils.h"
 
+#ifdef MOZ_FONTATIONS
+#  include "mozilla/MemoryMappedFile.h"
+#  include "mozilla/gfx/fontations_glue_generated.h"
+#endif
+
 
 
 
@@ -36,6 +41,10 @@ class CTFontEntry final : public gfxFontEntry {
               bool aIsDataUserFont, bool aIsLocal);
 
   gfxFontEntry* Clone() const override;
+
+#if MOZ_FONTATIONS
+  void InitSkrifaFontFace() override;
+#endif
 
   
   
