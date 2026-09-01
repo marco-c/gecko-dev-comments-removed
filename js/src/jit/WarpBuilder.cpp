@@ -2821,7 +2821,6 @@ bool WarpBuilder::build_AfterYield(BytecodeLocation loc) {
   
   
   current->push(resumeFrameArg(ResumeFrameArgs::ResumeValueSlot));
-  current->push(genObj);
 #ifdef DEBUG
   current->add(MAssertResumeKindIsNext::New(alloc()));
 #endif

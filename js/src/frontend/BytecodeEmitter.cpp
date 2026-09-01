@@ -6647,20 +6647,12 @@ bool BytecodeEmitter::emitCheckYieldResumeKind() {
     
     return false;
   }
-  if (!emit1(JSOp::Pop)) {
-    
-    return false;
-  }
   if (!emit1(JSOp::Throw)) {
     
     return false;
   }
   bytecodeSection().setStackDepth(startDepth - 1);
   if (!ifThrow.emitEnd()) {
-    
-    return false;
-  }
-  if (!emit1(JSOp::Pop)) {
     
     return false;
   }
@@ -6680,7 +6672,7 @@ bool BytecodeEmitter::emitCheckYieldResumeKind() {
     
     return false;
   }
-  if (!emitPopN(2)) {
+  if (!emit1(JSOp::Pop)) {
     
     return false;
   }
@@ -6704,20 +6696,12 @@ bool BytecodeEmitter::emitCheckAwaitResumeKind() {
     
     return false;
   }
-  if (!emit1(JSOp::Pop)) {
-    
-    return false;
-  }
   if (!emit1(JSOp::Throw)) {
     
     return false;
   }
   bytecodeSection().setStackDepth(startDepth - 1);
   if (!ifThrow.emitEnd()) {
-    
-    return false;
-  }
-  if (!emit1(JSOp::Pop)) {
     
     return false;
   }
@@ -7316,14 +7300,6 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     return false;
   }
   if (!emitYieldOp(JSOp::Yield)) {
-    
-    return false;
-  }
-  if (!emit1(JSOp::Swap)) {
-    
-    return false;
-  }
-  if (!emit1(JSOp::Pop)) {
     
     return false;
   }

@@ -274,10 +274,9 @@ void AbstractGeneratorObject::resume(JSContext* cx,
   activation.regs().pc = script->offsetToPC(offset);
 
   
-  activation.regs().sp += 3;
+  activation.regs().sp += 2;
   MOZ_ASSERT(activation.regs().spForStackDepth(activation.regs().stackDepth()));
-  activation.regs().sp[-3] = arg;
-  activation.regs().sp[-2] = ObjectValue(*genObj);
+  activation.regs().sp[-2] = arg;
   activation.regs().sp[-1] = Int32Value(int32_t(resumeKind));
 }
 

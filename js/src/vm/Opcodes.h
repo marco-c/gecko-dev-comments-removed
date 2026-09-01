@@ -1992,7 +1992,7 @@
 
 
  \
-    MACRO(InitialYield, initial_yield, NULL, 4, 1, 3, JOF_RESUMEINDEX) \
+    MACRO(InitialYield, initial_yield, NULL, 4, 1, 2, JOF_RESUMEINDEX) \
     
 
 
@@ -2056,7 +2056,7 @@
 
 
  \
-    MACRO(Yield, yield, NULL, 4, 2, 3, JOF_RESUMEINDEX) \
+    MACRO(Yield, yield, NULL, 4, 2, 2, JOF_RESUMEINDEX) \
     
 
 
@@ -2178,7 +2178,7 @@
 
 
  \
-    MACRO(Await, await, NULL, 4, 2, 3, JOF_RESUMEINDEX) \
+    MACRO(Await, await, NULL, 4, 2, 2, JOF_RESUMEINDEX) \
     
 
 

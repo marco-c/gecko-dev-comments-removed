@@ -6309,7 +6309,7 @@ bool BaselineCodeGen<Handler>::emitSuspend(JSOp op) {
 
   
   
-  frame.incStackDepth(2);
+  frame.incStackDepth(1);
   return true;
 }
 
@@ -6541,7 +6541,6 @@ bool BaselineCodeGen<Handler>::emitGeneratorResumePrologueBody() {
   
   
   masm.pushValue(argValue);
-  masm.pushValue(argGen);
   masm.pushValue(argResumeKind);
 
   
