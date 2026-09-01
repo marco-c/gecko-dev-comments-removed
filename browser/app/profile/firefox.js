@@ -2386,6 +2386,10 @@ pref("browser.smartwindow.searchQuery.endpointURL", "https://mlpa-prod-prod-mozi
 pref("browser.smartwindow.searchQuery.apiKey", "");
 
 
+
+pref("browser.smartwindow.searchTheWebFast", false);
+
+
 pref("browser.smartwindow.chatHistory.loglevel", "Error");
 pref("browser.smartwindow.chatStore.loglevel", "Error");
 pref("browser.smartwindow.conversation.logLevel", "Error");
