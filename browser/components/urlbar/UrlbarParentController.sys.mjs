@@ -34,6 +34,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
   UrlbarProviderSemanticHistorySearch:
     "moz-src:///browser/components/urlbar/UrlbarProviderSemanticHistorySearch.sys.mjs",
+  UrlbarProviderTopSites:
+    "moz-src:///browser/components/urlbar/UrlbarProviderTopSites.sys.mjs",
   UrlbarQueryContext: "chrome://browser/content/urlbar/UrlbarQueryContext.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarTelemetryUtils:
@@ -89,6 +91,16 @@ function engineToEngineInfo(engine) {
  */
 export class UrlbarParentController {
   /**
+   * Resolves with the most recent handleAutofillReintegration() call's work,
+   * including its Glean recording. The input fires re-integration without
+   * awaiting it, so tests await this to sequence on the cleared block and the
+   * recorded telemetry.
+   *
+   * @type {Promise<void>}
+   */
+  static _lastAutofillReintegrationPromise = Promise.resolve();
+
+  /**
    * The paired UrlbarChildController, which registers itself via setChild().
    * Listener registration and notification dispatch live on it, keeping
    * dispatch on the side where the listeners (the view, the event bufferer)
@@ -141,6 +153,7 @@ export class UrlbarParentController {
       manager || lazy.ProvidersManager.getInstanceForSap(this.sapName);
 
     this.engagementEvent = new TelemetryEvent(this);
+    lazy.UrlbarProviderTopSites.addTopSitesListener(this.#topSitesListener);
   }
 
   /**
@@ -490,6 +503,79 @@ export class UrlbarParentController {
   }
 
   /**
+   * Records that the user deleted a whole autofilled value.
+   */
+  recordAutofillDeletion() {
+    Glean.urlbar.autofillDeletion.add(1);
+  }
+
+  /**
+   * Dismisses an autofilled URL on the user's behalf, blocking the autofill
+   * pairing or removing the URL from history. Async so callers can await the
+   * write before re-running their query on either transport.
+   *
+   * @param {string} url
+   *   The dismissed autofill result's URL.
+   * @param {"dismiss" | "forget"} action
+   *   "dismiss" blocks the autofill pairing for a period of time.
+   *   "forget" removes the URL from history entirely.
+   */
+  async dismissAutofill(url, action) {
+    if (action != "dismiss" && action != "forget") {
+      throw new Error(`Unknown autofill dismissal action: ${action}`);
+    }
+
+    Glean.urlbarAutofill.inputContextMenuDismissal[action].add(1);
+
+    await lazy.UrlbarUtils.dismissAutofill(url, {
+      removeFromHistory: action == "forget",
+    });
+  }
+
+  /**
+   * Clears the backspace bookkeeping for an autofilled URL the user accepted.
+   * The bookkeeping is parent state, so the input hands the URL over here.
+   *
+   * @param {string} url
+   *   The accepted autofill result's URL.
+   */
+  clearAutofillBackspaceEntryForUrl(url) {
+    lazy.UrlbarUtils.clearAutofillBackspaceEntryForUrl(url);
+  }
+
+  /**
+   * Re-integrates an autofill URL the user navigated to anyway: clears its
+   * autofill block and records how long the block had been in place. Both the
+   * block state and Glean are parent-side, so the input only decides when a
+   * navigation counts as a re-integration and hands the URL over here.
+   *
+   * @param {string} url
+   *   The URL being re-integrated.
+   */
+  handleAutofillReintegration(url) {
+    UrlbarParentController._lastAutofillReintegrationPromise =
+      this.#doHandleAutofillReintegration(url).catch(console.error);
+  }
+
+  async #doHandleAutofillReintegration(url) {
+    let { wasBlocked, level, backspaceBlock } =
+      await lazy.UrlbarUtils.reintegrateAutofill(url);
+    if (!wasBlocked) {
+      return;
+    }
+
+    Glean.urlbarAutofill.reintegration[level].add(1);
+
+    // For backspace-induced blocks, record the unblock delay: fast unblocks
+    // suggest the original block was accidental.
+    if (backspaceBlock?.level === level) {
+      Glean.urlbarAutofill.reintegrationAfterBackspace[
+        level
+      ].accumulateSingleSample(Date.now() - backspaceBlock.blockedAt);
+    }
+  }
+
+  /**
    * Records a visit to an engine's search form. The parent-side counterpart to
    * the content-side `BrowserSearchTelemetry.recordSearchForm()` call; the
    * engine is shipped by id and resolved here, and the source is this
@@ -505,12 +591,14 @@ export class UrlbarParentController {
 
   /**
    * Records that a search is being loaded: bumps the search-count prefs,
-   * informs ASRouter, and records search telemetry. The parent-side
-   * counterpart to the content-side `_recordSearch()`.
+   * informs ASRouter, records search telemetry and adds the search query
+   * to form history. The parent-side counterpart to the content-side
+   * `_recordSearch()`.
    *
    * @param {object} options
    * @param {string} options.engineId
    *   The id of the engine handling the search.
+   * @param {string} options.query
    * @param {string} options.searchSource
    *   Where the search originated from.
    * @param {object} options.details
@@ -518,8 +606,19 @@ export class UrlbarParentController {
    * @param {number} [options.browserId]
    *   The id of the browser where the search is being opened; defaults to the
    *   selected browser.
+   * @param {boolean} [options.opensInPrivateWindow]
+   *   Whether the search opens in a new private window, in which case it's
+   *   not added to form history. If this is false but the current window
+   *   is private, it's not added either.
    */
-  recordSearch({ engineId, searchSource, details, browserId }) {
+  recordSearch({
+    engineId,
+    query,
+    searchSource,
+    details,
+    browserId,
+    opensInPrivateWindow,
+  }) {
     let browser =
       this.resolveTargetBrowser(browserId) ||
       this.browserWindow.gBrowser.selectedBrowser;
@@ -562,6 +661,15 @@ export class UrlbarParentController {
       searchSource,
       details
     );
+
+    let engine = lazy.SearchService.getEngineById(engineId);
+    if (engine) {
+      lazy.UrlbarUtils.addToFormHistory(
+        this.isPrivate || opensInPrivateWindow,
+        query,
+        engine.name
+      ).catch(console.error);
+    }
   }
 
   /**
@@ -654,18 +762,11 @@ export class UrlbarParentController {
       queryContext.sixthTimerId = 0;
     }
 
-    // When the input is in-process (direct path), let it react to the first
-    // result and bail before notifying if it took over (e.g. entered search
-    // mode and restarted the query). On the message path the input lives across
-    // the boundary, so it runs `onFirstResult` content-side when it receives the
-    // results instead. On the message path `this.input` is a forwarding
-    // stand-in without `onFirstResult`, so the capability check also
-    // distinguishes the paths.
-    if (queryContext.firstResultChanged && this.input?.onFirstResult) {
-      if (this.input.onFirstResult(queryContext.results[0])) {
-        // The input canceled the query and started a new one.
-        return;
-      }
+    if (queryContext.firstResultChanged) {
+      this.notify(
+        lazy.UrlbarShared.NOTIFICATIONS.QUERY_FIRST_RESULT,
+        queryContext
+      );
     }
 
     this.notify(lazy.UrlbarShared.NOTIFICATIONS.QUERY_RESULTS, queryContext);
@@ -694,8 +795,18 @@ export class UrlbarParentController {
    * @param {string} searchTerms
    * @param {string} where
    * @param {boolean} [inBackground]
+   * @param {number} [browserId]
+   *   The target browser's id. Only used if `where == current` and the call
+   *   isn't coming from a content process. If it's not specified and
+   *   `where == current`, the currently selected tab is used.
    */
-  openSERP(engineId, searchTerms, where, inBackground = false) {
+  openSERP(
+    engineId,
+    searchTerms,
+    where,
+    inBackground = false,
+    browserId = null
+  ) {
     let searchEngine = lazy.SearchService.getEngineById(engineId);
 
     let [url, postData] = lazy.UrlbarUtils.getSearchQueryUrl(
@@ -706,6 +817,8 @@ export class UrlbarParentController {
     this.browserWindow.openTrustedLinkIn(url, where, {
       inBackground,
       postData,
+      targetBrowser:
+        where == "current" ? this.resolveTargetBrowser(browserId) : null,
       globalHistoryOptions: {
         triggeringSource: this.sapName,
         triggeringSearchEngine: searchEngine.name,
@@ -720,18 +833,26 @@ export class UrlbarParentController {
    * @param {string} engineId
    * @param {string} where
    * @param {boolean} [inBackground]
+   * @param {number} [browserId]
+   *   The target browser's id. Only used if `where == current` and the call
+   *   isn't coming from a content process. If it's not specified and
+   *   `where == current`, the currently selected tab is used.
    */
-  openSearchForm(engineId, where, inBackground = false) {
+  openSearchForm(engineId, where, inBackground = false, browserId = null) {
     let searchEngine = lazy.SearchService.getEngineById(engineId);
     lazy.BrowserSearchTelemetry.recordSearchForm(searchEngine, this.sapName);
     let url = searchEngine.searchForm;
     this.browserWindow.openTrustedLinkIn(url, where, {
       inBackground,
+      targetBrowser:
+        where == "current" ? this.resolveTargetBrowser(browserId) : null,
     });
   }
 
   /**
-   * Returns the icon URL of the engine with the given id.
+   * Returns the icon URL of the engine with the given id. This can be a blob
+   * URL, which only resolves in this process, so UrlbarParent serializes it
+   * before handing it to another process.
    *
    * @param {string} engineId
    * @returns {Promise<?string>}
@@ -1186,6 +1307,10 @@ export class UrlbarParentController {
     Services.obs.addObserver(this, "browser-search-engine-modified", true);
     this.#engineObserverRegistered = true;
   }
+
+  #topSitesListener = () => {
+    this.view.clearTopSitesCache();
+  };
 
   QueryInterface = ChromeUtils.generateQI([
     "nsIObserver",
@@ -1659,6 +1784,34 @@ export class TelemetryEvent {
     }
     lazy.logger.info(`${metric} event:`, eventInfo);
     Glean.urlbar[metric].record(eventInfo);
+
+    if (metric === "engagement" && eventInfo.search_mode) {
+      this.#maybeRecordSearchModeUrlLikeQuery();
+    }
+  }
+
+  /**
+   * Records the `urlbar.searchmode.url_like_query` rate for a search-mode
+   * engagement. The denominator counts engagements whose heuristic result is a
+   * search result -- the only case where changing the behavior to navigate
+   * instead of search could take effect -- and the numerator counts those whose
+   * typed string parses as a URL per URIFixup. Local search modes have no search
+   * heuristic result and are therefore excluded.
+   */
+  #maybeRecordSearchModeUrlLikeQuery() {
+    let { queryContext } = this._controller._lastQueryContextWrapper || {};
+    let heuristicResult = queryContext?.heuristicResult;
+    if (
+      !heuristicResult?.heuristic ||
+      heuristicResult.type !== lazy.UrlbarShared.RESULT_TYPE.SEARCH
+    ) {
+      return;
+    }
+    Glean.urlbarSearchmode.urlLikeQuery.addToDenominator(1);
+    let { fixupInfo } = queryContext;
+    if (fixupInfo?.href && !fixupInfo.isSearch) {
+      Glean.urlbarSearchmode.urlLikeQuery.addToNumerator(1);
+    }
   }
 
   /**

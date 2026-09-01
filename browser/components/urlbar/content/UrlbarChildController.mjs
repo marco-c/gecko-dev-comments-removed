@@ -73,6 +73,10 @@ export class UrlbarChildController {
 
   #userSelectionBehavior = /** @type {"arrow"|"tab"|"none"} */ ("none");
 
+  // The id of the query whose results still have a consumer. Notifications
+  // carrying an older id belong to a query nobody is waiting for anymore.
+  #queryId = 0;
+
   // The content-side engagement-telemetry collector, created lazily on the
   // message path (where the parent stand-in has no `engagementEvent`).
   #childTelemetry = null;
@@ -213,10 +217,15 @@ export class UrlbarChildController {
     this.#listeners.delete(listener);
   }
   notify(notification, ...params) {
+    if (
+      (notification === UrlbarShared.NOTIFICATIONS.QUERY_FIRST_RESULT ||
+        notification === UrlbarShared.NOTIFICATIONS.QUERY_RESULTS) &&
+      params[0].id < this.#queryId
+    ) {
+      return;
+    }
     // When the first results arrive, pre-warm a connection to the heuristic
-    // result. This runs content-side on both transports (the input has already
-    // reacted to the first result before we're notified) and reaches the
-    // parent's window the same way a mousedown speculative connect does.
+    // result.
     if (
       notification === UrlbarShared.NOTIFICATIONS.QUERY_RESULTS &&
       params[0].firstResultChanged
@@ -249,6 +258,18 @@ export class UrlbarChildController {
   recordAutofillBackspace(url) {
     return this.#parentController.recordAutofillBackspace(url);
   }
+  clearAutofillBackspaceEntryForUrl(url) {
+    return this.#parentController.clearAutofillBackspaceEntryForUrl(url);
+  }
+  dismissAutofill(url, action) {
+    return this.#parentController.dismissAutofill(url, action);
+  }
+  recordAutofillDeletion() {
+    return this.#parentController.recordAutofillDeletion();
+  }
+  handleAutofillReintegration(url) {
+    return this.#parentController.handleAutofillReintegration(url);
+  }
   recordSearchMode(searchMode) {
     return this.#parentController.recordSearchMode(searchMode);
   }
@@ -273,6 +294,7 @@ export class UrlbarChildController {
    * @returns {Promise<UrlbarQueryContext>} Resolves with the finished context.
    */
   startQuery(queryContext) {
+    this.#queryId = queryContext.id;
     let queryContextPromise = this.#parentController.startQuery(queryContext);
     // Arm the event bufferer as the query starts so a just-typed Enter is
     // deferred until results arrive; it can't wait for the QUERY_STARTED
@@ -284,6 +306,16 @@ export class UrlbarChildController {
   }
   cancelQuery() {
     return this.#parentController.cancelQuery();
+  }
+  /**
+   * Keeps the running query's results from reaching the listeners. The input
+   * calls this when it takes the query over after the first result -- entering
+   * search mode and restarting it -- since the results are about to be
+   * replaced. The query keeps running until the restart cancels it, which over
+   * the message path takes a round trip.
+   */
+  discardResults() {
+    this.#queryId++;
   }
   receiveResults(queryContext) {
     return this.#parentController.receiveResults(queryContext);
@@ -745,6 +777,32 @@ export class UrlbarChildController {
   }
 
   /**
+   * Gets the SUMO URL for a support topic. Runs through the actor since the
+   * content-web input can't reach `Services.urlFormatter` (see
+   * `UrlbarChild.getSupportUrl`).
+   *
+   * @param {string} topic
+   *   The support page slug to append to the SUMO base URL.
+   * @returns {string}
+   */
+  getSupportUrl(topic) {
+    return this.#actor.getSupportUrl(topic);
+  }
+
+  /**
+   * Whether a string reads right-to-left. Runs through the actor since the
+   * content-web input can't reach the chrome-only `windowUtils` (see
+   * `UrlbarChild.isTextDirectionRTL`).
+   *
+   * @param {string} value
+   *   The text to check.
+   * @returns {boolean}
+   */
+  isTextDirectionRTL(value) {
+    return this.#actor.isTextDirectionRTL(value, window);
+  }
+
+  /**
    * Determines where a URL/page picked in `<moz-urlbar>` should be opened. Only
    * the `BrowserUtils.whereToOpenLink` call is routed through the actor (a system
    * module the content-web scope can't import); everything else, including the
@@ -795,6 +853,21 @@ export class UrlbarChildController {
       where = "current";
     }
     return where;
+  }
+
+  /**
+   * Whether a pick opened with the given `where` will load in the background.
+   * Runs through the actor since the content-web input can't import
+   * `BrowserUtils` (see `UrlbarChild.willLoadInBackground`).
+   *
+   * @param {string} where
+   *   Where the pick will open, as returned by `whereToOpen`.
+   * @param {object} params
+   *   The params that will be passed to `openLinkIn`.
+   * @returns {boolean}
+   */
+  willLoadInBackground(where, params) {
+    return this.#actor.willLoadInBackground(where, params);
   }
 
   focusOnUnifiedSearchButton() {
@@ -850,13 +923,24 @@ export class UrlbarChildController {
   }
 
   /** @type {typeof UrlbarParentController.prototype.openSERP} */
-  openSERP(engineId, searchTerms, where, inBackground) {
-    this.#parentController.openSERP(engineId, searchTerms, where, inBackground);
+  openSERP(engineId, searchTerms, where, inBackground, browserId) {
+    this.#parentController.openSERP(
+      engineId,
+      searchTerms,
+      where,
+      inBackground,
+      browserId
+    );
   }
 
   /** @type {typeof UrlbarParentController.prototype.openSearchForm} */
-  openSearchForm(engineId, where, inBackground) {
-    this.#parentController.openSearchForm(engineId, where, inBackground);
+  openSearchForm(engineId, where, inBackground, browserId) {
+    this.#parentController.openSearchForm(
+      engineId,
+      where,
+      inBackground,
+      browserId
+    );
   }
 
   /** @type {typeof UrlbarParentController.prototype.getEngineIconURL} */
