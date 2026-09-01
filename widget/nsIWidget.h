@@ -1812,14 +1812,14 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
-  virtual bool StartAsyncAutoscroll(const ScreenPoint& aAnchorLocation,
-                                    const ScrollableLayerGuid& aGuid);
+  bool StartAsyncAutoscroll(const ScreenPoint& aAnchorLocation,
+                            const ScrollableLayerGuid& aGuid);
 
   
 
 
 
-  virtual void StopAsyncAutoscroll(const ScrollableLayerGuid& aGuid);
+  void StopAsyncAutoscroll(const ScrollableLayerGuid& aGuid);
 
   virtual LayersId GetRootLayerTreeId();
 
