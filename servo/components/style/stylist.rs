@@ -2567,7 +2567,6 @@ struct StylistSelectorVisitor<'a> {
     in_selector_list_of: SelectorListKind,
 
     
-    
     mapped_ids: &'a mut PrecomputedHashSet<Atom>,
 
     
@@ -2602,19 +2601,8 @@ struct StylistSelectorVisitor<'a> {
     document_state_dependencies: &'a mut DocumentState,
 }
 
-fn component_needs_revalidation(
-    c: &Component<SelectorImpl>,
-    passed_rightmost_selector: bool,
-) -> bool {
+fn component_needs_revalidation(c: &Component<SelectorImpl>) -> bool {
     match *c {
-        Component::ID(_) => {
-            
-            
-            
-            
-            
-            passed_rightmost_selector
-        },
         Component::AttributeInNoNamespaceExists { .. }
         | Component::AttributeInNoNamespace { .. }
         | Component::AttributeOther(_)
@@ -2636,7 +2624,7 @@ impl<'a> StylistSelectorVisitor<'a> {
         let old_passed_rightmost_selector = self.passed_rightmost_selector;
         let old_in_selector_list_of = self.in_selector_list_of;
 
-        self.passed_rightmost_selector = false;
+        
         self.in_selector_list_of = in_selector_list_of;
         let _ret = selector.visit(self);
         debug_assert!(_ret, "We never return false");
@@ -2708,8 +2696,7 @@ impl<'a> SelectorVisitor for StylistSelectorVisitor<'a> {
     }
 
     fn visit_simple_selector(&mut self, s: &Component<SelectorImpl>) -> bool {
-        *self.needs_revalidation = *self.needs_revalidation
-            || component_needs_revalidation(s, self.passed_rightmost_selector);
+        *self.needs_revalidation = *self.needs_revalidation || component_needs_revalidation(s);
 
         match *s {
             Component::NonTSPseudoClass(NonTSPseudoClass::CustomState(ref name)) => {
@@ -2732,21 +2719,7 @@ impl<'a> SelectorVisitor for StylistSelectorVisitor<'a> {
                 }
             },
             Component::ID(ref id) => {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                if !self.passed_rightmost_selector {
-                    self.mapped_ids.insert(id.0.clone());
-                }
-
+                self.mapped_ids.insert(id.0.clone());
                 if self.in_selector_list_of.relevant_to_nth_of_dependencies() {
                     self.nth_of_mapped_ids.insert(id.0.clone());
                 }
@@ -3937,8 +3910,8 @@ impl CascadeData {
                 )?;
                 let mut needs_revalidation = false;
                 let mut visitor = StylistSelectorVisitor {
-                    needs_revalidation: &mut needs_revalidation,
                     passed_rightmost_selector: false,
+                    needs_revalidation: &mut needs_revalidation,
                     in_selector_list_of: SelectorListKind::default(),
                     mapped_ids: &mut self.mapped_ids,
                     nth_of_mapped_ids: &mut self.nth_of_mapped_ids,
@@ -4475,8 +4448,8 @@ impl CascadeData {
                 if let Some(cond) = cur_scope.condition.as_ref() {
                     let mut _unused = false;
                     let visitor = StylistSelectorVisitor {
-                        needs_revalidation: &mut _unused,
                         passed_rightmost_selector: true,
+                        needs_revalidation: &mut _unused,
                         in_selector_list_of: SelectorListKind::default(),
                         mapped_ids: &mut self.mapped_ids,
                         nth_of_mapped_ids: &mut self.nth_of_mapped_ids,
