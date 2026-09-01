@@ -252,7 +252,13 @@ TMimeType<char_type>::SplitMimetype(const nsTSubstring<char_type>& aMimeType) {
   for (size_t i = 0; i < aMimeType.Length(); i++) {
     char_type c = aMimeType[i];
 
-    if (c == '\"' && (i == 0 || aMimeType[i - 1] != '\\')) {
+    
+    
+    
+    
+    if (inQuotes && c == '\\') {
+      ++i;
+    } else if (c == '"') {
       inQuotes = !inQuotes;
     } else if (c == ',' && !inQuotes) {
       mimeTypeParts.AppendElement(Substring(aMimeType, start, i - start));
