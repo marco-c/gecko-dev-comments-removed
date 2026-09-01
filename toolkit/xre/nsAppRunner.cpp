@@ -2423,10 +2423,10 @@ class ShowProfileSelectorObserver final : public nsIObserver {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
-  ShowProfileSelectorObserver() {}
+  ShowProfileSelectorObserver() = default;
 
  protected:
-  ~ShowProfileSelectorObserver() {}
+  ~ShowProfileSelectorObserver() = default;
 };
 
 NS_IMPL_ISUPPORTS(ShowProfileSelectorObserver, nsIObserver);
@@ -2799,6 +2799,13 @@ static nsresult ProfileMissingDialog(nsINativeAppSupport* aNative) {
   }
 #  endif  
 
+  if (gfxPlatform::IsHeadless()) {
+    
+    
+    Output(true, "Could not find profile folder.\n");
+    return NS_ERROR_ABORT;
+  }
+
   nsresult rv;
 
   ScopedXPCOMStartup xpcom;
@@ -2864,6 +2871,12 @@ static nsresult ProfileEncryptionMismatchDialog(const char* aMsgKey,
     return NS_ERROR_ABORT;
   }
 #  endif  
+
+  if (gfxPlatform::IsHeadless()) {
+    
+    Output(true, "Profile encryption state does not match launching build.\n");
+    return NS_ERROR_ABORT;
+  }
 
   nsresult rv;
 
