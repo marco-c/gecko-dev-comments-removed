@@ -916,6 +916,17 @@ const char* BrowsingContext::BrowsingContextCoherencyChecks(
         parent->mOriginAttributes.EqualsIgnoringFPD(mOriginAttributes));
   }
 
+  if (aOriginProcess) {
+    if (GetBrowserId() == 0) {
+      return "Content BC must have a nonzero BrowserId";
+    }
+    if (!GetParent()) {
+      uint64_t browserProc =
+          std::get<0>(nsContentUtils::SplitProcessSpecificId(GetBrowserId()));
+      COHERENCY_ASSERT(browserProc == aOriginProcess->ChildID());
+    }
+  }
+
   
   if (mUseRemoteSubframes && !mUseRemoteTabs) {
     return "Cannot set useRemoteSubframes without also setting useRemoteTabs";
@@ -2342,8 +2353,6 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
       
       
       Canonical()->AttemptSpeculativeLoadInParent(aLoadState);
-
-      cp->TransmitBlobDataIfBlobURL(aLoadState->URI(), mOriginAttributes);
 
 #ifdef ANDROID
       uint32_t appLinkLaunchType = aLoadState->GetAppLinkLaunchType();
