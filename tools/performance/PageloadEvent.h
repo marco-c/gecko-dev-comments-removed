@@ -7,6 +7,10 @@
 
 #include <cstdint>
 
+#ifndef MOZ_GECKOVIEW_HISTORY
+#  include "mozilla/TimeStamp.h"
+#endif
+
 #include "nsCOMPtr.h"
 #include "nsString.h"
 
@@ -32,6 +36,7 @@ struct PageLoadDomainExtra;
   _(fcpTime, uint32_t)                         \
   _(hasSsd, bool)                              \
   _(httpVer, uint32_t)                         \
+  _(isActiveClient, bool)                      \
   _(jsExecTime, uint32_t)                      \
   _(delazifyTime, uint32_t)                    \
   _(lcpTime, uint32_t)                         \
@@ -89,6 +94,19 @@ enum class PageloadEventType { kNormal, kDomain, kNone };
 
 
 extern PageloadEventType GetPageloadEventType();
+
+#ifndef MOZ_GECKOVIEW_HISTORY
+
+
+
+
+extern bool FirstDailyLoadFromPlaces(const nsACString& aDomain,
+                                     const TimeStamp& aNavigationStartTime);
+
+
+
+extern bool IsActiveClient();
+#endif
 
 
 
