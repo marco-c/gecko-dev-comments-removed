@@ -2511,6 +2511,8 @@ class AllocInfo {
     
     
     
+    
+    MOZ_DIAGNOSTIC_ASSERT(mNode->mArena->mMagic == ARENA_MAGIC);
     MOZ_RELEASE_ASSERT(mNode->mArenaId == mNode->mArena->mId);
     return mNode->mArena;
   }
@@ -3076,6 +3078,9 @@ arena_t::~arena_t() {
       MOZ_RELEASE_ASSERT(node->mArenaId != mId, "Arena has huge allocations");
     }
   }
+#endif
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  mMagic = 0;
 #endif
   mId = 0;
 }
@@ -4056,6 +4061,7 @@ inline arena_t* ArenaCollection::GetById(arena_id_t aArenaId, bool aIsPrivate) {
   arena_t* result = tree->Search(aArenaId);
 #endif
   MOZ_RELEASE_ASSERT(result);
+  MOZ_DIAGNOSTIC_ASSERT(result->mMagic == ARENA_MAGIC);
   MOZ_RELEASE_ASSERT(result->mId == aArenaId);
   return result;
 }
@@ -4071,7 +4077,6 @@ inline arena_id_t MozJemalloc::moz_create_arena_with_params(
 
 inline void MozJemalloc::moz_dispose_arena(arena_id_t aArenaId) {
   arena_t* arena = gArenas.GetById(aArenaId,  true);
-  MOZ_RELEASE_ASSERT(arena);
   gArenas.DisposeArena(arena);
 }
 
