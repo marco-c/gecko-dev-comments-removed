@@ -105,6 +105,7 @@ var NonBrowserWindow = {
         document.getElementById("macDockMenuNewPrivateWindow").hidden = true;
         
         document.getElementById("Tools:PrivateBrowsing").hidden = true;
+        document.getElementById("menu_newPrivateWindow").hidden = true;
         document.getElementById("key_privatebrowsing").remove();
       }
       if (BrowserUIUtils.quitShortcutDisabled) {

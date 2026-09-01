@@ -403,6 +403,7 @@ var gBrowserInit = {
 
     if (!PrivateBrowsingUtils.enabled) {
       document.getElementById("Tools:PrivateBrowsing").hidden = true;
+      document.getElementById("menu_newPrivateWindow").hidden = true;
       
       
       document.getElementById("key_privatebrowsing").remove();
