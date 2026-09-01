@@ -4045,10 +4045,14 @@ pref("extensions.formautofill.available", "detect");
 
 #if !defined(ANDROID)
 pref("extensions.formautofill.addresses.supported", "on");
-
-pref("extensions.formautofill.useml", true);
 #else
 pref("extensions.formautofill.addresses.supported", "detect");
+#endif
+
+
+#if defined(XP_WIN) || defined(XP_MACOSX)
+pref("extensions.formautofill.useml", true);
+#else
 pref("extensions.formautofill.useml", false);
 #endif
 pref("extensions.formautofill.addresses.enabled", true);
