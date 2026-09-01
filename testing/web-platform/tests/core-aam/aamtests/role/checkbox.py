@@ -26,9 +26,16 @@ def test_atspi(atspi, session, inline):
 
 
 
+def test_uia(uia, session, inline):
+    session.url = inline(TEST_HTML)
 
+    
+    
+    
 
+    node = uia.find_node("test", session.url)
+    assert node.CurrentControlType == uia.ControlType.CheckBox
 
-
-
-
+    assert node.GetCurrentPropertyValue(uia.PropertyId.IsTogglePatternAvailable)
+    toggle_pattern = node.GetCurrentPattern(uia.PatternId.Toggle)
+    assert toggle_pattern and toggle_pattern.CurrentToggleState == 0

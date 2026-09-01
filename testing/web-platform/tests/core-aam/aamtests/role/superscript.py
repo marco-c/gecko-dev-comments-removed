@@ -26,9 +26,23 @@ def test_atspi(atspi, session, inline):
 
 
 
+def test_uia(uia, session, inline):
+    session.url = inline(TEST_HTML)
 
+    
+    
+    
 
+    node = uia.find_node("test", session.url)
+    assert node.CurrentControlType == uia.ControlType.Text
 
+    
+    assert (node.GetCurrentPropertyValue(uia.PropertyId.IsTextPatternAvailable) or node.GetCurrentPropertyValue(uia.PropertyId.IsTextChildPatternAvailable))
 
+    text_child = node.GetCurrentPattern(uia.PatternId.TextChild)
+    assert text_child is not None
 
+    text_range = text_child.TextRange
 
+    assert text_range.IsSuperscript
+    assert text_range.IsSubscript == False

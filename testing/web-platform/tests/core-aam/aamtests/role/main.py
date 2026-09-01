@@ -34,3 +34,16 @@ def test_atspi(atspi, session, inline):
 
 
 
+
+def test_uia(uia, session, inline):
+    session.url = inline(TEST_HTML)
+
+    
+    
+    
+    
+
+    node = uia.find_node("test", session.url)
+    assert node.CurrentControlType == uia.ControlType.Group
+    assert node.CurrentLocalizedControlType == "main"
+    assert node.GetCurrentPropertyValue(uia.PropertyId.LandmarkType) == uia.LandmarkType.Main

@@ -43,9 +43,12 @@ def test_axapi(axapi, session, inline, test_html):
 
 
 
+@pytest.mark.parametrize("test_html", TEST_HTML.values(), ids=TEST_HTML.keys())
+def test_uia(uia, session, inline, test_html):
+    session.url = inline(test_html)
 
+    
+    
 
-
-
-
-
+    node = uia.find_node("test", session.url)
+    assert node.CurrentControlType == uia.ControlType.Button

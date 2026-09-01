@@ -38,11 +38,17 @@ def test_atspi(atspi, session, inline):
 
 
 
+def test_uia(uia, session, inline):
+    session.url = inline(TEST_HTML)
 
+    
+    
+    
+    
+    
 
-
-
-
-
-
-
+    node = uia.find_node("test", session.url)
+    assert node.CurrentControlType == uia.ControlType.DataGrid
+    assert node.GetCurrentPropertyValue(uia.PropertyId.IsGridItemPatternAvailable)
+    assert node.GetCurrentPropertyValue(uia.PropertyId.IsTableItemPatternAvailable)
+    assert node.GetCurrentPropertyValue(uia.PropertyId.IsSelectionPatternAvailable)
