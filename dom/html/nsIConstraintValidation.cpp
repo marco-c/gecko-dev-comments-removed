@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsIConstraintValidation.h"
 
@@ -21,7 +21,7 @@ using namespace mozilla::dom;
 
 nsIConstraintValidation::nsIConstraintValidation()
     : mValidityBitField(0)
-      
+      // By default, all elements are subjects to constraint validation.
       ,
       mBarredFromConstraintValidation(false) {}
 
@@ -41,8 +41,7 @@ bool nsIConstraintValidation::CheckValidity(nsIContent& aEventTarget,
     return true;
   }
 
-  const RefPtr<Document> doc = aEventTarget.OwnerDoc();
-  nsContentUtils::DispatchTrustedEvent(doc, &aEventTarget, u"invalid"_ns,
+  nsContentUtils::DispatchTrustedEvent(&aEventTarget, u"invalid"_ns,
                                        CanBubble::eNo, Cancelable::eYes,
                                        Composed::eDefault, aEventDefaultAction);
   return false;
@@ -76,8 +75,8 @@ bool nsIConstraintValidation::ReportValidity() {
   RefPtr<CustomEvent> event =
       NS_NewDOMCustomEvent(element->OwnerDoc(), nullptr, nullptr);
   event->InitCustomEvent(jsapi.cx(), u"MozInvalidForm"_ns,
-                          true,
-                          true, detail);
+                         /* CanBubble */ true,
+                         /* Cancelable */ true, detail);
   event->SetTrusted(true);
   event->WidgetEventPtr()->mFlags.mOnlyChromeDispatch = true;
 
@@ -96,7 +95,7 @@ void nsIConstraintValidation::DoSetValidityState(ValidityStateType aState,
     mValidityBitField &= ~aState;
   }
 
-  
+  // Inform the form and fieldset elements if our validity has changed.
   if (previousValidity != IsValid() && IsCandidateForConstraintValidation()) {
     nsCOMPtr<nsIFormControl> formCtrl = do_QueryInterface(this);
     NS_ASSERTION(formCtrl, "This interface should be used by form elements!");
@@ -115,15 +114,15 @@ void nsIConstraintValidation::SetBarredFromConstraintValidation(bool aBarred) {
 
   mBarredFromConstraintValidation = aBarred;
 
-  
-  
+  // Inform the form and fieldset elements if our status regarding constraint
+  // validation is going to change.
   if (!IsValid() && previousBarred != mBarredFromConstraintValidation) {
     nsCOMPtr<nsIFormControl> formCtrl = do_QueryInterface(this);
     NS_ASSERTION(formCtrl, "This interface should be used by form elements!");
 
-    
-    
-    
+    // If the element is going to be barred from constraint validation, we can
+    // inform the form and fieldset that we are now valid. Otherwise, we are now
+    // invalid.
     if (HTMLFormElement* form = formCtrl->GetFormInternal()) {
       form->UpdateValidity(aBarred);
     }

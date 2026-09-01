@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MediaElementEventRunners.h"
 
@@ -47,7 +47,7 @@ void nsMediaEventRunner::ReportProfilerMarker() {
   if (!profiler_is_collecting_markers()) {
     return;
   }
-  
+  // Report the buffered range.
   if (mEventName.EqualsLiteral("progress")) {
     RefPtr<TimeRanges> buffered = mElement->Buffered();
     if (buffered && buffered->Length() > 0) {
@@ -99,7 +99,7 @@ uint64_t nsMediaEventRunner::GetElementDurationMs() const {
   }
 
   if (std::isnan(duration) || duration <= 0) {
-    
+    // Duration is unknown or invalid
     return 0;
   }
   return AssertedCast<uint64_t>(duration * 1000);
@@ -115,7 +115,7 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsMediaEventRunner)
 NS_INTERFACE_MAP_END
 
 NS_IMETHODIMP nsAsyncEventRunner::Run() {
-  
+  // Silently cancel if our load has been cancelled or element has been CCed.
   return IsCancelled() ? NS_OK : FireEvent(mEventName);
 }
 
@@ -165,7 +165,7 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(
 NS_INTERFACE_MAP_END_INHERITING(nsMediaEventRunner)
 
 NS_IMETHODIMP nsSourceErrorEventRunner::Run() {
-  
+  // Silently cancel if our load has been cancelled.
   if (IsCancelled()) {
     return NS_OK;
   }
@@ -176,9 +176,8 @@ NS_IMETHODIMP nsSourceErrorEventRunner::Run() {
                         {}, ErrorMarker{}, mErrorDetails,
                         Flow::FromPointer(mElement.get()));
   }
-  const RefPtr<Document> doc = mElement->OwnerDoc();
   const nsCOMPtr<nsIContent> source = mSource;
-  return nsContentUtils::DispatchTrustedEvent(doc, source, u"error"_ns,
+  return nsContentUtils::DispatchTrustedEvent(source, u"error"_ns,
                                               CanBubble::eNo, Cancelable::eNo);
 }
 
@@ -193,10 +192,10 @@ NS_IMETHODIMP nsTimeupdateRunner::Run() {
   if (IsCancelled() || !ShouldDispatchTimeupdate()) {
     return NS_OK;
   }
-  
-  
-  
-  
+  // After dispatching `timeupdate`, if the timeupdate event listener takes lots
+  // of time then we end up spending all time handling just timeupdate events.
+  // The spec is vague in this situation, so we choose to update time after we
+  // dispatch the event in order to solve that issue.
   nsresult rv = FireEvent(mEventName);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     LOG_EVENT(LogLevel::Debug,
@@ -212,9 +211,9 @@ bool nsTimeupdateRunner::ShouldDispatchTimeupdate() const {
     return true;
   }
 
-  
-  
-  
+  // If the main thread is busy, tasks may be delayed and dispatched at
+  // unexpected times. Ensure we don't dispatch `timeupdate` more often
+  // than once per `TIMEUPDATE_MS`.
   const TimeStamp& lastTime = mElement->LastTimeupdateDispatchTime();
   return lastTime.IsNull() || TimeStamp::Now() - lastTime >
                                   TimeDuration::FromMilliseconds(TIMEUPDATE_MS);
@@ -234,4 +233,4 @@ void nsTimeupdateRunner::ReportProfilerMarker() {
 }
 
 #undef LOG_EVENT
-}  
+}  // namespace mozilla::dom

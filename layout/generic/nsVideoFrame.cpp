@@ -176,9 +176,7 @@ class DispatchControlsResizeEvent final : public Runnable {
   MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() override {
     
     
-    const RefPtr<Document> doc = mContent->OwnerDoc();
-    nsContentUtils::DispatchTrustedEvent(doc, mContent,
-                                         u"resizevideocontrols"_ns,
+    nsContentUtils::DispatchTrustedEvent(mContent, u"resizevideocontrols"_ns,
                                          CanBubble::eNo, Cancelable::eNo);
     return NS_OK;
   }

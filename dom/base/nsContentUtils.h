@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <functional>
 #include <tuple>
+#include <utility>
 
 #include "ErrorList.h"
 #include "Units.h"
@@ -278,6 +279,39 @@ enum class PropertiesFile : uint8_t {
 namespace mozilla::dom {
 enum JSONBehavior { UndefinedIsNullStringLiteral, UndefinedIsVoidString };
 }  
+
+
+
+
+
+
+
+
+
+
+
+
+#define NS_INLINE_DECL_DISPATCH_EVENT_OVERLOADS(aMethodName)               \
+  template <typename... Args>                                              \
+  MOZ_CAN_RUN_SCRIPT static nsresult aMethodName(                          \
+      nsINode* aTarget, const nsAString& aEventName, Args&&... aArgs) {    \
+    return aMethodName(MOZ_KnownLive(DocumentForEventDispatch(aTarget)),   \
+                       aTarget, aEventName, std::forward<Args>(aArgs)...); \
+  }                                                                        \
+  template <typename... Args>                                              \
+  MOZ_CAN_RUN_SCRIPT static nsresult aMethodName(                          \
+      nsPIDOMWindowInner* aWindow, mozilla::dom::EventTarget* aTarget,     \
+      const nsAString& aEventName, Args&&... aArgs) {                      \
+    return aMethodName(MOZ_KnownLive(DocumentForEventDispatch(aWindow)),   \
+                       aTarget, aEventName, std::forward<Args>(aArgs)...); \
+  }                                                                        \
+  template <typename... Args>                                              \
+  MOZ_CAN_RUN_SCRIPT static nsresult aMethodName(                          \
+      nsPIDOMWindowOuter* aWindow, mozilla::dom::EventTarget* aTarget,     \
+      const nsAString& aEventName, Args&&... aArgs) {                      \
+    return aMethodName(MOZ_KnownLive(DocumentForEventDispatch(aWindow)),   \
+                       aTarget, aEventName, std::forward<Args>(aArgs)...); \
+  }
 
 class nsContentUtils {
   friend class nsAutoScriptBlockerSuppressNodeRemoved;
@@ -1618,6 +1652,9 @@ class nsContentUtils {
 
 
 
+
+
+
   MOZ_CAN_RUN_SCRIPT static nsresult DispatchTrustedEvent(
       Document* aDoc, mozilla::dom::EventTarget* aTarget,
       const nsAString& aEventName, CanBubble, Cancelable,
@@ -1634,8 +1671,9 @@ class nsContentUtils {
                                 aSystemGroupOnly);
   }
 
-  
+  NS_INLINE_DECL_DISPATCH_EVENT_OVERLOADS(DispatchTrustedEvent)
 
+  
 
 
 
@@ -1705,10 +1743,15 @@ class nsContentUtils {
 
 
 
+
+
+
   MOZ_CAN_RUN_SCRIPT static nsresult DispatchUntrustedEvent(
       Document* aDoc, mozilla::dom::EventTarget* aTarget,
       const nsAString& aEventName, CanBubble, Cancelable,
       bool* aDefaultAction = nullptr);
+
+  NS_INLINE_DECL_DISPATCH_EVENT_OVERLOADS(DispatchUntrustedEvent)
 
   
 
@@ -1751,10 +1794,15 @@ class nsContentUtils {
 
 
 
+
+
+
   MOZ_CAN_RUN_SCRIPT static nsresult DispatchChromeEvent(
       Document* aDoc, mozilla::dom::EventTarget* aTarget,
       const nsAString& aEventName, CanBubble, Cancelable,
       bool* aDefaultAction = nullptr);
+
+  NS_INLINE_DECL_DISPATCH_EVENT_OVERLOADS(DispatchChromeEvent)
 
   
 
@@ -1765,6 +1813,9 @@ class nsContentUtils {
       mozilla::dom::CallerType aCallerType);
 
   
+
+
+
 
 
 
@@ -1795,6 +1846,8 @@ class nsContentUtils {
                                      aCancelable, Composed::eDefault,
                                      aDefaultAction);
   }
+
+  NS_INLINE_DECL_DISPATCH_EVENT_OVERLOADS(DispatchEventOnlyToChrome)
 
   
 
@@ -3671,6 +3724,19 @@ class nsContentUtils {
                              JS::MutableHandle<JS::Value> vp,
                              bool aAllowWrapping);
 
+  
+  
+  
+  static Document* DocumentForEventDispatch(nsINode* aTarget) {
+    return aTarget->OwnerDoc();
+  }
+  static Document* DocumentForEventDispatch(nsPIDOMWindowInner* aWindow) {
+    return aWindow->GetExtantDoc();
+  }
+  static Document* DocumentForEventDispatch(nsPIDOMWindowOuter* aWindow) {
+    return aWindow->GetExtantDoc();
+  }
+
   MOZ_CAN_RUN_SCRIPT static nsresult DispatchEvent(
       Document* aDoc, mozilla::dom::EventTarget* aTarget,
       const nsAString& aEventName, CanBubble, Cancelable, Composed, Trusted,
@@ -3862,6 +3928,8 @@ class nsContentUtils {
   static int32_t sInnerOrOuterWindowCount;
   static uint32_t sInnerOrOuterWindowSerialCounter;
 };
+
+#undef NS_INLINE_DECL_DISPATCH_EVENT_OVERLOADS
 
  inline ExtContentPolicyType
 nsContentUtils::InternalContentPolicyTypeToExternal(nsContentPolicyType aType) {
