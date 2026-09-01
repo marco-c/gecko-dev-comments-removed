@@ -1,0 +1,12 @@
+
+
+function payload() {
+  var g = newGlobal({newCompartment: true});
+  g.enableProf = enableGeckoProfiling;
+  g.disableProf = disableGeckoProfiling;
+  
+  
+  g.eval("function run() { return [4].map(x => { enableProf(); disableProf(); }); };");
+  g.run();
+}
+oomTest(payload);
