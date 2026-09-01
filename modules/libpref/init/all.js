@@ -3921,6 +3921,10 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
 
   
   
+  pref("remote.experimental.dynamicstart.prompt.enabled", true);
+
+  
+  
   
   
   pref("remote.experimental.dynamicstart.banner.enabled", true);

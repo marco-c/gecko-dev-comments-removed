@@ -7,6 +7,10 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   cleanupCacheBypassState:
     "chrome://remote/content/shared/NetworkCacheManager.sys.mjs",
+  ConnectionPrompt:
+    "chrome://remote/content/shared/webdriver/ConnectionPrompt.sys.mjs",
+  ConnectionPromptResult:
+    "chrome://remote/content/shared/webdriver/ConnectionPrompt.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   Log: "chrome://remote/content/shared/Log.sys.mjs",
   RecommendedPreferences:
@@ -27,12 +31,6 @@ const RECOMMENDED_PREFS = new Map([
   // Enables permission isolation by user context.
   // It should be enabled by default in Nightly in the scope of the bug 1641584.
   ["permissions.isolateBy.userContext", true],
-  // Enables race-cache-with-network, which avoids issues with requests
-  // intercepted in the responseStarted phase. Without this preference, any
-  // subsequent request to the same URL as a suspended request hangs as well.
-  // Bug 1966494: should allow to unblock subsequent request, but might do so
-  // with a timer, slowing down tests. Should be reconsidered once fixed.
-  ["network.http.rcwn.enabled", true],
 ]);
 
 /**
@@ -45,6 +43,7 @@ export class WebDriverBiDi {
   #bidiServerPath;
   #running;
   #session;
+  #sessionCreationPending;
   #sessionlessConnections;
   #userPromptHandlerManager;
 
@@ -60,6 +59,9 @@ export class WebDriverBiDi {
 
     this.#bidiServerPath;
     this.#session = null;
+    // Set when creating sessions for dynamic non-automation servers, while we
+    // wait for the user to accept or deny the connection.
+    this.#sessionCreationPending = false;
     this.#sessionlessConnections = new Set();
   }
 
@@ -130,6 +132,26 @@ export class WebDriverBiDi {
       throw new lazy.error.SessionNotCreatedError(
         "Maximum number of active sessions"
       );
+    }
+
+    if (this.#sessionCreationPending) {
+      throw new lazy.error.SessionNotCreatedError(
+        "Maximum number of active sessions (session creation in progress)"
+      );
+    }
+
+    if (!this.#agent.isBrowserAutomationRunning) {
+      this.#sessionCreationPending = true;
+      try {
+        const promptResult = await lazy.ConnectionPrompt.show();
+        if (promptResult === lazy.ConnectionPromptResult.DENY) {
+          throw new lazy.error.SessionNotCreatedError(
+            "The connection was denied by the user"
+          );
+        }
+      } finally {
+        this.#sessionCreationPending = false;
+      }
     }
 
     this.#session = new lazy.WebDriverSession(
