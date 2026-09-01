@@ -146,7 +146,10 @@ class HTMLButtonElement final : public nsGenericHTMLFormControlElementWithState,
   virtual ~HTMLButtonElement();
 
   bool InAutoState() const;
-  const nsAttrValue::EnumTableEntry* ResolveAutoState() const;
+  
+  
+  const nsAttrValue::EnumTableEntry* ResolveAutoState(
+      const nsINode* aParent = nullptr) const;
 
   bool mDisabledChanged : 1;
   bool mInInternalActivate : 1;

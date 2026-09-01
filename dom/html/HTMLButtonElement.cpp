@@ -137,12 +137,17 @@ bool HTMLButtonElement::InAutoState() const {
 }
 
 
-const nsAttrValue::EnumTableEntry* HTMLButtonElement::ResolveAutoState() const {
+const nsAttrValue::EnumTableEntry* HTMLButtonElement::ResolveAutoState(
+    const nsINode* aParent) const {
   
   
   
   
   if (HasAttr(nsGkAtoms::commandfor) || HasAttr(nsGkAtoms::command)) {
+    return kButtonButtonType;
+  }
+  const nsINode* parent = aParent ? aParent : GetParentNode();
+  if (parent && parent->IsHTMLElement(nsGkAtoms::select)) {
     return kButtonButtonType;
   }
   return kButtonSubmitType;
@@ -414,6 +419,12 @@ void HTMLButtonElement::LegacyCanceledActivationBehavior(
 
 nsresult HTMLButtonElement::BindToTree(BindContext& aContext,
                                        nsINode& aParent) {
+  
+  
+  
+  if (InAutoState()) {
+    mType = FormControlType(ResolveAutoState(&aParent)->value);
+  }
   nsresult rv =
       nsGenericHTMLFormControlElementWithState::BindToTree(aContext, aParent);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -426,6 +437,11 @@ nsresult HTMLButtonElement::BindToTree(BindContext& aContext,
 
 void HTMLButtonElement::UnbindFromTree(UnbindContext& aContext) {
   nsGenericHTMLFormControlElementWithState::UnbindFromTree(aContext);
+
+  
+  if (InAutoState()) {
+    mType = FormControlType(ResolveAutoState()->value);
+  }
 
   UpdateBarredFromConstraintValidation();
   UpdateValidityElementStates(false);
