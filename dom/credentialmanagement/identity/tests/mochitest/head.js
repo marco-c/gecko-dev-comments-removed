@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 let test_path = "/tests/dom/credentialmanagement/identity/tests/mochitest";
@@ -17,8 +16,19 @@ async function setupTest(testName, idp_origin = "https://example.net") {
     `${idp_api}/server_manifest.sjs?set_test=${testName}`
   );
   let focusPromise = SimpleTest.promiseFocus();
+  
+  
+  
+  let cookiePromise = new Promise(resolve => {
+    window.addEventListener("message", function listener(event) {
+      if (event.data == "cookie-set") {
+        window.removeEventListener("message", listener);
+        resolve();
+      }
+    });
+  });
   window.open(`${idp_api}/helper_set_cookie.html`, "_blank");
-  await focusPromise;
+  await Promise.all([focusPromise, cookiePromise]);
   return fetchPromise;
 }
 
