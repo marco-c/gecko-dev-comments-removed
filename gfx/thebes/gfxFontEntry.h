@@ -204,6 +204,9 @@ class gfxFontEntry {
   typedef mozilla::SlantStyleRange SlantStyleRange;
   typedef mozilla::WidthRange WidthRange;
   using imgDrawingParams = mozilla::image::imgDrawingParams;
+#if MOZ_FONTATIONS
+  using SkrifaFontRef = mozilla::gfx::SkrifaFontRef;
+#endif
 
   
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxFontEntry)
@@ -283,7 +286,14 @@ class gfxFontEntry {
   const hb_set_t* InputsForOpenTypeFeature(Script aScript,
                                            uint32_t aFeatureTag);
 
-  virtual bool HasFontTable(uint32_t aTableTag);
+  bool HasFontTable(uint32_t aTableTag) {
+#if MOZ_FONTATIONS
+    if (const auto* skf = GetSkrifaFont()) {
+      return skrifa_font_has_table(skf, aTableTag);
+    }
+#endif
+    return HasFontTableInternal(aTableTag);
+  }
 
   inline bool HasGraphiteTables() {
     LazyFlag flag = mHasGraphiteTables;
@@ -740,8 +750,8 @@ class gfxFontEntry {
   
   
   
-  const mozilla::gfx::SkrifaFontRef* GetSkrifaFont() {
-    if (mozilla::gfx::SkrifaFontRef* f = mSkrifaFontFace) {
+  const SkrifaFontRef* GetSkrifaFont() {
+    if (const SkrifaFontRef* f = mSkrifaFontFace) {
       return f;
     }
     if (!mSkrifaFontInitialized) {
@@ -784,6 +794,9 @@ class gfxFontEntry {
   virtual hb_blob_t* GetFontTableInternal(uint32_t aTag);
 
   
+  virtual bool HasFontTableInternal(uint32_t aTableTag);
+
+  
   
   virtual nsresult CopyFontTable(uint32_t aTableTag,
                                  nsTArray<uint8_t>& aBuffer) {
@@ -819,18 +832,18 @@ class gfxFontEntry {
   
   
   
-  void SetSkrifaFont(mozilla::gfx::SkrifaFontRef* aSkrifaFont,
+  void SetSkrifaFont(SkrifaFontRef* aSkrifaFont,
                      mozilla::MemoryMappedFile&& aSkrifaFontFile);
 
   
   
-  void SetSkrifaFont(mozilla::gfx::SkrifaFontRef* aSkrifaFont);
+  void SetSkrifaFont(SkrifaFontRef* aSkrifaFont);
 
   
   
   virtual void InitSkrifaFontFace() {}
 
-  mozilla::Atomic<mozilla::gfx::SkrifaFontRef*> mSkrifaFontFace;
+  mozilla::Atomic<SkrifaFontRef*> mSkrifaFontFace;
   mozilla::MemoryMappedFile mSkrifaFontFile;
 #endif
 

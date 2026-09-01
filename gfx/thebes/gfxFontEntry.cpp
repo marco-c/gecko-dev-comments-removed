@@ -692,7 +692,8 @@ void gfxFontEntry::DisconnectSVG() {
   }
 }
 
-bool gfxFontEntry::HasFontTable(uint32_t aTableTag) {
+
+bool gfxFontEntry::HasFontTableInternal(uint32_t aTableTag) {
   AutoTable table(this, aTableTag);
   return table && hb_blob_get_length(table) > 0;
 }

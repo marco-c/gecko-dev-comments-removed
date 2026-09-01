@@ -104,6 +104,16 @@ pub extern "C" fn skrifa_font_get_table(font: &SkrifaFontRef, tag: u32) -> Skrif
 }
 
 
+
+
+#[no_mangle]
+pub extern "C" fn skrifa_font_has_table(font: &SkrifaFontRef, tag: u32) -> bool {
+    font.0
+        .table_data(skrifa::Tag::from_u32(tag))
+        .is_some_and(|data| data.len() > 0)
+}
+
+
 use style::gecko_bindings::structs::gfxFontVariation;
 
 pub struct SkrifaLocation(skrifa::instance::Location);
