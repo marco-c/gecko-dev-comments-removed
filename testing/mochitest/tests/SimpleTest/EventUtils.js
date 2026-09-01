@@ -3512,8 +3512,10 @@ function synthesizeDropAfterDragOver(
   
   
   this.AccessibilityUtils?.suppressClickHandling(true);
+  this.ClickChecks?.suppressClickHandling(true);
   synthesizeMouse(aDestElement, 2, 2, { type: "mouseup" }, aDestWindow);
   this.AccessibilityUtils?.suppressClickHandling(false);
+  this.ClickChecks?.suppressClickHandling(false);
 
   return effect;
 }

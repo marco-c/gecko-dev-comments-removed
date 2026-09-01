@@ -347,6 +347,14 @@ function Tester(aTests, structuredLogger, aCallback) {
   window.SpecialPowers.SimpleTest = this.SimpleTest;
   window.SpecialPowers.setAsDefaultAssertHandler();
 
+  
+  
+  this._scriptLoader.loadSubScript(
+    "chrome://mochikit/content/tests/SimpleTest/ClickChecks.js",
+    this.EventUtils
+  );
+  this.ClickChecks = this.EventUtils.ClickChecks;
+
   this._scriptLoader.loadSubScript(
     "chrome://mochikit/content/tests/SimpleTest/AccessibilityUtils.js",
     
@@ -356,6 +364,10 @@ function Tester(aTests, structuredLogger, aCallback) {
   );
   this.AccessibilityUtils = this.EventUtils.AccessibilityUtils;
 
+  
+  
+  
+  this.ClickChecks.init(this.SimpleTest);
   this.AccessibilityUtils.init(this.SimpleTest);
 
   var extensionUtilsScope = {
@@ -443,6 +455,7 @@ function Tester(aTests, structuredLogger, aCallback) {
 Tester.prototype = {
   EventUtils: {},
   AccessibilityUtils: {},
+  ClickChecks: {},
   SimpleTest: {},
   ContentTask: null,
   ExtensionTestUtils: null,
@@ -803,6 +816,7 @@ Tester.prototype = {
     DOMWindowTracker.destroy();
     Services.console.unregisterListener(this);
 
+    this.ClickChecks.uninit();
     this.AccessibilityUtils.uninit();
 
     
@@ -1102,6 +1116,9 @@ Tester.prototype = {
           );
         }
       }
+
+      
+      this.ClickChecks.forgetMouseDownState();
 
       
       if (Cu.isESModuleLoaded("resource://testing-common/Sinon.sys.mjs")) {
@@ -1609,6 +1626,7 @@ Tester.prototype = {
 
     this.SimpleTest.reset();
     
+    this.ClickChecks.reset();
     this.AccessibilityUtils.reset(this.a11y_checks, this.currentTest.path);
 
     
@@ -1851,6 +1869,9 @@ Tester.prototype = {
                 "PASS",
                 "Test timed out"
               );
+              
+              
+              self.ClickChecks.forgetMouseDownState();
               self._shutdownCleanup(async () => {
                 await self._checkForLeakedWindows(true);
                 self.finish();
