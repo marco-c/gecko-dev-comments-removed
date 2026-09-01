@@ -451,6 +451,13 @@ struct AnchorPositioningUtils {
     
     nsRect mRect;
   };
+  enum class UnionFragments : bool {
+    
+    All,
+    
+    SameContainingBlockOnly,
+  };
+
   
 
 
@@ -460,8 +467,12 @@ struct AnchorPositioningUtils {
 
 
 
+
+
+
   static CombinedFragments GetCombinedFragmentRects(
-      const nsIFrame* aFrame, const nsIFrame* aContainingBlock = nullptr);
+      const nsIFrame* aFrame, const nsIFrame* aContainingBlock,
+      UnionFragments aUnionFragments);
 
   
   static const dom::ShadowRoot* GetShadowRootForTreeScope(
