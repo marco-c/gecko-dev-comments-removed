@@ -85,6 +85,16 @@ typedef mozilla::MozPromise<base::ProcessHandle, LaunchError, false>
 
 
 
+
+
+
+
+
+
+
+
+
+
 extern LazyLogModule gChildProcessLifecycleLog;
 
 class GeckoChildProcessHost : public SupportsWeakPtr,
