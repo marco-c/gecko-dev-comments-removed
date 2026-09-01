@@ -28,6 +28,11 @@ class nsWindow::TaskbarConcealer {
   static void OnWindowMaximized(nsWindow* aWin, bool aForce = false);
 
   
+  
+  
+  static void OnWindowShown(nsWindow* aWin);
+
+  
   static void OnFullscreenChanged(nsWindow* aWin, bool enteredFullscreen);
 
   

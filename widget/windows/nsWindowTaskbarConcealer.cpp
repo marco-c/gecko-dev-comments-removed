@@ -335,7 +335,7 @@ void TaskbarConcealerImpl::MarkAsHidingTaskbar(HWND aWnd, bool aMark) {
   
   
 
-  const char* const sMark = aMark ? "true" : "false";
+  const char* const sMark = aMark ? "false" : "true";
 
   bool const useNonRudeHWND = !!(mMarkingMethod & MarkingMethod::NonRudeHwnd);
   bool const usePrepareFullScreen =
@@ -344,9 +344,25 @@ void TaskbarConcealerImpl::MarkAsHidingTaskbar(HWND aWnd, bool aMark) {
   
   MOZ_ASSERT(useNonRudeHWND || usePrepareFullScreen);
 
-  if (useNonRudeHWND) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool forceUseNonRudeHWND =
+      !aMark && ::IsWindowVisible(aWnd) &&
+      StaticPrefs::widget_windows_fullscreen_set_nonrudehwnd();
+  if (useNonRudeHWND || forceUseNonRudeHWND) {
     MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
-            ("Setting %p[L\"NonRudeHWND\"] to %s", aWnd, sMark));
+            ("Setting %p[L\"NonRudeHWND\"] to %s (forceUseNonRudeHWND is %d)",
+             aWnd, sMark, forceUseNonRudeHWND ? 1 : 0));
 
     
     
@@ -427,6 +443,8 @@ void nsWindow::TaskbarConcealer::OnWindowMaximized(nsWindow* aWin,
   
   
   if (!aWin->mCustomNonClient) {
+    MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
+            ("... skipped: HWND %p has no custom non-client area", aWin->mWnd));
     return;
   }
 
@@ -438,6 +456,20 @@ void nsWindow::TaskbarConcealer::OnWindowMaximized(nsWindow* aWin,
   
   
   (TaskbarConcealerImpl{}).MarkAsHidingTaskbar(aWin->mWnd, false);
+}
+
+void nsWindow::TaskbarConcealer::OnWindowShown(nsWindow* aWin) {
+  const nsSizeMode sizeMode = aWin->mFrameState->GetSizeMode();
+
+  MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
+          ("==> OnWindowShown() for HWND %p: sizeMode %d, customNonClient %d",
+           aWin->mWnd, int(sizeMode), int(aWin->mCustomNonClient)));
+
+  if (sizeMode != nsSizeMode_Maximized) {
+    return;
+  }
+
+  OnWindowMaximized(aWin,  true);
 }
 
 void nsWindow::TaskbarConcealer::OnFullscreenChanged(nsWindow* aWin,

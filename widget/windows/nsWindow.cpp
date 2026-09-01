@@ -1651,17 +1651,6 @@ void nsWindow::Show(bool aState) {
       ::NotifyWinEvent(EVENT_OBJECT_FOCUS, mWnd, OBJID_CLIENT, CHILDID_SELF);
     }
 #endif  
-
-    
-    
-    
-    
-    
-    
-    if (mCustomNonClient &&
-        mFrameState->GetSizeMode() == nsSizeMode_Maximized) {
-      TaskbarConcealer::OnWindowMaximized(this,  true);
-    }
   }
 
   MOZ_ASSERT_IF(mWindowType == WindowType::Popup,
@@ -1830,6 +1819,16 @@ void nsWindow::Show(bool aState) {
                            SWP_NOACTIVATE);
       }
     }
+  }
+
+  if (aState && mWnd) {
+    
+    
+    
+    
+    
+    
+    TaskbarConcealer::OnWindowShown(this);
   }
 
   if (!wasVisible && aState) {
@@ -2829,6 +2828,15 @@ void nsWindow::SetCustomTitlebar(bool aCustomTitlebar) {
   }
   if (ShouldAssociateWithWinAppSDK()) {
     WindowsUIUtils::SetIsTitlebarCollapsed(mWnd, mCustomNonClient);
+  }
+
+  if (mCustomNonClient && mIsVisible &&
+      mFrameState->GetSizeMode() == nsSizeMode_Maximized) {
+    
+    
+    
+    
+    TaskbarConcealer::OnWindowMaximized(this,  true);
   }
 }
 
