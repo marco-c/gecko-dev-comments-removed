@@ -4337,10 +4337,100 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
     }
 
     aNode->mNodeInfo.swap(newNodeInfo);
+
+    
+    
+    
+    
     aNode->NodeInfoChanged(oldDoc);
 
     MOZ_ASSERT(newDoc != oldDoc);
-    if (elem) {
+
+    
+    
+    
+    if (ShadowRoot* shadow = ShadowRoot::FromNode(aNode)) {
+      if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+        
+        
+        
+        
+        
+        const CustomElementRegistryState state =
+            shadow->GetCustomElementRegistryState();
+        const bool isNullNonKeep = state == CustomElementRegistryState::Null &&
+                                   !shadow->KeepCustomElementRegistryNull();
+        const bool isGlobal = state == CustomElementRegistryState::Global;
+        if (isNullNonKeep || isGlobal) {
+          
+          
+          
+          if (newDoc->GetEffectiveGlobalCustomElementRegistry()) {
+            shadow->SetCustomElementRegistryState(
+                CustomElementRegistryState::Global);
+          } else {
+            shadow->SetCustomElementRegistryState(
+                CustomElementRegistryState::Null);
+          }
+        }
+      }
+      
+    } else if (elem) {
+      if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+        const CustomElementRegistryState state =
+            elem->GetCustomElementRegistryState();
+        
+        
+        
+        
+        
+        
+        if (state == CustomElementRegistryState::Scoped) {
+          RefPtr<CustomElementRegistry> scopedRegistry =
+              CustomElementRegistry::GetScopedRegistry(*elem);
+          MOZ_ASSERT(scopedRegistry,
+                     "How did we get a Scoped state without a registry?");
+          scopedRegistry->AddToScopedDocumentSet(newDoc);
+        } else {
+          
+          CustomElementRegistry* registry = nullptr;
+
+          nsINode* parent = elem->GetParentNode();
+          
+          
+          
+          
+          
+          
+          
+          
+          if (state != CustomElementRegistryState::Null || !parent ||
+              (parent->IsDocumentFragment() && !parent->IsShadowRoot())) {
+            registry = newDoc->GetCustomElementRegistry();
+          } else {
+            Maybe<RefPtr<CustomElementRegistry>> parentRegistry =
+                nsContentUtils::GetCustomElementRegistry(parent);
+            registry = parentRegistry ? parentRegistry->get()
+                                      : newDoc->GetCustomElementRegistry();
+          }
+
+          
+          
+          
+          
+          
+          CustomElementRegistry* effectiveGlobal =
+              (registry && !registry->IsScoped()) ? registry : nullptr;
+          if (effectiveGlobal) {
+            elem->SetCustomElementRegistry(effectiveGlobal);
+          } else if (state == CustomElementRegistryState::Global &&
+                     elem->OwnerDoc()->HasScopedCustomElementRegistry()) {
+            elem->SetNullCustomElementRegistry();
+          }
+        }
+      }
+
+      
       
       
       CustomElementData* data = elem->GetCustomElementData();
@@ -4544,6 +4634,12 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
         return nullptr;
       }
       newShadowRoot->SetIsDeclarative(originalShadowRoot->IsDeclarative());
+      
+      
+      if (StaticPrefs::dom_scoped_custom_element_registries_enabled() &&
+          originalShadowRoot->KeepCustomElementRegistryNull()) {
+        newShadowRoot->SetKeepCustomElementRegistryNull();
+      }
       if (originalShadowRoot->IsAvailableToElementInternals()) {
         newShadowRoot->SetAvailableToElementInternals();
       }

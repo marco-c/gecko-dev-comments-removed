@@ -13958,6 +13958,13 @@ nsIContent* nsContentUtils::AttachDeclarativeShadowRoot(
     shadowRoot->SetIsDeclarative(
         nsGenericHTMLFormControlElement::ShadowRootDeclarative::Yes);
     
+    
+    
+    if (StaticPrefs::dom_scoped_custom_element_registries_enabled() &&
+        aCustomElementRegistry) {
+      shadowRoot->SetKeepCustomElementRegistryNull();
+    }
+    
     shadowRoot->SetAvailableToElementInternals();
     shadowRoot->SetReferenceTarget(aReferenceTarget);
   }
