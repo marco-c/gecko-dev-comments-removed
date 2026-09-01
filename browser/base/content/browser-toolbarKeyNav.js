@@ -21,6 +21,9 @@
 
 
 
+
+
+
 ToolbarKeyboardNavigator = {
   
   kToolbars: [
@@ -156,6 +159,11 @@ ToolbarKeyboardNavigator = {
   },
 
   _focusButton(aButton) {
+    if (aButton.hasAttribute("tabindex")) {
+      
+      aButton.focus();
+      return;
+    }
     
     
     
@@ -205,6 +213,9 @@ ToolbarKeyboardNavigator = {
 
     walker.currentNode = aEvent.target;
     let button = walker.nextNode();
+    while (button?.getAttribute("keyNav") == "skipTabStop") {
+      button = walker.nextNode();
+    }
     if (!button || !this._isButton(button)) {
       
       

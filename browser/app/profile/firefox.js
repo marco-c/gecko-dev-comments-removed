@@ -493,6 +493,15 @@ pref("browser.urlbar.deduplication.enabled", true);
 
 pref("browser.urlbar.scotchBonnet.enableOverride", true);
 
+
+
+
+#ifdef NIGHTLY_BUILD
+pref("browser.urlbar.searchModeSwitcher.skipTabStop", true);
+#else
+pref("browser.urlbar.searchModeSwitcher.skipTabStop", false);
+#endif
+
 pref("browser.urlbar.trackerCount.featureGate", true);
 pref("browser.urlbar.trackerCount.enabled", true);
 
