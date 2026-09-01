@@ -297,6 +297,11 @@
       );
     }
 
+    connectedMoveCallback() {
+      
+      
+    }
+
     set findMode(val) {
       this._findMode = val;
       this._updateBrowserWithState();
