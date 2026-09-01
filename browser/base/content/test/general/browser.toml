@@ -47,9 +47,6 @@ support-files = [
 ["browser_backOrSidebarButtonFitts.js"]
 https_first_disabled = true
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
-skip-if = [
-  "nova", # Bug 2050160
-]
 
 ["browser_bug321000.js"]
 skip-if = [
@@ -58,6 +55,9 @@ skip-if = [
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 
 ["browser_bug356571.js"]
+skip-if = [
+  "true", # This test hasn't done anything since 2010.
+]
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 
 ["browser_bug380960.js"]
