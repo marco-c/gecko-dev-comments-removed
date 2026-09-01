@@ -7446,10 +7446,32 @@ mozilla::ipc::IPCResult ContentParent::RecvWindowPostMessage(
     return IPC_OK();
   }
 
+  bool clearSource = false;
   if (!aData.source().IsNull()) {
-    RefPtr<CanonicalBrowsingContext> bc = aData.source().get_canonical();
-    if (!bc || !bc->IsOwnedByProcess(ChildID())) {
-      return IPC_FAIL(this, "RecvWindowPostMessage: unowned source");
+    
+    
+    
+    RefPtr<WindowGlobalParent> wgp =
+        WindowGlobalParent::GetByInnerWindowId(aData.innerWindowId());
+    if (!wgp || wgp->IsDiscarded() || !wgp->IsCurrent()) {
+      clearSource = true;
+    }
+
+    
+    if (wgp) {
+      RefPtr<CanonicalBrowsingContext> bc = aData.source().get_canonical();
+      if (wgp->GetBrowsingContext() != bc) {
+        return IPC_FAIL(this, "RecvWindowPostMessage: invalid innerWindowId");
+      }
+      if (wgp->GetContentParent() != this) {
+        return IPC_FAIL(this,
+                        "RecvWindowPostMessage: source is not this process");
+      }
+      if (!wgp->DocumentPrincipal()->Equals(aData.callerPrincipal())) {
+        return IPC_FAIL(
+            this,
+            "RecvWindowPostMessage: callerPrincipal doesn't match source");
+      }
     }
   }
 
@@ -7486,7 +7508,11 @@ mozilla::ipc::IPCResult ContentParent::RecvWindowPostMessage(
     return IPC_OK();
   }
 
-  (void)cp->SendWindowPostMessage(context, aMessage, aData);
+  PostMessageData data(aData);
+  if (clearSource) {
+    data.source() = nullptr;
+  }
+  (void)cp->SendWindowPostMessage(context, aMessage, data);
   return IPC_OK();
 }
 
