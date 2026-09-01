@@ -135,26 +135,8 @@ bool CSSNumericValue::Equals(const Sequence<OwningCSSNumberish>& aValue) {
 already_AddRefed<CSSUnitValue> CSSNumericValue::To(const nsACString& aUnit,
                                                    ErrorResult& aRv) const {
   
-  StyleNumericType numericType;
-  if (!Servo_NumericType_Create(&aUnit, &numericType)) {
-    aRv.ThrowSyntaxError("Invalid unit: "_ns + aUnit);
-    return nullptr;
-  }
-
-  
-  auto styleNumericValue = ToStyleNumericValue();
-
-  auto sumValue = WrapUnique(Servo_SumValue_Create(&styleNumericValue));
-  if (!sumValue) {
-    aRv.ThrowTypeError("Failed to create a sum value");
-    return nullptr;
-  }
-
-  
-  auto styleUnitValue = StyleOptional<StyleUnitValue>::None();
-  Servo_SumValue_ToUnit(sumValue.get(), &aUnit, &styleUnitValue);
-  if (styleUnitValue.IsNone()) {
-    aRv.ThrowTypeError("Failed to convert to "_ns + aUnit);
+  auto styleUnitValue = ToStyleUnitValue(aUnit, aRv);
+  if (aRv.Failed()) {
     return nullptr;
   }
 
@@ -325,6 +307,38 @@ StyleNumericValue CSSNumericValue::ToStyleNumericValue() const {
     }
   }
   MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Bad numeric value type!");
+}
+
+
+
+StyleOptional<StyleUnitValue> CSSNumericValue::ToStyleUnitValue(
+    const nsACString& aUnit, ErrorResult& aRv) const {
+  auto result = StyleOptional<StyleUnitValue>::None();
+
+  
+  StyleNumericType numericType;
+  if (!Servo_NumericType_Create(&aUnit, &numericType)) {
+    aRv.ThrowSyntaxError("Invalid unit: "_ns + aUnit);
+    return result;
+  }
+
+  
+  auto styleNumericValue = ToStyleNumericValue();
+
+  auto sumValue = WrapUnique(Servo_SumValue_Create(&styleNumericValue));
+  if (!sumValue) {
+    aRv.ThrowTypeError("Failed to create a sum value");
+    return result;
+  }
+
+  
+  Servo_SumValue_ToUnit(sumValue.get(), &aUnit, &result);
+  if (result.IsNone()) {
+    aRv.ThrowTypeError("Failed to convert to "_ns + aUnit);
+    return result;
+  }
+
+  return result;
 }
 
 const CSSNumericValue& CSSStyleValue::GetAsCSSNumericValue() const {

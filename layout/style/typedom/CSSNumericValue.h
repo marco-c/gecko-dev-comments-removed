@@ -27,6 +27,9 @@ struct CSSPropertyId;
 class ErrorResult;
 struct StyleNumericType;
 struct StyleNumericValue;
+template <typename T>
+struct StyleOptional;
+struct StyleUnitValue;
 
 namespace dom {
 
@@ -162,6 +165,11 @@ class CSSNumericValue : public CSSStyleValue {
                              nsACString& aDest) const;
 
   StyleNumericValue ToStyleNumericValue() const;
+
+  
+  
+  StyleOptional<StyleUnitValue> ToStyleUnitValue(const nsACString& aUnit,
+                                                 ErrorResult& aRv) const;
 
  protected:
   virtual ~CSSNumericValue() = default;
