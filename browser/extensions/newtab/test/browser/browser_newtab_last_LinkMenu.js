@@ -41,11 +41,17 @@ async function resetPrefs() {
 
 let initialHeight;
 let initialWidth;
+
+
+
 function setSize(width, height) {
   initialHeight = window.innerHeight;
   initialWidth = window.innerWidth;
   let resizePromise = BrowserTestUtils.waitForEvent(window, "resize", false);
-  window.resizeTo(width, height);
+  const dpr = window.devicePixelRatio;
+  window.docShell.treeOwner
+    .QueryInterface(Ci.nsIDocShellTreeOwner)
+    .setPrimaryContentSize(Math.round(width * dpr), Math.round(height * dpr));
   return resizePromise;
 }
 
@@ -82,16 +88,18 @@ add_task(async function test_newtab_last_LinkMenu() {
 
   
   
-  
   const novaEnabled = Services.prefs.getBoolPref(
     "browser.newtabpage.activity-stream.nova.enabled",
     false
   );
-  const testWidth = novaEnabled ? 750 : 600;
-  const topSiteNthChild = novaEnabled ? "4n" : "2n";
-
   
-  await setSize(testWidth, 450);
+  
+  
+  const topSitesWidth = novaEnabled ? 900 : 600;
+  const storiesWidth = novaEnabled ? 740 : 600;
+  const topSiteNthChild = novaEnabled ? "6n" : "2n";
+
+  await setSize(topSitesWidth, 450);
 
   
   await SpecialPowers.spawn(browser, [topSiteNthChild], async nthChild => {
@@ -122,7 +130,20 @@ add_task(async function test_newtab_last_LinkMenu() {
       0,
       "there should be no horizontal scroll bar"
     );
+
+    
+    
+    
+    topsiteContextMenuButton.click();
+    await ContentTaskUtils.waitForCondition(
+      () => !topsiteOuter.classList.contains("active"),
+      "Wait for the topsite menu to close"
+    );
   });
+
+  if (storiesWidth !== topSitesWidth) {
+    await setSize(storiesWidth, 450);
+  }
 
   
   await SpecialPowers.spawn(browser, [], async () => {
