@@ -264,24 +264,6 @@ static RangeBehaviour GetRangeBehaviour(
       return RangeBehaviour::CollapseDefaultRangeAndCrossShadowBoundaryRanges;
     }
 
-    if (const CrossShadowBoundaryRange* crossShadowBoundaryRange =
-            aRange->GetCrossShadowBoundaryRange()) {
-      
-      
-      
-      
-      
-      
-      const RangeBoundary& otherSideExistingBoundary =
-          aIsSetStart ? crossShadowBoundaryRange->EndRef()
-                      : crossShadowBoundaryRange->StartRef();
-      const nsINode* otherSideRoot =
-          RangeUtils::ComputeRootNode(otherSideExistingBoundary.GetContainer());
-      if (aNewRoot == otherSideRoot) {
-        return RangeBehaviour::CollapseDefaultRange;
-      }
-    }
-
     
     
     return aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes
@@ -1663,28 +1645,27 @@ PrependChild(nsINode* aContainer, nsINode* aChild) {
 
 
 
-static bool ValidateCurrentNode(nsRange* aRange, RangeSubtreeIterator& aIter) {
+static bool ValidateNodeInRange(nsRange* aRange, nsINode* aNode) {
   bool before, after;
-  nsCOMPtr<nsINode> node = aIter.GetCurrentNode();
-  if (!node) {
+  if (!aNode) {
     
     
     return true;
   }
 
-  nsresult rv = RangeUtils::CompareNodeToRange(node, aRange, &before, &after);
+  nsresult rv = RangeUtils::CompareNodeToRange(aNode, aRange, &before, &after);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return false;
   }
 
   if (before || after) {
-    if (node->IsCharacterData()) {
+    if (aNode->IsCharacterData()) {
       
       
-      if (before && node == aRange->GetStartContainer()) {
+      if (before && aNode == aRange->GetStartContainer()) {
         before = false;
       }
-      if (after && node == aRange->GetEndContainer()) {
+      if (after && aNode == aRange->GetEndContainer()) {
         after = false;
       }
     }
@@ -1880,24 +1861,27 @@ void nsRange::CutContents(DocumentFragment** aFragment,
   RangeSubtreeIterator iter;
 
   aRv = iter.Init(this, AllowRangeCrossShadowBoundary::Yes);
-  if (aRv.Failed()) {
+  if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
 
   if (iter.IsDone()) {
     
     aRv = CollapseRangeAfterDelete(this);
-    if (!aRv.Failed() && aFragment) {
+    if (NS_WARN_IF(aRv.Failed())) {
+      return;
+    }
+    if (aFragment) {
       retval.forget(aFragment);
     }
     return;
   }
 
-  iter.First();
+  
+  
+  
 
-  
-  
-  
+  iter.First();
 
   while (!iter.IsDone()) {
     nsCOMPtr<nsINode> nodeToResult;
@@ -1910,7 +1894,7 @@ void nsRange::CutContents(DocumentFragment** aFragment,
 
     iter.Next();
     nsCOMPtr<nsINode> nextNode = iter.GetCurrentNode();
-    while (nextNode && nextNode->IsInclusiveDescendantOf(node)) {
+    while (nextNode && nextNode->IsInclusiveFlatTreeDescendantOf(node)) {
       iter.Next();
       nextNode = iter.GetCurrentNode();
     }
@@ -1934,7 +1918,7 @@ void nsRange::CutContents(DocumentFragment** aFragment,
         
         
         
-        if (guard.Mutated(0) && !ValidateCurrentNode(this, iter)) {
+        if (guard.Mutated(0) && !ValidateNodeInRange(this, nextNode)) {
           aRv.Throw(NS_ERROR_UNEXPECTED);
           return;
         }
@@ -1969,6 +1953,18 @@ void nsRange::CutContents(DocumentFragment** aFragment,
               false, "The container shouldn't be iterated due to out of range");
           continue;  
         }
+      } else if (node->IsShadowRoot()) {
+        
+        
+        if ((node == endRef.GetContainer() && endRef.IsStartOfContainer()) ||
+            (node == startRef.GetContainer() && startRef.IsEndOfContainer())) {
+          continue;
+        }
+        
+        MOZ_ASSERT_IF(node == startRef.GetContainer(),
+                      startRef.IsStartOfContainer());
+        MOZ_ASSERT_IF(node == endRef.GetContainer(), endRef.IsEndOfContainer());
+        nodeToResult = node;
       } else {
         
         
@@ -2018,18 +2014,12 @@ void nsRange::CutContents(DocumentFragment** aFragment,
     
     if (retval) {
       nsCOMPtr<nsINode> oldCommonAncestor = commonAncestor;
-      if (!iter.IsDone()) {
-        
-        if (!nextNode) {
-          aRv.Throw(NS_ERROR_UNEXPECTED);
-          return;
-        }
-
+      if (nextNode) {
         
         
         commonAncestor =
             nsContentUtils::GetClosestCommonInclusiveAncestor(node, nextNode);
-        if (!commonAncestor) {
+        if (NS_WARN_IF(!commonAncestor)) {
           aRv.Throw(NS_ERROR_UNEXPECTED);
           return;
         }
@@ -2038,7 +2028,7 @@ void nsRange::CutContents(DocumentFragment** aFragment,
         while (parentCounterNode && parentCounterNode != commonAncestor) {
           ++parentCount;
           parentCounterNode = parentCounterNode->GetParentNode();
-          if (!parentCounterNode) {
+          if (NS_WARN_IF(!parentCounterNode)) {
             aRv.Throw(NS_ERROR_UNEXPECTED);
             return;
           }
@@ -2046,11 +2036,17 @@ void nsRange::CutContents(DocumentFragment** aFragment,
       }
 
       
+      
+      
+      
+      
+      
+      
       nsCOMPtr<nsINode> closestAncestor, farthestAncestor;
       aRv = CloneParentsBetween(oldCommonAncestor, node,
                                 getter_AddRefs(closestAncestor),
                                 getter_AddRefs(farthestAncestor));
-      if (aRv.Failed()) {
+      if (NS_WARN_IF(aRv.Failed())) {
         return;
       }
 
@@ -2083,37 +2079,49 @@ void nsRange::CutContents(DocumentFragment** aFragment,
       
       
       if (NS_WARN_IF(guard.Mutated(isCloneNode ? 1 : 2) &&
-                     !ValidateCurrentNode(this, iter))) {
+                     !ValidateNodeInRange(this, nextNode))) {
         aRv.Throw(NS_ERROR_UNEXPECTED);
         return;
       }
     } else if (nodeToResult) {
-      if (const nsCOMPtr<nsINode> parent = nodeToResult->GetParentNode()) {
-        nsMutationGuard guard;
-        parent->RemoveChild(*nodeToResult, aRv);
-        if (MOZ_UNLIKELY(aRv.Failed())) {
-          return;
+      MOZ_ASSERT(!retval);
+      nsMutationGuard guard;
+      uint32_t expectedMutation = 0;
+      if (nodeToResult->IsShadowRoot()) {
+        
+        
+        
+        expectedMutation = nodeToResult->GetChildCount();
+        nodeToResult->RemoveAllChildren(true);
+      } else {
+        if (const nsCOMPtr<nsINode> parent = nodeToResult->GetParentNode()) {
+          expectedMutation = 1;
+          parent->RemoveChild(*nodeToResult, aRv);
+          if (NS_WARN_IF(aRv.Failed())) {
+            return;
+          }
         }
-        
-        
-        
-        
-        
-        
-        
-        if (NS_WARN_IF(guard.Mutated(1) && !ValidateCurrentNode(this, iter))) {
-          aRv.Throw(NS_ERROR_UNEXPECTED);
-          return;
-        }
+      }
+      
+      
+      
+      
+      
+      
+      
+      if (NS_WARN_IF(guard.Mutated(expectedMutation) &&
+                     !ValidateNodeInRange(this, nextNode))) {
+        aRv.Throw(NS_ERROR_UNEXPECTED);
+        return;
       }
     }
 
-    if (!iter.IsDone() && retval) {
+    if (nextNode && retval) {
       
-      nsCOMPtr<nsINode> newCloneAncestor = nodeToResult;
+      nsINode* newCloneAncestor = nodeToResult;
       for (uint32_t i = parentCount; i; --i) {
         newCloneAncestor = newCloneAncestor->GetParentNode();
-        if (!newCloneAncestor) {
+        if (NS_WARN_IF(!newCloneAncestor)) {
           aRv.Throw(NS_ERROR_UNEXPECTED);
           return;
         }
