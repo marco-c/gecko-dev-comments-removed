@@ -7,10 +7,30 @@
 
 #include "jit/loong64/MacroAssembler-loong64.h"
 
+#include "mozilla/MathAlgorithms.h"
+
+#include <bit>
+#include <optional>
+#include <utility>
+
 namespace js {
 namespace jit {
 
 
+
+
+static inline constexpr std::optional<std::pair<uint32_t, uint32_t>>
+GetContiguousMaskRange(uint64_t mask) {
+  if (mask == 0) {
+    return std::nullopt;
+  }
+  const uint32_t lsb = std::countr_zero(mask);
+  const uint64_t shifted = mask >> lsb;
+  if (!std::has_single_bit(shifted + 1)) {
+    return std::nullopt;
+  }
+  return std::make_pair(lsb + mozilla::FloorLog2(shifted), lsb);
+}
 
 void MacroAssembler::move64(Register64 src, Register64 dest) {
   movePtr(src.reg, dest.reg);
@@ -2285,31 +2305,31 @@ void MacroAssembler::spectreBoundsCheckPtr(Register index,
 
 
 
-FaultingCodeOffset MacroAssembler::storeFloat32(FloatRegister src,
-                                                const Address& addr) {
-  return ma_fst_s(src, addr);
-}
-FaultingCodeOffset MacroAssembler::storeFloat32(FloatRegister src,
-                                                const BaseIndex& addr) {
-  return ma_fst_s(src, addr);
-}
-
-FaultingCodeOffset MacroAssembler::storeDouble(FloatRegister src,
+FaultingCodeRange MacroAssembler::storeFloat32(FloatRegister src,
                                                const Address& addr) {
+  return ma_fst_s(src, addr);
+}
+FaultingCodeRange MacroAssembler::storeFloat32(FloatRegister src,
+                                               const BaseIndex& addr) {
+  return ma_fst_s(src, addr);
+}
+
+FaultingCodeRange MacroAssembler::storeDouble(FloatRegister src,
+                                              const Address& addr) {
   return ma_fst_d(src, addr);
 }
-FaultingCodeOffset MacroAssembler::storeDouble(FloatRegister src,
-                                               const BaseIndex& addr) {
+FaultingCodeRange MacroAssembler::storeDouble(FloatRegister src,
+                                              const BaseIndex& addr) {
   return ma_fst_d(src, addr);
 }
 
-FaultingCodeOffset MacroAssembler::storeFloat16(FloatRegister src,
-                                                const Address& dest, Register) {
+FaultingCodeRange MacroAssembler::storeFloat16(FloatRegister src,
+                                               const Address& dest, Register) {
   MOZ_CRASH("Not supported for this target");
 }
-FaultingCodeOffset MacroAssembler::storeFloat16(FloatRegister src,
-                                                const BaseIndex& dest,
-                                                Register) {
+FaultingCodeRange MacroAssembler::storeFloat16(FloatRegister src,
+                                               const BaseIndex& dest,
+                                               Register) {
   MOZ_CRASH("Not supported for this target");
 }
 
