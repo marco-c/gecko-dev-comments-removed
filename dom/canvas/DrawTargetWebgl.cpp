@@ -573,6 +573,15 @@ bool SharedContextWebgl::Initialize() {
     return false;
   }
 
+  
+  
+  
+  constexpr auto provokingVertexExt = WebGLExtensionID::WEBGL_provoking_vertex;
+  if (mWebgl->IsExtensionSupported(provokingVertexExt)) {
+    mWebgl->RequestExtension(provokingVertexExt);
+    mWebgl->ProvokingVertex(webgl::ProvokingVertex::FirstVertex);
+  }
+
   mMaxTextureSize = initResult.limits.maxTex2dSize;
 
   if (kIsMacOS) {
@@ -1126,6 +1135,19 @@ already_AddRefed<TextureHandle> SharedContextWebgl::CopySnapshot(
     return nullptr;
   }
 
+  IntPoint offset(aRect.TopLeft());
+  IntSize size(aRect.Size());
+  if (aHandle) {
+    
+    offset += aHandle->GetBounds().TopLeft();
+    size = IntRect(IntPoint(0, 0), aHandle->GetBounds().Size())
+               .Intersect(aRect)
+               .Size();
+  }
+  if (size.IsEmpty()) {
+    return nullptr;
+  }
+
   
   
   RefPtr<WebGLTexture> tex = mWebgl->CreateTexture();
@@ -1140,15 +1162,16 @@ already_AddRefed<TextureHandle> SharedContextWebgl::CopySnapshot(
   }
 
   
-  BindAndInitRenderTex(tex, SurfaceFormat::B8G8R8A8, aRect.Size());
+  BindAndInitRenderTex(tex, SurfaceFormat::B8G8R8A8, size);
   
-  mWebgl->CopyTexImage(LOCAL_GL_TEXTURE_2D, 0, 0, {0, 0, 0}, {aRect.x, aRect.y},
-                       {uint32_t(aRect.width), uint32_t(aRect.height)});
+  mWebgl->CopyTexImage(LOCAL_GL_TEXTURE_2D, 0, 0, {0, 0, 0},
+                       {offset.x, offset.y},
+                       {uint32_t(size.width), uint32_t(size.height)});
 
   SurfaceFormat format =
       aHandle ? aHandle->GetFormat() : mCurrentTarget->GetFormat();
   already_AddRefed<TextureHandle> result =
-      WrapSnapshot(aRect.Size(), format, tex.forget());
+      WrapSnapshot(size, format, tex.forget());
 
   
   if (aHandle) {
