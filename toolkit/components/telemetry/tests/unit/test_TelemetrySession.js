@@ -1726,10 +1726,7 @@ add_task(async function test_abortedSession() {
   );
 
   
-  await IOUtils.remove(DATAREPORTING_PATH, {
-    ignoreAbsent: true,
-    recursive: true,
-  });
+  await IOUtils.remove(ABORTED_FILE, { ignoreAbsent: true });
 
   let schedulerTickCallback = null;
   let now = new Date(2040, 1, 1, 0, 0, 0);
@@ -1847,10 +1844,7 @@ add_task(async function test_abortedDailyCoalescing() {
   );
 
   
-  await IOUtils.remove(DATAREPORTING_PATH, {
-    ignoreAbsent: true,
-    recursive: true,
-  });
+  await IOUtils.remove(ABORTED_FILE, { ignoreAbsent: true });
 
   let schedulerTickCallback = null;
   PingServer.clearRequests();
@@ -1923,10 +1917,7 @@ add_task(async function test_schedulerComputerSleep() {
   PingServer.clearRequests();
 
   
-  await IOUtils.remove(DATAREPORTING_PATH, {
-    ignoreAbsent: true,
-    recursive: true,
-  });
+  await IOUtils.remove(ABORTED_FILE, { ignoreAbsent: true });
 
   
   let nowDate = fakeNow(2009, 10, 18, 0, 0, 0);
@@ -2065,10 +2056,7 @@ add_task(async function test_schedulerNothingDue() {
   );
 
   
-  await IOUtils.remove(DATAREPORTING_PATH, {
-    ignoreAbsent: true,
-    recursive: true,
-  });
+  await IOUtils.remove(ABORTED_FILE, { ignoreAbsent: true });
   await TelemetryStorage.testClearPendingPings();
   await TelemetryController.testReset();
 

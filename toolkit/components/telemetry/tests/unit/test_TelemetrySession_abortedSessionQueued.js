@@ -55,10 +55,7 @@ add_task(async function test_abortedSessionQueued() {
   );
 
   
-  await IOUtils.remove(DATAREPORTING_PATH, {
-    ignoreAbsent: true,
-    recursive: true,
-  });
+  await IOUtils.remove(ABORTED_FILE, { ignoreAbsent: true });
 
   let schedulerTickCallback = null;
   let now = new Date(2040, 1, 1, 0, 0, 0);
@@ -128,10 +125,7 @@ add_task(async function test_abortedSession_canary_clientid() {
   );
 
   
-  await IOUtils.remove(DATAREPORTING_PATH, {
-    ignoreAbsent: true,
-    recursive: true,
-  });
+  await IOUtils.remove(ABORTED_FILE, { ignoreAbsent: true });
 
   let schedulerTickCallback = null;
   let now = new Date(2040, 1, 1, 0, 0, 0);
