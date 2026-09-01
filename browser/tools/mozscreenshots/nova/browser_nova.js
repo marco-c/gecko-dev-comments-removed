@@ -1,0 +1,16 @@
+
+
+
+
+
+
+"use strict";
+
+add_task(async function capture() {
+  if (!shouldCapture()) {
+    return;
+  }
+  let sets = ["ColorScheme", "Nova"];
+
+  await TestRunner.start(sets, "nova");
+});
