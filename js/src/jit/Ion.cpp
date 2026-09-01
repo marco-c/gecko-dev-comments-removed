@@ -1975,6 +1975,13 @@ bool CanIonCompileScript(JSContext* cx, JSScript* script) {
     return false;
   }
 
+  if (script->isAsync() && script->isModule()) {
+    
+    JitSpew(JitSpew_IonAbort, "async module");
+    script->disableIon();
+    return false;
+  }
+
   if (script->hasNonSyntacticScope() && !script->function()) {
     
     
