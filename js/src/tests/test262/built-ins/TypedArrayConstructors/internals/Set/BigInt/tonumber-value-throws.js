@@ -25,8 +25,8 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
-  let sample = new TA([42n]);
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  let sample = new TA(makeCtorArg([42n]));
 
   let obj = {
     valueOf() {
@@ -57,6 +57,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   assert.throws(Test262Error, function() {
     sample['2'] = obj;
   }, '`sample["2"] = obj` throws Test262Error');
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

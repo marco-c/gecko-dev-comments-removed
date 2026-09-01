@@ -26,8 +26,8 @@
 
 
 
-testWithTypedArrayConstructors(function(TA) {
-  let sample = new TA([42]);
+testWithTypedArrayConstructors(function(TA, makeCtorArg) {
+  let sample = new TA(makeCtorArg([42]));
 
   let obj = {
     valueOf() {
@@ -58,6 +58,6 @@ testWithTypedArrayConstructors(function(TA) {
   assert.throws(Test262Error, function() {
     sample["2"] = obj;
   });
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

@@ -14,15 +14,19 @@
 
 
 
+var tags = ["ar", "de", "en", "ja", "ko", "sv", "tr", "zh"];
 
-
-
-
-const output = new Intl.Locale('en').getCollations();
-assert(output.length > 0, 'array has at least one element');
-output.forEach(c => {
-  if(['standard', 'search'].includes(c))
-    throw new Test262Error();
-});
+for (var i = 0; i < tags.length; i++) {
+  var tag = tags[i];
+  var collations = new Intl.Locale(tag).getCollations();
+  assert.notSameValue(collations.length, 0,
+    "getCollations() for " + tag + " has at least one element");
+  for (var j = 0; j < collations.length; j++) {
+    assert.notSameValue(collations[j], "standard",
+      "getCollations() for " + tag + " must not contain 'standard'");
+    assert.notSameValue(collations[j], "search",
+      "getCollations() for " + tag + " must not contain 'search'");
+  }
+}
 
 reportCompare(0, 0);

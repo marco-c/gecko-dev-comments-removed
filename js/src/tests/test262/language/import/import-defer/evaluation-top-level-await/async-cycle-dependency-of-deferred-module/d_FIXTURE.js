@@ -1,0 +1,6 @@
+
+
+
+import "./b_FIXTURE.js";
+
+globalThis.evaluations.push("D");

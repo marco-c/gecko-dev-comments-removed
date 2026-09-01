@@ -1,0 +1,6 @@
+
+
+
+import "./import-fulfilled-member-of-errored-cycle-b_FIXTURE.js";
+
+await Promise.resolve(0);

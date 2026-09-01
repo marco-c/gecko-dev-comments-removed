@@ -8,6 +8,7 @@
 
 
 
+
 function verifyFormatParts(actual, expected, message) {
   assert.sameValue(Array.isArray(expected), true, `${message}: expected is Array`);
   assert.sameValue(Array.isArray(actual), true, `${message}: actual is Array`);
@@ -19,81 +20,64 @@ function verifyFormatParts(actual, expected, message) {
   }
 }
 
+function makePart(type, value) {
+  return value ? [{ "type": type, "value": value }] : [];
+}
+
+function addUnitParts(numberParts, separators, prefixText, suffixText) {
+  return [].concat(
+    makePart("unit", prefixText),
+    makePart("literal", separators.prefix),
+    numberParts,
+    makePart("literal", separators.suffix),
+    makePart("unit", suffixText)
+  );
+}
+
+
+
+
+const shortSep = getUnitSeparators("ja-JP", "short");
+const narrowSep = getUnitSeparators("ja-JP", "narrow");
+const longSep = getUnitSeparators("ja-JP", "long");
+
 const tests = [
   [
     -987,
-    {
-      "short":
-        [{"type":"minusSign","value":"-"},{"type":"integer","value":"987"},{"type":"literal","value":" "},{"type":"unit","value":"km/h"}],
-      "narrow":
-        [{"type":"minusSign","value":"-"},{"type":"integer","value":"987"},{"type":"unit","value":"km/h"}],
-      "long":
-        [{"type":"unit","value":"時速"},{"type":"literal","value":" "},{"type":"minusSign","value":"-"},{"type":"integer","value":"987"},{"type":"literal","value":" "},{"type":"unit","value":"キロメートル"}],
-    }
+    [{ type: "minusSign", value: "-" }, { type: "integer", value: "987" }],
   ],
   [
     -0.001,
-    {
-      "short":
-        [{"type":"minusSign","value":"-"},{"type":"integer","value":"0"},{"type":"decimal","value":"."},{"type":"fraction","value":"001"},{"type":"literal","value":" "},{"type":"unit","value":"km/h"}],
-      "narrow":
-        [{"type":"minusSign","value":"-"},{"type":"integer","value":"0"},{"type":"decimal","value":"."},{"type":"fraction","value":"001"},{"type":"unit","value":"km/h"}],
-      "long":
-        [{"type":"unit","value":"時速"},{"type":"literal","value":" "},{"type":"minusSign","value":"-"},{"type":"integer","value":"0"},{"type":"decimal","value":"."},{"type":"fraction","value":"001"},{"type":"literal","value":" "},{"type":"unit","value":"キロメートル"}],
-    }
+    [{ type: "minusSign", value: "-" }, { type: "integer", value: "0" }, { type: "decimal", value: "." }, { type: "fraction", value: "001" }],
   ],
   [
     -0,
-    {
-      "short":
-        [{"type":"minusSign","value":"-"},{"type":"integer","value":"0"},{"type":"literal","value":" "},{"type":"unit","value":"km/h"}],
-      "narrow":
-        [{"type":"minusSign","value":"-"},{"type":"integer","value":"0"},{"type":"unit","value":"km/h"}],
-      "long":
-        [{"type":"unit","value":"時速"},{"type":"literal","value":" "},{"type":"minusSign","value":"-"},{"type":"integer","value":"0"},{"type":"literal","value":" "},{"type":"unit","value":"キロメートル"}],
-    }
+    [{ type: "minusSign", value: "-" }, { type: "integer", value: "0" }],
   ],
   [
     0,
-    {
-      "short":
-        [{"type":"integer","value":"0"},{"type":"literal","value":" "},{"type":"unit","value":"km/h"}],
-      "narrow":
-        [{"type":"integer","value":"0"},{"type":"unit","value":"km/h"}],
-      "long":
-        [{"type":"unit","value":"時速"},{"type":"literal","value":" "},{"type":"integer","value":"0"},{"type":"literal","value":" "},{"type":"unit","value":"キロメートル"}],
-    }
-  ],
+    [{ type: "integer", value: "0" }]],
   [
     0.001,
-    {
-      "short":
-        [{"type":"integer","value":"0"},{"type":"decimal","value":"."},{"type":"fraction","value":"001"},{"type":"literal","value":" "},{"type":"unit","value":"km/h"}],
-      "narrow":
-        [{"type":"integer","value":"0"},{"type":"decimal","value":"."},{"type":"fraction","value":"001"},{"type":"unit","value":"km/h"}],
-      "long":
-        [{"type":"unit","value":"時速"},{"type":"literal","value":" "},{"type":"integer","value":"0"},{"type":"decimal","value":"."},{"type":"fraction","value":"001"},{"type":"literal","value":" "},{"type":"unit","value":"キロメートル"}],
-    }
+    [{ type: "integer", value: "0" }, { type: "decimal", value: "." }, { type: "fraction", value: "001" }],
   ],
   [
     987,
-    {
-      "short":
-        [{"type":"integer","value":"987"},{"type":"literal","value":" "},{"type":"unit","value":"km/h"}],
-      "narrow":
-        [{"type":"integer","value":"987"},{"type":"unit","value":"km/h"}],
-      "long":
-        [{"type":"unit","value":"時速"},{"type":"literal","value":" "},{"type":"integer","value":"987"},{"type":"literal","value":" "},{"type":"unit","value":"キロメートル"}],
-    }
+    [{ type: "integer", value: "987" }],
   ],
 ];
 
-for (const [number, expectedData] of tests) {
+for (const [number, numberParts] of tests) {
+  const expectedData = {
+    "short": addUnitParts(numberParts, shortSep, "", "km/h"),
+    "narrow": addUnitParts(numberParts, narrowSep, "", "km/h"),
+    "long": addUnitParts(numberParts, longSep, "時速", "キロメートル"),
+  };
+
   for (const [unitDisplay, expected] of Object.entries(expectedData)) {
     const nf = new Intl.NumberFormat("ja-JP", { style: "unit", unit: "kilometer-per-hour", unitDisplay });
-    verifyFormatParts(nf.formatToParts(number), expected);
+    verifyFormatParts(nf.formatToParts(number), expected, `${number} ${unitDisplay}`);
   }
 }
-
 
 reportCompare(0, 0);

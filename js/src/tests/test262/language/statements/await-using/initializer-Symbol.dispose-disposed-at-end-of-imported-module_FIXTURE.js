@@ -1,0 +1,18 @@
+
+
+
+export let disposed = false;
+
+await using resource = {
+  [Symbol.dispose]() {
+    if (disposed) {
+      throw new Error('resource disposed multiple times');
+    }
+    disposed = true;
+  }
+};
+export { resource };
+
+if (disposed) {
+  throw new Error('resource disposed before module evaluation completed');
+}

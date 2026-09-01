@@ -52,13 +52,13 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
-  var typedArray = new TA(1);
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var typedArray = new TA(makeCtorArg(1));
 
   assert.throws(TypeError, function() {
     typedArray[0] = undefined;
   });
 
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

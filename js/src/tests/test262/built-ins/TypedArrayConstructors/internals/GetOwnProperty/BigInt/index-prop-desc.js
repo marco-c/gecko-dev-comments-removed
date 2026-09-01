@@ -18,8 +18,8 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
-  var sample = new TA([42n, 43n]);
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg([42n, 43n]));
 
   let descriptor0 = Object.getOwnPropertyDescriptor(sample, "0");
   let descriptor1 = Object.getOwnPropertyDescriptor(sample, "1");
@@ -33,6 +33,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   assert.sameValue(descriptor1.configurable, true);
   assert.sameValue(descriptor1.enumerable, true);
   assert.sameValue(descriptor1.writable, true);
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

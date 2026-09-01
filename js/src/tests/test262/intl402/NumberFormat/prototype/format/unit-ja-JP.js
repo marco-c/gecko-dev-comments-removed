@@ -9,53 +9,60 @@
 
 
 
+
+
+
+const shortSep = getUnitSeparators("ja-JP", "short");
+const narrowSep = getUnitSeparators("ja-JP", "narrow");
+const longSep = getUnitSeparators("ja-JP", "long");
+
 const tests = [
   [
     -987,
     {
-      "short": "-987 km/h",
-      "narrow": "-987km/h",
-      "long": "時速 -987 キロメートル",
+      "short": `-987${shortSep.suffix}km/h`,
+      "narrow": `-987${narrowSep.suffix}km/h`,
+      "long": `時速${longSep.prefix}-987${longSep.suffix}キロメートル`,
     }
   ],
   [
     -0.001,
     {
-      "short": "-0.001 km/h",
-      "narrow": "-0.001km/h",
-      "long": "時速 -0.001 キロメートル",
+      "short": `-0.001${shortSep.suffix}km/h`,
+      "narrow": `-0.001${narrowSep.suffix}km/h`,
+      "long": `時速${longSep.prefix}-0.001${longSep.suffix}キロメートル`,
     }
   ],
   [
     -0,
     {
-      "short": "-0 km/h",
-      "narrow": "-0km/h",
-      "long": "時速 -0 キロメートル",
+      "short": `-0${shortSep.suffix}km/h`,
+      "narrow": `-0${narrowSep.suffix}km/h`,
+      "long": `時速${longSep.prefix}-0${longSep.suffix}キロメートル`,
     }
   ],
   [
     0,
     {
-      "short": "0 km/h",
-      "narrow": "0km/h",
-      "long": "時速 0 キロメートル",
+      "short": `0${shortSep.suffix}km/h`,
+      "narrow": `0${narrowSep.suffix}km/h`,
+      "long": `時速${longSep.prefix}0${longSep.suffix}キロメートル`,
     }
   ],
   [
     0.001,
     {
-      "short": "0.001 km/h",
-      "narrow": "0.001km/h",
-      "long": "時速 0.001 キロメートル",
+      "short": `0.001${shortSep.suffix}km/h`,
+      "narrow": `0.001${narrowSep.suffix}km/h`,
+      "long": `時速${longSep.prefix}0.001${longSep.suffix}キロメートル`,
     }
   ],
   [
     987,
     {
-      "short": "987 km/h",
-      "narrow": "987km/h",
-      "long": "時速 987 キロメートル",
+      "short": `987${shortSep.suffix}km/h`,
+      "narrow": `987${narrowSep.suffix}km/h`,
+      "long": `時速${longSep.prefix}987${longSep.suffix}キロメートル`,
     }
   ],
 ];
@@ -66,6 +73,5 @@ for (const [number, expectedData] of tests) {
     assert.sameValue(nf.format(number), expected);
   }
 }
-
 
 reportCompare(0, 0);

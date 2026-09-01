@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+var gotReturn = false;
+var it = {
+  next: function () {
+    return null;
+  },
+  get return() {
+    gotReturn = true;
+  },
+};
+
+assert.throws(TypeError, function () {
+  Iterator.prototype.join.call(it);
+});
+
+assert.sameValue(gotReturn, false);
+
+reportCompare(0, 0);

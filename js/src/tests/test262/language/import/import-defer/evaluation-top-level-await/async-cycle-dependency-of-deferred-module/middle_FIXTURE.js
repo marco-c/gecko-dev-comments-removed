@@ -1,0 +1,8 @@
+
+
+
+import defer * as nsD from "./d_FIXTURE.js";
+
+globalThis.evaluations.push("Middle-before-nsD.z");
+nsD.z;
+globalThis.evaluations.push("Middle-after-nsD.z");

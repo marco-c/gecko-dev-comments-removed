@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Promise.resolve = function() {
+  return {};
+};
+
+asyncTest(function() {
+  return assert.throwsAsync(TypeError, function() {
+    return Promise.allKeyed({ key: 1 });
+  });
+});

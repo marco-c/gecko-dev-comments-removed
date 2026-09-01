@@ -13,6 +13,14 @@
 
 
 
-assert(Array.isArray(new Intl.Locale('en').getCollations()));
+var tags = ["ar", "de", "en", "ja", "ko", "sv", "tr", "zh"];
+
+for (var i = 0; i < tags.length; i++) {
+  var tag = tags[i];
+  assert(
+    Array.isArray(new Intl.Locale(tag).getCollations()),
+    "getCollations() for " + tag + " must return an array"
+  );
+}
 
 reportCompare(0, 0);
