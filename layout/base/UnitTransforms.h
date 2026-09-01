@@ -257,33 +257,33 @@ TypedMatrix ViewAs(const gfx::Matrix4x4& aMatrix) {
 
 
 template <typename TargetUnits, typename SourceUnits>
-static gfx::PointTyped<TargetUnits> TransformBy(
+gfx::PointTyped<TargetUnits> TransformBy(
     const gfx::Matrix4x4Typed<SourceUnits, TargetUnits>& aTransform,
     const gfx::PointTyped<SourceUnits>& aPoint) {
   return aTransform.TransformPoint(aPoint);
 }
 template <typename TargetUnits, typename SourceUnits>
-static gfx::IntPointTyped<TargetUnits> TransformBy(
+gfx::IntPointTyped<TargetUnits> TransformBy(
     const gfx::Matrix4x4Typed<SourceUnits, TargetUnits>& aTransform,
     const gfx::IntPointTyped<SourceUnits>& aPoint) {
   return RoundedToInt(
       TransformBy(aTransform, gfx::PointTyped<SourceUnits>(aPoint)));
 }
 template <typename TargetUnits, typename SourceUnits>
-static gfx::RectTyped<TargetUnits> TransformBy(
+gfx::RectTyped<TargetUnits> TransformBy(
     const gfx::Matrix4x4Typed<SourceUnits, TargetUnits>& aTransform,
     const gfx::RectTyped<SourceUnits>& aRect) {
   return aTransform.TransformBounds(aRect);
 }
 template <typename TargetUnits, typename SourceUnits>
-static gfx::IntRectTyped<TargetUnits> TransformBy(
+gfx::IntRectTyped<TargetUnits> TransformBy(
     const gfx::Matrix4x4Typed<SourceUnits, TargetUnits>& aTransform,
     const gfx::IntRectTyped<SourceUnits>& aRect) {
   return RoundedToInt(
       TransformBy(aTransform, gfx::RectTyped<SourceUnits>(aRect)));
 }
 template <typename TargetUnits, typename SourceUnits>
-static gfx::IntRegionTyped<TargetUnits> TransformBy(
+gfx::IntRegionTyped<TargetUnits> TransformBy(
     const gfx::Matrix4x4Typed<SourceUnits, TargetUnits>& aTransform,
     const gfx::IntRegionTyped<SourceUnits>& aRegion) {
   return ViewAs<TargetUnits>(
@@ -295,7 +295,7 @@ static gfx::IntRegionTyped<TargetUnits> TransformBy(
 
 
 template <typename TargetUnits, typename SourceUnits>
-static gfx::PointTyped<TargetUnits> TransformVector(
+gfx::PointTyped<TargetUnits> TransformVector(
     const gfx::Matrix4x4Typed<SourceUnits, TargetUnits>& aTransform,
     const gfx::PointTyped<SourceUnits>& aVector,
     const gfx::PointTyped<SourceUnits>& aAnchor) {
@@ -314,7 +314,7 @@ static gfx::PointTyped<TargetUnits> TransformVector(
 
 
 template <typename TargetUnits, typename SourceUnits>
-static Maybe<gfx::PointTyped<TargetUnits>> UntransformBy(
+Maybe<gfx::PointTyped<TargetUnits>> UntransformBy(
     const gfx::Matrix4x4Typed<SourceUnits, TargetUnits>& aTransform,
     const gfx::PointTyped<SourceUnits>& aPoint) {
   gfx::Point4DTyped<TargetUnits> point = aTransform.ProjectPoint(aPoint);
@@ -324,7 +324,7 @@ static Maybe<gfx::PointTyped<TargetUnits>> UntransformBy(
   return Some(point.As2DPoint());
 }
 template <typename TargetUnits, typename SourceUnits>
-static Maybe<gfx::IntPointTyped<TargetUnits>> UntransformBy(
+Maybe<gfx::IntPointTyped<TargetUnits>> UntransformBy(
     const gfx::Matrix4x4Typed<SourceUnits, TargetUnits>& aTransform,
     const gfx::IntPointTyped<SourceUnits>& aPoint) {
   gfx::PointTyped<SourceUnits> p = aPoint;
@@ -340,7 +340,7 @@ static Maybe<gfx::IntPointTyped<TargetUnits>> UntransformBy(
 
 
 template <typename TargetUnits, typename SourceUnits>
-static Maybe<gfx::RectTyped<TargetUnits>> UntransformBy(
+Maybe<gfx::RectTyped<TargetUnits>> UntransformBy(
     const gfx::Matrix4x4Typed<SourceUnits, TargetUnits>& aTransform,
     const gfx::RectTyped<SourceUnits>& aRect,
     const gfx::RectTyped<TargetUnits>& aClip) {
@@ -351,7 +351,7 @@ static Maybe<gfx::RectTyped<TargetUnits>> UntransformBy(
   return Some(rect);
 }
 template <typename TargetUnits, typename SourceUnits>
-static Maybe<gfx::IntRectTyped<TargetUnits>> UntransformBy(
+Maybe<gfx::IntRectTyped<TargetUnits>> UntransformBy(
     const gfx::Matrix4x4Typed<SourceUnits, TargetUnits>& aTransform,
     const gfx::IntRectTyped<SourceUnits>& aRect,
     const gfx::IntRectTyped<TargetUnits>& aClip) {
@@ -363,7 +363,7 @@ static Maybe<gfx::IntRectTyped<TargetUnits>> UntransformBy(
 }
 
 template <typename TargetUnits, typename SourceUnits>
-static Maybe<gfx::PointTyped<TargetUnits>> UntransformVector(
+Maybe<gfx::PointTyped<TargetUnits>> UntransformVector(
     const gfx::Matrix4x4Typed<SourceUnits, TargetUnits>& aTransform,
     const gfx::PointTyped<SourceUnits>& aVector,
     const gfx::PointTyped<SourceUnits>& aAnchor) {
