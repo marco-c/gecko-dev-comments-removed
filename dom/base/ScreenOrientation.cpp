@@ -564,6 +564,15 @@ already_AddRefed<Promise> ScreenOrientation::LockInternal(
     return p.forget();
   }
 
+#  if defined(XP_WIN)
+  
+  
+  if (doc->ShouldResistFingerprinting(RFPTarget::ScreenOrientation)) {
+    p->MaybeReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return p.forget();
+  }
+#  endif
+
   RefPtr<BrowsingContext> bc = docShell->GetBrowsingContext();
   bc = bc ? bc->Top() : nullptr;
   if (!bc) {
