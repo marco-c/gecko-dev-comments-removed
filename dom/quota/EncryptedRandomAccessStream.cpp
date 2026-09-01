@@ -239,12 +239,6 @@ NS_IMETHODIMP EncryptedRandomAccessStreamBase::WriteSegments(
   
   
   if (mLogicalPosition > mLogicalSize) {
-    if (mBlockDirty) {
-      const auto rv = SaveCurrentBlock();
-      if (NS_FAILED(rv)) {
-        return rv;
-      }
-    }
     const auto rv = ZeroExtendTo(mLogicalPosition);
     if (NS_FAILED(rv)) {
       return rv;
@@ -404,13 +398,14 @@ nsresult EncryptedRandomAccessStreamBase::ZeroExtendTo(
     return NS_OK;
   }
 
-  if (mTotalBlockCount == 0) {
+  if (mLogicalSize == 0) {
+    MOZ_ASSERT(!mBlockDirty);  
     const auto rv = LoadNewBlockAtEnd();
     if (NS_FAILED(rv)) {
       return rv;
     }
   } else {
-    BlockIndexType lastBlockIndex = mTotalBlockCount - 1;
+    const BlockIndexType lastBlockIndex = (mLogicalSize - 1) / sMaxTextLength;
     if (lastBlockIndex != mCurrentBlockIndex || !mBlockLoaded) {
       if (mBlockDirty) {
         const auto rv = SaveCurrentBlock();
@@ -461,6 +456,9 @@ nsresult EncryptedRandomAccessStreamBase::ZeroExtendTo(
       }
     }
   }
+
+  
+  MOZ_ASSERT(mBlockDirty);
 
   return NS_OK;
 }
