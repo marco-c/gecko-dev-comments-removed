@@ -452,6 +452,9 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   void ShutdownConnectionManager();
 
+  
+  void Shutdown();
+
   uint32_t DefaultHpackBuffer() const { return mDefaultHpackBuffer; }
 
   static bool IsHttp3Enabled();
@@ -668,6 +671,10 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   
   Atomic<bool, Relaxed> mHandlerActive{false};
+
+  
+  
+  Atomic<bool, ReleaseAcquire> mShutdownCalled{false};
 
   
   uint32_t mDebugObservations : 1;

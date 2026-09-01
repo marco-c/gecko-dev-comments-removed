@@ -203,7 +203,13 @@ already_AddRefed<nsHttpHandler> nsHttpHandler::GetInstance() {
     MOZ_ASSERT(NS_SUCCEEDED(rv));
     
     
-    ClearOnShutdown(&gHttpHandler, ShutdownPhase::CCPostLastCycleCollection);
+    
+    RunOnShutdown(
+        [] {
+          gHttpHandler->Shutdown();
+          gHttpHandler = nullptr;
+        },
+        ShutdownPhase::CCPostLastCycleCollection);
   }
   RefPtr<nsHttpHandler> httpHandler = gHttpHandler;
   return httpHandler.forget();
@@ -297,19 +303,21 @@ nsHttpHandler::~nsHttpHandler() {
   LOG(("Deleting nsHttpHandler [this=%p]\n", this));
 
   
-  if (mConnMgr) {
-    nsresult rv = mConnMgr->Shutdown();
-    if (NS_FAILED(rv)) {
-      LOG(
-          ("nsHttpHandler [this=%p] "
-           "failed to shutdown connection manager (%08x)\n",
-           this, static_cast<uint32_t>(rv)));
-    }
-    mConnMgr = nullptr;
+  
+
+  Shutdown();
+
+  mConnMgr = nullptr;
+}
+
+void nsHttpHandler::Shutdown() {
+  if (mShutdownCalled.exchange(true)) {
+    return;
   }
 
-  
-  
+  LOG(("nsHttpHandler::Shutdown [this=%p]\n", this));
+
+  ShutdownConnectionManager();
 
   nsHttp::DestroyAtomTable();
 }
