@@ -637,6 +637,10 @@ class TrustPanel {
         
         targetClasses.add("breach-animating");
         browser.lastAnimatedBreachURI = this.#uri?.spec;
+
+        Glean.trustpanel.breachAlertShieldAnimated.record({
+          breach_status: this.#breachedStatus,
+        });
         
         
       }
