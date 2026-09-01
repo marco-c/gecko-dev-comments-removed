@@ -111,7 +111,9 @@ template <typename char_type>
     }
 
     
-    if (*pos != '=') {
+    
+    
+    if (pos == end || *pos != '=') {
       
       while (namePos < pos && NS_IsHTTPWhitespace(*namePos)) {
         ++namePos;
