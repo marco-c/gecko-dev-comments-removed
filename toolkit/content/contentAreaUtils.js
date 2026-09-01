@@ -111,7 +111,7 @@ function saveBrowser(aBrowser, aSkipPrompt, aBrowsingContext = null) {
   
   
   if (aBrowser.contentPrincipal.spec == "resource://pdf.js/web/viewer.html") {
-    aBrowser.sendMessageToActor("PDFJS:Save", {}, "Pdfjs");
+    aBrowser.sendMessageToActor("PDFJS:Save", {}, "PdfJs");
     return;
   }
   let stack = Components.stack.caller;
