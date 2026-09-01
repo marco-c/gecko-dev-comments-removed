@@ -1168,7 +1168,7 @@ pref("browser.tabs.groups.smart.nearestNeighborThresholdInt", 275);
 pref("browser.tabs.groups.smart.clusterMethod", "AGGLOMERATIVE");
 
 
-pref("browser.tabs.groups.smart.agglomerativeThresholdInt", 850);
+pref("browser.tabs.groups.smart.agglomerativeThresholdInt", 825);
 pref("browser.tabs.groups.smart.optin", false);
 
 pref("browser.tabs.dragDrop.createGroup.enabled", true);
@@ -2353,7 +2353,7 @@ pref("places.semanticHistory.smartwindow.distanceThreshold", "0.6");
 
 
 pref("browser.smartwindow.autoTabGrouping.enabled", false);
-pref("browser.smartwindow.autoTabGrouping.maxGroups", 5);
+pref("browser.smartwindow.autoTabGrouping.maxGroups", 3);
 pref("browser.smartwindow.autoTabGrouping.minTabsPerGroup", 2);
 pref("browser.smartwindow.autoTabGrouping.minCandidateTabs", 4);
 pref("browser.smartwindow.autoTabGrouping.minCohesion", "0.15");
