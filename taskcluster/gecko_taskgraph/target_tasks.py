@@ -850,13 +850,6 @@ def target_tasks_custom_car_perf_testing(full_task_graph, parameters, graph_conf
                         for x in ["speedometer3", "jetstream3", "motionmark"]
                     ):
                         return False
-                
-                
-                if "jetstream2" in try_name:
-                    
-                    if "m-car" in try_name and "1500" in platform:
-                        return False
-                    return True
                 return True
         elif accept_raptor_android_build(platform):
             if "browsertime" in try_name and "cstm-car-m" in try_name:
@@ -864,8 +857,6 @@ def target_tasks_custom_car_perf_testing(full_task_graph, parameters, graph_conf
                     return False
                 if "hw-s24" in platform and "speedometer3" not in try_name:
                     return False
-                if "jetstream2" in try_name:
-                    return True
                 if "jetstream3" in try_name:
                     return True
                 
@@ -976,8 +967,6 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                 if "safari" in try_name and "video-playback-latency" in try_name:
                     return True
                 if "safari" and "benchmark" in try_name:
-                    if "jetstream2" in try_name and "safari" in try_name:
-                        return False
                     
                     
                     if (
@@ -1032,8 +1021,6 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                 
                 if "m-car" in try_name:
                     return False
-                if "jetstream2" in try_name:
-                    return True
                 if "jetstream3" in try_name:
                     return True
                 if "fenix" in try_name:
