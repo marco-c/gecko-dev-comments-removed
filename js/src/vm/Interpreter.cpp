@@ -1682,7 +1682,7 @@ bool js::SyncDisposalClosure(JSContext* cx, unsigned argc, JS::Value* vp) {
   }
 
   
-  args.rval().set(JS::ObjectValue(*promiseCapability));
+  args.rval().setObject(*promiseCapability);
   return true;
 }
 
@@ -1764,7 +1764,7 @@ bool js::AddDisposableResourceToCapability(JSContext* cx,
     }
     asyncWrapper->initExtendedSlot(uint8_t(SyncDisposalClosureSlots::Method),
                                    method);
-    disposeMethod.set(JS::ObjectValue(*asyncWrapper));
+    disposeMethod.setObject(*asyncWrapper);
   } else {
     disposeMethod.set(method);
   }
@@ -3354,13 +3354,13 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
           
           
           if (jit::JitOptions.emitInterpreterEntryTrampoline) {
-            if (MaybeEnterInterpreterTrampoline(cx, state)) {
-              interpReturnOK = true;
-              CHECK_BRANCH();
-              REGS.sp = args.spAfterCall();
-              goto jit_return;
+            if (!MaybeEnterInterpreterTrampoline(cx, state)) {
+              goto error;
             }
-            goto error;
+            interpReturnOK = true;
+            CHECK_BRANCH();
+            REGS.sp = args.spAfterCall();
+            goto jit_return;
           }
 #endif
         }
@@ -4286,6 +4286,20 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
             case jit::EnterJitStatus::NotEntered:
               break;
           }
+
+#ifdef NIGHTLY_BUILD
+          
+          
+          
+          if (jit::JitOptions.emitInterpreterEntryTrampoline) {
+            if (!MaybeEnterInterpreterTrampoline(cx, state)) {
+              goto error;
+            }
+            REGS.sp -= 2;
+            interpReturnOK = true;
+            goto jit_return;
+          }
+#endif
         }
 
         
@@ -4317,6 +4331,12 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
       
       
       MOZ_ASSERT_IF(REGS.fp()->script()->isDebuggee(), REGS.fp()->isDebuggee());
+
+#ifdef DEBUG
+      
+      auto& genObj = REGS.sp[-2].toObject().as<AbstractGeneratorObject>();
+      MOZ_ASSERT(genObj.isRunning());
+#endif
 
       
       
