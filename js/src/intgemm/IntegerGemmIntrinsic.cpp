@@ -467,6 +467,17 @@ int32_t js::intgemm::IntrI8SelectColumnsOfB(wasm::Instance* instance,
     }
   }
 
+  
+  
+  
+  
+  uint64_t colIndexListEnd =
+      (uint64_t)colIndexList + (uint64_t)sizeColIndexList * sizeof(uint32_t);
+  uint64_t outputEnd = (uint64_t)output + sizeOutput;
+  if (colIndexList < outputEnd && output < colIndexListEnd) {
+    return -1;
+  }
+
   AutoProfilerMarker marker(cx->runtime()->geckoProfiler(),
                             "integemm::SelectColumnsB",
                             "rowsB: {} colsB: {} sizecolList: {}, sizeB: {}",
