@@ -37,7 +37,6 @@ use style::counter_style::{self, DescriptorId as CounterStyleDescriptorId};
 use style::data::{self, ElementStyles};
 use style::dom::ElementContext;
 use style::dom::{AttributeTracker, ShowSubtreeData, TDocument, TElement, TNode, TShadowRoot};
-use style::driver;
 use style::error_reporting::{ParseErrorReporter, SelectorWarningKind};
 use style::font_face::{
     self, DescriptorId as FontFaceDescriptorId, FontFaceSourceFormat, FontFaceSourceListComponent,
@@ -141,7 +140,7 @@ use style::values::animated::{Animate, Procedure, ToAnimatedZero};
 use style::values::computed::easing::ComputedTimingFunction;
 use style::values::computed::effects::Filter;
 use style::values::computed::font::{
-    FamilyName, FontFamily, FontFamilyList, FontStretch, FontStyle, FontWeight, GenericFontFamily,
+    FamilyName, FontFamily, FontFamilyList, FontStyle, FontWeight, FontWidth, GenericFontFamily,
 };
 use style::values::computed::length_percentage::{
     AllowAnchorPosResolutionInCalcPercentage, Unpacked,
@@ -156,12 +155,14 @@ use style::values::generics::Optional;
 use style::values::resolved;
 use style::values::resolved::ToResolvedValue;
 use style::values::specified::align::AlignFlags;
+use style::values::specified::calc::{CalcNodeParseInPlaceOperations, PercentageContext};
 use style::values::specified::intersection_observer::IntersectionObserverMargin;
 use style::values::specified::position::PositionTryFallbacksItem;
 use style::values::specified::source_size_list::SourceSizeList;
 use style::values::specified::svg_path::PathCommand;
 use style::values::specified::{LengthUnit, NoCalcLength, NoCalcNumber};
 use style::values::{specified, AtomIdent, CustomIdent, KeyframesName};
+use style::{custom_properties, driver};
 use style_traits::{CssWriter, ParseError, ParsingMode, SpecifiedValueInfo, ToCss};
 use thin_vec::ThinVec as nsTArray;
 use to_shmem::SharedMemoryBuilder;
@@ -3796,14 +3797,14 @@ pub extern "C" fn Servo_FontFaceRule_GetFontWeight(
 }
 
 #[no_mangle]
-pub extern "C" fn Servo_FontFaceRule_GetFontStretch(
+pub extern "C" fn Servo_FontFaceRule_GetFontWidth(
     rule: &LockedFontFaceRule,
-    out: &mut font_face::ComputedFontStretchRange,
+    out: &mut font_face::ComputedFontWidthRange,
 ) -> bool {
     read_locked_arc_worker(rule, |rule: &FontFaceRule| {
         match rule
             .descriptors
-            .font_stretch
+            .font_width
             .as_ref()
             .and_then(|f| f.compute())
         {
@@ -5527,6 +5528,29 @@ pub extern "C" fn Servo_DeclarationBlock_GetAt(
     read_locked_arc(declarations, |decls: &PropertyDeclarationBlock| {
         if let Some(decl) = decls.declarations().get(index as usize) {
             *result = decl.id().to_gecko_css_property_id();
+
+            
+            
+            
+            
+            
+            
+            if let PropertyDeclarationId::Longhand(longhand) = decl.id() {
+                if !NonCustomPropertyId::from_longhand(longhand)
+                    .to_property_id()
+                    .enabled_for_all_content()
+                {
+                    for shorthand in longhand.shorthands() {
+                        if shorthand.is_legacy_shorthand()
+                            && shorthand.allows_disabled_subproperties()
+                        {
+                            result.mId = shorthand.to_noncustomcsspropertyid();
+                            break;
+                        }
+                    }
+                }
+            }
+
             true
         } else {
             false
@@ -7558,8 +7582,9 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
                     debug_assert!(!property.is_logical());
                     debug_assert!(property.is_animatable());
 
-                    
-                    if property == PropertyDeclarationId::Longhand(LonghandId::Display) {
+                    if property == PropertyDeclarationId::Longhand(LonghandId::Display)
+                        && !static_prefs::pref!("layout.css.display-animations.enabled")
+                    {
                         return;
                     }
 
@@ -7776,49 +7801,12 @@ pub extern "C" fn Servo_IsWorkerThread() -> bool {
     thread_state::get().is_worker()
 }
 
-enum Offset {
-    Zero,
-    One,
-}
-
 fn property_value_pair_for(id: &PropertyDeclarationId) -> structs::PropertyValuePair {
     structs::PropertyValuePair {
         mProperty: id.to_gecko_css_property_id(),
         mServoDeclarationBlock: structs::RefPtr::null(),
         #[cfg(feature = "gecko_debug")]
         mSimulateComputeValuesFailure: false,
-    }
-}
-
-fn fill_in_missing_keyframe_values(
-    all_properties: &PropertyDeclarationIdSet,
-    timing_function: &ComputedTimingFunction,
-    composite: structs::CompositeOperationOrAuto,
-    properties_at_offset: &PropertyDeclarationIdSet,
-    offset: Offset,
-    keyframes: &mut nsTArray<structs::Keyframe>,
-) {
-    
-    if properties_at_offset.contains_all(all_properties) {
-        return;
-    }
-
-    let keyframe = match offset {
-        Offset::Zero => unsafe {
-            &mut *bindings::Gecko_GetOrCreateInitialKeyframe(keyframes, timing_function, composite)
-        },
-        Offset::One => unsafe {
-            &mut *bindings::Gecko_GetOrCreateFinalKeyframe(keyframes, timing_function, composite)
-        },
-    };
-
-    
-    for property in all_properties.iter() {
-        if !properties_at_offset.contains(property) {
-            keyframe
-                .mPropertyValues
-                .push(property_value_pair_for(&property));
-        }
     }
 }
 
@@ -7859,7 +7847,6 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
     style: &ComputedValues,
     name: *mut nsAtom,
     inherited_timing_function: &ComputedTimingFunction,
-    inherited_composite: computed::AnimationComposition,
     keyframes: &mut nsTArray<structs::Keyframe>,
 ) -> bool {
     use style::gecko_bindings::structs::CompositeOperationOrAuto;
@@ -7882,52 +7869,34 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
     let guard = global_style_data.shared_lock.read();
 
     let mut properties_set_at_current_offset = PropertyDeclarationIdSet::default();
-    let mut properties_set_at_start = PropertyDeclarationIdSet::default();
-    let mut properties_set_at_end = PropertyDeclarationIdSet::default();
-    let mut has_complete_initial_keyframe = false;
-    let mut has_complete_final_keyframe = false;
     let mut current_offset = -1.;
 
     let writing_mode = style.writing_mode;
-    let map_composite = |composite: AnimationComposition| match composite {
-        AnimationComposition::Replace => CompositeOperationOrAuto::Replace,
-        AnimationComposition::Add => CompositeOperationOrAuto::Add,
-        AnimationComposition::Accumulate => CompositeOperationOrAuto::Accumulate,
-    };
-    
-    
-    let mut initial_keyframe_composite = CompositeOperationOrAuto::Auto;
-    let mut final_keyframe_composite = CompositeOperationOrAuto::Auto;
 
     let get_timing_func_and_composition =
-        |step: &KeyframesStep,
-         is_generated_missing_keyframe: bool|
-         -> (ComputedTimingFunction, CompositeOperationOrAuto) {
+        |step: &KeyframesStep| -> (ComputedTimingFunction, CompositeOperationOrAuto) {
             
             let timing_function = match step.get_animation_timing_function(&guard) {
                 Some(val) => val.to_computed_value_without_context(),
                 None => (*inherited_timing_function).clone(),
             };
             
+            
             let composition = step.get_animation_composition(&guard).map_or(
-                
-                
-                
-                
-                
-                if is_generated_missing_keyframe {
-                    map_composite(inherited_composite)
-                } else {
-                    CompositeOperationOrAuto::Auto
+                CompositeOperationOrAuto::Auto,
+                |c| match c {
+                    AnimationComposition::Replace => CompositeOperationOrAuto::Replace,
+                    AnimationComposition::Add => CompositeOperationOrAuto::Add,
+                    AnimationComposition::Accumulate => CompositeOperationOrAuto::Accumulate,
                 },
-                |val| map_composite(val),
             );
             (timing_function, composition)
         };
     let is_not_animatable = |id: &PropertyDeclarationId| {
         
-        
-        !id.is_animatable() || id == &PropertyDeclarationId::Longhand(LonghandId::Display)
+        !id.is_animatable()
+            || (id == &PropertyDeclarationId::Longhand(LonghandId::Display)
+                && !static_prefs::pref!("layout.css.display-animations.enabled"))
     };
     let make_declaration_pair = |declaration: &PropertyDeclaration| {
         let id = declaration.id().to_physical(writing_mode);
@@ -7951,13 +7920,10 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
             properties_set_at_current_offset.clear();
             current_offset = step.start_offset.percentage.0;
         }
-        let (timing_function, composition) = get_timing_func_and_composition(
-            step,
-            matches!(step.value, KeyframesStepValue::ComputedValues),
-        );
+        let (timing_function, composition) = get_timing_func_and_composition(step);
         
         
-        let keyframe = &mut *bindings::Gecko_GetOrCreateKeyframeAtEnd(
+        let keyframe = &mut *bindings::Gecko_GetOrCreateKeyframeForPercentageOffset(
             keyframes,
             step.start_offset.percentage.0 as f32,
             &timing_function,
@@ -7965,32 +7931,7 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
         );
 
         match step.value {
-            KeyframesStepValue::ComputedValues => {
-                
-                
-                
-                
-                
-                let mut seen = PropertyDeclarationIdSet::default();
-                for property in animation.properties_changed.iter() {
-                    let property = property.to_physical(writing_mode);
-                    if seen.contains(property) {
-                        continue;
-                    }
-                    seen.insert(property);
-                    keyframe
-                        .mPropertyValues
-                        .push(property_value_pair_for(&property));
-                }
-                if current_offset == 0.0 {
-                    has_complete_initial_keyframe = true;
-                } else if current_offset == 1.0 {
-                    has_complete_final_keyframe = true;
-                }
-
-                
-                keyframe.mIsGenerated = true;
-            },
+            KeyframesStepValue::ComputedValues => unreachable!("No implicit keyframes"),
             KeyframesStepValue::Declarations { ref block } => {
                 let guard = block.read_with(&guard);
 
@@ -8013,20 +7954,7 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
                         .mPropertyValues
                         .push(make_declaration_pair(declaration));
 
-                    if current_offset == 0.0 {
-                        properties_set_at_start.insert(id);
-                    } else if current_offset == 1.0 {
-                        properties_set_at_end.insert(id);
-                    }
                     properties_set_at_current_offset.insert(id);
-                }
-
-                
-                
-                if current_offset == 0.0 {
-                    initial_keyframe_composite = composition;
-                } else if current_offset == 1.0 {
-                    final_keyframe_composite = composition;
                 }
             },
         }
@@ -8035,35 +7963,6 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
     
     
     keyframes.reverse();
-
-    let mut properties_changed = PropertyDeclarationIdSet::default();
-    for property in animation.properties_changed.iter() {
-        properties_changed.insert(property.to_physical(writing_mode));
-    }
-
-    
-    
-    
-    if !has_complete_initial_keyframe {
-        fill_in_missing_keyframe_values(
-            &properties_changed,
-            inherited_timing_function,
-            initial_keyframe_composite,
-            &properties_set_at_start,
-            Offset::Zero,
-            keyframes,
-        );
-    }
-    if !has_complete_final_keyframe {
-        fill_in_missing_keyframe_values(
-            &properties_changed,
-            inherited_timing_function,
-            final_keyframe_composite,
-            &properties_set_at_end,
-            Offset::One,
-            keyframes,
-        );
-    }
 
     
     
@@ -8089,9 +7988,9 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
     let mut grouped_keyframes_indexes = HashSet::new();
     for step in animation.steps_with_range_name.iter().rev() {
         debug_assert!(!step.start_offset.range_name.is_none());
-        let (timing_function, composition) = get_timing_func_and_composition(step, false);
+        let (timing_function, composition) = get_timing_func_and_composition(step);
         let mut matched_idx = 0;
-        let keyframe = &mut *bindings::Gecko_GetOrCreateKeyframeWithRangeName(
+        let keyframe = &mut *bindings::Gecko_GetOrCreateKeyframeForTimelineRangeOffset(
             &mut keyframes_with_range_names,
             step.start_offset.range_name,
             step.start_offset.percentage.0 as f32,
@@ -9997,7 +9896,7 @@ pub unsafe extern "C" fn Servo_ParseFontShorthandForMatching(
     data: *mut URLExtraData,
     family: &mut FontFamilyList,
     style: &mut FontStyle,
-    stretch: &mut FontStretch,
+    width: &mut FontWidth,
     weight: &mut FontWeight,
     size: Option<&mut f32>,
     small_caps: Option<&mut bool>,
@@ -10046,13 +9945,13 @@ pub unsafe extern "C" fn Servo_ParseFontShorthandForMatching(
         },
     };
 
-    *stretch = match font.font_stretch {
-        specified::FontStretch::Keyword(ref k) => k.compute(),
-        specified::FontStretch::Stretch(ref p) => match p.compute() {
-            Some(v) => FontStretch::from_percentage(v.0),
+    *width = match font.font_width {
+        specified::FontWidth::Keyword(ref k) => k.compute(),
+        specified::FontWidth::Width(ref p) => match p.compute() {
+            Some(v) => FontWidth::from_percentage(v.0),
             None => return false,
         },
-        specified::FontStretch::System(_) => return false,
+        specified::FontWidth::System(_) => return false,
     };
 
     *weight = match font.font_weight {
@@ -10350,15 +10249,12 @@ pub extern "C" fn Servo_FontWeight_ToCss(w: &FontWeight, result: &mut nsACString
 }
 
 #[no_mangle]
-pub extern "C" fn Servo_FontStretch_ToCss(s: &FontStretch, result: &mut nsACString) {
+pub extern "C" fn Servo_FontWidth_ToCss(s: &FontWidth, result: &mut nsACString) {
     s.to_css(&mut CssWriter::new(result)).unwrap()
 }
 
 #[no_mangle]
-pub extern "C" fn Servo_FontStretch_SerializeKeyword(
-    s: &FontStretch,
-    result: &mut nsACString,
-) -> bool {
+pub extern "C" fn Servo_FontWidth_SerializeKeyword(s: &FontWidth, result: &mut nsACString) -> bool {
     let kw = match s.as_keyword() {
         Some(kw) => kw,
         None => return false,
@@ -11619,7 +11515,9 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
     raw_data: &PerDocumentStyleData,
     out: &mut nsTArray<nsString>,
 ) {
-    use style::values::generics::calc::{CalcUnits, SimplificationResult};
+    use style::custom_properties::VariableValue;
+    use style::properties::enabled_arbitrary_substitution_functions;
+    use style::values::generics::calc::SimplificationResult;
     use style::values::specified::calc::{CalcNode, CalcParseFlags, Leaf};
 
     let parser_context = ParserContext::new(
@@ -11635,52 +11533,9 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
     );
 
     let string = str.to_string();
+    let mut substituted = None;
     let mut input = ParserInput::new(&string);
     let mut parser = Parser::new(&mut input);
-
-    
-    
-    let math_func = match parser.next() {
-        Ok(Token::Function(ref name)) => {
-            match CalcNode::math_function(
-                &parser_context,
-                name,
-                
-                SourceLocation { line: 0, column: 0 },
-            ) {
-                Ok(f) => f,
-                Err(_) => {
-                    return;
-                },
-            }
-        },
-        _ => {
-            return;
-        },
-    };
-
-    let mut flags = CalcParseFlags::new(CalcUnits::ALL);
-    flags = flags.new_without_in_place_operations();
-    
-    let mut node = match CalcNode::parse(&parser_context, &mut parser, math_func, flags) {
-        Ok(n) => n,
-        Err(_) => {
-            return;
-        },
-    };
-
-    let mut value = match node.as_leaf() {
-        Some(l) => l.to_css_string(),
-        None => node.to_css_string(),
-    };
-    
-    
-    
-    
-    if value.replace(" ", "").to_lowercase() != string.replace(" ", "").to_lowercase() {
-        out.push(nsString::from(&string));
-    }
-    out.push(nsString::from(&value));
 
     let data = raw_data.borrow();
     let element = GeckoElement(element);
@@ -11709,6 +11564,121 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
         &element,
         &mut tree_counting_caches,
     );
+
+    
+    parser.look_for_arbitrary_substitution_functions(enabled_arbitrary_substitution_functions());
+    let Ok(variable_value) = VariableValue::parse(
+        &mut parser,
+        Some(&parser_context.namespaces.prefixes),
+        &parser_context.url_data,
+    ) else {
+        return;
+    };
+
+    if parser.seen_arbitrary_substitution_functions() {
+        
+        let stylist = &data.stylist;
+        let mut attribute_tracker = AttributeTracker::new(&element);
+        let attributes: style::custom_properties_map::OwnMap = variable_value
+            .references
+            .refs
+            .iter()
+            .filter_map(|reference| {
+                if !reference.is_attr_with_type() {
+                    return None;
+                }
+
+                let value = custom_properties::get_attr_value_for_cycle_resolution(
+                    &reference.name,
+                    &reference.attribute_data,
+                    &variable_value.url_data,
+                    &mut attribute_tracker,
+                )
+                .ok()?;
+
+                Some((reference.name.clone(), Some(value)))
+            })
+            .collect();
+        let substitution_functions = custom_properties::ComputedSubstitutionFunctions::new(
+            Some(style.custom_properties().clone()),
+            Some(attributes),
+        );
+
+        let Ok(result) = custom_properties::substitute(
+            &variable_value,
+            &substitution_functions,
+            stylist,
+            &context,
+            &mut attribute_tracker,
+        ) else {
+            return;
+        };
+
+        
+        out.push(nsString::from(&string));
+        let result_string = result.css.to_string();
+        
+        out.push(nsString::from(&result_string));
+        substituted = Some(result_string.clone());
+    }
+
+    let substituted_str = substituted.as_deref().unwrap_or(&string);
+    
+    
+    input = ParserInput::new(substituted_str);
+    parser = Parser::new(&mut input);
+
+    
+    
+    let math_func = match parser.next() {
+        Ok(Token::Function(ref name)) => {
+            match CalcNode::math_function(
+                &parser_context,
+                name,
+                
+                SourceLocation { line: 0, column: 0 },
+            ) {
+                Ok(f) => f,
+                Err(_) => {
+                    return;
+                },
+            }
+        },
+        _ => {
+            return;
+        },
+    };
+
+    let flags = CalcParseFlags {
+        percentage_context: PercentageContext::allowed(),
+        in_place_operations: CalcNodeParseInPlaceOperations::No,
+        ..Default::default()
+    };
+    
+    let mut node = match CalcNode::parse(&parser_context, &mut parser, math_func, flags) {
+        Ok(n) => n,
+        Err(_) => {
+            return;
+        },
+    };
+
+    let mut value = match node.as_leaf() {
+        Some(l) => l.to_css_string(),
+        None => node.to_css_string(),
+    };
+
+    
+    
+    if substituted.is_none() {
+        
+        
+        
+        
+        if value.replace(" ", "").to_lowercase() != string.replace(" ", "").to_lowercase() {
+            out.push(nsString::from(&string));
+        }
+        out.push(nsString::from(&value));
+    }
 
     
     node = node.map_leaves(|leaf| match *leaf {
