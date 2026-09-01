@@ -83,6 +83,7 @@ nsresult nsDragSessionProxy::InvokeDragSessionImpl(
       aArrayTransferables, transferables, false, nullptr);
 
   nsCOMPtr<nsIPrincipal> principal;
+  
   if (mSourceNode) {
     principal = mSourceNode->NodePrincipal();
   }

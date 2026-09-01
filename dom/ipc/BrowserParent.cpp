@@ -3987,6 +3987,7 @@ mozilla::ipc::IPCResult BrowserParent::RecvInvokeDragSession(
     return IPC_OK();
   }
 
+  
   if (!Manager()->ValidatePrincipal(aPrincipal,
                                     {ValidatePrincipalOptions::AllowNullPtr})) {
     return ContentParent::PrincipalValidationIpcFail(aPrincipal, this,
