@@ -175,11 +175,6 @@ clipboardTypes.forEach(function (clipboardType) {
     });
 
     add_task(function test_web_custom_format() {
-      
-      if (navigator.userAgent.includes("Android")) {
-        info("Skipping: Android does not yet support web custom formats");
-        return;
-      }
       let inputFormats = [
         "text/plain",
         "web text/plain",
@@ -347,11 +342,6 @@ add_task(async function test_read_custom_formats_from_clipboard_pref() {
     info("Skipping: HeadlessClipboard does not support web custom formats");
     return;
   }
-  
-  if (navigator.userAgent.includes("Android")) {
-    info("Skipping: Android does not yet support web custom formats");
-    return;
-  }
 
   await SpecialPowers.pushPrefEnv({
     set: [["widget.clipboard.use-cached-data.enabled", false]],
@@ -391,11 +381,6 @@ add_task(async function test_web_custom_format_empty_payload() {
     info("Skipping: HeadlessClipboard does not support web custom formats");
     return;
   }
-  
-  if (navigator.userAgent.includes("Android")) {
-    info("Skipping: Android does not yet support web custom formats");
-    return;
-  }
 
   await SpecialPowers.pushPrefEnv({
     set: [["widget.clipboard.use-cached-data.enabled", false]],
@@ -418,7 +403,12 @@ add_task(async function test_web_custom_format_empty_payload() {
   clipboard.setData(trans, null, clipboard.kGlobalClipboard);
 
   
-  if (navigator.platform.includes("Linux")) {
+  
+  
+  if (
+    navigator.platform.includes("Linux") &&
+    !navigator.userAgent.includes("Android")
+  ) {
     todo_is(
       getClipboardData(flavor, clipboard.kGlobalClipboard),
       "",
