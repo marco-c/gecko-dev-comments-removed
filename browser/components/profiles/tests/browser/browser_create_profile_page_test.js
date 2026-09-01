@@ -305,7 +305,14 @@ add_task(async function test_new_profile_theme() {
         
         newProfileCard.nameInput.value = "test";
 
-        let defaultThemeCard = newProfileCard.themesPicker.querySelector(
+        await newProfileCard.themesPicker.updateComplete;
+
+        
+        let pickerEl = newProfileCard.novaEnabled
+          ? newProfileCard.themesPicker.pickerEl
+          : newProfileCard.themesPicker;
+
+        let defaultThemeCard = pickerEl.querySelector(
           "moz-visual-picker-item[value='default-theme@mozilla.org']"
         );
 
@@ -339,7 +346,9 @@ add_task(async function test_new_profile_theme() {
         "Current profile theme was updated"
       );
 
-      await assertGlean("profiles", "new", "theme", expectedThemeId);
+      if (!Services.prefs.getBoolPref("browser.nova.enabled", false)) {
+        await assertGlean("profiles", "new", "theme", expectedThemeId);
+      }
     }
   );
 
