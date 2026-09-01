@@ -17,8 +17,31 @@ using namespace mozilla::a11y;
 
 ApplicationAccessibleWrap::ApplicationAccessibleWrap() = default;
 
+
+
+
+
+
+
+
+
+
+
+
+
+static AtkObject* sAppRootAtkObject = nullptr;
+
+void ApplicationAccessibleWrap::Shutdown() {
+  if (mAtkObject) {
+    MAI_ATK_OBJECT(mAtkObject)->Shutdown();
+    
+    mAtkObject = nullptr;
+  }
+  ApplicationAccessible::Shutdown();
+}
+
 ApplicationAccessibleWrap::~ApplicationAccessibleWrap() {
-  AccessibleWrap::ShutdownAtkObject();
+  NS_ASSERTION(!mAtkObject, "Shutdown() was not called");
 }
 
 gboolean toplevel_event_watcher(GSignalInvocationHint* ihint,
@@ -77,13 +100,22 @@ void ApplicationAccessibleWrap::GetNativeInterface(void** aOutAccessible) {
   *aOutAccessible = nullptr;
 
   if (!mAtkObject) {
-    mAtkObject = reinterpret_cast<AtkObject*>(
-        g_object_new(MAI_TYPE_ATK_OBJECT, nullptr));
-    if (!mAtkObject) return;
+    if (sAppRootAtkObject) {
+      
+      
+      
+      mAtkObject = sAppRootAtkObject;
+      MAI_ATK_OBJECT(mAtkObject)->acc = static_cast<Accessible*>(this);
+    } else {
+      mAtkObject = reinterpret_cast<AtkObject*>(
+          g_object_new(MAI_TYPE_ATK_OBJECT, nullptr));
+      if (!mAtkObject) return;
 
-    atk_object_initialize(mAtkObject, static_cast<Accessible*>(this));
-    mAtkObject->role = ATK_ROLE_INVALID;
-    mAtkObject->layer = ATK_LAYER_INVALID;
+      atk_object_initialize(mAtkObject, static_cast<Accessible*>(this));
+      mAtkObject->role = ATK_ROLE_INVALID;
+      mAtkObject->layer = ATK_LAYER_INVALID;
+      sAppRootAtkObject = mAtkObject;
+    }
   }
 
   *aOutAccessible = mAtkObject;
