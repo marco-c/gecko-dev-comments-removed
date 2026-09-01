@@ -737,7 +737,24 @@
       }
     }
 
-    _mouseenter() {
+    
+
+
+
+
+
+    #stopWaitingForPointer = null;
+
+    
+
+
+
+
+
+
+
+
+    _mouseenter({ withoutPointerEvent = false } = {}) {
       this._hover = true;
 
       if (this.selected) {
@@ -750,9 +767,34 @@
       SessionStore.speculativeConnectOnTabHover(this);
 
       this.dispatchEvent(new CustomEvent("TabHoverStart", { bubbles: true }));
+
+      if (withoutPointerEvent) {
+        this.#endHoverUnlessPointerArrives();
+      }
+    }
+
+    #endHoverUnlessPointerArrives() {
+      const types = ["mousemove", "mouseover"];
+      const onMouseEvent = () => {
+        this.#stopWaitingForPointer();
+        if (!this.matches(":hover")) {
+          this._mouseleave();
+        }
+      };
+      this.#stopWaitingForPointer?.();
+      this.#stopWaitingForPointer = () => {
+        this.#stopWaitingForPointer = null;
+        for (let type of types) {
+          window.removeEventListener(type, onMouseEvent, true);
+        }
+      };
+      for (let type of types) {
+        window.addEventListener(type, onMouseEvent, true);
+      }
     }
 
     _mouseleave() {
+      this.#stopWaitingForPointer?.();
       if (!this._hover) {
         return;
       }
