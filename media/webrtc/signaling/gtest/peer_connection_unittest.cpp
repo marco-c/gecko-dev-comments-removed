@@ -13,9 +13,7 @@ namespace mozilla {
 
 static std::strong_ordering RtpExtensionHeaderUriComparator(
     const PeerConnectionImpl::RtpExtensionHeader& aHeader, const char* aUri) {
-  
-  return std::string_view(aHeader.extensionname.get()) <=>
-         std::string_view(aUri);
+  return aHeader.extensionname <=> nsDependentCString(aUri);
 }
 
 static const PeerConnectionImpl::RtpExtensionHeader* FindExtension(
