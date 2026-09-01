@@ -436,37 +436,6 @@ nsresult nsComponentManagerImpl::Init() {
   return NS_OK;
 }
 
-template <typename T>
-static void AssertNotStackAllocated(T* aPtr) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-#ifdef DEBUG
-  static constexpr size_t kFuzz = 2048;
-
-  MOZ_ASSERT(uintptr_t(aPtr) < uintptr_t(&aPtr) ||
-             uintptr_t(aPtr) > uintptr_t(&aPtr) + kFuzz);
-#endif
-}
-
 static void DoRegisterManifest(NSLocationType aType, FileLocation& aFile,
                                bool aChromeOnly) {
   auto result = URLPreloader::Read(aFile);

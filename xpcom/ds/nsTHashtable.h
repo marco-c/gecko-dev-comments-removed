@@ -187,8 +187,8 @@ struct CheckAllowMemmove<EntryType, false> : std::false_type {};
 
 
 template <size_t N>
-static void FixedSizeEntryMover(PLDHashTable*, const PLDHashEntryHdr* aFrom,
-                                PLDHashEntryHdr* aTo) {
+void FixedSizeEntryMover(PLDHashTable*, const PLDHashEntryHdr* aFrom,
+                         PLDHashEntryHdr* aTo) {
   memcpy(aTo, aFrom, N);
 }
 
