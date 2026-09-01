@@ -8,6 +8,7 @@
 #include "mozilla/ContentBlockingLog.h"
 #include "mozilla/ContentBlockingNotifier.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/PrincipalHashKey.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
@@ -196,7 +197,7 @@ class WindowGlobalParent final : public WindowContext,
 
   already_AddRefed<mozilla::dom::Promise> DrawSnapshot(
       const DOMRect* aRect, double aScale, const nsACString& aBackgroundColor,
-      bool aResetScrollPosition, mozilla::ErrorResult& aRv);
+      const DrawSnapshotOptions& aOptions, mozilla::ErrorResult& aRv);
 
   already_AddRefed<mozilla::dom::Promise> RequestDocumentLanguageMetadata(
       const DocumentLanguageMetadataRequestOptions& aOptions,
@@ -290,7 +291,7 @@ class WindowGlobalParent final : public WindowContext,
   
   already_AddRefed<nsIChannel> GetFailedChannel();
 
-  dom::NoCorsMediaRequestState NoCorsMediaRequestState(nsIURI* aURI) const;
+  dom::NoCorsMediaRequestState NoCorsMediaRequestState(nsIURI* aURI);
 
   void RecordSubsequentNoCorsRequestState(nsIURI* aURI);
 
@@ -475,6 +476,23 @@ class WindowGlobalParent final : public WindowContext,
   using PageUseCounterResult = EnumSet<PageUseCounterResultBits>;
   PageUseCounterResult FinishAccumulatingPageUseCounters();
 
+  struct KnownAllowedSubsequentRequests : public SupportsWeakPtr {
+    NS_INLINE_DECL_REFCOUNTING(KnownAllowedSubsequentRequests);
+    nsTHashtable<nsCStringHashKey> mNoCorsMediaRequestURIs;
+    nsCOMPtr<nsIPrincipal> mPrincipal;
+
+   private:
+    ~KnownAllowedSubsequentRequests();
+  };
+
+  using AllKnownAllowedSubsequentRequests =
+      nsTHashMap<PrincipalHashKey, WeakPtr<KnownAllowedSubsequentRequests>>;
+
+  static AllKnownAllowedSubsequentRequests&
+  GetAllKnownAllowedSubsequentRequests();
+
+  KnownAllowedSubsequentRequests* EnsureKnownAllowedSubsequentRequests();
+
   
   
   
@@ -579,7 +597,11 @@ class WindowGlobalParent final : public WindowContext,
   
   
   
-  nsTHashtable<nsCStringHashKey> mNoCorsMediaRequestURIs;
+  
+  RefPtr<KnownAllowedSubsequentRequests> mKnownAllowedSubsequentRequests;
+
+  static StaticAutoPtr<AllKnownAllowedSubsequentRequests>
+      sAllKnownSubsequentRequests;
 };
 
 nsCString BFCacheStatusToString(uint32_t aFlags);
