@@ -60,8 +60,7 @@ use crate::util::MaxRect;
 
 pub struct FrameVisibilityContext<'a> {
     pub spatial_tree: &'a SpatialTree,
-    pub global_screen_world_rect: WorldRect,
-    pub global_device_pixel_scale: DevicePixelScale,
+    pub global_screen_device_rect: DeviceRect,
     pub debug_flags: DebugFlags,
     pub scene_properties: &'a SceneProperties,
     pub config: FrameBuilderConfig,
@@ -216,7 +215,7 @@ pub struct PrimitiveDrawHeader {
     
     
     
-    pub snapped_local_rect: LayoutRect,
+    pub snapped_pattern_rect: LayoutRect,
 }
 
 impl PrimitiveDrawHeader {
@@ -230,7 +229,7 @@ impl PrimitiveDrawHeader {
             clip_task_index: ClipTaskIndex::INVALID,
             kind_scratch: KindScratchHandle::None,
             compositor_surface_kind: CompositorSurfaceKind::Blit,
-            snapped_local_rect: LayoutRect::zero(),
+            snapped_pattern_rect: LayoutRect::zero(),
         }
     }
 
@@ -249,7 +248,7 @@ impl PrimitiveDrawHeader {
 pub fn update_prim_visibility(
     pic_index: PictureIndex,
     parent_surface_index: Option<SurfaceIndex>,
-    world_culling_rect: &WorldRect,
+    root_culling_rect: &DeviceRect,
     store: &PrimitiveStore,
     is_root_tile_cache: bool,
     frame_context: &FrameVisibilityContext,
@@ -372,14 +371,14 @@ pub fn update_prim_visibility(
                 != ClipNodeId::INVALID;
 
             let policy = prim_instance.snap_policy(snaps, frame_state.data_stores);
-            let snapped_local_rect =
-                snapper.snap_rect_rounded(&prim_instance.unsnapped_prim_rect, policy.rect);
+            let snapped_pattern_rect =
+                snapper.snap_rect_rounded(&prim_instance.unsnapped_pattern_rect, policy.rect);
 
             
             
             let mut draw = PrimitiveDrawHeader::new();
             draw.prim_instance_index = PrimitiveInstanceIndex(prim_instance_index as u32);
-            draw.snapped_local_rect = snapped_local_rect;
+            draw.snapped_pattern_rect = snapped_pattern_rect;
 
             
             
@@ -426,7 +425,7 @@ pub fn update_prim_visibility(
                 update_prim_visibility(
                     pic_index,
                     Some(surface_index),
-                    world_culling_rect,
+                    root_culling_rect,
                     store,
                     false,
                     frame_context,
@@ -449,7 +448,7 @@ pub fn update_prim_visibility(
 
             let local_coverage_rect = frame_state.data_stores.get_local_prim_coverage_rect(
                 prim_instance,
-                draw.snapped_local_rect,
+                draw.snapped_pattern_rect,
                 &store.pictures,
                 frame_state.surfaces,
             );
@@ -587,49 +586,35 @@ pub fn update_prim_visibility(
     }
 }
 
-pub fn compute_conservative_visible_rect(
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn compute_surface_visible_rect(
+    surface: &SurfaceInfo,
     clip_chain: &ClipChainInstance,
-    culling_rect: VisRect,
-    visibility_node_index: SpatialNodeIndex,
     prim_spatial_node_index: SpatialNodeIndex,
+    bounds: &LayoutRect,
     spatial_tree: &SpatialTree,
 ) -> LayoutRect {
-    
-    let map_pic_to_vis: SpaceMapper<PicturePixel, VisPixel> = SpaceMapper::new_with_target(
-        visibility_node_index,
-        clip_chain.pic_spatial_node_index,
-        culling_rect,
-        spatial_tree,
-    );
-
-    
-    let map_local_to_pic: SpaceMapper<LayoutPixel, PicturePixel> = SpaceMapper::new_with_target(
-        clip_chain.pic_spatial_node_index,
+    let map_prim_to_surface: SpaceMapper<LayoutPixel, PicturePixel> = SpaceMapper::new_with_target(
+        surface.surface_spatial_node_index,
         prim_spatial_node_index,
         PictureRect::max_rect(),
         spatial_tree,
     );
 
-    
-    
-    let pic_culling_rect = match map_pic_to_vis.unmap(&culling_rect) {
-        Some(rect) => rect,
-        None => return clip_chain.local_clip_rect,
-    };
-
-    
-    
-    
-    
-    let pic_culling_rect = match pic_culling_rect.intersection(&clip_chain.pic_coverage_rect) {
-        Some(rect) => rect,
-        None => return LayoutRect::zero(),
-    };
-
-    
-    
-    match map_local_to_pic.unmap(&pic_culling_rect) {
-        Some(rect) => rect,
-        None => clip_chain.local_clip_rect,
-    }
+    surface.clipping_rect
+        .intersection(&clip_chain.pic_coverage_rect)
+        .and_then(|rect| map_prim_to_surface.unmap(&rect))
+        .unwrap_or(*bounds)
+        .intersection_unchecked(bounds)
 }

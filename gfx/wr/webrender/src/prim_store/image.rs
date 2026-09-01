@@ -23,7 +23,7 @@ use crate::render_target::RenderTargetKind;
 use crate::render_task_graph::RenderTaskId;
 use crate::render_task::RenderTask;
 use crate::resource_cache::ImageRequest;
-use crate::visibility::compute_conservative_visible_rect;
+use crate::visibility::compute_surface_visible_rect;
 use crate::{image_tiling, quad};
 
 
@@ -92,7 +92,6 @@ pub struct ImageData {
     pub color: ColorF,
     pub image_rendering: ImageRendering,
     pub alpha_type: AlphaType,
-    pub sub_rect: Option<DeviceIntRect>,
 }
 
 impl From<Image> for ImageData {
@@ -104,7 +103,6 @@ impl From<Image> for ImageData {
             tile_spacing: image.tile_spacing.into(),
             image_rendering: image.image_rendering,
             alpha_type: image.alpha_type,
-            sub_rect: image.sub_rect,
         }
     }
 }
@@ -142,10 +140,7 @@ pub fn prepare_image_quads(
     
     
     
-    let tight_clip_rect = clip_chain
-        .local_clip_rect
-        .intersection(&prim_rect)
-        .unwrap();
+    let tight_clip_rect = clip_chain.local_coverage_rect;
 
     let request = ImageRequest {
         key: image_data.key,
@@ -205,43 +200,6 @@ pub fn prepare_image_quads(
                 }
             }
 
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            let mut local_rect = prim_rect;
-            let mut stretch_size = stretch_size;
-            if let Some(sub_rect) = image_data.sub_rect {
-                src_task_id = frame_state.rg_builder.add_sub_rect(src_task_id, &sub_rect);
-
-                
-                
-                let image_dest = LayoutRect::from_origin_and_size(prim_rect.min, stretch_size);
-                let sx = image_dest.width() / size.width as f32;
-                let sy = image_dest.height() / size.height as f32;
-
-                local_rect = LayoutRect {
-                    min: point2(
-                        image_dest.min.x + sub_rect.min.x as f32 * sx,
-                        image_dest.min.y + sub_rect.min.y as f32 * sy,
-                    ),
-                    max: point2(
-                        image_dest.min.x + sub_rect.max.x as f32 * sx,
-                        image_dest.min.y + sub_rect.max.y as f32 * sy,
-                    ),
-                };
-                stretch_size = local_rect.size();
-            }
-
             let image_pattern = ImagePattern {
                 src_task_id,
                 src_is_opaque,
@@ -253,8 +211,8 @@ pub fn prepare_image_quads(
             quad::prepare_repeatable_quad(
                 &image_pattern,
                 &QuadDescriptor {
-                    local_rect,
-                    local_clip_rect: tight_clip_rect,
+                    pattern_rect: prim_rect,
+                    bounds: tight_clip_rect.intersection_unchecked(&prim_rect),
                     aligned_aa_edges: common_data.aligned_aa_edges,
                     transformed_aa_edges: common_data.transformed_aa_edges,
                 },
@@ -277,22 +235,18 @@ pub fn prepare_image_quads(
             
             
             let active_rect = image_properties.visible_rect;
-            let visible_rect = compute_conservative_visible_rect(
-                &scratch.frame.draw(draw_index).clip_chain,
-                frame_state.current_dirty_region().combined,
-                frame_state.current_dirty_region().visibility_spatial_node,
+            let visible_rect = compute_surface_visible_rect(
+                &frame_state.surfaces[pic_context.surface_index.0],
+                clip_chain,
                 quad_transform.prim_spatial_node_index(),
+                &tight_clip_rect,
                 frame_context.spatial_tree,
             );
 
             let effective_stretch_size = image_data.stretch_size.resolve(prim_rect);
             let stride = effective_stretch_size + image_data.tile_spacing;
 
-            let repetitions = image_tiling::repetitions(
-                prim_rect,
-                &visible_rect,
-                stride,
-            );
+            let repetitions = image_tiling::repetitions(prim_rect, &visible_rect, stride);
 
             let base_edge_flags = edge_flags_for_tile_spacing(&image_data.tile_spacing);
 
@@ -337,8 +291,8 @@ pub fn prepare_image_quads(
                     quad::prepare_quad(
                         &image_pattern,
                         &QuadDescriptor {
-                            local_rect: tile.rect,
-                            local_clip_rect: tight_clip_rect,
+                            pattern_rect: tile.rect,
+                            bounds: tight_clip_rect.intersection_unchecked(&tile.rect),
                             aligned_aa_edges,
                             transformed_aa_edges,
                         },
@@ -645,9 +599,9 @@ fn test_struct_sizes() {
     
     
     
-    assert_eq!(mem::size_of::<Image>(), 56, "Image size changed");
-    assert_eq!(mem::size_of::<ImageTemplate>(), 72, "ImageTemplate size changed");
-    assert_eq!(mem::size_of::<ImageKey>(), 60, "ImageKey size changed");
+    assert_eq!(mem::size_of::<Image>(), 36, "Image size changed");
+    assert_eq!(mem::size_of::<ImageTemplate>(), 52, "ImageTemplate size changed");
+    assert_eq!(mem::size_of::<ImageKey>(), 40, "ImageKey size changed");
     assert_eq!(mem::size_of::<YuvImage>(), 32, "YuvImage size changed");
     assert_eq!(mem::size_of::<YuvImageTemplate>(), 72, "YuvImageTemplate size changed");
     assert_eq!(mem::size_of::<YuvImageKey>(), 36, "YuvImageKey size changed");
