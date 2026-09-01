@@ -3,6 +3,9 @@
 
 
 
+
+#![allow(const_evaluatable_unchecked)]
+
 use std::sync::{Arc, OnceLock};
 
 use crate::{ClientSettings, Request, Response, Result, ViaductError};

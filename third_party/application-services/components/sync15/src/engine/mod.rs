@@ -18,34 +18,11 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 mod bridged_engine;
 mod request;
 mod sync_engine;
 
-pub use bridged_engine::{ApplyResults, BridgedEngine, BridgedEngineAdaptor, BridgedEngineWrapper};
+pub use bridged_engine::BridgedEngineWrapper;
 #[cfg(feature = "sync-client")]
 pub(crate) use request::CollectionPost;
 

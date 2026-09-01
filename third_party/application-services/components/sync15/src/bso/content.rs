@@ -14,6 +14,7 @@ use crate::Guid;
 use crate::error::{trace, warn};
 use error_support::report_error;
 use serde::Serialize;
+use serde::ser::Error as _;
 
 
 type Result<T> = std::result::Result<T, serde_json::Error>;
@@ -208,7 +209,13 @@ where
             match map.get("id").as_ref().and_then(|v| v.as_str()) {
                 Some(id) => {
                     let id: Guid = id.into();
-                    assert!(id.is_valid_for_sync_server(), "record's ID is invalid");
+                    if !id.is_valid_for_sync_server() {
+                        
+                        
+                        
+                        
+                        return Err(serde_json::Error::custom("record's ID is invalid"));
+                    }
                     id
                 }
                 
@@ -232,7 +239,10 @@ where
     if let Some(ref mut map) = payload.as_object_mut() {
         if let Some(content_id) = map.get("id").as_ref().and_then(|v| v.as_str()) {
             assert_eq!(content_id, id);
-            assert!(id.is_valid_for_sync_server(), "record's ID is invalid");
+            if !id.is_valid_for_sync_server() {
+                
+                return Err(serde_json::Error::custom("record's ID is invalid"));
+            }
         } else {
             map.insert("id".to_string(), serde_json::Value::String(id.to_string()));
         }
@@ -382,24 +392,23 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn test_content_empty_id() {
         error_support::init_for_tests();
         let val = TestStruct {
             id: Guid::new(""),
             data: 1,
         };
-        let _ = OutgoingBso::from_content_with_id(val);
+        
+        assert!(OutgoingBso::from_content_with_id(val).is_err());
     }
 
     #[test]
-    #[should_panic]
     fn test_content_invalid_id() {
         error_support::init_for_tests();
         let val = TestStruct {
             id: Guid::new(&"X".repeat(65)),
             data: 1,
         };
-        let _ = OutgoingBso::from_content_with_id(val);
+        assert!(OutgoingBso::from_content_with_id(val).is_err());
     }
 }
