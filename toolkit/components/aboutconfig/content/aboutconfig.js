@@ -63,7 +63,7 @@ let gFilterString = null;
 
 
 
-let gFilterPattern = null;
+let gFilterPatterns = null;
 
 
 
@@ -145,7 +145,7 @@ class PrefRow {
 
     return (
       gFilterShowAll ||
-      (gFilterPattern && gFilterPattern.test(this.name)) ||
+      (gFilterPatterns && gFilterPatterns.every(p => p.test(this.name))) ||
       (gFilterString && this.name.toLowerCase().includes(gFilterString))
     );
   }
@@ -611,13 +611,29 @@ function filterPrefs(options = {}) {
   gFilterString = searchName.toLowerCase();
   gFilterShowAll = !!options.showAll;
 
-  gFilterPattern = null;
-  if (gFilterString.includes("*")) {
-    gFilterPattern = new RegExp(gFilterString.replace(/\*+/g, ".*"), "i");
+  gFilterPatterns = null;
+  if (/[*\s]/.test(gFilterString)) {
+    let words = gFilterString.split(/\s+/);
+    gFilterPatterns = [];
+    for (let word of words) {
+      if (!word) {
+        continue;
+      }
+      
+      const pattern = word
+        .split("*")
+        .map(part => RegExp.escape(part))
+        .join(".*");
+      gFilterPatterns.push(new RegExp(pattern, "i"));
+    }
+    if (gFilterPatterns.length === 0) {
+      
+      gFilterPatterns = null;
+    }
     gFilterString = "";
   }
 
-  let showResults = gFilterString || gFilterPattern || gFilterShowAll;
+  let showResults = gFilterString || gFilterPatterns || gFilterShowAll;
   document.body.classList.toggle("table-shown", showResults);
 
   let prefArray = [];
