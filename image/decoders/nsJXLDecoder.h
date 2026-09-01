@@ -64,6 +64,24 @@ class nsJXLDecoder final : public Decoder {
 
   enum class ProcessResult { NeedMoreData, YieldOutput, Complete, Error };
 
+  
+  
+  enum class DecodeResult : uint8_t {
+    DecodeError,
+    SizeOverflow,
+    OutOfMemory,
+    PipeInitError,
+    InvalidFrameDuration,
+    WriteError,
+    NoBasicInfo,
+  };
+
+  
+  
+  LexerResult DoDecodeInternal(SourceBufferIterator& aIterator,
+                               IResumable* aOnResume);
+  void RecordDecodeTelemetry(TerminalState aState);
+
   JxlDecoderStatus ProcessInput(const uint8_t** aData, size_t* aLength);
   FrameOutputResult HandleFrameOutput();
   
@@ -154,7 +172,17 @@ class nsJXLDecoder final : public Decoder {
   Vector<uint8_t> mKBuffer;  
   Maybe<SurfacePipe> mCurrentPipe;
 
-  bool mIteratorComplete = false;
+  bool mIteratorComplete : 1 = false;
+
+  
+  
+  
+  bool mFrameCompleted : 1 = false;
+  
+  
+  bool mPartialFrameRendered : 1 = false;
+
+  DecodeResult mDecodeResult = DecodeResult::DecodeError;
 
 #ifdef DEBUG
   uint32_t mWritePixelRowsCount = 0;
