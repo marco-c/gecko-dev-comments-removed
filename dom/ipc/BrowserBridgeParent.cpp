@@ -78,7 +78,8 @@ nsresult BrowserBridgeParent::InitWithProcess(
 
   
   auto browserParent = MakeRefPtr<BrowserParent>(
-      aContentParent, aTabId, *aParentBrowser, browsingContext, aChromeFlags);
+      aContentParent, aTabId, aWindowInit.context().mOuterWindowId,
+      *aParentBrowser, browsingContext, aChromeFlags);
   browserParent->SetBrowserBridgeParent(this);
 
   ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
