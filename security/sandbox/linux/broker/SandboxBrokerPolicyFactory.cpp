@@ -22,7 +22,7 @@
 #endif  
 #ifdef MOZ_ENABLE_VULKAN_VIDEO
 #  include "mozilla/Components.h"
-#  include "nsIGfxInfo.h"
+#  include "mozilla/gfx/gfxVars.h"
 #endif  
 #ifdef MOZ_WIDGET_GTK
 #  include <glib.h>
@@ -1058,14 +1058,7 @@ SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
   
   
   
-  nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
-  int32_t vulkanStatus = nsIGfxInfo::FEATURE_STATUS_UNKNOWN;
-  nsAutoCString failureId;
-  if (gfxInfo &&
-      NS_SUCCEEDED(gfxInfo->GetFeatureStatus(
-          nsIGfxInfo::FEATURE_HARDWARE_VIDEO_DECODING_VULKAN, failureId,
-          &vulkanStatus)) &&
-      vulkanStatus == nsIGfxInfo::FEATURE_STATUS_OK) {
+  if (gfx::gfxVars::CanUseVulkanHardwareVideoDecoding()) {
     AddVulkanDependencies(policy.get());
 #  if defined(MOZ_WIDGET_GTK)
     
@@ -1074,6 +1067,18 @@ SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
 #  endif
     
     AddX11Dependencies(policy.get());
+#  if defined(MOZ_WIDGET_GTK) && defined(MOZ_X11)
+    
+    
+    
+    
+    if (mozilla::widget::GdkIsWaylandDisplay() && PR_GetEnv("DISPLAY")) {
+      policy->AddPrefix(SandboxBroker::MAY_CONNECT, "/tmp/.X11-unix/X");
+      if (auto* const xauth = PR_GetEnv("XAUTHORITY")) {
+        policy->AddPath(rdonly, xauth);
+      }
+    }
+#  endif
   }
 #endif  
 
