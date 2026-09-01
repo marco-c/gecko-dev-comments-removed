@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 add_task(async function () {
@@ -116,6 +114,15 @@ add_task(async function testWindowUpdate() {
 
         let window = await browser.windows.getCurrent();
         currentWindowId = window.id;
+
+        
+        
+        
+        
+        
+        
+        await browser.windows.update(windowId, { state: "normal" });
+        window = await browser.windows.getCurrent();
 
         
         

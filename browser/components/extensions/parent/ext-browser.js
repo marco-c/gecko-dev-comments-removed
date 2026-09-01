@@ -1100,7 +1100,22 @@ class Window extends WindowBase {
     
     
     
+    const noWindowManagerTimeout = 2000;
+
+    
+    
+    
+    let onResize;
+    let promiseExitFullscreenResize;
     if (initialState == window.STATE_FULLSCREEN || window.fullScreen) {
+      
+      
+      
+      
+      promiseExitFullscreenResize = new Promise(resolve => {
+        onResize = resolve;
+        window.addEventListener("resize", onResize);
+      });
       window.fullScreen = false;
     }
 
@@ -1127,17 +1142,14 @@ class Window extends WindowBase {
         break;
 
       default:
+        window.removeEventListener("resize", onResize);
         throw new Error(`Unexpected window state: ${state}`);
     }
 
+    let onSizeModeChange;
+    let promiseExpectedSizeMode;
     if (window.windowState != expectedState) {
-      
-      
-      
-      const noWindowManagerTimeout = 2000;
-
-      let onSizeModeChange;
-      const promiseExpectedSizeMode = new Promise(resolve => {
+      promiseExpectedSizeMode = new Promise(resolve => {
         onSizeModeChange = function () {
           if (window.windowState == expectedState) {
             resolve();
@@ -1145,13 +1157,18 @@ class Window extends WindowBase {
         };
         window.addEventListener("sizemodechange", onSizeModeChange);
       });
+    }
 
+    if (promiseExpectedSizeMode || promiseExitFullscreenResize) {
+      
+      
       await Promise.any([
-        promiseExpectedSizeMode,
+        Promise.all([promiseExpectedSizeMode, promiseExitFullscreenResize]),
         new Promise(resolve => setTimeout(resolve, noWindowManagerTimeout)),
       ]);
 
       window.removeEventListener("sizemodechange", onSizeModeChange);
+      window.removeEventListener("resize", onResize);
     }
   }
 
