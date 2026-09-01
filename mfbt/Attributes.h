@@ -490,6 +490,24 @@
 
 
 
+
+
+#if defined(__clang__) && defined(__has_cpp_attribute)
+#  if __has_cpp_attribute(clang::lifetime_capture_by_this)
+#    define MOZ_LIFETIME_CAPTURE_BY_THIS [[clang::lifetime_capture_by_this]]
+#  elif __has_cpp_attribute(clang::lifetime_capture_by)
+#    define MOZ_LIFETIME_CAPTURE_BY_THIS [[clang::lifetime_capture_by(this)]]
+#  else
+#    define MOZ_LIFETIME_CAPTURE_BY_THIS
+#  endif
+#else
+#  define MOZ_LIFETIME_CAPTURE_BY_THIS
+#endif
+
+
+
+
+
 #if defined(__clang__) && defined(__has_cpp_attribute)
 #  if __has_cpp_attribute(clang::reinitializes)
 #    define MOZ_REINITIALIZES [[clang::reinitializes]]
