@@ -84,10 +84,19 @@ async function testForgetAboutThisSite(
   let popupShown = promisePopupShown(contextmenu);
 
   
-  await synthesizeClickOnSelectedTreeCell(tree, {
-    type: "contextmenu",
-    button: 2,
-  });
+  let rect = tree.getCoordsForCellItem(
+    sitesToSelect[0],
+    tree.columns[0],
+    "text"
+  );
+  
+  EventUtils.synthesizeMouse(
+    tree.body,
+    rect.x + rect.width / 2,
+    rect.y + rect.height / 2,
+    { type: "contextmenu", button: 2 },
+    organizer
+  );
   await popupShown;
 
   let forgetThisSite = doc.getElementById("placesContext_deleteHost");
