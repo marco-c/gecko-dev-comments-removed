@@ -16011,6 +16011,12 @@ void Document::ExitFullscreenInDocTree(Document* aMaybeNotARootDoc) {
     
     
     
+    
+    
+    
+    if (aMaybeNotARootDoc->GetUnretargetedFullscreenElement()) {
+      aMaybeNotARootDoc->CleanupFullscreenState();
+    }
     return;
   }
 
@@ -16525,6 +16531,7 @@ nsTArray<Element*> Document::GetTopLayer() const {
   nsTArray<Element*> elements;
   for (const nsWeakPtr& ptr : mTopLayer) {
     if (nsCOMPtr<Element> elem = do_QueryReferent(ptr)) {
+      MOZ_DIAGNOSTIC_ASSERT(elem->GetComposedDoc() == this);
       elements.AppendElement(elem);
     }
   }
@@ -17282,24 +17289,38 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY
 bool Document::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
   Element* elem = aRequest->Element();
 
-  switch (FullscreenElementReadyCheck(*aRequest)) {
-    case ElementReadyCheckResult::eOk:
-      break;
-    case ElementReadyCheckResult::eKeyboardLockOnly:
-      SetKeyboardLockStatusAndMaybeDispatchEvent(this, *aRequest);
-      aRequest->MayResolvePromise();
-      return true;
-    case ElementReadyCheckResult::eSame:
-      aRequest->MayResolvePromise();
-      [[fallthrough]];
-    case ElementReadyCheckResult::eErrorPromiseRejected:
-      return false;
+  
+  
+  auto readyCheck = [&]() -> Maybe<bool> {
+    switch (FullscreenElementReadyCheck(*aRequest)) {
+      case ElementReadyCheckResult::eOk:
+        return Nothing();
+      case ElementReadyCheckResult::eKeyboardLockOnly:
+        SetKeyboardLockStatusAndMaybeDispatchEvent(this, *aRequest);
+        aRequest->MayResolvePromise();
+        return Some(true);
+      case ElementReadyCheckResult::eSame:
+        aRequest->MayResolvePromise();
+        [[fallthrough]];
+      case ElementReadyCheckResult::eErrorPromiseRejected:
+        return Some(false);
+    }
+    MOZ_ASSERT_UNREACHABLE("Unhandled ElementReadyCheckResult");
+    return Some(false);
+  };
+
+  if (Maybe<bool> result = readyCheck()) {
+    return *result;
   }
 
   RefPtr<Document> doc = aRequest->Document();
   
   RefPtr<Element> hideUntil = elem->GetTopmostPopoverAncestor(nullptr, false);
   doc->HidePopoversUntil(hideUntil, false, true);
+
+  if (Maybe<bool> result = readyCheck()) {
+    return *result;
+  }
 
   
   
