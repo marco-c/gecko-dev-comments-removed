@@ -18,6 +18,7 @@
 #include "mozilla/LateWriteChecks.h"
 #include "mozilla/PoisonIOInterposer.h"
 #include "mozilla/Printf.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/Services.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/StartupTimeline.h"
@@ -354,6 +355,37 @@ bool AppShutdown::IsNoOrLegalShutdownTopic(const char* aTopic) {
 }
 #endif
 
+
+
+
+class MOZ_RAII AutoShutdownPhaseMarker {
+ public:
+  AutoShutdownPhaseMarker(const char* aMarkerName, const char* aPhaseName)
+      : mMarkerName(aMarkerName), mPhaseName(aPhaseName) {
+    if (profiler_is_active_and_unpaused()) {
+      Emit(MarkerTiming::IntervalStart());
+    }
+  }
+
+  ~AutoShutdownPhaseMarker() {
+    if (profiler_is_active_and_unpaused()) {
+      Emit(MarkerTiming::IntervalEnd());
+    }
+  }
+
+ private:
+  
+  
+  void Emit(MarkerTiming aTiming) {
+    PROFILER_MARKER_TEXT(
+        ProfilerString8View::WrapNullTerminatedString(mMarkerName), OTHER,
+        MarkerOptions(std::move(aTiming)), nsDependentCString(mPhaseName));
+  }
+
+  const char* mMarkerName;
+  const char* mPhaseName;
+};
+
 void AppShutdown::AdvanceShutdownPhaseInternal(
     ShutdownPhase aPhase, bool doNotify, const char16_t* aNotificationData,
     const nsCOMPtr<nsISupports>& aNotificationSubject) {
@@ -372,6 +404,9 @@ void AppShutdown::AdvanceShutdownPhaseInternal(
   if (sCurrentShutdownPhase >= aPhase) {
     return;
   }
+
+  const char* phaseName = AppShutdown::GetShutdownPhaseName(aPhase);
+  AutoShutdownPhaseMarker phaseMarker("AdvanceShutdownPhase", phaseName);
 
   
   
@@ -402,6 +437,7 @@ void AppShutdown::AdvanceShutdownPhaseInternal(
   
   
   if (mayProcessPending && thread) {
+    AutoShutdownPhaseMarker drainMarker("ShutdownDrainBeforePhase", phaseName);
     NS_ProcessPendingEvents(thread);
   }
 
@@ -420,10 +456,15 @@ void AppShutdown::AdvanceShutdownPhaseInternal(
   
   
   
-  mozilla::KillClearOnShutdown(aPhase);
+  {
+    AutoShutdownPhaseMarker killMarker("KillClearOnShutdown", phaseName);
+    mozilla::KillClearOnShutdown(aPhase);
+  }
 
   
   if (mayProcessPending && thread) {
+    AutoShutdownPhaseMarker drainMarker("ShutdownDrainAfterKillClearOnShutdown",
+                                        phaseName);
     NS_ProcessPendingEvents(thread);
   }
 
@@ -437,10 +478,18 @@ void AppShutdown::AdvanceShutdownPhaseInternal(
         sNotifyingShutdownObservers = true;
         auto reset = MakeScopeExit([] { sNotifyingShutdownObservers = false; });
 #endif
-        obsService->NotifyObservers(aNotificationSubject, aTopic,
-                                    aNotificationData);
+        {
+          
+          
+          AutoShutdownPhaseMarker notifyMarker("ShutdownNotifyObservers",
+                                               phaseName);
+          obsService->NotifyObservers(aNotificationSubject, aTopic,
+                                      aNotificationData);
+        }
         
         if (mayProcessPending && thread) {
+          AutoShutdownPhaseMarker drainMarker("ShutdownDrainAfterNotification",
+                                              phaseName);
           NS_ProcessPendingEvents(thread);
         }
       }
