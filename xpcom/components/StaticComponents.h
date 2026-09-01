@@ -94,6 +94,9 @@ struct StaticModule {
   StringOffset mContractID;
   Module::ProcessSelector mProcessSelector;
 
+  
+  bool mIsSerializable;
+
   const nsID& CID() const { return mCID; }
 
   ModuleID ID() const { return ModuleID(this - gStaticModules); }
