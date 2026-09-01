@@ -12,18 +12,6 @@
 
 async function waitForInstallDialog(id = "addon-webext-permissions") {
   let panel = await waitForNotification(id);
-  
-  
-  
-  
-  if (panel.state === "showing") {
-    await TestUtils.waitForCondition(
-      () => panel.state === "open",
-      `Wait for ${id} panel state to become open`
-    );
-    is(panel.state, "open", "Panel.state should be open");
-  }
-
   return panel.childNodes[0];
 }
 
@@ -119,8 +107,15 @@ async function waitForNotification(
   await panelEventPromise;
   await waitForTick();
 
+  
+  
+  await BrowserTestUtils.waitForPopupEvent(
+    win.PopupNotifications.panel,
+    "shown"
+  );
+
   info(`Saw a ${aId} notification`);
-  ok(win.PopupNotifications.isPanelOpen, "Panel should be open");
+  is(win.PopupNotifications.panel.state, "open", "Panel should be open");
   is(
     win.PopupNotifications.panel.childNodes.length,
     aExpectedCount,
