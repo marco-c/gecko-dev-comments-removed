@@ -324,8 +324,7 @@ class HTMLInputElement final : public TextControlElement,
   void UpdateValueMissingValidityState();
   void UpdateTypeMismatchValidityState();
   void UpdatePatternMismatchValidityState();
-  void UpdateRangeOverflowValidityState();
-  void UpdateRangeUnderflowValidityState();
+  void UpdateRangeValidityStates();
   void UpdateStepMismatchValidityState();
   void UpdateBadInputValidityState();
   void UpdatePlaceholderShownState();
@@ -1082,6 +1081,34 @@ class HTMLInputElement final : public TextControlElement,
   
 
 
+
+  bool DoesTypeMismatchApply() const {
+    return mType == FormControlType::InputEmail ||
+           mType == FormControlType::InputUrl;
+  }
+
+  
+
+
+
+  bool DoesBadInputApply() const {
+    switch (mType) {
+      case FormControlType::InputEmail:
+      case FormControlType::InputNumber:
+      case FormControlType::InputDate:
+      case FormControlType::InputTime:
+      case FormControlType::InputMonth:
+      case FormControlType::InputWeek:
+      case FormControlType::InputDatetimeLocal:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  
+
+
   bool DoStepDownStepUpApply() const { return DoesStepApply(); }
 
   
@@ -1093,6 +1120,10 @@ class HTMLInputElement final : public TextControlElement,
 
 
   bool DoesAutocompleteApply() const;
+
+  bool WasValueChangedInteractively() const {
+    return mValueChanged && mLastValueChangeWasInteractive;
+  }
 
   enum class TextControlStateDisposition : bool {
     Destroy,
