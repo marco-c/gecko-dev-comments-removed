@@ -30,8 +30,8 @@ class BaseHistory : public IHistory {
   void NotifyVisitedFromParent(nsIURI*, VisitedStatus, const ContentParentSet*);
   static constexpr const size_t kTrackedUrisInitialSize = 64;
 
-  BaseHistory();
-  ~BaseHistory();
+  BaseHistory() = default;
+  ~BaseHistory() = default;
 
   using ObserverArray = nsTObserverArray<dom::Link*>;
   struct ObservingLinks {
@@ -64,7 +64,8 @@ class BaseHistory : public IHistory {
  protected:
   
   
-  nsTHashMap<nsURIHashKey, ObservingLinks> mTrackedURIs;
+  nsTHashMap<nsURIHashKey, ObservingLinks> mTrackedURIs{
+      kTrackedUrisInitialSize};
 
  private:
   
