@@ -3096,7 +3096,8 @@ class nsLayoutUtils {
 
 
 
-  static bool IsTransformed(nsIFrame* aForFrame, nsIFrame* aTopFrame = nullptr);
+  static bool IsTransformed(const nsIFrame* aForFrame,
+                            const nsIFrame* aTopFrame = nullptr);
 
   
 
