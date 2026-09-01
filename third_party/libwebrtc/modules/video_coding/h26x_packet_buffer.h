@@ -42,6 +42,8 @@ class H26xPacketBuffer {
   
   void SetSpropParameterSets(const std::string& sprop_parameter_sets);
 
+  void SetH264IdrOnlyKeyframesAllowed(bool allowed);
+
  private:
   
   struct PpsInfo {
@@ -91,7 +93,7 @@ class H26xPacketBuffer {
   bool FixH264Packet(Packet& packet);
 
   
-  const bool h264_idr_only_keyframes_allowed_;
+  bool h264_idr_only_keyframes_allowed_ = false;
   std::array<std::unique_ptr<Packet>, kBufferSize> buffer_;
   std::array<int64_t, kNumTrackedSequences> last_continuous_in_sequence_;
   int64_t last_continuous_in_sequence_index_ = 0;
