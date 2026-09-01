@@ -68,6 +68,7 @@
 #include "mozilla/ArrayAlgorithm.h"
 #include "mozilla/BaseAndGeckoProfilerDetail.h"
 #include "mozilla/BaseProfiler.h"
+#include "mozilla/ChromeProfilerCounter.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/ExtensionPolicyService.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
@@ -893,6 +894,12 @@ class CorePS {
       aProfSize += registeredPage->SizeOfIncludingThis(aMallocSizeOf);
     }
 
+    aProfSize += sInstance->mChromeCounters.sizeOfExcludingThis(aMallocSizeOf);
+    for (auto& chromeCounter : sInstance->mChromeCounters) {
+      aProfSize += chromeCounter->SizeOfIncludingThis(aMallocSizeOf);
+    }
+
+    
     
     
     
@@ -982,6 +989,34 @@ class CorePS {
     }
   }
 
+  static void AddChromeCounter(
+      PSLockRef, already_AddRefed<ChromeProfilerCounter> aCounter) {
+    MOZ_ASSERT(sInstance);
+    MOZ_RELEASE_ASSERT(
+        sInstance->mChromeCounters.append(RefPtr(std::move(aCounter))));
+  }
+
+  static already_AddRefed<ChromeProfilerCounter> ReleaseChromeCounter(
+      PSLockRef, ChromeProfilerCounter* aCounter) {
+    if (!sInstance) {
+      
+      return nullptr;
+    }
+    auto* it = std::find(sInstance->mChromeCounters.begin(),
+                         sInstance->mChromeCounters.end(), aCounter);
+    MOZ_RELEASE_ASSERT(it != sInstance->mChromeCounters.end());
+    RefPtr<ChromeProfilerCounter> owned = std::move(*it);
+    sInstance->mChromeCounters.erase(it);
+    return owned.forget();
+  }
+
+  static void ClearChromeCounters(PSLockRef) {
+    MOZ_ASSERT(sInstance);
+    for (RefPtr<ChromeProfilerCounter>& counter : sInstance->mChromeCounters) {
+      counter->Clear();
+    }
+  }
+
 #ifdef USE_LUL_STACKWALK
   static lul::LUL* Lul() {
     MOZ_RELEASE_ASSERT(sInstance);
@@ -1062,6 +1097,14 @@ class CorePS {
 
   
   Vector<BaseProfilerCount*> mCounters;
+
+  
+  
+  
+  
+  
+  
+  Vector<RefPtr<ChromeProfilerCounter>> mChromeCounters;
 
 #if defined(GECKO_PROFILER_ASYNC_POSIX_SIGNAL_CONTROL)
   
@@ -1422,6 +1465,11 @@ class ActivePS {
     size_t n = aMallocSizeOf(sInstance);
 
     n += sInstance->mProfileBuffer.SizeOfExcludingThis(aMallocSizeOf);
+
+    n += sInstance->mDeadCounters.sizeOfExcludingThis(aMallocSizeOf);
+    for (auto& deadCounter : sInstance->mDeadCounters) {
+      n += deadCounter->SizeOfIncludingThis(aMallocSizeOf);
+    }
 
     
     
@@ -1904,6 +1952,13 @@ class ActivePS {
   }
 #endif
 
+  static void AddDeadCounter(PSLockRef,
+                             already_AddRefed<ChromeProfilerCounter> aCounter) {
+    MOZ_ASSERT(sInstance);
+    MOZ_RELEASE_ASSERT(
+        sInstance->mDeadCounters.append(RefPtr(std::move(aCounter))));
+  }
+
  private:
   
   static ActivePS* sInstance;
@@ -2005,6 +2060,13 @@ class ActivePS {
 #if defined(MOZ_MEMORY) && defined(MOZ_PROFILER_MEMORY)
   UniquePtr<BaseProfilerCount> mMemoryCounter;
 #endif
+
+  
+  
+  
+  
+  
+  Vector<RefPtr<ChromeProfilerCounter>> mDeadCounters;
 };
 
 ActivePS* ActivePS::sInstance = nullptr;
@@ -7036,6 +7098,10 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
   }
 #endif
 
+  
+  
+  CorePS::ClearChromeCounters(aLock);
+
 #if defined(MOZ_MEMORY) && defined(MOZ_PROFILER_MEMORY)
   if (ActivePS::FeatureMemory(aLock)) {
     auto counter = mozilla::profiler::create_memory_counter();
@@ -7574,6 +7640,25 @@ void profiler_remove_sampled_counter(BaseProfilerCount* aCounter) {
   DEBUG_LOG("profiler_remove_sampled_counter(%s)", aCounter->mLabel);
   PSAutoLock lock;
   locked_profiler_remove_sampled_counter(lock, aCounter);
+}
+
+void profiler_add_sampled_chrome_counter(ChromeProfilerCounter* aCounter) {
+  PSAutoLock lock;
+  CorePS::AddChromeCounter(lock, do_AddRef(aCounter));
+  locked_profiler_add_sampled_counter(lock, aCounter);
+}
+
+void profiler_remove_sampled_chrome_counter(ChromeProfilerCounter* aCounter) {
+  PSAutoLock lock;
+  locked_profiler_remove_sampled_counter(lock, aCounter);
+  RefPtr<ChromeProfilerCounter> owned =
+      CorePS::ReleaseChromeCounter(lock, aCounter);
+  if (owned && ActivePS::Exists(lock)) {
+    
+    
+    
+    ActivePS::AddDeadCounter(lock, owned.forget());
+  }
 }
 
 void profiler_count_bandwidth_bytes(int64_t aCount) {
