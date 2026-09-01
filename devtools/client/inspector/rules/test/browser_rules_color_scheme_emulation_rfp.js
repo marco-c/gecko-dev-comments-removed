@@ -23,15 +23,15 @@ async function runTest(enabled) {
   await addTab(TEST_URI);
   const { inspector } = await openRuleView();
 
-  info("Check that the color scheme simulation buttons exist");
+  info("Check that the color scheme emulation buttons exist");
   const lightButton = inspector.panelDoc.querySelector(
-    "#color-scheme-simulation-light-toggle"
+    "#color-scheme-emulation-light-toggle"
   );
   const darkButton = inspector.panelDoc.querySelector(
-    "#color-scheme-simulation-dark-toggle"
+    "#color-scheme-emulation-dark-toggle"
   );
-  ok(lightButton, "The light color scheme simulation button exists");
-  ok(darkButton, "The dark color scheme simulation button exists");
+  ok(lightButton, "The light color scheme emulation button exists");
+  ok(darkButton, "The dark color scheme emulation button exists");
 
   const expectedState = enabled ? "disabled" : "enabled";
   is(lightButton.disabled, enabled, `Light button is ${expectedState}`);

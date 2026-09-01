@@ -273,7 +273,7 @@ class TargetConfigurationActor extends Actor {
           this._setAnimationsPlayBackRateMultiplier(value);
           break;
         case "colorSchemeSimulation":
-          this._setColorSchemeSimulation(value);
+          this._setColorSchemeEmulation(value);
           break;
         case "customUserAgent":
           this._setCustomUserAgent(value);
@@ -292,7 +292,7 @@ class TargetConfigurationActor extends Actor {
           this._setDPPXOverride(value);
           break;
         case "printSimulationEnabled":
-          this._setPrintSimulationEnabled(value);
+          this._setPrintEmulationEnabled(value);
           break;
         case "reducedMotionEmulation":
           this._setReducedMotionEmulation(value);
@@ -334,7 +334,7 @@ class TargetConfigurationActor extends Actor {
     }
 
     this._setServiceWorkersTestingEnabled(false);
-    this._setPrintSimulationEnabled(false);
+    this._setPrintEmulationEnabled(false);
     if (this._resetCacheDisabledOnDestroy) {
       this._setCacheDisabled(false);
     }
@@ -345,8 +345,8 @@ class TargetConfigurationActor extends Actor {
     
     
     
-    if (this._resetColorSchemeSimulationOnDestroy) {
-      this._setColorSchemeSimulation(null);
+    if (this._resetColorSchemeEmulationOnDestroy) {
+      this._setColorSchemeEmulation(null);
     }
 
     
@@ -389,7 +389,7 @@ class TargetConfigurationActor extends Actor {
   
 
 
-  _setPrintSimulationEnabled(enabled) {
+  _setPrintEmulationEnabled(enabled) {
     const value = enabled ? "print" : "";
     if (this._browsingContext.mediumOverride != value) {
       this._browsingContext.mediumOverride = value;
@@ -399,11 +399,11 @@ class TargetConfigurationActor extends Actor {
   
 
 
-  _setColorSchemeSimulation(override) {
+  _setColorSchemeEmulation(override) {
     const value = override || "none";
     if (this._browsingContext.prefersColorSchemeOverride != value) {
       this._browsingContext.prefersColorSchemeOverride = value;
-      this._resetColorSchemeSimulationOnDestroy = true;
+      this._resetColorSchemeEmulationOnDestroy = true;
     }
   }
 

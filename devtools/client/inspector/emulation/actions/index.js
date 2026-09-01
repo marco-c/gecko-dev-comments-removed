@@ -9,10 +9,10 @@ const { createEnum } = require("resource://devtools/client/shared/enum.js");
 createEnum(
   [
     
-    "SET_COLOR_SCHEME_SIMULATION",
+    "SET_COLOR_SCHEME_EMULATION",
 
     
-    "SET_PRINT_SIMULATION_ENABLED",
+    "SET_PRINT_EMULATION_ENABLED",
 
     
     "SET_REDUCED_MOTION_EMULATION",

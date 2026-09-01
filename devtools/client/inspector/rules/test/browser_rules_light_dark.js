@@ -91,7 +91,7 @@ add_task(async function () {
 
   
   
-  info("Enable light mode simulation if needed");
+  info("Enable light mode emulation if needed");
   const isDarkScheme = await SpecialPowers.spawn(
     gBrowser.selectedBrowser,
     [],
@@ -102,7 +102,7 @@ add_task(async function () {
   if (isDarkScheme) {
     const onRuleViewRefreshed = inspector.once("rule-view-refreshed");
     await openEmulationPanel(view);
-    inspector.panelDoc.querySelector("#color-scheme-simulation-light").click();
+    inspector.panelDoc.querySelector("#color-scheme-emulation-light").click();
     await onRuleViewRefreshed;
   }
 
@@ -112,10 +112,10 @@ add_task(async function () {
     { color: "tomato", matched: false },
   ]);
 
-  info("Trigger dark mode simulation");
+  info("Trigger dark mode emulation");
   const onRuleViewRefreshed = inspector.once("rule-view-refreshed");
   inspector.panelDoc
-    .querySelector("#color-scheme-simulation-dark-toggle")
+    .querySelector("#color-scheme-emulation-dark-toggle")
     .click();
   await onRuleViewRefreshed;
 

@@ -18,10 +18,10 @@ add_task(async function () {
 
   
   const lightButton = inspector.panelDoc.querySelector(
-    "#color-scheme-simulation-light-toggle"
+    "#color-scheme-emulation-light-toggle"
   );
   const darkButton = inspector.panelDoc.querySelector(
-    "#color-scheme-simulation-dark-toggle"
+    "#color-scheme-emulation-dark-toggle"
   );
 
   

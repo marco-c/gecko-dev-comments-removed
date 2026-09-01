@@ -26,8 +26,8 @@ const { debounce } = require("resource://devtools/shared/debounce.js");
 const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 const CssLogic = require("resource://devtools/shared/inspector/css-logic.js");
 const {
-  setColorSchemeSimulation,
-  setPrintSimulationEnabled,
+  setColorSchemeEmulation,
+  setPrintEmulationEnabled,
   setReducedMotionEmulation,
 } = require("resource://devtools/client/inspector/emulation/actions/emulation.js");
 
@@ -230,26 +230,26 @@ class CssRuleView extends EventEmitter {
     this.emulationReducedMotionHeading = doc.getElementById(
       "emulation-reduced-motion-heading"
     );
-    this.#printSimulationCheckbox = doc.getElementById(
-      "print-simulation-enabled"
+    this.#printEmulationCheckbox = doc.getElementById(
+      "print-emulation-enabled"
     );
     this.#colorSchemeLightRadio = doc.getElementById(
-      "color-scheme-simulation-light"
+      "color-scheme-emulation-light"
     );
     this.#colorSchemeDarkRadio = doc.getElementById(
-      "color-scheme-simulation-dark"
+      "color-scheme-emulation-dark"
     );
     this.#colorSchemeNoneRadio = doc.getElementById(
-      "color-scheme-simulation-none"
+      "color-scheme-emulation-none"
     );
-    this.#colorSchemeLightSimulationButton = doc.getElementById(
-      "color-scheme-simulation-light-toggle"
+    this.#colorSchemeLightEmulationButton = doc.getElementById(
+      "color-scheme-emulation-light-toggle"
     );
-    this.#colorSchemeDarkSimulationButton = doc.getElementById(
-      "color-scheme-simulation-dark-toggle"
+    this.#colorSchemeDarkEmulationButton = doc.getElementById(
+      "color-scheme-emulation-dark-toggle"
     );
 
-    this.#initSimulationFeatures();
+    this.#initEmulationFeatures();
 
     this.searchClearButton.hidden = true;
 
@@ -383,9 +383,9 @@ class CssRuleView extends EventEmitter {
   #showUserAgentStyles;
   #focusNextUserAddedRule;
 
-  #colorSchemeLightSimulationButton;
-  #colorSchemeDarkSimulationButton;
-  #printSimulationCheckbox;
+  #colorSchemeLightEmulationButton;
+  #colorSchemeDarkEmulationButton;
+  #printEmulationCheckbox;
   #colorSchemeLightRadio;
   #colorSchemeDarkRadio;
   #colorSchemeNoneRadio;
@@ -760,13 +760,12 @@ class CssRuleView extends EventEmitter {
   
 
 
-  async #initSimulationFeatures() {
+  async #initEmulationFeatures() {
     if (!this.inspector.commands.descriptorFront.isTabDescriptor) {
       return;
     }
-
-    this.#colorSchemeLightSimulationButton.removeAttribute("hidden");
-    this.#colorSchemeDarkSimulationButton.removeAttribute("hidden");
+    this.#colorSchemeLightEmulationButton.removeAttribute("hidden");
+    this.#colorSchemeDarkEmulationButton.removeAttribute("hidden");
     this.emulationToggle.removeAttribute("hidden");
 
     const { signal } = this.#abortController;
@@ -795,23 +794,23 @@ class CssRuleView extends EventEmitter {
       baseEventConfig
     );
 
-    this.#colorSchemeLightSimulationButton.addEventListener(
+    this.#colorSchemeLightEmulationButton.addEventListener(
       "click",
-      this.#onToggleLightColorSchemeSimulation,
+      this.#onToggleLightColorSchemeEmulation,
       baseEventConfig
     );
-    this.#colorSchemeDarkSimulationButton.addEventListener(
+    this.#colorSchemeDarkEmulationButton.addEventListener(
       "click",
-      this.#onToggleDarkColorSchemeSimulation,
+      this.#onToggleDarkColorSchemeEmulation,
       baseEventConfig
     );
     const { rfpCSSColorScheme } = this.inspector.walker;
     if (rfpCSSColorScheme) {
-      this.#colorSchemeLightSimulationButton.setAttribute("disabled", true);
-      this.#colorSchemeDarkSimulationButton.setAttribute("disabled", true);
+      this.#colorSchemeLightEmulationButton.setAttribute("disabled", true);
+      this.#colorSchemeDarkEmulationButton.setAttribute("disabled", true);
       this.#colorSchemeLightRadio.setAttribute("disabled", true);
       this.#colorSchemeDarkRadio.setAttribute("disabled", true);
-      console.warn("Color scheme simulation is disabled in RFP mode.");
+      console.warn("Color scheme emulation is disabled in RFP mode.");
     }
 
     
@@ -1170,11 +1169,11 @@ class CssRuleView extends EventEmitter {
       this.#highlighters = null;
     }
 
-    this.#colorSchemeLightSimulationButton = null;
-    this.#colorSchemeDarkSimulationButton = null;
+    this.#colorSchemeLightEmulationButton = null;
+    this.#colorSchemeDarkEmulationButton = null;
     this.emulationPanel = null;
     this.emulationToggle = null;
-    this.#printSimulationCheckbox = null;
+    this.#printEmulationCheckbox = null;
     this.#colorSchemeLightRadio = null;
     this.#colorSchemeDarkRadio = null;
     this.#colorSchemeNoneRadio = null;
@@ -2441,10 +2440,10 @@ class CssRuleView extends EventEmitter {
 
   #onEmulationPanelChange = event => {
     const { target } = event;
-    if (target.id === "print-simulation-enabled") {
-      this.#updatePrintSimulation(this.#printSimulationCheckbox.checked);
-    } else if (target.name === "color-scheme-simulation") {
-      this.#updateColorSchemeSimulation(target.value || null);
+    if (target.id === "print-emulation-enabled") {
+      this.#updatePrintEmulation(this.#printEmulationCheckbox.checked);
+    } else if (target.name === "color-scheme-emulation") {
+      this.#updateColorSchemeEmulation(target.value || null);
     } else if (target.name === "reduced-motion-emulation") {
       this.#updateReducedMotionEmulation(target.value || null);
     }
@@ -2455,8 +2454,8 @@ class CssRuleView extends EventEmitter {
 
 
 
-  async #updatePrintSimulation(enabled) {
-    setPrintSimulationEnabled(enabled);
+  async #updatePrintEmulation(enabled) {
+    setPrintEmulationEnabled(enabled);
 
     await this.inspector.commands.targetConfigurationCommand.updateConfiguration(
       {
@@ -2472,8 +2471,8 @@ class CssRuleView extends EventEmitter {
 
 
 
-  async #updateColorSchemeSimulation(colorScheme) {
-    setColorSchemeSimulation(colorScheme);
+  async #updateColorSchemeEmulation(colorScheme) {
+    setColorSchemeEmulation(colorScheme);
 
     this.#syncColorSchemeUI(colorScheme);
 
@@ -2514,11 +2513,11 @@ class CssRuleView extends EventEmitter {
     this.#colorSchemeDarkRadio.checked = colorScheme === "dark";
     this.#colorSchemeNoneRadio.checked = colorScheme === null;
 
-    this.#colorSchemeLightSimulationButton.setAttribute(
+    this.#colorSchemeLightEmulationButton.setAttribute(
       "aria-pressed",
       colorScheme === "light"
     );
-    this.#colorSchemeDarkSimulationButton.setAttribute(
+    this.#colorSchemeDarkEmulationButton.setAttribute(
       "aria-pressed",
       colorScheme === "dark"
     );
@@ -2567,27 +2566,27 @@ class CssRuleView extends EventEmitter {
   
 
 
-  #onToggleLightColorSchemeSimulation = async () => {
+  #onToggleLightColorSchemeEmulation = async () => {
     const currentColorScheme =
-      this.#colorSchemeLightSimulationButton.getAttribute("aria-pressed") ===
+      this.#colorSchemeLightEmulationButton.getAttribute("aria-pressed") ===
       "true"
         ? null
         : "light";
 
-    await this.#updateColorSchemeSimulation(currentColorScheme);
+    await this.#updateColorSchemeEmulation(currentColorScheme);
   };
 
   
 
 
-  #onToggleDarkColorSchemeSimulation = async () => {
+  #onToggleDarkColorSchemeEmulation = async () => {
     const currentColorScheme =
-      this.#colorSchemeDarkSimulationButton.getAttribute("aria-pressed") ===
+      this.#colorSchemeDarkEmulationButton.getAttribute("aria-pressed") ===
       "true"
         ? null
         : "dark";
 
-    await this.#updateColorSchemeSimulation(currentColorScheme);
+    await this.#updateColorSchemeEmulation(currentColorScheme);
   };
 
   
