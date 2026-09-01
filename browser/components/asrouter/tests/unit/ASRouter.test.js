@@ -995,6 +995,34 @@ describe("ASRouter", () => {
         assert.notCalled(FakeSpecialMessageActions.handleAction);
         assert.notCalled(addImpressionStub);
       });
+      it("rejects a nested MULTI_ACTION even if MULTI_ACTION is allowlisted", () => {
+        
+        
+        FakeMessagingSystemAllowlists.getActionOnlyActions.returns([
+          "MULTI_ACTION",
+        ]);
+        const nestedMulti = {
+          id: "NESTED_MULTI",
+          template: "action_only",
+          content: {
+            action: {
+              type: "MULTI_ACTION",
+              data: {
+                actions: [
+                  {
+                    type: "MULTI_ACTION",
+                    data: { actions: [{ type: "OPEN_URL" }] },
+                  },
+                ],
+              },
+            },
+          },
+        };
+        Router.routeCFRMessage(nestedMulti, browser, {});
+
+        assert.notCalled(FakeSpecialMessageActions.handleAction);
+        assert.notCalled(addImpressionStub);
+      });
       it("rejects a MULTI_ACTION with no nested actions", () => {
         const emptyMulti = {
           id: "EMPTY_MULTI",
