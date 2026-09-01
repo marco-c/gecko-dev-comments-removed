@@ -25,7 +25,7 @@ add_setup({ skip_if: () => AppConstants.MOZ_SYSTEM_NSS }, async () => {
   );
 
   gProfileDir = do_get_profile();
-  gCacheFile = PathUtils.join(gProfileDir.path, "ssl_tokens_cache.bin");
+  gCacheFile = PathUtils.join(gProfileDir.path, "ssl_tokens_cache.sqlite");
 
   
   
@@ -79,7 +79,7 @@ add_task(
 
     ok(
       !(await IOUtils.exists(gCacheFile)),
-      "ssl_tokens_cache.bin must NOT be written when pref is disabled"
+      "ssl_tokens_cache.sqlite must NOT be written when pref is disabled"
     );
   }
 );

@@ -6,10 +6,17 @@
 
 
 
+import os
+import sys
 import time
 from pathlib import Path
 
 from marionette_harness import MarionetteTestCase
+
+
+sys.path.append(os.path.dirname(__file__))
+
+from ssl_tokens_cache_mixin import SSLTokensCacheMixin
 
 NORMAL_KEY = "test.example.com:443"
 PBM_KEY = "test.example.com:443^privateBrowsingId=1"
@@ -33,7 +40,7 @@ resolve(Cc["@mozilla.org/network/ssl-tokens-cache;1"].getService(Ci.nsISSLTokens
 """
 
 
-class SSLTokenCacheClearingBugsTestCase(MarionetteTestCase):
+class SSLTokenCacheClearingBugsTestCase(SSLTokensCacheMixin, MarionetteTestCase):
     """Various operations must not incorrectly evict cached TLS session tokens."""
 
     def setUp(self):
@@ -101,21 +108,19 @@ class SSLTokenCacheClearingBugsTestCase(MarionetteTestCase):
         
         
         self.marionette.set_pref("network.ssl_tokens_cache_persistence", True)
-        cache_file = Path(self.marionette.profile_path) / "ssl_tokens_cache.bin"
+        cache_file = Path(self.marionette.profile_path) / "ssl_tokens_cache.sqlite"
 
         self.assertEqual(self._put_token(), 1)
         self.marionette.execute_script(
             "Services.obs.notifyObservers(null, 'application-background', null);"
         )
 
-        deadline = time.monotonic() + 5
-        while not cache_file.exists() and time.monotonic() < deadline:
-            time.sleep(0.25)
-
-        self.assertTrue(
-            cache_file.exists(), "file must appear after application-background"
+        self.assertGreaterEqual(
+            self.wait_for_cache_rows(cache_file, 1),
+            1,
+            "token must be written to ssl_tokens_cache.sqlite after "
+            "application-background",
         )
-        self.assertGreater(cache_file.stat().st_size, 0, "file must be non-empty")
 
         
         self.marionette.set_pref("network.ssl_tokens_cache_persistence", False)

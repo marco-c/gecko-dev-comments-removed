@@ -12,6 +12,11 @@ from pathlib import Path
 
 from marionette_harness import MarionetteTestCase
 
+
+sys.path.append(os.path.dirname(__file__))
+
+from ssl_tokens_cache_mixin import SSLTokensCacheMixin
+
 HOST = "0rtt-accept-h1.example.com"
 PORT = 8443
 URL = f"https://{HOST}:{PORT}/"
@@ -69,7 +74,7 @@ _BASE_PREFS = {
 }
 
 
-class TLSTokenResumptionTestCase(MarionetteTestCase):
+class TLSTokenResumptionTestCase(SSLTokensCacheMixin, MarionetteTestCase):
     def setUp(self):
         super().setUp()
 
@@ -123,7 +128,7 @@ class TLSTokenResumptionTestCase(MarionetteTestCase):
         
         
         self.marionette.set_prefs(_BASE_PREFS)
-        self.cache_file = Path(self.marionette.profile_path) / "ssl_tokens_cache.bin"
+        self.cache_file = Path(self.marionette.profile_path) / "ssl_tokens_cache.sqlite"
         self._import_ca_cert()
 
     def tearDown(self):
@@ -230,9 +235,10 @@ class TLSTokenResumptionTestCase(MarionetteTestCase):
         self.marionette.set_prefs(_BASE_PREFS)
 
         
-        self.assertTrue(
-            self.cache_file.exists(),
-            "ssl_tokens_cache.bin must exist after shutdown",
+        self.assertGreaterEqual(
+            self.wait_for_cache_rows(self.cache_file, 1),
+            1,
+            "ssl_tokens_cache.sqlite must contain a row after shutdown",
         )
 
         
@@ -280,7 +286,7 @@ class TLSTokenResumptionTestCase(MarionetteTestCase):
 
         self.assertFalse(
             self.cache_file.exists(),
-            "ssl_tokens_cache.bin must NOT exist when persistence is disabled",
+            "ssl_tokens_cache.sqlite must NOT exist when persistence is disabled",
         )
         self.assertEqual(
             self._token_count(),

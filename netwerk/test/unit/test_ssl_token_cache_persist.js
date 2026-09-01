@@ -13,11 +13,6 @@
 
 
 
-
-
-
-
-
 "use strict";
 
 const { AppConstants } = ChromeUtils.importESModule(
@@ -41,7 +36,7 @@ add_setup({ skip_if: () => AppConstants.MOZ_SYSTEM_NSS }, async () => {
   
   
   gProfileDir = do_get_profile();
-  gCacheFile = PathUtils.join(gProfileDir.path, "ssl_tokens_cache.bin");
+  gCacheFile = PathUtils.join(gProfileDir.path, "ssl_tokens_cache.sqlite");
   Services.obs.notifyObservers(
     null,
     "profile-after-change",
@@ -79,14 +74,50 @@ async function makeConnection() {
 }
 
 
-async function waitForCacheFile() {
+
+function readCacheRowCount() {
+  let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+  file.initWithPath(gCacheFile);
+  if (!file.exists()) {
+    return null;
+  }
+  let conn;
+  try {
+    conn = Services.storage.openDatabase(file);
+  } catch (e) {
+    return null;
+  }
+  try {
+    let stmt = conn.createStatement("SELECT COUNT(*) FROM ssl_tokens");
+    try {
+      stmt.executeStep();
+      return stmt.getInt32(0);
+    } finally {
+      stmt.reset();
+      stmt.finalize();
+    }
+  } catch (e) {
+    return null;
+  } finally {
+    conn.close();
+  }
+}
+
+
+
+async function waitForCacheRows(aMinCount = 1) {
+  let lastCount = 0;
   for (let i = 0; i < 50; i++) {
-    if (await IOUtils.exists(gCacheFile)) {
-      return true;
+    let count = readCacheRowCount();
+    if (count !== null) {
+      lastCount = count;
+      if (count >= aMinCount) {
+        return count;
+      }
     }
     await new Promise(resolve => do_timeout(100, resolve));
   }
-  return false;
+  return lastCount;
 }
 
 
@@ -95,19 +126,13 @@ add_task(
   { skip_if: () => AppConstants.MOZ_SYSTEM_NSS },
   async function test_ssl_token_cache_written_on_idle_daily() {
     await makeConnection();
-    await IOUtils.remove(gCacheFile, { ignoreAbsent: true });
 
     Services.obs.notifyObservers(null, "idle-daily");
 
-    ok(
-      await waitForCacheFile(),
-      "ssl_tokens_cache.bin written after idle-daily"
-    );
-    const info = await IOUtils.stat(gCacheFile);
-    Assert.greater(
-      info.size,
-      0,
-      `cache file is non-empty (${info.size} bytes)`
+    Assert.greaterOrEqual(
+      await waitForCacheRows(1),
+      1,
+      "ssl_tokens_cache.sqlite has rows after idle-daily"
     );
   }
 );
@@ -118,19 +143,13 @@ add_task(
   { skip_if: () => AppConstants.MOZ_SYSTEM_NSS },
   async function test_ssl_token_cache_written_on_application_background() {
     await makeConnection();
-    await IOUtils.remove(gCacheFile, { ignoreAbsent: true });
 
     Services.obs.notifyObservers(null, "application-background");
 
-    ok(
-      await waitForCacheFile(),
-      "ssl_tokens_cache.bin written after application-background"
-    );
-    const info = await IOUtils.stat(gCacheFile);
-    Assert.greater(
-      info.size,
-      0,
-      `cache file is non-empty (${info.size} bytes)`
+    Assert.greaterOrEqual(
+      await waitForCacheRows(1),
+      1,
+      "ssl_tokens_cache.sqlite has rows after application-background"
     );
   }
 );
@@ -141,10 +160,7 @@ add_task(
   { skip_if: () => AppConstants.MOZ_SYSTEM_NSS },
   async function test_ssl_token_cache_written_on_quit() {
     await makeConnection();
-    await IOUtils.remove(gCacheFile, { ignoreAbsent: true });
 
-    
-    
     
     
     Services.prefs.setBoolPref("toolkit.asyncshutdown.testing", true);
@@ -155,13 +171,12 @@ add_task(
 
     ok(
       await IOUtils.exists(gCacheFile),
-      "ssl_tokens_cache.bin written after profile-before-change"
+      "ssl_tokens_cache.sqlite exists after profile-before-change"
     );
-    const info = await IOUtils.stat(gCacheFile);
-    Assert.greater(
-      info.size,
-      0,
-      `cache file is non-empty (${info.size} bytes)`
+    Assert.greaterOrEqual(
+      await waitForCacheRows(1),
+      1,
+      "ssl_tokens_cache.sqlite has rows after profile-before-change"
     );
   }
 );

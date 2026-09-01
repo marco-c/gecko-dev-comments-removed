@@ -7,6 +7,7 @@ clippy:
         - browser/app/nmhproxy/
         - dom/base/fragmentdirectives/
         - dom/base/rust/
+        - dom/base/speculationrules/
         - dom/fs/parent/rust/data-encoding-ffi/
         - dom/fs/parent/rust/mime-guess-ffi/
         - dom/media/gtest/
@@ -37,7 +38,6 @@ clippy:
         - netwerk/base/idna_glue/
         - netwerk/base/mozurl/
         - netwerk/base/rust-helper/
-        - netwerk/base/ssl_tokens_cache/
         - netwerk/base/urlpattern_glue/
         - netwerk/base/uritemplate_glue/
         - netwerk/protocol/http/happy_eyeballs_glue/

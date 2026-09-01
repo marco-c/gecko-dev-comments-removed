@@ -32,13 +32,9 @@
 #endif
 
 class CommonSocketControl;
-struct SslTokensPersistedRecord;
-
-namespace mozilla {
-namespace ipc {
-class ByteBuf;
-}
-}  
+class mozIStorageConnection;
+class mozIStorageService;
+class mozIStorageStatement;
 
 namespace mozilla {
 namespace net {
@@ -112,15 +108,14 @@ class SSLTokensCache : public nsIMemoryReporter,
       MOZ_EXCLUDES(sLock);
 
   
-  static nsTArray<uint8_t> SerializeForIPC();
+  static nsTArray<SSLTokensCacheRecordInfo> SerializeForIPC();
 
   
-  
-  static void DeserializeFromIPC(mozilla::Span<const uint8_t> aData,
+  static void DeserializeFromIPC(nsTArray<SSLTokensCacheRecordInfo>&& aRecords,
                                  bool aRestored);
   
-  static void DeserializeFromIPCAsync(mozilla::ipc::ByteBuf&& aBuf,
-                                      bool aRestored);
+  static void DeserializeFromIPCAsync(
+      nsTArray<SSLTokensCacheRecordInfo>&& aRecords, bool aRestored);
 
   
   static void GetAllRecords(nsTArray<SSLTokensCacheRecordInfo>& aOut);
@@ -189,8 +184,14 @@ class SSLTokensCache : public nsIMemoryReporter,
   
   bool mPrefCallbackRegistered{false};  
   bool mWriteObserversRegistered MOZ_GUARDED_BY(sLock){false};
-  nsCOMPtr<nsIFile> mBackingFile MOZ_GUARDED_BY(sLock);
-  nsCOMPtr<nsISerialEventTarget> mWriteTaskQueue MOZ_GUARDED_BY(sLock);
+  
+  
+  nsCOMPtr<nsISerialEventTarget> mDBQueue MOZ_GUARDED_BY(sLock);
+  
+  
+  nsCOMPtr<nsIFile> mDBFile MOZ_GUARDED_BY(sLock);
+  
+  bool mDBActive MOZ_GUARDED_BY(sLock){false};
   bool mLoadComplete MOZ_GUARDED_BY(sLock){false};
   TimeStamp mLoadStartTime MOZ_GUARDED_BY(sLock);
   
@@ -198,17 +199,21 @@ class SSLTokensCache : public nsIMemoryReporter,
   void DoWrite(bool aSynchronous) MOZ_EXCLUDES(sLock);
   void RegisterShutdownBlocker() MOZ_EXCLUDES(sLock);
   void RemoveShutdownBlocker() MOZ_EXCLUDES(sLock);
+  
+  
+  static void UnregisterFromServices(SSLTokensCache* aInstance)
+      MOZ_EXCLUDES(sLock);
   nsCOMPtr<nsIAsyncShutdownClient> mShutdownBarrier MOZ_GUARDED_BY(sLock);
+
   
   
   
-  
-  static nsCString SetupPersistenceLocked(uint32_t& aLoadGen)
+  static bool SetupPersistenceLocked(uint32_t& aLoadGen,
+                                     bool aStorageServiceAvailable)
       MOZ_REQUIRES(sLock);
-  static void DispatchLoad(nsCString aPath, uint32_t aLoadGen);
+  
+  static void DispatchOpenAndLoad(uint32_t aLoadGen);
   static void OnLoadCompleteNotify(uint32_t aCount);
-  
-  
   
   static UniquePtr<TokenCacheRecord> MakeRecord(
       const nsACString& aKey, PRTime aExpirationTime, uint8_t aOverridableError,
@@ -216,22 +221,51 @@ class SSLTokensCache : public nsIMemoryReporter,
 
   
   
-  
-  
-  static bool PutFromPersisted(const SslTokensPersistedRecord* aRec,
+  static bool PutFromPersisted(const SSLTokensCacheRecordInfo& aRec,
                                uint32_t aExpectedGen, bool aRestored);
 
-  struct LoadCtx {
-    uint32_t loadGen;
-    uint32_t count = 0;
-  };
-  static void LoadCallback(void* aCtx, const SslTokensPersistedRecord* aRec);
   
   
-  struct PersistedPutCtx {
-    uint32_t loadGen;
-    bool restored;
-  };
+  static bool IsPersistenceStillActive();
+
+  
+  static already_AddRefed<nsIFile> GetCachedDBFile();
+
+  
+  
+  static bool OpenDB(nsCOMPtr<mozIStorageConnection>& aConn);
+  
+  static already_AddRefed<mozIStorageConnection> OpenActiveDB();
+  static uint32_t LoadFromDB(uint32_t aLoadGen);
+  static void WriteSnapshotToDB(nsTArray<SSLTokensCacheRecordInfo>&& aSnapshot);
+  
+  static void CollectAndWriteSnapshotIfLoaded();
+  static void ClearDB();
+  static void RemoveDBFileSync();
+  
+  
+  static bool RemoveDBFile(nsIFile* aDbFile);
+#ifdef DEBUG
+  
+  static void AssertOnDBThread();
+#endif
+
+  
+  
+  static nsresult EnsureSchema(mozIStorageConnection* aConn);
+  static nsresult CreateSchemaOn(mozIStorageConnection* aConn);
+  static nsresult PrepareInsertStatement(
+      mozIStorageConnection* aConn,
+      nsCOMPtr<mozIStorageStatement>& aStmtInsert);
+  static nsresult WriteSnapshotTo(
+      mozIStorageConnection* aConn, mozIStorageStatement* aStmtInsert,
+      const nsTArray<SSLTokensCacheRecordInfo>& aSnapshot);
+  
+  
+  static uint32_t LoadValidRecordsFrom(mozIStorageConnection* aConn,
+                                       uint32_t aLoadGen,
+                                       bool* aCorrupted = nullptr);
+
   static nsDependentCSubstring BasePartFromKey(const nsACString& aKey);
   static nsDependentCSubstring HostFromBasePart(
       const nsDependentCSubstring& aBasePart);
@@ -242,25 +276,12 @@ class SSLTokensCache : public nsIMemoryReporter,
 
   
   
-  
-  
-  nsTArray<SslTokensPersistedRecord> CollectSnapshotLocked() const
-      MOZ_REQUIRES(sLock);
-  static nsTArray<uint8_t> SerializeSnapshotLocked() MOZ_REQUIRES(sLock);
-  
-  
-  
-  
   void CollectRecordInfosLocked(nsTArray<SSLTokensCacheRecordInfo>& aOut,
                                 bool aFilterForPersistence) const
       MOZ_REQUIRES(sLock);
   
   template <typename Pred>
   void RemoveMatchingLocked(Pred&& aPredicate) MOZ_REQUIRES(sLock);
-  
-  
-  static void PutFromPersistedCallback(void* aCtx,
-                                       const SslTokensPersistedRecord* aRec);
 
   class TokenCacheRecord {
    public:
