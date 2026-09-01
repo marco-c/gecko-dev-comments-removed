@@ -124,7 +124,7 @@ async function serveRemoteSettings() {
   );
 
   const message = await PanelTestProvider.getMessages().then(msgs =>
-    msgs.find(msg => msg.id === "INFOBAR_ACTION_86")
+    msgs.find(msg => msg.id === "PERSONALIZED_CFR_MESSAGE")
   );
 
   

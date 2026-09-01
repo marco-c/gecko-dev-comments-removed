@@ -1,15 +1,15 @@
 
 
 
-const { PanelTestProvider } = ChromeUtils.importESModule(
-  "resource:///modules/asrouter/PanelTestProvider.sys.mjs"
+const { CFRMessageProvider } = ChromeUtils.importESModule(
+  "resource:///modules/asrouter/CFRMessageProvider.sys.mjs"
 );
 
 add_task(async function test_multiMessageTreatment() {
   const { experimentValidator } = await makeValidators();
   
   
-  let messages = await PanelTestProvider.getMessages();
+  let messages = await CFRMessageProvider.getMessages();
   let featureValue = { template: "multi", messages };
   assertValidates(
     experimentValidator,
@@ -27,7 +27,7 @@ add_task(async function test_multiMessageTreatment() {
   
   messages.push({
     id: "INVALID_MESSAGE",
-    template: "infobar",
+    template: "cfr_doorhanger",
   });
   const result = experimentValidator.validate(featureValue);
   Assert.ok(
