@@ -50,7 +50,7 @@ static inline bool IsSymbol(const JS::Value& value) { return value.isSymbol(); }
 
 
 template <typename T>
-static CellColor GetEffectiveColor(GCMarker* marker, const T& item) {
+CellColor GetEffectiveColor(GCMarker* marker, const T& item) {
   static_assert(!IsBarriered<T>::value, "Don't pass wrapper types");
 
   Cell* cell = ToMarkable(item);
@@ -297,7 +297,7 @@ bool WeakMap<K, V, AP>::markEntry(GCMarker* marker, gc::CellColor mapColor,
 
 template <class K, class V, class AP>
 void WeakMap<K, V, AP>::trace(JSTracer* trc) {
-  MOZ_ASSERT(isInList());
+  MOZ_ASSERT_IF(!trc->isMarkingTracer(), isInList());
 
   TraceEdge(trc, &memberOf, "WeakMap owner");
 
@@ -321,6 +321,9 @@ void WeakMap<K, V, AP>::trace(JSTracer* trc) {
         lock.emplace(marker->runtime());
       }
     }
+
+    
+    MOZ_ASSERT(isInList());
 
     if (!memberOf) {
       (void)markEntries(marker);
