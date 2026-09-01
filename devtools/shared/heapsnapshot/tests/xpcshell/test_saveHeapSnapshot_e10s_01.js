@@ -5,5 +5,6 @@
 
 
 function run_test() {
+  ChromeUtils.notifyDevToolsOpened();
   run_test_in_child("test_SaveHeapSnapshot.js");
 }
