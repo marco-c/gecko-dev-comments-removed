@@ -980,8 +980,7 @@ void RTCRtpTransceiver::ToDomHeaderExtensions(
   aDetails.ForEachRTPHeaderExtension(
       [&](const SdpExtmapAttributeList::Extmap& aExtmap) {
         RTCRtpHeaderExtensionParameters ext;
-        ext.mUri.Construct(
-            NS_ConvertUTF8toUTF16(aExtmap.extensionname.c_str()));
+        ext.mUri.Construct(NS_ConvertUTF8toUTF16(aExtmap.extensionname));
         ext.mId.Construct(aExtmap.entry);
         
         
