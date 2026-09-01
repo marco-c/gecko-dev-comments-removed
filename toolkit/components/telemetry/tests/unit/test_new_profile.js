@@ -74,7 +74,21 @@ sinon.stub(WindowsInstallsInfo, "getInstallPaths").callsFake(() => new Set());
 MockRegistrar.register("@mozilla.org/windows-package-manager;1", {
   QueryInterface: ChromeUtils.generateQI(["nsIWindowsPackageManager"]),
   findUserInstalledPackages(_prefixes) {
+    
+    
+    if (Services.sysinfo.getProperty("hasWinPackageId")) {
+      return [Services.sysinfo.getProperty("winPackageFamilyName")];
+    }
+
     return [];
+  },
+  getInstalledDate() {
+    if (Services.sysinfo.getProperty("hasWinPackageId")) {
+      
+      return Number(TIMESTAMP_TEST_VALUE);
+    }
+
+    throw new Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
   },
 });
 
@@ -94,6 +108,13 @@ add_setup(async function () {
 });
 
 add_task(async function test_new_profile_ping() {
+  
+  Assert.equal(
+    Number(Services.prefs.getStringPref("app.installation.timestamp")),
+    Number(TIMESTAMP_TEST_VALUE),
+    "app.installation.timestamp is updated with this installation's timestamp"
+  );
+
   Object.entries(testDataJSON).forEach(([key, value]) => {
     
     if (key == "build_id") {
