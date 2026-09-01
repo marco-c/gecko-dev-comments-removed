@@ -5,15 +5,19 @@
 #ifndef jit_WarpBuilder_h
 #define jit_WarpBuilder_h
 
+#include "mozilla/Maybe.h"
+
 #include <initializer_list>
 
 #include "ds/InlineTable.h"
+#include "jit/GeneratorResumeAnalysis.h"
 #include "jit/JitContext.h"
 #include "jit/MIR-wasm.h"
 #include "jit/MIR.h"
 #include "jit/WarpBuilderShared.h"
 #include "jit/WarpSnapshot.h"
 #include "vm/Opcodes.h"
+#include "vm/Stack.h"  
 
 namespace js {
 namespace jit {
@@ -50,6 +54,23 @@ class MIRGraph;
 class WarpSnapshot;
 
 enum class CacheKind : uint8_t;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -187,6 +208,26 @@ class MOZ_STACK_CLASS WarpBuilder : public WarpBuilderShared {
   MResumePoint* callerResumePoint_ = nullptr;
   CallInfo* inlineCallInfo_ = nullptr;
 
+  
+  
+  mozilla::Maybe<GeneratorResumeAnalysis> resumeAnalysis_;
+
+  
+  
+  
+  
+  using PendingInnerLoopResumesMap =
+      InlineMap<uint32_t, MBasicBlock*, 2, DefaultHasher<uint32_t>,
+                SystemAllocPolicy>;
+  PendingInnerLoopResumesMap pendingInnerLoopResumes_;
+
+  
+  
+  mozilla::Maybe<uint32_t> pendingSuspendSavedSlots_;
+#ifdef DEBUG
+  uint32_t pendingSuspendResumeIndex_ = 0;
+#endif
+
   WarpCompilation* warpCompilation() const { return warpCompilation_; }
   MIRGraph& graph() { return graph_; }
   const WarpScriptSnapshot* scriptSnapshot() const { return scriptSnapshot_; }
@@ -263,6 +304,23 @@ class MOZ_STACK_CLASS WarpBuilder : public WarpBuilderShared {
 
   [[nodiscard]] bool buildSuspend(BytecodeLocation loc, MDefinition* gen,
                                   MDefinition* retVal);
+
+  [[nodiscard]] bool startResumePath(MBasicBlock* from, BytecodeLocation loc,
+                                     MBasicBlock** normalBlock);
+  [[nodiscard]] bool buildPrologueResumeDispatch(BytecodeLocation startLoc);
+  [[nodiscard]] bool buildResumeIndexDispatch(BytecodeLocation loc,
+                                              DispatchEntrySpan entries);
+  [[nodiscard]] bool linkDispatchEntry(MBasicBlock* from, size_t successorIndex,
+                                       const DispatchEntry& entry,
+                                       BytecodeLocation loc);
+  [[nodiscard]] bool buildLoopResumeMerge(BytecodeLocation loopHead);
+
+  MBasicBlock* takePendingInnerLoopResume(BytecodeLocation loopHead);
+
+  MDefinition* resumeFrameArg(ResumeFrameArgs::Slot slot);
+  MDefinition* resumeGeneratorObject();
+
+  MDefinition* loadGeneratorStackStorage(MDefinition* genObj);
 
   void buildCheckLexicalOp(BytecodeLocation loc);
 

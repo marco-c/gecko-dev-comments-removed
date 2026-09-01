@@ -9701,9 +9701,15 @@ void CodeGenerator::visitCreateThis(LCreateThis* lir) {
 }
 
 void CodeGenerator::visitCreateArgumentsObject(LCreateArgumentsObject* lir) {
+#ifdef DEBUG
   
   
-  MOZ_ASSERT(lir->mir()->block()->id() == 0);
+  
+  MBasicBlock* block = lir->mir()->block();
+  JSScript* script = block->info().script();
+  MOZ_ASSERT(block != block->graph().osrBlock());
+  MOZ_ASSERT_IF(!script->isGenerator() && !script->isAsync(), block->id() == 0);
+#endif
 
   Register callObj = ToRegister(lir->callObject());
   Register temp0 = ToRegister(lir->temp0());

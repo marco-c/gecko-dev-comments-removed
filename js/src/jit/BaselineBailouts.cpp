@@ -1991,6 +1991,14 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
       action = BailoutAction::DisableIfFrequent;
       break;
 
+    case BailoutKind::UncompiledGeneratorResume:
+      
+      
+      
+      
+      action = BailoutAction::DisableIfFrequent;
+      break;
+
     case BailoutKind::LICM:
       
       

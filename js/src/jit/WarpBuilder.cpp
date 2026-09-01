@@ -290,12 +290,39 @@ bool WarpBuilder::addPendingEdge(BytecodeLocation target, MBasicBlock* block,
 }
 
 bool WarpBuilder::build() {
+  if (script_->isGenerator() || script_->isAsync()) {
+    resumeAnalysis_.emplace(script_);
+    if (!resumeAnalysis_->init()) {
+      return false;
+    }
+    if (!resumeAnalysis_->hasResumes()) {
+      
+      
+      resumeAnalysis_.reset();
+    }
+  }
+
   if (!buildPrologue()) {
     return false;
   }
 
   if (!buildBody()) {
     return false;
+  }
+
+  MOZ_ASSERT(pendingSuspendSavedSlots_.isNothing(),
+             "didn't build the AfterYield following a suspend");
+
+  
+  
+  
+  
+  
+  for (auto iter = pendingInnerLoopResumes_.iter(); !iter.done(); iter.next()) {
+    MBasicBlock* block = iter.get().value();
+    MOZ_ASSERT(!block->hasLastIns());
+    block->add(MBail::New(alloc(), BailoutKind::UncompiledGeneratorResume));
+    block->end(MUnreachable::New(alloc()));
   }
 
   if (!MPhi::markIteratorPhis(*iterators())) {
@@ -435,6 +462,279 @@ bool WarpBuilder::buildEnvironmentChain() {
   return true;
 }
 
+MDefinition* WarpBuilder::resumeFrameArg(ResumeFrameArgs::Slot slot) {
+  auto* def = MResumeFrameArg::New(alloc(), slot);
+  current->add(def);
+  return def;
+}
+
+MDefinition* WarpBuilder::resumeGeneratorObject() {
+  MDefinition* val = resumeFrameArg(ResumeFrameArgs::GeneratorSlot);
+  auto* unbox =
+      MUnbox::New(alloc(), val, MIRType::Object, MUnbox::Mode::Infallible);
+  current->add(unbox);
+  return unbox;
+}
+
+MDefinition* WarpBuilder::loadGeneratorStackStorage(MDefinition* genObj) {
+  auto* arrayObj = MLoadFixedSlotAndUnbox::New(
+      alloc(), genObj, AbstractGeneratorObject::stackStorageSlot(),
+      MUnbox::Mode::Infallible, MIRType::Object);
+  current->add(arrayObj);
+  return arrayObj;
+}
+
+bool WarpBuilder::startResumePath(MBasicBlock* from, BytecodeLocation loc,
+                                  MBasicBlock** normalBlock) {
+  auto* isResuming = MIsResumingGenerator::New(alloc());
+  from->add(isResuming);
+
+  if (!startNewBlock(from, loc)) {
+    return false;
+  }
+  *normalBlock = current;
+
+  if (!startNewBlock(from, loc)) {
+    return false;
+  }
+
+  from->end(MTest::New(alloc(), isResuming,  current,
+                        *normalBlock));
+  return true;
+}
+
+bool WarpBuilder::linkDispatchEntry(MBasicBlock* from, size_t successorIndex,
+                                    const DispatchEntry& entry,
+                                    BytecodeLocation loc) {
+  MOZ_ASSERT(successorIndex < from->lastIns()->numSuccessors());
+
+  if (entry.isAfterYield()) {
+    
+    BytecodeLocation afterYield =
+        resumeAnalysis_->afterYieldLocationAt(entry.resumeIndex());
+    if (!addPendingEdge(afterYield, from, successorIndex)) {
+      return false;
+    }
+  } else {
+    
+    
+    if (!startNewBlock(from, loc)) {
+      return false;
+    }
+    from->lastIns()->initSuccessor(successorIndex, current);
+    PendingInnerLoopResumesMap::AddPtr p =
+        pendingInnerLoopResumes_.lookupForAdd(entry.innerLoopHeadOffset());
+    MOZ_ASSERT(!p, "each loop is targeted by a single dispatch entry");
+    if (!pendingInnerLoopResumes_.add(p, entry.innerLoopHeadOffset(),
+                                      current)) {
+      return false;
+    }
+  }
+
+  setTerminatedBlock();
+  return true;
+}
+
+MBasicBlock* WarpBuilder::takePendingInnerLoopResume(
+    BytecodeLocation loopHead) {
+  MOZ_ASSERT(loopHead.is(JSOp::LoopHead));
+  uint32_t loopHeadOffset = loopHead.bytecodeToOffset(script_);
+
+  auto p = pendingInnerLoopResumes_.lookup(loopHeadOffset);
+  MOZ_RELEASE_ASSERT(p);
+
+  MBasicBlock* block = p->value();
+  pendingInnerLoopResumes_.remove(p);
+  return block;
+}
+
+bool WarpBuilder::buildResumeIndexDispatch(BytecodeLocation loc,
+                                           DispatchEntrySpan entries) {
+  MOZ_ASSERT(!entries.empty());
+
+  
+  
+  
+  if (entries.size() == 1) {
+    current->end(MGoto::New(alloc(), nullptr));
+    return linkDispatchEntry(current, MGoto::TargetIndex, entries[0], loc);
+  }
+
+  auto* resumeIndexVal = resumeFrameArg(ResumeFrameArgs::ResumeIndexSlot);
+  auto* resumeIndex = MUnbox::New(alloc(), resumeIndexVal, MIRType::Int32,
+                                  MUnbox::Mode::Infallible);
+  current->add(resumeIndex);
+
+  
+  
+  
+  if (entries.size() == 2) {
+    int32_t second = int32_t(entries[1].resumeIndices().begin);
+    MOZ_ASSERT(int32_t(entries[0].resumeIndices().last()) < second);
+    auto* isFirst =
+        MCompare::New(alloc(), resumeIndex, constant(Int32Value(second)),
+                      JSOp::Lt, MCompare::Compare_Int32);
+    current->add(isFirst);
+    current->end(MTest::New(alloc(), isFirst,  nullptr,
+                             nullptr));
+    MBasicBlock* from = current;
+    return linkDispatchEntry(from, MTest::TrueBranchIndex, entries[0], loc) &&
+           linkDispatchEntry(from, MTest::FalseBranchIndex, entries[1], loc);
+  }
+
+  
+  int32_t low = int32_t(entries[0].resumeIndices().begin);
+  int32_t high = int32_t(entries[entries.size() - 1].resumeIndices().last());
+  auto* tableswitch = MTableSwitch::New(alloc(), resumeIndex, low, high);
+  current->end(tableswitch);
+
+  
+  
+  
+  size_t defaultIndex;
+  if (!tableswitch->addDefault(nullptr, &defaultIndex)) {
+    return false;
+  }
+
+  
+  
+  
+  MBasicBlock* from = current;
+  mozilla::DebugOnly<int32_t> nextResumeIndex = low;
+  for (const DispatchEntry& entry : entries) {
+    size_t successorIndex;
+    if (!tableswitch->addSuccessor(nullptr, &successorIndex)) {
+      return false;
+    }
+    ResumeIndexRange range = entry.resumeIndices();
+    for (uint32_t index = range.begin; index < range.end; index++) {
+      MOZ_ASSERT(int32_t(index) == nextResumeIndex);
+      if (!tableswitch->addCase(successorIndex)) {
+        return false;
+      }
+      nextResumeIndex++;
+    }
+    if (!linkDispatchEntry(from, successorIndex, entry, loc)) {
+      return false;
+    }
+  }
+  MOZ_ASSERT(nextResumeIndex == high + 1);
+
+  
+  if (!startNewBlock(from, loc)) {
+    return false;
+  }
+  tableswitch->initSuccessor(defaultIndex, current);
+  current->end(MUnreachable::New(alloc()));
+  setTerminatedBlock();
+  return true;
+}
+
+bool WarpBuilder::buildLoopResumeMerge(BytecodeLocation loopHead) {
+  MBasicBlock* preheader = current;
+
+  
+  
+  if (!startNewBlock(preheader, loopHead)) {
+    return false;
+  }
+  MBasicBlock* merge = current;
+
+  
+  
+  MBasicBlock* innerLoopResume = takePendingInnerLoopResume(loopHead);
+  MOZ_ASSERT(!innerLoopResume->hasLastIns());
+  current = innerLoopResume;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(innerLoopResume->stackDepth() <= merge->stackDepth());
+  if (innerLoopResume->stackDepth() < merge->stackDepth()) {
+    MConstant* undef = constant(UndefinedValue());
+    while (current->stackDepth() < merge->stackDepth()) {
+      current->push(undef);
+    }
+  }
+
+  innerLoopResume->end(MGoto::New(alloc(), merge));
+  if (!merge->addPredecessor(alloc(), innerLoopResume)) {
+    return false;
+  }
+
+  preheader->end(MGoto::New(alloc(), merge));
+  current = merge;
+  return true;
+}
+
+bool WarpBuilder::buildPrologueResumeDispatch(BytecodeLocation startLoc) {
+  MBasicBlock* entryBlock = current;
+
+  MBasicBlock* normalBlock = nullptr;
+  if (!startResumePath(entryBlock, startLoc, &normalBlock)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  current->add(
+      MCheckOverRecursed::New(alloc(),  true));
+
+  
+  MDefinition* genObj = resumeGeneratorObject();
+  auto* envChain = MLoadFixedSlotAndUnbox::New(
+      alloc(), genObj, AbstractGeneratorObject::envChainSlot(),
+      MUnbox::Mode::Infallible, MIRType::Object);
+  current->add(envChain);
+  current->setEnvironmentChain(envChain);
+
+  
+  
+  uint32_t nfixed = info().nlocals();
+  if (nfixed > 0) {
+    MDefinition* arrayObj = loadGeneratorStackStorage(genObj);
+
+    auto* elements = MElements::New(alloc(), arrayObj);
+    current->add(elements);
+
+    for (uint32_t i = 0; i < nfixed; i++) {
+      if (!alloc().ensureBallast()) {
+        return false;
+      }
+      auto* load = MLoadElement::New(alloc(), elements, constant(Int32Value(i)),
+                                      false);
+      current->add(load);
+      current->setSlot(info().localSlot(i), load);
+    }
+  }
+
+  
+  if (info().needsArgsObj()) {
+    auto* argsObj = MLoadFixedSlotAndUnbox::New(
+        alloc(), genObj, AbstractGeneratorObject::argsObjectSlot(),
+        MUnbox::Mode::Infallible, MIRType::Object);
+    current->add(argsObj);
+    current->setSlot(info().argsObjSlot(), argsObj);
+  }
+
+  
+  DispatchEntrySpan entries = resumeAnalysis_->prologueDispatchEntries();
+  MOZ_ASSERT(!entries.empty(), "a script with no suspend has no dispatch");
+  if (!buildResumeIndexDispatch(startLoc, entries)) {
+    return false;
+  }
+
+  current = normalBlock;
+  return true;
+}
+
 bool WarpBuilder::buildPrologue() {
   BytecodeLocation startLoc(script_, script_->code());
   if (!startNewEntryBlock(info().firstStackSlot(), startLoc)) {
@@ -473,6 +773,14 @@ bool WarpBuilder::buildPrologue() {
   }
 
   current->add(MStart::New(alloc()));
+
+  
+  
+  if (resumeAnalysis_.isSome()) {
+    if (!buildPrologueResumeDispatch(startLoc)) {
+      return false;
+    }
+  }
 
   
   auto* check =
@@ -1331,6 +1639,17 @@ bool WarpBuilder::build_LoopHead(BytecodeLocation loc) {
   }
 
   
+  
+  
+  DispatchEntrySpan entries;
+  if (resumeAnalysis_.isSome()) {
+    entries = resumeAnalysis_->loopDispatchEntries(loc);
+    if (!entries.empty() && !buildLoopResumeMerge(loc)) {
+      return false;
+    }
+  }
+
+  
   if (loc.toRawBytecode() == info().osrPc()) {
     if (!startNewOsrPreHeaderBlock(loc)) {
       return false;
@@ -1350,6 +1669,22 @@ bool WarpBuilder::build_LoopHead(BytecodeLocation loc) {
     return false;
   }
 
+  
+  
+  if (!entries.empty()) {
+    MBasicBlock* body = nullptr;
+    if (!startResumePath(current, loc, &body)) {
+      return false;
+    }
+    if (!buildResumeIndexDispatch(loc, entries)) {
+      return false;
+    }
+    current = body;
+  }
+
+  
+  
+  
   MInterruptCheck* check = MInterruptCheck::New(alloc());
   current->add(check);
 
@@ -2408,24 +2743,104 @@ bool WarpBuilder::build_Generator(BytecodeLocation loc) {
 }
 
 bool WarpBuilder::build_AfterYield(BytecodeLocation loc) {
+  MOZ_ASSERT(resumeAnalysis_.isSome());
+
   
-  if (hasTerminatedBlock()) {
+  
+  MOZ_ASSERT(hasTerminatedBlock());
+  mozilla::Maybe<uint32_t> savedSlots = pendingSuspendSavedSlots_.take();
+  MOZ_ASSERT_IF(savedSlots, pendingSuspendResumeIndex_ ==
+                                loc.getSuspendForAfterYield().getResumeIndex());
+
+  
+  
+  
+  PendingEdgesMap::Ptr p = pendingEdges_.lookup(loc.toRawBytecode());
+  if (!p) {
+    MOZ_ASSERT(savedSlots.isNothing());
+    return true;
+  }
+
+  
+  
+  PendingEdges edges(std::move(p->value()));
+  pendingEdges_.remove(p);
+  MOZ_RELEASE_ASSERT(edges.length() == 1);
+
+  
+  
+  
+  const PendingEdge& edge = edges[0];
+  BytecodeLocation predLoc(script_, edge.block()->pc());
+  if (!startNewBlock(edge.block(), predLoc, edge.numToPop())) {
+    return false;
+  }
+  edge.block()->lastIns()->initSuccessor(edge.successor(), current);
+
+  if (savedSlots.isNothing()) {
+    
+    
+    current->add(MBail::New(alloc(), BailoutKind::UncompiledGeneratorResume));
+    current->end(MUnreachable::New(alloc()));
+    setTerminatedBlock();
     return true;
   }
 
   
   
   
-  
-  
-  
-  
-  
-  
-  MBail* bail = MBail::New(alloc(), BailoutKind::Unreachable);
-  current->add(bail);
+  while (current->stackDepth() > info().firstStackSlot()) {
+    current->pop();
+  }
 
-  return true;
+  MDefinition* genObj = resumeGeneratorObject();
+
+  uint32_t nfixed = info().nlocals();
+  MOZ_ASSERT(*savedSlots >= nfixed);
+  uint32_t nexpr = *savedSlots - nfixed;
+  if (*savedSlots > 0) {
+    
+    MDefinition* arrayObj = loadGeneratorStackStorage(genObj);
+    auto* elements = MElements::New(alloc(), arrayObj);
+    current->add(elements);
+
+    
+    for (uint32_t i = 0; i < nexpr; i++) {
+      if (!alloc().ensureBallast()) {
+        return false;
+      }
+      auto* load =
+          MLoadElement::New(alloc(), elements, constant(Int32Value(nfixed + i)),
+                             false);
+      current->add(load);
+      current->push(load);
+    }
+
+    
+    
+    
+    
+    
+    current->add(MSetInitializedLength::New(alloc(), elements, 0,
+                                             true));
+  }
+
+  
+  
+  
+  current->push(resumeFrameArg(ResumeFrameArgs::ResumeValueSlot));
+  current->push(genObj);
+#ifdef DEBUG
+  current->add(MAssertResumeKindIsNext::New(alloc()));
+#endif
+  current->push(constant(Int32Value(int32_t(GeneratorResumeKind::Next))));
+
+  
+  
+  
+  auto* clear = MClearResumingGeneratorFlag::New(alloc());
+  current->add(clear);
+  return resumeAfter(clear, loc);
 }
 
 bool WarpBuilder::build_FinalYieldRval(BytecodeLocation loc) {
@@ -2483,14 +2898,8 @@ bool WarpBuilder::build_ResumeKind(BytecodeLocation loc) {
 }
 
 bool WarpBuilder::build_CheckResumeKind(BytecodeLocation loc) {
-  
-  
-  
-  
-  
-  
-  
-  
+  MOZ_ASSERT(resumeAnalysis_.isSome());
+
   MDefinition* resumeKind = current->pop();
   MDefinition* gen = current->pop();
   MDefinition* rval = current->peek(-1);
@@ -2501,6 +2910,19 @@ bool WarpBuilder::build_CheckResumeKind(BytecodeLocation loc) {
   rval->setImplicitlyUsedUnchecked();
 
   
+  
+  MOZ_RELEASE_ASSERT(resumeKind->isConstant());
+  MConstant* cst = resumeKind->toConstant();
+
+  
+  if (cst->isInt32(int32_t(GeneratorResumeKind::Next))) {
+    return true;
+  }
+
+  
+  
+  MOZ_RELEASE_ASSERT(cst->isInt32(int32_t(GeneratorResumeKind::Return)));
+
   MBail* bail = MBail::New(alloc(), BailoutKind::Inevitable);
   current->add(bail);
   current->setAlwaysBails();
@@ -2553,6 +2975,8 @@ bool WarpBuilder::build_Yield(BytecodeLocation loc) { return build_Await(loc); }
 
 bool WarpBuilder::buildSuspend(BytecodeLocation loc, MDefinition* gen,
                                MDefinition* retVal) {
+  MOZ_ASSERT(resumeAnalysis_.isSome());
+
   
   
   
@@ -2569,14 +2993,18 @@ bool WarpBuilder::buildSuspend(BytecodeLocation loc, MDefinition* gen,
 
   int32_t slotsToCopy = current->stackDepth() - info().firstLocalSlot();
   MOZ_ASSERT(slotsToCopy >= 0);
-  if (slotsToCopy > 0) {
-    auto* arrayObj = MLoadFixedSlotAndUnbox::New(
-        alloc(), genObj, AbstractGeneratorObject::stackStorageSlot(),
-        MUnbox::Mode::Infallible, MIRType::Object);
-    current->add(arrayObj);
 
-    auto* stackStorage = MElements::New(alloc(), arrayObj);
-    current->add(stackStorage);
+  
+  MOZ_ASSERT(pendingSuspendSavedSlots_.isNothing());
+  pendingSuspendSavedSlots_.emplace(uint32_t(slotsToCopy));
+#ifdef DEBUG
+  pendingSuspendResumeIndex_ = loc.getResumeIndex();
+#endif
+
+  if (slotsToCopy > 0) {
+    MDefinition* arrayObj = loadGeneratorStackStorage(genObj);
+    auto* elements = MElements::New(alloc(), arrayObj);
+    current->add(elements);
 
     for (int32_t i = 0; i < slotsToCopy; i++) {
       if (!alloc().ensureBallast()) {
@@ -2586,7 +3014,7 @@ bool WarpBuilder::buildSuspend(BytecodeLocation loc, MDefinition* gen,
       int32_t peek = -slotsToCopy + i;
       MDefinition* stackElem = current->peekUnchecked(peek);
       auto* store = MStoreElement::NewUnbarriered(
-          alloc(), stackStorage, constant(Int32Value(i)), stackElem,
+          alloc(), elements, constant(Int32Value(i)), stackElem,
            false);
 
       current->add(store);
@@ -2594,11 +3022,11 @@ bool WarpBuilder::buildSuspend(BytecodeLocation loc, MDefinition* gen,
     }
 
     auto* setInitLength =
-        MSetInitializedLength::New(alloc(), stackStorage, slotsToCopy,
+        MSetInitializedLength::New(alloc(), elements, slotsToCopy,
                                     false);
     current->add(setInitLength);
 
-    auto* setLength = MSetArrayLength::New(alloc(), stackStorage, slotsToCopy);
+    auto* setLength = MSetArrayLength::New(alloc(), elements, slotsToCopy);
     current->add(setLength);
   }
 
@@ -2626,21 +3054,8 @@ bool WarpBuilder::buildSuspend(BytecodeLocation loc, MDefinition* gen,
 
   
   
-  
-  auto* unreachableResumeKind =
-      MUnreachableResult::New(alloc(), MIRType::Int32);
-  current->add(unreachableResumeKind);
-  current->push(unreachableResumeKind);
-
-  auto* unreachableGenerator =
-      MUnreachableResult::New(alloc(), MIRType::Object);
-  current->add(unreachableGenerator);
-  current->push(unreachableGenerator);
-
-  auto* unreachableRval = MUnreachableResult::New(alloc(), MIRType::Value);
-  current->add(unreachableRval);
-  current->push(unreachableRval);
-
+  current->end(MUnreachable::New(alloc()));
+  setTerminatedBlock();
   return true;
 }
 

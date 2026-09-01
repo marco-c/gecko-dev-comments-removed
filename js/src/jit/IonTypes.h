@@ -14,7 +14,6 @@
 #include "NamespaceImports.h"
 
 #include "jit/ABIFunctionType.h"
-
 #include "js/ScalarType.h"  
 #include "js/Value.h"
 
@@ -158,6 +157,11 @@ enum class BailoutKind : uint8_t {
   
   
   
+  UncompiledGeneratorResume,
+
+  
+  
+  
   DuringVMCall,
 
   
@@ -223,6 +227,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "UnboxFolding";
     case BailoutKind::Inevitable:
       return "Inevitable";
+    case BailoutKind::UncompiledGeneratorResume:
+      return "UncompiledGeneratorResume";
     case BailoutKind::DuringVMCall:
       return "DuringVMCall";
     case BailoutKind::TooManyArguments:
