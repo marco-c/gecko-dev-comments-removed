@@ -9,13 +9,17 @@
 
 #include "rtc_tools/frame_analyzer/reference_less_video_analysis_lib.h"
 
-#include <stdio.h>
-
+#include <cstddef>
+#include <cstdio>
 #include <numeric>
+#include <span>
+#include <string>
 #include <vector>
 
+#include "api/scoped_refptr.h"
 #include "api/video/video_frame_buffer.h"
 #include "rtc_tools/frame_analyzer/video_quality_analysis.h"
+#include "rtc_tools/video_file_reader.h"
 
 #define STATS_LINE_LENGTH 28
 #define PSNR_FREEZE_THRESHOLD 47
@@ -25,8 +29,8 @@
 #define strtok_r strtok_s
 #endif
 
-bool frozen_frame(std::vector<double> psnr_per_frame,
-                  std::vector<double> ssim_per_frame,
+bool frozen_frame(std::span<const double> psnr_per_frame,
+                  std::span<const double> ssim_per_frame,
                   size_t frame) {
   if (psnr_per_frame[frame] >= PSNR_FREEZE_THRESHOLD ||
       ssim_per_frame[frame] >= SSIM_FREEZE_THRESHOLD)
