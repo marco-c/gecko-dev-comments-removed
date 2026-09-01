@@ -91,8 +91,6 @@ const XPIS = {};
 
 const ADDON_SEARCH_RESULTS = {};
 
-AddonTestUtils.init(this);
-AddonTestUtils.overrideCertDB();
 AddonTestUtils.createAppInfo(
   "xpcshell@tests.mozilla.org",
   "XPCShell",

@@ -12,13 +12,9 @@ const {
   XPIInternal: {
     KEY_APP_PROFILE,
     KEY_APP_SYSTEM_BUILTINS,
-    KEY_APP_SYSTEM_DEFAULTS,
     KEY_APP_SYSTEM_PROFILE,
   },
 } = XPIExports;
-
-AddonTestUtils.init(this);
-AddonTestUtils.overrideCertDB();
 
 
 
@@ -45,7 +41,6 @@ function getInstallLocation({
   isBuiltin = false,
   isSystem = false,
   isTemporary = false,
-  isSystemBuiltin = false,
 }) {
   if (isTemporary) {
     
@@ -54,11 +49,9 @@ function getInstallLocation({
   let location;
   if (isSystem) {
     if (isBuiltin) {
-      location = isSystemBuiltin
-        ? 
-          XPIExports.XPIInternal.XPIStates.getLocation(KEY_APP_SYSTEM_BUILTINS)
-        : 
-          XPIExports.XPIInternal.XPIStates.getLocation(KEY_APP_SYSTEM_DEFAULTS);
+      location = XPIExports.XPIInternal.XPIStates.getLocation(
+        KEY_APP_SYSTEM_BUILTINS
+      );
     } else {
       
       location = XPIExports.XPIInternal.XPIStates.getLocation(
@@ -193,15 +186,6 @@ add_task(async function test_system_location() {
   });
 });
 
-
-add_task(async function test_builtin_system_location_directory() {
-  AddonTestUtils.usePrivilegedSignatures = false;
-  await testLoadManifest({
-    expectPrivileged: true,
-    location: getInstallLocation({ isSystem: true, isBuiltin: true }),
-  });
-});
-
 add_task(async function test_builtin_system_location() {
   AddonTestUtils.usePrivilegedSignatures = false;
   await testLoadManifest({
@@ -209,7 +193,6 @@ add_task(async function test_builtin_system_location() {
     location: getInstallLocation({
       isSystem: true,
       isBuiltin: true,
-      isSystemBuiltin: true,
     }),
   });
 });

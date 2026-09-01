@@ -1,4 +1,3 @@
-AddonTestUtils.overrideCertDB();
 AddonTestUtils.usePrivilegedSignatures = id => id.startsWith("privileged-");
 
 
