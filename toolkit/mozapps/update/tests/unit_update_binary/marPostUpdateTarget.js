@@ -16,8 +16,7 @@ async function run_test() {
   preventDistributionFiles();
 
   
-  
-  Services.env.set("MOZ_TEST_FORCE_ENTERPRISE", "0");
+  Services.env.set("MOZ_TEST_FORCE_ENTERPRISE", "1");
 
   
   await setupUpdaterTest(FILE_COMPLETE_MAR, true, "", true, {
@@ -28,8 +27,8 @@ async function run_test() {
 
   await checkPostUpdateAppLog({
     expectedContents: gIsServiceTest
-      ? "2: /DesktopLauncher\n3: /PostUpdateTarget:Installation\n2: /DesktopLauncher\n3: /PostUpdateTarget:CurrentUser\n"
-      : "2: /DesktopLauncher\n3: /PostUpdateTarget:Installation\n",
+      ? "2: /PostUpdateTarget:Installation\n2: /PostUpdateTarget:CurrentUser\n"
+      : "2: /PostUpdateTarget:Installation\n",
   });
 
   checkAppBundleModTime();

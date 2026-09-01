@@ -186,6 +186,26 @@ enum class UpdaterInvocation {
 
 
 
+
+
+
+
+
+
+
+
+
+enum class PostUpdateTarget {
+  
+  Installation,
+  
+  
+  CurrentUser,
+};
+
+
+
+
 const char* getUpdaterInvocationString(UpdaterInvocation value) {
   switch (value) {
     case UpdaterInvocation::First:
@@ -2557,8 +2577,10 @@ void PatchIfFile::Finish(int status) {
 
 
 
+
+
 bool LaunchWinPostProcess(const WCHAR* installationDir,
-                          const WCHAR* updateInfoDir) {
+                          const WCHAR* updateInfoDir, PostUpdateTarget target) {
   WCHAR workingDirectory[MAX_PATH + 1] = {L'\0'};
   wcsncpy(workingDirectory, installationDir, MAX_PATH);
 
@@ -2652,18 +2674,27 @@ bool LaunchWinPostProcess(const WCHAR* installationDir,
     }
   }
 
-  WCHAR dummyArg[14] = {L'\0'};
-  wcsncpy(dummyArg, L"argv0ignored ",
-          sizeof(dummyArg) / sizeof(dummyArg[0]) - 1);
-
   const bool addDesktopLauncher{
       !EnterprisePoliciesFlagFile::Exists(gPatchDirPath)};
   if (addDesktopLauncher) {
     LOG(("Add /DesktopLauncher argument to helper.exe"));
   }
-  LPCWSTR desktopLauncherArg{addDesktopLauncher ? L" /DesktopLauncher" : L""};
-  size_t len{wcslen(exearg) + wcslen(dummyArg) + wcslen(desktopLauncherArg)};
-  WCHAR* cmdline = (WCHAR*)malloc((len + 1) * sizeof(WCHAR));
+
+  LPCWSTR args[] = {
+      L"argv0ignored ",
+      exearg,
+      addDesktopLauncher ? L" /DesktopLauncher" : L"",
+      target == PostUpdateTarget::Installation
+          ? L" /PostUpdateTarget:Installation"
+          : L" /PostUpdateTarget:CurrentUser",
+  };
+
+  size_t len = 0;
+  for (LPCWSTR arg : args) {
+    len += wcslen(arg);
+  }
+
+  WCHAR* cmdline = (WCHAR*)calloc(len + 1, sizeof(WCHAR));
   if (!cmdline) {
     LOG(
         ("LaunchWinPostProcess failed due to failure to allocate %zu wchars "
@@ -2672,9 +2703,9 @@ bool LaunchWinPostProcess(const WCHAR* installationDir,
     return false;
   }
 
-  wcsncpy(cmdline, dummyArg, len);
-  wcscat(cmdline, exearg);
-  wcscat(cmdline, desktopLauncherArg);
+  for (LPCWSTR arg : args) {
+    wcscat(cmdline, arg);
+  }
 
   
   
@@ -3485,7 +3516,8 @@ int LaunchCallbackAndPostProcessApps(int argc, NS_tchar** argv
 #if defined(XP_WIN)
     if (gSucceeded) {
       LOG(("Launching Windows post update process"));
-      if (!LaunchWinPostProcess(gInstallDirPath, gPatchDirPath)) {
+      if (!LaunchWinPostProcess(gInstallDirPath, gPatchDirPath,
+                                PostUpdateTarget::Installation)) {
         LOG(("The post update process was not launched successfully"));
       }
 
@@ -4561,7 +4593,8 @@ int NS_main(int argc, NS_tchar** argv) {
           if (IsSecureUpdateStatusSucceeded(updateStatusSucceeded) &&
               updateStatusSucceeded) {
             LOG(("Running LaunchWinPostProcess"));
-            if (!LaunchWinPostProcess(gInstallDirPath, gPatchDirPath)) {
+            if (!LaunchWinPostProcess(gInstallDirPath, gPatchDirPath,
+                                      PostUpdateTarget::CurrentUser)) {
               LOG(("Failed to run LaunchWinPostProcess"));
             }
           } else {
