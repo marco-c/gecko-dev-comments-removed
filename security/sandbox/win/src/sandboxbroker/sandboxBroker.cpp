@@ -27,9 +27,8 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/SHA1.h"
 #include "mozilla/SandboxSettings.h"
-#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/StaticPrefs_media.h"
 #include "mozilla/StaticPrefs_security.h"
-#include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WinDllServices.h"
@@ -1225,6 +1224,16 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
     
     
     config->SetForceKnownDllLoadingFallback();
+
+    
+    if (!StaticPrefs::media_use_remote_encoder_video_platform()) {
+      result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
+                                       LR"(\Device\KsecDD)");
+      if (sandbox::SBOX_ALL_OK != result) {
+        NS_ERROR("Failed to add rule for KsecDD.");
+        LOG_E("Failed (ResultCode %d) to add read access to KsecDD", result);
+      }
+    }
 
     
     

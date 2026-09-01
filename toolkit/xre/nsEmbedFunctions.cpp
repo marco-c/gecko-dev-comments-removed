@@ -24,7 +24,6 @@
 #  endif
 #  include "mozilla/ScopeExit.h"
 #  include "mozilla/WinDllServices.h"
-#  include "mozilla/WindowsBCryptInitialization.h"
 #  include "WinUtils.h"
 #endif
 
@@ -452,7 +451,8 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
   }
 
   nsID messageChannelId{};
-  if (NS_WARN_IF(!messageChannelId.Parse(*initialChannelIdString))) {
+  if (NS_WARN_IF(!messageChannelId.Parse(
+          nsDependentCString(*initialChannelIdString)))) {
     return NS_ERROR_FAILURE;
   }
 
@@ -485,13 +485,6 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
       uiLoopType = MessageLoop::TYPE_UI;
       break;
   }
-
-#if defined(XP_WIN)
-  {
-    DebugOnly<bool> result = mozilla::WindowsBCryptInitialization();
-    MOZ_ASSERT(result);
-  }
-#endif  
 
   {
     

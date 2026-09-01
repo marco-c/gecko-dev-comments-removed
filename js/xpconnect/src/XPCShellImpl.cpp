@@ -2,9 +2,42 @@
 
 
 
-#include "nsXULAppAPI.h"
+#include "mozilla/ChaosMode.h"
+#include "mozilla/dom/AutoEntryScript.h"
+#include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/IOInterposer.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/Utf8.h"  
+
+#include "Components.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
+#include "nsAppDirectoryServiceDefs.h"
+#include "nsArrayEnumerator.h"
+#include "nsCOMArray.h"
+#include "nsComponentManagerUtils.h"
+#include "nsCOMPtr.h"
+#include "nscore.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsDirectoryServiceUtils.h"
+#include "nsExceptionHandler.h"
+#include "nsIAppStartup.h"
+#include "nsIDirectoryService.h"
+#include "nsIFile.h"
+#include "nsIPrincipal.h"
+#include "nsIScriptSecurityManager.h"
+#include "nsIServiceManager.h"
+#include "nsIXULRuntime.h"
+#include "nsJSPrincipals.h"
+#include "nsJSUtils.h"
+#include "nsServiceManagerUtils.h"
+#include "nsString.h"
+#include "nsXULAppAPI.h"
+#include "ProfilerControl.h"
+#include "SystemGlobal.h"
+#include "xpcprivate.h"
+#include "xpcpublic.h"
+
 #include "js/Array.h"             
 #include "js/CallAndConstruct.h"  
 #include "js/CharacterEncoding.h"
@@ -14,42 +47,10 @@
 #include "js/PropertyAndElement.h"  
 #include "js/PropertySpec.h"
 #include "js/SourceText.h"  
-#include "mozilla/ChaosMode.h"
-#include "mozilla/dom/AutoEntryScript.h"
-#include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/IOInterposer.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/Utf8.h"  
-#include "nsServiceManagerUtils.h"
-#include "nsComponentManagerUtils.h"
-#include "nsExceptionHandler.h"
-#include "nsIServiceManager.h"
-#include "nsIFile.h"
-#include "nsString.h"
-#include "nsIDirectoryService.h"
-#include "nsDirectoryServiceDefs.h"
-#include "nsAppDirectoryServiceDefs.h"
-#include "nscore.h"
-#include "nsArrayEnumerator.h"
-#include "nsCOMArray.h"
-#include "nsDirectoryServiceUtils.h"
-#include "nsCOMPtr.h"
-#include "nsJSPrincipals.h"
-#include "nsJSUtils.h"
-#include "xpcpublic.h"
-#include "xpcprivate.h"
-#include "SystemGlobal.h"
-#include "nsIScriptSecurityManager.h"
-#include "nsIPrincipal.h"
-#include "nsJSUtils.h"
-
-#include "nsIXULRuntime.h"
-#include "nsIAppStartup.h"
-#include "Components.h"
-#include "ProfilerControl.h"
 
 #ifdef ANDROID
 #  include <android/log.h>
+
 #  include "XREShellData.h"
 #endif
 
@@ -61,11 +62,11 @@
 #  include "mozilla/mscom/ProcessRuntime.h"
 #  include "mozilla/ScopeExit.h"
 #  include "mozilla/WinDllServices.h"
-#  include "mozilla/WindowsBCryptInitialization.h"
+
 #  include <windows.h>
 #  if defined(MOZ_SANDBOX)
-#    include "XREShellData.h"
 #    include "sandboxBroker.h"
+#    include "XREShellData.h"
 #  endif
 #endif
 
@@ -74,8 +75,8 @@
 #endif
 
 
-#include <stdlib.h>
 #include <errno.h>
+#include <stdlib.h>
 #ifdef HAVE_IO_H
 #  include <io.h> 
 #endif
@@ -89,8 +90,9 @@
 
 
 #ifdef FUZZING_INTERFACES
-#  include "xpcrtfuzzing/xpcrtfuzzing.h"
 #  include "XREShellData.h"
+
+#  include "xpcrtfuzzing/xpcrtfuzzing.h"
 MOZ_RUNINIT static bool fuzzDoDebug = !!getenv("MOZ_FUZZ_DEBUG");
 MOZ_RUNINIT static bool fuzzHaveModule = !!getenv("FUZZER");
 #endif  
@@ -1304,10 +1306,6 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
     }
 #  endif  
 
-    {
-      DebugOnly<bool> result = WindowsBCryptInitialization();
-      MOZ_ASSERT(result);
-    }
 #endif  
 
 #ifdef MOZ_CODE_COVERAGE
