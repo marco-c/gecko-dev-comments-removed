@@ -4425,6 +4425,7 @@ void nsWindow::DispatchFocusToTopLevelWindow(bool aIsActivate) {
   }
 }
 
+
 HWND nsWindow::WindowAtMouse() {
   DWORD pos = ::GetMessagePos();
   POINT mp;
@@ -4433,8 +4434,22 @@ HWND nsWindow::WindowAtMouse() {
   return ::WindowFromPoint(mp);
 }
 
+
+HWND nsWindow::NsWindowAtMouse() {
+  HWND curWnd = WindowAtMouse();
+
+  while (curWnd && !WinUtils::GetNSWindowPtr(curWnd)) {
+    curWnd = GetAncestor(curWnd, GA_PARENT);
+  }
+
+  return curWnd;
+}
+
+
 bool nsWindow::IsTopLevelMouseExit(HWND aWnd) {
-  HWND mouseWnd = WindowAtMouse();
+  
+  
+  HWND mouseWnd = NsWindowAtMouse();
 
   
   
