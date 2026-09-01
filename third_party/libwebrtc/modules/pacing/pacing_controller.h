@@ -103,9 +103,6 @@ class PacingController {
     
     TimeDelta queue_time_limit = kMaxExpectedQueueLength;
     
-    [[deprecated("Keyframe flushing is now always enabled.")]]
-    bool keyframe_flushing = false;
-    
     bool prioritize_audio_retransmission = false;
     
     
