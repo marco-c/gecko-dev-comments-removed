@@ -526,13 +526,13 @@ async function checkTip(win, expectedTip, closeView = true) {
   let title;
   let name = SearchService.defaultEngine.name;
   switch (expectedTip) {
-    case UrlbarProviderSearchTips.TIP_TYPE.ONBOARD:
+    case UrlbarShared.SEARCH_TIP_TYPE.ONBOARD:
       heuristic = true;
       title =
         `Type less, find more: Search ${name} right from your ` +
         `address bar.`;
       break;
-    case UrlbarProviderSearchTips.TIP_TYPE.REDIRECT:
+    case UrlbarShared.SEARCH_TIP_TYPE.REDIRECT:
       heuristic = false;
       title =
         `Start your search in the address bar to see suggestions from ` +
@@ -689,10 +689,10 @@ async function withDNSRedirect(domain, path, callback) {
 
 function resetSearchTipsProvider() {
   Services.prefs.clearUserPref(
-    `browser.urlbar.tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.ONBOARD}`
+    `browser.urlbar.tipShownCount.${UrlbarShared.SEARCH_TIP_TYPE.ONBOARD}`
   );
   Services.prefs.clearUserPref(
-    `browser.urlbar.tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.REDIRECT}`
+    `browser.urlbar.tipShownCount.${UrlbarShared.SEARCH_TIP_TYPE.REDIRECT}`
   );
   ProvidersManager.getInstanceForSap("urlbar").getProvider(
     "UrlbarProviderSearchTips"
