@@ -348,7 +348,12 @@ function internalSave(
     let relatedURI =
       aOriginalURL || aReferrerInfo?.originalReferrer || sourceURI;
 
-    promiseTargetFile(fpParams, aSkipPrompt, relatedURI)
+    promiseTargetFile(
+      fpParams,
+      aSkipPrompt,
+      relatedURI,
+      aOriginalURL || sourceURI
+    )
       .then(aDialogAccepted => {
         if (!aDialogAccepted) {
           
@@ -693,11 +698,47 @@ function initFileInfo(
 
 
 
+
+
 function promiseTargetFile(
   aFpP,
    aSkipPrompt,
-   aRelatedURI
+   aRelatedURI,
+   aSourceURI
 ) {
+  
+
+
+
+
+
+
+
+
+  async function getLocalSourceDirectory(aURI) {
+    try {
+      let uri = typeof aURI == "string" ? makeURI(aURI) : aURI;
+      if (URL.isInstance(uri)) {
+        uri = uri.URI;
+      }
+      if (!uri.schemeIs("file")) {
+        return null;
+      }
+      const dir = uri.QueryInterface(Ci.nsIFileURL).file.parent;
+      if (!(await IOUtils.exists(dir.path))) {
+        return null;
+      }
+      
+      const realDir = dir.clone();
+      realDir.normalize();
+      const tmpDir = Services.dirsvc.get("TmpD", Ci.nsIFile);
+      tmpDir.normalize();
+      return realDir.equals(tmpDir) || tmpDir.contains(realDir) ? null : dir;
+    } catch {
+      return null;
+    }
+  }
+
   return (async function () {
     let downloadLastDir = new DownloadLastDir(window);
     let prefBranch = Services.prefs.getBranch("browser.download.");
@@ -721,8 +762,11 @@ function promiseTargetFile(
 
     
     
-    let file = null;
-    if (!useDownloadDir) {
+    
+    
+    let file = await getLocalSourceDirectory(aSourceURI);
+    
+    if (!file && !useDownloadDir) {
       file = await downloadLastDir.getFileAsync(aRelatedURI);
     }
     if (file && (await IOUtils.exists(file.path))) {
@@ -853,6 +897,7 @@ function DownloadURL(aURL, aFileName, aInitiatingDocument) {
     let accepted = await promiseTargetFile(
       filepickerParams,
       true,
+      fileInfo.uri,
       fileInfo.uri
     );
     if (!accepted) {
