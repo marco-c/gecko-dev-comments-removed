@@ -32,6 +32,7 @@
 #include "jit/JitOptions.h"
 #include "jit/Simulator.h"
 #include "js/ColumnNumber.h"  
+#include "js/Context.h"       
 #include "js/ForOfIterator.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/Printf.h"
@@ -46,6 +47,7 @@
 #include "vm/GlobalObject.h"       
 #include "vm/HelperThreadState.h"  
 #include "vm/Interpreter.h"
+#include "vm/JSContext.h"  
 #include "vm/JSFunction.h"
 #include "vm/PlainObject.h"    
 #include "vm/PromiseObject.h"  
@@ -592,8 +594,12 @@ static bool ReportCompileWarnings(JSContext* cx,
 }
 
 
-SharedCompileArgs js::wasm::BuildCompileArgsForESM(
+JS_PUBLIC_API JS::SharedWasmCompileArgs JS::BuildCompileArgsForESM(
     JSContext* cx, const JS::ReadOnlyCompileOptions& options) {
+  MOZ_ASSERT(!cx->zone()->isAtomsZone());
+  AssertHeapIsIdle();
+  CHECK_THREAD(cx);
+
   FeatureOptions featureOptions;
   
   featureOptions.jsStringBuiltins = true;
@@ -621,16 +627,18 @@ SharedCompileArgs js::wasm::BuildCompileArgsForESM(
                                      featureOptions,  true);
 }
 
-ESMCompileResult js::wasm::CompileForESM(
-    const CompileArgs& compileArgs, const BytecodeSource& bytecodeSource) {
+JS_PUBLIC_API JS::ESMCompileResult JS::CompileForESM(
+    const WasmCompileArgs& compileArgs, const uint8_t* bytes, size_t length) {
   
   
+  BytecodeSource bytecodeSource(bytes, length);
 
   
   
   ESMCompileResult result;
   result.module =
-      CompileModule(compileArgs, BytecodeBufferOrSource(bytecodeSource),
+      CompileModule(static_cast<const CompileArgs&>(compileArgs),
+                    BytecodeBufferOrSource(bytecodeSource),
                     &result.error, &result.warnings, nullptr);
   if (result.module) {
     result.status = ESMCompileResult::Status::Success;
@@ -642,11 +650,15 @@ ESMCompileResult js::wasm::CompileForESM(
   return result;
 }
 
-bool js::wasm::FinishCompileForESM(JSContext* cx,
-                                   const CompileArgs& compileArgs,
-                                   const ESMCompileResult& compileResult,
-                                   MutableHandleObject moduleObj) {
-  const SharedModule& module = compileResult.module;
+JS_PUBLIC_API bool JS::FinishCompileForESM(
+    JSContext* cx, const WasmCompileArgs& compileArgs,
+    const JS::ESMCompileResult& compileResult, MutableHandleObject moduleObj) {
+  MOZ_ASSERT(!cx->zone()->isAtomsZone());
+  AssertHeapIsIdle();
+  CHECK_THREAD(cx);
+
+  const Module* module =
+      static_cast<const Module*>(compileResult.module.get());
 
   if (!ReportCompileWarnings(cx, compileResult.warnings)) {
     return false;
@@ -661,7 +673,9 @@ bool js::wasm::FinishCompileForESM(JSContext* cx,
     case ESMCompileResult::Status::Failed: {
       RootedObject errorObj(cx);
       RootedObject nullStack(cx, nullptr);
-      if (!CreateCompileError(cx, compileArgs.scriptedCaller, nullStack,
+      if (!CreateCompileError(
+              cx, static_cast<const CompileArgs&>(compileArgs).scriptedCaller,
+              nullStack,
                               compileResult.error.get(), &errorObj)) {
         return false;
       }

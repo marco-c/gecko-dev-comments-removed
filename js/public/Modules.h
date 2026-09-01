@@ -232,6 +232,13 @@ extern JS_PUBLIC_API JSObject* CompileWasmModuleAsSource(
 
 
 
+
+extern JS_PUBLIC_API JSObject* CreateWasmSourcePhaseModule(
+    JSContext* cx, Handle<JSObject*> wasmModuleObject);
+
+
+
+
 extern JS_PUBLIC_API void SetModulePrivate(JSObject* module,
                                            const Value& value);
 
