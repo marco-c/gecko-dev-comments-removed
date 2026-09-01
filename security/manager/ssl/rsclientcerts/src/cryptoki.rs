@@ -2,7 +2,6 @@
 
 
 
-use byteorder::{NativeEndian, WriteBytesExt};
 use digest::{Digest, DynDigest};
 use pkcs11_bindings::*;
 use rand::rngs::OsRng;
@@ -30,20 +29,6 @@ pub unsafe fn char_ptr_to_slice<'a>(ptr: CK_UTF8CHAR_PTR, len: CK_ULONG) -> &'a 
     } else {
         std::slice::from_raw_parts(ptr, len as usize)
     }
-}
-
-
-
-pub fn serialize_uint<T: TryInto<u64>>(value: T) -> Result<Vec<u8>, Error> {
-    let value_size = std::mem::size_of::<T>();
-    let mut value_buf = Vec::with_capacity(value_size);
-    let value_as_u64 = value
-        .try_into()
-        .map_err(|_| error_here!(ErrorType::ValueTooLarge))?;
-    value_buf
-        .write_uint::<NativeEndian>(value_as_u64, value_size)
-        .map_err(|_| error_here!(ErrorType::LibraryFailure))?;
-    Ok(value_buf)
 }
 
 fn make_hasher(params: &CK_RSA_PKCS_PSS_PARAMS) -> Result<Box<dyn DynDigest>, Error> {
@@ -213,8 +198,8 @@ impl CryptokiCert {
         let id = sha2::Sha256::digest(&der).to_vec();
         let (serial_number, issuer, subject) = read_encoded_certificate_identifiers(&der)?;
         Ok(CryptokiCert {
-            class: serialize_uint(CKO_CERTIFICATE)?,
-            token: serialize_uint(CK_TRUE)?,
+            class: CKO_CERTIFICATE.to_ne_bytes().to_vec(),
+            token: CK_TRUE.to_ne_bytes().to_vec(),
             id,
             label,
             value: der,
@@ -316,11 +301,11 @@ impl CryptokiKey {
         };
         let id = sha2::Sha256::digest(cert).to_vec();
         Ok(CryptokiKey {
-            class: serialize_uint(CKO_PRIVATE_KEY)?,
-            token: serialize_uint(CK_TRUE)?,
+            class: CKO_PRIVATE_KEY.to_ne_bytes().to_vec(),
+            token: CK_TRUE.to_ne_bytes().to_vec(),
             id,
-            private: serialize_uint(CK_TRUE)?,
-            key_type_attribute: serialize_uint(key_type_attribute)?,
+            private: CK_TRUE.to_ne_bytes().to_vec(),
+            key_type_attribute: key_type_attribute.to_ne_bytes().to_vec(),
             modulus,
             ec_params,
             key_type,
