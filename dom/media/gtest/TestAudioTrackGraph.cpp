@@ -342,6 +342,47 @@ TEST_WithTailDispatch(TestAudioTrackGraph, StreamName) {
   WaitFor(cubeb->StreamDestroyEvent());
 }
 
+TEST_WithTailDispatch(TestAudioTrackGraph,
+                      AudioDriverImmediateStreamNameChange) {
+  MockCubeb* cubeb = new MockCubeb();
+  CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
+
+  
+  
+  MediaTrackGraphImpl* graph = MediaTrackGraphImpl::GetInstance(
+      MediaTrackGraph::AUDIO_THREAD_DRIVER,  1,
+      CubebUtils::PreferredSampleRate( false),
+       reinterpret_cast<cubeb_devid>(1),
+      AbstractThread::MainThread());
+  nsLiteralCString name0("name0");
+  graph->CurrentDriver()->SetStreamName(name0);
+
+  
+  RefPtr<SourceMediaTrack> dummySource;
+  
+  nsLiteralCString name1("name1");
+  DispatchFunction([&] {
+    dummySource = graph->CreateSourceTrack(MediaSegment::AUDIO);
+    graph->QueueControlMessageWithNoShutdown(
+        [&] { graph->CurrentDriver()->SetStreamName(name1); });
+  });
+
+  RefPtr<SmartMockCubebStream> stream = WaitFor(cubeb->StreamInitEvent());
+  
+  
+  MediaEventListener nameSetListener = stream->NameSetEvent().Connect(
+      NS_GetCurrentThread(), [](const nsCString&) {});
+  
+  SpinEventLoopUntil("TestAudioTrackGraph, OfflineDestruction"_ns,
+                     [&] { return stream->StreamName() != name0; });
+  nameSetListener.Disconnect();
+  EXPECT_EQ(stream->StreamName(), name1);
+
+  
+  DispatchMethod(dummySource, &SourceMediaTrack::Destroy);
+  WaitFor(cubeb->StreamDestroyEvent());
+}
+
 TEST_WithTailDispatch(TestAudioTrackGraph, OfflineDestruction) {
   RefPtr graph = static_cast<MediaTrackGraphImpl*>(
       MediaTrackGraph::CreateNonRealtimeInstance(48000));
