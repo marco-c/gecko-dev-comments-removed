@@ -47,15 +47,10 @@ void DirtyTrackingAutoLock::EagerMarkAsDirty() {
 
   auto stateMetadata = mOriginInfo->LockedFlattenToOriginStateMetadata();
   stateMetadata.mDirty = true;
-  
-  
-  
-  
-  PauseLock pausedLock(*this);
 
   auto* quotaManager = QuotaManager::Get();
   MOZ_ASSERT(quotaManager);
-  quotaManager->AssertNotCurrentThreadOwnsQuotaMutex();
+  quotaManager->AssertCurrentThreadOwnsQuotaMutex();
 
   quotaManager->FlagOriginInfoAsDirtyOnDisk(*this, stateMetadata);
 }
