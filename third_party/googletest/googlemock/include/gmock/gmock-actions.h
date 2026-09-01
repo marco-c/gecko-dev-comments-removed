@@ -1332,22 +1332,6 @@ struct InvokeMethodAction {
 };
 
 
-
-
-
-template <typename FunctionImpl>
-struct InvokeWithoutArgsAction {
-  FunctionImpl function_impl;
-
-  
-  
-  template <typename... Args>
-  auto operator()(const Args&...) -> decltype(function_impl()) {
-    return function_impl();
-  }
-};
-
-
 template <class Class, typename MethodPtr>
 struct InvokeMethodWithoutArgsAction {
   Class* const obj_ptr;
@@ -2070,9 +2054,11 @@ internal::InvokeMethodAction<Class, MethodPtr> Invoke(Class* obj_ptr,
 
 
 template <typename FunctionImpl>
-internal::InvokeWithoutArgsAction<typename std::decay<FunctionImpl>::type>
-InvokeWithoutArgs(FunctionImpl function_impl) {
-  return {std::move(function_impl)};
+GTEST_INTERNAL_DEPRECATE_AND_INLINE(
+    "Actions can now be implicitly constructed from zero-argument callables. "
+    "No need to create wrapper objects using InvokeWithoutArgs().")
+std::decay_t<FunctionImpl> InvokeWithoutArgs(FunctionImpl&& function_impl) {
+  return std::forward<FunctionImpl>(function_impl);
 }
 
 

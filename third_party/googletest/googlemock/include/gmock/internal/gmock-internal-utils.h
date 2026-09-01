@@ -194,11 +194,11 @@ using LosslessArithmeticConvertibleImpl = std::integral_constant<
        
        
       (((sizeof(From) < sizeof(To)) &&
-        !(std::is_signed<From>::value && !std::is_signed<To>::value)) ||
+        !(std::is_signed_v<From> && !std::is_signed_v<To>)) ||
        
        
        ((sizeof(From) == sizeof(To)) &&
-        (std::is_signed<From>::value == std::is_signed<To>::value)))
+        (std::is_signed_v<From> == std::is_signed_v<To>)))
        ) ? true
       
       
@@ -364,7 +364,7 @@ class [[nodiscard]] StlContainerView {
   typedef const type& const_reference;
 
   static const_reference ConstReference(const RawContainer& container) {
-    static_assert(!std::is_const<RawContainer>::value,
+    static_assert(!std::is_const_v<RawContainer>,
                   "RawContainer type must not be const");
     return container;
   }
@@ -385,7 +385,7 @@ class [[nodiscard]] StlContainerView<Element[N]> {
   typedef const type const_reference;
 
   static const_reference ConstReference(const Element (&array)[N]) {
-    static_assert(std::is_same<Element, RawElement>::value,
+    static_assert(std::is_same_v<Element, RawElement>,
                   "Element type must not be const");
     return type(array, N, RelationToSourceReference());
   }
@@ -447,14 +447,13 @@ auto ApplyImpl(F&& f, Tuple&& args, std::index_sequence<Idx...>)
 
 
 template <typename F, typename Tuple>
-auto Apply(F&& f, Tuple&& args)
-    -> decltype(ApplyImpl(
-        std::forward<F>(f), std::forward<Tuple>(args),
-        std::make_index_sequence<std::tuple_size<
-            typename std::remove_reference<Tuple>::type>::value>())) {
+auto Apply(F&& f, Tuple&& args) -> decltype(ApplyImpl(
+    std::forward<F>(f), std::forward<Tuple>(args),
+    std::make_index_sequence<
+        std::tuple_size_v<std::remove_reference_t<Tuple>>>())) {
   return ApplyImpl(std::forward<F>(f), std::forward<Tuple>(args),
-                   std::make_index_sequence<std::tuple_size<
-                       typename std::remove_reference<Tuple>::type>::value>());
+                   std::make_index_sequence<
+                       std::tuple_size_v<std::remove_reference_t<Tuple>>>());
 }
 
 
@@ -490,7 +489,7 @@ struct Function<R(Args...)> {
 
 
 template <size_t I, typename T>
-using TupleElement = typename std::tuple_element<I, T>::type;
+using TupleElement = std::tuple_element_t<I, T>;
 
 bool Base64Unescape(const std::string& encoded, std::string* decoded);
 

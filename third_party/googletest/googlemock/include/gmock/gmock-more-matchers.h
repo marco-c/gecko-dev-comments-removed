@@ -76,8 +76,21 @@ class [[nodiscard]] IsEmptyMatcher {
 
   
   bool MatchAndExplain(const char* s, MatchResultListener* listener) const {
+    if (s == nullptr) {
+      return false;
+    }
     return MatchAndExplain(std::string(s), listener);
   }
+
+#if GTEST_HAS_STD_WSTRING
+  
+  bool MatchAndExplain(const wchar_t* s, MatchResultListener* listener) const {
+    if (s == nullptr) {
+      return false;
+    }
+    return MatchAndExplain(std::wstring(s), listener);
+  }
+#endif  
 
   
   void DescribeTo(std::ostream* os) const { *os << "is empty"; }

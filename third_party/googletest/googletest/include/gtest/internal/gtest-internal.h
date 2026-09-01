@@ -96,6 +96,12 @@
 
 namespace proto2 {
 class [[nodiscard]] MessageLite;
+
+
+
+
+template <typename T>
+T DynamicCastMessage() = delete;
 }
 
 namespace testing {
