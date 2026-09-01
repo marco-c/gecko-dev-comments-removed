@@ -1430,17 +1430,6 @@ nsresult nsObjectLoadingContent::OpenChannel() {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  
-  
-  
-  
-  rv = nsContentUtils::GetSecurityManager()->CheckLoadURIWithPrincipal(
-      el->NodePrincipal(), mURI, nsIScriptSecurityManager::STANDARD,
-      doc->InnerWindowID());
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
   nsCOMPtr<nsILoadGroup> group = doc->GetDocumentLoadGroup();
   nsCOMPtr<nsIChannel> chan;
   RefPtr<ObjectInterfaceRequestorShim> shim =
