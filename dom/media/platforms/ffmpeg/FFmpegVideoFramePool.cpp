@@ -199,10 +199,15 @@ VideoFramePool<LIBAV_VER>::GetFFmpegVideoFrameSurfaceLocked(
   
   for (auto& surface : mDMABufSurfaces) {
     if (surface->mFFMPEGSurfaceID == aFFMPEGSurfaceID) {
-      
-      
       if (surface->IsUsedByRenderer()) {
-        NS_WARNING("Using live surfaces, visual glitches ahead!");
+        
+        
+        
+        
+        
+        
+        surface->mFFMPEGSurfaceID = sInvalidFFMPEGSurfaceID;
+        return nullptr;
       }
       return surface;
     }
@@ -383,7 +388,7 @@ static gfx::SurfaceFormat GetSurfaceFormat(enum AVPixelFormat aPixFmt) {
 RefPtr<VideoFrameSurface<LIBAV_VER>>
 VideoFramePool<LIBAV_VER>::GetVideoFrameSurface(
     const layers::PlanarYCbCrData& aData, AVCodecContext* aAVCodecContext) {
-  static gfx::SurfaceFormat format = GetSurfaceFormat(aAVCodecContext->pix_fmt);
+  gfx::SurfaceFormat format = GetSurfaceFormat(aAVCodecContext->pix_fmt);
   if (format == gfx::SurfaceFormat::UNKNOWN) {
     DMABUF_LOG("Unsupported FFmpeg DMABuf format {:x}",
                static_cast<int>(aAVCodecContext->pix_fmt));
