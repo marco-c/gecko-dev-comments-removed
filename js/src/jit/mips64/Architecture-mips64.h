@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_mips64_Architecture_mips64_h
 #define jit_mips64_Architecture_mips64_h
 
@@ -12,7 +10,6 @@
 #include <stdint.h>
 
 #include "jit/mips-shared/Architecture-mips-shared.h"
-
 #include "js/Utility.h"
 
 namespace js {
@@ -176,12 +173,8 @@ class FloatRegister : public FloatRegisterMIPSShared {
   }
   uint32_t numAlignedAliased() const { return 2; }
   FloatRegister alignedAliased(uint32_t aliasIdx) {
-    MOZ_ASSERT(isDouble());
-    if (aliasIdx == 0) {
-      return *this;
-    }
-    MOZ_ASSERT(aliasIdx == 1);
-    return singleOverlay();
+    MOZ_ASSERT(aliasIdx < numAliased());
+    return aliased(aliasIdx);
   }
 
   SetType alignedOrDominatedAliasedSet() const { return Codes::Spread << reg_; }
