@@ -3660,6 +3660,20 @@ pref("browser.ipProtection.userEnableCount", 0);
 
 pref("browser.ipProtection.everOpenedPanel", false);
 
+
+
+
+
+#ifdef NIGHTLY_BUILD
+pref("browser.ipProtection.hasSeenFeature", true);
+#else
+pref("browser.ipProtection.hasSeenFeature", false);
+#endif
+
+
+
+pref("browser.ipProtection.l10nGateVersion", 0);
+
 pref("browser.ipProtection.openedPanelWithLocation", false);
 
 pref("browser.ipProtection.features.siteExceptions", true);

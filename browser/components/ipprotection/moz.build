@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
     BUG_COMPONENT = ("Firefox", "IP Protection")
@@ -10,6 +8,7 @@ with Files("**"):
 JAR_MANIFESTS += ["jar.mn"]
 
 MOZ_SRC_FILES += [
+    "IPPL10nHelper.sys.mjs",
     "IPPOnboardingMessageHelper.sys.mjs",
     "IPPOptOutHelper.sys.mjs",
     "IPProtection.sys.mjs",
