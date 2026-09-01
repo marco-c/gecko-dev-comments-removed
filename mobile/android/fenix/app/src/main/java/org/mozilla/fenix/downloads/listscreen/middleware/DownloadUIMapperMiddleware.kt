@@ -5,6 +5,7 @@
 package org.mozilla.fenix.downloads.listscreen.middleware
 
 import androidx.annotation.FloatRange
+import java.time.Instant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.map
@@ -12,6 +13,7 @@ import kotlinx.coroutines.launch
 import mozilla.components.browser.state.action.DownloadAction
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.lib.publicsuffixlist.PublicSuffixList
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import mozilla.components.lib.state.ext.flow
@@ -22,19 +24,19 @@ import org.mozilla.fenix.downloads.listscreen.store.DownloadUIState
 import org.mozilla.fenix.downloads.listscreen.store.FileItem
 import org.mozilla.fenix.downloads.listscreen.store.TimeCategory
 import org.mozilla.fenix.ext.getBaseDomainUrl
-import java.time.Instant
 
 /**
  * Middleware for loading and mapping download items from the browser store.
  *
  * @param browserStore [BrowserStore] instance to get the download items from.
- * @param fileItemDescriptionProvider [FileItemDescriptionProvider] used to format the description
- * of the file item.
+ * @param publicSuffixList [PublicSuffixList] used to accurately extract base domains.
+ * @param fileItemDescriptionProvider [FileItemDescriptionProvider] used to format the description of the file item.
  * @param scope The [CoroutineScope] that will be used to launch coroutines.
  * @param dateTimeProvider The [DateTimeProvider] that will be used to get the current date.
  */
 class DownloadUIMapperMiddleware(
     private val browserStore: BrowserStore,
+    private val publicSuffixList: PublicSuffixList,
     private val fileItemDescriptionProvider: FileItemDescriptionProvider,
     private val scope: CoroutineScope,
     private val dateTimeProvider: DateTimeProvider = DefaultDateTimeProvider(),
@@ -60,7 +62,8 @@ class DownloadUIMapperMiddleware(
 
     private fun update(store: Store<DownloadUIState, DownloadUIAction>) {
         scope.launch {
-            browserStore.flow()
+            browserStore
+                .flow()
                 .distinctUntilChangedBy { it.downloads }
                 .map { it.downloads.toFileItemsList() }
                 .collect {
@@ -69,43 +72,44 @@ class DownloadUIMapperMiddleware(
         }
     }
 
-    private fun Map<String, DownloadState>.toFileItemsList(): List<FileItem> =
+    private suspend fun Map<String, DownloadState>.toFileItemsList(): List<FileItem> =
         values
             .filter { isDisplayableItem(it.status) }
             .sortedByDescending { it.createdTime }
             .distinctBy { Triple(it.fileName, it.status, it.directoryPath) }
             .map { it.toFileItem() }
 
-    private fun isDisplayableItem(status: DownloadState.Status) =
-        status != DownloadState.Status.CANCELLED
+    private fun isDisplayableItem(status: DownloadState.Status) = status != DownloadState.Status.CANCELLED
 
-    private fun DownloadState.toFileItem() =
+    private suspend fun DownloadState.toFileItem() =
         FileItem(
             id = id,
             url = url,
             fileName = fileName,
             filePath = filePath,
             directoryPath = directoryPath,
-            displayedShortUrl = url.getBaseDomainUrl(),
+            displayedShortUrl = url.getBaseDomainUrl(publicSuffixList),
             contentType = contentType,
             status = status.toFileItemStatus(progress = progress),
-            timeCategory = categorizeGroup(
-                epochMillis = createdTime,
-                status = status,
-            ),
+            timeCategory =
+                categorizeGroup(
+                    epochMillis = createdTime,
+                    status = status,
+                ),
             description = fileItemDescriptionProvider.getDescription(downloadState = this),
         )
 
     private fun DownloadState.Status.toFileItemStatus(
-        @FloatRange(from = 0.0, to = 1.0) progress: Float?,
-    ): FileItem.Status = when (this) {
-        DownloadState.Status.INITIATED -> FileItem.Status.Initiated
-        DownloadState.Status.DOWNLOADING -> FileItem.Status.Downloading(progress = progress)
-        DownloadState.Status.PAUSED -> FileItem.Status.Paused(progress = progress)
-        DownloadState.Status.CANCELLED -> FileItem.Status.Cancelled
-        DownloadState.Status.FAILED -> FileItem.Status.Failed
-        DownloadState.Status.COMPLETED -> FileItem.Status.Completed
-    }
+        @FloatRange(from = 0.0, to = 1.0) progress: Float?
+    ): FileItem.Status =
+        when (this) {
+            DownloadState.Status.INITIATED -> FileItem.Status.Initiated
+            DownloadState.Status.DOWNLOADING -> FileItem.Status.Downloading(progress = progress)
+            DownloadState.Status.PAUSED -> FileItem.Status.Paused(progress = progress)
+            DownloadState.Status.CANCELLED -> FileItem.Status.Cancelled
+            DownloadState.Status.FAILED -> FileItem.Status.Failed
+            DownloadState.Status.COMPLETED -> FileItem.Status.Completed
+        }
 
     private fun categorizeGroup(epochMillis: Long, status: DownloadState.Status): TimeCategory {
         if (isDisplayableItem(status) && status != DownloadState.Status.COMPLETED) {
@@ -113,9 +117,7 @@ class DownloadUIMapperMiddleware(
         }
 
         val currentDate = dateTimeProvider.currentLocalDate()
-        val inputDate = Instant.ofEpochMilli(epochMillis)
-            .atZone(dateTimeProvider.currentZoneId())
-            .toLocalDate()
+        val inputDate = Instant.ofEpochMilli(epochMillis).atZone(dateTimeProvider.currentZoneId()).toLocalDate()
 
         return when {
             inputDate.isEqual(currentDate) -> TimeCategory.TODAY
@@ -126,9 +128,7 @@ class DownloadUIMapperMiddleware(
         }
     }
 
-    /**
-     * Constants for [DownloadUIMapperMiddleware].
-     */
+    /** Constants for [DownloadUIMapperMiddleware]. */
     companion object {
         private const val NUM_DAYS_IN_LAST_7_DAYS_PERIOD = 7L
         private const val NUM_DAYS_IN_LAST_30_DAYS_PERIOD = 30L

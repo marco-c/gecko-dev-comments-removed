@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+@file:OptIn(ExperimentalAndroidComponentsApi::class)
+
 package org.mozilla.fenix.components.ipprotection
 
 import android.os.SystemClock
@@ -13,21 +15,21 @@ import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import org.mozilla.fenix.GleanMetrics.Vpn
+import org.mozilla.geckoview.ExperimentalGeckoViewApi
+import org.mozilla.geckoview.IPProtectionController.IPProxyException
 
 /**
- * [Middleware] that records telemetry for the FxA authentication and authorization initiated through IP Protection
- * as well as if a network error is encountered when user tries to toggle the VPN.
+ * [Middleware] that records telemetry for the FxA authentication and authorization initiated through IP Protection as
+ * well as if a network error is encountered when user tries to toggle the VPN.
  *
- * A flow is considered complete when the status leaves
- * [AccountStatus.AwaitingAuthentication] or [AccountStatus.AwaitingAuthorization] for a successful
- * state. The flow duration is measured from when the status first enters the corresponding
- * `Requesting*` state.
+ * A flow is considered complete when the status leaves [AccountStatus.AwaitingAuthentication] or
+ * [AccountStatus.AwaitingAuthorization] for a successful state. The flow duration is measured from when the status
+ * first enters the corresponding `Requesting*` state.
  *
- * @param currentTimeInMillis the current time in milliseconds, used to measure
- * how long the corresponding flow takes.
+ * @param currentTimeInMillis the current time in milliseconds, used to measure how long the corresponding flow takes.
  */
 internal class IPProtectionTelemetryMiddleware(
-    private val currentTimeInMillis: () -> Long = { SystemClock.elapsedRealtime() },
+    private val currentTimeInMillis: () -> Long = { SystemClock.elapsedRealtime() }
 ) : Middleware<IPProtectionState, IPProtectionAction> {
 
     private var authenticationFlowStartMs: Long? = null
@@ -40,7 +42,7 @@ internal class IPProtectionTelemetryMiddleware(
     ) {
         // The entitled but unauthenticated error state can be only captured before the reducer processes the action.
         if (action is IPProtectionAction.ToggleFailed) {
-            handleToggleFailedAction(store.state)
+            handleToggleFailedAction(store.state, action.error)
         }
 
         val previousStatus = store.state.accountState.status
@@ -71,8 +73,7 @@ internal class IPProtectionTelemetryMiddleware(
             AccountStatus.AuthFailed,
             AccountStatus.Authenticated,
             AccountStatus.EnrolledAndEntitled,
-            AccountStatus.TryAgain,
-                -> {
+            AccountStatus.TryAgain -> {
                 // no-op
             }
         }
@@ -84,14 +85,14 @@ internal class IPProtectionTelemetryMiddleware(
         when (previousStatus) {
             AccountStatus.AwaitingAuthentication -> {
                 Vpn.fxAccountFlowCompleted.record(
-                    Vpn.FxAccountFlowCompletedExtra(durationMs = durationSince(authenticationFlowStartMs)),
+                    Vpn.FxAccountFlowCompletedExtra(durationMs = durationSince(authenticationFlowStartMs))
                 )
                 authenticationFlowStartMs = null
             }
 
             AccountStatus.AwaitingAuthorization -> {
                 Vpn.fxAuthorizationFlowCompleted.record(
-                    Vpn.FxAuthorizationFlowCompletedExtra(durationMs = durationSince(authorizationFlowStartMs)),
+                    Vpn.FxAuthorizationFlowCompletedExtra(durationMs = durationSince(authorizationFlowStartMs))
                 )
                 authorizationFlowStartMs = null
             }
@@ -107,21 +108,21 @@ internal class IPProtectionTelemetryMiddleware(
             AccountStatus.AuthFailed,
             AccountStatus.Authenticated,
             AccountStatus.EnrolledAndEntitled,
-            AccountStatus.TryAgain,
-                -> {
+            AccountStatus.TryAgain -> {
                 // no-op
             }
         }
     }
 
-    @OptIn(ExperimentalAndroidComponentsApi::class)
-    private fun handleToggleFailedAction(state: IPProtectionState) {
-        if (state.accountState.status == AccountStatus.EnrolledAndEntitled &&
-            state.serviceStatus == ServiceState.Unauthenticated
+    @androidx.annotation.OptIn(ExperimentalGeckoViewApi::class)
+    private fun handleToggleFailedAction(state: IPProtectionState, error: Throwable?) {
+        if (
+            state.accountState.status == AccountStatus.EnrolledAndEntitled &&
+                state.serviceStatus == ServiceState.Unauthenticated
         ) {
             Vpn.entitledAccountUnauthenticated.record()
         }
-        Vpn.errorEncountered.record()
+        Vpn.errorEncountered.record(Vpn.ErrorEncounteredExtra(errorCode = "${(error as? IPProxyException)?.code}"))
     }
 
     private fun durationSince(startMs: Long?): Int? = startMs?.let { (currentTimeInMillis() - it).toInt() }
@@ -131,9 +132,10 @@ internal class IPProtectionTelemetryMiddleware(
         // succeeds, so it is considered a completed status.
         // [AccountStatus.EnrolledAndEntitled] is deliberately excluded since it is a VPN only state
         // reached after VPN enrollment, beyond the FxA auth time that we are interested in.
-        val COMPLETED_STATUSES = setOf(
-            AccountStatus.Authenticated,
-            AccountStatus.AwaitingEnrollment,
-        )
+        val COMPLETED_STATUSES =
+            setOf(
+                AccountStatus.Authenticated,
+                AccountStatus.AwaitingEnrollment,
+            )
     }
 }

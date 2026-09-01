@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.tabstray
 
+import kotlin.test.assertIs
 import mozilla.components.browser.state.state.createTab
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -24,15 +25,15 @@ class TabsTrayStoreTest {
         store.dispatch(TabsTrayAction.EnterSelectMode)
 
         assertTrue(store.state.mode.selectedTabs.isEmpty())
-        assertTrue(store.state.mode is TabsTrayState.Mode.Select)
+        assertIs<TabsTrayState.Mode.Select>(store.state.mode)
 
-        store.dispatch(TabsTrayAction.AddSelectTabItem(TabsTrayItem.Tab(tab = createTab(url = "url"))))
+        store.dispatch(TabsTrayAction.AddSelectTab(TabsTrayItem.Tab(tab = createTab(url = "url"))))
 
         store.dispatch(TabsTrayAction.ExitSelectMode)
         store.dispatch(TabsTrayAction.EnterSelectMode)
 
         assertTrue(store.state.mode.selectedTabs.isEmpty())
-        assertTrue(store.state.mode is TabsTrayState.Mode.Select)
+        assertIs<TabsTrayState.Mode.Select>(store.state.mode)
     }
 
     @Test
@@ -41,18 +42,18 @@ class TabsTrayStoreTest {
 
         store.dispatch(TabsTrayAction.EnterSelectMode)
 
-        assertTrue(store.state.mode is TabsTrayState.Mode.Select)
+        assertIs<TabsTrayState.Mode.Select>(store.state.mode)
 
         store.dispatch(TabsTrayAction.ExitSelectMode)
 
-        assertTrue(store.state.mode is TabsTrayState.Mode.Normal)
+        assertIs<TabsTrayState.Mode.Normal>(store.state.mode)
     }
 
     @Test
     fun `WHEN adding a tab to selection THEN it is added to the selectedTabs`() {
         val store = TabsTrayStore()
 
-        store.dispatch(TabsTrayAction.AddSelectTabItem(TabsTrayItem.Tab(tab = createTab(url = "url", id = "tab1"))))
+        store.dispatch(TabsTrayAction.AddSelectTab(TabsTrayItem.Tab(tab = createTab(url = "url", id = "tab1"))))
 
         assertEquals("tab1", store.state.mode.selectedTabs.take(1).first().id)
     }
@@ -62,12 +63,12 @@ class TabsTrayStoreTest {
         val store = TabsTrayStore()
         val tabForRemoval = TabsTrayItem.Tab(tab = createTab(url = "url", id = "tab1"))
 
-        store.dispatch(TabsTrayAction.AddSelectTabItem(tabForRemoval))
-        store.dispatch(TabsTrayAction.AddSelectTabItem(TabsTrayItem.Tab(tab = createTab(url = "url", id = "tab2"))))
+        store.dispatch(TabsTrayAction.AddSelectTab(tabForRemoval))
+        store.dispatch(TabsTrayAction.AddSelectTab(TabsTrayItem.Tab(tab = createTab(url = "url", id = "tab2"))))
 
         assertEquals(2, store.state.mode.selectedTabs.size)
 
-        store.dispatch(TabsTrayAction.RemoveSelectTabItem(tabForRemoval))
+        store.dispatch(TabsTrayAction.RemoveSelectTab(tabForRemoval))
 
         assertEquals(1, store.state.mode.selectedTabs.size)
         assertEquals("tab2", store.state.mode.selectedTabs.take(1).first().id)
@@ -157,11 +158,10 @@ class TabsTrayStoreTest {
 
     @Test
     fun `WHEN UpdateInactiveExpanded is dispatched THEN update inactiveTabsExpanded`() {
-        val tabsTrayStore = TabsTrayStore(
-            initialState = TabsTrayState(
-                inactiveTabs = TabsTrayState.InactiveTabsState(isExpanded = false),
-            ),
-        )
+        val tabsTrayStore =
+            TabsTrayStore(
+                initialState = TabsTrayState(inactiveTabs = TabsTrayState.InactiveTabsState(isExpanded = false))
+            )
 
         assertFalse(tabsTrayStore.state.inactiveTabs.isExpanded)
 

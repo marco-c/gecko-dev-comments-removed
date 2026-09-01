@@ -15,22 +15,16 @@ import org.mozilla.fenix.home.HomeFragment
 import org.mozilla.fenix.home.HomeFragmentDirections
 import org.mozilla.fenix.home.recentsyncedtabs.RecentSyncedTab
 import org.mozilla.fenix.home.recentsyncedtabs.interactor.RecentSyncedTabInteractor
-import org.mozilla.fenix.tabstray.Page
+import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.ui.AccessPoint
 import org.mozilla.fenix.utils.Settings
 
-/**
- * An interface that handles the view manipulation of the recent synced tabs in the Home screen.
- */
+/** An interface that handles the view manipulation of the recent synced tabs in the Home screen. */
 interface RecentSyncedTabController {
-    /**
-     * @see [RecentSyncedTabInteractor.onRecentSyncedTabClicked]
-     */
+    /** @see [RecentSyncedTabInteractor.onRecentSyncedTabClicked] */
     fun handleRecentSyncedTabClick(tab: RecentSyncedTab)
 
-    /**
-     * @see [RecentSyncedTabInteractor.onRecentSyncedTabClicked]
-     */
+    /** @see [RecentSyncedTabInteractor.onRecentSyncedTabClicked] */
     fun handleSyncedTabShowAllClicked()
 
     /**
@@ -81,7 +75,7 @@ class DefaultRecentSyncedTabController(
             HomeFragmentDirections.actionGlobalTabManagementFragment(
                 page = Page.SyncedTabs,
                 accessPoint = accessPoint,
-            ),
+            )
         )
     }
 

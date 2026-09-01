@@ -30,19 +30,21 @@ class IPProtectionSnackbarMiddlewareTest {
     fun setup() {
         captureMiddleware = CaptureActionsMiddleware()
         appStore = AppStore(middlewares = listOf(captureMiddleware))
-        ipProtectionStore = IPProtectionStore(
-            middleware = listOf(
-                IPProtectionSnackbarMiddleware(
-                    lazyAppStore = lazy { appStore },
-                    messages = IPProtectionSnackbarMessages(connectionError = connectionError),
-                ),
-            ),
-        )
+        ipProtectionStore =
+            IPProtectionStore(
+                middleware =
+                    listOf(
+                        IPProtectionSnackbarMiddleware(
+                            lazyAppStore = lazy { appStore },
+                            messages = IPProtectionSnackbarMessages(connectionError = connectionError),
+                        )
+                    )
+            )
     }
 
     @Test
     fun `WHEN ActivationFailed is dispatched THEN ConnectionError snackbar action is dispatched`() {
-        ipProtectionStore.dispatch(IPProtectionAction.ToggleFailed)
+        ipProtectionStore.dispatch(IPProtectionAction.ToggleFailed())
 
         captureMiddleware.assertLastAction(AppAction.IPProtectionSnackbarAction.ConnectionError::class) { action ->
             assertEquals(connectionError, action.title)
@@ -51,9 +53,7 @@ class IPProtectionSnackbarMiddlewareTest {
 
     @Test
     fun `WHEN an unrelated action is dispatched THEN no snackbar action is dispatched`() {
-        ipProtectionStore.dispatch(
-            IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible),
-        )
+        ipProtectionStore.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible))
 
         captureMiddleware.assertNotDispatched(AppAction.IPProtectionSnackbarAction.ConnectionError::class)
     }
@@ -64,16 +64,17 @@ class IPProtectionSnackbarMiddlewareTest {
             // Simulates HomeActivity recreation: the same process-scoped IPProtectionStore now has
             // a new observer (a freshly-instantiated IPProtectionInfoPrompter). With the snackbar
             // owned by middleware, the new observer does not re-fire on already-set state.
-            ipProtectionStore.dispatch(IPProtectionAction.ToggleFailed)
+            ipProtectionStore.dispatch(IPProtectionAction.ToggleFailed())
             captureMiddleware.assertLastAction(AppAction.IPProtectionSnackbarAction.ConnectionError::class)
             captureMiddleware.reset()
 
-            val newPrompter = IPProtectionInfoPrompter(
-                store = ipProtectionStore,
-                appStore = appStore,
-                errorMessages = ErrorMessages(dataLimitReached = "Data limit reached"),
-                mainDispatcher = StandardTestDispatcher(testScheduler),
-            )
+            val newPrompter =
+                IPProtectionInfoPrompter(
+                    store = ipProtectionStore,
+                    appStore = appStore,
+                    errorMessages = ErrorMessages(dataLimitReached = "Data limit reached"),
+                    mainDispatcher = StandardTestDispatcher(testScheduler),
+                )
             newPrompter.start()
             testScheduler.advanceUntilIdle()
 

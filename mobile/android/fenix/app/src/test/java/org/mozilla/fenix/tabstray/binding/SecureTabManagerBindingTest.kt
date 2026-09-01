@@ -13,10 +13,10 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
-import org.mozilla.fenix.tabstray.Page
-import org.mozilla.fenix.tabstray.TabsTrayAction
-import org.mozilla.fenix.tabstray.TabsTrayState
-import org.mozilla.fenix.tabstray.TabsTrayStore
+import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
+import org.mozilla.fenix.tabstray.redux.state.Page
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
+import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.utils.Settings
 
 class SecureTabManagerBindingTest {
@@ -33,95 +33,102 @@ class SecureTabManagerBindingTest {
     fun setup() {
         tabsTrayStore = TabsTrayStore(TabsTrayState())
 
-        secureTabManagerBinding = SecureTabManagerBinding(
-            store = tabsTrayStore,
-            settings = settings,
-            window = window,
-            mainDispatcher = testDispatcher,
-        )
+        secureTabManagerBinding =
+            SecureTabManagerBinding(
+                store = tabsTrayStore,
+                settings = settings,
+                window = window,
+                mainDispatcher = testDispatcher,
+            )
     }
 
     @Test
-    fun `WHEN tab selected page switches to private THEN set window to secure`() = runTest(testDispatcher) {
-        every { settings.shouldSecureModeBeOverridden } returns false
-        every { settings.lastKnownMode.isPrivate } returns false
+    fun `WHEN tab selected page switches to private THEN set window to secure`() =
+        runTest(testDispatcher) {
+            every { settings.shouldSecureModeBeOverridden } returns false
+            every { settings.lastKnownMode.isPrivate } returns false
 
-        secureTabManagerBinding.start()
-        testDispatcher.scheduler.advanceUntilIdle()
+            secureTabManagerBinding.start()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        tabsTrayStore.dispatch(TabsTrayAction.PageSelected(Page.PrivateTabs))
-        testDispatcher.scheduler.advanceUntilIdle()
+            tabsTrayStore.dispatch(TabsTrayAction.PageSelected(Page.PrivateTabs))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify { window.addFlags(WindowManager.LayoutParams.FLAG_SECURE) }
-    }
-
-    @Test
-    fun `WHEN tab selected page switches to private and allowScreenshotsInPrivateMode true THEN set window to un-secure`() = runTest(testDispatcher) {
-        every { settings.shouldSecureModeBeOverridden } returns true
-        every { settings.lastKnownMode.isPrivate } returns false
-
-        secureTabManagerBinding.start()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        tabsTrayStore.dispatch(TabsTrayAction.PageSelected(Page.PrivateTabs))
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        verify { window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
-    }
+            verify { window.addFlags(WindowManager.LayoutParams.FLAG_SECURE) }
+        }
 
     @Test
-    fun `WHEN tab selected page switches to private and allowScreenshotsInPrivateMode false and shouldSecureModeBeOverridden true THEN set window to un-secure`() = runTest(testDispatcher) {
-        every { settings.shouldSecureModeBeOverridden } returns true
-        every { settings.lastKnownMode.isPrivate } returns false
+    fun `WHEN tab selected page switches to private and allowScreenshotsInPrivateMode true THEN set window to un-secure`() =
+        runTest(testDispatcher) {
+            every { settings.shouldSecureModeBeOverridden } returns true
+            every { settings.lastKnownMode.isPrivate } returns false
 
-        secureTabManagerBinding.start()
-        testDispatcher.scheduler.advanceUntilIdle()
+            secureTabManagerBinding.start()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        tabsTrayStore.dispatch(TabsTrayAction.PageSelected(Page.PrivateTabs))
-        testDispatcher.scheduler.advanceUntilIdle()
+            tabsTrayStore.dispatch(TabsTrayAction.PageSelected(Page.PrivateTabs))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify { window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
-    }
-
-    @Test
-    fun `GIVEN not in private mode WHEN tab selected page switches to normal tabs from private THEN set window to un-secure`() = runTest(testDispatcher) {
-        every { settings.lastKnownMode.isPrivate } returns false
-
-        secureTabManagerBinding.start()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        tabsTrayStore.dispatch(TabsTrayAction.PageSelected(Page.NormalTabs))
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        verify { window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
-    }
+            verify { window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
+        }
 
     @Test
-    fun `GIVEN private mode WHEN tab selected page switches to normal tabs from private THEN do nothing`() = runTest(testDispatcher) {
-        every { settings.lastKnownMode.isPrivate } returns true
+    fun `WHEN tab selected page switches to private and allowScreenshotsInPrivateMode false and shouldSecureModeBeOverridden true THEN set window to un-secure`() =
+        runTest(testDispatcher) {
+            every { settings.shouldSecureModeBeOverridden } returns true
+            every { settings.lastKnownMode.isPrivate } returns false
 
-        secureTabManagerBinding.start()
-        testDispatcher.scheduler.advanceUntilIdle()
+            secureTabManagerBinding.start()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        tabsTrayStore.dispatch(TabsTrayAction.PageSelected(Page.NormalTabs))
-        testDispatcher.scheduler.advanceUntilIdle()
+            tabsTrayStore.dispatch(TabsTrayAction.PageSelected(Page.PrivateTabs))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(exactly = 0) { window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
-    }
+            verify { window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
+        }
 
     @Test
-    fun `GIVEN in Normal browsing mode WHEN fragment is stopped THEN set window to un-secure`() = runTest(testDispatcher) {
-        every { settings.lastKnownMode.isPrivate } returns false
+    fun `GIVEN not in private mode WHEN tab selected page switches to normal tabs from private THEN set window to un-secure`() =
+        runTest(testDispatcher) {
+            every { settings.lastKnownMode.isPrivate } returns false
 
-        secureTabManagerBinding.start()
-        testDispatcher.scheduler.advanceUntilIdle()
+            secureTabManagerBinding.start()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        tabsTrayStore.dispatch(TabsTrayAction.PageSelected(Page.NormalTabs))
-        testDispatcher.scheduler.advanceUntilIdle()
+            tabsTrayStore.dispatch(TabsTrayAction.PageSelected(Page.NormalTabs))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        secureTabManagerBinding.stop()
-        testDispatcher.scheduler.advanceUntilIdle()
+            verify { window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
+        }
 
-        verify { window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
-    }
+    @Test
+    fun `GIVEN private mode WHEN tab selected page switches to normal tabs from private THEN do nothing`() =
+        runTest(testDispatcher) {
+            every { settings.lastKnownMode.isPrivate } returns true
+
+            secureTabManagerBinding.start()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            tabsTrayStore.dispatch(TabsTrayAction.PageSelected(Page.NormalTabs))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 0) { window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
+        }
+
+    @Test
+    fun `GIVEN in Normal browsing mode WHEN fragment is stopped THEN set window to un-secure`() =
+        runTest(testDispatcher) {
+            every { settings.lastKnownMode.isPrivate } returns false
+
+            secureTabManagerBinding.start()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            tabsTrayStore.dispatch(TabsTrayAction.PageSelected(Page.NormalTabs))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            secureTabManagerBinding.stop()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify { window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
+        }
 }
