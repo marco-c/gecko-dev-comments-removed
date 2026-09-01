@@ -307,3 +307,5 @@ static jlong JNI_CallClient_CreateClient(JNIEnv* env) {
 }
 
 }  
+
+DEFINE_JNI(CallClient)

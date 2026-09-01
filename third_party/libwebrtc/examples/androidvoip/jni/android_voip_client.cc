@@ -566,3 +566,5 @@ static jlong JNI_VoipClient_CreateClient(
 }
 
 }  
+
+DEFINE_JNI(VoipClient)
