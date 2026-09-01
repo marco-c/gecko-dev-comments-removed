@@ -33,8 +33,14 @@ enum SandboxingKind : uint64_t {
   PKCS11_MODULE,
 #endif  
 
-  COUNT,
+#ifndef ANDROID
+  HW_INFERENCE,
+#endif  
 
+  
+  
+  
+  COUNT,
 };
 
 bool IsUtilitySandboxEnabled(const char* envVar, SandboxingKind aKind);
