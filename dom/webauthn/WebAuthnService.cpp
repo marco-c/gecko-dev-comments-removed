@@ -19,6 +19,55 @@ already_AddRefed<nsIWebAuthnService> NewWebAuthnService() {
   return webauthnService.forget();
 }
 
+#if defined(XP_MACOSX)
+namespace {
+
+
+
+
+
+
+bool PrfRequestedForSecurityKey(nsIWebAuthnRegisterArgs* aArgs) {
+  bool prf = false;
+  if (NS_FAILED(aArgs->GetPrf(&prf)) || !prf) {
+    return false;
+  }
+  
+  
+  nsAutoString attachment;
+  if (NS_SUCCEEDED(aArgs->GetAuthenticatorAttachment(attachment)) &&
+      attachment.EqualsLiteral(
+          MOZ_WEBAUTHN_AUTHENTICATOR_ATTACHMENT_PLATFORM)) {
+    return false;
+  }
+  return true;
+}
+
+bool PrfRequestedForSecurityKey(nsIWebAuthnSignArgs* aArgs) {
+  bool prf = false;
+  if (NS_FAILED(aArgs->GetPrf(&prf)) || !prf) {
+    return false;
+  }
+  
+  
+  nsTArray<uint8_t> allowListTransports;
+  (void)aArgs->GetAllowListTransports(allowListTransports);
+  if (allowListTransports.IsEmpty()) {
+    return false;
+  }
+  uint8_t transportSet = 0;
+  for (const uint8_t& transport : allowListTransports) {
+    transportSet |= transport;
+  }
+  uint8_t passkeyTransportMask =
+      MOZ_WEBAUTHN_AUTHENTICATOR_TRANSPORT_ID_INTERNAL |
+      MOZ_WEBAUTHN_AUTHENTICATOR_TRANSPORT_ID_HYBRID;
+  return (transportSet & passkeyTransportMask) == 0;
+}
+
+}  
+#endif
+
 NS_IMPL_ISUPPORTS(WebAuthnService, nsIWebAuthnService)
 
 void WebAuthnService::ShowAttestationConsentPrompt(
@@ -73,6 +122,24 @@ WebAuthnService::MakeCredential(uint64_t aTransactionId,
       Some(TransactionState{.service = DefaultService(),
                             .transactionId = aTransactionId,
                             .parentRegisterPromise = Some(aPromise)});
+
+#if defined(XP_MACOSX)
+  if (__builtin_available(macos 26.4, *)) {
+    
+    
+  } else {
+    
+    
+    
+    
+    
+    
+    
+    if (PrfRequestedForSecurityKey(aArgs)) {
+      mActiveTransaction.ref().service = AuthrsService();
+    }
+  }
+#endif
 
   
   
@@ -232,6 +299,18 @@ WebAuthnService::GetAssertion(uint64_t aTransactionId,
           (transportSet & passkeyTransportMask) == 0) {
         mActiveTransaction.ref().service = AuthrsService();
       }
+    }
+  }
+
+  if (__builtin_available(macos 26.4, *)) {
+    
+    
+  } else {
+    
+    
+    
+    if (PrfRequestedForSecurityKey(aArgs)) {
+      mActiveTransaction.ref().service = AuthrsService();
     }
   }
 #endif
