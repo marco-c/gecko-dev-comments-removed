@@ -899,8 +899,7 @@ class DocAccessible : public HyperTextAccessible,
   PresShell* mPresShell;
 
   
-  
-  DocAccessibleChild* mIPCDoc;
+  RefPtr<DocAccessibleChild> mIPCDoc;
 
   
   

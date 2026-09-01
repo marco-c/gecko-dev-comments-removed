@@ -21,22 +21,12 @@ class AccShowEvent;
 
 class DocAccessibleChild : public PDocAccessibleChild {
  public:
+  NS_INLINE_DECL_REFCOUNTING(DocAccessibleChild, override)
+
   DocAccessibleChild(DocAccessible* aDoc,
                      mozilla::ipc::IRefCountedProtocol* aManager)
       : mDoc(aDoc) {
-    MOZ_COUNT_CTOR(DocAccessibleChild);
     SetManager(aManager);
-  }
-
-  ~DocAccessibleChild() {
-    
-    
-    MOZ_ASSERT(!mDoc);
-    if (mDoc) {
-      mDoc->SetIPCDoc(nullptr);
-    }
-
-    MOZ_COUNT_DTOR(DocAccessibleChild);
   }
 
   void Shutdown() {
@@ -200,6 +190,13 @@ class DocAccessibleChild : public PDocAccessibleChild {
   MutationEventBatcher mMutationEventBatcher;
 
   friend void DocAccessible::DoInitialUpdate();
+
+ private:
+  ~DocAccessibleChild() {
+    
+    
+    MOZ_ASSERT(!mDoc);
+  }
 };
 
 }  
