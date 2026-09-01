@@ -10,7 +10,6 @@ const { ExtensionTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/ExtensionXPCShellUtils.sys.mjs"
 );
 
-const DistinctDevToolsServer = getDistinctDevToolsServer();
 ExtensionTestUtils.init(this);
 
 add_setup(async () => {
@@ -20,60 +19,20 @@ add_setup(async () => {
 
 
 
-
-async function sendRequest(transport, request) {
-  return new Promise(resolve => {
-    transport.hooks = {
-      onPacket: packet => {
-        dump(`received packet: ${JSON.stringify(packet)}\n`);
-        
-        
-        
-        
-        
-        if (packet.from === request.to) {
-          resolve(packet);
-        }
-      },
-    };
-    transport.send(request);
-  });
-}
-
-
-
 add_task(async function test_webext_run_apis() {
-  DistinctDevToolsServer.init();
-  DistinctDevToolsServer.registerAllActors();
-
-  const transport = DistinctDevToolsServer.connectPipe();
-
-  
-  
-  await new Promise(resolve => {
-    transport.hooks = { onPacket: resolve };
-  });
-
-  const getRootResponse = await sendRequest(transport, {
-    to: "root",
-    type: "getRoot",
-  });
-
-  ok(getRootResponse, "received a response after calling RootActor::getRoot");
-  ok(getRootResponse.addonsActor, "getRoot returned an addonsActor id");
+  const client = await CommandsFactory.spawnClientToDebugSystemPrincipal();
+  const addons = await client.mainRoot.getFront("addons");
 
   
   const addonId = "test-addons-actor@mozilla.org";
   const addonPath = getFilePath("addons/web-extension", false, true);
   const promiseStarted = AddonTestUtils.promiseWebExtensionStartup(addonId);
-  const { addon } = await sendRequest(transport, {
-    to: getRootResponse.addonsActor,
-    type: "installTemporaryAddon",
+  const addon = await addons.installTemporaryAddon(
     addonPath,
     
     
-    
-  });
+    false
+  );
   await promiseStarted;
 
   ok(addon, "addonsActor allows to install a temporary add-on");
@@ -81,24 +40,18 @@ add_task(async function test_webext_run_apis() {
   equal(addon.actor, false, "temporary add-on does not have an actor");
 
   
-  let { addons } = await sendRequest(transport, {
-    to: "root",
-    type: "listAddons",
-  });
-  ok(Array.isArray(addons), "listAddons() returns a list of add-ons");
-  equal(addons.length, 1, "expected an add-on installed");
+  let addonsList = await client.mainRoot.listAddons();
+  ok(Array.isArray(addonsList), "listAddons() returns a list of add-ons");
+  equal(addonsList.length, 1, "expected an add-on installed");
 
-  const installedAddon = addons[0];
+  const installedAddon = addonsList[0];
   equal(installedAddon.id, addonId, "installed add-on is the expected one");
-  ok(installedAddon.actor, "returned add-on has an actor");
+  ok(installedAddon.actorID, "returned add-on has an actor");
 
   
   const promiseReloaded = AddonTestUtils.promiseAddonEvent("onInstalled");
   const promiseRestarted = AddonTestUtils.promiseWebExtensionStartup(addonId);
-  await sendRequest(transport, {
-    to: installedAddon.actor,
-    type: "reload",
-  });
+  await installedAddon.reload();
   await Promise.all([promiseReloaded, promiseRestarted]);
 
   
@@ -112,30 +65,23 @@ add_task(async function test_webext_run_apis() {
     };
     AddonManager.addAddonListener(listener);
   });
-  await sendRequest(transport, {
-    to: getRootResponse.addonsActor,
-    type: "uninstallAddon",
-    addonId,
-  });
+  await addons.uninstallAddon(addonId);
   await promiseUninstalled;
 
-  ({ addons } = await sendRequest(transport, {
-    to: "root",
-    type: "listAddons",
-  }));
-  equal(addons.length, 0, "expected no add-on installed");
+  addonsList = await client.mainRoot.listAddons();
+  equal(addonsList.length, 0, "expected no add-on installed");
 
   
-  let error = await sendRequest(transport, {
-    to: getRootResponse.addonsActor,
-    type: "uninstallAddon",
-    addonId,
-  });
-  equal(
-    error?.message,
-    `Could not uninstall add-on "${addonId}"`,
-    "expected error"
-  );
+  try {
+    await addons.uninstallAddon(addonId);
+    ok(false, "should throw");
+  } catch (error) {
+    Assert.stringContains(
+      error?.message,
+      `Could not uninstall add-on "${addonId}"`,
+      "expected error"
+    );
+  }
 
   
   
@@ -149,14 +95,18 @@ add_task(async function test_webext_run_apis() {
   });
   await extension.startup();
 
-  error = await sendRequest(transport, {
-    to: getRootResponse.addonsActor,
-    type: "uninstallAddon",
-    addonId: id,
-  });
-  equal(error?.message, `Could not uninstall add-on "${id}"`, "expected error");
+  try {
+    await addons.uninstallAddon(id);
+    ok(false, "should throw");
+  } catch (error) {
+    Assert.stringContains(
+      error?.message,
+      `Could not uninstall add-on "${id}"`,
+      "expected error"
+    );
+  }
 
   await extension.unload();
 
-  transport.close();
+  await client.close();
 });

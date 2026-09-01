@@ -5,29 +5,14 @@
 
 
 
-const {
-  DevToolsServer,
-} = require("resource://devtools/server/devtools-server.js");
-const {
-  DevToolsClient,
-} = require("resource://devtools/client/devtools-client.js");
-
 add_task(async function () {
   await testCloseLoops();
   await fakeTransportShutdown();
 });
 
-function createClient() {
-  DevToolsServer.init();
-  DevToolsServer.registerAllActors();
-  const client = new DevToolsClient(DevToolsServer.connectPipe());
-  return client;
-}
-
 
 async function testCloseLoops() {
-  const client = createClient();
-  await client.connect();
+  const client = await createLocalClientForTests();
 
   await new Promise(resolve => {
     let called = false;
@@ -51,8 +36,7 @@ async function testCloseLoops() {
 
 
 async function fakeTransportShutdown() {
-  const client = createClient();
-  await client.connect();
+  const client = await createLocalClientForTests();
 
   await new Promise(resolve => {
     const onClosed = async function () {

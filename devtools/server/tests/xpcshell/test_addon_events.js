@@ -9,11 +9,7 @@ const { AddonManager } = ChromeUtils.importESModule(
 add_task(async function testReloadExitedAddon() {
   await startupAddonsManager();
 
-  DevToolsServer.init();
-  DevToolsServer.registerAllActors();
-
-  const client = new DevToolsClient(DevToolsServer.connectPipe());
-  await client.connect();
+  const client = await CommandsFactory.spawnClientToDebugSystemPrincipal();
 
   
   
