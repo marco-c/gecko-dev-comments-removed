@@ -98,3 +98,36 @@ function waitForRowIcon(browser, title, predicate) {
     return icon && predicate(icon) ? icon : false;
   }, `waiting for the icon of the row titled "${title}"`);
 }
+
+
+
+
+
+
+
+
+
+function getBarState(browser) {
+  return SpecialPowers.spawn(browser, [], () => {
+    let bar = content.document.querySelector("moz-urlbar");
+    let input = bar.querySelector("input.urlbar-input");
+    return {
+      focused: content.document.activeElement == input,
+      value: input.value,
+      
+      viewOpen: Cu.waiveXrays(bar).view.isOpen,
+    };
+  });
+}
+
+
+
+
+
+
+function waitForResults(browser) {
+  return TestUtils.waitForCondition(
+    async () => (await getBarState(browser)).viewOpen,
+    "waiting for the results view to open"
+  );
+}
