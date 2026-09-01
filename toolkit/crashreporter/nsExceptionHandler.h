@@ -142,6 +142,9 @@ nsresult UnrecordAnnotation(Annotation aKey);
 
 nsresult AppendAppNotesToCrashReport(const nsACString& data);
 
+nsresult RecordPlatformAnnotations();
+nsresult RecordXPCOMPlatformAnnotations();
+
 
 
 
