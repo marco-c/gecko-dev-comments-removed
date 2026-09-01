@@ -1171,6 +1171,8 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
                      });
     }
 
+    
+    
     blobPromise
         ->Then(
             GetMainThreadSerialEventTarget(), __func__,

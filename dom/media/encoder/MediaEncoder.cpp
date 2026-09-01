@@ -898,16 +898,23 @@ void MediaEncoder::MaybeExtractOrGatherBlob() {
         ("MediaEncoder {} Muxed {:.2f}s of data since last "
          "blob. Issuing new blob.",
          fmt::ptr(this), (muxedEndTime - mLastBlobTime).ToSeconds()));
-    RequestData()->Then(mEncoderThread, __func__,
-                        [this, self = RefPtr<MediaEncoder>(this)](
-                            const BlobPromise::ResolveOrRejectValue& aValue) {
-                          if (aValue.IsReject()) {
-                            SetError();
-                            return;
-                          }
-                          RefPtr<BlobImpl> blob = aValue.ResolveValue();
-                          mDataAvailableEvent.Notify(std::move(blob));
-                        });
+    
+    
+    
+    
+    RequestData()->Then(
+        mMainThread, __func__,
+        [this, self = RefPtr<MediaEncoder>(this)](
+            const BlobPromise::ResolveOrRejectValue& aValue) {
+          if (aValue.IsReject()) {
+            MOZ_ALWAYS_SUCCEEDS(mEncoderThread->Dispatch(NS_NewRunnableFunction(
+                "MediaEncoder::SetError",
+                [self = RefPtr<MediaEncoder>(this)] { self->SetError(); })));
+            return;
+          }
+          RefPtr<BlobImpl> blob = aValue.ResolveValue();
+          mDataAvailableEvent.Notify(std::move(blob));
+        });
   }
 
   if (muxedEndTime - mLastExtractTime > TimeUnit::FromSeconds(1)) {
