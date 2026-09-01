@@ -6,6 +6,8 @@
 
 #include "mozilla/AppShutdown.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/dom/AbstractRange.h"
+#include "mozilla/dom/DirectionalityUtils.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLSlotElementBinding.h"
@@ -308,7 +310,7 @@ void HTMLSlotElement::InsertAssignedNode(uint32_t aIndex, nsIContent& aNode) {
   mAssignedNodes.InsertElementAt(aIndex, &aNode);
   aNode.SetAssignedSlot(this);
   RecalculateHasSlottedState();
-  SlotAssignedNodeAdded(this, aNode);
+  AddedAssignedNode(aNode);
 }
 
 void HTMLSlotElement::AppendAssignedNode(nsIContent& aNode) {
@@ -316,7 +318,23 @@ void HTMLSlotElement::AppendAssignedNode(nsIContent& aNode) {
   mAssignedNodes.AppendElement(&aNode);
   aNode.SetAssignedSlot(this);
   RecalculateHasSlottedState();
-  SlotAssignedNodeAdded(this, aNode);
+  AddedAssignedNode(aNode);
+}
+
+void HTMLSlotElement::AddedAssignedNode(nsIContent& aNode) {
+  if (IsMaybeSelected()) {
+    
+    
+    
+    
+    
+    dom::AbstractRange::UpdateDescendantsInFlattenedTree(
+        aNode, true );
+  }
+  SlotAssignedNodeAddedForDir(this, aNode);
+  if (StaticPrefs::dom_headingoffset_enabled()) {
+    aNode.UpdateHeadingElementsOffsetChange();
+  }
 }
 
 void HTMLSlotElement::RecalculateHasSlottedState() {
@@ -351,10 +369,7 @@ void HTMLSlotElement::RemoveAssignedNode(nsIContent& aNode) {
   aNode.SetAssignedSlot(nullptr);
 
   RecalculateHasSlottedState();
-  SlotAssignedNodeRemoved(this, aNode);
-  if (StaticPrefs::dom_headingoffset_enabled()) {
-    aNode.AsContent()->UpdateHeadingElementsOffsetChange();
-  }
+  RemovedAssignedNode(aNode);
 }
 
 void HTMLSlotElement::ClearAssignedNodes() {
@@ -369,10 +384,25 @@ void HTMLSlotElement::ClearAssignedNodes() {
     if (StaticPrefs::dom_headingoffset_enabled()) {
       node->AsContent()->UpdateHeadingElementsOffsetChange();
     }
-    SlotAssignedNodeRemoved(this, *node->AsContent());
+    RemovedAssignedNode(*node->AsContent());
   }
 
   RecalculateHasSlottedState();
+}
+
+void HTMLSlotElement::RemovedAssignedNode(nsIContent& aNode) {
+  if (aNode.IsMaybeSelected()) {
+    
+    
+    
+    
+    
+    
+    
+    dom::AbstractRange::UpdateDescendantsInFlattenedTree(
+        aNode, false );
+  }
+  SlotAssignedNodeRemovedForDir(this, aNode);
 }
 
 void HTMLSlotElement::EnqueueSlotChangeEvent() {
