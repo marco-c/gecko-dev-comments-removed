@@ -3762,6 +3762,12 @@ void AsyncPanZoomController::HandlePinchLocking(
     const PinchGestureInput& aEvent) {
   
   
+  if (aEvent.mSource != PinchGestureInput::TOUCH) {
+    return;
+  }
+
+  
+  
   
   
   
