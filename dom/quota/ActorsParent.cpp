@@ -6052,26 +6052,7 @@ void QuotaManager::FlushDirtyOriginInfos() {
   const uint32_t maxOriginsToSaveInOneBatch =
       StaticPrefs::dom_quotaManager_maxOriginsToSaveInOneBatch();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  MutexAutoTryLock lock(mQuotaMutex);
-  if (!lock) {
-    return;
-  }
+  MutexAutoLock lock(mQuotaMutex);
 
   const auto now = TimeStamp::Now();
   uint32_t flushed = 0;
@@ -7700,7 +7681,7 @@ RefPtr<BoolPromise> QuotaManager::InitializeAllTemporaryOrigins() {
 nsresult QuotaManager::FlagOriginInfoAsDirtyOnDisk(
     DirtyTrackingAutoLock& aProofOfLock,
     const OriginStateMetadata& aStateMetadata) {
-  AssertCurrentThreadOwnsQuotaMutex();
+  AssertNotCurrentThreadOwnsQuotaMutex();
 
   struct SharedState {
     mozilla::Mutex mMutex;
@@ -8930,10 +8911,7 @@ void QuotaManager::CleanupTemporaryStorage() {
     
     
     auto checker = [&self = *this, cutoffTime](const auto& doomedOriginInfo) {
-      MutexAutoTryLock lock(self.mQuotaMutex);
-      if (!lock) {
-        return;
-      }
+      MutexAutoLock lock(self.mQuotaMutex);
       MOZ_ASSERT(!doomedOriginInfo->LockedPersisted());
       MOZ_ASSERT(doomedOriginInfo->LockedUsage() == 0);
       MOZ_ASSERT(doomedOriginInfo->LockedAccessTime() < cutoffTime);
@@ -8955,10 +8933,7 @@ void QuotaManager::CleanupTemporaryStorage() {
 
 #ifdef DEBUG
   auto nonPersistedChecker = [&self = *this](const auto& doomedOriginInfo) {
-    MutexAutoTryLock lock(self.mQuotaMutex);
-    if (!lock) {
-      return;
-    }
+    MutexAutoLock lock(self.mQuotaMutex);
     MOZ_ASSERT(!doomedOriginInfo->LockedPersisted());
   };
 #else

@@ -25,10 +25,6 @@ class OriginInfo;
 
 
 
-
-
-
-
 class MOZ_RAII MOZ_SCOPED_CAPABILITY MOZ_CAPABILITY("dirty_tracking_autolock")
     DirtyTrackingAutoLock {
  public:

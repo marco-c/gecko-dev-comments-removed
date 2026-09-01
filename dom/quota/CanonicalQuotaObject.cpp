@@ -229,15 +229,6 @@ bool CanonicalQuotaObject::LockedMaybeUpdateSize(
   
   
 
-  if (!originInfo->mGroupInfo) {
-    
-    
-    
-    DirtyTrackingAutoLock::PauseLock pauseLock(aProofOfLock);
-    quotaManager->FinalizeOriginEviction(std::move(locks));
-    return false;
-  }
-
   QM_ASSERT_NO_UNDERFLOW(aSize, mSize);
   const uint64_t increase = aSize - mSize;
 
