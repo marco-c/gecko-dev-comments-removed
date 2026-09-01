@@ -368,7 +368,7 @@ pub struct PrimitiveInstance {
     
     
     
-    pub unsnapped_prim_rect: LayoutRect,
+    pub unsnapped_pattern_rect: LayoutRect,
 }
 
 
@@ -404,12 +404,12 @@ impl PrimitiveInstance {
     pub fn new(
         kind: PrimitiveKind,
         clip_leaf_id: ClipLeafId,
-        unsnapped_prim_rect: LayoutRect,
+        unsnapped_pattern_rect: LayoutRect,
     ) -> Self {
         PrimitiveInstance {
             kind,
             clip_leaf_id,
-            unsnapped_prim_rect,
+            unsnapped_pattern_rect,
         }
     }
 
@@ -438,7 +438,8 @@ impl PrimitiveInstance {
                         SnapRounding::RoundOutNonSubpx { subpx_horizontal: true },
                     SubpixelDirection::Vertical =>
                         SnapRounding::RoundOutNonSubpx { subpx_horizontal: false },
-                    SubpixelDirection::None => SnapRounding::RoundOut,
+                    SubpixelDirection::None |
+                    SubpixelDirection::Mixed => SnapRounding::RoundOut,
                 })
             } else {
                 ClipSnap::Exact

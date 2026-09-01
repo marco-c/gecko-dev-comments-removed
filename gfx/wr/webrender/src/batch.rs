@@ -784,7 +784,7 @@ impl BatchBuilder {
             PrimitiveCommand::Simple { draw_index } => {
                 draw_index
             }
-            PrimitiveCommand::SplitComposite { draw_index, polygons_address, transform_id, src_task_id, local_rect } => {
+            PrimitiveCommand::SplitComposite { draw_index, polygons_address, transform_id, src_task_id, pattern_rect } => {
                 let prim_info = ctx.scratch.frame.draw(*draw_index);
 
                 let (clip_task_address, clip_mask_texture_id) = ctx.get_prim_clip_task_and_texture(
@@ -798,8 +798,8 @@ impl BatchBuilder {
                 let z_id = z_generator.next();
 
                 let prim_header = PrimitiveHeader {
-                    local_rect: *local_rect,
-                    local_clip_rect: prim_info.clip_chain.local_clip_rect,
+                    pattern_rect: *pattern_rect,
+                    bounds: prim_info.clip_chain.local_clip_rect,
                     specific_prim_address: GpuBufferAddress::INVALID.as_int(),
                     transform_id: *transform_id,
                     z: z_id,
@@ -982,8 +982,13 @@ impl BatchBuilder {
                 
                 
                 let prim_header = PrimitiveHeader {
-                    local_rect: run_scratch.local_rect,
-                    local_clip_rect: prim_info.clip_chain.local_clip_rect,
+                    
+                    
+                    
+                    
+                    
+                    pattern_rect: run_scratch.pattern_rect,
+                    bounds: prim_info.clip_chain.local_clip_rect,
                     transform_id,
                     z: z_id,
                     render_task_address: self.batcher.render_task_address,
@@ -1090,6 +1095,7 @@ impl BatchBuilder {
                                     SubpixelDirection::None => DeviceVector2D::new(0.5, 0.5),
                                     SubpixelDirection::Horizontal => DeviceVector2D::new(0.125, 0.5),
                                     SubpixelDirection::Vertical => DeviceVector2D::new(0.5, 0.125),
+                                    SubpixelDirection::Mixed => DeviceVector2D::new(0.125, 0.125),
                                 }
                             };
                             let text_offset = LayoutVector2D::zero();
@@ -1097,18 +1103,17 @@ impl BatchBuilder {
                             let pic_bounding_rect = if run_scratch.used_font.flags.contains(FontInstanceFlags::TRANSFORM_GLYPHS) {
                                 let mut device_bounding_rect = DeviceRect::default();
 
+                                
                                 let glyph_transform = ctx.spatial_tree.get_relative_transform(
                                     prim_spatial_node_index,
                                     root_spatial_node_index,
-                                ).into_transform()
-                                    .with_destination::<WorldPixel>()
-                                    .then(&euclid::Transform3D::from_scale(ctx.global_device_pixel_scale));
+                                ).into_transform().with_destination::<DevicePixel>();
 
                                 let glyph_translation = DeviceVector2D::new(glyph_transform.m41, glyph_transform.m42);
 
                                 let mut use_tight_bounding_rect = true;
                                 for glyph in glyphs {
-                                    let glyph_offset = prim_data.glyphs[glyph.index_in_text_run as usize].point + prim_header.local_rect.min.to_vector();
+                                    let glyph_offset = prim_data.glyphs[glyph.index_in_text_run as usize].point + prim_header.pattern_rect.min.to_vector();
 
                                     let transformed_offset = match glyph_transform.transform_point2d(glyph_offset) {
                                         Some(transformed_offset) => transformed_offset,
@@ -1150,10 +1155,10 @@ impl BatchBuilder {
                             } else {
                                 let mut local_bounding_rect = LayoutRect::default();
 
-                                let glyph_raster_scale = run_scratch.raster_scale * ctx.global_device_pixel_scale.get();
+                                let glyph_raster_scale = run_scratch.raster_scale;
 
                                 for glyph in glyphs {
-                                    let glyph_offset = prim_data.glyphs[glyph.index_in_text_run as usize].point + prim_header.local_rect.min.to_vector();
+                                    let glyph_offset = prim_data.glyphs[glyph.index_in_text_run as usize].point + prim_header.pattern_rect.min.to_vector();
                                     let glyph_scale = LayoutToDeviceScale::new(glyph_raster_scale / glyph.scale);
                                     let raster_glyph_offset = (glyph_offset * LayoutToDeviceScale::new(glyph_raster_scale) + snap_bias).floor() / glyph.scale;
                                     let local_glyph_rect = LayoutRect::from_origin_and_size(

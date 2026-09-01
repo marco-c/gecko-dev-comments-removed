@@ -503,10 +503,15 @@ impl TextRunTemplate {
         let local_raster = raster_space != RasterSpace::Screen
             || used_font.flags.contains(FontInstanceFlags::TEXTURE_PADDING);
 
+        
+        
+        
+        
         let snap_bias = match subpx_dir {
             SubpixelDirection::None => DeviceVector2D::new(0.5, 0.5),
             SubpixelDirection::Horizontal => DeviceVector2D::new(0.125, 0.5),
             SubpixelDirection::Vertical => DeviceVector2D::new(0.5, 0.125),
+            SubpixelDirection::Mixed => DeviceVector2D::new(0.125, 0.125),
         };
 
         
