@@ -13,56 +13,53 @@ cd devtools/client/debugger
 yarn && node bin/bundle.js
 
 Those steps are done in the devtools-verify-bundle job, prior to calling this script.
-The script will only run `hg status devtools/` and check that no change is detected by
-mercurial.
+The script checks whether regenerating the bundles changed any file under devtools/,
+using the repository's version control system so it works whether the source was
+cloned from Mercurial or Git.
 """
 
 import argparse
 import json
-import subprocess
 import sys
+from pathlib import Path
+
+from mozversioncontrol import get_repository_object
 
 
 
-hg_exclude = "devtools/client/debugger/bin/module-manifest.json"
+exclude = ("devtools/client/debugger/bin/module-manifest.json",)
 
-print("Run `hg status devtools/`")
-status = (
-    subprocess
-    .check_output(["hg", "status", "-n", "devtools/", "-X", hg_exclude])
-    .decode("utf-8")
-    .split("\n")
-)
-print(" status:")
-print("-" * 80)
+
+repo = get_repository_object(path=Path(__file__).resolve().parents[3])
+
+print("Checking for changes under devtools/")
+changed = [
+    path
+    for path in repo.get_changed_files("AMD", mode="all")
+    if path.startswith("devtools/") and path not in exclude
+]
+
+
+diff = repo.diff_stream().read()
+
+
+repo.clean_directory(Path(repo.path) / "devtools")
 
 doc = "https://firefox-source-docs.mozilla.org/devtools/tests/node-tests.html#devtools-bundle"
 
 failures = {}
-for l in status:
-    if not l:
-        
-        continue
-
-    failures[l] = [
+for path in changed:
+    failures[path] = [
         {
-            "path": l,
+            "path": path,
             "line": None,
             "column": None,
             "level": "error",
-            "message": l
+            "message": path
             + " is outdated and needs to be regenerated, "
             + f"instructions at: {doc}",
         }
     ]
-
-
-diff = subprocess.check_output(["hg", "diff", "devtools/", "-X", hg_exclude]).decode(
-    "utf-8"
-)
-
-
-subprocess.check_output(["hg", "revert", "-C", "devtools/"])
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--output", required=True)
