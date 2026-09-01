@@ -91,17 +91,25 @@ add_task(async function test_OS_data() {
   }
 });
 
-add_task(async function test_attributionData() {
-  try {
-    await ClientEnvironmentBase.attribution;
-  } catch (ex) {
-    equal(
-      ex.result,
-      Cr.NS_ERROR_FILE_NOT_FOUND,
-      "Test environment does not have attribution data"
-    );
+add_task(
+  {
+    
+    
+    
+    skip_if: () => AppConstants.MOZ_BUILD_APP != "browser",
+  },
+  async function test_attributionData() {
+    try {
+      await ClientEnvironmentBase.attribution;
+    } catch (ex) {
+      equal(
+        ex.result,
+        Cr.NS_ERROR_FILE_NOT_FOUND,
+        "Test environment does not have attribution data"
+      );
+    }
   }
-});
+);
 
 add_task(async function testLiveTelemetry() {
   
