@@ -120,6 +120,20 @@ class HeaderWord {
   }
 
   
+  void setBitAtomic(uintptr_t flag) {
+    MOZ_ASSERT((flag & RESERVED_MASK) == 0);
+    __atomic_fetch_or(&value_, flag, __ATOMIC_RELAXED);
+  }
+  void clearBitAtomic(uintptr_t flag) {
+    MOZ_ASSERT((flag & RESERVED_MASK) == 0);
+    __atomic_fetch_and(&value_, ~flag, __ATOMIC_RELAXED);
+  }
+  void toggleBitAtomic(uintptr_t flag) {
+    MOZ_ASSERT((flag & RESERVED_MASK) == 0);
+    __atomic_fetch_xor(&value_, flag, __ATOMIC_RELAXED);
+  }
+
+  
   uintptr_t flags() const { return getAtomic() & RESERVED_MASK; }
   bool isForwarded() const { return flags() & FORWARD_BIT; }
   
@@ -706,6 +720,11 @@ class alignas(gc::CellAlignBytes) CellWithLengthAndFlags : public Cell {
   }
   void toggleHeaderFlagBit(uint32_t flag) {
     header_.set(header_.get() ^ uintptr_t(flag));
+  }
+  void setHeaderFlagBitAtomic(uint32_t flag) { header_.setBitAtomic(flag); }
+  void clearHeaderFlagBitAtomic(uint32_t flag) { header_.clearBitAtomic(flag); }
+  void toggleHeaderFlagBitAtomic(uint32_t flag) {
+    header_.toggleBitAtomic(flag);
   }
 
   void setHeaderLengthAndFlags(uint32_t len, uint32_t flags) {
