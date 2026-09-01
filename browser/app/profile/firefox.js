@@ -2504,6 +2504,9 @@ pref("identity.fxaccounts.commands.remoteTabManagement.enabled", true);
 pref("identity.fxaccounts.telemetry.clientAssociationPing.enabled", true);
 
 
+pref("identity.fxaccounts.telemetry.clientInfoPing.enabled", true);
+
+
 
 
 
