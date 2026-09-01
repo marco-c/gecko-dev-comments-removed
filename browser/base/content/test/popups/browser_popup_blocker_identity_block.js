@@ -162,9 +162,9 @@ add_task(async function check_permission_state_change() {
   
   await openPermissionPopup();
   let menulist = document.getElementById("permission-popup-menulist");
-  menulist.menupopup.openPopup(); 
+  
   let menuitem = menulist.getElementsByTagName("menuitem")[0];
-  menuitem.click();
+  await BrowserTestUtils.selectMenulistItem(menuitem);
   await closePermissionPopup();
 
   state = SitePermissions.getForPrincipal(PRINCIPAL, "popup", gBrowser).state;
@@ -201,9 +201,9 @@ add_task(async function check_permission_state_change() {
   
   await openPermissionPopup();
   menulist = document.getElementById("permission-popup-menulist");
-  menulist.menupopup.openPopup(); 
+  
   menuitem = menulist.getElementsByTagName("menuitem")[1];
-  menuitem.click();
+  await BrowserTestUtils.selectMenulistItem(menuitem);
   await closePermissionPopup();
 
   
