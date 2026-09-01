@@ -623,6 +623,15 @@ fn flac_streaminfo() -> Vec<u8> {
     ]
 }
 
+fn flac_streaminfo_with_sample_rate(sample_rate: u32) -> Vec<u8> {
+    assert!(sample_rate < 1 << 20);
+    let mut stream_info = flac_streaminfo();
+    stream_info[10] = (sample_rate >> 12) as u8;
+    stream_info[11] = (sample_rate >> 4) as u8;
+    stream_info[12] = (stream_info[12] & 0x0f) | ((sample_rate as u8 & 0x0f) << 4);
+    stream_info
+}
+
 #[test]
 fn read_flac() {
     let mut stream = make_box(BoxSize::Auto, b"fLaC", |s| {
@@ -649,6 +658,45 @@ fn read_flac() {
     let mut stream = iter.next_box().unwrap().unwrap();
     let r = super::read_audio_sample_entry(&mut stream, ParseStrictness::Normal);
     assert!(r.is_ok());
+}
+
+#[test]
+fn read_high_rate_flac_preserves_sample_entry_rate() {
+    let mut stream = make_box(BoxSize::Auto, b"fLaC", |s| {
+        s.append_repeated(0, 6) 
+            .B16(1) 
+            .B32(0) 
+            .B32(0) 
+            .B16(2) 
+            .B16(16) 
+            .B16(0) 
+            .B16(0) 
+            .B32(48000 << 16) 
+            .append_bytes(
+                &make_dfla(
+                    FlacBlockType::StreamInfo,
+                    true,
+                    &flac_streaminfo_with_sample_rate(96000),
+                    FlacBlockLength::Correct,
+                )
+                .into_inner(),
+            )
+    });
+    let mut iter = super::BoxIter::new(&mut stream);
+    let mut stream = iter.next_box().unwrap().unwrap();
+    let sample_entry =
+        super::read_audio_sample_entry(&mut stream, ParseStrictness::Normal).unwrap();
+
+    let super::SampleEntry::Audio(audio) = sample_entry else {
+        panic!("expected an audio sample entry");
+    };
+    assert_eq!(audio.samplerate, 48000.0);
+    let super::AudioCodecSpecific::FLACSpecificBox(flac) = audio.codec_specific else {
+        panic!("expected FLAC codec-specific metadata");
+    };
+    assert_eq!(flac.stream_info.sample_rate, 96000);
+    assert_eq!(flac.stream_info.channel_count, 2);
+    assert_eq!(flac.stream_info.bits_per_sample, 16);
 }
 
 #[derive(Clone, Copy)]
@@ -691,6 +739,24 @@ fn make_dfla(
     })
 }
 
+fn make_dfla_with_trailing_bytes(trailing: &[u8]) -> Cursor<Vec<u8>> {
+    make_fullbox(BoxSize::Auto, b"dfLa", 0, |s| {
+        s.B32(flac_streaminfo().len() as u32)
+            .append_bytes(&flac_streaminfo())
+            .append_bytes(trailing)
+    })
+}
+
+fn read_test_dfla(
+    mut stream: Cursor<Vec<u8>>,
+    strictness: ParseStrictness,
+) -> super::Result<super::FLACSpecificBox> {
+    let mut iter = super::BoxIter::new(&mut stream);
+    let mut stream = iter.next_box()?.unwrap();
+    assert_eq!(stream.head.name, BoxType::FLACSpecificBox);
+    super::read_dfla(&mut stream, strictness)
+}
+
 #[test]
 fn read_dfla() {
     let mut stream = make_dfla(
@@ -702,24 +768,90 @@ fn read_dfla() {
     let mut iter = super::BoxIter::new(&mut stream);
     let mut stream = iter.next_box().unwrap().unwrap();
     assert_eq!(stream.head.name, BoxType::FLACSpecificBox);
-    let dfla = super::read_dfla(&mut stream).unwrap();
+    let dfla = super::read_dfla(&mut stream, ParseStrictness::Normal).unwrap();
     assert_eq!(dfla.version, 0);
+    assert_eq!(dfla.stream_info.sample_rate, 44100);
+    assert_eq!(dfla.stream_info.channel_count, 2);
+    assert_eq!(dfla.stream_info.bits_per_sample, 16);
 }
 
 #[test]
 fn long_flac_metadata() {
     let streaminfo = flac_streaminfo();
-    let mut stream = make_dfla(
-        FlacBlockType::StreamInfo,
-        true,
-        &streaminfo,
-        FlacBlockLength::Incorrect(streaminfo.len() + 4),
-    );
-    let mut iter = super::BoxIter::new(&mut stream);
-    let mut stream = iter.next_box().unwrap().unwrap();
-    assert_eq!(stream.head.name, BoxType::FLACSpecificBox);
-    let r = super::read_dfla(&mut stream);
-    assert!(r.is_err());
+    for strictness in [
+        ParseStrictness::Permissive,
+        ParseStrictness::Normal,
+        ParseStrictness::Strict,
+    ] {
+        let stream = make_dfla(
+            FlacBlockType::StreamInfo,
+            true,
+            &streaminfo,
+            FlacBlockLength::Incorrect(streaminfo.len() + 4),
+        );
+        assert!(matches!(
+            read_test_dfla(stream, strictness),
+            Err(Error::InvalidData(Status::DflaBadMetadataBlockSize))
+        ));
+    }
+}
+
+#[test]
+fn oversized_trailing_flac_metadata_respects_strictness() {
+    
+    let trailing = [0x81, 0x00, 0x00, 0x04, 0x00, 0x00];
+
+    for strictness in [ParseStrictness::Permissive, ParseStrictness::Normal] {
+        let dfla = read_test_dfla(make_dfla_with_trailing_bytes(&trailing), strictness).unwrap();
+        assert_eq!(dfla.blocks.len(), 1);
+        assert_eq!(dfla.stream_info.sample_rate, 44100);
+    }
+
+    assert!(matches!(
+        read_test_dfla(
+            make_dfla_with_trailing_bytes(&trailing),
+            ParseStrictness::Strict
+        ),
+        Err(Error::InvalidData(Status::DflaBadMetadataBlockSize))
+    ));
+}
+
+#[test]
+fn short_trailing_flac_metadata_header_respects_strictness() {
+    
+    let trailing = [0x81, 0x00];
+
+    for strictness in [ParseStrictness::Permissive, ParseStrictness::Normal] {
+        let dfla = read_test_dfla(make_dfla_with_trailing_bytes(&trailing), strictness).unwrap();
+        assert_eq!(dfla.blocks.len(), 1);
+        assert_eq!(dfla.stream_info.sample_rate, 44100);
+    }
+
+    assert!(matches!(
+        read_test_dfla(
+            make_dfla_with_trailing_bytes(&trailing),
+            ParseStrictness::Strict
+        ),
+        Err(Error::UnexpectedEOF)
+    ));
+}
+
+#[test]
+fn physically_truncated_trailing_flac_metadata_is_rejected() {
+    
+    
+    let trailing = [0x81, 0x00, 0x00, 0x04, 0x00, 0x00];
+
+    for strictness in [
+        ParseStrictness::Permissive,
+        ParseStrictness::Normal,
+        ParseStrictness::Strict,
+    ] {
+        let mut stream = make_dfla_with_trailing_bytes(&trailing);
+        let declared_size = u32::from_be_bytes(stream.get_ref()[0..4].try_into().unwrap()) + 2;
+        stream.get_mut()[0..4].copy_from_slice(&declared_size.to_be_bytes());
+        assert!(read_test_dfla(stream, strictness).is_err());
+    }
 }
 
 #[test]
@@ -1121,6 +1253,205 @@ fn read_esds_mpeg2_aac_lc() {
 }
 
 #[test]
+fn read_esds_truncated_dsi() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let aac_esds = vec![
+        0x03, 0x1a, // ES_Descriptor tag, len=26
+        0x00, 0x00, 0x00, // ES_ID + flags
+        0x04, 0x12, // DC_Descriptor tag, len=18
+        0x40, 0x15, 0x00, 0x00, 0x00, // objType=AAC, streamType, bufferSize
+        0x00, 0x00, 0x00, 0x00, // maxBitrate
+        0x00, 0x00, 0x00, 0x00, // avgBitrate
+        0x05, 0x03, 0x2b, 0x92, 0x08, // DSI: truncated HE-AAC
+        0x06, 0x01, 0x02, // SL_Descriptor
+    ];
+    let aac_dc_descriptor = &aac_esds[22..25];
+
+    let mut stream = make_box(BoxSize::Auto, b"esds", |s| {
+        s.B32(0) 
+            .append_bytes(aac_esds.as_slice())
+    });
+    let mut iter = super::BoxIter::new(&mut stream);
+    let mut stream = iter.next_box().unwrap().unwrap();
+
+    let es = super::read_esds(&mut stream, ParseStrictness::Normal).unwrap();
+
+    assert_eq!(es.audio_codec, super::CodecType::AAC);
+    assert_eq!(es.audio_object_type, Some(2));
+    assert_eq!(es.extended_audio_object_type, Some(5));
+    assert_eq!(es.audio_sample_rate, Some(22050));
+    assert_eq!(es.audio_channel_count, Some(2));
+    assert_eq!(es.codec_esds, aac_esds);
+    assert_eq!(es.decoder_specific_data, aac_dc_descriptor);
+}
+
+#[test]
+fn read_esds_duplicate_dsi() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let aac_esds = vec![
+        0x03, 0x1d, // ES_Descriptor tag, len=29
+        0x00, 0x00, 0x00, // ES_ID + flags
+        0x04, 0x15, // DC_Descriptor tag, len=21
+        0x40, 0x15, 0x00, 0x00, 0x00, // objType=AAC, streamType, bufferSize
+        0x00, 0x00, 0x01, 0xf4, // maxBitrate
+        0x00, 0x00, 0x01, 0xf4, // avgBitrate
+        0x05, 0x02, 0x11, 0x90, // DSI #1 (kept)
+        0x05, 0x02, 0x11, 0x90, // DSI #2 (ignored in non-strict)
+        0x06, 0x01, 0x02, // SL_Descriptor
+    ];
+    let aac_dc_descriptor = &aac_esds[22..24];
+
+    let mut stream = make_box(BoxSize::Auto, b"esds", |s| {
+        s.B32(0) 
+            .append_bytes(aac_esds.as_slice())
+    });
+    let mut iter = super::BoxIter::new(&mut stream);
+    let mut stream = iter.next_box().unwrap().unwrap();
+
+    let es = super::read_esds(&mut stream, ParseStrictness::Normal).unwrap();
+
+    assert_eq!(es.audio_codec, super::CodecType::AAC);
+    assert_eq!(es.audio_object_type, Some(2));
+    assert_eq!(es.extended_audio_object_type, None);
+    assert_eq!(es.audio_sample_rate, Some(48000));
+    assert_eq!(es.audio_channel_count, Some(2));
+    assert_eq!(es.codec_esds, aac_esds);
+    
+    assert_eq!(es.decoder_specific_data, aac_dc_descriptor);
+}
+
+#[test]
+fn read_esds_duplicate_dsi_strict() {
+    
+    
+    let aac_esds = vec![
+        0x03, 0x1d, 0x00, 0x00, 0x00, 0x04, 0x15, 0x40, 0x15, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+        0xf4, 0x00, 0x00, 0x01, 0xf4, 0x05, 0x02, 0x11, 0x90, 0x05, 0x02, 0x11, 0x90, 0x06, 0x01,
+        0x02,
+    ];
+
+    let mut stream = make_box(BoxSize::Auto, b"esds", |s| {
+        s.B32(0) 
+            .append_bytes(aac_esds.as_slice())
+    });
+    let mut iter = super::BoxIter::new(&mut stream);
+    let mut stream = iter.next_box().unwrap().unwrap();
+
+    match super::read_esds(&mut stream, ParseStrictness::Strict) {
+        Err(Error::InvalidData(Status::EsdsDecSpecificInfoTagQuantity)) => {}
+        other => panic!(
+            "expected EsdsDecSpecificInfoTagQuantity in strict mode, got {:?}",
+            other
+        ),
+    }
+}
+
+#[test]
+fn read_esds_duplicate_dsi_disagreeing() {
+    
+    
+    
+    
+    
+    let aac_esds = vec![
+        0x03, 0x1d, // ES_Descriptor tag, len=29
+        0x00, 0x00, 0x00, // ES_ID + flags
+        0x04, 0x15, // DC_Descriptor tag, len=21
+        0x40, 0x15, 0x00, 0x00, 0x00, // objType=AAC, streamType, bufferSize
+        0x00, 0x00, 0x01, 0xf4, // maxBitrate
+        0x00, 0x00, 0x01, 0xf4, // avgBitrate
+        0x05, 0x02, 0x11, 0x90, // DSI #1: 48 kHz stereo (kept)
+        0x05, 0x02, 0x12, 0x88, // DSI #2: 32 kHz mono (ignored in non-strict)
+        0x06, 0x01, 0x02, // SL_Descriptor
+    ];
+    let dsi1 = &aac_esds[22..24];
+
+    let mut stream = make_box(BoxSize::Auto, b"esds", |s| {
+        s.B32(0) 
+            .append_bytes(aac_esds.as_slice())
+    });
+    let mut iter = super::BoxIter::new(&mut stream);
+    let mut stream = iter.next_box().unwrap().unwrap();
+
+    let es = super::read_esds(&mut stream, ParseStrictness::Normal).unwrap();
+
+    assert_eq!(es.audio_codec, super::CodecType::AAC);
+    assert_eq!(es.audio_object_type, Some(2));
+    assert_eq!(es.extended_audio_object_type, None);
+    
+    assert_eq!(es.audio_sample_rate, Some(48000));
+    assert_eq!(es.audio_channel_count, Some(2));
+    assert_eq!(es.decoder_specific_data, dsi1);
+}
+
+#[test]
+fn read_esds_truncated_dsi_pce() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let aac_esds = vec![
+        0x03, 0x19, // ES_Descriptor tag, len=25
+        0x00, 0x00, 0x00, // ES_ID + flags
+        0x04, 0x11, // DC_Descriptor tag, len=17
+        0x40, 0x15, 0x00, 0x00, 0x00, // objType=AAC, streamType, bufferSize
+        0x00, 0x00, 0x01, 0xf4, // maxBitrate
+        0x00, 0x00, 0x01, 0xf4, // avgBitrate
+        0x05, 0x02, 0x11, 0x80, // DSI: AAC-LC 48 kHz PCE, truncated mid-PCE
+        0x06, 0x01, 0x02, // SL_Descriptor
+    ];
+
+    let mut stream = make_box(BoxSize::Auto, b"esds", |s| {
+        s.B32(0) 
+            .append_bytes(aac_esds.as_slice())
+    });
+    let mut iter = super::BoxIter::new(&mut stream);
+    let mut stream = iter.next_box().unwrap().unwrap();
+
+    let es = super::read_esds(&mut stream, ParseStrictness::Normal).unwrap();
+
+    assert_eq!(es.audio_codec, super::CodecType::AAC);
+    assert_eq!(es.audio_object_type, Some(2));
+    assert_eq!(es.extended_audio_object_type, None);
+    assert_eq!(es.audio_sample_rate, Some(48000));
+    
+    
+    assert_eq!(es.audio_channel_count, None);
+    assert!(es.decoder_specific_data.is_empty());
+}
+
+#[test]
 fn read_stsd_mp4v() {
     let mp4v = vec![
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -1433,4 +1764,64 @@ fn read_clli() {
     let clli = super::read_clli(&mut stream).unwrap();
     assert_eq!(clli.max_content_light_level, 1000);
     assert_eq!(clli.max_pic_average_light_level, 400);
+}
+
+#[test]
+fn read_colr_nclx() {
+    let mut stream = make_box(BoxSize::Auto, b"colr", |s| {
+        s.append_bytes(b"nclx").B16(1).B16(1).B16(1).B8(0x80)
+    });
+    let mut iter = super::BoxIter::new(&mut stream);
+    let mut stream = iter.next_box().unwrap().unwrap();
+    assert_eq!(stream.head.name, super::BoxType::ColourInformationBox);
+    let colour_type = super::be_u32(&mut stream).unwrap().to_be_bytes();
+    match super::read_colr(&mut stream, colour_type, ParseStrictness::Strict).unwrap() {
+        super::ParsedColourInformation::Supported(super::ColourInformation::Nclx(nclx)) => {
+            assert_eq!(nclx.colour_primaries, 1);
+            assert_eq!(nclx.transfer_characteristics, 1);
+            assert_eq!(nclx.matrix_coefficients, 1);
+            assert!(nclx.full_range_flag);
+        }
+        _ => panic!("expected nclx colour information"),
+    }
+}
+
+#[test]
+fn read_colr_nclx_missing_full_range_flag() {
+    
+    
+    
+    let make_stream = || {
+        make_box(BoxSize::Auto, b"colr", |s| {
+            s.append_bytes(b"nclx").B16(1).B16(1).B16(1)
+        })
+    };
+
+    for strictness in [ParseStrictness::Permissive, ParseStrictness::Normal] {
+        let mut stream = make_stream();
+        let mut iter = super::BoxIter::new(&mut stream);
+        let mut stream = iter.next_box().unwrap().unwrap();
+        let colour_type = super::be_u32(&mut stream).unwrap().to_be_bytes();
+        let colr = super::read_colr(&mut stream, colour_type, strictness)
+            .expect("nclx missing full_range_flag should parse outside Strict");
+        match colr {
+            super::ParsedColourInformation::Supported(super::ColourInformation::Nclx(nclx)) => {
+                assert!(
+                    !nclx.full_range_flag,
+                    "missing full_range_flag should default to limited range"
+                );
+            }
+            _ => panic!("expected nclx colour information"),
+        }
+    }
+
+    let mut stream = make_stream();
+    let mut iter = super::BoxIter::new(&mut stream);
+    let mut stream = iter.next_box().unwrap().unwrap();
+    let colour_type = super::be_u32(&mut stream).unwrap().to_be_bytes();
+    match super::read_colr(&mut stream, colour_type, ParseStrictness::Strict) {
+        Err(Error::InvalidData(s)) => assert_eq!(s, Status::ColrBadSize),
+        Ok(_) => panic!("nclx missing full_range_flag should be rejected under Strict"),
+        Err(e) => panic!("unexpected error {:?}", e),
+    }
 }
