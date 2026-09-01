@@ -3163,8 +3163,8 @@ mozilla::ipc::IPCResult BrowserChild::RecvRenderLayers(const bool& aEnabled) {
   } else {
     
     
-    presShell->PaintAndRequestComposite(presShell->GetRootFrame(),
-                                        mPuppetWidget->GetWindowRenderer(),
+    RefPtr<WindowRenderer> renderer = mPuppetWidget->GetWindowRenderer();
+    presShell->PaintAndRequestComposite(presShell->GetRootFrame(), renderer,
                                         PaintFlags::None);
   }
   presShell->SuppressDisplayport(false);
