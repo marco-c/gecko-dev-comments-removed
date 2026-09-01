@@ -34,16 +34,6 @@ fn stops_and_min_alpha(stop_keys: &[GradientStopKey]) -> (Vec<GradientStop>, f32
     (stops, min_alpha)
 }
 
-
-
-
-
-
-
-
-
-pub use api::prim_geometry::apply_gradient_local_clip;
-
 #[test]
 #[cfg(target_pointer_width = "64")]
 fn test_struct_sizes() {
