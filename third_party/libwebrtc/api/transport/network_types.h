@@ -227,7 +227,6 @@ struct RTC_EXPORT NetworkEstimate {
   
   DataRate bandwidth = DataRate::Infinity();
   TimeDelta round_trip_time = TimeDelta::PlusInfinity();
-  TimeDelta bwe_period = TimeDelta::PlusInfinity();
 
   float loss_rate_ratio = 0;
 };

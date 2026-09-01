@@ -210,9 +210,6 @@ NetworkControlUpdate ScreamNetworkController::CreateUpdate(Timestamp now) {
     target_rate_msg.target_rate = scream_->target_rate();
     target_rate_msg.network_estimate.at_time = now;
     target_rate_msg.network_estimate.round_trip_time = scream_->rtt();
-    
-    
-    target_rate_msg.network_estimate.bwe_period = TimeDelta::Millis(25);
     target_rate_msg.is_bandwidth_limited = is_bandwidth_limited;
     update.target_rate = target_rate_msg;
   }

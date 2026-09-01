@@ -63,8 +63,7 @@ class AimdRateControl {
 
   
   double GetNearMaxIncreaseRateBpsPerSecond() const;
-  
-  TimeDelta GetExpectedBandwidthPeriod() const;
+
 
  private:
   enum class RateControlState { kRcHold, kRcIncrease, kRcDecrease };
