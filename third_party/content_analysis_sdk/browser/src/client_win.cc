@@ -17,7 +17,9 @@
 namespace content_analysis {
 namespace sdk {
 
-const DWORD kBufferSize = 4096;
+
+
+const DWORD kBufferSize = 65536;
 
 
 
@@ -420,7 +422,11 @@ DWORD ClientWin::ConnectToPipe(const std::string& pipename, HANDLE* handle) {
 
 void ClientWin::Shutdown() {
   if (hPipe_ != INVALID_HANDLE_VALUE) {
-    FlushFileBuffers(hPipe_);
+    
+    
+    
+    
+    
     CloseHandle(hPipe_);
     hPipe_ = INVALID_HANDLE_VALUE;
   }
