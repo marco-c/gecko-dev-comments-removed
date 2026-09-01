@@ -7,6 +7,10 @@
 
 "use strict";
 
+ChromeUtils.defineESModuleGetters(this, {
+  SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
+});
+
 const TEST_PROVIDER_INFO = [
   {
     telemetryId: "example",
@@ -46,6 +50,22 @@ add_setup(async function () {
   
   let oldCanRecord = Services.telemetry.canRecordExtended;
   Services.telemetry.canRecordExtended = true;
+
+  
+  
+  
+  await SearchTestUtils.installSearchExtension(
+    {
+      name: "Example",
+      search_url:
+        getRootDirectory(gTestPath).replace(
+          "chrome://mochitests/content",
+          "https://example.org"
+        ) + "searchTelemetryAd_searchbox_with_content.html",
+      search_url_get_params: "s={searchTerms}&abc=ff",
+    },
+    { setAsDefault: true }
+  );
 
   registerCleanupFunction(async () => {
     SearchSERPTelemetry.overrideSearchTelemetryForTests();
@@ -418,4 +438,40 @@ add_task(async function test_refinement_button_vs_opened_in_new_tab() {
 
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
+});
+
+
+
+
+
+add_task(async function test_source_errorpage() {
+  resetTelemetry();
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
+  let pageLoadPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  await SearchUIUtils.loadSearch({
+    window,
+    searchText: "test",
+    triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+    sapSource: "errorpage",
+  });
+  await pageLoadPromise;
+  await waitForPageWithAdImpressions();
+
+  assertSERPTelemetry([
+    {
+      impression: {
+        source: "errorpage",
+      },
+      adImpressions: [
+        {
+          component: SearchSERPTelemetryUtils.COMPONENTS.REFINED_SEARCH_BUTTONS,
+          ads_loaded: "1",
+          ads_visible: "1",
+          ads_hidden: "0",
+        },
+      ],
+    },
+  ]);
+
+  BrowserTestUtils.removeTab(tab);
 });
