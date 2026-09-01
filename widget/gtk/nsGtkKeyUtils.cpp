@@ -1610,6 +1610,7 @@ void KeymapWrapper::HandleKeyPressEvent(nsWindow* aWindow,
   KeyHandlingState handlingState = KeyHandlingState::eNotHandled;
   RefPtr<IMContextWrapper> imContext = aWindow->GetIMContext();
   if (imContext) {
+    DebugOnly<bool> isEditable = imContext->IsEditable();
     IMEWasEnabled = imContext->IsEnabled();
     handlingState = imContext->OnKeyEvent(aWindow, aGdkKeyEvent);
     if (handlingState == KeyHandlingState::eHandled) {
@@ -1618,6 +1619,11 @@ void KeymapWrapper::HandleKeyPressEvent(nsWindow* aWindow,
                "IMContextWrapper"));
       return;
     }
+    
+    
+    
+    MOZ_ASSERT_IF(!isEditable,
+                  imContext->GetCommittedGraphemeCluster().IsVoid());
   }
 
   

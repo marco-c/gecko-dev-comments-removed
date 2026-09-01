@@ -835,6 +835,8 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
     bool aKeyboardEventWasDispatched ) {
   MOZ_ASSERT(aEvent, "aEvent must be non-null");
 
+  mGraphemeClusterFallbackToKeyEvent.SetIsVoid(true);
+
   if (mPendingKeyEvents.HasNonProcessedEvents()) {
     
     
@@ -1093,7 +1095,6 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
     
   }
 
-  mGraphemeClusterFallbackToKeyEvent.SetIsVoid(true);
   mHandlingKeyEvent = aEvent;
   gboolean isFiltered = gtk_im_context_filter_keypress(currentContext, aEvent);
 
