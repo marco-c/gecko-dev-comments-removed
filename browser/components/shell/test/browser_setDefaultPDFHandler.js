@@ -2,6 +2,7 @@
 
 
 ChromeUtils.defineESModuleGetters(this, {
+  ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   NimbusTestUtils: "resource://testing-common/NimbusTestUtils.sys.mjs",
@@ -51,10 +52,16 @@ const shellStub = sinon.stub(ShellService, "shellService").value({
   QueryInterface: ChromeUtils.generateQI([]),
 });
 
+
+
+
+const sendTriggerStub = sinon.stub(ASRouter, "sendTriggerMessage");
+
 registerCleanupFunction(() => {
   defaultAgentStub.restore();
   _userChoiceImpossibleTelemetryResultStub.restore();
   shellStub.restore();
+  sendTriggerStub.restore();
 });
 
 add_task(async function ready() {
