@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 add_task(async function tabs_discarded_load_and_discard() {
