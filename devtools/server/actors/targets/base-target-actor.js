@@ -323,9 +323,7 @@ class BaseTargetActor extends Actor {
 
   
   
-  
-  
-  #enabledHighlighters = new Set();
+  #enabledHighlighters = new Map();
 
   
 
@@ -345,15 +343,16 @@ class BaseTargetActor extends Actor {
       }
       const highlighter = await inspectorActor.getHighlighterByType(type);
       promises.push(highlighter.show());
-      this.#enabledHighlighters.add({ type, highlighter });
+      this.#enabledHighlighters.set(type, highlighter);
     }
 
     
-    for (const { type, highlighter } of this.#enabledHighlighters) {
+    for (const [type, highlighter] of this.#enabledHighlighters) {
       if (enabledHighlighters.includes(type)) {
         continue;
       }
-      promises.push(highlighter.hide());
+      highlighter.hide();
+      this.#enabledHighlighters.delete(type);
     }
 
     await Promise.all(promises);
