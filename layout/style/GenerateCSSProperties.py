@@ -250,6 +250,11 @@ interface CSSFontFaceDescriptors : CSSStyleDeclaration {
             extendedAttrs.append('Pref="%s"' % d.gecko_pref)
         if idl_name != d.name:
             extendedAttrs.append('BindingAlias="%s"' % d.name)
+        for alias in d.aliases:
+            alias_idl_name = data.to_idl_name(alias)
+            if alias_idl_name != alias:
+                 extendedAttrs.append('BindingAlias="%s"' % alias)
+            extendedAttrs.append('BindingAlias="%s"' % alias_idl_name)
         output.write(generateLine(idl_name, extendedAttrs))
     output.write("};\n")
     return deps
@@ -574,6 +579,7 @@ def gen_css_properties_js(output):
         "-moz-top-layer",                     
         "-moz-min-font-size-ratio",           
         "-moz-box-collapse",                  
+        "-moz-line-scroll-amount",            
         "-moz-image-decoding",                
         "-moz-subtree-hidden-only-visually",  
         "-moz-user-focus",                    

@@ -306,12 +306,11 @@ bool AnchorPosResolutionParams::AutoResolutionOverrideParams::OverriddenToZero(
 static AnchorPosResolutionParams::AutoResolutionOverrideParams
 GetAutoResolutionOverrideParams(const nsIFrame* aFrame,
                                 bool aDefaultAnchorValid) {
-  if (!aFrame) {
+  if (!aFrame || !aDefaultAnchorValid) {
     return {};
   }
   nsIFrame* parent = aFrame->GetParent();
-  if (!parent || !aFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) ||
-      !aDefaultAnchorValid) {
+  if (!parent || !aFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
     return {};
   }
 
@@ -2312,7 +2311,6 @@ nsStyleDisplay::nsStyleDisplay()
       mWebkitLineClamp{
           {StyleOptional<StyleInteger>::None(), StyleMaxLinesKeyword::None},
           StyleBlockEllipsis::Ellipsis(),
-          false,
           false},
       mShapeMargin(LengthPercentage::Zero()),
       mShapeOutside(StyleShapeOutside::None()) {
@@ -3367,6 +3365,7 @@ nsStyleUIReset::nsStyleUIReset()
       mWindowDragging(StyleWindowDragging::Default),
       mWindowShadow(StyleWindowShadow::Auto),
       mFieldSizing(StyleFieldSizing::Fixed),
+      mMozLineScrollAmount(NonNegativeLengthOrAuto::Auto()),
       mMozWindowInputRegionMargin(StyleLength::Zero()),
       mTransitions(
           nsStyleAutoArray<StyleTransition>::WITH_SINGLE_INITIAL_ELEMENT),
@@ -3412,6 +3411,7 @@ nsStyleUIReset::nsStyleUIReset(const nsStyleUIReset& aSource)
       mWindowDragging(aSource.mWindowDragging),
       mWindowShadow(aSource.mWindowShadow),
       mFieldSizing(aSource.mFieldSizing),
+      mMozLineScrollAmount(aSource.mMozLineScrollAmount),
       mMozWindowInputRegionMargin(aSource.mMozWindowInputRegionMargin),
       mMozWindowTransform(aSource.mMozWindowTransform),
       mTransitions(aSource.mTransitions.Clone()),
@@ -3522,6 +3522,7 @@ nsChangeHint nsStyleUIReset::CalcDifference(
        mAnimationRangeEndCount != aNewData.mAnimationRangeEndCount ||
        mIMEMode != aNewData.mIMEMode ||
        mWindowOpacity != aNewData.mWindowOpacity ||
+       mMozLineScrollAmount != aNewData.mMozLineScrollAmount ||
        mMozWindowInputRegionMargin != aNewData.mMozWindowInputRegionMargin ||
        mMozWindowTransform != aNewData.mMozWindowTransform ||
        mScrollTimelines != aNewData.mScrollTimelines ||

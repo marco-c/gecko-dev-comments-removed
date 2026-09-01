@@ -2156,6 +2156,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset {
   mozilla::StyleFieldSizing mFieldSizing;
 
   
+  
+  mozilla::NonNegativeLengthOrAuto mMozLineScrollAmount;
+
+  
   mozilla::StyleLength mMozWindowInputRegionMargin;
   mozilla::StyleTransform mMozWindowTransform;
 
