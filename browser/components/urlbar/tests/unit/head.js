@@ -638,7 +638,7 @@ function makeTabSwitchResult(
     title,
     
     icon: typeof iconUri != "undefined" ? iconUri : `page-icon:${uri}`,
-    userContextId: userContextId || 0,
+    userContext: UrlbarUtils.getUserContextData(userContextId || 0),
     tabGroup,
   };
 
