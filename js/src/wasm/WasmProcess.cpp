@@ -108,6 +108,11 @@ bool wasm::InCompiledCode(void* pc) {
 #  if defined(__riscv)
 
 static const size_t MinAddressBitsForHugeMemory = 47;
+#  elif defined(__loongarch__) && (__loongarch_grlen == 64)
+
+
+
+static const size_t MinAddressBitsForHugeMemory = 47;
 #  else
 
 
