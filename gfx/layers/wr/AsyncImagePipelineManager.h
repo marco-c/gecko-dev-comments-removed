@@ -98,6 +98,15 @@ class AsyncImagePipelineManager final {
 
   void AddAsyncImagePipeline(const wr::PipelineId& aPipelineId,
                              WebRenderImageHost* aImageHost);
+  
+  
+  
+  
+  
+  bool HasLivePipeline(const wr::PipelineId& aPipelineId) const {
+    auto* holder = mPipelineTexturesHolders.Get(wr::AsUint64(aPipelineId));
+    return holder && holder->mDestroyedEpoch.isNothing();
+  }
   void RemoveAsyncImagePipeline(const wr::PipelineId& aPipelineId,
                                 AsyncImagePipelineOps* aPendingOps,
                                 wr::TransactionBuilder& aTxn);

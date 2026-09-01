@@ -42,8 +42,8 @@ CompositorManagerParent::CreateSameProcess(uint32_t aNamespace) {
   
   
   
-  RefPtr<CompositorManagerParent> parent =
-      new CompositorManagerParent(dom::ContentParentId(), aNamespace);
+  RefPtr<CompositorManagerParent> parent = new CompositorManagerParent(
+      dom::ContentParentId(), aNamespace,  0);
   parent->SetOtherEndpointProcInfo(ipc::EndpointProcInfo::Current());
   return parent.forget();
 }
@@ -51,7 +51,8 @@ CompositorManagerParent::CreateSameProcess(uint32_t aNamespace) {
 
 bool CompositorManagerParent::Create(
     Endpoint<PCompositorManagerParent>&& aEndpoint,
-    dom::ContentParentId aChildId, uint32_t aNamespace, bool aIsRoot) {
+    dom::ContentParentId aChildId, uint32_t aNamespace,
+    uint32_t aContentBridgeNamespace, bool aIsRoot) {
   MOZ_ASSERT(NS_IsMainThread());
 
   
@@ -62,8 +63,8 @@ bool CompositorManagerParent::Create(
     return false;
   }
 
-  RefPtr<CompositorManagerParent> bridge =
-      new CompositorManagerParent(aChildId, aNamespace);
+  RefPtr<CompositorManagerParent> bridge = new CompositorManagerParent(
+      aChildId, aNamespace, aContentBridgeNamespace);
 
   RefPtr<Runnable> runnable =
       NewRunnableMethod<Endpoint<PCompositorManagerParent>&&, bool>(
@@ -114,11 +115,13 @@ CompositorManagerParent::CreateSameProcessWidgetCompositorBridge(
 }
 
 CompositorManagerParent::CompositorManagerParent(
-    dom::ContentParentId aContentId, uint32_t aNamespace)
+    dom::ContentParentId aContentId, uint32_t aNamespace,
+    uint32_t aContentBridgeNamespace)
     : mCompositorThreadHolder(CompositorThreadHolder::GetSingleton()),
       mSharedSurfacesHolder(MakeRefPtr<SharedSurfacesHolder>(aNamespace)),
       mContentId(aContentId),
-      mNamespace(aNamespace) {}
+      mNamespace(aNamespace),
+      mContentBridgeNamespace(aContentBridgeNamespace) {}
 
 CompositorManagerParent::~CompositorManagerParent() = default;
 
@@ -227,6 +230,17 @@ CompositorManagerParent::AllocPCompositorBridgeParent(
     const CompositorBridgeOptions& aOpt, const uint32_t& aNamespace) {
   switch (aOpt.type()) {
     case CompositorBridgeOptions::TContentCompositorOptions: {
+      
+      
+      
+      
+      
+      if (NS_WARN_IF(mContentBridgeNamespace == 0 ||
+                     aNamespace != mContentBridgeNamespace)) {
+        MOZ_ASSERT_UNREACHABLE("Invalid content compositor namespace!");
+        break;
+      }
+
       RefPtr bridge =
           MakeRefPtr<ContentCompositorBridgeParent>(this, aNamespace);
       return bridge.forget();

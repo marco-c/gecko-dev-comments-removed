@@ -1328,8 +1328,8 @@ bool WebRenderBridgeParent::SetDisplayList(
     pipelineId = gfx::GetTemporaryWebRenderPipelineId(pipelineId);
   }
 
-  aTxn.SetDisplayList(aWrEpoch, pipelineId, aDLDesc, dlItems,
-                      dlSpatialTreeData);
+  aTxn.SetDisplayList(aWrEpoch, mLateInit->mIdNamespace, pipelineId, aDLDesc,
+                      dlItems, dlSpatialTreeData);
 
   if (aRenderOffscreen) {
     aTxn.RenderOffscreen(pipelineId);
@@ -2121,6 +2121,17 @@ void WebRenderBridgeParent::AddPipelineIdForCompositable(
     return;
   }
 
+  
+  
+  
+  
+  
+  if (mLateInit->mAsyncImageManager->HasLivePipeline(aPipelineId)) {
+    gfxCriticalNote << "Content attempted AddPipelineIdForCompositable with "
+                       "pipelineId already registered";
+    return;
+  }
+
   wrHost->SetWrBridge(aPipelineId, this);
   mAsyncCompositables.emplace(wr::AsUint64(aPipelineId), wrHost);
   mLateInit->mAsyncImageManager->AddAsyncImagePipeline(aPipelineId, wrHost);
@@ -2227,7 +2238,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvClearCachedResources() {
   
   wr::TransactionBuilder txn(mLateInit->mApi);
   txn.SetLowPriority(true);
-  txn.ClearDisplayList(GetNextWrEpoch(), mPipelineId);
+  txn.ClearDisplayList(GetNextWrEpoch(), mLateInit->mIdNamespace, mPipelineId);
   MaybeNotifyOfLayers(txn, false);
   mLateInit->mApi->SendTransaction(txn);
 
@@ -3053,7 +3064,7 @@ void WebRenderBridgeParent::ClearResources() {
 
   wr::TransactionBuilder txn(mLateInit->mApi);
   txn.SetLowPriority(true);
-  txn.ClearDisplayList(wrEpoch, mPipelineId);
+  txn.ClearDisplayList(wrEpoch, mLateInit->mIdNamespace, mPipelineId);
 
   for (const auto& entry : mAsyncCompositables) {
     wr::PipelineId pipelineId = wr::AsPipelineId(entry.first);
