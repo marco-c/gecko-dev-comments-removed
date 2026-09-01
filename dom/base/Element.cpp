@@ -107,6 +107,7 @@
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/MutationObservers.h"
 #include "mozilla/dom/NodeInfo.h"
+#include "mozilla/dom/PerformanceContainerTiming.h"
 #include "mozilla/dom/PointerEventHandler.h"
 #include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/Promise.h"
@@ -3006,6 +3007,14 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
 
   
   
+  
+  if (aContext.OwnerDoc().MayHaveContainerTimingAttributes() &&
+      aContext.InUncomposedDoc()) {
+    UpdateContainerTimingRootFromParent(&aParent);
+  }
+
+  
+  
   {
     for (nsIContent* child = GetFirstChild(); child;
          child = child->GetNextSibling()) {
@@ -3062,6 +3071,65 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   return NS_OK;
 }
 
+Element* Element::GetContainerTimingRoot() const {
+  return static_cast<Element*>(GetProperty(nsGkAtoms::containerTimingRoot));
+}
+
+void Element::UpdateContainerTimingRootFromParent(nsINode* aParent) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static const uint64_t containerTimingBits =
+      AttrArray::HashForBloomFilter(nsGkAtoms::containertiming);
+  static const uint64_t ignoreBits =
+      AttrArray::HashForBloomFilter(nsGkAtoms::containerTimingIgnore);
+
+  const bool rootsIgnoredSubtree = IsHTMLElement() &&
+                                   mAttrs.BloomMayHave(ignoreBits) &&
+                                   HasAttr(nsGkAtoms::containerTimingIgnore);
+
+  Element* root = nullptr;
+  Element* parent = Element::FromNodeOrNull(aParent);
+  if (parent && !rootsIgnoredSubtree) {
+    if (parent->IsHTMLElement() &&
+        parent->mAttrs.BloomMayHave(containerTimingBits) &&
+        parent->HasAttr(nsGkAtoms::containertiming)) {
+      root = parent;
+    } else {
+      
+      
+      
+      root = parent->GetContainerTimingRoot();
+    }
+  }
+
+  if (root) {
+    
+    
+    
+    
+    SetProperty(nsGkAtoms::containerTimingRoot, root);
+  } else if (HasProperties()) {
+    RemoveProperty(nsGkAtoms::containerTimingRoot);
+  }
+}
+
+void Element::RecomputeContainerTimingRootForSubtree() {
+  UpdateContainerTimingRootFromParent(GetParentNode());
+  for (nsIContent* node = GetNextNode(this); node;
+       node = node->GetNextNode(this)) {
+    if (Element* element = Element::FromNode(node)) {
+      element->UpdateContainerTimingRootFromParent(element->GetParentNode());
+    }
+  }
+}
+
 static bool WillDetachFromShadowOnUnbind(const Element& aElement,
                                          bool aNullParent) {
   
@@ -3097,6 +3165,25 @@ void Element::UnbindFromTree(UnbindContext& aContext) {
       if (!parent->HasFlag(ELEMENT_IS_DATALIST_OR_HAS_DATALIST_ANCESTOR)) {
         UnsetFlags(ELEMENT_IS_DATALIST_OR_HAS_DATALIST_ANCESTOR);
       }
+    }
+  }
+
+  if (aContext.OwnerDoc().MayHaveContainerTimingAttributes()) {
+    
+    
+    if (HasProperties()) {
+      RemoveProperty(nsGkAtoms::containerTimingRoot);
+    }
+
+    static const uint64_t containerTimingBits =
+        AttrArray::HashForBloomFilter(nsGkAtoms::containertiming);
+
+    
+    
+    if (!aContext.IsMove() && IsHTMLElement() &&
+        mAttrs.BloomMayHave(containerTimingBits) &&
+        HasAttr(nsGkAtoms::containertiming)) {
+      ContainerTimingHelpers::DropRecordForContainerRoot(this);
     }
   }
 
