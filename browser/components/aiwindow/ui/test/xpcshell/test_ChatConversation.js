@@ -279,6 +279,45 @@ add_task(function test_ChatConversation_addAssistantMessage() {
   });
 });
 
+add_task(function test_ChatConversation_addAssistantWithL10nMessage() {
+  const conversation = new ChatConversation({});
+
+  const events = [];
+  const onUpdate = (_event, m) => events.push(["update", m]);
+  const onComplete = (_event, m) => events.push(["complete", m]);
+  conversation.on("chat-conversation:message-update", onUpdate);
+  conversation.on("chat-conversation:message-complete", onComplete);
+
+  const message = conversation.addAssistantWithL10nMessage(
+    "smartwindow-agent-monitor-limit-reached",
+    { count: 5 },
+    { l10nName: "tasks", href: "about:smartwindowtasks" }
+  );
+
+  conversation.off("chat-conversation:message-update", onUpdate);
+  conversation.off("chat-conversation:message-complete", onComplete);
+
+  Assert.withSoftAssertions(function (soft) {
+    soft.equal(message.role, MESSAGE_ROLE.ASSISTANT);
+    soft.deepEqual(message.content, {
+      type: "text",
+      body: "",
+      l10nId: "smartwindow-agent-monitor-limit-reached",
+      l10nArgs: { count: 5 },
+      link: { l10nName: "tasks", href: "about:smartwindowtasks" },
+    });
+
+    soft.ok(
+      events.some(([type, m]) => type === "update" && m === message),
+      "emits chat-conversation:message-update"
+    );
+    soft.ok(
+      events.some(([type, m]) => type === "complete" && m === message),
+      "emits chat-conversation:message-complete"
+    );
+  });
+});
+
 add_task(function test_opts_ChatConversation_addAssistantMessage() {
   const conversation = new ChatConversation({});
 
@@ -846,13 +885,17 @@ add_task(
   async function test_deduplicatesMemoryIds_ChatConversation_receiveResponse() {
     let sandbox = lazy.sinon.createSandbox();
 
-    const mockMemories = [{ id: "mem-1" }, { id: "mem-2" }];
+    const mockMemories = [
+      { id: "mem-1", lifetime_accessed_count: 0, recent_accessed_counts: {} },
+      { id: "mem-2", lifetime_accessed_count: 0, recent_accessed_counts: {} },
+    ];
     sandbox.stub(MemoryStore, "getMemories").resolves(mockMemories);
+    sandbox.stub(MemoryStore, "requestSave").resolves();
 
     const conversation = new ChatConversation({});
     conversation.addAssistantMessage("text", "some response");
     const assistantMsg = conversation.messages.at(-1);
-    assistantMsg.memoriesApplied = ["mem-1", "mem-1", "mem-2", "mem-2"];
+    assistantMsg.tokens.existing_memory = ["mem-1", "mem-1", "mem-2", "mem-2"];
 
     async function* emptyStream() {}
     await conversation.receiveResponse(emptyStream());
@@ -861,7 +904,20 @@ add_task(
       MemoryStore.getMemories.calledOnce,
       "MemoryStore.getMemories should be called exactly once"
     );
-    const { memoryIds } = MemoryStore.getMemories.firstCall.args[0];
+    Assert.ok(
+      MemoryStore.requestSave.calledOnce,
+      "The recorded use should be saved exactly once for the message"
+    );
+    for (const memory of mockMemories) {
+      Assert.equal(
+        memory.lifetime_accessed_count,
+        1,
+        `Use should be recorded once per distinct memory (${memory.id})`
+      );
+    }
+    const memoryIds = new Set(
+      assistantMsg.memoriesApplied.map(memory => memory.id)
+    );
     Assert.equal(
       memoryIds.size,
       2,
@@ -873,6 +929,81 @@ add_task(
       assistantMsg.memoriesApplied,
       mockMemories,
       "memoriesApplied should be set to the resolved memories"
+    );
+
+    sandbox.restore();
+  }
+);
+
+add_task(
+  async function test_resolvesMemoriesOncePerTurn_ChatConversation_receiveResponse() {
+    let sandbox = lazy.sinon.createSandbox();
+
+    const mockMemories = [
+      { id: "mem-1", lifetime_accessed_count: 0, recent_accessed_counts: {} },
+    ];
+    sandbox.stub(MemoryStore, "getMemories").resolves(mockMemories);
+    sandbox.stub(MemoryStore, "requestSave").resolves();
+
+    const conversation = new ChatConversation({});
+    conversation.addAssistantMessage("text", "");
+    const assistantMsg = conversation.messages.at(-1);
+
+    
+    
+    async function* toolCallStream() {
+      yield { text: "Let me check that.§existing_memory: mem-1§" };
+      yield {
+        toolCalls: [
+          { id: "call_1", function: { name: "run_search", arguments: "{}" } },
+        ],
+      };
+    }
+    const withToolCalls = await conversation.receiveResponse(toolCallStream());
+
+    Assert.equal(
+      withToolCalls.pendingToolCalls.length,
+      1,
+      "The first pass should report the pending tool call"
+    );
+    Assert.ok(
+      MemoryStore.getMemories.notCalled,
+      "Use should not be recorded while the turn is still running"
+    );
+    Assert.deepEqual(
+      assistantMsg.memoriesApplied,
+      ["mem-1"],
+      "memoriesApplied should still hold the raw cited id mid-turn"
+    );
+
+    
+    async function* finalStream() {
+      yield { text: " Here is what I found.§existing_memory: mem-1§" };
+    }
+    const final = await conversation.receiveResponse(finalStream());
+
+    Assert.equal(
+      final.pendingToolCalls,
+      null,
+      "The final pass should not report any pending tool call"
+    );
+    Assert.ok(
+      MemoryStore.getMemories.calledOnce,
+      "MemoryStore.getMemories should be called exactly once for the turn"
+    );
+    Assert.ok(
+      MemoryStore.requestSave.calledOnce,
+      "The recorded use should be saved exactly once for the turn"
+    );
+    Assert.equal(
+      mockMemories[0].lifetime_accessed_count,
+      1,
+      "Use should be recorded once even though the memory was cited twice"
+    );
+    Assert.deepEqual(
+      assistantMsg.memoriesApplied,
+      mockMemories,
+      "memoriesApplied should end up as the resolved memories"
     );
 
     sandbox.restore();
@@ -925,6 +1056,143 @@ add_task(
     );
   }
 );
+
+add_task(function test_ChatConversation_rehydratesCitationsPool() {
+  const records = [
+    { url: "https://example.com/1", title: "Source 1" },
+    { url: "https://example.com/2", title: "Source 2" },
+  ];
+  const message = new ChatMessage({
+    ordinal: 1,
+    role: MESSAGE_ROLE.ASSISTANT,
+    turnIndex: 0,
+    content: { type: "text", body: "Here is what I found" },
+    citations: records,
+  });
+
+  const conversation = new ChatConversation({ messages: [message] });
+
+  
+  Assert.deepEqual(
+    conversation.getCitationsSnapshot(),
+    [],
+    "a restored conversation starts with no pending citations"
+  );
+
+  conversation.addCitations([{ url: "https://example.com/2" }]);
+  Assert.deepEqual(
+    conversation.getCitationsSnapshot(),
+    [{ url: "https://example.com/2", title: "Source 2" }],
+    "constructor rehydrates the citations pool from message snapshots"
+  );
+});
+
+add_task(async function test_receiveResponse_snapshotsCitationsOnMessage() {
+  const conversation = new ChatConversation({});
+  conversation.addAssistantMessage("text", "");
+  const assistantMsg = conversation.messages.at(-1);
+
+  const records = [{ url: "https://example.com/1", title: "Source 1" }];
+  conversation.addCitations(records);
+
+  async function* emptyStream() {}
+  await conversation.receiveResponse(emptyStream());
+
+  Assert.deepEqual(
+    assistantMsg.citations,
+    records,
+    "receiveResponse snapshots this turn's citations onto the completed message"
+  );
+});
+
+add_task(function test_applyHistoryAssets_keepsThumbnailForCitedUrl() {
+  const url = "https://example.com/1";
+  const conversation = new ChatConversation({});
+  conversation.addHistoryResults([{ url, title: "Page 1" }]);
+  conversation.applyHistoryAssets([
+    {
+      url,
+      image: "moz-page-thumb://thumb",
+      requestedThumbnail: true,
+      hasFavicon: false,
+    },
+  ]);
+  conversation.addCitations([{ url, title: "Source 1" }]);
+  
+  conversation.applyHistoryAssets([
+    { url, image: null, requestedThumbnail: false, hasFavicon: true },
+  ]);
+
+  Assert.equal(
+    conversation.getHistoryResultsSnapshot()[0].image,
+    "moz-page-thumb://thumb",
+    "citation-only asset resolution keeps the history record’s thumbnail"
+  );
+  Assert.ok(
+    conversation.getHistoryResultsSnapshot()[0].hasFavicon,
+    "history record picks up the resolved favicon availability"
+  );
+  Assert.ok(
+    conversation.getCitationsSnapshot()[0].hasFavicon,
+    "citation picks up the resolved favicon availability"
+  );
+
+  conversation.applyHistoryAssets([
+    { url, image: null, requestedThumbnail: true, hasFavicon: true },
+  ]);
+  Assert.equal(
+    conversation.getHistoryResultsSnapshot()[0].image,
+    null,
+    "an evicted thumbnail still clears when a thumbnail was requested"
+  );
+});
+
+add_task(async function test_addUserMessage_clearsPendingCitations() {
+  const conversation = new ChatConversation({});
+  conversation.addCitations([{ url: "https://example.com/1", title: "S1" }]);
+
+  conversation.addUserMessage("A follow-up question", "https://example.com/");
+  conversation.addAssistantMessage("text", "");
+  const assistantMsg = conversation.messages.at(-1);
+
+  async function* emptyStream() {}
+  await conversation.receiveResponse(emptyStream());
+
+  Assert.deepEqual(
+    assistantMsg.citations,
+    [],
+    "addUserMessage clears pending citations so chips belong to their own reply"
+  );
+});
+
+add_task(async function test_retryMessage_clearsPendingCitations() {
+  const conversation = new ChatConversation({});
+  const userMsg = conversation.addUserMessage(
+    "Search the web",
+    "https://example.com/"
+  );
+  conversation.addAssistantMessage("text", "Here is what I found");
+  conversation.addCitations([{ url: "https://example.com/1", title: "S1" }]);
+
+  await conversation.retryMessage(userMsg);
+
+  Assert.deepEqual(
+    conversation.getCitationsSnapshot(),
+    [],
+    "retryMessage clears the pending citations from the previous turn"
+  );
+
+  conversation.addAssistantMessage("text", "");
+  const assistantMsg = conversation.messages.at(-1);
+  async function* emptyStream() {}
+  await conversation.receiveResponse(emptyStream());
+
+  Assert.deepEqual(
+    assistantMsg.citations,
+    [],
+    "the regenerated reply does not inherit citations from the previous turn"
+  );
+});
 
 add_task(async function test_addUserMessage_sets_memories_fields() {
   const conversation = new ChatConversation({});
