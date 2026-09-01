@@ -1170,21 +1170,11 @@ static bool UnrollAndOrPeelLoop(MIRGraph& graph, UnrollState& state) {
     
     
     
-    for (vix = 0; vix < numValuesInOriginal; vix++) {
-      MDefinition* clonedInsn = valueTable.get(cix, vix);
-      MDefinition* originalDep = clonedInsn->dependency();
-      if (originalDep) {
-        mozilla::Maybe<size_t> originalInsnIndex =
-            valueTable.findInRow(0, originalDep);
-        if (originalInsnIndex.isSome()) {
-          
-          
-          MDefinition* clonedDep =
-              valueTable.get(cix, originalInsnIndex.value());
-          clonedInsn->setDependency(clonedDep);
-        }
-      }
-    }
+    
+    
+    
+    
+    
   }
 
 #ifdef JS_JITSPEW
@@ -2009,6 +1999,34 @@ bool UnrollLoops(const MIRGenerator* mir, MIRGraph& graph, bool* changed) {
 
   
   
+  if (unrollStates.empty()) {
+    if (JitSpewEnabled(JitSpew_Unroll)) {
+      JitSpew(JitSpew_Unroll, "END   UnrollLoops, no loops changed.");
+    }
+    
+    return true;
+  }
+
+#ifdef DEBUG
+  
+  
+  
+  
+  
+  
+  for (MBasicBlockIterator iter(graph.begin()); iter != graph.end(); iter++) {
+    MBasicBlock* block = *iter;
+    for (MInstruction* ins : *block) {
+      MDefinition* dep = ins->dependency();
+      if (dep) {
+        ins->setDependency((MDefinition*)1);
+      }
+    }
+  }
+#endif
+
+  
+  
   for (const UnrollState& state : unrollStates) {
     if (!AddClosingPhisForLoop(graph.alloc(), state)) {
       return false;
@@ -2040,31 +2058,30 @@ bool UnrollLoops(const MIRGenerator* mir, MIRGraph& graph, bool* changed) {
   }
 
   
-  if (!unrollStates.empty()) {
-    RenumberBlocks(graph);
-    ClearDominatorTree(graph);
-    if (!BuildDominatorTree(mir, graph)) {
-      return false;
-    }
+  
+  
+  
+  MOZ_ASSERT(!unrollStates.empty());
+  if (!AccountForCFGChanges(mir, graph, true,
+                            false)) {
+    return false;
   }
 
   uint32_t numLoopsChanged =
       numLoopsPeeled + numLoopsUnrolled + numLoopsPeeledAndUnrolled;
+  (void)numLoopsChanged;
+  MOZ_ASSERT(numLoopsChanged > 0);
 
 #ifdef JS_JITSPEW
   if (JitSpewEnabled(JitSpew_Unroll)) {
-    if (numLoopsChanged == 0) {
-      JitSpew(JitSpew_Unroll, "END   UnrollLoops");
-    } else {
-      JitSpew(JitSpew_Unroll,
-              "END UnrollLoops, %u processed (P=%u, U=%u, P&U=%u)",
-              numLoopsChanged, numLoopsPeeled, numLoopsUnrolled,
-              numLoopsPeeledAndUnrolled);
-    }
+    JitSpew(JitSpew_Unroll,
+            "END UnrollLoops, %u processed (P=%u, U=%u, P&U=%u)",
+            numLoopsChanged, numLoopsPeeled, numLoopsUnrolled,
+            numLoopsPeeledAndUnrolled);
   }
 #endif
 
-  *changed = numLoopsChanged > 0;
+  *changed = true;
   return true;
 }
 
