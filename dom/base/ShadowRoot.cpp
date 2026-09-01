@@ -1033,6 +1033,9 @@ void ShadowRoot::SetCustomElementRegistry(CustomElementRegistry* aRegistry) {
   if (aRegistry->IsScoped()) {
     SetCustomElementRegistryState(CustomElementRegistryState::Scoped);
     CustomElementRegistry::SetScopedRegistry(*this, *aRegistry);
+    
+    
+    aRegistry->AddToScopedDocumentSet(OwnerDoc());
   } else {
     MOZ_ASSERT(aRegistry == OwnerDoc()->GetCustomElementRegistry(),
                "Tried to set a global registry different to docs");

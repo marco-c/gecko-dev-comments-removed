@@ -31,6 +31,7 @@ class CallbackFunction;
 class CustomElementCallback;
 class CustomElementReaction;
 class DocGroup;
+class Document;
 class Promise;
 
 enum class ElementCallbackType {
@@ -469,6 +470,9 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
   static void RemoveScopedRegistry(nsINode&);
   static bool IsInScopedRegistryMap(nsINode&);
 
+  
+  void AddToScopedDocumentSet(Document* aDoc);
+
   void TraceDefinitions(JSTracer* aTrc);
 
  private:
@@ -527,6 +531,12 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
   
   
   bool mIsScoped;
+
+  
+  
+  
+  
+  nsTArray<nsWeakPtr> mScopedDocumentSet;
 
  private:
   int32_t InferNamespace(JSContext* aCx, JS::Handle<JSObject*> constructor);

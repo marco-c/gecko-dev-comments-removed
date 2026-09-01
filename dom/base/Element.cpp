@@ -575,6 +575,9 @@ void Element::SetCustomElementRegistry(
   if (aCustomElementRegistry->IsScoped()) {
     SetCustomElementRegistryState(CustomElementRegistryState::Scoped);
     CustomElementRegistry::SetScopedRegistry(*this, *aCustomElementRegistry);
+    
+    
+    aCustomElementRegistry->AddToScopedDocumentSet(OwnerDoc());
   } else {
     SetCustomElementRegistryState(CustomElementRegistryState::Global);
   }

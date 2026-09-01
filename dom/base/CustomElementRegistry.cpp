@@ -746,23 +746,38 @@ bool CustomElementRegistry::IsInScopedRegistryMap(nsINode& aNode) {
   return gScopedRegistryMap && gScopedRegistryMap->Contains(&aNode);
 }
 
+
+void CustomElementRegistry::AddToScopedDocumentSet(Document* aDoc) {
+  MOZ_ASSERT(mIsScoped);
+  MOZ_ASSERT(aDoc);
+  nsWeakPtr weak = do_GetWeakReference(aDoc);
+  if (!weak) {
+    return;
+  }
+  
+  for (const auto& entry : mScopedDocumentSet) {
+    if (entry.get() == weak.get()) {
+      return;
+    }
+  }
+  mScopedDocumentSet.AppendElement(std::move(weak));
+}
+
 namespace {
 
 class CandidateFinder {
  public:
-  CandidateFinder(nsTHashSet<RefPtr<nsIWeakReference>>& aCandidates,
-                  Document* aDoc);
-  nsTArray<nsCOMPtr<Element>> OrderedCandidates();
+  explicit CandidateFinder(nsTHashSet<RefPtr<nsIWeakReference>>& aCandidates);
+  void CollectCandidatesFromDocument(Document* aDoc,
+                                     nsTArray<nsCOMPtr<Element>>& aResult);
 
  private:
-  nsCOMPtr<Document> mDoc;
   nsInterfaceHashtable<nsPtrHashKey<Element>, Element> mCandidates;
 };
 
 CandidateFinder::CandidateFinder(
-    nsTHashSet<RefPtr<nsIWeakReference>>& aCandidates, Document* aDoc)
-    : mDoc(aDoc), mCandidates(aCandidates.Count()) {
-  MOZ_ASSERT(mDoc);
+    nsTHashSet<RefPtr<nsIWeakReference>>& aCandidates)
+    : mCandidates(aCandidates.Count()) {
   for (const auto& candidate : aCandidates) {
     nsCOMPtr<Element> elem = do_QueryReferent(candidate);
     if (!elem) {
@@ -774,17 +789,18 @@ CandidateFinder::CandidateFinder(
   }
 }
 
-nsTArray<nsCOMPtr<Element>> CandidateFinder::OrderedCandidates() {
+void CandidateFinder::CollectCandidatesFromDocument(
+    Document* aDoc, nsTArray<nsCOMPtr<Element>>& aResult) {
+  MOZ_ASSERT(aDoc);
   if (mCandidates.Count() == 1) {
-    
     auto iter = mCandidates.Iter();
-    nsTArray<nsCOMPtr<Element>> rval({std::move(iter.Data())});
-    iter.Remove();
-    return rval;
+    if (iter.Data()->GetComposedDoc() == aDoc) {
+      aResult.AppendElement(std::move(iter.Data()));
+      iter.Remove();
+    }
+    return;
   }
-
-  nsTArray<nsCOMPtr<Element>> orderedElements(mCandidates.Count());
-  for (nsINode* node : ShadowIncludingTreeIterator(*mDoc)) {
+  for (nsINode* node : ShadowIncludingTreeIterator(*aDoc)) {
     Element* element = Element::FromNode(node);
     if (!element) {
       continue;
@@ -792,14 +808,12 @@ nsTArray<nsCOMPtr<Element>> CandidateFinder::OrderedCandidates() {
 
     nsCOMPtr<Element> elem;
     if (mCandidates.Remove(element, getter_AddRefs(elem))) {
-      orderedElements.AppendElement(std::move(elem));
+      aResult.AppendElement(std::move(elem));
       if (mCandidates.Count() == 0) {
         break;
       }
     }
   }
-
-  return orderedElements;
 }
 
 }  
@@ -819,19 +833,35 @@ void CustomElementRegistry::UpgradeCandidates(
   
   
   
-  
-  
   mozilla::UniquePtr<nsTHashSet<RefPtr<nsIWeakReference>>> candidates;
   if (mCandidatesMap.Remove(aKey, &candidates)) {
     MOZ_ASSERT(candidates);
     CustomElementReactionsStack* reactionsStack =
         docGroup->CustomElementReactionsStack();
 
-    CandidateFinder finder(*candidates, mWindow->GetExtantDoc());
-    
-    
-    for (auto& elem : finder.OrderedCandidates()) {
-      reactionsStack->EnqueueUpgradeReaction(elem, aDefinition);
+    CandidateFinder finder(*candidates);
+
+    auto enqueue = [&](nsTArray<nsCOMPtr<Element>>& aElements) {
+      for (auto& elem : aElements) {
+        reactionsStack->EnqueueUpgradeReaction(elem, aDefinition);
+      }
+    };
+    if (mIsScoped && !mScopedDocumentSet.IsEmpty()) {
+      for (const auto& weakDoc : mScopedDocumentSet) {
+        nsCOMPtr<Document> doc = do_QueryReferent(weakDoc);
+        if (!doc) {
+          continue;
+        }
+        nsTArray<nsCOMPtr<Element>> ordered;
+        finder.CollectCandidatesFromDocument(doc, ordered);
+        
+        
+        enqueue(ordered);
+      }
+    } else {
+      nsTArray<nsCOMPtr<Element>> ordered;
+      finder.CollectCandidatesFromDocument(mWindow->GetExtantDoc(), ordered);
+      enqueue(ordered);
     }
   }
 }
@@ -1369,10 +1399,10 @@ void CustomElementRegistry::Initialize(nsINode& aRoot, ErrorResult& aRv) {
     
     if (!registry) {
       
+      
+      
+      
       element->SetCustomElementRegistry(this);
-      
-      
-      
     } else if (registry != this) {
       
       
