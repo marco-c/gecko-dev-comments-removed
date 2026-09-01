@@ -2475,10 +2475,6 @@ nsISupports* GlobalObject::GetAsSupports() const {
 }
 
 nsIPrincipal* GlobalObject::GetSubjectPrincipal() const {
-  if (!NS_IsMainThread()) {
-    return nullptr;
-  }
-
   JS::Realm* realm = js::GetContextRealm(mCx);
   MOZ_ASSERT(realm);
   JSPrincipals* principals = JS::GetRealmPrincipals(realm);
@@ -2886,7 +2882,7 @@ struct LenientThisPolicyMixin {
     if (!ReportLenientThisUnwrappingFailure(aCx, &aArgs.callee())) {
       return false;
     }
-    aArgs.rval().set(JS::UndefinedValue());
+    aArgs.rval().setUndefined();
     return true;
   }
 };
