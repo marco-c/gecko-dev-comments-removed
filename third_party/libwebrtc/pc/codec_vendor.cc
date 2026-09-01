@@ -251,7 +251,7 @@ RTCError MergeRedCodec(const CodecConfiguration& config,
       
       
       param << primary_codec.id.value() << "/" << primary_codec.id.value();
-      red.SetParam(kCodecParamNotInNameValueFormat, param.str());
+      red.SetParam(kCodecParamNotInNameValueFormat, param.Release());
     }
   }
 
@@ -825,7 +825,7 @@ void LinkRed(std::vector<Codec>& codecs) {
           
           
           param << first_opus_pt << "/" << first_opus_pt;
-          codec.SetParam(kCodecParamNotInNameValueFormat, param.str());
+          codec.SetParam(kCodecParamNotInNameValueFormat, param.Release());
         }
       }
     }
