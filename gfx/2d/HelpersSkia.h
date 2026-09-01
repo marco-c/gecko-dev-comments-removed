@@ -343,15 +343,8 @@ static inline FillRule GetFillRule(SkPathFillType aFillType) {
 
 
 
-
-
 static inline bool IsBackedByPixels(const SkCanvas* aCanvas) {
-  SkSurfaceProps props(0, kUnknown_SkPixelGeometry);
-  if (!aCanvas->getProps(&props) ||
-      props.pixelGeometry() == kUnknown_SkPixelGeometry) {
-    return false;
-  }
-  return true;
+  return aCanvas->imageInfo().colorType() != kUnknown_SkColorType;
 }
 
 
