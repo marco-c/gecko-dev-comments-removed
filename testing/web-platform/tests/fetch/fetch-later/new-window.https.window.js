@@ -45,9 +45,12 @@ for (const target of ['', '_blank']) {
 
           
           const w = window.open(
-              `javascript: fetchLater("${url}", {activateAfter: 0})`, target,
+              `javascript: fetchLater("${url}", {activateAfter: 0});''`, target,
               features);
-          await new Promise(resolve => w.addEventListener('load', resolve));
+          await new Promise((resolve, reject) => {
+            w.addEventListener('load', resolve);
+            w.addEventListener('error', reject);
+          });
 
           
           await expectBeacon(uuid, {count: 1});
