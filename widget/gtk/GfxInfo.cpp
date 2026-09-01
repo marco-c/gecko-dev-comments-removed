@@ -1335,6 +1335,22 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
 
     
     
+#ifdef NIGHTLY_BUILD
+    
+    APPEND_TO_DRIVER_BLOCKLIST(
+        OperatingSystem::Linux, DeviceFamily::NvidiaAll,
+        nsIGfxInfo::FEATURE_HARDWARE_VIDEO_DECODING_VULKAN,
+        nsIGfxInfo::FEATURE_STATUS_OK, DRIVER_GREATER_THAN_OR_EQUAL,
+        V(580, 76, 5, 0), "FEATURE_VIDEO_DECODING_VULKAN_NIGHTLY_NVIDIA", "");
+#endif
+    APPEND_TO_DRIVER_BLOCKLIST(
+        OperatingSystem::Linux, DeviceFamily::All,
+        nsIGfxInfo::FEATURE_HARDWARE_VIDEO_DECODING_VULKAN,
+        nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_COMPARISON_IGNORED,
+        V(0, 0, 0, 0), "FEATURE_VIDEO_DECODING_VULKAN_DISABLED", "");
+
+    
+    
 
     
     
@@ -1588,13 +1604,11 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       aFailureId = "FEATURE_HARDWARE_VIDEO_DECODING_VULKAN_PREF_DISABLED"_ns;
       return NS_OK;
     }
-    if (!StaticPrefs::media_hardware_video_decoding_enabled_AtStartup()) {
-      return ret;
-    }
     bool probeHWDecode =
         mIsAccelerated &&
         (*aStatus == nsIGfxInfo::FEATURE_STATUS_OK ||
-         StaticPrefs::media_hardware_video_decoding_force_enabled_AtStartup());
+         StaticPrefs::
+             media_hardware_video_decoding_vulkan_force_enabled_AtStartup());
     if (probeHWDecode) {
       GetDataVulkan();
     } else {
