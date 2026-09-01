@@ -200,16 +200,37 @@ static AtomCache sRecentlyUsedMainThreadAtoms;
 
 
 
+
+
+
 struct ShortAtomCache {
   static constexpr size_t kMaxLength = 7;
-  static constexpr size_t kLogSize = 12;
-  static constexpr size_t kSize = size_t(1) << kLogSize;
+  static constexpr size_t kLogSize = 11;
+  static constexpr size_t kLogWays = 2;
+
+  static_assert(kLogWays <= kLogSize);
+
+  static constexpr size_t kWays = size_t(1) << kLogWays;
+  static constexpr size_t kLogSets = kLogSize - kLogWays;
+  static constexpr size_t kSets = size_t(1) << kLogSets;
 
   using Signature = uint64_t;
   static constexpr Signature kInvalidSignature = 0;
 
-  Signature mSignatures[kSize] = {};
-  nsAtom* MOZ_NON_OWNING_REF mAtoms[kSize] = {};
+  
+  struct Set {
+    Signature mSigs[kWays];
+    nsAtom* MOZ_NON_OWNING_REF mAtoms[kWays];
+  };
+  alignas(64) Set mSets[kSets] = {};
+
+#ifdef HAVE_64BIT_BUILD
+  
+  static_assert(64 % sizeof(Set) == 0 || sizeof(Set) % 64 == 0);
+#endif
+
+  
+  uint8_t mNextWay = 0;
 
   static Signature TryMakeSignature(const char16_t* aStr, size_t aLength) {
     static_assert(sizeof(Signature) >= kMaxLength + 1);
@@ -226,32 +247,50 @@ struct ShortAtomCache {
     return signature;
   }
 
-  size_t Index(Signature aSig) const {
+  
+  static size_t Index(Signature aSig) {
     static constexpr uint64_t kGoldenRatio64 = 0x9e3779b97f4a7c15ull;
-    static constexpr size_t kHashShift = 64 - kLogSize;
-    return static_cast<size_t>((aSig * kGoldenRatio64) >> kHashShift);
+    return static_cast<size_t>((aSig * kGoldenRatio64) >> (64 - kLogSets));
   }
 
-  nsAtom* Lookup(Signature aSig) {
-    size_t idx = Index(aSig);
-    if (mSignatures[idx] == aSig) {
-      return mAtoms[idx];
+  nsAtom* Lookup(Signature aSig) const {
+    const Set& set = mSets[Index(aSig)];
+    for (size_t i = 0; i < kWays; i++) {
+      if (set.mSigs[i] == aSig) {
+        return set.mAtoms[i];
+      }
     }
     return nullptr;
   }
 
   void Put(Signature aSig, nsAtom* aAtom) {
     MOZ_ASSERT(aSig != kInvalidSignature);
-    size_t idx = Index(aSig);
-    mSignatures[idx] = aSig;
-    mAtoms[idx] = aAtom;
+
+    Set& set = mSets[Index(aSig)];
+
+    
+    size_t way = 0;
+    while (way < kWays && set.mSigs[way] != kInvalidSignature) {
+      ++way;
+    }
+    if (way == kWays) {
+      way = mNextWay;
+      mNextWay = (mNextWay + 1) & (kWays - 1);
+    }
+
+    set.mSigs[way] = aSig;
+    set.mAtoms[way] = aAtom;
   }
 
   void Clear() {
-    PodArrayZero(mSignatures);
-    PodArrayZero(mAtoms);
+    PodArrayZero(mSets);
+    mNextWay = 0;
   }
 };
+
+size_t TestGetShortAtomCacheSize() {
+  return size_t(1) << ShortAtomCache::kLogSize;
+}
 
 static ShortAtomCache sShortAtomCache;
 
