@@ -473,7 +473,7 @@ async function prepareForToggleClick(browser, videoID) {
       
       
       let { PictureInPictureToggleChild } = ChromeUtils.importESModule(
-        "resource://gre/actors/PictureInPictureChild.sys.mjs"
+        "moz-src:///toolkit/actors/PictureInPictureChild.sys.mjs"
       );
       await ContentTaskUtils.waitForCondition(
         () => {
