@@ -3064,17 +3064,23 @@ static nsIFrame* BackfaceHidden3DParticipantFor(nsIFrame* aAncestor,
   return nullptr;
 }
 
-static void WrapSeparatorTransform(nsDisplayListBuilder* aBuilder,
-                                   nsIFrame* aFrame,
-                                   nsDisplayList* aNonParticipants,
-                                   nsDisplayList* aParticipants, int aIndex,
-                                   nsDisplayItem** aSeparator) {
+
+
+
+
+
+
+
+static void FlushNonParticipantsIntoSeparatorTransform(
+    nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
+    nsDisplayList* aNonParticipants, nsDisplayList* aParticipants, int& aIndex,
+    nsDisplayItem** aSeparator) {
   if (aNonParticipants->IsEmpty()) {
     return;
   }
 
   nsDisplayTransform* item = MakeDisplayItemWithIndex<nsDisplayTransform>(
-      aBuilder, aFrame, aIndex, aNonParticipants, aBuilder->GetVisibleRect());
+      aBuilder, aFrame, aIndex++, aNonParticipants, aBuilder->GetVisibleRect());
 
   if (*aSeparator == nullptr && item) {
     *aSeparator = item;
@@ -3920,8 +3926,9 @@ void nsIFrame::BuildDisplayListForStackingContext(
         if (ItemParticipatesIn3DContext(this, item) &&
             !item->GetClip().HasClip()) {
           
-          WrapSeparatorTransform(aBuilder, this, &nonparticipants,
-                                 &participants, index++, &separator);
+          FlushNonParticipantsIntoSeparatorTransform(
+              aBuilder, this, &nonparticipants, &participants, index,
+              &separator);
 
           participants.AppendToTop(item);
         } else if (nsIFrame* backfaceHidden =
@@ -3930,8 +3937,9 @@ void nsIFrame::BuildDisplayListForStackingContext(
           
           
           
-          WrapSeparatorTransform(aBuilder, this, &nonparticipants,
-                                 &participants, index++, &separator);
+          FlushNonParticipantsIntoSeparatorTransform(
+              aBuilder, this, &nonparticipants, &participants, index,
+              &separator);
 
           nsDisplayList itemList(aBuilder);
           itemList.AppendToTop(item);
@@ -3949,8 +3957,8 @@ void nsIFrame::BuildDisplayListForStackingContext(
           nonparticipants.AppendToTop(item);
         }
       }
-      WrapSeparatorTransform(aBuilder, this, &nonparticipants, &participants,
-                             index++, &separator);
+      FlushNonParticipantsIntoSeparatorTransform(
+          aBuilder, this, &nonparticipants, &participants, index, &separator);
 
       if (separator) {
         createdContainer = true;
