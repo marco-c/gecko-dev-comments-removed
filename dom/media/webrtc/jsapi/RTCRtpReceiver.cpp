@@ -540,7 +540,7 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal(
               
               local.mFramesDecoded.Construct(videoStats->frames_decoded);
               local.mKeyFramesDecoded.Construct(
-                  videoStats->frame_counts.key_frames);
+                  videoStats->decoded_frame_counts.key_frames);
 
               local.mFramesPerSecond.Construct(videoStats->decode_frame_rate);
               local.mFrameWidth.Construct(videoStats->width);
@@ -548,8 +548,8 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal(
               
               
               local.mFramesReceived.Construct(
-                  videoStats->frame_counts.key_frames +
-                  videoStats->frame_counts.delta_frames);
+                  videoStats->received_frame_counts.key_frames +
+                  videoStats->received_frame_counts.delta_frames);
               local.mJitterBufferDelay.Construct(
                   videoStats->jitter_buffer_delay.seconds<double>());
               local.mJitterBufferTargetDelay.Construct(
