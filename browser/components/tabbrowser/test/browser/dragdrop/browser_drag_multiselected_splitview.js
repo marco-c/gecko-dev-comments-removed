@@ -32,7 +32,7 @@ add_task(async function test_drag_mulitselected_splitview_as_target() {
     ok(!tabs[i].multiselected, "Tab" + i + " is not multiselected");
   }
   for (let i of [0, 1, 2, 3, 4, 5]) {
-    is(tabs[i]._tPos, i, "Tab" + i + " position is :" + i);
+    is(tabs[i].index, i, "Tab" + i + " position is :" + i);
   }
 
   await customDragAndDrop(tab3, tab4);
@@ -54,23 +54,23 @@ add_task(async function test_drag_mulitselected_splitview_as_target() {
     ok(!tabs[i].multiselected, "Tab" + i + " is still not multiselected");
   }
 
-  is(tab0._tPos, 0, "Tab0 position (0) doesn't change");
+  is(tab0.index, 0, "Tab0 position (0) doesn't change");
 
   
   is(
-    tab1._tPos,
-    tab2._tPos - 1,
+    tab1.index,
+    tab2.index - 1,
     "Tab1 is located right at the left of the dragged splitview"
   );
   is(
-    tab5._tPos,
-    tab3._tPos + 1,
+    tab5.index,
+    tab3.index + 1,
     "Tab5 is located right at the right of the dragged splitview"
   );
-  is(tab3._tPos, 4, "Dragged tab (tab3) of splitview position is 4");
-  is(tab2._tPos, 3, "Dragged tab (tab2) of splitview position is 3");
+  is(tab3.index, 4, "Dragged tab (tab3) of splitview position is 4");
+  is(tab2.index, 3, "Dragged tab (tab2) of splitview position is 3");
 
-  is(tab4._tPos, 1, "Drag target (tab4) has shifted to position 1");
+  is(tab4.index, 1, "Drag target (tab4) has shifted to position 1");
 
   for (let tab of tabs.filter(t => t != tab0)) {
     BrowserTestUtils.removeTab(tab);
@@ -103,7 +103,7 @@ add_task(async function test_drag_mulitselected_splitview_as_selection() {
     ok(!tabs[i].multiselected, "Tab" + i + " is not multiselected");
   }
   for (let i of [0, 1, 2, 3, 4, 5]) {
-    is(tabs[i]._tPos, i, "Tab" + i + " position is :" + i);
+    is(tabs[i].index, i, "Tab" + i + " position is :" + i);
   }
 
   await customDragAndDrop(tab1, tab4);
@@ -120,23 +120,23 @@ add_task(async function test_drag_mulitselected_splitview_as_selection() {
     ok(!tabs[i].multiselected, "Tab" + i + " is still not multiselected");
   }
 
-  is(tab0._tPos, 0, "Tab0 position (0) doesn't change");
+  is(tab0.index, 0, "Tab0 position (0) doesn't change");
 
   
   is(
-    tab1._tPos,
-    tab2._tPos - 1,
+    tab1.index,
+    tab2.index - 1,
     "Tab1 is located right at the left of the dragged splitview"
   );
   is(
-    tab5._tPos,
-    tab3._tPos + 1,
+    tab5.index,
+    tab3.index + 1,
     "Tab5 is located right at the right of the dragged splitview"
   );
-  is(tab3._tPos, 4, "Dragged tab (tab3) of splitview position is 4");
-  is(tab2._tPos, 3, "Dragged tab (tab2) of splitview position is 3");
+  is(tab3.index, 4, "Dragged tab (tab3) of splitview position is 4");
+  is(tab2.index, 3, "Dragged tab (tab2) of splitview position is 3");
 
-  is(tab4._tPos, 1, "Drag target (tab4) has shifted to position 1");
+  is(tab4.index, 1, "Drag target (tab4) has shifted to position 1");
 
   for (let tab of tabs.filter(t => t != tab0)) {
     BrowserTestUtils.removeTab(tab);
@@ -178,3 +178,94 @@ add_task(async function test_drag_multiple_split_views_after_last_tab() {
     BrowserTestUtils.removeTab(tab);
   }
 });
+
+add_task(async function test_drag_multiselected_splitview_over_pinned_area() {
+  
+  let pinnedTab = BrowserTestUtils.addTab(gBrowser, "about:blank", {
+    pinned: true,
+  });
+  let regularTab = await addTab();
+  let splitTab1 = await addTab();
+  let splitTab2 = await addTab();
+  let splitview = gBrowser.addTabSplitView([splitTab1, splitTab2]);
+
+  await BrowserTestUtils.switchTab(gBrowser, regularTab);
+  await triggerClickOn(splitTab1, { ctrlKey: true });
+
+  is(gBrowser.selectedTab, regularTab, "Regular tab is active");
+  is(gBrowser.selectedTabs.length, 2, "Two tabs selected");
+  ok(splitview.multiselected, "Splitview is multiselected");
+
+  let pinnedTabsContainer = document.getElementById("pinned-tabs-container");
+  await customDragAndDrop(
+    regularTab,
+    pinnedTabsContainer,
+    null,
+    BrowserTestUtils.waitForEvent(regularTab, "TabPinned")
+  );
+
+  ok(regularTab.pinned, "Regular tab is pinned");
+  ok(!splitTab1.pinned, "Split view tab 1 is not pinned");
+  ok(!splitTab2.pinned, "Split view tab 2 is not pinned");
+
+  BrowserTestUtils.removeTab(pinnedTab);
+  BrowserTestUtils.removeTab(regularTab);
+  BrowserTestUtils.removeTab(splitTab1);
+  BrowserTestUtils.removeTab(splitTab2);
+});
+
+add_task(
+  async function test_drag_multiselected_splitview_to_second_window_pinned_area() {
+    let win2 = await BrowserTestUtils.openNewBrowserWindow();
+    
+    
+    
+    let win2PinnedTab1 = BrowserTestUtils.addTab(win2.gBrowser, "about:blank", {
+      pinned: true,
+    });
+    BrowserTestUtils.addTab(win2.gBrowser, "about:blank", { pinned: true });
+    is(win2.gBrowser.pinnedTabCount, 2, "Two pinned tabs in win2");
+
+    let regularTab = await addTab();
+    let splitTab1 = await addTab();
+    let splitTab2 = await addTab();
+    let splitview = gBrowser.addTabSplitView([splitTab1, splitTab2]);
+
+    await BrowserTestUtils.switchTab(gBrowser, regularTab);
+    await triggerClickOn(splitTab1, { ctrlKey: true });
+
+    is(gBrowser.selectedTab, regularTab, "Regular tab is active");
+    is(gBrowser.selectedTabs.length, 2, "Two tabs selected");
+    ok(splitview.multiselected, "Splitview is multiselected");
+
+    let tabsClosePromise = Promise.all([
+      BrowserTestUtils.waitForEvent(regularTab, "TabClose"),
+      BrowserTestUtils.waitForEvent(splitTab1, "TabClose"),
+      BrowserTestUtils.waitForEvent(splitTab2, "TabClose"),
+    ]);
+
+    
+    EventUtils.synthesizeDrop(
+      regularTab,
+      win2PinnedTab1,
+      [[{ type: TAB_DROP_TYPE, data: regularTab }]],
+      null,
+      window,
+      win2
+    );
+
+    await tabsClosePromise;
+
+    is(win2.gBrowser.pinnedTabCount, 3, "Three pinned tabs in win2");
+    let adoptedSplitTabs = win2.gBrowser.tabs.filter(
+      t => !t.pinned && t.splitview
+    );
+    is(
+      adoptedSplitTabs.length,
+      2,
+      "Two unpinned splitview tabs adopted into win2"
+    );
+
+    await BrowserTestUtils.closeWindow(win2);
+  }
+);
