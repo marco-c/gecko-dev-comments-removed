@@ -26,3 +26,7 @@ user_pref("browser.startup.couldRestoreSession.count", -1);
 
 
 user_pref("extensions.formautofill.useml", false);
+
+
+
+user_pref("browser.ml.onnxNativeAvailabilityReported", true);
