@@ -3923,6 +3923,13 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
   
   
   
+  pref("remote.experimental.dynamicstart.banner.enabled", true);
+  pref("remote.experimental.dynamicstart.connectionbanner.enabled", true);
+
+  
+  
+  
+  
   
   pref("remote.log.level", "Info");
 
