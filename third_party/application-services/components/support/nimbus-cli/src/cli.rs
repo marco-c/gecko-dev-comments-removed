@@ -343,6 +343,12 @@ pub(crate) struct OpenArgs {
     
     
     
+    #[arg(long = "legacy-open")]
+    pub(crate) legacy_open_mode: bool,
+
+    
+    
+    
     
     #[arg(long, value_name = "OUTPUT_FILE")]
     pub(crate) output: Option<PathBuf>,
