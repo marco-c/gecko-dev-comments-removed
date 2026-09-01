@@ -146,7 +146,7 @@ class VideoReceiveStream2
   uint32_t remote_ssrc() const { return config_.rtp.remote_ssrc; }
   
   uint32_t rtx_ssrc() const {
-    RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
+    RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
     return updated_rtx_ssrc_.value_or(config_.rtp.rtx_ssrc);
   }
 
@@ -241,14 +241,14 @@ class VideoReceiveStream2
       bool keyframe_required) RTC_RUN_ON(decode_sequence_checker_);
   void UpdatePlayoutDelays() const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(worker_sequence_checker_);
-  void RequestKeyFrame(Timestamp now) RTC_RUN_ON(packet_sequence_checker_);
+  void RequestKeyFrame(Timestamp now) RTC_RUN_ON(worker_sequence_checker_);
   void HandleKeyFrameGeneration(bool received_frame_is_keyframe,
                                 Timestamp now,
                                 bool always_request_key_frame,
                                 bool keyframe_request_is_due)
-      RTC_RUN_ON(packet_sequence_checker_);
+      RTC_RUN_ON(worker_sequence_checker_);
   bool IsReceivingKeyFrame(Timestamp timestamp) const
-      RTC_RUN_ON(packet_sequence_checker_);
+      RTC_RUN_ON(worker_sequence_checker_);
   int DecodeAndMaybeDispatchEncodedFrame(std::unique_ptr<EncodedFrame> frame)
       RTC_RUN_ON(decode_sequence_checker_);
 
@@ -261,15 +261,6 @@ class VideoReceiveStream2
   const Environment env_;
 
   RTC_NO_UNIQUE_ADDRESS SequenceChecker worker_sequence_checker_;
-  
-  
-  
-  
-  
-  
-  
-  RTC_NO_UNIQUE_ADDRESS SequenceChecker packet_sequence_checker_;
-
   RTC_NO_UNIQUE_ADDRESS SequenceChecker decode_sequence_checker_;
 
   
@@ -301,34 +292,34 @@ class VideoReceiveStream2
 
   
   
-  TimeDelta max_wait_for_keyframe_ RTC_GUARDED_BY(packet_sequence_checker_);
-  TimeDelta max_wait_for_frame_ RTC_GUARDED_BY(packet_sequence_checker_);
+  TimeDelta max_wait_for_keyframe_ RTC_GUARDED_BY(worker_sequence_checker_);
+  TimeDelta max_wait_for_frame_ RTC_GUARDED_BY(worker_sequence_checker_);
 
   const std::unique_ptr<VideoStreamBufferController> buffer_;
 
   
   
   RtpStreamReceiverControllerInterface* receiver_controller_
-      RTC_GUARDED_BY(packet_sequence_checker_) = nullptr;
+      RTC_GUARDED_BY(worker_sequence_checker_) = nullptr;
 
   std::unique_ptr<RtpStreamReceiverInterface> media_receiver_
-      RTC_GUARDED_BY(packet_sequence_checker_);
+      RTC_GUARDED_BY(worker_sequence_checker_);
   std::unique_ptr<RtxReceiveStream> rtx_receive_stream_
-      RTC_GUARDED_BY(packet_sequence_checker_);
+      RTC_GUARDED_BY(worker_sequence_checker_);
   std::optional<uint32_t> updated_rtx_ssrc_
-      RTC_GUARDED_BY(packet_sequence_checker_);
+      RTC_GUARDED_BY(worker_sequence_checker_);
   std::unique_ptr<RtpStreamReceiverInterface> rtx_receiver_
-      RTC_GUARDED_BY(packet_sequence_checker_);
+      RTC_GUARDED_BY(worker_sequence_checker_);
 
   
   
-  bool keyframe_required_ RTC_GUARDED_BY(packet_sequence_checker_) = true;
+  bool keyframe_required_ RTC_GUARDED_BY(worker_sequence_checker_) = true;
 
   
   bool frame_decoded_ RTC_GUARDED_BY(decode_sequence_checker_) = false;
 
   std::optional<Timestamp> last_keyframe_request_
-      RTC_GUARDED_BY(packet_sequence_checker_);
+      RTC_GUARDED_BY(worker_sequence_checker_);
 
   
   
@@ -352,7 +343,7 @@ class VideoReceiveStream2
   std::function<void(const RecordableEncodedFrame&)>
       encoded_frame_buffer_function_ RTC_GUARDED_BY(decode_sequence_checker_);
   
-  bool keyframe_generation_requested_ RTC_GUARDED_BY(packet_sequence_checker_) =
+  bool keyframe_generation_requested_ RTC_GUARDED_BY(worker_sequence_checker_) =
       false;
   
   webrtc::Mutex pending_resolution_mutex_;
