@@ -110,6 +110,10 @@ add_task(async function test_pkcs11_remote_process() {
     "Attempting to get a token when it isn't present should throw."
   );
 
+  
+  
+  await testToken.reset();
+
   await moduleDB.deleteModule("PKCS11 Test Module");
   testModule = await findModuleByName(moduleDB, "PKCS11 Test Module");
   equal(
