@@ -121,7 +121,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   
   
-  WindowGlobalParent* GetEmbedderWindowGlobal();
+  already_AddRefed<WindowGlobalParent> GetEmbedderWindowGlobal() const;
 
   CanonicalBrowsingContext* GetParentCrossChromeBoundary();
   CanonicalBrowsingContext* TopCrossChromeBoundary();

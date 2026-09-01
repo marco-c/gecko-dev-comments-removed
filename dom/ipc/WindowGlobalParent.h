@@ -84,16 +84,15 @@ class WindowGlobalParent final : public WindowContext,
     return GetByInnerWindowId(aInnerWindowId);
   }
 
-  static WindowGlobalParent* Cast(WindowContext* aContext);
-
   
   
   
   WindowGlobalParent* GetParentWindowContext() {
-    return Cast(WindowContext::GetParentWindowContext());
+    return static_cast<WindowGlobalParent*>(
+        WindowContext::GetParentWindowContext());
   }
   WindowGlobalParent* TopWindowContext() {
-    return Cast(WindowContext::TopWindowContext());
+    return static_cast<WindowGlobalParent*>(WindowContext::TopWindowContext());
   }
   CanonicalBrowsingContext* GetBrowsingContext() const {
     return CanonicalBrowsingContext::Cast(WindowContext::GetBrowsingContext());
