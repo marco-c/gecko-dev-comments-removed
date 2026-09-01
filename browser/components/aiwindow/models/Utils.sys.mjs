@@ -91,6 +91,7 @@ export const DEFAULT_ENGINE_ID = "smart-openai";
  */
 export const MODEL_FEATURES = Object.freeze({
   CHAT: "chat",
+  SMART_FORM_FILL: "smart-form-fill",
   TITLE_GENERATION: "title-generation",
   CONVERSATION_STARTERS_SIDEBAR_SYSTEM: "conversation-starters-sidebar-system",
   CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER:
@@ -106,8 +107,7 @@ export const MODEL_FEATURES = Object.freeze({
     "memories-quality-and-sensitivity-filter-system",
   MEMORIES_QUALITY_AND_SENSITIVITY_FILTER_USER:
     "memories-quality-and-sensitivity-filter-user",
-  MEMORIES_DEDUPLICATION_SYSTEM: "memories-deduplication-system",
-  MEMORIES_DEDUPLICATION_USER: "memories-deduplication-user",
+  MEMORIES_MERGE: "memories-merge",
   // memories usage features
   MEMORIES_MESSAGE_CLASSIFICATION_SYSTEM:
     "memories-message-classification-system",
@@ -139,6 +139,7 @@ export const SERVICE_TYPES = Object.freeze({
  */
 export const PURPOSES = Object.freeze({
   CHAT: "chat",
+  SMART_FORM_FILL: "smart-form-fill",
   TITLE_GENERATION: "title-generation",
   CONVERSATION_STARTERS_SIDEBAR: "convo-starters-sidebar",
   MEMORY_GENERATION: "memory-generation",
@@ -160,6 +161,7 @@ export const FEATURE_MAJOR_VERSIONS = Object.freeze({
   get [MODEL_FEATURES.CHAT]() {
     return Services.prefs.getBoolPref(MISTRAL_RELEASE_PREF, false) ? 11 : 10;
   },
+  [MODEL_FEATURES.SMART_FORM_FILL]: 1,
   [MODEL_FEATURES.TITLE_GENERATION]: 1,
   [MODEL_FEATURES.CONVERSATION_STARTERS_SIDEBAR_SYSTEM]: 1,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER]: 3,
@@ -169,8 +171,7 @@ export const FEATURE_MAJOR_VERSIONS = Object.freeze({
   // memories generation feature versions
   [MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM]: 3,
   [MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_USER]: 4,
-  [MODEL_FEATURES.MEMORIES_DEDUPLICATION_SYSTEM]: 1,
-  [MODEL_FEATURES.MEMORIES_DEDUPLICATION_USER]: 1,
+  [MODEL_FEATURES.MEMORIES_MERGE]: 1,
   [MODEL_FEATURES.MEMORIES_QUALITY_AND_SENSITIVITY_FILTER_SYSTEM]: 1,
   [MODEL_FEATURES.MEMORIES_QUALITY_AND_SENSITIVITY_FILTER_USER]: 1,
   // memories usage feature versions
