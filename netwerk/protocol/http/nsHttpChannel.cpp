@@ -9066,6 +9066,19 @@ static already_AddRefed<nsIURI> GetFallbackURI(nsIURI* aURI) {
 }
 
 
+
+
+static bool IsInternalSystemLoad(nsILoadInfo* aLoadInfo) {
+  if (!aLoadInfo->TriggeringPrincipal()->IsSystemPrincipal()) {
+    return false;
+  }
+
+  ExtContentPolicyType type = aLoadInfo->GetExternalContentPolicyType();
+  return type != ExtContentPolicy::TYPE_DOCUMENT &&
+         type != ExtContentPolicy::TYPE_SUBDOCUMENT;
+}
+
+
 nsHttpChannel::EssentialDomainCategory
 nsHttpChannel::GetEssentialDomainCategory(nsCString& domain) {
   if (StringEndsWith(domain, ".addons.mozilla.org"_ns)) {
@@ -9345,8 +9358,7 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
     MaybeUpdateDocumentIPAddressSpaceFromCache();
   }
 
-  if (!mCanceled && mTransaction &&
-      mLoadInfo->TriggeringPrincipal()->IsSystemPrincipal()) {
+  if (!mCanceled && mTransaction && IsInternalSystemLoad(mLoadInfo)) {
     
     
     ReportSystemChannelTelemetry(mStatus);
@@ -9405,8 +9417,7 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
   
   
   
-  if (NS_FAILED(mStatus) && !mCanceled &&
-      mLoadInfo->TriggeringPrincipal()->IsSystemPrincipal()) {
+  if (NS_FAILED(mStatus) && !mCanceled && IsInternalSystemLoad(mLoadInfo)) {
     if (StaticPrefs::network_essential_domains_fallback() &&
         hasConnectivity()) {
       auto passDomainCategory = [&](nsIChannel* aRedirectedChannel) {
