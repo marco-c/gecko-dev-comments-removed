@@ -2158,19 +2158,9 @@ static bool LookupOrCompileStub(JSContext* cx, CacheKind kind,
   return true;
 }
 
-ICAttachResult js::jit::AttachBaselineCacheIRStub(
+static ICAttachResult CompileBaselineCacheIRStub(
     JSContext* cx, const CacheIRWriter& writer, CacheKind kind,
-    JSScript* outerScript, ICScript* icScript, ICFallbackStub* stub,
-    const char* name) {
-  gc::AutoMarkingLock lock(cx->zone(), icScript->markingLock());
-  return AttachBaselineCacheIRStubLocked(cx, writer, kind, outerScript,
-                                         icScript, stub, name, lock);
-}
-
-ICAttachResult js::jit::AttachBaselineCacheIRStubLocked(
-    JSContext* cx, const CacheIRWriter& writer, CacheKind kind,
-    JSScript* outerScript, ICScript* icScript, ICFallbackStub* stub,
-    const char* name, const gc::AutoMarkingLock& lock) {
+    const char* name, CacheIRStubInfo** stubInfo, JitCode** codeOut) {
   
   AutoAssertNoPendingException aanpe(cx);
   JS::AutoCheckCannotGC nogc;
@@ -2186,97 +2176,128 @@ ICAttachResult js::jit::AttachBaselineCacheIRStubLocked(
   MOZ_ASSERT(!writer.failed());
 
   
+  if (!LookupOrCompileStub(cx, kind, writer, *stubInfo, *codeOut, name,
+                            false, cx->zone()->jitZone())) {
+    return ICAttachResult::OOM;
+  }
+
+  return ICAttachResult::Attached;
+}
+
+ICAttachResult js::jit::AttachBaselineCacheIRStub(
+    JSContext* cx, const CacheIRWriter& writer, CacheKind kind,
+    JSScript* outerScript, ICScript* icScript, ICFallbackStub* stub,
+    const char* name) {
+  MaybeMarkingLock lock;
+  return AttachBaselineCacheIRStubLocked(cx, writer, kind, outerScript,
+                                         icScript, stub,
+                                         DiscardExistingStubs::No, name, lock);
+}
+
+ICAttachResult js::jit::AttachBaselineCacheIRStubLocked(
+    JSContext* cx, const CacheIRWriter& writer, CacheKind kind,
+    JSScript* outerScript, ICScript* icScript, ICFallbackStub* stub,
+    DiscardExistingStubs discardFallbackStubs, const char* name,
+    MaybeMarkingLock& lock) {
+  
   
 #ifdef DEBUG
   static const size_t MaxOptimizedCacheIRStubs = 16;
   MOZ_ASSERT(stub->numOptimizedStubs() < MaxOptimizedCacheIRStubs);
 #endif
 
-  
   CacheIRStubInfo* stubInfo;
-  JitCode* code;
-
-  if (!LookupOrCompileStub(cx, kind, writer, stubInfo, code, name,
-                            false, cx->zone()->jitZone())) {
-    return ICAttachResult::OOM;
+  JitCode* code = nullptr;
+  ICAttachResult result =
+      CompileBaselineCacheIRStub(cx, writer, kind, name, &stubInfo, &code);
+  if (result != ICAttachResult::Attached) {
+    return result;
   }
+
+  
+  AutoAssertNoPendingException aanpe(cx);
+  JS::AutoCheckCannotGC nogc;
 
   ICEntry* icEntry = icScript->icEntryForStub(stub);
 
-  
-  
-  
-  for (ICStub* iter = icEntry->firstStub(); iter != stub;
-       iter = iter->toCacheIRStub()->next()) {
-    auto otherStub = iter->toCacheIRStub();
-    if (otherStub->stubInfo() != stubInfo) {
-      continue;
-    }
-    if (!writer.stubDataEquals(otherStub->stubDataStart())) {
-      continue;
-    }
-
+  if (discardFallbackStubs == DiscardExistingStubs::No) {
     
     
     
-    JitSpew(JitSpew_BaselineICFallback,
-            "Tried attaching identical stub for (%s:%u:%u)",
-            outerScript->filename(), outerScript->lineno(),
-            outerScript->column().oneOriginValue());
-    return ICAttachResult::DuplicateStub;
-  }
-
-  
-  if (stub->mayHaveFoldedStub() &&
-      AddToFoldedStub(cx, writer, icScript, stub, lock)) {
-    JitSpew(JitSpew_StubFolding,
-            "Added to folded stub at offset %u (icScript: %p) (%s:%u:%u)",
-            stub->pcOffset(), icScript, outerScript->filename(),
-            outerScript->lineno(), outerScript->column().oneOriginValue());
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    stub->resetEnteredCount();
-    JSScript* owningScript = nullptr;
-    bool hadGuardMultipleShapesBailout = false;
-    if (cx->zone()->jitZone()->hasStubFoldingBailoutData(outerScript)) {
-      owningScript = cx->zone()->jitZone()->stubFoldingBailoutOuter();
-      hadGuardMultipleShapesBailout = true;
-      JitSpew(JitSpew_StubFolding, "Found stub folding bailout outer: %s:%u:%u",
-              owningScript->filename(), owningScript->lineno(),
-              owningScript->column().oneOriginValue());
-    } else {
-      owningScript = icScript->isInlined()
-                         ? icScript->inliningRoot()->owningScript()
-                         : outerScript;
-    }
-    cx->zone()->jitZone()->clearStubFoldingBailoutData();
-    if (stub->usedByTranspiler() && hadGuardMultipleShapesBailout) {
-      if (owningScript->hasIonScript()) {
-        owningScript->ionScript()->resetNumFixableBailouts();
-      } else if (owningScript->hasJitScript()) {
-        owningScript->jitScript()->clearFailedICHash();
+    for (ICStub* iter = icEntry->firstStub(); iter != stub;
+         iter = iter->toCacheIRStub()->next()) {
+      auto otherStub = iter->toCacheIRStub();
+      if (otherStub->stubInfo() != stubInfo) {
+        continue;
       }
-    } else {
+      if (!writer.stubDataEquals(otherStub->stubDataStart())) {
+        continue;
+      }
+
       
       
-      owningScript->updateLastICStubCounter();
+      
+      JitSpew(JitSpew_BaselineICFallback,
+              "Tried attaching identical stub for (%s:%u:%u)",
+              outerScript->filename(), outerScript->lineno(),
+              outerScript->column().oneOriginValue());
+      return ICAttachResult::DuplicateStub;
     }
-    return ICAttachResult::Attached;
+
+    
+    if (stub->mayHaveFoldedStub() &&
+        AddToFoldedStub(cx, writer, icScript, stub)) {
+      JitSpew(JitSpew_StubFolding,
+              "Added to folded stub at offset %u (icScript: %p) (%s:%u:%u)",
+              stub->pcOffset(), icScript, outerScript->filename(),
+              outerScript->lineno(), outerScript->column().oneOriginValue());
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      stub->resetEnteredCount();
+      JSScript* owningScript = nullptr;
+      bool hadGuardMultipleShapesBailout = false;
+      if (cx->zone()->jitZone()->hasStubFoldingBailoutData(outerScript)) {
+        owningScript = cx->zone()->jitZone()->stubFoldingBailoutOuter();
+        hadGuardMultipleShapesBailout = true;
+        JitSpew(JitSpew_StubFolding,
+                "Found stub folding bailout outer: %s:%u:%u",
+                owningScript->filename(), owningScript->lineno(),
+                owningScript->column().oneOriginValue());
+      } else {
+        owningScript = icScript->isInlined()
+                           ? icScript->inliningRoot()->owningScript()
+                           : outerScript;
+      }
+      cx->zone()->jitZone()->clearStubFoldingBailoutData();
+      if (stub->usedByTranspiler() && hadGuardMultipleShapesBailout) {
+        if (owningScript->hasIonScript()) {
+          owningScript->ionScript()->resetNumFixableBailouts();
+        } else if (owningScript->hasJitScript()) {
+          owningScript->jitScript()->clearFailedICHash();
+        }
+      } else {
+        
+        
+        owningScript->updateLastICStubCounter();
+      }
+      return ICAttachResult::Attached;
+    }
   }
 
   
@@ -2286,6 +2307,22 @@ ICAttachResult js::jit::AttachBaselineCacheIRStubLocked(
   void* newStubMem = cx->zone()->jitZone()->stubSpace()->alloc(bytesNeeded);
   if (!newStubMem) {
     return ICAttachResult::OOM;
+  }
+
+  auto newStub = new (newStubMem) ICCacheIRStub(code, stubInfo);
+  writer.copyStubData(newStub->stubDataStart());
+  newStub->setTypeData(writer.typeData());
+
+#ifdef ENABLE_PORTABLE_BASELINE_INTERP
+  newStub->updateRawJitCode(pbl::GetICInterpreter());
+#endif
+
+  if (!lock.isSome()) {
+    lock.emplace(cx->zone(), icScript->markingLock());
+  }
+
+  if (discardFallbackStubs == DiscardExistingStubs::Yes) {
+    stub->discardStubs(cx->zone(), icEntry, *lock);
   }
 
   
@@ -2303,20 +2340,12 @@ ICAttachResult js::jit::AttachBaselineCacheIRStubLocked(
     case TrialInliningState::Inlined:
       stub->setTrialInliningState(TrialInliningState::Failure);
       
-      stub->discardStubs(cx->zone(), icEntry, lock);
+      stub->discardStubs(cx->zone(), icEntry, *lock);
       icScript->removeInlinedChild(stub->pcOffset());
       break;
     case TrialInliningState::Failure:
       break;
   }
-
-  auto newStub = new (newStubMem) ICCacheIRStub(code, stubInfo);
-  writer.copyStubData(newStub->stubDataStart());
-  newStub->setTypeData(writer.typeData());
-
-#ifdef ENABLE_PORTABLE_BASELINE_INTERP
-  newStub->updateRawJitCode(pbl::GetICInterpreter());
-#endif
 
   stub->addNewStub(icEntry, newStub);
 

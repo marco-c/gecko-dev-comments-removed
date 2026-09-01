@@ -188,9 +188,6 @@ class MOZ_RAII TrialInliner {
   JSContext* cx_;
   HandleScript script_;
   ICScript* icScript_;
-
-  
-  gc::AutoMarkingLock lock_;
 };
 
 bool DoTrialInlining(JSContext* cx, BaselineFrame* frame);
