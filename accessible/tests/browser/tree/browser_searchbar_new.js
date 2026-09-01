@@ -39,7 +39,7 @@ add_task(async function test_searchbar_a11y_tree() {
         children: [
           
           {
-            role: ROLE_EDITCOMBOBOX,
+            role: ROLE_PUSHBUTTON,
             
           },
 
@@ -92,7 +92,7 @@ add_task(async function test_searchbar_a11y_tree_with_results() {
         children: [
           
           {
-            role: ROLE_EDITCOMBOBOX,
+            role: ROLE_PUSHBUTTON,
             
           },
 
