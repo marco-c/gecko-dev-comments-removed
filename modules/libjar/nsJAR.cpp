@@ -590,8 +590,6 @@ nsZipReaderCache::Init(uint32_t cacheSize) {
   return NS_OK;
 }
 
-
-
 nsZipReaderCache::~nsZipReaderCache() {
   for (const auto& zip : mZips.Values()) {
     zip->SetZipReaderCache(nullptr);
