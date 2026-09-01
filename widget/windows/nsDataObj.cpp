@@ -57,21 +57,7 @@ using namespace mozilla::widget;
 #define BFH_LENGTH 14
 #define DEFAULT_THREAD_TIMEOUT_MS 30000
 
-
-
-nsDataObj::CStreamBase::CStreamBase() : mStreamRead(0) {}
-
-
-nsDataObj::CStreamBase::~CStreamBase() {}
-
 NS_IMPL_ISUPPORTS(nsDataObj::CStream, nsIStreamListener)
-
-
-
-nsDataObj::CStream::CStream() : mChannelRead(false) {}
-
-
-nsDataObj::CStream::~CStream() {}
 
 
 
@@ -197,7 +183,17 @@ NS_IMETHODIMP nsDataObj::CStream::OnStopRequest(nsIRequest* aRequest,
 
 
 
+
+
+
+
+
 nsresult nsDataObj::CStream::WaitForCompletion() {
+  
+  
+  
+  RefPtr<CStream> keepAliveDuringWait(this);
+
   
   SpinEventLoopUntil("widget:nsDataObj::CStream::WaitForCompletion"_ns,
                      [&]() { return mChannelRead; });
@@ -234,6 +230,8 @@ STDMETHODIMP nsDataObj::CStreamBase::LockRegion(ULARGE_INTEGER nStart,
 
 STDMETHODIMP nsDataObj::CStream::Read(void* pvBuffer, ULONG nBytesToRead,
                                       ULONG* nBytesRead) {
+  RefPtr<CStream> keepAliveDuringRead(this);
+
   
   
   if (NS_FAILED(WaitForCompletion())) return E_FAIL;
@@ -276,6 +274,8 @@ STDMETHODIMP nsDataObj::CStreamBase::SetSize(ULARGE_INTEGER nNewSize) {
 STDMETHODIMP nsDataObj::CStream::Stat(STATSTG* statstg, DWORD dwFlags) {
   if (statstg == nullptr) return STG_E_INVALIDPOINTER;
 
+  RefPtr<CStream> keepAliveDuringStat(this);
+
   if (!mChannel || NS_FAILED(WaitForCompletion())) return E_FAIL;
 
   memset((void*)statstg, 0, sizeof(STATSTG));
@@ -288,6 +288,8 @@ STDMETHODIMP nsDataObj::CStream::Stat(STATSTG* statstg, DWORD dwFlags) {
 
     nsAutoCString strFileName;
     nsCOMPtr<nsIURL> sourceURL = do_QueryInterface(sourceURI);
+    if (!sourceURL) return E_FAIL;
+
     sourceURL->GetFileName(strFileName);
 
     if (strFileName.IsEmpty()) return E_FAIL;
@@ -413,9 +415,6 @@ nsDataObj::CMemStream::CMemStream(nsHGLOBAL aGlobalMem, uint32_t aTotalLength,
     : mGlobalMem(aGlobalMem), mEvent(aEvent), mTotalLength(aTotalLength) {
   ::CoCreateFreeThreadedMarshaler(this, getter_AddRefs(mMarshaler));
 }
-
-
-nsDataObj::CMemStream::~CMemStream() {}
 
 
 
@@ -1965,7 +1964,7 @@ HRESULT nsDataObj::DropTempFile(FORMATETC& aFE, STGMEDIUM& aSTG) {
     char buffer[512];
     ULONG readCount = 0;
     uint32_t writeCount = 0;
-    while (1) {
+    while (true) {
       HRESULT hres = pStream->Read(buffer, sizeof(buffer), &readCount);
       if (FAILED(hres)) return E_FAIL;
       if (readCount == 0) break;
