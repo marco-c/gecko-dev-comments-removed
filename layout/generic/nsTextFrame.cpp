@@ -9704,7 +9704,7 @@ static bool FindFirstLetterRange(const CharacterDataBuffer& aBuffer,
   
   
   if (usesIndicHalfForms) {
-    while (i + 1 < length &&
+    while (i + 1 < length && iter.GetSkippedOffset() < aTextRun->GetLength() &&
            !aTextRun->IsLigatureGroupStart(iter.GetSkippedOffset())) {
       char32_t c = aBuffer.ScalarValueAt(AssertedCast<uint32_t>(aOffset + i));
       if (intl::UnicodeProperties::GetCombiningClass(c) ==
