@@ -16,6 +16,7 @@
 #include "CacheStorageService.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/FileUtils.h"
+#include "mozilla/IOUtils.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
@@ -1505,8 +1506,14 @@ nsresult CacheFileIOManager::OnIdleDaily() {
               }
               if (leafName.Find(kPurgeExtension) != kNotFound) {
                 mozilla::glean::networking::residual_cache_folder_count.Add(1);
-                rv = subdir->Remove(true);
-                if (NS_SUCCEEDED(rv)) {
+                
+                
+                
+                
+                if (IOUtils::RemoveSync(subdir,  true,
+                                         true,
+                                         true)
+                        .isOk()) {
                   mozilla::glean::networking::residual_cache_folder_removal
                       .Get("success"_ns)
                       .Add(1);
