@@ -440,10 +440,6 @@ struct arena_t : public BaseAllocClass {
 
   void DemoteChunkToSpare(arena_chunk_t* aChunk) MOZ_REQUIRES(mLock);
 
- public:
-  arena_chunk_t* RemoveOldestSpareChunk() MOZ_REQUIRES(mLock);
-
- private:
   
   
   size_t TryCoalesce(arena_chunk_t* aChunk, size_t run_ind, size_t run_pages,
