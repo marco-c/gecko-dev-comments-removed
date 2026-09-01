@@ -17,6 +17,7 @@
 #include "nsThreadUtils.h"
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/AutoSQLiteLifetime.h"
+#include "mozilla/FOG.h"
 
 #include "mozIStorageService.h"
 #include "mozIStorageConnection.h"
@@ -145,6 +146,11 @@ class HookSqliteMutex {
   HookSqliteMutex() {
     
     
+    
+    RefPtr<mozilla::FOG>(mozilla::FOG::GetSingleton())->TestShutdownFOG();
+
+    
+    
     do_check_ok(sqlite3_initialize());
     do_check_ok(sqlite3_shutdown());
     do_check_ok(::sqlite3_config(SQLITE_CONFIG_GETMUTEX, &orig_mutex_methods));
@@ -161,6 +167,11 @@ class HookSqliteMutex {
     mozilla::AutoSQLiteLifetime::Init();
     int rc = mozilla::AutoSQLiteLifetime::getInitResult();
     MOZ_RELEASE_ASSERT(rc == SQLITE_OK);
+
+    
+    const nsCString empty;
+    RefPtr<mozilla::FOG>(mozilla::FOG::GetSingleton())
+        ->TestResetFOG(empty, empty);
   }
 };
 
