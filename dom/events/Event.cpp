@@ -748,7 +748,8 @@ nsIFrame* Event::GetPrimaryFrameOfEventTarget(const nsPresContext& aPresContext,
   
   
   
-  if (frame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT) &&
+  if ((frame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT) ||
+       frame->IsInSVGTextSubtree()) &&
       StaticPrefs::dom_events_offset_in_svg_relative_to_svg_root()) {
     return SVGUtils::GetOuterSVGFrame(frame);
   }
