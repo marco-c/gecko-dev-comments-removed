@@ -3087,7 +3087,14 @@ nsresult QuotaManager::LoadQuota() {
           
           
 
-          if (fullOriginMetadata.mDirty) {
+          const bool needsRescan =
+#if defined(NIGHTLY_BUILD) || defined(DEBUG)
+              !fullOriginMetadata.CheckIfUsageIsConsistent(
+                  "LoadQuotaFromCache"_ns);
+#else
+              false;
+#endif
+          if (fullOriginMetadata.mDirty || needsRescan) {
             aDirtyOrigins.AppendElement(std::move(fullOriginMetadata));
           } else if (IsBestEffortPersistenceType(
                          
@@ -3151,6 +3158,14 @@ nsresult QuotaManager::LoadQuota() {
       
       isCacheUseAllowed = false;
     } else if (!dirtyOrigins.IsEmpty()) {
+      
+      
+      
+      
+      
+      
+      mUsageModificationDisabled.store(false);
+
       nsTArray<RenameAndInitInfo> renameAndInitInfos;
       nsTArray<FullOriginMetadata> failedOrigins;
       for (auto& dirtyOrigin : dirtyOrigins) {
@@ -4301,7 +4316,11 @@ Result<Ok, nsresult> QuotaManager::InitializeOriginDirectory(
 
     if (StaticPrefs::dom_quotaManager_loadQuotaFromSecondaryCache() &&
         IsInitializableQuotaVersion(metadata.mQuotaVersion) &&
-        !metadata.mAccessed) {
+        !metadata.mAccessed
+#if defined(NIGHTLY_BUILD) || defined(DEBUG)
+        && metadata.CheckIfUsageIsConsistent("InitializeOriginDirectory"_ns)
+#endif
+    ) {
       QM_LOG(("Initializing quota for: %s", metadata.mOrigin.get()));
       InitQuotaForOrigin(metadata,  true, aCacheMap);
 

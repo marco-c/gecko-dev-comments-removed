@@ -2,14 +2,14 @@
 
 
 
-
-
 #include "QuotaManagerDependencyFixture.h"
 #include "QuotaManagerTestHelpers.h"
 #include "gtest/gtest.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/dom/quota/Client.h"
 #include "mozilla/dom/quota/ClientDirectoryLock.h"
 #include "mozilla/dom/quota/ClientDirectoryLockHandle.h"
+#include "mozilla/dom/quota/CommonMetadata.h"
 #include "mozilla/dom/quota/DirectoryLock.h"
 #include "mozilla/dom/quota/DirectoryLockInlines.h"
 #include "mozilla/dom/quota/OriginScope.h"
@@ -4046,5 +4046,42 @@ TEST_F(TestQuotaManagerAndShutdownFixture,
     }
   });
 }
+
+
+#if defined(NIGHTLY_BUILD) || defined(DEBUG)
+TEST_F(TestQuotaManager, CheckIfUsageIsConsistentNoUnderflow) {
+  PerformOnIOThread([]() {
+    FullOriginMetadata fullOriginMetadata = GetFullOriginMetadata(
+        ""_ns, "mozilla.org"_ns, "http://www.mozilla.org"_ns);
+    fullOriginMetadata.mClientUsages[Client::IDB] = Some(uint64_t(10));
+    fullOriginMetadata.mOriginUsage = 10;
+
+    EXPECT_TRUE(fullOriginMetadata.CheckIfUsageIsConsistent("Test"_ns));
+  });
+}
+
+TEST_F(TestQuotaManager, CheckIfUsageIsConsistentDetectsUnderflow) {
+  PerformOnIOThread([]() {
+    FullOriginMetadata fullOriginMetadata = GetFullOriginMetadata(
+        ""_ns, "mozilla.org"_ns, "http://www.mozilla.org"_ns);
+    const uint64_t underflowed = uint64_t(INT64_MAX) + 5;
+    fullOriginMetadata.mClientUsages[Client::IDB] = Some(underflowed);
+    fullOriginMetadata.mOriginUsage = underflowed;
+
+    EXPECT_FALSE(fullOriginMetadata.CheckIfUsageIsConsistent("Test"_ns));
+  });
+}
+
+TEST_F(TestQuotaManager, CheckIfUsageIsConsistentDetectsMismatch) {
+  PerformOnIOThread([]() {
+    FullOriginMetadata fullOriginMetadata = GetFullOriginMetadata(
+        ""_ns, "mozilla.org"_ns, "http://www.mozilla.org"_ns);
+    fullOriginMetadata.mClientUsages[Client::IDB] = Some(uint64_t(10));
+    fullOriginMetadata.mOriginUsage = 999;
+
+    EXPECT_FALSE(fullOriginMetadata.CheckIfUsageIsConsistent("Test"_ns));
+  });
+}
+#endif
 
 }  
