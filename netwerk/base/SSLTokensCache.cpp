@@ -152,6 +152,12 @@ static nsTArray<uint8_t> SerializeRecord(Span<const uint8_t> aToken,
 }
 
 
+
+
+
+static constexpr int kRecordCompressionQuality = 1;
+
+
 static nsTArray<uint8_t> CompressRecord(Span<const uint8_t> aPayload) {
   size_t bound = BrotliEncoderMaxCompressedSize(aPayload.Length());
   nsTArray<uint8_t> result;
@@ -161,9 +167,10 @@ static nsTArray<uint8_t> CompressRecord(Span<const uint8_t> aPayload) {
   uint32_t originalLen = AssertedCast<uint32_t>(aPayload.Length());
   LittleEndian::writeUint32(result.Elements(), originalLen);
   size_t encodedSize = bound;
-  if (!BrotliEncoderCompress(5, BROTLI_DEFAULT_WINDOW, BROTLI_MODE_GENERIC,
-                             aPayload.Length(), aPayload.Elements(),
-                             &encodedSize, result.Elements() + 4)) {
+  if (!BrotliEncoderCompress(kRecordCompressionQuality, BROTLI_DEFAULT_WINDOW,
+                             BROTLI_MODE_GENERIC, aPayload.Length(),
+                             aPayload.Elements(), &encodedSize,
+                             result.Elements() + 4)) {
     return {};
   }
   result.TruncateLength(4 + encodedSize);
