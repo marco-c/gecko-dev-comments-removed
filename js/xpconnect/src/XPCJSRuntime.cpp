@@ -3315,6 +3315,10 @@ bool XPCJSRuntime::DescribeCustomObjects(JSObject* obj, const JSClass* clasp,
   }
 
   XPCWrappedNativeProto* p = XPCWrappedNativeProto::Get(obj);
+  if (!p) {
+    
+    return false;
+  }
   
   
   
