@@ -113,10 +113,7 @@ async function toggleMuteAudio(tab, expectMuted) {
 }
 
 async function pressIcon(icon) {
-  let tooltip = document.getElementById("tabbrowser-tab-tooltip");
-  await hover_icon(icon, tooltip);
   EventUtils.synthesizeMouseAtCenter(icon, { button: 0 });
-  leave_icon(icon);
 }
 
 async function wait_for_tab_playing_event(tab, expectPlaying) {
@@ -208,32 +205,6 @@ function disable_non_test_mouse(disable) {
   utils.disableNonTestMouseEvents(disable);
 }
 
-function hover_icon(icon, tooltip) {
-  disable_non_test_mouse(true);
-
-  let popupShownPromise = BrowserTestUtils.waitForEvent(tooltip, "popupshown");
-  EventUtils.synthesizeMouse(icon, 1, 1, { type: "mouseover" });
-  EventUtils.synthesizeMouse(icon, 2, 2, { type: "mousemove" });
-  EventUtils.synthesizeMouse(icon, 3, 3, { type: "mousemove" });
-  EventUtils.synthesizeMouse(icon, 4, 4, { type: "mousemove" });
-  return popupShownPromise;
-}
-
-function leave_icon(icon) {
-  EventUtils.synthesizeMouse(icon, 0, 0, { type: "mouseout" });
-  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
-    type: "mousemove",
-  });
-  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
-    type: "mousemove",
-  });
-  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
-    type: "mousemove",
-  });
-
-  disable_non_test_mouse(false);
-}
-
 
 
 let everMutedTabs = new WeakSet();
@@ -276,11 +247,17 @@ async function test_mute_tab(tab, icon, expectMuted) {
 
   let activeTab = gBrowser.selectedTab;
 
-  let tooltip = document.getElementById("tabbrowser-tab-tooltip");
+  
+  
+  
+  await BrowserTestUtils.waitForMutationCondition(
+    tab,
+    { attributes: true, subtree: true },
+    () => BrowserTestUtils.isVisible(icon),
+    { msg: "audio button is visible before clicking it" }
+  );
 
-  await hover_icon(icon, tooltip);
   EventUtils.synthesizeMouseAtCenter(icon, { button: 0 });
-  leave_icon(icon);
 
   is(
     gBrowser.selectedTab,
