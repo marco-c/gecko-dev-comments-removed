@@ -77,16 +77,35 @@ class Element;
 class CompileOrDecodeTask : public mozilla::Task {
  protected:
   CompileOrDecodeTask();
-  virtual ~CompileOrDecodeTask();
+  virtual ~CompileOrDecodeTask() = default;
+
+  bool IsCancelled(const MutexAutoLock& aProofOfLock) const {
+    return mIsCancelled;
+  }
+
+ public:
+  
+  
+  void Cancel();
+
+ protected:
+  
+  mozilla::Mutex mMutex;
+
+  bool mIsCancelled = false;
+};
+
+
+
+class StencilCompileOrDecodeTask : public CompileOrDecodeTask {
+ protected:
+  StencilCompileOrDecodeTask();
+  virtual ~StencilCompileOrDecodeTask();
 
   nsresult InitFrontendContext();
 
   void DidRunTask(const MutexAutoLock& aProofOfLock,
                   RefPtr<JS::Stencil>&& aStencil);
-
-  bool IsCancelled(const MutexAutoLock& aProofOfLock) const {
-    return mIsCancelled;
-  }
 
  public:
   
@@ -97,14 +116,7 @@ class CompileOrDecodeTask : public mozilla::Task {
   already_AddRefed<JS::Stencil> StealResult(
       JSContext* aCx, JS::InstantiationStorage* aInstantiationStorage);
 
-  
-  
-  void Cancel();
-
  protected:
-  
-  mozilla::Mutex mMutex;
-
   
   JS::TranscodeResult mResult = JS::TranscodeResult::Ok;
 
@@ -117,8 +129,6 @@ class CompileOrDecodeTask : public mozilla::Task {
   
   
   JS::FrontendContext* mFrontendContext = nullptr;
-
-  bool mIsCancelled = false;
 
  private:
   
@@ -330,7 +340,7 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
   
   
   
-  RefPtr<CompileOrDecodeTask> mCompileOrDecodeTask;
+  RefPtr<StencilCompileOrDecodeTask> mCompileOrDecodeTask;
 
   
   RefPtr<Document> mLoadBlockedDocument;
