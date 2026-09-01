@@ -8,6 +8,7 @@
 #include "js/loader/ModuleLoadRequest.h"
 #include "js/loader/ScriptLoadRequest.h"
 #include "mozilla/Encoding.h"
+#include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/InternalResponse.h"
@@ -148,9 +149,16 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
     
     
     
-    MOZ_ASSERT(!loadingPrincipal || loadingPrincipal->GetIsNullPrincipal() ||
-               principal->GetIsNullPrincipal() ||
-               loadingPrincipal->Subsumes(principal));
+    
+    
+    
+    
+    MOZ_ASSERT(
+        !loadingPrincipal || loadingPrincipal->GetIsNullPrincipal() ||
+        principal->GetIsNullPrincipal() ||
+        loadingPrincipal->Subsumes(principal) ||
+        (StaticPrefs::extensions_web_accessible_workers_deprecated_behavior() &&
+         principal->GetIsAddonPrincipal()));
   }
 #endif
 
