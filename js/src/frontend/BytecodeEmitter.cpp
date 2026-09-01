@@ -3110,6 +3110,39 @@ bool BytecodeEmitter::emitIteratorCloseInScope(EmitterScope& currentScope,
   
 }
 
+bool BytecodeEmitter::emitDestructuringIteratorClose(
+    SelfHostedIter selfHostedIter) {
+  
+
+  InternalIfEmitter ifDone(this);
+  if (!ifDone.emitThenElse()) {
+    
+    return false;
+  }
+  if (!emitPopN(2)) {
+    
+    return false;
+  }
+  if (!ifDone.emitElse()) {
+    
+    return false;
+  }
+  if (!emit1(JSOp::Swap)) {
+    
+    return false;
+  }
+  if (!emit1(JSOp::Pop)) {
+    
+    return false;
+  }
+  if (!emitIteratorCloseInInnermostScope(
+          IteratorKind::Sync, CompletionKind::Normal, selfHostedIter)) {
+    
+    return false;
+  }
+  return ifDone.emitEnd();
+}
+
 template <typename InnerEmitter>
 bool BytecodeEmitter::wrapWithDestructuringTryNote(int32_t iterDepth,
                                                    InnerEmitter emitter) {
@@ -3800,33 +3833,8 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
   
   
 
-  InternalIfEmitter ifDone(this);
-  if (!ifDone.emitThenElse()) {
+  if (!emitDestructuringIteratorClose(selfHostedIter)) {
     
-    return false;
-  }
-  if (!emitPopN(2)) {
-    
-    return false;
-  }
-  if (!ifDone.emitElse()) {
-    
-    return false;
-  }
-  if (!emit1(JSOp::Swap)) {
-    
-    return false;
-  }
-  if (!emit1(JSOp::Pop)) {
-    
-    return false;
-  }
-  if (!emitIteratorCloseInInnermostScope(
-          IteratorKind::Sync, CompletionKind::Normal, selfHostedIter)) {
-    
-    return false;
-  }
-  if (!ifDone.emitEnd()) {
     return false;
   }
 
