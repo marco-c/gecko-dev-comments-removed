@@ -212,6 +212,12 @@ class GTests:
             raise Exception("xre_path does not exist: %s", self.xre_path)
         env = dict(os.environ)
         env = self.build_core_environment(env)
+        
+        
+        
+        
+        
+        env["PYTHON"] = sys.executable
         env["PERFHERDER_ALERTING_ENABLED"] = "1"
         pathvar = ""
         if mozinfo.os == "linux":
