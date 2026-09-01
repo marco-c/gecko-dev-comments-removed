@@ -117,6 +117,13 @@ EventListenerManagerBase::EventListenerManagerBase()
                 "Keep the size of EventListenerManagerBase size compact!");
 }
 
+
+
+#ifndef MOZ_THREAD_SAFETY_OWNERSHIP_CHECKS_SUPPORTED
+static_assert(sizeof(EventListenerManager) <= 96,
+              "Keep the size of EventListenerManager compact!");
+#endif
+
 EventListenerManager::EventListenerManager(EventTarget* aTarget)
     : mTarget(aTarget) {
   NS_ASSERTION(aTarget, "unexpected null pointer");
@@ -138,6 +145,9 @@ EventListenerManager::~EventListenerManager() {
   
   
   NS_ASSERTION(!mTarget, "didn't call Disconnect");
+  if (mIsMainThreadELM) {
+    nsContentUtils::RemoveNodeListenerManager(this);
+  }
   RemoveAllListenersSilently();
 }
 
@@ -281,7 +291,13 @@ void EventListenerManager::AddEventListenerInternal(
       aAllEvents ? mListenerMap.GetOrCreateListenersForAllEvents()
                  : mListenerMap.GetOrCreateListenersForType(aTypeAtom);
 
-  for (const Listener& listener : listeners->NonObservingRange()) {
+  
+  
+  
+  const Listener* const elements = listeners->Elements();
+  const size_t length = listeners->Length();
+  for (size_t i = 0; i < length; ++i) {
+    const Listener& listener = elements[i];
     
     if (listener.mListenerIsHandler == aHandler &&
         listener.mFlags.EqualsForAddition(aFlags) &&
@@ -830,8 +846,10 @@ void EventListenerManager::RemoveEventListenerInternal(
     uint32_t count = listenerArray.Length();
     for (uint32_t i = 0; i < count; ++i) {
       Listener* listener = &listenerArray.ElementAt(i);
-      if (listener->mListener == aListenerHolder &&
-          listener->mFlags.EqualsForRemoval(aFlags)) {
+      
+      
+      if (listener->mFlags.EqualsForRemoval(aFlags) &&
+          listener->mListener == aListenerHolder) {
         return Some(i);
       }
     }

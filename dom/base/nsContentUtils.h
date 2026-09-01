@@ -1880,32 +1880,14 @@ class nsContentUtils {
 
 
 
-
-
-
-
-
-
-
-  static void TraverseListenerManager(nsINode* aNode,
-                                      nsCycleCollectionTraversalCallback& cb);
+  static void AddNodeListenerManager(mozilla::EventListenerManager* aManager);
 
   
 
 
 
-
-
-  static mozilla::EventListenerManager* GetListenerManagerForNode(
-      nsINode* aNode);
-  
-
-
-
-
-
-  static mozilla::EventListenerManager* GetExistingListenerManagerForNode(
-      const nsINode* aNode);
+  static void RemoveNodeListenerManager(
+      mozilla::EventListenerManager* aManager);
 
   static void AddEntryToDOMArenaTable(nsINode* aNode,
                                       mozilla::dom::DOMArena* aDOMArena);
@@ -1917,13 +1899,6 @@ class nsContentUtils {
       const nsINode* aNode);
 
   static void UnmarkGrayJSListenersInCCGenerationDocuments();
-
-  
-
-
-
-
-  static void RemoveListenerManager(nsINode* aNode);
 
   static bool IsInitialized() { return sInitialized; }
 
@@ -3179,6 +3154,13 @@ class nsContentUtils {
 
   static mozilla::dom::ReferrerPolicy GetReferrerPolicyFromChannel(
       nsIChannel* aChannel);
+
+  
+
+
+
+
+  static bool HasRelNoReferrer(const mozilla::dom::Element& aElement);
 
   static bool IsNonSubresourceRequest(nsIChannel* aChannel);
 

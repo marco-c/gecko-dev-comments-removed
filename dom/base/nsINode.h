@@ -1785,6 +1785,14 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
+
+    RefPtr<mozilla::EventListenerManager> mListenerManager;
+
+    
+
+
+
+
     RefPtr<nsAttrChildContentList> mChildNodes;
 
     
@@ -3072,17 +3080,25 @@ class nsINode : public mozilla::dom::EventTarget {
   
   virtual nsINode::nsSlots* CreateSlots();
 
-  bool HasSlots() const { return mSlots != nullptr; }
+  bool HasSlots() const {
+    return !(mSlotsOrListenerManager & kListenerManagerBit);
+  }
 
-  nsSlots* GetExistingSlots() const { return mSlots; }
+  nsSlots* GetExistingSlots() const {
+    return HasSlots() ? reinterpret_cast<nsSlots*>(mSlotsOrListenerManager)
+                      : nullptr;
+  }
 
   nsSlots* Slots() {
     if (!HasSlots()) {
-      mSlots = CreateSlots();
-      MOZ_ASSERT(mSlots);
+      SetSlots(CreateSlots());
     }
     return GetExistingSlots();
   }
+
+  
+  
+  void SetSlots(nsSlots* aSlots);
 
   
 
@@ -3191,8 +3207,29 @@ class nsINode : public mozilla::dom::EventTarget {
   
   nsIFrame* mPrimaryFrame = nullptr;
 
+ private:
   
-  nsSlots* mSlots;
+  
+  static constexpr uintptr_t kListenerManagerBit = 1;
+
+  
+  mozilla::EventListenerManager* GetInlineListenerManager() const {
+    MOZ_ASSERT(!HasSlots());
+    return reinterpret_cast<mozilla::EventListenerManager*>(
+        mSlotsOrListenerManager & ~kListenerManagerBit);
+  }
+
+  
+  mozilla::EventListenerManager* GetNodeListenerManager() const;
+
+  
+  
+  void DropNodeListenerManager();
+
+  
+  
+  
+  uintptr_t mSlotsOrListenerManager = kListenerManagerBit;
 };
 
 NON_VIRTUAL_ADDREF_RELEASE(nsINode)

@@ -330,7 +330,6 @@
 #include "nsILoadGroup.h"
 #include "nsILoadInfo.h"
 #include "nsIMIMEService.h"
-#include "nsIMemoryReporter.h"
 #include "nsINetUtil.h"
 #include "nsINode.h"
 #include "nsIObjectLoadingContent.h"
@@ -680,41 +679,15 @@ static constexpr nsAttrValue::EnumTableEntry
 
 namespace {
 
-static StaticAutoPtr<nsTHashMap<const nsINode*, RefPtr<EventListenerManager>>>
-    sEventListenerManagersHash;
+
+
+
+constinit DoublyLinkedList<EventListenerManager> sNodeEventListenerManagers;
 
 
 
 static nsRefPtrHashtable<nsPtrHashKey<const nsINode>, mozilla::dom::DOMArena>*
     sDOMArenaHashtable;
-
-class DOMEventListenerManagersHashReporter final : public nsIMemoryReporter {
-  MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf)
-
-  ~DOMEventListenerManagersHashReporter() = default;
-
- public:
-  NS_DECL_ISUPPORTS
-
-  NS_IMETHOD CollectReports(nsIHandleReportCallback* aHandleReport,
-                            nsISupports* aData, bool aAnonymize) override {
-    
-    
-    int64_t amount =
-        sEventListenerManagersHash
-            ? sEventListenerManagersHash->ShallowSizeOfIncludingThis(
-                  MallocSizeOf)
-            : 0;
-
-    MOZ_COLLECT_REPORT(
-        "explicit/dom/event-listener-managers-hash", KIND_HEAP, UNITS_BYTES,
-        amount, "Memory used by the event listener manager's hash table.");
-
-    return NS_OK;
-  }
-};
-
-NS_IMPL_ISUPPORTS(DOMEventListenerManagersHashReporter, nsIMemoryReporter)
 
 class SameOriginCheckerImpl final : public nsIChannelEventSink,
                                     public nsIInterfaceRequestor {
@@ -1288,14 +1261,6 @@ nsresult nsContentUtils::Init() {
   fingerprintingProtectionPrincipal.forget(&sFingerprintingProtectionPrincipal);
 
   if (!InitializeEventTable()) return NS_ERROR_FAILURE;
-
-  if (!sEventListenerManagersHash) {
-    sEventListenerManagersHash =
-        new nsTHashMap<const nsINode*, RefPtr<EventListenerManager>>();
-
-    RegisterStrongMemoryReporter(
-        MakeAndAddRef<DOMEventListenerManagersHashReporter>());
-  }
 
   sBlockedScriptRunners = new AutoTArray<nsCOMPtr<nsIRunnable>, 8>;
 
@@ -2460,23 +2425,10 @@ void nsContentUtils::Shutdown() {
   delete sUserDefinedEvents;
   sUserDefinedEvents = nullptr;
 
-  if (sEventListenerManagersHash) {
-    NS_ASSERTION(sEventListenerManagersHash->Count() == 0,
-                 "Event listener manager hash not empty at shutdown!");
-
-    
-
-    
-    
-    
-    
-    
-    
-
-    if (sEventListenerManagersHash->Count() == 0) {
-      sEventListenerManagersHash = nullptr;
-    }
-  }
+  
+  
+  NS_ASSERTION(sNodeEventListenerManagers.isEmpty(),
+               "Node event listener manager list not empty at shutdown!");
 
   MOZ_ASSERT_IF(sDOMArenaHashtable, sDOMArenaHashtable->Count() == 0);
   delete sDOMArenaHashtable;
@@ -6710,73 +6662,29 @@ void nsContentUtils::NotifyDevToolsOfNodeRemoval(nsINode& aRemovingNode) {
 }
 
 void nsContentUtils::UnmarkGrayJSListenersInCCGenerationDocuments() {
-  if (!sEventListenerManagersHash) {
-    return;
-  }
-
-  for (EventListenerManager* mgr : sEventListenerManagersHash->Values()) {
-    nsINode* n = static_cast<nsINode*>(mgr->GetTarget());
+  for (EventListenerManager& mgr : sNodeEventListenerManagers) {
+    nsINode* n = static_cast<nsINode*>(mgr.GetTarget());
     if (n && n->IsInComposedDoc() &&
         nsCCUncollectableMarker::InGeneration(
             n->OwnerDoc()->GetMarkedCCGeneration())) {
-      mgr->MarkForCC();
+      mgr.MarkForCC();
     }
   }
 }
 
 
-void nsContentUtils::TraverseListenerManager(
-    nsINode* aNode, nsCycleCollectionTraversalCallback& cb) {
-  if (!sEventListenerManagersHash) {
-    
-    return;
-  }
-
-  auto entry = sEventListenerManagersHash->Lookup(aNode);
-  if (entry) {
-    CycleCollectionNoteChild(cb, entry->get(), "[via hash] mListenerManager");
-  }
+void nsContentUtils::AddNodeListenerManager(EventListenerManager* aManager) {
+  MOZ_ASSERT(NS_IsMainThread());
+  sNodeEventListenerManagers.pushBack(aManager);
 }
 
-EventListenerManager* nsContentUtils::GetListenerManagerForNode(
-    nsINode* aNode) {
-  if (!sEventListenerManagersHash) {
-    
-    
 
-    return nullptr;
+void nsContentUtils::RemoveNodeListenerManager(EventListenerManager* aManager) {
+  MOZ_ASSERT(NS_IsMainThread());
+  
+  if (sNodeEventListenerManagers.ElementProbablyInList(aManager)) {
+    sNodeEventListenerManagers.remove(aManager);
   }
-
-  auto& entry = sEventListenerManagersHash->LookupOrInsert(aNode);
-
-  if (!entry) {
-    entry = new EventListenerManager(aNode);
-
-    aNode->SetFlags(NODE_HAS_LISTENERMANAGER);
-  }
-
-  return entry;
-}
-
-EventListenerManager* nsContentUtils::GetExistingListenerManagerForNode(
-    const nsINode* aNode) {
-  if (!aNode->HasFlag(NODE_HAS_LISTENERMANAGER)) {
-    return nullptr;
-  }
-
-  if (!sEventListenerManagersHash) {
-    
-    
-
-    return nullptr;
-  }
-
-  auto entry = sEventListenerManagersHash->Lookup(aNode);
-  if (entry) {
-    return entry.Data();
-  }
-
-  return nullptr;
 }
 
 void nsContentUtils::AddEntryToDOMArenaTable(nsINode* aNode,
@@ -6804,19 +6712,6 @@ already_AddRefed<DOMArena> nsContentUtils::TakeEntryFromDOMArenaTable(
   RefPtr<DOMArena> arena;
   sDOMArenaHashtable->Remove(aNode, getter_AddRefs(arena));
   return arena.forget();
-}
-
-
-void nsContentUtils::RemoveListenerManager(nsINode* aNode) {
-  if (sEventListenerManagersHash) {
-    
-    
-    Maybe<RefPtr<EventListenerManager>> listenerManager =
-        sEventListenerManagersHash->Extract(aNode);
-    if (listenerManager && *listenerManager) {
-      (*listenerManager)->Disconnect();
-    }
-  }
 }
 
 
