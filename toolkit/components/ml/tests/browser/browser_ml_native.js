@@ -558,18 +558,24 @@ add_task(async function test_ml_smoke_test_llama_prompt_sensitive() {
 
 
 
-const LLAMA_SMOKE_IS_AARCH64 = AppConstants.platform === "macosx";
-const LLAMA_SMOKE_EXPECTED_TEXT = LLAMA_SMOKE_IS_AARCH64
-  ? "Suddenly, the mouse stopped! \nThe little mouse was scared, but he was scared. He had been so brave. He was scared, but he was still wearing his "
-  : "Suddenly, the mouse stopped! \nThe old lady was surprised to see a beautiful song. The old lady was so surprised. She had never seen a little mouse and ";
-const LLAMA_SMOKE_EXPECTED_HASH = LLAMA_SMOKE_IS_AARCH64
-  ? "a59803f3d1c9d983f14c54fadbe9de3b73a1053780f01bc7768fa2bc498f6005"
-  : "67b4cf2e37139e20795938ab3dedbdd040ffc2143e2ded210b0838de37581fa9";
+const LLAMA_SMOKE_GOLDEN = {
+  aarch64: {
+    text: "Suddenly, the mouse stopped! \nThe little mouse was scared, but he was scared. He had been so brave. He was scared, but he was still wearing his ",
+    hash: "a59803f3d1c9d983f14c54fadbe9de3b73a1053780f01bc7768fa2bc498f6005",
+  },
+  "x86-64": {
+    text: "Suddenly, the mouse stopped! \nThe old lady was surprised to see a beautiful song. The old lady was so surprised. She had never seen a little mouse and ",
+    hash: "67b4cf2e37139e20795938ab3dedbdd040ffc2143e2ded210b0838de37581fa9",
+  },
+  x86: {
+    text: "Suddenly, the mouse stopped! \nThe old lady was surprised to see a beautiful song. The old lady was so surprised. She had never seen anything else ",
+    hash: "afc7fdbad9f3b10f7e68a23c3ef34f7118a23a17d3b8d5185636de3c8c8e2989",
+  },
+};
 
 add_task(async function test_ml_smoke_test_llama_golden_text() {
-  const isMacIntel =
-    AppConstants.platform === "macosx" &&
-    Services.sysinfo.getProperty("arch") !== "aarch64";
+  const arch = Services.sysinfo.getProperty("arch");
+  const isMacIntel = AppConstants.platform === "macosx" && arch !== "aarch64";
   if (isMacIntel) {
     ok(
       true,
@@ -577,6 +583,12 @@ add_task(async function test_ml_smoke_test_llama_golden_text() {
         "output is in a third arch bucket and within-engine determinism " +
         "is unreliable there (Bug 2047025)."
     );
+    return;
+  }
+
+  const golden = LLAMA_SMOKE_GOLDEN[arch];
+  if (!golden) {
+    ok(true, `Skipping golden-text: no output pinned for arch ${arch}.`);
     return;
   }
 
@@ -590,12 +602,12 @@ add_task(async function test_ml_smoke_test_llama_golden_text() {
       info(`Greedy SHA-256: ${hash}`);
       Assert.equal(
         text,
-        LLAMA_SMOKE_EXPECTED_TEXT,
+        golden.text,
         "Greedy output matches the pinned golden text"
       );
       Assert.equal(
         hash,
-        LLAMA_SMOKE_EXPECTED_HASH,
+        golden.hash,
         "Greedy output hash matches the pinned golden hash"
       );
     } finally {
