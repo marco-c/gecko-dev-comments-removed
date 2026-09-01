@@ -5,14 +5,18 @@
 #include "Link.h"
 
 #include "mozilla/Components.h"
+#include "mozilla/FocusModel.h"
 #include "mozilla/IHistory.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLDNSPrefetch.h"
 #include "mozilla/dom/SVGAElement.h"
+#include "mozilla/dom/SpeculationRules.h"
 #include "nsAttrValueInlines.h"
 #include "nsGkAtoms.h"
+#include "nsIContentInlines.h"  
 #include "nsIURIMutator.h"
 #include "nsIURIWithSizeOf.h"
 #include "nsLayoutUtils.h"
@@ -391,6 +395,39 @@ void Link::BindToTree(const BindContext& aContext) {
   ResetLinkState(false);
 }
 
+Focusable Link::IsLinkFocusableWithoutStyle(IsFocusableFlags aFlags) const {
+  Element* element = GetElement();
+  MOZ_ASSERT(element);
+
+  
+  
+  
+  
+  
+  
+  if (!element->IsInComposedDoc() || element->IsInDesignMode() ||
+      !element->OwnerDoc()->LinkHandlingEnabled() ||
+      nsContentUtils::IsNodeInEditableRegion(element)) {
+    return {};
+  }
+
+  int32_t tabIndex = element->TabIndex();
+
+  
+  
+  
+  if (!element->IsLink()) {
+    return element->GetTabIndexAttrValue().isSome() ? Focusable{true, tabIndex}
+                                                    : Focusable{};
+  }
+
+  if (!FocusModel::IsTabFocusable(TabFocusableType::Links)) {
+    tabIndex = -1;
+  }
+
+  return {true, tabIndex};
+}
+
 void Link::ResetLinkState(bool aNotify, bool aHasHref) {
   
   mNeedsRegistration = aHasHref;
@@ -403,6 +440,30 @@ void Link::ResetLinkState(bool aNotify, bool aHasHref) {
   
   SetLinkState(aHasHref ? State::Unvisited : State::NotLink, aNotify);
   TriggerLinkUpdate(aNotify);
+
+  UpdateSpeculationRulesLink(aHasHref);
+}
+
+void Link::UpdateSpeculationRulesLink(bool aHasHref) {
+  
+  
+  if (!mElement->IsAnyOfHTMLElements(nsGkAtoms::a, nsGkAtoms::area)) {
+    return;
+  }
+
+  
+  
+  
+  
+  if (StaticPrefs::dom_speculation_rules_enabled() && aHasHref &&
+      mElement->IsInComposedDoc()) {
+    mElement->OwnerDoc()->SpeculationRules().AddLink(mElement);
+  } else if (auto* speculationRules =
+                 mElement->OwnerDoc()->GetSpeculationRules()) {
+    
+    
+    speculationRules->RemoveLink(mElement);
+  }
 }
 
 void Link::Unregister() {

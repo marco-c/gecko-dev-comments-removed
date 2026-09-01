@@ -11,6 +11,7 @@
 
 #include "mozilla/dom/RustTypes.h"
 #include "nsCOMPtr.h"
+#include "nsIContent.h"
 #include "nsWrapperCache.h"  
 
 class nsIURI;
@@ -82,6 +83,12 @@ class Link : public nsISupports {
 
 
 
+  Focusable IsLinkFocusableWithoutStyle(IsFocusableFlags aFlags) const;
+
+  
+
+
+
 
 
 
@@ -124,6 +131,10 @@ class Link : public nsISupports {
   void Unregister();
   void SetLinkState(State, bool aNotify);
   void SetHrefAttribute(nsIURI* aURI);
+
+  
+  
+  void UpdateSpeculationRulesLink(bool aHasHref);
 
   mutable nsCOMPtr<nsIURI> mCachedURI;
 

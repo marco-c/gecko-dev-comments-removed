@@ -979,6 +979,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "MIDIPort", android: false },
   
+  { name: "MathMLAnchorElement", insecureContext: true, nightly: true },
+  
   { name: "MathMLElement", insecureContext: true },
   
   { name: "MediaCapabilities", insecureContext: true },

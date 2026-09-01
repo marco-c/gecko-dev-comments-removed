@@ -687,37 +687,8 @@ int32_t MathMLElement::TabIndexDefault() {
   return mNodeInfo->Equals(nsGkAtoms::a) ? 0 : -1;
 }
 
-
-Focusable MathMLElement::IsFocusableWithoutStyle(IsFocusableFlags) {
-  if (!IsInComposedDoc() || IsInDesignMode()) {
-    
-    return {};
-  }
-
-  int32_t tabIndex = TabIndex();
-  if (!IsLink()) {
-    
-    if (GetTabIndexAttrValue().isSome()) {
-      return {true, tabIndex};
-    }
-    return {};
-  }
-
-  if (!OwnerDoc()->LinkHandlingEnabled()) {
-    return {};
-  }
-
-  
-  
-  if (nsContentUtils::IsNodeInEditableRegion(this)) {
-    return {};
-  }
-
-  if (!FocusModel::IsTabFocusable(TabFocusableType::Links)) {
-    tabIndex = -1;
-  }
-
-  return {true, tabIndex};
+Focusable MathMLElement::IsFocusableWithoutStyle(IsFocusableFlags aFlags) {
+  return Link::IsLinkFocusableWithoutStyle(aFlags);
 }
 
 already_AddRefed<nsIURI> MathMLElement::GetHrefURI() const {

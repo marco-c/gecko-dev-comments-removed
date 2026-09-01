@@ -145,34 +145,13 @@ void SVGAElement::UnbindFromTree(UnbindContext& aContext) {
 
 int32_t SVGAElement::TabIndexDefault() { return 0; }
 
-Focusable SVGAElement::IsFocusableWithoutStyle(IsFocusableFlags) {
+Focusable SVGAElement::IsFocusableWithoutStyle(IsFocusableFlags aFlags) {
   Focusable result;
   if (IsSVGFocusable(&result.mFocusable, &result.mTabIndex)) {
     return result;
   }
 
-  if (!OwnerDoc()->LinkHandlingEnabled()) {
-    return {};
-  }
-
-  
-  
-  if (nsContentUtils::IsNodeInEditableRegion(this)) {
-    return {};
-  }
-
-  if (GetTabIndexAttrValue().isNothing()) {
-    
-    if (!IsLink()) {
-      
-      
-      return {};
-    }
-  }
-  if (!FocusModel::IsTabFocusable(TabFocusableType::Links)) {
-    result.mTabIndex = -1;
-  }
-  return result;
+  return Link::IsLinkFocusableWithoutStyle(aFlags);
 }
 
 bool SVGAElement::HasHref() const {

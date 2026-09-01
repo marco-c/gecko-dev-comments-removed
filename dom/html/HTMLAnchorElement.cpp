@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/HTMLAnchorElement.h"
 
 #include "mozilla/EventDispatcher.h"
@@ -92,36 +90,10 @@ bool HTMLAnchorElement::IsHTMLFocusable(IsFocusableFlags aFlags,
     return true;
   }
 
-  
-  if (!OwnerDoc()->LinkHandlingEnabled()) {
-    *aTabIndex = -1;
-    *aIsFocusable = false;
-    return false;
-  }
+  Focusable focusable = Link::IsLinkFocusableWithoutStyle(aFlags);
+  *aIsFocusable = focusable.mFocusable;
+  *aTabIndex = focusable.mTabIndex;
 
-  
-  
-  if (nsContentUtils::IsNodeInEditableRegion(this)) {
-    *aTabIndex = -1;
-    *aIsFocusable = false;
-    return true;
-  }
-
-  if (GetTabIndexAttrValue().isNothing()) {
-    
-    if (!IsLink()) {
-      
-      
-      *aTabIndex = -1;
-      *aIsFocusable = false;
-      return false;
-    }
-  }
-
-  if (!FocusModel::IsTabFocusable(TabFocusableType::Links)) {
-    *aTabIndex = -1;
-  }
-  *aIsFocusable = true;
   return false;
 }
 
