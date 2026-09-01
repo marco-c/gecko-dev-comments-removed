@@ -13,6 +13,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <span>
 
 #include "api/environment/environment.h"
 #include "api/field_trials_view.h"
@@ -41,6 +42,12 @@ class DefaultVideoJitterTiming : public VideoJitterTimingInterface {
 
   
   std::optional<Timestamp> LocalTime(uint32_t rtp_timestamp) const override;
+
+  std::optional<TimeDelta> OnContinuousTemporalUnits(
+      std::span<const uint32_t> rtp_timestamps,
+      Timestamp now) override {
+    return std::nullopt;
+  }
 
   
   

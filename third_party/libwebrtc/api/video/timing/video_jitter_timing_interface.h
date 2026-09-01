@@ -13,6 +13,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <span>
 
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
@@ -48,6 +49,12 @@ class VideoJitterTimingInterface {
 
   
   virtual void OnCompleteFrame(const FrameInfo& info) = 0;
+
+  
+  
+  virtual std::optional<TimeDelta> OnContinuousTemporalUnits(
+      std::span<const uint32_t> rtp_timestamps,
+      Timestamp now) = 0;
 
   
   
