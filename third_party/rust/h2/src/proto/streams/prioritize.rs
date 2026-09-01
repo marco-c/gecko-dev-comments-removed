@@ -10,7 +10,7 @@ use bytes::buf::Take;
 use std::{
     cmp::{self, Ordering},
     fmt, io, mem,
-    task::{Context, Poll, Waker},
+    task::Waker,
 };
 
 
@@ -443,13 +443,9 @@ impl Prioritize {
         }
 
         
-        
-        
-        debug_assert!(
-            stream.state.is_send_streaming() || stream.buffered_send_data > 0,
-            "state={:?}",
-            stream.state
-        );
+        if !stream.state.is_send_streaming() && stream.buffered_send_data == 0 {
+            return;
+        }
 
         
         let conn_available = self.flow.available().as_size();
@@ -509,30 +505,30 @@ impl Prioritize {
         }
     }
 
-    pub fn poll_complete<T, B>(
+    pub fn buffer_pending<T, B>(
         &mut self,
-        cx: &mut Context,
         buffer: &mut Buffer<Frame<B>>,
         store: &mut Store,
         counts: &mut Counts,
         dst: &mut Codec<T, Prioritized<B>>,
-    ) -> Poll<io::Result<()>>
+    ) -> io::Result<BufferStatus>
     where
         T: AsyncWrite + Unpin,
         B: Buf,
     {
-        
-        ready!(dst.poll_ready(cx))?;
-
         
         self.reclaim_frame(buffer, store, dst);
 
         
         let max_frame_len = dst.max_send_frame_size();
 
-        tracing::trace!("poll_complete");
+        tracing::trace!("buffer_pending");
 
         loop {
+            if !dst.has_send_capacity() {
+                return Ok(BufferStatus::CodecFull);
+            }
+
             if let Some(mut stream) = self.pop_pending_open(store, counts) {
                 self.pending_send.push_front(&mut stream);
                 self.try_assign_capacity(&mut stream);
@@ -549,25 +545,28 @@ impl Prioritize {
                     dst.buffer(frame).expect("invalid frame");
 
                     
-                    ready!(dst.poll_ready(cx))?;
-
+                    
+                    
                     
                     self.reclaim_frame(buffer, store, dst);
                 }
                 None => {
-                    
-                    ready!(dst.flush(cx))?;
-
-                    
-                    if !self.reclaim_frame(buffer, store, dst) {
-                        return Poll::Ready(Ok(()));
-                    }
-
-                    
-                    
+                    return Ok(BufferStatus::Complete);
                 }
             }
         }
+    }
+
+    pub fn reclaim_written_frame<T, B>(
+        &mut self,
+        buffer: &mut Buffer<Frame<B>>,
+        store: &mut Store,
+        dst: &mut Codec<T, Prioritized<B>>,
+    ) -> bool
+    where
+        B: Buf,
+    {
+        self.reclaim_frame(buffer, store, dst)
     }
 
     
@@ -731,6 +730,23 @@ impl Prioritize {
 
                     let frame = match stream.pending_send.pop_front(buffer) {
                         Some(Frame::Data(mut frame)) => {
+                            if let Some(reason) = stream.state.get_scheduled_reset() {
+                                
+                                
+                                
+                                
+                                
+                                
+                                
+                                if reason != Reason::NO_ERROR {
+                                    stream.pending_send.push_front(buffer, frame.into());
+                                    self.clear_queue(buffer, &mut stream);
+                                    self.reclaim_all_capacity(&mut stream, counts);
+                                    self.pending_send.push(&mut stream);
+                                    continue;
+                                }
+                            }
+
                             
                             
                             let stream_capacity = stream.send_flow.available();

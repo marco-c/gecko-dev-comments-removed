@@ -444,9 +444,15 @@ where
             
             
             
+            
             Err(Error::Reset(id, reason, initiator)) => {
+                if initiator == Initiator::Remote {
+                    tracing::trace!(?id, ?reason, ?initiator, "stream reset");
+                    return Ok(());
+                }
+
                 debug_assert_eq!(initiator, Initiator::Library);
-                tracing::trace!(?id, ?reason, "stream error");
+                tracing::trace!(?id, ?reason, ?initiator, "stream error");
                 match self.streams.send_reset(id, reason) {
                     Ok(()) => (),
                     Err(crate::proto::error::GoAway { debug_data, reason }) => {

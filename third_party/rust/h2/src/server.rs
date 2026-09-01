@@ -807,6 +807,18 @@ impl Builder {
     
     
     
+    pub fn header_table_size(&mut self, size: u32) -> &mut Self {
+        self.settings.set_header_table_size(Some(size));
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
     
     
     

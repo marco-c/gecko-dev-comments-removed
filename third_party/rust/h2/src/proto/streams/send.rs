@@ -1,6 +1,6 @@
 use super::{
-    store, Buffer, Codec, Config, Counts, Frame, Prioritize, Prioritized, Store, Stream, StreamId,
-    StreamIdOverflow, WindowSize,
+    store, Buffer, BufferStatus, Codec, Config, Counts, Frame, Prioritize, Prioritized, Store,
+    Stream, StreamId, StreamIdOverflow, WindowSize,
 };
 use crate::codec::UserError;
 use crate::frame::{self, Reason};
@@ -255,7 +255,18 @@ impl Send {
         
         
         
-        self.prioritize.clear_queue(buffer, stream);
+        
+        
+        
+        if !stream.is_pending_open {
+            
+            
+            
+            
+            
+            
+            self.prioritize.clear_queue(buffer, stream);
+        }
 
         let frame = frame::Reset::new(stream.id, reason);
 
@@ -307,6 +318,16 @@ impl Send {
         task: &mut Option<Waker>,
     ) -> Result<(), UserError> {
         
+        
+        
+        
+        
+        
+        
+        
+        Self::check_headers(frame.fields())?;
+
+        
         if !stream.state.is_send_streaming() {
             return Err(UserError::UnexpectedFrameType);
         }
@@ -323,20 +344,30 @@ impl Send {
         Ok(())
     }
 
-    pub fn poll_complete<T, B>(
+    pub fn buffer_pending<T, B>(
         &mut self,
-        cx: &mut Context,
         buffer: &mut Buffer<Frame<B>>,
         store: &mut Store,
         counts: &mut Counts,
         dst: &mut Codec<T, Prioritized<B>>,
-    ) -> Poll<io::Result<()>>
+    ) -> io::Result<BufferStatus>
     where
         T: AsyncWrite + Unpin,
         B: Buf,
     {
-        self.prioritize
-            .poll_complete(cx, buffer, store, counts, dst)
+        self.prioritize.buffer_pending(buffer, store, counts, dst)
+    }
+
+    pub fn reclaim_written_frame<T, B>(
+        &mut self,
+        buffer: &mut Buffer<Frame<B>>,
+        store: &mut Store,
+        dst: &mut Codec<T, Prioritized<B>>,
+    ) -> bool
+    where
+        B: Buf,
+    {
+        self.prioritize.reclaim_written_frame(buffer, store, dst)
     }
 
     
@@ -365,7 +396,16 @@ impl Send {
 
         stream.send_capacity_inc = false;
 
-        Poll::Ready(Some(Ok(self.capacity(stream))))
+        let capacity = self.capacity(stream);
+
+        
+        
+        if capacity == 0 {
+            stream.wait_send(cx);
+            return Poll::Pending;
+        }
+
+        Poll::Ready(Some(Ok(capacity)))
     }
 
     

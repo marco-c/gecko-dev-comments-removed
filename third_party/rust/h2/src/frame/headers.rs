@@ -6,12 +6,15 @@ use crate::hpack::{self, BytesStr};
 use http::header::{self, HeaderName, HeaderValue};
 use http::{uri, HeaderMap, Method, Request, StatusCode, Uri};
 
-use bytes::{Buf, BufMut, Bytes, BytesMut};
+use bytes::{Buf, BufMut, BytesMut};
 
 use std::fmt;
 use std::io::Cursor;
+use std::ops::ControlFlow;
 
 type EncodeBuf<'a> = bytes::buf::Limit<&'a mut BytesMut>;
+
+const MAX_HEADER_LIST_ABUSE_MULTIPLIER: usize = 4;
 
 
 
@@ -101,7 +104,7 @@ struct HeaderBlock {
 
 #[derive(Debug)]
 struct EncodingHeaderBlock {
-    hpack: Bytes,
+    hpack: BytesMut,
 }
 
 const END_STREAM: u8 = 0x1;
@@ -284,7 +287,7 @@ impl Headers {
 
         self.header_block
             .into_encoding(encoder)
-            .encode(&head, dst, |_| {})
+            .encode(&head, dst, Some(encoder), |_| {})
     }
 
     fn head(&self) -> Head {
@@ -505,7 +508,7 @@ impl PushPromise {
 
         self.header_block
             .into_encoding(encoder)
-            .encode(&head, dst, |dst| {
+            .encode(&head, dst, Some(encoder), |dst| {
                 dst.put_u32(promised_id.into());
             })
     }
@@ -548,7 +551,7 @@ impl Continuation {
         
         let head = self.head();
 
-        self.header_block.encode(&head, dst, |_| {})
+        self.header_block.encode(&head, dst, None, |_| {})
     }
 }
 
@@ -644,7 +647,13 @@ impl Pseudo {
 
 
 impl EncodingHeaderBlock {
-    fn encode<F>(mut self, head: &Head, dst: &mut EncodeBuf<'_>, f: F) -> Option<Continuation>
+    fn encode<F>(
+        mut self,
+        head: &Head,
+        dst: &mut EncodeBuf<'_>,
+        encoder: Option<&mut hpack::Encoder>,
+        f: F,
+    ) -> Option<Continuation>
     where
         F: FnOnce(&mut EncodeBuf<'_>),
     {
@@ -661,7 +670,8 @@ impl EncodingHeaderBlock {
 
         
         let continuation = if self.hpack.len() > dst.remaining_mut() {
-            dst.put((&mut self.hpack).take(dst.remaining_mut()));
+            let head_part = self.hpack.split_to(dst.remaining_mut());
+            dst.put_slice(&head_part);
 
             Some(Continuation {
                 stream_id: head.stream_id(),
@@ -669,6 +679,11 @@ impl EncodingHeaderBlock {
             })
         } else {
             dst.put_slice(&self.hpack);
+            
+            
+            if let Some(encoder) = encoder {
+                encoder.return_scratch(self.hpack);
+            }
 
             None
         };
@@ -852,7 +867,26 @@ impl HeaderBlock {
     ) -> Result<(), Error> {
         let mut reg = !self.fields.is_empty();
         let mut malformed = false;
+        let mut header_list_way_too_large = false;
         let mut headers_size = self.calculate_header_list_size();
+        let max_header_list_abuse_size =
+            max_header_list_size.saturating_mul(MAX_HEADER_LIST_ABUSE_MULTIPLIER);
+
+        macro_rules! check_size {
+            () => {{
+                if headers_size > max_header_list_abuse_size {
+                    tracing::trace!("load_hpack; header list size over abuse max");
+                    header_list_way_too_large = true;
+                    ControlFlow::Break(())
+                } else {
+                    if headers_size >= max_header_list_size && !self.is_over_size {
+                        tracing::trace!("load_hpack; header list size over max");
+                        self.is_over_size = true;
+                    }
+                    ControlFlow::Continue(())
+                }
+            }};
+        }
 
         macro_rules! set_pseudo {
             ($field:ident, $val:expr) => {{
@@ -866,11 +900,11 @@ impl HeaderBlock {
                     let __val = $val;
                     headers_size +=
                         decoded_header_size(stringify!($field).len() + 1, __val.as_str().len());
-                    if headers_size < max_header_list_size {
+                    if check_size!().is_break() {
+                        return ControlFlow::Break(());
+                    }
+                    if !self.is_over_size {
                         self.pseudo.$field = Some(__val);
-                    } else if !self.is_over_size {
-                        tracing::trace!("load_hpack; header list size over max");
-                        self.is_over_size = true;
                     }
                 }
             }};
@@ -907,14 +941,19 @@ impl HeaderBlock {
                     } else {
                         reg = true;
 
-                        headers_size += decoded_header_size(name.as_str().len(), value.len());
-                        if headers_size < max_header_list_size {
-                            self.field_size +=
-                                decoded_header_size(name.as_str().len(), value.len());
-                            self.fields.append(name, value);
-                        } else if !self.is_over_size {
-                            tracing::trace!("load_hpack; header list size over max");
-                            self.is_over_size = true;
+                        let header_size = decoded_header_size(name.as_str().len(), value.len());
+                        headers_size += header_size;
+                        if check_size!().is_break() {
+                            return ControlFlow::Break(());
+                        }
+                        if !self.is_over_size {
+                            self.field_size += header_size;
+                            if let Err(_) = self.fields.try_append(name, value) {
+                                
+                                
+                                
+                                self.is_over_size = true;
+                            }
                         }
                     }
                 }
@@ -925,11 +964,21 @@ impl HeaderBlock {
                 Protocol(v) => set_pseudo!(protocol, v),
                 Status(v) => set_pseudo!(status, v),
             }
+
+            ControlFlow::Continue(())
         });
 
-        if let Err(e) = res {
-            tracing::trace!("hpack decoding error; err={:?}", e);
-            return Err(e.into());
+        match res {
+            Ok(()) => {}
+            Err(e) => {
+                tracing::trace!("hpack decoding error; err={:?}", e);
+                return Err(e.into());
+            }
+        }
+
+        if header_list_way_too_large {
+            tracing::trace!("header list way too large; aborting connection");
+            return Err(Error::HeaderListWayTooLarge);
         }
 
         if malformed {
@@ -941,7 +990,8 @@ impl HeaderBlock {
     }
 
     fn into_encoding(self, encoder: &mut hpack::Encoder) -> EncodingHeaderBlock {
-        let mut hpack = BytesMut::new();
+        let mut hpack = encoder.take_scratch();
+        hpack.clear();
         let headers = Iter {
             pseudo: Some(self.pseudo),
             fields: self.fields.into_iter(),
@@ -949,9 +999,7 @@ impl HeaderBlock {
 
         encoder.encode(headers, &mut hpack);
 
-        EncodingHeaderBlock {
-            hpack: hpack.freeze(),
-        }
+        EncodingHeaderBlock { hpack }
     }
 
     
@@ -1167,6 +1215,90 @@ mod test {
                 path: BytesStr::from_static("*").into(),
                 ..Default::default()
             }
+        );
+    }
+
+    #[test]
+    fn test_try_append_prevents_panic_on_max_size_reached() {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        let num_headers = 25_000;
+
+        
+        let mut hpack = Vec::new();
+
+        
+        hpack.push(0x82u8); 
+        hpack.push(0x86); 
+        hpack.push(0x84); 
+
+        
+        hpack.push(0x41); 
+        hpack.push(0x09); 
+        hpack.extend_from_slice(b"localhost");
+
+        
+        
+        for i in 0..num_headers {
+            let name = format!("x-h-{i}");
+            hpack.push(0x00u8); 
+            hpack.push(name.len() as u8);
+            hpack.extend_from_slice(name.as_bytes());
+            hpack.push(1u8); 
+            hpack.push(b'v');
+        }
+
+        
+        let payload_len = hpack.len();
+        let mut frame = BytesMut::with_capacity(9 + payload_len);
+
+        
+        frame.put_u8(((payload_len >> 16) & 0xFF) as u8);
+        frame.put_u8(((payload_len >> 8) & 0xFF) as u8);
+        frame.put_u8((payload_len & 0xFF) as u8);
+        frame.put_u8(0x01); 
+        frame.put_u8(0x04); 
+        frame.put_u32(1); 
+
+        frame.extend_from_slice(&hpack);
+
+        
+        let head = Head::parse(&frame[..9]);
+        let payload = BytesMut::from(&frame[9..]);
+        let (mut headers, mut hpack_data) = Headers::load(head, payload).unwrap();
+        
+
+        
+        let mut decoder = hpack::Decoder::new(4096);
+        const DEFAULT_MAX_HEADER_LIST_SIZE: usize = 16 << 20; 
+        headers
+            .load_hpack(&mut hpack_data, DEFAULT_MAX_HEADER_LIST_SIZE, &mut decoder)
+            .expect("load_hpack should return Ok");
+
+        
+        assert!(
+            headers.is_over_size(),
+            "is_over_size should be true when HeaderMap capacity is exceeded"
         );
     }
 

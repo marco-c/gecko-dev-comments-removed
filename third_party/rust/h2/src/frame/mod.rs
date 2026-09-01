@@ -161,6 +161,9 @@ pub enum Error {
     MalformedMessage,
 
     
+    HeaderListWayTooLarge,
+
+    
     
     
     

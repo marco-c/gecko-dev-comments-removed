@@ -138,6 +138,12 @@ where
 
     
     
+    pub(crate) fn has_send_capacity(&mut self) -> bool {
+        self.framed_write().has_capacity()
+    }
+
+    
+    
     
     
     

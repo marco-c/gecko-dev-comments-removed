@@ -8,6 +8,13 @@ use http::header::{HeaderName, HeaderValue};
 pub struct Encoder {
     table: Table,
     size_update: Option<SizeUpdate>,
+    
+    
+    
+    
+    
+    
+    scratch: BytesMut,
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -21,7 +28,23 @@ impl Encoder {
         Encoder {
             table: Table::new(max_size, capacity),
             size_update: None,
+            scratch: BytesMut::new(),
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub(crate) fn take_scratch(&mut self) -> BytesMut {
+        std::mem::take(&mut self.scratch)
+    }
+
+    
+    pub(crate) fn return_scratch(&mut self, scratch: BytesMut) {
+        self.scratch = scratch;
     }
 
     
