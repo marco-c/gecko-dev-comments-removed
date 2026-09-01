@@ -40,7 +40,7 @@ static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> LoadRemainder_SIMD(
     
     dst32 = vld1q_lane_u32(src32, vdupq_n_u32(0), 0);
   }
-  return vreinterpretq_u16_u32(dst32);
+  return vreinterpretq_u8_u32(dst32);
 }
 
 template <class Arch>
@@ -48,7 +48,7 @@ template <class Arch>
 static MOZ_ALWAYS_INLINE void StoreRemainder_SIMD(
     uint8_t* aDst, size_t aLength, const xsimd::batch<uint8_t, Arch>& aSrc) {
   uint32_t* dst32 = reinterpret_cast<uint32_t*>(aDst);
-  uint32x4_t src32 = vreinterpretq_u32_u16(aSrc);
+  uint32x4_t src32 = vreinterpretq_u32_u8(aSrc);
   if (aLength >= 2) {
     
     vst1_u32(dst32, vget_low_u32(src32));
@@ -82,14 +82,17 @@ static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> SwizzleVector_SIMD(
     
     
     
-    return vbslq_u16(
-        vdupq_n_u16(0x00FF), vrev32q_u16(aSrc),
+    uint16x8_t src16 = vreinterpretq_u16_u8(aSrc);
+    return vreinterpretq_u8_u16(vbslq_u16(
+        vdupq_n_u16(0x00FF), vrev32q_u16(src16),
         aOpaqueAlpha
-            ? vorrq_u16(aSrc, vreinterpretq_u16_u32(vdupq_n_u32(0xFF000000)))
-            : aSrc.data);
+            ? vorrq_u16(src16, vreinterpretq_u16_u32(vdupq_n_u32(0xFF000000)))
+            : src16));
   }
   if constexpr (aOpaqueAlpha) {
-    return vorrq_u16(aSrc, vreinterpretq_u16_u32(vdupq_n_u32(0xFF000000)));
+    return vreinterpretq_u8_u16(
+        vorrq_u16(vreinterpretq_u16_u8(aSrc),
+                  vreinterpretq_u16_u32(vdupq_n_u32(0xFF000000))));
   }
   return aSrc;
 }
@@ -106,7 +109,7 @@ static MOZ_ALWAYS_INLINE xsimd::batch<uint32_t, Arch> UnpremultiplyLookup_SIMD(
 
   
   
-  return vreinterpretq_u16_u32(vld1q_lane_u32(
+  return vld1q_lane_u32(
       &sUnpremultiplyTable_NEON[alphaBuf[7]],
       vld1q_lane_u32(
           &sUnpremultiplyTable_NEON[alphaBuf[5]],
@@ -115,7 +118,7 @@ static MOZ_ALWAYS_INLINE xsimd::batch<uint32_t, Arch> UnpremultiplyLookup_SIMD(
                                         vdupq_n_u32(0), 0),
                          1),
           2),
-      3));
+      3);
 }
 
 template <class Arch>
@@ -128,7 +131,8 @@ static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> UnpremultiplyReverse_SIMD(
   
   
   
-  uint16x8x2_t q1234lohi = vtrnq_u16(aRecip, aRecip);
+  uint16x8_t recip16 = vreinterpretq_u16_u32(aRecip);
+  uint16x8x2_t q1234lohi = vtrnq_u16(recip16, recip16);
 
   
   
@@ -153,8 +157,9 @@ static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> UnpremultiplyReverse_SIMD(
 
   
   
-  return vbslq_u16(vreinterpretq_u16_u32(vdupq_n_u32(0xFF000000)), aSrc,
-                   vsliq_n_u16(rb, ga, 8));
+  return vreinterpretq_u8_u16(
+      vbslq_u16(vreinterpretq_u16_u32(vdupq_n_u32(0xFF000000)),
+                vreinterpretq_u16_u8(aSrc), vsliq_n_u16(rb, ga, 8)));
 }
 
 template <class Arch>
