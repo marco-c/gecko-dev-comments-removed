@@ -167,6 +167,10 @@ class AudioSink : private AudioStream::DataSource {
   int64_t mTotalSamplesPushed = 0;
   int64_t mTotalSamplesPopped = 0;
 
+  
+  
+  Atomic<bool> mStoppedForSeek{false};
+
   const RefPtr<AbstractThread> mOwnerThread;
 
   

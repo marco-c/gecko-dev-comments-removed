@@ -308,15 +308,15 @@ void AudioSink::ShutDown() {
     mAudioStream = nullptr;
     ReenqueueUnplayedAudioDataIfNeeded();
   }
+  mStoppedForSeek = false;
   mProcessedQueueFinished = true;
 }
 
 void AudioSink::PrepareForReuse() {
   MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
   MOZ_ASSERT(mAudioStream);
-  SINK_LOG("PrepareForReuse: detaching audio-queue listeners for seek reuse");
+  SINK_LOG("PrepareForReuse: dropping queued pre-seek audio for seek reuse");
 
-  
   
   
   
@@ -324,12 +324,16 @@ void AudioSink::PrepareForReuse() {
   mAudioQueueListener.DisconnectIfExists();
   mAudioQueueFinishListener.DisconnectIfExists();
   mProcessedQueueListener.DisconnectIfExists();
+  mStoppedForSeek = true;
+  mDiscardUpToSampleCount = mTotalSamplesPushed;
 }
 
 RefPtr<MediaSink::EndedPromise> AudioSink::ResetForReuse(
     const PlaybackParams& aParams, const media::TimeUnit& aStartTime) {
   MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
   MOZ_ASSERT(mAudioStream);
+  MOZ_ASSERT(mDiscardUpToSampleCount == mTotalSamplesPushed,
+             "Nothing may be pushed while the sink is stopped for a seek");
   SINK_LOG("ResetForReuse to start time {}", aStartTime.ToMicroseconds());
 
   ApplyPlaybackParams(aParams);
@@ -353,13 +357,9 @@ RefPtr<MediaSink::EndedPromise> AudioSink::ResetForReuse(
   ConnectAudioQueues();
 
   
-  
-  
-  
-  mDiscardUpToSampleCount = mTotalSamplesPushed;
-
-  
   NotifyAudioNeeded();
+
+  mStoppedForSeek = false;
 
   
   
@@ -459,6 +459,8 @@ uint32_t AudioSink::PopFrames(AudioDataValue* aBuffer, uint32_t aFrames,
   if (samplesRead != samplesToPop) {
     if (Ended()) {
       SINK_LOG("Last PopFrames -- Source ended.");
+    } else if (mStoppedForSeek) {
+      SINK_LOG_V("Stopped for a seek, outputting silence.");
     } else {
       NS_WARNING("Underrun when popping samples from audiosink ring buffer.");
       TRACE_COMMENT("AudioSink::PopFrames", "Underrun %u frames missing",
@@ -482,7 +484,7 @@ uint32_t AudioSink::PopFrames(AudioDataValue* aBuffer, uint32_t aFrames,
 bool AudioSink::Ended() const {
   
   
-  return mProcessedQueueFinished || mErrored;
+  return mErrored || (!mStoppedForSeek && mProcessedQueueFinished);
 }
 
 void AudioSink::CheckIsAudible(const Span<AudioDataValue>& aInterleaved,
