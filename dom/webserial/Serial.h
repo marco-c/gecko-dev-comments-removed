@@ -15,6 +15,12 @@
 
 namespace mozilla::dom {
 
+
+
+
+inline constexpr char16_t kBluetoothSerialPortProfileUUID[] =
+    u"00001101-0000-1000-8000-00805f9b34fb";
+
 class Promise;
 class SerialManagerChild;
 class SerialPort;
@@ -49,7 +55,8 @@ class Serial final : public DOMEventTargetHelper, public SupportsWeakPtr {
 
   already_AddRefed<Promise> SimulateDeviceConnection(
       const nsAString& aDeviceId, const nsAString& aDevicePath,
-      uint16_t aVendorId, uint16_t aProductId, ErrorResult& aRv);
+      uint16_t aVendorId, uint16_t aProductId,
+      const nsAString& aBluetoothServiceClassId, ErrorResult& aRv);
 
   already_AddRefed<Promise> SimulateDeviceDisconnection(
       const nsAString& aDeviceId, ErrorResult& aRv);
@@ -83,10 +90,6 @@ class Serial final : public DOMEventTargetHelper, public SupportsWeakPtr {
 
  private:
   ~Serial() override;
-
-  
-  
-  SerialManagerChild* GetManagerChildForTesting(ErrorResult& aRv);
 
   
   nsTArray<RefPtr<SerialPort>> mPorts;

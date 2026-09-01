@@ -20,6 +20,7 @@
 #include "nsContentUtils.h"
 #include "nsIObserverService.h"
 #include "nsIScriptError.h"
+#include "nsReadableUtils.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla::dom {
@@ -161,6 +162,72 @@ void SerialManagerParent::Init(uint64_t aBrowserId) {
 
 
 
+
+
+
+
+
+static bool IsBlockedBluetoothServiceClassUuid(const nsAString& aUuid) {
+  
+  
+  
+  
+  static const char16_t* const kBlocklist[] = {};
+  for (const char16_t* blocked : kBlocklist) {
+    if (aUuid.Equals(nsDependentString(blocked))) {
+      return true;
+    }
+  }
+
+  
+  if (aUuid.Equals(nsDependentString(kBluetoothSerialPortProfileUUID))) {
+    return false;
+  }
+
+  
+  
+  
+  constexpr auto kSigBaseSuffix = u"-0000-1000-8000-00805f9b34fb"_ns;
+  if (aUuid.Length() == 36 && StringEndsWith(aUuid, kSigBaseSuffix)) {
+    return true;
+  }
+
+  
+  return false;
+}
+
+
+
+
+
+static void ApplyBluetoothServiceClassGate(
+    nsTArray<IPCSerialPortInfo>& aPorts,
+    const nsTArray<nsString>& aAllowedBluetoothServiceClassIds) {
+  aPorts.RemoveElementsBy([&](const IPCSerialPortInfo& port) {
+    if (port.bluetoothServiceClassId().isNothing()) {
+      return false;
+    }
+    const nsString& uuid = port.bluetoothServiceClassId().value();
+    if (IsBlockedBluetoothServiceClassUuid(uuid)) {
+      return true;
+    }
+    if (uuid.Equals(nsDependentString(kBluetoothSerialPortProfileUUID))) {
+      return false;
+    }
+    for (const nsString& allowed : aAllowedBluetoothServiceClassIds) {
+      if (uuid.Equals(allowed)) {
+        return false;
+      }
+    }
+    return true;
+  });
+}
+
+
+
+
+
+
 static void ApplyPortFilters(nsTArray<IPCSerialPortInfo>& aPorts,
                              const nsTArray<IPCSerialPortFilter>& aFilters) {
   if (aFilters.IsEmpty()) {
@@ -244,7 +311,8 @@ using EnumeratePortsPromise = MozPromise<EnumeratePortsResult, nsresult, true>;
 }  
 
 mozilla::ipc::IPCResult SerialManagerParent::RecvRequestPort(
-    nsTArray<IPCSerialPortFilter>&& aFilters, bool aAutoselect,
+    nsTArray<IPCSerialPortFilter>&& aFilters,
+    nsTArray<nsString>&& aAllowedBluetoothServiceClassIds, bool aAutoselect,
     RequestPortResolver&& aResolver) {
   AssertIsOnMainThread();
 
@@ -282,6 +350,11 @@ mozilla::ipc::IPCResult SerialManagerParent::RecvRequestPort(
       return IPC_FAIL(this, "invalid filter");
     }
   }
+  for (const auto& uuid : aAllowedBluetoothServiceClassIds) {
+    if (!Serial::IsValidBluetoothUUID(uuid)) {
+      return IPC_FAIL(this, "invalid allowed bluetooth UUID");
+    }
+  }
 
   
   
@@ -307,8 +380,10 @@ mozilla::ipc::IPCResult SerialManagerParent::RecvRequestPort(
               })
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [self = RefPtr{this}, filters = std::move(aFilters), aAutoselect,
-           resolver = std::move(aResolver)](
+          [self = RefPtr{this}, filters = std::move(aFilters),
+           allowedBluetoothServiceClassIds =
+               std::move(aAllowedBluetoothServiceClassIds),
+           aAutoselect, resolver = std::move(aResolver)](
               EnumeratePortsPromise::ResolveOrRejectValue&& aValue) mutable {
             if (aValue.IsReject()) {
               self->mChooserRequestInFlight = false;
@@ -333,6 +408,8 @@ mozilla::ipc::IPCResult SerialManagerParent::RecvRequestPort(
                   u"serial port access."_ns,
                   nsIScriptError::warningFlag, "WebSerial"_ns, innerWindowId);
             }
+            ApplyBluetoothServiceClassGate(enumerated.mPorts,
+                                           allowedBluetoothServiceClassIds);
             ApplyPortFilters(enumerated.mPorts, filters);
             self->StartChooserRequest(aAutoselect, std::move(enumerated.mPorts),
                                       std::move(resolver));
@@ -421,13 +498,17 @@ mozilla::ipc::IPCResult SerialManagerParent::DispatchTestOperation(
 
 mozilla::ipc::IPCResult SerialManagerParent::RecvSimulateDeviceConnection(
     const nsString& aDeviceId, const nsString& aDevicePath, uint16_t aVendorId,
-    uint16_t aProductId, SimulateDeviceConnectionResolver&& aResolver) {
+    uint16_t aProductId, const nsString& aBluetoothServiceClassId,
+    SimulateDeviceConnectionResolver&& aResolver) {
   return DispatchTestOperation(
       "SerialManagerParent::SimulateDeviceConnection",
       [deviceId = nsString(aDeviceId), devicePath = nsString(aDevicePath),
-       aVendorId, aProductId](TestSerialPlatformService* testService) {
+       aVendorId, aProductId,
+       bluetoothServiceClassId = nsString(aBluetoothServiceClassId)](
+          TestSerialPlatformService* testService) {
         testService->SimulateDeviceConnection(deviceId, devicePath, aVendorId,
-                                              aProductId);
+                                              aProductId,
+                                              bluetoothServiceClassId);
       },
       std::move(aResolver));
 }
