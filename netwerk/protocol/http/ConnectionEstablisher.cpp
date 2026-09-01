@@ -152,15 +152,6 @@ SingleDNSAddrRecord::GetLastUpdate(mozilla::TimeStamp* aLastUpdate) {
 }
 
 NS_IMETHODIMP
-SingleDNSAddrRecord::GetFromStaleCache(bool* aResult) {
-  
-  
-  
-  *aResult = false;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 SingleDNSAddrRecord::GetNextAddr(uint16_t aPort, NetAddr* aAddr) {
   if (mDone) {
     return NS_ERROR_NOT_AVAILABLE;
