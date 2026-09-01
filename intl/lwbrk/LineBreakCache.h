@@ -15,7 +15,8 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/intl/Segmenter.h"
 
-namespace mozilla::intl {
+namespace mozilla {
+namespace intl {
 
 namespace detail {
 struct LBCacheKey {
@@ -36,6 +37,8 @@ struct LBCacheEntry {
   bool mIsChineseOrJapanese = false;
 };
 }  
+
+
 
 
 
@@ -61,10 +64,6 @@ class LineBreakCache : public MruCache<detail::LBCacheKey, detail::LBCacheEntry,
     h = AddToHash(h, aKey.mLineBreak);
     h = AddToHash(h, aKey.mIsChineseOrJapanese);
     return h;
-  }
-
-  static bool IsEmpty(const EntryType& aEntry) {
-    return aEntry.mText.IsEmpty();
   }
 
   static bool Match(const KeyType& aKey, const EntryType& aEntry) {
@@ -94,6 +93,7 @@ class LineBreakCache : public MruCache<detail::LBCacheKey, detail::LBCacheEntry,
   static StaticAutoPtr<LineBreakCache> sBreakCache;
 };
 
+}  
 }  
 
 #endif 

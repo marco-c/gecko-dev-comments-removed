@@ -16,6 +16,22 @@
 
 namespace mozilla {
 
+namespace detail {
+
+
+
+
+
+template <typename Value>
+constexpr bool IsNotEmpty(const Value& aVal) {
+  if constexpr (!std::is_pointer_v<Value>) {
+    return true;
+  } else {
+    return aVal != nullptr;
+  }
+}
+
+}  
 
 
 
@@ -45,30 +61,12 @@ namespace mozilla {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-template <class Key, class Value, class Cache, size_t Size = 32,
-          size_t Ways = 2>
+template <class Key, class Value, class Cache, size_t Size = 32>
 class MruCache {
+  static_assert(Size >= 2 && (Size & (Size - 1)) == 0,
+                "Size must be a power of two");
+
  public:
-  
-  static constexpr size_t kWays = Ways;
-
-  static_assert((Size & (Size - 1)) == 0, "Size must be a power of two");
-  static_assert(Size > kWays,
-                "Size must be larger than the associativity, so that there's "
-                "more than one set");
-
   using KeyType = Key;
   using ValueType = Value;
 
@@ -78,19 +76,9 @@ class MruCache {
 
   
   
-  static bool IsEmpty(const ValueType& aVal) {
-    static_assert(std::is_pointer_v<ValueType>,
-                  "Non-pointer value types must provide "
-                  "`static bool IsEmpty(const ValueType&)`");
-    return !aVal;
-  }
-
-  
-  
-  
   template <typename U>
   void Put(const KeyType& aKey, U&& aVal) {
-    Lookup(aKey).Set(std::forward<U>(aVal));
+    *RawEntry(aKey) = std::forward<U>(aVal);
   }
 
   
@@ -147,34 +135,21 @@ class MruCache {
   
   
   
-  MOZ_ALWAYS_INLINE Entry Lookup(const KeyType& aKey) {
-    const HashNumber hash = ScrambleHashCode(Cache::Hash(aKey));
-    const size_t base = SetIndex(hash) * kWays;
-
-    size_t freeEntry = kWays;
-    for (size_t way = 0; way < kWays; ++way) {
-      ValueType& val = mCache[base + way];
-      if (Cache::IsEmpty(val)) {
-        freeEntry = way;
-        continue;
-      }
-      if (Cache::Match(aKey, val)) {
-        return Entry(&val, true);
-      }
-    }
-    if (freeEntry == kWays) {
-      
-      
-      freeEntry = hash & (kWays - 1);
-    }
-    return Entry(&mCache[base + freeEntry], false);
+  Entry Lookup(const KeyType& aKey) {
+    auto entry = RawEntry(aKey);
+    bool match = detail::IsNotEmpty(*entry) && Cache::Match(aKey, *entry);
+    return Entry(entry, match);
   }
 
  private:
-  static constexpr size_t kSets = Size / kWays;
-  static constexpr uint32_t kSetBits = CeilingLog2(kSets);
-  static constexpr uint32_t kShift = kHashNumberBits - kSetBits;
-  static constexpr size_t SetIndex(HashNumber aHash) { return aHash >> kShift; }
+  static constexpr uint32_t kShift = kHashNumberBits - CeilingLog2(Size);
+
+  MOZ_ALWAYS_INLINE ValueType* RawEntry(const KeyType& aKey) {
+    
+    
+    
+    return &mCache[ScrambleHashCode(Cache::Hash(aKey)) >> kShift];
+  }
 
   ValueType mCache[Size] = {};
 };
