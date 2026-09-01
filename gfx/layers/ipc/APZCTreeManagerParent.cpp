@@ -153,9 +153,11 @@ mozilla::ipc::IPCResult APZCTreeManagerParent::RecvStartAutoscroll(
   
   
   
-  
-  
-  
+  if (!IsForRootLayer()) {
+    return IPC_FAIL(
+        this,
+        "StartAutoscroll from non-root APZCTreeManagerParent is not expected.");
+  }
 
   mUpdater->RunOnControllerThread(
       mLayersId,
@@ -169,6 +171,11 @@ mozilla::ipc::IPCResult APZCTreeManagerParent::RecvStartAutoscroll(
 mozilla::ipc::IPCResult APZCTreeManagerParent::RecvStopAutoscroll(
     const ScrollableLayerGuid& aGuid) {
   
+  if (!IsForRootLayer()) {
+    return IPC_FAIL(
+        this,
+        "StopAutoscroll from non-root APZCTreeManagerParent is not expected.");
+  }
 
   mUpdater->RunOnControllerThread(
       mLayersId, NewRunnableMethod<ScrollableLayerGuid>(
@@ -204,6 +211,10 @@ bool APZCTreeManagerParent::IsGuidValid(const ScrollableLayerGuid& aGuid) {
     return false;
   }
   return true;
+}
+
+bool APZCTreeManagerParent::IsForRootLayer() const {
+  return mLayersId == mTreeManager->GetRootLayersId();
 }
 
 }  
