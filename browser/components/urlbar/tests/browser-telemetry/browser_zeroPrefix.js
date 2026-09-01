@@ -9,6 +9,11 @@
 
 "use strict";
 
+ChromeUtils.defineESModuleGetters(this, {
+  CustomizableUITestUtils:
+    "resource://testing-common/CustomizableUITestUtils.sys.mjs",
+});
+
 const SCALARS = {
   ABANDONMENT: "urlbar.zeroprefix.abandonment",
   ENGAGEMENT: "urlbar.zeroprefix.engagement",
@@ -55,6 +60,49 @@ add_task(async function engagement() {
   checkScalars({
     [SCALARS.ENGAGEMENT]: 1,
   });
+});
+
+
+
+add_task(async function searchbarIsNotCounted() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.search.widget.new", true]],
+  });
+  let cuiTestUtils = new CustomizableUITestUtils(window);
+  await cuiTestUtils.addSearchBar();
+  let searchbar = SearchbarTestUtils.getUrlbar(window);
+  
+  
+  await SearchbarTestUtils.formHistory.add(["a recent search"]);
+
+  try {
+    await BrowserTestUtils.withNewTab("about:blank", async () => {
+      let { promise, cleanup } = waitForQueryFinished(searchbar);
+      await SimpleTest.promiseFocus(window);
+      await SearchbarTestUtils.promisePopupOpen(window, () => {
+        EventUtils.synthesizeMouseAtCenter(searchbar.inputField, {}, window);
+      });
+      await promise;
+      cleanup();
+
+      Assert.greater(
+        SearchbarTestUtils.getResultCount(window),
+        0,
+        "The search bar's zero prefix view has a row"
+      );
+
+      await SearchbarTestUtils.promisePopupClose(window, () =>
+        EventUtils.synthesizeKey("KEY_Escape")
+      );
+    });
+  } finally {
+    searchbar.view.queryContextCache.clear();
+    await SearchbarTestUtils.formHistory.clear();
+    await cuiTestUtils.removeSearchBar();
+    await SpecialPowers.popPrefEnv();
+  }
+
+  checkScalars({});
 });
 
 
@@ -190,17 +238,19 @@ async function showZeroPrefix() {
 
 
 
-function waitForQueryFinished() {
+
+
+function waitForQueryFinished(input = gURLBar) {
   let deferred = Promise.withResolvers();
   let listener = {
     onQueryFinished: () => deferred.resolve(),
   };
-  gURLBar.controller.addListener(listener);
+  input.controller.addListener(listener);
 
   return {
     promise: deferred.promise,
     cleanup() {
-      gURLBar.controller.removeListener(listener);
+      input.controller.removeListener(listener);
     },
   };
 }
