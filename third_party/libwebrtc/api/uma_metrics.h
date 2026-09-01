@@ -217,6 +217,7 @@ enum SdpMungingType {
   kSframe = 35,
   kMsidStream = 36,
   kMsidTrack = 37,
+  kIceOptionsRemoved = 38,
   
   kRtpHeaderExtensionRemoved = 40,
   kRtpHeaderExtensionAdded = 41,
