@@ -44,9 +44,19 @@
     throw new Error(`Element "${element.tagName}" is not expected to move`);
   };
 
+  
+  
+  const STALE_DRAG_CHECK_INTERVAL_MS = 1000;
+
+  
+  
+  const DROP_ANIMATION_GRACE_MS = 1000;
+
   window.TabDragAndDrop = class {
     #dragTime = 0;
     #pinnedDropIndicatorTimeout = null;
+    #dropAnimationEndTime = 0;
+    #staleDragCheckTimer = null;
 
     constructor(tabbrowserTabs) {
       this._tabbrowserTabs = tabbrowserTabs;
@@ -475,6 +485,7 @@
         }
 
         if (shouldTranslate) {
+          this.#dropAnimationEndTime = Date.now() + DROP_ANIMATION_GRACE_MS;
           let translationPromises = [];
           for (let item of movingTabs) {
             item = elementToMove(item);
@@ -911,6 +922,89 @@
     #setMovingTabMode(movingTab) {
       this._tabbrowserTabs.toggleAttribute("movingtab", movingTab);
       gNavToolbox.toggleAttribute("movingtab", movingTab);
+
+      if (movingTab) {
+        this.#startStaleDragCheck();
+      } else {
+        this.#stopStaleDragCheck();
+      }
+    }
+
+    get #dragSession() {
+      return Cc["@mozilla.org/widget/dragservice;1"]
+        .getService(Ci.nsIDragService)
+        .getCurrentSession(window);
+    }
+
+    
+
+
+
+
+
+
+    #startStaleDragCheck() {
+      if (this.#staleDragCheckTimer) {
+        return;
+      }
+      this.#staleDragCheckTimer = setInterval(() => {
+        if (!this.#dragSession) {
+          this.#recoverFromStaleDrag();
+        }
+      }, STALE_DRAG_CHECK_INTERVAL_MS);
+      window.addEventListener("mousedown", this.#onMouseDown, {
+        capture: true,
+      });
+    }
+
+    #stopStaleDragCheck() {
+      if (!this.#staleDragCheckTimer) {
+        return;
+      }
+      clearInterval(this.#staleDragCheckTimer);
+      this.#staleDragCheckTimer = null;
+      window.removeEventListener("mousedown", this.#onMouseDown, {
+        capture: true,
+      });
+    }
+
+    #onMouseDown = event => {
+      
+      
+      
+      if (event.button == 0) {
+        this.#recoverFromStaleDrag();
+      }
+    };
+
+    #recoverFromStaleDrag() {
+      
+      
+      
+      if (Date.now() < this.#dropAnimationEndTime) {
+        return;
+      }
+
+      
+      
+      
+      this.#dragSession?.endDragSession(false);
+
+      let draggedItem = this._tabbrowserTabs.dragAndDropElements.find(
+        item => item._dragData
+      );
+      if (draggedItem) {
+        this.finishMoveTogetherSelectedTabs(draggedItem);
+        if (isTabGroupLabel(draggedItem)) {
+          this._setIsDraggingTabGroup(draggedItem.group, false);
+          this._expandGroupOnDrop(draggedItem);
+        }
+      }
+      this.finishAnimateTabMove();
+      this._resetTabsAfterDrop(draggedItem);
+      if (draggedItem) {
+        delete draggedItem._dragData;
+      }
     }
 
     _getDropIndex(event) {
