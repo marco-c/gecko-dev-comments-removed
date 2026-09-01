@@ -108,10 +108,12 @@ const startupPhases = {
 };
 
 if (AppConstants.platform == "win") {
+  let modules = startupPhases["before profile selection"].allowlist.modules;
   
-  startupPhases["before profile selection"].allowlist.modules.add(
+  modules.add(
     "moz-src:///browser/components/shell/StartupOSIntegration.sys.mjs"
   );
+  modules.add("resource://gre/modules/LaunchOnLogin.sys.mjs");
 }
 
 if (
