@@ -18,6 +18,7 @@ from symbolication import (
     UNSYMBOLICATED,
     get_file_url,
     make_sym_map,
+    parse_inlines,
     process_module,
 )
 
@@ -74,6 +75,27 @@ def test_make_sym_map_handles_empty_input():
 
 
 
+def test_parse_inlines_resolves_chain_for_wanted_func():
+    
+    func_inlines = parse_inlines(_read_fixture(), {0x2500})
+    inlines = func_inlines[0x2500]
+    by_name = {name: (nest, ranges) for nest, name, ranges in inlines}
+    assert by_name["InlinedOuter()"] == (0, [(0x2500, 0x2520)])
+    assert by_name["InlinedInner()"] == (1, [(0x2505, 0x2515)])
+
+
+def test_parse_inlines_ignores_unwanted_funcs():
+    
+    assert parse_inlines(_read_fixture(), {0x1000}) == {}
+
+
+def test_parse_inlines_empty_wanted_set_is_noop():
+    assert parse_inlines(_read_fixture(), set()) == {}
+
+
+
+
+
 _CONFIG = {"symbol_server_url": "https://symbols.example.com/"}
 
 
@@ -100,7 +122,7 @@ def test_get_file_url_returns_none_for_missing_breakpad_id():
 
 def test_process_module_none_module_returns_unsymbolicated():
     result = process_module(None, ["100", "200"], _CONFIG)
-    assert all(entry[1] == (UNSYMBOLICATED, "unknown") for entry in result)
+    assert all(entry[1] == [(UNSYMBOLICATED, "unknown")] for entry in result)
     assert len(result) == 2
 
 
@@ -108,8 +130,8 @@ def test_process_module_pseudo_module_returns_offset_as_symbol():
     pseudo = ("pseudo", None)
     result = process_module(pseudo, ["myFrameLabel", None], _CONFIG)
     
-    assert result[0][1] == ("myFrameLabel", "")
-    assert result[1][1] == ("", "")
+    assert result[0][1] == [("myFrameLabel", "")]
+    assert result[1][1] == [("", "")]
 
 
 def test_process_module_resolves_offsets_via_fixture(monkeypatch):
@@ -124,13 +146,39 @@ def test_process_module_resolves_offsets_via_fixture(monkeypatch):
     result = process_module(module, offsets, _CONFIG)
 
     
-    assert result[0][1] == ("FooFunction()", "testlib.pdb")
     
-    assert result[1][1] == ("FooFunction()", "testlib.pdb")
+    assert result[0][1] == [("FooFunction()", "testlib.pdb")]
     
-    assert result[2][1] == ("BarFunction(int)", "testlib.pdb")
+    assert result[1][1] == [("FooFunction()", "testlib.pdb")]
     
-    assert result[3][1] == ("MultilineSymbol", "testlib.pdb")
+    assert result[2][1] == [("BarFunction(int)", "testlib.pdb")]
+    
+    assert result[3][1] == [("MultilineSymbol", "testlib.pdb")]
+
+
+def test_process_module_expands_inline_frames(monkeypatch):
+    import symbolication
+
+    fixture_bytes = _read_fixture()
+    monkeypatch.setattr(symbolication, "fetch_url", lambda _url: (True, fixture_bytes))
+
+    module = ("testlib.pdb", "ABCDEF0123456789ABCDEF0123456789A")
+    result = dict(process_module(module, ["2500", "2508", "2530"], _CONFIG))
+
+    lib = "testlib.pdb"
+    
+    assert result[(module, "2500")] == [
+        ("OuterFunc()", lib),
+        ("InlinedOuter()", lib),
+    ]
+    
+    assert result[(module, "2508")] == [
+        ("OuterFunc()", lib),
+        ("InlinedOuter()", lib),
+        ("InlinedInner()", lib),
+    ]
+    
+    assert result[(module, "2530")] == [("OuterFunc()", lib)]
 
 
 def test_process_module_returns_unsymbolicated_when_fetch_fails(monkeypatch):
@@ -140,7 +188,7 @@ def test_process_module_returns_unsymbolicated_when_fetch_fails(monkeypatch):
 
     module = ("missing.pdb", "DEADBEEF")
     result = process_module(module, ["100", "200"], _CONFIG)
-    assert all(entry[1] == (UNSYMBOLICATED, "missing.pdb") for entry in result)
+    assert all(entry[1] == [(UNSYMBOLICATED, "missing.pdb")] for entry in result)
 
 
 
@@ -159,7 +207,7 @@ def test_symbolicate_modules_calls_process_module_per_module(monkeypatch):
 
     def fake_process_module(module, offsets, config):
         calls.append((module, list(offsets)))
-        return [((module, o), (f"sym-{o}", module[0])) for o in offsets]
+        return [((module, o), [(f"sym-{o}", module[0])]) for o in offsets]
 
     monkeypatch.setattr(symbolication, "process_module", fake_process_module)
 
@@ -174,9 +222,9 @@ def test_symbolicate_modules_calls_process_module_per_module(monkeypatch):
     assert called_modules == {("a.pdb", "1"), ("b.pdb", "2")}
 
     
-    assert result[(("a.pdb", "1"), "100")] == ("sym-100", "a.pdb")
-    assert result[(("b.pdb", "2"), "200")] == ("sym-200", "b.pdb")
-    assert result[(("b.pdb", "2"), "300")] == ("sym-300", "b.pdb")
+    assert result[(("a.pdb", "1"), "100")] == [("sym-100", "a.pdb")]
+    assert result[(("b.pdb", "2"), "200")] == [("sym-200", "b.pdb")]
+    assert result[(("b.pdb", "2"), "300")] == [("sym-300", "b.pdb")]
 
 
 def test_symbolicate_modules_runs_in_parallel(monkeypatch):
@@ -193,7 +241,7 @@ def test_symbolicate_modules_runs_in_parallel(monkeypatch):
 
     def fake_process_module(module, offsets, config):
         barrier.wait()
-        return [((module, o), (f"sym-{o}", "")) for o in offsets]
+        return [((module, o), [(f"sym-{o}", "")]) for o in offsets]
 
     monkeypatch.setattr(symbolication, "process_module", fake_process_module)
 
@@ -225,8 +273,10 @@ def test_symbolicate_modules_propagates_exceptions(monkeypatch):
 
 
 def _module_result(module, offsets, symbolicated):
-    value = ("Sym", module[0]) if symbolicated else (UNSYMBOLICATED, module[0])
-    return [((module, o), value) for o in offsets]
+    
+    
+    frame = ("Sym", module[0]) if symbolicated else (UNSYMBOLICATED, module[0])
+    return [((module, o), [frame]) for o in offsets]
 
 
 def test_symbolicate_modules_counts_unsymbolicated_separately(monkeypatch, capsys):
