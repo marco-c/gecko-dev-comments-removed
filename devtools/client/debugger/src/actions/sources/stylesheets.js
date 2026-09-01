@@ -5,8 +5,16 @@
 import { prefs } from "../../utils/prefs";
 import { getSourceActorsForSource } from "../../selectors/index";
 
+const telemetryPingsPerSource = new Map();
+
 export function updateStyleSheetContent(sourceActor, text) {
   return async ({ client }) => {
+    
+    
+    if (!telemetryPingsPerSource.has(sourceActor.id)) {
+      Glean.devtoolsDebuggerStylesheets.stylesheetsEditedCount.add(1);
+      telemetryPingsPerSource.set(sourceActor.id, true);
+    }
     await client.updateStyleSheetContent(
       sourceActor,
       text,
