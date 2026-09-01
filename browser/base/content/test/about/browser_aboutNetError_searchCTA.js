@@ -7,6 +7,13 @@ const CTA_PREF = "browser.netError.searchCTA.enabled";
 
 
 
+
+
+const FRESHNESS_PREF = "browser.netError.searchCTA.connectivityFreshnessMs";
+const ALWAYS_FRESH = 2147483647;
+
+
+
 const FAILED_HOST = "www.doesnotexist-searchcta.com";
 const REGISTRABLE_DOMAIN = "doesnotexist-searchcta.com";
 const SEARCH_URL = `https://example.com/?q=${REGISTRABLE_DOMAIN}`;
@@ -35,7 +42,12 @@ add_setup(async function () {
 
 
 async function withDnsNotFoundPage(enabled, taskFn) {
-  await SpecialPowers.pushPrefEnv({ set: [[CTA_PREF, enabled]] });
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [CTA_PREF, enabled],
+      [FRESHNESS_PREF, ALWAYS_FRESH],
+    ],
+  });
   const { tab, browser } = await loadNetErrorPage("dnsNotFound", FAILED_HOST);
   try {
     await taskFn(browser);

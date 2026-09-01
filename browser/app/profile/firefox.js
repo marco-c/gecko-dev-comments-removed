@@ -1440,6 +1440,13 @@ pref("browser.xul.error_pages.show_safe_browsing_details_on_load", false);
 pref("browser.netError.searchCTA.enabled", false);
 
 
+
+
+
+pref("browser.netError.searchCTA.connectivityFreshnessMs", 60000);
+pref("browser.netError.searchCTA.connectivityRecheckTimeoutMs", 3000);
+
+
 pref("network.captive-portal-service.enabled", true);
 
 

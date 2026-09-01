@@ -33,7 +33,14 @@ add_setup(async function () {
     },
     { setAsDefault: true }
   );
-  await SpecialPowers.pushPrefEnv({ set: [[CTA_PREF, true]] });
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [CTA_PREF, true],
+      
+      
+      ["browser.netError.searchCTA.connectivityFreshnessMs", 2147483647],
+    ],
+  });
 });
 
 

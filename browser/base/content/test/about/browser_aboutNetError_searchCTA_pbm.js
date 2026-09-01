@@ -25,6 +25,9 @@ add_setup(async function () {
       [CTA_PREF, true],
       ["browser.search.separatePrivateDefault.ui.enabled", true],
       ["browser.search.separatePrivateDefault", true],
+      
+      
+      ["browser.netError.searchCTA.connectivityFreshnessMs", 2147483647],
     ],
   });
   
