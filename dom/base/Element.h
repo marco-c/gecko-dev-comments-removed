@@ -1800,7 +1800,7 @@ class Element : public FragmentOrElement {
   
   CustomElementRegistry* GetCustomElementRegistry();
   void SetCustomElementRegistry(CustomElementRegistry* aCustomElementRegistry);
-  void SetKeepCustomElementRegistryNull();
+  void SetNullCustomElementRegistry();
   static void TraverseCustomElementRegistry(
       Element* aElement, nsCycleCollectionTraversalCallback& aCb);
   static void UnlinkCustomElementRegistry(Element* aElement);

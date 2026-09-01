@@ -4261,11 +4261,11 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
           cloneElem->SetCustomElementRegistry(registry);
         } else if (elem->GetCustomElementRegistryState() ==
                    CustomElementRegistryState::Null) {
-          cloneElem->SetKeepCustomElementRegistryNull();
+          cloneElem->SetNullCustomElementRegistry();
         } else if (cloneElem->OwnerDoc()->HasScopedCustomElementRegistry()) {
           
           
-          cloneElem->SetKeepCustomElementRegistryNull();
+          cloneElem->SetNullCustomElementRegistry();
         }
       }
 

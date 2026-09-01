@@ -562,7 +562,7 @@ nsresult nsXMLContentSink::CreateElement(
   
   
   if (hasCustomElementRegistryAttr && element) {
-    element->SetKeepCustomElementRegistryNull();
+    element->SetNullCustomElementRegistry();
   }
 
   if (aNodeInfo->Equals(nsGkAtoms::script, kNameSpaceID_XHTML) ||
