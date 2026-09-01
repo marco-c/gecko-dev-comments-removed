@@ -2264,17 +2264,13 @@ impl DisplayListBuilder {
         
         
         
+        
+        
+        
+        
         if points.len() >= 3 {
             self.push_item(&di::DisplayItem::SetPoints);
-            if !offset.is_zero() {
-                let grid = self.au_grid;
-                let off_grid = &mut self.off_grid_coords;
-                let shifted: Vec<LayoutPoint> =
-                    points.iter().map(|p| grid.point(*p, offset, off_grid)).collect();
-                self.push_iter(&shifted);
-            } else {
-                self.push_iter(points);
-            }
+            self.push_iter(points);
         }
         self.push_item(&item);
         id
