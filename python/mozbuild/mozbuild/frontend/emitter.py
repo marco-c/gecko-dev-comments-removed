@@ -1360,6 +1360,8 @@ class TreeMetadataEmitter(LoggingMixin):
                 context["WIN32_EXE_LDFLAGS"] += context.config.substs.get(
                     "WIN32_CONSOLE_EXE_LDFLAGS", []
                 )
+                if "WINCONSOLE" in context:
+                    context["DEFINES"]["MOZ_WINCONSOLE"] = True
             else:
                 context["WIN32_EXE_LDFLAGS"] += context.config.substs.get(
                     "WIN32_GUI_EXE_LDFLAGS", []
