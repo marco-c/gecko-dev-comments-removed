@@ -17,24 +17,45 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref(LOCALE_CONFIG);
 });
 
+add_task(function test_shipped_defaults_enable_the_rollout() {
+  Services.prefs.clearUserPref(REGION_CONFIG);
+  Services.prefs.clearUserPref(LOCALE_CONFIG);
 
+  Assert.ok(
+    useContextualAds({ geo: "US", locale: "en-US" }),
+    "Enabled for US/en-US from the pref defaults shipped in firefox.js"
+  );
+  Assert.ok(
+    !useContextualAds({ geo: "XX", locale: "en-US" }),
+    "Disabled when the region is not in the configured list"
+  );
+  Assert.ok(
+    !useContextualAds({ geo: "US", locale: "zz-ZZ" }),
+    "Disabled when the locale is not in the configured list"
+  );
+});
 
-
-add_task(function test_empty_config_coalesces_to_us_default() {
+add_task(function test_empty_config_disables() {
   Services.prefs.setStringPref(REGION_CONFIG, "");
   Services.prefs.setStringPref(LOCALE_CONFIG, "");
 
   Assert.ok(
-    useContextualAds({ geo: "US", locale: "en-US" }),
-    "Enabled for US/en-US when the region config is empty"
+    !useContextualAds({ geo: "US", locale: "en-US" }),
+    "An empty region/locale config disables contextual ads"
   );
+
+  Services.prefs.setStringPref(REGION_CONFIG, "US");
+  Services.prefs.setStringPref(LOCALE_CONFIG, "");
   Assert.ok(
-    !useContextualAds({ geo: "JP", locale: "en-US" }),
-    "Disabled when the region is not US"
+    !useContextualAds({ geo: "US", locale: "en-US" }),
+    "An empty locale config alone is enough to disable contextual ads"
   );
+
+  Services.prefs.setStringPref(REGION_CONFIG, "");
+  Services.prefs.setStringPref(LOCALE_CONFIG, "en-US");
   Assert.ok(
-    !useContextualAds({ geo: "US", locale: "fr" }),
-    "Disabled when the locale is not supported"
+    !useContextualAds({ geo: "US", locale: "en-US" }),
+    "An empty region config alone is enough to disable contextual ads"
   );
 });
 
