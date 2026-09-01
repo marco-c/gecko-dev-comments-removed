@@ -351,12 +351,6 @@ pref("browser.startup.couldRestoreSession.count", 0);
 
 #if defined(XP_WIN)
 pref("browser.startup.preXulSkeletonUI", true);
-#endif
-
-
-
-
-
 
 
 pref("browser.startup.windowsLaunchOnLogin.enabled", true);
@@ -369,6 +363,7 @@ pref("browser.startup.windowsLaunchOnLogin.disableLaunchOnLoginPrompt", false);
 
 pref("browser.startup.windowsLaunchOnLogin.defaultEnabled", false);
 pref("browser.startup.windowsLaunchOnLogin.alreadyApplied", false);
+#endif
 
 
 pref("browser.startup.upgradeDialog.enabled", false);
