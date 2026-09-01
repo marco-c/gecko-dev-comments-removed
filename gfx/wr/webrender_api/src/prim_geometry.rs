@@ -145,6 +145,16 @@ pub fn apply_gradient_local_clip(
     offset
 }
 
+
+
+
+
+
+
+
+
+
+
 pub fn optimize_linear_gradient(
     prim_rect: &mut LayoutRect,
     tile_size: &mut LayoutSize,
