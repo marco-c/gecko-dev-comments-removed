@@ -499,15 +499,16 @@ class CacheIndexEntryUpdate : public CacheIndexEntry {
       aDst->mRec->Get()->mFlags ^= kHasAltDataMask;
     }
 
-    if (mUpdateFlags & kFileSizeUpdatedMask) {
-      
-      aDst->mRec->Get()->mFlags |= (mRec->Get()->mFlags & ~kHasAltDataMask);
-    } else {
-      
-      aDst->mRec->Get()->mFlags &= kFileSizeMask;
-      aDst->mRec->Get()->mFlags |=
-          (mRec->Get()->mFlags & ~kHasAltDataMask & ~kFileSizeMask);
+    
+    
+    
+    
+    uint32_t keepMask = kHasAltDataMask;
+    if (!(mUpdateFlags & kFileSizeUpdatedMask)) {
+      keepMask |= kFileSizeMask;
     }
+    aDst->mRec->Get()->mFlags = (aDst->mRec->Get()->mFlags & keepMask) |
+                                (mRec->Get()->mFlags & ~keepMask);
   }
 
  private:
