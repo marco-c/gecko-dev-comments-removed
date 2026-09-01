@@ -1605,6 +1605,9 @@ class gfxFont {
   }
 
   
+  bool FontCanSupportHarfBuzz() const { return mFontEntry->HasCmapTable(); }
+
+  
   bool FontCanSupportGraphite() const {
     return mFontEntry->HasGraphiteTables();
   }
