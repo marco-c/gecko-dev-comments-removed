@@ -11,6 +11,7 @@
 #include <SystemConfiguration/SystemConfiguration.h>
 #include <sys/types.h>
 #include <sys/sysctl.h>
+#include <unistd.h>
 #include "readstrings.h"
 
 #define ARCH_PATH "/usr/bin/arch"
@@ -68,7 +69,66 @@ static void StripQuarantineBit(NSString* aBundlePath) {
   LaunchTask(@"/usr/bin/xattr", arguments);
 }
 
-void LaunchMacApp(int argc, const char** argv) {
+
+
+static const NSTimeInterval kWaitForExitSeconds = 10.0;
+
+
+static const useconds_t kWaitForExitPollMicroseconds = 50000;
+
+
+
+
+
+
+
+
+
+static void WaitForAppToTerminate(pid_t aPid, NSTimeInterval aTimeout) {
+  NSDate* deadline = [NSDate dateWithTimeIntervalSinceNow:aTimeout];
+  while (true) {
+    {
+      MacAutoreleasePool pool;
+      NSRunningApplication* app =
+          [NSRunningApplication runningApplicationWithProcessIdentifier:aPid];
+      if (!app || [app isTerminated]) {
+        return;
+      }
+      if ([deadline timeIntervalSinceNow] <= 0) {
+        NSLog(@"Timed out waiting for pid %d to exit before relaunching.",
+              (int)aPid);
+        return;
+      }
+    }
+    usleep(kWaitForExitPollMicroseconds);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+static BOOL ShouldCreateNewAppInstance(NSString* aBundlePath) {
+  MacAutoreleasePool pool;
+
+  NSString* bundleId = [[NSBundle bundleWithPath:aBundlePath] bundleIdentifier];
+  if (!bundleId) {
+    return YES;
+  }
+
+  return [[NSRunningApplication
+             runningApplicationsWithBundleIdentifier:bundleId] count] > 0;
+}
+
+void LaunchMacApp(int argc, const char** argv, pid_t aWaitForPid) {
   MacAutoreleasePool pool;
 
   @try {
@@ -88,6 +148,10 @@ void LaunchMacApp(int argc, const char** argv) {
     StripQuarantineBit(launchPath);
     RegisterAppWithLaunchServices(launchPath);
 
+    if (aWaitForPid > 0) {
+      WaitForAppToTerminate(aWaitForPid, kWaitForExitSeconds);
+    }
+
     
     
     
@@ -96,7 +160,8 @@ void LaunchMacApp(int argc, const char** argv) {
         [NSWorkspaceOpenConfiguration configuration];
     [config setArguments:arguments];
     [config setActivates:NO];
-    [config setCreatesNewApplicationInstance:YES];
+    [config setCreatesNewApplicationInstance:ShouldCreateNewAppInstance(
+                                                 launchPath)];
     [config setEnvironment:[[NSProcessInfo processInfo] environment]];
 
     [[NSWorkspace sharedWorkspace]
