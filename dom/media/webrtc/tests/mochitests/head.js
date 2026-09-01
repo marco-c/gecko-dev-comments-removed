@@ -456,7 +456,7 @@ function setupEnvironment() {
   
   
   const platformEncoderEnabled =
-    SpecialPowers.getIntPref("media.webrtc.encoder_creation_strategy") == 1;
+    SpecialPowers.getIntPref("media.webrtc.encoder_creation_strategy") != 0;
   defaultMochitestPrefs.set.push([
     "media.navigator.mediadatadecoder_h264_enabled",
     platformEncoderEnabled,
@@ -476,7 +476,7 @@ function setupEnvironment() {
 function checkPlatformH264CodecPrefs() {
   
   const platform =
-    SpecialPowers.getIntPref("media.webrtc.encoder_creation_strategy") == 1 &&
+    SpecialPowers.getIntPref("media.webrtc.encoder_creation_strategy") != 0 &&
     (navigator.userAgent.includes("Android") ||
       navigator.userAgent.includes("Mac OS X"));
   const webrtc = !navigator.userAgent.includes("Android");
