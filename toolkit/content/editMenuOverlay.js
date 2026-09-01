@@ -126,8 +126,12 @@ var EditContextMenu = {
 
 
 
-  addItems({ matches, createItems, onShowing, after }) {
-    let itemSet = { matches, createItems, onShowing, after, items: [] };
+
+
+
+
+  addItems({ matches, createItems, onShowing, after, before }) {
+    let itemSet = { matches, createItems, onShowing, after, before, items: [] };
     this._itemSets.push(itemSet);
 
     let popup = document.getElementById("textbox-contextmenu");
@@ -175,7 +179,7 @@ var EditContextMenu = {
         item.hidden = !matches;
       }
       if (matches) {
-        itemSet.onShowing?.(input, itemSet.items);
+        itemSet.onShowing?.(input, itemSet.items, event);
       }
     }
 
@@ -219,6 +223,8 @@ var EditContextMenu = {
     itemSet.items = [...fragment.children];
     if (itemSet.after) {
       popup.querySelector(`#${itemSet.after}`).after(fragment);
+    } else if (itemSet.before) {
+      popup.querySelector(`#${itemSet.before}`).before(fragment);
     } else {
       popup.appendChild(fragment);
     }
