@@ -49,7 +49,15 @@ struct TestWebrtcGmpVideoEncoder : public Test {
     ASSERT_TRUE(mGmpThread);
   }
 
-  void TearDown() override { mEncoder = nullptr; }
+  
+  
+  
+  
+  
+  void TearDown() override {
+    mEncoder->Shutdown();
+    mEncoder = nullptr;
+  }
 
   
   
