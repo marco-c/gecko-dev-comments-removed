@@ -2760,9 +2760,9 @@ void QuotaManager::InitQuotaForOrigin(
   
   
   
-  if (!cacheRowMatches && aFullOriginMetadata.mDirty &&
-      aFullOriginMetadata.mOriginUsage > 0 &&
-      !mUsageModificationDisabled.load()) {
+  if (!cacheRowMatches &&
+      (aFullOriginMetadata.mDirty || !aCacheMap.IsActive()) &&
+      aFullOriginMetadata.mOriginUsage > 0) {
     originInfo->mMetadataDirty = true;
     auto* message = new UnboundedMPSCQueue<RefPtr<OriginInfo>>::Message();
     message->data = originInfo;
