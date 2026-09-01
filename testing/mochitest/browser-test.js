@@ -1229,11 +1229,14 @@ Tester.prototype = {
       this.PromiseTestUtils.assertNoUncaughtRejections();
       this.PromiseTestUtils.clearAllowedUncaughtRejections();
 
-      await this.notifyProfilerOfTestEnd();
-
+      
+      
+      
       
       
       this.checkWindowsState();
+
+      await this.notifyProfilerOfTestEnd();
 
       let time = Date.now() - this.lastStartTime;
 
