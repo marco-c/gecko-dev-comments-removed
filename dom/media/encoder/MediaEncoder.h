@@ -151,11 +151,6 @@ class MediaEncoder {
   
 
 
-  void RemoveMediaStreamTrack(dom::MediaStreamTrack* aTrack);
-
-  
-
-
 
 
 
@@ -251,6 +246,11 @@ class MediaEncoder {
 
 
   void EnsureGraphTrackFrom(MediaTrack* aTrack);
+
+  
+
+
+  void RemoveMediaStreamTrack(dom::MediaStreamTrack* aTrack);
 
   
 
