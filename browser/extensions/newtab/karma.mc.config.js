@@ -577,6 +577,20 @@ module.exports = function (config) {
               branches: 0,
             },
             
+            "content-src/components/Widgets/Stocks/StockSearch.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            
+            "content-src/components/Widgets/Stocks/useStockSearch.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            
             "content-src/components/Widgets/PictureOfTheDay/PictureOfTheDay.jsx":
               {
                 statements: 0,
