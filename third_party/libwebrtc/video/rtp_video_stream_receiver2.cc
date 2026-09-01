@@ -563,13 +563,8 @@ bool RtpVideoStreamReceiver2::OnReceivedPayloadData(
   auto packet = std::make_unique<video_coding::PacketBuffer::Packet>(
       rtp_packet, unwrapped_rtp_seq_num, video);
 
-  RtpPacketInfo& packet_info =
-      packet_infos_
-          .emplace(unwrapped_rtp_seq_num,
-                   RtpPacketInfo(rtp_packet.Ssrc(), rtp_packet.Csrcs(),
-                                 rtp_packet.Timestamp(),
-                                 env_.clock().CurrentTime()))
-          .first->second;
+  RtpPacketInfo& packet_info = packet->rtp_packet_info;
+  packet_info.set_receive_time(env_.clock().CurrentTime());
 
   
   packet_info.set_absolute_capture_time(
@@ -846,19 +841,7 @@ void RtpVideoStreamReceiver2::OnInsertedPacket(
     }
     skip_frame = false;
 
-    
-    
-    
-    
-    
-    int64_t unwrapped_rtp_seq_num = packet->sequence_number;
-    auto packet_info_it = packet_infos_.find(unwrapped_rtp_seq_num);
-    if (packet_info_it == packet_infos_.end()) {
-      skip_frame = true;
-      continue;
-    }
-
-    RtpPacketInfo& packet_info = packet_info_it->second;
+    const RtpPacketInfo& packet_info = packet->rtp_packet_info;
     if (packet->is_first_packet_in_frame()) {
       payloads.clear();
       packet_infos.clear();
@@ -926,7 +909,6 @@ void RtpVideoStreamReceiver2::OnInsertedPacket(
     last_received_rtp_system_time_.reset();
     last_received_keyframe_rtp_system_time_.reset();
     last_received_keyframe_rtp_timestamp_.reset();
-    packet_infos_.clear();
     RequestKeyFrame();
   }
 }
@@ -1382,8 +1364,6 @@ void RtpVideoStreamReceiver2::FrameDecoded(int64_t picture_id) {
 
   if (seq_num != -1) {
     int64_t unwrapped_rtp_seq_num = rtp_seq_num_unwrapper_.Unwrap(seq_num);
-    packet_infos_.erase(packet_infos_.begin(),
-                        packet_infos_.upper_bound(unwrapped_rtp_seq_num));
     uint32_t num_packets_cleared = packet_buffer_.ClearTo(unwrapped_rtp_seq_num);
     if (num_packets_cleared > 0) {
       TRACE_EVENT2("webrtc",
