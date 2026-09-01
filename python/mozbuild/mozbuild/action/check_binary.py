@@ -3,6 +3,7 @@
 
 
 import argparse
+import functools
 import os
 import re
 import subprocess
@@ -11,8 +12,6 @@ import sys
 import buildconfig
 from mozpack.executables import ELF, UNKNOWN, get_type
 from packaging.version import Version
-
-from mozbuild.util import memoize
 
 IS_ARM64 = buildconfig.substs.get("TARGET_CPU") == "aarch64"
 
@@ -33,10 +32,10 @@ else:
     GUESSED_NSMODULE_SIZE = 4
 
 
-get_type = memoize(get_type)
+get_type = functools.cache(get_type)
 
 
-@memoize
+@functools.cache
 def get_output(*cmd):
     env = dict(os.environ)
     env["LC_ALL"] = "C"
@@ -206,6 +205,17 @@ def check_mozglue_order(binary):
         raise RuntimeError("Could not parse readelf output?")
 
 
+def check_android_megazord_mozglue(binary):
+    if PLATFORM != "Android" or os.path.basename(binary) != "libmegazord.so":
+        raise Skip()
+    try:
+        for tag, value in at_least_one(iter_readelf_dynamic(binary)):
+            if tag == "NEEDED" and "[libmozglue.so]" in value:
+                raise RuntimeError("libmegazord.so must not link against libmozglue.so")
+    except Empty:
+        raise RuntimeError("Could not parse readelf output?")
+
+
 def check_networking(binary):
     retcode = 0
     networking_functions = set([
@@ -288,6 +298,7 @@ def checks(binary):
         checks.append(check_textrel)
         checks.append(check_pt_load)
         checks.append(check_mozglue_order)
+        checks.append(check_android_megazord_mozglue)
 
     retcode = 0
     basename = os.path.basename(binary)
