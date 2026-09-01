@@ -1498,6 +1498,12 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot,
     nsIFrame* frame = acc->GetFrame();
     if (frame) {
       acc->MaybeQueueCacheUpdateForStyleChanges();
+      
+      
+      if (frame->IsFocusable()) {
+        auto event = MakeRefPtr<AccStateChangeEvent>(acc, states::FOCUSABLE);
+        FireDelayedEvent(event);
+      }
     }
 
     
@@ -1517,6 +1523,10 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot,
       
       
       QueueCacheUpdate(acc, CacheDomain::Style | CacheDomain::Bounds);
+      
+      auto event =
+          MakeRefPtr<AccStateChangeEvent>(acc, states::FOCUSABLE, false);
+      FireDelayedEvent(event);
     }
 
     
