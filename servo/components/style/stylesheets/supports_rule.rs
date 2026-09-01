@@ -11,8 +11,9 @@ use crate::properties::{PropertyDeclaration, PropertyId, SourcePropertyDeclarati
 use crate::selector_parser::{SelectorImpl, SelectorParser};
 use crate::shared_lock::{DeepCloneWithLock, Locked};
 use crate::shared_lock::{SharedRwLock, SharedRwLockReadGuard, ToCssWithGuard};
+use crate::stylesheets::rule_parser::AtRuleType;
 use crate::stylesheets::{CssRuleType, CssRules};
-use cssparser::parse_important;
+use cssparser::{parse_important, serialize_identifier};
 use cssparser::{match_ignore_ascii_case, ParseError as CssParseError, ParserInput};
 use cssparser::{Delimiter, Parser, SourceLocation, Token};
 #[cfg(feature = "gecko")]
@@ -84,11 +85,15 @@ pub enum SupportsCondition {
     
     Declaration(Declaration),
     
+    AtRule(AtRuleKeyword),
+    
     Selector(RawSelector),
     
     FontFormat(FontFaceSourceFormatKeyword),
     
     FontTech(FontFaceSourceTechFlags),
+    
+    NamedFeature(NamedFeature),
     
     FutureSyntax(String),
 }
@@ -141,6 +146,10 @@ impl SupportsCondition {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         match_ignore_ascii_case! { function,
+            "at-rule" if static_prefs::pref!("layout.css.supports.at-rule.enabled") => {
+                let kw = AtRuleKeyword::parse(input)?;
+                Ok(SupportsCondition::AtRule(kw))
+            },
             "selector" => {
                 let pos = input.position();
                 consume_any_value(input)?;
@@ -155,6 +164,10 @@ impl SupportsCondition {
             "font-tech" => {
                 let flag = FontFaceSourceTechFlags::parse_one(input)?;
                 Ok(SupportsCondition::FontTech(flag))
+            },
+            "named-feature" => {
+                let feature = NamedFeature::parse(input)?;
+                Ok(SupportsCondition::NamedFeature(feature))
             },
             _ => {
                 Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
@@ -210,10 +223,12 @@ impl SupportsCondition {
             SupportsCondition::Parenthesized(ref cond) => cond.eval(cx),
             SupportsCondition::And(ref vec) => vec.iter().all(|c| c.eval(cx)),
             SupportsCondition::Or(ref vec) => vec.iter().any(|c| c.eval(cx)),
+            SupportsCondition::AtRule(ref kw) => kw.eval(cx),
             SupportsCondition::Declaration(ref decl) => decl.eval(cx),
             SupportsCondition::Selector(ref selector) => selector.eval(cx),
             SupportsCondition::FontFormat(ref format) => eval_font_format(format),
             SupportsCondition::FontTech(ref tech) => eval_font_tech(tech),
+            SupportsCondition::NamedFeature(ref feature) => feature.eval(),
             SupportsCondition::FutureSyntax(_) => false,
         }
     }
@@ -290,6 +305,11 @@ impl ToCss for SupportsCondition {
                 }
                 Ok(())
             },
+            SupportsCondition::AtRule(ref kw) => {
+                dest.write_str("at-rule(")?;
+                kw.to_css(dest)?;
+                dest.write_char(')')
+            },
             SupportsCondition::Declaration(ref decl) => decl.to_css(dest),
             SupportsCondition::Selector(ref selector) => {
                 dest.write_str("selector(")?;
@@ -304,6 +324,11 @@ impl ToCss for SupportsCondition {
             SupportsCondition::FontTech(ref flag) => {
                 dest.write_str("font-tech(")?;
                 flag.to_css(dest)?;
+                dest.write_char(')')
+            },
+            SupportsCondition::NamedFeature(ref feature) => {
+                dest.write_str("named-feature(")?;
+                feature.to_css(dest)?;
                 dest.write_char(')')
             },
             SupportsCondition::FutureSyntax(ref s) => dest.write_str(&s),
@@ -400,5 +425,64 @@ impl Declaration {
                 Ok(())
             })
             .is_ok()
+    }
+}
+
+
+#[derive(Clone, Debug, ToShmem)]
+pub struct AtRuleKeyword(pub Box<str>);
+
+impl AtRuleKeyword {
+    
+    pub fn parse<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
+        let location = input.current_source_location();
+        match input.next()? {
+            Token::AtKeyword(kw) => Ok(Self(kw.as_ref().into())),
+            token => Err(location
+                .new_basic_unexpected_token_error(token.clone())
+                .into()),
+        }
+    }
+
+    
+    
+    pub fn eval(&self, context: &ParserContext) -> bool {
+        AtRuleType::is_supported(&self.0, context)
+    }
+}
+
+impl ToCss for AtRuleKeyword {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        dest.write_char('@')?;
+        serialize_identifier(&self.0, dest)
+    }
+}
+
+
+
+
+#[derive(Clone, Copy, Debug, Parse, ToCss, ToShmem)]
+#[repr(u8)]
+pub enum NamedFeature {
+    
+    AnchorPositionFollowsTransforms,
+    
+    SingleAxisScrollContainer,
+}
+
+impl NamedFeature {
+    
+    
+    
+    pub fn eval(self) -> bool {
+        match self {
+            
+            Self::AnchorPositionFollowsTransforms => false,
+            
+            Self::SingleAxisScrollContainer => false,
+        }
     }
 }
