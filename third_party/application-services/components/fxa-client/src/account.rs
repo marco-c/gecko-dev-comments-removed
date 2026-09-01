@@ -15,6 +15,7 @@
 use crate::{ApiResult, Error, FirefoxAccount, FxaServer};
 use error_support::handle_error;
 
+#[uniffi::export]
 impl FirefoxAccount {
     
     #[handle_error(Error)]

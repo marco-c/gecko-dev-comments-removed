@@ -3,5 +3,8 @@
 
 
 fn main() {
+    #[cfg(feature = "mozbuild-rustlib")]
+    nss_build_common::link_nss_rustlib().unwrap();
+    #[cfg(not(feature = "mozbuild-rustlib"))]
     nss_build_common::link_nss().unwrap();
 }

@@ -5,11 +5,12 @@
 use error_support::{ErrorHandling, GetErrorHandling};
 use std::string;
 
+#[derive(uniffi::Error, Debug, thiserror::Error)]
+#[uniffi(flat_error)]
 
 
 
 
-#[derive(Debug, thiserror::Error)]
 pub enum FxaError {
     
     

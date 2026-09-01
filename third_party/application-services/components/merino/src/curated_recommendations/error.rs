@@ -4,7 +4,7 @@
 
 use error_support::{ErrorHandling, GetErrorHandling};
 
-pub use error_support::{error, trace};
+pub use error_support::trace;
 
 
 pub type Result<T> = std::result::Result<T, Error>;

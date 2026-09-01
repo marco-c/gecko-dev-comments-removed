@@ -7,9 +7,6 @@
 
 
 
-
-
-
 use super::{FxaEvent, FxaState};
 use std::fmt;
 
@@ -18,9 +15,9 @@ impl fmt::Display for FxaState {
         let name = match self {
             Self::Uninitialized => "Uninitialized",
             Self::Disconnected => "Disconnected",
-            Self::Authenticating { .. } => "Athenticating",
+            Self::Authenticating { .. } => "Authenticating",
             Self::Connected => "Connected",
-            Self::AuthIssues => "AthIssues",
+            Self::AuthIssues => "AuthIssues",
         };
         write!(f, "{name}")
     }
@@ -30,10 +27,10 @@ impl fmt::Display for FxaEvent {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let name = match self {
             Self::Initialize { .. } => "Initialize",
-            Self::BeginOAuthFlow { .. } => "BeginOAthFlow",
+            Self::BeginOAuthFlow { .. } => "BeginOAuthFlow",
             Self::BeginPairingFlow { .. } => "BeginPairingFlow",
-            Self::CompleteOAuthFlow { .. } => "CompleteOAthFlow",
-            Self::CancelOAuthFlow => "CancelOAthFlow",
+            Self::CompleteOAuthFlow { .. } => "CompleteOAuthFlow",
+            Self::CancelOAuthFlow => "CancelOAuthFlow",
             Self::CheckAuthorizationStatus => "CheckAuthorizationStatus",
             Self::WebChannelPasswordChange { .. } => "WebChannelPwdChange",
             Self::Disconnect => "Disconnect",

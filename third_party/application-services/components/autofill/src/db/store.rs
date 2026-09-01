@@ -2,7 +2,10 @@
 
 
 
-use crate::db::models::address::{Address, UpdatableAddressFields};
+use crate::db::models::address::{
+    Address, AddressBulkResultEntry, AddressBulkTombstoneResultEntry, AddressTombstone,
+    UpdatableAddressFields, UpdatableAddressFieldsWithMeta,
+};
 use crate::db::models::credit_card::{CreditCard, UpdatableCreditCardFields};
 use crate::db::models::passport::{Passport, UpdatablePassportFields};
 use crate::db::{
@@ -133,6 +136,73 @@ impl Store {
         Ok(addresses::add_address(&self.lock_db()?.writer, new_address)?.into())
     }
 
+    
+    
+    
+    
+    
+    #[handle_error(Error)]
+    pub fn add_address_with_meta(
+        &self,
+        entry_with_meta: UpdatableAddressFieldsWithMeta,
+    ) -> ApiResult<Address> {
+        Ok(addresses::add_address_with_meta(
+            &self.lock_db()?.writer,
+            entry_with_meta.fields,
+            entry_with_meta.meta,
+        )?
+        .into())
+    }
+
+    
+    #[handle_error(Error)]
+    pub fn add_many_addresses_with_meta(
+        &self,
+        entries_with_meta: Vec<UpdatableAddressFieldsWithMeta>,
+    ) -> ApiResult<Vec<AddressBulkResultEntry>> {
+        let results =
+            addresses::add_many_addresses_with_meta(&self.lock_db()?.writer, entries_with_meta)?;
+        Ok(results
+            .into_iter()
+            .map(|result| match result {
+                Ok(address) => AddressBulkResultEntry::Success {
+                    address: address.into(),
+                },
+                Err(message) => AddressBulkResultEntry::Error { message },
+            })
+            .collect())
+    }
+
+    
+    
+    #[handle_error(Error)]
+    pub fn add_many_address_tombstones(
+        &self,
+        tombstones: Vec<AddressTombstone>,
+    ) -> ApiResult<Vec<AddressBulkTombstoneResultEntry>> {
+        let results = addresses::add_many_address_tombstones(
+            &self.lock_db()?.writer,
+            tombstones
+                .into_iter()
+                .map(|t| (t.guid, t.time_deleted))
+                .collect(),
+        )?;
+        Ok(results
+            .into_iter()
+            .map(|result| match result {
+                Ok(guid) => AddressBulkTombstoneResultEntry::Success { guid },
+                Err(message) => AddressBulkTombstoneResultEntry::Error { message },
+            })
+            .collect())
+    }
+
+    
+    #[handle_error(Error)]
+    pub fn delete_all_addresses(&self) -> ApiResult<()> {
+        addresses::delete_all_addresses(&self.lock_db()?.writer)?;
+        Ok(())
+    }
+
     #[handle_error(Error)]
     pub fn get_address(&self, guid: String) -> ApiResult<Address> {
         Ok(addresses::get_address(&self.lock_db()?.writer, &Guid::new(&guid))?.into())
@@ -156,6 +226,23 @@ impl Store {
     #[handle_error(Error)]
     pub fn update_address(&self, guid: String, address: UpdatableAddressFields) -> ApiResult<()> {
         addresses::update_address(&self.lock_db()?.writer, &Guid::new(&guid), &address)
+    }
+
+    
+    
+    
+    
+    
+    #[handle_error(Error)]
+    pub fn update_address_with_meta(
+        &self,
+        entry_with_meta: UpdatableAddressFieldsWithMeta,
+    ) -> ApiResult<()> {
+        addresses::update_address_with_meta(
+            &self.lock_db()?.writer,
+            entry_with_meta.fields,
+            entry_with_meta.meta,
+        )
     }
 
     #[handle_error(Error)]

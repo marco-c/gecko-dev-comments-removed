@@ -31,11 +31,8 @@ pub struct RemoteSettingsConfig {
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum RemoteSettingsServer {
     Prod,
-    ProdV2,
     Stage,
-    StageV2,
     Dev,
-    DevV2,
     Custom { url: String },
 }
 
@@ -55,7 +52,7 @@ impl RemoteSettingsServer {
         
         
         if base_url.url().scheme() != "file" {
-            Ok(base_url.join("v1"))
+            Ok(base_url.join("v2"))
         } else {
             Ok(base_url)
         }
@@ -78,14 +75,9 @@ impl RemoteSettingsServer {
     fn raw_url(&self) -> &str {
         match self {
             
-            Self::Prod => "https://firefox.settings.services.mozilla.com/v1",
-            Self::Stage => "https://firefox.settings.services.allizom.org/v1",
-            Self::Dev => "https://remote-settings-dev.allizom.org/v1",
-
-            
-            Self::ProdV2 => "https://firefox.settings.services.mozilla.com/v2",
-            Self::StageV2 => "https://firefox.settings.services.allizom.org/v2",
-            Self::DevV2 => "https://remote-settings-dev.allizom.org/v2",
+            Self::Prod => "https://firefox.settings.services.mozilla.com/v2",
+            Self::Stage => "https://firefox.settings.services.allizom.org/v2",
+            Self::Dev => "https://remote-settings-dev.allizom.org/v2",
 
             
             Self::Custom { url } => url,
@@ -98,12 +90,9 @@ impl RemoteSettingsServer {
     
     pub fn get_url(&self) -> Result<Url> {
         Ok(match self {
-            Self::Prod => Url::parse("https://firefox.settings.services.mozilla.com/v1")?,
-            Self::Stage => Url::parse("https://firefox.settings.services.allizom.org/v1")?,
-            Self::Dev => Url::parse("https://remote-settings-dev.allizom.org/v1")?,
-            Self::ProdV2 => Url::parse("https://firefox.settings.services.mozilla.com/v2")?,
-            Self::StageV2 => Url::parse("https://firefox.settings.services.allizom.org/v2")?,
-            Self::DevV2 => Url::parse("https://remote-settings-dev.allizom.org/v2")?,
+            Self::Prod => Url::parse("https://firefox.settings.services.mozilla.com/v2")?,
+            Self::Stage => Url::parse("https://firefox.settings.services.allizom.org/v2")?,
+            Self::Dev => Url::parse("https://remote-settings-dev.allizom.org/v2")?,
             Self::Custom { url } => {
                 let mut url = Url::parse(url)?;
                 
@@ -112,7 +101,7 @@ impl RemoteSettingsServer {
                 
                 
                 if url.scheme() != "file" {
-                    url = url.join("v1")?
+                    url = url.join("v2")?
                 }
                 url
             }

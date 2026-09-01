@@ -21,6 +21,7 @@ use sync15::DeviceType;
 
 use crate::{ApiResult, DevicePushSubscription, Error, FirefoxAccount};
 
+#[uniffi::export]
 impl FirefoxAccount {
     
     
@@ -189,16 +190,19 @@ impl FirefoxAccount {
     }
 }
 
+#[derive(uniffi::Record, Clone, Debug, PartialEq, Eq)]
 
-#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DeviceConfig {
     pub name: String,
     pub device_type: sync15::DeviceType,
     pub capabilities: Vec<DeviceCapability>,
 }
 
+#[derive(uniffi::Record, Debug, Clone, Serialize, Deserialize)]
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+
+
+
 pub struct LocalDevice {
     pub id: String,
     pub display_name: String,
@@ -208,12 +212,12 @@ pub struct LocalDevice {
     pub push_endpoint_expired: bool,
 }
 
+#[derive(uniffi::Record, Debug)]
 
 
 
 
 
-#[derive(Debug)]
 pub struct Device {
     pub id: String,
     pub display_name: String,
@@ -225,6 +229,7 @@ pub struct Device {
     pub last_access_time: Option<i64>,
 }
 
+#[derive(uniffi::Enum, Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 
 
 
@@ -232,13 +237,12 @@ pub struct Device {
 
 
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum DeviceCapability {
     SendTab,
     CloseTabs,
 }
 
-
+#[derive(uniffi::Record)]
 
 
 
@@ -260,8 +264,27 @@ pub struct AttachedClient {
     pub scope: Option<Vec<String>>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(uniffi::Enum, Clone, Debug, PartialEq, Eq)]
+
+
+
+
+
+
+
+
+
+
 pub enum CloseTabsResult {
+    
+    
     Ok,
+    
+    
+    
+    
+    
+    
+    
     TabsNotClosed { urls: Vec<String> },
 }

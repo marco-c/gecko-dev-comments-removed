@@ -2,7 +2,6 @@
 
 
 
-pub use error_support::error;
 use error_support::{ErrorHandling, GetErrorHandling};
 
 pub type Result<T> = std::result::Result<T, Error>;

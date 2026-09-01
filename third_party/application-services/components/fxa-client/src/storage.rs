@@ -21,6 +21,7 @@ use crate::{internal, ApiResult, Error, FirefoxAccount};
 use error_support::handle_error;
 use parking_lot::Mutex;
 
+#[uniffi::export]
 impl FirefoxAccount {
     
     
@@ -31,6 +32,7 @@ impl FirefoxAccount {
     
     
     
+    #[uniffi::constructor]
     #[handle_error(Error)]
     pub fn from_json(data: &str) -> ApiResult<FirefoxAccount> {
         Ok(FirefoxAccount {

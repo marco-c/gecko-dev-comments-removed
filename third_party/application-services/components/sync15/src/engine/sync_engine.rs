@@ -227,11 +227,7 @@ pub trait SyncEngine {
     
     
     
-    
-    
-    fn wipe(&self) -> Result<()> {
-        unimplemented!("The engine does not implement wipe, no wipe should be requested")
-    }
+    fn wipe(&self) -> Result<()>;
 }
 
 #[cfg(test)]

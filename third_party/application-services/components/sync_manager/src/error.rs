@@ -10,6 +10,8 @@ pub enum SyncManagerError {
     UnknownEngine(String),
     #[error("Manager was compiled without support for {0:?}")]
     UnsupportedFeature(String),
+    #[error("Another sync is already in progress")]
+    Busy,
     
     
     #[error("Sync error: {0}")]

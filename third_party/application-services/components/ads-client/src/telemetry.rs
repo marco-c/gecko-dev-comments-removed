@@ -7,4 +7,8 @@ use std::any::Any;
 
 pub trait Telemetry {
     fn record(&self, event: &dyn Any);
+
+    
+    
+    fn shutdown(&self);
 }

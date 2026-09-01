@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{internal, ApiResult, CloseTabsResult, Device, Error, FirefoxAccount, LocalDevice};
 
+#[uniffi::export]
 impl FirefoxAccount {
     
     
@@ -95,16 +96,17 @@ impl FirefoxAccount {
     
     
     #[handle_error(Error)]
+    #[uniffi::method(default(is_private = false))]
     pub fn send_single_tab(
         &self,
         target_device_id: &str,
         title: &str,
         url: &str,
-        private: bool,
+        is_private: bool,
     ) -> ApiResult<()> {
         self.internal
             .lock()
-            .send_single_tab(target_device_id, title, url, private)
+            .send_single_tab(target_device_id, title, url, is_private)
     }
 
     
@@ -123,6 +125,7 @@ impl FirefoxAccount {
     }
 }
 
+#[derive(uniffi::Record, Debug, Clone, Serialize, Deserialize)]
 
 
 
@@ -132,25 +135,24 @@ impl FirefoxAccount {
 
 
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DevicePushSubscription {
     pub endpoint: String,
     pub public_key: String,
     pub auth_key: String,
 }
 
-
-
-
-
-
-
-
-
-
-
 #[allow(clippy::large_enum_variant)]
-#[derive(Debug)]
+#[derive(uniffi::Enum, Debug)]
+
+
+
+
+
+
+
+
+
+
 pub enum AccountEvent {
     
     
@@ -198,26 +200,27 @@ pub enum AccountEvent {
     Unknown,
 }
 
+#[derive(uniffi::Enum, Debug)]
 
 
 
 
 
-#[derive(Debug)]
 pub enum IncomingDeviceCommand {
     
     TabReceived {
         sender: Option<Device>,
         payload: SendTabPayload,
     },
+    
     TabsClosed {
         sender: Option<Device>,
         payload: CloseTabsPayload,
     },
 }
 
+#[derive(uniffi::Record, Debug)]
 
-#[derive(Debug)]
 pub struct SendTabPayload {
     
     
@@ -228,23 +231,27 @@ pub struct SendTabPayload {
     
     
     
+    #[uniffi(default = "")]
     pub flow_id: String,
     
     
     
+    #[uniffi(default = "")]
     pub stream_id: String,
 }
 
+#[derive(uniffi::Record, Debug)]
 
-#[derive(Debug)]
 pub struct CloseTabsPayload {
+    
     pub urls: Vec<String>,
 }
 
+#[derive(uniffi::Record, Debug)]
 
-#[derive(Debug)]
 pub struct TabHistoryEntry {
     pub title: String,
     pub url: String,
+    #[uniffi(default = false)]
     pub is_private: bool,
 }

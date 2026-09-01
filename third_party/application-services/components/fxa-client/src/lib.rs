@@ -74,7 +74,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 pub type ApiResult<T> = std::result::Result<T, FxaError>;
 
-
+#[derive(uniffi::Object)]
 
 
 
@@ -87,6 +87,7 @@ pub struct FirefoxAccount {
     internal: Mutex<internal::FirefoxAccount>,
 }
 
+#[uniffi::export]
 impl FirefoxAccount {
     
     
@@ -94,6 +95,7 @@ impl FirefoxAccount {
     
     
     
+    #[uniffi::constructor]
     pub fn new(config: FxaConfig) -> FirefoxAccount {
         FirefoxAccount {
             internal: Mutex::new(internal::FirefoxAccount::new(config)),
@@ -106,7 +108,7 @@ impl FirefoxAccount {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(uniffi::Record, Clone, Debug)]
 pub struct FxaConfig {
     
     pub server: FxaServer,
@@ -121,10 +123,11 @@ pub struct FxaConfig {
     
     
     
+    #[uniffi(default=None)]
     pub token_server_url_override: Option<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(uniffi::Enum, Clone, Debug, PartialEq, Eq)]
 pub enum FxaServer {
     Release,
     Stable,
@@ -232,7 +235,7 @@ impl FxaConfig {
     }
 }
 
-uniffi::include_scaffolding!("fxa_client");
+uniffi::setup_scaffolding!("fxa_client");
 
 #[cfg(test)]
 mod tests {

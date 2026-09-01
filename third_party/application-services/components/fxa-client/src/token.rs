@@ -20,6 +20,7 @@ use error_support::handle_error;
 use serde_derive::*;
 use std::convert::TryInto;
 
+#[uniffi::export]
 impl FirefoxAccount {
     
     
@@ -50,6 +51,7 @@ impl FirefoxAccount {
     
     
     #[handle_error(Error)]
+    #[uniffi::method(default(use_cache = true))]
     pub fn get_access_token(&self, scope: &str, use_cache: bool) -> ApiResult<AccessTokenInfo> {
         self.internal
             .lock()
@@ -158,13 +160,13 @@ impl FirefoxAccount {
     }
 }
 
+#[derive(uniffi::Record, Debug)]
 
 
 
 
 
 
-#[derive(Debug)]
 pub struct AccessTokenInfo {
     
     pub scope: String,
@@ -190,13 +192,12 @@ pub struct AccessTokenInfo {
     pub expires_at: i64,
 }
 
+#[derive(uniffi::Record, Clone, Serialize, Deserialize)]
 
 
 
 
 
-
-#[derive(Clone, Serialize, Deserialize)]
 pub struct ScopedKey {
     
     
@@ -216,6 +217,7 @@ pub struct ScopedKey {
     pub kid: String,
 }
 
+#[derive(uniffi::Record)]
 
 
 

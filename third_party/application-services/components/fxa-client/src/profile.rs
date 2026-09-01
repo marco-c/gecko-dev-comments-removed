@@ -9,6 +9,7 @@
 use crate::{ApiResult, Error, FirefoxAccount};
 use error_support::handle_error;
 
+#[uniffi::export]
 impl FirefoxAccount {
     
     
@@ -36,6 +37,7 @@ impl FirefoxAccount {
     }
 }
 
+#[derive(uniffi::Record)]
 
 
 

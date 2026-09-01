@@ -2,7 +2,6 @@
 
 
 
-pub use error_support::error;
 use error_support::{ErrorHandling, GetErrorHandling};
 use remote_settings::RemoteSettingsError;
 

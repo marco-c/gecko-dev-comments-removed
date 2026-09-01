@@ -26,6 +26,7 @@
 use crate::{ApiResult, DeviceConfig, Error, FirefoxAccount};
 use error_support::handle_error;
 
+#[uniffi::export]
 impl FirefoxAccount {
     
     pub fn get_state(&self) -> FxaState {
@@ -122,6 +123,7 @@ impl FirefoxAccount {
     }
 }
 
+#[derive(uniffi::Record)]
 
 
 
@@ -130,6 +132,7 @@ pub struct AuthorizationInfo {
     pub active: bool,
 }
 
+#[derive(uniffi::Enum, Clone, Copy, Debug, PartialEq, Eq)]
 
 
 
@@ -138,17 +141,16 @@ pub struct AuthorizationInfo {
 
 
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FxaRustAuthState {
     Disconnected,
     Connected,
     AuthIssues,
 }
 
+#[derive(uniffi::Enum, Clone, Debug, PartialEq, Eq)]
 
 
 
-#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FxaState {
     
     Uninitialized,
@@ -177,10 +179,10 @@ impl From<FxaRustAuthState> for FxaState {
     }
 }
 
+#[derive(uniffi::Enum, Clone, Debug, PartialEq, Eq)]
 
 
 
-#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FxaEvent {
     
     Initialize { device_config: DeviceConfig },
@@ -225,14 +227,6 @@ pub enum FxaEvent {
     
     
     
-    
-    WebChannelPasswordChange { json_payload: String },
-    
-    
-    
-    
-    
-    
     CancelOAuthFlow,
     
     
@@ -243,6 +237,14 @@ pub enum FxaEvent {
     
     
     CheckAuthorizationStatus,
+    
+    
+    
+    
+    
+    
+    
+    WebChannelPasswordChange { json_payload: String },
     
     
     

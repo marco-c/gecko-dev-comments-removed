@@ -31,6 +31,17 @@ pub enum AutofillApiError {
     UnexpectedAutofillApiError { reason: String },
 }
 
+
+
+
+impl From<anyhow::Error> for AutofillApiError {
+    fn from(value: anyhow::Error) -> Self {
+        AutofillApiError::UnexpectedAutofillApiError {
+            reason: value.to_string(),
+        }
+    }
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Error opening database: {0}")]
