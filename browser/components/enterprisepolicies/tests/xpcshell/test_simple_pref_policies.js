@@ -666,6 +666,52 @@ const POLICIES_TESTS = [
   },
 
   
+  
+  {
+    policies: {
+      FirefoxHome: {
+        Widgets: {
+          Enabled: false,
+        },
+      },
+    },
+    unlockedPrefs: {
+      "browser.newtabpage.activity-stream.widgets.enabled": false,
+    },
+  },
+
+  
+  {
+    policies: {
+      FirefoxHome: {
+        Widgets: {
+          Enabled: true,
+          Blocked: ["crossword"],
+        },
+        Locked: true,
+      },
+    },
+    lockedPrefs: {
+      "browser.newtabpage.activity-stream.widgets.enabled": true,
+      "browser.newtabpage.activity-stream.widgets.crossword.enabled": false,
+    },
+  },
+
+  
+  {
+    policies: {
+      FirefoxHome: {
+        Widgets: {
+          Blocked: ["stocks"],
+        },
+      },
+    },
+    lockedPrefs: {
+      "browser.newtabpage.activity-stream.widgets.stocks.enabled": false,
+    },
+  },
+
+  
   {
     policies: {
       OfferToSaveLoginsDefault: false,
