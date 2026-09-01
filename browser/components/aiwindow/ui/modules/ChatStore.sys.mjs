@@ -54,7 +54,6 @@ import {
   getUniformSamplingByConvIdsSql,
   LLM_TELEMETRY_TABLE,
   GET_LLM_TELEMETRY_BY_CONV_ID,
-  GET_LLM_TELEMETRY_DATA_BY_CONV_ID,
   UPSERT_LLM_TELEMETRY,
   MARK_LLM_TELEMETRY_UNPROCESSED,
   MARK_LLM_TELEMETRY_PROCESSED,
@@ -85,7 +84,7 @@ import {
   parseMessageRows,
   parseChatHistoryViewRows,
   toJSONOrNull,
-  stripHistoryResultAssets,
+  stripResolvedAssets,
 } from "./ChatUtils.sys.mjs";
 
 // NOTE: Reference to migrations file, migrations.mjs has an example
@@ -260,7 +259,15 @@ class ChatStore {
           message_id: m.id,
           type: TOOL_RESULT_TYPE.HISTORY_RESULTS,
           ordinal: index,
-          payload: toJSONOrNull(stripHistoryResultAssets(record)),
+          payload: toJSONOrNull(stripResolvedAssets(record)),
+        });
+      });
+      m.citations.forEach((record, index) => {
+        toolResults.push({
+          message_id: m.id,
+          type: TOOL_RESULT_TYPE.CITATIONS,
+          ordinal: index,
+          payload: toJSONOrNull(stripResolvedAssets(record)),
         });
       });
     }
@@ -959,11 +966,12 @@ class ChatStore {
       convs[convId].messages = messages;
     }
 
-    // Rebuild the history results map for ai-chat-grid
-    // instances now that all messages are retrieved
-    conversations.forEach(conversation =>
-      conversation.rehydrateHistoryResultsPool()
-    );
+    // Rebuild the history results map for ai-chat-grid instances and citations
+    // for the source chips.
+    conversations.forEach(conversation => {
+      conversation.rehydrateHistoryResultsPool();
+      conversation.rehydrateCitationsPool();
+    });
 
     return conversations;
   }
@@ -1288,57 +1296,13 @@ class ChatStore {
     });
 
     await this.#conn
-      .executeTransaction(async () => {
-        const rows = await this.#conn.executeCached(
-          GET_LLM_TELEMETRY_DATA_BY_CONV_ID,
-          { conv_id: conversationId }
-        );
-
-        let existingPrompts = {};
-        let existingProbabilities = {};
-
-        if (rows.length) {
-          try {
-            existingPrompts = JSON.parse(
-              rows[0].getResultByName("telemetry_prompts") || "{}"
-            );
-          } catch (e) {
-            lazy.log.warn(
-              `Could not parse LLM telemetry prompts for ${conversationId}`,
-              e.message
-            );
-          }
-
-          try {
-            existingProbabilities = JSON.parse(
-              rows[0].getResultByName("telemetry_probabilities") || "{}"
-            );
-          } catch (e) {
-            lazy.log.warn(
-              `Could not parse LLM telemetry probabilities for ${conversationId}`,
-              e.message
-            );
-          }
-        }
-
-        const mergedPrompts = {
-          ...existingPrompts,
-          ...(prompts ?? {}),
-        };
-
-        const mergedProbabilities = {
-          ...(probabilities ?? {}),
-          ...existingProbabilities,
-        };
-
-        await this.#conn.executeCached(UPSERT_LLM_TELEMETRY, {
-          conv_id: conversationId,
-          telemetry_prompts: JSON.stringify(mergedPrompts),
-          telemetry_probabilities: JSON.stringify(mergedProbabilities),
-          uniform_sampling_probability,
-          processed_time: Date.now(),
-          processed,
-        });
+      .executeCached(UPSERT_LLM_TELEMETRY, {
+        conv_id: conversationId,
+        telemetry_prompts: JSON.stringify(prompts ?? {}),
+        telemetry_probabilities: JSON.stringify(probabilities ?? {}),
+        uniform_sampling_probability,
+        processed_time: Date.now(),
+        processed,
       })
       .catch(e => {
         lazy.log.error(
@@ -1419,31 +1383,15 @@ class ChatStore {
       throw e;
     });
 
+    const newPrompts = Object.fromEntries(
+      Object.keys(telemetryPrompts).map(name => [name, turnIndex])
+    );
+
     await this.#conn
-      .executeTransaction(async () => {
-        const existingRows = await this.#conn.executeCached(
-          GET_LLM_TELEMETRY_BY_CONV_ID,
-          { conv_id: convId }
-        );
-
-        const existingPrompts = existingRows.length
-          ? JSON.parse(
-              existingRows[0].getResultByName("telemetry_prompts") || "{}"
-            )
-          : {};
-
-        const newPrompts = Object.fromEntries(
-          Object.keys(telemetryPrompts).map(name => [name, turnIndex])
-        );
-
-        await this.#conn.executeCached(MARK_LLM_TELEMETRY_PROCESSED, {
-          conv_id: convId,
-          processed_time: Date.now(),
-          telemetry_prompts: JSON.stringify({
-            ...existingPrompts,
-            ...newPrompts,
-          }),
-        });
+      .executeCached(MARK_LLM_TELEMETRY_PROCESSED, {
+        conv_id: convId,
+        processed_time: Date.now(),
+        telemetry_prompts: JSON.stringify(newPrompts),
       })
       .catch(e => {
         lazy.log.error(
