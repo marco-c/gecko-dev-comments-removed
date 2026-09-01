@@ -992,6 +992,7 @@ namespace mozilla {
 
 
 
+
 void CheckIdleMemoryCleanupNeeded(nsITimer* aTimer, void* aClosure) {
   const char* reason = static_cast<const char*>(aClosure);
   uint32_t reuseGracePeriod =
@@ -1006,6 +1007,12 @@ void CheckIdleMemoryCleanupNeeded(nsITimer* aTimer, void* aClosure) {
 
   MOZ_ASSERT(!sIdleMemoryCleanupRunner ||
              !sIdleMemoryCleanupWantsLaterScheduled);
+
+  
+  if (aTimer) {
+    sIdleMemoryCleanupWantsLaterScheduled = false;
+  }
+
   auto result =
       moz_may_purge_now( true, reuseGracePeriod, Nothing());
   switch (result) {
@@ -1017,23 +1024,23 @@ void CheckIdleMemoryCleanupNeeded(nsITimer* aTimer, void* aClosure) {
       
       
       
-      if (sIdleMemoryCleanupRunner || sIdleMemoryCleanupWantsLaterScheduled) {
+      if (aTimer || sIdleMemoryCleanupRunner ||
+          sIdleMemoryCleanupWantsLaterScheduled) {
         PROFILER_MARKER("IdlePurgePeek", GCCC, MarkerTiming::InstantNow(),
                         IdlePurgePeekMarker,
                         ProfilerString8View::WrapNullTerminatedString(
-                            "Done (Cancel timer or runner)"),
+                            "Done (Nothing left to purge)"),
                         ProfilerString8View::WrapNullTerminatedString(reason));
         CancelIdleMemoryCleanupTimerAndRunner();
       }
       break;
     case may_purge_now_result_t::WantsLater:
       if (!sIdleMemoryCleanupWantsLaterScheduled) {
-        PROFILER_MARKER(
-            "IdlePurgePeek", GCCC, MarkerTiming::InstantNow(),
-            IdlePurgePeekMarker,
-            ProfilerString8View::WrapNullTerminatedString(
-                "WantsLater (First schedule of low priority timer)"),
-            ProfilerString8View::WrapNullTerminatedString(reason));
+        PROFILER_MARKER("IdlePurgePeek", GCCC, MarkerTiming::InstantNow(),
+                        IdlePurgePeekMarker,
+                        ProfilerString8View::WrapNullTerminatedString(
+                            "WantsLater (Arming low priority timer)"),
+                        ProfilerString8View::WrapNullTerminatedString(reason));
       }
       
       
@@ -1120,11 +1127,11 @@ bool RunIdleMemoryCleanup(TimeStamp aDeadline, uint32_t aWantsLaterDelay) {
   const char* last_result;
   switch (result) {
     case may_purge_now_result_t::Done:
-      last_result = "Done (Cancel timer and runner)";
+      last_result = "Done (Cancel runner)";
       CancelIdleMemoryCleanupTimerAndRunner();
       break;
     case may_purge_now_result_t::WantsLater:
-      last_result = "WantsLater (First schedule of low priority timer)";
+      last_result = "WantsLater (Arming low priority timer)";
       ScheduleWantsLaterTimer(aWantsLaterDelay);
       break;
     case may_purge_now_result_t::NeedsMore:
