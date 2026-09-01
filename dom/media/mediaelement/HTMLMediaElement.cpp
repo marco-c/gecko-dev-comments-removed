@@ -7504,6 +7504,29 @@ void HTMLMediaElement::NotifyOwnerDocumentActivityChanged() {
     }
   }
 
+#if defined(MOZ_WIDGET_ANDROID)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (OwnerDoc()->Hidden() && !OwnerDoc()->InAndroidPipMode() && !mPaused &&
+      IsAudible()) {
+    if (!mRecordedBackgroundAudioPlayback) {
+      mRecordedBackgroundAudioPlayback = true;
+      glean::media::background_audio_playback.Record();
+    }
+  } else if (!OwnerDoc()->Hidden()) {
+    mRecordedBackgroundAudioPlayback = false;
+  }
+#endif
+
   AddRemoveSelfReference();
 }
 

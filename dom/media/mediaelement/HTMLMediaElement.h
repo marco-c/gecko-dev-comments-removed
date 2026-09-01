@@ -1768,6 +1768,13 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   bool mSuspendedByInactiveDocOrDocshell = false;
 
+#if defined(MOZ_WIDGET_ANDROID)
+  
+  
+  
+  bool mRecordedBackgroundAudioPlayback = false;
+#endif
+
   
   bool mIsRunningLoadMethod = false;
 
