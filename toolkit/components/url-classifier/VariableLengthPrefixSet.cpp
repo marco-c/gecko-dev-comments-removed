@@ -2,15 +2,16 @@
 
 
 
-
-
 #include "VariableLengthPrefixSet.h"
 #include "nsIInputStream.h"
+#include "nsIMemoryReporter.h"
 #include "nsUrlClassifierPrefixSet.h"
 #include "nsPrintfCString.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/Logging.h"
+#include "mozilla/StaticMutex.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/UniquePtr.h"
 #include <algorithm>
 #include <bit>
@@ -39,10 +40,119 @@ void EnsureSorted(T* aArray) {
 }  
 #endif
 
-NS_IMPL_ISUPPORTS(VariableLengthPrefixSet, nsIMemoryReporter)
+struct TrackedPrefixSet {
+  ThreadSafeWeakPtr<VariableLengthPrefixSet> mWeakRef;
+  nsCString mPath;
+
+  bool operator==(const VariableLengthPrefixSet* aPrefixSet) const {
+    return mWeakRef == aPrefixSet;
+  }
+};
+
+class UrlClassifierPrefixSetReporter final : public nsIMemoryReporter {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIMEMORYREPORTER
+
+  static void Register(VariableLengthPrefixSet* aSet, const nsACString& aName);
+  static void PurgeStale(VariableLengthPrefixSet* aSet);
+
+ private:
+  ~UrlClassifierPrefixSetReporter() = default;
+
+  void Init() {
+    RefPtr reporter(this);
+    RegisterStrongMemoryReporter(reporter.forget());
+  }
+
+  static StaticMutex sMutex;
+  static StaticRefPtr<UrlClassifierPrefixSetReporter> sPrefixSetReporter;
+  nsTArray<TrackedPrefixSet> mSets MOZ_GUARDED_BY(sMutex);
+};
+
+StaticRefPtr<UrlClassifierPrefixSetReporter>
+    UrlClassifierPrefixSetReporter::sPrefixSetReporter;
+StaticMutex UrlClassifierPrefixSetReporter::sMutex;
+
+NS_IMPL_ISUPPORTS(UrlClassifierPrefixSetReporter, nsIMemoryReporter)
 
 
+void UrlClassifierPrefixSetReporter::Register(VariableLengthPrefixSet* aSet,
+                                              const nsACString& aName) {
+  StaticMutexAutoLock lock(sMutex);
+  if (!sPrefixSetReporter) {
+    sPrefixSetReporter = new UrlClassifierPrefixSetReporter();
+    sPrefixSetReporter->Init();
+  }
+  sPrefixSetReporter->mSets.RemoveElementsBy(
+      [](const TrackedPrefixSet& aEntry) { return aEntry.mWeakRef.IsDead(); });
+  nsCString path = nsPrintfCString(
+      "explicit/storage/prefix-set/%s",
+      (!aName.IsEmpty() ? PromiseFlatCString(aName).get() : "?!"));
+  sPrefixSetReporter->mSets.AppendElement(
+      TrackedPrefixSet{ThreadSafeWeakPtr<VariableLengthPrefixSet>(aSet), path});
+}
 
+
+void UrlClassifierPrefixSetReporter::PurgeStale(
+    VariableLengthPrefixSet* aPrefixSet) {
+  StaticMutexAutoLock lock(sMutex);
+  if (!sPrefixSetReporter) {
+    return;
+  }
+
+  sPrefixSetReporter->mSets.RemoveElement(aPrefixSet);
+
+  if (sPrefixSetReporter->mSets.IsEmpty()) {
+    
+    
+    
+    UnregisterStrongMemoryReporter(sPrefixSetReporter);
+    sPrefixSetReporter = nullptr;
+  }
+}
+
+MOZ_DEFINE_MALLOC_SIZE_OF(UrlClassifierMallocSizeOf)
+
+NS_IMETHODIMP
+UrlClassifierPrefixSetReporter::CollectReports(
+    nsIHandleReportCallback* aHandleReport, nsISupports* aData,
+    bool aAnonymize) {
+  struct PrefixSetToReport {
+    RefPtr<VariableLengthPrefixSet> mPrefixSet;
+    nsCString mPath;
+  };
+
+  nsTArray<PrefixSetToReport> prefixSetsToReport;
+  {
+    StaticMutexAutoLock lock(sMutex);
+
+    mSets.RemoveElementsBy([&](const TrackedPrefixSet& aEntry) {
+      RefPtr<VariableLengthPrefixSet> set(aEntry.mWeakRef);
+      if (!set) {
+        return true;
+      }
+
+      prefixSetsToReport.AppendElement(
+          PrefixSetToReport{std::move(set), aEntry.mPath});
+
+      return false;
+    });
+  }
+
+  for (auto&& aEntry : prefixSetsToReport) {
+    size_t amount =
+        aEntry.mPrefixSet->SizeOfIncludingThis(UrlClassifierMallocSizeOf);
+    aHandleReport->Callback(
+        ""_ns, std::move(aEntry.mPath), nsIMemoryReporter::KIND_HEAP,
+        nsIMemoryReporter::UNITS_BYTES, amount,
+        nsLiteralCString("Memory used by the variable-length prefix set for a "
+                         "URL classifier."),
+        aData);
+  }
+
+  return NS_OK;
+}
 
 VariableLengthPrefixSet::VariableLengthPrefixSet()
     : mLock("VariableLengthPrefixSet.mLock"),
@@ -50,17 +160,14 @@ VariableLengthPrefixSet::VariableLengthPrefixSet()
 
 nsresult VariableLengthPrefixSet::Init(const nsACString& aName) {
   mName = aName;
-  mMemoryReportPath = nsPrintfCString(
-      "explicit/storage/prefix-set/%s",
-      (!aName.IsEmpty() ? PromiseFlatCString(aName).get() : "?!"));
 
-  RegisterWeakMemoryReporter(this);
+  UrlClassifierPrefixSetReporter::Register(this, aName);
 
   return mFixedPrefixSet->Init(aName);
 }
 
 VariableLengthPrefixSet::~VariableLengthPrefixSet() {
-  UnregisterWeakMemoryReporter(this);
+  UrlClassifierPrefixSetReporter::PurgeStale(this);
 }
 
 nsresult VariableLengthPrefixSet::SetPrefixes(AddPrefixArray& aAddPrefixes,
@@ -447,7 +554,7 @@ bool VariableLengthPrefixSet::BinarySearch(const nsACString& aFullHash,
   int32_t begin = 0, end = aPrefixes.Length() / aPrefixSize;
 
   while (end > begin) {
-    int32_t mid = (begin + end) >> 1;
+    int32_t mid = begin + ((end - begin) >> 1);
     int cmp = memcmp(fullhash, prefixes + mid * aPrefixSize, aPrefixSize);
     if (cmp < 0) {
       end = mid;
@@ -458,22 +565,6 @@ bool VariableLengthPrefixSet::BinarySearch(const nsACString& aFullHash,
     }
   }
   return false;
-}
-
-MOZ_DEFINE_MALLOC_SIZE_OF(UrlClassifierMallocSizeOf)
-
-NS_IMETHODIMP
-VariableLengthPrefixSet::CollectReports(nsIHandleReportCallback* aHandleReport,
-                                        nsISupports* aData, bool aAnonymize) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  size_t amount = SizeOfIncludingThis(UrlClassifierMallocSizeOf);
-
-  return aHandleReport->Callback(
-      ""_ns, mMemoryReportPath, KIND_HEAP, UNITS_BYTES, amount,
-      nsLiteralCString("Memory used by the variable-length prefix set for a "
-                       "URL classifier."),
-      aData);
 }
 
 size_t VariableLengthPrefixSet::SizeOfIncludingThis(
