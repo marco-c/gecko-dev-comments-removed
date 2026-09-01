@@ -2240,9 +2240,12 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     
     
     const auto fits = aStatus.IsComplete() && FitsInContainingBlock();
+    
+    
+    
+    
     if (fallbacks.IsEmpty() || finalizing ||
-        (fits && (tryOrder == StylePositionTryOrder::Normal ||
-                  currentFallbackIndex == firstTryIndex))) {
+        (fits && tryOrder == StylePositionTryOrder::Normal)) {
       
       
       isOverflowingCB = !fits;
