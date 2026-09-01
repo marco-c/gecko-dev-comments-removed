@@ -15,7 +15,7 @@ import mozilla.components.browser.state.search.RegionState
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.SearchState
 import mozilla.components.browser.state.store.BrowserStore
-import mozilla.components.feature.ipprotection.EligibilityStatus
+import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -42,6 +42,27 @@ class FenixIPProtectionEligibilityStorageTest {
         val browserStore = BrowserStore(
             initialState = BrowserState(
                 search = SearchState(region = RegionState("CA", "CA")),
+            ),
+        )
+
+        val storage = FenixIPProtectionEligibilityStorage(
+            browserStore = browserStore,
+            sharedPref = sharedPreferences,
+            prefKey = prefKey,
+            lifecycleOwner = mockk(relaxed = true),
+        )
+
+        assertEquals(EligibilityStatus.Ineligible, storage.eligibilityStatus.first())
+    }
+
+    @Test
+    fun `WHEN nimbus disabled but region in allowed list THEN status is Ineligible`() = runTest {
+        FxNimbus.features.ipProtection.withCachedValue(
+            IpProtection(enabled = false, allowedRegions = listOf("US", "CA")),
+        )
+        val browserStore = BrowserStore(
+            initialState = BrowserState(
+                search = SearchState(region = RegionState("US", "US")),
             ),
         )
 
