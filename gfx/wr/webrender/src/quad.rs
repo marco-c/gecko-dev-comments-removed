@@ -715,6 +715,20 @@ fn prepare_quad_impl(
 
         let main_prim_address = frame_state.frame_gpu_data.f32.push(&quad);
 
+        let device_bounds = match transform.as_2d_scale_offset() {
+            
+            
+            
+            
+            Some(local_to_device) => local_to_device.map_rect(&local_bounds),
+            
+            
+            None => frame_state.surfaces[pic_context.surface_index.0].map_to_device_rect(
+                &clip_chain.pic_coverage_rect,
+                spatial_tree,
+            ),
+        };
+
         
         
         frame_state.push_prim(
@@ -723,6 +737,7 @@ fn prepare_quad_impl(
                 pattern.shader_input,
                 pattern.texture_input.task_ids,
                 draw_index,
+                device_bounds,
                 main_prim_address,
                 transform_id,
                 quad_flags,
@@ -1697,6 +1712,7 @@ fn add_pattern_prim(
             pattern.shader_input,
             pattern.texture_input.task_ids,
             draw_index,
+            *coverage_rect,
             prim_address,
             GpuTransformId::IDENTITY,
             quad_flags,
@@ -1746,6 +1762,7 @@ fn add_composite_prim(
             ),
             [RenderTaskId::INVALID; 3],
             draw_index,
+            *rect,
             composite_prim_address,
             GpuTransformId::IDENTITY,
             quad_flags,
