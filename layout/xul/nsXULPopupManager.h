@@ -15,7 +15,6 @@
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/widget/InitData.h"
-#include "mozilla/widget/NativeMenu.h"
 #include "nsCOMPtr.h"
 #include "nsHashtablesFwd.h"
 #include "nsIContent.h"
@@ -66,6 +65,9 @@ class XULButtonElement;
 class XULMenuBarElement;
 class XULPopupElement;
 }  
+namespace widget {
+class NativeMenu;
+}
 }  
 
 
@@ -369,8 +371,7 @@ class nsXULMenuCommandEvent : public mozilla::Runnable {
 
 class nsXULPopupManager final : public nsIDOMEventListener,
                                 public nsIRollupListener,
-                                public nsIObserver,
-                                public mozilla::widget::NativeMenu::Observer {
+                                public nsIObserver {
  public:
   friend class nsXULPopupHidingEvent;
   friend class nsXULPopupPositionedEvent;
@@ -379,6 +380,7 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
   using PopupType = mozilla::widget::PopupType;
   using Element = mozilla::dom::Element;
+  using NativeMenu = mozilla::widget::NativeMenu;
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
@@ -403,13 +405,14 @@ class nsXULPopupManager final : public nsIDOMEventListener,
                       nsIContent** aLastRolledUp);
 
   
-  void OnNativeMenuOpened() override;
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void OnNativeMenuClosed() override;
-  void OnNativeSubMenuWillOpen(mozilla::dom::Element* aPopupElement) override;
-  void OnNativeSubMenuDidOpen(mozilla::dom::Element* aPopupElement) override;
-  void OnNativeSubMenuClosed(mozilla::dom::Element* aPopupElement) override;
+  void OnNativeMenuOpened(NativeMenu*);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void OnNativeMenuClosed(NativeMenu*);
+  
+  void OnNativeSubMenuWillOpen(NativeMenu*, Element* aPopupElement);
+  void OnNativeSubMenuDidOpen(NativeMenu*, Element* aPopupElement);
+  void OnNativeSubMenuClosed(NativeMenu*, Element* aPopupElement);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void OnNativeMenuWillActivateItem(
-      mozilla::dom::Element* aMenuItemElement) override;
+      NativeMenu*, Element* aMenuItemElement);
 
   static mozilla::StaticRefPtr<nsXULPopupManager> sInstance;
 
@@ -913,7 +916,7 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   
   
   
-  RefPtr<mozilla::widget::NativeMenu> mNativeMenu;
+  RefPtr<NativeMenu> mNativeMenu;
 
   
   

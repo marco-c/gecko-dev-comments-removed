@@ -77,37 +77,14 @@ class NativeMenu {
   
   virtual RefPtr<dom::Element> Element() = 0;
 
-  class Observer {
-   public:
-    
-    
-    virtual void OnNativeMenuOpened() = 0;
-
-    
-    
-    virtual void OnNativeMenuClosed() = 0;
-
-    
-    virtual void OnNativeSubMenuWillOpen(dom::Element* aPopupElement) = 0;
-
-    
-    virtual void OnNativeSubMenuDidOpen(dom::Element* aPopupElement) = 0;
-
-    
-    virtual void OnNativeSubMenuClosed(dom::Element* aPopupElement) = 0;
-
-    
-    virtual void OnNativeMenuWillActivateItem(
-        dom::Element* aMenuItemElement) = 0;
-  };
-
   
   
-  
-  virtual void AddObserver(Observer* aObserver) = 0;
-
-  
-  virtual void RemoveObserver(Observer* aObserver) = 0;
+  void OnOpened();
+  void OnClosed();
+  void OnSubMenuWillOpen(dom::Element* aPopupElement);
+  void OnSubMenuDidOpen(dom::Element* aPopupElement);
+  void OnSubMenuClosed(dom::Element* aPopupElement);
+  void OnWillActivateItem(dom::Element* aMenuItemElement);
 
  protected:
   virtual ~NativeMenu() = default;

@@ -187,9 +187,7 @@ void NativeMenuMac::OnMenuWillOpen(dom::Element* aPopupElement) {
   
   RefPtr<NativeMenuMac> kungFuDeathGrip(this);
 
-  for (NativeMenu::Observer* observer : mObservers.Clone()) {
-    observer->OnNativeSubMenuWillOpen(aPopupElement);
-  }
+  OnSubMenuWillOpen(aPopupElement);
 }
 
 void NativeMenuMac::OnMenuDidOpen(dom::Element* aPopupElement) {
@@ -197,12 +195,10 @@ void NativeMenuMac::OnMenuDidOpen(dom::Element* aPopupElement) {
   
   RefPtr<NativeMenuMac> kungFuDeathGrip(this);
 
-  for (NativeMenu::Observer* observer : mObservers.Clone()) {
-    if (aPopupElement == mElement) {
-      observer->OnNativeMenuOpened();
-    } else {
-      observer->OnNativeSubMenuDidOpen(aPopupElement);
-    }
+  if (aPopupElement == mElement) {
+    OnOpened();
+  } else {
+    OnSubMenuDidOpen(aPopupElement);
   }
 }
 
@@ -212,9 +208,7 @@ void NativeMenuMac::OnMenuWillActivateItem(dom::Element* aPopupElement,
   
   RefPtr<NativeMenuMac> kungFuDeathGrip(this);
 
-  for (NativeMenu::Observer* observer : mObservers.Clone()) {
-    observer->OnNativeMenuWillActivateItem(aMenuItemElement);
-  }
+  OnWillActivateItem(aMenuItemElement);
 }
 
 void NativeMenuMac::OnMenuClosed(dom::Element* aPopupElement) {
@@ -222,12 +216,10 @@ void NativeMenuMac::OnMenuClosed(dom::Element* aPopupElement) {
   
   RefPtr<NativeMenuMac> kungFuDeathGrip(this);
 
-  for (NativeMenu::Observer* observer : mObservers.Clone()) {
-    if (aPopupElement == mElement) {
-      observer->OnNativeMenuClosed();
-    } else {
-      observer->OnNativeSubMenuClosed(aPopupElement);
-    }
+  if (aPopupElement == mElement) {
+    OnClosed();
+  } else {
+    OnSubMenuClosed(aPopupElement);
   }
 }
 
