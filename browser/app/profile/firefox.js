@@ -2405,12 +2405,12 @@ pref("browser.smartwindow.autoTabGrouping.loglevel", "Warn");
 
 pref("browser.smartwindow.smartformfill.enabled", false);
 
+
 pref("browser.smartwindow.smartformfill.disallowedRegions", "FR");
 
 
 pref("browser.smartwindow.agent.enabled", false);
 pref("browser.smartwindow.agent.supportedRegions", "US,CA");
-
 
 
 pref("browser.smartwindow.worldcup.enabled", false);
@@ -2431,6 +2431,8 @@ pref("browser.smartwindow.chatStore.loglevel", "Error");
 pref("browser.smartwindow.conversation.logLevel", "Error");
 pref("browser.smartwindow.smartbarMentions.loglevel", "Error");
 pref("browser.smartwindow.telemetryLogLevel", "Error");
+pref("browser.smartwindow.aiTabHistory.logLevel", "Error");
+pref("browser.smartwindow.aiTabStore.logLevel", "Error");
 
 
 pref("security.mixed_content.block_active_content", true);
