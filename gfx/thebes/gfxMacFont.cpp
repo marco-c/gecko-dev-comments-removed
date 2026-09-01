@@ -259,7 +259,11 @@ void gfxMacFont::InitMetrics() {
 
   
   
-  if (!InitMetricsFromSfntTables(mMetrics) &&
+  if (
+#if MOZ_FONTATIONS
+      !InitMetricsFromSkrifa(mMetrics) &&
+#endif
+      !InitMetricsFromSfntTables(mMetrics) &&
       (!mFontEntry->IsUserFont() || mFontEntry->IsLocalUserFont())) {
     InitMetricsFromPlatform();
   }
