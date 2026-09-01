@@ -15,6 +15,7 @@
 #include "gfxPlatform.h"
 #include "imgFrame.h"
 #include "jerror.h"
+#include "mozilla/StaticPrefs_image.h"
 #include "mozilla/gfx/Types.h"
 #include "nsCRT.h"
 #include "nspr.h"
@@ -355,13 +356,41 @@ LexerTransition<nsJPEGDecoder::State> nsJPEGDecoder::ReadJPEGData(
 
       
       
-      if (mInfo.out_color_space == JCS_GRAYSCALE) {
-        mCMSLine = new (std::nothrow) uint32_t[mInfo.image_width];
-        if (!mCMSLine) {
-          mState = JPEG_ERROR;
-          MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
-                  ("} (could allocate buffer for color conversion)"));
-          return Transition::TerminateFailure();
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      JDIMENSION mcuWidth = mInfo.max_h_samp_factor * DCTSIZE;
+      JDIMENSION mcuHeight = mInfo.max_v_samp_factor * DCTSIZE;
+      bool mcuAligned = mcuWidth != 0 && mcuHeight != 0 &&
+                        mInfo.image_width % mcuWidth == 0 &&
+                        mInfo.image_height % mcuHeight == 0;
+      if (ExplicitOutputSize() && mcuAligned &&
+          StaticPrefs::image_jpeg_dct_scaling_enabled()) {
+        UnorientedIntSize targetSize =
+            GetOrientation().ToUnoriented(OutputSize());
+        float widthRatio = float(mInfo.image_width) / float(targetSize.width);
+        float heightRatio =
+            float(mInfo.image_height) / float(targetSize.height);
+        float minRatio = std::min(widthRatio, heightRatio);
+        float minFactor =
+            std::max(1.0f, StaticPrefs::image_jpeg_dct_scaling_min_factor());
+
+        if (minRatio >= 8.0f * minFactor) {
+          mInfo.scale_num = 1;
+          mInfo.scale_denom = 8;
+        } else if (minRatio >= 4.0f * minFactor) {
+          mInfo.scale_num = 1;
+          mInfo.scale_denom = 4;
+        } else if (minRatio >= 2.0f * minFactor) {
+          mInfo.scale_num = 1;
+          mInfo.scale_denom = 2;
         }
       }
 
@@ -372,6 +401,18 @@ LexerTransition<nsJPEGDecoder::State> nsJPEGDecoder::ReadJPEGData(
 
       
       jpeg_calc_output_dimensions(&mInfo);
+
+      
+      
+      if (mInfo.out_color_space == JCS_GRAYSCALE) {
+        mCMSLine = new (std::nothrow) uint32_t[mInfo.output_width];
+        if (!mCMSLine) {
+          mState = JPEG_ERROR;
+          MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
+                  ("} (could allocate buffer for color conversion)"));
+          return Transition::TerminateFailure();
+        }
+      }
 
       
       
@@ -386,8 +427,10 @@ LexerTransition<nsJPEGDecoder::State> nsJPEGDecoder::ReadJPEGData(
         inFormat = mIsPDF ? SurfaceFormat::CMYK : SurfaceFormat::InvertedCMYK;
       }
 
+      OrientedIntSize pipeInputSize = GetOrientation().ToOriented(
+          UnorientedIntSize(mInfo.output_width, mInfo.output_height));
       Maybe<SurfacePipe> pipe = SurfacePipeFactory::CreateReorientSurfacePipe(
-          this, Size(), OutputSize(), inFormat, SurfaceFormat::OS_RGBX,
+          this, pipeInputSize, OutputSize(), inFormat, SurfaceFormat::OS_RGBX,
           pipeTransform, GetOrientation(), SurfacePipeFlags());
       if (!pipe) {
         mState = JPEG_ERROR;

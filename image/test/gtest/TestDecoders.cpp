@@ -19,6 +19,7 @@
 #include "ProgressTracker.h"
 #include "SourceBuffer.h"
 #include "imgIContainer.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/gfx/2D.h"
@@ -430,6 +431,36 @@ static void CheckDownscaleDuringDecode(const ImageTestCase& aTestCase) {
       });
 }
 
+static void CheckExifOrientationDownscale(const ImageTestCase& aTestCase) {
+  
+  
+  
+  
+  bool oldValue = false;
+  Preferences::GetBool("image.jpeg.dct-scaling.enabled", &oldValue);
+  Preferences::SetBool("image.jpeg.dct-scaling.enabled", true);
+  auto resetPref = MakeScopeExit([&] {
+    Preferences::SetBool("image.jpeg.dct-scaling.enabled", oldValue);
+  });
+
+  WithSingleChunkDecode(
+      aTestCase, Some(aTestCase.mOutputSize),  false,
+      [&](image::Decoder* aDecoder) {
+        
+        
+        ASSERT_FALSE(aDecoder->HasError());
+        EXPECT_TRUE(aDecoder->GetDecodeDone());
+
+        RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+        ASSERT_TRUE(bool(currentFrame));
+        RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
+        ASSERT_TRUE(surface != nullptr);
+
+        EXPECT_EQ(aTestCase.mOutputSize, surface->GetSize());
+        EXPECT_TRUE(IsSolidColor(surface, aTestCase.Color(), aTestCase.Fuzz()));
+      });
+}
+
 static void CheckAnimationDecoderResults(const ImageTestCase& aTestCase,
                                          AnimationSurfaceProvider* aProvider,
                                          image::Decoder* aDecoder) {
@@ -820,6 +851,10 @@ IMAGE_GTEST_DECODER_BASE_F(JXL)
 
 TEST_F(ImageDecoders, ICOWithANDMaskDownscaleDuringDecode) {
   CheckDownscaleDuringDecode(DownscaledTransparentICOWithANDMaskTestCase());
+}
+
+TEST_F(ImageDecoders, JPGExifOrientationDctDownscale) {
+  CheckExifOrientationDownscale(ExifOrientationDownscaleJPGTestCase());
 }
 
 TEST_F(ImageDecoders, WebPLargeMultiChunk) {
