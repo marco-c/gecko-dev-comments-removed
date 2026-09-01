@@ -196,6 +196,28 @@ class SVGGeometryElement : public SVGGeometryElementBase {
 
 
 
+
+
+
+  Maybe<Rect> GetBounds(const Matrix& aPathTransform);
+
+  
+
+
+
+
+
+
+
+
+  Maybe<Rect> GetStrokedBounds(const StrokeOptions& aStrokeOptions,
+                               const Matrix& aPathTransform,
+                               const Matrix& aPathToBounds);
+
+  
+
+
+
   virtual bool GetDistancesFromOriginToEndsOfVisibleSegments(
       FallibleTArray<double>* aOutput) {
     aOutput->Clear();
@@ -279,6 +301,8 @@ class SVGGeometryElement : public SVGGeometryElementBase {
 
  private:
   already_AddRefed<Path> GetOrBuildPathForHitTest();
+
+  already_AddRefed<Path> GetTransformedPath(const Matrix& aPathTransform);
 
   float GetTotalLength();
 };
