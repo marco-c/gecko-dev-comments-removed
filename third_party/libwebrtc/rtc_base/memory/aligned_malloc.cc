@@ -10,15 +10,15 @@
 
 #include "rtc_base/memory/aligned_malloc.h"
 
-#include <stdlib.h>  
-#include <string.h>  
+#include <cstdlib>
+#include <cstring>
 
 #include "rtc_base/checks.h"
 
 #ifdef _WIN32
 #include <windows.h>
 #else
-#include <stdint.h>
+#include <cstdint>
 #endif
 
 
@@ -50,7 +50,7 @@ void* GetRightAlign(const void* pointer, size_t alignment) {
   return reinterpret_cast<void*>(GetRightAlign(start_pos, alignment));
 }
 
-void* AlignedMalloc(size_t size, size_t alignment) {
+void* AlignedMallocOrNull(size_t size, size_t alignment) {
   if (size == 0) {
     return nullptr;
   }
@@ -63,7 +63,9 @@ void* AlignedMalloc(size_t size, size_t alignment) {
   
   
   void* memory_pointer = malloc(size + sizeof(uintptr_t) + alignment - 1);
-  RTC_CHECK(memory_pointer) << "Couldn't allocate memory in AlignedMalloc";
+  if (memory_pointer == nullptr) {
+    return nullptr;
+  }
 
   
   
@@ -79,6 +81,21 @@ void* AlignedMalloc(size_t size, size_t alignment) {
   uintptr_t memory_start = reinterpret_cast<uintptr_t>(memory_pointer);
   memcpy(header_pointer, &memory_start, sizeof(uintptr_t));
 
+  return aligned_pointer;
+}
+
+void* AlignedMalloc(size_t size, size_t alignment) {
+  
+  
+  if (size == 0) {
+    return nullptr;
+  }
+  if (!ValidAlignment(alignment)) {
+    return nullptr;
+  }
+
+  void* aligned_pointer = AlignedMallocOrNull(size, alignment);
+  RTC_CHECK(aligned_pointer) << "Couldn't allocate memory in AlignedMalloc";
   return aligned_pointer;
 }
 

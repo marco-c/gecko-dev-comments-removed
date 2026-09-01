@@ -32,6 +32,9 @@ void* GetRightAlign(const void* ptr, size_t alignment);
 
 void* AlignedMalloc(size_t size, size_t alignment);
 
+
+void* AlignedMallocOrNull(size_t size, size_t alignment);
+
 void AlignedFree(void* mem_block);
 
 
@@ -44,6 +47,10 @@ T* GetRightAlign(const T* ptr, size_t alignment) {
 template <typename T>
 T* AlignedMalloc(size_t size, size_t alignment) {
   return reinterpret_cast<T*>(AlignedMalloc(size, alignment));
+}
+template <typename T>
+T* AlignedMallocOrNull(size_t size, size_t alignment) {
+  return reinterpret_cast<T*>(AlignedMallocOrNull(size, alignment));
 }
 
 
