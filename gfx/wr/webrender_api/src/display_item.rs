@@ -637,14 +637,27 @@ pub enum BoxShadowClipMode {
     Inset = 1,
 }
 
+
+pub const BLUR_SAMPLE_SCALE: f32 = 3.0;
+
+
+
+pub const MAX_BLUR_RADIUS: f32 = 300.;
+
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct BoxShadowDisplayItem {
     pub common: CommonItemProperties,
-    pub box_bounds: LayoutRect,
+    
+    
+    
+    pub bounds: LayoutRect,
     pub offset: LayoutVector2D,
     pub color: ColorF,
+    
     pub blur_radius: f32,
-    pub spread_radius: f32,
+    
+    
+    pub spread_amount: f32,
     pub border_radius: BorderRadius,
     pub shadow_radius: BorderRadius,
     pub clip_mode: BoxShadowClipMode,

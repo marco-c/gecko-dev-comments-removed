@@ -1634,14 +1634,67 @@ impl DisplayListBuilder {
             return;
         }
 
-        let (common, eso_offset) = self.normalize_common(common);
+        if color.a == 0.0 {
+            return;
+        }
+
+        
+        let spread_amount = match clip_mode {
+            di::BoxShadowClipMode::Outset => spread_radius,
+            di::BoxShadowClipMode::Inset => -spread_radius,
+        };
+
+        
+        let blur_radius = f32::min(blur_radius, di::MAX_BLUR_RADIUS);
+
+        let (mut common, eso_offset) = self.normalize_common(common);
+
+        
+        
+        if clip_mode == di::BoxShadowClipMode::Outset {
+            common.flags = di::PrimitiveFlags::default();
+        }
+
+        let element_rect = self.shift_rect(box_bounds, eso_offset);
+
+        
+        let shadow_rect = element_rect
+            .translate(offset)
+            .inflate(spread_amount, spread_amount);
+
+        
+        
+        let blur_offset = (di::BLUR_SAMPLE_SCALE * blur_radius).ceil();
+
+        let bounds = match clip_mode {
+            di::BoxShadowClipMode::Outset => {
+                
+                if shadow_rect.is_empty() {
+                    return;
+                }
+                shadow_rect.inflate(blur_offset, blur_offset)
+            }
+            di::BoxShadowClipMode::Inset => {
+                
+                
+                if border_radius.is_zero()
+                    && shadow_rect
+                        .inflate(-blur_radius, -blur_radius)
+                        .contains_box(&element_rect)
+                {
+                    return;
+                }
+                element_rect
+            }
+        };
+
         let item = di::DisplayItem::BoxShadow(di::BoxShadowDisplayItem {
             common,
-            box_bounds: self.shift_rect(box_bounds, eso_offset),
+            bounds,
             offset,
             color,
             blur_radius,
-            spread_radius,
+            spread_amount,
             border_radius,
             shadow_radius,
             clip_mode,

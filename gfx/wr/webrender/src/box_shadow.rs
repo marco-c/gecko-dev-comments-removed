@@ -104,12 +104,7 @@ impl From<BoxShadowKey> for BoxShadowTemplate {
     }
 }
 
-
-pub const BLUR_SAMPLE_SCALE: f32 = 3.0;
-
-
-
-pub const MAX_BLUR_RADIUS: f32 = 300.;
+pub use api::BLUR_SAMPLE_SCALE;
 
 
 
@@ -145,99 +140,36 @@ impl<'a> SceneBuilder<'a> {
         prim_info: &LayoutPrimitiveInfo,
         box_offset: &LayoutVector2D,
         color: ColorF,
-        mut blur_radius: f32,
-        spread_radius: f32,
+        blur_radius: f32,
+        spread_amount: f32,
         border_radius: BorderRadius,
         shadow_radius: BorderRadius,
         clip_mode: BoxShadowClipMode,
     ) {
-        if color.a == 0.0 {
-            return;
-        }
-
-        
-        let spread_amount = match clip_mode {
-            BoxShadowClipMode::Outset => spread_radius,
-            BoxShadowClipMode::Inset => -spread_radius,
-        };
-
-        
-        blur_radius = f32::min(blur_radius, MAX_BLUR_RADIUS);
-
-        
-        
-        let shadow_rect = prim_info
-            .rect
-            .translate(*box_offset)
-            .inflate(spread_amount, spread_amount);
-
         
         
         
-        
-        let blur_offset = (BLUR_SAMPLE_SCALE * blur_radius).ceil();
-
-        
-        
-        let dest_rect = shadow_rect.inflate(blur_offset, blur_offset);
-
-        match clip_mode {
-            BoxShadowClipMode::Outset => {
-                
-                if shadow_rect.is_empty() {
-                    return;
-                }
-
-                
-                self.add_primitive(
-                    spatial_node_index,
-                    clip_node_id,
-                    &LayoutPrimitiveInfo::with_clip_rect(dest_rect, prim_info.clip_rect),
-                    BoxShadow {
-                        color: color.into(),
-                        blur_radius: Au::from_f32_px(blur_radius),
-                        clip_mode,
-                        shadow_radius: shadow_radius.into(),
-                        element_radius: border_radius.into(),
-                        box_offset: (*box_offset).into(),
-                        spread_amount: Au::from_f32_px(spread_amount),
-                    },
-                );
-            }
-            BoxShadowClipMode::Inset => {
-                
-                
-                if border_radius.is_zero() && shadow_rect
-                    .inflate(-blur_radius, -blur_radius)
-                    .contains_box(&prim_info.rect)
-                {
-                    return;
-                }
-
-                
-                self.add_primitive(
-                    spatial_node_index,
-                    clip_node_id,
-                    &prim_info.clone(),
-                    BoxShadow {
-                        color: color.into(),
-                        blur_radius: Au::from_f32_px(blur_radius),
-                        clip_mode,
-                        shadow_radius: shadow_radius.into(),
-                        element_radius: border_radius.into(),
-                        box_offset: (*box_offset).into(),
-                        spread_amount: Au::from_f32_px(spread_amount),
-                    },
-                );
-            }
-        }
+        self.add_primitive(
+            spatial_node_index,
+            clip_node_id,
+            prim_info,
+            BoxShadow {
+                color: color.into(),
+                blur_radius: Au::from_f32_px(blur_radius),
+                clip_mode,
+                shadow_radius: shadow_radius.into(),
+                element_radius: border_radius.into(),
+                box_offset: (*box_offset).into(),
+                spread_amount: Au::from_f32_px(spread_amount),
+            },
+        );
     }
 }
 
 pub fn prepare_box_shadow(
     shadow_data: &BoxShadowData,
     common_data: &PrimTemplateCommonData,
-    unsnapped_prim_rect: &LayoutRect,
+    unsnapped_pattern_rect: &LayoutRect,
     clip_chain: &ClipChainInstance,
     quad_transform: &mut QuadTransformState,
     frame_context: &FrameBuildingContext,
@@ -269,11 +201,11 @@ pub fn prepare_box_shadow(
     
     let blur_offset = (BLUR_SAMPLE_SCALE * blur_radius).ceil();
     let unsnapped_element_rect = match shadow_data.clip_mode {
-        BoxShadowClipMode::Outset => unsnapped_prim_rect
+        BoxShadowClipMode::Outset => unsnapped_pattern_rect
             .inflate(-blur_offset, -blur_offset)
             .inflate(-shadow_data.spread_amount, -shadow_data.spread_amount)
             .translate(-shadow_data.box_offset),
-        BoxShadowClipMode::Inset => *unsnapped_prim_rect,
+        BoxShadowClipMode::Inset => *unsnapped_pattern_rect,
     };
     let element_rect = {
         
@@ -520,8 +452,11 @@ pub fn prepare_box_shadow(
     quad::prepare_quad(
         &pattern,
         &QuadDescriptor {
-            local_rect: prim_rect,
-            local_clip_rect: clip_chain.local_clip_rect,
+            pattern_rect: prim_rect,
+            
+            
+            
+            bounds: clip_chain.local_clip_rect.intersection_unchecked(&prim_rect),
             aligned_aa_edges: common_data.aligned_aa_edges,
             transformed_aa_edges: common_data.transformed_aa_edges,
         },
