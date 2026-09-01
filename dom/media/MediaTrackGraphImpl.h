@@ -15,6 +15,7 @@
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Monitor.h"
+#include "mozilla/TargetShutdownTaskSet.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "nsIDirectTaskDispatcher.h"
@@ -913,6 +914,10 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
     mMonitor.AssertCurrentThreadOwns();
     return !mBackMessageQueue.IsEmpty();
   }
+
+  
+  TargetShutdownTaskSet mShutdownTasks MOZ_GUARDED_BY(mMonitor);
+
   
 
 
