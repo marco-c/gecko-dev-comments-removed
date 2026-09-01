@@ -8987,7 +8987,7 @@ bool nsDocShell::CanLoadInParentProcess(nsIURI* aURI) {
   }
   
   
-  if (!uri || uri->SchemeIs("about") ||
+  if (!uri || (uri->SchemeIs("about") && !NS_IsAboutSrcdoc(uri)) ||
       (!StaticPrefs::extensions_webextensions_remote() &&
        uri->SchemeIs("moz-extension"))) {
     return true;
@@ -9473,13 +9473,13 @@ bool nsDocShell::ShouldDoInitialAboutBlankSyncLoad(
         mDocumentViewer->GetDocument()->NodePrincipal()->GetIsNullPrincipal(),
         "Load looks like first load but does not want principal inheritance.");
   } else {
-    if (XRE_IsContentProcess() &&
-        !ValidatePrincipalCouldPotentiallyBeLoadedBy(
-            aPrincipalToInherit, ContentChild::GetSingleton()->GetRemoteType(),
-            {})) {
-      
-      
-      return false;
+    if (XRE_IsContentProcess()) {
+      RefPtr<LoadedOriginSet> loadedOrigins = CurrentLoadedOriginSet();
+      if (!loadedOrigins->ValidatePrincipal(aPrincipalToInherit)) {
+        
+        
+        return false;
+      }
     }
 
     
