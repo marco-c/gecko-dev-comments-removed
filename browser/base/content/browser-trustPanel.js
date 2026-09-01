@@ -511,6 +511,12 @@ class TrustPanel {
     if (!this.#enabled) {
       return;
     }
+
+    
+    if (this.#uri?.spec != uri.spec && this.#popup?.state == "open") {
+      PanelMultiView.hidePopup(this.#popup);
+    }
+
     try {
       
       this.#uriHasHost = !!uri.host;
