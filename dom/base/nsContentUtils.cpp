@@ -413,6 +413,7 @@
 #include "nsURLHelper.h"
 #include "nsUnicodeProperties.h"
 #include "nsVariant.h"
+#include "nsWhitespaceTokenizer.h"
 #include "nsWidgetsCID.h"
 #include "nsXPCOM.h"
 #include "nsXPCOMCID.h"
@@ -10879,6 +10880,29 @@ ReferrerPolicy nsContentUtils::GetReferrerPolicyFromChannel(
 }
 
 
+bool nsContentUtils::HasRelNoReferrer(const Element& aElement) {
+  
+  if (!aElement.IsAnyOfHTMLElements(nsGkAtoms::a, nsGkAtoms::area,
+                                    nsGkAtoms::form) &&
+      !aElement.IsSVGElement(nsGkAtoms::a)) {
+    return false;
+  }
+
+  nsAutoString rel;
+  aElement.GetAttr(nsGkAtoms::rel, rel);
+  nsWhitespaceTokenizerTemplate<nsContentUtils::IsHTMLWhitespace> tok(rel);
+
+  while (tok.hasMoreTokens()) {
+    const nsAString& token = tok.nextToken();
+    if (token.LowerCaseEqualsLiteral("noreferrer")) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
 bool nsContentUtils::IsNonSubresourceRequest(nsIChannel* aChannel) {
   nsLoadFlags loadFlags = 0;
   aChannel->GetLoadFlags(&loadFlags);
@@ -11648,30 +11672,95 @@ static bool StartSerializingShadowDOM(
     return false;
   }
 
+  
+  
+
+  
   aBuilder.Append(u"<template shadowrootmode=\"");
+
+  
+  
+  
   if (shadow->IsClosed()) {
     aBuilder.Append(u"closed\"");
   } else {
     aBuilder.Append(u"open\"");
   }
 
+  
+  
   if (shadow->DelegatesFocus()) {
     aBuilder.Append(u" shadowrootdelegatesfocus=\"\"");
   }
+
+  
+  
   if (shadow->Serializable()) {
     aBuilder.Append(u" shadowrootserializable=\"\"");
   }
+
+  
+  
   if (StaticPrefs::dom_shadowdom_shadowRootSlotAssignment_enabled() &&
       shadow->SlotAssignment() == SlotAssignmentMode::Manual) {
     aBuilder.Append(u" shadowrootslotassignment=\"manual\"");
   }
+
+  
+  
   if (shadow->Clonable()) {
     aBuilder.Append(u" shadowrootclonable=\"\"");
   }
 
+  auto isGlobalCustomElementRegistry = [](CustomElementRegistry* registry) {
+    return registry && !registry->IsScoped();
+  };
+
+  
+  const bool shouldAppendRegistryAttribute = [&]() {
+    if (!StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+      return false;
+    }
+
+    
+    
+    CustomElementRegistry* documentRegistry =
+        shadow->OwnerDoc()->GetCustomElementRegistry();
+    
+    CustomElementRegistry* shadowRegistry = shadow->GetCustomElementRegistry();
+
+    
+    
+    if (!documentRegistry && !shadowRegistry) {
+      return false;
+    }
+    
+    
+    
+    else if (isGlobalCustomElementRegistry(documentRegistry) &&
+             isGlobalCustomElementRegistry(shadowRegistry)) {
+      return false;
+    }
+
+    
+    return true;
+  }();
+
+  
+  
+  if (shouldAppendRegistryAttribute) {
+    aBuilder.Append(u" shadowrootcustomelementregistry=\"\"");
+  }
+
+  
   aBuilder.Append(u">");
 
+  
+  
+  
+  
   if (!shadow->HasChildren()) {
+    
     aBuilder.Append(u"</template>");
     return false;
   }
