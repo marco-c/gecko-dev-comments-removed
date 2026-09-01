@@ -90,7 +90,7 @@ class JSHolderMap {
  public:
   class Iter;
 
-  JSHolderMap();
+  JSHolderMap() = default;
   ~JSHolderMap() { MOZ_RELEASE_ASSERT(!mHasIterator); }
 
   bool Has(void* aHolder) const;
@@ -102,13 +102,13 @@ class JSHolderMap {
 
  private:
   struct Entry {
-    void* mHolder;
-    nsScriptObjectTracer* mTracer;
+    void* mHolder = nullptr;
+    nsScriptObjectTracer* mTracer = nullptr;
 #ifdef DEBUG
-    JS::Zone* mZone;
+    JS::Zone* mZone = nullptr;
 #endif
 
-    Entry();
+    Entry() = default;
     Entry(void* aHolder, nsScriptObjectTracer* aTracer, JS::Zone* aZone);
   };
 
@@ -126,7 +126,7 @@ class JSHolderMap {
   bool RemoveEntry(EntryVector& aJSHolders, Entry* aEntry);
 
   
-  EntryMap mJSHolderMap;
+  EntryMap mJSHolderMap{256};
 
   
   
@@ -584,12 +584,19 @@ class CycleCollectedJSRuntime {
   using DeferredFinalizerTable = nsTHashMap<DeferredFinalizeFunction, void*>;
   DeferredFinalizerTable mDeferredFinalizerTable;
 
+  
+  
+  DeferredFinalizeFunction mLastDeferredFinalizeFunction = nullptr;
+  void* mLastDeferredFinalizeData = nullptr;
+
   RefPtr<IncrementalFinalizeRunnable> mFinalizeRunnable;
 
   OOMState mOutOfMemoryState;
   OOMState mLargeAllocationFailureState;
 
-  static const size_t kSegmentSize = 512;
+  
+  
+  static const size_t kSegmentSize = 3800;
   using NurseryObjectsVector =
       SegmentedVector<nsWrapperCache*, kSegmentSize, InfallibleAllocPolicy>;
   NurseryObjectsVector mNurseryObjects;
