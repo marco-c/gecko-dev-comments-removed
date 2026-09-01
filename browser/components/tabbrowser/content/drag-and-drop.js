@@ -152,6 +152,7 @@
           draggedTab._dragData.expandGroupOnDrop &&
           !draggedTab.group.collapsed
         ) {
+          draggedTab.group.collapsedByDrag = true;
           draggedTab.group.collapsed = true;
         }
 
@@ -464,11 +465,6 @@
               metricsContext: dropMetricsContext,
             });
           }
-
-          if (isTabGroupLabel(draggedTab)) {
-            this._setIsDraggingTabGroup(draggedTab.group, false);
-            this._expandGroupOnDrop(draggedTab);
-          }
         };
 
         if (shouldPin || shouldUnpin) {
@@ -555,6 +551,13 @@
             moveTabs();
             this._tabbrowserTabs._notifyBackgroundTab(movingTabs.at(-1));
           }
+        }
+
+        
+        
+        if (isTabGroupLabel(draggedTab)) {
+          this._setIsDraggingTabGroup(draggedTab.group, false);
+          this._expandGroupOnDrop(draggedTab);
         }
       } else if (isTabGroupLabel(draggedTab)) {
         const dropIndex = this._getDropIndex(event);
@@ -1161,31 +1164,35 @@
       this._tabbrowserTabs._invalidateCachedVisibleTabs();
     }
 
+    
+
+
+
+
+
+
     _expandGroupOnDrop(draggedTab) {
-      if (
-        !isTabGroupLabel(draggedTab) ||
-        !draggedTab._dragData?.expandGroupOnDrop
-      ) {
+      if (!isTabGroupLabel(draggedTab)) {
         return;
       }
       let group = draggedTab.group;
+      if (!group.collapsedByDrag || !group.collapsed) {
+        return;
+      }
       let periphery = draggedTab.ownerDocument.getElementById(
         "tabbrowser-arrowscrollbox-periphery"
       );
-      let releaseReservedSpace = () =>
-        this.#releaseSpaceInScrolledContent(periphery);
-      if (group.collapsed) {
-        
-        
-        group.addEventListener(
-          "TabGroupAnimationComplete",
-          releaseReservedSpace,
-          { once: true }
-        );
-        group.collapsed = false;
-      } else {
-        releaseReservedSpace();
-      }
+      
+      
+      group.addEventListener(
+        "TabGroupAnimationComplete",
+        () => {
+          group.collapsedByDrag = false;
+          this.#releaseSpaceInScrolledContent(periphery);
+        },
+        { once: true }
+      );
+      group.collapsed = false;
     }
 
     
@@ -2844,7 +2851,7 @@
       periphery.style.top = "";
       
       
-      if (!draggedTab?._dragData?.expandGroupOnDrop) {
+      if (!isTabGroupLabel(draggedTab) || !draggedTab.group.collapsedByDrag) {
         this.#releaseSpaceInScrolledContent(periphery);
       }
       let pinnedTabsContainer = draggedTabDocument.getElementById(

@@ -51,6 +51,16 @@
     
     #wasCreatedByAdoption = false;
 
+    
+
+
+
+
+
+
+
+    collapsedByDrag = false;
+
     #observerRemoved = false;
 
     constructor() {
