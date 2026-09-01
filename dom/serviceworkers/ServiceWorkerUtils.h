@@ -56,6 +56,12 @@ bool ServiceWorkerRegistrationDataIsValid(
 
 
 
+void ServiceWorkerScopeIsValid(nsIPrincipal* aPrincipal, nsIURI* aScopeURI,
+                               ErrorResult& aRv);
+
+
+
+
 
 
 
