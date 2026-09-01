@@ -430,10 +430,13 @@ class AliasSet {
     
     SharedArrayRawBufferLength = 1 << 28,
 
-    Last = SharedArrayRawBufferLength,
+    
+    GeneratorResumeState = 1 << 29,
+
+    Last = GeneratorResumeState,
 
     Any = Last | (Last - 1),
-    NumCategories = 29,
+    NumCategories = 30,
 
     
     Store_ = 1 << 31
