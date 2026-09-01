@@ -251,15 +251,11 @@ var gTests = [
         "webRTC-shareDevices popup notification is present"
       );
 
-      await BrowserTestUtils.waitForMutationCondition(
+      
+      
+      await BrowserTestUtils.waitForPopupEvent(
         PopupNotifications.panel,
-        { childList: true },
-        () => PopupNotifications.panel?.firstElementChild
-      );
-      await BrowserTestUtils.waitForMutationCondition(
-        PopupNotifications.panel.firstElementChild,
-        { childList: true },
-        () => PopupNotifications.panel.firstElementChild?.button
+        "shown"
       );
       let indicator = promiseIndicatorWindow();
       let observerPromise1 = expectObserverCalled(
