@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGTRANSFORMLIST_H_
 #define DOM_SVG_SVGTRANSFORMLIST_H_
 
@@ -31,6 +29,7 @@ class SVGTransformList {
   friend class SVGAnimatedTransformList;
   friend class dom::DOMSVGTransform;
   friend class dom::DOMSVGTransformList;
+  using const_iterator = FallibleTArray<SVGTransform>::const_iterator;
 
  public:
   SVGTransformList() = default;
@@ -58,6 +57,9 @@ class SVGTransformList {
   const SVGTransform& operator[](uint32_t aIndex) const {
     return mItems[aIndex];
   }
+
+  [[nodiscard]] const_iterator begin() const { return mItems.begin(); }
+  [[nodiscard]] const_iterator end() const { return mItems.end(); }
 
   bool operator==(const SVGTransformList& rhs) const {
     return mItems == rhs.mItems;

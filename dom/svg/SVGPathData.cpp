@@ -675,7 +675,7 @@ void SVGPathData::GetMarkerPositioningData(Span<const StylePathCommand> aPath,
     }
 
     
-    if (aMarks->Length()) {
+    if (!aMarks->IsEmpty()) {
       SVGMark& mark = aMarks->LastElement();
       if (!cmd.IsMove() && prevSeg && prevSeg->IsMove()) {
         
