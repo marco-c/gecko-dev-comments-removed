@@ -1163,6 +1163,13 @@ static bool IsLineClampRoot(const nsBlockFrame* aFrame) {
   return origDisplay.Inside() == StyleDisplayInside::WebkitBox;
 }
 
+const mozilla::StyleBlockEllipsis* nsBlockFrame::GetLineClampBlockEllipsis()
+    const {
+  const auto* root = GetLineClampRoot();
+  return root ? &root->StyleDisplay()->mWebkitLineClamp.block_ellipsis
+              : nullptr;
+}
+
 nsBlockFrame* nsBlockFrame::GetLineClampRoot() const {
   if (IsLineClampRoot(this)) {
     return const_cast<nsBlockFrame*>(this);
@@ -5796,11 +5803,14 @@ bool nsBlockFrame::IsLastInlineLine(LineIterator aLine) {
 }
 
 bool nsBlockFrame::IsLastFormattedLine(LineIterator aLine) {
+  
   for (LineIterator line = aLine.next(); line != LinesEnd(); ++line) {
     if (line->GetChildCount() > 0 && (line->IsBlock() || !line->IsPhantom())) {
       return false;
     }
   }
+
+  
   nsBlockFrame* nextInFlow = (nsBlockFrame*)GetNextInFlow();
   while (nextInFlow) {
     for (const auto& line : nextInFlow->Lines()) {
@@ -5810,6 +5820,15 @@ bool nsBlockFrame::IsLastFormattedLine(LineIterator aLine) {
     }
     nextInFlow = (nsBlockFrame*)nextInFlow->GetNextInFlow();
   }
+
+  
+  
+  for (nsIFrame* f : aLine->ChildFrames()) {
+    if (f->GetProperty(nsContainerFrame::OverflowProperty())) {
+      return false;
+    }
+  }
+
   return true;
 }
 
