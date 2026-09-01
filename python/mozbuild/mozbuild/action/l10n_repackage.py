@@ -17,7 +17,6 @@ Invoked in make via $(call py_action,l10n_repackage,...).
 """
 
 import argparse
-import os
 import shutil
 import subprocess
 import sys
@@ -207,21 +206,20 @@ def _build_helper_exe(
 ) -> int:
     
     
-    env = {
-        **os.environ,
-        "AB_CD": locale,
-        "REAL_LOCALE_MERGEDIR": str(real_locale_mergedir),
-        "IS_LANGUAGE_REPACK": "1",
-    }
+    
+    
+    
     result = subprocess.run(
         [
             make,
             "-C",
             installer_dir,
             "CONFIG_DIR=l10ngen",
+            f"AB_CD={locale}",
+            f"REAL_LOCALE_MERGEDIR={real_locale_mergedir}",
+            "IS_LANGUAGE_REPACK=1",
             "l10ngen/helper.exe",
         ],
-        env=env,
         check=False,
     )
     if result.returncode:
