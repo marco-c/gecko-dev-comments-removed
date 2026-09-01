@@ -2528,8 +2528,6 @@ already_AddRefed<StaticRange> Selection::GetComposedRange(
 
   RefPtr<StaticRange> composedRange = StaticRange::Create(
       startNode, startOffset, endNode, endOffset, IgnoreErrors());
-  NS_WARNING(mozilla::ToString(composedRange->StartRef()).c_str());
-  NS_WARNING(mozilla::ToString(composedRange->EndRef()).c_str());
   return composedRange.forget();
 }
 
@@ -3293,7 +3291,13 @@ void Selection::ExtendInternal(nsINode& aContainer, uint32_t aOffset,
 
   
   
-  if (!anchorOldFocusOrder || !oldFocusNewFocusOrder || !anchorNewFocusOrder) {
+  
+  if (!anchorOldFocusOrder || !oldFocusNewFocusOrder || !anchorNewFocusOrder ||
+      
+      
+      
+      (mCalledByJS && mAnchorFocusRange->GetRoot() !=
+                          RangeUtils::ComputeRootNode(&aContainer))) {
     
     SelectFrames(presContext, *range, false);
 
