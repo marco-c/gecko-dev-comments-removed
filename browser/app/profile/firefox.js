@@ -1092,13 +1092,12 @@ pref("browser.tabs.allowTabDetach", true);
 
 
 
+
 pref("browser.tabs.insertRelatedAfterCurrent", true);
 
 
 
-
 pref("browser.tabs.insertAfterCurrent", false);
-
 
 
 
