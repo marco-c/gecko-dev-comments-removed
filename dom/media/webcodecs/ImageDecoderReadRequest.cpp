@@ -48,7 +48,7 @@ bool ImageDecoderReadRequest::Initialize(const GlobalObject& aGlobal,
         "ImageDecoderReadRequest {} Initialize -- cannot get stream reader",
         fmt::ptr(this));
     mSourceBuffer->Complete(NS_ERROR_FAILURE);
-    Destroy();
+    Destroy( false);
     return false;
   }
 
@@ -57,26 +57,16 @@ bool ImageDecoderReadRequest::Initialize(const GlobalObject& aGlobal,
   return true;
 }
 
-void ImageDecoderReadRequest::Destroy() {
+void ImageDecoderReadRequest::Destroy(bool aCancel) {
   MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Debug,
               "ImageDecoderReadRequest {} Destroy", fmt::ptr(this));
-  TeardownWithoutCancel();
-}
-
-void ImageDecoderReadRequest::DestroyAndCancel() {
-  MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Debug,
-              "ImageDecoderReadRequest {} DestroyAndCancel", fmt::ptr(this));
 
   RefPtr<ImageDecoderReadRequest> self(this);
-  
-  
-  
-  
-  Cancel();
-  TeardownWithoutCancel();
-}
+  if (aCancel) {
+    
+    Cancel();
+  }
 
-void ImageDecoderReadRequest::TeardownWithoutCancel() {
   if (mSourceBuffer) {
     if (!mSourceBuffer->IsComplete()) {
       mSourceBuffer->Complete(NS_ERROR_ABORT);
@@ -215,7 +205,7 @@ void ImageDecoderReadRequest::Complete(const MediaResult& aResult) {
     mDecoder->OnSourceBufferComplete(aResult);
   }
 
-  Destroy();
+  Destroy( false);
 }
 
 void ImageDecoderReadRequest::ChunkSteps(JSContext* aCx,
