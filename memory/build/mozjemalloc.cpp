@@ -1132,22 +1132,36 @@ bool arena_t::RemoveChunk(arena_chunk_t* aChunk) {
 }
 
 arena_chunk_t* arena_t::DemoteChunkToSpare(arena_chunk_t* aChunk) {
-  if (mSpare) {
-    if (!RemoveChunk(mSpare)) {
+  arena_chunk_t* chunk_dealloc = nullptr;
+
+  if (!mSpares.isEmpty()) {
+    chunk_dealloc = mSpares.popBack();
+    if (!RemoveChunk(chunk_dealloc)) {
       
       
       
-      mSpare = nullptr;
+      chunk_dealloc = nullptr;
     }
+
+    
+    
+    MOZ_ASSERT(mSpares.isEmpty());
   }
 
-  arena_chunk_t* chunk_dealloc = mSpare;
-  mSpare = aChunk;
+  
+  
+  
+  if (aChunk->mNumDirty) {
+    MOZ_ASSERT(mChunksDirty.ElementProbablyInList(aChunk));
+    mChunksDirty.remove(aChunk);
+  }
+  mSpares.pushFront(aChunk);
+
   return chunk_dealloc;
 }
 
 arena_run_t* arena_t::AllocRun(size_t aSize, bool aLarge, bool aZero) {
-  arena_run_t* run;
+  arena_run_t* run = nullptr;
   arena_chunk_map_t* mapelm;
 
   MOZ_ASSERT(aSize <= gMaxLargeClass);
@@ -1163,16 +1177,21 @@ arena_run_t* arena_t::AllocRun(size_t aSize, bool aLarge, bool aZero) {
     MOZ_ASSERT((chunk->mPageMap[pageind].bits & CHUNK_MAP_BUSY) == 0);
     run = (arena_run_t*)(uintptr_t(chunk) + (pageind << gPageSize2Pow));
     mRunsAvail.Remove(mapelm);
-  } else if (mSpare && !mSpare->mIsPurging) {
-    
-    arena_chunk_t* chunk = mSpare;
-    mSpare = nullptr;
-    run = (arena_run_t*)(uintptr_t(chunk) +
-                         (gChunkHeaderNumPages << gPageSize2Pow));
-    MOZ_ASSERT((chunk->mPageMap[gChunkHeaderNumPages].bits & CHUNK_MAP_BUSY) ==
-               0);
-    mapelm = &chunk->mPageMap[gChunkHeaderNumPages];
   } else {
+    for (arena_chunk_t& chunk : mSpares) {
+      if (!chunk.mIsPurging) {
+        
+        mSpares.remove(&chunk);
+        run = (arena_run_t*)(uintptr_t(&chunk) +
+                             (gChunkHeaderNumPages << gPageSize2Pow));
+        MOZ_ASSERT(
+            (chunk.mPageMap[gChunkHeaderNumPages].bits & CHUNK_MAP_BUSY) == 0);
+        mapelm = &chunk.mPageMap[gChunkHeaderNumPages];
+        break;
+      }
+    }
+  }
+  if (!run) {
     
     
     arena_chunk_t* chunk = (arena_chunk_t*)arena_chunk_alloc(
@@ -1331,20 +1350,28 @@ ArenaPurgeResult arena_t::Purge(
     
     
     
-    if (mSpare && mSpare->mNumDirty && !mSpare->mIsPurging &&
-        mChunksDirty.ElementProbablyInList(mSpare)) {
+
+    
+    
+    
+    
+    
+    for (arena_chunk_t& spare : mSpares) {
       
       
       
-      
-      
-      chunk = mSpare;
-      mChunksDirty.remove(chunk);
-    } else {
+      if (spare.mNumDirty && !spare.mIsPurging) {
+        chunk = &spare;
+        break;
+      }
+    }
+
+    if (!chunk) {
       if (!mChunksDirty.isEmpty()) {
         chunk = mChunksDirty.popFront();
       }
     }
+
     if (!chunk) {
       
       
@@ -1582,7 +1609,8 @@ bool arena_t::PurgeInfo::FindDirtyPages(bool aPurgedOnce) {
 
   
   
-  if (mArena.mSpare != mChunk) {
+  
+  if (!mChunk->IsEmpty()) {
     mArena.mRunsAvail.Remove(&mChunk->mPageMap[mFreeRunInd]);
   }
   return true;
@@ -1767,7 +1795,7 @@ std::pair<bool, arena_chunk_t*> arena_t::PurgeInfo::UpdatePagesAndCounts() {
     chunk_to_release = mArena.DemoteChunkToSpare(mChunk);
   }
 
-  if (mChunk != mArena.mSpare) {
+  if (!mChunk->IsEmpty()) {
     mArena.mRunsAvail.Insert(&mChunk->mPageMap[mFreeRunInd]);
   }
 
@@ -3047,8 +3075,9 @@ arena_t::~arena_t() {
                      "Arena is still registered");
   MOZ_RELEASE_ASSERT(!mStats.allocated_small && !mStats.allocated_large,
                      "Arena is not empty");
-  if (mSpare) {
-    arena_chunk_dealloc(mChunkAllocator, mSpare, kChunkSize);
+  while (!mSpares.isEmpty()) {
+    arena_chunk_t* spare = mSpares.popFront();
+    arena_chunk_dealloc(mChunkAllocator, spare, kChunkSize);
   }
   for (i = 0; i < NUM_SMALL_CLASSES; i++) {
     MOZ_RELEASE_ASSERT(mBins[i].mNonFullRuns.isEmpty(), "Bin is not empty");
