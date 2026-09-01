@@ -143,6 +143,52 @@ export class UrlbarParentControllerProxy {
   }
 
   /**
+   * Ships an autofill deletion to the parent recorder. The counterpart to the
+   * controller's `recordAutofillDeletion()`.
+   */
+  recordAutofillDeletion() {
+    this.#actor.sendAsyncMessage("RecordAutofillDeletion", {
+      instanceId: this.#instanceId,
+    });
+  }
+
+  /** @type {UrlbarParentController["dismissAutofill"]} */
+  dismissAutofill(url, action) {
+    return this.#actor.sendQuery("DismissAutofill", {
+      instanceId: this.#instanceId,
+      url,
+      action,
+    });
+  }
+
+  /**
+   * Ships an accepted autofill to the parent, which clears its backspace
+   * bookkeeping. The counterpart to the controller's
+   * `clearAutofillBackspaceEntryForUrl()`.
+   *
+   * @param {string} url The accepted autofill result's URL.
+   */
+  clearAutofillBackspaceEntryForUrl(url) {
+    this.#actor.sendAsyncMessage("ClearAutofillBackspaceEntryForUrl", {
+      instanceId: this.#instanceId,
+      url,
+    });
+  }
+
+  /**
+   * Ships an autofill re-integration to the parent. The counterpart to the
+   * controller's `handleAutofillReintegration()`.
+   *
+   * @param {string} url The URL being re-integrated.
+   */
+  handleAutofillReintegration(url) {
+    this.#actor.sendAsyncMessage("HandleAutofillReintegration", {
+      instanceId: this.#instanceId,
+      url,
+    });
+  }
+
+  /**
    * Ships a search-form visit to the parent recorder, which resolves the engine
    * by name. The counterpart to the controller's `recordSearchForm()`.
    *
@@ -159,8 +205,7 @@ export class UrlbarParentControllerProxy {
    * Ships a search to the parent recorder, which resolves the engine by name
    * and the browser by id. The counterpart to the controller's `recordSearch()`.
    *
-   * @param {object} options
-   *   `{engineName, searchSource, browserId, details}`.
+   * @param {Parameters<UrlbarParentController["recordSearch"]>[0]} options
    */
   recordSearch(options) {
     this.#actor.sendAsyncMessage("RecordSearch", {
@@ -335,6 +380,24 @@ export class UrlbarParentControllerProxy {
   }
 
   /**
+   * Records input history parent-side, where the Places write belongs.
+   *
+   * @param {string} url The picked URL.
+   * @param {string} input The search string to associate with it.
+   * @param {object} [options]
+   * @param {boolean} [options.whenReady]
+   *   Whether to defer the write until the URL lands in moz_places.
+   */
+  addToInputHistory(url, input, { whenReady = false } = {}) {
+    this.#actor.sendAsyncMessage("AddToInputHistory", {
+      instanceId: this.#instanceId,
+      url,
+      input,
+      whenReady,
+    });
+  }
+
+  /**
    * @param {UrlbarResult} result The result to remove.
    * @param {object} [options] Options forwarded to the parent controller's
    *   removeResult.
@@ -433,23 +496,25 @@ export class UrlbarParentControllerProxy {
   }
 
   /** @type {UrlbarParentController["openSERP"]} */
-  openSERP(engineId, searchTerms, where, inBackground) {
+  openSERP(engineId, searchTerms, where, inBackground, browserId) {
     this.#actor.sendAsyncMessage("OpenSERP", {
       instanceId: this.#instanceId,
       engineId,
       searchTerms,
       where,
       inBackground,
+      browserId,
     });
   }
 
   /** @type {UrlbarParentController["openSearchForm"]} */
-  openSearchForm(engineId, where, inBackground) {
+  openSearchForm(engineId, where, inBackground, browserId) {
     this.#actor.sendAsyncMessage("OpenSearchForm", {
       instanceId: this.#instanceId,
       engineId,
       where,
       inBackground,
+      browserId,
     });
   }
 }
