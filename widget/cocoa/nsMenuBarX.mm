@@ -1128,6 +1128,16 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
 
   if ([keyWindow isKindOfClass:[BaseWindow class]]) {
     gMenuItemsExecuteCommands = NO;
+  } else if (!(aEvent.modifierFlags & NSEventModifierFlagCommand)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    return NO;
   }
 
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK
