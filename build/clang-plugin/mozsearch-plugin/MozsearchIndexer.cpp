@@ -1819,15 +1819,9 @@ public:
     F->Output.push_back(std::move(ros.str()));
   }
 
-  std::string typeToString(QualType Type) {
-    if (CXXRecordDecl* cxxDecl = Type->getAsCXXRecordDecl()) {
-      if (cxxDecl->isLambda()) {
-        return getQualifiedName(cxxDecl);
-      }
-    }
-    return Type.getAsString();
-  }
-  std::string typeToString(QualType Type, PrintingPolicy policy) {
+  std::string typeToString(QualType Type, PrintingPolicy policy = LangOptions{}) {
+    policy.FullyQualifiedName = true;
+
     if (CXXRecordDecl* cxxDecl = Type->getAsCXXRecordDecl()) {
       if (cxxDecl->isLambda()) {
         return getQualifiedName(cxxDecl);
@@ -2557,7 +2551,7 @@ public:
   }
 
   bool VisitTagTypeLoc(TagTypeLoc L) {
-    SourceLocation Loc = L.getBeginLoc();
+    SourceLocation Loc = L.getNameLoc();
     if (!isInterestingLocation(Loc)) {
       return true;
     }
@@ -2572,14 +2566,14 @@ public:
   }
 
   bool VisitTypedefTypeLoc(TypedefTypeLoc L) {
-    SourceLocation Loc = L.getBeginLoc();
+    SourceLocation Loc = L.getNameLoc();
     if (!isInterestingLocation(Loc)) {
       return true;
     }
 
     SourceLocation SpellingLoc = SM.getSpellingLoc(Loc);
 
-    NamedDecl *Decl = L.getTypedefNameDecl();
+    NamedDecl *Decl = L.getTypePtr()->getDecl();
     std::string Mangled = getMangledName(CurMangleContext, Decl);
     visitIdentifier("use", "type", getQualifiedName(Decl), Loc, Mangled,
                     L.getType(), getContext(SpellingLoc));
@@ -2587,7 +2581,7 @@ public:
   }
 
   bool VisitInjectedClassNameTypeLoc(InjectedClassNameTypeLoc L) {
-    SourceLocation Loc = L.getBeginLoc();
+    SourceLocation Loc = L.getNameLoc();
     if (!isInterestingLocation(Loc)) {
       return true;
     }
@@ -2602,7 +2596,7 @@ public:
   }
 
   bool VisitTemplateSpecializationTypeLoc(TemplateSpecializationTypeLoc L) {
-    SourceLocation Loc = L.getBeginLoc();
+    SourceLocation Loc = L.getTemplateNameLoc();
     if (!isInterestingLocation(Loc)) {
       return true;
     }
@@ -2923,12 +2917,30 @@ public:
       TemplateStack->visitDependent(Loc);
 
       
+#if CLANG_VERSION_MAJOR >= 22
+      
+      
+      
+      
+      for (auto NestedNameLoc = E->getQualifierLoc();
+           NestedNameLoc &&
+           NestedNameLoc.getNestedNameSpecifier().isDependent();) {
+        auto DNTL = NestedNameLoc.getAsTypeLoc().getAs<DependentNameTypeLoc>();
+        if (!DNTL) {
+          TemplateStack->visitDependent(NestedNameLoc.getLocalBeginLoc());
+          break;
+        }
+        TemplateStack->visitDependent(DNTL.getNameLoc());
+        NestedNameLoc = DNTL.getQualifierLoc();
+      }
+#else
       for (auto NestedNameLoc = E->getQualifierLoc();
            NestedNameLoc &&
            NestedNameLoc.getNestedNameSpecifier()->isDependent();
            NestedNameLoc = NestedNameLoc.getPrefix()) {
         TemplateStack->visitDependent(NestedNameLoc.getLocalBeginLoc());
       }
+#endif
     }
 
     return true;
