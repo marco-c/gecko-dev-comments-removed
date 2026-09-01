@@ -5,10 +5,10 @@
 #ifndef mozilla_BinarySearch_h
 #define mozilla_BinarySearch_h
 
-#include "mozilla/Assertions.h"
-
 #include <cstddef>
 #include <utility>
+
+#include "mozilla/Assertions.h"
 
 namespace mozilla {
 
@@ -75,7 +75,7 @@ bool BinarySearchIf(const Container& aContainer, size_t aBegin, size_t aEnd,
 
     
     
-    const int result = aCompare(aContainer[middle]);
+    const auto result = aCompare(aContainer[middle]);
 
     if (result == 0) {
       *aMatchOrInsertionPoint = middle;
@@ -173,7 +173,7 @@ size_t LowerBound(const Container& aContainer, size_t aBegin, size_t aEnd,
 
     
     
-    const int result = aCompare(aContainer[middle]);
+    const auto result = aCompare(aContainer[middle]);
 
     
     
@@ -199,7 +199,7 @@ size_t UpperBound(const Container& aContainer, size_t aBegin, size_t aEnd,
 
     
     
-    const int result = aCompare(aContainer[middle]);
+    const auto result = aCompare(aContainer[middle]);
 
     
     
@@ -225,7 +225,7 @@ std::pair<size_t, size_t> EqualRange(const Container& aContainer, size_t aBegin,
 
     
     
-    const int result = aCompare(aContainer[middle]);
+    const auto result = aCompare(aContainer[middle]);
 
     if (result < 0) {
       high = middle;

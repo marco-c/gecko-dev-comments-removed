@@ -758,28 +758,9 @@ namespace detail {
 
 
 
-template <typename T, typename L, typename R, typename V = int>
-struct IsCompareMethod : std::false_type {};
-
-template <typename T, typename L, typename R>
-struct IsCompareMethod<
-    T, L, R, decltype(std::declval<T>()(std::declval<L>(), std::declval<R>()))>
-    : std::true_type {};
 
 
-
-
-
-
-
-
-
-
-
-
-
-template <typename T, typename L, typename R,
-          bool IsCompare = IsCompareMethod<T, L, R>::value>
+template <typename T>
 struct CompareWrapper {
 #ifdef _MSC_VER
 #  pragma warning(push)
@@ -790,54 +771,42 @@ struct CompareWrapper {
       : mComparator(aComparator) {}
 
   template <typename A, typename B>
-  int Compare(A& aLeft, B& aRight) const {
-    return mComparator(aLeft, aRight);
+  auto Compare(A& aLeft, B& aRight) const {
+    if constexpr (std::is_invocable_v<const T&, A&, B&>) {
+      return std::invoke(mComparator, aLeft, aRight);
+    } else {
+      if (LessThan(aLeft, aRight)) {
+        return -1;
+      }
+      if (Equals(aLeft, aRight)) {
+        return 0;
+      }
+      return 1;
+    }
   }
 
   template <typename A, typename B>
   bool Equals(A& aLeft, B& aRight) const {
-    return Compare(aLeft, aRight) == 0;
+    if constexpr (std::is_invocable_v<const T&, A&, B&>) {
+      return Compare(aLeft, aRight) == 0;
+    } else {
+      return mComparator.Equals(aLeft, aRight);
+    }
   }
 
   template <typename A, typename B>
   bool LessThan(A& aLeft, B& aRight) const {
-    return Compare(aLeft, aRight) < 0;
+    if constexpr (std::is_invocable_v<const T&, A&, B&>) {
+      return Compare(aLeft, aRight) < 0;
+    } else {
+      return mComparator.LessThan(aLeft, aRight);
+    }
   }
 
   const T& mComparator;
 #ifdef _MSC_VER
 #  pragma warning(pop)
 #endif
-};
-
-
-template <typename T, typename L, typename R>
-struct CompareWrapper<T, L, R, false> {
-  MOZ_IMPLICIT CompareWrapper(const T& aComparator)
-      : mComparator(aComparator) {}
-
-  template <typename A, typename B>
-  int Compare(A& aLeft, B& aRight) const {
-    if (LessThan(aLeft, aRight)) {
-      return -1;
-    }
-    if (Equals(aLeft, aRight)) {
-      return 0;
-    }
-    return 1;
-  }
-
-  template <typename A, typename B>
-  bool Equals(A& aLeft, B& aRight) const {
-    return mComparator.Equals(aLeft, aRight);
-  }
-
-  template <typename A, typename B>
-  bool LessThan(A& aLeft, B& aRight) const {
-    return mComparator.LessThan(aLeft, aRight);
-  }
-
-  const T& mComparator;
 };
 
 }  
@@ -1210,7 +1179,7 @@ class nsTArray_Impl
   template <class Item, class Comparator>
   [[nodiscard]] index_type IndexOf(const Item& aItem, index_type aStart,
                                    const Comparator& aComp) const {
-    ::detail::CompareWrapper<Comparator, value_type, Item> comp(aComp);
+    ::detail::CompareWrapper comp(aComp);
 
     const value_type* iter = Elements() + aStart;
     const value_type* iend = Elements() + Length();
@@ -1244,7 +1213,7 @@ class nsTArray_Impl
   template <class Item, class Comparator>
   [[nodiscard]] index_type LastIndexOf(const Item& aItem, index_type aStart,
                                        const Comparator& aComp) const {
-    ::detail::CompareWrapper<Comparator, value_type, Item> comp(aComp);
+    ::detail::CompareWrapper comp(aComp);
 
     size_type endOffset = aStart >= Length() ? Length() : aStart + 1;
     const value_type* iend = Elements() - 1;
@@ -1281,7 +1250,7 @@ class nsTArray_Impl
   [[nodiscard]] index_type BinaryIndexOf(const Item& aItem,
                                          const Comparator& aComp) const {
     using mozilla::BinarySearchIf;
-    ::detail::CompareWrapper<Comparator, value_type, Item> comp(aComp);
+    ::detail::CompareWrapper comp(aComp);
 
     size_t index;
     bool found = BinarySearchIf(
@@ -1294,7 +1263,7 @@ class nsTArray_Impl
         
         
         [&](const value_type& aElement) {
-          return -comp.Compare(aElement, aItem);
+          return 0 <=> comp.Compare(aElement, aItem);
         },
         &index);
     return found ? index : NoIndex;
@@ -1526,7 +1495,7 @@ class nsTArray_Impl
   [[nodiscard]] index_type IndexOfFirstElementGt(
       const Item& aItem, const Comparator& aComp) const {
     using mozilla::BinarySearchIf;
-    ::detail::CompareWrapper<Comparator, value_type, Item> comp(aComp);
+    ::detail::CompareWrapper comp(aComp);
 
     size_t index;
     BinarySearchIf(
@@ -2019,7 +1988,7 @@ class nsTArray_Impl
             typename mozilla::FunctionTypeTraits<FunctionElse>::ReturnType>,
         "ApplyIf's `Function` and `FunctionElse` must return the same type.");
 
-    ::detail::CompareWrapper<Comparator, value_type, Item> comp(aComp);
+    ::detail::CompareWrapper comp(aComp);
 
     const value_type* const elements = Elements();
     const value_type* const iend = elements + Length();
@@ -2040,7 +2009,7 @@ class nsTArray_Impl
             typename mozilla::FunctionTypeTraits<FunctionElse>::ReturnType>,
         "ApplyIf's `Function` and `FunctionElse` must return the same type.");
 
-    ::detail::CompareWrapper<Comparator, value_type, Item> comp(aComp);
+    ::detail::CompareWrapper comp(aComp);
 
     value_type* const elements = Elements();
     value_type* const iend = elements + Length();
@@ -2251,7 +2220,7 @@ class nsTArray_Impl
     static_assert(std::is_move_assignable_v<value_type>);
     static_assert(std::is_move_constructible_v<value_type>);
 
-    ::detail::CompareWrapper<Comparator, value_type, value_type> comp(aComp);
+    ::detail::CompareWrapper comp(aComp);
     auto compFn = [&comp](const auto& left, const auto& right) {
       return comp.LessThan(left, right);
     };
@@ -2284,8 +2253,7 @@ class nsTArray_Impl
     static_assert(std::is_move_assignable_v<value_type>);
     static_assert(std::is_move_constructible_v<value_type>);
 
-    const ::detail::CompareWrapper<Comparator, value_type, value_type> comp(
-        aComp);
+    const ::detail::CompareWrapper comp(aComp);
     auto compFn = [&comp](const auto& lhs, const auto& rhs) {
       return comp.LessThan(lhs, rhs);
     };

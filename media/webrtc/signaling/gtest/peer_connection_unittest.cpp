@@ -2,6 +2,8 @@
 
 
 
+#include <compare>
+
 #include "MockJsepCodecPreferences.h"
 #include "PeerConnectionImpl.h"
 #include "api/rtp_parameters.h"
@@ -9,12 +11,11 @@
 
 namespace mozilla {
 
-static int RtpExtensionHeaderUriComparator(
+static std::strong_ordering RtpExtensionHeaderUriComparator(
     const PeerConnectionImpl::RtpExtensionHeader& aHeader, const char* aUri) {
   
-  std::strong_ordering ord =
-      std::string_view(aHeader.extensionname.get()) <=> std::string_view(aUri);
-  return ord == 0 ? 0 : ord < 0 ? -1 : 1;
+  return std::string_view(aHeader.extensionname.get()) <=>
+         std::string_view(aUri);
 }
 
 static const PeerConnectionImpl::RtpExtensionHeader* FindExtension(

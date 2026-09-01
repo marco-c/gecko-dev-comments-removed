@@ -2,11 +2,11 @@
 
 
 
+#include <cstdlib>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/BinarySearch.h"
 #include "mozilla/Vector.h"
-
-#include <cstdlib>
 
 using mozilla::BinarySearch;
 using mozilla::BinarySearchIf;
@@ -121,7 +121,8 @@ static void TestEqualRange() {
   }
 
   for (int i = -1; i < kMaxNumber + 1; ++i) {
-    auto bounds = EqualRange(sortedArray, 0, sortedArray.length(), CompareN(i));
+    const auto bounds =
+        EqualRange(sortedArray, 0, sortedArray.length(), CompareN(i));
 
     MOZ_RELEASE_ASSERT(bounds.first <= sortedArray.length());
     MOZ_RELEASE_ASSERT(bounds.second <= sortedArray.length());
@@ -144,6 +145,12 @@ static void TestEqualRange() {
       MOZ_RELEASE_ASSERT(sortedArray[bounds.second - 1] <= i);
       MOZ_RELEASE_ASSERT(sortedArray[bounds.second] > i);
     }
+
+    
+    
+    auto boundsTriState = EqualRange(sortedArray, 0, sortedArray.length(),
+                                     [i](int n) { return i <=> n; });
+    MOZ_RELEASE_ASSERT(bounds == boundsTriState);
   }
 }
 
