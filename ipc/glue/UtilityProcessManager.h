@@ -37,12 +37,14 @@ class ProcessProxy;
 namespace ipc {
 
 class UtilityProcessParent;
+class UtilityProcessKeepAlive;
 
 
 
 
 class UtilityProcessManager final : public UtilityProcessHost::Listener {
   friend class UtilityProcessParent;
+  friend class UtilityProcessKeepAlive;
 
  public:
   template <typename T>
@@ -74,6 +76,15 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
 
   
   RefPtr<SharedLaunchPromise<Ok>> LaunchProcess(SandboxingKind aSandbox);
+
+  
+  
+  
+  
+  
+  
+  already_AddRefed<UtilityProcessKeepAlive> LaunchProcessWithKeepAlive(
+      SandboxingKind aSandbox);
 
   template <typename Actor>
   RefPtr<LaunchPromise<Ok>> StartUtility(RefPtr<Actor> aActor,
@@ -108,7 +119,8 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
 
   
   
-  void StartContentHWInferenceManager(
+  
+  already_AddRefed<UtilityProcessKeepAlive> StartContentHWInferenceManager(
       Endpoint<hwinference::PHWInferenceManagerParent>&& aEndpoint,
       dom::ContentParentId aChildId);
 #endif  
@@ -249,6 +261,10 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
 
     SandboxingKind mSandbox = SandboxingKind::COUNT;
 
+    
+    
+    UtilityProcessKeepAlive* mKeepAlive = nullptr;
+
    protected:
     ~ProcessFields() = default;
   };
@@ -260,9 +276,45 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
   RefPtr<ProcessFields> GetProcess(SandboxingKind);
   bool NoMoreProcesses();
 
+  
+  
+  
+  template <typename Actor>
+  RefPtr<LaunchPromise<Ok>> StartUtilityOnProcess(
+      RefPtr<Actor> aActor, ProcessFields* aProcess,
+      SharedLaunchPromise<Ok>* aLaunchPromise);
+
 #ifdef XP_WIN
   RefPtr<dom::WindowsUtilsParent> mWindowsUtils;
 #endif  
+};
+
+
+
+
+class UtilityProcessKeepAlive final {
+ public:
+  NS_INLINE_DECL_REFCOUNTING(UtilityProcessKeepAlive);
+
+  
+  RefPtr<UtilityProcessManager::SharedLaunchPromise<Ok>> GetLaunchPromise()
+      const;
+
+  
+  
+  
+  template <typename Actor>
+  RefPtr<UtilityProcessManager::LaunchPromise<Ok>> StartUtility(
+      RefPtr<Actor> aActor);
+
+ private:
+  friend class UtilityProcessManager;
+
+  explicit UtilityProcessKeepAlive(
+      UtilityProcessManager::ProcessFields* aProcess);
+  ~UtilityProcessKeepAlive();
+
+  const RefPtr<UtilityProcessManager::ProcessFields> mProcess;
 };
 
 }  

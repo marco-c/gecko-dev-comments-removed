@@ -21,6 +21,10 @@ class HWInferenceManagerChild final : public PHWInferenceManagerChild {
 
   HWInferenceManagerChild() = default;
 
+  
+  
+  
+  
   static void OpenForProcess(Endpoint<PHWInferenceManagerChild>&& aEndpoint);
 
   static RefPtr<HWInferenceManagerChild> GetSingleton();
@@ -29,6 +33,12 @@ class HWInferenceManagerChild final : public PHWInferenceManagerChild {
 
  private:
   ~HWInferenceManagerChild() = default;
+
+  
+  
+  static bool AdoptEndpoint(Endpoint<PHWInferenceManagerChild>&& aEndpoint);
+
+  static void ReleaseConnectionReference();
 
   static StaticRefPtr<HWInferenceManagerChild> sSingleton
       MOZ_GUARDED_BY(sSingletonMutex);

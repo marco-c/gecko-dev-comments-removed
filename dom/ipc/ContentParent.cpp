@@ -1968,6 +1968,12 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
     fss->Forget(ChildID());
   }
 
+#ifndef ANDROID
+  
+  mHWInferenceConnections = 0;
+  mHWInferenceKeepAlive = nullptr;
+#endif  
+
   if (why == NormalShutdown && !mCalledClose) {
     
     
@@ -5259,8 +5265,27 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateAudioIPCConnection(
 #ifndef ANDROID
 mozilla::ipc::IPCResult ContentParent::RecvRequestHWInferenceConnection(
     Endpoint<hwinference::PHWInferenceManagerParent>&& aEndpoint) {
-  UtilityProcessManager::GetSingleton()->StartContentHWInferenceManager(
-      std::move(aEndpoint), mChildID);
+  RefPtr<UtilityProcessKeepAlive> keepAlive =
+      UtilityProcessManager::GetSingleton()->StartContentHWInferenceManager(
+          std::move(aEndpoint), mChildID);
+
+  ++mHWInferenceConnections;
+  
+  
+  mHWInferenceKeepAlive = std::move(keepAlive);
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult ContentParent::RecvReleaseHWInferenceConnection() {
+  if (mHWInferenceConnections == 0) {
+    return IPC_FAIL(this,
+                    "ReleaseHWInferenceConnection without a matching "
+                    "RequestHWInferenceConnection");
+  }
+
+  if (--mHWInferenceConnections == 0) {
+    mHWInferenceKeepAlive = nullptr;
+  }
   return IPC_OK();
 }
 #endif  

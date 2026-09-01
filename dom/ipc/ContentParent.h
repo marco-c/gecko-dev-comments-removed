@@ -91,6 +91,7 @@ class PageloadEventData;
 namespace ipc {
 class CrashReporterHost;
 class TestShellParent;
+class UtilityProcessKeepAlive;
 class SharedPreferenceSerializer;
 }  
 
@@ -1119,6 +1120,8 @@ class ContentParent final : public PContentParent,
 #ifndef ANDROID
   mozilla::ipc::IPCResult RecvRequestHWInferenceConnection(
       Endpoint<PHWInferenceManagerParent>&& aEndpoint);
+
+  mozilla::ipc::IPCResult RecvReleaseHWInferenceConnection();
 #endif  
 
   already_AddRefed<extensions::PExtensionsParent> AllocPExtensionsParent();
@@ -1518,6 +1521,12 @@ class ContentParent final : public PContentParent,
   
   
   const RefPtr<ThreadsafeContentParentHandle> mThreadsafeHandle;
+
+#ifndef ANDROID
+  
+  uint32_t mHWInferenceConnections = 0;
+  RefPtr<mozilla::ipc::UtilityProcessKeepAlive> mHWInferenceKeepAlive;
+#endif  
 
   
   
