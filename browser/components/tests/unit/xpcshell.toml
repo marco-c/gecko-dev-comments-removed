@@ -31,6 +31,8 @@ skip-if = [
 
 ["test_distribution.js"]
 
+["test_distribution_bookmarks_first.js"]
+
 ["test_distribution_cachedexistence.js"]
 
 ["test_distribution_idonly.js"]
@@ -38,6 +40,8 @@ skip-if = [
 ["test_distribution_mozillaonline.js"]
 
 ["test_distribution_observer.js"]
+
+["test_profileDataUpgrade_cookieBannerData.js"]
 
 ["test_profileDataUpgrade_duplicateCookiePerms.js"]
 
