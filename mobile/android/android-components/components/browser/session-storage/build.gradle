@@ -24,7 +24,7 @@ dependencies {
     implementation project(':components:support-utils')
 
     implementation libs.androidx.browser
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.androidx.drawerlayout
     implementation libs.androidx.lifecycle.process
     implementation libs.androidx.lifecycle.runtime
@@ -53,6 +53,7 @@ dependencies {
     androidTestImplementation libs.androidx.test.uiautomator
     androidTestImplementation libs.kotlin.test
     androidTestImplementation libs.leakcanary.instrumentation
+    androidTestImplementation libs.kotlinx.coroutines.test
     androidTestImplementation libs.okhttp
     constraints {
         // Various AndroidX dependencies pull in 1.1.1 transitively; OkHttp 5 requires 1.2.0.
