@@ -34,6 +34,21 @@ class NestableControl : public Nestable<NestableControl> {
   
   EmitterScope* emitterScope_;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mozilla::Maybe<int32_t> nonLocalExitStackDepth_;
+
  protected:
   NestableControl(BytecodeEmitter* bce, StatementKind kind);
 
@@ -44,6 +59,14 @@ class NestableControl : public Nestable<NestableControl> {
   StatementKind kind() const { return kind_; }
 
   EmitterScope* emitterScope() const { return emitterScope_; }
+
+  mozilla::Maybe<int32_t> nonLocalExitStackDepth() const {
+    return nonLocalExitStackDepth_;
+  }
+  void setNonLocalExitStackDepth(int32_t stackDepth) {
+    MOZ_ASSERT(nonLocalExitStackDepth_.isNothing());
+    nonLocalExitStackDepth_ = mozilla::Some(stackDepth);
+  }
 
   template <typename T>
   bool is() const;

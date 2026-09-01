@@ -196,6 +196,9 @@ bool ForOfLoopControl::emitPrepareForNonLocalJumpFromScope(
     BytecodeEmitter* bce, EmitterScope& currentScope, bool isTarget,
     BytecodeOffset* tryNoteStart) {
   
+  MOZ_ASSERT(bce->bytecodeSection().stackDepth() == *nonLocalExitStackDepth());
+
+  
   
   
   

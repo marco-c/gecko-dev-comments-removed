@@ -89,6 +89,12 @@ bool ForInEmitter::emitInitialize() {
 #endif
   MOZ_ASSERT(loopDepth_ >= 2);
 
+  
+  
+  
+  
+  loopInfo_->setNonLocalExitStackDepth(bce_->bytecodeSection().stackDepth());
+
 #ifdef DEBUG
   state_ = State::Initialize;
 #endif

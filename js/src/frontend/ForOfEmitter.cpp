@@ -180,6 +180,12 @@ bool ForOfEmitter::emitInitialize(uint32_t forPos) {
     return false;
   }
 
+  
+  
+  
+  
+  loopInfo_->setNonLocalExitStackDepth(bce_->bytecodeSection().stackDepth());
+
 #ifdef DEBUG
   state_ = State::Initialize;
 #endif

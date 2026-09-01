@@ -222,20 +222,29 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
   EmitterScope* es = startingAfter ? startingAfter->emitterScope()
                                    : bce_->innermostEmitterScope();
 
-  int npops = 0;
-
   AutoCheckUnstableEmitterScope cues(bce_);
 
   
   
   bool emitIteratorCloseAtTarget = kind_ != NonLocalExitKind::Continue;
 
-  auto flushPops = [&npops](BytecodeEmitter* bce) {
-    if (npops && !bce->emitPopN(npops)) {
-      return false;
+  
+  
+  
+#ifdef DEBUG
+  bool mayHaveExpressionValues = kind_ == NonLocalExitKind::Return &&
+                                 bce_->sc->isFunctionBox() &&
+                                 bce_->sc->asFunctionBox()->isGenerator();
+#endif
+  auto popToStackDepth = [&](int32_t targetDepth,
+                             bool hasSubroutineState = false) {
+    int32_t npops = bce_->bytecodeSection().stackDepth() - targetDepth;
+    MOZ_ASSERT(npops >= 0);
+    if (npops == 0) {
+      return true;
     }
-    npops = 0;
-    return true;
+    MOZ_ASSERT(hasSubroutineState || mayHaveExpressionValues);
+    return bce_->emitPopN(npops);
   };
 
   
@@ -263,23 +272,13 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
     switch (control->kind()) {
       case StatementKind::Finally: {
         TryFinallyControl& finallyControl = control->as<TryFinallyControl>();
-        if (finallyControl.emittingSubroutine()) {
-          
-
-
-
-
-          if (bce_->sc->noScriptRval()) {
-            npops += 3;
-          } else {
-            npops += 4;
-          }
-        } else {
+        if (!popToStackDepth(*control->nonLocalExitStackDepth(),
+                             finallyControl.emittingSubroutine())) {
+          return false;
+        }
+        if (!finallyControl.emittingSubroutine()) {
           jumpingToFinally = true;
 
-          if (!flushPops(bce_)) {
-            return false;
-          }
           uint32_t idx;
           if (!finallyControl.allocateContinuation(target, kind_, &idx)) {
             return false;
@@ -292,7 +291,7 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
       }
 
       case StatementKind::ForOfLoop: {
-        if (!flushPops(bce_)) {
+        if (!popToStackDepth(*control->nonLocalExitStackDepth())) {
           return false;
         }
         BytecodeOffset tryNoteStart;
@@ -310,7 +309,7 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
       }
 
       case StatementKind::ForInLoop:
-        if (!flushPops(bce_)) {
+        if (!popToStackDepth(*control->nonLocalExitStackDepth())) {
           return false;
         }
 
@@ -324,10 +323,6 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
       default:
         break;
     }
-  }
-
-  if (!flushPops(bce_)) {
-    return false;
   }
 
   if (!jumpingToFinally) {
@@ -358,6 +353,11 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
         return false;
       }
     }
+
+    
+    MOZ_ASSERT_IF(target && target->nonLocalExitStackDepth().isSome(),
+                  bce_->bytecodeSection().stackDepth() ==
+                      *target->nonLocalExitStackDepth());
 
     switch (kind_) {
       case NonLocalExitKind::Continue: {

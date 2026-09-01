@@ -55,6 +55,12 @@ bool TryEmitter::emitTry() {
   
   depth_ = bce_->bytecodeSection().stackDepth();
 
+  if (controlInfo_ && hasFinally()) {
+    
+    
+    controlInfo_->setNonLocalExitStackDepth(depth_);
+  }
+
   tryOpOffset_ = bce_->bytecodeSection().offset();
   if (!bce_->emit1(JSOp::Try)) {
     return false;
