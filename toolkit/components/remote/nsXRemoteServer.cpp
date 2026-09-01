@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "nsXRemoteServer.h"
 #include "nsCOMPtr.h"
 #include "nsICommandLine.h"
@@ -118,7 +115,7 @@ bool nsXRemoteServer::HandleNewProperty(XID aWindowId, Display* aDisplay,
     }
 
     
-    if (!data || !TO_LITTLE_ENDIAN32(*reinterpret_cast<int32_t*>(data))) {
+    if (!data) {
       return false;
     }
 
