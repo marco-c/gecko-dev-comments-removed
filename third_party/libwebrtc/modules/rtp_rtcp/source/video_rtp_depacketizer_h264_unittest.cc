@@ -597,5 +597,13 @@ TEST(VideoRtpDepacketizerH264Test, EmptyNaluPayload) {
   ASSERT_TRUE(parsed);
 }
 
+TEST(VideoRtpDepacketizerH264Test, OutOfSpecPpsIdRejected) {
+  
+  
+  const uint8_t kPayload[] = {H264::kPps, 0x00, 0x7D, 0x38};
+  EXPECT_EQ(VideoRtpDepacketizerH264().Parse(CopyOnWriteBuffer(kPayload)),
+            std::nullopt);
+}
+
 }  
 }  

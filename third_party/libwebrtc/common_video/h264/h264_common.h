@@ -25,17 +25,23 @@ namespace webrtc {
 namespace H264 {
 
 
-const size_t kNaluLongStartSequenceSize = 4;
+inline constexpr size_t kNaluLongStartSequenceSize = 4;
 
 
 
-const size_t kNaluShortStartSequenceSize = 3;
+inline constexpr size_t kNaluShortStartSequenceSize = 3;
 
 
-const size_t kNaluTypeSize = 1;
+inline constexpr size_t kNaluTypeSize = 1;
 
 
-constexpr int kMaxReferenceIndex = 31;
+inline constexpr int kMaxReferenceIndex = 31;
+
+
+inline constexpr int kMaxSpsId = 31;
+
+
+inline constexpr int kMaxPpsId = 255;
 
 enum NaluType : uint8_t {
   kSlice = 1,
