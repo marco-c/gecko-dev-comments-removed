@@ -11,12 +11,17 @@
 #define StickyScrollContainer_h
 
 #include "mozilla/DepthOrderedFrameList.h"
+#include "mozilla/Maybe.h"
 #include "nsPoint.h"
 #include "nsRectAbsolute.h"
 #include "nsTArray.h"
 
 struct nsRect;
 class nsIFrame;
+
+namespace mozilla::layers {
+enum class ScrollDirection : uint8_t;
+}  
 
 namespace mozilla {
 
@@ -29,6 +34,15 @@ class StickyScrollContainer final {
 
 
   static StickyScrollContainer* GetOrCreateForFrame(nsIFrame*);
+
+  
+
+
+
+
+
+
+  static StickyScrollContainer* GetForFrame(const nsIFrame*);
 
   void AddFrame(nsIFrame* aFrame) { mFrames.Add(aFrame); }
   void RemoveFrame(nsIFrame* aFrame) { mFrames.Remove(aFrame); }
@@ -52,6 +66,45 @@ class StickyScrollContainer final {
 
   void GetScrollRanges(nsIFrame* aFrame, nsRectAbsolute* aOuter,
                        nsRectAbsolute* aInner) const;
+
+  
+
+
+
+
+
+  struct StickyScrollRange {
+    
+    
+    nscoord mScrollPosition = 0;
+    
+    
+    nscoord mMaxOffset = 0;
+  };
+
+  
+
+
+
+
+  struct StickyScrollRanges {
+    Maybe<StickyScrollRange> mStartSide;
+    Maybe<StickyScrollRange> mEndSide;
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+  StickyScrollRanges GetStickyScrollRangesForAxis(
+      const nsIFrame* aFrame, layers::ScrollDirection aAxis) const;
 
   
 
@@ -97,8 +150,20 @@ class StickyScrollContainer final {
 
 
 
-  void ComputeStickyLimits(nsIFrame* aFrame, nsRect* aStick,
-                           nsRect* aContain) const;
+  enum class StickyLimitSpace : uint8_t {
+    RelativeToCurrentScroll,
+    IgnoreCurrentScroll,
+  };
+
+  
+
+
+
+
+
+  void ComputeStickyLimits(nsIFrame* aFrame, nsRect* aStick, nsRect* aContain,
+                           StickyLimitSpace aSpace =
+                               StickyLimitSpace::RelativeToCurrentScroll) const;
 
   ScrollContainerFrame* const mScrollContainerFrame;
   DepthOrderedFrameList mFrames;
