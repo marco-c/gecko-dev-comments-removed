@@ -369,7 +369,16 @@ async function initializeEngine(pipelineOptions, prefs = null) {
   });
   info("Get the engine process");
   const startTime = performance.now();
-  const engine = await createEngine(new PipelineOptions(pipelineOptions));
+  let engine;
+  try {
+    engine = await createEngine(new PipelineOptions(pipelineOptions));
+  } catch (error) {
+    
+    
+    await EngineProcess.destroyMLEngine();
+    await cleanup();
+    throw error;
+  }
   const e2eInitTime = performance.now() - startTime;
 
   info("Get Pipeline Options");
