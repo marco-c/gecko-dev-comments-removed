@@ -20,21 +20,15 @@ async function waitForTool(name) {
 
 
 async function waitForFormToolSchemaToMatch(expected_schema) {
-  const isMatch = (tool) => {
-    if (!tool)
-      return false;
-    return JSON.stringify(tool.inputSchema) === JSON.stringify(expected_schema);
-  };
-
   const [tool] = await document.modelContext.getTools();
-  if (isMatch(tool)) {
+  if (tool && tool.inputSchema === expected_schema) {
     return tool;
   }
   return new Promise(resolve => {
     const ac = new AbortController();
     document.modelContext.addEventListener('toolchange', async e => {
       const [tool] = await document.modelContext.getTools();
-      if (isMatch(tool)) {
+      if (tool && tool.inputSchema === expected_schema) {
         resolve(tool);
         ac.abort();
       }
