@@ -448,7 +448,7 @@ nsresult GetAddrInfo(const nsACString& aHost, uint16_t aAddressFamily,
 
 bool FindHTTPSRecordOverride(const nsACString& aHost,
                              TypeRecordResultType& aResult,
-                             nsACString& aAliasName) {
+                             HTTPSAliasTarget& aAlias) {
   LOG("FindHTTPSRecordOverride aHost=%s", PromiseFlatCString(aHost).get());
   if (!gOverrideServiceUsed) {
     return false;
@@ -487,13 +487,13 @@ bool FindHTTPSRecordOverride(const nsACString& aHost,
   }
 
   uint32_t ttl = 0;
-  rv = ParseHTTPSRecord(host, packet, aResult, ttl, aAliasName);
+  rv = ParseHTTPSRecord(host, packet, aResult, ttl, aAlias);
   if (NS_FAILED(rv)) {
     
     
     
     aResult = AsVariant(Nothing());
-    aAliasName.Truncate();
+    aAlias = HTTPSAliasTarget{};
   }
 
   return true;
@@ -501,7 +501,7 @@ bool FindHTTPSRecordOverride(const nsACString& aHost,
 
 nsresult ParseHTTPSRecord(nsCString& aHost, DNSPacket& aDNSPacket,
                           TypeRecordResultType& aResult, uint32_t& aTTL,
-                          nsACString& aAliasName) {
+                          HTTPSAliasTarget& aAlias) {
   nsAutoCString cname;
   nsresult rv;
 
@@ -517,19 +517,21 @@ nsresult ParseHTTPSRecord(nsCString& aHost, DNSPacket& aDNSPacket,
     if (NS_FAILED(rv)) {
       
       
-      if (rv == NS_ERROR_UNKNOWN_HOST && !aAliasName.IsEmpty()) {
+      if (rv == NS_ERROR_UNKNOWN_HOST && !aAlias.mName.IsEmpty()) {
         return NS_OK;
       }
       
       
-      aAliasName.Truncate();
+      aAlias = HTTPSAliasTarget{};
       LOG("Decode failed %x", static_cast<uint32_t>(rv));
       return rv;
     }
     if (!cname.IsEmpty() && aResult.is<Nothing>()) {
       
       
-      aAliasName = cname;
+      aAlias.mFromAliasMode =
+          aAlias.mFromAliasMode || aDNSPacket.CnameIsHTTPSAlias();
+      aAlias.mName = cname;
       aHost = cname;
       cname.Truncate();
       continue;
@@ -537,7 +539,7 @@ nsresult ParseHTTPSRecord(nsCString& aHost, DNSPacket& aDNSPacket,
   }
 
   if (aResult.is<Nothing>()) {
-    if (!aAliasName.IsEmpty()) {
+    if (!aAlias.mName.IsEmpty()) {
       
       return NS_OK;
     }
@@ -548,7 +550,7 @@ nsresult ParseHTTPSRecord(nsCString& aHost, DNSPacket& aDNSPacket,
 
   
   
-  aAliasName.Truncate();
+  aAlias = HTTPSAliasTarget{};
   return NS_OK;
 }
 
@@ -556,6 +558,8 @@ nsresult ResolveHTTPSRecord(const nsACString& aHost,
                             nsIDNSService::DNSFlags aFlags,
                             TypeRecordResultType& aResult, uint32_t& aTTL) {
   nsAutoCString host(aHost);
+  
+  nsAutoCString aliasTarget;
 
   
   
@@ -563,17 +567,16 @@ nsresult ResolveHTTPSRecord(const nsACString& aHost,
   constexpr uint32_t kMaxHTTPSAliasChain = 8;
   for (uint32_t i = 0; i < kMaxHTTPSAliasChain; i++) {
     aResult = AsVariant(Nothing());
-    nsAutoCString aliasName;
+    HTTPSAliasTarget alias;
     nsresult rv;
-    if (gOverrideServiceUsed &&
-        FindHTTPSRecordOverride(host, aResult, aliasName)) {
+    if (gOverrideServiceUsed && FindHTTPSRecordOverride(host, aResult, alias)) {
       
       rv = NS_OK;
     } else {
-      rv = ResolveHTTPSRecordImpl(host, aFlags, aResult, aTTL, aliasName);
+      rv = ResolveHTTPSRecordImpl(host, aFlags, aResult, aTTL, alias);
     }
 
-    if (NS_FAILED(rv)) {
+    if (NS_FAILED(rv) && rv != NS_ERROR_UNKNOWN_HOST) {
       
       
       
@@ -585,12 +588,35 @@ nsresult ResolveHTTPSRecord(const nsACString& aHost,
       return NS_OK;
     }
 
-    if (!aliasName.IsEmpty() &&
-        !aliasName.Equals(host, nsCaseInsensitiveCStringComparator)) {
+    
+    
+    
+    
+    if (!alias.mName.IsEmpty() &&
+        !alias.mName.Equals(host, nsCaseInsensitiveCStringComparator) &&
+        (alias.mFromAliasMode || !aliasTarget.IsEmpty())) {
       LOG("ResolveHTTPSRecord following alias %s => %s", host.get(),
-          aliasName.get());
-      host = std::move(aliasName);
+          alias.mName.get());
+      aliasTarget = alias.mName;
+      host = std::move(alias.mName);
       continue;
+    }
+
+    
+    if (!aliasTarget.IsEmpty()) {
+      
+      
+      
+      
+      LOG("ResolveHTTPSRecord returning AliasMode record for %s",
+          aliasTarget.get());
+      SVCB alias;
+      alias.mSvcFieldPriority = 0;
+      alias.mSvcDomainName = aliasTarget;
+      CopyableTArray<SVCB> records;
+      records.AppendElement(std::move(alias));
+      aResult = AsVariant(std::move(records));
+      return NS_OK;
     }
 
     return NS_ERROR_UNKNOWN_HOST;
@@ -656,8 +682,8 @@ nsresult CreateAndResolveMockHTTPSRecord(const nsACString& aHost,
     return rv;
   }
 
-  nsAutoCString aliasName;
-  return ParseHTTPSRecord(host, packet, aResult, aTTL, aliasName);
+  HTTPSAliasTarget alias;
+  return ParseHTTPSRecord(host, packet, aResult, aTTL, alias);
 }
 
 
@@ -742,7 +768,7 @@ NS_IMETHODIMP NativeDNSResolverOverride::ClearOverrides() {
 nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
                                 nsIDNSService::DNSFlags aFlags,
                                 TypeRecordResultType& aResult, uint32_t& aTTL,
-                                nsACString& aAliasName) {
+                                HTTPSAliasTarget& aAlias) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 

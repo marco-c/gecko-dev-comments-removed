@@ -644,6 +644,7 @@ nsresult DNSPacket::DecodeInternal(
   LOG(("doh decode %s %d bytes\n", aHost.get(), aLen));
 
   aCname.Truncate();
+  mCnameIsHTTPSAlias = false;
 
   
   aTypeResult = mozilla::AsVariant(Nothing());
@@ -878,6 +879,7 @@ nsresult DNSPacket::DecodeInternal(
               return NS_ERROR_UNEXPECTED;
             }
             aCname = parsed.mSvcDomainName;
+            mCnameIsHTTPSAlias = true;
             
             aTypeResult = mozilla::AsVariant(Nothing());
             ToLowerCase(aCname);

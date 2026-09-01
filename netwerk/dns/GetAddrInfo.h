@@ -81,14 +81,25 @@ nsresult ResolveHTTPSRecord(const nsACString& aHost,
 
 
 
+struct HTTPSAliasTarget {
+  nsCString mName;
+  bool mFromAliasMode = false;
+};
+
+
+
+
+
+
+
 nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
                                 nsIDNSService::DNSFlags aFlags,
                                 TypeRecordResultType& aResult, uint32_t& aTTL,
-                                nsACString& aAliasName);
+                                HTTPSAliasTarget& aAlias);
 
 nsresult ParseHTTPSRecord(nsCString& aHost, DNSPacket& aDNSPacket,
                           TypeRecordResultType& aResult, uint32_t& aTTL,
-                          nsACString& aAliasName);
+                          HTTPSAliasTarget& aAlias);
 
 
 nsresult CreateAndResolveMockHTTPSRecord(const nsACString& aHost,
@@ -119,7 +130,7 @@ class NativeDNSResolverOverride : public nsINativeDNSResolverOverride {
                                AddrInfo** aAddrInfo);
   friend bool FindHTTPSRecordOverride(const nsACString& aHost,
                                       TypeRecordResultType& aResult,
-                                      nsACString& aAliasName);
+                                      HTTPSAliasTarget& aAlias);
 };
 
 }  

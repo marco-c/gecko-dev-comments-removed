@@ -69,6 +69,12 @@ class DNSPacket {
 
   void SetOriginHost(const Maybe<nsCString>& aHost) { mOriginHost = aHost; }
 
+  
+  
+  
+  
+  bool CnameIsHTTPSAlias() const { return mCnameIsHTTPSAlias; }
+
   nsresult FillBuffer(std::function<int(unsigned char response[MAX_SIZE])>&&);
 
   static nsresult ParseHTTPS(uint16_t aRDLen, struct SVCB& aParsed,
@@ -102,6 +108,7 @@ class DNSPacket {
   bool mNativePacket = false;
   nsresult mStatus = NS_OK;
   Maybe<nsCString> mOriginHost;
+  bool mCnameIsHTTPSAlias = false;
 };
 
 }  

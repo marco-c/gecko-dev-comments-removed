@@ -693,6 +693,11 @@ bool TRR::HasUsableResponse() {
 nsresult TRR::FollowCname(nsIChannel* aChannel) {
   nsresult rv = NS_OK;
   nsAutoCString cname;
+  
+  
+  
+  bool aliasFollow =
+      mHTTPSAliasFollow || GetOrCreateDNSPacket()->CnameIsHTTPSAlias();
   while (NS_SUCCEEDED(rv) && mDNS.mAddresses.IsEmpty() && !mCname.IsEmpty() &&
          mCnameLoop > 0) {
     mCnameLoop--;
@@ -711,6 +716,8 @@ nsresult TRR::FollowCname(nsIChannel* aChannel) {
       LOG(("TRR::FollowCname DohDecode %x\n", (int)rv));
       HandleDecodeError(rv);
     }
+    aliasFollow = aliasFollow || (!mCname.IsEmpty() &&
+                                  GetOrCreateDNSPacket()->CnameIsHTTPSAlias());
   }
 
   
@@ -722,7 +729,7 @@ nsresult TRR::FollowCname(nsIChannel* aChannel) {
 
   bool ra = mPacket && mPacket->RecursionAvailable().unwrapOr(false);
   LOG(("ra = %d", ra));
-  if (rv == NS_ERROR_UNKNOWN_HOST && ra && mType != TRRTYPE_HTTPSSVC) {
+  if (rv == NS_ERROR_UNKNOWN_HOST && ra && !aliasFollow) {
     
     
     
@@ -744,6 +751,12 @@ nsresult TRR::FollowCname(nsIChannel* aChannel) {
   RefPtr<TRR> trr =
       new TRR(mHostResolver, mRec, mCname, mType, mCnameLoop, mPB);
   trr->SetPurpose(mPurpose);
+  
+  
+  
+  
+  
+  trr->mHTTPSAliasFollow = aliasFollow;
   if (!TRRService::Get()) {
     return NS_ERROR_FAILURE;
   }
@@ -763,6 +776,31 @@ nsresult TRR::On200Response(nsIChannel* aChannel) {
       mHost, mType, mCname, StaticPrefs::network_trr_allow_rfc1918(), mDNS,
       mResult, additionalRecords, mTTL);
   if (NS_FAILED(rv)) {
+    
+    
+    
+    
+    
+    
+    if (mType == TRRTYPE_HTTPSSVC && mHTTPSAliasFollow &&
+        rv == NS_ERROR_UNKNOWN_HOST) {
+      auto rcode = mPacket->GetRCode();
+      if (rcode.isOk() && rcode.unwrap() == 0) {
+        LOG(("TRR::On200Response synthesizing AliasMode record for %s\n",
+             mHost.get()));
+        SVCB alias;
+        alias.mSvcFieldPriority = 0;
+        alias.mSvcDomainName = mHost;
+        CopyableTArray<SVCB> records;
+        records.AppendElement(std::move(alias));
+        mResult = AsVariant(std::move(records));
+        if (mTTL == UINT32_MAX) {
+          mTTL = 60;
+        }
+        ReturnData(aChannel);
+        return NS_OK;
+      }
+    }
     LOG(("TRR::On200Response DohDecode %x\n", (int)rv));
     HandleDecodeError(rv);
     return rv;

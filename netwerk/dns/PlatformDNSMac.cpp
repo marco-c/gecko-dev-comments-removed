@@ -105,7 +105,7 @@ void QueryCallback(DNSServiceRef aSDRef, DNSServiceFlags aFlags,
 nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
                                 nsIDNSService::DNSFlags aFlags,
                                 TypeRecordResultType& aResult, uint32_t& aTTL,
-                                nsACString& aAliasName) {
+                                HTTPSAliasTarget& aAlias) {
   nsAutoCString host(aHost);
   nsAutoCString cname;
 
@@ -168,7 +168,9 @@ nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
     if (!context.mAliasName.IsEmpty()) {
       
       
-      aAliasName = context.mAliasName;
+      
+      aAlias.mName = context.mAliasName;
+      aAlias.mFromAliasMode = true;
       return NS_OK;
     }
     
