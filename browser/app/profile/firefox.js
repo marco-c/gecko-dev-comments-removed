@@ -2328,6 +2328,13 @@ pref("sidebar.notification.badge.aichat", false);
 
 pref("browser.resourceMonitor.enabled", false);
 
+
+
+pref(
+  "sidebar.newTool.migration.resourcemonitor",
+  '{"visibilityPref":"browser.resourceMonitor.enabled"}'
+);
+
 pref("browser.ml.chat.enabled", true);
 pref("browser.ml.chat.hideLocalhost", true);
 pref("browser.ml.chat.maxLength", 7000);
