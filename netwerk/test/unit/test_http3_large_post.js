@@ -18,7 +18,9 @@ Http3Listener.prototype = {
   expectedStatus: Cr.NS_OK,
   amount: 0,
   onProgressMaxNotificationCount: 0,
-  onProgressNotificationCount: 0,
+  onPartialProgressNotificationCount: 0,
+  lastProgress: -1,
+  lastProgressMax: -1,
 
   QueryInterface: ChromeUtils.generateQI(["nsIProgressEventSink"]),
 
@@ -31,11 +33,19 @@ Http3Listener.prototype = {
 
   onProgress(request, progress, progressMax) {
     
+    
+    if (progressMax === this.lastProgressMax) {
+      Assert.greater(progress, this.lastProgress);
+    }
+    this.lastProgress = progress;
+    this.lastProgressMax = progressMax;
+
+    
     if (progress === progressMax) {
       this.onProgressMaxNotificationCount += 1;
+    } else {
+      this.onPartialProgressNotificationCount += 1;
     }
-    
-    this.onProgressNotificationCount += 1;
   },
 
   onStatus() {},
@@ -66,7 +76,9 @@ Http3Listener.prototype = {
     if (this.amount > 500000) {
       
       
-      Assert.greater(this.onProgressNotificationCount, 10);
+      
+      
+      Assert.greater(this.onPartialProgressNotificationCount, 0);
     }
     this.finish();
   },
