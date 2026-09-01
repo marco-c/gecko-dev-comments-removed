@@ -75,8 +75,10 @@
 
 
 
+
 #define PROGRESS_PREPARE_SIZE 20.0f
-#define PROGRESS_EXECUTE_SIZE 75.0f
+#define PROGRESS_DRAFT_SIZE 65.0f
+#define PROGRESS_EXECUTE_SIZE 10.0f
 #define PROGRESS_FINISH_SIZE 5.0f
 
 
@@ -930,6 +932,14 @@ static int ensure_copy(const NS_tchar* path, const NS_tchar* dest) {
 #endif
 }
 
+
+
+static bool is_draft_path(const NS_tchar* path) {
+  size_t pathLen = NS_tstrlen(path);
+  size_t extLen = NS_tstrlen(DRAFT_EXT);
+  return pathLen > extLen && !NS_tstricmp(path + pathLen - extLen, DRAFT_EXT);
+}
+
 template <unsigned N>
 struct copy_recursive_skiplist {
   NS_tchar paths[N][MAXPATHLEN];
@@ -947,6 +957,9 @@ struct copy_recursive_skiplist {
     return false;
   }
 };
+
+
+
 
 
 
@@ -997,7 +1010,7 @@ static int ensure_copy_recursive(const NS_tchar* path, const NS_tchar* dest,
       NS_tchar childPath[MAXPATHLEN];
       NS_tsnprintf(childPath, sizeof(childPath) / sizeof(childPath[0]),
                    NS_T("%s/%s"), path, entry->d_name);
-      if (skiplist.find(childPath)) {
+      if (skiplist.find(childPath) || is_draft_path(entry->d_name)) {
         continue;
       }
       NS_tchar childPathDest[MAXPATHLEN];
@@ -1245,6 +1258,56 @@ static int backup_discard(const NS_tchar* path, const NS_tchar* relPath) {
   return OK;
 }
 
+[[nodiscard]] static bool draft_path(NS_tchar (&draft)[MAXPATHLEN],
+                                     const NS_tchar* path) {
+  return NS_tvsnprintf(draft, MAXPATHLEN, NS_T("%s") DRAFT_EXT, path);
+}
+
+
+
+
+
+static int draft_discard(const NS_tchar* path, const NS_tchar* relPath) {
+  NS_tchar draft[MAXPATHLEN];
+  NS_tchar relDraft[MAXPATHLEN];
+  if (!draft_path(draft, path) || !draft_path(relDraft, relPath)) {
+    LOG(("draft_discard: draft path too long for: " LOG_S, relPath));
+    return USAGE_ERROR;
+  }
+
+  
+  if (NS_taccess(draft, F_OK)) {
+    return OK;
+  }
+
+  LOG(("draft_discard: discarding draft file: " LOG_S, relDraft));
+
+  int rv = ensure_remove(draft);
+  if (rv) {
+    LOG(("draft_discard: unable to remove: " LOG_S, relDraft));
+#ifdef XP_WIN
+    rv = remove_on_reboot(draft);
+  }
+  if (rv) {
+#endif
+    return WRITE_ERROR_DELETE_FILE;
+  }
+
+  return OK;
+}
+
+
+
+static int draft_commit(const NS_tchar* path) {
+  NS_tchar draft[MAXPATHLEN];
+  if (!draft_path(draft, path)) {
+    LOG(("draft_commit: draft path too long"));
+    return USAGE_ERROR;
+  }
+
+  return rename_file(draft, path);
+}
+
 
 static void backup_finish(const NS_tchar* path, const NS_tchar* relPath,
                           int status) {
@@ -1303,6 +1366,11 @@ class Action {
   
   
   
+  virtual int Draft() = 0;
+
+  
+  
+  
   virtual int Execute() = 0;
 
   
@@ -1323,6 +1391,7 @@ class RemoveFile : public Action {
 
   int Parse(NS_tchar* line) override;
   int Prepare() override;
+  int Draft() override { return OK; }
   int Execute() override;
   void Finish(int status) override;
 
@@ -1446,6 +1515,7 @@ class RemoveDir : public Action {
 
   int Parse(NS_tchar* line) override;
   int Prepare() override;  
+  int Draft() override { return OK; }
   int Execute() override;
   void Finish(int status) override;
 
@@ -1555,6 +1625,7 @@ class AddFile : public Action {
 
   int Parse(NS_tchar* line) override;
   int Prepare() override;
+  int Draft() override;
   int Execute() override;
   void Finish(int status) override;
 
@@ -1589,6 +1660,36 @@ int AddFile::Prepare() {
   return OK;
 }
 
+int AddFile::Draft() {
+  
+  
+  LOG(("DRAFT ADD " LOG_S, mRelPath.get()));
+
+  if (sStagedUpdate) {
+    return OK;
+  }
+
+  NS_tchar draft[MAXPATHLEN];
+  if (!draft_path(draft, mFile.get())) {
+    LOG(("draft path too long for: " LOG_S, mRelPath.get()));
+    return USAGE_ERROR;
+  }
+
+  int rv = ensure_parent_dir(mFile.get());
+  if (rv) {
+    return rv;
+  }
+
+  
+  
+  rv = draft_discard(mFile.get(), mRelPath.get());
+  if (rv) {
+    return rv;
+  }
+
+  return extract_file(mRelPath.get(), draft);
+}
+
 int AddFile::Execute() {
   LOG(("EXECUTE ADD " LOG_S, mRelPath.get()));
 
@@ -1615,6 +1716,15 @@ int AddFile::Execute() {
     }
   }
 
+  if (!sStagedUpdate) {
+    
+    rv = draft_commit(mFile.get());
+    if (!rv) {
+      mAdded = true;
+    }
+    return rv;
+  }
+
   rv = extract_file(mRelPath.get(), mFile.get());
   if (!rv) {
     mAdded = true;
@@ -1626,6 +1736,10 @@ void AddFile::Finish(int status) {
   LOG(("FINISH ADD " LOG_S, mRelPath.get()));
   
   if (!sStagedUpdate) {
+    
+    
+    draft_discard(mFile.get(), mRelPath.get());
+
     
     
     if (status && mAdded) {
@@ -1854,12 +1968,14 @@ class PatchFile : public Action {
 
   int Parse(NS_tchar* line) override;
   int Prepare() override;  
+  int Draft() override;
   int Execute() override;
   void Finish(int status) override;
 
  private:
   enum class PatchDest {
     InPlace,
+    Draft,
   };
 
   int LoadSourceFile(FILE* ofile);
@@ -2018,18 +2134,52 @@ int PatchFile::Prepare() {
   return extract_file_to_stream(mPatchFile, mPatchStream);
 }
 
+int PatchFile::Draft() {
+  
+  
+  LOG(("DRAFT PATCH " LOG_S, mFileRelPath.get()));
+
+  if (sStagedUpdate) {
+    return OK;
+  }
+
+  
+  
+  
+  
+  int rv = draft_discard(mFile.get(), mFileRelPath.get());
+  if (rv) {
+    return rv;
+  }
+
+  return ApplyPatchTo(PatchDest::Draft);
+}
+
 int PatchFile::Execute() {
   LOG(("EXECUTE PATCH " LOG_S, mFileRelPath.get()));
+
+  if (!sStagedUpdate) {
+    
+    
+    
+    int rv = backup_create(mFile.get());
+    if (rv) {
+      return rv;
+    }
+
+    return draft_commit(mFile.get());
+  }
 
   return ApplyPatchTo(PatchDest::InPlace);
 }
 
 int PatchFile::ApplyPatchTo(PatchDest aDest) {
-  
-  
-  (void)aDest;
-
-  const NS_tchar* destPath = mFile.get();
+  NS_tchar draft[MAXPATHLEN];
+  if (aDest == PatchDest::Draft && !draft_path(draft, mFile.get())) {
+    LOG(("draft path too long for: " LOG_S, mFileRelPath.get()));
+    return USAGE_ERROR;
+  }
+  const NS_tchar* destPath = aDest == PatchDest::Draft ? draft : mFile.get();
 
   int rv = UNEXPECTED_BSPATCH_ERROR;
 
@@ -2081,7 +2231,6 @@ int PatchFile::ApplyPatchTo(PatchDest aDest) {
   }
 
   
-  
   struct NS_tstat_t ss;
   rv = NS_tstat(mFile.get(), &ss);
   if (rv) {
@@ -2090,18 +2239,19 @@ int PatchFile::ApplyPatchTo(PatchDest aDest) {
     return READ_ERROR;
   }
 
-  
-  if (!sStagedUpdate) {
-    rv = backup_create(mFile.get());
-    if (rv) {
-      return rv;
-    }
+  unsigned int destMode = ss.st_mode;
+#ifdef XP_WIN
+  if (aDest == PatchDest::Draft) {
+    
+    
+    destMode &= ~(unsigned int)(_S_IEXEC | (_S_IEXEC >> 3) | (_S_IEXEC >> 6));
   }
+#endif
 
   off_t dlen = mPatchFileDecoder->DestinationSize();
 
 #if defined(HAVE_POSIX_FALLOCATE)
-  AutoFile ofile(ensure_open(destPath, NS_T("wb+"), ss.st_mode));
+  AutoFile ofile(ensure_open(destPath, NS_T("wb+"), destMode));
   posix_fallocate(fileno((FILE*)ofile), 0, dlen);
 #elif defined(XP_WIN)
   bool shouldTruncate = true;
@@ -2126,9 +2276,9 @@ int PatchFile::ApplyPatchTo(PatchDest aDest) {
   }
 
   AutoFile ofile(ensure_open(
-      destPath, shouldTruncate ? NS_T("wb+") : NS_T("rb+"), ss.st_mode));
+      destPath, shouldTruncate ? NS_T("wb+") : NS_T("rb+"), destMode));
 #elif defined(XP_MACOSX)
-  AutoFile ofile(ensure_open(destPath, NS_T("wb+"), ss.st_mode));
+  AutoFile ofile(ensure_open(destPath, NS_T("wb+"), destMode));
   
   fstore_t store = {F_ALLOCATECONTIG, F_PEOFPOSMODE, 0, dlen};
   
@@ -2143,7 +2293,7 @@ int PatchFile::ApplyPatchTo(PatchDest aDest) {
     ftruncate(fileno((FILE*)ofile), dlen);
   }
 #else
-  AutoFile ofile(ensure_open(destPath, NS_T("wb+"), ss.st_mode));
+  AutoFile ofile(ensure_open(destPath, NS_T("wb+"), destMode));
 #endif
 
   if (ofile == nullptr) {
@@ -2189,6 +2339,10 @@ void PatchFile::Finish(int status) {
 
   
   if (!sStagedUpdate) {
+    
+    
+    draft_discard(mFile.get(), mFileRelPath.get());
+
     backup_finish(mFile.get(), mFileRelPath.get(), status);
   }
 }
@@ -2197,6 +2351,7 @@ class AddIfFile : public AddFile {
  public:
   int Parse(NS_tchar* line) override;
   int Prepare() override;
+  int Draft() override;
   int Execute() override;
   void Finish(int status) override;
 
@@ -2231,6 +2386,14 @@ int AddIfFile::Prepare() {
   return AddFile::Prepare();
 }
 
+int AddIfFile::Draft() {
+  if (!mTestFile) {
+    return OK;
+  }
+
+  return AddFile::Draft();
+}
+
 int AddIfFile::Execute() {
   if (!mTestFile) {
     return OK;
@@ -2251,6 +2414,7 @@ class AddIfNotFile : public AddFile {
  public:
   int Parse(NS_tchar* line) override;
   int Prepare() override;
+  int Draft() override;
   int Execute() override;
   void Finish(int status) override;
 
@@ -2285,6 +2449,14 @@ int AddIfNotFile::Prepare() {
   return AddFile::Prepare();
 }
 
+int AddIfNotFile::Draft() {
+  if (!mTestFile) {
+    return OK;
+  }
+
+  return AddFile::Draft();
+}
+
 int AddIfNotFile::Execute() {
   if (!mTestFile) {
     return OK;
@@ -2305,6 +2477,7 @@ class PatchIfFile : public PatchFile {
  public:
   int Parse(NS_tchar* line) override;
   int Prepare() override;  
+  int Draft() override;
   int Execute() override;
   void Finish(int status) override;
 
@@ -2337,6 +2510,14 @@ int PatchIfFile::Prepare() {
   }
 
   return PatchFile::Prepare();
+}
+
+int PatchIfFile::Draft() {
+  if (!mTestFile) {
+    return OK;
+  }
+
+  return PatchFile::Draft();
 }
 
 int PatchIfFile::Execute() {
@@ -4799,6 +4980,7 @@ class ActionList {
 
   void Append(Action* action);
   int Prepare();
+  int Draft();
   int Execute();
   void Finish(int status);
 
@@ -4854,6 +5036,32 @@ int ActionList::Prepare() {
   return OK;
 }
 
+int ActionList::Draft() {
+  int currentProgress = 0, maxProgress = 0;
+  Action* a = mFirst;
+  while (a) {
+    maxProgress += a->mProgressCost;
+    a = a->mNext;
+  }
+
+  a = mFirst;
+  while (a) {
+    int rv = a->Draft();
+    if (rv) {
+      LOG(("### draft failed"));
+      return rv;
+    }
+
+    currentProgress += a->mProgressCost;
+    float percent = float(currentProgress) / float(maxProgress);
+    UpdateProgressUI(PROGRESS_PREPARE_SIZE + PROGRESS_DRAFT_SIZE * percent);
+
+    a = a->mNext;
+  }
+
+  return OK;
+}
+
 int ActionList::Execute() {
   int currentProgress = 0, maxProgress = 0;
   Action* a = mFirst;
@@ -4872,7 +5080,8 @@ int ActionList::Execute() {
 
     currentProgress += a->mProgressCost;
     float percent = float(currentProgress) / float(maxProgress);
-    UpdateProgressUI(PROGRESS_PREPARE_SIZE + PROGRESS_EXECUTE_SIZE * percent);
+    UpdateProgressUI(PROGRESS_PREPARE_SIZE + PROGRESS_DRAFT_SIZE +
+                     PROGRESS_EXECUTE_SIZE * percent);
 
     a = a->mNext;
   }
@@ -4887,8 +5096,8 @@ void ActionList::Finish(int status) {
     a->Finish(status);
 
     float percent = float(++i) / float(mCount);
-    UpdateProgressUI(PROGRESS_PREPARE_SIZE + PROGRESS_EXECUTE_SIZE +
-                     PROGRESS_FINISH_SIZE * percent);
+    UpdateProgressUI(PROGRESS_PREPARE_SIZE + PROGRESS_DRAFT_SIZE +
+                     PROGRESS_EXECUTE_SIZE + PROGRESS_FINISH_SIZE * percent);
 
     a = a->mNext;
   }
@@ -5444,7 +5653,10 @@ int DoUpdate() {
     return rv;
   }
 
-  rv = list.Execute();
+  rv = list.Draft();
+  if (rv == OK) {
+    rv = list.Execute();
+  }
 
   list.Finish(rv);
   free(buf);
