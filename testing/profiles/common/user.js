@@ -25,7 +25,16 @@ user_pref("browser.newtabpage.activity-stream.fxaccounts.endpoint", "");
 user_pref("browser.pagethumbnails.capturing_disabled", true);
 
 
+
+user_pref("browser.preonboarding.enabled", false);
+
+
 user_pref("browser.search.region", "US");
+
+
+
+
+user_pref("doh-rollout.enabled", false);
 
 user_pref("browser.search.removeEngineInfobar.enabled", false);
 
