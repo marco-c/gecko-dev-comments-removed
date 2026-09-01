@@ -4228,6 +4228,11 @@ void Selection::Modify(const nsAString& aAlter, const nsAString& aDirection,
     return;
   }
 
+  
+  
+  
+  MOZ_ASSERT(!mFrameSelection->IsIndependentSelection());
+
   if (!GetAnchorFocusRange() || !GetFocusNode()) {
     return;
   }
@@ -4340,6 +4345,9 @@ void Selection::Modify(const nsAString& aAlter, const nsAString& aDirection,
     if (!presShell) {
       return;
     }
+    
+    
+    
     presShell->CompleteMove(forward, extend);
   }
 }
