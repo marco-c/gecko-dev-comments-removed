@@ -3,6 +3,12 @@
 
 "use strict";
 
+
+
+PromiseTestUtils.allowMatchingRejectionsGlobally(
+  /Unexpected undefined tabState for onMoveToNewWindow/
+);
+
 add_task(async function moveMultipleWindows() {
   let extension = ExtensionTestUtils.loadExtension({
     manifest: { permissions: ["tabs"] },
