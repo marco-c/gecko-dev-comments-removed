@@ -356,6 +356,12 @@ bool Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
                                   ? 0.0
                                   : previousCurrentTime.Value().ToSeconds() /
                                         endTime.ToSeconds());
+  } else if (mTimeline && mTimeline->IsUnresolvedTimeline()) {
+    
+    
+    
+    
+    previousProgress.SetValue(0.0);
   }
 
   
@@ -433,7 +439,14 @@ bool Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
     
     
     
-    mAutoAlignStartTime = false;
+    if (mAutoAlignStartTime) {
+      mAutoAlignStartTime = false;
+      
+      
+      if (mHoldTime.IsNull() && mStartTime.IsNull()) {
+        previousProgress.SetValue(0.0);
+      }
+    }
     if (!previousProgress.IsNull()) {
       
       
@@ -1304,7 +1317,7 @@ bool Animation::TryTriggerNow() {
   
   
   
-  if (mTimeline->IsInactiveTimeline()) {
+  if (mTimeline->IsUnresolvedTimeline()) {
     return false;
   }
 
@@ -1638,6 +1651,9 @@ void Animation::ComposeStyle(
   if (!mEffect) {
     return;
   }
+  if (mTimeline && mTimeline->IsUnresolvedTimeline()) {
+    return;
+  }
 
   
   
@@ -1737,8 +1753,8 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
   bool hasPendingReadyPromise = false;
   const bool hasFiniteTimeline = HasFiniteTimeline();
   const Nullable<TimeDuration> prevCurrentTime = GetCurrentTimeAsDuration();
-  const bool enableSeek =
-      (aLimitBehavior == LimitBehavior::AutoRewind) && !hasFiniteTimeline;
+  const bool autoRewindIsTrue = aLimitBehavior == LimitBehavior::AutoRewind;
+  const bool enableSeek = autoRewindIsTrue && !hasFiniteTimeline;
 
   
   
@@ -1780,9 +1796,11 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
   }
 
   
-  if (hasFiniteTimeline && prevCurrentTime.IsNull()) {
+  if (hasFiniteTimeline && autoRewindIsTrue) {
     
     mAutoAlignStartTime = true;
+    
+    mHoldTime = prevCurrentTime;
   }
 
   
@@ -1793,15 +1811,6 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
   
   
   if (!hasFiniteTimeline && prevCurrentTime.IsNull() && mHoldTime.IsNull()) {
-    mHoldTime = TimeDuration();
-  }
-
-  const bool hasInactiveTimeline = mTimeline && mTimeline->IsInactiveTimeline();
-  if (hasInactiveTimeline && mHoldTime.IsNull()) {
-    
-    
-    
-    
     mHoldTime = TimeDuration();
   }
 
@@ -2413,6 +2422,9 @@ void Animation::AutoAlignStartTime() {
   mStartTime.SetValue(TimeDuration::FromMilliseconds(
       (effectivePlaybackRate >= 0.0 ? startOffset : endOffset) *
       PROGRESS_TIMELINE_DURATION_MILLISEC));
+
+  
+  ApplyPendingPlaybackRate();
 
   
   mHoldTime.SetNull();
