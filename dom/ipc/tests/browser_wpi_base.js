@@ -197,7 +197,7 @@ const heuristics = [
       
       let loginDetection = Cc[
         "@mozilla.org/login-detection-service;1"
-      ].createInstance(Ci.nsILoginDetectionService);
+      ].getService(Ci.nsILoginDetectionService);
       loginDetection.init();
 
       await TestUtils.waitForCondition(() => {
