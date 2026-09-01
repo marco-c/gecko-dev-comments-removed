@@ -9,9 +9,9 @@
         grid-template-rows: repeat(4, 100px);
         grid-template-columns: 1fr;
         row-gap: 10px;
+        width: 500px;
         margin-left: 100px;
         border: solid 2px blue;
-        height: min-content;
         font-family: Ahem;
         font-size: 10px;
     }
@@ -27,9 +27,9 @@
     <!-- Row 1: block, spanner, Item 6, spanner -->
     <div class="row">
       <div style="background-color: lightcoral; width: 100px;">block</div>
-      <div style="background-color: lightcoral; width: 10px; height: 430px;"></div>
+      <div style="background-color: lightcoral; width: 10px; height: 430px;">spanner</div>
       <div style="background-color: lightblue; width: 100px;">Item 6</div>
-      <div style="background-color: lightcoral; width: 10px; height: 430px;"></div>
+      <div style="background-color: lightcoral; width: 10px; height: 430px; z-index: 1;">spanner</div>
     </div>
     <!-- Row 2: Item 1, Item 5, Item 8, [spanner gap], block -->
     <div class="row">

@@ -2,9 +2,9 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>CSS Grid Lanes: Fill-reverse with dense-packing and indefinite size</title>
+  <title>CSS Grid Lanes: Fill-reverse with dense-packing</title>
   <link rel="help" href="https://drafts.csswg.org/css-grid-3/">
-  <link rel="match" href="row-fill-reverse-dense-packing-indefinite-size-001-ref.html">
+  <link rel="match" href="row-fill-reverse-dense-packing-definite-size-001-ref.html">
   <link rel="author" title="Celeste Pan" href="mailto:celestepan@microsoft.com">
   <link rel="stylesheet" type="text/css" href="/fonts/ahem.css">
   <style>
@@ -17,6 +17,7 @@
       gap: 10px;
       margin-left: 100px;
       border: solid 2px blue;
+      width: 500px;
       font-family: Ahem;
       font-size: 10px;
     }
@@ -25,7 +26,7 @@
 <body>
   <div class="grid-lanes">
     <div style="background-color: lightcoral; width: 100px;">block</div>
-    <div style="grid-row: span 4; background-color: lightcoral; width: 10px;"></div>
+    <div style="grid-row: span 4; background-color: lightcoral; width: 10px;">spanner</div>
     <div style="background-color: lightgreen; width: 30px;">Item 1</div>
     <div style="background-color: lightblue; width: 100px;">Item 2</div>
     <div style="background-color: lightgreen; width: 30px;">Item 3</div>
@@ -33,7 +34,7 @@
     <div style="background-color: lightgreen; width: 30px;">Item 5</div>
     <div style="background-color: lightblue; width: 100px;">Item 6</div>
     <div style="background-color: lightcoral; width: 100px;">block</div>
-    <div style="grid-row: span 4; background-color: lightcoral; width: 10px;"></div>
+    <div style="grid-row: span 4; background-color: lightcoral; width: 10px;">spanner</div>
     <div style="background-color: lightgreen; width: 30px;">Item 7</div>
     <div style="background-color: lightblue; width: 15px;">Item 8</div>
     <div style="background-color: lightblue; grid-row: 4; width: 40px;">Item 9</div>
