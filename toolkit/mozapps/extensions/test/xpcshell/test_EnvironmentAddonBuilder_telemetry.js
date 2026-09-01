@@ -1,9 +1,11 @@
 
 
 
-const { AMTelemetry, EnvironmentAddonBuilder } = ChromeUtils.importESModule(
-  "resource://gre/modules/AddonManager.sys.mjs"
-);
+const {
+  AMTelemetry,
+  EnvironmentAddonBuilder,
+  TELEMETRY_ENVIRONMENT_ADDONS_CHANGED_TOPIC,
+} = ChromeUtils.importESModule("resource://gre/modules/AddonManager.sys.mjs");
 
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
@@ -189,17 +191,13 @@ function checkEnvironmentAddonBuilderData(
 ) {
   const EXPECTED_FIELDS = ["activeAddons", "theme", "activeGMPlugins"];
 
-  Assert.ok(
-    "addons" in data,
-    "There must be an addons section in EnvironmentAddonBuilder instance."
-  );
   for (let f of EXPECTED_FIELDS) {
-    Assert.ok(f in data.addons, f + " must be available.");
+    Assert.ok(f in data, f + " must be available.");
   }
 
   
   if (!expectBrokenAddons) {
-    let activeAddons = data.addons.activeAddons;
+    let activeAddons = data.activeAddons;
     for (let addon in activeAddons) {
       checkActiveAddon(addon, activeAddons[addon], partialAddonsRecords);
     }
@@ -211,12 +209,12 @@ function checkEnvironmentAddonBuilderData(
   
   
   
-  if (data.addons.theme?.id) {
-    checkTheme(data.addons.theme);
+  if (data.theme?.id) {
+    checkTheme(data.theme);
   }
 
   
-  let activeGMPlugins = data.addons.activeGMPlugins;
+  let activeGMPlugins = data.activeGMPlugins;
   for (let gmPlugin in activeGMPlugins) {
     checkActiveGMPlugin(activeGMPlugins[gmPlugin]);
   }
@@ -383,7 +381,7 @@ add_setup(async function setup() {
   
   
   finishAddonManagerStartup();
-  await AMTelemetry.telemetryAddonBuilder._pendingTask;
+  await AMTelemetry.addonsBuilder._pendingTask;
 
   
   gHttpServer = new HttpServer();
@@ -412,21 +410,21 @@ add_task(async function test_addons_initialData_and_fullData() {
   
   
   
-  const telemetryAddonBuilder = new EnvironmentAddonBuilder();
-  const pendingTaskPromise = telemetryAddonBuilder.init();
+  const addonsBuilder = new EnvironmentAddonBuilder();
+  const pendingTaskPromise = addonsBuilder.init();
 
   Assert.equal(
-    telemetryAddonBuilder._addonsAreFull,
+    addonsBuilder._addonsAreFull,
     false,
     "Expect full addons details to not have been collected yet"
   );
 
   await TestUtils.waitForCondition(
-    () => "addons" in telemetryAddonBuilder._currentData,
+    () => "activeAddons" in addonsBuilder.addons,
     "Wait for initial addons data to be collected"
   );
 
-  checkEnvironmentAddonBuilderData(telemetryAddonBuilder._currentData, {
+  checkEnvironmentAddonBuilderData(addonsBuilder.addons, {
     expectBrokenAddons: false,
     partialAddonsRecords: true,
   });
@@ -436,12 +434,12 @@ add_task(async function test_addons_initialData_and_fullData() {
   await pendingTaskPromise;
 
   Assert.equal(
-    telemetryAddonBuilder._addonsAreFull,
+    addonsBuilder._addonsAreFull,
     true,
     "Expect full addons details to have been collected after addon DB is loaded"
   );
 
-  checkEnvironmentAddonBuilderData(telemetryAddonBuilder._currentData, {
+  checkEnvironmentAddonBuilderData(addonsBuilder.addons, {
     expectBrokenAddons: false,
     partialAddonsRecords: false,
   });
@@ -454,17 +452,51 @@ add_task(async function test_addons_initialData_and_fullData() {
   );
 
   Assert.equal(
-    telemetryAddonBuilder._shutdownCompleted,
+    addonsBuilder._shutdownCompleted,
     false,
-    "Expect telemetryAddonBuilder instance to not have been shutdown yet"
+    "Expect addonsBuilder instance to not have been shutdown yet"
+  );
+
+  
+  
+  
+  Assert.ok(
+    "dummy-gmp" in addonsBuilder.addons.activeGMPlugins,
+    "Expect the dummy GMP plugin placeholder while GMPProvider isn't registered"
+  );
+  Assert.ok(
+    Glean.addons.activeGMPlugins.testGetValue()?.some(p => p.id == "dummy-gmp"),
+    "Expect the dummy placeholder to also be reflected in the Glean metric"
+  );
+
+  
+  
+  
+  let fakeGMPProvider = createMockAddonProvider("GMPProvider");
+  AddonManagerPrivate.registerProvider(fakeGMPProvider);
+
+  Services.obs.notifyObservers(null, "gmp-provider-registered");
+  await addonsBuilder._pendingTask;
+
+  AddonManagerPrivate.unregisterProvider(fakeGMPProvider);
+
+  Assert.ok(
+    !("dummy-gmp" in addonsBuilder.addons.activeGMPlugins),
+    "Expect the dummy placeholder to be gone once GMPProvider has registered"
+  );
+  Assert.ok(
+    !Glean.addons.activeGMPlugins
+      .testGetValue()
+      ?.some(p => p.id == "dummy-gmp"),
+    "Expect the Glean addons.activeGMPlugins metric to also drop the placeholder"
   );
 
   await AddonTestUtils.promiseShutdownManager();
 
   Assert.equal(
-    telemetryAddonBuilder._shutdownCompleted,
+    addonsBuilder._shutdownCompleted,
     true,
-    "Expect telemetryAddonBuilder shutdown to be completed"
+    "Expect addonsBuilder shutdown to be completed"
   );
 
   await promiseStartupManagerWithOverrideBuiltIn();
@@ -474,7 +506,7 @@ add_task(async function test_addonsWatch_InterestingChange() {
   const ADDON_ID = "tel-restartless-webext@tests.mozilla.org";
 
   
-  ok(AMTelemetry.telemetryAddonBuilder, "Got EnvironmentAddonBuilder instance");
+  ok(AMTelemetry.addonsBuilder, "Got EnvironmentAddonBuilder instance");
   Assert.equal(
     !!Glean.addons.activeAddons.testGetValue()?.find(it => it.id === ADDON_ID),
     false,
@@ -485,9 +517,20 @@ add_task(async function test_addonsWatch_InterestingChange() {
   const EXPECTED_NOTIFICATIONS = 4;
   let receivedNotifications = 0;
 
+  
+  
+  
+  
+  let receivedEnvironmentChangeNotifications = 0;
+  let onAddonsChangedTopic = () => receivedEnvironmentChangeNotifications++;
+  Services.obs.addObserver(
+    onAddonsChangedTopic,
+    TELEMETRY_ENVIRONMENT_ADDONS_CHANGED_TOPIC
+  );
+
   let sandbox = sinon.createSandbox();
   sandbox
-    .stub(AMTelemetry.telemetryAddonBuilder, "_scheduleGleanPingAddonsUpdated")
+    .stub(AMTelemetry.addonsBuilder, "_scheduleGleanPingAddonsUpdated")
     .callsFake(() => {
       receivedNotifications++;
       Services.obs.notifyObservers(
@@ -562,7 +605,16 @@ add_task(async function test_addonsWatch_InterestingChange() {
     EXPECTED_NOTIFICATIONS,
     "We must only receive the notifications we expect."
   );
+  Assert.equal(
+    receivedEnvironmentChangeNotifications,
+    EXPECTED_NOTIFICATIONS,
+    "TelemetryEnvironment must have been notified for each addons change."
+  );
 
+  Services.obs.removeObserver(
+    onAddonsChangedTopic,
+    TELEMETRY_ENVIRONMENT_ADDONS_CHANGED_TOPIC
+  );
   sandbox.restore();
 });
 
@@ -582,7 +634,7 @@ add_task(async function test_addonsWatch_NotInterestingChange() {
 
   let sandbox = sinon.createSandbox();
   sandbox
-    .stub(AMTelemetry.telemetryAddonBuilder, "_scheduleGleanPingAddonsUpdated")
+    .stub(AMTelemetry.addonsBuilder, "_scheduleGleanPingAddonsUpdated")
     .callsFake(() => {
       Assert.ok(
         !receivedNotification,
@@ -708,7 +760,7 @@ add_task(async function test_addons() {
   let deferred = Promise.withResolvers();
   let sandbox = sinon.createSandbox();
   sandbox
-    .stub(AMTelemetry.telemetryAddonBuilder, "_scheduleGleanPingAddonsUpdated")
+    .stub(AMTelemetry.addonsBuilder, "_scheduleGleanPingAddonsUpdated")
     .callsFake(() => {
       deferred.resolve();
     });
@@ -732,18 +784,18 @@ add_task(async function test_addons() {
   await deferred.promise;
   sandbox.restore();
 
-  let data = AMTelemetry.telemetryAddonBuilder._currentEnvironment;
-  checkEnvironmentAddonBuilderData(data, {
+  checkEnvironmentAddonBuilderData(AMTelemetry.addonsBuilder.addons, {
     expectBrokenAddons: false,
     partialAddonsRecords: false,
   });
 
   
+  let activeAddons = AMTelemetry.addonsBuilder.addons.activeAddons;
   Assert.ok(
-    SYSTEM_ADDON_ID in data.addons.activeAddons,
+    SYSTEM_ADDON_ID in activeAddons,
     "We must have one active system addon."
   );
-  let targetSystemAddon = data.addons.activeAddons[SYSTEM_ADDON_ID];
+  let targetSystemAddon = activeAddons[SYSTEM_ADDON_ID];
   for (let f in EXPECTED_SYSTEM_ADDON_DATA) {
     Assert.equal(
       targetSystemAddon[f],
@@ -754,10 +806,10 @@ add_task(async function test_addons() {
 
   
   Assert.ok(
-    WEBEXTENSION_ADDON_ID in data.addons.activeAddons,
+    WEBEXTENSION_ADDON_ID in activeAddons,
     "We must have one active webextension addon."
   );
-  let targetWebExtensionAddon = data.addons.activeAddons[WEBEXTENSION_ADDON_ID];
+  let targetWebExtensionAddon = activeAddons[WEBEXTENSION_ADDON_ID];
   for (let f in EXPECTED_WEBEXTENSION_ADDON_DATA) {
     Assert.equal(
       targetWebExtensionAddon[f],
@@ -802,7 +854,7 @@ add_task(async function test_signedAddon() {
   let deferred = Promise.withResolvers();
   let sandbox = sinon.createSandbox();
   sandbox
-    .stub(AMTelemetry.telemetryAddonBuilder, "_scheduleGleanPingAddonsUpdated")
+    .stub(AMTelemetry.addonsBuilder, "_scheduleGleanPingAddonsUpdated")
     .callsFake(() => {
       deferred.resolve();
     });
@@ -813,18 +865,17 @@ add_task(async function test_signedAddon() {
   await deferred.promise;
   sandbox.restore();
 
-  let data = AMTelemetry.telemetryAddonBuilder._currentEnvironment;
-  checkEnvironmentAddonBuilderData(data, {
+  checkEnvironmentAddonBuilderData(AMTelemetry.addonsBuilder.addons, {
     expectBrokenAddons: false,
     partialAddonsRecords: false,
   });
 
   
   Assert.ok(
-    ADDON_ID in data.addons.activeAddons,
+    ADDON_ID in AMTelemetry.addonsBuilder.addons.activeAddons,
     "Add-on should be in the environment."
   );
-  let targetAddon = data.addons.activeAddons[ADDON_ID];
+  let targetAddon = AMTelemetry.addonsBuilder.addons.activeAddons[ADDON_ID];
   for (let f in EXPECTED_ADDON_DATA) {
     Assert.equal(
       targetAddon[f],
@@ -837,7 +888,7 @@ add_task(async function test_signedAddon() {
   
   deferred = Promise.withResolvers();
   sandbox
-    .stub(AMTelemetry.telemetryAddonBuilder, "_scheduleGleanPingAddonsUpdated")
+    .stub(AMTelemetry.addonsBuilder, "_scheduleGleanPingAddonsUpdated")
     .callsFake(() => {
       deferred.resolve();
     });
@@ -847,7 +898,8 @@ add_task(async function test_signedAddon() {
   sandbox.restore();
 
   Assert.equal(
-    data.addons.activeAddons[ADDON_ID].quarantineIgnoredByUser,
+    AMTelemetry.addonsBuilder.addons.activeAddons[ADDON_ID]
+      .quarantineIgnoredByUser,
     true,
     "Expect quarantineIgnoredByUser to be set to true"
   );
@@ -864,7 +916,7 @@ add_task(async function test_addonsFieldsLimit() {
   let deferred = Promise.withResolvers();
   let sandbox = sinon.createSandbox();
   sandbox
-    .stub(AMTelemetry.telemetryAddonBuilder, "_scheduleGleanPingAddonsUpdated")
+    .stub(AMTelemetry.addonsBuilder, "_scheduleGleanPingAddonsUpdated")
     .callsFake(() => {
       deferred.resolve();
     });
@@ -885,18 +937,17 @@ add_task(async function test_addonsFieldsLimit() {
   await deferred.promise;
   sandbox.restore();
 
-  let data = AMTelemetry.telemetryAddonBuilder._currentEnvironment;
-  checkEnvironmentAddonBuilderData(data, {
+  checkEnvironmentAddonBuilderData(AMTelemetry.addonsBuilder.addons, {
     expectBrokenAddons: false,
     partialAddonsRecords: false,
   });
 
   
   Assert.ok(
-    ADDON_ID in data.addons.activeAddons,
+    ADDON_ID in AMTelemetry.addonsBuilder.addons.activeAddons,
     "Add-on should be in the environment."
   );
-  let targetAddon = data.addons.activeAddons[ADDON_ID];
+  let targetAddon = AMTelemetry.addonsBuilder.addons.activeAddons[ADDON_ID];
 
   
   
@@ -952,7 +1003,7 @@ add_task(async function test_collectionWithbrokenAddonData() {
 
   let sandbox = sinon.createSandbox();
   sandbox
-    .stub(AMTelemetry.telemetryAddonBuilder, "_scheduleGleanPingAddonsUpdated")
+    .stub(AMTelemetry.addonsBuilder, "_scheduleGleanPingAddonsUpdated")
     .callsFake(() => {
       receivedNotifications++;
       Services.obs.notifyObservers(
@@ -995,13 +1046,12 @@ add_task(async function test_collectionWithbrokenAddonData() {
 
   
   
-  let data = AMTelemetry.telemetryAddonBuilder._currentEnvironment;
-  checkEnvironmentAddonBuilderData(data, {
+  checkEnvironmentAddonBuilderData(AMTelemetry.addonsBuilder.addons, {
     expectBrokenAddons: true,
     partialAddonsRecords: false,
   });
 
-  let activeAddons = data.addons.activeAddons;
+  let activeAddons = AMTelemetry.addonsBuilder.addons.activeAddons;
   Assert.ok(
     BROKEN_ADDON_ID in activeAddons,
     "The addon with the broken manifest must be reported."
@@ -1047,14 +1097,13 @@ add_task(async function nonSystemBuiltinAddon() {
   let deferred = Promise.withResolvers();
   let sandbox = sinon.createSandbox();
   sandbox
-    .stub(AMTelemetry.telemetryAddonBuilder, "_scheduleGleanPingAddonsUpdated")
+    .stub(AMTelemetry.addonsBuilder, "_scheduleGleanPingAddonsUpdated")
     .callsFake(() => {
       deferred.resolve();
     });
 
-  let data = AMTelemetry.telemetryAddonBuilder._currentEnvironment;
   Assert.ok(
-    !(addon_id in data.addons.activeAddons),
+    !(addon_id in AMTelemetry.addonsBuilder.addons.activeAddons),
     "non-system built-in addon expected to not be found yet."
   );
 
@@ -1071,24 +1120,25 @@ add_task(async function nonSystemBuiltinAddon() {
   await deferred.promise;
   sandbox.restore();
 
+  let activeAddons = AMTelemetry.addonsBuilder.addons.activeAddons;
   Assert.ok(
-    addon_id in data.addons.activeAddons,
+    addon_id in activeAddons,
     "non-system built-in addon must be reported."
   );
   Assert.equal(
-    data.addons.activeAddons[addon_id].version,
+    activeAddons[addon_id].version,
     addon_version,
     "Got the expected version."
   );
 
   Assert.equal(
-    data.addons.activeAddons[addon_id].scope,
+    activeAddons[addon_id].scope,
     AddonManager.SCOPE_APPLICATION,
     "Got the expected scope."
   );
 
   Assert.equal(
-    data.addons.activeAddons[addon_id].isSystem,
+    activeAddons[addon_id].isSystem,
     false,
     "Expect isSystem to be false."
   );

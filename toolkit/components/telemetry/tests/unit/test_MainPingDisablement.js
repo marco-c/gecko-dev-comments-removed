@@ -21,6 +21,10 @@ add_setup(async function () {
   
   do_get_profile();
   Services.fog.initializeFOG();
+  
+  
+  
+  fakeIntlReady();
 
   
   await setEmptyPrefWatchlist();

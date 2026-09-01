@@ -11,6 +11,10 @@ var gHttpServer = null;
 
 add_task(async function test_setup() {
   do_get_profile();
+  
+  
+  
+  fakeIntlReady();
 
   
   await setEmptyPrefWatchlist();
