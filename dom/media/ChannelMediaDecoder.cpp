@@ -562,13 +562,6 @@ void ChannelMediaDecoder::MetadataLoaded(
   mResource->SetReadMode(MediaCacheStream::MODE_PLAYBACK);
 }
 
-void ChannelMediaDecoder::GetDebugInfo(dom::MediaDecoderDebugInfo& aInfo) {
-  MediaDecoder::GetDebugInfo(aInfo);
-  if (mResource) {
-    mResource->GetDebugInfo(aInfo.mResource);
-  }
-}
-
 bool ChannelMediaDecoder::MediaStatistics::CanPlayThrough() const {
   
   

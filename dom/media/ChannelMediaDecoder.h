@@ -69,8 +69,6 @@ class ChannelMediaDecoder
 
   explicit ChannelMediaDecoder(MediaDecoderInit& aInit);
 
-  void GetDebugInfo(dom::MediaDecoderDebugInfo& aInfo);
-
  public:
   
   
