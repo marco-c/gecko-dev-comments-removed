@@ -97,6 +97,19 @@ ffi_clear_cache (void *start, void *end)
 
 
 static int
+intlog2 (int n)
+{
+  int level = 0;
+  while (n >>= 1)
+    ++level;
+  return level;
+}
+
+
+
+
+
+static int
 is_hfa0 (const ffi_type *ty)
 {
   ffi_type **elements = ty->elements;
@@ -106,7 +119,8 @@ is_hfa0 (const ffi_type *ty)
     for (i = 0; elements[i]; ++i)
       {
         ret = elements[i]->type;
-        if (ret == FFI_TYPE_STRUCT || ret == FFI_TYPE_COMPLEX)
+        if (ret == FFI_TYPE_STRUCT || ret == FFI_TYPE_VECTOR
+	    || ret == FFI_TYPE_COMPLEX)
           {
             ret = is_hfa0 (elements[i]);
             if (ret < 0)
@@ -116,6 +130,33 @@ is_hfa0 (const ffi_type *ty)
       }
 
   return ret;
+}
+
+
+
+
+
+
+static size_t
+is_simd (const ffi_type *ty)
+{
+  ffi_type **elements;
+  int i;
+
+  if (ty->type == FFI_TYPE_VECTOR)
+    return ty->size;
+
+  elements = ty->elements;
+  if (elements != NULL)
+    for (i = 0; elements[i]; ++i)
+      {
+        int t = elements[i]->type;
+        if (t == FFI_TYPE_STRUCT || t == FFI_TYPE_COMPLEX
+	    || t == FFI_TYPE_VECTOR)
+          return is_simd (elements[i]);
+      }
+
+  return 0;
 }
 
 
@@ -131,7 +172,8 @@ is_hfa1 (const ffi_type *ty, int candidate)
     for (i = 0; elements[i]; ++i)
       {
         int t = elements[i]->type;
-        if (t == FFI_TYPE_STRUCT || t == FFI_TYPE_COMPLEX)
+        if (t == FFI_TYPE_STRUCT || t == FFI_TYPE_VECTOR
+	    || t == FFI_TYPE_COMPLEX)
           {
             if (!is_hfa1 (elements[i], candidate))
               return 0;
@@ -156,7 +198,7 @@ is_vfp_type (const ffi_type *ty)
 {
   ffi_type **elements;
   int candidate, i;
-  size_t size, ele_count;
+  size_t size, ele_count, simd_size;
 
   
   candidate = ty->type;
@@ -181,6 +223,7 @@ is_vfp_type (const ffi_type *ty)
 	}
       return 0;
     case FFI_TYPE_STRUCT:
+    case FFI_TYPE_VECTOR:
       break;
     }
 
@@ -190,9 +233,14 @@ is_vfp_type (const ffi_type *ty)
     return 0;
 
   
+
+  simd_size = is_simd (ty);
+
+  
   elements = ty->elements;
   candidate = elements[0]->type;
-  if (candidate == FFI_TYPE_STRUCT || candidate == FFI_TYPE_COMPLEX)
+  if (candidate == FFI_TYPE_STRUCT || candidate == FFI_TYPE_VECTOR
+      || candidate == FFI_TYPE_COMPLEX)
     {
       for (i = 0; ; ++i)
         {
@@ -200,6 +248,63 @@ is_vfp_type (const ffi_type *ty)
           if (candidate >= 0)
             break;
         }
+    }
+
+  if (simd_size)
+    {
+      
+
+
+
+
+
+
+
+
+      size_t reg_size = simd_size;
+      int num_registers;
+      int first_level_element_type;
+
+      
+
+
+
+      if (reg_size < 4 || reg_size > 16 || size % reg_size != 0)
+	return 0;
+      num_registers = (int) (size / reg_size);
+      if (num_registers > 4)
+	return 0;
+
+      
+
+
+
+
+      if (ty->type != FFI_TYPE_VECTOR)
+	for (i = 0; elements[i]; ++i)
+	  if (is_simd (elements[i]) != reg_size)
+	    return 0;
+
+      
+
+      for (i = 0; elements[i]; ++i)
+	{
+	  int t = elements[i]->type;
+	  if (t == FFI_TYPE_STRUCT || t == FFI_TYPE_VECTOR
+	      || t == FFI_TYPE_COMPLEX)
+	    {
+	      if (!is_hfa1 (elements[i], candidate))
+		return 0;
+	    }
+	  else if (t != candidate)
+	    return 0;
+	}
+
+      
+
+
+      first_level_element_type = FFI_TYPE_FLOAT + intlog2 ((int) reg_size) - 2;
+      return first_level_element_type * 4 + (4 - num_registers);
     }
 
   
@@ -378,13 +483,13 @@ extend_integer_type (void *source, int type)
     }
 }
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(__clang__)
 void extend_hfa_type (void *dest, void *src, int h);
 #else
 static void
 extend_hfa_type (void *dest, void *src, int h)
 {
-  ssize_t f = h - AARCH64_RET_S4;
+  ptrdiff_t f = h - AARCH64_RET_S4;
   void *x0;
 
 #define BTI_J "hint #36"
@@ -449,7 +554,7 @@ extend_hfa_type (void *dest, void *src, int h)
 }
 #endif
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(__clang__)
 void* compress_hfa_type (void *dest, void *src, int h);
 #else
 static void *
@@ -550,7 +655,9 @@ allocate_int128_to_reg_or_stack (struct call_context *context,
   ngrn += ngrn & 1;
 #endif
 
-  if (ngrn < N_X_ARG_REG)
+  
+
+  if (ngrn + 2 <= N_X_ARG_REG)
     {
       ret = &context->x[ngrn];
       ngrn += 2;
@@ -612,6 +719,7 @@ ffi_prep_cif_machdep (ffi_cif *cif)
     case FFI_TYPE_DOUBLE:
     case FFI_TYPE_LONGDOUBLE:
     case FFI_TYPE_STRUCT:
+    case FFI_TYPE_VECTOR:
     case FFI_TYPE_COMPLEX:
       flags = is_vfp_type (rtype);
       if (flags == 0)
@@ -641,6 +749,23 @@ ffi_prep_cif_machdep (ffi_cif *cif)
 	flags |= AARCH64_FLAG_ARG_V;
 	break;
       }
+
+  
+
+
+
+
+
+
+
+
+
+  for (i = 0, n = cif->nargs; i < n; i++)
+    {
+      ffi_type *ty = cif->arg_types[i];
+      if (ty->size > 16 && !is_vfp_type (ty))
+	bytes += 8;
+    }
 
   
   cif->bytes = (unsigned) FFI_ALIGN(bytes, 16);
@@ -783,6 +908,7 @@ ffi_call_int (ffi_cif *cif, void (*fn)(void), void *orig_rvalue,
 	case FFI_TYPE_DOUBLE:
 	case FFI_TYPE_LONGDOUBLE:
 	case FFI_TYPE_STRUCT:
+	case FFI_TYPE_VECTOR:
 	case FFI_TYPE_COMPLEX:
 	  {
 	    h = is_vfp_type (ty);
@@ -1070,6 +1196,7 @@ ffi_closure_SYSV_inner (ffi_cif *cif,
 	case FFI_TYPE_DOUBLE:
 	case FFI_TYPE_LONGDOUBLE:
 	case FFI_TYPE_STRUCT:
+	case FFI_TYPE_VECTOR:
 	case FFI_TYPE_COMPLEX:
 	  h = is_vfp_type (ty);
 	  if (h)

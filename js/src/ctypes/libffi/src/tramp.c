@@ -201,11 +201,18 @@ static int tramp_table_alloc (void);
 
 #if defined (__linux__) || defined (__CYGWIN__)
 
+
+#define FFI_TRAMP_STR_(x) #x
+#define FFI_TRAMP_STR(x)  FFI_TRAMP_STR_(x)
+
 static int
 ffi_tramp_get_libffi (void)
 {
   FILE *fp;
-  char file[PATH_MAX], line[PATH_MAX+100], perm[10], dev[10];
+  
+
+
+  char file[PATH_MAX+1], line[PATH_MAX+100], perm[10], dev[10];
   unsigned long start, end, offset, inode;
   uintptr_t addr = (uintptr_t) tramp_globals.text;
   int nfields, found;
@@ -215,7 +222,7 @@ ffi_tramp_get_libffi (void)
   open_flags |= O_CLOEXEC;
 #endif
 
-  snprintf (file, PATH_MAX, "/proc/%d/maps", getpid());
+  snprintf (file, sizeof (file), "/proc/%d/maps", getpid());
   fp = fopen (file, "r");
   if (fp == NULL)
     return 0;
@@ -225,7 +232,10 @@ ffi_tramp_get_libffi (void)
     if (fgets (line, sizeof (line), fp) == 0)
       break;
 
-    nfields = sscanf (line, "%lx-%lx %9s %lx %9s %ld %s",
+    
+
+    nfields = sscanf (line,
+      "%lx-%lx %9s %lx %9s %ld %" FFI_TRAMP_STR(PATH_MAX) "s",
       &start, &end, perm, &offset, dev, &inode, file);
     if (nfields != 7)
       continue;
@@ -407,9 +417,19 @@ ffi_tramp_init (void)
     &tramp_globals.map_size);
   tramp_globals.ntramp = tramp_globals.map_size / tramp_globals.size;
 
+  
+
+
+
+
+
+
   page_size = sysconf (_SC_PAGESIZE);
   if (page_size >= 0 && (size_t)page_size > tramp_globals.map_size)
-    return 0;
+    {
+      tramp_globals.status = TRAMP_GLOBALS_FAILED;
+      return 0;
+    }
 
   if (ffi_tramp_init_os ())
     {

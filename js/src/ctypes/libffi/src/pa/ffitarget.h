@@ -83,7 +83,20 @@ typedef enum ffi_abi {
 #define FFI_TYPE_SMALL_STRUCT8 -8
 
 
-#define FFI_PA_TYPE_LAST FFI_TYPE_COMPLEX
+
+
+
+
+
+
+
+
+
+
+
+
+#define FFI_PA_TYPE_LAST FFI_TYPE_VECTOR
+
 
 
 

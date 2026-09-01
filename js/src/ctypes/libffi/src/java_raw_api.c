@@ -58,6 +58,7 @@ ffi_java_raw_size (ffi_cif *cif)
 	  result += 2 * FFI_SIZEOF_JAVA_RAW;
 	  break;
 	case FFI_TYPE_STRUCT:
+	case FFI_TYPE_VECTOR:
 	  
 	  abort();
 	case FFI_TYPE_COMPLEX:

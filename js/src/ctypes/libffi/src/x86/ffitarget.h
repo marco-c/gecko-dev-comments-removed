@@ -60,6 +60,13 @@
 
 
 
+
+#if defined(X86_64) && !defined(X86_WIN64)
+#define FFI_TARGET_HAS_VECTOR_TYPE
+#endif
+
+
+
 #ifndef LIBFFI_ASM
 #ifdef X86_WIN64
 #ifdef _MSC_VER
@@ -137,6 +144,18 @@ typedef enum ffi_abi {
 #define FFI_TYPE_SMALL_STRUCT_2B (FFI_TYPE_LAST + 2)
 #define FFI_TYPE_SMALL_STRUCT_4B (FFI_TYPE_LAST + 3)
 #define FFI_TYPE_MS_STRUCT       (FFI_TYPE_LAST + 4)
+
+
+
+
+
+
+
+
+#define FFI_X86_TYPE_LAST FFI_TYPE_VECTOR
+#if FFI_TYPE_LAST != FFI_X86_TYPE_LAST
+# error "new FFI_TYPE_* added: sync the win64.S/win64_intel.S jump tables and bump FFI_X86_TYPE_LAST"
+#endif
 
 #if defined (X86_64) || defined(X86_WIN64) \
     || (defined (__x86_64__) && defined (X86_DARWIN))

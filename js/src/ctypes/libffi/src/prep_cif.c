@@ -35,12 +35,81 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static ffi_status
+initialize_vector (ffi_type *arg)
+{
+  ffi_type **ptr = arg->elements;
+  ffi_type *elem;
+  size_t count = 0;
+  size_t total, p2;
+
+  if (UNLIKELY (ptr == NULL || *ptr == NULL))
+    return FFI_BAD_TYPEDEF;
+
+  elem = *ptr;
+  switch (elem->type)
+    {
+    case FFI_TYPE_FLOAT:
+    case FFI_TYPE_DOUBLE:
+    case FFI_TYPE_UINT8:
+    case FFI_TYPE_SINT8:
+    case FFI_TYPE_UINT16:
+    case FFI_TYPE_SINT16:
+    case FFI_TYPE_UINT32:
+    case FFI_TYPE_SINT32:
+    case FFI_TYPE_UINT64:
+    case FFI_TYPE_SINT64:
+      break;
+    default:
+      return FFI_BAD_TYPEDEF;
+    }
+
+  
+  for (; *ptr != NULL; ptr++)
+    {
+      if ((*ptr)->type != elem->type || (*ptr)->size != elem->size)
+	return FFI_BAD_TYPEDEF;
+      count++;
+    }
+
+  if (UNLIKELY (count < 1 || elem->size == 0))
+    return FFI_BAD_TYPEDEF;
+
+  total = elem->size * count;
+  for (p2 = 1; p2 < total; p2 <<= 1)
+    ;
+
+  arg->size = p2;
+  arg->alignment = p2 < 16 ? p2 : 16;
+  return FFI_OK;
+}
+
+
+
+
 static ffi_status initialize_aggregate(ffi_type *arg, size_t *offsets)
 {
   ffi_type **ptr;
 
   if (UNLIKELY(arg == NULL || arg->elements == NULL))
     return FFI_BAD_TYPEDEF;
+
+  if (arg->type == FFI_TYPE_VECTOR)
+    return initialize_vector (arg);
 
   arg->size = 0;
   arg->alignment = 0;
@@ -92,6 +161,28 @@ static ffi_status initialize_aggregate(ffi_type *arg, size_t *offsets)
     return FFI_OK;
 }
 
+#ifndef FFI_TARGET_HAS_VECTOR_TYPE
+
+
+
+
+static int
+ffi_type_contains_vector (ffi_type *ty)
+{
+  ffi_type **p;
+
+  if (ty == NULL)
+    return 0;
+  if (ty->type == FFI_TYPE_VECTOR)
+    return 1;
+  if (ty->type == FFI_TYPE_STRUCT && ty->elements != NULL)
+    for (p = ty->elements; *p != NULL; p++)
+      if (ffi_type_contains_vector (*p))
+	return 1;
+  return 0;
+}
+#endif 
+
 #ifndef __CRIS__
 
 
@@ -129,6 +220,15 @@ ffi_status FFI_HIDDEN ffi_prep_cif_core(ffi_cif *cif, ffi_abi abi,
   cif->nargs = ntotalargs;
   cif->rtype = rtype;
 
+#ifndef FFI_TARGET_HAS_VECTOR_TYPE
+  
+  if (ffi_type_contains_vector (rtype))
+    return FFI_BAD_TYPEDEF;
+  for (i = 0; i < ntotalargs; i++)
+    if (ffi_type_contains_vector (atypes[i]))
+      return FFI_BAD_TYPEDEF;
+#endif
+
   cif->flags = 0;
 #if (defined(_M_ARM64) || defined(__aarch64__)) && defined(_WIN32)
   cif->is_variadic = isvariadic;
@@ -152,7 +252,8 @@ ffi_status FFI_HIDDEN ffi_prep_cif_core(ffi_cif *cif, ffi_abi abi,
   
 #if !defined FFI_TARGET_SPECIFIC_STACK_SPACE_ALLOCATION
   
-  if (cif->rtype->type == FFI_TYPE_STRUCT
+  if ((cif->rtype->type == FFI_TYPE_STRUCT
+       || cif->rtype->type == FFI_TYPE_VECTOR)
 #ifdef TILE
       && (cif->rtype->size > 10 * FFI_SIZEOF_ARG)
 #endif
@@ -278,3 +379,49 @@ ffi_get_struct_offsets (ffi_abi abi, ffi_type *struct_type, size_t *offsets)
 
   return initialize_aggregate(struct_type, offsets);
 }
+
+
+
+
+
+
+
+
+
+#if !(defined(__x86_64__) && !defined(__ILP32__) && !defined(X86_WIN64))
+
+struct ffi_call_plan
+{
+  ffi_cif *cif;
+};
+
+ffi_call_plan *
+ffi_call_plan_alloc (ffi_cif *cif)
+{
+  ffi_call_plan *plan = malloc (sizeof (struct ffi_call_plan));
+  if (plan != NULL)
+    plan->cif = cif;
+  return plan;
+}
+
+void
+ffi_call_plan_invoke (ffi_call_plan *plan, void (*fn) (void),
+		      void *rvalue, void **avalue)
+{
+  ffi_call (plan->cif, fn, rvalue, avalue);
+}
+
+void
+ffi_call_plan_free (ffi_call_plan *plan)
+{
+  free (plan);
+}
+
+size_t
+ffi_call_plan_size (ffi_call_plan *plan)
+{
+  
+  return plan != NULL ? sizeof (struct ffi_call_plan) : 0;
+}
+
+#endif 

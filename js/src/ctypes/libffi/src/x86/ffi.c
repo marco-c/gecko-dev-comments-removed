@@ -118,7 +118,7 @@ ffi_prep_cif_machdep(ffi_cif *cif)
       break;
     case FFI_TYPE_STRUCT:
       {
-#if defined(X86_WIN32) || defined(X86_DARWIN)
+#if defined(X86_WIN32) || defined(X86_DARWIN) || defined(X86_FREEBSD)
         size_t size = cif->rtype->size;
         if (size == 1)
           flags = X86_RET_STRUCT_1B;
@@ -554,8 +554,14 @@ ffi_closure_inner (struct closure_frame *frame, char *stack)
       return flags | (cif->bytes << X86_RET_POP_SHIFT);
     case FFI_THISCALL:
     case FFI_FASTCALL:
-      return flags | ((cif->bytes - (narg_reg * FFI_SIZEOF_ARG))
-          << X86_RET_POP_SHIFT);
+      
+
+
+
+
+
+
+      return flags | (((unsigned) (argp - stack)) << X86_RET_POP_SHIFT);
     default:
       return flags;
     }
