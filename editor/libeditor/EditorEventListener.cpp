@@ -1113,6 +1113,10 @@ nsresult EditorEventListener::HandleChangeComposition(
 
 void EditorEventListener::HandleEndComposition(
     WidgetCompositionEvent* aCompositionEndEvent) {
+  
+  
+  
+  
   if (NS_WARN_IF(!aCompositionEndEvent) || DetachedFromEditor()) {
     return;
   }

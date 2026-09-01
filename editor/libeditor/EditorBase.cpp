@@ -4236,6 +4236,10 @@ nsresult EditorBase::OnCompositionChange(
 
 void EditorBase::OnCompositionEnd(
     WidgetCompositionEvent& aCompositionEndEvent) {
+  
+  
+  
+  MOZ_ASSERT(aCompositionEndEvent.CausesDOMCompositionEndEvent());
   MOZ_LOG(gTextInputLog, LogLevel::Info,
           ("%p %s::OnCompositionEnd(aCompositionEndEvent={ mData=\"%s\"}), "
            "mComposition=%p",

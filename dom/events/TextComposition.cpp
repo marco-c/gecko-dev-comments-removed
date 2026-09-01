@@ -535,7 +535,12 @@ void TextComposition::DispatchCompositionEvent(
 
   
   
-  if (dispatchDOMTextEvent && !HasEditor()) {
+  
+  
+  
+  if (dispatchDOMTextEvent && !HasEditor() &&
+      (!mHasReceivedCommitEvent ||
+       aCompositionEvent->IsFollowedByCompositionEnd())) {
     EditorWillHandleCompositionChangeEvent(aCompositionEvent);
     EditorDidHandleCompositionChangeEvent();
   }
@@ -544,6 +549,22 @@ void TextComposition::DispatchCompositionEvent(
     
     if (aCompositionEvent->mMessage != eCompositionEnd) {
       CloneAndDispatchAs(aCompositionEvent, eCompositionEnd);
+    }
+    if (RefPtr<EditorBase> editor = GetEditorBase()) {
+      
+      
+      
+      
+      
+      MOZ_ASSERT(mNode);
+      MOZ_ASSERT(
+          editor->GetDocument() != mNode->GetComposedDoc(),
+          "Should only happen if event target node is disconnected or moved to "
+          "a different document");
+      editor->OnCompositionEnd(*aCompositionEvent);
+      
+      
+      mIsComposing = false;
     }
     MOZ_ASSERT(!mIsComposing, "Why is the editor still composing?");
     MOZ_ASSERT(!HasEditor(), "Why does the editor still keep to hold this?");
