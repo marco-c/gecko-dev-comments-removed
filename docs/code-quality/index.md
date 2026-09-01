@@ -42,7 +42,7 @@ typescript/index
    * - cpp virtual final
      -
      -
-     - :ref:`cpp virtual final <cpp virtual final>`
+     - :ref:`cpp virtual final <cpp-virtual-final>`
      -
    * - clang-format
      - Yes
@@ -181,11 +181,6 @@ typescript/index
      -
      -
      - https://www.shellcheck.net/
-   * - rstchecker
-     -
-     -
-     - :ref:`RST Linter`
-     - https://github.com/myint/rstcheck
    * - Typo detection
      - Yes
      -
