@@ -91,7 +91,7 @@ add_task(async function test_locations_list_default_rendering() {
   let recButton = locationsList.querySelector("#location-option-REC");
   Assert.ok(recButton, "recommended location button should be present");
   Assert.equal(
-    recButton.getAttribute("aria-checked"),
+    recButton.getAttribute("aria-selected"),
     "true",
     "recommended location should be selected by default"
   );
@@ -112,7 +112,7 @@ add_task(async function test_locations_list_default_rendering() {
       `#location-option-${code}`
     );
     Assert.equal(
-      unSelectedButton.getAttribute("aria-checked"),
+      unSelectedButton.getAttribute("aria-selected"),
       "false",
       `${code} button should not be selected`
     );
@@ -139,14 +139,14 @@ add_task(async function test_locations_list_preselected_location() {
   let caButton = locationsList.querySelector("#location-option-CA");
   Assert.ok(caButton, "CA location button should be present");
   Assert.equal(
-    caButton.getAttribute("aria-checked"),
+    caButton.getAttribute("aria-selected"),
     "true",
     "CA should be selected when passed as location"
   );
 
   let recButton = locationsList.querySelector("#location-option-REC");
   Assert.equal(
-    recButton.getAttribute("aria-checked"),
+    recButton.getAttribute("aria-selected"),
     "false",
     "recommended location should not be selected"
   );
@@ -171,7 +171,7 @@ add_task(async function test_locations_list_unknown_falls_back_to_rec() {
 
   let recButton = locationsList.querySelector("#location-option-REC");
   Assert.equal(
-    recButton.getAttribute("aria-checked"),
+    recButton.getAttribute("aria-selected"),
     "true",
     "recommended location button should be selected when an invalid code is passed"
   );
@@ -196,10 +196,10 @@ add_task(async function test_locations_list_sorted_alphabetically() {
   Assert.ok(locationsList, "locations-list element should exist");
 
   let locationItems = locationsList.querySelectorAll(
-    "#locations-list li:not(:first-child) button"
+    "#locations-list li:not(:first-child)"
   );
-  let renderedCodes = Array.from(locationItems).map(btn =>
-    btn.id.replace("location-option-", "")
+  let renderedCodes = Array.from(locationItems).map(option =>
+    option.id.replace("location-option-", "")
   );
 
   let expectedCodes = ["CA", "DE", "US"];
@@ -498,18 +498,18 @@ add_task(
 
     let recButton = locationsList.querySelector("#location-option-REC");
     Assert.equal(
-      recButton.getAttribute("aria-checked"),
+      recButton.getAttribute("aria-selected"),
       "true",
-      "recommended location should be the checked radio"
+      "recommended location should be the selected option"
     );
 
-    let checkedButtons = locationsList.querySelectorAll(
-      '#locations-list button[aria-checked="true"]'
+    let selectedOptions = locationsList.querySelectorAll(
+      '#locations-list [aria-selected="true"]'
     );
     Assert.equal(
-      checkedButtons.length,
+      selectedOptions.length,
       1,
-      "exactly one radio should be checked after falling back to REC"
+      "exactly one option should be selected after falling back to REC"
     );
 
     await closePanel();
