@@ -28,6 +28,17 @@ add_setup(async function common_initialize() {
   }
 });
 
+
+let gNotificationsFromClosedTabs = [];
+
+registerCleanupFunction(function cleanup_checkNotificationsFromClosedTabs() {
+  Assert.deepEqual(
+    gNotificationsFromClosedTabs,
+    [],
+    "No test notification arrived from a browsing context whose tab is gone"
+  );
+});
+
 registerCleanupFunction(
   async function cleanup_removeAllLoginsAndResetRecipes() {
     await SpecialPowers.popPrefEnv();
@@ -813,6 +824,9 @@ async function openPasswordContextMenu(
 
 
 
+
+
+
 function listenForTestNotification(expectedMessage, count = 1) {
   let expectedMessages = [];
   if (Array.isArray(expectedMessage)) {
@@ -827,6 +841,17 @@ function listenForTestNotification(expectedMessage, count = 1) {
     LoginManagerParent.setListenerForTests((msg, data) => {
       let idx = expectedMessages.indexOf(msg);
       if (idx == -1) {
+        return;
+      }
+
+      
+      
+      
+      
+      if (!data.browsingContext.top.embedderElement) {
+        let stale = `${msg} from ${data.browsingContext.currentURI?.spec}`;
+        info(`Ignoring a notification from a closed tab: ${stale}`);
+        gNotificationsFromClosedTabs.push(stale);
         return;
       }
 
