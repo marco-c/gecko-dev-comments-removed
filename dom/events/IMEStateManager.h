@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_IMEStateManager_h_
 #define mozilla_IMEStateManager_h_
 
@@ -405,6 +403,14 @@ class IMEStateManager {
 
   static bool HasActiveChildSetInputContext();
 
+  static void AdvanceFocusGeneration() {
+    if (sFocusGeneration == UINT32_MAX) [[unlikely]] {
+      sFocusGeneration = 0;
+    } else {
+      sFocusGeneration++;
+    }
+  }
+
   
 
 
@@ -466,6 +472,9 @@ class IMEStateManager {
   
   
   static InputContext sActiveChildInputContext;
+
+  
+  static uint32_t sFocusGeneration;
 
   
   
