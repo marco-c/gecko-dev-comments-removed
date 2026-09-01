@@ -60,25 +60,7 @@ struct ReferencePtr {
 
   
   
-  bool operator<(const ReferencePtr& aOther) const {
-    return mLongPtr < aOther.mLongPtr;
-  }
-
-  bool operator>(const ReferencePtr& aOther) const {
-    return mLongPtr > aOther.mLongPtr;
-  }
-
-  bool operator==(const ReferencePtr& aOther) const {
-    return mLongPtr == aOther.mLongPtr;
-  }
-
-  bool operator!=(const ReferencePtr& aOther) const {
-    return !(*this == aOther);
-  }
-
-  bool operator>=(const ReferencePtr& aOther) const {
-    return mLongPtr >= aOther.mLongPtr;
-  }
+  auto operator<=>(const ReferencePtr& aOther) const = default;
 
   uint64_t mLongPtr;
 };
