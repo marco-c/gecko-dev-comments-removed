@@ -70,6 +70,7 @@
 
 #include "nsIApplicationReputation.h"
 
+#include "nsContentUtils.h"
 #include "nsDSURIContentListener.h"
 #include "nsMimeTypes.h"
 #include "nsMIMEInfoImpl.h"
@@ -1871,6 +1872,16 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
 
   bool shouldAutomaticallyHandleInternally =
       action == nsIMIMEInfo::handleInternally;
+
+  
+  
+  
+  if (shouldAutomaticallyHandleInternally &&
+      MIMEType.EqualsLiteral(APPLICATION_PDF) &&
+      !nsContentUtils::IsPDFJSEnabled()) {
+    shouldAutomaticallyHandleInternally = false;
+    alwaysAsk = true;
+  }
 
   if (aChannel) {
     uint32_t disposition = -1;
