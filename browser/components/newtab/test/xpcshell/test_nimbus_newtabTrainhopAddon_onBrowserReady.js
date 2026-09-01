@@ -12,8 +12,6 @@ add_task(
     pref_set: [
       [TRAINHOP_SCHEDULED_UPDATE_STATE_TIMEOUT_PREF, 100],
       [TRAINHOP_SCHEDULED_UPDATE_STATE_DELAY_PREF, 100],
-      
-      ["toolkit.asyncshutdown.testing", true],
     ],
   },
   async function test_scheduled_updateAddonState_onBrowserReady() {
@@ -72,11 +70,6 @@ add_task(
 
     
     
-    
-    
-    const { AsyncShutdown } = ChromeUtils.importESModule(
-      "resource://gre/modules/AsyncShutdown.sys.mjs"
-    );
-    AsyncShutdown.appShutdownConfirmed._trigger();
+    await AboutNewTabResourceMapping._updateAddonStateDeferredTask?.finalize();
   }
 );
