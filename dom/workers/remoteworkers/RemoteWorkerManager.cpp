@@ -55,22 +55,11 @@ bool IsServiceWorker(const RemoteWorkerData& aData) {
 }
 
 void TransmitPermissionsAndCookiesAndBlobURLsForPrincipalInfo(
-    ContentParent* aContentParent, const PrincipalInfo& aPrincipalInfo) {
+    ContentParent* aContentParent, nsIPrincipal* aPrincipal) {
   AssertIsOnMainThread();
   MOZ_ASSERT(aContentParent);
 
-  auto principalOrErr = PrincipalInfoToPrincipal(aPrincipalInfo);
-
-  if (NS_WARN_IF(principalOrErr.isErr())) {
-    return;
-  }
-
-  nsCOMPtr<nsIPrincipal> principal = principalOrErr.unwrap();
-
-  aContentParent->TransmitBlobURLsForPrincipal(principal);
-
-  MOZ_ALWAYS_SUCCEEDS(
-      aContentParent->TransmitPermissionsForPrincipal(principal));
+  MOZ_ALWAYS_SUCCEEDS(aContentParent->AboutToLoadOrigin(aPrincipal));
 
   CookieServiceParent* cs = nullptr;
 
@@ -85,10 +74,10 @@ void TransmitPermissionsAndCookiesAndBlobURLsForPrincipalInfo(
   }
 
   if (cs) {
-    nsCOMPtr<nsIURI> uri = principal->GetURI();
-    cs->UpdateCookieInContentList(uri, principal->OriginAttributesRef());
+    nsCOMPtr<nsIURI> uri = aPrincipal->GetURI();
+    cs->UpdateCookieInContentList(uri, aPrincipal->OriginAttributesRef());
   } else {
-    aContentParent->AddPrincipalToCookieInProcessCache(principal);
+    aContentParent->AddPrincipalToCookieInProcessCache(aPrincipal);
   }
 }
 
@@ -159,7 +148,7 @@ Result<nsCString, nsresult> RemoteWorkerManager::GetRemoteType(
 
 
 bool RemoteWorkerManager::HasExtensionPrincipal(const RemoteWorkerData& aData) {
-  auto principalInfo = aData.principalInfo();
+  const auto& principalInfo = aData.principalInfo();
   return principalInfo.type() == PrincipalInfo::TContentPrincipalInfo &&
          
          
@@ -266,6 +255,13 @@ void RemoteWorkerManager::LaunchInternal(
   MOZ_ASSERT(aTargetActor == mParentActor ||
              mChildActors.Contains(aTargetActor));
 
+  auto principalOrErr = PrincipalInfoToPrincipal(aData.principalInfo());
+  if (NS_WARN_IF(principalOrErr.isErr())) {
+    AsyncCreationFailed(aController);
+    return;
+  }
+  nsCOMPtr<nsIPrincipal> principal = principalOrErr.unwrap();
+
   
   
   if (aTargetActor != mParentActor) {
@@ -274,14 +270,19 @@ void RemoteWorkerManager::LaunchInternal(
     
     
     
+    
+    
+    
+    
+    aKeepAlive->LoadedOrigins()->AddTentative(principal);
+
     nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-        __func__, [contentHandle = RefPtr{aKeepAlive.get()},
-                   principalInfo = aData.principalInfo()] {
+        __func__, [contentHandle = RefPtr{aKeepAlive.get()}, principal] {
           AssertIsOnMainThread();
           if (RefPtr<ContentParent> contentParent =
                   contentHandle->GetContentParent()) {
             TransmitPermissionsAndCookiesAndBlobURLsForPrincipalInfo(
-                contentParent, principalInfo);
+                contentParent, principal);
           }
         });
 

@@ -1575,7 +1575,8 @@ void ExternalEngineStateMachine::ReportTelemetry(const MediaResult& aError) {
   
   
   
-  const nsCString adapterVendorID = gfx::gfxVars::AdapterVendorID();
+  const nsCString adapterVendorID = gfx::gfxVars::
+      AdapterVendorID();  
   if (!adapterVendorID.IsEmpty()) {
     extraData.adapterVendorId = Some(adapterVendorID);
     extraData.adapterDeviceId = Some(gfx::gfxVars::AdapterDeviceID());

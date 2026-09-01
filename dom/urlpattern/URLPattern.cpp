@@ -2,7 +2,6 @@
 
 
 
-
 #include "URLPattern.h"
 
 #include "mozilla/ErrorResult.h"
@@ -167,7 +166,7 @@ void ConvertGroupsToRecord(
     Optional<Record<nsCString, OwningUTF8StringOrUndefined>>& aRes) {
   Record<nsCString, OwningUTF8StringOrUndefined> record;
   for (auto iter = aGroups.ConstIter(); !iter.Done(); iter.Next()) {
-    MaybeString s = iter.Data();
+    const MaybeString& s = iter.Data();
     OwningUTF8StringOrUndefined value;
     value.SetUndefined();  
     if (s.valid) {

@@ -1502,7 +1502,7 @@ nsresult GeckoMediaPluginServiceParent::GetNodeId(
     return NS_OK;
   }
   
-  NodeIdParts nodeIdParts{aNodeIdVariant.get_NodeIdParts()};
+  const NodeIdParts& nodeIdParts = aNodeIdVariant.get_NodeIdParts();
   return GetNodeId(nodeIdParts.mOrigin(), nodeIdParts.mTopLevelOrigin(),
                    nodeIdParts.mGMPName(), aOutId);
 }

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GetFilesTask.h"
 
 #include "HTMLSplitOnSpacesTokenizer.h"
@@ -100,7 +98,7 @@ void GetFilesTaskChild::SetSuccessRequestResult(
   MOZ_ASSERT(aValue.type() ==
              FileSystemResponseValue::TFileSystemFilesResponse);
 
-  FileSystemFilesResponse r = aValue;
+  const FileSystemFilesResponse& r = aValue;
 
   if (!mTargetData.SetLength(r.data().Length(), mozilla::fallible_t())) {
     aRv.Throw(NS_ERROR_OUT_OF_MEMORY);

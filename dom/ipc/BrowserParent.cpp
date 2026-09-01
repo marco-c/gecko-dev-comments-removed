@@ -1211,7 +1211,8 @@ void BrowserParent::HandleAccessKey(const WidgetKeyboardEvent& aEvent,
     
     
     
-    WidgetKeyboardEvent localEvent(aEvent);
+    WidgetKeyboardEvent localEvent(
+        aEvent);  
     RequestingAccessKeyEventData::Set(localEvent);
     (void)SendHandleAccessKey(localEvent, aCharCodes);
   }

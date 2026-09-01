@@ -2414,7 +2414,8 @@ void BrowserChild::RequestEditCommands(NativeKeyBindingsType aType,
 
   
   
-  WidgetKeyboardEvent localEvent(aEvent);
+  WidgetKeyboardEvent localEvent(
+      aEvent);  
   SendRequestNativeKeyBindings(aType, localEvent, &aCommands);
 }
 
