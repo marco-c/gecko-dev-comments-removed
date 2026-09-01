@@ -801,7 +801,9 @@ def test_aggregate_end_to_end_offline(monkeypatch, tmp_path):
     )
 
     
-    assert set(profile.keys()) == {"threads", "usageHoursByDate", "uuid"}
+    
+    assert set(profile.keys()) == {"threads", "usageHoursByDate", "uuid", "leafGroups"}
+    assert profile["leafGroups"] == {"Gecko": []}
     assert profile["usageHoursByDate"] == {"20260502": 1.0}
     assert len(profile["threads"]) == 1
     assert profile["threads"][0]["name"] == "Gecko"

@@ -29,6 +29,7 @@ from datetime import timedelta
 
 from client_metrics import HyperLogLog
 from heuristics import apply_hang_signature_heuristics
+from leaf_grouping import compute_leaf_groups
 from profile_processor import ProfileProcessor
 from symbolication import UNSYMBOLICATED, symbolicate_modules
 
@@ -68,6 +69,10 @@ DEFAULT_CONFIG = {
     
     
     "client_metrics": False,
+    
+    
+    
+    "leaf_grouping": True,
 }
 
 
@@ -670,6 +675,13 @@ def aggregate(
 
     if affected_clients is not None:
         profile["affectedClients"] = affected_clients
+
+    
+    
+    if config["leaf_grouping"] and not config["split_threads_in_out_file"]:
+        profile["leafGroups"] = compute_leaf_groups(profile)
+        group_count = sum(len(groups) for groups in profile["leafGroups"].values())
+        _phase(f"Grouped near-duplicates into {group_count} groups.")
 
     base = "hangs_" + output_tag
     written = write_file(f"{base}_{date_str}", profile, output_dir)
