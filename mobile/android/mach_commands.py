@@ -139,25 +139,12 @@ def android_checkstyle_REMOVED(command_context):
 
 
 
-
-GRADLE_DEPENDENCY_PASSES = (
-    (".", ()),
-    ("mobile/android/fenix", ()),
-    ("mobile/android/focus-android", ()),
-    ("mobile/android/android-components", ()),
-)
-
-
-
-
-GECKO_GRADLE_PROJECTS = (
-    "annotations",
-    "geckoview",
-    "geckoview_example",
-    "messaging_example",
-    "port_messaging_example",
-    "test_runner",
-)
+GRADLE_DEPENDENCY_PASSES = [
+    ".",
+    "mobile/android/fenix",
+    "mobile/android/focus-android",
+    "mobile/android/android-components",
+]
 
 
 
@@ -182,17 +169,9 @@ ENUMERATION_FLAGS = [
     """Collect Android Gradle dependencies.
     See http://firefox-source-docs.mozilla.org/build/buildsystem/toolchains.html#firefox-for-android-with-gradle""",  
 )
-@CommandArgument(
-    "--gecko-only",
-    action="store_true",
-    help="Only enumerate the Gecko-side projects of the top-level build, for "
-    "the geckoview-lite artifact.",
-)
 @CommandArgument("args", nargs=argparse.REMAINDER)
-def android_gradle_dependencies(command_context, gecko_only, args):
+def android_gradle_dependencies(command_context, args):
     from pathlib import Path
-
-    passes = ((".", GECKO_GRADLE_PROJECTS),) if gecko_only else GRADLE_DEPENDENCY_PASSES
 
     topsrcdir = Path(command_context.topsrcdir)
     
@@ -202,15 +181,14 @@ def android_gradle_dependencies(command_context, gecko_only, args):
         shutil.rmtree(inventories)
     inventories.mkdir(parents=True)
 
-    for root, projects in passes:
+    for root in GRADLE_DEPENDENCY_PASSES:
         
         inventory = topsrcdir / root / "gradle" / DEPENDENCY_INVENTORY
         inventory.unlink(missing_ok=True)
 
-        tasks = [f":{project}:help" for project in projects] or ["help"]
         ret = gradle(
             command_context,
-            tasks + ENUMERATION_FLAGS + args,
+            ["help"] + ENUMERATION_FLAGS + args,
             verbose=True,
             topsrcdir=str(topsrcdir / root),
         )
