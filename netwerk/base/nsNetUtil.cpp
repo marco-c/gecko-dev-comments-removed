@@ -4152,7 +4152,8 @@ void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
   }
   nsAutoCString scheme;
   aURI->GetScheme(scheme);
-  if (!scheme.EqualsLiteral("chrome") && !scheme.EqualsLiteral("resource")) {
+  if (!scheme.EqualsLiteral("chrome") && !scheme.EqualsLiteral("resource") &&
+      !scheme.EqualsLiteral("moz-src")) {
     return;
   }
   nsAutoCString host;
@@ -4219,13 +4220,6 @@ void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
   
   
   if (spec.Find("backgroundtasks") != kNotFound) {
-    return;
-  }
-
-  
-  
-  if (spec.EqualsLiteral("moz-src:///browser/components/sessionstore/"
-                         "SessionStoreFunctions.sys.mjs")) {
     return;
   }
 
