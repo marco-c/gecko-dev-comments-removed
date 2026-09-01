@@ -62,12 +62,12 @@ function assertIsEmptyPanelOnboardingExtensions(win) {
   ok(BrowserTestUtils.isVisible(emptyStateBox), "Empty state is visible");
   is(
     emptyStateBox.querySelector("h2").getAttribute("data-l10n-id"),
-    "unified-extensions-empty-reason-zero-extensions-onboarding",
+    "unified-extensions-empty-reason-zero-extensions-onboarding2",
     "Has header when the user does not have any extensions installed"
   );
   is(
     emptyStateBox.querySelector("description").getAttribute("data-l10n-id"),
-    "unified-extensions-empty-content-explain-extensions-onboarding",
+    "unified-extensions-empty-content-explain-extensions-onboarding2",
     "Has description explaining extensions"
   );
 
@@ -214,66 +214,32 @@ add_task(async function test_button_opens_extlist_when_all_exts_pinned() {
 });
 
 add_task(
-  async function test_button_opens_extlist_when_no_extension_and_pane_disabled() {
+  async function test_no_discover_button_when_pane_disabled_and_no_extension() {
     
     
-
     await SpecialPowers.pushPrefEnv({
-      set: [
-        
-        ["extensions.ui.lastCategory", "addons://list/theme"],
-        ["extensions.getAddons.showPane", false],
-      ],
+      set: [["extensions.getAddons.showPane", false]],
     });
 
-    await BrowserTestUtils.withNewTab(
-      { gBrowser, url: "about:robots" },
-      async () => {
-        
-        await openExtensionsPanel(window);
+    await openExtensionsPanel(window);
 
-        assertIsEmptyPanelOnboardingExtensions(window);
-        const discoverButton = getDiscoverButton(window);
-
-        const tabPromise = BrowserTestUtils.waitForNewTab(
-          gBrowser,
-          "about:addons",
-          true
-        );
-
-        discoverButton.click();
-
-        const tab = await tabPromise;
-        is(
-          gBrowser.currentURI.spec,
-          "about:addons",
-          "expected about:addons to be open"
-        );
-        const managerWindow = gBrowser.selectedBrowser.contentWindow;
-        is(
-          managerWindow.gViewController.currentViewId,
-          "addons://list/extension",
-          "expected about:addons to show the extension list"
-        );
-        if (managerWindow.gViewController.isLoading) {
-          info("Waiting for about:addons to finish loading");
-          await BrowserTestUtils.waitForEvent(
-            managerWindow.document,
-            "view-loaded"
-          );
-        }
-        const amoLink = managerWindow.document.querySelector(
-          `#empty-addons-message a[data-l10n-name="get-extensions"]`
-        );
-        ok(amoLink, "Found link to get extensions");
-        is(
-          amoLink.href,
-          "https://addons.mozilla.org/en-US/firefox/",
-          "Link points to AMO, where the user can discover extensions"
-        );
-        BrowserTestUtils.removeTab(tab);
-      }
+    ok(
+      BrowserTestUtils.isVisible(getEmptyStateContainer(window)),
+      "Empty state is visible"
     );
+    ok(
+      !getDiscoverButton(window),
+      "'Discover extensions' button should not be present"
+    );
+    const manageExtensionsButton = getListView(window).querySelector(
+      "#unified-extensions-manage-extensions"
+    );
+    ok(
+      BrowserTestUtils.isVisible(manageExtensionsButton),
+      "'Manage Extensions' button should be visible"
+    );
+
+    await closeExtensionsPanel(window);
 
     await SpecialPowers.popPrefEnv();
   }

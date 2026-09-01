@@ -2497,6 +2497,14 @@ var gUnifiedExtensions = {
 
           
           
+          if (
+            !Services.prefs.getBoolPref("extensions.getAddons.showPane", true)
+          ) {
+            return;
+          }
+
+          
+          
           
           const discoverButton = this._createDiscoverButton(panelview);
 
@@ -3244,18 +3252,7 @@ var gUnifiedExtensions = {
     );
 
     discoverButton.addEventListener("click", () => {
-      if (
-        
-        
-        
-        
-        
-        Services.prefs.getBoolPref("extensions.getAddons.showPane", true)
-      ) {
-        BrowserAddonUI.openAddonsMgr("addons://list/discover");
-      } else {
-        BrowserAddonUI.openAddonsMgr("addons://list/extension");
-      }
+      BrowserAddonUI.openAddonsMgr("addons://list/discover");
       
       
     });
