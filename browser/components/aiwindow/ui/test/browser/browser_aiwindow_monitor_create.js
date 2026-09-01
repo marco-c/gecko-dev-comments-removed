@@ -108,7 +108,18 @@ add_task(async function test_dialog_opens() {
       Assert.ok(dialog.open, "Dialog is open");
 
       
-      const title = dialog.querySelector(".modal-title");
+      const card = dialog.querySelector("agent-monitor-item");
+      Assert.ok(card, "Create card exists");
+      Assert.equal(
+        card.getAttribute("mode"),
+        "create",
+        "Card is in create mode"
+      );
+      await (card.wrappedJSObject || card).updateComplete;
+      const cardShadow = card.shadowRoot;
+
+      
+      const title = cardShadow.querySelector(".monitor-card-state-title");
       Assert.ok(title, "Dialog title element exists");
       Assert.ok(
         title.hasAttribute("data-l10n-id"),
@@ -116,13 +127,11 @@ add_task(async function test_dialog_opens() {
       );
 
       
-      const nameInput = dialog.querySelector("moz-input-text");
-      const alertTextarea = dialog.querySelector("moz-textarea");
-      const pageInput = dialog.querySelector("moz-input-url");
-      const cancelButton = dialog.querySelector(
-        'moz-button[data-l10n-id="ai-tasks-alert-cancel-button"]'
-      );
-      const startButton = dialog.querySelector(
+      const nameInput = cardShadow.querySelector("moz-input-text");
+      const alertTextarea = cardShadow.querySelector("moz-textarea");
+      const pageInput = cardShadow.querySelector("moz-input-url");
+      const cancelButton = cardShadow.querySelector("#cancel-create-button");
+      const startButton = cardShadow.querySelector(
         'moz-button[data-l10n-id="ai-tasks-alert-create-button"]'
       );
 
@@ -184,11 +193,24 @@ add_task(async function test_form_validation() {
       await new Promise(resolve => content.setTimeout(resolve, 100));
 
       const dialog = aiTasks.shadowRoot.querySelector("dialog");
-      const nameInput = dialog.querySelector("moz-input-text");
-      const alertTextarea = dialog.querySelector("moz-textarea");
-      const pageInput = dialog.querySelector("moz-input-url");
-      const addPageButton = dialog.querySelector(".add-page-btn");
-      const startButton = dialog.querySelector(
+      const card = dialog.querySelector("agent-monitor-item");
+      const cardJS = card.wrappedJSObject || card;
+      await cardJS.updateComplete;
+      const cardShadow = card.shadowRoot;
+
+      
+      
+      const setInputValue = (element, value) => {
+        const elementJS = element.wrappedJSObject || element;
+        elementJS.value = value;
+        element.dispatchEvent(new content.Event("input", { bubbles: true }));
+      };
+
+      const nameInput = cardShadow.querySelector("moz-input-text");
+      const alertTextarea = cardShadow.querySelector("moz-textarea");
+      const pageInput = cardShadow.querySelector("moz-input-url");
+      const addPageButton = cardShadow.querySelector(".add-page-btn");
+      const startButton = cardShadow.querySelector(
         'moz-button[data-l10n-id="ai-tasks-alert-create-button"]'
       );
 
@@ -199,14 +221,8 @@ add_task(async function test_form_validation() {
       );
 
       
-      const aiTasksJS = aiTasks.wrappedJSObject || aiTasks;
-
-      
-      nameInput.value = "Test Monitor";
-      nameInput.dispatchEvent(new content.Event("input", { bubbles: true }));
-
-      
-      aiTasksJS.monitorName = "Test Monitor";
+      setInputValue(nameInput, "Test Monitor");
+      await cardJS.updateComplete;
 
       
       Assert.ok(
@@ -215,13 +231,8 @@ add_task(async function test_form_validation() {
       );
 
       
-      alertTextarea.value = "Watch for price changes";
-      alertTextarea.dispatchEvent(
-        new content.Event("input", { bubbles: true })
-      );
-
-      
-      aiTasksJS.alertDescription = "Watch for price changes";
+      setInputValue(alertTextarea, "Watch for price changes");
+      await cardJS.updateComplete;
 
       
       Assert.ok(
@@ -230,14 +241,8 @@ add_task(async function test_form_validation() {
       );
 
       
-      pageInput.value = "https://example.com";
-      pageInput.dispatchEvent(new content.Event("input", { bubbles: true }));
-
-      
-      aiTasksJS.pendingUrl = "https://example.com";
-
-      
-      await new Promise(resolve => content.setTimeout(resolve, 50));
+      setInputValue(pageInput, "https://example.com");
+      await cardJS.updateComplete;
 
       
       addPageButton.click();
@@ -245,7 +250,7 @@ add_task(async function test_form_validation() {
       
       await ContentTaskUtils.waitForCondition(
         () => {
-          const pills = aiTasks.shadowRoot.querySelectorAll(".page-pill");
+          const pills = cardShadow.querySelectorAll(".page-pill");
           return pills && Boolean(pills.length);
         },
         "URL pill should appear after adding URL",
@@ -254,7 +259,7 @@ add_task(async function test_form_validation() {
       );
 
       
-      const pagePill = aiTasks.shadowRoot.querySelector(".page-pill");
+      const pagePill = cardShadow.querySelector(".page-pill");
       Assert.ok(pagePill, "URL pill should exist");
 
       
@@ -273,10 +278,7 @@ add_task(async function test_form_validation() {
       );
 
       
-      const cancelButton = dialog.querySelector(
-        'moz-button[data-l10n-id="ai-tasks-alert-cancel-button"]'
-      );
-      cancelButton.click();
+      cardShadow.querySelector("#cancel-create-button").click();
       await new Promise(resolve => content.setTimeout(resolve, 100));
     });
   } finally {
@@ -333,27 +335,30 @@ add_task(async function test_monitor_creation() {
         );
 
         const dialog = aiTasks.shadowRoot.querySelector("dialog");
-        const nameInput = dialog.querySelector("moz-input-text");
-        const alertTextarea = dialog.querySelector("moz-textarea");
-        const pageInput = dialog.querySelector("moz-input-url");
-        const startButton = dialog.querySelector(
+        const card = dialog.querySelector("agent-monitor-item");
+        const cardJS = card.wrappedJSObject || card;
+        await cardJS.updateComplete;
+        const cardShadow = card.shadowRoot;
+
+        
+        
+        const setInputValue = (element, value) => {
+          const elementJS = element.wrappedJSObject || element;
+          elementJS.value = value;
+          element.dispatchEvent(new content.Event("input", { bubbles: true }));
+        };
+
+        const nameInput = cardShadow.querySelector("moz-input-text");
+        const alertTextarea = cardShadow.querySelector("moz-textarea");
+        const pageInput = cardShadow.querySelector("moz-input-url");
+        const startButton = cardShadow.querySelector(
           'moz-button[data-l10n-id="ai-tasks-alert-create-button"]'
         );
 
         
-        nameInput.value = "Product Monitor";
-        nameInput.dispatchEvent(new content.Event("input", { bubbles: true }));
-        aiTasksJS.monitorName = "Product Monitor";
-
-        alertTextarea.value = "Test monitor for price changes";
-        alertTextarea.dispatchEvent(
-          new content.Event("input", { bubbles: true })
-        );
-        aiTasksJS.alertDescription = "Test monitor for price changes";
-
-        pageInput.value = "https://example.com/product";
-        pageInput.dispatchEvent(new content.Event("input", { bubbles: true }));
-        aiTasksJS.pendingUrl = "https://example.com/product";
+        setInputValue(nameInput, "Product Monitor");
+        setInputValue(alertTextarea, "Test monitor for price changes");
+        setInputValue(pageInput, "https://example.com/product");
 
         
         pageInput.dispatchEvent(
@@ -365,7 +370,7 @@ add_task(async function test_monitor_creation() {
 
         
         await ContentTaskUtils.waitForCondition(() => {
-          const pills = aiTasks.shadowRoot.querySelectorAll(".page-pill");
+          const pills = cardShadow.querySelectorAll(".page-pill");
           return pills && Boolean(pills.length);
         }, "URL pill should appear");
 
