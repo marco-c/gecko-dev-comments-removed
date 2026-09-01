@@ -1920,19 +1920,16 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
   }
   renderOrderedContent(content) {
     const elements = [];
-    for (const [index, item] of content.entries()) {
+    for (const item of content) {
       switch (item.type) {
         case "text":
           elements.push(react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_LinkParagraph__WEBPACK_IMPORTED_MODULE_9__.LinkParagraph, {
-            key: index,
             text_content: item,
             handleAction: this.props.handleAction
           }));
           break;
         case "image":
-          elements.push(react__WEBPACK_IMPORTED_MODULE_0___default().createElement((react__WEBPACK_IMPORTED_MODULE_0___default().Fragment), {
-            key: index
-          }, this.renderPicture({
+          elements.push(this.renderPicture({
             imageURL: item.url,
             darkModeImageURL: item.darkModeImageURL,
             height: item.height,
@@ -1940,7 +1937,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
             alt: item.alt_text,
             marginInline: item.marginInline,
             className: "inline-image"
-          })));
+          }));
       }
     }
     return react__WEBPACK_IMPORTED_MODULE_0___default().createElement((react__WEBPACK_IMPORTED_MODULE_0___default().Fragment), null, elements);
@@ -4538,28 +4535,6 @@ function renderSegment(segment, index, handleAction) {
       style: (0,_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.pickConfigurableStyles)(segment)
     });
   }
-  if (segment?.action) {
-    return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("a", {
-      key: index,
-      href: segment.href,
-      value: segment.id,
-      role: segment.href ? null : "link",
-      className: "text-link",
-      tabIndex: "0",
-      onClick: event => {
-        event.preventDefault();
-        handleAction(event, segment.action);
-      },
-      onKeyPress: event => {
-        if (event.key === "Enter" && !event.repeat) {
-          event.preventDefault();
-          handleAction(event, segment.action);
-        }
-      }
-    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-      text: segment
-    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", null)));
-  }
   if (segment?.href) {
     const action = {
       type: "OPEN_URL",
@@ -5604,52 +5579,6 @@ for (let i = MULTI_SELECT_STYLES.length - 1; i >= 0; i--) {
   }
 }
 const MULTI_SELECT_ICON_STYLES = [..._MSLocalized__WEBPACK_IMPORTED_MODULE_1__.CONFIGURABLE_STYLES, "width", "height", "background", "backgroundColor", "backgroundImage", "backgroundSize", "backgroundPosition", "backgroundRepeat", "backgroundOrigin", "backgroundClip", "border", "borderRadius", "appearance", "fill", "stroke", "outline", "outlineOffset", "boxShadow"];
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const UncheckedNotice = ({
-  notice,
-  isShown
-}) => {
-  const {
-    title,
-    subtitle,
-    iconURL
-  } = notice;
-  return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-    className: "multi-select-notice-region",
-    role: "status"
-  }, isShown ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-    className: "multi-select-notice"
-  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-    className: "multi-select-notice-icon",
-    style: iconURL ? {
-      backgroundImage: `url("${iconURL}")`
-    } : null
-  }), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-    className: "multi-select-notice-content"
-  }, title ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-    text: title
-  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("p", {
-    className: "multi-select-notice-title"
-  })) : null, subtitle ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-    text: subtitle
-  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("p", {
-    className: "multi-select-notice-subtitle"
-  })) : null)) : null);
-};
 const MultiSelect = ({
   content,
   screenMultiSelects,
@@ -5771,56 +5700,43 @@ const MultiSelect = ({
     group,
     style,
     pickerEmoji,
-    pickerEmojiBackgroundColor,
-    uncheckedNotice
-  }) => {
-    const checkboxContainer = react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      key: id + label,
-      className: "checkbox-container multi-select-item",
-      style: _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.getValidStyle(style, MULTI_SELECT_STYLES),
-      tabIndex: isPicker ? "0" : null,
-      onClick: isPicker ? handleCheckboxContainerInteraction : null,
-      onKeyDown: isPicker ? handleCheckboxContainerInteraction : null,
-      role: isPicker ? "checkbox" : null,
-      "aria-checked": isPicker ? activeMultiSelect?.includes(id) : null
-    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("input", {
-      type: type 
-      ,
-      id: id,
-      value: id,
-      name: group,
-      checked: activeMultiSelect?.includes(id),
-      style: _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.getValidStyle(icon?.style, MULTI_SELECT_ICON_STYLES),
-      onChange: handleChange,
-      ref: el => refs.current[id] = el,
-      "aria-describedby": description ? `${id}-description` : null,
-      "aria-labelledby": description ? `${id}-label` : null,
-      tabIndex: isPicker ? "-1" : "0"
-    }), isPicker && react__WEBPACK_IMPORTED_MODULE_0___default().createElement(PickerIcon, {
-      emoji: pickerEmoji,
-      bgColor: pickerEmojiBackgroundColor,
-      isChecked: activeMultiSelect?.includes(id)
-    }), label ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-      text: label
-    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("label", {
-      id: `${id}-label`,
-      htmlFor: id
-    })) : null, description ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-      text: description
-    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("p", {
-      id: `${id}-description`
-    })) : null);
-    if (!uncheckedNotice) {
-      return checkboxContainer;
-    }
-    return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      className: "multi-select-item-group",
-      key: id + label
-    }, checkboxContainer, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(UncheckedNotice, {
-      notice: uncheckedNotice,
-      isShown: !activeMultiSelect?.includes(id)
-    }));
-  }), content.tiles.footer ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+    pickerEmojiBackgroundColor
+  }) => react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    key: id + label,
+    className: "checkbox-container multi-select-item",
+    style: _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.getValidStyle(style, MULTI_SELECT_STYLES),
+    tabIndex: isPicker ? "0" : null,
+    onClick: isPicker ? handleCheckboxContainerInteraction : null,
+    onKeyDown: isPicker ? handleCheckboxContainerInteraction : null,
+    role: isPicker ? "checkbox" : null,
+    "aria-checked": isPicker ? activeMultiSelect?.includes(id) : null
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("input", {
+    type: type 
+    ,
+    id: id,
+    value: id,
+    name: group,
+    checked: activeMultiSelect?.includes(id),
+    style: _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.getValidStyle(icon?.style, MULTI_SELECT_ICON_STYLES),
+    onChange: handleChange,
+    ref: el => refs.current[id] = el,
+    "aria-describedby": description ? `${id}-description` : null,
+    "aria-labelledby": description ? `${id}-label` : null,
+    tabIndex: isPicker ? "-1" : "0"
+  }), isPicker && react__WEBPACK_IMPORTED_MODULE_0___default().createElement(PickerIcon, {
+    emoji: pickerEmoji,
+    bgColor: pickerEmojiBackgroundColor,
+    isChecked: activeMultiSelect?.includes(id)
+  }), label ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+    text: label
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("label", {
+    id: `${id}-label`,
+    htmlFor: id
+  })) : null, description ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+    text: description
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("p", {
+    id: `${id}-description`
+  })) : null)), content.tiles.footer ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
     text: items.some(i => activeMultiSelect?.includes(i.id)) ? content.tiles.footer.checkedLabel : content.tiles.footer.unCheckAllLabel
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("h2", {
     id: "multi-stage-multi-select-footer-label"

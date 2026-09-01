@@ -2270,28 +2270,6 @@ function renderSegment(segment, index, handleAction) {
       style: pickConfigurableStyles(segment)
     });
   }
-  if (segment?.action) {
-    return external_React_default().createElement("a", {
-      key: index,
-      href: segment.href,
-      value: segment.id,
-      role: segment.href ? null : "link",
-      className: "text-link",
-      tabIndex: "0",
-      onClick: event => {
-        event.preventDefault();
-        handleAction(event, segment.action);
-      },
-      onKeyPress: event => {
-        if (event.key === "Enter" && !event.repeat) {
-          event.preventDefault();
-          handleAction(event, segment.action);
-        }
-      }
-    }, external_React_default().createElement(Localized, {
-      text: segment
-    }, external_React_default().createElement("span", null)));
-  }
   if (segment?.href) {
     const action = {
       type: "OPEN_URL",
@@ -2874,52 +2852,6 @@ for (let i = MULTI_SELECT_STYLES.length - 1; i >= 0; i--) {
   }
 }
 const MULTI_SELECT_ICON_STYLES = [...CONFIGURABLE_STYLES, "width", "height", "background", "backgroundColor", "backgroundImage", "backgroundSize", "backgroundPosition", "backgroundRepeat", "backgroundOrigin", "backgroundClip", "border", "borderRadius", "appearance", "fill", "stroke", "outline", "outlineOffset", "boxShadow"];
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const UncheckedNotice = ({
-  notice,
-  isShown
-}) => {
-  const {
-    title,
-    subtitle,
-    iconURL
-  } = notice;
-  return external_React_default().createElement("div", {
-    className: "multi-select-notice-region",
-    role: "status"
-  }, isShown ? external_React_default().createElement("div", {
-    className: "multi-select-notice"
-  }, external_React_default().createElement("div", {
-    className: "multi-select-notice-icon",
-    style: iconURL ? {
-      backgroundImage: `url("${iconURL}")`
-    } : null
-  }), external_React_default().createElement("div", {
-    className: "multi-select-notice-content"
-  }, title ? external_React_default().createElement(Localized, {
-    text: title
-  }, external_React_default().createElement("p", {
-    className: "multi-select-notice-title"
-  })) : null, subtitle ? external_React_default().createElement(Localized, {
-    text: subtitle
-  }, external_React_default().createElement("p", {
-    className: "multi-select-notice-subtitle"
-  })) : null)) : null);
-};
 const MultiSelect = ({
   content,
   screenMultiSelects,
@@ -3041,56 +2973,43 @@ const MultiSelect = ({
     group,
     style,
     pickerEmoji,
-    pickerEmojiBackgroundColor,
-    uncheckedNotice
-  }) => {
-    const checkboxContainer = external_React_default().createElement("div", {
-      key: id + label,
-      className: "checkbox-container multi-select-item",
-      style: MultiStageUtils.getValidStyle(style, MULTI_SELECT_STYLES),
-      tabIndex: isPicker ? "0" : null,
-      onClick: isPicker ? handleCheckboxContainerInteraction : null,
-      onKeyDown: isPicker ? handleCheckboxContainerInteraction : null,
-      role: isPicker ? "checkbox" : null,
-      "aria-checked": isPicker ? activeMultiSelect?.includes(id) : null
-    }, external_React_default().createElement("input", {
-      type: type 
-      ,
-      id: id,
-      value: id,
-      name: group,
-      checked: activeMultiSelect?.includes(id),
-      style: MultiStageUtils.getValidStyle(icon?.style, MULTI_SELECT_ICON_STYLES),
-      onChange: handleChange,
-      ref: el => refs.current[id] = el,
-      "aria-describedby": description ? `${id}-description` : null,
-      "aria-labelledby": description ? `${id}-label` : null,
-      tabIndex: isPicker ? "-1" : "0"
-    }), isPicker && external_React_default().createElement(PickerIcon, {
-      emoji: pickerEmoji,
-      bgColor: pickerEmojiBackgroundColor,
-      isChecked: activeMultiSelect?.includes(id)
-    }), label ? external_React_default().createElement(Localized, {
-      text: label
-    }, external_React_default().createElement("label", {
-      id: `${id}-label`,
-      htmlFor: id
-    })) : null, description ? external_React_default().createElement(Localized, {
-      text: description
-    }, external_React_default().createElement("p", {
-      id: `${id}-description`
-    })) : null);
-    if (!uncheckedNotice) {
-      return checkboxContainer;
-    }
-    return external_React_default().createElement("div", {
-      className: "multi-select-item-group",
-      key: id + label
-    }, checkboxContainer, external_React_default().createElement(UncheckedNotice, {
-      notice: uncheckedNotice,
-      isShown: !activeMultiSelect?.includes(id)
-    }));
-  }), content.tiles.footer ? external_React_default().createElement(Localized, {
+    pickerEmojiBackgroundColor
+  }) => external_React_default().createElement("div", {
+    key: id + label,
+    className: "checkbox-container multi-select-item",
+    style: MultiStageUtils.getValidStyle(style, MULTI_SELECT_STYLES),
+    tabIndex: isPicker ? "0" : null,
+    onClick: isPicker ? handleCheckboxContainerInteraction : null,
+    onKeyDown: isPicker ? handleCheckboxContainerInteraction : null,
+    role: isPicker ? "checkbox" : null,
+    "aria-checked": isPicker ? activeMultiSelect?.includes(id) : null
+  }, external_React_default().createElement("input", {
+    type: type 
+    ,
+    id: id,
+    value: id,
+    name: group,
+    checked: activeMultiSelect?.includes(id),
+    style: MultiStageUtils.getValidStyle(icon?.style, MULTI_SELECT_ICON_STYLES),
+    onChange: handleChange,
+    ref: el => refs.current[id] = el,
+    "aria-describedby": description ? `${id}-description` : null,
+    "aria-labelledby": description ? `${id}-label` : null,
+    tabIndex: isPicker ? "-1" : "0"
+  }), isPicker && external_React_default().createElement(PickerIcon, {
+    emoji: pickerEmoji,
+    bgColor: pickerEmojiBackgroundColor,
+    isChecked: activeMultiSelect?.includes(id)
+  }), label ? external_React_default().createElement(Localized, {
+    text: label
+  }, external_React_default().createElement("label", {
+    id: `${id}-label`,
+    htmlFor: id
+  })) : null, description ? external_React_default().createElement(Localized, {
+    text: description
+  }, external_React_default().createElement("p", {
+    id: `${id}-description`
+  })) : null)), content.tiles.footer ? external_React_default().createElement(Localized, {
     text: items.some(i => activeMultiSelect?.includes(i.id)) ? content.tiles.footer.checkedLabel : content.tiles.footer.unCheckAllLabel
   }, external_React_default().createElement("h2", {
     id: "multi-stage-multi-select-footer-label"
@@ -4824,19 +4743,16 @@ class ProtonScreen extends (external_React_default()).PureComponent {
   }
   renderOrderedContent(content) {
     const elements = [];
-    for (const [index, item] of content.entries()) {
+    for (const item of content) {
       switch (item.type) {
         case "text":
           elements.push(external_React_default().createElement(LinkParagraph, {
-            key: index,
             text_content: item,
             handleAction: this.props.handleAction
           }));
           break;
         case "image":
-          elements.push(external_React_default().createElement((external_React_default()).Fragment, {
-            key: index
-          }, this.renderPicture({
+          elements.push(this.renderPicture({
             imageURL: item.url,
             darkModeImageURL: item.darkModeImageURL,
             height: item.height,
@@ -4844,7 +4760,7 @@ class ProtonScreen extends (external_React_default()).PureComponent {
             alt: item.alt_text,
             marginInline: item.marginInline,
             className: "inline-image"
-          })));
+          }));
       }
     }
     return external_React_default().createElement((external_React_default()).Fragment, null, elements);
