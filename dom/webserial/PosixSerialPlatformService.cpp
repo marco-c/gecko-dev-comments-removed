@@ -13,6 +13,7 @@
 #include <unistd.h>
 
 #include "PosixSerialParityDecodeStream.h"
+#include "Serial.h"
 #include "SerialLogging.h"
 #include "mozilla/AsyncPlatformPipes.h"
 #include "mozilla/Maybe.h"
@@ -30,6 +31,8 @@
 #  include <IOKit/serial/IOSerialKeys.h>
 #  include <IOKit/serial/ioss.h>
 #  include <IOKit/usb/IOUSBLib.h>
+
+#  include "MacBluetoothServiceClassId.h"
 #  ifndef kIOMainPortDefault
 #    define kIOMainPortDefault kIOMasterPortDefault
 #  endif
@@ -226,12 +229,17 @@ nsresult PosixSerialPlatformService::EnumeratePortsImpl(
   while ((serialService = IOIteratorNext(serialPortIterator))) {
     IPCSerialPortInfo info;
     if (ExtractDeviceInfo(serialService, info)) {
-      MOZ_LOG(gWebSerialLog, LogLevel::Debug,
-              ("PosixSerialPlatformService[%p]::EnumeratePorts found port: "
-               "path=%s, friendlyName=%s, VID=0x%04x, PID=0x%04x",
-               this, NS_ConvertUTF16toUTF8(info.path()).get(),
-               NS_ConvertUTF16toUTF8(info.friendlyName()).get(),
-               info.usbVendorId().valueOr(0), info.usbProductId().valueOr(0)));
+      MOZ_LOG(
+          gWebSerialLog, LogLevel::Debug,
+          ("PosixSerialPlatformService[%p]::EnumeratePorts found port: "
+           "path=%s, friendlyName=%s, VID=0x%04x, PID=0x%04x, BT:%s",
+           this, NS_ConvertUTF16toUTF8(info.path()).get(),
+           NS_ConvertUTF16toUTF8(info.friendlyName()).get(),
+           info.usbVendorId().valueOr(0), info.usbProductId().valueOr(0),
+           info.bluetoothServiceClassId().isSome()
+               ? NS_ConvertUTF16toUTF8(info.bluetoothServiceClassId().value())
+                     .get()
+               : "none"));
 
       aPorts.AppendElement(std::move(info));
     }
@@ -346,12 +354,17 @@ nsresult PosixSerialPlatformService::EnumeratePortsImpl(
       IPCSerialPortInfo info;
       PopulatePortInfoFromUdev(dev, devnode, info);
 
-      MOZ_LOG(gWebSerialLog, LogLevel::Debug,
-              ("PosixSerialPlatformService[%p]::EnumeratePorts found port: "
-               "path=%s, friendlyName=%s, VID=0x%04x, PID=0x%04x",
-               this, NS_ConvertUTF16toUTF8(info.path()).get(),
-               NS_ConvertUTF16toUTF8(info.friendlyName()).get(),
-               info.usbVendorId().valueOr(0), info.usbProductId().valueOr(0)));
+      MOZ_LOG(
+          gWebSerialLog, LogLevel::Debug,
+          ("PosixSerialPlatformService[%p]::EnumeratePorts found port: "
+           "path=%s, friendlyName=%s, VID=0x%04x, PID=0x%04x, BT:%s",
+           this, NS_ConvertUTF16toUTF8(info.path()).get(),
+           NS_ConvertUTF16toUTF8(info.friendlyName()).get(),
+           info.usbVendorId().valueOr(0), info.usbProductId().valueOr(0),
+           info.bluetoothServiceClassId().isSome()
+               ? NS_ConvertUTF16toUTF8(info.bluetoothServiceClassId().value())
+                     .get()
+               : "none"));
 
       aPorts.AppendElement(std::move(info));
     }
@@ -407,6 +420,11 @@ nsresult PosixSerialPlatformService::EnumeratePortsImpl(
         info.path() = devpathUtf16;
         info.friendlyName() =
             NS_ConvertUTF8toUTF16(nsDependentCString(ent->d_name));
+        if (strncmp(devpath.get(), "/dev/rfcomm", strlen("/dev/rfcomm")) == 0) {
+          
+          info.bluetoothServiceClassId() =
+              Some(nsString(kBluetoothSerialPortProfileUUID));
+        }
       }
       aPorts.AppendElement(std::move(info));
     }
@@ -1326,16 +1344,34 @@ void PosixSerialPlatformService::PopulatePortInfoFromUdev(
         NS_ConvertUTF8toUTF16(basename ? basename + 1 : aDevnode);
   }
 
-  const char* vendorIdStr =
-      mUdevLib->udev_device_get_property_value(aDev, "ID_VENDOR_ID");
-  const char* productIdStr =
-      mUdevLib->udev_device_get_property_value(aDev, "ID_MODEL_ID");
-  if (vendorIdStr && productIdStr) {
-    unsigned int vendorId, productId;
-    if (sscanf(vendorIdStr, "%x", &vendorId) == 1 &&
-        sscanf(productIdStr, "%x", &productId) == 1) {
-      aPortInfo.usbVendorId() = Some(static_cast<uint16_t>(vendorId));
-      aPortInfo.usbProductId() = Some(static_cast<uint16_t>(productId));
+  const char* bus = mUdevLib->udev_device_get_property_value(aDev, "ID_BUS");
+  const bool isBluetooth =
+      (bus && strcmp(bus, "bluetooth") == 0) ||
+      strncmp(aDevnode, "/dev/rfcomm", strlen("/dev/rfcomm")) == 0;
+
+  if (isBluetooth) {
+    
+    
+    
+    
+    
+    
+    
+    
+    aPortInfo.bluetoothServiceClassId() =
+        Some(nsString(kBluetoothSerialPortProfileUUID));
+  } else {
+    const char* vendorIdStr =
+        mUdevLib->udev_device_get_property_value(aDev, "ID_VENDOR_ID");
+    const char* productIdStr =
+        mUdevLib->udev_device_get_property_value(aDev, "ID_MODEL_ID");
+    if (vendorIdStr && productIdStr) {
+      unsigned int vendorId, productId;
+      if (sscanf(vendorIdStr, "%x", &vendorId) == 1 &&
+          sscanf(productIdStr, "%x", &productId) == 1) {
+        aPortInfo.usbVendorId() = Some(static_cast<uint16_t>(vendorId));
+        aPortInfo.usbProductId() = Some(static_cast<uint16_t>(productId));
+      }
     }
   }
 }
@@ -1370,10 +1406,13 @@ void PosixSerialPlatformService::ReadUdevChange() {
     MOZ_LOG(
         gWebSerialLog, LogLevel::Info,
         ("PosixSerialPlatformService[%p]::ReadUdevChange device connected: "
-         "path=%s, friendlyName=%s, VID=0x%04x, PID=0x%04x",
+         "path=%s, friendlyName=%s, VID=0x%04x, PID=0x%04x, BT:%s",
          this, devnode, NS_ConvertUTF16toUTF8(portInfo.friendlyName()).get(),
-         portInfo.usbVendorId().valueOr(0),
-         portInfo.usbProductId().valueOr(0)));
+         portInfo.usbVendorId().valueOr(0), portInfo.usbProductId().valueOr(0),
+         portInfo.bluetoothServiceClassId().isSome()
+             ? NS_ConvertUTF16toUTF8(portInfo.bluetoothServiceClassId().value())
+                   .get()
+             : "none"));
 
     NotifyPortConnected(portInfo);
   } else if (strcmp(action, "remove") == 0) {
@@ -1485,6 +1524,41 @@ bool PosixSerialPlatformService::ExtractDeviceInfo(
     }
   }
 
+  
+  
+  
+  bool isBluetooth = false;
+  io_iterator_t parentIterator = 0;
+  if (IORegistryEntryCreateIterator(
+          device, kIOServicePlane,
+          kIORegistryIterateRecursively | kIORegistryIterateParents,
+          &parentIterator) == KERN_SUCCESS) {
+    io_object_t parent;
+    while (!isBluetooth && (parent = IOIteratorNext(parentIterator))) {
+      io_name_t className;
+      if (IOObjectGetClass(parent, className) == KERN_SUCCESS &&
+          strstr(className, "Bluetooth")) {
+        isBluetooth = true;
+      }
+      IOObjectRelease(parent);
+    }
+    IOObjectRelease(parentIterator);
+  }
+  if (isBluetooth) {
+    
+    
+    
+    
+    
+    Maybe<nsString> resolvedUuid = LookupMacBluetoothServiceClassId(device);
+    portInfo.bluetoothServiceClassId() =
+        Some(resolvedUuid.valueOr(nsString(kBluetoothSerialPortProfileUUID)));
+    
+    
+    portInfo.usbVendorId() = Nothing();
+    portInfo.usbProductId() = Nothing();
+  }
+
   CFTypeRef productNameRef = IORegistryEntrySearchCFProperty(
       device, kIOServicePlane, CFSTR(kUSBProductString), kCFAllocatorDefault,
       kIORegistryIterateRecursively | kIORegistryIterateParents);
@@ -1540,11 +1614,16 @@ void PosixSerialPlatformService::OnDeviceAdded(io_iterator_t iterator,
     if (ExtractDeviceInfo(device, portInfo)) {
       MOZ_LOG(gWebSerialLog, LogLevel::Debug,
               ("PosixSerialPlatformService[%p]::OnDeviceAdded skip=%d device "
-               ": path=%s, friendlyName=%s, VID=0x%04x, PID=0x%04x",
+               ": path=%s, friendlyName=%s, VID=0x%04x, PID=0x%04x, BT:%s",
                this, aSkipNotify, NS_ConvertUTF16toUTF8(portInfo.path()).get(),
                NS_ConvertUTF16toUTF8(portInfo.friendlyName()).get(),
                portInfo.usbVendorId().valueOr(0),
-               portInfo.usbProductId().valueOr(0)));
+               portInfo.usbProductId().valueOr(0),
+               portInfo.bluetoothServiceClassId().isSome()
+                   ? NS_ConvertUTF16toUTF8(
+                         portInfo.bluetoothServiceClassId().value())
+                         .get()
+                   : "none"));
       if (!aSkipNotify) {
         NotifyPortConnected(portInfo);
       }
