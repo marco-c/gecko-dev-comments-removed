@@ -1158,19 +1158,36 @@ where
     }
 
     fn maybe_gather_combining(&mut self) {
-        if self.upcoming.len() != 1 {
+        let Some(first) = self.upcoming.first().cloned() else {
+            return;
+        };
+        if !first.decomposition_starts_with_non_starter() {
             return;
         }
-        
-        
-        #[expect(clippy::indexing_slicing)]
-        if !self.upcoming[0].decomposition_starts_with_non_starter() {
+        if self.upcoming.len() == 1 {
+            
+            
+            self.upcoming.clear();
+            
+            
+            self.upcoming_normalized = true;
+            self.push_decomposed_combining(first);
+        } else {
+            
+            self.ensure_upcoming_normalized();
+            #[cfg(debug_assertions)]
+            {
+                if !self.iter_exhausted {
+                    
+                    debug_assert!(!self
+                        .upcoming
+                        .last()
+                        .unwrap()
+                        .decomposition_starts_with_non_starter());
+                }
+            }
             return;
         }
-        
-        
-        let first = self.upcoming.remove(0);
-        self.push_decomposed_combining(first);
         
         loop {
             if let Some(ch) = self.iter_next() {
@@ -1230,11 +1247,6 @@ where
 
         let mut unnormalized = core::mem::take(&mut self.upcoming);
         let last_index = unnormalized.len() - 1;
-        
-        #[expect(clippy::indexing_slicing)]
-        {
-            debug_assert!(!unnormalized[0].decomposition_starts_with_non_starter());
-        }
         let mut start_combining = 0;
         for (i, c) in unnormalized.drain(..).enumerate() {
             if c.decomposition_starts_with_non_starter() {
@@ -1252,6 +1264,7 @@ where
                 start_combining = self.push_decomposed_starter(c);
             }
         }
+        
         
         #[cfg(debug_assertions)]
         debug_assert!(self.iter_exhausted);
