@@ -17,6 +17,7 @@
 #include "nsCOMPtr.h"
 #include "nsRefPtrHashtable.h"
 #include "nsTArray.h"
+#include "nsTHashMap.h"
 
 class nsCycleCollectionNoteRootCallback;
 class nsIRunnable;
@@ -491,6 +492,14 @@ class CycleCollectedJSContext : dom::PerThreadAtomCache, public JS::JobQueue {
 
   
   
+  static constexpr size_t kRejectedPromiseIndexThreshold = 8;
+
+  
+  
+  nsTHashMap<nsUint64HashKey, size_t> mUncaughtRejectionIndices;
+
+  
+  
   
   JS::PersistentRooted<JS::GCVector<JSObject*, 0, js::SystemAllocPolicy>>
       mConsumedRejections;
@@ -614,7 +623,14 @@ class CycleCollectedJSContext : dom::PerThreadAtomCache, public JS::JobQueue {
   
   
   
-  typedef nsRefPtrHashtable<nsUint64HashKey, dom::Promise> PromiseHashtable;
+  struct PendingRejection {
+    RefPtr<dom::Promise> mPromise;
+    
+    
+    
+    size_t mIndex = 0;
+  };
+  typedef nsTHashMap<nsUint64HashKey, PendingRejection> PromiseHashtable;
   PromiseHashtable mPendingUnhandledRejections;
 
   class NotifyUnhandledRejections final : public CancelableRunnable {
