@@ -70,6 +70,10 @@ export type PageMetadata = {
   language: string;
   
   isReaderable: boolean;
+  
+  
+  
+  isGated: boolean;
 };
 
 
