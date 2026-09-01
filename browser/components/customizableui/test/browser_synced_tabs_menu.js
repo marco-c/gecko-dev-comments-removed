@@ -253,10 +253,6 @@ add_task(async function () {
 
 
 add_task(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["identity.tabs.remoteSVGIconDecoding", true]],
-  });
-
   gSync.updateAllUI({
     status: UIState.STATUS_SIGNED_IN,
     syncEnabled: true,
@@ -356,7 +352,7 @@ add_task(async function () {
   
   
   node = node.nextElementSibling;
-  is(node.nodeName, "hbox");
+  is(node.nodeName, "toolbaritem");
   
   let childNode = node.firstElementChild;
   is(childNode.getAttribute("itemtype"), "tab", "node is a tab");
@@ -364,14 +360,14 @@ add_task(async function () {
 
   
   node = node.nextElementSibling;
-  is(node.nodeName, "hbox");
+  is(node.nodeName, "toolbaritem");
   childNode = node.firstElementChild;
   is(childNode.getAttribute("itemtype"), "tab", "node is a tab");
   is(childNode.getAttribute("label"), "http://example.com/5");
 
   
   node = node.nextElementSibling;
-  is(node.nodeName, "hbox");
+  is(node.nodeName, "toolbaritem");
   childNode = node.firstElementChild;
   is(childNode.getAttribute("itemtype"), "tab", "node is a tab");
   is(childNode.getAttribute("label"), "http://example.com/1");
@@ -393,15 +389,14 @@ add_task(async function () {
   is(node.textContent, "My Other Desktop", "correct client");
   
   node = node.nextElementSibling;
-  is(node.nodeName, "hbox");
+  is(node.nodeName, "toolbaritem");
   childNode = node.firstElementChild;
   is(childNode.getAttribute("itemtype"), "tab", "node is a tab");
   is(childNode.getAttribute("label"), "http://example.com/6");
   
-  let image = new URL(childNode.getAttribute("image"));
-  is(image.protocol, "moz-remote-image:", "image protocol is correct");
+  
   is(
-    image.searchParams.get("url"),
+    childNode.getAttribute("image"),
     "http://example.com/favicon.ico",
     "image url is correct"
   );
@@ -516,7 +511,7 @@ add_task(async function () {
     is(node.textContent, "My Desktop", "correct client");
     for (let i = 0; i < tabsShownCount; i++) {
       node = node.nextElementSibling;
-      is(node.nodeName, "hbox");
+      is(node.nodeName, "toolbaritem");
       let childNode = node.firstElementChild;
       is(childNode.getAttribute("itemtype"), "tab", "node is a tab");
       is(
