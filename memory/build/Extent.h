@@ -17,7 +17,13 @@
 
 struct arena_t;
 
-enum ChunkType;
+enum ChunkType {
+  UNKNOWN_CHUNK,
+  ZEROED_CHUNK,    
+  ARENA_CHUNK,     
+  HUGE_CHUNK,      
+  RECYCLED_CHUNK,  
+};
 
 
 struct extent_node_t : public BaseAllocClass {

@@ -6,9 +6,11 @@
 #define CHUNK_H
 
 #include "mozilla/Atomics.h"
+#include "mozilla/ThreadSafety.h"
 
 #include "mozjemalloc_types.h"
 
+#include "Extent.h"
 #include "RadixTree.h"
 
 #include "mozilla/DoublyLinkedList.h"
@@ -18,13 +20,7 @@
 
 struct arena_t;
 
-enum ChunkType {
-  UNKNOWN_CHUNK,
-  ZEROED_CHUNK,    
-  ARENA_CHUNK,     
-  HUGE_CHUNK,      
-  RECYCLED_CHUNK,  
-};
+enum ChunkType;
 
 
 struct arena_chunk_map_t {
@@ -200,8 +196,6 @@ struct DirtyChunkListTrait {
 
 void pages_decommit(void* aAddr, size_t aSize);
 
-void chunks_init();
-
 void* base_chunk_alloc(size_t aSize, size_t aAlignment);
 
 void base_chunk_dealloc(void* aChunk, size_t aSize, ChunkType aType);
@@ -214,8 +208,6 @@ void arena_chunk_dealloc(chunk_allocator_t* aChunkAllocator, void* aChunk,
 #ifdef MOZ_DEBUG
 void chunk_assert_zero(void* aPtr, size_t aSize);
 #endif
-
-extern mozilla::Atomic<size_t> gRecycledSize;
 
 extern AddressRadixTree<(sizeof(void*) << 3) - LOG2(kChunkSize)> gChunkRTree;
 
@@ -237,5 +229,52 @@ void* pages_mmap_aligned(size_t size, size_t alignment,
                          ShouldCommit should_commit);
 
 void pages_unmap(void* aAddr, size_t aSize);
+
+class ChunkCache {
+ private:
+  Mutex mMutex;
+
+  
+  
+  
+  
+  RedBlackTree<extent_node_t, ExtentTreeSzTrait> gChunksBySize
+      MOZ_GUARDED_BY(mMutex);
+  RedBlackTree<extent_node_t, ExtentTreeTrait> gChunksByAddress
+      MOZ_GUARDED_BY(mMutex);
+
+  
+  mozilla::Atomic<size_t> mRecycledSize;
+
+ public:
+  constexpr ChunkCache() = default;
+
+  void Init() { mMutex.Init(); }
+
+  static constexpr bool CanRecycle(size_t aSize) {
+#ifdef XP_WIN
+    
+    
+    
+    
+    return aSize == kChunkSize;
+#else
+    return true;
+#endif
+  }
+
+  
+  bool TryRecord(void* aChunk, size_t aSize, ChunkType aType);
+
+ private:
+  
+  void Record(void* aChunk, size_t aSize, ChunkType aType);
+
+ public:
+  
+  void* Recycle(size_t aSize, size_t aAlignment);
+};
+
+extern ChunkCache gCache;
 
 #endif 
