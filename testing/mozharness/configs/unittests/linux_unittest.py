@@ -181,6 +181,11 @@ config = {
             "--subsuite=devtools",
             "--timeout=1200",
         ],
+        
+        "mochitest-devtools-compat": [
+            "--flavor=browser",
+            "--subsuite=devtools-compat",
+        ],
         "mochitest-browser-a11y": ["--flavor=browser", "--subsuite=a11y"],
         "mochitest-browser-media": ["--flavor=browser", "--subsuite=media-bc"],
         "mochitest-browser-translations": [

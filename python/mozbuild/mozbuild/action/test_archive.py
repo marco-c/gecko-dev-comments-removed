@@ -230,6 +230,12 @@ ARCHIVE_FILES = {
             "pattern": "**",
             "dest": "certs",
         },
+        
+        {
+            "source": buildconfig.topobjdir,
+            "base": "_tests/testing",
+            "pattern": "devtools_compat/**",
+        },
     ],
     "cppunittest": [
         {"source": STAGE, "base": "", "pattern": "cppunittest/**"},
