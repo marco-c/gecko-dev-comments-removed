@@ -1,4 +1,3 @@
-/* -*- Mode: IDL; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -52,6 +51,9 @@ interface Notification : EventTarget {
   [Pure]
   readonly attribute UTF8String icon;
 
+  [Pure, Pref="dom.webnotifications.navigate.enabled"]
+  readonly attribute UTF8String navigate;
+
   [Constant, Pref="dom.webnotifications.requireinteraction.enabled"]
   readonly attribute boolean requireInteraction;
 
@@ -79,6 +81,7 @@ dictionary NotificationOptions {
   DOMString lang = "";
   DOMString body = "";
   // [UseCounter], bug 1976515
+  [Pref="dom.webnotifications.navigate.enabled"]
   UTF8String navigate;
   DOMString tag = "";
   // [UseCounter], bug 1976515
@@ -114,6 +117,8 @@ enum NotificationPermission {
 dictionary NotificationAction {
   required DOMString action;
   required DOMString title;
+  [Pref="dom.webnotifications.navigate.enabled"]
+  UTF8String navigate;
 };
 
 callback NotificationPermissionCallback = undefined (NotificationPermission permission);
