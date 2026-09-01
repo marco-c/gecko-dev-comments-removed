@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "LauncherProcessWin.h"
 
 #include "mozilla/CmdLineAndEnvUtils.h"
@@ -14,15 +12,20 @@
 #include "mozilla/NativeNt.h"
 #include "mozilla/SafeMode.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Vector.h"
 #include "mozilla/WindowsConsole.h"
 #include "mozilla/WindowsProcessMitigations.h"
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
 #include "nsWindowsHelpers.h"
+#include "mozilla/mscom/ProcessRuntime.h"
 
 #include <windows.h>
 #include <processthreadsapi.h>
 #include <shlwapi.h>
+#include <appmodel.h>
+#include <wrl.h>
+#include <wrl/wrappers/corewrappers.h>
 
 #include "DllBlocklistInit.h"
 #include "ErrorHandler.h"
@@ -37,6 +40,11 @@
 
 #if defined(MOZ_SANDBOX)
 #  include "mozilla/sandboxing/SandboxInitialization.h"
+#endif
+
+#ifndef __MINGW32__
+#  include <windows.applicationmodel.h>
+#  include <windows.applicationmodel.activation.h>
 #endif
 
 namespace mozilla {
@@ -357,6 +365,72 @@ static mozilla::Maybe<bool> RunAsLauncherProcess(int& argc, wchar_t** argv) {
 
 namespace mozilla {
 
+#ifndef __MINGW32__
+
+
+
+
+
+static ABI::Windows::ApplicationModel::Activation::ActivationKind
+getPackagedAppActivationKind() {
+  using namespace ABI::Windows::ApplicationModel;
+  using namespace ABI::Windows::ApplicationModel::Activation;
+  using namespace ABI::Windows::Foundation;
+  using namespace Microsoft::WRL;
+  using namespace Microsoft::WRL::Wrappers;
+
+  ActivationKind result = ActivationKind_Launch;
+  mozilla::mscom::ProcessRuntime mscom(
+      mozilla::mscom::ProcessRuntime::ProcessCategory::
+          Launcher);  
+
+  if (!mscom) {
+    
+    
+    return result;
+  }
+  ComPtr<IAppInstanceStatics> appInstanceStatics;
+  HRESULT hr = GetActivationFactory(
+      HStringReference(RuntimeClass_Windows_ApplicationModel_AppInstance).Get(),
+      &appInstanceStatics);
+  if (SUCCEEDED(hr)) {
+    ComPtr<IActivatedEventArgs> activatedEventArgs;
+    hr = appInstanceStatics->GetActivatedEventArgs(&activatedEventArgs);
+    if (SUCCEEDED(hr)) {
+      ActivationKind kind;
+      hr = activatedEventArgs->get_Kind(&kind);
+      if (SUCCEEDED(hr)) {
+        result = kind;
+      }
+    }
+  }
+
+  return result;
+}
+#endif
+
+
+
+
+
+
+
+static bool IsPackagedAppAutostarted() {
+#ifndef __MINGW32__
+  UINT32 length = 0;
+
+  LONG rc = GetCurrentPackageFullName(&length, NULL);
+  if (rc != APPMODEL_ERROR_NO_PACKAGE) {
+    
+    
+    using namespace ABI::Windows::ApplicationModel::Activation;
+    ActivationKind kind = getPackagedAppActivationKind();
+    return kind == ActivationKind_StartupTask;
+  }
+#endif
+  return false;
+}
+
 Maybe<int> LauncherMain(int& argc, wchar_t* argv[]) {
   EnsureBrowserCommandlineSafe(argc, argv);
 
@@ -368,6 +442,9 @@ Maybe<int> LauncherMain(int& argc, wchar_t* argv[]) {
     
     return Nothing();
   }
+  const bool hasAutostartArg =
+      mozilla::CheckArg(argc, argv, "os-autostart", nullptr,
+                        mozilla::CheckArgFlag::None) == mozilla::ARG_FOUND;
 
   
   EnablePreferLoadFromSystem32IfCompatible();
@@ -401,6 +478,9 @@ Maybe<int> LauncherMain(int& argc, wchar_t* argv[]) {
 #endif
 
   mozilla::UseParentConsole();
+
+  const bool packagedAppAutostartedWithoutArg =
+      hasAutostartArg ? false : IsPackagedAppAutostarted();
 
   if (!SetArgv0ToFullBinaryPath(argv)) {
     HandleLauncherError(LAUNCHER_ERROR_GENERIC());
@@ -471,9 +551,13 @@ Maybe<int> LauncherMain(int& argc, wchar_t* argv[]) {
     return Nothing();
   }
 #endif  
-
+  mozilla::Vector<const wchar_t*, 1> extraArgs;
+  if (packagedAppAutostartedWithoutArg) {
+    extraArgs.append(L"-os-autostart");
+  }
   
-  UniquePtr<wchar_t[]> cmdLine(MakeCommandLine(argc, argv));
+  UniquePtr<wchar_t[]> cmdLine(
+      MakeCommandLine(argc, argv, extraArgs.length(), extraArgs.begin()));
   if (!cmdLine) {
     HandleLauncherError(LAUNCHER_ERROR_GENERIC());
     return Nothing();
