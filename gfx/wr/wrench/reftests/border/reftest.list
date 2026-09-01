@@ -8,6 +8,8 @@ scale(*) == border-none.yaml border-none-ref.yaml
 fuzzy(128,69) fuzzy-if(platform(swgl),2,118) == border-overlapping-corner.yaml border-overlapping-corner-ref.yaml
 scale(*) == border-overlapping-edge.yaml border-overlapping-edge-ref.yaml
 fuzzy(20,100) == border-fractional-overlap.yaml border-fractional-overlap-ref.yaml
+== border-widths-exceed-box.yaml border-widths-exceed-box-ref.yaml
+== border-image-widths-exceed-box.yaml border-image-widths-exceed-box-ref.yaml
 scale(*) == long-solid-edge-with-rounded-corner.yaml long-solid-edge-with-rounded-corner-ref.yaml
 scale(*) == long-edge-all-styles.yaml long-edge-all-styles-ref.yaml
 scale(*) == border-invisible.yaml border-invisible-ref.yaml
@@ -37,3 +39,8 @@ scale(*) != small-inset-outset.yaml small-inset-outset-notref.yaml
 fuzzy(1,90) == no-aa.yaml green-square.yaml
 fuzzy(1,20) skip_on(android,device) == border-double-1px.yaml border-double-1px-ref.yaml  # Fails on Pixel2
 == max-scale.yaml max-scale-ref.yaml
+platform(linux,mac) == border-shape.yaml border-shape.png
+platform(linux,mac) == border-shape-2.yaml border-shape-2.png
+platform(linux,mac) == border-shape-3.yaml border-shape-3.png
+platform(linux,mac) == border-shape-4.yaml border-shape-4.png
+platform(linux,mac) == border-shape-inset.yaml border-shape-inset.png
