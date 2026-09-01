@@ -19,6 +19,7 @@
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsICacheEntry.h"
 #include "nsICacheEntryOpenCallback.h"
+#include "nsICacheStorage.h"
 #include "nsICachingChannel.h"
 #include "nsICorsPreflightCallback.h"
 #include "nsIDNSListener.h"
@@ -231,6 +232,14 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   [[nodiscard]] nsresult OpenCacheEntry(bool isHttps);
   [[nodiscard]] nsresult OpenCacheEntryInternal(bool isHttps);
+  
+  
+  void NoteCacheEntryKeyMatch(nsICacheEntry* aEntry);
+  
+  [[nodiscard]] nsresult GetCacheStorage(nsICacheStorage** aStorage);
+  
+  
+  [[nodiscard]] nsresult MaybeReplaceNoVarySearchAliasEntry();
   [[nodiscard]] nsresult ContinueConnect();
 
   [[nodiscard]] nsresult StartRedirectChannelToURI(nsIURI*, uint32_t);
@@ -759,7 +768,12 @@ class nsHttpChannel final : public HttpBaseChannel,
     (uint32_t, HTTPSSVCTelemetryReported, 1),
     (uint32_t, EchConfigUsed, 1),
     (uint32_t, AuthRedirectedChannel, 1),
-    (uint32_t, StorageAccessReloadChannel, 1)
+    (uint32_t, StorageAccessReloadChannel, 1),
+    
+    
+    
+    
+    (uint32_t, CacheEntryIsNoVarySearchMatch, 1)
   ))
   
   enum CachedContentValidity : uint8_t { Unset = 0, Invalid = 1, Valid = 2 };
