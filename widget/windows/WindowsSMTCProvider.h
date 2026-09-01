@@ -115,8 +115,8 @@ class WindowsSMTCProvider final : public mozilla::dom::MediaControlKeySource {
 
   
   
-  EventRegistrationToken mButtonPressedToken;
-  EventRegistrationToken mSeekRegistrationToken;
+  EventRegistrationToken mButtonPressedToken{};
+  EventRegistrationToken mSeekRegistrationToken{};
 };
 
 #endif  
