@@ -411,4 +411,38 @@ TEST_F(MAYBE_PipeWireStreamTest, TestModifierFallback) {
   shared_screencast_stream_->StopScreenCastStream();
 }
 
+TEST_F(MAYBE_PipeWireStreamTest, TestOnlyOneInstanceAllowed) {
+  
+  
+  Event waitConnectEvent;
+  EXPECT_CALL(*this, OnStreamReady(_))
+      .WillOnce(Invoke(this, &MAYBE_PipeWireStreamTest::StartScreenCastStream));
+  EXPECT_CALL(*this, OnStreamConfigured).WillOnce([&waitConnectEvent] {
+    waitConnectEvent.Set();
+  });
+
+  
+  
+  waitConnectEvent.Wait(kLongWait);
+
+  
+  auto shared_screencast_egl_dmabuf2 = TestEglDmaBuf::CreateDefault();
+  auto shared_screencast_stream2 = SharedScreenCastStream::CreateWithEglDmaBuf(
+      std::move(shared_screencast_egl_dmabuf2));
+
+  
+  
+  EXPECT_FALSE(shared_screencast_stream2->StartScreenCastStream(2));
+
+  
+  shared_screencast_stream_->StopScreenCastStream();
+
+  
+  
+  EXPECT_TRUE(shared_screencast_stream2->StartScreenCastStream(2));
+
+  
+  shared_screencast_stream2->StopScreenCastStream();
+}
+
 }  
