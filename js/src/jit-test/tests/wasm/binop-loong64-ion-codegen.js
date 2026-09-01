@@ -29,6 +29,29 @@ codegenTestLOONG64_adhoc(
 
 codegenTestLOONG64_adhoc(
     `(module
+       (func (export "f") (param i32) (result i32)
+         (i32.and (local.get 0) (i32.const 0xff))))`,
+    "f",
+    `andi           \\$a0, \\$a0, 0xff`);
+
+codegenTestLOONG64_adhoc(
+    `(module
+       (func (export "f") (param i32) (result i32)
+         (i32.or (local.get 0) (i32.const 0x100))))`,
+    "f",
+    `ori            \\$a0, \\$a0, 0x100`);
+
+codegenTestLOONG64_adhoc(
+    `(module
+       (func (export "f") (param i32) (result i32)
+         (i32.xor (local.get 0) (i32.const 0x1f))))`,
+    "f",
+    `xori           \\$a0, \\$a0, 0x1f`);
+
+
+
+codegenTestLOONG64_adhoc(
+    `(module
        (func (export "f") (param i64) (result i64)
          (i64.and (local.get 0) (i64.const 0xffffffff))))`,
     "f",
@@ -64,6 +87,32 @@ codegenTestLOONG64_adhoc(
     "f",
     `bstrpick\\.d   \\$a0, \\$a0, 0x3f, 0x8
      slli.d         \\$a0, \\$a0, 0x8`);
+
+
+
+
+codegenTestLOONG64_adhoc(
+    `(module
+       (func (export "f") (param i32) (result i32)
+         (i32.and (local.get 0) (i32.const 0x7fffffff))))`,
+    "f",
+    `bstrpick\\.d   \\$a0, \\$a0, 0x1e, 0x0`);
+
+codegenTestLOONG64_adhoc(
+    `(module
+       (func (export "f") (param i32) (result i32)
+         (i32.and (local.get 0) (i32.const 0xff00))))`,
+    "f",
+    `bstrpick\\.d   \\$a0, \\$a0, 0xf, 0x8
+     slli.d         \\$a0, \\$a0, 0x8`);
+
+codegenTestLOONG64_adhoc(
+    `(module
+       (func (export "f") (param i32) (result i32)
+         (i32.and (local.get 0) (i32.const 0xffff0000))))`,
+    "f",
+    `bstrpick\\.d   \\$a0, \\$a0, 0x3f, 0x10
+     slli.d         \\$a0, \\$a0, 0x10`);
 
 
 
