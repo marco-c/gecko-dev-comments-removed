@@ -6,7 +6,6 @@
 #include "DeviceInputTrack.h"
 #include "MediaTrackGraphImpl.h"
 #include "StaticComponents.h"
-#include "VideoUtils.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest-printers.h"
 #include "gtest/gtest.h"
@@ -19,8 +18,6 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/SpinEventLoopUntil.h"
-#include "mozilla/StateMirroring.h"
-#include "mozilla/gtest/MozHelpers.h"
 #include "mozilla/gtest/WaitFor.h"
 #include "nsComponentManager.h"
 #include "nsXPCOMPrivate.h"
@@ -30,7 +27,6 @@ using testing::AtLeast;
 using testing::Eq;
 using testing::InSequence;
 using testing::MockFunction;
-using testing::NiceMock;
 using testing::Return;
 using testing::StrEq;
 using testing::StrictMock;
@@ -51,16 +47,6 @@ using testing::StrictMock;
 #define ProcessEventQueue()                     \
   while (NS_ProcessNextEvent(nullptr, false)) { \
   }
-
-#define TEST_WithTailDispatch(suite, name)                          \
-  static void Do##name();                                           \
-  TEST(suite, name)                                                 \
-  {                                                                 \
-    MOZ_ALWAYS_SUCCEEDS(GetMainThreadSerialEventTarget()->Dispatch( \
-        NS_NewRunnableFunction("##name", &Do##name)));              \
-    NS_ProcessPendingEvents(nullptr);                               \
-  }                                                                 \
-  static void Do##name()
 
 namespace {
 #ifdef MOZ_WEBRTC
@@ -190,24 +176,10 @@ class MockProcessedMediaTrack : public ProcessedMediaTrack {
                            GraphTime aFrom, GraphTime aTo, uint32_t aFlags) {
           segment->AppendNullData(aTo - aFrom);
         });
-    ON_CALL(*this, AddListenerImpl)
-        .WillByDefault(
-            [self = MOZ_KnownLive(this)](
-                already_AddRefed<MediaTrackListener> aListener) mutable {
-              self->MediaTrack::AddListenerImpl(std::move(aListener));
-            });
-    ON_CALL(*this, RemoveListenerImpl)
-        .WillByDefault([self = MOZ_KnownLive(this)](
-                           MediaTrackListener* aListener) mutable {
-          self->MediaTrack::RemoveListenerImpl(aListener);
-        });
   }
 
   MOCK_METHOD(void, ProcessInput,
               (GraphTime aFrom, GraphTime aTo, uint32_t aFlags), (override));
-  MOCK_METHOD(void, AddListenerImpl, (already_AddRefed<MediaTrackListener>),
-              (override));
-  MOCK_METHOD(void, RemoveListenerImpl, (MediaTrackListener*), (override));
 
   uint32_t NumberOfChannels() const override { return 2; };
 };
@@ -228,31 +200,32 @@ class MockProcessedMediaTrack : public ProcessedMediaTrack {
 
 
 
-TEST_WithTailDispatch(TestAudioTrackGraph, DifferentDeviceIDs) {
+TEST(TestAudioTrackGraph, DifferentDeviceIDs)
+{
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
   MediaTrackGraph* g1 = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::AUDIO_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
-       nullptr, AbstractThread::MainThread());
+       nullptr, GetMainThreadSerialEventTarget());
 
   MediaTrackGraph* g2 = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::AUDIO_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
        reinterpret_cast<cubeb_devid>(1),
-      AbstractThread::MainThread());
+      GetMainThreadSerialEventTarget());
 
   MediaTrackGraph* g1_2 = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::AUDIO_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
-       nullptr, AbstractThread::MainThread());
+       nullptr, GetMainThreadSerialEventTarget());
 
   MediaTrackGraph* g2_2 = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::AUDIO_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
        reinterpret_cast<cubeb_devid>(1),
-      AbstractThread::MainThread());
+      GetMainThreadSerialEventTarget());
 
   EXPECT_NE(g1, g2) << "Different graphs due to different device ids";
   EXPECT_EQ(g1, g1_2) << "Same graphs for same device ids";
@@ -277,7 +250,8 @@ TEST_WithTailDispatch(TestAudioTrackGraph, DifferentDeviceIDs) {
   }
 }
 
-TEST_WithTailDispatch(TestAudioTrackGraph, SetOutputDeviceID) {
+TEST(TestAudioTrackGraph, SetOutputDeviceID)
+{
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
@@ -287,7 +261,7 @@ TEST_WithTailDispatch(TestAudioTrackGraph, SetOutputDeviceID) {
       MediaTrackGraph::AUDIO_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
        reinterpret_cast<cubeb_devid>(2),
-      AbstractThread::MainThread());
+      GetMainThreadSerialEventTarget());
 
   
   
@@ -305,7 +279,8 @@ TEST_WithTailDispatch(TestAudioTrackGraph, SetOutputDeviceID) {
   WaitFor(cubeb->StreamDestroyEvent());
 }
 
-TEST_WithTailDispatch(TestAudioTrackGraph, StreamName) {
+TEST(TestAudioTrackGraph, StreamName)
+{
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
@@ -315,7 +290,7 @@ TEST_WithTailDispatch(TestAudioTrackGraph, StreamName) {
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
        reinterpret_cast<cubeb_devid>(1),
-      AbstractThread::MainThread());
+      GetMainThreadSerialEventTarget());
   nsLiteralCString name1("name1");
   graph->CurrentDriver()->SetStreamName(name1);
 
@@ -342,15 +317,14 @@ TEST_WithTailDispatch(TestAudioTrackGraph, StreamName) {
   WaitFor(cubeb->StreamDestroyEvent());
 }
 
-TEST_WithTailDispatch(TestAudioTrackGraph, OfflineDestruction) {
+TEST(TestAudioTrackGraph, OfflineDestruction)
+{
   RefPtr graph = static_cast<MediaTrackGraphImpl*>(
       MediaTrackGraph::CreateNonRealtimeInstance(48000));
-  DispatchFunction([&] {
-    
-    RefPtr dummyTrack = new MockProcessedMediaTrack(graph->GraphRate());
-    graph->AddTrack(dummyTrack);
-    dummyTrack->Destroy();
-  });
+  
+  RefPtr dummyTrack = new MockProcessedMediaTrack(graph->GraphRate());
+  graph->AddTrack(dummyTrack);
+  dummyTrack->Destroy();
   
   SpinEventLoopUntil("TestAudioTrackGraph, OfflineDestruction"_ns, [&] {
     graph.get()->AddRef();
@@ -358,14 +332,15 @@ TEST_WithTailDispatch(TestAudioTrackGraph, OfflineDestruction) {
   });
 }
 
-TEST_WithTailDispatch(TestAudioTrackGraph, NotifyDeviceStarted) {
+TEST(TestAudioTrackGraph, NotifyDeviceStarted)
+{
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
   MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::AUDIO_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
-      nullptr, AbstractThread::MainThread());
+      nullptr, GetMainThreadSerialEventTarget());
 
   RefPtr<SourceMediaTrack> dummySource;
   (void)WaitForResolve(InvokeAsync([&] {
@@ -388,14 +363,15 @@ TEST_WithTailDispatch(TestAudioTrackGraph, NotifyDeviceStarted) {
   WaitFor(cubeb->StreamDestroyEvent());
 }
 
-TEST_WithTailDispatch(TestAudioTrackGraph, NonNativeInputTrackStartAndStop) {
+TEST(TestAudioTrackGraph, NonNativeInputTrackStartAndStop)
+{
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
   MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
-      nullptr, AbstractThread::MainThread());
+      nullptr, GetMainThreadSerialEventTarget());
 
   const CubebUtils::AudioDeviceID deviceId = (CubebUtils::AudioDeviceID)1;
 
@@ -439,7 +415,8 @@ TEST_WithTailDispatch(TestAudioTrackGraph, NonNativeInputTrackStartAndStop) {
         void Run() override {
           DeviceInfo info = {mInputTrack->NumberOfChannels(),
                              mInputTrack->DevicePreference()};
-          AbstractThread::MainThread()->Dispatch(NS_NewRunnableFunction(
+          
+          mTrack->GraphImpl()->Dispatch(NS_NewRunnableFunction(
               "TestAudioTrackGraph::DeviceQueryMessage",
               [holder = std::move(mHolder), devInfo = info]() mutable {
                 holder.Resolve(devInfo, __func__);
@@ -557,14 +534,15 @@ TEST_WithTailDispatch(TestAudioTrackGraph, NonNativeInputTrackStartAndStop) {
   EXPECT_EQ(destroyedStream.get(), driverStream.get());
 }
 
-TEST_WithTailDispatch(TestAudioTrackGraph, NonNativeInputTrackErrorCallback) {
+TEST(TestAudioTrackGraph, NonNativeInputTrackErrorCallback)
+{
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
   MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
-      nullptr, AbstractThread::MainThread());
+      nullptr, GetMainThreadSerialEventTarget());
 
   const CubebUtils::AudioDeviceID deviceId = (CubebUtils::AudioDeviceID)1;
 
@@ -671,14 +649,15 @@ class TestDeviceInputConsumerTrack : public DeviceInputConsumerTrack {
       : DeviceInputConsumerTrack(aSampleRate) {}
 };
 
-TEST_WithTailDispatch(TestAudioTrackGraph, DeviceChangedCallback) {
+TEST(TestAudioTrackGraph, DeviceChangedCallback)
+{
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
   MediaTrackGraph* graphImpl = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
-      nullptr, AbstractThread::MainThread());
+      nullptr, GetMainThreadSerialEventTarget());
 
   class TestAudioDataListener : public StrictMock<MockAudioDataListener> {
    public:
@@ -771,8 +750,8 @@ TEST_WithTailDispatch(TestAudioTrackGraph, DeviceChangedCallback) {
 
 
 
-TEST_WithTailDispatch(TestAudioTrackGraph,
-                      RestartAudioIfMaxChannelCountChanged) {
+TEST(TestAudioTrackGraph, RestartAudioIfMaxChannelCountChanged)
+{
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
   auto unforcer = WaitFor(cubeb->ForceAudioThread()).unwrap();
@@ -781,7 +760,7 @@ TEST_WithTailDispatch(TestAudioTrackGraph,
   MediaTrackGraph* graphImpl = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
-      nullptr, AbstractThread::MainThread());
+      nullptr, GetMainThreadSerialEventTarget());
 
   
   
@@ -843,7 +822,7 @@ TEST_WithTailDispatch(TestAudioTrackGraph,
     });
 
     SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
-        "TEST_WithTailDispatch(TestAudioTrackGraph, RestartAudioIfMaxChannelCountChanged) #1"_ns,
+        "TEST(TestAudioTrackGraph, RestartAudioIfMaxChannelCountChanged) #1"_ns,
         [&] { return destroyed && newStream; });
 
     destroyListener.Disconnect();
@@ -880,7 +859,7 @@ TEST_WithTailDispatch(TestAudioTrackGraph,
     aTrack->ConnectDeviceInput(aDevice, aListener.get(), PRINCIPAL_HANDLE_NONE);
 
     SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
-        "TEST_WithTailDispatch(TestAudioTrackGraph, RestartAudioIfMaxChannelCountChanged) #2"_ns,
+        "TEST(TestAudioTrackGraph, RestartAudioIfMaxChannelCountChanged) #2"_ns,
         [&] { return destroyed && newStream; });
 
     destroyListener.Disconnect();
@@ -1013,7 +992,8 @@ TEST_WithTailDispatch(TestAudioTrackGraph,
 
 
 
-TEST_WithTailDispatch(TestAudioTrackGraph, SwitchNativeInputDevice) {
+TEST(TestAudioTrackGraph, SwitchNativeInputDevice)
+{
   class TestAudioDataListener : public StrictMock<MockAudioDataListener> {
    public:
     TestAudioDataListener(uint32_t aChannelCount, bool aIsVoice) {
@@ -1034,71 +1014,70 @@ TEST_WithTailDispatch(TestAudioTrackGraph, SwitchNativeInputDevice) {
   MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
-      nullptr, AbstractThread::MainThread());
+      nullptr, GetMainThreadSerialEventTarget());
 
-  auto switchNativeDevice = [&](RefPtr<SmartMockCubebStream>&&
-                                    aCurrentNativeStream,
-                                RefPtr<TestDeviceInputConsumerTrack>&
-                                    aCurrentNativeTrack,
-                                RefPtr<SmartMockCubebStream>& aNextNativeStream,
-                                RefPtr<TestDeviceInputConsumerTrack>&
-                                    aNextNativeTrack) {
-    ASSERT_TRUE(aCurrentNativeStream->mHasInput);
-    ASSERT_TRUE(aCurrentNativeStream->mHasOutput);
-    ASSERT_TRUE(aNextNativeStream->mHasInput);
-    ASSERT_FALSE(aNextNativeStream->mHasOutput);
+  auto switchNativeDevice =
+      [&](RefPtr<SmartMockCubebStream>&& aCurrentNativeStream,
+          RefPtr<TestDeviceInputConsumerTrack>& aCurrentNativeTrack,
+          RefPtr<SmartMockCubebStream>& aNextNativeStream,
+          RefPtr<TestDeviceInputConsumerTrack>& aNextNativeTrack) {
+        ASSERT_TRUE(aCurrentNativeStream->mHasInput);
+        ASSERT_TRUE(aCurrentNativeStream->mHasOutput);
+        ASSERT_TRUE(aNextNativeStream->mHasInput);
+        ASSERT_FALSE(aNextNativeStream->mHasOutput);
 
-    std::cerr << "Switching native input from device "
-              << aCurrentNativeStream->GetInputDeviceID() << " to "
-              << aNextNativeStream->GetInputDeviceID() << std::endl;
+        std::cerr << "Switching native input from device "
+                  << aCurrentNativeStream->GetInputDeviceID() << " to "
+                  << aNextNativeStream->GetInputDeviceID() << std::endl;
 
-    uint32_t destroyed = 0;
-    MediaEventListener destroyListener = cubeb->StreamDestroyEvent().Connect(
-        AbstractThread::GetCurrent(),
-        [&](const RefPtr<SmartMockCubebStream>& aDestroyed) {
-          if (aDestroyed.get() == aCurrentNativeStream.get() ||
-              aDestroyed.get() == aNextNativeStream.get()) {
-            std::cerr << "cubeb stream " << aDestroyed.get() << " (device "
-                      << aDestroyed->GetInputDeviceID()
-                      << ") has been destroyed" << std::endl;
-            destroyed += 1;
-          }
+        uint32_t destroyed = 0;
+        MediaEventListener destroyListener =
+            cubeb->StreamDestroyEvent().Connect(
+                AbstractThread::GetCurrent(),
+                [&](const RefPtr<SmartMockCubebStream>& aDestroyed) {
+                  if (aDestroyed.get() == aCurrentNativeStream.get() ||
+                      aDestroyed.get() == aNextNativeStream.get()) {
+                    std::cerr << "cubeb stream " << aDestroyed.get()
+                              << " (device " << aDestroyed->GetInputDeviceID()
+                              << ") has been destroyed" << std::endl;
+                    destroyed += 1;
+                  }
+                });
+
+        RefPtr<SmartMockCubebStream> newStream;
+        MediaEventListener restartListener = cubeb->StreamInitEvent().Connect(
+            AbstractThread::GetCurrent(),
+            [&](const RefPtr<SmartMockCubebStream>& aCreated) {
+              
+              
+              
+              if (aCreated->mHasInput) {
+                ASSERT_TRUE(aCreated->mHasOutput);
+                newStream = aCreated;
+              }
+            });
+
+        std::cerr << "Close device " << aCurrentNativeStream->GetInputDeviceID()
+                  << std::endl;
+        DispatchFunction([&] {
+          aCurrentNativeTrack->DisconnectDeviceInput();
+          aCurrentNativeTrack->Destroy();
         });
 
-    RefPtr<SmartMockCubebStream> newStream;
-    MediaEventListener restartListener = cubeb->StreamInitEvent().Connect(
-        AbstractThread::GetCurrent(),
-        [&](const RefPtr<SmartMockCubebStream>& aCreated) {
-          
-          
-          
-          if (aCreated->mHasInput) {
-            ASSERT_TRUE(aCreated->mHasOutput);
-            newStream = aCreated;
-          }
-        });
+        std::cerr << "Wait for the switching" << std::endl;
+        SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
+            "TEST(TestAudioTrackGraph, SwitchNativeInputDevice)"_ns,
+            [&] { return destroyed >= 2 && newStream; });
 
-    std::cerr << "Close device " << aCurrentNativeStream->GetInputDeviceID()
-              << std::endl;
-    DispatchFunction([&] {
-      aCurrentNativeTrack->DisconnectDeviceInput();
-      aCurrentNativeTrack->Destroy();
-    });
+        destroyListener.Disconnect();
+        restartListener.Disconnect();
 
-    std::cerr << "Wait for the switching" << std::endl;
-    SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
-        "TEST_WithTailDispatch(TestAudioTrackGraph, SwitchNativeInputDevice)"_ns,
-        [&] { return destroyed >= 2 && newStream; });
+        aCurrentNativeStream = nullptr;
+        aNextNativeStream = newStream;
 
-    destroyListener.Disconnect();
-    restartListener.Disconnect();
-
-    aCurrentNativeStream = nullptr;
-    aNextNativeStream = newStream;
-
-    std::cerr << "Now the native input is device "
-              << aNextNativeStream->GetInputDeviceID() << std::endl;
-  };
+        std::cerr << "Now the native input is device "
+                  << aNextNativeStream->GetInputDeviceID() << std::endl;
+      };
 
   
   const CubebUtils::AudioDeviceID device1 = (CubebUtils::AudioDeviceID)1;
@@ -1198,14 +1177,15 @@ TEST_WithTailDispatch(TestAudioTrackGraph, SwitchNativeInputDevice) {
 }
 
 #ifdef MOZ_WEBRTC
-TEST_WithTailDispatch(TestAudioTrackGraph, ErrorCallback) {
+TEST(TestAudioTrackGraph, ErrorCallback)
+{
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
   MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
-      nullptr, AbstractThread::MainThread());
+      nullptr, GetMainThreadSerialEventTarget());
 
   const CubebUtils::AudioDeviceID deviceId = (CubebUtils::AudioDeviceID)1;
 
@@ -1262,7 +1242,8 @@ TEST_WithTailDispatch(TestAudioTrackGraph, ErrorCallback) {
   WaitFor(cubeb->StreamDestroyEvent());
 }
 
-TEST_WithTailDispatch(TestAudioTrackGraph, AudioProcessingTrack) {
+TEST(TestAudioTrackGraph, AudioProcessingTrack)
+{
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
   auto unforcer = WaitFor(cubeb->ForceAudioThread()).unwrap();
@@ -1274,7 +1255,7 @@ TEST_WithTailDispatch(TestAudioTrackGraph, AudioProcessingTrack) {
   MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
-      nullptr, AbstractThread::MainThread());
+      nullptr, GetMainThreadSerialEventTarget());
 
   const CubebUtils::AudioDeviceID deviceId = (CubebUtils::AudioDeviceID)1;
 
@@ -1352,7 +1333,8 @@ TEST_WithTailDispatch(TestAudioTrackGraph, AudioProcessingTrack) {
   EXPECT_LE(nrDiscontinuities, 1U);
 }
 
-TEST_WithTailDispatch(TestAudioTrackGraph, ReConnectDeviceInput) {
+TEST(TestAudioTrackGraph, ReConnectDeviceInput)
+{
   MockCubeb* cubeb = new MockCubeb(MockCubeb::RunningMode::Manual);
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
@@ -1367,7 +1349,7 @@ TEST_WithTailDispatch(TestAudioTrackGraph, ReConnectDeviceInput) {
 
   MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1, rate, nullptr,
-      AbstractThread::MainThread());
+      GetMainThreadSerialEventTarget());
 
   const CubebUtils::AudioDeviceID deviceId = (CubebUtils::AudioDeviceID)1;
 
@@ -1543,14 +1525,15 @@ float rmsf32(AudioDataValue* aSamples, uint32_t aChannels, uint32_t aFrames) {
   return sqrt(rms);
 }
 
-TEST_WithTailDispatch(TestAudioTrackGraph, AudioProcessingTrackDisabling) {
+TEST(TestAudioTrackGraph, AudioProcessingTrackDisabling)
+{
   MockCubeb* cubeb = new MockCubeb(MockCubeb::RunningMode::Manual);
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
   MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
-      nullptr, AbstractThread::MainThread());
+      nullptr, GetMainThreadSerialEventTarget());
 
   const CubebUtils::AudioDeviceID deviceId = (CubebUtils::AudioDeviceID)1;
 
@@ -1675,14 +1658,15 @@ TEST_WithTailDispatch(TestAudioTrackGraph, AudioProcessingTrackDisabling) {
   }
 }
 
-TEST_WithTailDispatch(TestAudioTrackGraph, SetRequestedInputChannelCount) {
+TEST(TestAudioTrackGraph, SetRequestedInputChannelCount)
+{
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
   MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
-      nullptr, AbstractThread::MainThread());
+      nullptr, GetMainThreadSerialEventTarget());
 
   
   const CubebUtils::AudioDeviceID device1 = (CubebUtils::AudioDeviceID)1;
@@ -1747,7 +1731,7 @@ TEST_WithTailDispatch(TestAudioTrackGraph, SetRequestedInputChannelCount) {
     QueueApplySettings(aTrack, aListener, settings);
 
     SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
-        "TEST_WithTailDispatch(TestAudioTrackGraph, SetRequestedInputChannelCount)"_ns,
+        "TEST(TestAudioTrackGraph, SetRequestedInputChannelCount)"_ns,
         [&] { return destroyed && newStream; });
 
     destroyListener.Disconnect();
@@ -1800,8 +1784,8 @@ TEST_WithTailDispatch(TestAudioTrackGraph, SetRequestedInputChannelCount) {
 
 
 
-TEST_WithTailDispatch(TestAudioTrackGraph,
-                      RestartAudioIfProcessingMaxChannelCountChanged) {
+TEST(TestAudioTrackGraph, RestartAudioIfProcessingMaxChannelCountChanged)
+{
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
   auto unforcer = WaitFor(cubeb->ForceAudioThread()).unwrap();
@@ -1810,7 +1794,7 @@ TEST_WithTailDispatch(TestAudioTrackGraph,
   MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
-      nullptr, AbstractThread::MainThread());
+      nullptr, GetMainThreadSerialEventTarget());
 
   
   auto setNewChannelCount = [&](const RefPtr<AudioProcessingTrack>& aTrack,
@@ -1842,7 +1826,7 @@ TEST_WithTailDispatch(TestAudioTrackGraph,
     QueueApplySettings(aTrack, aListener, settings);
 
     SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
-        "TEST_WithTailDispatch(TestAudioTrackGraph, RestartAudioIfProcessingMaxChannelCountChanged) #1"_ns,
+        "TEST(TestAudioTrackGraph, RestartAudioIfProcessingMaxChannelCountChanged) #1"_ns,
         [&] { return destroyed && newStream; });
 
     destroyListener.Disconnect();
@@ -1889,7 +1873,7 @@ TEST_WithTailDispatch(TestAudioTrackGraph,
     });
 
     SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
-        "TEST_WithTailDispatch(TestAudioTrackGraph, RestartAudioIfProcessingMaxChannelCountChanged) #2"_ns,
+        "TEST(TestAudioTrackGraph, RestartAudioIfProcessingMaxChannelCountChanged) #2"_ns,
         [&] { return destroyed && newStream; });
 
     destroyListener.Disconnect();
@@ -2036,15 +2020,15 @@ TEST_WithTailDispatch(TestAudioTrackGraph,
   }
 }
 
-TEST_WithTailDispatch(TestAudioTrackGraph,
-                      SetInputChannelCountBeforeAudioCallbackDriver) {
+TEST(TestAudioTrackGraph, SetInputChannelCountBeforeAudioCallbackDriver)
+{
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
   MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
-      nullptr, AbstractThread::MainThread());
+      nullptr, GetMainThreadSerialEventTarget());
 
   
   
@@ -2095,15 +2079,15 @@ TEST_WithTailDispatch(TestAudioTrackGraph,
   (void)WaitFor(cubeb->StreamDestroyEvent());
 }
 
-TEST_WithTailDispatch(TestAudioTrackGraph,
-                      StartAudioDeviceBeforeStartingAudioProcessing) {
+TEST(TestAudioTrackGraph, StartAudioDeviceBeforeStartingAudioProcessing)
+{
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
   MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
-      nullptr, AbstractThread::MainThread());
+      nullptr, GetMainThreadSerialEventTarget());
 
   
   const CubebUtils::AudioDeviceID deviceId = (CubebUtils::AudioDeviceID)1;
@@ -2160,15 +2144,15 @@ TEST_WithTailDispatch(TestAudioTrackGraph,
   (void)WaitFor(cubeb->StreamDestroyEvent());
 }
 
-TEST_WithTailDispatch(TestAudioTrackGraph,
-                      StopAudioProcessingBeforeStoppingAudioDevice) {
+TEST(TestAudioTrackGraph, StopAudioProcessingBeforeStoppingAudioDevice)
+{
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
   MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
-      nullptr, AbstractThread::MainThread());
+      nullptr, GetMainThreadSerialEventTarget());
 
   
   const CubebUtils::AudioDeviceID deviceId = (CubebUtils::AudioDeviceID)1;
@@ -2230,83 +2214,82 @@ TEST_WithTailDispatch(TestAudioTrackGraph,
 
 
 
-TEST_WithTailDispatch(TestAudioTrackGraph, SwitchNativeAudioProcessingTrack) {
+TEST(TestAudioTrackGraph, SwitchNativeAudioProcessingTrack)
+{
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
   MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
-      nullptr, AbstractThread::MainThread());
+      nullptr, GetMainThreadSerialEventTarget());
 
-  auto switchNativeDevice = [&](RefPtr<SmartMockCubebStream>&&
-                                    aCurrentNativeStream,
-                                RefPtr<AudioProcessingTrack>&
-                                    aCurrentNativeTrack,
-                                RefPtr<AudioInputProcessing>&
-                                    aCurrentNativeListener,
-                                RefPtr<SmartMockCubebStream>& aNextNativeStream,
-                                RefPtr<AudioProcessingTrack>&
-                                    aNextNativeTrack) {
-    ASSERT_TRUE(aCurrentNativeStream->mHasInput);
-    ASSERT_TRUE(aCurrentNativeStream->mHasOutput);
-    ASSERT_TRUE(aNextNativeStream->mHasInput);
-    ASSERT_FALSE(aNextNativeStream->mHasOutput);
+  auto switchNativeDevice =
+      [&](RefPtr<SmartMockCubebStream>&& aCurrentNativeStream,
+          RefPtr<AudioProcessingTrack>& aCurrentNativeTrack,
+          RefPtr<AudioInputProcessing>& aCurrentNativeListener,
+          RefPtr<SmartMockCubebStream>& aNextNativeStream,
+          RefPtr<AudioProcessingTrack>& aNextNativeTrack) {
+        ASSERT_TRUE(aCurrentNativeStream->mHasInput);
+        ASSERT_TRUE(aCurrentNativeStream->mHasOutput);
+        ASSERT_TRUE(aNextNativeStream->mHasInput);
+        ASSERT_FALSE(aNextNativeStream->mHasOutput);
 
-    std::cerr << "Switching native input from device "
-              << aCurrentNativeStream->GetInputDeviceID() << " to "
-              << aNextNativeStream->GetInputDeviceID() << std::endl;
+        std::cerr << "Switching native input from device "
+                  << aCurrentNativeStream->GetInputDeviceID() << " to "
+                  << aNextNativeStream->GetInputDeviceID() << std::endl;
 
-    uint32_t destroyed = 0;
-    MediaEventListener destroyListener = cubeb->StreamDestroyEvent().Connect(
-        AbstractThread::GetCurrent(),
-        [&](const RefPtr<SmartMockCubebStream>& aDestroyed) {
-          if (aDestroyed.get() == aCurrentNativeStream.get() ||
-              aDestroyed.get() == aNextNativeStream.get()) {
-            std::cerr << "cubeb stream " << aDestroyed.get() << " (device "
-                      << aDestroyed->GetInputDeviceID()
-                      << ") has been destroyed" << std::endl;
-            destroyed += 1;
-          }
+        uint32_t destroyed = 0;
+        MediaEventListener destroyListener =
+            cubeb->StreamDestroyEvent().Connect(
+                AbstractThread::GetCurrent(),
+                [&](const RefPtr<SmartMockCubebStream>& aDestroyed) {
+                  if (aDestroyed.get() == aCurrentNativeStream.get() ||
+                      aDestroyed.get() == aNextNativeStream.get()) {
+                    std::cerr << "cubeb stream " << aDestroyed.get()
+                              << " (device " << aDestroyed->GetInputDeviceID()
+                              << ") has been destroyed" << std::endl;
+                    destroyed += 1;
+                  }
+                });
+
+        RefPtr<SmartMockCubebStream> newStream;
+        MediaEventListener restartListener = cubeb->StreamInitEvent().Connect(
+            AbstractThread::GetCurrent(),
+            [&](const RefPtr<SmartMockCubebStream>& aCreated) {
+              
+              
+              
+              if (aCreated->mHasInput) {
+                ASSERT_TRUE(aCreated->mHasOutput);
+                newStream = aCreated;
+              }
+            });
+
+        std::cerr << "Close device " << aCurrentNativeStream->GetInputDeviceID()
+                  << std::endl;
+        DispatchFunction([&] {
+          aCurrentNativeTrack->GraphImpl()->AppendMessage(
+              MakeUnique<StopInputProcessing>(aCurrentNativeTrack,
+                                              aCurrentNativeListener));
+          aCurrentNativeTrack->DisconnectDeviceInput();
+          aCurrentNativeTrack->Destroy();
         });
 
-    RefPtr<SmartMockCubebStream> newStream;
-    MediaEventListener restartListener = cubeb->StreamInitEvent().Connect(
-        AbstractThread::GetCurrent(),
-        [&](const RefPtr<SmartMockCubebStream>& aCreated) {
-          
-          
-          
-          if (aCreated->mHasInput) {
-            ASSERT_TRUE(aCreated->mHasOutput);
-            newStream = aCreated;
-          }
-        });
+        std::cerr << "Wait for the switching" << std::endl;
+        SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
+            "TEST(TestAudioTrackGraph, SwitchNativeAudioProcessingTrack)"_ns,
+            [&] { return destroyed >= 2 && newStream; });
 
-    std::cerr << "Close device " << aCurrentNativeStream->GetInputDeviceID()
-              << std::endl;
-    DispatchFunction([&] {
-      aCurrentNativeTrack->GraphImpl()->AppendMessage(
-          MakeUnique<StopInputProcessing>(aCurrentNativeTrack,
-                                          aCurrentNativeListener));
-      aCurrentNativeTrack->DisconnectDeviceInput();
-      aCurrentNativeTrack->Destroy();
-    });
+        destroyListener.Disconnect();
+        restartListener.Disconnect();
 
-    std::cerr << "Wait for the switching" << std::endl;
-    SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
-        "TEST_WithTailDispatch(TestAudioTrackGraph, SwitchNativeAudioProcessingTrack)"_ns,
-        [&] { return destroyed >= 2 && newStream; });
+        aCurrentNativeStream = nullptr;
+        aNextNativeStream = newStream;
 
-    destroyListener.Disconnect();
-    restartListener.Disconnect();
-
-    aCurrentNativeStream = nullptr;
-    aNextNativeStream = newStream;
-
-    std::cerr << "Now the native input is device "
-              << aNextNativeStream->GetInputDeviceID() << std::endl;
-  };
+        std::cerr << "Now the native input is device "
+                  << aNextNativeStream->GetInputDeviceID() << std::endl;
+      };
 
   
   const CubebUtils::AudioDeviceID device1 = (CubebUtils::AudioDeviceID)1;
@@ -2426,13 +2409,13 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
   
   MediaTrackGraph* primary = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,
-       1, aInputRate, nullptr, AbstractThread::MainThread());
+       1, aInputRate, nullptr, GetMainThreadSerialEventTarget());
 
   
   MediaTrackGraph* partner = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1, aOutputRate,
        reinterpret_cast<cubeb_devid>(1),
-      AbstractThread::MainThread());
+      GetMainThreadSerialEventTarget());
 
   const CubebUtils::AudioDeviceID inputDeviceId = (CubebUtils::AudioDeviceID)1;
 
@@ -2619,7 +2602,8 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
   partnerStateListener.Disconnect();
 }
 
-TEST_WithTailDispatch(TestAudioTrackGraph, CrossGraphPort) {
+TEST(TestAudioTrackGraph, CrossGraphPort)
+{
   TestCrossGraphPort(44100, 44100, 1);
   TestCrossGraphPort(44100, 44100, 1.006);
   TestCrossGraphPort(44100, 44100, 0.994);
@@ -2637,7 +2621,8 @@ TEST_WithTailDispatch(TestAudioTrackGraph, CrossGraphPort) {
   TestCrossGraphPort(52110, 17781, 0.994);
 }
 
-TEST_WithTailDispatch(TestAudioTrackGraph, CrossGraphPortUnderrun) {
+TEST(TestAudioTrackGraph, CrossGraphPortUnderrun)
+{
   TestCrossGraphPort(44100, 44100, 1.01, 30, 1);
   TestCrossGraphPort(44100, 44100, 1.03, 40, 3);
 
@@ -2651,7 +2636,8 @@ TEST_WithTailDispatch(TestAudioTrackGraph, CrossGraphPortUnderrun) {
   TestCrossGraphPort(52110, 17781, 1.03, 40, 3);
 }
 
-TEST_WithTailDispatch(TestAudioTrackGraph, SecondaryOutputDevice) {
+TEST(TestAudioTrackGraph, SecondaryOutputDevice)
+{
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
@@ -2660,7 +2646,7 @@ TEST_WithTailDispatch(TestAudioTrackGraph, SecondaryOutputDevice) {
 
   MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,
-       1, primaryRate, nullptr, AbstractThread::MainThread());
+       1, primaryRate, nullptr, GetMainThreadSerialEventTarget());
 
   RefPtr<AudioProcessingTrack> processingTrack;
   RefPtr<AudioInputProcessing> listener;
@@ -2756,7 +2742,8 @@ TEST_WithTailDispatch(TestAudioTrackGraph, SecondaryOutputDevice) {
 }
 
 
-TEST_WithTailDispatch(TestAudioTrackGraph, ClockDriftExpectation) {
+TEST(TestAudioTrackGraph, ClockDriftExpectation)
+{
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
@@ -2764,7 +2751,7 @@ TEST_WithTailDispatch(TestAudioTrackGraph, ClockDriftExpectation) {
 
   MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,
-       1, rate, nullptr, AbstractThread::MainThread());
+       1, rate, nullptr, GetMainThreadSerialEventTarget());
 
   auto createInputProcessing =
       [&](CubebUtils::AudioDeviceID aDeviceID,
@@ -2860,7 +2847,8 @@ TEST_WithTailDispatch(TestAudioTrackGraph, ClockDriftExpectation) {
 }
 #endif  
 
-TEST_WithTailDispatch(TestAudioTrackGraph, PlatformProcessing) {
+TEST(TestAudioTrackGraph, PlatformProcessing)
+{
   constexpr cubeb_input_processing_params allParams =
       CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
       CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION |
@@ -2873,7 +2861,7 @@ TEST_WithTailDispatch(TestAudioTrackGraph, PlatformProcessing) {
   MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
-      nullptr, AbstractThread::MainThread());
+      nullptr, GetMainThreadSerialEventTarget());
 
   const CubebUtils::AudioDeviceID device = (CubebUtils::AudioDeviceID)1;
 
@@ -3064,11 +3052,8 @@ TEST_WithTailDispatch(TestAudioTrackGraph, PlatformProcessing) {
     track->Destroy();
   });
   ProcessEventQueue();
-  DispatchFunction([&] {
-    
-    EXPECT_EQ(stream->ManualDataCallback(0),
-              MockCubebStream::KeepProcessing::No);
-  });
+  
+  EXPECT_EQ(stream->ManualDataCallback(0), MockCubebStream::KeepProcessing::No);
   RefPtr<SmartMockCubebStream> destroyedStream =
       WaitFor(cubeb->StreamDestroyEvent());
   EXPECT_EQ(destroyedStream.get(), stream.get());
@@ -3078,8 +3063,8 @@ TEST_WithTailDispatch(TestAudioTrackGraph, PlatformProcessing) {
   }
 }
 
-TEST_WithTailDispatch(TestAudioTrackGraph,
-                      PlatformProcessingNonNativeToNativeSwitch) {
+TEST(TestAudioTrackGraph, PlatformProcessingNonNativeToNativeSwitch)
+{
   constexpr cubeb_input_processing_params allParams =
       CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
       CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION |
@@ -3092,7 +3077,7 @@ TEST_WithTailDispatch(TestAudioTrackGraph,
   MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
-      nullptr, AbstractThread::MainThread());
+      nullptr, GetMainThreadSerialEventTarget());
 
   const CubebUtils::AudioDeviceID firstDevice = (CubebUtils::AudioDeviceID)1;
   const CubebUtils::AudioDeviceID secondDevice = (CubebUtils::AudioDeviceID)2;
@@ -3336,21 +3321,21 @@ TEST_WithTailDispatch(TestAudioTrackGraph,
   }
 }
 
-TEST_WithTailDispatch(TestAudioTrackGraph, EmptyProcessingInterval) {
+TEST(TestAudioTrackGraph, EmptyProcessingInterval)
+{
   MockCubeb* cubeb = new MockCubeb(MockCubeb::RunningMode::Manual);
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
   MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
-      MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
+      MediaTrackGraph::AUDIO_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
-      nullptr, AbstractThread::MainThread());
+      nullptr, GetMainThreadSerialEventTarget());
 
   RefPtr processedTrack = new MockProcessedMediaTrack(graph->GraphRate());
   RefPtr fallbackListener = new OnFallbackListener(processedTrack);
   MockFunction<void(const char* name)> checkpoint;
   {
     InSequence s;
-    EXPECT_CALL(*processedTrack, AddListenerImpl).Times(1);
     EXPECT_CALL(*processedTrack, ProcessInput).Times(AtLeast(1));
     EXPECT_CALL(checkpoint, Call(StrEq("before single iteration")));
     EXPECT_CALL(*processedTrack, ProcessInput).Times(1);
@@ -3396,18 +3381,17 @@ TEST_WithTailDispatch(TestAudioTrackGraph, EmptyProcessingInterval) {
   ProcessEventQueue();
   
   auto destroyPromise = TakeN(cubeb->StreamDestroyEvent(), 1);
-  DispatchFunction([&] {
-    while (stream->ManualDataCallback(0) ==
-           MockCubebStream::KeepProcessing::Yes) {
-    }
-  });
+  while (stream->ManualDataCallback(0) ==
+         MockCubebStream::KeepProcessing::Yes) {
+  }
   
   
   
   (void)WaitFor(destroyPromise).unwrap()[0];
 }
 
-TEST_WithTailDispatch(TestAudioTrackGraph, DefaultOutputDeviceIDTracking) {
+TEST(TestAudioTrackGraph, DefaultOutputDeviceIDTracking)
+{
 #ifdef ANDROID
   GTEST_SKIP() << "On Android CubebDeviceEnumerator, not the cubeb backend, "
                   "handles device enumeration, exposing only a single input "
@@ -3421,7 +3405,7 @@ TEST_WithTailDispatch(TestAudioTrackGraph, DefaultOutputDeviceIDTracking) {
   MediaTrackGraphImpl* graph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::AUDIO_THREAD_DRIVER,  1,
       CubebUtils::PreferredSampleRate( false),
-      nullptr, AbstractThread::MainThread());
+      nullptr, GetMainThreadSerialEventTarget());
 
   
   RefPtr processedTrack = new MockProcessedMediaTrack(graph->GraphRate());
@@ -3430,8 +3414,6 @@ TEST_WithTailDispatch(TestAudioTrackGraph, DefaultOutputDeviceIDTracking) {
   const Result<cubeb_input_processing_params, int> notSupportedResult(
       Err(CUBEB_ERROR_NOT_SUPPORTED));
 
-  EXPECT_CALL(*processedTrack, AddListenerImpl).Times(1);
-  EXPECT_CALL(*processedTrack, RemoveListenerImpl).Times(1);
   EXPECT_CALL(*processedTrack, ProcessInput).Times(AtLeast(1));
   EXPECT_CALL(*dataListener, RequestedInputChannelCount)
       .WillRepeatedly(Return(2));
@@ -3510,11 +3492,9 @@ TEST_WithTailDispatch(TestAudioTrackGraph, DefaultOutputDeviceIDTracking) {
   ProcessEventQueue();
   
   auto destroyPromise = TakeN(cubeb->StreamDestroyEvent(), 1);
-  DispatchFunction([&] {
-    while (stream->ManualDataCallback(0) ==
-           MockCubebStream::KeepProcessing::Yes) {
-    }
-  });
+  while (stream->ManualDataCallback(0) ==
+         MockCubebStream::KeepProcessing::Yes) {
+  }
   
   
   
@@ -3549,7 +3529,8 @@ class TrackDestroyShutdownFactory final : public nsIFactory {
 
 NS_IMPL_ISUPPORTS(TrackDestroyShutdownFactory, nsIFactory)
 
-TEST_WithTailDispatch(TestAudioTrackGraph, GraphRemovalInGetInstance) {
+TEST(TestAudioTrackGraph, GraphRemovalInGetInstance)
+{
   TrackRate sampleRate1 = 24000;
   TrackRate sampleRate2 = 48000;
   const char* shutdownSvcContractId = "@mozilla.org/async-shutdown-service;1";
@@ -3562,7 +3543,7 @@ TEST_WithTailDispatch(TestAudioTrackGraph, GraphRemovalInGetInstance) {
 
   RefPtr graph1 = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::AUDIO_THREAD_DRIVER,  1, sampleRate1,
-      nullptr, AbstractThread::MainThread());
+      nullptr, GetMainThreadSerialEventTarget());
 
   
   RefPtr<SourceMediaTrack> dummySource1;
@@ -3600,7 +3581,7 @@ TEST_WithTailDispatch(TestAudioTrackGraph, GraphRemovalInGetInstance) {
     EXPECT_FALSE(dummySource1->IsDestroyed());
     graph2 = MediaTrackGraphImpl::GetInstance(
         MediaTrackGraph::AUDIO_THREAD_DRIVER,  1, sampleRate2,
-        nullptr, AbstractThread::MainThread());
+        nullptr, GetMainThreadSerialEventTarget());
     EXPECT_TRUE(dummySource1->IsDestroyed());
   });
   
@@ -3626,597 +3607,7 @@ TEST_WithTailDispatch(TestAudioTrackGraph, GraphRemovalInGetInstance) {
   (void)WaitFor(cubeb->StreamDestroyEvent());
 }
 
-TEST(TestAudioTrackGraph, MessageOrdering)
-{
-  MockCubeb* cubeb = new MockCubeb(MockCubeb::RunningMode::Manual);
-  CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
-
-  MediaTrackGraphImpl* graph = MediaTrackGraphImpl::GetInstance(
-      MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
-      CubebUtils::PreferredSampleRate( false),
-      nullptr, AbstractThread::MainThread());
-
-  
-  RefPtr processedTrack = new MockProcessedMediaTrack(graph->GraphRate());
-
-  MockFunction<void(const char* name)> checkpoint;
-  {
-    InSequence s;
-    EXPECT_CALL(checkpoint, Call(StrEq("Prior to tail dispatch")));
-    EXPECT_CALL(*processedTrack, AddListenerImpl);
-    EXPECT_CALL(checkpoint, Call(StrEq("1-main->graph")));
-    EXPECT_CALL(*processedTrack, ProcessInput).Times(AtLeast(1));
-    EXPECT_CALL(checkpoint, Call(StrEq("processed task on main")))
-        .Times(AtLeast(1));
-    EXPECT_CALL(checkpoint, Call(StrEq("canonical1")));
-    EXPECT_CALL(*processedTrack, ProcessInput);  
-    EXPECT_CALL(checkpoint, Call(StrEq("processed task on main")))
-        .Times(AtLeast(1));
-    EXPECT_CALL(*processedTrack, ProcessInput);  
-    EXPECT_CALL(checkpoint, Call(StrEq("processed task on main")))
-        .Times(AtLeast(1));
-    EXPECT_CALL(checkpoint, Call(StrEq("canonical3")));
-    EXPECT_CALL(checkpoint, Call(StrEq("2-main->graph")));
-    EXPECT_CALL(checkpoint, Call(StrEq("2-main->graph + 2-direct")));
-    EXPECT_CALL(checkpoint, Call(StrEq("3-main->graph")));
-    EXPECT_CALL(checkpoint, Call(StrEq("3-main->graph + 2-direct")));
-    EXPECT_CALL(*processedTrack, ProcessInput);  
-    EXPECT_CALL(checkpoint, Call(StrEq("processed task on main")))
-        .Times(AtLeast(1));
-    EXPECT_CALL(checkpoint, Call(StrEq("2-main->graph + 3-graph->graph")));
-    EXPECT_CALL(checkpoint,
-                Call(StrEq("3-main->graph + 2-direct + 2-graph->graph")));
-    EXPECT_CALL(*processedTrack, ProcessInput);  
-    EXPECT_CALL(checkpoint, Call(StrEq("processed task on main")))
-        .Times(AtLeast(1));
-    EXPECT_CALL(checkpoint, Call(StrEq("2-main->graph + 1-graph->main")));
-    EXPECT_CALL(checkpoint,
-                Call(StrEq("2-main->graph + 2-direct + graph->main")));
-    EXPECT_CALL(checkpoint, Call(StrEq("3-main->graph + 1-graph->main")));
-    EXPECT_CALL(checkpoint,
-                Call(StrEq("3-main->graph + 2-direct + 1-graph->main")));
-    EXPECT_CALL(checkpoint, Call(StrEq("processed task on main")))
-        .Times(AtLeast(1));
-    EXPECT_CALL(checkpoint,
-                Call(StrEq("2-main->graph + 3-graph->graph + graph->main")));
-    EXPECT_CALL(
-        checkpoint,
-        Call(StrEq("3-main->graph + 2-direct + 2-graph->graph + graph->main")));
-    EXPECT_CALL(checkpoint, Call(StrEq("processed task on main")))
-        .Times(AtLeast(1));
-    EXPECT_CALL(*processedTrack, RemoveListenerImpl);
-  }
-
-  RefPtr<OnFallbackListener> fallbackListener;
-  DispatchFunction([&] {
-    
-    graph->AddTrack(processedTrack);
-    processedTrack->AddAudioOutput(reinterpret_cast<void*>(1), nullptr);
-    fallbackListener = new OnFallbackListener(processedTrack);
-    processedTrack->AddListener(fallbackListener);
-
-    
-    EXPECT_TRUE(NS_SUCCEEDED(graph->Dispatch(NS_NewRunnableFunction(
-        __func__, [&] { checkpoint.Call("1-main->graph"); }))));
-    checkpoint.Call("Prior to tail dispatch");
-  });
-
-  RefPtr<SmartMockCubebStream> stream = WaitFor(cubeb->StreamInitEvent());
-  while (stream->State().isNothing()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
-  EXPECT_EQ(*stream->State(), CUBEB_STATE_STARTED);
-  
-  while (fallbackListener->OnFallback()) {
-    EXPECT_EQ(stream->ManualDataCallback(WEBAUDIO_BLOCK_SIZE),
-              MockCubebStream::KeepProcessing::Yes);
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
-
-  
-
-  Canonical<const char*> canonical(AbstractThread::MainThread(), "canonical1",
-                                   "TestCanonical");
-  Mirror<const char*> mirror(graph, "", "TestMirror");
-  using OnMirror = NiceMock<MockFunction<void()>>;
-  auto onmirror = MakeRefPtr<media::Refcountable<OnMirror>>();
-  ON_CALL(*onmirror, Call).WillByDefault([&] { checkpoint.Call(mirror); });
-  WatchManager<media::Refcountable<OnMirror>> mgr(onmirror, graph);
-
-  
-  DispatchFunction([&] {
-    mgr.Watch(mirror, &OnMirror::Call);
-    canonical.ConnectMirror(&mirror);
-  });
-
-  
-  DispatchFunction([&] {
-    EXPECT_EQ(stream->ManualDataCallback(2 * WEBAUDIO_BLOCK_SIZE),
-              MockCubebStream::KeepProcessing::Yes);
-  });
-
-  DispatchFunction([&] {
-    
-    
-    
-    EXPECT_TRUE(
-        NS_SUCCEEDED(graph->Dispatch(NS_NewRunnableFunction(__func__, [&] {
-          EXPECT_EQ(AbstractThread::GetCurrent(), graph);
-          EXPECT_EQ(GetCurrentSerialEventTarget(), graph);
-          graph->DispatchToMainThread(NS_NewRunnableFunction(
-              "MessageOrdering main",
-              [&] { checkpoint.Call("2-main->graph + 1-graph->main"); }));
-          graph->TailDispatcher().AddDirectTask(
-              NS_NewRunnableFunction("MessageOrdering direct", [&] {
-                EXPECT_EQ(AbstractThread::GetCurrent(), graph);
-                EXPECT_EQ(GetCurrentSerialEventTarget(), graph);
-                graph->DispatchToMainThread(
-                    NS_NewRunnableFunction("MessageOrdering main", [&] {
-                      checkpoint.Call("2-main->graph + 2-direct + graph->main");
-                    }));
-                checkpoint.Call("2-main->graph + 2-direct");
-              }));
-          EXPECT_TRUE(NS_SUCCEEDED(graph->Dispatch(
-              NS_NewRunnableFunction("MessageOrdering nested", [&] {
-                graph->DispatchToMainThread(
-                    NS_NewRunnableFunction("MessageOrdering nested main", [&] {
-                      checkpoint.Call(
-                          "2-main->graph + 3-graph->graph + graph->main");
-                    }));
-                checkpoint.Call("2-main->graph + 3-graph->graph");
-              }))));
-          checkpoint.Call("2-main->graph");
-        }))));
-
-    
-    
-    canonical = "canonical2";
-
-    
-    EXPECT_EQ(stream->ManualDataCallback(3 * WEBAUDIO_BLOCK_SIZE),
-              MockCubebStream::KeepProcessing::Yes);
-
-    
-    EXPECT_TRUE(
-        NS_SUCCEEDED(graph->Dispatch(NS_NewRunnableFunction(__func__, [&] {
-          graph->DispatchToMainThread(NS_NewRunnableFunction(
-              "MessageOrdering main",
-              [&] { checkpoint.Call("3-main->graph + 1-graph->main"); }));
-          graph->TailDispatcher().AddDirectTask(
-              NS_NewRunnableFunction("MessageOrdering direct", [&] {
-                graph->DispatchToMainThread(
-                    NS_NewRunnableFunction("MessageOrdering main", [&] {
-                      checkpoint.Call(
-                          "3-main->graph + 2-direct + 1-graph->main");
-                    }));
-                EXPECT_TRUE(NS_SUCCEEDED(graph->Dispatch(NS_NewRunnableFunction(
-                    "MessageOrdering direct nested", [&] {
-                      graph->DispatchToMainThread(NS_NewRunnableFunction(
-                          "MessageOrdering direct nested main", [&] {
-                            checkpoint.Call(
-                                "3-main->graph + 2-direct + 2-graph->graph + "
-                                "graph->main");
-                          }));
-                      checkpoint.Call(
-                          "3-main->graph + 2-direct + 2-graph->graph");
-                    }))));
-                checkpoint.Call("3-main->graph + 2-direct");
-              }));
-          checkpoint.Call("3-main->graph");
-        }))));
-
-    
-    canonical = "canonical3";
-  });
-
-  
-  DispatchFunction([&] {
-    EXPECT_EQ(stream->ManualDataCallback(4 * WEBAUDIO_BLOCK_SIZE),
-              MockCubebStream::KeepProcessing::Yes);
-  });
-
-  
-  DispatchFunction([&] {
-    EXPECT_EQ(stream->ManualDataCallback(5 * WEBAUDIO_BLOCK_SIZE),
-              MockCubebStream::KeepProcessing::Yes);
-  });
-
-  DispatchFunction([&] {
-    EXPECT_TRUE(NS_SUCCEEDED(graph->Dispatch(
-        NS_NewRunnableFunction(__func__, [&] { mgr.Shutdown(); }))));
-    canonical.DisconnectAll();
-  });
-
-  
-  while (NS_ProcessNextEvent(nullptr, false)) {
-    checkpoint.Call("processed task on main");
-  }
-
-  DispatchFunction([&] {
-    processedTrack->RemoveListener(fallbackListener);
-    processedTrack->Destroy();
-  });
-  
-  auto destroyPromise = TakeN(cubeb->StreamDestroyEvent(), 1);
-  DispatchFunction([&] {
-    while (stream->ManualDataCallback(0) ==
-           MockCubebStream::KeepProcessing::Yes) {
-    }
-  });
-  
-  
-  
-  (void)WaitFor(destroyPromise).unwrap()[0];
-}
-
-namespace {
-class TestRunnable : public Runnable, public nsIDiscardableRunnable {
- public:
-  NS_DECL_ISUPPORTS_INHERITED
-
-  TestRunnable(const char* aName, bool aDiscardable,
-               MockFunction<void(const char*)>& aCheckpoint)
-      : Runnable(aName),
-        mName(aName),
-        mDiscardable(aDiscardable),
-        mCheckpoint(aCheckpoint) {}
-  NS_IMETHODIMP Run() override {
-    mCheckpoint.Call(nsPrintfCString("%s::%s", mName, __func__).get());
-    return NS_OK;
-  }
-
-  void OnDiscard() override {
-    mCheckpoint.Call(nsPrintfCString("%s::%s", mName, __func__).get());
-  }
-
- private:
-  ~TestRunnable() override {
-    mCheckpoint.Call(nsPrintfCString("~%s", mName).get());
-  }
-
-  const char* mName;
-  const bool mDiscardable;
-  MockFunction<void(const char*)>& mCheckpoint;
-};
-}  
-
-NS_IMPL_ADDREF_INHERITED(TestRunnable, Runnable)
-NS_IMPL_RELEASE_INHERITED(TestRunnable, Runnable)
-
-NS_INTERFACE_MAP_BEGIN(TestRunnable)
-  NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIDiscardableRunnable, mDiscardable)
-NS_INTERFACE_MAP_END_INHERITING(Runnable)
-
-TEST(TestAudioTrackGraph, ShutdownMessages)
-{
-  MockCubeb* cubeb = new MockCubeb(MockCubeb::RunningMode::Manual);
-  CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
-
-  MediaTrackGraphImpl* graph = MediaTrackGraphImpl::GetInstance(
-      MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
-      CubebUtils::PreferredSampleRate( false),
-      nullptr, AbstractThread::MainThread());
-
-  
-  RefPtr processedTrack = new MockProcessedMediaTrack(graph->GraphRate());
-
-  MockFunction<void(const char* name)> checkpoint;
-  {
-    InSequence s;
-    EXPECT_CALL(checkpoint, Call(StrEq("Prior to tail dispatch")));
-    EXPECT_CALL(*processedTrack, AddListenerImpl);
-    EXPECT_CALL(checkpoint, Call(StrEq("First dispatch")));
-    EXPECT_CALL(*processedTrack, ProcessInput).Times(AtLeast(1));
-    EXPECT_CALL(checkpoint, Call(StrEq("Now manual")));
-
-    EXPECT_CALL(checkpoint,
-                Call(StrEq("NonShutdownRunnable_BeforeShutdown::Run")));
-    EXPECT_CALL(checkpoint,
-                Call(StrEq("ShutdownRunnable_BeforeShutdown::Run")));
-    EXPECT_CALL(checkpoint,
-                Call(StrEq("ControlNoShutdown_BeforeShutdown::Run")));
-    EXPECT_CALL(checkpoint,
-                Call(StrEq("ControlOrShutdown_BeforeShutdown::Run")));
-    EXPECT_CALL(checkpoint, Call(StrEq("~NonShutdownRunnable_BeforeShutdown")));
-    EXPECT_CALL(checkpoint, Call(StrEq("~ShutdownRunnable_BeforeShutdown")));
-
-    EXPECT_CALL(checkpoint, Call(StrEq("Forced shutdown")));
-    EXPECT_CALL(checkpoint, Call(StrEq("Before main thread cleanup")));
-
-    EXPECT_CALL(checkpoint, Call(StrEq("NonShutdownRunnable_OnShutdown::Run")));
-    EXPECT_CALL(checkpoint, Call(StrEq("~NonShutdownRunnable_OnShutdown")));
-    EXPECT_CALL(checkpoint,
-                Call(StrEq("ShutdownRunnable_OnShutdown::OnDiscard")));
-    EXPECT_CALL(checkpoint, Call(StrEq("~ShutdownRunnable_OnShutdown")));
-    EXPECT_CALL(checkpoint, Call(StrEq("ControlOrShutdown_OnShutdown::Run")));
-
-    EXPECT_CALL(checkpoint, Call(StrEq("After main thread cleanup")));
-
-    EXPECT_CALL(checkpoint,
-                Call(StrEq("NonShutdownRunnable_AfterShutdown::Run")));
-    EXPECT_CALL(checkpoint, Call(StrEq("~NonShutdownRunnable_AfterShutdown")));
-    EXPECT_CALL(checkpoint,
-                Call(StrEq("ShutdownRunnable_AfterShutdown::OnDiscard")));
-    EXPECT_CALL(checkpoint, Call(StrEq("~ShutdownRunnable_AfterShutdown")));
-    EXPECT_CALL(checkpoint,
-                Call(StrEq("ControlOrShutdown_AfterShutdown::Run")));
-
-    EXPECT_CALL(*processedTrack, RemoveListenerImpl);
-    EXPECT_CALL(checkpoint, Call(StrEq("Final track removed")));
-
-#ifndef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-    EXPECT_CALL(checkpoint, Call(StrEq("NonShutdownRunnable_Empty::Run")));
-    EXPECT_CALL(checkpoint, Call(StrEq("~NonShutdownRunnable_Empty")));
-    EXPECT_CALL(checkpoint, Call(StrEq("ShutdownRunnable_Empty::OnDiscard")));
-    EXPECT_CALL(checkpoint, Call(StrEq("~ShutdownRunnable_Empty")));
-    EXPECT_CALL(checkpoint, Call(StrEq("ControlOrShutdown_Empty::Run")));
-#endif
-
-    EXPECT_CALL(checkpoint, Call(StrEq("Final call")));
-  }
-
-  RefPtr<OnFallbackListener> fallbackListener;
-  DispatchFunction([&] {
-    
-    graph->AddTrack(processedTrack);
-    processedTrack->AddAudioOutput(reinterpret_cast<void*>(1), nullptr);
-    fallbackListener = new OnFallbackListener(processedTrack);
-    processedTrack->AddListener(fallbackListener);
-
-    
-    EXPECT_TRUE(NS_SUCCEEDED(graph->Dispatch(NS_NewRunnableFunction(
-        __func__, [&] { checkpoint.Call("First dispatch"); }))));
-    checkpoint.Call("Prior to tail dispatch");
-  });
-
-  RefPtr<SmartMockCubebStream> stream = WaitFor(cubeb->StreamInitEvent());
-  while (stream->State().isNothing()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
-  EXPECT_EQ(*stream->State(), CUBEB_STATE_STARTED);
-  
-  DispatchFunction([&] {
-    while (fallbackListener->OnFallback()) {
-      EXPECT_EQ(stream->ManualDataCallback(WEBAUDIO_BLOCK_SIZE),
-                MockCubebStream::KeepProcessing::Yes);
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
-
-    
-    checkpoint.Call("Now manual");
-  });
-
-  const auto CreateControlMessageRunner([&](const char* aName) {
-    return [&, aName] {
-      checkpoint.Call(nsPrintfCString("%s::Run", aName).get());
-    };
-  });
-  const auto CreateControlOrShutdownMessageRunner([&](const char* aName) {
-    return [&, aName](MediaTrack::IsInShutdown) {
-      checkpoint.Call(nsPrintfCString("%s::Run", aName).get());
-    };
-  });
-
-  DispatchFunction([&] {
-    
-    MOZ_ALWAYS_SUCCEEDS(graph->Dispatch(
-        MakeAndAddRef<TestRunnable>("NonShutdownRunnable_BeforeShutdown",
-                                    false, checkpoint)));
-    MOZ_ALWAYS_SUCCEEDS(graph->Dispatch(MakeAndAddRef<TestRunnable>(
-        "ShutdownRunnable_BeforeShutdown", true, checkpoint)));
-    graph->QueueControlMessageWithNoShutdown(
-        CreateControlMessageRunner("ControlNoShutdown_BeforeShutdown"));
-    graph->QueueControlOrShutdownMessage(CreateControlOrShutdownMessageRunner(
-        "ControlOrShutdown_BeforeShutdown"));
-  });
-
-  auto destroyPromise = TakeN(cubeb->StreamDestroyEvent(), 1);
-  DispatchFunction([&] { graph->ForceShutDown(); });
-
-  DispatchFunction([&] {
-    
-    EXPECT_EQ(stream->ManualDataCallback(0),
-              MockCubebStream::KeepProcessing::No);
-
-    checkpoint.Call("Forced shutdown");
-  });
-
-  
-  DispatchFunction([&] {
-    MOZ_ALWAYS_SUCCEEDS(graph->Dispatch(
-        MakeAndAddRef<TestRunnable>("NonShutdownRunnable_OnShutdown",
-                                    false, checkpoint)));
-    MOZ_ALWAYS_SUCCEEDS(graph->Dispatch(MakeAndAddRef<TestRunnable>(
-        "ShutdownRunnable_OnShutdown", true, checkpoint)));
-    graph->QueueControlMessageWithNoShutdown(
-        CreateControlMessageRunner("ControlNoShutdown_OnShutdown"));
-    graph->QueueControlOrShutdownMessage(
-        CreateControlOrShutdownMessageRunner("ControlOrShutdown_OnShutdown"));
-
-    checkpoint.Call("Before main thread cleanup");
-  });
-
-  DispatchFunction([&] {
-    checkpoint.Call("After main thread cleanup");
-
-    
-    
-    MOZ_ALWAYS_SUCCEEDS(graph->Dispatch(
-        MakeAndAddRef<TestRunnable>("NonShutdownRunnable_AfterShutdown",
-                                    false, checkpoint)));
-    MOZ_ALWAYS_SUCCEEDS(graph->Dispatch(MakeAndAddRef<TestRunnable>(
-        "ShutdownRunnable_AfterShutdown", true, checkpoint)));
-    graph->QueueControlMessageWithNoShutdown(
-        CreateControlMessageRunner("ControlNoShutdown_AfterShutdown"));
-    graph->QueueControlOrShutdownMessage(CreateControlOrShutdownMessageRunner(
-        "ControlOrShutdown_AfterShutdown"));
-
-    processedTrack->RemoveListener(fallbackListener);
-    processedTrack->Destroy();
-  });
-
-  DispatchFunction([&] { checkpoint.Call("Final track removed"); });
-
-  DispatchFunction([&] {
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-    GTEST_FLAG_SET(death_test_style, "threadsafe");
-    SAVE_GDB_SLEEP_LOCAL();
-    EXPECT_DEATH_WRAP(
-        MOZ_ALWAYS_SUCCEEDS(graph->Dispatch(
-            MakeAndAddRef<TestRunnable>("NonShutdownRunnable_Empty",
-                                        false, checkpoint))),
-        "");
-    EXPECT_DEATH_WRAP(
-        MOZ_ALWAYS_SUCCEEDS(graph->Dispatch(MakeAndAddRef<TestRunnable>(
-            "ShutdownRunnable_Empty", true, checkpoint))),
-        "");
-    EXPECT_DEATH_WRAP(
-        graph->QueueControlMessageWithNoShutdown(
-            CreateControlMessageRunner("ControlNoShutdown_Empty")),
-        "");
-    EXPECT_DEATH_WRAP(
-        graph->QueueControlOrShutdownMessage(
-            CreateControlOrShutdownMessageRunner("ControlOrShutdown_Empty")),
-        "");
-    RESTORE_GDB_SLEEP_LOCAL();
-#else
-    
-    
-    MOZ_ALWAYS_SUCCEEDS(graph->Dispatch(MakeAndAddRef<TestRunnable>(
-        "NonShutdownRunnable_Empty", false, checkpoint)));
-    MOZ_ALWAYS_SUCCEEDS(graph->Dispatch(MakeAndAddRef<TestRunnable>(
-        "ShutdownRunnable_Empty", true, checkpoint)));
-    graph->QueueControlMessageWithNoShutdown(
-        CreateControlMessageRunner("ControlNoShutdown_Empty"));
-    graph->QueueControlOrShutdownMessage(
-        CreateControlOrShutdownMessageRunner("ControlOrShutdown_Empty"));
-#endif
-
-    checkpoint.Call("Final call");
-  });
-
-  
-  
-  
-  (void)WaitFor(destroyPromise).unwrap()[0];
-  ProcessEventQueue();
-}
-
-TEST(TestAudioTrackGraph, MessageAtomicity)
-{
-  MockCubeb* cubeb = new MockCubeb(MockCubeb::RunningMode::Manual);
-  CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
-
-  MediaTrackGraphImpl* graph = MediaTrackGraphImpl::GetInstance(
-      MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
-      CubebUtils::PreferredSampleRate( false),
-      nullptr, AbstractThread::MainThread());
-
-  
-  RefPtr processedTrack = new MockProcessedMediaTrack(graph->GraphRate());
-
-  MockFunction<void(const char* name)> checkpoint;
-  {
-    InSequence s;
-    EXPECT_CALL(*processedTrack, AddListenerImpl);
-    EXPECT_CALL(*processedTrack, ProcessInput).Times(AtLeast(0));
-    
-    EXPECT_CALL(checkpoint, Call(StrEq("Main"))).Times(500);
-    
-    
-    EXPECT_CALL(checkpoint, Call(StrEq("Other"))).Times(500);
-    EXPECT_CALL(*processedTrack, ProcessInput);
-    EXPECT_CALL(*processedTrack, RemoveListenerImpl);
-  }
-
-  
-  RefPtr<OnFallbackListener> fallbackListener;
-  DispatchFunction([&] {
-    graph->AddTrack(processedTrack);
-    processedTrack->AddAudioOutput(reinterpret_cast<void*>(1), nullptr);
-    fallbackListener = new OnFallbackListener(processedTrack);
-    processedTrack->AddListener(fallbackListener);
-  });
-
-  RefPtr<SmartMockCubebStream> stream = WaitFor(cubeb->StreamInitEvent());
-  while (stream->State().isNothing()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
-  EXPECT_EQ(*stream->State(), CUBEB_STATE_STARTED);
-  
-  DispatchFunction([&] {
-    while (fallbackListener->OnFallback()) {
-      EXPECT_EQ(stream->ManualDataCallback(WEBAUDIO_BLOCK_SIZE),
-                MockCubebStream::KeepProcessing::Yes);
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
-  });
-
-  
-
-  
-  DispatchFunction([&] {
-    EXPECT_EQ(stream->ManualDataCallback(2 * WEBAUDIO_BLOCK_SIZE),
-              MockCubebStream::KeepProcessing::Yes);
-  });
-
-  auto tq =
-      TaskQueue::Create(GetMediaThreadPool(MediaThreadType::WEBRTC_WORKER),
-                        __func__, TailDispatchPolicy::ConsistentOrdering);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  DispatchFunction([&] {
-    for (size_t i = 0; i < 500; ++i) {
-      EXPECT_TRUE(NS_SUCCEEDED(graph->Dispatch(
-          NS_NewRunnableFunction(__func__, [&] { checkpoint.Call("Main"); }))));
-      EXPECT_TRUE(
-          NS_SUCCEEDED(tq->Dispatch(NS_NewRunnableFunction(__func__, [&] {
-            EXPECT_TRUE(NS_SUCCEEDED(graph->Dispatch(NS_NewRunnableFunction(
-                "TaskQueue.Task", [&] { checkpoint.Call("Other"); }))));
-          }))));
-    }
-  });
-
-  
-  ProcessEventQueue();
-
-  
-  WaitForMirrors(tq);
-
-  
-  DispatchFunction([&] {
-    EXPECT_EQ(stream->ManualDataCallback(WEBAUDIO_BLOCK_SIZE),
-              MockCubebStream::KeepProcessing::Yes);
-  });
-
-  DispatchFunction([&] {
-    processedTrack->RemoveListener(fallbackListener);
-    processedTrack->Destroy();
-  });
-
-  
-  auto destroyPromise = TakeN(cubeb->StreamDestroyEvent(), 1);
-  DispatchFunction([&] {
-    while (stream->ManualDataCallback(0) ==
-           MockCubebStream::KeepProcessing::Yes) {
-    }
-  });
-  
-  
-  
-  (void)WaitFor(destroyPromise).unwrap()[0];
-}
-
 #undef InvokeAsync
-#undef TEST_WithTailDispatch
 #undef DispatchFunction
 #undef DispatchMethod
 #undef ProcessEventQueue

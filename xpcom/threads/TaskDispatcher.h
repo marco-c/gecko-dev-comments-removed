@@ -105,10 +105,9 @@ class TaskDispatcher {
 class AutoTaskDispatcher : public TaskDispatcher {
  public:
   explicit AutoTaskDispatcher(nsIDirectTaskDispatcher* aDirectTaskDispatcher,
-                              TailDispatchPolicy aTailDispatchPolicy =
-                                  TailDispatchPolicy::NoTailDispatch)
+                              bool aIsTailDispatcher = false)
       : mDirectTaskDispatcher(aDirectTaskDispatcher),
-        mTailDispatchPolicy(aTailDispatchPolicy) {}
+        mIsTailDispatcher(aIsTailDispatcher) {}
 
   ~AutoTaskDispatcher() {
     
@@ -153,47 +152,17 @@ class AutoTaskDispatcher : public TaskDispatcher {
                    already_AddRefed<nsIRunnable> aRunnable) override {
     nsCOMPtr<nsIRunnable> r = aRunnable;
     MOZ_RELEASE_ASSERT(r);
-
     
     
     
-    MOZ_ASSERT(AbstractThread::GetCurrent());
-    MOZ_ASSERT(AbstractThread::GetCurrent()->IsTailDispatcherAvailable());
-    MOZ_ASSERT(&AbstractThread::GetCurrent()->TailDispatcher() == this);
-
-    PerThreadTaskGroup* group = nullptr;
-    if (aThread->TailDispatchPolicy() == TailDispatchPolicy::TargetAtomicity ||
-        mTailDispatchPolicy == TailDispatchPolicy::TargetAtomicity) {
-      
-      
-      for (const auto& g : mTaskGroups) {
-        if (g->mThread == aThread) {
-          group = g.get();
-          break;
-        }
-      }
-      if (!group) {
-        group =
-            mTaskGroups
-                .AppendElement(std::make_unique<PerThreadTaskGroup>(aThread))
-                ->get();
-      }
-    } else {
-      MOZ_ASSERT(aThread->TailDispatchPolicy() ==
-                 TailDispatchPolicy::ConsistentOrdering);
-      
-      
-      
-      
-      if (mTaskGroups.Length() == 0 ||
-          mTaskGroups.LastElement()->mThread != aThread) {
-        mTaskGroups.AppendElement(new PerThreadTaskGroup(aThread));
-      }
-
-      group = mTaskGroups.LastElement().get();
+    
+    if (mTaskGroups.Length() == 0 ||
+        mTaskGroups.LastElement()->mThread != aThread) {
+      mTaskGroups.AppendElement(new PerThreadTaskGroup(aThread));
     }
 
-    group->mRegularTasks.AppendElement(r.forget());
+    PerThreadTaskGroup& group = *mTaskGroups.LastElement();
+    group.mRegularTasks.AppendElement(r.forget());
 
     return NS_OK;
   }
@@ -239,10 +208,10 @@ class AutoTaskDispatcher : public TaskDispatcher {
     nsTArray<nsCOMPtr<nsIRunnable>> mRegularTasks;
   };
 
-  class TaskGroupRunnable : public CancelableRunnable {
+  class TaskGroupRunnable : public Runnable {
    public:
     explicit TaskGroupRunnable(UniquePtr<PerThreadTaskGroup>&& aTasks)
-        : CancelableRunnable("AutoTaskDispatcher::TaskGroupRunnable"),
+        : Runnable("AutoTaskDispatcher::TaskGroupRunnable"),
           mTasks(std::move(aTasks)) {}
 
     NS_IMETHOD Run() override {
@@ -269,49 +238,12 @@ class AutoTaskDispatcher : public TaskDispatcher {
       return NS_OK;
     }
 
-    nsresult Cancel() override {
-      nsTArray<nsCOMPtr<nsIRunnable>> stateChangeTasks =
-          std::move(mTasks->mStateChangeTasks);
-      nsTArray<nsCOMPtr<nsIRunnable>> regularTasks =
-          std::move(mTasks->mRegularTasks);
-
-      for (auto& task : stateChangeTasks) {
-        CancelTask(task);
-        task = nullptr;
-      }
-
-      
-      
-      MaybeDrainDirectTasks();
-
-      for (auto& task : regularTasks) {
-        CancelTask(task);
-        task = nullptr;
-
-        
-        
-        MaybeDrainDirectTasks();
-      }
-
-      return NS_OK;
-    }
-
    private:
     void MaybeDrainDirectTasks() {
       AbstractThread* currentThread = AbstractThread::GetCurrent();
       if (currentThread && currentThread->MightHaveTailTasks()) {
         currentThread->TailDispatcher().DrainDirectTasks();
       }
-    }
-
-    nsresult CancelTask(nsIRunnable* aTask) {
-      if (nsCOMPtr<nsIDiscardableRunnable> discardable =
-              do_QueryInterface(aTask)) {
-        discardable->OnDiscard();
-        return NS_OK;
-      }
-
-      return NS_OK;
     }
 
     UniquePtr<PerThreadTaskGroup> mTasks;
@@ -342,9 +274,8 @@ class AutoTaskDispatcher : public TaskDispatcher {
     RefPtr<AbstractThread> thread = aGroup->mThread;
 
     AbstractThread::DispatchReason reason =
-        mTailDispatchPolicy == TailDispatchPolicy::NoTailDispatch
-            ? AbstractThread::NormalDispatch
-            : AbstractThread::TailDispatch;
+        mIsTailDispatcher ? AbstractThread::TailDispatch
+                          : AbstractThread::NormalDispatch;
     nsCOMPtr<nsIRunnable> r = new TaskGroupRunnable(std::move(aGroup));
     return thread->Dispatch(r.forget(), reason);
   }
@@ -354,7 +285,8 @@ class AutoTaskDispatcher : public TaskDispatcher {
 
   nsCOMPtr<nsIDirectTaskDispatcher> mDirectTaskDispatcher;
   
-  const TailDispatchPolicy mTailDispatchPolicy;
+  
+  const bool mIsTailDispatcher;
 };
 
 
