@@ -72,7 +72,7 @@ class TransformableFrameInterface {
   
   
   
-  
+  [[deprecated("Use GetRtpTimestampInfo instead")]]
   virtual uint32_t GetTimestamp() const = 0;
   virtual void SetRTPTimestamp(uint32_t rtp_timestamp_with_offset) = 0;
 
