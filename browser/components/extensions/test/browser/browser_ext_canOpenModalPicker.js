@@ -169,6 +169,16 @@ add_task(async function test_canOpenModalPicker_in_options_ui() {
     "openOptionsPage() opened about:addons tab"
   );
 
+  
+  
+  
+  let moreOptionsButton = aboutaddonsBrowser.contentDocument.querySelector(
+    "addon-card .more-options-button"
+  );
+  if (aboutaddonsBrowser.contentDocument.activeElement != moreOptionsButton) {
+    await BrowserTestUtils.waitForEvent(moreOptionsButton, "focus");
+  }
+
   let optionsBrowser = aboutaddonsBrowser.contentDocument.getElementById(
     "addon-inline-options"
   );
