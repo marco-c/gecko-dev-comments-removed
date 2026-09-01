@@ -58,7 +58,6 @@ enum class BorderStyle : int16_t {
                       
   Maximize = 1 << 6,  
                       
-  Close = 1 << 7,     
   Default = -1        
 };
 
