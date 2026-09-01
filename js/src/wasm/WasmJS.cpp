@@ -856,14 +856,14 @@ static bool EnforceAddressValue(JSContext* cx, HandleValue v,
   switch (addressType) {
     case AddressType::I32:
       MOZ_ASSERT(value <= UINT32_MAX);
-      addressValue.set(NumberValue(value));
+      addressValue.setNumber(value);
       return true;
     case AddressType::I64: {
       BigInt* bi = BigInt::createFromUint64(cx, value);
       if (!bi) {
         return false;
       }
-      addressValue.set(BigIntValue(bi));
+      addressValue.setBigInt(bi);
       return true;
     }
     default:
@@ -2157,21 +2157,23 @@ bool WasmComponentObject::construct(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  BytecodeSource source;
-  Rooted<JSObject*> sourceObj(cx, &callArgs[0].toObject());
-  bool isShared;
-  if (!GetBytecodeSource(cx, sourceObj, JSMSG_WASM_BAD_BUF_ARG, &source,
-                         &isShared)) {
-    return false;
-  }
-
   UniqueChars error;
   UniqueCharsVector warnings;
   SharedComponent component;
   {
+    
+    
+    
+    BytecodeBufferOrSource bytecode;
+    Rooted<JSObject*> sourceObj(cx, &callArgs[0].toObject());
+    if (!GetBytecodeBufferOrSource(cx, sourceObj, JSMSG_WASM_BAD_BUF_ARG,
+                                   &bytecode)) {
+      return false;
+    }
     AutoPinBufferSourceLength pin(cx, sourceObj.get());
-    component = CompileComponent(*compileArgs, BytecodeBufferOrSource(source),
-                                 &error, &warnings, nullptr);
+
+    component =
+        CompileComponent(*compileArgs, bytecode, &error, &warnings, nullptr);
   }
 
   if (!ReportCompileWarnings(cx, warnings)) {
@@ -3043,7 +3045,7 @@ bool WasmMemoryObject::toFixedLengthBufferImpl(JSContext* cx,
     if (!refreshedBuffer) {
       return false;
     }
-    args.rval().set(ObjectValue(*refreshedBuffer));
+    args.rval().setObject(*refreshedBuffer);
     return true;
   }
 
@@ -3070,7 +3072,7 @@ bool WasmMemoryObject::toFixedLengthBufferImpl(JSContext* cx,
     return false;
   }
   memory->setReservedSlotTyped(BUFFER_SLOT, ObjectValue(*fixedBuffer));
-  args.rval().set(ObjectValue(*fixedBuffer));
+  args.rval().setObject(*fixedBuffer);
   return true;
 }
 
@@ -3090,7 +3092,7 @@ bool WasmMemoryObject::toResizableBufferImpl(JSContext* cx,
   Rooted<ArrayBufferObjectMaybeShared*> buffer(cx, &memory->buffer());
   
   if (buffer->isResizable()) {
-    args.rval().set(ObjectValue(*buffer));
+    args.rval().setObject(*buffer);
     return true;
   }
 
@@ -3123,7 +3125,7 @@ bool WasmMemoryObject::toResizableBufferImpl(JSContext* cx,
     return false;
   }
   memory->setReservedSlotTyped(BUFFER_SLOT, ObjectValue(*resizableBuffer));
-  args.rval().set(ObjectValue(*resizableBuffer));
+  args.rval().setObject(*resizableBuffer);
   return true;
 }
 
@@ -6181,7 +6183,7 @@ static bool WebAssembly_mozIntGemm(JSContext* cx, unsigned argc, Value* vp) {
     ReportOutOfMemory(cx);
     return false;
   }
-  args.rval().set(ObjectValue(*module.get()));
+  args.rval().setObject(*module.get());
   return true;
 }
 
