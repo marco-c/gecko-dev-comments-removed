@@ -71,6 +71,10 @@ class OverscrollHandoffChain {
 
   
   
+  void ClearScrolledByHandedOffGesture() const;
+
+  
+  
   void SnapBackOverscrolledApzc(const AsyncPanZoomController* aStart) const;
 
   
@@ -142,6 +146,8 @@ struct OverscrollHandoffState {
         mChainIndex(0),
         mPanDistance(aPanDistance),
         mScrollSource(aScrollSource) {}
+
+  bool IsScrolledByHandedOffGesture() const;
 
   
   

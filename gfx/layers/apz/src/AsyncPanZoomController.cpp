@@ -598,7 +598,7 @@ AsyncPanZoomController::AutoRecordCompositorScrollUpdate final {
     CompositorScrollUpdate::Metrics newMetrics =
         mApzc->GetCurrentMetricsForCompositorScrollUpdate(mProofOfApzcLock);
     if (newMetrics != mPreviousMetrics) {
-      mApzc->mUpdatesSinceLastSample.push_back({newMetrics, mSource});
+      mApzc->mUpdatesSinceLastSample.EmplaceBack(newMetrics, mSource);
     }
   }
 
@@ -3935,7 +3935,7 @@ bool AsyncPanZoomController::AttemptScroll(
           }
         }
         if (displacementIsUserVisible) {
-          block->SetScrolledApzc(this);
+          block->SetScrolledApzc(this, aOverscrollHandoffState);
         }
       }
       
@@ -5391,6 +5391,17 @@ void AsyncPanZoomController::UnapplyAsyncTestAttributes(
   }
 }
 
+void AsyncPanZoomController::SetScrolledByHandedOffGesture(bool aState) {
+  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  mScrolledByHandedOffGesture = aState;
+}
+
+void AsyncPanZoomController::ClearScrolledByHandedOffGestureOnChain() {
+  if (InputBlockState* block = GetCurrentInputBlock()) {
+    block->GetOverscrollHandoffChain()->ClearScrolledByHandedOffGesture();
+  }
+}
+
 Matrix4x4 AsyncPanZoomController::GetTransformToLastDispatchedPaint(
     const AsyncTransformComponents& aComponents, LayersId aForLayersId) const {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
@@ -6273,11 +6284,11 @@ bool CompositorScrollUpdate::operator==(
   return mMetrics == aOther.mMetrics && mSource == aOther.mSource;
 }
 
-std::vector<CompositorScrollUpdate>
+nsTArray<CompositorScrollUpdate>
 AsyncPanZoomController::GetCompositorScrollUpdates() {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   MOZ_ASSERT(Metrics().IsRootContent());
-  return mSampledState[0].Updates();
+  return mSampledState[0].Updates().Clone();
 }
 
 CompositorScrollUpdate::Metrics
@@ -6745,7 +6756,19 @@ void AsyncPanZoomController::SetState(PanZoomState aNewState) {
     }
   }
 
+  bool wasInScrollingGesture = IsInScrollingGesture();
   PanZoomState oldState = SetStateNoContentControllerDispatch(aNewState);
+
+  
+  
+  
+  
+  if (wasInScrollingGesture && !IsInScrollingGesture()) {
+    APZThreadUtils::RunOnControllerThread(NewRunnableMethod(
+        "layers::AsyncPanZoomController::"
+        "ClearScrolledByHandedOffGestureOnChain",
+        this, &AsyncPanZoomController::ClearScrolledByHandedOffGestureOnChain));
+  }
 
   DispatchStateChangeNotification(oldState, aNewState);
 }
@@ -6804,7 +6827,19 @@ bool AsyncPanZoomController::IsInPanningState() const {
 
 bool AsyncPanZoomController::IsInScrollingGesture() const {
   return IsPanningState(mState) || mState == SCROLLBAR_DRAG ||
-         mState == TOUCHING || mState == PINCHING;
+         mState == TOUCHING || mState == PINCHING ||
+         mScrolledByHandedOffGesture;
+}
+
+void AsyncPanZoomController::ClearScrolledByHandedOffGesture() {
+  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  if (!mScrolledByHandedOffGesture) {
+    return;
+  }
+  mScrolledByHandedOffGesture = false;
+  
+  
+  RequestContentRepaint();
 }
 
 bool AsyncPanZoomController::IsDelayedTransformEndSet() {

@@ -615,13 +615,13 @@ class AsyncPanZoomController {
 
 
 
-  std::vector<CompositorScrollUpdate> GetCompositorScrollUpdates();
+  nsTArray<CompositorScrollUpdate> GetCompositorScrollUpdates();
 
  private:
   
   
   
-  std::vector<CompositorScrollUpdate> mUpdatesSinceLastSample;
+  nsTArray<CompositorScrollUpdate> mUpdatesSinceLastSample;
 
   CompositorScrollUpdate::Metrics GetCurrentMetricsForCompositorScrollUpdate(
       const RecursiveMutexAutoLock& aProofOfApzcLock) const;
@@ -1480,6 +1480,20 @@ class AsyncPanZoomController {
   
   PanZoomState mState;
 
+  
+  
+  
+  
+  
+  bool mScrolledByHandedOffGesture = false;
+
+ public:
+  void SetScrolledByHandedOffGesture(bool aState);
+
+ private:
+  void ClearScrolledByHandedOffGestureOnChain();
+
+ protected:
   AxisX mX;
   AxisY mY;
 
@@ -1905,7 +1919,12 @@ class AsyncPanZoomController {
 
   
   
+  
   bool IsInScrollingGesture() const;
+
+  
+  
+  void ClearScrolledByHandedOffGesture();
 
  private:
   
