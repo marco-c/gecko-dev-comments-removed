@@ -747,7 +747,8 @@ class nsBlockFrame : public nsContainerFrame {
 
  protected:
   nsBlockFrame* GetLineClampRoot() const;
-  nscoord ApplyLineClamp(nscoord aContentBlockEndEdge);
+  nscoord ApplyLineClamp(nscoord aContentBlockEndEdge,
+                         nscoord aCollapsingBEndMargin);
 
   
 
