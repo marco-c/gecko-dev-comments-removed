@@ -2818,13 +2818,12 @@ bool WarpBuilder::build_AfterYield(BytecodeLocation loc) {
   }
 
   
-  
-  
   current->push(resumeFrameArg(ResumeFrameArgs::ResumeValueSlot));
-#ifdef DEBUG
-  current->add(MAssertResumeKindIsNext::New(alloc()));
-#endif
-  current->push(constant(Int32Value(int32_t(GeneratorResumeKind::Next))));
+  auto* resumeKindVal = resumeFrameArg(ResumeFrameArgs::ResumeKindSlot);
+  auto* resumeKind = MUnbox::New(alloc(), resumeKindVal, MIRType::Int32,
+                                 MUnbox::Mode::Infallible);
+  current->add(resumeKind);
+  current->push(resumeKind);
 
   
   

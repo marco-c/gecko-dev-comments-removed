@@ -6676,8 +6676,8 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
   Register code = regs.takeAny();
   Label baselineOnly, gotEntry;
   masm.unboxInt32(resumeKindSlot, scratch1);
-  masm.branch32(Assembler::NotEqual, scratch1,
-                Imm32(int32_t(GeneratorResumeKind::Next)), &baselineOnly);
+  masm.branch32(Assembler::Equal, scratch1,
+                Imm32(int32_t(GeneratorResumeKind::Throw)), &baselineOnly);
   masm.loadJitCodeRaw(callee, code);
   masm.jump(&gotEntry);
   masm.bind(&baselineOnly);
