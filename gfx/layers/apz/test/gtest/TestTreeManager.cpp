@@ -420,7 +420,7 @@ TEST_F(APZCTreeManagerGenericTesterMock,
   ScopedLayerTreeRegistration registration2(LayersId{2}, mcc);
 
   
-  ScrollableLayerGuid::ViewID scrollId = START_SCROLL_ID;
+  ViewID scrollId = START_SCROLL_ID;
   SetScrollableFrameMetrics(layers[1], scrollId, CSSRect(0, 0, 100, 100));
 
   

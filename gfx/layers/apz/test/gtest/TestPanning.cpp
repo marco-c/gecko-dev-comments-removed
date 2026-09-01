@@ -341,7 +341,7 @@ TEST_F(APZCPanningTesterMock, HoldGesture_ActiveWheelListener) {
   UpdateHitTestingTree();
 
   RefPtr<TestAsyncPanZoomController> apzc = ApzcOf(root);
-  ScrollableLayerGuid::ViewID scrollId = START_SCROLL_ID;
+  ViewID scrollId = START_SCROLL_ID;
   ScreenIntPoint panPoint(50, 80);
 
   
@@ -411,7 +411,7 @@ TEST_F(APZCPanningTesterMock, HoldGesture_PreventDefaultAfterLongHold) {
   UpdateHitTestingTree();
 
   RefPtr<TestAsyncPanZoomController> apzc = ApzcOf(root);
-  ScrollableLayerGuid::ViewID scrollId = START_SCROLL_ID;
+  ViewID scrollId = START_SCROLL_ID;
   ScreenIntPoint panPoint(50, 80);
 
   
@@ -499,7 +499,7 @@ TEST_F(APZCPanningTesterMock, HoldGesture_SubframeTargeting) {
       OverscrollBehaviorInfo::FromStyleConstants(
           StyleOverscrollBehavior::None, StyleOverscrollBehavior::None));
 
-  ScrollableLayerGuid::ViewID subframeScrollId = START_SCROLL_ID + 1;
+  ViewID subframeScrollId = START_SCROLL_ID + 1;
   ScreenIntPoint panPoint(50, 50);
 
   

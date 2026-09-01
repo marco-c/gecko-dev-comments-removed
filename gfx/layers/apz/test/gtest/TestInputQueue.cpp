@@ -52,7 +52,6 @@ TEST_F(APZCTreeManagerTester, WheelInterruptedByMouseDrag) {
 
 
 TEST_F(APZCTreeManagerTester, HorizontalDeltaInterferesWithVerticalScrolling) {
-  using ViewID = ScrollableLayerGuid::ViewID;
   ViewID rootScrollId = START_SCROLL_ID;
   const char* treeShape = "x";
   LayerIntRect layerVisibleRect[] = {
