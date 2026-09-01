@@ -1294,88 +1294,117 @@ size_t arena_t::ExtraCommitPages(size_t aReqPages, size_t aRemainingPages) {
 }
 #endif
 
-ArenaPurgeResult arena_t::Purge(
-    PurgeCondition aCond, PurgeStats& aStats,
-    const Maybe<std::function<bool()>>& aKeepGoing) {
-  arena_chunk_t* chunk = nullptr;
+ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats,
+                                const Maybe<std::function<bool()>>& aKeepGoing)
+    MOZ_EXCLUDES(mLock) {
+  mLock.Lock();
+
+  if (mMustDeleteAfterPurge) {
+    mIsPurgePending = false;
+    mLock.Unlock();
+    return Dying;
+  }
+
+  if (!ShouldContinuePurge(aCond)) {
+    mIsPurgePending = false;
+    mLock.Unlock();
+    return ReachedThresholdOrBusy;
+  }
+
+  arena_chunk_t* chunk = PurgeGetSpareChunk(aStats);
+  if (chunk) {
+    
+    mLock.Unlock();
+    arena_chunk_dealloc(mChunkAllocator, (void*)chunk, kChunkSize);
+    aStats.system_calls++;
+    return NotDone;
+  }
+
+  chunk = PurgeGetDirtyChunk(aCond, aStats);
+  mLock.Unlock();
+  if (chunk) {
+    return PurgeDirtyPages(chunk, aCond, aStats, aKeepGoing);
+  }
+
+  return ReachedThresholdOrBusy;
+}
+
+arena_chunk_t* arena_t::PurgeGetSpareChunk(PurgeStats& aStats)
+    MOZ_REQUIRES(mLock) {
+  if (mSpares.isEmpty()) {
+    return nullptr;
+  }
 
   
-  {
-    MaybeMutexAutoLock lock(mLock);
+  arena_chunk_t* chunk = mSpares.popBack();
 
-    if (mMustDeleteAfterPurge) {
-      mIsPurgePending = false;
-      return Dying;
-    }
+  
+  
+  
+  
+  
+  MOZ_ASSERT(!chunk->mIsPurging);
 
+  aStats.chunks++;
+  aStats.pages_dirty += chunk->mNumDirty;
+  aStats.pages_total += (kChunkSize >> gPageSize2Pow) - gPagesPerRealPage * 2;
+  RemoveChunk(chunk);
+
+  return chunk;
+}
+
+arena_chunk_t* arena_t::PurgeGetDirtyChunk(PurgeCondition aCond,
+                                           PurgeStats& aStats)
+    MOZ_REQUIRES(mLock) {
 #ifdef MOZ_DEBUG
-    size_t ndirty = 0;
-    for (auto& chunk : mChunksDirty) {
-      ndirty += chunk.mNumDirty;
-    }
-    
-    
-    MOZ_ASSERT(ndirty <= mNumDirty);
+  size_t ndirty = 0;
+  for (auto& chunk : mChunksDirty) {
+    ndirty += chunk.mNumDirty;
+  }
+  
+  
+  MOZ_ASSERT(ndirty <= mNumDirty);
 #endif
 
-    if (!ShouldContinuePurge(aCond)) {
-      mIsPurgePending = false;
-      return ReachedThresholdOrBusy;
-    }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mChunksDirty.isEmpty()) {
+    
+    
+    
+    
+    
+    mIsPurgePending = false;
 
     
     
     
-    
-    
-    
-    
-    
-    
+    return nullptr;
+  }
 
-    
-    
-    
-    
-    
-    for (arena_chunk_t& spare : mSpares) {
-      
-      
-      
-      if (spare.mNumDirty && !spare.mIsPurging) {
-        chunk = &spare;
-        break;
-      }
-    }
+  arena_chunk_t* chunk = mChunksDirty.popFront();
+  MOZ_ASSERT(chunk->mNumDirty > 0);
+  MOZ_ASSERT(!chunk->IsEmpty());
 
-    if (!chunk) {
-      if (!mChunksDirty.isEmpty()) {
-        chunk = mChunksDirty.popFront();
-      }
-    }
+  
+  
+  MOZ_ASSERT(!chunk->mIsPurging);
+  chunk->mIsPurging = true;
+  aStats.chunks++;
 
-    if (!chunk) {
-      
-      
-      
-      
-      
-      mIsPurgePending = false;
+  return chunk;
+}
 
-      
-      
-      
-      return ReachedThresholdOrBusy;
-    }
-    MOZ_ASSERT(chunk->mNumDirty > 0);
-
-    
-    
-    MOZ_ASSERT(!chunk->mIsPurging);
-    chunk->mIsPurging = true;
-    aStats.chunks++;
-  }  
-
+ArenaPurgeResult arena_t::PurgeDirtyPages(
+    arena_chunk_t* aChunk, PurgeCondition aCond, PurgeStats& aStats,
+    const Maybe<std::function<bool()>>& aKeepGoing) MOZ_EXCLUDES(mLock) {
   
   bool continue_purge_arena = true;
 
@@ -1392,23 +1421,23 @@ ArenaPurgeResult arena_t::Purge(
   while (continue_purge_chunk && continue_purge_arena && keep_going) {
     
     
-    PurgeInfo purge_info(*this, chunk, aStats);
+    PurgeInfo purge_info(*this, aChunk, aStats);
 
     bool chunk_is_dying;
     {
       
       MaybeMutexAutoLock lock(purge_info.mArena.mLock);
-      MOZ_ASSERT(chunk->mIsPurging);
+      MOZ_ASSERT(aChunk->mIsPurging);
 
       if (purge_info.mArena.mMustDeleteAfterPurge) {
-        chunk->mIsPurging = false;
+        aChunk->mIsPurging = false;
         purge_info.mArena.mIsPurgePending = false;
         return Dying;
       }
 
       continue_purge_chunk = purge_info.FindDirtyPages(purged_once);
       continue_purge_arena = purge_info.mArena.ShouldContinuePurge(aCond);
-      chunk_is_dying = chunk->mDying;
+      chunk_is_dying = aChunk->mDying;
 
       
       
@@ -1421,7 +1450,7 @@ ArenaPurgeResult arena_t::Purge(
       if (chunk_is_dying) {
         
         
-        arena_chunk_dealloc(purge_info.mArena.mChunkAllocator, (void*)chunk,
+        arena_chunk_dealloc(purge_info.mArena.mChunkAllocator, (void*)aChunk,
                             kChunkSize);
       }
       
@@ -1453,7 +1482,7 @@ ArenaPurgeResult arena_t::Purge(
       
       
       MaybeMutexAutoLock lock(purge_info.mArena.mLock);
-      MOZ_ASSERT(chunk->mIsPurging);
+      MOZ_ASSERT(aChunk->mIsPurging);
 
       
       
