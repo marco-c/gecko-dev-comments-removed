@@ -195,9 +195,13 @@ tls13_MakePsk(PK11SymKey *key, SSLPskType pskType, SSLHashType hashType, const S
 
 
 
+
+
 SECStatus
 tls13_ResetHandshakePsks(sslSocket *ss, PRCList *list)
 {
+    PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
+
     tls13_DestroyPskList(list);
     PORT_Assert(!ss->xtnData.selectedPsk);
     ss->xtnData.selectedPsk = NULL;

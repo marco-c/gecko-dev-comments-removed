@@ -210,7 +210,7 @@ typedef int __BLAPI_DEPRECATED __attribute__((deprecated));
 
 
 #define PQG_PBITS_TO_INDEX(bits) \
-    (((bits) < 512 || (bits) > 1024 || (bits) % 64) ? -1 : (int)((bits)-512) / 64)
+    (((bits) < 512 || (bits) > 1024 || (bits) % 64) ? -1 : (int)((bits) - 512) / 64)
 
 
 

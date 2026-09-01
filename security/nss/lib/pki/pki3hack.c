@@ -190,16 +190,17 @@ STAN_RemoveModuleFromDefaultTrustDomain(
             nssToken_NotifyCertsNotVisible(token);
             NSSRWLock_LockWrite(td->tokensLock);
             nssList_Remove(td->tokenList, token);
+            
+
+
+            nssListIterator_Destroy(td->tokens);
+            td->tokens = nssList_CreateIterator(td->tokenList);
             NSSRWLock_UnlockWrite(td->tokensLock);
             PK11Slot_SetNSSToken(module->slots[i], NULL);
             (void)nssToken_Destroy(token); 
             (void)nssToken_Destroy(token); 
         }
     }
-    NSSRWLock_LockWrite(td->tokensLock);
-    nssListIterator_Destroy(td->tokens);
-    td->tokens = nssList_CreateIterator(td->tokenList);
-    NSSRWLock_UnlockWrite(td->tokensLock);
     return SECSuccess;
 }
 
@@ -691,7 +692,9 @@ STAN_GetCERTCertificateNameForInstance(
     NSSCertificate *c,
     nssCryptokiInstance *instance)
 {
+    nssPKIObject_Lock(&c->object);
     NSSCryptoContext *context = c->object.cryptoContext;
+    nssPKIObject_Unlock(&c->object);
     PRStatus nssrv;
     int nicklen, tokenlen, len;
     NSSUTF8 *tokenName = NULL;
@@ -730,6 +733,7 @@ STAN_GetCERTCertificateNameForInstance(
         memcpy(nick, stanNick, nicklen - 1);
         nickname[len - 1] = '\0';
     }
+
     return nickname;
 }
 
@@ -746,17 +750,16 @@ STAN_GetCERTCertificateName(PLArenaPool *arenaOpt, NSSCertificate *c)
 }
 
 static void
-fill_CERTCertificateFields(NSSCertificate *c, CERTCertificate *cc, PRBool forced)
+fill_CERTCertificateFields(NSSCertificate *c, CERTCertificate *cc, NSSTrust *ccTrust, PRBool forced)
 {
-    CERTCertTrust *trust = NULL;
-    NSSTrust *nssTrust;
-    NSSCryptoContext *context = c->object.cryptoContext;
-    nssCryptokiInstance *instance;
-    NSSUTF8 *stanNick = NULL;
-
     
 
 
+
+    CERTCertTrust *trust = NULL;
+    NSSCryptoContext *context = c->object.cryptoContext;
+    nssCryptokiInstance *instance;
+    NSSUTF8 *stanNick = NULL;
 
     instance = get_cert_instance(c);
 
@@ -799,7 +802,8 @@ fill_CERTCertificateFields(NSSCertificate *c, CERTCertificate *cc, PRBool forced
     }
     if (context) {
         
-        nssTrust = nssCryptoContext_FindTrustForCertificate(context, c);
+        NSSTrust *nssTrust = ccTrust;
+        NSSTrust *tdTrust = NULL;
         if (!nssTrust) {
             
 
@@ -814,7 +818,7 @@ fill_CERTCertificateFields(NSSCertificate *c, CERTCertificate *cc, PRBool forced
             c->issuer.size = cc->derIssuer.len;
             c->serial.data = cc->serialNumber.data;
             c->serial.size = cc->serialNumber.len;
-            nssTrust = nssTrustDomain_FindTrustForCertificate(context->td, c);
+            nssTrust = tdTrust = nssTrustDomain_FindTrustForCertificate(context->td, c);
         }
         if (nssTrust) {
             trust = cert_trust_from_stan_trust(nssTrust, cc->arena);
@@ -826,8 +830,8 @@ fill_CERTCertificateFields(NSSCertificate *c, CERTCertificate *cc, PRBool forced
                 cc->trust = trust;
                 CERT_UnlockCertTrust(cc);
             }
-            nssTrust_Destroy(nssTrust);
         }
+        nssTrust_Destroy(tdTrust);
     } else if (instance) {
         
         if (cc->slot != instance->token->pk11slot) {
@@ -911,6 +915,17 @@ stan_GetCERTCertificate(NSSCertificate *c, PRBool forceUpdate)
     CERTCertTrust certTrust;
 
     
+    
+    
+    NSSTrust *ccTrust = NULL;
+    nssPKIObject_Lock(&c->object);
+    NSSCryptoContext *context = c->object.cryptoContext;
+    nssPKIObject_Unlock(&c->object);
+    if (context) {
+        ccTrust = nssCryptoContext_FindTrustForCertificate(context, c);
+    }
+
+    
     nssPKIObject_AddRef(&c->object);
     nssPKIObject_Lock(&c->object);
 
@@ -947,7 +962,7 @@ stan_GetCERTCertificate(NSSCertificate *c, PRBool forceUpdate)
     NSSCertificate *nssCert = cc->nssCertificate;
     CERT_UnlockCertTempPerm(cc);
     if (!nssCert || forceUpdate) {
-        fill_CERTCertificateFields(c, cc, forceUpdate);
+        fill_CERTCertificateFields(c, cc, ccTrust, forceUpdate);
     } else if (CERT_GetCertTrust(cc, &certTrust) != SECSuccess) {
         CERTCertTrust *trust;
         if (!c->object.cryptoContext) {
@@ -979,6 +994,7 @@ stan_GetCERTCertificate(NSSCertificate *c, PRBool forceUpdate)
 loser:
     nssPKIObject_Unlock(&c->object);
     nssPKIObject_Destroy(&c->object);
+    nssTrust_Destroy(ccTrust);
     return cc;
 }
 
@@ -1219,18 +1235,26 @@ STAN_ChangeCertTrust(CERTCertificate *cc, CERTCertTrust *trust)
     nssTrust->codeSigning = get_stan_trust(trust->objectSigningFlags, PR_FALSE);
     nssTrust->stepUpApproved =
         (PRBool)(trust->sslFlags & CERTDB_GOVT_APPROVED_CA);
-    if (c->object.cryptoContext != NULL) {
+
+    nssPKIObject_Lock(&c->object);
+    NSSCryptoContext *cctx = c->object.cryptoContext;
+    nssPKIObject_Unlock(&c->object);
+    if (cctx) {
         
-        NSSCryptoContext *cctx = c->object.cryptoContext;
         nssrv = nssCryptoContext_ImportTrust(cctx, nssTrust);
         if (nssrv != PR_SUCCESS) {
             goto done;
         }
-        if (c->object.numInstances == 0) {
+
+        nssPKIObject_Lock(&c->object);
+        PRBool soleInstance = c->object.numInstances == 0;
+        nssPKIObject_Unlock(&c->object);
+        if (soleInstance) {
             
             goto done;
         }
     }
+
     td = STAN_GetDefaultTrustDomain();
     tok = stan_GetTrustToken(c);
     moving_object = PR_FALSE;

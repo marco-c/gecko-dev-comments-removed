@@ -228,7 +228,7 @@ ec_secp384r1_sign_digest(ECPrivateKey *ecPrivKey, SECItem *signature,
     bool b = Hacl_P384_ecdsa_sign_p384_without_hash(
         signature->data, 48, hash, key, nonce);
 #else
-    bool b = key != NULL;     
+    bool b = key != NULL; 
 #endif
 
     if (!b) {
@@ -300,7 +300,7 @@ ec_secp384r1_verify_digest(ECPublicKey *key, const SECItem *signature,
     bool b = Hacl_P384_ecdsa_verif_without_hash(
         48, hash, key->publicValue.data + 1, sig, sig + 48);
 #else
-    bool b = sig != NULL;     
+    bool b = sig != NULL; 
 #endif
 
     if (!b) {

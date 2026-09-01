@@ -39,7 +39,6 @@ nssCertificate_Create(
     NSSCertificate *rvCert;
     nssArenaMark *mark;
     NSSArena *arena = object->arena;
-    PR_ASSERT(object->instances != NULL && object->numInstances > 0);
     PR_ASSERT(object->lockType == nssPKIMonitor);
     mark = nssArena_Mark(arena);
     rvCert = nss_ZNEW(arena, NSSCertificate);
@@ -48,6 +47,8 @@ nssCertificate_Create(
     }
     rvCert->object = *object;
     
+    nssPKIObject_Lock(object);
+    PR_ASSERT(object->instances != NULL && object->numInstances > 0);
     status = nssCryptokiCertificate_GetAttributes(object->instances[0],
                                                   NULL, 
                                                   arena,
@@ -57,6 +58,7 @@ nssCertificate_Create(
                                                   &rvCert->issuer,
                                                   &rvCert->serial,
                                                   &rvCert->subject);
+    nssPKIObject_Unlock(object);
     if (status != PR_SUCCESS ||
         !rvCert->encoding.data ||
         !rvCert->encoding.size ||
@@ -90,48 +92,78 @@ nssCertificate_Destroy(
     nssCertificateStoreTrace lockTrace = { NULL, NULL, PR_FALSE, PR_FALSE };
     nssCertificateStoreTrace unlockTrace = { NULL, NULL, PR_FALSE, PR_FALSE };
 
-    if (c) {
-        PRUint32 i;
-        nssDecodedCert *dc = c->decoding;
-        NSSTrustDomain *td = STAN_GetDefaultTrustDomain();
-        NSSCryptoContext *cc = c->object.cryptoContext;
+    if (!c) {
+        return PR_SUCCESS;
+    }
 
-        PR_ASSERT(c->object.refCount > 0);
-
+    
+    nssPKIObject_Lock(&c->object);
+    NSSCryptoContext *cc = c->object.cryptoContext;
+    nssPKIObject_Unlock(&c->object);
+    
+    
+    if (cc) {
         
-        if (cc) {
-            nssCertificateStore_Lock(cc->certStore, &lockTrace);
-        } else {
-            nssTrustDomain_LockCertCache(td);
-        }
-        if (PR_ATOMIC_DECREMENT(&c->object.refCount) == 0) {
-            
-            if (cc) {
-                nssCertificateStore_RemoveCertLOCKED(cc->certStore, c);
-                nssCertificateStore_Unlock(cc->certStore, &lockTrace,
-                                           &unlockTrace);
-            } else {
-                nssTrustDomain_RemoveCertFromCacheLOCKED(td, c);
-                nssTrustDomain_UnlockCertCache(td);
-            }
-            
-            for (i = 0; i < c->object.numInstances; i++) {
-                nssCryptokiObject_Destroy(c->object.instances[i]);
-            }
-            nssPKIObject_DestroyLock(&c->object);
-            nssArena_Destroy(c->object.arena);
-            nssDecodedCert_Destroy(dc);
-        } else {
-            
-            if (cc) {
-                nssCertificateStore_Unlock(cc->certStore,
-                                           &lockTrace,
-                                           &unlockTrace);
-            } else {
-                nssTrustDomain_UnlockCertCache(td);
-            }
+        nssCertificateStore_Lock(cc->certStore, &lockTrace);
+        nssPKIObject_Lock(&c->object);
+        
+        
+        
+        if (c->object.cryptoContext != cc) {
+            nssPKIObject_Unlock(&c->object);
+            nssCertificateStore_Unlock(cc->certStore, &lockTrace,
+                                       &unlockTrace);
+            cc = NULL;
         }
     }
+
+    
+    
+    NSSTrustDomain *td = STAN_GetDefaultTrustDomain();
+    if (!cc) {
+        nssTrustDomain_LockCertCache(td);
+        nssPKIObject_Lock(&c->object);
+    }
+
+    
+    
+    
+    
+
+    
+    if (PR_ATOMIC_DECREMENT(&c->object.refCount) != 0) {
+        nssPKIObject_Unlock(&c->object);
+        if (cc) {
+            nssCertificateStore_Unlock(cc->certStore, &lockTrace, &unlockTrace);
+        } else {
+            nssTrustDomain_UnlockCertCache(td);
+        }
+        return PR_SUCCESS;
+    }
+
+    
+    if (cc) {
+        nssCertificateStore_RemoveCertLOCKED(cc->certStore, c);
+    } else {
+        nssTrustDomain_RemoveCertFromCacheLOCKED(td, c);
+    }
+
+    
+    nssPKIObject_Unlock(&c->object);
+    if (cc) {
+        nssCertificateStore_Unlock(cc->certStore, &lockTrace, &unlockTrace);
+    } else {
+        nssTrustDomain_UnlockCertCache(td);
+    }
+
+    
+    for (PRUint32 i = 0; i < c->object.numInstances; i++) {
+        nssCryptokiObject_Destroy(c->object.instances[i]);
+    }
+    nssPKIObject_DestroyLock(&c->object);
+    nssDecodedCert_Destroy(c->decoding);
+    nssArena_Destroy(c->object.arena);
+
     return PR_SUCCESS;
 }
 
@@ -1064,13 +1096,14 @@ nssCRL_Create(nssPKIObject *object)
     PRStatus status;
     NSSCRL *rvCRL;
     NSSArena *arena = object->arena;
-    PR_ASSERT(object->instances != NULL && object->numInstances > 0);
     rvCRL = nss_ZNEW(arena, NSSCRL);
     if (!rvCRL) {
         return (NSSCRL *)NULL;
     }
     rvCRL->object = *object;
     
+    nssPKIObject_Lock(object);
+    PR_ASSERT(object->instances != NULL && object->numInstances > 0);
     status = nssCryptokiCRL_GetAttributes(object->instances[0],
                                           NULL, 
                                           arena,
@@ -1079,6 +1112,7 @@ nssCRL_Create(nssPKIObject *object)
                                           NULL, 
                                           &rvCRL->url,
                                           &rvCRL->isKRL);
+    nssPKIObject_Unlock(object);
     if (status != PR_SUCCESS) {
         if (!arena) {
             nssPKIObject_Destroy((nssPKIObject *)rvCRL);

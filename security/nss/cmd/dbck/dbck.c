@@ -493,9 +493,9 @@ mapSubjectEntries(certDBArray *dbArray)
                             }
                         }
                     } 
-                }     
-            }         
-        }             
+                } 
+            } 
+        } 
     }
     return SECSuccess;
 }

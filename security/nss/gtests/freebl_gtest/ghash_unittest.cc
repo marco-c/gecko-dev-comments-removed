@@ -30,10 +30,10 @@ class GHashTest : public ::testing::TestWithParam<AesGcmKatValue> {
 
     
     gcmHash_Reset(&ghashCtx,
-                  const_cast<const unsigned char *>(additional_data.data()),
+                  const_cast<const unsigned char*>(additional_data.data()),
                   additional_data.size());
     gcmHash_Update(&ghashCtx,
-                   const_cast<const unsigned char *>(cipher_text.data()),
+                   const_cast<const unsigned char*>(cipher_text.data()),
                    cipher_text.size());
 
     

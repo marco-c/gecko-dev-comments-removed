@@ -14,11 +14,14 @@
 
 #include "kyber-pqcrystals-ref.h"
 #include "kyber.h"
-#include "verified/internal/libcrux_core.h"
-#include "verified/libcrux_mlkem768_portable.h"
-#include "verified/libcrux_mlkem768.h"
-#include "verified/libcrux_mlkem1024_portable.h"
-#include "verified/libcrux_mlkem1024.h"
+
+
+
+
+#include "libcrux_mlkem768.h"
+#include "libcrux_mlkem768_portable.h"
+#include "libcrux_mlkem1024.h"
+#include "libcrux_mlkem1024_portable.h"
 
 
 PR_STATIC_ASSERT(KYBER768_PUBLIC_KEY_BYTES == pqcrystals_kyber768_PUBLICKEYBYTES);
@@ -29,17 +32,31 @@ PR_STATIC_ASSERT(KYBER_KEYPAIR_COIN_BYTES == pqcrystals_kyber768_KEYPAIRCOINBYTE
 PR_STATIC_ASSERT(KYBER_ENC_COIN_BYTES == pqcrystals_kyber768_ENCCOINBYTES);
 
 
-PR_STATIC_ASSERT(KYBER768_PUBLIC_KEY_BYTES == LIBCRUX_ML_KEM_MLKEM768_CPA_PKE_PUBLIC_KEY_SIZE);
-PR_STATIC_ASSERT(KYBER768_PRIVATE_KEY_BYTES == LIBCRUX_ML_KEM_MLKEM768_SECRET_KEY_SIZE);
-PR_STATIC_ASSERT(KYBER768_CIPHERTEXT_BYTES == LIBCRUX_ML_KEM_MLKEM768_CPA_PKE_CIPHERTEXT_SIZE);
-PR_STATIC_ASSERT(KYBER_SHARED_SECRET_BYTES == LIBCRUX_ML_KEM_CONSTANTS_SHARED_SECRET_SIZE);
-PR_STATIC_ASSERT(KYBER_KEYPAIR_COIN_BYTES == 64);
-PR_STATIC_ASSERT(KYBER_ENC_COIN_BYTES == 32);
 
 
-PR_STATIC_ASSERT(MLKEM1024_PUBLIC_KEY_BYTES == LIBCRUX_ML_KEM_MLKEM1024_CPA_PKE_PUBLIC_KEY_SIZE);
-PR_STATIC_ASSERT(MLKEM1024_PRIVATE_KEY_BYTES == LIBCRUX_ML_KEM_MLKEM1024_SECRET_KEY_SIZE);
-PR_STATIC_ASSERT(MLKEM1024_CIPHERTEXT_BYTES == LIBCRUX_ML_KEM_MLKEM1024_CPA_PKE_CIPHERTEXT_SIZE);
+
+
+typedef Eurydice_arr_c7 MlKemKeypairCoins;   
+typedef Eurydice_arr_ec MlKemEncCoins;       
+typedef Eurydice_arr_ec MlKemSharedSecret;   
+typedef Eurydice_arr_2b MlKem768Ciphertext;  
+typedef Eurydice_arr_d1 MlKem1024Ciphertext; 
+typedef tuple_f4 MlKem768Encapsulation;      
+typedef tuple_25 MlKem1024Encapsulation;     
+
+
+
+
+
+PR_STATIC_ASSERT(KYBER768_PUBLIC_KEY_BYTES == sizeof(((libcrux_ml_kem_mlkem768_MlKem768PublicKey *)0)->data));
+PR_STATIC_ASSERT(KYBER768_PRIVATE_KEY_BYTES == sizeof(((libcrux_ml_kem_mlkem768_MlKem768PrivateKey *)0)->data));
+PR_STATIC_ASSERT(KYBER768_CIPHERTEXT_BYTES == sizeof(((MlKem768Ciphertext *)0)->data));
+PR_STATIC_ASSERT(KYBER_SHARED_SECRET_BYTES == sizeof(((MlKemSharedSecret *)0)->data));
+PR_STATIC_ASSERT(KYBER_KEYPAIR_COIN_BYTES == sizeof(((MlKemKeypairCoins *)0)->data));
+PR_STATIC_ASSERT(KYBER_ENC_COIN_BYTES == sizeof(((MlKemEncCoins *)0)->data));
+PR_STATIC_ASSERT(MLKEM1024_PUBLIC_KEY_BYTES == sizeof(((libcrux_ml_kem_mlkem1024_MlKem1024PublicKey *)0)->data));
+PR_STATIC_ASSERT(MLKEM1024_PRIVATE_KEY_BYTES == sizeof(((libcrux_ml_kem_mlkem1024_MlKem1024PrivateKey *)0)->data));
+PR_STATIC_ASSERT(MLKEM1024_CIPHERTEXT_BYTES == sizeof(((MlKem1024Ciphertext *)0)->data));
 
 static bool
 valid_params(KyberParams params)
@@ -185,13 +202,17 @@ Kyber_NewKey(KyberParams params, const SECItem *keypair_seed, SECItem *privkey, 
     }
     NSS_CLASSIFY(coins, KYBER_KEYPAIR_COIN_BYTES);
     if (params == params_ml_kem768 || params == params_ml_kem768_test_mode) {
-        libcrux_ml_kem_mlkem768_MlKem768KeyPair keys = libcrux_ml_kem_mlkem768_portable_generate_key_pair(coins);
-        memcpy(pubkey->data, keys.pk.value, KYBER768_PUBLIC_KEY_BYTES);
-        memcpy(privkey->data, keys.sk.value, KYBER768_PRIVATE_KEY_BYTES);
+        MlKemKeypairCoins coinsArr;
+        memcpy(coinsArr.data, coins, KYBER_KEYPAIR_COIN_BYTES);
+        libcrux_ml_kem_mlkem768_MlKem768KeyPair keys = libcrux_ml_kem_mlkem768_portable_generate_key_pair(coinsArr);
+        memcpy(pubkey->data, keys.pk.data, KYBER768_PUBLIC_KEY_BYTES);
+        memcpy(privkey->data, keys.sk.data, KYBER768_PRIVATE_KEY_BYTES);
     } else if (params == params_ml_kem1024 || params == params_ml_kem1024_test_mode) {
-        libcrux_ml_kem_mlkem1024_MlKem1024KeyPair keys = libcrux_ml_kem_mlkem1024_portable_generate_key_pair(coins);
-        memcpy(pubkey->data, keys.pk.value, MLKEM1024_PUBLIC_KEY_BYTES);
-        memcpy(privkey->data, keys.sk.value, MLKEM1024_PRIVATE_KEY_BYTES);
+        MlKemKeypairCoins coinsArr;
+        memcpy(coinsArr.data, coins, KYBER_KEYPAIR_COIN_BYTES);
+        libcrux_ml_kem_mlkem1024_MlKem1024KeyPair keys = libcrux_ml_kem_mlkem1024_portable_generate_key_pair(coinsArr);
+        memcpy(pubkey->data, keys.pk.data, MLKEM1024_PUBLIC_KEY_BYTES);
+        memcpy(privkey->data, keys.sk.data, MLKEM1024_PRIVATE_KEY_BYTES);
     } else if (params == params_kyber768_round3 || params == params_kyber768_round3_test_mode) {
 #ifdef NSS_DISABLE_KYBER
         PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
@@ -234,9 +255,8 @@ Kyber_Encapsulate(KyberParams params, const SECItem *enc_seed, const SECItem *pu
     }
     NSS_CLASSIFY(coins, KYBER_ENC_COIN_BYTES);
     if (params == params_ml_kem768 || params == params_ml_kem768_test_mode) {
-        
         libcrux_ml_kem_mlkem768_MlKem768PublicKey pk_value;
-        memcpy(pk_value.value, pubkey->data, KYBER768_PUBLIC_KEY_BYTES);
+        memcpy(pk_value.data, pubkey->data, KYBER768_PUBLIC_KEY_BYTES);
 
         bool valid_pk = libcrux_ml_kem_mlkem768_portable_validate_public_key(&pk_value);
         if (!valid_pk) {
@@ -244,13 +264,14 @@ Kyber_Encapsulate(KyberParams params, const SECItem *enc_seed, const SECItem *pu
             return SECFailure;
         }
 
-        tuple_c2 encap = libcrux_ml_kem_mlkem768_portable_encapsulate(&pk_value, coins);
-        memcpy(ciphertext->data, encap.fst.value, KYBER768_CIPHERTEXT_BYTES);
-        memcpy(secret->data, encap.snd, KYBER_SHARED_SECRET_BYTES);
+        MlKemEncCoins coinsArr;
+        memcpy(coinsArr.data, coins, KYBER_ENC_COIN_BYTES);
+        MlKem768Encapsulation encap = libcrux_ml_kem_mlkem768_portable_encapsulate(&pk_value, coinsArr);
+        memcpy(ciphertext->data, encap.fst.data, KYBER768_CIPHERTEXT_BYTES);
+        memcpy(secret->data, encap.snd.data, KYBER_SHARED_SECRET_BYTES);
     } else if (params == params_ml_kem1024 || params == params_ml_kem1024_test_mode) {
-        
         libcrux_ml_kem_mlkem1024_MlKem1024PublicKey pk_value;
-        memcpy(pk_value.value, pubkey->data, MLKEM1024_PUBLIC_KEY_BYTES);
+        memcpy(pk_value.data, pubkey->data, MLKEM1024_PUBLIC_KEY_BYTES);
 
         bool valid_pk = libcrux_ml_kem_mlkem1024_portable_validate_public_key(&pk_value);
         if (!valid_pk) {
@@ -258,9 +279,11 @@ Kyber_Encapsulate(KyberParams params, const SECItem *enc_seed, const SECItem *pu
             return SECFailure;
         }
 
-        tuple_fa encap = libcrux_ml_kem_mlkem1024_portable_encapsulate(&pk_value, coins);
-        memcpy(ciphertext->data, encap.fst.value, MLKEM1024_CIPHERTEXT_BYTES);
-        memcpy(secret->data, encap.snd, KYBER_SHARED_SECRET_BYTES);
+        MlKemEncCoins coinsArr;
+        memcpy(coinsArr.data, coins, KYBER_ENC_COIN_BYTES);
+        MlKem1024Encapsulation encap = libcrux_ml_kem_mlkem1024_portable_encapsulate(&pk_value, coinsArr);
+        memcpy(ciphertext->data, encap.fst.data, MLKEM1024_CIPHERTEXT_BYTES);
+        memcpy(secret->data, encap.snd.data, KYBER_SHARED_SECRET_BYTES);
     } else if (params == params_kyber768_round3 || params == params_kyber768_round3_test_mode) {
 #ifdef NSS_DISABLE_KYBER
         PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
@@ -292,10 +315,10 @@ Kyber_Decapsulate(KyberParams params, const SECItem *privkey, const SECItem *cip
 
     if (params == params_ml_kem768 || params == params_ml_kem768_test_mode) {
         libcrux_ml_kem_mlkem768_MlKem768PrivateKey private_key;
-        memcpy(private_key.value, privkey->data, KYBER768_PRIVATE_KEY_BYTES);
+        memcpy(private_key.data, privkey->data, KYBER768_PRIVATE_KEY_BYTES);
 
-        libcrux_ml_kem_mlkem768_MlKem768Ciphertext cipher_text;
-        memcpy(cipher_text.value, ciphertext->data, KYBER768_CIPHERTEXT_BYTES);
+        MlKem768Ciphertext cipher_text;
+        memcpy(cipher_text.data, ciphertext->data, KYBER768_CIPHERTEXT_BYTES);
 
         bool valid = libcrux_ml_kem_mlkem768_portable_validate_private_key(&private_key, &cipher_text);
         if (!valid) {
@@ -303,13 +326,14 @@ Kyber_Decapsulate(KyberParams params, const SECItem *privkey, const SECItem *cip
             return SECFailure;
         }
 
-        libcrux_ml_kem_mlkem768_portable_decapsulate(&private_key, &cipher_text, secret->data);
+        MlKemSharedSecret ss = libcrux_ml_kem_mlkem768_portable_decapsulate(&private_key, &cipher_text);
+        memcpy(secret->data, ss.data, KYBER_SHARED_SECRET_BYTES);
     } else if (params == params_ml_kem1024 || params == params_ml_kem1024_test_mode) {
         libcrux_ml_kem_mlkem1024_MlKem1024PrivateKey private_key;
-        memcpy(private_key.value, privkey->data, MLKEM1024_PRIVATE_KEY_BYTES);
+        memcpy(private_key.data, privkey->data, MLKEM1024_PRIVATE_KEY_BYTES);
 
-        libcrux_ml_kem_mlkem1024_MlKem1024Ciphertext cipher_text;
-        memcpy(cipher_text.value, ciphertext->data, MLKEM1024_CIPHERTEXT_BYTES);
+        MlKem1024Ciphertext cipher_text;
+        memcpy(cipher_text.data, ciphertext->data, MLKEM1024_CIPHERTEXT_BYTES);
 
         bool valid = libcrux_ml_kem_mlkem1024_portable_validate_private_key(&private_key, &cipher_text);
         if (!valid) {
@@ -317,7 +341,8 @@ Kyber_Decapsulate(KyberParams params, const SECItem *privkey, const SECItem *cip
             return SECFailure;
         }
 
-        libcrux_ml_kem_mlkem1024_portable_decapsulate(&private_key, &cipher_text, secret->data);
+        MlKemSharedSecret ss = libcrux_ml_kem_mlkem1024_portable_decapsulate(&private_key, &cipher_text);
+        memcpy(secret->data, ss.data, KYBER_SHARED_SECRET_BYTES);
     } else if (params == params_kyber768_round3 || params == params_kyber768_round3_test_mode) {
 #ifdef NSS_DISABLE_KYBER
         PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);

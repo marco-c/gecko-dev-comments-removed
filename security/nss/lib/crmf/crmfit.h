@@ -144,7 +144,7 @@ struct CRMFPOPOSigningKeyStr {
 
     SECAlgorithmID *algorithmIdentifier;
     SECItem signature; 
-};                     
+}; 
 
 
 struct CRMFPOPOPrivKeyStr {
