@@ -102,6 +102,34 @@ def to_optional_path(path: Optional[Path]):
         return None
 
 
+
+
+
+MAX_COMMAND_LINE_LENGTH = 31000
+
+
+def batch_paths(paths: list[Union[str, Path]], budget: int = MAX_COMMAND_LINE_LENGTH):
+    if not paths:
+        return
+
+    if sys.platform != "win32":
+        yield paths
+        return
+
+    batch = []
+    used = 0
+    for path in paths:
+        
+        size = len(str(path)) + 3
+        if batch and used + size > budget:
+            yield batch
+            batch, used = [], 0
+        batch.append(path)
+        used += size
+    if batch:
+        yield batch
+
+
 def to_optional_str(path: Optional[Path]):
     if path:
         return str(path)
