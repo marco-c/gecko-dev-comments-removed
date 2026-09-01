@@ -347,6 +347,10 @@
 
         this.mInput = aInput;
         
+        
+        this.style.direction = "";
+        this.style.colorScheme = "";
+        
         this.selectedIndex = -1;
 
         
