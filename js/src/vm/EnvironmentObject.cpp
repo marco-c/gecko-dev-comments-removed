@@ -1740,7 +1740,8 @@ class DebugEnvironmentProxyHandler : public NurseryAllocableProxyHandler {
         return true;
       }
 
-      if (action == SET && bi.kind() == BindingKind::Const) {
+      if (action == SET && (bi.kind() == BindingKind::Const ||
+                            bi.kind() == BindingKind::Using)) {
         ReportRuntimeLexicalError(cx, JSMSG_BAD_CONST_ASSIGN, id);
         return false;
       }
@@ -1865,7 +1866,8 @@ class DebugEnvironmentProxyHandler : public NurseryAllocableProxyHandler {
         return true;
       }
 
-      if (action == SET && bi.kind() == BindingKind::Const) {
+      if (action == SET && (bi.kind() == BindingKind::Const ||
+                            bi.kind() == BindingKind::Using)) {
         ReportRuntimeLexicalError(cx, JSMSG_BAD_CONST_ASSIGN, id);
         return false;
       }
@@ -1999,8 +2001,8 @@ class DebugEnvironmentProxyHandler : public NurseryAllocableProxyHandler {
       if (action == GET) {
         if (instanceScope->memoriesStart() <= index &&
             index < instanceScope->globalsStart()) {
-          vp.set(ObjectValue(
-              *instance.memory(index - instanceScope->memoriesStart())));
+          vp.setObject(
+              *instance.memory(index - instanceScope->memoriesStart()));
         }
         if (instanceScope->globalsStart() <= index) {
           MOZ_ASSERT(index < instanceScope->namesCount());
