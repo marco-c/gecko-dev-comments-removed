@@ -167,10 +167,10 @@ async function runTests() {
     
     
     info("Opening and closing native context menu");
-    let contextMenu = searchbar.querySelector(".textbox-contextmenu");
+    let contextMenu = window.EditContextMenu.popup;
     let popupshown = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
     EventUtils.synthesizeMouseAtCenter(
-      searchbar.querySelector("moz-input-box"),
+      searchbar.querySelector(".urlbar-input-box"),
       { type: "contextmenu" }
     );
     await popupshown;
@@ -186,7 +186,7 @@ async function runTests() {
       isEventForMenuPopup
     );
     EventUtils.synthesizeMouseAtCenter(
-      searchbar.querySelector("moz-input-box"),
+      searchbar.querySelector(".urlbar-input-box"),
       { type: "contextmenu" }
     );
     await menuEvent;

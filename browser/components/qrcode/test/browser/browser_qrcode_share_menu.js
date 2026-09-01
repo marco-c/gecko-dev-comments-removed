@@ -288,7 +288,7 @@ add_task(
         "Two tabs should be selected"
       );
 
-      let contextMenu = gURLBar.querySelector("moz-input-box").menupopup;
+      let contextMenu = window.EditContextMenu.popup;
       
       let popupShown = BrowserTestUtils.waitForPopupEvent(contextMenu, "shown");
       contextMenu.dispatchEvent(
