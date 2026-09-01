@@ -1152,29 +1152,22 @@ static JSObject* MaybeGetDelegate(Cell* cell) {
   JSObject* object = cell->as<JSObject>();
   return js::UncheckedUnwrapWithoutExpose(object);
 }
-
-bool js::gc::CheckWeakMapEntryMarking(const WeakMapBase* map, Cell* key,
-                                      Cell* maybeValue) {
+bool js::gc::CheckWeakMapMapMarking(const WeakMapBase* map) {
   bool ok = true;
 
   Zone* zone = map->zone();
   MOZ_RELEASE_ASSERT(CurrentThreadCanAccessZone(zone));
   MOZ_RELEASE_ASSERT(zone->isGCMarking());
 
+  CellColor mapColor = map->mapColor();
+  if (mapColor == CellColor::White) {
+    fprintf(stderr, "WeakMap %p is not marked\n", map);
+    ok = false;
+  }
+
   JSObject* object = map->memberOf;
   if (object) {
     MOZ_RELEASE_ASSERT(object->zone() == zone);
-  }
-
-  
-  Zone* keyZone = key->zoneFromAnyThread();
-  if (!map->allowKeysInOtherZones()) {
-    MOZ_RELEASE_ASSERT(keyZone == zone || keyZone->isAtomsZone());
-  }
-
-  if (maybeValue) {
-    Zone* valueZone = maybeValue->zoneFromAnyThread();
-    MOZ_RELEASE_ASSERT(valueZone == zone || valueZone->isAtomsZone());
   }
 
   if (object && object->color() != map->mapColor()) {
@@ -1185,9 +1178,28 @@ bool js::gc::CheckWeakMapEntryMarking(const WeakMapBase* map, Cell* key,
     ok = false;
   }
 
+  return ok;
+}
+
+bool js::gc::CheckWeakMapEntryMarking(const WeakMapBase* map, Cell* key,
+                                      Cell* maybeValue) {
+  bool ok = true;
+
+  
+  Zone* mapZone = map->zone();
+  Zone* keyZone = key->zoneFromAnyThread();
+  if (!map->allowKeysInOtherZones()) {
+    MOZ_RELEASE_ASSERT(keyZone == mapZone || keyZone->isAtomsZone());
+  }
+
+  if (maybeValue) {
+    Zone* valueZone = maybeValue->zoneFromAnyThread();
+    MOZ_RELEASE_ASSERT(valueZone == mapZone || valueZone->isAtomsZone());
+  }
+
   
   
-  JSRuntime* mapRuntime = zone->runtimeFromAnyThread();
+  JSRuntime* mapRuntime = mapZone->runtimeFromAnyThread();
   auto effectiveColor = [=](Cell* cell) -> CellColor {
     if (!cell || cell->runtimeFromAnyThread() != mapRuntime) {
       return CellColor::Black;
@@ -1235,16 +1247,38 @@ bool js::gc::CheckWeakMapEntryMarking(const WeakMapBase* map, Cell* key,
   }
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  GCRuntime* gc = &mapRuntime->gc;
   if (key->is<JS::Symbol>()) {
-    GCRuntime* gc = &mapRuntime->gc;
-    CellColor bitmapColor =
-        gc->atomReferences.getRefColor(zone, key->as<JS::Symbol>());
-    if (bitmapColor < keyColor) {
+    auto* symbol = key->as<JS::Symbol>();
+    CellColor keyRefColor = gc->atomReferences.getRefColor(mapZone, symbol);
+    if (keyRefColor == CellColor::White) {
       fprintf(stderr,
-              "Color of zone reference to symbol is less than symbol key %p\n",
-              key);
-      fprintf(stderr, "(key %p is %s, bitmap is %s)\n", key,
-              CellColorName(keyColor), CellColorName(bitmapColor));
+              "Symbol key %p in map %p is not present in the atom reference "
+              "bitmap for zone %p\n",
+              key, map, mapZone);
+      ok = false;
+    }
+  }
+
+  if (maybeValue && maybeValue->is<JS::Symbol>()) {
+    auto* symbol = maybeValue->as<JS::Symbol>();
+    CellColor valueRefColor = gc->atomReferences.getRefColor(mapZone, symbol);
+    if (valueRefColor == CellColor::White) {
+      fprintf(stderr,
+              "Symbol value %p in map %p is not present in the atom reference "
+              "bitmap for zone %p\n",
+              maybeValue, map, mapZone);
       ok = false;
     }
   }
