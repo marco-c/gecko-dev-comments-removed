@@ -6,13 +6,6 @@
 
 
 {
-  const lazy = {};
-
-  ChromeUtils.defineESModuleGetters(lazy, {
-    OpenInTabsUtils:
-      "moz-src:///browser/components/tabbrowser/OpenInTabsUtils.sys.mjs",
-  });
-
   const isTab = element => gBrowser.isTab(element);
   const isTabGroupLabel = element => gBrowser.isTabGroupLabel(element);
   const isSplitViewWrapper = element => gBrowser.isSplitViewWrapper(element);
@@ -695,10 +688,11 @@
             Services.prefs.getIntPref("browser.tabs.maxOpenBeforeWarn")
           ) {
             
-            let answer = await lazy.OpenInTabsUtils.promiseConfirmOpenInTabs(
-              urls.length,
-              window
-            );
+            let answer =
+              await gBrowser.OpenInTabsUtils.promiseConfirmOpenInTabs(
+                urls.length,
+                window
+              );
             if (!answer) {
               return;
             }

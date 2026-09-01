@@ -507,7 +507,7 @@ var TabContextMenu = {
     
     
     for (let tab of this.contextTabs) {
-      TabContextMenu.TabStateFlusher.flush(tab.linkedBrowser);
+      gBrowser.TabStateFlusher.flush(tab.linkedBrowser);
 
       
       if (tab.splitview) {
@@ -1464,6 +1464,4 @@ ChromeUtils.defineESModuleGetters(TabContextMenu, {
   GenAI: "resource:///modules/GenAI.sys.mjs",
   MenuSectionLayout: "resource:///modules/MenuSectionLayout.sys.mjs",
   TabNotes: "moz-src:///browser/components/tabnotes/TabNotes.sys.mjs",
-  TabStateFlusher:
-    "moz-src:///browser/components/sessionstore/TabStateFlusher.sys.mjs",
 });
