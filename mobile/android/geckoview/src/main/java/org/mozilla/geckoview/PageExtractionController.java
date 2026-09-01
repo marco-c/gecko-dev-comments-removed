@@ -69,13 +69,23 @@ public class PageExtractionController {
 
 
 
-    public ContentParams(final boolean removeBoilerplate) {
+    public final boolean useSimpleText;
+
+    
+
+
+
+
+
+    public ContentParams(final boolean removeBoilerplate, final boolean useSimpleText) {
       this.removeBoilerplate = removeBoilerplate;
+      this.useSimpleText = useSimpleText;
     }
 
      GeckoBundle toBundle() {
-      final GeckoBundle bundle = new GeckoBundle(1);
+      final GeckoBundle bundle = new GeckoBundle(2);
       bundle.putBoolean("removeBoilerplate", removeBoilerplate);
+      bundle.putBoolean("useSimpleText", useSimpleText);
       return bundle;
     }
   }
@@ -113,7 +123,7 @@ public class PageExtractionController {
 
     @HandlerThread
     public @NonNull GeckoResult<String> getPageContent() {
-      return getPageContent(new ContentParams(false));
+      return getPageContent(new ContentParams(false, false));
     }
 
     
