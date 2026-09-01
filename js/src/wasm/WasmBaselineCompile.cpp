@@ -147,6 +147,7 @@
 #include "wasm/WasmBCFrame.h"
 #include "wasm/WasmBCRegDefs.h"
 #include "wasm/WasmBCStk.h"
+#include "wasm/WasmGC.h"
 #include "wasm/WasmValType.h"
 
 #include "jit/MacroAssembler-inl.h"
@@ -480,7 +481,7 @@ static uint32_t BlockSizeToDownwardsStep(size_t blockBytecodeSize) {
 bool BaseCompiler::beginFunction() {
   AutoCreatedBy acb(masm, "(wasm)BaseCompiler::beginFunction");
 
-  JitSpew(JitSpew_Codegen, "# ========================================");
+  JitSpew(JitSpew_Codegen, "# ================================");
   JitSpew(JitSpew_Codegen, "# Emitting wasm baseline code");
   JitSpew(JitSpew_Codegen,
           "# beginFunction: start of function prologue for index %d",
@@ -12697,6 +12698,23 @@ bool js::wasm::BaselineCompileFunctions(const CodeMetadata& codeMeta,
   }
 
   for (const FuncCompileInput& func : inputs) {
+    JitSpew(JitSpew_Codegen,
+            "# ================================"
+            "================================");
+    JitSpew(JitSpew_Codegen,
+            "# j::w::BaselineCompileFunctions: BEGIN function index %d",
+            (int)func.index);
+
+#ifdef DEBUG
+    
+    
+    mozilla::EnumeratedArray<Trap, uint32_t, size_t(Trap::Limit)>
+        trapSitesBefore;
+    for (Trap kind : mozilla::MakeEnumeratedRange(Trap::Limit)) {
+      trapSitesBefore[kind] = uint32_t(masm.trapSites().length(kind));
+    }
+#endif
+
     Decoder d(func.begin, func.end, func.bytecodeOffset, error);
 
     
@@ -12751,6 +12769,31 @@ bool js::wasm::BaselineCompileFunctions(const CodeMetadata& codeMeta,
 
     
     code->featureUsage |= f.iter_.featureUsage();
+
+#ifdef DEBUG
+    
+    
+    mozilla::EnumeratedArray<Trap, uint32_t, size_t(Trap::Limit)>
+        trapSitesAfter;
+    for (Trap kind : mozilla::MakeEnumeratedRange(Trap::Limit)) {
+      trapSitesAfter[kind] = uint32_t(masm.trapSites().length(kind));
+    }
+
+    
+    auto checkThisTrapKind = [](Trap t) -> bool {
+      
+      return false;
+    };
+    CheckStackMapsForTraps(masm, code->stackMaps, trapSitesBefore,
+                           trapSitesAfter, checkThisTrapKind);
+#endif
+
+    JitSpew(JitSpew_Codegen,
+            "# j::w::BaselineCompileFunctions: END function index %d",
+            (int)func.index);
+    JitSpew(JitSpew_Codegen,
+            "# ================================"
+            "================================");
   }
 
   masm.finish();

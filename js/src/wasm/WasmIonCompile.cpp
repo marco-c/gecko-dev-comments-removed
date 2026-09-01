@@ -11212,6 +11212,16 @@ bool wasm::IonCompileFunctions(const CodeMetadata& codeMeta,
             "# wasm::IonCompileFunctions: starting on function index %d",
             (int)func.index);
 
+#ifdef DEBUG
+    
+    
+    mozilla::EnumeratedArray<Trap, uint32_t, size_t(Trap::Limit)>
+        trapSitesBefore;
+    for (Trap kind : mozilla::MakeEnumeratedRange(Trap::Limit)) {
+      trapSitesBefore[kind] = uint32_t(masm.trapSites().length(kind));
+    }
+#endif
+
     Decoder d(func.begin, func.end, func.bytecodeOffset, error);
 
     
@@ -11284,6 +11294,24 @@ bool wasm::IonCompileFunctions(const CodeMetadata& codeMeta,
     if (!code->funcs.emplaceBack(func.index, observedFeatures)) {
       return false;
     }
+
+#ifdef DEBUG
+    
+    
+    mozilla::EnumeratedArray<Trap, uint32_t, size_t(Trap::Limit)>
+        trapSitesAfter;
+    for (Trap kind : mozilla::MakeEnumeratedRange(Trap::Limit)) {
+      trapSitesAfter[kind] = uint32_t(masm.trapSites().length(kind));
+    }
+
+    
+    auto checkThisTrapKind = [](Trap t) -> bool {
+      
+      return false;
+    };
+    CheckStackMapsForTraps(masm, code->stackMaps, trapSitesBefore,
+                           trapSitesAfter, checkThisTrapKind);
+#endif
 
     JitSpew(JitSpew_Codegen,
             "# wasm::IonCompileFunctions: completed function index %d",

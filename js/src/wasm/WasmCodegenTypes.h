@@ -222,28 +222,132 @@ const char* ToString(TrapMachineInsn tmi);
 
 
 
-class FaultingCodeOffset {
-  static constexpr uint32_t INVALID = UINT32_MAX;
-  uint32_t offset_;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class FaultingCodeRange {
+  
+  
+  
+  
+ private:
+#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+  
+  static constexpr uint32_t kMinInsnLength = 1;
+  static constexpr uint32_t kMaxInsnLength = 15;
+#elif defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) ||    \
+    defined(JS_CODEGEN_RISCV64) || defined(JS_CODEGEN_MIPS64) || \
+    defined(JS_CODEGEN_LOONG64)
+  
+  
+  
+  static constexpr uint32_t kMinInsnLength = 4;
+  static constexpr uint32_t kMaxInsnLength = 4;
+#elif defined(JS_CODEGEN_NONE)
+  
+  static constexpr uint32_t kMinInsnLength = 1;
+  static constexpr uint32_t kMaxInsnLength = 1;
+#else
+#  error "Unknown architecture"
+#endif
+  static_assert(kMinInsnLength >= 1);
+  static_assert(kMinInsnLength <= kMaxInsnLength);
 
  public:
-  FaultingCodeOffset() : offset_(INVALID) {}
-  explicit FaultingCodeOffset(uint32_t offset) : offset_(offset) {
-    MOZ_ASSERT(offset != INVALID);
+  static constexpr uint32_t minInsnLength() { return kMinInsnLength; }
+  static constexpr uint32_t maxInsnLength() { return kMaxInsnLength; }
+
+  
+  
+ private:
+  static constexpr uint32_t INVALID_OFFSET = UINT32_MAX;
+  uint32_t startOffset_ = INVALID_OFFSET;
+  uint32_t endOffset_ = INVALID_OFFSET;
+
+ public:
+  
+  bool isValid() const {
+    return
+        
+        startOffset_ != INVALID_OFFSET && endOffset_ != INVALID_OFFSET &&
+        
+        startOffset_ < endOffset_ &&
+        
+        endOffset_ - startOffset_ >= kMinInsnLength &&
+        endOffset_ - startOffset_ <= kMaxInsnLength;
   }
-  bool isValid() const { return offset_ != INVALID; }
-  uint32_t get() const {
+
+  
+  inline FaultingCodeRange() { MOZ_ASSERT(!isValid()); }
+
+#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+  
+  
+  inline FaultingCodeRange(uint32_t startOffset, uint32_t endOffset)
+      : startOffset_(startOffset), endOffset_(endOffset) {
+    static_assert(kMinInsnLength < kMaxInsnLength);
+    
+    MOZ_ASSERT(startOffset != INVALID_OFFSET && endOffset != INVALID_OFFSET);
+    
+    
+    
+  }
+#else
+  
+  
+  inline explicit FaultingCodeRange(uint32_t startOffset)
+      : startOffset_(startOffset), endOffset_(startOffset + kMinInsnLength) {
+    static_assert(kMinInsnLength == kMaxInsnLength);
+    
+    MOZ_ASSERT(startOffset != INVALID_OFFSET);
+  }
+#endif
+
+  
+  uint32_t offset() const {
     MOZ_ASSERT(isValid());
-    return offset_;
+    return startOffset_;
   }
+  uint32_t length() const {
+    MOZ_ASSERT(isValid());
+    return endOffset_ - startOffset_;
+  }
+  uint32_t resumeOffset() const {
+    MOZ_ASSERT(isValid());
+    return endOffset_;
+  }
+
+  
+  
+  uint32_t offsetUnchecked() const { return startOffset_; }
+  uint32_t resumeOffsetUnchecked() const { return endOffset_; }
+
+  
+  
+  uint32_t get() const { return offset(); }
 };
-static_assert(sizeof(FaultingCodeOffset) == 4);
+static_assert(sizeof(FaultingCodeRange) == 8);
 
 
 
-using FaultingCodeOffsetPair =
-    std::pair<FaultingCodeOffset, FaultingCodeOffset>;
-static_assert(sizeof(FaultingCodeOffsetPair) == 8);
+using FaultingCodeRangePair = std::pair<FaultingCodeRange, FaultingCodeRange>;
+static_assert(sizeof(FaultingCodeRangePair) == 16);
 
 
 
@@ -431,6 +535,8 @@ class TrapSitesForKind {
   
   static constexpr size_t MAX_LENGTH = UINT32_MAX - 1;
 
+  uint32_t getPCoffset(uint32_t index) const { return pcOffsets_[index]; }
+
   uint32_t length() const {
     size_t result = pcOffsets_.length();
     
@@ -456,7 +562,7 @@ class TrapSitesForKind {
   }
 
   [[nodiscard]]
-  bool append(TrapMachineInsn insn, uint32_t pcOffset,
+  bool append(TrapMachineInsn insn, FaultingCodeRange fcr,
               const TrapSiteDesc& desc) {
     MOZ_ASSERT(desc.bytecodeOffset.isValid());
 
@@ -484,7 +590,7 @@ class TrapSitesForKind {
 #ifdef DEBUG
     machineInsns_.infallibleAppend(insn);
 #endif
-    pcOffsets_.infallibleAppend(pcOffset);
+    pcOffsets_.infallibleAppend(fcr.offsetUnchecked());
     bytecodeOffsets_.infallibleAppend(desc.bytecodeOffset);
 
     return true;
@@ -606,6 +712,8 @@ class TrapSites {
  public:
   explicit TrapSites() = default;
 
+  const TrapSitesForKind& get(Trap trap) const { return array_[trap]; }
+
   bool empty() const {
     for (Trap trap : mozilla::MakeEnumeratedRange(Trap::Limit)) {
       if (!array_[trap].empty()) {
@@ -622,9 +730,9 @@ class TrapSites {
   }
 
   [[nodiscard]]
-  bool append(Trap trap, TrapMachineInsn insn, uint32_t pcOffset,
+  bool append(Trap trap, TrapMachineInsn insn, FaultingCodeRange fcr,
               const TrapSiteDesc& desc) {
-    return array_[trap].append(insn, pcOffset, desc);
+    return array_[trap].append(insn, fcr, desc);
   }
 
   [[nodiscard]]
@@ -656,6 +764,8 @@ class TrapSites {
       array_[trap].shrinkStorageToFit();
     }
   }
+
+  size_t length(Trap trap) const { return array_[trap].length(); }
 
   [[nodiscard]]
   bool lookup(uint32_t trapInstructionOffset,

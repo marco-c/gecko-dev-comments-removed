@@ -26,6 +26,63 @@ namespace wasm {
 
 
 
+class InstructionBytes {
+ public:
+  
+  virtual uint8_t get(size_t offset) const = 0;
+  
+  
+  virtual bool isU32aligned() const = 0;
+  
+  uint32_t getU32LittleEndian(size_t offset) const {
+    MOZ_ASSERT((offset & 3) == 0);
+    uint32_t word = 0;
+    for (uint32_t i = 0; i < 4; i++) {
+      word = (word << 8) | uint32_t(get(offset + (3 - i)));
+    }
+    return word;
+  }
+};
+
+
+class InstructionBytesAbsolute : public InstructionBytes {
+  const uint8_t* insn_ = nullptr;
+
+ public:
+  explicit InstructionBytesAbsolute(const uint8_t* insn) : insn_(insn) {}
+  bool isU32aligned() const override { return (uintptr_t(insn_) & 3) == 0; }
+  uint8_t get(size_t offset) const override {
+    MOZ_ASSERT(offset < 16);
+    return insn_[offset];
+  }
+};
+
+
+class InstructionBytesFromMasm : public wasm::InstructionBytes {
+  const MacroAssembler& masm_;
+  uint32_t baseOffset_ = 0;
+
+ public:
+  explicit InstructionBytesFromMasm(const MacroAssembler& masm,
+                                    uint32_t baseOffset)
+      : masm_(masm), baseOffset_(baseOffset) {
+    MOZ_ASSERT(baseOffset < masm.readableSize());
+  }
+  bool isU32aligned() const override { return (baseOffset_ & 3) == 0; }
+  uint8_t get(size_t offset) const override {
+    return masm_.getByteAtOffset(size_t(baseOffset_) + offset);
+  }
+};
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -182,7 +239,7 @@ static uint8_t ImmediateSizeFromOperationSize(uint8_t opSizeInBytes) {
   }
 }
 
-SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
+static SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
   
   
   
@@ -1012,7 +1069,7 @@ SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
 
 #elif defined(JS_CODEGEN_ARM64)
 
-SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
+static SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
   
   MOZ_ASSERT(insn.isU32aligned());
 
@@ -1362,7 +1419,7 @@ SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
 
 #elif defined(JS_CODEGEN_ARM)
 
-SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
+static SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
   
   
   
@@ -1560,7 +1617,7 @@ SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
 
 #elif defined(JS_CODEGEN_RISCV64)
 
-SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
+static SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
   
   MOZ_ASSERT(insn.isU32aligned());
 
@@ -2151,7 +2208,7 @@ SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
 
 #elif defined(JS_CODEGEN_NONE)
 
-SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
+static SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
   MOZ_CRASH();
 }
 
@@ -2167,6 +2224,12 @@ SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
 SummarizeResult SummarizeTrapInstruction(const uint8_t* insn) {
   const InstructionBytesAbsolute iba(insn);
   return SummarizeTrapInstruction(iba);
+}
+
+SummarizeResult SummarizeTrapInstruction(const MacroAssembler& masm,
+                                         uint32_t offset) {
+  const InstructionBytesFromMasm ibfm(masm, offset);
+  return SummarizeTrapInstruction(ibfm);
 }
 
 }  

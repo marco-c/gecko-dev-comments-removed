@@ -654,6 +654,22 @@ void CheckWholeCellLastElementCache(jit::MacroAssembler& masm,
 
 
 bool IsPlausibleStackMapKey(const uint8_t* base, uint32_t stackmapOffset);
+
+using TrapSitesFrontierArray =
+    mozilla::EnumeratedArray<Trap, uint32_t, size_t(Trap::Limit)>;
+
+
+
+
+
+
+
+
+void CheckStackMapsForTraps(const jit::MacroAssembler& masm,
+                            const StackMaps& stackMaps,
+                            const TrapSitesFrontierArray& trapSitesBefore,
+                            const TrapSitesFrontierArray& trapSitesAfter,
+                            bool (*checkThisTrapKind)(Trap));
 #endif
 
 }  

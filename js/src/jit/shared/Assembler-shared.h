@@ -43,7 +43,7 @@
 #  define JS_CODELABEL_LINKMODE
 #endif
 
-using js::wasm::FaultingCodeOffset;
+using js::wasm::FaultingCodeRange;
 
 namespace js {
 namespace jit {
@@ -717,19 +717,19 @@ class AssemblerShared {
     enoughMemory_ &= callSites_.append(desc, retAddr.offset());
     enoughMemory_ &= callSiteTargets_.emplaceBack(std::forward<Args>(args)...);
   }
-  void append(wasm::Trap trap, wasm::TrapMachineInsn insn, uint32_t pcOffset,
-              const wasm::TrapSiteDesc& desc) {
-    enoughMemory_ &= trapSites_.append(trap, insn, pcOffset, desc);
+  
+  
+  
+  void appendNoVerify(wasm::Trap trap, wasm::TrapMachineInsn insn,
+                      FaultingCodeRange fcr, const wasm::TrapSiteDesc& desc) {
+    enoughMemory_ &= trapSites_.append(trap, insn, fcr, desc);
 #ifdef JS_JITSPEW
     if (JitSpewEnabled(JitSpew_Codegen)) {
-      JitSpew(jit::JitSpew_Codegen, "%06x  # <-- @ w::TrapSiteDesc, kind = %s",
-              pcOffset, NameOfTrap(trap));
+      JitSpew(
+          jit::JitSpew_Codegen, "%06x,%06x  # <-- @ w::TrapSiteDesc, kind = %s",
+          fcr.offsetUnchecked(), fcr.resumeOffsetUnchecked(), NameOfTrap(trap));
     }
 #endif
-  }
-  void append(const wasm::MemoryAccessDesc& access, wasm::TrapMachineInsn insn,
-              FaultingCodeOffset pcOffset) {
-    append(wasm::Trap::OutOfBounds, insn, pcOffset.get(), access.trapDesc());
   }
   void append(wasm::SymbolicAccess access) {
     enoughMemory_ &= symbolicAccesses_.append(access);
@@ -760,6 +760,7 @@ class AssemblerShared {
   wasm::CallSites& callSites() { return callSites_; }
   wasm::CallSiteTargetVector& callSiteTargets() { return callSiteTargets_; }
   wasm::TrapSites& trapSites() { return trapSites_; }
+  const wasm::TrapSites& trapSites() const { return trapSites_; }
   wasm::SymbolicAccessVector& symbolicAccesses() { return symbolicAccesses_; }
   wasm::TryNoteVector& tryNotes() { return tryNotes_; }
   wasm::CodeRangeUnwindInfoVector& codeRangeUnwindInfos() {
