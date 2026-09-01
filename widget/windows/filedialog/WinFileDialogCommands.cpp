@@ -241,17 +241,23 @@ mozilla::Result<nsString, Error> GetFolderResults(::IFileDialog* dialog) {
 
   
   
-  RefPtr<IShellLibrary> shellLib;
-  RefPtr<IShellItem> folderPath;
-  MOZ_ENSURE_HRESULT_OK(
-      "CoCreateInstance(CLSID_ShellLibrary)",
-      CoCreateInstance(CLSID_ShellLibrary, nullptr, CLSCTX_INPROC_SERVER,
-                       IID_IShellLibrary, getter_AddRefs(shellLib)));
+  
+  
+  SFGAOF attrs = 0;
+  if (SUCCEEDED(item->GetAttributes(SFGAO_FILESYSTEM, &attrs)) &&
+      !(attrs & SFGAO_FILESYSTEM)) {
+    RefPtr<IShellLibrary> shellLib;
+    RefPtr<IShellItem> folderPath;
+    MOZ_ENSURE_HRESULT_OK(
+        "CoCreateInstance(CLSID_ShellLibrary)",
+        CoCreateInstance(CLSID_ShellLibrary, nullptr, CLSCTX_INPROC_SERVER,
+                         IID_IShellLibrary, getter_AddRefs(shellLib)));
 
-  if (shellLib && SUCCEEDED(shellLib->LoadLibraryFromItem(item, STGM_READ)) &&
-      SUCCEEDED(shellLib->GetDefaultSaveFolder(DSFT_DETECT, IID_IShellItem,
-                                               getter_AddRefs(folderPath)))) {
-    item.swap(folderPath);
+    if (shellLib && SUCCEEDED(shellLib->LoadLibraryFromItem(item, STGM_READ)) &&
+        SUCCEEDED(shellLib->GetDefaultSaveFolder(DSFT_DETECT, IID_IShellItem,
+                                                 getter_AddRefs(folderPath)))) {
+      item.swap(folderPath);
+    }
   }
 
   
