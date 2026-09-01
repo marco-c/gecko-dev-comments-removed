@@ -201,11 +201,9 @@ class nsIGlobalObject : public nsISupports {
     return nullptr;
   }
 
-  virtual void SetWebTaskSchedulingState(
-      mozilla::dom::WebTaskSchedulingState* aState) {}
-  virtual mozilla::dom::WebTaskSchedulingState* GetWebTaskSchedulingState()
-      const {
-    return nullptr;
+  void SetWebTaskSchedulingState(mozilla::dom::WebTaskSchedulingState* aState);
+  mozilla::dom::WebTaskSchedulingState* GetWebTaskSchedulingState() const {
+    return mWebTaskSchedulingState;
   }
 
   
@@ -428,6 +426,9 @@ class nsIGlobalObject : public nsISupports {
 
   
   RefPtr<mozilla::dom::Function> mByteLengthQueuingStrategySizeFunction;
+
+  
+  RefPtr<mozilla::dom::WebTaskSchedulingState> mWebTaskSchedulingState;
 };
 
 #endif  
