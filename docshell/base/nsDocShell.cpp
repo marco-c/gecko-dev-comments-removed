@@ -867,7 +867,10 @@ nsresult nsDocShell::LoadURI(nsDocShellLoadState* aLoadState,
       aLoadState->TriggeringPrincipal();
   if (triggeringPrincipal && triggeringPrincipal->IsSystemPrincipal()) {
     WindowContext* topWc = mBrowsingContext->GetTopWindowContext();
-    if (topWc && !topWc->IsDiscarded()) {
+    
+    
+    if (topWc && !topWc->IsDiscarded() &&
+        !topWc->GetSHEntryHasUserInteraction()) {
       MOZ_ALWAYS_SUCCEEDS(topWc->SetSHEntryHasUserInteraction(true));
     }
   }

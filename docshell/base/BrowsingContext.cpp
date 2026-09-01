@@ -2352,6 +2352,20 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
       
       
       
+      
+      if (!aLoadState->LoadIsFromSessionHistory() &&
+          aLoadState->TriggeringPrincipal() &&
+          aLoadState->TriggeringPrincipal()->IsSystemPrincipal()) {
+        WindowContext* topWc = GetTopWindowContext();
+        if (topWc && !topWc->IsDiscarded()) {
+          MOZ_ALWAYS_SUCCEEDS(topWc->SetSHEntryHasUserInteraction(true));
+        }
+      }
+
+      
+      
+      
+      
       Canonical()->AttemptSpeculativeLoadInParent(aLoadState);
 
 #ifdef ANDROID
