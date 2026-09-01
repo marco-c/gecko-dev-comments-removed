@@ -15,8 +15,10 @@
 
 #include <vector>
 
+#import "api/peerconnection/RTCCertificate.h"
 #import "api/peerconnection/RTCConfiguration+Private.h"
 #import "api/peerconnection/RTCConfiguration.h"
+#import "api/peerconnection/RTCDtlsFingerprint.h"
 #import "api/peerconnection/RTCIceServer.h"
 #import "api/peerconnection/RTCMediaConstraints.h"
 #import "api/peerconnection/RTCPeerConnection.h"
@@ -81,6 +83,52 @@
   
   EXPECT_EQ(originalPrivateKeyField, retrievedPrivateKeyField);
   EXPECT_EQ(retrievedCertificateField, retrievedCertificateField);
+
+  
+  
+  NSArray<RTC_OBJC_TYPE(RTCDtlsFingerprint) *> *originalFingerprints =
+      [originalCertificate getFingerprints];
+  NSArray<RTC_OBJC_TYPE(RTCDtlsFingerprint) *> *retrievedFingerprints =
+      [retrievedCertificate getFingerprints];
+  XCTAssertEqual(originalFingerprints.count, 1u);
+  XCTAssertEqual(retrievedFingerprints.count, 1u);
+  XCTAssertEqualObjects(originalFingerprints.firstObject.algorithm,
+                        retrievedFingerprints.firstObject.algorithm);
+  XCTAssertEqualObjects(originalFingerprints.firstObject.value,
+                        retrievedFingerprints.firstObject.value);
+}
+
+- (void)testGeneratedCertificateHasFingerprint {
+  RTC_OBJC_TYPE(RTCCertificate) *certificate = [RTC_OBJC_TYPE(RTCCertificate)
+      generateCertificateWithParams:@{@"name" : @"RSASSA-PKCS1-v1_5"}];
+
+  NSArray<RTC_OBJC_TYPE(RTCDtlsFingerprint) *> *fingerprints =
+      [certificate getFingerprints];
+  XCTAssertEqual(fingerprints.count, 1u);
+
+  RTC_OBJC_TYPE(RTCDtlsFingerprint) *fingerprint = fingerprints.firstObject;
+  
+  NSPredicate *algorithmPredicate =
+      [NSPredicate predicateWithFormat:@"SELF MATCHES %@", @"[a-z0-9\\-]+"];
+  XCTAssertTrue([algorithmPredicate evaluateWithObject:fingerprint.algorithm],
+                @"Unexpected algorithm format: %@",
+                fingerprint.algorithm);
+
+  
+  NSPredicate *valuePredicate = [NSPredicate
+      predicateWithFormat:@"SELF MATCHES %@", @"([0-9A-F]{2}:)+[0-9A-F]{2}"];
+  XCTAssertTrue([valuePredicate evaluateWithObject:fingerprint.value],
+                @"Unexpected fingerprint value format: %@",
+                fingerprint.value);
+}
+
+- (void)testCertificateFromInvalidPemHasNoFingerprint {
+  
+  
+  RTC_OBJC_TYPE(RTCCertificate) *certificate =
+      [[RTC_OBJC_TYPE(RTCCertificate) alloc] initWithPrivateKey:@"private"
+                                                    certificate:@"certificate"];
+  XCTAssertEqual([certificate getFingerprints].count, 0u);
 }
 
 @end

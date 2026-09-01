@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+#import <Foundation/Foundation.h>
+
+#import "sdk/objc/base/RTCMacros.h"
+
+NS_ASSUME_NONNULL_BEGIN
+
+
+
+
+
+RTC_OBJC_EXPORT
+@interface RTC_OBJC_TYPE (RTCDtlsFingerprint) : NSObject
+
+
+@property(nonatomic, readonly) NSString *algorithm;
+
+
+
+
+
+@property(nonatomic, readonly) NSString *value;
+
+- (instancetype)initWithAlgorithm:(NSString *)algorithm
+                            value:(NSString *)value NS_DESIGNATED_INITIALIZER;
+
+- (instancetype)init NS_UNAVAILABLE;
+
+@end
+
+NS_ASSUME_NONNULL_END

@@ -12,6 +12,8 @@
 
 #import "sdk/objc/base/RTCMacros.h"
 
+@class RTC_OBJC_TYPE(RTCDtlsFingerprint);
+
 NS_ASSUME_NONNULL_BEGIN
 
 RTC_OBJC_EXPORT
@@ -32,6 +34,14 @@ RTC_OBJC_EXPORT
     NS_DESIGNATED_INITIALIZER;
 
 - (instancetype)init NS_UNAVAILABLE;
+
+
+
+
+
+
+
+- (NSArray<RTC_OBJC_TYPE(RTCDtlsFingerprint) *> *)getFingerprints;
 
 
 
