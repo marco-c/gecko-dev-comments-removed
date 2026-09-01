@@ -297,11 +297,6 @@ class nsObjectLoadingContent : public nsIStreamListener,
   
 
 
-  bool ShouldBlockContent();
-
-  
-
-
 
 
 
@@ -450,9 +445,6 @@ class nsObjectLoadingContent : public nsIStreamListener,
   
   
   bool mNetworkCreated : 1;
-
-  
-  bool mContentBlockingEnabled : 1;
 
   
   bool mIsStopping : 1;

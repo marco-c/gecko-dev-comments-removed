@@ -51,7 +51,6 @@
 #include "mozilla/LoadInfo.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ProfilerLabels.h"
-#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/ContentChild.h"
@@ -228,7 +227,6 @@ nsObjectLoadingContent::nsObjectLoadingContent()
     : mType(ObjectType::Loading),
       mChannelLoaded(false),
       mNetworkCreated(true),
-      mContentBlockingEnabled(false),
       mIsStopping(false),
       mIsLoading(false),
       mScriptRequested(false),
@@ -320,12 +318,10 @@ nsObjectLoadingContent::OnStartRequest(nsIRequest* aRequest) {
               u" since it was found on an internal Firefox blocklist.");
       console->LogStringMessage(message.get());
     }
-    mContentBlockingEnabled = true;
     return NS_ERROR_FAILURE;
   }
 
   if (ChannelClassifierUtils::IsClassifierBlockingErrorCode(status)) {
-    mContentBlockingEnabled = true;
     return NS_ERROR_FAILURE;
   }
 
@@ -1224,13 +1220,6 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
 
   
   
-  if (mType == ObjectType::Fallback && ShouldBlockContent()) {
-    LOG(("OBJLC [%p]: Enable content blocking", this));
-    mType = ObjectType::Loading;
-  }
-
-  
-  
   if (mFrameLoader || mFinalListener) {
     MOZ_ASSERT_UNREACHABLE("Trying to load new plugin with existing content");
     return NS_OK;
@@ -1785,11 +1774,6 @@ nsObjectLoadingContent::UpgradeLoadToDocument(
 
   bc.forget(aBrowsingContext);
   return NS_OK;
-}
-
-bool nsObjectLoadingContent::ShouldBlockContent() {
-  return mContentBlockingEnabled && mURI && IsFlashMIME(mContentType) &&
-         StaticPrefs::browser_safebrowsing_blockedURIs_enabled();
 }
 
 Document* nsObjectLoadingContent::GetContentDocument(
