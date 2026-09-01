@@ -4,14 +4,16 @@
 
 "use strict";
 
-const { dumpn } = require("resource://devtools/shared/DevToolsUtils.js");
+const {
+  logger,
+} = require("resource://devtools/client/shared/remote-debugging/adb/adb-logger.js");
 
 
 
 
 
 const listDevices = function () {
-  dumpn("listDevices");
+  logger.debug("listDevices");
 
   return this.runCommand("host:devices").then(function onSuccess(data) {
     const lines = data.split("\n");

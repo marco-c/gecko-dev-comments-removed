@@ -1,0 +1,13 @@
+
+
+
+
+"use strict";
+
+
+
+
+exports.logger = console.createInstance({
+  prefix: "devtools_adb",
+  maxLogLevel: "Warn",
+});
