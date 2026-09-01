@@ -7,9 +7,6 @@
 const {
   createCommandsDictionary,
 } = require("resource://devtools/shared/commands/index.js");
-const { DevToolsLoader } = ChromeUtils.importESModule(
-  "resource://devtools/shared/loader/Loader.sys.mjs"
-);
 loader.lazyRequireGetter(
   this,
   "DevToolsServer",
@@ -176,12 +173,17 @@ exports.CommandsFactory = {
   async spawnClientToDebugSystemPrincipal() {
     
     
-    
-    
-    const customLoader = new DevToolsLoader({
-      freshCompartment: true,
-    });
-    const { DevToolsServer: customDevToolsServer } = customLoader.require(
+    const {
+      useDistinctSystemPrincipalLoader,
+      releaseDistinctSystemPrincipalLoader,
+    } = ChromeUtils.importESModule(
+      "resource://devtools/shared/loader/DistinctSystemPrincipalLoader.sys.mjs",
+      { global: "shared" }
+    );
+    const requester = {};
+    const loader = useDistinctSystemPrincipalLoader(requester);
+
+    const { DevToolsServer: customDevToolsServer } = loader.require(
       "resource://devtools/server/devtools-server.js"
     );
 
@@ -197,6 +199,10 @@ exports.CommandsFactory = {
 
     const client = new DevToolsClient(customDevToolsServer.connectPipe());
     await client.connect();
+
+    client.once("closed", () => {
+      releaseDistinctSystemPrincipalLoader(requester);
+    });
 
     return client;
   },
