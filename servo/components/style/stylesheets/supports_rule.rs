@@ -13,9 +13,9 @@ use crate::shared_lock::{DeepCloneWithLock, Locked};
 use crate::shared_lock::{SharedRwLock, SharedRwLockReadGuard, ToCssWithGuard};
 use crate::stylesheets::rule_parser::AtRuleType;
 use crate::stylesheets::{CssRuleType, CssRules};
-use cssparser::{match_ignore_ascii_case, ParseError as CssParseError, ParserInput};
-use cssparser::{parse_important, serialize_identifier};
 use cssparser::{Delimiter, Parser, SourceLocation, Token};
+use cssparser::{ParseError as CssParseError, ParserInput, match_ignore_ascii_case};
+use cssparser::{parse_important, serialize_identifier};
 #[cfg(feature = "gecko")]
 use malloc_size_of::{MallocSizeOfOps, MallocUnconditionalShallowSizeOf};
 use selectors::parser::{Selector, SelectorParseErrorKind};
@@ -467,6 +467,7 @@ impl NamedFeature {
     
     
     
+    #[cfg(feature = "gecko")]
     pub fn eval(self) -> bool {
         match self {
             Self::AnchorPositionFollowsTransforms => {
@@ -475,5 +476,10 @@ impl NamedFeature {
             
             Self::SingleAxisScrollContainer => false,
         }
+    }
+
+    #[cfg(feature = "servo")]
+    pub fn eval(self) -> bool {
+        false
     }
 }
