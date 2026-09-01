@@ -2652,6 +2652,8 @@ void HTMLMediaElement::AbortExistingLoads() {
 
   RemoveMediaElementFromURITable();
   mLoadingSrcTriggeringPrincipal = nullptr;
+  
+  mCORSMode = CORS_NONE;
   DDLOG(DDLogCategory::Property, "loading_src", "");
   DDUNLINKCHILD(mMediaSource.get());
   mMediaSource = nullptr;
@@ -8808,6 +8810,11 @@ bool HTMLMediaElement::IsControllableMediaSource() const {
 
   if (IsInFullScreen()) {
     MEDIACONTROL_LOG("Controllable: media is in fullscreen");
+    return true;
+  }
+
+  if (mDecoder && mDecoder->IsLiveStream()) {
+    MEDIACONTROL_LOG("Controllable: live stream");
     return true;
   }
 
