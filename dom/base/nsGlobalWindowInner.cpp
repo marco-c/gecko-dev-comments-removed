@@ -3718,29 +3718,29 @@ void nsGlobalWindowInner::SetName(const nsAString& aName,
   FORWARD_TO_OUTER_OR_THROW(SetNameOuter, (aName, aError), aError, );
 }
 
-double nsGlobalWindowInner::GetInnerWidth(CallerType aCallerType,
-                                          ErrorResult& aError) {
-  FORWARD_TO_OUTER_OR_THROW(GetInnerWidthOuter, (aCallerType, aError), aError,
-                            0);
+double nsGlobalWindowInner::GetInnerWidth(ErrorResult& aError) {
+  FORWARD_TO_OUTER_OR_THROW(GetInnerWidthOuter, (aError), aError, 0);
 }
 
-nsresult nsGlobalWindowInner::GetInnerWidth(CallerType aCallerType,
-                                            double* aWidth) {
+nsresult nsGlobalWindowInner::GetInnerWidth(double* aWidth) {
   ErrorResult rv;
-  *aWidth = GetInnerWidth(aCallerType, rv);
+  
+  *aWidth = GetInnerWidth(rv);
   return rv.StealNSResult();
 }
 
-double nsGlobalWindowInner::GetInnerHeight(CallerType aCallerType,
-                                           ErrorResult& aError) {
-  FORWARD_TO_OUTER_OR_THROW(GetInnerHeightOuter, (aCallerType, aError), aError,
-                            0);
+double nsGlobalWindowInner::GetInnerHeight(ErrorResult& aError) {
+  
+  
+  
+  
+  FORWARD_TO_OUTER_OR_THROW(GetInnerHeightOuter, (aError), aError, 0);
 }
 
-nsresult nsGlobalWindowInner::GetInnerHeight(CallerType aCallerType,
-                                             double* aHeight) {
+nsresult nsGlobalWindowInner::GetInnerHeight(double* aHeight) {
   ErrorResult rv;
-  *aHeight = GetInnerHeight(aCallerType, rv);
+  
+  *aHeight = GetInnerHeight(rv);
   return rv.StealNSResult();
 }
 
