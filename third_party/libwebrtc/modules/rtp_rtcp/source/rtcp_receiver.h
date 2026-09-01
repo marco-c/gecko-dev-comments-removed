@@ -161,14 +161,12 @@ class RTCPReceiver final {
   struct PacketInformation;
 
   
-  
   struct TmmbrInformation {
     struct TimedTmmbrItem {
       rtcp::TmmbItem tmmbr_item;
       Timestamp last_updated = Timestamp::Zero();
     };
 
-    std::vector<rtcp::TmmbItem> tmmbn;
     std::map<uint32_t, TimedTmmbrItem> tmmbr;
   };
 
@@ -217,9 +215,6 @@ class RTCPReceiver final {
 
   void TriggerCallbacksFromRtcpPacket(
       const PacketInformation& packet_information);
-
-  TmmbrInformation* GetTmmbrInformation(uint32_t remote_ssrc)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(rtcp_receiver_lock_);
 
   bool HandleSenderReport(const rtcp::CommonHeader& rtcp_block,
                           PacketInformation* packet_information)
@@ -334,6 +329,9 @@ class RTCPReceiver final {
   
   flat_map<uint32_t, TmmbrInformation> tmmbr_infos_
       RTC_GUARDED_BY(rtcp_receiver_lock_);
+
+  
+  std::vector<rtcp::TmmbItem> tmmbn_ RTC_GUARDED_BY(rtcp_receiver_lock_);
 
   
   RttStats rtts_ RTC_GUARDED_BY(rtcp_receiver_lock_);
