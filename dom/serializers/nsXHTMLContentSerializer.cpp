@@ -128,7 +128,7 @@ nsXHTMLContentSerializer::AppendText(Text* aText, int32_t aStartOffset,
                    NS_ERROR_OUT_OF_MEMORY);
   } else {
     int32_t lastNewlineOffset = kNotFound;
-    if (mAllowLineBreaking && HasLongLines(data, lastNewlineOffset)) {
+    if (HasLongLines(data, lastNewlineOffset)) {
       
       mDoWrap = true;
       bool result = AppendToStringWrapped(data, *mOutput);
