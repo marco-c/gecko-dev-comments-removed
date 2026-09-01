@@ -5,41 +5,41 @@
 #ifndef EffectiveTLDService_h
 #define EffectiveTLDService_h
 
-#include "mozilla/AutoMemMap.h"
+#include "MainThreadUtils.h"
 #include "mozilla/Dafsa.h"
-#include "mozilla/MemoryReporting.h"
 #include "mozilla/MruCache.h"
-#include "mozilla/RWLock.h"
-#include "nsCOMPtr.h"
+#include "mozilla/StaticPtr.h"
 #include "nsHashKeys.h"
 #include "nsIEffectiveTLDService.h"
-#include "nsIMemoryReporter.h"
 #include "nsString.h"
 
 class nsIIDNService;
 
-class nsEffectiveTLDService final : public nsIEffectiveTLDService,
-                                    public nsIMemoryReporter {
+class nsEffectiveTLDService final : public nsIEffectiveTLDService {
  public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSIEFFECTIVETLDSERVICE
-  NS_DECL_NSIMEMORYREPORTER
+  
+  
+  NS_IMETHOD_(MozExternalRefCountType) AddRef() override { return 2; }
+  NS_IMETHOD_(MozExternalRefCountType) Release() override { return 1; }
+  NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
+  using HasThreadSafeRefCnt = std::true_type;
 
-  nsEffectiveTLDService();
-  nsresult Init();
+  NS_DECL_NSIEFFECTIVETLDSERVICE
 
   static already_AddRefed<nsIEffectiveTLDService> GetXPCOMSingleton();
 
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
-
  private:
+  constexpr explicit nsEffectiveTLDService(mozilla::Dafsa::Graph aGraph)
+      : mGraph(aGraph) {}
+
   nsresult GetBaseDomainInternal(nsCString& aHostname, int32_t aAdditionalParts,
                                  bool aOnlyKnownPublicSuffix,
                                  nsACString& aBaseDomain);
-  ~nsEffectiveTLDService();
+
+  static nsEffectiveTLDService sSingleton;
 
   
-  mozilla::Dafsa mGraph;
+  const mozilla::Dafsa mGraph;
 
   
   
@@ -70,7 +70,8 @@ class nsEffectiveTLDService final : public nsIEffectiveTLDService,
   };
 
   
-  TldCache mMruTable;
+  mozilla::StaticAutoPtr<TldCache> mMruTable
+      MOZ_GUARDED_BY(mozilla::sMainThreadCapability);
 };
 
 #endif  
