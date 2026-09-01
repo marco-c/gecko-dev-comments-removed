@@ -196,9 +196,15 @@ where
         let visited_rules = if self.context.shared.visited_styles_enabled
             && (inside_link || self.element.is_link())
         {
-            let visited_matching_results =
-                self.match_primary(VisitedHandlingMode::RelevantLinkVisited);
-            Some(visited_matching_results.rule_node)
+            if self.needs_visited_matching() {
+                let visited_matching_results =
+                    self.match_primary(VisitedHandlingMode::RelevantLinkVisited);
+                Some(visited_matching_results.rule_node)
+            } else {
+                
+                
+                Some(primary_results.rule_node.clone())
+            }
         } else {
             None
         };
@@ -213,6 +219,23 @@ where
             parent_style,
             layout_parent_style,
         )
+    }
+
+    
+    
+    
+    
+    
+    
+    fn needs_visited_matching(&self) -> bool {
+        self.element.is_link()
+            || self
+                .context
+                .shared
+                .stylist
+                .any_applicable_rule_data(self.element, |data| {
+                    data.has_non_link_visited_dependency()
+                })
     }
 
     fn cascade_primary_style(
