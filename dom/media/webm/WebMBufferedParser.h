@@ -1,8 +1,6 @@
 
 
 
-
-
 #if !defined(WebMBufferedParser_h_)
 #  define WebMBufferedParser_h_
 

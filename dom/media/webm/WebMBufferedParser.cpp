@@ -400,7 +400,11 @@ MediaResult WebMBufferedParser::Append(const unsigned char* aBuffer,
           
           
           
-          if (mInitEndOffset >= 0 && mClusterOffset < 0) {
+          
+          
+          
+          if (mInitEndOffset >= 0 && mClusterOffset < 0 &&
+              mLastInitStartOffset < mInitEndOffset) {
             mInitEndOffset = mBlockEndOffset;
           }
           mState = mNextState;
