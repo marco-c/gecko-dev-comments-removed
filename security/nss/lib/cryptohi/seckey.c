@@ -5,6 +5,7 @@
 #include "keyhi.h"
 #include "pkcs11t.h"
 #include "secoid.h"
+#include "eccutil.h"
 #include "secitem.h"
 #include "secder.h"
 #include "base64.h"
@@ -1864,6 +1865,8 @@ SECKEY_ConvertToPublicKey(SECKEYPrivateKey *privk)
     SECStatus rv;
     CK_OBJECT_HANDLE pubKeyHandle;
     SECItem decodedPoint;
+    SECItem *point;
+    unsigned int fieldLen;
 
     
 
@@ -1965,12 +1968,19 @@ SECKEY_ConvertToPublicKey(SECKEYPrivateKey *privk)
             
 
 
-            rv = SEC_QuickDERDecodeItem(arena, &decodedPoint,
-                                        SEC_ASN1_GET(SEC_OctetStringTemplate), &pubk->u.ec.publicValue);
-            if (rv == SECSuccess) {
-                
+            fieldLen = (SECKEY_ECParamsToKeySize(&pubk->u.ec.DEREncodedParams) +
+                        7) /
+                       8;
+            point = &pubk->u.ec.publicValue;
+            if (!ECPoint_IsBare(point, fieldLen) && point->len != 0 &&
+                point->data[0] == SEC_ASN1_OCTET_STRING) {
+                rv = SEC_QuickDERDecodeItem(arena, &decodedPoint,
+                                            SEC_ASN1_GET(SEC_OctetStringTemplate), point);
+                if (rv == SECSuccess) {
+                    
 
-                pubk->u.ec.publicValue = decodedPoint;
+                    *point = decodedPoint;
+                }
             }
 
             pubk->u.ec.encoding = ECPoint_Undefined;

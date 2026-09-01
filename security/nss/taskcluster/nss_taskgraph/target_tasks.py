@@ -76,6 +76,14 @@ def filter_try_syntax(options, task):
             return False
 
     
+    
+    
+    if task.kind == "fuzz" and not any(
+        t in options["unittests"] for t in ("all", "fuzz")
+    ):
+        return False
+
+    
     if group == "builds" and not options["extra"]:
         return False
 

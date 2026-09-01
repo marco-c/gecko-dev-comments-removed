@@ -288,6 +288,60 @@ prepare_ec_priv_key_export_for_asn1(SECKEYRawPrivateKey *key)
     key->u.ec.publicValue.type = siUnsignedInteger;
 }
 
+
+
+
+
+
+
+
+
+static SECStatus
+pk11_SetIDAndPublicKey(SECKEYPrivateKey *privKey, const SECItem *publicValue,
+                       PRBool isPerm)
+{
+    SECKEYPublicKey *pubKey = NULL;
+    SECItem *ck_id = NULL;
+    SECStatus rv = SECFailure;
+
+    if (publicValue == NULL) {
+        
+
+        pubKey = SECKEY_ConvertToPublicKey(privKey);
+        if (pubKey == NULL) {
+            goto loser;
+        }
+        publicValue = PK11_GetPublicValueFromPublicKey(pubKey);
+        if (publicValue == NULL) {
+            goto loser;
+        }
+        ck_id = PK11_MakeIDFromPubKey(publicValue);
+        if (ck_id == NULL) {
+            goto loser;
+        }
+        rv = PK11_WriteRawAttribute(PK11_TypePrivKey, privKey, CKA_ID, ck_id);
+        if (rv != SECSuccess) {
+            goto loser;
+        }
+    }
+
+    
+
+    rv = SECSuccess;
+    if (isPerm) {
+        rv = SECKEY_SetPublicValue(privKey, publicValue);
+    }
+
+loser:
+    if (pubKey) {
+        SECKEY_DestroyPublicKey(pubKey);
+    }
+    if (ck_id) {
+        SECITEM_ZfreeItem(ck_id, PR_TRUE);
+    }
+    return rv;
+}
+
 SECStatus
 PK11_ImportDERPrivateKeyInfo(PK11SlotInfo *slot, SECItem *derPKI,
                              SECItem *nickname, const SECItem *publicValue, PRBool isPerm,
@@ -369,6 +423,11 @@ PK11_ImportAndReturnPrivateKey(PK11SlotInfo *slot, SECKEYRawPrivateKey *lpk,
     CK_ATTRIBUTE *ap;
     SECItem *ck_id = NULL;
     CK_ULONG paramSet;
+    SECKEYPrivateKey *privKey = NULL;
+    
+
+
+    const SECItem *pubValue = publicValue;
 
     attrs = theTemplate;
 
@@ -403,7 +462,8 @@ PK11_ImportAndReturnPrivateKey(PK11SlotInfo *slot, SECKEYRawPrivateKey *lpk,
                                                             : &ckfalse,
                           sizeof(CK_BBOOL));
             attrs++;
-            ck_id = PK11_MakeIDFromPubKey(&lpk->u.rsa.modulus);
+            pubValue = &lpk->u.rsa.modulus;
+            ck_id = PK11_MakeIDFromPubKey(pubValue);
             if (ck_id == NULL) {
                 goto loser;
             }
@@ -448,18 +508,6 @@ PK11_ImportAndReturnPrivateKey(PK11SlotInfo *slot, SECKEYRawPrivateKey *lpk,
             break;
         case dsaKey:
             keyType = CKK_DSA;
-            
-
-
-
-            if (publicValue == NULL) {
-                goto loser;
-            }
-            if (PK11_IsInternal(slot)) {
-                PK11_SETATTRS(attrs, CKA_NSS_DB,
-                              publicValue->data, publicValue->len);
-                attrs++;
-            }
             PK11_SETATTRS(attrs, CKA_SIGN, &cktrue, sizeof(CK_BBOOL));
             attrs++;
             PK11_SETATTRS(attrs, CKA_SIGN_RECOVER, &ckfalse, sizeof(CK_BBOOL));
@@ -468,12 +516,23 @@ PK11_ImportAndReturnPrivateKey(PK11SlotInfo *slot, SECKEYRawPrivateKey *lpk,
                 PK11_SETATTRS(attrs, CKA_LABEL, nickname->data, nickname->len);
                 attrs++;
             }
-            ck_id = PK11_MakeIDFromPubKey(publicValue);
-            if (ck_id == NULL) {
-                goto loser;
+            
+
+
+
+            if (pubValue != NULL) {
+                if (PK11_IsInternal(slot)) {
+                    PK11_SETATTRS(attrs, CKA_NSS_DB,
+                                  pubValue->data, pubValue->len);
+                    attrs++;
+                }
+                ck_id = PK11_MakeIDFromPubKey(pubValue);
+                if (ck_id == NULL) {
+                    goto loser;
+                }
+                PK11_SETATTRS(attrs, CKA_ID, ck_id->data, ck_id->len);
+                attrs++;
             }
-            PK11_SETATTRS(attrs, CKA_ID, ck_id->data, ck_id->len);
-            attrs++;
             signedattr = attrs;
             PK11_SETATTRS(attrs, CKA_PRIME, lpk->u.dsa.params.prime.data,
                           lpk->u.dsa.params.prime.len);
@@ -490,27 +549,29 @@ PK11_ImportAndReturnPrivateKey(PK11SlotInfo *slot, SECKEYRawPrivateKey *lpk,
             break;
         case dhKey:
             keyType = CKK_DH;
-            
-
-
-
-            if (PK11_IsInternal(slot)) {
-                PK11_SETATTRS(attrs, CKA_NSS_DB,
-                              publicValue->data, publicValue->len);
-                attrs++;
-            }
             PK11_SETATTRS(attrs, CKA_DERIVE, &cktrue, sizeof(CK_BBOOL));
             attrs++;
             if (nickname) {
                 PK11_SETATTRS(attrs, CKA_LABEL, nickname->data, nickname->len);
                 attrs++;
             }
-            ck_id = PK11_MakeIDFromPubKey(publicValue);
-            if (ck_id == NULL) {
-                goto loser;
+            
+
+
+
+            if (pubValue != NULL) {
+                if (PK11_IsInternal(slot)) {
+                    PK11_SETATTRS(attrs, CKA_NSS_DB,
+                                  pubValue->data, pubValue->len);
+                    attrs++;
+                }
+                ck_id = PK11_MakeIDFromPubKey(pubValue);
+                if (ck_id == NULL) {
+                    goto loser;
+                }
+                PK11_SETATTRS(attrs, CKA_ID, ck_id->data, ck_id->len);
+                attrs++;
             }
-            PK11_SETATTRS(attrs, CKA_ID, ck_id->data, ck_id->len);
-            attrs++;
             signedattr = attrs;
             PK11_SETATTRS(attrs, CKA_PRIME, lpk->u.dh.prime.data,
                           lpk->u.dh.prime.len);
@@ -524,15 +585,6 @@ PK11_ImportAndReturnPrivateKey(PK11SlotInfo *slot, SECKEYRawPrivateKey *lpk,
             break;
         case ecKey:
             keyType = CKK_EC;
-            if (lpk->u.ec.publicValue.len != 0) {
-                if (PK11_IsInternal(slot)) {
-                    PK11_SETATTRS(attrs, CKA_NSS_DB,
-                                  lpk->u.ec.publicValue.data,
-                                  lpk->u.ec.publicValue.len);
-                    attrs++;
-                }
-            }
-
             PK11_SETATTRS(attrs, CKA_SIGN, (keyUsage & KU_DIGITAL_SIGNATURE) ? &cktrue : &ckfalse,
                           sizeof(CK_BBOOL));
             attrs++;
@@ -546,12 +598,28 @@ PK11_ImportAndReturnPrivateKey(PK11SlotInfo *slot, SECKEYRawPrivateKey *lpk,
                 PK11_SETATTRS(attrs, CKA_LABEL, nickname->data, nickname->len);
                 attrs++;
             }
-            ck_id = PK11_MakeIDFromPubKey(&lpk->u.ec.publicValue);
-            if (ck_id == NULL) {
-                goto loser;
+            
+
+
+            if (lpk->u.ec.publicValue.len != 0) {
+                pubValue = &lpk->u.ec.publicValue;
             }
-            PK11_SETATTRS(attrs, CKA_ID, ck_id->data, ck_id->len);
-            attrs++;
+            if (pubValue != NULL) {
+                if (PK11_IsInternal(slot)) {
+                    PK11_SETATTRS(attrs, CKA_NSS_DB,
+                                  pubValue->data, pubValue->len);
+                    attrs++;
+                }
+                ck_id = PK11_MakeIDFromPubKey(pubValue);
+                if (ck_id == NULL) {
+                    goto loser;
+                }
+                PK11_SETATTRS(attrs, CKA_ID, ck_id->data, ck_id->len);
+                attrs++;
+                PK11_SETATTRS(attrs, CKA_EC_POINT, pubValue->data,
+                              pubValue->len);
+                attrs++;
+            }
             
             
             PK11_SETATTRS(attrs, CKA_EC_PARAMS, lpk->u.ec.curveOID.data,
@@ -560,9 +628,6 @@ PK11_ImportAndReturnPrivateKey(PK11SlotInfo *slot, SECKEYRawPrivateKey *lpk,
             PK11_SETATTRS(attrs, CKA_VALUE, lpk->u.ec.privateValue.data,
                           lpk->u.ec.privateValue.len);
             attrs++;
-            PK11_SETATTRS(attrs, CKA_EC_POINT, lpk->u.ec.publicValue.data,
-                          lpk->u.ec.publicValue.len);
-            attrs++;
             break;
         case edKey:
             keyType = CKK_EC_EDWARDS;
@@ -570,6 +635,17 @@ PK11_ImportAndReturnPrivateKey(PK11SlotInfo *slot, SECKEYRawPrivateKey *lpk,
             attrs++;
             if (nickname) {
                 PK11_SETATTRS(attrs, CKA_LABEL, nickname->data, nickname->len);
+                attrs++;
+            }
+            
+
+
+            if (pubValue != NULL) {
+                ck_id = PK11_MakeIDFromPubKey(pubValue);
+                if (ck_id == NULL) {
+                    goto loser;
+                }
+                PK11_SETATTRS(attrs, CKA_ID, ck_id->data, ck_id->len);
                 attrs++;
             }
 
@@ -590,6 +666,17 @@ PK11_ImportAndReturnPrivateKey(PK11SlotInfo *slot, SECKEYRawPrivateKey *lpk,
 
             if (nickname) {
                 PK11_SETATTRS(attrs, CKA_LABEL, nickname->data, nickname->len);
+                attrs++;
+            }
+            
+
+
+            if (pubValue != NULL) {
+                ck_id = PK11_MakeIDFromPubKey(pubValue);
+                if (ck_id == NULL) {
+                    goto loser;
+                }
+                PK11_SETATTRS(attrs, CKA_ID, ck_id->data, ck_id->len);
                 attrs++;
             }
 
@@ -621,13 +708,9 @@ PK11_ImportAndReturnPrivateKey(PK11SlotInfo *slot, SECKEYRawPrivateKey *lpk,
 
 
 
-            if (publicValue != NULL) {
-                if (PK11_IsInternal(slot)) {
-                    PK11_SETATTRS(attrs, CKA_NSS_DB,
-                                  publicValue->data, publicValue->len);
-                    attrs++;
-                }
-                ck_id = PK11_MakeIDFromPubKey(publicValue);
+
+            if (pubValue != NULL) {
+                ck_id = PK11_MakeIDFromPubKey(pubValue);
                 if (ck_id == NULL) {
                     goto loser;
                 }
@@ -669,13 +752,9 @@ PK11_ImportAndReturnPrivateKey(PK11SlotInfo *slot, SECKEYRawPrivateKey *lpk,
 
 
 
-            if (publicValue != NULL) {
-                if (PK11_IsInternal(slot)) {
-                    PK11_SETATTRS(attrs, CKA_NSS_DB,
-                                  publicValue->data, publicValue->len);
-                    attrs++;
-                }
-                ck_id = PK11_MakeIDFromPubKey(publicValue);
+
+            if (pubValue != NULL) {
+                ck_id = PK11_MakeIDFromPubKey(pubValue);
                 if (ck_id == NULL) {
                     goto loser;
                 }
@@ -720,15 +799,31 @@ PK11_ImportAndReturnPrivateKey(PK11SlotInfo *slot, SECKEYRawPrivateKey *lpk,
 
     rv = PK11_CreateNewObject(slot, CK_INVALID_HANDLE,
                               theTemplate, templateCount, isPerm, &objectID);
+    if (rv != SECSuccess) {
+        goto loser;
+    }
+
+    privKey = pk11_MakePrivKey(slot, lpk->keyType, !isPerm, objectID, wincx);
+    if (privKey == NULL) {
+        rv = SECFailure;
+        goto loser;
+    }
 
     
-    if (rv == SECSuccess && privk != NULL) {
-        *privk = pk11_MakePrivKey(slot, lpk->keyType, !isPerm, objectID, wincx);
-        if (*privk == NULL) {
-            rv = SECFailure;
-        }
+
+
+
+
+    (void)pk11_SetIDAndPublicKey(privKey, pubValue, isPerm);
+
+    if (privk != NULL) {
+        *privk = privKey;
+        privKey = NULL;
     }
 loser:
+    if (privKey) {
+        SECKEY_DestroyPrivateKey(privKey);
+    }
     if (ck_id) {
         SECITEM_ZfreeItem(ck_id, PR_TRUE);
     }

@@ -12,6 +12,8 @@ from optparse import OptionParser
 from subprocess import check_call
 from subprocess import check_output
 
+nss_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 nssutil_h = "lib/util/nssutil.h"
 softkver_h = "lib/softoken/softkver.h"
 nss_h = "lib/nss/nss.h"
@@ -675,8 +677,10 @@ def generate_release_notes_index(args):
     latest_version = args[0].strip()  
     esr_version = args[1].strip()  
 
-    latest_underscore = version_string_to_underscore(latest_version)
-    esr_underscore = version_string_to_underscore(esr_version)
+    
+    
+    latest_dash = latest_version.replace(".", "-")
+    esr_dash = esr_version.replace(".", "-")
 
     
     release_dir = "doc/src/releases"
@@ -722,10 +726,10 @@ def generate_release_notes_index(args):
 
 :::{{note}}
 **NSS {latest_version}** is the latest version of NSS.
-Complete release notes are available here: {{ref}}`mozilla_projects_nss_nss_{latest_underscore}_release_notes`
+Complete release notes are available here: {{ref}}`mozilla-projects-nss-nss-{latest_dash}-release-notes`
 
 **NSS {esr_version} (ESR)** is the latest ESR version of NSS.
-Complete release notes are available here: {{ref}}`mozilla_projects_nss_nss_{esr_underscore}_release_notes`
+Complete release notes are available here: {{ref}}`mozilla-projects-nss-nss-{esr_dash}-release-notes`
 :::
 """
 
@@ -865,7 +869,12 @@ def release_nss(args):
     )
 
     
-    print("Step 9: Committing release notes...")
+    print("Step 9: Running doc-lint...")
+    check_call_noisy([os.path.join(nss_root, "mach"), "doc-lint"])
+    print_separator()
+
+    
+    print("Step 10: Committing release notes...")
     check_call_noisy(["hg", "add", release_note_file])
     check_call_noisy(["hg", "commit", "-m", release_notes_commit_message])
 
@@ -879,12 +888,12 @@ def release_nss(args):
     print_separator()
 
     
-    print(f"Step 10: Tagging release version {rtm_tag}...")
+    print(f"Step 11: Tagging release version {rtm_tag}...")
     check_call_noisy(["hg", "tag", rtm_tag])
     print_separator()
 
     
-    print("Step 11: Switching to default branch and grafting release notes...")
+    print("Step 12: Switching to default branch and grafting release notes...")
     check_call_noisy(["hg", "checkout", "default"])
     check_call_noisy(["hg", "graft", "-r", docs_commit])
     print_separator()
@@ -897,7 +906,7 @@ def release_nss(args):
     print_separator()
 
     
-    print("Step 12: Checking cf_status_nss on Bugzilla...")
+    print("Step 13: Checking cf_status_nss on Bugzilla...")
     cf_status_script = os.path.join(
         os.path.dirname(__file__), "bugzilla_cf_status_nss.py"
     )

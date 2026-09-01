@@ -21,11 +21,16 @@
 
 typedef enum {
     SFTKFIPSNone = 0,
-    SFTKFIPSDH,   
-    SFTKFIPSECC,  
-    SFTKFIPSAEAD, 
-    SFTKFIPSRSAPSS,
-    SFTKFIPSTlsKeyCheck
+    SFTKFIPSDH,           
+    SFTKFIPSECC,          
+    SFTKFIPSAEAD,         
+    SFTKFIPSRSAPSS,       
+    SFTKFIPSPBKDF2,       
+    SFTKFIPSTlsKeyCheck,  
+    SFTKFIPSChkHash,      
+    SFTKFIPSChkHashTls,   
+    SFTKFIPSChkHashSp800, 
+    SFTKFIPSRSAOAEP,      
 } SFTKFIPSSpecialClass;
 
 typedef struct SFTKFIPSAlgorithmListStr SFTKFIPSAlgorithmList;
@@ -34,6 +39,7 @@ struct SFTKFIPSAlgorithmListStr {
     CK_MECHANISM_INFO info;
     CK_ULONG step;
     SFTKFIPSSpecialClass special;
+    size_t offset;
 };
 
 
@@ -42,6 +48,10 @@ struct SFTKFIPSAlgorithmListStr {
 
 
 #include "fips_algorithms.h"
+
+#ifndef SFTKFIPS_PBKDF2_MIN_PW_LEN 
+#define SFTKFIPS_PBKDF2_MIN_PW_LEN 8
+#endif
 #define NSS_HAS_FIPS_INDICATORS 1
 #endif
 
@@ -2780,6 +2790,28 @@ sftk_checkKeyLength(CK_ULONG keyLength, CK_ULONG min,
     return PR_TRUE;
 }
 
+PRBool
+sftk_checkFIPSHash(CK_MECHANISM_TYPE hash, PRBool allowSmall, PRBool allowCMAC)
+{
+    switch (hash) {
+        case CKM_AES_CMAC:
+            return allowCMAC;
+        case CKM_SHA_1:
+        case CKM_SHA_1_HMAC:
+        case CKM_SHA224:
+        case CKM_SHA224_HMAC:
+            return allowSmall;
+        case CKM_SHA256:
+        case CKM_SHA256_HMAC:
+        case CKM_SHA384:
+        case CKM_SHA384_HMAC:
+        case CKM_SHA512:
+        case CKM_SHA512_HMAC:
+            return PR_TRUE;
+    }
+    return PR_FALSE;
+}
+
 
 
 
@@ -2789,6 +2821,8 @@ sftk_handleSpecial(SFTKSlot *slot, CK_MECHANISM *mech,
                    SFTKFIPSAlgorithmList *mechInfo, SFTKObject *source,
                    CK_ULONG keyLength, CK_ULONG targetKeyLength)
 {
+    PRBool allowSmall = PR_FALSE;
+    PRBool allowCMAC = PR_FALSE;
     switch (mechInfo->special) {
         case SFTKFIPSDH: {
             SECItem dhPrime;
@@ -2858,8 +2892,70 @@ sftk_handleSpecial(SFTKSlot *slot, CK_MECHANISM *mech,
             }
             return PR_TRUE;
         }
+        case SFTKFIPSPBKDF2: {
+            
+
+
+
+
+
+
+            CK_PKCS5_PBKD2_PARAMS2 *pbkdf2 = (CK_PKCS5_PBKD2_PARAMS2 *)
+                                                 mech->pParameter;
+            if (mech->ulParameterLen != sizeof(*pbkdf2)) {
+                return PR_FALSE;
+            }
+            if (pbkdf2 == NULL) {
+                return PR_FALSE;
+            }
+            if (pbkdf2->iterations < 1000) {
+                return PR_FALSE;
+            }
+            if (pbkdf2->ulSaltSourceDataLen < 16) {
+                return PR_FALSE;
+            }
+            if (pbkdf2->ulPasswordLen < SFTKFIPS_PBKDF2_MIN_PW_LEN) {
+                return PR_FALSE;
+            }
+            return PR_TRUE;
+        }
+        
+        case SFTKFIPSChkHashSp800:
+            allowCMAC = PR_TRUE;
+            
+        case SFTKFIPSChkHash:
+            allowSmall = PR_TRUE;
+            
+        case SFTKFIPSChkHashTls:
+            if (mech->ulParameterLen < mechInfo->offset + sizeof(CK_ULONG)) {
+                return PR_FALSE;
+            }
+            return sftk_checkFIPSHash(*(CK_MECHANISM_TYPE *)(((char *)mech->pParameter) + mechInfo->offset),
+                                      allowSmall, allowCMAC);
         case SFTKFIPSTlsKeyCheck:
+            if (mech->mechanism != CKM_NSS_TLS_KEY_AND_MAC_DERIVE_SHA256) {
+                
+                if (mech->ulParameterLen < mechInfo->offset + sizeof(CK_ULONG)) {
+                    return PR_FALSE;
+                }
+                if (!sftk_checkFIPSHash(*(CK_MECHANISM_TYPE *)(((char *)mech->pParameter) + mechInfo->offset),
+                                        PR_FALSE, PR_FALSE)) {
+                    return PR_FALSE;
+                }
+            }
             return sftk_checkKeyLength(targetKeyLength, 112, 512, 1);
+        case SFTKFIPSRSAOAEP: {
+            CK_RSA_PKCS_OAEP_PARAMS *rsaoaep = (CK_RSA_PKCS_OAEP_PARAMS *)
+                                                   mech->pParameter;
+
+            HASH_HashType hash_msg = sftk_GetHashTypeFromMechanism(rsaoaep->hashAlg);
+            HASH_HashType hash_pad = sftk_GetHashTypeFromMechanism(rsaoaep->mgf);
+            
+            if (hash_pad != hash_msg)
+                return PR_FALSE;
+
+            return sftk_checkFIPSHash(rsaoaep->hashAlg, PR_FALSE, PR_FALSE);
+        }
         default:
             break;
     }
