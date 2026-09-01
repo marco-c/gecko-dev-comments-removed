@@ -6039,10 +6039,15 @@ bool nsDisplayStickyPosition::UpdateScrollData(
     }
 
     if (ShouldGetStickyAnimationId()) {
+      
+      
+      auto displayItemKey = nsDisplayItem::GetPerFrameKey(
+          0, 0, DisplayItemType::TYPE_STICKY_POSITION);
       RefPtr<WebRenderAPZAnimationData> animationData =
           aData->GetManager()
               ->CommandBuilder()
-              .GetWebRenderUserData<WebRenderAPZAnimationData>(this);
+              .GetWebRenderUserData<WebRenderAPZAnimationData>(
+                  displayItemKey, mFrame->FirstContinuation());
       MOZ_ASSERT(animationData);
       aLayerData->SetStickyPositionAnimationId(animationData->GetAnimationId());
     }
