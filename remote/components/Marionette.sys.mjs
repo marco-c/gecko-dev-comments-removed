@@ -23,6 +23,8 @@ ChromeUtils.defineLazyGetter(lazy, "textEncoder", () => new TextEncoder());
 
 const NOTIFY_LISTENING = "marionette-listening";
 const SHARED_DATA_ACTIVE_KEY = "Marionette:Active";
+const SHARED_DATA_IS_BROWSER_AUTOMATION_KEY =
+  "Marionette:IsBrowserAutomationRunning";
 
 const PREF_DYNAMIC_START_ENABLED = "remote.experimental.dynamicstart.enabled";
 
@@ -44,11 +46,14 @@ const ENV_ENABLED = "MOZ_MARIONETTE";
 // pref being set to 4444.
 const ENV_PRESERVE_PREFS = "MOZ_MARIONETTE_PREF_STATE_ACROSS_RESTARTS";
 
+const EXIT_CODE_NOT_AVAILABLE = 69;
+
 const isRemote =
   Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT;
 
 class MarionetteParentProcess {
   #browserStartupFinished;
+  #isBrowserAutomation;
 
   constructor() {
     this.server = null;
@@ -56,6 +61,10 @@ class MarionetteParentProcess {
 
     // Initially set the enabled state based on the environment variable.
     this.enabled = Services.env.exists(ENV_ENABLED);
+
+    // Whether the running instance belongs to a browser automation session.
+    // True for command line startup. Optional for startAtRuntime.
+    this.#isBrowserAutomation = true;
 
     this.#browserStartupFinished = lazy.Deferred();
   }
@@ -89,6 +98,10 @@ class MarionetteParentProcess {
     return !!this.server && this.server.alive;
   }
 
+  get isBrowserAutomationRunning() {
+    return this.running && this.#isBrowserAutomation;
+  }
+
   /**
    * Syncs the Marionette active flag with the web content processes.
    *
@@ -96,6 +109,10 @@ class MarionetteParentProcess {
    */
   updateWebdriverActiveFlag(value) {
     Services.ppmm.sharedData.set(SHARED_DATA_ACTIVE_KEY, value);
+    Services.ppmm.sharedData.set(
+      SHARED_DATA_IS_BROWSER_AUTOMATION_KEY,
+      value && this.#isBrowserAutomation
+    );
     Services.ppmm.sharedData.flush();
   }
 
@@ -256,7 +273,10 @@ class MarionetteParentProcess {
       await this.server.start();
     } catch (e) {
       lazy.logger.fatal("Marionette server failed to start", e);
-      Services.startup.quit(Ci.nsIAppStartup.eForceQuit);
+      Services.startup.quit(
+        Ci.nsIAppStartup.eForceQuit,
+        EXIT_CODE_NOT_AVAILABLE
+      );
       return;
     }
 
@@ -286,10 +306,17 @@ class MarionetteParentProcess {
    * Start Marionette at runtime, unless it was already enabled via command line
    * arguments.
    *
+   * @param {object=} options
+   * @param {boolean=} options.isBrowserAutomation
+   *     True if the server is started for regular browser automation (as
+   *     opposed to tooling, agentic assisted browsing etc.). Defaults to true.
+   *
    * @returns {number}
    *     The port on which Marionette was started. -1 if it could not be started.
    */
-  async startAtRuntime() {
+  async startAtRuntime(options = {}) {
+    const { isBrowserAutomation = true } = options;
+
     if (!Services.prefs.getBoolPref(PREF_DYNAMIC_START_ENABLED, false)) {
       lazy.logger.debug(
         `Start aborted, ${PREF_DYNAMIC_START_ENABLED} is disabled`
@@ -332,6 +359,8 @@ class MarionetteParentProcess {
         "Could not start remote agent dynamically, application window still starting up"
       );
     }
+
+    this.#isBrowserAutomation = isBrowserAutomation;
 
     // Enable marionette explicitly, the `running` flag is inferred from the
     // server status.
@@ -400,6 +429,13 @@ class MarionetteParentProcess {
 class MarionetteContentProcess {
   get running() {
     return Services.cpmm.sharedData.get(SHARED_DATA_ACTIVE_KEY) ?? false;
+  }
+
+  get isBrowserAutomationRunning() {
+    return (
+      Services.cpmm.sharedData.get(SHARED_DATA_IS_BROWSER_AUTOMATION_KEY) ??
+      false
+    );
   }
 
   // XPCOM
