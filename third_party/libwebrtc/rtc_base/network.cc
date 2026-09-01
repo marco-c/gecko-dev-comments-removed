@@ -284,7 +284,11 @@ AdapterType GetAdapterTypeFromName(absl::string_view network_name) {
   if (MatchTypeNameWithIndexPattern(network_name, "ipsec") ||
       MatchTypeNameWithIndexPattern(network_name, "tun") ||
       MatchTypeNameWithIndexPattern(network_name, "utun") ||
-      MatchTypeNameWithIndexPattern(network_name, "tap")) {
+      MatchTypeNameWithIndexPattern(network_name, "tap") ||
+      
+      MatchTypeNameWithIndexPattern(network_name, "tailscale") ||
+      
+      MatchTypeNameWithIndexPattern(network_name, "Tailscale")) {
     return ADAPTER_TYPE_VPN;
   }
 #if defined(WEBRTC_IOS)
