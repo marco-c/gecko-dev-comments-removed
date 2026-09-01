@@ -1549,18 +1549,36 @@ var gSync = {
   },
 
   _showSecureSyncSubpanel(anchor, event) {
-    const deviceName = fxAccounts.device.getLocalName();
+    this._updateSecureSyncNowLabel();
+    PanelUI.showSubView("PanelUI-fxa-menu-secure-sync-subpanel", anchor, event);
+  },
+
+  
+  
+  
+  
+  _updateSecureSyncNowLabel() {
     const labelEl = PanelMultiView.getViewNode(
       document,
       "PanelUI-fxa-menu-secure-sync-now-label"
     );
-    labelEl.setAttribute(
-      "value",
-      this.fluentStrings.formatValueSync("fxa-menu-sync-device-now", {
-        deviceName,
-      })
-    );
-    PanelUI.showSubView("PanelUI-fxa-menu-secure-sync-subpanel", anchor, event);
+    if (!labelEl) {
+      return;
+    }
+    if (this._isCurrentlySyncing) {
+      labelEl.setAttribute(
+        "value",
+        this.fluentStrings.formatValueSync("fxa-toolbar-sync-syncing2")
+      );
+    } else {
+      const deviceName = fxAccounts.device.getLocalName();
+      labelEl.setAttribute(
+        "value",
+        this.fluentStrings.formatValueSync("fxa-menu-sync-device-now", {
+          deviceName,
+        })
+      );
+    }
   },
 
   
@@ -3271,6 +3289,8 @@ var gSync = {
       .forEach(el => {
         el.setAttribute("syncstatus", "active");
       });
+
+    this._updateSecureSyncNowLabel();
   },
 
   _onActivityStop() {
@@ -3294,6 +3314,8 @@ var gSync = {
       .forEach(el => {
         el.removeAttribute("syncstatus");
       });
+
+    this._updateSecureSyncNowLabel();
 
     Services.obs.notifyObservers(null, "test:browser-sync:activity-stop");
   },
