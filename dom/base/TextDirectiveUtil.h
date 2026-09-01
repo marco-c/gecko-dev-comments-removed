@@ -237,6 +237,15 @@ class TextDirectiveUtil final {
 
 
 
+  static bool ContainsAtLeastTwoWords(const nsAString& aString);
+
+  
+
+
+
+
+
+
 
 
 
