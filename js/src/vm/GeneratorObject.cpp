@@ -8,10 +8,10 @@
 #ifdef DEBUG
 #  include "js/friend/DumpFunctions.h"  
 #endif
-#include "js/friend/UsageStatistics.h"  
 #include "js/PropertySpec.h"
 #include "vm/AsyncFunction.h"
 #include "vm/AsyncIteration.h"
+#include "vm/BytecodeUtil.h"   
 #include "vm/FunctionFlags.h"  
 #include "vm/GlobalObject.h"
 #include "vm/Interpreter.h"  
@@ -27,15 +27,10 @@ AbstractGeneratorObject* AbstractGeneratorObject::create(
     JSContext* cx, HandleFunction callee, HandleScript script,
     HandleObject environmentChain, Handle<ArgumentsObject*> argsObject) {
   Rooted<AbstractGeneratorObject*> genObj(cx);
-  
   if (!callee->isAsync()) {
     genObj = GeneratorObject::create(cx, callee);
-    cx->runtime()->setUseCounter(cx->global(),
-                                 JSUseCounter::GENERATOR_FUNCTION_CREATED);
   } else if (callee->isGenerator()) {
     genObj = AsyncGeneratorObject::create(cx, callee);
-    cx->runtime()->setUseCounter(
-        cx->global(), JSUseCounter::ASYNC_GENERATOR_FUNCTION_CREATED);
   } else {
     genObj = AsyncFunctionGeneratorObject::create(cx, callee);
   }
@@ -272,11 +267,14 @@ void AbstractGeneratorObject::resume(JSContext* cx,
   InterpreterFrame* fp = activation.regs().fp();
   fp->setResumingGenerator();
 
+  uint32_t resumeIndex = genObj->resumeIndex();
+  genObj->setRunning();
+
   
   
   MOZ_ASSERT_IF(fp->isFunctionFrame(), fp->numActualArgs() == 0);
-  ResumeFrameArgs::init(fp->resumeArgs(), arg, ObjectValue(*genObj),
-                        resumeKind);
+  ResumeFrameArgs::init(fp->resumeArgs(), arg, ObjectValue(*genObj), resumeKind,
+                        resumeIndex);
 
   if (genObj->hasArgsObj()) {
     fp->initArgsObj(genObj->argsObj());
@@ -291,7 +289,7 @@ void AbstractGeneratorObject::resume(JSContext* cx,
     storage->setDenseInitializedLength(0);
   }
 
-  uint32_t offset = script->resumeOffsets()[genObj->resumeIndex()];
+  uint32_t offset = script->resumeOffsets()[resumeIndex];
   activation.regs().pc = script->offsetToPC(offset);
 
   
@@ -300,8 +298,6 @@ void AbstractGeneratorObject::resume(JSContext* cx,
   activation.regs().sp[-3] = arg;
   activation.regs().sp[-2] = ObjectValue(*genObj);
   activation.regs().sp[-1] = Int32Value(int32_t(resumeKind));
-
-  genObj->setRunning();
 }
 
 bool js::ResumeGenerator(JSContext* cx, Handle<AbstractGeneratorObject*> genObj,
@@ -481,17 +477,8 @@ bool AbstractGeneratorObject::isAfterYieldOrAwait(JSOp op) {
     return false;
   }
 
-  static_assert(JSOpLength_Yield == JSOpLength_InitialYield,
-                "JSOp::Yield and JSOp::InitialYield must have the same length");
-  static_assert(JSOpLength_Yield == JSOpLength_Await,
-                "JSOp::Yield and JSOp::Await must have the same length");
-
-  uint32_t offset = nextOffset - JSOpLength_Yield;
-  JSOp prevOp = JSOp(code[offset]);
-  MOZ_ASSERT(prevOp == JSOp::InitialYield || prevOp == JSOp::Yield ||
-             prevOp == JSOp::Await);
-
-  return prevOp == op;
+  jsbytecode* suspendPC = SuspendPCForAfterYield(code + nextOffset);
+  return JSOp(*suspendPC) == op;
 }
 
 template <>
