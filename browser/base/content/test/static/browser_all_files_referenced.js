@@ -206,6 +206,11 @@ var allowlist = [
   },
 
   
+  {
+    file: "moz-src:///browser/components/aiwindow/ui/modules/ConversationStore.sys.mjs",
+  },
+
+  
   { file: "resource://gre/defaults/autoconfig/prefcalls.js" },
 
   
