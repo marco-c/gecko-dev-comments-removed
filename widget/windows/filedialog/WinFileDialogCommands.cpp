@@ -274,10 +274,13 @@ namespace detail {
 
 
 
+
+
+
+
+
 class FileDialogInputProtector final : public IFileDialogEvents {
  public:
-  FileDialogInputProtector() : mShowTime(mozilla::TimeStamp::Now()) {}
-
   
   IFACEMETHODIMP QueryInterface(REFIID aRefIID, void** aResult) override {
     if (aRefIID == IID_IUnknown || aRefIID == IID_IFileDialogEvents) {
@@ -299,18 +302,30 @@ class FileDialogInputProtector final : public IFileDialogEvents {
 
   
   IFACEMETHODIMP OnFileOk(IFileDialog*) override {
-    if (nsBaseFilePicker::IsWithinInputProtectionTimeRange(
-            mShowTime, mozilla::TimeStamp::Now(),
-            mozilla::StaticPrefs::security_notification_enable_delay())) {
-      
-      return S_FALSE;
+    uint32_t const delayMs =
+        mozilla::StaticPrefs::security_notification_enable_delay();
+    
+    
+    if (!delayMs) {
+      return S_OK;
     }
-    return S_OK;
+
+    bool const isTooEarly =
+        mFolderChangeTime.IsNull() ||
+        nsBaseFilePicker::IsWithinInputProtectionTimeRange(
+            mFolderChangeTime, mozilla::TimeStamp::Now(), delayMs);
+    
+    return isTooEarly ? S_FALSE : S_OK;
   }
   IFACEMETHODIMP OnFolderChanging(IFileDialog*, IShellItem*) override {
     return S_OK;
   }
-  IFACEMETHODIMP OnFolderChange(IFileDialog*) override { return S_OK; }
+  IFACEMETHODIMP OnFolderChange(IFileDialog*) override {
+    if (mFolderChangeTime.IsNull()) {
+      mFolderChangeTime = mozilla::TimeStamp::Now();
+    }
+    return S_OK;
+  }
   IFACEMETHODIMP OnSelectionChange(IFileDialog*) override { return S_OK; }
   IFACEMETHODIMP OnShareViolation(IFileDialog*, IShellItem*,
                                   FDE_SHAREVIOLATION_RESPONSE*) override {
@@ -325,7 +340,9 @@ class FileDialogInputProtector final : public IFileDialogEvents {
  private:
   ~FileDialogInputProtector() = default;
   std::atomic<ULONG> mRefCnt{0};
-  mozilla::TimeStamp mShowTime;
+  
+  
+  mozilla::TimeStamp mFolderChangeTime;
 };
 
 void LogProcessingError(LogModule* aModule, ipc::IProtocol* aCaller,
@@ -545,7 +562,6 @@ auto SpawnPickerT(HWND parent, FileDialogType type, ExtractorF&& extractor,
 
         MOZ_TRY(ApplyCommands(dialog, commands));
 
-        
         
         
         
