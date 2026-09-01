@@ -100,9 +100,9 @@ SVGElement::LengthAttributesInfo SVGEllipseElement::GetLengthInfo() {
 
 
 
-bool SVGEllipseElement::GetGeometryBounds(
-    Rect* aBounds, const StrokeOptions& aStrokeOptions,
-    const Matrix& aToBoundsSpace, const Matrix* aToNonScalingStrokeSpace) {
+Maybe<Rect> SVGEllipseElement::GetGeometryBounds(
+    const StrokeOptions& aStrokeOptions, const Matrix& aToBoundsSpace,
+    const Matrix* aToNonScalingStrokeSpace) {
   float x, y, rx, ry;
 
   DebugOnly<bool> ok =
@@ -112,34 +112,31 @@ bool SVGEllipseElement::GetGeometryBounds(
 
   if (rx <= 0.f || ry <= 0.f) {
     
-    *aBounds = Rect(aToBoundsSpace.TransformPoint(Point(x, y)), Size());
-    return true;
+    return Some(Rect(aToBoundsSpace.TransformPoint(Point(x, y)), Size()));
   }
 
-  if (aToBoundsSpace.IsRectilinear()) {
-    
-    
-    if (aStrokeOptions.mLineWidth > 0.f) {
-      if (aToNonScalingStrokeSpace) {
-        if (aToNonScalingStrokeSpace->IsRectilinear()) {
-          MOZ_ASSERT(!aToNonScalingStrokeSpace->IsSingular());
-          Rect userBounds(x - rx, y - ry, 2 * rx, 2 * ry);
-          SVGContentUtils::RectilinearGetStrokeBounds(
-              userBounds, aToBoundsSpace, *aToNonScalingStrokeSpace,
-              aStrokeOptions.mLineWidth, aBounds);
-          return true;
-        }
-        return false;
+  if (!aToBoundsSpace.IsRectilinear()) {
+    return Nothing();
+  }
+
+  
+  
+  if (aStrokeOptions.mLineWidth > 0.f) {
+    if (aToNonScalingStrokeSpace) {
+      if (aToNonScalingStrokeSpace->IsRectilinear()) {
+        MOZ_ASSERT(!aToNonScalingStrokeSpace->IsSingular());
+        Rect userBounds(x - rx, y - ry, 2 * rx, 2 * ry);
+        return Some(SVGContentUtils::RectilinearGetStrokeBounds(
+            userBounds, aToBoundsSpace, *aToNonScalingStrokeSpace,
+            aStrokeOptions.mLineWidth));
       }
-      rx += aStrokeOptions.mLineWidth / 2.f;
-      ry += aStrokeOptions.mLineWidth / 2.f;
+      return Nothing();
     }
-    Rect rect(x - rx, y - ry, 2 * rx, 2 * ry);
-    *aBounds = aToBoundsSpace.TransformBounds(rect);
-    return true;
+    rx += aStrokeOptions.mLineWidth / 2.f;
+    ry += aStrokeOptions.mLineWidth / 2.f;
   }
-
-  return false;
+  Rect rect(x - rx, y - ry, 2 * rx, 2 * ry);
+  return Some(aToBoundsSpace.TransformBounds(rect));
 }
 
 already_AddRefed<Path> SVGEllipseElement::BuildPath(PathBuilder* aBuilder) {

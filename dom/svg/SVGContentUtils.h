@@ -182,10 +182,10 @@ class SVGContentUtils {
 
 
 
-  static void RectilinearGetStrokeBounds(const Rect& aRect,
+  static Rect RectilinearGetStrokeBounds(const Rect& aRect,
                                          const Matrix& aToBoundsSpace,
                                          const Matrix& aToNonScalingStrokeSpace,
-                                         float aStrokeWidth, Rect* aBounds);
+                                         float aStrokeWidth);
 
   static dom::SVGViewportElement* GetNearestViewportElement(
       const nsIContent* aContent);

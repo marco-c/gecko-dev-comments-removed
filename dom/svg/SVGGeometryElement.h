@@ -106,11 +106,10 @@ class SVGGeometryElement : public SVGGeometryElementBase {
 
 
 
-  virtual bool GetGeometryBounds(
-      Rect* aBounds, const StrokeOptions& aStrokeOptions,
-      const Matrix& aToBoundsSpace,
+  virtual Maybe<Rect> GetGeometryBounds(
+      const StrokeOptions& aStrokeOptions, const Matrix& aToBoundsSpace,
       const Matrix* aToNonScalingStrokeSpace = nullptr) {
-    return false;
+    return Nothing();
   }
 
   
