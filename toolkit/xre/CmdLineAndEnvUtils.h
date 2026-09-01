@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_CmdLineAndEnvUtils_h
 #define mozilla_CmdLineAndEnvUtils_h
 
@@ -270,7 +268,7 @@ namespace internal {
 
 template <typename CharT, typename ListT>
 
-static bool MatchesAnyOf(CharT const* unknown, ListT const& known) {
+bool MatchesAnyOf(CharT const* unknown, ListT const& known) {
   for (const char* k : known) {
     if (strimatch(k, unknown)) {
       return true;
