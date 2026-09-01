@@ -21,6 +21,7 @@ const { AppConstants } = ChromeUtils.importESModule(
 import { FeatureCalloutMessages } from "resource:///modules/asrouter/FeatureCalloutMessages.sys.mjs";
 import {
   WIN_OS_PIN_PROMPT_ENABLED,
+  SET_DEFAULT_OS_PROMPT_ENABLED,
   FXA_NOT_SIGNED_IN,
 } from "resource:///modules/asrouter/MessagingTargetingConstants.sys.mjs";
 
@@ -1798,20 +1799,19 @@ const BASE_MESSAGES = () => [
     targeting: "doesAppNeedPrivatePin",
   },
   {
-    id: "PB_NEWTAB_COOKIE_BANNERS_PROMO",
+    id: "PB_NEWTAB_RELAY_PROMO",
     template: "pb_newtab",
     type: "default",
     groups: ["pbNewtab"],
     content: {
       promoEnabled: true,
-      promoType: "COOKIE_BANNERS",
-      promoHeader: "fluent:about-private-browsing-cookie-banners-promo-heading",
-      promoImageLarge:
-        "chrome://browser/content/assets/cookie-banners-begone.svg",
-      promoLinkText: "fluent:about-private-browsing-learn-more-link",
-      promoLinkType: "link",
+      promoType: "RELAY",
+      promoHeader: "fluent:about-private-browsing-relay-promo-header",
+      promoImageLarge: "chrome://browser/content/assets/relay-promo.svg",
+      promoLinkText: "fluent:about-private-browsing-relay-promo-link-text",
+      promoLinkType: "button",
       promoSectionStyle: "below-search",
-      promoTitle: "fluent:about-private-browsing-cookie-banners-promo-body",
+      promoTitle: "fluent:about-private-browsing-relay-promo-title",
       promoTitleEnabled: true,
       promoButton: {
         action: {
@@ -1821,14 +1821,14 @@ const BASE_MESSAGES = () => [
               {
                 type: "OPEN_URL",
                 data: {
-                  args: "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/cookie-banner-reduction",
+                  args: "https://relay.firefox.com/",
                   where: "tabshifted",
                 },
               },
               {
                 type: "BLOCK_MESSAGE",
                 data: {
-                  id: "PB_NEWTAB_COOKIE_BANNERS_PROMO",
+                  id: "PB_NEWTAB_RELAY_PROMO",
                 },
               },
             ],
@@ -1836,17 +1836,17 @@ const BASE_MESSAGES = () => [
         },
       },
     },
-    priority: 4,
+    priority: 3,
     frequency: {
       custom: [
         {
-          cap: 3,
-          period: 604800000, // Max 3 per week
+          cap: 1,
+          period: 86400000,
         },
       ],
       lifetime: 12,
     },
-    targeting: `'cookiebanners.service.mode.privateBrowsing'|preferenceValue != 0 || 'cookiebanners.service.mode'|preferenceValue != 0`,
+    targeting: "'browser.privateWindowRedesign.enabled'|preferenceValue",
   },
   {
     id: "INFOBAR_LAUNCH_ON_LOGIN",
@@ -2314,7 +2314,30 @@ const BASE_MESSAGES = () => [
         type: "PIN_FIREFOX_TO_TASKBAR",
       },
     },
-    targeting: `!('browser.bypassAutoTriggerActions' | preferenceValue) && source == 'startup' && !previousSessionEnd && doesAppNeedPin && ${WIN_OS_PIN_PROMPT_ENABLED} && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT')`,
+    targeting: `source == 'startup' && !previousSessionEnd && doesAppNeedPin && ${WIN_OS_PIN_PROMPT_ENABLED} && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT')`,
+    trigger: {
+      id: "defaultBrowserCheck",
+    },
+    frequency: {
+      lifetime: 1,
+    },
+  },
+  {
+    // Silently triggers set default for users on Mac, and on Windows when
+    // one-click set default isn't available (so this falls back to Windows'
+    // own "Choose default apps" settings UI), in lieu of the AW_EASY_SETUP
+    // default checkbox. Never fired when one-click set default IS available,
+    // since that would silently rewrite the UserChoice registry with no
+    // consent surface at all.
+    id: "SET_DEFAULT_MAC_AND_WINDOWS_OS_PROMPT",
+    template: "action_only",
+    skip_in_tests: "it silently triggers a real OS-level set default request",
+    content: {
+      action: {
+        type: "SET_DEFAULT_BROWSER",
+      },
+    },
+    targeting: `source == 'newtab' && !previousSessionEnd && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser && ${SET_DEFAULT_OS_PROMPT_ENABLED} && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_AND_DEFAULT')`,
     trigger: {
       id: "defaultBrowserCheck",
     },
@@ -2946,34 +2969,6 @@ const BASE_MESSAGES = () => [
     frequency: {
       lifetime: 3,
     },
-    groups: [],
-  },
-  {
-    id: "SIDEBAR_CHATBOT_PROMO",
-    template: "sidebar_chatbot_promo",
-    content: {
-      type: "default",
-      heading: "Give your AI the full picture",
-      message:
-        "In Smart Window, AI reads every page and tab you have open, not just this sidebar. Skip the copy-paste and just ask.",
-      primary_button: {
-        label: "Try Smart Window",
-        action: {
-          type: "FXA_AIWINDOW_SIGNIN_FLOW",
-        },
-      },
-      additional_button: {
-        label: "Dismiss",
-        action: {
-          type: "CANCEL",
-        },
-      },
-    },
-    trigger: {
-      id: "sidebarToolOpened",
-    },
-    targeting: "view == 'viewGenaiChatSidebar'",
-    frequency: {},
     groups: [],
   },
   {
