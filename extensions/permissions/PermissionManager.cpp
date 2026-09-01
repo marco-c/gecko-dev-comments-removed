@@ -755,15 +755,6 @@ PermissionManager::PermissionManager()
 PermissionManager::~PermissionManager() {
   MonitorAutoLock lock{mMonitor};
 
-  
-  
-  for (const auto& promise : mPermissionKeyPromiseMap.Values()) {
-    if (promise) {
-      promise->Reject(NS_ERROR_FAILURE, __func__);
-    }
-  }
-  mPermissionKeyPromiseMap.Clear();
-
   if (mThread) {
     mThread->Shutdown();
     mThread = nullptr;
@@ -3757,22 +3748,11 @@ void PermissionManager::SetPermissionsWithKey(
 
   MonitorAutoLock lock{mMonitor};
 
-  RefPtr<GenericNonExclusivePromise::Private> promise;
-  bool foundKey =
-      mPermissionKeyPromiseMap.Get(aPermissionKey, getter_AddRefs(promise));
-  if (promise) {
-    MOZ_ASSERT(foundKey);
-    
-    
-    
-    promise->Resolve(true, __func__);
-  } else if (foundKey) {
+  if (!mPermissionKeys.EnsureInserted(aPermissionKey)) {
     
     
     return;
   }
-  mPermissionKeyPromiseMap.InsertOrUpdate(
-      aPermissionKey, RefPtr<GenericNonExclusivePromise::Private>{});
 
   
   for (IPC::Permission& perm : aPerms) {
@@ -3939,11 +3919,7 @@ bool PermissionManager::PermissionAvailableInternal(nsIPrincipal* aPrincipal,
     
     GetKeyForPermission(aPrincipal, aType, permissionKey);
 
-    
-    
-    RefPtr<GenericNonExclusivePromise::Private> promise;
-    if (!mPermissionKeyPromiseMap.Get(permissionKey, getter_AddRefs(promise)) ||
-        promise) {
+    if (!mPermissionKeys.Contains(permissionKey)) {
       
       
       NS_WARNING(nsPrintfCString("This content process hasn't received the "
@@ -3954,55 +3930,6 @@ bool PermissionManager::PermissionAvailableInternal(nsIPrincipal* aPrincipal,
     }
   }
   return true;
-}
-
-void PermissionManager::WhenPermissionsAvailable(nsIPrincipal* aPrincipal,
-                                                 nsIRunnable* aRunnable) {
-  MOZ_ASSERT(aRunnable);
-
-  if (!XRE_IsContentProcess()) {
-    aRunnable->Run();
-    return;
-  }
-
-  MonitorAutoLock lock{mMonitor};
-
-  nsTArray<RefPtr<GenericNonExclusivePromise>> promises;
-  for (auto& pair : GetAllKeysForPrincipal(aPrincipal)) {
-    RefPtr<GenericNonExclusivePromise::Private> promise;
-    if (!mPermissionKeyPromiseMap.Get(pair.first, getter_AddRefs(promise))) {
-      
-      
-      
-      
-      promise = new GenericNonExclusivePromise::Private(__func__);
-      mPermissionKeyPromiseMap.InsertOrUpdate(pair.first, RefPtr{promise});
-    }
-
-    if (promise) {
-      promises.AppendElement(std::move(promise));
-    }
-  }
-
-  
-  
-  
-  if (promises.IsEmpty()) {
-    aRunnable->Run();
-    return;
-  }
-
-  auto* thread = AbstractThread::MainThread();
-
-  RefPtr<nsIRunnable> runnable = aRunnable;
-  GenericNonExclusivePromise::All(thread, promises)
-      ->Then(
-          thread, __func__, [runnable]() { runnable->Run(); },
-          []() {
-            NS_WARNING(
-                "PermissionManager permission promise rejected. We're "
-                "probably shutting down.");
-          });
 }
 
 void PermissionManager::EnsureReadCompleted() {
@@ -4532,6 +4459,34 @@ void PermissionManager::ForwardBrowserPermissionToChild(
     uint64_t aBrowserId, bool aIsRemoval) {
   MOZ_ASSERT(XRE_IsParentProcess());
 
+  nsAutoCString origin;
+  nsresult rv = aPrincipal->GetOrigin(origin);
+  if (NS_FAILED(rv)) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (aIsRemoval) {
+    nsAutoCString permissionKey;
+    GetKeyForPermission(aPrincipal, aType, permissionKey);
+
+    nsTArray<dom::ContentParent*> cplist;
+    dom::ContentParent::GetAll(cplist);
+    for (dom::ContentParent* cp : cplist) {
+      if (cp->NeedsPermissionsUpdate(permissionKey)) {
+        (void)cp->SendSetBrowserPermission(origin, nsCString(aType), aAction,
+                                           aBrowserId, aIsRemoval);
+      }
+    }
+    return;
+  }
+
   RefPtr<dom::BrowsingContext> bc =
       dom::BrowsingContext::GetCurrentTopByBrowserId(aBrowserId);
   if (!bc) {
@@ -4540,12 +4495,6 @@ void PermissionManager::ForwardBrowserPermissionToChild(
 
   dom::ContentParent* cp = bc->Canonical()->GetContentParent();
   if (!cp) {
-    return;
-  }
-
-  nsAutoCString origin;
-  nsresult rv = aPrincipal->GetOrigin(origin);
-  if (NS_FAILED(rv)) {
     return;
   }
 
@@ -4789,19 +4738,16 @@ void PermissionManager::ForwardClearBrowserPermissionsToChild(
     uint64_t aBrowserId, uint32_t aActionFilter) {
   MOZ_ASSERT(XRE_IsParentProcess());
 
-  RefPtr<dom::BrowsingContext> bc =
-      dom::BrowsingContext::GetCurrentTopByBrowserId(aBrowserId);
-  if (!bc) {
-    return;
-  }
-
-  dom::ContentParent* cp = bc->Canonical()->GetContentParent();
-  if (!cp) {
-    return;
-  }
-
-  if (!cp->SendClearBrowserPermissions(aBrowserId, aActionFilter)) {
-    NS_WARNING("Failed to send ClearBrowserPermissions to child");
+  
+  
+  
+  
+  
+  
+  nsTArray<dom::ContentParent*> cplist;
+  dom::ContentParent::GetAll(cplist);
+  for (dom::ContentParent* cp : cplist) {
+    (void)cp->SendClearBrowserPermissions(aBrowserId, aActionFilter);
   }
 }
 
