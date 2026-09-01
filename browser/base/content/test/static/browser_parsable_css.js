@@ -260,10 +260,6 @@ let propNameAllowlist = [
 
   
   
-  { propName: /--dimension(-relative)?-\d+/, isFromDevTools: false },
-
-  
-  
   { propName: "--sections-col-count", isFromDevTools: false },
 
   
