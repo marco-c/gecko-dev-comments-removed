@@ -10,13 +10,21 @@
         "@base": {
           "value": {
             "default": "{border.color.transparent}",
+            "nativeTheme": "{border.color.transparent}",
             "prefersContrast": "{input.border.color}"
           }
         },
         "focus": {
           "value": {
             "default": "color-mix(in srgb, {focus.outline.color} 50%, transparent)",
-            "prefersContrast": "{focus.outline.color}"
+            "prefersContrast": "{focus.outline.color}",
+            "nova": {
+              "value": {
+                "nativeTheme": "color-mix(in srgb, {focus.outline.color} 50%, transparent)",
+                "default": "{focus.outline.color}",
+                "prefersContrast": "{focus.outline.color}"
+              }
+            }
           }
         }
       }
@@ -27,6 +35,7 @@
           "value": {
             "light": "rgba(0, 0, 0, 0.05)",
             "dark": "{color.black.alpha.30}",
+            "nativeTheme": "light-dark(rgba(0, 0, 0, 0.05), {color.black.alpha.30})",
             "prefersContrast": "Field"
           }
         },
