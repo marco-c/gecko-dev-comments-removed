@@ -968,6 +968,15 @@ void nsContentSink::NotifyDocElementCreated(Document* aDoc) {
   
   mozilla::dom::ContentChild::MaybeBecomeUntrusted();
 
+  
+  
+  
+  
+  
+  if (aDoc->IsLoadedAsData() && !aDoc->NodePrincipal()->IsSystemPrincipal()) {
+    return;
+  }
+
   nsCOMPtr<nsIObserverService> observerService =
       mozilla::services::GetObserverService();
   MOZ_ASSERT(observerService);
