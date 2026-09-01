@@ -234,7 +234,7 @@ pub struct TextRunScratch {
     
     
     
-    pub local_rect: LayoutRect,
+    pub pattern_rect: LayoutRect,
     
     
     
@@ -279,6 +279,13 @@ impl TextRunTemplate {
         let quantized_scale = (dps * raster_scale_input * 100.0).round() / 100.0;
         let mut device_font_size = font_size * quantized_scale;
 
+        
+        
+        
+        
+        
+        
+        
         
         
         
@@ -431,7 +438,7 @@ impl TextRunTemplate {
 
     pub fn request_resources(
         &self,
-        local_rect: LayoutRect,
+        pattern_rect: LayoutRect,
         transform: &LayoutToWorldTransform,
         surface: &SurfaceInfo,
         spatial_node_index: SpatialNodeIndex,
@@ -454,7 +461,8 @@ impl TextRunTemplate {
         
         
         
-        let has_bitmap_strikes = !transform.is_2d_scale_translation()
+        
+        let has_bitmap_strikes = !transform.is_simple_2d_translation()
             && self.font.flags.contains(FontInstanceFlags::EMBEDDED_BITMAPS)
             && resource_cache.font_has_bitmap_strikes(self.font.font_key);
 
@@ -502,7 +510,7 @@ impl TextRunTemplate {
         };
 
         
-        let anchor_world = transform.transform_point2d(local_rect.min);
+        let anchor_world = transform.transform_point2d(pattern_rect.min);
 
         let mut glyph_offsets: Vec<DeviceVector2D> = Vec::new();
         let glyph_keys_range = if local_raster {
@@ -514,7 +522,7 @@ impl TextRunTemplate {
             glyph_offsets.reserve(self.glyphs.len());
 
             scratch.frame.glyph_keys.extend(self.glyphs.iter().map(|src| {
-                let pos = local_rect.min + src.point.to_vector();
+                let pos = pattern_rect.min + src.point.to_vector();
                 let raster_pos = DevicePoint::new(pos.x * glyph_raster_scale, pos.y * glyph_raster_scale);
                 let snapped = (raster_pos + snap_bias).floor();
                 glyph_offsets.push(snapped.to_vector());
@@ -546,7 +554,7 @@ impl TextRunTemplate {
             scratch.frame.glyph_keys.extend(self.glyphs.iter().map(|src| {
                 
                 let glyph_world = transform
-                    .transform_point2d(local_rect.min + src.point.to_vector())
+                    .transform_point2d(pattern_rect.min + src.point.to_vector())
                     .unwrap_or(anchor_world);
                 let device_pen = glyph_world * dps;
 
@@ -570,7 +578,7 @@ impl TextRunTemplate {
         scratch.frame.text_runs.push(TextRunScratch {
             used_font,
             glyph_keys_range,
-            local_rect,
+            pattern_rect,
             gpu_address,
             raster_scale,
             local_raster,
