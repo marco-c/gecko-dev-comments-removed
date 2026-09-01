@@ -211,7 +211,7 @@ class RTCRtpTransceiver : public nsISupports, public nsWrapperCache {
   Canonical<std::string>& CanonicalMid() { return mMid; }
   Canonical<std::string>& CanonicalSyncGroup() { return mSyncGroup; }
 
-  const std::vector<UniquePtr<JsepCodecDescription>>& GetPreferredCodecs() {
+  const nsTArray<UniquePtr<JsepCodecDescription>>& GetPreferredCodecs() {
     return mPreferredCodecs;
   }
 
@@ -278,7 +278,7 @@ class RTCRtpTransceiver : public nsISupports, public nsWrapperCache {
 
   
   
-  std::vector<UniquePtr<JsepCodecDescription>> mPreferredCodecs;
+  nsTArray<UniquePtr<JsepCodecDescription>> mPreferredCodecs;
   
   
   

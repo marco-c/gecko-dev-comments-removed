@@ -821,7 +821,7 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
   
   
   auto toDomCodecParametersList =
-      [](const std::vector<UniquePtr<JsepCodecDescription>>& aJsepCodec)
+      [](const nsTArray<UniquePtr<JsepCodecDescription>>& aJsepCodec)
       -> dom::Sequence<RTCRtpCodecParameters> {
     dom::Sequence<RTCRtpCodecParameters> codecs;
     for (const auto& codec : aJsepCodec) {
@@ -896,7 +896,7 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
   if (choosableCodecs.Length() == 0) {
     
     
-    std::vector<UniquePtr<JsepCodecDescription>> codecs;
+    AutoTArray<UniquePtr<JsepCodecDescription>, 16> codecs;
     if (mTransceiver->IsVideo()) {
       auto useRtx =
           Preferences::GetBool("media.peerconnection.video.use_rtx", false)
