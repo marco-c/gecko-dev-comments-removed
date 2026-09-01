@@ -525,13 +525,6 @@ def create_webmanifest(
         else:
             raise Exception("Unknown type {}".format(entry["type"]))
 
-    
-    
-    cr = {
-        alias: dict(sorted(paths.items())) if isinstance(paths, dict) else paths
-        for alias, paths in sorted(cr.items())
-    }
-
     for loc in locales:
         manifest["languages"][loc] = {
             "version": get_timestamp_for_locale(os.path.join(l10n_basedir, loc)),
