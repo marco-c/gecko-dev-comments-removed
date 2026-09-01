@@ -11,7 +11,6 @@
 #include <SystemConfiguration/SystemConfiguration.h>
 #include <sys/types.h>
 #include <sys/sysctl.h>
-#include <unistd.h>
 #include "readstrings.h"
 
 #define ARCH_PATH "/usr/bin/arch"
@@ -69,80 +68,7 @@ static void StripQuarantineBit(NSString* aBundlePath) {
   LaunchTask(@"/usr/bin/xattr", arguments);
 }
 
-
-
-static const NSTimeInterval kWaitForExitSeconds = 10.0;
-
-
-static const useconds_t kWaitForExitPollMicroseconds = 50000;
-
-static NSString* CanonicalBundlePath(NSString* aBundlePath) {
-  return [[[NSURL fileURLWithPath:aBundlePath
-                      isDirectory:YES] URLByResolvingSymlinksInPath] path];
-}
-
-
-
-
-
-
-
-
-
-static void WaitForAppToTerminate(pid_t aPid, NSTimeInterval aTimeout) {
-  NSDate* deadline = [NSDate dateWithTimeIntervalSinceNow:aTimeout];
-  while (true) {
-    {
-      MacAutoreleasePool pool;
-      NSRunningApplication* app =
-          [NSRunningApplication runningApplicationWithProcessIdentifier:aPid];
-      if (!app || [app isTerminated]) {
-        return;
-      }
-      if ([deadline timeIntervalSinceNow] <= 0) {
-        NSLog(@"Timed out waiting for pid %d to exit before relaunching.",
-              (int)aPid);
-        return;
-      }
-    }
-    usleep(kWaitForExitPollMicroseconds);
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-static BOOL ShouldCreateNewAppInstance(NSString* aBundlePath) {
-  MacAutoreleasePool pool;
-
-  NSString* bundleId = [[NSBundle bundleWithPath:aBundlePath] bundleIdentifier];
-  NSString* path = CanonicalBundlePath(aBundlePath);
-  if (!bundleId || !path) {
-    return YES;
-  }
-
-  for (NSRunningApplication* app in [NSRunningApplication
-           runningApplicationsWithBundleIdentifier:bundleId]) {
-    NSURL* runningURL = [app bundleURL];
-    NSString* runningPath =
-        runningURL ? CanonicalBundlePath([runningURL path]) : nil;
-    if (!runningPath || [runningPath isEqualToString:path]) {
-      
-      
-      return YES;
-    }
-  }
-  return NO;
-}
-
-void LaunchMacApp(int argc, const char** argv, pid_t aWaitForPid) {
+void LaunchMacApp(int argc, const char** argv) {
   MacAutoreleasePool pool;
 
   @try {
@@ -162,10 +88,6 @@ void LaunchMacApp(int argc, const char** argv, pid_t aWaitForPid) {
     StripQuarantineBit(launchPath);
     RegisterAppWithLaunchServices(launchPath);
 
-    if (aWaitForPid > 0) {
-      WaitForAppToTerminate(aWaitForPid, kWaitForExitSeconds);
-    }
-
     
     
     
@@ -174,8 +96,7 @@ void LaunchMacApp(int argc, const char** argv, pid_t aWaitForPid) {
         [NSWorkspaceOpenConfiguration configuration];
     [config setArguments:arguments];
     [config setActivates:NO];
-    [config setCreatesNewApplicationInstance:ShouldCreateNewAppInstance(
-                                                 launchPath)];
+    [config setCreatesNewApplicationInstance:YES];
     [config setEnvironment:[[NSProcessInfo processInfo] environment]];
 
     [[NSWorkspace sharedWorkspace]

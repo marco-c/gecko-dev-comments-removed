@@ -58,19 +58,11 @@ void SetupMacCommandLine(int& argc, char**& argv, bool forRestart) {
     
     
     
-    
-    
-    
     NSString* updaterPath = [[path stringByDeletingLastPathComponent]
         stringByAppendingPathComponent:
             @"updater.app/Contents/MacOS/org.mozilla.updater"];
     AddToCommandLine(updaterPath.UTF8String);
     AddToCommandLine("--openAppBundle");
-    AddToCommandLine("--wait-pid");
-    AddToCommandLine(
-        [NSString stringWithFormat:@"%d", [[NSProcessInfo processInfo]
-                                              processIdentifier]]
-            .UTF8String);
   }
 
   

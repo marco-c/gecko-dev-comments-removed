@@ -91,9 +91,7 @@
 void CleanupElevatedMacUpdate(bool aFailureOccurred);
 bool IsOwnedByGroupAdmin(const char* aAppBundle);
 bool IsRecursivelyWritable(const char* aPath);
-
-
-void LaunchMacApp(int argc, const char** argv, pid_t aWaitForPid);
+void LaunchMacApp(int argc, const char** argv);
 void LaunchMacPostProcess(const char* aAppBundle);
 bool ObtainUpdaterArguments(int* aArgc, char*** aArgv,
                             MARChannelStringTable* aMARStrings);
@@ -386,13 +384,6 @@ static const int kCallbackWorkingDirIndex = 7;
 
 
 static const int kCallbackIndex = 8;
-
-#if defined(XP_MACOSX)
-
-
-
-static pid_t gCallbackWaitPid = 0;
-#endif
 
 
 
@@ -2782,7 +2773,7 @@ static void LaunchCallbackApp(const NS_tchar* workingDir, int argc,
 #if defined(USE_EXECV)
   execv(argv[0], argv);
 #elif defined(XP_MACOSX)
-  LaunchMacApp(argc, (const char**)argv, gCallbackWaitPid);
+  LaunchMacApp(argc, (const char**)argv);
 #elif defined(XP_WIN)
   
   
@@ -3664,15 +3655,7 @@ int NS_main(int argc, NS_tchar** argv) {
     
     
     
-    
-    
-    int appIndex = 2;
-    pid_t waitForPid = 0;
-    if (argc > 4 && NS_tstrcmp(argv[2], NS_T("--wait-pid")) == 0) {
-      waitForPid = static_cast<pid_t>(NS_tatoi(argv[3]));
-      appIndex = 4;
-    }
-    LaunchMacApp(argc - appIndex, (const char**)argv + appIndex, waitForPid);
+    LaunchMacApp(argc - 2, (const char**)argv + 2);
     return 0;
   }
 
@@ -3940,13 +3923,6 @@ int NS_main(int argc, NS_tchar** argv) {
       
       sReplaceRequest = true;
     }
-#if defined(XP_MACOSX)
-    if (pid > 0) {
-      
-      
-      gCallbackWaitPid = static_cast<pid_t>(pid);
-    }
-#endif
   }
 
   if (!isDMGInstall) {
