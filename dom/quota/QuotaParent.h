@@ -5,6 +5,7 @@
 #ifndef DOM_QUOTA_QUOTAPARENT_H_
 #define DOM_QUOTA_QUOTAPARENT_H_
 
+#include "mozilla/Result.h"
 #include "mozilla/dom/quota/PQuotaParent.h"
 #include "nsISupportsImpl.h"
 
@@ -24,6 +25,16 @@ class Quota final : public PQuotaParent {
   ~Quota();
 
   bool TrustParams() const;
+
+  
+  
+  
+  mozilla::Result<mozilla::Ok, nsresult> VerifyIsParentProcessActor() const;
+
+  
+  
+  
+  bool VerifyPrincipalInfo(const PrincipalInfo& aPrincipalInfo) const;
 
   bool VerifyRequestParams(const RequestParams& aParams) const;
 
