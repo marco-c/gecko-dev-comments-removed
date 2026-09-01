@@ -1332,7 +1332,7 @@ nsresult CollectProcessInfo(ProcessInfo& info) {
     glean::system_cpu::logical_cores.Set(info.cpuCount);
   }
 #endif
-  if (Maybe<hal::HeterogeneousCpuInfo> hetCpuInfo =
+  if (const Maybe<hal::HeterogeneousCpuInfo>& hetCpuInfo =
           hal::GetHeterogeneousCpuInfo()) {
     info.cpuPCount = int32_t(hetCpuInfo->mBigCpus.Count());
     info.cpuMCount = int32_t(hetCpuInfo->mMediumCpus.Count());
@@ -2353,4 +2353,15 @@ nsSystemInfo::GetProcessInfo(JSContext* aCx, Promise** aResult) {
   promise.forget(aResult);
 
   return NS_OK;
+}
+
+NS_IMETHODIMP
+nsSystemInfo::IsWindows10BuildOrLater(uint32_t aBuildNumber, bool* aResult) {
+#ifdef XP_WIN
+  NS_ENSURE_ARG_POINTER(aResult);
+  *aResult = mozilla::IsWindows10BuildOrLater(aBuildNumber);
+  return NS_OK;
+#else
+  return NS_ERROR_NOT_AVAILABLE;
+#endif
 }
