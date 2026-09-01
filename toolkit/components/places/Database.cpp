@@ -28,13 +28,13 @@
 #include "ScopedNSSTypes.h"
 #include "Helpers.h"
 #include "nsFaviconService.h"
-#include "ConcurrentConnection.h"
 
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
 #include "prenv.h"
 #include "prsystem.h"
 #include "nsPrintfCString.h"
+#include "mozilla/Components.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozIStorageService.h"
@@ -432,7 +432,7 @@ Database::Database()
 already_AddRefed<nsIAsyncShutdownClient>
 Database::GetProfileChangeTeardownPhase() {
   nsCOMPtr<nsIAsyncShutdownService> asyncShutdownSvc =
-      services::GetAsyncShutdownService();
+      components::AsyncShutdown::Service();
   MOZ_ASSERT(asyncShutdownSvc);
   if (NS_WARN_IF(!asyncShutdownSvc)) {
     return nullptr;
@@ -449,7 +449,7 @@ Database::GetProfileChangeTeardownPhase() {
 already_AddRefed<nsIAsyncShutdownClient>
 Database::GetProfileBeforeChangePhase() {
   nsCOMPtr<nsIAsyncShutdownService> asyncShutdownSvc =
-      services::GetAsyncShutdownService();
+      components::AsyncShutdown::Service();
   MOZ_ASSERT(asyncShutdownSvc);
   if (NS_WARN_IF(!asyncShutdownSvc)) {
     return nullptr;
@@ -630,15 +630,10 @@ nsresult Database::EnsureConnection() {
     rv = storage->OpenUnsharedDatabase(databaseFile,
                                        mozIStorageService::CONNECTION_DEFAULT,
                                        getter_AddRefs(mMainConn));
-    if (rv == NS_ERROR_STORAGE_IOERR) {
+    if (rv == NS_ERROR_STORAGE_IOERR || rv == NS_ERROR_FILE_IS_LOCKED ||
+        rv == NS_ERROR_STORAGE_BUSY) {
       
       
-      
-      
-      
-      
-      
-      ConcurrentConnection::MaybeInterrupt();
       rv = storage->OpenUnsharedDatabase(databaseFile,
                                          mozIStorageService::CONNECTION_DEFAULT,
                                          getter_AddRefs(mMainConn));

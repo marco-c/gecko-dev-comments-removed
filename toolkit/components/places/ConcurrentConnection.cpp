@@ -11,11 +11,11 @@
 #include "MainThreadUtils.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Components.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Services.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/dom/RemoteType.h"
+#include "mozilla/StaticPtr.h"
 #include "mozIStorageBindingParamsArray.h"
 #include "mozIStorageError.h"
 #include "mozIStorageResultSet.h"
@@ -27,6 +27,7 @@
 #include "nsError.h"
 #include "nsINavHistoryService.h"
 #include "nsIObserverService.h"
+#include "nsITimer.h"
 #include "nsIWritablePropertyBag.h"
 #include "nsPlacesMacros.h"
 #include "nsServiceManagerUtils.h"
@@ -37,6 +38,12 @@
 namespace mozilla::places {
 
 namespace {
+
+#ifdef MOZ_TSAN
+static const uint32_t kPlacesInitFallbackTimeoutMs = 120 * 1000;
+#else
+static const uint32_t kPlacesInitFallbackTimeoutMs = 10 * 1000;
+#endif
 
 
 
@@ -103,8 +110,8 @@ NS_IMPL_ISUPPORTS(ConcurrentConnection, nsIObserver, nsISupportsWeakReference,
                   mozIStorageStatementCallback)
 
 ConcurrentConnection::ConcurrentConnection() {
-  MOZ_DIAGNOSTIC_ASSERT(IsSupportedProcessType(),
-                        "Can only instantiate in supported processes");
+  MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess(),
+                        "Can only instantiate in the parent process");
 }
 
 void ConcurrentConnection::Init() {
@@ -122,7 +129,7 @@ void ConcurrentConnection::InitializeOnMainThread() {
 
   
   nsCOMPtr<nsIAsyncShutdownService> asyncShutdownSvc =
-      services::GetAsyncShutdownService();
+      components::AsyncShutdown::Service();
   MOZ_ASSERT(asyncShutdownSvc);
   if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed) ||
       !asyncShutdownSvc) {
@@ -146,52 +153,34 @@ void ConcurrentConnection::InitializeOnMainThread() {
   }
 
   
-  
-  
-  
-  
-  
-  if (XRE_IsParentProcess()) {
-    nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-    if (os) {
-      MOZ_ALWAYS_SUCCEEDS(
-          os->AddObserver(this, TOPIC_PLACES_INIT_COMPLETE, true));
-    }
+  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+  if (os) {
+    MOZ_ALWAYS_SUCCEEDS(
+        os->AddObserver(this, TOPIC_PLACES_INIT_COMPLETE, true));
   }
 
   mState = AWAITING_DATABASE_READY;
-  TryToOpenConnection();
-}
-
-void ConcurrentConnection::MaybeInterrupt() {
-  AssertIsOnMainThread();
-  RefPtr<ConcurrentConnection> instance;
-  {
-    auto lock = sCCInstance.Lock();
-    instance = *lock;
-  }
-  if (instance) {
-    instance->mConnectionReadyMutex.NoteOnMainThread();
-    if (instance->mConn) {
-      (void)instance->mConn->Interrupt();
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<Database> db = Database::GetDatabase();
+  if (db && db->IsConnectionOpen()) {
+    mPlacesIsInitialized = true;
+    TryToOpenConnection();
+  } else {
+    mPlacesInitFallbackTimer = NS_NewTimer();
+    if (mPlacesInitFallbackTimer) {
+      mPlacesInitFallbackTimer->InitWithNamedFuncCallback(
+          PlacesInitFallbackTimerCallback, this, kPlacesInitFallbackTimeoutMs,
+          nsITimer::TYPE_ONE_SHOT,
+          "ConcurrentConnection::PlacesInitFallback"_ns);
     }
   }
-}
-
-bool ConcurrentConnection::IsSupportedProcessType() {
-  if (XRE_IsParentProcess()) {
-    return true;
-  }
-  if (!XRE_IsContentProcess()) {
-    return false;
-  }
-  const auto* cc = dom::ContentChild::GetSingleton();
-  if (!cc) {
-    return false;
-  }
-  const nsACString& remoteType = cc->GetRemoteType();
-  return remoteType == PRIVILEGEDABOUT_REMOTE_TYPE ||
-         remoteType == PRIVILEGEDMOZILLA_REMOTE_TYPE;
 }
 
 Maybe<RefPtr<ConcurrentConnection>> ConcurrentConnection::GetInstance() {
@@ -206,7 +195,7 @@ Maybe<RefPtr<ConcurrentConnection>> ConcurrentConnection::GetInstance() {
     if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
       return Nothing();
     }
-    if (!IsSupportedProcessType()) {
+    if (!XRE_IsParentProcess()) {
       return Nothing();
     }
     *lock = new ConcurrentConnection();
@@ -295,13 +284,11 @@ ConcurrentConnection::Complete(nsresult aRv, nsISupports* aData) {
     
     
     
+    mIsOpening = false;
     if (mPlacesIsInitialized && mRetryOpening) {
-      
       mRetryOpening = false;
       TryToOpenConnection();
-      return NS_OK;
     }
-    mIsOpening = false;
     return NS_OK;
   }
   
@@ -497,6 +484,10 @@ ConcurrentConnection::Observe(nsISupports* aSubject, const char* aTopic,
   AssertIsOnMainThread();
   if (strcmp(aTopic, TOPIC_PLACES_INIT_COMPLETE) == 0) {
     mPlacesIsInitialized = true;
+    if (mPlacesInitFallbackTimer) {
+      mPlacesInitFallbackTimer->Cancel();
+      mPlacesInitFallbackTimer = nullptr;
+    }
     TryToOpenConnection();
   }
   return NS_OK;
@@ -645,6 +636,15 @@ void ConcurrentConnection::TryToOpenConnection() {
 #undef SHUTDOWN_AND_RETURN_IF_FALSE
 }
 
+
+void ConcurrentConnection::PlacesInitFallbackTimerCallback(nsITimer*,
+                                                           void* aClosure) {
+  auto* self = static_cast<ConcurrentConnection*>(aClosure);
+  self->mPlacesInitFallbackTimer = nullptr;
+  self->mPlacesIsInitialized = true;
+  self->TryToOpenConnection();
+}
+
 void ConcurrentConnection::Shutdown() {
   
   
@@ -656,6 +656,11 @@ void ConcurrentConnection::Shutdown() {
     MOZ_CRASH("Connection should be closed");
   }
 #endif
+
+  if (mPlacesInitFallbackTimer) {
+    mPlacesInitFallbackTimer->Cancel();
+    mPlacesInitFallbackTimer = nullptr;
+  }
 
   RefPtr<ConcurrentConnection> kungFuDeathGrip = this;
   {
