@@ -54,6 +54,8 @@ class MOZ_STACK_CLASS WarpScriptOracle {
   HandleScript script_;
   const CompileInfo* info_;
   ICScript* icScript_;
+  Vector<uint32_t, 16, SystemAllocPolicy> monomorphicInlineHints_;
+  bool monomorphicInlineHintsComputed_ = false;
 
   
   
@@ -67,6 +69,7 @@ class MOZ_STACK_CLASS WarpScriptOracle {
   WarpEnvironment createEnvironment();
   AbortReasonOr<Ok> maybeInlineIC(WarpOpSnapshotList& snapshots,
                                   BytecodeLocation loc);
+  AbortReasonOr<Ok> ensureMonomorphicInlineHints();
   AbortReasonOr<bool> maybeInlineCall(WarpOpSnapshotList& snapshots,
                                       BytecodeLocation loc, ICCacheIRStub* stub,
                                       ICFallbackStub* fallbackStub,
@@ -764,30 +767,45 @@ static void LineNumberAndColumn(HandleScript script, BytecodeLocation loc,
 #endif
 }
 
-static void MaybeSetInliningStateFromJitHints(JSContext* cx,
-                                              ICFallbackStub* fallbackStub,
-                                              JSScript* script,
-                                              BytecodeLocation loc) {
+static bool ShouldSetInliningStateFromJitHints(ICFallbackStub* fallbackStub,
+                                               BytecodeLocation loc) {
   
   if (fallbackStub->trialInliningState() != TrialInliningState::Candidate) {
-    return;
+    return false;
   }
 
   
   if (!TrialInliner::IsValidInliningOp(loc.getOp())) {
-    return;
+    return false;
   }
 
-  if (!cx->runtime()->jitRuntime()->hasJitHintsMap()) {
-    return;
+  return true;
+}
+
+
+
+AbortReasonOr<Ok> WarpScriptOracle::ensureMonomorphicInlineHints() {
+  if (monomorphicInlineHintsComputed_) {
+    return Ok();
   }
 
-  JitHintsMap* jitHints = cx->runtime()->jitRuntime()->getJitHintsMap();
-  uint32_t offset = loc.bytecodeToOffset(script);
-
-  if (jitHints->hasMonomorphicInlineHintAtOffset(script, offset)) {
-    fallbackStub->setTrialInliningState(TrialInliningState::MonomorphicInlined);
+  monomorphicInlineHintsComputed_ = true;
+  if (!cx_->runtime()->jitRuntime()->hasJitHintsMap()) {
+    return Ok();
   }
+
+  JitHintsMap* jitHints = cx_->runtime()->jitRuntime()->getJitHintsMap();
+  auto offsets = jitHints->getMonomorphicInlineOffsets(script_);
+  if (offsets.empty()) {
+    return Ok();
+  }
+
+  
+  if (!monomorphicInlineHints_.append(offsets.data(), offsets.size())) {
+    return abort(AbortReason::Alloc);
+  }
+
+  return Ok();
 }
 
 template <auto FuseMember, CompilationDependency::Type DepType>
@@ -1000,7 +1018,15 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
 
   
   
-  MaybeSetInliningStateFromJitHints(cx_, fallbackStub, script_, loc);
+  if (ShouldSetInliningStateFromJitHints(fallbackStub, loc)) {
+    MOZ_TRY(ensureMonomorphicInlineHints());
+    if (std::find(monomorphicInlineHints_.begin(),
+                  monomorphicInlineHints_.end(),
+                  offset) != monomorphicInlineHints_.end()) {
+      fallbackStub->setTrialInliningState(
+          TrialInliningState::MonomorphicInlined);
+    }
+  }
 
   
   
