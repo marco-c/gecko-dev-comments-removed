@@ -964,6 +964,14 @@ struct BaseCompiler final {
   
   
   
+  
+  [[nodiscard]] bool createStackMap(
+      Maybe<Trap> reason, FaultingCodeRange insnRange,
+      HasDebugFrameWithLiveRefs debugFrameWithLiveRefs);
+
+  
+  
+  
   [[nodiscard]] bool createDebugOnlyStackMapForNonResumingTrap(
       StackMap** result, Trap t1, Trap t2 = Trap::Limit);
 
