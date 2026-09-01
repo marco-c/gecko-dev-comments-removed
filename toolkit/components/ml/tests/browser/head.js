@@ -793,11 +793,23 @@ function readRequestBody(request) {
   });
 }
 
+
+
+
+
+
+
+
+
 function startMockOpenAI({
   echo = "This gets echoed.",
   onRequest = null,
+  holdStreamOpenAfterFinish = false,
 } = {}) {
   const server = new HttpServer();
+
+  
+  const heldResponses = [];
 
   server.registerPathHandler("/v1/chat/completions", (request, response) => {
     info("[openai] GET /v1/chat/completions");
@@ -914,6 +926,26 @@ function startMockOpenAI({
         created: Math.floor(Date.now() / 1000),
         model: "qwen3:0.6b",
         choices: [{ index: 0, delta: {}, finish_reason: "tool_calls" }],
+      });
+
+      if (holdStreamOpenAfterFinish) {
+        heldResponses.push(response);
+        return;
+      }
+
+      
+      sendSSE({
+        id: "chatcmpl-mock-tools-stream-usage",
+        object: "chat.completion.chunk",
+        created: Math.floor(Date.now() / 1000),
+        model: "qwen3:0.6b",
+        choices: [],
+        usage: {
+          prompt_tokens: 9839,
+          completion_tokens: 12,
+          total_tokens: 9851,
+          prompt_tokens_details: { cached_tokens: 9800 },
+        },
       });
 
       endSSE();
@@ -1142,10 +1174,20 @@ function startMockOpenAI({
     response.write(JSON.stringify(payload));
   });
 
+  function releaseHeldStreams() {
+    while (heldResponses.length) {
+      try {
+        heldResponses.pop().finish();
+      } catch (_) {
+        
+      }
+    }
+  }
+
   
   server.start(-1);
   const port = server.identity.primaryPort;
-  return { server, port };
+  return { server, port, releaseHeldStreams };
 }
 
 function stopMockOpenAI(server) {
