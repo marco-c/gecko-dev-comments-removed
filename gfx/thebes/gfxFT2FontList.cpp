@@ -104,13 +104,12 @@ already_AddRefed<SharedFTFace> FT2FontEntry::GetFTFace(bool aCommit) {
     NS_ASSERTION(item, "failed to find zip entry");
 
     uint32_t bufSize = item->RealSize();
-    if (uint8_t* fontDataBuf = static_cast<uint8_t*>(malloc(bufSize))) {
+    uint8_t* fontDataBuf = static_cast<uint8_t*>(malloc(bufSize));
+    if (fontDataBuf) {
       nsZipCursor cursor(item, reader, fontDataBuf, bufSize);
       cursor.Copy(&bufSize);
       NS_ASSERTION(bufSize == item->RealSize(), "error reading bundled font");
-      
-      auto fontData = MakeRefPtr<FontData>(std::move(fontDataBuf), bufSize);
-      auto ufd = MakeRefPtr<FTUserFontData>(fontData);
+      RefPtr<FTUserFontData> ufd = new FTUserFontData(fontDataBuf, bufSize);
       face = ufd->CloneFace(mFTFontIndex);
       if (!face) {
         NS_WARNING("failed to create freetype face");
@@ -250,11 +249,11 @@ gfxFont* FT2FontEntry::CreateFontInstance(const gfxFontStyle* aStyle) {
 
 already_AddRefed<FT2FontEntry> FT2FontEntry::CreateFontEntry(
     const nsACString& aFontName, WeightRange aWeight, WidthRange aWidth,
-    SlantStyleRange aStyle, FontData* aFontData) {
+    SlantStyleRange aStyle, const uint8_t* aFontData, uint32_t aLength) {
   
   
   
-  RefPtr<FTUserFontData> ufd = MakeRefPtr<FTUserFontData>(aFontData);
+  RefPtr<FTUserFontData> ufd = MakeRefPtr<FTUserFontData>(aFontData, aLength);
   RefPtr<SharedFTFace> face = ufd->CloneFace();
   if (!face) {
     return nullptr;
@@ -580,8 +579,9 @@ hb_blob_t* FT2FontEntry::GetFontTable(uint32_t aTableTag) {
   if (FTUserFontData* userFontData = GetUserFontData()) {
     
     
-    if (const auto* data = userFontData->GetData()) {
-      return gfxFontUtils::GetTableFromFontData(data, aTableTag);
+    if (userFontData->FontData()) {
+      return gfxFontUtils::GetTableFromFontData(userFontData->FontData(),
+                                                aTableTag);
     }
   }
 
@@ -1925,11 +1925,13 @@ FontFamily gfxFT2FontList::GetDefaultFontForPlatform(
 already_AddRefed<gfxFontEntry> gfxFT2FontList::MakePlatformFont(
     const nsACString& aFontName, WeightRange aWeightForEntry,
     WidthRange aWidthForEntry, SlantStyleRange aStyleForEntry,
-    FontData* aFontData) {
+    const uint8_t* aFontData, uint32_t aLength) {
   
   
-  return FT2FontEntry::CreateFontEntry(
-      aFontName, aWeightForEntry, aWidthForEntry, aStyleForEntry, aFontData);
+  
+  return FT2FontEntry::CreateFontEntry(aFontName, aWeightForEntry,
+                                       aWidthForEntry, aStyleForEntry,
+                                       aFontData, aLength);
 }
 
 already_AddRefed<gfxFontFamily> gfxFT2FontList::CreateFontFamily(

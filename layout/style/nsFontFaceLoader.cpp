@@ -287,8 +287,8 @@ nsFontFaceLoader::OnStreamComplete(nsIStreamLoader* aLoader,
 
   
   
-  mUserFontEntry->FontDataDownloadComplete(mSrcIndex, std::move(aString),
-                                           aStringLen, aStatus, this);
+  mUserFontEntry->FontDataDownloadComplete(mSrcIndex, aString, aStringLen,
+                                           aStatus, this);
   return NS_SUCCESS_ADOPTED_DATA;
 }
 

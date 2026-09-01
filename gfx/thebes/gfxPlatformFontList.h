@@ -12,7 +12,6 @@
 #include "gfxFontInfoLoader.h"
 #include "gfxFontUtils.h"
 #include "gfxPlatform.h"
-#include "gfxUserFontSet.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/MemoryReporting.h"
@@ -513,7 +512,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   virtual already_AddRefed<gfxFontEntry> MakePlatformFont(
       const nsACString& aFontName, WeightRange aWeightForEntry,
       WidthRange aWidthForEntry, SlantStyleRange aStyleForEntry,
-      FontData* aFontData) = 0;
+      const uint8_t* aFontData, uint32_t aLength) = 0;
 
   
   

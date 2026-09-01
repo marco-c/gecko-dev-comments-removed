@@ -35,9 +35,16 @@ IFACEMETHODIMP_(ULONG) gfxDWriteFontFileStream::Release() {
   return count;
 }
 
-gfxDWriteFontFileStream::gfxDWriteFontFileStream(FontData* aData,
+gfxDWriteFontFileStream::gfxDWriteFontFileStream(const uint8_t* aData,
+                                                 uint32_t aLength,
                                                  uint64_t aFontFileKey)
-    : mData(aData), mFontFileKey(aFontFileKey) {}
+    : mFontFileKey(aFontFileKey) {
+  
+  
+  if (!mData.AppendElements(aData, aLength, fallible_t())) {
+    NS_WARNING("Failed to store data in gfxDWriteFontFileStream");
+  }
+}
 
 gfxDWriteFontFileStream::~gfxDWriteFontFileStream() {
   sFontFileStreams.erase(mFontFileKey);
@@ -45,7 +52,7 @@ gfxDWriteFontFileStream::~gfxDWriteFontFileStream() {
 
 HRESULT STDMETHODCALLTYPE
 gfxDWriteFontFileStream::GetFileSize(UINT64* fileSize) {
-  *fileSize = mData->Length();
+  *fileSize = mData.Length();
   return S_OK;
 }
 
@@ -58,11 +65,11 @@ HRESULT STDMETHODCALLTYPE gfxDWriteFontFileStream::ReadFileFragment(
     const void** fragmentStart, UINT64 fileOffset, UINT64 fragmentSize,
     void** fragmentContext) {
   
-  if (fileOffset + fragmentSize > (UINT64)mData->Length()) {
+  if (fileOffset + fragmentSize > (UINT64)mData.Length()) {
     return E_FAIL;
   }
   
-  *fragmentStart = mData->Data() + fileOffset;
+  *fragmentStart = &mData[fileOffset];
   *fragmentContext = nullptr;
   return S_OK;
 }
@@ -93,7 +100,7 @@ HRESULT STDMETHODCALLTYPE gfxDWriteFontFileLoader::CreateStreamFromKey(
 
 HRESULT
 gfxDWriteFontFileLoader::CreateCustomFontFile(
-    FontData* aFontData, IDWriteFontFile** aFontFile,
+    const uint8_t* aFontData, uint32_t aLength, IDWriteFontFile** aFontFile,
     gfxDWriteFontFileStream** aFontFileStream) {
   MOZ_ASSERT(aFontFile);
   MOZ_ASSERT(aFontFileStream);
@@ -108,7 +115,7 @@ gfxDWriteFontFileLoader::CreateCustomFontFile(
   sFontFileStreamsMutex.Lock();
   uint64_t fontFileKey = sNextFontFileKey++;
   RefPtr<gfxDWriteFontFileStream> ffsRef =
-      new gfxDWriteFontFileStream(aFontData, fontFileKey);
+      new gfxDWriteFontFileStream(aFontData, aLength, fontFileKey);
   sFontFileStreams[fontFileKey] = ffsRef;
   sFontFileStreamsMutex.Unlock();
 
