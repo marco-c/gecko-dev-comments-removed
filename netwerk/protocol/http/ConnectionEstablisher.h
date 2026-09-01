@@ -28,6 +28,9 @@ struct DnsMetadata {
   double mTrrFetchDurationNetworkOnly = 0.0;
   nsIRequest::TRRMode mEffectiveTRRMode = nsIRequest::TRR_DEFAULT_MODE;
   nsITRRSkipReason::value mTrrSkipReason = nsITRRSkipReason::TRR_UNSET;
+  
+  
+  bool mStale = false;
 
   void Fill(nsIDNSAddrRecord* aRecord);
 };

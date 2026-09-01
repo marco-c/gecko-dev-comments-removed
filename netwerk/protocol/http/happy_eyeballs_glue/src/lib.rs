@@ -157,6 +157,7 @@ pub unsafe extern "C" fn happy_eyeballs_process_dns_response_a(
     id: u64,
     addrs: *const ThinVec<NetAddr>,
     is_trr: bool,
+    stale: bool,
 ) -> nsresult {
     let Some(he) = (unsafe { he.as_mut() }) else {
         debug_assert!(false, "unexpected null he pointer");
@@ -168,7 +169,7 @@ pub unsafe extern "C" fn happy_eyeballs_process_dns_response_a(
         return NS_ERROR_INVALID_ARG;
     };
 
-    he.process_dns_response_a(id, addrs, is_trr)
+    he.process_dns_response_a(id, addrs, is_trr, stale)
 }
 
 #[no_mangle]
@@ -177,6 +178,7 @@ pub unsafe extern "C" fn happy_eyeballs_process_dns_response_aaaa(
     id: u64,
     addrs: *const ThinVec<NetAddr>,
     is_trr: bool,
+    stale: bool,
 ) -> nsresult {
     let Some(he) = (unsafe { he.as_mut() }) else {
         debug_assert!(false, "unexpected null he pointer");
@@ -188,7 +190,7 @@ pub unsafe extern "C" fn happy_eyeballs_process_dns_response_aaaa(
         return NS_ERROR_INVALID_ARG;
     };
 
-    he.process_dns_response_aaaa(id, addrs, is_trr)
+    he.process_dns_response_aaaa(id, addrs, is_trr, stale)
 }
 
 #[no_mangle]
@@ -197,6 +199,7 @@ pub unsafe extern "C" fn happy_eyeballs_process_dns_response_https(
     id: u64,
     service_infos: *const ThinVec<ServiceInfo>,
     is_trr: bool,
+    stale: bool,
 ) -> nsresult {
     let Some(he) = (unsafe { he.as_mut() }) else {
         debug_assert!(false, "unexpected null he pointer");
@@ -208,7 +211,7 @@ pub unsafe extern "C" fn happy_eyeballs_process_dns_response_https(
         return NS_ERROR_INVALID_ARG;
     };
 
-    he.process_dns_response_https(id, service_infos, is_trr)
+    he.process_dns_response_https(id, service_infos, is_trr, stale)
 }
 
 #[no_mangle]
@@ -288,6 +291,7 @@ impl HappyEyeballs {
         id: u64,
         net_addrs: &ThinVec<NetAddr>,
         is_trr: bool,
+        stale: bool,
     ) -> nsresult {
         let id: happy_eyeballs::Id = id.into();
         let mut addrs = Vec::with_capacity(net_addrs.len());
@@ -307,7 +311,7 @@ impl HappyEyeballs {
         self.metrics.dns_response(id, !addrs.is_empty(), is_trr);
 
         let result = happy_eyeballs::DnsResult::A(Ok(addrs));
-        let input = happy_eyeballs::Input::DnsResult { id, result };
+        let input = happy_eyeballs::Input::DnsResult { id, result, stale };
         self.inner.process_input(input, Instant::now());
 
         NS_OK
@@ -318,6 +322,7 @@ impl HappyEyeballs {
         id: u64,
         net_addrs: &ThinVec<NetAddr>,
         is_trr: bool,
+        stale: bool,
     ) -> nsresult {
         let id: happy_eyeballs::Id = id.into();
         let mut addrs = Vec::with_capacity(net_addrs.len());
@@ -338,7 +343,7 @@ impl HappyEyeballs {
         self.metrics.dns_response(id, !addrs.is_empty(), is_trr);
 
         let result = happy_eyeballs::DnsResult::Aaaa(Ok(addrs));
-        let input = happy_eyeballs::Input::DnsResult { id, result };
+        let input = happy_eyeballs::Input::DnsResult { id, result, stale };
         self.inner.process_input(input, Instant::now());
 
         NS_OK
@@ -349,6 +354,7 @@ impl HappyEyeballs {
         id: u64,
         service_infos: &ThinVec<ServiceInfo>,
         is_trr: bool,
+        stale: bool,
     ) -> nsresult {
         let id: happy_eyeballs::Id = id.into();
         let mut infos = Vec::new();
@@ -422,7 +428,7 @@ impl HappyEyeballs {
         self.metrics.dns_response_https(id, &infos, is_trr);
 
         let result = happy_eyeballs::DnsResult::Https(Ok(infos));
-        let input = happy_eyeballs::Input::DnsResult { id, result };
+        let input = happy_eyeballs::Input::DnsResult { id, result, stale };
         self.inner.process_input(input, Instant::now());
 
         NS_OK
@@ -478,6 +484,7 @@ impl HappyEyeballs {
                 id,
                 hostname,
                 record_type,
+                allow_stale,
             }) => {
                 self.profiler.dns_query_started(id, record_type);
                 self.metrics.dns_query_started(id, record_type);
@@ -486,6 +493,7 @@ impl HappyEyeballs {
                 *ret_event = Output::SendDnsQuery {
                     id: id.into(),
                     record_type: record_type.into(),
+                    allow_stale,
                 };
             }
             Some(happy_eyeballs::Output::Timer { duration, .. }) => {
@@ -679,6 +687,10 @@ pub enum Output {
     SendDnsQuery {
         id: u64,
         record_type: DnsRecordType,
+        
+        
+        
+        allow_stale: bool,
     },
     Timer {
         duration_ms: u64,
