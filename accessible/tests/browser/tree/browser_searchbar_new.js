@@ -62,12 +62,6 @@ add_task(async function test_searchbar_a11y_tree() {
           },
 
           
-          {
-            role: ROLE_MENUPOPUP,
-            children: [],
-          },
-
-          
           
         ],
       },
@@ -118,12 +112,6 @@ add_task(async function test_searchbar_a11y_tree_with_results() {
                 children: [],
               },
             ],
-          },
-
-          
-          {
-            role: ROLE_MENUPOPUP,
-            children: [],
           },
 
           

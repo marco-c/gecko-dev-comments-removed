@@ -288,12 +288,12 @@ add_task(
         "Two tabs should be selected"
       );
 
-      let contextMenu = gURLBar.querySelector("moz-input-box").menupopup;
-      
+      let contextMenu = window.EditContextMenu.popup;
       let popupShown = BrowserTestUtils.waitForPopupEvent(contextMenu, "shown");
-      contextMenu.dispatchEvent(
-        new PointerEvent("contextmenu", { bubbles: true })
-      );
+      EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {
+        type: "contextmenu",
+        button: 2,
+      });
       await popupShown;
 
       let shareItem = contextMenu.querySelector(".share-tab-url-item");
