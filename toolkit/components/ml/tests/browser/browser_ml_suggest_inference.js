@@ -3,15 +3,20 @@
 "use strict";
 
 const PREFIX = "inference";
-const METRICS = [
-  `${PREFIX}-${PIPELINE_READY_LATENCY}`,
-  `${PREFIX}-${INITIALIZATION_LATENCY}`,
-  `${PREFIX}-${MODEL_RUN_LATENCY}`,
-  `${PREFIX}-${TOTAL_MEMORY_USAGE}`,
-];
-const journal = {};
-for (let metric of METRICS) {
-  journal[metric] = [1];
+
+
+
+function placeholderMetrics(tag) {
+  const journal = {};
+  for (const metric of [
+    PIPELINE_READY_LATENCY,
+    INITIALIZATION_LATENCY,
+    MODEL_RUN_LATENCY,
+    TOTAL_MEMORY_USAGE,
+  ]) {
+    journal[`${PREFIX}-${metric}-${tag}`] = [1];
+  }
+  return journal;
 }
 
 const perfMetadata = {
@@ -149,14 +154,17 @@ async function perform_inference(queries, type) {
   await writeResultsToFile(results, type);
 }
 
-const runInference2 = async () => {
+const runInference2 = async ({ backend, tag }) => {
   ChromeUtils.defineESModuleGetters(this, {
     MLSuggest: "moz-src:///browser/components/urlbar/private/MLSuggest.sys.mjs",
   });
 
   
-  MLSuggest.INTENT_OPTIONS = CUSTOM_INTENT_OPTIONS;
-  MLSuggest.NER_OPTIONS = CUSTOM_NER_OPTIONS;
+  
+  MLSuggest.INTENT_OPTIONS = { ...CUSTOM_INTENT_OPTIONS, backend };
+  MLSuggest.INTENT_OPTIONS_FALLBACK = { ...CUSTOM_INTENT_OPTIONS, backend };
+  MLSuggest.NER_OPTIONS = { ...CUSTOM_NER_OPTIONS, backend };
+  MLSuggest.NER_OPTIONS_FALLBACK = { ...CUSTOM_NER_OPTIONS, backend };
 
   const modelHubRootUrl = Services.env.get("MOZ_MODELS_HUB");
   if (!modelHubRootUrl) {
@@ -173,26 +181,30 @@ const runInference2 = async () => {
   });
 
   const TYPES = ["YELP_KEYWORDS_DATA", "YELP_VAL_DATA", "NER_VAL_DATA"];
-  for (const type of TYPES) {
-    info(`processing ${type} now`);
-    
-    const queries = await read_data_by_type(type);
-    if (!queries) {
-      info(`No queries found for type: ${type}`);
-      continue;
+  try {
+    for (const type of TYPES) {
+      info(`processing ${type} now`);
+      
+      const queries = await read_data_by_type(type);
+      if (!queries) {
+        info(`No queries found for type: ${type}`);
+        continue;
+      }
+      
+      await perform_inference(queries, `${type}-${tag}`);
     }
+  } finally {
     
-    await perform_inference(queries, type);
+    await MLSuggest.shutdown();
+    await EngineProcess.destroyMLEngine();
+    await cleanup();
   }
-  await MLSuggest.shutdown();
-  await EngineProcess.destroyMLEngine();
-  await cleanup();
+  reportMetrics(placeholderMetrics(tag));
 };
 
 
 
 
 add_task(async function test_ml_generic_pipeline() {
-  await runInference2();
-  reportMetrics(journal);
+  await runMLPerfTestForEachBackend({ name: PREFIX, run: runInference2 });
 });

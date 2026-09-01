@@ -187,11 +187,13 @@ async function run_summarizer_with_perf({
     context: { swaFull: false, flashAttn: false },
   };
 
-  await perfTest({
+  await runMLPerfTest({
     name: `sum-${perfName}`,
     options,
     request,
     trackPeakMemory,
+    
+    backends: ["llama.cpp"],
   });
 }
 

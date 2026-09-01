@@ -59,26 +59,6 @@ const ENGINES = {
   },
 };
 
-const BASE_METRICS = [
-  PIPELINE_READY_LATENCY,
-  INITIALIZATION_LATENCY,
-  MODEL_RUN_LATENCY,
-];
-
-
-const METRICS = [];
-for (let engineKey of Object.keys(ENGINES)) {
-  for (let metric of BASE_METRICS) {
-    METRICS.push(`${engineKey}-${metric}`);
-  }
-}
-METRICS.push(TOTAL_MEMORY_USAGE);
-
-const journal = {};
-for (let metric of METRICS) {
-  journal[metric] = [];
-}
-
 const perfMetadata = {
   owner: "GenAI Team",
   name: "browser_ml_engine_multi_perf.js",
@@ -111,7 +91,8 @@ requestLongerTimeout(10);
 async function runEngineWithMetrics(
   engineInstance,
   engineConfig,
-  iterations = 1
+  iterations = 1,
+  tag
 ) {
   const journal = {};
   const engine = engineInstance.engine;
@@ -121,7 +102,7 @@ async function runEngineWithMetrics(
 
     
     for (const [metricName, metricVal] of Object.entries(metrics)) {
-      const prefixedMetricName = `${engineConfig.engineId}-${metricName}`;
+      const prefixedMetricName = `${engineConfig.engineId}-${metricName}-${tag}`;
       if (!journal[prefixedMetricName]) {
         journal[prefixedMetricName] = [];
       }
@@ -145,52 +126,63 @@ async function runEngineWithMetrics(
 
 
 add_task(async function test_ml_generic_pipeline_concurrent_separate_phases() {
+  await runMLPerfTestForEachBackend({
+    name: "MULTI",
+    run: runConcurrentEngines,
+  });
+});
+
+async function runConcurrentEngines({ backend, tag }) {
   
   const engineInstances = await Promise.all(
     Object.values(ENGINES).map(async engineConfig => {
       const { cleanup, engine } = await initializeEngine(
-        new PipelineOptions({ timeoutMS: -1, ...engineConfig })
+        new PipelineOptions({ timeoutMS: -1, ...engineConfig, backend })
       );
       return { cleanup, engine };
     })
   );
   info("All engines initialized successfully");
 
-  
-  const allJournals = await Promise.all(
-    engineInstances.map((engineInstance, index) =>
-      runEngineWithMetrics(
-        engineInstance,
-        Object.values(ENGINES)[index],
-        ITERATIONS
+  let combinedJournal;
+  try {
+    
+    const allJournals = await Promise.all(
+      engineInstances.map((engineInstance, index) =>
+        runEngineWithMetrics(
+          engineInstance,
+          Object.values(ENGINES)[index],
+          ITERATIONS,
+          tag
+        )
       )
-    )
-  );
+    );
 
-  
-  const combinedJournal = allJournals.reduce((acc, journal) => {
-    Object.entries(journal).forEach(([key, values]) => {
-      if (!acc[key]) {
-        acc[key] = [];
-      }
-      acc[key].push(...values);
-    });
-    return acc;
-  }, {});
+    
+    combinedJournal = allJournals.reduce((acc, journal) => {
+      Object.entries(journal).forEach(([key, values]) => {
+        if (!acc[key]) {
+          acc[key] = [];
+        }
+        acc[key].push(...values);
+      });
+      return acc;
+    }, {});
 
-  Assert.ok(true);
+    Assert.ok(true);
 
-  const memUsage = await getTotalMemoryUsage();
-  (combinedJournal["total-memory-usage"] =
-    combinedJournal["total-memory-usage"] || []).push(memUsage);
+    const memUsage = await getTotalMemoryUsage();
+    (combinedJournal[`MULTI-total-memory-usage-${tag}`] =
+      combinedJournal[`MULTI-total-memory-usage-${tag}`] || []).push(memUsage);
+  } finally {
+    await EngineProcess.destroyMLEngine();
+
+    
+    for (const instance of engineInstances) {
+      await instance.cleanup();
+    }
+  }
 
   
   reportMetrics(combinedJournal);
-
-  await EngineProcess.destroyMLEngine();
-
-  
-  for (const instance of engineInstances) {
-    await instance.cleanup();
-  }
-});
+}
