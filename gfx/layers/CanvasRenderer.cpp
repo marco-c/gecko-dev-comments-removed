@@ -122,7 +122,8 @@ TextureType TexTypeForWebgl(KnowsCompositor* const knowsCompositor,
   if (kIsAndroid) {
     
     
-    if (aIsWebglOop && StaticPrefs::webgl_enable_egl_image()) {
+    if (aIsWebglOop && !gfx::gfxVars::UseWebRenderANGLE() &&
+        StaticPrefs::webgl_enable_egl_image()) {
       return TextureType::EGLImage;
     }
     if (gfx::gfxVars::UseAHardwareBufferSharedSurfaceWebglOop()) {
