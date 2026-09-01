@@ -988,20 +988,7 @@ impl AuGrid {
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn add(&self, v: f32, off_au: i32, off_grid: &mut u32) -> f32 {
-        if off_au == 0 {
-            return v;
-        }
         self.from_au(self.to_au(v, off_grid) + off_au as f64)
     }
 

@@ -25,8 +25,6 @@ use compositor_windows as compositor;
 use compositor_wayland as compositor;
 use std::{env, f32, process};
 
-const AU_PER_DEV_PX: f32 = 60.0;
-
 
 
 
@@ -467,7 +465,7 @@ fn main() {
 
     if let Invalidations::Scrolling = inv_mode {
         let mut root_builder = DisplayListBuilder::new(root_pipeline_id);
-        root_builder.begin(AU_PER_DEV_PX);
+        root_builder.begin();
 
         build_display_list(
             &mut root_builder,
@@ -500,7 +498,7 @@ fn main() {
             match inv_mode {
                 Invalidations::Small | Invalidations::Large => {
                     let mut root_builder = DisplayListBuilder::new(root_pipeline_id);
-                    root_builder.begin(AU_PER_DEV_PX);
+                    root_builder.begin();
 
                     build_display_list(
                         &mut root_builder,
