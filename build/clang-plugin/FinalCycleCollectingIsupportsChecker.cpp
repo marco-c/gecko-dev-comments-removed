@@ -14,7 +14,7 @@ void FinalCycleCollectingIsupportsChecker::registerMatchers(
   
   AstMatcher->addMatcher(
       cxxRecordDecl(
-          isFinal(), isInPath("/dom/"),
+          isFinal(), isInPath("dom/html"),
           has(cxxMethodDecl(hasName("AddRef"), isOverride(), unless(isFinal()),
                             isExpandedFromMacro(
                                 "NS_DECL_CYCLE_COLLECTING_ISUPPORTS_META"))
