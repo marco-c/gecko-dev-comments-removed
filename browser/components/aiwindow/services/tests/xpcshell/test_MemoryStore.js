@@ -1132,7 +1132,6 @@ add_task(
 
 
 
-
 add_task(async function test_getRelevantMemories_cache_invalidation() {
   await deleteAllMemories();
 
@@ -1181,8 +1180,11 @@ add_task(async function test_getRelevantMemories_cache_invalidation() {
     const memories = await MemoryStore.getMemories({
       includeSoftDeleted: true,
     });
+    
+    const originalTimestamp = memories[0].updated_at;
     await MemoryStore.updateMemory(memories[0].id, {
       memory_summary: "Loves drinking coffee and tea",
+      updated_at: originalTimestamp + 1000, 
     });
 
     await MemoryStore.getRelevantMemories("coffee");
