@@ -278,6 +278,19 @@ struct ReflowInput : public SizeComputationInput {
   
   
   
+  nscoord ComputedBSizeAsPercentageBasis() const {
+    if (mFlags.mTreatBSizeAsIndefinite) {
+      return NS_UNCONSTRAINEDSIZE;
+    }
+    if (mPercentageBasisInBlockAxis) {
+      return *mPercentageBasisInBlockAxis;
+    }
+    return ComputedBSize();
+  }
+
+  
+  
+  
   
   
   

@@ -4748,14 +4748,20 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
     
     
     
+    
+    
+    
+    LogicalSize gapPercentageBasis = tentativeContentBoxSize;
+    gapPercentageBasis.BSize(wm) =
+        aReflowInput.ComputedBSizeAsPercentageBasis();
     const auto& mainGapStyle =
         axisTracker.IsRowOriented() ? stylePos->mColumnGap : stylePos->mRowGap;
     const auto& crossGapStyle =
         axisTracker.IsRowOriented() ? stylePos->mRowGap : stylePos->mColumnGap;
     const nscoord mainGapSize = nsLayoutUtils::ResolveGapToLength(
-        mainGapStyle, tentativeContentBoxMainSize);
+        mainGapStyle, axisTracker.MainComponent(gapPercentageBasis));
     const nscoord crossGapSize = nsLayoutUtils::ResolveGapToLength(
-        crossGapStyle, tentativeContentBoxCrossSize);
+        crossGapStyle, axisTracker.CrossComponent(gapPercentageBasis));
 
     
     
