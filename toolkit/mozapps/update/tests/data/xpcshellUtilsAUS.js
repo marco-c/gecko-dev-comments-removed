@@ -4246,6 +4246,37 @@ function checkFilesAfterUpdateCommon(aStageDirExists, aToBeDeletedDirExists) {
 
 
 
+
+
+function checkToBeDeletedFileCount(aExpectedCount) {
+  let toBeDeletedDir = getApplyDirFile(DIR_TOBEDELETED);
+  let relocatedFiles = [];
+  let dirEntries = toBeDeletedDir.directoryEntries;
+  while (dirEntries.hasMoreElements()) {
+    let entry = dirEntries.nextFile;
+    if (entry.isFile() && entry.leafName.startsWith("moz")) {
+      relocatedFiles.push(entry);
+    }
+  }
+  Assert.equal(
+    relocatedFiles.length,
+    aExpectedCount,
+    "the tobedeleted directory should contain " +
+      aExpectedCount +
+      " relocated file(s)"
+  );
+  return relocatedFiles;
+}
+
+
+
+
+
+
+
+
+
+
 function checkCallbackLog(
   appLaunchLog = getApplyDirFile(DIR_MACOS + gCallbackArgs[1])
 ) {

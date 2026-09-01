@@ -670,6 +670,27 @@ static void ensure_write_permissions(const NS_tchar* path) {
 }
 
 static int ensure_remove(const NS_tchar* path) {
+#if defined(TEST_UPDATER) && defined(XP_WIN)
+  
+  
+  
+  const wchar_t* failName = _wgetenv(L"MOZ_TEST_ENSURE_REMOVE_FAIL");
+  if (failName && *failName) {
+    const wchar_t* leaf = path;
+    for (const wchar_t* c = path; *c; ++c) {
+      if (*c == L'\\' || *c == L'/') {
+        leaf = c + 1;
+      }
+    }
+    if (!wcscmp(leaf, failName)) {
+      LOG(
+          ("ensure_remove: TEST fault injection, pretending removal "
+           "failed: " LOG_S,
+           path));
+      return -1;
+    }
+  }
+#endif
   ensure_write_permissions(path);
   int rv = NS_tremove(path);
   if (rv) {
