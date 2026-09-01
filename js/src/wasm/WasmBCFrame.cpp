@@ -304,8 +304,6 @@ bool StackMapGenerator::createStackMap(
     }
   }
 
-  
-  
   MOZ_ASSERT_IF(framePushedAtEntryToBody.isNothing(), stk.empty());
   MOZ_ASSERT_IF(framePushedExcludingArgs.isNothing(), stk.empty());
 
@@ -313,35 +311,42 @@ bool StackMapGenerator::createStackMap(
   
   
   
-  bool allowRefsInRegs =
-      
-      reason.isSome() &&
-      
-      !TrapMightResume(reason.value());
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
+  
+  bool allowRegRef = false;
+  bool allowRegNonRef = false;
+  if (reason.isSome()) {
+    
+    if (TrapMightResume(reason.value())) {
+      allowRegRef = false;
+      allowRegNonRef = true;
+    } else {
+      allowRegRef = true;
+      allowRegNonRef = true;
+    }
+  }
+
+  
+  
   for (const Stk& v : stk) {
-    
-    
-    if (MOZ_LIKELY(!allowRefsInRegs)) {
-      MOZ_RELEASE_ASSERT(v.kind() != Stk::RegisterRef);
-    }
-
-    
-    
-    
-    
-
-#ifndef DEBUG
-    
-    if (v.kind() != Stk::MemRef) {
-      continue;
-    }
-
-#else
-    
-    
-    
     switch (v.kind()) {
+      
       case Stk::MemI32:
       case Stk::MemI64:
       case Stk::MemF32:
@@ -350,67 +355,76 @@ bool StackMapGenerator::createStackMap(
       case Stk::ConstI64:
       case Stk::ConstF32:
       case Stk::ConstF64:
-#  ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_WASM_SIMD
       case Stk::MemV128:
       case Stk::ConstV128:
-#  endif
-        
+#endif
         continue;
+
+      
+      
+      
+      
       case Stk::LocalI32:
       case Stk::LocalI64:
       case Stk::LocalF32:
       case Stk::LocalF64:
-#  ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_WASM_SIMD
       case Stk::LocalV128:
-#  endif
-        
-        
-        
+#endif
         MOZ_ASSERT(v.offs() <= framePushedAtEntryToBody.value());
         continue;
+
+      
       case Stk::RegisterI32:
       case Stk::RegisterI64:
       case Stk::RegisterF32:
       case Stk::RegisterF64:
-#  ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_WASM_SIMD
       case Stk::RegisterV128:
-#  endif
+#endif
+        if (allowRegNonRef) {
+          
+          continue;
+        }
+        MOZ_CRASH("createStackMap: operand stack has a non-Ref in a register");
+
+      case Stk::RegisterRef:
         
-        
-        
-        
-        MOZ_CRASH("createStackMap: operand stack has Register-non-Ref");
+        if (allowRegRef) {
+          
+          continue;
+        }
+        MOZ_CRASH("createStackMap: operand stack has a Ref in a register");
+
       case Stk::MemRef:
         
         
         break;
+
       case Stk::LocalRef:
-        
         
         
         MOZ_ASSERT(v.offs() <= framePushedAtEntryToBody.value());
         continue;
+
       case Stk::ConstRef:
         
         MOZ_ASSERT(v.refval() == 0);
         continue;
-      case Stk::RegisterRef:
-        
-        
-        MOZ_RELEASE_ASSERT(allowRefsInRegs);
-        
-        
-        continue;
+
       default:
         MOZ_CRASH("createStackMap: unknown operand stack element");
     }
-#endif
+
+    
+    MOZ_RELEASE_ASSERT(v.kind() == Stk::MemRef);
 
     
     
     
-    MOZ_ASSERT(v.kind() == Stk::MemRef);
     MOZ_ASSERT(v.offs() <= framePushedExcludingArgs.value());
+
     uint32_t offsFromMapLowest = framePushedExcludingArgs.value() - v.offs();
     MOZ_ASSERT(0 == offsFromMapLowest % sizeof(void*));
     augmentedMst.setGCPointer(offsFromMapLowest / sizeof(void*));
