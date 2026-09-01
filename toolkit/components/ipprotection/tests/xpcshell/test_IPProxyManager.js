@@ -423,11 +423,36 @@ add_task(async function test_IPPProxyManager_non_string_error_normalized() {
 
 
 
+
+add_task(async function test_IPPProxyManager_non_string_error_on_activation() {
+  setupStubs();
+  IPPDummyAuthProvider.setProxyPass({
+    status: 403,
+    error: new Error("boom"),
+    pass: undefined,
+    usage: undefined,
+  });
+
+  await IPProtectionService.init();
+  const result = await IPPProxyManager.start(false);
+
+  Assert.equal(
+    result.error,
+    ERRORS.PASS_UNAVAILABLE,
+    "A non-string provider error is reported as ERRORS.PASS_UNAVAILABLE"
+  );
+
+  IPProtectionService.uninit();
+});
+
+
+
+
 add_task(async function test_IPPProxyManager_catastrophic_on_500() {
   setupStubs();
   IPPDummyAuthProvider.setProxyPass({
     status: 500,
-    error: undefined,
+    error: AUTH_ERRORS.SERVER_ERROR,
     pass: undefined,
     usage: undefined,
   });
@@ -997,6 +1022,56 @@ add_task(async function test_IPPProxyManager_rotateProxyPass_changes_pass() {
   );
 
   IPProtectionService.uninit();
+});
+
+
+
+
+
+
+
+
+add_task(async function test_ProxyPass_fromResponse_reanchors_to_now() {
+  const now = Temporal.Now.instant();
+  const cases = [
+    {
+      desc: "large drift (client clock ~2h ahead of a 1h token)",
+      from: now.subtract({ hours: 2 }),
+      until: now.subtract({ hours: 1 }),
+    },
+    {
+      desc: "accurate clock (freshly issued 24h token)",
+      from: now.subtract({ seconds: 30 }),
+      until: now.add({ hours: 24 }),
+    },
+  ];
+
+  for (const { desc, from, until } of cases) {
+    const token = createProxyPassToken(from, until);
+    const response = { ok: true, json: async () => ({ token }) };
+
+    const pass = await ProxyPass.fromResponse(response);
+    Assert.ok(pass, `${desc}: fromResponse returns a pass`);
+
+    const lifetimeMs = until.epochMilliseconds - from.epochMilliseconds;
+    const expectedFromMs = Temporal.Now.instant().epochMilliseconds;
+
+    Assert.less(
+      Math.abs(pass.from.epochMilliseconds - expectedFromMs),
+      1000,
+      `${desc}: from is re-anchored to now`
+    );
+    Assert.less(
+      Math.abs(pass.until.epochMilliseconds - (expectedFromMs + lifetimeMs)),
+      1000,
+      `${desc}: the token lifetime is preserved`
+    );
+    Assert.ok(pass.isValid(), `${desc}: pass is valid`);
+    Assert.ok(
+      !pass.shouldRotate(),
+      `${desc}: a just-received pass does not want immediate rotation`
+    );
+  }
 });
 
 add_task(async function test_IPPProxyManager_stop_during_rotation() {
@@ -1887,8 +1962,8 @@ add_task(async function test_IPPProxyManager_switch_noop_when_not_active() {
 
   Assert.deepEqual(
     result,
-    { switched: false },
-    "switch() should return {switched: false} when not ACTIVE"
+    { switched: false, error: ERRORS.NOT_READY },
+    "switch() should return {switched: false} with a reason when not ACTIVE"
   );
 
   Assert.ok(
