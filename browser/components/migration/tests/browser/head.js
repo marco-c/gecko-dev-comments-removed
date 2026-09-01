@@ -319,6 +319,26 @@ async function waitForTestMigration(
 
 
 
+async function waitForPanelListShown(panelList) {
+  await new Promise(resolve => {
+    panelList.addEventListener("shown", resolve, { once: true });
+  });
+
+  let panel = panelList.parentElement;
+  if (panel?.localName == "panel") {
+    await BrowserTestUtils.waitForPopupEvent(panel, "shown");
+  }
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -338,9 +358,7 @@ async function selectResourceTypesAndStartMigration(
   let selector = shadow.querySelector("#browser-profile-selector");
   EventUtils.synthesizeMouseAtCenter(selector, {}, wizard.documentGlobal);
 
-  await new Promise(resolve => {
-    panelList.addEventListener("shown", resolve, { once: true });
-  });
+  await waitForPanelListShown(panelList);
 
   let panelItem = shadow.querySelector(`panel-item[key="${migratorKey}"]`);
   Assert.ok(
