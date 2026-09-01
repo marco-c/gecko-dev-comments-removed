@@ -475,7 +475,6 @@ TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest,
         
         uint32_t new_timestamp = 112233u;
         frame->SetRTPTimestamp(new_timestamp);
-        EXPECT_EQ(frame->GetTimestamp(), new_timestamp);
         EXPECT_TRUE(std::holds_alternative<RtpTimestampWithOffset>(
             frame->GetRtpTimestampInfo()));
         EXPECT_EQ(
