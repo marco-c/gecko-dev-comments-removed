@@ -24,8 +24,6 @@ const FRONTEND_BASE_URL = FRONTEND_BASE_HOST + FRONTEND_BASE_PATH;
 
 
 
-
-
 addCompatTask(async function (config) {
   await setProfilerFrontendUrl(FRONTEND_BASE_HOST, FRONTEND_BASE_PATH);
 
@@ -62,8 +60,10 @@ addCompatTask(async function (config) {
   await getActiveButtonFromText(profilerDocument, "Start recording");
 
   info("Check that the profiler frontend was opened in a new tab");
-  await waitUntil(() => gBrowser.currentURI.spec === FRONTEND_BASE_URL);
-  ok(true, `The profiler frontend was opened at ${FRONTEND_BASE_URL}`);
+  await waitFor(
+    () => gBrowser.currentURI.spec === FRONTEND_BASE_URL,
+    `The profiler frontend was opened at ${FRONTEND_BASE_URL}`
+  );
 
   info("Wait for the profile to be handed over to the profiler frontend");
   
@@ -86,8 +86,9 @@ async function openProfilerDialog(doc) {
 
   info("Wait for the rendering of the profiler UI");
   const profilerIframe = doc.querySelector(".profiler-dialog__frame");
-  await waitUntil(() =>
-    profilerIframe.contentDocument?.querySelector(".perf-presets")
+  await waitFor(
+    () => profilerIframe.contentDocument?.querySelector(".perf-presets"),
+    "Wait until the profiler presets are ready in the profiler UI"
   );
 
   return profilerIframe.contentDocument;
