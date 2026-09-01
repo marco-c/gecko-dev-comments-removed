@@ -2,7 +2,7 @@
 
 
 const { TabStateFlusher } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/sessionstore/TabStateFlusher.sys.mjs"
+  "resource:///modules/sessionstore/TabStateFlusher.sys.mjs"
 );
 
 add_task(async function test_blank() {

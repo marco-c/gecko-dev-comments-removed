@@ -136,7 +136,7 @@ add_task(async function test_sessionRestore() {
 
   
   let { SessionStore } = ChromeUtils.importESModule(
-    "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs"
+    "resource:///modules/sessionstore/SessionStore.sys.mjs"
   );
 
   
