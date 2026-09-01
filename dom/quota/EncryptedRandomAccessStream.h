@@ -10,7 +10,6 @@
 #include "EncryptedRandomAccessBlock.h"
 #include "EncryptedRandomAccessBlockView.h"
 #include "ErrorList.h"
-#include "NSSRandomAccessCipherStrategy.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
@@ -127,6 +126,7 @@ class EncryptedRandomAccessStreamBase : public nsIRandomAccessStream,
 
   NS_DECL_NSITELLABLESTREAM
   NS_DECL_NSISEEKABLESTREAM
+  NS_DECL_NSIRANDOMACCESSSTREAM
   NS_DECL_NSIOUTPUTSTREAM
 
   
@@ -134,15 +134,6 @@ class EncryptedRandomAccessStreamBase : public nsIRandomAccessStream,
   NS_IMETHOD ReadSegments(nsWriteSegmentFun aWriter, void* aClosure,
                           uint32_t aCount, uint32_t* _retval) override;
   NS_IMETHOD Available(uint64_t* _retval) override;
-
-  
-  NS_IMETHOD GetInputStream(nsIInputStream** _retval) override;
-  NS_IMETHOD GetOutputStream(nsIOutputStream** _retval) override;
-  nsIInputStream* InputStream(void) override;
-  nsIOutputStream* OutputStream(void) override;
-  bool Deserialize(mozilla::ipc::RandomAccessStreamParams& params) override;
-  mozilla::ipc::RandomAccessStreamParams Serialize(
-      nsIInterfaceRequestor* aCallbacks) override = 0;
 
  protected:
   using BlockIndexType = uint64_t;
@@ -224,32 +215,6 @@ class EncryptedRandomAccessStream final
          MovingNotNull<nsCOMPtr<nsIRandomAccessStream>> aStream,
          typename CipherStrategy::KeyType aMasterKey);
 
-  
-
-
-
-
-
-
-
-  mozilla::ipc::RandomAccessStreamParams Serialize(
-      nsIInterfaceRequestor* aCallbacks) override;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  static Result<RefPtr<EncryptedRandomAccessStream<CipherStrategy>>, nsresult>
-  CreateFromParams(mozilla::ipc::RandomAccessStreamParams& aParams);
-
  private:
   template <typename T, typename... Args>
   friend RefPtr<T> mozilla::MakeRefPtr(Args&&... aArgs);
@@ -277,17 +242,6 @@ class EncryptedRandomAccessStream final
   
   const typename CipherStrategy::KeyType mMasterKey;
 };
-
-template <>
-mozilla::ipc::RandomAccessStreamParams
-EncryptedRandomAccessStream<NSSRandomAccessCipherStrategy>::Serialize(
-    nsIInterfaceRequestor* aCallbacks);
-
-template <>
-Result<RefPtr<EncryptedRandomAccessStream<NSSRandomAccessCipherStrategy>>,
-       nsresult>
-EncryptedRandomAccessStream<NSSRandomAccessCipherStrategy>::CreateFromParams(
-    mozilla::ipc::RandomAccessStreamParams& aParams);
 
 }  
 

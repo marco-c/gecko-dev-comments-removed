@@ -9,7 +9,6 @@
 #include "ErrorList.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/Span.h"
 #include "mozilla/ipc/RandomAccessStreamParams.h"
@@ -240,6 +239,12 @@ NS_IMETHODIMP EncryptedRandomAccessStreamBase::WriteSegments(
   
   
   if (mLogicalPosition > mLogicalSize) {
+    if (mBlockDirty) {
+      const auto rv = SaveCurrentBlock();
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+    }
     const auto rv = ZeroExtendTo(mLogicalPosition);
     if (NS_FAILED(rv)) {
       return rv;
@@ -399,14 +404,13 @@ nsresult EncryptedRandomAccessStreamBase::ZeroExtendTo(
     return NS_OK;
   }
 
-  if (mLogicalSize == 0) {
-    MOZ_ASSERT(!mBlockDirty);  
+  if (mTotalBlockCount == 0) {
     const auto rv = LoadNewBlockAtEnd();
     if (NS_FAILED(rv)) {
       return rv;
     }
   } else {
-    const BlockIndexType lastBlockIndex = (mLogicalSize - 1) / sMaxTextLength;
+    BlockIndexType lastBlockIndex = mTotalBlockCount - 1;
     if (lastBlockIndex != mCurrentBlockIndex || !mBlockLoaded) {
       if (mBlockDirty) {
         const auto rv = SaveCurrentBlock();
@@ -458,9 +462,6 @@ nsresult EncryptedRandomAccessStreamBase::ZeroExtendTo(
     }
   }
 
-  
-  MOZ_ASSERT(mBlockDirty);
-
   return NS_OK;
 }
 
@@ -504,114 +505,25 @@ nsresult EncryptedRandomAccessStreamBase::PadPlainBuffer() {
   return NS_OK;
 }
 
+
+
+
+
 NS_IMETHODIMP EncryptedRandomAccessStreamBase::SetEOF() {
-  if (mClosed) {
-    return NS_BASE_STREAM_CLOSED;
-  }
-
-  if (mLogicalPosition == mLogicalSize) {
-    return NS_OK;
-  }
-
-  if (mLogicalPosition == 0) {
-    mLogicalSize = 0;
-    mTotalBlockCount = 0;
-    mCurrentBlockIndex = 0;
-    mCurrentBlockTextLength = 0;
-    mBlockLoaded = false;
-    mBlockDirty = false;
-
-    auto rv = mBaseStream->Seek(NS_SEEK_SET, 0);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    rv = mBaseStream->SetEOF();
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    return NS_OK;
-  }
-
-  
-  const BlockIndexType targetBlockIndex =
-      (mLogicalPosition - 1) / sMaxTextLength;
-  const auto targetBlockNewOffset =
-      static_cast<TextLengthType>(mLogicalPosition % sMaxTextLength == 0
-                                      ? sMaxTextLength
-                                      : mLogicalPosition % sMaxTextLength);
-
-  DebugOnly<bool> grow;
-  if (mLogicalPosition > mLogicalSize) {
-    grow = true;
-
-    auto rv = ZeroExtendTo(mLogicalPosition);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    
-    
-    MOZ_ASSERT(mCurrentBlockIndex == targetBlockIndex);
-    MOZ_ASSERT(mLogicalSize == mLogicalPosition);
-    MOZ_ASSERT(mCurrentBlockTextLength == targetBlockNewOffset);
-  } else {
-    grow = false;
-
-    if (targetBlockIndex != mCurrentBlockIndex || !mBlockLoaded) {
-      
-      
-      
-      if (mBlockDirty && mCurrentBlockIndex < targetBlockIndex) {
-        const auto rv = SaveCurrentBlock();
-        if (NS_FAILED(rv)) {
-          return rv;
-        }
-      }
-      const auto rv = LoadBlock(targetBlockIndex);
-      if (NS_FAILED(rv)) {
-        return rv;
-      }
-    }
-
-    MOZ_ASSERT(mCurrentBlockIndex == targetBlockIndex);
-    mLogicalSize = mLogicalPosition;
-    mCurrentBlockTextLength = targetBlockNewOffset;
-
-    
-    
-    
-    mBlockDirty = true;
-  }
-
-  
-  
-  auto rv = SaveCurrentBlock();
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  MOZ_ASSERT_IF(grow, mTotalBlockCount == targetBlockIndex + 1);
-  mTotalBlockCount = targetBlockIndex + 1;  
-
-  
-  const auto newPhysicalSize = CheckedInt64(mTotalBlockCount) * sBlockSize;
-  if (!newPhysicalSize.isValid()) {
-    return NS_ERROR_FILE_TOO_BIG;
-  }
-  rv = mBaseStream->Seek(NS_SEEK_SET, newPhysicalSize.value());
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  rv = mBaseStream->SetEOF();
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  return NS_OK;
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
+
+
+
+mozilla::ipc::RandomAccessStreamParams
+EncryptedRandomAccessStreamBase::Serialize(nsIInterfaceRequestor*) {
+  return {};
+}
+
+
 
 bool EncryptedRandomAccessStreamBase::Deserialize(
     mozilla::ipc::RandomAccessStreamParams&) {
-  MOZ_ASSERT_UNREACHABLE("Use |CreateFromParams| for deserialization.");
   return false;
 }
 
