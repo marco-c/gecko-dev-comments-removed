@@ -112,9 +112,6 @@ class LoopControl : public BreakableControl {
   JumpTarget head_;
 
   
-  int32_t stackDepth_;
-
-  
   uint32_t loopDepth_;
 
  public:
