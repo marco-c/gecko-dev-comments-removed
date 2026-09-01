@@ -46,9 +46,9 @@ add_setup(async function setup() {
 
 
 function echoWebSocket(url, msg) {
-  let chan = Cc["@mozilla.org/network/protocol;1?name=wss"].createInstance(
-    Ci.nsIWebSocketChannel
-  );
+  let chan = Cc["@mozilla.org/network/protocol;1?name=wss"]
+    .getService(Ci.nsIWebSocketProtocolHandler)
+    .newWebSocketChannel();
   
   
   let principal = Services.scriptSecurityManager.createContentPrincipal(

@@ -62,9 +62,9 @@ add_task(async function open_wss_when_h3_is_active() {
 
   
   
-  let chan = Cc["@mozilla.org/network/protocol;1?name=wss"].createInstance(
-    Ci.nsIWebSocketChannel
-  );
+  let chan = Cc["@mozilla.org/network/protocol;1?name=wss"]
+    .getService(Ci.nsIWebSocketProtocolHandler)
+    .newWebSocketChannel();
   chan.initLoadInfo(
     null, 
     Services.scriptSecurityManager.getSystemPrincipal(),
