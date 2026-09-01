@@ -66,12 +66,6 @@ class FT2FontEntry final : public gfxFT2FontEntryBase {
 
   nsresult CopyFontTable(uint32_t aTableTag, nsTArray<uint8_t>&) override;
 
-  bool HasVariations() override;
-  void GetVariationAxes(
-      nsTArray<gfxFontVariationAxis>& aVariationAxes) override;
-  void GetVariationInstances(
-      nsTArray<gfxFontVariationInstance>& aInstances) override;
-
   
   
   void CheckForBrokenFont(gfxFontFamily* aFamily);
@@ -112,6 +106,12 @@ class FT2FontEntry final : public gfxFT2FontEntryBase {
  protected:
   
   ~FT2FontEntry();
+
+  bool HasVariationsInternal() override;
+  void GetVariationAxesInternal(
+      nsTArray<gfxFontVariationAxis>& aVariationAxes) override;
+  void GetVariationInstancesInternal(
+      nsTArray<gfxFontVariationInstance>& aInstances) override;
 
   hb_blob_t* GetFontTableInternal(uint32_t aTableTag) override;
 

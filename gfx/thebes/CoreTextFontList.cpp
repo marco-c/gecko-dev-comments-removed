@@ -392,7 +392,7 @@ gfxFont* CTFontEntry::CreateFontInstance(const gfxFontStyle* aFontStyle) {
   return new gfxMacFont(unscaledFont, this, aFontStyle);
 }
 
-bool CTFontEntry::HasVariations() {
+bool CTFontEntry::HasVariationsInternal() {
   if (!mHasVariationsInitialized) {
     mHasVariationsInitialized = true;
     mHasVariations = gfxPlatform::HasVariationFontSupport() &&
@@ -402,7 +402,7 @@ bool CTFontEntry::HasVariations() {
   return mHasVariations;
 }
 
-void CTFontEntry::GetVariationAxes(
+void CTFontEntry::GetVariationAxesInternal(
     nsTArray<gfxFontVariationAxis>& aVariationAxes) {
   
   
@@ -411,7 +411,7 @@ void CTFontEntry::GetVariationAxes(
   gfxFontUtils::GetVariationData(this, &aVariationAxes, nullptr);
 }
 
-void CTFontEntry::GetVariationInstances(
+void CTFontEntry::GetVariationInstancesInternal(
     nsTArray<gfxFontVariationInstance>& aInstances) {
   
   

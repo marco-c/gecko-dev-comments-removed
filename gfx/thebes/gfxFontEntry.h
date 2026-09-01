@@ -522,15 +522,9 @@ class gfxFontEntry {
 
 
 
-
-
-  virtual bool HasVariations() = 0;
-
-  virtual void GetVariationAxes(
-      nsTArray<gfxFontVariationAxis>& aVariationAxes) = 0;
-
-  virtual void GetVariationInstances(
-      nsTArray<gfxFontVariationInstance>& aInstances) = 0;
+  bool HasVariations();
+  void GetVariationAxes(nsTArray<gfxFontVariationAxis>& aVariationAxes);
+  void GetVariationInstances(nsTArray<gfxFontVariationInstance>& aInstances);
 
   bool HasBoldVariableWeight();
   bool HasItalicVariation();
@@ -778,6 +772,14 @@ class gfxFontEntry {
   inline bool CheckForGraphiteTables() {
     return HasFontTable(TRUETYPE_TAG('S', 'i', 'l', 'f'));
   }
+
+  virtual bool HasVariationsInternal() { return false; };
+
+  virtual void GetVariationAxesInternal(
+      nsTArray<gfxFontVariationAxis>& aVariationAxes) {};
+
+  virtual void GetVariationInstancesInternal(
+      nsTArray<gfxFontVariationInstance>& aInstances) {};
 
   
   
