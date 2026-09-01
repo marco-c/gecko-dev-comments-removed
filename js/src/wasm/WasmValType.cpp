@@ -21,7 +21,6 @@
 #include "js/friend/ErrorMessages.h"  
 #include "js/Printf.h"
 #include "js/Value.h"
-
 #include "vm/JSAtomUtils.h"  
 #include "vm/JSObject.h"
 #include "vm/StringType.h"
@@ -168,7 +167,6 @@ RefType RefType::greatestLowerBound(RefType a, RefType b) {
   
   bool nullable = a.isNullable() && b.isNullable();
 
-  
   
   if (RefType::isSubTypeOf(a.asNonNullable(), b.asNonNullable())) {
     return a.withIsNullable(nullable);

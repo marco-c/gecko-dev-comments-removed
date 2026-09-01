@@ -160,6 +160,8 @@ static void ReplaceAllUsesWith(MDefinition* from, MDefinition* to) {
   
   
   
+  
+  
   wasm::MaybeRefType glb = wasm::MaybeRefType::greatestLowerBound(
       from->wasmRefType(), to->wasmRefType());
   MOZ_RELEASE_ASSERT(glb.isNothing() || glb.value().isInhabitable());
@@ -797,6 +799,10 @@ bool ValueNumberer::visitDefinition(MDefinition* def) {
     wasm::MaybeRefType glb = wasm::MaybeRefType::greatestLowerBound(
         def->wasmRefType(), sim->wasmRefType());
     if (glb.isSome() && !glb.value().isInhabitable()) {
+      
+      
+      
+      
       return true;
     }
 
@@ -899,6 +905,10 @@ bool ValueNumberer::visitDefinition(MDefinition* def) {
     wasm::MaybeRefType glb = wasm::MaybeRefType::greatestLowerBound(
         def->wasmRefType(), rep->wasmRefType());
     if (glb.isSome() && !glb.value().isInhabitable()) {
+      
+      
+      
+      
       return true;
     }
 

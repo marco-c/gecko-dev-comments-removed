@@ -954,6 +954,7 @@ MWasmShuffleSimd128* jit::BuildWasmShuffleSimd128(TempAllocator& alloc,
 static MDefinition* FoldTrivialWasmTests(TempAllocator& alloc,
                                          wasm::RefType sourceType,
                                          wasm::RefType destType) {
+  
   if (!sourceType.isInhabitable() || !destType.isInhabitable()) {
     return nullptr;
   }
@@ -975,6 +976,7 @@ static MDefinition* FoldTrivialWasmTests(TempAllocator& alloc,
 static MDefinition* FoldTrivialWasmCasts(MDefinition* ref,
                                          wasm::RefType sourceType,
                                          wasm::RefType destType) {
+  
   if (!sourceType.isInhabitable() || !destType.isInhabitable()) {
     return nullptr;
   }

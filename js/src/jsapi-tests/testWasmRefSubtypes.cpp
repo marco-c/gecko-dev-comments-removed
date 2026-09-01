@@ -3,7 +3,6 @@
 
 
 #include "jsapi-tests/tests.h"
-
 #include "wasm/WasmValType.h"
 
 BEGIN_TEST(testWasmRefType_LUB) {
