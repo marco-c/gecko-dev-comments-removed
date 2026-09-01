@@ -192,11 +192,6 @@ class DoublyLinkedList final {
     return mHead == nullptr;
   }
 
-  bool isSingle() const {
-    MOZ_ASSERT(isStateValid());
-    return !isEmpty() && mHead == mTail;
-  }
-
   
 
 

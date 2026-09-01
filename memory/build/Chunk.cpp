@@ -34,6 +34,7 @@
 
 
 #include "mozilla/TaggedAnonymousMemory.h"
+#include "mozilla/ThreadSafety.h"
 
 
 #if defined(XP_WIN) && !defined(JS_STANDALONE)
@@ -493,6 +494,36 @@ void* pages_mmap_aligned(size_t size, size_t alignment,
 
 constinit AddressRadixTree<(sizeof(void*) << 3) - LOG2(kChunkSize)> gChunkRTree;
 
+
+static Mutex chunks_mtx;
+
+
+
+
+
+static RedBlackTree<extent_node_t, ExtentTreeSzTrait> gChunksBySize
+    MOZ_GUARDED_BY(chunks_mtx);
+static RedBlackTree<extent_node_t, ExtentTreeTrait> gChunksByAddress
+    MOZ_GUARDED_BY(chunks_mtx);
+
+
+Atomic<size_t> gRecycledSize;
+
+void chunks_init() {
+  
+  chunks_mtx.Init();
+}
+
+#ifdef XP_WIN
+
+
+
+
+#  define CAN_RECYCLE(size) ((size) == kChunkSize)
+#else
+#  define CAN_RECYCLE(size) true
+#endif
+
 #ifdef MOZ_DEBUG
 void chunk_assert_zero(void* aPtr, size_t aSize) {
 
@@ -507,138 +538,13 @@ void chunk_assert_zero(void* aPtr, size_t aSize) {
 }
 #endif
 
-
-
-
-void base_chunk_dealloc(void* aChunk, size_t aSize, ChunkType aType) {
-  MOZ_ASSERT(aChunk);
-  MOZ_ASSERT(GetChunkOffsetForPtr(aChunk) == 0);
-  MOZ_ASSERT(aSize != 0);
-  MOZ_ASSERT((aSize & kChunkSizeMask) == 0);
-  MOZ_ASSERT(!gChunkRTree.Get(aChunk));
-
-#ifndef XP_WIN
-  if (gCache.TryRecord(aChunk, aSize, aType)) {
-    return;
-  }
-#endif
-
-  pages_unmap(aChunk, aSize);
-}
-
-
-void arena_chunk_dealloc(chunk_allocator_t* aChunkAllocator, void* aChunk,
-                         size_t aSize) {
-  MOZ_ASSERT(aChunk);
-  MOZ_ASSERT(GetChunkOffsetForPtr(aChunk) == 0);
-  MOZ_ASSERT(aSize != 0);
-  MOZ_ASSERT((aSize & kChunkSizeMask) == 0);
-
-  gChunkRTree.Unset(aChunk);
-
-  aChunkAllocator->unmap(aChunk, aSize);
-}
-
-
-
-void* base_chunk_alloc(size_t aSize, size_t aAlignment) {
-  MOZ_ASSERT(aSize != 0);
-  MOZ_ASSERT((aSize & kChunkSizeMask) == 0);
-  MOZ_ASSERT(aAlignment != 0);
-  MOZ_ASSERT((aAlignment & kChunkSizeMask) == 0);
-
-  
-  
-  void* ret = pages_mmap_aligned(aSize, aAlignment, ReserveAndCommit);
-  MOZ_ASSERT(GetChunkOffsetForPtr(ret) == 0);
-
-  return ret;
-}
-
-
-
-void* arena_chunk_alloc(chunk_allocator_t* aChunkAllocator, size_t aSize,
-                        size_t aAlignment) {
-  MOZ_ASSERT(aSize != 0);
-  MOZ_ASSERT((aSize & kChunkSizeMask) == 0);
-  MOZ_ASSERT(aAlignment != 0);
-  MOZ_ASSERT((aAlignment & kChunkSizeMask) == 0);
-
-  void* ret = aChunkAllocator->map(aSize, aAlignment);
-  if (ret) {
-    if (!gChunkRTree.Set(ret, ret)) {
-      aChunkAllocator->unmap(ret, aSize);
-      return nullptr;
-    }
-  }
-
-  MOZ_ASSERT(GetChunkOffsetForPtr(ret) == 0);
-  return ret;
-}
-
-static void* system_pages_map(size_t aSize, size_t aAlignment) {
-  void* ret = nullptr;
-
-#ifndef XP_WIN
-  ret = gCache.Recycle(aSize, aAlignment);
-  if (!ret) {
-#endif
-    ret = pages_mmap_aligned(aSize, aAlignment, ReserveAndCommit);
-#ifndef XP_WIN
-  }
-#endif
-
-  return ret;
-}
-
-static void system_pages_unmap(void* aAddr, size_t aSize) {
-  base_chunk_dealloc(aAddr, aSize, ARENA_CHUNK);
-}
-
-chunk_allocator_t gSystemChunkAllocator{
-    .map = system_pages_map,
-    .unmap = system_pages_unmap,
-    .commit = pages_commit,
-    .decommit = pages_decommit,
-};
-
-arena_chunk_t::arena_chunk_t(arena_t* aArena)
-    : mArena(aArena), mDirtyRunHint(gChunkHeaderNumPages) {}
-
-bool arena_chunk_t::IsEmpty() {
-  return (mPageMap[gChunkHeaderNumPages].bits &
-          (~gPageSizeMask | CHUNK_MAP_ALLOCATED)) == gMaxLargeClass;
-}
-
-#ifndef XP_WIN
-
-bool ChunkCache::TryRecord(void* aChunk, size_t aSize, ChunkType aType) {
-  size_t recycled_so_far = mRecycledSize;
-
-  
-  if (recycled_so_far >= gRecycleLimit) {
-    return false;
-  }
-
-  size_t recycle_remaining = gRecycleLimit - recycled_so_far;
-  size_t to_recycle;
-  if (aSize > recycle_remaining) {
-    to_recycle = recycle_remaining;
-    
-    pages_trim(aChunk, aSize, 0, to_recycle, ReserveAndCommit);
-  } else {
-    to_recycle = aSize;
-  }
-  Record(aChunk, to_recycle, aType);
-  return true;
-}
-
-void ChunkCache::Record(void* aChunk, size_t aSize, ChunkType aType) {
+static void chunk_record(void* aChunk, size_t aSize, ChunkType aType) {
   if (aType != ZEROED_CHUNK) {
     pages_purge(aChunk, aSize);
     aType = ZEROED_CHUNK;
   }
 
+  
   
   
   
@@ -648,7 +554,7 @@ void ChunkCache::Record(void* aChunk, size_t aSize, ChunkType aType) {
 
   
   
-  MutexAutoLock lock(mMutex);
+  MutexAutoLock lock(chunks_mtx);
   void* addr = (void*)((uintptr_t)aChunk + aSize);
   extent_node_t* node = gChunksByAddress.SearchOrNext(addr);
   
@@ -699,20 +605,71 @@ void ChunkCache::Record(void* aChunk, size_t aSize, ChunkType aType) {
     xprev.reset(prev);
   }
 
-  mRecycledSize += aSize;
+  gRecycledSize += aSize;
 }
 
-void* ChunkCache::Recycle(size_t aSize, size_t aAlignment) {
+
+
+
+void base_chunk_dealloc(void* aChunk, size_t aSize, ChunkType aType) {
+  MOZ_ASSERT(aChunk);
+  MOZ_ASSERT(GetChunkOffsetForPtr(aChunk) == 0);
+  MOZ_ASSERT(aSize != 0);
+  MOZ_ASSERT((aSize & kChunkSizeMask) == 0);
+  MOZ_ASSERT(!gChunkRTree.Get(aChunk));
+
+  if (CAN_RECYCLE(aSize)) {
+    size_t recycled_so_far = gRecycledSize;
+    
+    if (recycled_so_far < gRecycleLimit) {
+      size_t recycle_remaining = gRecycleLimit - recycled_so_far;
+      size_t to_recycle;
+      if (aSize > recycle_remaining) {
+#ifndef XP_WIN
+        to_recycle = recycle_remaining;
+        
+        pages_trim(aChunk, aSize, 0, to_recycle, ReserveAndCommit);
+#else
+        
+        
+        
+        pages_unmap(aChunk, aSize);
+        return;
+#endif
+      } else {
+        to_recycle = aSize;
+      }
+      chunk_record(aChunk, to_recycle, aType);
+      return;
+    }
+  }
+
+  pages_unmap(aChunk, aSize);
+}
+
+
+void arena_chunk_dealloc(chunk_allocator_t* aChunkAllocator, void* aChunk,
+                         size_t aSize) {
+  MOZ_ASSERT(aChunk);
+  MOZ_ASSERT(GetChunkOffsetForPtr(aChunk) == 0);
+  MOZ_ASSERT(aSize != 0);
+  MOZ_ASSERT((aSize & kChunkSizeMask) == 0);
+
+  gChunkRTree.Unset(aChunk);
+
+  aChunkAllocator->unmap(aChunk, aSize);
+}
+
+static void* chunk_recycle(size_t aSize, size_t aAlignment) {
   size_t alloc_size = aSize + aAlignment - kChunkSize;
   
   if (alloc_size < aSize) {
     return nullptr;
   }
-
-  mMutex.Lock();
+  chunks_mtx.Lock();
   extent_node_t* node = gChunksBySize.SearchOrNext(alloc_size);
   if (!node) {
-    mMutex.Unlock();
+    chunks_mtx.Unlock();
     return nullptr;
   }
   size_t leadsize = ALIGNMENT_CEILING((uintptr_t)node->mAddr, aAlignment) -
@@ -742,13 +699,13 @@ void* ChunkCache::Recycle(size_t aSize, size_t aAlignment) {
       
       
       
-      mMutex.Unlock();
+      chunks_mtx.Unlock();
       node = new (fallible) extent_node_t();
       if (!node) {
         base_chunk_dealloc(ret, aSize, ZEROED_CHUNK);
         return nullptr;
       }
-      mMutex.Lock();
+      chunks_mtx.Lock();
     }
     node->mAddr = (void*)((uintptr_t)(ret) + aSize);
     node->mSize = trailsize;
@@ -758,9 +715,9 @@ void* ChunkCache::Recycle(size_t aSize, size_t aAlignment) {
     node = nullptr;
   }
 
-  mRecycledSize -= aSize;
+  gRecycledSize -= aSize;
 
-  mMutex.Unlock();
+  chunks_mtx.Unlock();
 
   if (node) {
     delete node;
@@ -773,6 +730,70 @@ void* ChunkCache::Recycle(size_t aSize, size_t aAlignment) {
 }
 
 
-ChunkCache gCache;
 
-#endif 
+void* base_chunk_alloc(size_t aSize, size_t aAlignment) {
+  MOZ_ASSERT(aSize != 0);
+  MOZ_ASSERT((aSize & kChunkSizeMask) == 0);
+  MOZ_ASSERT(aAlignment != 0);
+  MOZ_ASSERT((aAlignment & kChunkSizeMask) == 0);
+
+  
+  
+  void* ret = pages_mmap_aligned(aSize, aAlignment, ReserveAndCommit);
+  MOZ_ASSERT(GetChunkOffsetForPtr(ret) == 0);
+
+  return ret;
+}
+
+
+
+void* arena_chunk_alloc(chunk_allocator_t* aChunkAllocator, size_t aSize,
+                        size_t aAlignment) {
+  MOZ_ASSERT(aSize != 0);
+  MOZ_ASSERT((aSize & kChunkSizeMask) == 0);
+  MOZ_ASSERT(aAlignment != 0);
+  MOZ_ASSERT((aAlignment & kChunkSizeMask) == 0);
+
+  void* ret = aChunkAllocator->map(aSize, aAlignment);
+  if (ret) {
+    if (!gChunkRTree.Set(ret, ret)) {
+      aChunkAllocator->unmap(ret, aSize);
+      return nullptr;
+    }
+  }
+
+  MOZ_ASSERT(GetChunkOffsetForPtr(ret) == 0);
+  return ret;
+}
+
+static void* system_pages_map(size_t aSize, size_t aAlignment) {
+  void* ret = nullptr;
+
+  if (CAN_RECYCLE(aSize)) {
+    ret = chunk_recycle(aSize, aAlignment);
+  }
+  if (!ret) {
+    ret = pages_mmap_aligned(aSize, aAlignment, ReserveAndCommit);
+  }
+
+  return ret;
+}
+
+static void system_pages_unmap(void* aAddr, size_t aSize) {
+  base_chunk_dealloc(aAddr, aSize, ARENA_CHUNK);
+}
+
+chunk_allocator_t gSystemChunkAllocator{
+    .map = system_pages_map,
+    .unmap = system_pages_unmap,
+    .commit = pages_commit,
+    .decommit = pages_decommit,
+};
+
+arena_chunk_t::arena_chunk_t(arena_t* aArena)
+    : mArena(aArena), mDirtyRunHint(gChunkHeaderNumPages) {}
+
+bool arena_chunk_t::IsEmpty() {
+  return (mPageMap[gChunkHeaderNumPages].bits &
+          (~gPageSizeMask | CHUNK_MAP_ALLOCATED)) == gMaxLargeClass;
+}
