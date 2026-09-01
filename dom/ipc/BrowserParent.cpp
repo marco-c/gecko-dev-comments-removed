@@ -194,7 +194,7 @@ class RequestingAccessKeyEventData {
   RequestingAccessKeyEventData() = delete;
 
   static void OnBrowserParentCreated() {
-    MOZ_ASSERT(sBrowserParentCount <= INT32_MAX);
+    MOZ_ASSERT(sBrowserParentCount < INT32_MAX);
     sBrowserParentCount++;
   }
   static void OnBrowserParentDestroyed() {
@@ -1436,7 +1436,7 @@ IPCResult BrowserParent::RecvNewWindowGlobal(
     if (isChromeReftest ||
         (NS_IsAboutBlank(docURI) && parentWgp && parentWgp->Manager() == this &&
          parentWgp->DocumentPrincipal()->IsSystemPrincipal())) {
-      validationOptions += ValidatePrincipalOptions::AllowSystem;
+      validationOptions += ValidatePrincipalOptions::AllowSystemIfLoaded;
     }
   }
   if (!Manager()->ValidatePrincipal(aInit.principal(), validationOptions)) {
