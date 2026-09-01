@@ -72,7 +72,7 @@
       }
 
       let tab = this._getDragTarget(event, { findClosestTarget: false });
-      if (!tab) {
+      if (!tab?.visible) {
         return;
       }
       if (tab.splitview) {
@@ -283,7 +283,7 @@
       let overPinnedDropIndicator =
         this._pinnedDropIndicator.hasAttribute("visible") &&
         this._pinnedDropIndicator.hasAttribute("interactive");
-      this._resetTabsAfterDrop(draggedTab?.ownerDocument);
+      this._resetTabsAfterDrop(draggedTab);
 
       this._tabDropIndicator.hidden = true;
       event.stopPropagation();
@@ -679,6 +679,17 @@
             }
           }
 
+          
+          
+          
+          
+          let activeEntry =
+            targetTab?.linkedBrowser?.browsingContext
+              ?.activeSessionHistoryEntry;
+          if (activeEntry) {
+            activeEntry.hasUserInteraction = true;
+          }
+
           let nextItem = this._tabbrowserTabs.dragAndDropElements[newIndex];
           let tabGroup = isTab(nextItem) && nextItem.group;
           gBrowser.loadTabs(urls, {
@@ -721,7 +732,7 @@
         this._setIsDraggingTabGroup(draggedTab.group, false);
         this._expandGroupOnDrop(draggedTab);
       }
-      this._resetTabsAfterDrop(draggedTab.ownerDocument);
+      this._resetTabsAfterDrop(draggedTab);
 
       if (
         dt.mozUserCancelled ||
@@ -1043,10 +1054,28 @@
 
     _expandGroupOnDrop(draggedTab) {
       if (
-        isTabGroupLabel(draggedTab) &&
-        draggedTab._dragData?.expandGroupOnDrop
+        !isTabGroupLabel(draggedTab) ||
+        !draggedTab._dragData?.expandGroupOnDrop
       ) {
-        draggedTab.group.collapsed = false;
+        return;
+      }
+      let group = draggedTab.group;
+      let periphery = draggedTab.ownerDocument.getElementById(
+        "tabbrowser-arrowscrollbox-periphery"
+      );
+      let releaseReservedSpace = () =>
+        this.#releaseSpaceInScrolledContent(periphery);
+      if (group.collapsed) {
+        
+        
+        group.addEventListener(
+          "TabGroupAnimationComplete",
+          releaseReservedSpace,
+          { once: true }
+        );
+        group.collapsed = false;
+      } else {
+        releaseReservedSpace();
       }
     }
 
@@ -1336,6 +1365,52 @@
 
 
 
+
+    #reserveSpaceInScrolledContent(periphery, space) {
+      if (this._tabbrowserTabs.verticalMode) {
+        periphery.style.marginBlockStart = space + "px";
+      } else {
+        periphery.style.marginInlineStart = space + "px";
+      }
+    }
+
+    
+
+
+    #releaseSpaceInScrolledContent(periphery) {
+      periphery.style.marginBlockStart = "";
+      periphery.style.marginInlineStart = "";
+    }
+
+    
+
+
+
+
+
+    #marginBoxExtent(element) {
+      let rect = window.windowUtils.getBoundsWithoutFlushing(element);
+      let style = window.getComputedStyle(element);
+      if (this._tabbrowserTabs.verticalMode) {
+        return (
+          rect.height +
+          parseFloat(style.marginBlockStart) +
+          parseFloat(style.marginBlockEnd)
+        );
+      }
+      return (
+        rect.width +
+        parseFloat(style.marginInlineStart) +
+        parseFloat(style.marginInlineEnd)
+      );
+    }
+
+    
+
+
+
+
+
     _updateTabStylesOnDrag(tab, dropEffect) {
       let tabStripItemElement = elementToMove(tab);
       tabStripItemElement.style.pointerEvents =
@@ -1470,11 +1545,18 @@
         !isPinned &&
         this._tabbrowserTabs.arrowScrollbox.hasAttribute("overflowing")
       ) {
-        if (this._tabbrowserTabs.verticalMode) {
-          periphery.style.marginBlockStart = rect.height + "px";
-        } else {
-          periphery.style.marginInlineStart = rect.width + "px";
+        
+        
+        
+        
+        
+        let missingSpace = this.#marginBoxExtent(tabStripItemElement);
+        if (expandGroupOnDrop) {
+          for (let groupItem of tab.group.tabsAndSplitViews) {
+            missingSpace += this.#marginBoxExtent(groupItem);
+          }
         }
+        this.#reserveSpaceInScrolledContent(periphery, missingSpace);
       } else if (
         isPinned &&
         this._tabbrowserTabs.pinnedTabsContainer.hasAttribute("overflowing")
@@ -2600,7 +2682,12 @@
     
 
     
-    _resetTabsAfterDrop(draggedTabDocument = document) {
+
+
+
+
+    _resetTabsAfterDrop(draggedTab) {
+      let draggedTabDocument = draggedTab?.ownerDocument ?? document;
       if (this._tabbrowserTabs.expandOnHover) {
         
         MousePosTracker.addListener(document.defaultView.SidebarController);
@@ -2644,10 +2731,13 @@
       let periphery = draggedTabDocument.getElementById(
         "tabbrowser-arrowscrollbox-periphery"
       );
-      periphery.style.marginBlockStart = "";
-      periphery.style.marginInlineStart = "";
       periphery.style.left = "";
       periphery.style.top = "";
+      
+      
+      if (!draggedTab?._dragData?.expandGroupOnDrop) {
+        this.#releaseSpaceInScrolledContent(periphery);
+      }
       let pinnedTabsContainer = draggedTabDocument.getElementById(
         "pinned-tabs-container"
       );
