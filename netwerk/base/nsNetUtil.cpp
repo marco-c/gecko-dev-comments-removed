@@ -56,6 +56,7 @@
 #include "nsIClassifiedChannel.h"
 #include "nsIContentSniffer.h"
 #include "nsIDownloader.h"
+#include "nsIEnterprisePolicies.h"
 #include "nsIFileProtocolHandler.h"
 #include "nsIFileStreams.h"
 #include "nsIFileURL.h"
@@ -2950,6 +2951,7 @@ bool handleResultFunc(bool aAllowSTS, bool aIsStsHost) {
 
 
 
+
 static bool ShouldSecureUpgradeNoHSTS(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
   
   if (aLoadInfo->GetUpgradeInsecureRequests()) {
@@ -3023,8 +3025,51 @@ static bool ShouldSecureUpgradeNoHSTS(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
     }
     return true;
   }
+
+  
+  
+  
+  
+  const bool isHttpsOnlyByPolicy = [&]() {
+    nsCOMPtr<nsIEnterprisePolicies> policyService =
+        do_GetService("@mozilla.org/enterprisepolicies;1");
+    if (!policyService) {
+      return false;
+    }
+
+    int16_t status;
+    if (NS_FAILED(policyService->GetStatus(&status)) ||
+        status != nsIEnterprisePolicies::ACTIVE) {
+      return false;
+    }
+
+    nsCOMPtr<nsIURI> policyCheckURI;
+    nsCOMPtr<nsIPrincipal> topLevelPrincipal =
+        aLoadInfo->GetTopLevelPrincipal();
+
+    if (topLevelPrincipal) {
+      nsAutoCString siteOrigin;
+      if (NS_FAILED(topLevelPrincipal->GetSiteOriginNoSuffix(siteOrigin)) ||
+          NS_FAILED(NS_NewURI(getter_AddRefs(policyCheckURI), siteOrigin))) {
+        return false;
+      }
+    } else {
+      policyCheckURI = aURI;
+    }
+
+    bool isHttpAllowed = true;
+    return NS_SUCCEEDED(policyService->IsAllowedForURI(
+               "http"_ns, policyCheckURI, &isHttpAllowed)) &&
+           !isHttpAllowed;
+  }();
+
+  if (isHttpsOnlyByPolicy) {
+    return true;
+  }
+
   return false;
 }
+
 
 
 
@@ -4092,16 +4137,10 @@ nsresult HasRootDomain(const nsACString& aInput, const nsACString& aHost,
   }
 
   
-  int32_t index = nsAutoCString(aInput).Find(aHost);
-  if (index == kNotFound) {
-    return NS_OK;
-  }
-
   
-  
-  
-  *aResult = index > 0 && (uint32_t)index == aInput.Length() - aHost.Length() &&
-             (aInput[index - 1] == '.' || aInput[index - 1] == '/');
+  *aResult = !aHost.IsEmpty() && aInput.Length() > aHost.Length() &&
+             StringEndsWith(aInput, aHost) &&
+             aInput[aInput.Length() - aHost.Length() - 1] == '.';
   return NS_OK;
 }
 
