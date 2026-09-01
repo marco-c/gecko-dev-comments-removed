@@ -2,14 +2,6 @@
 
 
 
-#include "gtest/gtest.h"
-#include <math.h>
-
-#include "mozilla/Array.h"
-#include "mozilla/Tainting.h"
-#include "nsTHashtable.h"
-#include "nsHashKeys.h"
-#include "nsTArray.h"
 #include <array>
 #include <deque>
 #include <forward_list>
@@ -19,6 +11,13 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+
+#include "gtest/gtest.h"
+#include "mozilla/Array.h"
+#include "mozilla/Tainting.h"
+#include "nsHashKeys.h"
+#include "nsTArray.h"
+#include "nsTHashtable.h"
 
 using mozilla::Tainted;
 
@@ -259,9 +258,7 @@ TEST(Tainting, moz_find_and_validate)
       this->b = b;
     }
 
-    bool operator==(const TestClass& other) const {
-      return this->a == other.a && this->b == other.b;
-    }
+    bool operator==(const TestClass& other) const = default;
   };
 
   const mozilla::Array<TestClass, 5> mozarrayOfClassesWithFoo(

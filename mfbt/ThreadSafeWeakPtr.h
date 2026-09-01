@@ -243,9 +243,7 @@ class ThreadSafeWeakPtr {
   
   bool IsDead() const { return IsNull() || size_t(mRef->mStrongCnt) == 0; }
 
-  bool operator==(const ThreadSafeWeakPtr& aOther) const {
-    return mRef == aOther.mRef;
-  }
+  bool operator==(const ThreadSafeWeakPtr& aOther) const = default;
 
   bool operator==(const RefPtr<T>& aOther) const {
     return *this == aOther.get();
