@@ -915,7 +915,7 @@ bool nsOuterWindowProxy::get(JSContext* cx, JS::Handle<JSObject*> proxy,
                              JS::MutableHandle<JS::Value> vp) const {
   if (id == GetJSIDByIndex(cx, XPCJSContext::IDX_WRAPPED_JSOBJECT) &&
       xpc::AccessCheck::isChrome(js::GetContextCompartment(cx))) {
-    vp.set(JS::ObjectValue(*proxy));
+    vp.setObject(*proxy);
     return MaybeWrapValue(cx, vp);
   }
 
@@ -3430,7 +3430,8 @@ CSSToLayoutDeviceScale nsGlobalWindowOuter::CSSToDevScaleForBaseWindow(
   return scale;
 }
 
-nsresult nsGlobalWindowOuter::GetInnerSize(CSSSize& aSize) {
+nsresult nsGlobalWindowOuter::GetInnerSize(CSSSize& aSize,
+                                           CallerType aCallerType) {
   if (mDoc && mDoc->IsTopLevelContentDocument() &&
       nsLayoutUtils::ShouldHandleMetaViewport(mDoc)) {
     
@@ -3465,6 +3466,10 @@ nsresult nsGlobalWindowOuter::GetInnerSize(CSSSize& aSize) {
 
   aSize = CSSPixel::FromAppUnits(innerSize);
 
+  if (aCallerType == dom::CallerType::System) {
+    return NS_OK;
+  }
+
   switch (StaticPrefs::dom_innerSize_rounding()) {
     case 1:
       aSize.width = std::roundf(aSize.width);
@@ -3481,26 +3486,18 @@ nsresult nsGlobalWindowOuter::GetInnerSize(CSSSize& aSize) {
   return NS_OK;
 }
 
-double nsGlobalWindowOuter::GetInnerWidthOuter(ErrorResult& aError) {
+double nsGlobalWindowOuter::GetInnerWidthOuter(CallerType aCallerType,
+                                               ErrorResult& aError) {
   CSSSize size;
-  aError = GetInnerSize(size);
+  aError = GetInnerSize(size, aCallerType);
   return size.width;
 }
 
-nsresult nsGlobalWindowOuter::GetInnerWidth(double* aInnerWidth) {
-  FORWARD_TO_INNER_WITH_STRONG_REF(GetInnerWidth, (aInnerWidth),
-                                   NS_ERROR_UNEXPECTED);
-}
-
-double nsGlobalWindowOuter::GetInnerHeightOuter(ErrorResult& aError) {
+double nsGlobalWindowOuter::GetInnerHeightOuter(CallerType aCallerType,
+                                                ErrorResult& aError) {
   CSSSize size;
-  aError = GetInnerSize(size);
+  aError = GetInnerSize(size, aCallerType);
   return size.height;
-}
-
-nsresult nsGlobalWindowOuter::GetInnerHeight(double* aInnerHeight) {
-  FORWARD_TO_INNER_WITH_STRONG_REF(GetInnerHeight, (aInnerHeight),
-                                   NS_ERROR_UNEXPECTED);
 }
 
 CSSIntSize nsGlobalWindowOuter::GetOuterSize(CallerType aCallerType,
