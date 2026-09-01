@@ -43,7 +43,6 @@ class ComputedStyle;
 struct AnchorPosResolutionCache;
 class AnchorPosReferenceData;
 struct IntrinsicSize;
-class LogicalMargin;
 struct SizeComputationInput;
 
 }  
@@ -1663,8 +1662,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   mozilla::StyleScrollSnapAlign mScrollSnapAlign;
   mozilla::StyleScrollSnapStop mScrollSnapStop;
   mozilla::StyleScrollSnapType mScrollSnapType;
-  mozilla::StyleScrollbarInset mScrollbarInsetBlock;
-  mozilla::StyleScrollbarInset mScrollbarInsetInline;
 
   mozilla::StyleBackfaceVisibility mBackfaceVisibility;
   mozilla::StyleTransformStyle mTransformStyle;
@@ -1850,12 +1847,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
     return mOverflowX == mozilla::StyleOverflow::Visible &&
            mOverflowY == mozilla::StyleOverflow::Visible;
   }
-
-  
-  
-  
-  inline mozilla::LogicalMargin GetScrollbarInset(
-      mozilla::WritingMode aWM) const;
 
   bool IsContainPaint() const {
     

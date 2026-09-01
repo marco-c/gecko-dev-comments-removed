@@ -5882,11 +5882,6 @@ GetWebkitScrollbarWidthAndHeight(
   return {toSize(webkitScrollbarWidth), toSize(webkitScrollbarHeight)};
 }
 
-static nsMargin StyleScrollbarInsets(const ComputedStyle& aStyle,
-                                     const WritingMode aWm) {
-  return aStyle.StyleDisplay()->GetScrollbarInset(aWm).GetPhysicalMargin(aWm);
-}
-
 void ScrollContainerFrame::DidSetComputedStyle(
     ComputedStyle* aOldComputedStyle) {
   nsContainerFrame::DidSetComputedStyle(aOldComputedStyle);
@@ -5937,15 +5932,10 @@ void ScrollContainerFrame::DidSetComputedStyle(
     }
   }
 
-  if (aOldComputedStyle && !mIsRoot) {
-    if (StyleDisplay()->mScrollSnapType !=
-        aOldComputedStyle->StyleDisplay()->mScrollSnapType) {
-      PostPendingResnap();
-    }
-    if (ScrollbarInsets() !=
-        StyleScrollbarInsets(*aOldComputedStyle, GetWritingMode())) {
-      MarkScrollbarsDirtyForReflow();
-    }
+  if (aOldComputedStyle && !mIsRoot &&
+      StyleDisplay()->mScrollSnapType !=
+          aOldComputedStyle->StyleDisplay()->mScrollSnapType) {
+    PostPendingResnap();
   }
 }
 
@@ -6979,13 +6969,6 @@ void ScrollContainerFrame::LayoutScrollbars(ScrollReflowInput& aState,
   }
 }
 
-nsMargin ScrollContainerFrame::ScrollbarInsets() const {
-  if (mIsRoot) {
-    return PresContext()->EmbedderScrollbarInset();
-  }
-  return StyleScrollbarInsets(*Style(), GetWritingMode());
-}
-
 static void ReduceRadii(nscoord aXBorder, nscoord aYBorder, nsSize& aRadius) {
   
   
@@ -6998,20 +6981,6 @@ static void ReduceRadii(nscoord aXBorder, nscoord aYBorder, nsSize& aRadius) {
                           double(aYBorder) / aRadius.height);
   aRadius.width *= ratio;
   aRadius.height *= ratio;
-}
-
-
-
-
-
-static bool ScrollbarReachesCorner(bool aHasScrollbar, nscoord aInset,
-                                   nscoord aRadius, nscoord aBorder) {
-  if (!aHasScrollbar) {
-    return false;
-  }
-  
-  
-  return aInset < aRadius - aBorder;
 }
 
 
@@ -7037,33 +7006,16 @@ bool ScrollContainerFrame::GetBorderRadii(const nsSize& aFrameSize,
   nsMargin sb = GetActualScrollbarSizes();
   nsMargin border = GetUsedBorder();
 
-  
-  
-  
-  const nsMargin inset = ScrollbarInsets();
-
-  if (ScrollbarReachesCorner(sb.left, inset.top, aRadii.TopLeft().height,
-                             border.top) ||
-      ScrollbarReachesCorner(sb.top, inset.left, aRadii.TopLeft().width,
-                             border.left)) {
+  if (sb.left > 0 || sb.top > 0) {
     ReduceRadii(border.left, border.top, aRadii.TopLeft());
   }
-  if (ScrollbarReachesCorner(sb.right, inset.top, aRadii.TopRight().height,
-                             border.top) ||
-      ScrollbarReachesCorner(sb.top, inset.right, aRadii.TopRight().width,
-                             border.right)) {
+  if (sb.top > 0 || sb.right > 0) {
     ReduceRadii(border.right, border.top, aRadii.TopRight());
   }
-  if (ScrollbarReachesCorner(sb.right, inset.bottom,
-                             aRadii.BottomRight().height, border.bottom) ||
-      ScrollbarReachesCorner(sb.bottom, inset.right, aRadii.BottomRight().width,
-                             border.right)) {
+  if (sb.right > 0 || sb.bottom > 0) {
     ReduceRadii(border.right, border.bottom, aRadii.BottomRight());
   }
-  if (ScrollbarReachesCorner(sb.left, inset.bottom, aRadii.BottomLeft().height,
-                             border.bottom) ||
-      ScrollbarReachesCorner(sb.bottom, inset.left, aRadii.BottomLeft().width,
-                             border.left)) {
+  if (sb.bottom > 0 || sb.left > 0) {
     ReduceRadii(border.left, border.bottom, aRadii.BottomLeft());
   }
   return true;

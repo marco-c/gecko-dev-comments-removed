@@ -605,15 +605,6 @@ class nsPresContext : public nsISupports,
 
 
 
-  const nsMargin& EmbedderScrollbarInset() const {
-    return mEmbedderScrollbarInset;
-  }
-  void SetEmbedderScrollbarInset(const nsMargin& aInset);
-
-  
-
-
-
 
 
 
@@ -1442,7 +1433,6 @@ class nsPresContext : public nsISupports,
   mozilla::dom::PrefersColorSchemeOverride mOverriddenOrEmbedderColorScheme;
   mozilla::StyleForcedColors mForcedColors;
   mozilla::StyleLinkParameters mLinkParameters;
-  nsMargin mEmbedderScrollbarInset;
 
  protected:
   virtual ~nsPresContext();

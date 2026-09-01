@@ -124,18 +124,6 @@ void nsScrollbarFrame::Destroy(DestroyContext& aContext) {
   nsContainerFrame::Destroy(aContext);
 }
 
-std::pair<nscoord, nscoord> nsScrollbarFrame::ScrollbarInset() const {
-  
-  
-  ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(GetParent());
-  if (!scrollContainerFrame) {
-    return {0, 0};
-  }
-  const nsMargin inset = scrollContainerFrame->ScrollbarInsets();
-  return IsHorizontal() ? std::pair{inset.left, inset.right}
-                        : std::pair{inset.top, inset.bottom};
-}
-
 void nsScrollbarFrame::Reflow(nsPresContext* aPresContext,
                               ReflowOutput& aDesiredSize,
                               const ReflowInput& aReflowInput,
@@ -164,21 +152,10 @@ void nsScrollbarFrame::Reflow(nsPresContext* aPresContext,
 
   const nsSize containerSize = aDesiredSize.PhysicalSize();
   const LogicalSize totalAvailSize = aDesiredSize.Size(wm);
+  LogicalPoint nextKidPos(wm);
 
   MOZ_ASSERT(!wm.IsVertical());
   const bool movesInInlineDirection = horizontal;
-
-  
-  
-  
-  const auto [insetStart, insetEnd] = ScrollbarInset();
-
-  LogicalPoint nextKidPos(wm);
-  if (movesInInlineDirection) {
-    nextKidPos.I(wm) = insetStart;
-  } else {
-    nextKidPos.B(wm) = insetStart;
-  }
 
   
   for (nsIFrame* kid : mFrames) {
@@ -187,18 +164,16 @@ void nsScrollbarFrame::Reflow(nsPresContext* aPresContext,
     const bool isSlider = kid->GetContent() == mSlider;
     LogicalSize availSize = totalAvailSize;
     {
-      const nscoord consumed =
-          movesInInlineDirection ? nextKidPos.I(wm) : nextKidPos.B(wm);
       
       
       
-      const nscoord reserved =
-          isSlider ? (consumed - insetStart) * 2 + insetStart + insetEnd
-                   : consumed;
+      const int32_t factor = isSlider ? 2 : 1;
       if (movesInInlineDirection) {
-        availSize.ISize(wm) = std::max(0, totalAvailSize.ISize(wm) - reserved);
+        availSize.ISize(wm) =
+            std::max(0, totalAvailSize.ISize(wm) - nextKidPos.I(wm) * factor);
       } else {
-        availSize.BSize(wm) = std::max(0, totalAvailSize.BSize(wm) - reserved);
+        availSize.BSize(wm) =
+            std::max(0, totalAvailSize.BSize(wm) - nextKidPos.B(wm) * factor);
       }
     }
 
