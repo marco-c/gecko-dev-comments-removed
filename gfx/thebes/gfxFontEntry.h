@@ -326,12 +326,11 @@ class gfxFontEntry {
     if (map) {
       if (mShmemFace && TrySetShmemCharacterMap()) {
         
-        
-        
-        MOZ_PUSH_IGNORE_THREAD_SAFETY
-        auto* oldCmap = mCharacterMap.exchange(nullptr);
-        MOZ_POP_THREAD_SAFETY
-        NS_IF_RELEASE(oldCmap);
+        {
+          mozilla::AutoWriteLock lock(mLock);
+          auto* oldCmap = mCharacterMap.exchange(nullptr);
+          NS_IF_RELEASE(oldCmap);
+        }
         return GetShmemCharacterMap()->test(ch);
       }
       if (map->test(ch)) {
@@ -591,7 +590,8 @@ class gfxFontEntry {
 
   
   
-  already_AddRefed<gfxCharacterMap> GetCharacterMapAddRefed() const {
+  already_AddRefed<gfxCharacterMap> GetCharacterMapAddRefed() const
+      MOZ_EXCLUDES(mLock) {
     mozilla::AutoReadLock lock(mLock);
     RefPtr map = static_cast<gfxCharacterMap*>(mCharacterMap);
     return map.forget();
