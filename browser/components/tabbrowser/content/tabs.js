@@ -1662,7 +1662,7 @@
         if (!aTab.selected) {
           return null;
         }
-        gBrowser._insertBrowser(aTab);
+        gBrowser.insertBrowser(aTab);
       }
       return document.getElementById(aTab.linkedPanel);
     }
