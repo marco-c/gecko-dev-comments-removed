@@ -1036,6 +1036,17 @@ class Document : public nsINode,
 
 
 
+  bool NeedsDirHandling() const { return mNeedsDirHandling; }
+
+  
+
+
+  void SetNeedsDirHandling() { mNeedsDirHandling = true; }
+
+  
+
+
+
   enum class InitialStatus : uint8_t {
     
     
@@ -5078,6 +5089,9 @@ class Document : public nsINode,
 
   
   bool mBidiEnabled : 1;
+
+  
+  bool mNeedsDirHandling : 1;
 
   
   

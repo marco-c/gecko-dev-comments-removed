@@ -6,6 +6,7 @@
 #define DirectionalityUtils_h_
 
 #include "mozilla/Directionality.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/dom/Text.h"
@@ -28,6 +29,18 @@ namespace mozilla {
 inline bool MayAffectDirAutoElement(const nsINode* aNode) {
   return aNode &&
          (aNode->NodeOrAncestorHasDirAuto() || aNode->AffectsDirAutoSlot());
+}
+
+
+
+
+inline void MaybeSetDocNeedsDirHandling(dom::Element* aElement,
+                                        const nsAttrValue* aValue) {
+  if (aValue && aValue->Type() == nsAttrValue::eEnum &&
+      Directionality(aValue->GetEnumValue()) != Directionality::Ltr) {
+    
+    aElement->OwnerDoc()->SetNeedsDirHandling();
+  }
 }
 
 
@@ -141,12 +154,20 @@ inline void ResetDirectionSetBySlotHost(dom::HTMLSlotElement* aSlot,
   }
 }
 
+void ResetDirFormAssociatedElementInternal(dom::Element*, bool, bool,
+                                           const nsAString*);
 
 
 
-void ResetDirFormAssociatedElement(mozilla::dom::Element* aElement,
-                                   bool aNotify, bool aHasDirAuto,
-                                   const nsAString* aKnownValue = nullptr);
+
+inline void ResetDirFormAssociatedElement(
+    mozilla::dom::Element* aElement, bool aNotify, bool aHasDirAuto,
+    const nsAString* aKnownValue = nullptr) {
+  if (aElement->OwnerDoc()->NeedsDirHandling()) {
+    ResetDirFormAssociatedElementInternal(aElement, aNotify, aHasDirAuto,
+                                          aKnownValue);
+  }
+}
 
 
 
@@ -159,12 +180,23 @@ void ResetDirFormAssociatedElement(mozilla::dom::Element* aElement,
 void OnSetDirAttr(mozilla::dom::Element* aElement, const nsAttrValue* aNewValue,
                   bool hadValidDir, bool hadDirAuto, bool aNotify);
 
+void SetDirOnBindInternal(dom::Element*, nsIContent*);
 
 
 
 
 
-void SetDirOnBind(mozilla::dom::Element* aElement, nsIContent* aParent);
+
+inline void SetDirOnBind(mozilla::dom::Element* aElement, nsIContent* aParent) {
+  if (!aElement->OwnerDoc()->NeedsDirHandling()) {
+    MOZ_ASSERT(!aElement->State().HasAtLeastOneOfStates(
+        dom::ElementState::HAS_DIR_ATTR_RTL |
+        dom::ElementState::HAS_DIR_ATTR_LIKE_AUTO));
+    aElement->SetDirectionality(Directionality::Ltr, false);
+    return;
+  }
+  SetDirOnBindInternal(aElement, aParent);
+}
 
 
 
@@ -172,7 +204,7 @@ void SetDirOnBind(mozilla::dom::Element* aElement, nsIContent* aParent);
 
 
 inline void ResetDir(mozilla::dom::Element* aElement) {
-  if (!aElement->HasDirAuto()) {
+  if (aElement->OwnerDoc()->NeedsDirHandling() && !aElement->HasDirAuto()) {
     RecomputeDirectionality(aElement, false);
   }
 }

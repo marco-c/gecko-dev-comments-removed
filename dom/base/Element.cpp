@@ -4055,6 +4055,9 @@ nsresult Element::SetNoNameSpaceAttrOnNewlyCreatedElement(
 
   
   
+  if (namePtr == nsGkAtoms::dir) {
+    MaybeSetDocNeedsDirHandling(this, valuePtr);
+  }
 
   
   
