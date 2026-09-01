@@ -527,18 +527,6 @@ class Element : public FragmentOrElement {
   void UnbindFromTree(UnbindContext&) override;
   using nsIContent::UnbindFromTree;
 
-  
-  
-  
-  
-  
-  Element* GetContainerTimingRoot() const;
-
-  
-  
-  
-  void RecomputeContainerTimingRootForSubtree();
-
   virtual nsMapRuleToAttributesFunc GetAttributeMappingFunction() const;
   static void MapNoAttributesInto(mozilla::MappedDeclarationsBuilder&);
 
@@ -788,10 +776,6 @@ class Element : public FragmentOrElement {
       nsIFrame** aFrame = nullptr, FlushType aFlushType = FlushType::Layout);
 
  private:
-  
-  
-  void UpdateContainerTimingRootFromParent(nsINode* aParent);
-
   
   ElementState StyleStateFromLocks() const;
 

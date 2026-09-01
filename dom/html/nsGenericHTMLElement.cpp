@@ -57,7 +57,6 @@
 #include "mozilla/dom/InputEvent.h"
 #include "mozilla/dom/Link.h"
 #include "mozilla/dom/MouseEventBinding.h"
-#include "mozilla/dom/PerformanceContainerTiming.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/ShadowIncludingTreeIterator.h"
 #include "mozilla/dom/ToggleEvent.h"
@@ -801,25 +800,6 @@ void nsGenericHTMLElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                             &nsGenericHTMLElement::AfterSetPopoverAttr));
     } else if (aName == nsGkAtoms::popovertarget) {
       ClearExplicitlySetAttrElement(aName);
-    } else if (aName == nsGkAtoms::containertiming ||
-               aName == nsGkAtoms::containerTimingIgnore) {
-      
-      
-      if (StaticPrefs::dom_enable_container_timing()) {
-        if (aValue) {
-          OwnerDoc()->SetMayHaveContainerTimingAttributes();
-        }
-        if (IsInUncomposedDoc()) {
-          RecomputeContainerTimingRootForSubtree();
-          
-          
-          
-          
-          if (aName == nsGkAtoms::containertiming && !aValue) {
-            ContainerTimingHelpers::DropRecordForContainerRoot(this);
-          }
-        }
-      }
     } else if (aName == nsGkAtoms::dir) {
       auto dir = Directionality::Ltr;
       

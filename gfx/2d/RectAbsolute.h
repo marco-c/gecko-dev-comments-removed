@@ -56,15 +56,7 @@ struct BaseRectAbsolute {
   MOZ_ALWAYS_INLINE T& Right() { return right; }
   MOZ_ALWAYS_INLINE T& Top() { return top; }
   MOZ_ALWAYS_INLINE T& Bottom() { return bottom; }
-  
-  
-  auto Area() const {
-    if constexpr (std::is_integral_v<T>) {
-      return int64_t(Width()) * int64_t(Height());
-    } else {
-      return Width() * Height();
-    }
-  }
+  T Area() const { return Width() * Height(); }
 
   void Inflate(T aD) { Inflate(aD, aD); }
   void Inflate(T aDx, T aDy) {
