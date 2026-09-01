@@ -238,12 +238,6 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   
 
 
-  void UpdateLabelValue(mozilla::PresShell* aPresShell, nsIContent* aLabelElm,
-                        const nsString& aNewValue);
-
-  
-
-
 
   void NotifyOfAnchorJumpTo(nsIContent* aTarget);
 

@@ -5,13 +5,11 @@
 #ifndef mozilla_a11y_XULElementAccessibles_h_
 #define mozilla_a11y_XULElementAccessibles_h_
 
+#include "BaseAccessibles.h"
 #include "HyperTextAccessible.h"
-#include "TextLeafAccessible.h"
 
 namespace mozilla {
 namespace a11y {
-
-class XULLabelTextLeafAccessible;
 
 
 
@@ -21,43 +19,19 @@ class XULLabelAccessible : public HyperTextAccessible {
   XULLabelAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
-  virtual void Shutdown() override;
   virtual a11y::role NativeRole() const override;
   virtual uint64_t NativeState() const override;
   virtual Relation RelationByType(RelationType aType) const override;
-
-  void UpdateLabelValue(const nsString& aValue);
 
  protected:
   
   virtual ENameValueFlag NativeName(nsString& aName) const override;
   virtual void DispatchClickEvent(uint32_t aActionIndex) const override;
-
- private:
-  RefPtr<XULLabelTextLeafAccessible> mValueTextLeaf;
 };
 
 inline XULLabelAccessible* LocalAccessible::AsXULLabel() {
   return IsXULLabel() ? static_cast<XULLabelAccessible*>(this) : nullptr;
 }
-
-
-
-
-
-class XULLabelTextLeafAccessible final : public TextLeafAccessible {
- public:
-  XULLabelTextLeafAccessible(nsIContent* aContent, DocAccessible* aDoc)
-      : TextLeafAccessible(aContent, aDoc) {
-    mStateFlags |= eSharedNode;
-  }
-
-  virtual ~XULLabelTextLeafAccessible() = default;
-
-  
-  virtual a11y::role NativeRole() const override;
-  virtual uint64_t NativeState() const override;
-};
 
 
 

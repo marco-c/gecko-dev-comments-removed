@@ -36,11 +36,6 @@ XULLabelAccessible::XULLabelAccessible(nsIContent* aContent,
   mType = eXULLabelType;
 }
 
-void XULLabelAccessible::Shutdown() {
-  mValueTextLeaf = nullptr;
-  HyperTextAccessible::Shutdown();
-}
-
 void XULLabelAccessible::DispatchClickEvent(uint32_t aActionIndex) const {
   
   
@@ -51,10 +46,6 @@ void XULLabelAccessible::DispatchClickEvent(uint32_t aActionIndex) const {
 }
 
 ENameValueFlag XULLabelAccessible::NativeName(nsString& aName) const {
-  
-  
-  if (mValueTextLeaf) return mValueTextLeaf->Name(aName);
-
   return LocalAccessible::NativeName(aName);
 }
 
@@ -82,31 +73,6 @@ Relation XULLabelAccessible::RelationByType(RelationType aType) const {
   }
 
   return rel;
-}
-
-void XULLabelAccessible::UpdateLabelValue(const nsString& aValue) {
-#ifdef A11Y_LOG
-  if (logging::IsEnabled(logging::eText)) {
-    logging::MsgBegin("TEXT", "text may be changed (xul:label @value update)");
-    logging::Node("container", mContent);
-    logging::MsgEntry("old text '%s'",
-                      NS_ConvertUTF16toUTF8(mValueTextLeaf->Text()).get());
-    logging::MsgEntry("new text: '%s'", NS_ConvertUTF16toUTF8(aValue).get());
-    logging::MsgEnd();
-  }
-#endif
-
-  TextUpdater::Run(mDoc, mValueTextLeaf, aValue);
-}
-
-
-
-
-
-role XULLabelTextLeafAccessible::NativeRole() const { return roles::TEXT_LEAF; }
-
-uint64_t XULLabelTextLeafAccessible::NativeState() const {
-  return TextLeafAccessible::NativeState() | states::READONLY;
 }
 
 
