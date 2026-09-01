@@ -321,6 +321,17 @@
     };
   }
 
+  function sharedWorkerExecutorCreator(remoteContextWrapper, globalVariable) {
+    return url => {
+      return remoteContextWrapper.executeScript((url, globalVariable) => {
+        const worker = new SharedWorker(url);
+        if (globalVariable) {
+          window[globalVariable] = worker;
+        }
+      }, [url, globalVariable]);
+    };
+  }
+
   function navigateExecutorCreator(remoteContextWrapper) {
     return url => {
       return remoteContextWrapper.navigate((url) => {
@@ -489,6 +500,22 @@
     addWorker(globalVariable, extraConfig) {
       return this.helper.createContext({
         executorCreator: workerExecutorCreator(this, globalVariable),
+        extraConfig,
+        isWorker: true,
+      });
+    }
+
+    
+
+
+
+
+
+
+
+    addSharedWorker(globalVariable, extraConfig) {
+      return this.helper.createContext({
+        executorCreator: sharedWorkerExecutorCreator(this, globalVariable),
         extraConfig,
         isWorker: true,
       });
