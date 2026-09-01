@@ -267,7 +267,22 @@ impl TextRunTemplate {
         
         
         
-        let raster_scale_input = raster_space.local_scale().unwrap_or(1.0).max(0.001);
+        
+        
+        
+        
+        
+        
+        
+        
+        let raster_scale_input = if has_bitmap_strikes && raster_space == RasterSpace::Screen {
+            transform
+                .coplanar_scale_factors()
+                .map_or(1.0, |(sx, sy)| sx.max(sy))
+        } else {
+            raster_space.local_scale().unwrap_or(1.0)
+        }
+        .max(0.001);
 
         let dps = surface.device_pixel_scale.0;
         let font_size = specified_font.size.to_f32_px();
