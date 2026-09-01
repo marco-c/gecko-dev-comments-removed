@@ -633,7 +633,7 @@ int SandboxBroker::SymlinkPermissions(const char* aPath,
   
   
   char pathBufSymlink[kMaxPathLen + 1];
-  strcpy(pathBufSymlink, aPath);
+  base::strlcpy(pathBufSymlink, aPath, sizeof(pathBufSymlink));
 
   nsCString orig =
       ReverseSymlinks(nsDependentCString(pathBufSymlink, aPathLen));
