@@ -4,36 +4,63 @@
 
 #include "VulkanDeviceHolder.h"
 
+#include <atomic>
 #include <cstring>
+#include <unordered_map>
 
 #include "FFmpegLibWrapper.h"
 #include "FFmpegLog.h"
 #include "PlatformDecoderModule.h"
 #include "libavutil/hwcontext.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/DataMutex.h"
 
 namespace mozilla {
 
-constinit static StaticDataMutex<ThreadSafeWeakPtr<VulkanDeviceHolder>>
-    sDeviceHolder("VulkanDeviceHolder::sDeviceHolder");
+
+
+using HolderMap = std::unordered_map<const FFmpegLibWrapper*,
+                                     ThreadSafeWeakPtr<VulkanDeviceHolder>>;
+MOZ_RUNINIT static StaticDataMutex<HolderMap> sDeviceHolders(
+    "VulkanDeviceHolder::sDeviceHolders");
+
+
+
+static std::atomic<uint64_t> sNextGeneration{1};
+
+static RefPtr<VulkanDeviceHolder> LookupHolder(HolderMap& aMap,
+                                               const FFmpegLibWrapper* aLib,
+                                               const char* aDeviceName) {
+  const auto it = aMap.find(aLib);
+  if (it == aMap.end()) {
+    return nullptr;
+  }
+  RefPtr<VulkanDeviceHolder> instance(it->second);
+  if (!instance) {
+    aMap.erase(it);
+    return nullptr;
+  }
+  if (strcmp(instance->DeviceName(), aDeviceName) != 0) {
+    FFMPEGP_LOG(
+        "VulkanDeviceHolder: device name mismatch ('{}' vs '{}'), creating "
+        "new device",
+        instance->DeviceName(), aDeviceName);
+    return nullptr;
+  }
+  return instance;
+}
 
 
 RefPtr<VulkanDeviceHolder> VulkanDeviceHolder::GetOrCreate(
     const FFmpegLibWrapper* aLib, const char* aDeviceName,
     const char* aDeviceExtensions) {
   {
-    auto weakInstance = sDeviceHolder.Lock();
-    RefPtr<VulkanDeviceHolder> instance(*weakInstance);
-    if (instance) {
-      if (strcmp(instance->mDeviceName, aDeviceName) == 0) {
-        FFMPEGP_LOG("VulkanDeviceHolder: reusing shared VkDevice for {}",
-                    aDeviceName);
-        return instance;
-      }
-      FFMPEGP_LOG(
-          "VulkanDeviceHolder: device name mismatch ('{}' vs '{}'), creating "
-          "new device",
-          instance->mDeviceName, aDeviceName);
+    auto map = sDeviceHolders.Lock();
+    if (RefPtr<VulkanDeviceHolder> instance =
+            LookupHolder(*map, aLib, aDeviceName)) {
+      FFMPEGP_LOG("VulkanDeviceHolder: reusing shared VkDevice for {}",
+                  aDeviceName);
+      return instance;
     }
   }
 
@@ -57,19 +84,18 @@ RefPtr<VulkanDeviceHolder> VulkanDeviceHolder::GetOrCreate(
 
   RefPtr<VulkanDeviceHolder> instance =
       new VulkanDeviceHolder(aLib, ctx, aDeviceName);
-  FFMPEGP_LOG("VulkanDeviceHolder: created shared VkDevice for {}",
-              aDeviceName);
+  FFMPEGP_LOG("VulkanDeviceHolder: created shared VkDevice for {} (gen {})",
+              aDeviceName, instance->Generation());
 
-  auto weakInstance = sDeviceHolder.Lock();
+  auto map = sDeviceHolders.Lock();
   
-  
-  RefPtr<VulkanDeviceHolder> existing(*weakInstance);
-  if (existing && strcmp(existing->mDeviceName, aDeviceName) == 0) {
+  if (RefPtr<VulkanDeviceHolder> existing =
+          LookupHolder(*map, aLib, aDeviceName)) {
     FFMPEGP_LOG("VulkanDeviceHolder: discarding redundant VkDevice for {}",
                 aDeviceName);
     return existing;
   }
-  *weakInstance = instance;
+  (*map)[aLib] = instance;
   return instance;
 }
 
@@ -80,13 +106,16 @@ AVBufferRef* VulkanDeviceHolder::Ref() const {
 VulkanDeviceHolder::VulkanDeviceHolder(const FFmpegLibWrapper* aLib,
                                        AVBufferRef* aDeviceContext,
                                        const char* aDeviceName)
-    : mLib(aLib), mDeviceContext(aDeviceContext) {
+    : mLib(aLib),
+      mDeviceContext(aDeviceContext),
+      mGeneration(sNextGeneration.fetch_add(1, std::memory_order_relaxed)) {
   strncpy(mDeviceName, aDeviceName, sizeof(mDeviceName) - 1);
   mDeviceName[sizeof(mDeviceName) - 1] = '\0';
 }
 
 VulkanDeviceHolder::~VulkanDeviceHolder() {
-  FFMPEGP_LOG("VulkanDeviceHolder: destroying shared VkDevice");
+  FFMPEGP_LOG("VulkanDeviceHolder: destroying shared VkDevice (gen {})",
+              mGeneration);
   mLib->av_buffer_unref(&mDeviceContext);
 }
 

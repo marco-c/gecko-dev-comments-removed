@@ -20,6 +20,7 @@ struct FFmpegLibWrapper;
 
 
 
+
 class VulkanDeviceHolder final
     : public SupportsThreadSafeWeakPtr<VulkanDeviceHolder> {
  public:
@@ -32,6 +33,16 @@ class VulkanDeviceHolder final
   
   AVBufferRef* Ref() const;
 
+  
+  
+  
+  
+  
+  
+  uint64_t Generation() const { return mGeneration; }
+
+  const char* DeviceName() const { return mDeviceName; }
+
   ~VulkanDeviceHolder();
 
  private:
@@ -42,6 +53,7 @@ class VulkanDeviceHolder final
   AVBufferRef* mDeviceContext;
   
   char mDeviceName[256] = {'\0'};
+  const uint64_t mGeneration;
 };
 
 }  
