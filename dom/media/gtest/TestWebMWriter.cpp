@@ -63,9 +63,29 @@ static void GetVP8Metadata(int32_t aWidth, int32_t aHeight,
 const uint64_t FIXED_DURATION = 1000000;
 const uint32_t FIXED_FRAMESIZE = 500;
 
+const uint64_t OPUS_DURATION_BASE = 48000;
+
 class TestWebMWriter : public WebMWriter {
  public:
   TestWebMWriter() = default;
+
+  
+  
+  void AppendFrame(EncodedFrame::FrameType aFrameType,
+                   const media::TimeUnit& aTime,
+                   const media::TimeUnit& aDuration) {
+    const uint64_t durationBase = aFrameType == EncodedFrame::OPUS_AUDIO_FRAME
+                                      ? OPUS_DURATION_BASE
+                                      : static_cast<uint64_t>(PR_USEC_PER_SEC);
+    nsTArray<RefPtr<EncodedFrame>> encodedData;
+    auto frameData = MakeRefPtr<EncodedFrame::FrameData>();
+    
+    frameData->SetLength(FIXED_FRAMESIZE);
+    encodedData.AppendElement(MakeRefPtr<EncodedFrame>(
+        aTime, aDuration.ToTicksAtRate(durationBase), durationBase, aFrameType,
+        std::move(frameData)));
+    WriteEncodedTrack(encodedData, 0);
+  }
 
   
   
@@ -73,14 +93,8 @@ class TestWebMWriter : public WebMWriter {
   
   void AppendDummyFrame(EncodedFrame::FrameType aFrameType,
                         uint64_t aDuration) {
-    nsTArray<RefPtr<EncodedFrame>> encodedVideoData;
-    auto frameData = MakeRefPtr<EncodedFrame::FrameData>();
-    
-    frameData->SetLength(FIXED_FRAMESIZE);
-    encodedVideoData.AppendElement(
-        MakeRefPtr<EncodedFrame>(mTimestamp, aDuration, PR_USEC_PER_SEC,
-                                 aFrameType, std::move(frameData)));
-    WriteEncodedTrack(encodedVideoData, 0);
+    AppendFrame(aFrameType, mTimestamp,
+                media::TimeUnit::FromMicroseconds(aDuration));
     mTimestamp += media::TimeUnit::FromMicroseconds(aDuration);
   }
 
@@ -351,6 +365,78 @@ TEST(WebMWriter, bug970774_aspect_ratio)
   }
 }
 
+static nsTArray<uint8_t> Flatten(const nsTArray<nsTArray<uint8_t>>& aBufs) {
+  nsTArray<uint8_t> data;
+  for (const auto& buf : aBufs) {
+    data.AppendElements(buf);
+  }
+  return data;
+}
+
+
+
+
+static size_t CountClusters(const nsTArray<uint8_t>& aData) {
+  static const uint8_t kClusterId[] = {0x1F, 0x43, 0xB6, 0x75};
+  size_t count = 0;
+  for (size_t i = 0; i + sizeof(kClusterId) <= aData.Length(); ++i) {
+    if (memcmp(aData.Elements() + i, kClusterId, sizeof(kClusterId)) == 0) {
+      ++count;
+    }
+  }
+  return count;
+}
+
+struct DemuxedPacket {
+  
+  int mTrackType;
+  uint64_t mTimestampNs;
+};
+
+
+
+static uint64_t ExpectedTimestampNs(const media::TimeUnit& aTime) {
+  return static_cast<uint64_t>(aTime.ToMicroseconds() / PR_USEC_PER_MSEC) *
+         PR_NSEC_PER_MSEC;
+}
+
+
+
+static nsTArray<DemuxedPacket> DemuxWebM(const nsTArray<uint8_t>& aData) {
+  nsTArray<DemuxedPacket> packets;
+
+  WebMioData ioData;
+  ioData.offset = 0;
+  ioData.data.AppendElements(aData);
+
+  nestegg* context = nullptr;
+  nestegg_io io;
+  io.read = webm_read;
+  io.seek = webm_seek;
+  io.tell = webm_tell;
+  io.userdata = static_cast<void*>(&ioData);
+  if (nestegg_init(&context, io, nullptr, -1) != 0) {
+    ADD_FAILURE() << "nestegg_init failed";
+    return packets;
+  }
+
+  int rv;
+  nestegg_packet* packet = nullptr;
+  while ((rv = nestegg_read_packet(context, &packet)) > 0) {
+    unsigned int track = 0;
+    EXPECT_EQ(nestegg_packet_track(packet, &track), 0);
+    uint64_t tstamp = 0;
+    EXPECT_EQ(nestegg_packet_tstamp(packet, &tstamp), 0);
+    packets.AppendElement(
+        DemuxedPacket{nestegg_track_type(context, track), tstamp});
+    nestegg_free_packet(packet);
+  }
+  EXPECT_EQ(rv, 0) << "Demuxing must reach end of stream without error";
+
+  nestegg_destroy(context);
+  return packets;
+}
+
 
 
 
@@ -380,4 +466,141 @@ TEST(WebMWriter, LongVideoGap)
   writer.GetContainerData(&encodedBuf, ContainerWriter::GET_HEADER);
   
   EXPECT_EQ(encodedBuf.Length(), 3U);
+}
+
+
+
+
+
+
+TEST(WebMWriter, ClustersFlushOnInterval)
+{
+  TestWebMWriter writer;
+  nsTArray<RefPtr<TrackMetadataBase>> meta;
+  GetOpusMetadata(1, 48000, meta);
+  GetVP8Metadata(320, 240, 320, 240, 48000, meta);
+  writer.SetMetadata(meta);
+
+  
+  const auto videoDuration = media::TimeUnit::FromSeconds(0.04);
+  const auto audioDuration = media::TimeUnit::FromSeconds(0.02);
+  const auto totalDuration = media::TimeUnit::FromSeconds(3);
+
+  size_t numFrames = 0;
+  for (auto t = media::TimeUnit::Zero(); t < totalDuration;
+       t += videoDuration) {
+    writer.AppendFrame(
+        t.IsZero() ? EncodedFrame::VP8_I_FRAME : EncodedFrame::VP8_P_FRAME, t,
+        videoDuration);
+    ++numFrames;
+    for (auto u = t; u < t + videoDuration; u += audioDuration) {
+      writer.AppendFrame(EncodedFrame::OPUS_AUDIO_FRAME, u, audioDuration);
+      ++numFrames;
+    }
+  }
+
+  nsTArray<nsTArray<uint8_t>> encodedBuf;
+  writer.GetContainerData(&encodedBuf, ContainerWriter::GET_HEADER);
+  const nsTArray<uint8_t> data = Flatten(encodedBuf);
+
+  
+  EXPECT_EQ(CountClusters(data), 3U);
+  EXPECT_EQ(DemuxWebM(data).Length(), numFrames);
+}
+
+
+
+
+
+
+TEST(WebMWriter, VideoResumingAfterStall)
+{
+  TestWebMWriter writer;
+  nsTArray<RefPtr<TrackMetadataBase>> meta;
+  GetOpusMetadata(1, 48000, meta);
+  GetVP8Metadata(320, 240, 320, 240, 48000, meta);
+  writer.SetMetadata(meta);
+
+  const auto audioDuration = media::TimeUnit::FromSeconds(0.02);
+  const auto stallEnd = media::TimeUnit::FromSeconds(3);
+  const auto totalDuration = media::TimeUnit::FromSeconds(4);
+
+  
+  
+  writer.AppendFrame(EncodedFrame::VP8_I_FRAME, media::TimeUnit::Zero(),
+                     stallEnd);
+  size_t numAudioBeforeResume = 0;
+  for (auto t = media::TimeUnit::Zero(); t < stallEnd; t += audioDuration) {
+    writer.AppendFrame(EncodedFrame::OPUS_AUDIO_FRAME, t, audioDuration);
+    ++numAudioBeforeResume;
+  }
+  writer.AppendFrame(EncodedFrame::VP8_P_FRAME, stallEnd, audioDuration);
+  size_t numAudioAfterResume = 0;
+  for (auto t = stallEnd; t < totalDuration; t += audioDuration) {
+    writer.AppendFrame(EncodedFrame::OPUS_AUDIO_FRAME, t, audioDuration);
+    ++numAudioAfterResume;
+  }
+
+  nsTArray<nsTArray<uint8_t>> encodedBuf;
+  writer.GetContainerData(&encodedBuf, ContainerWriter::GET_HEADER);
+  const nsTArray<uint8_t> data = Flatten(encodedBuf);
+
+  
+  
+  EXPECT_EQ(CountClusters(data), 4U);
+
+  const nsTArray<DemuxedPacket> packets = DemuxWebM(data);
+  ASSERT_EQ(packets.Length(), numAudioBeforeResume + numAudioAfterResume + 2);
+  EXPECT_EQ(packets[0].mTrackType, NESTEGG_TRACK_VIDEO);
+  EXPECT_EQ(packets[numAudioBeforeResume + 1].mTrackType, NESTEGG_TRACK_VIDEO);
+  EXPECT_EQ(packets[numAudioBeforeResume + 1].mTimestampNs,
+            ExpectedTimestampNs(stallEnd));
+}
+
+
+
+
+
+
+
+TEST(WebMWriter, AudioSpanningLongVideoKeyframeGap)
+{
+  TestWebMWriter writer;
+  nsTArray<RefPtr<TrackMetadataBase>> meta;
+  GetOpusMetadata(1, 48000, meta);
+  GetVP8Metadata(320, 240, 320, 240, 48000, meta);
+  writer.SetMetadata(meta);
+
+  const auto audioDuration = media::TimeUnit::FromSeconds(0.02);
+  const auto totalDuration = media::TimeUnit::FromSeconds(40);
+
+  
+  
+  writer.AppendFrame(EncodedFrame::VP8_I_FRAME, media::TimeUnit::Zero(),
+                     totalDuration);
+  nsTArray<media::TimeUnit> audioTimes;
+  for (auto t = media::TimeUnit::Zero(); t < totalDuration;
+       t += audioDuration) {
+    writer.AppendFrame(EncodedFrame::OPUS_AUDIO_FRAME, t, audioDuration);
+    audioTimes.AppendElement(t);
+  }
+
+  nsTArray<nsTArray<uint8_t>> encodedBuf;
+  writer.GetContainerData(&encodedBuf, ContainerWriter::GET_HEADER);
+  const nsTArray<uint8_t> data = Flatten(encodedBuf);
+
+  
+  
+  EXPECT_EQ(CountClusters(data), 40U);
+
+  const nsTArray<DemuxedPacket> packets = DemuxWebM(data);
+  ASSERT_EQ(packets.Length(), audioTimes.Length() + 1);
+  EXPECT_EQ(packets[0].mTrackType, NESTEGG_TRACK_VIDEO);
+  EXPECT_EQ(packets[0].mTimestampNs, 0U);
+  for (size_t i = 0; i < audioTimes.Length(); ++i) {
+    EXPECT_EQ(packets[i + 1].mTrackType, NESTEGG_TRACK_AUDIO)
+        << "Audio packet " << i;
+    EXPECT_EQ(packets[i + 1].mTimestampNs, ExpectedTimestampNs(audioTimes[i]))
+        << "Audio packet " << i;
+  }
 }

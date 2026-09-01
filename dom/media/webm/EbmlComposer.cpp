@@ -2,13 +2,13 @@
 
 
 
-
 #include "EbmlComposer.h"
+
+#include <limits>
 
 #include "libmkv/EbmlIDs.h"
 #include "libmkv/EbmlWriter.h"
 #include "libmkv/WebMElement.h"
-#include "limits.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/UniquePtr.h"
 #include "prtime.h"
@@ -20,7 +20,14 @@ constexpr unsigned long TIME_CODE_SCALE = 1000000;
 
 constexpr int32_t DEFAULT_HEADER_SIZE = 1024;
 
-constexpr int32_t FLUSH_AUDIO_ONLY_AFTER_MS = 1000;
+
+constexpr int64_t MAX_BLOCK_TIMECODE_MS = std::numeric_limits<int16_t>::max();
+
+
+
+constexpr int64_t NEW_CLUSTER_AFTER_MS = 1000;
+static_assert(NEW_CLUSTER_AFTER_MS <= MAX_BLOCK_TIMECODE_MS,
+              "A cluster must not span more than a block timecode can hold");
 
 void EbmlComposer::GenerateHeader() {
   MOZ_RELEASE_ASSERT(!mMetadataFinished);
@@ -99,12 +106,12 @@ nsresult EbmlComposer::WriteSimpleBlock(EncodedFrame* aFrame) {
     return NS_ERROR_INVALID_ARG;
   }
 
-  int64_t timeCode = aFrame->mTime.ToMicroseconds() / PR_USEC_PER_MSEC -
-                     mCurrentClusterTimecode;
+  const int64_t frameTimecode = aFrame->mTime.ToMilliseconds();
+  int64_t timeCode =
+      frameTimecode - static_cast<int64_t>(mCurrentClusterTimecode);
 
   const bool needClusterHeader =
-      !mHasWrittenCluster ||
-      (!mHasVideo && timeCode >= FLUSH_AUDIO_ONLY_AFTER_MS) || isVP8IFrame;
+      !mHasWrittenCluster || timeCode >= NEW_CLUSTER_AFTER_MS || isVP8IFrame;
 
   auto block = mBuffer.AppendElement();
   block->SetLength(aFrame->mFrameData->Length() + DEFAULT_HEADER_SIZE);
@@ -124,22 +131,17 @@ nsresult EbmlComposer::WriteSimpleBlock(EncodedFrame* aFrame) {
     
     
     Ebml_StartSubElement(&ebml, &ebmlLoc, Cluster);
-    
-    mCurrentClusterTimecode = aFrame->mTime.ToMicroseconds() / PR_USEC_PER_MSEC;
+    mCurrentClusterTimecode = frameTimecode;
     Ebml_SerializeUnsigned(&ebml, Timecode, mCurrentClusterTimecode);
 
-    
     timeCode = 0;
   }
 
-  if (MOZ_UNLIKELY(timeCode < SHRT_MIN || timeCode > SHRT_MAX)) {
-    MOZ_CRASH_UNSAFE_PRINTF(
-        "Invalid cluster timecode! audio=%d, video=%d, timeCode=%" PRId64
-        "ms, currentClusterTimecode=%" PRIu64 "ms",
-        mHasAudio, mHasVideo, timeCode, mCurrentClusterTimecode);
-  }
+  
+  
+  MOZ_ASSERT(timeCode >= 0 && timeCode < NEW_CLUSTER_AFTER_MS);
 
-  writeSimpleBlock(&ebml, isOpus ? 0x2 : 0x1, static_cast<short>(timeCode),
+  writeSimpleBlock(&ebml, isOpus ? 0x2 : 0x1, static_cast<int16_t>(timeCode),
                    isVP8IFrame, 0, 0,
                    (unsigned char*)aFrame->mFrameData->Elements(),
                    aFrame->mFrameData->Length());
