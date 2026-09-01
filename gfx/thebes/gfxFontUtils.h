@@ -23,10 +23,10 @@ namespace mozilla {
 class Encoding;
 class ServoStyleSet;
 class SlantStyleRange;
-class StretchRange;
+class WidthRange;
 class WeightRange;
 struct StyleFontStyle;
-struct StyleFontStretch;
+struct StyleFontWidth;
 struct StyleFontWeight;
 }  
 
@@ -657,7 +657,7 @@ class gfxFontUtils {
                                nsTArray<nsCString>& aFontList);
 
   
-  static nsresult MakeUniqueUserFontName(nsAString& aName);
+  static nsresult MakeUniqueUserFontName(nsACString& aName);
 
   
   
@@ -725,7 +725,7 @@ class gfxFontUtils {
 
 
 constexpr double kPresentationMismatch = 1.0e12;
-constexpr double kStretchFactor = 1.0e8;
+constexpr double kWidthFactor = 1.0e8;
 constexpr double kStyleFactor = 1.0e4;
 constexpr double kWeightFactor = 1.0e0;
 
@@ -737,8 +737,8 @@ double StyleDistance(const mozilla::SlantStyleRange& aRange,
                      bool aItalicToObliqueFallback);
 
 
-double StretchDistance(const mozilla::StretchRange& aRange,
-                       const mozilla::StyleFontStretch& aTargetStretch);
+double WidthDistance(const mozilla::WidthRange& aRange,
+                     const mozilla::StyleFontWidth& aTargetWidth);
 
 
 double WeightDistance(const mozilla::WeightRange& aRange,

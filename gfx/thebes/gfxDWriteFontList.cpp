@@ -230,11 +230,11 @@ void gfxDWriteFontFamily::FindStyleVariationsLocked(
       fe->Weight().ToString(weightString);
       LOG_FONTLIST(
           ("(fontlist) added (%s) to family (%s)"
-           " with style: %s weight: %s stretch: %d psname: %s fullname: %s",
+           " with style: %s weight: %s width: %d psname: %s fullname: %s",
            fe->Name().get(), Name().get(),
            (fe->IsItalic()) ? "italic"
                             : (fe->IsOblique() ? "oblique" : "normal"),
-           weightString.get(), fe->Stretch().AsScalar(), psname.get(),
+           weightString.get(), fe->Width().AsScalar(), psname.get(),
            fullname.get()));
     }
   }
@@ -380,7 +380,7 @@ gfxFontEntry* gfxDWriteFontEntry::Clone() const {
   MOZ_ASSERT(!IsUserFont(), "we can only clone installed fonts!");
   gfxDWriteFontEntry* fe = new gfxDWriteFontEntry(Name(), mFont);
   fe->mWeightRange = mWeightRange;
-  fe->mStretchRange = mStretchRange;
+  fe->mWidthRange = mWidthRange;
   fe->mStyleRange = mStyleRange;
   return fe;
 }
@@ -975,12 +975,12 @@ FontFamily gfxDWriteFontList::GetDefaultFontForPlatform(
 already_AddRefed<gfxFontEntry> gfxDWriteFontList::LookupLocalFont(
     FontVisibilityProvider* aFontVisibilityProvider,
     const nsACString& aFontName, WeightRange aWeightForEntry,
-    StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry) {
+    WidthRange aWidthForEntry, SlantStyleRange aStyleForEntry) {
   AutoLock lock(mLock);
 
   if (SharedFontList()) {
     return LookupInSharedFaceNameList(aFontVisibilityProvider, aFontName,
-                                      aWeightForEntry, aStretchForEntry,
+                                      aWeightForEntry, aWidthForEntry,
                                       aStyleForEntry);
   }
 
@@ -993,7 +993,7 @@ already_AddRefed<gfxFontEntry> gfxDWriteFontList::LookupLocalFont(
 
   gfxDWriteFontEntry* dwriteLookup = static_cast<gfxDWriteFontEntry*>(lookup);
   RefPtr fe = MakeRefPtr<gfxDWriteFontEntry>(
-      lookup->Name(), dwriteLookup->mFont, aWeightForEntry, aStretchForEntry,
+      lookup->Name(), dwriteLookup->mFont, aWeightForEntry, aWidthForEntry,
       aStyleForEntry);
   fe->SetForceGDIClassic(dwriteLookup->GetForceGDIClassic());
   return fe.forget();
@@ -1001,7 +1001,7 @@ already_AddRefed<gfxFontEntry> gfxDWriteFontList::LookupLocalFont(
 
 already_AddRefed<gfxFontEntry> gfxDWriteFontList::MakePlatformFont(
     const nsACString& aFontName, WeightRange aWeightForEntry,
-    StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry,
+    WidthRange aWidthForEntry, SlantStyleRange aStyleForEntry,
     const uint8_t* aFontData, uint32_t aLength) {
   RefPtr<gfxDWriteFontFileStream> fontFileStream;
   RefPtr<IDWriteFontFile> fontFile;
@@ -1014,7 +1014,7 @@ already_AddRefed<gfxFontEntry> gfxDWriteFontList::MakePlatformFont(
     return nullptr;
   }
 
-  nsAutoString uniqueName;
+  nsAutoCString uniqueName;
   nsresult rv = gfxFontUtils::MakeUniqueUserFontName(uniqueName);
   NS_ASSERTION(NS_SUCCEEDED(rv), "Failed to make unique user font name");
   if (NS_FAILED(rv)) {
@@ -1025,9 +1025,9 @@ already_AddRefed<gfxFontEntry> gfxDWriteFontList::MakePlatformFont(
   DWRITE_FONT_FILE_TYPE fileType;
   UINT32 numFaces;
 
-  RefPtr entry = MakeRefPtr<gfxDWriteFontEntry>(
-      NS_ConvertUTF16toUTF8(uniqueName), fontFile, fontFileStream,
-      aWeightForEntry, aStretchForEntry, aStyleForEntry);
+  RefPtr entry = MakeRefPtr<gfxDWriteFontEntry>(uniqueName, fontFile,
+                                                fontFileStream, aWeightForEntry,
+                                                aWidthForEntry, aStyleForEntry);
 
   hr = fontFile->Analyze(&isSupported, &fileType, &entry->mFaceType, &numFaces);
   NS_ASSERTION(SUCCEEDED(hr), "IDWriteFontFile::Analyze failed");
@@ -1368,7 +1368,7 @@ void gfxDWriteFontList::GetFacesInitDataForFamily(
       continue;
     }
     WeightRange weight(FontWeight::FromInt(dwFont->GetWeight()));
-    StretchRange stretch(FontStretchFromDWriteStretch(dwFont->GetStretch()));
+    WidthRange width(FontWidthFromDWriteStretch(dwFont->GetStretch()));
     
     
     
@@ -1411,7 +1411,7 @@ void gfxDWriteFontList::GetFacesInitDataForFamily(
           : dwstyle == DWRITE_FONT_STYLE_ITALIC ? FontSlantStyle::ITALIC
                                                 : FontSlantStyle::OBLIQUE);
       aFaces.AppendElement(fontlist::Face::InitData{
-          name, uint16_t(i), false, weight, stretch, slant, charmap});
+          name, uint16_t(i), false, weight, width, slant, charmap});
     }
     MOZ_SEH_EXCEPT(EXCEPTION_EXECUTE_HANDLER) {
       
@@ -1805,11 +1805,11 @@ nsresult gfxDWriteFontList::InitFontListForPlatform() {
           face->Weight().ToString(weightString);
           LOG_FONTLIST(
               ("(fontlist) moved (%s) to family (%s)"
-               " with style: %s weight: %s stretch: %d",
+               " with style: %s weight: %s width: %d",
                face->Name().get(), gillSansMTFamily->Name().get(),
                (face->IsItalic()) ? "italic"
                                   : (face->IsOblique() ? "oblique" : "normal"),
-               weightString.get(), face->Stretch().AsScalar()));
+               weightString.get(), face->Width().AsScalar()));
         }
       }
       gillSansFamily->ReadUnlock();
