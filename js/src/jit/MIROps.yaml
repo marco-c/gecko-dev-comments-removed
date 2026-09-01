@@ -1729,8 +1729,12 @@
   result_type: Value
   generate_lir: true
 
-# Checks whether we need to fire the interrupt handler.
+# Guard against overrecursion. This may also fire the interrupt handler, unless
+# isResumingGenerator is set: interrupt callbacks can run JS/Debugger code and a
+# frame that's in the middle of resuming a generator is only half-initialized.
 - name: CheckOverRecursed
+  arguments:
+    isResumingGenerator: bool
   guard: true
   alias_set: none
   generate_lir: true
@@ -1929,17 +1933,19 @@
   clone: true
   generate_lir: true
 
-# Store to the initialized length in an elements header. Note the input is an
-# *index*, one less than the desired initialized length.
+# Set the initialized length field in an elements header.
 - name: SetInitializedLength
   operands:
     elements: Elements
-    index: Int32
+  arguments:
+    length: uint32_t
+    needsPreBarrier: bool
   type_policy: none
   alias_set:
     store: ObjectFields
   clone: true
   generate_lir: true
+  lir_temps: 1
 
 # Load the array length from an elements header.
 - name: ArrayLength
@@ -1955,12 +1961,12 @@
   clone: true
   generate_lir: true
 
-# Store to the length in an elements header. Note the input is an *index*, one
-# less than the desired length.
+# Set the array length field in an elements header.
 - name: SetArrayLength
   operands:
     elements: Elements
-    index: Int32
+  arguments:
+    length: uint32_t
   type_policy: none
   alias_set:
     store: ObjectFields
@@ -3624,6 +3630,17 @@
   alias_set: none
   generate_lir: true
 
+- name: IsSuspendedGenerator
+  operands:
+    object: Object
+  result_type: Boolean
+  alias_set:
+    load:
+      - ObjectFields
+      - FixedSlot
+  generate_lir: true
+  lir_temps: 1
+
 - name: IsNullOrUndefined
   operands:
     value: any
@@ -3720,6 +3737,17 @@
   result_type: Object
   possibly_calls: true
   generate_lir: true
+
+- name: GeneratorResume
+  operands:
+    generator: Object
+    value: Value
+  arguments:
+    resumeKind: int32_t
+  result_type: Value
+  possibly_calls: true
+  generate_lir: true
+  lir_temps: 2
 
 - name: CheckThisReinit
   operands:

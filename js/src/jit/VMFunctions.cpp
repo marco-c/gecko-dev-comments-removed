@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include "jit/VMFunctions.h"
 
@@ -19,9 +19,9 @@
 #include "jit/Simulator.h"
 #include "js/Date.h"
 #include "js/experimental/JitInfo.h"
-#include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
-#include "js/friend/StackLimits.h"    // js::AutoCheckRecursionLimit
-#include "js/friend/WindowProxy.h"    // js::IsWindow
+#include "js/friend/ErrorMessages.h"  
+#include "js/friend/StackLimits.h"    
+#include "js/friend/WindowProxy.h"    
 #include "js/Printf.h"
 #include "js/TraceKind.h"
 #include "proxy/ScriptedProxyHandler.h"
@@ -31,12 +31,12 @@
 #include "vm/DateObject.h"
 #include "vm/Float16.h"
 #include "vm/Interpreter.h"
-#include "vm/JSAtomUtils.h"  // AtomizeString
-#include "vm/PlainObject.h"  // js::PlainObject
+#include "vm/JSAtomUtils.h"  
+#include "vm/PlainObject.h"  
 #include "vm/SelfHosting.h"
 #include "vm/StaticStrings.h"
 #include "vm/TypedArrayObject.h"
-#include "vm/TypeofEqOperand.h"  // TypeofEqOperand
+#include "vm/TypeofEqOperand.h"  
 #include "vm/Watchtower.h"
 #include "vm/WrapperObject.h"
 #include "wasm/WasmGcObject.h"
@@ -46,11 +46,11 @@
 #include "jit/BaselineFrame-inl.h"
 #include "jit/VMFunctionList-inl.h"
 #include "vm/Interpreter-inl.h"
-#include "vm/JSAtomUtils-inl.h"  // TypeName
+#include "vm/JSAtomUtils-inl.h"  
 #include "vm/JSContext-inl.h"
 #include "vm/JSScript-inl.h"
 #include "vm/NativeObject-inl.h"
-#include "vm/PlainObject-inl.h"  // js::CreateThis
+#include "vm/PlainObject-inl.h"  
 #include "vm/StringObject-inl.h"
 
 using namespace js;
@@ -73,7 +73,7 @@ struct PopValues {
 };
 
 template <class>
-struct ReturnTypeToDataType { /* Unexpected return type for a VMFunction. */
+struct ReturnTypeToDataType { 
 };
 template <>
 struct ReturnTypeToDataType<void> {
@@ -85,13 +85,13 @@ struct ReturnTypeToDataType<bool> {
 };
 template <class T>
 struct ReturnTypeToDataType<T*> {
-  // Assume by default that any pointer return types are cells.
+  
   static_assert(std::is_base_of_v<gc::Cell, T>);
 
   static const DataType result = Type_Cell;
 };
 
-// Convert argument types to properties of the argument known by the jit.
+
 template <class T>
 struct TypeToArgProperties {
   static const uint32_t result =
@@ -120,7 +120,7 @@ struct TypeToArgProperties<HandleId> {
 };
 template <class T>
 struct TypeToArgProperties<Handle<T*>> {
-  // Assume by default that any pointer handle types are cells.
+  
   static_assert(std::is_base_of_v<gc::Cell, T>);
 
   static const uint32_t result =
@@ -128,11 +128,11 @@ struct TypeToArgProperties<Handle<T*>> {
 };
 template <class T>
 struct TypeToArgProperties<Handle<T>> {
-  // Fail for Handle types that aren't specialized above.
+  
 };
 
-// Convert argument type to whether or not it should be passed in a float
-// register on platforms that have them, like x64.
+
+
 template <class T>
 struct TypeToPassInFloatReg {
   static const uint32_t result = 0;
@@ -142,7 +142,7 @@ struct TypeToPassInFloatReg<double> {
   static const uint32_t result = 1;
 };
 
-// Convert argument types to root types used by the gc, see TraceJitExitFrame.
+
 template <class T>
 struct TypeToRootType {
   static const uint32_t result = VMFunctionData::RootNone;
@@ -161,7 +161,7 @@ struct TypeToRootType<HandleId> {
 };
 template <class T>
 struct TypeToRootType<Handle<T*>> {
-  // Assume by default that any pointer types are cells.
+  
   static_assert(std::is_base_of_v<gc::Cell, T>);
 
   static constexpr uint32_t rootType() {
@@ -193,7 +193,7 @@ struct TypeToRootType<Handle<T*>> {
 };
 template <class T>
 struct TypeToRootType<Handle<T>> {
-  // Fail for Handle types that aren't specialized above.
+  
 };
 
 template <class>
@@ -202,32 +202,32 @@ struct OutParamToDataType {
 };
 template <class T>
 struct OutParamToDataType<const T*> {
-  // Const pointers can't be output parameters.
+  
   static const DataType result = Type_Void;
 };
 template <>
 struct OutParamToDataType<uint64_t*> {
-  // Already used as an input type, so it can't be used as an output param.
+  
   static const DataType result = Type_Void;
 };
 template <>
 struct OutParamToDataType<JSObject*> {
-  // Already used as an input type, so it can't be used as an output param.
+  
   static const DataType result = Type_Void;
 };
 template <>
 struct OutParamToDataType<JSString*> {
-  // Already used as an input type, so it can't be used as an output param.
+  
   static const DataType result = Type_Void;
 };
 template <>
 struct OutParamToDataType<BaselineFrame*> {
-  // Already used as an input type, so it can't be used as an output param.
+  
   static const DataType result = Type_Void;
 };
 template <>
 struct OutParamToDataType<gc::AllocSite*> {
-  // Already used as an input type, so it can't be used as an output param.
+  
   static const DataType result = Type_Void;
 };
 template <>
@@ -252,7 +252,7 @@ struct OutParamToDataType<double*> {
 };
 template <class T>
 struct OutParamToDataType<T*> {
-  // Fail for pointer types that aren't specialized above.
+  
 };
 template <class T>
 struct OutParamToDataType<T**> {
@@ -284,11 +284,11 @@ struct OutParamToRootType<MutableHandleBigInt> {
   static const VMFunctionData::RootType result = VMFunctionData::RootBigInt;
 };
 
-// Construct a bit mask from a list of types.  The mask is constructed as an OR
-// of the mask produced for each argument. The result of each argument is
-// shifted by its index, such that the result of the first argument is on the
-// low bits of the mask, and the result of the last argument in part of the
-// high bits of the mask.
+
+
+
+
+
 template <template <typename> class Each, typename ResultType, size_t Shift,
           typename... Args>
 struct BitMask;
@@ -311,7 +311,7 @@ struct BitMask<Each, ResultType, Shift, HeadType, TailTypes...> {
       (BitMask<Each, ResultType, Shift, TailTypes...>::result << Shift);
 };
 
-// Helper template to build the VMFunctionData for a function.
+
 template <typename... Args>
 struct VMFunctionDataHelper;
 
@@ -346,7 +346,7 @@ struct VMFunctionDataHelper<R (*)(JSContext*, Args...)>
       : VMFunctionData(name, explicitArgs(), argumentProperties(),
                        argumentPassedInFloatRegs(), argumentRootTypes(),
                        outParam(), outParamRootType(), returnType(),
-                       /* extraValuesToPop = */ 0) {}
+                        0) {}
   constexpr explicit VMFunctionDataHelper(const char* name,
                                           PopValues extraValuesToPop)
       : VMFunctionData(name, explicitArgs(), argumentProperties(),
@@ -355,14 +355,14 @@ struct VMFunctionDataHelper<R (*)(JSContext*, Args...)>
                        extraValuesToPop.numValues) {}
 };
 
-// GCC warns when the signature does not have matching attributes (for example
-// [[nodiscard]]). Squelch this warning to avoid a GCC-only footgun.
+
+
 #if MOZ_IS_GCC
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wignored-attributes"
 #endif
 
-// Generate VMFunctionData array.
+
 static constexpr VMFunctionData vmFunctions[] = {
 #define DEF_VMFUNCTION(name, fp, valuesToPop...) \
   VMFunctionDataHelper<decltype(&fp)>(#name, PopValues(valuesToPop)),
@@ -374,10 +374,10 @@ static constexpr VMFunctionData vmFunctions[] = {
 #  pragma GCC diagnostic pop
 #endif
 
-// Generate arrays storing C++ function pointers. These pointers are not stored
-// in VMFunctionData because there's no good way to cast them to void* in
-// constexpr code. Compilers are smart enough to treat the const array below as
-// constexpr.
+
+
+
+
 #define DEF_VMFUNCTION(name, fp, ...) (void*)(fp),
 static void* const vmFunctionTargets[] = {VMFUNCTION_LIST(DEF_VMFUNCTION)};
 #undef DEF_VMFUNCTION
@@ -432,7 +432,7 @@ size_t VMFunctionData::sizeOfOutParamStackSlot() const {
 
 bool JitRuntime::generateVMWrappers(JSContext* cx, MacroAssembler& masm,
                                     PerfSpewerRangeRecorder& rangeRecorder) {
-  // Generate all VM function wrappers.
+  
 
   static constexpr size_t NumVMFunctions = size_t(VMFunctionId::Count);
 
@@ -449,7 +449,7 @@ bool JitRuntime::generateVMWrappers(JSContext* cx, MacroAssembler& masm,
     const VMFunctionData& fun = GetVMFunction(id);
 
 #ifdef DEBUG
-    // Assert the list is sorted by name.
+    
     if (lastName) {
       MOZ_ASSERT(strcmp(lastName, fun.name()) < 0,
                  "VM function list must be sorted by name");
@@ -482,7 +482,7 @@ bool InvokeFunction(JSContext* cx, HandleObject obj, bool constructing,
                     MutableHandleValue rval) {
   RootedExternalValueArray argvRoot(cx, argc + 1 + constructing, argv);
 
-  // Data in the argument vector is arranged for a JIT -> JIT call.
+  
   RootedValue thisv(cx, argv[0]);
   Value* argvWithoutThis = argv + 1;
 
@@ -505,12 +505,12 @@ bool InvokeFunction(JSContext* cx, HandleObject obj, bool constructing,
 
     RootedValue newTarget(cx, argvWithoutThis[argc]);
 
-    // The JIT ABI expects at least callee->nargs() arguments, with undefined
-    // values passed for missing formal arguments. These undefined values are
-    // passed before newTarget. We don't normally insert undefined values when
-    // calling native functions like this one, but by detecting and supporting
-    // that case here, it is easier for jit code to fall back to InvokeFunction
-    // as a slow path.
+    
+    
+    
+    
+    
+    
     if (newTarget.isUndefined()) {
       MOZ_RELEASE_ASSERT(obj->is<JSFunction>());
       JSFunction* callee = &obj->as<JSFunction>();
@@ -524,14 +524,14 @@ bool InvokeFunction(JSContext* cx, HandleObject obj, bool constructing,
       MOZ_ASSERT(newTarget.isObject());
     }
 
-    // See CreateThisFromIon for why this can be NullValue.
+    
     if (thisv.isNull()) {
       thisv.setMagic(JS_IS_CONSTRUCTING);
     }
 
-    // If |this| hasn't been created, or is JS_UNINITIALIZED_LEXICAL,
-    // we can use normal construction code without creating an extraneous
-    // object.
+    
+    
+    
     if (thisv.isMagic()) {
       MOZ_RELEASE_ASSERT(thisv.whyMagic() == JS_IS_CONSTRUCTING ||
                          thisv.whyMagic() == JS_UNINITIALIZED_LEXICAL);
@@ -545,10 +545,10 @@ bool InvokeFunction(JSContext* cx, HandleObject obj, bool constructing,
       return true;
     }
 
-    // Otherwise the default |this| has already been created.  We could
-    // almost perform a *call* at this point, but we'd break |new.target|
-    // in the function.  So in this one weird case we call a one-off
-    // construction path that *won't* set |this| to JS_IS_CONSTRUCTING.
+    
+    
+    
+    
     return InternalConstructWithProvidedThis(cx, fval, thisv, cargs, newTarget,
                                              rval);
   }
@@ -579,14 +579,14 @@ bool InvokeFromInterpreterStub(JSContext* cx,
   RootedFunction fun(cx, CalleeTokenToFunction(token));
   RootedValue rval(cx);
 
-  if (jsFrame->descriptor().isResumingGenerator()) {
-    // Resuming a suspended generator. The ResumeFrameArgs are stored after the
-    // formals with numActualArgs == 0.
+  if (jsFrame->isResumingGenerator()) {
+    
+    
 
     MOZ_RELEASE_ASSERT(fun->isGenerator());
     MOZ_ASSERT(numActualArgs == 0);
 
-    Value* resumeArgs = &argv[1 + fun->nargs()];
+    Value* resumeArgs = jsFrame->resumeArgs();
     Rooted<AbstractGeneratorObject*> genObj(
         cx, &resumeArgs[ResumeFrameArgs::GeneratorSlot]
                  .toObject()
@@ -594,6 +594,13 @@ bool InvokeFromInterpreterStub(JSContext* cx,
     RootedValue resumeValue(cx, resumeArgs[ResumeFrameArgs::ResumeValueSlot]);
     GeneratorResumeKind resumeKind =
         IntToResumeKind(resumeArgs[ResumeFrameArgs::ResumeKindSlot].toInt32());
+
+    
+    
+    MOZ_ASSERT(genObj->isRunning());
+    genObj->setResumeIndex(
+        resumeArgs[ResumeFrameArgs::ResumeIndexSlot].toInt32());
+    MOZ_ASSERT(genObj->isSuspended());
 
     AutoRealm ar(cx, genObj);
     if (!js::ResumeGenerator(cx, genObj, resumeValue, resumeKind, &rval)) {
@@ -603,32 +610,33 @@ bool InvokeFromInterpreterStub(JSContext* cx,
     return true;
   }
 
-  // Ensure new.target immediately follows the actual arguments (the JIT
-  // ABI passes `undefined` for missing formals).
+  
+  
   bool constructing = CalleeTokenIsConstructing(token);
   if (constructing && numActualArgs < fun->nargs()) {
     argv[1 + numActualArgs] = argv[1 + fun->nargs()];
   }
 
   if (!InvokeFunction(cx, fun, constructing,
-                      /* ignoresReturnValue = */ false, numActualArgs, argv,
+                       false, numActualArgs, argv,
                       &rval)) {
     return false;
   }
 
-  // Overwrite |this| with the return value.
+  
   argv[0] = rval;
   return true;
 }
 
-static bool CheckOverRecursedImpl(JSContext* cx, size_t extra) {
-  // We just failed the jitStackLimit check. There are two possible reasons:
-  //  1) jitStackLimit was the real stack limit and we're over-recursed
-  //  2) jitStackLimit was set to JS::NativeStackLimitMin by
-  //     JSContext::requestInterrupt and we need to call
-  //     JSContext::handleInterrupt.
+static bool CheckOverRecursedImpl(JSContext* cx, size_t extra,
+                                  bool isResumingGenerator = false) {
+  
+  
+  
+  
+  
 
-  // This handles 1).
+  
 #ifdef JS_SIMULATOR
   if (cx->simulator()->overRecursedWithExtra(extra)) {
     ReportOverRecursed(cx);
@@ -641,18 +649,29 @@ static bool CheckOverRecursedImpl(JSContext* cx, size_t extra) {
   }
 #endif
 
-  // This handles 2).
+  
+  
+  
+  
+  
+  if (isResumingGenerator) {
+    return true;
+  }
   gc::MaybeVerifyBarriers(cx);
   return cx->handleInterrupt();
 }
 
 bool CheckOverRecursed(JSContext* cx) { return CheckOverRecursedImpl(cx, 0); }
 
+bool CheckOverRecursedResumingGenerator(JSContext* cx) {
+  return CheckOverRecursedImpl(cx, 0,  true);
+}
+
 bool CheckOverRecursedBaseline(JSContext* cx, BaselineFrame* frame) {
-  // The stack check in Baseline happens before pushing locals so we have to
-  // account for that by including script->nslots() in the C++ recursion check.
+  
+  
   size_t extra = frame->script()->nslots() * sizeof(Value);
-  return CheckOverRecursedImpl(cx, extra);
+  return CheckOverRecursedImpl(cx, extra, frame->isResumingGenerator());
 }
 
 bool MutatePrototype(JSContext* cx, Handle<PlainObject*> obj,
@@ -731,16 +750,16 @@ bool SetArrayLength(JSContext* cx, HandleObject obj, HandleValue value,
   RootedId id(cx, NameToId(cx->names().length));
   ObjectOpResult result;
 
-  // SetArrayLength is called by IC stubs for SetProp and SetElem on arrays'
-  // "length" property.
-  //
-  // ArraySetLength below coerces |value| before checking for length being
-  // writable, and in the case of illegal values, will throw RangeError even
-  // when "length" is not writable. This is incorrect observable behavior,
-  // as a regular [[Set]] operation will check for "length" being
-  // writable before attempting any assignment.
-  //
-  // So, perform ArraySetLength if and only if "length" is writable.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (array->lengthIsWritable()) {
     Rooted<PropertyDescriptor> desc(
         cx, PropertyDescriptor::Data(value, JS::PropertyAttribute::Writable));
@@ -789,15 +808,15 @@ JSLinearString* StringFromCharCodeNoGC(JSContext* cx, int32_t code) {
 JSLinearString* LinearizeForCharAccessPure(JSString* str) {
   AutoUnsafeCallWithABI unsafe;
 
-  // Should only be called on ropes.
+  
   MOZ_ASSERT(str->isRope());
 
-  // ensureLinear is intentionally called with a nullptr to avoid OOM reporting.
+  
   return str->ensureLinear(nullptr);
 }
 
 JSLinearString* LinearizeForCharAccess(JSContext* cx, JSString* str) {
-  // Should only be called on ropes.
+  
   MOZ_ASSERT(str->isRope());
 
   return str->ensureLinear(cx);
@@ -925,7 +944,7 @@ bool GetIntrinsicValue(JSContext* cx, Handle<PropertyName*> name,
 static uint32_t NumTraceableArgsForCreateThis(HandleFunction fun,
                                               uint32_t argc) {
   uint32_t numActualArgs = std::max(argc, uint32_t(fun->nargs()));
-  return numActualArgs + 1;  // Add 1 for newTarget
+  return numActualArgs + 1;  
 }
 
 bool CreateThisFromIC(JSContext* cx, HandleObject callee,
@@ -940,8 +959,8 @@ bool CreateThisFromIC(JSContext* cx, HandleObject callee,
   RootedExternalValueArray args(cx, NumTraceableArgsForCreateThis(fun, argc),
                                 argv);
 
-  // CreateThis expects rval to be this magic value.
-  rval.set(MagicValue(JS_IS_CONSTRUCTING));
+  
+  rval.setMagic(JS_IS_CONSTRUCTING);
 
   if (!js::CreateThis(cx, fun, newTarget, GenericObject, rval)) {
     return false;
@@ -985,8 +1004,8 @@ bool CreateThisFromICWithAllocSite(JSContext* cx, HandleObject callee,
 
 bool CreateThisFromIon(JSContext* cx, HandleObject callee,
                        HandleObject newTarget, MutableHandleValue rval) {
-  // Return JS_IS_CONSTRUCTING for cases not supported by the inline call path.
-  rval.set(MagicValue(JS_IS_CONSTRUCTING));
+  
+  rval.setMagic(JS_IS_CONSTRUCTING);
 
   if (!callee->is<JSFunction>()) {
     return true;
@@ -997,12 +1016,12 @@ bool CreateThisFromIon(JSContext* cx, HandleObject callee,
     return true;
   }
 
-  // If newTarget is not a function or is a function with a possibly-getter
-  // .prototype property, return NullValue to signal to LCallGeneric that it has
-  // to take the slow path. Note that we return NullValue instead of a
-  // MagicValue only because it's easier and faster to check for in JIT code
-  // (if we returned a MagicValue, JIT code would have to check both the type
-  // tag and the JSWhyMagic payload).
+  
+  
+  
+  
+  
+  
   if (!fun->constructorNeedsUninitializedThis()) {
     if (!newTarget->is<JSFunction>()) {
       rval.setNull();
@@ -1066,7 +1085,7 @@ void PostGlobalWriteBarrier(JSRuntime* rt, GlobalObject* obj) {
 }
 
 bool GetInt32FromStringPure(JSContext* cx, JSString* str, int32_t* result) {
-  // We shouldn't GC here as this is called directly from IC code.
+  
   AutoUnsafeCallWithABI unsafe;
 
   double d;
@@ -1078,14 +1097,14 @@ bool GetInt32FromStringPure(JSContext* cx, JSString* str, int32_t* result) {
 }
 
 int32_t GetIndexFromString(JSString* str) {
-  // We shouldn't GC here as this is called directly from IC code.
+  
   AutoUnsafeCallWithABI unsafe;
 
   if (!str->isLinear()) {
     return -1;
   }
 
-  uint32_t index = UINT32_MAX;  // Initialize this to appease Valgrind.
+  uint32_t index = UINT32_MAX;  
   if (!str->asLinear().isIndex(&index) || index > INT32_MAX) {
     return -1;
   }
@@ -1094,31 +1113,31 @@ int32_t GetIndexFromString(JSString* str) {
 }
 
 JSObject* WrapObjectPure(JSContext* cx, JSObject* obj) {
-  // IC code calls this directly so we shouldn't GC.
+  
   AutoUnsafeCallWithABI unsafe;
 
   MOZ_ASSERT(obj);
   MOZ_ASSERT(cx->compartment() != obj->compartment());
 
-  // From: Compartment::getNonWrapperObjectForCurrentCompartment
-  // Note that if the object is same-compartment, but has been wrapped into a
-  // different compartment, we need to unwrap it and return the bare same-
-  // compartment object. Note again that windows are always wrapped by a
-  // WindowProxy even when same-compartment so take care not to strip this
-  // particular wrapper.
-  obj = UncheckedUnwrap(obj, /* stopAtWindowProxy = */ true);
+  
+  
+  
+  
+  
+  
+  obj = UncheckedUnwrap(obj,  true);
   if (cx->compartment() == obj->compartment()) {
     MOZ_ASSERT(!IsWindow(obj));
     JS::ExposeObjectToActiveJS(obj);
     return obj;
   }
 
-  // Try to Lookup an existing wrapper for this object. We assume that
-  // if we can find such a wrapper, not calling preWrap is correct.
+  
+  
   if (ObjectWrapperMap::Ptr p = cx->compartment()->lookupWrapper(obj)) {
     JSObject* wrapped = p->value().get();
 
-    // Ensure the wrapper is still exposed.
+    
     JS::ExposeObjectToActiveJS(wrapped);
     return wrapped;
   }
@@ -1141,18 +1160,18 @@ bool DebugEpilogueOnBaselineReturn(JSContext* cx, BaselineFrame* frame,
 
 bool DebugEpilogue(JSContext* cx, BaselineFrame* frame, const jsbytecode* pc,
                    bool ok) {
-  // If DebugAPI::onLeaveFrame returns |true| we have to return the frame's
-  // return value. If it returns |false|, the debugger threw an exception.
-  // In both cases we have to pop debug scopes.
+  
+  
+  
   ok = DebugAPI::onLeaveFrame(cx, frame, pc, ok);
 
-  // Unwind to the outermost environment.
+  
   EnvironmentIter ei(cx, frame, pc);
   UnwindAllEnvironmentsInFrame(cx, ei);
 
   if (!ok) {
-    // Pop this frame by updating packedExitFP, so that the exception
-    // handling code will start at the previous frame.
+    
+    
     JitFrameLayout* prefix = frame->framePrefix();
     EnsureUnwoundJitExitFrame(cx->activation()->asJit(), prefix);
     return false;
@@ -1186,7 +1205,7 @@ bool NormalSuspend(JSContext* cx, HandleObject obj, BaselineFrame* frame,
   MOZ_ASSERT(JSOp(*pc) == JSOp::InitialYield || JSOp(*pc) == JSOp::Yield ||
              JSOp(*pc) == JSOp::Await);
 
-  // Minus one because we don't want to include the return value.
+  
   uint32_t numSlots = frame->numValueSlots(frameSize) - 1;
   MOZ_ASSERT(numSlots >= frame->script()->nfixed());
   return AbstractGeneratorObject::suspend(cx, obj, frame, pc, numSlots);
@@ -1199,15 +1218,8 @@ bool FinalSuspend(JSContext* cx, HandleObject obj, const jsbytecode* pc) {
 }
 
 bool DebugAfterYield(JSContext* cx, BaselineFrame* frame) {
-  // The BaselineFrame has just been constructed. We need to set its debuggee
-  // flag as necessary.
-  MOZ_ASSERT(!frame->isDebuggee());
-  if (frame->script()->isDebuggee()) {
-    frame->setIsDebuggee();
-    return DebugAPI::onResumeFrame(cx, frame);
-  }
-
-  return true;
+  MOZ_ASSERT_IF(frame->script()->isDebuggee(), frame->isDebuggee());
+  return DebugAPI::onResumeFrame(cx, frame);
 }
 
 bool GeneratorThrowOrReturn(JSContext* cx, BaselineFrame* frame,
@@ -1258,12 +1270,12 @@ ArrayObject* NewArrayObjectEnsureDenseInitLength(JSContext* cx, int32_t count) {
 ArrayObject* InitRestParameter(JSContext* cx, uint32_t length, Value* rest,
                                Handle<ArrayObject*> arrRes) {
   if (arrRes) {
-    // Fast path: we managed to allocate the array inline; initialize the
-    // elements.
+    
+    
     MOZ_ASSERT(arrRes->getDenseInitializedLength() == 0);
 
-    // We don't call this function if we can initialize the elements in JIT
-    // code.
+    
+    
     MOZ_ASSERT(length > arrRes->getDenseCapacity());
 
     if (!arrRes->growElements(cx, length)) {
@@ -1279,6 +1291,8 @@ ArrayObject* InitRestParameter(JSContext* cx, uint32_t length, Value* rest,
 
 bool HandleDebugTrap(JSContext* cx, BaselineFrame* frame,
                      const uint8_t* retAddr) {
+  MOZ_ASSERT(frame->isDebuggee());
+
   RootedScript script(cx, frame->script());
   jsbytecode* pc;
   if (frame->runningInInterpreter()) {
@@ -1288,9 +1302,9 @@ bool HandleDebugTrap(JSContext* cx, BaselineFrame* frame,
     pc = blScript->retAddrEntryFromReturnAddress(retAddr).pc(script);
   }
 
-  // The Baseline Interpreter calls HandleDebugTrap for every op when the script
-  // is in step mode or has breakpoints. The Baseline Compiler can toggle
-  // breakpoints more granularly for specific bytecode PCs.
+  
+  
+  
   if (frame->runningInInterpreter()) {
     MOZ_ASSERT(DebugAPI::hasAnyBreakpointsOrStepMode(script));
   } else {
@@ -1299,14 +1313,11 @@ bool HandleDebugTrap(JSContext* cx, BaselineFrame* frame,
   }
 
   if (frame->isResumingGenerator()) {
-    // JSOp::AfterYield will set the frame's debuggee flag, call the
-    // onEnterFrame handler, and handle breakpoint/stepping at that op (in
-    // DebugAPI::slowPathOnResumeFrame).
-    MOZ_ASSERT(!frame->isDebuggee());
+    
+    
+    
     return true;
   }
-
-  MOZ_ASSERT(frame->isDebuggee());
 
   if (DebugAPI::stepModeEnabled(script) && !DebugAPI::onSingleStep(cx)) {
     return false;
@@ -1408,7 +1419,7 @@ JSString* StringReplace(JSContext* cx, HandleString string,
 
 void AssertValidBigIntPtr(JSContext* cx, JS::BigInt* bi) {
   AutoUnsafeCallWithABI unsafe;
-  // FIXME: check runtime?
+  
   MOZ_ASSERT(cx->zone() == bi->zone());
   MOZ_ASSERT(bi->isAligned());
   MOZ_ASSERT(bi->getAllocKind() == gc::AllocKind::BIGINT);
@@ -1417,8 +1428,8 @@ void AssertValidBigIntPtr(JSContext* cx, JS::BigInt* bi) {
 void AssertValidObjectPtr(JSContext* cx, JSObject* obj) {
   AutoUnsafeCallWithABI unsafe;
 #ifdef DEBUG
-  // Check what we can, so that we'll hopefully assert/crash if we get a
-  // bogus object (pointer).
+  
+  
   MOZ_ASSERT(obj->compartment() == cx->compartment());
   MOZ_ASSERT(obj->zoneFromAnyThread() == cx->zone());
   MOZ_ASSERT(obj->runtimeFromMainThread() == cx->runtime());
@@ -1434,7 +1445,7 @@ void AssertValidObjectPtr(JSContext* cx, JSObject* obj) {
 void AssertValidStringPtr(JSContext* cx, JSString* str) {
   AutoUnsafeCallWithABI unsafe;
 #ifdef DEBUG
-  // We can't closely inspect strings from another runtime.
+  
   if (str->runtimeFromAnyThread() != cx->runtime()) {
     MOZ_ASSERT(str->isPermanentAtom());
     return;
@@ -1472,7 +1483,7 @@ void AssertValidStringPtr(JSContext* cx, JSString* str) {
 void AssertValidSymbolPtr(JSContext* cx, JS::Symbol* sym) {
   AutoUnsafeCallWithABI unsafe;
 
-  // We can't closely inspect symbols from another runtime.
+  
   if (sym->runtimeFromAnyThread() != cx->runtime()) {
     MOZ_ASSERT(sym->isWellKnownSymbol());
     return;
@@ -1512,9 +1523,9 @@ bool ObjectIsConstructor(JSObject* obj) {
 
 JSObject* ObjectKeys(JSContext* cx, HandleObject obj) {
   JS::RootedValueArray<3> argv(cx);
-  argv[0].setUndefined();   // rval
-  argv[1].setUndefined();   // this
-  argv[2].setObject(*obj);  // arg0
+  argv[0].setUndefined();   
+  argv[1].setUndefined();   
+  argv[2].setObject(*obj);  
   if (!js::obj_keys(cx, 1, argv.begin())) {
     return nullptr;
   }
@@ -1639,7 +1650,7 @@ bool CallDOMGetter(JSContext* cx, const JSJitInfo* info, HandleObject obj,
   MOZ_ASSERT(instanceChecker(obj->getClass(), info->protoID, info->depth));
 #endif
 
-  // Loading DOM_OBJECT_SLOT, which must be the first slot.
+  
   JS::Value val = obj->as<NativeObject>().getReservedSlot(0);
   JSJitGetterOp getter = info->getter;
   return getter(cx, obj, val.toPrivate(), JSJitGetterCallArgs(result));
@@ -1673,7 +1684,7 @@ bool CallDOMSetter(JSContext* cx, const JSJitInfo* info, HandleObject obj,
   MOZ_ASSERT(instanceChecker(obj->getClass(), info->protoID, info->depth));
 #endif
 
-  // Loading DOM_OBJECT_SLOT, which must be the first slot.
+  
   JS::Value val = obj->as<NativeObject>().getReservedSlot(0);
   JSJitSetterOp setter = info->setter;
 
@@ -1682,15 +1693,15 @@ bool CallDOMSetter(JSContext* cx, const JSJitInfo* info, HandleObject obj,
 }
 
 bool EqualStringsHelperPure(JSString* str1, JSString* str2) {
-  // IC code calls this directly so we shouldn't GC.
+  
   AutoUnsafeCallWithABI unsafe;
 
   MOZ_ASSERT(str1->isAtom());
   MOZ_ASSERT(!str2->isAtom());
   MOZ_ASSERT(str1->length() == str2->length());
 
-  // ensureLinear is intentionally called with a nullptr to avoid OOM
-  // reporting; if it fails, we will continue to the next stub.
+  
+  
   JSLinearString* str2Linear = str2->ensureLinear(nullptr);
   if (!str2Linear) {
     return false;
@@ -1705,8 +1716,8 @@ static bool MaybeTypedArrayIndexString(PropertyKey key) {
   if (MOZ_LIKELY(key.isAtom())) {
     JSAtom* str = key.toAtom();
     if (str->length() > 0) {
-      // Only check the first character because we want this function to be
-      // fast.
+      
+      
       return CanStartTypedArrayIndex(str->latin1OrTwoByteChar(0));
     }
   }
@@ -1766,8 +1777,8 @@ static MOZ_ALWAYS_INLINE bool MaybeGetNativePropertyAndWriteToCache(
         return true;
       }
       if constexpr (allowGC) {
-        // There's nothing fundamentally blocking us from supporting these,
-        // it's just not a priority
+        
+        
         if (prop.isCustomDataProperty()) {
           return false;
         }
@@ -1797,13 +1808,13 @@ static MOZ_ALWAYS_INLINE bool MaybeGetNativePropertyAndWriteToCache(
       }
     }
 
-    // Property not found. Watch out for Class hooks and TypedArrays.
+    
     if (MOZ_UNLIKELY(!nobj->is<PlainObject>())) {
       if (ClassMayResolveId(cx->names(), nobj->getClass(), key, nobj)) {
         return false;
       }
 
-      // Don't skip past TypedArrayObjects if the key can be a TypedArray index.
+      
       if (nobj->is<TypedArrayObject>()) {
         if (MaybeTypedArrayIndexString(key)) {
           return false;
@@ -1832,8 +1843,8 @@ bool GetNativeDataPropertyPureWithCacheLookup(JSContext* cx, JSObject* obj,
                                               Value* vp) {
   AutoUnsafeCallWithABI unsafe;
 
-  // If we're on x86, we didn't have enough registers to populate this
-  // directly in Baseline JITted code, so we do the lookup here.
+  
+  
   Shape* receiverShape = obj->shape();
   MegamorphicCache& cache = cx->caches().megamorphicCache;
 
@@ -1893,7 +1904,7 @@ bool GetNativeDataPropertyPure(JSContext* cx, JSObject* obj, PropertyKey id,
   return MaybeGetNativePropertyAndWriteToCache<NoGC>(cx, obj, id, entry, vp);
 }
 
-// Non-inlined implementation of ValueToAtomOrSymbolPure for less common types.
+
 static bool ValueToAtomOrSymbolSlow(JSContext* cx, const Value& keyVal,
                                     PropertyKey* key) {
   MOZ_ASSERT(!keyVal.isString());
@@ -1935,7 +1946,7 @@ static MOZ_ALWAYS_INLINE bool ValueToAtomOrSymbolPure(JSContext* cx,
       return false;
     }
 
-    // Watch out for integer ids because they may be stored in dense elements.
+    
     static_assert(PropertyKey::IntMin == 0);
     static_assert(NativeObject::MAX_DENSE_ELEMENTS_COUNT < PropertyKey::IntMax,
                   "All dense elements must have integer jsids");
@@ -1960,7 +1971,7 @@ bool GetNativeDataPropertyByValuePure(JSContext* cx, JSObject* obj,
                                       MegamorphicCacheEntry* entry, Value* vp) {
   AutoUnsafeCallWithABI unsafe;
 
-  // vp[0] contains the key, result will be stored in vp[1].
+  
   Value keyVal = vp[0];
   PropertyKey key;
   if (!ValueToAtomOrSymbolPure(cx, keyVal, &key)) {
@@ -2001,8 +2012,8 @@ bool GetPropertyCached(JSContext* cx, HandleObject obj, HandleId id,
     result.set(nobj->getDynamicSlot(index));
   }
 
-  // If it's a data property, we're done - otherwise we need to try to call the
-  // getter
+  
+  
   if (entry->isDataProperty()) {
     return true;
   }
@@ -2021,17 +2032,17 @@ bool GetPropMaybeCached(JSContext* cx, HandleObject obj, HandleId id,
                         MegamorphicCacheEntry* entry,
                         MutableHandleValue result) {
   if (obj->is<NativeObject>()) {
-    // Look up the entry in the cache if we don't have it
+    
     Shape* receiverShape = obj->shape();
     MegamorphicCache& cache = cx->caches().megamorphicCache;
     if (!entry) {
       cache.lookup(receiverShape, id, &entry);
     }
 
-    // If we hit it, load it from the cache. We can't though if it was a
-    // MissingOwnProperty entry (added by the HasOwn handler), because we
-    // need to look it up again to know if it's somewhere on the prototype
-    // chain
+    
+    
+    
+    
     if (cache.isValidForLookup(*entry, receiverShape, id) &&
         !entry->isMissingOwnProperty()) {
       return GetPropertyCached(cx, obj, id, entry, result);
@@ -2042,10 +2053,10 @@ bool GetPropMaybeCached(JSContext* cx, HandleObject obj, HandleId id,
       return true;
     }
 
-    // The getter call in MaybeGetNativePropertyAndWriteToCache can throw, so
-    // we need to check for that specifically
-    // XXX: I know this is unusual, but I'm not sure on the best approach here -
-    // is this alright?
+    
+    
+    
+    
     if (JS_IsExceptionPending(cx)) {
       return false;
     }
@@ -2077,8 +2088,8 @@ bool GetElemMaybeCached(JSContext* cx, HandleObject obj, HandleValue keyVal,
       return true;
     }
 
-    // The getter call in MaybeGetNativePropertyAndWriteToCache can throw, so
-    // we need to check for that specifically
+    
+    
     if (JS_IsExceptionPending(cx)) {
       return false;
     }
@@ -2093,8 +2104,8 @@ bool ObjectHasGetterSetterPure(JSContext* cx, JSObject* objArg, jsid id,
                                GetterSetter* getterSetter) {
   AutoUnsafeCallWithABI unsafe;
 
-  // Window objects may require outerizing (passing the WindowProxy to the
-  // getter/setter), so we don't support them here.
+  
+  
   if (MOZ_UNLIKELY(!objArg->is<NativeObject>() || IsWindow(objArg))) {
     return false;
   }
@@ -2116,7 +2127,7 @@ bool ObjectHasGetterSetterPure(JSContext* cx, JSObject* objArg, jsid id,
               actualGetterSetter->setter() == getterSetter->setter());
     }
 
-    // Property not found. Watch out for Class hooks.
+    
     if (!nobj->is<PlainObject>()) {
       if (ClassMayResolveId(cx->names(), nobj->getClass(), id, nobj)) {
         return false;
@@ -2140,7 +2151,7 @@ bool HasNativeDataPropertyPure(JSContext* cx, JSObject* obj,
                                MegamorphicCacheEntry* entry, Value* vp) {
   AutoUnsafeCallWithABI unsafe;
 
-  // vp[0] contains the key, result will be stored in vp[1].
+  
   Value keyVal = vp[0];
   PropertyKey key;
   if (!ValueToAtomOrSymbolPure(cx, keyVal, &key)) {
@@ -2176,16 +2187,16 @@ bool HasNativeDataPropertyPure(JSContext* cx, JSObject* obj,
       return true;
     }
 
-    // Property not found. Watch out for Class hooks and TypedArrays.
+    
     if (MOZ_UNLIKELY(!obj->is<PlainObject>())) {
-      // Fail if there's a resolve hook, unless the mayResolve hook tells us
-      // the resolve hook won't define a property with this key.
+      
+      
       if (ClassMayResolveId(cx->names(), obj->getClass(), key, obj)) {
         return false;
       }
 
-      // Don't skip past TypedArrayObjects if the key can be a TypedArray
-      // index.
+      
+      
       if (obj->is<TypedArrayObject>()) {
         if (MaybeTypedArrayIndexString(key)) {
           return false;
@@ -2193,18 +2204,18 @@ bool HasNativeDataPropertyPure(JSContext* cx, JSObject* obj,
       }
     }
 
-    // If implementing Object.hasOwnProperty, don't follow protochain.
+    
     if constexpr (HasOwn) {
       break;
     }
 
-    // Get prototype. Objects that may allow dynamic prototypes are already
-    // filtered out above.
+    
+    
     obj = obj->staticPrototype();
     numHops++;
   } while (obj);
 
-  // Missing property.
+  
   if (entry) {
     if constexpr (HasOwn) {
       cache.initEntryForMissingOwnProperty(entry, receiverShape, key);
@@ -2249,12 +2260,12 @@ bool HasNativeElementPure(JSContext* cx, NativeObject* obj, int32_t index,
     return true;
   }
 
-  // Fail if there's a resolve hook, unless the mayResolve hook tells
-  // us the resolve hook won't define a property with this key.
+  
+  
   if (MOZ_UNLIKELY(ClassMayResolveId(cx->names(), obj->getClass(), key, obj))) {
     return false;
   }
-  // TypedArrayObject are also native and contain indexed properties.
+  
   if (MOZ_UNLIKELY(obj->is<TypedArrayObject>())) {
     size_t length = obj->as<TypedArrayObject>().length().valueOr(0);
     vp[0].setBoolean(uint32_t(index) < length);
@@ -2265,8 +2276,8 @@ bool HasNativeElementPure(JSContext* cx, NativeObject* obj, int32_t index,
   return true;
 }
 
-// Fast path for setting/adding a native object property. This is the common
-// case for megamorphic SetProp/SetElem.
+
+
 template <bool UseCache>
 static bool TryAddOrSetNativeObjectProperty(JSContext* cx,
                                             Handle<NativeObject*> obj,
@@ -2281,7 +2292,7 @@ static bool TryAddOrSetNativeObjectProperty(JSContext* cx,
   if constexpr (UseCache) {
     MegamorphicSetPropCache::Entry* entry;
     if (cache.lookup(receiverShape, key, &entry)) {
-      if (entry->afterShape() != nullptr) {  // AddProp
+      if (entry->afterShape() != nullptr) {  
         NativeObject* holder = nullptr;
         PropertyResult prop;
         MOZ_ASSERT(LookupPropertyPure(cx, obj, key, &holder, &prop));
@@ -2290,7 +2301,7 @@ static bool TryAddOrSetNativeObjectProperty(JSContext* cx,
                       prop.isNativeProperty() &&
                           prop.propertyInfo().isDataProperty() &&
                           prop.propertyInfo().writable());
-      } else {  // SetProp
+      } else {  
         mozilla::Maybe<PropertyInfo> prop = obj->lookupPure(key);
         MOZ_ASSERT(prop.isSome());
         MOZ_ASSERT(prop->isDataProperty());
@@ -2301,7 +2312,7 @@ static bool TryAddOrSetNativeObjectProperty(JSContext* cx,
   }
 #endif
 
-  // Fast path for changing a data property.
+  
   uint32_t index;
   if (PropMap* map = obj->shape()->lookup(cx, key, &index)) {
     PropertyInfo prop = map->getPropertyInfo(index);
@@ -2317,10 +2328,10 @@ static bool TryAddOrSetNativeObjectProperty(JSContext* cx,
     *optimized = true;
 
     if constexpr (UseCache) {
-      // Don't add an entry to the MegamorphicSetPropCache if we need to invoke
-      // the Watchtower hook for property value changes. The cache is used
-      // directly from JIT code and we can't easily call into Watchtower from
-      // there.
+      
+      
+      
+      
       if (!watchesPropValue) {
         TaggedSlotOffset offset = obj->getTaggedSlotOffset(prop.slot());
         cache.set(receiverShape, nullptr, key, offset, 0);
@@ -2329,15 +2340,15 @@ static bool TryAddOrSetNativeObjectProperty(JSContext* cx,
     return true;
   }
 
-  // Don't support "__proto__". This lets us take advantage of the
-  // hasNonWritableOrAccessorPropExclProto optimization below.
+  
+  
   if (MOZ_UNLIKELY(!obj->isExtensible() || key.isAtom(cx->names().proto_))) {
     return true;
   }
 
-  // Ensure the proto chain contains only plain objects. Deoptimize for accessor
-  // properties and non-writable data properties (we can't shadow non-writable
-  // properties).
+  
+  
+  
   JSObject* proto = obj->staticPrototype();
   while (proto) {
     if (!proto->is<NativeObject>()) {
@@ -2364,8 +2375,8 @@ static bool TryAddOrSetNativeObjectProperty(JSContext* cx,
   }
 
 #ifdef DEBUG
-  // At this point either the property is missing or it's a writable data
-  // property on the proto chain that we can shadow.
+  
+  
   {
     NativeObject* holder = nullptr;
     PropertyResult prop;
@@ -2536,24 +2547,24 @@ bool DoConcatStringObject(JSContext* cx, HandleValue lhs, HandleValue rhs,
   JSString* rstr = nullptr;
 
   if (lhs.isString()) {
-    // Convert rhs first.
+    
     MOZ_ASSERT(lhs.isString() && rhs.isObject());
     rstr = ConvertObjectToStringForConcat(cx, rhs);
     if (!rstr) {
       return false;
     }
 
-    // lhs is already string.
+    
     lstr = lhs.toString();
   } else {
     MOZ_ASSERT(rhs.isString() && lhs.isObject());
-    // Convert lhs first.
+    
     lstr = ConvertObjectToStringForConcat(cx, lhs);
     if (!lstr) {
       return false;
     }
 
-    // rhs is already string.
+    
     rstr = rhs.toString();
   }
 
@@ -2583,7 +2594,7 @@ bool IsPossiblyWrappedTypedArray(JSContext* cx, JSObject* obj, bool* result) {
   return true;
 }
 
-// Called from CreateDependentString::generateFallback.
+
 void* AllocateDependentString(JSContext* cx) {
   AutoUnsafeCallWithABI unsafe;
   return cx->newCell<JSDependentString, NoGC>(js::gc::Heap::Default);
@@ -2593,7 +2604,7 @@ void* AllocateFatInlineString(JSContext* cx) {
   return cx->newCell<JSFatInlineString, NoGC>(js::gc::Heap::Default);
 }
 
-// Called to allocate a BigInt if inline allocation failed.
+
 void* AllocateBigIntNoGC(JSContext* cx, bool requestMinorGC) {
   AutoUnsafeCallWithABI unsafe;
 
@@ -2609,31 +2620,31 @@ void AllocateAndInitTypedArrayBuffer(JSContext* cx,
                                      int32_t count, size_t inlineCapacity) {
   AutoUnsafeCallWithABI unsafe;
 
-  // Inline implementation of the last steps in
-  // `FixedLengthTypedArrayObjectTemplate::makeTypedArrayWithTemplate`.
-  //
-  // 1. Perform FixedLengthTypedArrayObjectTemplate::initTypedArraySlots:
-  //   - Initialize BUFFER_SLOT, LENGTH_SLOT, and BYTEOFFSET_SLOT.
-  //   - Mark zero-length typed arrays with `ZeroLengthArrayData`.
-  // 2. Perform FixedLengthTypedArrayObjectTemplate::initTypedArrayData:
-  //   - Initialize the DATA_SLOT.
+  
+  
+  
+  
+  
+  
+  
+  
 
-  // The data slot is initialized to UndefinedValue when copying slots from the
-  // template object. If the slot isn't overwritten below, this value is used as
-  // a signal to our JIT caller that the allocation failed.
+  
+  
+  
   MOZ_RELEASE_ASSERT(
       obj->getFixedSlot(TypedArrayObject::DATA_SLOT).isUndefined(),
       "DATA_SLOT initialized to UndefinedValue in JIT code");
 
-  // The buffer and byte-offset slots are initialized to their default values.
+  
   MOZ_ASSERT(obj->getFixedSlot(TypedArrayObject::BUFFER_SLOT).isFalse(),
              "BUFFER_SLOT initialized to FalseValue in JIT code");
   MOZ_ASSERT(obj->getFixedSlot(TypedArrayObject::BYTEOFFSET_SLOT) ==
                  PrivateValue(size_t(0)),
              "BUFFER_SLOT initialized to PrivateValue(0) in JIT code");
 
-  // Negative numbers will bail out to the slow path, which in turn will raise
-  // an invalid argument exception.
+  
+  
   constexpr size_t byteLengthLimit = TypedArrayObject::ByteLengthLimit;
   size_t bytesPerElement = obj->bytesPerElement();
   if (count < 0 || size_t(count) > byteLengthLimit / bytesPerElement) {
@@ -2644,11 +2655,11 @@ void AllocateAndInitTypedArrayBuffer(JSContext* cx,
   size_t nbytes = size_t(count) * bytesPerElement;
   MOZ_ASSERT(nbytes <= byteLengthLimit);
 
-  // Overwrite the slot with the length of the newly allocated typed array.
+  
   obj->setFixedSlot(TypedArrayObject::LENGTH_SLOT, PrivateValue(count));
 
-  // If possible try to use the available inline space allocated through the
-  // template object's alloc-kind.
+  
+  
   if (inlineCapacity > 0 && nbytes <= inlineCapacity) {
     uint8_t* data =
         obj->fixedData(FixedLengthTypedArrayObject::FIXED_DATA_START);
@@ -2664,9 +2675,9 @@ void AllocateAndInitTypedArrayBuffer(JSContext* cx,
     return;
   }
 
-  // Zero-length typed arrays have to be tagged with |ZeroLengthArrayData|, but
-  // there's not enough space when exceeding the inline buffer limit. Fall back
-  // to the slow path.
+  
+  
+  
   if (count == 0) {
     MOZ_ASSERT(inlineCapacity == 0);
     return;
@@ -3261,7 +3272,7 @@ void DateFillLocalTimeSlots(DateObject* dateObj) {
 double DateNow(JSContext* cx) {
   AutoUnsafeCallWithABI unsafe;
 
-  // ClippedTime can return non-canonical NaN, so canonicalize explicitly.
+  
   return JS::CanonicalizeNaN(js::DateNow(cx).toDouble());
 }
 
@@ -3272,14 +3283,14 @@ double DateParse(JSContext* cx, const JSString* str) {
 
   const auto* linear = &str->asLinear();
 
-  // ClippedTime can return non-canonical NaN, so canonicalize explicitly.
+  
   return JS::CanonicalizeNaN(js::DateParse(cx, linear).toDouble());
 }
 
 double DateLocalTimeToUTC(JSContext* cx, int64_t localTime) {
   AutoUnsafeCallWithABI unsafe;
 
-  // ClippedTime can return non-canonical NaN, so canonicalize explicitly.
+  
   return JS::CanonicalizeNaN(js::LocalTimeToUTC(cx, localTime).toDouble());
 }
 
@@ -3329,7 +3340,7 @@ JSObject* NewDateObject(JSContext* cx, double utcTime) {
 }
 
 JSAtom* AtomizeStringNoGC(JSContext* cx, JSString* str) {
-  // IC code calls this directly so we shouldn't GC.
+  
   AutoUnsafeCallWithABI unsafe;
 
   JSAtom* atom = AtomizeString(cx, str);
@@ -3432,12 +3443,12 @@ void AssertPropertyLookup(NativeObject* obj, PropertyKey id, uint32_t slot) {
 #endif
 }
 
-// This is a specialized version of WeakMap::valueReadBarrier.
+
 
 void WeakMapValueReadBarrier(js::gc::TenuredCell* cell, Zone* mapZone) {
   AutoUnsafeCallWithABI unsafe;
 
-  // This is an inlined and specialized copy of ExposeGCThingToActiveJS.
+  
   {
     MOZ_ASSERT(!JS::RuntimeHeapIsCollecting());
     MOZ_ASSERT(!gc::IsInsideNursery(cell));
@@ -3467,9 +3478,9 @@ void AssumeUnreachable(const char* output) {
 void Printf0(const char* output) {
   AutoUnsafeCallWithABI unsafe;
 
-  // Use stderr instead of stdout because this is only used for debug
-  // output. stderr is less likely to interfere with the program's normal
-  // output, and it's always unbuffered.
+  
+  
+  
   fprintf(stderr, "%s", output);
 }
 
@@ -3483,5 +3494,5 @@ void Printf1(const char* output, uintptr_t value) {
   fprintf(stderr, "%s", line.get());
 }
 
-}  // namespace jit
-}  // namespace js
+}  
+}  

@@ -310,6 +310,8 @@ bool WarpBuilder::build() {
 }
 
 bool WarpBuilder::buildInline() {
+  MOZ_ASSERT(!script_->isGenerator() && !script_->isAsync());
+
   if (!buildInlinePrologue()) {
     return false;
   }
@@ -473,7 +475,8 @@ bool WarpBuilder::buildPrologue() {
   current->add(MStart::New(alloc()));
 
   
-  MCheckOverRecursed* check = MCheckOverRecursed::New(alloc());
+  auto* check =
+      MCheckOverRecursed::New(alloc(),  false);
   current->add(check);
 
   if (!buildEnvironmentChain()) {
@@ -2437,6 +2440,23 @@ bool WarpBuilder::build_FinalYieldRval(BytecodeLocation loc) {
   return build_RetRval(loc);
 }
 
+bool WarpBuilder::build_Resume(BytecodeLocation loc) {
+  MDefinition* resumeKind = current->pop();
+  MDefinition* value = current->pop();
+  MDefinition* gen = current->pop();
+
+  
+  
+  MOZ_RELEASE_ASSERT(resumeKind->isConstant());
+  int32_t resumeKindInt32 = resumeKind->toConstant()->toInt32();
+  resumeKind->setImplicitlyUsedUnchecked();
+
+  auto* resume = MGeneratorResume::New(alloc(), gen, value, resumeKindInt32);
+  current->add(resume);
+  current->push(resume);
+  return resumeAfter(resume, loc);
+}
+
 bool WarpBuilder::build_AsyncResolve(BytecodeLocation loc) {
   MDefinition* generator = current->pop();
   MDefinition* value = current->pop();
@@ -2565,13 +2585,12 @@ bool WarpBuilder::buildSuspend(BytecodeLocation loc, MDefinition* gen,
       current->add(MPostWriteBarrier::New(alloc(), arrayObj, stackElem));
     }
 
-    auto* len = constant(Int32Value(slotsToCopy - 1));
-
     auto* setInitLength =
-        MSetInitializedLength::New(alloc(), stackStorage, len);
+        MSetInitializedLength::New(alloc(), stackStorage, slotsToCopy,
+                                    false);
     current->add(setInitLength);
 
-    auto* setLength = MSetArrayLength::New(alloc(), stackStorage, len);
+    auto* setLength = MSetArrayLength::New(alloc(), stackStorage, slotsToCopy);
     current->add(setLength);
   }
 
@@ -3012,7 +3031,8 @@ bool WarpBuilder::build_InitElemArray(BytecodeLocation loc) {
     current->add(store);
   }
 
-  auto* setLength = MSetInitializedLength::New(alloc(), elements, indexConst);
+  auto* setLength = MSetInitializedLength::New(alloc(), elements, index + 1,
+                                                false);
   current->add(setLength);
 
   return resumeAfter(setLength, loc);
@@ -3221,13 +3241,12 @@ bool WarpBuilder::build_Rest(BytecodeLocation loc) {
 
     
     
-    MConstant* index = nullptr;
     for (uint32_t i = numFormals; i < numActuals; i++) {
       if (!alloc().ensureBallast()) {
         return false;
       }
 
-      index = MConstant::NewInt32(alloc(), i - numFormals);
+      MConstant* index = MConstant::NewInt32(alloc(), i - numFormals);
       current->add(index);
 
       MDefinition* arg = inlineCallInfo()->argv()[i];
@@ -3241,7 +3260,8 @@ bool WarpBuilder::build_Rest(BytecodeLocation loc) {
     
     
     MSetInitializedLength* initLength =
-        MSetInitializedLength::New(alloc(), elements, index);
+        MSetInitializedLength::New(alloc(), elements, numRest,
+                                    false);
     current->add(initLength);
 
     return true;
