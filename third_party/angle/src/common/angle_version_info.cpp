@@ -20,6 +20,13 @@ const char *GetANGLEVersionString()
     return ANGLE_VERSION_STRING;
 }
 
+
+
+const char *GetANGLEEGLVersionString()
+{
+    return "1.5 (ANGLE " ANGLE_VERSION_STRING ")";
+}
+
 const char *GetANGLECommitHash()
 {
     return ANGLE_COMMIT_HASH;

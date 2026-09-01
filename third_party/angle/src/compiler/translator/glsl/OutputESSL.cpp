@@ -12,7 +12,7 @@ namespace sh
 TOutputESSL::TOutputESSL(TCompiler *compiler,
                          TInfoSinkBase &objSink,
                          const ShCompileOptions &compileOptions)
-    : TOutputGLSLBase(compiler, objSink, compileOptions)
+    : TOutputGLSLBase(compiler, objSink, compileOptions, false)
 {}
 
 bool TOutputESSL::writeVariablePrecision(TPrecision precision)
@@ -28,25 +28,6 @@ bool TOutputESSL::writeVariablePrecision(TPrecision precision)
 ImmutableString TOutputESSL::translateTextureFunction(const ImmutableString &name,
                                                       const ShCompileOptions &option)
 {
-    
-    if (name == "textureVideoWEBGL")
-    {
-        if (option.takeVideoTextureAsExternalOES)
-        {
-            
-            UNIMPLEMENTED();
-            return ImmutableString("");
-        }
-        else
-        {
-            
-            
-            
-            return (getShaderVersion() >= 300) ? ImmutableString("texture")
-                                               : ImmutableString("texture2D");
-        }
-    }
-
     return name;
 }
 

@@ -51,20 +51,23 @@ bool PreferStagedTextureUploads(const gl::Context *context,
 angle::Result InitializeTextureContents(const gl::Context *context,
                                         const TextureRef &texture,
                                         const Format &textureObjFormat,
-                                        const ImageNativeIndex &index);
+                                        const ImageNativeIndex &index,
+                                        bool toNonZero = false);
 
 
 angle::Result InitializeTextureContentsGPU(const gl::Context *context,
                                            const TextureRef &texture,
                                            const Format &textureObjFormat,
                                            const ImageNativeIndex &index,
-                                           MTLColorWriteMask channelsToInit);
+                                           MTLColorWriteMask channelsToInit,
+                                           bool toNonZero = false);
 
 
 angle::Result InitializeDepthStencilTextureContentsGPU(const gl::Context *context,
                                                        const TextureRef &texture,
                                                        const Format &textureObjFormat,
-                                                       const ImageNativeIndex &index);
+                                                       const ImageNativeIndex &index,
+                                                       bool toNonZero = false);
 
 
 angle::Result ReadTexturePerSliceBytes(const gl::Context *context,
@@ -153,7 +156,6 @@ MTLStencilOperation GetStencilOp(GLenum op);
 
 MTLWinding GetFrontfaceWinding(GLenum frontFaceMode, bool invert);
 
-MTLPrimitiveTopologyClass GetPrimitiveTopologyClass(gl::PrimitiveMode mode);
 MTLPrimitiveType GetPrimitiveType(gl::PrimitiveMode mode);
 MTLIndexType GetIndexType(gl::DrawElementsType type);
 

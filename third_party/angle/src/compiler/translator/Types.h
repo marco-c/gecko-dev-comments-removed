@@ -308,7 +308,13 @@ class TType
                 return mArraySizes[i] < right.mArraySizes[i];
         }
         if (mStructure != right.mStructure)
+        {
             return mStructure < right.mStructure;
+        }
+        if (mInterfaceBlock != right.mInterfaceBlock)
+        {
+            return mInterfaceBlock < right.mInterfaceBlock;
+        }
 
         return false;
     }
@@ -362,7 +368,6 @@ class TType
     bool isSampler() const { return IsSampler(type); }
     bool isSamplerCube() const { return type == EbtSamplerCube; }
     bool isAtomicCounter() const { return IsAtomicCounter(type); }
-    bool isSamplerVideoWEBGL() const { return type == EbtSamplerVideoWEBGL; }
     bool isImage() const { return IsImage(type); }
     bool isPixelLocal() const { return IsPixelLocal(type); }
 
@@ -430,7 +435,12 @@ struct TTypeSpecifierNonArray
     TSourceLoc line;
 
     
+    
+    
+    
+    
     bool isStructSpecifier;
+    bool isStructSpecifierForValidation;
 
     void initialize(TBasicType aType, const TSourceLoc &aLine)
     {
@@ -441,18 +451,22 @@ struct TTypeSpecifierNonArray
         userDef           = nullptr;
         line              = aLine;
         isStructSpecifier = false;
+        isStructSpecifierForValidation = false;
     }
 
     void initializeStruct(const TStructure *aUserDef,
                           bool aIsStructSpecifier,
+                          bool aIsStructSpecifierForValidation,
                           const TSourceLoc &aLine)
     {
+        ASSERT(!aIsStructSpecifier || aIsStructSpecifierForValidation);
         type              = EbtStruct;
         primarySize       = 1;
         secondarySize     = 1;
         userDef           = aUserDef;
         line              = aLine;
         isStructSpecifier = aIsStructSpecifier;
+        isStructSpecifierForValidation = aIsStructSpecifierForValidation;
     }
 
     void setAggregate(uint8_t size) { primarySize = size; }
@@ -495,6 +509,10 @@ struct TPublicType
     const TSourceLoc &getLine() const { return typeSpecifierNonArray.line; }
 
     bool isStructSpecifier() const { return typeSpecifierNonArray.isStructSpecifier; }
+    bool isStructSpecifierForValidation() const
+    {
+        return typeSpecifierNonArray.isStructSpecifierForValidation;
+    }
 
     bool isStructureContainingArrays() const;
     bool isStructureContainingType(TBasicType t) const;

@@ -2995,8 +2995,6 @@ void GL_APIENTRY glLogicOpANGLE(GLenum opcode)
 }
 
 
-
-
 void GL_APIENTRY glTexStorageMemFlags2DANGLE(GLenum target,
                                              GLsizei levels,
                                              GLenum internalFormat,
@@ -3140,7 +3138,6 @@ void GL_APIENTRY glRequestExtensionANGLE(const GLchar *name)
 {
     return GL_RequestExtensionANGLE(name);
 }
-
 
 
 
@@ -3709,25 +3706,6 @@ void GL_APIENTRY glGetFramebufferPixelLocalStorageParameteruivANGLE(GLint plane,
 
 
 
-void GL_APIENTRY glTexImage2DExternalANGLE(GLenum target,
-                                           GLint level,
-                                           GLint internalformat,
-                                           GLsizei width,
-                                           GLsizei height,
-                                           GLint border,
-                                           GLenum format,
-                                           GLenum type)
-{
-    return GL_TexImage2DExternalANGLE(target, level, internalformat, width, height, border, format,
-                                      type);
-}
-
-void GL_APIENTRY glInvalidateTextureANGLE(GLenum target)
-{
-    return GL_InvalidateTextureANGLE(target);
-}
-
-
 void GL_APIENTRY glTexStorage2DMultisampleANGLE(GLenum target,
                                                 GLsizei samples,
                                                 GLenum internalformat,
@@ -3855,7 +3833,6 @@ void GL_APIENTRY glEGLImageTargetTexStorageEXT(GLenum target,
 {
     return GL_EGLImageTargetTexStorageEXT(target, image, attrib_list);
 }
-
 
 
 
@@ -4206,7 +4183,6 @@ void GL_APIENTRY glBufferStorageExternalEXT(GLenum target,
 {
     return GL_BufferStorageExternalEXT(target, offset, size, clientBuffer, flags);
 }
-
 
 
 
@@ -4942,6 +4918,8 @@ void GL_APIENTRY glTexBufferRangeEXT(GLenum target,
 {
     return GL_TexBufferRangeEXT(target, internalformat, buffer, offset, size);
 }
+
+
 
 
 
@@ -5964,6 +5942,8 @@ void GL_APIENTRY glTextureFoveationParametersQCOM(GLuint texture,
     return GL_TextureFoveationParametersQCOM(texture, layer, focalPoint, focalX, focalY, gainX,
                                              gainY, foveaArea);
 }
+
+
 
 
 void GL_APIENTRY glEndTilingQCOM(GLbitfield preserveMask)

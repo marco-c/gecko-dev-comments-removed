@@ -28,9 +28,6 @@ struct ValidateASTOptions
     bool validateVariableReferences = true;
     
     
-    bool validateSpecConstReferences = false;
-    
-    
     
     
     
@@ -97,6 +94,9 @@ struct ValidateASTOptions
     
     
     bool validateNoStatementsAfterBranch = true;
+    
+    
+    bool validateNoCaseAtEndOfSwitchBlock = true;
     
     
     bool validateNoSwizzleOfSwizzle = true;

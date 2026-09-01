@@ -37,8 +37,8 @@ class VertexBinding final : angle::NonCopyable
     GLuint getDivisor() const { return mDivisor; }
     void setDivisor(GLuint divisorIn) { mDivisor = divisorIn; }
 
-    GLintptr getOffset() const { return mOffset; }
-    void setOffset(GLintptr offsetIn) { mOffset = offsetIn; }
+    uintptr_t getOffset() const { return mOffset; }
+    void setOffset(uintptr_t offsetIn) { mOffset = offsetIn; }
 
     const AttributesMask &getBoundAttributesMask() const { return mBoundAttributesMask; }
 
@@ -49,7 +49,7 @@ class VertexBinding final : angle::NonCopyable
   private:
     GLuint mStride;
     GLuint mDivisor;
-    GLintptr mOffset;
+    uintptr_t mOffset;
 
     
     AttributesMask mBoundAttributesMask;
@@ -98,9 +98,12 @@ ANGLE_INLINE size_t ComputeVertexAttributeTypeSize(const VertexAttribute &attrib
 size_t ComputeVertexAttributeStride(const VertexAttribute &attrib, const VertexBinding &binding);
 
 
-GLintptr ComputeVertexAttributeOffset(const VertexAttribute &attrib, const VertexBinding &binding);
+uintptr_t ComputeVertexAttributeOffset(const VertexAttribute &attrib, const VertexBinding &binding);
 
-size_t ComputeVertexBindingElementCount(GLuint divisor, uint64_t drawCount, size_t instanceCount);
+size_t ComputeVertexBindingElementCount(GLuint divisor,
+                                        uint64_t drawCount,
+                                        size_t instanceCount,
+                                        uint64_t baseInstance);
 
 struct VertexAttribCurrentValueData
 {

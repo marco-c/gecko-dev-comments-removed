@@ -231,7 +231,9 @@ std::vector<const Config *> ConfigSet::filter(const AttributeMap &attributeMap) 
     std::vector<const Config *> result;
 
     
-    if (attributeMap.contains(EGL_CONFIG_ID))
+    
+    
+    if (attributeMap.contains(EGL_CONFIG_ID) && attributeMap.get(EGL_CONFIG_ID) != EGL_DONT_CARE)
     {
         result.push_back(&ConfigSet::get(attributeMap.getAsInt(EGL_CONFIG_ID)));
         return result;

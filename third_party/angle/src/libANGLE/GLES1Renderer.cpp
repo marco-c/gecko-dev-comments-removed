@@ -147,7 +147,7 @@ angle::Result GLES1Renderer::prepareForDraw(PrimitiveMode mode,
         if (texCubeEnables[i] && currCubeTexture &&
             IsMipmapFiltered(currCubeTexture->getMinFilter()))
         {
-            texCubeEnables[i] = curr2DTexture->isMipmapComplete();
+            texCubeEnables[i] = currCubeTexture->isMipmapComplete();
         }
     }
 
@@ -316,6 +316,23 @@ angle::Result GLES1Renderer::prepareForDraw(PrimitiveMode mode,
     setUniform4fv(&executable, programState.drawTextureNormalizedCropRectLoc, kTexUnitCount,
                   reinterpret_cast<GLfloat *>(cropRectBuffer));
 
+    for (int i = 0; i < kTexUnitCount; i++)
+    {
+        
+        
+        if (texCubeEnables[i])
+        {
+            setUniform1i(context, &executable, programState.tex2DSamplerLocs[i], i + kTexUnitCount);
+            setUniform1i(context, &executable, programState.texCubeSamplerLocs[i], i);
+        }
+        else
+        {
+            setUniform1i(context, &executable, programState.tex2DSamplerLocs[i], i);
+            setUniform1i(context, &executable, programState.texCubeSamplerLocs[i],
+                         i + kTexUnitCount);
+        }
+    }
+
     if (gles1State->isDirty(GLES1State::DIRTY_GLES1_LOGIC_OP) && hasLogicOpANGLE)
     {
         
@@ -415,6 +432,7 @@ angle::Result GLES1Renderer::prepareForDraw(PrimitiveMode mode,
 
     if (gles1State->isDirty(GLES1State::DIRTY_GLES1_TEXTURE_ENVIRONMENT))
     {
+        float maxLodBias = context->getCaps().maxLODBias;
         for (int i = 0; i < kTexUnitCount; i++)
         {
             const auto &env = gles1State->textureEnvironment(i);
@@ -426,6 +444,7 @@ angle::Result GLES1Renderer::prepareForDraw(PrimitiveMode mode,
 
             uniformBuffers.texEnvRgbScales[i]   = env.rgbScale;
             uniformBuffers.texEnvAlphaScales[i] = env.alphaScale;
+            uniformBuffers.texEnvLodBiases[i]   = gl::clamp(env.lodBias, -maxLodBias, maxLodBias);
         }
 
         setUniform4fv(&executable, programState.textureEnvColorLoc, kTexUnitCount,
@@ -434,6 +453,8 @@ angle::Result GLES1Renderer::prepareForDraw(PrimitiveMode mode,
                       uniformBuffers.texEnvRgbScales.data());
         setUniform1fv(&executable, programState.alphaScaleLoc, kTexUnitCount,
                       uniformBuffers.texEnvAlphaScales.data());
+        setUniform1fv(&executable, programState.lodBiasLoc, kTexUnitCount,
+                      uniformBuffers.texEnvLodBiases.data());
     }
 
     
@@ -1069,6 +1090,7 @@ angle::Result GLES1Renderer::initializeRendererProgram(Context *context,
     programState.textureEnvColorLoc = executable.getUniformLocation("texture_env_color");
     programState.rgbScaleLoc        = executable.getUniformLocation("texture_env_rgb_scale");
     programState.alphaScaleLoc      = executable.getUniformLocation("texture_env_alpha_scale");
+    programState.lodBiasLoc         = executable.getUniformLocation("texture_env_lod_bias");
 
     programState.alphaTestRefLoc = executable.getUniformLocation("alpha_test_ref");
 
@@ -1121,6 +1143,8 @@ angle::Result GLES1Renderer::initializeRendererProgram(Context *context,
 
     for (int i = 0; i < kTexUnitCount; i++)
     {
+        
+        
         setUniform1i(context, &executable, programState.tex2DSamplerLocs[i], i);
         setUniform1i(context, &executable, programState.texCubeSamplerLocs[i], i + kTexUnitCount);
     }

@@ -117,21 +117,11 @@ bool TranslatorHLSL::translate(TIntermBlock *root,
         return false;
     }
 
-    if (!shouldRunLoopAndIndexingValidation(compileOptions))
+    if (!shouldRunLoopAndIndexingValidation())
     {
         
         if (!RemoveDynamicIndexingOfNonSSBOVectorOrMatrix(this, root, &getSymbolTable(),
                                                           perfDiagnostics))
-        {
-            return false;
-        }
-    }
-
-    
-    
-    if (getOutputType() == SH_HLSL_3_0_OUTPUT && getShaderType() == GL_VERTEX_SHADER)
-    {
-        if (!sh::RewriteElseBlocks(this, root, &getSymbolTable()))
         {
             return false;
         }

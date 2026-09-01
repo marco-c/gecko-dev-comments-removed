@@ -40,7 +40,6 @@ class TranslatorMSL;
 #endif  
 
 using MetadataFlagBits   = angle::PackedEnumBitSet<sh::MetadataFlags, uint32_t>;
-using SpecConstUsageBits = angle::PackedEnumBitSet<vk::SpecConstUsage, uint32_t>;
 
 
 
@@ -49,13 +48,7 @@ bool IsGLSL150OrNewer(ShShaderOutput output);
 bool IsGLSL420OrNewer(ShShaderOutput output);
 bool IsGLSL410OrOlder(ShShaderOutput output);
 
-
-
-
-bool RemoveInvariant(sh::GLenum shaderType,
-                     int shaderVersion,
-                     ShShaderOutput outputType,
-                     const ShCompileOptions &compileOptions);
+int GetMaxShaderVersionForSpec(ShShaderSpec spec);
 
 
 
@@ -113,7 +106,6 @@ class TCompiler : public TShHandleBase
     bool specifyEarlyFragmentTests() { return mEarlyFragmentTestsSpecified = true; }
     bool isEarlyFragmentTestsSpecified() const { return mEarlyFragmentTestsSpecified; }
     MetadataFlagBits getMetadataFlags() const { return mMetadataFlags; }
-    SpecConstUsageBits getSpecConstUsageBits() const { return mSpecConstUsageBits; }
 
     bool isComputeShaderLocalSizeDeclared() const { return mComputeShaderLocalSizeDeclared; }
     const sh::WorkGroupSize &getComputeShaderLocalSize() const { return mComputeShaderLocalSize; }
@@ -136,6 +128,7 @@ class TCompiler : public TShHandleBase
 
     ShHashFunction64 getHashFunction() const { return mResources.HashFunction; }
     char getUserVariableNamePrefix() const { return mResources.UserVariableNamePrefix; }
+    char getUserBlockNamePrefix() const { return mResources.UserBlockNamePrefix; }
     NameMap &getNameMap() { return mNameMap; }
     TSymbolTable &getSymbolTable() { return mSymbolTable; }
     ShShaderSpec getShaderSpec() const { return mShaderSpec; }
@@ -143,7 +136,7 @@ class TCompiler : public TShHandleBase
     const ShBuiltInResources &getBuiltInResources() const { return mResources; }
     const std::string &getBuiltInResourcesString() const { return mBuiltInResourcesString; }
 
-    bool shouldRunLoopAndIndexingValidation(const ShCompileOptions &compileOptions) const;
+    bool shouldRunLoopAndIndexingValidation() const;
 
     
     const ShBuiltInResources &getResources() const;
@@ -260,9 +253,6 @@ class TCompiler : public TShHandleBase
 
     MetadataFlagBits mMetadataFlags;
 
-    
-    SpecConstUsageBits mSpecConstUsageBits;
-
   private:
     
     bool initBuiltInSymbolTable(const ShBuiltInResources &resources);
@@ -302,9 +292,6 @@ class TCompiler : public TShHandleBase
     
     
     void setShaderMetadata(const TParseContext &parseContext);
-
-    
-    bool checkShaderVersion(TParseContext *parseContext);
 
     
     bool checkAndSimplifyAST(TIntermBlock *root,

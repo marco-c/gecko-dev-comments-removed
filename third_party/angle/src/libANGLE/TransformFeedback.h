@@ -11,8 +11,10 @@
 
 #include "common/PackedEnums.h"
 #include "common/angleutils.h"
+#include "common/mathutil.h"
 #include "libANGLE/Debug.h"
 
+#include <optional>
 #include "angle_gl.h"
 
 namespace rx
@@ -28,6 +30,10 @@ class Buffer;
 struct Caps;
 class Context;
 class Program;
+
+angle::CheckedNumeric<GLsizeiptr> GetVerticesNeededForDraw(PrimitiveMode primitiveMode,
+                                                           GLsizei count,
+                                                           GLsizei primcount);
 
 class TransformFeedbackState final : angle::NonCopyable
 {
@@ -50,7 +56,7 @@ class TransformFeedbackState final : angle::NonCopyable
     PrimitiveMode mPrimitiveMode;
     bool mPaused;
     GLsizeiptr mVerticesDrawn;
-    GLsizeiptr mVertexCapacity;
+    std::optional<GLsizeiptr> mVertexCapacity;
 
     Program *mProgram;
     ProgramPipeline *mProgramPipeline;
@@ -83,7 +89,10 @@ class TransformFeedback final : public RefCountObject<TransformFeedbackID>, publ
     PrimitiveMode getPrimitiveMode() const;
     
     
-    bool checkBufferSpaceForDraw(GLsizei count, GLsizei primcount) const;
+    bool checkBufferSpaceForDraw(const Context *context,
+                                 const GLsizei *counts,
+                                 const GLsizei *primcounts,
+                                 GLsizei drawcount);
     
     
     
@@ -114,6 +123,7 @@ class TransformFeedback final : public RefCountObject<TransformFeedbackID>, publ
     
     
     bool isBufferBound(BufferID bufferID) const;
+    void invalidateVertexCapacity() { mState.mVertexCapacity = std::nullopt; }
 
     angle::Result detachBuffer(const Context *context, BufferID bufferID);
 
@@ -125,7 +135,6 @@ class TransformFeedback final : public RefCountObject<TransformFeedbackID>, publ
     void bindProgram(const Context *context, Program *program);
     void bindProgramPipeline(const Context *context, ProgramPipeline *programPipeline);
     void bindPPOPrograms(ProgramPipeline *programPipeline);
-    void recomputeVertexCapacity(const Context *context);
 
     TransformFeedbackState mState;
     rx::TransformFeedbackImpl *mImplementation;

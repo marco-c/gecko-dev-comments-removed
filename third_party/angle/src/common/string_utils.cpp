@@ -7,11 +7,8 @@
 
 
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include "common/string_utils.h"
+#include "common/unsafe_buffers.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -32,7 +29,8 @@ bool EndsWithSuffix(const char *str,
                     const char *suffix,
                     const size_t suffixLen)
 {
-    return suffixLen <= strLen && strncmp(str + strLen - suffixLen, suffix, suffixLen) == 0;
+    return suffixLen <= strLen &&
+           ANGLE_UNSAFE_TODO(strncmp(str + strLen - suffixLen, suffix, suffixLen)) == 0;
 }
 
 }  
@@ -163,7 +161,8 @@ bool HexStringToUInt(const std::string_view &input, unsigned int *uintOut)
 
     std::string_view inputWithOffset = input.substr(offset);
     const auto result                = std::from_chars(
-        inputWithOffset.data(), inputWithOffset.data() + inputWithOffset.size(), *uintOut, 16);
+        inputWithOffset.data(), ANGLE_UNSAFE_TODO(inputWithOffset.data() + inputWithOffset.size()),
+        *uintOut, 16);
     if (result.ec != std::errc{})
     {
         return false;
@@ -171,7 +170,7 @@ bool HexStringToUInt(const std::string_view &input, unsigned int *uintOut)
 
     
     
-    if (result.ptr != inputWithOffset.data() + inputWithOffset.size())
+    if (result.ptr != ANGLE_UNSAFE_TODO(inputWithOffset.data() + inputWithOffset.size()))
     {
         return false;
     }
@@ -198,22 +197,22 @@ bool ReadFileToString(const std::string &path, std::string *stringOut)
 
 bool BeginsWith(const std::string &str, const std::string &prefix)
 {
-    return strncmp(str.c_str(), prefix.c_str(), prefix.length()) == 0;
+    return ANGLE_UNSAFE_TODO(strncmp(str.c_str(), prefix.c_str(), prefix.length())) == 0;
 }
 
 bool BeginsWith(const std::string &str, const char *prefix)
 {
-    return strncmp(str.c_str(), prefix, strlen(prefix)) == 0;
+    return ANGLE_UNSAFE_TODO(strncmp(str.c_str(), prefix, strlen(prefix))) == 0;
 }
 
 bool BeginsWith(const char *str, const char *prefix)
 {
-    return strncmp(str, prefix, strlen(prefix)) == 0;
+    return ANGLE_UNSAFE_TODO(strncmp(str, prefix, strlen(prefix))) == 0;
 }
 
 bool BeginsWith(const std::string &str, const std::string &prefix, const size_t prefixLength)
 {
-    return strncmp(str.c_str(), prefix.c_str(), prefixLength) == 0;
+    return ANGLE_UNSAFE_TODO(strncmp(str.c_str(), prefix.c_str(), prefixLength)) == 0;
 }
 
 bool EndsWith(const std::string &str, const std::string &suffix)
@@ -342,22 +341,22 @@ std::vector<std::string> GetCachedStringsFromEnvironmentVarOrAndroidProperty(
 bool NamesMatchWithWildcard(const char *glob, const char *name)
 {
     
-    const char *firstWildcard = strchr(glob, '*');
+    const char *firstWildcard = ANGLE_UNSAFE_TODO(strchr(glob, '*'));
 
     
     if (firstWildcard == nullptr)
     {
-        return strcmp(glob, name) == 0;
+        return ANGLE_UNSAFE_TODO(strcmp(glob, name)) == 0;
     }
 
     
     size_t preWildcardLen = firstWildcard - glob;
-    if (strncmp(glob, name, preWildcardLen) != 0)
+    if (ANGLE_UNSAFE_TODO(strncmp(glob, name, preWildcardLen)) != 0)
     {
         return false;
     }
 
-    const char *postWildcardRef = glob + preWildcardLen + 1;
+    const char *postWildcardRef = ANGLE_UNSAFE_TODO(glob + preWildcardLen + 1);
 
     
     
@@ -367,9 +366,9 @@ bool NamesMatchWithWildcard(const char *glob, const char *name)
     }
 
     
-    for (size_t matchSize = 0; name[matchSize] != '\0'; ++matchSize)
+    for (size_t matchSize = 0; ANGLE_UNSAFE_TODO(name[matchSize]) != '\0'; ++matchSize)
     {
-        if (NamesMatchWithWildcard(postWildcardRef, name + matchSize))
+        if (NamesMatchWithWildcard(postWildcardRef, ANGLE_UNSAFE_TODO(name + matchSize)))
         {
             return true;
         }

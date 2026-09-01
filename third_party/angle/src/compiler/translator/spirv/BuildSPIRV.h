@@ -425,6 +425,30 @@ class SPIRVBuilder : angle::NonCopyable
     spirv::IdRef getNullConstant(spirv::IdRef typeId);
 
     
+    
+    
+    
+    
+    
+    
+    
+    bool isCompositeConstantId(spirv::IdRef id) const;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    spirv::IdRef getOrDeclarePrivateConstantVar(spirv::IdRef typeId,
+                                                spirv::IdRef constantId,
+                                                const SpirvDecorations &decorations,
+                                                const char *name);
+
+    
     void startNewFunction(spirv::IdRef functionId, const TFunction *func);
     void assembleSpirvFunctionBlocks();
 
@@ -515,9 +539,6 @@ class SPIRVBuilder : angle::NonCopyable
     spirv::IdRefList mEntryPointInterfaceList;
 
     
-    spirv::IdRef mExtInstImportIdStd;
-
-    
     spirv::IdRef mNextAvailableId;
 
     
@@ -551,6 +572,11 @@ class SPIRVBuilder : angle::NonCopyable
     angle::HashMap<SpirvIdAndIdList, spirv::IdRef, SpirvIdAndIdListHash> mCompositeConstants;
     
     std::vector<spirv::IdRef> mNullConstants;
+
+    
+    
+    
+    angle::HashMap<uint32_t, spirv::IdRef> mPrivateConstantVars;
 
     
     

@@ -185,6 +185,8 @@ void InsertInitCode(TCompiler *compiler,
                     const TExtensionBehavior &extensionBehavior,
                     bool canUseLoopsToInitialize)
 {
+    const bool secondaryFragDataUsed = symbolTable->isSecondaryFragDataUsed();
+
     TIntermSequence *mainBody = FindMainBody(root)->getSequence();
     for (const TVariable *var : variables)
     {
@@ -214,10 +216,13 @@ void InsertInitCode(TCompiler *compiler,
 
         initializedSymbol = new TIntermSymbol(var);
         if (qualifier == EvqFragData &&
-            !IsExtensionEnabled(extensionBehavior, TExtension::EXT_draw_buffers))
+            (!IsExtensionEnabled(extensionBehavior, TExtension::EXT_draw_buffers) ||
+             secondaryFragDataUsed))
         {
             
             
+            
+            ASSERT(compiler->getBuiltInResources().MaxDualSourceDrawBuffers <= 1);
             initializedSymbol =
                 new TIntermBinary(EOpIndexDirect, initializedSymbol, CreateIndexNode(0));
         }

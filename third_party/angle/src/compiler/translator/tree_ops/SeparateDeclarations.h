@@ -53,18 +53,6 @@ class TIntermBlock;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 [[nodiscard]] bool SeparateDeclarations(TCompiler &compiler,
                                         TIntermBlock &root,
                                         bool separateCompoundStructDeclarations);

@@ -23,17 +23,67 @@ struct HandleAllocator::HandleRangeComparator
     bool operator()(const HandleRange &range, GLuint handle) const { return (range.end < handle); }
 };
 
-HandleAllocator::HandleAllocator(GLuint maximumHandleValue)
-    : mMaxValue(maximumHandleValue), mLoggingEnabled(false)
+HandleAllocator::HandleAllocator(GLuint maximumHandleValue, GLuint minimumReleasedToKeep)
+    : mMaxValue(maximumHandleValue),
+      mMinimumReleasedToKeep(minimumReleasedToKeep),
+      mLoggingEnabled(false)
 {
     mUnallocatedList.push_back(HandleRange(1, mMaxValue));
 }
 
-HandleAllocator::~HandleAllocator() {}
+HandleAllocator::~HandleAllocator() = default;
 
 bool HandleAllocator::allocate(GLuint *outId)
 {
     
+    if (mReleasedList.size() > mMinimumReleasedToKeep)
+    {
+        GLuint reusedHandle = mReleasedList.front();
+        mReleasedList.pop_front();
+
+        if (mLoggingEnabled)
+        {
+            WARN() << "HandleAllocator::allocate reusing " << reusedHandle << std::endl;
+        }
+
+        if (outId)
+        {
+            *outId = reusedHandle;
+        }
+        return true;
+    }
+
+    if (!mUnallocatedList.empty())
+    {
+        
+        auto listIt = mUnallocatedList.begin();
+
+        GLuint freeListHandle = listIt->begin;
+        ASSERT(freeListHandle > 0);
+
+        if (listIt->begin == listIt->end)
+        {
+            mUnallocatedList.erase(listIt);
+        }
+        else
+        {
+            angle::CheckedNumeric<GLuint> checkedBegin = listIt->begin;
+            checkedBegin++;
+            listIt->begin = checkedBegin.ValueOrDie();
+        }
+
+        if (mLoggingEnabled)
+        {
+            WARN() << "HandleAllocator::allocate allocating " << freeListHandle << std::endl;
+        }
+
+        if (outId)
+        {
+            *outId = freeListHandle;
+        }
+        return true;
+    }
+
     if (!mReleasedList.empty())
     {
         GLuint reusedHandle = mReleasedList.front();
@@ -51,38 +101,7 @@ bool HandleAllocator::allocate(GLuint *outId)
         return true;
     }
 
-    if (mUnallocatedList.empty())
-    {
-        return false;
-    }
-
-    
-    auto listIt = mUnallocatedList.begin();
-
-    GLuint freeListHandle = listIt->begin;
-    ASSERT(freeListHandle > 0);
-
-    if (listIt->begin == listIt->end)
-    {
-        mUnallocatedList.erase(listIt);
-    }
-    else
-    {
-        angle::CheckedNumeric<GLuint> checkedBegin = listIt->begin;
-        checkedBegin++;
-        listIt->begin = checkedBegin.ValueOrDie();
-    }
-
-    if (mLoggingEnabled)
-    {
-        WARN() << "HandleAllocator::allocate allocating " << freeListHandle << std::endl;
-    }
-
-    if (outId)
-    {
-        *outId = freeListHandle;
-    }
-    return true;
+    return false;
 }
 
 void HandleAllocator::release(GLuint handle)

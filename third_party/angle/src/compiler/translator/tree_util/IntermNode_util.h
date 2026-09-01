@@ -130,7 +130,7 @@ TIntermSymbol *ReferenceGlobalVariable(const ImmutableString &name,
                                        const TSymbolTable &symbolTable);
 
 TIntermSymbol *ReferenceBuiltInVariable(const ImmutableString &name,
-                                        const TSymbolTable &symbolTable,
+                                        TSymbolTable &symbolTable,
                                         int shaderVersion);
 
 TIntermTyped *CreateBuiltInFunctionCallNode(const char *name,
@@ -171,6 +171,11 @@ bool EndsInBranch(TIntermBlock *block);
 
 
 TIntermNode *CastScalar(const TType &type, TIntermTyped *scalar);
+
+
+
+
+void MoveDeclarationsBeforeFunctions(TIntermBlock *root);
 
 }  
 

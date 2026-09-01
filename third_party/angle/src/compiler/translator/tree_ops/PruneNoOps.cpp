@@ -99,6 +99,15 @@ bool IsNoOp(TIntermNode *node)
     return !node->getAsTyped()->hasSideEffects();
 }
 
+enum class CommaExpression
+{
+    
+    
+    ThrowAway,
+    
+    FinalResult,
+};
+
 class PruneNoOpsTraverser : private TIntermTraverser
 {
   public:
@@ -109,31 +118,35 @@ class PruneNoOpsTraverser : private TIntermTraverser
   private:
     PruneNoOpsTraverser(TSymbolTable *symbolTable);
     bool visitDeclaration(Visit, TIntermDeclaration *node) override;
+    bool visitSwitch(Visit visit, TIntermSwitch *node) override;
     bool visitBlock(Visit visit, TIntermBlock *node) override;
+    bool visitBinary(Visit visit, TIntermBinary *node) override;
     bool visitLoop(Visit visit, TIntermLoop *loop) override;
     bool visitBranch(Visit visit, TIntermBranch *node) override;
-    TIntermTyped *pruneNoOpCommaExpressions(TIntermTyped *statement);
+    TIntermTyped *pruneCommaThrowAwayExpression(TIntermTyped *statement);
+    TIntermTyped *pruneNoOpCommaExpressions(TIntermTyped *statement, CommaExpression commaExpr);
+    TIntermTyped *mergePrunedNoOpCommaExpressions(TIntermTyped *lhs, TIntermTyped *rhs);
 
     bool mIsBranchVisited = false;
+
+    TVector<TVector<const TVariable *>> mSwitchPrunedDeclarationsStack;
 };
 
 bool PruneNoOpsTraverser::apply(TCompiler *compiler, TIntermBlock *root, TSymbolTable *symbolTable)
 {
     PruneNoOpsTraverser prune(symbolTable);
     root->traverse(&prune);
+    ASSERT(prune.mSwitchPrunedDeclarationsStack.empty());
     return prune.updateTree(compiler, root);
 }
 
 PruneNoOpsTraverser::PruneNoOpsTraverser(TSymbolTable *symbolTable)
-    : TIntermTraverser(true, true, true, symbolTable)
+    : TIntermTraverser(true, false, false, symbolTable)
 {}
 
 bool PruneNoOpsTraverser::visitDeclaration(Visit visit, TIntermDeclaration *node)
 {
-    if (visit != PreVisit)
-    {
-        return true;
-    }
+    ASSERT(visit == PreVisit);
 
     TIntermSequence *sequence = node->getSequence();
     if (sequence->size() >= 1)
@@ -191,8 +204,38 @@ bool PruneNoOpsTraverser::visitDeclaration(Visit visit, TIntermDeclaration *node
                 queueReplacementWithParent(node, declaratorSymbol, new TIntermSymbol(variable),
                                            OriginalNode::IS_DROPPED);
             }
+            return false;
         }
     }
+    return true;
+}
+
+bool PruneNoOpsTraverser::visitSwitch(Visit visit, TIntermSwitch *node)
+{
+    node->getInit()->traverse(this);
+
+    
+    
+    
+    
+    mSwitchPrunedDeclarationsStack.push_back({});
+
+    node->getStatementList()->traverse(this);
+    if (!mSwitchPrunedDeclarationsStack.back().empty())
+    {
+        TIntermSequence replacement;
+        for (const TVariable *toDeclare : mSwitchPrunedDeclarationsStack.back())
+        {
+            TIntermDeclaration *decl = new TIntermDeclaration();
+            decl->appendDeclarator(new TIntermSymbol(toDeclare));
+            replacement.push_back(decl);
+        }
+        replacement.push_back(node);
+        mMultiReplacements.emplace_back(getParentNode()->getAsBlock(), node,
+                                        std::move(replacement));
+    }
+
+    mSwitchPrunedDeclarationsStack.pop_back();
     return false;
 }
 
@@ -201,6 +244,7 @@ bool PruneNoOpsTraverser::visitBlock(Visit visit, TIntermBlock *node)
     ASSERT(visit == PreVisit);
 
     TIntermSequence &statements = *node->getSequence();
+    size_t writeIndex           = 0;
 
     
     
@@ -217,8 +261,42 @@ bool PruneNoOpsTraverser::visitBlock(Visit visit, TIntermBlock *node)
         
         if (mIsBranchVisited || IsNoOp(statement))
         {
-            TIntermSequence emptyReplacement;
-            mMultiReplacements.emplace_back(node, statement, std::move(emptyReplacement));
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if (mIsBranchVisited && getParentNode()->getAsSwitchNode() != nullptr)
+            {
+                TIntermDeclaration *decl = statement->getAsDeclarationNode();
+                if (decl != nullptr)
+                {
+                    for (TIntermNode *declarator : *decl->getSequence())
+                    {
+                        TIntermSymbol *symbol        = declarator->getAsSymbolNode();
+                        const TVariable *declaredVar = nullptr;
+                        if (symbol != nullptr)
+                        {
+                            declaredVar = &symbol->variable();
+                        }
+                        else
+                        {
+                            TIntermBinary *initNode = declarator->getAsBinaryNode();
+                            ASSERT(initNode && initNode->getOp() == EOpInitialize);
+                            ASSERT(initNode->getLeft()->getAsSymbolNode());
+                            declaredVar = &initNode->getLeft()->getAsSymbolNode()->variable();
+                        }
+
+                        mSwitchPrunedDeclarationsStack.back().push_back(declaredVar);
+                    }
+                }
+            }
+
             continue;
         }
 
@@ -227,20 +305,19 @@ bool PruneNoOpsTraverser::visitBlock(Visit visit, TIntermBlock *node)
         
         if (statement->getAsBinaryNode() != nullptr)
         {
-            statement = pruneNoOpCommaExpressions(statement->getAsBinaryNode());
+            statement = pruneNoOpCommaExpressions(statement->getAsBinaryNode(),
+                                                  CommaExpression::FinalResult);
             if (statement == nullptr)
             {
-                TIntermSequence emptyReplacement;
-                mMultiReplacements.emplace_back(node, statement, std::move(emptyReplacement));
                 continue;
             }
-
-            statements[statementIndex] = statement;
         }
 
         
+        statements[writeIndex++] = statement;
         statement->traverse(this);
     }
+    statements.resize(writeIndex);
 
     
     
@@ -253,19 +330,93 @@ bool PruneNoOpsTraverser::visitBlock(Visit visit, TIntermBlock *node)
     return false;
 }
 
-TIntermTyped *PruneNoOpsTraverser::pruneNoOpCommaExpressions(TIntermTyped *statement)
+bool PruneNoOpsTraverser::visitBinary(Visit visit, TIntermBinary *node)
+{
+    if (node->getOp() == EOpComma && getParentNode()->getAsBlock() == nullptr)
+    {
+        
+        
+        TIntermTyped *prunedLeft = pruneCommaThrowAwayExpression(node->getLeft());
+        if (prunedLeft != node->getLeft())
+        {
+            
+            
+            queueReplacement(prunedLeft != nullptr
+                                 ? new TIntermBinary(EOpComma, prunedLeft, node->getRight())
+                                 : node->getRight(),
+                             OriginalNode::IS_DROPPED);
+
+            node->getRight()->traverse(this);
+            if (prunedLeft)
+            {
+                prunedLeft->traverse(this);
+            }
+            return false;
+        }
+    }
+
+    return true;
+}
+
+TIntermTyped *PruneNoOpsTraverser::pruneCommaThrowAwayExpression(TIntermTyped *statement)
+{
+    if (IsNoOp(statement))
+    {
+        return nullptr;
+    }
+
+    TIntermBinary *asBinary = statement->getAsBinaryNode();
+    if (asBinary == nullptr)
+    {
+        return statement;
+    }
+
+    switch (asBinary->getOp())
+    {
+        case EOpIndexDirect:
+        case EOpIndexDirectStruct:
+        case EOpIndexDirectInterfaceBlock:
+            return pruneNoOpCommaExpressions(asBinary->getLeft(), CommaExpression::ThrowAway);
+        case EOpIndexIndirect:
+        case EOpComma:
+        {
+            
+            
+            
+            
+            
+            
+            TIntermTyped *prunedLeft =
+                pruneNoOpCommaExpressions(asBinary->getLeft(), CommaExpression::ThrowAway);
+            TIntermTyped *prunedRight =
+                pruneNoOpCommaExpressions(asBinary->getRight(), CommaExpression::ThrowAway);
+            return mergePrunedNoOpCommaExpressions(prunedLeft, prunedRight);
+        }
+        default:
+            return statement;
+    }
+}
+
+TIntermTyped *PruneNoOpsTraverser::pruneNoOpCommaExpressions(TIntermTyped *statement,
+                                                             CommaExpression commaExpr)
 {
     TIntermBinary *commaSeparatedExpressions = statement->getAsBinaryNode();
     if (commaSeparatedExpressions == nullptr || commaSeparatedExpressions->getOp() != EOpComma)
     {
-        return statement;
+        
+        
+        
+        return commaExpr == CommaExpression::ThrowAway ? pruneCommaThrowAwayExpression(statement)
+                                                       : statement;
     }
 
     TIntermTyped *left  = commaSeparatedExpressions->getLeft();
     TIntermTyped *right = commaSeparatedExpressions->getRight();
 
-    TIntermTyped *prunedLeft  = IsNoOp(left) ? nullptr : pruneNoOpCommaExpressions(left);
-    TIntermTyped *prunedRight = IsNoOp(right) ? nullptr : pruneNoOpCommaExpressions(right);
+    TIntermTyped *prunedLeft =
+        IsNoOp(left) ? nullptr : pruneNoOpCommaExpressions(left, CommaExpression::ThrowAway);
+    TIntermTyped *prunedRight =
+        IsNoOp(right) ? nullptr : pruneNoOpCommaExpressions(right, commaExpr);
 
     if (left == prunedLeft && right == prunedRight)
     {
@@ -273,26 +424,29 @@ TIntermTyped *PruneNoOpsTraverser::pruneNoOpCommaExpressions(TIntermTyped *state
         return statement;
     }
 
+    return mergePrunedNoOpCommaExpressions(prunedLeft, prunedRight);
+}
+
+TIntermTyped *PruneNoOpsTraverser::mergePrunedNoOpCommaExpressions(TIntermTyped *lhs,
+                                                                   TIntermTyped *rhs)
+{
     
     
-    if (prunedRight == nullptr)
+    if (rhs == nullptr)
     {
-        return prunedLeft;
+        return lhs;
     }
-    if (prunedLeft == nullptr)
+    if (lhs == nullptr)
     {
-        return prunedRight;
+        return rhs;
     }
 
-    return new TIntermBinary(EOpComma, prunedLeft, prunedRight);
+    return new TIntermBinary(EOpComma, lhs, rhs);
 }
 
 bool PruneNoOpsTraverser::visitLoop(Visit visit, TIntermLoop *loop)
 {
-    if (visit != PreVisit)
-    {
-        return true;
-    }
+    ASSERT(visit == PreVisit);
 
     TIntermTyped *expr = loop->getExpression();
     if (expr != nullptr && IsNoOp(expr))

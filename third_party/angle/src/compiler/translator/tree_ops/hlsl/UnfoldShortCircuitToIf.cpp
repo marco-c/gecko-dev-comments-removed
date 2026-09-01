@@ -59,11 +59,6 @@ bool UnfoldShortCircuitTraverser::visitBinary(Visit visit, TIntermBinary *node)
     if (!mPatternToUnfoldMatcher.match(node, getParentNode()))
         return true;
 
-    
-    
-    
-    ASSERT(node->getRight()->hasSideEffects());
-
     mFoundShortCircuit = true;
 
     switch (node->getOp())

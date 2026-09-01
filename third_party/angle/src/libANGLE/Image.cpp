@@ -57,6 +57,46 @@ const Display *DisplayFromContext(const gl::Context *context)
 angle::SubjectIndex kExternalImageImplSubjectIndex = 0;
 }  
 
+gl::SourceImageIndex ImageSourceAttributes::toSourceIndex(const gl::OwnImageIndex &ownIndex) const
+{
+    
+    if (type == gl::TextureType::InvalidEnum)
+    {
+        ASSERT(level == 0 && zoffset == 0);
+        return gl::SourceImageIndex(ownIndex.getUntranslated());
+    }
+
+    
+    
+    ASSERT((!ownIndex.getUntranslated().hasLayer() ||
+            ownIndex.getUntranslated().getLayerIndex() == 0) &&
+           ownIndex.getUntranslated().getLevelIndex() == 0);
+    return gl::SourceImageIndex(gl::ImageIndex::MakeFromType(type, level, zoffset));
+}
+
+gl::SourceLevel ImageSourceAttributes::toSourceLevel(gl::OwnLevel ownLevel) const
+{
+    
+    
+    ASSERT(ownLevel.getUntranslated().get() == 0 || level == 0);
+    return gl::SourceLevel(ownLevel.getUntranslated() + level);
+}
+
+gl::SourceLayer ImageSourceAttributes::toSourceLayer(gl::OwnLayer ownLayer) const
+{
+    
+    
+    ASSERT(ownLayer.getUntranslated() == 0 || zoffset == 0);
+    return gl::SourceLayer(ownLayer.getUntranslated() + zoffset);
+}
+
+gl::SourceLayer ImageSourceAttributes::toSourceDepth(const gl::Offset &offset) const
+{
+    
+    return type == gl::TextureType::_3D ? toSourceLayer(gl::OwnLayer(offset.z))
+                                        : gl::SourceLayer(offset.z);
+}
+
 ImageSibling::ImageSibling() : FramebufferAttachmentObject(), mSourcesOf(), mTargetOf() {}
 
 ImageSibling::~ImageSibling()
@@ -68,11 +108,19 @@ ImageSibling::~ImageSibling()
     ASSERT(mTargetOf.get() == nullptr);
 }
 
-void ImageSibling::setTargetImage(const gl::Context *context, egl::Image *imageTarget)
+void ImageSibling::setTargetImage(const gl::Context *context,
+                                  egl::Image *imageTarget,
+                                  ImageSourceAttributes *attributesOut)
 {
     ASSERT(imageTarget != nullptr);
     mTargetOf.set(DisplayFromContext(context), imageTarget);
     imageTarget->addTargetSibling(this);
+
+    attributesOut->type    = imageTarget->getSourceImageIndex().getType();
+    attributesOut->level   = imageTarget->getSourceImageIndex().getLevelIndex();
+    attributesOut->zoffset = imageTarget->getSourceImageIndex().hasLayer()
+                                 ? imageTarget->getSourceImageIndex().getLayerIndex()
+                                 : 0;
 }
 
 angle::Result ImageSibling::orphanImages(const gl::Context *context,

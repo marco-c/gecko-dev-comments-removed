@@ -14,14 +14,6 @@
 
 
 
-
-#if !defined(ANGLE_D3D9EX)
-#    define ANGLE_D3D9EX 1
-#endif
-
-
-
-
 #if !defined(ANGLE_VSYNC)
 #    define ANGLE_VSYNC 1
 #endif

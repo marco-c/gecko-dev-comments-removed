@@ -26,6 +26,14 @@ class TOutputGLSL : public TOutputGLSLBase
                                              const ShCompileOptions &option) override;
 };
 
+
+
+
+bool RemoveInvariant(sh::GLenum shaderType,
+                     int shaderVersion,
+                     ShShaderOutput outputType,
+                     const ShCompileOptions &compileOptions);
+
 }  
 
 #endif  

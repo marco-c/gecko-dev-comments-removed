@@ -201,6 +201,22 @@ enum {
 
 
     ANGLE_AHB_FORMAT_R8_UNORM   = 0x38,
+
+    
+
+
+
+
+
+    ANGLE_AHB_FORMAT_R16_UINT   = 0x39,
+
+    
+
+
+
+
+
+    ANGLE_AHB_FORMAT_R16G16_UINT = 0x3a,
 };
 
 

@@ -86,7 +86,10 @@ enum class SubjectMessage
     TextureIDDeleted,
 
     
-    InitializationComplete,
+    ObjectReallocated,
+
+    
+    TextureLayerCountIncreased,
 
     
     FoveatedRenderingStateChanged,

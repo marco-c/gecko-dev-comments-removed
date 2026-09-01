@@ -75,7 +75,7 @@ const TVariable *GetBaseUniform(TIntermTyped *node, bool *isSamplerInStructOut)
             *isSamplerInStructOut = true;
         }
 
-        node = asBinary->getLeft();
+        node = op == EOpComma ? asBinary->getRight() : asBinary->getLeft();
     }
 
     
@@ -99,6 +99,13 @@ TIntermTyped *ExtractSideEffects(TSymbolTable *symbolTable,
                                  TIntermTyped *node,
                                  TIntermSequence *replacementIndices)
 {
+    
+    
+    while (node->getAsBinaryNode() != nullptr && node->getAsBinaryNode()->getOp() == EOpComma)
+    {
+        node = node->getAsBinaryNode()->getRight();
+    }
+
     TIntermTyped *withoutSideEffects = node->deepCopy();
 
     for (TIntermBinary *asBinary = withoutSideEffects->getAsBinaryNode(); asBinary;
@@ -509,34 +516,6 @@ class UpdateFunctionsDefinitionsTraverser final : public TIntermTraverser
     const FunctionMap &mFunctionMap;
 };
 
-void SortDeclarations(TIntermBlock *root)
-{
-    TIntermSequence *original = root->getSequence();
-
-    TIntermSequence replacement;
-    TIntermSequence functionDefs;
-
-    
-    
-    for (TIntermNode *node : *original)
-    {
-        if (node->getAsFunctionDefinition() || node->getAsFunctionPrototypeNode())
-        {
-            functionDefs.push_back(node);
-        }
-        else
-        {
-            replacement.push_back(node);
-        }
-    }
-
-    
-    replacement.insert(replacement.end(), functionDefs.begin(), functionDefs.end());
-
-    
-    root->replaceAllChildren(std::move(replacement));
-}
-
 bool MonomorphizeUnsupportedFunctionsImpl(TCompiler *compiler,
                                           TIntermBlock *root,
                                           TSymbolTable *symbolTable,
@@ -545,7 +524,7 @@ bool MonomorphizeUnsupportedFunctionsImpl(TCompiler *compiler,
     
     
     
-    SortDeclarations(root);
+    MoveDeclarationsBeforeFunctions(root);
 
     while (true)
     {

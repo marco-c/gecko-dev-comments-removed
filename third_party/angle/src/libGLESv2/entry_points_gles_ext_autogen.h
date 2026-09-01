@@ -189,8 +189,6 @@ ANGLE_EXPORT void GL_APIENTRY GL_VertexAttribDivisorANGLE(GLuint index, GLuint d
 ANGLE_EXPORT void GL_APIENTRY GL_LogicOpANGLE(GLenum opcode);
 
 
-
-
 ANGLE_EXPORT void GL_APIENTRY GL_TexStorageMemFlags2DANGLE(GLenum target,
                                                            GLsizei levels,
                                                            GLenum internalFormat,
@@ -602,17 +600,6 @@ ANGLE_EXPORT void GL_APIENTRY GL_GetFramebufferPixelLocalStorageParameteruivANGL
 
 
 
-
-
-ANGLE_EXPORT void GL_APIENTRY GL_TexImage2DExternalANGLE(GLenum target,
-                                                         GLint level,
-                                                         GLint internalformat,
-                                                         GLsizei width,
-                                                         GLsizei height,
-                                                         GLint border,
-                                                         GLenum format,
-                                                         GLenum type);
-ANGLE_EXPORT void GL_APIENTRY GL_InvalidateTextureANGLE(GLenum target);
 
 
 ANGLE_EXPORT void GL_APIENTRY GL_TexStorage2DMultisampleANGLE(GLenum target,
@@ -1328,6 +1315,8 @@ ANGLE_EXPORT void GL_APIENTRY GL_TexBufferRangeEXT(GLenum target,
 
 
 
+
+
 ANGLE_EXPORT void GL_APIENTRY GL_TexStorage2DEXT(GLenum target,
                                                  GLsizei levels,
                                                  GLenum internalformat,
@@ -1887,6 +1876,8 @@ ANGLE_EXPORT void GL_APIENTRY GL_TextureFoveationParametersQCOM(GLuint texture,
                                                                 GLfloat gainX,
                                                                 GLfloat gainY,
                                                                 GLfloat foveaArea);
+
+
 
 
 ANGLE_EXPORT void GL_APIENTRY GL_EndTilingQCOM(GLbitfield preserveMask);

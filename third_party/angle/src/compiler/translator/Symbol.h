@@ -9,11 +9,8 @@
 #ifndef COMPILER_TRANSLATOR_SYMBOL_H_
 #define COMPILER_TRANSLATOR_SYMBOL_H_
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include "common/angleutils.h"
+#include "common/unsafe_buffers.h"
 #include "compiler/translator/ExtensionBehavior.h"
 #include "compiler/translator/ImmutableString.h"
 #include "compiler/translator/IntermNode.h"
@@ -186,6 +183,15 @@ class TStructure : public TSymbol, public TFieldListCollection
     void setAtGlobalScope(bool atGlobalScope) { mAtGlobalScope = atGlobalScope; }
     bool atGlobalScope() const { return mAtGlobalScope; }
 
+    
+    
+    void setName(const ImmutableString &name);
+    
+    
+    
+    void setImplementingInterfaceBlock() { mImplementingInterfaceBlock = true; }
+    bool isImplementingInterfaceBlock() const { return mImplementingInterfaceBlock; }
+
   private:
     friend class TSymbolTable;
     
@@ -198,7 +204,9 @@ class TStructure : public TSymbol, public TFieldListCollection
                   SymbolType::BuiltIn,
                   std::array<TExtension, 1u>{{extension}},
                   SymbolClass::Struct),
-          TFieldListCollection(fields)
+          TFieldListCollection(fields),
+          mAtGlobalScope(true),
+          mImplementingInterfaceBlock(false)
     {}
 
     template <size_t ExtensionCount>
@@ -207,16 +215,13 @@ class TStructure : public TSymbol, public TFieldListCollection
                const std::array<TExtension, ExtensionCount> &extensions,
                const TFieldList *fields)
         : TSymbol(id, name, SymbolType::BuiltIn, extensions, SymbolClass::Struct),
-          TFieldListCollection(fields)
+          TFieldListCollection(fields),
+          mAtGlobalScope(true),
+          mImplementingInterfaceBlock(false)
     {}
 
-    
-    
-    
-    friend class RegenerateStructNamesTraverser;
-    void setName(const ImmutableString &name);
-
     bool mAtGlobalScope;
+    bool mImplementingInterfaceBlock;
 };
 
 
@@ -337,7 +342,7 @@ class TFunction : public TSymbol
     bool hasVoidParameter() const { return mHasVoidParameter; }
 
     size_t getParamCount() const { return mParamCount; }
-    const TVariable *getParam(size_t i) const { return mParameters[i]; }
+    const TVariable *getParam(size_t i) const { return ANGLE_UNSAFE_TODO(mParameters[i]); }
 
     bool isKnownToNotHaveSideEffects() const { return mKnownToNotHaveSideEffects; }
 

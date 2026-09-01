@@ -41,7 +41,6 @@ class ShaderConstants11 : angle::NonCopyable
     void onViewportChange(const gl::Rectangle &glViewport,
                           const D3D11_VIEWPORT &dxViewport,
                           const gl::Offset &glFragCoordOffset,
-                          bool is9_3,
                           bool presentPathFast);
     bool onFirstVertexChange(GLint firstVertex);
     void onImageLayerChange(gl::ShaderType shaderType, unsigned int imageIndex, int layer);
@@ -65,8 +64,6 @@ class ShaderConstants11 : angle::NonCopyable
     {
         Vertex()
             : depthRange{.0f},
-              viewAdjust{.0f},
-              viewCoords{.0f},
               viewScale{.0f},
               clipControlOrigin{-1.0f},
               clipControlZeroToOne{.0f},
@@ -76,8 +73,6 @@ class ShaderConstants11 : angle::NonCopyable
         {}
 
         float depthRange[4];
-        float viewAdjust[4];
-        float viewCoords[4];
         float viewScale[2];
 
         
@@ -251,10 +246,6 @@ class StateManager11 final : angle::NonCopyable
     void setScissorRectD3D(const D3D11_RECT &d3dRect);
 
     void setIndexBuffer(ID3D11Buffer *buffer, DXGI_FORMAT indexFormat, unsigned int offset);
-
-    angle::Result updateVertexOffsetsForPointSpritesEmulation(const gl::Context *context,
-                                                              GLint startVertex,
-                                                              GLsizei emulatedInstanceId);
 
     
     InputLayoutCache *getInputLayoutCache() { return &mInputLayoutCache; }
@@ -475,7 +466,6 @@ class StateManager11 final : angle::NonCopyable
     ShaderConstants11 mShaderConstants;
 
     
-    gl::Extents mViewportBounds;
     bool mRenderTargetIsDirty;
 
     

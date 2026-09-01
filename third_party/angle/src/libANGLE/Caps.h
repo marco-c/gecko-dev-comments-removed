@@ -109,15 +109,6 @@ struct Limitations
     Limitations &operator=(const Limitations &other);
 
     
-    bool noFrontFacingSupport = false;
-
-    
-    bool noSampleAlphaToCoverageSupport = false;
-
-    
-    bool attributeZeroRequiresZeroDivisorInEXT = false;
-
-    
     bool noSeparateStencilRefsAndMasks = false;
 
     
@@ -126,9 +117,6 @@ struct Limitations
 
     
     bool noUnclampedBlendColor = false;
-
-    
-    bool noFlexibleVaryingPacking = false;
 
     
     bool noDoubleBoundTransformFeedbackBuffers = false;
@@ -144,9 +132,6 @@ struct Limitations
     
     
     bool noRasterOrderGroupWithoutAttachmentZero = false;
-
-    
-    bool squarePvrtc1 = false;
 
     
     bool emulatedEtc1 = false;
@@ -170,7 +155,12 @@ struct Limitations
 
     
     
-    GLsizeiptr bufferSizeLimit = std::numeric_limits<GLsizeiptr>::max();
+    size_t maxBufferBytes = std::numeric_limits<GLsizeiptr>::max();
+
+    
+    
+    
+    size_t maxTextureBytes = 1280 * 1024 * 1024;
 };
 
 struct TypePrecision
@@ -748,9 +738,6 @@ struct DeviceExtensions
     bool deviceD3D = false;
 
     
-    bool deviceD3D9 = false;
-
-    
     bool deviceD3D11 = false;
 
     
@@ -833,6 +820,9 @@ struct ClientExtensions
 
     
     bool platformANGLEDeviceId = false;
+
+    
+    bool platformANGLEDisplayKey = false;
 
     
     bool deviceCreation = false;

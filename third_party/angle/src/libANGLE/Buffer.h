@@ -70,7 +70,6 @@ class BufferState final : angle::NonCopyable
     GLint64 getMapOffset() const { return mMapOffset; }
     GLint64 getMapLength() const { return mMapLength; }
     GLint64 getSize() const { return mSize; }
-    bool isBoundForTransformFeedback() const { return mTransformFeedbackIndexedBindingCount != 0; }
     std::string getLabel() const { return mLabel; }
     WebGLBufferType getWebGLType() const { return mWebGLType; }
 
@@ -90,6 +89,7 @@ class BufferState final : angle::NonCopyable
     int mBindingCount;
     int mTransformFeedbackIndexedBindingCount;
     int mTransformFeedbackGenericBindingCount;
+    int mActiveTransformFeedbackCount;
     GLboolean mImmutable;
     GLbitfield mStorageExtUsageFlags;
     GLboolean mExternal;
@@ -183,20 +183,15 @@ class Buffer final : public ThreadSafeRefCountObject<BufferID>,
     GLboolean isImmutable() const { return mState.mImmutable; }
     GLbitfield getStorageExtUsageFlags() const { return mState.mStorageExtUsageFlags; }
 
+    WebGLBufferType getWebGLType() const { return mState.mWebGLType; }
+
     
     InitState initState() const { return InitState::Initialized; }
 
     rx::BufferImpl *getImplementation() const { return mImpl; }
 
-    
-    
-    ANGLE_INLINE bool hasWebGLXFBBindingConflict(bool isWebGL) const
+    ANGLE_INLINE bool isBoundToTFAndNonTFSimultaneously() const
     {
-        if (!isWebGL)
-        {
-            return false;
-        }
-
         
         
         
@@ -206,8 +201,21 @@ class Buffer final : public ThreadSafeRefCountObject<BufferID>,
                    mState.mBindingCount - mState.mTransformFeedbackGenericBindingCount;
     }
 
+    
+    
+    ANGLE_INLINE bool isBoundToActiveTransformFeedback() const
+    {
+        return mState.mActiveTransformFeedbackCount > 0;
+    }
+
+    ANGLE_INLINE bool hasTFBBindingConflict() const
+    {
+        return isBoundToTFAndNonTFSimultaneously() || isBoundToActiveTransformFeedback();
+    }
+
     bool isDoubleBoundForTransformFeedback() const;
     void onTFBindingChanged(const Context *context, bool bound, bool indexed);
+    void onTFActiveChanged(const Context *context, bool active);
     void onNonTFBindingChanged(int incr) { mState.mBindingCount += incr; }
     angle::Result getSubData(const gl::Context *context,
                              GLintptr offset,

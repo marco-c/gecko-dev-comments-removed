@@ -17,6 +17,7 @@
 #include "libANGLE/Error.h"
 #include "libANGLE/FramebufferAttachment.h"
 #include "libANGLE/RefCountObject.h"
+#include "libANGLE/angletypes.h"
 #include "libANGLE/formatutils.h"
 
 namespace rx
@@ -35,6 +36,22 @@ namespace egl
 class Image;
 class Display;
 class ContextMutex;
+
+
+struct ImageSourceAttributes
+{
+    
+    gl::TextureType type = gl::TextureType::InvalidEnum;
+    
+    uint32_t level = 0;
+    
+    uint32_t zoffset = 0;
+
+    gl::SourceImageIndex toSourceIndex(const gl::OwnImageIndex &ownIndex) const;
+    gl::SourceLevel toSourceLevel(gl::OwnLevel ownLevel) const;
+    gl::SourceLayer toSourceLayer(gl::OwnLayer ownLayer) const;
+    gl::SourceLayer toSourceDepth(const gl::Offset &offset) const;
+};
 
 
 
@@ -67,7 +84,9 @@ class ImageSibling : public gl::FramebufferAttachmentObject
 
     const UnorderedSetSiblingSource &getSiblingSourcesOf() const { return mSourcesOf; }
     
-    void setTargetImage(const gl::Context *context, egl::Image *imageTarget);
+    void setTargetImage(const gl::Context *context,
+                        egl::Image *imageTarget,
+                        ImageSourceAttributes *attributesOut);
 
     
     angle::Result orphanImages(const gl::Context *context,

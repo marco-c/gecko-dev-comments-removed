@@ -79,6 +79,7 @@ struct Extensions
     {
         return (textureCubeMapArrayEXT || textureCubeMapArrayOES);
     }
+    bool textureLodBiasAny() const { return (textureLodBiasQCOM || textureLodBiasEXT); }
 
     
     
@@ -120,40 +121,10 @@ struct Extensions
     bool colorBufferHalfFloatEXT = false;
 
     
-    bool compressedEACR11SignedTextureOES = false;
-
-    
-    bool compressedEACR11UnsignedTextureOES = false;
-
-    
-    bool compressedEACRG11SignedTextureOES = false;
-
-    
-    bool compressedEACRG11UnsignedTextureOES = false;
-
-    
     bool compressedETC1RGB8SubTextureEXT = false;
 
     
     bool compressedETC1RGB8TextureOES = false;
-
-    
-    bool compressedETC2PunchthroughARGBA8TextureOES = false;
-
-    
-    bool compressedETC2PunchthroughASRGB8AlphaTextureOES = false;
-
-    
-    bool compressedETC2RGB8TextureOES = false;
-
-    
-    bool compressedETC2RGBA8TextureOES = false;
-
-    
-    bool compressedETC2SRGB8Alpha8TextureOES = false;
-
-    
-    bool compressedETC2SRGB8TextureOES = false;
 
     
     bool compressedPalettedTextureOES = false;
@@ -181,9 +152,6 @@ struct Extensions
 
     
     bool depth32OES = false;
-
-    
-    bool depthBufferFloat2NV = false;
 
     
     bool depthClampEXT = false;
@@ -594,6 +562,9 @@ struct Extensions
     bool textureHalfFloatLinearOES = false;
 
     
+    bool textureLodBiasQCOM = false;
+
+    
     bool textureMirrorClampToEdgeEXT = false;
 
     
@@ -660,9 +631,6 @@ struct Extensions
     bool vertexType1010102OES = false;
 
     
-    bool videoTextureWEBGL = false;
-
-    
     bool YUVTargetEXT = false;
 
     
@@ -708,6 +676,9 @@ struct Extensions
     bool copyTexture3dANGLE = false;
 
     
+    bool explicitContextANGLE = false;
+
+    
     bool framebufferMixedSamplesCHROMIUM = false;
 
     
@@ -727,9 +698,6 @@ struct Extensions
 
     
     bool loseContextCHROMIUM = false;
-
-    
-    bool lossyEtcDecodeANGLE = false;
 
     
     bool memoryObjectFlagsANGLE = false;
@@ -807,9 +775,6 @@ struct Extensions
     bool textureCompressionDxt5ANGLE = false;
 
     
-    bool textureExternalUpdateANGLE = false;
-
-    
     bool textureMultisampleANGLE = false;
 
     
@@ -850,6 +815,9 @@ struct Extensions
 
     
     bool textureCubeMapOES = false;
+
+    
+    bool textureLodBiasEXT = false;
 
     
     bool textureMirroredRepeatOES = false;

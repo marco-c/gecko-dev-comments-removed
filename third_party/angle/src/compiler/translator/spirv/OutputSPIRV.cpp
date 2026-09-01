@@ -6,11 +6,8 @@
 
 
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include "compiler/translator/spirv/OutputSPIRV.h"
+#include "common/unsafe_buffers.h"
 
 #include "angle_gl.h"
 #include "common/debug.h"
@@ -583,6 +580,7 @@ spirv::IdRef OutputSPIRVTraverser::getSymbolIdAndStorageClass(const TSymbol *sym
         case EvqFragCoord:
             name              = "gl_FragCoord";
             builtInDecoration = spv::BuiltInFragCoord;
+            uniqueId          = &symbol->uniqueId();
             break;
         case EvqFrontFacing:
             name              = "gl_FrontFacing";
@@ -1026,17 +1024,58 @@ spirv::IdRef OutputSPIRVTraverser::accessChainLoad(NodeData *data,
             else
             {
                 
-                const spirv::IdRef tempVar =
-                    mBuilder.declareVariable(accessChain.baseTypeId, spv::StorageClassFunction,
-                                             decorations, nullptr, "indexable", nullptr);
-
                 
-                spirv::WriteStore(mBuilder.getSpirvCurrentFunctionBlock(), tempVar, loadResult,
-                                  nullptr);
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                const bool rvalueIsConstant = mBuilder.isCompositeConstantId(loadResult);
+
+                spirv::IdRef tempVar;
+                spv::StorageClass tempStorageClass;
+                if (rvalueIsConstant)
+                {
+                    tempVar = mBuilder.getOrDeclarePrivateConstantVar(
+                        accessChain.baseTypeId, loadResult, decorations, "indexable");
+                    tempStorageClass = spv::StorageClassPrivate;
+                }
+                else
+                {
+                    tempVar =
+                        mBuilder.declareVariable(accessChain.baseTypeId, spv::StorageClassFunction,
+                                                 decorations, nullptr, "indexable", nullptr);
+                    tempStorageClass = spv::StorageClassFunction;
+
+                    
+                    
+                    spirv::WriteStore(mBuilder.getSpirvCurrentFunctionBlock(), tempVar, loadResult,
+                                      nullptr);
+                }
 
                 
                 data->baseId                   = tempVar;
-                data->accessChain.storageClass = spv::StorageClassFunction;
+                data->accessChain.storageClass = tempStorageClass;
 
                 
                 const spirv::IdRef accessChainId = accessChainCollapse(data);
@@ -1327,7 +1366,7 @@ spirv::IdRef OutputSPIRVTraverser::createConstant(const TType &type,
         {
             componentIds.push_back(
                 createConstant(elementType, elementTypeId, expectedBasicType, constUnion, false));
-            constUnion += elementType.getObjectSize();
+            ANGLE_UNSAFE_TODO(constUnion += elementType.getObjectSize());
         }
     }
     else if (type.getBasicType() == EbtStruct)
@@ -1340,7 +1379,7 @@ spirv::IdRef OutputSPIRVTraverser::createConstant(const TType &type,
             componentIds.push_back(createConstant(*fieldType, fieldTypeId,
                                                   fieldType->getBasicType(), constUnion, false));
 
-            constUnion += fieldType->getObjectSize();
+            ANGLE_UNSAFE_TODO(constUnion += fieldType->getObjectSize());
         }
     }
     else
@@ -1350,7 +1389,7 @@ spirv::IdRef OutputSPIRVTraverser::createConstant(const TType &type,
                expectedBasicType == EbtUInt || expectedBasicType == EbtBool ||
                expectedBasicType == EbtYuvCscStandardEXT);
 
-        for (size_t component = 0; component < size; ++component, ++constUnion)
+        for (size_t component = 0; component < size; ++component, ANGLE_UNSAFE_TODO(++constUnion))
         {
             spirv::IdRef componentId;
 
@@ -2243,10 +2282,11 @@ spirv::IdRef OutputSPIRVTraverser::createFunctionCall(TIntermAggregate *node,
                    paramQualifier == EvqParamInOut);
 
             
+            
             tempVarTypeIds[paramIndex] = mBuilder.getTypeData(paramType, {}).id;
             tempVarIds[paramIndex]     = mBuilder.declareVariable(
                 tempVarTypeIds[paramIndex], spv::StorageClassFunction,
-                mBuilder.getDecorations(argType), nullptr, "param", nullptr);
+                mBuilder.getDecorations(paramType), nullptr, "param", nullptr);
 
             
             
@@ -2277,7 +2317,6 @@ spirv::IdRef OutputSPIRVTraverser::createFunctionCall(TIntermAggregate *node,
         }
 
         const TType &paramType           = function->getParam(paramIndex)->getType();
-        const TType &argType             = node->getChildNode(paramIndex)->getAsTyped()->getType();
         const TQualifier &paramQualifier = paramType.getQualifier();
         NodeData &param = mNodeData[mNodeData.size() - parameterCount + paramIndex];
 
@@ -2290,7 +2329,7 @@ spirv::IdRef OutputSPIRVTraverser::createFunctionCall(TIntermAggregate *node,
         NodeData tempVarData;
         nodeDataInitLValue(&tempVarData, tempVarIds[paramIndex], tempVarTypeIds[paramIndex],
                            spv::StorageClassFunction, {});
-        const spirv::IdRef tempVarValue = accessChainLoad(&tempVarData, argType, nullptr);
+        const spirv::IdRef tempVarValue = accessChainLoad(&tempVarData, paramType, nullptr);
         accessChainStore(&param, tempVarValue, function->getParam(paramIndex)->getType());
     }
 
@@ -2362,77 +2401,6 @@ void OutputSPIRVTraverser::visitArrayLength(TIntermUnary *node)
 
     
     nodeDataInitRValue(&mNodeData.back(), castResultId, intTypeId);
-}
-
-
-
-
-
-bool IsSafeToExecuteInShortCircuit(TIntermTyped *node)
-{
-    
-    if (node->getAsConstantUnion() || node->getAsSymbolNode())
-    {
-        return true;
-    }
-
-    
-    {
-        TIntermSwizzle *asSwizzle = node->getAsSwizzleNode();
-        if (asSwizzle)
-        {
-            return IsSafeToExecuteInShortCircuit(asSwizzle->getOperand());
-        }
-    }
-
-    
-    
-    {
-        TIntermBinary *asBinary = node->getAsBinaryNode();
-        if (asBinary != nullptr)
-        {
-            return (asBinary->getOp() == EOpIndexDirectInterfaceBlock ||
-                    asBinary->getOp() == EOpIndexDirectStruct) &&
-                   IsSafeToExecuteInShortCircuit(asBinary->getLeft());
-        }
-    }
-
-    
-    {
-        TIntermAggregate *asAggregate = node->getAsAggregate();
-        if (asAggregate != nullptr && asAggregate->getOp() == EOpConstruct)
-        {
-            for (TIntermNode *component : *asAggregate->getSequence())
-            {
-                if (!IsSafeToExecuteInShortCircuit(component->getAsTyped()))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-    }
-
-    
-    
-    return false;
-}
-
-bool IsShortCircuitNeeded(TIntermOperator *node)
-{
-    TOperator op = node->getOp();
-
-    
-    if (op != EOpLogicalAnd && op != EOpLogicalOr)
-    {
-        return false;
-    }
-
-    ASSERT(node->getChildCount() == 2);
-
-    
-    
-    return !IsSafeToExecuteInShortCircuit(node->getChildNode(1)->getAsTyped());
 }
 
 using WriteUnaryOp      = void (*)(spirv::Blob *blob,
@@ -2702,7 +2670,7 @@ spirv::IdRef OutputSPIRVTraverser::visitOperator(TIntermOperator *node, spirv::I
             break;
 
         case EOpLogicalOr:
-            ASSERT(!IsShortCircuitNeeded(node));
+            ASSERT(!node->isShortCircuitNeeded());
             extendScalarToVector = false;
             writeBinaryOp        = spirv::WriteLogicalOr;
             break;
@@ -2711,7 +2679,7 @@ spirv::IdRef OutputSPIRVTraverser::visitOperator(TIntermOperator *node, spirv::I
             writeBinaryOp        = spirv::WriteLogicalNotEqual;
             break;
         case EOpLogicalAnd:
-            ASSERT(!IsShortCircuitNeeded(node));
+            ASSERT(!node->isShortCircuitNeeded());
             extendScalarToVector = false;
             writeBinaryOp        = spirv::WriteLogicalAnd;
             break;
@@ -3564,7 +3532,6 @@ spirv::IdRef OutputSPIRVTraverser::createImageTextureBuiltIn(TIntermOperator *no
         case EOpTexture3D:
         case EOpShadow2DEXT:
         case EOpTexture2DRect:
-        case EOpTextureVideoWEBGL:
         case EOpTexture:
 
         case EOpTexture2DBias:
@@ -5201,7 +5168,7 @@ bool OutputSPIRVTraverser::visitBinary(Visit visit, TIntermBinary *node)
         return true;
     }
 
-    if (IsShortCircuitNeeded(node))
+    if (node->isShortCircuitNeeded())
     {
         
         
@@ -5378,8 +5345,8 @@ bool OutputSPIRVTraverser::visitTernary(Visit visit, TIntermTernary *node)
     
     const TType &type   = node->getType();
     bool canUseOpSelect = (type.isScalar() || type.isVector() || mCompileOptions.emitSPIRV14) &&
-                          IsSafeToExecuteInShortCircuit(node->getTrueExpression()) &&
-                          IsSafeToExecuteInShortCircuit(node->getFalseExpression());
+                          node->getTrueExpression()->isSafeToExecuteInShortCircuit() &&
+                          node->getFalseExpression()->isSafeToExecuteInShortCircuit();
 
     
     
@@ -6248,7 +6215,7 @@ bool OutputSPIRVTraverser::visitDeclaration(Visit visit, TIntermDeclaration *nod
         else
         {
             
-            initializerId = accessChainLoad(&mNodeData.back(), symbol->getType(), nullptr);
+            initializerId = accessChainLoad(&mNodeData.back(), initializer->getType(), nullptr);
         }
 
         

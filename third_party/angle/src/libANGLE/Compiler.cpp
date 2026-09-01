@@ -106,14 +106,12 @@ Compiler::Compiler(rx::GLImplFactory *implFactory, const State &state, egl::Disp
         
         
         mResources.UserVariableNamePrefix = '\0';
+        mResources.UserBlockNamePrefix    = '\0';
     }
 
     
     mResources.EXT_multisampled_render_to_texture  = extensions.multisampledRenderToTextureEXT;
     mResources.EXT_multisampled_render_to_texture2 = extensions.multisampledRenderToTexture2EXT;
-
-    
-    mResources.WEBGL_video_texture = extensions.videoTextureWEBGL;
 
     
     mResources.OES_texture_cube_map_array = extensions.textureCubeMapArrayOES;

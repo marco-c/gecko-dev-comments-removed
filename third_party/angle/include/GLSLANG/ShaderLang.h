@@ -26,7 +26,7 @@
 
 
 
-#define ANGLE_SH_VERSION 407
+#define ANGLE_SH_VERSION 419
 
 enum ShShaderSpec
 {
@@ -60,7 +60,6 @@ enum ShShaderOutput
     SH_GLSL_450_CORE_OUTPUT,
 
     
-    SH_HLSL_3_0_OUTPUT,  
     SH_HLSL_4_1_OUTPUT,  
 
     
@@ -181,9 +180,7 @@ struct ShCompileOptions
     uint64_t validateAST : 1;
 
     
-    
-    
-    uint64_t validateLoopIndexing : 1;
+    uint64_t limitOutputVaryingsTo256 : 1;
 
     
     uint64_t lineDirectives : 1;
@@ -250,7 +247,6 @@ struct ShCompileOptions
     
     uint64_t scalarizeVecAndMatConstructorArgs : 1;
 
-    
     
     uint64_t regenerateStructNames : 1;
 
@@ -363,8 +359,7 @@ struct ShCompileOptions
     
     uint64_t wrapSwitchInIfTrue : 1;
 
-    
-    uint64_t takeVideoTextureAsExternalOES : 1;
+    uint64_t unused4 : 1;
 
     
     
@@ -414,17 +409,15 @@ struct ShCompileOptions
     
     uint64_t explicitFragmentLocations : 1;
 
+    uint64_t unused : 1;
+
     
-    uint64_t emulateDithering : 1;
+    uint64_t avoidComplexExpressionsInStructConstructor : 1;
 
     
     
-    uint64_t roundOutputAfterDithering : 1;
-
     
-    
-    
-    uint64_t unused3 : 1;
+    uint64_t allowExtensionDisableAfterNonPPTokensInWebGL : 1;
 
     
     
@@ -490,6 +483,9 @@ struct ShCompileOptions
 
     
     uint64_t useIR : 1;
+
+    
+    uint64_t expandFragmentOutputsToVec4 : 1;
 
     ShCompileOptionsMetal metal;
     ShPixelLocalStorageOptions pls;
@@ -561,7 +557,6 @@ struct ShBuiltInResources
     int ANGLE_multi_draw;
     
     int ANGLE_base_vertex_base_instance;
-    int WEBGL_video_texture;
     int APPLE_clip_distance;
     int OES_texture_cube_map_array;
     int EXT_texture_cube_map_array;
@@ -623,7 +618,18 @@ struct ShBuiltInResources
     
     
     
+    
+    
+    
+    
+    
+    
     char UserVariableNamePrefix;
+    
+    
+    
+    
+    char UserBlockNamePrefix;
 
     
     int MaxExpressionComplexity;
@@ -918,9 +924,6 @@ int GetVertexShaderNumViews(const ShHandle handle);
 const std::vector<ShPixelLocalStorageLayout> *GetPixelLocalStorageLayouts(const ShHandle handle);
 
 
-uint32_t GetShaderSpecConstUsageBits(const ShHandle handle);
-
-
 
 
 
@@ -989,11 +992,6 @@ inline bool IsWebGLBasedSpec(ShShaderSpec spec)
     return (spec == SH_WEBGL_SPEC || spec == SH_WEBGL2_SPEC);
 }
 
-
-
-
-extern const char kUserDefinedNamePrefix;
-
 enum class MetadataFlags
 {
     
@@ -1024,23 +1022,6 @@ enum class MetadataFlags
 
 namespace vk
 {
-
-
-enum class SpecializationConstantId : uint32_t
-{
-    Dither = 0,
-
-    InvalidEnum = 1,
-    EnumCount   = InvalidEnum,
-};
-
-enum class SpecConstUsage : uint32_t
-{
-    Dither = 0,
-
-    InvalidEnum = 1,
-    EnumCount   = InvalidEnum,
-};
 
 enum ColorAttachmentDitherControl
 {
@@ -1078,6 +1059,7 @@ constexpr uint32_t kNonSemanticInstructionMask       = 0xF;
 constexpr uint32_t kOverviewHasSampleRateShadingMask = 0x10;
 constexpr uint32_t kOverviewHasSampleIDMask          = 0x20;
 constexpr uint32_t kOverviewHasOutputPerVertexMask   = 0x40;
+constexpr uint32_t kOverviewHasFragCoordMask         = 0x80;
 
 enum ReservedIds
 {
@@ -1089,6 +1071,7 @@ enum ReservedIds
 
     
     kIdNonSemanticInstructionSet,
+    kIdGlslStdInstructionSet,
     kIdEntryPoint,
 
     
@@ -1101,6 +1084,7 @@ enum ReservedIds
     kIdMat3,
     kIdMat4,
     kIdInt,
+    kIdIVec2,
     kIdIVec4,
     kIdUint,
 
@@ -1109,10 +1093,21 @@ enum ReservedIds
     kIdIntOne,
     kIdIntTwo,
     kIdIntThree,
+    kIdIntFour,
+    kIdIntFive,
+    kIdIntSix,
+    kIdIntSeven,
+
+    kIdFloatTwo,
+
+    kIdVec4Zero,
+    kIdIVec4Zero,
 
     
     kIdIntInputTypePointer,
+    kIdVec4InputTypePointer,
     kIdVec4OutputTypePointer,
+    kIdVec3OutputTypePointer,
     kIdIVec4FunctionTypePointer,
     kIdOutputPerVertexTypePointer,
 
@@ -1132,6 +1127,9 @@ enum ReservedIds
 
     
     kIdSampleID,
+
+    
+    kIdFragCoord,
 
     
     

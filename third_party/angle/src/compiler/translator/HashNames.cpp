@@ -45,10 +45,9 @@ void AddToNameMapIfNotMapped(const ImmutableString &name,
         NameMap::const_iterator it = nameMap->find(name.data());
         if (it != nameMap->end())
         {
-            
             return;
         }
-        (*nameMap)[name.data()] = hashedName.data();
+        nameMap->insert(name.data(), hashedName.data());
     }
 }
 
@@ -75,8 +74,34 @@ ImmutableString HashName(const ImmutableString &name,
     }
 
     
-    ImmutableString hashedName = HashName(name, hashFunction);
-    AddToNameMapIfNotMapped(name, hashedName, nameMap);
+    
+    
+    if (nameMap)
+    {
+        NameMap::const_iterator it = nameMap->find(name.data());
+        if (it != nameMap->end())
+        {
+            return ImmutableString(it->second);
+        }
+    }
+
+    const ImmutableString baseHashedName = HashName(name, hashFunction);
+    if (!nameMap)
+    {
+        return baseHashedName;
+    }
+
+    
+    
+    
+    ImmutableString hashedName = baseHashedName;
+    unsigned int suffix        = 0u;
+    while (nameMap->containsHashedName(hashedName.data()))
+    {
+        ++suffix;
+        hashedName = BuildConcatenatedImmutableString(baseHashedName, '_', suffix);
+    }
+    nameMap->insert(name.data(), hashedName.data());
     return hashedName;
 }
 

@@ -9,11 +9,8 @@
 
 
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include "libANGLE/VaryingPacking.h"
+#include "common/unsafe_buffers.h"
 
 #include "common/CompiledShaderState.h"
 #include "common/utilities.h"
@@ -153,9 +150,8 @@ bool ShouldSkipPackedVarying(const sh::ShaderVariable &varying, PackMode packMod
 {
     
     
-    return varying.name == "gl_Position" ||
-           (varying.name == "gl_PointSize" && packMode == PackMode::ANGLE_NON_CONFORMANT_D3D9) ||
-           varying.name == "gl_TessLevelInner" || varying.name == "gl_TessLevelOuter";
+    return varying.name == "gl_Position" || varying.name == "gl_TessLevelInner" ||
+           varying.name == "gl_TessLevelOuter";
 }
 
 std::vector<unsigned int> StripVaryingArrayDimension(const sh::ShaderVariable *frontVarying,
@@ -368,14 +364,7 @@ bool VaryingPacking::packVaryingIntoRegisterMap(PackMode packMode,
 
     
     
-    if (packMode == PackMode::ANGLE_NON_CONFORMANT_D3D9)
-    {
-        varyingColumns = 4;
-    }
-
-    
-    
-    else if (packMode == PackMode::WEBGL_STRICT && varying.type == GL_FLOAT_MAT2)
+    if (packMode == PackMode::WEBGL_STRICT && varying.type == GL_FLOAT_MAT2)
     {
         varyingColumns = 4;
     }
@@ -439,16 +428,18 @@ bool VaryingPacking::packVaryingIntoRegisterMap(PackMode packMode,
         {
             if (mRegisterMap[row][column])
             {
-                contiguousSpace[column] = 0;
+                ANGLE_UNSAFE_TODO(contiguousSpace[column]) = 0;
             }
             else
             {
-                contiguousSpace[column]++;
-                totalSpace[column]++;
+                ANGLE_UNSAFE_TODO(contiguousSpace[column])++;
+                ANGLE_UNSAFE_TODO(totalSpace[column])++;
 
-                if (contiguousSpace[column] > bestContiguousSpace[column])
+                if (ANGLE_UNSAFE_TODO(contiguousSpace[column]) >
+                    ANGLE_UNSAFE_TODO(bestContiguousSpace[column]))
                 {
-                    bestContiguousSpace[column] = contiguousSpace[column];
+                    ANGLE_UNSAFE_TODO(bestContiguousSpace[column]) =
+                        ANGLE_UNSAFE_TODO(contiguousSpace[column]);
                 }
             }
         }
@@ -457,15 +448,15 @@ bool VaryingPacking::packVaryingIntoRegisterMap(PackMode packMode,
     unsigned int bestColumn = 0;
     for (unsigned int column = 1; column < 4; ++column)
     {
-        if (bestContiguousSpace[column] >= varyingRows &&
-            (bestContiguousSpace[bestColumn] < varyingRows ||
-             totalSpace[column] < totalSpace[bestColumn]))
+        if (ANGLE_UNSAFE_TODO(bestContiguousSpace[column]) >= varyingRows &&
+            (ANGLE_UNSAFE_TODO(bestContiguousSpace[bestColumn]) < varyingRows ||
+             ANGLE_UNSAFE_TODO(totalSpace[column] < totalSpace[bestColumn])))
         {
             bestColumn = column;
         }
     }
 
-    if (bestContiguousSpace[bestColumn] >= varyingRows)
+    if (ANGLE_UNSAFE_TODO(bestContiguousSpace[bestColumn]) >= varyingRows)
     {
         for (unsigned int row = 0; row < maxVaryingVectors; row++)
         {
@@ -984,13 +975,6 @@ bool VaryingPacking::packUserVaryings(gl::InfoLog &infoLog,
                                          ? packedVarying.frontVarying.stage
                                          : packedVarying.backVarying.stage;
             infoLog << "Could not pack varying " << packedVarying.fullName(eitherStage);
-
-            
-            if (packMode == PackMode::ANGLE_NON_CONFORMANT_D3D9)
-            {
-                infoLog << "Note: Additional non-conformant packing restrictions are enforced on "
-                           "D3D9.";
-            }
 
             return false;
         }

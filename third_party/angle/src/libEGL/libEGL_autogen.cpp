@@ -630,7 +630,6 @@ EGLBoolean EGLAPIENTRY eglStreamPostD3DTextureANGLE(EGLDisplay dpy,
 }
 
 
-
 EGLBoolean EGLAPIENTRY eglGetMscRateANGLE(EGLDisplay dpy,
                                           EGLSurface surface,
                                           EGLint *numerator,

@@ -32,10 +32,6 @@ namespace gl
 {
 
 
-
-using SpecConstUsageBits = angle::PackedEnumBitSet<sh::vk::SpecConstUsage, uint32_t>;
-
-
 void WriteShaderVar(gl::BinaryOutputStream *stream, const sh::ShaderVariable &var);
 void LoadShaderVar(gl::BinaryInputStream *stream, sh::ShaderVariable *var);
 
@@ -89,7 +85,6 @@ struct CompiledShaderState
 
     sh::CompilerMetadataFlags metadataFlags;
     gl::BlendEquationBitSet advancedBlendEquations;
-    SpecConstUsageBits specConstUsageBits;
 
     
     int numViews;

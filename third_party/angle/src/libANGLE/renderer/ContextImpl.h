@@ -196,9 +196,6 @@ class ContextImpl : public GLImplFactory
     virtual void setMaxShaderCompilerThreads(GLuint count) {}
 
     
-    virtual void invalidateTexture(gl::TextureType target);
-
-    
     virtual void framebufferFetchBarrier() {}
 
     

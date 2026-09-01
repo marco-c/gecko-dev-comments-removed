@@ -9,13 +9,10 @@
 #ifndef COMMON_UTILITIES_H_
 #define COMMON_UTILITIES_H_
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <GLSLANG/ShaderLang.h>
+#include "common/unsafe_buffers.h"
 
 #include <math.h>
 #include <string>
@@ -385,7 +382,7 @@ template <typename T>
 void FillWithNullptr(T *array)
 {
     
-    memset(array->data(), 0, array->size() * sizeof(*array->data()));
+    ANGLE_UNSAFE_TODO(memset(array->data(), 0, array->size() * sizeof(*array->data())));
     
     ASSERT(array->data()[0] == nullptr);
 }

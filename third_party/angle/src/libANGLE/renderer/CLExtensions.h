@@ -48,8 +48,9 @@ struct CLExtensions
     cl_device_integer_dot_product_acceleration_properties_khr
         integerDotProductAccelerationProperties4x8BitPacked;
     ExternalMemoryHandleBitset externalMemoryHandleSupport;
-    
+    ExternalMemoryHandleBitset externalMemoryLinearImagesHandleSupport;
     ExternalMemoryHandleFixedVector externalMemoryHandleSupportList;
+    ExternalMemoryHandleFixedVector externalMemoryLinearImagesHandleSupportList;
     SupportedDepthOrderTypes supportedDepthOrderTypes;
 
     

@@ -58,8 +58,6 @@ egl::Error Device::CreateDevice(EGLint deviceType, void *nativeDevice, Device **
     }
 #endif
 
-    
-
     if (newDeviceImpl == nullptr)
     {
         return egl::Error(EGL_BAD_ATTRIBUTE);

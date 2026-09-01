@@ -284,7 +284,7 @@ class ProgramExecutableMtl : public ProgramExecutableImpl
     
     
     
-    std::vector<std::pair<mtl::BufferRef, uint32_t>> mLegalizedOffsetedUniformBuffers;
+    std::vector<mtl::BufferSlice> mLegalizedOffsetedUniformBuffers;
     
     
     std::vector<uint32_t> mArgumentBufferRenderStageUsages;
@@ -292,6 +292,10 @@ class ProgramExecutableMtl : public ProgramExecutableImpl
     uint32_t mShadowCompareModes[mtl::kMaxShaderSamplers];
 
     gl::ShaderMap<std::unique_ptr<mtl::BufferPool>> mDefaultUniformBufferPools;
+
+    
+    
+    Serial mProgramSerialId;
 };
 
 angle::Result CreateMslShaderLib(mtl::Context *context,

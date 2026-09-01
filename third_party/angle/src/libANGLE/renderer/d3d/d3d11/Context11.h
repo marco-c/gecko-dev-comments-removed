@@ -55,7 +55,7 @@ class Context11 : public ContextD3D, public MultisampleTextureInitializer
     
     QueryImpl *createQuery(gl::QueryType type) override;
     FenceNVImpl *createFenceNV() override;
-    SyncImpl *createSync(const gl::Context *context) override;
+    SyncImpl *createSync() override;
 
     
     TransformFeedbackImpl *createTransformFeedback(
@@ -72,9 +72,6 @@ class Context11 : public ContextD3D, public MultisampleTextureInitializer
 
     
     SemaphoreImpl *createSemaphore() override;
-
-    
-    OverlayImpl *createOverlay(const gl::OverlayState &state) override;
 
     
     angle::Result flush(const gl::Context *context) override;

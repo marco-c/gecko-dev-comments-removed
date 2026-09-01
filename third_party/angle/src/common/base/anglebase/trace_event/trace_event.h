@@ -141,13 +141,10 @@
 #ifndef COMMON_TRACE_EVENT_H_
 #define COMMON_TRACE_EVENT_H_
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include <string>
 
 #include "common/event_tracer.h"
+#include "common/unsafe_buffers.h"
 
 
 
@@ -700,7 +697,7 @@ static inline void unpackArguments(const char **names,
 {
     *names = argName;
     setTraceValue(argVal, types, values);
-    unpackArguments(++names, ++types, ++values, args...);
+    ANGLE_UNSAFE_TODO(unpackArguments(++names, ++types, ++values, args...));
 }
 
 

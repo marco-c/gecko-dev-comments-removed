@@ -11,6 +11,7 @@
 #include "compiler/translator/Compiler.h"
 #include "compiler/translator/StaticType.h"
 #include "compiler/translator/SymbolTable.h"
+#include "compiler/translator/tree_util/BuiltIn.h"
 #include "compiler/translator/tree_util/IntermNode_util.h"
 #include "compiler/translator/tree_util/IntermTraverse.h"
 
@@ -18,14 +19,31 @@ namespace sh
 {
 namespace
 {
+enum class ExtDrawBuffers
+{
+    Disabled,
+    Enabled,
+};
+
+bool ClampIndirectIndicesImpl(TCompiler *compiler,
+                              TIntermNode *root,
+                              TSymbolTable *symbolTable,
+                              ExtDrawBuffers extDrawBuffers);
+
 
 
 class ClampIndirectIndicesTraverser : public TIntermTraverser
 {
   public:
-    ClampIndirectIndicesTraverser(TCompiler *compiler, TSymbolTable *symbolTable)
-        : TIntermTraverser(true, false, false, symbolTable), mCompiler(compiler)
-    {}
+    ClampIndirectIndicesTraverser(TCompiler *compiler,
+                                  TSymbolTable *symbolTable,
+                                  ExtDrawBuffers extDrawBuffers)
+        : TIntermTraverser(true, false, false, symbolTable),
+          mCompiler(compiler),
+          mExtDrawBuffers(extDrawBuffers)
+    {
+        mIsSecondaryFragDataUsed = symbolTable->isSecondaryFragDataUsed();
+    }
 
     bool visitBinary(Visit visit, TIntermBinary *node) override
     {
@@ -38,9 +56,11 @@ class ClampIndirectIndicesTraverser : public TIntermTraverser
         }
 
         
-        bool valid = ClampIndirectIndices(mCompiler, node->getLeft(), mSymbolTable);
+        bool valid =
+            ClampIndirectIndicesImpl(mCompiler, node->getLeft(), mSymbolTable, mExtDrawBuffers);
         ASSERT(valid);
-        valid = ClampIndirectIndices(mCompiler, node->getRight(), mSymbolTable);
+        valid =
+            ClampIndirectIndicesImpl(mCompiler, node->getRight(), mSymbolTable, mExtDrawBuffers);
         ASSERT(valid);
 
         
@@ -68,8 +88,21 @@ class ClampIndirectIndicesTraverser : public TIntermTraverser
 
         if (leftType.isArray())
         {
-            max = createClampValue(static_cast<int>(leftType.getOutermostArraySize()) - 1,
-                                   useFloatClamp);
+            int arraySize = static_cast<int>(leftType.getOutermostArraySize());
+            if (leftType.getQualifier() == EvqFragData &&
+                mExtDrawBuffers == ExtDrawBuffers::Disabled)
+            {
+                
+                arraySize = 1;
+            }
+            else if (leftType.getQualifier() == EvqFragData && mIsSecondaryFragDataUsed)
+            {
+                
+                
+                arraySize =
+                    std::min(arraySize, mCompiler->getBuiltInResources().MaxDualSourceDrawBuffers);
+            }
+            max = createClampValue(arraySize - 1, useFloatClamp);
         }
         else
         {
@@ -123,14 +156,32 @@ class ClampIndirectIndicesTraverser : public TIntermTraverser
     }
 
     TCompiler *mCompiler;
+    const ExtDrawBuffers mExtDrawBuffers;
+    bool mIsSecondaryFragDataUsed = false;
 };
-}  
 
-bool ClampIndirectIndices(TCompiler *compiler, TIntermNode *root, TSymbolTable *symbolTable)
+bool ClampIndirectIndicesImpl(TCompiler *compiler,
+                              TIntermNode *root,
+                              TSymbolTable *symbolTable,
+                              ExtDrawBuffers extDrawBuffers)
 {
-    ClampIndirectIndicesTraverser traverser(compiler, symbolTable);
+    ClampIndirectIndicesTraverser traverser(compiler, symbolTable, extDrawBuffers);
     root->traverse(&traverser);
     return traverser.updateTree(compiler, root);
+}
+
+}  
+
+bool ClampIndirectIndices(TCompiler *compiler,
+                          TIntermNode *root,
+                          TSymbolTable *symbolTable,
+                          const TExtensionBehavior &extensionBehavior)
+{
+    const ExtDrawBuffers extDrawBuffers =
+        IsExtensionEnabled(extensionBehavior, TExtension::EXT_draw_buffers)
+            ? ExtDrawBuffers::Enabled
+            : ExtDrawBuffers::Disabled;
+    return ClampIndirectIndicesImpl(compiler, root, symbolTable, extDrawBuffers);
 }
 
 }  

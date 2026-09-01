@@ -6,10 +6,7 @@
 
 
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
+#include "common/unsafe_buffers.h"
 #include "gpu_info_util/SystemInfo_internal.h"
 
 #import <Cocoa/Cocoa.h>
@@ -69,7 +66,8 @@ void GetIORegistryDevices(std::vector<GPUDeviceInfo> *devices)
     for (uint32_t i = 0; i < kNumServices; ++i)
     {
         
-        CFMutableDictionaryRef matchDictionary = IOServiceMatching(kServiceNames[i]);
+        CFMutableDictionaryRef matchDictionary =
+            ANGLE_UNSAFE_TODO(IOServiceMatching(kServiceNames[i]));
 
         io_iterator_t entryIterator;
         if (IOServiceGetMatchingServices(mainPort, matchDictionary, &entryIterator) !=
@@ -93,7 +91,7 @@ void GetIORegistryDevices(std::vector<GPUDeviceInfo> *devices)
             }
 
             io_registry_entry_t queryEntry = entry;
-            if (kServiceIsGraphicsAccelerator2[i])
+            if (ANGLE_UNSAFE_TODO(kServiceIsGraphicsAccelerator2[i]))
             {
                 
                 
@@ -115,7 +113,7 @@ void GetIORegistryDevices(std::vector<GPUDeviceInfo> *devices)
                 continue;
             }
             
-            if (kServiceIsGraphicsAccelerator2[i])
+            if (ANGLE_UNSAFE_TODO(kServiceIsGraphicsAccelerator2[i]))
             {
                 if (!GetEntryProperty(queryEntry, CFSTR("class-code"), &classCode))
                 {
