@@ -1243,6 +1243,20 @@ interface DisplayNameResult {
     values?: string[];
 }
 
+interface DocumentLanguageMetadata {
+    
+    htmlLangAttribute: string;
+    
+    textSample: string;
+}
+
+interface DocumentLanguageMetadataRequestOptions {
+    
+    textSampleMinCodeUnits: number;
+    
+    textSampleTargetCodeUnits: number;
+}
+
 interface DocumentPictureInPictureEventInit extends EventInit {
     
     window: Window;
@@ -1274,6 +1288,13 @@ interface DoubleRange {
 interface DragEventInit extends MouseEventInit {
     
     dataTransfer?: DataTransfer | null;
+}
+
+interface DrawSnapshotOptions {
+    
+    drawView?: boolean;
+    
+    resetScrollPosition?: boolean;
 }
 
 interface DynamicsCompressorOptions extends AudioNodeOptions {
@@ -1372,6 +1393,11 @@ interface EncodedVideoChunkMetadata {
     decoderConfig?: VideoDecoderConfig;
     
     svc?: SvcOutputMetadata;
+}
+
+interface EncoderDebugInfo {
+    
+    encoderName?: string;
 }
 
 interface ErrorEventInit extends EventInit {
@@ -1606,6 +1632,8 @@ interface FontFaceDescriptors {
     variationSettings?: string;
     
     weight?: string;
+    
+    width?: string;
 }
 
 interface FontFaceSetIteratorResult {
@@ -2508,6 +2536,13 @@ interface ImageText {
 interface ImportESModuleOptionsDictionary {
     
     global?: ImportESModuleTargetGlobal;
+}
+
+interface ImportNodeOptions {
+    
+    customElementRegistry?: CustomElementRegistry;
+    
+    selfOnly?: boolean;
 }
 
 interface InferenceSessionRunOptions {
@@ -4815,32 +4850,6 @@ interface PredictRemoteTypeOptions {
     window?: Window | null;
 }
 
-interface PrivateAttributionConversionOptions {
-    
-    ads?: string[];
-    
-    histogramSize: number;
-    
-    impression?: PrivateAttributionImpressionType;
-    
-    lookbackDays?: number;
-    
-    sources?: string[];
-    
-    task: string;
-}
-
-interface PrivateAttributionImpressionOptions {
-    
-    ad: string;
-    
-    index: number;
-    
-    target: string;
-    
-    type?: PrivateAttributionImpressionType;
-}
-
 interface ProcessActorChildOptions extends JSActorSidedOptions {
     
     observers?: string[];
@@ -5147,6 +5156,8 @@ interface RTCCodecStats extends RTCStats {
 
 interface RTCConfiguration {
     
+    alwaysNegotiateDataChannels?: boolean;
+    
     bundlePolicy?: RTCBundlePolicy;
     
     certificates?: RTCCertificate[];
@@ -5163,6 +5174,8 @@ interface RTCConfiguration {
 }
 
 interface RTCConfigurationInternal {
+    
+    alwaysNegotiateDataChannels?: boolean;
     
     bundlePolicy?: RTCBundlePolicy;
     
@@ -5938,6 +5951,8 @@ interface RTCTransportStats extends RTCStats {
     
     remoteCertificateId?: string;
     
+    selectedCandidatePairChanges?: number;
+    
     selectedCandidatePairId?: string;
     
     srtpCipher?: string;
@@ -6400,6 +6415,8 @@ interface SizeToContentConstraints {
 interface SocketOptions {
     
     binaryType?: TCPSocketBinaryType;
+    
+    connectionFlags?: number;
     
     useSecureTransport?: boolean;
 }
@@ -7232,7 +7249,7 @@ interface ViewTimelineOptions {
     
     inset?: string | (CSSKeywordish | CSSNumericValue)[];
     
-    subject?: Element;
+    subject: Element;
 }
 
 interface WaveShaperOptions extends AudioNodeOptions {
@@ -7370,9 +7387,9 @@ interface WebTransportErrorInit {
 
 interface WebTransportHash {
     
-    algorithm?: string;
+    algorithm: string;
     
-    value?: BufferSource;
+    value: BufferSource;
 }
 
 interface WebTransportOptions {
@@ -7380,6 +7397,8 @@ interface WebTransportOptions {
     allowPooling?: boolean;
     
     congestionControl?: WebTransportCongestionControl;
+    
+    protocols?: string[];
     
     requireUnreliable?: boolean;
     
@@ -7395,9 +7414,14 @@ interface WebTransportReceiveStreamStats {
     timestamp?: DOMHighResTimeStamp;
 }
 
-interface WebTransportSendStreamOptions {
+interface WebTransportSendOptions {
     
-    sendOrder?: number | null;
+    sendGroup?: WebTransportSendGroup | null;
+    
+    sendOrder?: number;
+}
+
+interface WebTransportSendStreamOptions extends WebTransportSendOptions {
 }
 
 interface WebTransportSendStreamStats {
@@ -8191,6 +8215,10 @@ interface Animation extends EventTarget {
     
     playbackRate: number;
     
+    rangeEnd: any;
+    
+    rangeStart: any;
+    
     readonly ready: Promise<Animation>;
     
     readonly replaceState: AnimationReplaceState;
@@ -8533,6 +8561,8 @@ interface AudioEncoder extends EventTarget {
     encode(data: AudioData): void;
     
     flush(): Promise<void>;
+    
+    mozRequestDebugInfo(): Promise<EncoderDebugInfo>;
     
     reset(): void;
     addEventListener<K extends keyof AudioEncoderEventMap>(type: K, listener: (this: AudioEncoder, ev: AudioEncoderEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
@@ -9522,13 +9552,13 @@ interface CSSFontFaceDescriptors extends CSSStyleDeclaration {
     
     fontLanguageOverride: string;
     
-    fontStretch: string;
-    
     fontStyle: string;
     
     fontVariationSettings: string;
     
     fontWeight: string;
+    
+    fontWidth: string;
     
     lineGapOverride: string;
     
@@ -10586,6 +10616,8 @@ interface CSSStyleProperties extends CSSStyleDeclaration {
     
     MozImageDecoding: string;
     
+    MozLineScrollAmount: string;
+    
     MozMarginEnd: string;
     
     MozMarginStart: string;
@@ -11059,6 +11091,8 @@ interface CSSStyleProperties extends CSSStyleDeclaration {
     fontVariationSettings: string;
     
     fontWeight: string;
+    
+    fontWidth: string;
     
     forcedColorAdjust: string;
     
@@ -12074,6 +12108,8 @@ interface CanonicalBrowsingContext extends BrowsingContext {
     readonly scopedPrefs: nsIScopedPrefs | null;
     
     readonly secureBrowserUI: nsISecureBrowserUI | null;
+    
+    readonly serviceWorkersDisabledByPolicy: boolean;
     
     readonly sessionHistory: nsISHistory | null;
     
@@ -14605,7 +14641,7 @@ interface Document extends Node, ARIANotifyMixin, DocumentOrShadowRoot, FontFace
     
     hasStorageAccess(): Promise<boolean>;
     
-    importNode(node: Node, deep?: boolean): Node;
+    importNode(node: Node, options?: boolean | ImportNodeOptions): Node;
     
     insertAnonymousContent(): AnonymousContent;
     
@@ -15751,6 +15787,8 @@ declare var File: {
     createFromFileName(fileName: string, options?: ChromeFilePropertyBag): Promise<File>;
     
     createFromNsIFile(file: nsIFile, options?: ChromeFilePropertyBag): Promise<File>;
+    
+    createFromNsIInputStream(inputStream: nsIInputStream, size: number, options?: ChromeFilePropertyBag): File;
 };
 
 
@@ -16171,8 +16209,6 @@ interface FontFace {
     
     readonly status: FontFaceLoadStatus;
     
-    stretch: string;
-    
     style: string;
     
     unicodeRange: string;
@@ -16182,6 +16218,8 @@ interface FontFace {
     variationSettings: string;
     
     weight: string;
+    
+    width: string;
     
     load(): Promise<FontFace>;
 }
@@ -18867,6 +18905,10 @@ interface HTMLElement extends Element, ElementCSSInlineStyle, ElementOffsetAttri
     
     autocorrect: boolean;
     
+    containerTiming: string;
+    
+    containerTimingIgnore: boolean;
+    
     contentEditable: string;
     
     dir: string;
@@ -20816,6 +20858,8 @@ interface HTMLTemplateElement extends HTMLElement {
     
     shadowRootClonable: boolean;
     
+    shadowRootCustomElementRegistry: string;
+    
     shadowRootDelegatesFocus: boolean;
     
     shadowRootMode: string;
@@ -21385,6 +21429,10 @@ interface IDBIndex {
     
     getKey(query: any): IDBRequest;
     
+    mozGetAll(queryOrOptions?: any, count?: number): IDBRequest;
+    
+    mozGetAllKeys(queryOrOptions?: any, count?: number): IDBRequest;
+    
     openCursor(query?: any, direction?: IDBCursorDirection): IDBRequest;
     
     openKeyCursor(query?: any, direction?: IDBCursorDirection): IDBRequest;
@@ -21462,6 +21510,8 @@ interface IDBObjectStore {
     getKey(key: any): IDBRequest;
     
     index(name: string): IDBIndex;
+    
+    mozGetAll(queryOrOptions?: any, count?: number): IDBRequest;
     
     openCursor(range?: any, direction?: IDBCursorDirection): IDBRequest;
     
@@ -21910,6 +21960,8 @@ declare var InferenceSession: {
     isInstance: IsInstance<InferenceSession>;
     
     create(uriOrBuffer: string | Uint8Array, options?: InferenceSessionSessionOptions): Promise<InferenceSession>;
+    
+    isAvailable(): boolean;
 };
 
 
@@ -24035,6 +24087,25 @@ declare var MatchPatternSet: {
     isInstance: IsInstance<MatchPatternSet>;
 };
 
+
+interface MathMLAnchorElement extends MathMLElement, HyperlinkElementUtils {
+    
+    href: string;
+    
+    target: string;
+    addEventListener<K extends keyof MathMLElementEventMap>(type: K, listener: (this: MathMLAnchorElement, ev: MathMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+    addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+    removeEventListener<K extends keyof MathMLElementEventMap>(type: K, listener: (this: MathMLAnchorElement, ev: MathMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+    removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
+}
+
+declare var MathMLAnchorElement: {
+    prototype: MathMLAnchorElement;
+    new(): MathMLAnchorElement;
+    
+    isInstance: IsInstance<MathMLAnchorElement>;
+};
+
 interface MathMLElementEventMap extends ElementEventMap, GlobalEventHandlersEventMap, OnErrorEventHandlerForNodesEventMap, TouchEventHandlersEventMap {
 }
 
@@ -25764,8 +25835,6 @@ interface Navigator extends GlobalPrivacyControl, NavigatorAutomationInformation
     
     readonly plugins: PluginArray;
     
-    readonly privateAttribution: PrivateAttribution;
-    
     readonly productSub: string;
     
 
@@ -27034,6 +27103,31 @@ declare var Performance: {
 };
 
 
+interface PerformanceContainerTiming extends PerformanceEntry, PaintTimingMixin {
+    
+    readonly firstRenderTime: DOMHighResTimeStamp;
+    
+    readonly identifier: string;
+    
+    readonly intersectionRect: DOMRectReadOnly;
+    
+    readonly lastPaintedElement: Element | null;
+    
+    readonly rootElement: HTMLElement | null;
+    
+    readonly size: number;
+    
+    toJSON(): any;
+}
+
+declare var PerformanceContainerTiming: {
+    prototype: PerformanceContainerTiming;
+    new(): PerformanceContainerTiming;
+    
+    isInstance: IsInstance<PerformanceContainerTiming>;
+};
+
+
 interface PerformanceEntry {
     
     readonly duration: DOMHighResTimeStamp;
@@ -27251,6 +27345,8 @@ interface PerformanceResourceTiming extends PerformanceEntry {
     readonly contentType: string;
     
     readonly decodedBodySize: number;
+    
+    readonly deliveryType: string;
     
     readonly domainLookupEnd: DOMHighResTimeStamp;
     
@@ -28045,29 +28141,13 @@ declare var PrecompiledScript: {
 };
 
 
-
-
-
-interface PrivateAttribution {
-    
-    measureConversion(options: PrivateAttributionConversionOptions): void;
-    
-    saveImpression(options: PrivateAttributionImpressionOptions): void;
-}
-
-declare var PrivateAttribution: {
-    prototype: PrivateAttribution;
-    new(): PrivateAttribution;
-    
-    isInstance: IsInstance<PrivateAttribution>;
-};
-
-
 interface ProcessMessageManager extends MessageSender, ProcessScriptLoader {
     
     readonly isInProcess: boolean;
     
     readonly osPid: number;
+    
+    readonly processParent: nsIDOMProcessParent;
 }
 
 declare var ProcessMessageManager: {
@@ -28871,13 +28951,13 @@ interface RTCSctpTransport extends EventTarget {
     
     readonly maxChannels: number | null;
     
-    readonly maxMessageSize: number;
+    readonly maxMessageSize: number | null;
     
     onstatechange: ((this: RTCSctpTransport, ev: Event) => any) | null;
     
     readonly state: RTCSctpTransportState;
     
-    readonly transport: RTCDtlsTransport;
+    readonly transport: RTCDtlsTransport | null;
     addEventListener<K extends keyof RTCSctpTransportEventMap>(type: K, listener: (this: RTCSctpTransport, ev: RTCSctpTransportEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
     addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
     removeEventListener<K extends keyof RTCSctpTransportEventMap>(type: K, listener: (this: RTCSctpTransport, ev: RTCSctpTransportEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
@@ -29357,11 +29437,9 @@ declare var Response: {
 };
 
 
-interface SVGAElement extends SVGGraphicsElement, SVGURIReference {
+interface SVGAElement extends SVGGraphicsElement, HyperlinkElementUtils, SVGURIReference {
     
     download: string;
-    
-    hreflang: string;
     
     ping: string;
     
@@ -29372,10 +29450,6 @@ interface SVGAElement extends SVGGraphicsElement, SVGURIReference {
     readonly relList: DOMTokenList;
     
     readonly target: SVGAnimatedString;
-    
-    text: string;
-    
-    type: string;
     addEventListener<K extends keyof SVGElementEventMap>(type: K, listener: (this: SVGAElement, ev: SVGElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
     addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
     removeEventListener<K extends keyof SVGElementEventMap>(type: K, listener: (this: SVGAElement, ev: SVGElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
@@ -35865,6 +35939,8 @@ interface VideoEncoder extends EventTarget {
     
     flush(): Promise<void>;
     
+    mozRequestDebugInfo(): Promise<EncoderDebugInfo>;
+    
     reset(): void;
     addEventListener<K extends keyof VideoEncoderEventMap>(type: K, listener: (this: VideoEncoder, ev: VideoEncoderEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
     addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
@@ -36007,12 +36083,12 @@ interface ViewTimeline extends ScrollTimeline {
     
     readonly startOffset: CSSNumericValue | null;
     
-    readonly subject: Element | null;
+    readonly subject: Element;
 }
 
 declare var ViewTimeline: {
     prototype: ViewTimeline;
-    new(options?: ViewTimelineOptions): ViewTimeline;
+    new(options: ViewTimelineOptions): ViewTimeline;
     
     isInstance: IsInstance<ViewTimeline>;
 };
@@ -40246,9 +40322,13 @@ interface WebTransport {
     
     readonly datagrams: WebTransportDatagramDuplexStream;
     
+    readonly draining: Promise<void>;
+    
     readonly incomingBidirectionalStreams: ReadableStream;
     
     readonly incomingUnidirectionalStreams: ReadableStream;
+    
+    readonly protocol: string;
     
     readonly ready: Promise<void>;
     
@@ -40258,7 +40338,11 @@ interface WebTransport {
     
     createBidirectionalStream(options?: WebTransportSendStreamOptions): Promise<WebTransportBidirectionalStream>;
     
+    createSendGroup(): WebTransportSendGroup;
+    
     createUnidirectionalStream(options?: WebTransportSendStreamOptions): Promise<WebTransportSendStream>;
+    
+    exportKeyingMaterial(label: BufferSource, context?: BufferSource): Promise<Uint8Array>;
     
     getStats(): Promise<WebTransportStats>;
 }
@@ -40307,6 +40391,8 @@ interface WebTransportDatagramDuplexStream {
     readonly readable: ReadableStream;
     
     readonly writable: WritableStream;
+    
+    createWritable(options?: WebTransportSendOptions): WebTransportDatagramsWritable;
 }
 
 declare var WebTransportDatagramDuplexStream: {
@@ -40314,6 +40400,24 @@ declare var WebTransportDatagramDuplexStream: {
     new(): WebTransportDatagramDuplexStream;
     
     isInstance: IsInstance<WebTransportDatagramDuplexStream>;
+};
+
+
+
+
+
+interface WebTransportDatagramsWritable extends WritableStream {
+    
+    sendGroup: WebTransportSendGroup | null;
+    
+    sendOrder: number;
+}
+
+declare var WebTransportDatagramsWritable: {
+    prototype: WebTransportDatagramsWritable;
+    new(): WebTransportDatagramsWritable;
+    
+    isInstance: IsInstance<WebTransportDatagramsWritable>;
 };
 
 
@@ -40354,9 +40458,27 @@ declare var WebTransportReceiveStream: {
 
 
 
+interface WebTransportSendGroup {
+    
+    getStats(): Promise<WebTransportSendStreamStats>;
+}
+
+declare var WebTransportSendGroup: {
+    prototype: WebTransportSendGroup;
+    new(): WebTransportSendGroup;
+    
+    isInstance: IsInstance<WebTransportSendGroup>;
+};
+
+
+
+
+
 interface WebTransportSendStream extends WritableStream {
     
-    sendOrder: number | null;
+    sendGroup: WebTransportSendGroup | null;
+    
+    sendOrder: number;
     
     getStats(): Promise<WebTransportSendStreamStats>;
 }
@@ -40946,7 +41068,7 @@ interface WindowGlobalParent extends WindowContext {
     
     readonly rootFrameLoader: FrameLoader | null;
     
-    drawSnapshot(rect: DOMRect | null, scale: number, backgroundColor: string, resetScrollPosition?: boolean): Promise<ImageBitmap>;
+    drawSnapshot(rect: DOMRect | null, scale: number, backgroundColor: string, options?: DrawSnapshotOptions): Promise<ImageBitmap>;
     
     getActor(name: string): JSWindowActorParent;
     
@@ -40955,6 +41077,8 @@ interface WindowGlobalParent extends WindowContext {
     hasActivePeerConnections(): boolean;
     
     permitUnload(action?: PermitUnloadAction, timeout?: number): Promise<boolean>;
+    
+    requestDocumentLanguageMetadata(options: DocumentLanguageMetadataRequestOptions): Promise<DocumentLanguageMetadata | null>;
     
     updateFullscreenKeyboardLockStatus(status: FullscreenKeyboardLock): void;
 }
@@ -42455,6 +42579,8 @@ declare namespace ChromeUtils {
     
     function invalidateResourceCache(): void;
     
+    function isBlobURLValid(principal: Principal, uriString: string): boolean;
+    
     function isClassifierBlockingErrorCode(aError: number): boolean;
     
     function isDOMObject(obj: any, unwrap?: boolean): boolean;
@@ -42521,6 +42647,8 @@ declare namespace ChromeUtils {
     function unregisterWindowActor(aName: string): void;
     
     function unwaiveXrays(val: any): any;
+    
+    function validateServiceWorkerScope(principal: Principal, uri: URI): void;
     
     function vsyncEnabled(): boolean;
     
@@ -44504,7 +44632,7 @@ type ForcedColorsOverride = "active" | "none";
 type FullscreenKeyboardLock = "browser" | "none";
 type GPUAddressMode = "clamp-to-edge" | "mirror-repeat" | "repeat";
 type GPUAutoLayoutMode = "auto";
-type GPUBlendFactor = "constant" | "dst" | "dst-alpha" | "one" | "one-minus-constant" | "one-minus-dst" | "one-minus-dst-alpha" | "one-minus-src" | "one-minus-src-alpha" | "src" | "src-alpha" | "src-alpha-saturated" | "zero";
+type GPUBlendFactor = "constant" | "dst" | "dst-alpha" | "one" | "one-minus-constant" | "one-minus-dst" | "one-minus-dst-alpha" | "one-minus-src" | "one-minus-src-alpha" | "one-minus-src1" | "one-minus-src1-alpha" | "src" | "src-alpha" | "src-alpha-saturated" | "src1" | "src1-alpha" | "zero";
 type GPUBlendOperation = "add" | "max" | "min" | "reverse-subtract" | "subtract";
 type GPUBufferBindingType = "read-only-storage" | "storage" | "uniform";
 type GPUBufferMapState = "mapped" | "pending" | "unmapped";
@@ -44619,7 +44747,6 @@ type PrefersColorSchemeOverride = "dark" | "light" | "none";
 type PrefersReducedMotionOverride = "no-preference" | "none" | "reduce";
 type PremultiplyAlpha = "default" | "none" | "premultiply";
 type PresentationStyle = "attachment" | "inline" | "unspecified";
-type PrivateAttributionImpressionType = "click" | "view";
 type PromiseDebuggingState = "fulfilled" | "pending" | "rejected";
 type PushEncryptionKeyName = "auth" | "p256dh";
 type RTCBundlePolicy = "balanced" | "max-bundle" | "max-compat";
@@ -44709,7 +44836,7 @@ type VisibilityState = "hidden" | "visible";
 type WakeLockType = "screen";
 type WebGLPowerPreference = "default" | "high-performance" | "low-power";
 type WebIDLProcType = "browser" | "extension" | "file" | "forkServer" | "gmpPlugin" | "gpu" | "inference" | "ipdlUnitTest" | "preallocated" | "privilegedabout" | "privilegedmozilla" | "rdd" | "socket" | "unknown" | "utility" | "vr" | "web" | "webIsolated" | "webServiceWorker" | "withCoopCoep";
-type WebIDLUtilityActorName = "audioDecoder_AppleMedia" | "audioDecoder_Generic" | "audioDecoder_WMF" | "jSOracle" | "mfMediaEngineCDM" | "pkcs11Module" | "unknown" | "windowsFileDialog" | "windowsUtils";
+type WebIDLUtilityActorName = "audioDecoder_AppleMedia" | "audioDecoder_Generic" | "audioDecoder_WMF" | "hwInference" | "jSOracle" | "mfMediaEngineCDM" | "pkcs11Module" | "unknown" | "windowsFileDialog" | "windowsUtils";
 type WebTransportCongestionControl = "default" | "low-latency" | "throughput";
 type WebTransportErrorSource = "session" | "stream";
 type WebTransportReliabilityMode = "pending" | "reliable-only" | "supports-unreliable";
