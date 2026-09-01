@@ -24,6 +24,15 @@ namespace JS {
 struct CTypesCallbacks;
 }  
 
+
+
+
+
+#if defined(FFI_VERSION_NUMBER) && FFI_VERSION_NUMBER >= 30800 && \
+    defined(__x86_64__) && !defined(__ILP32__) && !defined(_WIN64)
+#  define CTYPES_HAVE_FAST_CALL_PLAN 1
+#endif
+
 namespace js {
 namespace ctypes {
 
@@ -362,6 +371,13 @@ struct FunctionInfo {
   
   
   bool mIsVariadic;
+
+#ifdef CTYPES_HAVE_FAST_CALL_PLAN
+  
+  
+  
+  ffi_call_plan* mCallPlan = nullptr;
+#endif
 };
 
 
