@@ -3033,8 +3033,12 @@ pref("signon.signupDetection.confidenceThreshold",     "0.75");
   pref("signon.storage.rust.enabled", false);
 #endif
 
+pref("signon.storage.rust.restoreEnabled", true);
+
 pref("signon.storage.rust.active", false);
 pref("signon.storage.rust.migrationAttempts", 0);
+pref("signon.storage.rust.restoreAttempts", 0);
+pref("signon.storage.rust.restoreDone", false);
 
 
 pref("browser.formfill.debug",            false);
