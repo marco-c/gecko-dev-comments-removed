@@ -998,6 +998,13 @@ FFmpegVideoDecoder<LIBAV_VER>::FFmpegVideoDecoder(
 }
 
 FFmpegVideoDecoder<LIBAV_VER>::~FFmpegVideoDecoder() {
+#ifdef MOZ_WIDGET_ANDROID
+  
+  
+  
+  
+  ReleaseSurfaceMediaCodec();
+#endif
 #ifdef CUSTOMIZED_BUFFER_ALLOCATION_ASSERT_ENABLED
   
   
@@ -3099,6 +3106,7 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitMediaCodecDecoder() {
     if (mMediaCodecDeviceContext) {
       mLib->av_buffer_unref(&mMediaCodecDeviceContext);
     }
+    ReleaseSurfaceMediaCodec();
   });
 
   FFMPEG_LOG("  creating device context");
@@ -3294,6 +3302,14 @@ bool FFmpegVideoDecoder<LIBAV_VER>::ReleaseFrameMediaCodec(void* aKey,
     }
     mLib->av_frame_free(&aFrame);
   });
+}
+
+void FFmpegVideoDecoder<LIBAV_VER>::ReleaseSurfaceMediaCodec() {
+  if (mSurfaceTextureSurface) {
+    java::SurfaceAllocator::DisposeSurface(mSurfaceTextureSurface);
+    mSurfaceTextureSurface = nullptr;
+    mSurfaceHandle = {};
+  }
 }
 
 void FFmpegVideoDecoder<LIBAV_VER>::ReleaseFramesMediaCodec() {
