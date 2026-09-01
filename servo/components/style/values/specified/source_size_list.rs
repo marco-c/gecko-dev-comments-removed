@@ -20,7 +20,7 @@ use style_traits::ParseError;
 
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct SourceSize {
     condition: QueryCondition,
     value: Length,
@@ -40,7 +40,7 @@ impl Parse for SourceSize {
 
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct SourceSizeList {
     source_sizes: Vec<SourceSize>,
     value: Option<Length>,
