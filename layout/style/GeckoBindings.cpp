@@ -1075,22 +1075,16 @@ void Gecko_EnsureStyleViewTimelineArrayLength(void* aArray, size_t aLen) {
   EnsureStyleAutoArrayLength(base, aLen);
 }
 
-enum class KeyframeSearchDirection {
-  Forwards,
-  Backwards,
-};
 
-enum class KeyframeInsertPosition {
-  LastForOffset,
-  Append,
-};
+
+
+
+
 
 static std::pair<Keyframe*, size_t> GetOrCreateKeyframe(
     nsTArray<Keyframe>* aKeyframes, StyleTimelineRangeName aRangeName,
     float aOffset, const StyleComputedTimingFunction* aTimingFunction,
-    const CompositeOperationOrAuto aComposition,
-    KeyframeSearchDirection aSearchDirection,
-    KeyframeInsertPosition aInsertPosition) {
+    const CompositeOperationOrAuto aComposition) {
   MOZ_ASSERT(aKeyframes, "The keyframe array should be valid");
   MOZ_ASSERT(aTimingFunction, "The timing function should be valid");
   MOZ_ASSERT(aRangeName != StyleTimelineRangeName::None ||
@@ -1100,40 +1094,18 @@ static std::pair<Keyframe*, size_t> GetOrCreateKeyframe(
 
   const auto& offset = Keyframe::OffsetType{aRangeName, (double)aOffset};
   size_t keyframeIndex;
-  switch (aSearchDirection) {
-    case KeyframeSearchDirection::Forwards:
-      if (nsAnimationManager::FindMatchingKeyframe(
-              *aKeyframes, offset, *aTimingFunction, aComposition,
-              keyframeIndex)) {
-        return {&(*aKeyframes)[keyframeIndex], keyframeIndex};
-      }
-      break;
-    case KeyframeSearchDirection::Backwards:
-      if (nsAnimationManager::FindMatchingKeyframe(
-              Reversed(*aKeyframes), offset, *aTimingFunction, aComposition,
-              keyframeIndex)) {
-        return {&(*aKeyframes)[aKeyframes->Length() - 1 - keyframeIndex],
-                aKeyframes->Length() - 1 - keyframeIndex};
-      }
-      keyframeIndex = aKeyframes->Length() - 1;
-      break;
+  
+  
+  
+  if (nsAnimationManager::FindMatchingKeyframe(Reversed(*aKeyframes), offset,
+                                               *aTimingFunction, aComposition,
+                                               keyframeIndex)) {
+    return {&(*aKeyframes)[aKeyframes->Length() - 1 - keyframeIndex],
+            aKeyframes->Length() - 1 - keyframeIndex};
   }
+  keyframeIndex = aKeyframes->Length() - 1;
 
-  Keyframe* keyframe = nullptr;
-  switch (aInsertPosition) {
-    case KeyframeInsertPosition::LastForOffset:
-      
-      
-      
-      
-      
-      keyframe = aKeyframes->InsertElementAt(keyframeIndex);
-      break;
-    case KeyframeInsertPosition::Append:
-      keyframe = aKeyframes->AppendElement();
-      break;
-  }
-  MOZ_ASSERT(keyframe);
+  Keyframe* keyframe = aKeyframes->AppendElement();
   keyframe->mOffset.emplace(offset);
   if (!aTimingFunction->IsLinearKeyword()) {
     keyframe->mTimingFunction.emplace(*aTimingFunction);
@@ -1143,7 +1115,7 @@ static std::pair<Keyframe*, size_t> GetOrCreateKeyframe(
   return {keyframe, aKeyframes->Length()};
 }
 
-Keyframe* Gecko_GetOrCreateKeyframeAtEnd(
+Keyframe* Gecko_GetOrCreateKeyframeForPercentageOffset(
     nsTArray<Keyframe>* aKeyframes, float aOffset,
     const StyleComputedTimingFunction* aTimingFunction,
     const CompositeOperationOrAuto aComposition) {
@@ -1152,46 +1124,20 @@ Keyframe* Gecko_GetOrCreateKeyframeAtEnd(
              "The percentage offset should be less than or equal to the last "
              "keyframe's offset if there are exisiting keyframes");
   return GetOrCreateKeyframe(aKeyframes, StyleTimelineRangeName::None, aOffset,
-                             aTimingFunction, aComposition,
-                             KeyframeSearchDirection::Backwards,
-                             KeyframeInsertPosition::Append)
+                             aTimingFunction, aComposition)
       .first;
 }
 
-Keyframe* Gecko_GetOrCreateKeyframeWithRangeName(
+Keyframe* Gecko_GetOrCreateKeyframeForTimelineRangeOffset(
     nsTArray<Keyframe>* aKeyframes, const StyleTimelineRangeName aRangeName,
     float aOffset, const StyleComputedTimingFunction* aTimingFunction,
     const CompositeOperationOrAuto aComposition, size_t* aMatchedIdx) {
   MOZ_ASSERT(aRangeName != StyleTimelineRangeName::Normal,
              "normal shouldn't be used");
-
-  auto [keyframe, idx] = GetOrCreateKeyframe(
-      aKeyframes, aRangeName, aOffset, aTimingFunction, aComposition,
-      KeyframeSearchDirection::Backwards, KeyframeInsertPosition::Append);
+  auto [keyframe, idx] = GetOrCreateKeyframe(aKeyframes, aRangeName, aOffset,
+                                             aTimingFunction, aComposition);
   *aMatchedIdx = idx;
   return keyframe;
-}
-
-Keyframe* Gecko_GetOrCreateInitialKeyframe(
-    nsTArray<Keyframe>* aKeyframes,
-    const StyleComputedTimingFunction* aTimingFunction,
-    const CompositeOperationOrAuto aComposition) {
-  return GetOrCreateKeyframe(aKeyframes, StyleTimelineRangeName::None, 0.,
-                             aTimingFunction, aComposition,
-                             KeyframeSearchDirection::Forwards,
-                             KeyframeInsertPosition::LastForOffset)
-      .first;
-}
-
-Keyframe* Gecko_GetOrCreateFinalKeyframe(
-    nsTArray<Keyframe>* aKeyframes,
-    const StyleComputedTimingFunction* aTimingFunction,
-    const CompositeOperationOrAuto aComposition) {
-  return GetOrCreateKeyframe(aKeyframes, StyleTimelineRangeName::None, 1.,
-                             aTimingFunction, aComposition,
-                             KeyframeSearchDirection::Backwards,
-                             KeyframeInsertPosition::LastForOffset)
-      .first;
 }
 
 void Gecko_GetComputedURLSpec(const StyleComputedUrl* aURL, nsCString* aOut) {
@@ -2059,12 +2005,12 @@ bool Gecko_GetAnchorPosSize(const AnchorPosResolutionParams* aParams,
     return false;
   }
   const auto* positioned = aParams->mFrame;
+  const auto* containingBlock = positioned->GetParent();
   const auto size = AnchorPositioningUtils::ResolveAnchorPosSize(
-      positioned, {aAnchorName, *aTreeScope}, aParams->mCache);
+      positioned, containingBlock, {aAnchorName, *aTreeScope}, aParams->mCache);
   if (!size) {
     return false;
   }
-  const auto* containingBlock = positioned->GetParent();
   const auto l = [&]() {
     switch (aAnchorSizeKeyword) {
       case StyleAnchorSizeKeyword::None:
