@@ -11895,9 +11895,7 @@ static bool HasNullRequestOrigin(nsHttpChannel* aChannel, nsIURI* aURI,
                                  bool isAddonRequest) {
   
   if (aChannel->HasRedirectTaintedOrigin()) {
-    if (StaticPrefs::network_http_origin_redirectTainted()) {
-      return true;
-    }
+    return true;
   }
 
   
