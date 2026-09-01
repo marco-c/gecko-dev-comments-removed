@@ -149,6 +149,11 @@ class Handle;
 
 #define PROFILE(isolate, event)
 
+#if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__) && \
+  __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define V8_TARGET_LITTLE_ENDIAN 1
+#endif
+
 
 
 
@@ -1102,7 +1107,7 @@ inline Handle<To> CheckedCast(Handle<From> value) {
 template <typename T>
 class MOZ_NONHEAP_CLASS MaybeHandle final {
  public:
-  MaybeHandle() : location_(nullptr) {}
+  MaybeHandle() = default;
 
   
   
@@ -1128,7 +1133,7 @@ class MOZ_NONHEAP_CLASS MaybeHandle final {
   }
 
  private:
-  JS::Value* location_;
+  JS::Value* location_{nullptr};
 };
 
 
@@ -1335,6 +1340,48 @@ class RegExpData : public HeapObject {
   }
 
   Tagged<String> escaped_source() const { return String(inner()->getSource()); }
+
+  
+
+  
+  static constexpr int kQuickCheckBitsetChars = 256;
+  static constexpr int kQuickCheckBitsetBitsPerWord = 32;
+  static constexpr int kQuickCheckBitsetWords =
+      kQuickCheckBitsetChars / kQuickCheckBitsetBitsPerWord;
+
+  
+  
+  static constexpr std::pair<int, uint32_t> QuickCheckBitsetBit(uint8_t c) {
+    return {c / kQuickCheckBitsetBitsPerWord,
+            uint32_t{1} << (c % kQuickCheckBitsetBitsPerWord)};
+  }
+
+  inline uint32_t quick_check_mask() const { return 0; }
+  inline void set_quick_check_mask(uint32_t value) {}
+
+  inline uint32_t quick_check_value() const { return 0; }
+  inline void set_quick_check_value(uint32_t value) {}
+
+  inline void set_quick_check_reject_bitset_word(int index, uint32_t value) {}
+
+  enum InternalFlag : uint32_t {
+    
+    
+    
+    kHasQuickCheck = 1 << 0,
+  };
+
+  inline uint32_t internal_flags() const { return 0; }
+  inline void set_internal_flags(uint32_t value) {}
+
+  inline void clear_quick_check() {}
+
+  
+  
+  
+  bool QuickCheckRejects(base::Vector<const uint8_t> subject, int index) const {
+    return false;
+  }
 
  private:
   js::RegExpShared* inner() const {
