@@ -26,19 +26,6 @@ pub type UndisplayedStyleCache =
 
 
 
-
-
-#[derive(Clone, Copy, Debug)]
-pub struct PerLevelTraversalData {
-    
-    
-    
-    
-    pub current_dom_depth: usize,
-}
-
-
-
 pub struct PreTraverseToken<E: TElement>(Option<E>);
 impl<E: TElement> PreTraverseToken<E> {
     
@@ -61,7 +48,6 @@ pub trait DomTraversal<E: TElement>: Sync {
     
     fn process_preorder<F>(
         &self,
-        data: &PerLevelTraversalData,
         context: &mut StyleContext<E>,
         node: E::ConcreteNode,
         note_child: F,
@@ -305,6 +291,7 @@ where
 
     for ancestor in ancestors_requiring_style_resolution.iter().rev() {
         context.thread_local.bloom_filter.assert_complete(*ancestor);
+        context.thread_local.current_dom_depth = context.thread_local.bloom_filter.matching_depth();
 
         
         
@@ -330,6 +317,7 @@ where
     }
 
     context.thread_local.bloom_filter.assert_complete(element);
+    context.thread_local.current_dom_depth = context.thread_local.bloom_filter.matching_depth();
     let styles: ElementStyles = StyleResolverForElement::new(
         element,
         context,
@@ -351,7 +339,6 @@ where
 #[allow(unsafe_code)]
 pub fn recalc_style_at<E, D, F>(
     _traversal: &D,
-    traversal_data: &PerLevelTraversalData,
     context: &mut StyleContext<E>,
     element: E,
     data: &mut ElementData,
@@ -386,7 +373,7 @@ pub fn recalc_style_at<E, D, F>(
 
     
     if let Some(restyle_kind) = restyle_kind {
-        child_restyle_hint = compute_style(traversal_data, context, element, data, restyle_kind);
+        child_restyle_hint = compute_style(context, element, data, restyle_kind);
 
         if !element.matches_user_and_content_rules() {
             
@@ -493,7 +480,6 @@ where
 }
 
 fn compute_style<E>(
-    traversal_data: &PerLevelTraversalData,
     context: &mut StyleContext<E>,
     element: E,
     data: &mut ElementData,
@@ -522,12 +508,12 @@ where
             context
                 .thread_local
                 .bloom_filter
-                .insert_parents_recovering(element, traversal_data.current_dom_depth);
+                .insert_parents_recovering(element, context.thread_local.current_dom_depth);
 
             context.thread_local.bloom_filter.assert_complete(element);
             debug_assert_eq!(
                 context.thread_local.bloom_filter.matching_depth(),
-                traversal_data.current_dom_depth
+                context.thread_local.current_dom_depth
             );
 
             
@@ -556,11 +542,12 @@ where
                         resolver.resolve_style_with_default_parents()
                     };
 
+                    let dom_depth = context.thread_local.current_dom_depth;
                     context.thread_local.sharing_cache.insert_if_possible(
                         &element,
                         &new_styles.primary,
                         Some(&mut target),
-                        traversal_data.current_dom_depth,
+                        dom_depth,
                         &context.shared,
                     );
 
@@ -617,7 +604,7 @@ where
                     &element,
                     &new_styles.primary,
                     None,
-                    traversal_data.current_dom_depth,
+                    context.thread_local.current_dom_depth,
                     &context.shared,
                 );
             }

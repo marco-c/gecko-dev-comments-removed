@@ -645,6 +645,8 @@ pub struct ThreadLocalStyleContext<E: TElement> {
     
     pub bloom_filter: StyleBloom<E>,
     
+    pub current_dom_depth: usize,
+    
     
     
     
@@ -670,6 +672,7 @@ impl<E: TElement> ThreadLocalStyleContext<E> {
             sharing_cache: StyleSharingCache::new(),
             rule_cache: RuleCache::new(),
             bloom_filter: StyleBloom::new(),
+            current_dom_depth: 0,
             tasks: SequentialTaskList(Vec::new()),
             statistics: PerThreadTraversalStatistics::default(),
             stack_limit_checker: StackLimitChecker::new(
