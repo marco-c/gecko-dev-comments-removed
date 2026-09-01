@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MOZILLA_AUDIOSEGMENT_H_
 #define MOZILLA_AUDIOSEGMENT_H_
 
@@ -74,24 +73,30 @@ const uint32_t WEBAUDIO_BLOCK_SIZE_BITS = 7;
 const uint32_t WEBAUDIO_BLOCK_SIZE = 1 << WEBAUDIO_BLOCK_SIZE_BITS;
 
 template <typename SrcT, typename DestT>
-static void InterleaveAndConvertBuffer(const SrcT* const* aSourceChannels,
-                                       uint32_t aLength, float aVolume,
-                                       uint32_t aChannels, DestT* aOutput) {
-  DestT* output = aOutput;
-  for (size_t i = 0; i < aLength; ++i) {
-    for (size_t channel = 0; channel < aChannels; ++channel) {
-      float v =
-          ConvertAudioSample<float>(aSourceChannels[channel][i]) * aVolume;
-      *output = FloatToAudioSample<DestT>(v);
-      ++output;
+void InterleaveAndConvertBuffer(const SrcT* const* aSourceChannels,
+                                uint32_t aLength, float aVolume,
+                                uint32_t aChannelCount, DestT* aOutput) {
+  for (size_t channel = 0; channel < aChannelCount; ++channel) {
+    DestT* output = aOutput + channel;
+    if (aSourceChannels[channel]) {
+      for (size_t i = 0; i < aLength; ++i) {
+        float v =
+            ConvertAudioSample<float>(aSourceChannels[channel][i]) * aVolume;
+        *output = FloatToAudioSample<DestT>(v);
+        output += aChannelCount;
+      }
+    } else {
+      for (size_t i = 0; i < aLength; ++i) {
+        *output = static_cast<DestT>(0);
+        output += aChannelCount;
+      }
     }
   }
 }
 
 template <typename SrcT, typename DestT>
-static void DeinterleaveAndConvertBuffer(const SrcT* aSourceBuffer,
-                                         uint32_t aFrames, uint32_t aChannels,
-                                         DestT** aOutput) {
+void DeinterleaveAndConvertBuffer(const SrcT* aSourceBuffer, uint32_t aFrames,
+                                  uint32_t aChannels, DestT** aOutput) {
   for (size_t i = 0; i < aChannels; i++) {
     size_t interleavedIndex = i;
     for (size_t j = 0; j < aFrames; j++) {
@@ -348,9 +353,11 @@ class AudioSegment final : public MediaSegmentBase<AudioSegment, AudioChunk> {
   
   
   
-  void ResampleChunks(nsAutoRef<SpeexResamplerState>& aResampler,
-                      uint32_t* aResamplerChannelCount, uint32_t aInRate,
-                      uint32_t aOutRate);
+  
+  
+  [[nodiscard]] nsresult ResampleChunks(
+      nsAutoRef<SpeexResamplerState>& aResampler,
+      uint32_t* aResamplerChannelCount, uint32_t aInRate, uint32_t aOutRate);
 
   template <typename T>
   void AppendFrames(already_AddRefed<ThreadSharedObject> aBuffer,
@@ -459,9 +466,9 @@ class AudioSegment final : public MediaSegmentBase<AudioSegment, AudioChunk> {
 
  private:
   template <typename T>
-  void Resample(nsAutoRef<SpeexResamplerState>& aResampler,
-                uint32_t* aResamplerChannelCount, uint32_t aInRate,
-                uint32_t aOutRate);
+  [[nodiscard]] nsresult Resample(nsAutoRef<SpeexResamplerState>& aResampler,
+                                  uint32_t* aResamplerChannelCount,
+                                  uint32_t aInRate, uint32_t aOutRate);
 };
 
 template <typename SrcT>
@@ -474,7 +481,7 @@ void WriteChunk(const AudioChunk& aChunk, uint32_t aOutputChannels,
     
     
     AudioChannelsUpMix(&channelData, aOutputChannels,
-                       SilentChannel::ZeroChannel<SrcT>());
+                       static_cast<const SrcT*>(nullptr));
   }
   if (channelData.Length() > aOutputChannels) {
     

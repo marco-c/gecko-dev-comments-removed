@@ -126,26 +126,6 @@ using LocalDirection = MediaSessionConduitLocalDirection;
 const int kNullPayloadType = -1;
 const char kRtcpFbCcmParamTmmbr[] = "tmmbr";
 
-template <class t>
-void ConstrainPreservingAspectRatioExact(uint32_t max_fs, t* width, t* height) {
-  
-  
-  for (size_t d = 1; d < std::min(*width, *height); ++d) {
-    if ((*width % d) || (*height % d)) {
-      continue;  
-    }
-
-    if (((*width) * (*height)) / (d * d) <= max_fs) {
-      *width /= d;
-      *height /= d;
-      return;
-    }
-  }
-
-  *width = 0;
-  *height = 0;
-}
-
 
 
 
