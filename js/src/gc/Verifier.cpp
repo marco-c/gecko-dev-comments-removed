@@ -18,6 +18,7 @@
 #include "gc/Zone.h"
 #include "js/friend/DumpFunctions.h"  
 #include "js/HashTable.h"
+#include "threading/Thread.h"
 #include "vm/JSContext.h"
 
 #include "gc/ArenaList-inl.h"
@@ -1294,6 +1295,7 @@ bool js::gc::CheckWeakMapEntryMarking(const WeakMapBase* map, Cell* key,
 #endif  
 
 #ifdef JS_GC_ZEAL
+
 void GCRuntime::verifyPostBarriers(AutoHeapSession& session) {
   
   
@@ -1326,7 +1328,14 @@ void GCRuntime::checkHeapBeforeMinorGC(AutoHeapSession& session) {
     }
   }
 }
-#endif
+
+void js::gc::MaybeSleepForConcurrentMarkingDelays(JSContext* cx) {
+  if (cx->runtime()->hasZealMode(ZealMode::ConcurrentMarkingDelays)) {
+    ThisThread::SleepMilliseconds(1);
+  }
+}
+
+#endif  
 
 
 
