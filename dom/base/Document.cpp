@@ -16604,13 +16604,14 @@ void Document::HidePopoversUntil(Element* aEndpoint, bool aFocusPreviousElement,
                         aFocusPreviousElement, aFireEvents);
 
   
-  if (endpointIsHint) {
-    return;
-  }
+  
+  
+  RefPtr<Element> autoEndpoint =
+      endpointIsHint ? PopoverHintStackParent() : aEndpoint;
 
   
   
-  HidePopoverStackUntil(aEndpoint, PopoverAttributeState::Auto,
+  HidePopoverStackUntil(autoEndpoint, PopoverAttributeState::Auto,
                         aFocusPreviousElement, aFireEvents);
 }
 
