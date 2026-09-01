@@ -3027,7 +3027,11 @@ pref("signon.firefoxRelay.privacy_policy_url", "https://www.mozilla.org/%LOCALE%
 pref("signon.signupDetection.confidenceThreshold",     "0.75");
 
 
-pref("signon.storage.rust.enabled", true);
+#if MOZ_UPDATE_CHANNEL != release && MOZ_UPDATE_CHANNEL != esr
+  pref("signon.storage.rust.enabled", true);
+#else
+  pref("signon.storage.rust.enabled", false);
+#endif
 
 pref("signon.storage.rust.active", false);
 pref("signon.storage.rust.migrationAttempts", 0);
