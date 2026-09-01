@@ -225,6 +225,35 @@ TimingParams TimingParams::Normalize(
     const TimeDuration& aTimelineDuration) const {
   TimingParams normalizedTiming(*this);
 
+  auto ComputeIntrinsicIterationDuration = [&](const TimeDuration& aStartDelay,
+                                               const TimeDuration& aEndDelay) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (std::isnan(mIterations) || std::isinf(mIterations) ||
+        mIterations == 0.0) {
+      
+      
+      
+      return TimeDuration();
+    }
+    
+    
+    
+    
+    
+    
+    return (aTimelineDuration - aStartDelay - aEndDelay)
+        .MultDouble(1.0 / mIterations);
+  };
+
   
   if (!mDuration) {
     
@@ -232,12 +261,15 @@ TimingParams TimingParams::Normalize(
     
     normalizedTiming.mDelay = TimeDuration();
     normalizedTiming.mEndDelay = TimeDuration();
-    normalizedTiming.mDuration.emplace(aTimelineDuration);
+    
+    normalizedTiming.mDuration = Some(ComputeIntrinsicIterationDuration(
+        normalizedTiming.mDelay, normalizedTiming.mEndDelay));
     normalizedTiming.Update();
     return normalizedTiming;
   }
 
   if (mEndTime.IsZero()) {
+    
     
     
     
@@ -259,19 +291,30 @@ TimingParams TimingParams::Normalize(
     
     
     
+    
     normalizedTiming.mDelay = TimeDuration();
     normalizedTiming.mEndDelay = TimeDuration();
-    normalizedTiming.mDuration =
-        Some(aTimelineDuration.MultDouble(1.0 / mIterations));
+    normalizedTiming.mDuration = Some(ComputeIntrinsicIterationDuration(
+        normalizedTiming.mDelay, normalizedTiming.mEndDelay));
   } else {
     
     const double endTimeInSec = mEndTime.ToSeconds();
-    normalizedTiming.mDelay =
-        aTimelineDuration.MultDouble(mDelay.ToSeconds() / endTimeInSec);
-    normalizedTiming.mEndDelay =
-        aTimelineDuration.MultDouble(mEndDelay.ToSeconds() / endTimeInSec);
     normalizedTiming.mDuration = Some(StickyTimeDuration(
         aTimelineDuration.MultDouble(mDuration->ToSeconds() / endTimeInSec)));
+
+    if (*normalizedTiming.mDuration == StickyTimeDuration::Forever()) {
+      
+      
+      
+      
+      normalizedTiming.mDelay = TimeDuration();
+      normalizedTiming.mEndDelay = TimeDuration();
+    } else {
+      normalizedTiming.mDelay =
+          aTimelineDuration.MultDouble(mDelay.ToSeconds() / endTimeInSec);
+      normalizedTiming.mEndDelay =
+          aTimelineDuration.MultDouble(mEndDelay.ToSeconds() / endTimeInSec);
+    }
   }
 
   normalizedTiming.Update();
