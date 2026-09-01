@@ -18,8 +18,14 @@ async function check_tab_close_notification(openedTab, expectNotification) {
   }
   Services.obs.addObserver(topicObserver, NOTIFY_CLOSED_OBJECTS_CHANGED);
 
+  
+  
+  
+  let flushedPromise = TabStateFlusher.flush(openedTab.linkedBrowser);
+
   BrowserTestUtils.removeTab(openedTab);
   await tabClosed;
+  await flushedPromise;
   
   
   
