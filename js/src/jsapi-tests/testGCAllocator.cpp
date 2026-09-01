@@ -19,8 +19,10 @@
 #include "gc/BufferAllocator-inl.h"
 
 #if defined(XP_WIN)
+
 #  include "util/WindowsWrapper.h"
 #  include <psapi.h>
+
 #elif defined(__wasi__)
 
 #else
@@ -726,7 +728,7 @@ END_TEST(testBufferAllocator_reallocInPlace)
 
 namespace js::gc {
 void* TestAllocAligned(Zone* zone, size_t bytes) {
-  return zone->bufferAllocator.allocMediumAligned(bytes, false);
+  return zone->bufferAllocator.allocMediumAligned(bytes, false, false);
 }
 }  
 
