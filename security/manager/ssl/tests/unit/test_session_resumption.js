@@ -13,12 +13,43 @@ const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
 
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref("security.OCSP.enabled");
+  if (gConnectionRejector) {
+    stopConnectionRejector();
+  }
 });
 
 Services.prefs.setIntPref("security.OCSP.enabled", 1);
 
 addCertFromFile(certdb, "bad_certs/evroot.pem", "CTu,,");
 addCertFromFile(certdb, "bad_certs/ev-test-intermediate.pem", ",,");
+
+const SERVER_PORT = 8888;
+
+
+
+
+
+
+
+let gConnectionRejector = null;
+
+function startConnectionRejector() {
+  gConnectionRejector = Cc[
+    "@mozilla.org/network/server-socket;1"
+  ].createInstance(Ci.nsIServerSocket);
+  gConnectionRejector.init(SERVER_PORT, true, -1);
+  gConnectionRejector.asyncListen({
+    onSocketAccepted(_socket, transport) {
+      transport.close(Cr.NS_OK);
+    },
+    onStopListening() {},
+  });
+}
+
+function stopConnectionRejector() {
+  gConnectionRejector.close();
+  gConnectionRejector = null;
+}
 
 
 
@@ -128,7 +159,6 @@ function add_one_ev_test(resumed) {
 
 
 function add_resume_ev_test() {
-  const SERVER_PORT = 8888;
   let expectedRequestPaths = ["ev-test"];
   let responseTypes = ["good"];
   
@@ -136,6 +166,7 @@ function add_resume_ev_test() {
   
   
   add_test(() => {
+    stopConnectionRejector();
     ocspResponder = startOCSPResponder(
       SERVER_PORT,
       "localhost",
@@ -156,7 +187,10 @@ function add_resume_ev_test() {
   add_one_ev_test(true);
 
   add_test(() => {
-    ocspResponder.stop(run_next_test);
+    ocspResponder.stop(() => {
+      startConnectionRejector();
+      run_next_test();
+    });
   });
 }
 
@@ -277,12 +311,18 @@ function add_resumption_tests() {
 
 function run_test() {
   add_tls_server_setup("BadCertAndPinningServer", "bad_certs");
+  add_test(() => {
+    startConnectionRejector();
+    run_next_test();
+  });
   add_resumption_tests();
   
   add_test(function () {
-    Services.prefs.setBoolPref("network.ssl_tokens_cache_enabled", true);
-    certdb.clearOCSPCache();
-    run_next_test();
+    do_timeout(3000, function () {
+      Services.prefs.setBoolPref("network.ssl_tokens_cache_enabled", true);
+      certdb.clearOCSPCache();
+      run_next_test();
+    });
   });
   
   add_resumption_tests();
