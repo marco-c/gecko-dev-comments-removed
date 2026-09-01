@@ -17,6 +17,11 @@
 
 
 
+
+
+
+
+
 const EMBEDDING_DIM = 384;
 const HEAD_FEATURE_DIM = 5 * EMBEDDING_DIM; 
 
@@ -59,7 +64,7 @@ function prefixTokens(tokens, prefix) {
 
 
 
-const LEGACY_INPUTS = FIELD_TOKENS.map((own, i) => {
+const SINGLE_MODEL_INPUTS = FIELD_TOKENS.map((own, i) => {
   const parts = [own];
   if (i > 0) {
     parts.push(prefixTokens(FIELD_TOKENS[i - 1], "bb"));
@@ -132,7 +137,7 @@ const perfMetadata = {
   owner: "GenAI Team",
   name: "browser_ml_autofill_perf.js",
   description:
-    "Latency for the ML Autofill model (legacy single-model and new two-engine)",
+    "Latency for the ML Autofill model (default single-model and opt-in two-engine)",
   options: {
     default: {
       perfherder: true,
@@ -258,7 +263,7 @@ add_task(async function test_ml_generic_pipeline() {
   });
 
   const request = {
-    args: [LEGACY_INPUTS],
+    args: [SINGLE_MODEL_INPUTS],
     options: { pooling: "mean", normalize: true },
   };
 

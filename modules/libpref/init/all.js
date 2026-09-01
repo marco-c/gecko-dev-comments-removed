@@ -4081,9 +4081,20 @@ pref("extensions.formautofill.useml", false);
 #endif
 
 
+
 pref("extensions.formautofill.useml.nativeOnnxAvailable", false);
+
+
+
+
+pref("extensions.formautofill.useml.twoHead", true);
+
+
+pref("extensions.formautofill.useml.timeoutMS", 120000);
+
 pref("extensions.formautofill.addresses.enabled", true);
 pref("extensions.formautofill.addresses.capture.enabled", true);
+
 #if defined(ANDROID)
   
   
