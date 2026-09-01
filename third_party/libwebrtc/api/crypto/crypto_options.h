@@ -107,7 +107,7 @@ struct RTC_EXPORT CryptoOptions {
     EphemeralKeyExchangeCipherGroups();
 
     
-    std::vector<uint16_t> GetEnabled() const { return enabled_; }
+    const std::vector<uint16_t>& GetEnabled() const { return enabled_; }
     void SetEnabled(const std::vector<uint16_t>& groups) { enabled_ = groups; }
     void AddFirst(uint16_t group);
 

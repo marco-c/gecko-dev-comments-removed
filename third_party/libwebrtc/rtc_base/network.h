@@ -299,7 +299,7 @@ class RTC_EXPORT Network {
 
   
   
-  std::string key() const { return key_; }
+  const std::string& key() const { return key_; }
 
   
   

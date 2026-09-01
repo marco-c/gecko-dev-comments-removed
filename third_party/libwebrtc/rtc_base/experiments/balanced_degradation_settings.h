@@ -112,7 +112,7 @@ class BalancedDegradationSettings {
   };
 
   
-  std::vector<Config> GetConfigs() const;
+  const std::vector<Config>& GetConfigs() const;
 
   
   int MinFps(VideoCodecType type, int pixels) const;
