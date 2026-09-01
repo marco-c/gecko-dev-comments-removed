@@ -18,11 +18,11 @@ use crate::{
     ImageRendering, LineOrientation, LineStyle, PropertyBinding, YuvColorSpace, YuvFormat,
 };
 use crate::key_types::{
-    BorderRadiusAu, ConicGradientParams, EdgeMask, GradientStopKey, NinePatchDescriptor,
+    BorderRadiusAu, ConicGradientParams, GradientStopKey, NinePatchDescriptor,
     NormalBorderAu, PointKey, PrimKeyCommonData, RadialGradientParams, SizeKey, StretchSizeKey,
     VectorKey,
 };
-use crate::units::{DeviceIntRect, LayoutSideOffsetsAu, TileOffset};
+use crate::units::{LayoutSideOffsetsAu, TileOffset};
 use app_units::Au;
 use malloc_size_of::MallocSizeOf;
 
@@ -71,9 +71,6 @@ pub struct Image {
     pub color: ColorU,
     pub image_rendering: ImageRendering,
     pub alpha_type: AlphaType,
-    
-    
-    pub sub_rect: Option<DeviceIntRect>,
 }
 
 #[derive(Debug, Clone, Eq, MallocSizeOf, PartialEq, Hash, Serialize, Deserialize)]
@@ -132,7 +129,6 @@ pub struct LinearGradient {
     pub stops: Vec<GradientStopKey>,
     pub reverse_stops: bool,
     pub nine_patch: Option<Box<NinePatchDescriptor>>,
-    pub edge_aa_mask: EdgeMask,
 }
 
 #[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, Hash, Serialize, Deserialize)]
