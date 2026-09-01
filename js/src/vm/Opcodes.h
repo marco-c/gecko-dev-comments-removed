@@ -249,6 +249,8 @@
 
 
 
+
+
 #define FOR_EACH_OPCODE(MACRO)
 
 
@@ -2244,6 +2246,7 @@
  \
     MACRO(CheckResumeKind, check_resume_kind, NULL, 1, 3, 1, JOF_BYTE) \
     
+
 
 
 

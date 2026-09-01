@@ -155,14 +155,44 @@ struct CGScopeNoteList {
 };
 
 struct CGResumeOffsetList {
-  Vector<uint32_t, 0> list;
+  using OffsetVector = Vector<uint32_t, 0>;
+  OffsetVector list;
+
   explicit CGResumeOffsetList(FrontendContext* fc) : list(fc) {}
 
   [[nodiscard]] bool append(uint32_t offset) { return list.append(offset); }
+  [[nodiscard]] bool appendAll(const OffsetVector& offsets) {
+    return list.appendAll(offsets);
+  }
+  void setFrom(OffsetVector&& offsets) {
+    MOZ_ASSERT(list.empty());
+    list = std::move(offsets);
+  }
   mozilla::Span<const uint32_t> span() const {
     return {list.begin(), list.length()};
   }
   size_t length() const { return list.length(); }
+};
+
+
+
+
+struct CGTableSwitchOffsetList {
+  CGResumeOffsetList::OffsetVector caseOffsets;
+
+  
+  Vector<BytecodeOffset, 0> switchOffsets;
+
+  explicit CGTableSwitchOffsetList(FrontendContext* fc)
+      : caseOffsets(fc), switchOffsets(fc) {}
+
+  [[nodiscard]] bool appendCaseOffset(BytecodeOffset offset) {
+    return caseOffsets.append(offset.value());
+  }
+  [[nodiscard]] bool appendTableSwitch(BytecodeOffset switchOffset) {
+    return switchOffsets.append(switchOffset);
+  }
+  size_t numCaseOffsets() const { return caseOffsets.length(); }
 };
 
 static constexpr size_t MaxBytecodeLength = INT32_MAX;
@@ -231,6 +261,10 @@ class BytecodeSection {
   CGResumeOffsetList& resumeOffsetList() { return resumeOffsetList_; }
   const CGResumeOffsetList& resumeOffsetList() const {
     return resumeOffsetList_;
+  }
+
+  CGTableSwitchOffsetList& tableSwitchOffsetList() {
+    return tableSwitchOffsetList_;
   }
 
   uint32_t numYields() const { return numYields_; }
@@ -327,7 +361,12 @@ class BytecodeSection {
   
   
   
+  
+  
+  
+  
   CGResumeOffsetList resumeOffsetList_;
+  CGTableSwitchOffsetList tableSwitchOffsetList_;
 
   
   uint32_t numYields_ = 0;

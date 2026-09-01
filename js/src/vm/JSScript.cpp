@@ -1740,8 +1740,11 @@ void SourceCompressionTaskEntry::workEncodingSpecific(Compressor& comp) {
 
   
   
+  
   size_t inputBytes = reader->length() * sizeof(Unit);
-  size_t firstSize = inputBytes / 2;
+  const size_t MinimumSizeForOptimisticAllocation = 5000;
+  bool allocateOptimistically = inputBytes > MinimumSizeForOptimisticAllocation;
+  size_t firstSize = allocateOptimistically ? inputBytes / 2 : inputBytes;
   UniqueChars compressed(js_pod_malloc<char>(firstSize));
   if (!compressed) {
     return;
@@ -1755,7 +1758,7 @@ void SourceCompressionTaskEntry::workEncodingSpecific(Compressor& comp) {
 
   comp.setOutput(reinterpret_cast<unsigned char*>(compressed.get()), firstSize);
   bool cont = true;
-  bool reallocated = false;
+  bool canReallocate = allocateOptimistically;
   while (cont) {
     if (shouldCancel()) {
       return;
@@ -1765,7 +1768,7 @@ void SourceCompressionTaskEntry::workEncodingSpecific(Compressor& comp) {
       case Compressor::CONTINUE:
         break;
       case Compressor::MOREOUTPUT: {
-        if (reallocated) {
+        if (!canReallocate) {
           
           return;
         }
@@ -1778,7 +1781,7 @@ void SourceCompressionTaskEntry::workEncodingSpecific(Compressor& comp) {
 
         comp.setOutput(reinterpret_cast<unsigned char*>(compressed.get()),
                        inputBytes);
-        reallocated = true;
+        canReallocate = false;
         break;
       }
       case Compressor::DONE:
@@ -2746,6 +2749,8 @@ JSScript* JSScript::fromStencil(JSContext* cx,
 void JSScript::assertValidJumpTargets() const {
   BytecodeLocation mainLoc = mainLocation();
   BytecodeLocation endLoc = endLocation();
+  uint32_t numSuspends = 0;
+  uint32_t numTableSwitchCases = 0;
   AllBytecodesIterable iter(this);
   for (BytecodeLocation loc : iter) {
     
@@ -2789,8 +2794,22 @@ void JSScript::assertValidJumpTargets() const {
         MOZ_ASSERT(mainLoc <= switchCase && switchCase < endLoc);
         MOZ_ASSERT(switchCase.is(JSOp::JumpTarget));
       }
+      numTableSwitchCases += high - low + 1;
+    }
+
+    
+    
+    
+    if (loc.is(JSOp::InitialYield) || loc.is(JSOp::Yield) ||
+        loc.is(JSOp::Await)) {
+      MOZ_ASSERT(numSuspends < resumeOffsets().size());
+      MOZ_ASSERT(loc.getResumeIndex() == numSuspends);
+      MOZ_ASSERT(resumeOffsets()[numSuspends] ==
+                 loc.next().bytecodeToOffset(this));
+      numSuspends++;
     }
   }
+  MOZ_ASSERT(numSuspends + numTableSwitchCases == resumeOffsets().size());
 
   
   for (const TryNote& tn : trynotes()) {
