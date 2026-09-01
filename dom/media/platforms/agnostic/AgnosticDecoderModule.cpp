@@ -15,20 +15,14 @@ namespace mozilla {
 
 enum class DecoderType {
   AV1,
-  Opus,
-  Vorbis,
   VPX,
-  Wave,
 };
 
 static bool IsAvailableInDefault(DecoderType type) {
   switch (type) {
     case DecoderType::AV1:
       return StaticPrefs::media_av1_enabled();
-    case DecoderType::Opus:
-    case DecoderType::Vorbis:
     case DecoderType::VPX:
-    case DecoderType::Wave:
       return true;
     default:
       return false;
@@ -39,41 +33,15 @@ static bool IsAvailableInRdd(DecoderType type) {
   switch (type) {
     case DecoderType::AV1:
       return StaticPrefs::media_av1_enabled();
-    case DecoderType::Opus:
-      return StaticPrefs::media_rdd_opus_enabled();
-    case DecoderType::Vorbis:
-#if defined(__MINGW32__)
-      
-      
-      
-      
-      
-      
-      
-      return false;
-#else
-      return StaticPrefs::media_rdd_vorbis_enabled();
-#endif
     case DecoderType::VPX:
       return StaticPrefs::media_rdd_vpx_enabled();
-    case DecoderType::Wave:
-      return StaticPrefs::media_rdd_wav_enabled();
     default:
       return false;
   }
 }
 
-static bool IsAvailableInUtility(DecoderType type) {
-  switch (type) {
-    case DecoderType::Opus:
-    case DecoderType::Vorbis:
-    case DecoderType::Wave:
-      return true;
-    
-    default:
-      return false;
-  }
-}
+
+static bool IsAvailableInUtility(DecoderType) { return false; }
 
 
 static bool IsAvailable(DecoderType type) {
