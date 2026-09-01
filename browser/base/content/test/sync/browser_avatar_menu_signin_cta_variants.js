@@ -21,7 +21,23 @@ const DEFAULT_DESCRIPTION = gSync.fluentStrings.formatValueSync(
 
 add_setup(async () => {
   gSync.init();
+  registerCleanupFunction(closeAvatarMenu);
 });
+
+
+
+
+
+async function closeAvatarMenu() {
+  let widgetPanel = document.getElementById("customizationui-widget-panel");
+  
+  
+  if (widgetPanel) {
+    let panelHidden = BrowserTestUtils.waitForPopupEvent(widgetPanel, "hidden");
+    widgetPanel.hidePopup();
+    await panelHidden;
+  }
+}
 
 
 
@@ -34,14 +50,7 @@ add_setup(async () => {
 
 
 async function reopenAvatarMenu() {
-  let widgetPanel = document.getElementById("customizationui-widget-panel");
-  
-  
-  if (widgetPanel) {
-    let panelHidden = BrowserTestUtils.waitForEvent(widgetPanel, "popuphidden");
-    widgetPanel.hidePopup();
-    await panelHidden;
-  }
+  await closeAvatarMenu();
   let promiseViewShown = BrowserTestUtils.waitForEvent(
     PanelMultiView.getViewNode(document, "PanelUI-fxa"),
     "ViewShown"
