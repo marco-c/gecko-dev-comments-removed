@@ -46,7 +46,7 @@ static void close_logging() {
 
 
 template <typename func_ptr_type>
-static func_ptr_type cast(void* ptr) {
+func_ptr_type cast(void* ptr) {
   return reinterpret_cast<func_ptr_type>(reinterpret_cast<size_t>(ptr));
 }
 
