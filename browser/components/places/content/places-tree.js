@@ -310,7 +310,24 @@
     }
 
     get draggableSelection() {
-      return this.selectedNodes;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      let selectedNodes = new Set(this.selectedNodes);
+      return [...selectedNodes].filter(node => {
+        for (let ancestor = node.parent; ancestor; ancestor = ancestor.parent) {
+          if (selectedNodes.has(ancestor)) {
+            return false;
+          }
+        }
+        return true;
+      });
     }
 
     get selectedNode() {
