@@ -1518,6 +1518,45 @@ void DrawTargetSkia::Mask(const Pattern& aSource, const Pattern& aMask,
     }
   }
 
+  
+  if (!IsBackedByPixels(mCanvas)) {
+    SkIRect maskBounds;
+    if (!mCanvas->getDeviceClipBounds(&maskBounds)) {
+      return;
+    }
+    SkPoint maskOrigin;
+    maskOrigin.iset(maskBounds.fLeft, maskBounds.fTop);
+    SkMatrix maskMatrix = mCanvas->getTotalMatrix();
+    maskMatrix.postTranslate(-maskOrigin.fX, -maskOrigin.fY);
+
+    MarkChanged();
+    AutoPaintSetup paint(mCanvas, aOptions, aSource, nullptr, &maskMatrix);
+
+    SkPaint maskPaint;
+    SetPaintPattern(maskPaint, aMask, lock);
+
+    SkImageInfo maskInfo = SkImageInfo::MakeA8(maskBounds.size());
+    if (sk_sp<SkSurface> maskSurface = SkSurfaces::Raster(maskInfo)) {
+      if (SkCanvas* maskCanvas = maskSurface->getCanvas()) {
+        maskCanvas->setMatrix(maskMatrix);
+        maskCanvas->drawPaint(maskPaint);
+        if (sk_sp<SkImage> maskImage = maskSurface->makeTemporaryImage()) {
+          mCanvas->save();
+          mCanvas->resetMatrix();
+          mCanvas->drawImage(maskImage, maskOrigin.fX, maskOrigin.fY,
+                             SkSamplingOptions(SkFilterMode::kLinear),
+                             &paint.mPaint);
+          mCanvas->restore();
+          return;
+        }
+      }
+    }
+
+    gfxDebug()
+        << "Failed to create SkImage for Mask on non-pixel-backed canvas";
+    return;
+  }
+
   SkPaint maskPaint;
   SetPaintPattern(maskPaint, aMask, lock);
 
@@ -1531,12 +1570,6 @@ void DrawTargetSkia::Mask(const Pattern& aSource, const Pattern& aMask,
       gfxDebug() << "Failed creating Skia clip shader for Mask";
       return;
     }
-  }
-
-  
-  if (maskShader && !IsBackedByPixels(mCanvas)) {
-    gfxDebug() << "Clip shaders only supported on pixel-backed canvas for Mask";
-    return;
   }
 
   MarkChanged();
@@ -1575,8 +1608,18 @@ void DrawTargetSkia::MaskSurface(const Pattern& aSource, SourceSurface* aMask,
 
   
   if (!IsBackedByPixels(mCanvas)) {
-    gfxDebug()
-        << "Clip shaders only supported on pixel-backed canvas for MaskSurface";
+    MarkChanged();
+    SkMatrix invOffset = SkMatrix::Translate(-aOffset.x, -aOffset.y);
+    AutoPaintSetup paint(mCanvas, aOptions, aSource, nullptr, &invOffset);
+    if (sk_sp<SkImage> alphaMask = ExtractAlphaImage(maskImage, true)) {
+      mCanvas->drawImage(alphaMask, maskOffset.x, maskOffset.y,
+                         SkSamplingOptions(SkFilterMode::kLinear),
+                         &paint.mPaint);
+      return;
+    }
+
+    gfxDebug() << "Failed to create SkImage for MaskSurface on "
+                  "non-pixel-backed canvas";
     return;
   }
 
@@ -2196,38 +2239,64 @@ void DrawTargetSkia::PushLayerWithBlend(bool aOpaque, Float aOpacity,
     }
   }
 
-  
-  
-  
-  
-  sk_sp<SkImage> clipImage = GetSkImageForSurface(aMask, nullptr);
-  bool usedMask = false;
-  if (bool(clipImage)) {
-    Rect maskBounds(aMask->GetRect());
-    sk_sp<SkShader> shader = clipImage->makeShader(
-        SkTileMode::kClamp, SkTileMode::kClamp,
-        SkSamplingOptions(SkFilterMode::kLinear),
-        SkMatrix::Translate(PointToSkPoint(maskBounds.TopLeft())));
-    if (shader) {
-      usedMask = true;
-      mCanvas->save();
+  if (aMask) {
+    
+    
+    
+    
+    
+    if (!IsBackedByPixels(mCanvas)) {
+      if (aCompositionOp == CompositionOp::OP_OVER) {
+        
+        
+        mCanvas->save();
+        auto oldMatrix = mCanvas->getLocalToDevice();
+        SkMatrix maskTransform;
+        GfxMatrixToSkiaMatrix(aMaskTransform, maskTransform);
+        mCanvas->concat(maskTransform);
+        mCanvas->clipRect(RectToSkRect(Rect(aMask->GetRect())));
+        mCanvas->setMatrix(oldMatrix);
+      } else {
+        gfxDebug() << "Unsupported blend with mask on non-pixel-backed canvas "
+                      "for PushLayerWithBlend";
+        aMask = nullptr;
+      }
+    } else if (sk_sp<SkImage> clipImage =
+                   GetSkImageForSurface(aMask, nullptr)) {
+      
+      
+      
+      
+      
+      Rect maskBounds(aMask->GetRect());
+      sk_sp<SkShader> shader = clipImage->makeShader(
+          SkTileMode::kClamp, SkTileMode::kClamp,
+          SkSamplingOptions(SkFilterMode::kLinear),
+          SkMatrix::Translate(PointToSkPoint(maskBounds.TopLeft())));
+      if (shader) {
+        mCanvas->save();
 
-      auto oldMatrix = mCanvas->getLocalToDevice();
-      SkMatrix clipMatrix;
-      GfxMatrixToSkiaMatrix(aMaskTransform, clipMatrix);
-      mCanvas->concat(clipMatrix);
+        auto oldMatrix = mCanvas->getLocalToDevice();
+        SkMatrix maskTransform;
+        GfxMatrixToSkiaMatrix(aMaskTransform, maskTransform);
+        mCanvas->concat(maskTransform);
 
-      mCanvas->clipRect(RectToSkRect(maskBounds));
-      mCanvas->clipShader(shader);
+        mCanvas->clipRect(RectToSkRect(maskBounds));
+        mCanvas->clipShader(shader);
 
-      mCanvas->setMatrix(oldMatrix);
-    } else {
-      gfxDebug() << "Failed to create Skia clip shader for PushLayerWithBlend";
+        mCanvas->setMatrix(oldMatrix);
+      } else {
+        gfxDebug()
+            << "Failed to create Skia clip shader for PushLayerWithBlend";
+        aMask = nullptr;
+      }
     }
   }
 
-  PushedLayer layer(GetPermitSubpixelAA(), usedMask ? aMask : nullptr);
-  mPushedLayers.push_back(layer);
+  
+  
+  mPushedLayers.emplace_back(aMask, aMaskTransform * mTransform, aCompositionOp,
+                             GetPermitSubpixelAA());
 
   SkCanvas::SaveLayerRec saveRec(
       aBounds.IsEmpty() ? nullptr : &bounds, &paint, nullptr,
@@ -2251,8 +2320,27 @@ void DrawTargetSkia::PopLayer() {
 
   const PushedLayer& layer = mPushedLayers.back();
 
-  mCanvas->restore();
+  
+  
+  if (layer.mMask && !IsBackedByPixels(mCanvas)) {
+    Maybe<MutexAutoLock> lock;
+    if (sk_sp<SkImage> maskImage = GetSkImageForSurface(layer.mMask, &lock)) {
+      
+      
+      
+      SkMatrix maskToDevice;
+      GfxMatrixToSkiaMatrix(layer.mMaskToDevice, maskToDevice);
+      mCanvas->setMatrix(maskToDevice);
+      SkPaint maskPaint;
+      maskPaint.setBlendMode(SkBlendMode::kDstIn);
+      IntPoint maskOrigin = layer.mMask->GetRect().TopLeft();
+      mCanvas->drawImage(maskImage, maskOrigin.x, maskOrigin.y,
+                         SkSamplingOptions(SkFilterMode::kLinear), &maskPaint);
+    }
+  }
 
+  
+  mCanvas->restore();
   if (layer.mMask) {
     mCanvas->restore();
   }
