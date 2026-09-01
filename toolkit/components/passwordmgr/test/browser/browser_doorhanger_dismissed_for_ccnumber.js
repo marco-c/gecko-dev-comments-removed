@@ -35,7 +35,10 @@ add_task(async function test_doorhanger_dismissal_un() {
       
       await clearMessageCache(browser);
 
-      let processedPromise = listenForTestNotification("ShowDoorhanger");
+      let processedPromise = listenForTestNotification([
+        "FormProcessed",
+        "ShowDoorhanger",
+      ]);
       await SpecialPowers.spawn(browser, [], async () => {
         content.document.getElementById("form-basic-submit").click();
       });
@@ -88,7 +91,10 @@ add_task(async function test_doorhanger_dismissal_pw() {
       
       await clearMessageCache(browser);
 
-      let processedPromise = listenForTestNotification("ShowDoorhanger");
+      let processedPromise = listenForTestNotification([
+        "FormProcessed",
+        "ShowDoorhanger",
+      ]);
       await SpecialPowers.spawn(browser, [], async () => {
         content.document.getElementById("form-basic-submit").click();
       });
@@ -136,7 +142,10 @@ add_task(async function test_doorhanger_shown_on_un_with_invalid_ccnumber() {
       
       await clearMessageCache(browser);
 
-      let processedPromise = listenForTestNotification("ShowDoorhanger");
+      let processedPromise = listenForTestNotification([
+        "FormProcessed",
+        "ShowDoorhanger",
+      ]);
       await SpecialPowers.spawn(browser, [], async () => {
         content.document.getElementById("form-basic-submit").click();
       });
@@ -197,7 +206,10 @@ add_task(async function test_doorhanger_dismissal_on_change() {
       
       await clearMessageCache(browser);
 
-      let processedPromise = listenForTestNotification("ShowDoorhanger");
+      let processedPromise = listenForTestNotification([
+        "FormProcessed",
+        "ShowDoorhanger",
+      ]);
       await SpecialPowers.spawn(browser, [], async () => {
         content.document.getElementById("form-basic-submit").click();
       });
