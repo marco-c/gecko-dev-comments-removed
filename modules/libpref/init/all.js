@@ -3913,11 +3913,10 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
   #endif
 
   
-  #if defined(NIGHTLY_BUILD)
-    pref("remote.experimental.dynamicstart.enabled", true);
-  #else
-    pref("remote.experimental.dynamicstart.enabled", false);
-  #endif
+  
+  
+  
+  pref("remote.experimental.dynamicstart.enabled", false);
 
   
   
