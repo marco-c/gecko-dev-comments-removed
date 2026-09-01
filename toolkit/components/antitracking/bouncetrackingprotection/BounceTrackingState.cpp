@@ -443,15 +443,30 @@ nsresult BounceTrackingState::OnDocumentStartRequest(nsIChannel* aChannel) {
   
   
   
+  
+  
+  
+  
+  
 #ifdef DEBUG
   if (nsCOMPtr<nsIURI> channelURIForAssert;
       NS_SUCCEEDED(aChannel->GetURI(getter_AddRefs(channelURIForAssert))) &&
       channelURIForAssert &&
       mozilla::net::SchemeIsHttpOrHttps(channelURIForAssert)) {
-    MOZ_ASSERT(
-        loadInfo->GetOriginAttributes().EqualsIgnoringFPD(mOriginAttributes),
-        "BTP: channel OriginAttributes (userContextId/PBM) diverged from the "
-        "cached BounceTrackingState OriginAttributes (Bug 2054941).");
+    constexpr uint32_t kIgnoredForAssert =
+        OriginAttributes::STRIP_FIRST_PARTY_DOMAIN |
+        OriginAttributes::STRIP_PARITION_KEY |
+        OriginAttributes::STRIP_USER_CONTEXT_ID;
+
+    OriginAttributes channelAttrsForAssert = loadInfo->GetOriginAttributes();
+    channelAttrsForAssert.StripAttributes(kIgnoredForAssert);
+
+    OriginAttributes stateAttrsForAssert = mOriginAttributes;
+    stateAttrsForAssert.StripAttributes(kIgnoredForAssert);
+
+    MOZ_ASSERT(channelAttrsForAssert == stateAttrsForAssert,
+               "BTP: channel OriginAttributes (PBM) diverged from the cached "
+               "BounceTrackingState OriginAttributes (Bug 2054941).");
   }
 #endif
 
@@ -631,6 +646,32 @@ BounceTrackingState::OnContentBlockingEvent(nsIWebProgress* aWebProgress,
   return NS_OK;
 }
 
+
+
+static bool GetTopLevelSiteHost(dom::WindowContext* aWindowContext,
+                                nsACString& aSiteHost) {
+  if (!aWindowContext) {
+    return false;
+  }
+  dom::WindowContext* topWindowContext = aWindowContext->TopWindowContext();
+  if (!topWindowContext || !topWindowContext->IsCurrent()) {
+    return false;
+  }
+
+  nsIPrincipal* principal = topWindowContext->Canonical()->DocumentPrincipal();
+  if (!principal || !BounceTrackingState::ShouldTrackPrincipal(principal)) {
+    return false;
+  }
+
+  nsAutoCString siteHost;
+  if (NS_WARN_IF(NS_FAILED(principal->GetBaseDomain(siteHost)))) {
+    return false;
+  }
+
+  aSiteHost = siteHost;
+  return true;
+}
+
 nsresult BounceTrackingState::OnStartNavigation(
     nsIPrincipal* aTriggeringPrincipal,
     const bool aHasValidUserGestureActivation, uint64_t aLoadId) {
@@ -691,6 +732,26 @@ nsresult BounceTrackingState::OnStartNavigation(
   
   
   
+  
+  nsAutoCString initialSiteHost;
+  if (RefPtr<dom::BrowsingContext> browsingContext = CurrentBrowsingContext()) {
+    if (browsingContext->GetHasLoadedNonInitialDocument()) {
+      GetTopLevelSiteHost(browsingContext->GetCurrentWindowContext(),
+                          initialSiteHost);
+    } else if (RefPtr<dom::BrowsingContext> opener =
+                   browsingContext->GetOpener()) {
+      GetTopLevelSiteHost(opener->GetCurrentWindowContext(), initialSiteHost);
+    }
+  }
+
+  MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
+              "{}: siteHost: {}, initialSiteHost: {}", __FUNCTION__, siteHost,
+              initialSiteHost);
+
+  
+  
+  
+  
   bool hasUserActivation = aHasValidUserGestureActivation ||
                            aTriggeringPrincipal->IsSystemPrincipal();
 
@@ -699,7 +760,7 @@ nsresult BounceTrackingState::OnStartNavigation(
   
   if (!mBounceTrackingRecord) {
     mBounceTrackingRecord = MakeRefPtr<BounceTrackingRecord>();
-    mBounceTrackingRecord->SetInitialHost(siteHost);
+    mBounceTrackingRecord->SetInitialHost(initialSiteHost);
     if (hasUserActivation) {
       mBounceTrackingRecord->AddUserActivationHost(siteHost);
     }
@@ -722,7 +783,9 @@ nsresult BounceTrackingState::OnStartNavigation(
 
     MOZ_ASSERT(!mBounceTrackingRecord);
     mBounceTrackingRecord = MakeRefPtr<BounceTrackingRecord>();
-    mBounceTrackingRecord->SetInitialHost(siteHost);
+    mBounceTrackingRecord->SetInitialHost(initialSiteHost);
+    
+    
     mBounceTrackingRecord->AddUserActivationHost(siteHost);
 
     return NS_OK;
