@@ -3060,6 +3060,14 @@ static void WrapSeparatorTransform(nsDisplayListBuilder* aBuilder,
 
 
 
+
+
+
+
+
+#if defined(XP_WIN) && !defined(_WIN64)
+MOZ_NEVER_INLINE
+#endif
 static Maybe<nsRect> ComputeClipForMaskItem(
     nsDisplayListBuilder* aBuilder, nsIFrame* aMaskedFrame,
     const SVGUtils::MaskUsage& aMaskUsage) {
