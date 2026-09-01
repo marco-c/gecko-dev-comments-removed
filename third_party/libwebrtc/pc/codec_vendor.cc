@@ -11,6 +11,7 @@
 
 #include <cstddef>
 #include <optional>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -834,6 +835,40 @@ void LinkRed(std::vector<Codec>& codecs) {
 
 
 
+
+
+
+void RemoveRedCodecsWithoutPrimary(std::vector<Codec>& codecs) {
+  std::set<int> present_pts;
+  for (const Codec& codec : codecs) {
+    if (codec.id.IsSet()) {
+      present_pts.insert(codec.id.value());
+    }
+  }
+  std::erase_if(codecs, [&present_pts](const Codec& codec) {
+    if (codec.type != Codec::Type::kAudio ||
+        codec.GetResiliencyType() != Codec::ResiliencyType::kRed) {
+      return false;
+    }
+    std::string fmtp;
+    if (!codec.GetParam(kCodecParamNotInNameValueFormat, &fmtp)) {
+      
+      
+      return false;
+    }
+    for (absl::string_view pt_str : split(fmtp, '/')) {
+      int pt;
+      if (FromString(pt_str, &pt) && present_pts.contains(pt)) {
+        return false;  
+      }
+    }
+    return true;  
+  });
+}
+
+
+
+
 RTCError RecordCodecIdsAndLinkRed(PayloadTypeSuggester& pt_suggester,
                                   const std::string& mid,
                                   std::vector<Codec>& codecs) {
@@ -1143,6 +1178,9 @@ RTCErrorOr<std::vector<Codec>> CodecVendor::GetNegotiatedCodecsForOffer(
     RecordCodecIdsAndLinkRed(pt_suggester, mid,
                              filtered_codecs.writable_codecs());
   }
+  
+  
+  RemoveRedCodecsWithoutPrimary(filtered_codecs.writable_codecs());
   return filtered_codecs.codecs();
 }
 
