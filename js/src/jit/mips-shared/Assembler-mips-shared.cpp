@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/mips-shared/Assembler-mips-shared.h"
 
 #include "mozilla/DebugOnly.h"
@@ -190,7 +188,11 @@ bool AssemblerMIPSShared::oom() const {
 }
 
 
+
 size_t AssemblerMIPSShared::size() const { return m_buffer.size(); }
+
+
+size_t AssemblerMIPSShared::readableSize() const { return m_buffer.size(); }
 
 
 size_t AssemblerMIPSShared::jumpRelocationTableBytes() const {

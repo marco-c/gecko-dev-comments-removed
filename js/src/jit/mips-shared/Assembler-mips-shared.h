@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_mips_shared_Assembler_mips_shared_h
 #define jit_mips_shared_Assembler_mips_shared_h
 
@@ -780,11 +778,6 @@ class AssemblerMIPSShared : public AssemblerShared {
 
   enum FloatTestKind { TestForTrue, TestForFalse };
 
-  
-  
-
-  BufferOffset nextOffset() { return m_buffer.nextOffset(); }
-
  protected:
   Instruction* editSrc(BufferOffset bo) { return m_buffer.getInst(bo); }
 
@@ -807,6 +800,10 @@ class AssemblerMIPSShared : public AssemblerShared {
   CompactBufferWriter dataRelocations_;
 
   MIPSBufferWithExecutableCopy m_buffer;
+
+  
+  
+  BufferOffset nextOffset() { return m_buffer.nextOffset(); }
 
 #ifdef JS_JITSPEW
   Sprinter* printer;
@@ -903,7 +900,12 @@ class AssemblerMIPSShared : public AssemblerShared {
   void copyDataRelocationTable(uint8_t* dest);
 
   
+  
   size_t size() const;
+  
+  
+  size_t readableSize() const;
+
   
   size_t jumpRelocationTableBytes() const;
   size_t dataRelocationTableBytes() const;
