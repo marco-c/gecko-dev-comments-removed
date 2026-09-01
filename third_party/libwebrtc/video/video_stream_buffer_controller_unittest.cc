@@ -799,6 +799,27 @@ TEST_P(VideoStreamBufferControllerTest,
   EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(test::WithId(10)));
 }
 
+TEST_P(VideoStreamBufferControllerTest,
+       OutOfOrderSpatialLayersTriggersKeyframeRequest) {
+  StartNextDecodeForceKeyframe();
+
+  
+  
+  
+  
+  buffer_->InsertFrame(WithReceiveTimeFromRtpTimestamp(
+      test::FakeFrameBuilder().Id(1).SpatialLayer(1).Time(0).Build()));
+  buffer_->InsertFrame(WithReceiveTimeFromRtpTimestamp(
+      test::FakeFrameBuilder().Id(2).SpatialLayer(0).Time(0).AsLast().Build()));
+
+  
+  
+  
+  
+  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()),
+              Optional(VariantWith<TimeDelta>(TimeDelta::Zero())));
+}
+
 INSTANTIATE_TEST_SUITE_P(VideoStreamBufferController,
                          VideoStreamBufferControllerTest,
                          ::testing::Combine(::testing::Bool(),
