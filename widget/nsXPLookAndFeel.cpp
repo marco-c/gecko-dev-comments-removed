@@ -1291,9 +1291,8 @@ bool LookAndFeel::IsDarkColor(nscolor aColor) {
          RelativeLuminanceUtils::Compute(aColor) < kThreshold;
 }
 
-ColorScheme LookAndFeel::ColorSchemeForStyle(
-    const dom::Document& aDoc, const StyleColorSchemeFlags& aFlags,
-    ColorSchemeMode aMode) {
+Maybe<ColorScheme> LookAndFeel::ExplicitColorSchemeForStyle(
+    const dom::Document& aDoc, const StyleColorSchemeFlags& aFlags) {
   const auto& prefs = PreferenceSheet::PrefsFor(aDoc);
   StyleColorSchemeFlags style(aFlags);
   if (!style) {
@@ -1303,27 +1302,41 @@ ColorScheme LookAndFeel::ColorSchemeForStyle(
   const bool supportsLight = bool(style & StyleColorSchemeFlags::LIGHT);
   if (supportsLight && supportsDark) {
     
-    return aDoc.PreferredColorScheme();
+    return Some(aDoc.PreferredColorScheme());
   }
   if (supportsDark || supportsLight) {
     
     
-    return supportsDark ? ColorScheme::Dark : ColorScheme::Light;
+    return Some(supportsDark ? ColorScheme::Dark : ColorScheme::Light);
   }
   
   
-  if (aMode == ColorSchemeMode::Preferred || aDoc.ChromeRulesEnabled() ||
-      !prefs.mUseDocumentColors) {
-    return aDoc.PreferredColorScheme();
+  if (aDoc.ChromeRulesEnabled() || !prefs.mUseDocumentColors) {
+    return Some(aDoc.PreferredColorScheme());
   }
-  
-  return ColorScheme::Light;
+  return {};
 }
 
-LookAndFeel::ColorScheme LookAndFeel::ColorSchemeForFrame(
-    const nsIFrame* aFrame, ColorSchemeMode aMode) {
+ColorScheme LookAndFeel::ColorSchemeForStyle(
+    const dom::Document& aDoc, const StyleColorSchemeFlags& aFlags,
+    ColorSchemeMode aMode) {
+  if (auto s = ExplicitColorSchemeForStyle(aDoc, aFlags)) {
+    return *s;
+  }
+  return aMode == ColorSchemeMode::Preferred ? aDoc.PreferredColorScheme()
+                                             : ColorScheme::Light;
+}
+
+ColorScheme LookAndFeel::ColorSchemeForFrame(const nsIFrame* aFrame,
+                                             ColorSchemeMode aMode) {
   return ColorSchemeForStyle(*aFrame->PresContext()->Document(),
                              aFrame->StyleUI()->mColorScheme.bits, aMode);
+}
+
+Maybe<ColorScheme> LookAndFeel::ExplicitColorSchemeForFrame(
+    const nsIFrame* aFrame) {
+  return ExplicitColorSchemeForStyle(*aFrame->PresContext()->Document(),
+                                     aFrame->StyleUI()->mColorScheme.bits);
 }
 
 
