@@ -180,6 +180,12 @@ add_task(async function accelClickSearchesInANewTab() {
 });
 
 add_task(async function tabReachesTheSwitcher() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.searchModeSwitcher.skipTabStop", true]],
+  });
+
   let tab = await NewtabSearchbarTestUtils.openNewTabPage();
 
   await NewtabSearchbarTestUtils.spawn(tab.linkedBrowser, [], async () => {
