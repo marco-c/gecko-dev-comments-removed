@@ -2281,27 +2281,6 @@ void AppWindow::ApplyChromeFlags() {
     return;
   }
 
-  
-
-
-  nsAutoString newvalue;
-
-  if (!(mChromeFlags & nsIWebBrowserChrome::CHROME_MENUBAR))
-    newvalue.AppendLiteral("menubar ");
-
-  if (!(mChromeFlags & nsIWebBrowserChrome::CHROME_TOOLBAR))
-    newvalue.AppendLiteral("toolbar ");
-
-  if (!(mChromeFlags & nsIWebBrowserChrome::CHROME_PERSONAL_TOOLBAR))
-    newvalue.AppendLiteral("directories ");
-
-  if (!(mChromeFlags & nsIWebBrowserChrome::CHROME_EXTRA))
-    newvalue.AppendLiteral("extrachrome ");
-
-  
-  
-  root->SetAttribute(u"chromehidden"_ns, newvalue, IgnoreErrors());
-
   if (mChromeFlags & nsIWebBrowserChrome::CHROME_NO_PERSISTENCE) {
     root->SetAttribute(u"persist"_ns, u""_ns, IgnoreErrors());
   }
