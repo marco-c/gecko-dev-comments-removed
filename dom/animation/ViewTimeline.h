@@ -7,8 +7,6 @@
 
 #include "mozilla/dom/ScrollTimeline.h"
 
-class nsIFrame;
-
 namespace mozilla {
 class ScrollContainerFrame;
 }  
@@ -95,92 +93,9 @@ class ViewTimeline final : public ScrollTimeline {
 
   Maybe<ComputedTimelineData> ComputeTimelineData() const override;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  struct StickyDisplacement {
-    
-    
-    
-    nscoord mStartSideStuckAt = 0;
-    
-    
-    nscoord mStartSideMax = 0;
-    
-    
-    
-    nscoord mEndSideUnstuckAt = 0;
-    
-    
-    nscoord mEndSideMax = 0;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    nscoord Earliest(nscoord aOffsetIgnoringSticky) const;
-    nscoord Latest(nscoord aOffsetIgnoringSticky) const;
-
-    
-    
-    
-    StickyDisplacement Reversed() const {
-      return {-mEndSideUnstuckAt, mEndSideMax, -mStartSideStuckAt,
-              mStartSideMax};
-    }
-
-    bool operator==(const StickyDisplacement&) const = default;
-  };
-
-  
-  
-  struct AlignmentOffsetsIgnoringSticky {
-    
-    
-    nscoord mSubjectStartAtViewEnd = 0;
-    
-    
-    nscoord mSubjectEndAtViewStart = 0;
-    
-    
-    nscoord mSubjectStartAtViewStart = 0;
-    
-    
-    nscoord mSubjectEndAtViewEnd = 0;
-  };
-  AlignmentOffsetsIgnoringSticky ComputeAlignmentOffsetsIgnoringSticky() const;
-
-  
-  
-  
-  
-  
-  
-  
-  static Maybe<std::pair<nscoord, StickyDisplacement>>
-  ComputeStickyDisplacement(const nsIFrame* aSubject,
-                            const ScrollContainerFrame* aScrollContainerFrame,
-                            layers::ScrollDirection aAxis);
-
   std::pair<nscoord, nscoord> IntervalForTimelineRangeName(
-      const StyleTimelineRangeName aName) const;
+      const StyleTimelineRangeName aName,
+      const ScrollTimeline::ComputedTimelineData& aData) const;
 
   template <typename F>
   double ComputeOffsetToTimelineRange(
@@ -217,10 +132,6 @@ class ViewTimeline final : public ScrollTimeline {
     nscoord mInsetStart = 0;
     nscoord mInsetEnd = 0;
     
-    
-    
-    
-    StickyDisplacement mSticky;
 
     
     bool IsChanged(const CurrentTimeData& aOther) const {
@@ -229,8 +140,7 @@ class ViewTimeline final : public ScrollTimeline {
              mScrollPortSize != aOther.mScrollPortSize ||
              mSubjectPosition != aOther.mSubjectPosition ||
              mSubjectSize != aOther.mSubjectSize ||
-             mInsetStart != aOther.mInsetStart ||
-             mInsetEnd != aOther.mInsetEnd || mSticky != aOther.mSticky;
+             mInsetStart != aOther.mInsetStart || mInsetEnd != aOther.mInsetEnd;
     }
     bool operator==(const CurrentTimeData& aOther) const {
       return mScrollData.mPosition == aOther.mScrollData.mPosition &&
