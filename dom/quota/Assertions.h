@@ -25,7 +25,8 @@ void AssertNoUnderflow(T aDest, U aArg,
 
 
 
-bool ShouldReportUnderflow(const nsACString& aContext);
+
+bool ShouldReportDiagnostic(const nsACString& aContext);
 
 bool IsOnIOThread();
 

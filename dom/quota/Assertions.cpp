@@ -12,9 +12,9 @@
 
 namespace mozilla::dom::quota {
 
-bool ShouldReportUnderflow(const nsACString& aContext) {
+bool ShouldReportDiagnostic(const nsACString& aContext) {
   static StaticDataMutex<nsTHashMap<nsCStringHashKey, uint32_t>> sCounters(
-      "ShouldReportUnderflow::sCounters");
+      "ShouldReportDiagnostic::sCounters");
 
   auto counters = sCounters.Lock();
   uint32_t& counter = counters->LookupOrInsert(aContext, 0u);

@@ -53,8 +53,22 @@ void AssertNoUnderflow(T aDest, U aArg, const nsACString& context) {
     const bool noUnderflow = uint64_t(aDest) >= uint64_t(aArg);
     MOZ_ASSERT(noUnderflow);
     QM_TRY(OkIf(noUnderflow), QM_VOID, QM_NO_CLEANUP,
-           ([&context]() { return ShouldReportUnderflow(context); }));
+           ([&context]() { return ShouldReportDiagnostic(context); }));
   }
+#endif
+}
+
+
+
+
+
+inline void ReportUsageDriftIfAny(int64_t aTracked, int64_t aReal,
+                                  const nsACString& aContext) {
+#if defined(NIGHTLY_BUILD) || defined(DEBUG)
+  MOZ_ASSERT_DEBUG_OR_FUZZING(aTracked == aReal);
+  QM_SCOPED_CONTEXT(aContext);
+  QM_TRY(OkIf(aTracked == aReal), QM_VOID, QM_NO_CLEANUP,
+         ([&aContext]() { return ShouldReportDiagnostic(aContext); }));
 #endif
 }
 
