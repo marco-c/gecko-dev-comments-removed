@@ -7,6 +7,7 @@
 
 #include "EnabledSignatureSchemes.h"
 #include "NSSSocketControl.h"
+#include "PKCS11ModuleDB.h"
 #include "SSLTokensCache.h"
 #include "ScopedNSSTypes.h"
 #include "SharedCertVerifier.h"
@@ -20,7 +21,6 @@
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/SyncRunnable.h"
-#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/glean/SecurityManagerSslMetrics.h"
 #include "mozpkix/pkixtypes.h"
 #include "nsComponentManagerUtils.h"
@@ -35,8 +35,6 @@
 #include "nsISupportsPriority.h"
 #include "nsIUploadChannel.h"
 #include "nsIWebProgressListener.h"
-#include "nsIWindowWatcher.h"
-#include "nsIWritablePropertyBag2.h"
 #include "nsNSSCertHelper.h"
 #include "nsNSSCertificate.h"
 #include "nsNSSComponent.h"
@@ -605,49 +603,8 @@ static char* ShowProtectedAuthPrompt(PK11SlotInfo* slot) {
     obsService->RemoveObserver(cancelObserver, "pk11-protected-auth-cancel");
   });
 
-  
-  
-  
-  
-  nsCOMPtr<nsIWindowWatcher> ww =
-      do_GetService("@mozilla.org/embedcomp/window-watcher;1");
-  nsCOMPtr<mozIDOMWindowProxy> activeWindow;
-  if (ww) {
-    ww->GetActiveWindow(getter_AddRefs(activeWindow));
-  }
-  if (activeWindow) {
-    
-    
-    
-    nsCOMPtr<nsIWritablePropertyBag2> dialogArgs =
-        do_CreateInstance("@mozilla.org/hash-property-bag;1");
-    if (!dialogArgs) {
-      return nullptr;
-    }
-    rv = dialogArgs->SetPropertyAsAString(
-        u"tokenName"_ns, NS_ConvertUTF8toUTF16(PK11_GetTokenName(slot)));
-    if (NS_FAILED(rv)) {
-      return nullptr;
-    }
-    rv = dialogArgs->SetPropertyAsAString(u"promptId"_ns, promptId);
-    if (NS_FAILED(rv)) {
-      return nullptr;
-    }
-    
-    
-    
-    
-    
-    mozilla::dom::AutoNoJSAPI nojsapi;
-    nsCOMPtr<mozIDOMWindowProxy> newWindow;
-    rv = ww->OpenWindow(activeWindow,
-                        "chrome://pippki/content/protectedAuth.xhtml"_ns,
-                        "_blank"_ns, "centerscreen,chrome,modal,titlebar"_ns,
-                        dialogArgs, getter_AddRefs(newWindow));
-    if (NS_FAILED(rv)) {
-      return nullptr;
-    }
-  }
+  nsAutoCString tokenName(PK11_GetTokenName(slot));
+  ShowProtectedAuthDialog(tokenName, promptId);
 
   
   MOZ_ALWAYS_TRUE(SpinEventLoopUntil("ShowProtectedAuthPrompt"_ns, [&state]() {

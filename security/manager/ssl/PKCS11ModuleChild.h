@@ -49,9 +49,16 @@ class PKCS11ModuleChild final : public PPKCS11ModuleChild {
                                          const nsCString& aNewPassword,
                                          ResetTokenResolver&& aResolver);
 
+  ipc::IPCResult RecvCancelProtectedAuth(uint64_t uuid);
+
   
   
   char* PromptForPassword(PK11SlotInfo* slot);
+
+  
+  
+  
+  char* InitiateProtectedAuth(PK11SlotInfo* slot);
 
  private:
   
@@ -63,13 +70,28 @@ class PKCS11ModuleChild final : public PPKCS11ModuleChild {
   
   
   nsCOMPtr<nsISerialEventTarget> mAuthTaskQueue;
+
   
   
   mozilla::Monitor mAuthPromptMonitor{"PKCS11ModuleChild::mAuthPromptMonitor"};
+
   
   
   mozilla::Maybe<std::tuple<nsresult, nsCString>> mMaybePasswordForPrompt
       MOZ_GUARDED_BY(mAuthPromptMonitor);
+
+  enum class ProtectedAuthState {
+    InProgress,
+    Cancelled,
+    Succeeded,
+    DoRetry,
+  };
+
+  
+  
+  
+  mozilla::Maybe<std::pair<ProtectedAuthState, uint64_t>>
+      mMaybeProtectedAuthPrompt MOZ_GUARDED_BY(mAuthPromptMonitor);
 
   ~PKCS11ModuleChild() = default;
 };

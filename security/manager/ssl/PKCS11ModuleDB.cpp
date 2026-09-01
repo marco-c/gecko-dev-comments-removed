@@ -11,8 +11,11 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/glean/SecurityManagerSslMetrics.h"
 #include "nsComponentManagerUtils.h"
+#include "nsIWindowWatcher.h"
+#include "nsIWritablePropertyBag2.h"
 #include "nsNSSCertHelper.h"
 #include "nsNSSComponent.h"
 #include "nsNativeCharsetUtils.h"
@@ -783,6 +786,43 @@ RefPtr<PKCS11ModuleDB::TokenInfoPromise> PKCS11ModuleDB::ChangeTokenPassword(
       });
 }
 #endif  
+
+void ShowProtectedAuthDialog(const nsCString& tokenName,
+                             const nsString& promptId) {
+  nsCOMPtr<nsIWindowWatcher> ww =
+      do_GetService("@mozilla.org/embedcomp/window-watcher;1");
+  if (!ww) {
+    return;
+  }
+  nsCOMPtr<mozIDOMWindowProxy> activeWindow;
+  if (NS_FAILED(ww->GetActiveWindow(getter_AddRefs(activeWindow))) ||
+      !activeWindow) {
+    return;
+  }
+  
+  
+  
+  nsCOMPtr<nsIWritablePropertyBag2> dialogArgs =
+      do_CreateInstance("@mozilla.org/hash-property-bag;1");
+  if (!dialogArgs) {
+    return;
+  }
+  if (NS_FAILED(dialogArgs->SetPropertyAsAString(
+          u"tokenName"_ns, NS_ConvertUTF8toUTF16(tokenName)))) {
+    return;
+  }
+  if (NS_FAILED(dialogArgs->SetPropertyAsAString(u"promptId"_ns, promptId))) {
+    return;
+  }
+  
+  
+  mozilla::dom::AutoNoJSAPI nojsapi;
+  nsCOMPtr<mozIDOMWindowProxy> newWindow;
+  (void)ww->OpenWindow(activeWindow,
+                       "chrome://pippki/content/protectedAuth.xhtml"_ns,
+                       "_blank"_ns, "centerscreen,chrome,modal,titlebar"_ns,
+                       dialogArgs, getter_AddRefs(newWindow));
+}
 
 }  
 }  
