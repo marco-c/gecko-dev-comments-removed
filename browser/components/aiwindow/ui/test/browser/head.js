@@ -69,7 +69,6 @@ const MOCK_RS_RECORDS = [
   ["memories-quality-filter-user", 1],
   ["memories-message-classification-system", 1],
   ["memories-message-classification-user", 1],
-  ["memories-relevant-context", 2],
   ["search-answer-generation", 1],
 ]
   .map(([feature, major]) => ({
@@ -86,17 +85,6 @@ const MOCK_RS_RECORDS = [
     version: `v${major}.0`,
     is_default: true,
   }))
-  
-  
-  .map(record =>
-    record.feature === "memories-relevant-context"
-      ? {
-          ...record,
-          prompts:
-            "# Existing Memories\n\n## Existing Memories\n{relevantMemoriesList}",
-        }
-      : record
-  )
   
   
   .concat([
@@ -230,6 +218,29 @@ const MOCK_RS_RECORDS = [
       purpose: "chat",
       parameters: {},
       version: "v11.0",
+    },
+    
+    
+    {
+      kind: "params",
+      feature: "memories-context",
+      model: "generic",
+      service_type: "memories",
+      parameters: {},
+      is_default: true,
+      modules: [{ name: "relevant-memories", version: "1.0" }],
+      version: "v1.0",
+    },
+    {
+      kind: "module",
+      feature: "memories-context",
+      module: "relevant-memories",
+      model: "generic",
+      
+      
+      prompts:
+        "# Existing Memories\n\n## Existing Memories\n{relevantMemoriesList}",
+      version: "v1.0",
     },
   ]);
 
