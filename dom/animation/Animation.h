@@ -142,7 +142,7 @@ class Animation : public DOMEventTargetHelper,
 
   AnimationTimeline* GetTimelineFromJS() const {
     auto* timeline = GetTimeline();
-    if (timeline && timeline->IsInactiveTimeline()) {
+    if (timeline && timeline->IsUnresolvedTimeline()) {
       
       
       return nullptr;
@@ -400,13 +400,6 @@ class Animation : public DOMEventTargetHelper,
 
 
 
-  bool CanThrottle() const;
-
-  
-
-
-
-
   void WillComposeStyle();
 
   
@@ -608,7 +601,7 @@ class Animation : public DOMEventTargetHelper,
 
   bool HasFiniteActiveTimeline() const {
     return mTimeline && !mTimeline->IsMonotonicallyIncreasing() &&
-           !mTimeline->IsInactiveTimeline();
+           !mTimeline->IsUnresolvedTimeline();
   }
 
   RefPtr<AnimationTimeline> mTimeline;

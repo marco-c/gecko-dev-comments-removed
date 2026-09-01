@@ -493,13 +493,16 @@ class KeyframeEffect : public AnimationEffect {
     bool mOverflow : 1;
     
     bool mHasBackgroundColorCurrentColor : 1;
+    
+    bool mDisplay : 1;
 
     CumulativeChanges()
         : mOpacity(false),
           mVisibility(false),
           mLayout(false),
           mOverflow(false),
-          mHasBackgroundColorCurrentColor(false) {}
+          mHasBackgroundColorCurrentColor(false),
+          mDisplay(false) {}
   };
   CumulativeChanges mCumulativeChanges;
 
@@ -517,6 +520,13 @@ class KeyframeEffect : public AnimationEffect {
   
   nsIFrame* GetStyleFrame() const;
 
+  
+  
+  
+  
+  
+  
+  
   bool CanThrottle() const;
   bool CanThrottleOverflowChanges(const nsIFrame& aFrame) const;
   bool CanThrottleOverflowChangesInScrollable(nsIFrame& aFrame) const;

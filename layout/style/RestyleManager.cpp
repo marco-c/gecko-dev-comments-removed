@@ -2114,6 +2114,22 @@ void RestyleManager::AnimationsWithDestroyedFrame::Put(
   mContents.AppendElement(std::make_pair(target->AsElement(), pseudoType));
 }
 
+
+
+
+
+
+static bool IsDisplayNoneRoot(const Element* aElement,
+                              const PseudoStyleRequest& aPseudoRequest) {
+  MOZ_ASSERT(aElement);
+  
+  if (!aPseudoRequest.IsNotPseudo() ||
+      !StaticPrefs::layout_css_display_animations_enabled()) {
+    return false;
+  }
+  return aElement->HasServoData() && Servo_Element_IsDisplayNone(aElement);
+}
+
 void RestyleManager::AnimationsWithDestroyedFrame::
     StopAnimationsForElementsWithoutFrames() {
   nsPresContext* context = mRestyleManager->PresContext();
@@ -2144,8 +2160,12 @@ void RestyleManager::AnimationsWithDestroyedFrame::
       continue;
     }
 
-    animationManager->StopAnimationsForElement(element, request);
-    transitionManager->StopAnimationsForElement(element, request);
+    
+    
+    if (!IsDisplayNoneRoot(element, request)) {
+      animationManager->StopAnimationsForElement(element, request);
+      transitionManager->StopAnimationsForElement(element, request);
+    }
 
     
     

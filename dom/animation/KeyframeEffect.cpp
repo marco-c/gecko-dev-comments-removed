@@ -1521,7 +1521,8 @@ bool KeyframeEffect::CanThrottle() const {
     
     
     
-    return true;
+    
+    return !mCumulativeChanges.mDisplay;
   }
 
   
@@ -1900,6 +1901,9 @@ void KeyframeEffect::CalculateCumulativeChangesForProperty(
     return;
   }
 
+  if (aProperty.mProperty.mId == eCSSProperty_display) {
+    mCumulativeChanges.mDisplay = true;
+  }
   mCumulativeChanges.mOverflow |= bool(flags & CSSPropFlags::AffectsOverflow);
   mCumulativeChanges.mLayout |= bool(flags & CSSPropFlags::AffectsLayout);
 }
