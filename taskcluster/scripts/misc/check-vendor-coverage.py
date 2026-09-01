@@ -33,6 +33,8 @@ def vendored_moz_yamls():
         if "moz.yaml" not in filenames:
             continue
         path = os.path.join(dirpath, "moz.yaml").replace("./", "", 1)
+        if path in SKIP_LIST_NOT_A_VENDORED_LIBRARY:
+            continue
         try:
             with open(path) as fh:
                 data = yaml.safe_load(fh) or {}
@@ -95,6 +97,51 @@ def main():
         f"vendor-verify coverage OK: all {len(vendored)} vendored "
         "moz.yaml are verified by a task, and every expected-fail entry is valid."
     )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SKIP_LIST_NOT_A_VENDORED_LIBRARY = {
+    
+    
+    "mobile/android/android-components/plugins/dependencies/src/main/java/moz.yaml": (
+        "bug 2067205: this one drives updatebot version bumps of ApplicationServices.kt "
+        "rather than vendoring sources. It skips every vendoring step, so there is "
+        "nothing to reproduce, and its one update-action moves the version forward to "
+        "the newest app-services build -- so running the check does not sit still, it "
+        "fails. On beta the script raises NotImplementedError, because app-services is "
+        "on the release channel there and it only handles nightly. On central it "
+        "rewrites ApplicationServices.kt whenever a newer app-services build exists, "
+        "which reports as drift. An expected-fail annotation cannot express that "
+        "either: on central it passes whenever nothing has moved, so the annotation "
+        "would go UNEXPECTED-PASS and turn the tree orange on its own."
+    ),
+    
+    
+    
+}
 
 
 if __name__ == "__main__":
