@@ -100,6 +100,8 @@ class nsHtml5TreeOpExecutor final
  public:
   nsHtml5TreeOpExecutor();
 
+  static void InitializeStatics();
+
  protected:
   virtual ~nsHtml5TreeOpExecutor();
 
@@ -116,7 +118,8 @@ class nsHtml5TreeOpExecutor final
   
 
 
-  NS_IMETHOD DidBuildModel(bool aTerminated) override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD
+  DidBuildModel(bool aTerminated) override;
 
   
 
@@ -217,7 +220,8 @@ class nsHtml5TreeOpExecutor final
   bool IsInFlushLoop() { return mRunFlushLoopOnStack; }
 #endif
 
-  void RunScript(nsIContent* aScriptElement, bool aMayDocumentWriteOrBlock);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void RunScript(nsIContent* aScriptElement,
+                                             bool aMayDocumentWriteOrBlock);
 
   
 

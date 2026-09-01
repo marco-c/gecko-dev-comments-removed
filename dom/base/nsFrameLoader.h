@@ -161,9 +161,9 @@ class nsFrameLoader final : public nsStubMutationObserver,
   
   
   
-  nsresult FinishStaticClone(nsFrameLoader* aStaticCloneOf,
-                             nsIPrintSettings* aPrintSettings,
-                             bool* aOutHasInProcessPrintCallbacks);
+  MOZ_CAN_RUN_SCRIPT nsresult FinishStaticClone(
+      nsFrameLoader* aStaticCloneOf, nsIPrintSettings* aPrintSettings,
+      bool* aOutHasInProcessPrintCallbacks);
 
   nsresult DoRemoteStaticClone(nsFrameLoader* aStaticCloneOf,
                                nsIPrintSettings* aPrintSettings);
@@ -300,9 +300,9 @@ class nsFrameLoader final : public nsStubMutationObserver,
   
   
   
-  nsresult SwapWithOtherLoader(nsFrameLoader* aOther,
-                               nsFrameLoaderOwner* aThisOwner,
-                               nsFrameLoaderOwner* aOtherOwner);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  SwapWithOtherLoader(nsFrameLoader* aOther, nsFrameLoaderOwner* aThisOwner,
+                      nsFrameLoaderOwner* aOtherOwner);
 
   nsresult SwapWithOtherRemoteLoader(nsFrameLoader* aOther,
                                      nsFrameLoaderOwner* aThisOwner,

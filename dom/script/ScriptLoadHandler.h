@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ScriptLoadHandler_h
 #define mozilla_dom_ScriptLoadHandler_h
 
@@ -85,8 +83,10 @@ class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver,
  private:
   virtual ~ScriptLoadHandler();
 
-  nsresult DoOnStreamComplete(nsIChannel* aChannel, nsresult aStatus,
-                              uint32_t aDataLength, const uint8_t* aData);
+  MOZ_CAN_RUN_SCRIPT nsresult DoOnStreamComplete(nsIChannel* aChannel,
+                                                 nsresult aStatus,
+                                                 uint32_t aDataLength,
+                                                 const uint8_t* aData);
 
   
 

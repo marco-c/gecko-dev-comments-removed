@@ -36,11 +36,16 @@ class ScreenOrientation final : public DOMEventTargetHelper {
 
   
   
-  void MaybeDispatchEventsForOverride(BrowsingContext* aBrowsingContext,
-                                      bool aOldHasOrientationOverride,
-                                      bool aOverrideIsDifferentThanDevice);
+  MOZ_CAN_RUN_SCRIPT void MaybeDispatchEventsForOverride(
+      BrowsingContext* aBrowsingContext, bool aOldHasOrientationOverride,
+      bool aOverrideIsDifferentThanDevice);
 
+ private:
   ScreenOrientation(nsPIDOMWindowInner* aWindow, nsScreen* aScreen);
+
+ public:
+  static already_AddRefed<ScreenOrientation> Create(nsPIDOMWindowInner* aWindow,
+                                                    nsScreen* aScreen);
 
   already_AddRefed<Promise> Lock(OrientationLockType aOrientation,
                                  ErrorResult& aRv);
@@ -114,8 +119,8 @@ class ScreenOrientation final : public DOMEventTargetHelper {
   RefPtr<nsScreen> mScreen;
   RefPtr<FullscreenEventListener> mFullscreenListener;
   RefPtr<VisibleEventListener> mVisibleListener;
-  OrientationType mType;
-  uint16_t mAngle;
+  OrientationType mType{};
+  uint16_t mAngle{};
   
   
   

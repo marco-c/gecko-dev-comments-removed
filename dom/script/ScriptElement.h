@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ScriptElement_h
 #define mozilla_dom_ScriptElement_h
 
@@ -37,7 +35,7 @@ class ScriptElement : public nsIScriptElement, public nsStubMutationObserver {
   explicit ScriptElement(FromParser aFromParser)
       : nsIScriptElement(aFromParser) {}
 
-  virtual nsresult FireErrorEvent() override;
+  MOZ_CAN_RUN_SCRIPT nsresult FireErrorEvent() override;
 
   virtual bool GetScriptType(nsAString& aType) override;
 
@@ -49,16 +47,17 @@ class ScriptElement : public nsIScriptElement, public nsStubMutationObserver {
 
   virtual bool HasExternalScriptContent() = 0;
 
-  virtual bool MaybeProcessScript(nsCOMPtr<nsIParser> aParser) override;
+  MOZ_CAN_RUN_SCRIPT bool MaybeProcessScript(
+      nsCOMPtr<nsIParser> aParser) override;
 
-  virtual MOZ_CAN_RUN_SCRIPT nsresult
+  MOZ_CAN_RUN_SCRIPT nsresult
   GetTrustedTypesCompliantInlineScriptText(nsString& aSourceText) override;
 
  private:
   
   void UpdateTrustWorthiness(MutationEffectOnScript aMutationEffectOnScript);
 
-  bool MaybeProcessScript(const nsAString& aSourceText);
+  MOZ_CAN_RUN_SCRIPT bool MaybeProcessScript(const nsAString& aSourceText);
 };
 
 }  

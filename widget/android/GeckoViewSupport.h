@@ -68,7 +68,7 @@ class GeckoViewSupport final
                    jni::String::Param aChromeURI, bool aPrivateMode);
 
   
-  void Close();
+  MOZ_CAN_RUN_SCRIPT void Close();
 
   
   void Transfer(const java::GeckoSession::Window::LocalRef& inst,

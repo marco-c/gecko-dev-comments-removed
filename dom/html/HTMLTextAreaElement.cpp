@@ -437,8 +437,12 @@ void HTMLTextAreaElement::FireChangeEventIfNeeded() {
 
   
   mFocusedValue = std::move(value);
-  nsContentUtils::DispatchTrustedEvent(OwnerDoc(), this, u"change"_ns,
-                                       CanBubble::eYes, Cancelable::eNo);
+  
+  
+  
+  nsContentUtils::DispatchTrustedEvent(MOZ_KnownLive(OwnerDoc()), this,
+                                       u"change"_ns, CanBubble::eYes,
+                                       Cancelable::eNo);
 }
 
 nsresult HTMLTextAreaElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {

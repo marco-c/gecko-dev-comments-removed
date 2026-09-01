@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_PendingFullscreenEvent_h_
 #define mozilla_PendingFullscreenEvent_h_
 
@@ -46,7 +44,8 @@ class PendingFullscreenEvent {
         name = u"fullscreenerror"_ns;
         break;
     }
-    nsINode* target = mTarget->GetComposedDoc() == aDoc ? mTarget.get() : aDoc;
+    const nsCOMPtr<nsINode> target =
+        mTarget->GetComposedDoc() == aDoc ? mTarget.get() : aDoc;
     (void)nsContentUtils::DispatchTrustedEvent(
         aDoc, target, name, CanBubble::eYes, Cancelable::eNo, Composed::eYes);
   }

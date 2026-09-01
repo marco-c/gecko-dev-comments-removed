@@ -11,6 +11,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/GetFilesHelper.h"
+#include "mozilla/dom/LoadedOriginSet.h"
 #include "mozilla/dom/PContentChild.h"
 #include "mozilla/dom/ProcessActor.h"
 #include "mozilla/dom/RemoteType.h"
@@ -401,6 +402,8 @@ class ContentChild final : public PContentChild,
   
   const nsACString& GetRemoteType() const override;
 
+  mozilla::ipc::IPCResult RecvAddLoadedOrigin(nsIPrincipal* aPrincipal);
+
   mozilla::ipc::IPCResult RecvInitRemoteWorkerService(
       Endpoint<PRemoteWorkerServiceChild>&& aEndpoint,
       Endpoint<PRemoteWorkerDebuggerManagerChild>&& aDebuggerChildEp);
@@ -677,7 +680,7 @@ class ContentChild final : public PContentChild,
   mozilla::ipc::IPCResult RecvSetUseOriginAgentCluster(
       uint64_t aGroupId, nsIPrincipal* aPrincipal, bool aUseOriginAgentCluster);
 
-  mozilla::ipc::IPCResult RecvWindowClose(
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::ipc::IPCResult RecvWindowClose(
       const MaybeDiscarded<BrowsingContext>& aContext, bool aTrustedCaller);
   mozilla::ipc::IPCResult RecvWindowFocus(
       const MaybeDiscarded<BrowsingContext>& aContext, CallerType aCallerType,
@@ -958,6 +961,9 @@ inline nsISupports* ToSupports(mozilla::dom::ContentChild* aContentChild) {
 
 
 nsCString CurrentRemoteType();
+
+
+already_AddRefed<LoadedOriginSet> CurrentLoadedOriginSet();
 
 }  
 }  

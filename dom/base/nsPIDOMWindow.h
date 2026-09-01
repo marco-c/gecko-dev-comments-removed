@@ -405,7 +405,8 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
   
   
-  virtual nsresult FireDelayedDOMEvents(bool aIncludeSubWindows) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult FireDelayedDOMEvents(
+      bool aIncludeSubWindows) = 0;
 
   
 
@@ -602,7 +603,7 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   virtual bool GetFullScreen() = 0;
 
   virtual nsresult Focus(mozilla::dom::CallerType aCallerType) = 0;
-  virtual nsresult Close() = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult Close() = 0;
 
   mozilla::dom::DocGroup* GetDocGroup() const;
 
@@ -892,7 +893,8 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
   
   
-  virtual nsresult FireDelayedDOMEvents(bool aIncludeSubWindows) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult FireDelayedDOMEvents(
+      bool aIncludeSubWindows) = 0;
 
   
 
@@ -917,7 +919,7 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
 
 
-  virtual nsresult SetNewDocument(
+  MOZ_CAN_RUN_SCRIPT virtual nsresult SetNewDocument(
       Document* aDocument, nsISupports* aState, bool aForceReuseInnerWindow,
       mozilla::dom::WindowGlobalChild* aActor = nullptr) = 0;
 
@@ -947,15 +949,15 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   virtual void LeaveModalState() = 0;
 
   virtual bool CanClose() = 0;
-  virtual void ForceClose() = 0;
+  MOZ_CAN_RUN_SCRIPT virtual void ForceClose() = 0;
 
   
 
 
 
-  virtual nsresult SetFullscreenInternal(FullscreenReason aReason,
-                                         bool aIsFullscreen) = 0;
-  virtual void FullscreenWillChange(bool aIsFullscreen) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult SetFullscreenInternal(
+      FullscreenReason aReason, bool aIsFullscreen) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual void FullscreenWillChange(bool aIsFullscreen) = 0;
   
 
 
@@ -964,7 +966,8 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
 
 
-  virtual void FinishFullscreenChange(bool aIsFullscreen) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual void FinishFullscreenChange(
+      bool aIsFullscreen) = 0;
 
   virtual void ForceFullScreenInWidget() = 0;
 
@@ -1038,7 +1041,7 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
 
 
-  virtual bool DispatchCustomEvent(
+  MOZ_CAN_RUN_SCRIPT virtual bool DispatchCustomEvent(
       const nsAString& aEventName,
       mozilla::ChromeOnlyDispatch aChromeOnlyDispatch =
           mozilla::ChromeOnlyDispatch::eNo) = 0;
@@ -1098,10 +1101,10 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
   virtual bool Closed() = 0;
   virtual bool GetFullScreen() = 0;
-  virtual nsresult SetFullScreen(bool aFullscreen) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult SetFullScreen(bool aFullscreen) = 0;
 
   virtual nsresult Focus(mozilla::dom::CallerType aCallerType) = 0;
-  virtual nsresult Close() = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult Close() = 0;
 
   virtual nsresult MoveBy(int32_t aXDif, int32_t aYDif) = 0;
 

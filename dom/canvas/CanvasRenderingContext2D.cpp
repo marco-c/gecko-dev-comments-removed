@@ -1415,7 +1415,8 @@ void CanvasRenderingContext2D::OnRemoteCanvasLost() {
   
   
   NS_DispatchToCurrentThread(NS_NewCancelableRunnableFunction(
-      "CanvasRenderingContext2D::OnRemoteCanvasLost", [self = RefPtr{this}] {
+      "CanvasRenderingContext2D::OnRemoteCanvasLost",
+      [self = RefPtr{this}]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
         
         
         
@@ -1438,7 +1439,7 @@ void CanvasRenderingContext2D::OnRemoteCanvasRestored() {
   
   NS_DispatchToCurrentThread(NS_NewCancelableRunnableFunction(
       "CanvasRenderingContext2D::OnRemoteCanvasRestored",
-      [self = RefPtr{this}] {
+      [self = RefPtr{this}]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
         
         if (!self->mHasShutdown && self->mIsContextLost &&
             self->mAllowContextRestore) {

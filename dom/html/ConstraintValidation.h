@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ConstraintValidition_h_
 #define mozilla_dom_ConstraintValidition_h_
 
@@ -20,7 +18,7 @@ class ConstraintValidation : public nsIConstraintValidation {
   
   void GetValidationMessage(nsAString& aValidationMessage,
                             mozilla::ErrorResult& aError);
-  bool CheckValidity();
+  MOZ_CAN_RUN_SCRIPT bool CheckValidity();
 
  protected:
   

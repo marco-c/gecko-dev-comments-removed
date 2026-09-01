@@ -124,6 +124,14 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
   
 
 
+  bool GetScriptIsSpeculationRules() {
+    MOZ_ASSERT(mFrozen, "Not ready for this call yet!");
+    return mKind == JS::loader::ScriptKind::eSpeculationRules;
+  }
+
+  
+
+
   bool GetScriptDeferred() {
     MOZ_ASSERT(mFrozen, "Not ready for this call yet!");
     return mDefer;
@@ -216,7 +224,7 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
 
 
 
-  bool AttemptToExecute(nsCOMPtr<nsIParser> aParser);
+  MOZ_CAN_RUN_SCRIPT bool AttemptToExecute(nsCOMPtr<nsIParser> aParser);
 
   
 
@@ -241,7 +249,7 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
   
 
 
-  virtual nsresult FireErrorEvent() = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult FireErrorEvent() = 0;
 
   
 
@@ -268,7 +276,8 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
 
 
 
-  virtual bool MaybeProcessScript(nsCOMPtr<nsIParser> aParser) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual bool MaybeProcessScript(
+      nsCOMPtr<nsIParser> aParser) = 0;
 
   
 

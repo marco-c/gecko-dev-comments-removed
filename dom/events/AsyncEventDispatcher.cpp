@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/AsyncEventDispatcher.h"
 
 #include "mozilla/BasicEvents.h"
@@ -52,7 +50,7 @@ AsyncEventDispatcher::Run() {
   if (mEventMessage != eUnidentifiedEvent) {
     MOZ_ASSERT(mComposed == Composed::eDefault);
     return nsContentUtils::DispatchTrustedEvent<WidgetEvent>(
-        node->OwnerDoc(), mTarget, mEventMessage, mCanBubble, Cancelable::eNo,
+        mTarget, mEventMessage, mCanBubble, Cancelable::eNo,
         nullptr , mOnlyChromeDispatch);
   }
   

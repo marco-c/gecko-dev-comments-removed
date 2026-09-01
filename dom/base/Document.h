@@ -399,10 +399,9 @@ class ExternalResourceMap {
 
 
 
-  Document* RequestResource(nsIURI* aURI, nsIReferrerInfo* aReferrerInfo,
-                            nsINode* aRequestingNode,
-                            Document* aDisplayDocument,
-                            ExternalResourceLoad** aPendingLoad);
+  MOZ_CAN_RUN_SCRIPT Document* RequestResource(
+      nsIURI* aURI, nsIReferrerInfo* aReferrerInfo, nsINode* aRequestingNode,
+      Document* aDisplayDocument, ExternalResourceLoad** aPendingLoad);
 
   
 
@@ -526,9 +525,10 @@ class ExternalResourceMap {
 
 
 
-  nsresult AddExternalResource(nsIURI* aURI, nsIDocumentViewer* aViewer,
-                               nsILoadGroup* aLoadGroup,
-                               Document* aDisplayDocument);
+  MOZ_CAN_RUN_SCRIPT nsresult AddExternalResource(nsIURI* aURI,
+                                                  nsIDocumentViewer* aViewer,
+                                                  nsILoadGroup* aLoadGroup,
+                                                  Document* aDisplayDocument);
 
   nsClassHashtable<nsURIHashKey, ExternalResource> mMap;
   nsRefPtrHashtable<nsURIHashKey, PendingLoad> mPendingLoads;
@@ -1854,7 +1854,11 @@ class Document : public nsINode,
 
   AttributeStyles* GetAttributeStyles() const { return mAttributeStyles.get(); }
 
-  virtual void SetScriptGlobalObject(nsIScriptGlobalObject* aGlobalObject);
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual void SetScriptGlobalObject(
+      nsIScriptGlobalObject* aGlobalObject);
 
   
 
@@ -1995,13 +1999,15 @@ class Document : public nsINode,
 
 
 
-  void RequestFullscreen(UniquePtr<FullscreenRequest> aRequest,
-                         bool aApplyFullscreenDirectly = false);
+  MOZ_CAN_RUN_SCRIPT void RequestFullscreen(
+      UniquePtr<FullscreenRequest> aRequest,
+      bool aApplyFullscreenDirectly = false);
 
  private:
   void RequestFullscreenInContentProcess(UniquePtr<FullscreenRequest> aRequest,
                                          bool aApplyFullscreenDirectly);
-  void RequestFullscreenInParentProcess(UniquePtr<FullscreenRequest> aRequest);
+  MOZ_CAN_RUN_SCRIPT void RequestFullscreenInParentProcess(
+      UniquePtr<FullscreenRequest> aRequest);
 
   
   void TopLayerPush(Element&);
@@ -2080,8 +2086,8 @@ class Document : public nsINode,
 
 
 
-  void RemoteFrameFullscreenChanged(Element* aFrameElement,
-                                    bool aFullscreenKeyboardLockEnabled);
+  MOZ_CAN_RUN_SCRIPT void RemoteFrameFullscreenChanged(
+      Element* aFrameElement, bool aFullscreenKeyboardLockEnabled);
 
   
 
@@ -2092,14 +2098,15 @@ class Document : public nsINode,
 
 
 
-  void RemoteFrameFullscreenReverted();
+  MOZ_CAN_RUN_SCRIPT void RemoteFrameFullscreenReverted();
 
   
 
 
 
 
-  void RestorePreviousFullscreenState(UniquePtr<FullscreenExit>);
+  MOZ_CAN_RUN_SCRIPT void RestorePreviousFullscreenState(
+      UniquePtr<FullscreenExit>);
 
   
 
@@ -2273,7 +2280,7 @@ class Document : public nsINode,
   void RemoveWorkerDocumentListener(WorkerDocumentListener* aListener);
 
   
-  void UpdateSVGUseElementShadowTrees() {
+  MOZ_CAN_RUN_SCRIPT void UpdateSVGUseElementShadowTrees() {
     if (mSVGUseElementsNeedingShadowTreeUpdate.IsEmpty()) {
       return;
     }
@@ -2570,7 +2577,7 @@ class Document : public nsINode,
   virtual void Destroy();
 
   
-  void CloseAnyAssociatedDocumentPiPWindows();
+  MOZ_CAN_RUN_SCRIPT void CloseAnyAssociatedDocumentPiPWindows();
 
   
 
@@ -2623,8 +2630,9 @@ class Document : public nsINode,
 
 
 
-  virtual void OnPageShow(bool aPersisted, EventTarget* aDispatchStartTarget,
-                          bool aOnlySystemGroup = false);
+  MOZ_CAN_RUN_SCRIPT virtual void OnPageShow(bool aPersisted,
+                                             EventTarget* aDispatchStartTarget,
+                                             bool aOnlySystemGroup = false);
 
   
 
@@ -2639,8 +2647,9 @@ class Document : public nsINode,
 
 
 
-  void OnPageHide(bool aPersisted, EventTarget* aDispatchStartTarget,
-                  bool aOnlySystemGroup = false);
+  MOZ_CAN_RUN_SCRIPT void OnPageHide(bool aPersisted,
+                                     EventTarget* aDispatchStartTarget,
+                                     bool aOnlySystemGroup = false);
 
   
 
@@ -2827,10 +2836,9 @@ class Document : public nsINode,
 
 
 
-  Document* RequestExternalResource(nsIURI* aURI,
-                                    nsIReferrerInfo* aReferrerInfo,
-                                    nsINode* aRequestingNode,
-                                    ExternalResourceLoad** aPendingLoad);
+  MOZ_CAN_RUN_SCRIPT Document* RequestExternalResource(
+      nsIURI* aURI, nsIReferrerInfo* aReferrerInfo, nsINode* aRequestingNode,
+      ExternalResourceLoad** aPendingLoad);
 
   
 
@@ -3133,7 +3141,7 @@ class Document : public nsINode,
 
 
 
-  already_AddRefed<Document> CreateStaticClone(
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Document> CreateStaticClone(
       nsIDocShell* aCloneContainer, nsIDocumentViewer* aDocumentViewer,
       nsIPrintSettings* aPrintSettings, bool* aOutHasInProcessPrintCallbacks);
 
@@ -3455,7 +3463,7 @@ class Document : public nsINode,
   
   
   enum class DispatchVisibilityChange { No, Yes };
-  void UpdateVisibilityState(
+  MOZ_CAN_RUN_SCRIPT void UpdateVisibilityState(
       DispatchVisibilityChange = DispatchVisibilityChange::Yes);
 
   
@@ -3755,7 +3763,7 @@ class Document : public nsINode,
   
   Element* GetUnretargetedFullscreenElement() const;
   bool Fullscreen() const { return !!GetUnretargetedFullscreenElement(); }
-  already_AddRefed<Promise> ExitFullscreen(ErrorResult&);
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> ExitFullscreen(ErrorResult&);
   void ExitPointerLock() {
     PointerLockManager::Unlock("Document::ExitPointerLock", this);
   }
@@ -4597,7 +4605,7 @@ class Document : public nsINode,
   
   WindowContext* GetWindowContextForPageUseCounters() const;
 
-  void DoUpdateSVGUseElementShadowTrees();
+  MOZ_CAN_RUN_SCRIPT void DoUpdateSVGUseElementShadowTrees();
 
   already_AddRefed<nsIPrincipal> MaybeDowngradePrincipal(
       nsIPrincipal* aPrincipal);

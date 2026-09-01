@@ -873,7 +873,7 @@ void nsDOMMutationObserver::HandleMutationsInternal(AutoSlowOperation& aAso) {
   
   for (const nsTArray<RefPtr<HTMLSlotElement>>& signalList : signalLists) {
     for (const RefPtr<HTMLSlotElement>& signal : signalList) {
-      signal->FireSlotChangeEvent();
+      MOZ_KnownLive(signal)->FireSlotChangeEvent();
     }
   }
 }

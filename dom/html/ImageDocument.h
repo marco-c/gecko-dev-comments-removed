@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ImageDocument_h
 #define mozilla_dom_ImageDocument_h
 
@@ -41,8 +39,9 @@ class ImageDocument final : public MediaDocument,
 
   void SetScriptGlobalObject(nsIScriptGlobalObject*) override;
   void Destroy() override;
-  void OnPageShow(bool aPersisted, EventTarget* aDispatchStartTarget,
-                  bool aOnlySystemGroup = false) override;
+  MOZ_CAN_RUN_SCRIPT void OnPageShow(bool aPersisted,
+                                     EventTarget* aDispatchStartTarget,
+                                     bool aOnlySystemGroup = false) override;
 
   NS_DECL_IMGINOTIFICATIONOBSERVER
 

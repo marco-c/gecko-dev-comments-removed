@@ -320,7 +320,7 @@ class HTMLFormElement final : public nsGenericHTMLElement {
 
   MOZ_CAN_RUN_SCRIPT void Reset();
 
-  bool CheckValidity() { return CheckFormValidity(nullptr); }
+  MOZ_CAN_RUN_SCRIPT bool CheckValidity() { return CheckFormValidity(nullptr); }
 
   MOZ_CAN_RUN_SCRIPT
   bool ReportValidity() { return CheckValidFormSubmission(); }
@@ -420,7 +420,8 @@ class HTMLFormElement final : public nsGenericHTMLElement {
 
 
 
-  bool CheckFormValidity(nsTArray<RefPtr<Element>>* aInvalidElements) const;
+  MOZ_CAN_RUN_SCRIPT bool CheckFormValidity(
+      nsTArray<RefPtr<Element>>* aInvalidElements) const;
 
   
   void Clear();

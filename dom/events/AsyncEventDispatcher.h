@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_AsyncEventDispatcher_h_
 #define mozilla_AsyncEventDispatcher_h_
 
@@ -166,7 +164,7 @@ class AsyncEventDispatcher : public CancelableRunnable {
       Composed aComposed);
 
  public:
-  nsCOMPtr<dom::EventTarget> mTarget;
+  MOZ_KNOWN_LIVE const nsCOMPtr<dom::EventTarget> mTarget;
   RefPtr<dom::Event> mEvent;
   
   

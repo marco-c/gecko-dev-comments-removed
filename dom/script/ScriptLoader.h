@@ -224,8 +224,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
-  bool ProcessScriptElement(nsIScriptElement* aElement,
-                            const nsAString& aSourceText);
+  MOZ_CAN_RUN_SCRIPT bool ProcessScriptElement(nsIScriptElement* aElement,
+                                               const nsAString& aSourceText);
 
   
 
@@ -356,9 +356,10 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
-  nsresult OnStreamComplete(nsIChannel* aChannel, ScriptLoadRequest* aRequest,
-                            nsresult aChannelStatus, nsresult aSRIStatus,
-                            SRICheckDataVerifier* aSRIDataVerifier);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  OnStreamComplete(nsIChannel* aChannel, ScriptLoadRequest* aRequest,
+                   nsresult aChannelStatus, nsresult aSRIStatus,
+                   SRICheckDataVerifier* aSRIDataVerifier);
 
   
 
@@ -373,7 +374,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
 
 
-  void ProcessPendingRequests(bool aAllowBypassingParserBlocking = false);
+  MOZ_CAN_RUN_SCRIPT void ProcessPendingRequests(
+      bool aAllowBypassingParserBlocking = false);
 
   
 
@@ -386,7 +388,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
-  void ParsingComplete(bool aTerminated);
+  MOZ_CAN_RUN_SCRIPT void ParsingComplete(bool aTerminated);
 
   
 
@@ -400,7 +402,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
-  void DeferCheckpointReached();
+  MOZ_CAN_RUN_SCRIPT void DeferCheckpointReached();
 
   
 
@@ -435,7 +437,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
-  nsresult ProcessOffThreadRequest(ScriptLoadRequest* aRequest);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  ProcessOffThreadRequest(ScriptLoadRequest* aRequest);
 
   bool AddPendingChildLoader(ScriptLoader* aChild) {
     
@@ -479,7 +482,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   nsIURI* GetBaseURI() const override;
 
  private:
-  ~ScriptLoader();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY ~ScriptLoader();
 
   already_AddRefed<ScriptLoadRequest> CreateLoadRequest(
       JS::loader::ScriptKind aKind, nsIURI* aURI, nsIScriptElement* aElement,
@@ -518,15 +521,16 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
 
 
-  void ContinueParserAsync(ScriptLoadRequest* aParserBlockingRequest);
+  MOZ_CAN_RUN_SCRIPT void ContinueParserAsync(
+      ScriptLoadRequest* aParserBlockingRequest);
 
-  bool ProcessExternalScript(nsIScriptElement* aElement,
-                             JS::loader::ScriptKind aScriptKind,
-                             nsIContent* aScriptContent);
+  MOZ_CAN_RUN_SCRIPT bool ProcessExternalScript(
+      nsIScriptElement* aElement, JS::loader::ScriptKind aScriptKind,
+      nsIContent* aScriptContent);
 
-  bool ProcessInlineScript(nsIScriptElement* aElement,
-                           JS::loader::ScriptKind aScriptKind,
-                           const nsAString& aSourceText);
+  MOZ_CAN_RUN_SCRIPT bool ProcessInlineScript(
+      nsIScriptElement* aElement, JS::loader::ScriptKind aScriptKind,
+      const nsAString& aSourceText);
 
   enum class CacheBehavior : uint8_t {
     DoNothingDisabled,
@@ -582,8 +586,9 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   nsresult StartClassicLoad(ScriptLoadRequest* aRequest,
                             const Maybe<nsAutoString>& aCharsetForPreload);
 
-  void OnDelayedReady(ScriptLoadRequest* aRequest,
-                      const Maybe<nsAutoString>& aCharsetForPreload);
+  MOZ_CAN_RUN_SCRIPT void OnDelayedReady(
+      ScriptLoadRequest* aRequest,
+      const Maybe<nsAutoString>& aCharsetForPreload);
 
   static void PrepareCacheInfoChannel(nsIChannel* aChannel,
                                       ScriptLoadRequest* aRequest);
@@ -626,10 +631,11 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   nsresult RestartLoad(ScriptLoadRequest* aRequest);
 
-  void HandleLoadError(ScriptLoadRequest* aRequest, nsresult aResult);
+  MOZ_CAN_RUN_SCRIPT void HandleLoadError(ScriptLoadRequest* aRequest,
+                                          nsresult aResult);
 
-  void HandleLoadErrorAndProcessPendingRequests(ScriptLoadRequest* aRequest,
-                                                nsresult aResult);
+  MOZ_CAN_RUN_SCRIPT void HandleLoadErrorAndProcessPendingRequests(
+      ScriptLoadRequest* aRequest, nsresult aResult);
 
   
 
@@ -692,9 +698,11 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
                                JS::CompileOptions& aOptions,
                                CompileOrDecodeTask** aCompileOrDecodeTask);
 
-  nsresult ProcessRequest(ScriptLoadRequest* aRequest);
-  nsresult CompileOffThreadOrProcessRequest(ScriptLoadRequest* aRequest);
-  void FireScriptAvailable(nsresult aResult, ScriptLoadRequest* aRequest);
+  MOZ_CAN_RUN_SCRIPT nsresult ProcessRequest(ScriptLoadRequest* aRequest);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  CompileOffThreadOrProcessRequest(ScriptLoadRequest* aRequest);
+  MOZ_CAN_RUN_SCRIPT void FireScriptAvailable(nsresult aResult,
+                                              ScriptLoadRequest* aRequest);
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void FireScriptEvaluated(
       nsresult aResult, ScriptLoadRequest* aRequest);

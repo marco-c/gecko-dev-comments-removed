@@ -4589,21 +4589,23 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
     return;
   }
 
-  
-  
-  
-  
-  
-  
-  mDocument->FlushExternalResources(flushType);
+  const RefPtr<Document> doc = mDocument;
 
   
   
   
   
-  mDocument->FlushPendingNotifications(FlushType::ContentAndNotify);
+  
+  
+  doc->FlushExternalResources(flushType);
 
-  mDocument->UpdateSVGUseElementShadowTrees();
+  
+  
+  
+  
+  doc->FlushPendingNotifications(FlushType::ContentAndNotify);
+
+  doc->UpdateSVGUseElementShadowTrees();
 
   
   
@@ -4620,7 +4622,7 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
     
     
     
-    mDocument->FlushUserFontSet();
+    doc->FlushUserFontSet();
 
     mPresContext->FlushCounterStyles();
 
@@ -4629,8 +4631,8 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
     mPresContext->FlushFontPaletteValues();
 
     
-    if (mDocument->HasAnimationController()) {
-      mDocument->GetAnimationController()->FlushResampleRequests();
+    if (doc->HasAnimationController()) {
+      doc->GetAnimationController()->FlushResampleRequests();
     }
   }
 
@@ -4643,7 +4645,7 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
 
     nsAutoScriptBlocker scriptBlocker;
     Maybe<uint64_t> innerWindowID;
-    if (auto* window = mDocument->GetInnerWindow()) {
+    if (auto* window = doc->GetInnerWindow()) {
       innerWindowID = Some(window->WindowID());
     }
     AutoProfilerStyleMarker tracingStyleFlush(std::move(mStyleCause),

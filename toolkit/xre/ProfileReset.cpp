@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsIAppStartup.h"
 #include "nsIFile.h"
 #include "nsIStringBundle.h"
@@ -139,7 +138,7 @@ nsresult ProfileResetCleanup(nsToolkitProfileService* aService,
   }
   
   auto* piWindow = nsPIDOMWindowOuter::From(progressWindow);
-  piWindow->Close();
+  MOZ_KnownLive(piWindow)->Close();
 
   return aService->ApplyResetProfile(aOldProfile);
 }

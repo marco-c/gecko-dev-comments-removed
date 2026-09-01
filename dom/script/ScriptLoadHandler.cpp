@@ -283,11 +283,38 @@ bool ScriptLoadHandler::TrySetDecoder(nsIChannel* aChannel,
 
   
   
-  encoding = mRequest->ClassicScriptFallbackEncoding();
-  MOZ_ASSERT(encoding);
+  nsAutoString hintCharset;
+  if (!mRequest->GetScriptLoadContext()->IsPreload()) {
+    mRequest->GetScriptLoadContext()->GetHintCharset(hintCharset);
+  } else {
+    nsTArray<ScriptLoader::PreloadInfo>::index_type i =
+        mScriptLoader->mPreloads.IndexOf(
+            mRequest, 0, ScriptLoader::PreloadRequestComparator());
 
-  mDecoder =
-      MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
+    NS_ASSERTION(i != mScriptLoader->mPreloads.NoIndex,
+                 "Incorrect preload bookkeeping");
+    hintCharset = mScriptLoader->mPreloads[i].mCharset;
+  }
+
+  if ((encoding = Encoding::ForLabel(hintCharset))) {
+    mDecoder =
+        MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
+    return true;
+  }
+
+  
+  if (mScriptLoader->mDocument) {
+    encoding = mScriptLoader->mDocument->GetDocumentCharacterSet();
+    mDecoder =
+        MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
+    return true;
+  }
+
+  
+  
+  
+  mDecoder = MakeUnique<ScriptDecoder>(WINDOWS_1252_ENCODING,
+                                       ScriptDecoder::BOMHandling::Ignore);
   return true;
 }
 
@@ -358,9 +385,7 @@ nsresult ScriptLoadHandler::EnsureKnownDataType(nsIChannel* aChannel) {
   if (nsCOMPtr<nsICacheInfoChannel> cic = do_QueryInterface(aChannel)) {
     nsAutoCString altDataType;
     cic->GetAlternativeDataType(altDataType);
-    nsAutoCString mimeType;
-    ScriptLoader::BytecodeMimeTypeFor(mRequest->getLoadedScript(), mimeType);
-    if (altDataType.Equals(mimeType)) {
+    if (altDataType.Equals(ScriptLoader::BytecodeMimeTypeFor(mRequest))) {
       mRequest->SetSerializedStencil();
       TRACE_FOR_TEST(mRequest, "load:diskcache");
       return NS_OK;
@@ -379,8 +404,8 @@ nsresult ScriptLoadHandler::EnsureKnownDataType(nsIChannel* aChannel) {
 NS_IMETHODIMP
 ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
                                     nsISupports* aContext, nsresult aStatus,
-                                    uint32_t aDataLength,
-                                    const uint8_t* aData) {
+                                    uint32_t aDataLength, const uint8_t* aData)
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY {
   nsCOMPtr<nsIRequest> channelRequest;
   aLoader->GetRequest(getter_AddRefs(channelRequest));
   nsCOMPtr<nsIChannel> channel = do_QueryInterface(channelRequest);
@@ -425,7 +450,7 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
       GetCurrentSerialEventTarget(), __func__,
       [self = RefPtr{this}, channel = std::move(channel),
        integrity = RefPtr{integrity}, computedHash = std::move(computedHash),
-       aStatus, aDataLength, aData](bool) {
+       aStatus, aDataLength, aData](bool) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
         MOZ_LOG_FMT(gWaictLog, LogLevel::Debug,
                     "ScriptLoadHandler::OnStreamComplete: WaitForManifestLoad "
                     "promise resolved");
@@ -565,8 +590,10 @@ nsresult ScriptLoadHandler::DoOnStreamComplete(nsIChannel* aChannel,
   
   
   
-  rv = mScriptLoader->OnStreamComplete(aChannel, mRequest, aStatus, mSRIStatus,
-                                       mSRIDataVerifier.get());
+  const RefPtr<ScriptLoader> scriptLoader = mScriptLoader;
+  const RefPtr<JS::loader::ScriptLoadRequest> request = mRequest;
+  rv = scriptLoader->OnStreamComplete(aChannel, request, aStatus, mSRIStatus,
+                                      mSRIDataVerifier.get());
 
   return rv;
 }

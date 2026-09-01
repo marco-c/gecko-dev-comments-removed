@@ -69,9 +69,9 @@ class IDTracker {
 
 
 
-  void ResetToURIWithFragmentID(Element& aFrom, nsIURI* aURI,
-                                nsIReferrerInfo* aReferrerInfo,
-                                bool aReferenceImage = false);
+  MOZ_CAN_RUN_SCRIPT void ResetToURIWithFragmentID(
+      Element& aFrom, nsIURI* aURI, nsIReferrerInfo* aReferrerInfo,
+      bool aReferenceImage = false);
 
   
 
@@ -87,10 +87,9 @@ class IDTracker {
 
 
 
-  void ResetToLocalFragmentID(Element& aFrom, const nsAString& aLocalRef,
-                              nsIURI* aBaseURI = nullptr,
-                              nsIReferrerInfo* aReferrerInfo = nullptr,
-                              bool aReferenceImage = false);
+  MOZ_CAN_RUN_SCRIPT void ResetToLocalFragmentID(
+      Element& aFrom, const nsAString& aLocalRef, nsIURI* aBaseURI = nullptr,
+      nsIReferrerInfo* aReferrerInfo = nullptr, bool aReferenceImage = false);
 
   
 
@@ -113,9 +112,9 @@ class IDTracker {
 
  protected:
   
-  void ResetToExternalResource(nsIURI* aURI, nsIReferrerInfo* aReferrerInfo,
-                               nsAtom* aRef, Element& aFrom,
-                               bool aReferenceImage);
+  MOZ_CAN_RUN_SCRIPT void ResetToExternalResource(
+      nsIURI* aURI, nsIReferrerInfo* aReferrerInfo, nsAtom* aRef,
+      Element& aFrom, bool aReferenceImage);
 
   
 

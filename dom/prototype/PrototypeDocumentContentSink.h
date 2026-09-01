@@ -212,7 +212,7 @@ class PrototypeDocumentContentSink final : public nsIStreamLoaderObserver,
 
 
 
-  nsresult DoneWalking();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult DoneWalking();
 
   
 
@@ -243,7 +243,7 @@ class PrototypeDocumentContentSink final : public nsIStreamLoaderObserver,
   nsresult InsertXMLStylesheetPI(const nsXULPrototypePI* aProtoPI,
                                  nsINode* aParent,
                                  XMLStylesheetProcessingInstruction* aPINode);
-  void CloseElement(Element* aElement);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void CloseElement(Element* aElement);
 };
 
 }  

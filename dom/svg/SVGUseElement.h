@@ -85,7 +85,7 @@ class SVGUseElement final : public SVGUseElementBase,
 
   
   
-  void UpdateShadowTree();
+  MOZ_CAN_RUN_SCRIPT void UpdateShadowTree();
 
   
   
@@ -153,7 +153,7 @@ class SVGUseElement final : public SVGUseElementBase,
 
   bool OurWidthAndHeightAreUsed() const;
   void SyncWidthOrHeight(nsAtom* aName);
-  void LookupHref();
+  MOZ_CAN_RUN_SCRIPT void LookupHref();
   void TriggerReclone();
   void UnlinkSource();
 
