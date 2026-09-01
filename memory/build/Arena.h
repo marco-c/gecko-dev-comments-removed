@@ -435,12 +435,12 @@ struct arena_t : public BaseAllocClass {
   
   bool RemoveChunk(arena_chunk_t* aChunk) MOZ_REQUIRES(mLock);
 
-  
-  
-  
-  [[nodiscard]] arena_chunk_t* DemoteChunkToSpare(arena_chunk_t* aChunk)
-      MOZ_REQUIRES(mLock);
+  void DemoteChunkToSpare(arena_chunk_t* aChunk) MOZ_REQUIRES(mLock);
 
+ public:
+  arena_chunk_t* RemoveOldestSpareChunk() MOZ_REQUIRES(mLock);
+
+ private:
   
   
   size_t TryCoalesce(arena_chunk_t* aChunk, size_t run_ind, size_t run_pages,
@@ -449,7 +449,7 @@ struct arena_t : public BaseAllocClass {
   arena_run_t* AllocRun(size_t aSize, bool aLarge, bool aZero)
       MOZ_REQUIRES(mLock);
 
-  arena_chunk_t* DallocRun(arena_run_t* aRun, bool aDirty) MOZ_REQUIRES(mLock);
+  void DallocRun(arena_run_t* aRun, bool aDirty) MOZ_REQUIRES(mLock);
 
 #ifndef MALLOC_DECOMMIT
   
@@ -523,16 +523,10 @@ struct arena_t : public BaseAllocClass {
 
   void* Palloc(size_t aAlignment, size_t aSize) MOZ_EXCLUDES(mLock);
 
-  
-  
-  
-  [[nodiscard]] inline arena_chunk_t* DallocSmall(arena_chunk_t* aChunk,
-                                                  void* aPtr,
-                                                  arena_chunk_map_t* aMapElm)
-      MOZ_REQUIRES(mLock);
+  inline void DallocSmall(arena_chunk_t* aChunk, void* aPtr,
+                          arena_chunk_map_t* aMapElm) MOZ_REQUIRES(mLock);
 
-  [[nodiscard]] arena_chunk_t* DallocLarge(arena_chunk_t* aChunk, void* aPtr)
-      MOZ_REQUIRES(mLock);
+  void DallocLarge(arena_chunk_t* aChunk, void* aPtr) MOZ_REQUIRES(mLock);
 
   void* Ralloc(void* aPtr, size_t aSize, size_t aOldSize) MOZ_EXCLUDES(mLock);
 
@@ -642,9 +636,7 @@ struct arena_t : public BaseAllocClass {
 
     
     
-    
-    std::pair<bool, arena_chunk_t*> UpdatePagesAndCounts()
-        MOZ_REQUIRES(mArena.mLock);
+    bool UpdatePagesAndCounts() MOZ_REQUIRES(mArena.mLock);
 
     
     
