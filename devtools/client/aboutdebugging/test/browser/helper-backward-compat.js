@@ -93,6 +93,16 @@ function addCompatTask(taskFn) {
       `Testing against ${brandName} ${version} (${channel}) on ${config.host}`
     );
 
+    
+
+
+
+
+
+
+
+
+
     if (isReleaseVersionTooOld(config)) {
       ok(
         true,

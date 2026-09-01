@@ -52,7 +52,8 @@ function computeMinMaxVersion(localVersion) {
     
     
     
-    minVersion: localMajorVersion - 2 + ".0a1",
+    
+    minVersion: localMajorVersion - 3 + ".0a1",
     
     
     
