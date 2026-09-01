@@ -2156,12 +2156,6 @@ enum GetCapabilitiesExecutorSlots {
                   PROMISE_FLAG_DEFAULT_RESOLVING_FUNCTIONS | extraFlags);
 
   
-  
-  if (!DebugAPI::onNewPromise(cx, promise)) {
-    return nullptr;
-  }
-
-  
   return promise;
 }
 
@@ -2188,12 +2182,6 @@ enum GetCapabilitiesExecutorSlots {
 
   promise->setFixedSlotTyped(PromiseObject::REJECT_FUNCTION_SLOT,
                              ObjectValue(*reject));
-
-  
-  
-  if (!DebugAPI::onNewPromise(cx, promise)) {
-    return nullptr;
-  }
 
   
   return promise;
@@ -3513,11 +3501,6 @@ PromiseObject* PromiseObject::create(JSContext* cx, HandleObject executor,
               &calleeOrRval)) {
       return nullptr;
     }
-  }
-
-  
-  if (!DebugAPI::onNewPromise(cx, promise)) {
-    return nullptr;
   }
 
   

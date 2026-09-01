@@ -206,7 +206,7 @@ class Completion {
 
   
   
-  Completion() : variant(Terminate()) {}
+  Completion() = default;
 
   
   
@@ -280,7 +280,7 @@ class Completion {
   struct BuildValueMatcher;
   struct ToResumeModeMatcher;
 
-  Variant variant;
+  Variant variant{Terminate()};
 };
 
 using WeakGlobalObjectSet =
@@ -564,7 +564,6 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
     OnEnterFrame,
     OnNativeCall,
     OnNewGlobalObject,
-    OnNewPromise,
     OnGarbageCollection,
     HookCount
   };
