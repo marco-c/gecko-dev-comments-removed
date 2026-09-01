@@ -5557,7 +5557,7 @@ void EventStateManager::NotifyMouseOut(WidgetMouseEvent* aMouseEvent,
   
   
   
-  if (!aMovingInto && !isPointer) {
+  if (!aMovingInto && (!isPointer || aMouseEvent->InputSourceSupportsHover())) {
     
     SetContentState(nullptr, ElementState::HOVER);
   }
@@ -5664,7 +5664,7 @@ void EventStateManager::NotifyMouseOver(WidgetMouseEvent* aMouseEvent,
                                        aMouseEvent,
                                        isPointer ? ePointerEnter : eMouseEnter);
 
-  if (!isPointer) {
+  if (!isPointer || aMouseEvent->InputSourceSupportsHover()) {
     SetContentState(aContent, ElementState::HOVER);
   }
 
