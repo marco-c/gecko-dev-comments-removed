@@ -870,6 +870,8 @@
   <string name="preferences_toolbar_shortcut">قورال بالداق تېزلەتمىسى</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_toolbar_select_shortcut">تېزلەتمە تاللىنىدۇ</string>
+  <!-- Title of a menu option allowing to change the shortcut button shown in the toolbar -->
+  <string name="toolbar_shortcut_menu_edit_option">تېزلەتمە تەھرىر</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_gestures">قول ئىشارىسى</string>
   <!-- Preference for settings related to visual options -->
@@ -1043,6 +1045,8 @@
   <string name="customize_toggle_pocket_sponsored">قوللىغان ھېكايىلەر</string>
   <!-- Title for the opening wallpaper settings screen -->
   <string name="customize_wallpapers">تام قەغىزى</string>
+  <!-- Label for the menu item that opens the customize homepage settings screen. -->
+  <string name="browser_menu_customize_homepage">باش بەتنى خاسلاشتۇر</string>
   <!-- Label for the menu item that opens the wallpaper settings screen. -->
   <string name="browser_menu_change_wallpaper">تام قەغەز ئۆزگەرت</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
@@ -1493,6 +1497,14 @@
   <!-- Title of inactive tabs preference -->
   <string name="preferences_inactive_tabs_title">سىز ئىككى ھەپتە كۆرمىگەن بەتكۈچلەر ئاكتىپسىز بۆلەككە يۆتكىلىدۇ.</string>
   <!--
+    Privacy report
+
+    Category header of a preference that allows a user to enable or disable the privacy report feature
+  -->
+  <string name="preferences_privacy_report">شەخسىيەت دوكلاتى</string>
+  <!-- Title of the privacy report preference that allows a user to enable or disable the feature -->
+  <string name="preferences_privacy_report_title">شەخسىيەت دوكلاتىنى قوزغات</string>
+  <!--
     Studies
 
     Title of the remove studies button
@@ -1710,10 +1722,24 @@
   <string name="tab_group_three_dot_button_content_description">تېخىمۇ كۆپ تاللانما</string>
   <!-- Text shown on the edit button for a tab group on the three dot menu -->
   <string name="tab_group_three_dot_menu_edit">تەھرىر</string>
+  <!-- Text shown on the ungroup button for a tab group on the three dot menu -->
+  <string name="tab_group_three_dot_menu_ungroup">گۇرۇپپىلىما</string>
   <!-- Text shown on the delete button for a tab group on the three dot menu -->
   <string name="tab_group_three_dot_menu_delete">ئۆچۈر</string>
+  <!-- Text shown on the share button for a tab group on the three dot menu -->
+  <string name="tab_group_three_dot_menu_share">ھەمبەھىر</string>
   <!-- Text shown on the close button for a tab group on the three dot menu -->
   <string name="tab_group_three_dot_menu_close">ياپ</string>
+  <!-- Title for the Ungroup tab group confirmation dialog. -->
+  <string name="ungroup_tab_group_confirmation_dialog_title">بەتكۈچ گۇرۇپپىسىنى ئۆچۈرەمدۇ؟</string>
+  <!-- Text shown in the body of the Ungroup tab group confirmation dialog. -->
+  <string name="ungroup_tab_group_confirmation_dialog_body">بەتكۈچلەر بۇ ئۈسكۈنىدە ئوچۇق تۇرىدۇ ئەمما گۇرۇپپا ئۆچۈرۈلىدۇ.</string>
+  <!-- Text shown on the Don't Ask Again checkbox button in the Ungroup tab group confirmation dialog. -->
+  <string name="ungroup_tab_group_confirmation_dialog_dont_ask_again">قايتا سورىما</string>
+  <!-- Text shown on the confirm button in the Ungroup tab group confirmation dialog. -->
+  <string name="ungroup_tab_group_confirmation_dialog_confirm">گۇرۇپپىلىما</string>
+  <!-- Text shown on the cancel button in the Ungroup tab group confirmation dialog. -->
+  <string name="ungroup_tab_group_confirmation_dialog_cancel">ۋاز كەچ</string>
   <!--
     Color labels for tab groups, used for accessibility and selection UI.
 
@@ -2415,6 +2441,10 @@
   <string name="sync_sign_in">قەدەمداشلاشتا تىزىمغا كىرىڭ</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">ھەممە ئۈسكۈنىگە يوللا</string>
+  <!-- Text displayed when no other sync devices are available for link sharing -->
+  <string name="sync_no_devices_available">ھېچقانداق ئۈسكۈنە يوق</string>
+  <!-- Text displayed when no other sync devices are available for link sharing. -->
+  <string name="sync_no_devices_available_description">بۇ ھېسابتا ھەر قانداق ئۈسكۈنە تىزىمغا كىرسە ۋە قەدەمداشلىسا بۇ جايدا كۆرۈنىدۇ.</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">قەدەمداشقا قايتا باغلىنىدۇ</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
@@ -3164,6 +3194,14 @@
   <string name="ip_protection_location_unavailable" tools:ignore="UnusedResources">ئورۇننى ئىشلەتكىلى بولمايدۇ. باشقا ئورۇننى تاللاڭ.</string>
   <!-- Snackbar (in-app pop-up notification) text shown when the previously selected browser VPN location is unavailable and the recommended location was used instead. -->
   <string name="ip_protection_location_unavailable_recommended_snackbar" tools:ignore="UnusedResources">تاللىغان VPN نى ئىشلەتكىلى بولمايدۇ. تەۋسىيە قىلىنغان ئورۇنغا باغلاندى.</string>
+  <!-- Title for the card shown to the user when we are unable to fetch server locations -->
+  <string name="ip_protection_locations_unavailable_title">ئورۇن ئۇچۇرى يوق</string>
+  <!-- Description for the card shown to the user when we are unable to fetch server locations -->
+  <string name="ip_protection_locations_unavailable_description">تەۋسىيە قىلىنغان ئورۇنغا ئالماشتى.</string>
+  <!-- Title for the browser VPN location selection screen (displayed in the app bar) -->
+  <string name="ip_protection_locations_title">VPN ئورنى تاللىنىدۇ</string>
+  <!-- Content description for the browser VPN location selection screen top bar back button -->
+  <string name="ip_protection_locations_navigate_back_button_content_description">كەينىگە قايت</string>
   <!-- Title for the card shown to the user when we are unable to fetch server locations -->
   <string name="ip_protection_location_unavailable_title" tools:ignore="UnusedResources">ئالدىنقى ئورۇننى ئىشلەتكىلى بولمايدۇ</string>
   <!-- Description for the card shown to the user when we are unable to fetch server locations -->
@@ -4510,6 +4548,10 @@
   <string name="sports_widget_final">ھەل قىلغۇچ مۇسابىقە</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
   <string name="sports_widget_bronze_final">مىس مېدال ھەل قىلغۇچ مۇسابىقىسى</string>
+  <!-- Sports widget error card message shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed" tools:ignore="UnusedResources">ھازىر مۇسابىقە ئۇچۇرىنى ئىشلەتكىلى بولمايدۇ. بىر قانچە مىنۇتتىن كېيىن قايتا يېڭىلاڭ.</string>
+  <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
+  <string name="sports_widget_error_connection_interrupted" tools:ignore="UnusedResources">باغلىنىش ئۈزۈلدى — شۇئان يېڭىلاش ۋاقىتلىق توختىتىلدى.</string>
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">يېڭىلا</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
@@ -4542,6 +4584,12 @@
   <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">مۇسابىقە تەپسىلاتىنى كۆرسەت</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches" tools:ignore="UnusedResources">مۇناسىۋەتلىك مۇسابىقە</string>
+  <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
+  <string name="sports_widget_upcoming" tools:ignore="UnusedResources">يېقىنلىشىۋاتقىنى</string>
+  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_suffix">(مۇسابىقە ئاخىرى)</string>
+  <!-- Sports widget match status to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_2">مۇسابىقە ئاخىرى</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
@@ -4550,24 +4598,117 @@
     or tracking in a technical sense; the meaning is about staying informed.
   -->
   <string name="sports_widget_card_title">دۇنيا لوڭقىسى مۇسابىقە ئۇچۇرى</string>
+  <!-- Sports widget card description shown below the title on the homepage entry point. -->
+  <string name="sports_widget_card_description">شۇئان مۇسابىقە يېڭىلانما ئۇچۇرى ۋە باشقىلارغا ئېرىشىدۇ.</string>
   <!-- Sports widget menu item to change the selected team. -->
   <string name="sports_widget_change_team">كوماندا ئالماشتۇر</string>
+  <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
+  <string name="sports_widget_get_custom_wallpaper">ئىختىيارىي تام قەغەزگە ئېرىش</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove">چىقىرىۋەت</string>
+  <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
+  <string name="sports_widget_still_want_to_follow">يەنىلا ئەگىشىشنى داۋملاشتۇرامدۇ؟</string>
+  <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
+  <string name="sports_widget_choose_another_team">باشقا پۇتبول كوماندىسىنى تاللاپ دۇنيا لوڭقىسى پۇتبول مۇسابىقىسىنىڭ ئەڭ يېڭى خەۋىرىگە ئەگىشىدۇ.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">باشقا كوماندىغا ئەگەش</string>
+  <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
+  <string name="sports_widget_countdown_to_world_cup">دۇنيا لوڭقىسى پۇتبول مۇسابىقىسى باشلىنىش ۋاقتى</string>
+  <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
+  <string name="sports_widget_view_schedule">كۈنتەرتىپنى كۆرسەت</string>
   <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
   <string name="sports_widget_skip">ئاتلا</string>
+  <!-- Sports widget match status label shown during halftime of a match. -->
+  <string name="sports_widget_halftime" tools:ignore="UnusedResources">ئوتتۇرا مەيدان دەم ئېلىش</string>
+  <!-- Sports widget match status label shown during extra time of a match. -->
+  <string name="sports_widget_extra_time">ئۇزارتىلغان ۋاقىت</string>
+  <!-- Sports widget match status label shown during penalties of a match. -->
+  <string name="sports_widget_penalties">نۇقتا توپ</string>
   <!--
     Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
     if there is an equivalent single character for your language, use that (e.g. T for German).
     Your translation will be automatically truncated at 2 characters to avoid layout issues.
   -->
   <string name="sports_widget_countdown_days">ك</string>
+  <!--
+    Sports widget countdown pill abbreviated label for hours. H is short for Hour. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. S for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_hours">س</string>
+  <!--
+    Sports widget countdown pill abbreviated label for minutes. M is short for Minute. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that.
+    Your translation will be automatically truncated at 2 characters to avoid layout issues
+  -->
+  <string name="sports_widget_countdown_minutes">م</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
+  <string name="sports_widget_close_team_selection_sheet_content_description">كوماندا تاللاش جەدۋىلىنى ياپىدۇ</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
   <string name="sports_widget_close_content_description">ياپ</string>
   <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
   <string name="sports_widget_more_options_content_description">تېخىمۇ كۆپ تاللانما</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
+    %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
+  -->
+  <string name="sports_widget_countdown_remaining_content_description">قالغان ۋاقىت. كۈن: %1$d. سائەت: %2$d. مىنۇت: %3$d.</string>
+  <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
+  <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">دۇنيا لوڭقىسى تور بېكىتىگە يۆتكىلىدۇ</string>
+  <!--
+    Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
+    %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
+  -->
+  <string name="sports_widget_upcoming_match_content_description">كېلەر قېتىملىق: %1$s - %2$s، %3$s - %4$s</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing a soccer match.
+    %1$s is the home team name, %2$s is the away team name, %3$s is trailing context
+    (e.g. formatted score "1 - 2 (Full time)", upcoming match info "Jun 19 5:00 PM",
+    or a match status like "Full time").
+  -->
+  <string name="sports_widget_match_content_description">%1$s - %2$s، %3$s</string>
+  <!--
+    Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
+    %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
+    or Final represented by sports_widget_final).
+  -->
+  <string name="sports_widget_live_game_content_description">%s، نەق مەيدان مۇسابىقە</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing a live score.
+    %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
+    and %5$s is the match elapsed time (e.g. 72 minutes).
+  -->
+  <string name="sports_widget_live_score_content_description">%1$s %2$d، %3$s %4$d، %5$s، شۇئان</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing the elapsed minutes of a live match.
+    %1$s is the clock value, which may be a plain number (e.g. "72") or include extra time (e.g. "90+3").
+  -->
+  <string name="sports_widget_match_elapsed_minutes">مۇسابىقە ۋاقتى(مىنۇت): %1$s</string>
+  <!--
+    Content description (for accessibility, not displayed) for a paginated item.
+    %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
+    %2$d is the current page number, and %3$d is the total number of pages.
+  -->
+  <string name="sports_widget_page_position_content_description">%1$s، %2$d/%3$d بەت</string>
+  <!--
+    Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
+    %1$d is the current page number, and %2$d is the total number of pages.
+  -->
+  <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">دۇنيا لوڭقىسى ھەل قىلغۇچ مۇسابىقىسىنىڭ نەتىجىسى، %1$d/%2$d بەت</string>
+  <!-- Content description (for accessibility, not displayed) for the World Cup final results page. -->
+  <string name="sports_widget_final_results_content_description">دۇنيا لوڭقىسى ھەل قىلغۇچ مۇسابىقىسىنىڭ نەتىجىسى</string>
+  <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
+  <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">دۇنيا لوڭقىسىنى باش بەتتىن چىقىرىۋەت</string>
+  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
+  <string name="sports_widget_team_followed_title">ئەگىشىۋاتقانلار: %s</string>
+  <!-- Description shown on the sports widget immediately after the user has followed a team -->
+  <string name="sports_widget_team_followed_description">مۇسابىقە يېقىنلاشقاندا قايتىپ كېلىپ مۇسابىقە ئۇچۇرىنى تەكشۈرۈڭ.</string>
+  <!-- Sports widget match status label shown during first half of a match. -->
+  <string name="sports_widget_first_half" tools:ignore="UnusedResources">ئالدىنقى يېرىم مەيدان</string>
+  <!-- Sports widget match status label shown during second half of a match. -->
+  <string name="sports_widget_second_half" tools:ignore="UnusedResources">كېيىنكى يېرىم مەيدان</string>
+  <!-- Sports widget error card title shown when the user is offline. -->
+  <string name="sports_widget_error_connection_offline_title">توردا ئەمەستەك قىلىسىز.</string>
   <!-- Sports widget error card description shown when the user is offline. -->
   <string name="sports_widget_error_connection_offline_description">ئىنتېرنېت باغلىنىشىڭىزنى تەكشۈرۈپ ئاندىن قايتا سىناڭ.</string>
   <!-- Sports widget general group stage label in the soccer tournament. -->
@@ -4576,6 +4717,8 @@
   <string name="sports_widget_error_load_failed_title">ھازىرچە مۇسابىقە ئۇچۇرى يوق.</string>
   <!-- Sports widget error card description shown when match data fails to load. -->
   <string name="sports_widget_error_load_failed_description">بىر نەچچە مىنۇتتىن كېيىن يېڭىلاپ كۆرۈڭ.</string>
+  <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
+  <string name="sports_widget_team_to_be_determined">كوماندا بېكىتىلىدۇ</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--
@@ -4590,6 +4733,26 @@
   <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">شەخسىيەت ئۇقتۇرۇشى</string>
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">مول بىلىم</string>
+  <!--
+    Collections migration homepage card
+
+    Title shown on the collections to tab groups migration card on the homepage.
+  -->
+  <string name="collections_migration_homepage_banner_title">ھازىر توپلام گۇرۇپپىغا ئۆزگەردى</string>
+  <!-- Message shown on the collections to tab groups migration card on the homepage. -->
+  <string name="collections_migration_homepage_card_message">بەتكۈچنى رەتلىك ساقلاشنىڭ ئاددىي ئۇسۇلى بار</string>
+  <!-- Link text shown on the collections to tab groups migration card that opens the tab groups page in the tab manager. -->
+  <string name="collections_migration_homepage_card_link">بەتكۈچ گۇرۇپپىسىنى كۆرسەت</string>
+  <!-- Google Lens prototype related strings -->
+  <string name="preferences_debug_settings_google_lens_integration">Google Lens توپلاشتۇرۇشنى قوزغات</string>
+  <!-- Lens image search button content description -->
+  <string name="lens_search_content_description">سۈرەت بىلەن ئىزدە</string>
+  <!-- Content description for the gallery picker button in the Lens camera screen -->
+  <string name="content_description_gallery">سۈرەت توپلىمىدىن تاللاپ Google Lens غا يوللايدۇ</string>
+  <!-- Content description for the shutter button in the Lens camera screen -->
+  <string name="content_description_take_photo">سۈرەت تارتىپ Google Lens غا يوللايدۇ</string>
+  <!-- Image context menu entry that sends the long-pressed image to Google Lens -->
+  <string name="context_menu_open_image_with_google_lens">Google Lens بىلەن ئىزدە</string>
   <!-- Toast shown when the user denies the camera permission requested by the Lens camera screen -->
   <string name="lens_camera_permission_denied">ئىجازەت رەت قىلىندى</string>
   <!--
@@ -4597,16 +4760,79 @@
     user that the photo they capture will be sent to Google Lens for a visual search.
   -->
   <string name="lens_camera_title_lens">Google Lens</string>
+  <!--
+    Title shown at the top of the camera screen, next to the close button, telling the
+    user that the camera is being used to scan a QR code.
+  -->
+  <string name="lens_camera_title_qr">QR كودى</string>
+  <!-- Title for the Google Lens Search Settings page feature toggle -->
+  <string name="search_settings_google_lens_title">Google Lens ئىزدەشنى قوزغات</string>
+  <!-- Description for the Google Lens Search Settings page feature toggle -->
+  <string name="search_settings_google_lens_description">كۆرۈنۈش بويىچە ئىزدەش ئۈچۈن سۈرەت ۋە رەسىمنى يوللايدۇ.</string>
+  <!-- Caption shown under the Google Lens toggle clarifying when the feature is available -->
+  <string name="preferences_google_lens_availability_caption">پەقەت ئۈستىدە Google نى قوزغىتىپ، توركۆرگۈنىڭ ئاكتىپ ئىزدەش موتورى سۈپىتىدە ئاكتىپلاندىلا ئىشلەتكىلى بولىدۇ.</string>
   <!-- Title for the Google Lens AI feature toggle -->
   <string name="ai_controls_google_lens_title">Google Lens</string>
+  <!-- Description for the Google Lens AI feature toggle -->
+  <string name="ai_controls_google_lens_description">كۆرۈنۈش بويىچە ئىزدەش ئۈچۈن سۈرەت ۋە رەسىمنى يوللايدۇ.</string>
   <!-- Content description for the Google Lens half of the camera mode toggle -->
   <string name="lens_camera_mode_lens">Google Lens</string>
   <!-- Content description for the QR scanner half of the camera mode toggle -->
   <string name="lens_camera_mode_qr">QR تارىغۇچ</string>
   <!-- Toast shown when the user picks an image from the gallery in QR mode but no QR code is found in it -->
   <string name="lens_camera_qr_no_code_found">سۈرەتتە ھېچقانداق QR كودى تېپىلمىدى</string>
+  <!-- Title of the bottom sheet shown the first time the user opens the Google Lens camera screen -->
+  <string name="lens_opt_out_title">Google Lens بىلەن ئىزدە</string>
+  <!-- Description of the bottom sheet shown the first time the user opens the Google Lens camera screen -->
+  <string name="lens_opt_out_description">Google Lens دىن نەتىجىگە ئېرىشىش ئۈچۈن بىر سۈرەت تاللاڭ ياكى كامېرايىڭىزنى ئىشلىڭ.</string>
+  <!-- Text of the link in the first-run Google Lens bottom sheet that opens the Search settings page -->
+  <string name="lens_opt_out_settings_link">Google Lens تەڭشىكى</string>
+  <!-- Button in the first-run Google Lens bottom sheet that dismisses it and starts the camera -->
+  <string name="lens_opt_out_try_it_now_button">ھازىر سىنا</string>
+  <!-- Button in the first-run Google Lens bottom sheet that leaves Google Lens without using it -->
+  <string name="lens_opt_out_not_now_button">ھازىر ئەمەس</string>
+  <!--
+    Firefox Labs
+
+    Firefox Labs is the name of a screen in Settings to allow users to learn about
+    experimental and in-development features, and turn those features on and off.
+    The "Labs" portion can be localized, "Firefox" must be treated as a brand and kept
+    in English.
+  -->
+  <string name="firefox_labs_title" tools:ignore="BrandUsage">Firefox تەجرىبەخانىسى</string>
+  <!-- Banner title text on the Firefox Labs screen. -->
+  <string name="firefox_labs_banner_title_2">تەجرىبە خاراكتېرلىك ئىقتىدارنى سىناڭ!</string>
+  <!--
+    Banner description text on the Firefox Labs screen. Provides information on what Firefox Labs does. %s is the name of the app (for example "Firefox Nightly").
+    Text will appear under the Firefox Labs banner title.
+  -->
+  <string name="firefox_labs_experimental_description">بۇ ئىقتىدار ئىجادىيەت باسقۇچىدا ۋە ياخشىلىنىۋاتىدۇ، %s ئىشلىشىگە تەسىر كۆرسىتىشى مۇمكىن.</string>
   <!-- The link text shown when a feedback URL for a Firefox Labs feature is available. The feedback URL page will allow users to provide opinions and suggestions. -->
   <string name="firefox_labs_share_feedback">قايتۇرما ئىنكاس ھەمبەھىر</string>
+  <!-- Content description for the share feedback link on a Firefox Labs feature. This text will be used by screen readers to provide more context on the feedback link. %s is the name of the Firefox Labs feature. -->
+  <string name="firefox_labs_share_feedback_content_description">«%s» نىڭ قايتۇرما ئىنكاسىنى ھەمبەھىرلەيدۇ.</string>
+  <!-- Button text on the Firefox Labs screen for restoring all toggles back to the default settings. The button will turn off any experimental features. -->
+  <string name="firefox_labs_restore_default_button_text">كۆڭۈلدىكىگە ئەسلىگە كەلتۈر</string>
+  <!-- The title used in a confirmation dialog on the Firefox Labs screen when toggling "on" or "off" an experimental feature that requires a restart. -->
+  <string name="firefox_labs_feature_dialog_title">قايتا قوزغىتىش زۆرۈر</string>
+  <!-- The text on the dialog on the Firefox Labs screen for the positive button when toggling "on" and "off" experimental features. This prompts the user to confirm that they want to restart the app. -->
+  <string name="firefox_labs_dialog_restart_button">قايتا قوزغات</string>
   <!-- The text on the dialog on the Firefox Labs screen for the negative button when toggling "on" and "off" experimental features. This is used to cancel the action and return to the previous screen. -->
   <string name="firefox_labs_dialog_cancel_button">ۋاز كەچ</string>
+  <!-- The title used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. -->
+  <string name="firefox_labs_restore_defaults_dialog_title">قايتا قوزغىتىش زۆرۈر</string>
+  <!-- The description used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+  <string name="firefox_labs_restore_defaults_dialog_message">كۆڭۈلدىكىگە ئەسلىگە كەلتۈرۈش ئۈچۈن %s نى قايتا قوزغىتىش كېرەك.</string>
+  <!-- The description text that is displayed in the confirmation dialog on the Firefox Labs screen for toggling "on" experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+  <string name="firefox_labs_feature_enable_dialog_message">بۇ ئىقتىدارنى قوزغىتىش ئۈچۈن، %s نى قايتا قوزغىتىش كېرەك.</string>
+  <!-- The description text that is displayed in the confirmation dialog on the Firefox Labs screen for toggling "off" experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+  <string name="firefox_labs_feature_disable_dialog_message">بۇ ئىقتىدارنى تاقاش ئۈچۈن، %s نى قايتا قوزغىتىش كېرەك.</string>
+  <!-- Helper text shown beneath a Firefox Labs item when it is blocked from being turned on. -->
+  <string name="firefox_labs_feature_conflict">بۇ ئىقتىدارنى سىنىغىلى بولمايدۇ.</string>
+  <!-- Text displayed on the Firefox Labs screen when there are no Labs experimental features present. -->
+  <string name="firefox_labs_no_labs_available_description">ھازىرچە سىنايدىغان سىناق خاراكتېرلىك ئىقتىدارى يوق</string>
+  <!-- Title of the Firefox Labs Sandboxing experiment. -->
+  <string name="firefox_labs_website_isolation_title" tools:ignore="UnusedResources">تور بېكەت ئايرىش</string>
+  <!-- Description of the Firefox Labs Sandboxing experiment. -->
+  <string name="firefox_labs_website_isolation_description" tools:ignore="UnusedResources">ئوخشاش بولمىغان بېكەت ئارىسىدا يەنە بىر قوشۇمچە توسۇق قوشۇپ بەتكۈچ ھالقىغان سانلىق مەلۇماتنى قوغداشقا ياردەم بېرىدۇ. بەلكىم ئۈنۈم، مۇقىملىق، تور بېكەت ماسلىشىشچانلىقى ۋە تور زىيارەت تارىخىنىڭ قانداق ساقلىنىشىغا تەسىر كۆرسىتىشى مۇمكىن.</string>
 </resources>
