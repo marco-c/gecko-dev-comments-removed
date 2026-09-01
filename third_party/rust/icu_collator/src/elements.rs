@@ -1266,6 +1266,10 @@ where
         }
         
         
+        
+        
+
+        
         #[cfg(debug_assertions)]
         debug_assert!(self.iter_exhausted);
         
@@ -2509,6 +2513,7 @@ where
                             
                             
                             drain_from_upcoming = 0;
+                            looked_ahead = 0;
                             self.collect_combining(&mut combining_characters);
                             continue 'combining_outer;
                         }

@@ -1,0 +1,14 @@
+
+
+
+
+
+let collator = new Intl.Collator("my");
+assertEq(
+  collator.compare(
+    "",
+    "\u102d\u102f\u1037"),
+  -1);
+
+if (typeof reportCompare === "function")
+  reportCompare(0, 0, "ok");
