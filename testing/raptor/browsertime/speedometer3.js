@@ -85,9 +85,16 @@ module.exports = logTest(
             wait_time
           );
           await commands.wait.byTime(wait_time);
-          data_exists = await commands.js.run(
-            "return !(this.benchmarkClient._isRunning)"
-          );
+          
+          
+          
+          
+          data_exists = await commands.js.run(`
+            const client = this.benchmarkClient;
+            return typeof client.hasFinished === "function"
+              ? client.hasFinished()
+              : !client._isRunning;
+          `);
         }
         if (expose_profiler === "true") {
           context.log.info("Custom profiler stop!");
