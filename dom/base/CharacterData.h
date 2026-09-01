@@ -155,14 +155,12 @@ class CharacterData : public nsIContent {
   bool TextEndsWithOnlyWhitespace(uint32_t aOffset) const;
 
   
-
-
-  void AppendTextTo(nsAString& aResult) const { mBuffer.AppendTo(aResult); }
-
-  
-
-
-  [[nodiscard]] bool AppendTextTo(nsAString& aResult,
+  template <typename CharT>
+  void AppendTextTo(nsTSubstring<CharT>& aResult) const {
+    mBuffer.AppendTo(aResult);
+  }
+  template <typename CharT>
+  [[nodiscard]] bool AppendTextTo(nsTSubstring<CharT>& aResult,
                                   const fallible_t& aFallible) const {
     return mBuffer.AppendTo(aResult, aFallible);
   }

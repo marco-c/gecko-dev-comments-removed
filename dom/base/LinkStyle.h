@@ -175,6 +175,10 @@ class LinkStyle {
   void SetStyleSheet(StyleSheet* aStyleSheet);
 
   
+  [[nodiscard]] bool GetInlineSheetText(nsACString&);
+  [[nodiscard]] bool GetInlineSheetText(nsAString&);
+
+  
 
 
 
