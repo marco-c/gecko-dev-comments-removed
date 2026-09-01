@@ -2294,6 +2294,14 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvPDocAccessibleConstructor(
     return IPC_OK();
   }
 
+  if (GetBrowsingContext()->IsDiscarded()) {
+    
+    
+    
+    doc->MarkAsShutdown();
+    return IPC_OK();
+  }
+
   RefPtr<WindowGlobalParent> embedderWgp =
       GetBrowsingContext()->GetEmbedderWindowGlobal();
   if (NS_WARN_IF(!IsTop() && !embedderWgp)) {
