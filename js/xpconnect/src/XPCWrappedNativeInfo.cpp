@@ -4,15 +4,16 @@
 
 
 
-#include "xpcprivate.h"
-#include "XPCMaps.h"
-#include "js/Wrapper.h"
-
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/SourceLocation.h"
+
 #include "nsIScriptError.h"
-#include "nsPrintfCString.h"
 #include "nsPointerHashKeys.h"
+#include "nsPrintfCString.h"
+#include "XPCMaps.h"
+#include "xpcprivate.h"
+
+#include "js/Wrapper.h"
 
 using namespace JS;
 using namespace mozilla;
@@ -629,6 +630,13 @@ already_AddRefed<XPCNativeSet> XPCNativeSet::NewInstance(
 
   
   
+  if (array.Length() > kMaxInterfaceCount - 1) {
+    NS_WARNING("Too many interfaces in set");
+    return nullptr;
+  }
+
+  
+  
   
   
 
@@ -676,6 +684,11 @@ already_AddRefed<XPCNativeSet> XPCNativeSet::NewInstanceMutate(
   MOZ_ASSERT(otherSet);
 
   if (!newInterface) {
+    return nullptr;
+  }
+
+  if (otherSet->mInterfaceCount == kMaxInterfaceCount) {
+    NS_WARNING("Too many interfaces in set");
     return nullptr;
   }
 

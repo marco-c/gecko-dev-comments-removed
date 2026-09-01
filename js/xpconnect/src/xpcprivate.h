@@ -1145,6 +1145,10 @@ class XPCNativeSet final {
   static void DestroyInstance(XPCNativeSet* inst);
 
  private:
+  
+  
+  static constexpr size_t kMaxInterfaceCount = UINT16_MAX;
+
   uint16_t mInterfaceCount;
   
   
