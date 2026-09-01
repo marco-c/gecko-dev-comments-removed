@@ -598,6 +598,11 @@ nsresult TCPConnectionEstablisher::CreateAndConfigureSocketTransport() {
   socketTransport->SetConnectionFlags(tmpFlags);
   socketTransport->SetTlsFlags(mConnInfo->GetTlsFlags());
   socketTransport->SetOriginAttributes(mConnInfo->GetOriginAttributes());
+  
+  
+  
+  
+  socketTransport->SetIsTRRConnection(mConnInfo->GetIsTrrServiceChannel());
 
   socketTransport->SetQoSBits(gHttpHandler->GetQoSBits());
 
