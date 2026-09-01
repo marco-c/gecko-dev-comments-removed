@@ -1124,20 +1124,20 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
     return [super performKeyEquivalent:aEvent];
   }
 
+  
+  
+  
+  
+  
+  
+  if (!(aEvent.modifierFlags & NSEventModifierFlagCommand)) {
+    return NO;
+  }
+
   NSResponder* firstResponder = keyWindow.firstResponder;
 
   if ([keyWindow isKindOfClass:[BaseWindow class]]) {
     gMenuItemsExecuteCommands = NO;
-  } else if (!(aEvent.modifierFlags & NSEventModifierFlagCommand)) {
-    
-    
-    
-    
-    
-    
-    
-    
-    return NO;
   }
 
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK
