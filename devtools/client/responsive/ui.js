@@ -908,7 +908,10 @@ class ResponsiveUI extends EventEmitter {
     
     
     
-    this.rdmFrame.classList.toggle("accomodate-ua", event.data.isNarrowLayout);
+    this.browserContainerEl.classList.toggle(
+      "accomodate-ua",
+      event.data.isNarrowLayout
+    );
   }
 
   async hasDeviceState() {
