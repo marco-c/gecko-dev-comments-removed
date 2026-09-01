@@ -1501,14 +1501,6 @@ const Encoding* gfxFontUtils::GetCharsetForFontName(uint16_t aPlatform,
   return nullptr;
 }
 
-template <int N>
-static bool StartsWith(const nsACString& string, const char (&prefix)[N]) {
-  if (N - 1 > string.Length()) {
-    return false;
-  }
-  return memcmp(string.Data(), prefix, N - 1) == 0;
-}
-
 
 
 bool gfxFontUtils::DecodeFontName(const char* aNameData, int32_t aByteLen,
