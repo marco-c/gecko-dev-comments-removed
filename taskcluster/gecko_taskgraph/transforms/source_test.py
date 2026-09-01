@@ -85,6 +85,7 @@ def set_job_name(config, jobs):
         yield job
 
 
+VENDOR_VERIFY_TASKS_FILE = "vendor-verify.yml"
 VENDOR_VERIFY_WRAPPER = "taskcluster/scripts/misc/verify-vendored-library.py"
 VENDOR_VERIFY_EXPECTED_FAIL = "taskcluster/scripts/misc/vendor-verify-expected-fail.yml"
 
@@ -97,6 +98,10 @@ VENDOR_VERIFY_SHARED_WHEN = [
     VENDOR_VERIFY_WRAPPER,
     VENDOR_VERIFY_EXPECTED_FAIL,
 ]
+
+
+
+VENDOR_VERIFY_TOOL_PATH = "$MOZ_FETCHES_DIR/rustc/bin:$MOZ_FETCHES_DIR/node/bin"
 
 
 def vendor_verify_triggers(member):
@@ -127,9 +132,13 @@ def vendor_verify_members(config, jobs):
     triggers need each library's moz.yaml read to find its vendor-directory.
     """
     for job in jobs:
+        if job.get("task-from") != VENDOR_VERIFY_TASKS_FILE:
+            yield job
+            continue
         members = sorted(job.pop("members", []))
         if members:
             job["run"]["command"] = (
+                f'PATH="{VENDOR_VERIFY_TOOL_PATH}:$PATH" '
                 f"./mach python {VENDOR_VERIFY_WRAPPER} "
                 f"--expected-fail {VENDOR_VERIFY_EXPECTED_FAIL} " + " ".join(members)
             )
@@ -137,6 +146,12 @@ def vendor_verify_members(config, jobs):
             job["when"] = {
                 "files-changed": sorted(set(triggers) | set(VENDOR_VERIFY_SHARED_WHEN))
             }
+        else:
+            
+            
+            
+            
+            job.pop("fetches", None)
         yield job
 
 
