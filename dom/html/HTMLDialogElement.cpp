@@ -336,7 +336,8 @@ void HTMLDialogElement::Show(ErrorResult& aError) {
   RefPtr<Element> hideUntil = GetTopmostPopoverAncestor(nullptr, false);
 
   
-  OwnerDoc()->HidePopoversUntil(hideUntil, false, true);
+  RefPtr<Document> doc = OwnerDoc();
+  doc->HidePopoversUntil(hideUntil, false, true);
 
   
   FocusDialog();
@@ -504,7 +505,8 @@ void HTMLDialogElement::ShowModal(Element* aSource, ErrorResult& aError) {
   RefPtr<Element> hideUntil = GetTopmostPopoverAncestor(nullptr, false);
 
   
-  OwnerDoc()->HidePopoversUntil(hideUntil, false, true);
+  RefPtr<Document> doc = OwnerDoc();
+  doc->HidePopoversUntil(hideUntil, false, true);
 
   
   FocusDialog();
