@@ -6,11 +6,24 @@
 
 
 ChromeUtils.defineESModuleGetters(this, {
+  QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
   UrlbarProviderQuickSuggest:
     "moz-src:///browser/components/urlbar/UrlbarProviderQuickSuggest.sys.mjs",
 });
 
 add_setup(async function setup() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  QuickSuggest._testSkipTelemetryEnvironmentInit = true;
+
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
     remoteSettingsRecords: [
       {

@@ -39,6 +39,10 @@ add_setup(async function setup() {
   
   do_get_profile(true);
   
+  
+  
+  fakeIntlReady();
+  
   await setEmptyPrefWatchlist();
   Services.prefs.setBoolPref(
     TelemetryUtils.Preferences.HealthPingEnabled,

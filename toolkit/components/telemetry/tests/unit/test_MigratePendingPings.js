@@ -39,6 +39,10 @@ async function createFakeAppDir() {
 add_task(async function setup() {
   
   do_get_profile();
+  
+  
+  
+  fakeIntlReady();
   await createFakeAppDir();
   
   await setEmptyPrefWatchlist();
