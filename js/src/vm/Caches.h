@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #ifndef vm_Caches_h
 #define vm_Caches_h
@@ -29,11 +29,11 @@ struct EvalCacheEntry {
   JSScript* callerScript;
   jsbytecode* pc;
 
-  // We sweep this cache after a nursery collection to update entries with
-  // string keys that have been tenured.
-  //
-  // The entire cache is purged on a major GC, so we don't need to sweep it
-  // then.
+  
+  
+  
+  
+  
   bool traceWeak(JSTracer* trc) {
     MOZ_ASSERT(trc->kind() == JS::TracerKind::MinorSweeping);
     return TraceManuallyBarrieredWeakEdge(trc, &str, "EvalCacheEntry::str");
@@ -63,30 +63,30 @@ using EvalCache =
     GCHashSet<EvalCacheEntry, EvalCacheHashPolicy, SystemAllocPolicy>;
 
 class MegamorphicCacheEntry {
-  // Receiver object's shape.
+  
   Shape* shape_ = nullptr;
 
-  // The atom or symbol property being accessed.
+  
   PropertyKey key_;
 
-  // Slot offset and isFixedSlot flag of the data property.
+  
   TaggedSlotOffset slotOffset_;
 
-  // This entry is valid iff the generation matches the cache's generation.
+  
   uint16_t generation_ = 0;
 
-  // This encodes the number of hops on the prototype chain to get to the holder
-  // object, along with information about the kind of property. If the high bit
-  // is 0, the property is a data property. If the high bit is 1 and the value
-  // is <= MaxHopsForGetterProperty, the property is a getter. Otherwise, this
-  // is a sentinel value indicating a missing property lookup.
+  
+  
+  
+  
+  
   uint8_t hopsAndKind_ = 0;
 
   friend class MegamorphicCache;
 
  public:
-  // A simple flag for the JIT to check which, if false, lets it know that it's
-  // just a data property N hops up the prototype chain
+  
+  
   static constexpr uint8_t NonDataPropertyFlag = 128;
 
   static constexpr uint8_t MaxHopsForGetterProperty = 253;
@@ -150,35 +150,35 @@ class MegamorphicCacheEntry {
   }
 };
 
-// [SMDOC] Megamorphic Property Lookup Cache (MegamorphicCache)
-//
-// MegamorphicCache is a data structure used to speed up megamorphic property
-// lookups from JIT code. The same cache is currently used for both GetProp and
-// HasProp (in, hasOwnProperty) operations.
-//
-// This is implemented as a fixed-size array of entries. Lookups are performed
-// based on the receiver object's Shape + PropertyKey. If found in the cache,
-// the result of a lookup represents either:
-//
-// * A data property on the receiver or on its proto chain (stored as number of
-//   'hops' up the proto chain + the slot of the data property).
-//
-// * A missing property on the receiver or its proto chain.
-//
-// * A missing property on the receiver, but it might exist on the proto chain.
-//   This lets us optimize hasOwnProperty better.
-//
-// Collisions are handled by simply overwriting the previous entry stored in the
-// slot. This is sufficient to achieve a high hit rate on typical web workloads
-// while ensuring cache lookups are always fast and simple.
-//
-// Lookups always check the receiver object's shape (ensuring the properties and
-// prototype are unchanged). Because the cache also caches lookups on the proto
-// chain, Watchtower is used to invalidate the cache when prototype objects are
-// mutated. This is done by incrementing the cache's generation counter to
-// invalidate all entries.
-//
-// The cache is also invalidated on each major GC.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class MegamorphicCache {
  public:
   using Entry = MegamorphicCacheEntry;
@@ -196,11 +196,11 @@ class MegamorphicCache {
  private:
   mozilla::Array<Entry, NumEntries> entries_;
 
-  // Generation counter used to invalidate all entries.
+  
   uint16_t generation_ = 0;
 
-  // NOTE: this logic is mirrored in
-  // MacroAssembler::emitMegamorphicCacheLookupByValueCommon
+  
+  
   Entry& getEntry(Shape* shape, PropertyKey key) {
     static_assert(std::has_single_bit(NumEntries),
                   "NumEntries must be a power-of-two for fast modulo");
@@ -214,7 +214,7 @@ class MegamorphicCache {
   void bumpGeneration() {
     generation_++;
     if (generation_ == 0) {
-      // Generation overflowed. Invalidate the whole cache.
+      
       for (size_t i = 0; i < NumEntries; i++) {
         entries_[i].shape_ = nullptr;
       }
@@ -268,41 +268,53 @@ class MegamorphicCache {
 
 class MegamorphicSetPropCacheEntry {
   Shape* beforeShape_ = nullptr;
-  Shape* afterShape_ = nullptr;
 
-  // The atom or symbol property being accessed.
+  
+  
+  
+  uintptr_t taggedAfterShape_ = 0;
+
+  
   PropertyKey key_;
 
-  // Slot offset and isFixedSlot flag of the data property.
+  
   TaggedSlotOffset slotOffset_;
 
-  // If slots need to be grown, this is the new capacity we need.
+  
   uint16_t newCapacity_ = 0;
 
-  // This entry is valid iff the generation matches the cache's generation.
+  
   uint16_t generation_ = 0;
 
   friend class MegamorphicSetPropCache;
 
  public:
+  static constexpr uintptr_t ShouldPreserveBit = 0x1;
+
   void init(Shape* beforeShape, Shape* afterShape, PropertyKey key,
             uint16_t generation, TaggedSlotOffset slotOffset,
-            uint16_t newCapacity) {
+            uint16_t newCapacity, bool shouldPreserve) {
+    MOZ_ASSERT_IF(shouldPreserve, afterShape);
+
     beforeShape_ = beforeShape;
-    afterShape_ = afterShape;
+    taggedAfterShape_ = reinterpret_cast<uintptr_t>(afterShape) |
+                        (shouldPreserve ? ShouldPreserveBit : 0);
     key_ = key;
     slotOffset_ = slotOffset;
     newCapacity_ = newCapacity;
     generation_ = generation;
   }
   TaggedSlotOffset slotOffset() const { return slotOffset_; }
-  Shape* afterShape() const { return afterShape_; }
+  Shape* afterShape() const {
+    return reinterpret_cast<Shape*>(taggedAfterShape_ & ~ShouldPreserveBit);
+  }
+  bool shouldPreserve() const { return taggedAfterShape_ & ShouldPreserveBit; }
 
   static constexpr size_t offsetOfShape() {
     return offsetof(MegamorphicSetPropCacheEntry, beforeShape_);
   }
-  static constexpr size_t offsetOfAfterShape() {
-    return offsetof(MegamorphicSetPropCacheEntry, afterShape_);
+  static constexpr size_t offsetOfTaggedAfterShape() {
+    return offsetof(MegamorphicSetPropCacheEntry, taggedAfterShape_);
   }
 
   static constexpr size_t offsetOfKey() {
@@ -325,9 +337,9 @@ class MegamorphicSetPropCacheEntry {
 class MegamorphicSetPropCache {
  public:
   using Entry = MegamorphicSetPropCacheEntry;
-  // We can get more hits if we increase this, but this seems to be around
-  // the sweet spot where we are getting most of the hits we would get with
-  // an infinitely sized cache
+  
+  
+  
   static constexpr size_t NumEntries = 1024;
   static constexpr uint8_t ShapeHashShift1 = mozilla::FloorLog2(alignof(Shape));
   static constexpr uint8_t ShapeHashShift2 =
@@ -341,7 +353,7 @@ class MegamorphicSetPropCache {
  private:
   mozilla::Array<Entry, NumEntries> entries_;
 
-  // Generation counter used to invalidate all entries.
+  
   uint16_t generation_ = 0;
 
   Entry& getEntry(Shape* beforeShape, PropertyKey key) {
@@ -357,20 +369,22 @@ class MegamorphicSetPropCache {
   void bumpGeneration() {
     generation_++;
     if (generation_ == 0) {
-      // Generation overflowed. Invalidate the whole cache.
+      
       for (size_t i = 0; i < NumEntries; i++) {
         entries_[i].beforeShape_ = nullptr;
       }
     }
   }
   void set(Shape* beforeShape, Shape* afterShape, PropertyKey key,
-           TaggedSlotOffset slotOffset, uint32_t newCapacity) {
+           TaggedSlotOffset slotOffset, uint32_t newCapacity,
+           bool shouldPreserve) {
     uint16_t newSlots = (uint16_t)newCapacity;
     if (newSlots != newCapacity) {
       return;
     }
     Entry& entry = getEntry(beforeShape, key);
-    entry.init(beforeShape, afterShape, key, generation_, slotOffset, newSlots);
+    entry.init(beforeShape, afterShape, key, generation_, slotOffset, newSlots,
+               shouldPreserve);
   }
 
 #ifdef DEBUG
@@ -391,19 +405,19 @@ class MegamorphicSetPropCache {
   }
 };
 
-// Cache for AtomizeString, mapping JSString* or JS::Latin1Char* to the
-// corresponding JSAtom*. The cache has three different optimizations:
-//
-// * The two most recent lookups are cached. This has a hit rate of 30-65% on
-//   typical web workloads.
-//
-// * MruCache is used for short JS::Latin1Char strings.
-//
-// * For longer strings, there's also a JSLinearString* => JSAtom* HashMap,
-//   because hashing the string characters repeatedly can be slow.
-//   This map is also used by nursery GC to de-duplicate strings to atoms.
-//
-// This cache is purged on minor and major GC.
+
+
+
+
+
+
+
+
+
+
+
+
+
 class StringToAtomCache {
  public:
   struct LastLookup {
@@ -448,8 +462,8 @@ class StringToAtomCache {
   RopeAtomCache ropeCharCache_;
 
  public:
-  // Don't use the HashMap for short strings. Hashing them is less expensive.
-  // But the length needs to long enough to cover common identifiers in React.
+  
+  
   static constexpr size_t MinStringLength = 39;
 
   JSAtom* lookupInMap(JSString* s) const {
@@ -525,12 +539,12 @@ class StringToAtomCache {
 
 #ifdef MOZ_EXECUTION_TRACING
 
-// Holds a handful of caches used for tracing JS execution. These effectively
-// hold onto IDs which let the tracer know that it has already recorded the
-// entity in question. They need to be cleared on a compacting GC since they
-// are keyed by pointers. However the IDs must continue incrementing until
-// the tracer is turned off since entries containing the IDs in question may
-// linger in the ExecutionTracer's buffer through a GC.
+
+
+
+
+
+
 class TracingCaches {
   uint32_t shapeId_ = 0;
   uint32_t atomId_ = 0;
@@ -539,8 +553,8 @@ class TracingCaches {
   TracingPointerCache shapes_;
   TracingPointerCache atoms_;
 
-  // NOTE: this cache does not need to be cleared on compaction, but still
-  // needs to be cleared at the end of tracing.
+  
+  
   using TracingU32Set =
       HashSet<uint32_t, DefaultHasher<uint32_t>, SystemAllocPolicy>;
   TracingU32Set scriptSourcesSeen_;
@@ -593,7 +607,7 @@ class TracingCaches {
     return GetOrPutResult::NewlyAdded;
   }
 
-  // NOTE: scriptSourceId is js::ScriptSource::id value.
+  
   GetOrPutResult putScriptSourceIfMissing(uint32_t scriptSourceId) {
     TracingU32Set::AddPtr p = scriptSourcesSeen_.lookupForAdd(scriptSourceId);
     if (p) {
@@ -606,7 +620,7 @@ class TracingCaches {
   }
 };
 
-#endif /* MOZ_EXECUTION_TRACING */
+#endif 
 
 class RuntimeCaches {
  public:
@@ -620,9 +634,9 @@ class RuntimeCaches {
   TracingCaches tracingCaches;
 #endif
 
-  // Delazification: Cache binding for runtime objects which are used during
-  // delazification to quickly resolve NameLocation of bindings without linearly
-  // iterating over the list of bindings.
+  
+  
+  
   frontend::RuntimeScopeBindingCache scopeCache;
 
   void sweepAfterMinorGC(JSTracer* trc) { evalCache.traceWeak(trc); }
@@ -635,9 +649,9 @@ class RuntimeCaches {
     stringToAtomCache.purge();
     megamorphicCache.bumpGeneration();
     if (megamorphicSetPropCache) {
-      // MegamorphicSetPropCache can be null if we failed out of
-      // JSRuntime::init. We will then try to destroy the runtime which will
-      // do a GC and land us here.
+      
+      
+      
       megamorphicSetPropCache->bumpGeneration();
     }
     scopeCache.purge();
@@ -652,6 +666,6 @@ class RuntimeCaches {
   }
 };
 
-}  // namespace js
+}  
 
-#endif /* vm_Caches_h */
+#endif 

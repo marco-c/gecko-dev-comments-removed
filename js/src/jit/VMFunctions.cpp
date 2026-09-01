@@ -2284,6 +2284,7 @@ static bool TryAddOrSetNativeObjectProperty(JSContext* cx,
     MegamorphicSetPropCache::Entry* entry;
     if (cache.lookup(receiverShape, key, &entry)) {
       if (entry->afterShape() != nullptr) {  
+        MOZ_ASSERT(entry->shouldPreserve() == obj->hasUnpreservedWrapper());
         NativeObject* holder = nullptr;
         PropertyResult prop;
         MOZ_ASSERT(LookupPropertyPure(cx, obj, key, &holder, &prop));
@@ -2325,7 +2326,7 @@ static bool TryAddOrSetNativeObjectProperty(JSContext* cx,
       
       if (!watchesPropValue) {
         TaggedSlotOffset offset = obj->getTaggedSlotOffset(prop.slot());
-        cache.set(receiverShape, nullptr, key, offset, 0);
+        cache.set(receiverShape, nullptr, key, offset, 0, false);
       }
     }
     return true;
@@ -2379,9 +2380,23 @@ static bool TryAddOrSetNativeObjectProperty(JSContext* cx,
   }
 #endif
 
-  *optimized = true;
   Rooted<PropertyKey> keyRoot(cx, key);
   Rooted<Shape*> receiverShapeRoot(cx, receiverShape);
+
+  
+  
+  bool shouldPreserveWrapper = obj->hasUnpreservedWrapper();
+  if (MOZ_UNLIKELY(shouldPreserveWrapper)) {
+    if (!PreserveAnyUnpreservedWrapper(cx, obj)) {
+      return false;
+    }
+    
+    if (MOZ_UNLIKELY(obj->hasUnpreservedWrapper())) {
+      return true;
+    }
+  }
+
+  *optimized = true;
   uint32_t resultSlot = 0;
   size_t numDynamic = obj->numDynamicSlots();
   bool res = AddDataPropertyToNativeObjectNoHooks(cx, obj, keyRoot, value,
@@ -2397,7 +2412,8 @@ static bool TryAddOrSetNativeObjectProperty(JSContext* cx,
             (resultSlot - obj->numFixedSlots()) < numDynamic)) {
         newCapacity = obj->numDynamicSlots();
       }
-      cache.set(receiverShapeRoot, obj->shape(), keyRoot, offset, newCapacity);
+      cache.set(receiverShapeRoot, obj->shape(), keyRoot, offset, newCapacity,
+                shouldPreserveWrapper);
     }
   }
 
