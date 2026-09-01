@@ -963,6 +963,13 @@ class LocalAccessible : public nsISupports, public Accessible {
                                  int32_t* aPosInSet) const override;
 
   
+
+
+
+
+  nsIFrame* FindNearestAccessibleAncestorFrame() const;
+
+  
   
   
   nsCOMPtr<nsIContent> mContent;
@@ -1030,13 +1037,6 @@ class LocalAccessible : public nsISupports, public Accessible {
   friend class AccGroupInfo;
 
  private:
-  
-
-
-
-
-  nsIFrame* FindNearestAccessibleAncestorFrame();
-
   LocalAccessible* GetCommandForDetailsRelation() const;
 
   LocalAccessible* GetPopoverTargetDetailsRelation() const;
