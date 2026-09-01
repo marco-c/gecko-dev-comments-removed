@@ -826,8 +826,15 @@ class ComponentExternDesc {
     return coreModuleIndex_;
   }
 
-  static bool matches(const ComponentExternDesc& sub,
-                      const ComponentExternDesc& super);
+  
+  
+  
+  
+  
+  
+  static bool compatible(const ComponentExternDesc& defined,
+                         const ComponentExternDesc& ascribed,
+                         bool isNewSubResource);
 };
 
 static_assert(std::is_default_constructible_v<ComponentExternDesc>);
