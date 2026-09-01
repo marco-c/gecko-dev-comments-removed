@@ -285,14 +285,10 @@ class ArenaCollection {
 
     {
       MutexAutoLock lock(mLock);
-      Tree& tree =
-#ifndef NON_RANDOM_ARENA_IDS
-          aArena->IsMainThreadOnly() ? mMainThreadArenas :
-#endif
-                                     mPrivateArenas;
 
-      MOZ_RELEASE_ASSERT(tree.Search(aArena->mId), "Arena not in tree");
-      tree.Remove(aArena);
+      MOZ_RELEASE_ASSERT(mPrivateArenas.Search(aArena->mId),
+                         "Arena not in tree");
+      mPrivateArenas.Remove(aArena);
       mNumOperationsDisposedArenas += aArena->Operations();
     }
     {
@@ -414,11 +410,7 @@ class ArenaCollection {
   };
 
   Iterator iter() MOZ_REQUIRES(mLock) {
-#ifdef NON_RANDOM_ARENA_IDS
     return Iterator(&mArenas, &mPrivateArenas);
-#else
-    return Iterator(&mArenas, &mPrivateArenas, &mMainThreadArenas);
-#endif
   }
 
   inline arena_t* GetDefault() { return mDefaultArena; }
@@ -536,9 +528,6 @@ class ArenaCollection {
  private:
   const static arena_id_t MAIN_THREAD_ARENA_BIT = 0x1;
 
-#ifndef NON_RANDOM_ARENA_IDS
-  arena_id_t MakeRandArenaId(bool aIsMainThreadOnly) const MOZ_REQUIRES(mLock);
-#endif
   static bool ArenaIdIsMainThreadOnly(arena_id_t aArenaId) {
     return aArenaId & MAIN_THREAD_ARENA_BIT;
   }
@@ -550,16 +539,10 @@ class ArenaCollection {
   Tree mArenas MOZ_GUARDED_BY(mLock);
   Tree mPrivateArenas MOZ_GUARDED_BY(mLock);
 
-#ifdef NON_RANDOM_ARENA_IDS
   
   
   arena_id_t mArenaIdKey = 0;
   int8_t mArenaIdRotation = 0;
-#else
-  
-  
-  Tree mMainThreadArenas MOZ_GUARDED_BY(mLock);
-#endif
 
   
   
@@ -3122,7 +3105,6 @@ arena_t* ArenaCollection::CreateArena(bool aIsPrivate,
     return ret;
   }
 
-#ifdef NON_RANDOM_ARENA_IDS
   
   
   if (mArenaIdKey == 0) {
@@ -3138,48 +3120,7 @@ arena_t* ArenaCollection::CreateArena(bool aIsPrivate,
       (id >> mArenaIdRotation) | (id << (sizeof(void*) * 8 - mArenaIdRotation));
   mPrivateArenas.Insert(ret);
   return ret;
-#else
-  
-  
-  
-  
-  Tree& tree = (ret->IsMainThreadOnly()) ? mMainThreadArenas : mPrivateArenas;
-  arena_id_t arena_id;
-  do {
-    arena_id = MakeRandArenaId(ret->IsMainThreadOnly());
-    
-    
-  } while (tree.Search(arena_id));
-
-  ret->mId = arena_id;
-  tree.Insert(ret);
-  return ret;
-#endif
 }
-
-#ifndef NON_RANDOM_ARENA_IDS
-arena_id_t ArenaCollection::MakeRandArenaId(bool aIsMainThreadOnly) const {
-  uint64_t rand;
-  do {
-    mozilla::Maybe<uint64_t> maybeRandomId = mozilla::RandomUint64();
-    MOZ_RELEASE_ASSERT(maybeRandomId.isSome());
-
-    rand = maybeRandomId.value();
-
-    
-    
-    if (aIsMainThreadOnly) {
-      rand = rand | MAIN_THREAD_ARENA_BIT;
-    } else {
-      rand = rand & ~MAIN_THREAD_ARENA_BIT;
-    }
-
-    
-  } while (rand == 0);
-
-  return arena_id_t(rand);
-}
-#endif
 
 
 
@@ -4022,7 +3963,6 @@ inline arena_t* ArenaCollection::GetById(arena_id_t aArenaId, bool aIsPrivate) {
     return nullptr;
   }
 
-#ifdef NON_RANDOM_ARENA_IDS
   
   
   
@@ -4034,32 +3974,6 @@ inline arena_t* ArenaCollection::GetById(arena_id_t aArenaId, bool aIsPrivate) {
   arena_id_t id = (aArenaId << mArenaIdRotation) |
                   (aArenaId >> (sizeof(void*) * 8 - mArenaIdRotation));
   arena_t* result = reinterpret_cast<arena_t*>(id ^ mArenaIdKey);
-#else
-  Tree* tree = nullptr;
-  if (aIsPrivate) {
-    if (ArenaIdIsMainThreadOnly(aArenaId)) {
-      
-      
-      
-      
-      
-      
-      
-      MOZ_ASSERT(IsOnMainThread());
-      MOZ_PUSH_IGNORE_THREAD_SAFETY
-      arena_t* result = mMainThreadArenas.Search(aArenaId);
-      MOZ_POP_THREAD_SAFETY
-      MOZ_RELEASE_ASSERT(result);
-      return result;
-    }
-    tree = &mPrivateArenas;
-  } else {
-    tree = &mArenas;
-  }
-
-  MutexAutoLock lock(mLock);
-  arena_t* result = tree->Search(aArenaId);
-#endif
   MOZ_RELEASE_ASSERT(result);
   MOZ_DIAGNOSTIC_ASSERT(result->mMagic == ARENA_MAGIC);
   MOZ_RELEASE_ASSERT(result->mId == aArenaId);
