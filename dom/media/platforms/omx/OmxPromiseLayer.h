@@ -2,8 +2,6 @@
 
 
 
-
-
 #if !defined(OmxPromiseLayer_h_)
 #  define OmxPromiseLayer_h_
 
@@ -39,7 +37,7 @@ class TrackInfo;
 
 class OmxPromiseLayer {
  protected:
-  virtual ~OmxPromiseLayer() = default;
+  virtual ~OmxPromiseLayer();
 
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(OmxPromiseLayer)
