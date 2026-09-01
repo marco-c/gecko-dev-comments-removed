@@ -86,21 +86,18 @@ void DanglingOnTemporaryChecker::registerMatchers(MatchFinder *AstMatcher) {
           
           callee(cxxMethodDecl(noDanglingOnTemporaries())),
 
-          expr().bind("memberCallExpr"),
-
           
           
           
-          anyOf(
+          optionally(anyOf(
               
               
               allOf(hasParentCall, expr().bind("parentCallArg")),
 
               
               
-              hasAncestor(expr(hasParentCall, expr().bind("parentCallArg"))),
-              
-              anything())),
+              hasAncestor(expr(hasParentCall, expr().bind("parentCallArg"))))))
+          .bind("memberCallExpr"),
       this);
 }
 
@@ -177,9 +174,8 @@ void DanglingOnTemporaryChecker::check(const MatchFinder::MatchResult &Result) {
     auto FunctionEscapeData =
         ParentOperatorCallExpr
             ? escapesFunction(ParentCallArg, ParentOperatorCallExpr)
-            : ParentCallExpr
-                  ? escapesFunction(ParentCallArg, ParentCallExpr)
-                  : escapesFunction(ParentCallArg, ParentConstructExpr);
+        : ParentCallExpr ? escapesFunction(ParentCallArg, ParentCallExpr)
+                         : escapesFunction(ParentCallArg, ParentConstructExpr);
 
     
     if (std::error_code ec = FunctionEscapeData.getError()) {

@@ -12,24 +12,39 @@ struct MOZ_TEMPORARY_CLASS Temporary {
   void *operator new(size_t blah, char *buffer) { return buffer; }
 };
 
-template <class T>
-struct MOZ_TEMPORARY_CLASS TemplateClass {
+template <class T> struct MOZ_TEMPORARY_CLASS TemplateClass {
   T i;
 };
 
-void gobble(void *) { }
+void gobble(void *) {}
 
-void gobbleref(const Temporary&) { }
+void gobbleref(const Temporary &) {}
 
-template <class T>
-void gobbleanyref(const T&) { }
+template <class T> void gobbleanyref(const T &) {}
 
 void misuseNonTemporaryClass(int len) {
   
   Temporary invalid; 
-  Temporary alsoInvalid[2]; 
-  static Temporary invalidStatic; 
-  static Temporary alsoInvalidStatic[2]; 
+                     
+                     
+  Temporary
+      alsoInvalid[2]; 
+                      
+                      
+                      
+                      
+                      
+  static Temporary
+      invalidStatic; 
+                     
+                     
+  static Temporary
+      alsoInvalidStatic[2]; 
+                            
+                            
+                            
+                            
+                            
 
   gobble(&invalid);
   gobble(&invalidStatic);
@@ -44,24 +59,45 @@ void misuseNonTemporaryClass(int len) {
 
   
   gobble(new Temporary); 
+                         
+                         
   gobble(new Temporary[10]); 
+                             
+                             
   gobble(new TemplateClass<int>); 
-  gobble(len <= 5 ? &invalid : new Temporary); 
+                                  
+                                  
+                                  
+  gobble(len <= 5
+             ? &invalid
+             : new Temporary); 
+                               
+                               
 
   
   char buffer[sizeof(Temporary)];
   gobble(new (buffer) Temporary);
 }
 
-void defaultArg(const Temporary& arg = Temporary()) { 
+void defaultArg(
+    const Temporary &arg =
+        Temporary()) { 
+                       
+                       
 }
 
 
 Temporary invalidStatic; 
+                         
+                         
 
 struct RandomClass {
   Temporary nonstaticMember; 
-  static Temporary staticMember; 
+                             
+  static Temporary
+      staticMember; 
+                    
+                    
 };
 
 struct BadInherit : Temporary {};

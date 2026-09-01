@@ -1,4 +1,5 @@
-#define MOZ_NON_TERMINATED_STRING __attribute__((annotate("moz_non_terminated_string")))
+#define MOZ_NON_TERMINATED_STRING                                              \
+  __attribute__((annotate("moz_non_terminated_string")))
 
 #include "mozilla/Casting.h"
 
@@ -6,7 +7,7 @@
 #include <sstream>
 #include <string>
 
-#define MOZ_FORMAT_PRINTF(stringIndex, firstToCheck) \
+#define MOZ_FORMAT_PRINTF(stringIndex, firstToCheck)                           \
   __attribute__((format(printf, stringIndex, firstToCheck)))
 
 const char *getNotTerminated() MOZ_NON_TERMINATED_STRING;
@@ -21,29 +22,49 @@ struct S {
 };
 
 void testPrintf() {
-  printf("%s", getNotTerminated()); 
+  printf("%s",
+         getNotTerminated()); 
+                              
+                              
   printf("%s", getTerminated());
-  printf("hello %s world", getNotTerminated()); 
+  printf("hello %s world",
+         getNotTerminated()); 
+                              
+                              
 }
 
 void testSnprintf(char *buf, int size) {
-  snprintf(buf, size, "%s", getNotTerminated()); 
+  snprintf(
+      buf, size, "%s",
+      getNotTerminated()); 
+                           
+                           
   snprintf(buf, size, "%s", getTerminated());
 }
 
 void testFprintf() {
-  fprintf(stderr, "%s", getNotTerminated()); 
+  fprintf(
+      stderr, "%s",
+      getNotTerminated()); 
+                           
+                           
   fprintf(stderr, "%s", getTerminated());
 }
 
 void testCustomPrintf() {
-  myPrintf("%s", getNotTerminated()); 
+  myPrintf(
+      "%s",
+      getNotTerminated()); 
+                           
+                           
   myPrintf("%s", getTerminated());
 }
 
 void testMethod() {
   S s;
   printf("%s", s.data()); 
+                          
+                          
   printf("%s", s.c_str());
 }
 
@@ -53,9 +74,16 @@ struct PrintfCtor {
 
 void testConstructor() {
   S s;
-  PrintfCtor("hello %s", s.data()); 
+  PrintfCtor("hello %s",
+             s.data()); 
+                        
+                        
   PrintfCtor("hello %s", s.c_str());
-  PrintfCtor("hello %s", getNotTerminated()); 
+  PrintfCtor("hello %s",
+             getNotTerminated()); 
+                                  
+                                  
+                                  
   PrintfCtor("hello %s", getTerminated());
 }
 
@@ -78,15 +106,27 @@ struct SingleVoidArgCtor {
 void testSingleArg() {
   S s;
   takesOneArg(getNotTerminated()); 
+                                   
+                                   
+                                   
   takesOneArg(getTerminated());
   takesOneArg(s.data()); 
+                         
+                         
   takesOneArg(s.c_str());
   takesTwoArgs(getNotTerminated(), 0);
   takesOneVoidArg(getNotTerminated());
-  (void)mozilla::BitwiseCast<const uint8_t*>(getNotTerminated());
-  SingleArgCtor{getNotTerminated()}; 
+  (void)mozilla::BitwiseCast<const uint8_t *>(getNotTerminated());
+  SingleArgCtor{
+      getNotTerminated()}; 
+                           
+                           
+                           
   SingleArgCtor{getTerminated()};
-  SingleArgCtor{s.data()}; 
+  SingleArgCtor{
+      s.data()}; 
+                 
+                 
   TwoArgCtor{getNotTerminated(), 0};
   SingleVoidArgCtor{getNotTerminated()};
 }
@@ -95,12 +135,16 @@ void testStreams() {
   S s;
   std::stringstream ss;
   ss << s.data(); 
+                  
+                  
   ss << s.c_str();
 }
 
 void testStringCtor() {
   S s;
   std::string s1(s.data()); 
+                            
+                            
   std::string s2(s.data(), s.size());
   std::string s3(s.c_str());
 }

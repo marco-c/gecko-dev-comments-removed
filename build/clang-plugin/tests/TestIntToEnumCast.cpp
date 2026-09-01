@@ -18,34 +18,53 @@ public:
 class MockCDMParent : public mozilla::ipc::IProtocol {
 public:
   void RecvDecryptFailed(unsigned aStatus) {
-    ScopedEnum e = static_cast<ScopedEnum>(aStatus); 
+    ScopedEnum e = static_cast<ScopedEnum>(
+        aStatus); 
+                  
+                  
   }
 
   void RecvOnRejectPromise(unsigned aException) {
-    UnscopedEnum e = static_cast<UnscopedEnum>(aException); 
+    UnscopedEnum e = static_cast<UnscopedEnum>(
+        aException); 
+                     
+                     
+                     
   }
 
   void RecvDecoderInit(unsigned aStatus) {
-    TypedEnum e = static_cast<TypedEnum>(aStatus); 
+    TypedEnum e = static_cast<TypedEnum>(
+        aStatus); 
+                  
+                  
   }
 
   void RecvCStyleCast(unsigned aStatus) {
-    ScopedEnum e = (ScopedEnum)aStatus; 
+    ScopedEnum e = (ScopedEnum)
+        aStatus; 
+                 
+                 
   }
 
   void RecvFunctionalCast(unsigned aStatus) {
-    UnscopedEnum e = UnscopedEnum(aStatus); 
+    UnscopedEnum e = UnscopedEnum(
+        aStatus); 
+                  
+                  
+                  
   }
 
   
   void RecvInLambda(unsigned aStatus) {
     auto callback = [](unsigned aValue) {
-      ScopedEnum e = static_cast<ScopedEnum>(aValue); 
+      ScopedEnum e = static_cast<ScopedEnum>(
+          aValue); 
+                   
+                   
       return e;
     };
     callback(aStatus);
   }
-
 };
 
 

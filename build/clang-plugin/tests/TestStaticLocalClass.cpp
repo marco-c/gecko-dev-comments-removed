@@ -1,4 +1,5 @@
-#define MOZ_STATIC_LOCAL_CLASS __attribute__((annotate("moz_static_local_class")))
+#define MOZ_STATIC_LOCAL_CLASS                                                 \
+  __attribute__((annotate("moz_static_local_class")))
 #include <stddef.h>
 
 struct MOZ_STATIC_LOCAL_CLASS StaticLocal {
@@ -7,16 +8,22 @@ struct MOZ_STATIC_LOCAL_CLASS StaticLocal {
   void *operator new(size_t blah, char *buffer) { return buffer; }
 };
 
-template <class T>
-struct MOZ_STATIC_LOCAL_CLASS TemplateClass {
+template <class T> struct MOZ_STATIC_LOCAL_CLASS TemplateClass {
   T i;
 };
 
-void gobble(void *) { }
+void gobble(void *) {}
 
 void misuseStaticLocalClass(int len) {
   StaticLocal notValid; 
-  StaticLocal alsoNotValid[2]; 
+                        
+                        
+  StaticLocal alsoNotValid
+      [2]; 
+           
+           
+           
+           
   static StaticLocal valid;
   static StaticLocal alsoValid[2];
 
@@ -25,30 +32,62 @@ void misuseStaticLocalClass(int len) {
   gobble(&alsoValid[0]);
 
   gobble(new StaticLocal); 
-  gobble(new StaticLocal[10]); 
+                           
+                           
+  gobble(
+      new StaticLocal[10]); 
+                            
+                            
   gobble(new TemplateClass<int>); 
-  gobble(len <= 5 ? &valid : new StaticLocal); 
+                                  
+                                  
+                                  
+  gobble(
+      len <= 5
+          ? &valid
+          : new StaticLocal); 
+                              
+                              
 
   char buffer[sizeof(StaticLocal)];
   gobble(new (buffer) StaticLocal);
 }
 
 StaticLocal notValid; 
+                      
+                      
 
 struct RandomClass {
-  StaticLocal nonstaticMember; 
-  static StaticLocal staticMember; 
+  StaticLocal
+      nonstaticMember; 
+                       
+                       
+  static StaticLocal
+      staticMember; 
+                    
+                    
 };
 
 struct MOZ_STATIC_LOCAL_CLASS RandomStaticLocalClass {
   StaticLocal nonstaticMember;
-  static StaticLocal staticMember; 
+  static StaticLocal
+      staticMember; 
+                    
+                    
 };
 
-struct BadInherit : StaticLocal {}; 
+struct BadInherit : StaticLocal {
+}; 
+   
 struct MOZ_STATIC_LOCAL_CLASS GoodInherit : StaticLocal {};
 
 void misuseStaticLocalClassEvenMore(int len) {
-  BadInherit moreInvalid; 
-  RandomClass evenMoreInvalid; 
+  BadInherit
+      moreInvalid; 
+                   
+                   
+  RandomClass
+      evenMoreInvalid; 
+                       
+                       
 }

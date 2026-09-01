@@ -2,6 +2,8 @@
 
 struct Bad {
   operator bool(); 
+                   
+                   
 };
 struct Good {
   explicit operator bool();

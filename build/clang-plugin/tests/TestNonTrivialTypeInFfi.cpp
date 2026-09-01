@@ -8,30 +8,25 @@ struct Opaque;
 struct Trivial {
   int foo;
   char bar;
-  Opaque* baz;
+  Opaque *baz;
 };
 
-template <typename T>
-struct TrivialT {
+template <typename T> struct TrivialT {
   int foo;
   char bar;
-  T* baz;
+  T *baz;
 };
 
 struct NonTrivial {
-  ~NonTrivial() {
-  }
+  ~NonTrivial() {}
 
-  Opaque* ptr;
+  Opaque *ptr;
 };
 
-template <typename T>
-struct NonTrivialT {
-  ~NonTrivialT() {
-    delete ptr;
-  }
+template <typename T> struct NonTrivialT {
+  ~NonTrivialT() { delete ptr; }
 
-  T* ptr;
+  T *ptr;
 };
 
 struct TransitivelyNonTrivial {
@@ -40,25 +35,60 @@ struct TransitivelyNonTrivial {
 
 extern "C" void Foo();
 extern "C" Trivial Foo1();
-extern "C" NonTrivial Foo2(); 
-extern "C" NonTrivialT<int> Foo3(); 
-extern "C" NonTrivialT<float> Foo4(); 
+extern "C" NonTrivial
+Foo2(); 
+        
+        
+extern "C" NonTrivialT<int>
+Foo3(); 
+        
+        
+        
+extern "C" NonTrivialT<float>
+Foo4(); 
+        
+        
+        
 
-extern "C" NonTrivial* Foo5();
+extern "C" NonTrivial *Foo5();
 
 extern "C" TrivialT<int> Foo6();
-extern "C" TrivialT<float> Foo7(); 
-extern "C" Trivial* Foo8();
+extern "C" TrivialT<float>
+Foo7(); 
+        
+        
+        
+extern "C" Trivial *Foo8();
 
 extern "C" void Foo9(Trivial);
-extern "C" void Foo10(NonTrivial); 
-extern "C" void Foo11(NonTrivial*);
-extern "C" void Foo12(NonTrivialT<int>); 
+extern "C" void Foo10(
+    NonTrivial); 
+                 
+                 
+extern "C" void Foo11(NonTrivial *);
+extern "C" void
+    Foo12(NonTrivialT<int>); 
+                             
+                             
+                             
+                             
 extern "C" void Foo13(TrivialT<int>);
-extern "C" void Foo14(TrivialT<float>); 
+extern "C" void
+    Foo14(TrivialT<float>); 
+                            
+                            
+                            
+                            
 
-extern "C" TransitivelyNonTrivial Foo15(); 
-extern "C" void Foo16(TransitivelyNonTrivial); 
+extern "C" TransitivelyNonTrivial
+Foo15(); 
+         
+         
+extern "C" void Foo16(
+    TransitivelyNonTrivial); 
+                             
+                             
+                             
 
 template struct TrivialT<int>;
 

@@ -2,9 +2,7 @@
 
 
 
-inline int headerSays(double x) {
-  return x != x;
-}
+inline int headerSays(double x) { return x != x; }
 #line 9 "TestNANTestingExpr.cpp"
 void test(bool x);
 void foo() {
@@ -13,9 +11,17 @@ void foo() {
   mydouble d;
   double d2;
   test(f == f); 
+                
+                
   test(d == d); 
+                
+                
   test(f != f); 
+                
+                
   test(d != d); 
+                
+                
   test(f != d);
   test(d == (d - f));
   test(f == f2);

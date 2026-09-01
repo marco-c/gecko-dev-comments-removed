@@ -1,4 +1,4 @@
-#define MOZ_RUNINIT  __attribute__((annotate("moz_global_var")))
+#define MOZ_RUNINIT __attribute__((annotate("moz_global_var")))
 #define MOZ_GLOBAL_CLASS __attribute__((annotate("moz_global_class")))
 
 
@@ -22,6 +22,8 @@ struct Global {
 };
 
 Global g2; 
+           
+           
 
 
 struct MOZ_GLOBAL_CLASS GlobalCls {
@@ -42,25 +44,60 @@ struct InvalidRuninitGlobal {
   constexpr InvalidRuninitGlobal() {}
 };
 
-MOZ_RUNINIT InvalidRuninitGlobal g5; 
+MOZ_RUNINIT InvalidRuninitGlobal
+    g5; 
+        
+        
 constexpr InvalidRuninitGlobal g5a;
 
 struct InvalidRuninitGlobal2 {
   int i;
 };
 
-MOZ_RUNINIT InvalidRuninitGlobal2 g5b; 
+MOZ_RUNINIT InvalidRuninitGlobal2
+    g5b; 
+         
+         
 InvalidRuninitGlobal2 g5c;
 
 
-Global g6;  
+Global g6; 
+           
+           
 
 
 void foo() { static Global g7; }
 
 
-namespace bar {Global g8;}  
+namespace bar {
+Global g8;
+} 
 
 
-class foobar {static Global g9;};
-Global foobar::g9; 
+class foobar {
+  static Global g9;
+};
+Global
+    foobar::g9; 
+                
+                
+
+struct almost_trivial_constructor1 {
+  void *p;
+  almost_trivial_constructor1() : p(nullptr) {}
+};
+
+almost_trivial_constructor1 atc1;
+
+struct almost_trivial_constructor2 {
+  void *p = nullptr;
+  almost_trivial_constructor2() {}
+};
+
+almost_trivial_constructor2 atc2;
+
+struct almost_trivial_constructor3 {
+  void *p = nullptr;
+};
+
+almost_trivial_constructor3 atc3;

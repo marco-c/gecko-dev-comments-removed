@@ -1,21 +1,20 @@
 class Foo {
-  Foo(Foo&& f);
+  Foo(Foo &&f);
 };
 
 class Bar {
-  explicit Bar(Bar&& f); 
+  explicit Bar(Bar &&f); 
+                         
 };
 
 class Baz {
-  template<typename T>
-  explicit Baz(T&& f) {};
+  template <typename T> explicit Baz(T &&f){};
 };
 
 class Quxx {
   Quxx();
-  Quxx(Quxx& q) = delete;
-  template<typename T>
-  explicit Quxx(T&& f) {};
+  Quxx(Quxx &q) = delete;
+  template <typename T> explicit Quxx(T &&f){};
 };
 
 void f() {

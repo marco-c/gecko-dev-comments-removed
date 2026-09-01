@@ -9,7 +9,8 @@ class RC1 {
 class RC2 {
 public:
   RC2();
-  RC2(const RC2&);
+  RC2(const RC2 &);
+
 private:
   void AddRef();
   void Release();
@@ -17,9 +18,15 @@ private:
 };
 
 void f() {
-  RC1* r1 = new RC1();
-  RC1* r1p = new RC1(*r1); 
+  RC1 *r1 = new RC1();
+  RC1 *r1p =
+      new RC1(*r1); 
+                    
+                    
+                    
+                    
+                    
 
-  RC2* r2 = new RC2();
-  RC2* r2p = new RC2(*r2);
+  RC2 *r2 = new RC2();
+  RC2 *r2p = new RC2(*r2);
 }

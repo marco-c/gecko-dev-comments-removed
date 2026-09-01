@@ -19,6 +19,7 @@ class Bar {
 
   void Baz() {
     mFoo = nullptr; 
+                    
   }
 };
 
@@ -29,5 +30,6 @@ class Bar2 {
 
   void Baz() {
     mFoo = nullptr; 
+                    
   }
 };

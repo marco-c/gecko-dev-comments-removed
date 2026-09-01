@@ -12,29 +12,49 @@ struct MOZ_HEAP_CLASS Heap {
   void *operator new(size_t blah, char *buffer) { return buffer; }
 };
 
-template <class T>
-struct MOZ_HEAP_CLASS TemplateClass {
+template <class T> struct MOZ_HEAP_CLASS TemplateClass {
   T i;
 };
 
-void gobble(void *) { }
+void gobble(void *) {}
 
-void gobbleref(const Heap&) { }
+void gobbleref(const Heap &) {}
 
 void misuseHeapClass(int len) {
   Heap invalid; 
+                
+                
   Heap alsoInvalid[2]; 
+                       
+                       
+                       
+                       
   static Heap invalidStatic; 
-  static Heap alsoInvalidStatic[2]; 
+                             
+                             
+  static Heap alsoInvalidStatic
+      [2]; 
+           
+           
+           
 
   gobble(&invalid);
   gobble(&invalidStatic);
   gobble(&alsoInvalid[0]);
 
   gobbleref(Heap()); 
-  gobbleref(Heap(10, 20)); 
-  gobbleref(Heap(10)); 
-  gobbleref(10); 
+                     
+                     
+  gobbleref(Heap(
+      10,
+      20)); 
+            
+  gobbleref(Heap(
+      10)); 
+            
+  gobbleref(
+      10); 
+           
 
   gobble(new Heap);
   gobble(new Heap[10]);
@@ -46,19 +66,31 @@ void misuseHeapClass(int len) {
 }
 
 Heap invalidStatic; 
+                    
+                    
 struct RandomClass {
   Heap nonstaticMember; 
+                        
   static Heap staticMember; 
+                            
+                            
 };
 struct MOZ_HEAP_CLASS RandomHeapClass {
   Heap nonstaticMember;
   static Heap staticMember; 
+                            
+                            
 };
 
 struct BadInherit : Heap {}; 
+                             
 struct MOZ_HEAP_CLASS GoodInherit : Heap {};
 
 void useStuffWrongly() {
-  BadInherit i; 
+  BadInherit i;  
+                 
+                 
   RandomClass r; 
+                 
+                 
 }

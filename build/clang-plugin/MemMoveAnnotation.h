@@ -9,7 +9,6 @@
 #include "CustomTypeAnnotation.h"
 #include "Utils.h"
 
-
 class MemMoveAnnotation final : public CustomTypeAnnotation {
 public:
   MemMoveAnnotation()
@@ -29,8 +28,7 @@ protected:
       }
       
       if (auto *Spec = dyn_cast<ClassTemplateSpecializationDecl>(RD)) {
-        if (getDeclarationNamespace(D) == "std" &&
-            (getNameChecked(D) == "unique_ptr")) {
+        if (D->isInStdNamespace() && (getNameChecked(D) == "unique_ptr")) {
           unsigned ParameterIndex = 0;
           const auto &TArgs = Spec->getTemplateArgs();
           if (TArgs.size() != 2) {
@@ -57,7 +55,7 @@ protected:
                                 VisitFlags &ToVisit) const override {
     
     
-    if (getDeclarationNamespace(D) != "std") {
+    if (!D->isInStdNamespace()) {
       return "";
     }
 

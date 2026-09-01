@@ -1,6 +1,7 @@
-#define MOZ_NON_TEMPORARY_CLASS __attribute__((annotate("moz_non_temporary_class")))
+#define MOZ_NON_TEMPORARY_CLASS                                                \
+  __attribute__((annotate("moz_non_temporary_class")))
 #define MOZ_IMPLICIT __attribute__((annotate("moz_implicit")))
-#define MOZ_RUNINIT  __attribute__((annotate("moz_global_var")))
+#define MOZ_RUNINIT __attribute__((annotate("moz_global_var")))
 
 #include <stddef.h>
 
@@ -13,17 +14,15 @@ struct MOZ_NON_TEMPORARY_CLASS NonTemporary {
   void *operator new(size_t blah, char *buffer) { return buffer; }
 };
 
-template <class T>
-struct MOZ_NON_TEMPORARY_CLASS TemplateClass {
+template <class T> struct MOZ_NON_TEMPORARY_CLASS TemplateClass {
   T i;
 };
 
-void gobble(void *) { }
+void gobble(void *) {}
 
-void gobbleref(const NonTemporary&) { }
+void gobbleref(const NonTemporary &) {}
 
-template <class T>
-void gobbleanyref(const T&) { }
+template <class T> void gobbleanyref(const T &) {}
 
 void misuseNonTemporaryClass(int len) {
   NonTemporary invalid;
@@ -36,10 +35,23 @@ void misuseNonTemporaryClass(int len) {
   gobble(&alsoInvalid[0]);
 
   gobbleref(NonTemporary()); 
-  gobbleref(NonTemporary(10, 20)); 
-  gobbleref(NonTemporary(10)); 
+                             
+                             
+  gobbleref(
+      NonTemporary(10, 20)); 
+                             
+                             
+  gobbleref(
+      NonTemporary(10)); 
+                         
+                         
   gobbleref(10); 
+                 
+                 
   gobbleanyref(TemplateClass<int>()); 
+                                      
+                                      
+                                      
 
   gobble(new NonTemporary);
   gobble(new NonTemporary[10]);
@@ -50,12 +62,14 @@ void misuseNonTemporaryClass(int len) {
   gobble(new (buffer) NonTemporary);
 }
 
-void defaultArg(const NonTemporary& arg = NonTemporary()) {
-}
+void defaultArg(const NonTemporary &arg = NonTemporary()) {}
 
 NonTemporary invalidStatic;
 struct RandomClass {
-  NonTemporary nonstaticMember; 
+  NonTemporary
+      nonstaticMember; 
+                       
+                       
   static NonTemporary staticMember;
 };
 struct MOZ_NON_TEMPORARY_CLASS RandomNonTemporaryClass {
@@ -63,9 +77,16 @@ struct MOZ_NON_TEMPORARY_CLASS RandomNonTemporaryClass {
   static NonTemporary staticMember;
 };
 
-struct BadInherit : NonTemporary {}; 
+struct BadInherit : NonTemporary {
+}; 
+   
 
 void useStuffWrongly() {
   gobbleanyref(BadInherit()); 
-  gobbleanyref(RandomClass()); 
+                              
+                              
+  gobbleanyref(
+      RandomClass()); 
+                      
+                      
 }

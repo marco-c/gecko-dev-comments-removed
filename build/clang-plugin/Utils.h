@@ -138,27 +138,27 @@ inline bool isInIgnoredNamespaceForImplicitCtor(const Decl *Declaration) {
     return false;
   }
 
-  return Name == "std" ||               
-         Name == "__gnu_cxx" ||         
-         Name == "boost" ||             
-         Name == "webrtc" ||            
-         Name == "rtc" ||               
+  return Name == "std" ||       
+         Name == "__gnu_cxx" || 
+         Name == "boost" ||     
+         Name == "webrtc" ||    
+         Name == "rtc" ||       
 #if CLANG_VERSION_MAJOR >= 16
-         Name.starts_with("icu_") ||    
+         Name.starts_with("icu_") || 
 #else
-         Name.startswith("icu_") ||     
+         Name.startswith("icu_") || 
 #endif
-         Name == "google" ||            
-         Name == "google_breakpad" ||   
-         Name == "soundtouch" ||        
-         Name == "stagefright" ||       
-         Name == "MacFileUtilities" ||  
-         Name == "dwarf2reader" ||      
-         Name == "arm_ex_to_module" ||  
-         Name == "testing" ||           
-         Name == "Json" ||              
-         Name == "rlbox" ||             
-         Name == "v8";                  
+         Name == "google" ||           
+         Name == "google_breakpad" ||  
+         Name == "soundtouch" ||       
+         Name == "stagefright" ||      
+         Name == "MacFileUtilities" || 
+         Name == "dwarf2reader" ||     
+         Name == "arm_ex_to_module" || 
+         Name == "testing" ||          
+         Name == "Json" ||             
+         Name == "rlbox" ||            
+         Name == "v8";                 
 }
 
 inline bool isInIgnoredNamespaceForImplicitConversion(const Decl *Declaration) {

@@ -1,79 +1,54 @@
 #include <cstdint>
 
-typedef enum {
-  BadFirst,
-  BadSecond,
-  BadThird
-} BadEnum;
+typedef enum { BadFirst, BadSecond, BadThird } BadEnum;
 
-typedef enum {
-  NestedFirst,
-  NestedSecond
-} NestedBadEnum;
+typedef enum { NestedFirst, NestedSecond } NestedBadEnum;
 
-typedef enum {
-  GoodFirst,
-  GoodSecond,
-  GoodLast
-} GoodEnum;
+typedef enum { GoodFirst, GoodSecond, GoodLast } GoodEnum;
 
-enum RawEnum {
-  RawFirst,
-  RawLast
-};
+enum RawEnum { RawFirst, RawLast };
 
-enum class ClassEnum {
-  ClassFirst,
-  ClassLast
-};
+enum class ClassEnum { ClassFirst, ClassLast };
 
-enum class TypedClassEnum : uint32_t {
-  TypedFirst,
-  TypedLast
-};
+enum class TypedClassEnum : uint32_t { TypedFirst, TypedLast };
 
-enum class nsresult : uint32_t {
-  NS_OK = 0
-};
+enum class nsresult : uint32_t { NS_OK = 0 };
 
 template <class P> struct ParamTraits;
 
 
-template <typename E, typename EnumValidator>
-struct EnumSerializer {
-};
+template <typename E, typename EnumValidator> struct EnumSerializer {};
 
-template <typename E,
-          E MinLegal,
-          E HighBound>
-class ContiguousEnumValidator
-{};
+template <typename E, E MinLegal, E HighBound> class ContiguousEnumValidator {};
 
 
-template <typename E,
-          E MinLegal,
-          E HighBound>
+template <typename E, E MinLegal, E HighBound>
 struct ContiguousEnumSerializer
-  : EnumSerializer<E,
-                   ContiguousEnumValidator<E, MinLegal, HighBound>>
-{};
+    : EnumSerializer<E, ContiguousEnumValidator<E, MinLegal, HighBound>> {};
 
 
-template<>
+template <>
 struct ParamTraits<ClassEnum> 
+                              
+                              
+                              
 {
   
 };
 
-template<>
+template <>
 struct ParamTraits<TypedClassEnum> 
-{
-};
+                                   
+                                   
+                                   
+{};
 
-template<>
+template <>
 struct ParamTraits<enum RawEnum> 
-{
-};
+                                 
+                                 
+                                 
+{};
 
 
 template <> struct ParamTraits<BadEnum>;
@@ -86,37 +61,34 @@ struct SomeClass {
   friend struct ParamTraits<FooBarClass>;
 };
 
-template<>
+template <>
 struct ParamTraits<BadEnum> 
-{
-};
+                            
+                            
+                            
+{};
 
 
 typedef NestedBadEnum NestedDefLevel1;
 typedef NestedDefLevel1 NestedDefLevel2;
 
-template<>
+template <>
 struct ParamTraits<NestedDefLevel2> 
-{
-};
+                                    
+                                    
+                                    
+{};
 
 
 typedef int IntTypedef;
 
-template<>
-struct ParamTraits<IntTypedef>
-{
-};
+template <> struct ParamTraits<IntTypedef> {};
 
 
-template<>
+template <>
 struct ParamTraits<GoodEnum>
-: public ContiguousEnumSerializer<GoodEnum,
-                                  GoodEnum::GoodFirst,
-                                  GoodEnum::GoodLast>
-{};
+    : public ContiguousEnumSerializer<GoodEnum, GoodEnum::GoodFirst,
+                                      GoodEnum::GoodLast> {};
 
 
-template<>
-struct ParamTraits<nsresult>
-{};
+template <> struct ParamTraits<nsresult> {};
