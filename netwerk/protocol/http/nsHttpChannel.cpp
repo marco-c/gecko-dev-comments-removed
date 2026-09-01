@@ -10478,60 +10478,6 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
   RecordHttpChanDispositionGlean(chanDisposition);
 
   
-  
-  
-  
-  nsContentPolicyType internalLoadType;
-  mLoadInfo->GetInternalContentPolicyType(&internalLoadType);
-  bool statusIsSuccess = NS_SUCCEEDED(aStatus);
-  if (internalLoadType == nsIContentPolicy::TYPE_INTERNAL_IMAGE ||
-      internalLoadType == nsIContentPolicy::TYPE_INTERNAL_IMAGE_PRELOAD) {
-    if (mLoadInfo->GetBrowserDidUpgradeInsecureRequests()) {
-      glean::mixed_content::images
-          .EnumGet(statusIsSuccess
-                       ? glean::mixed_content::ImagesLabel::eImgupsuccess
-                       : glean::mixed_content::ImagesLabel::eImgupfailure)
-          .Add();
-    } else {
-      glean::mixed_content::images
-          .EnumGet(statusIsSuccess
-                       ? glean::mixed_content::ImagesLabel::eImgnoupsuccess
-                       : glean::mixed_content::ImagesLabel::eImgnoupfailure)
-          .Add();
-    }
-  }
-  if (internalLoadType == nsIContentPolicy::TYPE_INTERNAL_VIDEO) {
-    if (mLoadInfo->GetBrowserDidUpgradeInsecureRequests()) {
-      glean::mixed_content::video
-          .EnumGet(statusIsSuccess
-                       ? glean::mixed_content::VideoLabel::eVideoupsuccess
-                       : glean::mixed_content::VideoLabel::eVideoupfailure)
-          .Add();
-    } else {
-      glean::mixed_content::video
-          .EnumGet(statusIsSuccess
-                       ? glean::mixed_content::VideoLabel::eVideonoupsuccess
-                       : glean::mixed_content::VideoLabel::eVideonoupfailure)
-          .Add();
-    }
-  }
-  if (internalLoadType == nsIContentPolicy::TYPE_INTERNAL_AUDIO) {
-    if (mLoadInfo->GetBrowserDidUpgradeInsecureRequests()) {
-      glean::mixed_content::audio
-          .EnumGet(statusIsSuccess
-                       ? glean::mixed_content::AudioLabel::eAudioupsuccess
-                       : glean::mixed_content::AudioLabel::eAudioupfailure)
-          .Add();
-    } else {
-      glean::mixed_content::audio
-          .EnumGet(statusIsSuccess
-                       ? glean::mixed_content::AudioLabel::eAudionoupsuccess
-                       : glean::mixed_content::AudioLabel::eAudionoupfailure)
-          .Add();
-    }
-  }
-
-  
   if (mCacheEntry && mCachePump && LoadConcurrentCacheAccess() &&
       aContentComplete) {
     int64_t size, contentLength;
