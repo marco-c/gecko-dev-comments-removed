@@ -162,9 +162,7 @@ const runInference2 = async ({ backend, tag }) => {
   
   
   MLSuggest.INTENT_OPTIONS = { ...CUSTOM_INTENT_OPTIONS, backend };
-  MLSuggest.INTENT_OPTIONS_FALLBACK = { ...CUSTOM_INTENT_OPTIONS, backend };
   MLSuggest.NER_OPTIONS = { ...CUSTOM_NER_OPTIONS, backend };
-  MLSuggest.NER_OPTIONS_FALLBACK = { ...CUSTOM_NER_OPTIONS, backend };
 
   const modelHubRootUrl = Services.env.get("MOZ_MODELS_HUB");
   if (!modelHubRootUrl) {
