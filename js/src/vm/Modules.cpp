@@ -27,7 +27,6 @@
 #include "js/friend/StackLimits.h"      
 #include "js/RootingAPI.h"              
 #include "js/Value.h"                   
-#include "js/WasmModule.h"              
 #include "vm/EnvironmentObject.h"       
 #include "vm/JSAtomUtils.h"             
 #include "vm/JSContext.h"               
@@ -344,28 +343,11 @@ JS_PUBLIC_API JSObject* JS::CompileWasmModuleAsSource(
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
 
-  SharedWasmCompileArgs compileArgs = BuildCompileArgsForESM(cx, options);
-  if (!compileArgs) {
-    return nullptr;
-  }
-
-  ESMCompileResult compileResult =
-      CompileForESM(*compileArgs, srcBuf.begin(), srcBuf.length());
-
+  wasm::BytecodeSource source(srcBuf.begin(), srcBuf.length());
   RootedObject wasmModuleObject(cx);
-  if (!FinishCompileForESM(cx, *compileArgs, compileResult,
-                           &wasmModuleObject)) {
+  if (!wasm::CompileForESM(cx, options, source, &wasmModuleObject)) {
     return nullptr;
   }
-
-  return CreateWasmSourcePhaseModule(cx, wasmModuleObject);
-}
-
-JS_PUBLIC_API JSObject* JS::CreateWasmSourcePhaseModule(
-    JSContext* cx, Handle<JSObject*> wasmModuleObject) {
-  MOZ_ASSERT(!cx->zone()->isAtomsZone());
-  AssertHeapIsIdle();
-  CHECK_THREAD(cx);
 
   Rooted<ModuleObject*> moduleObject(cx, ModuleObject::create(cx));
   if (!moduleObject) {

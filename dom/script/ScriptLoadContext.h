@@ -12,7 +12,6 @@
 #include "js/SourceText.h"
 #include "js/Transcoding.h"  
 #include "js/TypeDecls.h"
-#include "js/WasmModule.h"  
 #include "js/experimental/JSStencil.h"  
 #include "js/loader/LoadContextBase.h"
 #include "js/loader/ScriptKind.h"
@@ -25,7 +24,6 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TaskController.h"  
 #include "mozilla/Utf8.h"            
-#include "mozilla/Vector.h"
 #include "mozilla/dom/SRIMetadata.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "nsCOMPtr.h"
@@ -75,53 +73,20 @@ class Element;
 
 
 
-class StencilCompileOrDecodeTask;
-class WasmCompileTask;
-
 
 class CompileOrDecodeTask : public mozilla::Task {
  protected:
-  enum class Type : uint8_t { Stencil, Wasm };
-
-  explicit CompileOrDecodeTask(Type aType);
-  virtual ~CompileOrDecodeTask() = default;
-
-  bool IsCancelled(const MutexAutoLock& aProofOfLock) const {
-    return mIsCancelled;
-  }
-
- public:
-  
-  
-  void Cancel();
-
-  bool IsStencilTask() const { return mType == Type::Stencil; }
-  bool IsWasmTask() const { return mType == Type::Wasm; }
-
-  inline StencilCompileOrDecodeTask* AsStencilCompileOrDecodeTask();
-  inline WasmCompileTask* AsWasmCompileTask();
-
- protected:
-  
-  mozilla::Mutex mMutex;
-
-  bool mIsCancelled = false;
-
- private:
-  const Type mType;
-};
-
-
-
-class StencilCompileOrDecodeTask : public CompileOrDecodeTask {
- protected:
-  StencilCompileOrDecodeTask();
-  virtual ~StencilCompileOrDecodeTask();
+  CompileOrDecodeTask();
+  virtual ~CompileOrDecodeTask();
 
   nsresult InitFrontendContext();
 
   void DidRunTask(const MutexAutoLock& aProofOfLock,
                   RefPtr<JS::Stencil>&& aStencil);
+
+  bool IsCancelled(const MutexAutoLock& aProofOfLock) const {
+    return mIsCancelled;
+  }
 
  public:
   
@@ -132,7 +97,14 @@ class StencilCompileOrDecodeTask : public CompileOrDecodeTask {
   already_AddRefed<JS::Stencil> StealResult(
       JSContext* aCx, JS::InstantiationStorage* aInstantiationStorage);
 
+  
+  
+  void Cancel();
+
  protected:
+  
+  mozilla::Mutex mMutex;
+
   
   JS::TranscodeResult mResult = JS::TranscodeResult::Ok;
 
@@ -146,56 +118,14 @@ class StencilCompileOrDecodeTask : public CompileOrDecodeTask {
   
   JS::FrontendContext* mFrontendContext = nullptr;
 
+  bool mIsCancelled = false;
+
  private:
   
   RefPtr<JS::Stencil> mStencil;
 
   JS::InstantiationStorage mInstantiationStorage;
 };
-
-
-class WasmCompileTask final : public CompileOrDecodeTask {
- public:
-  using WasmBytesBuffer = mozilla::Vector<uint8_t, 0, js::MallocAllocPolicy>;
-
-  explicit WasmCompileTask(WasmBytesBuffer&& aBytes)
-      : CompileOrDecodeTask(Type::Wasm), mBytes(std::move(aBytes)) {}
-
-  nsresult Init(JSContext* aCx, JS::CompileOptions& aOptions);
-
-  TaskResult Run() override;
-
-  
-  
-  JSObject* StealResult(JSContext* aCx);
-
-#ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
-  bool GetName(nsACString& aName) override {
-    aName.AssignLiteral("WasmCompileTask");
-    return true;
-  }
-#endif
-
- private:
-  JS::SharedWasmCompileArgs mCompileArgs;
-
-  
-  
-  JS::ESMCompileResult mCompileResult;
-
-  WasmBytesBuffer mBytes;
-};
-
-StencilCompileOrDecodeTask*
-CompileOrDecodeTask::AsStencilCompileOrDecodeTask() {
-  MOZ_ASSERT(IsStencilTask());
-  return static_cast<StencilCompileOrDecodeTask*>(this);
-}
-
-WasmCompileTask* CompileOrDecodeTask::AsWasmCompileTask() {
-  MOZ_ASSERT(IsWasmTask());
-  return static_cast<WasmCompileTask*>(this);
-}
 
 class ScriptLoadContext : public JS::loader::LoadContextBase,
                           public PreloaderBase {
@@ -362,10 +292,6 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
   
   already_AddRefed<JS::Stencil> StealOffThreadResult(
       JSContext* aCx, JS::InstantiationStorage* aInstantiationStorage);
-
-  
-  
-  JSObject* StealOffThreadWasmResult(JSContext* aCx);
 
   ScriptMode mScriptMode;  
   bool mScriptFromHead;    

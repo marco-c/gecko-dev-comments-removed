@@ -7,16 +7,10 @@
 
 #include "mozilla/RefPtr.h"  
 
-#include <stddef.h>  
-#include <stdint.h>  
-
 #include "jstypes.h"  
 
-#include "js/AllocPolicy.h"  
-#include "js/RefCounted.h"   
-#include "js/TypeDecls.h"    
-#include "js/Utility.h"      
-#include "js/Vector.h"       
+#include "js/RefCounted.h"  
+#include "js/TypeDecls.h"   
 
 namespace JS {
 
@@ -43,39 +37,6 @@ struct WasmModule : js::AtomicRefCounted<WasmModule> {
 extern JS_PUBLIC_API bool IsWasmModuleObject(HandleObject obj);
 
 extern JS_PUBLIC_API RefPtr<WasmModule> GetWasmModule(HandleObject obj);
-
-class JS_PUBLIC_API ReadOnlyCompileOptions;
-
-struct WasmCompileArgs : js::AtomicRefCounted<WasmCompileArgs> {
-  virtual ~WasmCompileArgs() = default;
-};
-
-using WasmCompileWarnings = js::Vector<UniqueChars, 0, js::SystemAllocPolicy>;
-
-using SharedWasmCompileArgs = RefPtr<const WasmCompileArgs>;
-
-extern JS_PUBLIC_API SharedWasmCompileArgs
-BuildCompileArgsForESM(JSContext* cx, const ReadOnlyCompileOptions& options);
-
-struct ESMCompileResult {
-  enum class Status {
-    Success,
-    Failed,
-    OutOfMemory,
-  };
-
-  Status status = Status::OutOfMemory;
-  RefPtr<const WasmModule> module;
-  UniqueChars error;
-  WasmCompileWarnings warnings;
-};
-
-extern JS_PUBLIC_API ESMCompileResult CompileForESM(
-    const WasmCompileArgs& compileArgs, const uint8_t* bytes, size_t length);
-
-extern JS_PUBLIC_API bool FinishCompileForESM(
-    JSContext* cx, const WasmCompileArgs& compileArgs,
-    const ESMCompileResult& compileResult, MutableHandleObject moduleObj);
 
 }  
 
