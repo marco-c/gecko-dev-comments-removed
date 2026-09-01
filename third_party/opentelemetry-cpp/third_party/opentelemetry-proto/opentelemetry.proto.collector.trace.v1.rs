@@ -1,5 +1,4 @@
 
-#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ExportTraceServiceRequest {
     
@@ -12,8 +11,7 @@ pub struct ExportTraceServiceRequest {
         super::super::super::trace::v1::ResourceSpans,
     >,
 }
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ExportTraceServiceResponse {
     
     
@@ -33,8 +31,7 @@ pub struct ExportTraceServiceResponse {
     #[prost(message, optional, tag = "1")]
     pub partial_success: ::core::option::Option<ExportTracePartialSuccess>,
 }
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ExportTracePartialSuccess {
     
     

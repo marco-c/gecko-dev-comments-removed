@@ -9,7 +9,6 @@
 
 
 
-#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TracesData {
     
@@ -21,7 +20,6 @@ pub struct TracesData {
     pub resource_spans: ::prost::alloc::vec::Vec<ResourceSpans>,
 }
 
-#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ResourceSpans {
     
@@ -41,7 +39,6 @@ pub struct ResourceSpans {
     pub schema_url: ::prost::alloc::string::String,
 }
 
-#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ScopeSpans {
     
@@ -63,7 +60,6 @@ pub struct ScopeSpans {
 
 
 
-#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Span {
     
@@ -199,7 +195,6 @@ pub struct Span {
 pub mod span {
     
     
-    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct Event {
         
@@ -235,7 +230,6 @@ pub mod span {
     
     
     
-    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct Link {
         
@@ -332,12 +326,12 @@ pub mod span {
         
         pub fn as_str_name(&self) -> &'static str {
             match self {
-                SpanKind::Unspecified => "SPAN_KIND_UNSPECIFIED",
-                SpanKind::Internal => "SPAN_KIND_INTERNAL",
-                SpanKind::Server => "SPAN_KIND_SERVER",
-                SpanKind::Client => "SPAN_KIND_CLIENT",
-                SpanKind::Producer => "SPAN_KIND_PRODUCER",
-                SpanKind::Consumer => "SPAN_KIND_CONSUMER",
+                Self::Unspecified => "SPAN_KIND_UNSPECIFIED",
+                Self::Internal => "SPAN_KIND_INTERNAL",
+                Self::Server => "SPAN_KIND_SERVER",
+                Self::Client => "SPAN_KIND_CLIENT",
+                Self::Producer => "SPAN_KIND_PRODUCER",
+                Self::Consumer => "SPAN_KIND_CONSUMER",
             }
         }
         
@@ -356,8 +350,7 @@ pub mod span {
 }
 
 
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct Status {
     
     #[prost(string, tag = "2")]
@@ -398,9 +391,9 @@ pub mod status {
         
         pub fn as_str_name(&self) -> &'static str {
             match self {
-                StatusCode::Unset => "STATUS_CODE_UNSET",
-                StatusCode::Ok => "STATUS_CODE_OK",
-                StatusCode::Error => "STATUS_CODE_ERROR",
+                Self::Unset => "STATUS_CODE_UNSET",
+                Self::Ok => "STATUS_CODE_OK",
+                Self::Error => "STATUS_CODE_ERROR",
             }
         }
         
@@ -449,10 +442,10 @@ impl SpanFlags {
     
     pub fn as_str_name(&self) -> &'static str {
         match self {
-            SpanFlags::DoNotUse => "SPAN_FLAGS_DO_NOT_USE",
-            SpanFlags::TraceFlagsMask => "SPAN_FLAGS_TRACE_FLAGS_MASK",
-            SpanFlags::ContextHasIsRemoteMask => "SPAN_FLAGS_CONTEXT_HAS_IS_REMOTE_MASK",
-            SpanFlags::ContextIsRemoteMask => "SPAN_FLAGS_CONTEXT_IS_REMOTE_MASK",
+            Self::DoNotUse => "SPAN_FLAGS_DO_NOT_USE",
+            Self::TraceFlagsMask => "SPAN_FLAGS_TRACE_FLAGS_MASK",
+            Self::ContextHasIsRemoteMask => "SPAN_FLAGS_CONTEXT_HAS_IS_REMOTE_MASK",
+            Self::ContextIsRemoteMask => "SPAN_FLAGS_CONTEXT_IS_REMOTE_MASK",
         }
     }
     

@@ -2,7 +2,6 @@
 
 
 
-#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct AnyValue {
     
@@ -14,7 +13,6 @@ pub struct AnyValue {
 pub mod any_value {
     
     
-    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Value {
         #[prost(string, tag = "1")]
@@ -35,7 +33,6 @@ pub mod any_value {
 }
 
 
-#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ArrayValue {
     
@@ -47,7 +44,6 @@ pub struct ArrayValue {
 
 
 
-#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct KeyValueList {
     
@@ -59,7 +55,6 @@ pub struct KeyValueList {
 }
 
 
-#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct KeyValue {
     #[prost(string, tag = "1")]
@@ -69,7 +64,6 @@ pub struct KeyValue {
 }
 
 
-#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct InstrumentationScope {
     
@@ -89,8 +83,7 @@ pub struct InstrumentationScope {
 
 
 
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct EntityRef {
     
     
