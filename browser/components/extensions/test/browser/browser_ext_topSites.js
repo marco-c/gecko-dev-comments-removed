@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const { PlacesTestUtils } = ChromeUtils.importESModule(
@@ -287,8 +285,9 @@ add_task(async function test_topSites_newtab_visits_favicons() {
   await PlacesTestUtils.addFavicons(faviconData);
 
   
+  
   await updateTopSites(sites => {
-    return sites && sites[1] && sites[1].url == "http://example-1.com/";
+    return sites?.[1]?.url == "http://example-1.com/" && sites?.[1]?.favicon;
   });
 
   let base = "chrome://activity-stream/content/data/content/tippytop/images/";
@@ -376,8 +375,9 @@ add_task(async function test_topSites_newtab_visits_favicons_limit() {
   await PlacesTestUtils.addFavicons(faviconData);
 
   
+  
   await updateTopSites(sites => {
-    return sites && sites[1] && sites[1].url == "http://example-1.com/";
+    return sites?.[1]?.url == "http://example-1.com/" && sites?.[1]?.favicon;
   });
 
   let expectedResults = [
