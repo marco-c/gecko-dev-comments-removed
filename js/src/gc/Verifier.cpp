@@ -415,6 +415,11 @@ void gc::GCRuntime::endVerifyPreBarriers() {
   resetDelayedMarking();
   resetDeferredWeakMaps();
 
+  
+  
+  
+  setGrayBitsInvalid();
+
   for (AllZonesIter zone(this); !zone.done(); zone.next()) {
     zone->bufferAllocator.clearMarkStateAfterBarrierVerification();
   }
