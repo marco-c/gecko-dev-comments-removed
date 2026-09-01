@@ -11457,6 +11457,9 @@ nsresult nsHttpChannel::DoAuthRetry(
   MOZ_ASSERT(!mTransaction, "should not have a transaction");
 
   
+  mSecurityInfo = nullptr;
+
+  
   
   
   
