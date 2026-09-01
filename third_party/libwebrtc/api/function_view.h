@@ -73,11 +73,23 @@ class FunctionView<RetT(ArgT...)> final {
   
   template <
       typename F,
-      typename std::enable_if<std::is_function<typename std::remove_pointer<
-          typename std::remove_reference<F>::type>::type>::value>::type* =
+      typename std::enable_if<
+          std::is_pointer<typename std::remove_reference<F>::type>::value &&
+          std::is_function<typename std::remove_pointer<
+              typename std::remove_reference<F>::type>::type>::value>::type* =
           nullptr>
   FunctionView(F&& f)
       : call_(f ? CallFunPtr<typename std::remove_pointer<F>::type> : nullptr) {
+    f_.fun_ptr = reinterpret_cast<void (*)()>(f);
+  }
+
+  
+  template <
+      typename F,
+      typename std::enable_if<std::is_function<
+          typename std::remove_reference<F>::type>::value>::type* = nullptr>
+  FunctionView(F&& f)
+      : call_(CallFunPtr<typename std::remove_reference<F>::type>) {
     f_.fun_ptr = reinterpret_cast<void (*)()>(f);
   }
 
@@ -128,12 +140,5 @@ class FunctionView<RetT(ArgT...)> final {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::FunctionView;
-}  
-#endif  
 
 #endif  
