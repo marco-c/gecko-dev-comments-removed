@@ -134,6 +134,7 @@ float SVGSVGElement::CurrentScale() const {
 
 void SVGSVGElement::SetCurrentScale(float aCurrentScale) {
   if (IsInner()) {
+    
     return;
   }
   
