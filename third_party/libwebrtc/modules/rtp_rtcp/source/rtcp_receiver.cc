@@ -491,8 +491,6 @@ bool RTCPReceiver::HandleSenderReport(const CommonHeader& rtcp_block,
 
   packet_information->remote_ssrc = remote_ssrc;
 
-  UpdateTmmbrRemoteIsAlive(remote_ssrc);
-
   
   if (remote_ssrc_ == remote_ssrc) {
     
@@ -528,9 +526,6 @@ bool RTCPReceiver::HandleReceiverReport(const CommonHeader& rtcp_block,
   const uint32_t remote_ssrc = receiver_report.sender_ssrc();
 
   packet_information->remote_ssrc = remote_ssrc;
-
-  UpdateTmmbrRemoteIsAlive(remote_ssrc);
-
   packet_information->packet_type_flags |= kRtcpRr;
 
   for (const ReportBlock& report_block : receiver_report.report_blocks()) {
@@ -596,21 +591,6 @@ void RTCPReceiver::HandleReportBlock(const ReportBlock& report_block,
   }
 
   packet_information->report_block_datas.push_back(*report_block_data);
-}
-
-RTCPReceiver::TmmbrInformation* RTCPReceiver::FindOrCreateTmmbrInfo(
-    uint32_t remote_ssrc) {
-  
-  TmmbrInformation* tmmbr_info = &tmmbr_infos_[remote_ssrc];
-  
-  tmmbr_info->last_time_received = env_.clock().CurrentTime();
-  return tmmbr_info;
-}
-
-void RTCPReceiver::UpdateTmmbrRemoteIsAlive(uint32_t remote_ssrc) {
-  auto tmmbr_it = tmmbr_infos_.find(remote_ssrc);
-  if (tmmbr_it != tmmbr_infos_.end())
-    tmmbr_it->second.last_time_received = env_.clock().CurrentTime();
 }
 
 RTCPReceiver::TmmbrInformation* RTCPReceiver::GetTmmbrInformation(
@@ -825,13 +805,11 @@ bool RTCPReceiver::HandleTmmbr(const CommonHeader& rtcp_block,
     if (local_media_ssrc() != request.ssrc() || request.bitrate_bps() == 0)
       continue;
 
-    TmmbrInformation* tmmbr_info = FindOrCreateTmmbrInfo(tmmbr.sender_ssrc());
-    auto* entry = &tmmbr_info->tmmbr[sender_ssrc];
+    TmmbrInformation& tmmbr_info = tmmbr_infos_[tmmbr.sender_ssrc()];
+    auto* entry = &tmmbr_info.tmmbr[sender_ssrc];
     entry->tmmbr_item = rtcp::TmmbItem(sender_ssrc, request.bitrate_bps(),
                                        request.packet_overhead());
-    
-    
-    entry->last_updated = tmmbr_info->last_time_received;
+    entry->last_updated = env_.clock().CurrentTime();
 
     packet_information->packet_type_flags |= kRtcpTmmbr;
     break;
@@ -846,11 +824,11 @@ bool RTCPReceiver::HandleTmmbn(const CommonHeader& rtcp_block,
     return false;
   }
 
-  TmmbrInformation* tmmbr_info = FindOrCreateTmmbrInfo(tmmbn.sender_ssrc());
+  TmmbrInformation& tmmbr_info = tmmbr_infos_[tmmbn.sender_ssrc()];
 
   packet_information->packet_type_flags |= kRtcpTmmbn;
 
-  tmmbr_info->tmmbn = tmmbn.items();
+  tmmbr_info.tmmbn = tmmbn.items();
   return true;
 }
 
