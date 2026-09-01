@@ -5,21 +5,38 @@
 
 
 
-use std::future::IntoFuture;
+
+
+
+
+
+use std::ffi::c_void;
+use std::os::windows::process::CommandExt;
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicI32, Ordering};
 
-use futures_executor::block_on;
 use windows::ApplicationModel::Background::{
     IBackgroundTask, IBackgroundTaskInstance, IBackgroundTask_Impl,
 };
-use windows::ApplicationModel::FullTrustProcessLauncher;
-use windows::Win32::Foundation::{CLASS_E_CLASSNOTAVAILABLE, S_FALSE, S_OK};
-use windows::Win32::System::WinRT::{IActivationFactory, IActivationFactory_Impl};
+use windows::Win32::Foundation::{
+    CLASS_E_CLASSNOTAVAILABLE, CLASS_E_NOAGGREGATION, E_INVALIDARG, HMODULE, MAX_PATH, S_FALSE,
+    S_OK,
+};
+use windows::Win32::System::Com::{IClassFactory, IClassFactory_Impl};
+use windows::Win32::System::LibraryLoader::{
+    GetModuleFileNameW, GetModuleHandleExW, GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+    GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+};
+use windows::Win32::System::Threading::CREATE_BREAKAWAY_FROM_JOB;
 use windows_core::{
-    implement, IInspectable, Interface, OutRef, Ref, Result as WindowsResult, HRESULT, HSTRING,
+    implement, IUnknown, Interface, Ref, Result as WindowsResult, BOOL, GUID, HRESULT, PCWSTR,
 };
 
-const ACTIVATABLE_CLASS_ID: &str = mozbuild::config::MOZ_BACKGROUNDTASK_ACTIVATABLE_CLASS_ID;
+
+
+
+
+const CLSID_BACKGROUND_TASK_SERVER: GUID = GUID::from_u128(0x85013aea_4a5a_4b6a_94b8_55090116061e);
 
 
 
@@ -57,47 +74,120 @@ impl IBackgroundTask_Impl for FirefoxBackgroundTask_Impl {
         };
 
         let name = instance.Task()?.Name()?.to_string();
-        if name.is_empty() {
-            return Ok(());
+        if !name.is_empty() {
+            launch_background_task(&name);
         }
 
-        
-        
-        
-        
-        launch_full_trust(&name)
+        Ok(())
     }
 }
 
+fn launch_background_task(task_name: &str) {
+    let Some(install_dir) = dll_directory() else {
+        return;
+    };
 
+    let firefox = install_dir.join(format!("{}.exe", mozbuild::config::MOZ_APP_NAME));
 
-fn task_args(task_name: &str) -> Vec<String> {
+    
+    
+    
+    
     let mut args = vec!["--backgroundtask".to_string()];
     args.extend(task_name.split(':').map(str::to_string));
-    args
-}
 
+    let spawn = |flags: u32| {
+        std::process::Command::new(&firefox)
+            .args(&args)
+            .creation_flags(flags)
+            .spawn()
+    };
 
-
-fn launch_full_trust(task_name: &str) -> WindowsResult<()> {
-    let command_line = HSTRING::from(task_args(task_name).join(" "));
-    let operation =
-        FullTrustProcessLauncher::LaunchFullTrustProcessForCurrentAppWithArgumentsAsync(
-            &command_line,
-        )?;
-
-    block_on(operation.into_future())?;
-    Ok(())
-}
-
-#[implement(IActivationFactory)]
-struct BackgroundTaskActivationFactory;
-
-impl IActivationFactory_Impl for BackgroundTaskActivationFactory_Impl {
-    fn ActivateInstance(&self) -> WindowsResult<IInspectable> {
-        Ok(FirefoxBackgroundTask::new().into())
+    
+    
+    
+    if spawn(CREATE_BREAKAWAY_FROM_JOB.0).is_err() {
+        let _ = spawn(0);
     }
 }
+
+
+fn dll_directory() -> Option<PathBuf> {
+    let module = current_module()?;
+
+    let mut buffer = vec![0u16; MAX_PATH as usize];
+    loop {
+        
+        
+        let length = unsafe { GetModuleFileNameW(Some(module), &mut buffer) } as usize;
+        if length == 0 {
+            return None;
+        }
+
+        if length < buffer.len() {
+            let dll_path = PathBuf::from(String::from_utf16_lossy(&buffer[..length]));
+            return dll_path.parent().map(PathBuf::from);
+        }
+        buffer.resize(buffer.len() * 2, 0);
+    }
+}
+
+
+
+fn current_module() -> Option<HMODULE> {
+    let mut module = HMODULE::default();
+    
+    
+    
+    
+    unsafe {
+        GetModuleHandleExW(
+            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            PCWSTR(&LOCK_COUNT as *const AtomicI32 as *const u16),
+            &mut module,
+        )
+    }
+    .ok()?;
+    Some(module)
+}
+
+#[implement(IClassFactory)]
+struct BackgroundTaskFactory;
+
+impl IClassFactory_Impl for BackgroundTaskFactory_Impl {
+    fn CreateInstance(
+        &self,
+        outer: Ref<IUnknown>,
+        iid: *const GUID,
+        object: *mut *mut c_void,
+    ) -> WindowsResult<()> {
+        if !outer.is_null() {
+            return Err(CLASS_E_NOAGGREGATION.into());
+        }
+
+        let task: IBackgroundTask = FirefoxBackgroundTask::new().into();
+
+        
+        unsafe { task.query(iid, object) }.ok()
+    }
+
+    fn LockServer(&self, lock: BOOL) -> WindowsResult<()> {
+        if lock.as_bool() {
+            lock_module();
+        } else {
+            unlock_module();
+        }
+        Ok(())
+    }
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -108,18 +198,29 @@ impl IActivationFactory_Impl for BackgroundTaskActivationFactory_Impl {
 
 
 #[unsafe(no_mangle)]
-pub unsafe extern "system" fn DllGetActivationFactory(
-    name: Ref<HSTRING>,
-    factory: OutRef<IActivationFactory>,
+pub unsafe extern "system" fn DllGetClassObject(
+    rclsid: Option<&GUID>,
+    riid: Option<&GUID>,
+    ppv: Option<&mut *mut c_void>,
 ) -> HRESULT {
-    if name.to_string() != ACTIVATABLE_CLASS_ID {
-        let _ = factory.write(None);
+    let (Some(rclsid), Some(riid), Some(ppv)) = (rclsid, riid, ppv) else {
+        return E_INVALIDARG;
+    };
+
+    
+    *ppv = std::ptr::null_mut();
+
+    if *rclsid != CLSID_BACKGROUND_TASK_SERVER {
         return CLASS_E_CLASSNOTAVAILABLE;
     }
 
-    let instance: IActivationFactory = BackgroundTaskActivationFactory.into();
-    factory.write(Some(instance)).into()
+    let factory: IClassFactory = BackgroundTaskFactory.into();
+
+    
+    unsafe { factory.query(riid, ppv) }
 }
+
+
 
 
 
