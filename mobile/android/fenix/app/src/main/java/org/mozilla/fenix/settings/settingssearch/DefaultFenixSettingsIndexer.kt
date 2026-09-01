@@ -44,7 +44,7 @@ class DefaultFenixSettingsIndexer(
         val newSettings = mutableListOf<SettingsSearchItem>()
 
         for (preferenceFileInformation in preferenceFileInformationList) {
-            val settingFileParser = getXmlParserForFile(preferenceFileInformation.xmlResourceId)
+            val settingFileParser = preferenceFileInformation.xmlResourceId?.let(::getXmlParserForFile)
             if (settingFileParser != null) {
                 parseXmlFile(settingFileParser, preferenceFileInformation, newSettings)
             }
@@ -86,7 +86,6 @@ class DefaultFenixSettingsIndexer(
 
     private fun getXmlParserForFile(xmlResourceId: Int): XmlResourceParser? {
         try {
-            if (xmlResourceId == 0) return null
             return context.resources.getXml(xmlResourceId)
         } catch (e: Resources.NotFoundException) {
             logger.error("Failed to find XML resource $xmlResourceId", e)
@@ -118,7 +117,6 @@ class DefaultFenixSettingsIndexer(
                                 )
                             }
                             CHECKBOX_PREFERENCE_TAG,
-                            CUSTOM_CBH_SWITCH_PREFERENCE_TAG,
                             DEFAULT_BROWSER_PREFERENCE_TAG,
                             PREFERENCE_TAG,
                             SWITCH_PREFERENCE_TAG,
@@ -335,8 +333,6 @@ class DefaultFenixSettingsIndexer(
         private const val PREFERENCE_TAG = "androidx.preference.Preference"
         private const val SWITCH_PREFERENCE_TAG = "androidx.preference.SwitchPreferenceCompat"
         private const val SWITCH_PREFERENCE_PLAIN_TAG = "SwitchPreferenceCompat"
-        private const val CUSTOM_CBH_SWITCH_PREFERENCE_TAG =
-            "org.mozilla.fenix.settings.cookiebannerhandling.CustomCBHSwitchPreference"
         private const val DEFAULT_BROWSER_PREFERENCE_TAG = "org.mozilla.fenix.settings.DefaultBrowserPreference"
         private const val RADIO_BUTTON_PREFERENCE_TAG = "org.mozilla.fenix.settings.RadioButtonPreference"
         private const val TOGGLE_RADIO_BUTTON_PREFERENCE_TAG = "org.mozilla.fenix.settings.ToggleRadioButtonPreference"
@@ -365,9 +361,6 @@ class DefaultFenixSettingsIndexer(
             PreferenceFileInformation.TabsPreferences,
             PreferenceFileInformation.TrackingProtectionPreferences,
             PreferenceFileInformation.SaveLoginsPreferences,
-            PreferenceFileInformation.DataChoicesPreferences,
-            PreferenceFileInformation.AIControlsPreferences,
-            PreferenceFileInformation.FirefoxLabsPreferences,
         )
 
         /**
