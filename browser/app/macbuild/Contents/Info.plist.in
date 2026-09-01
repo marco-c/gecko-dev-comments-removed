@@ -260,12 +260,13 @@
   <true/>
   <key>NSRequiresAquaSystemAppearance</key>
   <false/>
+  <key>NSPrefersDisplaySafeAreaCompatibilityMode</key>
+  <false/>
   <key>NSPrincipalClass</key>
   <string>GeckoNSApplication</string>
 	<key>SMPrivilegedExecutables</key>
 	<dict>
-		<key>org.mozilla.updater</key>
-		<string>@MOZ_SMPRIVILEGEDEXECUTABLES_REQUIREMENTS@</string>
+		@MOZ_SMPRIVILEGEDEXECUTABLES_REQUIREMENTS@
 	</dict>
   <key>MozillaDeveloperRepoPath</key>
   <string>@MOZ_DEVELOPER_REPO_PATH@</string>
