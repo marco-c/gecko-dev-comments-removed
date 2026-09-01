@@ -69,7 +69,10 @@ struct FFmpegVulkanVideoDecoder {
   PFN_vkFreeCommandBuffers mFreeCommandBuffers = nullptr;
   PFN_vkBeginCommandBuffer mBeginCommandBuffer = nullptr;
   PFN_vkEndCommandBuffer mEndCommandBuffer = nullptr;
-  PFN_vkGetDeviceQueue mGetDeviceQueue = nullptr;
+  
+  
+  
+  PFN_vkGetDeviceQueue2 mGetDeviceQueue2 = nullptr;
   PFN_vkQueueSubmit mQueueSubmit = nullptr;
   PFN_vkCmdPipelineBarrier mCmdPipelineBarrier = nullptr;
   PFN_vkCmdCopyImage mCmdCopyImage = nullptr;
@@ -101,8 +104,12 @@ struct FFmpegVulkanVideoDecoder {
   std::vector<uint64_t> mDrmModifiers;
   nsTHashMap<uint64_t, bool> mExportRequiresDedicatedByModifier;
 
+  
+  
+  
   void LoadInstanceFunctions(PFN_vkGetInstanceProcAddr aGetProcAddr,
-                             VkInstance aInst, VkPhysicalDevice aPhysDev);
+                             VkInstance aInst, VkPhysicalDevice aPhysDev,
+                             uint64_t aGeneration);
   void LoadDeviceFunctions(VkDevice aDev);
   bool IsLoaded() const;
   
@@ -114,6 +121,10 @@ struct FFmpegVulkanVideoDecoder {
                         VkImageUsageFlags aImageUsages = 0);
   bool SelectVulkanDecoderPhysicalDevice(
       const StaticMutexAutoLock& aProofOfLock, const nsCString& aRendererNode);
+  bool VulkanCanDecodeFormat(AVCodecID aCodecID, unsigned aAvcodecVersion,
+                             AVBufferRef* aVulkanDeviceContext,
+                             const MediaByteBuffer* aExtraData,
+                             gfx::ColorDepth aColorDepth) const;
   uint32_t mNegotiatedCompositorDecoderVendorID = 0;
   uint32_t mNegotiatedCompositorDecoderDeviceID = 0;
   char mNegotiatedVulkanDeviceName[VK_MAX_PHYSICAL_DEVICE_NAME_SIZE] = {
@@ -130,7 +141,8 @@ struct FFmpegVulkanVideoDecoder {
   
   bool InitCtx(VkDevice aDevice, VkPhysicalDevice aPhysDev,
                PFN_vkGetInstanceProcAddr aGetProcAddr, VkInstance aInstance,
-               uint32_t aCopyQueueFamilyIndex);
+               uint64_t aGeneration, uint32_t aCopyQueueFamilyIndex,
+               VkDeviceQueueCreateFlags aQueueCreateFlags);
   MediaResult InitCopyRingBuffer(uint32_t aWidth, uint32_t aHeight,
                                  AVPixelFormat aSwFormat,
                                  AVBufferRef* aVulkanDevCtx);
