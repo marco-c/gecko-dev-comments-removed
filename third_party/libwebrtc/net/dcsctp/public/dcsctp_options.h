@@ -10,9 +10,8 @@
 #ifndef NET_DCSCTP_PUBLIC_DCSCTP_OPTIONS_H_
 #define NET_DCSCTP_PUBLIC_DCSCTP_OPTIONS_H_
 
-#include <stddef.h>
-#include <stdint.h>
-
+#include <cstddef>
+#include <cstdint>
 #include <optional>
 
 #include "net/dcsctp/public/types.h"
@@ -227,6 +226,10 @@ struct DcSctpOptions {
   ZeroChecksumAlternateErrorDetectionMethod
       zero_checksum_alternate_error_detection_method =
           ZeroChecksumAlternateErrorDetectionMethod::None();
+
+  
+  
+  bool enable_handover_with_outstanding_data = false;
 };
 }  
 
