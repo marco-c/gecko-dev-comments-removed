@@ -2,12 +2,14 @@
 
 
 
-
 #ifndef GPU_UTIL_H_
 #define GPU_UTIL_H_
 
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/WebGPUBinding.h"
+#include "mozilla/webgpu/WebGPUTypes.h"
+#include "mozilla/webgpu/ffi/wgpu.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 class ErrorResult;
@@ -22,9 +24,6 @@ using OwningGPUExtent3D =
     OwningRangeEnforcedUnsignedLongSequenceOrGPUExtent3DDict;
 }  
 namespace webgpu {
-namespace ffi {
-struct WGPUExtent3d;
-}  
 
 void ConvertExtent3DToFFI(const dom::GPUExtent3D& aExtent,
                           ffi::WGPUExtent3d* aExtentFFI);
@@ -44,6 +43,24 @@ ffi::WGPUTextureFormat ConvertTextureFormat(
 
 ffi::WGPUTextureAspect ConvertTextureAspect(
     const dom::GPUTextureAspect& aAspect);
+
+
+
+
+class MOZ_STACK_CLASS ConvertTextureDescriptor final {
+ public:
+  explicit ConvertTextureDescriptor(const dom::GPUTextureDescriptor& aDesc);
+
+  ConvertTextureDescriptor(const ConvertTextureDescriptor&) = delete;
+  ConvertTextureDescriptor& operator=(const ConvertTextureDescriptor&) = delete;
+
+  const ffi::WGPUTextureDescriptor* Get() const { return &mDesc; }
+
+ private:
+  StringHelper mLabel;
+  AutoTArray<ffi::WGPUTextureFormat, 8> mViewFormats;
+  ffi::WGPUTextureDescriptor mDesc = {};
+};
 
 ffi::WGPUVertexFormat ConvertVertexFormat(const dom::GPUVertexFormat& aFormat);
 
