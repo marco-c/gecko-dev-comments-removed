@@ -49,9 +49,15 @@ namespace webrtc {
   };
 
   auto sleep = [&](TimeDelta delta) {
+    
+    
+    
+    
+    if (Thread::Current()) {
+      Thread::Current()->ProcessMessages(0);
+    }
     std::visit(absl::Overload{
                    [&](const std::monostate&) {
-                     Thread::Current()->ProcessMessages(0);
                      Thread::Current()->SleepMs(delta.ms());
                    },
                    [&](auto* clock) { clock->AdvanceTime(delta); },
