@@ -227,10 +227,6 @@ Preferences.addSetting(
         
         
         LaunchOnLogin.enable();
-        Services.prefs.setBoolPref(
-          "browser.startup.windowsLaunchOnLogin.disableLaunchOnLoginPrompt",
-          true
-        );
       } else {
         
         

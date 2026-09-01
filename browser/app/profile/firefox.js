@@ -362,8 +362,6 @@ pref("browser.startup.preXulSkeletonUI", true);
 
 pref("browser.startup.windowsLaunchOnLogin.enabled", true);
 
-pref("browser.startup.windowsLaunchOnLogin.disableLaunchOnLoginPrompt", false);
-
 
 
 
