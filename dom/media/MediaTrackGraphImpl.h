@@ -92,7 +92,7 @@ class ControlMessage : public MediaTrack::ControlMessageInterface {
 
 class MessageBlock {
  public:
-  nsTArray<UniquePtr<MediaTrack::ControlMessageInterface>> mMessages;
+  nsTArray<nsCOMPtr<nsIRunnable>> mMessages;
 };
 
 
@@ -113,6 +113,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
                             public nsINamed {
  public:
   using ControlMessageInterface = MediaTrack::ControlMessageInterface;
+  using ControlMessageWrapper = MediaTrack::ControlMessageWrapper;
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIMEMORYREPORTER
@@ -372,7 +373,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  void RunMessageAfterProcessing(UniquePtr<ControlMessageInterface> aMessage);
+  void RunMessageAfterProcessing(already_AddRefed<nsIRunnable> aMessage);
 
   
 
@@ -1003,7 +1004,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  nsTArray<UniquePtr<ControlMessageInterface>> mCurrentTaskMessageQueue;
+  nsTArray<nsCOMPtr<nsIRunnable>> mCurrentTaskMessageQueue;
   
 
 
