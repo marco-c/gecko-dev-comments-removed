@@ -1200,7 +1200,7 @@ already_AddRefed<DOMRect> Element::GetBoundingClientRect() {
   RefPtr<DOMRect> rect = new DOMRect(ToSupports(OwnerDoc()));
 
   nsIFrame* frame = GetPrimaryFrame(FlushType::Layout);
-  if (!frame) {
+  if (!frame || frame->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
     
     return rect.forget();
   }
@@ -1213,7 +1213,7 @@ already_AddRefed<DOMRectList> Element::GetClientRects() {
   RefPtr<DOMRectList> rectList = new DOMRectList(this);
 
   nsIFrame* frame = GetPrimaryFrame(FlushType::Layout);
-  if (!frame) {
+  if (!frame || frame->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
     
     return rectList.forget();
   }
@@ -2925,8 +2925,8 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   MOZ_ASSERT(!IsInComposedDoc(), "Already have a document.  Unbind first!");
   
   
-  MOZ_ASSERT(!GetParentNode() || &aParent == GetParentNode(),
-             "Already have a parent.  Unbind first!");
+  MOZ_DIAGNOSTIC_ASSERT(!GetParentNode() || &aParent == GetParentNode(),
+                        "Already have a different parent.  Unbind first!");
 
   const bool hadParent = !!GetParentNode();
 
@@ -4252,6 +4252,72 @@ bool Element::GetAttr(int32_t aNameSpaceID, const nsAtom* aName,
   return true;
 }
 
+void Element::GetURIAttr(nsAtom* aAttr, nsAtom* aBaseAttr,
+                         nsAString& aResult) const {
+  nsCOMPtr<nsIURI> uri;
+  const nsAttrValue* attr = GetURIAttr(aAttr, aBaseAttr, getter_AddRefs(uri));
+  if (!attr) {
+    aResult.Truncate();
+    return;
+  }
+  if (!uri) {
+    
+    attr->ToString(aResult);
+    return;
+  }
+  nsAutoCString spec;
+  uri->GetSpec(spec);
+  CopyUTF8toUTF16(spec, aResult);
+}
+
+void Element::GetURIAttr(nsAtom* aAttr, nsAtom* aBaseAttr,
+                         nsACString& aResult) const {
+  nsCOMPtr<nsIURI> uri;
+  const nsAttrValue* attr = GetURIAttr(aAttr, aBaseAttr, getter_AddRefs(uri));
+  if (!attr) {
+    aResult.Truncate();
+    return;
+  }
+  if (!uri) {
+    
+    nsAutoString value;
+    attr->ToString(value);
+    CopyUTF16toUTF8(value, aResult);
+    return;
+  }
+  uri->GetSpec(aResult);
+}
+
+const nsAttrValue* Element::GetURIAttr(nsAtom* aAttr, nsAtom* aBaseAttr,
+                                       nsIURI** aURI) const {
+  *aURI = nullptr;
+
+  const nsAttrValue* attr = mAttrs.GetAttr(aAttr);
+  if (!attr) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIURI> baseURI = GetBaseURI();
+  if (aBaseAttr) {
+    nsAutoString baseAttrValue;
+    if (GetAttr(aBaseAttr, baseAttrValue)) {
+      nsCOMPtr<nsIURI> baseAttrURI;
+      nsresult rv = nsContentUtils::NewURIWithDocumentCharset(
+          getter_AddRefs(baseAttrURI), baseAttrValue, OwnerDoc(), baseURI);
+      if (NS_FAILED(rv)) {
+        return attr;
+      }
+      baseURI.swap(baseAttrURI);
+    }
+  }
+
+  
+  
+  nsContentUtils::NewURIWithDocumentCharset(
+      aURI, nsAttrValueOrString(attr).String(), OwnerDoc(), baseURI);
+  return attr;
+}
+
 int32_t Element::FindAttrValueIn(int32_t aNameSpaceID, const nsAtom* aName,
                                  AttrArray::AttrValuesArray* aValues,
                                  nsCaseTreatment aCaseSensitive) const {
@@ -4804,38 +4870,13 @@ nsresult Element::CopyInnerTo(Element* aDst) {
   
   
   
-  
-  
-  CustomElementRegistryState state = GetCustomElementRegistryState();
-  if (state == CustomElementRegistryState::Scoped) {
-    MOZ_ASSERT(StaticPrefs::dom_scoped_custom_element_registries_enabled());
-    RefPtr<CustomElementRegistry> scopedRegistry =
-        CustomElementRegistry::GetScopedRegistry(*this);
-    aDst->SetCustomElementRegistry(scopedRegistry);
-  } else {
-    MOZ_ASSERT(state == CustomElementRegistryState::Global ||
-               StaticPrefs::dom_scoped_custom_element_registries_enabled());
-    aDst->SetCustomElementRegistryState(state);
-  }
-
-  
-  dom::NodeInfo* dstNodeInfo = aDst->NodeInfo();
   if (CustomElementData* data = GetCustomElementData()) {
-    
-    
     if (nsAtom* typeAtom = data->GetCustomElementType()) {
       aDst->SetCustomElementData(MakeUnique<CustomElementData>(typeAtom));
-      MOZ_ASSERT(dstNodeInfo->NameAtom()->Equals(dstNodeInfo->LocalName()));
-      CustomElementDefinition* definition =
-          nsContentUtils::LookupCustomElementDefinition(
-              dstNodeInfo->GetDocument(), dstNodeInfo->NameAtom(),
-              dstNodeInfo->NamespaceID(), typeAtom);
-      if (definition) {
-        nsContentUtils::EnqueueUpgradeReaction(aDst, definition);
-      }
     }
   }
 
+  dom::NodeInfo* dstNodeInfo = aDst->NodeInfo();
   if (dstNodeInfo->GetDocument()->IsStaticDocument()) {
     
     if (State().HasState(ElementState::DEFINED)) {

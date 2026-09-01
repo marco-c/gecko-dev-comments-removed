@@ -2147,7 +2147,8 @@ void nsINode::InsertChildBefore(
     return;
   }
 
-  MOZ_ASSERT(!aKid->GetParentNode(), "Inserting node that already has parent");
+  MOZ_DIAGNOSTIC_ASSERT(!aKid->GetParentNode(),
+                        "Inserting node that already has parent");
   MOZ_ASSERT(!IsAttr());
 
   
@@ -4115,7 +4116,8 @@ void nsINode::AddAnimationObserverUnlessExists(
 already_AddRefed<nsINode> nsINode::CloneAndAdopt(
     nsINode* aNode, bool aClone, bool aDeep,
     nsNodeInfoManager* aNewNodeInfoManager, nsIGlobalObject* aNewScope,
-    nsINode* aParent, ErrorResult& aError) {
+    nsINode* aParent, ErrorResult& aError,
+    CustomElementRegistry* aFallbackRegistry) {
   MOZ_ASSERT(!aParent || aNode->IsContent(),
              "Can't insert document or attribute nodes into a parent");
 
@@ -4167,6 +4169,65 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
     if (NS_WARN_IF(NS_FAILED(rv))) {
       aError.Throw(rv);
       return nullptr;
+    }
+
+    
+    
+    if (elem) {
+      Element* cloneElem = clone->AsElement();
+      CustomElementRegistry* registry = nullptr;
+
+      if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+        
+        registry = elem->GetCustomElementRegistry();
+        
+        if (!registry) {
+          registry = aFallbackRegistry;
+        }
+        
+        
+        if (registry && !registry->IsScoped()) {
+          Document* doc = nodeInfo->GetDocument();
+          registry =
+              doc ? doc->GetEffectiveGlobalCustomElementRegistry() : nullptr;
+        }
+
+        if (registry) {
+          cloneElem->SetCustomElementRegistry(registry);
+        } else if (elem->GetCustomElementRegistryState() ==
+                   CustomElementRegistryState::Null) {
+          cloneElem->SetKeepCustomElementRegistryNull();
+        } else if (cloneElem->OwnerDoc()->HasScopedCustomElementRegistry()) {
+          
+          
+          cloneElem->SetKeepCustomElementRegistryNull();
+        }
+      }
+
+      
+      
+      
+      if (CustomElementData* data = elem->GetCustomElementData()) {
+        if (nsAtom* typeAtom = data->GetCustomElementType()) {
+          class NodeInfo* dstNodeInfo = cloneElem->NodeInfo();
+          MOZ_ASSERT(dstNodeInfo->NameAtom()->Equals(dstNodeInfo->LocalName()));
+          CustomElementDefinition* definition = nullptr;
+          if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+            if (registry) {
+              definition = registry->LookupCustomElementDefinition(
+                  dstNodeInfo->NameAtom(), dstNodeInfo->NamespaceID(),
+                  typeAtom);
+            }
+          } else {
+            definition = nsContentUtils::LookupCustomElementDefinition(
+                dstNodeInfo->GetDocument(), dstNodeInfo->NameAtom(),
+                dstNodeInfo->NamespaceID(), typeAtom);
+          }
+          if (definition) {
+            nsContentUtils::EnqueueUpgradeReaction(cloneElem, definition);
+          }
+        }
+      }
     }
 
     if (aParent) {
@@ -4320,10 +4381,13 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
 
   if (aDeep && (!aClone || !aNode->IsAttr())) {
     
+    
+    
     for (nsIContent* cloneChild = aNode->GetFirstChild(); cloneChild;
          cloneChild = cloneChild->GetNextSibling()) {
-      nsCOMPtr<nsINode> child = CloneAndAdopt(
-          cloneChild, aClone, true, nodeInfoManager, aNewScope, clone, aError);
+      nsCOMPtr<nsINode> child =
+          CloneAndAdopt(cloneChild, aClone, true, nodeInfoManager, aNewScope,
+                        clone, aError, aFallbackRegistry);
       if (NS_WARN_IF(aError.Failed())) {
         return nullptr;
       }
@@ -4389,10 +4453,20 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
       init.mDelegatesFocus = originalShadowRoot->DelegatesFocus();
       init.mSlotAssignment = originalShadowRoot->SlotAssignment();
       init.mClonable = true;
-      if (StaticPrefs::dom_scoped_custom_element_registries_enabled() &&
-          originalShadowRoot->HasCustomElementRegistry()) {
-        init.mCustomElementRegistry.Construct(
-            originalShadowRoot->GetCustomElementRegistry());
+      if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+        if (originalShadowRoot->HasCustomElementRegistry()) {
+          init.mCustomElementRegistry.Construct(
+              originalShadowRoot->GetCustomElementRegistry());
+        } else {
+          
+          
+          
+          
+          Document* doc = nodeInfoManager ? nodeInfoManager->GetDocument()
+                                          : nodeInfo->GetDocument();
+          init.mCustomElementRegistry.Construct(
+              doc ? doc->GetEffectiveGlobalCustomElementRegistry() : nullptr);
+        }
       }
 
       RefPtr<ShadowRoot> newShadowRoot =
@@ -4435,7 +4509,7 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
          cloneChild = cloneChild->GetNextSibling()) {
       nsCOMPtr<nsINode> child =
           CloneAndAdopt(cloneChild, aClone, aDeep, ownerNodeInfoManager,
-                        aNewScope, cloneContent, aError);
+                        aNewScope, cloneContent, aError, aFallbackRegistry);
       if (NS_WARN_IF(aError.Failed())) {
         return nullptr;
       }
@@ -4481,11 +4555,11 @@ void nsINode::Adopt(nsNodeInfoManager* aNewNodeInfoManager,
   nsMutationGuard::DidMutate();
 }
 
-already_AddRefed<nsINode> nsINode::Clone(bool aDeep,
-                                         nsNodeInfoManager* aNewNodeInfoManager,
-                                         ErrorResult& aError) {
-  return CloneAndAdopt(this, true, aDeep, aNewNodeInfoManager,
-                        nullptr, nullptr, aError);
+already_AddRefed<nsINode> nsINode::Clone(
+    bool aDeep, nsNodeInfoManager* aNewNodeInfoManager, ErrorResult& aError,
+    CustomElementRegistry* aFallbackRegistry) {
+  return CloneAndAdopt(this, true, aDeep, aNewNodeInfoManager, nullptr, nullptr,
+                       aError, aFallbackRegistry);
 }
 
 void nsINode::GenerateXPath(nsAString& aResult) {

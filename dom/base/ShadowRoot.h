@@ -321,7 +321,7 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
   
   void SetKeepCustomElementRegistryNull();
   
-  CustomElementRegistry* GetCustomElementRegistry();
+  CustomElementRegistry* GetCustomElementRegistry() const;
 
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
 

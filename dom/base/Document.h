@@ -121,6 +121,7 @@
 #else
 namespace mozilla {
 namespace dom {
+class BooleanOrImportNodeOptions;
 class ElementCreationOptionsOrString;
 }  
 }  
@@ -2408,8 +2409,8 @@ class Document : public nsINode,
           aCustomElementRegistry = mozilla::Nothing());
 
   
-  mozilla::dom::CustomElementRegistry*
-  GetEffectiveGlobalCustomElementRegistry();
+  mozilla::dom::CustomElementRegistry* GetEffectiveGlobalCustomElementRegistry()
+      const;
 
   
   bool HasScopedCustomElementRegistry() const {
@@ -3547,8 +3548,9 @@ class Document : public nsINode,
   already_AddRefed<Comment> CreateComment(const nsAString& aData) const;
   already_AddRefed<ProcessingInstruction> CreateProcessingInstruction(
       const nsAString& target, const nsAString& data, ErrorResult& rv) const;
-  already_AddRefed<nsINode> ImportNode(nsINode& aNode, bool aDeep,
-                                       ErrorResult& rv) const;
+  already_AddRefed<nsINode> ImportNode(
+      nsINode& aNode, const BooleanOrImportNodeOptions& aOptions,
+      ErrorResult& rv) const;
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsINode* AdoptNode(
       nsINode& aAdoptedNode, ErrorResult& rv, bool aAcceptShadowRoot = false);
@@ -5961,6 +5963,7 @@ class Document : public nsINode,
                                               ErrorResult& aError);
 
   class SpeculationRules& SpeculationRules();
+  class SpeculationRules* GetSpeculationRules();
 
   nsIURI* GetTlsCertificateBindingURI() const {
     return mTLSCertificateBindingURI;

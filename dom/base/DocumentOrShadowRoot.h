@@ -236,7 +236,7 @@ class DocumentOrShadowRoot {
   }
 
   
-  CustomElementRegistry* GetCustomElementRegistry();
+  CustomElementRegistry* GetCustomElementRegistry() const;
 
  protected:
   

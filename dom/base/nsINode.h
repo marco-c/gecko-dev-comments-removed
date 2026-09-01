@@ -41,6 +41,7 @@ class nsIAnimationObserver;
 class nsIContent;
 class nsIContentSecurityPolicy;
 class nsIFrame;
+class nsIGlobalObject;
 class nsIFormControl;
 class nsMultiMutationObserver;
 class nsINode;
@@ -1689,10 +1690,13 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
+
+
   static already_AddRefed<nsINode> CloneAndAdopt(
       nsINode* aNode, bool aClone, bool aDeep,
       nsNodeInfoManager* aNewNodeInfoManager, nsIGlobalObject* aNewScope,
-      nsINode* aParent, mozilla::ErrorResult& aError);
+      nsINode* aParent, mozilla::ErrorResult& aError,
+      mozilla::dom::CustomElementRegistry* aFallbackRegistry = nullptr);
 
  public:
   
@@ -1723,9 +1727,12 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  already_AddRefed<nsINode> Clone(bool aDeep,
-                                  nsNodeInfoManager* aNewNodeInfoManager,
-                                  mozilla::ErrorResult& aError);
+
+
+  already_AddRefed<nsINode> Clone(
+      bool aDeep, nsNodeInfoManager* aNewNodeInfoManager,
+      mozilla::ErrorResult& aError,
+      mozilla::dom::CustomElementRegistry* aFallbackRegistry = nullptr);
 
   
 

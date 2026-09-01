@@ -9657,8 +9657,9 @@ void Document::GetCharacterSet(nsAString& aCharacterSet) const {
 }
 
 
-already_AddRefed<nsINode> Document::ImportNode(nsINode& aNode, bool aDeep,
-                                               ErrorResult& rv) const {
+already_AddRefed<nsINode> Document::ImportNode(
+    nsINode& aNode, const BooleanOrImportNodeOptions& aOptions,
+    ErrorResult& rv) const {
   nsINode* imported = &aNode;
 
   switch (imported->NodeType()) {
@@ -9676,24 +9677,50 @@ already_AddRefed<nsINode> Document::ImportNode(nsINode& aNode, bool aDeep,
     case COMMENT_NODE:
     case DOCUMENT_TYPE_NODE: {
       
+      bool subtree = false;
       
+      RefPtr<CustomElementRegistry> registry;
+
       
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      if (aOptions.IsBoolean()) {
+        subtree = aOptions.GetAsBoolean();
+      } else {
+        
+        const ImportNodeOptions& options = aOptions.GetAsImportNodeOptions();
+        
+        subtree = !options.mSelfOnly;
+
+        
+        
+        if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+          if (options.mCustomElementRegistry.WasPassed()) {
+            registry = &options.mCustomElementRegistry.Value();
+            
+            
+            
+            if (!registry->IsScoped() &&
+                registry != GetCustomElementRegistry()) {
+              rv.ThrowNotSupportedError(
+                  "Cannot use a global CustomElementRegistry from another "
+                  "document");
+              return nullptr;
+            }
+          }
+        }
+      }
 
       
       
-      return imported->Clone(aDeep, mNodeInfoManager, rv);
+      
+      
+      if (!registry) {
+        registry = GetCustomElementRegistry();
+      }
+
+      
+      
+      
+      return imported->Clone(subtree, mNodeInfoManager, rv, registry);
     }
     default: {
       NS_WARNING("Don't know how to clone this nodetype for importNode.");
@@ -12114,7 +12141,8 @@ void Document::TerminateParserAndDisableScripts() {
 }
 
 
-CustomElementRegistry* Document::GetEffectiveGlobalCustomElementRegistry() {
+CustomElementRegistry* Document::GetEffectiveGlobalCustomElementRegistry()
+    const {
   
   
   CustomElementRegistry* registry = GetCustomElementRegistry();
@@ -12315,11 +12343,6 @@ bool Document::CanSavePresentation(nsIRequest* aNewRequest,
   
   nsCOMPtr<nsILoadGroup> loadGroup = GetDocumentLoadGroup();
   if (loadGroup) {
-    nsCOMPtr<nsISimpleEnumerator> requests;
-    loadGroup->GetRequests(getter_AddRefs(requests));
-
-    bool hasMore = false;
-
     
     
     
@@ -12329,32 +12352,40 @@ bool Document::CanSavePresentation(nsIRequest* aNewRequest,
       part->GetBaseChannel(getter_AddRefs(baseChannel));
     }
 
-    while (NS_SUCCEEDED(requests->HasMoreElements(&hasMore)) && hasMore) {
-      nsCOMPtr<nsISupports> elem;
-      requests->GetNext(getter_AddRefs(elem));
-
-      nsCOMPtr<nsIRequest> request = do_QueryInterface(elem);
-      if (request && request != aNewRequest && request != baseChannel) {
-        
-        nsCOMPtr<nsIChannel> channel = do_QueryInterface(request);
-        if (channel) {
-          nsCOMPtr<nsILoadInfo> li = channel->LoadInfo();
-          if (li->InternalContentPolicyType() ==
-              nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON) {
-            continue;
-          }
-        }
-
-        if (MOZ_UNLIKELY(MOZ_LOG_TEST(gPageCacheLog, LogLevel::Verbose))) {
-          nsAutoCString requestName;
-          request->GetName(requestName);
-          MOZ_LOG(gPageCacheLog, LogLevel::Verbose,
-                  ("Save of %s blocked because document has request %s",
-                   uri.get(), requestName.get()));
-        }
-        aBFCacheCombo |= BFCacheStatus::REQUEST;
-        ret = false;
+    bool blocked = false;
+    loadGroup->VisitRequests([&](nsIRequest* aRequest) {
+      if (aRequest == aNewRequest || aRequest == baseChannel.get()) {
+        return true;
       }
+
+      
+      nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
+      if (channel) {
+        nsCOMPtr<nsILoadInfo> li = channel->LoadInfo();
+        if (li->InternalContentPolicyType() ==
+            nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON) {
+          return true;
+        }
+      }
+
+      blocked = true;
+
+      
+      if (MOZ_LIKELY(!MOZ_LOG_TEST(gPageCacheLog, LogLevel::Verbose))) {
+        return false;
+      }
+
+      nsAutoCString requestName;
+      aRequest->GetName(requestName);
+      MOZ_LOG(gPageCacheLog, LogLevel::Verbose,
+              ("Save of %s blocked because document has request %s", uri.get(),
+               requestName.get()));
+      return true;
+    });
+
+    if (blocked) {
+      aBFCacheCombo |= BFCacheStatus::REQUEST;
+      ret = false;
     }
   }
 
@@ -21541,6 +21572,10 @@ class SpeculationRules& Document::SpeculationRules() {
     mSpeculationRules = MakeRefPtr<class SpeculationRules>(this);
   }
   return *mSpeculationRules;
+}
+
+class SpeculationRules* Document::GetSpeculationRules() {
+  return mSpeculationRules;
 }
 
 }  
