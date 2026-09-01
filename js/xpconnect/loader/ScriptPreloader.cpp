@@ -2,39 +2,32 @@
 
 
 
-#include "ScriptPreloader-inl.h"
-#include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/Monitor.h"
-
 #include "mozilla/ScriptPreloader.h"
-#include "mozilla/loader/ScriptCacheActors.h"
 
-#include "mozilla/URLPreloader.h"
-
+#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Components.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/FileUtils.h"
+#include "mozilla/glean/JsXpconnectMetrics.h"
+#include "mozilla/glean/XpcomMetrics.h"
 #include "mozilla/IOBuffers.h"
+#include "mozilla/loader/ScriptCacheActors.h"
 #include "mozilla/Logging.h"
+#include "mozilla/Monitor.h"
+#include "mozilla/scache/StartupCache.h"
+#include "mozilla/scache/StartupCacheUtils.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/TaskController.h"
-#include "mozilla/glean/JsXpconnectMetrics.h"
-#include "mozilla/glean/XpcomMetrics.h"
 #include "mozilla/Try.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/dom/ContentParent.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/scache/StartupCache.h"
-#include "mozilla/scache/StartupCacheUtils.h"
+#include "mozilla/URLPreloader.h"
 
 #include "crc32c.h"
-#include "js/CompileOptions.h"              
-#include "js/experimental/JSStencil.h"      
-#include "js/experimental/CompileScript.h"  
-#include "js/Transcoding.h"
 #include "MainThreadUtils.h"
 #include "nsDebug.h"
 #include "nsDirectoryServiceUtils.h"
@@ -46,7 +39,13 @@
 #include "nsProxyRelease.h"
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
+#include "ScriptPreloader-inl.h"
 #include "xpcpublic.h"
+
+#include "js/CompileOptions.h"              
+#include "js/experimental/CompileScript.h"  
+#include "js/experimental/JSStencil.h"      
+#include "js/Transcoding.h"
 
 #if defined(XP_LINUX)
 #  include <sys/mman.h>
@@ -1078,22 +1077,11 @@ already_AddRefed<JS::Stencil> ScriptPreloader::GetCachedStencil(
     RefPtr<JS::Stencil> stencil =
         mChildCache->GetCachedStencilInternal(cx, options, path);
     if (stencil) {
-#ifndef ANDROID
-      glean::script_preloader::requests
-          .EnumGet(glean::script_preloader::RequestsLabel::eHitchild)
-          .Add();
-#endif
       return stencil.forget();
     }
   }
 
   RefPtr<JS::Stencil> stencil = GetCachedStencilInternal(cx, options, path);
-#ifndef ANDROID
-  glean::script_preloader::requests
-      .EnumGet(stencil ? glean::script_preloader::RequestsLabel::eHit
-                       : glean::script_preloader::RequestsLabel::eMiss)
-      .Add();
-#endif
 
   return stencil.forget();
 }
