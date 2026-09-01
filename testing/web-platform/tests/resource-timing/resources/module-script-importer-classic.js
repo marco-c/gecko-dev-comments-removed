@@ -1,0 +1,3 @@
+
+
+import('/resource-timing/resources/module-script-imported.js?label=classic-importer-dynamic');

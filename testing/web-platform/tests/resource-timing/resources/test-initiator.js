@@ -1,4 +1,10 @@
 
+
+
+
+
+const getUrl = path => get_host_info()['ORIGIN'] + path;
+
 const with_timeout_message = async (promise, message, timeout = 1000) => {
   return Promise.race([
     promise,
