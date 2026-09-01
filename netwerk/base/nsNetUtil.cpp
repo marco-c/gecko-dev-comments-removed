@@ -4224,8 +4224,8 @@ void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
 
   
   
-  if (spec.EqualsLiteral(
-          "resource:///modules/sessionstore/SessionStoreFunctions.sys.mjs")) {
+  if (spec.EqualsLiteral("moz-src:///browser/components/sessionstore/"
+                         "SessionStoreFunctions.sys.mjs")) {
     return;
   }
 
