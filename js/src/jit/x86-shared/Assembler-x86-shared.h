@@ -2,11 +2,10 @@
 
 
 
-
-
 #ifndef jit_x86_shared_Assembler_x86_shared_h
 #define jit_x86_shared_Assembler_x86_shared_h
 
+#include "mozilla/EndianUtils.h"
 #include "mozilla/MathAlgorithms.h"
 
 #include <cstddef>
@@ -468,6 +467,9 @@ class AssemblerX86Shared : public AssemblerShared {
 
   
   size_t size() const { return masm.size(); }
+  
+  
+  size_t readableSize() const { return masm.size(); }
   
   size_t jumpRelocationTableBytes() const { return jumpRelocations_.length(); }
   size_t dataRelocationTableBytes() const { return dataRelocations_.length(); }
@@ -4457,15 +4459,15 @@ class AssemblerX86Shared : public AssemblerShared {
     }
     MOZ_CRASH("unexpected mode");
   }
-  void vroundsd(X86Encoding::RoundingMode mode, FloatRegister src,
-                FloatRegister dest) {
+  void vroundsd(X86Encoding::RoundingMode mode, FloatRegister src1,
+                FloatRegister src0, FloatRegister dest) {
     MOZ_ASSERT(HasSSE41());
-    masm.vroundsd_irr(mode, src.encoding(), dest.encoding());
+    masm.vroundsd_irr(mode, src1.encoding(), src0.encoding(), dest.encoding());
   }
-  void vroundss(X86Encoding::RoundingMode mode, FloatRegister src,
-                FloatRegister dest) {
+  void vroundss(X86Encoding::RoundingMode mode, FloatRegister src1,
+                FloatRegister src0, FloatRegister dest) {
     MOZ_ASSERT(HasSSE41());
-    masm.vroundss_irr(mode, src.encoding(), dest.encoding());
+    masm.vroundss_irr(mode, src1.encoding(), src0.encoding(), dest.encoding());
   }
 
   unsigned vinsertpsMask(unsigned sourceLane, unsigned destLane,

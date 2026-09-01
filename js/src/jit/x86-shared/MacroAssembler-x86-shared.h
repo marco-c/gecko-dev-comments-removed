@@ -412,6 +412,18 @@ class MacroAssemblerX86Shared : public Assembler {
     vcvtsd2ss(src, HasAVX() ? src : dest, dest);
   }
 
+  
+  
+  
+  void roundDoubleWithMode(X86Encoding::RoundingMode mode, FloatRegister src,
+                           FloatRegister dest) {
+    vroundsd(mode, src, HasAVX() ? src : dest, dest);
+  }
+  void roundFloat32WithMode(X86Encoding::RoundingMode mode, FloatRegister src,
+                            FloatRegister dest) {
+    vroundss(mode, src, HasAVX() ? src : dest, dest);
+  }
+
   void convertDoubleToFloat16(FloatRegister src, FloatRegister dest) {
     MOZ_CRASH("Not supported for this target");
   }
