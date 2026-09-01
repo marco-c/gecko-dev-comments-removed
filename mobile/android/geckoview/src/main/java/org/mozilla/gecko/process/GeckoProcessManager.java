@@ -34,13 +34,10 @@ import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.gecko.util.XPCOMEventTarget;
 import org.mozilla.geckoview.GeckoResult;
 
-public final class GeckoProcessManager {
+public final class GeckoProcessManager extends IProcessManager.Stub {
   private static final String LOGTAG = "GeckoProcessManager";
   private static final GeckoProcessManager INSTANCE = new GeckoProcessManager();
   private static final int INVALID_PID = 0;
-
-  
-  private static final int PRELOAD_CHILD_ID = -1;
 
   
   private final String mInstanceId;
@@ -64,27 +61,12 @@ public final class GeckoProcessManager {
 
   @WrapForJNI(stubName = "GetEditableParent", dispatchTo = "gecko")
   private static native void nativeGetEditableParent(
-      IGeckoEditableChild child, int contentId, long tabId);
+      IGeckoEditableChild child, long contentId, long tabId);
 
-  
-  private static final class ProcessManagerProxy extends IProcessManager.Stub {
-    private final ChildConnection mConnection;
-
-    ProcessManagerProxy(@NonNull final ChildConnection connection) {
-      mConnection = connection;
-    }
-
-    @Override 
-    public void getEditableParent(final IGeckoEditableChild child, final long tabId) {
-      nativeGetEditableParent(child, mConnection.getChildId(), tabId);
-    }
-
-    @Override 
-    public ISurfaceAllocator getSurfaceAllocator(final IBinder client) {
-      
-      
-      return INSTANCE.getSurfaceAllocator(client);
-    }
+  @Override 
+  public void getEditableParent(
+      final IGeckoEditableChild child, final long contentId, final long tabId) {
+    nativeGetEditableParent(child, contentId, tabId);
   }
 
   
@@ -92,6 +74,7 @@ public final class GeckoProcessManager {
 
 
 
+  @Override 
   public ISurfaceAllocator getSurfaceAllocator(final IBinder client) {
     final boolean gpuEnabled = GeckoAppShell.isGpuProcessEnabled();
 
@@ -204,16 +187,13 @@ public final class GeckoProcessManager {
     private IChildProcess mChild;
     private GeckoResult<IChildProcess> mPendingBind;
     private int mPid;
-    private int mChildId;
 
     protected ChildConnection(
         @NonNull final ServiceAllocator allocator,
         @NonNull final GeckoProcessType type,
-        @NonNull final PriorityLevel initialPriority,
-        final int childId) {
+        @NonNull final PriorityLevel initialPriority) {
       super(allocator, type, initialPriority);
       mPid = INVALID_PID;
-      mChildId = childId;
     }
 
     public int getPid() throws AssertionError, IncompleteChildConnectionException {
@@ -224,24 +204,6 @@ public final class GeckoProcessManager {
       }
 
       return mPid;
-    }
-
-    public int getChildId() {
-      return mChildId;
-    }
-
-    protected void setChildId(final int childId) {
-      XPCOMEventTarget.assertOnLauncherThread();
-      mChildId = childId;
-    }
-
-    protected ProcessManagerProxy createProcessManagerProxy() {
-      XPCOMEventTarget.assertOnLauncherThread();
-      if (mChildId == PRELOAD_CHILD_ID) {
-        throw new IllegalStateException("Starting a child process with preload child ID");
-      }
-
-      return new ProcessManagerProxy(this);
     }
 
     protected IChildProcess getChild() {
@@ -358,10 +320,8 @@ public final class GeckoProcessManager {
 
   private static class NonContentConnection extends ChildConnection {
     public NonContentConnection(
-        @NonNull final ServiceAllocator allocator,
-        @NonNull final GeckoProcessType type,
-        final int childId) {
-      super(allocator, type, PriorityLevel.FOREGROUND, childId);
+        @NonNull final ServiceAllocator allocator, @NonNull final GeckoProcessType type) {
+      super(allocator, type, PriorityLevel.FOREGROUND);
       if (GeckoProcessManager.isContent(type)) {
         throw new AssertionError("Attempt to create a NonContentConnection as CONTENT");
       }
@@ -385,11 +345,9 @@ public final class GeckoProcessManager {
     
     private static int sUniqueGpuProcessIdCounter = 0;
 
-    public GpuProcessConnection(@NonNull final ServiceAllocator allocator, final int childId) {
-      super(allocator, GeckoProcessType.GPU, childId);
+    public GpuProcessConnection(@NonNull final ServiceAllocator allocator) {
+      super(allocator, GeckoProcessType.GPU);
 
-      
-      
       
       
       if (sUniqueGpuProcessIdCounter == 0) {
@@ -424,8 +382,8 @@ public final class GeckoProcessManager {
     private boolean mIsForeground = true;
     private boolean mIsNetworkUp = true;
 
-    public SocketProcessConnection(@NonNull final ServiceAllocator allocator, final int childId) {
-      super(allocator, GeckoProcessType.SOCKET, childId);
+    public SocketProcessConnection(@NonNull final ServiceAllocator allocator) {
+      super(allocator, GeckoProcessType.SOCKET);
       GeckoProcessManager.INSTANCE.mConnections.enableNetworkNotifications();
     }
 
@@ -471,10 +429,8 @@ public final class GeckoProcessManager {
   private static final class ContentConnection extends ChildConnection {
 
     public ContentConnection(
-        @NonNull final ServiceAllocator allocator,
-        @NonNull final PriorityLevel initialPriority,
-        final int childId) {
-      super(allocator, GeckoProcessType.determineContentProcessType(), initialPriority, childId);
+        @NonNull final ServiceAllocator allocator, @NonNull final PriorityLevel initialPriority) {
+      super(allocator, GeckoProcessType.determineContentProcessType(), initialPriority);
     }
 
     @Override
@@ -653,10 +609,8 @@ public final class GeckoProcessManager {
     }
 
     
-    private ContentConnection getNewContentConnection(
-        @NonNull final PriorityLevel newPriority, final int childId) {
-      final ContentConnection result =
-          new ContentConnection(mServiceAllocator, newPriority, childId);
+    private ContentConnection getNewContentConnection(@NonNull final PriorityLevel newPriority) {
+      final ContentConnection result = new ContentConnection(mServiceAllocator, newPriority);
       mContentConnections.add(result);
 
       return result;
@@ -680,24 +634,20 @@ public final class GeckoProcessManager {
 
 
 
-
-
-    private ChildConnection getContentConnectionForStart(final int childId) {
+    private ChildConnection getContentConnectionForStart() {
       XPCOMEventTarget.assertOnLauncherThread();
 
       if (mNonStartedContentConnections.isEmpty()) {
-        return getNewContentConnection(PriorityLevel.FOREGROUND, childId);
+        return getNewContentConnection(PriorityLevel.FOREGROUND);
       }
 
       final ChildConnection conn = mNonStartedContentConnections.removeFirst();
       conn.setPriorityLevel(PriorityLevel.FOREGROUND);
-      conn.setChildId(childId);
       return conn;
     }
 
     
-    private ChildConnection getNonContentConnection(
-        @NonNull final GeckoProcessType type, final int childId) {
+    private ChildConnection getNonContentConnection(@NonNull final GeckoProcessType type) {
       XPCOMEventTarget.assertOnLauncherThread();
       if (isContent(type)) {
         throw new IllegalArgumentException("Content processes not supported by this method");
@@ -706,44 +656,37 @@ public final class GeckoProcessManager {
       NonContentConnection connection = mNonContentConnections.get(type);
       if (connection == null) {
         if (type == GeckoProcessType.SOCKET) {
-          connection = new SocketProcessConnection(mServiceAllocator, childId);
+          connection = new SocketProcessConnection(mServiceAllocator);
         } else if (type == GeckoProcessType.GPU) {
-          connection = new GpuProcessConnection(mServiceAllocator, childId);
+          connection = new GpuProcessConnection(mServiceAllocator);
         } else {
-          connection = new NonContentConnection(mServiceAllocator, type, childId);
+          connection = new NonContentConnection(mServiceAllocator, type);
         }
 
         mNonContentConnections.put(type, connection);
-      } else if (connection.getChildId() != childId) {
-        if (connection.getChildId() != PRELOAD_CHILD_ID) {
-          throw new IllegalArgumentException("Connection already has childId set?");
-        }
-        connection.setChildId(childId);
       }
 
       return connection;
     }
 
     
-    public ChildConnection getConnectionForStart(
-        @NonNull final GeckoProcessType type, final int childId) {
+    public ChildConnection getConnectionForStart(@NonNull final GeckoProcessType type) {
       if (isContent(type)) {
-        return getContentConnectionForStart(childId);
+        return getContentConnectionForStart();
       }
 
-      return getNonContentConnection(type, childId);
+      return getNonContentConnection(type);
     }
 
     
     public ChildConnection getConnectionForPreload(@NonNull final GeckoProcessType type) {
       if (isContent(type)) {
-        final ContentConnection conn =
-            getNewContentConnection(PriorityLevel.BACKGROUND, PRELOAD_CHILD_ID);
+        final ContentConnection conn = getNewContentConnection(PriorityLevel.BACKGROUND);
         mNonStartedContentConnections.addLast(conn);
         return conn;
       }
 
-      return getNonContentConnection(type, PRELOAD_CHILD_ID);
+      return getNonContentConnection(type);
     }
   }
 
@@ -847,12 +790,11 @@ public final class GeckoProcessManager {
 
   @WrapForJNI
   private static GeckoResult<Integer> start(
-      final GeckoProcessType type, final int childId, final String[] args, final int[] fds) {
+      final GeckoProcessType type, final String[] args, final int[] fds) {
     final GeckoResult<Integer> result = new GeckoResult<>();
     final StartInfo info =
         new StartInfo(
             type,
-            childId,
             GeckoThread.InitInfo.builder()
                 .args(args)
                 .userSerialNumber(System.getenv("MOZ_ANDROID_USER_SERIAL_NUMBER"))
@@ -888,16 +830,13 @@ public final class GeckoProcessManager {
 
   private static class StartInfo {
     final GeckoProcessType type;
-    final int childId;
     final String crashHandler;
     final GeckoThread.InitInfo init;
 
     final ParcelFileDescriptor[] pfds;
 
-    private StartInfo(
-        final GeckoProcessType type, final int childId, final GeckoThread.InitInfo initInfo) {
+    private StartInfo(final GeckoProcessType type, final GeckoThread.InitInfo initInfo) {
       this.type = type;
-      this.childId = childId;
       this.init = initInfo;
       crashHandler =
           GeckoAppShell.getCrashHandlerService() != null
@@ -1005,14 +944,14 @@ public final class GeckoProcessManager {
   private GeckoResult<Integer> startInternal(final StartInfo info) {
     XPCOMEventTarget.assertOnLauncherThread();
 
-    final ChildConnection connection = mConnections.getConnectionForStart(info.type, info.childId);
+    final ChildConnection connection = mConnections.getConnectionForStart(info.type);
     return connection
         .bind()
         .map(
             child -> {
               final int result =
                   child.start(
-                      connection.createProcessManagerProxy(),
+                      this,
                       mInstanceId,
                       info.init.args,
                       info.init.extras,

@@ -1336,11 +1336,14 @@ nsresult GeckoEditableSupport::NotifyIME(
           }
 
           if (!mEditable->HasEditableParent()) {
+            const dom::ContentChild* const contentChild =
+                dom::ContentChild::GetSingleton();
             if (dom::BrowserChild* browserChild =
                     widget->GetOwningBrowserChild()) {
+              const uint64_t contentId = contentChild->GetID();
               const uint64_t tabId = browserChild->GetTabId();
 
-              EnsureEditableParent(tabId);
+              EnsureEditableParent(contentId, tabId);
             }
           }
 
@@ -1602,14 +1605,16 @@ void GeckoEditableSupport::TransferParent(jni::Object::Param aEditableParent) {
   }
 }
 
-void GeckoEditableSupport::EnsureEditableParent(uint64_t aTabId) {
+void GeckoEditableSupport::EnsureEditableParent(uint64_t aContentId,
+                                                uint64_t aTabId) {
   MOZ_ASSERT(mEditableAttached);
   MOZ_ASSERT(mEditable);
 
   if (mEditable->HasEditableParent()) {
     return;
   }
-  java::GeckoServiceChildProcess::GetEditableParent(GetJavaEditable(), aTabId);
+  java::GeckoServiceChildProcess::GetEditableParent(GetJavaEditable(),
+                                                    aContentId, aTabId);
 }
 
 void GeckoEditableSupport::SetOnBrowserChild(dom::BrowserChild* aBrowserChild) {
@@ -1652,7 +1657,8 @@ void GeckoEditableSupport::SetOnBrowserChild(dom::BrowserChild* aBrowserChild) {
     accEditableSupport->mEditableAttached = true;
 
     
-    java::GeckoServiceChildProcess::GetEditableParent(editableChild, tabId);
+    java::GeckoServiceChildProcess::GetEditableParent(editableChild, contentId,
+                                                      tabId);
     return;
   }
 
@@ -1676,7 +1682,7 @@ void GeckoEditableSupport::SetOnBrowserChild(dom::BrowserChild* aBrowserChild) {
   }
 
   
-  support->EnsureEditableParent(tabId);
+  support->EnsureEditableParent(contentId, tabId);
 }
 
 nsIWidget* GeckoEditableSupport::GetWidget() const {
