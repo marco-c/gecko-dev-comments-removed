@@ -218,7 +218,7 @@ struct RTC_EXPORT RtpCodec {
   virtual ~RtpCodec();
 
   
-  std::string mime_type() const { return MediaTypeToString(kind) + "/" + name; }
+  std::string mime_type() const;
 
   
   std::string name;
