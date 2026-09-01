@@ -23,6 +23,12 @@ add_task(
       
       
       
+      
+      
+      ["extensions.telemetry.EnvironmentAddonBuilder", true],
+      
+      
+      
       ["extensions.gleanPingAddons.updated.delay", 1000 * 2],
       ["extensions.gleanPingAddons.updated.idleTimeout", -1],
       
@@ -53,7 +59,7 @@ add_task(
         
         await AddonTestUtils.promiseStartupManager();
         Services.obs.notifyObservers(null, "test-load-xpi-database");
-        await AMTelemetry.addonsBuilder._pendingTask;
+        await AMTelemetry.telemetryAddonBuilder._pendingTask;
       }
     );
 

@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { TelemetryEnvironment } = ChromeUtils.importESModule(
+  "resource://gre/modules/TelemetryEnvironment.sys.mjs"
+);
+
 const { AMTelemetry } = ChromeUtils.importESModule(
   "resource://gre/modules/AddonManager.sys.mjs"
 );
@@ -24,9 +28,9 @@ add_task(async function test_shutdown_immediately_after_startup() {
     "Expect Glean addons.activeAddons to not be set yet"
   );
   Assert.equal(
-    AMTelemetry.addonsBuilder,
+    AMTelemetry.telemetryAddonBuilder,
     undefined,
-    "Expect addonsBuilder to not be initialized yet"
+    "Expect telemetryAddonBuilder to not be initialized yet"
   );
 
   Cc["@mozilla.org/addons/integration;1"]
@@ -47,10 +51,27 @@ add_task(async function test_shutdown_immediately_after_startup() {
 
   
   
-  Assert.ok(
-    AMTelemetry.addonsBuilder,
-    "Expect addonsBuilder to have been initialized"
-  );
+  
+  
+  
+  
+  
+  
+  if (AppConstants.platform !== "android") {
+    
+    
+    
+    equal(
+      TelemetryEnvironment.currentEnvironment.addons,
+      undefined,
+      "TelemetryEnvironment.currentEnvironment.addons is uninitialized"
+    );
+  } else {
+    Assert.ok(
+      AMTelemetry.telemetryAddonBuilder,
+      "Expect telemetryAddonBuilder to have been initialized"
+    );
+  }
 
   info("Immediate exit at startup, without quit-application-granted");
   Services.startup.advanceShutdownPhase(
@@ -64,7 +85,7 @@ add_task(async function test_shutdown_immediately_after_startup() {
   
   await shutdownPromise;
 
-  ok(databaseLoaded, "Addon DB loaded for use by EnvironmentAddonBuilder");
+  ok(databaseLoaded, "Addon DB loaded for use by TelemetryEnvironment");
   equal(AddonManagerPrivate.isDBLoaded(), false, "DB unloaded after shutdown");
 
   Assert.deepEqual(
@@ -72,4 +93,11 @@ add_task(async function test_shutdown_immediately_after_startup() {
     [],
     "Expect Glean addons.activeAddons to have been set"
   );
+  if (AppConstants.platform !== "android") {
+    Assert.deepEqual(
+      TelemetryEnvironment.currentEnvironment.addons.activeAddons,
+      {},
+      "TelemetryEnvironment.currentEnvironment.addons is initialized"
+    );
+  }
 });
