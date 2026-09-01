@@ -16,6 +16,7 @@ const TEST_URI = `
     text-box-edge: text;
     user-modify: read-only;
     stroke-color: red;
+    -moz-orient: horizontal;
   }
   div {
     overflow-anchor: auto;
@@ -50,7 +51,13 @@ const TEST_DATA_SELECTED = [
     deprecated: false,
     experimental: true,
   },
-  
+  {
+    type: COMPATIBILITY_ISSUE_TYPE.CSS_PROPERTY,
+    property: "-moz-orient",
+    
+    deprecated: false,
+    experimental: false,
+  },
 ];
 
 const TEST_DATA_ALL = [

@@ -11,6 +11,7 @@ const TEST_URI = `
   body {
     user-select: none;
     stroke-color: red;
+    -moz-orient: horizontal;
   }
 </style>
 <body>
@@ -36,7 +37,12 @@ const TEST_DATA_INITIAL = [
           expectedLearnMoreUrl:
             "https://drafts.csswg.org/fill-stroke-3/#stroke-color",
         },
-        
+        "-moz-orient": {
+          value: "horizontal",
+          expected: COMPATIBILITY_TOOLTIP_MESSAGE.default,
+          
+          expectedLearnMoreUrl: null,
+        },
       },
     ],
   },
