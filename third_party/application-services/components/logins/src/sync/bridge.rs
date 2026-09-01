@@ -6,8 +6,6 @@ use crate::sync::engine::LoginsSyncEngine;
 use crate::LoginStore;
 use anyhow::Result;
 use std::sync::Arc;
-use sync15::engine::BridgedEngineAdaptor;
-use sync15::ServerTimestamp;
 
 impl LoginStore {
     
@@ -18,8 +16,7 @@ impl LoginStore {
     
     pub fn bridged_engine(self: Arc<Self>) -> Result<Arc<LoginsBridgedEngine>> {
         let engine = LoginsSyncEngine::new(self)?;
-        let bridged_engine = LoginsBridgedEngineAdaptor { engine };
-        Ok(Arc::new(LoginsBridgedEngine::new(Box::new(bridged_engine))))
+        Ok(Arc::new(LoginsBridgedEngine::new(Box::new(engine))))
     }
 }
 
@@ -27,46 +24,7 @@ impl LoginStore {
 
 
 
-
-
-
-
-struct LoginsBridgedEngineAdaptor {
-    engine: LoginsSyncEngine,
-}
-
-
-impl BridgedEngineAdaptor for LoginsBridgedEngineAdaptor {
-    fn last_sync(&self) -> Result<i64> {
-        
-        
-        
-        let db = self.engine.store.lock_db()?;
-        Ok(self
-            .engine
-            .get_last_sync(&db)?
-            .unwrap_or_default()
-            .as_millis())
-    }
-
-    fn set_last_sync(&self, last_sync_millis: i64) -> Result<()> {
-        let db = self.engine.store.lock_db()?;
-        self.engine
-            .set_last_sync(&db, ServerTimestamp::from_millis(last_sync_millis))?;
-        Ok(())
-    }
-
-    fn engine(&self) -> &dyn sync15::engine::SyncEngine {
-        &self.engine
-    }
-}
-
-
-
-
-
-
-sync15::uniffi_bridged_engine!(LoginsBridgedEngine, String);
+sync15::uniffi_bridged_engine!(LoginsBridgedEngine);
 
 #[cfg(not(feature = "keydb"))]
 #[cfg(test)]
@@ -89,7 +47,7 @@ mod tests {
 
         
         assert_eq!(bridge.last_sync().unwrap(), 0);
-        bridge.set_last_sync(3).unwrap();
+        bridge.set_uploaded(3, vec![]).unwrap();
         assert_eq!(bridge.last_sync().unwrap(), 3);
 
         assert!(bridge.sync_id().unwrap().is_none());
@@ -98,14 +56,16 @@ mod tests {
         assert_eq!(bridge.sync_id().unwrap(), Some("some_guid".to_string()));
         
         assert_eq!(bridge.last_sync().unwrap(), 0);
-        bridge.set_last_sync(3).unwrap();
+        
+        bridge.set_uploaded(3, vec![]).unwrap();
 
         bridge.reset_sync_id().unwrap();
         
         assert_ne!(bridge.sync_id().unwrap(), Some("some_guid".to_string()));
         
         assert_eq!(bridge.last_sync().unwrap(), 0);
-        bridge.set_last_sync(3).unwrap();
+        
+        bridge.set_uploaded(3, vec![]).unwrap();
 
         
         bridge.reset().unwrap();
@@ -162,7 +122,7 @@ mod tests {
 
         
         
-        let outgoing = bridge.apply().expect("should apply");
+        let outgoing = bridge.apply(0).expect("should apply");
         let changes: HashMap<String, serde_json::Value> = outgoing
             .into_iter()
             .map(|s| {

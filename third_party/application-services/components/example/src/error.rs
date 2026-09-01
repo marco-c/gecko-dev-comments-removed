@@ -14,7 +14,7 @@
 use error_support::{ErrorHandling, GetErrorHandling};
 
 
-pub use error_support::{error, trace};
+pub use error_support::trace;
 
 
 

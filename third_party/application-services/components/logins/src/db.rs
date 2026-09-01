@@ -614,8 +614,19 @@ impl LoginDb {
     ) -> Result<Vec<Result<EncryptedLogin>>> {
         let tx = self.unchecked_transaction()?;
         let mut results = vec![];
-        for entry_with_meta in entries_with_meta {
-            let guid = Guid::from_string(entry_with_meta.meta.id.clone());
+        for mut entry_with_meta in entries_with_meta {
+            let guid = match Self::validate_or_fixup_guid(Guid::from_string(
+                entry_with_meta.meta.id.clone(),
+            )) {
+                Ok(guid) => guid,
+                Err(err) => {
+                    results.push(Err(err));
+                    continue;
+                }
+            };
+            
+            
+            entry_with_meta.meta.id = guid.to_string();
             match self.fixup_and_check_for_dupes(&guid, entry_with_meta.entry) {
                 Ok(new_entry) => {
                     let sec_fields = SecureLoginFields {
@@ -647,6 +658,33 @@ impl LoginDb {
         tx.commit()?;
 
         Ok(results)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn validate_or_fixup_guid(guid: Guid) -> Result<Guid> {
+        if guid.is_valid_for_sync_server() {
+            return Ok(guid);
+        }
+        #[cfg(feature = "fixup_invalid_guids")]
+        {
+            warn!("regenerating a login guid that is invalid for the sync server");
+            Ok(Guid::random())
+        }
+        #[cfg(not(feature = "fixup_invalid_guids"))]
+        {
+            Err(InvalidLogin::IllegalFieldValue {
+                field_info: "guid is not valid for the sync server".into(),
+            }
+            .into())
+        }
     }
 
     pub fn add(&self, entry: LoginEntry) -> Result<EncryptedLogin> {
@@ -1572,6 +1610,44 @@ mod tests {
             .expect("should get a record");
 
         assert_eq!(fetched.meta, meta);
+    }
+
+    #[test]
+    fn test_add_with_meta_invalid_guid() {
+        ensure_initialized();
+
+        let now_ms = util::system_time_ms_i64(SystemTime::now());
+        
+        let meta = LoginMeta {
+            id: "invalid,guid".to_string(),
+            time_created: now_ms,
+            time_password_changed: now_ms,
+            time_last_used: now_ms,
+            times_used: 1,
+            time_last_breach_alert_dismissed: None,
+        };
+        let db = LoginDb::open_in_memory();
+        let result = db.add_with_meta(LoginEntryWithMeta {
+            entry: LoginEntry {
+                origin: "https://www.example.com".into(),
+                http_realm: Some("https://www.example.com".into()),
+                username: "test".into(),
+                password: "sekret".into(),
+                ..LoginEntry::default()
+            },
+            meta,
+        });
+
+        
+        
+        #[cfg(not(feature = "fixup_invalid_guids"))]
+        assert!(result.is_err());
+
+        #[cfg(feature = "fixup_invalid_guids")]
+        {
+            let login = result.expect("invalid guid should be repaired");
+            assert!(Guid::new(&login.meta.id).is_valid_for_sync_server());
+        }
     }
 
     #[test]

@@ -52,6 +52,7 @@ pub enum Metric {
     LabeledCounter(LabeledCounterMetric),
     Distribution(DistributionMetric),
     LabeledDistribution(LabeledDistributionMetric),
+    Events(EventsMetric),
 }
 
 
@@ -152,6 +153,22 @@ pub enum DistributionMetricKind {
     Memory,
     Timing,
     Custom,
+}
+
+
+
+
+pub struct EventsMetric {
+    
+    pub display_name: &'static str,
+    
+    pub ping: &'static str,
+    
+    pub category: &'static str,
+    
+    pub metrics: Vec<&'static str>,
+    
+    pub applications: Vec<Application>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -261,5 +278,11 @@ impl From<DistributionMetric> for Metric {
 impl From<LabeledDistributionMetric> for Metric {
     fn from(m: LabeledDistributionMetric) -> Self {
         Self::LabeledDistribution(m)
+    }
+}
+
+impl From<EventsMetric> for Metric {
+    fn from(m: EventsMetric) -> Self {
+        Self::Events(m)
     }
 }

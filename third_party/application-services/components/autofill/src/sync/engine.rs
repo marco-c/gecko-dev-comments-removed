@@ -75,18 +75,6 @@ impl<T> ConfigSyncEngine<T> {
         let key = format!("{}.{}", self.config.namespace, tail);
         crate::db::store::delete_meta(conn, &key)
     }
-    
-    pub(crate) fn get_last_sync_millis(&self) -> Result<i64> {
-        let db = self.store.lock_db()?;
-        Ok(self
-            .get_meta::<i64>(&db.writer, LAST_SYNC_META_KEY)?
-            .unwrap_or_default())
-    }
-
-    pub(crate) fn set_last_sync_millis(&self, millis: i64) -> Result<()> {
-        let db = self.store.lock_db()?;
-        self.put_meta(&db.writer, LAST_SYNC_META_KEY, &millis)
-    }
 
     
     pub fn reset_local_sync_data(&self) -> Result<()> {
@@ -119,10 +107,7 @@ impl<T: SyncRecord + std::fmt::Debug> SyncEngine for ConfigSyncEngine<T> {
         Ok(())
     }
 
-    fn prepare_for_sync(
-        &self,
-        _get_client_data: &dyn Fn() -> sync15::ClientData,
-    ) -> anyhow::Result<()> {
+    fn sync_started(&self) -> anyhow::Result<()> {
         let db = self.store.lock_db()?;
         let signal = db.begin_interrupt_scope()?;
         crate::db::schema::create_empty_sync_temp_tables(&db.writer)?;
@@ -172,7 +157,10 @@ impl<T: SyncRecord + std::fmt::Debug> SyncEngine for ConfigSyncEngine<T> {
         
         
         
-        self.put_meta(&tx, LAST_SYNC_META_KEY, &timestamp.as_millis())?;
+        
+        if timestamp != ServerTimestamp(0) {
+            self.put_meta(&tx, LAST_SYNC_META_KEY, &timestamp.as_millis())?;
+        }
 
         incoming_impl.finish_incoming(&tx)?;
 
@@ -254,6 +242,19 @@ impl<T: SyncRecord + std::fmt::Debug> SyncEngine for ConfigSyncEngine<T> {
 
     fn wipe(&self) -> anyhow::Result<()> {
         warn!("not implemented as there isn't a valid use case for it");
+        Ok(())
+    }
+
+    fn last_sync(&self) -> anyhow::Result<Option<ServerTimestamp>> {
+        let db = self.store.lock_db()?;
+        Ok(self
+            .get_meta::<i64>(&db.writer, LAST_SYNC_META_KEY)?
+            .map(ServerTimestamp::from_millis))
+    }
+
+    fn reset_last_sync(&self) -> anyhow::Result<()> {
+        let db = self.store.lock_db()?;
+        self.delete_meta(&db.writer, LAST_SYNC_META_KEY)?;
         Ok(())
     }
 }

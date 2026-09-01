@@ -7,244 +7,9 @@ use crate::{ServerTimestamp, telemetry};
 use anyhow::Result;
 
 use crate::Guid;
-use crate::bso::{IncomingBso, OutgoingBso};
+use crate::bso::IncomingBso;
 
 use super::{CollSyncIds, EngineSyncAssociation, SyncEngine};
-
-
-
-
-
-
-
-
-
-
-pub trait BridgedEngine: Send + Sync {
-    
-    
-    
-    fn last_sync(&self) -> Result<i64>;
-
-    
-    
-    
-    fn set_last_sync(&self, last_sync_millis: i64) -> Result<()>;
-
-    
-    
-    fn sync_id(&self) -> Result<Option<String>>;
-
-    
-    
-    
-    
-    
-    
-    fn reset_sync_id(&self) -> Result<String>;
-
-    
-    
-    
-    
-    
-    
-    
-    fn ensure_current_sync_id(&self, new_sync_id: &str) -> Result<String>;
-
-    
-    
-    
-    fn prepare_for_sync(&self, _client_data: &str) -> Result<()> {
-        Ok(())
-    }
-
-    
-    
-    fn sync_started(&self) -> Result<()>;
-
-    
-    
-    
-    
-    fn store_incoming(&self, incoming_records: Vec<IncomingBso>) -> Result<()>;
-
-    
-    
-    fn apply(&self) -> Result<ApplyResults>;
-
-    
-    
-    
-    fn set_uploaded(&self, server_modified_millis: i64, ids: &[Guid]) -> Result<()>;
-
-    
-    
-    
-    
-    fn sync_finished(&self) -> Result<()>;
-
-    
-    
-    
-    fn reset(&self) -> Result<()>;
-
-    
-    
-    fn wipe(&self) -> Result<()>;
-}
-
-
-
-
-
-
-
-
-pub trait BridgedEngineAdaptor: Send + Sync {
-    
-    fn last_sync(&self) -> Result<i64>;
-    fn set_last_sync(&self, last_sync_millis: i64) -> Result<()>;
-    fn sync_started(&self) -> Result<()> {
-        Ok(())
-    }
-
-    fn engine(&self) -> &dyn SyncEngine;
-}
-
-impl<A: BridgedEngineAdaptor> BridgedEngine for A {
-    fn last_sync(&self) -> Result<i64> {
-        self.last_sync()
-    }
-
-    fn set_last_sync(&self, last_sync_millis: i64) -> Result<()> {
-        self.set_last_sync(last_sync_millis)
-    }
-
-    fn sync_id(&self) -> Result<Option<String>> {
-        Ok(match self.engine().get_sync_assoc()? {
-            EngineSyncAssociation::Disconnected => None,
-            EngineSyncAssociation::Connected(c) => Some(c.coll.into()),
-        })
-    }
-
-    fn reset_sync_id(&self) -> Result<String> {
-        
-        
-        let global = Guid::empty();
-        let coll = Guid::random();
-        self.engine()
-            .reset(&EngineSyncAssociation::Connected(CollSyncIds {
-                global,
-                coll: coll.clone(),
-            }))?;
-        Ok(coll.to_string())
-    }
-
-    fn ensure_current_sync_id(&self, sync_id: &str) -> Result<String> {
-        let engine = self.engine();
-        let assoc = engine.get_sync_assoc()?;
-        if matches!(assoc, EngineSyncAssociation::Connected(c) if c.coll == sync_id) {
-            debug!("ensure_current_sync_id is current");
-        } else {
-            let new_coll_ids = CollSyncIds {
-                global: Guid::empty(),
-                coll: sync_id.into(),
-            };
-            engine.reset(&EngineSyncAssociation::Connected(new_coll_ids))?;
-        }
-        Ok(sync_id.to_string())
-    }
-
-    fn prepare_for_sync(&self, client_data: &str) -> Result<()> {
-        
-        
-        self.engine()
-            .prepare_for_sync(&|| serde_json::from_str::<crate::ClientData>(client_data).unwrap())
-    }
-
-    fn sync_started(&self) -> Result<()> {
-        A::sync_started(self)
-    }
-
-    fn store_incoming(&self, incoming_records: Vec<IncomingBso>) -> Result<()> {
-        let engine = self.engine();
-        let mut telem = telemetry::Engine::new(engine.collection_name());
-        engine.stage_incoming(incoming_records, &mut telem)
-    }
-
-    fn apply(&self) -> Result<ApplyResults> {
-        let engine = self.engine();
-        let mut telem = telemetry::Engine::new(engine.collection_name());
-        
-        
-        
-        
-        
-        
-        
-        let records = engine.apply(ServerTimestamp::from_millis(0), &mut telem)?;
-        Ok(ApplyResults {
-            records,
-            num_reconciled: telem
-                .get_incoming()
-                .as_ref()
-                .map(|i| i.get_reconciled() as usize),
-        })
-    }
-
-    fn set_uploaded(&self, millis: i64, ids: &[Guid]) -> Result<()> {
-        self.engine()
-            .set_uploaded(ServerTimestamp::from_millis(millis), ids.to_vec())
-    }
-
-    fn sync_finished(&self) -> Result<()> {
-        self.engine().sync_finished()
-    }
-
-    fn reset(&self) -> Result<()> {
-        self.engine().reset(&EngineSyncAssociation::Disconnected)
-    }
-
-    fn wipe(&self) -> Result<()> {
-        self.engine().wipe()
-    }
-}
-
-
-
-#[derive(Debug, Default)]
-pub struct ApplyResults {
-    
-    pub records: Vec<OutgoingBso>,
-    
-    
-    
-    pub num_reconciled: Option<usize>,
-}
-
-impl ApplyResults {
-    pub fn new(records: Vec<OutgoingBso>, num_reconciled: impl Into<Option<usize>>) -> Self {
-        Self {
-            records,
-            num_reconciled: num_reconciled.into(),
-        }
-    }
-}
-
-
-impl From<Vec<OutgoingBso>> for ApplyResults {
-    fn from(records: Vec<OutgoingBso>) -> Self {
-        Self {
-            records,
-            num_reconciled: None,
-        }
-    }
-}
-
-
-
-
 
 
 
@@ -260,36 +25,73 @@ impl From<Vec<OutgoingBso>> for ApplyResults {
 
 
 pub struct BridgedEngineWrapper {
-    inner: Box<dyn BridgedEngine>,
+    inner: Box<dyn SyncEngine + Send + Sync>,
 }
 
 impl BridgedEngineWrapper {
-    pub fn new(inner: Box<dyn BridgedEngine>) -> Self {
+    pub fn new(inner: Box<dyn SyncEngine + Send + Sync>) -> Self {
         Self { inner }
     }
 
+    
+    
+    
+    
     pub fn last_sync(&self) -> Result<i64> {
-        self.inner.last_sync()
+        Ok(self.inner.last_sync()?.unwrap_or_default().as_millis())
     }
 
-    pub fn set_last_sync(&self, last_sync: i64) -> Result<()> {
-        self.inner.set_last_sync(last_sync)
+    
+    
+    pub fn reset_last_sync(&self) -> Result<()> {
+        self.inner.reset_last_sync()
     }
 
+    
+    
+    
     pub fn sync_id(&self) -> Result<Option<String>> {
-        self.inner.sync_id()
+        Ok(match self.inner.get_sync_assoc()? {
+            EngineSyncAssociation::Disconnected => None,
+            EngineSyncAssociation::Connected(c) => Some(c.coll.into()),
+        })
     }
 
+    
+    
     pub fn reset_sync_id(&self) -> Result<String> {
-        self.inner.reset_sync_id()
+        let global = Guid::empty();
+        let coll = Guid::random();
+        self.inner
+            .reset(&EngineSyncAssociation::Connected(CollSyncIds {
+                global,
+                coll: coll.clone(),
+            }))?;
+        Ok(coll.to_string())
     }
 
+    
+    
     pub fn ensure_current_sync_id(&self, sync_id: &str) -> Result<String> {
-        self.inner.ensure_current_sync_id(sync_id)
+        let assoc = self.inner.get_sync_assoc()?;
+        if matches!(assoc, EngineSyncAssociation::Connected(c) if c.coll == sync_id) {
+            debug!("ensure_current_sync_id is current");
+        } else {
+            let new_coll_ids = CollSyncIds {
+                global: Guid::empty(),
+                coll: sync_id.into(),
+            };
+            self.inner
+                .reset(&EngineSyncAssociation::Connected(new_coll_ids))?;
+        }
+        Ok(sync_id.to_string())
     }
 
-    pub fn prepare_for_sync(&self, client_data: &str) -> Result<()> {
-        self.inner.prepare_for_sync(client_data)
+    pub fn set_clients(&self, client_data: &str) -> Result<()> {
+        
+        
+        self.inner
+            .set_clients(&|| serde_json::from_str::<crate::ClientData>(client_data).unwrap())
     }
 
     pub fn sync_started(&self) -> Result<()> {
@@ -303,15 +105,26 @@ impl BridgedEngineWrapper {
         for inc in incoming {
             bsos.push(serde_json::from_str::<IncomingBso>(&inc)?);
         }
-        self.inner.store_incoming(bsos)
+        let mut telem = telemetry::Engine::new(self.inner.collection_name());
+        self.inner.stage_incoming(bsos, &mut telem)
     }
 
     
     
-    pub fn apply(&self) -> Result<Vec<String>> {
-        let apply_results = self.inner.apply()?;
-        let mut outgoing = Vec::with_capacity(apply_results.records.len());
-        for e in apply_results.records {
+    
+    
+    
+    
+    
+    
+    pub fn apply(&self, server_modified_millis: i64) -> Result<Vec<String>> {
+        let mut telem = telemetry::Engine::new(self.inner.collection_name());
+        let records = self.inner.apply(
+            ServerTimestamp::from_millis(server_modified_millis),
+            &mut telem,
+        )?;
+        let mut outgoing = Vec::with_capacity(records.len());
+        for e in records {
             outgoing.push(serde_json::to_string(&e)?);
         }
         Ok(outgoing)
@@ -319,15 +132,10 @@ impl BridgedEngineWrapper {
 
     
     
-    
-    
-    pub fn set_uploaded<G: Into<Guid>>(
-        &self,
-        server_modified_millis: i64,
-        ids: Vec<G>,
-    ) -> Result<()> {
-        let guids: Vec<Guid> = ids.into_iter().map(Into::into).collect();
-        self.inner.set_uploaded(server_modified_millis, &guids)
+    pub fn set_uploaded(&self, server_modified_millis: i64, ids: Vec<String>) -> Result<()> {
+        let guids: Vec<Guid> = ids.into_iter().map(Guid::from).collect();
+        self.inner
+            .set_uploaded(ServerTimestamp::from_millis(server_modified_millis), guids)
     }
 
     pub fn sync_finished(&self) -> Result<()> {
@@ -335,7 +143,7 @@ impl BridgedEngineWrapper {
     }
 
     pub fn reset(&self) -> Result<()> {
-        self.inner.reset()
+        self.inner.reset(&EngineSyncAssociation::Disconnected)
     }
 
     pub fn wipe(&self) -> Result<()> {
@@ -363,14 +171,15 @@ impl BridgedEngineWrapper {
 
 #[macro_export]
 macro_rules! uniffi_bridged_engine {
-    ($name:ident, $guid:ty) => {
+    ($name:ident) => {
         // This is what UniFFI exposes; it does nothing other than delegate to
-        // the shared `BridgedEngineWrapper`. See
-        // services/interfaces/mozIBridgedSyncEngine.idl for the Desktop contract.
+        // the shared `BridgedEngineWrapper`, which adapts our `SyncEngine`.
         pub struct $name($crate::engine::BridgedEngineWrapper);
 
         impl $name {
-            pub fn new(inner: ::std::boxed::Box<dyn $crate::engine::BridgedEngine>) -> Self {
+            pub fn new(
+                inner: ::std::boxed::Box<dyn $crate::engine::SyncEngine + Send + Sync>,
+            ) -> Self {
                 Self($crate::engine::BridgedEngineWrapper::new(inner))
             }
 
@@ -378,8 +187,8 @@ macro_rules! uniffi_bridged_engine {
                 self.0.last_sync()
             }
 
-            pub fn set_last_sync(&self, last_sync: i64) -> ::anyhow::Result<()> {
-                self.0.set_last_sync(last_sync)
+            pub fn reset_last_sync(&self) -> ::anyhow::Result<()> {
+                self.0.reset_last_sync()
             }
 
             pub fn sync_id(&self) -> ::anyhow::Result<Option<String>> {
@@ -394,8 +203,8 @@ macro_rules! uniffi_bridged_engine {
                 self.0.ensure_current_sync_id(sync_id)
             }
 
-            pub fn prepare_for_sync(&self, client_data: &str) -> ::anyhow::Result<()> {
-                self.0.prepare_for_sync(client_data)
+            pub fn set_clients(&self, client_data: &str) -> ::anyhow::Result<()> {
+                self.0.set_clients(client_data)
             }
 
             pub fn sync_started(&self) -> ::anyhow::Result<()> {
@@ -406,14 +215,14 @@ macro_rules! uniffi_bridged_engine {
                 self.0.store_incoming(incoming)
             }
 
-            pub fn apply(&self) -> ::anyhow::Result<Vec<String>> {
-                self.0.apply()
+            pub fn apply(&self, server_modified_millis: i64) -> ::anyhow::Result<Vec<String>> {
+                self.0.apply(server_modified_millis)
             }
 
             pub fn set_uploaded(
                 &self,
                 server_modified_millis: i64,
-                ids: Vec<$guid>,
+                ids: Vec<String>,
             ) -> ::anyhow::Result<()> {
                 self.0.set_uploaded(server_modified_millis, ids)
             }
@@ -436,7 +245,9 @@ macro_rules! uniffi_bridged_engine {
 #[cfg(test)]
 mod wrapper_tests {
     use super::*;
+    use crate::CollectionName;
     use crate::bso::OutgoingBso;
+    use crate::engine::CollectionRequest;
     use std::sync::Mutex;
 
     
@@ -447,39 +258,38 @@ mod wrapper_tests {
         uploaded: Mutex<Vec<Guid>>,
     }
 
-    impl BridgedEngine for RecordingEngine {
-        fn last_sync(&self) -> Result<i64> {
-            Ok(0)
+    impl SyncEngine for RecordingEngine {
+        fn collection_name(&self) -> CollectionName {
+            "test".into()
         }
-        fn set_last_sync(&self, _: i64) -> Result<()> {
+        fn stage_incoming(
+            &self,
+            _inbound: Vec<IncomingBso>,
+            _telem: &mut telemetry::Engine,
+        ) -> Result<()> {
             Ok(())
         }
-        fn sync_id(&self) -> Result<Option<String>> {
+        fn apply(
+            &self,
+            _timestamp: ServerTimestamp,
+            _telem: &mut telemetry::Engine,
+        ) -> Result<Vec<OutgoingBso>> {
+            Ok(vec![])
+        }
+        fn set_uploaded(&self, _new_timestamp: ServerTimestamp, ids: Vec<Guid>) -> Result<()> {
+            self.uploaded.lock().unwrap().extend(ids);
+            Ok(())
+        }
+        fn get_collection_request(
+            &self,
+            _server_timestamp: ServerTimestamp,
+        ) -> Result<Option<CollectionRequest>> {
             Ok(None)
         }
-        fn reset_sync_id(&self) -> Result<String> {
-            Ok(String::new())
+        fn get_sync_assoc(&self) -> Result<EngineSyncAssociation> {
+            Ok(EngineSyncAssociation::Disconnected)
         }
-        fn ensure_current_sync_id(&self, id: &str) -> Result<String> {
-            Ok(id.to_string())
-        }
-        fn sync_started(&self) -> Result<()> {
-            Ok(())
-        }
-        fn store_incoming(&self, _: Vec<IncomingBso>) -> Result<()> {
-            Ok(())
-        }
-        fn apply(&self) -> Result<ApplyResults> {
-            Ok(Vec::<OutgoingBso>::new().into())
-        }
-        fn set_uploaded(&self, _millis: i64, ids: &[Guid]) -> Result<()> {
-            self.uploaded.lock().unwrap().extend_from_slice(ids);
-            Ok(())
-        }
-        fn sync_finished(&self) -> Result<()> {
-            Ok(())
-        }
-        fn reset(&self) -> Result<()> {
+        fn reset(&self, _assoc: &EngineSyncAssociation) -> Result<()> {
             Ok(())
         }
         fn wipe(&self) -> Result<()> {
@@ -488,11 +298,11 @@ mod wrapper_tests {
     }
 
     #[test]
-    fn set_uploaded_accepts_strings_and_guids() {
+    fn set_uploaded_converts_string_ids() {
         let wrapper = BridgedEngineWrapper::new(Box::new(RecordingEngine::default()));
         
-        wrapper.set_uploaded(1, vec!["aaaa".to_string()]).unwrap();
-        
-        wrapper.set_uploaded(2, vec![Guid::new("bbbb")]).unwrap();
+        wrapper
+            .set_uploaded(1, vec!["aaaa".to_string(), "bbbb".to_string()])
+            .unwrap();
     }
 }
