@@ -50,7 +50,7 @@ class ViewTimeline final : public ScrollTimeline {
   static already_AddRefed<ViewTimeline> Constructor(
       const GlobalObject& aGlobal, const ViewTimelineOptions& aOptions,
       ErrorResult& aRv);
-  Element* GetSubject() const { return mSubject; }
+  Element* Subject() const { return mSubject; }
   already_AddRefed<CSSNumericValue> GetStartOffset(ErrorResult& aRv) const;
   already_AddRefed<CSSNumericValue> GetEndOffset(ErrorResult& aRv) const;
 
@@ -76,15 +76,19 @@ class ViewTimeline final : public ScrollTimeline {
                                     PseudoStyleRequest{mSubjectPseudoType}};
   }
 
+  bool IsReusableAnonymousTimeline(
+      const StyleGenericViewFunction<StyleLengthPercentage>& aView) const;
+
  private:
   ~ViewTimeline() = default;
   ViewTimeline(Document* aDocument, const ScrollerInfo& aScrollerInfo,
                StyleScrollAxis aAxis, Element* aSubject,
                PseudoStyleType aSubjectPseudoType,
-               const StyleViewTimelineInset& aInset)
+               const StyleViewTimelineInset& aInset, bool aIsAnonymous)
       : ScrollTimeline(aDocument, aScrollerInfo, aAxis),
         mSubject(aSubject),
         mSubjectPseudoType(aSubjectPseudoType),
+        mIsAnonymous(aIsAnonymous),
         mInset(aInset) {}
 
   Maybe<ComputedTimelineData> ComputeTimelineData() const override;
@@ -107,6 +111,7 @@ class ViewTimeline final : public ScrollTimeline {
   
   
   PseudoStyleType mSubjectPseudoType;
+  bool mIsAnonymous;
 
   
   

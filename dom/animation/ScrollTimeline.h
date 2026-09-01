@@ -94,6 +94,22 @@ class ScrollTimeline : public AnimationTimeline,
     };
     Type mType = Type::Root;
 
+    static Type TypeFromStyleScroller(StyleScroller aType) {
+      switch (aType) {
+        case StyleScroller::Root:
+          break;
+        case StyleScroller::Nearest:
+          return Type::Nearest;
+        case StyleScroller::SelfElement:
+          return Type::Self;
+        default:
+          MOZ_ASSERT_UNREACHABLE("Unhandled scroller type");
+          break;
+      }
+
+      return Type::Root;
+    }
+
    private:
     
     
@@ -120,21 +136,7 @@ class ScrollTimeline : public AnimationTimeline,
 
     static ScrollerInfo Anonymous(StyleScroller aType,
                                   const NonOwningAnimationTarget& aTarget) {
-      const auto type = [aType]() {
-        switch (aType) {
-          case StyleScroller::Root:
-            break;
-          case StyleScroller::Nearest:
-            return Type::Nearest;
-          case StyleScroller::SelfElement:
-            return Type::Self;
-          default:
-            MOZ_ASSERT_UNREACHABLE("Unhandled scroller type");
-            break;
-        }
-
-        return Type::Root;
-      }();
+      const auto type = TypeFromStyleScroller(aType);
       
       
       return {type, aTarget.mElement, aTarget.mPseudoRequest};
@@ -308,6 +310,8 @@ class ScrollTimeline : public AnimationTimeline,
 
   void AutoAlignStartTime();
 
+  bool IsReusableAnonymousTimeline(const StyleScrollFunction& aScroll) const;
+
  protected:
   virtual ~ScrollTimeline();
   ScrollTimeline(Document* aDocument, const ScrollerInfo& aScrollerInfo,
@@ -372,7 +376,8 @@ class ScrollTimeline : public AnimationTimeline,
 
 
 
-class InactiveTimeline final : public ScrollTimeline {
+
+class UnresolvedTimeline final : public ScrollTimeline {
  public:
   Nullable<TimeDuration> GetCurrentTimeAsDuration() const override {
     
@@ -382,7 +387,7 @@ class InactiveTimeline final : public ScrollTimeline {
   TimeStamp ToTimeStamp(const TimeDuration& aTimelineTime) const override {
     return {};
   }
-  bool IsInactiveTimeline() const override { return true; }
+  bool IsUnresolvedTimeline() const override { return true; }
 
   JSObject* WrapObject(JSContext*, JS::Handle<JSObject*>) override {
     
@@ -395,11 +400,11 @@ class InactiveTimeline final : public ScrollTimeline {
   }
 
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(InactiveTimeline, ScrollTimeline)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(UnresolvedTimeline, ScrollTimeline)
 
  private:
-  explicit InactiveTimeline(Document* aDocument);
-  ~InactiveTimeline() override = default;
+  explicit UnresolvedTimeline(Document* aDocument);
+  ~UnresolvedTimeline() override = default;
 
   
   
