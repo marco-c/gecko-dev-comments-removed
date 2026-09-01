@@ -6,8 +6,6 @@
 
 
 
-#include "vm/JSObject-inl.h"
-
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Try.h"
 
@@ -66,12 +64,14 @@
 #include "vm/TypedArrayObject.h"
 #include "vm/Watchtower.h"
 #include "vm/WrapperObject.h"
+
 #include "gc/StableCellHasher-inl.h"
 #include "vm/BooleanObject-inl.h"
 #include "vm/EnvironmentObject-inl.h"
 #include "vm/Interpreter-inl.h"
 #include "vm/JSAtomUtils-inl.h"  
 #include "vm/JSContext-inl.h"
+#include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"
 #include "vm/NumberObject-inl.h"
 #include "vm/ObjectFlags-inl.h"
@@ -1778,6 +1778,11 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
          id == NameToId(cx->names().zipKeyed))) {
       return true;
     }
+    if (!JS::Prefs::experimental_promise_allkeyed() &&
+        (id == NameToId(cx->names().allKeyed) ||
+         id == NameToId(cx->names().allSettledKeyed))) {
+      return true;
+    }
   }
 
 #ifdef JS_HAS_INTL_API
@@ -1806,11 +1811,6 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
   if (key == JSProto_Function) {
     if (!JS::Prefs::experimental_iterator_range() &&
         (id == NameToId(cx->names().range))) {
-      return true;
-    }
-    if (!JS::Prefs::experimental_promise_allkeyed() &&
-        (id == NameToId(cx->names().allKeyed) ||
-         id == NameToId(cx->names().allSettledKeyed))) {
       return true;
     }
   }

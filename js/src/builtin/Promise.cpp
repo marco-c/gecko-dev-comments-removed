@@ -233,7 +233,6 @@ const JSClass PromiseCombinatorDataHolder::class_ = {
 
 
 
-#ifdef NIGHTLY_BUILD
 class PromiseCombinatorKeyedDataHolder : public PromiseCombinatorDataHolder {
   enum {
     
@@ -268,7 +267,6 @@ const JSClass PromiseCombinatorKeyedDataHolder::class_ = {
     "PromiseCombinatorKeyedDataHolder",
     JSCLASS_HAS_RESERVED_SLOTS(SlotsCount),
 };
-#endif
 
 
 
@@ -412,7 +410,6 @@ PromiseCombinatorDataHolder* PromiseCombinatorDataHolder::New(
   return dataHolder;
 }
 
-#ifdef NIGHTLY_BUILD
 PromiseCombinatorKeyedDataHolder* PromiseCombinatorKeyedDataHolder::New(
     JSContext* cx, JS::Handle<JSObject*> resultPromise,
     JS::Handle<ListObject*> keys, JS::Handle<ListObject*> values,
@@ -436,7 +433,6 @@ PromiseCombinatorKeyedDataHolder* PromiseCombinatorKeyedDataHolder::New(
   dataHolder->setFixedSlot(Slot_KeysList, ObjectValue(*keys));
   return dataHolder;
 }
-#endif
 
 namespace {
 
@@ -3725,7 +3721,6 @@ static bool Promise_static_all(JSContext* cx, unsigned argc, Value* vp) {
                                      "Argument of Promise.all");
 }
 
-#ifdef NIGHTLY_BUILD
 
 
 
@@ -3809,7 +3804,6 @@ static bool Promise_static_allSettledKeyed(JSContext* cx, unsigned argc,
       "Receiver of Promise.allSettledKeyed call",
       "Argument of Promise.allSettledKeyed");
 }
-#endif
 
 [[nodiscard]] static bool PerformPromiseThen(
     JSContext* cx, Handle<PromiseObject*> promise, HandleValue onFulfilled_,
@@ -5399,7 +5393,6 @@ static void ThrowAggregateError(JSContext* cx,
   cx->setPendingException(error, stack);
 }
 
-#ifdef NIGHTLY_BUILD
 
 
 
@@ -5913,7 +5906,6 @@ static bool PromiseAllSettledKeyedRejectElementFunction(JSContext* cx,
   return PromiseKeyedElementFunction(cx, argc, vp,
                                      processAllSettledRejectValue);
 }
-#endif
 
 
 
@@ -8706,10 +8698,8 @@ static const JSPropertySpec promise_properties[] = {
 static const JSFunctionSpec promise_static_methods[] = {
     JS_FN("all", Promise_static_all, 1, 0),
     JS_FN("allSettled", Promise_static_allSettled, 1, 0),
-#ifdef NIGHTLY_BUILD
     JS_FN("allKeyed", Promise_static_allKeyed, 1, 0),
     JS_FN("allSettledKeyed", Promise_static_allSettledKeyed, 1, 0),
-#endif
     JS_FN("any", Promise_static_any, 1, 0),
     JS_FN("race", Promise_static_race, 1, 0),
     JS_FN("reject", Promise_reject, 1, 0),
