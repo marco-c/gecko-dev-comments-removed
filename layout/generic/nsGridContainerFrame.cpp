@@ -1403,7 +1403,7 @@ void GridItemInfo::AdjustForRemovedTracks(
 
 
 struct nsGridContainerFrame::UsedTrackSizes {
-  UsedTrackSizes() : mCanResolveLineRangeSize{false, false} {}
+  UsedTrackSizes() = default;
 
   
 
@@ -1427,7 +1427,7 @@ struct nsGridContainerFrame::UsedTrackSizes {
   
   PerLogicalAxis<TrackPlan> mTrackPlans;
   
-  PerLogicalAxis<bool> mCanResolveLineRangeSize;
+  PerLogicalAxis<bool> mCanResolveLineRangeSize{false, false};
 
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(Prop, UsedTrackSizes)
 };

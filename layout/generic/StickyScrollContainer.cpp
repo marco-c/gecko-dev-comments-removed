@@ -22,8 +22,6 @@ StickyScrollContainer::StickyScrollContainer(
     ScrollContainerFrame* aScrollContainerFrame)
     : mScrollContainerFrame(aScrollContainerFrame) {}
 
-StickyScrollContainer::~StickyScrollContainer() = default;
-
 
 StickyScrollContainer* StickyScrollContainer::GetOrCreateForFrame(
     nsIFrame* aFrame) {
