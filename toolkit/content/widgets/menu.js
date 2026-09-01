@@ -212,10 +212,6 @@
       return frag;
     }
 
-    get needsEagerRender() {
-      return this.isMenulistChild || !this.isInHiddenMenupopup;
-    }
-
     get isMenulistChild() {
       return this.matches("menulist > menupopup > menuitem");
     }
@@ -277,19 +273,17 @@
     connectedCallback() {
       if (this.renderedOnce) {
         this._computeAccelTextFromKeyIfNeeded();
-        return;
       }
-
-      if (this.delayConnectedCallback()) {
-        return;
-      }
-
       
-      if (!this.needsEagerRender) {
-        return;
+      
+      
+      
+      if (
+        this.isMenulistChild ||
+        (this.isConnectedAndReady && !this.isInHiddenMenupopup)
+      ) {
+        this.render();
       }
-
-      this.render();
     }
   }
 
