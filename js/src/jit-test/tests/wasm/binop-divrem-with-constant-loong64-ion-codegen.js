@@ -207,8 +207,10 @@ const i64_div_s = [
   
   {
     divisor: 1,
-    expected: `or            \\$a0, \\$a0, \\$zero`,
+    expected: ``,
   },
+
+  
   {
     divisor: 2,
     expected: `srli\\.d      \\$t6, \\$a0, 0x3f
@@ -340,8 +342,10 @@ const i64_div_u = [
   
   {
     divisor: 1,
-    expected: `or            \\$a0, \\$a0, \\$zero`,
+    expected: ``,
   },
+
+  
   {
     divisor: 2,
     expected: `srli\\.d      \\$a0, \\$a0, 0x1`,
