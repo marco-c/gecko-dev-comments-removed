@@ -572,14 +572,19 @@ void PDMFactory::CreateRddPDMs() {
   StartupPDM(FFVPXRuntimeLinker::CreateDecoder());
 #ifdef MOZ_FFMPEG
   if (StaticPrefs::media_ffmpeg_enabled() &&
-      StaticPrefs::media_rdd_ffmpeg_enabled() &&
-      !StartupPDM(FFmpegRuntimeLinker::CreateDecoder(),
-                  
-                  
-                  
-                  gfx::gfxVars::CanUseVulkanHardwareVideoDecoding())) {
-    mFailureFlags += GetFailureFlagBasedOnFFmpegStatus(
-        FFmpegRuntimeLinker::LinkStatusCode());
+      StaticPrefs::media_rdd_ffmpeg_enabled()) {
+    
+    
+    const bool preferSystemForVulkan =
+        gfx::gfxVars::CanUseVulkanHardwareVideoDecoding() &&
+        FFmpegRuntimeLinker::PreferSystemFFmpegForVulkan();
+    PDM_INIT_LOG("Insert system FFmpeg before ffvpx: {}",
+                 preferSystemForVulkan);
+    if (!StartupPDM(FFmpegRuntimeLinker::CreateDecoder(),
+                    preferSystemForVulkan)) {
+      mFailureFlags += GetFailureFlagBasedOnFFmpegStatus(
+          FFmpegRuntimeLinker::LinkStatusCode());
+    }
   }
 #endif
   StartupPDM(AgnosticDecoderModule::Create(),

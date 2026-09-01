@@ -13,6 +13,9 @@
 #define FFMPEG_MAX_MAJOR_VERSION_STR_HELPER(x) #x
 #define FFMPEG_MAX_MAJOR_VERSION_STR(x) FFMPEG_MAX_MAJOR_VERSION_STR_HELPER(x)
 
+
+#define MOZ_FFMPEG_MIN_LAVC_FOR_VULKAN_DMABUF ((62u << 16) | (29u << 8) | 101u)
+
 #include "ffvpx/tx.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DefineEnum.h"
