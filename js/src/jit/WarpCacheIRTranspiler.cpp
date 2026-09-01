@@ -4690,6 +4690,14 @@ bool WarpCacheIRTranspiler::emitIsObjectResult(ValOperandId inputId) {
   return true;
 }
 
+bool WarpCacheIRTranspiler::emitIsSuspendedGeneratorResult(ObjOperandId objId) {
+  MDefinition* obj = getOperand(objId);
+  auto* ins = MIsSuspendedGenerator::New(alloc(), obj);
+  add(ins);
+  pushResult(ins);
+  return true;
+}
+
 bool WarpCacheIRTranspiler::emitIsPackedArrayResult(ObjOperandId objId) {
   MDefinition* obj = getOperand(objId);
 
@@ -6315,8 +6323,9 @@ bool WarpCacheIRTranspiler::maybeCreateThis(MDefinition* callee,
     
     
     
+    
     MOZ_ASSERT(thisArg->type() == MIRType::MagicIsConstructing ||
-               thisArg->isPhi());
+               thisArg->isPhi() || thisArg->isLoadElement());
     return false;
   }
   MOZ_ASSERT(kind == CallKind::Scripted);
@@ -6334,7 +6343,7 @@ bool WarpCacheIRTranspiler::maybeCreateThis(MDefinition* callee,
   }
   
   MOZ_ASSERT(thisArg->type() == MIRType::MagicIsConstructing ||
-             thisArg->isPhi());
+             thisArg->isPhi() || thisArg->isLoadElement());
 
   auto* newTarget = unboxObjectInfallible(callInfo_->getNewTarget());
   auto* createThis = MCreateThis::New(alloc(), callee, newTarget);
