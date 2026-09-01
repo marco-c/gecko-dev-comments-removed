@@ -804,6 +804,27 @@ class EditorBase : public nsIEditor,
 
 
 
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult
+  PasteNoFormattingAsAction(nsIClipboard::ClipboardType aClipboardType,
+                            DispatchPasteEvent aDispatchPasteEvent,
+                            DataTransfer* aDataTransfer = nullptr,
+                            nsIPrincipal* aPrincipal = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
   MOZ_CAN_RUN_SCRIPT nsresult PasteTransferableAsAction(
       nsITransferable* aTransferable, DispatchPasteEvent aDispatchPasteEvent,
       nsIPrincipal* aPrincipal = nullptr);

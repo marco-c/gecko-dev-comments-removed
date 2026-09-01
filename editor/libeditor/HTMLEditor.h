@@ -260,27 +260,6 @@ class HTMLEditor final : public EditorBase,
   MOZ_CAN_RUN_SCRIPT nsresult GetBackgroundColorState(bool* aMixed,
                                                       nsAString& aOutColor);
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult
-  PasteNoFormattingAsAction(nsIClipboard::ClipboardType aClipboardType,
-                            DispatchPasteEvent aDispatchPasteEvent,
-                            DataTransfer* aDataTransfer = nullptr,
-                            nsIPrincipal* aPrincipal = nullptr);
-
   bool CanPasteTransferable(nsITransferable* aTransferable) final;
 
   MOZ_CAN_RUN_SCRIPT nsresult
@@ -3294,6 +3273,9 @@ class HTMLEditor final : public EditorBase,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   HandlePasteTransferable(AutoEditActionDataSetter& aEditActionData,
                           nsITransferable& aTransferable) final;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult HandlePasteNoFormatting(
+      AutoEditActionDataSetter& aEditActionData,
+      nsIClipboard::ClipboardType aClipboardType, DataTransfer* aDataTransfer);
 
   
 
