@@ -432,6 +432,15 @@ struct AnchorPositioningUtils {
   static nsRect ReassembleAnchorRect(const nsIFrame* aAnchor,
                                      const nsIFrame* aContainingBlock);
 
+  
+
+
+
+
+
+  static const nsIFrame* GetMatchingContainingBlock(
+      const nsIFrame* aAnchor, const nsIFrame* aContainingBlock);
+
   struct CombinedFragments {
     
     
