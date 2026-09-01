@@ -676,20 +676,6 @@ class LConstructArrayNative : public LCallInstructionHelper<BOX_PIECES, 2, 3> {
   const LAllocation* getArgc() { return getOperand(0); }
 };
 
-
-
-class LReturn : public LInstructionHelper<0, BOX_PIECES, 0> {
-  bool isGenerator_;
-
- public:
-  LIR_HEADER(Return)
-
-  explicit LReturn(bool isGenerator)
-      : LInstructionHelper(classOpcode), isGenerator_(isGenerator) {}
-
-  bool isGenerator() { return isGenerator_; }
-};
-
 class LHypot : public LCallInstructionHelper<1, 4, 0> {
   uint32_t numOperands_;
 
@@ -917,6 +903,45 @@ class LWasmSystemFloatRegisterResult : public LInstructionHelper<1, 0, 0> {
     return mir_->toWasmSystemFloatRegisterResult();
   }
 };
+
+#ifdef ENABLE_WASM_JSPI
+class LWasmResume : public LInstructionHelper<0, 3, 3> {
+ public:
+  LIR_HEADER(WasmResume);
+
+  static constexpr size_t InstanceIndex = 0;
+  static constexpr size_t ContIndex = 1;
+  static constexpr size_t HandlersParamsAreaIndex = 2;
+
+  explicit LWasmResume(const LAllocation& instance, const LAllocation& cont,
+                       const LAllocation& handlersParamsArea,
+                       const LDefinition& temp0, const LDefinition& temp1,
+                       const LDefinition& temp2)
+      : LInstructionHelper(classOpcode) {
+    this->setIsCall();
+    setOperand(InstanceIndex, instance);
+    setOperand(ContIndex, cont);
+    setOperand(HandlersParamsAreaIndex, handlersParamsArea);
+    setTemp(0, temp0);
+    setTemp(1, temp1);
+    setTemp(2, temp2);
+  }
+
+  const LAllocation* instance() const { return getOperand(InstanceIndex); }
+  const LAllocation* cont() const { return getOperand(ContIndex); }
+  const LAllocation* handlersParamsArea() const {
+    return getOperand(HandlersParamsAreaIndex);
+  }
+  const LDefinition* temp0() { return getTemp(0); }
+  const LDefinition* temp1() { return getTemp(1); }
+  const LDefinition* temp2() { return getTemp(2); }
+  MWasmResume* mir() const { return mir_->toWasmResume(); }
+
+  static bool isCallPreserved(AnyRegister reg) {
+    return LWasmCall::isCallPreserved(reg);
+  }
+};
+#endif  
 
 inline uint32_t LStackArea::base() const {
   return ins()->toWasmStackResultArea()->mir()->base();

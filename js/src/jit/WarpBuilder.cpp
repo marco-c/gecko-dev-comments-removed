@@ -3048,13 +3048,10 @@ bool WarpBuilder::buildSuspend(BytecodeLocation loc, MDefinition* gen,
       MPostWriteBarrier::New(alloc(), genObj, current->environmentChain()));
 
   
-  
-  MGeneratorReturn* ret = MGeneratorReturn::New(alloc(), retVal);
-  current->add(ret);
-
-  
-  
-  current->end(MUnreachable::New(alloc()));
+  current->end(MReturn::New(alloc(), retVal));
+  if (!graph().addReturn(current)) {
+    return false;
+  }
   setTerminatedBlock();
   return true;
 }

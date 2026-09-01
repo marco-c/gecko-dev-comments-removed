@@ -168,11 +168,6 @@ class LIRGeneratorShared {
   inline LUse usePayload(MDefinition* mir, LUse::Policy policy);
   inline LUse usePayloadAtStart(MDefinition* mir, LUse::Policy policy);
   inline LUse usePayloadInRegisterAtStart(MDefinition* mir);
-
-  
-  
-  
-  inline void fillBoxUses(LInstruction* lir, size_t n, MDefinition* mir);
 #endif
 
   

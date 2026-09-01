@@ -4073,10 +4073,7 @@ void CodeGenerator::visitReturn(LReturn* lir) {
 #endif
   
   
-  
-  
-  
-  if (current->mir() != *gen->graph().poBegin() || lir->isGenerator()) {
+  if (current->mir() != *gen->graph().poBegin()) {
     masm.jump(&returnLabel_);
   }
 }

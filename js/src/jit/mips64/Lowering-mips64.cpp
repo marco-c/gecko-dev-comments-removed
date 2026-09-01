@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/mips64/Lowering-mips64.h"
 
 #include "jit/Lowering.h"
@@ -124,14 +122,6 @@ void LIRGenerator::visitUnbox(MUnbox* unbox) {
   }
 
   define(lir, unbox);
-}
-
-void LIRGenerator::visitReturnImpl(MDefinition* opd, bool isGenerator) {
-  MOZ_ASSERT(opd->type() == MIRType::Value);
-
-  LReturn* ins = new (alloc()) LReturn(isGenerator);
-  ins->setOperand(0, useFixed(opd, JSReturnReg));
-  add(ins);
 }
 
 void LIRGeneratorMIPS64::lowerUntypedPhiInput(MPhi* phi, uint32_t inputPosition,
