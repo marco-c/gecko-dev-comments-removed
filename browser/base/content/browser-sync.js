@@ -1495,9 +1495,30 @@ var gSync = {
     );
     signOutButtonEl.hidden = !this.isSignedIn;
 
-    panelview.syncedTabsPanelList = new FxAMenuDeviceList(
-      PanelMultiView.getViewNode(document, "PanelUI-fxa-menu-devices-list")
+    const devicesListEl = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-devices-list"
     );
+    const signOutSeparatorEl = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-sign-out-separator"
+    );
+
+    
+    
+    
+    
+    
+    const inAppMenu = document
+      .getElementById("appMenu-popup")
+      ?.contains(devicesListEl);
+    if (inAppMenu) {
+      signOutButtonEl.after(devicesListEl);
+    } else {
+      signOutSeparatorEl.before(devicesListEl);
+    }
+
+    panelview.syncedTabsPanelList = new FxAMenuDeviceList(devicesListEl);
 
     
     
