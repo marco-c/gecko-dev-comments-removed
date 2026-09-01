@@ -380,7 +380,7 @@ FT2FontEntry* gfxFT2Font::GetFontEntry() {
 
 
 nsresult FT2FontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
-  if (mCharacterMap || mShmemCharacterMap) {
+  if (HasCharacterMap()) {
     return NS_OK;
   }
 
@@ -459,6 +459,7 @@ nsresult FT2FontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
     charmap = new gfxCharacterMap(0);
   }
   if (setCharMap) {
+    AutoWriteLock lock(mLock);
     if (mCharacterMap.compareExchange(nullptr, charmap.get())) {
       
       charmap.forget().leak();
