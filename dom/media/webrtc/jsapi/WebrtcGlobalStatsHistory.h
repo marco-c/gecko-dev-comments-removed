@@ -38,6 +38,8 @@ struct WebrtcGlobalStatsHistory {
     };
     
     struct SdpElement : public LinkedListElement<SdpElement> {
+      explicit SdpElement(RTCSdpHistoryEntryInternal&& aSdp)
+          : sdp(std::move(aSdp)) {}
       RTCSdpHistoryEntryInternal sdp;
       auto Timestamp() const -> DOMHighResTimeStamp;
       virtual ~SdpElement() = default;
