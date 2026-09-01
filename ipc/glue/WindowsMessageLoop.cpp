@@ -824,7 +824,7 @@ bool MessageChannel::WaitForSyncNotify() {
   NeuteredWindowRegion neuteredRgn(true);
 
   {
-    while (1) {
+    while (true) {
       MSG msg = {0};
       
       {

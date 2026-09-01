@@ -38,7 +38,7 @@ class PageLoadTrackerUnitTest;
 
 class TimeDelta {
  public:
-  TimeDelta() : delta_(0) {}
+  TimeDelta() = default;
 
   
   static TimeDelta FromDays(int64_t days);
@@ -124,7 +124,7 @@ class TimeDelta {
   explicit TimeDelta(int64_t delta_us) : delta_(delta_us) {}
 
   
-  int64_t delta_;
+  int64_t delta_{0};
 };
 
 inline TimeDelta operator*(int64_t a, TimeDelta td) {
@@ -164,7 +164,7 @@ class Time {
   };
 
   
-  explicit Time() : us_(0) {}
+  explicit Time() = default;
 
   
   bool is_null() const { return us_ == 0; }
@@ -278,7 +278,7 @@ class Time {
   static const int64_t kTimeTToMicrosecondsOffset;
 
   
-  int64_t us_;
+  int64_t us_{0};
 };
 
 inline Time TimeDelta::operator+(Time t) const { return Time(t.us_ + delta_); }
@@ -319,7 +319,7 @@ inline TimeDelta TimeDelta::FromMicroseconds(int64_t us) {
 
 class TimeTicks {
  public:
-  TimeTicks() : ticks_(0) {}
+  TimeTicks() = default;
   TimeTicks(const TimeTicks&) = default;
 
   
@@ -378,7 +378,7 @@ class TimeTicks {
   explicit TimeTicks(int64_t ticks) : ticks_(ticks) {}
 
   
-  int64_t ticks_;
+  int64_t ticks_{0};
 };
 
 inline TimeTicks TimeDelta::operator+(TimeTicks t) const {

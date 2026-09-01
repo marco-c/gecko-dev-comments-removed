@@ -28,7 +28,7 @@ class MessagePumpWin : public MessagePump {
   
   class Observer {
    public:
-    virtual ~Observer() {}
+    virtual ~Observer() = default;
 
     
     
@@ -49,14 +49,14 @@ class MessagePumpWin : public MessagePump {
   
   class Dispatcher {
    public:
-    virtual ~Dispatcher() {}
+    virtual ~Dispatcher() = default;
     
     
     virtual bool Dispatch(const MSG& msg) = 0;
   };
 
   MessagePumpWin() : have_work_(0), state_(nullptr) {}
-  virtual ~MessagePumpWin() {}
+  virtual ~MessagePumpWin() = default;
 
   
   void AddObserver(Observer* observer);
@@ -273,7 +273,7 @@ class MessagePumpForIO : public MessagePumpWin {
   
   class IOHandler {
    public:
-    virtual ~IOHandler() {}
+    virtual ~IOHandler() = default;
     
     
     
@@ -297,7 +297,7 @@ class MessagePumpForIO : public MessagePumpWin {
   };
 
   MessagePumpForIO();
-  virtual ~MessagePumpForIO() {}
+  virtual ~MessagePumpForIO() = default;
 
   
   virtual void ScheduleWork();
