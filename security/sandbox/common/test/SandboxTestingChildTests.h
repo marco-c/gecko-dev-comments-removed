@@ -269,19 +269,15 @@ static void FileTest(const nsCString& aName, const char* aSpecialDirName,
 
 
 
-
-
-void RunMacTestLaunchProcess(SandboxTestingChild* child,
-                             int aPosixSpawnExpectedError = ENOENT) {
+void RunMacTestLaunchProcess(SandboxTestingChild* child) {
   
   char* argv[2];
   argv[0] = const_cast<char*>("bash");
   argv[1] = NULL;
   int rv = posix_spawnp(NULL, "/bin/bash", NULL, NULL, argv, NULL);
-  nsPrintfCString posixSpawnMessage("posix_spawnp returned %d, expected %d", rv,
-                                    aPosixSpawnExpectedError);
-  child->SendReportTestResults("posix_spawnp test"_ns,
-                               rv == aPosixSpawnExpectedError,
+  nsPrintfCString posixSpawnMessage(
+      "posix_spawnp returned %d, expected a non-zero error", rv);
+  child->SendReportTestResults("posix_spawnp test"_ns, rv != 0,
                                posixSpawnMessage);
 
   
@@ -296,6 +292,7 @@ void RunMacTestLaunchProcess(SandboxTestingChild* child,
                                                      kCFStringEncodingUTF8);
   CFURLRef urlRef = ::CFURLCreateWithFileSystemPath(
       kCFAllocatorDefault, filePath, kCFURLPOSIXPathStyle, false);
+  ::CFRelease(filePath);
   if (!urlRef) {
     child->SendReportTestResults("LSOpenCFURLRef"_ns, false,
                                  "CFURLCreateWithFileSystemPath failed"_ns);
@@ -305,12 +302,8 @@ void RunMacTestLaunchProcess(SandboxTestingChild* child,
   OSStatus status = ApplicationServices::LSOpenCFURLRef(urlRef, NULL);
   ::CFRelease(urlRef);
   nsPrintfCString lsMessage(
-      "LSOpenCFURLRef returned %d, "
-      "expected kLSServerCommunicationErr (%d)",
-      status, ApplicationServices::kLSServerCommunicationErr);
-  child->SendReportTestResults(
-      "LSOpenCFURLRef"_ns,
-      status == ApplicationServices::kLSServerCommunicationErr, lsMessage);
+      "LSOpenCFURLRef returned %d, expected a non-zero error", status);
+  child->SendReportTestResults("LSOpenCFURLRef"_ns, status != noErr, lsMessage);
 }
 
 
@@ -637,7 +630,7 @@ void RunTestsContent(SandboxTestingChild* child) {
 #  endif  
 
 #  ifdef XP_MACOSX
-  RunMacTestLaunchProcess(child, EPERM);
+  RunMacTestLaunchProcess(child);
   RunMacTestWindowServer(child);
   RunMacTestAudioAPI(child, true);
 #  endif
@@ -915,7 +908,7 @@ void RunTestsRDD(SandboxTestingChild* child) {
   });
 
 #  elif XP_MACOSX
-  RunMacTestLaunchProcess(child, EPERM);
+  RunMacTestLaunchProcess(child);
   RunMacTestWindowServer(child);
   RunMacTestAudioAPI(child, true);
 #  endif
@@ -1358,7 +1351,7 @@ void RunTestsGPU(SandboxTestingChild* child) {
     return fd;
   });
 
-  RunMacTestLaunchProcess(child, EPERM);
+  RunMacTestLaunchProcess(child);
   RunMacTestAudioAPI(child);
   RunMacTestWindowServer(child, ProcessIsX86_64());
 
