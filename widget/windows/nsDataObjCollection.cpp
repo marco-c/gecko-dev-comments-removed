@@ -23,8 +23,6 @@ const IID IID_IDataObjCollection = {
 
 
 
-nsDataObjCollection::nsDataObjCollection() {}
-
 nsDataObjCollection::~nsDataObjCollection() { mDataObjects.Clear(); }
 
 
@@ -64,6 +62,8 @@ STDMETHODIMP_(ULONG) nsDataObjCollection::Release() {
 
 
 STDMETHODIMP nsDataObjCollection::GetData(LPFORMATETC pFE, LPSTGMEDIUM pSTM) {
+  *pSTM = STGMEDIUM{};
+
   static CLIPFORMAT fileDescriptorFlavorA =
       ::RegisterClipboardFormat(CFSTR_FILEDESCRIPTORA);
   static CLIPFORMAT fileDescriptorFlavorW =
@@ -151,7 +151,6 @@ void nsDataObjCollection::AddDataObject(IDataObject* aDataObj) {
 
 
 HRESULT nsDataObjCollection::GetFile(LPFORMATETC pFE, LPSTGMEDIUM pSTM) {
-  STGMEDIUM workingmedium;
   FORMATETC fe = *pFE;
   HGLOBAL hGlobalMemory;
   HRESULT hr;
@@ -165,6 +164,7 @@ HRESULT nsDataObjCollection::GetFile(LPFORMATETC pFE, LPSTGMEDIUM pSTM) {
       mozilla::MakeScopeExit([&]() { GlobalFree(hGlobalMemory); });
 
   for (uint32_t i = 0; i < mDataObjects.Length(); ++i) {
+    STGMEDIUM workingmedium{};
     nsDataObj* dataObj = mDataObjects.ElementAt(i);
     hr = dataObj->GetData(&fe, &workingmedium);
     if (hr != S_OK) {
@@ -175,6 +175,8 @@ HRESULT nsDataObjCollection::GetFile(LPFORMATETC pFE, LPSTGMEDIUM pSTM) {
           return hr;
       }
     }
+    auto releaseStgMedium =
+        mozilla::MakeScopeExit([&]() { ReleaseStgMedium(&workingmedium); });
     
     char16_t* buffer = (char16_t*)GlobalLock(workingmedium.hGlobal);
     if (buffer == nullptr) {
@@ -183,7 +185,6 @@ HRESULT nsDataObjCollection::GetFile(LPFORMATETC pFE, LPSTGMEDIUM pSTM) {
     buffer += sizeof(DROPFILES) / sizeof(char16_t);
     filename = buffer;
     GlobalUnlock(workingmedium.hGlobal);
-    ReleaseStgMedium(&workingmedium);
     
     mozilla::CheckedInt<size_t> alloclen =
         mozilla::CheckedInt<size_t>(filename.Length() + 1) * sizeof(char16_t);
@@ -233,7 +234,6 @@ HRESULT nsDataObjCollection::GetFile(LPFORMATETC pFE, LPSTGMEDIUM pSTM) {
 
 template <typename CharT, typename StringT>
 HRESULT nsDataObjCollection::GetText(LPFORMATETC pFE, LPSTGMEDIUM pSTM) {
-  STGMEDIUM workingmedium;
   FORMATETC fe = *pFE;
   HGLOBAL hGlobalMemory;
   HRESULT hr;
@@ -245,6 +245,7 @@ HRESULT nsDataObjCollection::GetText(LPFORMATETC pFE, LPSTGMEDIUM pSTM) {
 
   StringT text;
   for (uint32_t i = 0; i < mDataObjects.Length(); ++i) {
+    STGMEDIUM workingmedium{};
     nsDataObj* dataObj = mDataObjects.ElementAt(i);
     hr = dataObj->GetData(&fe, &workingmedium);
     if (hr != S_OK) {
@@ -255,6 +256,8 @@ HRESULT nsDataObjCollection::GetText(LPFORMATETC pFE, LPSTGMEDIUM pSTM) {
           return hr;
       }
     }
+    auto releaseStgMedium =
+        mozilla::MakeScopeExit([&]() { ReleaseStgMedium(&workingmedium); });
     
     CharT* buffer = static_cast<CharT*>(GlobalLock(workingmedium.hGlobal));
     if (buffer == nullptr) {
@@ -262,7 +265,6 @@ HRESULT nsDataObjCollection::GetText(LPFORMATETC pFE, LPSTGMEDIUM pSTM) {
     }
     text = buffer;
     GlobalUnlock(workingmedium.hGlobal);
-    ReleaseStgMedium(&workingmedium);
     
     mozilla::CheckedInt<size_t> alloclen =
         mozilla::CheckedInt<size_t>(text.Length()) * sizeof(CharT);
@@ -298,7 +300,6 @@ HRESULT nsDataObjCollection::GetText(LPFORMATETC pFE, LPSTGMEDIUM pSTM) {
 HRESULT nsDataObjCollection::GetFileDescriptors(LPFORMATETC pFE,
                                                 LPSTGMEDIUM pSTM,
                                                 bool aIsWideChar) {
-  STGMEDIUM workingmedium;
   FORMATETC fe = *pFE;
   HGLOBAL hGlobalMemory;
   HRESULT hr;
@@ -311,6 +312,7 @@ HRESULT nsDataObjCollection::GetFileDescriptors(LPFORMATETC pFE,
       mozilla::MakeScopeExit([&]() { GlobalFree(hGlobalMemory); });
 
   for (uint32_t i = 0; i < mDataObjects.Length(); ++i) {
+    STGMEDIUM workingmedium{};
     nsDataObj* dataObj = mDataObjects.ElementAt(i);
     hr = dataObj->GetData(&fe, &workingmedium);
     if (hr != S_OK) {
