@@ -1,9 +1,6 @@
-
-
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 include LayersSurfaces;
 include protocol PVRLayer;
@@ -29,12 +26,12 @@ using mozilla::dom::GamepadHandle from "mozilla/dom/GamepadHandle.h";
 namespace mozilla {
 namespace gfx {
 
-
-
-
-
-
-[NeedsOtherPid, ChildImpl="VRManagerChild", ParentImpl="VRManagerParent", ParentProc=compositor, ChildProc=anydom]
+/**
+ * The PVRManager protocol is used to enable communication of VR display
+ * enumeration and sensor state between the compositor thread and
+ * content threads/processes.
+ */
+[NeedsOtherPid, ChildImpl="mozilla::gfx::VRManagerChild", ParentImpl="mozilla::gfx::VRManagerParent", ParentProc=compositor, ChildProc=anydom]
 sync protocol PVRManager
 {
   manages PVRLayer;
@@ -42,12 +39,12 @@ sync protocol PVRManager
 parent:
   async PVRLayer(uint32_t aDisplayID, uint32_t aGroup);
 
-  
-  
+  // Detect runtime capabilities.  This will return the presense of VR and/or AR
+  // runtime software, without enumerating or activating any hardware devices.
   async DetectRuntimes();
 
-  
-  
+  // (Re)Enumerate VR Displays.  An updated list of VR displays will be returned
+  // asynchronously to children via UpdateDisplayInfo.
   async RefreshDisplays();
 
   async SetGroupMask(uint32_t aDisplayID, uint32_t aGroupMask);
@@ -67,10 +64,10 @@ parent:
   async ResetPuppet();
 
 child:
-  
-  
-  
-  
+  // Notify children of updated VR display enumeration and details.  This will
+  // be sent to all children when the parent receives RefreshDisplays, even
+  // if no changes have been detected.  This ensures that Promises exposed
+  // through DOM calls are always resolved.
   async UpdateDisplayInfo(VRDisplayInfo aDisplayInfo);
 
   async UpdateRuntimeCapabilities(VRDisplayCapabilityFlags aCapabilities);
@@ -83,5 +80,5 @@ child:
 
 };
 
-} 
-} 
+} // gfx
+} // mozilla

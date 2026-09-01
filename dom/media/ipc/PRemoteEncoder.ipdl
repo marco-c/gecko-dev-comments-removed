@@ -1,7 +1,6 @@
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 include "mozilla/dom/MediaIPCUtils.h";
 include "mozilla/RemoteMediaDataEncoderChild.h";
@@ -49,21 +48,21 @@ union EncodeResultIPDL
   EncodeCompletionIPDL;
 };
 
-
-
-
-
-
-
-[ChildImpl="RemoteMediaDataEncoderChild", ParentImpl="RemoteMediaDataEncoderParent"]
+// This protocol provides a way to use MediaDataEncoder across processes.
+// The parent side currently is only implemented to work with
+// RemoteEncoderModule.
+// The child side runs in the content process, and the parent side runs
+// in the RDD/utility/GPU processes. We run a separate IPDL thread for both
+// sides.
+[ChildImpl="mozilla::RemoteMediaDataEncoderChild", ParentImpl="mozilla::RemoteMediaDataEncoderParent"]
 async protocol PRemoteEncoder
 {
   manager PRemoteMediaManager;
 parent:
-  
+  // Construct must be the first message sent.
   async Construct() returns (MediaResult result);
 
-  
+  // Init must only be called after Construct has returned successfully.
   async Init() returns (EncodeInitResultIPDL result);
 
   async Encode(EncodedInputIPDL data) returns (EncodeResultIPDL result);
@@ -76,4 +75,4 @@ parent:
   async __delete__();
 };
 
-} 
+} // namespace mozilla

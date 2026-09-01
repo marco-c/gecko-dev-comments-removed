@@ -1,7 +1,6 @@
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 using mozilla::TimeStamp from "mozilla/TimeStamp.h";
 using mozilla::gfx::VRControllerType from "moz_external_vr.h";
@@ -19,7 +18,7 @@ include protocol PVRGPU;
 namespace mozilla {
 namespace gfx {
 
-[NeedsOtherPid, ChildImpl="VRChild", ParentImpl="VRParent", ParentProc=VR, ChildProc=Parent]
+[NeedsOtherPid, ChildImpl="mozilla::gfx::VRChild", ParentImpl="mozilla::gfx::VRParent", ParentProc=VR, ChildProc=Parent]
 async protocol PVR
 {
 parent:
@@ -37,8 +36,8 @@ parent:
       returns (uint32_t aGeneration);
 
 child:
-  
-  
+  // Sent when the GPU process has initialized devices. This occurs once, after
+  // Init().
   async InitComplete();
   async OpenVRControllerActionPathToParent(nsCString aPath);
   async OpenVRControllerManifestPathToParent(VRControllerType aType, nsCString aPath);
@@ -46,5 +45,5 @@ child:
   async AddMemoryReport(MemoryReport aReport);
 };
 
-} 
-} 
+} // namespace gfx
+} // namespace mozilla
