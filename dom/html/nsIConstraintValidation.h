@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsIConstraintValidition_h_
 #define nsIConstraintValidition_h_
 
@@ -54,7 +52,12 @@ class nsIConstraintValidation : public nsISupports {
     VALIDITY_STATE_CUSTOM_ERROR = 0x1 << 9,
   };
 
-  void SetValidityState(ValidityStateType aState, bool aValue);
+  void SetValidityState(ValidityStateType aState, bool aValue) {
+    if (GetValidityState(aState) == aValue) {
+      return;
+    }
+    DoSetValidityState(aState, aValue);
+  }
 
   
 
@@ -89,6 +92,9 @@ class nsIConstraintValidation : public nsISupports {
   RefPtr<mozilla::dom::ValidityState> mValidity;
 
  private:
+  
+  void DoSetValidityState(ValidityStateType aState, bool aValue);
+
   
 
 
