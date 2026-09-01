@@ -102,11 +102,7 @@ class WMFMediaDataEncoder final : public MediaDataEncoder {
   
   Atomic<bool> mIsHardwareAccelerated;
 
-  
-  
-  MozPromiseHolder<EncodePromise> mEncodePromise;
-  MozPromiseRequestHolder<MFTEncoder::EncodePromise> mEncodeRequest;
-
+  AutoTArray<RefPtr<EncodePromise::Private>, 4> mEncodePromises;
   MozPromiseHolder<EncodePromise> mDrainPromise;
   MozPromiseRequestHolder<MFTEncoder::EncodePromise> mDrainRequest;
 };
