@@ -64,13 +64,17 @@ async function loadDnsNotFoundPage(failedURL, win = window) {
 
 
 
+
 async function waitForSettledNetErrorCard(browser, { clickQuery = null } = {}) {
   await SpecialPowers.spawn(browser, [clickQuery], async query => {
     const card = await ContentTaskUtils.waitForCondition(
       () => content.document.querySelector("net-error-card")?.wrappedJSObject,
       "The net-error-card is present"
     );
-    if (card.shouldShowSearchCTA()) {
+    
+    
+    
+    if (card.isSearchCTAEligible()) {
       await ContentTaskUtils.waitForCondition(
         () => card.searchCTAResolved,
         "The search CTA decision came back from the parent"
@@ -127,6 +131,47 @@ async function injectErrorPageFrame(tab, src, sandboxed) {
   await BrowserTestUtils.waitForPaintingUnsuppressed(
     tab.linkedBrowser.browsingContext.children[0]
   );
+}
+
+
+
+
+
+
+
+
+
+
+
+async function loadDnsNotFoundFrame(failedURL) {
+  const dummyPage =
+    getRootDirectory(gTestPath).replace(
+      "chrome://mochitests/content",
+      "https://example.com"
+    ) + "dummy_page.html";
+  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, dummyPage);
+  const browser = tab.linkedBrowser;
+
+  await SpecialPowers.spawn(browser, [], async () => {
+    content.document.body.appendChild(content.document.createElement("iframe"));
+  });
+  await TestUtils.waitForCondition(
+    () => browser.browsingContext.children.length === 1,
+    "The frame's BrowsingContext exists"
+  );
+
+  const url = `about:neterror?e=dnsNotFound&u=${encodeURIComponent(failedURL)}`;
+  await SpecialPowers.spawn(browser.browsingContext.children[0], [url], u => {
+    content.location = u;
+  });
+  
+  
+  await TestUtils.waitForCondition(
+    () => browser.browsingContext.children[0]?.currentURI?.spec === url,
+    "The frame is showing the synthetic error page"
+  );
+
+  return { tab, browser, frame: browser.browsingContext.children[0] };
 }
 
 async function openErrorPage(src, useFrame, sandboxed) {
