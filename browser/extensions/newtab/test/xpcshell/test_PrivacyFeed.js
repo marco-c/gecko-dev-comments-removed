@@ -187,7 +187,6 @@ add_task(async function test_new_tab_init_runs_scheduler() {
   const sandbox = sinon.createSandbox();
   
   
-  sandbox.stub(PrivacyMetricsService, "getTodayStats").resolves({ total: 1 });
   sandbox
     .stub(feed, "fetchTodayCounts")
     .resolves({ trackersToday: 42, sitesToday: 7, lastUpdated: 123 });
@@ -252,7 +251,6 @@ add_task(async function test_force_message_id_pins_the_message() {
     [PREF_FORCE_MESSAGE_ID]: "newtab-privacy-message-promo-relay-1",
   });
   const sandbox = sinon.createSandbox();
-  sandbox.stub(PrivacyMetricsService, "getTodayStats").resolves({ total: 1 });
   sandbox
     .stub(feed, "fetchTodayCounts")
     .resolves({ trackersToday: 42, sitesToday: 7, lastUpdated: 123 });
