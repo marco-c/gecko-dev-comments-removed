@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const kContentFileUrl =
@@ -42,7 +40,7 @@ add_task(async function test_paste_button_clickjacking() {
       pasteButton,
       { attributeFilter: ["disabled"] },
       () => !pasteButton.disabled,
-      "Wait for paste button enabled"
+      { msg: "Wait for paste button enabled" }
     );
 
     const pasteButtonIsHidden = promisePasteButtonIsHidden();

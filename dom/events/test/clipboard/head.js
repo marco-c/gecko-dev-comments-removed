@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 const kPasteMenuPopupId = "clipboardReadPasteMenuPopup";
@@ -97,7 +95,7 @@ function promisePasteButtonIsShown() {
       pasteButton,
       { attributeFilter: ["disabled"] },
       () => !pasteButton.disabled,
-      "Wait for paste button enabled"
+      { msg: "Wait for paste button enabled" }
     );
 
     return promiseBrowserReflow().then(() => {
@@ -180,8 +178,15 @@ async function promiseDismissPasteButton() {
 
 
 
-function promiseClickContentElement(aBrowser, aContentElementId) {
-  return SpecialPowers.spawn(
+async function promiseClickContentElement(aBrowser, aContentElementId) {
+  
+  
+  
+  
+  AccessibilityUtils.setEnv({
+    mustHaveAccessibleRule: false,
+  });
+  let result = await SpecialPowers.spawn(
     aBrowser,
     [aContentElementId],
     async _contentElementId => {
@@ -201,6 +206,8 @@ function promiseClickContentElement(aBrowser, aContentElementId) {
       return promise;
     }
   );
+  AccessibilityUtils.resetEnv();
+  return result;
 }
 
 
