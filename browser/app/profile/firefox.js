@@ -2144,7 +2144,10 @@ pref("browser.newtabpage.activity-stream.discoverystream.merino-feed-experiment"
 pref("browser.newtabpage.activity-stream.telemetry.privatePing.enabled", true);
 
 
+
+
 pref("browser.newtabpage.activity-stream.telemetry.privatePing.redactNewtabPing.enabled", true);
+
 pref("browser.newtabpage.activity-stream.telemetry.privatePing.maxSubmissionDelayMs", 5000);
 
   
