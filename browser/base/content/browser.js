@@ -4705,6 +4705,10 @@ TabDialogBox.prototype.QueryInterface = ChromeUtils.generateQI([
 
 
 
+window.TabDialogBox = TabDialogBox;
+
+
+
 var gDialogBox = {
   _dialog: null,
   _nextOpenJumpsQueue: false,
