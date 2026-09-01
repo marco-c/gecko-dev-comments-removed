@@ -167,8 +167,8 @@ bool BaseCompiler::createStackMap(
          (!stackMap || stackMaps_->add(masm.currentOffset(), stackMap));
 }
 
-bool BaseCompiler::createDebugOnlyStackMapForNonResumingTrap(
-    StackMap** result, Trap t1, Trap t2) {
+bool BaseCompiler::createDebugOnlyStackMapForNonResumingTrap(StackMap** result,
+                                                             Trap t1, Trap t2) {
   
   MOZ_ASSERT(t1 != Trap::Limit);
   MOZ_ASSERT(!TrapMightResume(t1));

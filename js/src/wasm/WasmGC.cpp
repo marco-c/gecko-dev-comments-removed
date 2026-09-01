@@ -17,8 +17,8 @@
 #include "wasm/WasmGC.h"
 
 #include "wasm/WasmInstance.h"
-
 #include "wasm/WasmSummarizeInsn.h"
+
 #include "jit/MacroAssembler-inl.h"
 
 using namespace js;
@@ -629,8 +629,9 @@ void wasm::CheckStackMapsForTraps(const jit::MacroAssembler& masm,
                 trapsiteKey);
         
         
-        MOZ_CRASH("wasm::CheckStackMapsForTraps: "
-                  "could not identify trapping instruction");
+        MOZ_CRASH(
+            "wasm::CheckStackMapsForTraps: "
+            "could not identify trapping instruction");
       }
 
       JitSpew(JitSpew_Codegen,
@@ -666,8 +667,9 @@ void wasm::CheckStackMapsForTraps(const jit::MacroAssembler& masm,
         
         
         
-        MOZ_CRASH("wasm::CheckStackMapsForTraps: "
-                  "trapping instruction lacks a stackmap");
+        MOZ_CRASH(
+            "wasm::CheckStackMapsForTraps: "
+            "trapping instruction lacks a stackmap");
       }
     }
   }
