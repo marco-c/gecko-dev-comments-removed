@@ -7,6 +7,7 @@ package org.mozilla.fenix.ui
 import androidx.test.espresso.Espresso.closeSoftKeyboard
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Converted
 import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.bringAppToForeground
@@ -60,6 +61,11 @@ class CreditCardAutofillTest {
     val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1512792
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.CreditCardAutofillTest#verifyCreditCardAutofillTest"],
+        bug = 2063262,
+        since = "2026-08",
+    )
     @SmokeTest
     @Test
     fun verifyCreditCardAutofillTest() {
@@ -99,6 +105,11 @@ class CreditCardAutofillTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1512798
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.CreditCardAutofillTest#deleteSavedCreditCardUsingToolbarButtonTest"],
+        bug = 2063262,
+        since = "2026-08",
+    )
     @SmokeTest
     @Test
     fun deleteSavedCreditCardUsingToolbarButtonTest() {
@@ -126,6 +137,13 @@ class CreditCardAutofillTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2271192
+    @Converted(
+        replacedBy = [
+            "org.mozilla.fenix.ui.efficiency.tests.CreditCardAutofillTest#deleteSavedCreditCardUsingMenuButtonTest",
+        ],
+        bug = 2060406,
+        since = "2026-08",
+    )
     @SmokeTest
     @Test
     fun deleteSavedCreditCardUsingMenuButtonTest() {
