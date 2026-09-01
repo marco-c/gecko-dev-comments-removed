@@ -884,11 +884,22 @@ class QATests(SnapTestsBase):
         download_name = self.accept_download()
         self.wait_for_download()
 
-        self.open_tab("about:preferences")
+        
+        
+        
+        
+        
+        
+        self.open_tab("about:preferences#downloads")
+
         download_folder = self._wait.until(
             EC.presence_of_element_located((By.ID, "chooseFolder"))
         )
-        if not download_folder.get_property("value"):
+        try:
+            
+            
+            self._wait.until(lambda d: download_folder.get_property("value"))
+        except TimeoutException:
             
             download_folder = self._wait.until(
                 EC.presence_of_element_located((By.ID, "downloadFolder"))
