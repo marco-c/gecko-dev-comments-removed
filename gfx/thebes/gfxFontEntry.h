@@ -301,19 +301,22 @@ class gfxFontEntry {
     return flag == LazyFlag::Yes;
   }
 
-  inline bool HasCharacter(uint32_t ch) {
-    if (mShmemCharacterMap) {
-      return GetShmemCharacterMap()->test(ch);
+  inline bool HasCharacter(uint32_t ch) MOZ_EXCLUDES(mLock) {
+    if (const auto* map = GetShmemCharacterMap()) {
+      return map->test(ch);
     }
-    if (mCharacterMap) {
-      if (mShmemFace && TrySetShmemCharacterMap()) {
-        
-        auto* oldCmap = mCharacterMap.exchange(nullptr);
-        NS_IF_RELEASE(oldCmap);
-        return GetShmemCharacterMap()->test(ch);
-      }
-      if (GetCharacterMap()->test(ch)) {
-        return true;
+    {
+      mozilla::AutoReadLock lock(mLock);
+      if (gfxCharacterMap* map = GetCharacterMap()) {
+        if (mShmemFace && TrySetShmemCharacterMap()) {
+          
+          auto* oldCmap = mCharacterMap.exchange(nullptr);
+          NS_IF_RELEASE(oldCmap);
+          return GetShmemCharacterMap()->test(ch);
+        }
+        if (map->test(ch)) {
+          return true;
+        }
       }
     }
     return TestCharacterMap(ch);
@@ -573,8 +576,19 @@ class gfxFontEntry {
   mutable mozilla::RWLock mLock;
   mutable mozilla::Mutex mFeatureInfoLock;
 
-  mozilla::Atomic<gfxCharacterMap*> mCharacterMap;  
-  gfxCharacterMap* GetCharacterMap() const { return mCharacterMap; }
+  mozilla::Atomic<gfxCharacterMap*> mCharacterMap MOZ_GUARDED_BY(mLock);  
+  gfxCharacterMap* GetCharacterMap() const {
+    mozilla::AutoReadLock lock(mLock);
+    return mCharacterMap;
+  }
+
+  
+  bool HasCharacterMap() const MOZ_NO_THREAD_SAFETY_ANALYSIS {
+    
+    
+    
+    return mShmemCharacterMap || mCharacterMap;
+  }
 
   mozilla::fontlist::Face* mShmemFace = nullptr;
   const mozilla::fontlist::Family* mShmemFamily = nullptr;
@@ -737,7 +751,7 @@ class gfxFontEntry {
       FontInfoData* aFontInfoData, uint32_t& aUVSOffset);
 
   
-  virtual bool TestCharacterMap(uint32_t aCh);
+  virtual bool TestCharacterMap(uint32_t aCh) MOZ_EXCLUDES(mLock);
 
   
   
