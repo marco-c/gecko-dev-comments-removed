@@ -74,6 +74,7 @@ already_AddRefed<FOG> FOG::GetSingleton() {
   MOZ_LOG(sLog, LogLevel::Debug, ("FOG::GetSingleton()"));
 
   gFOG = new FOG();
+  gFOG->mIsShutdown = false;
   gFOG->InitMemoryReporter();
 
   if (XRE_IsParentProcess()) {
@@ -123,6 +124,10 @@ already_AddRefed<FOG> FOG::GetSingleton() {
 
 void FOG::Shutdown() {
   MOZ_ASSERT(XRE_IsParentProcess());
+
+  if (mIsShutdown) {
+    return;
+  }
 
   UnregisterWeakMemoryReporter(this);
   glean::impl::fog_shutdown();
@@ -319,12 +324,12 @@ FOG::TestGetExperimentData(const nsACString& aExperimentId, JSContext* aCx,
                            JS::MutableHandleValue aResult) {
 #ifdef MOZ_GLEAN_ANDROID
   NS_WARNING("Don't test experiments from Gecko in Android. Throwing.");
-  aResult.set(JS::UndefinedValue());
+  aResult.setUndefined();
   return NS_ERROR_FAILURE;
 #else
   MOZ_ASSERT(XRE_IsParentProcess());
   if (!glean::impl::fog_test_is_experiment_active(&aExperimentId)) {
-    aResult.set(JS::UndefinedValue());
+    aResult.setUndefined();
     return NS_OK;
   }
 
@@ -450,7 +455,23 @@ FOG::TestResetFOG(const nsACString& aDataPathOverride,
     ApplyInterestingServerKnobs();
   }
 #endif
+  mIsShutdown = false;
   return rv;
+}
+
+NS_IMETHODIMP
+FOG::TestShutdownFOG() {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  if (mIsShutdown) {
+    return NS_OK;
+  }
+
+  mIsShutdown = true;
+
+  PROFILER_MARKER_UNTYPED("fog.testShutdownFOG", TEST);
+  glean::impl::fog_test_shutdown();
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -559,7 +580,7 @@ NS_IMETHODIMP
 FOG::TestGetAttribution(JSContext* aCx, JS::MutableHandleValue aResult) {
 #ifdef MOZ_GLEAN_ANDROID
   NS_WARNING("Don't test attribution from Gecko in Android. Throwing.");
-  aResult.set(JS::UndefinedValue());
+  aResult.setUndefined();
   return NS_ERROR_FAILURE;
 #else
   MOZ_ASSERT(XRE_IsParentProcess());
@@ -653,7 +674,7 @@ NS_IMETHODIMP
 FOG::TestGetDistribution(JSContext* aCx, JS::MutableHandleValue aResult) {
 #ifdef MOZ_GLEAN_ANDROID
   NS_WARNING("Don't test distribution from Gecko in Android. Throwing.");
-  aResult.set(JS::UndefinedValue());
+  aResult.setUndefined();
   return NS_ERROR_FAILURE;
 #else
   MOZ_ASSERT(XRE_IsParentProcess());

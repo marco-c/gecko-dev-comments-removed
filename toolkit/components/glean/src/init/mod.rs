@@ -332,6 +332,13 @@ pub extern "C" fn fog_test_reset(
 }
 
 
+
+#[no_mangle]
+pub extern "C" fn fog_test_shutdown() {
+    glean::shutdown();
+}
+
+
 #[cfg(not(target_os = "android"))]
 fn fog_test_reset_internal(
     data_path_override: &nsACString,
