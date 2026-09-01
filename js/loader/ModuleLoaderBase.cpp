@@ -9,6 +9,7 @@
 #include "mozilla/dom/ScriptLoadContext.h"
 #include "mozilla/dom/ScriptSettings.h"  
 #include "mozilla/dom/ScriptTrace.h"
+#include "mozilla/mozalloc_oom.h"  
 #include "mozilla/Preferences.h"
 #include "mozilla/RefPtr.h"  
 #include "mozilla/StaticPrefs_dom.h"
@@ -26,8 +27,9 @@
 #include "js/Array.h"         
 #include "js/ColumnNumber.h"  
 #include "js/CompilationAndEvaluation.h"
-#include "js/ContextOptions.h"        
-#include "js/ErrorReport.h"           
+#include "js/ContextOptions.h"  
+#include "js/ErrorReport.h"     
+#include "js/Exception.h"  
 #include "js/friend/ErrorMessages.h"  
 #include "js/Modules.h"  
 #include "js/PropertyAndElement.h"  
@@ -326,18 +328,26 @@ bool ModuleLoaderBase::FinishLoadingImportedModule(
 
   Rooted<JSScript*> referrer(aCx, aRequest->mReferrerScript);
   Rooted<JSObject*> moduleReqObj(aCx, aRequest->mModuleRequestObj);
-  Rooted<Value> statePrivate(aCx, aRequest->mPayload);
   Rooted<Value> payload(aCx, aRequest->mPayload);
 
   LOG(("ScriptLoadRequest (%p): FinishLoadingImportedModule module (%p)",
        aRequest, module.get()));
   bool usePromise = aRequest->HasScriptLoadContext();
-  MOZ_ALWAYS_TRUE(JS::FinishLoadingImportedModule(aCx, referrer, moduleReqObj,
-                                                  payload, module, usePromise));
+  bool ok = JS::FinishLoadingImportedModule(aCx, referrer, moduleReqObj,
+                                            payload, module, usePromise);
+  
+  
+  
+  if (!ok && JS_IsThrowingOutOfMemory(aCx)) {
+    mozalloc_handle_oom(0);
+  }
+
+  
+  
   MOZ_ASSERT(!JS_IsExceptionPending(aCx));
   aRequest->ClearImport();
 
-  return true;
+  return ok;
 }
 
 
@@ -850,7 +860,12 @@ void ModuleLoaderBase::OnFetchSucceeded(ModuleLoadRequest* aRequest) {
       return;
     }
     JSContext* cx = jsapi.cx();
-    FinishLoadingImportedModule(cx, aRequest);
+    if (!FinishLoadingImportedModule(cx, aRequest)) {
+      
+      
+      aRequest->Cancel();
+      return;
+    }
 
     aRequest->SetReady();
     aRequest->LoadFinished();
@@ -1390,7 +1405,9 @@ void ModuleLoaderBase::StartFetchingModuleDependencies(
 
     Rooted<JSObject*> loadPromise(cx);
     result = LoadRequestedModules(cx, module, hostDefinedVal, &loadPromise);
-    AddPromiseReactions(cx, loadPromise, resolveFuncObj, rejectFuncObj);
+    if (result) {
+      AddPromiseReactions(cx, loadPromise, resolveFuncObj, rejectFuncObj);
+    }
   } else {
     result = LoadRequestedModules(cx, module, hostDefinedVal,
                                   OnLoadRequestedModulesResolved,
@@ -1700,7 +1717,11 @@ void ModuleLoaderBase::ProcessDynamicImport(ModuleLoadRequest* aRequest) {
   JSContext* cx = jsapi.cx();
 
   LOG(("ScriptLoadRequest (%p): ProcessDynamicImport", aRequest));
-  FinishLoadingImportedModule(cx, aRequest);
+  if (!FinishLoadingImportedModule(cx, aRequest)) {
+    
+    
+    return;
+  }
 
   
   if (!aRequest->IsWasmBytes()) {
