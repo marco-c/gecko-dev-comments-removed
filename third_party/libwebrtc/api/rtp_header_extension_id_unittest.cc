@@ -18,7 +18,6 @@ namespace webrtc {
 namespace {
 
 enum Unscoped { kUnscopedVal = 1 };
-enum class Scoped { kScopedVal = 1 };
 
 class ConvertTo {
  public:
@@ -32,26 +31,13 @@ TEST(RtpHeaderExtensionId, AppropriateConstructorsChosen) {
   RtpHeaderExtensionId t1(5);                   
   RtpHeaderExtensionId t2(uint8_t{5});          
   RtpHeaderExtensionId t3(kUnscopedVal);        
-  RtpHeaderExtensionId t4(Scoped::kScopedVal);  
   ConvertTo c;
-  RtpHeaderExtensionId t5(c);  
+  RtpHeaderExtensionId t4(c);  
 
   (void)t1;
   (void)t2;
   (void)t3;
   (void)t4;
-  (void)t5;
-
-  
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  RtpHeaderExtensionId t6 = 5;             
-  RtpHeaderExtensionId t7 = kUnscopedVal;  
-  RtpHeaderExtensionId t8 = c;             
-#pragma clang diagnostic pop
-  (void)t6;
-  (void)t7;
-  (void)t8;
 }
 
 }  
