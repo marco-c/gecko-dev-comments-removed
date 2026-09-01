@@ -124,7 +124,7 @@ async function serveRemoteSettings() {
   );
 
   const message = await PanelTestProvider.getMessages().then(msgs =>
-    msgs.find(msg => msg.id === "PERSONALIZED_CFR_MESSAGE")
+    msgs.find(msg => msg.id === "INFOBAR_ACTION_86")
   );
 
   
@@ -183,12 +183,17 @@ add_task(async function test_asrouter() {
     ],
   });
   const localeService = Services.locale;
-  RemoteSettings("cfr").verifySignature = false;
-  RemoteSettings("ms-language-packs").verifySignature = false;
+  const cfrRSClient = RemoteSettings("cfr");
+  const msgRSClient = RemoteSettings("ms-language-packs");
+  cfrRSClient.verifySignature = false;
+  msgRSClient.verifySignature = false;
 
   registerCleanupFunction(async () => {
-    RemoteSettings("cfr").verifySignature = true;
-    RemoteSettings("ms-language-packs").verifySignature = true;
+    cfrRSClient.verifySignature = true;
+    msgRSClient.verifySignature = true;
+    await cfrRSClient.db.clear();
+    await msgRSClient.db.clear();
+
     Services.locale = localeService;
     await SpecialPowers.popPrefEnv();
     await stop();
