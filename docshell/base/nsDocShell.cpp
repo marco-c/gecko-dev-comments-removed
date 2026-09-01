@@ -8722,11 +8722,29 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
 
   
   
-  
-  
-  SetOngoingNavigation(isJavaScript ? Nothing()
-                                    : Some(OngoingNavigation::NavigationID));
+  SetOngoingNavigation(Some(OngoingNavigation::NavigationID));
 
+  
+  if (isJavaScript) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    SetOngoingNavigation(Nothing());
+  }
+
+  
+  
+  
+  
+  
+  
   
   if (RefPtr<Document> document = GetDocument();
       !aLoadState->LoadIsFromSessionHistory() && document &&
@@ -8745,13 +8763,23 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
           RefPtr<Element> sourceElement = aLoadState->GetSourceElement();
 
           
+          
           RefPtr<FormData> formData = aLoadState->GetFormDataEntryList();
 
+          
+          
           
           RefPtr<nsIStructuredCloneContainer> navigationAPIStateForFiring =
               aLoadState->GetNavigationAPIState();
 
           nsCOMPtr<nsIURI> destinationURL = aLoadState->URI();
+          
+          
+          
+          
+          
+          
+          
           
           RefPtr apiMethodTracker = aLoadState->GetNavigationAPIMethodTracker();
           bool shouldContinue = navigation->FirePushReplaceReloadNavigateEvent(
