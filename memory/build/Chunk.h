@@ -230,6 +230,13 @@ void* pages_mmap_aligned(size_t size, size_t alignment,
 
 void pages_unmap(void* aAddr, size_t aSize);
 
+
+
+
+
+
+#ifndef XP_WIN
+
 class ChunkCache {
  private:
   Mutex mMutex;
@@ -251,18 +258,6 @@ class ChunkCache {
 
   void Init() { mMutex.Init(); }
 
-  static constexpr bool CanRecycle(size_t aSize) {
-#ifdef XP_WIN
-    
-    
-    
-    
-    return aSize == kChunkSize;
-#else
-    return true;
-#endif
-  }
-
   
   bool TryRecord(void* aChunk, size_t aSize, ChunkType aType);
 
@@ -276,5 +271,7 @@ class ChunkCache {
 };
 
 extern ChunkCache gCache;
+
+#endif 
 
 #endif 
