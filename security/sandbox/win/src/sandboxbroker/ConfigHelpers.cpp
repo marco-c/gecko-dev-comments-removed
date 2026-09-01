@@ -24,6 +24,19 @@ extern LazyLogModule sSandboxBrokerLog;
 
 namespace sandboxing {
 
+namespace {
+
+bool ContainsSandboxWildcard(const nsAString& aPath) {
+  
+  
+  
+  static constexpr std::u16string_view kForbidden = u"*/";
+
+  return aPath.FindCharInSet(kForbidden) != kNotFound;
+}
+
+}  
+
 SizeTrackingConfig::SizeTrackingConfig(sandbox::TargetConfig* aConfig,
                                        int32_t aStoragePages)
     : mConfig(aConfig) {
@@ -154,6 +167,11 @@ static auto AddRulesForKey(HKEY aFontKey, const nsAString& aWindowsUserFontDir,
 
     
     if (data[dataSizeInWChars - 1] == L'\\') {
+      continue;
+    }
+
+    
+    if (ContainsSandboxWildcard(nsDependentSubstring(data, dataSizeInWChars))) {
       continue;
     }
 
