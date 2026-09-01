@@ -318,10 +318,7 @@ impl CachedSurface {
 
 pub struct TileUpdateDirtyContext<'a> {
     
-    pub pic_to_world_mapper: SpaceMapper<PicturePixel, WorldPixel>,
-
-    
-    pub global_device_pixel_scale: DevicePixelScale,
+    pub pic_to_device_mapper: SpaceMapper<PicturePixel, DevicePixel>,
 
     
     pub opacity_bindings: &'a FastHashMap<PropertyBindingId, OpacityBindingInfo>,
@@ -362,6 +359,9 @@ pub struct PrimitiveDependencyInfo {
     pub opacity_bindings: SmallVec<[OpacityBinding; 4]>,
     
     pub color_binding: Option<ColorBinding>,
+    
+    
+    
     
     
     

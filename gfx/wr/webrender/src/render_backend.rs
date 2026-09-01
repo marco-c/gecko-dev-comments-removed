@@ -166,7 +166,7 @@ impl DataStores {
     pub fn get_local_prim_rect(
         &self,
         prim_instance: &PrimitiveInstance,
-        snapped_local_rect: LayoutRect,
+        snapped_pattern_rect: LayoutRect,
         pictures: &[PictureInstance],
         surfaces: &[SurfaceInfo],
     ) -> LayoutRect {
@@ -185,7 +185,7 @@ impl DataStores {
                     }
                 }
             }
-            _ => snapped_local_rect,
+            _ => snapped_pattern_rect,
         }
     }
 
@@ -196,7 +196,7 @@ impl DataStores {
     pub fn get_local_prim_coverage_rect(
         &self,
         prim_instance: &PrimitiveInstance,
-        snapped_local_rect: LayoutRect,
+        snapped_pattern_rect: LayoutRect,
         pictures: &[PictureInstance],
         surfaces: &[SurfaceInfo],
     ) -> LayoutRect {
@@ -215,7 +215,7 @@ impl DataStores {
                     }
                 }
             }
-            _ => snapped_local_rect,
+            _ => snapped_pattern_rect,
         }
     }
 
@@ -231,6 +231,20 @@ impl DataStores {
             _ => {
                 self.as_common_data(prim_instance).flags.contains(PrimitiveFlags::ANTIALISED)
             }
+        }
+    }
+
+    
+    
+    
+    
+    pub fn prim_rect(
+        &self,
+        prim_inst: &PrimitiveInstance,
+    ) -> LayoutRect {
+        match prim_inst.kind {
+            PrimitiveKind::Picture { .. } => LayoutRect::zero(),
+            _ => self.as_common_data(prim_inst).prim_rect,
         }
     }
 

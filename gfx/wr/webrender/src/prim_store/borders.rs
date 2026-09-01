@@ -110,7 +110,7 @@ impl NormalBorderData {
         
         let mut segments: SmallVec<[NormalBorderSegment; 8]> = SmallVec::new();
         crate::border::create_border_segments(
-            desc.local_rect,
+            desc.pattern_rect,
             &self.border,
             &widths,
             &mut |segment| segments.push(segment.clone()),
@@ -126,19 +126,20 @@ impl NormalBorderData {
         scale.0 = scale.0.min(max_scale.0);
 
         for segment in &segments {
-            let local_clip_rect = match segment.clip_rect {
-                Some(clip_rect) => desc.local_clip_rect
-                    .intersection(&clip_rect)
-                    .unwrap_or(LayoutRect::zero()),
-                None => desc.local_clip_rect,
+            let segment_bounds = |extent: &LayoutRect| {
+                let mut bounds = desc.bounds.intersection_unchecked(extent);
+                if let Some(clip_rect) = segment.clip_rect {
+                    bounds = bounds.intersection_unchecked(&clip_rect);
+                }
+                bounds
             };
 
             if let Some(color) = &segment.is_solid {
                 quad::prepare_quad(
                     color,
                     &QuadDescriptor {
-                        local_rect: segment.local_rect,
-                        local_clip_rect,
+                        pattern_rect: segment.pattern_rect,
+                        bounds: segment_bounds(&segment.pattern_rect),
                         aligned_aa_edges: desc.aligned_aa_edges & segment.edge_flags,
                         transformed_aa_edges: desc.transformed_aa_edges & segment.edge_flags,
                     },
@@ -203,13 +204,13 @@ impl NormalBorderData {
             
             
             
-            let segment_local_rect = segment.local_rect;
+            let segment_pattern_rect = segment.pattern_rect;
 
-            let mut stretch_size = segment_local_rect.size();
+            let mut stretch_size = segment_pattern_rect.size();
             let mut spacing = LayoutSize::zero();
             let mut _repeat_offset = LayoutVector2D::zero();
             crate::border::compute_border_repetition(
-                segment_local_rect.size(),
+                segment_pattern_rect.size(),
                 cache_size.to_f32(),
                 segment.repeat_x,
                 segment.repeat_y,
@@ -226,7 +227,7 @@ impl NormalBorderData {
             
 
             if segment.repeat_x == RepeatMode::Repeat {
-                let w = segment_local_rect.width();
+                let w = segment_pattern_rect.width();
                 let sw = stretch_size.width;
                 let scale = w / ((w / sw).round() * sw);
 
@@ -234,7 +235,7 @@ impl NormalBorderData {
             }
 
             if segment.repeat_y == RepeatMode::Repeat {
-                let h = segment_local_rect.height();
+                let h = segment_pattern_rect.height();
                 let sh = stretch_size.height;
                 let scale = h / ((h / sh).round() * sh);
 
@@ -244,8 +245,8 @@ impl NormalBorderData {
             quad::prepare_repeatable_quad(
                 &pattern,
                 &QuadDescriptor {
-                    local_rect: segment_local_rect,
-                    local_clip_rect,
+                    pattern_rect: segment_pattern_rect,
+                    bounds: segment_bounds(&segment_pattern_rect),
                     aligned_aa_edges: desc.aligned_aa_edges & segment.edge_flags,
                     transformed_aa_edges: desc.transformed_aa_edges & segment.edge_flags,
                 },
@@ -438,9 +439,9 @@ fn test_struct_sizes() {
     
     
     assert_eq!(mem::size_of::<NormalBorderPrim>(), 116, "NormalBorderPrim size changed");
-    assert_eq!(mem::size_of::<NormalBorderTemplate>(), 168, "NormalBorderTemplate size changed");
-    assert_eq!(mem::size_of::<NormalBorderKey>(), 120, "NormalBorderKey size changed");
+    assert_eq!(mem::size_of::<NormalBorderTemplate>(), 184, "NormalBorderTemplate size changed");
+    assert_eq!(mem::size_of::<NormalBorderKey>(), 136, "NormalBorderKey size changed");
     assert_eq!(mem::size_of::<ImageBorder>(), 68, "ImageBorder size changed");
-    assert_eq!(mem::size_of::<ImageBorderTemplate>(), 72, "ImageBorderTemplate size changed");
-    assert_eq!(mem::size_of::<ImageBorderKey>(), 72, "ImageBorderKey size changed");
+    assert_eq!(mem::size_of::<ImageBorderTemplate>(), 88, "ImageBorderTemplate size changed");
+    assert_eq!(mem::size_of::<ImageBorderKey>(), 88, "ImageBorderKey size changed");
 }
