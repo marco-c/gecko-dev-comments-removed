@@ -19,7 +19,7 @@ class APZCPanningTester : public APZCBasicTester {
                  uint32_t aBehavior) {
     if (aShouldTriggerScroll) {
       
-      EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(6);
+      EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(8);
     } else {
       EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(0);
     }
