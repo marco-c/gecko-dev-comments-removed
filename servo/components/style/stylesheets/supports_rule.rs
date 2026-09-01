@@ -479,8 +479,9 @@ impl NamedFeature {
     
     pub fn eval(self) -> bool {
         match self {
-            
-            Self::AnchorPositionFollowsTransforms => false,
+            Self::AnchorPositionFollowsTransforms => {
+                static_prefs::pref!("layout.css.anchor-positioning.follows-transforms.enabled")
+            },
             
             Self::SingleAxisScrollContainer => false,
         }
