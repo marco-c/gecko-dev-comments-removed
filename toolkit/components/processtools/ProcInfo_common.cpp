@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/ProcInfo.h"
 
 #include "mozilla/UniquePtr.h"
@@ -61,6 +59,8 @@ nsCString GetUtilityActorName(const UtilityActorName aActorName) {
       return "windows-file-dialog"_ns;
     case UtilityActorName::Pkcs11Module:
       return "pkcs11-module"_ns;
+    case UtilityActorName::HwInference:
+      return "hw-inference"_ns;
     default:
       return "unknown"_ns;
   }
