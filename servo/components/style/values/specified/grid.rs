@@ -178,17 +178,14 @@ impl TrackRepeat<LengthPercentage, Integer> {
 
                             values.push(track_size);
                             names.push(current_names);
-                        } else {
-                            if values.is_empty() {
-                                
-                                return Err(ParseError::custom(
-                                    StyleParseErrorKind::UnspecifiedError,
-                                ));
-                            }
-
-                            names.push(current_names); 
-                            break; 
+                            continue;
                         }
+                        if values.is_empty() {
+                            
+                            return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
+                        }
+                        names.push(current_names); 
+                        break; 
                     }
 
                     let repeat = TrackRepeat {
@@ -228,7 +225,9 @@ impl Parse for TrackList<LengthPercentage, Integer> {
                 let vec = mem::replace(&mut current_names, vec![]);
                 names.push(vec.into());
                 values.push(TrackListValue::TrackSize(track_size));
-            } else if let Ok((repeat, type_)) =
+                continue;
+            }
+            if let Ok((repeat, type_)) =
                 input.try_parse(|i| TrackRepeat::parse_with_repeat_type(context, i))
             {
                 match type_ {
@@ -252,14 +251,13 @@ impl Parse for TrackList<LengthPercentage, Integer> {
                 let vec = mem::replace(&mut current_names, vec![]);
                 names.push(vec.into());
                 values.push(TrackListValue::TrackRepeat(repeat));
-            } else {
-                if values.is_empty() && auto_repeat_index.is_none() {
-                    return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
-                }
-
-                names.push(current_names.into());
-                break;
+                continue;
             }
+            if values.is_empty() && auto_repeat_index.is_none() {
+                return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
+            }
+            names.push(current_names.into());
+            break;
         }
 
         Ok(TrackList {

@@ -166,7 +166,7 @@ impl RuleTree {
         while head != RuleNode::DANGLING_PTR {
             debug_assert!(!head.is_null());
 
-            let mut node = UnsafeBox::from_raw(head);
+            let mut node = unsafe { UnsafeBox::from_raw(head) };
 
             
             debug_assert!(node.root.is_some());
@@ -185,14 +185,14 @@ impl RuleTree {
             
             
             if node.refcount.fetch_sub(1, Ordering::Release) == 1 {
-                
-                
-                
-                RuleNode::pretend_to_be_on_free_list(&node);
-
-                
-                
-                RuleNode::drop_without_free_list(&mut node);
+                unsafe {
+                    
+                    
+                    
+                    RuleNode::pretend_to_be_on_free_list(&node);
+                    
+                    RuleNode::drop_without_free_list(&mut node);
+                }
             }
         }
     }
@@ -272,7 +272,7 @@ mod gecko_leak_checking {
     use std::mem::size_of;
     use std::os::raw::{c_char, c_void};
 
-    extern "C" {
+    unsafe extern "C" {
         fn NS_LogCtor(aPtr: *mut c_void, aTypeName: *const c_char, aSize: u32);
         fn NS_LogDtor(aPtr: *mut c_void, aTypeName: *const c_char, aSize: u32);
     }
@@ -371,7 +371,7 @@ impl RuleNode {
     unsafe fn drop_without_free_list(this: &mut UnsafeBox<Self>) {
         
         
-        let mut this = UnsafeBox::clone(this);
+        let mut this = unsafe { UnsafeBox::clone(this) };
         loop {
             
             
@@ -420,12 +420,12 @@ impl RuleNode {
 
             
             
-            let parent = UnsafeBox::deref_mut(&mut this).parent.take();
+            let parent = unsafe { UnsafeBox::deref_mut(&mut this).parent.take() };
 
             
             
             log_drop(&*this);
-            UnsafeBox::drop(&mut this);
+            unsafe { UnsafeBox::drop(&mut this) };
 
             if let Some(parent) = parent {
                 
@@ -433,12 +433,14 @@ impl RuleNode {
                 
                 
                 
-                this = UnsafeBox::clone(&parent.p);
+                this = unsafe { UnsafeBox::clone(&parent.p) };
                 mem::forget(parent);
                 if this.refcount.fetch_sub(1, Ordering::Release) == 1 {
                     debug_assert_eq!(this.next_free.load(Ordering::Relaxed), ptr::null_mut());
                     if this.root.is_some() {
-                        RuleNode::pretend_to_be_on_free_list(&this);
+                        unsafe {
+                            RuleNode::pretend_to_be_on_free_list(&this);
+                        }
                     }
                     
                     continue;
@@ -543,8 +545,10 @@ impl StrongRuleNode {
     }
 
     unsafe fn downgrade(&self) -> WeakRuleNode {
-        WeakRuleNode {
-            p: UnsafeBox::clone(&self.p),
+        unsafe {
+            WeakRuleNode {
+                p: UnsafeBox::clone(&self.p),
+            }
         }
     }
 
@@ -745,7 +749,7 @@ impl WeakRuleNode {
             atomic::fence(Ordering::Acquire);
             while self.p.next_free.load(Ordering::Relaxed).is_null() {}
         }
-        StrongRuleNode::from_unsafe_box(UnsafeBox::clone(&self.p))
+        unsafe { StrongRuleNode::from_unsafe_box(UnsafeBox::clone(&self.p)) }
     }
 }
 

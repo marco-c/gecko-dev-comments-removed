@@ -452,11 +452,13 @@ impl AtomIdent {
     where
         F: FnOnce(&Self) -> R,
     {
-        Atom::with(ptr, |atom: &Atom| {
-            
-            let atom = atom as *const Atom as *const AtomIdent;
-            callback(&*atom)
-        })
+        unsafe {
+            Atom::with(ptr, |atom: &Atom| {
+                
+                let atom = atom as *const Atom as *const AtomIdent;
+                callback(&*atom)
+            })
+        }
     }
 
     

@@ -109,13 +109,9 @@ impl Animate for PathOrShapeFunction {
         
         
         match (self, other) {
-            (Self::Path(ref from), Self::Path(ref to)) => {
-                from.animate(to, procedure).map(Self::Path)
-            },
-            (Self::Shape(ref from), Self::Shape(ref to)) => {
-                from.animate(to, procedure).map(Self::Shape)
-            },
-            (Self::Shape(ref from), Self::Path(ref to)) => {
+            (Self::Path(from), Self::Path(to)) => from.animate(to, procedure).map(Self::Path),
+            (Self::Shape(from), Self::Shape(to)) => from.animate(to, procedure).map(Self::Shape),
+            (Self::Shape(from), Self::Path(to)) => {
                 
                 
                 animate_shape!(
@@ -127,7 +123,7 @@ impl Animate for PathOrShapeFunction {
                 )
                 .map(Self::Shape)
             },
-            (Self::Path(ref from), Self::Shape(ref to)) => {
+            (Self::Path(from), Self::Shape(to)) => {
                 
                 
                 animate_shape!(

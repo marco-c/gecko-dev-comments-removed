@@ -223,7 +223,7 @@ impl UrlExtraData {
     
     #[inline]
     pub unsafe fn from_ptr_ref(ptr: &*mut structs::URLExtraData) -> &Self {
-        mem::transmute(ptr)
+        unsafe { mem::transmute(ptr) }
     }
 
     

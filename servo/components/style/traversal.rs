@@ -749,7 +749,9 @@ where
                 
                 
                 if kid.has_data() {
-                    kid.clear_data();
+                    unsafe {
+                        kid.clear_data();
+                    }
                     parents.push(kid);
                 }
             }
@@ -757,5 +759,7 @@ where
     }
 
     
-    root.clear_descendant_bits();
+    unsafe {
+        root.clear_descendant_bits();
+    }
 }

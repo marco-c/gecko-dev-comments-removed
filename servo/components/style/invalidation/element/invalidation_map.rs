@@ -5,6 +5,7 @@
 
 
 use crate::context::QuirksMode;
+use crate::derives::*;
 use crate::selector_map::{
     MaybeCaseInsensitiveHashMap, PrecomputedHashMap, SelectorMap, SelectorMapEntry,
 };
@@ -1255,7 +1256,7 @@ fn add_non_unique_info<C: Collector>(
     
     for ss in selector.iter_from(offset) {
         match ss {
-            Component::LocalName(ref name) => {
+            Component::LocalName(name) => {
                 let dependency = collector.dependency();
                 add_local_name(name.name.clone(), dependency, &mut collector.type_map())?;
                 if name.name != name.lower_name {

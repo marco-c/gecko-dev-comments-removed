@@ -4,6 +4,8 @@
 
 
 
+use crate::derives::*;
+use crate::values::generics::calc::CalcType;
 use crate::values::generics::grid::FlexUnit;
 use crate::values::generics::Optional;
 use crate::values::specified::angle::AngleUnit;
@@ -13,7 +15,18 @@ use crate::values::specified::resolution::ResolutionUnit;
 use crate::values::specified::time::TimeUnit;
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    MallocSizeOf,
+    PartialEq,
+    Serialize,
+    ToAnimatedZero,
+    ToResolvedValue,
+    ToShmem,
+)]
 #[repr(u8)]
 pub enum NumericBaseType {
     
@@ -223,6 +236,18 @@ impl NumericType {
         result.unwrap_or(Self::number())
     }
 
+    
+    pub fn with_percent_hint(self, hint: NumericBaseType) -> Self {
+        let mut ty = self;
+        ty.apply_percent_hint(hint);
+        ty
+    }
+
+    
+    pub fn percent_hint(&self) -> Optional<NumericBaseType> {
+        self.percent_hint
+    }
+
     fn exponent(&self, base_type: NumericBaseType) -> i32 {
         self.exponents[base_type as usize]
     }
@@ -301,19 +326,19 @@ impl NumericType {
     
 
     
-    #[export_name = "Servo_NumericType_MatchesLength"]
+    #[unsafe(export_name = "Servo_NumericType_MatchesLength")]
     pub extern "C" fn matches_length(&self) -> bool {
         self.only_non_zero_entry_is(NumericBaseType::Length, 1) && self.has_null_percent_hint()
     }
 
     
-    #[export_name = "Servo_NumericType_MatchesAngle"]
+    #[unsafe(export_name = "Servo_NumericType_MatchesAngle")]
     pub extern "C" fn matches_angle(&self) -> bool {
         self.only_non_zero_entry_is(NumericBaseType::Angle, 1) && self.has_null_percent_hint()
     }
 
     
-    #[export_name = "Servo_NumericType_MatchesPercentage"]
+    #[unsafe(export_name = "Servo_NumericType_MatchesPercentage")]
     pub extern "C" fn matches_percentage(&self) -> bool {
         self.only_non_zero_entry_is(NumericBaseType::Percent, 1)
             && (self.has_null_percent_hint()
@@ -321,19 +346,27 @@ impl NumericType {
     }
 
     
-    #[export_name = "Servo_NumericType_MatchesLengthPercentage"]
+    #[unsafe(export_name = "Servo_NumericType_MatchesLengthPercentage")]
     pub extern "C" fn matches_length_percentage(&self) -> bool {
         self.matches_length_in_percentage_context() || self.matches_percentage()
     }
 
     
-    #[export_name = "Servo_NumericType_MatchesNumber"]
+    #[unsafe(export_name = "Servo_NumericType_MatchesNumber")]
     pub extern "C" fn matches_number(&self) -> bool {
         self.has_no_non_zero_entries() && self.has_null_percent_hint()
     }
 
     
-    fn apply_percent_hint(&mut self, hint: NumericBaseType) {
+    
+    
+    
+    
+    pub fn apply_percent_hint(&mut self, hint: NumericBaseType) {
+        if self.percent_hint.is_some() {
+            return;
+        }
+
         
         self.percent_hint = Optional::Some(hint);
 
@@ -357,7 +390,7 @@ impl NumericType {
     
     
     
-    fn add_two_types(type1: &NumericType, type2: &NumericType) -> Result<Self, ()> {
+    pub fn add_two_types(type1: &NumericType, type2: &NumericType) -> Result<Self, ()> {
         
         
         
@@ -467,7 +500,7 @@ impl NumericType {
     
     
     
-    fn multiply_two_types(type1: &NumericType, type2: &NumericType) -> Result<Self, ()> {
+    pub fn multiply_two_types(type1: &NumericType, type2: &NumericType) -> Result<Self, ()> {
         
         
         
@@ -564,5 +597,44 @@ impl NumericType {
         I: Iterator<Item = &'a NumericType>,
     {
         Self::combine_types(types, Self::multiply_two_types)
+    }
+
+    
+    pub fn is_number(&self) -> bool {
+        self.non_zero_count == 0
+    }
+
+    
+    
+    pub fn as_calc_type(&self) -> Result<CalcType, ()> {
+        match self.non_zero_count {
+            0 => return Ok(CalcType::Number),
+            1 => {},
+            _ => return Err(()),
+        };
+
+        for base_type in ALL_NUMERIC_BASE_TYPES.iter() {
+            let exponent = self.exponent(*base_type);
+            if exponent == 0 {
+                continue;
+            }
+            if exponent != 1 {
+                return Err(());
+            }
+
+            
+            
+            return Ok(match base_type {
+                NumericBaseType::Length => CalcType::Length,
+                NumericBaseType::Angle => CalcType::Angle,
+                NumericBaseType::Time => CalcType::Time,
+                NumericBaseType::Resolution => CalcType::Resolution,
+                NumericBaseType::Percent => CalcType::Percentage,
+                NumericBaseType::Frequency | NumericBaseType::Flex => return Err(()),
+            });
+        }
+
+        debug_assert!(false, "non_zero_count was 1 but all exponents were 0");
+        Ok(CalcType::Number)
     }
 }

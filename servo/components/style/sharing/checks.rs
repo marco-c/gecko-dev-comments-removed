@@ -162,7 +162,8 @@ where
         };
         attrs.iter().all(|(name, namespaces)| {
             namespaces.iter().all(|namespace| {
-                target.get_attr(name, namespace) == candidate.get_attr(name, namespace)
+                TElement::get_attr(&**target, name, namespace)
+                    == TElement::get_attr(&**candidate, name, namespace)
             })
         })
     };
@@ -172,7 +173,7 @@ where
     }
 
     for pseudo_styles in styles.pseudos.as_array() {
-        let Some(ref styles) = pseudo_styles else {
+        let Some(styles) = pseudo_styles else {
             continue;
         };
         if !check_style(styles) {

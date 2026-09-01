@@ -4,6 +4,7 @@
 
 
 
+use crate::derives::*;
 use crate::gecko_bindings::structs::nsAtom;
 use crate::string_cache::{Atom, WeakAtom};
 use precomputed_hash::PrecomputedHash;
@@ -83,7 +84,7 @@ impl WeakNamespace {
     
     #[inline]
     pub unsafe fn new<'a>(atom: *mut nsAtom) -> &'a Self {
-        &*(atom as *const WeakNamespace)
+        unsafe { &*(atom as *const WeakNamespace) }
     }
 
     

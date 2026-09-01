@@ -232,7 +232,9 @@ impl PropertyDeclaration {
     
     
     pub(crate) unsafe fn unchecked_value_as<T>(&self) -> &T {
-        &(*(self as *const _ as *const PropertyDeclarationVariantRepr<T>)).value
+        unsafe {
+            &(*(self as *const _ as *const PropertyDeclarationVariantRepr<T>)).value
+        }
     }
 
     
@@ -340,9 +342,11 @@ pub mod property_counts {
 % if engine == "gecko":
 #[allow(dead_code)]
 unsafe fn static_assert_noncustomcsspropertyid() {
+    unsafe {
     % for i, property in enumerate(data.longhands + data.shorthands + data.all_aliases()):
     std::mem::transmute::<[u8; ${i}], [u8; ${property.noncustomcsspropertyid()} as usize]>([0; ${i}]); 
     % endfor
+    }
 }
 % endif
 

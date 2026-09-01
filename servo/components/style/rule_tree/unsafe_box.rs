@@ -27,8 +27,10 @@ impl<T> UnsafeBox<T> {
     
     
     pub(super) unsafe fn from_raw(ptr: *mut T) -> Self {
-        Self {
-            inner: ManuallyDrop::new(Box::from_raw(ptr)),
+        unsafe {
+            Self {
+                inner: ManuallyDrop::new(Box::from_raw(ptr)),
+            }
         }
     }
 
@@ -39,8 +41,10 @@ impl<T> UnsafeBox<T> {
     
     
     pub(super) unsafe fn clone(this: &Self) -> Self {
-        Self {
-            inner: ptr::read(&this.inner),
+        unsafe {
+            Self {
+                inner: ptr::read(&this.inner),
+            }
         }
     }
 
@@ -61,7 +65,7 @@ impl<T> UnsafeBox<T> {
     
     
     pub(super) unsafe fn drop(this: &mut Self) {
-        ManuallyDrop::drop(&mut this.inner)
+        unsafe { ManuallyDrop::drop(&mut this.inner) }
     }
 }
 

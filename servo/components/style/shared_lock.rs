@@ -156,8 +156,10 @@ impl<T> Locked<T> {
 
     
     pub unsafe fn read_unchecked<'a>(&'a self) -> &'a T {
-        let ptr = self.data.get();
-        &*ptr
+        unsafe {
+            let ptr = self.data.get();
+            &*ptr
+        }
     }
 
     

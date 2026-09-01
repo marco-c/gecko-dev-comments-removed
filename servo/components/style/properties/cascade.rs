@@ -1180,12 +1180,14 @@ impl<'a> Cascade<'a> {
         declaration: &PropertyDeclaration,
     ) {
         debug_assert!(!longhand_id.is_logical());
-        
-        
-        
-        
-        
-        (CASCADE_PROPERTY[longhand_id as usize])(&declaration, context);
+        unsafe {
+            
+            
+            
+            
+            
+            (CASCADE_PROPERTY[longhand_id as usize])(&declaration, context);
+        }
     }
 
     fn compute_visited_style_if_needed<E>(
