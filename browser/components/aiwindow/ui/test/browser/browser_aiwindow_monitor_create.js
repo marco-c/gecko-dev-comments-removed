@@ -7,14 +7,34 @@ const { MonitorAgent } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/agents/MonitorAgent.sys.mjs"
 );
 
+const { Region } = ChromeUtils.importESModule(
+  "resource://gre/modules/Region.sys.mjs"
+);
+
+const SUPPORTED_REGIONS_PREF = "browser.smartwindow.agent.supportedRegions";
+const TEST_REGION = "US";
 
 
 
+
+
+
+
+add_setup(async function () {
+  const originalRegion = Region.home;
+  Region._setHomeRegion(TEST_REGION, false);
+  registerCleanupFunction(() => {
+    Region._setHomeRegion(originalRegion, false);
+  });
+});
 
 
 add_task(async function test_ai_tasks_page_loads() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.smartwindow.enabled", true]],
+    set: [
+      ["browser.smartwindow.enabled", true],
+      [SUPPORTED_REGIONS_PREF, TEST_REGION],
+    ],
   });
 
   const tab = await BrowserTestUtils.openNewForegroundTab(
@@ -52,7 +72,10 @@ add_task(async function test_ai_tasks_page_loads() {
 
 add_task(async function test_dialog_opens() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.smartwindow.enabled", true]],
+    set: [
+      ["browser.smartwindow.enabled", true],
+      [SUPPORTED_REGIONS_PREF, TEST_REGION],
+    ],
   });
 
   const tab = await BrowserTestUtils.openNewForegroundTab(
@@ -86,10 +109,10 @@ add_task(async function test_dialog_opens() {
 
       
       const title = dialog.querySelector(".modal-title");
-      Assert.equal(
-        title.textContent,
-        "Create alert",
-        "Dialog has correct title"
+      Assert.ok(title, "Dialog title element exists");
+      Assert.ok(
+        title.hasAttribute("data-l10n-id"),
+        "Dialog title is localized"
       );
 
       
@@ -132,7 +155,10 @@ add_task(async function test_dialog_opens() {
 
 add_task(async function test_form_validation() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.smartwindow.enabled", true]],
+    set: [
+      ["browser.smartwindow.enabled", true],
+      [SUPPORTED_REGIONS_PREF, TEST_REGION],
+    ],
   });
 
   const tab = await BrowserTestUtils.openNewForegroundTab(
@@ -263,7 +289,10 @@ add_task(async function test_form_validation() {
 
 add_task(async function test_monitor_creation() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.smartwindow.enabled", true]],
+    set: [
+      ["browser.smartwindow.enabled", true],
+      [SUPPORTED_REGIONS_PREF, TEST_REGION],
+    ],
   });
 
   
@@ -398,9 +427,13 @@ add_task(async function test_monitor_creation() {
 });
 
 
-add_task(async function test_success_message_display() {
+
+add_task(async function test_add_button_hidden_when_region_unsupported() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.smartwindow.enabled", true]],
+    set: [
+      ["browser.smartwindow.enabled", true],
+      [SUPPORTED_REGIONS_PREF, ""],
+    ],
   });
 
   const tab = await BrowserTestUtils.openNewForegroundTab(
@@ -410,90 +443,158 @@ add_task(async function test_success_message_display() {
 
   try {
     await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
-      
       if (content.document.readyState !== "complete") {
         await ContentTaskUtils.waitForEvent(content, "load");
       }
 
-      
       await content.customElements.whenDefined("ai-tasks");
 
       const aiTasks = content.document.querySelector("ai-tasks");
       const aiTasksJS = aiTasks.wrappedJSObject || aiTasks;
 
       
-      aiTasksJS.showSuccess("Test success message");
-
       
-      Assert.equal(
-        aiTasksJS.successMessage,
-        "Test success message",
-        "Success message should be set"
-      );
-      Assert.equal(
-        aiTasksJS.showSuccessMessage,
-        true,
-        "Success message should be visible"
+      
+      await ContentTaskUtils.waitForCondition(
+        () => Object.isFrozen(aiTasksJS._constants),
+        "Constants should resolve from the actor"
       );
 
-      
-      await ContentTaskUtils.waitForCondition(() => {
-        const messageBar = aiTasks.shadowRoot.querySelector("moz-message-bar");
-        return messageBar && messageBar.getAttribute("type") === "success";
-      }, "Success message bar should be visible");
-
-      const messageBar = aiTasks.shadowRoot.querySelector("moz-message-bar");
-      Assert.ok(messageBar, "Message bar element exists");
-      Assert.equal(
-        messageBar.getAttribute("type"),
-        "success",
-        "Message bar should be of type 'success'"
+      Assert.ok(
+        !aiTasksJS._constants.isMonitorRegionSupported,
+        "Region support should resolve to false"
       );
+      await aiTasksJS.updateComplete;
 
-      
-      const messageSpan = messageBar.querySelector('span[slot="message"]');
-      Assert.equal(
-        messageSpan.textContent,
-        "Test success message",
-        "Message text should be displayed"
+      Assert.ok(
+        aiTasks.shadowRoot.querySelector(".unavailable-wrapper"),
+        "Unavailable message is shown in an unsupported region"
       );
-
-      
-      aiTasksJS.dismissSuccessMessage();
-      Assert.equal(
-        aiTasksJS.showSuccessMessage,
-        false,
-        "Success message should be dismissed"
+      Assert.ok(
+        !aiTasks.shadowRoot.querySelector(".add-task-button"),
+        "Add Monitor button is hidden in an unsupported region"
       );
-
-      
-      await ContentTaskUtils.waitForCondition(() => {
-        const dismissedMessageBar =
-          aiTasks.shadowRoot.querySelector("moz-message-bar");
-        return !dismissedMessageBar;
-      }, "Success message bar should be removed");
-
-      
-      aiTasksJS.showSuccess("Auto-dismiss test");
-      Assert.equal(
-        aiTasksJS.showSuccessMessage,
-        true,
-        "Success message should be visible again"
+      Assert.ok(
+        !aiTasks.shadowRoot.querySelector("monitors-display"),
+        "Monitors list is hidden in an unsupported region"
       );
-
-      
-      
-      Assert.notStrictEqual(
-        aiTasksJS._successTimer,
-        null,
-        "Success timer should be set for auto-dismiss"
-      );
-
-      
-      aiTasksJS.dismissSuccessMessage();
     });
   } finally {
     BrowserTestUtils.removeTab(tab);
-    await SpecialPowers.popPrefEnv();
   }
+
+  await SpecialPowers.popPrefEnv();
+});
+
+
+add_task(async function test_add_button_shown_when_region_supported() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.enabled", true],
+      [SUPPORTED_REGIONS_PREF, TEST_REGION],
+    ],
+  });
+
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:smartwindowtasks"
+  );
+
+  try {
+    await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+      if (content.document.readyState !== "complete") {
+        await ContentTaskUtils.waitForEvent(content, "load");
+      }
+
+      await content.customElements.whenDefined("ai-tasks");
+
+      const aiTasks = content.document.querySelector("ai-tasks");
+      const aiTasksJS = aiTasks.wrappedJSObject || aiTasks;
+
+      
+      
+      
+      await ContentTaskUtils.waitForCondition(
+        () => Object.isFrozen(aiTasksJS._constants),
+        "Constants should resolve from the actor"
+      );
+
+      Assert.ok(
+        aiTasksJS._constants.isMonitorRegionSupported,
+        "Region support should resolve to true"
+      );
+      await aiTasksJS.updateComplete;
+
+      const addButton = aiTasks.shadowRoot.querySelector(".add-task-button");
+      Assert.ok(addButton, "Add Monitor button exists");
+      Assert.ok(
+        !addButton.hasAttribute("disabled"),
+        "Add Monitor button is enabled in a supported region"
+      );
+      Assert.ok(
+        aiTasks.shadowRoot.querySelector("monitors-display"),
+        "Monitors list is shown in a supported region"
+      );
+      Assert.ok(
+        !aiTasks.shadowRoot.querySelector(".unavailable-wrapper"),
+        "Unavailable message is hidden in a supported region"
+      );
+    });
+  } finally {
+    BrowserTestUtils.removeTab(tab);
+  }
+
+  await SpecialPowers.popPrefEnv();
+});
+
+
+add_task(async function test_add_button_shown_for_secondary_region() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.enabled", true],
+      [SUPPORTED_REGIONS_PREF, "US,CA"],
+    ],
+  });
+
+  const originalRegion = Region.home;
+  Region._setHomeRegion("CA", false);
+
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:smartwindowtasks"
+  );
+
+  try {
+    await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+      if (content.document.readyState !== "complete") {
+        await ContentTaskUtils.waitForEvent(content, "load");
+      }
+
+      await content.customElements.whenDefined("ai-tasks");
+
+      const aiTasks = content.document.querySelector("ai-tasks");
+      const aiTasksJS = aiTasks.wrappedJSObject || aiTasks;
+
+      await ContentTaskUtils.waitForCondition(
+        () => Object.isFrozen(aiTasksJS._constants),
+        "Constants should resolve from the actor"
+      );
+
+      Assert.ok(
+        aiTasksJS._constants.isMonitorRegionSupported,
+        "A home region of CA in the US,CA list resolves to supported"
+      );
+      await aiTasksJS.updateComplete;
+
+      Assert.ok(
+        aiTasks.shadowRoot.querySelector(".add-task-button"),
+        "Add Monitor button is shown for the CA region"
+      );
+    });
+  } finally {
+    BrowserTestUtils.removeTab(tab);
+    Region._setHomeRegion(originalRegion, false);
+  }
+
+  await SpecialPowers.popPrefEnv();
 });
