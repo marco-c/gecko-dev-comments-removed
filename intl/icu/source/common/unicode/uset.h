@@ -1459,9 +1459,9 @@ struct CodePointRange {
         iterator(UChar32 aC) : c(aC) {}
 
         
-        bool operator==(const iterator &other) const { return c == other.c; }
+        bool operator==(const iterator &other) const = default;
         
-        bool operator!=(const iterator &other) const { return !operator==(other); }
+        bool operator!=(const iterator &other) const = default;
 
         
         UChar32 operator*() const { return c; }
