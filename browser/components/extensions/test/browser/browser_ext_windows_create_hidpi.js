@@ -4,6 +4,21 @@ add_setup(async () => {
   
   
   
+  
+  const { outerWidth, outerHeight } = window;
+  registerCleanupFunction(async () => {
+    await SpecialPowers.popPrefEnv();
+    
+    
+    await window.promiseDocumentFlushed(() => {});
+    if (window.outerWidth != outerWidth || window.outerHeight != outerHeight) {
+      window.resizeTo(outerWidth, outerHeight);
+    }
+  });
+
+  
+  
+  
   await SpecialPowers.pushPrefEnv({
     set: [["layout.css.devPixelsPerPx", 3]],
   });
