@@ -24,12 +24,13 @@ struct PropertyValuePair {
 
   PropertyValuePair(const CSSPropertyId& aProperty,
                     RefPtr<StyleLockedDeclarationBlock>&& aValue)
-      : mProperty(aProperty), mServoDeclarationBlock(std::move(aValue)) {
-    MOZ_ASSERT(mServoDeclarationBlock, "Should be valid property value");
-  }
+      : mProperty(aProperty), mServoDeclarationBlock(std::move(aValue)) {}
 
   CSSPropertyId mProperty;
 
+  
+  
+  
   
   RefPtr<StyleLockedDeclarationBlock> mServoDeclarationBlock;
 
@@ -43,13 +44,10 @@ struct PropertyValuePair {
 };
 
 
-struct KeyframesOffsetHasAny {
-  
-  
-  bool mRangeOffset = false;
-  
-  
-  bool mNonRangeOffset = false;
+
+enum class KeyframeOffsetsHasRangeOffset {
+  No,
+  Yes,
 };
 
 
@@ -107,10 +105,7 @@ struct Keyframe {
       return mRangeName != StyleTimelineRangeName::None;
     }
 
-    bool operator==(const OffsetType& aOther) const {
-      return mRangeName == aOther.mRangeName &&
-             mPercentage == aOther.mPercentage;
-    }
+    bool operator==(const OffsetType& aOther) const = default;
   };
   
   
@@ -123,10 +118,6 @@ struct Keyframe {
   dom::CompositeOperationOrAuto mComposite =
       dom::CompositeOperationOrAuto::Auto;
   CopyableTArray<PropertyValuePair> mPropertyValues;
-
-  
-  
-  bool mIsGenerated = false;
 };
 
 }  

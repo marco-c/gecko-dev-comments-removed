@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SMIL_SMILMILESTONE_H_
 #define DOM_SMIL_SMILMILESTONE_H_
 
@@ -43,13 +41,9 @@ class SMILMilestone {
 
   constexpr SMILMilestone() : mTime(0), mIsEnd(false) {}
 
-  bool operator==(const SMILMilestone& aOther) const {
-    return mTime == aOther.mTime && mIsEnd == aOther.mIsEnd;
-  }
+  bool operator==(const SMILMilestone& aOther) const = default;
 
-  bool operator!=(const SMILMilestone& aOther) const {
-    return !(*this == aOther);
-  }
+  bool operator!=(const SMILMilestone& aOther) const = default;
 
   bool operator<(const SMILMilestone& aOther) const {
     

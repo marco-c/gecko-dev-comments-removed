@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_QUOTA_DATE_H_
 #define DOM_QUOTA_DATE_H_
 
@@ -44,12 +42,7 @@ class Date final {
 
   int32_t ToDays() const { return mValue; }
 
-  bool operator==(const Date& aOther) const { return mValue == aOther.mValue; }
-  bool operator!=(const Date& aOther) const { return mValue != aOther.mValue; }
-  bool operator<(const Date& aOther) const { return mValue < aOther.mValue; }
-  bool operator<=(const Date& aOther) const { return mValue <= aOther.mValue; }
-  bool operator>(const Date& aOther) const { return mValue > aOther.mValue; }
-  bool operator>=(const Date& aOther) const { return mValue >= aOther.mValue; }
+  auto operator<=>(const Date& aOther) const = default;
 
  private:
   explicit Date(int32_t aValue) : mValue(aValue) {}

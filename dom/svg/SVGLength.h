@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGLENGTH_H_
 #define DOM_SVG_SVGLENGTH_H_
 
@@ -46,9 +44,7 @@ class SVGLength {
   
   enum class Axis : uint8_t { X, Y, XY };
 
-  bool operator==(const SVGLength& rhs) const {
-    return mValue == rhs.mValue && mUnit == rhs.mUnit;
-  }
+  bool operator==(const SVGLength& rhs) const = default;
 
   void GetValueAsString(nsAString& aValue) const;
 

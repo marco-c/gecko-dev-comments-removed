@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_RollingNumber_h_
 #define mozilla_RollingNumber_h_
 
@@ -102,12 +100,8 @@ class RollingNumber {
 
   
 
-  bool operator==(const RollingNumber& aOther) const {
-    return mIndex == aOther.mIndex;
-  }
-  bool operator!=(const RollingNumber& aOther) const {
-    return !(*this == aOther);
-  }
+  bool operator==(const RollingNumber& aOther) const = default;
+  bool operator!=(const RollingNumber& aOther) const = default;
 
   
 
