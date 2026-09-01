@@ -963,8 +963,9 @@ struct BaseCompiler final {
 
   
   
-  [[nodiscard]] bool createAbortingOutOfLineTrapStackMap(StackMap** result,
-                                                         Trap t);
+  
+  [[nodiscard]] bool createDebugOnlyStackMapForNonResumingTrap(
+      StackMap** result, Trap t1, Trap t2 = Trap::Limit);
 
   
   
