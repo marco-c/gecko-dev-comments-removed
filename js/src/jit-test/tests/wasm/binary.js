@@ -1,5 +1,3 @@
-
-
 load(libdir + "wasm-binary.js");
 
 const { extractStackFrameFunction } = WasmHelpers;
