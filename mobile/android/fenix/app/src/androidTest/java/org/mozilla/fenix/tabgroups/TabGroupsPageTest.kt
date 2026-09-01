@@ -25,8 +25,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 @RunWith(AndroidJUnit4::class)
 class TabGroupsPageTest {
 
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun verifyEmptyState() {
@@ -35,14 +34,14 @@ class TabGroupsPageTest {
                 TabGroupsPage(
                     state = TabsTrayState.TabGroupState(),
                     onTabGroupClick = {},
-                    onDeleteTabGroupClick = {},
                     onEditTabGroupClick = {},
+                    onShareTabGroupClick = {},
+                    onDeleteTabGroupClick = {},
                 )
             }
         }
 
-        composeTestRule.onNodeWithTag(TabsTrayTestTag.EMPTY_TAB_GROUPS_LIST)
-            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.EMPTY_TAB_GROUPS_LIST).assertIsDisplayed()
     }
 
     @Test
@@ -54,21 +53,19 @@ class TabGroupsPageTest {
         composeTestRule.setContent {
             FirefoxTheme {
                 TabGroupsPage(
-                    state = TabsTrayState.TabGroupState(
-                        groups = listOf(group),
-                    ),
+                    state = TabsTrayState.TabGroupState(groups = listOf(group)),
                     onTabGroupClick = {
                         groupClicked = true
                         clickedGroup = it
                     },
-                    onDeleteTabGroupClick = {},
                     onEditTabGroupClick = {},
+                    onShareTabGroupClick = {},
+                    onDeleteTabGroupClick = {},
                 )
             }
         }
 
-        composeTestRule.onNodeWithTag("${TabsTrayTestTag.TAB_GROUP_ROOT}.${group.id}")
-            .performClick()
+        composeTestRule.onNodeWithTag("${TabsTrayTestTag.TAB_GROUP_ROOT}.${group.id}").performClick()
 
         assertTrue(groupClicked)
         assertEquals(group, clickedGroup)
@@ -83,23 +80,20 @@ class TabGroupsPageTest {
         composeTestRule.setContent {
             FirefoxTheme {
                 TabGroupsPage(
-                    state = TabsTrayState.TabGroupState(
-                        groups = listOf(group),
-                    ),
+                    state = TabsTrayState.TabGroupState(groups = listOf(group)),
                     onTabGroupClick = {},
                     onDeleteTabGroupClick = {
                         deleteClicked = true
                         clickedGroup = it
                     },
                     onEditTabGroupClick = {},
+                    onShareTabGroupClick = {},
                 )
             }
         }
 
-        composeTestRule.onAllNodesWithTag(TabsTrayTestTag.TAB_GROUP_THREE_DOT_BUTTON)[0]
-            .performClick()
-        composeTestRule.onNodeWithTag(TabsTrayTestTag.DELETE_TAB_GROUP)
-            .performClick()
+        composeTestRule.onAllNodesWithTag(TabsTrayTestTag.TAB_GROUP_THREE_DOT_BUTTON)[0].performClick()
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.DELETE_TAB_GROUP).performClick()
 
         assertTrue(deleteClicked)
         assertEquals(group, clickedGroup)
@@ -114,23 +108,20 @@ class TabGroupsPageTest {
         composeTestRule.setContent {
             FirefoxTheme {
                 TabGroupsPage(
-                    state = TabsTrayState.TabGroupState(
-                        groups = listOf(group),
-                    ),
+                    state = TabsTrayState.TabGroupState(groups = listOf(group)),
                     onTabGroupClick = {},
                     onDeleteTabGroupClick = {},
                     onEditTabGroupClick = {
                         editClicked = true
                         clickedGroup = it
                     },
+                    onShareTabGroupClick = {},
                 )
             }
         }
 
-        composeTestRule.onAllNodesWithTag(TabsTrayTestTag.TAB_GROUP_THREE_DOT_BUTTON)[0]
-            .performClick()
-        composeTestRule.onNodeWithTag(TabsTrayTestTag.EDIT_TAB_GROUP)
-            .performClick()
+        composeTestRule.onAllNodesWithTag(TabsTrayTestTag.TAB_GROUP_THREE_DOT_BUTTON)[0].performClick()
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.EDIT_TAB_GROUP).performClick()
 
         assertTrue(editClicked)
         assertEquals(group, clickedGroup)
