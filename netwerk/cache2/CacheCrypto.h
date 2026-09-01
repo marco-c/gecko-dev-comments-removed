@@ -10,7 +10,17 @@
 #include "nscore.h"
 
 namespace mozilla {
+
+namespace security::lockstore {
+class LockstoreService;
+}
+
 namespace net {
+
+
+
+
+
 
 
 
@@ -37,9 +47,17 @@ class CacheCrypto {
   
   
   
+  
+  
+  
+  
+  
+  
+  
   static void Init();
   static void Shutdown();
 
+  
   
   
   static void InitForTesting();
@@ -76,14 +94,24 @@ class CacheCrypto {
                         uint8_t* aOut, const uint8_t* aAad = nullptr,
                         uint32_t aAadLen = 0);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  static already_AddRefed<CacheCrypto> LoadFromKeystore(
+      security::lockstore::LockstoreService* aLockstore);
+
  private:
   CacheCrypto() = default;
   
   ~CacheCrypto();
 
   
-  
-  static void InitInternal();
+  static void Publish(already_AddRefed<CacheCrypto> aCrypto);
 
   bool mUsable{false};
   uint8_t mKeyBytes[kKeyLength]{};

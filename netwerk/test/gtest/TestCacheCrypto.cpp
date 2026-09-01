@@ -5,15 +5,18 @@
 #include <cstring>
 
 #include "CacheCrypto.h"
+#include "LockstoreService.h"
 #include "gtest/gtest.h"
-#include "mozilla/Preferences.h"
+#include "mozilla/SpinEventLoopUntil.h"
 #include "nsCOMPtr.h"
 #include "nsIX509CertDB.h"
 #include "nsServiceManagerUtils.h"
 #include "nsTArray.h"
+#include "nsThreadUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::net;
+using mozilla::security::lockstore::LockstoreService;
 
 namespace {
 
@@ -115,7 +118,6 @@ TEST(CacheCrypto, WrongKeyFails)
   
   
   CacheCrypto::Shutdown();
-  Preferences::SetCString("browser.cache.disk.encryption.key", ""_ns);
   CacheCrypto::InitForTesting();
   RefPtr<CacheCrypto> crypto2 = CacheCrypto::GetInstanceOrNull();
   ASSERT_TRUE(crypto2);
@@ -155,3 +157,64 @@ TEST(CacheCrypto, FreshNoncePerEncryption)
 
   CacheCrypto::Shutdown();
 }
+
+
+
+#ifndef MOZ_WIDGET_ANDROID
+
+TEST(CacheCrypto, KeyIsRecoveredFromTheKeystore)
+{
+  
+  
+  
+  
+  nsCOMPtr<nsIX509CertDB> certDB(do_GetService(NS_X509CERTDB_CONTRACTID));
+  ASSERT_TRUE(certDB);
+
+  
+  
+  RefPtr<LockstoreService> lockstore = LockstoreService::GetSingleton();
+  ASSERT_TRUE(lockstore);
+
+  auto load = [&lockstore]() -> RefPtr<CacheCrypto> {
+    
+    
+    RefPtr<CacheCrypto> crypto;
+    bool done = false;
+    MOZ_ALWAYS_SUCCEEDS(NS_DispatchBackgroundTask(NS_NewRunnableFunction(
+        "TestCacheCrypto::Load", [&lockstore, &crypto, &done]() {
+          crypto = CacheCrypto::LoadFromKeystore(lockstore);
+          
+          
+          NS_DispatchToMainThread(NS_NewRunnableFunction(
+              "TestCacheCrypto::Load::Done", [&done] { done = true; }));
+        })));
+    MOZ_ALWAYS_TRUE(SpinEventLoopUntil("TestCacheCrypto::Load"_ns,
+                                       [&done]() { return done; }));
+    return crypto;
+  };
+
+  RefPtr<CacheCrypto> first = load();
+  ASSERT_TRUE(first);
+
+  const char* msg = "cache contents that must outlive the session";
+  const uint32_t len = strlen(msg);
+  nsTArray<uint8_t> block;
+  block.SetLength(len + CacheCrypto::kBlockOverhead);
+  ASSERT_EQ(NS_OK, first->EncryptBlock(0, reinterpret_cast<const uint8_t*>(msg),
+                                       len, block.Elements()));
+
+  
+  
+  RefPtr<CacheCrypto> second = load();
+  ASSERT_TRUE(second);
+  ASSERT_NE(first.get(), second.get());
+
+  nsTArray<uint8_t> out;
+  out.SetLength(len);
+  EXPECT_EQ(NS_OK,
+            second->DecryptBlock(0, block.Elements(), len, out.Elements()));
+  EXPECT_EQ(0, memcmp(out.Elements(), msg, len));
+}
+
+#endif  

@@ -217,6 +217,7 @@ CacheObserver::Observe(nsISupports* aSubject, const char* aTopic,
     
     
     
+    
     CacheCrypto::Init();
     CacheFileIOManager::OnProfile();
     return NS_OK;

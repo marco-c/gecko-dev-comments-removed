@@ -1860,8 +1860,11 @@ void CacheIndex::WriteIndexToDisk(const StaticMutexAutoLock& aProofOfLock) {
   
   
   
+  
+  
+  
   NetworkEndian::writeUint32(mRWBuf + mRWBufPos,
-                             CacheCrypto::IsActive() ? 1 : 0);
+                             CacheCrypto::IsEnabled() ? 1 : 0);
   mRWBufPos += sizeof(uint32_t);
 
   mSkipEntries = 0;
@@ -2344,7 +2347,10 @@ void CacheIndex::ParseRecords(const StaticMutexAutoLock& aProofOfLock) {
 
     bool wasEncrypted = !!NetworkEndian::readUint32(mRWBuf + pos);
     pos += sizeof(uint32_t);
-    bool nowEncrypted = CacheCrypto::IsActive();
+    
+    
+    
+    bool nowEncrypted = CacheCrypto::IsEnabled();
     if (wasEncrypted != nowEncrypted) {
       
       
