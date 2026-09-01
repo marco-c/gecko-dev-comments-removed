@@ -29,7 +29,6 @@ class HistogramPercentileCounter {
   ~HistogramPercentileCounter();
   void Add(uint32_t value);
   void Add(uint32_t value, size_t count);
-  void Add(const HistogramPercentileCounter& other);
   
   std::optional<uint32_t> GetPercentile(float fraction);
 
@@ -42,11 +41,4 @@ class HistogramPercentileCounter {
 };
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::HistogramPercentileCounter;
-}  
-#endif  
 #endif  
