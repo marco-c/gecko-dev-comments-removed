@@ -2036,6 +2036,10 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
       
       case SYS_BIND:
         return Some(Error(EPERM));
+      
+      case SYS_GETSOCKOPT:
+      case SYS_SETSOCKOPT:
+        return Some(Allow());
 #endif
 
       case SYS_SOCKET:
