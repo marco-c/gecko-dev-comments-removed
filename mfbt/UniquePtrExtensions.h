@@ -11,15 +11,16 @@
 #include <type_traits>
 
 #include "mozilla/Attributes.h"
-#include "mozilla/fallible.h"
 #include "mozilla/Types.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/fallible.h"
 
 #ifdef XP_WIN
 #  include <cstdint>
 #endif
 #if defined(XP_DARWIN)
 #  include <mach/mach.h>
+
 #  include "mozilla/Assertions.h"
 #  include "mozilla/DebugOnly.h"
 #endif
@@ -113,24 +114,26 @@ struct FileHandleHelper {
 #endif
   }
 
-  MOZ_IMPLICIT constexpr FileHandleHelper() : mHandle(kInvalidHandle) {}
+  MOZ_IMPLICIT constexpr FileHandleHelper() = default;
 
   MOZ_IMPLICIT constexpr FileHandleHelper(std::nullptr_t)
-      : mHandle(kInvalidHandle) {}
+      : FileHandleHelper() {}
 
-  bool operator!=(std::nullptr_t) const {
+  static bool IsValid(FileHandleType aHandle) {
 #ifdef XP_WIN
     
     
     
     
     
-    if (mHandle == (void*)-1) {
+    if (aHandle == (void*)-1) {
       return false;
     }
 #endif
-    return mHandle != kInvalidHandle;
+    return aHandle != kInvalidHandle;
   }
+
+  bool operator!=(std::nullptr_t) const { return IsValid(mHandle); }
 
   operator FileHandleType() const { return mHandle; }
 
@@ -151,7 +154,7 @@ struct FileHandleHelper {
   }
 
  private:
-  FileHandleType mHandle;
+  FileHandleType mHandle{kInvalidHandle};
 
 #ifdef XP_WIN
   
@@ -242,6 +245,13 @@ inline void SetCloseOnExec(const UniqueFileHandle& aFile) {
   SetCloseOnExec(aFile.get());
 }
 #endif
+
+inline bool FileHandleIsValid(detail::FileHandleType aFile) {
+  return detail::FileHandleHelper::IsValid(aFile);
+}
+inline bool FileHandleIsValid(const UniqueFileHandle& aFile) {
+  return aFile != nullptr;
+}
 
 #if defined(XP_DARWIN)
 
