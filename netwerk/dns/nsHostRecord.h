@@ -235,6 +235,12 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
   bool negative = false;
 
   
+  
+  
+  
+  bool mFromStaleCache = false;
+
+  
   bool mDoomed = false;
 
   
