@@ -2,7 +2,7 @@
 
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/components/preferences/tests/head.js",
+  "chrome://mochitests/content/browser/browser/components/preferences/tests/head-common.js",
   this
 );
 
@@ -127,11 +127,3 @@ const RESET_PROBLEMATIC_TEST_STATUSES = [
   ],
   ["browser.preferences.config_warning.warningProcessSandbox.dismissed", true],
 ];
-
-
-
-
-
-
-
-
