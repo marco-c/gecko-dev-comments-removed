@@ -105,8 +105,15 @@ nsresult nsHttpChunkedDecoder::ParseChunkRemaining(char* buf, uint32_t count,
       count = mLineBuf.Length();
     }
 
+    
+    
+    if (memchr(buf, '\0', count)) {
+      LOG(("chunked line contains embedded NUL; rejecting\n"));
+      return NS_ERROR_UNEXPECTED;
+    }
+
     if (mWaitEOF) {
-      if (*buf) {
+      if (count) {
         LOG(("got trailer: %s\n", buf));
         
         if (!mTrailers) {
@@ -129,7 +136,7 @@ nsresult nsHttpChunkedDecoder::ParseChunkRemaining(char* buf, uint32_t count,
         mReachedEOF = true;
         LOG(("reached end of chunked-body\n"));
       }
-    } else if (*buf) {
+    } else if (count) {
       char* endptr;
       unsigned long parsedval;  
 
