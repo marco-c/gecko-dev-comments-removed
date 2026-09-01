@@ -84,10 +84,14 @@ extern "C" {
 #define VISUALC_HAS_AVX2 1
 #endif  
 
+#if defined(LIBYUV_ENABLE_SME)
+#undef LIBYUV_DISABLE_SME
+#endif
+
 
 
 #if !defined(LIBYUV_DISABLE_SME) && defined(__aarch64__) && \
-    defined(__linux__) && defined(__clang__) && (__clang_major__ >= 19)
+    defined(__linux__) && defined(__clang__) && (__clang_major__ >= 18)
 #define CLANG_HAS_SME 1
 #endif
 

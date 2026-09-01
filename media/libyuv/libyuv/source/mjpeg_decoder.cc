@@ -142,6 +142,10 @@ LIBYUV_BOOL MJpegDecoder::LoadFrame(const uint8_t* src, size_t src_len) {
     
     
     int databuf_stride = GetComponentStride(i);
+    
+    
+    
+    
     int databuf_size = scanlines_size * databuf_stride;
     if (databuf_strides_[i] != databuf_stride) {
       if (databuf_[i]) {
