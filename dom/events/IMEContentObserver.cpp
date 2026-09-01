@@ -902,8 +902,16 @@ nsresult IMEContentObserver::MaybeHandleSelectionEvent(
     nsPresContext* aPresContext, WidgetSelectionEvent* aEvent) {
   MOZ_ASSERT(aEvent);
   MOZ_ASSERT(aEvent->mMessage == eSetSelection);
-  NS_ASSERTION(!mNeedsToNotifyIMEOfSelectionChange,
-               "Selection cache has not been updated yet");
+  if (mIsForEditContext) {
+    
+    
+    
+    NS_WARNING_ASSERTION(!mNeedsToNotifyIMEOfSelectionChange,
+                         "Selection cache has not been updated yet");
+  } else {
+    NS_ASSERTION(!mNeedsToNotifyIMEOfSelectionChange,
+                 "Selection cache has not been updated yet");
+  }
 
   MOZ_LOG(sIMECOLog, LogLevel::Debug,
           ("0x%p MaybeHandleSelectionEvent(aEvent={ "
