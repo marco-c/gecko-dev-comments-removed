@@ -6600,6 +6600,43 @@ bool BytecodeEmitter::finishReturn(BytecodeOffset setRvalOffset) {
   return emitReturnRval();
 }
 
+bool BytecodeEmitter::emitCheckAwaitResumeKind() {
+  
+  
+  
+
+  
+  static_assert(uint8_t(GeneratorResumeKind::Next) == 0);
+  static_assert(uint8_t(GeneratorResumeKind::Throw) != 0);
+
+  const int32_t startDepth = bytecodeSection().stackDepth();
+  
+
+  InternalIfEmitter ifThrow(this);
+  if (!ifThrow.emitThen()) {
+    
+    return false;
+  }
+  if (!emit1(JSOp::Pop)) {
+    
+    return false;
+  }
+  if (!emit1(JSOp::Throw)) {
+    
+    return false;
+  }
+  bytecodeSection().setStackDepth(startDepth - 1);
+  if (!ifThrow.emitEnd()) {
+    
+    return false;
+  }
+  if (!emit1(JSOp::Pop)) {
+    
+    return false;
+  }
+  return true;
+}
+
 bool BytecodeEmitter::emitGetDotGeneratorInScope(EmitterScope& currentScope) {
   if (!sc->isFunction() && sc->isModuleContext() &&
       sc->asModuleContext()->isAsync()) {
@@ -6747,7 +6784,7 @@ bool BytecodeEmitter::emitAwaitInScope(EmitterScope& currentScope) {
     
     return false;
   }
-  if (!emit1(JSOp::CheckResumeKind)) {
+  if (!emitCheckAwaitResumeKind()) {
     
     return false;
   }
