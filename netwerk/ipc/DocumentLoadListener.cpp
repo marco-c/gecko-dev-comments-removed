@@ -62,6 +62,7 @@
 #include "nsIBrowserDOMWindow.h"
 #include "nsICachingChannel.h"
 #include "nsIClassifiedChannel.h"
+#include "nsIContentPolicy.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsINetworkInterceptController.h"
 #include "nsISiteContainerService.h"
@@ -1288,6 +1289,15 @@ auto DocumentLoadListener::OpenObject(
        aLoadState->URI()->GetSpecOrDefault().get()));
 
   MOZ_ASSERT(!mIsDocumentLoad);
+
+  
+  
+  
+  if (aContentPolicyType != nsIContentPolicy::TYPE_INTERNAL_OBJECT &&
+      aContentPolicyType != nsIContentPolicy::TYPE_INTERNAL_EMBED) {
+    *aRv = NS_ERROR_UNEXPECTED;
+    return nullptr;
+  }
 
   auto sandboxFlags = aLoadState->TriggeringSandboxFlags();
 
