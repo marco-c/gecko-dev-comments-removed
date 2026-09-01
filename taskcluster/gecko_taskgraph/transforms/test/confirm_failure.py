@@ -36,7 +36,7 @@ def test_confirm_failure_tasks(config, tasks):
             cftask = deepcopy(task)
 
             
-            cftask["tier"] = 2
+            cftask["tier"] = max(task["tier"], 2)
             cftask["confirm-failure"] = True
             group, symbol = split_symbol(cftask["treeherder-symbol"])
             group += "-cf"
