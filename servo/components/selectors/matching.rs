@@ -1152,7 +1152,7 @@ pub(crate) fn compound_matches_featureless_host<Impl: SelectorImpl>(
             Component::PseudoElement(..) => {},
             
             
-            Component::Is(ref l) | Component::Where(ref l) => {
+            Component::Is(l) | Component::Where(l) => {
                 let mut any_yes = false;
                 let mut any_no = false;
                 for selector in l.slice() {
@@ -1177,7 +1177,7 @@ pub(crate) fn compound_matches_featureless_host<Impl: SelectorImpl>(
                     matches = MatchesFeaturelessHost::Yes;
                 }
             },
-            Component::Negation(ref l) => {
+            Component::Negation(l) => {
                 
                 
                 

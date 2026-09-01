@@ -3,7 +3,7 @@
 
 
 
-use fxhash::FxHashMap;
+use rustc_hash::FxHashMap;
 
 use crate::bloom::BloomFilter;
 use crate::context::QuirksMode;
@@ -102,7 +102,7 @@ impl RelativeSelectorFilterMap {
                 }
             })
             .or_insert(Entry::Lookup);
-        match entry {
+        match *entry {
             Entry::Lookup => None,
             Entry::HasFilter(ref filter) => Some(filter.as_ref()),
         }
