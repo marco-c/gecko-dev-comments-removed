@@ -247,26 +247,6 @@ class IOUtils final {
     Uint8Array,
   };
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static Result<Ok, IOError> RemoveSync(nsIFile* aFile, bool aIgnoreAbsent,
-                                        bool aRecursive, bool aRetryReadonly);
-
  private:
   ~IOUtils() = default;
 
@@ -405,6 +385,24 @@ class IOUtils final {
                                             const char* aMethodName,
                                             nsIFile* aSource, nsIFile* aDest,
                                             bool aNoOverwrite);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static Result<Ok, IOError> RemoveSync(nsIFile* aFile, bool aIgnoreAbsent,
+                                        bool aRecursive, bool aRetryReadonly);
 
   
 
