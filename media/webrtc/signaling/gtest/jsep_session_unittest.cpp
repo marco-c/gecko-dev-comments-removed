@@ -78,7 +78,7 @@ class JsepSessionTest : public JsepSessionTestBase,
     EXPECT_EQ(NS_OK, mSessionOff->Init());
     EXPECT_EQ(NS_OK, mSessionAns->Init());
 
-    std::vector<UniquePtr<JsepCodecDescription>> preferredCodecs;
+    AutoTArray<UniquePtr<JsepCodecDescription>, 16> preferredCodecs;
     PeerConnectionImpl::SetupPreferredCodecs(preferredCodecs);
     for (auto& codec : preferredCodecs) {
       
