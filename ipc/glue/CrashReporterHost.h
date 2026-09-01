@@ -5,8 +5,6 @@
 #ifndef mozilla_ipc_CrashReporterHost_h
 #define mozilla_ipc_CrashReporterHost_h
 
-#include <functional>
-
 #include "base/process.h"
 #include "nsExceptionHandler.h"
 #include "nsIFile.h"
@@ -19,6 +17,12 @@ class CrashReporterInitArgs;
 }
 
 namespace mozilla::ipc {
+
+#if defined(XP_DARWIN)
+typedef mozilla::UniqueMachSendRight ChildThreadId;
+#else
+typedef CrashReporter::ThreadId ChildThreadId;
+#endif  
 
 
 
@@ -76,7 +80,7 @@ class CrashReporterHost {
 #endif
 
     nsCOMPtr<nsIFile> targetDump;
-    if (!CrashReporter::CreateMinidumpsAndPair(childHandle, mThreadId,
+    if (!CrashReporter::CreateMinidumpsAndPair(childHandle, GetRawThreadId(),
                                                aPairName, mExtraAnnotations,
                                                getter_AddRefs(targetDump))) {
       return false;
@@ -109,8 +113,13 @@ class CrashReporterHost {
                           const nsString& aChildDumpID);
 
  private:
-  
-  int32_t GetCrashType();
+  CrashReporter::ThreadId GetRawThreadId() const {
+#if defined(XP_DARWIN)
+    return mThreadId.get();
+#else
+    return mThreadId;
+#endif  
+  }
 
   static void RecordCrashWithTelemetry(GeckoProcessType aProcessType,
                                        int32_t aCrashType);
@@ -121,7 +130,7 @@ class CrashReporterHost {
  private:
   GeckoProcessType mProcessType;
   GeckoChildID mChildID;
-  CrashReporter::ThreadId mThreadId;
+  ChildThreadId mThreadId;
   time_t mStartTime;
   AnnotationTable mExtraAnnotations;
   nsString mDumpID;
