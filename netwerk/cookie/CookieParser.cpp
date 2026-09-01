@@ -676,7 +676,6 @@ void CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
   }
 
   FixDomain(mCookieData, mHostURI, aBaseDomain, aRequireHostMatch);
-  FixPath(mCookieData, mHostURI);
 
   
   
@@ -716,6 +715,13 @@ void CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
   if (mValidation->Result() != nsICookieValidation::eOK) {
     return;
   }
+
+  
+  
+  
+  
+  
+  FixPath(mCookieData, mHostURI);
 }
 
 void CookieParser::RejectCookie(Rejection aRejection) {
