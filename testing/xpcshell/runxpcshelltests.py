@@ -259,11 +259,6 @@ class XPCShellTestThread(Thread):
         self.infra = False
 
         
-        
-        self.exception = None
-        self.traceback = None
-
-        
         self.event = kwargs.get("event")
         self.done = False  
         self.timer = None  
@@ -528,12 +523,6 @@ class XPCShellTestThread(Thread):
         
         
         self.lock.release()
-
-        
-        
-        
-        
-        self.done = True
 
     def reportTimeoutResult(self):
         """Log the structured failure for a timed-out test: a FAIL test_status
@@ -2623,14 +2612,6 @@ class XPCShellTests:
     def test_ended(self, test):
         pass
 
-    def join_test(self, test):
-        """Wait for a test to be done rather than for its thread to exit: a test
-        that timed out leaving a child process holding its stdout pipe open
-        never returns from communicate(), and testTimeout marks it done for us.
-        The thread is a daemon, so leaving it blocked behind is harmless."""
-        while not test.done:
-            test.join(1)
-
     def runTestList(
         self, tests_queue, sequential_tests, testClass, mobileArgs, **kwargs
     ):
@@ -2739,7 +2720,7 @@ class XPCShellTests:
                     )
                     break
                 self.start_test(test)
-                self.join_test(test)
+                test.join()
                 self.test_ended(test)
                 if (test.failCount > 0 or test.passCount <= 0) and test.retry:
                     self.try_again_list.append(test.test_object)
@@ -2774,7 +2755,7 @@ class XPCShellTests:
                 **try_again_kwargs,
             )
             self.start_test(test)
-            self.join_test(test)
+            test.join()
             self.test_ended(test)
             self.addTestResults(test)
             
