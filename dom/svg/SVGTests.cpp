@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGTests.h"
 
 #include "DOMSVGStringList.h"
@@ -51,8 +49,8 @@ bool SVGTests::HasExtension(const nsAString& aExtension) const {
 
 bool SVGTests::IsConditionalProcessingAttribute(
     const nsAtom* aAttribute) const {
-  for (uint32_t i = 0; i < std::size(sStringListNames); i++) {
-    if (aAttribute == sStringListNames[i]) {
+  for (auto sStringListName : sStringListNames) {
+    if (aAttribute == sStringListName) {
       return true;
     }
   }
@@ -166,7 +164,7 @@ bool SVGTests::PassesRequiredExtensionsTests() const {
 
 bool SVGTests::PassesConditionalProcessingTests() const {
   if (mPassesConditionalProcessingTests) {
-    return mPassesConditionalProcessingTests.value();
+    return *mPassesConditionalProcessingTests;
   }
   if (!PassesRequiredExtensionsTests()) {
     return false;
@@ -191,7 +189,7 @@ bool SVGTests::PassesConditionalProcessingTests() const {
 
     mPassesConditionalProcessingTests =
         Some(FindBestLanguage(availLocales, AsSVGElement()->OwnerDoc()) >= 0);
-    return mPassesConditionalProcessingTests.value();
+    return *mPassesConditionalProcessingTests;
   }
 
   mPassesConditionalProcessingTests = Some(true);
