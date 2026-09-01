@@ -74,27 +74,15 @@ static MOZ_ALWAYS_INLINE xsimd::batch<uint16_t, Arch> ExtractAlpha_SIMD(
 
 
 
-template <class Arch, bool aSwapRB, bool aOpaqueAlpha>
+template <class Arch>
   requires std::same_as<Arch, xsimd::neon>
-static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> SwizzleVector_SIMD(
-    const xsimd::batch<uint8_t, Arch>& aSrc) {
-  if constexpr (aSwapRB) {
-    
-    
-    
-    uint16x8_t src16 = vreinterpretq_u16_u8(aSrc);
-    return vreinterpretq_u8_u16(vbslq_u16(
-        vdupq_n_u16(0x00FF), vrev32q_u16(src16),
-        aOpaqueAlpha
-            ? vorrq_u16(src16, vreinterpretq_u16_u32(vdupq_n_u32(0xFF000000)))
-            : src16));
-  }
-  if constexpr (aOpaqueAlpha) {
-    return vreinterpretq_u8_u16(
-        vorrq_u16(vreinterpretq_u16_u8(aSrc),
-                  vreinterpretq_u16_u32(vdupq_n_u32(0xFF000000))));
-  }
-  return aSrc;
+static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> SwapRB8_SIMD(
+    const xsimd::batch<uint8_t, Arch>& aPx) {
+  
+  
+  uint16x8_t px16 = vreinterpretq_u16_u8(aPx);
+  return vreinterpretq_u8_u16(
+      vbslq_u16(vdupq_n_u16(0x00FF), vrev32q_u16(px16), px16));
 }
 
 template <class Arch>
