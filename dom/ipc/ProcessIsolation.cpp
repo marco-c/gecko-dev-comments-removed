@@ -417,7 +417,7 @@ static nsAutoCString OriginSuffixForRemoteType(OriginAttributes aAttrs,
                                                bool aDisableJit) {
   nsAutoCString originSuffix;
   aAttrs.StripAttributes(OriginAttributes::STRIP_FIRST_PARTY_DOMAIN |
-                         OriginAttributes::STRIP_PARITION_KEY);
+                         OriginAttributes::STRIP_PARTITION_KEY);
   aAttrs.CreateSuffix(originSuffix);
 
   if (aDisableJit) {
@@ -815,6 +815,16 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
        aChannelCreationURI->GetSpecOrDefault().get()));
 
   
+  
+  
+  OriginAttributes originAttributes = aTopBC->OriginAttributesRef();
+  if (aForNewTab && !aParentWindow &&
+      resultOrPrecursor->GetIsContentPrincipal()) {
+    originAttributes.mUserContextId =
+        resultOrPrecursor->OriginAttributesRef().mUserContextId;
+  }
+
+  
   if (mozilla::BFCacheInParent() && nsSHistory::GetMaxTotalViewers() > 0 &&
       !aForNewTab && !aParentWindow && !aTopBC->HadOriginalOpener() &&
       behavior != IsolationBehavior::Parent &&
@@ -843,9 +853,8 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
 
   
   if (behavior != IsolationBehavior::WebContent) {
-    options.mRemoteType = MOZ_TRY(
-        SpecialBehaviorRemoteType(behavior, aCurrentRemoteType, aParentWindow,
-                                  aTopBC->OriginAttributesRef()));
+    options.mRemoteType = MOZ_TRY(SpecialBehaviorRemoteType(
+        behavior, aCurrentRemoteType, aParentWindow, originAttributes));
 
     if (options.mRemoteType != aCurrentRemoteType &&
         (options.mRemoteType.IsEmpty() || aCurrentRemoteType.IsEmpty())) {
@@ -964,7 +973,7 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
   switch (webProcessType) {
     case WebProcessType::Web:
       options.mRemoteType =
-          SharedWebRemoteType(aTopBC->OriginAttributesRef(), !isJitAllowed);
+          SharedWebRemoteType(originAttributes, !isJitAllowed);
       break;
     case WebProcessType::WebIsolated:
       options.mRemoteType =
@@ -1467,7 +1476,21 @@ bool IsIsolateHighValueSiteEnabled() {
 
 bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
     nsIPrincipal* aPrincipal, const nsACString& aRemoteType,
-    const EnumSet<ValidatePrincipalOptions>& aOptions) {
+    const EnumSet<ValidatePrincipalOptions>& aOptions,
+    FunctionRef<bool(nsIPrincipal*)> aIsPrincipalLoaded) {
+#ifdef DEBUG
+  if (!aIsPrincipalLoaded) {
+    MOZ_ASSERT(
+        aOptions.contains(ValidatePrincipalOptions::AllowNotLoadedOrigin),
+        "`AllowNotLoadedOrigin` is required if calling "
+        "ValidatePrincipalCouldPotentiallyBeLoadedBy directly");
+    MOZ_ASSERT(
+        !aOptions.contains(ValidatePrincipalOptions::AllowSystemIfLoaded),
+        "`AllowSystemIfLoaded` is invalid if calling "
+        "ValidatePrincipalCouldPotentiallyBeLoadedBy directly");
+  }
+#endif
+
   
   if (aRemoteType == NOT_REMOTE_TYPE) {
     return true;
@@ -1486,7 +1509,9 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
 
   
   if (aPrincipal->IsSystemPrincipal()) {
-    return aOptions.contains(ValidatePrincipalOptions::AllowSystem);
+    return aOptions.contains(ValidatePrincipalOptions::AlwaysAllowSystem) ||
+           (aOptions.contains(ValidatePrincipalOptions::AllowSystemIfLoaded) &&
+            aIsPrincipalLoaded(aPrincipal));
   }
 
   
@@ -1508,8 +1533,8 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
         do_QueryInterface(aPrincipal);
     const auto& allowList = expandedPrincipal->AllowList();
     for (const auto& innerPrincipal : allowList) {
-      if (!ValidatePrincipalCouldPotentiallyBeLoadedBy(innerPrincipal,
-                                                       aRemoteType, aOptions)) {
+      if (!ValidatePrincipalCouldPotentiallyBeLoadedBy(
+              innerPrincipal, aRemoteType, aOptions, aIsPrincipalLoaded)) {
         return false;
       }
     }
@@ -1534,8 +1559,26 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
 
   
   
+  
   if (originScheme == "resource"_ns) {
     return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (originScheme == "moz-extension"_ns) {
+    return true;
+  }
+
+  
+  
+  if (!aOptions.contains(ValidatePrincipalOptions::AllowNotLoadedOrigin) &&
+      !aIsPrincipalLoaded(aPrincipal)) {
+    return false;
   }
 
   
@@ -1590,15 +1633,6 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
         MOZ_CRASH("Unexpected IsolationBehaviorForURI for about: URI");
         return false;
     }
-  }
-
-  
-  
-  
-  
-  
-  if (originScheme == "moz-extension"_ns) {
-    return true;
   }
 
   
