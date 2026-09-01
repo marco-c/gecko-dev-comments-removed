@@ -543,13 +543,11 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
 
   nsAutoCString xdgConfigDirs(PR_GetEnv("XDG_CONFIG_DIRS"));
   for (const auto& path : xdgConfigDirs.Split(':')) {
-    if (path[0] != '/') {
+    if (path.IsEmpty() || path[0] != '/') {
       continue;
     }
 
-    if (!path.IsEmpty()) {  
-      policy->AddFutureDir(rdonly, PromiseFlatCString(path).get());
-    }
+    policy->AddFutureDir(rdonly, PromiseFlatCString(path).get());
   }
 
   
@@ -563,7 +561,7 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
   
   nsAutoCString xdgDataDirs(PR_GetEnv("XDG_DATA_DIRS"));
   for (const auto& path : xdgDataDirs.Split(':')) {
-    if (path[0] != '/') {
+    if (path.IsEmpty() || path[0] != '/') {
       continue;
     }
 
