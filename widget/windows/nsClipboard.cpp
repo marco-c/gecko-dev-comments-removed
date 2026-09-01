@@ -148,8 +148,6 @@ nsClipboard::nsClipboard()
 
 
 
-nsClipboard::~nsClipboard() {}
-
 NS_IMPL_ISUPPORTS_INHERITED(nsClipboard, nsBaseClipboard, nsIObserver)
 
 NS_IMETHODIMP
@@ -218,6 +216,55 @@ template bool nsClipboard::FileGroupDescriptorHasItems<FILEGROUPDESCRIPTORW>(
     HGLOBAL, uint64_t);
 template bool nsClipboard::FileGroupDescriptorHasItems<FILEGROUPDESCRIPTORA>(
     HGLOBAL, uint64_t);
+
+template <typename CharT>
+static bool HasValidDropFilesList(DROPFILES* aDropFiles, size_t aBufferSize) {
+  
+  
+  if (aDropFiles->pFiles < sizeof(DROPFILES) ||
+      aDropFiles->pFiles > aBufferSize ||
+      aBufferSize - aDropFiles->pFiles < 2 * sizeof(CharT)) {
+    return false;
+  }
+
+  const BYTE* list =
+      reinterpret_cast<const BYTE*>(aDropFiles) + aDropFiles->pFiles;
+  const CharT* charList = reinterpret_cast<const CharT*>(list);
+  
+  const CharT* endCharList =
+      charList + ((aBufferSize - aDropFiles->pFiles) / sizeof(CharT));
+
+  while (charList <= endCharList - 2) {
+    if (charList[0] == CharT(0) && charList[1] == CharT(0)) {
+      return true;
+    }
+    ++charList;
+  }
+  return false;
+}
+
+
+bool nsClipboard::IsValidDropFilesData(HGLOBAL aHGlobal) {
+  if (!aHGlobal) {
+    return false;
+  }
+
+  size_t size = ::GlobalSize(aHGlobal);
+  if (size < sizeof(DROPFILES)) {
+    return false;
+  }
+
+  ScopedOLELock<DROPFILES*> dropFiles(aHGlobal);
+  if (!dropFiles) {
+    return false;
+  }
+
+  if (dropFiles->fWide) {
+    return HasValidDropFilesList<WCHAR>(dropFiles.get(), size);
+  }
+
+  return HasValidDropFilesList<CHAR>(dropFiles.get(), size);
+}
 
 
 
@@ -960,6 +1007,10 @@ nsresult nsClipboard::GetNativeDataOffClipboard(IDataObject* aDataObject,
       
       
       
+      if (!IsValidDropFilesData(stm.hGlobal)) {
+        return NS_ERROR_INVALID_ARG;
+      }
+
       ScopedOLELock<HDROP> dropFiles(stm.hGlobal);
 
       UINT numFiles = ::DragQueryFileW(dropFiles.get(), 0xFFFFFFFF, nullptr, 0);

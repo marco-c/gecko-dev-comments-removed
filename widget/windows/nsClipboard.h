@@ -22,7 +22,7 @@ struct IDataObject;
 
 
 class nsClipboard final : public nsBaseClipboard, public nsIObserver {
-  virtual ~nsClipboard();
+  virtual ~nsClipboard() = default;
 
  public:
   nsClipboard();
@@ -64,6 +64,9 @@ class nsClipboard final : public nsBaseClipboard, public nsIObserver {
   template <typename GroupDesc>
   static bool FileGroupDescriptorHasItems(HGLOBAL aHGlobal,
                                           uint64_t aItemCount);
+
+  
+  static bool IsValidDropFilesData(HGLOBAL aHGlobal);
 
   
   
