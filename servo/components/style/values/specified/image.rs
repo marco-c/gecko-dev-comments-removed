@@ -36,11 +36,6 @@ use style_traits::{CssString, CssType, CssWriter, KeywordsCollectFn, ParseError}
 use style_traits::{SpecifiedValueInfo, StyleParseErrorKind, ToCss};
 use thin_vec::ThinVec;
 
-#[inline]
-fn gradient_color_interpolation_method_enabled() -> bool {
-    static_prefs::pref!("layout.css.gradient-color-interpolation-method.enabled")
-}
-
 
 
 pub type Image = generic::Image<Gradient, SpecifiedUrl, Color, Percentage, Resolution>;
@@ -849,20 +844,6 @@ impl Gradient {
     }
 
     
-    fn try_parse_color_interpolation_method<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Option<ColorInterpolationMethod> {
-        if gradient_color_interpolation_method_enabled() {
-            input
-                .try_parse(|i| ColorInterpolationMethod::parse(context, i))
-                .ok()
-        } else {
-            None
-        }
-    }
-
-    
     
     fn parse_linear<'i, 't>(
         context: &ParserContext,
@@ -873,15 +854,18 @@ impl Gradient {
         let mut flags = GradientFlags::empty();
         flags.set(GradientFlags::REPEATING, repeating);
 
-        let mut color_interpolation_method =
-            Self::try_parse_color_interpolation_method(context, input);
+        let mut color_interpolation_method = input
+            .try_parse(|i| ColorInterpolationMethod::parse(context, i))
+            .ok();
 
         let direction = input
             .try_parse(|p| LineDirection::parse(context, p, &mut compat_mode))
             .ok();
 
         if direction.is_some() && color_interpolation_method.is_none() {
-            color_interpolation_method = Self::try_parse_color_interpolation_method(context, input);
+            color_interpolation_method = input
+                .try_parse(|i| ColorInterpolationMethod::parse(context, i))
+                .ok();
         }
 
         
@@ -922,8 +906,9 @@ impl Gradient {
         let mut flags = GradientFlags::empty();
         flags.set(GradientFlags::REPEATING, repeating);
 
-        let mut color_interpolation_method =
-            Self::try_parse_color_interpolation_method(context, input);
+        let mut color_interpolation_method = input
+            .try_parse(|i| ColorInterpolationMethod::parse(context, i))
+            .ok();
 
         let (shape, position) = match compat_mode {
             GradientCompatMode::Modern => {
@@ -948,7 +933,9 @@ impl Gradient {
 
         let has_shape_or_position = shape.is_ok() || position.is_some();
         if has_shape_or_position && color_interpolation_method.is_none() {
-            color_interpolation_method = Self::try_parse_color_interpolation_method(context, input);
+            color_interpolation_method = input
+                .try_parse(|i| ColorInterpolationMethod::parse(context, i))
+                .ok();
         }
 
         if has_shape_or_position || color_interpolation_method.is_some() {
@@ -989,8 +976,9 @@ impl Gradient {
         let mut flags = GradientFlags::empty();
         flags.set(GradientFlags::REPEATING, repeating);
 
-        let mut color_interpolation_method =
-            Self::try_parse_color_interpolation_method(context, input);
+        let mut color_interpolation_method = input
+            .try_parse(|i| ColorInterpolationMethod::parse(context, i))
+            .ok();
 
         let angle = input.try_parse(|i| {
             i.expect_ident_matching("from")?;
@@ -1005,7 +993,9 @@ impl Gradient {
 
         let has_angle_or_position = angle.is_ok() || position.is_ok();
         if has_angle_or_position && color_interpolation_method.is_none() {
-            color_interpolation_method = Self::try_parse_color_interpolation_method(context, input);
+            color_interpolation_method = input
+                .try_parse(|i| ColorInterpolationMethod::parse(context, i))
+                .ok();
         }
 
         if has_angle_or_position || color_interpolation_method.is_some() {
@@ -1394,4 +1384,31 @@ pub enum ImageRendering {
     Optimizespeed,
     #[cfg(feature = "gecko")]
     Optimizequality,
+}
+
+
+
+
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    FromPrimitive,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum ImageDecoding {
+    
+    Auto,
+    
+    Sync,
 }
