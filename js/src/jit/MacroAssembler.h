@@ -4478,18 +4478,18 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
 
   void atomicEffectOp64(Synchronization sync, AtomicOp op, Register64 value,
-                        const Address& mem) DEFINED_ON(x64);
+                        const Address& mem) DEFINED_ON(x64, loong64);
 
   void atomicEffectOp64(Synchronization sync, AtomicOp op, Register64 value,
                         const Address& mem, Register64 temp)
-      DEFINED_ON(arm, arm64, mips64, loong64, riscv64);
+      DEFINED_ON(arm, arm64, mips64, riscv64);
 
   void atomicEffectOp64(Synchronization sync, AtomicOp op, Register64 value,
-                        const BaseIndex& mem) DEFINED_ON(x64);
+                        const BaseIndex& mem) DEFINED_ON(x64, loong64);
 
   void atomicEffectOp64(Synchronization sync, AtomicOp op, Register64 value,
                         const BaseIndex& mem, Register64 temp)
-      DEFINED_ON(arm, arm64, mips64, loong64, riscv64);
+      DEFINED_ON(arm, arm64, mips64, riscv64);
 
   
   
