@@ -837,26 +837,28 @@ RTCError BaseChannel::SetRemoteContent_w(const MediaContentDescription* content,
     }
   }
 
+  
+  
+  const bool receive_non_sender_rtt =
+      content->receive_non_sender_rtt() ||
+      absl::c_any_of(content->codecs(),
+                     [](const Codec& codec) { return HasRrtr(codec); });
+
   if (media_type_ == MediaType::AUDIO) {
     voice_media_receive_channel()->SetRtcpMode(content->rtcp_reduced_size()
                                                    ? RtcpMode::kReducedSize
                                                    : RtcpMode::kCompound);
     voice_media_receive_channel()->SetReceiveNackEnabled(
         voice_media_send_channel()->SenderNackEnabled());
-    
-    
-    
     voice_media_receive_channel()->SetReceiveNonSenderRttEnabled(
-        content->receive_non_sender_rtt());
+        receive_non_sender_rtt);
   }
 
   RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(0);
 
   if (media_type_ == MediaType::VIDEO) {
-    
-    
     video_media_receive_channel()->SetReceiveNonSenderRttEnabled(
-        content->receive_non_sender_rtt());
+        receive_non_sender_rtt);
   }
 
   error = UpdateRemoteStreams_w(content, type);

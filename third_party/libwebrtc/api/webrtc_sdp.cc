@@ -1390,17 +1390,6 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
     InitAttrLine(kAttributeRtcpXr, &os);
     os << kSdpDelimiterColon << kRtcpXrFormatRcvrRtt << "=all";
     AddLine(os.str(), message);
-    
-    
-    
-    
-    
-    for (const Codec& codec : media_desc->codecs()) {
-      StringBuilder fb_os;
-      WriteRtcpFbHeader(codec.id, &fb_os);
-      fb_os << " " << kRtcpFbParamRrtr;
-      AddLine(fb_os.str(), message);
-    }
   }
 
   if (media_desc->conference_mode()) {
@@ -2556,14 +2545,6 @@ bool ParseRtcpFbAttribute(absl::string_view line,
     param.append(iter->data(), iter->length());
   }
   const FeedbackParam feedback_param(id, param);
-
-  
-  
-  
-  if (id == kRtcpFbParamRrtr) {
-    media_desc->set_receive_non_sender_rtt(true);
-    return true;
-  }
 
   if (media_type == MediaType::AUDIO || media_type == MediaType::VIDEO) {
     UpdateCodec(media_desc, payload_type, feedback_param);
