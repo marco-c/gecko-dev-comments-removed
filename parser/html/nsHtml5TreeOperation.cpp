@@ -10,6 +10,7 @@
 #include "mozilla/dom/Comment.h"
 #include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/DocGroup.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentFragment.h"
 #include "mozilla/dom/DocumentType.h"
 #include "mozilla/dom/Element.h"
@@ -570,6 +571,10 @@ void nsHtml5TreeOperation::SetHTMLElementAttributesFast(
   }
   
   
+  const nsAutoScriptBlocker scriptBlocker;
+
+  
+  
   
   
   
@@ -577,7 +582,7 @@ void nsHtml5TreeOperation::SetHTMLElementAttributesFast(
   for (nsHtml5AttributeEntry& entry : *aAttributes) {
     aElement->SetNoNameSpaceAttrOnNewlyCreatedElement(
         entry.ForgetNameHTML(), entry.ValueRef(),
-        isPendingMappedAttributeEvaluation);
+        isPendingMappedAttributeEvaluation, scriptBlocker);
   }
 #ifdef DEBUG
   aAttributes->MarkAsMovedFrom();

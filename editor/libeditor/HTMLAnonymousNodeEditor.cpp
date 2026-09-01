@@ -7,6 +7,7 @@
 #include "CSSEditUtils.h"
 #include "HTMLEditUtils.h"
 
+#include "js/GCAPI.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/dom/BindContext.h"
@@ -109,7 +110,8 @@ class ElementDeletionObserver final : public nsStubMultiMutationObserver {
 
 NS_IMPL_ISUPPORTS(ElementDeletionObserver, nsIMutationObserver)
 
-void ElementDeletionObserver::ParentChainChanged(nsIContent* aContent) {
+void ElementDeletionObserver::ParentChainChanged(nsIContent* aContent)
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY {
   
   
   if (aContent != mObservedElement || !mNativeAnonNode ||
@@ -122,30 +124,36 @@ void ElementDeletionObserver::ParentChainChanged(nsIContent* aContent) {
 
   
   
-  nsCOMPtr<nsIContent> nativeAnonNode(mNativeAnonNode);
+  mObservedElement->RemoveMutationObserver(self);
+  mObservedElement = nullptr;
+  nsCOMPtr<nsIContent> nativeAnonNode = mNativeAnonNode;
   mNativeAnonNode = nullptr;
   nativeAnonNode->RemoveMutationObserver(self);
   ManualNACPtr::RemoveContentFromNACArray(nativeAnonNode);
-
   
   
-  mObservedElement->RemoveMutationObserver(self);
-  mObservedElement = nullptr;
+  
 }
 
 void ElementDeletionObserver::NodeWillBeDestroyed(nsINode* aNode) {
   MOZ_DIAGNOSTIC_ASSERT(mSelf);
   MOZ_ASSERT(aNode == mNativeAnonNode || aNode == mObservedElement);
 
+  nsAutoScriptBlocker scriptBlocker;
   
   
   
   RefPtr<ElementDeletionObserver> self = std::move(mSelf);
   mObservedElement->RemoveMutationObserver(self);
   mObservedElement = nullptr;
-  mNativeAnonNode->RemoveMutationObserver(self);
-  mNativeAnonNode->UnbindFromTree();
+  const RefPtr nativeAnonNode = mNativeAnonNode;
   mNativeAnonNode = nullptr;
+  nativeAnonNode->RemoveMutationObserver(self);
+  nativeAnonNode->UnbindFromTree();
+  
+  
+  
+  
 }
 
 
@@ -174,6 +182,13 @@ ManualNACPtr HTMLEditor::CreateAnonymousElement(nsAtom* aTag,
   }
 
   
+  
+  Maybe<JS::AutoAssertNoGC> maybeAssertNoGC;
+  if (aTag == nsGkAtoms::span || aTag == nsGkAtoms::img) {
+    maybeAssertNoGC.emplace();
+  }
+
+  
   RefPtr<Element> newElement = CreateHTMLContent(aTag);
   if (!newElement) {
     NS_WARNING("EditorBase::CreateHTMLContent() failed");
@@ -199,6 +214,8 @@ ManualNACPtr HTMLEditor::CreateAnonymousElement(nsAtom* aTag,
     }
   }
 
+  
+  
   nsAutoScriptBlocker scriptBlocker;
 
   

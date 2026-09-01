@@ -281,12 +281,14 @@ bool HTMLEditor::CreateGrabberInternal(nsIContent& aParentContent) {
     return false;
   }
 
+  
+  
   mGrabber = CreateAnonymousElement(nsGkAtoms::span, aParentContent,
                                     u"mozGrabber"_ns, false);
 
   
   
-  if (!mGrabber) {
+  if (!mGrabber) [[unlikely]] {
     NS_WARNING(
         "HTMLEditor::CreateAnonymousElement(nsGkAtoms::span, mozGrabber) "
         "failed");

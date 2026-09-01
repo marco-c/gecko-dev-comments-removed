@@ -58,9 +58,11 @@ using namespace dom;
 
 ManualNACPtr HTMLEditor::CreateResizer(int16_t aLocation,
                                        nsIContent& aParentContent) {
+  
+  
   ManualNACPtr resizer = CreateAnonymousElement(nsGkAtoms::span, aParentContent,
                                                 u"mozResizer"_ns, false);
-  if (!resizer) {
+  if (!resizer) [[unlikely]] {
     NS_WARNING(
         "HTMLEditor::CreateAnonymousElement(nsGkAtoms::span, mozResizer) "
         "failed");
@@ -127,11 +129,17 @@ ManualNACPtr HTMLEditor::CreateShadow(nsIContent& aParentContent,
     name = nsGkAtoms::span;
   }
 
+  
+  
+  
   return CreateAnonymousElement(name, aParentContent, u"mozResizingShadow"_ns,
                                 true);
 }
 
 ManualNACPtr HTMLEditor::CreateResizingInfo(nsIContent& aParentContent) {
+  
+
+  
   
   return CreateAnonymousElement(nsGkAtoms::span, aParentContent,
                                 u"mozResizingInfo"_ns, true);

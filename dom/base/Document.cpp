@@ -17300,7 +17300,7 @@ bool Document::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
 
   
   
-  auto readyCheck = [&]() -> Maybe<bool> {
+  auto readyCheck = [&]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA -> Maybe<bool> {
     switch (FullscreenElementReadyCheck(*aRequest)) {
       case ElementReadyCheckResult::eOk:
         return Nothing();

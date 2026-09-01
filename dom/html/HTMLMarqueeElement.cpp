@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/HTMLMarqueeElement.h"
 
 #include "mozilla/AsyncEventDispatcher.h"
@@ -50,7 +48,7 @@ nsresult HTMLMarqueeElement::BindToTree(BindContext& aContext,
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (IsInComposedDoc()) {
-    AttachAndSetUAShadowRoot();
+    AttachAndSetUAShadowRoot(NotifyUAWidget::Yes);
   }
 
   return rv;
