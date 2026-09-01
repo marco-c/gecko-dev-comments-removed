@@ -14,7 +14,7 @@ function click(target) {
 
 function openContextMenu(target) {
   let popupShownPromise = BrowserTestUtils.waitForPopupEvent(
-    window.EditContextMenu.popup,
+    target.closest("moz-input-box").menupopup,
     "shown"
   );
 
@@ -149,29 +149,32 @@ add_task(async function rightClickSelectsAll() {
 
   checkPrimarySelection();
 
-  let contextMenu = window.EditContextMenu.popup;
+  let contextMenu = gURLBar.querySelector("moz-input-box").menupopup;
 
   
-  let contextMenuItem = contextMenu.querySelector(
-    "#edit-contextmenu-select-all"
-  );
+  let contextMenuItem = contextMenu.firstElementChild;
+  while (
+    contextMenuItem.nextElementSibling &&
+    contextMenuItem.getAttribute("cmd") != "cmd_selectAll"
+  ) {
+    contextMenuItem = contextMenuItem.nextElementSibling;
+  }
   Assert.ok(
     contextMenuItem,
     "The context menu should have the select all menu item."
   );
 
-  let controller =
-    document.commandDispatcher.getControllerForCommand("cmd_selectAll");
-  let enabled = controller.isCommandEnabled("cmd_selectAll");
+  let controller = document.commandDispatcher.getControllerForCommand(
+    contextMenuItem.getAttribute("cmd")
+  );
+  let enabled = controller.isCommandEnabled(
+    contextMenuItem.getAttribute("cmd")
+  );
   Assert.ok(enabled, "The context menu select all item should be enabled.");
 
   
   
-  
-  let commandPromise = BrowserTestUtils.waitForEvent(
-    document.getElementById("cmd_selectAll"),
-    "command"
-  );
+  let commandPromise = BrowserTestUtils.waitForEvent(contextMenu, "command");
   await click(contextMenuItem);
   await commandPromise;
   Assert.equal(
@@ -185,7 +188,7 @@ add_task(async function rightClickSelectsAll() {
     "The entire URL should be selected after clicking selectAll button."
   );
 
-  window.EditContextMenu.popup.hidePopup();
+  gURLBar.querySelector("moz-input-box").menupopup.hidePopup();
   gURLBar.blur();
   checkPrimarySelection(gURLBar.untrimmedValue);
   await SpecialPowers.popPrefEnv();
@@ -213,7 +216,7 @@ add_task(async function contextMenuDoesNotCancelSelection() {
     "The selection should not have changed."
   );
 
-  window.EditContextMenu.popup.hidePopup();
+  gURLBar.querySelector("moz-input-box").menupopup.hidePopup();
   gURLBar.blur();
   checkPrimarySelection();
 });
