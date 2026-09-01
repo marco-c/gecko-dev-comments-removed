@@ -16,20 +16,16 @@
 
 #include <map>
 
+#include "api/sequence_checker.h"
 #include "api/units/timestamp.h"
 #include "call/video_send_stream.h"
 #include "modules/include/module_common_types_public.h"
-#include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
 #include "video/stats_counter.h"
 
 namespace webrtc {
-
-
-
-
-
 
 
 class SendDelayStats {
@@ -61,18 +57,20 @@ class SendDelayStats {
   };
 
   void UpdateHistograms();
-  void RemoveOld(Timestamp now) RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+  void RemoveOld(Timestamp now) RTC_RUN_ON(worker_sequence_checker_);
 
   Clock* const clock_;
-  Mutex mutex_;
+
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker worker_sequence_checker_;
 
   std::map<uint16_t, Packet, SequenceNumberOlderThan> packets_
-      RTC_GUARDED_BY(mutex_);
-  size_t num_old_packets_ RTC_GUARDED_BY(mutex_);
-  size_t num_skipped_packets_ RTC_GUARDED_BY(mutex_);
+      RTC_GUARDED_BY(worker_sequence_checker_);
+  size_t num_old_packets_ RTC_GUARDED_BY(worker_sequence_checker_);
+  size_t num_skipped_packets_ RTC_GUARDED_BY(worker_sequence_checker_);
 
   
-  std::map<uint32_t, AvgCounter> send_delay_counters_ RTC_GUARDED_BY(mutex_);
+  std::map<uint32_t, AvgCounter> send_delay_counters_
+      RTC_GUARDED_BY(worker_sequence_checker_);
 };
 
 }  
