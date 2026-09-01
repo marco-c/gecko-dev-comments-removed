@@ -3765,30 +3765,70 @@ static void AtomicExchange(MacroAssembler& masm,
   bool signExtend = Scalar::isSignedIntType(type);
   unsigned nbytes = Scalar::byteSize(type);
 
-  switch (nbytes) {
-    case 1:
-    case 2:
-      break;
-    case 4:
-      MOZ_ASSERT(valueTemp == InvalidReg);
-      MOZ_ASSERT(offsetTemp == InvalidReg);
-      MOZ_ASSERT(maskTemp == InvalidReg);
-      break;
-    default:
-      MOZ_CRASH();
-  }
-
   Register scratch2 = temps.Acquire();
   masm.computeEffectiveAddress(mem, scratch2);
 
-  if (nbytes == 4) {
-    auto before = masm.currentOffset();
-    masm.as_amswap_db_w(output, scratch2, value);
-    if (access) {
-      masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic,
-                           FaultingCodeRange(before));
+  switch (nbytes) {
+    case 1: {
+      if (!LOONG64Flags::HasLamBhExtension()) {
+        break;
+      }
+      MOZ_ASSERT(valueTemp == InvalidReg);
+      MOZ_ASSERT(offsetTemp == InvalidReg);
+      MOZ_ASSERT(maskTemp == InvalidReg);
+
+      FaultingCodeRange fcr(masm.currentOffset());
+      masm.as_amswap_db_b(output, scratch2, value);
+      if (access) {
+        masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic, fcr);
+      }
+
+      
+      
+      
+      
+      
+      
+      if (!signExtend) {
+        masm.as_andi(output, output, 0xff);
+      }
+      return;
     }
-    return;
+    case 2: {
+      if (!LOONG64Flags::HasLamBhExtension()) {
+        break;
+      }
+      MOZ_ASSERT(valueTemp == InvalidReg);
+      MOZ_ASSERT(offsetTemp == InvalidReg);
+      MOZ_ASSERT(maskTemp == InvalidReg);
+
+      FaultingCodeRange fcr(masm.currentOffset());
+      masm.as_amswap_db_h(output, scratch2, value);
+      if (access) {
+        masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic, fcr);
+      }
+
+      if (!signExtend) {
+        
+        masm.as_bstrpick_d(output, output, 15, 0);
+      }
+      return;
+    }
+    case 4: {
+      MOZ_ASSERT(valueTemp == InvalidReg);
+      MOZ_ASSERT(offsetTemp == InvalidReg);
+      MOZ_ASSERT(maskTemp == InvalidReg);
+
+      FaultingCodeRange fcr(masm.currentOffset());
+      masm.as_amswap_db_w(output, scratch2, value);
+      if (access) {
+        masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic, fcr);
+      }
+
+      return;
+    }
+    default:
+      MOZ_CRASH();
   }
 
   Label again;
@@ -3878,23 +3918,14 @@ static void AtomicFetchOp(MacroAssembler& masm,
   bool signExtend = Scalar::isSignedIntType(type);
   unsigned nbytes = Scalar::byteSize(type);
 
-  switch (nbytes) {
-    case 1:
-    case 2:
-      break;
-    case 4:
-      MOZ_ASSERT(valueTemp == InvalidReg);
-      MOZ_ASSERT(offsetTemp == InvalidReg);
-      MOZ_ASSERT(maskTemp == InvalidReg);
-      break;
-    default:
-      MOZ_CRASH();
-  }
-
   Register scratch2 = temps.Acquire();
   masm.computeEffectiveAddress(mem, scratch2);
 
   if (nbytes == 4) {
+    MOZ_ASSERT(valueTemp == InvalidReg);
+    MOZ_ASSERT(offsetTemp == InvalidReg);
+    MOZ_ASSERT(maskTemp == InvalidReg);
+
     Register operand = value;
     if (op == AtomicOp::Sub) {
       
@@ -3922,6 +3953,45 @@ static void AtomicFetchOp(MacroAssembler& masm,
     }
     if (access) {
       masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic, fcr);
+    }
+    return;
+  }
+
+  if (LOONG64Flags::HasLamBhExtension() &&
+      (op == AtomicOp::Add || op == AtomicOp::Sub)) {
+    MOZ_ASSERT(valueTemp == InvalidReg);
+    MOZ_ASSERT(offsetTemp == InvalidReg);
+    MOZ_ASSERT(maskTemp == InvalidReg);
+
+    Register operand = value;
+    if (op == AtomicOp::Sub) {
+      
+      operand = temps.Acquire();
+      masm.as_sub_w(operand, zero, value);
+    }
+
+    if (nbytes == 1) {
+      FaultingCodeRange fcr(masm.currentOffset());
+      masm.as_amadd_db_b(output, scratch2, operand);
+      if (access) {
+        masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic, fcr);
+      }
+
+      if (!signExtend) {
+        
+        masm.as_andi(output, output, 0xff);
+      }
+    } else {
+      FaultingCodeRange fcr(masm.currentOffset());
+      masm.as_amadd_db_h(output, scratch2, operand);
+      if (access) {
+        masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic, fcr);
+      }
+
+      if (!signExtend) {
+        
+        masm.as_bstrpick_d(output, output, 15, 0);
+      }
     }
     return;
   }
@@ -3990,6 +4060,7 @@ static void AtomicFetchOp(MacroAssembler& masm,
     return;
   }
 
+  
   
   Label again;
   Register scratch = temps.Acquire();
@@ -4311,23 +4382,14 @@ static void AtomicEffectOp(MacroAssembler& masm,
   UseScratchRegisterScope temps(masm);
   unsigned nbytes = Scalar::byteSize(type);
 
-  switch (nbytes) {
-    case 1:
-    case 2:
-      break;
-    case 4:
-      MOZ_ASSERT(valueTemp == InvalidReg);
-      MOZ_ASSERT(offsetTemp == InvalidReg);
-      MOZ_ASSERT(maskTemp == InvalidReg);
-      break;
-    default:
-      MOZ_CRASH();
-  }
-
   Register scratch = temps.Acquire();
   masm.computeEffectiveAddress(mem, scratch);
 
   if (nbytes == 4) {
+    MOZ_ASSERT(valueTemp == InvalidReg);
+    MOZ_ASSERT(offsetTemp == InvalidReg);
+    MOZ_ASSERT(maskTemp == InvalidReg);
+
     MOZ_ASSERT(value != zero);
     Register operand = value;
     if (op == AtomicOp::Sub) {
@@ -4353,6 +4415,31 @@ static void AtomicEffectOp(MacroAssembler& masm,
         break;
       default:
         MOZ_CRASH();
+    }
+    if (access) {
+      masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic, fcr);
+    }
+    return;
+  }
+
+  if (LOONG64Flags::HasLamBhExtension() &&
+      (op == AtomicOp::Add || op == AtomicOp::Sub)) {
+    MOZ_ASSERT(valueTemp == InvalidReg);
+    MOZ_ASSERT(offsetTemp == InvalidReg);
+    MOZ_ASSERT(maskTemp == InvalidReg);
+
+    MOZ_ASSERT(value != zero);
+    Register operand = value;
+    if (op == AtomicOp::Sub) {
+      operand = temps.Acquire();
+      masm.as_sub_w(operand, zero, value);
+    }
+
+    FaultingCodeRange fcr(masm.currentOffset());
+    if (nbytes == 1) {
+      masm.as_amadd_db_b(zero, scratch, operand);
+    } else {
+      masm.as_amadd_db_h(zero, scratch, operand);
     }
     if (access) {
       masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic, fcr);
@@ -4404,6 +4491,7 @@ static void AtomicEffectOp(MacroAssembler& masm,
     return;
   }
 
+  
   
   Label again;
   Register scratch2 = temps.Acquire();
