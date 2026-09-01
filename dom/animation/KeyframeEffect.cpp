@@ -103,6 +103,7 @@ KeyframeEffect::KeyframeEffect(Document* aDocument,
       mEffectOptions{aOther.IterationComposite(), aOther.Composite(),
                      mTarget.mPseudoRequest},
       mKeyframes(aOther.mKeyframes.Clone()),
+      mKeyframeOffsetsHasRangeOffset(aOther.mKeyframeOffsetsHasRangeOffset),
       mProperties(aOther.mProperties.Clone()),
       mBaseValues(aOther.mBaseValues.Clone()) {}
 
@@ -259,7 +260,7 @@ void KeyframeEffect::SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
   }
 
   mKeyframes = std::move(aKeyframes);
-  mKeyframesOffsetInfo = KeyframeUtils::ComputeMissingKeyframeOffsets(
+  mKeyframeOffsetsHasRangeOffset = KeyframeUtils::ComputeMissingKeyframeOffsets(
       mKeyframes, aTimeline, aRange);
 
   if (mAnimation && mAnimation->IsRelevant()) {
@@ -888,9 +889,20 @@ nsTArray<AnimationProperty> KeyframeEffect::BuildProperties(
   
   auto keyframesCopy(mKeyframes.Clone());
 
+  
+  
+  
+  
+  
+  
+  nsTArray<Keyframe> computedKeyframes;
+  const nsTArray<Keyframe>& keyframes = GetComputedKeyframes(computedKeyframes)
+                                            ? computedKeyframes
+                                            : keyframesCopy;
+
   result = KeyframeUtils::GetAnimationPropertiesFromKeyframes(
-      keyframesCopy, mTarget.mElement, mTarget.mPseudoRequest, aStyle,
-      mEffectOptions.mComposite, aTimeline, mKeyframesOffsetInfo);
+      keyframes, mTarget.mElement, mTarget.mPseudoRequest, aStyle,
+      mEffectOptions.mComposite, aTimeline);
 
 #ifdef DEBUG
   MOZ_ASSERT(SpecifiedKeyframeArraysAreEqual(mKeyframes, keyframesCopy),
@@ -1274,23 +1286,11 @@ void KeyframeEffect::GetKeyframes(JSContext* aCx, nsTArray<JSObject*>& aResult,
 
   
   
-  
-  
-  const auto& generatedKeyframesStatus =
-      KeyframeUtils::CheckSkippableGeneratedKeyframes(
-          mKeyframes, mAnimation ? mAnimation->GetTimeline() : nullptr,
-          mKeyframesOffsetInfo);
+  nsTArray<Keyframe> computedKeyframes;
+  const nsTArray<Keyframe>& keyframes =
+      GetComputedKeyframes(computedKeyframes) ? computedKeyframes : mKeyframes;
 
-  for (const Keyframe& keyframe : mKeyframes) {
-    if (generatedKeyframesStatus.ShouldSkip(keyframe)) {
-      
-      
-      
-      
-      
-      continue;
-    }
-
+  for (const Keyframe& keyframe : keyframes) {
     
     BaseComputedKeyframe keyframeDict;
     if (keyframe.mOffset) {
@@ -2162,7 +2162,7 @@ double KeyframeEffect::AnimationsPlayBackRateMultiplier() const {
 
 void KeyframeEffect::MaybeUpdateKeyframeComputedOffsets(
     const AnimationTimeline* aTimeline, const AnimationRange& aRange) {
-  if (!mKeyframesOffsetInfo.mRangeOffset) {
+  if (mKeyframeOffsetsHasRangeOffset == KeyframeOffsetsHasRangeOffset::No) {
     return;
   }
 

@@ -102,6 +102,7 @@ struct AnimationProperty {
 namespace dom {
 
 class Animation;
+class CSSAnimationKeyframeEffect;
 class Document;
 
 class KeyframeEffect : public AnimationEffect {
@@ -120,6 +121,9 @@ class KeyframeEffect : public AnimationEffect {
                                JS::Handle<JSObject*> aGivenProto) override;
 
   KeyframeEffect* AsKeyframeEffect() override { return this; }
+  virtual CSSAnimationKeyframeEffect* AsCSSAnimationKeyframeEffect() {
+    return nullptr;
+  }
 
   bool IsValidTransition() const {
     return Properties().Length() == 1 &&
@@ -169,6 +173,9 @@ class KeyframeEffect : public AnimationEffect {
 
   void GetKeyframes(JSContext* aCx, nsTArray<JSObject*>& aResult,
                     ErrorResult& aRv);
+  virtual bool GetComputedKeyframes(nsTArray<Keyframe>& aKeyframes) const {
+    return false;
+  }
   void GetProperties(nsTArray<AnimationPropertyDetails>& aProperties,
                      ErrorResult& aRv) const;
 
@@ -441,7 +448,8 @@ class KeyframeEffect : public AnimationEffect {
   nsTArray<Keyframe> mKeyframes;
   
   
-  KeyframesOffsetHasAny mKeyframesOffsetInfo;
+  KeyframeOffsetsHasRangeOffset mKeyframeOffsetsHasRangeOffset =
+      KeyframeOffsetsHasRangeOffset::No;
 
   
   nsTArray<AnimationProperty> mProperties;
