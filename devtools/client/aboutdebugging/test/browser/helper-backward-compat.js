@@ -46,6 +46,28 @@ async function getCompatConfig() {
 }
 
 
+function getCurrentVersion() {
+  const { AppConstants } = ChromeUtils.importESModule(
+    "resource://gre/modules/AppConstants.sys.mjs"
+  );
+  return AppConstants.MOZ_APP_VERSION;
+}
+
+
+
+
+function isReleaseVersionTooOld(compatConfig) {
+  if (compatConfig.runtime.channel !== "release") {
+    
+    return false;
+  }
+
+  const getMajor = version => Number.parseInt(version.match(/\d+/)[0], 10);
+  return (
+    getMajor(getCurrentVersion()) === getMajor(compatConfig.runtime.version) + 3
+  );
+}
+
 
 
 
@@ -70,6 +92,16 @@ function addCompatTask(taskFn) {
     info(
       `Testing against ${brandName} ${version} (${channel}) on ${config.host}`
     );
+
+    if (isReleaseVersionTooOld(config)) {
+      ok(
+        true,
+        `The release version (${version}) is too old to be tested against the current version (${getCurrentVersion()}). ` +
+          "This should only happen for a few days around release time"
+      );
+      return;
+    }
+
     await taskFn(config);
   });
 }
