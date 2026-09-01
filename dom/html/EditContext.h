@@ -25,10 +25,10 @@ class EditContext final : public DOMEventTargetHelper, public SupportsWeakPtr {
                                                    const EditContextInit& aInit,
                                                    ErrorResult& aRv);
 
-  void UpdateText(uint32_t aRangeStart, uint32_t aRangeEnd,
-                  const nsAString& aText, ErrorResult& aRv);
-  void UpdateSelection(uint32_t aStart, uint32_t aEnd);
-  void UpdateControlBounds(const DOMRect& aControlBounds);
+  MOZ_CAN_RUN_SCRIPT void UpdateText(uint32_t aRangeStart, uint32_t aRangeEnd,
+                                     const nsAString& aText, ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void UpdateSelection(uint32_t aStart, uint32_t aEnd);
+  MOZ_CAN_RUN_SCRIPT void UpdateControlBounds(const DOMRect& aControlBounds);
   void UpdateSelectionBounds(const DOMRect& aSelectionBounds);
   void UpdateCharacterBounds(
       uint32_t aRangeStart,
@@ -40,7 +40,7 @@ class EditContext final : public DOMEventTargetHelper, public SupportsWeakPtr {
   }
 
   void GetText(nsAString& aText) const;
-  void GetTextSubstring(uint32_t aStart, uint32_t aEnd, nsAString& aText);
+  void GetTextSubstring(uint32_t aStart, uint32_t aEnd, nsAString& aText) const;
   uint32_t TextLength() const;
   uint32_t SelectionStart() const { return mSelectionStart; }
   uint32_t SelectionEnd() const { return mSelectionEnd; }
@@ -74,6 +74,7 @@ class EditContext final : public DOMEventTargetHelper, public SupportsWeakPtr {
   uint32_t CharacterBoundsRangeStart() const {
     return mCodepointRectsStartIndex;
   }
+  uint32_t CharacterBoundsLength() const { return mCodepointRects.Length(); }
   void CharacterBounds(nsTArray<RefPtr<DOMRect>>& aRetVal) const;
 
   nsGenericHTMLElement* GetAssociatedElement() const {
@@ -122,10 +123,11 @@ class EditContext final : public DOMEventTargetHelper, public SupportsWeakPtr {
   MOZ_CAN_RUN_SCRIPT void DoContentCommandReplaceText(
       WidgetContentCommandEvent& aEvent);
 
+  
+  MOZ_CAN_RUN_SCRIPT void DoSetSelection(WidgetSelectionEvent& aEvent);
+
   MOZ_CAN_RUN_SCRIPT void FireTextFormatUpdate(const TextRangeArray* aRanges,
                                                uint32_t aCompositionOffset);
-  MOZ_CAN_RUN_SCRIPT nsresult FireCharacterBoundsUpdateIfNeededAndGetRects(
-      uint32_t aStart, uint32_t aEnd, nsTArray<LayoutDeviceIntRect>& aRects);
   
   
   Maybe<LayoutDeviceIntRect> GetControlBounds() const;
@@ -156,12 +158,29 @@ class EditContext final : public DOMEventTargetHelper, public SupportsWeakPtr {
 
   
   
-  Maybe<LayoutDeviceIntRect> GetCharacterBound(uint32_t aOffset) const;
+  nsresult GetCharacterBounds(uint32_t aStart, uint32_t aEnd,
+                              nsTArray<LayoutDeviceIntRect>& aRects) const;
 
  private:
   EditContext(nsIGlobalObject* aGlobalObject, const EditContextInit& aInit,
               ErrorResult& aRv);
   ~EditContext() = default;
+
+  enum class IsFromFocus : bool { No, Yes };
+  
+  
+  void SuppressNotifyingIME(IsFromFocus aIsFromFocus);
+
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT void FireCharacterBoundsUpdateIfNeeded(
+      IsFromFocus aIsFromFocus = IsFromFocus::No);
+
+  
+  MOZ_CAN_RUN_SCRIPT void FireTextUpdate(uint32_t aUpdateRangeStart,
+                                         uint32_t aUpdateRangeEnd,
+                                         const nsAString& aText);
 
   using Rect = gfx::RectTyped<CSSPixel, double>;
 
@@ -173,6 +192,10 @@ class EditContext final : public DOMEventTargetHelper, public SupportsWeakPtr {
   Maybe<nsRect> GetControlBoundsOrClientRect() const;
 
   
+  void UpdateTextInternal(uint32_t aRangeStart, uint32_t aRangeEnd,
+                          const nsAString& aText, ErrorResult& aRv);
+
+  
   
   
   static LayoutDeviceIntRect ToRootRelativeDeviceRect(
@@ -181,9 +204,6 @@ class EditContext final : public DOMEventTargetHelper, public SupportsWeakPtr {
       const nsPresContext& aPresContext, const nsRect& aRect);
 
   class AutoSuppressIMENotifications;
-  MOZ_CAN_RUN_SCRIPT nsresult FireCharacterBoundsUpdateIfNeeded(
-      uint32_t aStart, uint32_t aEnd,
-      AutoSuppressIMENotifications* aSuppressIMENotifications);
 
   
   
@@ -215,6 +235,11 @@ class EditContext final : public DOMEventTargetHelper, public SupportsWeakPtr {
 
   
   
+  [[nodiscard]] TextRange ExpandRangeToClusterBoundaries(
+      TextRange aRange) const;
+
+  
+  
   
   bool ShouldFireNewCharacterBoundsUpdateForRange(TextRange aRange) const;
 
@@ -238,8 +263,9 @@ class EditContext final : public DOMEventTargetHelper, public SupportsWeakPtr {
   uint32_t mCodepointRectsStartIndex = 0;
   TextRange mLastRequestedCharacterBoundsRange;
   bool mIsComposing = false;
+  bool mIsSuppressingFocusNotification = false;
   bool mTextNextToCaretChangedByTextUpdateHandler = false;
-  bool mExpectingCharacterBounds = false;
+  bool mIsFiringCharacterBoundsUpdate = false;
   bool mIsFiringTextUpdate = false;
   
   bool mCodepointRectsTextChanged = false;
