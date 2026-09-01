@@ -12,6 +12,15 @@ const { sinon } = ChromeUtils.importESModule(
 const WORKER_STUB_URL =
   "chrome://mochitests/content/browser/toolkit/components/ml/tests/browser/ml_best_onnx_fallback_stub.worker.mjs";
 
+
+
+
+const NATIVE_UNAVAILABLE_STUB_URL =
+  "chrome://mochitests/content/browser/toolkit/components/ml/tests/browser/ml_native_ort_unavailable_stub.worker.mjs";
+
+const NATIVE_ERROR_STUB_URL =
+  "chrome://mochitests/content/browser/toolkit/components/ml/tests/browser/ml_native_ort_error_stub.worker.mjs";
+
 const BEST_ONNX_OPTIONS = {
   taskName: "text-classification",
   modelId: "acme/bert",
@@ -19,6 +28,8 @@ const BEST_ONNX_OPTIONS = {
   backend: "best-onnx",
   modelHubUrlTemplate: "{model}/resolve/{revision}",
 };
+
+
 
 
 
@@ -40,39 +51,35 @@ function stubNativeUnavailable() {
 
 
 
+function stubProbeUnavailable() {
+  const workerConfigStub = sinon
+    .stub(MLEngineParent, "getWorkerConfig")
+    .callsFake(() => ({
+      url: NATIVE_UNAVAILABLE_STUB_URL,
+      options: { type: "module" },
+    }));
+  return () => {
+    workerConfigStub.restore();
+  };
+}
 
 
 
 
 
 
+function stubProbeError() {
+  const workerConfigStub = sinon
+    .stub(MLEngineParent, "getWorkerConfig")
+    .callsFake(() => ({
+      url: NATIVE_ERROR_STUB_URL,
+      options: { type: "module" },
+    }));
+  return () => {
+    workerConfigStub.restore();
+  };
+}
 
-
-add_task(async function test_best_onnx_lazy_init_handles_null_cache() {
-  const { cleanup, remoteClients } = await setup();
-  const restoreStub = stubNativeUnavailable();
-
-  try {
-    
-    
-    
-    
-    
-    const enginePromise = createEngine(BEST_ONNX_OPTIONS);
-    await remoteClients["ml-onnx-runtime"].resolvePendingDownloads(1);
-    const engine = await enginePromise;
-
-    Assert.equal(
-      engine.pipelineOptions.backend,
-      "onnx",
-      "First best-onnx call resolves correctly without a primed cache."
-    );
-  } finally {
-    restoreStub();
-    await EngineProcess.destroyMLEngine();
-    await cleanup();
-  }
-});
 
 
 
@@ -137,3 +144,120 @@ add_task(async function test_best_onnx_engine_is_reused_after_fallback() {
     await cleanup();
   }
 });
+
+
+
+
+
+
+
+
+add_task(async function test_best_onnx_probe_skips_native_when_unavailable() {
+  const { cleanup, remoteClients } = await setup();
+  const restoreStub = stubProbeUnavailable();
+
+  try {
+    const enginePromise = createEngine(BEST_ONNX_OPTIONS);
+    await remoteClients["ml-onnx-runtime"].resolvePendingDownloads(1);
+    const engine = await enginePromise;
+
+    Assert.equal(
+      engine.pipelineOptions.backend,
+      "onnx",
+      "best-onnx resolves to wasm onnx when the probe reports native as absent."
+    );
+  } finally {
+    restoreStub();
+    await EngineProcess.destroyMLEngine();
+    await cleanup();
+  }
+});
+
+
+
+
+
+
+
+
+add_task(async function test_best_onnx_probe_error_falls_back_to_native() {
+  const { cleanup } = await setup();
+  const restoreStub = stubProbeError();
+
+  try {
+    
+    
+    const engine = await createEngine(BEST_ONNX_OPTIONS);
+
+    Assert.equal(
+      engine.pipelineOptions.backend,
+      "onnx-native",
+      "A failed probe falls back to optimistically trying onnx-native."
+    );
+  } finally {
+    restoreStub();
+    await EngineProcess.destroyMLEngine();
+    await cleanup();
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+add_task(
+  async function test_best_onnx_probe_runs_once_for_concurrent_requests() {
+    const { cleanup, remoteClients } = await setup();
+    const workerConfigStub = sinon
+      .stub(MLEngineParent, "getWorkerConfig")
+      .callsFake(() => ({
+        url: NATIVE_UNAVAILABLE_STUB_URL,
+        options: { type: "module" },
+      }));
+
+    try {
+      const enginePromise1 = createEngine({
+        ...BEST_ONNX_OPTIONS,
+        engineId: "best-onnx-concurrent-1",
+      });
+      const enginePromise2 = createEngine({
+        ...BEST_ONNX_OPTIONS,
+        engineId: "best-onnx-concurrent-2",
+      });
+
+      
+      await remoteClients["ml-onnx-runtime"].resolvePendingDownloads(2);
+
+      const [engine1, engine2] = await Promise.all([
+        enginePromise1,
+        enginePromise2,
+      ]);
+
+      Assert.equal(
+        engine1.pipelineOptions.backend,
+        "onnx",
+        "First resolves onnx."
+      );
+      Assert.equal(
+        engine2.pipelineOptions.backend,
+        "onnx",
+        "Second resolves onnx."
+      );
+      Assert.equal(
+        workerConfigStub.callCount,
+        3,
+        "One shared availability probe plus one build per engine (dedup)."
+      );
+    } finally {
+      workerConfigStub.restore();
+      await EngineProcess.destroyMLEngine();
+      await cleanup();
+    }
+  }
+);
