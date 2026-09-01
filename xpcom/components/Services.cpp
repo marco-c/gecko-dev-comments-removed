@@ -2,18 +2,17 @@
 
 
 
-
 #include "mozilla/Services.h"
 
 #include "mozilla/Likely.h"
-#include "nsComponentManager.h"
 #include "nsIObserverService.h"
+#include "nsServiceManagerUtils.h"
 #include "nsXPCOMPrivate.h"
 
 static nsIObserverService* gObserverService = nullptr;
 
-namespace mozilla {
-namespace services {
+namespace mozilla::services {
+
 already_AddRefed<nsIObserverService> GetObserverService() {
   if (MOZ_UNLIKELY(gXPCOMShuttingDown)) {
     return nullptr;
@@ -25,13 +24,10 @@ already_AddRefed<nsIObserverService> GetObserverService() {
   }
   return do_AddRef(gObserverService);
 }
-}  
-}  
 
-
-
-
-void mozilla::services::Shutdown() {
+void Shutdown() {
   gXPCOMShuttingDown = true;
   NS_IF_RELEASE(gObserverService);
 }
+
+}  
