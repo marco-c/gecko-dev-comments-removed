@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef _mozilla_dom_ServiceWorkerUtils_h
 #define _mozilla_dom_ServiceWorkerUtils_h
 
@@ -54,6 +52,12 @@ using NavigationPreloadGetStateCallback =
 
 bool ServiceWorkerRegistrationDataIsValid(
     const ServiceWorkerRegistrationData& aData);
+
+
+
+
+void ServiceWorkerScopeIsValid(nsIPrincipal* aPrincipal, nsIURI* aScopeURI,
+                               ErrorResult& aRv);
 
 
 
