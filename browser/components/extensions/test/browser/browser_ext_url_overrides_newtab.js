@@ -48,6 +48,21 @@ async function promiseNewTab(expectUrl = AboutNewTab.newTabURL, win = window) {
   await newtabShown;
   const tab = win.gBrowser.selectedTab;
 
+  
+  
+  
+  
+  await BrowserTestUtils.waitForMutationCondition(
+    tab,
+    { attributes: true, attributeFilter: ["busy"] },
+    () => !tab.hasAttribute("busy"),
+    { msg: `Should finish loading ${expectUrl}.` }
+  );
+  
+  
+  
+  await TestUtils.waitForTick();
+
   Assert.deepEqual(
     browser,
     tab.linkedBrowser,
@@ -402,6 +417,12 @@ add_task(async function test_new_tab_restore_settings() {
   await popupHidden;
   await preferencesShown;
 
+  is(
+    gBrowser.selectedTab,
+    tab,
+    "about:preferences replaced the New Tab page in the same tab"
+  );
+
   
   Assert.notEqual(
     panel.getAttribute("panelopen"),
@@ -504,6 +525,12 @@ add_task(async function test_new_tab_restore_settings_multiple() {
   await popupHidden;
   await preferencesShown;
 
+  is(
+    gBrowser.selectedTab,
+    tab1,
+    "about:preferences replaced the New Tab page in the same tab"
+  );
+
   
   let addonDisabled = waitForAddonDisabled(addonTwo);
   addonTwo.disable();
@@ -554,6 +581,13 @@ add_task(async function test_new_tab_restore_settings_multiple() {
   clickManage(notification);
   await popupHidden;
   await preferencesShown;
+
+  is(
+    gBrowser.selectedTab,
+    tab1,
+    "Switched back to the tab already showing about:preferences"
+  );
+
   
   BrowserTestUtils.removeTab(tab2);
 
