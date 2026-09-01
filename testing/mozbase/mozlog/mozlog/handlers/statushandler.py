@@ -45,7 +45,11 @@ class StatusHandler:
         if action == "crash":
             test_name = data.get("test")
             
-            if test_name is None or test_name not in self.tests_with_counted_crash:
+            
+            if data.get("quiet"):
+                pass
+            
+            elif test_name is None or test_name not in self.tests_with_counted_crash:
                 self.action_counts["crash"] += 1
                 if test_name is not None:
                     self.tests_with_counted_crash.add(test_name)
