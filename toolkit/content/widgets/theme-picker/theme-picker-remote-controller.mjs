@@ -7,11 +7,11 @@
  * @import { ThemePicker, ThemechangeEvent, ThemechangeEventDetail } from "./theme-picker.mjs";
  */
 
-const RESPONSE_EVENTS = [
-  "ThemePickerInitialState",
+const WINDOW_EVENTS = [
   "ThemePickerThemeUpdated",
   "ThemePickerAppearanceUpdated",
   "ThemePickerNativeThemeUpdated",
+  "ThemePickerDeviceAppearanceUpdated",
 ];
 
 /**
@@ -34,15 +34,23 @@ export class ThemePickerRemoteController {
     this.host = host;
     this.host.addController(this);
 
-    for (const eventType of RESPONSE_EVENTS) {
-      this.host.addEventListener(eventType, this);
-    }
+    this.host.addEventListener("ThemePickerInitialState", this);
 
     this.host.addEventListener(
       "themechange",
       /** @param {ThemechangeEvent} e */
       e => this.onThemechange(e.detail)
     );
+
+    for (const eventType of WINDOW_EVENTS) {
+      window.addEventListener(eventType, this);
+    }
+  }
+
+  hostDisconnected() {
+    for (const eventType of WINDOW_EVENTS) {
+      window.removeEventListener(eventType, this);
+    }
   }
 
   hostConnected() {
@@ -76,6 +84,7 @@ export class ThemePickerRemoteController {
         this.host.nativeTheme = event.detail.nativeTheme;
         this.host.appearance = event.detail.appearance;
         this.host.showNativeThemeOption = event.detail.showNativeThemeOption;
+        this.host.deviceAppearance = event.detail.deviceAppearance;
         break;
       case "ThemePickerThemeUpdated":
         this.host.activeThemeId = event.detail.activeThemeId;
@@ -85,6 +94,9 @@ export class ThemePickerRemoteController {
         break;
       case "ThemePickerNativeThemeUpdated":
         this.host.nativeTheme = event.detail.nativeTheme;
+        break;
+      case "ThemePickerDeviceAppearanceUpdated":
+        this.host.deviceAppearance = event.detail.deviceAppearance;
         break;
     }
   }
