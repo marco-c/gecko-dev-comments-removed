@@ -103,8 +103,7 @@ class PacingController {
     
     TimeDelta queue_time_limit = kMaxExpectedQueueLength;
     
-    
-    
+    [[deprecated("Keyframe flushing is now always enabled.")]]
     bool keyframe_flushing = false;
     
     bool prioritize_audio_retransmission = false;
@@ -249,7 +248,6 @@ class PacingController {
   const bool pace_audio_;
   const bool ignore_transport_overhead_;
   const bool fast_retransmissions_;
-  const bool keyframe_flushing_;
   DataSize transport_overhead_per_packet_;
   TimeDelta send_burst_interval_;
 
