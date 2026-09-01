@@ -351,6 +351,13 @@ pref("browser.startup.couldRestoreSession.count", 0);
 
 #if defined(XP_WIN)
 pref("browser.startup.preXulSkeletonUI", true);
+#endif
+
+#ifndef XP_LINUX
+
+
+
+
 
 
 pref("browser.startup.windowsLaunchOnLogin.enabled", true);
