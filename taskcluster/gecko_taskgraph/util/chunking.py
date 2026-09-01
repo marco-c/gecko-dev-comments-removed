@@ -417,6 +417,27 @@ class DefaultLoader(BaseManifestLoader):
         if "web-platform-tests" in suite:
             manifests = set()
 
+            
+            
+            
+            
+            
+            
+            
+            
+            if suite != "web-platform-tests":
+                for t in tests:
+                    if mozinfo_tags and not any(
+                        x in t.get("tags", []) for x in mozinfo_tags
+                    ):
+                        continue
+                    manifests.add(t["manifest"])
+                return {
+                    "active": list(manifests),
+                    "skipped": [],
+                    "other_dirs": {},
+                }
+
             subsuite = next((x for x in WPT_SUBSUITES.keys() if mozinfo.get(x)), None)
 
             if subsuite:
