@@ -10,9 +10,11 @@ const CACHED_STYLESHEETS = new WeakMap();
 
 ChromeUtils.defineESModuleGetters(this, {
   AutofillDataTypes: "resource://gre/modules/shared/AutofillDataTypes.sys.mjs",
+  EngineProcess: "chrome://global/content/ml/EngineProcess.sys.mjs",
   FormAutofill: "resource://autofill/FormAutofill.sys.mjs",
   FormAutofillParent: "resource://autofill/FormAutofillParent.sys.mjs",
   FormAutofillStatus: "resource://autofill/FormAutofillParent.sys.mjs",
+  FormAutofillUtils: "resource://gre/modules/shared/FormAutofillUtils.sys.mjs",
   AutoCompleteParent: "resource://gre/actors/AutoCompleteParent.sys.mjs",
 });
 
@@ -40,6 +42,29 @@ function insertStyleSheet(domWindow, url) {
   } else {
     CACHED_STYLESHEETS.set(domWindow, [styleSheet]);
   }
+}
+
+
+
+
+
+
+
+
+function refreshNativeOnnxRuntimeAvailability() {
+  if (!FormAutofillUtils.isMLAutofillEnabled) {
+    return;
+  }
+
+  
+  
+  FormAutofillUtils.setNativeOnnxRuntimeAvailable(false);
+
+  ChromeUtils.idleDispatch(async () => {
+    FormAutofillUtils.setNativeOnnxRuntimeAvailable(
+      await EngineProcess.requestIsNativeOnnxRuntimeAvailable()
+    );
+  });
 }
 
 function ensureCssLoaded(domWindow) {
@@ -154,6 +179,8 @@ this.formautofill = class extends ExtensionAPI {
       allFrames: true,
       safeForUntrustedWebProcess: true,
     });
+
+    refreshNativeOnnxRuntimeAvailability();
   }
 
   onShutdown(isAppShutdown) {
