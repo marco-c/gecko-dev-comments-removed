@@ -3,8 +3,6 @@
 
 
 
-const NopIns = `andi        \\$zero, \\$zero, 0x0`;
-
 
 
 codegenTestLOONG64_adhoc(
@@ -13,17 +11,9 @@ codegenTestLOONG64_adhoc(
        (func (export "f") (param i32)
          (i32.store (local.get 0) (i32.const 0))))`,
     "f",
-    `slli\\.w       \\$a1, \\$a0, 0x0
-     bstrpick\\.d   \\$a1, \\$a1, 0x1f, 0x0
-     ld\\.d         \\$t6, \\$s4, 8
-     sltu           \\$t7, \\$a1, \\$t6
-     beq            \\$t7, \\$zero, 44 -> ${HEX}+
-     ${NopIns}
-     bge            \\$zero, \\$zero, 12 -> ${HEX}+
-     ${NopIns}
-     ${NopIns}
-     bstrpick\\.d   \\$t6, \\$a0, 0x1f, 0x0
-     stx\\.w        \\$zero, \\$s7, \\$t6`);
+    `bstrpick\\.d   \\$t6, \\$a0, 0x1f, 0x0
+     stx\\.w        \\$zero, \\$s7, \\$t6`,
+    {no_prefix: true});
 
 codegenTestLOONG64_adhoc(
     `(module
@@ -31,17 +21,9 @@ codegenTestLOONG64_adhoc(
        (func (export "f") (param i32)
          (i32.store8 (local.get 0) (i32.const 0))))`,
     "f",
-    `slli\\.w       \\$a1, \\$a0, 0x0
-     bstrpick\\.d   \\$a1, \\$a1, 0x1f, 0x0
-     ld\\.d         \\$t6, \\$s4, 8
-     sltu           \\$t7, \\$a1, \\$t6
-     beq            \\$t7, \\$zero, 44 -> ${HEX}+
-     ${NopIns}
-     bge            \\$zero, \\$zero, 12 -> ${HEX}+
-     ${NopIns}
-     ${NopIns}
-     bstrpick\\.d   \\$t6, \\$a0, 0x1f, 0x0
-     stx\\.b        \\$zero, \\$s7, \\$t6`);
+    `bstrpick\\.d   \\$t6, \\$a0, 0x1f, 0x0
+     stx\\.b        \\$zero, \\$s7, \\$t6`,
+    {no_prefix: true});
 
 codegenTestLOONG64_adhoc(
     `(module
@@ -49,17 +31,9 @@ codegenTestLOONG64_adhoc(
        (func (export "f") (param i32)
          (i32.store16 (local.get 0) (i32.const 0))))`,
     "f",
-    `slli\\.w       \\$a1, \\$a0, 0x0
-     bstrpick\\.d   \\$a1, \\$a1, 0x1f, 0x0
-     ld\\.d         \\$t6, \\$s4, 8
-     sltu           \\$t7, \\$a1, \\$t6
-     beq            \\$t7, \\$zero, 44 -> ${HEX}+
-     ${NopIns}
-     bge            \\$zero, \\$zero, 12 -> ${HEX}+
-     ${NopIns}
-     ${NopIns}
-     bstrpick\\.d   \\$t6, \\$a0, 0x1f, 0x0
-     stx\\.h        \\$zero, \\$s7, \\$t6`);
+    `bstrpick\\.d   \\$t6, \\$a0, 0x1f, 0x0
+     stx\\.h        \\$zero, \\$s7, \\$t6`,
+    {no_prefix: true});
 
 
 
@@ -69,17 +43,9 @@ codegenTestLOONG64_adhoc(
        (func (export "f") (param i32)
          (i64.store (local.get 0) (i64.const 0))))`,
     "f",
-    `slli\\.w       \\$a1, \\$a0, 0x0
-     bstrpick\\.d   \\$a1, \\$a1, 0x1f, 0x0
-     ld\\.d         \\$t6, \\$s4, 8
-     sltu           \\$t7, \\$a1, \\$t6
-     beq            \\$t7, \\$zero, 44 -> ${HEX}+
-     ${NopIns}
-     bge            \\$zero, \\$zero, 12 -> ${HEX}+
-     ${NopIns}
-     ${NopIns}
-     bstrpick\\.d   \\$t6, \\$a0, 0x1f, 0x0
-     stx\\.d        \\$zero, \\$s7, \\$t6`);
+    `bstrpick\\.d   \\$t6, \\$a0, 0x1f, 0x0
+     stx\\.d        \\$zero, \\$s7, \\$t6`,
+    {no_prefix: true});
 
 codegenTestLOONG64_adhoc(
     `(module
@@ -87,17 +53,9 @@ codegenTestLOONG64_adhoc(
        (func (export "f") (param i32)
          (i64.store8 (local.get 0) (i64.const 0))))`,
     "f",
-    `slli\\.w       \\$a1, \\$a0, 0x0
-     bstrpick\\.d   \\$a1, \\$a1, 0x1f, 0x0
-     ld\\.d         \\$t6, \\$s4, 8
-     sltu           \\$t7, \\$a1, \\$t6
-     beq            \\$t7, \\$zero, 44 -> ${HEX}+
-     ${NopIns}
-     bge            \\$zero, \\$zero, 12 -> ${HEX}+
-     ${NopIns}
-     ${NopIns}
-     bstrpick\\.d   \\$t6, \\$a0, 0x1f, 0x0
-     stx\\.b        \\$zero, \\$s7, \\$t6`);
+    `bstrpick\\.d   \\$t6, \\$a0, 0x1f, 0x0
+     stx\\.b        \\$zero, \\$s7, \\$t6`,
+    {no_prefix: true});
 
 codegenTestLOONG64_adhoc(
     `(module
@@ -105,17 +63,9 @@ codegenTestLOONG64_adhoc(
        (func (export "f") (param i32)
          (i64.store16 (local.get 0) (i64.const 0))))`,
     "f",
-    `slli\\.w       \\$a1, \\$a0, 0x0
-     bstrpick\\.d   \\$a1, \\$a1, 0x1f, 0x0
-     ld\\.d         \\$t6, \\$s4, 8
-     sltu           \\$t7, \\$a1, \\$t6
-     beq            \\$t7, \\$zero, 44 -> ${HEX}+
-     ${NopIns}
-     bge            \\$zero, \\$zero, 12 -> ${HEX}+
-     ${NopIns}
-     ${NopIns}
-     bstrpick\\.d   \\$t6, \\$a0, 0x1f, 0x0
-     stx\\.h        \\$zero, \\$s7, \\$t6`);
+    `bstrpick\\.d   \\$t6, \\$a0, 0x1f, 0x0
+     stx\\.h        \\$zero, \\$s7, \\$t6`,
+    {no_prefix: true});
 
 codegenTestLOONG64_adhoc(
     `(module
@@ -123,17 +73,9 @@ codegenTestLOONG64_adhoc(
        (func (export "f") (param i32)
          (i64.store32 (local.get 0) (i64.const 0))))`,
     "f",
-    `slli\\.w       \\$a1, \\$a0, 0x0
-     bstrpick\\.d   \\$a1, \\$a1, 0x1f, 0x0
-     ld\\.d         \\$t6, \\$s4, 8
-     sltu           \\$t7, \\$a1, \\$t6
-     beq            \\$t7, \\$zero, 44 -> ${HEX}+
-     ${NopIns}
-     bge            \\$zero, \\$zero, 12 -> ${HEX}+
-     ${NopIns}
-     ${NopIns}
-     bstrpick\\.d   \\$t6, \\$a0, 0x1f, 0x0
-     stx\\.w        \\$zero, \\$s7, \\$t6`);
+    `bstrpick\\.d   \\$t6, \\$a0, 0x1f, 0x0
+     stx\\.w        \\$zero, \\$s7, \\$t6`,
+    {no_prefix: true});
 
 
 

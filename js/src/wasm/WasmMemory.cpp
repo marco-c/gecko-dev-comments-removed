@@ -287,7 +287,7 @@ static_assert(HugeOffsetGuardLimit < UINT32_MAX,
 
 
 #  if !(defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM64) || \
-        defined(JS_CODEGEN_RISCV64))
+        defined(JS_CODEGEN_RISCV64) || defined(JS_CODEGEN_LOONG64))
 #    error "Not an expected configuration"
 #  endif
 
