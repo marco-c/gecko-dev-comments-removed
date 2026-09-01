@@ -5,6 +5,11 @@
 #ifndef DirectionalityUtils_h_
 #define DirectionalityUtils_h_
 
+#include "mozilla/Directionality.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/HTMLSlotElement.h"
+#include "mozilla/dom/Text.h"
+#include "nsIContentInlines.h"
 #include "nsStringFwd.h"
 #include "nscore.h"
 
@@ -13,16 +18,17 @@ class nsINode;
 class nsAttrValue;
 
 namespace mozilla::dom {
-class Element;
 class HTMLSlotElement;
 class ShadowRoot;
-class Text;
 struct UnbindContext;
 }  
 
 namespace mozilla {
 
-enum class Directionality : uint8_t { Unset, Rtl, Ltr, Auto };
+inline bool MayAffectDirAutoElement(const nsINode* aNode) {
+  return aNode &&
+         (aNode->NodeOrAncestorHasDirAuto() || aNode->AffectsDirAutoSlot());
+}
 
 
 
@@ -69,12 +75,7 @@ void SlotAssignedNodeAddedForDir(dom::HTMLSlotElement* aSlot,
 void SlotAssignedNodeRemovedForDir(dom::HTMLSlotElement* aSlot,
                                    nsIContent& aUnassignedNode);
 
-
-
-
-
-
-void WalkDescendantsClearAncestorDirAuto(nsIContent* aContent);
+bool TextNodeWillChangeDirectionInternal(dom::Text*, Directionality*, uint32_t);
 
 
 
@@ -82,8 +83,14 @@ void WalkDescendantsClearAncestorDirAuto(nsIContent* aContent);
 
 
 
-bool TextNodeWillChangeDirection(dom::Text* aTextNode, Directionality* aOldDir,
-                                 uint32_t aOffset);
+inline bool TextNodeWillChangeDirection(dom::Text* aTextNode,
+                                        Directionality* aOldDir,
+                                        uint32_t aOffset) {
+  if (!MayAffectDirAutoElement(aTextNode)) {
+    return false;
+  }
+  return TextNodeWillChangeDirectionInternal(aTextNode, aOldDir, aOffset);
+}
 
 
 
@@ -92,25 +99,47 @@ bool TextNodeWillChangeDirection(dom::Text* aTextNode, Directionality* aOldDir,
 void TextNodeChangedDirection(dom::Text* aTextNode, Directionality aOldDir,
                               bool aNotify);
 
-
-
-
-
-void SetDirectionFromNewTextNode(dom::Text* aTextNode, nsINode* aParent);
-
-
-
-
-
-void ResetDirectionSetByTextNode(dom::Text*, dom::UnbindContext&);
+void SetDirectionFromNewTextNodeInternal(dom::Text*, nsINode*);
 
 
 
 
 
+inline void SetDirectionFromNewTextNode(dom::Text* aTextNode,
+                                        nsINode* aParent) {
+  if (MayAffectDirAutoElement(aParent)) {
+    SetDirectionFromNewTextNodeInternal(aTextNode, aParent);
+  }
+}
 
-void ResetDirectionSetBySlotHost(dom::HTMLSlotElement*, dom::UnbindContext&,
-                                 dom::ShadowRoot*);
+void ResetDirectionSetByTextNodeInternal(dom::Text*, dom::UnbindContext&);
+
+
+
+
+
+inline void ResetDirectionSetByTextNode(dom::Text* aTextNode,
+                                        dom::UnbindContext& aContext) {
+  if (aTextNode->MaySetDirAuto()) {
+    ResetDirectionSetByTextNodeInternal(aTextNode, aContext);
+  }
+}
+
+void ResetDirectionSetBySlotHostInternal(dom::HTMLSlotElement*,
+                                         dom::UnbindContext&, dom::ShadowRoot*);
+
+
+
+
+
+
+inline void ResetDirectionSetBySlotHost(dom::HTMLSlotElement* aSlot,
+                                        dom::UnbindContext& aContext,
+                                        dom::ShadowRoot* aOldContainingShadow) {
+  if (MayAffectDirAutoElement(aSlot)) {
+    ResetDirectionSetBySlotHostInternal(aSlot, aContext, aOldContainingShadow);
+  }
+}
 
 
 
@@ -142,7 +171,11 @@ void SetDirOnBind(mozilla::dom::Element* aElement, nsIContent* aParent);
 
 
 
-void ResetDir(mozilla::dom::Element* aElement);
+inline void ResetDir(mozilla::dom::Element* aElement) {
+  if (!aElement->HasDirAuto()) {
+    RecomputeDirectionality(aElement, false);
+  }
+}
 }  
 
 #endif 

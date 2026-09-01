@@ -138,9 +138,7 @@ inline static bool EstablishesOwnDirection(const Element* aElement) {
 
 
 inline static bool AffectsDirAutoElement(nsIContent* aContent) {
-  return aContent &&
-         (aContent->NodeOrAncestorHasDirAuto() ||
-          aContent->AffectsDirAutoSlot()) &&
+  return MayAffectDirAutoElement(aContent) &&
          ParticipatesInAutoDirection(aContent);
 }
 
@@ -602,7 +600,12 @@ static void WalkDescendantsSetDirAuto(Element* aElement, bool aNotify) {
   ResetAutoDirection(aElement, aNotify);
 }
 
-void WalkDescendantsClearAncestorDirAuto(nsIContent* aContent) {
+
+
+
+
+
+static void WalkDescendantsClearAncestorDirAuto(nsIContent* aContent) {
   nsIContent* child = aContent->GetFirstChild();
   while (child) {
     if (child->IsElement() && EstablishesOwnDirection(child->AsElement())) {
@@ -682,8 +685,9 @@ static void SetAncestorDirectionIfAuto(Text* aTextNode, Directionality aDir,
   }
 }
 
-bool TextNodeWillChangeDirection(Text* aTextNode, Directionality* aOldDir,
-                                 uint32_t aOffset) {
+bool TextNodeWillChangeDirectionInternal(Text* aTextNode,
+                                         Directionality* aOldDir,
+                                         uint32_t aOffset) {
   if (!AffectsDirAutoElement(aTextNode)) {
     return false;
   }
@@ -712,7 +716,7 @@ void TextNodeChangedDirection(Text* aTextNode, Directionality aOldDir,
   }
 }
 
-void SetDirectionFromNewTextNode(Text* aTextNode, nsINode* aParent) {
+void SetDirectionFromNewTextNodeInternal(Text* aTextNode, nsINode* aParent) {
   
   MOZ_ASSERT(aParent->IsContent(), "Text node with non-content parent?");
   if (!AffectsDirAutoElement(aParent->AsContent())) {
@@ -735,12 +739,10 @@ void SetDirectionFromNewTextNode(Text* aTextNode, nsINode* aParent) {
 
 
 
-void ResetDirectionSetByTextNode(Text* aTextNode,
-                                 dom::UnbindContext& aContext) {
+void ResetDirectionSetByTextNodeInternal(Text* aTextNode,
+                                         dom::UnbindContext& aContext) {
   MOZ_ASSERT(!aTextNode->IsInComposedDoc(), "Should be disconnected already");
-  if (!aTextNode->MaySetDirAuto()) {
-    return;
-  }
+  MOZ_ASSERT(aTextNode->MaySetDirAuto(), "Caller should check");
   AutoTArray<Element*, 4> autoElements;
   bool answerIsDefinitive = FindDirAutoElementsFrom(aTextNode, autoElements);
 
@@ -775,9 +777,9 @@ void ResetDirectionSetByTextNode(Text* aTextNode,
   }
 }
 
-void ResetDirectionSetBySlotHost(HTMLSlotElement* aSlot,
-                                 dom::UnbindContext& aContext,
-                                 ShadowRoot* aOldContainingShadow) {
+void ResetDirectionSetBySlotHostInternal(HTMLSlotElement* aSlot,
+                                         dom::UnbindContext& aContext,
+                                         ShadowRoot* aOldContainingShadow) {
   
   
   
@@ -944,12 +946,6 @@ void SetDirOnBind(Element* aElement, nsIContent* aParent) {
   if (!aElement->HasDirAuto()) {
     
     
-    RecomputeDirectionality(aElement, false);
-  }
-}
-
-void ResetDir(Element* aElement) {
-  if (!aElement->HasDirAuto()) {
     RecomputeDirectionality(aElement, false);
   }
 }
