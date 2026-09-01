@@ -4705,7 +4705,10 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  CaretPosition GetExtremeCaretPosition(bool aStart);
+
+
+
+  CaretPosition GetExtremeCaretPosition(bool aStart, uint32_t aFlags);
 
   
 

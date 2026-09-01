@@ -4336,11 +4336,15 @@ void Selection::Modify(const nsAString& aAlter, const nsAString& aDirection,
       visual ? nsFrameSelection::eVisual : nsFrameSelection::eLogical);
 
   if (aGranularity.LowerCaseEqualsLiteral("line") && NS_FAILED(rv)) {
-    RefPtr<PresShell> presShell = frameSelection->GetPresShell();
-    if (!presShell) {
+    const nsCOMPtr<nsISelectionController> controller =
+        frameSelection->GetSelectionController();
+    if (!controller) [[unlikely]] {
       return;
     }
-    presShell->CompleteMove(forward, extend);
+    
+    
+    
+    controller->CompleteMove(forward, extend);
   }
 }
 
