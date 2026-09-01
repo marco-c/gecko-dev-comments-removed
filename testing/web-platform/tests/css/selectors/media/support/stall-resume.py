@@ -1,11 +1,29 @@
 import os
 import time
 
+
+
+RESUME_WINDOW = 5
+
+
+
+RESUME_TIMEOUT = 30
+
+
 def main(request, response):
     key = request.GET.first(b"key")
+    stash = request.server.stash
 
     if request.method == "POST":
-        request.server.stash.put(key, True)
+        stash.put(key, True)
+
+        
+        
+        
+        time.sleep(RESUME_WINDOW)
+        with stash.lock:
+            stash.take(key)
+
         return f"put {key} into stash"
 
     file_path = os.path.join(request.doc_root, "media", "movie_300.webm")
@@ -29,9 +47,20 @@ def main(request, response):
         response.writer.write(f.read(first_size))
 
         
+        
+        
+        deadline = time.monotonic() + RESUME_TIMEOUT
         while True:
-            if request.server.stash.take(key) == True:
-                break
+            with stash.lock:
+                if stash.take(key) == True:
+                    
+                    
+                    
+                    
+                    stash.put(key, True)
+                    break
+            if time.monotonic() > deadline:
+                return
             time.sleep(0.1)
 
         
