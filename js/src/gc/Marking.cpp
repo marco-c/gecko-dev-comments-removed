@@ -457,6 +457,8 @@ INSTANTIATE_INTERNAL_TRACE_FUNCTIONS(TaggedProto)
 
 
 
+
+
 class MOZ_RAII AutoSetTracingSource {
   GCMarker* marker = nullptr;
 
