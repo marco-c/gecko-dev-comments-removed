@@ -12,6 +12,7 @@
 #include "mozilla/dom/CSSNumericValueBinding.h"
 #include "mozilla/dom/CSSScaleBinding.h"
 #include "mozilla/dom/CSSUnitValue.h"
+#include "mozilla/dom/DOMMatrix.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
 
@@ -61,20 +62,35 @@ already_AddRefed<CSSScale> CSSScale::Constructor(
   nsCOMPtr<nsISupports> global = aGlobal.GetAsSupports();
 
   
-  
-
-  
   RefPtr<CSSNumericValue> x = CSSNumericValue::Create(global, aX);
   RefPtr<CSSNumericValue> y = CSSNumericValue::Create(global, aY);
+  RefPtr<CSSNumericValue> z =
+      aZ.WasPassed() ? CSSNumericValue::Create(global, aZ.Value()) : nullptr;
 
-  if (aZ.WasPassed()) {
-    RefPtr<CSSNumericValue> z = CSSNumericValue::Create(global, aZ.Value());
+  
+  if (!x->GetNumericType().MatchesNumber()) {
+    aRv.ThrowTypeError("X must match <number>");
+    return nullptr;
+  }
+  if (!y->GetNumericType().MatchesNumber()) {
+    aRv.ThrowTypeError("Y must match <number>");
+    return nullptr;
+  }
+  if (z && !z->GetNumericType().MatchesNumber()) {
+    aRv.ThrowTypeError("Z must match <number>");
+    return nullptr;
+  }
 
+  
+  
+
+  
+  if (z) {
     return MakeAndAddRef<CSSScale>(std::move(global),  false,
                                    std::move(x), std::move(y), std::move(z));
   }
 
-  RefPtr<CSSUnitValue> z = CSSUnitValue::Create(global, 1.0);
+  z = CSSUnitValue::Create(global, 1.0);
 
   return MakeAndAddRef<CSSScale>(std::move(global),  true,
                                  std::move(x), std::move(y), std::move(z));
@@ -85,7 +101,15 @@ void CSSScale::GetX(OwningCSSNumberish& aRetVal) const {
 }
 
 void CSSScale::SetX(const CSSNumberish& aArg, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  
+  RefPtr<CSSNumericValue> x = CSSNumericValue::Create(mParent, aArg);
+
+  if (!x->GetNumericType().MatchesNumber()) {
+    aRv.ThrowTypeError("X must match <number>");
+    return;
+  }
+
+  mX = std::move(x);
 }
 
 void CSSScale::GetY(OwningCSSNumberish& aRetVal) const {
@@ -93,7 +117,15 @@ void CSSScale::GetY(OwningCSSNumberish& aRetVal) const {
 }
 
 void CSSScale::SetY(const CSSNumberish& aArg, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  
+  RefPtr<CSSNumericValue> y = CSSNumericValue::Create(mParent, aArg);
+
+  if (!y->GetNumericType().MatchesNumber()) {
+    aRv.ThrowTypeError("Y must match <number>");
+    return;
+  }
+
+  mY = std::move(y);
 }
 
 void CSSScale::GetZ(OwningCSSNumberish& aRetVal) const {
@@ -101,10 +133,45 @@ void CSSScale::GetZ(OwningCSSNumberish& aRetVal) const {
 }
 
 void CSSScale::SetZ(const CSSNumberish& aArg, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  
+  RefPtr<CSSNumericValue> z = CSSNumericValue::Create(mParent, aArg);
+
+  if (!z->GetNumericType().MatchesNumber()) {
+    aRv.ThrowTypeError("Z must match <number>");
+    return;
+  }
+
+  mZ = std::move(z);
 }
 
 
+
+already_AddRefed<DOMMatrix> CSSScale::ToMatrix(ErrorResult& aRv) {
+  auto matrix = MakeRefPtr<DOMMatrix>(mParent);
+
+  auto x = mX->ToStyleUnitValue("number"_ns, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  auto y = mY->ToStyleUnitValue("number"_ns, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  if (Is2D()) {
+    matrix->ScaleSelf(x->value, Optional<double>(y->value), 1, 0, 0, 0);
+  } else {
+    auto z = mZ->ToStyleUnitValue("number"_ns, aRv);
+    if (aRv.Failed()) {
+      return nullptr;
+    }
+
+    matrix->ScaleSelf(x->value, Optional<double>(y->value), z->value, 0, 0, 0);
+  }
+
+  return matrix.forget();
+}
 
 void CSSScale::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                                      nsACString& aDest) const {
