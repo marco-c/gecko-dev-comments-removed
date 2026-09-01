@@ -12,6 +12,7 @@
 #include "js/SourceText.h"
 #include "js/Transcoding.h"  
 #include "js/TypeDecls.h"
+#include "js/WasmModule.h"  
 #include "js/experimental/JSStencil.h"  
 #include "js/loader/LoadContextBase.h"
 #include "js/loader/ScriptKind.h"
@@ -24,6 +25,7 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TaskController.h"  
 #include "mozilla/Utf8.h"            
+#include "mozilla/Vector.h"
 #include "mozilla/dom/SRIMetadata.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "nsCOMPtr.h"
@@ -135,6 +137,39 @@ class StencilCompileOrDecodeTask : public CompileOrDecodeTask {
   RefPtr<JS::Stencil> mStencil;
 
   JS::InstantiationStorage mInstantiationStorage;
+};
+
+
+class WasmCompileTask final : public CompileOrDecodeTask {
+ public:
+  using WasmBytesBuffer = mozilla::Vector<uint8_t, 0, js::MallocAllocPolicy>;
+
+  explicit WasmCompileTask(WasmBytesBuffer&& aBytes)
+      : mBytes(std::move(aBytes)) {}
+
+  nsresult Init(JSContext* aCx, JS::CompileOptions& aOptions);
+
+  TaskResult Run() override;
+
+  
+  
+  JSObject* StealResult(JSContext* aCx);
+
+#ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
+  bool GetName(nsACString& aName) override {
+    aName.AssignLiteral("WasmCompileTask");
+    return true;
+  }
+#endif
+
+ private:
+  JS::SharedWasmCompileArgs mCompileArgs;
+
+  
+  
+  JS::ESMCompileResult mCompileResult;
+
+  WasmBytesBuffer mBytes;
 };
 
 class ScriptLoadContext : public JS::loader::LoadContextBase,
