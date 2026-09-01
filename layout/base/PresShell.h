@@ -96,6 +96,7 @@ class ProfileChunkedBuffer;
 class ScopedNameRef;
 class ScrollContainerFrame;
 class StyleSheet;
+struct StyleAtom;
 
 struct AutoConnectedAncestorTracker;
 struct PointerInfo;
@@ -816,8 +817,8 @@ class PresShell final : public nsStubDocumentObserver,
                                const nsIFrame* aPositionedFrame) const;
   void CollectAnchorNames(const nsIFrame* aPositionedFrame,
                           nsTArray<nsString>& aResult);
-  void AddAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame);
-  void RemoveAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame);
+  void AddAnchorPosAnchor(Span<const StyleAtom> aNames, nsIFrame* aFrame);
+  void RemoveAnchorPosAnchor(Span<const StyleAtom> aNames, nsIFrame* aFrame);
   enum class AnchorPosUpdateResult {
     NotApplicable,
     Flushed,
@@ -1870,6 +1871,18 @@ class PresShell final : public nsStubDocumentObserver,
 
   bool IsForcingLayoutForHiddenContent(const nsIFrame*) const;
 
+  void IncrementContentVisibilityHiddenCount() {
+    ++mContentVisibilityHiddenCount;
+  }
+  void DecrementContentVisibilityHiddenCount() {
+    MOZ_ASSERT(mContentVisibilityHiddenCount > 0,
+               "Increment/decrement calls should be balanced");
+    --mContentVisibilityHiddenCount;
+  }
+  bool HasContentVisibilityHiddenFrames() const {
+    return mContentVisibilityHiddenCount > 0;
+  }
+
   void RegisterContentVisibilityAutoFrame(nsIFrame* aFrame) {
     mContentVisibilityAutoFrames.Insert(aFrame);
   }
@@ -2121,6 +2134,7 @@ class PresShell final : public nsStubDocumentObserver,
     RenderingState mOldState;
   };
   void SetRenderingState(const RenderingState& aState);
+  void RemoveAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame);
 
   friend class ::nsPresShellEventCB;
 
@@ -3434,6 +3448,9 @@ class PresShell final : public nsStubDocumentObserver,
   uint32_t mFontSizeInflationEmPerLine;
   uint32_t mFontSizeInflationMinTwips;
   uint32_t mFontSizeInflationLineThreshold;
+
+  
+  uint32_t mContentVisibilityHiddenCount = 0;
 
   
   int16_t mSelectionFlags;
