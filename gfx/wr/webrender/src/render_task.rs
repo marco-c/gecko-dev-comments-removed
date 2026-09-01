@@ -2242,7 +2242,6 @@ pub struct RectangleClipSubTask {
     pub quad_flags: QuadFlags,
     pub needs_scissor_rect: bool,
     pub rounded_rect_fast_path: bool,
-    pub rounded_rect_superellipse: bool,
 }
 
 
