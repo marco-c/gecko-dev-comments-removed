@@ -330,7 +330,6 @@ class AppWindow final : public nsIBaseWindow,
   bool mLockedUntilChromeLoad;
   bool mIgnoreXULSize;
   bool mIgnoreXULPosition;
-  bool mChromeFlagsFrozen;
   bool mIgnoreXULSizeMode;
   
   
