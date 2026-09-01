@@ -44,9 +44,11 @@ USAGE EXAMPLES
 from __future__ import annotations
 
 import argparse
+import atexit
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 
@@ -307,6 +309,34 @@ def find_adb() -> str | None:
     return None
 
 
+
+
+
+
+
+
+
+
+
+_CHILDREN: list = []
+
+
+def _reap_children(*_args):
+    for proc in _CHILDREN:
+        if proc.poll() is None:
+            proc.terminate()
+            try:
+                proc.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+    _CHILDREN.clear()
+
+
+def _reap_and_exit(signum, _frame):
+    _reap_children()
+    sys.exit(128 + signum)
+
+
 def capture_lines(mode: str):
     """Yield logcat lines from a connected device. mode: live | watch | dump."""
     adb = find_adb()
@@ -324,16 +354,12 @@ def capture_lines(mode: str):
     proc = subprocess.Popen(
         cmd, stdout=subprocess.PIPE, text=True, bufsize=1, errors="replace"
     )
+    _CHILDREN.append(proc)
     try:
         assert proc.stdout is not None
         yield from proc.stdout
     finally:
-        if proc.poll() is None:
-            proc.terminate()
-            try:
-                proc.wait(timeout=3)
-            except subprocess.TimeoutExpired:
-                proc.kill()
+        _reap_children()
 
 
 
@@ -396,6 +422,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    atexit.register(_reap_children)
+    for sig in (signal.SIGTERM, signal.SIGHUP):
+        signal.signal(sig, _reap_and_exit)
+
     argv = sys.argv[1:]
     
     if not argv or (argv[0] not in ("view", "capture", "-h", "--help")):
