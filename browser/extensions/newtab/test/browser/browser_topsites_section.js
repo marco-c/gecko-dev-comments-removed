@@ -18,13 +18,14 @@ test_newtab({
     content.document.querySelector(".top-sites .context-menu-button").click();
 
     await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".top-sites .context-menu"),
+      () => content.document.querySelector(".top-sites panel-list panel-item"),
       "Should find a visible topsite context menu [topsites_edit]"
     );
 
-    const topsitesAddBtn = content.document.querySelector(
-      ".top-sites li:nth-child(2) button"
-    );
+    
+    const topsitesAddBtn = content.document
+      .querySelectorAll(".top-sites panel-list panel-item")
+      .item(1);
     topsitesAddBtn.click();
 
     await ContentTaskUtils.waitForCondition(
@@ -56,16 +57,15 @@ test_newtab({
     topsiteContextBtn.click();
 
     await ContentTaskUtils.waitForCondition(
-      () => topsiteEl.querySelector(".top-sites-list .context-menu"),
+      () => topsiteEl.querySelector("panel-list"),
       "No context menu found"
     );
 
-    let contextMenu = topsiteEl.querySelector(".top-sites-list .context-menu");
+    let contextMenu = topsiteEl.querySelector("panel-list");
     ok(contextMenu, "Should find a topsite context menu");
 
-    const pinUnpinTopsiteBtn = contextMenu.querySelector(
-      ".top-sites .context-menu-item button"
-    );
+    
+    const pinUnpinTopsiteBtn = contextMenu.querySelector("panel-item");
     
     pinUnpinTopsiteBtn.click();
 
@@ -84,15 +84,264 @@ test_newtab({
     topsiteContextBtn.click();
 
     await ContentTaskUtils.waitForCondition(
-      () => topsiteEl.querySelector(".context-menu-item button"),
+      () => topsiteEl.querySelector("panel-item"),
       "Should find context menu item button for unpin"
     );
-    topsiteEl.querySelector(".context-menu-item button").click();
+    topsiteEl.querySelector("panel-item").click();
 
     
     await ContentTaskUtils.waitForCondition(
       () => !topsiteEl.querySelector(".icon-pin-small"),
       "Topsite should be unpinned"
+    );
+  },
+});
+
+
+
+
+
+test_newtab({
+  before: async args => {
+    
+    gBrowser.selectedBrowser.focus();
+    await setDefaultTopSites(args);
+  },
+  test: async function topsites_menu_no_stuck_hover_after_mouse() {
+    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(siteSelector),
+      "Wait for a topsite tile"
+    );
+    const tile = content.document.querySelector(siteSelector);
+    const menuButton = tile.querySelector(".context-menu-button");
+    const panelList = tile.querySelector("panel-list");
+
+    await EventUtils.synthesizeMouseAtCenter(menuButton, {}, content.window);
+    await ContentTaskUtils.waitForCondition(
+      () => panelList.hasAttribute("open"),
+      "Menu opens on mouse click"
+    );
+
+    
+    
+    await EventUtils.synthesizeMouseAtCenter(menuButton, {}, content.window);
+    await ContentTaskUtils.waitForCondition(
+      () => !panelList.hasAttribute("open"),
+      "Menu closes on second click"
+    );
+
+    
+    const logo = content.document.querySelector(".logo-and-wordmark");
+    EventUtils.synthesizeMouse(
+      logo,
+      5,
+      5,
+      { type: "mousemove" },
+      content.window
+    );
+    await ContentTaskUtils.waitForCondition(
+      () => !tile.matches(":hover"),
+      "Pointer moved off the tile"
+    );
+
+    
+    
+    is(
+      content.getComputedStyle(menuButton).opacity,
+      "0",
+      "the menu button is hidden once the pointer leaves (not stuck visible via retained focus)"
+    );
+  },
+});
+
+
+
+
+
+
+
+test_newtab({
+  before: async args => {
+    gBrowser.selectedBrowser.focus();
+    await setDefaultTopSites(args);
+  },
+  test: async function topsites_menu_no_stuck_hover_after_pin_via_menu() {
+    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(siteSelector),
+      "Wait for a topsite tile"
+    );
+    const tile = content.document.querySelector(siteSelector);
+    const menuButton = () => tile.querySelector(".context-menu-button");
+    const panelList = () => tile.querySelector("panel-list");
+
+    await EventUtils.synthesizeMouseAtCenter(menuButton(), {}, content.window);
+    await ContentTaskUtils.waitForCondition(
+      () => panelList().hasAttribute("open"),
+      "Menu opens on mouse click"
+    );
+
+    
+    await EventUtils.synthesizeMouseAtCenter(
+      panelList().querySelector("panel-item"),
+      {},
+      content.window
+    );
+    await ContentTaskUtils.waitForCondition(
+      () => tile.querySelector(".icon-pin-small"),
+      "The topsite is pinned"
+    );
+    await ContentTaskUtils.waitForCondition(
+      () => !panelList().hasAttribute("open"),
+      "Choosing a menu item closes the menu"
+    );
+
+    
+    const logo = content.document.querySelector(".logo-and-wordmark");
+    EventUtils.synthesizeMouse(
+      logo,
+      5,
+      5,
+      { type: "mousemove" },
+      content.window
+    );
+    await ContentTaskUtils.waitForCondition(
+      () => !tile.matches(":hover"),
+      "Pointer moved off the tile"
+    );
+
+    ok(!tile.classList.contains("active"), "the tile is no longer active");
+    is(
+      content.getComputedStyle(menuButton()).opacity,
+      "0",
+      "the tile is not stuck showing its menu button after pinning via the menu"
+    );
+
+    
+    await EventUtils.synthesizeMouseAtCenter(menuButton(), {}, content.window);
+    await ContentTaskUtils.waitForCondition(
+      () => panelList().hasAttribute("open"),
+      "Menu reopens for unpin"
+    );
+    await EventUtils.synthesizeMouseAtCenter(
+      panelList().querySelector("panel-item"),
+      {},
+      content.window
+    );
+    await ContentTaskUtils.waitForCondition(
+      () => !tile.querySelector(".icon-pin-small"),
+      "The topsite is unpinned again"
+    );
+  },
+});
+
+
+
+
+test_newtab({
+  before: async args => {
+    
+    gBrowser.selectedBrowser.focus();
+    await setDefaultTopSites(args);
+  },
+  test: async function topsites_menu_visible_on_keyboard_focus() {
+    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(siteSelector),
+      "Wait for a topsite tile"
+    );
+    const tile = content.document.querySelector(siteSelector);
+    const link = tile.querySelector("a.top-site-button");
+    const menuButton = tile.querySelector(".context-menu-button");
+
+    
+    
+    link.focus();
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.activeElement === link,
+      "The tile link is focused"
+    );
+
+    EventUtils.synthesizeKey("KEY_Tab", {}, content.window);
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.activeElement === menuButton,
+      "Tab moves focus from the tile link to its menu button"
+    );
+
+    await ContentTaskUtils.waitForCondition(
+      () => content.getComputedStyle(menuButton).opacity === "1",
+      "the menu button is visible while it holds keyboard focus"
+    );
+    ok(
+      menuButton.matches(":focus-visible"),
+      "the menu button matches :focus-visible, which is what reveals it"
+    );
+
+    
+    EventUtils.synthesizeKey("KEY_Tab", {}, content.window);
+    await ContentTaskUtils.waitForCondition(
+      () => content.getComputedStyle(menuButton).opacity === "0",
+      "the menu button is hidden again after focus moves on"
+    );
+  },
+});
+
+
+
+test_newtab({
+  before: async args => {
+    gBrowser.selectedBrowser.focus();
+    await setDefaultTopSites(args);
+  },
+  test: async function topsites_menu_opens_from_keyboard() {
+    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(siteSelector),
+      "Wait for a topsite tile"
+    );
+    const tile = content.document.querySelector(siteSelector);
+    const menuButton = tile.querySelector(".context-menu-button");
+    const panelList = tile.querySelector("panel-list");
+
+    menuButton.focus();
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.activeElement === menuButton,
+      "The menu button is focused"
+    );
+
+    EventUtils.synthesizeKey("KEY_Enter", {}, content.window);
+    await ContentTaskUtils.waitForCondition(
+      () => panelList.hasAttribute("open"),
+      "Wait for the menu to open"
+    );
+    ok(panelList.hasAttribute("open"), "Enter opens the menu");
+    is(
+      menuButton.getAttribute("aria-expanded"),
+      "true",
+      "aria-expanded tracks the open menu"
+    );
+    
+    
+    ok(
+      panelList.contains(content.document.activeElement),
+      "Opening with the keyboard moves focus into the menu"
+    );
+
+    EventUtils.synthesizeKey("KEY_Escape", {}, content.window);
+    await ContentTaskUtils.waitForCondition(
+      () => !panelList.hasAttribute("open"),
+      "Wait for the menu to close"
+    );
+    ok(!panelList.hasAttribute("open"), "Escape closes the menu");
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.activeElement === menuButton,
+      "Wait for focus to return to the trigger"
+    );
+    is(
+      content.document.activeElement,
+      menuButton,
+      "Escape returns focus to the menu button"
     );
   },
 });
@@ -118,14 +367,15 @@ test_newtab({
 
     
     await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".top-sites .context-menu"),
+      () => content.document.querySelector(".top-sites panel-list panel-item"),
       "Should find a visible topsite context menu [topsites_add]"
     );
 
     
-    const topsitesAddBtn = content.document.querySelector(
-      ".top-sites li:nth-child(2) button"
-    );
+    
+    const topsitesAddBtn = content.document
+      .querySelectorAll(".top-sites panel-list panel-item")
+      .item(1);
 
     topsitesAddBtn.click();
 
@@ -178,15 +428,15 @@ test_newtab({
     );
     topsiteContextBtn.click();
     await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".top-sites-list .context-menu"),
+      () => content.document.querySelector(".top-sites-list panel-list"),
       "No context menu found"
     );
 
+    
+    
     const dismissBtn = content.document
-      .querySelector(
-        '.top-sites-list .context-menu [data-l10n-id="newtab-menu-dismiss"]'
-      )
-      .closest("button");
+      .querySelectorAll(".top-sites panel-list panel-item")
+      .item(5);
     dismissBtn.click();
 
     
