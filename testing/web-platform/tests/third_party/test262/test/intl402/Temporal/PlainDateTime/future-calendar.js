@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+for (const calendar of TemporalHelpers.NotYetSupportedCalendars) {
+  assert.throws(RangeError, function () {
+    new Temporal.PlainDateTime(1970, 1, 1, 0, 0, 0, 0, 0, 0, calendar);
+  }, `${calendar} is not yet supported`);
+}

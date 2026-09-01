@@ -1,0 +1,11 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(Atomics.pause(), undefined,
+                 'Atomics.pause returns undefined');

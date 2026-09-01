@@ -1,0 +1,11 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.isFrozen(null), true);

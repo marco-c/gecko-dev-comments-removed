@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+function* g() {}
+
+let iter = g();
+
+assert.sameValue(typeof iter.includes(0), 'boolean');

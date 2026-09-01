@@ -1,0 +1,11 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.getPrototypeOf(Iterator.prototype.chunks), Function.prototype);

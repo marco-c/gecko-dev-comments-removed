@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+function* g() {}
+Iterator.prototype.windows.call(g(), 1);
+
+let iter = g();
+iter.windows(1);

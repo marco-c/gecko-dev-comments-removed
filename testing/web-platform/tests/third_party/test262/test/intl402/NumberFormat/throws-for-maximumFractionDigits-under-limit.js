@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let wontThrow = new Intl.NumberFormat(undefined, {maximumFractionDigits: 0});
+
+assert.throws(RangeError, function () {
+        return new Intl.NumberFormat(undefined, {maximumFractionDigits: -1});
+}, "Throws RangeError when maximumFractionDigits is less than 0.");

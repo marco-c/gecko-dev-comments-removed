@@ -1,0 +1,37 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var bigTypedArray;
+var littleTypedArray;
+
+testWithBigIntTypedArrayConstructors(function(BTA, makeCtorArg) {
+
+  bigTypedArray = new BTA(makeCtorArg([1n]));
+
+  testWithTypedArrayConstructors(function(TA, makeCtorArg) {
+
+    littleTypedArray = new TA(1);
+    assert.throws(TypeError, function() {
+      littleTypedArray.set(bigTypedArray);
+    });
+  });
+
+}, null, null, ["immutable"]);

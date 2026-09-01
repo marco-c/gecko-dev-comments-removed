@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Iterator.prototype, 'windows', {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});

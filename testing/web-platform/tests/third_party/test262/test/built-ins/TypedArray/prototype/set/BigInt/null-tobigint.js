@@ -1,0 +1,47 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var typedArray = new TA(makeCtorArg(1));
+
+  assert.throws(TypeError, function() {
+    typedArray.set([null]);
+  }, "abrupt completion from Null");
+
+}, null, null, ["immutable"]);

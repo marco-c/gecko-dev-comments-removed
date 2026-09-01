@@ -1,0 +1,10 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Iterator.prototype.chunks, 'function');

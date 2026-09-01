@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue([].values().join(''), '');
+
+assert.sameValue(['one'].values().join(''), 'one');
+
+assert.sameValue(['one', 'two'].values().join(''), 'onetwo');
+
+assert.sameValue(['one', 'two', 'three'].values().join(''), 'onetwothree');

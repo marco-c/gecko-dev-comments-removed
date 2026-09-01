@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+let arr = [NaN];
+
+assert.sameValue(arr.values().includes(0), false);
+assert.sameValue(arr.values().includes(NaN), true);
+assert.sameValue([].values().includes(NaN), false);

@@ -1,0 +1,11 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.freeze("abc"), "abc");

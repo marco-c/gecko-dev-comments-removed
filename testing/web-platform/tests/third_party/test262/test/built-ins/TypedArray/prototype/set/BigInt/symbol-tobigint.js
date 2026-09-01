@@ -1,0 +1,50 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = Symbol()
+
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var typedArray = new TA(makeCtorArg(1))
+
+  assert.throws(TypeError, function() {
+    typedArray.set([s]);
+  }, "abrupt completion from Symbol");
+
+}, null, null, ["immutable"]);

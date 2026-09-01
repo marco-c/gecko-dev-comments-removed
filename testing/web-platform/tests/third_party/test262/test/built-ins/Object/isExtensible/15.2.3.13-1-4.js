@@ -1,0 +1,9 @@
+
+
+
+
+
+
+
+
+assert.sameValue(Object.isExtensible("abc"), false);

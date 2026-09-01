@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Iterator.prototype.join, 'name', {
+  value: 'join',
+  enumerable: false,
+  writable: false,
+  configurable: true
+});

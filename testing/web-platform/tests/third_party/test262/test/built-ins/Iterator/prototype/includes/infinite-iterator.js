@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+let gen = function* () {
+  for (let i = 0; ; ++i) {
+    yield i;
+  }
+};
+
+assert.sameValue(gen().includes(1000), true);

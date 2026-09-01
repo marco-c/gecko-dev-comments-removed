@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+let s = Symbol('test');
+let arr = [s];
+
+assert.sameValue(arr.values().includes(Symbol('test')), false);
+assert.sameValue(arr.values().includes(s), true);
+assert.sameValue([].values().includes(s), false);

@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithTypedArrayConstructors(function(TA, makeCtorArg) {
+  assert(
+    compareArray(
+      new TA().fill(8),
+      []
+    ),
+    "does not fill an empty instance"
+  );
+
+  assert(
+    compareArray(new TA(makeCtorArg([0, 0, 0])).fill(8), [8, 8, 8]),
+    "Default start and end indexes are 0 and this.length"
+  );
+}, null, null, ["immutable"]);

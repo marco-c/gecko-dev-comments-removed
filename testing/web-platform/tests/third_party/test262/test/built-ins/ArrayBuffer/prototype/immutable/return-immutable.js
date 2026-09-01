@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var ab = new ArrayBuffer(1);
+assert.sameValue(ab.immutable, false);
+
+var iab = ab.transferToImmutable();
+assert.sameValue(iab.immutable, true);
+
+$DETACHBUFFER(ab);
+assert.sameValue(ab.immutable, false);

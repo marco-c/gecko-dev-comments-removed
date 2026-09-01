@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Iterator.prototype, 'join', {
+  enumerable: false,
+  writable: true,
+  configurable: true
+});

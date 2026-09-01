@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let iter = Iterator.prototype.chunks.call({ next: 0 }, 1);
+
+assert.throws(TypeError, function () {
+  iter.next();
+});

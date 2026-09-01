@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Iterator.prototype, 'includes', {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});

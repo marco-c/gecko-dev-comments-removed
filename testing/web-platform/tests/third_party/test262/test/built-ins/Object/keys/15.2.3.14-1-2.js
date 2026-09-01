@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.compareArray(Object.keys(true), []);

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+let iterator = {
+  __proto__: Iterator.prototype,
+  next() {
+    return null;
+  },
+  get return() {
+    throw new Test262Error();
+  }
+};
+
+assert.throws(TypeError, function() {
+  iterator.includes(0);
+});

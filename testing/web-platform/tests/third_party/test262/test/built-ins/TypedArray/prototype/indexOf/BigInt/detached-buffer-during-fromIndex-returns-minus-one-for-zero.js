@@ -1,0 +1,49 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  const sample = new TA(makeCtorArg(1));
+  const fromIndex = {
+    valueOf() {
+      $DETACHBUFFER(sample.buffer);
+      return 0;
+    }
+  };
+
+  assert.sameValue(sample.indexOf(0n, fromIndex), -1);
+}, null, null, ["immutable"]);

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var buffer = makeCtorArg(1);
+  var ta = new TA(buffer);
+
+  assert.sameValue(ta.buffer, buffer);
+}, null, ["arraybuffer"]);

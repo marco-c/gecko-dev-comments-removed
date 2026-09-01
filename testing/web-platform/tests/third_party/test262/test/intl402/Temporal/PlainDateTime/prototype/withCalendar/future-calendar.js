@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+const okDate = new Temporal.PlainDateTime(1970, 1, 1);
+
+for (const calendar of TemporalHelpers.NotYetSupportedCalendars) {
+  assert.throws(RangeError, function () {
+    okDate.withCalendar(calendar);
+  }, `${calendar} is not yet supported`);
+}

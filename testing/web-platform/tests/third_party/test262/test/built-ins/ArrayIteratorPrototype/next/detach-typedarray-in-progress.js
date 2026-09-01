@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithAllTypedArrayConstructors((TA, makeCtorArg) => {
+  var typedArray = new TA(makeCtorArg(5));
+  var i = 0;
+  assert.throws(TypeError, () => {
+    for (let key of typedArray.keys()) {
+      $DETACHBUFFER(typedArray.buffer);
+      i++;
+    }
+  });
+  assert.sameValue(i, 1);
+}, null, null, ["immutable"]);

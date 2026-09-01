@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Iterator.prototype, 'chunks', {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});

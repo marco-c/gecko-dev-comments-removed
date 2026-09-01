@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithTypedArrayConstructors(function(TA, makeCtorArg) {
+  var called = 0;
+
+  new TA(makeCtorArg(0)).map(function() {
+    called++;
+  });
+
+  assert.sameValue(called, 0);
+});

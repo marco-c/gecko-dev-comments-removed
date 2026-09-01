@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+let object = new Intl.NumberFormat();
+let newObject = Intl.NumberFormat.call(object);
+let symbols = Object.getOwnPropertySymbols(newObject);
+
+assert(symbols.some((symbol) => symbol.description === "IntlLegacyConstructedSymbol"));

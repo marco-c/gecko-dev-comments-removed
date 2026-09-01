@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg([1n, 2n, 3n]));
+
+  assert.throws(TypeError, function() {
+    sample.set(undefined);
+  }, "undefined");
+
+  assert.throws(TypeError, function() {
+    sample.set(null);
+  }, "null");
+}, null, null, ["immutable"]);

@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithTypedArrayConstructors(function(TA, makeCtorArg) {
+  var loops = 0;
+  var sample = new TA(makeCtorArg(2));
+
+  sample.filter(function() {
+    if (loops === 0) {
+      $DETACHBUFFER(sample.buffer);
+    }
+    loops++;
+    return true;
+  });
+
+  assert.sameValue(loops, 2);
+}, null, null, ["immutable"]);

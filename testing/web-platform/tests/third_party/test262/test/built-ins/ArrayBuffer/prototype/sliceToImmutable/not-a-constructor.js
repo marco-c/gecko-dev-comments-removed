@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert(!isConstructor(ArrayBuffer.prototype.sliceToImmutable),
+  "ArrayBuffer.prototype.sliceToImmutable is not a constructor");
+
+var arrayBuffer = new ArrayBuffer(8);
+assert.throws(TypeError, function() {
+  new arrayBuffer.sliceToImmutable();
+});

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function* g() {}
+
+let chunks = Array.from(g().chunks(2));
+assert.sameValue(chunks.length, 0);

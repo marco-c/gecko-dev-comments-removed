@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+assert(!isConstructor(Iterator.prototype.join), "Iterator.prototype.join should not be a constructor");
+
+assert.throws(TypeError, function() {
+  var iterator = [].values();
+  new iterator.join();
+});

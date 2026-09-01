@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let defaultMaximumFractionDigits =
+    new Intl.NumberFormat("en").resolvedOptions().maximumFractionDigits;
+
+Object.prototype.maximumFractionDigits = 1;
+let formatter = new Intl.NumberFormat("en");
+assert.sameValue(formatter.resolvedOptions().maximumFractionDigits,
+                 defaultMaximumFractionDigits);

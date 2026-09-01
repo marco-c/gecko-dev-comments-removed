@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+var gotReturn = false;
+var it = {
+  next: function () {
+    throw new Test262Error();
+  },
+  get return() {
+    gotReturn = true;
+  },
+};
+
+assert.throws(Test262Error, function () {
+  Iterator.prototype.join.call(it);
+});
+
+assert.sameValue(gotReturn, false);

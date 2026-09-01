@@ -1,0 +1,50 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var typedArray = new TA(makeCtorArg(1));
+
+  assert.throws(SyntaxError, function() {
+    typedArray.set(["definately not a number"]);
+  }, "StringToBigInt(prim) == NaN");
+
+}, null, null, ["immutable"]);

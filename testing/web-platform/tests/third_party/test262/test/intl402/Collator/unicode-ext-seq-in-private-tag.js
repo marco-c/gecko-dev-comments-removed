@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var c = new Intl.Collator("de-x-u-co-phonebk");
+var resolved = c.resolvedOptions();
+
+assert.sameValue(resolved.collation, "default");

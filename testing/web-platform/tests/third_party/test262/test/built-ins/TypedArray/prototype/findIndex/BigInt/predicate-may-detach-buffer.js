@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg(2));
+  var loops = 0;
+
+  sample.findIndex(function() {
+    if (loops === 0) {
+      $DETACHBUFFER(sample.buffer);
+    }
+    loops++;
+  });
+  assert.sameValue(loops, 2, "predicate is called once");
+}, null, null, ["immutable"]);

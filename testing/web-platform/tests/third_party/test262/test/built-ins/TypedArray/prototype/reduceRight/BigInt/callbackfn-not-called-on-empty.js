@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var called = 0;
+
+  new TA(makeCtorArg(0)).reduceRight(function() {
+    called++;
+  }, undefined);
+
+  assert.sameValue(called, 0);
+});

@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const nf = new Intl.NumberFormat([], {
+  signDisplay: 'negative',
+});
+const resolvedOptions = nf.resolvedOptions();
+
+verifyProperty(resolvedOptions, 'signDisplay', {
+  value: 'negative',
+  writable: true,
+  enumerable: true,
+  configurable: true
+});

@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+let positive = [+0];
+let negative = [-0];
+
+assert.sameValue(positive.values().includes(+0), true);
+assert.sameValue(positive.values().includes(-0), true);
+assert.sameValue(negative.values().includes(+0), true);
+assert.sameValue(negative.values().includes(-0), true);

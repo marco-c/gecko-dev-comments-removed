@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Object.prototype.useGrouping = false;
+assert.sameValue(12345n.toLocaleString("en-US"), "12,345");

@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  ['one', null, 'two', undefined].values().join(),
+  'one,,two,'
+);
+
+assert.sameValue(
+  ['one', null, 'two', undefined, 'three'].values().join(),
+  'one,,two,,three'
+);

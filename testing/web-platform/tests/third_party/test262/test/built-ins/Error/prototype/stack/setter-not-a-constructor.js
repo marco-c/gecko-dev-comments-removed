@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var set = Object.getOwnPropertyDescriptor(Error.prototype, 'stack').set;
+
+assert.sameValue(
+  isConstructor(set),
+  false,
+  'isConstructor(set Error.prototype.stack) must return false'
+);
+
+assert.throws(TypeError, function () {
+  new set('');
+});
