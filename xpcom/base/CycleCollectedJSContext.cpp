@@ -73,6 +73,9 @@ CycleCollectedJSContext::CycleCollectedJSContext()
 
 CycleCollectedJSContext::~CycleCollectedJSContext() {
   MOZ_COUNT_DTOR(CycleCollectedJSContext);
+  MOZ_ASSERT(mWebTaskSchedulingStateCount == 0,
+             "A global leaked a WebTaskSchedulingState, which would have "
+             "permanently disabled the getHostDefinedData fast path");
   
   if (!mJSContext) {
     return;
@@ -244,6 +247,12 @@ bool CycleCollectedJSContext::getHostDefinedData(
   
   
   
+  
+  
+  if (!MayHaveWebTaskSchedulingState()) {
+    return true;
+  }
+
   mozilla::dom::WebTaskSchedulingState* schedulingState =
       mozilla::dom::GetWebTaskSchedulingState();
   if (!schedulingState) {

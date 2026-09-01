@@ -171,9 +171,17 @@ void nsIGlobalObject::TraverseObjectsInGlobal(
 
 void nsIGlobalObject::SetWebTaskSchedulingState(
     mozilla::dom::WebTaskSchedulingState* aState) {
+  
+  
+  
+  if (!!mWebTaskSchedulingState != !!aState) {
+    if (CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get()) {
+      aState ? ccjs->NoteWebTaskSchedulingStateAdded()
+             : ccjs->NoteWebTaskSchedulingStateRemoved();
+    }
+  }
   mWebTaskSchedulingState = aState;
 }
-
 
 void nsIGlobalObject::AddGlobalTeardownObserver(
     GlobalTeardownObserver* aObject) {

@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ScriptSettings_h
 #define mozilla_dom_ScriptSettings_h
 
@@ -93,6 +91,10 @@ nsIGlobalObject* GetIncumbentGlobal();
 
 
 nsIGlobalObject* GetCurrentGlobal();
+
+
+
+
 
 WebTaskSchedulingState* GetWebTaskSchedulingState();
 
