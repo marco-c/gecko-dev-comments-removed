@@ -1925,6 +1925,10 @@ var gSync = {
       document,
       "PanelUI-fxa-menu-signed-out-card"
     );
+    const signedOutSeparatorEl = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-signed-out-separator"
+    );
     const signedInContainer = PanelMultiView.getViewNode(
       document,
       "PanelUI-signedin-panel"
@@ -1933,25 +1937,9 @@ var gSync = {
       document,
       "PanelUI-sign-out-separator"
     );
-    const profilesHeaderLabel = PanelMultiView.getViewNode(
-      document,
-      "PanelUI-fxa-menu-profiles-header-label"
-    );
-    const profileButtonsContainer = PanelMultiView.getViewNode(
-      document,
-      "PanelUI-fxa-menu-profile-buttons"
-    );
-    const profilesSeparator = PanelMultiView.getViewNode(
-      document,
-      "PanelUI-fxa-menu-profiles-separator"
-    );
     const manageAccountSeparator = PanelMultiView.getViewNode(
       document,
       "PanelUI-fxa-menu-manage-account-separator"
-    );
-    const secureSyncHeader = PanelMultiView.getViewNode(
-      document,
-      "PanelUI-fxa-menu-secure-sync-header"
     );
     const syncSetupEl = PanelMultiView.getViewNode(
       document,
@@ -1980,6 +1968,7 @@ var gSync = {
     manageAccountSeparator.hidden = true;
     signInPromoEl.hidden = true;
     signedOutCardEl.hidden = true;
+    signedOutSeparatorEl.hidden = true;
     menuHeaderDescriptionEl.hidden = false;
 
     
@@ -2018,10 +2007,6 @@ var gSync = {
     let headerTitleL10nId;
     let headerDescription;
 
-    
-    
-    const profilesShown = !!SelectableProfileService?.isEnabled;
-
     switch (state.status) {
       case UIState.STATUS_NOT_CONFIGURED:
         signOutSeparator.hidden = true;
@@ -2050,24 +2035,7 @@ var gSync = {
           }
         }
 
-        
-        profilesHeaderLabel.remove();
-        profileButtonsContainer.remove();
-        profilesSeparator.remove();
-        secureSyncHeader.remove();
-
-        
-        
-        
-        profilesSeparator.hidden = false;
-        secureSyncHeader.hidden = false;
-
-        signedInContainer.after(secureSyncHeader);
-        signedInContainer.after(profilesSeparator);
-        signedInContainer.after(profileButtonsContainer);
-        signedInContainer.after(profilesHeaderLabel);
-
-        secureSyncHeader.after(syncStatusBtn);
+        this._positionSecureSyncSection(signedInContainer);
 
         break;
 
@@ -2078,6 +2046,7 @@ var gSync = {
         headerDescription = state.displayName || state.email;
         mainWindowEl.style.removeProperty("--avatar-image-url");
         this._showFxASignedOutCard(signedOutCardEl, state);
+        this._positionSecureSyncSection(signedInContainer);
         break;
 
       case UIState.STATUS_NOT_VERIFIED:
@@ -2086,6 +2055,7 @@ var gSync = {
         headerTitleL10nId = "account-finish-account-setup";
         headerDescription = state.displayName || state.email;
         this._showFxASignedOutCard(signedOutCardEl, state);
+        this._positionSecureSyncSection(signedInContainer);
         break;
 
       case UIState.STATUS_SIGNED_IN:
@@ -2110,22 +2080,10 @@ var gSync = {
 
         
         manageAccountSeparator.remove();
-        profilesHeaderLabel.remove();
-        profileButtonsContainer.remove();
-        profilesSeparator.remove();
-        secureSyncHeader.remove();
-
+        this._positionSecureSyncSection(manageAccountButtonEl);
         
         
         manageAccountSeparator.hidden = false;
-        
-        profilesSeparator.hidden = !profilesShown;
-        secureSyncHeader.hidden = false;
-
-        manageAccountButtonEl.after(secureSyncHeader);
-        manageAccountButtonEl.after(profilesSeparator);
-        manageAccountButtonEl.after(profileButtonsContainer);
-        manageAccountButtonEl.after(profilesHeaderLabel);
         
         
         manageAccountButtonEl.after(manageAccountSeparator);
@@ -2162,6 +2120,47 @@ var gSync = {
 
   
   
+  
+  _positionSecureSyncSection(anchorEl) {
+    const profilesHeaderLabel = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-profiles-header-label"
+    );
+    const profileButtonsContainer = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-profile-buttons"
+    );
+    const profilesSeparator = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-profiles-separator"
+    );
+    const secureSyncHeader = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-secure-sync-header"
+    );
+    const syncStatusBtn = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-sync-status-button"
+    );
+
+    profilesHeaderLabel.remove();
+    profileButtonsContainer.remove();
+    profilesSeparator.remove();
+    secureSyncHeader.remove();
+
+    profilesSeparator.hidden = false;
+    secureSyncHeader.hidden = false;
+
+    anchorEl.after(secureSyncHeader);
+    anchorEl.after(profilesSeparator);
+    anchorEl.after(profileButtonsContainer);
+    anchorEl.after(profilesHeaderLabel);
+
+    secureSyncHeader.after(syncStatusBtn);
+  },
+
+  
+  
   _showFxASignedOutCard(cardEl, state) {
     const emailEl = PanelMultiView.getViewNode(
       document,
@@ -2170,6 +2169,10 @@ var gSync = {
     const messageEl = PanelMultiView.getViewNode(
       document,
       "PanelUI-fxa-menu-signed-out-message"
+    );
+    const separatorEl = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-signed-out-separator"
     );
 
     emailEl.value = state.email ?? "";
@@ -2181,6 +2184,7 @@ var gSync = {
     );
 
     cardEl.hidden = false;
+    separatorEl.hidden = false;
   },
 
   updateAvatarURL(mainWindowEl, avatarURL, avatarIsDefault) {
