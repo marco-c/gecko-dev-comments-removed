@@ -15,12 +15,8 @@ const { Weave } = ChromeUtils.importESModule(
 ChromeUtils.defineESModuleGetters(this, {
   EventEmitter: "resource://gre/modules/EventEmitter.sys.mjs",
   FxAccountsPairingFlow: "resource://gre/modules/FxAccountsPairing.sys.mjs",
+  QR: "moz-src:///toolkit/components/qrcode/encoder.mjs",
 });
-
-const { require } = ChromeUtils.importESModule(
-  "resource://devtools/shared/loader/Loader.sys.mjs"
-);
-const QR = require("devtools/shared/qrcode/index");
 
 
 
@@ -92,14 +88,11 @@ var gFxaPairDeviceDialog = {
     
     let dialogParent = window.parent.document;
 
-    
     let dialogBox = dialogParent.querySelector(".dialogBox");
-    dialogBox.style.overflow = "visible";
     dialogBox.style.borderRadius = "12px";
 
     let dialogTitle = dialogParent.querySelector(".dialogTitleBar");
     dialogTitle.style.borderBottom = "none";
-    dialogTitle.classList.add("fxaPairDeviceIcon");
   },
 
   _resetBackgroundQR() {
