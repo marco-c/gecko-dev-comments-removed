@@ -24,6 +24,14 @@ function promisePopupNotificationShown(name) {
       if (!notification) {
         return;
       }
+      
+      
+      
+      let panelState = PopupNotifications.panel.state;
+      if (panelState != "open") {
+        info(`Ignoring popupshown for ${name}, panel state: ${panelState}`);
+        return;
+      }
 
       ok(notification, `${name} notification shown`);
       ok(PopupNotifications.isPanelOpen, "notification panel open");

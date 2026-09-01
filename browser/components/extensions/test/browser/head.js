@@ -268,6 +268,14 @@ function promisePopupNotificationShown(name, win = window) {
       if (!notification) {
         return;
       }
+      
+      
+      
+      let panelState = win.PopupNotifications.panel.state;
+      if (panelState != "open") {
+        info(`Ignoring popupshown for ${name}, panel state: ${panelState}`);
+        return;
+      }
 
       ok(notification, `${name} notification shown`);
       ok(win.PopupNotifications.isPanelOpen, "notification panel open");
