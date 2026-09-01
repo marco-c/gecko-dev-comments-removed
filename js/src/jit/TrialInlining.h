@@ -118,6 +118,13 @@ class InlinableCallData : public InlinableOpData {
  public:
   ObjOperandId calleeOperand;
   CallFlags callFlags;
+
+  
+  
+  
+  bool isBound = false;
+  ObjOperandId boundTargetOperand;
+  uint32_t numBoundArgs = 0;
 };
 
 class InlinableGetterData : public InlinableOpData {

@@ -2233,6 +2233,8 @@ bool WarpBuilder::buildCallOp(BytecodeLocation loc) {
     
     
     
+    
+    
     callInfo.markAsInlined();
     if (!transpileCall(loc, inliningSnapshot->cacheIRSnapshot(), &callInfo)) {
       return false;
