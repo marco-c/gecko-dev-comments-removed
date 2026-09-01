@@ -178,7 +178,6 @@ panel toolbarseparator {
 }
 
 panelmultiview {
-  align-items: flex-start;
   min-width: 0;
   min-height: 0;
 
@@ -811,6 +810,8 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
   display: none;
 }
 
+/* FIXME(bug 2061145): Remove :has() usage, use showing-* selectors instead */
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 :root[fxastatus="not_configured"]
   #appMenu-mainView:not([showing-fxa-menu-message], [showing-default-cta-menu-message]):not(:has(#appMenu-update-banner:not([hidden]))) {
   & #appMenu-fxa-status2 {
@@ -978,17 +979,19 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 #PanelUI-fxa-menu-secure-sync-subpanel,
 #PanelUI-fxa-device-recent-tabs {
   height: fit-content;
+  /* FIXME: Why is !important needed here? */
   min-height: 0 !important;
 }
 
-.panel-viewcontainer:has(#PanelUI-fxa-menu-secure-sync-subpanel[visible], #PanelUI-fxa-device-recent-tabs[visible]) {
+/* FIXME(bug 2061145): We should track visible panel without using :has() */
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
+.panel-viewcontainer:has(#PanelUI-fxa-menu-secure-sync-subpanel[visible], #PanelUI-fxa-device-recent-tabs[visible], #PanelUI-profiles[visible]) {
+  /* FIXME: Why is !important needed here? */
   min-height: 0 !important;
 }
 
-#PanelUI-fxa-cta-menu {
-  .fxa-cta-button label {
-    margin: 0;
-  }
+#PanelUI-fxa-cta-menu .fxa-cta-button label {
+  margin: 0;
 }
 
 #appMenu-fxa-status2 {
@@ -1882,7 +1885,6 @@ toolbarbutton[itemtype="tab"].PanelUI-tabitem-container,
 #appMenu-fxa-label > .toolbarbutton-icon,
 #PanelUI-containersItems > .subviewbutton > .toolbarbutton-icon,
 .PanelUI-tabitem-container > toolbarbutton[itemtype="tab"] > .toolbarbutton-icon,
-toolbarbutton[itemtype="tab"].PanelUI-tabitem-container > .toolbarbutton-icon,
 .PanelUI-remotetabs-clientcontainer > toolbarbutton > .toolbarbutton-icon,
 #PanelUI-recentlyClosedWindows > toolbarbutton > .toolbarbutton-icon,
 #PanelUI-recentlyClosedTabs > toolbarbutton > .toolbarbutton-icon,
@@ -1910,21 +1912,13 @@ toolbarbutton[itemtype="tab"].PanelUI-tabitem-container > .toolbarbutton-icon,
     transform: translateY(-20px);
   }
 
-  > toolbarbutton[itemtype="tab"],
-  &[itemtype="tab"] {
+  > toolbarbutton[itemtype="tab"] {
     flex: 1;
     min-width: 0;
     display: flex;
 
     &[disabled] {
       pointer-events: none;
-
-      /* When the tab button doubles as the row container, the Undo button is
-         nested inside it and would inherit pointer-events: none once the row is
-         disabled on close. Keep it clickable so the close can be undone. */
-      > .remote-tabs-undo-button {
-        pointer-events: auto;
-      }
     }
   }
 }
@@ -1944,7 +1938,6 @@ toolbarbutton[itemtype="showinactivebutton"] {
     /* To match the nav elements in the panel */
     -moz-context-properties: fill, fill-opacity;
     fill: currentColor;
-    fill-opacity: var(--opacity-deemphasized-strong);
     display: flex;
   }
 }
@@ -2912,10 +2905,6 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 
 #PanelUI-profiles {
   height: fit-content;
-  min-height: 0 !important;
-}
-
-.panel-viewcontainer:has(#PanelUI-profiles[visible]) {
   min-height: 0 !important;
 }
 
