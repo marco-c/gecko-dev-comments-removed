@@ -1284,16 +1284,34 @@ void nsFocusManager::WindowHidden(mozIDOMWindowProxy* aWindow,
     window->UpdateCommands(u"focus"_ns);
 
     if (presShell) {
+      const DebugOnly<uint64_t> actionId =
+          mActionIdForFocusedBrowsingContextInContent;
       RefPtr<Document> composedDoc = oldFocusedElement->GetComposedDoc();
       SendFocusOrBlurEvent(eBlur, presShell, composedDoc, oldFocusedElement,
                            false);
+      NS_WARNING_ASSERTION(
+          !XRE_IsContentProcess() ||
+              !ActionIdComparableAndLower(
+                  actionId, mActionIdForFocusedBrowsingContextInContent),
+          "A recursive focus move occurred. We might need to stop doing "
+          "something below.");
     }
   }
 
-  const RefPtr<nsPresContext> focusedPresContext =
-      presShell ? presShell->GetPresContext() : nullptr;
-  IMEStateManager::OnChangeFocus(focusedPresContext, nullptr,
-                                 GetFocusMoveActionCause(0));
+  {
+    const DebugOnly<uint64_t> actionId =
+        mActionIdForFocusedBrowsingContextInContent;
+    const RefPtr<nsPresContext> focusedPresContext =
+        presShell ? presShell->GetPresContext() : nullptr;
+    IMEStateManager::OnChangeFocus(focusedPresContext, nullptr,
+                                   GetFocusMoveActionCause(0));
+    NS_WARNING_ASSERTION(
+        !XRE_IsContentProcess() ||
+            !ActionIdComparableAndLower(
+                actionId, mActionIdForFocusedBrowsingContextInContent),
+        "A recursive focus move occurred. We might need to stop doing "
+        "something below.");
+  }
   if (presShell) {
     SetCaretVisible(presShell, false, nullptr);
   }
@@ -2500,6 +2518,19 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
 
   
   
+  if (XRE_IsContentProcess() &&
+      ActionIdComparableAndLower(aActionId,
+                                 mActionIdForFocusedBrowsingContextInContent))
+      [[unlikely]] {
+    LOGFOCUS(
+        ("Ignored an attempt to null out focused element after notifying "
+         "IMEStateManager due to a stale action id %" PRIu64 ".",
+         aActionId));
+    return true;
+  }
+
+  
+  
   mFocusedElement = nullptr;
   if (aBrowsingContextToClear) {
     nsPIDOMWindowOuter* windowToClear = aBrowsingContextToClear->GetDOMWindow();
@@ -2824,6 +2855,18 @@ void nsFocusManager::Focus(
       RefPtr<nsPresContext> presContext = presShell->GetPresContext();
       IMEStateManager::OnChangeFocus(presContext, nullptr,
                                      GetFocusMoveActionCause(aFlags));
+      
+      
+      if (XRE_IsContentProcess() &&
+          ActionIdComparableAndLower(
+              aActionId, mActionIdForFocusedBrowsingContextInContent))
+          [[unlikely]] {
+        LOGFOCUS(
+            ("Ignored an attempt to null out focused element after notifying "
+             "IMEStateManager due to a stale action id %" PRIu64 ".",
+             aActionId));
+        return;
+      }
     }
     if (doc && !focusInOtherContentProcess) {
       SendFocusOrBlurEvent(eFocus, presShell, doc, doc, aWindowRaised);
@@ -2882,6 +2925,18 @@ void nsFocusManager::Focus(
 
       IMEStateManager::OnChangeFocus(presContext, elementToFocus,
                                      GetFocusMoveActionCause(aFlags));
+      
+      
+      if (XRE_IsContentProcess() &&
+          ActionIdComparableAndLower(
+              aActionId, mActionIdForFocusedBrowsingContextInContent))
+          [[unlikely]] {
+        LOGFOCUS(
+            ("Ignored an attempt to null out focused element after notifying "
+             "IMEStateManager due to a stale action id %" PRIu64 ".",
+             aActionId));
+        return;
+      }
 
       
       
@@ -2910,6 +2965,18 @@ void nsFocusManager::Focus(
       
       IMEStateManager::OnChangeFocus(presContext, elementToFocus,
                                      GetFocusMoveActionCause(aFlags));
+      
+      
+      if (XRE_IsContentProcess() &&
+          ActionIdComparableAndLower(
+              aActionId, mActionIdForFocusedBrowsingContextInContent))
+          [[unlikely]] {
+        LOGFOCUS(
+            ("Ignored an attempt to null out focused element after notifying "
+             "IMEStateManager due to a stale action id %" PRIu64 ".",
+             aActionId));
+        return;
+      }
       if (!aWindowRaised) {
         aWindow->UpdateCommands(u"focus"_ns);
       }
@@ -2928,6 +2995,18 @@ void nsFocusManager::Focus(
       RefPtr<nsPresContext> presContext = presShell->GetPresContext();
       IMEStateManager::OnChangeFocus(presContext, nullptr,
                                      GetFocusMoveActionCause(aFlags));
+      
+      
+      if (XRE_IsContentProcess() &&
+          ActionIdComparableAndLower(
+              aActionId, mActionIdForFocusedBrowsingContextInContent))
+          [[unlikely]] {
+        LOGFOCUS(
+            ("Ignored an attempt to null out focused element after notifying "
+             "IMEStateManager due to a stale action id %" PRIu64 ".",
+             aActionId));
+        return;
+      }
     }
 
     if (!aWindowRaised) {
