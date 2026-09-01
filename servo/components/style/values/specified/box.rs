@@ -1743,14 +1743,6 @@ impl Perspective {
         }
         Self::parse(context, input)
     }
-
-    
-    pub(crate) fn to_css_legacy<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: Write,
-    {
-        self.to_css(dest)
-    }
 }
 
 
@@ -2007,6 +1999,17 @@ pub enum Appearance {
     
     #[css(skip)]
     Count,
+}
+
+impl Appearance {
+    
+    pub(crate) fn parse_legacy<'i>(
+        context: &ParserContext,
+        input: &mut Parser<'i, '_>,
+    ) -> Result<Self, ParseError<'i>> {
+        
+        Self::parse(context, input)
+    }
 }
 
 

@@ -142,12 +142,12 @@ interface """
         pref = p.gecko_pref
 
         propId = p.ident
+        if p.idl_method == "MozAppearance":
+            
+            
+            pref = "layout.css.moz-appearance.webidl.enabled"
         if p.type() == "alias":
-            if p.idl_method == "MozAppearance":
-                
-                
-                pref = "layout.css.moz-appearance.webidl.enabled"
-            elif p.gecko_pref == p.original.gecko_pref:
+            if p.gecko_pref == p.original.gecko_pref:
                 
                 continue
             propId = p.original.ident
