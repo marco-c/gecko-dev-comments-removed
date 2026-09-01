@@ -5,6 +5,7 @@
 #include "PerformanceMainThread.h"
 
 #include "LargestContentfulPaint.h"
+#include "PerformanceContainerTiming.h"
 #include "PerformanceEventTiming.h"
 #include "PerformanceInteractionMetrics.h"
 #include "PerformanceNavigation.h"
@@ -70,10 +71,11 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(PerformanceMainThread,
                                                 Performance)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(
       mTiming, mNavigation, mDocEntry, mFCPTiming, mEventTimingEntries,
-      mLargestContentfulPaintEntries, mFirstInputEvent, mPendingPointerDown,
-      mPendingEventTimingEntries, mEventCounts, mInteractionMetrics,
-      mCurrentEventTimingEntry)
+      mLargestContentfulPaintEntries, mContainerTimingEntries, mFirstInputEvent,
+      mPendingPointerDown, mPendingEventTimingEntries, mEventCounts,
+      mInteractionMetrics, mCurrentEventTimingEntry)
   tmp->mTextFrameUnions.Clear();
+  tmp->mContainerTimingRecords.Clear();
   mozilla::DropJSObjects(tmp);
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -81,9 +83,10 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(PerformanceMainThread,
                                                   Performance)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(
       mTiming, mNavigation, mDocEntry, mFCPTiming, mEventTimingEntries,
-      mLargestContentfulPaintEntries, mFirstInputEvent, mPendingPointerDown,
-      mPendingEventTimingEntries, mEventCounts, mTextFrameUnions,
-      mInteractionMetrics, mCurrentEventTimingEntry)
+      mLargestContentfulPaintEntries, mContainerTimingEntries, mFirstInputEvent,
+      mPendingPointerDown, mPendingEventTimingEntries, mEventCounts,
+      mTextFrameUnions, mContainerTimingRecords, mInteractionMetrics,
+      mCurrentEventTimingEntry)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
@@ -316,6 +319,86 @@ void PerformanceMainThread::SetCurrentEventTimingEntry(
 PerformanceEventTiming* PerformanceMainThread::GetCurrentEventTimingEntry()
     const {
   return mCurrentEventTimingEntry;
+}
+
+void PerformanceMainThread::QueueContainerTimingEntry(
+    PerformanceContainerTiming* aEntry) {
+  MOZ_ASSERT(StaticPrefs::dom_enable_container_timing());
+  
+  if (mContainerTimingEntries.Length() < kMaxContainerTimingBufferSize) {
+    mContainerTimingEntries.AppendElement(aEntry);
+  }
+  QueueEntry(aEntry);
+}
+
+void PerformanceMainThread::FinalizeContainerTimingEntries() {
+  if (!StaticPrefs::dom_enable_container_timing()) {
+    return;
+  }
+
+  
+  
+  
+  
+  if (HasDispatchedScrollEvent()) {
+    return;
+  }
+
+  PresShell* presShell = GetPresShell();
+  if (!presShell) {
+    return;
+  }
+
+  nsPresContext* presContext = presShell->GetPresContext();
+  if (!presContext) {
+    return;
+  }
+
+  
+  
+  TimeStamp paintTime = presContext->GetMarkPaintTimingStart();
+  if (paintTime.IsNull()) {
+    return;
+  }
+
+  
+  for (auto iter = mContainerTimingRecords.Iter(); !iter.Done(); iter.Next()) {
+    Element* containerRoot = iter.Key();
+    ContainerTimingRecord& record = iter.Data();
+
+    if (!record.mHasPendingChanges) {
+      continue;
+    }
+
+    
+    if (!containerRoot->IsInUncomposedDoc()) {
+      record.ClearPendingChanges();
+      continue;
+    }
+
+    if (record.mFirstRenderTime.IsNull()) {
+      record.mFirstRenderTime = paintTime;
+    }
+
+    
+    
+    nsRect intersectionRect = record.mPaintedRegion.GetBounds();
+    uint64_t appUnitsPerPixelSquared =
+        static_cast<uint64_t>(AppUnitsPerCSSPixel()) * AppUnitsPerCSSPixel();
+    uint64_t sizeInPixels = record.mPaintedRegionArea / appUnitsPerPixelSquared;
+
+    
+    
+    
+    RefPtr<PerformanceContainerTiming> containerEntry =
+        new PerformanceContainerTiming(this, containerRoot, record.mIdentifier,
+                                       intersectionRect, sizeInPixels,
+                                       record.mFirstRenderTime, paintTime,
+                                       record.mLastNewPaintedAreaElement);
+    QueueContainerTimingEntry(containerEntry);
+
+    record.ClearPendingChanges();
+  }
 }
 
 void PerformanceMainThread::DispatchPendingEventTimingEntries() {
@@ -696,6 +779,13 @@ void PerformanceMainThread::GetEntriesByTypeForObserver(
     }
   }
 
+  if (StaticPrefs::dom_enable_container_timing()) {
+    if (aEntryType.Equals(kContainerTimingName)) {
+      aRetval.AppendElements(mContainerTimingEntries);
+      return;
+    }
+  }
+
   return GetEntriesByType(aEntryType, aRetval);
 }
 
@@ -854,6 +944,7 @@ bool PerformanceMainThread::UpdateLargestContentfulPaintSize(double aSize) {
 void PerformanceMainThread::SetHasDispatchedScrollEvent() {
   mHasDispatchedScrollEvent = true;
   ClearGeneratedTempDataForLCP();
+  ClearContainerTimingData();
 }
 
 void PerformanceMainThread::SetHasDispatchedInputEvent() {
@@ -873,5 +964,9 @@ void PerformanceMainThread::ClearGeneratedTempDataForLCP() {
   if (Document* document = global->GetAsInnerWindow()->GetExtantDoc()) {
     document->ContentIdentifiersForLCP().Clear();
   }
+}
+
+void PerformanceMainThread::ClearContainerTimingData() {
+  mContainerTimingRecords.Clear();
 }
 }  

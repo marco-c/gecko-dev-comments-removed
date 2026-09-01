@@ -1326,8 +1326,9 @@ void nsGlobalWindowInner::FreeInnerObjects() {
     
     
     
-    static_cast<PerformanceMainThread*>(mPerformance.get())
-        ->ClearGeneratedTempDataForLCP();
+    auto* perf = static_cast<PerformanceMainThread*>(mPerformance.get());
+    perf->ClearGeneratedTempDataForLCP();
+    perf->ClearContainerTimingData();
   }
   mPerformance = nullptr;
 

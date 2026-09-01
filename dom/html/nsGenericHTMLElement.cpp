@@ -57,6 +57,7 @@
 #include "mozilla/dom/InputEvent.h"
 #include "mozilla/dom/Link.h"
 #include "mozilla/dom/MouseEventBinding.h"
+#include "mozilla/dom/PerformanceContainerTiming.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/ShadowIncludingTreeIterator.h"
 #include "mozilla/dom/ToggleEvent.h"
@@ -800,6 +801,25 @@ void nsGenericHTMLElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                             &nsGenericHTMLElement::AfterSetPopoverAttr));
     } else if (aName == nsGkAtoms::popovertarget) {
       ClearExplicitlySetAttrElement(aName);
+    } else if (aName == nsGkAtoms::containertiming ||
+               aName == nsGkAtoms::containerTimingIgnore) {
+      
+      
+      if (StaticPrefs::dom_enable_container_timing()) {
+        if (aValue) {
+          OwnerDoc()->SetMayHaveContainerTimingAttributes();
+        }
+        if (IsInUncomposedDoc()) {
+          RecomputeContainerTimingRootForSubtree();
+          
+          
+          
+          
+          if (aName == nsGkAtoms::containertiming && !aValue) {
+            ContainerTimingHelpers::DropRecordForContainerRoot(this);
+          }
+        }
+      }
     } else if (aName == nsGkAtoms::dir) {
       auto dir = Directionality::Ltr;
       
@@ -1799,73 +1819,6 @@ uint32_t nsGenericHTMLElement::GetDimensionAttrAsUnsignedInt(
   }
 
   return parsedInt;
-}
-
-void nsGenericHTMLElement::GetURIAttr(nsAtom* aAttr, nsAtom* aBaseAttr,
-                                      nsAString& aResult) const {
-  nsCOMPtr<nsIURI> uri;
-  const nsAttrValue* attr = GetURIAttr(aAttr, aBaseAttr, getter_AddRefs(uri));
-  if (!attr) {
-    aResult.Truncate();
-    return;
-  }
-  if (!uri) {
-    
-    attr->ToString(aResult);
-    return;
-  }
-  nsAutoCString spec;
-  uri->GetSpec(spec);
-  CopyUTF8toUTF16(spec, aResult);
-}
-
-void nsGenericHTMLElement::GetURIAttr(nsAtom* aAttr, nsAtom* aBaseAttr,
-                                      nsACString& aResult) const {
-  nsCOMPtr<nsIURI> uri;
-  const nsAttrValue* attr = GetURIAttr(aAttr, aBaseAttr, getter_AddRefs(uri));
-  if (!attr) {
-    aResult.Truncate();
-    return;
-  }
-  if (!uri) {
-    
-    nsAutoString value;
-    attr->ToString(value);
-    CopyUTF16toUTF8(value, aResult);
-    return;
-  }
-  uri->GetSpec(aResult);
-}
-
-const nsAttrValue* nsGenericHTMLElement::GetURIAttr(nsAtom* aAttr,
-                                                    nsAtom* aBaseAttr,
-                                                    nsIURI** aURI) const {
-  *aURI = nullptr;
-
-  const nsAttrValue* attr = mAttrs.GetAttr(aAttr);
-  if (!attr) {
-    return nullptr;
-  }
-
-  nsCOMPtr<nsIURI> baseURI = GetBaseURI();
-  if (aBaseAttr) {
-    nsAutoString baseAttrValue;
-    if (GetAttr(aBaseAttr, baseAttrValue)) {
-      nsCOMPtr<nsIURI> baseAttrURI;
-      nsresult rv = nsContentUtils::NewURIWithDocumentCharset(
-          getter_AddRefs(baseAttrURI), baseAttrValue, OwnerDoc(), baseURI);
-      if (NS_FAILED(rv)) {
-        return attr;
-      }
-      baseURI.swap(baseAttrURI);
-    }
-  }
-
-  
-  
-  nsContentUtils::NewURIWithDocumentCharset(
-      aURI, nsAttrValueOrString(attr).String(), OwnerDoc(), baseURI);
-  return attr;
 }
 
 bool nsGenericHTMLElement::IsContentEditable() const {

@@ -3490,6 +3490,14 @@ class Document : public nsINode,
 
   void SetMayHaveAnimationObservers() { mMayHaveAnimationObservers = true; }
 
+  bool MayHaveContainerTimingAttributes() const {
+    return mMayHaveContainerTimingAttributes;
+  }
+
+  void SetMayHaveContainerTimingAttributes() {
+    mMayHaveContainerTimingAttributes = true;
+  }
+
   bool IsInSyncOperation() { return mInSyncOperationCount != 0; }
 
   void SetIsInSyncOperation(bool aSync);
@@ -5149,6 +5157,10 @@ class Document : public nsINode,
   
   
   bool mMayHaveAnimationObservers : 1;
+
+  
+  
+  bool mMayHaveContainerTimingAttributes : 1;
 
   
   bool mHasCSPDeliveredThroughHeader : 1;

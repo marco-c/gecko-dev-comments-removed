@@ -100,6 +100,18 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
   void SetPopover(const nsAString& aPopover, mozilla::ErrorResult& aError) {
     SetOrRemoveNullableStringAttr(nsGkAtoms::popover, aPopover, aError);
   }
+  void GetContainerTiming(mozilla::dom::DOMString& aValue) const {
+    GetHTMLAttr(nsGkAtoms::containertiming, aValue);
+  }
+  void SetContainerTiming(const nsAString& aValue) {
+    SetHTMLAttr(nsGkAtoms::containertiming, aValue);
+  }
+  bool ContainerTimingIgnore() const {
+    return GetBoolAttr(nsGkAtoms::containerTimingIgnore);
+  }
+  void SetContainerTimingIgnore(bool aValue) {
+    SetBoolAttr(nsGkAtoms::containerTimingIgnore, aValue);
+  }
 
   void GetHidden(mozilla::dom::Nullable<
                  mozilla::dom::OwningBooleanOrUnrestrictedDoubleOrString>&
@@ -682,28 +694,6 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
 
   static bool InNavQuirksMode(Document*);
-
-  
-
-
-
-
-
-
-
-
-
-  void GetURIAttr(nsAtom* aAttr, nsAtom* aBaseAttr, nsAString& aResult) const;
-  void GetURIAttr(nsAtom* aAttr, nsAtom* aBaseAttr, nsACString& aResult) const;
-
-  
-
-
-
-
-
-  const nsAttrValue* GetURIAttr(nsAtom* aAttr, nsAtom* aBaseAttr,
-                                nsIURI** aURI) const;
 
   bool IsHidden() const { return HasAttr(nsGkAtoms::hidden); }
 

@@ -527,6 +527,18 @@ class Element : public FragmentOrElement {
   void UnbindFromTree(UnbindContext&) override;
   using nsIContent::UnbindFromTree;
 
+  
+  
+  
+  
+  
+  Element* GetContainerTimingRoot() const;
+
+  
+  
+  
+  void RecomputeContainerTimingRootForSubtree();
+
   virtual nsMapRuleToAttributesFunc GetAttributeMappingFunction() const;
   static void MapNoAttributesInto(mozilla::MappedDeclarationsBuilder&);
 
@@ -777,6 +789,10 @@ class Element : public FragmentOrElement {
 
  private:
   
+  
+  void UpdateContainerTimingRootFromParent(nsINode* aParent);
+
+  
   ElementState StyleStateFromLocks() const;
 
   void NotifyStateChange(ElementState aStates);
@@ -971,6 +987,28 @@ class Element : public FragmentOrElement {
   bool GetAttr(int32_t aNameSpaceID, const nsAtom* aName,
                nsAString& aResult) const;
   bool GetAttr(const nsAtom* aName, nsAString& aResult) const;
+
+  
+
+
+
+
+
+
+
+
+
+  void GetURIAttr(nsAtom* aAttr, nsAtom* aBaseAttr, nsAString& aResult) const;
+  void GetURIAttr(nsAtom* aAttr, nsAtom* aBaseAttr, nsACString& aResult) const;
+
+  
+
+
+
+
+
+  const nsAttrValue* GetURIAttr(nsAtom* aAttr, nsAtom* aBaseAttr,
+                                nsIURI** aURI) const;
 
   
 
