@@ -268,6 +268,10 @@ class AudioStream final {
                                bool aAudioThreadChanged) = 0;
     
     virtual bool Ended() const = 0;
+    
+    
+    
+    virtual bool IsIntentionallySilent() const { return false; }
 
    protected:
     virtual ~DataSource() = default;

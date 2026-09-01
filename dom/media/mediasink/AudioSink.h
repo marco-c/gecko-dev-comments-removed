@@ -117,6 +117,7 @@ class AudioSink : private AudioStream::DataSource {
   uint32_t PopFrames(AudioDataValue* aBuffer, uint32_t aFrames,
                      bool aAudioThreadChanged) override;
   bool Ended() const override;
+  bool IsIntentionallySilent() const override { return mStoppedForSeek; }
 
   
   
