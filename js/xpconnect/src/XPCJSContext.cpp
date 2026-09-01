@@ -768,6 +768,11 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
     win = SandboxWindowOrNull(global, cx);
   }
 
+  if (!win && !chrome) {
+    
+    win = SandboxAssociatedWindowOrNull(global);
+  }
+
   if (!win) {
     NS_WARNING("No active window");
     return true;
