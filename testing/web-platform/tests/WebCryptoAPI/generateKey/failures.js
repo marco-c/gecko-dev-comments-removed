@@ -1,5 +1,3 @@
-function run_test(algorithmNames) {
-    var subtle = crypto.subtle; 
 
 
 
@@ -18,43 +16,83 @@ function run_test(algorithmNames) {
 
 
 
-
-    var testVectors = getGenerateKeyTestVectors(algorithmNames);
-
-
-    function parameterString(algorithm, extractable, usages) {
-        if (typeof algorithm !== "object" && typeof algorithm !== "string") {
-            alert(algorithm);
-        }
-
-        var result = "(" +
-                        objectToString(algorithm) + ", " +
-                        objectToString(extractable) + ", " +
-                        objectToString(usages) +
-                     ")";
-
-        return result;
+function parameterString(algorithm, extractable, usages) {
+    if (typeof algorithm !== "object" && typeof algorithm !== "string") {
+        alert(algorithm);
     }
 
+    var result = "(" +
+                    objectToString(algorithm) + ", " +
+                    objectToString(extractable) + ", " +
+                    objectToString(usages) +
+                 ")";
+
+    return result;
+}
+
+
+
+
+
+
+function testError(algorithm, extractable, usages, expectedError, testTag) {
+    promise_test(function(test) {
+        return crypto.subtle.generateKey(algorithm, extractable, usages)
+        .then(function(result) {
+            assert_unreached("Operation succeeded, but should not have");
+        }, function(err) {
+            if (typeof expectedError === "number") {
+                assert_equals(err.code, expectedError, testTag + " not supported");
+            } else {
+                assert_equals(err.name, expectedError, testTag + " not supported");
+            }
+        });
+    }, testTag + ": generateKey" + parameterString(algorithm, extractable, usages));
+}
+
+
+
+
+
+function run_bad_algorithm_test() {
+    
+    var badAlgorithmNames = [
+        "AES",
+        {name: "AES"},
+        {name: "AES", length: 128},
+        {name: "AES-CMAC", length: 128},    
+        {name: "AES-CFB", length: 128},      
+        {name: "HMAC", hash: "MD5"},
+        {name: "RSA", hash: "SHA-256", modulusLength: 2048, publicExponent: new Uint8Array([1,0,1])},
+        {name: "RSA-PSS", hash: "SHA", modulusLength: 2048, publicExponent: new Uint8Array([1,0,1])},
+        {name: "EC", namedCurve: "P521"}
+    ];
+
+
     
     
     
-    
-    
-    function testError(algorithm, extractable, usages, expectedError, testTag) {
-        promise_test(function(test) {
-            return crypto.subtle.generateKey(algorithm, extractable, usages)
-            .then(function(result) {
-                assert_unreached("Operation succeeded, but should not have");
-            }, function(err) {
-                if (typeof expectedError === "number") {
-                    assert_equals(err.code, expectedError, testTag + " not supported");
-                } else {
-                    assert_equals(err.name, expectedError, testTag + " not supported");
-                }
+    badAlgorithmNames.forEach(function(algorithm) {
+        allValidUsages(["decrypt", "sign", "deriveBits"], true, []) 
+        .forEach(function(usages) {
+            [false, true, "RED", 7].forEach(function(extractable){
+                testError(algorithm, extractable, usages, "NotSupportedError", "Bad algorithm");
             });
-        }, testTag + ": generateKey" + parameterString(algorithm, extractable, usages));
-    }
+        });
+    });
+
+    
+    allValidUsages(["decrypt", "sign", "deriveBits"], true, []) 
+        .forEach(function(usages) {
+            [false, true, "RED", 7].forEach(function(extractable){
+                testError({}, extractable, usages, "TypeError", "Empty algorithm");
+            });
+        });
+}
+
+
+function run_test(algorithmNames) {
+    var testVectors = getGenerateKeyTestVectors(algorithmNames);
 
 
     
@@ -63,13 +101,19 @@ function run_test(algorithmNames) {
 
         if (algorithmName.toUpperCase().substring(0, 3) === "AES") {
             
-            [64, 127, 129, 255, 257, 512].forEach(function(length) {
+            [64, 127, 129, 255, 257, 512, 128 + 2**32, 128 - 2**32].forEach(function(length) {
                 results.push({name: algorithmName, length: length});
+            });
+        } else if (algorithmName.toUpperCase() === "HMAC") {
+            [128 + 2**32, 128 - 2**32].forEach(function(length) {
+                results.push({name: algorithmName, hash: "SHA-256", length: length});
             });
         } else if (algorithmName.toUpperCase().substring(0, 3) === "RSA") {
             [new Uint8Array([1]), new Uint8Array([1,0,0])].forEach(function(publicExponent) {
                 results.push({name: algorithmName, hash: "SHA-256", modulusLength: 1024, publicExponent: publicExponent});
             });
+            results.push({name: algorithmName, hash: "SHA-256", modulusLength: 1024 + 2 ** 32, publicExponent: new Uint8Array([1,0,1])});
+            results.push({name: algorithmName, hash: "SHA-256", modulusLength: 1024 - 2 ** 32, publicExponent: new Uint8Array([1,0,1])});
         } else if (algorithmName.toUpperCase().substring(0, 2) === "EC") {
             ["P-512", "Curve25519"].forEach(function(curveName) {
                 results.push({name: algorithmName, namedCurve: curveName});
@@ -111,42 +155,6 @@ function run_test(algorithmNames) {
 
 
 
-
-    
-    var badAlgorithmNames = [
-        "AES",
-        {name: "AES"},
-        {name: "AES", length: 128},
-        {name: "AES-CMAC", length: 128},    
-        {name: "AES-CFB", length: 128},      
-        {name: "HMAC", hash: "MD5"},
-        {name: "RSA", hash: "SHA-256", modulusLength: 2048, publicExponent: new Uint8Array([1,0,1])},
-        {name: "RSA-PSS", hash: "SHA", modulusLength: 2048, publicExponent: new Uint8Array([1,0,1])},
-        {name: "EC", namedCurve: "P521"}
-    ];
-
-
-    
-    
-    
-    badAlgorithmNames.forEach(function(algorithm) {
-        allValidUsages(["decrypt", "sign", "deriveBits"], true, []) 
-        .forEach(function(usages) {
-            [false, true, "RED", 7].forEach(function(extractable){
-                testError(algorithm, extractable, usages, "NotSupportedError", "Bad algorithm");
-            });
-        });
-    });
-
-    
-    allValidUsages(["decrypt", "sign", "deriveBits"], true, []) 
-        .forEach(function(usages) {
-            [false, true, "RED", 7].forEach(function(extractable){
-                testError({}, extractable, usages, "TypeError", "Empty algorithm");
-            });
-        });
-
-
     
     
     
@@ -175,6 +183,9 @@ function run_test(algorithmNames) {
                 [false, true].forEach(function(extractable) {
                     if (name.substring(0,2) === "EC") {
                         testError(algorithm, extractable, usages, "NotSupportedError", "Bad algorithm property");
+                    } else if (name.substring(0,3) === "RSA" && (algorithm.modulusLength < 0 || algorithm.modulusLength > 2**32) ||
+                        (name.substring(0,3) === "AES" || name === "HMAC") && (algorithm.length < 0 || algorithm.length > 2**32)) {
+                        testError(algorithm, extractable, usages, "TypeError", "Bad algorithm property");
                     } else {
                         testError(algorithm, extractable, usages, "OperationError", "Bad algorithm property");
                     }
