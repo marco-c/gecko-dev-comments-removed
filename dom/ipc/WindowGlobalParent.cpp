@@ -651,15 +651,6 @@ IPCResult WindowGlobalParent::RecvDestroy() {
   if (CanSend()) {
     RefPtr<BrowserParent> browserParent = GetBrowserParent();
     if (!browserParent || !browserParent->IsDestroyed()) {
-#ifdef ACCESSIBILITY
-      
-      
-      
-      
-      if (auto* docAcc = a11y::DocAccessibleParent::GetFrom(this)) {
-        docAcc->Destroy();
-      }
-#endif
       (void)Send__delete__(this);
     }
   }
