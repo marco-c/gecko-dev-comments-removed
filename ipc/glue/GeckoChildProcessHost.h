@@ -20,6 +20,7 @@
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/LinkedList.h"
+#include "mozilla/Logging.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/RWLock.h"
@@ -57,6 +58,34 @@ namespace ipc {
 
 typedef mozilla::MozPromise<base::ProcessHandle, LaunchError, false>
     ProcessHandlePromise;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern LazyLogModule gChildProcessLifecycleLog;
 
 class GeckoChildProcessHost : public SupportsWeakPtr,
                               public LinkedListElement<GeckoChildProcessHost> {
@@ -208,7 +237,7 @@ class GeckoChildProcessHost : public SupportsWeakPtr,
   GeckoProcessType mProcessType;
   GeckoChildID mChildID;
   bool mIsFileContent;
-  Monitor mMonitor;
+  mutable Monitor mMonitor;
   FilePath mProcessPath;
 #ifdef ALLOW_GECKO_CHILD_PROCESS_ARCH
   
@@ -295,6 +324,8 @@ class GeckoChildProcessHost : public SupportsWeakPtr,
   
   virtual bool AppendMacSandboxParams(StringVector& aArgs);
 #endif
+
+  virtual void OnProcessLaunchError(const LaunchError aError);
 
  private:
   DISALLOW_EVIL_CONSTRUCTORS(GeckoChildProcessHost);
