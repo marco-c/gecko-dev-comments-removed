@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef mozilla_dom_WebTaskScheduler_h
 #define mozilla_dom_WebTaskScheduler_h
 
@@ -340,7 +337,7 @@ class DelayedWebTaskHandler final : public TimeoutHandler {
                         WebTask* aTask, EventQueuePriority aPriority)
       : TimeoutHandler(aCx), mScheduler(aScheduler), mWebTask(aTask) {}
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(DelayedWebTaskHandler)
 
   MOZ_CAN_RUN_SCRIPT bool Call(const char* ) override {
