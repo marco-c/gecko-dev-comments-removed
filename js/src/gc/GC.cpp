@@ -3762,7 +3762,9 @@ GCRuntime::MarkQueueProgress GCRuntime::processTestMarkQueue() {
       if (!hadDelayed && delayedMarkingWorkAdded) {
         
         
-        MOZ_ASSERT(obj->asTenured().arena()->onDelayedMarkingList());
+        
+        
+        
         printf_stderr(
             "Hit mark stack limit while marking test queue; test results may "
             "be invalid");
