@@ -150,7 +150,15 @@ add_task(async function test_completed_assistant_message_announced() {
     await typeInSmartbar(browser, "Hello");
     await waitForSmartbarAction(browser, "chat");
     await stubLoadURL(browser);
+    await stubOpenSERP(browser);
     await submitSmartbar(browser);
+
+    
+    
+    Assert.ok(
+      !(await getStubOpenSERPResult(browser)).called,
+      "Submitting should ask the assistant, not run a search"
+    );
 
     const aiWindowEl = browser.contentDocument?.querySelector("ai-window");
     const aichatBrowser = await TestUtils.waitForCondition(

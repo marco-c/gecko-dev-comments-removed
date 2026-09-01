@@ -26,12 +26,15 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/urlbar/SmartbarMentionsPanelSearch.sys.mjs",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
+  SearchTestUtils: "resource://testing-common/SearchTestUtils.sys.mjs",
   SessionStore:
     "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs",
   SessionWindowUI:
     "moz-src:///browser/components/sessionstore/SessionWindowUI.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
+
+SearchTestUtils.init(this);
 
 const { _setLoadPromptForTesting } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs"
@@ -300,6 +303,20 @@ add_setup(async function () {
       ["browser.smartwindow.chat.interactionCount", 0],
     ],
   });
+
+  
+  
+  
+  
+  await SearchTestUtils.installSearchExtension(
+    {
+      name: "AIWindowTestEngine",
+      search_url: "https://example.org/aiwindow-test-serp/",
+      search_url_get_params: "?q={searchTerms}",
+      favicon_url: "https://example.com/favicon.ico",
+    },
+    { setAsDefault: true }
+  );
 
   
   const fakeIntentEngine = {
