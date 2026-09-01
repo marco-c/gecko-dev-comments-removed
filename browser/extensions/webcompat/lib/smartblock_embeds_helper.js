@@ -315,7 +315,7 @@ const embedHelperLib = (() => {
 
         
         const contentDiv = document.createElement("div");
-        contentDiv.setHTML(originalContainer.innerHTML, { sanitizer });
+        contentDiv.setHTML(originalContainer.outerHTML, { sanitizer });
 
         
         
