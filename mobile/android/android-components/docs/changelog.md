@@ -5,6 +5,8 @@ permalink: /changelog/
 ---
 
 # 155.0 (In Development)
+* **browser-state**
+    * ⚠️ **Breaking change**: Removed `TabPartition` and `TabGroup` from `BrowserState`.
 
 # 154.0
 * **browser-icons**
@@ -19,6 +21,8 @@ permalink: /changelog/
     * Fixed the autocomplete selection prompts (login, credit card, and address) not being dismissed when the associated input field loses focus. [Bug 2040184](https://bugzilla.mozilla.org/show_bug.cgi?id=2040184)
 * **feature-webcompat-reporter**
     * 🆕 Added `sendGleanBrokenSiteReport` which sends a broken site report using Glean. [Bug 2054543](https://bugzilla.mozilla.org/show_bug.cgi?id=2054543)).
+* **concept-engine**, **browser-engine-gecko**, **browser-engine-system**, **browser-state**, **support-test-fakes**
+    * ⚠️ **Breaking change**: Removed the cookie banner handling feature. Removed the `mozilla.components.concept.engine.cookiehandling` package (`CookieBannersStorage`) and `GeckoCookieBannersStorage`, `EngineSession.CookieBannerHandlingMode`, `EngineSession.CookieBannerHandlingStatus`, `EngineSession.Observer.onCookieBannerChange`, `EngineSession.hasCookieBannerRuleForSession`, the `Settings.cookieBannerHandling*` settings, the `cookieBanner*` parameters of `TrackingProtectionPolicy.toContentBlockingSetting`, `CookieBannerAction` and `SessionState.cookieBanner` (also removed from `SessionState.createCopy`). [Bug 2058143](https://bugzilla.mozilla.org/show_bug.cgi?id=2058143)
 
 # 153.0
 * **support-utils**
