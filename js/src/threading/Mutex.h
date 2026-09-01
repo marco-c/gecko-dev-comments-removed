@@ -28,22 +28,7 @@ struct MutexId {
 
 
 
-class MutexImpl : public mozilla::detail::MutexImpl {
- protected:
-  MutexImpl() = default;
-
-  friend class Mutex;
-};
-
-
-
-
-
-
-class Mutex {
- private:
-  MutexImpl impl_;
-
+class Mutex : private mozilla::detail::MutexImpl {
 #ifdef DEBUG
   const MutexId id_;
   Mutex* prev_ = nullptr;
@@ -63,15 +48,31 @@ class Mutex {
   void unlock();
   bool isOwnedByCurrentThread() const;
   void assertOwnedByCurrentThread() const;
+
+  
+  
+  template <typename F>
+  void checkScopedUnlock(F&& func) {
+    preUnlockChecks();
+    func();
+    preLockChecks();
+    postLockChecks();
+  }
+
 #else
   static bool Init() { return true; }
 
   explicit Mutex(const MutexId& id) {}
 
-  void lock() { impl_.lock(); }
-  bool tryLock() { return impl_.tryLock(); }
-  void unlock() { impl_.unlock(); }
+  void lock() { MutexImpl::lock(); }
+  bool tryLock() { return MutexImpl::tryLock(); }
+  void unlock() { MutexImpl::unlock(); }
   void assertOwnedByCurrentThread() const {};
+
+  template <typename F>
+  void checkScopedUnlock(F&& func) {
+    func();
+  }
 #endif
 
  private:
