@@ -30,6 +30,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
+  AdsClient: "resource://newtab/lib/AdsClient.sys.mjs",
   ClientEnvironmentBase:
     "resource://gre/modules/components-utils/ClientEnvironment.sys.mjs",
   ClientID: "resource://gre/modules/ClientID.sys.mjs",
@@ -43,6 +44,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   NewTabContentPing: "resource://newtab/lib/NewTabContentPing.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
+  MozAdsReportReason:
+    "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustAdsClient.sys.mjs",
 });
 
 export const PREF_IMPRESSION_ID = "impressionId";
@@ -75,7 +78,7 @@ const TOP_STORIES_SECTION_NAME = "top_stories_section";
  * Glean session types for OHTTP ping optimization.
  * Determines whether events are queued or sent immediately to OHTTP ping.
  */
-const GleanSessionType = {
+export const GleanSessionType = {
   NormalGleanSession: "normal",
   PrivateGleanSession: "private",
 };
@@ -164,6 +167,7 @@ export class TelemetryFeed {
     this._prefs = new Prefs();
     this._impressionId = this.getOrCreateImpressionId();
     this._aboutHomeSeen = false;
+    this._adsClient = null;
     this._classifySite = classifySite;
     this._browserOpenNewtabStart = null;
     this._privateRandomContentTelemetryProbablityValues = {};
@@ -317,18 +321,39 @@ export class TelemetryFeed {
   }
 
   /**
+   * Initializes MAC
+   */
+  initializeMac() {
+    if (lazy.AdsClient.isEnabled(this.store?.getState()?.Prefs.values)) {
+      this._adsClient = lazy.AdsClient.getClient();
+    }
+  }
+
+  /**
    * Clears the event queue, executing callbacks and optionally
    * recording to newtab-content ping.
    *
    * @param {boolean} recordToContentPing - Whether to record events to newtab-content ping
+   * @param {string} [sessionId] - Only drain events queued by this session. Omit
+   *  to drain every session's events, which is only correct when no session is
+   *  going to get the chance to drain its own (private-session transition and
+   *  shutdown).
    */
-  #clearEventBuffer(recordToContentPing) {
+  #clearEventBuffer(recordToContentPing, sessionId) {
     if (!this.#eventBuffer.length) {
       return;
     }
 
-    const events = this.#eventBuffer;
-    this.#eventBuffer = [];
+    let events;
+    if (sessionId === undefined) {
+      events = this.#eventBuffer;
+      this.#eventBuffer = [];
+    } else {
+      events = this.#eventBuffer.filter(event => event.sessionId === sessionId);
+      this.#eventBuffer = this.#eventBuffer.filter(
+        event => event.sessionId !== sessionId
+      );
+    }
 
     for (const { eventName, eventData, callback } of events) {
       callback?.();
@@ -339,18 +364,56 @@ export class TelemetryFeed {
   }
 
   /**
+   * Drops a session's queued events without recording them, for a session whose
+   * events must not be reported at all.
+   *
+   * @param {string} sessionId - The session whose events are discarded
+   */
+  #discardEventBuffer(sessionId) {
+    this.#eventBuffer = this.#eventBuffer.filter(
+      event => event.sessionId !== sessionId
+    );
+  }
+
+  /**
+   * Flushes any events still queued at shutdown into the newtab ping.
+   *
+   * Sessions that are still open when the feed goes away never receive a
+   * NEW_TAB_UNLOAD, so they never call endSession and never drain their own
+   * events. Without this, everything they queued is dropped.
+   */
+  #flushBufferedEventsOnUninit() {
+    if (
+      !this.#eventBuffer.length ||
+      !this.telemetryEnabled ||
+      !Services.prefs.getBoolPref(PREF_NEWTAB_PING_ENABLED, true)
+    ) {
+      return;
+    }
+
+    const recordToContentPing =
+      this.gleanSessionType === GleanSessionType.PrivateGleanSession;
+    this.#clearEventBuffer(recordToContentPing);
+    GleanPings.newtab.submit("newtab_session_end");
+  }
+
+  /**
    * Records or queues an event based on the current Glean session type.
    * For queueable events (impression, click, section_impression).
    *
    * @param {string} eventName - Name of the event for newtab-content ping
    * @param {object} eventData - Event data for newtab-content ping
+   * @param {string} sessionId - The session this event belongs to. Used only to
+   *  decide which events a given session drains; it is never recorded, and in
+   *  particular is kept out of eventData, which is the newtab-content payload
+   *  and deliberately carries no visit id.
    * @param {Function} callback - Function to record to non-private newtab ping
    *  Called immediately if in PrivateGleanSession, otherwise its added to eventBuffer
    *  and called when the eventBuffer is cleared. The return value is ignored.
    */
-  recordOrQueueEvent(eventName, eventData, callback) {
+  recordOrQueueEvent(eventName, eventData, sessionId, callback) {
     if (this.gleanSessionType === GleanSessionType.NormalGleanSession) {
-      this.#eventBuffer.push({ eventName, eventData, callback });
+      this.#eventBuffer.push({ eventName, eventData, callback, sessionId });
     } else {
       callback?.();
       if (this.privatePingEnabled) {
@@ -645,6 +708,16 @@ export class TelemetryFeed {
       return;
     }
 
+    if (!session.perf.visibility_event_rcvd_ts) {
+      // This session was never shown (i.e. the hidden preloaded newtab), there was no user session either.
+      // Bail out before recording anything: a newtab the user never saw must
+      // not contribute a newtab.closed event, and must not submit a ping that
+      // describes it. Anything it managed to queue goes with it.
+      this.#discardEventBuffer(session.session_id);
+      this.sessions.delete(portID);
+      return;
+    }
+
     Glean.newtab.closed.record({ newtab_visit_id: session.session_id });
     if (
       this.telemetryEnabled &&
@@ -653,35 +726,29 @@ export class TelemetryFeed {
       // clear event buffer based on session type
       const recordToContentPing =
         this.gleanSessionType === GleanSessionType.PrivateGleanSession;
-      this.#clearEventBuffer(recordToContentPing);
+      this.#clearEventBuffer(recordToContentPing, session.session_id);
       GleanPings.newtab.submit("newtab_session_end");
       if (this.privatePingEnabled) {
         this.configureContentPing();
       }
     }
 
-    if (session.perf.visibility_event_rcvd_ts) {
-      let absNow = this.processStartTs + ChromeUtils.now();
-      session.session_duration = Math.round(
-        absNow - session.perf.visibility_event_rcvd_ts
-      );
+    let absNow = this.processStartTs + ChromeUtils.now();
+    session.session_duration = Math.round(
+      absNow - session.perf.visibility_event_rcvd_ts
+    );
 
-      // Rounding all timestamps in perf to ease the data processing on the backend.
-      // NB: use `TIMESTAMP_MISSING_VALUE` if the value is missing.
-      session.perf.visibility_event_rcvd_ts = Math.round(
-        session.perf.visibility_event_rcvd_ts
-      );
-      session.perf.load_trigger_ts = Math.round(
-        session.perf.load_trigger_ts || TIMESTAMP_MISSING_VALUE
-      );
-      session.perf.topsites_first_painted_ts = Math.round(
-        session.perf.topsites_first_painted_ts || TIMESTAMP_MISSING_VALUE
-      );
-    } else {
-      // This session was never shown (i.e. the hidden preloaded newtab), there was no user session either.
-      this.sessions.delete(portID);
-      return;
-    }
+    // Rounding all timestamps in perf to ease the data processing on the backend.
+    // NB: use `TIMESTAMP_MISSING_VALUE` if the value is missing.
+    session.perf.visibility_event_rcvd_ts = Math.round(
+      session.perf.visibility_event_rcvd_ts
+    );
+    session.perf.load_trigger_ts = Math.round(
+      session.perf.load_trigger_ts || TIMESTAMP_MISSING_VALUE
+    );
+    session.perf.topsites_first_painted_ts = Math.round(
+      session.perf.topsites_first_painted_ts || TIMESTAMP_MISSING_VALUE
+    );
 
     this.sessions.delete(portID);
   }
@@ -743,7 +810,11 @@ export class TelemetryFeed {
             frecency_boosted,
             frecency_boosted_has_exposure: this.frecencyBoostedHasExposure(),
           };
-          this.recordOrQueueEvent("topSitesImpression", eventData);
+          this.recordOrQueueEvent(
+            "topSitesImpression",
+            eventData,
+            session.session_id
+          );
         } else {
           Glean.topsites.impression.record({
             advertiser_name,
@@ -770,7 +841,11 @@ export class TelemetryFeed {
             frecency_boosted,
             frecency_boosted_has_exposure: this.frecencyBoostedHasExposure(),
           };
-          this.recordOrQueueEvent("topSitesClick", eventData);
+          this.recordOrQueueEvent(
+            "topSitesClick",
+            eventData,
+            session.session_id
+          );
         } else {
           Glean.topsites.click.record({
             advertiser_name,
@@ -788,11 +863,15 @@ export class TelemetryFeed {
     }
 
     if (data.reporting_url && this.canSendUnifiedAdsTilesCallbacks) {
-      // Send callback events to MARS unified ads api
-      this.sendUnifiedAdsCallbackEvent({
-        url: data.reporting_url,
-        position,
-      });
+      if (this._adsClient) {
+        this.sendMacCallbackEvent(data.reporting_url, type);
+      } else {
+        // Send callback events to MARS unified ads api
+        this.sendUnifiedAdsCallbackEvent({
+          url: data.reporting_url,
+          position,
+        });
+      }
     }
   }
 
@@ -1079,6 +1158,7 @@ export class TelemetryFeed {
           this.recordOrQueueEvent(
             "click",
             this.randomizeOrganicContentEvent(gleanData),
+            session.session_id,
             () => {
               Glean.pocket.click.record({
                 ...this.redactNewTabPing(gleanData, is_sponsored),
@@ -1088,11 +1168,16 @@ export class TelemetryFeed {
           );
           if (shim) {
             if (this.canSendUnifiedAdsSpocCallbacks) {
-              // Send unified ads callback event
-              this.sendUnifiedAdsCallbackEvent({
-                url: shim,
-                position: action.data.action_position,
-              });
+              if (this._adsClient) {
+                // Send callback event via MAC
+                this.sendMacCallbackEvent(shim, "click");
+              } else {
+                // Send unified ads callback event
+                this.sendUnifiedAdsCallbackEvent({
+                  url: shim,
+                  position: action.data.action_position,
+                });
+              }
             }
           }
         }
@@ -1135,6 +1220,37 @@ export class TelemetryFeed {
   }
 
   /**
+   * This function submits callback events to MARS via MAC.
+   */
+
+  async sendMacCallbackEvent(url, event) {
+    if (!url) {
+      throw new Error(
+        `[Unified ads callback] Missing argument (No url). Cannot send telemetry event.`
+      );
+    }
+
+    // Make sure the callback endpoint is allowed
+    const allowed = this.allowedEndpoints;
+    if (!allowed.some(prefix => url.startsWith(prefix))) {
+      throw new Error(
+        `[Unified ads callback] Not one of allowed prefixes (${allowed})`
+      );
+    }
+
+    const options = lazy.AdsClient.callbackOptions();
+    if (event === "impression") {
+      await this._adsClient.recordImpression(url, options);
+    } else if (event === "click") {
+      await this._adsClient.recordClick(url, options);
+    } else {
+      throw new Error(
+        `[Unified ads callback] Unknown callback event type. Cannot send telemetry event.`
+      );
+    }
+  }
+
+  /**
    * This function submits callback events to the MARS unified ads service.
    */
 
@@ -1153,12 +1269,7 @@ export class TelemetryFeed {
     }
 
     // Make sure the callback endpoint is allowed
-    const allowed =
-      this._prefs
-        .get(PREF_ENDPOINTS)
-        .split(",")
-        .map(item => item.trim())
-        .filter(item => item) || [];
+    const allowed = this.allowedEndpoints;
     if (!allowed.some(prefix => data.url.startsWith(prefix))) {
       throw new Error(
         `[Unified ads callback] Not one of allowed prefixes (${allowed})`
@@ -1486,7 +1597,6 @@ export class TelemetryFeed {
       case at.INLINE_SELECTION_IMPRESSION:
         this.handleInlineSelectionUserEvent(action);
         break;
-      case at.REPORT_AD_OPEN:
       case at.REPORT_AD_SUBMIT:
         this.handleReportAdUserEvent(action);
         break;
@@ -1526,6 +1636,7 @@ export class TelemetryFeed {
       case at.PREFS_INITIAL_VALUES:
         this.initializeGleanSession();
         this.recordEnabledWidgets();
+        this.initializeMac();
         break;
     }
   }
@@ -1710,31 +1821,67 @@ export class TelemetryFeed {
     }
   }
 
-  async handleReportAdUserEvent(action) {
-    const { placement_id, position, report_reason, reporting_url } =
-      action.data || {};
-
-    const url = new URL(reporting_url);
-    url.searchParams.append("placement_id", placement_id);
-    url.searchParams.append("reason", report_reason);
-    url.searchParams.append("position", position);
-    const adResponse = url.toString();
-
-    const allowed =
+  get allowedEndpoints() {
+    return (
       this._prefs
         .get(PREF_ENDPOINTS)
         .split(",")
         .map(item => item.trim())
-        .filter(item => item) || [];
+        .filter(item => item) || []
+    );
+  }
 
-    if (!allowed.some(prefix => adResponse.startsWith(prefix))) {
+  async handleReportAdUserEvent(action) {
+    const { placement_id, position, report_reason, reporting_url } =
+      action.data || {};
+
+    if (!reporting_url) {
+      throw new Error(
+        `[Unified ads callback] Missing argument (No url). Cannot send telemetry event.`
+      );
+    }
+
+    if (!report_reason) {
+      throw new Error(
+        `[Unified ads callback] Missing argument (No report reason). Cannot send telemetry event.`
+      );
+    }
+
+    const allowed = this.allowedEndpoints;
+    if (!allowed.some(prefix => reporting_url.startsWith(prefix))) {
       throw new Error(
         `[Unified ads callback] Not one of allowed prefixes (${allowed})`
       );
     }
 
     try {
-      await fetch(adResponse);
+      if (this._adsClient) {
+        // js-style enum string (eg. "seen_too_many_times") must be converted to
+        // rust-style enum name (eg. "SEEN_TOO_MANY_TIMES") and then converted to
+        // enum value (eg. 2) by lookup in uniffi bindings
+        const reportReasonValue =
+          lazy.MozAdsReportReason[report_reason.toUpperCase()];
+        if (reportReasonValue === undefined) {
+          throw new Error(
+            `[Unified ads callback] Invalid argument (Invalid report reason). Cannot send telemetry event.`
+          );
+        }
+
+        const options = lazy.AdsClient.callbackOptions();
+        await this._adsClient.reportAd(
+          reporting_url,
+          reportReasonValue,
+          options
+        );
+      } else {
+        const url = new URL(reporting_url);
+        url.searchParams.append("placement_id", placement_id);
+        url.searchParams.append("position", position);
+        url.searchParams.append("reason", report_reason);
+        const adResponse = url.toString();
+
+        await fetch(adResponse);
+      }
     } catch (error) {
       console.error("Error:", error);
     }
@@ -1854,11 +2001,16 @@ export class TelemetryFeed {
                 ? { is_section_followed: !!is_section_followed }
                 : {}),
             };
-            this.recordOrQueueEvent("sectionsImpression", eventData, () => {
-              Glean.newtab.sectionsImpression.record(
-                this.redactNewTabPing(gleanData)
-              );
-            });
+            this.recordOrQueueEvent(
+              "sectionsImpression",
+              eventData,
+              session.session_id,
+              () => {
+                Glean.newtab.sectionsImpression.record(
+                  this.redactNewTabPing(gleanData)
+                );
+              }
+            );
           }
           break;
         case "FOLLOW_SECTION": {
@@ -1955,6 +2107,12 @@ export class TelemetryFeed {
       return;
     }
     switch (action.data.name) {
+      case "topSitesRows":
+        Glean.topsites.changeDisplay.record({
+          newtab_visit_id: session.session_id,
+          rows: action.data.value,
+        });
+        break;
       case "weather.display":
         Glean.newtab.weatherChangeDisplay.record({
           newtab_visit_id: session.session_id,
@@ -2111,12 +2269,17 @@ export class TelemetryFeed {
         if (this.trainhopClickOnlyEnabled) {
           this.transitionToPrivateSession();
         }
-        this.recordOrQueueEvent("dismiss", gleanData, () => {
-          Glean.pocket.dismiss.record({
-            ...this.redactNewTabPing(gleanData, gleanData.is_sponsored),
-            newtab_visit_id: session.session_id,
-          });
-        });
+        this.recordOrQueueEvent(
+          "dismiss",
+          gleanData,
+          session.session_id,
+          () => {
+            Glean.pocket.dismiss.record({
+              ...this.redactNewTabPing(gleanData, gleanData.is_sponsored),
+              newtab_visit_id: session.session_id,
+            });
+          }
+        );
         continue;
       }
       // Only log a topsites.dismiss telemetry event if the action came from TopSites section
@@ -2124,12 +2287,16 @@ export class TelemetryFeed {
         const { position, advertiser_name, tile_id, isSponsoredTopSite } =
           datum;
         if (this.sovEnabled() && isSponsoredTopSite) {
-          this.recordOrQueueEvent("topSitesDismiss", {
-            advertiser_name,
-            tile_id,
-            is_sponsored: !!isSponsoredTopSite,
-            position,
-          });
+          this.recordOrQueueEvent(
+            "topSitesDismiss",
+            {
+              advertiser_name,
+              tile_id,
+              is_sponsored: !!isSponsoredTopSite,
+              position,
+            },
+            session.session_id
+          );
         } else {
           Glean.topsites.dismiss.record({
             advertiser_name,
@@ -2216,20 +2383,30 @@ export class TelemetryFeed {
               recommendation_id: tile.recommendation_id,
             }),
       };
-      this.recordOrQueueEvent("impression", gleanData, () => {
-        Glean.pocket.impression.record({
-          ...this.redactNewTabPing(gleanData, is_sponsored),
-          newtab_visit_id: session.session_id,
-        });
-      });
+      this.recordOrQueueEvent(
+        "impression",
+        gleanData,
+        session.session_id,
+        () => {
+          Glean.pocket.impression.record({
+            ...this.redactNewTabPing(gleanData, is_sponsored),
+            newtab_visit_id: session.session_id,
+          });
+        }
+      );
 
       if (tile.shim) {
         if (this.canSendUnifiedAdsSpocCallbacks) {
-          // Send unified ads callback event
-          this.sendUnifiedAdsCallbackEvent({
-            url: tile.shim,
-            position: tile.pos,
-          });
+          if (this._adsClient) {
+            // Send callback event via MAC
+            this.sendMacCallbackEvent(tile.shim, "impression");
+          } else {
+            // Send unified ads callback event
+            this.sendUnifiedAdsCallbackEvent({
+              url: tile.shim,
+              position: tile.pos,
+            });
+          }
         }
       }
     });
@@ -2384,6 +2561,8 @@ export class TelemetryFeed {
 
   uninit() {
     this._stopObservingNewtabPingPrefs();
+    // Must run before newtabContentPing.uninit(), which discards its own buffer.
+    this.#flushBufferedEventsOnUninit();
     this.newtabContentPing.uninit();
     if (this._initialized) {
       Services.obs.removeObserver(
@@ -2393,6 +2572,7 @@ export class TelemetryFeed {
       this._initialized = false;
     }
 
-    // TODO: Send any unfinished sessions
+    // TODO: The sessions still in this.sessions are not reported as ended;
+    // only their buffered events are flushed above.
   }
 }

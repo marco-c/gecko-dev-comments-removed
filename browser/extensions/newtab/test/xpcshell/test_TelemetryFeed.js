@@ -9,11 +9,13 @@ const { updateAppInfo } = ChromeUtils.importESModule(
 
 ChromeUtils.defineESModuleGetters(this, {
   AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
+  AdsClient: "resource://newtab/lib/AdsClient.sys.mjs",
   ContextId: "moz-src:///browser/modules/ContextId.sys.mjs",
   actionCreators: "resource://newtab/common/Actions.mjs",
   actionTypes: "resource://newtab/common/Actions.mjs",
   ExtensionSettingsStore:
     "resource://gre/modules/ExtensionSettingsStore.sys.mjs",
+  GleanSessionType: "resource://newtab/lib/TelemetryFeed.sys.mjs",
   HomePage: "resource:///modules/HomePage.sys.mjs",
   NewTabContentPing: "resource://newtab/lib/NewTabContentPing.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
@@ -32,6 +34,12 @@ const PREF_REDACT_NEWTAB_PING_ENABLED =
   "browser.newtabpage.activity-stream.telemetry.privatePing.redactNewtabPing.enabled";
 const PREF_IS_MERINO_FEED_EXPERIMENT =
   "browser.newtabpage.activity-stream.discoverystream.merino-feed-experiment";
+const PREF_ENDPOINTS =
+  "browser.newtabpage.activity-stream.discoverystream.endpoints";
+const PREF_UNIFIED_ADS_TILES_ENABLED =
+  "browser.newtabpage.activity-stream.unifiedAds.tiles.enabled";
+const PREF_UNIFIED_ADS_SPOCS_ENABLED =
+  "browser.newtabpage.activity-stream.unifiedAds.spocs.enabled";
 
 add_setup(async function setup() {
   do_get_profile();
@@ -313,6 +321,53 @@ add_task(async function test_events_on_pref_changes() {
   );
 });
 
+add_task(async function test_topsites_change_display_event() {
+  info(
+    "TelemetryFeed.handleSetPref should record a topsites.change_display " +
+      "event when the topSitesRows pref is set from the customize menu"
+  );
+  Services.fog.testResetFOG();
+
+  const PORT_ID = "port123";
+  const ROWS = 3;
+
+  let instance = new TelemetryFeed();
+  let session = instance.addSession(PORT_ID);
+
+  instance.handleSetPref({
+    meta: { fromTarget: PORT_ID },
+    data: { name: "topSitesRows", value: ROWS },
+  });
+
+  let events = Glean.topsites.changeDisplay.testGetValue();
+  Assert.equal(events.length, 1, "One change_display event was recorded");
+  Assert.deepEqual(events[0].extra, {
+    rows: String(ROWS),
+    newtab_visit_id: session.session_id,
+  });
+});
+
+add_task(async function test_topsites_change_display_event_no_session() {
+  info(
+    "TelemetryFeed.handleSetPref should not record a topsites.change_display " +
+      "event when the sending port has no session"
+  );
+  Services.fog.testResetFOG();
+
+  let instance = new TelemetryFeed();
+
+  instance.handleSetPref({
+    meta: { fromTarget: "port-with-no-session" },
+    data: { name: "topSitesRows", value: 2 },
+  });
+
+  Assert.equal(
+    Glean.topsites.changeDisplay.testGetValue(),
+    null,
+    "No change_display event was recorded"
+  );
+});
+
 add_task(async function test_browserOpenNewtabStart() {
   info(
     "TelemetryFeed.browserOpenNewtabStart should call " +
@@ -339,11 +394,8 @@ add_task(async function test_browserOpenNewtabStart() {
   Assert.ok(profile.threads);
   Assert.equal(profile.threads.length, 1);
 
-  
-  
-  let [thread] = profile.threads;
-  let foundMarker = thread.markers.data.find(marker => {
-    return thread.stringTable[marker[5]?.name] === "browser-open-newtab-start";
+  let foundMarker = profile.threads[0].markers.data.find(marker => {
+    return marker[5]?.name === "browser-open-newtab-start";
   });
 
   Assert.ok(foundMarker, "Found the browser-open-newtab-start marker");
@@ -484,17 +536,34 @@ add_task(async function test_endSession_no_ping_on_no_visibility_event() {
     "TelemetryFeed.endSession shouldn't send session ping if there's " +
       "no visibility_event_rcvd_ts"
   );
+  Services.fog.testResetFOG();
   Services.prefs.setBoolPref(PREF_TELEMETRY, true);
   let instance = new TelemetryFeed();
 
   let sandbox = sinon.createSandbox();
   sandbox.stub(instance, "configureContentPing");
 
+  let submittedReasons = [];
+  GleanPings.newtab.testBeforeNextSubmit(reason => {
+    submittedReasons.push(reason);
+  });
+
   instance.addSession("foo");
 
   Services.telemetry.clearEvents();
-  instance.endSession("foo");
+  await instance.endSession("foo");
   TelemetryTestUtils.assertNumberOfEvents(0);
+
+  Assert.deepEqual(
+    submittedReasons,
+    [],
+    "A newtab that was never shown should not submit a newtab ping."
+  );
+  Assert.equal(
+    Glean.newtab.closed.testGetValue(),
+    null,
+    "A newtab that was never shown should not record newtab.closed."
+  );
 
   info("TelemetryFeed.endSession should remove the session from .sessions");
   Assert.ok(!instance.sessions.has("foo"));
@@ -502,6 +571,105 @@ add_task(async function test_endSession_no_ping_on_no_visibility_event() {
   Services.prefs.clearUserPref(PREF_TELEMETRY);
 
   sandbox.restore();
+  Services.fog.testResetFOG();
+});
+
+add_task(async function test_endSession_never_shown_keeps_buffered_events() {
+  info(
+    "TelemetryFeed.endSession shouldn't drain the shared event buffer for a " +
+      "newtab that was never shown"
+  );
+  Services.fog.testResetFOG();
+  Services.prefs.setBoolPref(PREF_TELEMETRY, true);
+
+  let sandbox = sinon.createSandbox();
+  let instance = new TelemetryFeed();
+  sandbox.stub(instance, "configureContentPing");
+  instance.gleanSessionType = GleanSessionType.NormalGleanSession;
+
+  let recorded = false;
+  instance.recordOrQueueEvent("impression", {}, "other-session", () => {
+    recorded = true;
+  });
+  Assert.ok(!recorded, "The event should be queued rather than recorded.");
+
+  instance.addSession("preloaded");
+  await instance.endSession("preloaded");
+
+  Assert.ok(
+    !recorded,
+    "A newtab that was never shown should leave queued events alone."
+  );
+  Assert.ok(!instance.sessions.has("preloaded"));
+
+  instance.uninit();
+  Assert.ok(recorded, "The queued event should survive until uninit.");
+
+  Services.prefs.clearUserPref(PREF_TELEMETRY);
+  sandbox.restore();
+  Services.fog.testResetFOG();
+});
+
+add_task(async function test_uninit_flushes_buffered_events() {
+  info(
+    "TelemetryFeed.uninit should flush events queued in a normal Glean " +
+      "session rather than dropping them"
+  );
+  Services.fog.testResetFOG();
+  Services.prefs.setBoolPref(PREF_TELEMETRY, true);
+
+  let sandbox = sinon.createSandbox();
+  let instance = new TelemetryFeed();
+  sandbox.stub(instance, "configureContentPing");
+  instance.gleanSessionType = GleanSessionType.NormalGleanSession;
+
+  let recorded = false;
+  instance.recordOrQueueEvent("impression", {}, "orphaned-session", () => {
+    recorded = true;
+  });
+
+  let pingSubmitted = new Promise(resolve => {
+    GleanPings.newtab.testBeforeNextSubmit(reason => {
+      Assert.equal(reason, "newtab_session_end");
+      resolve();
+    });
+  });
+
+  instance.uninit();
+  await pingSubmitted;
+
+  Assert.ok(recorded, "The queued event should be recorded at uninit.");
+
+  Services.prefs.clearUserPref(PREF_TELEMETRY);
+  sandbox.restore();
+  Services.fog.testResetFOG();
+});
+
+add_task(async function test_uninit_no_ping_when_buffer_empty() {
+  info("TelemetryFeed.uninit shouldn't submit an empty newtab ping");
+  Services.fog.testResetFOG();
+  Services.prefs.setBoolPref(PREF_TELEMETRY, true);
+
+  let sandbox = sinon.createSandbox();
+  let instance = new TelemetryFeed();
+  sandbox.stub(instance, "configureContentPing");
+
+  let submittedReasons = [];
+  GleanPings.newtab.testBeforeNextSubmit(reason => {
+    submittedReasons.push(reason);
+  });
+
+  instance.uninit();
+
+  Assert.deepEqual(
+    submittedReasons,
+    [],
+    "uninit with nothing buffered should not submit a ping."
+  );
+
+  Services.prefs.clearUserPref(PREF_TELEMETRY);
+  sandbox.restore();
+  Services.fog.testResetFOG();
 });
 
 add_task(async function test_endSession_send_ping() {
@@ -1221,6 +1389,57 @@ add_task(async function test_sendPageTakeoverData_newtab_ping() {
 });
 
 add_task(
+  async function test_handleDiscoveryStreamImpressionStats_records_adsClient_impression_if_enabled() {
+    info(
+      "TelemetryFeed.handleDiscoveryStreamImpressionStats should record adsClient impression " +
+        "when enabled"
+    );
+    let sandbox = sinon.createSandbox();
+    Services.prefs.setStringPref(PREF_ENDPOINTS, "https://test.reporting.net/");
+    Services.prefs.setBoolPref(PREF_UNIFIED_ADS_SPOCS_ENABLED, true);
+
+    sandbox.stub(AdsClient, "isEnabled").returns(true);
+    const ADS_CLIENT = { recordImpression: sinon.fake.resolves() };
+    sandbox.stub(AdsClient, "getClient").returns(ADS_CLIENT);
+    sandbox.stub(AdsClient, "callbackOptions").returns({ ohttp: true });
+
+    let instance = new TelemetryFeed();
+    sandbox.replaceGetter(
+      instance,
+      "SHOW_SPONSORED_STORIES_ENABLED",
+      sinon.fake.returns(true)
+    );
+
+    await instance.onAction({
+      type: actionTypes.PREFS_INITIAL_VALUES,
+    });
+    Assert.ok(AdsClient.isEnabled.calledOnce);
+    Assert.ok(AdsClient.getClient.calledOnce);
+
+    sandbox
+      .stub(instance.sessions, "get")
+      .returns({ session_id: "decafc0ffee" });
+
+    instance.handleDiscoveryStreamImpressionStats(42, {
+      tiles: [
+        {
+          card_type: "spoc",
+          pos: 42,
+          shim: "https://test.reporting.net/",
+        },
+      ],
+    });
+
+    Assert.ok(AdsClient.callbackOptions.calledOnce);
+    Assert.ok(ADS_CLIENT.recordImpression.calledOnce);
+
+    Services.prefs.clearUserPref(PREF_UNIFIED_ADS_SPOCS_ENABLED);
+    Services.prefs.clearUserPref(PREF_ENDPOINTS);
+    sandbox.restore();
+  }
+);
+
+add_task(
   async function test_handleDiscoveryStreamImpressionStats_should_throw() {
     info(
       "TelemetryFeed.handleDiscoveryStreamImpressionStats should throw " +
@@ -1388,6 +1607,104 @@ add_task(
     let impressions = Glean.topsites.impression.testGetValue();
     Assert.ok(!impressions, "Should not have recorded any impressions");
 
+    sandbox.restore();
+  }
+);
+
+add_task(
+  async function test_handleTopSitesSponsoredImpressionStats_record_adsClient_impression_if_enabled() {
+    info(
+      "TelemetryFeed.handleTopSitesSponsoredImpressionStats should record an " +
+        "adsClient impression event on an impression event if enabled"
+    );
+
+    let sandbox = sinon.createSandbox();
+    Services.prefs.setStringPref(PREF_ENDPOINTS, "https://test.reporting.net/");
+    Services.prefs.setBoolPref(PREF_UNIFIED_ADS_TILES_ENABLED, true);
+
+    sandbox.stub(AdsClient, "isEnabled").returns(true);
+    const ADS_CLIENT = { recordImpression: sinon.fake.resolves() };
+    sandbox.stub(AdsClient, "getClient").returns(ADS_CLIENT);
+    sandbox.stub(AdsClient, "callbackOptions").returns({ ohttp: true });
+
+    let instance = new TelemetryFeed();
+    sandbox.replaceGetter(
+      instance,
+      "SHOW_SPONSORED_TOPSITES_ENABLED",
+      sinon.fake.returns(true)
+    );
+
+    await instance.onAction({
+      type: actionTypes.PREFS_INITIAL_VALUES,
+    });
+    Assert.ok(AdsClient.isEnabled.calledOnce);
+    Assert.ok(AdsClient.getClient.calledOnce);
+
+    await instance.handleTopSitesSponsoredImpressionStats({
+      data: {
+        type: "impression",
+        tile_id: 42,
+        source: "newtab",
+        position: 1,
+        reporting_url: "https://test.reporting.net/",
+        advertiser: "adnoid ads",
+      },
+    });
+
+    Assert.ok(AdsClient.callbackOptions.calledOnce);
+    Assert.ok(ADS_CLIENT.recordImpression.calledOnce);
+
+    Services.prefs.clearUserPref(PREF_UNIFIED_ADS_TILES_ENABLED);
+    Services.prefs.clearUserPref(PREF_ENDPOINTS);
+    sandbox.restore();
+  }
+);
+
+add_task(
+  async function test_handleTopSitesSponsoredImpressionStats_record_adsClient_click_if_enabled() {
+    info(
+      "TelemetryFeed.handleTopSitesSponsoredImpressionStats should record an " +
+        "adsClient impresclicksion event on an click event if enabled"
+    );
+
+    let sandbox = sinon.createSandbox();
+    Services.prefs.setStringPref(PREF_ENDPOINTS, "https://test.reporting.net/");
+    Services.prefs.setBoolPref(PREF_UNIFIED_ADS_TILES_ENABLED, true);
+
+    sandbox.stub(AdsClient, "isEnabled").returns(true);
+    const ADS_CLIENT = { recordClick: sinon.fake.resolves() };
+    sandbox.stub(AdsClient, "getClient").returns(ADS_CLIENT);
+    sandbox.stub(AdsClient, "callbackOptions").returns({ ohttp: true });
+
+    let instance = new TelemetryFeed();
+    sandbox.replaceGetter(
+      instance,
+      "SHOW_SPONSORED_TOPSITES_ENABLED",
+      sinon.fake.returns(true)
+    );
+
+    await instance.onAction({
+      type: actionTypes.PREFS_INITIAL_VALUES,
+    });
+    Assert.ok(AdsClient.isEnabled.calledOnce);
+    Assert.ok(AdsClient.getClient.calledOnce);
+
+    await instance.handleTopSitesSponsoredImpressionStats({
+      data: {
+        type: "click",
+        tile_id: 42,
+        source: "newtab",
+        position: 1,
+        reporting_url: "https://test.reporting.net/",
+        advertiser: "adnoid ads",
+      },
+    });
+
+    Assert.ok(AdsClient.callbackOptions.calledOnce);
+    Assert.ok(ADS_CLIENT.recordClick.calledOnce);
+
+    Services.prefs.clearUserPref(PREF_UNIFIED_ADS_TILES_ENABLED);
+    Services.prefs.clearUserPref(PREF_ENDPOINTS);
     sandbox.restore();
   }
 );
@@ -1975,6 +2292,100 @@ add_task(
 );
 
 add_task(
+  async function test_handleDiscoveryStreamUserEvent_record_adsClient_click_if_enabled() {
+    info(
+      "TelemetryFeed.handleDiscoveryStreamUserEvent records an adsClient click " +
+        "if enabled"
+    );
+
+    let sandbox = sinon.createSandbox();
+    Services.prefs.setStringPref(PREF_ENDPOINTS, "https://test.reporting.net/");
+    Services.prefs.setBoolPref(PREF_UNIFIED_ADS_SPOCS_ENABLED, true);
+
+    sandbox.stub(AdsClient, "isEnabled").returns(true);
+    const ADS_CLIENT = { recordClick: sinon.fake.resolves() };
+    sandbox.stub(AdsClient, "getClient").returns(ADS_CLIENT);
+    sandbox.stub(AdsClient, "callbackOptions").returns({ ohttp: true });
+
+    let instance = new TelemetryFeed();
+    sandbox.replaceGetter(
+      instance,
+      "SHOW_SPONSORED_STORIES_ENABLED",
+      sinon.fake.returns(true)
+    );
+
+    await instance.onAction({
+      type: actionTypes.PREFS_INITIAL_VALUES,
+    });
+    Assert.ok(AdsClient.isEnabled.calledOnce);
+    Assert.ok(AdsClient.getClient.calledOnce);
+
+    sandbox
+      .stub(instance.sessions, "get")
+      .returns({ session_id: "decafc0ffee" });
+
+    instance.handleDiscoveryStreamUserEvent(
+      actionCreators.DiscoveryStreamUserEvent({
+        event: "CLICK",
+        action_position: 42,
+        value: {
+          card_type: "spoc",
+          shim: "https://test.reporting.net/",
+        },
+      })
+    );
+
+    Assert.ok(AdsClient.callbackOptions.calledOnce);
+    Assert.ok(ADS_CLIENT.recordClick.calledOnce);
+
+    Services.prefs.clearUserPref(PREF_UNIFIED_ADS_SPOCS_ENABLED);
+    Services.prefs.clearUserPref(PREF_ENDPOINTS);
+    sandbox.restore();
+  }
+);
+
+add_task(
+  async function test_handleReportAdUserEvent_reports_adsClient_ad_if_enabled() {
+    info(
+      "TelemetryFeed.handleDiscoveryStreamImpressionStats should report add to adsClient " +
+        "when enabled"
+    );
+
+    let sandbox = sinon.createSandbox();
+    Services.prefs.setStringPref(PREF_ENDPOINTS, "https://test.reporting.net/");
+
+    sandbox.stub(AdsClient, "isEnabled").returns(true);
+    const ADS_CLIENT = { reportAd: sinon.fake.resolves() };
+    sandbox.stub(AdsClient, "getClient").returns(ADS_CLIENT);
+    sandbox.stub(AdsClient, "callbackOptions").returns({ ohttp: true });
+
+    let instance = new TelemetryFeed();
+
+    await instance.onAction({
+      type: actionTypes.PREFS_INITIAL_VALUES,
+    });
+    Assert.ok(AdsClient.isEnabled.calledOnce);
+    Assert.ok(AdsClient.getClient.calledOnce);
+
+    await instance.handleReportAdUserEvent({
+      type: actionTypes.REPORT_AD_SUBMIT,
+      data: {
+        placement_id: "place",
+        position: 42,
+        report_reason: "not_interested",
+        reporting_url: "https://test.reporting.net/",
+      },
+    });
+
+    Assert.ok(AdsClient.callbackOptions.calledOnce);
+    Assert.ok(ADS_CLIENT.reportAd.calledOnce);
+
+    Services.prefs.clearUserPref(PREF_ENDPOINTS);
+    sandbox.restore();
+  }
+);
+
+add_task(
   async function test_handleAboutSponsoredTopSites_record_showPrivacyClick() {
     info(
       "TelemetryFeed.handleAboutSponsoredTopSites should record a Glean " +
@@ -2422,7 +2833,12 @@ add_task(async function test_recordOrQueueEvent_queues_in_normal_session() {
 
   let recordEventStub = sandbox.stub(instance.newtabContentPing, "recordEvent");
 
-  instance.recordOrQueueEvent("testEvent", { test: "data" }, callback);
+  instance.recordOrQueueEvent(
+    "testEvent",
+    { test: "data" },
+    "session1",
+    callback
+  );
 
   Assert.ok(
     !recordEventStub.called,
@@ -2452,7 +2868,7 @@ add_task(async function test_recordOrQueueEvent_immediate_in_private_session() {
   let recordEventStub = sandbox.stub(instance.newtabContentPing, "recordEvent");
 
   const eventData = { test: "data" };
-  instance.recordOrQueueEvent("testEvent", eventData, callback);
+  instance.recordOrQueueEvent("testEvent", eventData, "session1", callback);
 
   Assert.ok(callbackCalled, "callback should be called immediately");
   Assert.ok(
@@ -2489,7 +2905,12 @@ add_task(
       "recordEvent"
     );
 
-    instance.recordOrQueueEvent("testEvent", { test: "data" }, callback);
+    instance.recordOrQueueEvent(
+      "testEvent",
+      { test: "data" },
+      "session1",
+      callback
+    );
 
     Assert.ok(callbackCalled, "callback should still be called");
     Assert.ok(
@@ -2501,6 +2922,96 @@ add_task(
     sandbox.restore();
   }
 );
+
+add_task(async function test_endSession_leaves_other_sessions_events_queued() {
+  info(
+    "endSession should drain only its own session's queued events, leaving " +
+      "events belonging to other open sessions in the buffer"
+  );
+  Services.prefs.setBoolPref(PREF_TELEMETRY, true);
+
+  let sandbox = sinon.createSandbox();
+  let instance = new TelemetryFeed();
+  instance.gleanSessionType = "normal";
+
+  let endingSession = instance.addSession("ending-port");
+  let otherSession = instance.addSession("other-port");
+  endingSession.perf.visibility_event_rcvd_ts = 1000;
+  otherSession.perf.visibility_event_rcvd_ts = 1000;
+
+  let endingRecorded = false;
+  let otherRecorded = false;
+  instance.recordOrQueueEvent(
+    "impression",
+    {},
+    endingSession.session_id,
+    () => {
+      endingRecorded = true;
+    }
+  );
+  instance.recordOrQueueEvent("impression", {}, otherSession.session_id, () => {
+    otherRecorded = true;
+  });
+
+  await instance.endSession("ending-port");
+
+  Assert.ok(endingRecorded, "The ending session's event should be recorded.");
+  Assert.ok(
+    !otherRecorded,
+    "The still-open session's event should stay queued."
+  );
+
+  
+  await instance.endSession("other-port");
+  Assert.ok(
+    otherRecorded,
+    "The other session's event should be recorded when that session ends."
+  );
+
+  Services.prefs.clearUserPref(PREF_TELEMETRY);
+  sandbox.restore();
+  Services.fog.testResetFOG();
+});
+
+add_task(async function test_endSession_never_shown_discards_own_events() {
+  info(
+    "endSession should discard a never-shown session's queued events without " +
+      "recording them, and leave other sessions' events alone"
+  );
+  Services.prefs.setBoolPref(PREF_TELEMETRY, true);
+
+  let sandbox = sinon.createSandbox();
+  let instance = new TelemetryFeed();
+  instance.gleanSessionType = "normal";
+
+  let neverShown = instance.addSession("preloaded-port");
+  let visible = instance.addSession("visible-port");
+  visible.perf.visibility_event_rcvd_ts = 1000;
+
+  let neverShownRecorded = false;
+  let visibleRecorded = false;
+  instance.recordOrQueueEvent("impression", {}, neverShown.session_id, () => {
+    neverShownRecorded = true;
+  });
+  instance.recordOrQueueEvent("impression", {}, visible.session_id, () => {
+    visibleRecorded = true;
+  });
+
+  await instance.endSession("preloaded-port");
+
+  Assert.ok(
+    !neverShownRecorded,
+    "A never-shown session's own events must not be recorded."
+  );
+  Assert.ok(
+    !visibleRecorded,
+    "A never-shown session must not drain the visible session's events."
+  );
+
+  Services.prefs.clearUserPref(PREF_TELEMETRY);
+  sandbox.restore();
+  Services.fog.testResetFOG();
+});
 
 add_task(
   async function test_handleTopSitesSponsoredImpressionStats_frecency_boosted_queued() {
