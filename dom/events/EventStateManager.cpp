@@ -1621,7 +1621,25 @@ void EventStateManager::LightDismissOpenPopovers(WidgetEvent* aEvent,
   }
 
   
-  targetDoc->HidePopoversUntil(ancestor, false, true);
+  
+  bool endpointIsHint = targetDoc->PopoverListOf(PopoverAttributeState::Hint)
+                            .Contains(ancestor.get());
+
+  
+  
+  targetDoc->HidePopoverStackUntil(ancestor, PopoverAttributeState::Hint, false,
+                                   true);
+
+  
+  
+  
+  RefPtr<Element> autoEndpoint =
+      endpointIsHint ? targetDoc->PopoverHintStackParent() : ancestor.get();
+
+  
+  
+  targetDoc->HidePopoverStackUntil(autoEndpoint, PopoverAttributeState::Auto,
+                                   false, true);
 }
 
 
