@@ -14,6 +14,10 @@ document.addEventListener(
     });
     let mainPopupSet = document.getElementById("mainPopupSet");
     
+    
+    let getContextTabGroupId = popup =>
+      popup.triggerNode?.closest("[data-tab-group-id]")?.dataset.tabGroupId;
+    
     mainPopupSet.addEventListener("command", event => {
       switch (event.target.id) {
         
@@ -189,7 +193,7 @@ document.addEventListener(
         
         case "open-tab-group-context-menu_moveToNewWindow":
           {
-            let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
+            let tabGroupId = getContextTabGroupId(event.target.parentElement);
             let tabGroup = gBrowser.getTabGroupById(tabGroupId);
             tabGroup.documentGlobal.gBrowser.replaceGroupWithWindow(
               tabGroup,
@@ -201,7 +205,7 @@ document.addEventListener(
           break;
         case "open-tab-group-context-menu_moveToThisWindow":
           {
-            let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
+            let tabGroupId = getContextTabGroupId(event.target.parentElement);
             let otherTabGroup = gBrowser.getTabGroupById(tabGroupId);
             let adoptedTabGroup = gBrowser.adoptTabGroup(otherTabGroup, {
               tabIndex: gBrowser.tabs.length,
@@ -211,19 +215,23 @@ document.addEventListener(
           break;
         case "open-tab-group-context-menu_share":
           {
-            let { triggerNode } = event.target.parentElement;
-            let { tabGroupId } = triggerNode.dataset;
+            let popup = event.target.parentElement;
+            let tabGroupId = getContextTabGroupId(popup);
             let tabGroup = gBrowser.getTabGroupById(tabGroupId);
             
             
-            triggerNode.closest("panel")?.hidePopup();
+            popup.triggerNode?.closest("panel")?.hidePopup();
             lazy.ContentSharingUtils.handleShareTabGroup(tabGroup);
           }
           break;
         case "open-tab-group-context-menu_delete":
           {
-            let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
+            let popup = event.target.parentElement;
+            let tabGroupId = getContextTabGroupId(popup);
             let tabGroup = gBrowser.getTabGroupById(tabGroupId);
+            
+            
+            popup.triggerNode?.closest("panel")?.hidePopup();
             
             
             tabGroup.documentGlobal.gBrowser.removeTabGroup(tabGroup, {
@@ -237,7 +245,7 @@ document.addEventListener(
         
         case "saved-tab-group-context-menu_openInThisWindow":
           {
-            let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
+            let tabGroupId = getContextTabGroupId(event.target.parentElement);
             SessionStore.openSavedTabGroup(tabGroupId, window, {
               source: lazy.TabMetrics.METRIC_SOURCE.TAB_OVERFLOW_MENU,
             });
@@ -246,7 +254,7 @@ document.addEventListener(
         case "saved-tab-group-context-menu_openInNewWindow":
           {
             
-            let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
+            let tabGroupId = getContextTabGroupId(event.target.parentElement);
             let tabGroup = SessionStore.openSavedTabGroup(tabGroupId, window, {
               source: lazy.TabMetrics.METRIC_SOURCE.TAB_OVERFLOW_MENU,
             });
@@ -260,7 +268,9 @@ document.addEventListener(
           break;
         case "saved-tab-group-context-menu_delete":
           {
-            let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
+            let popup = event.target.parentElement;
+            let tabGroupId = getContextTabGroupId(popup);
+            popup.triggerNode?.closest("panel")?.hidePopup();
             SessionStore.forgetSavedTabGroup(tabGroupId);
           }
           break;
@@ -633,7 +643,10 @@ document.addEventListener(
           DynamicShortcutTooltip.updateText(event.target);
           break;
         case "SyncedTabsOpenSelectedInContainerTabMenu":
-          createUserContextMenu(event, { isContextMenu: true });
+          createUserContextMenu(event, {
+            isContextMenu: true,
+            containerSource: "synced_tabs_context_menu",
+          });
           break;
         case "unified-extensions-context-menu":
           gUnifiedExtensions.updateContextMenu(event.target, event);
@@ -667,7 +680,7 @@ document.addEventListener(
         if (event.target.id == "open-tab-group-context-menu") {
           
           
-          let { tabGroupId } = event.target.triggerNode.dataset;
+          let tabGroupId = getContextTabGroupId(event.target);
           let tabGroup = gBrowser.getTabGroupById(tabGroupId);
           let tabGroupIsInThisWindow = tabGroup.ownerDocument == document;
           event.target.querySelector(
