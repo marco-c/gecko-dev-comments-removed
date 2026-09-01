@@ -1509,6 +1509,32 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
 
     
 
+
+    APPEND_TO_DRIVER_BLOCKLIST2_ADAPTER(
+        OperatingSystem::Windows, AdapterMatch::Any,
+        DeviceFamily::IntelHDGraphicsToIvyBridge,
+        nsIGfxInfo::FEATURE_HARDWARE_VIDEO_ENCODING,
+        nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_COMPARISON_IGNORED,
+        V(0, 0, 0, 0), "FEATURE_FAILURE_INTEL_ENC_IVB");
+
+    
+    APPEND_TO_DRIVER_BLOCKLIST2_ADAPTER(
+        OperatingSystem::Windows, AdapterMatch::Any,
+        DeviceFamily::IntelGen7Baytrail,
+        nsIGfxInfo::FEATURE_HARDWARE_VIDEO_ENCODING,
+        nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_COMPARISON_IGNORED,
+        V(0, 0, 0, 0), "FEATURE_FAILURE_INTEL_ENC_BAYTRAIL");
+
+    
+
+    APPEND_TO_DRIVER_BLOCKLIST2_ADAPTER(
+        OperatingSystem::Windows, AdapterMatch::Any, DeviceFamily::AtiAll,
+        nsIGfxInfo::FEATURE_HARDWARE_VIDEO_ENCODING,
+        nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_LESS_THAN,
+        V(31, 0, 0, 0), "FEATURE_FAILURE_AMD_ENC_LEGACY");
+
+    
+
     APPEND_TO_DRIVER_BLOCKLIST_RANGE_ADAPTER(
         OperatingSystem::Windows7, AdapterMatch::Secondary,
         DeviceFamily::Bug1137716, GfxDriverInfo::optionalFeatures,
