@@ -81,8 +81,7 @@ NS_IMPL_ISUPPORTS_INHERITED(GeckoMediaPluginServiceParent,
                             mozIGeckoMediaPluginChromeService)
 
 GeckoMediaPluginServiceParent::GeckoMediaPluginServiceParent()
-    : mScannedPluginOnDisk(false),
-      mShuttingDown(false),
+    : mShuttingDown(false),
       mWaitingForPluginsSyncShutdown(false),
       mInitPromiseMonitor("GeckoMediaPluginServiceParent::mInitPromiseMonitor"),
       mInitPromise(&mInitPromiseMonitor),
@@ -584,7 +583,6 @@ RefPtr<GenericPromise> GeckoMediaPluginServiceParent::LoadFromEnvironment() {
     }
   }
 
-  mScannedPluginOnDisk = true;
   return GenericPromise::All(thread, promises)
       ->Then(
           thread, __func__,
@@ -956,22 +954,70 @@ GeckoMediaPluginServiceParent::FindPluginDirectoryForAPI(
 }
 
 nsresult GeckoMediaPluginServiceParent::EnsurePluginsOnDiskScanned() {
-  const char* env = nullptr;
-  if (!mScannedPluginOnDisk && (env = PR_GetEnv("MOZ_GMP_PATH")) && *env) {
+  const char* env = PR_GetEnv("MOZ_GMP_PATH");
+  if (!env || !*env) {
+    
+    return NS_OK;
+  }
+
+  {
+    MonitorAutoLock lock(mInitPromiseMonitor);
+    if (mLoadPluginsFromDiskComplete) {
+      return NS_OK;
+    }
+  }
+
+  
+  
+  nsCOMPtr<nsIThread> thread;
+  nsresult rv = GetThread(getter_AddRefs(thread));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (thread->IsOnCurrentThread()) {
+    
+    
+    MOZ_ASSERT_UNREACHABLE("Cannot wait for the GMP thread from itself");
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  
+  if (!NS_IsMainThread()) {
     
     
     
     
     
-    
-    nsCOMPtr<nsIThread> thread;
-    nsresult rv = GetThread(getter_AddRefs(thread));
+    nsCOMPtr<nsISerialEventTarget> queue;
+    rv = NS_CreateBackgroundTaskQueue("EnsurePluginsOnDiskScanned",
+                                      getter_AddRefs(queue));
     NS_ENSURE_SUCCESS(rv, rv);
-    rv = NS_DispatchAndSpinEventLoopUntilComplete(
-        "GeckoMediaPluginServiceParent::EnsurePluginsOnDiskScanned"_ns, thread,
-        MakeAndAddRef<mozilla::Runnable>("GMPDummyRunnable"));
-    NS_ENSURE_SUCCESS(rv, rv);
-    MOZ_ASSERT(mScannedPluginOnDisk, "Should have scanned MOZ_GMP_PATH by now");
+    media::Await(queue.forget(), EnsureInitialized());
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  MozPromiseRequestHolder<GenericNonExclusivePromise> request;
+  bool scanned = false;
+  EnsureInitialized()
+      ->Then(GetMainThreadSerialEventTarget(), __func__,
+             [&](const GenericNonExclusivePromise::ResolveOrRejectValue&) {
+               request.Complete();
+               scanned = true;
+             })
+      ->Track(request);
+
+  if (!SpinEventLoopUntil(
+          "GeckoMediaPluginServiceParent::EnsurePluginsOnDiskScanned"_ns,
+          [&] { return scanned; })) {
+    request.Disconnect();
+    return NS_ERROR_ABORT;
   }
 
   return NS_OK;

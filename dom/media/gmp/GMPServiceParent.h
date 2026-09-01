@@ -8,7 +8,6 @@
 #include "GMPService.h"
 #include "GMPStorage.h"
 #include "mozIGeckoMediaPluginChromeService.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/gmp/PGMPParent.h"
@@ -199,10 +198,6 @@ class GeckoMediaPluginServiceParent final
 
   
   nsTArray<RefPtr<GMPParent>> mPlugins MOZ_GUARDED_BY(mMutex);
-
-  
-  
-  Atomic<bool> mScannedPluginOnDisk;
 
   template <typename T>
   class MainThreadOnly {
