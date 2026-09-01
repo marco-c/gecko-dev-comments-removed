@@ -34,6 +34,10 @@ def _make_processor():
 
 
 def _row(stack, build_date, hang_ms, hang_count=1.0):
+    
+    
+    
+    stack = [f if len(f) == 3 else (f[0], f[1], 0) for f in stack]
     return (
         stack,
         "",
