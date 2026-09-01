@@ -1551,11 +1551,6 @@ void AppWindow::SyncAttributesToWidget() {
   NS_ENSURE_TRUE_VOID(mWindow);
 
   
-  mWindow->SetShowsToolbarButton(
-      windowElement->HasAttribute(u"toggletoolbar"_ns));
-  NS_ENSURE_TRUE_VOID(mWindow);
-
-  
   
   
   
