@@ -26,7 +26,7 @@ use crate::typed_om::{
 };
 use crate::values::computed;
 use crate::values::generics::calc::SortKey as AttrUnit;
-use crate::values::specified::{param::LinkParamValueOrNone, NoCalcLength, ParsedNamespace};
+use crate::values::specified::{NoCalcLength, ParsedNamespace};
 use crate::{derives::*, Atom, LocalName, Namespace, Prefix};
 use cssparser::{
     CowRcStr, Delimiter, Parser, ParserInput, SourcePosition, Token, TokenSerializationType,
@@ -215,14 +215,10 @@ impl CssEnvironment {
                 .0
                 .iter()
                 .find(|p| p.name.0 == *name)?;
-            if let LinkParamValueOrNone::Specified(val) = &param.value {
-                let mut input = cssparser::ParserInput::new(val.as_ref());
-                let mut parser = cssparser::Parser::new(&mut input);
-
-                
-                return VariableValue::parse(&mut parser, None, url_data).ok();
-            }
-            return None;
+            let mut input = cssparser::ParserInput::new(param.value.0.as_ref());
+            let mut parser = cssparser::Parser::new(&mut input);
+            
+            return VariableValue::parse(&mut parser, None, url_data).ok();
         }
 
         if let Some(var) = ENVIRONMENT_VARIABLES.iter().find(|var| var.name == *name) {
@@ -1767,7 +1763,7 @@ fn do_substitute_chunk<'a>(
         
         if reference.start == start && reference.end == end {
             if let Some(taint) = attr_taint.filter(|_| substitution.attr_tainted) {
-                taint.push(start, end);
+                taint.push(start, substitution.css.len());
             }
             return Ok(substitution);
         }
