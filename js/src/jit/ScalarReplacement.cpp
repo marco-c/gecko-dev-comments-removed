@@ -13,6 +13,7 @@
 #include "jit/WarpBuilderShared.h"
 #include "js/Vector.h"
 #include "vm/ArgumentsObject.h"
+#include "vm/BoundFunctionObject.h"
 #include "vm/DateObject.h"
 #include "vm/TypedArrayObject.h"
 
@@ -111,7 +112,8 @@ bool EmulateStateOf<MemoryView>::run(MemoryView& view) {
 
 static inline bool IsOptimizableObjectInstruction(MInstruction* ins) {
   return ins->isNewObject() || ins->isNewPlainObject() ||
-         ins->isNewCallObject() || ins->isNewIterator();
+         ins->isNewCallObject() || ins->isNewIterator() ||
+         ins->isNewBoundFunction();
 }
 
 static bool PhiOperandEqualTo(MDefinition* operand, MInstruction* newObject) {
@@ -125,6 +127,14 @@ static bool PhiOperandEqualTo(MDefinition* operand, MInstruction* newObject) {
 
     case MDefinition::Opcode::GuardToClass:
       return PhiOperandEqualTo(operand->toGuardToClass()->input(), newObject);
+
+    case MDefinition::Opcode::GuardBoundFunctionIsConstructor:
+      return PhiOperandEqualTo(
+          operand->toGuardBoundFunctionIsConstructor()->object(), newObject);
+
+    case MDefinition::Opcode::GuardObjectIdentity:
+      return PhiOperandEqualTo(operand->toGuardObjectIdentity()->object(),
+                               newObject);
 
     case MDefinition::Opcode::CheckIsObj:
       return PhiOperandEqualTo(operand->toCheckIsObj()->input(), newObject);
@@ -272,6 +282,7 @@ static bool IsObjectEscaped(MDefinition* ins, MInstruction* newObject,
     switch (def->op()) {
       case MDefinition::Opcode::StoreFixedSlot:
       case MDefinition::Opcode::LoadFixedSlot:
+      case MDefinition::Opcode::LoadFixedSlotAndUnbox:
         
         if (def->indexOf(*i) == 0) {
           break;
@@ -376,7 +387,47 @@ static bool IsObjectEscaped(MDefinition* ins, MInstruction* newObject,
 
       
       case MDefinition::Opcode::IsObject:
+      case MDefinition::Opcode::BoundFunctionNumArgs:
         break;
+
+      case MDefinition::Opcode::GuardBoundFunctionIsConstructor: {
+        auto* guard = def->toGuardBoundFunctionIsConstructor();
+        if (!newObject->isNewBoundFunction()) {
+          JitSpewDef(JitSpew_Escape, "is not a bound function\n", guard);
+          return true;
+        }
+        JSObject* templateObj = MObjectState::templateObjectOf(newObject);
+        if (!templateObj->as<BoundFunctionObject>().isConstructor()) {
+          JitSpewDef(JitSpew_Escape, "has a non-matching isConstructor guard\n",
+                     guard);
+          return true;
+        }
+        if (IsObjectEscaped(def->toInstruction(), newObject, shape)) {
+          JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", def);
+          return true;
+        }
+        break;
+      }
+
+      case MDefinition::Opcode::GuardObjectIdentity: {
+        
+        
+        
+        
+        auto* guard = def->toGuardObjectIdentity();
+        if (guard->bailOnEquality() ||
+            !PhiOperandEqualTo(guard->object(), newObject) ||
+            !PhiOperandEqualTo(guard->expected(), newObject)) {
+          JitSpewDef(JitSpew_Escape, "has a non-trivial identity guard\n",
+                     guard);
+          return true;
+        }
+        if (IsObjectEscaped(def->toInstruction(), newObject, shape)) {
+          JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", def);
+          return true;
+        }
+        break;
+      }
 
       
       
@@ -446,6 +497,11 @@ class ObjectMemoryView : public MDefinitionVisitorDefaultNoop {
   void visitObjectState(MObjectState* ins);
   void visitStoreFixedSlot(MStoreFixedSlot* ins);
   void visitLoadFixedSlot(MLoadFixedSlot* ins);
+  void visitLoadFixedSlotAndUnbox(MLoadFixedSlotAndUnbox* ins);
+  void visitBoundFunctionNumArgs(MBoundFunctionNumArgs* ins);
+  void visitGuardBoundFunctionIsConstructor(
+      MGuardBoundFunctionIsConstructor* ins);
+  void visitGuardObjectIdentity(MGuardObjectIdentity* ins);
   void visitPostWriteBarrier(MPostWriteBarrier* ins);
   void visitStoreDynamicSlot(MStoreDynamicSlot* ins);
   void visitLoadDynamicSlot(MLoadDynamicSlot* ins);
@@ -681,6 +737,72 @@ void ObjectMemoryView::visitLoadFixedSlot(MLoadFixedSlot* ins) {
     ins->block()->insertBefore(ins, bailout);
     ins->replaceAllUsesWith(undefinedVal_);
   }
+
+  
+  ins->block()->discard(ins);
+}
+
+void ObjectMemoryView::visitLoadFixedSlotAndUnbox(MLoadFixedSlotAndUnbox* ins) {
+  
+  if (ins->object() != obj_) {
+    return;
+  }
+
+  MOZ_ASSERT(state_->hasFixedSlot(ins->slot()));
+  MDefinition* val = state_->getFixedSlot(ins->slot());
+  if (val->type() == ins->type()) {
+    ins->replaceAllUsesWith(val);
+  } else {
+    auto* unbox = MUnbox::New(alloc_, val, ins->type(), ins->mode());
+    ins->block()->insertBefore(ins, unbox);
+    ins->replaceAllUsesWith(unbox);
+  }
+
+  
+  ins->block()->discard(ins);
+}
+
+void ObjectMemoryView::visitBoundFunctionNumArgs(MBoundFunctionNumArgs* ins) {
+  
+  if (ins->object() != obj_) {
+    return;
+  }
+
+  JSObject* templateObj = MObjectState::templateObjectOf(obj_);
+  size_t numBoundArgs = templateObj->as<BoundFunctionObject>().numBoundArgs();
+
+  auto* num = MConstant::NewInt32(alloc_, int32_t(numBoundArgs));
+  ins->block()->insertBefore(ins, num);
+  ins->replaceAllUsesWith(num);
+
+  
+  ins->block()->discard(ins);
+}
+
+void ObjectMemoryView::visitGuardBoundFunctionIsConstructor(
+    MGuardBoundFunctionIsConstructor* ins) {
+  
+  if (ins->object() != obj_) {
+    return;
+  }
+
+  
+  ins->replaceAllUsesWith(obj_);
+
+  
+  ins->block()->discard(ins);
+}
+
+void ObjectMemoryView::visitGuardObjectIdentity(MGuardObjectIdentity* ins) {
+  
+  if (ins->object() != obj_) {
+    return;
+  }
+
+  
+  MOZ_ASSERT(ins->expected() == obj_);
+  MOZ_ASSERT(!ins->bailOnEquality());
+  ins->replaceAllUsesWith(obj_);
 
   
   ins->block()->discard(ins);
@@ -1664,17 +1786,13 @@ void ArrayMemoryView::visitSetInitializedLength(MSetInitializedLength* ins) {
   }
 
   
-  
-  
-  
   state_ = BlockState::Copy(alloc_, state_);
   if (!state_) {
     oom_ = true;
     return;
   }
 
-  int32_t initLengthValue = ins->index()->maybeConstantValue()->toInt32() + 1;
-  MConstant* initLength = MConstant::NewInt32(alloc_, initLengthValue);
+  MConstant* initLength = MConstant::NewInt32(alloc_, ins->length());
   ins->block()->insertBefore(ins, initLength);
   ins->block()->insertBefore(ins, state_);
   state_->setInitializedLength(initLength);
@@ -2424,9 +2542,8 @@ MNewArrayObject* ArgumentsReplacer::inlineArgsArray(MInstruction* ins,
     auto* elements = MElements::New(alloc(), newArray);
     ins->block()->insertBefore(ins, elements);
 
-    MConstant* index = nullptr;
     for (uint32_t i = 0; i < count; i++) {
-      index = MConstant::NewInt32(alloc(), i);
+      auto* index = MConstant::NewInt32(alloc(), i);
       ins->block()->insertBefore(ins, index);
 
       MDefinition* arg = actualArgs->getArg(begin + i);
@@ -2438,7 +2555,9 @@ MNewArrayObject* ArgumentsReplacer::inlineArgsArray(MInstruction* ins,
       ins->block()->insertBefore(ins, barrier);
     }
 
-    auto* initLength = MSetInitializedLength::New(alloc(), elements, index);
+    auto* initLength =
+        MSetInitializedLength::New(alloc(), elements, count,
+                                    false);
     ins->block()->insertBefore(ins, initLength);
   }
 
