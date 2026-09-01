@@ -279,13 +279,7 @@ class SVGElement : public SVGElementBase
   void GetAnimatedLengthListValues(SVGUserUnitList* aFirst, ...);
   SVGAnimatedLengthList* GetAnimatedLengthList(uint8_t aAttrEnum);
   virtual SVGAnimatedPointList* GetAnimatedPointList() { return nullptr; }
-  virtual SVGAnimatedPathSegList* GetAnimPathSegList() {
-    
-    
-    
-    
-    return nullptr;
-  }
+  virtual SVGAnimatedPathSegList* GetAnimatedPathSegList() { return nullptr; }
   
 
 

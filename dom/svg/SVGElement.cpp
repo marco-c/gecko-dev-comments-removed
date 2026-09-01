@@ -237,8 +237,8 @@ nsresult SVGElement::CopyInnerTo(mozilla::dom::Element* aDest) {
     if (const auto* pointList = GetAnimatedPointList()) {
       *dest->GetAnimatedPointList() = *pointList;
     }
-    if (const auto* pathSegList = GetAnimPathSegList()) {
-      *dest->GetAnimPathSegList() = *pathSegList;
+    if (const auto* pathSegList = GetAnimatedPathSegList()) {
+      *dest->GetAnimatedPathSegList() = *pathSegList;
       if (pathSegList->IsAnimating()) {
         dest->SMILOverrideStyle()->SetSMILValue(eCSSProperty_d, *pathSegList);
       }
@@ -468,7 +468,7 @@ bool SVGElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
     if (!foundMatch) {
       
       if (GetPathDataAttrName() == aAttribute) {
-        if (SVGAnimatedPathSegList* segList = GetAnimPathSegList()) {
+        if (SVGAnimatedPathSegList* segList = GetAnimatedPathSegList()) {
           segList->SetBaseValueString(aValue);
           
           
@@ -777,7 +777,7 @@ void SVGElement::UnsetAttrInternal(int32_t aNamespaceID, nsAtom* aName,
 
     
     if (GetPathDataAttrName() == aName) {
-      SVGAnimatedPathSegList* segList = GetAnimPathSegList();
+      SVGAnimatedPathSegList* segList = GetAnimatedPathSegList();
       if (segList) {
         segList->ClearBaseValue();
         return;
@@ -1364,7 +1364,7 @@ void SVGElement::UpdateMappedDeclarationBlock() {
     }
 
     if (nameAtom == nsGkAtoms::d) {
-      const auto* path = GetAnimPathSegList();
+      const auto* path = GetAnimatedPathSegList();
       
       MOZ_ASSERT(
           path,
@@ -1725,7 +1725,7 @@ void SVGElement::DidChangePathSegList(const mozAutoDocUpdate& aProofOfUpdate) {
   MOZ_ASSERT(GetPathDataAttrName(), "Changing non-existent path seg list?");
 
   nsAttrValue newValue;
-  newValue.SetTo(GetAnimPathSegList()->GetBaseValue(), nullptr);
+  newValue.SetTo(GetAnimatedPathSegList()->GetBaseValue(), nullptr);
 
   DidChangeValue(GetPathDataAttrName(), newValue, aProofOfUpdate);
 }
@@ -1738,7 +1738,7 @@ void SVGElement::DidAnimatePathSegList() {
 
   
   if (name == nsGkAtoms::d) {
-    auto* animPathSegList = GetAnimPathSegList();
+    auto* animPathSegList = GetAnimatedPathSegList();
     if (animPathSegList->IsAnimating()) {
       SMILOverrideStyle()->SetSMILValue(eCSSProperty_d, *animPathSegList);
     } else {
@@ -2227,7 +2227,7 @@ std::unique_ptr<SMILAttr> SVGElement::GetAnimatedAttr(int32_t aNamespaceID,
     
     {
       if (GetPathDataAttrName() == aName) {
-        SVGAnimatedPathSegList* segList = GetAnimPathSegList();
+        SVGAnimatedPathSegList* segList = GetAnimatedPathSegList();
         if (segList) {
           return segList->ToSMILAttr(this);
         }
