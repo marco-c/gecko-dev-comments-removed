@@ -47,11 +47,6 @@ using mozilla::dom::quota::ScopedLogExtraInfo;
 
 namespace {
 
-
-
-
-
-
 template <typename Callable>
 nsresult MaybeUpdatePaddingFile(nsIFile* aBaseDir, mozIStorageConnection* aConn,
                                 const int64_t aIncreaseSize,
@@ -144,11 +139,6 @@ class SetupAction final : public SyncDBAction {
                     BodyDeleteFiles(aDirectoryMetadata, *aDBDir,
                                     deletionInfo.mDeletedBodyIdList)));
 
-                if (deletionInfo.mDeletedPaddingSize > 0) {
-                  DecreaseUsageForDirectoryMetadata(
-                      aDirectoryMetadata, deletionInfo.mDeletedPaddingSize);
-                }
-
                 return oldValue + deletionInfo.mDeletedPaddingSize;
               }));
 
@@ -175,10 +165,18 @@ class SetupAction final : public SyncDBAction {
                                    "CacheSetupAction::PaddingUpdateFailed"_ns})
                              : Nothing{};
 
-      QM_WARNONLY_TRY(QM_TO_RESULT(
-          MaybeUpdatePaddingFile(aDBDir, aConn,  0,
-                                 overallDeletedPaddingSize.value(),
-                                 [&trans]() { return trans.Commit(); })));
+      QM_WARNONLY_TRY(QM_TO_RESULT(MaybeUpdatePaddingFile(
+          aDBDir, aConn,  0,
+          overallDeletedPaddingSize.value(),
+          [&trans, &overallDeletedPaddingSize,
+           &aDirectoryMetadata]() -> nsresult {
+            const nsresult rv = trans.Commit();
+            if (NS_SUCCEEDED(rv) && overallDeletedPaddingSize.value() > 0) {
+              DecreaseUsageForDirectoryMetadata(
+                  aDirectoryMetadata, overallDeletedPaddingSize.value());
+            }
+            return rv;
+          })));
     }
 
     if (DirectoryPaddingFileExists(*aDBDir, DirPaddingFile::TMP_FILE) ||
