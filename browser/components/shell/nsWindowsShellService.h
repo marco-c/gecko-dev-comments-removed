@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nswindowsshellservice_h_
 #define nswindowsshellservice_h_
 
@@ -17,10 +16,10 @@
 
 class nsWindowsShellService : public nsToolkitShellService,
                               public nsIWindowsShellService {
-  virtual ~nsWindowsShellService();
+  virtual ~nsWindowsShellService() = default;
 
  public:
-  nsWindowsShellService();
+  nsWindowsShellService() = default;
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSISHELLSERVICE
