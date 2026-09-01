@@ -3,6 +3,7 @@
 
 
 #include "ProtocolParser.h"
+#include "Entries.h"
 #include "LookupCache.h"
 #include "nsNetCID.h"
 #include "mozilla/Components.h"
@@ -413,6 +414,12 @@ nsresult ProtocolParserV2::ProcessShaChunk(const nsACString& aChunk) {
   uint32_t start = 0;
   while (start < aChunk.Length()) {
     
+    if (aChunk.Length() - start < DOMAIN_SIZE + 1) {
+      NS_WARNING("Chunk is not long enough to contain the record header.");
+      return NS_ERROR_FAILURE;
+    }
+
+    
     Prefix domain;
     domain.Assign(Substring(aChunk, start, DOMAIN_SIZE));
     start += DOMAIN_SIZE;
@@ -466,8 +473,10 @@ nsresult ProtocolParserV2::ProcessDigestChunk(const nsACString& aChunk) {
 nsresult ProtocolParserV2::ProcessDigestAdd(const nsACString& aChunk) {
   MOZ_ASSERT(mTableUpdate);
   
-  MOZ_ASSERT(aChunk.Length() % 32 == 0,
-             "Chunk length in bytes must be divisible by 4");
+  if (aChunk.Length() % COMPLETE_SIZE != 0) {
+    NS_WARNING("Chunk length in bytes must be divisible by 32");
+    return NS_ERROR_FAILURE;
+  }
   uint32_t start = 0;
   while (start < aChunk.Length()) {
     Completion hash;
@@ -485,8 +494,10 @@ nsresult ProtocolParserV2::ProcessDigestSub(const nsACString& aChunk) {
   MOZ_ASSERT(mTableUpdate);
   
   
-  MOZ_ASSERT(aChunk.Length() % 36 == 0,
-             "Chunk length in bytes must be divisible by 36");
+  if (aChunk.Length() % (4 + COMPLETE_SIZE) != 0) {
+    NS_WARNING("Chunk length in bytes must be divisible by 36");
+    return NS_ERROR_FAILURE;
+  }
   uint32_t start = 0;
   while (start < aChunk.Length()) {
     
