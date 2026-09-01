@@ -2416,6 +2416,8 @@ pref("browser.smartwindow.smartformfill.disallowedRegions", "FR");
 pref("browser.smartwindow.agent.enabled", true);
 pref("browser.smartwindow.agent.supportedRegions", "US,CA");
 
+pref("browser.smartwindow.agent.toolbar.enabled", false);
+
 
 
 pref("browser.smartwindow.searchQuery.endpointURL", "https://mlpa-prod-prod-mozilla.freetls.fastly.net/v1/search");
