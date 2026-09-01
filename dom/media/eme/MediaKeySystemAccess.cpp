@@ -607,9 +607,6 @@ static Sequence<MediaKeySystemMediaCapability> GetSupportedCapabilities(
     
     const nsString& robustness = capabilities.mRobustness;
     
-    
-    
-    
     const nsString encryptionScheme = capabilities.mEncryptionScheme;
     
     if (contentTypeString.IsEmpty()) {
