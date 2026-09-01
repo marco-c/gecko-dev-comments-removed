@@ -63,7 +63,11 @@ already_AddRefed<nsJARProtocolHandler> nsJARProtocolHandler::GetSingleton() {
   if (!gJarHandler) {
     gJarHandler = new nsJARProtocolHandler();
     if (NS_SUCCEEDED(gJarHandler->Init())) {
-      ClearOnShutdown(&gJarHandler);
+      
+      
+      
+      ClearOnShutdown(&gJarHandler,
+                      mozilla::ShutdownPhase::CCPostLastCycleCollection);
     } else {
       gJarHandler = nullptr;
     }
