@@ -112,7 +112,13 @@
 
                 
                 
+                
                 if (item.localName == "richlistbox") {
+                  if (this.richlistbox.hasAttribute("pointerselected")) {
+                    lazy.AutoCompleteParent.getCurrentActor()?.clearAutoCompletePreview();
+                    this.mousedOverIndex = -1;
+                    this._setSelectedIndex(-1, false, true);
+                  }
                   return;
                 }
 
