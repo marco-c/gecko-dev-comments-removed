@@ -4778,8 +4778,8 @@ var gDialogBox = {
 
     try {
       
-      for (let mozUrlbar of document.querySelectorAll("moz-urlbar")) {
-        mozUrlbar.incrementBreakoutBlockerCount();
+      for (let urlbar of document.querySelectorAll(".urlbar")) {
+        urlbar.incrementBreakoutBlockerCount();
       }
     } catch (ex) {
       console.error(ex);
@@ -4809,8 +4809,8 @@ var gDialogBox = {
       this._dialog = null;
       UpdatePopupNotificationsVisibility();
       
-      for (let mozUrlbar of document.querySelectorAll("moz-urlbar")) {
-        mozUrlbar.decrementBreakoutBlockerCount();
+      for (let urlbar of document.querySelectorAll(".urlbar")) {
+        urlbar.decrementBreakoutBlockerCount();
       }
     }
     if (this._queued.length) {
