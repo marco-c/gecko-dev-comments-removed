@@ -965,7 +965,7 @@ inline void DequantizeMonotonic(const Span<float> vals) {
   
   
 
-  const auto head_end = *body_first;
+  const auto& head_end = *body_first;
   const auto head = vals.subspan(0, head_end - vals.begin());
   const auto tail_begin = *body_last + 1;
   const auto tail = vals.subspan(tail_begin - vals.begin());
