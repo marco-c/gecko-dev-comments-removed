@@ -8,7 +8,7 @@
 
 
 
-#include "modules/video_coding/timing/frame_delay_variation_kalman_filter.h"
+#include "video/timing/frame_delay_variation_kalman_filter.h"
 
 #include "test/gtest.h"
 

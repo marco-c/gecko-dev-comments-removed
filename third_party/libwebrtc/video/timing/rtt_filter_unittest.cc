@@ -8,7 +8,7 @@
 
 
 
-#include "modules/video_coding/timing/rtt_filter.h"
+#include "video/timing/rtt_filter.h"
 
 #include "api/units/time_delta.h"
 #include "test/gtest.h"

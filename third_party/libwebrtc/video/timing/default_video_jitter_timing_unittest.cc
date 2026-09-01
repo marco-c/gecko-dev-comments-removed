@@ -8,7 +8,7 @@
 
 
 
-#include "modules/video_coding/timing/default_video_jitter_timing.h"
+#include "video/timing/default_video_jitter_timing.h"
 
 #include <cstdint>
 #include <optional>

@@ -8,7 +8,7 @@
 
 
 
-#include "modules/video_coding/timing/timestamp_extrapolator.h"
+#include "video/timing/timestamp_extrapolator.h"
 
 #include <algorithm>
 #include <cmath>
