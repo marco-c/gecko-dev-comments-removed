@@ -175,6 +175,9 @@ class CharacterRange {
                         const ZoneList<CharacterRange>* rhs,
                         ZoneList<CharacterRange>* dst, Zone* zone);
   
+  static bool Intersects(const ZoneList<CharacterRange>* lhs,
+                         const ZoneList<CharacterRange>* rhs);
+  
   static void Subtract(const ZoneList<CharacterRange>* src,
                        const ZoneList<CharacterRange>* to_remove,
                        ZoneList<CharacterRange>* dst, Zone* zone);

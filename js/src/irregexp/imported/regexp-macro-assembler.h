@@ -211,6 +211,21 @@ class RegExpMacroAssembler {
 
   
   
+  
+  
+  
+  
+  virtual bool CanTableSwitchOnBits() { return false; }
+  virtual void TableSwitchOnBits(int shift, int table_size, Label* table) {
+    UNREACHABLE();
+  }
+  virtual void EmitTableSwitchTable(Label* table,
+                                    base::Vector<Label* const> targets) {
+    UNREACHABLE();
+  }
+
+  
+  
   virtual void CheckPosition(int cp_offset, Label* on_outside_input) = 0;
   
   
@@ -347,6 +362,25 @@ class RegExpMacroAssembler {
   
   virtual void set_can_fallback(bool val) { can_fallback_ = val; }
 
+  
+  
+  
+  
+  bool backtrack_stack_used() const { return backtrack_stack_used_; }
+
+  
+  
+  
+  
+  virtual void set_fail_label(Label* label) { fail_label_ = label; }
+
+  
+  
+  
+  
+  
+  virtual bool prologue_pushes_fail_label() const { return false; }
+
   enum GlobalMode {
     NOT_GLOBAL,
     GLOBAL_NO_ZERO_LENGTH_CHECK,
@@ -390,6 +424,9 @@ class RegExpMacroAssembler {
 
   bool can_fallback() const { return can_fallback_; }
 
+  void set_backtrack_stack_used() { backtrack_stack_used_ = true; }
+  Label* fail_label() const { return fail_label_; }
+
   
   Mode mode() const { return mode_; }
 
@@ -402,6 +439,8 @@ class RegExpMacroAssembler {
  private:
   uint32_t backtrack_limit_;
   bool can_fallback_ = false;
+  bool backtrack_stack_used_ = false;
+  Label* fail_label_ = nullptr;
   GlobalMode global_mode_;
   Isolate* const isolate_;
   Zone* const zone_;

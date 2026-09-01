@@ -4,7 +4,9 @@
 
 #include "irregexp/imported/regexp-compiler.h"
 
+#include <algorithm>
 #include <optional>
+#include <string_view>
 
 #include "irregexp/imported/regexp-ast-printer.h"
 #include "irregexp/imported/regexp-graph-printer.h"
@@ -339,10 +341,20 @@ Compiler::CompilationResult Compiler::Assemble(
     return CompilationResult::RegExpTooBig();
   };
 
+  const Flags flags_before_emit = flags_;
   ZoneVector<Node*> work_list(zone());
   work_list_ = &work_list;
   Label fail;
-  macro_assembler_->PushBacktrack(&fail);
+  macro_assembler_->set_fail_label(&fail);
+  if (!macro_assembler_->prologue_pushes_fail_label()) {
+    
+    
+    
+    
+    
+    
+    macro_assembler_->PushBacktrack(&fail);
+  }
   Trace new_trace;
   if (start->Emit(this, &new_trace).IsError()) {
     work_list_ = nullptr;
@@ -369,30 +381,13 @@ Compiler::CompilationResult Compiler::Assemble(
     return ReportError();
   }
 
+  
+  set_flags(flags_before_emit);
+
   DirectHandle<HeapObject> code = macro_assembler_->GetCode(re_data, flags_);
   work_list_ = nullptr;
 
-#ifdef V8_TARGET_LITTLE_ENDIAN
-  
-  
-  
-  constexpr bool kPossiblyAtStart = false;
-  constexpr int kMinChars = 1;
-  constexpr int kMaxChars = 4;
-  int eats_at_least = start->EatsAtLeast(kPossiblyAtStart);
-  if (one_byte_ && eats_at_least >= kMinChars && !IsMultiline(flags_)) {
-    int chars = std::min(eats_at_least, kMaxChars);
-    QuickCheckDetails quick_check(chars);
-    start->GetQuickCheckDetails(&quick_check, this, 0, kPossiblyAtStart,
-                                Node::kRecursionBudget);
-
-    if (!quick_check.cannot_match()) {
-      quick_check.Rationalize(one_byte_);
-      re_data->set_quick_check_mask(quick_check.mask());
-      re_data->set_quick_check_value(quick_check.value());
-    }
-  }
-#endif
+  ComputeQuickCheckFilters(start, re_data);
   return {code, next_register_};
 }
 
@@ -431,6 +426,10 @@ class DynamicBitSet : public ZoneObject {
     } else {
       return remaining_->Contains(value);
     }
+  }
+
+  bool IsEmpty() const {
+    return first_ == 0 && (remaining_ == nullptr || remaining_->is_empty());
   }
 
   
@@ -614,6 +613,51 @@ void Trace::PerformDeferredActions(RegExpMacroAssembler* assembler,
   }
 }
 
+#ifdef V8_ENABLE_REGEXP_DIAGNOSTICS
+namespace {
+
+
+std::string_view AtomicLoopKindName(AtomicLoopKind kind) {
+  switch (kind) {
+    case AtomicLoopKind::kNone:
+      return "none";
+    case AtomicLoopKind::kAtEnd:
+      return "at-end";
+    case AtomicLoopKind::kTotal:
+      return "total";
+    case AtomicLoopKind::kBoundary:
+      return "boundary";
+    case AtomicLoopKind::kDisjoint:
+      return "disjoint";
+  }
+}
+std::string_view DrainModeName(DrainMode mode) {
+  switch (mode) {
+    case DrainMode::kFull:
+      return "full";
+    case DrainMode::kRetryAtEntry:
+      return "retry-at-entry";
+    case DrainMode::kRestoreOnly:
+      return "restore-only";
+    case DrainMode::kOmit:
+      return "omit";
+  }
+}
+std::string_view ParkedGrantName(ParkedGrant grant) {
+  switch (grant) {
+    case ParkedGrant::kNone:
+      return "none";
+    case ParkedGrant::kParked:
+      return "parked";
+    case ParkedGrant::kParkedUniformPrefix:
+      return "uniform-prefix";
+    case ParkedGrant::kParkedNonEmptyUniformPrefix:
+      return "nonempty-uniform-prefix";
+  }
+}
+}  
+#endif  
+
 
 
 
@@ -664,7 +708,56 @@ EmitResult Trace::Flush(Compiler* compiler, Node* successor,
   
   DynamicBitSet affected_registers;
 
-  if (backtrack() != nullptr && mode != kFlushSuccess) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  LoopChoiceNode* drain_useless_loop = nullptr;
+  if (mode == kFlushFull && parked_grant() != ParkedGrant::kNone) {
+    DCHECK_NOT_NULL(backtrack());
+    
+    
+    
+    LoopChoiceNode* loop = successor->AsLoopChoiceNode();
+    if (loop != nullptr && loop->FixedLengthBodyIterationLength() == 1) {
+      const bool uniform_prefix =
+          parked_grant() == ParkedGrant::kParkedUniformPrefix ||
+          parked_grant() == ParkedGrant::kParkedNonEmptyUniformPrefix;
+      switch (loop->atomic_loop_kind(compiler->flags())) {
+        case AtomicLoopKind::kNone:
+          break;
+        case AtomicLoopKind::kAtEnd:
+        case AtomicLoopKind::kTotal:
+        case AtomicLoopKind::kDisjoint:
+          if (cp_offset_ == 0 || (cp_offset_ > 0 && uniform_prefix)) {
+            drain_useless_loop = loop;
+          }
+          break;
+        case AtomicLoopKind::kBoundary:
+          if (cp_offset_ > 0 && uniform_prefix) {
+            drain_useless_loop = loop;
+          }
+          break;
+      }
+    }
+  }
+  bool skip_position_save = drain_useless_loop != nullptr;
+
+  if (!skip_position_save && backtrack() != nullptr && mode != kFlushSuccess) {
     
     
     
@@ -673,6 +766,26 @@ EmitResult Trace::Flush(Compiler* compiler, Node* successor,
 
   int max_register =
       FindAffectedRegisters(&affected_registers, compiler->zone());
+
+  
+  
+  
+  
+  bool skip_undo_frame = false;
+  if (drain_useless_loop != nullptr &&
+      drain_useless_loop->KeepRecursing(compiler)) {
+    skip_undo_frame = true;
+    for (int reg = 0; reg <= max_register; ++reg) {
+      if (!affected_registers.Get(reg)) continue;
+      RegisterFlushInfo info;
+      ScanDeferredActions(this, reg, &info);
+      if (info.undo_action != IGNORE) {
+        skip_undo_frame = false;
+        break;
+      }
+    }
+  }
+
   DynamicBitSet registers_to_pop;
   DynamicBitSet registers_to_clear;
   PerformDeferredActions(assembler, max_register, affected_registers,
@@ -683,6 +796,25 @@ EmitResult Trace::Flush(Compiler* compiler, Node* successor,
   if (mode == kFlushSuccess) {
     Trace new_state;
     return successor->Emit(compiler, &new_state);
+  }
+
+  if (skip_undo_frame) {
+    
+    
+    
+    
+    
+    DCHECK(registers_to_pop.IsEmpty());
+    DCHECK(registers_to_clear.IsEmpty());
+    Trace new_state;
+    new_state.set_backtrack(backtrack());
+    
+    
+    
+    new_state.set_parked_grant(cp_offset_ > 0
+                                   ? ParkedGrant::kParkedNonEmptyUniformPrefix
+                                   : parked_grant());
+    return drain_useless_loop->ChoiceNode::Emit(compiler, &new_state);
   }
 
   
@@ -710,7 +842,7 @@ EmitResult Trace::Flush(Compiler* compiler, Node* successor,
   if (backtrack() == nullptr) {
     assembler->Backtrack();
   } else {
-    assembler->PopCurrentPosition();
+    if (!skip_position_save) assembler->PopCurrentPosition();
     assembler->GoTo(backtrack());
   }
   return EmitResult::Success();
@@ -1393,7 +1525,7 @@ void GenerateBranches(RegExpMacroAssembler* masm, ZoneList<base::uc32>* ranges,
 void EmitClassRanges(Compiler* compiler, RegExpMacroAssembler* macro_assembler,
                      ClassRanges* cr, bool one_byte, Label* on_failure,
                      int cp_offset, bool check_offset, bool preloaded,
-                     Zone* zone) {
+                     const QuickCheckDetails::Position* known, Zone* zone) {
   ZoneList<CharacterRange>* ranges = cr->ranges(zone);
   CharacterRange::Canonicalize(ranges);
 
@@ -1486,9 +1618,19 @@ void EmitClassRanges(Compiler* compiler, RegExpMacroAssembler* macro_assembler,
     }
     if (solutions != member_count) break;
     TRACE("* Fold masked class");
+    
+    
+    
+    const bool mask_known = known != nullptr && (known->mask & mask) == mask &&
+                            (known->value & mask) == c;
     if (!cr->is_negated()) {
-      macro_assembler->CheckNotCharacterAfterAnd(c, mask, on_failure);
+      if (!mask_known) {
+        macro_assembler->CheckNotCharacterAfterAnd(c, mask, on_failure);
+      }
       macro_assembler->CheckCharacterNotInRange(
+          static_cast<base::uc16>(lo), static_cast<base::uc16>(hi), on_failure);
+    } else if (mask_known) {
+      macro_assembler->CheckCharacterInRange(
           static_cast<base::uc16>(lo), static_cast<base::uc16>(hi), on_failure);
     } else {
       Label ok;
@@ -1726,10 +1868,89 @@ bool QuickCheckDetails::Rationalize(bool asc) {
   return found_useful_op;
 }
 
+void Node::set_bm_info(bool not_at_start, BoyerMooreLookahead* bm) {
+  if (!bm->caches_node_info()) return;
+  bm_info_[not_at_start ? 1 : 0] = bm;
+}
+
 uint32_t Node::EatsAtLeast(bool not_at_start) {
   return not_at_start ? eats_at_least_.from_not_start
                       : eats_at_least_.from_possibly_start;
 }
+
+namespace {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Handle<ByteArray> TryBuildFirstCharacterTable(Node* node, uint32_t mask,
+                                              Compiler* compiler,
+                                              bool not_at_start) {
+  if (node->EatsAtLeast(not_at_start) < 1) {
+    TRACE("* No first-character table: eats nothing");
+    return {};
+  }
+
+  Zone* zone = node->zone();
+  BoyerMooreLookahead* lookahead =
+      zone->New<BoyerMooreLookahead>(1, compiler, zone);
+  lookahead->set_caches_node_info(false);
+  node->FillInBMInfo(compiler->isolate(), 0, Node::kRecursionBudget, lookahead,
+                     not_at_start);
+
+  const int count = lookahead->at(0)->map_count();
+  if (count == 0) {
+    
+    TRACE("* No first-character table: set unknown");
+    return {};
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const uint32_t char_mask = CharMask(compiler->one_byte());
+  const int alias_factor = (char_mask + 1) / RegExpMacroAssembler::kTableSize;
+  const int mask_accepts = 1 << base::bits::CountPopulation(~mask & char_mask);
+  if (count * alias_factor >= mask_accepts) {
+    TRACE("* No first-character table: mask at least as discriminating");
+    return {};
+  }
+
+  
+  
+  
+  
+  
+  Handle<ByteArray> table = compiler->isolate()->factory()->NewByteArray(
+      RegExpMacroAssembler::kTableSize, AllocationType::kOld);
+  lookahead->GetSkipTable(0, 0, table);
+  TRACE("* Emit first-character table");
+  return table;
+}
+
+}  
 
 bool Node::EmitQuickCheck(Compiler* compiler, Trace* bounds_check_trace,
                           Trace* trace, bool preload_has_checked_bounds,
@@ -1777,6 +1998,42 @@ bool Node::EmitQuickCheck(Compiler* compiler, Trace* bounds_check_trace,
     assembler->LoadCurrentCharacter(cp_offset, bounds_check_trace->backtrack(),
                                     !preload_has_checked_bounds,
                                     details->characters(), bounds_check_offset);
+  }
+
+  
+  
+  if (details->characters() == 1 &&
+      !details->positions(0)->determines_perfectly) {
+    const bool not_at_start = trace->at_start() == Trace::FALSE_VALUE;
+    Handle<ByteArray> table =
+        TryBuildFirstCharacterTable(this, mask, compiler, not_at_start);
+    if (!table.is_null()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      details->positions(0)->mask = 0;
+      details->positions(0)->value = 0;
+      details->set_mask(0);
+      details->set_value(0);
+      if (fall_through_on_failure) {
+        assembler->CheckBitInTable(table, on_possible_success);
+      } else {
+        Label matched;
+        assembler->CheckBitInTable(table, &matched);
+        assembler->GoTo(trace->backtrack());
+        assembler->Bind(&matched);
+      }
+      return true;
+    }
   }
 
   bool need_mask = true;
@@ -2474,8 +2731,13 @@ void TextNode::TextEmitPass(Compiler* compiler, TextEmitPassType pass,
         if (DeterminedAlready(quick_check, elm.cp_offset())) continue;
         ClassRanges* cr = elm.class_ranges();
         bool bounds_check = *checked_up_to < cp_offset || read_backward();
+        const QuickCheckDetails::Position* known =
+            quick_check != nullptr &&
+                    elm.cp_offset() < quick_check->characters()
+                ? quick_check->positions(elm.cp_offset())
+                : nullptr;
         EmitClassRanges(compiler, assembler, cr, one_byte, backtrack, cp_offset,
-                        bounds_check, preloaded, zone());
+                        bounds_check, preloaded, known, zone());
         UpdateBoundsCheck(cp_offset, checked_up_to);
       }
     }
@@ -2704,6 +2966,694 @@ int ChoiceNode::FixedLengthLoopLengthForAlternative(
     return kNodeIsTooComplexForFixedLengthLoops;
   }
   return length;
+}
+
+
+
+
+
+void AppendClassRangesMatchSet(ClassRanges* cr, Zone* node_zone, Zone* zone,
+                               ZoneList<CharacterRange>* out) {
+  ZoneList<CharacterRange>* ranges = cr->ranges(node_zone);
+  if (!cr->is_negated()) {
+    for (int i = 0; i < ranges->length(); i++) out->Add(ranges->at(i), zone);
+    return;
+  }
+  ZoneList<CharacterRange> positive(ranges->length(), zone);
+  for (int i = 0; i < ranges->length(); i++) positive.Add(ranges->at(i), zone);
+  CharacterRange::Canonicalize(&positive);
+  ZoneList<CharacterRange> negated(positive.length() + 1, zone);
+  CharacterRange::Negate(&positive, &negated, zone);
+  for (int i = 0; i < negated.length(); i++) out->Add(negated.at(i), zone);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class FirstCharacterSetBuilder {
+ public:
+  FirstCharacterSetBuilder(Compiler* compiler, Zone* zone,
+                           ZoneList<CharacterRange>* out)
+      : compiler_(compiler), zone_(zone), out_(out) {}
+
+  bool Build(Node* start) { return AddNode(start, 0); }
+
+ private:
+  static constexpr int kBudget = 500;
+
+  bool AddNode(Node* node, int depth) {
+    if (node == nullptr) return false;
+    if (depth > Compiler::kMaxRecursion) return false;
+    if (--budget_ < 0) return false;
+
+    if (AssertionNode* assertion = node->AsAssertionNode()) {
+      
+      return AddNode(assertion->on_success(), depth + 1);
+    }
+    if (ActionNode* action = node->AsActionNode()) {
+      return AddAction(action, depth);
+    }
+    if (ChoiceNode* choice = node->AsChoiceNode()) {
+      return AddChoice(choice, depth);
+    }
+    if (TextNode* text = node->AsTextNode()) return AddText(text);
+    if (EndNode* end = node->AsEndNode()) {
+      
+      
+      
+      
+      if (end->IsBacktrack()) return true;
+      
+      return false;
+    }
+    
+    
+    DCHECK(node->AsBackReferenceNode() != nullptr ||
+           node->AsUnanchoredAdvanceNode() != nullptr);
+    return false;
+  }
+
+  bool AddAction(ActionNode* action, int depth) {
+    switch (action->action_type()) {
+      
+      case ActionNode::STORE_POSITION:
+      case ActionNode::CLEAR_CAPTURES:
+      case ActionNode::SET_REGISTER_FOR_LOOP:
+      case ActionNode::INCREMENT_REGISTER:
+      case ActionNode::EATS_AT_LEAST:
+        return AddNode(action->on_success(), depth + 1);
+      
+      
+      
+      case ActionNode::POSITIVE_SUBMATCH_SUCCESS:
+        return AddNode(action->on_success(), depth + 1);
+      case ActionNode::BEGIN_POSITIVE_SUBMATCH:
+        
+        
+        
+        
+        
+        
+        
+        
+        if (AddNode(action->on_success(), depth + 1)) return true;
+        return AddNode(action->success_node()->on_success(), depth + 1);
+      case ActionNode::BEGIN_NEGATIVE_SUBMATCH:
+        
+        
+        
+        return AddNode(action->on_success(), depth + 1);
+      
+      
+      
+      
+      
+      case ActionNode::MODIFY_FLAGS:
+      
+      case ActionNode::EMPTY_MATCH_CHECK:
+      case ActionNode::RESTORE_POSITION:
+        return false;
+    }
+    UNREACHABLE();
+  }
+
+  bool AddChoice(ChoiceNode* choice, int depth) {
+    
+    
+    if (NegativeLookaroundChoiceNode* negative =
+            choice->AsNegativeLookaroundChoiceNode()) {
+      return AddNode(negative->continue_node(), depth + 1);
+    }
+    
+    
+    
+    DCHECK(!choice->alternatives()->is_empty());
+    for (GuardedAlternative& alt : *choice->alternatives()) {
+      if (!AddNode(alt.node(), depth + 1)) return false;
+    }
+    return true;
+  }
+
+  bool AddText(TextNode* text) {
+    
+    
+    if (text->read_backward()) return false;
+    if (text->elements()->is_empty()) return false;
+    
+    TextElement& elm = text->elements()->at(0);
+    if (elm.text_type() == TextElement::CLASS_RANGES) {
+      
+      
+      AppendClassRangesMatchSet(elm.class_ranges(), text->zone(), zone_, out_);
+      return true;
+    }
+    DCHECK_EQ(elm.text_type(), TextElement::ATOM);
+    base::Vector<const base::uc16> data = elm.atom()->data();
+    if (data.empty()) return false;
+    const base::uc16 c = data[0];
+    if (!IsIgnoreCase(compiler_->flags())) {
+      out_->Add(CharacterRange::Singleton(c), zone_);
+      return true;
+    }
+    
+    
+    unibrow::uchar letters[4];
+    int length = GetCaseIndependentLetters(compiler_->isolate(), c, compiler_,
+                                           letters, 4);
+    
+    
+    
+    if (length == 0) return false;
+    for (int i = 0; i < length; i++) {
+      out_->Add(CharacterRange::Singleton(letters[i]), zone_);
+    }
+    return true;
+  }
+
+  Compiler* const compiler_;
+  Zone* const zone_;
+  ZoneList<CharacterRange>* const out_;
+  int budget_ = kBudget;
+};
+
+
+
+
+bool ComputeFirstCharacterSet(Node* start, Compiler* compiler, Zone* zone,
+                              ZoneList<CharacterRange>* out) {
+  FirstCharacterSetBuilder builder(compiler, zone, out);
+  if (!builder.Build(start)) return false;
+  CharacterRange::Canonicalize(out);
+  return true;
+}
+
+
+
+
+
+
+
+
+void Compiler::ComputeQuickCheckFilters(Node* start,
+                                        DirectHandle<RegExpData> re_data) {
+  
+  
+  
+  
+  if (has_search_prefix()) return;
+
+  constexpr bool kPossiblyAtStart = false;
+  constexpr int kMinChars = 1;
+  constexpr int kMaxChars = 4;
+  int eats_at_least = start->EatsAtLeast(kPossiblyAtStart);
+  if (!one_byte() || eats_at_least < kMinChars || IsMultiline(flags())) {
+    return;
+  }
+
+  bool has_filter = false;
+
+  
+  
+  
+#ifdef V8_TARGET_LITTLE_ENDIAN
+  int chars = std::min(eats_at_least, kMaxChars);
+  QuickCheckDetails quick_check(chars);
+  start->GetQuickCheckDetails(&quick_check, this, 0, kPossiblyAtStart,
+                              Node::kRecursionBudget);
+  if (!quick_check.cannot_match()) {
+    quick_check.Rationalize(one_byte());
+    if (quick_check.mask() != 0) {
+      re_data->set_quick_check_mask(quick_check.mask());
+      re_data->set_quick_check_value(quick_check.value());
+      has_filter = true;
+    }
+  }
+#endif
+
+  
+  
+  
+  ZoneList<CharacterRange> first_set(2, zone());
+  if (ComputeFirstCharacterSet(start, this, zone(), &first_set)) {
+    uint32_t accept[RegExpData::kQuickCheckBitsetWords] = {};
+    for (const CharacterRange& range : first_set) {
+      base::uc32 to = std::min<base::uc32>(
+          range.to(), RegExpData::kQuickCheckBitsetChars - 1);
+      for (base::uc32 c = range.from(); c <= to; c++) {
+        auto [word, bit] = RegExpData::QuickCheckBitsetBit(c);
+        accept[word] |= bit;
+      }
+    }
+    bool rejects_anything = false;
+    for (int i = 0; i < RegExpData::kQuickCheckBitsetWords; i++) {
+      re_data->set_quick_check_reject_bitset_word(i, ~accept[i]);
+      rejects_anything |= ~accept[i] != 0;
+    }
+    has_filter |= rejects_anything;
+  }
+
+  if (has_filter) {
+    re_data->set_internal_flags(re_data->internal_flags() |
+                                RegExpData::kHasQuickCheck);
+  }
+}
+
+
+
+
+bool RangesSubsetOfSpecialClass(const ZoneList<CharacterRange>* ranges,
+                                const int* special_class, int length) {
+  DCHECK(CharacterRange::IsCanonical(ranges));
+  DCHECK_EQ(kRangeEndMarker, special_class[length - 1]);
+  length--;  
+  auto bound = [&](int i) { return static_cast<base::uc32>(special_class[i]); };
+  
+  
+  int ci = 0;
+  for (int i = 0; i < ranges->length(); i++) {
+    CharacterRange range = ranges->at(i);
+    while (ci < length && bound(ci + 1) <= range.from()) ci += 2;
+    if (ci >= length || range.from() < bound(ci) ||
+        range.to() >= bound(ci + 1)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+
+struct AtomicLoopBodyAnalysis {
+  
+  
+  
+  
+  
+  
+  bool fixed_length_eligible = false;
+  
+  
+  
+  
+  bool set_known = true;
+};
+
+
+
+
+
+
+
+
+bool AppendTextElementMatchSet(TextElement& elm, Zone* node_zone, Flags flags,
+                               Zone* zone, ZoneList<CharacterRange>* out) {
+  if (elm.text_type() == TextElement::CLASS_RANGES) {
+    AppendClassRangesMatchSet(elm.class_ranges(), node_zone, zone, out);
+    return true;
+  }
+  DCHECK_EQ(elm.text_type(), TextElement::ATOM);
+  if (IsIgnoreCase(flags)) return false;
+  base::Vector<const base::uc16> data = elm.atom()->data();
+  for (int j = 0; j < data.length(); j++) {
+    out->Add(CharacterRange::Singleton(data[j]), zone);
+  }
+  return true;
+}
+
+
+
+
+
+AtomicLoopBodyAnalysis AnalyzeAtomicLoopBody(
+    GuardedAlternative* alt, Node* loop, Flags flags, Zone* zone,
+    ZoneList<CharacterRange>* body_set) {
+  AtomicLoopBodyAnalysis result;
+  Node* node = alt->node();
+  for (int depth = 0; depth <= Compiler::kMaxRecursion; ++depth) {
+    if (node == loop) {
+      result.fixed_length_eligible = true;
+      return result;
+    }
+    if (node->FixedLengthLoopLength() ==
+        Node::kNodeIsTooComplexForFixedLengthLoops) {
+      return result;
+    }
+    SeqNode* seq = node->AsSeqNode();
+    if (seq == nullptr) return result;
+    TextNode* text = node->AsTextNode();
+    if (text == nullptr || text->read_backward()) {
+      result.set_known = false;
+    } else {
+      ZoneList<TextElement>* elms = text->elements();
+      for (int i = 0; i < elms->length(); i++) {
+        if (!AppendTextElementMatchSet(elms->at(i), text->zone(), flags, zone,
+                                       body_set)) {
+          result.set_known = false;
+        }
+      }
+    }
+    node = seq->on_success();
+  }
+  return result;
+}
+
+
+constexpr int kContinuationAlwaysSucceedsBudget = 1000;
+
+
+
+
+
+
+
+
+
+
+bool ContinuationAlwaysSucceeds(Node* node, int depth, int* budget) {
+  if (depth > Compiler::kMaxRecursion || node == nullptr) return false;
+  if (--*budget < 0) return false;
+  if (ActionNode* action = node->AsActionNode()) {
+    switch (action->action_type()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      case ActionNode::STORE_POSITION:
+      case ActionNode::CLEAR_CAPTURES:
+      case ActionNode::SET_REGISTER_FOR_LOOP:
+      case ActionNode::INCREMENT_REGISTER:
+      case ActionNode::MODIFY_FLAGS:
+      case ActionNode::EATS_AT_LEAST:
+      case ActionNode::RESTORE_POSITION:
+      case ActionNode::POSITIVE_SUBMATCH_SUCCESS:
+      case ActionNode::BEGIN_POSITIVE_SUBMATCH:
+        return ContinuationAlwaysSucceeds(action->on_success(), depth + 1,
+                                          budget);
+      
+      
+      
+      case ActionNode::EMPTY_MATCH_CHECK:
+      case ActionNode::BEGIN_NEGATIVE_SUBMATCH:
+        return false;
+    }
+  }
+  if (EndNode* end = node->AsEndNode()) {
+    return end->action() == EndNode::ACCEPT;
+  }
+  
+  
+  
+  
+  if (ChoiceNode* choice = node->AsChoiceNode()) {
+    
+    
+    if (choice->AsNegativeLookaroundChoiceNode() != nullptr) return false;
+    
+    
+    
+    
+    for (GuardedAlternative& alt : *choice->alternatives()) {
+      if (alt.guards() != nullptr && alt.guards()->length() != 0) continue;
+      if (ContinuationAlwaysSucceeds(alt.node(), depth + 1, budget)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  return false;
+}
+
+
+
+
+
+
+
+
+
+struct AtomicLoopContinuationAnalysis {
+  
+  
+  
+  
+  
+  
+  
+  bool at_end_accept = false;
+  
+  
+  bool always_succeeds = false;
+  
+  
+  
+  
+  
+  
+  
+  bool starts_with_boundary = false;
+  
+  
+  
+  
+  
+  
+  
+  bool first_set_known = false;
+};
+
+AtomicLoopContinuationAnalysis AnalyzeAtomicLoopContinuation(
+    GuardedAlternative* alt, Flags flags, Zone* zone,
+    ZoneList<CharacterRange>* first_set) {
+  AtomicLoopContinuationAnalysis result;
+  if (alt->guards() != nullptr && alt->guards()->length() != 0) return result;
+  Node* node = alt->node();
+  
+  
+  int budget = kContinuationAlwaysSucceedsBudget;
+  result.always_succeeds = ContinuationAlwaysSucceeds(node, 0, &budget);
+  if (AssertionNode* head = node->AsAssertionNode()) {
+    result.starts_with_boundary =
+        head->assertion_type() == AssertionNode::AT_BOUNDARY;
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  bool at_end_alive =
+      node->AsAssertionNode() != nullptr &&
+      node->AsAssertionNode()->assertion_type() == AssertionNode::AT_END;
+  bool first_alive = true;
+  for (int depth = 0; depth <= Compiler::kMaxRecursion; ++depth) {
+    if (AssertionNode* assertion = node->AsAssertionNode()) {
+      if (depth > 0) at_end_alive = false;  
+      node = assertion->on_success();
+      continue;
+    }
+    if (ActionNode* action = node->AsActionNode()) {
+      switch (action->action_type()) {
+        case ActionNode::STORE_POSITION:
+        case ActionNode::CLEAR_CAPTURES:
+          break;
+        
+        
+        
+        case ActionNode::SET_REGISTER_FOR_LOOP:
+        case ActionNode::INCREMENT_REGISTER:
+        case ActionNode::MODIFY_FLAGS:
+          first_alive = false;
+          break;
+        
+        
+        
+        case ActionNode::RESTORE_POSITION:
+        case ActionNode::BEGIN_POSITIVE_SUBMATCH:
+        case ActionNode::BEGIN_NEGATIVE_SUBMATCH:
+        case ActionNode::POSITIVE_SUBMATCH_SUCCESS:
+        case ActionNode::EMPTY_MATCH_CHECK:
+        case ActionNode::EATS_AT_LEAST:
+          return result;
+      }
+      node = action->on_success();
+      continue;
+    }
+    if (EndNode* end = node->AsEndNode()) {
+      result.at_end_accept = at_end_alive && end->action() == EndNode::ACCEPT;
+      return result;
+    }
+    
+    
+    if (first_alive) {
+      TextNode* text = node->AsTextNode();
+      if (text != nullptr && !text->read_backward()) {
+        
+        
+        
+        TextElement& elm = text->elements()->at(0);
+        if (elm.text_type() == TextElement::CLASS_RANGES) {
+          AppendClassRangesMatchSet(elm.class_ranges(), text->zone(), zone,
+                                    first_set);
+          result.first_set_known = true;
+        } else if (!IsIgnoreCase(flags)) {
+          DCHECK_EQ(elm.text_type(), TextElement::ATOM);
+          first_set->Add(CharacterRange::Singleton(elm.atom()->data().at(0)),
+                         zone);
+          result.first_set_known = true;
+        }
+      }
+    }
+    return result;
+  }
+  return result;
+}
+
+
+
+
+AtomicLoopKind ClassifyAtomicLoop(LoopChoiceNode* loop, Flags flags) {
+  if (loop->alternatives()->length() != 2) return AtomicLoopKind::kNone;
+  GuardedAlternative* body = &loop->alternatives()->at(0);
+  GuardedAlternative* continuation = &loop->alternatives()->at(1);
+  Zone* zone = loop->zone();
+
+  ZoneList<CharacterRange> body_set(4, zone);
+  AtomicLoopBodyAnalysis body_info =
+      AnalyzeAtomicLoopBody(body, loop, flags, zone, &body_set);
+  if (!body_info.fixed_length_eligible) return AtomicLoopKind::kNone;
+
+  ZoneList<CharacterRange> first_set(2, zone);
+  AtomicLoopContinuationAnalysis cont =
+      AnalyzeAtomicLoopContinuation(continuation, flags, zone, &first_set);
+
+  
+  
+  if (cont.at_end_accept) return AtomicLoopKind::kAtEnd;
+  if (cont.always_succeeds) return AtomicLoopKind::kTotal;
+  if (!body_info.set_known) return AtomicLoopKind::kNone;
+  CharacterRange::Canonicalize(&body_set);
+  
+  
+  
+  
+  
+  
+  if (cont.first_set_known) {
+    CharacterRange::Canonicalize(&first_set);
+    if (!CharacterRange::Intersects(&body_set, &first_set)) {
+      return AtomicLoopKind::kDisjoint;
+    }
+  }
+  
+  
+  
+  if (cont.starts_with_boundary &&
+      RangesSubsetOfSpecialClass(&body_set, kWordRanges, kWordRangeCount)) {
+    return AtomicLoopKind::kBoundary;
+  }
+  return AtomicLoopKind::kNone;
+}
+
+AtomicLoopKind LoopChoiceNode::atomic_loop_kind(Flags flags) {
+  if (!atomic_loop_kind_valid_ || atomic_loop_kind_flags_ != flags) {
+    atomic_loop_kind_ = ClassifyAtomicLoop(this, flags);
+    atomic_loop_kind_flags_ = flags;
+    atomic_loop_kind_valid_ = true;
+  }
+  return atomic_loop_kind_;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+DrainMode ChooseFixedLengthLoopDrainMode(ChoiceNode* choice, Trace* trace,
+                                         Flags flags) {
+  LoopChoiceNode* loop = choice->AsLoopChoiceNode();
+  if (loop == nullptr) return DrainMode::kFull;
+  const AtomicLoopKind kind = loop->atomic_loop_kind(flags);
+  
+  
+  const bool parkable = kind != AtomicLoopKind::kNone &&
+                        loop->FixedLengthBodyIterationLength() == 1;
+  switch (kind) {
+    case AtomicLoopKind::kNone:
+      return DrainMode::kFull;
+    case AtomicLoopKind::kAtEnd:
+    case AtomicLoopKind::kTotal:
+      
+      
+      
+      
+      
+      
+      
+      
+      return (parkable && (trace->backtrack() == nullptr ||
+                           trace->parked_grant() != ParkedGrant::kNone))
+                 ? DrainMode::kOmit
+                 : DrainMode::kRestoreOnly;
+    case AtomicLoopKind::kBoundary:
+      
+      
+      return (parkable && trace->backtrack() != nullptr &&
+              trace->parked_grant() ==
+                  ParkedGrant::kParkedNonEmptyUniformPrefix)
+                 ? DrainMode::kOmit
+                 : DrainMode::kRetryAtEntry;
+    case AtomicLoopKind::kDisjoint:
+      
+      
+      
+      
+      
+      
+      return (parkable && trace->backtrack() != nullptr &&
+              trace->parked_grant() != ParkedGrant::kNone)
+                 ? DrainMode::kOmit
+                 : DrainMode::kRestoreOnly;
+  }
+  UNREACHABLE();
 }
 
 void LoopChoiceNode::AddLoopAlternative(GuardedAlternative alt) {
@@ -3331,9 +4281,40 @@ EmitResult ChoiceNode::Emit(Compiler* compiler, Trace* trace) {
   
   
   Flags flags = compiler->flags();
+  
+  
+  
+  
+  
+  LoopChoiceNode* loop_choice = AsLoopChoiceNode();
+  const ParkedGrant body_parked_grant =
+      loop_choice != nullptr
+          ? loop_choice->ComputeSearchBodyParkedGrant(compiler)
+          : ParkedGrant::kNone;
   if (choice_count > 1 && text_length != kNodeIsTooComplexForFixedLengthLoops) {
+    
+    
+    
+    const DrainMode drain_mode =
+        ChooseFixedLengthLoopDrainMode(this, trace, flags);
+    
+    
+    
+    
+    DCHECK_IMPLIES(drain_mode != DrainMode::kFull, trace->cp_offset() == 0);
+    DCHECK_IMPLIES(
+        drain_mode == DrainMode::kOmit && trace->backtrack() == nullptr,
+        !trace->has_any_actions());
+    if (drain_mode != DrainMode::kFull) {
+      
+      TRACE("* Atomic loop drain reduced: "
+            << DrainModeName(drain_mode) << " (kind "
+            << AtomicLoopKindName(AsLoopChoiceNode()->atomic_loop_kind(flags))
+            << ", grant " << ParkedGrantName(trace->parked_grant()) << ")");
+    }
     trace = EmitFixedLengthLoop(compiler, trace, &alt_gens, &preload,
-                                &special_loop_state, text_length, flags);
+                                &special_loop_state, text_length, flags,
+                                drain_mode, body_parked_grant);
     if (trace == nullptr) return EmitResult::Error();
   } else {
     bool bm_scan_emitted = false;
@@ -3361,8 +4342,8 @@ EmitResult ChoiceNode::Emit(Compiler* compiler, Trace* trace) {
       }
     }
 
-    RETURN_IF_ERROR(
-        EmitChoices(compiler, &alt_gens, 0, trace, &preload, flags));
+    RETURN_IF_ERROR(EmitChoices(compiler, &alt_gens, 0, trace, &preload, flags,
+                                body_parked_grant));
   }
 
   
@@ -3381,9 +4362,13 @@ EmitResult ChoiceNode::Emit(Compiler* compiler, Trace* trace) {
     }
     bool next_expects_preload =
         i == choice_count - 1 ? false : alt_gens.at(i + 1)->expects_preload;
+    
+    
+    
+    ParkedGrant parked_grant = i == 0 ? body_parked_grant : ParkedGrant::kNone;
     RETURN_IF_ERROR(EmitOutOfLineContinuation(
         compiler, &new_trace, alternatives_->at(i), alt_gen,
-        preload.preload_characters_, next_expects_preload));
+        preload.preload_characters_, next_expects_preload, parked_grant));
   }
 
   return EmitResult::Success();
@@ -3392,7 +4377,8 @@ EmitResult ChoiceNode::Emit(Compiler* compiler, Trace* trace) {
 Trace* ChoiceNode::EmitFixedLengthLoop(
     Compiler* compiler, Trace* trace, AlternativeGenerationList* alt_gens,
     PreloadState* preload, SpecialLoopState* fixed_length_loop_state,
-    int text_length, Flags flags) {
+    int text_length, Flags flags, DrainMode drain_mode,
+    ParkedGrant body_parked_grant) {
   TRACE("* Emit fixed length loop");
   RegExpMacroAssembler* macro_assembler = compiler->macro_assembler();
   
@@ -3419,8 +4405,11 @@ Trace* ChoiceNode::EmitFixedLengthLoop(
   
   
   
+  
+  
+  
   DCHECK(trace->special_loop_state() == nullptr);
-  macro_assembler->PushCurrentPosition();
+  if (drain_mode != DrainMode::kOmit) macro_assembler->PushCurrentPosition();
   
   
   
@@ -3442,19 +4431,184 @@ Trace* ChoiceNode::EmitFixedLengthLoop(
   if (result.IsError()) return nullptr;
 
   Trace* new_trace = fixed_length_loop_state->backtrack_trace();
+  if (drain_mode == DrainMode::kOmit) {
+    
+    
+    new_trace->set_backtrack(trace->backtrack());
+  }
 
   
   
-  result = EmitChoices(compiler, alt_gens, 1, new_trace, preload, flags);
+  result = EmitChoices(compiler, alt_gens, 1, new_trace, preload, flags,
+                       body_parked_grant);
   if (result.IsError()) return nullptr;
 
+  
+  
+  if (drain_mode == DrainMode::kOmit) return new_trace;
+
   fixed_length_loop_state->BindStepLabel(macro_assembler);
-  
-  macro_assembler->CheckFixedLengthLoop(trace->backtrack());
-  
-  macro_assembler->AdvanceCurrentPosition(-text_length);
-  macro_assembler->GoTo(&after_body_match_attempt);
+  switch (drain_mode) {
+    case DrainMode::kFull:
+      
+      macro_assembler->CheckFixedLengthLoop(trace->backtrack());
+      
+      macro_assembler->AdvanceCurrentPosition(-text_length);
+      macro_assembler->GoTo(&after_body_match_attempt);
+      break;
+    case DrainMode::kRetryAtEntry:
+      
+      
+      macro_assembler->CheckFixedLengthLoop(trace->backtrack());
+      
+      
+      
+      
+      macro_assembler->PopCurrentPosition();
+      macro_assembler->PushCurrentPosition();
+      macro_assembler->GoTo(&after_body_match_attempt);
+      break;
+    case DrainMode::kRestoreOnly:
+      
+      
+      
+      macro_assembler->PopCurrentPosition();
+      macro_assembler->GoTo(trace->backtrack());  
+      break;
+    case DrainMode::kOmit:
+      UNREACHABLE();
+  }
   return new_trace;
+}
+
+
+
+
+
+
+
+bool LoopChoiceNode::IsImplicitSearchLoop(Compiler* compiler) {
+  if (alternatives_->length() != 2) return false;
+  GuardedAlternative alt1 = alternatives_->at(1);
+  if (alt1.guards() != nullptr && alt1.guards()->length() != 0) return false;
+  return alt1.node()->GetSuccessorOfOmnivorousTextNode(compiler) == this;
+}
+
+namespace {
+
+
+
+
+
+
+
+struct UniformTextSource {
+  ClassRanges* class_ranges = nullptr;
+  base::uc16 atom_char = 0;
+  bool is_atom = false;
+  bool is_empty = true;
+
+  
+  
+  bool Accumulate(TextNode* text) {
+    if (text->read_backward()) return false;
+    ZoneList<TextElement>* elms = text->elements();
+    for (int i = 0; i < elms->length(); i++) {
+      TextElement& elm = elms->at(i);
+      if (elm.text_type() == TextElement::CLASS_RANGES) {
+        ClassRanges* cr = elm.class_ranges();
+        if (!is_empty && (is_atom || class_ranges != cr)) return false;
+        class_ranges = cr;
+        is_empty = false;
+      } else {
+        DCHECK_EQ(elm.text_type(), TextElement::ATOM);
+        base::Vector<const base::uc16> data = elm.atom()->data();
+        for (int j = 0; j < data.length(); j++) {
+          if (!is_empty && (!is_atom || atom_char != data[j])) return false;
+          is_atom = true;
+          atom_char = data[j];
+          is_empty = false;
+        }
+      }
+    }
+    return true;
+  }
+};
+
+
+
+
+
+
+
+bool AlternativeMatchesOnlyAtStart(Node* node) {
+  for (int depth = 0; depth <= Compiler::kMaxRecursion; depth++) {
+    ActionNode* action = node->AsActionNode();
+    if (action == nullptr) {
+      AssertionNode* assertion = node->AsAssertionNode();
+      return assertion != nullptr &&
+             assertion->assertion_type() == AssertionNode::AT_START;
+    }
+    if (!action->IsRegisterOnlyAction()) return false;
+    node = action->on_success();
+  }
+  return false;
+}
+
+}  
+
+
+
+
+
+
+
+
+
+ParkedGrant LoopChoiceNode::ComputeSearchBodyParkedGrant(Compiler* compiler) {
+  if (!IsImplicitSearchLoop(compiler)) return ParkedGrant::kNone;
+  
+  
+  
+  
+  
+  UniformTextSource source;
+  Node* node = alternatives_->at(0).node();
+  for (int depth = 0; depth <= Compiler::kMaxRecursion; depth++) {
+    if (AssertionNode* assertion = node->AsAssertionNode()) {
+      
+      
+      node = assertion->on_success();
+      continue;
+    }
+    if (ActionNode* action = node->AsActionNode()) {
+      
+      
+      if (!action->IsRegisterOnlyAction()) return ParkedGrant::kParked;
+      node = action->on_success();
+      continue;
+    }
+    if (TextNode* text = node->AsTextNode()) {
+      if (!source.Accumulate(text)) return ParkedGrant::kParked;
+      node = text->on_success();
+      continue;
+    }
+    LoopChoiceNode* loop = node->AsLoopChoiceNode();
+    if (loop == nullptr ||
+        loop->atomic_loop_kind(compiler->flags()) == AtomicLoopKind::kNone) {
+      return ParkedGrant::kParked;
+    }
+    
+    Node* body = loop->alternatives()->at(0).node();
+    for (int i = 0; i <= Compiler::kMaxRecursion; i++) {
+      if (body == loop) return ParkedGrant::kParkedUniformPrefix;
+      TextNode* body_text = body->AsTextNode();
+      if (body_text == nullptr || !source.Accumulate(body_text)) break;
+      body = body_text->on_success();
+    }
+    return ParkedGrant::kParked;
+  }
+  return ParkedGrant::kParked;
 }
 
 int ChoiceNode::EmitOptimizedUnanchoredSearch(
@@ -3462,16 +4616,8 @@ int ChoiceNode::EmitOptimizedUnanchoredSearch(
     bool* bm_scan_emitted) {
   *bm_scan_emitted = false;
   int eats_at_least = PreloadState::kEatsAtLeastNotYetInitialized;
-  if (alternatives_->length() != 2) return eats_at_least;
-
-  GuardedAlternative alt1 = alternatives_->at(1);
-  if (alt1.guards() != nullptr && alt1.guards()->length() != 0) {
-    TRACE(
-        "  Alternatives with guards -> Can't emit optimized unanchored search");
-    return eats_at_least;
-  }
-  Node* eats_anything_node = alt1.node();
-  if (eats_anything_node->GetSuccessorOfOmnivorousTextNode(compiler) != this) {
+  LoopChoiceNode* loop_choice = AsLoopChoiceNode();
+  if (loop_choice == nullptr || !loop_choice->IsImplicitSearchLoop(compiler)) {
     return eats_at_least;
   }
 
@@ -3577,14 +4723,7 @@ Node* ChoiceNode::MatchLazyStarLoopBody(Compiler* compiler,
   
   
   
-  
-  
-  if (alternatives_->length() != 2) return nullptr;
-  GuardedAlternative alt1 = alternatives_->at(1);
-  if (alt1.guards() != nullptr && alt1.guards()->length() != 0) return nullptr;
-  if (alt1.node()->GetSuccessorOfOmnivorousTextNode(compiler) != this) {
-    return nullptr;
-  }
+  if (!AsLoopChoiceNode()->IsImplicitSearchLoop(compiler)) return nullptr;
   return FindBodyNodeUnderOneWrapper(alternatives_->at(0).node(), wrapper_out);
 }
 
@@ -4375,13 +5514,102 @@ std::optional<EmitResult> ChoiceNode::TryEmitMaskedValueDispatch(
   }
   
   
-  const bool need_mask = (common_mask & load_mask) != load_mask;
-  for (int g = 0; g < group_count; g++) {
-    if (need_mask) {
-      assembler->CheckCharacterAfterAnd(group_values[g], common_mask,
-                                        group_labels[g]);
-    } else {
-      assembler->CheckCharacter(group_values[g], group_labels[g]);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static constexpr int kMinGroupsForTableSwitch = 6;
+  static constexpr int kMaxTableSwitchBits = 6;  
+  uint32_t value_diff = 0;
+  for (int g = 1; g < group_count; g++) {
+    value_diff |= group_values[g] ^ group_values[0];
+  }
+  int table_shift = 0;
+  int table_bits = 0;
+  if (assembler->CanTableSwitchOnBits() &&
+      group_count >= kMinGroupsForTableSwitch && value_diff != 0) {
+    table_shift = base::bits::CountTrailingZeros(value_diff);
+    table_bits = 32 - base::bits::CountLeadingZeros(value_diff) - table_shift;
+    if (table_bits > kMaxTableSwitchBits) table_bits = 0;
+  }
+  
+  
+  Label* table_label = table_bits > 0 ? zone()->New<Label>() : nullptr;
+  base::SmallVector<Label*, 64> table;
+  Label no_group;
+  if (table_bits > 0) {
+    const int table_size = 1 << table_bits;
+    const uint32_t index_mask = table_size - 1;
+    const uint32_t span_mask = index_mask << table_shift;
+    
+    
+    uint32_t known_mask = 0;
+    uint32_t known_value = 0;
+    const QuickCheckDetails* prior = trace->quick_check_performed();
+    if (prior != nullptr) {
+      const uint32_t char_mask = CharMask(compiler->one_byte());
+      const int bits_per_char = compiler->one_byte() ? 8 : 16;
+      for (int i = 0; i < prior->characters() && i < preload_characters; i++) {
+        const QuickCheckDetails::Position* pos = prior->positions(i);
+        known_mask |= (pos->mask & char_mask) << (i * bits_per_char);
+        known_value |= (pos->value & char_mask) << (i * bits_per_char);
+      }
+    }
+    
+    
+    
+    
+    
+    uint32_t pre_mask = common_mask & ~span_mask;
+    pre_mask &= ~(known_mask & ~(known_value ^ group_values[0]));
+    if (pre_mask != 0) {
+      assembler->CheckNotCharacterAfterAnd(group_values[0] & pre_mask, pre_mask,
+                                           &no_group);
+    }
+    
+    
+    
+    const uint32_t masked_index_bits =
+        (common_mask >> table_shift) & index_mask;
+    const uint32_t free_bits = index_mask & ~masked_index_bits;
+    table.resize_no_init(table_size);
+    for (int idx = 0; idx < table_size; idx++) table[idx] = &no_group;
+    for (int g = 0; g < group_count; g++) {
+      const uint32_t group_bits =
+          (group_values[g] >> table_shift) & masked_index_bits;
+      
+      
+      for (uint32_t sub = free_bits;; sub = (sub - 1) & free_bits) {
+        DCHECK_EQ(table[group_bits | sub], &no_group);
+        table[group_bits | sub] = group_labels[g];
+        if (sub == 0) break;
+      }
+    }
+    assembler->TableSwitchOnBits(table_shift, table_size, table_label);
+    
+    
+    assembler->BindJumpTarget(&no_group);
+  } else {
+    
+    
+    const bool need_mask = (common_mask & load_mask) != load_mask;
+    for (int g = 0; g < group_count; g++) {
+      if (need_mask) {
+        assembler->CheckCharacterAfterAnd(group_values[g], common_mask,
+                                          group_labels[g]);
+      } else {
+        assembler->CheckCharacter(group_values[g], group_labels[g]);
+      }
     }
   }
   
@@ -4397,7 +5625,14 @@ std::optional<EmitResult> ChoiceNode::TryEmitMaskedValueDispatch(
     chain_labels[i] = zone()->New<Label>();
   }
   for (int g = 0; g < group_count; g++) {
-    assembler->Bind(group_labels[g]);
+    
+    
+    
+    if (table_bits > 0) {
+      assembler->BindJumpTarget(group_labels[g]);
+    } else {
+      assembler->Bind(group_labels[g]);
+    }
     int last_in_group = -1;
     for (int i = choice_count - 1; i >= 0; i--) {
       if (group_of_alt[i] == g) {
@@ -4438,6 +5673,12 @@ std::optional<EmitResult> ChoiceNode::TryEmitMaskedValueDispatch(
     }
   }
 
+  
+  
+  if (table_bits > 0) {
+    assembler->EmitTableSwitchTable(table_label, base::VectorOf(table));
+  }
+
   preload->preload_is_current_ = false;
   return EmitResult::Success();
 }
@@ -4445,7 +5686,8 @@ std::optional<EmitResult> ChoiceNode::TryEmitMaskedValueDispatch(
 EmitResult ChoiceNode::EmitChoices(Compiler* compiler,
                                    AlternativeGenerationList* alt_gens,
                                    int first_choice, Trace* trace,
-                                   PreloadState* preload, Flags flags) {
+                                   PreloadState* preload, Flags flags,
+                                   ParkedGrant body_parked_grant) {
   TRACE("* Emit Choices");
   RegExpMacroAssembler* macro_assembler = compiler->macro_assembler();
   SetUpPreLoad(compiler, trace, preload);
@@ -4466,6 +5708,26 @@ EmitResult ChoiceNode::EmitChoices(Compiler* compiler,
   bool quick_check_flags =
       v8_flags.regexp_optimization && v8_flags.regexp_quick_check;
 
+  
+  
+  Label parked_reentry;
+
+  
+  
+  
+  
+  
+  
+  int floating_alternatives = 0;
+  int last_floating = -1;
+  if (trace->parked_grant() != ParkedGrant::kNone) {
+    for (int i = 0; i < choice_count; i++) {
+      if (AlternativeMatchesOnlyAtStart(alternatives_->at(i).node())) continue;
+      floating_alternatives++;
+      last_floating = i;
+    }
+  }
+
   for (int i = first_choice; i < choice_count; i++) {
     compiler->set_flags(flags);
     bool is_last = i == choice_count - 1;
@@ -4476,6 +5738,10 @@ EmitResult ChoiceNode::EmitChoices(Compiler* compiler,
     const ZoneList<Guard*>* guards = alternative.guards();
     int guard_count = (guards == nullptr) ? 0 : guards->length();
     Trace new_trace(*trace);
+    const bool siblings_all_anchored =
+        floating_alternatives == 0 ||
+        (floating_alternatives == 1 && last_floating == i);
+    if (!siblings_all_anchored) new_trace.reset_parked_grant();
     new_trace.set_characters_preloaded(
         preload->preload_is_current_ ? preload->preload_characters_ : 0);
     if (preload->preload_has_checked_bounds_) {
@@ -4484,7 +5750,18 @@ EmitResult ChoiceNode::EmitChoices(Compiler* compiler,
     new_trace.quick_check_performed()->Clear();
     if (not_at_start_) new_trace.set_at_start(Trace::FALSE_VALUE);
     if (!is_last) {
-      new_trace.set_backtrack(&alt_gen->after);
+      
+      
+      
+      if (body_parked_grant != ParkedGrant::kNone) {
+        
+        
+        DCHECK_EQ(0, i);
+        new_trace.set_backtrack(&parked_reentry);
+        new_trace.set_parked_grant(body_parked_grant);
+      } else {
+        new_trace.set_backtrack(&alt_gen->after);
+      }
     }
     alt_gen->expects_preload = preload->preload_is_current_;
     bool generate_full_check_inline = false;
@@ -4536,15 +5813,34 @@ EmitResult ChoiceNode::EmitChoices(Compiler* compiler,
     }
     macro_assembler->Bind(&alt_gen->after);
   }
+
+  if (parked_reentry.is_linked()) {
+    
+    
+    
+    
+    
+    
+    macro_assembler->Bind(&parked_reentry);
+    if (preload->preload_characters_ > 0) {
+      Label out_of_input;
+      macro_assembler->LoadCurrentCharacter(trace->cp_offset(), &out_of_input,
+                                            true, preload->preload_characters_);
+      macro_assembler->GoTo(&alt_gens->at(0)->after);
+      macro_assembler->Bind(&out_of_input);
+      macro_assembler->GoTo(trace->backtrack());  
+    } else {
+      macro_assembler->GoTo(&alt_gens->at(0)->after);
+    }
+  }
+
   return EmitResult::Success();
 }
 
-EmitResult ChoiceNode::EmitOutOfLineContinuation(Compiler* compiler,
-                                                 Trace* trace,
-                                                 GuardedAlternative alternative,
-                                                 AlternativeGeneration* alt_gen,
-                                                 int preload_characters,
-                                                 bool next_expects_preload) {
+EmitResult ChoiceNode::EmitOutOfLineContinuation(
+    Compiler* compiler, Trace* trace, GuardedAlternative alternative,
+    AlternativeGeneration* alt_gen, int preload_characters,
+    bool next_expects_preload, ParkedGrant parked_grant) {
   if (!alt_gen->possible_success.is_linked()) return EmitResult::Success();
   TRACE_WITH_NODE_AND_TRACE(compiler, "* Emit Out-of-Line Continuation for ",
                             alternative.node(), trace);
@@ -4557,13 +5853,45 @@ EmitResult ChoiceNode::EmitOutOfLineContinuation(Compiler* compiler,
   if (not_at_start_) out_of_line_trace.set_at_start(Trace::FALSE_VALUE);
   const ZoneList<Guard*>* guards = alternative.guards();
   int guard_count = (guards == nullptr) ? 0 : guards->length();
-  if (next_expects_preload) {
-    Label reload_current_char;
+  Label reload_current_char;
+  Label parked_landing;
+  if (parked_grant != ParkedGrant::kNone) {
+    
+    
+    
+    
+    
+    out_of_line_trace.set_backtrack(&parked_landing);
+    out_of_line_trace.set_parked_grant(parked_grant);
+  } else if (next_expects_preload) {
+    
+    
     out_of_line_trace.set_backtrack(&reload_current_char);
-    for (int j = 0; j < guard_count; j++) {
-      GenerateGuard(macro_assembler, guards->at(j), &out_of_line_trace);
+  } else {
+    out_of_line_trace.set_backtrack(&(alt_gen->after));
+  }
+  for (int j = 0; j < guard_count; j++) {
+    GenerateGuard(macro_assembler, guards->at(j), &out_of_line_trace);
+  }
+  RETURN_IF_ERROR(alternative.node()->Emit(compiler, &out_of_line_trace));
+  if (parked_grant != ParkedGrant::kNone) {
+    macro_assembler->Bind(&parked_landing);
+    if (preload_characters > 0) {
+      
+      
+      
+      Label out_of_input;
+      macro_assembler->LoadCurrentCharacter(trace->cp_offset(), &out_of_input,
+                                            true, preload_characters);
+      macro_assembler->GoTo(&(alt_gen->after));
+      macro_assembler->Bind(&out_of_input);
+      macro_assembler->GoTo(trace->backtrack());  
+    } else {
+      
+      
+      macro_assembler->GoTo(&(alt_gen->after));
     }
-    RETURN_IF_ERROR(alternative.node()->Emit(compiler, &out_of_line_trace));
+  } else if (next_expects_preload) {
     macro_assembler->Bind(&reload_current_char);
     
     
@@ -4571,12 +5899,6 @@ EmitResult ChoiceNode::EmitOutOfLineContinuation(Compiler* compiler,
     macro_assembler->LoadCurrentCharacter(trace->cp_offset(), nullptr, false,
                                           preload_characters);
     macro_assembler->GoTo(&(alt_gen->after));
-  } else {
-    out_of_line_trace.set_backtrack(&(alt_gen->after));
-    for (int j = 0; j < guard_count; j++) {
-      GenerateGuard(macro_assembler, guards->at(j), &out_of_line_trace);
-    }
-    RETURN_IF_ERROR(alternative.node()->Emit(compiler, &out_of_line_trace));
   }
   return EmitResult::Success();
 }
@@ -5050,11 +6372,13 @@ class Analysis : public NodeVisitor {
       NegativeLookaroundChoiceNode* that) override {
     DCHECK_EQ(that->alternatives()->length(), 2);  
 
+    Flags header_flags = flags();
     EnsureAnalyzed(that->lookaround_node());
     if (has_failed()) return;
     STATIC_FOR_EACH(
         Propagators::VisitNegativeLookaroundChoiceLookaroundNode(that));
 
+    set_flags(header_flags);
     EnsureAnalyzed(that->continue_node());
     if (has_failed()) return;
     STATIC_FOR_EACH(
@@ -5226,6 +6550,7 @@ Node* Compiler::PreprocessRegExp(CompileData* data, bool is_one_byte) {
     
     
     TRACE_GRAPH("* Add .*? at beginning of unanchored, non-sticky RegExp");
+    has_search_prefix_ = true;
     Node* loop_node = Quantifier::ToNode(
         0, Tree::kInfinity, false,
         zone()->New<ClassRanges>(StandardCharacterSet::kEverything), this,

@@ -1,6 +1,6 @@
-// Copyright 2012 the V8 project authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+
+
+
 
 #ifdef V8_ENABLE_REGEXP_DIAGNOSTICS
 
@@ -12,7 +12,7 @@ namespace internal {
 namespace regexp {
 
 RegExpMacroAssemblerTracer::RegExpMacroAssemblerTracer(
-    js::UniquePtr<RegExpMacroAssembler>&& assembler)
+    std::unique_ptr<RegExpMacroAssembler>&& assembler)
     : RegExpMacroAssembler(*assembler), assembler_(std::move(assembler)) {
   PrintF("RegExpMacroAssembler%s();\n",
          ImplementationToString(assembler_->Implementation()));
@@ -25,8 +25,8 @@ void RegExpMacroAssemblerTracer::AbortedCodeGeneration() {
   assembler_->AbortedCodeGeneration();
 }
 
-// This is used for printing out debugging information.  It makes an integer
-// that is closely related to the address of an object.
+
+
 static int LabelToInt(Label* label) {
   return static_cast<int>(reinterpret_cast<intptr_t>(label));
 }
@@ -180,7 +180,7 @@ class PrintablePrinter {
   char buffer_[4];
 };
 
-}  // namespace
+}  
 
 void RegExpMacroAssemblerTracer::CheckCharacterLT(base::uc16 limit,
                                                   Label* on_less) {
@@ -311,7 +311,7 @@ void PrintRangeArray(const ZoneList<CharacterRange>* ranges) {
   }
 }
 
-}  // namespace
+}  
 
 bool RegExpMacroAssemblerTracer::CheckCharacterInRangeArray(
     const ZoneList<CharacterRange>* ranges, Label* on_in_range) {
@@ -380,7 +380,7 @@ void PrintTables(Handle<ByteArray> table, Handle<ByteArray> nibble_table) {
   }
 }
 
-}  // namespace
+}  
 
 void RegExpMacroAssemblerTracer::SkipUntilBitInTable(
     int cp_offset, Handle<ByteArray> table, Handle<ByteArray> nibble_table,
@@ -596,8 +596,8 @@ DirectHandle<HeapObject> RegExpMacroAssemblerTracer::GetCode(
   return assembler_->GetCode(re_data, flags);
 }
 
-}  // namespace regexp
-}  // namespace internal
-}  // namespace v8
+}  
+}  
+}  
 
-#endif  // V8_ENABLE_REGEXP_DIAGNOSTICS
+#endif  

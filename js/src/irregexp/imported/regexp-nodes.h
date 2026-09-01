@@ -150,6 +150,139 @@ class EmitResult final {
 #define RETURN_IF_ERROR(stmt) \
   if (EmitResult r = (stmt); V8_UNLIKELY(r.IsError())) return r
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum class DrainMode : uint8_t {
+  
+  kFull,
+  
+  
+  
+  kRetryAtEntry,
+  
+  
+  
+  kRestoreOnly,
+  
+  
+  
+  
+  kOmit,
+};
+
+
+
+
+
+enum class AtomicLoopKind : uint8_t {
+  kNone,
+  kAtEnd,     
+  kTotal,     
+              
+              
+              
+              
+              
+  kBoundary,  
+              
+              
+  kDisjoint,  
+              
+};
+
+
+
+
+
+
+
+
+
+enum class ParkedGrant : uint8_t {
+  
+  
+  kNone,
+  
+  
+  
+  
+  
+  
+  
+  kParked,
+  
+  
+  
+  
+  
+  
+  kParkedUniformPrefix,
+  
+  
+  
+  
+  
+  
+  
+  kParkedNonEmptyUniformPrefix,
+};
+
 class V8_EXPORT_PRIVATE Node : public ZoneObject {
  public:
   explicit Node(Zone* zone)
@@ -268,9 +401,9 @@ class V8_EXPORT_PRIVATE Node : public ZoneObject {
 
   LimitResult LimitVersions(Compiler* compiler, Trace* trace);
 
-  void set_bm_info(bool not_at_start, BoyerMooreLookahead* bm) {
-    bm_info_[not_at_start ? 1 : 0] = bm;
-  }
+  
+  
+  void set_bm_info(bool not_at_start, BoyerMooreLookahead* bm);
 
  private:
   static const int kFirstCharBudget = 10;
@@ -384,6 +517,15 @@ class ActionNode : public SeqNode {
   bool IsSimpleAction() const {
     return action_type() == STORE_POSITION ||
            action_type() == RESTORE_POSITION ||
+           action_type() == INCREMENT_REGISTER ||
+           action_type() == SET_REGISTER_FOR_LOOP ||
+           action_type() == CLEAR_CAPTURES;
+  }
+
+  
+  
+  bool IsRegisterOnlyAction() const {
+    return action_type() == EATS_AT_LEAST || action_type() == STORE_POSITION ||
            action_type() == INCREMENT_REGISTER ||
            action_type() == SET_REGISTER_FOR_LOOP ||
            action_type() == CLEAR_CAPTURES;
@@ -715,7 +857,7 @@ class ChoiceNode : public Node {
   V8_WARN_UNUSED_RESULT EmitResult EmitOutOfLineContinuation(
       Compiler* compiler, Trace* trace, GuardedAlternative alternative,
       AlternativeGeneration* alt_gen, int preload_characters,
-      bool next_expects_preload);
+      bool next_expects_preload, ParkedGrant parked_grant);
   void SetUpPreLoad(Compiler* compiler, Trace* current_trace,
                     PreloadState* preloads);
   void AssertGuardsMentionRegisters(Trace* trace);
@@ -772,10 +914,12 @@ class ChoiceNode : public Node {
   V8_WARN_UNUSED_RESULT Trace* EmitFixedLengthLoop(
       Compiler* compiler, Trace* trace, AlternativeGenerationList* alt_gens,
       PreloadState* preloads, SpecialLoopState* fixed_length_loop_state,
-      int text_length, Flags flags);
-  V8_WARN_UNUSED_RESULT EmitResult EmitChoices(
-      Compiler* compiler, AlternativeGenerationList* alt_gens, int first_choice,
-      Trace* trace, PreloadState* preloads, Flags flags);
+      int text_length, Flags flags, DrainMode drain_mode,
+      ParkedGrant body_parked_grant);
+  V8_WARN_UNUSED_RESULT EmitResult
+  EmitChoices(Compiler* compiler, AlternativeGenerationList* alt_gens,
+              int first_choice, Trace* trace, PreloadState* preloads,
+              Flags flags, ParkedGrant body_parked_grant);
   
   
   std::optional<EmitResult> TryEmitMaskedValueDispatch(
@@ -849,6 +993,26 @@ class LoopChoiceNode : public ChoiceNode {
   bool read_backward() const override { return read_backward_; }
   LoopChoiceNode* AsLoopChoiceNode() override { return this; }
   void Accept(NodeVisitor* visitor) override;
+  
+  
+  
+  AtomicLoopKind atomic_loop_kind(Flags flags);
+  
+  
+  
+  int FixedLengthBodyIterationLength() {
+    return FixedLengthLoopLengthForAlternative(&alternatives()->at(0));
+  }
+  
+  
+  
+  bool IsImplicitSearchLoop(Compiler* compiler);
+  
+  
+  
+  
+  
+  ParkedGrant ComputeSearchBodyParkedGrant(Compiler* compiler);
 
  private:
   
@@ -862,6 +1026,10 @@ class LoopChoiceNode : public ChoiceNode {
   Node* continue_node_;
   bool body_can_be_zero_length_;
   bool read_backward_;
+  
+  bool atomic_loop_kind_valid_ = false;
+  AtomicLoopKind atomic_loop_kind_ = AtomicLoopKind::kNone;
+  Flags atomic_loop_kind_flags_ = {};
 };
 
 class NodeVisitor {
