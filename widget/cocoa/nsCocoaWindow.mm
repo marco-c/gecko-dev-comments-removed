@@ -8842,27 +8842,6 @@ static CGFloat DefaultTitlebarHeight() {
 }
 
 
-- (void)_toolbarPillButtonClicked:(id)sender {
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
-
-  RollUpPopups();
-
-  if ([self.delegate isKindOfClass:[WindowDelegate class]]) {
-    auto* windowDelegate = static_cast<WindowDelegate*>(self.delegate);
-    nsCocoaWindow* geckoWindow = windowDelegate.geckoWidget;
-    if (!geckoWindow) {
-      return;
-    }
-
-    if (nsIWidgetListener* listener = geckoWindow->GetWidgetListener()) {
-      listener->OSToolbarButtonPressed();
-    }
-  }
-
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
-}
-
-
 
 
 

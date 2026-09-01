@@ -95,11 +95,6 @@ class nsIWidgetListener {
   
 
 
-  virtual void OSToolbarButtonPressed() {}
-
-  
-
-
 
   virtual bool RequestWindowClose(nsIWidget* aWidget) { return false; }
 
