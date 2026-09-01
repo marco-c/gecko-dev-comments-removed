@@ -1594,9 +1594,13 @@ bool GLBlitHelper::Blit(DMABufSurface* surface, const gfx::IntRect& destRect,
 
   
   
-  baseArgs.texMatrix0 = SubRectMat3(0, 0, 1, 1);
+  baseArgs.texMatrix0 = SubRectMat3(
+      0, 0, float(surface->GetWidth(0)) / float(surface->GetWidthAligned(0)),
+      float(surface->GetHeight(0)) / float(surface->GetHeightAligned(0)));
   baseArgs.texSize = gfx::IntSize(surface->GetWidth(), surface->GetHeight());
-  yuvArgs.texMatrix1 = SubRectMat3(0, 0, 1, 1);
+  yuvArgs.texMatrix1 = SubRectMat3(
+      0, 0, float(surface->GetWidth(1)) / float(surface->GetWidthAligned(1)),
+      float(surface->GetHeight(1)) / float(surface->GetHeightAligned(1)));
 
   const auto& prog =
       GetDrawBlitProg({kFragHeader_Tex2D,
