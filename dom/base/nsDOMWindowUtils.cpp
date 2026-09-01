@@ -1946,7 +1946,9 @@ nsDOMWindowUtils::NeedsFlush(int32_t aFlushType, bool* aResult) {
       return NS_ERROR_INVALID_ARG;
   }
 
-  *aResult = presShell->NeedFlush(flushType);
+  
+  
+  *aResult = presShell->NeedFlush(flushType,  true);
   return NS_OK;
 }
 
