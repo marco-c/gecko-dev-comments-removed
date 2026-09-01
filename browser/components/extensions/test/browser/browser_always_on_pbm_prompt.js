@@ -41,6 +41,10 @@ async function testCheckbox(allowPbm, expectedCheckboxValue) {
   is(checkbox.checked, allowPbm, "The checkbox matches allowPbm.");
 
   
+  const installNotificationShown = BrowserTestUtils.waitForPopupEvent(
+    PanelUI.notificationPanel,
+    "shown"
+  );
   panel.button.click();
 
   await readyPromise;
@@ -51,6 +55,18 @@ async function testCheckbox(allowPbm, expectedCheckboxValue) {
     allowPbm,
     `Private browsing permission has ${allowPbm ? "" : "not "}been granted`
   );
+
+  
+  
+  await installNotificationShown;
+  const installNotificationHidden = BrowserTestUtils.waitForPopupEvent(
+    PanelUI.notificationPanel,
+    "hidden"
+  );
+  document
+    .getElementById("appMenu-addon-installed-notification")
+    .button.click();
+  await installNotificationHidden;
 }
 
 async function uninstall() {

@@ -82,6 +82,7 @@ add_task(async function test_tabs_update() {
     extension.awaitMessage("changeInfo"),
   ]);
   Assert.ok(tab.hidden, "Tab is hidden by extension");
+  await dismissTabHideDoorhanger();
 
   
   let extdata = {
@@ -135,6 +136,7 @@ add_task(async function test_tabs_disable() {
     extension.awaitMessage("changeInfo"),
   ]);
   Assert.ok(tab.hidden, "Tab is hidden by extension");
+  await dismissTabHideDoorhanger();
 
   
   await disableExtension(ID);

@@ -39,6 +39,7 @@
 
 
 
+
 const { PromiseTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PromiseTestUtils.sys.mjs"
 );
@@ -231,6 +232,22 @@ function promisePopupHidden(popup) {
     };
     popup.addEventListener("popuphidden", onPopupHidden);
   });
+}
+
+
+
+
+
+
+async function dismissTabHideDoorhanger() {
+  const { ExtensionControlledPopup } = ChromeUtils.importESModule(
+    "resource:///modules/ExtensionControlledPopup.sys.mjs"
+  );
+  let panel = ExtensionControlledPopup._getAndMaybeCreatePanel(document);
+  await promisePopupShown(panel);
+  let hidden = promisePopupHidden(panel);
+  panel.hidePopup();
+  await hidden;
 }
 
 
