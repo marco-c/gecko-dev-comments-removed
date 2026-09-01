@@ -38,6 +38,23 @@ var { DEVICE_TYPE_MOBILE, DEVICE_TYPE_TABLET } = ChromeUtils.importESModule(
 
 const MIN_STATUS_ANIMATION_DURATION = 1600;
 
+
+
+const FXA_CTA_UTM_PARAMS = {
+  utm_medium: "referral",
+  utm_source: "firefox-desktop",
+  utm_campaign: "toolbar",
+};
+
+
+
+const MONITOR_NEW_USER_URL = "https://monitor.mozilla.org/";
+const MONITOR_EXISTING_USER_URL = "https://monitor.mozilla.org/user/dashboard/";
+const RELAY_NEW_USER_URL = "https://relay.firefox.com/";
+const RELAY_EXISTING_USER_URL = "https://relay.firefox.com/accounts/profile/";
+const VPN_NEW_USER_URL = "https://www.mozilla.org/products/vpn/";
+const VPN_EXISTING_USER_URL = "https://www.mozilla.org/products/vpn/download/";
+
 this.SyncedTabsPanelList = class SyncedTabsPanelList {
   static sRemoteTabsDeckIndices = {
     DECKINDEX_TABS: 0,
@@ -3770,30 +3787,30 @@ var gSync = {
     }
   },
 
-  async openMonitorLink(sourceElement) {
+  openMonitorLink(sourceElement) {
     this.emitFxaToolbarTelemetry("monitor_cta", sourceElement);
-    await this.openCtaLink(
+    this.openCtaLink(
       FX_MONITOR_OAUTH_CLIENT_ID,
-      new URL("https://monitor.firefox.com"),
-      new URL("https://monitor.firefox.com/user/breaches")
+      this._ctaURL(MONITOR_NEW_USER_URL, "new-user-global"),
+      this._ctaURL(MONITOR_EXISTING_USER_URL, "existing-user-global")
     );
   },
 
-  async openRelayLink(sourceElement) {
+  openRelayLink(sourceElement) {
     this.emitFxaToolbarTelemetry("relay_cta", sourceElement);
-    await this.openCtaLink(
+    this.openCtaLink(
       FX_RELAY_OAUTH_CLIENT_ID,
-      new URL("https://relay.firefox.com"),
-      new URL("https://relay.firefox.com/accounts/profile")
+      this._ctaURL(RELAY_NEW_USER_URL, "new-user-global"),
+      this._ctaURL(RELAY_EXISTING_USER_URL, "existing-user-global")
     );
   },
 
-  async openVPNLink(sourceElement) {
+  openVPNLink(sourceElement) {
     this.emitFxaToolbarTelemetry("vpn_cta", sourceElement);
-    await this.openCtaLink(
+    this.openCtaLink(
       VPN_OAUTH_CLIENT_ID,
-      new URL("https://www.mozilla.org/en-US/products/vpn/"),
-      new URL("https://www.mozilla.org/en-US/products/vpn/")
+      this._ctaURL(VPN_NEW_USER_URL, "new-user-global"),
+      this._ctaURL(VPN_EXISTING_USER_URL, "existing-user-global")
     );
   },
 
@@ -3803,27 +3820,38 @@ var gSync = {
   },
 
   
-  async openCtaLink(clientId, defaultUrl, signedInUrl) {
-    const params = {
-      utm_medium: "firefox-desktop",
-      utm_source: "toolbar",
-      utm_campaign: "discovery",
-    };
-    const searchParams = new URLSearchParams(params);
 
-    if (!this.isSignedIn) {
-      
-      defaultUrl.search = searchParams.toString();
-      defaultUrl.searchParams.append("utm_content", "notsignedin");
-      this.openLink(defaultUrl);
-      PanelUI.hide();
-      return;
+
+
+
+
+
+
+
+  _ctaURL(baseUrl, utmContent) {
+    const url = new URL(baseUrl);
+    for (const [key, value] of Object.entries(FXA_CTA_UTM_PARAMS)) {
+      url.searchParams.set(key, value);
     }
+    url.searchParams.set("utm_content", utmContent);
+    return url;
+  },
 
-    const url = this.hasClientForId(clientId) ? signedInUrl : defaultUrl;
-    
-    url.search = searchParams.toString();
-    url.searchParams.append("utm_content", "signedIn");
+  
+
+
+
+
+
+
+
+
+
+  openCtaLink(clientId, defaultUrl, signedInUrl) {
+    const url =
+      this.isSignedIn && this.hasClientForId(clientId)
+        ? signedInUrl
+        : defaultUrl;
 
     this.openLink(url);
     PanelUI.hide();
