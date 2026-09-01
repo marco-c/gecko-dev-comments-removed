@@ -368,6 +368,7 @@ var SidebarController = {
   _windowRestoredObserverAdded: false,
   _mainResizeObserver: null,
   _ongoingAnimations: [],
+  _collapsedWidthMeasurementID: 0,
 
   
 
@@ -2696,17 +2697,37 @@ var SidebarController = {
     return this._mouseEnterDeferred?.promise || Promise.resolve();
   },
 
+  
+
+
+
+
+
+
+
+
+
+
   async setLauncherCollapsedWidth() {
     let browserEl = document.getElementById("browser");
+    const measurementID = ++this._collapsedWidthMeasurementID;
     if (this.getUIState().launcherExpanded) {
       this._state.launcherExpanded = false;
     }
     await this.waitUntilStable();
-    let collapsedWidth = await new Promise(resolve => {
-      requestAnimationFrame(() => {
-        resolve(this._getRects([this.sidebarContainer])[0][1].width);
-      });
-    });
+    let collapsedWidth = await window.promiseDocumentFlushed(
+      () => this._getRects([this.sidebarContainer])[0][1].width
+    );
+
+    if (measurementID !== this._collapsedWidthMeasurementID) {
+      
+      return;
+    }
+    if (this._state.launcherExpanded) {
+      
+      
+      return;
+    }
 
     browserEl.style.setProperty(
       "--sidebar-launcher-collapsed-width",
