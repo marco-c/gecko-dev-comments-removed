@@ -442,7 +442,7 @@ where
 
 
 #[inline(always)]
-fn matches_complex_selector<E>(
+pub fn matches_complex_selector<E>(
     mut iter: SelectorIter<E::Impl>,
     element: &E,
     context: &mut MatchingContext<E::Impl>,
@@ -453,7 +453,10 @@ where
 {
     
     
-    if context.matching_mode() == MatchingMode::ForStatelessPseudoElement && !context.is_nested() {
+    if context.matching_mode() == MatchingMode::ForStatelessPseudoElement
+        && !context.is_nested()
+        && rightmost == SubjectOrPseudoElement::Yes
+    {
         
         match *iter.next().unwrap() {
             Component::PseudoElement(ref pseudo) => {
@@ -760,8 +763,9 @@ fn hover_and_active_quirk_applies<Impl: SelectorImpl>(
     })
 }
 
+
 #[derive(Clone, Copy, PartialEq)]
-enum SubjectOrPseudoElement {
+pub enum SubjectOrPseudoElement {
     Yes,
     No,
 }

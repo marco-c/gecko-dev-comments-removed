@@ -16,7 +16,7 @@ use crate::AllocErr;
 use crate::{Atom, LocalName, Namespace, ShrinkIfNeeded, WeakAtom};
 use dom::ElementState;
 use precomputed_hash::PrecomputedHash;
-use selectors::matching::{matches_selector, MatchingContext};
+use selectors::matching::MatchingContext;
 use selectors::parser::{Combinator, Component, SelectorIter};
 use smallvec::SmallVec;
 use std::collections::hash_map;
@@ -104,6 +104,8 @@ impl Hasher for PrecomputedHasher {
 pub trait SelectorMapEntry: Sized + Clone {
     
     fn selector(&self) -> SelectorIter<'_, SelectorImpl>;
+    
+    fn set_bucket_matches(&mut self, _: BucketMatches) {}
 }
 
 
@@ -352,13 +354,7 @@ impl SelectorMap<Rule> {
     {
         for rule in rules {
             let scope_proximity = if rule.scope_condition_id == ScopeConditionId::none() {
-                if !matches_selector(
-                    &rule.selector,
-                    0,
-                    Some(&rule.hashes),
-                    &element,
-                    matching_context,
-                ) {
+                if !rule.matches_selector(element, matching_context) {
                     continue;
                 }
                 ScopeProximity::infinity()
@@ -392,13 +388,14 @@ impl SelectorMap<Rule> {
 
 impl<T: SelectorMapEntry> SelectorMap<T> {
     
-    pub fn insert(&mut self, entry: T, quirks_mode: QuirksMode) -> Result<(), AllocErr> {
+    pub fn insert(&mut self, mut entry: T, quirks_mode: QuirksMode) -> Result<(), AllocErr> {
         self.count += 1;
 
         
         
         
         
+        let mut bucket_matches = BucketMatches::Full;
         macro_rules! insert_into_bucket {
             ($entry:ident, $bucket:expr) => {{
                 let vec = match $bucket {
@@ -436,7 +433,9 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
                             hash.try_reserve(1)?;
                             let vec = hash.entry(lower_name.clone()).or_default();
                             vec.try_reserve(1)?;
-                            vec.push($entry.clone());
+                            let mut entry = $entry.clone();
+                            entry.set_bucket_matches(bucket_matches);
+                            vec.push(entry);
                         }
                         hash.try_reserve(1)?;
                         hash.entry(name.clone()).or_default()
@@ -449,13 +448,20 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
                     Bucket::Universal => &mut self.other,
                 };
                 vec.try_reserve(1)?;
+                $entry.set_bucket_matches(bucket_matches);
                 vec.push($entry);
             }};
         }
 
         let bucket = {
             let mut disjoint_buckets = SmallVec::new();
-            let bucket = find_bucket(entry.selector(), &mut disjoint_buckets);
+            let bucket = find_bucket(
+                entry.selector(),
+                quirks_mode,
+                &mut disjoint_buckets,
+                &mut bucket_matches,
+                 false,
+            );
 
             
             
@@ -478,7 +484,7 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
                     .all(|b| b.more_specific_than(&bucket))
             {
                 for bucket in &disjoint_buckets {
-                    let entry = entry.clone();
+                    let mut entry = entry.clone();
                     insert_into_bucket!(entry, *bucket);
                 }
                 return Ok(());
@@ -729,32 +735,75 @@ impl<'a> Bucket<'a> {
 
 type DisjointBuckets<'a> = SmallVec<[Bucket<'a>; 5]>;
 
+
+#[derive(Copy, Clone, Debug, PartialEq, MallocSizeOf)]
+pub enum BucketMatches {
+    
+    Full,
+    
+    Subject,
+    
+    Unknown,
+}
+
 fn specific_bucket_for<'a>(
     component: &'a Component<SelectorImpl>,
+    quirks_mode: QuirksMode,
     disjoint_buckets: &mut DisjointBuckets<'a>,
+    bucket_matches: &mut BucketMatches,
+    nested: bool,
 ) -> Bucket<'a> {
     match *component {
         Component::Root => Bucket::Root,
-        Component::ID(ref id) => Bucket::ID(id),
-        Component::Class(ref class) => Bucket::Class(class),
-        Component::AttributeInNoNamespace { ref local_name, .. } => Bucket::Attribute {
-            name: local_name,
-            lower_name: local_name,
+        Component::ID(ref id) => {
+            if quirks_mode == QuirksMode::Quirks {
+                
+                *bucket_matches = BucketMatches::Unknown;
+            }
+            Bucket::ID(id)
+        },
+        Component::Class(ref class) => {
+            if quirks_mode == QuirksMode::Quirks {
+                
+                *bucket_matches = BucketMatches::Unknown;
+            }
+            Bucket::Class(class)
+        },
+        Component::AttributeInNoNamespace { ref local_name, .. } => {
+            
+            *bucket_matches = BucketMatches::Unknown;
+            Bucket::Attribute {
+                name: local_name,
+                lower_name: local_name,
+            }
         },
         Component::AttributeInNoNamespaceExists {
             ref local_name,
             ref local_name_lower,
-        } => Bucket::Attribute {
-            name: local_name,
-            lower_name: local_name_lower,
+        } => {
+            
+            *bucket_matches = BucketMatches::Unknown;
+            Bucket::Attribute {
+                name: local_name,
+                lower_name: local_name_lower,
+            }
         },
-        Component::AttributeOther(ref selector) => Bucket::Attribute {
-            name: &selector.local_name,
-            lower_name: &selector.local_name_lower,
+        Component::AttributeOther(ref selector) => {
+            
+            *bucket_matches = BucketMatches::Unknown;
+            Bucket::Attribute {
+                name: &selector.local_name,
+                lower_name: &selector.local_name_lower,
+            }
         },
-        Component::LocalName(ref selector) => Bucket::LocalName {
-            name: &selector.name,
-            lower_name: &selector.lower_name,
+        Component::LocalName(ref selector) => {
+            if selector.name != selector.lower_name {
+                *bucket_matches = BucketMatches::Unknown;
+            }
+            Bucket::LocalName {
+                name: &selector.name,
+                lower_name: &selector.lower_name,
+            }
         },
         Component::Namespace(_, ref url) | Component::DefaultNamespace(ref url) => {
             Bucket::Namespace(url)
@@ -777,14 +826,55 @@ fn specific_bucket_for<'a>(
         
         
         
-        Component::Slotted(ref selector) => find_bucket(selector.iter(), disjoint_buckets),
-        Component::Host(Some(ref selector)) => find_bucket(selector.iter(), disjoint_buckets),
+        Component::Slotted(ref selector) => {
+            
+            
+            *bucket_matches = BucketMatches::Unknown;
+            find_bucket(
+                selector.iter(),
+                quirks_mode,
+                disjoint_buckets,
+                bucket_matches,
+                 true,
+            )
+        },
+        Component::Host(ref selector) => {
+            if let Some(selector) = selector {
+                find_bucket(
+                    selector.iter(),
+                    quirks_mode,
+                    disjoint_buckets,
+                    bucket_matches,
+                     true,
+                )
+            } else {
+                
+                Bucket::Universal
+            }
+        },
         Component::Is(ref list) | Component::Where(ref list) => {
             if list.len() == 1 {
-                find_bucket(list.slice()[0].iter(), disjoint_buckets)
+                find_bucket(
+                    list.slice()[0].iter(),
+                    quirks_mode,
+                    disjoint_buckets,
+                    bucket_matches,
+                     true,
+                )
             } else {
+                
+                
+                
+                
+                *bucket_matches = BucketMatches::Unknown;
                 for selector in list.slice() {
-                    let bucket = find_bucket(selector.iter(), disjoint_buckets);
+                    let bucket = find_bucket(
+                        selector.iter(),
+                        quirks_mode,
+                        disjoint_buckets,
+                        bucket_matches,
+                         true,
+                    );
                     if disjoint_buckets.last() == Some(&bucket) {
                         
                         
@@ -801,11 +891,33 @@ fn specific_bucket_for<'a>(
                 .state_flag()
                 .intersects(RARE_PSEUDO_CLASS_STATES) =>
         {
+            
+            
+            *bucket_matches = BucketMatches::Unknown;
             Bucket::RarePseudoClasses
         },
-        _ => Bucket::Universal,
+        Component::PseudoElement(ref pseudo) => {
+            
+            
+            
+            if pseudo.has_argument() || nested {
+                *bucket_matches = BucketMatches::Unknown;
+            }
+            Bucket::Universal
+        },
+        Component::ExplicitUniversalType | Component::ExplicitAnyNamespace => {
+            
+            Bucket::Universal
+        },
+        _ => {
+            *bucket_matches = BucketMatches::Unknown;
+            Bucket::Universal
+        },
     }
 }
+
+
+
 
 
 
@@ -815,15 +927,23 @@ fn specific_bucket_for<'a>(
 #[inline(always)]
 fn find_bucket<'a>(
     mut iter: SelectorIter<'a, SelectorImpl>,
+    quirks_mode: QuirksMode,
     disjoint_buckets: &mut DisjointBuckets<'a>,
+    bucket_matches: &mut BucketMatches,
+    nested: bool,
 ) -> Bucket<'a> {
     let mut current_bucket = Bucket::Universal;
 
     loop {
         for ss in &mut iter {
-            let new_bucket = specific_bucket_for(ss, disjoint_buckets);
+            let new_bucket =
+                specific_bucket_for(ss, quirks_mode, disjoint_buckets, bucket_matches, nested);
             
             
+            if current_bucket != Bucket::Universal {
+                
+                *bucket_matches = BucketMatches::Unknown;
+            }
             if new_bucket.more_or_equally_specific_than(&current_bucket) {
                 current_bucket = new_bucket;
             }
@@ -831,8 +951,20 @@ fn find_bucket<'a>(
 
         
         
-        if iter.next_sequence() != Some(Combinator::PseudoElement) {
-            break;
+        match iter.next_sequence() {
+            None => break,
+            Some(Combinator::PseudoElement) => continue,
+            Some(..) => {
+                
+                if *bucket_matches != BucketMatches::Unknown {
+                    if nested {
+                        *bucket_matches = BucketMatches::Unknown;
+                    } else {
+                        *bucket_matches = BucketMatches::Subject;
+                    }
+                }
+                break;
+            },
         }
     }
 

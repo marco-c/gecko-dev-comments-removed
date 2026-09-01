@@ -318,6 +318,12 @@ impl PseudoElement {
 
     
     #[inline]
+    pub fn has_argument(&self) -> bool {
+        false
+    }
+
+    
+    #[inline]
     pub fn is_target_text(&self) -> bool {
         false
     }
