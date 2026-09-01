@@ -924,7 +924,12 @@ void AltSvcCache::UpdateAltServiceMapping(
   caps |= ci->GetAnonymous() ? NS_HTTP_LOAD_ANONYMOUS : 0;
   caps |= NS_HTTP_ERROR_SOFTLY;
 
-  if (StaticPrefs::network_http_happy_eyeballs_enabled()) {
+  
+  
+  
+  
+  
+  if (StaticPrefs::network_http_happy_eyeballs_enabled() && !pi) {
     ci->SetHappyEyeballsEnabled(true);
     
     
