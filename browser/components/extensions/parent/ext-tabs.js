@@ -1123,7 +1123,7 @@ this.tabs = class extends ExtensionAPIPersistent {
               } else {
                 insertionPoint = Math.min(insertionPoint, maxIndex);
               }
-            } else if (isSameWindow && nativeTab._tPos <= lastInsertion) {
+            } else if (isSameWindow && nativeTab.index <= lastInsertion) {
               
               
               
@@ -1167,7 +1167,7 @@ this.tabs = class extends ExtensionAPIPersistent {
               } else if (isSameWindow) {
                 
                 
-                wantReversedSplit = otherTabInSplit._tPos === insertionPoint;
+                wantReversedSplit = otherTabInSplit.index === insertionPoint;
               }
               if (wantReversedSplit) {
                 
@@ -1204,7 +1204,7 @@ this.tabs = class extends ExtensionAPIPersistent {
             }
             lastInsertionMap.set(
               window,
-              splitview ? splitviewTabs.at(-1)._tPos : nativeTab._tPos
+              splitview ? splitviewTabs.at(-1).index : nativeTab.index
             );
             if (splitview) {
               for (const tab of splitviewTabs) {
@@ -1786,7 +1786,7 @@ this.tabs = class extends ExtensionAPIPersistent {
             for (const nativeTab of nativeTabs) {
               if (
                 nativeTab.documentGlobal === window &&
-                nativeTab._tPos < firstTabInGroup._tPos
+                nativeTab.index < firstTabInGroup.index
               ) {
                 tabsBefore.push(nativeTab);
               } else {
@@ -1819,7 +1819,7 @@ this.tabs = class extends ExtensionAPIPersistent {
           }
           for (let [group, tabs] of ungroupOrder) {
             
-            tabs.sort((a, b) => a._tPos - b._tPos);
+            tabs.sort((a, b) => a.index - b.index);
             tabs = getNativeTabsOrSplitViews(tabs);
             let firstTab = tabs[0];
             if (group.documentGlobal.gBrowser.isSplitViewWrapper(firstTab)) {

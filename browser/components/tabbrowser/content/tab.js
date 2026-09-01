@@ -143,6 +143,16 @@
       this.setAttribute("aria-level", 1);
     }
 
+    
+
+
+
+
+
+    get index() {
+      return this._index;
+    }
+
     #elementIndex;
     get elementIndex() {
       if (!this.visible) {
