@@ -194,10 +194,10 @@ class gfxFontEntry {
   typedef mozilla::intl::Script Script;
   typedef mozilla::FontWeight FontWeight;
   typedef mozilla::FontSlantStyle FontSlantStyle;
-  typedef mozilla::FontStretch FontStretch;
+  typedef mozilla::FontWidth FontWidth;
   typedef mozilla::WeightRange WeightRange;
   typedef mozilla::SlantStyleRange SlantStyleRange;
-  typedef mozilla::StretchRange StretchRange;
+  typedef mozilla::WidthRange WidthRange;
   using imgDrawingParams = mozilla::image::imgDrawingParams;
 
   
@@ -239,7 +239,7 @@ class gfxFontEntry {
   virtual nsCString RealFaceName();
 
   WeightRange Weight() const { return mWeightRange; }
-  StretchRange Stretch() const { return mStretchRange; }
+  WidthRange Width() const { return mWidthRange; }
   SlantStyleRange SlantStyle() const { return mStyleRange; }
 
   bool IsUserFont() const { return mIsDataUserFont || mIsLocalUserFont; }
@@ -265,8 +265,8 @@ class gfxFontEntry {
   bool IsNormalStyle() const {
     return IsUpright() && Weight().Min() <= FontWeight::NORMAL &&
            Weight().Max() >= FontWeight::NORMAL &&
-           Stretch().Min() <= FontStretch::NORMAL &&
-           Stretch().Max() >= FontStretch::NORMAL;
+           Width().Min() <= FontWidth::NORMAL &&
+           Width().Max() >= FontWidth::NORMAL;
   }
 
   
@@ -299,15 +299,6 @@ class gfxFontEntry {
       mNeedsMaskForShadow = flag;
     }
     return flag == LazyFlag::Yes;
-  }
-
-  inline bool HasCmapTable() {
-    if (!mCharacterMap && !mShmemCharacterMap) {
-      ReadCMAP();
-      NS_ASSERTION(mCharacterMap || mShmemCharacterMap,
-                   "failed to initialize character map");
-    }
-    return mHasCmapTable;
   }
 
   inline bool HasCharacter(uint32_t ch) {
@@ -630,7 +621,7 @@ class gfxFontEntry {
   uint32_t mLanguageOverride = NO_FONT_LANGUAGE_OVERRIDE;
 
   WeightRange mWeightRange = WeightRange(FontWeight::FromInt(500));
-  StretchRange mStretchRange = StretchRange(FontStretch::NORMAL);
+  WidthRange mWidthRange = WidthRange(FontWidth::NORMAL);
   SlantStyleRange mStyleRange = SlantStyleRange(FontSlantStyle::NORMAL);
 
   
@@ -651,7 +642,7 @@ class gfxFontEntry {
   enum class RangeFlags : uint16_t {
     eNoFlags = 0,
     eAutoWeight = (1 << 0),
-    eAutoStretch = (1 << 1),
+    eAutoWidth = (1 << 1),
     eAutoSlantStyle = (1 << 2),
 
     
@@ -668,7 +659,7 @@ class gfxFontEntry {
     
     
     eNonCSSWeight = (1 << 6),
-    eNonCSSStretch = (1 << 7),
+    eNonCSSWidth = (1 << 7),
 
     
     eOpticalSize = (1 << 8)
@@ -688,7 +679,6 @@ class gfxFontEntry {
   bool mSkipDefaultFeatureSpaceCheck : 1;
 
   mozilla::Atomic<bool> mSVGInitialized;
-  mozilla::Atomic<bool> mHasCmapTable;
   mozilla::Atomic<bool> mGrFaceInitialized;
   mozilla::Atomic<bool> mCheckedForColorGlyph;
   mozilla::Atomic<bool> mCheckedForVariationAxes;
@@ -847,7 +837,7 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxFontEntry::RangeFlags)
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxFontEntry::SpaceFeatures)
 
 inline gfxFontEntry::RangeFlags gfxFontEntry::AutoRangeFlags() const {
-  return mRangeFlags & (RangeFlags::eAutoWeight | RangeFlags::eAutoStretch |
+  return mRangeFlags & (RangeFlags::eAutoWeight | RangeFlags::eAutoWidth |
                         RangeFlags::eAutoSlantStyle);
 }
 
