@@ -35,6 +35,7 @@
 #include "wasm/WasmConstants.h"
 #include "wasm/WasmContext.h"
 #include "wasm/WasmFrameIter.h"
+#include "wasm/WasmInstance.h"
 #include "wasm/WasmJS.h"
 #include "wasm/WasmStubs.h"
 
@@ -932,9 +933,24 @@ void ContStackAllocator::ensureInitialized() {
   stackSize_.compute();
 
   
-  arenaCapacity_ =
-      uint32_t(std::clamp(size_t(JS::Prefs::wasm_cont_stack_arena_capacity()),
-                          size_t(1), size_t(ContStackArena::MaxCapacity)));
+  
+  
+  
+  size_t maxVmem = JS::Prefs::wasm_cont_stack_max_vmem();
+
+  
+  
+  size_t maxStacks = std::max<size_t>(maxVmem / stackSize_.totalSize, 1);
+
+  
+  
+  size_t capacity = JS::Prefs::wasm_cont_stack_arena_capacity();
+  capacity = std::min(capacity, maxStacks);
+  capacity = std::clamp<size_t>(capacity, 1, ContStackArena::MaxCapacity);
+  arenaCapacity_ = uint32_t(capacity);
+
+  
+  maxArenas_ = std::max<size_t>(maxVmem / arenaSize(), 1);
 
   initialized_ = true;
 }
@@ -981,7 +997,17 @@ ContStackArena* ContStackAllocator::findOrAddArenaForAllocate(JSContext* cx) {
     }
   }
 
-  return addArena(cx);
+  if (arenas_.length() >= maxArenas_) {
+    ReportTrapError(cx, JSMSG_WASM_CONT_IMP_LIMIT);
+    return nullptr;
+  }
+
+  ContStackArena* arena = addArena(cx);
+  if (!arena) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+  return arena;
 }
 
 ContStackArena* ContStackAllocator::findArenaForAddress(
@@ -1005,11 +1031,9 @@ UniqueContStack ContStackAllocator::allocate(JSContext* cx,
                                              const Code* creatorCode) {
   ensureInitialized();
 
-  ContStackArena* arena = findOrAddArenaForAllocate(cx);
-
   
+  ContStackArena* arena = findOrAddArenaForAllocate(cx);
   if (!arena) {
-    ReportOutOfMemory(cx);
     return nullptr;
   }
 

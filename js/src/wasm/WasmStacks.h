@@ -498,6 +498,9 @@ class ContStackAllocator {
   uint32_t arenaCapacity_ = 0;
   
   
+  size_t maxArenas_ = 0;
+  
+  
   ContStackArenaVector arenas_;
   
   bool initialized_ = false;
