@@ -2846,8 +2846,13 @@ RTC_ALLOW_PLAN_B_DEPRECATION_END()
 
 TEST_P(PeerConnectionInterfaceTest, RejectMediaContent) {
   
+  
+  
+  
+  
+  
   RTCConfiguration config;
-  CreatePeerConnection(config, "WebRTC-NoSdpMangleAllowForTesting/Enabled,1/");
+  CreatePeerConnection(config, "WebRTC-NoSdpMangleAllowForTesting/Enabled,39/");
   
   
   CreateAndSetRemoteOffer(kSdpStringWithStream1PlanB);

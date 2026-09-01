@@ -931,8 +931,10 @@ TEST_P(PeerConnectionIntegrationTest, AnswererRejectsAudioAndVideoSections) {
 
 
 TEST_P(PeerConnectionIntegrationTest, VideoRejectedInSubsequentOffer) {
-  
-  SetFieldTrials("WebRTC-NoSdpMangleAllowForTesting/Enabled,1/");
+  if (sdp_semantics_ == SdpSemantics::kPlanB_DEPRECATED) {
+    
+    SetFieldTrials("WebRTC-NoSdpMangleAllowForTesting/Enabled,39/");
+  }
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   caller()->AddAudioVideoTracks();
