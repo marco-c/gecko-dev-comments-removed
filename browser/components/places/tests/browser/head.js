@@ -109,9 +109,15 @@ async function synthesizeClickOnSelectedTreeCell(aTree, aOptions) {
   let rowID = min.value;
   aTree.ensureRowIsVisible(rowID);
   
-  var rect = aTree.getCoordsForCellItem(rowID, aTree.columns[0], "text");
-  var x = rect.x + rect.width / 2;
-  var y = rect.y + rect.height / 2;
+  
+  
+  
+  
+  let rect = aTree.getCoordsForCellItem(rowID, aTree.columns[0], "text");
+  let minX = aTree.body.clientLeft;
+  let maxX = minX + aTree.body.clientWidth;
+  let x = (Math.max(rect.x, minX) + Math.min(rect.x + rect.width, maxX)) / 2;
+  let y = rect.y + rect.height / 2;
   if (aTree.id == "bookmarks-view" || aTree.id == "historyTree") {
     
     
