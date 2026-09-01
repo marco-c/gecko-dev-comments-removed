@@ -115,6 +115,20 @@ BufferAllocator::FreeRegion* BufferAllocator::FreeLists::getFirstRegion(
   return lists[sizeClass].getFirst();
 }
 
+void BufferAllocator::FreeLists::pushFront(FreeRegion* region, SizeKind kind) {
+  MOZ_ASSERT(region);
+  size_t sizeClass = SizeClassForFreeRegion(region->size(), kind);
+  CheckFreeRegionClass(region, sizeClass);
+  pushFront(sizeClass, region);
+}
+
+void BufferAllocator::FreeLists::pushBack(FreeRegion* region, SizeKind kind) {
+  MOZ_ASSERT(region);
+  size_t sizeClass = SizeClassForFreeRegion(region->size(), kind);
+  CheckFreeRegionClass(region, sizeClass);
+  pushBack(sizeClass, region);
+}
+
 void BufferAllocator::FreeLists::pushFront(size_t sizeClass,
                                            FreeRegion* region) {
   MOZ_ASSERT(sizeClass < AllocSizeClasses);
@@ -2552,8 +2566,8 @@ void* BufferAllocator::alignedAllocFromRegion(FreeRegion* region,
     MOZ_ASSERT(uintptr_t(prefix) == start);
     (void)prefix;
     MOZ_ASSERT(!region->hasDecommittedPages);
-    FreeRegion* region = makeFreeRegion(start, alignBytes, false);
-    pushFreeRegionBack(&freeLists, region, SizeKind::Medium);
+    FreeRegion* region = FreeRegion::create(start, alignBytes, false);
+    freeLists.pushBack(region, SizeKind::Medium);
   }
 
   
@@ -2842,8 +2856,7 @@ bool BufferAllocator::sweepChunk(BufferChunk* chunk, SweepKind sweepKind,
     decreaseHeapSize(smallRegionBytesFreed, false, inMajorGC);
   }
 
-  auto result =
-      chunk->sweep(this, freeLists, sweepKind, sweptAny, shouldDecommit);
+  auto result = chunk->sweep(freeLists, sweepKind, sweptAny, shouldDecommit);
 
   if (sweepKind == SweepKind::Tenured && result.bytesFreed) {
     decreaseHeapSize(result.bytesFreed, false, true);
@@ -2884,10 +2897,9 @@ bool BufferAllocator::CanSweepAlloc(bool nurseryOwned,
   return sweepKind == requiredKind;
 }
 
-void BufferAllocator::addSweptRegion(BufferChunk* chunk, uintptr_t freeStart,
-                                     uintptr_t freeEnd, bool shouldDecommit,
-                                     bool expectUnchanged,
-                                     FreeLists& freeLists) {
+void BufferChunk::addSweptRegion(uintptr_t freeStart, uintptr_t freeEnd,
+                                 bool shouldDecommit, bool expectUnchanged,
+                                 FreeLists& freeLists) {
   
   
 
@@ -2905,18 +2917,18 @@ void BufferAllocator::addSweptRegion(BufferChunk* chunk, uintptr_t freeStart,
   uintptr_t decommitEnd = RoundDown(freeEnd - sizeof(FreeRegion), PageSize);
   size_t endPage = decommitEnd / PageSize;
   if (shouldDecommit && decommitEnd > decommitStart) {
-    void* ptr = reinterpret_cast<void*>(decommitStart + uintptr_t(chunk));
+    void* ptr = reinterpret_cast<void*>(decommitStart + uintptr_t(this));
     MarkPagesUnusedSoft(ptr, decommitEnd - decommitStart);
     size_t startPage = decommitStart / PageSize;
     for (size_t i = startPage; i != endPage; i++) {
-      chunk->decommittedPages.ref()[i] = true;
+      decommittedPages.ref()[i] = true;
     }
     anyDecommitted = true;
   } else {
     
     uintptr_t startPage = RoundDown(freeStart, PageSize) / PageSize;
     for (size_t i = startPage; i != endPage; i++) {
-      if (chunk->decommittedPages.ref()[i]) {
+      if (decommittedPages.ref()[i]) {
         anyDecommitted = true;
       }
     }
@@ -2924,15 +2936,15 @@ void BufferAllocator::addSweptRegion(BufferChunk* chunk, uintptr_t freeStart,
 
   
   
-  MOZ_ASSERT(!chunk->decommittedPages.ref()[endPage]);
+  MOZ_ASSERT(!decommittedPages.ref()[endPage]);
 
-  freeStart += uintptr_t(chunk);
-  freeEnd += uintptr_t(chunk);
+  freeStart += uintptr_t(this);
+  freeEnd += uintptr_t(this);
 
   size_t bytes = freeEnd - freeStart;
   FreeRegion* region =
-      makeFreeRegion(freeStart, bytes, anyDecommitted, expectUnchanged);
-  pushFreeRegionBack(&freeLists, region, SizeKind::Medium);
+      FreeRegion::create(freeStart, bytes, anyDecommitted, expectUnchanged);
+  freeLists.pushBack(region, SizeKind::Medium);
 }
 
 bool BufferAllocator::sweepSmallBufferRegion(BufferChunk* chunk,
@@ -2940,7 +2952,7 @@ bool BufferAllocator::sweepSmallBufferRegion(BufferChunk* chunk,
                                              SweepKind sweepKind,
                                              size_t* usedBytesOut) {
   FreeLists& freeLists = chunk->freeLists.ref();
-  auto result = region->sweep(this, freeLists, sweepKind, false, false);
+  auto result = region->sweep(freeLists, sweepKind, false, false);
 
   if (result.isEmpty) {
     return false;
@@ -2953,8 +2965,8 @@ bool BufferAllocator::sweepSmallBufferRegion(BufferChunk* chunk,
 
 template <typename D, size_t S, size_t G>
 AllocSpace<D, S, G>::SweepResult AllocSpace<D, S, G>::sweep(
-    BufferAllocator* allocator, FreeLists& freeLists, SweepKind sweepKind,
-    bool sweptAnyPreviously, bool shouldDecommit) {
+    FreeLists& freeLists, SweepKind sweepKind, bool sweptAnyPreviously,
+    bool shouldDecommit) {
   SweepResult result;
 
   size_t freeStart = firstAllocOffset();
@@ -2980,8 +2992,8 @@ AllocSpace<D, S, G>::SweepResult AllocSpace<D, S, G>::sweep(
       
       uintptr_t allocStart = iter.getOffset();
       if (freeStart != allocStart) {
-        allocator->addSweptRegion(asDerived(), freeStart, allocStart,
-                                  shouldDecommit, !sweptAny, freeLists);
+        asDerived()->addSweptRegion(freeStart, allocStart, shouldDecommit,
+                                    !sweptAny, freeLists);
       }
       freeStart = allocEnd;
       result.usedBytes += bytes;
@@ -3000,17 +3012,17 @@ AllocSpace<D, S, G>::SweepResult AllocSpace<D, S, G>::sweep(
   
   result.isEmpty = freeStart == firstAllocOffset();
   if (freeStart != SizeBytes && !result.isEmpty) {
-    allocator->addSweptRegion(asDerived(), freeStart, SizeBytes, shouldDecommit,
-                              !sweptAny, freeLists);
+    asDerived()->addSweptRegion(freeStart, SizeBytes, shouldDecommit, !sweptAny,
+                                freeLists);
   }
 
   return result;
 }
 
-void BufferAllocator::addSweptRegion(SmallBufferRegion* region,
-                                     uintptr_t freeStart, uintptr_t freeEnd,
-                                     bool shouldDecommit, bool expectUnchanged,
-                                     FreeLists& freeLists) {
+void SmallBufferRegion::addSweptRegion(uintptr_t freeStart, uintptr_t freeEnd,
+                                       bool shouldDecommit,
+                                       bool expectUnchanged,
+                                       FreeLists& freeLists) {
   
   
   
@@ -3022,14 +3034,14 @@ void BufferAllocator::addSweptRegion(SmallBufferRegion* region,
   MOZ_ASSERT(freeEnd % SmallAllocGranularity == 0);
   MOZ_ASSERT(!shouldDecommit);
 
-  freeStart += uintptr_t(region);
-  freeEnd += uintptr_t(region);
+  freeStart += uintptr_t(this);
+  freeEnd += uintptr_t(this);
 
   size_t bytes = freeEnd - freeStart;
   FreeRegion* freeRegion =
-      makeFreeRegion(freeStart, bytes, false, expectUnchanged);
+      FreeRegion::create(freeStart, bytes, false, expectUnchanged);
   if (freeRegion) {
-    pushFreeRegionBack(&freeLists, freeRegion, SizeKind::Small);
+    freeLists.pushBack(freeRegion, SizeKind::Small);
   }
 }
 
@@ -3084,8 +3096,8 @@ void BufferAllocator::freeMedium(void* alloc) {
     
     
     
-    region = makeFreeRegion(startAddr, bytes, false);
-    pushFreeRegionFront(freeLists, region, SizeKind::Medium);
+    region = FreeRegion::create(startAddr, bytes, false);
+    freeLists->pushFront(region, SizeKind::Medium);
   } else {
     
     
@@ -3183,7 +3195,8 @@ bool BufferAllocator::isSweepingChunk(BufferChunk* chunk) {
   return false;
 }
 
-BufferAllocator::FreeRegion* BufferAllocator::makeFreeRegion(
+
+BufferAllocator::FreeRegion* BufferAllocator::FreeRegion::create(
     uintptr_t start, size_t bytes, bool anyDecommitted,
     bool expectUnchanged ) {
   static_assert(sizeof(FreeRegion) <= MinFreeRegionSize);
@@ -3208,26 +3221,6 @@ BufferAllocator::FreeRegion* BufferAllocator::makeFreeRegion(
   MOZ_ASSERT(region->getEnd() == end);
 
   return region;
-}
-
-void BufferAllocator::pushFreeRegionBack(FreeLists* freeLists,
-                                         FreeRegion* region, SizeKind kind) {
-  MOZ_ASSERT(region);
-
-  size_t sizeClass = SizeClassForFreeRegion(region->size(), kind);
-  CheckFreeRegionClass(region, sizeClass);
-
-  freeLists->pushBack(sizeClass, region);
-}
-
-void BufferAllocator::pushFreeRegionFront(FreeLists* freeLists,
-                                          FreeRegion* region, SizeKind kind) {
-  MOZ_ASSERT(region);
-
-  size_t sizeClass = SizeClassForFreeRegion(region->size(), kind);
-  CheckFreeRegionClass(region, sizeClass);
-
-  freeLists->pushFront(sizeClass, region);
 }
 
 
@@ -3383,8 +3376,8 @@ bool BufferAllocator::shrinkMedium(void* alloc, size_t newBytes) {
   if (oldEndOffset == ChunkSize || chunk->isAllocated(oldEndOffset)) {
     
     uintptr_t freeStart = chunkAddr + newEndOffset;
-    FreeRegion* region = makeFreeRegion(freeStart, sizeChange, false);
-    pushFreeRegionFront(freeLists, region, SizeKind::Medium);
+    FreeRegion* region = FreeRegion::create(freeStart, sizeChange, false);
+    freeLists->pushFront(region, SizeKind::Medium);
   } else {
     
     FreeRegion* region =
