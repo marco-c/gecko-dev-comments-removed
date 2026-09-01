@@ -89,6 +89,11 @@
         tab = tab.splitview;
       }
 
+      
+      if (isSplitViewWrapper(tab) && !tab.visible) {
+        return;
+      }
+
       this._tabbrowserTabs.previewPanel?.deactivate(null, { force: true });
       this.startTabDrag(event, tab);
     }
