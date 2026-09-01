@@ -37,14 +37,39 @@ class PKCS11ModuleChild final : public PPKCS11ModuleChild {
   ipc::IPCResult RecvResetToken(SECMODModuleID aModuleID, CK_SLOT_ID aSlotID,
                                 ResetTokenResolver&& aResolver);
 
+  ipc::IPCResult RecvLoginToken(SECMODModuleID aModuleID, CK_SLOT_ID aSlotID,
+                                LoginTokenResolver&& aResolver);
+
+  ipc::IPCResult RecvLogoutToken(SECMODModuleID aModuleID, CK_SLOT_ID aSlotID,
+                                 LogoutTokenResolver&& aResolver);
+
   ipc::IPCResult RecvChangeTokenPassword(SECMODModuleID aModuleID,
                                          CK_SLOT_ID aSlotID,
                                          const nsCString& aOldPassword,
                                          const nsCString& aNewPassword,
                                          ResetTokenResolver&& aResolver);
 
+  
+  
+  char* PromptForPassword(PK11SlotInfo* slot);
+
  private:
+  
   nsCOMPtr<nsISerialEventTarget> mTaskQueue;
+
+  
+  
+  
+  
+  
+  nsCOMPtr<nsISerialEventTarget> mAuthTaskQueue;
+  
+  
+  mozilla::Monitor mAuthPromptMonitor{"PKCS11ModuleChild::mAuthPromptMonitor"};
+  
+  
+  mozilla::Maybe<std::tuple<nsresult, nsCString>> mMaybePasswordForPrompt
+      MOZ_GUARDED_BY(mAuthPromptMonitor);
 
   ~PKCS11ModuleChild() = default;
 };

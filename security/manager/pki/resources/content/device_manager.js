@@ -40,7 +40,7 @@ async function LoadModules() {
           await doLogout();
           break;
         case "change_pw_button":
-          changePassword();
+          await changePassword();
           break;
         case "load_button":
           await doLoad();
@@ -78,6 +78,38 @@ async function RefreshDeviceList() {
 
   
   SetFIPSButton();
+}
+
+
+
+
+
+
+
+async function refreshModuleForSelectedSlot() {
+  let tree = document.getElementById("device_tree");
+  if (tree.currentIndex < 0 || !selected_slot) {
+    return;
+  }
+  let item = tree.view.getItemAtIndex(tree.currentIndex);
+  let parent = item.parentElement; 
+  let parentItem = parent.parentElement; 
+  let new_slots;
+  for (let new_module of await secmoddb.listModules()) {
+    
+    if (parentItem.module.name == new_module.name) {
+      parentItem.module = new_module;
+      new_slots = new_module.slots;
+    }
+  }
+  if (!new_slots || new_slots.length != parent.childNodes.length) {
+    return;
+  }
+  for (let i = 0; i < parent.childNodes.length; i++) {
+    parent.childNodes[i].slotObject = new_slots[i];
+  }
+  getSelectedItem();
+  enableButtons();
 }
 
 function SetFIPSButton() {
@@ -337,16 +369,10 @@ async function doLogin() {
   var selected_token = selected_slot.getToken();
   try {
     await selected_token.login();
-    var tok_status = document.getElementById("tok_status");
-    if (selected_token.isLoggedIn) {
-      document.l10n.setAttributes(tok_status, "devinfo-status-logged-in");
-    } else {
-      document.l10n.setAttributes(tok_status, "devinfo-status-not-logged-in");
-    }
   } catch (e) {
     doPrompt("login-failed");
   }
-  enableButtons();
+  await refreshModuleForSelectedSlot();
 }
 
 
@@ -358,14 +384,8 @@ async function doLogout() {
     
     let nssComponent = Cc["@mozilla.org/psm;1"].getService(Ci.nsINSSComponent);
     nssComponent.clearTLSCacheAndCancelAllConnections();
-    var tok_status = document.getElementById("tok_status");
-    if (selected_token.isLoggedIn) {
-      document.l10n.setAttributes(tok_status, "devinfo-status-logged-in");
-    } else {
-      document.l10n.setAttributes(tok_status, "devinfo-status-not-logged-in");
-    }
   } catch (e) {}
-  enableButtons();
+  await refreshModuleForSelectedSlot();
 }
 
 
@@ -401,7 +421,7 @@ async function doUnload() {
   }
 }
 
-function changePassword() {
+async function changePassword() {
   getSelectedItem();
   let params = Cc["@mozilla.org/embedcomp/dialogparam;1"].createInstance(
     Ci.nsIDialogParamBlock
@@ -415,8 +435,7 @@ function changePassword() {
     "chrome,centerscreen,modal",
     params
   );
-  showSlotInfo();
-  enableButtons();
+  await refreshModuleForSelectedSlot();
 }
 
 
@@ -472,7 +491,6 @@ async function toggleFIPS() {
   
   
   ClearDeviceList();
-
   await RefreshDeviceList();
 }
 
