@@ -1237,6 +1237,7 @@ async function check_results({
     suggestionObject: { ignore: true },
     
     viewTemplate: { optional: true },
+    viewUpdate: { optional: true },
     ...conditionalPayloadProperties,
   };
 
