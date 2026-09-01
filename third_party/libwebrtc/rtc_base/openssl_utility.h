@@ -43,6 +43,10 @@ bool VerifyPeerCertMatchesHost(SSL* ssl, absl::string_view host);
 
 void LogSSLErrors(absl::string_view prefix);
 
+
+
+void SSLInfoCallback(const SSL* ssl, int where, int ret);
+
 #ifndef WEBRTC_EXCLUDE_BUILT_IN_SSL_ROOT_CERTS
 
 
@@ -57,26 +61,5 @@ CRYPTO_BUFFER_POOL* GetBufferPool();
 }  
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-namespace openssl {
-
-#ifndef WEBRTC_EXCLUDE_BUILT_IN_SSL_ROOT_CERTS
-using ::webrtc::openssl::LoadBuiltinSSLRootCertificates;
-#endif
-
-using ::webrtc::openssl::LogSSLErrors;
-using ::webrtc::openssl::VerifyPeerCertMatchesHost;
-
-#ifdef OPENSSL_IS_BORINGSSL
-using ::webrtc::openssl::GetBufferPool;
-using ::webrtc::openssl::ParseCertificate;
-#endif
-
-}  
-}  
-#endif  
 
 #endif  
