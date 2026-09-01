@@ -188,7 +188,17 @@ pub struct SurfaceInfo {
     
     pub device_pixel_scale: DevicePixelScale,
     
+    
+    
+    
     pub world_scale_factors: (f32, f32),
+    
+    
+    
+    
+    
+    
+    pub blur_scale_factors: (f32, f32),
     
     pub local_scale: (f32, f32),
     
@@ -221,6 +231,7 @@ impl SurfaceInfo {
         spatial_tree: &SpatialTree,
         device_pixel_scale: DevicePixelScale,
         world_scale_factors: (f32, f32),
+        blur_scale_factors: (f32, f32),
         local_scale: (f32, f32),
         allow_snapping: bool,
         force_scissor_rect: bool,
@@ -255,6 +266,7 @@ impl SurfaceInfo {
             visibility_spatial_node_index,
             device_pixel_scale,
             world_scale_factors,
+            blur_scale_factors,
             local_scale,
             allow_snapping,
             force_scissor_rect,
@@ -279,8 +291,8 @@ impl SurfaceInfo {
         let sy_blur_radius = y_blur_radius * self.local_scale.1;
 
         let largest_scaled_blur_radius = f32::max(
-            sx_blur_radius * self.world_scale_factors.0,
-            sy_blur_radius * self.world_scale_factors.1,
+            sx_blur_radius * self.blur_scale_factors.0,
+            sy_blur_radius * self.blur_scale_factors.1,
         );
 
         if largest_scaled_blur_radius > MAX_BLUR_RADIUS {
