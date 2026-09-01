@@ -2585,8 +2585,6 @@ pref("toolkit.telemetry.firstShutdownPing.enabled", true);
 
 pref("toolkit.telemetry.newProfilePing.enabled", true);
 
-pref("toolkit.telemetry.updatePing.enabled", true);
-
 pref("toolkit.telemetry.bhrPing.enabled", true);
 
 
