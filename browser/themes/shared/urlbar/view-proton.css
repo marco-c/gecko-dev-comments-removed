@@ -684,10 +684,6 @@
   .urlbarView-row:not([has-action], [has-url], [restyled-search]) & {
     display: none;
   }
-
-  #searchbar-new & {
-    display: none;
-  }
 }
 
 /* Action labels */
@@ -736,10 +732,6 @@
        visible even when the chiclet is hidden due to action-override. */
     padding-inline: 0 !important;
     border-inline: 0;
-  }
-
-  #searchbar-new & {
-    display: none;
   }
 }
 
@@ -1426,7 +1418,8 @@
           display: inline;
         }
 
-        /* stylelint-disable-next-line max-nesting-depth */
+        /* Small subtree */
+        /* stylelint-disable-next-line max-nesting-depth, stylelint-plugin-mozilla/no-has-selector */
         &:has(+ span:empty) {
           display: none;
         }
@@ -1935,6 +1928,20 @@
   --panel-text-color: var(--toolbar-field-text-color-focus);
   --panel-background-color: var(--toolbar-field-background-color-focus);
   --panel-border-color: inherit;
+
+  > richlistbox > richlistitem {
+    width: 100%;
+
+    &[selected] {
+      border-radius: var(--border-radius-large);
+      background-color: var(--urlbarview-background-color-selected);
+      color: var(--urlbarview-text-color-selected);
+    }
+
+    > autocomplete-row-item {
+      width: 100%;
+    }
+  }
 }
 
 #PopupSearchAutoComplete::part(content) {
