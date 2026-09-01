@@ -17,6 +17,8 @@
 #include "nsTArray.h"
 #include "nscore.h"
 
+class FontData;
+
 #define GFX_CLEARTYPE_PARAMS "gfx.font_rendering.cleartype_params."
 #define GFX_CLEARTYPE_PARAMS_GAMMA "gfx.font_rendering.cleartype_params.gamma"
 #define GFX_CLEARTYPE_PARAMS_CONTRAST \
@@ -102,8 +104,8 @@ class gfxDWriteFontFileStream final : public IDWriteFontFileStream {
 
 
 
-  gfxDWriteFontFileStream(const uint8_t* aData, uint32_t aLength,
-                          uint64_t aFontFileKey);
+
+  gfxDWriteFontFileStream(FontData* aData, uint64_t aFontFileKey);
   ~gfxDWriteFontFileStream();
 
   
@@ -138,7 +140,9 @@ class gfxDWriteFontFileStream final : public IDWriteFontFileStream {
   virtual HRESULT STDMETHODCALLTYPE GetLastWriteTime(OUT UINT64* lastWriteTime);
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
-    return mData.ShallowSizeOfExcludingThis(mallocSizeOf);
+    
+    
+    return 0;
   }
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
@@ -146,7 +150,7 @@ class gfxDWriteFontFileStream final : public IDWriteFontFileStream {
   }
 
  private:
-  FallibleTArray<uint8_t> mData;
+  RefPtr<FontData> mData;
   mozilla::Atomic<uint32_t> mRefCnt;
   uint64_t mFontFileKey;
 };
@@ -203,9 +207,8 @@ class gfxDWriteFontFileLoader : public IDWriteFontFileLoader {
 
 
 
-
   static HRESULT CreateCustomFontFile(
-      const uint8_t* aFontData, uint32_t aLength, IDWriteFontFile** aFontFile,
+      FontData* aFontData, IDWriteFontFile** aFontFile,
       gfxDWriteFontFileStream** aFontFileStream);
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
