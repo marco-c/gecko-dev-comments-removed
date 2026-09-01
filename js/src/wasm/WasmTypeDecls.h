@@ -18,6 +18,7 @@
 #define wasm_type_decls_h
 
 #include "NamespaceImports.h"
+
 #include "gc/Barrier.h"
 #include "js/GCVector.h"
 #include "js/HashTable.h"
@@ -90,7 +91,8 @@ using Uint32Vector = Vector<uint32_t, 8, SystemAllocPolicy>;
 
 using Bytes = Vector<uint8_t, 0, SystemAllocPolicy>;
 using UTF8Bytes = Vector<char, 0, SystemAllocPolicy>;
-using InstanceVector = Vector<Instance*, 0, SystemAllocPolicy>;
+using InstanceSet =
+    HashSet<Instance*, DefaultHasher<Instance*>, SystemAllocPolicy>;
 using UniqueCharsVector = Vector<UniqueChars, 0, SystemAllocPolicy>;
 
 class RecGroup;

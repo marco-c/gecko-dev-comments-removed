@@ -1056,7 +1056,7 @@ struct JSRuntime {
   
   
   
-  js::ExclusiveData<js::wasm::InstanceVector> wasmInstances;
+  js::ExclusiveData<js::wasm::InstanceSet> wasmInstances;
 
   
   

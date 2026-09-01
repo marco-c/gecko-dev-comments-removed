@@ -18,7 +18,6 @@
 #define wasm_realm_h
 
 #include "js/TracingAPI.h"
-
 #include "wasm/WasmTypeDecls.h"
 
 namespace js {
@@ -33,7 +32,7 @@ namespace wasm {
 
 class Realm {
   JSRuntime* runtime_;
-  InstanceVector instances_;
+  InstanceSet instances_;
 
  public:
   explicit Realm(JSRuntime* rt);
@@ -52,8 +51,15 @@ class Realm {
   
   
   
+  
+  
+  
 
-  const InstanceVector& instances() const { return instances_; }
+  const InstanceSet& instances() const { return instances_; }
+
+  
+  
+  void traceWeakInstances();
 
   
 

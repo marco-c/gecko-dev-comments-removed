@@ -653,6 +653,11 @@ bool Debugger::getFrame(JSContext* cx, const FrameIter& iter,
   AbstractFramePtr referent = iter.abstractFramePtr();
   MOZ_ASSERT_IF(referent.hasScript(), !referent.script()->selfHosted());
 
+  
+  
+  
+  MOZ_ASSERT(!iter.isResumingGenerator());
+
   FrameMap::AddPtr p = frames.lookupForAdd(referent);
   if (!p) {
     Rooted<AbstractGeneratorObject*> genObj(cx);
@@ -2675,6 +2680,11 @@ void DebugAPI::slowPathOnNewWasmInstance(
 
 bool DebugAPI::onTrap(JSContext* cx) {
   FrameIter iter(cx);
+
+  
+  
+  MOZ_ASSERT(!iter.isResumingGenerator());
+
   JS::AutoSaveExceptionState savedExc(cx);
   Rooted<GlobalObject*> global(cx);
   BreakpointSite* site;
@@ -2782,6 +2792,10 @@ bool DebugAPI::onTrap(JSContext* cx) {
 
 bool DebugAPI::onSingleStep(JSContext* cx) {
   FrameIter iter(cx);
+
+  
+  
+  MOZ_ASSERT(!iter.isResumingGenerator());
 
   
   
@@ -3435,7 +3449,8 @@ static bool UpdateExecutionObservabilityOfScriptsInZone(
 
   
   for (RealmsInZoneIter r(zone); !r.done(); r.next()) {
-    for (wasm::Instance* instance : r->wasm.instances()) {
+    for (auto iter = r->wasm.instances().iter(); !iter.done(); iter.next()) {
+      wasm::Instance* instance = iter.get();
       if (!instance->debugEnabled()) {
         continue;
       }
@@ -5714,7 +5729,9 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
     
     
     for (auto iter = debugger->allDebuggees(); !iter.done(); iter.next()) {
-      for (wasm::Instance* instance : iter.get()->realm()->wasm.instances()) {
+      for (auto instIter = iter.get()->realm()->wasm.instances().iter();
+           !instIter.done(); instIter.next()) {
+        wasm::Instance* instance = instIter.get();
         if (instance->codeMeta().isSelfHostedModule()) {
           continue;
         }
@@ -6175,7 +6192,9 @@ class MOZ_STACK_CLASS Debugger::SourceQuery : public Debugger::QueryBase {
     
     
     for (auto iter = debugger->allDebuggees(); !iter.done(); iter.next()) {
-      for (wasm::Instance* instance : iter.get()->realm()->wasm.instances()) {
+      for (auto instIter = iter.get()->realm()->wasm.instances().iter();
+           !instIter.done(); instIter.next()) {
+        wasm::Instance* instance = instIter.get();
         if (instance->codeMeta().isSelfHostedModule()) {
           continue;
         }
