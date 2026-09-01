@@ -47,10 +47,42 @@ add_task(async function test_idle_cleanup() {
   );
 
   
-  
   if (AppConstants.platform == "win") {
+    
+    
     dir.create(Ci.nsIFile.DIRECTORY_TYPE, 0o744);
     dir.QueryInterface(Ci.nsILocalFileWin).readOnly = true;
+
+    Services.obs.notifyObservers(null, "idle-daily");
+
+    await TestUtils.waitForCondition(() => {
+      return !dir.exists();
+    });
+
+    Assert.equal(
+      await Glean.networking.residualCacheFolderCount.testGetValue(),
+      2
+    );
+    Assert.equal(
+      await Glean.networking.residualCacheFolderRemoval.success.testGetValue(),
+      2
+    );
+    Assert.equal(
+      await Glean.networking.residualCacheFolderRemoval.failure.testGetValue(),
+      null
+    );
+
+    
+    
+    
+    
+    dir.create(Ci.nsIFile.DIRECTORY_TYPE, 0o744);
+    let lockedFile = dir.clone();
+    lockedFile.append("locked");
+    let stream = Cc["@mozilla.org/network/file-output-stream;1"].createInstance(
+      Ci.nsIFileOutputStream
+    );
+    stream.init(lockedFile, -1, -1, 0);
 
     Services.obs.notifyObservers(null, "idle-daily");
 
@@ -63,18 +95,19 @@ add_task(async function test_idle_cleanup() {
 
     Assert.equal(
       await Glean.networking.residualCacheFolderCount.testGetValue(),
-      2
+      3
     );
     Assert.equal(
       await Glean.networking.residualCacheFolderRemoval.success.testGetValue(),
-      1
+      2
     );
     Assert.equal(
       await Glean.networking.residualCacheFolderRemoval.failure.testGetValue(),
       1
     );
+    Assert.ok(dir.exists(), `Folder ${dir.path} should not have been removed`);
 
-    dir.QueryInterface(Ci.nsILocalFileWin).readOnly = false;
+    stream.close();
     dir.remove(true);
   }
 
