@@ -104,7 +104,7 @@ void RDDProcessManager::OnPreferenceChange(const char16_t* aData) {
                            false, Nothing(), Nothing());
 
   Preferences::GetPreference(&pref, GeckoProcessType_RDD,
-                              ""_ns);
+                              {});
   if (!!mRDDChild) {
     MOZ_ASSERT(mQueuedPrefs.IsEmpty());
     mRDDChild->SendPreferenceUpdate(pref);

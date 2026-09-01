@@ -9,6 +9,7 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/Variant.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/dom/RemoteType.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/net/NeckoCommon.h"
@@ -608,7 +609,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   RefPtr<dom::ParentProcessChannelHandle> mParentProcessChannelHandle;
 
-  Maybe<nsCString> mRemoteTypeOverride;
+  Maybe<dom::RemoteType> mRemoteTypeOverride;
 
   
   

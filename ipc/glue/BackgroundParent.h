@@ -53,6 +53,7 @@ class BackgroundParent final {
   using ProcessId = base::ProcessId;
   using BlobImpl = mozilla::dom::BlobImpl;
   using ContentParent = mozilla::dom::ContentParent;
+  using LoadedOriginSet = mozilla::dom::LoadedOriginSet;
   using ThreadsafeContentParentHandle =
       mozilla::dom::ThreadsafeContentParentHandle;
 
@@ -78,9 +79,16 @@ class BackgroundParent final {
   static ThreadsafeContentParentHandle* GetContentParentHandle(
       PBackgroundParent* aBackgroundActor);
 
+  
+  
+  
+  
+  static LoadedOriginSet* GetLoadedOrigins(PBackgroundParent* aBackgroundActor);
+
   static uint64_t GetChildID(PBackgroundParent* aBackgroundActor);
 
-  static nsCString GetRemoteType(PBackgroundParent* aBackgroundActor);
+  static mozilla::dom::RemoteType GetRemoteType(
+      PBackgroundParent* aBackgroundActor);
 
   
   

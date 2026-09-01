@@ -92,7 +92,7 @@ bool UtilityProcessHost::Launch(geckoargs::ChildProcessArgs aExtraOpts) {
 
   mPrefSerializer = MakeUnique<ipc::SharedPreferenceSerializer>();
   if (!mPrefSerializer->SerializeToSharedMemory(GeckoProcessType_Utility,
-                                                 ""_ns)) {
+                                                 {})) {
     return false;
   }
   mPrefSerializer->AddSharedPrefCmdLineArgs(*this, aExtraOpts);

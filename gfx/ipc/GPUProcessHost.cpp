@@ -60,7 +60,7 @@ bool GPUProcessHost::Launch(geckoargs::ChildProcessArgs aExtraOpts) {
 
   mPrefSerializer = MakeUnique<ipc::SharedPreferenceSerializer>();
   if (!mPrefSerializer->SerializeToSharedMemory(GeckoProcessType_GPU,
-                                                 ""_ns)) {
+                                                 {})) {
     return false;
   }
   mPrefSerializer->AddSharedPrefCmdLineArgs(*this, aExtraOpts);

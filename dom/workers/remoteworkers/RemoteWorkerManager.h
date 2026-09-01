@@ -38,16 +38,16 @@ class RemoteWorkerManager final {
   void Launch(RemoteWorkerController* aController,
               const RemoteWorkerData& aData, base::ProcessId aProcessId);
 
-  static bool MatchRemoteType(const nsACString& processRemoteType,
-                              const nsACString& workerRemoteType);
+  static bool MatchRemoteType(const RemoteType& processRemoteType,
+                              const RemoteType& workerRemoteType);
 
   
 
 
 
-  static Result<nsCString, nsresult> GetRemoteType(
+  static Result<RemoteType, nsresult> GetRemoteType(
       const nsCOMPtr<nsIPrincipal>& aPrincipal, WorkerKind aWorkerKind,
-      const nsACString& aCurrentRemoteType);
+      const RemoteType& aCurrentRemoteType);
 
   static bool HasExtensionPrincipal(const RemoteWorkerData& aData);
 
@@ -93,7 +93,7 @@ class RemoteWorkerManager final {
   
   
   template <typename Callback>
-  void ForEachActor(Callback&& aCallback, const nsACString& aRemoteType,
+  void ForEachActor(Callback&& aCallback, const RemoteType& aRemoteType,
                     Maybe<base::ProcessId> aProcessId = Nothing()) const;
 
   

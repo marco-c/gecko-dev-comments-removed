@@ -407,7 +407,8 @@ nsresult WebrtcTCPSocket::OpenWithHttpProxy() {
   
   
   rv = ipc::LoadInfoArgsToLoadInfo(mProxyConfig->loadInfoArgs(),
-                                   NOT_REMOTE_TYPE, getter_AddRefs(loadInfo));
+                                   dom::RemoteType::NotRemote(),
+                                   getter_AddRefs(loadInfo));
   if (NS_FAILED(rv)) {
     LOG("WebrtcTCPSocket {}: could not init load info\n", fmt::ptr(this));
     return rv;

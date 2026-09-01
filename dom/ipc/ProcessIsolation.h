@@ -30,15 +30,8 @@ constexpr nsLiteralCString kHighValueIsLoggedInPermission =
 
 
 
-
-
-nsCString SharedWebRemoteType(const OriginAttributes& aAttrs,
-                              bool aDisableJit = false);
-
-
-
 struct NavigationIsolationOptions {
-  nsCString mRemoteType;
+  RemoteType mRemoteType;
   bool mReplaceBrowsingContext = false;
   uint64_t mSpecificGroupId = 0;
   bool mShouldCrossOriginIsolate = false;
@@ -61,15 +54,15 @@ struct NavigationIsolationOptions {
 Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
     CanonicalBrowsingContext* aTopBC, WindowGlobalParent* aParentWindow,
     nsIURI* aChannelCreationURI, nsIChannel* aChannel,
-    const nsACString& aCurrentRemoteType, bool aHasCOOPMismatch,
+    const RemoteType& aCurrentRemoteType, bool aHasCOOPMismatch,
     bool aForNewTab, uint32_t aLoadStateLoadType,
     const Maybe<uint64_t>& aChannelId,
-    const Maybe<nsCString>& aRemoteTypeOverride);
+    const Maybe<RemoteType>& aRemoteTypeOverride);
 
 
 
 struct WorkerIsolationOptions {
-  nsCString mRemoteType;
+  RemoteType mRemoteType;
 };
 
 
@@ -80,7 +73,7 @@ struct WorkerIsolationOptions {
 
 Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
     nsIPrincipal* aPrincipal, WorkerKind aWorkerKind,
-    const nsACString& aCurrentRemoteType, bool aUseRemoteSubframes);
+    const RemoteType& aCurrentRemoteType, bool aUseRemoteSubframes);
 
 
 
@@ -92,9 +85,9 @@ Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
 
 
 
-Result<nsCString, nsresult> PredictRemoteTypeForURI(
+Result<RemoteType, nsresult> PredictRemoteTypeForURI(
     nsIURI* aURI, const OriginAttributes& aOriginAttributes,
-    const nsACString& aPreferredRemoteType, bool aUseRemoteSubframes);
+    const RemoteType& aPreferredRemoteType, bool aUseRemoteSubframes);
 
 
 
@@ -169,7 +162,7 @@ enum class ValidatePrincipalOptions {
 
 
 bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
-    nsIPrincipal* aPrincipal, const nsACString& aRemoteType,
+    nsIPrincipal* aPrincipal, const RemoteType& aRemoteType,
     const EnumSet<ValidatePrincipalOptions>& aOptions,
     FunctionRef<bool(nsIPrincipal*)> aIsPrincipalLoaded = nullptr);
 

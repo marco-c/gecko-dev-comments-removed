@@ -7,6 +7,7 @@
 
 #include "mozilla/PrincipalHashKey.h"
 #include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/RemoteType.h"
 #include "nsRefPtrHashtable.h"
 #include "nsHashKeys.h"
 #include "nsTArray.h"
@@ -82,7 +83,7 @@ class BrowsingContextGroup final : public nsWrapperCache {
   
   
   
-  ContentParent* GetHostProcess(const nsACString& aRemoteType);
+  ContentParent* GetHostProcess(const RemoteType& aRemoteType);
 
   
   
@@ -297,7 +298,7 @@ class BrowsingContextGroup final : public nsWrapperCache {
   
   
   
-  nsRefPtrHashtable<nsCStringHashKey, ContentParent> mHosts;
+  nsRefPtrHashtable<nsGenericHashKey<RemoteType>, ContentParent> mHosts;
 
   
   

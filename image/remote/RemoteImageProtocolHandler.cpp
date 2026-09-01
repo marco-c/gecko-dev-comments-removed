@@ -57,7 +57,7 @@ static UniqueContentParentKeepAlive GetLaunchingContentParentForDecode(
   
   
   return ContentParent::GetNewOrUsedLaunchingBrowserProcess(
-      EXTENSION_REMOTE_TYPE,
+      dom::RemoteType(dom::RemoteType::Kind::Extension),
        nullptr,
        hal::PROCESS_PRIORITY_FOREGROUND,
        true);

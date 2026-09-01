@@ -80,7 +80,7 @@ TEST_F(TelemetryTestFixture, UnexpectedPrivilegedLoadsTelemetryTest) {
        
        "blob://000-000"_ns,
        nsContentPolicyType::TYPE_SCRIPT,
-       "webIsolated=https://blob.example/"_ns,
+       "webIsolated=https://blob.example"_ns,
        {"bloburi"_ns, "TYPE_SCRIPT"_ns, "webIsolated"_ns, "unknown"_ns, ""_ns}},
       {
        
@@ -195,9 +195,12 @@ TEST_F(TelemetryTestFixture, UnexpectedPrivilegedLoadsTelemetryTest) {
       mockLoadInfo->AppendRedirectHistoryEntry(redirectChannel, false);
     }
 
+    auto remoteType = mozilla::dom::RemoteType::Parse(currentTest.remoteType);
+    ASSERT_TRUE(remoteType);
+
     
-    nsContentSecurityManager::MeasureUnexpectedPrivilegedLoads(
-        mockLoadInfo, uri, currentTest.remoteType);
+    nsContentSecurityManager::MeasureUnexpectedPrivilegedLoads(mockLoadInfo,
+                                                               uri, remoteType);
 
     
     auto optEvents =

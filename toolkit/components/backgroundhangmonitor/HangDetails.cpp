@@ -11,7 +11,6 @@
 #include "mozilla/FileUtils.h"
 #include "mozilla/gfx/GPUParent.h"
 #include "mozilla/dom/ContentChild.h"
-#include "mozilla/dom/ContentParent.h"  
 #include "mozilla/FileUtils.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/GfxMessageUtils.h"  
@@ -292,8 +291,8 @@ void nsHangDetails::Submit() {
             if (cc) {
               
               
-              hangDetails->mDetails.remoteType().Assign(
-                  dom::RemoteTypePrefix(cc->GetRemoteType()));
+              hangDetails->mDetails.remoteType() =
+                  cc->GetRemoteType().StringifyKind();
               (void)cc->SendBHRThreadHang(hangDetails->mDetails);
             }
             break;

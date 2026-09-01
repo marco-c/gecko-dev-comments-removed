@@ -121,7 +121,7 @@ struct CommaSeparatedPref {
 CommaSeparatedPref sSeparatedMozillaDomains{
     "browser.tabs.remote.separatedMozillaDomains"_ns};
 
-bool AllowJITForSiteOrigin(const nsACString& aSiteOriginNoSuffix,
+bool AllowJITForSiteOrigin(nsIURI* aSiteOriginURI,
                            WindowGlobalParent* aParentWindow) {
   nsresult rv;
 
@@ -131,32 +131,30 @@ bool AllowJITForSiteOrigin(const nsACString& aSiteOriginNoSuffix,
     return true;
   }
 
-  nsAutoCString topSiteOriginNoSuffix(aSiteOriginNoSuffix);
+  nsCOMPtr<nsIURI> topSiteOriginURI = aSiteOriginURI;
 
   
   if (aParentWindow) {
+    nsAutoCString topSiteOriginNoSuffix;
     rv = aParentWindow->TopWindowContext()
              ->DocumentPrincipal()
              ->GetSiteOriginNoSuffix(topSiteOriginNoSuffix);
-    if (NS_FAILED(rv)) {
-      topSiteOriginNoSuffix = aSiteOriginNoSuffix;
-    }
+    NS_ENSURE_SUCCESS(rv, true);
+
+    rv = NS_NewURI(getter_AddRefs(topSiteOriginURI), topSiteOriginNoSuffix);
+    NS_ENSURE_SUCCESS(rv, true);
   }
 
-  nsCOMPtr<nsIURI> topSite;
-  rv = NS_NewURI(getter_AddRefs(topSite), topSiteOriginNoSuffix);
-  NS_ENSURE_SUCCESS(rv, true);
-
   bool isJitAllowed = true;
-  if (NS_FAILED(
-          policyService->IsAllowedForURI("jit"_ns, topSite, &isJitAllowed))) {
+  if (NS_FAILED(policyService->IsAllowedForURI("jit"_ns, topSiteOriginURI,
+                                               &isJitAllowed))) {
     return true;
   }
 
   if (!isJitAllowed) {
     MOZ_LOG(gProcessIsolationLog, LogLevel::Debug,
             ("JIT is disabled for site %s by enterprise policy",
-             topSiteOriginNoSuffix.get()));
+             topSiteOriginURI->GetSpecOrDefault().get()));
   }
 
   return isJitAllowed;
@@ -428,22 +426,9 @@ static nsAutoCString OriginString(nsIPrincipal* aPrincipal) {
 
 
 
-
-static nsAutoCString OriginSuffixForRemoteType(OriginAttributes aAttrs,
-                                               bool aDisableJit) {
+static nsAutoCString OriginAttributesString(const OriginAttributes& aAttrs) {
   nsAutoCString originSuffix;
-  aAttrs.StripAttributes(OriginAttributes::STRIP_FIRST_PARTY_DOMAIN |
-                         OriginAttributes::STRIP_PARTITION_KEY);
   aAttrs.CreateSuffix(originSuffix);
-
-  if (aDisableJit) {
-    if (originSuffix.IsEmpty()) {
-      originSuffix = "^"_ns + DISABLE_JIT_REMOTE_TYPE_SUFFIX;
-    } else {
-      originSuffix += "&"_ns + DISABLE_JIT_REMOTE_TYPE_SUFFIX;
-    }
-  }
-
   return originSuffix;
 }
 
@@ -574,35 +559,35 @@ static bool ShouldIsolateSite(nsIPrincipal* aPrincipal,
   }
 }
 
-static Result<nsCString, nsresult> SpecialBehaviorRemoteType(
-    IsolationBehavior aBehavior, const nsACString& aCurrentRemoteType,
+static Result<RemoteType, nsresult> SpecialBehaviorRemoteType(
+    IsolationBehavior aBehavior, const RemoteType& aCurrentRemoteType,
     WindowGlobalParent* aParentWindow, const OriginAttributes& aAttrs) {
   switch (aBehavior) {
     case IsolationBehavior::ForceWebRemoteType:
-      return {SharedWebRemoteType(aAttrs)};
+      return {RemoteType::SharedWeb(aAttrs)};
     case IsolationBehavior::PrivilegedAbout:
       
       
-      return {PRIVILEGEDABOUT_REMOTE_TYPE};
+      return {RemoteType(RemoteType::Kind::PrivilegedAbout)};
     case IsolationBehavior::Extension:
       if (ExtensionPolicyService::GetSingleton().UseRemoteExtensions()) {
-        return {EXTENSION_REMOTE_TYPE};
+        return {RemoteType(RemoteType::Kind::Extension)};
       }
-      return {NOT_REMOTE_TYPE};
+      return {RemoteType(RemoteType::Kind::NotRemote)};
     case IsolationBehavior::File:
       if (StaticPrefs::browser_tabs_remote_separateFileUriProcess()) {
-        return {FILE_REMOTE_TYPE};
+        return {RemoteType(RemoteType::Kind::File)};
       }
-      return {SharedWebRemoteType(aAttrs)};
+      return {RemoteType::SharedWeb(aAttrs)};
     case IsolationBehavior::PrivilegedMozilla:
-      return {PRIVILEGEDMOZILLA_REMOTE_TYPE};
+      return {RemoteType(RemoteType::Kind::PrivilegedMozilla)};
     case IsolationBehavior::Parent:
-      return {NOT_REMOTE_TYPE};
+      return {RemoteType(RemoteType::Kind::NotRemote)};
     case IsolationBehavior::Anywhere:
-      return {nsCString(aCurrentRemoteType)};
+      return {aCurrentRemoteType};
     case IsolationBehavior::Inherit:
       MOZ_DIAGNOSTIC_ASSERT(aParentWindow);
-      return {nsCString(aParentWindow->GetRemoteType())};
+      return {aParentWindow->GetRemoteType()};
 
     case IsolationBehavior::Error:
       return Err(NS_ERROR_UNEXPECTED);
@@ -613,30 +598,15 @@ static Result<nsCString, nsresult> SpecialBehaviorRemoteType(
   }
 }
 
-enum class WebProcessType {
-  Web,
-  WebIsolated,
-  WebCoopCoep,
-};
-
 }  
-
-nsCString SharedWebRemoteType(const OriginAttributes& aAttrs,
-                              bool aDisableJit) {
-  nsAutoCString suffix = OriginSuffixForRemoteType(aAttrs, aDisableJit);
-  if (suffix.IsEmpty()) {
-    return WEB_REMOTE_TYPE;
-  }
-  return WEB_REMOTE_TYPE "="_ns + suffix;
-}
 
 Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
     CanonicalBrowsingContext* aTopBC, WindowGlobalParent* aParentWindow,
     nsIURI* aChannelCreationURI, nsIChannel* aChannel,
-    const nsACString& aCurrentRemoteType, bool aHasCOOPMismatch,
+    const RemoteType& aCurrentRemoteType, bool aHasCOOPMismatch,
     bool aForNewTab, uint32_t aLoadStateLoadType,
     const Maybe<uint64_t>& aChannelId,
-    const Maybe<nsCString>& aRemoteTypeOverride) {
+    const Maybe<RemoteType>& aRemoteTypeOverride) {
   
   nsCOMPtr<nsIPrincipal> resultPrincipal;
   nsresult rv = nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
@@ -688,7 +658,7 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
 
     MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
             ("using remote type override (%s) for load",
-             aRemoteTypeOverride->get()));
+             aRemoteTypeOverride->Stringify().get()));
     options.mRemoteType = *aRemoteTypeOverride;
     return options;
   }
@@ -781,7 +751,7 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
       
       
       bool isUIResource = false;
-      if (aCurrentRemoteType.IsEmpty() &&
+      if (aCurrentRemoteType.IsNotRemote() &&
           (aChannelCreationURI->SchemeIs("about") ||
            (NS_SUCCEEDED(NS_URIChainHasFlags(
                 aChannelCreationURI, nsIProtocolHandler::URI_IS_UI_RESOURCE,
@@ -806,7 +776,7 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
   
   
   
-  if (!aParentWindow && aCurrentRemoteType == EXTENSION_REMOTE_TYPE &&
+  if (!aParentWindow && aCurrentRemoteType.IsExtension() &&
       behavior != IsolationBehavior::Extension &&
       behavior != IsolationBehavior::Anywhere) {
     MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
@@ -848,7 +818,7 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
       behavior != IsolationBehavior::Parent &&
       (ExtensionPolicyService::GetSingleton().UseRemoteExtensions() ||
        behavior != IsolationBehavior::Extension) &&
-      !aCurrentRemoteType.IsEmpty() &&
+      !aCurrentRemoteType.IsNotRemote() &&
       aTopBC->GetHasLoadedNonInitialDocument() &&
       (aLoadStateLoadType == LOAD_NORMAL ||
        aLoadStateLoadType == LOAD_HISTORY || aLoadStateLoadType == LOAD_LINK ||
@@ -875,7 +845,8 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
         behavior, aCurrentRemoteType, aParentWindow, originAttributes));
 
     if (options.mRemoteType != aCurrentRemoteType &&
-        (options.mRemoteType.IsEmpty() || aCurrentRemoteType.IsEmpty())) {
+        (options.mRemoteType.IsNotRemote() ||
+         aCurrentRemoteType.IsNotRemote())) {
       options.mReplaceBrowsingContext = true;
     }
 
@@ -883,14 +854,15 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
         gProcessIsolationLog, LogLevel::Debug,
         ("Selecting specific remote type (%s) due to a special case isolation "
          "behavior %s",
-         options.mRemoteType.get(), IsolationBehaviorName(behavior)));
+         options.mRemoteType.Stringify().get(),
+         IsolationBehaviorName(behavior)));
     return options;
   }
 
   
   
   
-  if (aCurrentRemoteType.IsEmpty()) {
+  if (aCurrentRemoteType.IsNotRemote()) {
     MOZ_ASSERT(!aParentWindow);
     options.mReplaceBrowsingContext = true;
   }
@@ -908,6 +880,9 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
 
   nsAutoCString siteOriginNoSuffix;
   MOZ_TRY(resultOrPrecursor->GetSiteOriginNoSuffix(siteOriginNoSuffix));
+
+  nsCOMPtr<nsIURI> siteOriginURI;
+  MOZ_TRY(NS_NewURI(getter_AddRefs(siteOriginURI), siteOriginNoSuffix));
 
   
   
@@ -957,12 +932,12 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
 
         
         
-        if (!wgp->GetRemoteType().IsEmpty() &&
+        if (!wgp->GetRemoteType().IsNotRemote() &&
             principalIsSameSite(wgp->DocumentPrincipal())) {
           MOZ_LOG(gProcessIsolationLog, LogLevel::Debug,
                   ("Found existing frame with matching principal "
                    "(remoteType:(%s), origin:%s)",
-                   PromiseFlatCString(wgp->GetRemoteType()).get(),
+                   wgp->GetRemoteType().Stringify().get(),
                    OriginString(wgp->DocumentPrincipal()).get()));
           options.mRemoteType = wgp->GetRemoteType();
           return options;
@@ -974,40 +949,26 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
     }
   }
 
-  bool isJitAllowed = AllowJITForSiteOrigin(siteOriginNoSuffix, aParentWindow);
-  nsAutoCString originSuffix = OriginSuffixForRemoteType(
-      resultOrPrecursor->OriginAttributesRef(), !isJitAllowed);
+  options.mRemoteType = RemoteType::SharedWeb(originAttributes);
 
-  WebProcessType webProcessType = WebProcessType::Web;
-  if (ShouldIsolateSite(resultOrPrecursor, aTopBC->UseRemoteSubframes())) {
-    webProcessType = WebProcessType::WebIsolated;
+  if (!AllowJITForSiteOrigin(siteOriginURI, aParentWindow)) {
+    options.mRemoteType = options.mRemoteType.WithDisableJit(true);
   }
 
-  
-  if (options.mShouldCrossOriginIsolate) {
-    webProcessType = WebProcessType::WebCoopCoep;
+  if (options.mShouldCrossOriginIsolate ||
+      ShouldIsolateSite(resultOrPrecursor, aTopBC->UseRemoteSubframes())) {
+    options.mRemoteType = options.mRemoteType.WithSiteOrigin(
+        siteOriginNoSuffix, options.mShouldCrossOriginIsolate
+                                ? RemoteType::Kind::WebCoopCoep
+                                : RemoteType::Kind::WebContent);
   }
 
-  switch (webProcessType) {
-    case WebProcessType::Web:
-      options.mRemoteType =
-          SharedWebRemoteType(originAttributes, !isJitAllowed);
-      break;
-    case WebProcessType::WebIsolated:
-      options.mRemoteType =
-          FISSION_WEB_REMOTE_TYPE "="_ns + siteOriginNoSuffix + originSuffix;
-      break;
-    case WebProcessType::WebCoopCoep:
-      options.mRemoteType =
-          WITH_COOP_COEP_REMOTE_TYPE "="_ns + siteOriginNoSuffix + originSuffix;
-      break;
-  }
   return options;
 }
 
 static bool ValidateBehaviorForWorker(IsolationBehavior aBehavior,
-                                      const nsACString& aCurrentRemoteType) {
-  if (aCurrentRemoteType == NOT_REMOTE_TYPE) {
+                                      const RemoteType& aCurrentRemoteType) {
+  if (aCurrentRemoteType.IsNotRemote()) {
     return true;
   }
 
@@ -1031,14 +992,14 @@ static bool ValidateBehaviorForWorker(IsolationBehavior aBehavior,
       return true;
 
     case IsolationBehavior::PrivilegedAbout:
-      return aCurrentRemoteType == PRIVILEGEDABOUT_REMOTE_TYPE;
+      return aCurrentRemoteType.IsPrivilegedAbout();
 
     case IsolationBehavior::File:
       return !StaticPrefs::browser_tabs_remote_separateFileUriProcess() ||
-             aCurrentRemoteType == FILE_REMOTE_TYPE;
+             aCurrentRemoteType.IsFile();
 
     case IsolationBehavior::PrivilegedMozilla:
-      return aCurrentRemoteType == PRIVILEGEDMOZILLA_REMOTE_TYPE;
+      return aCurrentRemoteType.IsPrivilegedMozilla();
 
     case IsolationBehavior::Error:
       break;
@@ -1049,11 +1010,11 @@ static bool ValidateBehaviorForWorker(IsolationBehavior aBehavior,
 
 Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
     nsIPrincipal* aPrincipal, WorkerKind aWorkerKind,
-    const nsACString& aCurrentRemoteType, bool aUseRemoteSubframes) {
+    const RemoteType& aCurrentRemoteType, bool aUseRemoteSubframes) {
   MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
           ("IsolationOptionsForWorker principal:%s, kind:%s, current:%s",
            OriginString(aPrincipal).get(), WorkerKindName(aWorkerKind),
-           PromiseFlatCString(aCurrentRemoteType).get()));
+           aCurrentRemoteType.Stringify().get()));
 
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(
@@ -1083,11 +1044,10 @@ Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
   
   
   
-  nsCString preferredRemoteType =
-      SharedWebRemoteType(aPrincipal->OriginAttributesRef());
+  RemoteType preferredRemoteType =
+      RemoteType::SharedWeb(aPrincipal->OriginAttributesRef());
   if (aWorkerKind == WorkerKind::WorkerKindShared &&
-      !StringBeginsWith(aCurrentRemoteType,
-                        WITH_COOP_COEP_REMOTE_TYPE_PREFIX)) {
+      !aCurrentRemoteType.IsWebCoopCoep()) {
     preferredRemoteType = aCurrentRemoteType;
   }
 
@@ -1118,7 +1078,7 @@ Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
 
     
     
-    if (preferredRemoteType == NOT_REMOTE_TYPE) {
+    if (preferredRemoteType.IsNotRemote()) {
       MOZ_LOG(gProcessIsolationLog, LogLevel::Debug,
               ("Loading system principal shared worker in parent process"));
       behavior = IsolationBehavior::Parent;
@@ -1132,7 +1092,7 @@ Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
     MOZ_ASSERT(resultOrPrecursor->GetIsNullPrincipal());
     MOZ_ASSERT(aWorkerKind == WorkerKindShared);
 
-    if (preferredRemoteType == NOT_REMOTE_TYPE) {
+    if (preferredRemoteType.IsNotRemote()) {
       MOZ_LOG(gProcessIsolationLog, LogLevel::Debug,
               ("Ensuring precursorless null principal shared worker loads in a "
                "content process"));
@@ -1141,7 +1101,7 @@ Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
       MOZ_LOG(gProcessIsolationLog, LogLevel::Debug,
               ("Loading precursorless null principal shared worker within "
                "current remotetype: (%s)",
-               preferredRemoteType.get()));
+               preferredRemoteType.Stringify().get()));
       behavior = IsolationBehavior::Anywhere;
     }
   }
@@ -1158,7 +1118,7 @@ Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
         gProcessIsolationLog, LogLevel::Warning,
         ("Rejecting invalid worker isolation behavior %s for remote type %s",
          IsolationBehaviorName(behavior),
-         PromiseFlatCString(aCurrentRemoteType).get()));
+         aCurrentRemoteType.Stringify().get()));
     return Err(NS_ERROR_FAILURE);
   }
 
@@ -1171,7 +1131,7 @@ Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
         gProcessIsolationLog, LogLevel::Debug,
         ("Selecting specific %s worker remote type (%s) due to a special case "
          "isolation behavior %s",
-         WorkerKindName(aWorkerKind), options.mRemoteType.get(),
+         WorkerKindName(aWorkerKind), options.mRemoteType.Stringify().get(),
          IsolationBehaviorName(behavior)));
     return options;
   }
@@ -1179,30 +1139,29 @@ Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
   nsAutoCString siteOriginNoSuffix;
   MOZ_TRY(resultOrPrecursor->GetSiteOriginNoSuffix(siteOriginNoSuffix));
 
-  bool isJitAllowed = AllowJITForSiteOrigin(siteOriginNoSuffix, nullptr);
+  nsCOMPtr<nsIURI> siteOriginURI;
+  MOZ_TRY(NS_NewURI(getter_AddRefs(siteOriginURI), siteOriginNoSuffix));
+
+  options.mRemoteType =
+      RemoteType::SharedWeb(resultOrPrecursor->OriginAttributesRef());
+
+  if (!AllowJITForSiteOrigin(siteOriginURI, nullptr)) {
+    options.mRemoteType = options.mRemoteType.WithDisableJit(true);
+  }
 
   
   
   if (ShouldIsolateSite(resultOrPrecursor, aUseRemoteSubframes)) {
-    nsAutoCString originSuffix = OriginSuffixForRemoteType(
-        resultOrPrecursor->OriginAttributesRef(), !isJitAllowed);
-
-    nsCString prefix = aWorkerKind == WorkerKindService
-                           ? SERVICEWORKER_REMOTE_TYPE
-                           : FISSION_WEB_REMOTE_TYPE;
-    options.mRemoteType = prefix + "="_ns + siteOriginNoSuffix + originSuffix;
-
-    MOZ_LOG(gProcessIsolationLog, LogLevel::Debug,
-            ("Isolating web content %s worker in remote type (%s)",
-             WorkerKindName(aWorkerKind), options.mRemoteType.get()));
-  } else {
-    options.mRemoteType = SharedWebRemoteType(
-        resultOrPrecursor->OriginAttributesRef(), !isJitAllowed);
-
-    MOZ_LOG(gProcessIsolationLog, LogLevel::Debug,
-            ("Loading web content %s worker in shared web remote type",
-             WorkerKindName(aWorkerKind)));
+    options.mRemoteType = options.mRemoteType.WithSiteOrigin(
+        siteOriginNoSuffix, aWorkerKind == WorkerKindService
+                                ? RemoteType::Kind::WebServiceWorker
+                                : RemoteType::Kind::WebContent);
   }
+
+  MOZ_LOG(gProcessIsolationLog, LogLevel::Debug,
+          ("Loading web content %s worker in remote type (%s)",
+           WorkerKindName(aWorkerKind), options.mRemoteType.Stringify().get()));
+
   return options;
 }
 
@@ -1297,16 +1256,15 @@ static already_AddRefed<nsIURI> MaybeResolveWebAppHandler(nsIURI* aURI) {
   return newURI.forget();
 }
 
-Result<nsCString, nsresult> PredictRemoteTypeForURI(
+Result<RemoteType, nsresult> PredictRemoteTypeForURI(
     nsIURI* aURI, const OriginAttributes& aOriginAttributes,
-    const nsACString& aPreferredRemoteType, bool aUseRemoteSubframes) {
-  MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
-          ("PredictRemoteTypeForURI uri:%s, preferred:%s, oa:%s, "
-           "useRemoteSubframes:%d",
-           aURI->GetSpecOrDefault().get(),
-           PromiseFlatCString(aPreferredRemoteType).get(),
-           OriginSuffixForRemoteType(aOriginAttributes, false).get(),
-           aUseRemoteSubframes));
+    const RemoteType& aPreferredRemoteType, bool aUseRemoteSubframes) {
+  MOZ_LOG(
+      gProcessIsolationLog, LogLevel::Verbose,
+      ("PredictRemoteTypeForURI uri:%s, preferred:%s, oa:%s, "
+       "useRemoteSubframes:%d",
+       aURI->GetSpecOrDefault().get(), aPreferredRemoteType.Stringify().get(),
+       OriginAttributesString(aOriginAttributes).get(), aUseRemoteSubframes));
 
   IsolationBehavior behavior = IsolationBehaviorForURI(
       aURI,  false,  true,
@@ -1372,13 +1330,13 @@ Result<nsCString, nsresult> PredictRemoteTypeForURI(
 
   
   if (behavior != IsolationBehavior::WebContent) {
-    nsCString remoteType = MOZ_TRY(SpecialBehaviorRemoteType(
+    RemoteType remoteType = MOZ_TRY(SpecialBehaviorRemoteType(
         behavior, aPreferredRemoteType, nullptr, aOriginAttributes));
 
     MOZ_LOG(gProcessIsolationLog, LogLevel::Debug,
             ("Predicting specific remote type (%s) due to a special case "
              "isolation behavior %s",
-             remoteType.get(), IsolationBehaviorName(behavior)));
+             remoteType.Stringify().get(), IsolationBehaviorName(behavior)));
     return remoteType;
   }
 
@@ -1387,35 +1345,36 @@ Result<nsCString, nsresult> PredictRemoteTypeForURI(
   nsAutoCString siteOriginNoSuffix;
   MOZ_TRY(principal->GetSiteOriginNoSuffix(siteOriginNoSuffix));
 
-  bool isJitAllowed = AllowJITForSiteOrigin(siteOriginNoSuffix, nullptr);
-  nsAutoCString originSuffix = OriginSuffixForRemoteType(
-      principal->OriginAttributesRef(), !isJitAllowed);
+  nsCOMPtr<nsIURI> siteOriginURI;
+  MOZ_TRY(NS_NewURI(getter_AddRefs(siteOriginURI), siteOriginNoSuffix));
+
+  RemoteType remoteType = RemoteType::SharedWeb(aOriginAttributes);
+
+  if (!AllowJITForSiteOrigin(siteOriginURI, nullptr)) {
+    remoteType = remoteType.WithDisableJit(true);
+  }
 
   
   
-  if (StringBeginsWith(aPreferredRemoteType,
-                       WITH_COOP_COEP_REMOTE_TYPE_PREFIX)) {
-    nsCString coopCoepRemoteType =
-        WITH_COOP_COEP_REMOTE_TYPE "="_ns + siteOriginNoSuffix + originSuffix;
+  if (aPreferredRemoteType.IsWebCoopCoep()) {
+    RemoteType coopCoepRemoteType = remoteType.WithSiteOrigin(
+        siteOriginNoSuffix, RemoteType::Kind::WebCoopCoep);
     if (coopCoepRemoteType == aPreferredRemoteType) {
       MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
               ("Predicting preferred COOP+COEP remote type (%s) due to "
                "compatible site-origin %s",
-               coopCoepRemoteType.get(), OriginString(principal).get()));
+               coopCoepRemoteType.Stringify().get(),
+               OriginString(principal).get()));
       return coopCoepRemoteType;
     }
   }
 
-  nsCString remoteType;
   if (ShouldIsolateSite(principal, aUseRemoteSubframes)) {
-    remoteType =
-        FISSION_WEB_REMOTE_TYPE "="_ns + siteOriginNoSuffix + originSuffix;
-  } else {
-    remoteType = SharedWebRemoteType(aOriginAttributes, !isJitAllowed);
+    remoteType = remoteType.WithSiteOrigin(siteOriginNoSuffix);
   }
 
   MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
-          ("Predicting web remote type (%s)", remoteType.get()));
+          ("Predicting web remote type (%s)", remoteType.Stringify().get()));
   return remoteType;
 }
 
@@ -1497,7 +1456,7 @@ bool IsIsolateHighValueSiteEnabled() {
 }
 
 bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
-    nsIPrincipal* aPrincipal, const nsACString& aRemoteType,
+    nsIPrincipal* aPrincipal, const RemoteType& aRemoteType,
     const EnumSet<ValidatePrincipalOptions>& aOptions,
     FunctionRef<bool(nsIPrincipal*)> aIsPrincipalLoaded) {
 #ifdef DEBUG
@@ -1514,7 +1473,7 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
 #endif
 
   
-  if (aRemoteType == NOT_REMOTE_TYPE) {
+  if (aRemoteType.IsNotRemote()) {
     return true;
   }
 
@@ -1610,7 +1569,7 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
     if (!StaticPrefs::browser_tabs_remote_separateFileUriProcess()) {
       return true;
     }
-    return aRemoteType == FILE_REMOTE_TYPE;
+    return aRemoteType.IsFile();
   }
 
   if (originScheme == "about"_ns) {
@@ -1642,11 +1601,11 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
         
         return true;
       case IsolationBehavior::Extension:
-        return aRemoteType == EXTENSION_REMOTE_TYPE;
+        return aRemoteType.IsExtension();
       case IsolationBehavior::PrivilegedAbout:
-        return aRemoteType == PRIVILEGEDABOUT_REMOTE_TYPE;
+        return aRemoteType.IsPrivilegedAbout();
       case IsolationBehavior::ForceWebRemoteType:
-        return RemoteTypePrefix(aRemoteType) == WEB_REMOTE_TYPE;
+        return aRemoteType.IsSharedWeb();
       case IsolationBehavior::WebContent:
       case IsolationBehavior::Error:
         
@@ -1660,20 +1619,7 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
 
   
   
-  int32_t equalIdx = aRemoteType.FindChar('=');
-  if (equalIdx == kNotFound) {
-    return true;
-  }
-
-  
-  nsDependentCSubstring typePrefix(aRemoteType, 0, equalIdx);
-  nsDependentCSubstring typeOrigin(aRemoteType, equalIdx + 1);
-
-  
-  
-  if (typePrefix != FISSION_WEB_REMOTE_TYPE &&
-      typePrefix != WITH_COOP_COEP_REMOTE_TYPE &&
-      typePrefix != SERVICEWORKER_REMOTE_TYPE) {
+  if (!aRemoteType.IsIsolatedWeb()) {
     return true;
   }
 
@@ -1682,20 +1628,11 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
   
   
   
-  if (typePrefix == WITH_COOP_COEP_REMOTE_TYPE &&
-      !mozilla::FissionAutostart()) {
+  if (aRemoteType.IsWebCoopCoep() && !mozilla::FissionAutostart()) {
     return true;
   }
 
   
-  int32_t suffixIdx = typeOrigin.RFindChar('^');
-  nsDependentCSubstring typeOriginNoSuffix(typeOrigin, 0, suffixIdx);
-
-  
-  if (typeOriginNoSuffix == originNoSuffix) {
-    return true;
-  }
-
   
   
   
@@ -1704,7 +1641,8 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
     MOZ_ASSERT_UNREACHABLE("Failed when not late in shutdown?");
     return false;
   }
-  return siteOriginNoSuffix == typeOriginNoSuffix;
+
+  return aRemoteType.OriginNoSuffix() == siteOriginNoSuffix;
 }
 
 }  

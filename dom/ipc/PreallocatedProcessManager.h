@@ -2,12 +2,11 @@
 
 
 
-
-
 #ifndef mozilla_PreallocatedProcessManager_h
 #define mozilla_PreallocatedProcessManager_h
 
 #include "base/basictypes.h"
+#include "mozilla/dom/RemoteType.h"
 #include "mozilla/dom/UniqueContentParentKeepAlive.h"
 #include "nsStringFwd.h"
 
@@ -30,6 +29,7 @@ class PreallocatedProcessManagerImpl;
 
 class PreallocatedProcessManager final {
   using ContentParent = mozilla::dom::ContentParent;
+  using RemoteType = mozilla::dom::RemoteType;
   using UniqueContentParentKeepAlive =
       mozilla::dom::UniqueContentParentKeepAlive;
 
@@ -43,8 +43,8 @@ class PreallocatedProcessManager final {
 
 
 
-  static void AddBlocker(const nsACString& aRemoteType, ContentParent* aParent);
-  static void RemoveBlocker(const nsACString& aRemoteType,
+  static void AddBlocker(const RemoteType& aRemoteType, ContentParent* aParent);
+  static void RemoveBlocker(const RemoteType& aRemoteType,
                             ContentParent* aParent);
 
   
@@ -54,7 +54,7 @@ class PreallocatedProcessManager final {
 
 
 
-  static UniqueContentParentKeepAlive Take(const nsACString& aRemoteType);
+  static UniqueContentParentKeepAlive Take(const RemoteType& aRemoteType);
 
   
 

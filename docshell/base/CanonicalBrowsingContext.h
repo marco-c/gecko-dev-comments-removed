@@ -271,6 +271,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   
+  
   using RemotenessPromise = MozPromise<
       std::pair<RefPtr<BrowserParent>, RefPtr<CanonicalBrowsingContext>>,
       nsresult, false>;
@@ -445,7 +446,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   MOZ_CAN_RUN_SCRIPT
   void CloneDocumentTreeInto(CanonicalBrowsingContext* aSource,
-                             const nsACString& aRemoteType,
+                             const RemoteType& aRemoteType,
                              embedding::PrintData&& aPrintData);
 
   

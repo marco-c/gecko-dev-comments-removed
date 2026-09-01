@@ -206,7 +206,7 @@ void GPUProcessManager::OnPreferenceChange(const char16_t* aData) {
                            false, Nothing(), Nothing());
 
   Preferences::GetPreference(&pref, GeckoProcessType_GPU,
-                              ""_ns);
+                              {});
   if (mGPUChild) {
     MOZ_ASSERT(mQueuedPrefs.IsEmpty());
     mGPUChild->SendPreferenceUpdate(pref);

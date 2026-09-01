@@ -236,7 +236,7 @@ void SharedWorkerService::GetOrCreateWorkerManagerOnMainThread(
   
   auto remoteType = RemoteWorkerManager::GetRemoteType(
       principal, WorkerKind::WorkerKindShared,
-      contentParent ? contentParent->GetRemoteType() : NOT_REMOTE_TYPE);
+      contentParent ? contentParent->GetRemoteType() : RemoteType::NotRemote());
   if (NS_WARN_IF(remoteType.isErr())) {
     ErrorPropagationOnMainThread(aBackgroundEventTarget, aActor,
                                  remoteType.unwrapErr());

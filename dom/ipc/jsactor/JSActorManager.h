@@ -2,14 +2,13 @@
 
 
 
-
-
 #ifndef mozilla_dom_JSActorManager_h
 #define mozilla_dom_JSActorManager_h
 
 #include "js/TypeDecls.h"
 #include "mozilla/dom/JSActor.h"
 #include "mozilla/dom/JSIPCValue.h"
+#include "mozilla/dom/RemoteType.h"
 #include "nsRefPtrHashtable.h"
 #include "nsString.h"
 
@@ -47,7 +46,7 @@ class JSActorManager : public nsISupports {
   void ReceiveRawMessage(const JSActorMessageMeta& aMetadata,
                          JSIPCValue&& aData, ipc::StructuredCloneData* aStack);
 
-  virtual const nsACString& GetRemoteType() const = 0;
+  virtual const RemoteType& GetRemoteType() const = 0;
 
  protected:
   

@@ -111,20 +111,18 @@ IPCResult FetchParent::RecvFetchOp(FetchOpArgs&& aArgs) {
       BackgroundParent::GetContentParentHandle(Manager());
   if (contentHandle &&
       StaticPrefs::dom_fetch_validatePrincipalForRemoteType()) {
-    const nsACString& remoteType = contentHandle->GetRemoteType();
     
     
     EnumSet<ValidatePrincipalOptions> options;
-    if (remoteType == INFERENCE_REMOTE_TYPE) {
-      options += ValidatePrincipalOptions::AllowSystem;
+    if (contentHandle->GetRemoteType().IsInference()) {
+      options += ValidatePrincipalOptions::AllowSystemIfLoaded;
     }
-    if (!ValidatePrincipalCouldPotentiallyBeLoadedBy(principal, remoteType,
-                                                     options)) {
+    if (!contentHandle->ValidatePrincipal(principal, options)) {
       return IPC_FAIL(this,
                       "RecvFetchOp principal not allowed for remote type");
     }
     if (!ClientIsValidPrincipalInfo(aArgs.clientInfo().principalInfo(),
-                                    remoteType)) {
+                                    contentHandle->LoadedOrigins())) {
       return IPC_FAIL(
           this, "RecvFetchOp clientInfo principal not allowed for remote type");
     }

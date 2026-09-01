@@ -684,8 +684,8 @@ already_AddRefed<TestShellParent> GetOrCreateTestShellParent() {
     
     
     
-    TestShellContentParent() =
-        ContentParent::GetNewOrUsedBrowserProcess(DEFAULT_REMOTE_TYPE);
+    TestShellContentParent() = ContentParent::GetNewOrUsedBrowserProcess(
+        mozilla::dom::RemoteType::SharedWeb({}));
   } else if (TestShellContentParent()->IsShuttingDown()) {
     return nullptr;
   }

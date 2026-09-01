@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RemoteWorkerServiceParent.h"
 
 #include "RemoteWorkerManager.h"
@@ -72,11 +70,11 @@ void RemoteWorkerServiceParent::ActorDestroy(IProtocol::ActorDestroyReason) {
   }
 }
 
-nsCString RemoteWorkerServiceParent::GetRemoteType() const {
+RemoteType RemoteWorkerServiceParent::GetRemoteType() const {
   if (mProcess) {
     return mProcess->GetRemoteType();
   }
-  return NOT_REMOTE_TYPE;
+  return RemoteType::NotRemote();
 }
 
 }  

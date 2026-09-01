@@ -359,41 +359,26 @@ JSActorService::GetJSWindowActorProtocol(const nsACString& aName) {
   return mWindowActorDescriptors.Get(aName);
 }
 
-static nsDependentCSubstring RemoteTypePrefixForMatch(
-    const nsACString& aRemoteType) {
-  nsDependentCSubstring remoteTypePrefix(RemoteTypePrefix(aRemoteType));
-  
-  
-  MOZ_ASSERT(!StringBeginsWith(remoteTypePrefix, "parent"_ns));
-  if (aRemoteType == NOT_REMOTE_TYPE) {
-    remoteTypePrefix.AssignLiteral("parent");
-  }
-  return remoteTypePrefix;
-}
-
-void JSActorProtocol::LogMatch(const nsACString& aRemoteType) {
+void JSActorProtocol::LogMatch(const RemoteType& aRemoteType) {
   if (!MOZ_LOG_TEST(gJSActorServiceLog, LogLevel::Info)) {
     return;
   }
 
-  nsDependentCSubstring remoteTypePrefix(RemoteTypePrefixForMatch(aRemoteType));
-  if (mLoggedRemoteTypes.Contains(remoteTypePrefix)) {
+  nsCString remoteTypeKind(aRemoteType.StringifyKind());
+  if (mLoggedRemoteTypes.Contains(remoteTypeKind)) {
     return;
   }
 
-  mLoggedRemoteTypes.AppendElement(remoteTypePrefix);
+  mLoggedRemoteTypes.AppendElement(remoteTypeKind);
   MOZ_LOG_FMT(gJSActorServiceLog, LogLevel::Info,
               "JSActor '{}' matched remoteType '{}'", mName.get(),
-              PromiseFlatCString(remoteTypePrefix).get());
+              remoteTypeKind.get());
 }
 
-bool JSActorProtocol::RemoteTypePrefixMatches(const nsACString& aRemoteType) {
-  nsDependentCSubstring remoteTypePrefix(RemoteTypePrefixForMatch(aRemoteType));
-
+bool JSActorProtocol::RemoteTypeMatches(const RemoteType& aRemoteType) {
   if (StaticPrefs::dom_jsipc_check_safeForUntrustedWebProcess() &&
       !mSafeForUntrustedWebProcess &&
-      (StringBeginsWith(remoteTypePrefix, "web"_ns) ||
-       StringBeginsWith(remoteTypePrefix, "file"_ns))) {
+      (aRemoteType.IsWeb() || aRemoteType.IsFile())) {
     return false;
   }
 
@@ -401,9 +386,12 @@ bool JSActorProtocol::RemoteTypePrefixMatches(const nsACString& aRemoteType) {
     return true;
   }
 
+  
+  
+  nsCString remoteTypeKind(aRemoteType.StringifyKind());
+
   for (auto& remoteType : mRemoteTypes) {
-    
-    if (StringBeginsWith(remoteTypePrefix, remoteType)) {
+    if (StringBeginsWith(remoteTypeKind, remoteType)) {
       return true;
     }
   }

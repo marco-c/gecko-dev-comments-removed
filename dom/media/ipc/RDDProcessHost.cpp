@@ -1,8 +1,6 @@
 
 
 
-
-
 #include "RDDProcessHost.h"
 
 #include "RDDChild.h"
@@ -48,7 +46,7 @@ bool RDDProcessHost::Launch(geckoargs::ChildProcessArgs aExtraOpts) {
 
   mPrefSerializer = MakeUnique<ipc::SharedPreferenceSerializer>();
   if (!mPrefSerializer->SerializeToSharedMemory(GeckoProcessType_RDD,
-                                                 ""_ns)) {
+                                                 {})) {
     return false;
   }
   mPrefSerializer->AddSharedPrefCmdLineArgs(*this, aExtraOpts);

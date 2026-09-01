@@ -218,7 +218,7 @@ void VRProcessManager::OnPreferenceChange(const char16_t* aData) {
                            false, Nothing(), Nothing());
 
   Preferences::GetPreference(&pref, GeckoProcessType_VR,
-                              ""_ns);
+                              {});
   if (!!mVRChild) {
     MOZ_ASSERT(mQueuedPrefs.IsEmpty());
     mVRChild->SendPreferenceUpdate(pref);

@@ -46,7 +46,7 @@ already_AddRefed<IPDLUnitTestParent> IPDLUnitTestParent::CreateCrossProcess() {
 
   auto prefSerializer = MakeUnique<ipc::SharedPreferenceSerializer>();
   if (!prefSerializer->SerializeToSharedMemory(GeckoProcessType_IPDLUnitTest,
-                                                ""_ns)) {
+                                                {})) {
     ADD_FAILURE()
         << "SharedPreferenceSerializer::SerializeToSharedMemory failed";
     return nullptr;

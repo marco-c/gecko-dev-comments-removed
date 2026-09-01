@@ -646,7 +646,8 @@ ContentChild::ContentChild()
   {
     StaticMutexAutoLock lock(sLoadedOriginsMutex);
     MOZ_ASSERT(!sLoadedOrigins);
-    sLoadedOrigins = MakeRefPtr<LoadedOriginSet>(PREALLOC_REMOTE_TYPE);
+    sLoadedOrigins =
+        MakeRefPtr<LoadedOriginSet>(RemoteType(RemoteType::Kind::Prealloc));
     RunOnShutdown([] {
       StaticMutexAutoLock lock(sLoadedOriginsMutex);
       sLoadedOrigins = nullptr;
@@ -822,12 +823,8 @@ void ContentChild::Init(mozilla::ipc::UntypedEndpoint&& aEndpoint,
 }
 
 void ContentChild::AddProfileToProcessName(const nsACString& aProfile) {
-  nsCOMPtr<nsIPrincipal> isolationPrincipal =
-      ContentParent::CreateRemoteTypeIsolationPrincipal(mRemoteType);
-  if (isolationPrincipal) {
-    if (isolationPrincipal->OriginAttributesRef().IsPrivateBrowsing()) {
-      return;
-    }
+  if (mRemoteType.IsPrivateBrowsing()) {
+    return;
   }
 
   mProcessName = aProfile + ":"_ns + mProcessName;  
@@ -861,35 +858,26 @@ void ContentChild::SetProcessName(const nsACString& aName,
 
   
   if (aSite && StaticPrefs::fission_processSiteNames()) {
-    nsCOMPtr<nsIPrincipal> isolationPrincipal =
-        ContentParent::CreateRemoteTypeIsolationPrincipal(mRemoteType);
-    if (isolationPrincipal) {
-      
-      MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-              ("private = %d, pref = %d",
-               isolationPrincipal->OriginAttributesRef().IsPrivateBrowsing(),
-               StaticPrefs::fission_processPrivateWindowSiteNames()));
-      if (!isolationPrincipal->OriginAttributesRef().IsPrivateBrowsing()
+    
+    MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+            ("private = %d, pref = %d", mRemoteType.IsPrivateBrowsing(),
+             StaticPrefs::fission_processPrivateWindowSiteNames()));
+    if (!mRemoteType.IsPrivateBrowsing()
 #ifdef NIGHTLY_BUILD
-          
-          || StaticPrefs::fission_processPrivateWindowSiteNames()
+        
+        || StaticPrefs::fission_processPrivateWindowSiteNames()
 #endif
-      ) {
+    ) {
 #if !defined(XP_MACOSX)
-        
-        
-        if (isolationPrincipal->SchemeIs("https")) {
-          nsAutoCString schemeless;
-          isolationPrincipal->GetHostPort(schemeless);
-          nsAutoCString originSuffix;
-          isolationPrincipal->GetOriginSuffix(originSuffix);
-          schemeless.Append(originSuffix);
-          mProcessName = std::move(schemeless);
-        } else
+      
+      
+      constexpr nsLiteralCString prefix = "https://"_ns;
+      if (StringBeginsWith(*aSite, prefix)) {
+        mProcessName = Substring(*aSite, prefix.Length());
+      } else
 #endif
-        {
-          mProcessName = *aSite;
-        }
+      {
+        mProcessName = *aSite;
       }
     }
   }
@@ -1288,11 +1276,11 @@ void ContentChild::MaybeBecomeUntrusted() {
   }
 
   ContentChild* cc = ContentChild::GetSingleton();
-  MOZ_DIAGNOSTIC_ASSERT(cc->GetRemoteType() != PREALLOC_REMOTE_TYPE,
+  MOZ_DIAGNOSTIC_ASSERT(!cc->GetRemoteType().IsPrealloc(),
                         "Prealloc process cannot become untrusted");
 
   
-  if (cc->GetRemoteType() == PRIVILEGEDABOUT_REMOTE_TYPE) {
+  if (cc->GetRemoteType().IsPrivilegedAbout()) {
     return;
   }
 
@@ -1454,10 +1442,10 @@ mozilla::ipc::IPCResult ContentChild::RecvRequestMemoryReport(
     const Maybe<mozilla::ipc::FileDescriptor>& aDMDFile,
     const RequestMemoryReportResolver& aResolver) {
   nsCString process;
-  if (aAnonymize || mRemoteType.IsEmpty()) {
+  if (aAnonymize || !mRemoteType.IsKnown()) {
     GetProcessName(process);
   } else {
-    process = mRemoteType;
+    process = mRemoteType.Stringify();
   }
   AppendProcessId(process);
   MOZ_ASSERT(!process.IsEmpty());
@@ -2705,15 +2693,15 @@ mozilla::ipc::IPCResult ContentChild::RecvAppInfo(
   return IPC_OK();
 }
 
-nsCString CurrentRemoteType() {
+RemoteType CurrentRemoteType() {
   if (XRE_IsContentProcess()) {
     if (RefPtr<LoadedOriginSet> loadedOrigins = CurrentLoadedOriginSet()) {
       return loadedOrigins->GetRemoteType();
     }
-    return PREALLOC_REMOTE_TYPE;
+    return RemoteType(RemoteType::Kind::Prealloc);
   }
 
-  return NOT_REMOTE_TYPE;
+  return RemoteType::NotRemote();
 }
 
 already_AddRefed<LoadedOriginSet> CurrentLoadedOriginSet() {
@@ -2721,40 +2709,37 @@ already_AddRefed<LoadedOriginSet> CurrentLoadedOriginSet() {
   return do_AddRef(sLoadedOrigins);
 }
 
-mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
-    const nsCString& aRemoteType, const nsCString& aProfile) {
+mozilla::ipc::IPCResult ContentChild::RecvSetRemoteType(
+    const RemoteType& aRemoteType, const nsCString& aProfile) {
   if (aRemoteType == mRemoteType) {
     
     
     return IPC_OK();
   }
 
-  if (!mRemoteType.IsVoid()) {
-    
-    
+  if (mRemoteType.IsKnown()) {
     MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
             ("Changing remoteType of process %d from %s to %s", getpid(),
-             mRemoteType.get(), aRemoteType.get()));
-    
-    MOZ_RELEASE_ASSERT(mRemoteType == PREALLOC_REMOTE_TYPE &&
-                       aRemoteType != FILE_REMOTE_TYPE &&
-                       aRemoteType != PRIVILEGEDABOUT_REMOTE_TYPE);
+             mRemoteType.Stringify().get(), aRemoteType.Stringify().get()));
+    MOZ_RELEASE_ASSERT(
+        mRemoteType.IsPrealloc(),
+        "Cannot change remote type unless we're a prealloc process");
+    MOZ_RELEASE_ASSERT(aRemoteType.SupportsPrealloc(),
+                       "Cannot use prealloc process for this remote type");
   } else {
     
     
     MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
             ("Setting remoteType of process %d to %s", getpid(),
-             aRemoteType.get()));
+             aRemoteType.Stringify().get()));
 
-    if (aRemoteType == PREALLOC_REMOTE_TYPE) {
+    if (aRemoteType.IsPrealloc()) {
       PreallocInit();
     }
   }
 
-  auto remoteTypePrefix = RemoteTypePrefix(aRemoteType);
-
   
-  mRemoteType.Assign(aRemoteType);
+  mRemoteType = aRemoteType;
 
   RefPtr<LoadedOriginSet> loadedOrigins = CurrentLoadedOriginSet();
   if (!loadedOrigins) {
@@ -2763,36 +2748,32 @@ mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
   loadedOrigins->SetRemoteType(mRemoteType);
 
   
-  if (aRemoteType == FILE_REMOTE_TYPE) {
+  if (aRemoteType.IsFile()) {
     SetProcessName("file:// Content"_ns, nullptr, &aProfile);
-  } else if (aRemoteType == EXTENSION_REMOTE_TYPE) {
+  } else if (aRemoteType.IsExtension()) {
     SetProcessName("WebExtensions"_ns, nullptr, &aProfile);
-  } else if (aRemoteType == PRIVILEGEDABOUT_REMOTE_TYPE) {
+  } else if (aRemoteType.IsPrivilegedAbout()) {
     SetProcessName("Privileged Content"_ns, nullptr, &aProfile);
-  } else if (aRemoteType == PRIVILEGEDMOZILLA_REMOTE_TYPE) {
+  } else if (aRemoteType.IsPrivilegedMozilla()) {
     SetProcessName("Privileged Mozilla"_ns, nullptr, &aProfile);
-  } else if (aRemoteType == INFERENCE_REMOTE_TYPE) {
+  } else if (aRemoteType.IsInference()) {
     SetProcessName("Inference"_ns, nullptr, &aProfile);
-  } else if (remoteTypePrefix == WITH_COOP_COEP_REMOTE_TYPE) {
-    
-    nsDependentCSubstring etld =
-        Substring(aRemoteType, WITH_COOP_COEP_REMOTE_TYPE.Length() + 1);
+  } else if (aRemoteType.IsIsolatedWeb()) {
+    nsAutoCString site = mRemoteType.StringifyMeta();
+
+    if (aRemoteType.IsWebServiceWorker()) {
+      SetProcessName("Isolated Service Worker"_ns, &site, &aProfile);
+    }
 #ifdef NIGHTLY_BUILD
-    SetProcessName("WebCOOP+COEP Content"_ns, &etld, &aProfile);
-#else
-    SetProcessName("Isolated Web Content"_ns, &etld,
-                   &aProfile);  
+    else if (aRemoteType.IsWebCoopCoep()) {
+      
+      
+      SetProcessName("WebCOOP+COEP Content"_ns, &site, &aProfile);
+    }
 #endif
-  } else if (remoteTypePrefix == FISSION_WEB_REMOTE_TYPE) {
-    
-    nsDependentCSubstring etld =
-        Substring(aRemoteType, FISSION_WEB_REMOTE_TYPE.Length() + 1);
-    SetProcessName("Isolated Web Content"_ns, &etld, &aProfile);
-  } else if (remoteTypePrefix == SERVICEWORKER_REMOTE_TYPE) {
-    
-    nsDependentCSubstring etld =
-        Substring(aRemoteType, SERVICEWORKER_REMOTE_TYPE.Length() + 1);
-    SetProcessName("Isolated Service Worker"_ns, &etld, &aProfile);
+    else {
+      SetProcessName("Isolated Web Content"_ns, &site, &aProfile);
+    }
   } else {
     
     SetProcessName("Web Content"_ns, nullptr, &aProfile);
@@ -2801,17 +2782,15 @@ mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
   
   if (StaticPrefs::javascript_options_spectre_disable_for_isolated_content() &&
       StaticPrefs::browser_opaqueResponseBlocking() &&
-      (remoteTypePrefix == FISSION_WEB_REMOTE_TYPE ||
-       remoteTypePrefix == SERVICEWORKER_REMOTE_TYPE ||
-       remoteTypePrefix == WITH_COOP_COEP_REMOTE_TYPE ||
-       aRemoteType == PRIVILEGEDABOUT_REMOTE_TYPE ||
-       aRemoteType == PRIVILEGEDMOZILLA_REMOTE_TYPE)) {
+      (aRemoteType.IsIsolatedWeb() || aRemoteType.IsPrivilegedAbout() ||
+       aRemoteType.IsPrivilegedMozilla())) {
     JS::DisableSpectreMitigationsAfterInit();
   }
 
   
+  
   CrashReporter::RecordAnnotationNSCString(
-      CrashReporter::Annotation::RemoteType, remoteTypePrefix);
+      CrashReporter::Annotation::RemoteType, mRemoteType.StringifyKind());
 
   return IPC_OK();
 }
@@ -2847,7 +2826,7 @@ void ContentChild::PreallocInit() {
 
 
 
-const nsACString& ContentChild::GetRemoteType() const { return mRemoteType; }
+const RemoteType& ContentChild::GetRemoteType() const { return mRemoteType; }
 
 mozilla::ipc::IPCResult ContentChild::RecvInitRemoteWorkerService(
     Endpoint<PRemoteWorkerServiceChild>&& aEndpoint,
@@ -3541,7 +3520,7 @@ mozilla::ipc::IPCResult ContentChild::RecvCrossProcessRedirect(
 
   nsCOMPtr<nsILoadInfo> loadInfo;
   nsresult rv = mozilla::ipc::LoadInfoArgsToLoadInfo(
-      aArgs.loadInfo(), NOT_REMOTE_TYPE, getter_AddRefs(loadInfo));
+      aArgs.loadInfo(), RemoteType::NotRemote(), getter_AddRefs(loadInfo));
   if (NS_FAILED(rv)) {
     MOZ_DIAGNOSTIC_CRASH("LoadInfoArgsToLoadInfo failed");
     return IPC_OK();
@@ -4350,7 +4329,7 @@ mozilla::ipc::IPCResult ContentChild::RecvReportFrameTimingData(
 
   nsCOMPtr<nsILoadInfo> loadInfo;
   nsresult rv = mozilla::ipc::LoadInfoArgsToLoadInfo(
-      loadInfoArgs, NOT_REMOTE_TYPE, getter_AddRefs(loadInfo));
+      loadInfoArgs, RemoteType::NotRemote(), getter_AddRefs(loadInfo));
   if (NS_FAILED(rv)) {
     MOZ_DIAGNOSTIC_CRASH("LoadInfoArgsToLoadInfo failed");
     return IPC_OK();

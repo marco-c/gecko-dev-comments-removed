@@ -754,20 +754,22 @@ mozilla::ipc::IPCResult NeckoParent::RecvEnsureHSTSData(
 mozilla::ipc::IPCResult NeckoParent::RecvGetPageThumbStream(
     nsIURI* aURI, const LoadInfoArgs& aLoadInfoArgs,
     GetPageThumbStreamResolver&& aResolver) {
+  const dom::RemoteType& remoteType =
+      ContentParent::Cast(Manager())->GetRemoteType();
+
   
   
   
   
   
   
-  if (mozilla::ipc::ActorCast<ContentParent>(Manager())->GetRemoteType() !=
-      PRIVILEGEDABOUT_REMOTE_TYPE) {
+  if (!remoteType.IsPrivilegedAbout()) {
     return IPC_FAIL(this, "Wrong process type");
   }
 
   nsCOMPtr<nsILoadInfo> loadInfo;
-  nsresult rv = mozilla::ipc::LoadInfoArgsToLoadInfo(
-      aLoadInfoArgs, PRIVILEGEDABOUT_REMOTE_TYPE, getter_AddRefs(loadInfo));
+  nsresult rv = mozilla::ipc::LoadInfoArgsToLoadInfo(aLoadInfoArgs, remoteType,
+                                                     getter_AddRefs(loadInfo));
   if (NS_FAILED(rv)) {
     return IPC_FAIL(this, "moz-page-thumb request must include loadInfo");
   }
@@ -806,20 +808,22 @@ mozilla::ipc::IPCResult NeckoParent::RecvGetPageThumbStream(
 mozilla::ipc::IPCResult NeckoParent::RecvGetMozNewTabWallpaperStream(
     nsIURI* aURI, const LoadInfoArgs& aLoadInfoArgs,
     GetMozNewTabWallpaperStreamResolver&& aResolver) {
+  const dom::RemoteType& remoteType =
+      ContentParent::Cast(Manager())->GetRemoteType();
+
   
   
   
   
   
   
-  if (mozilla::ipc::ActorCast<ContentParent>(Manager())->GetRemoteType() !=
-      PRIVILEGEDABOUT_REMOTE_TYPE) {
+  if (!remoteType.IsPrivilegedAbout()) {
     return IPC_FAIL(this, "Wrong process type");
   }
 
   nsCOMPtr<nsILoadInfo> loadInfo;
-  nsresult rv = mozilla::ipc::LoadInfoArgsToLoadInfo(
-      aLoadInfoArgs, PRIVILEGEDABOUT_REMOTE_TYPE, getter_AddRefs(loadInfo));
+  nsresult rv = mozilla::ipc::LoadInfoArgsToLoadInfo(aLoadInfoArgs, remoteType,
+                                                     getter_AddRefs(loadInfo));
   if (NS_FAILED(rv)) {
     return IPC_FAIL(this, "moz-newtab-wallpaper request must include loadInfo");
   }
@@ -860,7 +864,7 @@ mozilla::ipc::IPCResult NeckoParent::RecvGetPageIconStream(
     nsIURI* aURI, const LoadInfoArgs& aLoadInfoArgs,
     GetPageIconStreamResolver&& aResolver) {
 #ifdef MOZ_PLACES
-  const nsACString& remoteType =
+  const dom::RemoteType& remoteType =
       ContentParent::Cast(Manager())->GetRemoteType();
 
   
@@ -869,7 +873,7 @@ mozilla::ipc::IPCResult NeckoParent::RecvGetPageIconStream(
   
   
   
-  if (remoteType != PRIVILEGEDABOUT_REMOTE_TYPE) {
+  if (!remoteType.IsPrivilegedAbout()) {
     return IPC_FAIL(this, "Wrong process type");
   }
 

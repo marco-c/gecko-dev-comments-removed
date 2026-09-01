@@ -365,7 +365,7 @@ GeckoMediaPluginServiceParent::Observe(nsISupports* aSubject,
       mozilla::dom::Pref pref(strData,  false,
                                false, Nothing(), Nothing());
       Preferences::GetPreference(&pref, GeckoProcessType_GMPlugin,
-                                  ""_ns);
+                                  {});
       return GMPDispatch(NewRunnableMethod<mozilla::dom::Pref&&>(
           "gmp::GeckoMediaPluginServiceParent::OnPreferenceChanged", this,
           &GeckoMediaPluginServiceParent::OnPreferenceChanged,

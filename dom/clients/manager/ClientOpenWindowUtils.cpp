@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ClientOpenWindowUtils.h"
 
 #include "ClientInfo.h"
@@ -368,7 +366,7 @@ void WaitForLoad(const ClientOpenWindowArgsParsed& aArgsValidated,
     loadState->SetTriggeringRemoteType(
         aArgsValidated.originContent
             ? aArgsValidated.originContent->GetRemoteType()
-            : NOT_REMOTE_TYPE);
+            : RemoteType::NotRemote());
 
     rv = aBrowsingContext->LoadURI(loadState, true);
     if (NS_FAILED(rv)) {

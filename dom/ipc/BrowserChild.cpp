@@ -2212,7 +2212,7 @@ already_AddRefed<DataTransfer> BrowserChild::ConvertToDataTransfer(
   
   
   
-  if (!aPrincipal || Manager()->GetRemoteType() != EXTENSION_REMOTE_TYPE) {
+  if (!aPrincipal || !Manager()->GetRemoteType().IsExtension()) {
     aPrincipal = nsContentUtils::GetSystemPrincipal();
   }
 

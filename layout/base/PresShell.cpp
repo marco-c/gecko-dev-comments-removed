@@ -1069,7 +1069,7 @@ void PresShell::Destroy() {
       return false;
     }
     if (XRE_IsContentProcess() &&
-        IsExtensionRemoteType(ContentChild::GetSingleton()->GetRemoteType())) {
+        ContentChild::GetSingleton()->GetRemoteType().IsExtension()) {
       
       
       return false;

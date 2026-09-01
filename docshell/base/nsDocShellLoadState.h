@@ -7,6 +7,7 @@
 
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/NavigationBinding.h"
+#include "mozilla/dom/RemoteType.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/dom/UserNavigationInvolvement.h"
 #include "mozilla/dom/LoadURIOptionsBinding.h"
@@ -363,11 +364,13 @@ class nsDocShellLoadState final {
 
   bool IsMetaRefresh() const { return mIsMetaRefresh; }
 
-  const mozilla::Maybe<nsCString>& GetRemoteTypeOverride() const {
+  const mozilla::Maybe<mozilla::dom::RemoteType>& GetRemoteTypeOverride()
+      const {
     return mRemoteTypeOverride;
   }
 
-  void SetRemoteTypeOverride(const nsCString& aRemoteTypeOverride);
+  void SetRemoteTypeOverride(
+      const mozilla::dom::RemoteType& aRemoteTypeOverride);
 
   void SetSchemelessInput(nsILoadInfo::SchemelessInputType aSchemelessInput) {
     mSchemelessInput = aSchemelessInput;
@@ -402,9 +405,10 @@ class nsDocShellLoadState final {
   
   
   
-  const nsCString& GetEffectiveTriggeringRemoteType() const;
+  const mozilla::dom::RemoteType& GetEffectiveTriggeringRemoteType() const;
 
-  void SetTriggeringRemoteType(const nsACString& aTriggeringRemoteType);
+  void SetTriggeringRemoteType(
+      const mozilla::dom::RemoteType& aTriggeringRemoteType);
 
   
   
@@ -758,10 +762,10 @@ class nsDocShellLoadState final {
   nsCOMPtr<nsIURI> mUnstrippedURI;
 
   
-  mozilla::Maybe<nsCString> mRemoteTypeOverride;
+  mozilla::Maybe<mozilla::dom::RemoteType> mRemoteTypeOverride;
 
   
-  nsCString mTriggeringRemoteType;
+  mozilla::dom::RemoteType mTriggeringRemoteType;
 
   
   nsILoadInfo::SchemelessInputType mSchemelessInput =

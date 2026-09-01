@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_InProcessParent_h
 #define mozilla_dom_InProcessParent_h
 
@@ -47,7 +45,9 @@ class InProcessParent final : public nsIDOMProcessParent,
   
   static IProtocol* ChildActorFor(IProtocol* aActor);
 
-  const nsACString& GetRemoteType() const override { return NOT_REMOTE_TYPE; };
+  const RemoteType& GetRemoteType() const override {
+    return RemoteType::NotRemote();
+  };
 
  protected:
   already_AddRefed<JSActor> InitJSActor(JS::Handle<JSObject*> aMaybeActor,

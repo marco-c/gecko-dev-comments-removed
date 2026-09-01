@@ -240,8 +240,7 @@ bool InferenceSession::InInferenceProcess(JSContext*, JSObject*) {
   if (!ContentChild::GetSingleton()) {
     return false;
   }
-  return ContentChild::GetSingleton()->GetRemoteType().Equals(
-      INFERENCE_REMOTE_TYPE);
+  return ContentChild::GetSingleton()->GetRemoteType().IsInference();
 }
 
 bool InferenceSession::IsAvailable(const GlobalObject&) {
@@ -417,7 +416,8 @@ void InferenceSession::Init(const RefPtr<Promise>& aPromise,
       });
   if (status) {
     LOGD("CreateSession error: {}", status.Message());
-    MOZ_CRASH("CreateSession error");
+    aPromise->MaybeRejectWithUnknownError(nsDependentCString(status.Message()));
+    return;
   }
   LOGD("Successfully created ONNX Runtime session.");
   mSession = session;

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_RemoteWorkerServiceParent_h
 #define mozilla_dom_RemoteWorkerServiceParent_h
 
@@ -35,7 +33,7 @@ class RemoteWorkerServiceParent final : public PRemoteWorkerServiceParent {
     return mProcess;
   }
 
-  nsCString GetRemoteType() const;
+  RemoteType GetRemoteType() const;
 
  private:
   explicit RemoteWorkerServiceParent(ThreadsafeContentParentHandle* aProcess);

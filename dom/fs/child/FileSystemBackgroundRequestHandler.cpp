@@ -79,8 +79,8 @@ FileSystemBackgroundRequestHandler::CreateFileSystemManagerChild(
 
   
   EnumSet<ValidatePrincipalOptions> options;
-  if (CurrentRemoteType() == INFERENCE_REMOTE_TYPE) {
-    options += ValidatePrincipalOptions::AllowSystem;
+  if (CurrentRemoteType().IsInference()) {
+    options += ValidatePrincipalOptions::AllowSystemIfLoaded;
   }
   if (!BackgroundChild::ValidatePrincipalInfo(aPrincipalInfo, options)) {
     MOZ_ASSERT_UNREACHABLE(

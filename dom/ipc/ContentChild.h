@@ -69,6 +69,7 @@ class SharedMap;
 
 class ConsoleListener;
 class BrowserChild;
+class IPCTabContext;
 class TabContext;
 enum class CallerType : uint32_t;
 
@@ -393,14 +394,12 @@ class ContentChild final : public PContentChild,
       const nsCString& UAName, const nsCString& ID, const nsCString& vendor,
       const nsCString& sourceURL, const nsCString& updateURL);
 
-  mozilla::ipc::IPCResult RecvRemoteType(const nsCString& aRemoteType,
-                                         const nsCString& aProfile);
+  mozilla::ipc::IPCResult RecvSetRemoteType(const RemoteType& aRemoteType,
+                                            const nsCString& aProfile);
 
   void PreallocInit();
 
-  
-  
-  const nsACString& GetRemoteType() const override;
+  const RemoteType& GetRemoteType() const override;
 
   mozilla::ipc::IPCResult RecvAddLoadedOrigin(nsIPrincipal* aPrincipal);
 
@@ -906,7 +905,7 @@ class ContentChild final : public PContentChild,
   AppInfo mAppInfo;
 
   bool mIsForBrowser;
-  nsCString mRemoteType = NOT_REMOTE_TYPE;
+  RemoteType mRemoteType;
   bool mIsAlive;
   nsCString mProcessName;
 
@@ -960,7 +959,7 @@ inline nsISupports* ToSupports(mozilla::dom::ContentChild* aContentChild) {
 }
 
 
-nsCString CurrentRemoteType();
+RemoteType CurrentRemoteType();
 
 
 already_AddRefed<LoadedOriginSet> CurrentLoadedOriginSet();

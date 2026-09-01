@@ -664,23 +664,34 @@ ThreadsafeContentParentHandle* BackgroundParent::GetContentParentHandle(
 }
 
 
+LoadedOriginSet* BackgroundParent::GetLoadedOrigins(
+    PBackgroundParent* aBackgroundActor) {
+  ThreadsafeContentParentHandle* handle =
+      GetContentParentHandle(aBackgroundActor);
+  return handle ? handle->LoadedOrigins() : nullptr;
+}
+
+
 uint64_t BackgroundParent::GetChildID(PBackgroundParent* aBackgroundActor) {
   return ParentImpl::GetChildID(aBackgroundActor);
 }
 
 
-nsCString BackgroundParent::GetRemoteType(PBackgroundParent* aBackgroundActor) {
+mozilla::dom::RemoteType BackgroundParent::GetRemoteType(
+    PBackgroundParent* aBackgroundActor) {
   ThreadsafeContentParentHandle* handle =
       GetContentParentHandle(aBackgroundActor);
-  return handle ? handle->GetRemoteType() : NOT_REMOTE_TYPE;
+  return handle ? handle->GetRemoteType()
+                : mozilla::dom::RemoteType::NotRemote();
 }
 
 
 bool BackgroundParent::ValidatePrincipal(
     PBackgroundParent* aBackgroundActor, nsIPrincipal* aPrincipal,
     const EnumSet<ValidatePrincipalOptions>& aOptions) {
-  return ValidatePrincipalCouldPotentiallyBeLoadedBy(
-      aPrincipal, GetRemoteType(aBackgroundActor), aOptions);
+  RefPtr<ThreadsafeContentParentHandle> handle =
+      GetContentParentHandle(aBackgroundActor);
+  return !handle || handle->ValidatePrincipal(aPrincipal, aOptions);
 }
 
 
@@ -738,8 +749,9 @@ void BackgroundChild::InitContentStarter(ContentChild* aContent) {
 bool BackgroundChild::ValidatePrincipal(
     nsIPrincipal* aPrincipal,
     const EnumSet<ValidatePrincipalOptions>& aOptions) {
-  return ValidatePrincipalCouldPotentiallyBeLoadedBy(
-      aPrincipal, dom::CurrentRemoteType(), aOptions);
+  RefPtr<LoadedOriginSet> loadedOrigins = CurrentLoadedOriginSet();
+  return !loadedOrigins ||
+         loadedOrigins->ValidatePrincipal(aPrincipal, aOptions);
 }
 
 
