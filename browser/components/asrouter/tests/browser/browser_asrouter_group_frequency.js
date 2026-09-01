@@ -4,24 +4,65 @@ const { ASRouter } = ChromeUtils.importESModule(
 const { RemoteSettings } = ChromeUtils.importESModule(
   "resource://services-settings/remote-settings.sys.mjs"
 );
-const { CFRMessageProvider } = ChromeUtils.importESModule(
-  "resource:///modules/asrouter/CFRMessageProvider.sys.mjs"
+const { InfoBar } = ChromeUtils.importESModule(
+  "resource:///modules/asrouter/InfoBar.sys.mjs"
 );
+
+
+
+const TEST_PREF = "test.asrouter.groupFrequency";
+
+function getInfobarBox() {
+  return gBrowser.getNotificationBox(gBrowser.selectedBrowser);
+}
+
+function getInfobar(id) {
+  return getInfobarBox().getNotificationWithValue(id);
+}
+
+
+
+
+
+
+async function showAndDismissInfobar(id, prefValue, expectedImpressions) {
+  Services.prefs.setIntPref(TEST_PREF, prefValue);
+
+  const node = await TestUtils.waitForCondition(
+    () => getInfobar(id),
+    `Infobar should be shown (impression ${expectedImpressions})`
+  );
+
+  await TestUtils.waitForCondition(
+    () => ASRouter.state.messageImpressions[id]?.length === expectedImpressions,
+    `Impression ${expectedImpressions} recorded`
+  );
+
+  getInfobarBox().removeNotification(node);
+  await TestUtils.waitForCondition(
+    () => !InfoBar._activeInfobar,
+    `Active infobar should be cleared (impression ${expectedImpressions})`
+  );
+}
 
 
 
 
 add_setup(async function () {
   const initialMsgCount = ASRouter.state.messages.length;
-  const heartbeatMsg = (await CFRMessageProvider.getMessages()).find(
-    m => m.id === "HEARTBEAT_TACTIC_2"
-  );
   const testMessage = {
-    ...heartbeatMsg,
+    
+    id: `GROUP_FREQUENCY_MESSAGE_${Date.now()}`,
+    template: "infobar",
     groups: ["messaging-experiments"],
     targeting: "true",
-    
-    id: `HEARTBEAT_MESSAGE_${Date.now()}`,
+    frequency: { lifetime: 3 },
+    trigger: { id: "preferenceObserver", params: [TEST_PREF] },
+    content: {
+      type: "tab",
+      text: "Group frequency test infobar",
+      buttons: [{ label: "OK", primary: true, action: { type: "CANCEL" } }],
+    },
   };
   const client = RemoteSettings("cfr");
   await client.db.importChanges({}, Date.now(), [testMessage], {
@@ -43,10 +84,10 @@ add_setup(async function () {
   await ASRouter.loadMessagesFromAllProviders();
   await TestUtils.waitForCondition(
     () => ASRouter.state.messages.length > initialMsgCount,
-    "Should load the extra heartbeat message"
+    "Should load the extra test message"
   );
 
-  TestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => ASRouter.state.messages.find(m => m.id === testMessage.id),
     "Wait to load the message"
   );
@@ -56,6 +97,7 @@ add_setup(async function () {
   Assert.equal(msg.groups[0], "messaging-experiments");
 
   registerCleanupFunction(async () => {
+    Services.prefs.clearUserPref(TEST_PREF);
     await client.db.clear();
     
     await ASRouter._updateMessageProviders();
@@ -74,10 +116,7 @@ add_setup(async function () {
 
 
 
-
-add_task(async function test_heartbeat_tactic_2() {
-  
-  const TEST_URL = "http://example.com";
+add_task(async function test_group_frequency_cap() {
   const msg = ASRouter.state.messages.find(m =>
     m.groups.includes("messaging-experiments")
   );
@@ -117,66 +156,43 @@ add_task(async function test_heartbeat_tactic_2() {
   );
   Assert.ok(groupState, "Group config found");
   Assert.ok(groupState.enabled, "Group is enabled");
-
-  let tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
-  BrowserTestUtils.startLoadingURIString(tab1.linkedBrowser, TEST_URL);
-
-  let chiclet = document.getElementById("contextual-feature-recommendation");
-  Assert.ok(chiclet, "CFR chiclet element found (tab1)");
-  await TestUtils.waitForCondition(
-    () => !chiclet.hidden,
-    "Chiclet should be visible (tab1)"
+  Assert.equal(
+    msg.frequency.lifetime,
+    3,
+    "Message's own cap allows more impressions than the group's cap of 2"
   );
 
-  await TestUtils.waitForCondition(
-    () =>
-      ASRouter.state.messageImpressions[msg.id] &&
-      ASRouter.state.messageImpressions[msg.id].length === 1,
-    "First impression recorded"
-  );
-
-  BrowserTestUtils.removeTab(tab1);
-
-  let tab2 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
-  BrowserTestUtils.startLoadingURIString(tab2.linkedBrowser, TEST_URL);
-
-  Assert.ok(chiclet, "CFR chiclet element found (tab2)");
-  await TestUtils.waitForCondition(
-    () => !chiclet.hidden,
-    "Chiclet should be visible (tab2)"
-  );
-
-  await TestUtils.waitForCondition(
-    () =>
-      ASRouter.state.messageImpressions[msg.id] &&
-      ASRouter.state.messageImpressions[msg.id].length === 2,
-    "Second impression recorded"
-  );
+  await showAndDismissInfobar(msg.id, 1, 1);
+  await showAndDismissInfobar(msg.id, 2, 2);
 
   Assert.ok(
     !ASRouter.isBelowFrequencyCaps(msg),
     "Should have reached freq limit"
   );
 
-  BrowserTestUtils.removeTab(tab2);
-
-  let tab3 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
-  BrowserTestUtils.startLoadingURIString(tab3.linkedBrowser, TEST_URL);
-
-  await TestUtils.waitForCondition(
-    () => chiclet.hidden,
-    "Heartbeat button should be hidden"
-  );
+  
+  
+  const eligible = await ASRouter.handleMessageRequest({
+    triggerId: "preferenceObserver",
+    triggerParam: { type: TEST_PREF },
+  });
   Assert.equal(
-    ASRouter.state.messageImpressions[msg.id] &&
-      ASRouter.state.messageImpressions[msg.id].length,
+    eligible,
+    null,
+    "Message is not eligible once the group cap is reached"
+  );
+
+  Services.prefs.setIntPref(TEST_PREF, 3);
+  await TestUtils.waitForTick();
+  Assert.ok(!getInfobar(msg.id), "Infobar should not be shown once capped");
+  Assert.equal(
+    ASRouter.state.messageImpressions[msg.id].length,
     2,
     "Number of impressions did not increase"
   );
 
-  BrowserTestUtils.removeTab(tab3);
-
   info("Cleanup");
+  Services.prefs.clearUserPref(TEST_PREF);
   await client.db.clear();
   
   await ASRouter.resetGroupsState();
@@ -184,5 +200,4 @@ add_task(async function test_heartbeat_tactic_2() {
   await ASRouter._updateMessageProviders();
   await ASRouter.loadMessagesFromAllProviders();
   await SpecialPowers.popPrefEnv();
-  CFRPageActions.clearRecommendations();
 });

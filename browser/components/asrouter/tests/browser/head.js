@@ -58,21 +58,6 @@ async function waitForUrlLoad(url) {
   await BrowserTestUtils.browserLoaded(browser, false, url);
 }
 
-
-
-
-
-
-async function hideCFRDoorhanger() {
-  await BrowserTestUtils.waitForPopupEvent(PopupNotifications.panel, "shown");
-  Assert.ok(
-    PopupNotifications.getNotification("contextual-feature-recommendation"),
-    "The CFR doorhanger is shown"
-  );
-  CFRPageActions.clearRecommendations();
-  await BrowserTestUtils.waitForPopupEvent(PopupNotifications.panel, "hidden");
-}
-
 async function waitForCalloutScreen(target, screenId) {
   await BrowserTestUtils.waitForMutationCondition(
     target,
