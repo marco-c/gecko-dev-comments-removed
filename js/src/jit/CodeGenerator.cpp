@@ -21904,9 +21904,14 @@ void CodeGenerator::visitGeneratorResume(LGeneratorResume* lir) {
 
   
   
-  
   Register code = callee;
-  masm.loadJitCodeRawNoIon(callee, code, scratch);
+  if (resumeKind == int32_t(GeneratorResumeKind::Next)) {
+    masm.loadJitCodeRaw(callee, code);
+  } else {
+    MOZ_ASSERT(resumeKind == int32_t(GeneratorResumeKind::Throw) ||
+               resumeKind == int32_t(GeneratorResumeKind::Return));
+    masm.loadJitCodeRawNoIon(callee, code, scratch);
+  }
 
   masm.switchToObjectRealm(genObj, scratch);
 

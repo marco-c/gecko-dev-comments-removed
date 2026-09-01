@@ -615,7 +615,7 @@ bool TrialInliner::canInline(JSContext* cx, JSScript* script,
     
     TempAllocator temp(&cx->tempLifoAlloc());
     BytecodeAnalysis analysis(temp, script);
-    if (!analysis.init(temp)) {
+    if (!analysis.init()) {
       JitSpew(JitSpew_WarpTrialInlining, "SKIP: OOM in bytecode analysis");
       cx->recoverFromOutOfMemory();
       return false;

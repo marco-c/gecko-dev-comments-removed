@@ -403,6 +403,7 @@ uint8_t* jit::LazyLinkTopActivation(JSContext* cx,
   
   
   
+  
   FrameDescriptor descriptor = jsFrame->descriptor();
   if (descriptor.isResumingGenerator() || descriptor.hasInlinedICScript()) {
     return calleeScript->baselineScript()->method()->raw();

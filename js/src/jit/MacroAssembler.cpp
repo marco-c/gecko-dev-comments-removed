@@ -4138,7 +4138,6 @@ void MacroAssembler::loadJitCodeRawNoIon(Register func, Register dest,
   
   
   
-  
 
   Label useJitCodeRaw, done;
   loadPrivate(Address(func, JSFunction::offsetOfJitInfoOrScript()), dest);
