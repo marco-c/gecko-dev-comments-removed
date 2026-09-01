@@ -234,7 +234,11 @@ pub struct SpaceSnapper {
     
     snap_node_index: SpatialNodeIndex,
     
+    
     raster_content_inverse: ScaleOffset,
+    
+    
+    snap_scale: f32,
     
     
     
@@ -259,6 +263,15 @@ impl SpaceSnapper {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn new(
         surface: &SurfaceInfo,
         spatial_tree: &SpatialTree,
@@ -268,12 +281,26 @@ impl SpaceSnapper {
         let raster_node = spatial_tree.get_spatial_node(raster_spatial_node_index);
         let raster_in_root = raster_node.coordinate_system_id == CoordinateSystemId::root();
 
-        let (enabled, snap_node_index) = if raster_in_root {
-            (true, spatial_tree.root_reference_frame_index())
+        
+        
+        
+        
+        let (enabled, snap_node_index, snap_scale) = if raster_in_root && !surface.allow_snapping {
+            (true, spatial_tree.root_reference_frame_index(), 1.0)
         } else if surface.allow_snapping {
-            (true, raster_spatial_node_index)
+            
+            
+            
+            
+            
+            
+            debug_assert!(
+                raster_in_root,
+                "snapping surface with a raster node outside the root coordinate system",
+            );
+            (true, raster_spatial_node_index, surface.device_pixel_scale.0)
         } else {
-            (false, raster_spatial_node_index)
+            (false, raster_spatial_node_index, 1.0)
         };
 
         let snap_node = spatial_tree.get_spatial_node(snap_node_index);
@@ -281,7 +308,8 @@ impl SpaceSnapper {
         SpaceSnapper {
             enabled,
             snap_node_index,
-            raster_content_inverse: snap_node.content_transform.inverse(),
+            raster_content_inverse: snap_node.content_transform.inverse().then_scale(snap_scale),
+            snap_scale,
             raster_coord_system_id: snap_node.coordinate_system_id,
             current_target_spatial_node_index: SpatialNodeIndex::INVALID,
             snapping_transform: None,
@@ -333,7 +361,10 @@ impl SpaceSnapper {
                 .get_relative_transform(target_node_index, self.snap_node_index)
                 .into_transform();
             fwd.as_grid_aligned_rotation()
-                .map(|(scale_offset, swap_xy)| SnapTransform { scale_offset, swap_xy })
+                .map(|(scale_offset, swap_xy)| SnapTransform {
+                    scale_offset: scale_offset.then_scale(self.snap_scale),
+                    swap_xy,
+                })
         };
     }
 
@@ -457,8 +488,8 @@ mod tests {
     use super::*;
     use api::{PipelineId, PropertyBinding, ReferenceFrameKind, StickyOffsetBounds, TransformStyle};
     use api::units::{
-        DevicePixelScale, LayoutPoint, LayoutRect, LayoutSize, LayoutTransform, LayoutVector2D,
-        WorldPoint, WorldRect, WorldSize,
+        DevicePixelScale, DeviceSize, LayoutPoint, LayoutRect, LayoutSize, LayoutTransform,
+        LayoutVector2D,
     };
     use crate::scene::SceneProperties;
     use crate::spatial_node::StickyFrameInfo;
@@ -506,7 +537,14 @@ mod tests {
     
     
     
-    fn assert_snaps_against_root(st: &SpatialTree, raster_node: SpatialNodeIndex) {
+    
+    
+    
+    
+    
+    
+    
+    fn assert_content_lands_on_device_pixels(st: &SpatialTree, raster_node: SpatialNodeIndex) {
         
         
         let node = st.get_spatial_node(raster_node);
@@ -522,7 +560,7 @@ mod tests {
         let surface = SurfaceInfo::new(
             raster_node,
             raster_node,
-            WorldRect::from_origin_and_size(WorldPoint::zero(), WorldSize::new(1000.0, 1000.0)),
+            DeviceRect::from_origin_and_size(DevicePoint::zero(), DeviceSize::new(1000.0, 1000.0)),
             st,
             DevicePixelScale::new(1.0),
             (1.0, 1.0),
@@ -534,20 +572,28 @@ mod tests {
         let mut snapper = SpaceSnapper::new(&surface, st);
         snapper.set_target_spatial_node(raster_node, st);
 
-        
-        
-        
-        
         let rect = LayoutRect::from_origin_and_size(
             LayoutPoint::new(20.0, 40.0),
             LayoutSize::new(60.0, 20.0),
         );
         let snapped = snapper.snap_rect(&rect);
 
+        
+        
+        let composite = crate::picture::get_relative_scale_offset(
+            raster_node,
+            st.root_reference_frame_index(),
+            st,
+        );
+        let device_x = snapped.min.x * composite.scale.x + composite.offset.x;
+        let device_y = snapped.min.y * composite.scale.y + composite.offset.y;
+
         assert!(
-            (snapped.min.x - 19.6).abs() < 0.01 && (snapped.min.y - 39.6).abs() < 0.01,
-            "expected content snapped against root (min ~= 19.6,39.6), got {:?}",
+            (device_x - device_x.round()).abs() < 0.01
+                && (device_y - device_y.round()).abs() < 0.01,
+            "expected snapped content to composite on whole device pixels, got              ({device_x}, {device_y}) from snapped local {:?} at composite offset {:?}",
             snapped.min,
+            composite.offset,
         );
     }
 
@@ -575,7 +621,7 @@ mod tests {
     }
 
     #[test]
-    fn test_root_cs_surface_snaps_against_root() {
+    fn test_root_cs_surface_content_lands_on_device_pixels() {
         let mut cst = SceneSpatialTree::new();
         let root = cst.root_reference_frame_index();
         let frac = add_fractional_ref_frame(&mut cst, root);
@@ -584,11 +630,11 @@ mod tests {
         st.apply_updates(cst.end_frame_and_get_pending_updates());
         st.update_tree(&SceneProperties::new());
 
-        assert_snaps_against_root(&st, frac);
+        assert_content_lands_on_device_pixels(&st, frac);
     }
 
     #[test]
-    fn test_sticky_cache_snaps_against_root() {
+    fn test_sticky_cache_content_lands_on_device_pixels() {
         
         
         
@@ -613,7 +659,7 @@ mod tests {
         st.apply_updates(cst.end_frame_and_get_pending_updates());
         st.update_tree(&SceneProperties::new());
 
-        assert_snaps_against_root(&st, sticky);
+        assert_content_lands_on_device_pixels(&st, sticky);
     }
 
     #[test]
@@ -662,7 +708,7 @@ mod tests {
         let surface = SurfaceInfo::new(
             root,
             root,
-            WorldRect::from_origin_and_size(WorldPoint::zero(), WorldSize::new(1000.0, 1000.0)),
+            DeviceRect::from_origin_and_size(DevicePoint::zero(), DeviceSize::new(1000.0, 1000.0)),
             &st,
             DevicePixelScale::new(1.0),
             (1.0, 1.0),
@@ -715,7 +761,7 @@ mod tests {
         let surface = SurfaceInfo::new(
             root,
             root,
-            WorldRect::from_origin_and_size(WorldPoint::zero(), WorldSize::new(1000.0, 1000.0)),
+            DeviceRect::from_origin_and_size(DevicePoint::zero(), DeviceSize::new(1000.0, 1000.0)),
             &st,
             DevicePixelScale::new(1.0),
             (1.0, 1.0),
