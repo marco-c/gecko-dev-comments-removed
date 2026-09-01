@@ -13,9 +13,9 @@ function click(target) {
 }
 
 function openContextMenu(target) {
-  let popupShownPromise = BrowserTestUtils.waitForEvent(
-    target.documentGlobal,
-    "contextmenu"
+  let popupShownPromise = BrowserTestUtils.waitForPopupEvent(
+    target.closest("moz-input-box").menupopup,
+    "shown"
   );
 
   EventUtils.synthesizeMouseAtCenter(
@@ -172,7 +172,11 @@ add_task(async function rightClickSelectsAll() {
   );
   Assert.ok(enabled, "The context menu select all item should be enabled.");
 
+  
+  
+  let commandPromise = BrowserTestUtils.waitForEvent(contextMenu, "command");
   await click(contextMenuItem);
+  await commandPromise;
   Assert.equal(
     gURLBar.selectionStart,
     0,
