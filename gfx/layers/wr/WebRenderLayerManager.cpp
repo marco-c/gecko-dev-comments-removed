@@ -616,16 +616,7 @@ void WebRenderLayerManager::DidComposite(
   
   
   if (aTransactionId.IsValid()) {
-    nsIWidgetListener* listener = mWidget->GetWidgetListener();
-    if (listener) {
-      listener->DidCompositeWindow(aTransactionId, aCompositeStart,
-                                   aCompositeEnd);
-    }
-    listener = mWidget->GetAttachedWidgetListener();
-    if (listener) {
-      listener->DidCompositeWindow(aTransactionId, aCompositeStart,
-                                   aCompositeEnd);
-    }
+    mWidget->DidCompositeWindow(aTransactionId, aCompositeStart, aCompositeEnd);
     if (mTransactionIdAllocator) {
       mTransactionIdAllocator->NotifyTransactionCompleted(aTransactionId);
     }

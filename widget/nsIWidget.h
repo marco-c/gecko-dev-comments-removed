@@ -836,6 +836,15 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
+
+  virtual void DidCompositeWindow(mozilla::layers::TransactionId aTransactionId,
+                                  const mozilla::TimeStamp& aCompositeStart,
+                                  const mozilla::TimeStamp& aCompositeEnd);
+
+  
+
+
+
   virtual nsSizeMode SizeMode() = 0;
 
   
