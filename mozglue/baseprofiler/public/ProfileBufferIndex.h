@@ -41,24 +41,8 @@ class ProfileBufferBlockIndex {
 
   
   
-  [[nodiscard]] bool operator==(const ProfileBufferBlockIndex& aRhs) const {
-    return mBlockIndex == aRhs.mBlockIndex;
-  }
-  [[nodiscard]] bool operator!=(const ProfileBufferBlockIndex& aRhs) const {
-    return mBlockIndex != aRhs.mBlockIndex;
-  }
-  [[nodiscard]] bool operator<(const ProfileBufferBlockIndex& aRhs) const {
-    return mBlockIndex < aRhs.mBlockIndex;
-  }
-  [[nodiscard]] bool operator<=(const ProfileBufferBlockIndex& aRhs) const {
-    return mBlockIndex <= aRhs.mBlockIndex;
-  }
-  [[nodiscard]] bool operator>(const ProfileBufferBlockIndex& aRhs) const {
-    return mBlockIndex > aRhs.mBlockIndex;
-  }
-  [[nodiscard]] bool operator>=(const ProfileBufferBlockIndex& aRhs) const {
-    return mBlockIndex >= aRhs.mBlockIndex;
-  }
+  [[nodiscard]] auto operator<=>(const ProfileBufferBlockIndex& aRhs) const =
+      default;
 
   
   
