@@ -30,7 +30,7 @@ add_task(function () {
   for (const { description, input, expected, testMessage } of TEST_DATA) {
     info(description);
 
-    const result = UrlbarUtils.unEscapeURIForUI(input);
+    const result = UrlbarShared.unEscapeURIForUI(input);
     Assert.equal(result, expected, testMessage);
   }
 });
