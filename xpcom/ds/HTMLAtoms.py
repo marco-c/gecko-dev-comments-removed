@@ -167,6 +167,8 @@ HTML_PARSER_ATOMS = [
     
     Atom("alttext", "alttext"),
     
+    Atom("customelementregistry", "customelementregistry"),
+    
     Atom("filterunits", "filterunits"),
     
     Atom("keytimes", "keytimes"),

@@ -6,6 +6,7 @@
 #include "mozAutoDocUpdate.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/Likely.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/Comment.h"
 #include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/DocGroup.h"
@@ -628,6 +629,18 @@ nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
       nsContentUtils::GetCustomElementRegistry(aIntendedParent);
   if (customElementRegistry.isNothing()) {
     customElementRegistry = std::move(aContextRegistry);
+  }
+
+  
+  
+  
+  
+  
+  
+  if (aAttributes &&
+      StaticPrefs::dom_scoped_custom_element_registries_enabled() &&
+      aAttributes->contains(nsHtml5AttributeName::ATTR_CUSTOMELEMENTREGISTRY)) {
+    customElementRegistry = Some(RefPtr<CustomElementRegistry>(nullptr));
   }
 
   
