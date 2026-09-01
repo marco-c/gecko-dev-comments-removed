@@ -365,11 +365,7 @@ nsresult nsBaseDragSession::InvokeDragSession(
       nsCOMPtr<nsITransferable> trans =
           do_CreateInstance("@mozilla.org/widget/transferable;1");
       trans->Init(nullptr);
-#ifdef MOZ_THUNDERBIRD  
-      trans->SetDataPrincipal(mSourceNode->NodePrincipal());
-#else
       trans->SetDataPrincipal(mTriggeringPrincipal);
-#endif
       trans->SetContentPolicyType(mContentPolicyType);
       trans->SetCookieJarSettings(aCookieJarSettings);
       mutableArray->AppendElement(trans);
@@ -380,12 +376,7 @@ nsresult nsBaseDragSession::InvokeDragSession(
           do_QueryElementAt(aTransferableArray, i);
       if (trans) {
         
-
-#ifdef MOZ_THUNDERBIRD  
-        trans->SetDataPrincipal(mSourceNode->NodePrincipal());
-#else
         trans->SetDataPrincipal(mTriggeringPrincipal);
-#endif
         trans->SetContentPolicyType(mContentPolicyType);
         trans->SetCookieJarSettings(aCookieJarSettings);
       }
