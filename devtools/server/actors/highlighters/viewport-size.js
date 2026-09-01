@@ -107,12 +107,7 @@ class ViewportSizeHighlighter {
     const { window } = this.env;
     const { innerHeight, innerWidth } = window;
     const infobarId = "viewport-size-highlighter-viewport-infobar-container";
-    
-    
-    
-    
-    const textContent =
-      innerWidth.toFixed(1) + "px \u00D7 " + innerHeight.toFixed(1) + "px";
+    const textContent = innerWidth + "px \u00D7 " + innerHeight + "px";
     this.markup.getElement(infobarId).setTextContent(textContent);
   }
 
