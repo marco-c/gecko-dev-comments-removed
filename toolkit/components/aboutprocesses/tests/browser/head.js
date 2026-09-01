@@ -140,6 +140,13 @@ function getTimeMultiplier(unit) {
   }
   throw new Error("Invalid time unit: " + unit);
 }
+
+
+
+function parseLocalizedFloat(str) {
+  return Number.parseFloat(str.replace(/,/g, ""));
+}
+
 async function testCpu(element, total, slope, assumptions) {
   info(
     `Testing CPU display ${element.textContent} - ${element.title} vs total ${total}, slope ${slope}`
@@ -178,7 +185,7 @@ async function testCpu(element, total, slope, assumptions) {
       return;
     default: {
       
-      let computedPercentage = Number.parseFloat(extractedPercentage);
+      let computedPercentage = parseLocalizedFloat(extractedPercentage);
       Assert.ok(
         isCloseEnough(computedPercentage, slope * 100),
         `The displayed approximation of the slope is reasonable: ${computedPercentage} vs ${
@@ -213,11 +220,7 @@ async function testCpu(element, total, slope, assumptions) {
 
   let totalMS = total / MS_PER_NS;
   let computedTotal =
-    
-    
-    
-    Number.parseFloat(extractedTotal.replace(/,/g, "")) *
-    getTimeMultiplier(extractedUnit);
+    parseLocalizedFloat(extractedTotal) * getTimeMultiplier(extractedUnit);
   Assert.ok(
     isCloseEnough(computedTotal, totalMS),
     `The displayed approximation of the total duration is reasonable: ${computedTotal} vs ${totalMS}`
@@ -243,7 +246,7 @@ async function testMemory(element, total, delta, assumptions) {
   );
   let [, extractedTotal, extractedUnit] = extracted;
 
-  let extractedTotalNumber = Number.parseFloat(extractedTotal);
+  let extractedTotalNumber = parseLocalizedFloat(extractedTotal);
   Assert.greater(
     extractedTotalNumber,
     0,
@@ -287,10 +290,7 @@ async function testMemory(element, total, delta, assumptions) {
     Assert.equal(delta || 0, 0);
     return;
   }
-  let deltaTotalNumber = Number.parseFloat(
-    
-    extractedDeltaTotal.replace(/,/g, "")
-  );
+  let deltaTotalNumber = parseLocalizedFloat(extractedDeltaTotal);
   
   
   Assert.ok(
