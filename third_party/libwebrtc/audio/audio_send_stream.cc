@@ -507,6 +507,12 @@ void AudioSendStream::DeliverRtcp(std::span<const uint8_t> packet) {
 
 uint32_t AudioSendStream::OnBitrateUpdated(BitrateAllocationUpdate update) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  if (transport_overhead_per_packet_bytes_ !=
+      update.packet_overhead.bytes<size_t>()) {
+    transport_overhead_per_packet_bytes_ =
+        update.packet_overhead.bytes<size_t>();
+    UpdateOverheadPerPacket();
+  }
   
   
   
@@ -524,13 +530,6 @@ uint32_t AudioSendStream::OnBitrateUpdated(BitrateAllocationUpdate update) {
 
 std::optional<DataRate> AudioSendStream::GetUsedRate() const {
   return channel_send_->GetUsedRate();
-}
-
-void AudioSendStream::SetTransportOverhead(
-    int transport_overhead_per_packet_bytes) {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  transport_overhead_per_packet_bytes_ = transport_overhead_per_packet_bytes;
-  UpdateOverheadPerPacket();
 }
 
 void AudioSendStream::UpdateOverheadPerPacket() {

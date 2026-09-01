@@ -21,6 +21,7 @@
 #include "api/sequence_checker.h"
 #include "api/transport/network_types.h"
 #include "api/units/data_rate.h"
+#include "api/units/data_size.h"
 #include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread_annotations.h"
 
@@ -131,6 +132,7 @@ class BitrateAllocator : public BitrateAllocatorInterface {
 
   
   void OnNetworkEstimateChanged(TargetTransferRate msg);
+  void OnTransportOverheadChanged(DataSize transport_overhead);
 
   
   
@@ -158,6 +160,9 @@ class BitrateAllocator : public BitrateAllocatorInterface {
  private:
   using AllocatableTrack = bitrate_allocator_impl::AllocatableTrack;
 
+  void ReallocateAndNotifyObservers(std::optional<double> cwnd_reduce_ratio)
+      RTC_RUN_ON(&sequenced_checker_);
+
   
   
   void UpdateAllocationLimits() RTC_RUN_ON(&sequenced_checker_);
@@ -177,6 +182,8 @@ class BitrateAllocator : public BitrateAllocatorInterface {
   uint32_t last_non_zero_bitrate_bps_ RTC_GUARDED_BY(&sequenced_checker_);
   uint8_t last_fraction_loss_ RTC_GUARDED_BY(&sequenced_checker_);
   int64_t last_rtt_ RTC_GUARDED_BY(&sequenced_checker_);
+  DataSize transport_overhead_ RTC_GUARDED_BY(&sequenced_checker_) =
+      DataSize::Zero();
   
   int num_pause_events_ RTC_GUARDED_BY(&sequenced_checker_);
   int64_t last_bwe_log_time_ RTC_GUARDED_BY(&sequenced_checker_);

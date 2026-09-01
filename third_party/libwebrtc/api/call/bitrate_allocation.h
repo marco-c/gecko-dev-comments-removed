@@ -11,6 +11,7 @@
 #define API_CALL_BITRATE_ALLOCATION_H_
 
 #include "api/units/data_rate.h"
+#include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 
 namespace webrtc {
@@ -31,6 +32,8 @@ struct BitrateAllocationUpdate {
   
   
   double cwnd_reduce_ratio = 0;
+  
+  DataSize packet_overhead = DataSize::Zero();
 };
 
 }  
