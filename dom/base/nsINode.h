@@ -1589,6 +1589,7 @@ class nsINode : public mozilla::dom::EventTarget {
                    "Observer already in the list");
 
       s->mMutationObservers.pushBack(aMutationObserver);
+      ForgetObserverChain();
     }
   }
 
@@ -1606,6 +1607,7 @@ class nsINode : public mozilla::dom::EventTarget {
     if (aMutationObserver &&
         !s->mMutationObservers.contains(aMutationObserver)) {
       s->mMutationObservers.pushBack(aMutationObserver);
+      ForgetObserverChain();
     }
   }
 
@@ -1630,8 +1632,39 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
   void RemoveMutationObserver(nsIMutationObserver* aMutationObserver) {
+    
+    
+    
+    
     if (nsSlots* s = GetExistingSlots()) {
       s->mMutationObservers.remove(aMutationObserver);
+    }
+  }
+
+  
+
+
+
+
+
+
+  static bool IsObserverChainStart(const nsINode* aNode) {
+    return aNode == sObserverChainStart;
+  }
+  static nsINode* ObserverChainSkipTo(const nsINode* aNode) {
+    return aNode == sObserverChainStart ? sObserverChainSkipTo : nullptr;
+  }
+  static void NoteObserverChain(const nsINode* aStart, nsINode* aSkipTo) {
+    sObserverChainStart = aStart;
+    sObserverChainSkipTo = aSkipTo;
+  }
+  static void ForgetObserverChain() {
+    sObserverChainStart = nullptr;
+    sObserverChainSkipTo = nullptr;
+  }
+  static void ForgetObserverChainIfCached(const nsINode* aNode) {
+    if (aNode == sObserverChainStart || aNode == sObserverChainSkipTo) {
+      ForgetObserverChain();
     }
   }
 
@@ -3230,6 +3263,10 @@ class nsINode : public mozilla::dom::EventTarget {
   
   
   uintptr_t mSlotsOrListenerManager = kListenerManagerBit;
+
+  
+  static const nsINode* sObserverChainStart;
+  static nsINode* sObserverChainSkipTo;
 };
 
 NON_VIRTUAL_ADDREF_RELEASE(nsINode)
