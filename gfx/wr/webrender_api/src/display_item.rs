@@ -927,6 +927,10 @@ pub struct StackingContext {
     pub transform_style: TransformStyle,
     pub mix_blend_mode: MixBlendMode,
     pub clip_chain_id: Option<ClipChainId>,
+    
+    
+    
+    
     pub raster_space: RasterSpace,
     pub flags: StackingContextFlags,
 }
@@ -1938,11 +1942,6 @@ pub struct ImageDisplayItem {
     pub alpha_type: AlphaType,
     
     pub color: ColorF,
-    
-    
-    
-    
-    pub sub_rect: Option<DeviceIntRect>,
 }
 
 

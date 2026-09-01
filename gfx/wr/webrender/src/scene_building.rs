@@ -431,6 +431,9 @@ pub struct SceneBuilder<'a> {
     containing_block_stack: Vec<SpatialNodeIndex>,
 
     
+    
+    
+    
     raster_space_stack: Vec<RasterSpace>,
 
     
@@ -2019,6 +2022,9 @@ impl<'a> SceneBuilder<'a> {
     }
 
     
+    
+    
+    
     fn push_stacking_context(
         &mut self,
         mut composite_ops: CompositeOps,
@@ -2026,7 +2032,7 @@ impl<'a> SceneBuilder<'a> {
         prim_flags: PrimitiveFlags,
         spatial_node_index: SpatialNodeIndex,
         clip_chain_id: Option<api::ClipChainId>,
-        requested_raster_space: RasterSpace,
+        raster_space: RasterSpace,
         flags: StackingContextFlags,
     ) -> StackingContextInfo {
         tracy_rs::profile_scope!("push_stacking_context");
@@ -2055,7 +2061,7 @@ impl<'a> SceneBuilder<'a> {
                 prim_flags,
                 spatial_node_index,
                 clip_chain_id,
-                requested_raster_space,
+                raster_space,
                 flags,
             );
             info.pop_stacking_context = true;
@@ -2077,17 +2083,7 @@ impl<'a> SceneBuilder<'a> {
             composite_ops.snapshot.is_some(),
         );
 
-        let new_space = match (self.raster_space_stack.last(), requested_raster_space) {
-            
-            (None, _) => requested_raster_space,
-            
-            (Some(parent_space), RasterSpace::Screen) => *parent_space,
-            
-            (Some(RasterSpace::Screen), space) => space,
-            
-            (Some(RasterSpace::Local(parent_scale)), RasterSpace::Local(scale)) => RasterSpace::Local(parent_scale.max(scale)),
-        };
-        self.raster_space_stack.push(new_space);
+        self.raster_space_stack.push(raster_space);
 
         
         
@@ -2292,7 +2288,7 @@ impl<'a> SceneBuilder<'a> {
                 transform_style,
                 context_3d,
                 flags,
-                raster_space: new_space,
+                raster_space,
             });
         }
 
