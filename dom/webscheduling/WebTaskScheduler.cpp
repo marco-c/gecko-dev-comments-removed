@@ -163,13 +163,13 @@ bool WebTask::Run() {
     return false;
   }
 
-  
-  global->SetWebTaskSchedulingState(mSchedulingState);
-
   AutoJSAPI jsapi;
   if (!jsapi.Init(global)) {
     return false;
   }
+
+  
+  global->SetWebTaskSchedulingState(mSchedulingState);
 
   JS::Rooted<JS::Value> returnVal(jsapi.cx());
 
