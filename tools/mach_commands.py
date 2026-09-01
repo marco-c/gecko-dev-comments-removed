@@ -271,9 +271,17 @@ def npm(command_context, args):
     os.environ["PATH"] = "{}{}{}".format(path, os.pathsep, os.environ["PATH"])
 
     
-    firefox_bin = command_context.get_binary_path(validate_exists=False)
-    if os.path.exists(firefox_bin):
-        os.environ["FIREFOX_BIN"] = firefox_bin
+    
+    
+    from mozbuild.base import BuildEnvironmentNotFoundException
+
+    try:
+        firefox_bin = command_context.get_binary_path(validate_exists=False)
+    except BuildEnvironmentNotFoundException:
+        pass  
+    else:
+        if os.path.exists(firefox_bin):
+            os.environ["FIREFOX_BIN"] = firefox_bin
 
     return command_context.run_process(
         [npm_path, "--scripts-prepend-node-path=auto"] + args,
