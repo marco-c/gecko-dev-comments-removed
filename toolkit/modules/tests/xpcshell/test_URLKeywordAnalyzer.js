@@ -128,6 +128,36 @@ add_task(function test_min_keywords_option() {
   );
 });
 
+add_task(function test_curated_stopwords_keep_content_words() {
+  
+  
+  const { query } = analyzeURL(
+    "https://unstoptest.com/system-fire-interest-name-part"
+  );
+  const words = query.split(" ");
+  for (const w of ["system", "fire", "interest", "name", "part"]) {
+    Assert.ok(
+      words.includes(w),
+      `un-stopped content word survives: ${w} (${query})`
+    );
+  }
+});
+
+add_task(function test_common_stopwords_still_filtered() {
+  
+  const { query } = analyzeURL(
+    "https://unstoptest.com/the-and-of-hiking-boots"
+  );
+  const words = query.split(" ");
+  for (const w of ["the", "and", "of"]) {
+    Assert.ok(!words.includes(w), `stopword dropped: ${w} (${query})`);
+  }
+  Assert.ok(
+    words.includes("hiking") && words.includes("boots"),
+    `content words kept: ${query}`
+  );
+});
+
 add_task(function test_invalid_input() {
   for (const url of ["not a url", "", "://missing-scheme"]) {
     checkAnalyze(url, {
