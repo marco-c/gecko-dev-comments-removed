@@ -107,8 +107,10 @@
 
 #include "mozilla/HashFunctions.h"
 #include "mozilla/Likely.h"
+#include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
 
+#include <algorithm>
 #include <memory>
 #include <tuple>
 #include <utility>
@@ -518,6 +520,10 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
       uint32_t numHashBuckets) {
     return uint32_t(numHashBuckets * FillFactor);
   }
+  static constexpr uint32_t dataCapacityToNumHashBuckets(
+      uint32_t dataCapacity) {
+    return mozilla::RoundUpPow2(dataCapacity / FillFactor);
+  }
 
   
   static constexpr uint32_t InitialBucketsLog2 = 1;
@@ -608,13 +614,31 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     return {data, table, hcs, numBytes};
   }
 
-  [[nodiscard]] bool initBuffer(JSContext* cx) {
+  
+  
+  
+  static constexpr uint32_t hashShiftForCount(uint32_t count) {
+    uint32_t minBuckets = dataCapacityToNumHashBuckets(count);
+    if (minBuckets >= MaxHashBuckets) {
+      return MinHashShift;
+    }
+
+    uint32_t bucketsLog2 = std::max<uint32_t>(mozilla::CeilingLog2(minBuckets),
+                                              InitialBucketsLog2);
+    MOZ_ASSERT(bucketsLog2 < js::kHashNumberBits);
+    return js::kHashNumberBits - bucketsLog2;
+  }
+
+  [[nodiscard]] bool initBuffer(JSContext* cx,
+                                uint32_t hashShift = InitialHashShift) {
     MOZ_ASSERT(!hasAllocatedBuffer());
     MOZ_ASSERT(getDataLength() == 0);
     MOZ_ASSERT(getLiveCount() == 0);
+    MOZ_ASSERT(hashShift >= MinHashShift);
+    MOZ_ASSERT(hashShift <= InitialHashShift);
 
-    constexpr uint32_t buckets = InitialBuckets;
-    constexpr uint32_t capacity = uint32_t(buckets * FillFactor);
+    uint32_t buckets = hashShiftToNumHashBuckets(hashShift);
+    uint32_t capacity = numHashBucketsToDataCapacity(buckets);
 
     auto [dataAlloc, tableAlloc, hcsAlloc, numBytes] =
         allocateBuffer(cx, capacity, buckets);
@@ -629,7 +653,7 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     setHashTable(tableAlloc);
     setData(dataAlloc);
     setDataCapacity(capacity);
-    setHashShift(InitialHashShift);
+    setHashShift(hashShift);
     setHashCodeScrambler(hcsAlloc);
     MOZ_ASSERT(hashBuckets() == buckets);
     return true;
@@ -760,6 +784,16 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
 
 
 
+  [[nodiscard]] bool ensureCapacity(JSContext* cx, uint32_t count) {
+    MOZ_ASSERT(!hasAllocatedBuffer());
+    uint32_t hashShift = hashShiftForCount(count);
+    return initBuffer(cx, hashShift);
+  }
+
+  
+
+
+
 
 
 
@@ -845,17 +879,20 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     forEachIterator(
         [this, pos](auto* iter) { IterOps::onRemove(obj, iter, pos); });
 
+    maybeShrink(cx);
+    return true;
+  }
+
+  void maybeShrink(JSContext* cx) {
     
     
     
-    if (hashBuckets() > InitialBuckets &&
-        liveCount < getDataLength() * MinDataFill) {
+    if (hasAllocatedBuffer() && hashBuckets() > InitialBuckets &&
+        getLiveCount() < getDataLength() * MinDataFill) {
       if (!rehash(cx, getHashShift() + 1)) {
         cx->recoverFromOutOfMemory();
       }
     }
-
-    return true;
   }
 
   
@@ -1395,6 +1432,11 @@ class MOZ_STACK_CLASS OrderedHashMapImpl {
   bool remove(JSContext* cx, const Lookup& key) { return impl.remove(cx, key); }
   void clear(JSContext* cx) { impl.clear(cx); }
 
+  [[nodiscard]] bool ensureCapacity(JSContext* cx, uint32_t count) {
+    return impl.ensureCapacity(cx, count);
+  }
+  void maybeShrink(JSContext* cx) { return impl.maybeShrink(cx); }
+
   template <typename K, typename V>
   [[nodiscard]] bool put(JSContext* cx, K&& key, V&& value) {
     return impl.put(cx, Entry(std::forward<K>(key), std::forward<V>(value)));
@@ -1500,6 +1542,11 @@ class MOZ_STACK_CLASS OrderedHashSetImpl {
     impl.forEachEntryUpTo(maxCount, f);
   }
 #endif
+  [[nodiscard]] bool ensureCapacity(JSContext* cx, uint32_t count) {
+    return impl.ensureCapacity(cx, count);
+  }
+  void maybeShrink(JSContext* cx) { return impl.maybeShrink(cx); }
+
   template <typename Input>
   [[nodiscard]] bool put(JSContext* cx, Input&& value) {
     return impl.put(cx, std::forward<Input>(value));

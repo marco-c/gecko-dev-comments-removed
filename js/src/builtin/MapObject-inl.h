@@ -26,17 +26,9 @@ template <MapOrSet IsMapOrSet>
 
   
   
-  
-  
-  
-  
   if constexpr (IsMapOrSet == MapOrSet::Map) {
     ArrayObject* array = &iterable->as<ArrayObject>();
     size_t len = array->length();
-    static constexpr size_t MaxLength = 100;
-    if (len > MaxLength) {
-      return false;
-    }
     for (size_t i = 0; i < len; i++) {
       Value elem = array->getDenseElement(i);
       if (!elem.isObject()) {
