@@ -4222,18 +4222,18 @@ function checkFilesAfterUpdateCommon(aStageDirExists, aToBeDeletedDirExists) {
   }
 
   debugDump(
-    "testing backup files should not be left behind in the " +
+    "testing temporary files should not be left behind in the " +
       "application directory"
   );
   let applyToDir = getApplyDirFile();
-  checkFilesInDirRecursive(applyToDir, checkForBackupFiles);
+  checkFilesInDirRecursive(applyToDir, checkForTemporaryFiles);
 
   if (stageDir.exists()) {
     debugDump(
-      "testing backup files should not be left behind in the " +
+      "testing temporary files should not be left behind in the " +
         "staging directory"
     );
-    checkFilesInDirRecursive(stageDir, checkForBackupFiles);
+    checkFilesInDirRecursive(stageDir, checkForTemporaryFiles);
   }
 }
 
@@ -4463,12 +4463,16 @@ async function waitForFilesInUse() {
 
 
 
-function checkForBackupFiles(aFile) {
-  Assert.notEqual(
-    getFileExtension(aFile),
-    "moz-backup",
-    "the file's extension should not equal moz-backup" + getMsgPath(aFile.path)
-  );
+
+function checkForTemporaryFiles(aFile) {
+  for (const extension of ["moz-backup", "moz-draft"]) {
+    Assert.notEqual(
+      getFileExtension(aFile),
+      extension,
+      `the file's extension should not equal ${extension}` +
+        getMsgPath(aFile.path)
+    );
+  }
 }
 
 
