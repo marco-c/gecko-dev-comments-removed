@@ -17,8 +17,7 @@ class APZCFlingAccelerationTester : public APZCTreeManagerTester {
         LayerIntRect(0, 0, 800, 1000),
     };
     CreateScrollData(treeShape, layerVisibleRect);
-    SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
-                              CSSRect(0, 0, 800, 50000));
+    SetScrollableFrameMetrics(root, START_SCROLL_ID, CSSRect(0, 0, 800, 50000));
     
     
     ModifyFrameMetrics(root, [](ScrollMetadata& aSm, FrameMetrics& aMetrics) {

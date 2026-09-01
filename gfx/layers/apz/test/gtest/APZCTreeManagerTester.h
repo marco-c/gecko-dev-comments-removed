@@ -128,7 +128,7 @@ class APZCTreeManagerTester : public APZCTesterBase {
     metrics.SetScrollId(aScrollId);
     
     
-    if (aScrollId == ScrollableLayerGuid::START_SCROLL_ID) {
+    if (aScrollId == START_SCROLL_ID) {
       metadata.SetIsLayersIdRoot(true);
     }
     metrics.SetCompositionBounds(aCompositionBounds);
@@ -217,7 +217,7 @@ class APZCTreeManagerTester : public APZCTesterBase {
         LayerIntRect(0, 0, 200, 200),
     };
     CreateScrollData(treeShape, layerVisibleRect);
-    SetScrollableFrameMetrics(layers[0], ScrollableLayerGuid::START_SCROLL_ID,
+    SetScrollableFrameMetrics(layers[0], START_SCROLL_ID,
                               CSSRect(0, 0, 500, 500));
   }
 };

@@ -21,9 +21,8 @@ TEST_F(APZCSnappingTesterMock, Bug1265510) {
   LayerIntRect layerVisibleRect[] = {LayerIntRect(0, 0, 100, 100),
                                      LayerIntRect(0, 100, 100, 100)};
   CreateScrollData(treeShape, layerVisibleRect);
-  SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
-                            CSSRect(0, 0, 100, 200));
-  SetScrollableFrameMetrics(layers[1], ScrollableLayerGuid::START_SCROLL_ID + 1,
+  SetScrollableFrameMetrics(root, START_SCROLL_ID, CSSRect(0, 0, 100, 200));
+  SetScrollableFrameMetrics(layers[1], START_SCROLL_ID + 1,
                             CSSRect(0, 0, 100, 200));
   SetScrollHandoff(layers[1], root);
 
@@ -55,7 +54,7 @@ TEST_F(APZCSnappingTesterMock, Bug1265510) {
   
   
   
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID);
+  QueueMockHitResult(START_SCROLL_ID);
   SmoothWheel(manager, ScreenIntPoint(50, 80), ScreenPoint(0, 6), mcc->Time());
   
   
@@ -71,7 +70,7 @@ TEST_F(APZCSnappingTesterMock, Bug1265510) {
   
   mcc->AdvanceBy(TimeDuration::FromMilliseconds(
       StaticPrefs::mousewheel_transaction_timeout() + 100));
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
+  QueueMockHitResult(START_SCROLL_ID + 1);
   SmoothWheel(manager, ScreenIntPoint(50, 80), ScreenPoint(0, 6), mcc->Time());
   mcc->AdvanceByMillis(5);
   inner->AdvanceAnimationsUntilEnd();
@@ -96,8 +95,7 @@ TEST_F(APZCSnappingTesterMock, Snap_After_Pinch) {
       LayerIntRect(0, 0, 100, 100),
   };
   CreateScrollData(treeShape, layerVisibleRect);
-  SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
-                            CSSRect(0, 0, 100, 200));
+  SetScrollableFrameMetrics(root, START_SCROLL_ID, CSSRect(0, 0, 100, 200));
 
   
   ScrollSnapInfo snap;
@@ -156,8 +154,7 @@ TEST_F(APZCSnappingTesterMock, SnapOnPanEndWithZeroVelocity) {
       LayerIntRect(0, 0, 100, 100),
   };
   CreateScrollData(treeShape, layerVisibleRect);
-  SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
-                            CSSRect(0, 0, 100, 400));
+  SetScrollableFrameMetrics(root, START_SCROLL_ID, CSSRect(0, 0, 100, 400));
 
   
   ScrollSnapInfo snap;
@@ -186,12 +183,12 @@ TEST_F(APZCSnappingTesterMock, SnapOnPanEndWithZeroVelocity) {
 
   
   const ScreenIntPoint position = ScreenIntPoint(50, 30);
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID);
+  QueueMockHitResult(START_SCROLL_ID);
   PanGesture(PanGestureInput::PANGESTURE_START, manager, position,
              ScreenPoint(0, 10), mcc->Time());
   mcc->AdvanceByMillis(5);
   apzc->AdvanceAnimations(mcc->GetSampleTime());
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID);
+  QueueMockHitResult(START_SCROLL_ID);
   PanGesture(PanGestureInput::PANGESTURE_PAN, manager, position,
              ScreenPoint(0, 40), mcc->Time());
   mcc->AdvanceByMillis(5);
@@ -200,7 +197,7 @@ TEST_F(APZCSnappingTesterMock, SnapOnPanEndWithZeroVelocity) {
   
   EXPECT_EQ(apzc->GetVelocityVector().y, 0);
 
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID);
+  QueueMockHitResult(START_SCROLL_ID);
   PanGesture(PanGestureInput::PANGESTURE_END, manager, position,
              ScreenPoint(0, 0), mcc->Time());
 
@@ -233,8 +230,7 @@ TEST_F(APZCSnappingTesterMock, SnapOnPanEndWithPositiveVelocity) {
       LayerIntRect(0, 0, 100, 100),
   };
   CreateScrollData(treeShape, layerVisibleRect);
-  SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
-                            CSSRect(0, 0, 100, 400));
+  SetScrollableFrameMetrics(root, START_SCROLL_ID, CSSRect(0, 0, 100, 400));
 
   
   ScrollSnapInfo snap;
@@ -263,17 +259,17 @@ TEST_F(APZCSnappingTesterMock, SnapOnPanEndWithPositiveVelocity) {
 
   
   const ScreenIntPoint position = ScreenIntPoint(50, 30);
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID);
+  QueueMockHitResult(START_SCROLL_ID);
   PanGesture(PanGestureInput::PANGESTURE_START, manager, position,
              ScreenPoint(0, 10), mcc->Time());
   mcc->AdvanceByMillis(5);
   apzc->AdvanceAnimations(mcc->GetSampleTime());
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID);
+  QueueMockHitResult(START_SCROLL_ID);
   PanGesture(PanGestureInput::PANGESTURE_PAN, manager, position,
              ScreenPoint(0, 35), mcc->Time());
   mcc->AdvanceByMillis(5);
   apzc->AdvanceAnimations(mcc->GetSampleTime());
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID);
+  QueueMockHitResult(START_SCROLL_ID);
   PanGesture(PanGestureInput::PANGESTURE_PAN, manager, position,
              ScreenPoint(0, 20), mcc->Time());
   mcc->AdvanceByMillis(5);
@@ -282,7 +278,7 @@ TEST_F(APZCSnappingTesterMock, SnapOnPanEndWithPositiveVelocity) {
   
   EXPECT_GT(apzc->GetVelocityVector().y, 0);
 
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID);
+  QueueMockHitResult(START_SCROLL_ID);
   PanGesture(PanGestureInput::PANGESTURE_END, manager, position,
              ScreenPoint(0, 0), mcc->Time());
   mcc->AdvanceByMillis(5);

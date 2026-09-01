@@ -484,6 +484,10 @@ class TestAsyncPanZoomController : public AsyncPanZoomController {
 
 class APZCTesterBase : public ::testing::Test {
  public:
+  
+  
+  static constexpr auto START_SCROLL_ID = ScrollableLayerGuid::START_SCROLL_ID;
+
   APZCTesterBase() { mcc = new NiceMock<MockContentControllerDelayed>(); }
 
   void SetUp() override {
