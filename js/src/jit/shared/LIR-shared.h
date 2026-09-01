@@ -782,50 +782,16 @@ class LOsrEntry : public LInstructionHelper<1, 0, 1> {
 };
 
 
-class LWasmCallIndirectAdjunctSafepoint : public LInstructionHelper<0, 0, 0> {
-  CodeOffset offs_;
-  uint32_t framePushedAtStackMapBase_;
-
- public:
-  LIR_HEADER(WasmCallIndirectAdjunctSafepoint);
-
-  LWasmCallIndirectAdjunctSafepoint()
-      : LInstructionHelper(classOpcode),
-        offs_(0),
-        framePushedAtStackMapBase_(0) {
-    
-    setIsCall();
-  }
-
-  CodeOffset safepointLocation() const {
-    MOZ_ASSERT(offs_.offset() != 0);
-    return offs_;
-  }
-  uint32_t framePushedAtStackMapBase() const {
-    MOZ_ASSERT(offs_.offset() != 0);
-    return framePushedAtStackMapBase_;
-  }
-  void recordSafepointInfo(CodeOffset offs, uint32_t framePushed) {
-    offs_ = offs;
-    framePushedAtStackMapBase_ = framePushed;
-  }
-};
-
-
-
 
 
 
 
 class LWasmCall : public LVariadicInstruction<0, 0> {
-  LWasmCallIndirectAdjunctSafepoint* adjunctSafepoint_;
-
  public:
   LIR_HEADER(WasmCall);
 
   explicit LWasmCall(uint32_t numOperands)
-      : LVariadicInstruction(classOpcode, numOperands),
-        adjunctSafepoint_(nullptr) {
+      : LVariadicInstruction(classOpcode, numOperands) {
     this->setIsCall();
   }
 
@@ -859,14 +825,6 @@ class LWasmCall : public LVariadicInstruction<0, 0> {
     
     
     return !reg.isFloat() && reg.gpr() == InstanceReg;
-  }
-
-  LWasmCallIndirectAdjunctSafepoint* adjunctSafepoint() const {
-    MOZ_ASSERT(adjunctSafepoint_ != nullptr);
-    return adjunctSafepoint_;
-  }
-  void setAdjunctSafepoint(LWasmCallIndirectAdjunctSafepoint* asp) {
-    adjunctSafepoint_ = asp;
   }
 };
 

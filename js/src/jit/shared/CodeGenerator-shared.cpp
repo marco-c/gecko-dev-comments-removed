@@ -2,13 +2,12 @@
 
 
 
-#include "jit/shared/CodeGenerator-shared-inl.h"
+#include "jit/CodeGenerator.h"
 
 #include "mozilla/DebugOnly.h"
 
 #include <utility>
 
-#include "jit/CodeGenerator.h"
 #include "jit/CompactBuffer.h"
 #include "jit/CompileInfo.h"
 #include "jit/InlineScriptTree.h"
@@ -24,6 +23,7 @@
 #include "util/Memory.h"
 
 #include "jit/MacroAssembler-inl.h"
+#include "jit/shared/CodeGenerator-shared-inl.h"
 #include "vm/JSScript-inl.h"
 
 using namespace js;
@@ -912,6 +912,22 @@ void CodeGeneratorShared::markSafepointAt(uint32_t offset, LInstruction* ins) {
   MOZ_ASSERT_IF(
       !safepointIndices_.empty() && !masm.oom(),
       offset - safepointIndices_.back().displacement() >= sizeof(uint32_t));
+#ifdef DEBUG
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (LSafepoint* sp = ins->safepoint()) {
+    MOZ_ASSERT_IF(sp->recordedInSafepointIndices(),
+                  gen->compilingWasm() || graph.extraSafepointUses() > 0);
+    sp->setRecordedInSafepointIndices();
+  }
+#endif
   masm.propagateOOM(safepointIndices_.append(
       CodegenSafepointIndex(offset, ins->safepoint())));
 }

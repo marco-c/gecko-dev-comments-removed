@@ -1710,6 +1710,13 @@ class LSafepoint : public TempObject {
   
   WasmSafepointKind wasmSafepointKind_;
 
+#ifdef DEBUG
+  
+  
+  
+  bool recordedInSafepointIndices_ = false;
+#endif
+
   
   
   
@@ -1760,6 +1767,13 @@ class LSafepoint : public TempObject {
     assertInvariants();
   }
   const LiveRegisterSet& liveRegs() const { return liveRegs_; }
+#ifdef DEBUG
+  bool recordedInSafepointIndices() const {
+    return recordedInSafepointIndices_;
+  }
+  
+  void setRecordedInSafepointIndices() { recordedInSafepointIndices_ = true; }
+#endif
 #ifdef CHECK_OSIPOINT_REGISTERS
   void addClobberedRegister(AnyRegister reg) {
     clobberedRegs_.addUnchecked(reg);

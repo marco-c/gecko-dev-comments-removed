@@ -10637,10 +10637,12 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
 
   
   
+  
+  
+  
   if (callee.which() == wasm::CalleeDesc::WasmTable ||
       callee.which() == wasm::CalleeDesc::FuncRef) {
-    lir->adjunctSafepoint()->recordSafepointInfo(secondRetOffset,
-                                                 framePushedAtStackMapBase);
+    markSafepointAt(secondRetOffset.offset(), lir);
   }
 
   if (reloadInstance) {
@@ -10687,9 +10689,7 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
     
     
     LBlock* block = lir->block();
-    MOZ_RELEASE_ASSERT(*block->rbegin() == lir ||
-                       (block->rbegin()->isWasmCallIndirectAdjunctSafepoint() &&
-                        *(++block->rbegin()) == lir));
+    MOZ_RELEASE_ASSERT(*block->rbegin() == lir);
 
     
     jumpToBlock(lir->mirCatchable()->getSuccessor(
@@ -10856,13 +10856,6 @@ void CodeGenerator::visitWasmCallLandingPrePad(LWasmCallLandingPrePad* lir) {
   
   
   tryNote.setLandingPad(block->label()->offset(), masm.framePushed());
-}
-
-void CodeGenerator::visitWasmCallIndirectAdjunctSafepoint(
-    LWasmCallIndirectAdjunctSafepoint* lir) {
-  markSafepointAt(lir->safepointLocation().offset(), lir);
-  lir->safepoint()->setFramePushedAtStackMapBase(
-      lir->framePushedAtStackMapBase());
 }
 
 template <typename InstructionWithMaybeTrapSite>
