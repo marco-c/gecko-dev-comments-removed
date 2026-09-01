@@ -50,17 +50,6 @@ namespace xsimd
                 XSIMD_INLINE svbool_t ptrue() noexcept { return ptrue_impl(index<sizeof(T)> {}); }
 
                 
-                template <bool M0, bool M1>
-                XSIMD_INLINE svbool_t pmask() noexcept { return svdupq_b64(M0, M1); }
-                template <bool M0, bool M1, bool M2, bool M3>
-                XSIMD_INLINE svbool_t pmask() noexcept { return svdupq_b32(M0, M1, M2, M3); }
-                template <bool M0, bool M1, bool M2, bool M3, bool M4, bool M5, bool M6, bool M7>
-                XSIMD_INLINE svbool_t pmask() noexcept { return svdupq_b16(M0, M1, M2, M3, M4, M5, M6, M7); }
-                template <bool M0, bool M1, bool M2, bool M3, bool M4, bool M5, bool M6, bool M7,
-                          bool M8, bool M9, bool M10, bool M11, bool M12, bool M13, bool M14, bool M15>
-                XSIMD_INLINE svbool_t pmask() noexcept { return svdupq_b8(M0, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15); }
-
-                
                 XSIMD_INLINE uint64_t pcount_impl(svbool_t p, index<1>) noexcept { return svcntp_b8(p, p); }
                 XSIMD_INLINE uint64_t pcount_impl(svbool_t p, index<2>) noexcept { return svcntp_b16(p, p); }
                 XSIMD_INLINE uint64_t pcount_impl(svbool_t p, index<4>) noexcept { return svcntp_b32(p, p); }
@@ -102,10 +91,22 @@ namespace xsimd
         }
 
         
-        template <class A, class T, bool... Values, class Mode, detail::enable_arithmetic_t<T> = 0>
-        XSIMD_INLINE batch<T, A> load_masked(T const* mem, batch_bool_constant<float, A, Values...>, Mode, requires_arch<sve>) noexcept
+        
+        
+        
+        template <class A, class T, bool... Values, class Mode,
+                  detail::enable_arithmetic_t<T> = 0,
+                  std::enable_if_t<!(std::is_integral<T>::value && (sizeof(T) == 4 || sizeof(T) == 8)), int> = 0>
+        XSIMD_INLINE batch<T, A> load_masked(T const* mem, batch_bool_constant<T, A, Values...> mask, convert<T>, Mode m, requires_arch<sve>) noexcept
         {
-            return svld1(detail_sve::pmask<Values...>(), reinterpret_cast<map_to_sized_type_t<T> const*>(mem));
+            return load_masked<A>(mem, mask.as_batch_bool(), convert<T> {}, m, sve {});
+        }
+
+        
+        template <class A, class T, class Mode, detail::enable_arithmetic_t<T> = 0>
+        XSIMD_INLINE batch<T, A> load_masked(T const* mem, batch_bool<T, A> mask, convert<T>, Mode, requires_arch<sve>) noexcept
+        {
+            return svld1(mask, reinterpret_cast<map_to_sized_type_t<T> const*>(mem));
         }
 
         
@@ -139,6 +140,24 @@ namespace xsimd
         XSIMD_INLINE void store_unaligned(T* dst, batch<T, A> const& src, requires_arch<sve>) noexcept
         {
             store_aligned<A>(dst, src, sve {});
+        }
+
+        
+        
+        
+        template <class A, class T, bool... Values, class Mode,
+                  detail::enable_arithmetic_t<T> = 0,
+                  std::enable_if_t<!(std::is_integral<T>::value && (sizeof(T) == 4 || sizeof(T) == 8)), int> = 0>
+        XSIMD_INLINE void store_masked(T* mem, batch<T, A> const& src, batch_bool_constant<T, A, Values...> mask, Mode m, requires_arch<sve>) noexcept
+        {
+            store_masked<A>(mem, src, mask.as_batch_bool(), m, sve {});
+        }
+
+        
+        template <class A, class T, class Mode, detail::enable_arithmetic_t<T> = 0>
+        XSIMD_INLINE void store_masked(T* mem, batch<T, A> const& src, batch_bool<T, A> mask, Mode, requires_arch<sve>) noexcept
+        {
+            svst1(mask, reinterpret_cast<map_to_sized_type_t<T>*>(mem), src);
         }
 
         

@@ -9,6 +9,7 @@
 
 
 
+
 #ifndef XSIMD_ISA_HPP
 #define XSIMD_ISA_HPP
 
@@ -72,16 +73,25 @@
 
 #if XSIMD_WITH_FMA3_AVX2
 #include "./xsimd_fma3_avx2.hpp"
+#include "./xsimd_fma3_avx2_128.hpp"
+#endif
+
+#if XSIMD_WITH_AVX512VL
+
+
+
+
+
+
+
+#include "./xsimd_avx512vl_128.hpp"
+#include "./xsimd_avx512vl_256.hpp"
+#include "./xsimd_avx512vl.hpp"
+
 #endif
 
 #if XSIMD_WITH_AVX512F
 #include "./xsimd_avx512f.hpp"
-#endif
-
-#if XSIMD_WITH_AVX512VL
-#include "./xsimd_avx512vl.hpp"
-#include "./xsimd_avx512vl_128.hpp"
-#include "./xsimd_avx512vl_256.hpp"
 #endif
 
 #if XSIMD_WITH_AVX512DQ

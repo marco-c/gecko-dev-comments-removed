@@ -9,6 +9,7 @@
 
 
 
+
 #include "./xsimd_avx2_register.hpp"
 #include "./xsimd_avx512bw_register.hpp"
 #include "./xsimd_avx512cd_register.hpp"
@@ -24,6 +25,7 @@
 #include "./xsimd_avx512vnni_avx512vbmi2_register.hpp"
 #include "./xsimd_avx_register.hpp"
 #include "./xsimd_avxvnni_register.hpp"
+#include "./xsimd_fma3_avx2_128_register.hpp"
 #include "./xsimd_fma3_avx2_register.hpp"
 #include "./xsimd_fma3_avx_register.hpp"
 #include "./xsimd_fma3_sse_register.hpp"

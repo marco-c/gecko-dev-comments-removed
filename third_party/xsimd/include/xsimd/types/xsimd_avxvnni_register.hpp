@@ -9,10 +9,12 @@
 
 
 
+
 #ifndef XSIMD_AVXVNNI_REGISTER_HPP
 #define XSIMD_AVXVNNI_REGISTER_HPP
 
 #include "./xsimd_avx2_register.hpp"
+#include "./xsimd_fma3_avx2_register.hpp"
 
 namespace xsimd
 {
@@ -21,7 +23,12 @@ namespace xsimd
 
 
 
-    struct avxvnni : avx2
+    
+    
+    
+    
+    
+    struct avxvnni : fma3<avx2>
     {
         static constexpr bool supported() noexcept { return XSIMD_WITH_AVXVNNI; }
         static constexpr bool available() noexcept { return true; }

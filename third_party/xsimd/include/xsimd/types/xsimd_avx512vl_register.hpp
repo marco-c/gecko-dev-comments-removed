@@ -9,10 +9,12 @@
 
 
 
+
 #ifndef XSIMD_AVX512VL_REGISTER_HPP
 #define XSIMD_AVX512VL_REGISTER_HPP
 
 #include "./xsimd_avx512cd_register.hpp"
+#include "./xsimd_fma3_avx2_128_register.hpp"
 
 namespace xsimd
 {
@@ -34,7 +36,7 @@ namespace xsimd
 
 
 
-    struct avx512vl_128 : avx2_128
+    struct avx512vl_128 : fma3<avx2_128>
     {
         static constexpr bool supported() noexcept { return XSIMD_WITH_AVX512VL; }
         static constexpr bool available() noexcept { return true; }

@@ -1562,9 +1562,40 @@ namespace xsimd
 
 
 
+
+    template <class T, class A = default_arch>
+    XSIMD_INLINE batch<T, A> load(T const* ptr,
+                                  batch_bool<T, A> mask,
+                                  aligned_mode = {}) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return batch<T, A>::load(ptr, mask, aligned_mode {});
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
     template <class T, class A = default_arch, bool... Values, class From>
     XSIMD_INLINE batch<T, A> load(From const* ptr,
                                   batch_bool_constant<T, A, Values...> const& mask,
+                                  unaligned_mode) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return batch<T, A>::load(ptr, mask, unaligned_mode {});
+    }
+
+    
+    template <class T, class A = default_arch>
+    XSIMD_INLINE batch<T, A> load(T const* ptr,
+                                  batch_bool<T, A> mask,
                                   unaligned_mode) noexcept
     {
         detail::static_check_supported_config<T, A>();
@@ -2722,10 +2753,43 @@ namespace xsimd
 
 
 
+
+
+    template <class T, class A = default_arch>
+    XSIMD_INLINE void store(T* mem,
+                            batch<T, A> const& val,
+                            batch_bool<T, A> mask,
+                            aligned_mode = {}) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        val.store(mem, mask, aligned_mode {});
+    }
+
+    
+
+
+
+
+
+
+
+
+
     template <class T, class A = default_arch, bool... Values>
     XSIMD_INLINE void store(T* mem,
                             batch<T, A> const& val,
                             batch_bool_constant<T, A, Values...> const& mask,
+                            unaligned_mode) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        val.store(mem, mask, unaligned_mode {});
+    }
+
+    
+    template <class T, class A = default_arch>
+    XSIMD_INLINE void store(T* mem,
+                            batch<T, A> const& val,
+                            batch_bool<T, A> mask,
                             unaligned_mode) noexcept
     {
         detail::static_check_supported_config<T, A>();
