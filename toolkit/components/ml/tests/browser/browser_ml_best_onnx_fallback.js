@@ -68,6 +68,7 @@ function stubProbeUnavailable() {
 
 
 
+
 function stubProbeError() {
   const workerConfigStub = sinon
     .stub(MLEngineParent, "getWorkerConfig")
@@ -112,6 +113,7 @@ add_task(async function test_best_onnx_falls_back_to_wasm() {
   } finally {
     restoreStub();
     await EngineProcess.destroyMLEngine();
+    EngineProcess.resetNativeOnnxRuntimeAvailabilityForTests();
     await cleanup();
   }
 });
@@ -141,6 +143,7 @@ add_task(async function test_best_onnx_engine_is_reused_after_fallback() {
   } finally {
     restoreStub();
     await EngineProcess.destroyMLEngine();
+    EngineProcess.resetNativeOnnxRuntimeAvailabilityForTests();
     await cleanup();
   }
 });
@@ -169,6 +172,7 @@ add_task(async function test_best_onnx_probe_skips_native_when_unavailable() {
   } finally {
     restoreStub();
     await EngineProcess.destroyMLEngine();
+    EngineProcess.resetNativeOnnxRuntimeAvailabilityForTests();
     await cleanup();
   }
 });
@@ -180,23 +184,24 @@ add_task(async function test_best_onnx_probe_skips_native_when_unavailable() {
 
 
 
-add_task(async function test_best_onnx_probe_error_falls_back_to_native() {
-  const { cleanup } = await setup();
+add_task(async function test_best_onnx_probe_error_falls_back_to_wasm() {
+  const { cleanup, remoteClients } = await setup();
   const restoreStub = stubProbeError();
 
   try {
-    
-    
-    const engine = await createEngine(BEST_ONNX_OPTIONS);
+    const enginePromise = createEngine(BEST_ONNX_OPTIONS);
+    await remoteClients["ml-onnx-runtime"].resolvePendingDownloads(1);
+    const engine = await enginePromise;
 
     Assert.equal(
       engine.pipelineOptions.backend,
-      "onnx-native",
-      "A failed probe falls back to optimistically trying onnx-native."
+      "onnx",
+      "A failed probe resolves to wasm onnx rather than attempting native."
     );
   } finally {
     restoreStub();
     await EngineProcess.destroyMLEngine();
+    EngineProcess.resetNativeOnnxRuntimeAvailabilityForTests();
     await cleanup();
   }
 });
@@ -257,6 +262,7 @@ add_task(
     } finally {
       workerConfigStub.restore();
       await EngineProcess.destroyMLEngine();
+      EngineProcess.resetNativeOnnxRuntimeAvailabilityForTests();
       await cleanup();
     }
   }
