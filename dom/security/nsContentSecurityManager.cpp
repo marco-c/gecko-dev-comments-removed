@@ -1338,8 +1338,7 @@ static nsresult CheckAllowLoadByTriggeringRemoteType(nsIChannel* aChannel) {
 
   
   
-  if (!loadInfo->IsPrincipalToInheritTrusted() &&
-      !ValidatePrincipalCouldPotentiallyBeLoadedBy(
+  if (!ValidatePrincipalCouldPotentiallyBeLoadedBy(
           loadInfo->PrincipalToInherit(), triggeringRemoteType,
           {ValidatePrincipalOptions::AllowNullPtr,
            ValidatePrincipalOptions::AllowNotLoadedOrigin})) {

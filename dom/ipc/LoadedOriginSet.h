@@ -37,8 +37,6 @@ class LoadedOriginSet {
   enum class Level : uint8_t {
     Unloaded,
     
-    PrecursorOnly,
-    
     SiteOnly,
     
     
@@ -72,7 +70,7 @@ class LoadedOriginSet {
   
   
   
-  [[nodiscard]] bool AddInternal(nsIPrincipal* aPrincipal, bool aTentative);
+  [[nodiscard]] Level AddInternal(nsIPrincipal* aPrincipal, bool aTentative);
 
   bool ValidatePrincipal(
       nsIPrincipal* aPrincipal,
