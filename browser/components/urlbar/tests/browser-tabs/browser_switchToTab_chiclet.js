@@ -165,7 +165,9 @@ add_task(async function test_chiclet_contextual_id() {
 
   
   
-  let chiclet = row.querySelector(".action-contextualidentity");
+  let chiclet = Services.prefs.getBoolPref("browser.nova.enabled", false)
+    ? row.querySelector(".urlbarView-user-context")
+    : row.querySelector(".action-contextualidentity");
   Assert.ok(chiclet, "The contextual ID chiclet should be in the row");
   Assert.ok(
     BrowserTestUtils.isVisible(chiclet),
@@ -178,13 +180,15 @@ add_task(async function test_chiclet_contextual_id() {
   );
 
   
-  let label = ContextualIdentityService.getUserContextLabel(1);
-  Assert.ok(label, "Sanity check: A label is defined for the contextual ID");
-  Assert.equal(
-    chiclet.textContent,
-    label,
-    "The contextual ID chiclet should have the expected label"
-  );
+  if (!Services.prefs.getBoolPref("browser.nova.enabled", false)) {
+    let label = ContextualIdentityService.getUserContextLabel(1);
+    Assert.ok(label, "Sanity check: A label is defined for the contextual ID");
+    Assert.equal(
+      chiclet.textContent,
+      label,
+      "The contextual ID chiclet should have the expected label"
+    );
+  }
 
   await UrlbarTestUtils.promisePopupClose(window);
   await BrowserTestUtils.removeTab(containerTab);
@@ -227,7 +231,11 @@ add_task(async function test_chiclet_tab_group() {
 
   
   
-  let chiclet = row.querySelector(".urlbarView-tabGroup");
+  let chiclet = row.querySelector(
+    Services.prefs.getBoolPref("browser.nova.enabled", false)
+      ? ".urlbarView-tab-group-container"
+      : ".urlbarView-tabGroup"
+  );
   Assert.ok(chiclet, "The tab group chiclet should be in the row");
   Assert.ok(
     BrowserTestUtils.isVisible(chiclet),
@@ -247,6 +255,11 @@ add_task(async function test_chiclet_tab_group() {
     label,
     "The tab group full-width label should be the full label text"
   );
+  Assert.deepEqual(
+    document.l10n.getAttributes(fullLabel),
+    { id: null, args: null },
+    "The tab group full-width label should not have l10n attributes"
+  );
 
   let narrowLabel = chiclet.children[1];
   Assert.ok(narrowLabel, "The tab group narrow-width label should exist");
@@ -254,6 +267,11 @@ add_task(async function test_chiclet_tab_group() {
     narrowLabel.textContent,
     label[0],
     "The tab group narrow-width label should be first char of the full label"
+  );
+  Assert.deepEqual(
+    document.l10n.getAttributes(narrowLabel),
+    { id: null, args: null },
+    "The tab group narrow-width label should not have l10n attributes"
   );
 
   await UrlbarTestUtils.promisePopupClose(window);
@@ -285,9 +303,23 @@ add_task(async function test_chiclet_tab_group_no_stale_after_row_reuse() {
   });
 
   let switchTabDetails = await getDetailsOfTabSwitchResult();
+  Assert.ok(switchTabDetails, "TAB_SWITCH row should be present");
+
+  let tabGroupSelector = Services.prefs.getBoolPref(
+    "browser.nova.enabled",
+    false
+  )
+    ? ".urlbarView-tab-group-container"
+    : ".urlbarView-tabGroup";
+  let tabGroupElement =
+    switchTabDetails.element.row.querySelector(tabGroupSelector);
   Assert.ok(
-    switchTabDetails?.element.row.querySelector(".urlbarView-tabGroup"),
+    tabGroupElement,
     "Tab group chiclet should be present on the TAB_SWITCH row"
+  );
+  Assert.ok(
+    BrowserTestUtils.isVisible(tabGroupElement),
+    "Tab group chiclet should be visible on the TAB_SWITCH row"
   );
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -302,10 +334,18 @@ add_task(async function test_chiclet_tab_group_no_stale_after_row_reuse() {
       UrlbarShared.RESULT_TYPE.TAB_SWITCH,
       `Row ${i} should not be a TAB_SWITCH result`
     );
-    Assert.ok(
-      !details.element.row.querySelector(".urlbarView-tabGroup"),
-      `Row ${i} should not have a stale tab group chiclet`
-    );
+    let groupElement = details.element.row.querySelector(tabGroupSelector);
+    if (Services.prefs.getBoolPref("browser.nova.enabled", false)) {
+      Assert.ok(
+        BrowserTestUtils.isHidden(groupElement),
+        `Row ${i} should not have a visible stale tab group chiclet`
+      );
+    } else {
+      Assert.ok(
+        !groupElement,
+        `Row ${i} should not have a stale tab group chiclet`
+      );
+    }
   }
 
   await UrlbarTestUtils.promisePopupClose(window);
