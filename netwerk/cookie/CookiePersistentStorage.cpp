@@ -33,13 +33,6 @@
 constexpr auto COOKIES_SCHEMA_VERSION = 17;
 
 
-
-
-
-constexpr int32_t COOKIES_MAX_WAL_BYTES = 2048000;
-constexpr int32_t COOKIES_JOURNAL_OVERHEAD_BYTES = 2048000;
-
-
 constexpr auto IDX_NAME = 0;
 constexpr auto IDX_VALUE = 1;
 constexpr auto IDX_HOST = 2;
@@ -2261,15 +2254,18 @@ nsresult CookiePersistentStorage::InitDBConnInternal() {
     pageSize = 0;
   }
 
+  uint32_t maxWalBytes = StaticPrefs::network_cookie_db_maxWalBytes();
+
   if (pageSize > 0) {
     nsAutoCString checkpointPragma("PRAGMA wal_autocheckpoint = ");
-    checkpointPragma.AppendInt(COOKIES_MAX_WAL_BYTES / pageSize);
+    checkpointPragma.AppendInt(maxWalBytes / pageSize);
     mDBConn->ExecuteSimpleSQL(checkpointPragma);
   }
 
   nsAutoCString journalSizePragma("PRAGMA journal_size_limit = ");
-  journalSizePragma.AppendInt(COOKIES_MAX_WAL_BYTES +
-                              COOKIES_JOURNAL_OVERHEAD_BYTES);
+  journalSizePragma.AppendInt(
+      uint64_t(maxWalBytes) +
+      StaticPrefs::network_cookie_db_journalOverheadBytes());
   mDBConn->ExecuteSimpleSQL(journalSizePragma);
 
   
