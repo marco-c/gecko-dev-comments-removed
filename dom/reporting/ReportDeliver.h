@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ReportDeliver_h
 #define mozilla_dom_ReportDeliver_h
 
@@ -90,6 +88,8 @@ class ReportDeliver final : public nsIObserver, public nsINamed {
   nsIURI* GetEndpointURLFor(uintptr_t aGlobalKey, const nsAString& aGroupName);
   void EndpointRespondedWithRemove(uint64_t aGlobalKey,
                                    const nsAString& aEndpointName);
+
+  static void RemoveGlobalEndpoints(uintptr_t aGlobalKey);
 
  private:
   ReportDeliver();

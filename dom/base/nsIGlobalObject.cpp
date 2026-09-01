@@ -15,6 +15,7 @@
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/FunctionBinding.h"
 #include "mozilla/dom/Report.h"
+#include "mozilla/dom/ReportDeliver.h"
 #include "mozilla/dom/ReportingObserver.h"
 #include "mozilla/dom/ServiceWorker.h"
 #include "mozilla/dom/ServiceWorkerContainer.h"
@@ -145,6 +146,10 @@ void nsIGlobalObject::UnlinkObjectsInGlobal() {
       }
     }
   }
+
+  
+  mozilla::dom::ReportDeliver::RemoveGlobalEndpoints(
+      reinterpret_cast<uintptr_t>(this));
 
   ClearReports();
   mReportingObservers.Clear();
