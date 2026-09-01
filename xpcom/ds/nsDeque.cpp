@@ -94,8 +94,8 @@ bool nsDequeBase::GrowCapacity() {
   
   
 
-  memcpy(temp, mData + mOrigin, sizeof(void*) * (mCapacity - mOrigin));
-  memcpy(temp + (mCapacity - mOrigin), mData, sizeof(void*) * mOrigin);
+  void** temp_next = std::copy(mData + mOrigin, mData + mCapacity, temp);
+  std::copy(mData, mData + mOrigin, temp_next);
 
   if (mData != mBuffer) {
     free(mData);
