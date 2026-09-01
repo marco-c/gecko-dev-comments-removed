@@ -485,18 +485,7 @@ class RefType {
 #endif
   }
   static bool isSubTypeOf(RefType subType, RefType superType);
-  static bool castPossible(RefType sourceType, RefType destType);
-
-  
-  
-  
-  
-  
-  static bool valuesMightAlias(RefType a, RefType b) {
-    MOZ_RELEASE_ASSERT(a.hierarchy() == b.hierarchy());
-    
-    return RefType::isSubTypeOf(a, b) || RefType::isSubTypeOf(b, a);
-  }
+  static bool valuesInCommon(RefType a, RefType b);
 
   
   
@@ -1069,8 +1058,12 @@ class MaybeRefType {
     return aDefault;
   }
 
-  bool operator==(const MaybeRefType& other) { return inner_ == other.inner_; }
-  bool operator!=(const MaybeRefType& other) { return inner_ != other.inner_; }
+  bool operator==(const MaybeRefType& other) const {
+    return inner_ == other.inner_;
+  }
+  bool operator!=(const MaybeRefType& other) const {
+    return inner_ != other.inner_;
+  }
 
   explicit operator bool() const { return isSome(); }
 
@@ -1079,6 +1072,20 @@ class MaybeRefType {
       return mozilla::Some(value().hierarchy());
     }
     return mozilla::Nothing();
+  }
+
+  MaybeRefType asNonNullable() const {
+    if (isSome()) {
+      return MaybeRefType(value().asNonNullable());
+    }
+    return MaybeRefType();
+  }
+
+  static bool mayHaveValuesInCommon(MaybeRefType a, MaybeRefType b) {
+    if (a.isSome() && b.isSome()) {
+      return RefType::valuesInCommon(a.value(), b.value());
+    }
+    return true;
   }
 
   

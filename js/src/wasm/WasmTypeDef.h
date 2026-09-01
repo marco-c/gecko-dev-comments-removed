@@ -1681,16 +1681,16 @@ inline bool RefType::isSubTypeOf(RefType subType, RefType superType) {
 }
 
 
-inline bool RefType::castPossible(RefType sourceType, RefType destType) {
+inline bool RefType::valuesInCommon(RefType a, RefType b) {
   
-  if (sourceType.isNullable() && destType.isNullable()) {
+  if (a.isNullable() && b.isNullable()) {
     return true;
   }
 
   
   
   
-  if (sourceType.isRefBottom() || destType.isRefBottom()) {
+  if (a.isRefBottom() || b.isRefBottom()) {
     return false;
   }
 
@@ -1698,10 +1698,10 @@ inline bool RefType::castPossible(RefType sourceType, RefType destType) {
   
   
   
-  RefType sourceNonNull = sourceType.withIsNullable(false);
-  RefType destNonNull = destType.withIsNullable(false);
-  return RefType::isSubTypeOf(sourceNonNull, destNonNull) ||
-         RefType::isSubTypeOf(destNonNull, sourceNonNull);
+  RefType aNonNull = a.withIsNullable(false);
+  RefType bNonNull = b.withIsNullable(false);
+  return RefType::isSubTypeOf(aNonNull, bNonNull) ||
+         RefType::isSubTypeOf(bNonNull, aNonNull);
 }
 
 

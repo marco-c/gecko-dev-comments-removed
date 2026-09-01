@@ -6716,6 +6716,10 @@ MDefinition* MFunctionEnvironment::foldsTo(TempAllocator& alloc) {
 }
 
 static bool AddIsANonZeroAdditionOf(MAdd* add, MDefinition* ins) {
+  if (add->type() != MIRType::Int32 && add->type() != MIRType::Double) {
+    return false;
+  }
+
   if (add->lhs() != ins && add->rhs() != ins) {
     return false;
   }
@@ -7927,31 +7931,6 @@ MDefinition* MTimeClip::foldsTo(TempAllocator& alloc) {
 
 JSOp MBinaryCache::jsop() const { return JSOp(*resumePoint()->pc()); }
 
-
-
-
-static bool StructTypesMightBeRelatedByInheritance(wasm::MaybeRefType mtyA,
-                                                   wasm::MaybeRefType mtyB) {
-  if (!mtyA.isSome() || !mtyB.isSome()) {
-    
-    
-    return true;
-  }
-
-  wasm::RefType tyA = mtyA.value();
-  wasm::RefType tyB = mtyB.value();
-  if (!tyA.isTypeRef() || !tyA.typeDef()->isStructType() || !tyB.isTypeRef() ||
-      !tyB.typeDef()->isStructType()) {
-    
-    return true;
-  }
-
-  
-  
-  
-  return wasm::RefType::valuesMightAlias(tyA, tyB);
-}
-
 MDefinition::AliasType MWasmLoadField::mightAlias(
     const MDefinition* ins) const {
   if (!(getAliasSet().flags() & ins->getAliasSet().flags())) {
@@ -7967,15 +7946,17 @@ MDefinition::AliasType MWasmLoadField::mightAlias(
   if (ins->isWasmStoreField()) {
     const MWasmStoreField* store = ins->toWasmStoreField();
     if (offset() != store->offset() ||
-        !StructTypesMightBeRelatedByInheritance(base()->wasmRefType(),
-                                                store->base()->wasmRefType())) {
+        !wasm::MaybeRefType::mayHaveValuesInCommon(
+            base()->wasmRefType().asNonNullable(),
+            store->base()->wasmRefType().asNonNullable())) {
       return AliasType::NoAlias;
     }
   } else if (ins->isWasmStoreFieldRef()) {
     const MWasmStoreFieldRef* store = ins->toWasmStoreFieldRef();
     if (offset() != store->offset() ||
-        !StructTypesMightBeRelatedByInheritance(base()->wasmRefType(),
-                                                store->base()->wasmRefType())) {
+        !wasm::MaybeRefType::mayHaveValuesInCommon(
+            base()->wasmRefType().asNonNullable(),
+            store->base()->wasmRefType().asNonNullable())) {
       return AliasType::NoAlias;
     }
   }
