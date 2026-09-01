@@ -1726,10 +1726,6 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JS::GCContext* gcx,
     }
   }
 
-#ifdef JS_GC_ZEAL
-  validateIncrementalMarking();
-#endif
-
   AutoSetThreadIsSweeping threadIsSweeping;
 
   
@@ -1814,6 +1810,10 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JS::GCContext* gcx,
     updateAtomsBitmap();
     startSweepingAtomsTable();
   }
+
+#ifdef JS_GC_ZEAL
+  validateIncrementalMarking();
+#endif
 
 #ifdef DEBUG
   
