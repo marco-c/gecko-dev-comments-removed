@@ -6,8 +6,9 @@
 const CTA_PREF = "browser.netError.searchCTA.enabled";
 
 
-const FAILED_HOST = "www.doesnotexist-searchcta.test";
-const REGISTRABLE_DOMAIN = "doesnotexist-searchcta.test";
+
+const FAILED_HOST = "www.doesnotexist-searchcta.com";
+const REGISTRABLE_DOMAIN = "doesnotexist-searchcta.com";
 const SEARCH_URL = `https://example.com/?q=${REGISTRABLE_DOMAIN}`;
 const BAD_CERT = "https://expired.example.com/";
 
@@ -175,8 +176,10 @@ add_task(async function test_searchClickOpensNewTab() {
 add_task(async function test_genericHintWhenNoSearchButton() {
   const sandbox = sinon.createSandbox();
   sandbox.stub(NetErrorParent.prototype, "getSearchCTAInfo").resolves({
-    domain: FAILED_HOST,
+    action: SEARCH_CTA_ACTIONS.NONE,
     query: "",
+    reason: SEARCH_CTA_REASONS.HOST_UNUSABLE,
+    domain: FAILED_HOST,
     hasEngine: false,
   });
   try {
