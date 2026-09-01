@@ -2259,7 +2259,7 @@ WindowGlobalParent::AllocPDigitalCredentialParent() {
 
 #ifdef ACCESSIBILITY
 a11y::PDocAccessibleParent* WindowGlobalParent::AllocPDocAccessibleParent(
-    a11y::PDocAccessibleParent*, const uint64_t&, const bool&) {
+    const uint64_t&, const bool&) {
   
   return a11y::DocAccessibleParent::New().take();
 }
@@ -2272,8 +2272,8 @@ bool WindowGlobalParent::DeallocPDocAccessibleParent(
 }
 
 mozilla::ipc::IPCResult WindowGlobalParent::RecvPDocAccessibleConstructor(
-    a11y::PDocAccessibleParent* aDoc, a11y::PDocAccessibleParent* aParentDoc,
-    const uint64_t& aParentID, const bool& aIsPrintDoc) {
+    a11y::PDocAccessibleParent* aDoc, const uint64_t& aParentID,
+    const bool& aIsPrintDoc) {
 #  if defined(ANDROID)
   MonitorAutoLock mal(nsAccessibilityService::GetAndroidMonitor());
 #  endif
@@ -2294,17 +2294,35 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvPDocAccessibleConstructor(
     return IPC_OK();
   }
 
-  if (aParentDoc) {
+  RefPtr<WindowGlobalParent> embedderWgp =
+      GetBrowsingContext()->GetEmbedderWindowGlobal();
+  if (NS_WARN_IF(!IsTop() && !embedderWgp)) {
+    
+    
+    
+    
+    
+    doc->MarkAsShutdown();
+    return IPC_OK();
+  }
+
+  if (!IsProcessRoot()) {
     
     
     
     
     MOZ_ASSERT(aParentID);
     if (!aParentID) {
-      return IPC_FAIL_NO_REASON(this);
+      return IPC_FAIL(this, "No parent specified for same-process iframe");
     }
 
-    auto parentDoc = static_cast<a11y::DocAccessibleParent*>(aParentDoc);
+    MOZ_ASSERT(embedderWgp);
+    auto* parentDoc = a11y::DocAccessibleParent::GetFrom(
+        embedderWgp,  true);
+    if (!parentDoc) {
+      return IPC_FAIL(this,
+                      "Same-process embedder's PDocAccessible doesn't exist");
+    }
     if (parentDoc->IsShutdown()) {
       
       
@@ -2330,6 +2348,13 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvPDocAccessibleConstructor(
 
   
   
+  MOZ_ASSERT(!aParentID);
+  if (aParentID) {
+    return IPC_FAIL(
+        this, "Doc at top level of its process shouldn't have a remote parent");
+  }
+  
+  
   
   
   
@@ -2348,8 +2373,6 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvPDocAccessibleConstructor(
   if (BrowserBridgeParent* bridge =
           GetBrowserParent()->GetBrowserBridgeParent()) {
     
-    
-    MOZ_ASSERT(!aParentDoc && !aParentID);
     doc->SetTopLevelInContentProcess();
     if (!doc->IsPrintDoc()) {
       a11y::ProxyCreated(doc);
@@ -2365,23 +2388,16 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvPDocAccessibleConstructor(
       }
     }
     return IPC_OK();
-  } else {
-    
-    
-    
-    MOZ_ASSERT(!aParentID);
-    if (aParentID) {
-      return IPC_FAIL_NO_REASON(this);
-    }
-
-    doc->SetTopLevel();
-    a11y::DocManager::RemoteDocAdded(doc);
-#  ifdef XP_WIN
-    if (!aIsPrintDoc) {
-      doc->MaybeInitWindowEmulation();
-    }
-#  endif
   }
+
+  MOZ_ASSERT(IsTop());
+  doc->SetTopLevel();
+  a11y::DocManager::RemoteDocAdded(doc);
+#  ifdef XP_WIN
+  if (!aIsPrintDoc) {
+    doc->MaybeInitWindowEmulation();
+  }
+#  endif
   return IPC_OK();
 }
 #endif  

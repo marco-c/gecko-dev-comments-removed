@@ -146,8 +146,8 @@ BrowserParent* BrowserBridgeParent::Manager() {
 void BrowserBridgeParent::Destroy() {
   if (mBrowserParent) {
 #ifdef ACCESSIBILITY
-    if (mEmbedderAccessibleDoc && !mEmbedderAccessibleDoc->IsShutdown()) {
-      mEmbedderAccessibleDoc->RemovePendingOOPChildDoc(this);
+    if (a11y::DocAccessibleParent* embedderDoc = GetEmbedderAccessibleDoc()) {
+      embedderDoc->RemovePendingOOPChildDoc(this);
     }
 #endif
     mBrowserParent->Destroy();
@@ -278,42 +278,26 @@ a11y::DocAccessibleParent* BrowserBridgeParent::GetDocAccessibleParent() {
   return docAcc && !docAcc->IsShutdown() ? docAcc : nullptr;
 }
 
-IPCResult BrowserBridgeParent::RecvSetEmbedderAccessible(
-    PDocAccessibleParent* aDoc, uint64_t aID) {
+IPCResult BrowserBridgeParent::RecvSetEmbedderAccessible(uint64_t aID) {
 #  if defined(ANDROID)
   MonitorAutoLock mal(nsAccessibilityService::GetAndroidMonitor());
 #  endif
-  if (!aDoc && !mEmbedderAccessibleDoc) {
-    return IPC_FAIL(this, "Embedder doc shouldn't be cleared if it wasn't set");
-  }
-  if (mEmbedderAccessibleDoc && aDoc && mEmbedderAccessibleDoc != aDoc) {
+  if (!aID && !mEmbedderAccessibleID) {
     return IPC_FAIL(this,
-                    "Embedder doc shouldn't change from one doc to another");
-  }
-  if (aDoc) {
-    RefPtr<WindowGlobalParent> embedderWgp =
-        GetBrowsingContext()->GetEmbedderWindowGlobal();
-    if (!embedderWgp || aDoc->Manager() != embedderWgp) {
-      return IPC_FAIL(this, "Embedder doc is not the actual embedder window");
-    }
-  }
-  if (!aDoc && mEmbedderAccessibleDoc &&
-      !mEmbedderAccessibleDoc->IsShutdown()) {
-    
-    
-    mEmbedderAccessibleDoc->RemovePendingOOPChildDoc(this);
-  }
-  mEmbedderAccessibleDoc = static_cast<a11y::DocAccessibleParent*>(aDoc);
-  mEmbedderAccessibleID = aID;
-  if (!aDoc) {
-    if (aID) {
-      return IPC_FAIL(this, "Attempt to clear embedder but id given");
-    }
-    return IPC_OK();
+                    "Embedder accessible shouldn't be cleared if it wasn't "
+                    "set");
   }
   if (!aID) {
-    return IPC_FAIL(this, "Attempt to set embedder without id");
+    
+    
+    if (a11y::DocAccessibleParent* embedderDoc = GetEmbedderAccessibleDoc()) {
+      embedderDoc->RemovePendingOOPChildDoc(this);
+    }
+    mEmbedderAccessibleID = 0;
+    return IPC_OK();
   }
+
+  mEmbedderAccessibleID = aID;
   if (GetDocAccessibleParent()) {
     
     
@@ -322,15 +306,26 @@ IPCResult BrowserBridgeParent::RecvSetEmbedderAccessible(
     
     
     
-    mEmbedderAccessibleDoc->AddChildDoc(this);
+    RefPtr<WindowGlobalParent> embedderWgp =
+        GetBrowsingContext()->GetEmbedderWindowGlobal();
+    auto* embedderDoc = embedderWgp
+                            ? a11y::DocAccessibleParent::GetFrom(
+                                  embedderWgp,  true)
+                            : nullptr;
+    if (!embedderDoc) {
+      return IPC_FAIL(this, "Embedder's PDocAccessible doesn't exist");
+    }
+    if (!embedderDoc->IsShutdown()) {
+      embedderDoc->AddChildDoc(this);
+    }
   }
   return IPC_OK();
 }
 
 a11y::DocAccessibleParent* BrowserBridgeParent::GetEmbedderAccessibleDoc() {
-  return mEmbedderAccessibleDoc && !mEmbedderAccessibleDoc->IsShutdown()
-             ? mEmbedderAccessibleDoc.get()
-             : nullptr;
+  RefPtr<WindowGlobalParent> embedderWgp =
+      GetBrowsingContext()->GetEmbedderWindowGlobal();
+  return a11y::DocAccessibleParent::GetFrom(embedderWgp);
 }
 #endif
 
