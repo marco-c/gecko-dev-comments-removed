@@ -43,11 +43,6 @@ class DepthAndStencilBuffer final : public SupportsWeakPtr {
 };
 
 class MozFramebuffer final {
- public:
-  
-  enum class ColorBackingOwnership { Owned, Borrowed };
-
- private:
   const WeakPtr<GLContext> mWeakGL;
 
  public:
@@ -59,7 +54,6 @@ class MozFramebuffer final {
  private:
   const RefPtr<DepthAndStencilBuffer> mDepthAndStencilBuffer;
   const GLuint mColorName;
-  const ColorBackingOwnership mColorBackingOwnership;
 
  public:
   
@@ -70,13 +64,9 @@ class MozFramebuffer final {
 
   
   
-  
-  
   static UniquePtr<MozFramebuffer> CreateForBacking(
       GLContext* gl, const gfx::IntSize& size, uint32_t samples, bool depth,
-      bool stencil, GLenum colorTarget, GLuint colorName,
-      ColorBackingOwnership colorBackingOwnership =
-          ColorBackingOwnership::Owned);
+      bool stencil, GLenum colorTarget, GLuint colorName);
 
   
   
@@ -86,23 +76,19 @@ class MozFramebuffer final {
   static UniquePtr<MozFramebuffer> CreateForBackingWithSharedDepthAndStencil(
       const gfx::IntSize& size, const uint32_t samples, GLenum colorTarget,
       GLuint colorName,
-      const RefPtr<DepthAndStencilBuffer>& depthAndStencilBuffer,
-      ColorBackingOwnership colorBackingOwnership =
-          ColorBackingOwnership::Owned);
+      const RefPtr<DepthAndStencilBuffer>& depthAndStencilBuffer);
 
  private:
   MozFramebuffer(GLContext* gl, const gfx::IntSize& size, GLuint fb,
                  uint32_t samples,
                  RefPtr<DepthAndStencilBuffer> depthAndStencilBuffer,
-                 GLenum colorTarget, GLuint colorName,
-                 ColorBackingOwnership colorBackingOwnership);
+                 GLenum colorTarget, GLuint colorName);
 
   
   static UniquePtr<MozFramebuffer> CreateImpl(
       GLContext* const gl, const gfx::IntSize& size, const uint32_t samples,
       const RefPtr<DepthAndStencilBuffer>& depthAndStencilBuffer,
-      const GLenum colorTarget, const GLuint colorName,
-      ColorBackingOwnership colorBackingOwnership);
+      const GLenum colorTarget, const GLuint colorName);
 
  public:
   ~MozFramebuffer();
