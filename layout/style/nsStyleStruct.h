@@ -271,9 +271,7 @@ struct nsStyleImageLayers {
     
     nsChangeHint CalcDifference(const Layer& aNewLayer) const;
 
-    
-    
-    bool operator==(const Layer& aOther) const;
+    bool operator==(const Layer&) const = default;
   };
 
   
@@ -1519,7 +1517,7 @@ struct StyleTransition {
   const StyleTransitionProperty& GetProperty() const { return mProperty; }
   StyleTransitionBehavior GetBehavior() const { return mBehavior; }
 
-  bool operator==(const StyleTransition& aOther) const;
+  bool operator==(const StyleTransition&) const = default;
 
  private:
   StyleComputedTimingFunction mTimingFunction{
@@ -1550,7 +1548,7 @@ struct StyleAnimation {
   const StyleAnimationRangeStart& GetRangeStart() const { return mRangeStart; }
   const StyleAnimationRangeEnd& GetRangeEnd() const { return mRangeEnd; }
 
-  bool operator==(const StyleAnimation& aOther) const;
+  bool operator==(const StyleAnimation&) const = default;
 
  private:
   StyleComputedTimingFunction mTimingFunction{
