@@ -416,7 +416,7 @@ TEST(TestAudioTrackGraph, NonNativeInputTrackStartAndStop)
           DeviceInfo info = {mInputTrack->NumberOfChannels(),
                              mInputTrack->DevicePreference()};
           
-          mTrack->GraphImpl()->Dispatch(NS_NewRunnableFunction(
+          mTrack->GraphImpl()->DispatchToMainThread(NS_NewRunnableFunction(
               "TestAudioTrackGraph::DeviceQueryMessage",
               [holder = std::move(mHolder), devInfo = info]() mutable {
                 holder.Resolve(devInfo, __func__);
