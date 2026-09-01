@@ -178,10 +178,10 @@ ShortcutKeyData ShortcutKeys::sInputHandlers[] = {
     {u"keypress", nullptr, u"z", u"accel",       u"cmd_undo"},   
     {u"keypress", nullptr, u"z", u"accel,shift", u"cmd_redo"},   
 
-    {u"keypress", nullptr, u"v", u"accel,shift",     u"cmd_paste"},  
+    {u"keypress", nullptr, u"v", u"accel,shift",     u"cmd_pasteNoFormatting"},  
 
 #if defined(MOZ_WIDGET_COCOA)
-    {u"keypress", nullptr, u"v", u"accel,alt,shift", u"cmd_paste"},  
+    {u"keypress", nullptr, u"v", u"accel,alt,shift", u"cmd_pasteNoFormatting"},  
 #endif  
 
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK) ||\
@@ -321,10 +321,10 @@ ShortcutKeyData ShortcutKeys::sTextAreaHandlers[] = {
     {u"keypress", u"VK_INSERT", nullptr, u"shift",   u"cmd_paste"},  
 #endif  
 
-    {u"keypress", nullptr, u"v", u"accel,shift",     u"cmd_paste"},  
+    {u"keypress", nullptr, u"v", u"accel,shift",     u"cmd_pasteNoFormatting"},  
 
 #if defined(MOZ_WIDGET_COCOA)
-    {u"keypress", nullptr, u"v", u"accel,alt,shift", u"cmd_paste"},  
+    {u"keypress", nullptr, u"v", u"accel,alt,shift", u"cmd_pasteNoFormatting"},  
 #endif  
 
     

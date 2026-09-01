@@ -295,8 +295,8 @@ TEST(ShortcutKeyDefinitions, HTMLInputElement)
     {0, 'z',    MODIFIER_ACCEL, u"cmd_undo",      u"cmd_undo",      u"cmd_undo",      u"cmd_undo",      u"cmd_undo"},
 
     
-    {0, 'v',    MODIFIER_SHIFT | MODIFIER_ACCEL,                u"cmd_paste", u"cmd_paste", u"cmd_paste", u"cmd_paste", u"cmd_paste"},
-    {0, 'v',    MODIFIER_SHIFT | MODIFIER_ALT | MODIFIER_ACCEL, nullptr,      u"cmd_paste", nullptr,      nullptr,      nullptr},
+    {0, 'v',    MODIFIER_SHIFT | MODIFIER_ACCEL,                u"cmd_pasteNoFormatting", u"cmd_pasteNoFormatting", u"cmd_pasteNoFormatting", u"cmd_pasteNoFormatting", u"cmd_pasteNoFormatting"},
+    {0, 'v',    MODIFIER_SHIFT | MODIFIER_ALT | MODIFIER_ACCEL, nullptr,                  u"cmd_pasteNoFormatting", nullptr,                  nullptr,                  nullptr},
 
     
     {0, 'z',    MODIFIER_SHIFT | MODIFIER_ACCEL, u"cmd_redo", u"cmd_redo", u"cmd_redo", u"cmd_redo", u"cmd_redo"},
@@ -397,8 +397,8 @@ TEST(ShortcutKeyDefinitions, HTMLTextAreaElement)
     {0, 'z',    MODIFIER_ACCEL, u"cmd_undo",      u"cmd_undo",      u"cmd_undo",      u"cmd_undo",      u"cmd_undo"},
 
     
-    {0, 'v',    MODIFIER_SHIFT | MODIFIER_ACCEL,                u"cmd_paste", u"cmd_paste", u"cmd_paste", u"cmd_paste", u"cmd_paste"},
-    {0, 'v',    MODIFIER_SHIFT | MODIFIER_ALT | MODIFIER_ACCEL, nullptr,      u"cmd_paste", nullptr,      nullptr,      nullptr},
+    {0, 'v',    MODIFIER_SHIFT | MODIFIER_ACCEL,                u"cmd_pasteNoFormatting", u"cmd_pasteNoFormatting", u"cmd_pasteNoFormatting", u"cmd_pasteNoFormatting", u"cmd_pasteNoFormatting"},
+    {0, 'v',    MODIFIER_SHIFT | MODIFIER_ALT | MODIFIER_ACCEL, nullptr,                  u"cmd_pasteNoFormatting", nullptr,                  nullptr,                  nullptr},
 
     
     {0, 'z',    MODIFIER_SHIFT | MODIFIER_ACCEL, u"cmd_redo", u"cmd_redo", u"cmd_redo", u"cmd_redo", u"cmd_redo"},
