@@ -926,7 +926,8 @@ async function clickDoorhangerButton(buttonType, index = 0) {
     info("expecting notification popup show up");
     await dropdownPromise;
 
-    button = notification.querySelectorAll("menuitem")[index];
+    
+    button = notification.menupopup.querySelectorAll("menuitem")[index];
     if (notification.menupopup.isNativeMenu) {
       notification.menupopup.activateItem(button);
     } else {
@@ -1645,6 +1646,9 @@ async function triggerCapture(browser, submitButtonSelector, fillSelectors) {
 
 
 
+
+
+
 async function add_heuristic_tests(
   patterns,
   fixturePathPrefix = "",
@@ -1677,6 +1681,10 @@ async function add_heuristic_tests(
 
     if (testPattern.profile) {
       await setStorage(testPattern.profile);
+    }
+
+    if (testPattern.onTestSetup) {
+      await testPattern.onTestSetup();
     }
 
     await BrowserTestUtils.withNewTab(TEST_URL, async browser => {
