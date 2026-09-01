@@ -575,7 +575,7 @@ nsresult FT2FontEntry::CopyFontTable(uint32_t aTableTag,
   return gfxFT2FontEntryBase::CopyFaceTable(face, aTableTag, aBuffer);
 }
 
-hb_blob_t* FT2FontEntry::GetFontTable(uint32_t aTableTag) {
+hb_blob_t* FT2FontEntry::GetFontTableInternal(uint32_t aTableTag) {
   if (FTUserFontData* userFontData = GetUserFontData()) {
     
     
@@ -596,7 +596,7 @@ hb_blob_t* FT2FontEntry::GetFontTable(uint32_t aTableTag) {
 
   
   
-  return gfxFontEntry::GetFontTable(aTableTag);
+  return gfxFontEntry::GetFontTableInternal(aTableTag);
 }
 
 gfxFontEntry::FontTableCache* FT2FontEntry::GetFontTableCache(bool aCreate) {

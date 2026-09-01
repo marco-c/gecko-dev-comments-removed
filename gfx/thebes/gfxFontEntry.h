@@ -373,20 +373,7 @@ class gfxFontEntry {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual hb_blob_t* GetFontTable(uint32_t aTag);
+  hb_blob_t* GetFontTable(uint32_t aTag);
 
   
   
@@ -781,6 +768,20 @@ class gfxFontEntry {
   inline bool CheckForGraphiteTables() {
     return HasFontTable(TRUETYPE_TAG('S', 'i', 'l', 'f'));
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual hb_blob_t* GetFontTableInternal(uint32_t aTag);
 
   
   

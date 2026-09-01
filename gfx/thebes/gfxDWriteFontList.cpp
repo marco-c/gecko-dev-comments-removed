@@ -493,12 +493,12 @@ static void DestroyBlobFunc(void* aUserData) {
   delete ftr;
 }
 
-hb_blob_t* gfxDWriteFontEntry::GetFontTable(uint32_t aTag) {
+hb_blob_t* gfxDWriteFontEntry::GetFontTableInternal(uint32_t aTag) {
   
   
   
   if (!mFontFace) {
-    return gfxFontEntry::GetFontTable(aTag);
+    return gfxFontEntry::GetFontTableInternal(aTag);
   }
 
   const void* data;
