@@ -89,6 +89,137 @@ window.addEventListener(
 );
 
 
+
+
+
+
+
+var EditContextMenu = {
+  _itemSets: [],
+
+  
+
+
+
+
+  get popup() {
+    return this._ensurePopup();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  addItems({ matches, createItems, onShowing, after }) {
+    let itemSet = { matches, createItems, onShowing, after, items: [] };
+    this._itemSets.push(itemSet);
+
+    let popup = document.getElementById("textbox-contextmenu");
+    if (popup) {
+      this._insertItems(popup, itemSet);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+  open(input, event) {
+    let popup = this._ensurePopup();
+
+    goUpdateGlobalEditMenuItems(true);
+    for (let itemSet of this._itemSets) {
+      let matches = itemSet.matches(input);
+      for (let item of itemSet.items) {
+        item.hidden = !matches;
+      }
+      if (matches) {
+        itemSet.onShowing?.(input, itemSet.items);
+      }
+    }
+
+    popup.openPopupAtScreen(event.screenX, event.screenY, true, event);
+  },
+
+  _ensurePopup() {
+    let popup = document.getElementById("textbox-contextmenu");
+    if (popup) {
+      return popup;
+    }
+
+    MozXULElement.insertFTLIfNeeded("toolkit/global/textActions.ftl");
+    
+    
+    document.documentElement.appendChild(
+      MozXULElement.parseXULToFragment(`
+      <menupopup id="textbox-contextmenu" class="textbox-contextmenu"
+                 showservicesmenu="true">
+        <menuitem id="edit-contextmenu-undo" data-l10n-id="text-action-undo" command="cmd_undo"></menuitem>
+        <menuitem id="edit-contextmenu-redo" data-l10n-id="text-action-redo" command="cmd_redo"></menuitem>
+        <menuseparator></menuseparator>
+        <menuitem id="edit-contextmenu-cut" data-l10n-id="text-action-cut" command="cmd_cut"></menuitem>
+        <menuitem id="edit-contextmenu-copy" data-l10n-id="text-action-copy" command="cmd_copy"></menuitem>
+        <menuitem id="edit-contextmenu-paste" data-l10n-id="text-action-paste" command="cmd_paste"></menuitem>
+        <menuitem id="edit-contextmenu-delete" data-l10n-id="text-action-delete" command="cmd_delete"></menuitem>
+        <menuitem id="edit-contextmenu-select-all" data-l10n-id="text-action-select-all" command="cmd_selectAll"></menuitem>
+      </menupopup>
+    `)
+    );
+    popup = document.documentElement.lastElementChild;
+
+    for (let itemSet of this._itemSets) {
+      this._insertItems(popup, itemSet);
+    }
+    return popup;
+  },
+
+  _insertItems(popup, itemSet) {
+    let fragment = itemSet.createItems();
+    itemSet.items = [...fragment.children];
+    if (itemSet.after) {
+      popup.querySelector(`#${itemSet.after}`).after(fragment);
+    } else {
+      popup.appendChild(fragment);
+    }
+  },
+};
+
+EditContextMenu.addItems({
+  matches: input => input.type == "password",
+  createItems() {
+    return MozXULElement.parseXULToFragment(`
+      <menuitem id="edit-contextmenu-reveal-password"
+                data-l10n-id="text-action-reveal-password" type="checkbox"/>
+    `);
+  },
+  onShowing(input, [item]) {
+    
+    item.oncommand = () => {
+      input.revealPassword = !input.revealPassword;
+    };
+    item.toggleAttribute("checked", input.revealPassword);
+  },
+});
+
+
 window.addEventListener("contextmenu", e => {
   const HTML_NS = "http://www.w3.org/1999/xhtml";
   const XUL_NS =
@@ -106,49 +237,7 @@ window.addEventListener("contextmenu", e => {
     return;
   }
 
-  let popup = document.getElementById("textbox-contextmenu");
-  if (!popup) {
-    MozXULElement.insertFTLIfNeeded("toolkit/global/textActions.ftl");
-    
-    
-    document.documentElement.appendChild(
-      MozXULElement.parseXULToFragment(`
-      <menupopup id="textbox-contextmenu" class="textbox-contextmenu"
-                 showservicesmenu="true">
-        <menuitem id="edit-contextmenu-undo" data-l10n-id="text-action-undo" command="cmd_undo"></menuitem>
-        <menuitem id="edit-contextmenu-redo" data-l10n-id="text-action-redo" command="cmd_redo"></menuitem>
-        <menuseparator></menuseparator>
-        <menuitem id="edit-contextmenu-cut" data-l10n-id="text-action-cut" command="cmd_cut"></menuitem>
-        <menuitem id="edit-contextmenu-copy" data-l10n-id="text-action-copy" command="cmd_copy"></menuitem>
-        <menuitem id="edit-contextmenu-paste" data-l10n-id="text-action-paste" command="cmd_paste"></menuitem>
-        <menuitem id="edit-contextmenu-delete" data-l10n-id="text-action-delete" command="cmd_delete"></menuitem>
-        <menuitem id="edit-contextmenu-select-all" data-l10n-id="text-action-select-all" command="cmd_selectAll"></menuitem>
-        <menuitem data-l10n-id="text-action-reveal-password" type="checkbox" id="edit-contextmenu-reveal-password" />
-      </menupopup>
-    `)
-    );
-    popup = document.documentElement.lastElementChild;
-  }
-
-  goUpdateGlobalEditMenuItems(true);
-  const isPasswordInput =
-    target.localName == "input" &&
-    target.namespaceURI == HTML_NS &&
-    target.type == "password";
-  let revealPassword = popup.querySelector("#edit-contextmenu-reveal-password");
-  
-  revealPassword.oncommand = () => {
-    target.revealPassword = !target.revealPassword;
-  };
-  revealPassword.hidden = !isPasswordInput;
-  if (isPasswordInput) {
-    if (target.revealPassword) {
-      revealPassword.setAttribute("checked", "true");
-    } else {
-      revealPassword.removeAttribute("checked");
-    }
-  }
-  popup.openPopupAtScreen(e.screenX, e.screenY, true, e);
+  EditContextMenu.open(target, e);
   
   
   e.preventDefault();
