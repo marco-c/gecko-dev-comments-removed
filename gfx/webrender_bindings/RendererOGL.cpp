@@ -180,10 +180,7 @@ RenderedFrameId RendererOGL::UpdateAndRender(
   
   bool present = aFrameParams.present;
 
-  LayoutDeviceIntSize size(0, 0);
-  auto bufferAge = 0;
   bool fullRender = false;
-
   bool needPostRenderCall = false;
   bool beginFrame = !mThread->IsHandlingDeviceReset();
 
@@ -206,9 +203,6 @@ RenderedFrameId RendererOGL::UpdateAndRender(
     if (!mCompositor->BeginFrame()) {
       beginFrame = false;
     }
-
-    size = mCompositor->GetBufferSize();
-    bufferAge = mCompositor->GetBufferAge();
 
     fullRender = mCompositor->RequestFullRender();
     
@@ -237,6 +231,9 @@ RenderedFrameId RendererOGL::UpdateAndRender(
     wr_renderer_force_redraw(mRenderer);
   }
 
+  LayoutDeviceIntSize size = mCompositor->GetBufferSize();
+  auto bufferAge = mCompositor->GetBufferAge();
+
   nsTArray<DeviceIntRect> dirtyRects;
   bool didRasterize = false;
   bool rendered =
@@ -263,6 +260,12 @@ RenderedFrameId RendererOGL::UpdateAndRender(
 
   if (present) {
     if (aReadbackBuffer.isSome()) {
+      
+      CheckGraphicsResetStatus(gfx::DeviceResetDetectPlace::WR_BEFORE_READBACK,
+                                true);
+    }
+
+    if (aReadbackBuffer.isSome() && !mThread->IsHandlingDeviceReset()) {
       MOZ_ASSERT(aReadbackSize.isSome());
       MOZ_ASSERT(aReadbackFormat.isSome());
       if (!mCompositor->MaybeReadback(aReadbackSize.ref(),

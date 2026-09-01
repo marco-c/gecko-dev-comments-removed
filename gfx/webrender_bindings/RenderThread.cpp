@@ -120,10 +120,21 @@ RenderThread::RenderThread(RefPtr<nsIThread> aThread)
 
 RenderThread::~RenderThread() {
   MOZ_ASSERT(mRenderTexturesDeferred.empty());
-  if (mRenderBackendPool) {
-    wr_render_backend_pool_delete(mRenderBackendPool);
-  }
+  DestroyRenderBackendPool();
   wr_chunk_pool_delete(mChunkPool);
+}
+
+void RenderThread::DestroyRenderBackendPool() {
+  if (!mRenderBackendPool) {
+    return;
+  }
+
+  
+  
+  
+  
+  wr_render_backend_pool_delete(mRenderBackendPool);
+  mRenderBackendPool = nullptr;
 }
 
 
@@ -229,6 +240,11 @@ void RenderThread::ShutDown() {
   
   nsCOMPtr<nsIThread> oldThread = sRenderThread->GetRenderThread();
   oldThread->Shutdown();
+
+  
+  
+  
+  sRenderThread->DestroyRenderBackendPool();
 
   layers::SharedSurfacesParent::Shutdown();
 
@@ -1400,6 +1416,8 @@ void RenderThread::HandleDeviceReset(gfx::DeviceResetDetectPlace aPlace,
 
   mHandlingDeviceReset = true;
 
+  gfxCriticalNote << "Handle DeviceReset";
+
   {
     MutexAutoLock lock(mRenderTextureMapLock);
     mRenderTexturesDeferred.clear();
@@ -1703,11 +1721,6 @@ static already_AddRefed<gl::GLContext> CreateGLContextANGLE(
 
   if (StaticPrefs::gfx_webrender_prefer_robustness_AtStartup()) {
     flags |= gl::CreateContextFlags::PREFER_ROBUSTNESS;
-  }
-
-  if (egl->IsExtensionSupported(
-          gl::EGLExtension::MOZ_create_context_provoking_vertex_dont_care)) {
-    flags |= gl::CreateContextFlags::PROVOKING_VERTEX_DONT_CARE;
   }
 
   
