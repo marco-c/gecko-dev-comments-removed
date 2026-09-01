@@ -70,8 +70,8 @@ std::string VideoReceiveStreamInterface::Stats::ToString(
   ss << "frameHeight: " << height << ", ";
   
   
-  ss << "key: " << frame_counts.key_frames << ", ";
-  ss << "delta: " << frame_counts.delta_frames << ", ";
+  ss << "key: " << received_frame_counts.key_frames << ", ";
+  ss << "delta: " << received_frame_counts.delta_frames << ", ";
   ss << "framesAssembledFromMultiplePackets: "
      << frames_assembled_from_multiple_packets << ", ";
   ss << "framesDecoded: " << frames_decoded << ", ";
