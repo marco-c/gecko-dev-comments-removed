@@ -200,6 +200,11 @@ var allowlist = [
   { file: "moz-src:///toolkit/components/reflect/reflect.sys.mjs" },
 
   
+  {
+    file: "moz-src:///browser/components/aiwindow/ui/modules/AITabStore.sys.mjs",
+  },
+
+  
   { file: "resource://gre/defaults/autoconfig/prefcalls.js" },
 
   
