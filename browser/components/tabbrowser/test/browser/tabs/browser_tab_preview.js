@@ -190,6 +190,16 @@ add_setup(async function () {
     ],
   });
 
+  
+  
+  
+  
+  
+  EventUtils.disableNonTestMouseEvents(true);
+  registerCleanupFunction(() => {
+    EventUtils.disableNonTestMouseEvents(false);
+  });
+
   await resetState();
   registerCleanupFunction(async function () {
     await resetState();
@@ -244,6 +254,58 @@ add_task(async function tabHoverTests() {
 
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
+
+  await resetState();
+});
+
+
+
+
+
+
+add_task(async function tabCloseHoverTests() {
+  const titles = ["First Closed", "Second Closed", "Last Closed"];
+  const tabs = [];
+  for (let title of titles) {
+    tabs.push(
+      await addTabTo(
+        gBrowser,
+        `data:text/html,<html><head><title>${title}</title></head><body>Hello</body></html>`
+      )
+    );
+  }
+  const previewContainer = document.getElementById(TAB_PREVIEW_PANEL_ID);
+
+  await openTabPreview(tabs[0]);
+
+  let sawHidden = false;
+  const onHidden = () => {
+    sawHidden = true;
+  };
+  previewContainer.addEventListener("popuphidden", onHidden);
+
+  
+  
+  for (let i = 0; i < 2; i++) {
+    BrowserTestUtils.removeTab(tabs[i]);
+    await TestUtils.waitForCondition(
+      () =>
+        previewContainer.querySelector(".tab-preview-title").innerText ==
+        titles[i + 1],
+      `Preview moved onto ${titles[i + 1]}`
+    );
+    Assert.ok(tabs[i + 1]._hover, `${titles[i + 1]} took over the hover`);
+  }
+  Assert.ok(!sawHidden, "Preview stayed open across the tab closes");
+  previewContainer.removeEventListener("popuphidden", onHidden);
+
+  
+  const previewHidden = BrowserTestUtils.waitForPopupEvent(
+    previewContainer,
+    "hidden"
+  );
+  BrowserTestUtils.removeTab(tabs[2]);
+  await previewHidden;
 
   await resetState();
 });
