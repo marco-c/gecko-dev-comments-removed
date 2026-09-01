@@ -170,25 +170,79 @@ function getBounceURL({
 
 
 
+function insertIframeAndWaitForLoad(
+  browserOrBrowsingContext,
+  url,
+  { sandbox = null } = {}
+) {
+  return SpecialPowers.spawn(
+    browserOrBrowsingContext,
+    [url, sandbox],
+    async (url, sandbox) => {
+      let iframe = content.document.createElement("iframe");
+      if (sandbox != null) {
+        iframe.sandbox = sandbox;
+      }
+      iframe.src = url;
+      content.document.body.appendChild(iframe);
+      
+      await ContentTaskUtils.waitForEvent(iframe, "load");
+
+      return iframe.browsingContext;
+    }
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 async function navigateLinkClick(
   browser,
   targetURL,
-  { spawnWindow = null } = {}
+  { spawnWindow = null, linkTarget = null } = {}
 ) {
   if (spawnWindow && !["newTab", "popup"].includes(spawnWindow)) {
     throw new Error(`Invalid option '${spawnWindow}' for spawnWindow`);
   }
 
-  await SpecialPowers.spawn(
+  
+  
+  
+  
+  
+  
+  let clicked = await SpecialPowers.spawn(
     browser,
-    [targetURL.href, spawnWindow],
-    async (targetURL, spawnWindow) => {
+    [targetURL.href, spawnWindow, linkTarget],
+    async (targetURL, spawnWindow, linkTarget) => {
       let link = content.document.createElement("a");
       link.id = "link";
       link.textContent = "Click Me";
-      link.style.display = "block";
+      
+      
+      
+      link.style.position = "fixed";
+      link.style.top = "0";
+      link.style.left = "0";
+      link.style.zIndex = "2147483647";
       link.style.fontSize = "40px";
 
       
@@ -207,14 +261,87 @@ async function navigateLinkClick(
       } else {
         
         link.href = targetURL;
+        if (linkTarget) {
+          link.target = linkTarget;
+        }
       }
 
       content.document.body.appendChild(link);
 
+      let clicked = false;
+      link.addEventListener("click", () => {
+        clicked = true;
+      });
+
       
-      SpecialPowers.wrap(content.document).notifyUserGestureActivation();
-      content.document.userInteractionForTesting();
-      link.click();
+      
+      
+      
+      
+      let isHittable = () => {
+        let { left, top, width, height } = link.getBoundingClientRect();
+        return link.contains(
+          content.document.elementFromPoint(left + width / 2, top + height / 2)
+        );
+      };
+      if (!isHittable()) {
+        await ContentTaskUtils.waitForCondition(
+          isHittable,
+          "The link is hit testable at its center."
+        );
+      }
+
+      ContentTaskUtils.getEventUtils(content).synthesizeMouseAtCenter(
+        link,
+        {},
+        content
+      );
+
+      return clicked;
+    }
+  );
+
+  Assert.ok(clicked, "The synthesized click hit the link.");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function navigateTopFromFrame(
+  frameBC,
+  targetURL,
+  { withGesture = true } = {}
+) {
+  await SpecialPowers.spawn(
+    frameBC,
+    [targetURL.href, withGesture],
+    async (targetURL, withGesture) => {
+      if (withGesture) {
+        SpecialPowers.wrap(content.document).notifyUserGestureActivation();
+        content.document.userInteractionForTesting();
+      }
+      let script = content.document.createElement("script");
+      script.textContent = `window.top.location.href = ${JSON.stringify(
+        targetURL
+      )};`;
+      content.document.body.appendChild(script);
     }
   );
 }
