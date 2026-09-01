@@ -105,6 +105,15 @@ class SimpleMap {
     return mMap.Length();
   }
 
+  
+  template <typename F>
+  void Enumerate(F&& aCallback) {
+    Policy guard(mLock);
+    for (const auto& element : mMap) {
+      aCallback(element.first, element.second);
+    }
+  }
+
  private:
   
   
