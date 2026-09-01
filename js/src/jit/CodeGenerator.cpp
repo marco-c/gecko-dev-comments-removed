@@ -3941,8 +3941,15 @@ void CodeGenerator::visitGoto(LGoto* lir) {
   
   
   
-  uint32_t numMoveGroupsCloned = 0;
+
+  
+  
   MBasicBlock* target = lir->target();
+  if (isNextBlock(target->lir())) {
+    return;
+  }
+
+  uint32_t numMoveGroupsCloned = 0;
   while (true) {
     LBlock* targetLBlock = target->lir();
     LBlock* nextLBlock = targetLBlock->isMoveGroupsThenGoto();
