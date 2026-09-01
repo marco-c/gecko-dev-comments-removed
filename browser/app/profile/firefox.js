@@ -2953,6 +2953,10 @@ pref("signon.suggestImportCount", 3);
 
 
 
+pref("browser.autocomplete.removeRecords.enabled", false);
+
+
+
 
 #ifdef NIGHTLY_BUILD
   pref("browser.crashReports.unsubmittedCheck.enabled", true);
