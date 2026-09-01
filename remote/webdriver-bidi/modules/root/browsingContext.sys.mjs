@@ -14,6 +14,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   capture: "chrome://remote/content/shared/Capture.sys.mjs",
   ContextDescriptorType:
     "chrome://remote/content/shared/messagehandler/MessageHandler.sys.mjs",
+  Downloads: "resource://gre/modules/Downloads.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   EventPromise: "chrome://remote/content/shared/Sync.sys.mjs",
   generateUUID: "chrome://remote/content/shared/UUID.sys.mjs",
@@ -1672,9 +1673,16 @@ class BrowsingContextModule extends RootBiDiModule {
         const { sessionHistory } = context;
         const flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
 
-        // Bug 2026546: As workaround use sessionHistory if available to avoid
-        // issues with frames.
-        if (sessionHistory?.count && sessionHistory?.index >= 0) {
+        // Bug 2026546: If available, use sessionHistory to properly reload
+        // top-level contexts which contain frames. Note that sessionHistory
+        // always belongs to the top-level context, so it must only be used
+        // for top-level navigables, otherwise reloading a child navigable
+        // would reload the whole tab.
+        if (
+          context.parent === null &&
+          sessionHistory?.count &&
+          sessionHistory?.index >= 0
+        ) {
           sessionHistory.reload(flags);
         } else {
           context.reload(flags);
@@ -2014,7 +2022,7 @@ class BrowsingContextModule extends RootBiDiModule {
       },
     });
 
-    const downloadsDir = Services.dirsvc.get("DfltDwnld", Ci.nsIFile).path;
+    const downloadsDir = await lazy.Downloads.getPreferredDownloadsDirectory();
     const screencast = lazy.generateUUID();
 
     // Extract video file extension from mimeType.
