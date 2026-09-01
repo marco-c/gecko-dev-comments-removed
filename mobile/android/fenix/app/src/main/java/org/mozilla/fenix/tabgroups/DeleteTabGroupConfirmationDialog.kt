@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.tabgroups
 
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -14,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.TextButton
@@ -25,14 +23,14 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
- * This dialog is used to prompt the user to confirm if they want to close the current tab and delete the associated tab
- * group.
+ * This dialog is used to prompt the user to confirm if they want to delete their selected tab group. It provides
+ * options to confirm or cancel the deletion.
  *
- * @param onConfirmDelete Callback invoked when the user confirms closing the tab and deleting the group.
- * @param onCancel Callback invoked when the user cancels the action.
+ * @param onConfirmDelete Callback invoked when the user confirms the deletion.
+ * @param onCancel Callback invoked when the user cancels the deletion.
  */
 @Composable
-fun CloseLastTabAndDeleteTabGroupConfirmationDialog(
+fun DeleteTabGroupConfirmationDialog(
     onConfirmDelete: () -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -46,30 +44,28 @@ fun CloseLastTabAndDeleteTabGroupConfirmationDialog(
         onDismissRequest = onCancel,
         title = {
             Text(
-                text = stringResource(R.string.close_tab_and_delete_group_confirmation_dialog_title),
+                text = stringResource(R.string.delete_tab_group_confirmation_dialog_title),
                 style = FirefoxTheme.typography.headline5,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
             )
         },
         text = {
             Text(
-                text = stringResource(R.string.close_tab_and_delete_group_confirmation_dialog_body),
+                text = stringResource(R.string.delete_tab_group_confirmation_dialog_body),
                 style = FirefoxTheme.typography.body2,
             )
         },
         confirmButton = {
             TextButton(
-                text = stringResource(R.string.close_tab_and_delete_group_confirmation_dialog_confirm),
+                text = stringResource(R.string.delete_tab_group_confirmation_dialog_confirm),
                 onClick = onConfirmDelete,
-                modifier = Modifier.testTag(tag = TabGroupsTestTag.CLOSE_LAST_TAB_AND_DELETE_DIALOG_CONFIRM_BUTTON),
+                modifier = Modifier.testTag(tag = TabGroupsTestTag.DELETE_DIALOG_CONFIRM_BUTTON),
             )
         },
         dismissButton = {
             TextButton(
-                text = stringResource(R.string.close_tab_and_delete_group_confirmation_dialog_cancel),
+                text = stringResource(R.string.delete_tab_group_confirmation_dialog_cancel),
                 onClick = onCancel,
-                modifier = Modifier.testTag(tag = TabGroupsTestTag.CLOSE_LAST_TAB_AND_DELETE_DIALOG_CANCEL_BUTTON),
+                modifier = Modifier.testTag(tag = TabGroupsTestTag.DELETE_DIALOG_CANCEL_BUTTON),
             )
         },
     )
@@ -77,12 +73,10 @@ fun CloseLastTabAndDeleteTabGroupConfirmationDialog(
 
 @FlexibleWindowPreview
 @Composable
-private fun CloseTabAndDeleteGroupConfirmationDialogPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme
-) {
+private fun DeleteTabGroupConfirmationDialogPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         Surface {
-            CloseLastTabAndDeleteTabGroupConfirmationDialog(
+            DeleteTabGroupConfirmationDialog(
                 onConfirmDelete = {},
                 onCancel = {},
             )
