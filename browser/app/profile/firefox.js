@@ -351,6 +351,12 @@ pref("browser.startup.couldRestoreSession.count", 0);
 
 #if defined(XP_WIN)
 pref("browser.startup.preXulSkeletonUI", true);
+#endif
+
+
+
+
+
 
 
 pref("browser.startup.windowsLaunchOnLogin.enabled", true);
@@ -363,7 +369,6 @@ pref("browser.startup.windowsLaunchOnLogin.disableLaunchOnLoginPrompt", false);
 
 pref("browser.startup.windowsLaunchOnLogin.defaultEnabled", false);
 pref("browser.startup.windowsLaunchOnLogin.alreadyApplied", false);
-#endif
 
 
 pref("browser.startup.upgradeDialog.enabled", false);
@@ -770,11 +775,17 @@ pref("places.semanticHistory.featureGate", true);
 #else
 pref("places.semanticHistory.featureGate", false);
 #endif
-pref("places.semanticHistory.supportedRegions", "[[\"AU\",[\"en-*\"]],[\"CA\",[\"en-*\"]],[\"GB\",[\"en-*\"]],[\"IE\",[\"en-*\"]],[\"NZ\",[\"en-*\"]],[\"PH\",[\"en-*\"]],[\"US\",[\"en-*\"]]]");
+pref("places.semanticHistory.supportedRegions", "[[\"AU\",[\"en-*\"]],[\"CA\",[\"en-*\"]],[\"GB\",[\"en-*\"]],[\"IE\",[\"en-*\"]],[\"NZ\",[\"en-*\"]],[\"PH\",[\"en-*\"]],[\"US\",[\"en-*\"]],[\"FR\",[\"en-*\",\"fr-*\"]]]");
 
 
 
-pref("places.semanticHistory.embeddingType", "static");
+
+pref("places.semanticHistory.embeddingType", "");
+
+
+
+
+pref("places.semanticHistory.multilingualEmbeddingRegions", "[[\"FR\",[\"en-*\",\"fr-*\"]],[\"*\",[\"fr-*\"]]]");
 
 
 pref("browser.ml.embedGen.textEmbeddingSize", 384);
