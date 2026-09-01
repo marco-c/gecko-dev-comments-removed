@@ -26,6 +26,29 @@ FileMgr::~FileMgr() { moz_glue_hunspell_destruct_filemgr(mFd); }
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 hunspell_create_filemgr_t* moz_glue_hunspell_create_filemgr = nullptr;
 hunspell_get_line_t* moz_glue_hunspell_get_line = nullptr;
 hunspell_get_line_num_t* moz_glue_hunspell_get_line_num = nullptr;
