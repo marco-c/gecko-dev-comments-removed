@@ -241,7 +241,7 @@ class gfxFontEntry {
 
   
   
-  virtual nsCString RealFaceName();
+  nsCString RealFaceName();
 
   WeightRange Weight() const { return mWeightRange; }
   WidthRange Width() const { return mWidthRange; }
