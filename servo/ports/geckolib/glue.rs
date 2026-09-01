@@ -37,6 +37,7 @@ use style::counter_style::{self, DescriptorId as CounterStyleDescriptorId};
 use style::data::{self, ElementStyles};
 use style::dom::ElementContext;
 use style::dom::{AttributeTracker, ShowSubtreeData, TDocument, TElement, TNode, TShadowRoot};
+use style::driver;
 use style::error_reporting::{ParseErrorReporter, SelectorWarningKind};
 use style::font_face::{
     self, DescriptorId as FontFaceDescriptorId, FontFaceSourceFormat, FontFaceSourceListComponent,
@@ -162,7 +163,6 @@ use style::values::specified::source_size_list::SourceSizeList;
 use style::values::specified::svg_path::PathCommand;
 use style::values::specified::{LengthUnit, NoCalcLength, NoCalcNumber};
 use style::values::{specified, AtomIdent, CustomIdent, KeyframesName};
-use style::{custom_properties, driver};
 use style_traits::{CssWriter, ParseError, ParsingMode, SpecifiedValueInfo, ToCss};
 use thin_vec::ThinVec as nsTArray;
 use to_shmem::SharedMemoryBuilder;
@@ -11515,8 +11515,6 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
     raw_data: &PerDocumentStyleData,
     out: &mut nsTArray<nsString>,
 ) {
-    use style::custom_properties::VariableValue;
-    use style::properties::enabled_arbitrary_substitution_functions;
     use style::values::generics::calc::SimplificationResult;
     use style::values::specified::calc::{CalcNode, CalcParseFlags, Leaf};
 
@@ -11533,100 +11531,8 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
     );
 
     let string = str.to_string();
-    let mut substituted = None;
     let mut input = ParserInput::new(&string);
     let mut parser = Parser::new(&mut input);
-
-    let data = raw_data.borrow();
-    let element = GeckoElement(element);
-    let pseudo = PseudoElement::from_pseudo_type(pseudo_type, None);
-    let parent_element = if pseudo.is_none() {
-        element.inheritance_parent()
-    } else {
-        Some(element)
-    };
-    let parent_data = parent_element.as_ref().and_then(|e| e.borrow_data());
-    let parent_style = parent_data
-        .as_ref()
-        .map(|d| d.styles.primary())
-        .map(|x| &**x);
-
-    let container_size_query =
-        ContainerSizeQuery::for_element(element, parent_style, pseudo.is_some());
-    let mut conditions = Default::default();
-    let mut tree_counting_caches = TreeCountingCaches::default();
-    let context = create_context_for_animation(
-        &data,
-        &style,
-        parent_style,
-        &mut conditions,
-        container_size_query,
-        &element,
-        &mut tree_counting_caches,
-    );
-
-    
-    parser.look_for_arbitrary_substitution_functions(enabled_arbitrary_substitution_functions());
-    let Ok(variable_value) = VariableValue::parse(
-        &mut parser,
-        Some(&parser_context.namespaces.prefixes),
-        &parser_context.url_data,
-    ) else {
-        return;
-    };
-
-    if parser.seen_arbitrary_substitution_functions() {
-        
-        let stylist = &data.stylist;
-        let mut attribute_tracker = AttributeTracker::new(&element);
-        let attributes: style::custom_properties_map::OwnMap = variable_value
-            .references
-            .refs
-            .iter()
-            .filter_map(|reference| {
-                if !reference.is_attr_with_type() {
-                    return None;
-                }
-
-                let value = custom_properties::get_attr_value_for_cycle_resolution(
-                    &reference.name,
-                    &reference.attribute_data,
-                    &variable_value.url_data,
-                    &mut attribute_tracker,
-                )
-                .ok()?;
-
-                Some((reference.name.clone(), Some(value)))
-            })
-            .collect();
-        let substitution_functions = custom_properties::ComputedSubstitutionFunctions::new(
-            Some(style.custom_properties().clone()),
-            Some(attributes),
-        );
-
-        let Ok(result) = custom_properties::substitute(
-            &variable_value,
-            &substitution_functions,
-            stylist,
-            &context,
-            &mut attribute_tracker,
-        ) else {
-            return;
-        };
-
-        
-        out.push(nsString::from(&string));
-        let result_string = result.css.to_string();
-        
-        out.push(nsString::from(&result_string));
-        substituted = Some(result_string.clone());
-    }
-
-    let substituted_str = substituted.as_deref().unwrap_or(&string);
-    
-    
-    input = ParserInput::new(substituted_str);
-    parser = Parser::new(&mut input);
 
     
     
@@ -11666,19 +11572,42 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
         Some(l) => l.to_css_string(),
         None => node.to_css_string(),
     };
-
     
     
-    if substituted.is_none() {
-        
-        
-        
-        
-        if value.replace(" ", "").to_lowercase() != string.replace(" ", "").to_lowercase() {
-            out.push(nsString::from(&string));
-        }
-        out.push(nsString::from(&value));
+    
+    
+    if value.replace(" ", "").to_lowercase() != string.replace(" ", "").to_lowercase() {
+        out.push(nsString::from(&string));
     }
+    out.push(nsString::from(&value));
+
+    let data = raw_data.borrow();
+    let element = GeckoElement(element);
+    let pseudo = PseudoElement::from_pseudo_type(pseudo_type, None);
+    let parent_element = if pseudo.is_none() {
+        element.inheritance_parent()
+    } else {
+        Some(element)
+    };
+    let parent_data = parent_element.as_ref().and_then(|e| e.borrow_data());
+    let parent_style = parent_data
+        .as_ref()
+        .map(|d| d.styles.primary())
+        .map(|x| &**x);
+
+    let container_size_query =
+        ContainerSizeQuery::for_element(element, parent_style, pseudo.is_some());
+    let mut conditions = Default::default();
+    let mut tree_counting_caches = TreeCountingCaches::default();
+    let context = create_context_for_animation(
+        &data,
+        &style,
+        parent_style,
+        &mut conditions,
+        container_size_query,
+        &element,
+        &mut tree_counting_caches,
+    );
 
     
     node = node.map_leaves(|leaf| match *leaf {
