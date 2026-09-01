@@ -25,10 +25,10 @@ const dbsReady = Promise.all([
 ]);
 
 const TEST_MESSAGE_CONTENT = {
-  id: "ON_LOAD_TEST_MESSAGE",
+  id: "NIMBUS_UPDATE_TEST_MESSAGE",
   template: "cfr_doorhanger",
   content: {
-    bucket_id: "ON_LOAD_TEST_MESSAGE",
+    bucket_id: "NIMBUS_UPDATE_TEST_MESSAGE",
     anchor_id: "PanelUI-menu-button",
     layout: "icon_and_message",
     icon: "chrome://activity-stream/content/data/content/assets/glyph-webextension-16.svg",
@@ -52,7 +52,7 @@ const TEST_MESSAGE_CONTENT = {
     skip_address_bar_notifier: true,
   },
   targeting: "true",
-  trigger: { id: "messagesLoaded" },
+  trigger: { id: "nimbusUpdate" },
 };
 
 add_setup(async function () {
@@ -63,7 +63,7 @@ add_setup(async function () {
   });
 });
 
-add_task(async function test_messagesLoaded_reach_experiment() {
+add_task(async function test_nimbusUpdate_reach_experiment() {
   const sandbox = sinon.createSandbox();
   await ASRouter.waitForInitialized;
   await ASRouter._updateMessageProviders();
@@ -73,9 +73,9 @@ add_task(async function test_messagesLoaded_reach_experiment() {
   const sendTriggerSpy = sandbox.spy(ASRouter, "sendTriggerMessage");
   const routeSpy = sandbox.spy(ASRouter, "routeCFRMessage");
   const reachSpy = sandbox.spy(ASRouter, "_recordReachEvent");
-  const triggerMatch = sandbox.match({ id: "messagesLoaded" });
+  const triggerMatch = sandbox.match({ id: "nimbusUpdate" });
   const featureId = "cfr";
-  const recipe = NimbusTestUtils.factories.recipe("messages_loaded_test", {
+  const recipe = NimbusTestUtils.factories.recipe("nimbus_update_test", {
     branches: [
       {
         slug: "control",
@@ -85,7 +85,7 @@ add_task(async function test_messagesLoaded_reach_experiment() {
             featureId,
             value: {
               ...TEST_MESSAGE_CONTENT,
-              id: "messages-loaded-test-1",
+              id: "nimbus-update-test-1",
               recordReach: true,
             },
           },
@@ -99,7 +99,7 @@ add_task(async function test_messagesLoaded_reach_experiment() {
             featureId,
             value: {
               ...TEST_MESSAGE_CONTENT,
-              id: "messages-loaded-test-2",
+              id: "nimbus-update-test-2",
               recordReach: true,
             },
           },
@@ -131,13 +131,16 @@ add_task(async function test_messagesLoaded_reach_experiment() {
   );
 
   const filterFn = m =>
-    ["messages-loaded-test-1", "messages-loaded-test-2"].includes(m?.id);
+    ["nimbus-update-test-1", "nimbus-update-test-2"].includes(m?.id);
   await TestUtils.waitForCondition(
     () => ASRouter.state.messages.filter(filterFn).length > 1,
     "Should load the test messages"
   );
 
-  Assert.ok(sendTriggerSpy.calledWith(triggerMatch, true), "Trigger fired");
+  await TestUtils.waitForCondition(
+    () => sendTriggerSpy.calledWith(triggerMatch),
+    "nimbusUpdate trigger fired after enrollment"
+  );
   Assert.ok(
     routeSpy.calledWith(
       sandbox.match(filterFn),
@@ -152,8 +155,8 @@ add_task(async function test_messagesLoaded_reach_experiment() {
   );
   const reachMessageId =
     metadata.branch === "control"
-      ? "messages-loaded-test-2"
-      : "messages-loaded-test-1";
+      ? "nimbus-update-test-2"
+      : "nimbus-update-test-1";
   const reachMessageBranch =
     metadata.branch === "control" ? "treatment" : "control";
   const reachId = `${metadata.slug}:${reachMessageBranch}:${reachMessageId}`;
@@ -165,7 +168,7 @@ add_task(async function test_messagesLoaded_reach_experiment() {
   
   await hideCFRDoorhanger();
 
-  ExperimentAPI.manager.store._deleteForTests("messages_loaded_test");
+  ExperimentAPI.manager.store._deleteForTests("nimbus_update_test");
   await client.db.importChanges({}, Date.now(), [], { clear: true });
   await ExperimentAPI._rsLoader.updateRecipes("test");
   MessageLoaderUtils._recordedReachIds.clear();

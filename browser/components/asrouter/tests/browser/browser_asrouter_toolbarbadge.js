@@ -5,11 +5,33 @@ const { ToolbarBadgeHub } = ChromeUtils.importESModule(
   "resource:///modules/asrouter/ToolbarBadgeHub.sys.mjs"
 );
 
+
+
+
+
+
+
+
+async function clickToClearBadge(button) {
+  let panelShown = BrowserTestUtils.waitForEvent(
+    button.ownerDocument,
+    "popupshown",
+    true,
+    event => event.target.id === "customizationui-widget-panel"
+  );
+  button.click();
+  let panel = (await panelShown).target;
+
+  let panelHidden = BrowserTestUtils.waitForEvent(panel, "popuphidden");
+  panel.hidePopup();
+  await panelHidden;
+}
+
 add_task(async function test_setup() {
   
   
   
-  registerCleanupFunction(() => {
+  registerCleanupFunction(async () => {
     
     
     
@@ -33,7 +55,7 @@ add_task(async function test_fxa_badge_shown_nodelay() {
   let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
   
   let fxaButton = browserWindow.document.getElementById(msg.content.target);
-  fxaButton.click();
+  await clickToClearBadge(fxaButton);
 
   await TestUtils.waitForCondition(
     () =>
@@ -72,7 +94,7 @@ add_task(async function test_fxa_badge_shown_nodelay() {
 
   
   fxaButton = document.getElementById(msg.content.target);
-  fxaButton.click();
+  await clickToClearBadge(fxaButton);
 
   await TestUtils.waitForCondition(
     () =>
@@ -97,7 +119,7 @@ add_task(async function test_fxa_badge_shown_withdelay() {
   let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
   
   let fxaButton = browserWindow.document.getElementById(msg.content.target);
-  fxaButton.click();
+  await clickToClearBadge(fxaButton);
 
   await TestUtils.waitForCondition(
     () =>
@@ -136,7 +158,7 @@ add_task(async function test_fxa_badge_shown_withdelay() {
 
   
   fxaButton = document.getElementById(msg.content.target);
-  fxaButton.click();
+  await clickToClearBadge(fxaButton);
 
   await TestUtils.waitForCondition(
     () =>

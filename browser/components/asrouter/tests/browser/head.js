@@ -2,6 +2,7 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
+  ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   FeatureCallout: "resource:///modules/asrouter/FeatureCallout.sys.mjs",
 
   FeatureCalloutBroker:
@@ -10,6 +11,7 @@ ChromeUtils.defineESModuleGetters(this, {
   FeatureCalloutMessages:
     "resource:///modules/asrouter/FeatureCalloutMessages.sys.mjs",
 
+  NimbusTestUtils: "resource://testing-common/NimbusTestUtils.sys.mjs",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
   QueryCache: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
   AboutWelcomeParent: "resource:///actors/AboutWelcomeParent.sys.mjs",
@@ -32,6 +34,10 @@ const calloutCTASelector = `#${calloutId} :is(.primary, .secondary)`;
 const calloutDismissSelector = `#${calloutId} .dismiss-button`;
 const CTASelector = `#${calloutId} :is(.primary, .secondary)`;
 
+add_setup(function setup() {
+  registerCleanupFunction(NimbusTestUtils.disableSignatureVerification());
+});
+
 function pushPrefs(...prefs) {
   return SpecialPowers.pushPrefEnv({ set: prefs });
 }
@@ -50,6 +56,21 @@ async function waitForUrlLoad(url) {
   let browser = gBrowser.selectedBrowser;
   BrowserTestUtils.startLoadingURIString(browser, url);
   await BrowserTestUtils.browserLoaded(browser, false, url);
+}
+
+
+
+
+
+
+async function hideCFRDoorhanger() {
+  await BrowserTestUtils.waitForPopupEvent(PopupNotifications.panel, "shown");
+  Assert.ok(
+    PopupNotifications.getNotification("contextual-feature-recommendation"),
+    "The CFR doorhanger is shown"
+  );
+  CFRPageActions.clearRecommendations();
+  await BrowserTestUtils.waitForPopupEvent(PopupNotifications.panel, "hidden");
 }
 
 async function waitForCalloutScreen(target, screenId) {
@@ -148,11 +169,11 @@ const clickCTA = async doc => {
 
 async function withTestMessage(sandbox, message, taskFn) {
   let handleMessageRequestStub = sandbox.stub(ASRouter, "handleMessageRequest");
-  handleMessageRequestStub.callsFake(async ({ template } = {}) => {
+  handleMessageRequestStub.callsFake(async ({ template, returnAll } = {}) => {
     if (!template || template === message.template) {
-      return [message];
+      return returnAll ? [message] : message;
     }
-    return [];
+    return returnAll ? [] : null;
   });
 
   let messagesEnabledInAutomationStub = sandbox.stub(
