@@ -16,6 +16,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <variant>
 
 #include "api/ref_count.h"
 #include "api/scoped_refptr.h"
@@ -26,6 +27,17 @@
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
+
+struct RtpTimestampWithOffset {
+  uint32_t value;
+  operator uint32_t() const { return value; }  
+};
+struct RtpTimestampWithoutOffset {
+  uint32_t value;
+  operator uint32_t() const { return value; }  
+};
+using RtpTimestampInfo =
+    std::variant<RtpTimestampWithOffset, RtpTimestampWithoutOffset>;
 
 
 class TransformableFrameInterface {
@@ -55,8 +67,14 @@ class TransformableFrameInterface {
   virtual bool CanSetPayloadType() const { return false; }
   virtual void SetPayloadType(uint8_t payload_type) { RTC_DCHECK_NOTREACHED(); }
   virtual uint32_t GetSsrc() const = 0;
+  
+  
+  
+  
+  
+  
   virtual uint32_t GetTimestamp() const = 0;
-  virtual void SetRTPTimestamp(uint32_t timestamp) = 0;
+  virtual void SetRTPTimestamp(uint32_t rtp_timestamp_with_offset) = 0;
 
   
   
@@ -107,6 +125,11 @@ class TransformableFrameInterface {
   
   
   virtual std::optional<TimeDelta> SenderCaptureTimeOffset() const = 0;
+
+  
+  
+  
+  virtual RtpTimestampInfo GetRtpTimestampInfo() const = 0;
 };
 
 class TransformableVideoFrameInterface : public TransformableFrameInterface {
