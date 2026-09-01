@@ -128,6 +128,13 @@ class Performance : public DOMEventTargetHelper {
 
   DOMHighResTimeStamp TimeStampToDOMHighResForRendering(TimeStamp) const;
 
+  
+  
+  
+  
+  DOMHighResTimeStamp GetReducedTimePrecisionDOMHighRes(
+      const TimeStamp& aTimeStamp);
+
   virtual uint64_t GetRandomTimelineSeed() = 0;
 
   void MemoryPressure();
