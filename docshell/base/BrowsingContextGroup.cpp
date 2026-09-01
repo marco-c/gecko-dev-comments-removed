@@ -219,7 +219,8 @@ void BrowsingContextGroup::Subscribe(ContentParent* aProcess) {
 
   nsTArray<OriginAgentClusterInitializer> useOriginAgentCluster;
   for (auto& entry : mUseOriginAgentCluster) {
-    if (!aProcess->ValidatePrincipal(entry.GetKey())) {
+    if (!aProcess->ValidatePrincipal(
+            entry.GetKey(), {ValidatePrincipalOptions::AllowNotLoadedOrigin})) {
       continue;
     }
 
@@ -270,8 +271,8 @@ bool BrowsingContextGroup::IsKnownForMessageReader(
       
       
       
-      if (topActor->GetSide() == mozilla::ipc::ParentSide && !mDestroyed &&
-          !mSubscribers.Contains(static_cast<ContentParent*>(topActor))) {
+      if (ContentParent* cp = ActorDynCast<ContentParent>(topActor);
+          cp && !mDestroyed && !mSubscribers.Contains(cp)) {
         aReader->FatalError(
             "Process is not subscribed to this BrowsingContextGroup");
         return false;
@@ -709,7 +710,8 @@ void BrowsingContextGroup::SetUseOriginAgentClusterFromNetwork(
   EachParent([&](ContentParent* aContentParent) {
     
     
-    if (!aContentParent->ValidatePrincipal(aPrincipal)) {
+    if (!aContentParent->ValidatePrincipal(
+            aPrincipal, {ValidatePrincipalOptions::AllowNotLoadedOrigin})) {
       return;
     }
 
@@ -737,10 +739,11 @@ Maybe<bool> BrowsingContextGroup::UsesOriginAgentCluster(
 
   
   
+  RefPtr<LoadedOriginSet> loadedOrigins = CurrentLoadedOriginSet();
   MOZ_DIAGNOSTIC_ASSERT(
       XRE_IsParentProcess() ||
-          ValidatePrincipalCouldPotentiallyBeLoadedBy(
-              aPrincipal, ContentChild::GetSingleton()->GetRemoteType()),
+          loadedOrigins->ValidatePrincipal(
+              aPrincipal, {ValidatePrincipalOptions::AllowNotLoadedOrigin}),
       "Attempting to create document with unexpected principal");
 
   if (auto entry = mUseOriginAgentCluster.Lookup(aPrincipal)) {
