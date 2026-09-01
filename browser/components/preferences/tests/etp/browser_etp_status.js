@@ -78,7 +78,14 @@ add_task(async function test_status_categories() {
 });
 
 add_task(async function test_tracker_count_toggle() {
-  await SpecialPowers.pushPrefEnv({ set: [[TRACKER_COUNT_PREF, true]] });
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      
+      ["browser.urlbar.trackerCount.featureGate", true],
+      [TRACKER_COUNT_PREF, true],
+    ],
+  });
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
   let doc = gBrowser.contentDocument;
 
