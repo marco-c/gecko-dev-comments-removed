@@ -425,20 +425,26 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
   if (gotSimpleBounds) {
     bbox = simpleBounds;
   } else {
-    RefPtr<Path> pathInBBoxSpace;
     RefPtr<Path> pathInUserSpace;
+    const FillRule fillRule = SVGUtils::ToFillRule(
+        HasAnyStateBits(NS_STATE_SVG_CLIPPATH_CHILD) ? StyleSVG()->mClipRule
+                                                     : StyleSVG()->mFillRule);
     if (getFill || getStroke) {
       
       RefPtr<DrawTarget> tmpDT;
       tmpDT = gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
 
-      FillRule fillRule = SVGUtils::ToFillRule(
-          HasAnyStateBits(NS_STATE_SVG_CLIPPATH_CHILD) ? StyleSVG()->mClipRule
-                                                       : StyleSVG()->mFillRule);
       pathInUserSpace = element->GetOrBuildPath(tmpDT, fillRule);
       if (!pathInUserSpace) {
         return bbox;
       }
+    }
+    
+    
+    
+    
+    auto getBoundsInBBoxSpace = [&]() -> Maybe<Rect> {
+      RefPtr<Path> pathInBBoxSpace;
       if (aToBBoxUserspace.IsIdentity()) {
         pathInBBoxSpace = pathInUserSpace;
       } else {
@@ -446,20 +452,22 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
             aToBBoxUserspace, fillRule);
         pathInBBoxSpace = builder->Finish();
         if (!pathInBBoxSpace) {
-          return bbox;
+          return Nothing();
         }
       }
-    }
+      Rect rect = pathInBBoxSpace->GetBounds();
+      return rect.IsFinite() ? Some(rect) : Nothing();
+    };
 
     
     if (getFill && !getStroke) {
-      Rect pathBBoxExtents = pathInBBoxSpace->GetBounds();
-      if (!pathBBoxExtents.IsFinite()) {
+      Maybe<Rect> pathBBoxExtents = getBoundsInBBoxSpace();
+      if (!pathBBoxExtents) {
         
         
         return bbox;
       }
-      bbox = pathBBoxExtents;
+      bbox = pathBBoxExtents.value();
     }
 
     
@@ -487,6 +495,9 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
               pathInUserSpace->TransformedCopyToBuilder(
                   ToMatrix(userToOuterSVG));
           RefPtr<Path> pathInOuterSVGSpace = builder->Finish();
+          if (!pathInOuterSVGSpace) {
+            return bbox;
+          }
           strokeBBoxExtents = pathInOuterSVGSpace->GetStrokedBounds(
               strokeOptions, outerSVGToBBox);
         } else {
@@ -494,20 +505,24 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
               strokeOptions, aToBBoxUserspace);
         }
         if (strokeBBoxExtents.IsEmpty() && getFill) {
-          strokeBBoxExtents = pathInBBoxSpace->GetBounds();
-          if (!strokeBBoxExtents.IsFinite()) {
+          Maybe<Rect> pathBBoxExtents = getBoundsInBBoxSpace();
+          if (!pathBBoxExtents) {
             return bbox;
           }
+          strokeBBoxExtents = pathBBoxExtents.value();
         }
       } else {
-        Rect pathBBoxExtents = pathInBBoxSpace->GetBounds();
-        if (!pathBBoxExtents.IsFinite()) {
+        Maybe<Rect> pathBBoxExtents = getBoundsInBBoxSpace();
+        if (!pathBBoxExtents) {
           return bbox;
         }
         strokeBBoxExtents = ToRect(SVGUtils::PathExtentsToMaxStrokeExtents(
-            ThebesRect(pathBBoxExtents), this, ThebesMatrix(aToBBoxUserspace)));
+            ThebesRect(pathBBoxExtents.value()), this,
+            ThebesMatrix(aToBBoxUserspace)));
       }
-      MOZ_ASSERT(strokeBBoxExtents.IsFinite(), "bbox is about to go bad");
+      if (!strokeBBoxExtents.IsFinite()) {
+        return bbox;
+      }
       bbox.UnionEdges(strokeBBoxExtents);
     }
   }
@@ -526,12 +541,18 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
           if (frame) {
             SVGBBox mbbox = frame->GetMarkBBoxContribution(
                 aToBBoxUserspace, aFlags, this, mark, strokeWidth);
-            MOZ_ASSERT(mbbox.IsFinite(), "bbox is about to go bad");
+            if (!mbbox.IsFinite()) {
+              return bbox;
+            }
             bbox.UnionEdges(mbbox);
           }
         }
       }
     }
+  }
+
+  if (aFlags.contains(SVGBBoxFlag::DisregardCSSZoom)) {
+    bbox.Scale(1 / Style()->EffectiveZoom().ToFloat());
   }
 
   return bbox;
