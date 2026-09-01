@@ -11,6 +11,7 @@ use crate::{APZScrollGeneration, HasScrollLinkedEffect, PipelineId, PropertyBind
 use crate::serde::{Serialize, Deserialize};
 use crate::color::ColorF;
 use crate::image::{ColorDepth, ImageKey};
+use crate::key_types::EdgeMask;
 use crate::units::*;
 use std::hash::{Hash, Hasher};
 
@@ -322,6 +323,12 @@ pub struct RectangleDisplayItem {
     pub common: CommonItemProperties,
     pub bounds: LayoutRect,
     pub color: PropertyBinding<ColorF>,
+    
+    
+    
+    
+    
+    pub transformed_aa_edges: EdgeMask,
 }
 
 

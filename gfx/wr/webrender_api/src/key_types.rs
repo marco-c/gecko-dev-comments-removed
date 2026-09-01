@@ -25,6 +25,14 @@ use std::hash::{Hash, Hasher};
 #[derive(Copy, PartialEq, Eq, Clone, PartialOrd, Ord, Hash, Deserialize, MallocSizeOf, Serialize, PeekPoke)]
 pub struct EdgeMask(u8);
 
+
+
+impl Default for EdgeMask {
+    fn default() -> Self {
+        EdgeMask::empty()
+    }
+}
+
 bitflags! {
     impl EdgeMask: u8 {
         ///
