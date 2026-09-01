@@ -256,8 +256,13 @@ static const char* WorkerKindName(WorkerKind aWorkerKind) {
 
 
 
+
+
+
+
 static IsolationBehavior IsolationBehaviorForURI(nsIURI* aURI, bool aIsSubframe,
-                                                 bool aForChannelCreationURI) {
+                                                 bool aForChannelCreationURI,
+                                                 bool aIsWorker) {
   MOZ_ASSERT(NS_IsMainThread());
 
   nsAutoCString scheme;
@@ -337,7 +342,8 @@ static IsolationBehavior IsolationBehaviorForURI(nsIURI* aURI, bool aIsSubframe,
   nsCOMPtr<nsIURI> inner;
   if (nsCOMPtr<nsINestedURI> nested = do_QueryInterface(aURI);
       nested && NS_SUCCEEDED(nested->GetInnerURI(getter_AddRefs(inner)))) {
-    return IsolationBehaviorForURI(inner, aIsSubframe, aForChannelCreationURI);
+    return IsolationBehaviorForURI(inner, aIsSubframe, aForChannelCreationURI,
+                                   aIsWorker);
   }
 
   
@@ -389,12 +395,22 @@ static IsolationBehavior IsolationBehaviorForURI(nsIURI* aURI, bool aIsSubframe,
     }
   }
 
-  nsCOMPtr<nsIScriptSecurityManager> secMan =
-      nsContentUtils::GetSecurityManager();
-  bool inFileURIAllowList = false;
-  if (NS_SUCCEEDED(secMan->InFileURIAllowlist(aURI, &inFileURIAllowList)) &&
-      inFileURIAllowList) {
-    return IsolationBehavior::File;
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!aIsWorker) {
+    nsCOMPtr<nsIScriptSecurityManager> secMan =
+        nsContentUtils::GetSecurityManager();
+    bool inFileURIAllowList = false;
+    if (NS_SUCCEEDED(secMan->InFileURIAllowlist(aURI, &inFileURIAllowList)) &&
+        inFileURIAllowList) {
+      return IsolationBehavior::File;
+    }
   }
 
   return IsolationBehavior::WebContent;
@@ -680,7 +696,8 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
   
   
   auto behavior = IsolationBehaviorForURI(aChannelCreationURI, aParentWindow,
-                                           true);
+                                           true,
+                                           false);
   MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
           ("Channel Creation Isolation Behavior: %s",
            IsolationBehaviorName(behavior)));
@@ -780,6 +797,7 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
       }
     } else if (nsCOMPtr<nsIURI> principalURI = resultOrPrecursor->GetURI()) {
       behavior = IsolationBehaviorForURI(principalURI, aParentWindow,
+                                          false,
                                           false);
     }
   }
@@ -1093,7 +1111,8 @@ Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
   if (resultOrPrecursor->GetIsContentPrincipal()) {
     nsCOMPtr<nsIURI> uri = resultOrPrecursor->GetURI();
     behavior = IsolationBehaviorForURI(uri,  false,
-                                        false);
+                                        false,
+                                        true);
   } else if (resultOrPrecursor->IsSystemPrincipal()) {
     MOZ_ASSERT(aWorkerKind == WorkerKindShared);
 
@@ -1290,7 +1309,8 @@ Result<nsCString, nsresult> PredictRemoteTypeForURI(
            aUseRemoteSubframes));
 
   IsolationBehavior behavior = IsolationBehaviorForURI(
-      aURI,  false,  true);
+      aURI,  false,  true,
+       false);
   MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
           ("Base Isolation Behavior: %s", IsolationBehaviorName(behavior)));
 
@@ -1301,7 +1321,8 @@ Result<nsCString, nsresult> PredictRemoteTypeForURI(
   if (nsCOMPtr<nsIURI> webAppHandlerURI = MaybeResolveWebAppHandler(uri)) {
     uri = webAppHandlerURI;
     behavior = IsolationBehaviorForURI(uri,  false,
-                                        true);
+                                        true,
+                                        false);
     MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
             ("Resolved WebAppHandler uri:%s isolationBehavior:%s",
              uri->GetSpecOrDefault().get(), IsolationBehaviorName(behavior)));
@@ -1339,6 +1360,7 @@ Result<nsCString, nsresult> PredictRemoteTypeForURI(
       behavior = IsolationBehavior::ForceWebRemoteType;
     } else if (nsCOMPtr<nsIURI> principalURI = principal->GetURI()) {
       behavior = IsolationBehaviorForURI(principalURI,  false,
+                                          false,
                                           false);
     }
   }
@@ -1608,7 +1630,8 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
     
     
     switch (IsolationBehaviorForURI(aboutURI,  false,
-                                     true)) {
+                                     true,
+                                     false)) {
       case IsolationBehavior::Parent:
         return false;
       case IsolationBehavior::Anywhere:
