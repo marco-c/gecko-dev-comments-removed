@@ -4,6 +4,11 @@
 
 
 
+#[allow(
+    clippy::allow_attributes,
+    semicolon_in_expressions_from_macros,
+    reason = "TODO: Remove once https://github.com/katharostech/cfg_aliases/pull/15 releases."
+)]
 fn main() {
     cfg_aliases::cfg_aliases! {
         bsd: {

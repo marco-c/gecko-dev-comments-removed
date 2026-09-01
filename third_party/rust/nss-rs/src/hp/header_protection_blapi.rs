@@ -101,6 +101,7 @@ impl Key {
                     )
                 })?;
                 debug_assert_eq!(output_len as usize, output.len());
+                Ok(output)
             }
             Self::Chacha(key_bytes) => {
                 
@@ -123,8 +124,8 @@ impl Key {
                         ctr,
                     )
                 })?;
+                Ok(output)
             }
         }
-        Ok(output)
     }
 }

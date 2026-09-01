@@ -31,8 +31,8 @@ const BENCHMARK_PARAMS: [(usize, usize); 3] = [(1, 1_000), (1_000, 1), (1_000, 1
 
 
 const FC_BENCHMARK_PARAMS: [(usize, usize); 2] = [
-    (1, 4 * 1024 * 1024), 
-    (10, 1024 * 1024),    
+    (1, 4 * 1024 * 1024),  
+    (10, 1 * 1024 * 1024), 
 ];
 
 fn setup_with_link(
@@ -75,10 +75,7 @@ fn setup_flow_controlled(streams: usize, data_size: usize) -> ReadySimulator {
 type SetupFn = fn(usize, usize) -> ReadySimulator;
 
 
-type Config = (&'static str, SetupFn, &'static [(usize, usize)]);
-
-
-const CONFIGS: [Config; 2] = [
+const CONFIGS: [(&str, SetupFn, &[(usize, usize)]); 2] = [
     ("streams", setup, &BENCHMARK_PARAMS),
     (
         "streams-flow-controlled",
@@ -97,7 +94,7 @@ pub fn bench(c: &mut Criterion, name_prefix: &str) {
         for &(streams, data_size) in params {
             group.throughput(Throughput::Bytes(to_u64(streams * data_size)));
             group.bench_function(
-                format!("{name_prefix}/{streams}-streams/each-{data_size}-bytes"),
+                &format!("{name_prefix}/{streams}-streams/each-{data_size}-bytes"),
                 |b| {
                     b.iter_batched(
                         || setup_fn(streams, data_size),

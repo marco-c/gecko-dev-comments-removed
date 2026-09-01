@@ -974,7 +974,10 @@ impl Connection {
         let mut v = self.stats.borrow().clone();
         v.version = self.version;
         if let Some(p) = self.paths.primary() {
-            p.borrow().update_stats(&mut v);
+            let p = p.borrow();
+            v.rtt = p.rtt().estimate();
+            v.rttvar = p.rtt().rttvar();
+            v.min_rtt = p.rtt().minimum();
         }
         v
     }
@@ -1091,27 +1094,6 @@ impl Connection {
                 .timeout(&path, now, self.crypto.has_handshake_keys());
             self.handle_lost_packets(&lost);
             qlog::packets_lost(&mut self.qlog, &lost, now);
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if let Some(max_pto) = self.conn_params.get_max_pto()
-            && self.state.connected()
-            && self.loss_recovery.pto_count() >= max_pto.get()
-        {
-            qinfo!("[{self}] {max_pto} consecutive PTOs, declaring connection broken");
-            self.set_state(
-                State::Closed(CloseReason::Transport(Error::TooManyPtos)),
-                now,
-            );
-            return;
         }
 
         if self.release_resumption_token_timer.is_some() {
@@ -1563,17 +1545,6 @@ impl Connection {
         }
 
         match (packet.packet_type(), &self.state, &self.role) {
-            
-            
-            
-            
-            
-            (packet::Type::Initial, _, Role::Client) if !packet.token().is_empty() => {
-                self.stats
-                    .borrow_mut()
-                    .pkt_dropped("Client received an Initial with a token");
-                return Ok(PreprocessResult::Next);
-            }
             (packet::Type::Initial, State::Init, Role::Server) => {
                 let version = packet.version().ok_or(Error::ProtocolViolation)?;
                 if !packet.is_valid_initial()
@@ -1810,7 +1781,6 @@ impl Connection {
         let tos = d.tos();
         let remote = d.source();
         let mut slc = d.as_mut();
-        self.stats.borrow_mut().bytes_rx += slc.len();
         let mut dcid = None;
         let pto = path.borrow().rtt().pto(self.confirmed());
 
@@ -3641,9 +3611,7 @@ impl Connection {
         );
         let largest_acknowledged = acked_packets.first().map(sent::Packet::pn);
         qlog::packets_acked(&mut self.qlog, space, &acked_packets, now);
-        let mut bytes_acked = 0;
         for acked in acked_packets {
-            bytes_acked += acked.len();
             for token in acked.tokens() {
                 match token {
                     recovery::Token::Stream(stream_token) => self.streams.acked(stream_token),
@@ -3667,12 +3635,10 @@ impl Connection {
         }
         self.handle_lost_packets(&lost_packets);
         qlog::packets_lost(&mut self.qlog, &lost_packets, now);
-        let mut stats = self.stats.borrow_mut();
-        stats.bytes_acked += bytes_acked;
-        stats.frame_rx.ack += 1;
+        let stats = &mut self.stats.borrow_mut().frame_rx;
+        stats.ack += 1;
         if let Some(largest_acknowledged) = largest_acknowledged {
-            stats.frame_rx.largest_acknowledged =
-                max(stats.frame_rx.largest_acknowledged, largest_acknowledged);
+            stats.largest_acknowledged = max(stats.largest_acknowledged, largest_acknowledged);
         }
         Ok(())
     }
@@ -4036,16 +4002,6 @@ impl Connection {
     #[must_use]
     pub const fn remote_datagram_size(&self) -> u64 {
         self.quic_datagrams.remote_datagram_size()
-    }
-
-    
-    
-    #[must_use]
-    pub fn peer_supports_reliable_stream_reset(&self) -> bool {
-        let tps = self.tps.borrow();
-        tps.remote_handshake()
-            .or_else(|| tps.remote_0rtt())
-            .is_some_and(|tp| tp.get_empty(ResetStreamAt))
     }
 
     

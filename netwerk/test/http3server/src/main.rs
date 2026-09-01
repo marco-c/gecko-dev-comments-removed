@@ -939,19 +939,15 @@ impl Http3ReverseProxyServer {
         let client = Client::builder(hyper_util::rt::TokioExecutor::new()).build_http();
         let resp = client.request(request).await?;
         out_header.push(Header::new(":status", resp.status().as_str()));
-        out_header.extend(resp.headers().iter().filter_map(|(key, value)| {
-            let name = key.as_str().to_ascii_lowercase();
-            
-            
-            
-            if matches!(
-                name.as_str(),
-                "connection" | "keep-alive" | "proxy-connection" | "transfer-encoding" | "upgrade"
-            ) {
-                return None;
-            }
-            Some(Header::new(name, value.to_str().unwrap_or("")))
-        }));
+        for (key, value) in resp.headers() {
+            out_header.push(Header::new(
+                key.as_str().to_ascii_lowercase(),
+                match value.to_str() {
+                    Ok(str) => str,
+                    _ => "",
+                },
+            ));
+        }
 
         let mut body = resp.into_body();
         while let Some(frame) = body.frame().await {

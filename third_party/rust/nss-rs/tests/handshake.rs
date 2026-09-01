@@ -70,11 +70,6 @@ fn handshake(now: Instant, client: &mut SecretAgent, server: &mut SecretAgent) {
                 "ECH fallback not supported"
             );
         }
-        #[allow(
-            clippy::allow_attributes, 
-            clippy::mut_mut,
-            reason = "This is on purpose"
-        )]
         mem::swap(&mut a, &mut b);
     }
 }

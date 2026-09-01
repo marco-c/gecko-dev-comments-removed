@@ -124,17 +124,6 @@ pub fn headers_valid(headers: &[Header], message_type: MessageType) -> Res<()> {
         if header.value().iter().any(|b| matches!(b, 0 | 0x0a | 0x0d)) {
             return Err(Error::InvalidHeader); 
         }
-
-        
-        
-        
-        match header.name() {
-            "connection" | "keep-alive" | "proxy-connection" | "transfer-encoding" | "upgrade" => {
-                return Err(Error::InvalidHeader);
-            }
-            "te" if header.value() != b"trailers" => return Err(Error::InvalidHeader),
-            _ => {}
-        }
     }
     
     pseudo_state.remove(PseudoHeaderState::Regular);
@@ -357,40 +346,6 @@ mod tests {
             Header::new(":path", b"/\r\nx".as_slice()),
         ];
         assert!(headers_valid(&headers, MessageType::Request).is_err());
-    }
-
-    #[test]
-    fn reject_connection_specific_header() {
-        
-        
-        for name in [
-            "connection",
-            "keep-alive",
-            "proxy-connection",
-            "transfer-encoding",
-            "upgrade",
-            "te",
-        ] {
-            let response = vec![Header::new(":status", "200"), Header::new(name, "x")];
-            assert!(headers_valid(&response, MessageType::Response).is_err());
-
-            let request = vec![
-                Header::new(":method", "GET"),
-                Header::new(":scheme", "https"),
-                Header::new(":path", "/"),
-                Header::new(name, "x"),
-            ];
-            assert!(headers_valid(&request, MessageType::Request).is_err());
-        }
-
-        
-        let ok = vec![
-            Header::new(":method", "GET"),
-            Header::new(":scheme", "https"),
-            Header::new(":path", "/"),
-            Header::new("te", "trailers"),
-        ];
-        assert!(headers_valid(&ok, MessageType::Request).is_ok());
     }
 
     #[test]

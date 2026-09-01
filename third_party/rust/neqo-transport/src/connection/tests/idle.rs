@@ -4,22 +4,19 @@
 
 
 
-use std::{
-    num::NonZeroUsize,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
 use neqo_common::{Encoder, qtrace, qwarn};
 use test_fixture::now;
 
 use super::{
     super::{Connection, ConnectionParameters, IdleTimeout, Output, State},
-    AT_LEAST_PTO, DEFAULT_RTT, DEFAULT_STREAM_DATA, connect, connect_force_idle, connect_rtt_idle,
+    AT_LEAST_PTO, DEFAULT_STREAM_DATA, connect, connect_force_idle, connect_rtt_idle,
     connect_with_rtt, default_client, default_server, maybe_authenticate, new_client, new_server,
     send_and_receive, send_something,
 };
 use crate::{
-    CloseReason, Error, packet, recovery,
+    packet, recovery,
     stats::FrameStats,
     stream_id::{StreamId, StreamType},
     tparams::{TransportParameter, TransportParameterId},
@@ -803,122 +800,4 @@ fn keep_alive_with_unresponsive_server() {
     }
     
     assert!(matches!(client.state(), State::Closed(_)));
-}
-
-
-
-
-#[test]
-fn declare_broken_after_max_pto() {
-    const MAX_PTO: usize = 7;
-    
-    
-    
-    
-    assert!(DEFAULT_RTT * (1_u32 << (MAX_PTO - 1)) * 3 < default_timeout());
-
-    let mut client =
-        new_client(ConnectionParameters::default().max_pto(NonZeroUsize::new(MAX_PTO)));
-    let mut server = default_server();
-    let start = connect_rtt_idle(&mut client, &mut server, DEFAULT_RTT);
-
-    
-    let mut now = start;
-    drop(send_something(&mut client, now));
-
-    
-    for _ in 0..=MAX_PTO {
-        let cb = loop {
-            match client.process_output(now) {
-                
-                Output::Datagram(_) => {}
-                Output::Callback(t) => break t,
-                Output::None => break Duration::ZERO,
-            }
-        };
-        now += cb;
-    }
-
-    assert!(
-        matches!(
-            client.state(),
-            State::Closed(CloseReason::Transport(Error::TooManyPtos))
-        ),
-        "expected TooManyPtos, got {:?}",
-        client.state()
-    );
-    assert_eq!(client.loss_recovery.pto_count(), MAX_PTO);
-    
-    assert!(
-        now - start < default_timeout(),
-        "closed after {:?}, which is not earlier than the {:?} idle timeout",
-        now - start,
-        default_timeout()
-    );
-}
-
-
-
-
-
-
-#[test]
-fn max_pto_counter_resets_on_ack() {
-    const MAX_PTO: usize = 7;
-    let mut client =
-        new_client(ConnectionParameters::default().max_pto(NonZeroUsize::new(MAX_PTO)));
-    let mut server = default_server();
-    let mut now = connect_rtt_idle(&mut client, &mut server, DEFAULT_RTT);
-
-    
-    drop(send_something(&mut client, now));
-    while client.loss_recovery.pto_count() < 2 {
-        let cb = loop {
-            match client.process_output(now) {
-                
-                Output::Datagram(_) => {}
-                Output::Callback(t) => break t,
-                Output::None => break Duration::ZERO,
-            }
-        };
-        now += cb;
-    }
-    assert!(!matches!(client.state(), State::Closed(_)));
-
-    
-    
-    let d = send_something(&mut client, now);
-    let mut out = server.process(Some(d), now);
-    let ack = loop {
-        match out {
-            Output::Datagram(d) => break Some(d),
-            Output::Callback(t) => {
-                now += t;
-                out = server.process_output(now);
-            }
-            Output::None => break None,
-        }
-    };
-    drop(client.process(ack, now));
-
-    
-    assert_eq!(client.loss_recovery.pto_count(), 0);
-    assert!(!matches!(client.state(), State::Closed(_)));
-
-    
-    
-    
-    drop(send_something(&mut client, now));
-    while client.loss_recovery.pto_count() < 2 {
-        let cb = loop {
-            match client.process_output(now) {
-                Output::Datagram(_) => {}
-                Output::Callback(t) => break t,
-                Output::None => break Duration::ZERO,
-            }
-        };
-        now += cb;
-    }
-    assert_eq!(client.loss_recovery.pto_count(), 2);
-    assert!(!matches!(client.state(), State::Closed(_)));
 }

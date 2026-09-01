@@ -61,7 +61,7 @@ pub fn init(level_filter: Option<log::LevelFilter>) {
 #[clippy::format_args]
 macro_rules! qerror {
     ($($arg:tt)*) => ( {
-        #[cfg(test)]
+        #[cfg(any(test, feature = "bench"))]
         ::neqo_common::log::init(None);
         ::log::error!($($arg)*);
     } );
@@ -75,7 +75,7 @@ macro_rules! qerror {
 #[clippy::format_args]
 macro_rules! qwarn {
     ($($arg:tt)*) => ( {
-        #[cfg(test)]
+        #[cfg(any(test, feature = "bench"))]
         ::neqo_common::log::init(None);
         ::log::warn!($($arg)*);
     } );
@@ -89,7 +89,7 @@ macro_rules! qwarn {
 #[clippy::format_args]
 macro_rules! qinfo {
     ($($arg:tt)*) => ( {
-        #[cfg(test)]
+        #[cfg(any(test, feature = "bench"))]
         ::neqo_common::log::init(None);
         ::log::info!($($arg)*);
     } );
@@ -103,7 +103,7 @@ macro_rules! qinfo {
 #[clippy::format_args]
 macro_rules! qdebug {
     ($($arg:tt)*) => ( {
-        #[cfg(test)]
+        #[cfg(any(test, feature = "bench"))]
         ::neqo_common::log::init(None);
         ::log::debug!($($arg)*);
     } );
@@ -117,7 +117,7 @@ macro_rules! qdebug {
 #[clippy::format_args]
 macro_rules! qtrace {
     ($($arg:tt)*) => ( {
-        #[cfg(test)]
+        #[cfg(any(test, feature = "bench"))]
         ::neqo_common::log::init(None);
         ::log::trace!($($arg)*);
     } );

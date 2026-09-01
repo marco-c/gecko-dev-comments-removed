@@ -10,14 +10,14 @@
 use std::{
     cell::RefCell,
     cmp::{max, min},
-    collections::{BTreeMap, btree_map::Entry},
+    collections::BTreeMap,
     fmt::Debug,
     mem,
     rc::{Rc, Weak},
     time::{Duration, Instant},
 };
 
-use neqo_common::{Buffer, Role, expect_usize, qtrace, qwarn, to_u64};
+use neqo_common::{Buffer, Role, expect_usize, qtrace, to_u64};
 use smallvec::SmallVec;
 use strum::Display;
 
@@ -198,35 +198,6 @@ impl RxStreamOrderer {
     
     const RANGE_TARGET: usize = 4096;
 
-    
-    pub(crate) const MAX_GAPS: usize = 4096;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn check_gap_limit(&self) -> Res<()> {
-        let span = self.end - self.retired;
-        let needed = expect_usize(span / to_u64(Self::RANGE_TARGET));
-        if self.data_ranges.len() > Self::MAX_GAPS + needed {
-            qwarn!("Too many gaps in the reassembly buffer, closing connection");
-            return Err(Error::ProtocolViolation);
-        }
-        Ok(())
-    }
-
-    
-    fn insert_range(&mut self, start: u64, data: Vec<u8>) -> Res<()> {
-        self.data_ranges.insert(start, data);
-        self.check_gap_limit()
-    }
-
     #[must_use]
     pub fn new() -> Self {
         Self::default()
@@ -238,10 +209,7 @@ impl RxStreamOrderer {
     
     
     
-    
-    
-    #[expect(clippy::too_many_lines, reason = "Yeah, but splitting it reads worse.")]
-    pub fn inbound_frame(&mut self, mut new_start: u64, mut new_data: &[u8]) -> Res<()> {
+    pub fn inbound_frame(&mut self, mut new_start: u64, mut new_data: &[u8]) {
         qtrace!("Inbound data offset={new_start} len={}", new_data.len());
 
         
@@ -251,7 +219,7 @@ impl RxStreamOrderer {
 
         if new_end <= self.retired {
             
-            return Ok(());
+            return;
         }
 
         if new_start < self.retired {
@@ -262,7 +230,7 @@ impl RxStreamOrderer {
 
         if new_data.is_empty() {
             
-            return Ok(());
+            return;
         }
 
         
@@ -278,28 +246,26 @@ impl RxStreamOrderer {
             
             
             
-            let adjacent = new_start == self.end;
-            
-            self.end = new_end;
-            return if adjacent
+            if new_start == self.end
                 && let Some(mut e) = self
                     .data_ranges
                     .last_entry()
                     .filter(|e| e.get().len() < Self::RANGE_TARGET)
             {
                 e.get_mut().extend_from_slice(new_data);
-                Ok(())
             } else {
-                self.insert_range(new_start, new_data.to_vec())
-            };
+                self.data_ranges.insert(new_start, new_data.to_vec());
+            }
+            
+            self.end = new_end;
+            return;
         }
 
         
         let extend = if let Some((&prev_start, prev_vec)) =
             self.data_ranges.range_mut(..=new_start).next_back()
         {
-            let prev_len = prev_vec.len();
-            let prev_end = prev_start + to_u64(prev_len);
+            let prev_end = prev_start + to_u64(prev_vec.len());
             if new_end > prev_end {
                 
                 
@@ -315,19 +281,18 @@ impl RxStreamOrderer {
                 
                 
                 
-                (prev_len < Self::RANGE_TARGET && prev_end == new_start)
-                    .then_some((prev_start, prev_len))
+                prev_vec.len() < Self::RANGE_TARGET && prev_end == new_start
             } else {
                 
                 
                 
                 
                 qtrace!("Dropping frame with already-received range {new_start}-{new_end}");
-                return Ok(());
+                return;
             }
         } else {
             qtrace!("New frame {new_start}-{new_end} received");
-            None
+            false
         };
 
         let mut to_add = new_data;
@@ -385,45 +350,18 @@ impl RxStreamOrderer {
 
         if !to_add.is_empty() {
             self.received += to_u64(to_add.len());
+            if extend {
+                if let Some((_, buf)) = self.data_ranges.range_mut(..=new_start).next_back() {
+                    buf.extend_from_slice(to_add);
+                }
+            } else {
+                self.data_ranges.insert(new_start, to_add.to_vec());
+            }
             
             
             
             self.end = max(self.end, new_end);
-            if let Some((prev_start, prev_len)) = extend {
-                
-                
-                let add_end = new_start + to_u64(to_add.len());
-                let next = match self.data_ranges.entry(add_end) {
-                    Entry::Occupied(n)
-                        if prev_len + to_add.len() + n.get().len() <= Self::RANGE_TARGET =>
-                    {
-                        Some(n.remove())
-                    }
-                    _ => None,
-                };
-                if let Some(buf) = self.data_ranges.get_mut(&prev_start) {
-                    buf.extend_from_slice(to_add);
-                    buf.extend_from_slice(next.as_deref().unwrap_or_default());
-                }
-            } else {
-                return self.insert_range(new_start, to_add.to_vec());
-            }
         }
-
-        Ok(())
-    }
-
-    #[cfg(test)]
-    fn count_runs(&self) -> usize {
-        let mut runs = 0;
-        let mut prev_end = None;
-        for (&start, data) in &self.data_ranges {
-            if prev_end != Some(start) {
-                runs += 1;
-            }
-            prev_end = Some(start + to_u64(data.len()));
-        }
-        runs
     }
 
     
@@ -815,7 +753,6 @@ impl RecvStream {
     
     
     
-    
     pub fn inbound_stream_frame(&mut self, fin: bool, offset: u64, data: &[u8]) -> Res<()> {
         
         
@@ -830,7 +767,7 @@ impl RecvStream {
                 fc,
                 session_fc,
             } => {
-                recv_buf.inbound_frame(offset, data)?;
+                recv_buf.inbound_frame(offset, data);
                 if fin {
                     let all_recv =
                         fc.consumed() == recv_buf.retired() + to_u64(recv_buf.bytes_ready());
@@ -857,7 +794,7 @@ impl RecvStream {
                 fc,
                 session_fc,
             } => {
-                recv_buf.inbound_frame(offset, data)?;
+                recv_buf.inbound_frame(offset, data);
                 if fc.consumed() == recv_buf.retired() + to_u64(recv_buf.bytes_ready()) {
                     let buf = mem::replace(recv_buf, RxStreamOrderer::new());
                     let fc_copy = mem::take(fc);
@@ -879,7 +816,7 @@ impl RecvStream {
                 let keep = reliable_size.saturating_sub(offset);
                 if keep > 0 {
                     let keep = min(data.len(), usize::try_from(keep)?);
-                    recv_buf.inbound_frame(offset, &data[..keep])?;
+                    recv_buf.inbound_frame(offset, &data[..keep]);
                 }
             }
             RecvStreamState::DataRecvd { .. }
@@ -1390,7 +1327,7 @@ mod tests {
         let mut s = RxStreamOrderer::default();
         for r in ranges {
             let data = &ZEROES[..expect_usize(r.end - r.start)];
-            s.inbound_frame(r.start, data).unwrap();
+            s.inbound_frame(r.start, data);
         }
 
         let mut buf = [0xff; 100];
@@ -1411,10 +1348,10 @@ mod tests {
     fn inbound_frame_no_extend_at_4096() {
         let mut s = RxStreamOrderer::default();
         
-        s.inbound_frame(0, &[0u8; 4096]).unwrap();
+        s.inbound_frame(0, &[0u8; 4096]);
         assert_eq!(s.data_ranges[&0].len(), 4096);
         
-        s.inbound_frame(4096, &[1u8]).unwrap();
+        s.inbound_frame(4096, &[1u8]);
         assert_eq!(
             s.data_ranges.len(),
             2,
@@ -1426,8 +1363,8 @@ mod tests {
     #[test]
     fn inbound_frame_extends_below_4096() {
         let mut s = RxStreamOrderer::default();
-        s.inbound_frame(0, &[0u8; 4095]).unwrap();
-        s.inbound_frame(4095, &[1u8]).unwrap();
+        s.inbound_frame(0, &[0u8; 4095]);
+        s.inbound_frame(4095, &[1u8]);
         assert_eq!(s.data_ranges.len(), 1);
         assert_eq!(s.data_ranges[&0].len(), 4096);
     }
@@ -1436,8 +1373,8 @@ mod tests {
     #[test]
     fn read_exact_available_removes_range() {
         let mut s = RxStreamOrderer::default();
-        s.inbound_frame(0, &[1u8; 5]).unwrap();
-        s.inbound_frame(5, &[2u8; 5]).unwrap();
+        s.inbound_frame(0, &[1u8; 5]);
+        s.inbound_frame(5, &[2u8; 5]);
 
         let mut buf = [0u8; 5];
         assert_eq!(s.read(&mut buf), 5);
@@ -1562,11 +1499,11 @@ mod tests {
         let mut s = RxStreamOrderer::new();
 
         
-        s.inbound_frame(0, &[0; CHUNK_SIZE]).unwrap();
+        s.inbound_frame(0, &[0; CHUNK_SIZE]);
         let offset = to_u64(CHUNK_SIZE);
-        s.inbound_frame(offset, &[0; EXTRA_SIZE]).unwrap();
+        s.inbound_frame(offset, &[0; EXTRA_SIZE]);
         let offset = to_u64(CHUNK_SIZE + EXTRA_SIZE);
-        s.inbound_frame(offset, &[0; EXTRA_SIZE]).unwrap();
+        s.inbound_frame(offset, &[0; EXTRA_SIZE]);
 
         
         let mut buf = [0; 100];
@@ -1581,7 +1518,7 @@ mod tests {
         let mut s = RxStreamOrderer::new();
 
         
-        s.inbound_frame(0, &[0; 150]).unwrap();
+        s.inbound_frame(0, &[0; 150]);
         assert_eq!(s.data_ranges[&0].len(), 150);
         
         let mut buf = [0; 100];
@@ -1592,7 +1529,7 @@ mod tests {
         
         
         
-        s.inbound_frame(120, &[0; 60]).unwrap();
+        s.inbound_frame(120, &[0; 60]);
         assert_eq!(s.data_ranges[&0].len(), 180);
         
         let count = s.read(&mut buf[..]);
@@ -1607,9 +1544,9 @@ mod tests {
         let mut s = RxStreamOrderer::new();
 
         
-        s.inbound_frame(0, &[0; CHUNK_SIZE]).unwrap();
+        s.inbound_frame(0, &[0; CHUNK_SIZE]);
         let offset = to_u64(CHUNK_SIZE + EXTRA_SIZE);
-        s.inbound_frame(offset, &[0; EXTRA_SIZE]).unwrap();
+        s.inbound_frame(offset, &[0; EXTRA_SIZE]);
 
         
         let mut buf = [0; 100];
@@ -1618,7 +1555,7 @@ mod tests {
 
         
         let offset = to_u64(CHUNK_SIZE);
-        s.inbound_frame(offset, &[0; EXTRA_SIZE]).unwrap();
+        s.inbound_frame(offset, &[0; EXTRA_SIZE]);
         let count = s.read(&mut buf[..]);
         assert_eq!(count, EXTRA_SIZE * 2);
     }
@@ -1631,9 +1568,9 @@ mod tests {
         let mut s = RxStreamOrderer::new();
 
         
-        s.inbound_frame(0, &[0; CHUNK_SIZE]).unwrap();
+        s.inbound_frame(0, &[0; CHUNK_SIZE]);
         let offset = to_u64(CHUNK_SIZE);
-        s.inbound_frame(offset, &[0; EXTRA_SIZE]).unwrap();
+        s.inbound_frame(offset, &[0; EXTRA_SIZE]);
 
         
         let mut buf = [0; 100];
@@ -1652,9 +1589,9 @@ mod tests {
         let mut s = RxStreamOrderer::new();
 
         
-        s.inbound_frame(0, &[0; CHUNK_SIZE]).unwrap();
+        s.inbound_frame(0, &[0; CHUNK_SIZE]);
         let offset = to_u64(CHUNK_SIZE);
-        s.inbound_frame(offset, &[0; EXTRA_SIZE]).unwrap();
+        s.inbound_frame(offset, &[0; EXTRA_SIZE]);
 
         let mut buf = [0; 1];
         for _ in 0..CHUNK_SIZE + EXTRA_SIZE {
@@ -1752,27 +1689,27 @@ mod tests {
     fn stream_rx_dedupe_tail() {
         let mut s = RxStreamOrderer::new();
 
-        s.inbound_frame(0, &[1; 6]).unwrap();
+        s.inbound_frame(0, &[1; 6]);
         check_chunks(&s, &[(0, 6)]);
 
         
-        s.inbound_frame(0, &[2; 3]).unwrap();
+        s.inbound_frame(0, &[2; 3]);
         check_chunks(&s, &[(0, 6)]);
 
         
-        s.inbound_frame(2, &[3; 6]).unwrap();
+        s.inbound_frame(2, &[3; 6]);
         check_chunks(&s, &[(0, 8)]);
 
         
-        s.inbound_frame(4, &[4; 4]).unwrap();
+        s.inbound_frame(4, &[4; 4]);
         check_chunks(&s, &[(0, 8)]);
 
         
-        s.inbound_frame(0, &[5; 10]).unwrap();
+        s.inbound_frame(0, &[5; 10]);
         check_chunks(&s, &[(0, 10)]);
 
         
-        s.inbound_frame(2, &[6; 2]).unwrap();
+        s.inbound_frame(2, &[6; 2]);
         check_chunks(&s, &[(0, 10)]);
 
         let mut buf = [0; 16];
@@ -1785,15 +1722,15 @@ mod tests {
     fn stream_rx_dedupe_head() {
         let mut s = RxStreamOrderer::new();
 
-        s.inbound_frame(1, &[6; 6]).unwrap();
+        s.inbound_frame(1, &[6; 6]);
         check_chunks(&s, &[(1, 6)]);
 
         
-        s.inbound_frame(0, &[7; 6]).unwrap();
+        s.inbound_frame(0, &[7; 6]);
         check_chunks(&s, &[(0, 1), (1, 6)]);
 
         
-        s.inbound_frame(0, &[8; 7]).unwrap();
+        s.inbound_frame(0, &[8; 7]);
         check_chunks(&s, &[(0, 1), (1, 6)]);
 
         let mut buf = [0; 16];
@@ -1805,16 +1742,16 @@ mod tests {
     fn stream_rx_dedupe_new_tail() {
         let mut s = RxStreamOrderer::new();
 
-        s.inbound_frame(1, &[6; 6]).unwrap();
+        s.inbound_frame(1, &[6; 6]);
         check_chunks(&s, &[(1, 6)]);
 
         
-        s.inbound_frame(0, &[7; 6]).unwrap();
+        s.inbound_frame(0, &[7; 6]);
         check_chunks(&s, &[(0, 1), (1, 6)]);
 
         
         
-        s.inbound_frame(0, &[9; 8]).unwrap();
+        s.inbound_frame(0, &[9; 8]);
         check_chunks(&s, &[(0, 8)]);
 
         let mut buf = [0; 16];
@@ -1826,15 +1763,15 @@ mod tests {
     fn stream_rx_dedupe_replace() {
         let mut s = RxStreamOrderer::new();
 
-        s.inbound_frame(2, &[6; 6]).unwrap();
+        s.inbound_frame(2, &[6; 6]);
         check_chunks(&s, &[(2, 6)]);
 
         
-        s.inbound_frame(1, &[7; 6]).unwrap();
+        s.inbound_frame(1, &[7; 6]);
         check_chunks(&s, &[(1, 1), (2, 6)]);
 
         
-        s.inbound_frame(0, &[9; 10]).unwrap();
+        s.inbound_frame(0, &[9; 10]);
         check_chunks(&s, &[(0, 10)]);
 
         let mut buf = [0; 16];
@@ -1847,14 +1784,14 @@ mod tests {
         let mut s = RxStreamOrderer::new();
 
         let mut buf = [0; 18];
-        s.inbound_frame(0, &[1; 10]).unwrap();
+        s.inbound_frame(0, &[1; 10]);
 
         
         assert_eq!(s.read(&mut buf[..6]), 6);
         check_chunks(&s, &[(0, 10)]);
 
         
-        s.inbound_frame(3, &buf[..10]).unwrap();
+        s.inbound_frame(3, &buf[..10]);
         check_chunks(&s, &[(0, 13)]);
 
         
@@ -1862,7 +1799,7 @@ mod tests {
         assert!(s.data_ranges.is_empty());
 
         
-        s.inbound_frame(0, &buf[..]).unwrap();
+        s.inbound_frame(0, &buf[..]);
         check_chunks(&s, &[(13, 5)]);
     }
 
@@ -1921,75 +1858,10 @@ mod tests {
     }
 
     #[test]
-    fn reject_unbounded_fragmentation() {
-        for descending in [false, true] {
-            let mut s = create_stream(1024 * to_u64(INITIAL_LOCAL_MAX_STREAM_DATA));
-            let count = to_u64(RxStreamOrderer::MAX_GAPS) * 4;
-            let rejected = (0..count).find_map(|i| {
-                let offset = if descending {
-                    2 * (count - i)
-                } else {
-                    2 * i + 1
-                };
-                s.inbound_stream_frame(false, offset, &[0u8; 1]).err()
-            });
-            assert_eq!(rejected, Some(Error::ProtocolViolation));
-            let buf = s.state.recv_buf().unwrap();
-            let span =
-                expect_usize((buf.end - buf.retired) / to_u64(RxStreamOrderer::RANGE_TARGET));
-            assert_eq!(buf.data_ranges.len(), RxStreamOrderer::MAX_GAPS + span + 1);
-        }
-    }
-
-    #[test]
-    fn overlap_does_not_inflate_allowance() {
-        let mut s = RxStreamOrderer::new();
-        s.inbound_frame(0, &[1; 1]).unwrap();
-        s.inbound_frame(2, &[2; 1]).unwrap();
-        
-        s.inbound_frame(0, &[3; 4]).unwrap();
-
-        let mut buf = [0; 4];
-        assert_eq!(s.read(&mut buf), 4);
-        assert!(s.data_ranges.is_empty());
-        assert_eq!(s.end - s.retired, 0, "nothing held, so no allowance");
-        assert_eq!(s.received - s.retired, 1);
-    }
-
-    #[test]
-    fn accept_all_adjacent_data() {
-        const TARGET: usize = RxStreamOrderer::RANGE_TARGET;
-        let mut s = RxStreamOrderer::new();
-        let payload = vec![0u8; TARGET];
-        for i in 0..RxStreamOrderer::MAX_GAPS + 2 {
-            s.inbound_frame(to_u64(i * TARGET), &payload).unwrap();
-        }
-        
-        assert_eq!(s.data_ranges.len(), RxStreamOrderer::MAX_GAPS + 2);
-        assert_eq!(s.count_runs(), 1);
-    }
-
-    #[test]
-    fn gap_fills_are_coalesced() {
-        let mut s = RxStreamOrderer::new();
-        for i in 0..to_u64(RxStreamOrderer::MAX_GAPS) * 2 {
-            s.inbound_frame(2 * i + 1, &[0u8; 1]).unwrap();
-            s.inbound_frame(2 * i, &[0u8; 1]).unwrap();
-        }
-        assert_eq!(s.count_runs(), 1, "all of it is one contiguous run");
-        
-        
-        check_chunks(
-            &s,
-            &[(0, 1), (1, 4096), (4097, 4096), (8193, 4096), (12289, 4095)],
-        );
-    }
-
-    #[test]
     fn stream_orderer_bytes_ready() {
         let mut rx_ord = RxStreamOrderer::new();
 
-        rx_ord.inbound_frame(0, &[1; 6]).unwrap();
+        rx_ord.inbound_frame(0, &[1; 6]);
         assert_eq!(rx_ord.bytes_ready(), 6);
         assert_eq!(rx_ord.buffered(), 6);
         assert_eq!(rx_ord.retired(), 0);
@@ -2002,19 +1874,19 @@ mod tests {
         assert_eq!(rx_ord.retired(), 2);
 
         
-        rx_ord.inbound_frame(5, &[2; 6]).unwrap();
+        rx_ord.inbound_frame(5, &[2; 6]);
         assert_eq!(rx_ord.bytes_ready(), 9);
         assert_eq!(rx_ord.buffered(), 9);
         assert_eq!(rx_ord.retired(), 2);
 
         
-        rx_ord.inbound_frame(20, &[3; 6]).unwrap();
+        rx_ord.inbound_frame(20, &[3; 6]);
         assert_eq!(rx_ord.bytes_ready(), 9);
         assert_eq!(rx_ord.buffered(), 15);
         assert_eq!(rx_ord.retired(), 2);
 
         
-        rx_ord.inbound_frame(0, &[4; 2]).unwrap();
+        rx_ord.inbound_frame(0, &[4; 2]);
         assert_eq!(rx_ord.bytes_ready(), 9);
         assert_eq!(rx_ord.buffered(), 15);
         assert_eq!(rx_ord.retired(), 2);
@@ -2777,7 +2649,7 @@ mod tests {
     #[test]
     fn orderer_discard_after() {
         let mut o = RxStreamOrderer::new();
-        o.inbound_frame(0, &[1; 10]).unwrap();
+        o.inbound_frame(0, &[1; 10]);
         o.discard_after(4);
         
         let mut buf = [0; 16];
@@ -2785,19 +2657,19 @@ mod tests {
 
         
         let mut o = RxStreamOrderer::new();
-        o.inbound_frame(0, &[1; 4]).unwrap();
-        o.inbound_frame(8, &[2; 4]).unwrap(); 
+        o.inbound_frame(0, &[1; 4]);
+        o.inbound_frame(8, &[2; 4]); 
         o.discard_after(6); 
-        o.inbound_frame(4, &[3; 2]).unwrap(); 
+        o.inbound_frame(4, &[3; 2]); 
         assert_eq!(o.read(&mut buf), 6);
 
         
         let mut o = RxStreamOrderer::new();
-        o.inbound_frame(0, &[1; 4]).unwrap();
+        o.inbound_frame(0, &[1; 4]);
         assert_eq!(o.read(&mut buf), 4);
-        o.inbound_frame(8, &[2; 4]).unwrap(); 
+        o.inbound_frame(8, &[2; 4]); 
         o.discard_after(6); 
-        o.inbound_frame(4, &[3; 2]).unwrap(); 
+        o.inbound_frame(4, &[3; 2]); 
         assert_eq!(o.read(&mut buf), 2);
     }
 

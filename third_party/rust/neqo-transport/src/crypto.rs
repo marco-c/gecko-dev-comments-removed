@@ -632,11 +632,6 @@ impl CryptoDxState {
         self.epoch & 1 != 1
     }
 
-    #[must_use]
-    pub const fn epoch(&self) -> usize {
-        self.epoch
-    }
-
     
     
     pub fn continuation(&mut self, prev: &Self) -> Res<()> {
@@ -873,11 +868,6 @@ pub struct CryptoStates {
     
     
     read_update_time: Option<Instant>,
-    
-    
-    
-    
-    read_update_epoch: Option<usize>,
 }
 
 impl CryptoStates {
@@ -1317,17 +1307,7 @@ impl CryptoStates {
     
     
     
-    pub fn key_update_received(&mut self, epoch: usize, expiration: Instant) -> Res<()> {
-        
-        
-        
-        
-        if self.read_update_epoch.is_some_and(|e| epoch <= e) {
-            qtrace!("[{self}] Ignoring duplicate key update for epoch {epoch}");
-            return Ok(());
-        }
-        self.read_update_epoch = Some(epoch);
-
+    pub fn key_update_received(&mut self, expiration: Instant) -> Res<()> {
         qtrace!("[{self}] Key update received");
         
         
@@ -1422,7 +1402,6 @@ impl CryptoStates {
             app_read: Some(app_read(3)),
             app_read_next: Some(app_read(4)),
             read_update_time: None,
-            read_update_epoch: None,
         }
     }
 
@@ -1472,7 +1451,6 @@ impl CryptoStates {
             app_read: Some(app_read(3)),
             app_read_next: Some(app_read(4)),
             read_update_time: None,
-            read_update_epoch: None,
         }
     }
 }
@@ -1547,16 +1525,9 @@ impl CryptoStreams {
         Ok(())
     }
 
-    
-    
     pub fn inbound_frame(&mut self, space: PacketNumberSpace, offset: u64, data: &[u8]) -> Res<()> {
         let rx = &mut self.get_mut(space).ok_or(Error::Internal)?.rx;
-        
-        if !data.is_empty() && offset > rx.retired() + Self::BUFFER_LIMIT {
-            return Err(Error::CryptoBufferExceeded);
-        }
-        rx.inbound_frame(offset, data)
-            .map_err(|_| Error::CryptoBufferExceeded)?;
+        rx.inbound_frame(offset, data);
         if rx.received() - rx.retired() <= Self::BUFFER_LIMIT {
             Ok(())
         } else {
@@ -1802,43 +1773,5 @@ mod tests {
         fixture_init();
         let dx = CryptoDxState::test_default_write();
         assert_eq!(dx.to_string(), "epoch 0 Write");
-    }
-}
-
-#[cfg(test)]
-#[cfg_attr(coverage_nightly, coverage(off))]
-mod buffer_limits {
-    use neqo_common::to_u64;
-
-    use super::{CryptoStreams, PacketNumberSpace, RxStreamOrderer};
-    use crate::Error;
-
-    
-    const RANGES: u64 = to_u64(RxStreamOrderer::MAX_GAPS) * 2;
-
-    
-    static_assertions::const_assert!(2 * RANGES < CryptoStreams::BUFFER_LIMIT);
-
-    #[test]
-    fn crypto_offset_beyond_buffer() {
-        let offset = CryptoStreams::BUFFER_LIMIT + 1;
-        assert_eq!(
-            CryptoStreams::default().inbound_frame(PacketNumberSpace::Initial, offset, &[0; 1]),
-            Err(Error::CryptoBufferExceeded)
-        );
-        assert_eq!(
-            CryptoStreams::default().inbound_frame(PacketNumberSpace::Initial, offset, &[]),
-            Ok(())
-        );
-    }
-
-    #[test]
-    fn crypto_too_many_ranges() {
-        let mut cs = CryptoStreams::default();
-        let rejected = (0..RANGES).find_map(|i| {
-            cs.inbound_frame(PacketNumberSpace::Initial, 2 * i + 1, &[0; 1])
-                .err()
-        });
-        assert_eq!(rejected, Some(Error::CryptoBufferExceeded));
     }
 }

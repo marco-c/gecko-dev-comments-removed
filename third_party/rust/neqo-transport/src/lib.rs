@@ -188,11 +188,6 @@ pub enum Error {
     Peer(TransportError),
     #[error("stateless reset")]
     StatelessReset,
-    
-    
-    
-    #[error("too many PTOs without acknowledgement; connection assumed broken")]
-    TooManyPtos,
     #[error("too much data")]
     TooMuchData,
     #[error("unexpected message")]
@@ -225,7 +220,7 @@ impl Error {
             Self::InvalidToken => 11,
             Self::KeysExhausted => ERROR_AEAD_LIMIT_REACHED,
             Self::Application => ERROR_APPLICATION_CLOSE,
-            Self::NoAvailablePath | Self::TooManyPtos => 16,
+            Self::NoAvailablePath => 16,
             Self::CryptoBufferExceeded => ERROR_CRYPTO_BUFFER_EXCEEDED,
             Self::CryptoAlert(a) => 0x100 + u64::from(*a),
             
@@ -306,7 +301,6 @@ mod tests {
             (Error::EchRetry(vec![]), 0x179),
             (Error::VersionNegotiation, 0x53f8),
             (Error::Internal, 1),
-            (Error::TooManyPtos, 16),
         ] {
             assert_eq!(err.code(), code);
         }

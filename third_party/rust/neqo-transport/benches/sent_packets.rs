@@ -53,7 +53,7 @@ fn collect_packets(iter: impl IntoIterator<Item = sent::Packet>) -> sent::Packet
 
 
 fn take_ranges(c: &mut Criterion) {
-    let now = test_fixture::now();
+    let now = Instant::now();
     c.bench_function("sent::Packets::take_ranges", |b| {
         b.iter_batched_ref(
             || collect_packets((0..PACKETS).map(|i| make_packet(i, now))),
@@ -68,7 +68,7 @@ fn take_ranges(c: &mut Criterion) {
 
 
 fn track(c: &mut Criterion) {
-    let now = test_fixture::now();
+    let now = Instant::now();
     c.bench_function("sent::Packets::track", |b| {
         b.iter_batched(
             sent::Packets::default,
@@ -86,14 +86,14 @@ fn track(c: &mut Criterion) {
 
 
 fn remove_expired(c: &mut Criterion) {
+    let now = Instant::now();
     let cd = Duration::from_millis(300);
-    
-    let old = test_fixture::now();
-    let now = old + cd * 2;
 
     c.bench_function("sent::Packets::remove_expired half-expired", |b| {
         b.iter_batched_ref(
             || {
+                
+                let old = now - cd * 2;
                 collect_packets(
                     (0..PACKETS / 2)
                         .map(|i| make_lost_packet(i, old))
@@ -106,9 +106,5 @@ fn remove_expired(c: &mut Criterion) {
     });
 }
 
-criterion_group! {
-    name = benches;
-    config = { neqo_common::log::init(None); Criterion::default() };
-    targets = take_ranges, track, remove_expired
-}
+criterion_group!(benches, take_ranges, track, remove_expired);
 criterion_main!(benches);

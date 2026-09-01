@@ -994,15 +994,6 @@ impl Path {
     }
 
     
-    pub fn update_stats(&self, stats: &mut Stats) {
-        stats.rtt = self.rtt.estimate();
-        stats.rttvar = self.rtt.rttvar();
-        stats.min_rtt = self.rtt.minimum();
-        stats.cc.cwnd = self.sender.cwnd();
-        stats.cc.bytes_in_flight = self.sender.bytes_in_flight();
-    }
-
-    
     
     pub fn set_ack_delay(
         &mut self,

@@ -8,6 +8,7 @@ use neqo_common::qdebug;
 use neqo_qpack as qpack;
 use neqo_transport::ConnectionParameters;
 
+const MAX_PUSH_STREAM_DEFAULT: u64 = 0;
 const WEBTRANSPORT_DEFAULT: bool = false;
 
 const CONNECT_DEFAULT: bool = false;
@@ -17,6 +18,7 @@ const HTTP3_DATAGRAM_DEFAULT: bool = true;
 pub struct Http3Parameters {
     conn_params: ConnectionParameters,
     qpack_settings: qpack::Settings,
+    max_concurrent_push_streams: u64,
     webtransport: bool,
     
     connect: bool,
@@ -28,6 +30,7 @@ impl Default for Http3Parameters {
         Self {
             conn_params: ConnectionParameters::default(),
             qpack_settings: qpack::Settings::default(),
+            max_concurrent_push_streams: MAX_PUSH_STREAM_DEFAULT,
             webtransport: WEBTRANSPORT_DEFAULT,
             connect: CONNECT_DEFAULT,
             http3_datagram: HTTP3_DATAGRAM_DEFAULT,
@@ -92,67 +95,38 @@ impl Http3Parameters {
         &self.qpack_settings
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
     #[must_use]
-    pub const fn webtransport(mut self, webtransport: bool) -> Self {
-        self.webtransport = webtransport;
-        self.connect |= webtransport;
+    pub const fn max_concurrent_push_streams(mut self, max_push_streams: u64) -> Self {
+        self.max_concurrent_push_streams = max_push_streams;
         self
     }
 
-    
-    
-    
-    
-    
-    
-    
     #[must_use]
-    pub fn webtransport_enabled(&self) -> bool {
-        if !self.webtransport {
-            return false;
-        }
-        
-        debug_assert!(self.connect);
-        
-        
-        
-        if !self.http3_datagram {
-            qdebug!("WebTransport disabled: SETTINGS_H3_DATAGRAM is not enabled");
-            return false;
-        }
-        if self.conn_params.get_datagram_size() == 0 {
-            qdebug!("WebTransport disabled: max_datagram_frame_size transport parameter is 0");
-            return false;
-        }
-        if !self.conn_params.reliable_stream_reset_enabled() {
-            qdebug!("WebTransport disabled: reset_stream_at transport parameter is disabled");
-            return false;
-        }
-        true
+    pub const fn get_max_concurrent_push_streams(&self) -> u64 {
+        self.max_concurrent_push_streams
     }
 
-    
-    
-    
+    #[must_use]
+    pub const fn webtransport(mut self, webtransport: bool) -> Self {
+        self.webtransport = webtransport;
+        self
+    }
+
+    #[must_use]
+    pub const fn get_webtransport(&self) -> bool {
+        self.webtransport
+    }
+
     
     #[must_use]
     pub const fn connect(mut self, connect: bool) -> Self {
         self.connect = connect;
-        self.webtransport &= connect;
         self
     }
 
     
     #[must_use]
-    pub const fn connect_enabled(&self) -> bool {
+    pub const fn get_connect(&self) -> bool {
         self.connect
     }
 
@@ -215,64 +189,6 @@ mod tests {
     #[should_panic(expected = "assertion")]
     fn max_table_size_decoder_rejects_above_limit() {
         _ = Http3Parameters::default().max_table_size_decoder(1 << 30);
-    }
-
-    #[test]
-    fn webtransport_requires_datagrams_and_reliable_reset() {
-        
-        assert!(
-            Http3Parameters::default()
-                .webtransport(true)
-                .webtransport_enabled()
-        );
-
-        
-        assert!(
-            !Http3Parameters::default()
-                .webtransport(true)
-                .http3_datagram(false)
-                .webtransport_enabled()
-        );
-
-        
-        assert!(
-            !Http3Parameters::default()
-                .connection_parameters(ConnectionParameters::default().datagram_size(0))
-                .webtransport(true)
-                .webtransport_enabled()
-        );
-
-        
-        assert!(
-            !Http3Parameters::default()
-                .connection_parameters(ConnectionParameters::default().reliable_stream_reset(false))
-                .webtransport(true)
-                .webtransport_enabled()
-        );
-    }
-
-    #[test]
-    fn webtransport_and_connect_are_coupled() {
-        
-        let p = Http3Parameters::default().webtransport(true);
-        assert!(p.connect_enabled());
-        assert!(p.webtransport_enabled());
-
-        
-        let p = Http3Parameters::default().webtransport(true).connect(false);
-        assert!(!p.connect_enabled());
-        assert!(!p.webtransport_enabled());
-
-        
-        
-        let p = Http3Parameters::default().connect(false).webtransport(true);
-        assert!(p.connect_enabled());
-        assert!(p.webtransport_enabled());
-
-        
-        let p = Http3Parameters::default().connect(true);
-        assert!(p.connect_enabled());
-        assert!(!p.webtransport_enabled());
     }
 
     #[test]

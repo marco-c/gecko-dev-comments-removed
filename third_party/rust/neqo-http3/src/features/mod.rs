@@ -9,8 +9,9 @@ use std::{fmt::Debug, mem};
 use neqo_common::qtrace;
 
 use crate::{
-    client_events::Http3ClientEvents, features::extended_connect::ExtendedConnectType,
-    settings::HSettingType,
+    client_events::Http3ClientEvents,
+    features::extended_connect::ExtendedConnectType,
+    settings::{HSettingType, HSettings},
 };
 
 pub mod extended_connect;
@@ -52,27 +53,30 @@ impl NegotiationState {
         }
     }
 
-    
-    
-    pub fn negotiate(&mut self, conditions_met: bool) {
-        let Self::Negotiating {
+    pub fn handle_settings(&mut self, settings: &HSettings) {
+        if !self.locally_enabled() {
+            return;
+        }
+
+        if let Self::Negotiating {
             feature_type,
             listener,
         } = self
-        else {
-            return;
-        };
-
-        let ft = *feature_type;
-        let cb = mem::take(listener);
-        qtrace!("negotiate {ft:?}: {conditions_met}");
-        *self = if conditions_met {
-            Self::Negotiated
-        } else {
-            Self::Failed
-        };
-        if let Some(l) = cb {
-            l.negotiation_done(ft, conditions_met);
+        {
+            qtrace!(
+                "set_negotiated {feature_type:?} to {}",
+                settings.get(*feature_type)
+            );
+            let cb = mem::take(listener);
+            let ft = *feature_type;
+            *self = if settings.get(ft) == 1 {
+                Self::Negotiated
+            } else {
+                Self::Failed
+            };
+            if let Some(l) = cb {
+                l.negotiation_done(ft, self.enabled());
+            }
         }
     }
 
@@ -100,17 +104,7 @@ pub(crate) enum ConnectType {
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
-    use neqo_common::Role;
-
-    use crate::{
-        features::{
-            NegotiationState,
-            extended_connect::{
-                ExtendedConnectFeature, ExtendedConnectType, TransportPrerequisites,
-            },
-        },
-        settings::{HSetting, HSettingType, HSettings},
-    };
+    use crate::{features::NegotiationState, settings::HSettingType};
 
     #[test]
     fn negotiation_state_locally_enabled() {
@@ -122,129 +116,5 @@ mod tests {
 
         assert!(NegotiationState::Negotiated.locally_enabled());
         assert!(NegotiationState::Failed.locally_enabled());
-    }
-
-    fn negotiate(
-        role: Role,
-        feature: ExtendedConnectType,
-        settings: &HSettings,
-        peer_ok: bool,
-    ) -> bool {
-        let mut f = ExtendedConnectFeature::new(feature, role, true);
-        let prereqs = TransportPrerequisites::new(peer_ok, peer_ok);
-        f.handle_settings(settings, &prereqs);
-        f.enabled()
-    }
-
-    
-    
-    
-    #[test]
-    fn webtransport_feature_checks() {
-        
-        let full = HSettings::new(&[
-            HSetting::new(HSettingType::EnableWebTransport, 1),
-            HSetting::new(HSettingType::EnableH3Datagram, 1),
-            HSetting::new(HSettingType::EnableConnect, 1),
-        ]);
-        
-        let no_connect = HSettings::new(&[
-            HSetting::new(HSettingType::EnableWebTransport, 1),
-            HSetting::new(HSettingType::EnableH3Datagram, 1),
-        ]);
-        
-        let no_h3_datagram = HSettings::new(&[
-            HSetting::new(HSettingType::EnableWebTransport, 1),
-            HSetting::new(HSettingType::EnableConnect, 1),
-        ]);
-        
-        let no_wt = HSettings::new(&[
-            HSetting::new(HSettingType::EnableH3Datagram, 1),
-            HSetting::new(HSettingType::EnableConnect, 1),
-        ]);
-
-        
-        assert!(negotiate(
-            Role::Client,
-            ExtendedConnectType::WebTransport,
-            &full,
-            true
-        ));
-        assert!(!negotiate(
-            Role::Client,
-            ExtendedConnectType::WebTransport,
-            &no_connect,
-            true
-        ));
-        assert!(!negotiate(
-            Role::Client,
-            ExtendedConnectType::WebTransport,
-            &no_h3_datagram,
-            true
-        ));
-        assert!(!negotiate(
-            Role::Client,
-            ExtendedConnectType::WebTransport,
-            &no_wt,
-            true
-        ));
-        assert!(!negotiate(
-            Role::Client,
-            ExtendedConnectType::WebTransport,
-            &full,
-            false
-        ));
-
-        
-        assert!(!negotiate(
-            Role::Server,
-            ExtendedConnectType::WebTransport,
-            &HSettings::default(),
-            true
-        ));
-        assert!(negotiate(
-            Role::Server,
-            ExtendedConnectType::WebTransport,
-            &HSettings::new(&[HSetting::new(HSettingType::EnableH3Datagram, 1)]),
-            true,
-        ));
-        assert!(!negotiate(
-            Role::Server,
-            ExtendedConnectType::WebTransport,
-            &full,
-            false
-        ));
-    }
-
-    
-    #[test]
-    fn connect_udp_feature_checks() {
-        
-        assert!(negotiate(
-            Role::Client,
-            ExtendedConnectType::ConnectUdp,
-            &HSettings::new(&[HSetting::new(HSettingType::EnableConnect, 1),]),
-            true
-        ));
-        assert!(!negotiate(
-            Role::Client,
-            ExtendedConnectType::ConnectUdp,
-            &HSettings::default(),
-            true
-        ));
-        assert!(negotiate(
-            Role::Client,
-            ExtendedConnectType::ConnectUdp,
-            &HSettings::new(&[HSetting::new(HSettingType::EnableConnect, 1),]),
-            false
-        ));
-
-        
-        assert!(negotiate(
-            Role::Server,
-            ExtendedConnectType::ConnectUdp,
-            &HSettings::default(),
-            false
-        ));
     }
 }
