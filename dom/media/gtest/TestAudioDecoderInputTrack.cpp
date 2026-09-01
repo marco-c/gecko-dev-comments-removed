@@ -11,6 +11,7 @@
 #include "VideoUtils.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/gtest/WaitFor.h"
 #include "nsThreadUtils.h"
 
@@ -424,3 +425,39 @@ TEST_F(TestAudioDecoderInputTrack, PlaybackRateChange) {
   EXPECT_PRED_FORMAT2(ExpectSegmentNonSilence, start, audio->Frames() / 2);
   EXPECT_PRED_FORMAT2(ExpectSegmentSilence, start + audio->Frames() / 2, end);
 }
+
+
+
+#ifdef HAVE_64BIT_BUILD
+TEST(AudioDecoderInputTrack, LimitsLargeRateTransposeOutput)
+{
+  constexpr TrackRate graphRate = 48000;
+  constexpr uint32_t inputFrames = 700000;
+  
+  constexpr uint32_t maxDestLimit = 10240000;
+
+  RefPtr<MockTestGraph> graph = MakeRefPtr<NiceMock<MockTestGraph>>(graphRate);
+  graph->Init(1);
+
+  AudioInfo info;
+  info.mRate = graphRate;
+  info.mChannels = 1;
+  RefPtr<AudioDecoderInputTrack> track =
+      CreateTrack(graph, NS_GetCurrentThread(), info, 0.0625, false);
+  RefPtr<AudioData> audio = CreateAudioDataFromInfo(inputFrames, info);
+  track->AppendData(audio, nullptr);
+
+  
+  
+  auto cleanup = MakeScopeExit([&] {
+    track->Close();
+    track->Destroy();
+    graph->Destroy();
+  });
+
+  track->ProcessInput(0, 1, kNoFlags);
+  const uint32_t timeStretcherSamples = track->TimeStretcherSamplesForTesting();
+  ASSERT_GT(timeStretcherSamples, 0u);
+  EXPECT_LT(timeStretcherSamples, maxDestLimit);
+}
+#endif
