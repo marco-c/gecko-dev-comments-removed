@@ -5,33 +5,35 @@
 function GeneratorNext(val) {
   
   
-  
-
   if (!IsSuspendedGenerator(this)) {
-    if (!IsObject(this) || !IsGeneratorObject(this)) {
-      return callFunction(
-        CallGeneratorMethodIfWrapped,
-        this,
-        val,
-        "GeneratorNext"
-      );
-    }
-
-    if (GeneratorObjectIsClosed(this)) {
-      return { value: undefined, done: true };
-    }
-
-    if (GeneratorIsRunning(this)) {
-      ThrowTypeError(JSMSG_NESTING_GENERATOR);
-    }
+    return callFunction(GeneratorNextSlow, this, val);
   }
 
   try {
     return resumeGenerator(this, val, "next");
   } catch (e) {
-    if (!GeneratorObjectIsClosed(this)) {
-      GeneratorSetClosed(this);
-    }
+    GeneratorSetClosed(this);
+    throw e;
+  }
+}
+
+function GeneratorNextSlow(val) {
+  if (!IsObject(this) || !IsGeneratorObject(this)) {
+    return callFunction(CallGeneratorMethodIfWrapped, this, val, "GeneratorNext");
+  }
+
+  if (GeneratorObjectIsClosed(this)) {
+    return { value: undefined, done: true };
+  }
+
+  if (GeneratorIsRunning(this)) {
+    ThrowTypeError(JSMSG_NESTING_GENERATOR);
+  }
+
+  try {
+    return resumeGenerator(this, val, "next");
+  } catch (e) {
+    GeneratorSetClosed(this);
     throw e;
   }
 }
@@ -59,9 +61,7 @@ function GeneratorThrow(val) {
   try {
     return resumeGenerator(this, val, "throw");
   } catch (e) {
-    if (!GeneratorObjectIsClosed(this)) {
-      GeneratorSetClosed(this);
-    }
+    GeneratorSetClosed(this);
     throw e;
   }
 }
@@ -87,12 +87,9 @@ function GeneratorReturn(val) {
   }
 
   try {
-    var rval = { value: val, done: true };
-    return resumeGenerator(this, rval, "return");
+    return resumeGenerator(this, val, "return");
   } catch (e) {
-    if (!GeneratorObjectIsClosed(this)) {
-      GeneratorSetClosed(this);
-    }
+    GeneratorSetClosed(this);
     throw e;
   }
 }

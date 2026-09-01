@@ -513,6 +513,13 @@ bool BytecodeEmitter::emitPopN(unsigned n) {
     return emit1(JSOp::Pop) && emit1(JSOp::Pop);
   }
 
+  
+  while (n > UINT16_MAX) {
+    if (!emitUint16Operand(JSOp::PopN, UINT16_MAX)) {
+      return false;
+    }
+    n -= UINT16_MAX;
+  }
   return emitUint16Operand(JSOp::PopN, n);
 }
 
@@ -6583,6 +6590,12 @@ bool BytecodeEmitter::finishReturn(BytecodeOffset setRvalOffset) {
   }
 
   if (needsFinalYield) {
+    
+    
+    int32_t nvalues = bytecodeSection().stackDepth();
+    if (nvalues > 0 && !emitPopN(nvalues)) {
+      return false;
+    }
     if (!emitJump(JSOp::Goto, &finalYields)) {
       return false;
     }
@@ -6598,6 +6611,80 @@ bool BytecodeEmitter::finishReturn(BytecodeOffset setRvalOffset) {
 
   
   return emitReturnRval();
+}
+
+bool BytecodeEmitter::emitCheckYieldResumeKind() {
+  
+  
+  static_assert(uint8_t(GeneratorResumeKind::Next) == 0);
+  static_assert(uint8_t(GeneratorResumeKind::Throw) != 0);
+  static_assert(uint8_t(GeneratorResumeKind::Return) != 0);
+
+  const int32_t startDepth = bytecodeSection().stackDepth();
+  
+
+  if (!emit1(JSOp::Dup)) {
+    
+    return false;
+  }
+  InternalIfEmitter ifNotNext(this);
+  if (!ifNotNext.emitThen()) {
+    
+    return false;
+  }
+
+  
+  if (!emitPushResumeKind(GeneratorResumeKind::Throw)) {
+    
+    return false;
+  }
+  if (!emit1(JSOp::StrictEq)) {
+    
+    return false;
+  }
+  InternalIfEmitter ifThrow(this);
+  if (!ifThrow.emitThen()) {
+    
+    return false;
+  }
+  if (!emit1(JSOp::Pop)) {
+    
+    return false;
+  }
+  if (!emit1(JSOp::Throw)) {
+    
+    return false;
+  }
+  bytecodeSection().setStackDepth(startDepth - 1);
+  if (!ifThrow.emitEnd()) {
+    
+    return false;
+  }
+  if (!emit1(JSOp::Pop)) {
+    
+    return false;
+  }
+  if (!emit1(JSOp::SetRval)) {
+    
+    return false;
+  }
+  {
+    NonLocalExitControl nle(this, NonLocalExitKind::Return);
+    if (!nle.emitReturn()) {
+      return false;
+    }
+  }
+
+  bytecodeSection().setStackDepth(startDepth);
+  if (!ifNotNext.emitEnd()) {
+    
+    return false;
+  }
+  if (!emitPopN(2)) {
+    
+    return false;
+  }
+  return true;
 }
 
 bool BytecodeEmitter::emitCheckAwaitResumeKind() {
@@ -6660,7 +6747,7 @@ bool BytecodeEmitter::emitInitialYield(UnaryNode* yieldNode) {
     
     return false;
   }
-  if (!emit1(JSOp::CheckResumeKind)) {
+  if (!emitCheckYieldResumeKind()) {
     
     return false;
   }
@@ -6724,7 +6811,7 @@ bool BytecodeEmitter::emitYield(UnaryNode* yieldNode) {
     return false;
   }
 
-  if (!emit1(JSOp::CheckResumeKind)) {
+  if (!emitCheckYieldResumeKind()) {
     
     return false;
   }
@@ -6814,8 +6901,6 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
   IteratorKind iterKind = sc->asSuspendableContext()->isAsync()
                               ? IteratorKind::Async
                               : IteratorKind::Sync;
-  bool needsIteratorResult = sc->asSuspendableContext()->needsIteratorResult();
-
   
   if (!emitTree(iter)) {
     
@@ -7091,13 +7176,6 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
       
       return false;
     }
-    if (needsIteratorResult) {
-      if (!emitAtomOp(JSOp::GetProp,
-                      TaggedParserAtomIndex::WellKnown::value())) {
-        
-        return false;
-      }
-    }
     if (!emitCall(JSOp::Call, 1)) {
       
       return false;
@@ -7140,21 +7218,6 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
       
       return false;
     }
-    if (needsIteratorResult) {
-      if (!emitPrepareIteratorResult()) {
-        
-        return false;
-      }
-      if (!emit1(JSOp::Swap)) {
-        
-        return false;
-      }
-      if (!emitFinishIteratorResult(true)) {
-        
-        return false;
-      }
-    }
-
     if (!ifReturnDone.emitElse()) {
       
       return false;
@@ -7196,18 +7259,17 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     
     
     
-    if (!emitGetDotGeneratorInInnermostScope()) {
+    if (!emit1(JSOp::SetRval)) {
       
       return false;
     }
-    if (!emitPushResumeKind(GeneratorResumeKind::Return)) {
-      
-      return false;
+    {
+      NonLocalExitControl nle(this, NonLocalExitKind::Return);
+      if (!nle.emitReturn()) {
+        return false;
+      }
     }
-    if (!emit1(JSOp::CheckResumeKind)) {
-      
-      return false;
-    }
+    bytecodeSection().setStackDepth(startDepth - 1);
   }
 
   if (!ifKind.emitEnd()) {
