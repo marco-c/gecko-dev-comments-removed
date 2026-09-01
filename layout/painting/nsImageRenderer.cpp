@@ -718,37 +718,9 @@ ImgDrawResult nsImageRenderer::BuildWebRenderDisplayItems(
 
       if (extendMode == ExtendMode::CLAMP) {
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        Maybe<wr::DeviceIntRect> subRect;
-        if (!region && !aDest.IsEmpty() && !decodeSize.IsEmpty()) {
-          const ImageIntRect imageRect(0, 0, decodeSize.width,
-                                       decodeSize.height);
-          const double sx = double(decodeSize.width) / aDest.Width();
-          const double sy = double(decodeSize.height) / aDest.Height();
-          const nsRect fill = aFill - aDest.TopLeft();
-          ImageIntRect sub = ImageIntRect::FromUnknownRect(
-              gfx::IntRect::RoundOut(fill.X() * sx, fill.Y() * sy,
-                                     fill.Width() * sx, fill.Height() * sy));
-          sub = sub.Intersect(imageRect);
-          if (!sub.IsEmpty() && !sub.IsEqualEdges(imageRect)) {
-            subRect = Some(wr::ToDeviceIntRect(sub));
-          }
-        }
-
         aBuilder.PushImage(dest, clip, !aItem->BackfaceIsHidden(), false,
                            rendering, key.value(), true,
-                           wr::ColorF{1.0f, 1.0f, 1.0f, aOpacity}, false, false,
-                           subRect);
+                           wr::ColorF{1.0f, 1.0f, 1.0f, aOpacity});
       } else {
         nsPoint firstTilePos = nsLayoutUtils::GetBackgroundFirstTilePos(
             aDest.TopLeft(), aFill.TopLeft(), aRepeatSize);
@@ -1048,9 +1020,11 @@ ImgDrawResult nsImageRenderer::DrawBorderImageComponent(
         nsLayoutUtils::GetSamplingFilterForFrame(mForFrame);
 
     if (!RequiresScaling(aFill, aHFill, aVFill, aUnitSize)) {
+      SVGImageContext svgContext;
+      SVGImageContext::MaybeStoreContextPaint(svgContext, mForFrame, subImage);
       ImgDrawResult result = nsLayoutUtils::DrawSingleImage(
           aRenderingContext, aPresContext, subImage, samplingFilter, aFill,
-          aDirtyRect, SVGImageContext(), drawFlags);
+          aDirtyRect, svgContext, drawFlags);
 
       if (!mImage->IsComplete()) {
         result &= ImgDrawResult::SUCCESS_NOT_COMPLETE;
