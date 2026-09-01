@@ -775,19 +775,23 @@ void LIRGenerator::visitAtomicTypedArrayElementBinop(
 
   if (Scalar::isBigIntType(ins->arrayType())) {
     LInt64Allocation value = useInt64Register(ins->value());
-    LInt64Definition temp = tempInt64();
 
     
 
     if (ins->isForEffect()) {
-      auto* lir = new (alloc()) LAtomicTypedArrayElementBinopForEffect64(
-          elements, index, value, temp);
+      auto* lir = new (alloc())
+          LAtomicTypedArrayElementBinopForEffect64(elements, index, value);
       add(lir, ins);
       return;
     }
 
     
 
+    
+    
+    LInt64Definition temp = ins->operation() == AtomicOp::Sub
+                                ? tempInt64()
+                                : LInt64Definition::BogusTemp();
     auto* lir = new (alloc())
         LAtomicTypedArrayElementBinop64(elements, index, value, temp);
     defineInt64(lir, ins);
@@ -991,9 +995,13 @@ void LIRGenerator::visitWasmAtomicBinopHeap(MWasmAtomicBinopHeap* ins) {
                                : LGeneralReg(HeapReg);
 
   if (ins->access().type() == Scalar::Int64) {
-    auto* lir = new (alloc())
-        LWasmAtomicBinopI64(useRegister(base), useInt64Register(ins->value()),
-                            memoryBase, tempInt64());
+    
+    
+    LInt64Definition temp = ins->operation() == AtomicOp::Sub
+                                ? tempInt64()
+                                : LInt64Definition::BogusTemp();
+    auto* lir = new (alloc()) LWasmAtomicBinopI64(
+        useRegister(base), useInt64Register(ins->value()), memoryBase, temp);
     defineInt64(lir, ins);
     return;
   }

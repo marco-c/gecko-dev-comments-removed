@@ -2308,7 +2308,7 @@
     elements: WordSized
     index: WordSized
     value: Int64
-#if !defined(JS_CODEGEN_X64) && !defined(JS_CODEGEN_RISCV64)
+#if !defined(JS_CODEGEN_X64) && !defined(JS_CODEGEN_RISCV64) && !defined(JS_CODEGEN_LOONG64)
   num_temps64: 1
 #endif
   mir_op: AtomicTypedArrayElementBinop
@@ -2924,6 +2924,12 @@
   successors: [ifTrue, ifFalse]
   operands:
     input: BoxedValue
+
+- name: IsSuspendedGeneratorAndBranch
+  successors: [ifTrue, ifFalse]
+  operands:
+    object: WordSized
+  num_temps: 1
 
 - name: HasClass
   result_type: WordSized
