@@ -12,6 +12,7 @@
 #include "mozilla/EffectCompositor.h"
 #include "mozilla/ElementAnimationData.h"
 #include "mozilla/ServoStyleSet.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/TimelineCollection.h"
 #include "mozilla/dom/AnimationEffect.h"
 #include "mozilla/dom/Document.h"
@@ -39,10 +40,10 @@ using mozilla::dom::Animation;
 using mozilla::dom::AnimationPlayState;
 using mozilla::dom::CSSAnimation;
 using mozilla::dom::Element;
-using mozilla::dom::InactiveTimeline;
 using mozilla::dom::KeyframeEffect;
 using mozilla::dom::MutationObservers;
 using mozilla::dom::ScrollTimeline;
+using mozilla::dom::UnresolvedTimeline;
 using mozilla::dom::ViewTimeline;
 
 
@@ -83,11 +84,9 @@ class MOZ_STACK_CLASS ServoCSSAnimationBuilder final {
   bool BuildKeyframes(const Element& aElement, nsPresContext* aPresContext,
                       nsAtom* aName,
                       const StyleComputedTimingFunction& aTimingFunction,
-                      const StyleAnimationComposition aComposition,
                       nsTArray<Keyframe>& aKeyframes) {
     return aPresContext->StyleSet()->GetKeyframesForName(
-        aElement, *mComputedStyle, aName, aTimingFunction, aComposition,
-        aKeyframes);
+        aElement, *mComputedStyle, aName, aTimingFunction, aKeyframes);
   }
   void SetKeyframes(KeyframeEffect& aEffect, nsTArray<Keyframe>&& aKeyframes,
                     const dom::AnimationTimeline* aTimeline,
@@ -181,6 +180,7 @@ static void UpdateOldAnimationPropertiesWithNew(
     CSSAnimationProperties aOverriddenProperties,
     ServoCSSAnimationBuilder& aBuilder, dom::AnimationTimeline* aTimeline,
     const dom::ScopedTimelineName& aTimelineName,
+    const StyleComputedTimingFunction& aNewTimingFunction,
     dom::CompositeOperation aNewComposite, dom::AnimationRange&& aTimelineRange,
     nsAnimationManager::TimelineNamesToAnimationMap&
         aTimelineNamesToAnimationMap) {
@@ -224,6 +224,14 @@ static void UpdateOldAnimationPropertiesWithNew(
       if (~aOverriddenProperties & CSSAnimationProperties::Keyframes) {
         aBuilder.SetKeyframes(*oldKeyframeEffect, std::move(aNewKeyframes),
                               aTimeline, aTimelineRange);
+
+        
+        
+        if (auto* cssEffect =
+                oldKeyframeEffect->AsCSSAnimationKeyframeEffect()) {
+          cssEffect->SetDefaultTimingFunction(aNewTimingFunction);
+          cssEffect->SetDefaultComposite(aNewComposite);
+        }
       }
 
       if (~aOverriddenProperties & CSSAnimationProperties::Composition) {
@@ -275,21 +283,6 @@ static void UpdateOldAnimationPropertiesWithNew(
   }
 }
 
-static bool ScopedNameLooselyMatches(const dom::ShadowRoot* aTargetShadowRoot,
-                                     const Element* aTimelineElement,
-                                     StyleCascadeLevel aTimelineCascadeLevel) {
-  const auto* timelineShadowRoot =
-      Servo_GetShadowRootForScoped(aTimelineElement, aTimelineCascadeLevel);
-  for (auto* root = aTargetShadowRoot; root;
-       root = root->Host()->GetContainingShadow()) {
-    
-    if (root == timelineShadowRoot) {
-      return true;
-    }
-  }
-  
-  return !timelineShadowRoot;
-}
 
 static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
     dom::Document* aDocument, const NonOwningAnimationTarget& aTarget,
@@ -299,62 +292,23 @@ static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
       Servo_GetShadowRootForScoped(aTarget.mElement, aName.mCascadeLevel);
   const auto* timelineManager =
       presContext ? presContext->TimelineManager() : nullptr;
-  
-  
-  
-  
   for (Element* e = aTarget.mElement->GetPseudoElement(aTarget.mPseudoRequest);
        e; e = e->GetParentElementCrossingShadowRoot()) {
     
-    
-    
-    
-    
     const auto [element, pseudo] = AnimationUtils::GetElementPseudoPair(e);
-    if (auto* collection =
-            TimelineCollection<ScrollTimeline>::Get(element, pseudo)) {
-      auto result = collection->Lookup(aName.mName);
-      if (result.mTimeline &&
-          ScopedNameLooselyMatches(targetShadowRoot, element,
-                                   result.mCascadeLevel)) {
-        return result.mTimeline.forget();
-      }
+    if (auto result = TimelineManager::GetNamedTimelineForThisElement(
+            element, pseudo, aName.mName, targetShadowRoot)) {
+      return result.forget();
     }
-
-    if (auto* collection =
-            TimelineCollection<ViewTimeline>::Get(element, pseudo)) {
-      auto result = collection->Lookup(aName.mName);
-      if (result.mTimeline &&
-          ScopedNameLooselyMatches(targetShadowRoot, element,
-                                   result.mCascadeLevel)) {
-        return result.mTimeline.forget();
-      }
+    
+    if (timelineManager &&
+        (timelineManager->TimelineNameScopedByElement(element, aName.mName) ||
+         e->IsRootElement())) {
+      return timelineManager->GetNamedTimelineInSubtree(
+          element, aName.mName, targetShadowRoot, aDocument);
     }
-
-    if (!timelineManager) {
-      continue;
-    }
-
     
-    
-    
-    
-    
-    if (auto scopedTimeline =
-            timelineManager->GetScopedTimeline(e, aName.mName)) {
-      auto* result = scopedTimeline->take();
-      if (!result) {
-        
-        return MakeAndAddRef<InactiveTimeline>(aDocument);
-      }
-      return already_AddRefed{result};
-    }
   }
-
-  
-  
-  
-  
   return nullptr;
 }
 
@@ -407,11 +361,11 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
   MOZ_ASSERT(aPresContext);
 
   nsAtom* animationName = aStyle.GetAnimationName(animIdx);
+  const StyleComputedTimingFunction& timingFunction =
+      aStyle.GetAnimationTimingFunction(animIdx);
   nsTArray<Keyframe> keyframes;
   if (!aBuilder.BuildKeyframes(*aTarget.mElement, aPresContext, animationName,
-                               aStyle.GetAnimationTimingFunction(animIdx),
-                               aStyle.GetAnimationComposition(animIdx),
-                               keyframes)) {
+                               timingFunction, keyframes)) {
     return nullptr;
   }
 
@@ -462,7 +416,8 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
     UpdateOldAnimationPropertiesWithNew(
         *oldAnim, std::move(timing), std::move(keyframes), isStylePaused,
         oldAnim->PropertiesOverridenByJS(), aBuilder, timeline, timelineName,
-        composition, std::move(range), aTimelineNamesToAnimationMap);
+        timingFunction, composition, std::move(range),
+        aTimelineNamesToAnimationMap);
     
     
     MOZ_ASSERT_IF(timelineName.mName && !timeline, styleTimeline.IsTimeline());
@@ -474,6 +429,8 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
       aPresContext->Document(),
       OwningAnimationTarget(aTarget.mElement, aTarget.mPseudoRequest),
       std::move(timing), effectOptions);
+  effect->SetDefaultTimingFunction(timingFunction);
+  effect->SetDefaultComposite(composition);
 
   aBuilder.SetKeyframes(*effect, std::move(keyframes), timeline, range);
 
@@ -550,7 +507,8 @@ void nsAnimationManager::UpdateAnimations(
              "document tree");
 
   if (!aComputedStyle ||
-      aComputedStyle->StyleDisplay()->mDisplay == StyleDisplay::None) {
+      (!StaticPrefs::layout_css_display_animations_enabled() &&
+       aComputedStyle->StyleDisplay()->mDisplay == StyleDisplay::None)) {
     
     
     
@@ -599,7 +557,7 @@ static void UpdateNamedTimelineAnimation(
     return;
   }
   if (aAnimationsWithDeferredUpdate &&
-      (!newTimeline || newTimeline->IsInactiveTimeline())) {
+      (!newTimeline || newTimeline->IsUnresolvedTimeline())) {
     
     
     
