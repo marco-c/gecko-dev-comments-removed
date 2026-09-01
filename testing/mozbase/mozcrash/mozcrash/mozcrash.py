@@ -269,6 +269,7 @@ class CrashInfo:
         self.remove_symbols = False
         self.brief_output = False
         self.keep = keep
+        self.use_debug_symbols = False
 
         if dump_save_path is None:
             dump_save_path = os.environ.get("MINIDUMP_SAVE_PATH", None)
@@ -292,6 +293,9 @@ class CrashInfo:
                 
                 
                 self.brief_output = True
+                
+                
+                self.use_debug_symbols = True
 
         self.stackwalk_binary = stackwalk_binary
 
@@ -420,6 +424,9 @@ class CrashInfo:
             command.append(f"--cyborg={json_output}")
             if self.brief_output:
                 command.append("--brief")
+
+            if self.use_debug_symbols:
+                command.append("--use-local-debuginfo")
 
             
             
