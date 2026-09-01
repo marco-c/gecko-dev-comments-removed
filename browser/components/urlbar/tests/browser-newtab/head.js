@@ -15,25 +15,20 @@ Services.scriptloader.loadSubScript(
 
 async function openNewTabPage() {
   
-  
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     "about:newtab",
     false
   );
-  await TestUtils.waitForCondition(async () => {
-    
-    
-    try {
-      return await SpecialPowers.spawn(
+  await TestUtils.waitForCondition(
+    () =>
+      SpecialPowers.spawn(
         tab.linkedBrowser,
         [],
         () => !!content.document.querySelector("moz-urlbar")
-      );
-    } catch {
-      return false;
-    }
-  }, "waiting for <moz-urlbar> on about:newtab");
+      ),
+    "waiting for <moz-urlbar> on about:newtab"
+  );
   return tab;
 }
 
