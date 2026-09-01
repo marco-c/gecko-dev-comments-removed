@@ -155,8 +155,3 @@ impl IsVisible for RadialGradient {
     }
 }
 
-
-
-
-
-pub use api::prim_geometry::optimize_radial_gradient;
