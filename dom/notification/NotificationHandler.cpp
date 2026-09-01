@@ -44,6 +44,14 @@ nsresult OpenWindowFor(nsIPrincipal* aPrincipal) {
   nsAutoCString origin;
   MOZ_TRY(aPrincipal->GetOriginNoSuffix(origin));
 
+  if (!StringBeginsWith(origin, "https://"_ns)) {
+    
+    
+    
+    
+    return NS_ERROR_INVALID_ARG;
+  }
+
   
   mozilla::ipc::PrincipalInfo info{};
   MOZ_TRY(PrincipalToPrincipalInfo(aPrincipal, &info));
@@ -83,13 +91,6 @@ NS_IMETHODIMP NotificationHandler::RespondOnClick(
 
   nsAutoCString origin;
   MOZ_TRY(aPrincipal->GetOrigin(origin));
-  if (!StringBeginsWith(origin, "https://"_ns)) {
-    
-    
-    
-    
-    return NS_ERROR_INVALID_ARG;
-  }
 
   bool isPrivate = aPrincipal->GetIsInPrivateBrowsing();
   nsCOMPtr<nsINotificationStorage> storage = GetNotificationStorage(isPrivate);
