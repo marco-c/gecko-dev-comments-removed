@@ -640,7 +640,11 @@ Maybe<std::pair<TimeStamp, TimeStamp>> Performance::GetTimeStampsForMarker(
 
 
 static bool MaybeOpenMarkerFile() {
-  if (!getenv("MOZ_USE_PERFORMANCE_MARKER_FILE")) {
+  
+  
+  static const bool sMarkerFileEnabled =
+      !!getenv("MOZ_USE_PERFORMANCE_MARKER_FILE");
+  if (!sMarkerFileEnabled) {
     return false;
   }
 
