@@ -60,14 +60,14 @@ void SetDirectionalityOnDescendants(mozilla::dom::Element* aElement,
 
 
 
-void SlotAssignedNodeAddedForDir(dom::HTMLSlotElement* aSlot,
-                                 nsIContent& aAssignedNode);
+void SlotAssignedNodeAdded(dom::HTMLSlotElement* aSlot,
+                           nsIContent& aAssignedNode);
 
 
 
 
-void SlotAssignedNodeRemovedForDir(dom::HTMLSlotElement* aSlot,
-                                   nsIContent& aUnassignedNode);
+void SlotAssignedNodeRemoved(dom::HTMLSlotElement* aSlot,
+                             nsIContent& aUnassignedNode);
 
 
 

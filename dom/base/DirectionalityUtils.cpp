@@ -25,6 +25,7 @@
 #include "mozilla/dom/DirectionalityUtils.h"
 
 #include "mozilla/Maybe.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/Utf16.h"
 #include "mozilla/dom/CharacterDataBuffer.h"
 #include "mozilla/dom/Document.h"
@@ -564,18 +565,43 @@ static void MaybeClearAffectsDirAutoSlot(nsIContent* aContent) {
   }
 }
 
-void SlotAssignedNodeAddedForDir(HTMLSlotElement* aSlot,
-                                 nsIContent& aAssignedNode) {
+void SlotAssignedNodeAdded(HTMLSlotElement* aSlot, nsIContent& aAssignedNode) {
   MOZ_ASSERT(aSlot);
+  if (aSlot->IsMaybeSelected()) {
+    
+    
+    
+    
+    
+    dom::AbstractRange::UpdateDescendantsInFlattenedTree(
+        aAssignedNode, true );
+  }
+
   if (aSlot->HasDirAuto()) {
     aAssignedNode.SetAffectsDirAutoSlot();
     DownwardPropagateDirAutoFlags(&aAssignedNode);
   }
   SlotStateChanged(aSlot);
+
+  if (StaticPrefs::dom_headingoffset_enabled()) {
+    aAssignedNode.UpdateHeadingElementsOffsetChange();
+  }
 }
 
-void SlotAssignedNodeRemovedForDir(HTMLSlotElement* aSlot,
-                                   nsIContent& aUnassignedNode) {
+void SlotAssignedNodeRemoved(HTMLSlotElement* aSlot,
+                             nsIContent& aUnassignedNode) {
+  if (aUnassignedNode.IsMaybeSelected()) {
+    
+    
+    
+    
+    
+    
+    
+    dom::AbstractRange::UpdateDescendantsInFlattenedTree(
+        aUnassignedNode, false );
+  }
+
   if (aSlot->HasDirAuto()) {
     MaybeClearAffectsDirAutoSlot(&aUnassignedNode);
   }

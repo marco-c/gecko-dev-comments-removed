@@ -6,8 +6,6 @@
 
 #include "mozilla/AppShutdown.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/dom/AbstractRange.h"
-#include "mozilla/dom/DirectionalityUtils.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLSlotElementBinding.h"
@@ -310,7 +308,7 @@ void HTMLSlotElement::InsertAssignedNode(uint32_t aIndex, nsIContent& aNode) {
   mAssignedNodes.InsertElementAt(aIndex, &aNode);
   aNode.SetAssignedSlot(this);
   RecalculateHasSlottedState();
-  AddedAssignedNode(aNode);
+  SlotAssignedNodeAdded(this, aNode);
 }
 
 void HTMLSlotElement::AppendAssignedNode(nsIContent& aNode) {
@@ -318,23 +316,7 @@ void HTMLSlotElement::AppendAssignedNode(nsIContent& aNode) {
   mAssignedNodes.AppendElement(&aNode);
   aNode.SetAssignedSlot(this);
   RecalculateHasSlottedState();
-  AddedAssignedNode(aNode);
-}
-
-void HTMLSlotElement::AddedAssignedNode(nsIContent& aNode) {
-  if (IsMaybeSelected()) {
-    
-    
-    
-    
-    
-    dom::AbstractRange::UpdateDescendantsInFlattenedTree(
-        aNode, true );
-  }
-  SlotAssignedNodeAddedForDir(this, aNode);
-  if (StaticPrefs::dom_headingoffset_enabled()) {
-    aNode.UpdateHeadingElementsOffsetChange();
-  }
+  SlotAssignedNodeAdded(this, aNode);
 }
 
 void HTMLSlotElement::RecalculateHasSlottedState() {
@@ -369,14 +351,14 @@ void HTMLSlotElement::RemoveAssignedNode(nsIContent& aNode) {
   aNode.SetAssignedSlot(nullptr);
 
   RecalculateHasSlottedState();
-  RemovedAssignedNode(aNode);
+  SlotAssignedNodeRemoved(this, aNode);
+  if (StaticPrefs::dom_headingoffset_enabled()) {
+    aNode.AsContent()->UpdateHeadingElementsOffsetChange();
+  }
 }
 
 void HTMLSlotElement::ClearAssignedNodes() {
-  FastFrontRemovableArray<RefPtr<nsINode>> assignedNodes =
-      std::move(mAssignedNodes);
-
-  for (RefPtr<nsINode>& node : assignedNodes.AsSpan()) {
+  for (RefPtr<nsINode>& node : mAssignedNodes.AsSpan()) {
     MOZ_ASSERT(!node->AsContent()->GetAssignedSlot() ||
                    node->AsContent()->GetAssignedSlot() == this,
                "How exactly?");
@@ -384,25 +366,10 @@ void HTMLSlotElement::ClearAssignedNodes() {
     if (StaticPrefs::dom_headingoffset_enabled()) {
       node->AsContent()->UpdateHeadingElementsOffsetChange();
     }
-    RemovedAssignedNode(*node->AsContent());
   }
 
+  mAssignedNodes.Clear();
   RecalculateHasSlottedState();
-}
-
-void HTMLSlotElement::RemovedAssignedNode(nsIContent& aNode) {
-  if (aNode.IsMaybeSelected()) {
-    
-    
-    
-    
-    
-    
-    
-    dom::AbstractRange::UpdateDescendantsInFlattenedTree(
-        aNode, false );
-  }
-  SlotAssignedNodeRemovedForDir(this, aNode);
 }
 
 void HTMLSlotElement::EnqueueSlotChangeEvent() {

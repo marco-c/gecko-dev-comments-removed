@@ -57,10 +57,6 @@ class HTMLSlotElement final : public nsGenericHTMLElement {
   void RemoveAssignedNode(nsIContent&);
   void ClearAssignedNodes();
 
-  
-  void AddedAssignedNode(nsIContent&);
-  void RemovedAssignedNode(nsIContent&);
-
   void EnqueueSlotChangeEvent();
   void RemovedFromSignalSlotList() {
     MOZ_ASSERT(mInSignalSlotList);
