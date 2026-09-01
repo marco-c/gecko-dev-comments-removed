@@ -1387,22 +1387,6 @@ function waitForCondition(condition, nextTest, errorMsg) {
 
 
 
-function promiseNotification(id = "addon-webext-permissions") {
-  return new Promise(resolve => {
-    function popupshown() {
-      let notification = PopupNotifications.getNotification(id);
-      if (notification) {
-        PopupNotifications.panel.removeEventListener("popupshown", popupshown);
-        PopupNotifications.panel.firstElementChild.button.click();
-        resolve();
-      }
-    }
-    PopupNotifications.panel.addEventListener("popupshown", popupshown);
-  });
-}
-
-
-
 
 
 
