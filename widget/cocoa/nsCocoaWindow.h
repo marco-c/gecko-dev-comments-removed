@@ -540,7 +540,7 @@ class nsCocoaWindow final : public nsIWidget {
   CGFloat ComputeBackingScaleFactor() const;
 
   void DoResize(double aX, double aY, double aWidth, double aHeight,
-                bool aRepaint, bool aConstrainToCurrentScreen);
+                bool aRepaint);
 
   
   
