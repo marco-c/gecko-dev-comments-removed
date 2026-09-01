@@ -5,7 +5,6 @@
 #include "MediaStatusManager.h"
 
 #include "MediaControlService.h"
-#include "mozilla/Components.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Document.h"
@@ -269,8 +268,7 @@ nsString MediaStatusManager::GetDefaultFaviconURL() const {
   
   
   
-  nsCOMPtr<nsIChromeRegistry> regService =
-      components::ChromeRegistry::Service();
+  nsCOMPtr<nsIChromeRegistry> regService = services::GetChromeRegistry();
   if (!regService) {
     return u""_ns;
   }
