@@ -295,16 +295,46 @@ class TestAsyncPanZoomController : public AsyncPanZoomController {
         mWaitForMainThread(false),
         mcc(aMcc) {}
 
+  
+  
+  
+  
+  void DisableDefaultTouchBehaviors() { mUseDefaultTouchBehaviors = false; }
+
+  
+  
+  
+  
+  
+  
+  Maybe<nsTArray<TouchBehaviorFlags>> DefaultTouchBehaviors(
+      const InputData& aEvent) const {
+    if (!mUseDefaultTouchBehaviors || aEvent.mInputType != MULTITOUCH_INPUT) {
+      return Nothing();
+    }
+    const MultiTouchInput& touchEvent = aEvent.AsMultiTouchInput();
+    if (touchEvent.mType != MultiTouchInput::MULTITOUCH_START) {
+      return Nothing();
+    }
+    nsTArray<TouchBehaviorFlags> behaviors;
+    behaviors.SetLength(touchEvent.mTouches.Length());
+    for (TouchBehaviorFlags& behavior : behaviors) {
+      behavior = kDefaultTouchBehavior;
+    }
+    return Some(std::move(behaviors));
+  }
+
   APZEventResult ReceiveInputEvent(
       InputData& aEvent,
-      const Maybe<nsTArray<uint32_t>>& aTouchBehaviors = Nothing()) {
+      const Maybe<nsTArray<TouchBehaviorFlags>>& aTouchBehaviors = Nothing()) {
     
     
     
     
     APZEventResult result = GetInputQueue()->ReceiveInputEvent(
         this, TargetConfirmationFlags{!mWaitForMainThread}, aEvent,
-        aTouchBehaviors);
+        aTouchBehaviors ? Some(aTouchBehaviors->Clone())
+                        : DefaultTouchBehaviors(aEvent));
 
     if (aEvent.mInputType == PANGESTURE_INPUT &&
         aEvent.AsPanGestureInput().AllowsSwipe()) {
@@ -479,6 +509,7 @@ class TestAsyncPanZoomController : public AsyncPanZoomController {
 
  private:
   bool mWaitForMainThread;
+  bool mUseDefaultTouchBehaviors = true;
   MockContentControllerDelayed* mcc;
 };
 

@@ -554,6 +554,10 @@ class APZCLongPressTester : public APZCGestureDetectorTester {
   void DoLongPressDiscardTouchBlockTest(bool aWithTouchMove) {
     
     
+    apzc->DisableDefaultTouchBehaviors();
+
+    
+    
     SCOPED_GFX_PREF_INT("apz.content_response_timeout", 60);
     SCOPED_GFX_PREF_INT("ui.click_hold_context_menus.delay", 30);
     SCOPED_GFX_PREF_FLOAT("apz.touch_start_tolerance", 0.06);
