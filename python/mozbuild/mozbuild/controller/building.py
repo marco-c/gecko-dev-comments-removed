@@ -1548,10 +1548,13 @@ class BuildDriver(MozbuildObject):
                 
                 
                 
+                
                 client_mk_env = dict(append_env or {})
-                sccache_basedirs = config.substs.get("SCCACHE_BASEDIRS")
-                if sccache_basedirs:
-                    client_mk_env["SCCACHE_BASEDIRS"] = sccache_basedirs
+                client_mk_env.update(
+                    (name, value)
+                    for name, value in config.substs.items()
+                    if name.startswith("SCCACHE_")
+                )
                 status = self._run_client_mk(
                     line_handler=output.on_stdout_line,
                     stderr_line_handler=output.on_stderr_line,
