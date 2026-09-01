@@ -511,11 +511,17 @@ Result<bool, nsresult> UpgradeCacheFrom3To4(
   return lastShutdownFailed;
 }
 
-Result<bool, nsresult> MaybeCreateOrUpgradeCache(
+struct CacheSetupInfo {
+  bool usable;
+  bool requiresFullScan;
+};
+
+Result<CacheSetupInfo, nsresult> MaybeCreateOrUpgradeCache(
     mozIStorageConnection& aConnection) {
   GECKO_TRACE_SCOPE("dom::quota", "MaybeCreateOrUpgradeCache");
 
   bool cacheUsable = true;
+  bool newlyCreated = false;
 
   QM_TRY_UNWRAP(int32_t cacheVersion, LoadCacheVersion(aConnection));
 
@@ -530,6 +536,8 @@ Result<bool, nsresult> MaybeCreateOrUpgradeCache(
     QM_TRY(MOZ_TO_RESULT(transaction.Start()));
 
     if (newCache) {
+      newlyCreated = true;
+
       QM_TRY(MOZ_TO_RESULT(CreateCacheTables(aConnection)));
 
 #ifdef DEBUG
@@ -565,6 +573,10 @@ Result<bool, nsresult> MaybeCreateOrUpgradeCache(
 
         QM_TRY(MOZ_TO_RESULT(insertStmt->Execute()));
       }
+
+      
+      
+      cacheUsable = false;
     } else {
       
       static_assert(kCacheVersion == 4,
@@ -600,7 +612,7 @@ Result<bool, nsresult> MaybeCreateOrUpgradeCache(
     QM_TRY(MOZ_TO_RESULT(transaction.Commit()));
   }
 
-  return cacheUsable;
+  return CacheSetupInfo{cacheUsable, newlyCreated};
 }
 
 Result<nsCOMPtr<mozIStorageConnection>, nsresult> CreateWebAppsStoreConnection(
@@ -1857,7 +1869,8 @@ QuotaManager::QuotaManager(const nsAString& aBasePath,
       mTemporaryStorageInitializedInternal(false),
       mInitializingAllTemporaryOrigins(false),
       mAllTemporaryOriginsInitialized(false),
-      mCacheUsable(false) {
+      mCacheUsable(false),
+      mCacheRequiresFullScan(false) {
   AssertIsOnOwningThread();
   MOZ_ASSERT(!gInstance);
 }
@@ -3080,6 +3093,10 @@ nsresult QuotaManager::LoadQuota() {
                     return false;
                   }
 
+                  if (mCacheRequiresFullScan) {
+                    return false;
+                  }
+
                   if (mCacheUsable) {
                     QM_TRY_INSPECT(const auto& stmt,
                                    CreateAndExecuteSingleStepStatement<
@@ -3269,17 +3286,28 @@ void QuotaManager::UnloadQuota() {
             continue;
           }
 
-          if (!originInfo->LockedDirty()) {
-            continue;
-          }
-
           auto metadata = originInfo->LockedFlattenToFullOriginMetadata();
-          QM_WARNONLY_TRY_UNWRAP(auto originDirectory,
-                                 GetOriginDirectory(metadata));
-          if (originDirectory) {
-            DebugOnly<nsresult> rv =
-                SettleDirectoryMetadata2(*originDirectory.ref(), metadata);
-            MOZ_ASSERT(NS_FAILED(rv) == metadata.mDirty);
+
+          if (originInfo->LockedDirty()) {
+            
+            
+            QM_WARNONLY_TRY_UNWRAP(auto originDirectory,
+                                   GetOriginDirectory(metadata));
+            MOZ_ASSERT(originDirectory);
+            if (originDirectory) {
+              DebugOnly<nsresult> rv =
+                  SettleDirectoryMetadata2(*originDirectory.ref(), metadata);
+              MOZ_ASSERT(NS_FAILED(rv) == metadata.mDirty);
+            }
+          } else if (mCacheRequiresFullScan) {
+            
+            
+            
+            
+            
+            
+            MOZ_ASSERT(mOriginUpserter, "We must have an origin upserter here");
+            QM_WARNONLY_TRY(mOriginUpserter->Refresh(metadata));
           }
         }
 
@@ -5805,6 +5833,8 @@ nsresult QuotaManager::EnsureStorageIsInitializedInternal() {
             
             ErrToDefaultOk<nsCOMPtr<mozIStorageConnection>>));
 
+    bool storageFileWasCorrupted = false;
+
     if (!connection) {
       
       QM_TRY(MOZ_TO_RESULT(storageFile->Remove(false)));
@@ -5813,6 +5843,8 @@ nsresult QuotaManager::EnsureStorageIsInitializedInternal() {
                                     nsCOMPtr<mozIStorageConnection>, ss,
                                     OpenUnsharedDatabase, storageFile,
                                     mozIStorageService::CONNECTION_DEFAULT));
+
+      storageFileWasCorrupted = true;
     }
 
     
@@ -5842,7 +5874,15 @@ nsresult QuotaManager::EnsureStorageIsInitializedInternal() {
           MOZ_TO_RESULT(MaybeRemoveLocalStorageDataAndArchive(*lsArchiveFile)));
     }
 
-    QM_TRY_UNWRAP(mCacheUsable, MaybeCreateOrUpgradeCache(*connection));
+    QM_TRY_INSPECT(const auto& cacheInfo,
+                   MaybeCreateOrUpgradeCache(*connection));
+    mCacheUsable = cacheInfo.usable;
+    mCacheRequiresFullScan = cacheInfo.requiresFullScan;
+
+    if (storageFileWasCorrupted) {
+      mCacheUsable = false;
+      mCacheRequiresFullScan = true;
+    }
 
     
     
@@ -8026,6 +8066,7 @@ void QuotaManager::ShutdownStorageInternal() {
     mOriginUpserter = nullptr;
     mStorageConnection = nullptr;
     mCacheUsable = false;
+    mCacheRequiresFullScan = false;
   }
 
   mInitializationInfo.ResetFirstInitializationAttempts();
@@ -8216,8 +8257,12 @@ std::pair<uint64_t, uint64_t> QuotaManager::GetUsageAndLimitForEstimate(
             RefPtr<OriginInfo> originInfo =
                 groupInfo->LockedGetOriginInfo(aOriginMetadata.mOrigin);
 
+            
+            
+            
             if (originInfo && originInfo->LockedPersisted()) {
-              return std::pair(mTemporaryStorageUsage, mTemporaryStorageLimit);
+              return std::pair(originInfo->LockedUsage(),
+                               mTemporaryStorageLimit);
             }
           }
 
