@@ -2650,7 +2650,8 @@ void nsGlobalWindowOuter::DispatchDOMWindowCreated() {
   }
 
   
-  nsContentUtils::DispatchChromeEvent(mDoc, mDoc, u"DOMWindowCreated"_ns,
+  const RefPtr<Document> doc = mDoc;
+  nsContentUtils::DispatchChromeEvent(doc, doc, u"DOMWindowCreated"_ns,
                                       CanBubble::eYes, Cancelable::eNo);
 
   nsCOMPtr<nsIObserverService> observerService =
@@ -3920,7 +3921,8 @@ nsresult nsGlobalWindowOuter::SetFullScreen(bool aFullscreen) {
                                aFullscreen);
 }
 
-static void FinishDOMFullscreenChange(Document* aDoc, bool aInDOMFullscreen) {
+MOZ_CAN_RUN_SCRIPT static void FinishDOMFullscreenChange(
+    Document* aDoc, bool aInDOMFullscreen) {
   if (aInDOMFullscreen) {
     
     if (!Document::HandlePendingFullscreenRequests(aDoc)) {
@@ -4319,7 +4321,8 @@ nsresult nsGlobalWindowOuter::SetFullscreenInternal(FullscreenReason aReason,
       
       
       if (!mInProcessFullscreenRequest.isSome()) {
-        FinishDOMFullscreenChange(mDoc, false);
+        const RefPtr<Document> doc = mDoc;
+        FinishDOMFullscreenChange(doc, false);
       }
       return NS_OK;
     }
@@ -4438,7 +4441,8 @@ void nsGlobalWindowOuter::FinishFullscreenChange(bool aIsFullscreen) {
   
   
   
-  FinishDOMFullscreenChange(mDoc, aIsFullscreen);
+  const RefPtr<Document> doc = mDoc;
+  FinishDOMFullscreenChange(doc, aIsFullscreen);
 
   
   

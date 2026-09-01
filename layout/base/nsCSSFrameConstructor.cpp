@@ -5117,7 +5117,7 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
   
   
   
-  if (auto* input = HTMLInputElement::FromNode(aContent)) {
+  if (const RefPtr input = HTMLInputElement::FromNode(aContent)) {
     if (auto* sr = input->CreateShadowTreeFromLayoutIfNeeded()) {
       StyleNewChildRange(sr->GetFirstChild(), nullptr);
     }

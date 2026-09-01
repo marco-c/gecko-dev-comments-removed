@@ -285,7 +285,7 @@ class WorkerFetchResolver final : public FetchDriverObserver {
     return mFetchObserver;
   }
 
-  void OnResponseAvailableInternal(
+  MOZ_CAN_RUN_SCRIPT void OnResponseAvailableInternal(
       SafeRefPtr<InternalResponse> aResponse) override;
 
   void OnResponseEnd(FetchDriverObserver::EndReason aReason,
@@ -360,7 +360,7 @@ class MainThreadFetchResolver final : public FetchDriverObserver {
         mSignalImpl(aSignalImpl),
         mMozErrors(aMozErrors) {}
 
-  void OnResponseAvailableInternal(
+  MOZ_CAN_RUN_SCRIPT void OnResponseAvailableInternal(
       SafeRefPtr<InternalResponse> aResponse) override;
 
   void SetLoadGroup(nsILoadGroup* aLoadGroup) { mLoadGroup = aLoadGroup; }
@@ -874,7 +874,7 @@ void MainThreadFetchResolver::OnResponseAvailableInternal(
     
     
     
-    Document* doc = inner ? inner->GetExtantDoc() : nullptr;
+    const RefPtr<Document> doc = inner ? inner->GetExtantDoc() : nullptr;
     if (doc) {
       doc->NotifyFetchOrXHRSuccess();
     }
@@ -1769,6 +1769,26 @@ template void FetchBody<Response>::MaybeTeeReadableStreamBody(
     JSContext* aCx, ReadableStream** aBodyOut,
     FetchStreamReader** aStreamReader, nsIInputStream** aInputStream,
     ErrorResult& aRv);
+
+template <class Derived>
+void FetchBody<Derived>::MaybeRebindReadableStreamBody() {
+  if (!mReadableStreamBody) {
+    return;
+  }
+
+  
+  
+  
+  nsCOMPtr<nsIInputStream> currentBody;
+  DerivedClass()->GetBody(getter_AddRefs(currentBody));
+  if (currentBody) {
+    mReadableStreamBody->SetInputStreamIfUnread(currentBody);
+  }
+}
+
+template void FetchBody<Request>::MaybeRebindReadableStreamBody();
+
+template void FetchBody<Response>::MaybeRebindReadableStreamBody();
 
 template <class Derived>
 void FetchBody<Derived>::RunAbortAlgorithm() {

@@ -51,7 +51,10 @@ class FetchDriverObserver {
       : mReporter(new ConsoleReportCollector()), mGotResponseAvailable(false) {}
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FetchDriverObserver);
-  void OnResponseAvailable(SafeRefPtr<InternalResponse> aResponse);
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void OnResponseAvailable(
+      SafeRefPtr<InternalResponse> aResponse);
 
   enum EndReason {
     eAborted,
@@ -81,7 +84,7 @@ class FetchDriverObserver {
  protected:
   virtual ~FetchDriverObserver() = default;
 
-  virtual void OnResponseAvailableInternal(
+  MOZ_CAN_RUN_SCRIPT virtual void OnResponseAvailableInternal(
       SafeRefPtr<InternalResponse> aResponse) = 0;
 
   nsCOMPtr<nsIConsoleReportCollector> mReporter;
@@ -231,7 +234,7 @@ class FetchDriver final : public nsIChannelEventSink,
 
   nsresult HttpFetch(const nsACString& aPreferredAlternativeDataType = ""_ns);
   
-  SafeRefPtr<InternalResponse> BeginAndGetFilteredResponse(
+  MOZ_CAN_RUN_SCRIPT SafeRefPtr<InternalResponse> BeginAndGetFilteredResponse(
       SafeRefPtr<InternalResponse> aResponse, bool aFoundOpaqueRedirect);
   
   
@@ -240,7 +243,8 @@ class FetchDriver final : public nsIChannelEventSink,
   void SetRequestHeaders(nsIHttpChannel* aChannel, bool aStripRequestBodyHeader,
                          bool aStripAuthHeader) const;
 
-  void FinishOnStopRequest(AlternativeDataStreamListener* aAltDataListener);
+  MOZ_CAN_RUN_SCRIPT void FinishOnStopRequest(
+      AlternativeDataStreamListener* aAltDataListener);
 };
 
 }  

@@ -1364,6 +1364,7 @@ already_AddRefed<Promise> nsImageLoadingContent::RecognizeCurrentImageText(
 
               
               
+              
               CSSPoint points[4];
               points[0] = CSSPoint(quad.points()[0].x, quad.points()[0].y);
               points[1] = CSSPoint(quad.points()[1].x, quad.points()[1].y);

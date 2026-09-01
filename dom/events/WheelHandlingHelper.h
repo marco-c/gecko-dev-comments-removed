@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_WheelHandlingHelper_h_
 #define mozilla_WheelHandlingHelper_h_
 
@@ -171,8 +169,24 @@ class WheelTransaction {
   static void MayEndTransaction();
 
   static LayoutDeviceIntPoint GetScreenPoint(WidgetGUIEvent* aEvent);
-  static void OnFailToScrollTarget();
-  static void OnTimeout(nsITimer* aTimer, void* aClosure);
+  
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static void OnFailToScrollTarget();
+  
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static void OnTimeout(nsITimer* aTimer,
+                                                    void* aClosure);
+
   static void SetTimeout();
   static DeltaValues OverrideSystemScrollSpeed(WidgetWheelEvent* aEvent);
   static double ComputeAcceleratedWheelDelta(double aDelta, int32_t aFactor);

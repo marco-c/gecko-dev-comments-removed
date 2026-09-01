@@ -272,7 +272,13 @@ class WheelBlockState : public CancelableBlockState {
 
 
 
-  bool MaybeTimeout(const TimeStamp& aTimeStamp);
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool MaybeTimeout(const TimeStamp& aTimeStamp);
 
   
 

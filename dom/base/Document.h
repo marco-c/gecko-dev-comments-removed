@@ -1611,7 +1611,7 @@ class Document : public nsINode,
   void AddMediaElementWithMSE();
   void RemoveMediaElementWithMSE();
 
-  void DoNotifyPossibleTitleChange();
+  MOZ_CAN_RUN_SCRIPT void DoNotifyPossibleTitleChange();
 
   void InitFeaturePolicy(const Variant<Nothing, FeaturePolicyInfo, Element*>&
                              aContainerFeaturePolicy);
@@ -1984,7 +1984,8 @@ class Document : public nsINode,
   
   
   
-  ElementReadyCheckResult FullscreenElementReadyCheck(FullscreenRequest&);
+  MOZ_CAN_RUN_SCRIPT ElementReadyCheckResult
+  FullscreenElementReadyCheck(FullscreenRequest&);
 
   
 
@@ -2004,8 +2005,8 @@ class Document : public nsINode,
       bool aApplyFullscreenDirectly = false);
 
  private:
-  void RequestFullscreenInContentProcess(UniquePtr<FullscreenRequest> aRequest,
-                                         bool aApplyFullscreenDirectly);
+  MOZ_CAN_RUN_SCRIPT void RequestFullscreenInContentProcess(
+      UniquePtr<FullscreenRequest> aRequest, bool aApplyFullscreenDirectly);
   MOZ_CAN_RUN_SCRIPT void RequestFullscreenInParentProcess(
       UniquePtr<FullscreenRequest> aRequest);
 
@@ -2166,7 +2167,8 @@ class Document : public nsINode,
 
 
 
-  static bool HandlePendingFullscreenRequests(Document* aDocument);
+  MOZ_CAN_RUN_SCRIPT static bool HandlePendingFullscreenRequests(
+      Document* aDocument);
 
   
 
@@ -4242,7 +4244,7 @@ class Document : public nsINode,
   
   
   
-  void NotifyFetchOrXHRSuccess();
+  MOZ_CAN_RUN_SCRIPT void NotifyFetchOrXHRSuccess();
 
   
   void SetNotifyFetchSuccess(bool aShouldNotify);
@@ -4638,8 +4640,7 @@ class Document : public nsINode,
   
   
   
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool ApplyFullscreen(
-      UniquePtr<FullscreenRequest>);
+  MOZ_CAN_RUN_SCRIPT bool ApplyFullscreen(UniquePtr<FullscreenRequest>);
 
   void RemoveDocStyleSheetsFromStyleSets();
   void ResetStylesheetsToURI(nsIURI* aURI);

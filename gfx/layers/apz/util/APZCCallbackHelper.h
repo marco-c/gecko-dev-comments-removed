@@ -12,8 +12,6 @@
 #include "mozilla/layers/MatrixMessage.h"
 #include "nsRefreshObservers.h"
 
-#include <functional>
-
 class nsIContent;
 class nsIWidget;
 class nsPresContext;
@@ -163,7 +161,7 @@ class APZCCallbackHelper {
       uint64_t aInputBlockId);
 
   
-  static void NotifyMozMouseScrollEvent(
+  MOZ_CAN_RUN_SCRIPT static void NotifyMozMouseScrollEvent(
       const ScrollableLayerGuid::ViewID& aScrollId, const nsString& aEvent);
 
   

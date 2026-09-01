@@ -401,9 +401,12 @@ class AsyncPanZoomController {
   
 
 
-  nsEventStatus HandleInputEvent(
-      const InputData& aEvent,
-      const ScreenToParentLayerMatrix4x4& aTransformToApzc);
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsEventStatus
+  HandleInputEvent(const InputData& aEvent,
+                   const ScreenToParentLayerMatrix4x4& aTransformToApzc);
 
   
 
@@ -600,7 +603,8 @@ class AsyncPanZoomController {
   OuterCSSCoord ConvertScrollbarPoint(const ParentLayerPoint& aScrollbarPoint,
                                       const ScrollbarData& aThumbData) const;
 
-  void NotifyMozMouseScrollEvent(const nsString& aString) const;
+  MOZ_CAN_RUN_SCRIPT void NotifyMozMouseScrollEvent(
+      const nsString& aString) const;
 
   bool OverscrollBehaviorAllowsSwipe() const;
 
@@ -724,7 +728,8 @@ class AsyncPanZoomController {
   
 
 
-  nsEventStatus OnScrollWheel(const ScrollWheelInput& aEvent);
+  MOZ_CAN_RUN_SCRIPT nsEventStatus
+  OnScrollWheel(const ScrollWheelInput& aEvent);
 
   
 

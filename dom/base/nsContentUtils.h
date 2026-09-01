@@ -1751,11 +1751,10 @@ class nsContentUtils {
 
 
 
-  static nsresult DispatchChromeEvent(Document* aDoc,
-                                      mozilla::dom::EventTarget* aTarget,
-                                      const nsAString& aEventName, CanBubble,
-                                      Cancelable,
-                                      bool* aDefaultAction = nullptr);
+  MOZ_CAN_RUN_SCRIPT static nsresult DispatchChromeEvent(
+      Document* aDoc, mozilla::dom::EventTarget* aTarget,
+      const nsAString& aEventName, CanBubble, Cancelable,
+      bool* aDefaultAction = nullptr);
 
   
 
@@ -1783,12 +1782,12 @@ class nsContentUtils {
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult DispatchEventOnlyToChrome(
+  MOZ_CAN_RUN_SCRIPT static nsresult DispatchEventOnlyToChrome(
       Document* aDoc, mozilla::dom::EventTarget* aTarget,
       const nsAString& aEventName, CanBubble, Cancelable,
       Composed aComposed = Composed::eDefault, bool* aDefaultAction = nullptr);
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult DispatchEventOnlyToChrome(
+  MOZ_CAN_RUN_SCRIPT static nsresult DispatchEventOnlyToChrome(
       Document* aDoc, mozilla::dom::EventTarget* aTarget,
       const nsAString& aEventName, CanBubble aCanBubble, Cancelable aCancelable,
       bool* aDefaultAction) {

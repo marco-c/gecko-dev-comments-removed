@@ -1644,11 +1644,12 @@ void Element::NotifyUAWidgetSetupOrChange() {
   
   nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
       "Element::NotifyUAWidgetSetupOrChange::UAWidgetSetupOrChange",
-      [self = RefPtr<Element>(this), doc = RefPtr<Document>(doc)]() {
-        nsContentUtils::DispatchChromeEvent(doc, self,
-                                            u"UAWidgetSetupOrChange"_ns,
-                                            CanBubble::eYes, Cancelable::eNo);
-      }));
+      [self = RefPtr<Element>(this), doc = RefPtr<Document>(doc)]()
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+            nsContentUtils::DispatchChromeEvent(
+                doc, self, u"UAWidgetSetupOrChange"_ns, CanBubble::eYes,
+                Cancelable::eNo);
+          }));
 }
 
 void Element::TeardownUAShadowRoot(NotifyUAWidget aNotify,
@@ -1674,19 +1675,20 @@ void Element::TeardownUAShadowRoot(NotifyUAWidget aNotify,
   
   nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
       "Element::NotifyUAWidgetTeardownAndUnattachShadow::UAWidgetTeardown",
-      [self = RefPtr<Element>(this), doc = RefPtr<Document>(doc)]() {
-        
-        bool hasHadScriptObject = true;
-        nsIScriptGlobalObject* scriptObject =
-            doc->GetScriptHandlingObject(hasHadScriptObject);
-        if (!scriptObject && hasHadScriptObject) {
-          return;
-        }
+      [self = RefPtr<Element>(this), doc = RefPtr<Document>(doc)]()
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+            
+            bool hasHadScriptObject = true;
+            nsIScriptGlobalObject* scriptObject =
+                doc->GetScriptHandlingObject(hasHadScriptObject);
+            if (!scriptObject && hasHadScriptObject) {
+              return;
+            }
 
-        (void)nsContentUtils::DispatchChromeEvent(
-            doc, self, u"UAWidgetTeardown"_ns, CanBubble::eYes,
-            Cancelable::eNo);
-      }));
+            (void)nsContentUtils::DispatchChromeEvent(
+                doc, self, u"UAWidgetTeardown"_ns, CanBubble::eYes,
+                Cancelable::eNo);
+          }));
 }
 
 void Element::UnattachShadow() {

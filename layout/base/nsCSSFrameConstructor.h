@@ -1457,12 +1457,10 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   
-  void AddFrameConstructionItemsInternal(nsFrameConstructorState& aState,
-                                         nsIContent* aContent,
-                                         nsContainerFrame* aParentFrame,
-                                         bool aSuppressWhiteSpaceOptimizations,
-                                         ComputedStyle*, ItemFlags,
-                                         FrameConstructionItemList& aItems);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void AddFrameConstructionItemsInternal(
+      nsFrameConstructorState& aState, nsIContent* aContent,
+      nsContainerFrame* aParentFrame, bool aSuppressWhiteSpaceOptimizations,
+      ComputedStyle*, ItemFlags, FrameConstructionItemList& aItems);
 
   
 

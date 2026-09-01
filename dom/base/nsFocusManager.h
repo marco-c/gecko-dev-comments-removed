@@ -326,7 +326,8 @@ class nsFocusManager final : public nsIFocusManager,
   
 
 
-  void ActivateOrDeactivate(nsPIDOMWindowOuter* aWindow, bool aActive);
+  MOZ_CAN_RUN_SCRIPT void ActivateOrDeactivate(nsPIDOMWindowOuter* aWindow,
+                                               bool aActive);
 
   
 
@@ -577,6 +578,19 @@ class nsFocusManager final : public nsIFocusManager,
   void GetSelectionLocation(Document* aDocument, mozilla::PresShell* aPresShell,
                             nsIContent** aStartContent,
                             nsIContent** aEndContent);
+
+  
+
+
+
+
+
+
+  void GetSequentialFocusNavigationStartingPoint(Document* aDocument,
+                                                 nsIContent* aFocusedContent,
+                                                 bool aForward,
+                                                 nsIContent** aStartContent,
+                                                 bool* aConsiderStartContent);
 
   
 

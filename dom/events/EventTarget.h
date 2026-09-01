@@ -284,14 +284,14 @@ class EventTarget : public nsISupports, public nsWrapperCache {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  virtual void ActivationBehavior(EventChainPostVisitor& aVisitor) {}
+  MOZ_CAN_RUN_SCRIPT virtual void ActivationBehavior(
+      EventChainPostVisitor& aVisitor) {}
 
   
 
 
 
-  virtual void LegacyCanceledActivationBehavior(
+  MOZ_CAN_RUN_SCRIPT virtual void LegacyCanceledActivationBehavior(
       EventChainPostVisitor& aVisitor) {}
 
   

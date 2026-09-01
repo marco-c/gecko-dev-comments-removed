@@ -289,7 +289,8 @@ void nsComboboxControlFrame::Destroy(DestroyContext& aContext) {
   auto& select = Select();
   if (select.OpenInParentProcess()) {
     nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
-        "nsComboboxControlFrame::Destroy", [element = RefPtr{&select}] {
+        "nsComboboxControlFrame::Destroy",
+        [element = RefPtr{&select}]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
           
           
           
@@ -297,9 +298,10 @@ void nsComboboxControlFrame::Destroy(DestroyContext& aContext) {
           
           if (!element->IsCombobox() ||
               !element->GetPrimaryFrame(FlushType::Frames)) {
+            const RefPtr<dom::Document> doc = element->OwnerDoc();
             nsContentUtils::DispatchChromeEvent(
-                element->OwnerDoc(), element, u"mozhidedropdown"_ns,
-                CanBubble::eYes, Cancelable::eNo);
+                doc, element, u"mozhidedropdown"_ns, CanBubble::eYes,
+                Cancelable::eNo);
           }
         }));
   }

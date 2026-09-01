@@ -1725,20 +1725,20 @@ class Element : public FragmentOrElement {
 
   
   enum class NotifyUAWidget : bool { No, Yes };
-  void AttachAndSetUAShadowRoot(NotifyUAWidget = NotifyUAWidget::Yes,
-                                DelegatesFocus = DelegatesFocus::No,
-                                CustomSlotDispatch = CustomSlotDispatch::No,
-                                bool aNotify = true);
+  MOZ_CAN_RUN_SCRIPT void AttachAndSetUAShadowRoot(
+      NotifyUAWidget = NotifyUAWidget::Yes, DelegatesFocus = DelegatesFocus::No,
+      CustomSlotDispatch = CustomSlotDispatch::No, bool aNotify = true);
 
   
   
-  void NotifyUAWidgetSetupOrChange();
+  MOZ_CAN_RUN_SCRIPT void NotifyUAWidgetSetupOrChange();
 
   enum class UnattachShadowRoot : bool { No, Yes };
   
   
-  void TeardownUAShadowRoot(NotifyUAWidget = NotifyUAWidget::Yes,
-                            UnattachShadowRoot = UnattachShadowRoot::Yes);
+  MOZ_CAN_RUN_SCRIPT void TeardownUAShadowRoot(
+      NotifyUAWidget = NotifyUAWidget::Yes,
+      UnattachShadowRoot = UnattachShadowRoot::Yes);
 
   void UnattachShadow();
 

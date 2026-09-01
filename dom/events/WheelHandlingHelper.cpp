@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WheelHandlingHelper.h"
 
 #include <utility>  
@@ -362,10 +360,12 @@ void WheelTransaction::OnFailToScrollTarget() {
 
   if (StaticPrefs::test_mousescroll()) {
     
+    const RefPtr<dom::Document> doc =
+        sScrollTargetFrame->GetContent()->OwnerDoc();
+    const nsCOMPtr<nsIContent> content = sScrollTargetFrame->GetContent();
     nsContentUtils::DispatchEventOnlyToChrome(
-        sScrollTargetFrame->GetContent()->OwnerDoc(),
-        sScrollTargetFrame->GetContent(), u"MozMouseScrollFailed"_ns,
-        CanBubble::eYes, Cancelable::eYes);
+        doc, content, u"MozMouseScrollFailed"_ns, CanBubble::eYes,
+        Cancelable::eYes);
   }
   
   
@@ -392,9 +392,10 @@ void WheelTransaction::OnTimeout(nsITimer* aTimer, void* aClosure) {
 
   if (StaticPrefs::test_mousescroll()) {
     
+    const RefPtr<dom::Document> doc = frame->GetContent()->OwnerDoc();
+    const nsCOMPtr<nsIContent> content = frame->GetContent();
     nsContentUtils::DispatchEventOnlyToChrome(
-        frame->GetContent()->OwnerDoc(), frame->GetContent(),
-        u"MozMouseScrollTransactionTimeout"_ns, CanBubble::eYes,
+        doc, content, u"MozMouseScrollTransactionTimeout"_ns, CanBubble::eYes,
         Cancelable::eYes);
   }
 }
@@ -535,8 +536,8 @@ bool ScrollbarsForWheel::IsActive() {
   if (sActiveOwner) {
     return true;
   }
-  for (size_t i = 0; i < kNumberOfTargets; ++i) {
-    if (sActivatedScrollTargets[i]) {
+  for (auto& sActivatedScrollTarget : sActivatedScrollTargets) {
+    if (sActivatedScrollTarget) {
       return true;
     }
   }
@@ -567,8 +568,8 @@ void ScrollbarsForWheel::TemporarilyActivateAllPossibleScrollTargets(
 
 
 void ScrollbarsForWheel::DeactivateAllTemporarilyActivatedScrollTargets() {
-  for (size_t i = 0; i < kNumberOfTargets; i++) {
-    AutoWeakFrame* scrollTarget = &sActivatedScrollTargets[i];
+  for (auto& sActivatedScrollTarget : sActivatedScrollTargets) {
+    AutoWeakFrame* scrollTarget = &sActivatedScrollTarget;
     if (*scrollTarget) {
       nsIScrollbarMediator* scrollbarMediator = do_QueryFrame(*scrollTarget);
       if (scrollbarMediator) {

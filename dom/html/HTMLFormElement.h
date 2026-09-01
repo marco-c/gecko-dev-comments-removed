@@ -302,7 +302,7 @@ class HTMLFormElement final : public nsGenericHTMLElement {
 
   MOZ_CAN_RUN_SCRIPT void MaybeSubmit(Element* aSubmitter);
   MOZ_CAN_RUN_SCRIPT void MaybeReset(Element* aSubmitter);
-  void Submit(ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void Submit(ErrorResult& aRv);
 
   
 
@@ -371,7 +371,7 @@ class HTMLFormElement final : public nsGenericHTMLElement {
 
 
 
-  nsresult DoSubmit(Event* aEvent = nullptr);
+  MOZ_CAN_RUN_SCRIPT nsresult DoSubmit(Event* aEvent = nullptr);
 
   
 
@@ -385,7 +385,8 @@ class HTMLFormElement final : public nsGenericHTMLElement {
 
 
 
-  nsresult SubmitSubmission(HTMLFormSubmission* aFormSubmission);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  SubmitSubmission(HTMLFormSubmission* aFormSubmission);
 
   
 
@@ -399,7 +400,8 @@ class HTMLFormElement final : public nsGenericHTMLElement {
 
 
 
-  nsresult DispatchBeforeSubmitChromeOnlyEvent(bool* aCancelSubmit);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  DispatchBeforeSubmitChromeOnlyEvent(bool* aCancelSubmit);
 
   
 
@@ -448,7 +450,7 @@ class HTMLFormElement final : public nsGenericHTMLElement {
 
 
 
-  void FlushPendingSubmission();
+  MOZ_CAN_RUN_SCRIPT void FlushPendingSubmission();
 
   
 
