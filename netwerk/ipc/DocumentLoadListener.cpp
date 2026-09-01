@@ -8,7 +8,6 @@
 #include "imgLoader.h"
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/AppShutdown.h"
-#include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/Components.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/DynamicFpiNavigationHeuristic.h"
@@ -20,7 +19,6 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/StaticPrefs_fission.h"
-#include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/dom/BrowserParent.h"
@@ -58,12 +56,10 @@
 #include "nsExternalHelperAppService.h"
 #include "nsHttpChannel.h"
 #include "nsIBrowser.h"
-#include "nsIBrowserDOMWindow.h"
 #include "nsICachingChannel.h"
 #include "nsIClassifiedChannel.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsINetworkInterceptController.h"
-#include "nsISiteContainerService.h"
 #include "nsIStreamConverterService.h"
 #include "nsIViewSourceChannel.h"
 #include "nsIXULRuntime.h"
@@ -77,7 +73,6 @@
 #include "nsSHistory.h"
 #include "nsSandboxFlags.h"
 #include "nsScriptSecurityManager.h"
-#include "nsServiceManagerUtils.h"
 #include "nsStringStream.h"
 #include "nsURILoader.h"
 #include "nsWebNavigationInfo.h"
@@ -761,65 +756,6 @@ static Result<SessionHistoryEntry*, const char*> ValidateHistoryLoad(
   return loading->mEntry;
 }
 
-
-
-
-static Maybe<uint32_t> SelectContainerForNavigation(
-    nsIURI* aURI, CanonicalBrowsingContext* aContext,
-    uint32_t aBaselineContainer) {
-  if (!StaticPrefs::privacy_containers_switchDuringNavigation_enabled()) {
-    return Nothing();
-  }
-
-  
-  
-  
-  if (!aContext || !aContext->IsTopContent() ||
-      aContext->Group()->Toplevels().Length() != 1) {
-    return Nothing();
-  }
-
-  
-  
-  nsCOMPtr<nsIBrowserDOMWindow> browserDOMWindow =
-      aContext->GetBrowserDOMWindow();
-  if (!browserDOMWindow) {
-    return Nothing();
-  }
-
-  
-  
-  
-  if (!aContext->UseRemoteTabs()) {
-    return Nothing();
-  }
-
-  
-  if (aContext->UsePrivateBrowsing()) {
-    return Nothing();
-  }
-
-  
-  
-  if (!aURI || (!aURI->SchemeIs("http") && !aURI->SchemeIs("https"))) {
-    return Nothing();
-  }
-
-  nsCOMPtr<nsISiteContainerService> siteContainers =
-      do_GetService("@mozilla.org/site-container-service;1");
-  if (!siteContainers) {
-    return Nothing();
-  }
-
-  uint32_t targetContainer = aBaselineContainer;
-  if (NS_WARN_IF(NS_FAILED(siteContainers->ContainerForNavigation(
-          aURI, aBaselineContainer, &targetContainer)))) {
-    return Nothing();
-  }
-
-  return Some(targetContainer);
-}
-
 auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
                                 LoadInfo* aLoadInfo, nsLoadFlags aLoadFlags,
                                 uint32_t aCacheKey,
@@ -942,15 +878,6 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
     *aRv = NS_BINDING_ABORTED;
     mParentChannelListener = nullptr;
     return nullptr;
-  }
-
-  if (!aLoadState->LoadIsFromSessionHistory()) {
-    Maybe<uint32_t> targetUserContextId = SelectContainerForNavigation(
-        aLoadState->URI(), documentContext, attrs.mUserContextId);
-    if (targetUserContextId && *targetUserContextId != attrs.mUserContextId) {
-      attrs.mUserContextId = *targetUserContextId;
-      mSwitchedContainer = true;
-    }
   }
 
   if (!nsDocShell::CreateAndConfigureRealChannelForLoadState(
@@ -1397,18 +1324,6 @@ static void SetNavigating(CanonicalBrowsingContext* aBrowsingContext,
   NS_DispatchToMainThread(NS_NewRunnableFunction(
       "DocumentLoadListener::SetNavigating",
       [browser, aNavigating]() { browser->SetIsNavigating(aNavigating); }));
-}
-
-static void NotifyLoadRetargeted(CanonicalBrowsingContext* aBrowsingContext) {
-  RefPtr<Element> element = aBrowsingContext->GetEmbedderElement();
-  if (!element) {
-    return;
-  }
-
-  auto dispatcher = MakeRefPtr<AsyncEventDispatcher>(
-      element, u"BrowserLoadRetargeted"_ns, CanBubble::eYes,
-      ChromeOnlyDispatch::eYes);
-  dispatcher->PostDOMEvent();
 }
 
  bool DocumentLoadListener::LoadInParent(
@@ -1942,41 +1857,14 @@ static bool IsFirstLoadInWindow(nsIChannel* aChannel) {
   return loadInfo->GetIsNewWindowTarget();
 }
 
-static int32_t GetBrowserLinkOpenNewWindow() {
-  
-  
-  
-  int32_t where = Preferences::GetInt("browser.link.open_newwindow",
-                                      nsIBrowserDOMWindow::OPEN_NEWTAB);
-  if (where == nsIBrowserDOMWindow::OPEN_CURRENTWINDOW ||
-      where == nsIBrowserDOMWindow::OPEN_NEWWINDOW ||
-      where == nsIBrowserDOMWindow::OPEN_NEWTAB) {
-    return where;
-  }
-  
-  
-  
-  return nsIBrowserDOMWindow::OPEN_NEWTAB;
-}
 
 
 
 
-
-static int32_t GetWhereToOpen(nsIChannel* aChannel, bool aIsDocumentLoad,
-                              bool aSwitchedContainer) {
+static int32_t GetWhereToOpen(nsIChannel* aChannel, bool aIsDocumentLoad) {
   
   if (!aIsDocumentLoad) {
     return nsIBrowserDOMWindow::OPEN_CURRENTWINDOW;
-  }
-
-  
-  
-  if (aSwitchedContainer) {
-    int32_t where = GetBrowserLinkOpenNewWindow();
-    return where == nsIBrowserDOMWindow::OPEN_CURRENTWINDOW
-               ? nsIBrowserDOMWindow::OPEN_NEWTAB
-               : where;
   }
 
   
@@ -1991,7 +1879,20 @@ static int32_t GetWhereToOpen(nsIChannel* aChannel, bool aIsDocumentLoad,
     return nsIBrowserDOMWindow::OPEN_CURRENTWINDOW;
   }
 
-  return GetBrowserLinkOpenNewWindow();
+  
+  
+  
+  int32_t where = Preferences::GetInt("browser.link.open_newwindow",
+                                      nsIBrowserDOMWindow::OPEN_NEWTAB);
+  if (where == nsIBrowserDOMWindow::OPEN_CURRENTWINDOW ||
+      where == nsIBrowserDOMWindow::OPEN_NEWWINDOW ||
+      where == nsIBrowserDOMWindow::OPEN_NEWTAB) {
+    return where;
+  }
+  
+  
+  
+  return nsIBrowserDOMWindow::OPEN_NEWTAB;
 }
 
 static bool ContextCanProcessSwitch(CanonicalBrowsingContext* aBrowsingContext,
@@ -2058,8 +1959,7 @@ static bool ContextCanProcessSwitch(CanonicalBrowsingContext* aBrowsingContext,
 }
 
 static RefPtr<dom::BrowsingContextCallbackReceivedPromise> SwitchToNewTab(
-    CanonicalBrowsingContext* aLoadingBrowsingContext, int32_t aWhere,
-    const OriginAttributes& aOriginAttributes) {
+    CanonicalBrowsingContext* aLoadingBrowsingContext, int32_t aWhere) {
   MOZ_ASSERT(aWhere == nsIBrowserDOMWindow::OPEN_NEWTAB ||
                  aWhere == nsIBrowserDOMWindow::OPEN_NEWTAB_BACKGROUND ||
                  aWhere == nsIBrowserDOMWindow::OPEN_NEWTAB_FOREGROUND ||
@@ -2084,11 +1984,8 @@ static RefPtr<dom::BrowsingContextCallbackReceivedPromise> SwitchToNewTab(
   
   
   
-  
-  
-  
   nsCOMPtr<nsIPrincipal> triggeringPrincipal =
-      NullPrincipal::Create(aOriginAttributes);
+      NullPrincipal::Create(aLoadingBrowsingContext->OriginAttributesRef());
 
   RefPtr<nsOpenWindowInfo> openInfo = new nsOpenWindowInfo();
   openInfo->mBrowsingContextReadyCallback =
@@ -2136,6 +2033,10 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
            GetLoadingBrowsingContext()->Top()->BrowserId()));
 
   
+  int32_t where = GetWhereToOpen(mChannel, mIsDocumentLoad);
+  bool switchToNewTab = where != nsIBrowserDOMWindow::OPEN_CURRENTWINDOW;
+
+  
   
   
   
@@ -2146,11 +2047,6 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
   
   RefPtr<CanonicalBrowsingContext> browsingContext =
       GetLoadingBrowsingContext();
-
-  
-  int32_t where = GetWhereToOpen(mChannel, mIsDocumentLoad, mSwitchedContainer);
-  bool switchToNewTab = where != nsIBrowserDOMWindow::OPEN_CURRENTWINDOW;
-
   
   RefPtr<WindowGlobalParent> parentWindow =
       switchToNewTab ? nullptr : GetParentWindowContext();
@@ -2245,19 +2141,11 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
   
   
   if (switchToNewTab) {
-    nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
-
-    
-    
-    
-    OriginAttributes newTabAttrs = browsingContext->OriginAttributesRef();
-    newTabAttrs.mUserContextId = loadInfo->GetOriginAttributes().mUserContextId;
-    SwitchToNewTab(browsingContext, where, newTabAttrs)
+    SwitchToNewTab(browsingContext, where)
         ->Then(
             GetMainThreadSerialEventTarget(), __func__,
-            [self = RefPtr{this}, options, startedIn = browsingContext,
-             switchedContainer = mSwitchedContainer](
-                const RefPtr<BrowsingContext>& aBrowsingContext)
+            [self = RefPtr{this},
+             options](const RefPtr<BrowsingContext>& aBrowsingContext)
                 MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA mutable {
                   if (aBrowsingContext->IsDiscarded()) {
                     MOZ_LOG(gProcessIsolationLog, LogLevel::Error,
@@ -2272,10 +2160,6 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
                   self->TriggerProcessSwitch(
                       MOZ_KnownLive(aBrowsingContext->Canonical()), options,
                        true);
-
-                  if (switchedContainer) {
-                    NotifyLoadRetargeted(startedIn);
-                  }
                 },
             [self = RefPtr{this}](const CopyableErrorResult&) {
               MOZ_LOG(gProcessIsolationLog, LogLevel::Error,
@@ -2284,10 +2168,6 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
             });
     return true;
   }
-
-  MOZ_ASSERT(!mSwitchedContainer,
-             "A load which switched container must have been retargeted into a "
-             "new tab");
 
   
   
@@ -3359,31 +3239,6 @@ DocumentLoadListener::AsyncOnChannelRedirect(
   nsCOMPtr<nsIURI> uri;
   mChannel->GetOriginalURI(getter_AddRefs(uri));
   loadInfoFromChannel->SetChannelCreationOriginalURI(uri);
-
-  if (CanonicalBrowsingContext* bc = GetDocumentBrowsingContext()) {
-    MOZ_ASSERT(mSwitchedContainer ||
-                   loadInfoFromChannel->GetOriginAttributes().mUserContextId ==
-                       bc->OriginAttributesRef().mUserContextId,
-               "The browsing context and the channel should be in the same "
-               "container, unless the load switched container.");
-
-    
-    
-    
-    
-    if (!(aFlags & nsIChannelEventSink::REDIRECT_INTERNAL) &&
-        !(mLoadingSessionHistoryInfo &&
-          mLoadingSessionHistoryInfo->mLoadIsFromSessionHistory)) {
-      OriginAttributes attrs = loadInfoFromChannel->GetOriginAttributes();
-      if (Maybe<uint32_t> targetUserContextId =
-              SelectContainerForNavigation(uri, bc, attrs.mUserContextId)) {
-        attrs.mUserContextId = *targetUserContextId;
-        loadInfoFromChannel->SetOriginAttributes(attrs);
-      }
-      mSwitchedContainer =
-          attrs.mUserContextId != bc->OriginAttributesRef().mUserContextId;
-    }
-  }
 
   
   

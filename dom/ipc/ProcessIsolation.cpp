@@ -815,16 +815,6 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
        aChannelCreationURI->GetSpecOrDefault().get()));
 
   
-  
-  
-  OriginAttributes originAttributes = aTopBC->OriginAttributesRef();
-  if (aForNewTab && !aParentWindow &&
-      resultOrPrecursor->GetIsContentPrincipal()) {
-    originAttributes.mUserContextId =
-        resultOrPrecursor->OriginAttributesRef().mUserContextId;
-  }
-
-  
   if (mozilla::BFCacheInParent() && nsSHistory::GetMaxTotalViewers() > 0 &&
       !aForNewTab && !aParentWindow && !aTopBC->HadOriginalOpener() &&
       behavior != IsolationBehavior::Parent &&
@@ -853,8 +843,9 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
 
   
   if (behavior != IsolationBehavior::WebContent) {
-    options.mRemoteType = MOZ_TRY(SpecialBehaviorRemoteType(
-        behavior, aCurrentRemoteType, aParentWindow, originAttributes));
+    options.mRemoteType = MOZ_TRY(
+        SpecialBehaviorRemoteType(behavior, aCurrentRemoteType, aParentWindow,
+                                  aTopBC->OriginAttributesRef()));
 
     if (options.mRemoteType != aCurrentRemoteType &&
         (options.mRemoteType.IsEmpty() || aCurrentRemoteType.IsEmpty())) {
@@ -973,7 +964,7 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
   switch (webProcessType) {
     case WebProcessType::Web:
       options.mRemoteType =
-          SharedWebRemoteType(originAttributes, !isJitAllowed);
+          SharedWebRemoteType(aTopBC->OriginAttributesRef(), !isJitAllowed);
       break;
     case WebProcessType::WebIsolated:
       options.mRemoteType =

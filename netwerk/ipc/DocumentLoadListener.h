@@ -571,11 +571,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
-  bool mSwitchedContainer = false;
-
-  
-  
-  
   uint64_t mRedirectChannelId = 0;
   
   

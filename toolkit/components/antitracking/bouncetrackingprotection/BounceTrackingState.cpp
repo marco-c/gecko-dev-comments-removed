@@ -443,30 +443,15 @@ nsresult BounceTrackingState::OnDocumentStartRequest(nsIChannel* aChannel) {
   
   
   
-  
-  
-  
-  
-  
 #ifdef DEBUG
   if (nsCOMPtr<nsIURI> channelURIForAssert;
       NS_SUCCEEDED(aChannel->GetURI(getter_AddRefs(channelURIForAssert))) &&
       channelURIForAssert &&
       mozilla::net::SchemeIsHttpOrHttps(channelURIForAssert)) {
-    constexpr uint32_t kIgnoredForAssert =
-        OriginAttributes::STRIP_FIRST_PARTY_DOMAIN |
-        OriginAttributes::STRIP_PARITION_KEY |
-        OriginAttributes::STRIP_USER_CONTEXT_ID;
-
-    OriginAttributes channelAttrsForAssert = loadInfo->GetOriginAttributes();
-    channelAttrsForAssert.StripAttributes(kIgnoredForAssert);
-
-    OriginAttributes stateAttrsForAssert = mOriginAttributes;
-    stateAttrsForAssert.StripAttributes(kIgnoredForAssert);
-
-    MOZ_ASSERT(channelAttrsForAssert == stateAttrsForAssert,
-               "BTP: channel OriginAttributes (PBM) diverged from the cached "
-               "BounceTrackingState OriginAttributes (Bug 2054941).");
+    MOZ_ASSERT(
+        loadInfo->GetOriginAttributes().EqualsIgnoringFPD(mOriginAttributes),
+        "BTP: channel OriginAttributes (userContextId/PBM) diverged from the "
+        "cached BounceTrackingState OriginAttributes (Bug 2054941).");
   }
 #endif
 
