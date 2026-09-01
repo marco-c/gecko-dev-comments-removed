@@ -3213,6 +3213,68 @@ enum AttributeFlags {
     CaseSensitivityDependsOnName,
 }
 
+
+
+
+
+
+
+
+
+
+
+fn is_ascii_case_insensitive_html_attribute(name: &str) -> bool {
+    matches!(
+        name,
+        "accept"
+            | "accept-charset"
+            | "align"
+            | "alink"
+            | "axis"
+            | "bgcolor"
+            | "charset"
+            | "checked"
+            | "clear"
+            | "codetype"
+            | "color"
+            | "compact"
+            | "declare"
+            | "defer"
+            | "dir"
+            | "direction"
+            | "disabled"
+            | "enctype"
+            | "face"
+            | "frame"
+            | "hreflang"
+            | "http-equiv"
+            | "lang"
+            | "language"
+            | "link"
+            | "media"
+            | "method"
+            | "multiple"
+            | "nohref"
+            | "noresize"
+            | "noshade"
+            | "nowrap"
+            | "readonly"
+            | "rel"
+            | "rev"
+            | "rules"
+            | "scope"
+            | "scrolling"
+            | "selected"
+            | "shape"
+            | "target"
+            | "text"
+            | "type"
+            | "valign"
+            | "valuetype"
+            | "vlink"
+    )
+}
+
 impl AttributeFlags {
     fn to_case_sensitivity(
         self,
@@ -3223,13 +3285,7 @@ impl AttributeFlags {
             AttributeFlags::CaseSensitive => ParsedCaseSensitivity::ExplicitCaseSensitive,
             AttributeFlags::AsciiCaseInsensitive => ParsedCaseSensitivity::AsciiCaseInsensitive,
             AttributeFlags::CaseSensitivityDependsOnName => {
-                if !have_namespace
-                    && include!(concat!(
-                        env!("OUT_DIR"),
-                        "/ascii_case_insensitive_html_attributes.rs"
-                    ))
-                    .contains(local_name_lower)
-                {
+                if !have_namespace && is_ascii_case_insensitive_html_attribute(local_name_lower) {
                     ParsedCaseSensitivity::AsciiCaseInsensitiveIfInHtmlElementInHtmlDocument
                 } else {
                     ParsedCaseSensitivity::CaseSensitive
