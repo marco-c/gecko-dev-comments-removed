@@ -504,6 +504,20 @@ nsresult ServiceWorkerPrivate::Initialize() {
   AssertIsOnMainThread();
   MOZ_ASSERT(mInfo);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  auto neutralizeOnFailure = MakeScopeExit([&] { mInfo = nullptr; });
+
   nsCOMPtr<nsIPrincipal> principal = mInfo->Principal();
 
   nsCOMPtr<nsIURI> uri;
@@ -787,10 +801,12 @@ nsresult ServiceWorkerPrivate::Initialize() {
   
   RefreshRemoteWorkerData(regInfo);
 
+  neutralizeOnFailure.release();
   return NS_OK;
 }
 
 void ServiceWorkerPrivate::RegenerateClientInfo() {
+  
   
   
   MOZ_DIAGNOSTIC_ASSERT(mClientInfo.isSome());
@@ -969,8 +985,14 @@ nsresult ServiceWorkerPrivate::SendCookieChangeEvent(
     const net::CookieStruct& aCookie, bool aCookieDeleted,
     RefPtr<ServiceWorkerRegistrationInfo> aRegistration) {
   AssertIsOnMainThread();
-  MOZ_ASSERT(mInfo);
   MOZ_ASSERT(aRegistration);
+
+  
+  
+  
+  if (NS_WARN_IF(!mInfo)) {
+    return NS_ERROR_DOM_INVALID_STATE_ERR;
+  }
 
   ServiceWorkerCookieChangeEventOpArgs args;
   args.cookie() = aCookie;
@@ -1013,8 +1035,14 @@ nsresult ServiceWorkerPrivate::SendPushEvent(
     const nsAString& aMessageId, const Maybe<nsTArray<uint8_t>>& aData,
     RefPtr<ServiceWorkerRegistrationInfo> aRegistration) {
   AssertIsOnMainThread();
-  MOZ_ASSERT(mInfo);
   MOZ_ASSERT(aRegistration);
+
+  
+  
+  
+  if (NS_WARN_IF(!mInfo)) {
+    return NS_ERROR_DOM_INVALID_STATE_ERR;
+  }
 
   ServiceWorkerPushEventOpArgs args;
   args.messageId() = nsString(aMessageId);
@@ -1596,6 +1624,8 @@ void ServiceWorkerPrivate::TerminateWorkerCallback(nsITimer* aTimer) {
 
   MOZ_ASSERT(aTimer == this->mIdleWorkerTimer, "Invalid timer!");
 
+  
+  
   
   
   
