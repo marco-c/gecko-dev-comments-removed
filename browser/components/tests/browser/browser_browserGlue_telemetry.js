@@ -11,76 +11,69 @@ ChromeUtils.defineESModuleGetters(this, {
 
 
 add_task(function check_startup_pinned_telemetry() {
-  const scalars = TelemetryTestUtils.getProcessScalars("parent");
-
   
   switch (AppConstants.platform) {
     case "win":
-      if (
-        AppConstants.platform === "win" &&
-        Services.sysinfo.getProperty("hasWinPackageId")
-      ) {
-        TelemetryTestUtils.assertScalar(
-          scalars,
-          "os.environment.is_taskbar_pinned",
-          false,
-          "Pin set on win MSIX"
-        );
+      Assert.strictEqual(
+        Glean.osEnvironment.isTaskbarPinned.testGetValue(),
+        false,
+        "Pin set on win"
+      );
+      if (Services.sysinfo.getProperty("hasWinPackageId")) {
         
         
         
         
-        TelemetryTestUtils.assertScalarUnset(
-          scalars,
-          "os.environment.is_taskbar_pinned_private"
+        Assert.strictEqual(
+          Glean.osEnvironment.isTaskbarPinnedPrivate.testGetValue(),
+          null,
+          "Pin private not set on win MSIX"
         );
       } else {
-        TelemetryTestUtils.assertScalar(
-          scalars,
-          "os.environment.is_taskbar_pinned",
-          false,
-          "Pin set on win"
-        );
-        TelemetryTestUtils.assertScalar(
-          scalars,
-          "os.environment.is_taskbar_pinned_private",
+        Assert.strictEqual(
+          Glean.osEnvironment.isTaskbarPinnedPrivate.testGetValue(),
           false,
           "Pin private set on win"
         );
       }
-      TelemetryTestUtils.assertScalarUnset(
-        scalars,
-        "os.environment.is_kept_in_dock"
+      Assert.strictEqual(
+        Glean.osEnvironment.isKeptInDock.testGetValue(),
+        null,
+        "Dock not set on win"
       );
       break;
     case "macosx":
-      TelemetryTestUtils.assertScalarUnset(
-        scalars,
-        "os.environment.is_taskbar_pinned"
+      Assert.strictEqual(
+        Glean.osEnvironment.isTaskbarPinned.testGetValue(),
+        null,
+        "Pin not set on mac"
       );
-      TelemetryTestUtils.assertScalarUnset(
-        scalars,
-        "os.environment.is_taskbar_pinned_private"
+      Assert.strictEqual(
+        Glean.osEnvironment.isTaskbarPinnedPrivate.testGetValue(),
+        null,
+        "Pin private not set on mac"
       );
-      TelemetryTestUtils.assertScalar(
-        scalars,
-        "os.environment.is_kept_in_dock",
+      Assert.strictEqual(
+        Glean.osEnvironment.isKeptInDock.testGetValue(),
         false,
         "Dock set on mac"
       );
       break;
     default:
-      TelemetryTestUtils.assertScalarUnset(
-        scalars,
-        "os.environment.is_taskbar_pinned"
+      Assert.strictEqual(
+        Glean.osEnvironment.isTaskbarPinned.testGetValue(),
+        null,
+        "Pin not set"
       );
-      TelemetryTestUtils.assertScalarUnset(
-        scalars,
-        "os.environment.is_taskbar_pinned_private"
+      Assert.strictEqual(
+        Glean.osEnvironment.isTaskbarPinnedPrivate.testGetValue(),
+        null,
+        "Pin private not set"
       );
-      TelemetryTestUtils.assertScalarUnset(
-        scalars,
-        "os.environment.is_kept_in_dock"
+      Assert.strictEqual(
+        Glean.osEnvironment.isKeptInDock.testGetValue(),
+        null,
+        "Dock not set"
       );
       break;
   }
@@ -93,41 +86,37 @@ add_task(function check_startup_pinned_telemetry() {
 
 
 add_task(function check_is_default_handler_telemetry() {
-  const scalars = TelemetryTestUtils.getProcessScalars("parent", true);
-
   const handlers = [".pdf", "mailto"];
 
   
   switch (AppConstants.platform) {
     case "win": {
-      
-      Assert.ok("os.environment.is_default_handler" in scalars);
-
-      const keys = Object.keys(scalars["os.environment.is_default_handler"]);
-      handlers.every(x => {
-        Assert.ok(keys.includes(x), `${x} handler present in telemetry`);
-        return true;
-      });
-
-      if (Cu.isInAutomation) {
+      for (const handler of handlers) {
         
-        handlers.every(x => {
-          TelemetryTestUtils.assertKeyedScalar(
-            scalars,
-            `os.environment.is_default_handler`,
-            x,
+        const isDefault =
+          Glean.osEnvironment.isDefaultHandler[handler].testGetValue();
+        Assert.notStrictEqual(
+          isDefault,
+          null,
+          `${handler} handler present in telemetry`
+        );
+
+        if (Cu.isInAutomation) {
+          
+          Assert.strictEqual(
+            isDefault,
             false,
-            `Not default ${x} handler on Windows`
+            `Not default ${handler} handler on Windows`
           );
-          return true;
-        });
+        }
       }
       break;
     }
     default:
-      TelemetryTestUtils.assertScalarUnset(
-        scalars,
-        "os.environment.is_default_handler"
+      Assert.deepEqual(
+        Glean.osEnvironment.isDefaultHandler.testGetValue() ?? {},
+        {},
+        "No handler present in telemetry"
       );
       break;
   }
