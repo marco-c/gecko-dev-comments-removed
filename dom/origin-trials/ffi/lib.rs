@@ -10,7 +10,6 @@ pub enum OriginTrial {
     
     TestTrial = 1,
     CoepCredentialless = 2,
-    PrivateAttributionV2 = 3,
     MLS = 4,
 
     MAX,
@@ -21,7 +20,6 @@ impl OriginTrial {
         Some(match s {
             "TestTrial" => Self::TestTrial,
             "CoepCredentialless" => Self::CoepCredentialless,
-            "PrivateAttributionV2" => Self::PrivateAttributionV2,
             "MLS" => Self::MLS,
             _ => return None,
         })

@@ -24,6 +24,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/AudioSessionBinding.h"
 #include "mozilla/dom/JSProcessActorParent.h"
+#include "mozilla/dom/LoadedOriginSet.h"
 #include "mozilla/dom/MediaSessionBinding.h"
 #include "mozilla/dom/MessageManagerCallback.h"
 #include "mozilla/dom/PContentParent.h"
@@ -525,15 +526,6 @@ class ContentParent final : public PContentParent,
     return PContentParent::RecvPHalConstructor(aActor);
   }
 
-  mozilla::ipc::IPCResult RecvAttributionEvent(
-      const nsACString& aHost, PrivateAttributionImpressionType aType,
-      uint32_t aIndex, const nsAString& aAd, const nsACString& aTargetHost);
-  mozilla::ipc::IPCResult RecvAttributionConversion(
-      const nsACString& aHost, const nsAString& aTask, uint32_t aHistogramSize,
-      const Maybe<uint32_t>& aLookbackDays,
-      const Maybe<PrivateAttributionImpressionType>& aImpressionType,
-      const nsTArray<nsString>& aAds, const nsTArray<nsCString>& aSourceHosts);
-
   PHeapSnapshotTempFileHelperParent* AllocPHeapSnapshotTempFileHelperParent();
 
   PRemoteSpellcheckEngineParent* AllocPRemoteSpellcheckEngineParent();
@@ -661,11 +653,6 @@ class ContentParent final : public PContentParent,
   
   
   
-  void TransmitBlobURLsForPrincipal(nsIPrincipal* aPrincipal);
-
-  
-  
-  
   void AddPrincipalToCookieInProcessCache(nsIPrincipal* aPrincipal);
   void TakeCookieInProcessCache(nsTArray<nsCOMPtr<nsIPrincipal>>& aList);
 
@@ -676,19 +663,6 @@ class ContentParent final : public PContentParent,
   bool ValidatePrincipal(
       nsIPrincipal* aPrincipal,
       const EnumSet<ValidatePrincipalOptions>& aOptions = {});
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void TransmitBlobDataIfBlobURL(nsIURI* aURI, const OriginAttributes& aAttrs);
 
   void OnCompositorDeviceReset() override;
 
@@ -1474,6 +1448,8 @@ class ContentParent final : public PContentParent,
     return mThreadsafeHandle;
   }
 
+  LoadedOriginSet* LoadedOrigins() const;
+
   RemoteWorkerServiceParent* GetRemoteWorkerServiceParent() const {
     return mRemoteWorkerServiceActor;
   }
@@ -1623,15 +1599,6 @@ class ContentParent final : public PContentParent,
 
   nsTArray<nsCOMPtr<nsIPrincipal>> mCookieInContentListCache;
 
-  
-  
-  
-  
-  
-  
-  
-  nsTArray<uint64_t> mLoadedOriginHashes;
-
   UniquePtr<mozilla::ipc::CrashReporterHost> mCrashReporter;
 
   
@@ -1717,17 +1684,27 @@ class ThreadsafeContentParentHandle final {
   [[nodiscard]] UniqueThreadsafeContentParentKeepAlive TryAddKeepAlive(
       uint64_t aBrowserId = 0) MOZ_EXCLUDES(mMutex);
 
+  LoadedOriginSet* LoadedOrigins() const { return mLoadedOrigins; }
+
+  
+  
+  bool ValidatePrincipal(
+      nsIPrincipal* aPrincipal,
+      const EnumSet<ValidatePrincipalOptions>& aOptions = {});
+
  private:
   ThreadsafeContentParentHandle(ContentParent* aActor, ContentParentId aChildID,
                                 const nsACString& aRemoteType)
-      : mChildID(aChildID), mRemoteType(aRemoteType), mWeakActor(aActor) {}
+      : mChildID(aChildID),
+        mLoadedOrigins(MakeRefPtr<LoadedOriginSet>(aRemoteType)),
+        mWeakActor(aActor) {}
   ~ThreadsafeContentParentHandle() { MOZ_ASSERT(!mWeakActor); }
 
   mozilla::RecursiveMutex mMutex{"ContentParentIdentity"};
 
   const ContentParentId mChildID;
 
-  nsCString mRemoteType MOZ_GUARDED_BY(mMutex);
+  const RefPtr<LoadedOriginSet> mLoadedOrigins;
 
   
   
