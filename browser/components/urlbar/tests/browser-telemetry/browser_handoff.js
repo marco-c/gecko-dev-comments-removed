@@ -38,6 +38,12 @@ add_setup(async function () {
   SearchSERPTelemetry.overrideSearchTelemetryForTests(TEST_PROVIDER_INFO);
   await waitForIdle();
 
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.newtab.featureGate", false]],
+  });
+
   await SearchTestUtils.installSearchExtension(
     {
       search_url: getPageUrl(true),

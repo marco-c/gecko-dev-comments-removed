@@ -4,6 +4,14 @@
 
 
 
+add_setup(async function () {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.newtab.featureGate", false]],
+  });
+});
+
 test_newtab({
   test: async function test_render_search_handoff() {
     const selector = "content-search-handoff-ui";
@@ -49,8 +57,19 @@ test_newtab({
     ]);
   },
   test: function test_render_logo_false() {
+    
+    const novaEnabled = Services.prefs.getBoolPref(
+      "browser.newtabpage.activity-stream.nova.enabled",
+      false
+    );
+
     let logoWordmark = content.document.querySelector(".logo-and-wordmark");
-    ok(!logoWordmark, "The logo is not rendered when pref is false");
+    
+    if (!novaEnabled) {
+      ok(!logoWordmark, "The logo is not rendered when pref is false");
+    } else {
+      ok(logoWordmark, "The logo is always rendered when Nova is enabled.");
+    }
   },
 });
 

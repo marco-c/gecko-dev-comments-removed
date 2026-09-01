@@ -40,6 +40,12 @@ class AwaitPromiseProvider extends UrlbarTestUtils.TestProvider {
 add_setup(async function () {
   await SearchTestUtils.installSearchExtension({}, { setAsDefault: true });
 
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.newtab.featureGate", false]],
+  });
+
   registerCleanupFunction(function () {
     SpecialPowers.clipboardCopyString("");
   });
