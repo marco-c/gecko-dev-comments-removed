@@ -961,25 +961,91 @@ var gBrowserInit = {
       return;
     }
 
-    BrowserUtils.callModulesFromCategory(
-      {
-        categoryName: "browser-window-idle-tasks",
-        profilerMarker: "perWindowIdleTask",
-        idleDispatch: true,
-        jsGlobal: globalThis,
+    function scheduleIdleTask(func, options) {
+      requestIdleCallback(function idleTaskRunner() {
+        if (!window.closed) {
+          func();
+        }
+      }, options);
+    }
+
+    scheduleIdleTask(() => {
+      
+      gSync.init();
+    });
+
+    scheduleIdleTask(() => {
+      
+      let reduceMotionQuery = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      );
+      function readSetting() {
+        gReduceMotionSetting = reduceMotionQuery.matches;
+      }
+      reduceMotionQuery.addListener(readSetting);
+      readSetting();
+    });
+
+    scheduleIdleTask(() => {
+      
+      gGestureSupport.init(true);
+
+      
+      gHistorySwipeAnimation.init();
+    });
+
+    scheduleIdleTask(() => {
+      gBrowserThumbnails.init();
+    });
+
+    scheduleIdleTask(
+      () => {
+        
+        
+        
+        
+        
+        try {
+          DownloadsCommon.initializeAllDataLinks();
+          ChromeUtils.importESModule(
+            "moz-src:///browser/components/downloads/DownloadsTaskbar.sys.mjs"
+          )
+            .DownloadsTaskbar.registerIndicator(window)
+            .catch(ex => {
+              console.error(ex);
+            });
+          if (AppConstants.platform == "macosx") {
+            ChromeUtils.importESModule(
+              "moz-src:///browser/components/downloads/DownloadsMacFinderProgress.sys.mjs"
+            ).DownloadsMacFinderProgress.register();
+          }
+        } catch (ex) {
+          console.error(ex);
+        }
       },
-      window
+      { timeout: 10000 }
     );
+
+    if (Win7Features) {
+      scheduleIdleTask(() => Win7Features.onOpenWindow());
+    }
+
+    scheduleIdleTask(async () => {
+      NewTabPagePreloading.maybeCreatePreloadedBrowser(window);
+    });
+
+    scheduleIdleTask(() => {
+      gGfxUtils.init();
+    });
+
+    scheduleIdleTask(async () => {
+      await gProfiles.init();
+    });
 
     
     
     
-    
-    
-    ChromeUtils.idleDispatch(() => {
-      if (window.closed) {
-        return;
-      }
+    scheduleIdleTask(() => {
       this.idleTasksFinished.resolve();
       Services.obs.notifyObservers(
         window,
@@ -1058,6 +1124,12 @@ var gBrowserInit = {
       return;
     }
 
+    gGestureSupport.init(false);
+
+    gHistorySwipeAnimation.uninit();
+
+    gSync.uninit();
+
     try {
       gBrowser.removeProgressListener(window.XULBrowserWindow);
       gBrowser.removeTabsProgressListener(window.TabsProgressListener);
@@ -1078,6 +1150,11 @@ var gBrowserInit = {
     if (this._boundDelayedStartup) {
       this._cancelDelayedStartup();
     } else {
+      if (Win7Features) {
+        Win7Features.onCloseWindow();
+      }
+      gBrowserThumbnails.uninit();
+
       BrowserUtils.callModulesFromCategory(
         {
           categoryName: "browser-window-unload-delayed-startup",

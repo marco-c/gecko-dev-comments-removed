@@ -24,24 +24,10 @@ var gGestureSupport = {
   
 
 
-  init() {
-    this._toggleListeners(true);
-  },
-
-  
-
-
-  uninit() {
-    this._toggleListeners(false);
-  },
-
-  
 
 
 
-
-
-  _toggleListeners(aAddListener) {
+  init: function GS_init(aAddListener) {
     const gestureEvents = [
       "SwipeGestureMayStart",
       "SwipeGestureStart",
