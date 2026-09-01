@@ -373,7 +373,7 @@ void RenderCompositorNativeOGL::AttachExternalImage(
   
   
   
-  image->Lock(0, nullptr);
+  image->Lock(0, mGL);
 
   RenderCompositorNative::AttachExternalImage(aId, aExternalImage);
 }
