@@ -69,7 +69,15 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/phf/0.13.1")]
+
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/phf/0.14.0")]
 #![warn(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -77,6 +85,10 @@
 extern crate std as core;
 
 #[cfg(feature = "macros")]
+
+
+
+
 
 
 
@@ -180,6 +192,73 @@ pub use phf_macros::phf_set;
 
 pub use phf_macros::phf_ordered_set;
 
+
+
+
+#[cfg(feature = "macros")]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __call_macro {
+    ($callback:ident { $($tokens:tt)* }) => {
+        $crate::$callback! { $($tokens)* }
+    };
+}
+
+#[cfg(not(feature = "macros"))]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __call_macro {
+    ($callback:ident { $($tokens:tt)* }) => {
+        phf_macros::$callback! { $($tokens)* }
+    };
+}
+
+#[doc(hidden)]
+
+#[macro_export]
+macro_rules! __resolve_cfg {
+    
+    ($callback:ident [ $($acc:tt)* ] { $($in:tt)* }) => {
+        $crate::__call_macro! {
+            $callback { $($acc)* $($in)* }
+        }
+    };
+
+    
+    (
+        $callback:ident
+        [ $($acc:tt)* ]
+        { $($in1:tt)* }
+        { $(#[$meta:meta])+ $($in2:tt)* }
+        $($rest:tt)*
+    ) => {{
+        // Macro shadowing is allowed if the shadowed macro is unused.
+        #[allow(unused)]
+        macro_rules! resolver {
+            () => {
+                $crate::__resolve_cfg! {
+                    $callback
+                    [ $($acc)* $($in1)* ]
+                    $($rest)*
+                }
+            };
+        }
+
+        $(#[$meta])+
+        macro_rules! resolver {
+            () => {
+                $crate::__resolve_cfg! {
+                    $callback
+                    [ $($acc)* $($in1)* $($in2)* ]
+                    $($rest)*
+                }
+            };
+        }
+
+        resolver! {}
+    }};
+}
+
 #[doc(inline)]
 pub use self::map::Map;
 #[doc(inline)]
@@ -188,7 +267,7 @@ pub use self::ordered_map::OrderedMap;
 pub use self::ordered_set::OrderedSet;
 #[doc(inline)]
 pub use self::set::Set;
-pub use phf_shared::PhfHash;
+pub use phf_shared::{PhfEq, PhfHash};
 
 pub mod map;
 pub mod ordered_map;

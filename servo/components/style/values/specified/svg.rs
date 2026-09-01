@@ -4,6 +4,7 @@
 
 
 
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::values::generics::svg as generic;
 use crate::values::specified::color::Color;
@@ -45,10 +46,7 @@ pub fn is_context_value_enabled() -> bool {
 macro_rules! parse_svg_length {
     ($ty:ty, $lp:ty) => {
         impl Parse for $ty {
-            fn parse<'i, 't>(
-                context: &ParserContext,
-                input: &mut Parser<'i, 't>,
-            ) -> Result<Self, ParseError<'i>> {
+            fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
                 if let Ok(lp) =
                     input.try_parse(|i| <$lp>::parse_quirky(context, i, AllowQuirks::Always))
                 {
@@ -69,10 +67,7 @@ parse_svg_length!(SVGLength, LengthPercentage);
 parse_svg_length!(SVGWidth, NonNegativeLengthPercentage);
 
 impl Parse for SVGStrokeDashArray {
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
+    fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
         if let Ok(values) = input.try_parse(|i| {
             CommaWithSpace::parse(i, |i| {
                 NonNegativeLengthPercentage::parse_quirky(context, i, AllowQuirks::Always)
@@ -139,6 +134,7 @@ pub const PAINT_ORDER_MASK: u8 = 0b11;
     ToTyped,
 )]
 #[repr(transparent)]
+#[typed(todo_derive_fields)]
 pub struct SVGPaintOrder(pub u8);
 
 impl SVGPaintOrder {
@@ -160,10 +156,7 @@ impl SVGPaintOrder {
 }
 
 impl Parse for SVGPaintOrder {
-    fn parse<'i, 't>(
-        _context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<SVGPaintOrder, ParseError<'i>> {
+    fn parse(_context: &ParserContext, input: &mut Parser) -> Result<SVGPaintOrder, ParseError> {
         if let Ok(()) = input.try_parse(|i| i.expect_ident_matching("normal")) {
             return Ok(SVGPaintOrder::normal());
         }
@@ -187,7 +180,7 @@ impl Parse for SVGPaintOrder {
                 Ok(val) => {
                     if (seen & (1 << val as u8)) != 0 {
                         
-                        return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+                        return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
                     }
 
                     value |= (val as u8) << (pos * PAINT_ORDER_SHIFT);
@@ -200,7 +193,7 @@ impl Parse for SVGPaintOrder {
 
         if value == 0 {
             
-            return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+            return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
         }
 
         
@@ -302,22 +295,21 @@ pub struct MozContextProperties {
 }
 
 impl Parse for MozContextProperties {
-    fn parse<'i, 't>(
+    fn parse(
         _context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<MozContextProperties, ParseError<'i>> {
+        input: &mut Parser,
+    ) -> Result<MozContextProperties, ParseError> {
         let mut values = vec![];
         let mut bits = ContextPropertyBits::empty();
         loop {
             {
-                let location = input.current_source_location();
                 let ident = input.expect_ident()?;
 
                 if ident.eq_ignore_ascii_case("none") && values.is_empty() {
                     return Ok(Self::default());
                 }
 
-                let ident = CustomIdent::from_ident(location, ident, &["all", "none", "auto"])?;
+                let ident = CustomIdent::from_ident(ident, &["all", "none", "auto"])?;
 
                 if ident.0 == atom!("fill") {
                     bits.insert(ContextPropertyBits::FILL);
@@ -332,16 +324,15 @@ impl Parse for MozContextProperties {
                 values.push(ident);
             }
 
-            let location = input.current_source_location();
             match input.next() {
                 Ok(&Token::Comma) => continue,
                 Err(..) => break,
-                Ok(other) => return Err(location.new_unexpected_token_error(other.clone())),
+                Ok(_) => return Err(ParseError::unexpected_token()),
             }
         }
 
         if values.is_empty() {
-            return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+            return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
         }
 
         Ok(MozContextProperties {
@@ -373,6 +364,7 @@ impl Parse for MozContextProperties {
     ToTyped,
 )]
 #[repr(C, u8)]
+#[typed(todo_derive_fields)]
 pub enum DProperty {
     
     #[css(function)]
@@ -391,10 +383,7 @@ impl DProperty {
 }
 
 impl Parse for DProperty {
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
+    fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
         
         if input.try_parse(|i| i.expect_ident_matching("none")).is_ok() {
             return Ok(DProperty::none());

@@ -873,15 +873,15 @@ impl LonghandId {
         }
     }
 
-    pub(super) fn parse_value<'i, 't>(
+    pub(super) fn parse_value(
         self,
         context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<PropertyDeclaration, ParseError<'i>> {
-        type ParsePropertyFn = for<'i, 't> fn(
+        input: &mut Parser,
+    ) -> Result<PropertyDeclaration, ParseError> {
+        type ParsePropertyFn = fn(
             context: &ParserContext,
-            input: &mut Parser<'i, 't>,
-        ) -> Result<PropertyDeclaration, ParseError<'i>>;
+            input: &mut Parser,
+        ) -> Result<PropertyDeclaration, ParseError>;
         static PARSE_PROPERTY: [ParsePropertyFn; property_counts::LONGHANDS] = [
         % for property in data.longhands:
             longhands::${property.ident}::parse_declared,
@@ -968,7 +968,8 @@ impl ShorthandId {
         % endfor
         ];
         NonCustomPropertyIterator {
-            filter: NonCustomPropertyId::from(self).enabled_for_all_content(),
+            filter: NonCustomPropertyId::from(self).enabled_for_all_content() &&
+                !self.allows_disabled_subproperties(),
             iter: MAP[self as usize].iter(),
         }
     }
@@ -1037,25 +1038,25 @@ impl ShorthandId {
         IDL_NAME_SORT_ORDER[self as usize]
     }
 
-    pub(super) fn parse_into<'i, 't>(
+    pub(super) fn parse_into(
         self,
         declarations: &mut SourcePropertyDeclaration,
         context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<(), ParseError<'i>> {
-        type ParseIntoFn = for<'i, 't> fn(
+        input: &mut Parser,
+    ) -> Result<(), ParseError> {
+        type ParseIntoFn = fn(
             declarations: &mut SourcePropertyDeclaration,
             context: &ParserContext,
-            input: &mut Parser<'i, 't>,
-        ) -> Result<(), ParseError<'i>>;
+            input: &mut Parser,
+        ) -> Result<(), ParseError>;
 
-        fn parse_all<'i, 't>(
+        fn parse_all(
             _: &mut SourcePropertyDeclaration,
             _: &ParserContext,
-            input: &mut Parser<'i, 't>
-        ) -> Result<(), ParseError<'i>> {
+            _input: &mut Parser
+        ) -> Result<(), ParseError> {
             
-            Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
+            Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError))
         }
 
         static PARSE_INTO: [ParseIntoFn; property_counts::SHORTHANDS] = [
@@ -1406,7 +1407,7 @@ pub mod style_structs {
                 pub fn compute_font_hash(&mut self) {
                     let mut hasher: FxHasher = Default::default();
                     self.font_weight.hash(&mut hasher);
-                    self.font_stretch.hash(&mut hasher);
+                    self.font_width.hash(&mut hasher);
                     self.font_style.hash(&mut hasher);
                     self.font_family.hash(&mut hasher);
                     self.hash = hasher.finish()
@@ -2902,6 +2903,9 @@ use crate::values::specified;
 pub enum DescriptorId {
     % for descriptor in descriptors:
     
+    % if descriptor.aliases:
+    #[parse(aliases="${','.join(descriptor.aliases)}")]
+    % endif
     ${descriptor.camel_case},
     % endfor
 }
@@ -2945,7 +2949,7 @@ impl Descriptors {
     }
 
     
-    pub fn set<'i, 't>(&mut self, id: DescriptorId, context: &ParserContext, input: &mut Parser<'i, 't>) -> Result<bool, ParseError<'i>> {
+    pub fn set(&mut self, id: DescriptorId, context: &ParserContext, input: &mut Parser) -> Result<bool, ParseError> {
         use crate::parser::Parse;
         
         
@@ -3031,16 +3035,16 @@ pub struct DescriptorParser<'a, 'b: 'a> {
 impl<'a, 'b, 'i> cssparser::AtRuleParser<'i> for DescriptorParser<'a, 'b> {
     type Prelude = ();
     type AtRule = ();
-    type Error = StyleParseErrorKind<'i>;
+    type Error = StyleParseErrorKind;
 }
 
 impl<'a, 'b, 'i> cssparser::QualifiedRuleParser<'i> for DescriptorParser<'a, 'b> {
     type Prelude = ();
     type QualifiedRule = ();
-    type Error = StyleParseErrorKind<'i>;
+    type Error = StyleParseErrorKind;
 }
 
-impl<'a, 'b, 'i> cssparser::RuleBodyItemParser<'i, (), StyleParseErrorKind<'i>>
+impl<'a, 'b, 'i> cssparser::RuleBodyItemParser<'i, (), StyleParseErrorKind>
     for DescriptorParser<'a, 'b>
 {
     fn parse_qualified(&self) -> bool {
@@ -3053,18 +3057,18 @@ impl<'a, 'b, 'i> cssparser::RuleBodyItemParser<'i, (), StyleParseErrorKind<'i>>
 
 impl<'a, 'b, 'i> cssparser::DeclarationParser<'i> for DescriptorParser<'a, 'b> {
     type Declaration = ();
-    type Error = StyleParseErrorKind<'i>;
+    type Error = StyleParseErrorKind;
 
-    fn parse_value<'t>(
+    fn parse_value(
         &mut self,
         name: cssparser::CowRcStr<'i>,
-        input: &mut Parser<'i, 't>,
+        input: &mut Parser<'i, '_>,
         _declaration_start: &cssparser::ParserState,
-    ) -> Result<(), ParseError<'i>> {
+    ) -> Result<(), ParseError> {
         let Ok(id) = DescriptorId::from_ident(name.as_ref()) else {
             return Err(
-                input.new_custom_error(
-                    selectors::parser::SelectorParseErrorKind::UnexpectedIdent(name.clone())
+                ParseError::custom(
+                    selectors::parser::SelectorParseErrorKind::UnexpectedIdent
                 )
             );
         };

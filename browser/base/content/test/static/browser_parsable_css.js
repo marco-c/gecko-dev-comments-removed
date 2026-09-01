@@ -28,14 +28,14 @@ let ignoreList = [
   
   {
     sourceName: /\b(html)\.css$/i,
-    errorMessage: /Error in parsing value for ‘content’/i,
+    errorMessage: /Error in parsing value for ‘content:/i,
     isFromDevTools: false,
   },
   
   
   {
     sourceName: /\bmegalist-agent\.css$/i,
-    errorMessage: /Unknown pseudo-class or pseudo-element ‘-moz-reveal’/i,
+    errorMessage: /Unknown pseudo-class or pseudo-element ‘.*::-moz-reveal’/i,
     isFromDevTools: false,
   },
   
@@ -65,12 +65,7 @@ if (AppConstants.platform != "macosx") {
 if (!Services.prefs.getBoolPref("dom.select.customizable_select.enabled")) {
   ignoreList.push({
     sourceName: /\bforms\.css$/i,
-    errorMessage: /Unknown pseudo-class or pseudo-element ‘picker’./i,
-    isFromDevTools: false,
-  });
-  ignoreList.push({
-    sourceName: /\bforms\.css$/i,
-    errorMessage: /Unknown pseudo-class or pseudo-element ‘checkmark’./i,
+    errorMessage: /Unknown pseudo-class or pseudo-element ‘.*::checkmark’./i,
     isFromDevTools: false,
   });
 }
@@ -78,7 +73,7 @@ if (!Services.prefs.getBoolPref("dom.select.customizable_select.enabled")) {
 if (!Services.prefs.getBoolPref("layout.css.zoom.enabled")) {
   ignoreList.push({
     sourceName: /\bscrollbars\.css$/i,
-    errorMessage: /Error in parsing value for ‘zoom’/i,
+    errorMessage: /Error in parsing value for ‘zoom:/i,
     isFromDevTools: false,
   });
 }

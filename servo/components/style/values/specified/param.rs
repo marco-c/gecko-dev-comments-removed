@@ -16,7 +16,6 @@ use style_traits::owned_str::OwnedStr;
 use style_traits::{ParseError, ToCss};
 
 
-
 #[derive(
     Clone,
     Debug,
@@ -27,13 +26,8 @@ use style_traits::{ParseError, ToCss};
     ToResolvedValue,
     ToShmem,
 )]
-#[repr(C, u8)]
-pub enum LinkParamValueOrNone {
-    
-    None,
-    
-    Specified(OwnedStr),
-}
+#[repr(transparent)]
+pub struct LinkParamValue(pub OwnedStr);
 
 
 #[derive(
@@ -51,7 +45,7 @@ pub struct LinkParam {
     
     pub name: DashedIdent,
     
-    pub value: LinkParamValueOrNone,
+    pub value: LinkParamValue,
 }
 
 
@@ -88,10 +82,7 @@ impl LinkParameters {
 }
 
 impl Parse for LinkParameters {
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
+    fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
         if input.try_parse(|i| i.expect_ident_matching("none")).is_ok() {
             return Ok(Self::none());
         }
@@ -100,14 +91,11 @@ impl Parse for LinkParameters {
             input.expect_function_matching("param")?;
             input.parse_nested_block(|input| {
                 let name = DashedIdent::parse(context, input)?;
+                input.expect_comma()?;
                 
                 
-                let value = if input.try_parse(|i| i.expect_comma()).is_ok() {
-                    let parsed = VariableValue::parse(input, None, &context.url_data)?;
-                    LinkParamValueOrNone::Specified(OwnedStr::from(parsed.css))
-                } else {
-                    LinkParamValueOrNone::None
-                };
+                let parsed = VariableValue::parse(input, None, &context.url_data)?;
+                let value = LinkParamValue(OwnedStr::from(parsed.css));
                 Ok(LinkParam { name, value })
             })
         })?;
@@ -123,12 +111,10 @@ impl ToCss for LinkParam {
     {
         dest.write_str("param(")?;
         self.name.to_css(dest)?;
-        if let LinkParamValueOrNone::Specified(param) = &self.value {
-            dest.write_str(", ")?;
-            if !param.is_empty() {
-                
-                dest.write_str(&param)?;
-            }
+        dest.write_str(", ")?;
+        if !self.value.0.is_empty() {
+            
+            dest.write_str(&self.value.0)?;
         }
         dest.write_char(')')
     }

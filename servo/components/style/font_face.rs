@@ -18,11 +18,10 @@ use std::fmt::{self, Write};
 use style_traits::{CssStringWriter, CssWriter, ParseError, StyleParseErrorKind, ToCss};
 
 pub use crate::properties::font_face::{DescriptorId, DescriptorParser, Descriptors};
-pub use crate::values::computed::font::{FamilyName, FontStretch, FontStyle};
+pub use crate::values::computed::font::{FamilyName, FontStyle, FontWidth};
 pub use crate::values::specified::font::{
-    AbsoluteFontWeight, FontFeatureSettings, FontLanguageOverride,
-    FontStretch as SpecifiedFontStretch, FontVariationSettings, MetricsOverride,
-    SpecifiedFontStyle,
+    AbsoluteFontWeight, FontFeatureSettings, FontLanguageOverride, FontVariationSettings,
+    FontWidth as SpecifiedFontWidth, MetricsOverride, SpecifiedFontStyle,
 };
 
 
@@ -45,10 +44,7 @@ pub struct SourceList(#[css(iterable)] pub Vec<Source>);
 
 
 impl Parse for SourceList {
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
+    fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
         
         let list = input
             .parse_comma_separated(|input| {
@@ -60,7 +56,7 @@ impl Parse for SourceList {
             .filter_map(|s| s)
             .collect::<Vec<Source>>();
         if list.is_empty() {
-            Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
+            Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError))
         } else {
             Ok(SourceList(list))
         }
@@ -122,7 +118,7 @@ bitflags! {
 
 impl FontFaceSourceTechFlags {
     
-    pub fn parse_one<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
+    pub fn parse_one(input: &mut Parser) -> Result<Self, ParseError> {
         Ok(try_match_ident_ignore_ascii_case! { input,
             "features-opentype" => Self::FEATURES_OPENTYPE,
             "features-aat" => Self::FEATURES_AAT,
@@ -140,11 +136,7 @@ impl FontFaceSourceTechFlags {
 }
 
 impl Parse for FontFaceSourceTechFlags {
-    fn parse<'i, 't>(
-        _context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        let location = input.current_source_location();
+    fn parse(_context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
         
         
         let mut result = Self::empty();
@@ -156,7 +148,7 @@ impl Parse for FontFaceSourceTechFlags {
         if !result.is_empty() {
             Ok(result)
         } else {
-            Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError))
+            Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError))
         }
     }
 }
@@ -309,10 +301,7 @@ pub enum FontDisplay {
 macro_rules! impl_range {
     ($range:ident, $component:ident) => {
         impl Parse for $range {
-            fn parse<'i, 't>(
-                context: &ParserContext,
-                input: &mut Parser<'i, 't>,
-            ) -> Result<Self, ParseError<'i>> {
+            fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
                 let first = $component::parse(context, input)?;
                 let second = input
                     .try_parse(|input| $component::parse(context, input))
@@ -373,32 +362,32 @@ impl FontWeightRange {
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
-pub struct FontStretchRange(pub SpecifiedFontStretch, pub SpecifiedFontStretch);
-impl_range!(FontStretchRange, SpecifiedFontStretch);
+pub struct FontWidthRange(pub SpecifiedFontWidth, pub SpecifiedFontWidth);
+impl_range!(FontWidthRange, SpecifiedFontWidth);
 
 
 
 #[repr(C)]
 #[allow(missing_docs)]
 #[derive(Clone, Debug, Deserialize, Hash, MallocSizeOf, PartialEq, Serialize)]
-pub struct ComputedFontStretchRange(pub FontStretch, pub FontStretch);
+pub struct ComputedFontWidthRange(pub FontWidth, pub FontWidth);
 
-impl FontStretchRange {
+impl FontWidthRange {
     
     
-    pub fn compute(&self) -> Option<ComputedFontStretchRange> {
-        fn compute_stretch(s: &SpecifiedFontStretch) -> Option<FontStretch> {
+    pub fn compute(&self) -> Option<ComputedFontWidthRange> {
+        fn compute_width(s: &SpecifiedFontWidth) -> Option<FontWidth> {
             match *s {
-                SpecifiedFontStretch::Keyword(ref kw) => Some(kw.compute()),
-                SpecifiedFontStretch::Stretch(ref p) => {
-                    Some(FontStretch::from_percentage(p.compute()?.0))
+                SpecifiedFontWidth::Keyword(ref kw) => Some(kw.compute()),
+                SpecifiedFontWidth::Width(ref p) => {
+                    Some(FontWidth::from_percentage(p.compute()?.0))
                 },
-                SpecifiedFontStretch::System(..) => unreachable!(),
+                SpecifiedFontWidth::System(..) => unreachable!(),
             }
         }
 
-        let (min, max) = sort_range(compute_stretch(&self.0)?, compute_stretch(&self.1)?);
-        Some(ComputedFontStretchRange(min, max))
+        let (min, max) = sort_range(compute_width(&self.0)?, compute_width(&self.1)?);
+        Some(ComputedFontWidthRange(min, max))
     }
 }
 
@@ -420,10 +409,7 @@ pub enum FontStyleRange {
 pub struct ComputedFontStyleRange(pub FontStyle, pub FontStyle);
 
 impl Parse for FontStyleRange {
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
+    fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
         
         
         if input
@@ -504,8 +490,7 @@ pub fn parse_font_face_block(
         };
         let mut iter = RuleBodyParser::new(input, &mut parser);
         while let Some(declaration) = iter.next() {
-            if let Err((error, slice)) = declaration {
-                let location = error.location;
+            if let Err((error, slice, location)) = declaration {
                 let error = ContextualParseError::UnsupportedFontFaceDescriptor(slice, error);
                 context.log_css_error(location, error)
             }
@@ -515,10 +500,7 @@ pub fn parse_font_face_block(
 }
 
 impl Parse for Source {
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Source, ParseError<'i>> {
+    fn parse(context: &ParserContext, input: &mut Parser) -> Result<Source, ParseError> {
         if input
             .try_parse(|input| input.expect_function_matching("local"))
             .is_ok()

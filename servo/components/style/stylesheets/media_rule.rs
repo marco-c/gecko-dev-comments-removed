@@ -6,6 +6,7 @@
 
 
 
+use crate::derives::*;
 use crate::media_queries::MediaList;
 use crate::selector_map::{PrecomputedHashMap, PrecomputedHashSet};
 use crate::shared_lock::{DeepCloneWithLock, Locked};
@@ -82,7 +83,7 @@ pub enum CustomMediaCondition {
 
 impl CustomMediaCondition {
     
-    pub(crate) fn parse_keyword<'i>(input: &mut Parser<'i, '_>) -> Result<Self, ParseError<'i>> {
+    pub(crate) fn parse_keyword(input: &mut Parser) -> Result<Self, ParseError> {
         Ok(try_match_ident_ignore_ascii_case! { input,
             "true" => Self::True,
             "false" => Self::False,

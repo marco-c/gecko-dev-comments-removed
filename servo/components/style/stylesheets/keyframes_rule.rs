@@ -13,7 +13,7 @@ use crate::properties::{
         transition_timing_function::single_value::SpecifiedValue as SpecifiedTimingFunction,
     },
     parse_property_declaration_list, LonghandId, PropertyDeclaration, PropertyDeclarationBlock,
-    PropertyDeclarationId, PropertyDeclarationIdSet,
+    PropertyDeclarationId,
 };
 use crate::shared_lock::{DeepCloneWithLock, SharedRwLock, SharedRwLockReadGuard};
 use crate::shared_lock::{Locked, ToCssWithGuard};
@@ -129,7 +129,7 @@ impl KeyframePercentage {
         KeyframePercentage(value)
     }
 
-    fn parse<'i, 't>(input: &mut Parser<'i, 't>) -> Result<KeyframePercentage, ParseError<'i>> {
+    fn parse(input: &mut Parser) -> Result<KeyframePercentage, ParseError> {
         let token = input.next()?.clone();
         match token {
             Token::Ident(ref identifier) if identifier.as_ref().eq_ignore_ascii_case("from") => {
@@ -142,7 +142,7 @@ impl KeyframePercentage {
                 unit_value: percentage,
                 ..
             } if percentage >= 0. && percentage <= 1. => Ok(KeyframePercentage::new(percentage)),
-            _ => Err(input.new_unexpected_token_error(token)),
+            _ => Err(ParseError::unexpected_token()),
         }
     }
 }
@@ -173,7 +173,7 @@ impl KeyframeSelector {
     }
 
     
-    pub fn parse_internal<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
+    pub fn parse_internal(input: &mut Parser) -> Result<Self, ParseError> {
         
         if let Ok(percentage) = input.try_parse(KeyframePercentage::parse) {
             return Ok(Self::from_percentage(percentage));
@@ -181,8 +181,7 @@ impl KeyframeSelector {
 
         
         if !static_prefs::pref!("layout.css.scroll-driven-animations.enabled") {
-            let location = input.current_source_location();
-            return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+            return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
         }
 
         
@@ -195,10 +194,7 @@ impl KeyframeSelector {
 }
 
 impl Parse for KeyframeSelector {
-    fn parse<'i, 't>(
-        _context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
+    fn parse(_context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
         KeyframeSelector::parse_internal(input)
     }
 }
@@ -220,7 +216,7 @@ impl KeyframeSelectors {
     }
 
     
-    pub fn parse<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
+    pub fn parse(input: &mut Parser) -> Result<Self, ParseError> {
         input
             .parse_comma_separated(KeyframeSelector::parse_internal)
             .map(KeyframeSelectors)
@@ -259,7 +255,7 @@ impl Keyframe {
         css: &'i str,
         parent_stylesheet_contents: &StylesheetContents,
         lock: &SharedRwLock,
-    ) -> Result<Arc<Locked<Self>>, ParseError<'i>> {
+    ) -> Result<Arc<Locked<Self>>, ParseError> {
         let url_data = &parent_stylesheet_contents.url_data;
         let namespaces = &parent_stylesheet_contents.namespaces;
         let mut context = ParserContext::new(
@@ -459,17 +455,14 @@ pub struct KeyframesAnimation {
     
     pub steps_with_range_name: Vec<KeyframesStep>,
     
-    pub properties_changed: PropertyDeclarationIdSet,
-    
     pub vendor_prefix: Option<VendorPrefix>,
 }
 
 
-fn get_animated_properties(
+fn has_animated_properties(
     keyframes: &[Arc<Locked<Keyframe>>],
     guard: &SharedRwLockReadGuard,
-) -> PropertyDeclarationIdSet {
-    let mut ret = PropertyDeclarationIdSet::default();
+) -> bool {
     
     
     for keyframe in keyframes {
@@ -484,7 +477,9 @@ fn get_animated_properties(
         for declaration in block.normal_declaration_iter() {
             let declaration_id = declaration.id();
 
-            if declaration_id == PropertyDeclarationId::Longhand(LonghandId::Display) {
+            if declaration_id == PropertyDeclarationId::Longhand(LonghandId::Display)
+                && !static_prefs::pref!("layout.css.display-animations.enabled")
+            {
                 continue;
             }
 
@@ -492,11 +487,11 @@ fn get_animated_properties(
                 continue;
             }
 
-            ret.insert(declaration_id);
+            return true;
         }
     }
 
-    ret
+    false
 }
 
 impl KeyframesAnimation {
@@ -516,16 +511,10 @@ impl KeyframesAnimation {
         let mut result = KeyframesAnimation {
             steps: vec![],
             steps_with_range_name: vec![],
-            properties_changed: PropertyDeclarationIdSet::default(),
             vendor_prefix,
         };
 
-        if keyframes.is_empty() {
-            return result;
-        }
-
-        result.properties_changed = get_animated_properties(keyframes, guard);
-        if result.properties_changed.is_empty() {
+        if keyframes.is_empty() || !has_animated_properties(keyframes, guard) {
             return result;
         }
 
@@ -555,34 +544,6 @@ impl KeyframesAnimation {
         
         
         steps.sort_by_key(|step| step.start_offset.percentage);
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if steps.is_empty() || steps[0].start_offset.percentage.0 != 0. {
-            steps.insert(
-                0,
-                KeyframesStep::new(
-                    KeyframeSelector::from_percentage(KeyframePercentage::new(0.)),
-                    KeyframesStepValue::ComputedValues,
-                    guard,
-                ),
-            );
-        }
-
-        if steps.last().unwrap().start_offset.percentage.0 != 1. {
-            steps.push(KeyframesStep::new(
-                KeyframeSelector::from_percentage(KeyframePercentage::new(1.)),
-                KeyframesStepValue::ComputedValues,
-                guard,
-            ));
-        }
 
         result.steps = steps;
         result
@@ -620,41 +581,38 @@ pub fn parse_keyframe_list<'a>(
 impl<'a, 'b, 'i> AtRuleParser<'i> for KeyframeListParser<'a, 'b> {
     type Prelude = ();
     type AtRule = Arc<Locked<Keyframe>>;
-    type Error = StyleParseErrorKind<'i>;
+    type Error = StyleParseErrorKind;
 }
 
 impl<'a, 'b, 'i> DeclarationParser<'i> for KeyframeListParser<'a, 'b> {
     type Declaration = Arc<Locked<Keyframe>>;
-    type Error = StyleParseErrorKind<'i>;
+    type Error = StyleParseErrorKind;
 }
 
 impl<'a, 'b, 'i> QualifiedRuleParser<'i> for KeyframeListParser<'a, 'b> {
     type Prelude = KeyframeSelectors;
     type QualifiedRule = Arc<Locked<Keyframe>>;
-    type Error = StyleParseErrorKind<'i>;
+    type Error = StyleParseErrorKind;
 
-    fn parse_prelude<'t>(
-        &mut self,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self::Prelude, ParseError<'i>> {
+    fn parse_prelude(&mut self, input: &mut Parser<'i, '_>) -> Result<Self::Prelude, ParseError> {
         let start_position = input.position();
+        let start_location = input.current_source_location();
         KeyframeSelectors::parse(input).map_err(|e| {
-            let location = e.location;
             let error = ContextualParseError::InvalidKeyframeRule(
                 input.slice_from(start_position),
                 e.clone(),
             );
-            self.context.log_css_error(location, error);
+            self.context.log_css_error(start_location, error);
             e
         })
     }
 
-    fn parse_block<'t>(
+    fn parse_block(
         &mut self,
         selector: Self::Prelude,
         start: &ParserState,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self::QualifiedRule, ParseError<'i>> {
+        input: &mut Parser<'i, '_>,
+    ) -> Result<Self::QualifiedRule, ParseError> {
         let block = self.context.nest_for_rule(CssRuleType::Keyframe, |p| {
             parse_property_declaration_list(&p, input, &[])
         });
@@ -666,7 +624,7 @@ impl<'a, 'b, 'i> QualifiedRuleParser<'i> for KeyframeListParser<'a, 'b> {
     }
 }
 
-impl<'a, 'b, 'i> RuleBodyItemParser<'i, Arc<Locked<Keyframe>>, StyleParseErrorKind<'i>>
+impl<'a, 'b, 'i> RuleBodyItemParser<'i, Arc<Locked<Keyframe>>, StyleParseErrorKind>
     for KeyframeListParser<'a, 'b>
 {
     fn parse_qualified(&self) -> bool {

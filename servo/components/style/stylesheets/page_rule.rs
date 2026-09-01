@@ -6,6 +6,7 @@
 
 
 
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::properties::PropertyDeclarationBlock;
 use crate::shared_lock::{
@@ -13,7 +14,7 @@ use crate::shared_lock::{
 };
 use crate::stylesheets::{style_or_page_rule_to_css, CssRules};
 use crate::values::{AtomIdent, CustomIdent};
-use cssparser::{Parser, SourceLocation, Token};
+use cssparser::{match_ignore_ascii_case, Parser, SourceLocation, Token};
 #[cfg(feature = "gecko")]
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps, MallocUnconditionalShallowSizeOf};
 use servo_arc::Arc;
@@ -32,23 +33,22 @@ macro_rules! page_pseudo_classes {
             $($(#[$($meta)+])* $id,)+
         }
         impl PagePseudoClass {
-            fn parse<'i, 't>(
-                input: &mut Parser<'i, 't>,
-            ) -> Result<Self, ParseError<'i>> {
-                let loc = input.current_source_location();
+            fn parse(
+                input: &mut Parser,
+            ) -> Result<Self, ParseError> {
                 let colon = input.next_including_whitespace()?;
                 if *colon != Token::Colon {
-                    return Err(loc.new_unexpected_token_error(colon.clone()));
+                    return Err(ParseError::unexpected_token());
                 }
 
                 let ident = input.next_including_whitespace()?;
                 if let Token::Ident(s) = ident {
                     return match_ignore_ascii_case! { &**s,
                         $($val => Ok(PagePseudoClass::$id),)+
-                        _ => Err(loc.new_unexpected_token_error(Token::Ident(s.clone()))),
+                        _ => Err(ParseError::unexpected_token()),
                     };
                 }
-                Err(loc.new_unexpected_token_error(ident.clone()))
+                Err(ParseError::unexpected_token())
             }
             #[inline]
             fn to_str(&self) -> &'static str {
@@ -220,16 +220,13 @@ impl ToCss for PageSelector {
     }
 }
 
-fn parse_page_name<'i, 't>(input: &mut Parser<'i, 't>) -> Result<AtomIdent, ParseError<'i>> {
+fn parse_page_name(input: &mut Parser) -> Result<AtomIdent, ParseError> {
     let s = input.expect_ident()?;
     Ok(AtomIdent::from(&**s))
 }
 
 impl Parse for PageSelector {
-    fn parse<'i, 't>(
-        _context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
+    fn parse(_context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
         let name = input.try_parse(parse_page_name);
         let mut pseudos = PagePseudoClasses::default();
         while let Ok(pc) = input.try_parse(PagePseudoClass::parse) {
@@ -271,10 +268,7 @@ impl PageSelectors {
 }
 
 impl Parse for PageSelectors {
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
+    fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
         Ok(PageSelectors::new(input.parse_comma_separated(|i| {
             PageSelector::parse(context, i)
         })?))

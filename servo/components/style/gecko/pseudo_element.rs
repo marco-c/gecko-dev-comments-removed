@@ -127,16 +127,13 @@ impl PtNameAndClassSelector {
     
     
     
-    pub fn parse<'i, 't>(
-        input: &mut Parser<'i, 't>,
-        target: Target,
-    ) -> Result<Self, ParseError<'i>> {
+    pub fn parse(input: &mut Parser, target: Target) -> Result<Self, ParseError> {
         use crate::values::CustomIdent;
         use cssparser::Token;
         use style_traits::StyleParseErrorKind;
 
         
-        let parse_pt_name = |input: &mut Parser<'i, '_>| {
+        let parse_pt_name = |input: &mut Parser| {
             
             if matches!(target, Target::Selector)
                 && input.try_parse(|i| i.expect_delim('*')).is_ok()
@@ -154,18 +151,17 @@ impl PtNameAndClassSelector {
         }
 
         
-        let parse_pt_class = |input: &mut Parser<'i, '_>| {
+        let parse_pt_class = |input: &mut Parser| {
             
             
             
-            let location = input.current_source_location();
             match input.next_including_whitespace()? {
                 Token::Delim('.') => (),
-                t => return Err(location.new_unexpected_token_error(t.clone())),
+                _ => return Err(ParseError::unexpected_token()),
             }
             
-            if let Ok(token) = input.try_parse(|i| i.expect_whitespace()) {
-                return Err(input.new_unexpected_token_error(Token::WhiteSpace(token)));
+            if input.try_parse(|i| i.expect_whitespace()).is_ok() {
+                return Err(ParseError::unexpected_token());
             }
             CustomIdent::parse(input, &[]).map(|c| c.0)
         };
@@ -181,7 +177,7 @@ impl PtNameAndClassSelector {
         
         
         if name.is_err() && classes.is_empty() {
-            return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+            return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
         }
 
         
@@ -548,9 +544,7 @@ impl PseudoElement {
     
     
     
-    pub fn parse_ignore_enabled_state<'i, 't>(
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
+    pub fn parse_ignore_enabled_state(input: &mut Parser) -> Result<Self, ParseError> {
         use crate::gecko::selector_parser;
         use cssparser::Token;
         use selectors::parser::{is_css2_pseudo_element, SelectorParseErrorKind};
@@ -559,16 +553,15 @@ impl PseudoElement {
         
         input.expect_colon()?;
 
-        let location = input.current_source_location();
         let next = input.next_including_whitespace()?;
         if !matches!(next, Token::Colon) {
             
             let name = match next {
                 Token::Ident(name) if is_css2_pseudo_element(&name) => name,
-                _ => return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError)),
+                _ => return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError)),
             };
-            return PseudoElement::from_slice(&name).ok_or(location.new_custom_error(
-                SelectorParseErrorKind::UnsupportedPseudoClassOrElement(name.clone()),
+            return PseudoElement::from_slice(&name).ok_or(ParseError::custom(
+                SelectorParseErrorKind::UnsupportedPseudoClassOrElement,
             ));
         }
 
@@ -576,8 +569,8 @@ impl PseudoElement {
         match input.next_including_whitespace()?.clone() {
             Token::Ident(name) => {
                 
-                PseudoElement::from_slice(&name).ok_or(input.new_custom_error(
-                    SelectorParseErrorKind::UnsupportedPseudoClassOrElement(name),
+                PseudoElement::from_slice(&name).ok_or(ParseError::custom(
+                    SelectorParseErrorKind::UnsupportedPseudoClassOrElement,
                 ))
             },
             Token::Function(name) => {
@@ -591,7 +584,7 @@ impl PseudoElement {
                     )
                 })
             },
-            t => return Err(input.new_unexpected_token_error(t)),
+            _ => return Err(ParseError::unexpected_token()),
         }
     }
 

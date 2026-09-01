@@ -177,8 +177,8 @@ impl ImportRule {
     
     
     
-    pub fn parse_layer_and_supports<'i, 't>(
-        input: &mut Parser<'i, 't>,
+    pub fn parse_layer_and_supports(
+        input: &mut Parser,
         context: &mut ParserContext,
     ) -> (ImportLayer, Option<ImportSupportsCondition>) {
         let layer = if input

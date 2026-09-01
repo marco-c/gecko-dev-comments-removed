@@ -86,15 +86,11 @@ impl SVGPathData {
     
     
     
-    pub fn parse<'i, 't>(
-        input: &mut Parser<'i, 't>,
-        allow_empty: AllowEmpty,
-    ) -> Result<Self, ParseError<'i>> {
-        let location = input.current_source_location();
+    pub fn parse(input: &mut Parser, allow_empty: AllowEmpty) -> Result<Self, ParseError> {
         let path_string = input.expect_string()?.as_ref();
         let (path, ok) = Self::parse_bytes(path_string.as_bytes());
         if !ok || (allow_empty == AllowEmpty::No && path.0.is_empty()) {
-            return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+            return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
         }
         return Ok(path);
     }
@@ -150,10 +146,7 @@ impl ToCss for SVGPathData {
 }
 
 impl Parse for SVGPathData {
-    fn parse<'i, 't>(
-        _context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
+    fn parse(_context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
         
         
         
