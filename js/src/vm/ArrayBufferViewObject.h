@@ -84,7 +84,6 @@ class ArrayBufferViewObject : public NativeObject {
  private:
   void* dataPointerEither_() const {
     
-    
     return maybePtrFromReservedSlot<void>(DATA_SLOT);
   }
 

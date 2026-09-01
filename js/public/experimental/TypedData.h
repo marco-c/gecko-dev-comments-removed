@@ -132,13 +132,6 @@ namespace js {
 
 extern JS_PUBLIC_API JSObject* UnwrapArrayBufferView(JSObject* obj);
 
-namespace detail {
-
-constexpr size_t TypedArrayLengthSlot = 1;
-constexpr size_t TypedArrayDataSlot = 3;
-
-}  
-
 
 
 extern JS_PUBLIC_API void GetArrayBufferViewLengthAndData(JSObject* obj,
@@ -429,9 +422,6 @@ class JS_PUBLIC_API ArrayBufferView : public ArrayBufferOrView {
 
   mozilla::Span<uint8_t> getData(bool* isSharedMemory,
                                  const JS::AutoRequireNoGC&);
-
-  
-  size_t getByteLength(const JS::AutoRequireNoGC&);
 };
 
 class JS_PUBLIC_API DataView : public ArrayBufferView {
@@ -603,30 +593,12 @@ ArrayBufferView ArrayBufferView::fromObject(JSObject* unwrapped) {
 
 
 
-
-
-
-
-
 #define JS_DEFINE_DATA_AND_LENGTH_ACCESSOR(ExternalType, NativeType, Name) \
   extern JS_PUBLIC_API ExternalType* JS_Get##Name##ArrayData(              \
       JSObject* maybeWrapped, bool* isSharedMemory,                        \
       const JS::AutoRequireNoGC&);                                         \
                                                                            \
   namespace js {                                                           \
-  inline void Get##Name##ArrayLengthAndData(JSObject* unwrapped,           \
-                                            size_t* length,                \
-                                            bool* isSharedMemory,          \
-                                            ExternalType** data) {         \
-    MOZ_ASSERT(JS::TypedArray<JS::Scalar::Name>::fromObject(unwrapped));   \
-    const JS::Value& lenSlot = JS::GetNativeObjectReservedSlot(            \
-        unwrapped, detail::TypedArrayLengthSlot);                          \
-    *length = size_t(lenSlot.toPrivate());                                 \
-    *isSharedMemory = JS_GetTypedArraySharedness(unwrapped);               \
-    *data = JS::GetMaybePtrFromNativeObjectReservedSlot<ExternalType>(     \
-        unwrapped, detail::TypedArrayDataSlot);                            \
-  }                                                                        \
-                                                                           \
   JS_PUBLIC_API JSObject* Unwrap##Name##Array(JSObject* maybeWrapped);     \
   } /* namespace js */
 
