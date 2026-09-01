@@ -2,6 +2,9 @@
 
 
 
+import functools
+from math import ceil
+
 import taskgraph
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util import json
@@ -16,6 +19,7 @@ from gecko_taskgraph.util.chunking import (
     get_test_tags,
     guess_mozinfo_from_task,
     resolve_manifest_runtimes,
+    resolver,
 )
 from gecko_taskgraph.util.perfile import perfile_number_of_chunks
 
@@ -24,6 +28,26 @@ DYNAMIC_CHUNK_DURATION = 20 * 60
 
 
 transforms = TransformSequence()
+
+
+@functools.cache
+def _parse_test_paths(mozharness_test_paths):
+    
+    return {
+        suite: [paths] if isinstance(paths, str) else paths
+        for suite, paths in json.loads(mozharness_test_paths).items()
+    }
+
+
+def _set_manifests_restricted(task):
+    task.setdefault("attributes", {})["test-manifests-restricted"] = True
+
+
+def _requested_test_paths(config):
+    """The test paths |mach try| restricted this push to, keyed by suite."""
+    try_task_config = config.params.get("try_task_config", {}) or {}
+    env = try_task_config.get("env", {})
+    return _parse_test_paths(env.get("MOZHARNESS_TEST_PATHS", "{}"))
 
 
 @transforms.add
@@ -134,56 +158,59 @@ def set_test_manifests(config, tasks):
         
         
         
-        mh_test_paths = {}
-        if "MOZHARNESS_TEST_PATHS" in config.params.get("try_task_config", {}).get(
-            "env", {}
-        ):
-            mh_test_paths = json.loads(
-                config.params["try_task_config"]["env"]["MOZHARNESS_TEST_PATHS"]
-            )
+        mh_test_paths = _requested_test_paths(config)
+        test_tags = get_test_tags(config, task.get("worker", {}).get("env", {}))
 
         if (
             mh_test_paths
             and task["attributes"]["unittest_suite"] in mh_test_paths.keys()
         ):
             input_paths = mh_test_paths[task["attributes"]["unittest_suite"]]
-            remaining_manifests = []
 
             if "web-platform-tests" in task["test-name"]:
+                
+                
                 if _wpt_task_should_run(task["test-name"], input_paths):
                     yield task
                 continue
 
             
             
-            for m in input_paths:
-                if [tm for tm in task["test-manifests"]["active"] if tm.startswith(m)]:
-                    remaining_manifests.append(m)
-
             
-            for m in input_paths:
-                man = m
-                for tm in task["test-manifests"]["other_dirs"]:
-                    matched_dirs = [
-                        dp
-                        for dp in task["test-manifests"]["other_dirs"].get(tm)
-                        if dp.startswith(man)
-                    ]
-                    if matched_dirs:
-                        if tm not in task["test-manifests"]["active"]:
-                            continue
-                        if m not in remaining_manifests:
-                            remaining_manifests.append(m)
-
-            if remaining_manifests == []:
+            
+            
+            test_paths = resolver.get_test_paths_by_manifest(
+                task["suite"], frozenset(input_paths)
+            )
+            suite_manifests = task["test-manifests"]["active"]
+            matched = [m for m in suite_manifests if m in test_paths]
+            if not matched:
                 continue
 
+            active = sorted({p for m in matched for p in test_paths[m]})
+            task["test-manifests"] = {"active": active, "skipped": []}
+
+            
+            
+            
+            for key in ("chunks", "default-chunks"):
+                if isinstance(task.get(key), int):
+                    task[key] = min(
+                        ceil(task[key] * len(matched) / len(suite_manifests)),
+                        len(active),
+                    )
+
+            
+            
+            
+            if not test_tags:
+                _set_manifests_restricted(task)
         elif mh_test_paths:
             
             
             continue
         elif (
-            get_test_tags(config, task.get("worker", {}).get("env", {}))
+            test_tags
             and not task["test-manifests"]["active"]
             and not task["test-manifests"]["other_dirs"]
         ):
@@ -214,7 +241,18 @@ def resolve_dynamic_chunks(config, tasks):
             all_runtimes, task["test-manifests"]["active"]
         )
 
-        if not all_runtimes:
+        
+        
+        
+        
+        
+        restricted = task["attributes"].get("test-manifests-restricted", False)
+        if restricted:
+            runtimes = {m: r for m, r in runtimes.items() if r}
+
+        
+        
+        if not all_runtimes or (restricted and not runtimes):
             task["chunks"] = task.get("default-chunks", 1)
             yield task
             continue
@@ -231,7 +269,14 @@ def resolve_dynamic_chunks(config, tasks):
         missing = [m for m in task["test-manifests"]["active"] if m not in runtimes]
         total += avg * len(missing)
 
-        chunks = int(round(total / DYNAMIC_CHUNK_DURATION))
+        
+        
+        
+        
+        if restricted:
+            chunks = ceil(total / DYNAMIC_CHUNK_DURATION)
+        else:
+            chunks = int(round(total / DYNAMIC_CHUNK_DURATION))
 
         
         

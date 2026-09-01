@@ -2376,7 +2376,18 @@ def try_task_config_env(config, tasks):
     }
     for task in tasks:
         if task["worker"]["implementation"] in implementations:
-            task["worker"]["env"].update(env)
+            task_env = task["worker"]["env"]
+            
+            
+            
+            
+            attributes = task.get("attributes") or {}
+            keep_test_paths = attributes.get("test-manifests-restricted", False)
+            task_env.update({
+                name: value
+                for name, value in env.items()
+                if name != "MOZHARNESS_TEST_PATHS" or not keep_test_paths
+            })
         yield task
 
 
