@@ -22,17 +22,6 @@ class PickleIterator;
 #  pragma warning(disable : 4800)
 #endif
 
-#if !defined(XP_UNIX)
-
-
-
-
-
-namespace base {
-struct FileDescriptor {};
-}  
-#endif
-
 namespace mozilla {
 template <typename...>
 class Variant;
@@ -87,21 +76,6 @@ struct ParamTraits<uint8_t> {
   }
 };
 
-#if !defined(XP_UNIX)
-
-template <>
-struct ParamTraits<base::FileDescriptor> {
-  typedef base::FileDescriptor paramType;
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    MOZ_CRASH("FileDescriptor isn't meaningful on this platform");
-  }
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    MOZ_CRASH("FileDescriptor isn't meaningful on this platform");
-    return false;
-  }
-};
-#endif  
-
 template <>
 struct ParamTraits<mozilla::void_t> {
   typedef mozilla::void_t paramType;
@@ -145,12 +119,12 @@ struct BitfieldHelper {
 
 
 template <typename... Ts>
-static void WriteParams(MessageWriter* aWriter, const Ts&... aArgs) {
+void WriteParams(MessageWriter* aWriter, const Ts&... aArgs) {
   (WriteParam(aWriter, aArgs), ...);
 }
 
 template <typename... Ts>
-static bool ReadParams(MessageReader* aReader, Ts&... aArgs) {
+bool ReadParams(MessageReader* aReader, Ts&... aArgs) {
   return (ReadParam(aReader, &aArgs) && ...);
 }
 
