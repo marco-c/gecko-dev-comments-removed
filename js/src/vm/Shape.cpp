@@ -2,8 +2,7 @@
 
 
 
-#include "vm/Shape-inl.h"
-
+#include "gc/GC.h"
 #include "gc/HashUtil.h"
 #include "js/friend/WindowProxy.h"  
 #include "js/HashTable.h"
@@ -19,6 +18,7 @@
 #include "vm/JSContext-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"
+#include "vm/Shape-inl.h"
 
 using namespace js;
 
@@ -128,6 +128,8 @@ bool js::NativeObject::toDictionaryMode(JSContext* cx,
   }
 
   obj->setShape(shape);
+
+  gc::MaybeSleepForConcurrentMarkingDelays(cx);
 
   MOZ_ASSERT(obj->inDictionaryMode());
   obj->setDictionaryModeSlotSpan(span);
