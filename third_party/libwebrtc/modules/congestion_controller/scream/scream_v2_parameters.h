@@ -135,6 +135,8 @@ struct ScreamV2Parameters {
 
   
   FieldTrialParameter<double> pacing_factor;
+  
+  FieldTrialParameter<double> pacing_rate_received_factor;
 
   
   
