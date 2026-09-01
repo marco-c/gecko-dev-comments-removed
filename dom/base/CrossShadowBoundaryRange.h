@@ -55,6 +55,16 @@ class CrossShadowBoundaryRange final : public StaticRange,
   void UpdateCommonAncestor();
 
   
+
+
+
+  [[nodiscard]] bool IsPositionedInSameRangeRoot() const {
+    return IsPositioned() &&
+           RangeUtils::ComputeRootNode(mStart.GetContainer()) ==
+               RangeUtils::ComputeRootNode(mEnd.GetContainer());
+  }
+
+  
   nsresult SetStartAndEnd(nsINode* aStartContainer, uint32_t aStartOffset,
                           nsINode* aEndContainer, uint32_t aEndOffset) = delete;
 
