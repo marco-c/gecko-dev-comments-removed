@@ -381,7 +381,8 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   
   
-  MainThreadOrGCTaskData<FreeLists> freeLists;
+  MainThreadOrGCTaskData<FreeLists> mixedFreeLists;
+  MainThreadOrGCTaskData<FreeLists> tenuredFreeLists;
 
   
   
@@ -438,6 +439,12 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   
   
   MainThreadOrGCTaskData<bool> majorFinishedWhileMinorSweeping;
+
+  
+  
+  
+  
+  MainThreadOrGCTaskData<bool> allocTenuredInMixedChunks;
 
   
   
@@ -575,20 +582,20 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   bool useAvailableChunk(size_t sizeClass, size_t maxSizeClass,
                          bool nurseryOwned);
   bool useAvailableChunk(size_t sizeClass, size_t maxSizeClass,
-                         ContentKind kind, BufferChunkList& dst);
-  SizeClassBitSet getChunkSizeClassesToMove(size_t maxSizeClass,
-                                            ContentKind kind) const;
-  void* bumpAlloc(size_t bytes, size_t sizeClass, size_t maxSizeClass,
+                         bool nurseryOwned, ContentKind srcKind,
+                         BufferChunkList& dstChunks, FreeLists& dstFreeLists);
+  void* bumpAlloc(size_t bytes, size_t minSizeClass, size_t maxSizeClass,
                   bool nurseryOwned);
+  FreeLists& getFreeListsForAlloc(bool nurseryOwned);
   void* allocFromRegion(FreeRegion* region, size_t bytes, size_t sizeClass);
   void* allocMediumAligned(size_t bytes, bool nurseryOwned, bool inGC);
   void* retryAlignedAlloc(size_t sizeClass, bool nurseryOwned, bool inGC);
   void* alignedAlloc(size_t sizeClass, bool nurseryOwned);
-  void* alignedAllocFromRegion(FreeRegion* region, size_t sizeClass);
+  void* alignedAllocFromRegion(FreeRegion* region, size_t sizeClass,
+                               FreeLists& freeLists);
   void updateFreeListsAfterAlloc(FreeLists* freeLists, FreeRegion* region,
                                  size_t sizeClass);
   void setAllocated(void* alloc, size_t bytes, bool nurseryOwned, bool inGC);
-  void setChunkHasNurseryAllocs(BufferChunk* chunk);
   void recommitRegion(FreeRegion* region);
   bool stealOrAllocNewChunk(size_t sizeClass, bool nurseryOwned, bool inGC);
   bool tryToStealQueuedChunk(bool nurseryOwned, size_t sizeClass);
