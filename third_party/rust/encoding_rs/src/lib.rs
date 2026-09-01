@@ -38,9 +38,11 @@
 
 
 
-#![cfg_attr(
-    feature = "cargo-clippy",
-    allow(doc_markdown, inline_always, new_ret_no_self)
+#![allow(
+    clippy::doc_markdown,
+    clippy::inline_always,
+    clippy::new_ret_no_self,
+    clippy::redundant_static_lifetimes
 )]
 
 
@@ -719,8 +721,13 @@
 
 
 
-#![no_std]
-#![cfg_attr(feature = "simd-accel", feature(core_intrinsics, portable_simd))]
+#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(feature = "simd-accel", allow(internal_features))]
+#![cfg_attr(feature = "simd-accel", feature(core_intrinsics))]
+#![cfg_attr(
+    all(feature = "simd-accel", target_endian = "little"),
+    feature(portable_simd)
+)]
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(test, macro_use)]
@@ -741,17 +748,19 @@ extern crate serde_derive;
 #[cfg(all(test, feature = "serde"))]
 extern crate serde_json;
 
+
+cfg_if! {
+    if #[cfg(all(feature = "simd-accel", feature = "std", any(target_arch = "x86_64", target_arch = "x86"), not(all(target_feature = "avx2", target_feature = "bmi1"))))] {
+        use multiversion::multiversion;
+    } else {
+        use multiversion_no_op::multiversion;
+    }
+}
+
 #[macro_use]
 mod macros;
 
-#[cfg(all(
-    feature = "simd-accel",
-    any(
-        target_feature = "sse2",
-        all(target_endian = "little", target_arch = "aarch64"),
-        all(target_endian = "little", target_feature = "neon")
-    )
-))]
+#[cfg(all(feature = "simd-accel", target_endian = "little",))]
 mod simd_funcs;
 
 #[cfg(all(test, feature = "alloc"))]
@@ -788,6 +797,9 @@ use alloc::borrow::Cow;
 use alloc::string::String;
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
+#[cfg(feature = "alloc")]
+use core::mem::MaybeUninit;
+
 use core::cmp::Ordering;
 use core::hash::Hash;
 use core::hash::Hasher;
@@ -867,6 +879,8 @@ pub static EUC_JP_INIT: Encoding = Encoding {
     name: "EUC-JP",
     variant: VariantEncoding::EucJp,
 };
+
+
 
 
 
@@ -2744,7 +2758,7 @@ impl Encoding {
     pub fn for_label(label: &[u8]) -> Option<&'static Encoding> {
         let mut trimmed = [0u8; LONGEST_LABEL_LENGTH];
         let mut trimmed_pos = 0usize;
-        let mut iter = label.into_iter();
+        let mut iter = label.iter();
         
         loop {
             match iter.next() {
@@ -3127,11 +3141,11 @@ impl Encoding {
             let mut string = String::with_capacity(
                 checked_min(rounded_without_replacement, with_replacement).unwrap(),
             );
-            unsafe {
-                let vec = string.as_mut_vec();
-                vec.set_len(valid_up_to);
-                core::ptr::copy_nonoverlapping(bytes.as_ptr(), vec.as_mut_ptr(), valid_up_to);
-            }
+
+            
+            
+            let vec = unsafe { string.as_mut_vec() };
+            vec.extend_from_slice(&bytes[..valid_up_to]);
             (decoder, string, valid_up_to)
         } else {
             let decoder = self.new_decoder_without_bom_handling();
@@ -3228,11 +3242,10 @@ impl Encoding {
                 )
                 .unwrap(),
             );
-            unsafe {
-                let vec = string.as_mut_vec();
-                vec.set_len(valid_up_to);
-                core::ptr::copy_nonoverlapping(bytes.as_ptr(), vec.as_mut_ptr(), valid_up_to);
-            }
+            
+            
+            let vec = unsafe { string.as_mut_vec() };
+            vec.extend_from_slice(&bytes[..valid_up_to]);
             (decoder, string, &bytes[valid_up_to..])
         } else {
             let decoder = self.new_decoder_without_bom_handling();
@@ -3320,10 +3333,7 @@ impl Encoding {
             .unwrap()
             .next_power_of_two(),
         );
-        unsafe {
-            vec.set_len(valid_up_to);
-            core::ptr::copy_nonoverlapping(bytes.as_ptr(), vec.as_mut_ptr(), valid_up_to);
-        }
+        vec.extend_from_slice(&bytes[..valid_up_to]);
         let mut total_read = valid_up_to;
         let mut total_had_errors = false;
         loop {
@@ -3450,7 +3460,7 @@ impl Encoding {
 impl PartialEq for Encoding {
     #[inline]
     fn eq(&self, other: &Encoding) -> bool {
-        (self as *const Encoding) == (other as *const Encoding)
+        ::core::ptr::eq(self, other)
     }
 }
 
@@ -3458,6 +3468,7 @@ impl Eq for Encoding {}
 
 #[cfg(test)]
 impl PartialOrd for Encoding {
+    #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         (self as *const Encoding as usize).partial_cmp(&(other as *const Encoding as usize))
     }
@@ -3465,6 +3476,7 @@ impl PartialOrd for Encoding {
 
 #[cfg(test)]
 impl Ord for Encoding {
+    #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
         (self as *const Encoding as usize).cmp(&(other as *const Encoding as usize))
     }
@@ -3478,9 +3490,10 @@ impl Hash for Encoding {
 }
 
 impl core::fmt::Debug for Encoding {
-    #[inline]
     fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-        write!(f, "Encoding {{ {} }}", self.name)
+        f.debug_struct("Encoding")
+            .field("name", &self.name)
+            .finish_non_exhaustive()
     }
 }
 
@@ -3785,22 +3798,20 @@ impl Decoder {
                 return self.variant.max_utf8_buffer_length(byte_length);
             }
             DecoderLifeCycle::AtStart => {
-                if let Some(utf8_bom) = checked_add(3, byte_length.checked_mul(3)) {
-                    if let Some(utf16_bom) = checked_add(
+                if let Some(utf8_bom) = checked_add(3, byte_length.checked_mul(3))
+                    && let Some(utf16_bom) = checked_add(
                         1,
                         checked_mul(3, checked_div(byte_length.checked_add(1), 2)),
-                    ) {
-                        let utf_bom = core::cmp::max(utf8_bom, utf16_bom);
-                        let encoding = self.encoding();
-                        if encoding == UTF_8 || encoding == UTF_16LE || encoding == UTF_16BE {
-                            
-                            
-                            return Some(utf_bom);
-                        } else if let Some(non_bom) =
-                            self.variant.max_utf8_buffer_length(byte_length)
-                        {
-                            return Some(core::cmp::max(utf_bom, non_bom));
-                        }
+                    )
+                {
+                    let utf_bom = core::cmp::max(utf8_bom, utf16_bom);
+                    let encoding = self.encoding();
+                    if encoding == UTF_8 || encoding == UTF_16LE || encoding == UTF_16BE {
+                        
+                        
+                        return Some(utf_bom);
+                    } else if let Some(non_bom) = self.variant.max_utf8_buffer_length(byte_length) {
+                        return Some(core::cmp::max(utf_bom, non_bom));
                     }
                 }
             }
@@ -3810,15 +3821,15 @@ impl Decoder {
                 
                 
                 
-                if let Some(sum) = byte_length.checked_add(2) {
-                    if let Some(utf8_bom) = checked_add(3, sum.checked_mul(3)) {
-                        if self.encoding() == UTF_8 {
-                            
-                            
-                            return Some(utf8_bom);
-                        } else if let Some(non_bom) = self.variant.max_utf8_buffer_length(sum) {
-                            return Some(core::cmp::max(utf8_bom, non_bom));
-                        }
+                if let Some(sum) = byte_length.checked_add(2)
+                    && let Some(utf8_bom) = checked_add(3, sum.checked_mul(3))
+                {
+                    if self.encoding() == UTF_8 {
+                        
+                        
+                        return Some(utf8_bom);
+                    } else if let Some(non_bom) = self.variant.max_utf8_buffer_length(sum) {
+                        return Some(core::cmp::max(utf8_bom, non_bom));
                     }
                 }
             }
@@ -3833,18 +3844,17 @@ impl Decoder {
                 
                 
                 
-                if let Some(sum) = byte_length.checked_add(2) {
-                    if let Some(utf16_bom) =
+                if let Some(sum) = byte_length.checked_add(2)
+                    && let Some(utf16_bom) =
                         checked_add(1, checked_mul(3, checked_div(sum.checked_add(1), 2)))
-                    {
-                        let encoding = self.encoding();
-                        if encoding == UTF_16LE || encoding == UTF_16BE {
-                            
-                            
-                            return Some(utf16_bom);
-                        } else if let Some(non_bom) = self.variant.max_utf8_buffer_length(sum) {
-                            return Some(core::cmp::max(utf16_bom, non_bom));
-                        }
+                {
+                    let encoding = self.encoding();
+                    if encoding == UTF_16LE || encoding == UTF_16BE {
+                        
+                        
+                        return Some(utf16_bom);
+                    } else if let Some(non_bom) = self.variant.max_utf8_buffer_length(sum) {
+                        return Some(core::cmp::max(utf16_bom, non_bom));
                     }
                 }
             }
@@ -3877,23 +3887,23 @@ impl Decoder {
                     .max_utf8_buffer_length_without_replacement(byte_length);
             }
             DecoderLifeCycle::AtStart => {
-                if let Some(utf8_bom) = byte_length.checked_add(3) {
-                    if let Some(utf16_bom) = checked_add(
+                if let Some(utf8_bom) = byte_length.checked_add(3)
+                    && let Some(utf16_bom) = checked_add(
                         1,
                         checked_mul(3, checked_div(byte_length.checked_add(1), 2)),
-                    ) {
-                        let utf_bom = core::cmp::max(utf8_bom, utf16_bom);
-                        let encoding = self.encoding();
-                        if encoding == UTF_8 || encoding == UTF_16LE || encoding == UTF_16BE {
-                            
-                            
-                            return Some(utf_bom);
-                        } else if let Some(non_bom) = self
-                            .variant
-                            .max_utf8_buffer_length_without_replacement(byte_length)
-                        {
-                            return Some(core::cmp::max(utf_bom, non_bom));
-                        }
+                    )
+                {
+                    let utf_bom = core::cmp::max(utf8_bom, utf16_bom);
+                    let encoding = self.encoding();
+                    if encoding == UTF_8 || encoding == UTF_16LE || encoding == UTF_16BE {
+                        
+                        
+                        return Some(utf_bom);
+                    } else if let Some(non_bom) = self
+                        .variant
+                        .max_utf8_buffer_length_without_replacement(byte_length)
+                    {
+                        return Some(core::cmp::max(utf_bom, non_bom));
                     }
                 }
             }
@@ -3903,17 +3913,17 @@ impl Decoder {
                 
                 
                 
-                if let Some(sum) = byte_length.checked_add(2) {
-                    if let Some(utf8_bom) = sum.checked_add(3) {
-                        if self.encoding() == UTF_8 {
-                            
-                            
-                            return Some(utf8_bom);
-                        } else if let Some(non_bom) =
-                            self.variant.max_utf8_buffer_length_without_replacement(sum)
-                        {
-                            return Some(core::cmp::max(utf8_bom, non_bom));
-                        }
+                if let Some(sum) = byte_length.checked_add(2)
+                    && let Some(utf8_bom) = sum.checked_add(3)
+                {
+                    if self.encoding() == UTF_8 {
+                        
+                        
+                        return Some(utf8_bom);
+                    } else if let Some(non_bom) =
+                        self.variant.max_utf8_buffer_length_without_replacement(sum)
+                    {
+                        return Some(core::cmp::max(utf8_bom, non_bom));
                     }
                 }
             }
@@ -3928,20 +3938,19 @@ impl Decoder {
                 
                 
                 
-                if let Some(sum) = byte_length.checked_add(2) {
-                    if let Some(utf16_bom) =
+                if let Some(sum) = byte_length.checked_add(2)
+                    && let Some(utf16_bom) =
                         checked_add(1, checked_mul(3, checked_div(sum.checked_add(1), 2)))
+                {
+                    let encoding = self.encoding();
+                    if encoding == UTF_16LE || encoding == UTF_16BE {
+                        
+                        
+                        return Some(utf16_bom);
+                    } else if let Some(non_bom) =
+                        self.variant.max_utf8_buffer_length_without_replacement(sum)
                     {
-                        let encoding = self.encoding();
-                        if encoding == UTF_16LE || encoding == UTF_16BE {
-                            
-                            
-                            return Some(utf16_bom);
-                        } else if let Some(non_bom) =
-                            self.variant.max_utf8_buffer_length_without_replacement(sum)
-                        {
-                            return Some(core::cmp::max(utf16_bom, non_bom));
-                        }
+                        return Some(core::cmp::max(utf16_bom, non_bom));
                     }
                 }
             }
@@ -4019,13 +4028,27 @@ impl Decoder {
     
     
     
-    
     pub fn decode_to_str(
         &mut self,
         src: &[u8],
         dst: &mut str,
         last: bool,
     ) -> (CoderResult, usize, usize, bool) {
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        
+        
+        
+        
+        
         let bytes: &mut [u8] = unsafe { dst.as_bytes_mut() };
         let (result, read, written, replaced) = self.decode_to_utf8(src, bytes, last);
         let len = bytes.len();
@@ -4072,16 +4095,32 @@ impl Decoder {
         dst: &mut String,
         last: bool,
     ) -> (CoderResult, usize, bool) {
+        
+        
+        
+        
+        
+        
+        
+        let vec = unsafe { dst.as_mut_vec() };
+        let old_len = vec.len();
+        let spare_capacity = minimally_init(vec.spare_capacity_mut());
+        let (result, read, written, replaced) = self.decode_to_utf8(src, spare_capacity, last);
+        debug_assert!(written <= spare_capacity.len());
+        let new_len = old_len + written;
+        assert!(new_len <= vec.capacity());
+        
+        
+        
+        
+        
+        
+        
+        
         unsafe {
-            let vec = dst.as_mut_vec();
-            let old_len = vec.len();
-            let capacity = vec.capacity();
-            vec.set_len(capacity);
-            let (result, read, written, replaced) =
-                self.decode_to_utf8(src, &mut vec[old_len..], last);
-            vec.set_len(old_len + written);
-            (result, read, replaced)
+            vec.set_len(new_len);
         }
+        (result, read, replaced)
     }
 
     public_decode_function!(/// Incrementally decode a byte stream into UTF-8
@@ -4111,13 +4150,27 @@ impl Decoder {
     
     
     
-    
     pub fn decode_to_str_without_replacement(
         &mut self,
         src: &[u8],
         dst: &mut str,
         last: bool,
     ) -> (DecoderResult, usize, usize) {
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        
+        
+        
+        
+        
         let bytes: &mut [u8] = unsafe { dst.as_bytes_mut() };
         let (result, read, written) = self.decode_to_utf8_without_replacement(src, bytes, last);
         let len = bytes.len();
@@ -4162,16 +4215,33 @@ impl Decoder {
         dst: &mut String,
         last: bool,
     ) -> (DecoderResult, usize) {
+        
+        
+        
+        
+        
+        
+        
+        let vec = unsafe { dst.as_mut_vec() };
+        let old_len = vec.len();
+        let spare_capacity = minimally_init(vec.spare_capacity_mut());
+        let (result, read, written) =
+            self.decode_to_utf8_without_replacement(src, spare_capacity, last);
+        debug_assert!(written <= spare_capacity.len());
+        let new_len = old_len + written;
+        assert!(new_len <= vec.capacity());
+        
+        
+        
+        
+        
+        
+        
+        
         unsafe {
-            let vec = dst.as_mut_vec();
-            let old_len = vec.len();
-            let capacity = vec.capacity();
-            vec.set_len(capacity);
-            let (result, read, written) =
-                self.decode_to_utf8_without_replacement(src, &mut vec[old_len..], last);
-            vec.set_len(old_len + written);
-            (result, read)
+            vec.set_len(new_len);
         }
+        (result, read)
     }
 
     
@@ -4197,21 +4267,19 @@ impl Decoder {
                 return self.variant.max_utf16_buffer_length(byte_length);
             }
             DecoderLifeCycle::AtStart => {
-                if let Some(utf8_bom) = byte_length.checked_add(1) {
-                    if let Some(utf16_bom) =
+                if let Some(utf8_bom) = byte_length.checked_add(1)
+                    && let Some(utf16_bom) =
                         checked_add(1, checked_div(byte_length.checked_add(1), 2))
+                {
+                    let utf_bom = core::cmp::max(utf8_bom, utf16_bom);
+                    let encoding = self.encoding();
+                    if encoding == UTF_8 || encoding == UTF_16LE || encoding == UTF_16BE {
+                        
+                        
+                        return Some(utf_bom);
+                    } else if let Some(non_bom) = self.variant.max_utf16_buffer_length(byte_length)
                     {
-                        let utf_bom = core::cmp::max(utf8_bom, utf16_bom);
-                        let encoding = self.encoding();
-                        if encoding == UTF_8 || encoding == UTF_16LE || encoding == UTF_16BE {
-                            
-                            
-                            return Some(utf_bom);
-                        } else if let Some(non_bom) =
-                            self.variant.max_utf16_buffer_length(byte_length)
-                        {
-                            return Some(core::cmp::max(utf_bom, non_bom));
-                        }
+                        return Some(core::cmp::max(utf_bom, non_bom));
                     }
                 }
             }
@@ -4221,15 +4289,15 @@ impl Decoder {
                 
                 
                 
-                if let Some(sum) = byte_length.checked_add(2) {
-                    if let Some(utf8_bom) = sum.checked_add(1) {
-                        if self.encoding() == UTF_8 {
-                            
-                            
-                            return Some(utf8_bom);
-                        } else if let Some(non_bom) = self.variant.max_utf16_buffer_length(sum) {
-                            return Some(core::cmp::max(utf8_bom, non_bom));
-                        }
+                if let Some(sum) = byte_length.checked_add(2)
+                    && let Some(utf8_bom) = sum.checked_add(1)
+                {
+                    if self.encoding() == UTF_8 {
+                        
+                        
+                        return Some(utf8_bom);
+                    } else if let Some(non_bom) = self.variant.max_utf16_buffer_length(sum) {
+                        return Some(core::cmp::max(utf8_bom, non_bom));
                     }
                 }
             }
@@ -4244,16 +4312,16 @@ impl Decoder {
                 
                 
                 
-                if let Some(sum) = byte_length.checked_add(2) {
-                    if let Some(utf16_bom) = checked_add(1, checked_div(sum.checked_add(1), 2)) {
-                        let encoding = self.encoding();
-                        if encoding == UTF_16LE || encoding == UTF_16BE {
-                            
-                            
-                            return Some(utf16_bom);
-                        } else if let Some(non_bom) = self.variant.max_utf16_buffer_length(sum) {
-                            return Some(core::cmp::max(utf16_bom, non_bom));
-                        }
+                if let Some(sum) = byte_length.checked_add(2)
+                    && let Some(utf16_bom) = checked_add(1, checked_div(sum.checked_add(1), 2))
+                {
+                    let encoding = self.encoding();
+                    if encoding == UTF_16LE || encoding == UTF_16BE {
+                        
+                        
+                        return Some(utf16_bom);
+                    } else if let Some(non_bom) = self.variant.max_utf16_buffer_length(sum) {
+                        return Some(core::cmp::max(utf16_bom, non_bom));
                     }
                 }
             }
@@ -4350,12 +4418,19 @@ impl Decoder {
     
     pub fn latin1_byte_compatible_up_to(&self, bytes: &[u8]) -> Option<usize> {
         match self.life_cycle {
-            DecoderLifeCycle::Converting => {
-                return self.variant.latin1_byte_compatible_up_to(bytes);
-            }
+            DecoderLifeCycle::Converting => self.variant.latin1_byte_compatible_up_to(bytes),
             DecoderLifeCycle::Finished => panic!("Must not use a decoder that has finished."),
             _ => None,
         }
+    }
+}
+
+impl core::fmt::Debug for Decoder {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("Decoder")
+            .field("encoding", self.encoding)
+            .field("life_cycle", &self.life_cycle)
+            .finish_non_exhaustive()
     }
 }
 
@@ -4663,15 +4738,24 @@ impl Encoder {
         dst: &mut Vec<u8>,
         last: bool,
     ) -> (CoderResult, usize, bool) {
+        let old_len = dst.len();
+        let spare_capacity = minimally_init(dst.spare_capacity_mut());
+        let (result, read, written, replaced) = self.encode_from_utf8(src, spare_capacity, last);
+        debug_assert!(written <= spare_capacity.len());
+        let new_len = old_len + written;
+        assert!(new_len <= dst.capacity());
+        
+        
+        
+        
+        
+        
+        
+        
         unsafe {
-            let old_len = dst.len();
-            let capacity = dst.capacity();
-            dst.set_len(capacity);
-            let (result, read, written, replaced) =
-                self.encode_from_utf8(src, &mut dst[old_len..], last);
-            dst.set_len(old_len + written);
-            (result, read, replaced)
+            dst.set_len(new_len);
         }
+        (result, read, replaced)
     }
 
     
@@ -4703,15 +4787,25 @@ impl Encoder {
         dst: &mut Vec<u8>,
         last: bool,
     ) -> (EncoderResult, usize) {
+        let old_len = dst.len();
+        let spare_capacity = minimally_init(dst.spare_capacity_mut());
+        let (result, read, written) =
+            self.encode_from_utf8_without_replacement(src, spare_capacity, last);
+        debug_assert!(written <= spare_capacity.len());
+        let new_len = old_len + written;
+        assert!(new_len <= dst.capacity());
+        
+        
+        
+        
+        
+        
+        
+        
         unsafe {
-            let old_len = dst.len();
-            let capacity = dst.capacity();
-            dst.set_len(capacity);
-            let (result, read, written) =
-                self.encode_from_utf8_without_replacement(src, &mut dst[old_len..], last);
-            dst.set_len(old_len + written);
-            (result, read)
+            dst.set_len(new_len);
         }
+        (result, read)
     }
 
     
@@ -4857,6 +4951,14 @@ impl Encoder {
     }
 }
 
+impl core::fmt::Debug for Encoder {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("Encoder")
+            .field("encoding", self.encoding)
+            .finish_non_exhaustive()
+    }
+}
+
 
 fn write_ncr(unmappable: char, dst: &mut [u8]) -> usize {
     
@@ -4979,6 +5081,143 @@ fn checked_min(one: Option<usize>, other: Option<usize>) -> Option<usize> {
         }
     } else {
         other
+    }
+}
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "alloc")]
+const SMALLEST_PAGE_SIZE: usize = 4096;
+
+
+#[cfg(feature = "alloc")]
+const PAGE_MASK: usize = SMALLEST_PAGE_SIZE - 1;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "alloc")]
+fn minimally_init(buf: &mut [MaybeUninit<u8>]) -> &mut [u8] {
+    
+    
+    #[allow(clippy::never_loop, clippy::while_let_loop)]
+    loop {
+        if let Some(b) = buf.first_mut() {
+            
+            
+            *b = MaybeUninit::zeroed();
+        } else {
+            
+            break;
+        };
+        
+        let mut i = SMALLEST_PAGE_SIZE - (buf.as_mut_ptr().addr() & PAGE_MASK);
+        while let Some(b) = buf.get_mut(i) {
+            
+            
+            *b = MaybeUninit::zeroed();
+            i += SMALLEST_PAGE_SIZE;
+        }
+        break;
+    }
+    let ptr = buf.as_mut_ptr();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    unsafe {
+        pointer_escapes(ptr);
+    }
+    
+    
+    
+    unsafe { core::slice::from_raw_parts_mut(buf.as_mut_ptr().cast(), buf.len()) }
+}
+
+cfg_if! {
+    if #[cfg(all(not(miri), feature = "alloc", any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "arm",
+        target_arch = "aarch64",
+        target_arch = "arm64ec",
+        target_arch = "riscv32",
+        target_arch = "riscv64",
+        target_arch = "loongarch64",
+        target_arch = "s390x",
+        target_arch = "powerpc",
+        target_arch = "powerpc64")))] {
+        #[inline(always)]
+        unsafe fn pointer_escapes(ptr: *mut MaybeUninit<u8>) {
+            // SAFETY:
+            // For the purpose of https://www.ralfj.de/blog/2026/03/13/inline-asm.html
+            // the safe Rust story for the `asm!` block is:
+            // The `asm!` block reads every byte in the slice that was
+            // written by the above code and uses the read values to derive
+            // bytes that it writes to every byte in the slice that was
+            // _not_ already written by the above code.
+            unsafe {
+                core::arch::asm!("/* {0} */", in(reg) ptr);
+            }
+        }
+    } else if #[cfg(feature = "alloc")] {
+        #[inline(never)]
+        unsafe fn pointer_escapes(_ptr: *mut MaybeUninit<u8>) {
+            // Can't use the `asm!` block with Miri. Skipping the `asm!` block
+            // in the Miri-enabled case means that we materialize `&mut [u8]`
+            // to memory whose initialization Miri hasn't seen. That tests
+            // pass under Miri nonetheless shows that we don't actually read from
+            // the slice, which is a stronger result that just zeroing the
+            // whole slice when Miri is enabled and having `cargo miri test`
+            // pass like that.
+            //
+            // Also, `asm!` doesn't work on some targets, so we end up relying
+            // on all this being unnecessary anyway, because materializing
+            // `&mut [u8]` to unitialized memory isn't UB after all. See
+            // https://users.rust-lang.org/t/soundly-turning-mut-maybeuninit-u8-into-mut-u8-with-garbage/140668/32
+        }
+    } else {
     }
 }
 
@@ -5466,11 +5705,13 @@ mod tests {
 
     #[test]
     fn test_decode_bomful_invalid_utf8_to_cow_without_bom_handling_and_without_replacement() {
-        assert!(UTF_8
-            .decode_without_bom_handling_and_without_replacement(
-                b"\xEF\xBB\xBF\xE2\x82\xAC\x80\xC3\xA4"
-            )
-            .is_none());
+        assert!(
+            UTF_8
+                .decode_without_bom_handling_and_without_replacement(
+                    b"\xEF\xBB\xBF\xE2\x82\xAC\x80\xC3\xA4"
+                )
+                .is_none()
+        );
     }
 
     #[test]
@@ -5488,9 +5729,11 @@ mod tests {
 
     #[test]
     fn test_decode_invalid_windows_1257_to_cow_without_bom_handling_and_without_replacement() {
-        assert!(WINDOWS_1257
-            .decode_without_bom_handling_and_without_replacement(b"abc\x80\xA1\xE4")
-            .is_none());
+        assert!(
+            WINDOWS_1257
+                .decode_without_bom_handling_and_without_replacement(b"abc\x80\xA1\xE4")
+                .is_none()
+        );
     }
 
     #[test]
@@ -5901,10 +6144,12 @@ mod tests {
                 .unwrap(),
             1
         );
-        assert!(REPLACEMENT
-            .new_decoder_without_bom_handling()
-            .latin1_byte_compatible_up_to(buffer)
-            .is_none());
+        assert!(
+            REPLACEMENT
+                .new_decoder_without_bom_handling()
+                .latin1_byte_compatible_up_to(buffer)
+                .is_none()
+        );
         assert_eq!(
             SHIFT_JIS
                 .new_decoder_without_bom_handling()
@@ -5919,14 +6164,18 @@ mod tests {
                 .unwrap(),
             1
         );
-        assert!(UTF_16BE
-            .new_decoder_without_bom_handling()
-            .latin1_byte_compatible_up_to(buffer)
-            .is_none());
-        assert!(UTF_16LE
-            .new_decoder_without_bom_handling()
-            .latin1_byte_compatible_up_to(buffer)
-            .is_none());
+        assert!(
+            UTF_16BE
+                .new_decoder_without_bom_handling()
+                .latin1_byte_compatible_up_to(buffer)
+                .is_none()
+        );
+        assert!(
+            UTF_16LE
+                .new_decoder_without_bom_handling()
+                .latin1_byte_compatible_up_to(buffer)
+                .is_none()
+        );
         assert_eq!(
             ISO_2022_JP
                 .new_decoder_without_bom_handling()
@@ -6139,10 +6388,12 @@ mod tests {
             1
         );
 
-        assert!(UTF_8
-            .new_decoder()
-            .latin1_byte_compatible_up_to(buffer)
-            .is_none());
+        assert!(
+            UTF_8
+                .new_decoder()
+                .latin1_byte_compatible_up_to(buffer)
+                .is_none()
+        );
 
         let mut decoder = UTF_8.new_decoder();
         let mut output = [0u16; 4];
@@ -6152,5 +6403,51 @@ mod tests {
         assert_eq!(decoder.latin1_byte_compatible_up_to(buffer), Some(1));
         let _ = decoder.decode_to_utf16(b"\xEF", &mut output, false);
         assert_eq!(decoder.latin1_byte_compatible_up_to(buffer), None);
+    }
+
+    #[test]
+    fn test_byte_destination_check_space_two() {
+        let input8 = "abc\u{4E00}";
+        let input16 = &[0x0061u16, 0x0062, 0x0063, 0x4E00];
+        let mut out4 = [0u8; 4];
+        {
+            let mut encoder = SHIFT_JIS.new_encoder();
+            let (r, read, written) =
+                encoder.encode_from_utf16_without_replacement(input16, &mut out4, false);
+            assert_eq!(r, EncoderResult::OutputFull);
+            assert_eq!(read, 3);
+            assert_eq!(written, 3);
+        }
+        {
+            let mut encoder = SHIFT_JIS.new_encoder();
+            let (r, read, written) =
+                encoder.encode_from_utf8_without_replacement(input8, &mut out4, false);
+            assert_eq!(r, EncoderResult::OutputFull);
+            assert_eq!(read, 3);
+            assert_eq!(written, 3);
+        }
+    }
+
+    #[test]
+    fn test_byte_destination_check_space_four() {
+        let input8 = "abc\u{FF00}";
+        let input16 = &[0x0061u16, 0x0062, 0x0063, 0xFF00];
+        let mut out6 = [0u8; 6];
+        {
+            let mut encoder = GB18030.new_encoder();
+            let (r, read, written) =
+                encoder.encode_from_utf16_without_replacement(input16, &mut out6, false);
+            assert_eq!(r, EncoderResult::OutputFull);
+            assert_eq!(read, 3);
+            assert_eq!(written, 3);
+        }
+        {
+            let mut encoder = GB18030.new_encoder();
+            let (r, read, written) =
+                encoder.encode_from_utf8_without_replacement(input8, &mut out6, false);
+            assert_eq!(r, EncoderResult::OutputFull);
+            assert_eq!(read, 3);
+            assert_eq!(written, 3);
+        }
     }
 }
