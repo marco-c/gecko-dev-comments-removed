@@ -22,7 +22,7 @@
 #endif  
 #ifdef MOZ_ENABLE_VULKAN_VIDEO
 #  include "mozilla/Components.h"
-#  include "mozilla/gfx/gfxVars.h"
+#  include "nsIGfxInfo.h"
 #endif  
 #ifdef MOZ_WIDGET_GTK
 #  include <glib.h>
@@ -1058,7 +1058,14 @@ SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
   
   
   
-  if (gfx::gfxVars::CanUseVulkanHardwareVideoDecoding()) {
+  nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
+  int32_t vulkanStatus = nsIGfxInfo::FEATURE_STATUS_UNKNOWN;
+  nsAutoCString failureId;
+  if (gfxInfo &&
+      NS_SUCCEEDED(gfxInfo->GetFeatureStatus(
+          nsIGfxInfo::FEATURE_HARDWARE_VIDEO_DECODING_VULKAN, failureId,
+          &vulkanStatus)) &&
+      vulkanStatus == nsIGfxInfo::FEATURE_STATUS_OK) {
     AddVulkanDependencies(policy.get());
 #  if defined(MOZ_WIDGET_GTK)
     
