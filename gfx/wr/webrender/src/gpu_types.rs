@@ -194,14 +194,17 @@ pub struct BorderInstanceGpuData {
 }
 
 impl BorderInstanceGpuData {
-    pub fn write(&self, gpu_buffer_builder: &mut GpuBufferBuilderF) -> GpuBufferAddress {
-        let mut writer = gpu_buffer_builder.write_blocks(6);
+    pub fn write(&self, superellipse: bool, gpu_buffer_builder: &mut GpuBufferBuilderF) -> GpuBufferAddress {
+        let block_count = if superellipse { 6 } else { 4 };
+        let mut writer = gpu_buffer_builder.write_blocks(block_count);
         writer.push_one(self.local_rect);
         writer.push_one(self.color0);
         writer.push_one(self.color1);
         writer.push_one([self.widths.width, self.widths.height, self.radius.width, self.radius.height]);
-        writer.push_one([self.shape, self.shape_offset.width, self.shape_offset.height, 0.0]);
-        writer.push_one([self.inset.width, self.inset.height, 0.0, 0.0]);
+        if superellipse {
+            writer.push_one([self.shape, self.shape_offset.width, self.shape_offset.height, 0.0]);
+            writer.push_one([self.inset.width, self.inset.height, 0.0, 0.0]);
+        }
 
         writer.finish()
     }
@@ -451,8 +454,8 @@ impl PrimitiveHeaders {
         let id = self.headers_float.len();
 
         self.headers_float.push(PrimitiveHeaderF {
-            local_rect: prim_header.local_rect,
-            local_clip_rect: prim_header.local_clip_rect,
+            pattern_rect: prim_header.pattern_rect,
+            bounds: prim_header.bounds,
         });
 
         self.headers_int.push(PrimitiveHeaderI {
@@ -471,8 +474,11 @@ impl PrimitiveHeaders {
 
 #[derive(Debug)]
 pub struct PrimitiveHeader {
-    pub local_rect: LayoutRect,
-    pub local_clip_rect: LayoutRect,
+    
+    
+    pub pattern_rect: LayoutRect,
+    
+    pub bounds: LayoutRect,
     pub specific_prim_address: i32,
     pub transform_id: GpuTransformId,
     pub z: ZBufferId,
@@ -486,8 +492,8 @@ pub struct PrimitiveHeader {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct PrimitiveHeaderF {
-    pub local_rect: LayoutRect,
-    pub local_clip_rect: LayoutRect,
+    pub pattern_rect: LayoutRect,
+    pub bounds: LayoutRect,
 }
 
 
