@@ -1159,7 +1159,14 @@ void PresShell::Destroy() {
 
   mUpdateApproximateFrameVisibilityEvent.Revoke();
 
-  ClearApproximatelyVisibleFramesList(Some(OnNonvisible::DiscardImages));
+  
+  
+  
+  
+  
+  
+  
+  ClearApproximatelyVisibleFramesList();
 
   if (mOriginalCaret) {
     mOriginalCaret->Terminate();
