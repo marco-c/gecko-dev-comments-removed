@@ -78,17 +78,36 @@ class RtpStreamReceiverController : public RtpStreamReceiverControllerInterface,
   bool IsEmpty() const;
 
  private:
+  
+  
+  
+  
+  
+  
+  
+  class ProxySink : public RtpPacketSinkInterface {
+   public:
+    explicit ProxySink(RtpPacketSinkInterface* sink) : sink_(sink) {}
+    void OnRtpPacket(const RtpPacketReceived& packet) override {
+      sink_->OnRtpPacket(packet);
+    }
+    RtpPacketSinkInterface* sink() const { return sink_; }
+
+   private:
+    RtpPacketSinkInterface* const sink_;
+  };
+
   class Receiver : public RtpStreamReceiverInterface {
    public:
     Receiver(RtpStreamReceiverController* controller,
              uint32_t ssrc,
-             RtpPacketSinkInterface* sink);
+             std::unique_ptr<ProxySink> proxy_sink);
 
     ~Receiver() override;
 
    private:
     RtpStreamReceiverController* const controller_;
-    RtpPacketSinkInterface* const sink_;
+    std::unique_ptr<ProxySink> proxy_sink_;
   };
 
   bool AddSink(uint32_t ssrc, RtpPacketSinkInterface* sink);
