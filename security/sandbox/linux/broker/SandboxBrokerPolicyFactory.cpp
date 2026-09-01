@@ -794,24 +794,17 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
     policy->AddTree(rdwrcr, "/dev/shm");
   }
 
+  if (allowPulse) {
 #ifdef MOZ_WIDGET_GTK
-  if (const auto userDir = g_get_user_runtime_dir()) {
-    
-    
-    nsPrintfCString shmPath("%s/dconf/", userDir);
-    policy->AddFutureDir(rdwrcr, shmPath.get());
-    policy->AddAncestors(shmPath.get());
-    if (allowPulse) {
+    if (const auto userDir = g_get_user_runtime_dir()) {
       
       
       
       nsPrintfCString pulsePath("%s/pulse", userDir);
       policy->AddPath(rdonly, pulsePath.get());
     }
-  }
 #endif  
 
-  if (allowPulse) {
     
     
     
