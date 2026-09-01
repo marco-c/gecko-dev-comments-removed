@@ -1,40 +1,47 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
+const lazy = {};
 
+ChromeUtils.defineESModuleGetters(lazy, {
+  AIWindow:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
+  BrowserUIUtils: "resource:///modules/BrowserUIUtils.sys.mjs",
+  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
+  ContextualIdentityService:
+    "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs",
+  E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
+  NewTabPagePreloading:
+    "moz-src:///browser/components/tabbrowser/NewTabPagePreloading.sys.mjs",
+  PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  ReducedProtectionNotification:
+    "resource:///modules/ReducedProtectionNotification.sys.mjs",
+  SelectableProfileService:
+    "resource:///modules/profiles/SelectableProfileService.sys.mjs",
+  SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
+  ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
+  SitePermissions: "resource:///modules/SitePermissions.sys.mjs",
+  TabCrashHandler: "resource:///modules/ContentCrashHandlers.sys.mjs",
+  webrtcUI: "resource:///modules/webrtcUI.sys.mjs",
+});
 
+let Tabbrowser;
+
+// A module's top level is private already, so this block serves no scope. It only
+// holds the file's indentation, at the price of a level of nesting and lines that
+// wrap earlier than they need to. Dropping it would dedent the file, prettier
+// would re-join the lines that then fit in 80 columns, and their blame would go
+// with them — a cost we may yet decide is worth paying.
 {
-  
-  const lazy = {};
-
-  ChromeUtils.defineESModuleGetters(lazy, {
-    AIWindow:
-      "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
-    AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
-    BrowserUIUtils: "resource:///modules/BrowserUIUtils.sys.mjs",
-    BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
-    ContextualIdentityService:
-      "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs",
-    E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
-    NewTabPagePreloading:
-      "moz-src:///browser/components/tabbrowser/NewTabPagePreloading.sys.mjs",
-    PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
-    PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
-    ReducedProtectionNotification:
-      "resource:///modules/ReducedProtectionNotification.sys.mjs",
-    SelectableProfileService:
-      "resource:///modules/profiles/SelectableProfileService.sys.mjs",
-    SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
-    ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
-    SitePermissions: "resource:///modules/SitePermissions.sys.mjs",
-    TabCrashHandler: "resource:///modules/ContentCrashHandlers.sys.mjs",
-    XPCOMUtils: "resource://gre/modules/XPCOMUtils.sys.mjs",
-    webrtcUI: "resource:///modules/webrtcUI.sys.mjs",
-  });
-
-  
-
-
-
+  /**
+   * A set of known icons to use for internal pages. These are hardcoded so we can
+   * start loading them faster than FaviconLoader would normally find them.
+   */
   const FAVICON_DEFAULTS = {
     "about:newtab": "chrome://branding/content/icon32.png",
     "about:home": "chrome://branding/content/icon32.png",
@@ -60,9 +67,9 @@
   const DIRECTION_BACKWARD = -1;
   const TAB_LABEL_MAX_LENGTH = 256;
 
-  
-
-
+  /**
+   * Updates the User Context UI indicators if the browser is in a non-default context
+   */
   async function getTotalMemoryUsage() {
     const procInfo = await ChromeUtils.requestProcInfo();
     let totalMemoryUsage = procInfo.memory;
@@ -72,11 +79,11 @@
     return totalMemoryUsage;
   }
 
-  
-  
-  
-  
-  
+  // Used for links dropped on browser content areas. Can be called with a null
+  // event argument when dropping links in the content process.
+  // handleDroppedLink has the following 2 overloads:
+  //   handleDroppedLink(tabbrowser, browser, event, url, name, triggeringPrincipal)
+  //   handleDroppedLink(tabbrowser, browser, event, links, triggeringPrincipal)
   async function handleDroppedLink(
     tabbrowser,
     browser,
@@ -85,11 +92,11 @@
     nameOrTriggeringPrincipal,
     triggeringPrincipal
   ) {
-    
-    
+    // If links are dropped in content process, event.preventDefault() should be
+    // called in the content process. Otherwise, we do it here.
     if (event) {
-      
-      
+      // Keep the event from being handled by the dragDrop listeners
+      // built-in to gecko if they happen to be above us.
       event.preventDefault();
     }
     let links;
@@ -104,8 +111,8 @@
 
     let userContextId = browser.getAttribute("usercontextid");
 
-    
-    
+    // event is null if links are dropped in content process.
+    // inBackground should be false, as it's loading into current browser.
     let inBackground = false;
     if (event) {
       inBackground = Services.prefs.getBoolPref(
@@ -120,7 +127,7 @@
       links.length >=
       Services.prefs.getIntPref("browser.tabs.maxOpenBeforeWarn")
     ) {
-      
+      // Sync dialog cannot be used inside drop event handler.
       let answer = await tabbrowser.OpenInTabsUtils.promiseConfirmOpenInTabs(
         links.length,
         tabbrowser.documentGlobal
@@ -152,9 +159,9 @@
     }
   }
 
-  window.Tabbrowser = class {
+  Tabbrowser = class {
     static create(window) {
-      window.gBrowser = new window.Tabbrowser();
+      window.gBrowser = new Tabbrowser(window);
       window.gBrowser.init();
     }
 
@@ -174,6 +181,9 @@
       this.splitViewCommandSet =
         this.document.getElementById("splitViewCommands");
 
+      // Defined on the instance, not on `lazy`, because callers reach these
+      // as `gBrowser.TabMetrics` and friends.
+      // eslint-disable-next-line mozilla/lazy-getter-object-name
       ChromeUtils.defineESModuleGetters(this, {
         ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
         AsyncTabSwitcher:
@@ -209,68 +219,69 @@
           true
         );
       });
-      lazy.XPCOMUtils.defineLazyPreferenceGetter(
+      XPCOMUtils.defineLazyPreferenceGetter(
         this,
         "_shouldExposeContentTitle",
         "privacy.exposeContentTitleInWindow",
         true
       );
-      lazy.XPCOMUtils.defineLazyPreferenceGetter(
+      XPCOMUtils.defineLazyPreferenceGetter(
         this,
         "_shouldExposeContentTitlePbm",
         "privacy.exposeContentTitleInWindow.pbm",
         true
       );
-      lazy.XPCOMUtils.defineLazyPreferenceGetter(
+      XPCOMUtils.defineLazyPreferenceGetter(
         this,
         "_showTabCardPreview",
         "browser.tabs.hoverPreview.enabled",
         true
       );
-      lazy.XPCOMUtils.defineLazyPreferenceGetter(
+      XPCOMUtils.defineLazyPreferenceGetter(
         this,
         "_allowTransparentBrowser",
         "browser.tabs.allow_transparent_browser",
         false
       );
-      lazy.XPCOMUtils.defineLazyPreferenceGetter(
+      XPCOMUtils.defineLazyPreferenceGetter(
         this,
         "_tabGroupsEnabled",
         "browser.tabs.groups.enabled",
         false
       );
-      lazy.XPCOMUtils.defineLazyPreferenceGetter(
+      XPCOMUtils.defineLazyPreferenceGetter(
         this,
         "_tabNotesEnabled",
         "browser.tabs.notes.enabled",
         false
       );
-      lazy.XPCOMUtils.defineLazyPreferenceGetter(
+      XPCOMUtils.defineLazyPreferenceGetter(
         this,
         "showPidAndActiveness",
         "browser.tabs.tooltipsShowPidAndActiveness",
         false
       );
-      lazy.XPCOMUtils.defineLazyPreferenceGetter(
+      XPCOMUtils.defineLazyPreferenceGetter(
         this,
         "_unloadTabInContextMenu",
         "browser.tabs.unloadTabInContextMenu",
         false
       );
-      lazy.XPCOMUtils.defineLazyPreferenceGetter(
+      XPCOMUtils.defineLazyPreferenceGetter(
         this,
         "_notificationEnableDelay",
         "security.notification_enable_delay",
         500
       );
-      lazy.XPCOMUtils.defineLazyPreferenceGetter(
+      XPCOMUtils.defineLazyPreferenceGetter(
         this,
         "_remoteSVGIconDecoding",
         "browser.tabs.remoteSVGIconDecoding",
         false
       );
 
-      if (lazy.AppConstants.MOZ_CRASHREPORTER) {
+      if (AppConstants.MOZ_CRASHREPORTER) {
+        // eslint-disable-next-line mozilla/lazy-getter-object-name
         ChromeUtils.defineESModuleGetters(this, {
           TabCrashHandler: "resource:///modules/ContentCrashHandlers.sys.mjs",
         });
@@ -303,8 +314,8 @@
       this.tabContainer.init();
 
       this._defaultDropLinkHandler = function (...args) {
-        
-        
+        // The droppedLinkHandler gets invoked with `this` being the browser
+        // element on which the drop took place.
         let browser = this;
         let tabbrowser = browser.getTabBrowser();
         handleDroppedLink(tabbrowser, browser, ...args);
@@ -321,23 +332,28 @@
 
       this._setFindbarData();
 
-      
-      
-      
+      // We take over setting the document title, so remove the l10n id to
+      // avoid it being re-translated and overwriting document content if
+      // we ever switch languages at runtime.
       this.document.querySelector("title").removeAttribute("data-l10n-id");
 
       this._setupEventListeners();
       this._initialized = true;
     }
 
-    documentGlobal = window;
+    documentGlobal;
 
-    document = window.document;
+    document;
 
-    
-    
+    // `ownerDocument` stays available to consumers outside this module, which
+    // are updated separately.
     get ownerDocument() {
       return this.document;
+    }
+
+    constructor(window) {
+      this.documentGlobal = window;
+      this.document = window.document;
     }
 
     closingTabsEnum = {
@@ -372,20 +388,20 @@
 
     tabAnimationsInProgress = 0;
 
-    
-
-
+    /**
+     * Binding from browser to tab
+     */
     #tabForBrowser = new WeakMap();
 
-    
-
-
-
-
-
-
-
-
+    /**
+     * `_createLazyBrowser` will define properties on the unbound lazy browser
+     * which correspond to properties defined in MozBrowser which will be bound to
+     * the browser when it is inserted into the document.  If any of these
+     * properties are accessed by consumers, `_insertBrowser` is called and
+     * the browser is inserted to ensure that things don't break.  This list
+     * provides the names of properties that may be called while the browser
+     * is in its unbound (lazy) state.
+     */
     #browserBindingProperties = [
       "canGoBack",
       "canGoForward",
@@ -449,18 +465,18 @@
 
     #multiSelectChangeSelected = false;
 
-    
-
-
-
+    /**
+     * Tab close requests are ignored if the window is closing anyway,
+     * e.g. when holding Ctrl+W.
+     */
     #windowIsClosing = false;
 
     preloadedBrowser = null;
 
-    
-
-
-
+    /**
+     * This defines a proxy which allows us to access browsers by
+     * index without actually creating a full array of browsers.
+     */
     browsers = new Proxy([], {
       has: (target, name) => {
         if (typeof name == "string" && Number.isInteger(parseInt(name))) {
@@ -482,24 +498,24 @@
       },
     });
 
-    
-
-
-
+    /**
+     * List of browsers whose docshells must be active in order for print preview
+     * to work.
+     */
     _printPreviewBrowsers = new Set();
 
-    
+    /** @type {MozTabSplitViewWrapper} */
     #activeSplitView = null;
 
     get activeSplitView() {
       return this.#activeSplitView;
     }
 
-    
-
-
-
-
+    /**
+     * List of browsers which are currently in an active Split View.
+     *
+     * @type {MozBrowser[]}
+     */
     get splitViewBrowsers() {
       const browsers = [];
       if (this.#activeSplitView) {
@@ -512,9 +528,9 @@
 
     _switcher = null;
 
-    
-
-
+    /**
+     * @type {Array<{count: number, uris: [string, string], timestamp: number}>}
+     */
     #tabSelectTimestamps = [];
 
     get tabs() {
@@ -548,20 +564,20 @@
       return this.tabpanels.dispatchEvent(...args);
     }
 
-    
-
-
-
-
-
-
-
+    /**
+     * Records a tab interaction metric.
+     *
+     * @param {string} action - The action from TabMetrics.METRIC_ACTION.
+     * @param {TabMetricsContext} [metricsContext] - Context for the metric.
+     * @param {object} [options]
+     * @param {number} [options.tabCount] - Number of tabs involved. Defaults to the number of selected tabs.
+     */
     recordTabMetrics(
       action,
       metricsContext,
       { tabCount = this.selectedTabs.length } = {}
     ) {
-      
+      // We only report user triggered events and not decomposed events.
       if (!metricsContext?.isUserTriggered || metricsContext.isDecomposed) {
         return;
       }
@@ -577,24 +593,24 @@
       });
     }
 
-    
-
-
-
+    /**
+     * Returns all tabs in the current window, including hidden tabs and tabs
+     * in collapsed groups, but excluding closing tabs and the Firefox View tab.
+     */
     get openTabs() {
       return this.tabContainer.openTabs;
     }
 
-    
-
-
+    /**
+     * Same as `openTabs` but excluding hidden tabs.
+     */
     get nonHiddenTabs() {
       return this.tabContainer.nonHiddenTabs;
     }
 
-    
-
-
+    /**
+     * Same as `openTabs` but excluding hidden tabs and tabs in collapsed groups.
+     */
     get visibleTabs() {
       return this.tabContainer.visibleTabs;
     }
@@ -620,7 +636,7 @@
       ) {
         return;
       }
-      
+      // Update the tab
       this.tabbox.selectedTab = val;
 
       this.recordTabMetrics(
@@ -649,8 +665,8 @@
     }
 
     _setupInitialBrowserAndTab() {
-      
-      
+      // See browser.js for the meaning of window.arguments.
+      // Bug 1485961 covers making this more sane.
       let userContextId =
         this.documentGlobal.arguments && this.documentGlobal.arguments[5];
 
@@ -671,9 +687,9 @@
         extraOptions = this.documentGlobal.arguments[1];
       }
 
-      
-      
-      
+      // If our opener provided a remoteType which was responsible for creating
+      // this pop-up window, we'll fall back to using that remote type when no
+      // other remote type is available.
       let triggeringRemoteType;
       if (extraOptions?.hasKey("triggeringRemoteType")) {
         triggeringRemoteType = extraOptions.getPropertyAsACString(
@@ -683,21 +699,21 @@
 
       let tabArgument = this.documentGlobal.gBrowserInit.getTabToAdopt();
 
-      
-      
-      
-      
-      
-      
-      
-      
+      // If we have a tab argument with browser, we use its remoteType. Otherwise,
+      // if e10s is disabled or there's a parent process opener (e.g. parent
+      // process about: page) for the content tab, we use a parent
+      // process remoteType. Otherwise, we check the URI to determine
+      // what to do - if there isn't one, we default to the default remote type.
+      //
+      // When adopting a tab, we'll also use that tab's browsingContextGroupId,
+      // if available, to ensure we don't spawn a new process.
       let remoteType;
       let initialBrowsingContextGroupId;
 
       if (tabArgument && tabArgument.hasAttribute("usercontextid")) {
-        
-        
-        
+        // The window's first argument is a tab if and only if we are swapping tabs.
+        // We must set the browser's usercontextid so that the newly created remote
+        // tab child has the correct usercontextid.
         userContextId = parseInt(tabArgument.getAttribute("usercontextid"), 10);
       }
 
@@ -707,8 +723,8 @@
 
       let remoteTypeOptions = { window: this.documentGlobal, userContextId };
       if (triggeringRemoteType) {
-        
-        
+        // NOTE: We intentionally don't allow setting preferredRemoteType to
+        // NOT_REMOTE (null), as we don't want to choose the parent process.
         remoteTypeOptions.preferredRemoteType = triggeringRemoteType;
       }
 
@@ -728,7 +744,7 @@
       } else {
         let uriToLoad = this.documentGlobal.gBrowserInit.uriToLoadPromise;
         if (uriToLoad && Array.isArray(uriToLoad)) {
-          uriToLoad = uriToLoad[0]; 
+          uriToLoad = uriToLoad[0]; // we only care about the first item
         }
 
         if (uriToLoad && typeof uriToLoad == "string") {
@@ -737,11 +753,11 @@
             remoteTypeOptions
           );
         } else {
-          
-          
-          
-          
-          
+          // If we reach here, we don't have the url to load. This means that
+          // `uriToLoad` is most likely a promise which is waiting on SessionStore
+          // initialization. We can't delay setting up the browser here, as that
+          // would mean that `gBrowser.selectedBrowser` might not always exist,
+          // which is the current assumption.
 
           if (Cu.isInAutomation) {
             ChromeUtils.releaseAssert(
@@ -750,8 +766,8 @@
             );
           }
 
-          
-          
+          // In this case we default to the privileged about process as that's
+          // the best guess we can make, and we'll likely need it eventually.
           remoteType = lazy.E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE;
         }
       }
@@ -784,9 +800,9 @@
         let firstURI = Array.isArray(uriToLoad) ? uriToLoad[0] : uriToLoad;
 
         if (!this._allowTransparentBrowser) {
-          
-          
-          
+          // firstURI may be a Promise (uriToLoadPromise still resolving while
+          // SessionStore restores) or empty; only build a URI from a real
+          // string, otherwise default to transparent like the no-URI case.
           browser.toggleAttribute(
             "transparent",
             !firstURI ||
@@ -820,11 +836,11 @@
 
       this.appendStatusPanel();
 
-      
-      
+      // This is the initial browser, so it's usually active; the default is false
+      // so we have to update it:
       browser.docShellIsActive = this.shouldActivateDocShell(browser);
 
-      
+      // Hook the browser up with a progress listener.
       let tabListener = new TabProgressListener(tab, browser, true, false);
       let filter = Cc[
         "@mozilla.org/appshell/component/browser-status-filter;1"
@@ -858,8 +874,8 @@
 
       let userContextId = this.selectedBrowser.getAttribute("usercontextid");
       if (!userContextId) {
-        
-        
+        // The container-creation panel can temporarily reveal this indicator to
+        // use it as its anchor; don't hide it again while that panel is up.
         let creationPanel = this.document.getElementById(
           "containerCreation-panel"
         );
@@ -884,8 +900,8 @@
       let label =
         lazy.ContextualIdentityService.getUserContextLabel(userContextId);
       this.document.getElementById("userContext-label").textContent = label;
-      
-      
+      // Also set the container label as the tooltip so we can only show the icon
+      // in small windows.
       hbox.setAttribute("tooltiptext", label);
 
       let indicator = this.document.getElementById("userContext-indicator");
@@ -894,10 +910,10 @@
       hbox.hidden = false;
     }
 
-    
-
-
-
+    /**
+     * BEGIN FORWARDED BROWSER PROPERTIES.  IF YOU ADD A PROPERTY TO THE BROWSER ELEMENT
+     * MAKE SURE TO ADD IT HERE AS WELL.
+     */
     get canGoBack() {
       return this.selectedBrowser.canGoBack;
     }
@@ -929,19 +945,19 @@
         const browser = tab.linkedBrowser;
         const url = browser.currentURI;
         const urlSpec = url.spec;
-        
-        
-        
+        // We need to cache the content principal here because the browser will be
+        // reconstructed when the remoteness changes and the content prinicpal will
+        // be cleared after reconstruction.
         const principal = tab.linkedBrowser.contentPrincipal;
         if (this.updateBrowserRemotenessByURL(browser, urlSpec)) {
-          
-          
-          
+          // If the remoteness has changed, the new browser doesn't have any
+          // information of what was loaded before, so we need to load the previous
+          // URL again.
           if (tab.linkedPanel) {
             loadBrowserURI(browser, url, principal);
           } else {
-            
-            
+            // Shift to fully loaded browser and make
+            // sure load handler is instantiated.
             tab.addEventListener(
               "SSTabRestoring",
               () => loadBrowserURI(browser, url, principal),
@@ -958,12 +974,12 @@
         return;
       }
 
-      
-      
-      
+      // Reset temporary permissions on the remaining tabs to reload.
+      // This is done here because we only want to reset
+      // permissions on user reload.
       for (const tab of unchangedRemoteness) {
         lazy.SitePermissions.clearTemporaryBlockPermissions(tab.linkedBrowser);
-        
+        // Also reset DOS mitigations for the basic auth prompt on reload.
         delete tab.linkedBrowser.authPromptAbuseCounter;
       }
       this.documentGlobal.gIdentityHandler.hidePopup();
@@ -988,8 +1004,8 @@
             browsingContext.reload(reloadFlags);
           }
         } else {
-          
-          
+          // Shift to fully loaded browser and make
+          // sure load handler is instantiated.
           tab.addEventListener(
             "SSTabRestoring",
             () => tab.linkedBrowser.browsingContext.reload(reloadFlags),
@@ -1013,15 +1029,15 @@
       return this.selectedBrowser.stop();
     }
 
-    
-
-
+    /**
+     * throws exception for unknown schemes
+     */
     loadURI(uri, params) {
       return this.selectedBrowser.loadURI(uri, params);
     }
-    
-
-
+    /**
+     * throws exception for unknown schemes
+     */
     fixupAndLoadURIString(uriString, params) {
       return this.selectedBrowser.fixupAndLoadURIString(uriString, params);
     }
@@ -1103,7 +1119,7 @@
     }
 
     _setFindbarData() {
-      
+      // Ensure we know what the find bar key is in the content process:
       let { sharedData } = Services.ppmm;
       if (!sharedData.has("Findbar:Shortcut")) {
         let keyEl = this.document.getElementById("key_find");
@@ -1111,7 +1127,7 @@
           .getAttribute("modifiers")
           .replace(
             /accel/i,
-            lazy.AppConstants.platform == "macosx" ? "meta" : "control"
+            AppConstants.platform == "macosx" ? "meta" : "control"
           );
         sharedData.set("Findbar:Shortcut", {
           key: keyEl.getAttribute("key"),
@@ -1127,37 +1143,37 @@
       return (aTab || this.selectedTab)._findBar != undefined;
     }
 
-    
-
-
+    /**
+     * Get the already constructed findbar
+     */
     getCachedFindBar(aTab = this.selectedTab) {
       return aTab._findBar;
     }
 
-    
-
-
-
-
+    /**
+     * Get the findbar, and create it if it doesn't exist.
+     *
+     * @return the find bar (or null if the window or tab is closed/closing in the interim).
+     */
     async getFindBar(aTab = this.selectedTab) {
       let findBar = this.getCachedFindBar(aTab);
       if (findBar) {
         return findBar;
       }
 
-      
+      // Avoid re-entrancy by caching the promise we're about to return.
       if (!aTab._pendingFindBar) {
         aTab._pendingFindBar = this._createFindBar(aTab);
       }
       return aTab._pendingFindBar;
     }
 
-    
-
-
-
-
-
+    /**
+     * Create a findbar instance.
+     *
+     * @param aTab the tab to create the find bar for.
+     * @return the created findbar, or null if the window or tab is closed/closing.
+     */
     async _createFindBar(aTab) {
       let findBar = this.document.createXULElement("findbar");
       let browser = this.getBrowserForTab(aTab);
@@ -1199,7 +1215,7 @@
       aTab,
       { metricsContext = this.TabMetrics.UNKNOWN_CONTEXT } = {}
     ) {
-      
+      // browsingContext is expected to not be defined on discarded tabs.
       if (aTab.linkedBrowser.browsingContext) {
         aTab.linkedBrowser.browsingContext.isAppTab = aTab.pinned;
       }
@@ -1223,15 +1239,15 @@
       aTab.dispatchEvent(event);
     }
 
-    
-
-
-
-
-
-
-
-
+    /**
+     * Pin a tab.
+     *
+     * @param {MozTabbrowserTab} aTab
+     *   The tab to pin.
+     * @param {object} [options]
+     * @param {TabMetricsContext} [options.metricsContext]
+     *   The context for the operation for telemetry purposes, defaults to an unknown context.
+     */
     pinTab(aTab, { metricsContext = this.TabMetrics.UNKNOWN_CONTEXT } = {}) {
       if (aTab.pinned || aTab == this.documentGlobal.FirefoxViewHandler.tab) {
         return;
@@ -1242,7 +1258,7 @@
         let periphery = this.document.getElementById(
           "pinned-tabs-container-periphery"
         );
-        
+        // If periphery is null, append to end
         this.pinnedTabsContainer.insertBefore(aTab, periphery);
       });
 
@@ -1251,24 +1267,24 @@
       this.#notifyPinnedStatus(aTab, { metricsContext });
     }
 
-    
-
-
-
-
-
-
-
-
+    /**
+     * Unpin a tab.
+     *
+     * @param {MozTabbrowserTab} aTab
+     *   The tab to pin.
+     * @param {object} [options]
+     * @param {TabMetricsContext} [options.metricsContext]
+     *   The context for the operation for telemetry purposes, defaults to an unknown context.
+     */
     unpinTab(aTab, { metricsContext = this.TabMetrics.UNKNOWN_CONTEXT } = {}) {
       if (!aTab.pinned) {
         return;
       }
 
       this.#handleTabMove(aTab, () => {
-        
-        
-        
+        // we remove this attribute first, so that allTabs represents
+        // the moving of a tab from the pinned tabs container
+        // and back into arrowscrollbox.
         aTab.removeAttribute("pinned");
         this.tabContainer.arrowScrollbox.prepend(aTab);
       });
@@ -1282,7 +1298,7 @@
     previewTab(aTab, aCallback) {
       let currentTab = this.selectedTab;
       try {
-        
+        // Suppress focus, ownership and selected tab changes
         this.#previewMode = true;
         this.selectedTab = aTab;
         aCallback();
@@ -1766,7 +1782,7 @@
       // title. We'll add the brand name and private window suffix for all other
       // platforms below.
       if (
-        lazy.AppConstants.platform == "macosx" &&
+        AppConstants.platform == "macosx" &&
         contentTitle &&
         isTemporaryPrivateWindow
       ) {
@@ -1778,7 +1794,7 @@
       // content title; elsewhere, the brand becomes a suffix in the title bar.
       if (
         !taskbarTabTitle &&
-        (!contentTitle || lazy.AppConstants.platform != "macosx")
+        (!contentTitle || AppConstants.platform != "macosx")
       ) {
         parts.push(
           this.#cachedTitleInfo[
@@ -3061,7 +3077,7 @@
             break;
           default:
             getter = () => {
-              if (lazy.AppConstants.NIGHTLY_BUILD) {
+              if (AppConstants.NIGHTLY_BUILD) {
                 let message = `[bug 1345098] Lazy browser prematurely inserted via '${name}' property access:\n`;
                 Services.console.logStringMessage(message + new Error().stack);
               }
@@ -3069,7 +3085,7 @@
               return browser[name];
             };
             setter = value => {
-              if (lazy.AppConstants.NIGHTLY_BUILD) {
+              if (AppConstants.NIGHTLY_BUILD) {
                 let message = `[bug 1345098] Lazy browser prematurely inserted via '${name}' property access:\n`;
                 Services.console.logStringMessage(message + new Error().stack);
               }
@@ -3087,8 +3103,6 @@
     }
 
     _insertBrowser(aTab, aInsertedOnTabCreation) {
-      "use strict";
-
       // If browser is already inserted or window is closed don't do anything.
       if (aTab.linkedPanel || this.documentGlobal.closed) {
         return;
@@ -3241,7 +3255,6 @@
     }
 
     discardBrowser(aTab, aForceDiscard) {
-      "use strict";
       let browser = aTab.linkedBrowser;
 
       if (!this._mayDiscardBrowser(aTab, aForceDiscard)) {
@@ -8659,7 +8672,7 @@
           break;
 
         case lazy.ShortcutUtils.NEXT_TAB:
-          if (lazy.AppConstants.platform == "macosx") {
+          if (AppConstants.platform == "macosx") {
             this.tabContainer.advanceSelectedTab(
               DIRECTION_FORWARD,
               true,
@@ -8669,7 +8682,7 @@
           }
           break;
         case lazy.ShortcutUtils.PREVIOUS_TAB:
-          if (lazy.AppConstants.platform == "macosx") {
+          if (AppConstants.platform == "macosx") {
             this.tabContainer.advanceSelectedTab(
               DIRECTION_BACKWARD,
               true,
@@ -9075,7 +9088,7 @@
       this.document.removeEventListener("keydown", this, {
         mozSystemGroup: true,
       });
-      if (lazy.AppConstants.platform == "macosx") {
+      if (AppConstants.platform == "macosx") {
         this.document.removeEventListener("keypress", this, {
           mozSystemGroup: true,
         });
@@ -10385,12 +10398,12 @@
       }
 
       // XXX(nika): Is `browser.isNavigating` necessary anymore?
-      
-      
+      // XXX(gijs): Unsure. But it mirrors docShell.isNavigating, but in the parent process
+      // (and therefore imperfectly so).
       browser.isNavigating = true;
 
       try {
-        
+        // Should more generally prefer loadURI here - see bug 1815509.
         if (startedWithURI) {
           browser.webNavigation.loadURI(uri, loadURIOptions);
         } else {
@@ -10404,4 +10417,6 @@
       }
     },
   };
-} 
+} // end of the indentation-preserving block
+
+export { Tabbrowser };
