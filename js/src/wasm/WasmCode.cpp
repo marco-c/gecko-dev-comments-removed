@@ -1000,7 +1000,7 @@ void CodeBlock::sendToProfiler(
     }
     uintptr_t start = uintptr_t(base() + codeRange.begin());
     uintptr_t size = codeRange.end() - codeRange.begin();
-    funcIonSpewer.spewer.saveWasmProfile(start, size, desc);
+    funcIonSpewer.spewer.saveWasmProfile(start, size, std::move(desc));
   }
 
   
@@ -1013,7 +1013,7 @@ void CodeBlock::sendToProfiler(
     }
     uintptr_t start = uintptr_t(base() + codeRange.begin());
     uintptr_t size = codeRange.end() - codeRange.begin();
-    funcBaselineSpewer.spewer.saveProfile(start, size, desc);
+    funcBaselineSpewer.spewer.saveProfile(start, size, std::move(desc));
   }
 
   

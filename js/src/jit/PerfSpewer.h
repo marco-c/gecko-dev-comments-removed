@@ -41,6 +41,34 @@ class MIRGraph;
 class LInstruction;
 enum class CacheOp : uint16_t;
 
+
+
+
+
+
+struct JitCodeDesc {
+  JS::UniqueChars name;
+
+  
+  
+  
+  
+  const char* filename = nullptr;
+  uint32_t sourceId = 0;
+  uint32_t line = 0;
+  uint32_t column = 0;
+
+  JitCodeDesc() = default;
+  explicit JitCodeDesc(JS::UniqueChars&& name) : name(std::move(name)) {}
+
+  explicit operator bool() const { return bool(name); }
+  bool hasSource() const { return filename != nullptr; }
+
+  
+  
+  JS::UniqueChars nameWithSourceLocation() const;
+};
+
 struct AutoLockPerfSpewer {
   AutoLockPerfSpewer();
   ~AutoLockPerfSpewer();
@@ -105,9 +133,8 @@ class PerfSpewer {
   
   void saveWasmCodeDebugInfo(uintptr_t codeBase, AutoLockPerfSpewer& lock);
 
-  void saveJSProfile(JitCode* code, JS::UniqueChars& desc, JSScript* script);
-  void saveWasmProfile(uintptr_t codeBase, size_t codeSize,
-                       JS::UniqueChars& desc);
+  void saveJSProfile(JitCode* code, JitCodeDesc& desc, JSScript* script);
+  void saveWasmProfile(uintptr_t codeBase, size_t codeSize, JitCodeDesc& desc);
 
   virtual void disable(AutoLockPerfSpewer& lock);
   virtual void disable();
@@ -142,11 +169,10 @@ class PerfSpewer {
 
   static void Init();
 
-  static void CollectJitCodeInfo(JS::UniqueChars& function_name, JitCode* code,
+  static void CollectJitCodeInfo(JitCodeDesc& desc, JitCode* code,
                                  AutoLockPerfSpewer& lock);
-  static void CollectJitCodeInfo(JS::UniqueChars& function_name,
-                                 void* code_addr, uint64_t code_size,
-                                 AutoLockPerfSpewer& lock);
+  static void CollectJitCodeInfo(JitCodeDesc& desc, void* code_addr,
+                                 uint64_t code_size, AutoLockPerfSpewer& lock);
 
   
   
@@ -201,7 +227,7 @@ class IonPerfSpewer : public PerfSpewer {
 
   void saveJSProfile(JSContext* cx, JSScript* script, JitCode* code);
   void saveWasmProfile(uintptr_t codeBase, size_t codeSize,
-                       JS::UniqueChars& desc);
+                       JS::UniqueChars&& desc);
 };
 
 class WasmBaselinePerfSpewer : public PerfSpewer {
@@ -216,7 +242,7 @@ class WasmBaselinePerfSpewer : public PerfSpewer {
 
   [[nodiscard]] bool needsToRecordInstruction() const;
   void recordInstruction(MacroAssembler& masm, const wasm::OpBytes& op);
-  void saveProfile(uintptr_t codeBase, size_t codeSize, JS::UniqueChars& desc);
+  void saveProfile(uintptr_t codeBase, size_t codeSize, JS::UniqueChars&& desc);
 };
 
 class BaselineInterpreterPerfSpewer : public PerfSpewer {
@@ -283,12 +309,12 @@ class IonICPerfSpewer : public InlineCachePerfSpewer {
 };
 
 class PerfSpewerRangeRecorder {
-  using OffsetPair = std::tuple<uint32_t, JS::UniqueChars>;
+  using OffsetPair = std::tuple<uint32_t, JitCodeDesc>;
   Vector<OffsetPair, 0, js::SystemAllocPolicy> ranges;
 
   MacroAssembler& masm;
 
-  void appendEntry(JS::UniqueChars& desc);
+  void appendEntry(JitCodeDesc& desc);
 
  public:
   explicit PerfSpewerRangeRecorder(MacroAssembler& masm_) : masm(masm_) {};
