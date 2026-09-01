@@ -1630,9 +1630,22 @@ void nsLineLayout::ApplyBlockTextBoxTrim(PerSpanData* psd, WritingMode aLineWM,
   
   nscoord totalOver = *aBaselineBCoord - mBStartEdge;
   nscoord totalUnder = *aLineBSize - totalOver;
-  const StyleTextBoxEdge& textBoxEdge = blockFrame->StyleText()->mTextBoxEdge;
+
+  
+  
+  
+  
+  
+  
+  nsIFrame* metricsFrame = blockFrame;
+  if (psd->mFirstFrame && psd->mFirstFrame->mFrame->Style()->GetPseudoType() ==
+                              PseudoStyleType::FirstLine) {
+    metricsFrame = psd->mFirstFrame->mFrame;
+  }
+
+  const StyleTextBoxEdge& textBoxEdge = metricsFrame->StyleText()->mTextBoxEdge;
   RefPtr<nsFontMetrics> fm =
-      nsLayoutUtils::GetInflatedFontMetricsForFrame(blockFrame);
+      nsLayoutUtils::GetInflatedFontMetricsForFrame(metricsFrame);
   const auto [trimmedOver, trimmedUnder] =
       ResolveTextBoxEdgeMetrics(textBoxEdge, fm);
 
