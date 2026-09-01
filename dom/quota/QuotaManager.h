@@ -1280,8 +1280,16 @@ class QuotaManager final : public BackgroundThreadObject {
 
   MozPromiseHolder<BoolPromise> mInitializeAllTemporaryOriginsPromiseHolder;
 
-  uint64_t mTemporaryStorageLimit;
-  uint64_t mTemporaryStorageUsage;
+  
+  
+  
+  
+  
+  
+  
+  int64_t mTemporaryStorageLimit;
+  int64_t mTemporaryStorageUsage;
+
   int64_t mNextDirectoryLockId;
   bool mStorageInitialized;
   bool mPersistentStorageInitialized;
