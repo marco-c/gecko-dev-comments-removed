@@ -30,49 +30,16 @@ const { TabNotes } = ChromeUtils.importESModule(
 const TAB_PREVIEW_PANEL_ID = "tab-preview-panel";
 const TAB_GROUP_PREVIEW_PANEL_ID = "tabgroup-preview-panel";
 
-const HOVER_ATTEMPTS = 4;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function hoverUntilPanelOpen(element, panel, win = window) {
-  for (let attempt = 0; attempt < HOVER_ATTEMPTS; attempt++) {
-    if (attempt > 0) {
-      
-      const tabs = win.document.getElementById("tabbrowser-tabs");
-      EventUtils.synthesizeMouse(
-        tabs,
-        0,
-        tabs.getBoundingClientRect().height + 10,
-        { type: "mouseout" },
-        win
-      );
-    }
-    if (panel.state != "open") {
-      const shown = BrowserTestUtils.waitForPopupEvent(panel, "shown");
-      EventUtils.synthesizeMouseAtCenter(element, { type: "mouseover" }, win);
-      await shown;
-    }
-    
-    
-    await new Promise(resolve =>
-      win.requestAnimationFrame(() => win.requestAnimationFrame(resolve))
-    );
-    if (panel.state == "open") {
-      return;
-    }
-  }
+async function parkNativePointer(win = window) {
+  const browserEl = win.gBrowser.selectedBrowser;
+  const { width, height } = browserEl.getBoundingClientRect();
+  await EventUtils.promiseNativeMouseEvent({
+    type: "mousemove",
+    target: browserEl,
+    offsetX: width - 10,
+    offsetY: height - 10,
+    win,
+  });
 }
 
 async function openTabPreview(tab, win = window) {
@@ -240,6 +207,8 @@ add_setup(async function () {
   
   
   
+  
+  await parkNativePointer();
   EventUtils.disableNonTestMouseEvents(true);
   registerCleanupFunction(() => {
     EventUtils.disableNonTestMouseEvents(false);
@@ -2181,9 +2150,15 @@ add_task(async function testTabAndTabGroupsWorkTogether() {
     TAB_GROUP_PREVIEW_PANEL_ID
   );
 
-  let tabPreviewEvent;
+  let tabPreviewEvent = BrowserTestUtils.waitForPopupEvent(
+    tabPreviewElement,
+    "shown"
+  );
   let groupPreviewEvent;
-  await hoverUntilPanelOpen(tabToLeft, tabPreviewElement);
+  EventUtils.synthesizeMouseAtCenter(tabToLeft, {
+    type: "mouseover",
+  });
+  await tabPreviewEvent;
   Assert.equal(
     tabPreviewElement.state,
     "open",
