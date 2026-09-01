@@ -4,22 +4,25 @@
 
 
 
+#include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/DOMException.h"
+#include "mozilla/dom/PrimitiveConversions.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/Range.h"
 #include "mozilla/Sprintf.h"
 
-#include "xpcprivate.h"
+#include "jsapi.h"
+#include "jsfriendapi.h"
 #include "nsIScriptError.h"
 #include "nsISimpleEnumerator.h"
-#include "nsWrapperCache.h"
 #include "nsJSUtils.h"
 #include "nsQueryObject.h"
 #include "nsScriptError.h"
-#include "WrapperFactory.h"
-
+#include "nsWrapperCache.h"
 #include "nsWrapperCacheInlines.h"
+#include "WrapperFactory.h"
+#include "xpcprivate.h"
 
-#include "jsapi.h"
-#include "jsfriendapi.h"
 #include "js/Array.h"  
 #include "js/CharacterEncoding.h"
 #include "js/experimental/TypedData.h"  
@@ -27,11 +30,6 @@
 #include "js/Object.h"              
 #include "js/PropertyAndElement.h"  
 #include "js/String.h"              
-
-#include "mozilla/dom/BindingUtils.h"
-#include "mozilla/dom/DOMException.h"
-#include "mozilla/dom/PrimitiveConversions.h"
-#include "mozilla/dom/Promise.h"
 
 using namespace xpc;
 using namespace mozilla;
@@ -1261,14 +1259,9 @@ nsresult XPCConvert::JSValToXPCException(JSContext* cx, MutableHandleValue s,
     } else {
       
       
-      nsCOMPtr<nsISupportsDouble> data;
-      nsCOMPtr<nsIComponentManager> cm;
-      if (NS_FAILED(NS_GetComponentManager(getter_AddRefs(cm))) || !cm ||
-          NS_FAILED(cm->CreateInstanceByContractID(
-              NS_SUPPORTS_DOUBLE_CONTRACTID, NS_GET_IID(nsISupportsDouble),
-              getter_AddRefs(data)))) {
-        return NS_ERROR_FAILURE;
-      }
+      nsCOMPtr<nsISupportsDouble> data =
+          do_CreateInstance("@mozilla.org/supports-double;1");
+      NS_ENSURE_TRUE(data, NS_ERROR_FAILURE);
       data->SetData(number);
       rv = ConstructException(NS_ERROR_XPC_JS_THREW_NUMBER, nullptr, ifaceName,
                               methodName, data, exceptn, cx, s.address());
