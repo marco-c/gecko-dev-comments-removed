@@ -1390,14 +1390,14 @@ auto AnchorPositioningUtils::GetCombinedFragmentRects(
   
   
   nsRect rect = GetRectInContainingBlockSpace(aFrame);
-  const auto* next = aFrame->GetNextContinuation();
+  const auto* next = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(aFrame);
   for (; next && onSamePage(next) && inSameCBFragment(next);
-       next = next->GetNextContinuation()) {
+       next = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(next)) {
     rect = rect.Union(GetRectInContainingBlockSpace(next));
   }
-  const auto* prev = aFrame->GetPrevContinuation();
+  const auto* prev = nsLayoutUtils::GetPrevContinuationOrIBSplitSibling(aFrame);
   for (; prev && onSamePage(prev) && inSameCBFragment(prev);
-       prev = prev->GetPrevContinuation()) {
+       prev = nsLayoutUtils::GetPrevContinuationOrIBSplitSibling(prev)) {
     rect = rect.Union(GetRectInContainingBlockSpace(prev));
   }
 
