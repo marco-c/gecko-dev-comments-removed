@@ -82,21 +82,38 @@ NS_IMETHODIMP
 nsMacShellService::SetDefaultBrowser(bool aForAllUsers) {
   
 
-  CFStringRef firefoxID = ::CFBundleGetIdentifier(::CFBundleGetMainBundle());
-  if (!firefoxID) {
-    return NS_ERROR_FAILURE;
-  }
+  if (@available(macOS 27.0, *)) {
+    
+    
+    
+    
+    
+    
+    
+    NSURL* appURL = [[NSBundle mainBundle] bundleURL];
+    if (!appURL) {
+      return NS_ERROR_FAILURE;
+    }
+    [[NSWorkspace sharedWorkspace] setDefaultApplicationAtURL:appURL
+                                         toOpenURLsWithScheme:@"http"
+                                            completionHandler:nil];
+  } else {
+    CFStringRef firefoxID = ::CFBundleGetIdentifier(::CFBundleGetMainBundle());
+    if (!firefoxID) {
+      return NS_ERROR_FAILURE;
+    }
 
-  if (::LSSetDefaultHandlerForURLScheme(CFSTR("http"), firefoxID) != noErr) {
-    return NS_ERROR_FAILURE;
-  }
-  if (::LSSetDefaultHandlerForURLScheme(CFSTR("https"), firefoxID) != noErr) {
-    return NS_ERROR_FAILURE;
-  }
+    if (::LSSetDefaultHandlerForURLScheme(CFSTR("http"), firefoxID) != noErr) {
+      return NS_ERROR_FAILURE;
+    }
+    if (::LSSetDefaultHandlerForURLScheme(CFSTR("https"), firefoxID) != noErr) {
+      return NS_ERROR_FAILURE;
+    }
 
-  if (::LSSetDefaultRoleHandlerForContentType(kUTTypeHTML, kLSRolesAll,
-                                              firefoxID) != noErr) {
-    return NS_ERROR_FAILURE;
+    if (::LSSetDefaultRoleHandlerForContentType(kUTTypeHTML, kLSRolesAll,
+                                                firefoxID) != noErr) {
+      return NS_ERROR_FAILURE;
+    }
   }
 
   nsCOMPtr<nsIPrefBranch> prefs(do_GetService(NS_PREFSERVICE_CONTRACTID));
