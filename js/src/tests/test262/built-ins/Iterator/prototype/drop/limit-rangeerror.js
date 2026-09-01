@@ -13,11 +13,21 @@
 
 
 
+
+
+
+
+
+
+
+
 let iterator = (function* () {})();
 
 iterator.drop(0);
 iterator.drop(-0.5);
 iterator.drop(null);
+iterator.drop(Number.MAX_SAFE_INTEGER);
+iterator.drop(Infinity);
 
 assert.throws(RangeError, () => {
   iterator.drop(-1);
@@ -33,6 +43,10 @@ assert.throws(RangeError, () => {
 
 assert.throws(RangeError, () => {
   iterator.drop(NaN);
+});
+
+assert.throws(RangeError, () => {
+  iterator.drop(Number.MAX_SAFE_INTEGER + 1);
 });
 
 reportCompare(0, 0);

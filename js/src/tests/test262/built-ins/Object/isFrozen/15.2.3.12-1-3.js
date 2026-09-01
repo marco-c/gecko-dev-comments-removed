@@ -8,6 +8,6 @@
 
 
 
-Object.isFrozen(true);
+assert.sameValue(Object.isFrozen(true), true);
 
 reportCompare(0, 0);

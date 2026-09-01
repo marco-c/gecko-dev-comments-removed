@@ -33,6 +33,7 @@
 
 
 
-Object.seal(Symbol());
+var s = Symbol();
+assert.sameValue(Object.seal(s), s);
 
 reportCompare(0, 0);

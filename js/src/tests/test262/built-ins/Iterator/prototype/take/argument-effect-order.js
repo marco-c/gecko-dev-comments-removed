@@ -19,6 +19,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
 let effects = [];
 
 Iterator.prototype.take.call(
@@ -52,6 +61,29 @@ assert.throws(TypeError, function () {
 });
 
 assert.compareArray(effects, []);
+
+effects = [];
+
+assert.throws(RangeError, function () {
+  Iterator.prototype.take.call(
+    {
+      get next() {
+        effects.push('get next');
+        return function () {
+          return { done: true, value: undefined };
+        };
+      },
+    },
+    {
+      valueOf() {
+        effects.push('ToNumber limit');
+        return Number.MAX_SAFE_INTEGER + 1;
+      },
+    }
+  );
+});
+
+assert.compareArray(effects, ['ToNumber limit']);
 
 effects = [];
 

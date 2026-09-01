@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+function* g() {}
+let iter = g();
+
+assert.throws(TypeError, () => {
+  new iter.chunks(1);
+});
+
+assert.throws(TypeError, () => {
+  new Iterator.prototype.chunks(1);
+});
+
+assert.throws(TypeError, () => {
+  new class extends Iterator {}.chunks(1);
+});
+
+reportCompare(0, 0);

@@ -20,5 +20,7 @@
 
 
 $DONOTEVALUATE();
+var rest;
 
-0, [...x,] = [];
+0, {...rest,} = {}
+;

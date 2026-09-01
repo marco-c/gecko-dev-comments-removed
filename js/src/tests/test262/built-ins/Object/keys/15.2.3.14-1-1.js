@@ -8,6 +8,7 @@
 
 
 
-Object.keys(0);
+
+assert.compareArray(Object.keys(0), []);
 
 reportCompare(0, 0);

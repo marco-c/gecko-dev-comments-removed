@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+var sentinel = Promise.resolve();
+
+var returnValue = Promise.try(function () {
+  return sentinel;
+});
+assert.sameValue(returnValue, sentinel);
+
+reportCompare(0, 0);

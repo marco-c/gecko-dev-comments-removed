@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var unscopables = Array.prototype[Symbol.unscopables];
+
+assert.sameValue(unscopables.at, true, '`at` property value');
+verifyProperty(unscopables, "at", {
+  writable: true,
+  enumerable: true,
+  configurable: true
+});
+
+reportCompare(0, 0);

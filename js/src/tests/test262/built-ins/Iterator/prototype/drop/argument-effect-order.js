@@ -57,6 +57,29 @@ assert.throws(RangeError, function () {
         };
       },
     },
+    {
+      valueOf() {
+        effects.push('ToNumber limit');
+        return Number.MAX_SAFE_INTEGER + 1;
+      },
+    }
+  );
+});
+
+assert.compareArray(effects, ['ToNumber limit']);
+
+effects = [];
+
+assert.throws(RangeError, function () {
+  Iterator.prototype.drop.call(
+    {
+      get next() {
+        effects.push('get next');
+        return function () {
+          return { done: true, value: undefined };
+        };
+      },
+    },
     NaN
   );
 });

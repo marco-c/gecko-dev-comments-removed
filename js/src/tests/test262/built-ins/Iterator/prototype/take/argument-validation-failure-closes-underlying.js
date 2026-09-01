@@ -36,6 +36,12 @@ assert.sameValue(closed, true);
 
 closed = false;
 assert.throws(RangeError, function() {
+  closable.take(Number.MAX_SAFE_INTEGER + 1);
+});
+assert.sameValue(closed, true);
+
+closed = false;
+assert.throws(RangeError, function() {
   closable.take(-1);
 });
 assert.sameValue(closed, true);

@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Iterator.prototype.windows, 'function');
+
+reportCompare(0, 0);

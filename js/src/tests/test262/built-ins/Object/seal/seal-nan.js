@@ -33,6 +33,6 @@
 
 
 
-Object.seal(NaN);
+assert.sameValue(Object.seal(NaN), NaN);
 
 reportCompare(0, 0);

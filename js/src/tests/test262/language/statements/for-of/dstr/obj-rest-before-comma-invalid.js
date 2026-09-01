@@ -29,5 +29,7 @@
 
 
 $DONOTEVALUATE();
+var rest;
 
-for ([...x,] in [[]]) ;
+for ({...rest,} of [{}
+]) ;

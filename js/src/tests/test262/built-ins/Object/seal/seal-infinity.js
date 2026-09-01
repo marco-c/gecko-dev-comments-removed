@@ -33,6 +33,6 @@
 
 
 
-Object.seal(Infinity);
+assert.sameValue(Object.seal(Infinity), Infinity);
 
 reportCompare(0, 0);

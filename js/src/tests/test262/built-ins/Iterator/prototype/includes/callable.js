@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+function* g() {
+  yield 0;
+}
+
+Iterator.prototype.includes.call(g(), 0);
+
+g().includes(0);
+
+reportCompare(0, 0);

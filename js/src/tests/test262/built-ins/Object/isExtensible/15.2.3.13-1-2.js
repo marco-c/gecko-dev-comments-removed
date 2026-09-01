@@ -6,6 +6,6 @@
 
 
 
-Object.isExtensible(null);
+assert.sameValue(Object.isExtensible(null), false);
 
 reportCompare(0, 0);

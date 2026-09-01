@@ -33,6 +33,6 @@
 
 
 
-Object.seal(true);
+assert.sameValue(Object.seal(true), true);
 
 reportCompare(0, 0);
