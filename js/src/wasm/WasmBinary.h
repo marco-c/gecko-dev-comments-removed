@@ -23,7 +23,6 @@
 #include <type_traits>
 
 #include "js/WasmFeatures.h"
-
 #include "wasm/WasmBinaryTypes.h"
 #include "wasm/WasmCompile.h"
 #include "wasm/WasmCompileArgs.h"
@@ -106,8 +105,8 @@ class Opcode {
 
   uint32_t bits() const { return bits_; }
 
-  bool operator==(const Opcode& that) const { return bits_ == that.bits_; }
-  bool operator!=(const Opcode& that) const { return bits_ != that.bits_; }
+  bool operator==(const Opcode& that) const = default;
+  bool operator!=(const Opcode& that) const = default;
 };
 
 

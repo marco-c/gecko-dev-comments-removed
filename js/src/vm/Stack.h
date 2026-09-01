@@ -170,12 +170,8 @@ class AbstractFramePtr {
     return AbstractFramePtr(reinterpret_cast<uintptr_t>(raw));
   }
 
-  bool operator==(const AbstractFramePtr& other) const {
-    return ptr_ == other.ptr_;
-  }
-  bool operator!=(const AbstractFramePtr& other) const {
-    return ptr_ != other.ptr_;
-  }
+  bool operator==(const AbstractFramePtr& other) const = default;
+  bool operator!=(const AbstractFramePtr& other) const = default;
 
   explicit operator bool() const { return !!ptr_; }
 
@@ -273,11 +269,17 @@ enum MaybeConstruct { NO_CONSTRUCT = false, CONSTRUCT = true };
 
 
 
+
+
+
+
+
 struct ResumeFrameArgs {
   enum Slot : uint32_t {
     ResumeValueSlot = 0,
     GeneratorSlot,
     ResumeKindSlot,
+    ResumeIndexSlot,
     NumSlots
   };
 
@@ -295,12 +297,16 @@ struct ResumeFrameArgs {
   static constexpr size_t offsetOfResumeKind() {
     return offsetOfSlot(ResumeKindSlot);
   }
+  static constexpr size_t offsetOfResumeIndex() {
+    return offsetOfSlot(ResumeIndexSlot);
+  }
 
   static void init(Value* slots, Value resumeValue, Value generator,
-                   GeneratorResumeKind resumeKind) {
+                   GeneratorResumeKind resumeKind, uint32_t resumeIndex) {
     slots[ResumeValueSlot] = resumeValue;
     slots[GeneratorSlot] = generator;
     slots[ResumeKindSlot] = Int32Value(int32_t(resumeKind));
+    slots[ResumeIndexSlot] = Int32Value(int32_t(resumeIndex));
   }
 };
 

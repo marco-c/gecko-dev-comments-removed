@@ -556,14 +556,12 @@ class JS_PUBLIC_API Base {
   explicit Base(void* ptr) : ptr(ptr) {}
 
  public:
-  bool operator==(const Base& rhs) const {
-    
-    
-    
-    
-    return ptr == rhs.ptr;
-  }
-  bool operator!=(const Base& rhs) const { return !(*this == rhs); }
+  
+  
+  
+  
+  bool operator==(const Base& rhs) const = default;
+  bool operator!=(const Base& rhs) const = default;
 
   
   
@@ -830,7 +828,7 @@ class Node {
   using Id = Base::Id;
   Id identifier() const {
     auto id = base()->identifier();
-    MOZ_ASSERT(JS::Value::isNumberRepresentable(id));
+    MOZ_RELEASE_ASSERT(JS::Value::isNumberRepresentable(id));
     return id;
   }
 

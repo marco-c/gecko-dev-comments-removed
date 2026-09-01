@@ -219,12 +219,12 @@ class MarkingTracerT;
 
 template <typename T>
 class MapAndIndex {
-  GCData<uintptr_t> data_;
+  GCData<uintptr_t> data_{0};
 
   static constexpr uintptr_t IndexMask = 0b111;
 
  public:
-  MapAndIndex() : data_(0) {}
+  MapAndIndex() = default;
 
   MapAndIndex(const T* map, uint32_t index) : data_(uintptr_t(map) | index) {
     MOZ_ASSERT((uintptr_t(map) & IndexMask) == 0);
@@ -254,12 +254,8 @@ class MapAndIndex {
 
   inline PropertyInfo propertyInfo() const;
 
-  bool operator==(const MapAndIndex<T>& other) const {
-    return data_ == other.data_;
-  }
-  bool operator!=(const MapAndIndex<T>& other) const {
-    return !operator==(other);
-  }
+  bool operator==(const MapAndIndex<T>& other) const = default;
+  bool operator!=(const MapAndIndex<T>& other) const = default;
 } JS_HAZ_GC_POINTER;
 using PropMapAndIndex = MapAndIndex<PropMap>;
 using SharedPropMapAndIndex = MapAndIndex<SharedPropMap>;

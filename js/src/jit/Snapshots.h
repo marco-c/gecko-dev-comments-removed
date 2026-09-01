@@ -121,9 +121,7 @@ class RValueAllocation {
   
   struct FloatRegisterBits {
     uint32_t data;
-    bool operator==(const FloatRegisterBits& other) const {
-      return data == other.data;
-    }
+    bool operator==(const FloatRegisterBits& other) const = default;
     uint32_t code() const { return data; }
     const char* name() const {
       FloatRegister tmp = FloatRegister::FromCode(data);
@@ -443,7 +441,11 @@ class SnapshotWriter {
   
   using RVA = RValueAllocation;
   using RValueAllocMap = HashMap<RVA, uint32_t, RVA::Hasher, SystemAllocPolicy>;
-  RValueAllocMap allocMap_;
+
+  
+  
+  
+  RValueAllocMap allocMap_{32};
 
   
   uint32_t allocWritten_ = 0;
@@ -452,7 +454,7 @@ class SnapshotWriter {
   SnapshotOffset lastStart_;
 
  public:
-  SnapshotWriter();
+  SnapshotWriter() = default;
 
   SnapshotOffset startSnapshot(RecoverOffset recoverOffset, BailoutKind kind);
 #ifdef TRACK_SNAPSHOTS

@@ -996,9 +996,7 @@ class TaggedScriptThingIndex {
 
   Kind tag() const { return Kind((data_ & TagMask) >> TagShift); }
 
-  bool operator==(const TaggedScriptThingIndex& rhs) const {
-    return data_ == rhs.data_;
-  }
+  bool operator==(const TaggedScriptThingIndex& rhs) const = default;
 };
 
 
