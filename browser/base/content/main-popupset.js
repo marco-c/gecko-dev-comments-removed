@@ -18,6 +18,11 @@ document.addEventListener(
     let getContextTabGroupId = popup =>
       popup.triggerNode?.closest("[data-tab-group-id]")?.dataset.tabGroupId;
     
+    let dismissTabGroupPanel = popup =>
+      popup.triggerNode
+        ?.closest("panel:not([keepopenongroupdelete])")
+        ?.hidePopup();
+    
     mainPopupSet.addEventListener("command", event => {
       switch (event.target.id) {
         
@@ -231,7 +236,7 @@ document.addEventListener(
             let tabGroup = gBrowser.getTabGroupById(tabGroupId);
             
             
-            popup.triggerNode?.closest("panel")?.hidePopup();
+            dismissTabGroupPanel(popup);
             
             
             tabGroup.documentGlobal.gBrowser.removeTabGroup(tabGroup, {
@@ -270,7 +275,7 @@ document.addEventListener(
           {
             let popup = event.target.parentElement;
             let tabGroupId = getContextTabGroupId(popup);
-            popup.triggerNode?.closest("panel")?.hidePopup();
+            dismissTabGroupPanel(popup);
             SessionStore.forgetSavedTabGroup(tabGroupId);
           }
           break;
