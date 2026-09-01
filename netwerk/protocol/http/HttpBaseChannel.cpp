@@ -1986,12 +1986,6 @@ nsresult HttpBaseChannel::SetReferrerInfoInternal(
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  if (aClone) {
-    
-    
-    referrerInfo->RecordTelemetry(this);
-  }
-
   if (aCompute) {
     rv = referrerInfo->ComputeReferrer(this);
     if (NS_WARN_IF(NS_FAILED(rv))) {
