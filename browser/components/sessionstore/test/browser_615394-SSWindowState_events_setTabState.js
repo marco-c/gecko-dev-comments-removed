@@ -56,6 +56,6 @@ function test_setTabState() {
   window.addEventListener("SSWindowStateReady", onSSWindowStateReady);
   tab.addEventListener("SSTabRestoring", onSSTabRestoring, { once: true });
   
-  gBrowser._insertBrowser(tab);
+  gBrowser.insertBrowser(tab);
   ss.setTabState(tab, newTabState);
 }
