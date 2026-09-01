@@ -22,11 +22,11 @@ class TlsCipherOrderTest : public TlsConnectTestBase {
     ConfigureVersion(SSL_LIBRARY_VERSION_TLS_1_3);
   }
 
-  virtual SECStatus BuildTestLists(std::vector<uint16_t> &cs_initial_list,
-                                   std::vector<uint16_t> &cs_new_list) {
+  virtual SECStatus BuildTestLists(std::vector<uint16_t>& cs_initial_list,
+                                   std::vector<uint16_t>& cs_new_list) {
     
     
-    const PRUint16 *kCipherSuites = SSL_GetImplementedCiphers();
+    const PRUint16* kCipherSuites = SSL_GetImplementedCiphers();
 
     for (unsigned int i = 0; i < kNumImplementedCiphers; i++) {
       PRBool pref = PR_FALSE, policy = PR_FALSE;
@@ -147,7 +147,7 @@ TEST_F(TlsCipherOrderTest, CipherOrderCopySocket) {
   }
 
   
-  PRFileDesc *rv = SSL_ImportFD(client_->ssl_fd(), server_->ssl_fd());
+  PRFileDesc* rv = SSL_ImportFD(client_->ssl_fd(), server_->ssl_fd());
   EXPECT_NE(nullptr, rv);
 
   result = SSL_CipherSuiteOrderGet(server_->ssl_fd(), current_cs_order.data(),

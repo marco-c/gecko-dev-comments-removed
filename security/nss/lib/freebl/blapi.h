@@ -1947,6 +1947,8 @@ extern SECStatus EC_DerivePublicKey(const SECItem *privateKey, const ECParams *e
 
 SECStatus MLDSA_NewKey(CK_ML_DSA_PARAMETER_SET_TYPE paramSet, SECItem *seed,
                        MLDSAPrivateKey *privKey, MLDSAPublicKey *pubKey);
+
+
 SECStatus MLDSA_SignInit(MLDSAPrivateKey *key, CK_HEDGE_TYPE hedgeType,
                          const SECItem *sgnCtx, MLDSAContext **ctx);
 SECStatus MLDSA_SignUpdate(MLDSAContext *ctx, const SECItem *data);
@@ -1956,6 +1958,10 @@ SECStatus MLDSA_VerifyInit(MLDSAPublicKey *key, const SECItem *sgnCtx,
                            MLDSAContext **ctx);
 SECStatus MLDSA_VerifyUpdate(MLDSAContext *ctx, const SECItem *data);
 SECStatus MLDSA_VerifyFinal(MLDSAContext *ctx, const SECItem *signature);
+
+
+
+void MLDSA_DestroyContext(MLDSAContext *ctx);
 
 
 

@@ -63,16 +63,21 @@ void
 PK11_DestroyContext(PK11Context *context, PRBool freeit)
 {
     pk11_CloseSession(context->slot, context->session, context->ownSession);
-    
-    if (context->savedData != NULL)
+    if (context->savedData != NULL) {
         PORT_Free(context->savedData);
-    if (context->key)
-        PK11_FreeSymKey(context->key);
-    if (context->param && context->param != &pk11_null_params)
+    }
+    PK11_FreeSymKey(context->key);
+    if (context->param && context->param != &pk11_null_params) {
         SECITEM_FreeItem(context->param, PR_TRUE);
-    if (context->sessionLock)
+    }
+    if (context->sessionLock) {
         PR_DestroyLock(context->sessionLock);
+    }
     PK11_FreeSlot(context->slot);
+    
+
+
+    PORT_Memset(context, 0, sizeof(*context));
     if (freeit)
         PORT_Free(context);
 }

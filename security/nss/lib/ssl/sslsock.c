@@ -149,20 +149,20 @@ static const PRUint16 srtpCiphers[] = {
 
 
 
-#define ECGROUP(name, size, oid, assumeSupported)  \
-    {                                              \
-        ssl_grp_ec_##name, size, ssl_kea_ecdh,     \
-            SEC_OID_SECG_EC_##oid, assumeSupported \
+#define ECGROUP(name, size, oid, assumeSupported) \
+    {                                             \
+        ssl_grp_ec_##name, size, ssl_kea_ecdh,    \
+        SEC_OID_SECG_EC_##oid, assumeSupported    \
     }
 #define FFGROUP(size)                           \
     {                                           \
         ssl_grp_ffdhe_##size, size, ssl_kea_dh, \
-            SEC_OID_TLS_FFDHE_##size, PR_TRUE   \
+        SEC_OID_TLS_FFDHE_##size, PR_TRUE       \
     }
 #define HYGROUP(first, second, size, first_oid, second_oid, assumeSupported) \
     {                                                                        \
         ssl_grp_kem_##first##second, size, ssl_kea_ecdh_hybrid,              \
-            SEC_OID_##first_oid##second_oid, assumeSupported                 \
+        SEC_OID_##first_oid##second_oid, assumeSupported                     \
     }
 
 const sslNamedGroupDef ssl_named_groups[] = {
@@ -2614,8 +2614,14 @@ SSL_ReconfigFD(PRFileDesc *model, PRFileDesc *fd)
     
 
 
+
+
+    ssl_Get1stHandshakeLock(ss);
+    ssl_GetSSL3HandshakeLock(ss);
     ss->xtnData.selectedPsk = NULL;
     rv = tls13_ResetHandshakePsks(ss, &ss->ssl3.hs.psks);
+    ssl_ReleaseSSL3HandshakeLock(ss);
+    ssl_Release1stHandshakeLock(ss);
     if (rv != SECSuccess) {
         return NULL;
     }

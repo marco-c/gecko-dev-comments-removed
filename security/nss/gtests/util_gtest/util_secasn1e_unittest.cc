@@ -18,15 +18,15 @@ static const SEC_ASN1Template NullTemplate[] = {
 
 
 TEST(SECASN1ETest, EncodeNullNearArenaAllocationBoundary) {
-  PLArenaPool *arena = PORT_NewArena(4096);
+  PLArenaPool* arena = PORT_NewArena(4096);
   ASSERT_NE(nullptr, arena);
 
-  void *src = PORT_ArenaAlloc(arena, 16);
+  void* src = PORT_ArenaAlloc(arena, 16);
   ASSERT_NE(nullptr, src);
   memset(src, 0, 16);
 
   SECItem result = {siBuffer, nullptr, 0};
-  SECItem *encoded = SEC_ASN1EncodeItem(arena, &result, src, NullTemplate);
+  SECItem* encoded = SEC_ASN1EncodeItem(arena, &result, src, NullTemplate);
   ASSERT_NE(nullptr, encoded);
 
   

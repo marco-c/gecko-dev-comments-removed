@@ -606,9 +606,16 @@ sec_DecodeSigAlg(const SECKEYPublicKey *key, SECOidTag sigAlg,
         case SEC_OID_ML_DSA_44:
         case SEC_OID_ML_DSA_65:
         case SEC_OID_ML_DSA_87:
+            
+
+
+
+            if (param != NULL && param->len != 0) {
+                PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
+                return SECFailure;
+            }
             comboRequired = PR_TRUE;
             *hashalg = sigAlg;
-            
             break;
         
         case SEC_OID_PKCS1_MD4_WITH_RSA_ENCRYPTION:
@@ -760,6 +767,11 @@ vfy_CreateContext(const SECKEYPublicKey *key, const SECItem *sig,
         SECITEM_FreeItem(mechparamsp, PR_FALSE);
         PORT_SetError(SEC_ERROR_PKCS7_KEYALG_MISMATCH);
         return NULL;
+    }
+    
+
+    if ((type == mldsaKey) && (hashAlg == SEC_OID_UNKNOWN)) {
+        hashAlg = encAlg;
     }
     if (NSS_OptionGet(NSS_KEY_SIZE_POLICY_FLAGS, &optFlags) != SECFailure) {
         if (optFlags & NSS_KEY_SIZE_POLICY_VERIFY_FLAG) {

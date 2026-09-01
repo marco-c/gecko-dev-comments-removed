@@ -48,7 +48,7 @@ struct dirent {
 };
 
 #if !defined(__BORLANDC__) && !defined(__GNUC__)
-#define S_ISDIR(s) ((s)&_S_IFDIR)
+#define S_ISDIR(s) ((s) & _S_IFDIR)
 #endif
 
 #else 
@@ -92,7 +92,7 @@ struct dirent {
 #endif
 };
 
-#define S_ISDIR(s) ((s)&_S_IFDIR)
+#define S_ISDIR(s) ((s) & _S_IFDIR)
 
 #endif 
 

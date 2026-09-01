@@ -91,7 +91,7 @@ extern int Debug;
 #define SSL_DBG(b)
 #endif
 
-#define LSB(x) ((unsigned char)((x)&0xff))
+#define LSB(x) ((unsigned char)((x) & 0xff))
 #define MSB(x) ((unsigned char)(((unsigned)(x)) >> 8))
 
 #define CONST_CAST(T, X) ((T *)(X))
@@ -264,7 +264,7 @@ typedef struct {
 #define MAX_DTLS_SRTP_CIPHER_SUITES 4
 
 
-#define MAX_SIGNATURE_SCHEMES 18
+#define MAX_SIGNATURE_SCHEMES 21
 
 #define MAX_SUPPORTED_CERTIFICATE_COMPRESSION_ALGS 32
 
@@ -1198,6 +1198,9 @@ struct sslSocketStr {
 
     
     PRBool statelessResume;
+    
+
+
     TLSExtensionData xtnData;
 
     
@@ -1752,12 +1755,14 @@ SECStatus ssl3_HandleServerSpki(sslSocket *ss);
 SECStatus ssl3_AuthCertificate(sslSocket *ss);
 SECStatus ssl_ReadCertificateStatus(sslSocket *ss, PRUint8 *b,
                                     PRUint32 length);
-SECStatus ssl3_EncodeSigAlgs(const sslSocket *ss, PRUint16 minVersion, PRBool forCert,
+SECStatus ssl3_EncodeSigAlgs(const sslSocket *ss, PRUint16 maxVersion,
+                             PRUint16 minVersion, PRBool forCert,
                              PRBool grease, sslBuffer *buf);
 SECStatus ssl3_EncodeFilteredSigAlgs(const sslSocket *ss,
                                      const SSLSignatureScheme *schemes,
                                      PRUint32 numSchemes, PRBool grease, sslBuffer *buf);
-SECStatus ssl3_FilterSigAlgs(const sslSocket *ss, PRUint16 minVersion, PRBool disableRsae, PRBool forCert,
+SECStatus ssl3_FilterSigAlgs(const sslSocket *ss, PRUint16 maxVersion, PRUint16 minVersion,
+                             PRBool disableRsae, PRBool forCert,
                              unsigned int maxSchemes, SSLSignatureScheme *filteredSchemes,
                              unsigned int *numFilteredSchemes);
 SECStatus ssl_GetCertificateRequestCAs(const sslSocket *ss,

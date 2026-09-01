@@ -865,9 +865,14 @@ SECStatus PK11_VerifyWithMechanism(SECKEYPublicKey *key,
 
 
 
+
+
+
+
 SECStatus PK11_Encapsulate(SECKEYPublicKey *pubKey, CK_MECHANISM_TYPE target,
                            PK11AttrFlags attrFlags, CK_FLAGS opFlags,
                            PK11SymKey **outKey, SECItem **outCiphertext);
+
 
 
 
