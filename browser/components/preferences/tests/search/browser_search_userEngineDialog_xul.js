@@ -618,13 +618,17 @@ add_task(async function test_icon() {
 
 
 async function assertError(elt, error = null) {
+  
+  
+  elt.dispatchEvent(new Event("focusout", { bubbles: true }));
+
   let errorLabel = elt.parentElement.querySelector(".error-label");
 
   if (error) {
     let msg = await document.l10n.formatValue(error);
     Assert.equal(errorLabel.textContent, msg);
   } else {
-    Assert.equal(errorLabel.textContent, "valid");
+    Assert.equal(errorLabel.textContent, "");
   }
 }
 

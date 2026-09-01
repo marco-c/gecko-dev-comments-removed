@@ -70,6 +70,18 @@ class EngineDialog {
     this._suggestUrl = document.getElementById("suggestUrl");
 
     this._form.addEventListener("input", e => this.validateInput(e.target));
+    
+    
+    this._form.addEventListener("focusout", e => {
+      if (e.target.localName == "input") {
+        this._revealValidity(e.target, e.target.validationMessage);
+      }
+    });
+    this._form.addEventListener("keypress", e => {
+      if (e.key == "Enter") {
+        this._revealAllValidity();
+      }
+    });
     document.addEventListener("dialogaccept", this.onAccept.bind(this));
     document.addEventListener("dialogextra1", () => this.showAdvanced());
   }
@@ -236,14 +248,49 @@ class EngineDialog {
       inputElement.setCustomValidity("");
     }
 
-    let errorLabel = inputElement.parentElement.querySelector(".error-label");
-    let validationMessage = inputElement.validationMessage;
-
     
     
-    errorLabel.textContent = validationMessage || "valid";
-
+    
+    
     this._dialog.getButton("accept").disabled = !this._form.checkValidity();
+  }
+
+  
+
+
+
+  _revealAllValidity() {
+    for (let input of this._form.elements) {
+      this._revealValidity(input, input.validationMessage);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  _revealValidity(inputElement, validationMessage) {
+    let errorLabel = inputElement.parentElement.querySelector(".error-label");
+
+    
+    
+    
+    
+    errorLabel.textContent = validationMessage;
+
+    
+    
+    if (validationMessage) {
+      inputElement.setAttribute("aria-invalid", "true");
+      inputElement.setAttribute("aria-describedby", errorLabel.id);
+    } else {
+      inputElement.removeAttribute("aria-invalid");
+      inputElement.removeAttribute("aria-describedby");
+    }
   }
 
   
