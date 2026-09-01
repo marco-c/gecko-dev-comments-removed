@@ -329,6 +329,11 @@ add_task(async function test_chat_storage_metric() {
     "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs"
   );
 
+  
+  
+  
+  
+  await ChatStore.destroyDatabase();
   Services.fog.testResetFOG();
   let conversation;
   try {
