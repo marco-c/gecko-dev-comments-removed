@@ -432,19 +432,36 @@ bool Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
         break;
     }
   } else if (fromFiniteTimeline) {
-    
-    
-    
-    
-    
-    
-    
-    mAutoAlignStartTime = false;
-    if (!previousProgress.IsNull()) {
+    const auto timeToSet = [&]() -> Maybe<TimeDuration> {
+      const auto autoAlignStartTimePending = mAutoAlignStartTime;
       
       
-      SetCurrentTimeNoUpdate(
+      
+      
+      
+      
+      
+      if (mAutoAlignStartTime) {
+        mAutoAlignStartTime = false;
+      }
+      if (autoAlignStartTimePending && mHoldTime.IsNull() &&
+          mStartTime.IsNull()) {
+        
+        
+        return Some(TimeDuration::FromMilliseconds(0.0));
+      }
+
+      if (previousProgress.IsNull()) {
+        return Nothing{};
+      }
+
+      return Some(
           TimeDuration(EffectEnd().MultDouble(previousProgress.Value())));
+    }();
+    if (timeToSet) {
+      
+      
+      SetCurrentTimeNoUpdate(TimeDuration(*timeToSet));
     }
   }
   
