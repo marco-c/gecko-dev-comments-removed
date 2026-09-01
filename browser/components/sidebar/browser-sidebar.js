@@ -1919,11 +1919,18 @@ var SidebarController = {
       return;
     }
 
+    if (!this._pinnedTabsContainer.childElementCount) {
+      return;
+    }
+
     const preferredHeight = this._state.launcherExpanded
       ? this._state.expandedPinnedTabsHeight
       : this._state.collapsedPinnedTabsHeight;
 
-    if (!preferredHeight || !this._pinnedTabsContainer.childElementCount) {
+    if (!preferredHeight) {
+      
+      
+      this._pinnedTabsContainer.style.height = "";
       return;
     }
 
@@ -1934,6 +1941,16 @@ var SidebarController = {
     
     const clampedHeight = Math.min(preferredHeight, itemsWrapperHeight);
     this._pinnedTabsContainer.style.height = `${clampedHeight}px`;
+  },
+
+  async updatePinnedTabsHeightAfterReflow() {
+    if (!this.sidebarVerticalTabsEnabled || !this._pinnedTabsContainer) {
+      return;
+    }
+    await window.promiseDocumentFlushed(() => {});
+    if (!this.uninitializing) {
+      this.updatePinnedTabsHeightOnResize();
+    }
   },
 
   
@@ -2983,6 +3000,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
           newValue
         );
         SidebarController._state.updateVisibility(showLauncher, forceExpand);
+        SidebarController.updatePinnedTabsHeightAfterReflow();
       }
       SidebarController.updateToolbarButton();
     }
