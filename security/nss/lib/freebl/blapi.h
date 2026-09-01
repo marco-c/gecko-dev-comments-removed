@@ -331,11 +331,6 @@ extern SECStatus DSA_SignDigestWithSeed(DSAPrivateKey *key,
 
 
 
-extern SECStatus DH_GenParam(int primeLen, DHParams **params);
-
-
-
-
 
 extern SECStatus DH_NewKey(DHParams *params,
                            DHPrivateKey **privKey);

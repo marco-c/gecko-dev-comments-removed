@@ -1547,16 +1547,6 @@ static const SSLSignatureScheme kSignatureSchemeRsaSha384[] = {
 static const SSLSignatureScheme kSignatureSchemeRsaSha256[] = {
     ssl_sig_rsa_pkcs1_sha256};
 
-static SSLNamedGroup NamedGroupForEcdsa384(const TlsConnectTestBase* ctbase) {
-  
-  
-  
-  if (ctbase->GetVersion() <= SSL_LIBRARY_VERSION_TLS_1_1) {
-    return ssl_grp_ec_secp384r1;
-  }
-  return ctbase->GetDefaultGroupFromKEA(ctbase->GetDefaultKEA());
-}
-
 
 
 TEST_P(TlsConnectGeneric, SignatureAlgorithmServerAuth) {
@@ -1566,8 +1556,7 @@ TEST_P(TlsConnectGeneric, SignatureAlgorithmServerAuth) {
   server_->SetSignatureSchemes(kSignatureSchemeEcdsaSha384,
                                PR_ARRAY_SIZE(kSignatureSchemeEcdsaSha384));
   Connect();
-  CheckKeys(GetDefaultKEA(), NamedGroupForEcdsa384(this), ssl_auth_ecdsa,
-            ssl_sig_ecdsa_secp384r1_sha384);
+  CheckKeys(ssl_auth_ecdsa, ssl_sig_ecdsa_secp384r1_sha384);
 }
 
 
@@ -1585,8 +1574,7 @@ TEST_P(TlsConnectGeneric, SignatureAlgorithmClientOnly) {
             SSL_SignaturePrefSet(client_->ssl_fd(), clientAlgorithms,
                                  PR_ARRAY_SIZE(clientAlgorithms)));
   Connect();
-  CheckKeys(GetDefaultKEA(), NamedGroupForEcdsa384(this), ssl_auth_ecdsa,
-            ssl_sig_ecdsa_secp384r1_sha384);
+  CheckKeys(ssl_auth_ecdsa, ssl_sig_ecdsa_secp384r1_sha384);
 }
 
 
@@ -1596,8 +1584,7 @@ TEST_P(TlsConnectGeneric, SignatureAlgorithmServerOnly) {
   server_->SetSignatureSchemes(kSignatureSchemeEcdsaSha384,
                                PR_ARRAY_SIZE(kSignatureSchemeEcdsaSha384));
   Connect();
-  CheckKeys(GetDefaultKEA(), NamedGroupForEcdsa384(this), ssl_auth_ecdsa,
-            ssl_sig_ecdsa_secp384r1_sha384);
+  CheckKeys(ssl_auth_ecdsa, ssl_sig_ecdsa_secp384r1_sha384);
 }
 
 

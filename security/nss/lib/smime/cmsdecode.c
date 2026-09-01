@@ -463,7 +463,9 @@ nss_cms_after_end_inner(NSSCMSDecoderContext *p7dcx, unsigned int depth)
                                          acinfo->rawContent->len);
                         }
                         
-                        acinfo->content.pointer = acinfo->rawContent;
+                        aerv = NSS_CMSContentInfo_SetContent(
+                            p7dcx->cmsg, acinfo, SEC_OID_PKCS7_DATA,
+                            acinfo->rawContent);
                     }
                 }
                 if (aerv != SECSuccess) {
