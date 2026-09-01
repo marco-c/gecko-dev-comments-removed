@@ -304,6 +304,16 @@ GeckoMediaPluginServiceParent::Observe(nsISupports* aSubject,
     MOZ_ASSERT(mShuttingDown);
 #endif
     ShutdownGMPThread();
+
+    
+    
+    
+    
+    MonitorAutoLock lock(mInitPromiseMonitor);
+    if (!mLoadPluginsFromDiskComplete) {
+      mLoadPluginsFromDiskComplete = true;
+      mInitPromise.RejectIfExists(NS_ERROR_ABORT, __func__);
+    }
   } else if (!strcmp(NS_XPCOM_WILL_SHUTDOWN_OBSERVER_ID, aTopic)) {
     mXPCOMWillShutdown = true;
   } else if (!strcmp("last-pb-context-exited", aTopic)) {
