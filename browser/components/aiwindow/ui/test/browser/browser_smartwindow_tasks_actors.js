@@ -183,11 +183,15 @@ add_task(async function test_smartwindow_tasks_monitor_operations() {
     );
 
     
+    
     const deleteResult = await actor.sendQuery(
       "SmartWindowTasks:DeleteMonitor",
-      { id: newMonitor.id }
+      { id: newMonitor.id, skipConfirmation: true }
     );
+
     Assert.ok(deleteResult.success, "Should delete monitor successfully");
+    Assert.ok(deleteResult.deleted, "Monitor should be deleted");
+    Assert.ok(!deleteResult.cancelled, "Deletion should not be cancelled");
 
     
     const finalResult = await actor.sendQuery(
@@ -321,10 +325,12 @@ add_task(async function test_smartwindow_tasks_pause_monitor() {
     );
 
     
+    
     const deleteResult = await actor.sendQuery(
       "SmartWindowTasks:DeleteMonitor",
-      { id: monitorId }
+      { id: monitorId, skipConfirmation: true }
     );
+
     Assert.ok(deleteResult.success, "Should delete monitor successfully");
   });
 
@@ -405,13 +411,59 @@ add_task(async function test_smartwindow_tasks_run_monitor() {
     }
 
     
+    
     const deleteResult = await actor.sendQuery(
       "SmartWindowTasks:DeleteMonitor",
-      { id: monitorId }
+      { id: monitorId, skipConfirmation: true }
     );
+
     Assert.ok(deleteResult.success, "Should delete monitor successfully");
   });
 
+  BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+
+add_task(async function test_smartwindow_tasks_open_url() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.smartwindow.enabled", true]],
+  });
+
+  const WATCH_URL = "https://example.com/watched-page";
+
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:smartwindowtasks"
+  );
+
+  const newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, WATCH_URL);
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [WATCH_URL], async url => {
+    if (content.document.readyState !== "complete") {
+      await ContentTaskUtils.waitForEvent(content, "load");
+    }
+    await content.customElements.whenDefined("ai-tasks");
+
+    const aiTasks = content.document.querySelector("ai-tasks");
+    aiTasks.dispatchEvent(
+      new content.CustomEvent("SmartWindowTasks:RequestOpenUrl", {
+        bubbles: true,
+        detail: { url },
+      })
+    );
+  });
+
+  const openedTab = await newTabPromise;
+  Assert.equal(
+    openedTab.linkedBrowser.currentURI.spec,
+    WATCH_URL,
+    "The watched page opens in a new tab"
+  );
+
+  BrowserTestUtils.removeTab(openedTab);
   BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();
 });

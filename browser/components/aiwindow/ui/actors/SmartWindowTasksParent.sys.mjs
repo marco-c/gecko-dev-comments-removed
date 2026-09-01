@@ -6,6 +6,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   MonitorAgent:
     "moz-src:///browser/components/aiwindow/models/agents/MonitorAgent.sys.mjs",
+  MonitorUIUtils:
+    "moz-src:///browser/components/aiwindow/ui/modules/MonitorUIUtils.sys.mjs",
   TOTAL_NUM_MONITORS:
     "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs",
   TOTAL_NUM_URLS_IN_MONITOR:
@@ -26,6 +28,7 @@ export class SmartWindowTasksParent extends JSWindowActorParent {
     ["SmartWindowTasks:RunMonitor", this.#handleRunMonitor.bind(this)],
     ["SmartWindowTasks:PauseMonitor", this.#handlePauseMonitor.bind(this)],
     ["SmartWindowTasks:GetConstants", this.#handleGetConstants.bind(this)],
+    ["SmartWindowTasks:OpenUrl", this.#handleOpenUrl.bind(this)],
   ]);
 
   async receiveMessage({ data, name }) {
@@ -42,6 +45,13 @@ export class SmartWindowTasksParent extends JSWindowActorParent {
   async #handleListMonitors() {
     try {
       const monitors = await lazy.MonitorAgent.listMonitors();
+      // Resolve page titles
+      await Promise.all(
+        monitors.map(async monitor => {
+          monitor.watchUrlTitles =
+            await lazy.MonitorUIUtils.resolveWatchUrlTitles(monitor.watchUrls);
+        })
+      );
       return { success: true, monitors };
     } catch (error) {
       console.error("Failed to list monitors:", error);
@@ -60,13 +70,13 @@ export class SmartWindowTasksParent extends JSWindowActorParent {
   }
 
   async #handleDeleteMonitor(data) {
-    try {
-      await lazy.MonitorAgent.deleteMonitor(data.id);
-      return { success: true };
-    } catch (error) {
-      console.error("Failed to delete monitor:", error);
-      return { success: false, error: error.message };
-    }
+    // Check if we're in test mode - tests can pass skipConfirmation flag
+    const skipConfirmation = data.skipConfirmation === true;
+    return lazy.MonitorUIUtils.deleteMonitorWithConfirmation(
+      this.browsingContext,
+      data.id,
+      skipConfirmation
+    );
   }
 
   async #handleUpdateMonitor(data) {
@@ -102,6 +112,13 @@ export class SmartWindowTasksParent extends JSWindowActorParent {
     }
   }
 
+  #handleOpenUrl(data) {
+    return lazy.MonitorUIUtils.openMonitorUrl(
+      this.browsingContext.topChromeWindow,
+      data?.url
+    );
+  }
+
   #handleGetConstants() {
     return {
       success: true,
@@ -109,6 +126,11 @@ export class SmartWindowTasksParent extends JSWindowActorParent {
         TOTAL_NUM_MONITORS: lazy.TOTAL_NUM_MONITORS,
         TOTAL_NUM_URLS_IN_MONITOR: lazy.TOTAL_NUM_URLS_IN_MONITOR,
         SCHEDULE_TYPES: lazy.SCHEDULE_TYPES,
+        isMonitorRegionSupported:
+          lazy.MonitorUIUtils.isMonitorRegionSupported(),
+        smartWindowSupportUrl:
+          Services.urlFormatter.formatURLPref("app.support.baseURL") +
+          "smart-window",
       },
     };
   }
