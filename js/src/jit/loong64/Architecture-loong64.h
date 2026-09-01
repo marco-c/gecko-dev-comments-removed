@@ -5,6 +5,8 @@
 #ifndef jit_loong64_Architecture_loong64_h
 #define jit_loong64_Architecture_loong64_h
 
+#include "mozilla/EnumSet.h"
+
 #include <algorithm>
 #include <bit>
 
@@ -509,7 +511,50 @@ FloatRegister::LiveAsIndexableSet<RegTypeName::Any>(SetType set) {
 
 inline bool hasMultiAlias() { return false; }
 
-uint32_t GetLOONG64Flags();
+enum class LOONG64Extension : uint32_t {
+  
+  Initialized,
+
+  
+  LamBh,
+};
+
+using LOONG64Extensions = mozilla::EnumSet<LOONG64Extension>;
+
+class LOONG64Flags final {
+  
+  
+  
+  static inline LOONG64Extensions extensions{};
+
+ public:
+  LOONG64Flags() = delete;
+
+  
+  
+  static void Init();
+
+  static bool IsInitialized() {
+    return extensions.contains(LOONG64Extension::Initialized);
+  }
+
+  static uint32_t GetFlags() {
+    MOZ_ASSERT(IsInitialized());
+    return extensions.serialize();
+  }
+
+  static bool HasLamBhExtension() {
+    return extensions.contains(LOONG64Extension::LamBh);
+  }
+};
+
+
+
+
+void SetLOONG64ISAString(const char* isa);
+
+
+inline uint32_t GetLOONG64Flags() { return LOONG64Flags::GetFlags(); }
 
 }  
 }  
