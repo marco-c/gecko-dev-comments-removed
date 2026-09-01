@@ -13,7 +13,7 @@
 
 
 #include "google/protobuf/runtime_version.h"
-#if PROTOBUF_VERSION != 7035000
+#if PROTOBUF_VERSION != 7036000
 #error "Protobuf C++ gencode is built with an incompatible version of"
 #error "Protobuf C++ headers/runtime. See"
 #error "https://protobuf.dev/support/cross-version-runtime-guarantee/#cpp"
@@ -36,15 +36,6 @@
 #include "google/protobuf/port_def.inc"
 
 #define PROTOBUF_INTERNAL_EXPORT_google_2fprotobuf_2fduration_2eproto PROTOBUF_EXPORT
-
-namespace google {
-namespace protobuf {
-namespace internal {
-template <typename T>
-::absl::string_view GetAnyMessageName();
-}  
-}  
-}  
 
 
 struct PROTOBUF_EXPORT TableStruct_google_2fprotobuf_2fduration_2eproto {
@@ -76,6 +67,8 @@ namespace protobuf {
 
 class PROTOBUF_EXPORT  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED Duration final : public ::google::protobuf::Message
  {
+  using Super_ = ::google::protobuf::Message;
+
  public:
   inline Duration() : Duration(nullptr) {}
   ~Duration() PROTOBUF_FINAL;
@@ -150,11 +143,11 @@ class PROTOBUF_EXPORT  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED Duration final : pu
 
   [[nodiscard]] Duration* PROTOBUF_NONNULL
   New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<Duration>(arena);
+    return Super_::DefaultConstruct<Duration>(arena);
   }
-  using ::google::protobuf::Message::CopyFrom;
+  using Super_::CopyFrom;
   void CopyFrom(const Duration& from);
-  using ::google::protobuf::Message::MergeFrom;
+  using Super_::MergeFrom;
   void MergeFrom(const Duration& from) { Duration::MergeImpl(*this, from); }
 
   private:
@@ -195,8 +188,6 @@ class PROTOBUF_EXPORT  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED Duration final : pu
   static void SharedDtor(MessageLite& self);
   void InternalSwap(Duration* PROTOBUF_NONNULL other);
  private:
-  template <typename T>
-  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
   static ::absl::string_view FullMessageName() { return "google.protobuf.Duration"; }
 
   explicit Duration(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);

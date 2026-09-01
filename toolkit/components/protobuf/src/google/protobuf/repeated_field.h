@@ -68,11 +68,11 @@ class UnknownField;
 class UnknownFieldSet;
 class DynamicMessage;
 class Reflection;
-template <typename ElementType>
-class RepeatedFieldProxy;
 
 namespace internal {
 
+template <typename ElementType, bool kOrProxy>
+class MutableRepeatedFieldProxyImpl;
 class EpsCopyInputStream;
 class TcParser;
 class WireFormat;
@@ -105,9 +105,6 @@ template <typename Element>
 class RepeatedIterator;
 
 
-struct RepeatedFieldBase {};
-
-
 
 
 
@@ -119,38 +116,42 @@ using DecayedRepeatedFieldElement =
 
 
 
-template <size_t kMinSize>
 class alignas(8) HeapRep {
  public:
-  explicit HeapRep(uint32_t capacity) : capacity_(capacity), unused_(0) {}
+  explicit HeapRep(uint32_t capacity) : capacity_(capacity) {}
   
   ~HeapRep() = delete;
 
   uint32_t capacity() const { return capacity_; }
 
-  const void* elements() const { return elements_; }
-  void* elements() { return elements_; }
+  template <typename Element>
+  const Element* elements() const {
+    const char* elements_ptr =
+        reinterpret_cast<const char*>(this) + SizeOf<Element>();
+    return reinterpret_cast<const Element*>(elements_ptr);
+  }
+  template <typename Element>
+  Element* elements() {
+    char* elements_ptr = reinterpret_cast<char*>(this) + SizeOf<Element>();
+    return reinterpret_cast<Element*>(elements_ptr);
+  }
 
   
   
-  static constexpr size_t SizeOf() { return offsetof(HeapRep, elements_); }
+  
+  template <typename Element>
+  static constexpr size_t SizeOf() {
+    
+    
+    return std::max(sizeof(HeapRep), sizeof(Element));
+  }
 
  private:
-  union {
-    struct {
-      uint32_t capacity_;
-      [[maybe_unused]] const uint32_t unused_;
-    };
-
-    
-    
-    char padding_[kMinSize];
-  };
-
+  uint32_t capacity_;
   
   
   
-  uint8_t elements_[1];
+  [[maybe_unused]] const uint32_t unused_ = 0;
 };
 
 
@@ -180,7 +181,16 @@ constexpr int SooCapacityElements() {
   return std::min<int>(kSooCapacityBytes / sizeof(T), kSooSizeMask);
 }
 
-template <size_t kMinSize>
+
+
+
+
+
+
+
+
+
+
 class SooRep {
  public:
   constexpr SooRep() = default;
@@ -191,7 +201,11 @@ class SooRep {
   Arena* arena() const {
     return ResolveTaggedArena<&SooRep::resolver_, kResolverTaggedBits>(this);
   }
-  int size() const { return size_; }
+  int size() const {
+    int res = size_;
+    PROTOBUF_ASSUME(res >= 0);
+    return res;
+  }
   void set_size(int size) {
     ABSL_DCHECK(!is_soo() || size <= kSooCapacityBytes);
     size_ = size;
@@ -201,31 +215,33 @@ class SooRep {
     return heap_rep_->capacity();
   }
   
-  void set_non_soo(HeapRep<kMinSize>* heap_rep) {
+  void set_non_soo(HeapRep* heap_rep) {
     resolver_.SetTag(kNotSooBit);
     heap_rep_ = heap_rep;
   }
 
-  HeapRep<kMinSize>* heap_rep() const {
+  HeapRep* heap_rep() const {
     ABSL_DCHECK(!is_soo());
     return heap_rep_;
   }
 
-  const void* elements(bool is_soo) const {
+  template <typename Element>
+  const Element* elements(bool is_soo) const {
     ABSL_DCHECK_EQ(is_soo, this->is_soo());
     if (is_soo) {
-      return soo_data_;
+      return reinterpret_cast<const Element*>(soo_data_);
     } else {
-      return heap_rep_->elements();
+      return heap_rep_->elements<Element>();
     }
   }
 
-  void* elements(bool is_soo) {
+  template <typename Element>
+  Element* elements(bool is_soo) {
     ABSL_DCHECK_EQ(is_soo, this->is_soo());
     if (is_soo) {
-      return soo_data_;
+      return reinterpret_cast<Element*>(soo_data_);
     } else {
-      return heap_rep_->elements();
+      return heap_rep_->elements<Element>();
     }
   }
 
@@ -241,7 +257,7 @@ class SooRep {
   uint32_t size_ = 0;
   union {
     char soo_data_[kSooCapacityBytes];
-    HeapRep<kMinSize>* heap_rep_;
+    HeapRep* heap_rep_;
 
     
     
@@ -249,6 +265,23 @@ class SooRep {
     std::true_type dummy_ = {};
   };
 };
+
+
+class RepeatedFieldBase {
+ protected:
+  constexpr RepeatedFieldBase() = default;
+  constexpr explicit RepeatedFieldBase(internal::InternalMetadataOffset offset)
+      : soo_rep_(
+            offset
+                .TranslateForMember<offsetof(RepeatedFieldBase, soo_rep_)>()) {}
+
+  SooRep soo_rep_;
+};
+
+
+
+
+[[noreturn]] PROTOBUF_EXPORT void LogSelfMergeAndAbort() noexcept;
 
 }  
 
@@ -268,21 +301,21 @@ class ABSL_ATTRIBUTE_WARN_UNUSED PROTOBUF_DECLSPEC_EMPTY_BASES
   static_assert(
       alignof(Arena) >= alignof(Element),
       "We only support types that have an alignment smaller than Arena");
-  static_assert(!std::is_const<Element>::value,
+  static_assert(!std::is_const_v<Element>,
                 "We do not support const value types.");
-  static_assert(!std::is_volatile<Element>::value,
+  static_assert(!std::is_volatile_v<Element>,
                 "We do not support volatile value types.");
-  static_assert(!std::is_pointer<Element>::value,
+  static_assert(!std::is_pointer_v<Element>,
                 "We do not support pointer value types.");
-  static_assert(!std::is_reference<Element>::value,
+  static_assert(!std::is_reference_v<Element>,
                 "We do not support reference value types.");
   static constexpr PROTOBUF_ALWAYS_INLINE void StaticValidityCheck() {
     static_assert(
-        std::disjunction<internal::is_supported_integral_type<Element>,
-                         internal::is_supported_floating_point_type<Element>,
-                         std::is_same<absl::Cord, Element>,
-                         std::is_same<UnknownField, Element>,
-                         is_proto_enum<Element>>::value,
+        std::disjunction_v<internal::is_supported_integral_type<Element>,
+                           internal::is_supported_floating_point_type<Element>,
+                           std::is_same<absl::Cord, Element>,
+                           std::is_same<UnknownField, Element>,
+                           is_proto_enum<Element>>,
         "We only support non-string scalars in RepeatedField.");
   }
 
@@ -301,11 +334,11 @@ class ABSL_ATTRIBUTE_WARN_UNUSED PROTOBUF_DECLSPEC_EMPTY_BASES
 
   constexpr RepeatedField();
   RepeatedField(const RepeatedField& rhs)
-      : RepeatedField(internal::InternalMetadataOffset(), rhs) {}
+      : RepeatedField(internal::InternalMetadataOffset(), nullptr,
+                      rhs) {}
 
-  template <typename Iter,
-            typename = typename std::enable_if<std::is_constructible<
-                Element, decltype(*std::declval<Iter>())>::value>::type>
+  template <typename Iter, typename = std::enable_if_t<std::is_constructible_v<
+                               Element, decltype(*std::declval<Iter>())>>>
   RepeatedField(Iter begin, Iter end);
 
   
@@ -313,15 +346,16 @@ class ABSL_ATTRIBUTE_WARN_UNUSED PROTOBUF_DECLSPEC_EMPTY_BASES
                           internal::InternalMetadataOffset offset)
       : RepeatedField(offset) {}
   RepeatedField(internal::InternalVisibility,
-                internal::InternalMetadataOffset offset,
+                internal::InternalMetadataOffset offset, Arena* arena,
                 const RepeatedField& rhs)
-      : RepeatedField(offset, rhs) {}
+      : RepeatedField(offset, arena, rhs) {}
 
   RepeatedField& operator=(const RepeatedField& other)
       ABSL_ATTRIBUTE_LIFETIME_BOUND;
 
   RepeatedField(RepeatedField&& rhs) noexcept
-      : RepeatedField(internal::InternalMetadataOffset(), std::move(rhs)) {}
+      : RepeatedField(internal::InternalMetadataOffset(), nullptr,
+                      std::move(rhs)) {}
   RepeatedField& operator=(RepeatedField&& other) noexcept
       ABSL_ATTRIBUTE_LIFETIME_BOUND;
 
@@ -502,11 +536,6 @@ class ABSL_ATTRIBUTE_WARN_UNUSED PROTOBUF_DECLSPEC_EMPTY_BASES
 
  private:
   using InternalArenaConstructable_ = void;
-  
-  
-  static constexpr size_t kMinHeapRepSize =
-      std::max<size_t>(sizeof(Element), 8);
-  using HeapRep = internal::HeapRep<kMinHeapRepSize>;
 
   template <typename T>
   friend class Arena::InternalHelper;
@@ -523,7 +552,8 @@ class ABSL_ATTRIBUTE_WARN_UNUSED PROTOBUF_DECLSPEC_EMPTY_BASES
   friend class internal::TcParser;
   friend class internal::WireFormat;
 
-  friend class RepeatedFieldProxy<Element>;
+  template <typename ElementType, bool kOrProxy>
+  friend class internal::MutableRepeatedFieldProxyImpl;
 
   
   friend class UnknownFieldSet;
@@ -532,12 +562,14 @@ class ABSL_ATTRIBUTE_WARN_UNUSED PROTOBUF_DECLSPEC_EMPTY_BASES
       internal::SooCapacityElements<Element>();
 
   static constexpr int kInitialSize = 0;
-  static constexpr const size_t kHeapRepHeaderSize = HeapRep::SizeOf();
+  static constexpr const size_t kHeapRepHeaderSize =
+      internal::HeapRep::SizeOf<Element>();
 
   explicit constexpr RepeatedField(internal::InternalMetadataOffset offset);
-  RepeatedField(internal::InternalMetadataOffset offset,
+  RepeatedField(internal::InternalMetadataOffset offset, Arena* arena,
                 const RepeatedField& rhs);
-  RepeatedField(internal::InternalMetadataOffset offset, RepeatedField&& rhs);
+  RepeatedField(internal::InternalMetadataOffset offset, Arena* arena,
+                RepeatedField&& rhs);
 
   template <typename Init>
   void ResizeImpl(int new_size, Init init);
@@ -559,7 +591,9 @@ class ABSL_ATTRIBUTE_WARN_UNUSED PROTOBUF_DECLSPEC_EMPTY_BASES
     soo_rep_.set_size(size);
   }
   int Capacity(bool is_soo) const {
-    return is_soo ? kSooCapacityElements : soo_rep_.capacity();
+    int res = is_soo ? kSooCapacityElements : soo_rep_.capacity();
+    PROTOBUF_ASSUME(res >= 0);
+    return res;
   }
 
   template <typename ArenaProvider>
@@ -614,7 +648,7 @@ class ABSL_ATTRIBUTE_WARN_UNUSED PROTOBUF_DECLSPEC_EMPTY_BASES
   
   static void Destroy([[maybe_unused]] const Element* begin,
                       [[maybe_unused]] const Element* end) {
-    if constexpr (!std::is_trivially_destructible<Element>::value) {
+    if constexpr (!std::is_trivially_destructible_v<Element>) {
       std::for_each(begin, end, [&](const Element& e) { e.~Element(); });
     }
   }
@@ -644,8 +678,7 @@ class ABSL_ATTRIBUTE_WARN_UNUSED PROTOBUF_DECLSPEC_EMPTY_BASES
   void AnnotateSize(int old_size, int new_size) const {
     if (old_size != new_size) {
       [[maybe_unused]] const bool is_soo = this->is_soo();
-      [[maybe_unused]] const Element* elem =
-          reinterpret_cast<const Element*>(soo_rep_.elements(is_soo));
+      [[maybe_unused]] const Element* elem = soo_rep_.elements<Element>(is_soo);
       ABSL_ANNOTATE_CONTIGUOUS_CONTAINER(elem, elem + Capacity(is_soo),
                                          elem + old_size, elem + new_size);
       if (new_size < old_size) {
@@ -677,22 +710,23 @@ class ABSL_ATTRIBUTE_WARN_UNUSED PROTOBUF_DECLSPEC_EMPTY_BASES
     return unsafe_elements(is_soo);
   }
   const Element* elements(bool is_soo) const {
-    return const_cast<RepeatedField*>(this)->elements(is_soo);
+    ABSL_DCHECK_GT(Capacity(is_soo), 0);
+    return unsafe_elements(is_soo);
   }
 
   
   
   
   Element* unsafe_elements(bool is_soo) {
-    return reinterpret_cast<Element*>(soo_rep_.elements(is_soo));
+    return soo_rep_.elements<Element>(is_soo);
   }
   const Element* unsafe_elements(bool is_soo) const {
-    return const_cast<RepeatedField*>(this)->unsafe_elements(is_soo);
+    return soo_rep_.elements<Element>(is_soo);
   }
 
   
   
-  HeapRep* heap_rep() const {
+  internal::HeapRep* heap_rep() const {
     ABSL_DCHECK(!is_soo());
     return soo_rep_.heap_rep();
   }
@@ -720,18 +754,6 @@ class ABSL_ATTRIBUTE_WARN_UNUSED PROTOBUF_DECLSPEC_EMPTY_BASES
       }
     }
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  internal::SooRep<kMinHeapRepSize> soo_rep_;
 };
 
 namespace internal {
@@ -774,7 +796,13 @@ constexpr RepeatedField<Element>::RepeatedField() {
 template <typename Element>
 constexpr RepeatedField<Element>::RepeatedField(
     internal::InternalMetadataOffset offset)
-    : soo_rep_(offset.TranslateForMember<offsetof(RepeatedField, soo_rep_)>()) {
+    : RepeatedFieldBase(offset) {
+  static_assert(
+      sizeof(RepeatedField) == sizeof(RepeatedFieldBase),
+      "Since we are passing an `InternalMetadataOffset` for this "
+      "`RepeatedField` to the `RepeatedFieldBase` constructor, "
+      "`RepeatedFieldBase` must have the same start address as `this`. We can "
+      "validate this by checking that the two types have the same size.");
   StaticValidityCheck();
 #ifdef __cpp_lib_is_constant_evaluated
   if (!std::is_constant_evaluated()) {
@@ -785,14 +813,16 @@ constexpr RepeatedField<Element>::RepeatedField(
 
 template <typename Element>
 inline RepeatedField<Element>::RepeatedField(
-    internal::InternalMetadataOffset offset, const RepeatedField& rhs)
+    internal::InternalMetadataOffset offset, Arena* arena,
+    const RepeatedField& rhs)
     : RepeatedField(offset) {
   StaticValidityCheck();
+  ABSL_DCHECK_EQ(arena, GetArena());
   AnnotateSize(kSooCapacityElements, 0);
   if (auto size = rhs.size()) {
     bool is_soo = true;
     if (size > kSooCapacityElements) {
-      Grow(SelfArena{}, is_soo, 0, size);
+      Grow(arena, is_soo, 0, size);
       is_soo = false;
     }
     ExchangeCurrentSize(size);
@@ -840,9 +870,9 @@ inline RepeatedField<Element>& RepeatedField<Element>::operator=(
 
 template <typename Element>
 inline RepeatedField<Element>::RepeatedField(
-    internal::InternalMetadataOffset offset, RepeatedField&& rhs)
+    internal::InternalMetadataOffset offset, Arena* arena, RepeatedField&& rhs)
     : RepeatedField(offset) {
-  Arena* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, GetArena());
   if (internal::CanMoveWithInternalSwap(arena, rhs.GetArena())) {
     InternalSwap(&rhs);
   } else {
@@ -1007,7 +1037,7 @@ inline void* RepeatedField<Element>::AddUninitializedWithArena(
   bool is_soo = this->is_soo();
   const int old_size = size();
   if (ABSL_PREDICT_FALSE(old_size == Capacity(is_soo))) {
-    Grow(arena_provider, is_soo, old_size, old_size + 1);
+    Grow(arena_provider, is_soo, old_size, internal::CheckedAdd(old_size, 1));
     is_soo = false;
   }
   return unsafe_elements(is_soo) + ExchangeCurrentSize(old_size + 1);
@@ -1036,7 +1066,7 @@ inline auto RepeatedField<Element>::AddWithArena(ArenaProvider arena_provider,
   int capacity = Capacity(is_soo);
   Element* elem = unsafe_elements(is_soo);
   if (ABSL_PREDICT_FALSE(old_size == capacity)) {
-    Grow(arena_provider, is_soo, old_size, old_size + 1);
+    Grow(arena_provider, is_soo, old_size, internal::CheckedAdd(old_size, 1));
     is_soo = false;
     capacity = Capacity(is_soo);
     elem = unsafe_elements(is_soo);
@@ -1094,10 +1124,8 @@ inline void RepeatedField<Element>::AddForwardIterator(
   ABSL_CHECK_LE(distance, static_cast<size_t>(std::numeric_limits<int>::max()))
       << "Input too large";
   
-  const int delta = static_cast<int>(distance);
-  ABSL_CHECK_LE(old_size, std::numeric_limits<int>::max() - delta)
-      << "Input too large";
-  const int new_size = old_size + delta;
+  const int new_size =
+      internal::CheckedAdd(old_size, static_cast<int>(distance));
   if (ABSL_PREDICT_FALSE(new_size > capacity)) {
     Grow(arena_provider, is_soo, old_size, new_size);
     is_soo = false;
@@ -1135,7 +1163,8 @@ inline void RepeatedField<Element>::AddInputIterator(
   while (begin != end) {
     if (ABSL_PREDICT_FALSE(first == last)) {
       size = first - elem;
-      GrowNoAnnotate(arena_provider, is_soo, size, size + 1);
+      GrowNoAnnotate(arena_provider, is_soo, size,
+                     internal::CheckedAdd(size, 1));
       is_soo = false;
       elem = unsafe_elements(is_soo);
       capacity = Capacity(is_soo);
@@ -1162,9 +1191,9 @@ template <typename Element>
 template <typename ArenaProvider, typename Iter>
 inline void RepeatedField<Element>::AddWithArena(ArenaProvider arena_provider,
                                                  Iter begin, Iter end) {
-  if (std::is_base_of<
+  if (std::is_base_of_v<
           std::forward_iterator_tag,
-          typename std::iterator_traits<Iter>::iterator_category>::value) {
+          typename std::iterator_traits<Iter>::iterator_category>) {
     AddForwardIterator(arena_provider, begin, end);
   } else {
     AddInputIterator(arena_provider, begin, end);
@@ -1221,7 +1250,9 @@ inline void RepeatedField<Element>::Clear() {
 
 template <typename Element>
 inline void RepeatedField<Element>::MergeFrom(const RepeatedField& other) {
-  ABSL_DCHECK_NE(&other, this);
+  if (ABSL_PREDICT_FALSE(&other == this)) {
+    PROTOBUF_NO_MERGE internal::LogSelfMergeAndAbort();
+  }
   const bool other_is_soo = other.is_soo();
   if (auto other_size = other.size()) {
     const int old_size = size();
@@ -1521,7 +1552,7 @@ PROTOBUF_NOINLINE void RepeatedField<Element>::GrowNoAnnotate(
   ABSL_DCHECK_EQ(ResolveArena(arena_provider), GetSerialArena());
   const int old_capacity = Capacity(was_soo);
   ABSL_DCHECK_GT(new_size, old_capacity);
-  HeapRep* new_rep;
+  internal::HeapRep* new_rep;
 
   new_size = internal::CalculateReserveSize<Element, kHeapRepHeaderSize>(
       old_capacity, new_size);
@@ -1542,7 +1573,7 @@ PROTOBUF_NOINLINE void RepeatedField<Element>::GrowNoAnnotate(
         std::min((res.n - kHeapRepHeaderSize) / sizeof(Element),
                  static_cast<size_t>(std::numeric_limits<int>::max()));
     new_size = static_cast<int>(num_available);
-    new_rep = new (res.p) HeapRep(new_size);
+    new_rep = new (res.p) internal::HeapRep(new_size);
   } else {
     if constexpr (internal::ArenaAlignDefault::Ceil(sizeof(Element)) !=
                   sizeof(Element)) {
@@ -1551,13 +1582,13 @@ PROTOBUF_NOINLINE void RepeatedField<Element>::GrowNoAnnotate(
     }
     new_rep =
         new (arena->AllocateAligned<internal::AllocationClient::kArray>(bytes))
-            HeapRep(new_size);
+            internal::HeapRep(new_size);
   }
 
   if (old_size > 0) {
-    Element* pnew = static_cast<Element*>(new_rep->elements());
+    Element* pnew = new_rep->elements<Element>();
     Element* pold = elements(was_soo);
-    if constexpr (std::is_trivially_copyable<Element>::value ||
+    if constexpr (std::is_trivially_copyable_v<Element> ||
                   absl::is_trivially_relocatable<Element>::value) {
       memcpy(static_cast<void*>(pnew), pold, old_size * sizeof(Element));
     } else {
@@ -1625,8 +1656,7 @@ namespace internal {
 template <typename Element>
 class RepeatedIterator {
  private:
-  using traits =
-      std::iterator_traits<typename std::remove_const<Element>::type*>;
+  using traits = std::iterator_traits<std::remove_const_t<Element>*>;
 
  public:
   

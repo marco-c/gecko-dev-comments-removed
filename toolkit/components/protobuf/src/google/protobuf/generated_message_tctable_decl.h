@@ -108,6 +108,29 @@ struct TcFieldData {
   uint16_t decoded_tag() const { return static_cast<uint16_t>(data >> 16); }
 
   
+  constexpr TcFieldData(uint16_t coded_tag, uint8_t function_index,
+                        uint32_t entry_offset)
+      : data(uint64_t{entry_offset} << 32 |    
+             uint64_t{function_index} << 16 |  
+             uint64_t{coded_tag}) {}
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  uint8_t function_idx() const { return static_cast<uint8_t>(data >> 16); }
+
+  
   
   
   
@@ -277,7 +300,7 @@ struct alignas(uint64_t) TcParseTableBase {
   uint32_t aux_offset;
 
   const ClassData* class_data;
-  using PostLoopHandler = const char* (*)(MessageLite * msg, const char* ptr,
+  using PostLoopHandler = const char* (*)(MessageLite* msg, const char* ptr,
                                           ParseContext* ctx);
   PostLoopHandler post_loop_handler;
 

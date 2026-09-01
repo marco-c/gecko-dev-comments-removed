@@ -31,6 +31,9 @@
 
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
+#include "absl/base/dynamic_annotations.h"
+#include "absl/numeric/bits.h"
+#include "absl/numeric/int128.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -135,7 +138,7 @@ inline void SetAllocateAtLeastHook(AllocateAtLeastHookFn fn, void* context) {}
 
 
 
-inline void* Allocate(size_t size) {
+PROTOBUF_ALWAYS_INLINE PROTOBUF_MALLOC void* Allocate(size_t size) {
 #if ABSL_HAVE_BUILTIN(__builtin_operator_new)
   
   
@@ -195,7 +198,7 @@ struct ArenaInitialized {
 
 template <typename To, typename From>
 void AssertDownCast(From* from) {
-  static_assert(std::is_base_of<From, To>::value, "illegal DownCast");
+  static_assert(std::is_base_of_v<From, To>, "illegal DownCast");
 
   
   
@@ -644,7 +647,24 @@ inline void PoisonMemoryRegion([[maybe_unused]] const void* p,
 inline void UnpoisonMemoryRegion([[maybe_unused]] const void* p,
                                  [[maybe_unused]] size_t n) {
 #if defined(ABSL_HAVE_ADDRESS_SANITIZER)
-  ASAN_UNPOISON_MEMORY_REGION(p, n);
+  static const bool kReallyHasMemoryPoisoning = [] {
+    
+    
+    alignas(8) char buf[8];
+    ASAN_POISON_MEMORY_REGION(buf, sizeof(buf));
+    bool res = __asan_address_is_poisoned(buf);
+    ASAN_UNPOISON_MEMORY_REGION(buf, sizeof(buf));
+    return res;
+  }();
+  if (kReallyHasMemoryPoisoning) {
+    ASAN_UNPOISON_MEMORY_REGION(p, n);
+  } else {
+    
+    
+    
+    ABSL_ANNOTATE_CONTIGUOUS_CONTAINER(p, static_cast<const char*>(p) + n, p,
+                                       static_cast<const char*>(p) + n);
+  }
 #else
   
 #endif
@@ -652,7 +672,7 @@ inline void UnpoisonMemoryRegion([[maybe_unused]] const void* p,
 
 inline bool IsMemoryPoisoned([[maybe_unused]] const void* p) {
 #if defined(ABSL_HAVE_ADDRESS_SANITIZER)
-  return __asan_address_is_poisoned(p);
+  return __asan_address_is_poisoned(p) != 0;
 #else
   return false;
 #endif
@@ -716,6 +736,13 @@ PROTOBUF_ALWAYS_INLINE void TSanWrite(const void*) {}
 template <typename T>
 using type_identity_t = std::enable_if_t<true, T>;
 
+
+
+template <typename T, typename U>
+U&& TypeDependent(U&& value) {
+  return std::forward<U>(value);
+}
+
 template <typename T>
 constexpr T* Launder(T* p) {
 #if defined(__cpp_lib_launder) && __cpp_lib_launder >= 201606L
@@ -760,16 +787,33 @@ constexpr bool EnableCustomNewFor() {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 class PROTOBUF_EXPORT RealDebugCounter {
  public:
+  static constexpr size_t kNumBuckets = 64;
   explicit RealDebugCounter(absl::string_view name) { Register(name); }
-  
-  void Inc() { counter_.store(value() + 1, std::memory_order_relaxed); }
-  size_t value() const { return counter_.load(std::memory_order_relaxed); }
+  void Inc() { IncBucket(0); }
+  void IncLog(uint64_t value) { IncBucket(absl::bit_width(value)); }
+  void IncBucket(size_t b) {
+    
+    b %= kNumBuckets;
+    
+    counters_[b].store(counters_[b].load(std::memory_order_relaxed) + 1);
+  }
 
  private:
   void Register(absl::string_view name);
-  std::atomic<size_t> counter_{};
+  std::atomic<size_t>* counters_;
 };
 
 
@@ -777,6 +821,8 @@ class NoopDebugCounter {
  public:
   explicit constexpr NoopDebugCounter() = default;
   constexpr void Inc() {}
+  constexpr void IncLog(uint64_t) {}
+  constexpr void IncBucket(size_t) {}
 };
 
 
@@ -788,6 +834,33 @@ inline constexpr size_t kSafeStringSize = 50000000;
 
 
 class alignas(8) GlobalEmptyStringConstexpr {
+  template <typename T>
+  struct NonConstexprAllocator {
+    using value_type = T;
+    using size_type = size_t;
+    using difference_type = ptrdiff_t;
+
+    constexpr NonConstexprAllocator() = default;
+
+    
+    
+    
+    template <typename U>
+    constexpr NonConstexprAllocator(NonConstexprAllocator<U>) {}
+
+    friend constexpr bool operator==(NonConstexprAllocator,
+                                     NonConstexprAllocator) {
+      return true;
+    }
+    friend constexpr bool operator!=(NonConstexprAllocator,
+                                     NonConstexprAllocator) {
+      return false;
+    }
+
+    T* allocate(size_t);
+    void deallocate(void*, size_t);
+  };
+
  public:
   const std::string& get() const { return value_; }
   
@@ -797,9 +870,18 @@ class alignas(8) GlobalEmptyStringConstexpr {
   
   
   
-#if !defined(_MSC_VER) && !defined(__XTENSA__)
   
-  template <typename T = std::string, bool = (T(), true)>
+  
+  
+  
+  
+  
+#if !defined(__XTENSA__)
+  
+  
+  template <
+      typename Alloc = NonConstexprAllocator<char>,
+      int = std::basic_string<char, std::char_traits<char>, Alloc>().size()>
   static constexpr std::true_type HasConstexprDefaultConstructor(int) {
     return {};
   }
@@ -832,22 +914,48 @@ using GlobalEmptyString = std::conditional_t<
 PROTOBUF_EXPORT extern GlobalEmptyString fixed_address_empty_string;
 
 PROTOBUF_EXPORT ABSL_ATTRIBUTE_NORETURN PROTOBUF_NOINLINE void
-HandleAddOverflow(int a, int b);
+HandleAddOverflow(absl::int128 a, absl::int128 b);
 
-inline int CheckedAdd(int a, int b) {
-  int sum;
+template <typename T, typename U>
+ABSL_ATTRIBUTE_NORETURN PROTOBUF_NOINLINE void HandleAddOverflow(T a, U b) {
+  HandleAddOverflow(absl::int128(a), absl::int128(b));
+}
+
 #if ABSL_HAVE_BUILTIN(__builtin_add_overflow)
+template <typename IntType1, typename IntType2>
+inline int CheckedAdd(IntType1 a, IntType2 b) {
+  int sum;
   bool overflow = __builtin_add_overflow(a, b, &sum);
-#else
-  int64_t sum64 = static_cast<int64_t>(a) + static_cast<int64_t>(b);
-  sum = static_cast<int>(sum64);
-  bool overflow = sum64 != sum;
-#endif
   if (ABSL_PREDICT_FALSE(overflow)) {
     HandleAddOverflow(a, b);
   }
   return sum;
 }
+#else
+inline int CheckedAdd(int a, int b) {
+  int sum;
+  int64_t sum64 = static_cast<int64_t>(a) + static_cast<int64_t>(b);
+  sum = static_cast<int>(sum64);
+  bool overflow = sum64 != sum;
+  if (ABSL_PREDICT_FALSE(overflow)) {
+    HandleAddOverflow(a, b);
+  }
+  return sum;
+}
+
+template <typename ScalarType1, typename ScalarType2>
+inline int CheckedAdd(ScalarType1 a, ScalarType2 b) {
+  static_assert(std::is_integral_v<ScalarType1>);
+  static_assert(std::is_integral_v<ScalarType2>);
+  absl::int128 sum128 = absl::int128(a) + absl::int128(b);
+  int sum = static_cast<int>(sum128);
+  bool overflow = sum128 != absl::int128(sum);
+  if (ABSL_PREDICT_FALSE(overflow)) {
+    HandleAddOverflow(a, b);
+  }
+  return sum;
+}
+#endif
 
 enum class BoundsCheckMode { kNoEnforcement, kReturnDefault, kAbort };
 

@@ -166,23 +166,19 @@ class PROTOBUF_EXPORT UnknownFieldSet {
                                       internal::InternalMetadata* metadata);
 
   
-  inline void Swap(UnknownFieldSet* x);
+  void Swap(UnknownFieldSet* x);
 
   
   
   
   PROTOBUF_FUTURE_ADD_EARLY_NODISCARD size_t SpaceUsedExcludingSelfLong() const;
 
-  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int SpaceUsedExcludingSelf() const {
-    return internal::ToIntSize(SpaceUsedExcludingSelfLong());
-  }
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int SpaceUsedExcludingSelf() const;
 
   
   PROTOBUF_FUTURE_ADD_EARLY_NODISCARD size_t SpaceUsedLong() const;
 
-  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int SpaceUsed() const {
-    return internal::ToIntSize(SpaceUsedLong());
-  }
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int SpaceUsed() const;
 
   
   PROTOBUF_FUTURE_ADD_EARLY_NODISCARD inline int field_count() const;
@@ -232,10 +228,8 @@ class PROTOBUF_EXPORT UnknownFieldSet {
       io::ZeroCopyInputStream* input);
   PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool ParseFromArray(const void* data,
                                                           int size);
-  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD inline bool ParseFromString(
-      const absl::string_view data) {
-    return ParseFromArray(data.data(), static_cast<int>(data.size()));
-  }
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool ParseFromString(
+      const absl::string_view data);
 
   
   
@@ -346,15 +340,6 @@ inline void UnknownFieldSet::Clear() {
 }
 
 inline bool UnknownFieldSet::empty() const { return fields().empty(); }
-
-inline void UnknownFieldSet::Swap(UnknownFieldSet* x) {
-  if (arena() == x->arena()) {
-    fields().Swap(&x->fields());
-  } else {
-    
-    SwapSlow(x);
-  }
-}
 
 inline int UnknownFieldSet::field_count() const {
   return static_cast<int>(fields().size());

@@ -61,22 +61,19 @@ class WeakFieldMap;
 
 
 
-inline constexpr uint32_t kInvalidFieldOffsetTag = 0x40000000u;
-
-
-inline constexpr uint32_t kSplitFieldOffsetMask = 0x80000000u;
-inline constexpr uint32_t kLazyMask = 0x1u;
-inline constexpr uint32_t kInlinedMask = 0x1u;
-inline constexpr uint32_t kMicroStringMask = 0x2u;
+inline constexpr uint32_t kInvalidFieldOffsetTag = 0x10000000u;
 
 
 
 
+inline constexpr uint32_t kSplitFieldOffsetTag = 0x80000000u;
+inline constexpr uint32_t kLazyOffsetTag = 0x40000000u;
+inline constexpr uint32_t kInlinedOffsetTag = 0x40000000u;
+inline constexpr uint32_t kMicroStringOffsetTag = 0x20000000u;
 
-
-
-
-
+inline constexpr uint32_t kAllOffsetTags = kSplitFieldOffsetTag |
+                                           kLazyOffsetTag | kInlinedOffsetTag |
+                                           kMicroStringOffsetTag;
 
 
 
@@ -84,10 +81,10 @@ inline constexpr uint32_t kMicroStringMask = 0x2u;
 
 
 
-
-
-
-
+struct MigrationSchema {
+  int32_t offsets_index;
+  int object_size;
+};
 
 
 
@@ -112,8 +109,41 @@ inline constexpr uint32_t kMicroStringMask = 0x2u;
 
 
 
-struct ReflectionSchema {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ReflectionSchema {
  public:
+  ReflectionSchema(const Message* default_instance, const uint32_t* offsets,
+                   const uint32_t* has_bit_indices, int has_bits_offset,
+                   int extensions_offset, int oneof_case_offset,
+                   int object_size, int weak_field_map_offset, int split_offset,
+                   int sizeof_split);
+
+  
+  static ReflectionSchema MigrationToReflectionSchema(
+      const MessageGlobalsBase* const* message_globals, const uint32_t* offsets,
+      MigrationSchema migration_schema);
+
+  const Message* default_instance() const { return default_instance_; }
+
   
   uint32_t GetObjectSize() const { return static_cast<uint32_t>(object_size_); }
 
@@ -122,9 +152,8 @@ struct ReflectionSchema {
   }
 
   
-  template <typename Type = void>
   uint32_t GetFieldOffset(const FieldDescriptor* field) const {
-    return OffsetValue<Type>(offsets_[field->index()], field->type());
+    return OffsetValue(offsets_[field->index()]);
   }
 
   bool IsFieldInlined(const FieldDescriptor* field) const {
@@ -149,11 +178,18 @@ struct ReflectionSchema {
   bool HasHasbits() const { return has_bits_offset_ != -1; }
 
   
-  uint32_t HasBitIndex(const FieldDescriptor* field) const {
+  
+  uint32_t HasBitIndex(const FieldDescriptor* field, int field_index) const {
+    ABSL_DCHECK_EQ(field->index(), field_index);
     ABSL_DCHECK(!field->is_extension());
     if (has_bits_offset_ == -1) return static_cast<uint32_t>(kNoHasbit);
     ABSL_DCHECK(HasHasbits());
-    return has_bit_indices_[field->index()];
+    return has_bit_indices_[field_index];
+  }
+
+  
+  uint32_t HasBitIndex(const FieldDescriptor* field) const {
+    return HasBitIndex(field, field->index());
   }
 
   
@@ -183,7 +219,7 @@ struct ReflectionSchema {
   
   const void* GetFieldDefault(const FieldDescriptor* field) const {
     return reinterpret_cast<const uint8_t*>(default_instance_) +
-           OffsetValue<void>(offsets_[field->index()], field->type());
+           OffsetValue(offsets_[field->index()]);
   }
 
   
@@ -197,7 +233,7 @@ struct ReflectionSchema {
 
   bool IsSplit(const FieldDescriptor* field) const {
     return split_offset_ != -1 &&
-           (offsets_[field->index()] & kSplitFieldOffsetMask) != 0;
+           (offsets_[field->index()] & kSplitFieldOffsetTag) != 0;
   }
 
   
@@ -214,45 +250,17 @@ struct ReflectionSchema {
 
   bool HasWeakFields() const { return weak_field_map_offset_ > 0; }
 
-  
-  
-  
-  
-  
-  
-  const Message* default_instance_;
-  const uint32_t* offsets_;
-  const uint32_t* has_bit_indices_;
-  int has_bits_offset_;
-  int extensions_offset_;
-  int oneof_case_offset_;
-  int object_size_;
-  int weak_field_map_offset_;
-  int split_offset_;
-  int sizeof_split_;
+ private:
+  ReflectionSchema() = default;
 
   
   
-  template <typename Type>
-  static uint32_t OffsetValue(uint32_t v, FieldDescriptor::Type type) {
-    if constexpr (!std::is_void_v<Type>) {
-      
-      
-      return v & ~kSplitFieldOffsetMask & ~(alignof(Type) - 1);
-    }
-    if (type == FieldDescriptor::TYPE_MESSAGE ||
-        type == FieldDescriptor::TYPE_STRING ||
-        type == FieldDescriptor::TYPE_BYTES) {
-      return v & ~kSplitFieldOffsetMask & ~kInlinedMask & ~kLazyMask &
-             ~kMicroStringMask;
-    }
-    return v & (~kSplitFieldOffsetMask);
-  }
+  static uint32_t OffsetValue(uint32_t v) { return v & ~kAllOffsetTags; }
 
   static bool Inlined(uint32_t v, FieldDescriptor::Type type) {
     if (type == FieldDescriptor::TYPE_STRING ||
         type == FieldDescriptor::TYPE_BYTES) {
-      return (v & kInlinedMask) != 0u;
+      return (v & kInlinedOffsetTag) != 0u;
     } else {
       
       return false;
@@ -263,19 +271,19 @@ struct ReflectionSchema {
     ABSL_DCHECK(type == FieldDescriptor::TYPE_STRING ||
                 type == FieldDescriptor::TYPE_BYTES)
         << type;
-    return (v & kMicroStringMask) != 0u;
+    return (v & kMicroStringOffsetTag) != 0u;
   }
-};
 
-
-
-
-
-
-
-struct MigrationSchema {
-  int32_t offsets_index;
-  int object_size;
+  const Message* default_instance_;
+  const uint32_t* offsets_;
+  const uint32_t* has_bit_indices_;
+  int has_bits_offset_;
+  int extensions_offset_;
+  int oneof_case_offset_;
+  int object_size_;
+  int weak_field_map_offset_;
+  int split_offset_;
+  int sizeof_split_;
 };
 
 

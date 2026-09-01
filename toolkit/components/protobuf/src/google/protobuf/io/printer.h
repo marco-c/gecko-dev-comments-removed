@@ -536,11 +536,11 @@ class PROTOBUF_EXPORT Printer {
   
   template <
       typename Map = absl::flat_hash_map<absl::string_view, absl::string_view>,
-      typename = std::enable_if_t<!std::is_pointer<Map>::value>,
+      typename = std::enable_if_t<!std::is_pointer_v<Map>>,
       
       
-      typename = std::enable_if_t<
-          !std::is_convertible<Map, absl::Span<const Sub>>::value>>
+      typename =
+          std::enable_if_t<!std::is_convertible_v<Map, absl::Span<const Sub>>>>
   auto WithVars(Map&& vars);
 
   
@@ -951,10 +951,9 @@ struct Printer::AnnotationRecord {
   
   
 
-  template <
-      typename String,
-      std::enable_if_t<std::is_convertible<const String&, std::string>::value,
-                       int> = 0>
+  template <typename String,
+            std::enable_if_t<std::is_convertible_v<const String&, std::string>,
+                             int> = 0>
   AnnotationRecord(  
       const String& file_path,
       absl::optional<AnnotationCollector::Semantic> semantic = absl::nullopt)
@@ -963,7 +962,7 @@ struct Printer::AnnotationRecord {
   template <typename Desc,
             
             
-            std::enable_if_t<std::is_class<Desc>::value, int> = 0>
+            std::enable_if_t<std::is_class_v<Desc>, int> = 0>
   AnnotationRecord(  
       const Desc* desc,
       absl::optional<AnnotationCollector::Semantic> semantic = absl::nullopt)

@@ -13,7 +13,7 @@
 
 
 #include "google/protobuf/runtime_version.h"
-#if PROTOBUF_VERSION != 7035000
+#if PROTOBUF_VERSION != 7036000
 #error "Protobuf C++ gencode is built with an incompatible version of"
 #error "Protobuf C++ headers/runtime. See"
 #error "https://protobuf.dev/support/cross-version-runtime-guarantee/#cpp"
@@ -34,15 +34,6 @@
 #include "google/protobuf/port_def.inc"
 
 #define PROTOBUF_INTERNAL_EXPORT_opentelemetry_2fproto_2fresource_2fv1_2fresource_2eproto
-
-namespace google {
-namespace protobuf {
-namespace internal {
-template <typename T>
-::absl::string_view GetAnyMessageName();
-}  
-}  
-}  
 
 
 struct TableStruct_opentelemetry_2fproto_2fresource_2fv1_2fresource_2eproto {
@@ -81,6 +72,8 @@ namespace v1 {
 
 class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED Resource final : public ::google::protobuf::MessageLite
  {
+  using Super_ = ::google::protobuf::MessageLite;
+
  public:
   inline Resource() : Resource(nullptr) {}
   ~Resource() PROTOBUF_FINAL;
@@ -145,7 +138,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED Resource final : public ::google::p
 
   [[nodiscard]] Resource* PROTOBUF_NONNULL
   New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::MessageLite::DefaultConstruct<Resource>(arena);
+    return Super_::DefaultConstruct<Resource>(arena);
   }
   void CopyFrom(const Resource& from);
   void MergeFrom(const Resource& from) { Resource::MergeImpl(*this, from); }
@@ -188,8 +181,6 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED Resource final : public ::google::p
   static void SharedDtor(MessageLite& self);
   void InternalSwap(Resource* PROTOBUF_NONNULL other);
  private:
-  template <typename T>
-  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
   static ::absl::string_view FullMessageName() { return "opentelemetry.proto.resource.v1.Resource"; }
 
   explicit Resource(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
@@ -219,8 +210,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED Resource final : public ::google::p
     kDroppedAttributesCountFieldNumber = 2,
   };
   
-  [[nodiscard]] int attributes_size()
-      const;
+  [[nodiscard]] int attributes_size() const;
   private:
   int _internal_attributes_size() const;
 
@@ -240,8 +230,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED Resource final : public ::google::p
 
   public:
   
-  [[nodiscard]] int entity_refs_size()
-      const;
+  [[nodiscard]] int entity_refs_size() const;
   private:
   int _internal_entity_refs_size() const;
 

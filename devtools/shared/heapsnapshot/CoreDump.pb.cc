@@ -46,12 +46,17 @@ constexpr StackFrame::ParseTableT_ StackFrame::InternalGenerateParseTable_(const
       offsetof(ParseTableT_, aux_entries),
       class_data,
       nullptr,  
-      ::_pbi::TcParser::GenericFallbackLite,  
+      ::_pbi::TcParser::MpUnknownFields,  
       #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
       ::_pbi::TcParser::GetTable<::mozilla::devtools::protobuf::StackFrame>(),  
       #endif  
     }, {{
-      {::_pbi::TcParser::MiniParse, {}},
+      
+      {::_pbi::TcParser::FastMiniParse1,
+       {16, ::uint8_t{1},
+        ::uint32_t{
+            PROTOBUF_FIELD_OFFSET(ParseTableT_, field_entries) +
+            sizeof(_pbi::TcParseTableBase::FieldEntry) * 1}}},
     }}, {{
       65535, 65535
     }}, {{
@@ -77,13 +82,12 @@ inline constexpr StackFrame::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
       : StackFrameType_{},
-        _cached_size_{0},
         _oneof_case_{} {}
 
 template <typename>
 constexpr StackFrame::StackFrame(::_pbi::ConstantInitialized,
                        const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
-    : ::google::protobuf::MessageLite(
+    : Super_(
 #if defined(PROTOBUF_CUSTOM_VTABLE)
           class_data
 #endif  
@@ -111,10 +115,10 @@ constexpr auto StackFrame::InternalGenerateClassData_(
 #endif
           nullptr,  
           &StackFrame::MergeImpl,
-          ::google::protobuf::MessageLite::GetNewImpl<StackFrame>(),
+          Super_::GetNewImpl<StackFrame>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
           &StackFrame::SharedDtor,
-          ::google::protobuf::MessageLite::GetClearImpl<StackFrame>(), &StackFrame::ByteSizeLong,
+          Super_::GetClearImpl<StackFrame>(), &StackFrame::ByteSizeLong,
               &StackFrame::_InternalSerialize,
 #endif  
           PROTOBUF_FIELD_OFFSET(StackFrame, _impl_._cached_size_),
@@ -189,7 +193,7 @@ constexpr StackFrame_Data::ParseTableT_ StackFrame_Data::InternalGenerateParseTa
       offsetof(ParseTableT_, aux_entries),
       class_data,
       nullptr,  
-      ::_pbi::TcParser::GenericFallbackLite,  
+      ::_pbi::TcParser::MpUnknownFields,  
       #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
       ::_pbi::TcParser::GetTable<::mozilla::devtools::protobuf::StackFrame_Data>(),  
       #endif  
@@ -211,10 +215,30 @@ constexpr StackFrame_Data::ParseTableT_ StackFrame_Data::InternalGenerateParseTa
       {::_pbi::TcParser::FastV32S1,
        {32, 3, 0,
         PROTOBUF_FIELD_OFFSET(StackFrame_Data, _impl_.column_)}},
-      {::_pbi::TcParser::MiniParse, {}},
-      {::_pbi::TcParser::MiniParse, {}},
-      {::_pbi::TcParser::MiniParse, {}},
-      {::_pbi::TcParser::MiniParse, {}},
+      
+      {::_pbi::TcParser::FastMiniParse1,
+       {42, ::uint8_t{5},
+        ::uint32_t{
+            PROTOBUF_FIELD_OFFSET(ParseTableT_, field_entries) +
+            sizeof(_pbi::TcParseTableBase::FieldEntry) * 4}}},
+      
+      {::_pbi::TcParser::FastMiniParse1,
+       {48, ::uint8_t{1},
+        ::uint32_t{
+            PROTOBUF_FIELD_OFFSET(ParseTableT_, field_entries) +
+            sizeof(_pbi::TcParseTableBase::FieldEntry) * 5}}},
+      
+      {::_pbi::TcParser::FastMiniParse1,
+       {58, ::uint8_t{5},
+        ::uint32_t{
+            PROTOBUF_FIELD_OFFSET(ParseTableT_, field_entries) +
+            sizeof(_pbi::TcParseTableBase::FieldEntry) * 6}}},
+      
+      {::_pbi::TcParser::FastMiniParse1,
+       {64, ::uint8_t{1},
+        ::uint32_t{
+            PROTOBUF_FIELD_OFFSET(ParseTableT_, field_entries) +
+            sizeof(_pbi::TcParseTableBase::FieldEntry) * 7}}},
       
       {::_pbi::TcParser::FastV8S1,
        {72, 4, 0,
@@ -268,8 +292,7 @@ constexpr StackFrame_Data::ParseTableT_ StackFrame_Data::InternalGenerateParseTa
 inline constexpr StackFrame_Data::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        parent_{nullptr},
+      : parent_{nullptr},
         id_{::uint64_t{0u}},
         line_{0u},
         column_{0u},
@@ -282,7 +305,7 @@ inline constexpr StackFrame_Data::Impl_::Impl_(
 template <typename>
 constexpr StackFrame_Data::StackFrame_Data(::_pbi::ConstantInitialized,
                        const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
-    : ::google::protobuf::MessageLite(
+    : Super_(
 #if defined(PROTOBUF_CUSTOM_VTABLE)
           class_data
 #endif  
@@ -310,10 +333,10 @@ constexpr auto StackFrame_Data::InternalGenerateClassData_(
 #endif
           nullptr,  
           &StackFrame_Data::MergeImpl,
-          ::google::protobuf::MessageLite::GetNewImpl<StackFrame_Data>(),
+          Super_::GetNewImpl<StackFrame_Data>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
           &StackFrame_Data::SharedDtor,
-          ::google::protobuf::MessageLite::GetClearImpl<StackFrame_Data>(), &StackFrame_Data::ByteSizeLong,
+          Super_::GetClearImpl<StackFrame_Data>(), &StackFrame_Data::ByteSizeLong,
               &StackFrame_Data::_InternalSerialize,
 #endif  
           PROTOBUF_FIELD_OFFSET(StackFrame_Data, _impl_._cached_size_),
@@ -386,7 +409,7 @@ constexpr Metadata::ParseTableT_ Metadata::InternalGenerateParseTable_(const ::_
       offsetof(ParseTableT_, field_names),  
       class_data,
       nullptr,  
-      ::_pbi::TcParser::GenericFallbackLite,  
+      ::_pbi::TcParser::MpUnknownFields,  
       #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
       ::_pbi::TcParser::GetTable<::mozilla::devtools::protobuf::Metadata>(),  
       #endif  
@@ -411,13 +434,12 @@ constexpr Metadata::ParseTableT_ Metadata::InternalGenerateParseTable_(const ::_
 inline constexpr Metadata::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        timestamp_{::uint64_t{0u}} {}
+      : timestamp_{::uint64_t{0u}} {}
 
 template <typename>
 constexpr Metadata::Metadata(::_pbi::ConstantInitialized,
                        const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
-    : ::google::protobuf::MessageLite(
+    : Super_(
 #if defined(PROTOBUF_CUSTOM_VTABLE)
           class_data
 #endif  
@@ -445,10 +467,10 @@ constexpr auto Metadata::InternalGenerateClassData_(
 #endif
           nullptr,  
           &Metadata::MergeImpl,
-          ::google::protobuf::MessageLite::GetNewImpl<Metadata>(),
+          Super_::GetNewImpl<Metadata>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
           &Metadata::SharedDtor,
-          ::google::protobuf::MessageLite::GetClearImpl<Metadata>(), &Metadata::ByteSizeLong,
+          Super_::GetClearImpl<Metadata>(), &Metadata::ByteSizeLong,
               &Metadata::_InternalSerialize,
 #endif  
           PROTOBUF_FIELD_OFFSET(Metadata, _impl_._cached_size_),
@@ -523,7 +545,7 @@ constexpr Edge::ParseTableT_ Edge::InternalGenerateParseTable_(const ::_pbi::Cla
       offsetof(ParseTableT_, field_names),  
       class_data,
       nullptr,  
-      ::_pbi::TcParser::GenericFallbackLite,  
+      ::_pbi::TcParser::MpUnknownFields,  
       #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
       ::_pbi::TcParser::GetTable<::mozilla::devtools::protobuf::Edge>(),  
       #endif  
@@ -552,15 +574,14 @@ constexpr Edge::ParseTableT_ Edge::InternalGenerateParseTable_(const ::_pbi::Cla
 inline constexpr Edge::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        referent_{::uint64_t{0u}},
+      : referent_{::uint64_t{0u}},
         EdgeNameOrRef_{},
         _oneof_case_{} {}
 
 template <typename>
 constexpr Edge::Edge(::_pbi::ConstantInitialized,
                        const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
-    : ::google::protobuf::MessageLite(
+    : Super_(
 #if defined(PROTOBUF_CUSTOM_VTABLE)
           class_data
 #endif  
@@ -588,10 +609,10 @@ constexpr auto Edge::InternalGenerateClassData_(
 #endif
           nullptr,  
           &Edge::MergeImpl,
-          ::google::protobuf::MessageLite::GetNewImpl<Edge>(),
+          Super_::GetNewImpl<Edge>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
           &Edge::SharedDtor,
-          ::google::protobuf::MessageLite::GetClearImpl<Edge>(), &Edge::ByteSizeLong,
+          Super_::GetClearImpl<Edge>(), &Edge::ByteSizeLong,
               &Edge::_InternalSerialize,
 #endif  
           PROTOBUF_FIELD_OFFSET(Edge, _impl_._cached_size_),
@@ -666,7 +687,7 @@ constexpr Node::ParseTableT_ Node::InternalGenerateParseTable_(const ::_pbi::Cla
       offsetof(ParseTableT_, aux_entries),
       class_data,
       nullptr,  
-      ::_pbi::TcParser::GenericFallbackLite,  
+      ::_pbi::TcParser::MpUnknownFields,  
       #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
       ::_pbi::TcParser::GetTable<::mozilla::devtools::protobuf::Node>(),  
       #endif  
@@ -676,8 +697,18 @@ constexpr Node::ParseTableT_ Node::InternalGenerateParseTable_(const ::_pbi::Cla
       {::_pbi::TcParser::FastV64S1,
        {8, 2, 0,
         PROTOBUF_FIELD_OFFSET(Node, _impl_.id_)}},
-      {::_pbi::TcParser::MiniParse, {}},
-      {::_pbi::TcParser::MiniParse, {}},
+      
+      {::_pbi::TcParser::FastMiniParse1,
+       {18, ::uint8_t{5},
+        ::uint32_t{
+            PROTOBUF_FIELD_OFFSET(ParseTableT_, field_entries) +
+            sizeof(_pbi::TcParseTableBase::FieldEntry) * 1}}},
+      
+      {::_pbi::TcParser::FastMiniParse1,
+       {24, ::uint8_t{1},
+        ::uint32_t{
+            PROTOBUF_FIELD_OFFSET(ParseTableT_, field_entries) +
+            sizeof(_pbi::TcParseTableBase::FieldEntry) * 2}}},
       
       {::_pbi::TcParser::FastV64S1,
        {32, 3, 0,
@@ -690,16 +721,46 @@ constexpr Node::ParseTableT_ Node::InternalGenerateParseTable_(const ::_pbi::Cla
       {::_pbi::TcParser::FastMtS1,
        {50, 1, 1,
         PROTOBUF_FIELD_OFFSET(Node, _impl_.allocationstack_)}},
-      {::_pbi::TcParser::MiniParse, {}},
-      {::_pbi::TcParser::MiniParse, {}},
+      
+      {::_pbi::TcParser::FastMiniParse1,
+       {58, ::uint8_t{5},
+        ::uint32_t{
+            PROTOBUF_FIELD_OFFSET(ParseTableT_, field_entries) +
+            sizeof(_pbi::TcParseTableBase::FieldEntry) * 6}}},
+      
+      {::_pbi::TcParser::FastMiniParse1,
+       {64, ::uint8_t{1},
+        ::uint32_t{
+            PROTOBUF_FIELD_OFFSET(ParseTableT_, field_entries) +
+            sizeof(_pbi::TcParseTableBase::FieldEntry) * 7}}},
       
       {::_pbi::TcParser::FastV32S1,
        {72, 4, 0,
         PROTOBUF_FIELD_OFFSET(Node, _impl_.coarsetype_)}},
-      {::_pbi::TcParser::MiniParse, {}},
-      {::_pbi::TcParser::MiniParse, {}},
-      {::_pbi::TcParser::MiniParse, {}},
-      {::_pbi::TcParser::MiniParse, {}},
+      
+      {::_pbi::TcParser::FastMiniParse1,
+       {82, ::uint8_t{5},
+        ::uint32_t{
+            PROTOBUF_FIELD_OFFSET(ParseTableT_, field_entries) +
+            sizeof(_pbi::TcParseTableBase::FieldEntry) * 9}}},
+      
+      {::_pbi::TcParser::FastMiniParse1,
+       {88, ::uint8_t{1},
+        ::uint32_t{
+            PROTOBUF_FIELD_OFFSET(ParseTableT_, field_entries) +
+            sizeof(_pbi::TcParseTableBase::FieldEntry) * 10}}},
+      
+      {::_pbi::TcParser::FastMiniParse1,
+       {98, ::uint8_t{5},
+        ::uint32_t{
+            PROTOBUF_FIELD_OFFSET(ParseTableT_, field_entries) +
+            sizeof(_pbi::TcParseTableBase::FieldEntry) * 11}}},
+      
+      {::_pbi::TcParser::FastMiniParse1,
+       {104, ::uint8_t{1},
+        ::uint32_t{
+            PROTOBUF_FIELD_OFFSET(ParseTableT_, field_entries) +
+            sizeof(_pbi::TcParseTableBase::FieldEntry) * 12}}},
       {::_pbi::TcParser::MiniParse, {}},
       {::_pbi::TcParser::MiniParse, {}},
     }}, {{
@@ -753,8 +814,7 @@ constexpr Node::ParseTableT_ Node::InternalGenerateParseTable_(const ::_pbi::Cla
 inline constexpr Node::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        edges_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+      : edges_ { visibility, ::_pbi::InternalMetadataOffset::Build<
             ::mozilla::devtools::protobuf::Node,
             PROTOBUF_FIELD_OFFSET(::mozilla::devtools::protobuf::Node, _impl_.edges_)>()
          }
@@ -772,7 +832,7 @@ inline constexpr Node::Impl_::Impl_(
 template <typename>
 constexpr Node::Node(::_pbi::ConstantInitialized,
                        const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
-    : ::google::protobuf::MessageLite(
+    : Super_(
 #if defined(PROTOBUF_CUSTOM_VTABLE)
           class_data
 #endif  
@@ -800,10 +860,10 @@ constexpr auto Node::InternalGenerateClassData_(
 #endif
           nullptr,  
           &Node::MergeImpl,
-          ::google::protobuf::MessageLite::GetNewImpl<Node>(),
+          Super_::GetNewImpl<Node>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
           &Node::SharedDtor,
-          ::google::protobuf::MessageLite::GetClearImpl<Node>(), &Node::ByteSizeLong,
+          Super_::GetClearImpl<Node>(), &Node::ByteSizeLong,
               &Node::_InternalSerialize,
 #endif  
           PROTOBUF_FIELD_OFFSET(Node, _impl_._cached_size_),
@@ -865,9 +925,9 @@ namespace protobuf {
 
 Metadata::Metadata(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::MessageLite(arena, Metadata_get_class_data()) {
+    : Super_(arena, Metadata_get_class_data()) {
 #else
-    : ::google::protobuf::MessageLite(arena) {
+    : Super_(arena) {
 #endif
   SharedCtor(arena);
   
@@ -875,9 +935,9 @@ Metadata::Metadata(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 Metadata::Metadata(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Metadata& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::MessageLite(arena, Metadata_get_class_data()),
+    : Super_(arena, Metadata_get_class_data()),
 #else   
-    : ::google::protobuf::MessageLite(arena),
+    : Super_(arena),
 #endif  
       _impl_(from._impl_) {
   _internal_metadata_.MergeFrom<::std::string>(
@@ -886,7 +946,7 @@ Metadata::Metadata(
 PROTOBUF_NDEBUG_INLINE Metadata::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0} {}
+     {}
 
 inline void Metadata::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
@@ -929,13 +989,12 @@ PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const Metadata::ParseTableT_
         Metadata::InternalGenerateParseTable_(Metadata_class_data_.base());
 #endif  
 PROTOBUF_NOINLINE void Metadata::Clear() {
-
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
+  auto& this_ [[maybe_unused]] = *this;
   
-  (void) cached_has_bits;
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits [[maybe_unused]] = 0;
 
-  _impl_.timestamp_ = ::uint64_t{0u};
+  this_._impl_.timestamp_ = ::uint64_t{0u};
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::std::string>();
 }
@@ -985,9 +1044,7 @@ PROTOBUF_NOINLINE void Metadata::Clear() {
 
   ::size_t total_size = 0;
 
-  ::uint32_t cached_has_bits = 0;
-  
-  (void)cached_has_bits;
+  ::uint32_t cached_has_bits [[maybe_unused]] = 0;
 
    {
     
@@ -1044,9 +1101,9 @@ void Metadata::InternalSwap(Metadata* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) 
 
 StackFrame_Data::StackFrame_Data(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::MessageLite(arena, StackFrame_Data_get_class_data()) {
+    : Super_(arena, StackFrame_Data_get_class_data()) {
 #else
-    : ::google::protobuf::MessageLite(arena) {
+    : Super_(arena) {
 #endif
   SharedCtor(arena);
   
@@ -1056,7 +1113,6 @@ PROTOBUF_NDEBUG_INLINE StackFrame_Data::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
     [[maybe_unused]] const ::mozilla::devtools::protobuf::StackFrame_Data& from_msg)
       : _has_bits_{from._has_bits_},
-        _cached_size_{0},
         SourceOrRef_{},
         FunctionDisplayNameOrRef_{},
         _oneof_case_{from._oneof_case_[0], from._oneof_case_[1]} {}
@@ -1065,10 +1121,10 @@ StackFrame_Data::StackFrame_Data(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
     const StackFrame_Data& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::MessageLite(arena, StackFrame_Data_get_class_data()) {
+    : Super_(arena, StackFrame_Data_get_class_data()) {
 
 #else
-    : ::google::protobuf::MessageLite(arena) {
+    : Super_(arena) {
 #endif
   StackFrame_Data* const _this = this;
   (void)_this;
@@ -1077,8 +1133,8 @@ StackFrame_Data::StackFrame_Data(
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
   _impl_.parent_ = (CheckHasBit(cached_has_bits, 0x00000001U))
-                ? ::google::protobuf::MessageLite::CopyConstruct(arena, *from._impl_.parent_)
-                : nullptr;
+                 ? Super_::CopyConstruct(arena, *from._impl_.parent_)
+                 : nullptr;
   ::memcpy(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, id_),
            reinterpret_cast<const char*>(&from._impl_) +
@@ -1112,8 +1168,7 @@ StackFrame_Data::StackFrame_Data(
 PROTOBUF_NDEBUG_INLINE StackFrame_Data::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0},
-        SourceOrRef_{},
+      : SourceOrRef_{},
         FunctionDisplayNameOrRef_{},
         _oneof_case_{} {}
 
@@ -1209,21 +1264,22 @@ PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const StackFrame_Data::ParseTableT_
         StackFrame_Data::InternalGenerateParseTable_(StackFrame_Data_class_data_.base());
 #endif  
 PROTOBUF_NOINLINE void StackFrame_Data::Clear() {
-
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
+  auto& this_ [[maybe_unused]] = *this;
   
-  (void) cached_has_bits;
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits [[maybe_unused]] = 0;
 
-  cached_has_bits = _impl_._has_bits_[0];
+  cached_has_bits = this_._impl_._has_bits_[0];
   if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    ABSL_DCHECK(_impl_.parent_ != nullptr);
-    _impl_.parent_->Clear();
+    ABSL_DCHECK(this_._impl_.parent_ != nullptr);
+    this_._impl_.parent_->Clear();
   }
   if (BatchCheckHasBit(cached_has_bits, 0x0000003eU)) {
-    ::memset(&_impl_.id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.isselfhosted_) -
-        reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.isselfhosted_));
+    ::memset(&this_._impl_.id_, 0,
+             static_cast<::size_t>(
+                 reinterpret_cast<char*>(&this_._impl_.isselfhosted_) -
+                 reinterpret_cast<char*>(&this_._impl_.id_)) +
+                 sizeof(_impl_.isselfhosted_));
   }
   clear_SourceOrRef();
   clear_FunctionDisplayNameOrRef();
@@ -1341,9 +1397,7 @@ PROTOBUF_NOINLINE void StackFrame_Data::Clear() {
 
   ::size_t total_size = 0;
 
-  ::uint32_t cached_has_bits = 0;
-  
-  (void)cached_has_bits;
+  ::uint32_t cached_has_bits [[maybe_unused]] = 0;
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
@@ -1429,7 +1483,7 @@ void StackFrame_Data::MergeImpl(::google::protobuf::MessageLite& to_msg,
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       ABSL_DCHECK(from._impl_.parent_ != nullptr);
       if (_this->_impl_.parent_ == nullptr) {
-        _this->_impl_.parent_ = ::google::protobuf::MessageLite::CopyConstruct(arena, *from._impl_.parent_);
+        _this->_impl_.parent_ = Super_::CopyConstruct(arena, *from._impl_.parent_);
       } else {
         _this->_impl_.parent_->MergeFrom(*from._impl_.parent_);
       }
@@ -1550,9 +1604,9 @@ void StackFrame::set_allocated_data(::mozilla::devtools::protobuf::StackFrame_Da
 }
 StackFrame::StackFrame(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::MessageLite(arena, StackFrame_get_class_data()) {
+    : Super_(arena, StackFrame_get_class_data()) {
 #else
-    : ::google::protobuf::MessageLite(arena) {
+    : Super_(arena) {
 #endif
   SharedCtor(arena);
   
@@ -1562,17 +1616,16 @@ PROTOBUF_NDEBUG_INLINE StackFrame::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
     [[maybe_unused]] const ::mozilla::devtools::protobuf::StackFrame& from_msg)
       : StackFrameType_{},
-        _cached_size_{0},
         _oneof_case_{from._oneof_case_[0]} {}
 
 StackFrame::StackFrame(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
     const StackFrame& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::MessageLite(arena, StackFrame_get_class_data()) {
+    : Super_(arena, StackFrame_get_class_data()) {
 
 #else
-    : ::google::protobuf::MessageLite(arena) {
+    : Super_(arena) {
 #endif
   StackFrame* const _this = this;
   (void)_this;
@@ -1583,7 +1636,7 @@ StackFrame::StackFrame(
     case STACKFRAMETYPE_NOT_SET:
       break;
       case kData:
-        _impl_.StackFrameType_.data_ = ::google::protobuf::MessageLite::CopyConstruct(arena, *from._impl_.StackFrameType_.data_);
+        _impl_.StackFrameType_.data_ = Super_::CopyConstruct(arena, *from._impl_.StackFrameType_.data_);
         break;
       case kRef:
         _impl_.StackFrameType_.ref_ = from._impl_.StackFrameType_.ref_;
@@ -1596,7 +1649,6 @@ PROTOBUF_NDEBUG_INLINE StackFrame::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : StackFrameType_{},
-        _cached_size_{0},
         _oneof_case_{} {}
 
 inline void StackFrame::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
@@ -1668,11 +1720,10 @@ PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const StackFrame::ParseTableT_
         StackFrame::InternalGenerateParseTable_(StackFrame_class_data_.base());
 #endif  
 PROTOBUF_NOINLINE void StackFrame::Clear() {
-
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
+  auto& this_ [[maybe_unused]] = *this;
   
-  (void) cached_has_bits;
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits [[maybe_unused]] = 0;
 
   clear_StackFrameType();
   _internal_metadata_.Clear<::std::string>();
@@ -1731,9 +1782,7 @@ PROTOBUF_NOINLINE void StackFrame::Clear() {
 
   ::size_t total_size = 0;
 
-  ::uint32_t cached_has_bits = 0;
-  
-  (void)cached_has_bits;
+  ::uint32_t cached_has_bits [[maybe_unused]] = 0;
 
   switch (this_.StackFrameType_case()) {
     
@@ -1786,7 +1835,7 @@ void StackFrame::MergeImpl(::google::protobuf::MessageLite& to_msg,
     switch (oneof_from_case) {
       case kData: {
         if (oneof_needs_init) {
-          _this->_impl_.StackFrameType_.data_ = ::google::protobuf::MessageLite::CopyConstruct(arena, *from._impl_.StackFrameType_.data_);
+          _this->_impl_.StackFrameType_.data_ = Super_::CopyConstruct(arena, *from._impl_.StackFrameType_.data_);
         } else {
           _this->_impl_.StackFrameType_.data_->MergeFrom(*from._impl_.StackFrameType_.data_);
         }
@@ -1823,9 +1872,9 @@ void StackFrame::InternalSwap(StackFrame* PROTOBUF_RESTRICT PROTOBUF_NONNULL oth
 
 Node::Node(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::MessageLite(arena, Node_get_class_data()) {
+    : Super_(arena, Node_get_class_data()) {
 #else
-    : ::google::protobuf::MessageLite(arena) {
+    : Super_(arena) {
 #endif
   SharedCtor(arena);
   
@@ -1835,12 +1884,11 @@ PROTOBUF_NDEBUG_INLINE Node::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
     [[maybe_unused]] const ::mozilla::devtools::protobuf::Node& from_msg)
       : _has_bits_{from._has_bits_},
-        _cached_size_{0},
         edges_ {
           visibility, ::_pbi::InternalMetadataOffset::Build<
               ::mozilla::devtools::protobuf::Node,
               PROTOBUF_FIELD_OFFSET(::mozilla::devtools::protobuf::Node, _impl_.edges_)>()
-          , from.edges_
+          , arena, from.edges_
         }
         ,
         TypeNameOrRef_{},
@@ -1853,10 +1901,10 @@ Node::Node(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
     const Node& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::MessageLite(arena, Node_get_class_data()) {
+    : Super_(arena, Node_get_class_data()) {
 
 #else
-    : ::google::protobuf::MessageLite(arena) {
+    : Super_(arena) {
 #endif
   Node* const _this = this;
   (void)_this;
@@ -1865,8 +1913,8 @@ Node::Node(
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
   _impl_.allocationstack_ = (CheckHasBit(cached_has_bits, 0x00000002U))
-                ? ::google::protobuf::MessageLite::CopyConstruct(arena, *from._impl_.allocationstack_)
-                : nullptr;
+                 ? Super_::CopyConstruct(arena, *from._impl_.allocationstack_)
+                 : nullptr;
   ::memcpy(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, id_),
            reinterpret_cast<const char*>(&from._impl_) +
@@ -1920,8 +1968,7 @@ Node::Node(
 PROTOBUF_NDEBUG_INLINE Node::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0},
-        edges_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+      : edges_ { visibility, ::_pbi::InternalMetadataOffset::Build<
             ::mozilla::devtools::protobuf::Node,
             PROTOBUF_FIELD_OFFSET(::mozilla::devtools::protobuf::Node, _impl_.edges_)>()
          }
@@ -2068,26 +2115,27 @@ PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const Node::ParseTableT_
         Node::InternalGenerateParseTable_(Node_class_data_.base());
 #endif  
 PROTOBUF_NOINLINE void Node::Clear() {
-
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
+  auto& this_ [[maybe_unused]] = *this;
   
-  (void) cached_has_bits;
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits [[maybe_unused]] = 0;
 
-  cached_has_bits = _impl_._has_bits_[0];
+  cached_has_bits = this_._impl_._has_bits_[0];
   if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       _impl_.edges_.Clear();
     }
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      ABSL_DCHECK(_impl_.allocationstack_ != nullptr);
-      _impl_.allocationstack_->Clear();
+      ABSL_DCHECK(this_._impl_.allocationstack_ != nullptr);
+      this_._impl_.allocationstack_->Clear();
     }
   }
   if (BatchCheckHasBit(cached_has_bits, 0x0000001cU)) {
-    ::memset(&_impl_.id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.coarsetype_) -
-        reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.coarsetype_));
+    ::memset(&this_._impl_.id_, 0,
+             static_cast<::size_t>(
+                 reinterpret_cast<char*>(&this_._impl_.coarsetype_) -
+                 reinterpret_cast<char*>(&this_._impl_.id_)) +
+                 sizeof(_impl_.coarsetype_));
   }
   clear_TypeNameOrRef();
   clear_JSObjectClassNameOrRef();
@@ -2151,10 +2199,9 @@ PROTOBUF_NOINLINE void Node::Clear() {
                              this_._internal_edges_size());
          i < n; i++) {
       const auto& repfield = this_._internal_edges().Get(i);
-      target =
-          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-              5, repfield, repfield.GetCachedSize(),
-              target, stream);
+      target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+          5, repfield, repfield.GetCachedSize(), target,
+          stream);
     }
   }
 
@@ -2236,9 +2283,7 @@ PROTOBUF_NOINLINE void Node::Clear() {
 
   ::size_t total_size = 0;
 
-  ::uint32_t cached_has_bits = 0;
-  
-  (void)cached_has_bits;
+  ::uint32_t cached_has_bits [[maybe_unused]] = 0;
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
@@ -2369,7 +2414,7 @@ void Node::MergeImpl(::google::protobuf::MessageLite& to_msg,
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
       ABSL_DCHECK(from._impl_.allocationstack_ != nullptr);
       if (_this->_impl_.allocationstack_ == nullptr) {
-        _this->_impl_.allocationstack_ = ::google::protobuf::MessageLite::CopyConstruct(arena, *from._impl_.allocationstack_);
+        _this->_impl_.allocationstack_ = Super_::CopyConstruct(arena, *from._impl_.allocationstack_);
       } else {
         _this->_impl_.allocationstack_->MergeFrom(*from._impl_.allocationstack_);
       }
@@ -2530,9 +2575,9 @@ void Node::InternalSwap(Node* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
 
 Edge::Edge(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::MessageLite(arena, Edge_get_class_data()) {
+    : Super_(arena, Edge_get_class_data()) {
 #else
-    : ::google::protobuf::MessageLite(arena) {
+    : Super_(arena) {
 #endif
   SharedCtor(arena);
   
@@ -2542,7 +2587,6 @@ PROTOBUF_NDEBUG_INLINE Edge::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
     [[maybe_unused]] const ::mozilla::devtools::protobuf::Edge& from_msg)
       : _has_bits_{from._has_bits_},
-        _cached_size_{0},
         EdgeNameOrRef_{},
         _oneof_case_{from._oneof_case_[0]} {}
 
@@ -2550,10 +2594,10 @@ Edge::Edge(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
     const Edge& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::MessageLite(arena, Edge_get_class_data()) {
+    : Super_(arena, Edge_get_class_data()) {
 
 #else
-    : ::google::protobuf::MessageLite(arena) {
+    : Super_(arena) {
 #endif
   Edge* const _this = this;
   (void)_this;
@@ -2577,8 +2621,7 @@ Edge::Edge(
 PROTOBUF_NDEBUG_INLINE Edge::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0},
-        EdgeNameOrRef_{},
+      : EdgeNameOrRef_{},
         _oneof_case_{} {}
 
 inline void Edge::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
@@ -2645,13 +2688,12 @@ PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const Edge::ParseTableT_
         Edge::InternalGenerateParseTable_(Edge_class_data_.base());
 #endif  
 PROTOBUF_NOINLINE void Edge::Clear() {
-
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
+  auto& this_ [[maybe_unused]] = *this;
   
-  (void) cached_has_bits;
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits [[maybe_unused]] = 0;
 
-  _impl_.referent_ = ::uint64_t{0u};
+  this_._impl_.referent_ = ::uint64_t{0u};
   clear_EdgeNameOrRef();
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::std::string>();
@@ -2717,9 +2759,7 @@ PROTOBUF_NOINLINE void Edge::Clear() {
 
   ::size_t total_size = 0;
 
-  ::uint32_t cached_has_bits = 0;
-  
-  (void)cached_has_bits;
+  ::uint32_t cached_has_bits [[maybe_unused]] = 0;
 
    {
     

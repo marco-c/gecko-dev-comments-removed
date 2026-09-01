@@ -48,7 +48,7 @@ constexpr ExportTracePartialSuccess::ParseTableT_ ExportTracePartialSuccess::Int
       offsetof(ParseTableT_, field_names),  
       class_data,
       nullptr,  
-      ::_pbi::TcParser::GenericFallbackLite,  
+      ::_pbi::TcParser::MpUnknownFields,  
       #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
       ::_pbi::TcParser::GetTable<::opentelemetry::proto::collector::trace::v1::ExportTracePartialSuccess>(),  
       #endif  
@@ -82,8 +82,7 @@ constexpr ExportTracePartialSuccess::ParseTableT_ ExportTracePartialSuccess::Int
 inline constexpr ExportTracePartialSuccess::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        error_message_(
+      : error_message_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
         rejected_spans_{::int64_t{0}} {}
@@ -91,7 +90,7 @@ inline constexpr ExportTracePartialSuccess::Impl_::Impl_(
 template <typename>
 constexpr ExportTracePartialSuccess::ExportTracePartialSuccess(::_pbi::ConstantInitialized,
                        const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
-    : ::google::protobuf::MessageLite(
+    : Super_(
 #if defined(PROTOBUF_CUSTOM_VTABLE)
           class_data
 #endif  
@@ -119,10 +118,10 @@ constexpr auto ExportTracePartialSuccess::InternalGenerateClassData_(
 #endif
           nullptr,  
           &ExportTracePartialSuccess::MergeImpl,
-          ::google::protobuf::MessageLite::GetNewImpl<ExportTracePartialSuccess>(),
+          Super_::GetNewImpl<ExportTracePartialSuccess>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
           &ExportTracePartialSuccess::SharedDtor,
-          ::google::protobuf::MessageLite::GetClearImpl<ExportTracePartialSuccess>(), &ExportTracePartialSuccess::ByteSizeLong,
+          Super_::GetClearImpl<ExportTracePartialSuccess>(), &ExportTracePartialSuccess::ByteSizeLong,
               &ExportTracePartialSuccess::_InternalSerialize,
 #endif  
           PROTOBUF_FIELD_OFFSET(ExportTracePartialSuccess, _impl_._cached_size_),
@@ -195,7 +194,7 @@ constexpr ExportTraceServiceResponse::ParseTableT_ ExportTraceServiceResponse::I
       offsetof(ParseTableT_, aux_entries),
       class_data,
       nullptr,  
-      ::_pbi::TcParser::GenericFallbackLite,  
+      ::_pbi::TcParser::MpUnknownFields,  
       #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
       ::_pbi::TcParser::GetTable<::opentelemetry::proto::collector::trace::v1::ExportTraceServiceResponse>(),  
       #endif  
@@ -226,13 +225,12 @@ constexpr ExportTraceServiceResponse::ParseTableT_ ExportTraceServiceResponse::I
 inline constexpr ExportTraceServiceResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        partial_success_{nullptr} {}
+      : partial_success_{nullptr} {}
 
 template <typename>
 constexpr ExportTraceServiceResponse::ExportTraceServiceResponse(::_pbi::ConstantInitialized,
                        const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
-    : ::google::protobuf::MessageLite(
+    : Super_(
 #if defined(PROTOBUF_CUSTOM_VTABLE)
           class_data
 #endif  
@@ -260,10 +258,10 @@ constexpr auto ExportTraceServiceResponse::InternalGenerateClassData_(
 #endif
           nullptr,  
           &ExportTraceServiceResponse::MergeImpl,
-          ::google::protobuf::MessageLite::GetNewImpl<ExportTraceServiceResponse>(),
+          Super_::GetNewImpl<ExportTraceServiceResponse>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
           &ExportTraceServiceResponse::SharedDtor,
-          ::google::protobuf::MessageLite::GetClearImpl<ExportTraceServiceResponse>(), &ExportTraceServiceResponse::ByteSizeLong,
+          Super_::GetClearImpl<ExportTraceServiceResponse>(), &ExportTraceServiceResponse::ByteSizeLong,
               &ExportTraceServiceResponse::_InternalSerialize,
 #endif  
           PROTOBUF_FIELD_OFFSET(ExportTraceServiceResponse, _impl_._cached_size_),
@@ -336,7 +334,7 @@ constexpr ExportTraceServiceRequest::ParseTableT_ ExportTraceServiceRequest::Int
       offsetof(ParseTableT_, aux_entries),
       class_data,
       nullptr,  
-      ::_pbi::TcParser::GenericFallbackLite,  
+      ::_pbi::TcParser::MpUnknownFields,  
       #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
       ::_pbi::TcParser::GetTable<::opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest>(),  
       #endif  
@@ -367,8 +365,7 @@ constexpr ExportTraceServiceRequest::ParseTableT_ ExportTraceServiceRequest::Int
 inline constexpr ExportTraceServiceRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        resource_spans_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+      : resource_spans_ { visibility, ::_pbi::InternalMetadataOffset::Build<
             ::opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest,
             PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest, _impl_.resource_spans_)>()
          }
@@ -377,7 +374,7 @@ inline constexpr ExportTraceServiceRequest::Impl_::Impl_(
 template <typename>
 constexpr ExportTraceServiceRequest::ExportTraceServiceRequest(::_pbi::ConstantInitialized,
                        const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
-    : ::google::protobuf::MessageLite(
+    : Super_(
 #if defined(PROTOBUF_CUSTOM_VTABLE)
           class_data
 #endif  
@@ -405,10 +402,10 @@ constexpr auto ExportTraceServiceRequest::InternalGenerateClassData_(
 #endif
           nullptr,  
           &ExportTraceServiceRequest::MergeImpl,
-          ::google::protobuf::MessageLite::GetNewImpl<ExportTraceServiceRequest>(),
+          Super_::GetNewImpl<ExportTraceServiceRequest>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
           &ExportTraceServiceRequest::SharedDtor,
-          ::google::protobuf::MessageLite::GetClearImpl<ExportTraceServiceRequest>(), &ExportTraceServiceRequest::ByteSizeLong,
+          Super_::GetClearImpl<ExportTraceServiceRequest>(), &ExportTraceServiceRequest::ByteSizeLong,
               &ExportTraceServiceRequest::_InternalSerialize,
 #endif  
           PROTOBUF_FIELD_OFFSET(ExportTraceServiceRequest, _impl_._cached_size_),
@@ -479,9 +476,9 @@ void ExportTraceServiceRequest::clear_resource_spans() {
 }
 ExportTraceServiceRequest::ExportTraceServiceRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::MessageLite(arena, ExportTraceServiceRequest_get_class_data()) {
+    : Super_(arena, ExportTraceServiceRequest_get_class_data()) {
 #else
-    : ::google::protobuf::MessageLite(arena) {
+    : Super_(arena) {
 #endif
   SharedCtor(arena);
   
@@ -491,12 +488,11 @@ PROTOBUF_NDEBUG_INLINE ExportTraceServiceRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
     [[maybe_unused]] const ::opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest& from_msg)
       : _has_bits_{from._has_bits_},
-        _cached_size_{0},
         resource_spans_ {
           visibility, ::_pbi::InternalMetadataOffset::Build<
               ::opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest,
               PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest, _impl_.resource_spans_)>()
-          , from.resource_spans_
+          , arena, from.resource_spans_
         }
      {}
 
@@ -504,10 +500,10 @@ ExportTraceServiceRequest::ExportTraceServiceRequest(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
     const ExportTraceServiceRequest& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::MessageLite(arena, ExportTraceServiceRequest_get_class_data()) {
+    : Super_(arena, ExportTraceServiceRequest_get_class_data()) {
 
 #else
-    : ::google::protobuf::MessageLite(arena) {
+    : Super_(arena) {
 #endif
   ExportTraceServiceRequest* const _this = this;
   (void)_this;
@@ -520,8 +516,7 @@ ExportTraceServiceRequest::ExportTraceServiceRequest(
 PROTOBUF_NDEBUG_INLINE ExportTraceServiceRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0},
-        resource_spans_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+      : resource_spans_ { visibility, ::_pbi::InternalMetadataOffset::Build<
             ::opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest,
             PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest, _impl_.resource_spans_)>()
          }
@@ -567,13 +562,12 @@ PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const ExportTraceServiceRequest::ParseTableT_
         ExportTraceServiceRequest::InternalGenerateParseTable_(ExportTraceServiceRequest_class_data_.base());
 #endif  
 PROTOBUF_NOINLINE void ExportTraceServiceRequest::Clear() {
-
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
+  auto& this_ [[maybe_unused]] = *this;
   
-  (void) cached_has_bits;
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits [[maybe_unused]] = 0;
 
-  cached_has_bits = _impl_._has_bits_[0];
+  cached_has_bits = this_._impl_._has_bits_[0];
   if (CheckHasBit(cached_has_bits, 0x00000001U)) {
     _impl_.resource_spans_.Clear();
   }
@@ -606,10 +600,9 @@ PROTOBUF_NOINLINE void ExportTraceServiceRequest::Clear() {
                              this_._internal_resource_spans_size());
          i < n; i++) {
       const auto& repfield = this_._internal_resource_spans().Get(i);
-      target =
-          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-              1, repfield, repfield.GetCachedSize(),
-              target, stream);
+      target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+          1, repfield, repfield.GetCachedSize(), target,
+          stream);
     }
   }
 
@@ -632,9 +625,7 @@ PROTOBUF_NOINLINE void ExportTraceServiceRequest::Clear() {
 
   ::size_t total_size = 0;
 
-  ::uint32_t cached_has_bits = 0;
-  
-  (void)cached_has_bits;
+  ::uint32_t cached_has_bits [[maybe_unused]] = 0;
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
    {
@@ -697,9 +688,9 @@ void ExportTraceServiceRequest::InternalSwap(ExportTraceServiceRequest* PROTOBUF
 
 ExportTraceServiceResponse::ExportTraceServiceResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::MessageLite(arena, ExportTraceServiceResponse_get_class_data()) {
+    : Super_(arena, ExportTraceServiceResponse_get_class_data()) {
 #else
-    : ::google::protobuf::MessageLite(arena) {
+    : Super_(arena) {
 #endif
   SharedCtor(arena);
   
@@ -708,17 +699,16 @@ PROTOBUF_NDEBUG_INLINE ExportTraceServiceResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
     [[maybe_unused]] const ::opentelemetry::proto::collector::trace::v1::ExportTraceServiceResponse& from_msg)
-      : _has_bits_{from._has_bits_},
-        _cached_size_{0} {}
+      : _has_bits_{from._has_bits_} {}
 
 ExportTraceServiceResponse::ExportTraceServiceResponse(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
     const ExportTraceServiceResponse& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::MessageLite(arena, ExportTraceServiceResponse_get_class_data()) {
+    : Super_(arena, ExportTraceServiceResponse_get_class_data()) {
 
 #else
-    : ::google::protobuf::MessageLite(arena) {
+    : Super_(arena) {
 #endif
   ExportTraceServiceResponse* const _this = this;
   (void)_this;
@@ -727,15 +717,15 @@ ExportTraceServiceResponse::ExportTraceServiceResponse(
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
   _impl_.partial_success_ = (CheckHasBit(cached_has_bits, 0x00000001U))
-                ? ::google::protobuf::MessageLite::CopyConstruct(arena, *from._impl_.partial_success_)
-                : nullptr;
+                 ? Super_::CopyConstruct(arena, *from._impl_.partial_success_)
+                 : nullptr;
 
   
 }
 PROTOBUF_NDEBUG_INLINE ExportTraceServiceResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0} {}
+     {}
 
 inline void ExportTraceServiceResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
@@ -779,16 +769,15 @@ PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const ExportTraceServiceResponse::ParseTableT_
         ExportTraceServiceResponse::InternalGenerateParseTable_(ExportTraceServiceResponse_class_data_.base());
 #endif  
 PROTOBUF_NOINLINE void ExportTraceServiceResponse::Clear() {
-
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
+  auto& this_ [[maybe_unused]] = *this;
   
-  (void) cached_has_bits;
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits [[maybe_unused]] = 0;
 
-  cached_has_bits = _impl_._has_bits_[0];
+  cached_has_bits = this_._impl_._has_bits_[0];
   if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    ABSL_DCHECK(_impl_.partial_success_ != nullptr);
-    _impl_.partial_success_->Clear();
+    ABSL_DCHECK(this_._impl_.partial_success_ != nullptr);
+    this_._impl_.partial_success_->Clear();
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::std::string>();
@@ -839,9 +828,7 @@ PROTOBUF_NOINLINE void ExportTraceServiceResponse::Clear() {
 
   ::size_t total_size = 0;
 
-  ::uint32_t cached_has_bits = 0;
-  
-  (void)cached_has_bits;
+  ::uint32_t cached_has_bits [[maybe_unused]] = 0;
 
    {
     
@@ -875,7 +862,7 @@ void ExportTraceServiceResponse::MergeImpl(::google::protobuf::MessageLite& to_m
   if (CheckHasBit(cached_has_bits, 0x00000001U)) {
     ABSL_DCHECK(from._impl_.partial_success_ != nullptr);
     if (_this->_impl_.partial_success_ == nullptr) {
-      _this->_impl_.partial_success_ = ::google::protobuf::MessageLite::CopyConstruct(arena, *from._impl_.partial_success_);
+      _this->_impl_.partial_success_ = Super_::CopyConstruct(arena, *from._impl_.partial_success_);
     } else {
       _this->_impl_.partial_success_->MergeFrom(*from._impl_.partial_success_);
     }
@@ -904,9 +891,9 @@ void ExportTraceServiceResponse::InternalSwap(ExportTraceServiceResponse* PROTOB
 
 ExportTracePartialSuccess::ExportTracePartialSuccess(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::MessageLite(arena, ExportTracePartialSuccess_get_class_data()) {
+    : Super_(arena, ExportTracePartialSuccess_get_class_data()) {
 #else
-    : ::google::protobuf::MessageLite(arena) {
+    : Super_(arena) {
 #endif
   SharedCtor(arena);
   
@@ -916,17 +903,16 @@ PROTOBUF_NDEBUG_INLINE ExportTracePartialSuccess::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
     [[maybe_unused]] const ::opentelemetry::proto::collector::trace::v1::ExportTracePartialSuccess& from_msg)
       : _has_bits_{from._has_bits_},
-        _cached_size_{0},
         error_message_(arena, from.error_message_) {}
 
 ExportTracePartialSuccess::ExportTracePartialSuccess(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
     const ExportTracePartialSuccess& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::MessageLite(arena, ExportTracePartialSuccess_get_class_data()) {
+    : Super_(arena, ExportTracePartialSuccess_get_class_data()) {
 
 #else
-    : ::google::protobuf::MessageLite(arena) {
+    : Super_(arena) {
 #endif
   ExportTracePartialSuccess* const _this = this;
   (void)_this;
@@ -940,8 +926,7 @@ ExportTracePartialSuccess::ExportTracePartialSuccess(
 PROTOBUF_NDEBUG_INLINE ExportTracePartialSuccess::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0},
-        error_message_(arena) {}
+      : error_message_(arena) {}
 
 inline void ExportTracePartialSuccess::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
@@ -985,17 +970,16 @@ PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const ExportTracePartialSuccess::ParseTableT_
         ExportTracePartialSuccess::InternalGenerateParseTable_(ExportTracePartialSuccess_class_data_.base());
 #endif  
 PROTOBUF_NOINLINE void ExportTracePartialSuccess::Clear() {
-
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
+  auto& this_ [[maybe_unused]] = *this;
   
-  (void) cached_has_bits;
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits [[maybe_unused]] = 0;
 
-  cached_has_bits = _impl_._has_bits_[0];
+  cached_has_bits = this_._impl_._has_bits_[0];
   if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    _impl_.error_message_.ClearNonDefaultToEmpty();
+    this_._impl_.error_message_.ClearNonDefaultToEmpty();
   }
-  _impl_.rejected_spans_ = ::int64_t{0};
+  this_._impl_.rejected_spans_ = ::int64_t{0};
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::std::string>();
 }
@@ -1057,9 +1041,7 @@ PROTOBUF_NOINLINE void ExportTracePartialSuccess::Clear() {
 
   ::size_t total_size = 0;
 
-  ::uint32_t cached_has_bits = 0;
-  
-  (void)cached_has_bits;
+  ::uint32_t cached_has_bits [[maybe_unused]] = 0;
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];

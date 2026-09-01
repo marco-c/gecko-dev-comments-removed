@@ -53,9 +53,21 @@ struct RepeatedFieldTraits {
   static_assert(!std::is_const_v<ElementType>);
   
   
-  static_assert(RepeatedElementTypeIsPrimitive<ElementType>);
+  static_assert(std::is_integral_v<ElementType> ||
+                std::is_floating_point_v<ElementType>);
 
   using type = ::google::protobuf::RepeatedField<ElementType>;
+  using const_reference = ElementType;
+  using reference = ElementType;
+};
+
+
+template <typename ElementType>
+struct RepeatedFieldTraits<ElementType,
+                           std::enable_if_t<std::is_enum_v<ElementType>>> {
+  static_assert(!std::is_const_v<ElementType>);
+
+  using type = ::google::protobuf::RepeatedField<int>;
   using const_reference = ElementType;
   using reference = ElementType;
 };

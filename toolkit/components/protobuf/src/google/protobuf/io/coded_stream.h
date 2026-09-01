@@ -935,7 +935,7 @@ class PROTOBUF_EXPORT PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED
 
   template <typename T>
   PROTOBUF_ALWAYS_INLINE static uint8_t* UnsafeVarint(T value, uint8_t* ptr) {
-    static_assert(std::is_unsigned<T>::value,
+    static_assert(std::is_unsigned_v<T>,
                   "Varint serialization must be unsigned");
     while (ABSL_PREDICT_FALSE(value >= 0x80)) {
       *ptr = static_cast<uint8_t>(value | 0x80);
@@ -1084,8 +1084,8 @@ class PROTOBUF_EXPORT PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED CodedOutputStream {
   
   
   
-  template <class Stream, class = typename std::enable_if<std::is_base_of<
-                              ZeroCopyOutputStream, Stream>::value>::type>
+  template <class Stream, class = std::enable_if_t<
+                              std::is_base_of_v<ZeroCopyOutputStream, Stream>>>
   CodedOutputStream(Stream* stream, bool eager_init);
   CodedOutputStream(const CodedOutputStream&) = delete;
   CodedOutputStream& operator=(const CodedOutputStream&) = delete;
@@ -1140,7 +1140,7 @@ class PROTOBUF_EXPORT PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED CodedOutputStream {
   
   
   
-  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD inline uint8_t*
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD uint8_t*
   GetDirectBufferForNBytesAndAdvance(int size) {
     return impl_.GetDirectBufferForNBytesAndAdvance(size, &cur_);
   }
@@ -1283,6 +1283,9 @@ class PROTOBUF_EXPORT PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED CodedOutputStream {
   
   void EnableAliasing(bool enabled) { impl_.EnableAliasing(enabled); }
 
+  
+  
+  
   
   
   

@@ -2,6 +2,7 @@
 #define GOOGLE_PROTOBUF_FIELD_WITH_ARENA_H__
 
 #include <cstddef>
+#include <type_traits>
 
 #include "absl/log/absl_check.h"
 #include "google/protobuf/arena.h"
@@ -15,6 +16,18 @@
 namespace google {
 namespace protobuf {
 namespace internal {
+
+
+
+
+
+
+
+template <typename T, typename... Args>
+inline constexpr bool kOffsetConstructorTakesArenaPointer =
+    std::is_constructible_v<T, InternalVisibility, InternalMetadataOffset,
+                            Arena*, Args...> ||
+    std::is_constructible_v<T, InternalMetadataOffset, Arena*, Args...>;
 
 
 
@@ -41,7 +54,11 @@ class FieldWithArena : public ContainerDestructorSkippableBase<T> {
     StaticallyVerifyLayout();
     
     
-    new (&field_) T(BuildOffset(), std::forward<Args>(args)...);
+    if constexpr (kOffsetConstructorTakesArenaPointer<T, Args...>) {
+      new (&field_) T(BuildOffset(), arena, std::forward<Args>(args)...);
+    } else {
+      new (&field_) T(BuildOffset(), std::forward<Args>(args)...);
+    }
   }
 
   ~FieldWithArena() {

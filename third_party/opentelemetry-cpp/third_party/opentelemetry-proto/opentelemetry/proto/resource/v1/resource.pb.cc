@@ -47,7 +47,7 @@ constexpr Resource::ParseTableT_ Resource::InternalGenerateParseTable_(const ::_
       offsetof(ParseTableT_, aux_entries),
       class_data,
       nullptr,  
-      ::_pbi::TcParser::GenericFallbackLite,  
+      ::_pbi::TcParser::MpUnknownFields,  
       #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
       ::_pbi::TcParser::GetTable<::opentelemetry::proto::resource::v1::Resource>(),  
       #endif  
@@ -96,8 +96,7 @@ constexpr Resource::ParseTableT_ Resource::InternalGenerateParseTable_(const ::_
 inline constexpr Resource::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        attributes_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+      : attributes_ { visibility, ::_pbi::InternalMetadataOffset::Build<
             ::opentelemetry::proto::resource::v1::Resource,
             PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::resource::v1::Resource, _impl_.attributes_)>()
          }
@@ -112,7 +111,7 @@ inline constexpr Resource::Impl_::Impl_(
 template <typename>
 constexpr Resource::Resource(::_pbi::ConstantInitialized,
                        const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
-    : ::google::protobuf::MessageLite(
+    : Super_(
 #if defined(PROTOBUF_CUSTOM_VTABLE)
           class_data
 #endif  
@@ -140,10 +139,10 @@ constexpr auto Resource::InternalGenerateClassData_(
 #endif
           nullptr,  
           &Resource::MergeImpl,
-          ::google::protobuf::MessageLite::GetNewImpl<Resource>(),
+          Super_::GetNewImpl<Resource>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
           &Resource::SharedDtor,
-          ::google::protobuf::MessageLite::GetClearImpl<Resource>(), &Resource::ByteSizeLong,
+          Super_::GetClearImpl<Resource>(), &Resource::ByteSizeLong,
               &Resource::_InternalSerialize,
 #endif  
           PROTOBUF_FIELD_OFFSET(Resource, _impl_._cached_size_),
@@ -217,9 +216,9 @@ void Resource::clear_entity_refs() {
 }
 Resource::Resource(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::MessageLite(arena, Resource_get_class_data()) {
+    : Super_(arena, Resource_get_class_data()) {
 #else
-    : ::google::protobuf::MessageLite(arena) {
+    : Super_(arena) {
 #endif
   SharedCtor(arena);
   
@@ -229,19 +228,18 @@ PROTOBUF_NDEBUG_INLINE Resource::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
     [[maybe_unused]] const ::opentelemetry::proto::resource::v1::Resource& from_msg)
       : _has_bits_{from._has_bits_},
-        _cached_size_{0},
         attributes_ {
           visibility, ::_pbi::InternalMetadataOffset::Build<
               ::opentelemetry::proto::resource::v1::Resource,
               PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::resource::v1::Resource, _impl_.attributes_)>()
-          , from.attributes_
+          , arena, from.attributes_
         }
         ,
         entity_refs_ {
           visibility, ::_pbi::InternalMetadataOffset::Build<
               ::opentelemetry::proto::resource::v1::Resource,
               PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::resource::v1::Resource, _impl_.entity_refs_)>()
-          , from.entity_refs_
+          , arena, from.entity_refs_
         }
      {}
 
@@ -249,10 +247,10 @@ Resource::Resource(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
     const Resource& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::MessageLite(arena, Resource_get_class_data()) {
+    : Super_(arena, Resource_get_class_data()) {
 
 #else
-    : ::google::protobuf::MessageLite(arena) {
+    : Super_(arena) {
 #endif
   Resource* const _this = this;
   (void)_this;
@@ -266,8 +264,7 @@ Resource::Resource(
 PROTOBUF_NDEBUG_INLINE Resource::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0},
-        attributes_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+      : attributes_ { visibility, ::_pbi::InternalMetadataOffset::Build<
             ::opentelemetry::proto::resource::v1::Resource,
             PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::resource::v1::Resource, _impl_.attributes_)>()
          }
@@ -319,13 +316,12 @@ PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const Resource::ParseTableT_
         Resource::InternalGenerateParseTable_(Resource_class_data_.base());
 #endif  
 PROTOBUF_NOINLINE void Resource::Clear() {
-
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
+  auto& this_ [[maybe_unused]] = *this;
   
-  (void) cached_has_bits;
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits [[maybe_unused]] = 0;
 
-  cached_has_bits = _impl_._has_bits_[0];
+  cached_has_bits = this_._impl_._has_bits_[0];
   if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       _impl_.attributes_.Clear();
@@ -334,7 +330,7 @@ PROTOBUF_NOINLINE void Resource::Clear() {
       _impl_.entity_refs_.Clear();
     }
   }
-  _impl_.dropped_attributes_count_ = 0u;
+  this_._impl_.dropped_attributes_count_ = 0u;
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::std::string>();
 }
@@ -364,10 +360,9 @@ PROTOBUF_NOINLINE void Resource::Clear() {
                              this_._internal_attributes_size());
          i < n; i++) {
       const auto& repfield = this_._internal_attributes().Get(i);
-      target =
-          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-              1, repfield, repfield.GetCachedSize(),
-              target, stream);
+      target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+          1, repfield, repfield.GetCachedSize(), target,
+          stream);
     }
   }
 
@@ -386,10 +381,9 @@ PROTOBUF_NOINLINE void Resource::Clear() {
                              this_._internal_entity_refs_size());
          i < n; i++) {
       const auto& repfield = this_._internal_entity_refs().Get(i);
-      target =
-          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-              3, repfield, repfield.GetCachedSize(),
-              target, stream);
+      target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+          3, repfield, repfield.GetCachedSize(), target,
+          stream);
     }
   }
 
@@ -412,9 +406,7 @@ PROTOBUF_NOINLINE void Resource::Clear() {
 
   ::size_t total_size = 0;
 
-  ::uint32_t cached_has_bits = 0;
-  
-  (void)cached_has_bits;
+  ::uint32_t cached_has_bits [[maybe_unused]] = 0;
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];

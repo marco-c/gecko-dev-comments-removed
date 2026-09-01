@@ -27,6 +27,8 @@
 #include <vector>
 
 #include "absl/base/macros.h"
+#include "absl/base/optimization.h"
+#include "absl/cleanup/cleanup.h"
 #include "absl/container/btree_set.h"
 #include "absl/log/absl_check.h"
 #include "absl/memory/memory.h"
@@ -508,12 +510,23 @@ class TextFormat::Parser::ParserImpl {
   
   
   bool ConsumeMessage(Message* message, const std::string& delimiter) {
+    if (--recursion_limit_ < 0) {
+      ReportError(
+          absl::StrCat("Message is too deep, the parser exceeded the "
+                       "configured recursion limit of ",
+                       initial_recursion_limit_, "."));
+      return false;
+    }
+
+    auto cleanup = absl::MakeCleanup([this] { ++recursion_limit_; });
+
     while (!LookingAt(">") && !LookingAt("}")) {
       DO(ConsumeField(message));
     }
 
     
     DO(Consume(delimiter));
+
     return true;
   }
 
@@ -792,7 +805,10 @@ class TextFormat::Parser::ParserImpl {
       if (consumed_semicolon) {
         TryConsumeWhitespace();
       }
-      if (consumed_semicolon && field->options().weak() &&
+      PROTOBUF_IGNORE_DEPRECATION_START
+      const bool field_is_weak = field->options().weak();
+      PROTOBUF_IGNORE_DEPRECATION_STOP
+      if (consumed_semicolon && field_is_weak &&
           LookingAtType(io::Tokenizer::TYPE_STRING)) {
         
         int v_start_line = tokenizer_.current().line;
@@ -885,13 +901,6 @@ class TextFormat::Parser::ParserImpl {
 
   bool ConsumeFieldMessage(Message* message, const Reflection* reflection,
                            const FieldDescriptor* field) {
-    if (--recursion_limit_ < 0) {
-      ReportError(
-          absl::StrCat("Message is too deep, the parser exceeded the "
-                       "configured recursion limit of ",
-                       initial_recursion_limit_, "."));
-      return false;
-    }
     
     
     ParseInfoTree* parent = parse_info_tree_;
@@ -911,8 +920,6 @@ class TextFormat::Parser::ParserImpl {
                         delimiter));
     }
 
-    ++recursion_limit_;
-
     
     parse_info_tree_ = parent;
     return true;
@@ -929,6 +936,8 @@ class TextFormat::Parser::ParserImpl {
       return false;
     }
 
+    auto cleanup = absl::MakeCleanup([this] { ++recursion_limit_; });
+
     std::string delimiter;
     DO(ConsumeMessageDelimiter(&delimiter));
     while (!LookingAt(">") && !LookingAt("}")) {
@@ -936,7 +945,6 @@ class TextFormat::Parser::ParserImpl {
     }
     DO(Consume(delimiter));
 
-    ++recursion_limit_;
     return true;
   }
 
@@ -1099,11 +1107,12 @@ class TextFormat::Parser::ParserImpl {
       return false;
     }
 
+    auto cleanup = absl::MakeCleanup([this] { ++recursion_limit_; });
+
     if (LookingAtType(io::Tokenizer::TYPE_STRING)) {
       while (LookingAtType(io::Tokenizer::TYPE_STRING)) {
         tokenizer_.Next();
       }
-      ++recursion_limit_;
       return true;
     }
     if (TryConsume("[")) {
@@ -1120,7 +1129,6 @@ class TextFormat::Parser::ParserImpl {
           DO(Consume(","));
         }
       }
-      ++recursion_limit_;
       return true;
     }
     
@@ -1151,7 +1159,6 @@ class TextFormat::Parser::ParserImpl {
       std::string text = tokenizer_.current().text;
       ReportError(
           absl::StrCat("Cannot skip field value, unexpected token: ", text));
-      ++recursion_limit_;
       return false;
     }
     
@@ -1166,12 +1173,10 @@ class TextFormat::Parser::ParserImpl {
       if (text != "inf" &&
           text != "infinity" && text != "nan") {
         ReportError(absl::StrCat("Invalid float number: ", text));
-        ++recursion_limit_;
         return false;
       }
     }
     tokenizer_.Next();
-    ++recursion_limit_;
     return true;
   }
 
@@ -1678,7 +1683,7 @@ class TextFormat::Printer::TextGenerator
   
   
   
-  bool failed() const { return failed_; }
+  bool failed() const override { return failed_; }
 
   void PrintMaybeWithMarker(MarkerToken, absl::string_view text) override {
     Print(text.data(), text.size());
@@ -1925,6 +1930,20 @@ MessageFactory* TextFormat::Finder::FindExtensionFactory(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+static constexpr int kDefaultRecursionLimit = std::numeric_limits<int>::max();
+
 TextFormat::Parser::Parser()
     : error_collector_(nullptr),
       finder_(nullptr),
@@ -1937,7 +1956,7 @@ TextFormat::Parser::Parser()
       allow_field_number_(false),
       allow_relaxed_whitespace_(false),
       allow_singular_overwrites_(false),
-      recursion_limit_(std::numeric_limits<int>::max()) {}
+      recursion_limit_(kDefaultRecursionLimit) {}
 
 namespace {
 
@@ -2185,11 +2204,28 @@ void TextFormat::FastFieldValuePrinter::PrintEnum(
   generator->PrintString(name);
 }
 
+namespace {
+
+bool ContainsCharactersToCEscape(absl::string_view val) {
+  bool needs_escape = false;
+  for (unsigned char c : val) {
+    needs_escape |=
+        ((c < 32) | (c > 126) | (c == '"') | (c == '\'') | (c == '\\'));
+  }
+  return needs_escape;
+}
+
+}  
+
 void TextFormat::FastFieldValuePrinter::PrintString(
     const std::string& val, BaseTextGenerator* generator) const {
   generator->PrintLiteral("\"");
   if (!val.empty()) {
-    generator->PrintString(absl::CEscape(val));
+    if (ABSL_PREDICT_FALSE(ContainsCharactersToCEscape(val))) {
+      generator->PrintString(absl::CEscape(val));
+    } else {
+      generator->PrintString(val);
+    }
   }
   generator->PrintLiteral("\"");
 }
@@ -2557,7 +2593,7 @@ void TextFormat::Printer::Print(const Message& message,
 
 void TextFormat::Printer::PrintMessage(const Message& message,
                                        BaseTextGenerator* generator) const {
-  if (generator == nullptr) {
+  if (generator == nullptr || generator->failed()) {
     return;
   }
   const Descriptor* descriptor = message.GetDescriptor();
@@ -2804,6 +2840,7 @@ void TextFormat::Printer::PrintField(const Message& message,
     count = 1;
   }
 
+  if (generator->failed()) return;
   bool is_map = field->is_map();
   const internal::MapEntries map_entries =
       is_map
@@ -2811,6 +2848,7 @@ void TextFormat::Printer::PrintField(const Message& message,
           : internal::MapEntries();
 
   for (int j = 0; j < count; ++j) {
+    if (generator->failed()) return;
     const int field_index = field->is_repeated() ? j : -1;
 
     PrintFieldName(message, field_index, count, reflection, field, generator);
@@ -2858,6 +2896,7 @@ void TextFormat::Printer::PrintShortRepeatedField(
                  field, generator);
   generator->PrintMaybeWithMarker(MarkerToken(), ": ", "[");
   for (int i = 0; i < size; i++) {
+    if (generator->failed()) return;
     if (i > 0) generator->PrintLiteral(", ");
     PrintFieldValue(message, reflection, field, i, generator);
   }

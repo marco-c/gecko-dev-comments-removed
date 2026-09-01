@@ -373,6 +373,10 @@ inline void AssignToString(std::string& dest, absl::string_view value,
                            BytesTag  = BytesTag{}) {
   dest.assign(value.data(), value.size());
 }
+inline void AssignToString(std::string& dest, const absl::Cord& value,
+                           BytesTag tag = BytesTag{}) {
+  absl::CopyCordToString(value, &dest);
+}
 
 
 
@@ -423,6 +427,11 @@ struct PrivateAccess {
   static constexpr auto GenerateParseTable(
       const ::google::protobuf::internal::ClassData* class_data) {
     return T::InternalGenerateParseTable_(class_data);
+  }
+
+  template <typename T>
+  static constexpr decltype(auto) FullMessageName() {
+    return T::FullMessageName();
   }
 
   static internal::ExtensionSet* GetExtensionSet(MessageLite* msg);

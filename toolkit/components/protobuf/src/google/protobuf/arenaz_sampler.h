@@ -59,7 +59,7 @@ struct [[nodiscard]] ThreadSafeArenaStats
   
   
   
-  static constexpr size_t kBlockHistogramBins = 15;
+  static constexpr size_t kBlockHistogramBins = 16;
   static constexpr size_t kLogMaxSizeForBinZero = 7;
   static constexpr size_t kMaxSizeForBinZero = (1 << kLogMaxSizeForBinZero);
   static constexpr size_t kMaxSizeForPenultimateBin =

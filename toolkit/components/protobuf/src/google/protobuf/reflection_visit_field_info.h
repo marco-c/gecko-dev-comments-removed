@@ -57,10 +57,10 @@ class iterator_range {
   
   
   template <class It = IteratorT>
-  typename std::enable_if<std::is_base_of<std::random_access_iterator_tag,
-                                          typename std::iterator_traits<
-                                              It>::iterator_category>::value,
-                          size_t>::type
+  std::enable_if_t<
+      std::is_base_of_v<std::random_access_iterator_tag,
+                        typename std::iterator_traits<It>::iterator_category>,
+      size_t>
   size() const {
     return std::distance(begin_iterator_, end_iterator_);
   }

@@ -102,6 +102,16 @@ class UnsetFieldsMetadataMessageDifferencerTestUtil;
 
 
 
+
+
+
+
+
+
+
+
+
+
 class PROTOBUF_EXPORT TextFormat {
  public:
   TextFormat(const TextFormat&) = delete;
@@ -155,6 +165,8 @@ class PROTOBUF_EXPORT TextFormat {
 
    public:
     virtual ~BaseTextGenerator();
+
+    virtual bool failed() const { return false; }
 
     virtual void Indent() {}
     virtual void Outdent() {}
@@ -800,6 +812,12 @@ class PROTOBUF_EXPORT TextFormat {
 
     void AllowFieldNumber(bool allow) { allow_field_number_ = allow; }
 
+    
+    
+    
+    
+    
+    
     
     
     void SetRecursionLimit(int limit) { recursion_limit_ = limit; }

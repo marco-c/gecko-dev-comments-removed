@@ -734,7 +734,10 @@ bool CodedInputStream::Refresh() {
 
 
 void EpsCopyOutputStream::EnableAliasing(bool enabled) {
-  aliasing_enabled_ = enabled && stream_->AllowsAliasing();
+  
+  
+  aliasing_enabled_ =
+      enabled && stream_ != nullptr && stream_->AllowsAliasing();
 }
 
 int64_t EpsCopyOutputStream::ByteCount(uint8_t* ptr) const {

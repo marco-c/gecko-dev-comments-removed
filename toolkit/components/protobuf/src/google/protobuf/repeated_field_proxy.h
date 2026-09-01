@@ -1,6 +1,7 @@
 #ifndef GOOGLE_PROTOBUF_REPEATED_FIELD_PROXY_H__
 #define GOOGLE_PROTOBUF_REPEATED_FIELD_PROXY_H__
 
+#include <algorithm>
 #include <cstddef>
 #include <iterator>
 #include <string>
@@ -10,6 +11,7 @@
 #include "absl/log/absl_check.h"
 #include "absl/strings/cord.h"
 #include "absl/strings/string_view.h"
+#include "google/protobuf/raw_ptr.h"
 #include "google/protobuf/repeated_field.h"
 #include "google/protobuf/repeated_field_proxy_iterator.h"
 #include "google/protobuf/repeated_field_proxy_traits.h"
@@ -28,6 +30,13 @@ class RepeatedFieldProxy;
 namespace internal {
 
 template <typename ElementType>
+class RepeatedFieldOrProxy;
+
+template <typename ElementType, bool kOrProxy>
+class MutableRepeatedFieldProxyImpl;
+template <typename ElementType, bool kOrProxy>
+class ConstRepeatedFieldProxyImpl;
+template <typename ElementType, bool kOrProxy>
 class RepeatedFieldProxyInternalPrivateAccessHelper;
 
 namespace string_util {
@@ -79,7 +88,29 @@ inline void SetElement(absl::Cord& element, T&& value) {
 
 
 
-template <typename ElementType>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename ElementType, bool kOrProxy>
 class RepeatedFieldProxyBase {
  protected:
   
@@ -98,12 +129,17 @@ class RepeatedFieldProxyBase {
   using const_reference = typename Traits::const_reference;
 
   using const_iterator =
-      internal::RepeatedFieldProxyIterator<const ElementType>;
-  using iterator = internal::RepeatedFieldProxyIterator<ElementType>;
+      internal::RepeatedFieldProxyIteratorImpl<const ElementType,
+                                               false, kOrProxy>;
+  using iterator =
+      internal::RepeatedFieldProxyIteratorImpl<ElementType,
+                                               false, kOrProxy>;
   using const_reverse_iterator =
-      internal::RepeatedFieldProxyReverseIterator<const ElementType>;
+      internal::RepeatedFieldProxyIteratorImpl<const ElementType,
+                                               true, kOrProxy>;
   using reverse_iterator =
-      internal::RepeatedFieldProxyReverseIterator<ElementType>;
+      internal::RepeatedFieldProxyIteratorImpl<ElementType,
+                                               true, kOrProxy>;
 
   
   
@@ -157,7 +193,7 @@ class RepeatedFieldProxyBase {
   ConstQualifiedRepeatedFieldType& field() const { return *field_; }
 
  private:
-  ConstQualifiedRepeatedFieldType* field_;
+  ConstQualifiedRepeatedFieldType* PROTOBUF_NONNULL field_;
 };
 
 
@@ -172,7 +208,7 @@ class RepeatedFieldProxyBase {
 
 
 
-template <typename ElementType, typename Enable = void>
+template <typename ElementType, bool kOrProxy, typename Enable = void>
 class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxyWithSet {
  public:
   
@@ -180,23 +216,26 @@ class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxyWithSet {
   
   void set(size_t index, ElementType value) const {
     auto& field =
-        RepeatedFieldProxyInternalPrivateAccessHelper<ElementType>::field(this);
+        RepeatedFieldProxyInternalPrivateAccessHelper<ElementType,
+                                                      kOrProxy>::field(this);
     field[index] = value;
   }
 };
 
 
 
-template <typename ElementType>
+template <typename ElementType, bool kOrProxy>
 class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxyWithSet<
-    ElementType, std::enable_if_t<RepeatedElementTypeIsMessage<ElementType>>> {
+    ElementType, kOrProxy,
+    std::enable_if_t<RepeatedElementTypeIsMessage<ElementType>>> {
  public:
   
   
   
   void set(size_t index, ElementType&& value) const {
     auto& field =
-        RepeatedFieldProxyInternalPrivateAccessHelper<ElementType>::field(this);
+        RepeatedFieldProxyInternalPrivateAccessHelper<ElementType,
+                                                      kOrProxy>::field(this);
     field[index] = std::move(value);
   }
 
@@ -205,16 +244,18 @@ class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxyWithSet<
   
   void set(size_t index, const ElementType& value) const {
     auto& field =
-        RepeatedFieldProxyInternalPrivateAccessHelper<ElementType>::field(this);
+        RepeatedFieldProxyInternalPrivateAccessHelper<ElementType,
+                                                      kOrProxy>::field(this);
     field[index] = value;
   }
 };
 
 
 
-template <typename ElementType>
+template <typename ElementType, bool kOrProxy>
 class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxyWithSet<
-    ElementType, std::enable_if_t<RepeatedElementTypeIsString<ElementType>>> {
+    ElementType, kOrProxy,
+    std::enable_if_t<RepeatedElementTypeIsString<ElementType>>> {
  public:
   
   
@@ -222,54 +263,58 @@ class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxyWithSet<
   template <typename T>
   void set(size_t index, T&& value) const {
     auto& field =
-        RepeatedFieldProxyInternalPrivateAccessHelper<ElementType>::field(this);
+        RepeatedFieldProxyInternalPrivateAccessHelper<ElementType,
+                                                      kOrProxy>::field(this);
     string_util::SetElement(field[index], std::forward<T>(value));
   }
 };
 
 
-template <typename ElementType, typename Enable = void>
+template <typename ElementType, bool kOrProxy, typename Enable = void>
 class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxyWithPushBack {
  public:
   
   void push_back(ElementType value) const {
-    RepeatedFieldProxyInternalPrivateAccessHelper<ElementType>::Add(this,
-                                                                    value);
+    RepeatedFieldProxyInternalPrivateAccessHelper<ElementType, kOrProxy>::Add(
+        this, value);
   }
 };
 
 
 
-template <typename ElementType>
+template <typename ElementType, bool kOrProxy>
 class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxyWithPushBack<
-    ElementType, std::enable_if_t<RepeatedElementTypeIsMessage<ElementType>>> {
+    ElementType, kOrProxy,
+    std::enable_if_t<RepeatedElementTypeIsMessage<ElementType>>> {
  public:
   
   
   void push_back(ElementType&& value) const {
-    RepeatedFieldProxyInternalPrivateAccessHelper<ElementType>::Add(
+    RepeatedFieldProxyInternalPrivateAccessHelper<ElementType, kOrProxy>::Add(
         this, std::move(value));
   }
 
   
   
   void push_back(const ElementType& value) const {
-    RepeatedFieldProxyInternalPrivateAccessHelper<ElementType>::Add(this,
-                                                                    value);
+    RepeatedFieldProxyInternalPrivateAccessHelper<ElementType, kOrProxy>::Add(
+        this, value);
   }
 };
 
 
 
-template <typename ElementType>
+template <typename ElementType, bool kOrProxy>
 class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxyWithPushBack<
-    ElementType, std::enable_if_t<RepeatedElementTypeIsString<ElementType>>> {
+    ElementType, kOrProxy,
+    std::enable_if_t<RepeatedElementTypeIsString<ElementType>>> {
  public:
   
   template <typename T>
   void push_back(T&& value) const {
     string_util::SetElement(
-        RepeatedFieldProxyInternalPrivateAccessHelper<ElementType>::Add(this),
+        RepeatedFieldProxyInternalPrivateAccessHelper<ElementType,
+                                                      kOrProxy>::Add(this),
         std::forward<T>(value));
   }
 };
@@ -277,138 +322,141 @@ class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxyWithPushBack<
 
 
 
-template <typename ElementType, typename Enable = void>
+template <typename ElementType, bool kOrProxy, typename Enable = void>
 class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxyWithEmplaceBack {
  public:
   
   
   template <typename... Args>
   auto& emplace_back(Args&&... args) const {
-    return RepeatedFieldProxyInternalPrivateAccessHelper<ElementType>::Emplace(
-        this, std::forward<Args>(args)...);
+    return RepeatedFieldProxyInternalPrivateAccessHelper<
+        ElementType, kOrProxy>::Emplace(this, std::forward<Args>(args)...);
   }
 };
 
 
 
 
-template <typename ElementType>
+template <typename ElementType, bool kOrProxy>
 class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxyWithEmplaceBack<
-    ElementType,
+    ElementType, kOrProxy,
     std::enable_if_t<std::is_same_v<ElementType, absl::string_view>>> {
  public:
   
   
   absl::string_view emplace_back() const {
-    return RepeatedFieldProxyInternalPrivateAccessHelper<ElementType>::Emplace(
-        this);
+    return RepeatedFieldProxyInternalPrivateAccessHelper<
+        ElementType, kOrProxy>::Emplace(this);
   }
 
   
   
   absl::string_view emplace_back(absl::string_view value) const {
-    return RepeatedFieldProxyInternalPrivateAccessHelper<ElementType>::Emplace(
-        this, value);
+    return RepeatedFieldProxyInternalPrivateAccessHelper<
+        ElementType, kOrProxy>::Emplace(this, value);
   }
 
   
   
   absl::string_view emplace_back(std::string&& value) const {
-    return RepeatedFieldProxyInternalPrivateAccessHelper<ElementType>::Emplace(
-        this, std::move(value));
+    return RepeatedFieldProxyInternalPrivateAccessHelper<
+        ElementType, kOrProxy>::Emplace(this, std::move(value));
   }
 
   
   
   absl::string_view emplace_back(const std::string& value) const {
-    return RepeatedFieldProxyInternalPrivateAccessHelper<ElementType>::Emplace(
-        this, value);
+    return RepeatedFieldProxyInternalPrivateAccessHelper<
+        ElementType, kOrProxy>::Emplace(this, value);
   }
 
   
   
-  absl::string_view emplace_back(const char* value) const {
-    return RepeatedFieldProxyInternalPrivateAccessHelper<ElementType>::Emplace(
-        this, value);
+  absl::string_view emplace_back(const char* PROTOBUF_NONNULL value) const {
+    return RepeatedFieldProxyInternalPrivateAccessHelper<
+        ElementType, kOrProxy>::Emplace(this, value);
   }
 };
 
 
-template <typename ElementType, typename Enable = void>
+template <typename ElementType, bool kOrProxy, typename Enable = void>
 class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxyWithResize {
  public:
+  
+  
+  
   void resize(size_t new_size, const ElementType& value) const {
     auto& field =
-        RepeatedFieldProxyInternalPrivateAccessHelper<ElementType>::field(this);
+        RepeatedFieldProxyInternalPrivateAccessHelper<ElementType,
+                                                      kOrProxy>::field(this);
     field.resize(new_size, value);
   }
 };
 
 
-template <typename ElementType>
+template <typename ElementType, bool kOrProxy>
 class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxyWithResize<
-    ElementType, std::enable_if_t<RepeatedElementTypeIsString<ElementType> &&
-                                  !std::is_same_v<ElementType, absl::Cord>>> {
+    ElementType, kOrProxy,
+    std::enable_if_t<RepeatedElementTypeIsString<ElementType> &&
+                     !std::is_same_v<ElementType, absl::Cord>>> {
  public:
+  
+  
+  
   void resize(size_t new_size, absl::string_view value) const {
     auto& field =
-        RepeatedFieldProxyInternalPrivateAccessHelper<ElementType>::field(this);
+        RepeatedFieldProxyInternalPrivateAccessHelper<ElementType,
+                                                      kOrProxy>::field(this);
     field.resize(new_size, value);
   }
 };
 
 
-template <typename ElementType>
+template <typename ElementType, bool kOrProxy>
 class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxyWithResize<
-    ElementType, std::enable_if_t<std::is_same_v<ElementType, absl::Cord>>> {
+    ElementType, kOrProxy,
+    std::enable_if_t<std::is_same_v<ElementType, absl::Cord>>> {
  public:
+  
+  
+  
   void resize(size_t new_size, const absl::Cord& value) const {
     auto& field =
-        RepeatedFieldProxyInternalPrivateAccessHelper<ElementType>::field(this);
+        RepeatedFieldProxyInternalPrivateAccessHelper<ElementType,
+                                                      kOrProxy>::field(this);
     field.resize(new_size, value);
   }
 };
 
-}  
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename ElementType>
-class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxy final
-    : public internal::RepeatedFieldProxyBase<ElementType>,
-      public internal::RepeatedFieldProxyWithSet<ElementType>,
-      public internal::RepeatedFieldProxyWithPushBack<ElementType>,
-      public internal::RepeatedFieldProxyWithEmplaceBack<ElementType>,
-      public internal::RepeatedFieldProxyWithResize<ElementType> {
+template <typename ElementType, bool kOrProxy>
+class PROTOBUF_DECLSPEC_EMPTY_BASES MutableRepeatedFieldProxyImpl
+    : public internal::RepeatedFieldProxyBase<ElementType, kOrProxy>,
+      public internal::RepeatedFieldProxyWithSet<ElementType, kOrProxy>,
+      public internal::RepeatedFieldProxyWithPushBack<ElementType, kOrProxy>,
+      public internal::RepeatedFieldProxyWithEmplaceBack<ElementType, kOrProxy>,
+      public internal::RepeatedFieldProxyWithResize<ElementType, kOrProxy> {
   static_assert(!std::is_const_v<ElementType>);
 
  protected:
-  using Base = internal::RepeatedFieldProxyBase<ElementType>;
+  using Base = internal::RepeatedFieldProxyBase<ElementType, kOrProxy>;
+  using typename Base::RepeatedFieldType;
 
+  using Base::field;
+
+ public:
   using typename Base::const_iterator;
   using typename Base::iterator;
-  using typename Base::RepeatedFieldType;
   using typename Base::size_type;
 
   using reference =
       typename internal::RepeatedFieldTraits<ElementType>::reference;
 
-  using Base::field;
-
- public:
-  RepeatedFieldProxy(const RepeatedFieldProxy& other) = default;
+  MutableRepeatedFieldProxyImpl(const MutableRepeatedFieldProxyImpl& other) =
+      default;
   
   
-  RepeatedFieldProxy& operator=(const RepeatedFieldProxy&) = delete;
+  MutableRepeatedFieldProxyImpl& operator=(
+      const MutableRepeatedFieldProxyImpl&) = delete;
 
   
   
@@ -449,14 +497,6 @@ class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxy final
   
   
   
-  void assign(RepeatedFieldProxy<const ElementType> other) const {
-    field().CopyFrom(other.field());
-  }
-
-  
-  
-  
-  
   
   template <
       typename Iter,
@@ -473,21 +513,15 @@ class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxy final
     
     
     
-    if constexpr (std::is_base_of<std::forward_iterator_tag,
-                                  typename std::iterator_traits<
-                                      Iter>::iterator_category>::value) {
+    if constexpr (std::is_base_of_v<
+                      std::forward_iterator_tag,
+                      typename std::iterator_traits<Iter>::iterator_category>) {
       int distance = static_cast<int>(std::distance(begin, end));
       field().ReserveWithArena(arena(), distance);
     }
     for (; begin != end; ++begin) {
       this->push_back(*begin);
     }
-  }
-
-  
-  
-  void move_assign(RepeatedFieldProxy<ElementType> other) const {
-    field() = std::move(other.field());
   }
 
   
@@ -500,34 +534,20 @@ class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxy final
   
   
   
-  
-  
-  
-  
-  void swap(RepeatedFieldProxy other) const { field().Swap(&other.field()); }
-
-  
-  
-  
   void resize(size_t new_size) const { field().resize(new_size); }
 
   
   
+  using internal::RepeatedFieldProxyWithResize<ElementType, kOrProxy>::resize;
 
-  
-  
-  
-  using internal::RepeatedFieldProxyWithResize<ElementType>::resize;
-
- private:
-  friend RepeatedFieldProxy<const ElementType>;
-
-  friend internal::RepeatedFieldProxyInternalPrivateAccessHelper<ElementType>;
-
-  RepeatedFieldProxy(RepeatedFieldType& field, Arena* arena)
+ protected:
+  MutableRepeatedFieldProxyImpl(RepeatedFieldType& field,
+                                Arena* PROTOBUF_NULLABLE arena)
       : Base(field), arena_(arena) {
     ABSL_DCHECK_EQ(arena, field.GetArena());
   }
+
+  Arena* PROTOBUF_NULLABLE arena() const { return arena_; }
 
   
   
@@ -544,21 +564,20 @@ class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxy final
     return *field().EmplaceWithArena(arena(), std::forward<Args>(args)...);
   }
 
-  Arena* arena() const { return arena_; }
+ private:
+  friend RepeatedFieldProxyInternalPrivateAccessHelper<ElementType, kOrProxy>;
 
-  Arena* const arena_;
+  Arena* PROTOBUF_NULLABLE const arena_;
 };
 
-template <typename ElementType>
-class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxy<const ElementType> final
-    : public internal::RepeatedFieldProxyBase<const ElementType> {
+template <typename ElementType, bool kOrProxy>
+class PROTOBUF_DECLSPEC_EMPTY_BASES ConstRepeatedFieldProxyImpl
+    : public internal::RepeatedFieldProxyBase<const ElementType, kOrProxy> {
   
   
 
  protected:
-  using Base = internal::RepeatedFieldProxyBase<const ElementType>;
-  using typename Base::const_reference;
-  using typename Base::size_type;
+  using Base = internal::RepeatedFieldProxyBase<const ElementType, kOrProxy>;
 
   
   
@@ -571,15 +590,16 @@ class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxy<const ElementType> final
   using Base::field;
 
  public:
-  RepeatedFieldProxy(const RepeatedFieldProxy& other) = default;
-  RepeatedFieldProxy& operator=(const RepeatedFieldProxy&) = default;
+  ConstRepeatedFieldProxyImpl()
+      : Base(*internal::RawPtr<const typename Base::RepeatedFieldType>()) {}
 
-  
-  
-  
-  
-  RepeatedFieldProxy(RepeatedFieldProxy<ElementType> other)
-      : Base(other.field()) {}
+  using typename Base::const_reference;
+  using typename Base::size_type;
+
+  ConstRepeatedFieldProxyImpl(const ConstRepeatedFieldProxyImpl& other) =
+      default;
+  ConstRepeatedFieldProxyImpl& operator=(const ConstRepeatedFieldProxyImpl&) =
+      default;
 
   
   
@@ -588,16 +608,108 @@ class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxy<const ElementType> final
   }
 
  private:
-  friend RepeatedFieldProxy<ElementType>;
-
-  friend internal::RepeatedFieldProxyInternalPrivateAccessHelper<
-      const ElementType>;
-
   
   
 };
 
-namespace internal {
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename ElementType>
+class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxy final
+    : public internal::MutableRepeatedFieldProxyImpl<ElementType,
+                                                     false> {
+  static_assert(!std::is_const_v<ElementType>);
+
+ private:
+  using Base = internal::MutableRepeatedFieldProxyImpl<ElementType,
+                                                       false>;
+  using Base::Base;
+  using Base::field;
+
+ public:
+  
+  
+  
+  void assign(RepeatedFieldProxy<const ElementType> other) const {
+    field().CopyFrom(other.field());
+  }
+
+  
+  
+  using Base::assign;
+
+  
+  
+  void move_assign(RepeatedFieldProxy<ElementType> other) const {
+    field() = std::move(other.field());
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  void swap(RepeatedFieldProxy other) const { field().Swap(&other.field()); }
+
+ private:
+  friend RepeatedFieldProxy<const ElementType>;
+  friend internal::RepeatedFieldOrProxy<ElementType>;
+  friend internal::RepeatedFieldOrProxy<const ElementType>;
+  friend internal::RepeatedFieldProxyInternalPrivateAccessHelper<
+      ElementType, false>;
+};
+
+template <typename ElementType>
+class PROTOBUF_DECLSPEC_EMPTY_BASES RepeatedFieldProxy<const ElementType> final
+    : public internal::ConstRepeatedFieldProxyImpl<ElementType,
+                                                   false> {
+  
+  
+
+ private:
+  using Base = internal::ConstRepeatedFieldProxyImpl<ElementType,
+                                                     false>;
+
+  
+  
+  
+  
+  
+  
+  using Base::Base;
+
+ public:
+  RepeatedFieldProxy() = default;
+
+  RepeatedFieldProxy(const RepeatedFieldProxy& other) = default;
+  RepeatedFieldProxy& operator=(const RepeatedFieldProxy& other) = default;
+
+  
+  
+  
+  
+  RepeatedFieldProxy(RepeatedFieldProxy<ElementType> other)
+      : Base(other.field()) {}
+
+ private:
+  friend RepeatedFieldProxy<ElementType>;
+  friend internal::RepeatedFieldOrProxy<const ElementType>;
+  friend internal::RepeatedFieldProxyInternalPrivateAccessHelper<
+      const ElementType, false>;
+};
 
 
 
@@ -606,19 +718,26 @@ namespace internal {
 static_assert(sizeof(RepeatedFieldProxy<int>) == 2 * sizeof(void*));
 static_assert(sizeof(RepeatedFieldProxy<const int>) == sizeof(void*));
 
+namespace internal {
 
 
 
 
-template <typename ElementType>
+
+template <typename ElementType, bool kOrProxy = false>
 class RepeatedFieldProxyInternalPrivateAccessHelper {
+  using ProxyType =
+      std::conditional_t<kOrProxy, RepeatedFieldOrProxy<ElementType>,
+                         RepeatedFieldProxy<ElementType>>;
+
   
   
   
-  template <template <typename...> class C>
-  static RepeatedFieldProxy<ElementType> ToProxyType(
-      const C<ElementType, void>* proxy) {
-    return *static_cast<const RepeatedFieldProxy<ElementType>*>(proxy);
+  template <typename C>
+  static MutableRepeatedFieldProxyImpl<ElementType, kOrProxy> ToProxyType(
+      const C* PROTOBUF_NONNULL proxy) {
+    return *static_cast<
+        const MutableRepeatedFieldProxyImpl<ElementType, kOrProxy>*>(proxy);
   }
 
  public:
@@ -627,27 +746,224 @@ class RepeatedFieldProxyInternalPrivateAccessHelper {
     return RepeatedFieldProxy<ElementType>(std::forward<Args>(args)...);
   }
 
-  static auto& field(const RepeatedFieldProxy<ElementType>& proxy) {
-    return proxy.field();
-  }
+  static auto& field(const ProxyType& proxy) { return proxy.field(); }
 
   
   
   
-  template <template <typename...> class C>
-  static auto& field(const C<ElementType, void>* proxy) {
+  template <typename C>
+  static auto& field(const C* PROTOBUF_NONNULL proxy) {
     return ToProxyType(proxy).field();
   }
 
-  template <template <typename...> class C, typename... Args>
-  static auto& Add(const C<ElementType, void>* proxy, Args&&... args) {
+  template <typename C, typename... Args>
+  static auto& Add(const C* PROTOBUF_NONNULL proxy, Args&&... args) {
     return ToProxyType(proxy).Add(std::forward<Args>(args)...);
   }
-  template <template <typename...> class C, typename... Args>
-  static auto& Emplace(const C<ElementType, void>* proxy, Args&&... args) {
+  template <typename C, typename... Args>
+  static auto& Emplace(const C* PROTOBUF_NONNULL proxy, Args&&... args) {
     return ToProxyType(proxy).Emplace(std::forward<Args>(args)...);
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename ElementType>
+class RepeatedFieldOrProxy final
+    : public internal::MutableRepeatedFieldProxyImpl<ElementType,
+                                                     true> {
+  
+  static_assert(!std::is_const_v<ElementType>);
+
+ private:
+  using Base = internal::MutableRepeatedFieldProxyImpl<ElementType,
+                                                       true>;
+  using RepeatedFieldType = typename Base::RepeatedFieldType;
+
+  
+  using Base::Base;
+
+  using Base::field;
+
+ public:
+  
+  
+  
+  RepeatedFieldOrProxy(RepeatedFieldType& field)
+      : Base(field, field.GetArena()) {}
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  PROTOBUF_REFACTOR_INLINE()
+  
+  RepeatedFieldOrProxy(RepeatedFieldType* PROTOBUF_NONNULL field)
+      : RepeatedFieldOrProxy(*field) {}
+
+  
+  
+  
+  
+  RepeatedFieldOrProxy(RepeatedFieldProxy<ElementType> proxy)
+      : Base(proxy.field(), proxy.arena()) {}
+
+  
+  
+  
+  explicit operator std::remove_const_t<RepeatedFieldType>() const {
+    return RepeatedFieldType(static_cast<const Base&>(*this));
+  }
+
+  
+  
+  
+
+  
+  
+  
+  void assign(RepeatedFieldOrProxy<const ElementType> other) const {
+    Base::field().CopyFrom(other.field());
+  }
+
+  
+  
+  using Base::assign;
+
+  
+  
+  
+  
+  
+  
+  
+  void move_assign(RepeatedFieldOrProxy other) const {
+    field() = std::move(other.field());
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  void swap(RepeatedFieldOrProxy other) const {
+    Base::field().Swap(&other.field());
+  }
+
+ private:
+  friend RepeatedFieldProxy<ElementType>;
+  friend RepeatedFieldOrProxy<const ElementType>;
+  friend internal::RepeatedFieldProxyInternalPrivateAccessHelper<
+      ElementType, true>;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename ElementType>
+class RepeatedFieldOrProxy<const ElementType> final
+    : public internal::ConstRepeatedFieldProxyImpl<ElementType,
+                                                   true> {
+  using Base = internal::ConstRepeatedFieldProxyImpl<ElementType,
+                                                     true>;
+  using RepeatedFieldType = typename Base::RepeatedFieldType;
+
+  
+  using Base::Base;
+
+  using Base::field;
+
+ public:
+  RepeatedFieldOrProxy() = default;
+
+  RepeatedFieldOrProxy(const RepeatedFieldOrProxy& other) = default;
+  RepeatedFieldOrProxy& operator=(const RepeatedFieldOrProxy& other) = default;
+
+  
+  
+  
+  
+  RepeatedFieldOrProxy(RepeatedFieldOrProxy<ElementType> other)
+      : Base(other.field()) {}
+
+  
+  
+  
+  RepeatedFieldOrProxy(const RepeatedFieldType& field) : Base(field) {}
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  PROTOBUF_REFACTOR_INLINE()
+  
+  RepeatedFieldOrProxy(RepeatedFieldType* PROTOBUF_NONNULL field)
+      : RepeatedFieldOrProxy(*field) {}
+
+  
+  
+  
+  
+  RepeatedFieldOrProxy(RepeatedFieldProxy<ElementType> proxy)
+      : Base(proxy.field()) {}
+
+  
+  RepeatedFieldOrProxy(RepeatedFieldProxy<const ElementType> proxy)
+      : Base(proxy.field()) {}
+
+  
+  
+  
+  explicit operator RepeatedFieldType() const {
+    return RepeatedFieldType(static_cast<const Base&>(*this));
+  }
+
+ private:
+  friend RepeatedFieldOrProxy<ElementType>;
+};
+
+static_assert(sizeof(RepeatedFieldOrProxy<int>) ==
+                  sizeof(RepeatedFieldProxy<int>),
+              "Mutable `RepeatedFieldOrProxy` is not the expected size");
+static_assert(sizeof(RepeatedFieldOrProxy<const int>) ==
+                  sizeof(RepeatedFieldProxy<const int>),
+              "Const `RepeatedFieldOrProxy` is not the expected size");
 
 }  
 
@@ -655,16 +971,34 @@ class RepeatedFieldProxyInternalPrivateAccessHelper {
 template <int&... DeductionBarrier, typename T, typename Pred>
 size_t erase_if(RepeatedFieldProxy<T> cont, Pred pred) {
   return google::protobuf::erase_if(
-      internal::RepeatedFieldProxyInternalPrivateAccessHelper<T>::field(cont),
+      internal::RepeatedFieldProxyInternalPrivateAccessHelper<
+          T, false>::field(cont),
       pred);
 }
 
 
 template <int&... DeductionBarrier, typename T, typename U>
 size_t erase(RepeatedFieldProxy<T> cont, const U& value) {
-  return google::protobuf::erase(
-      internal::RepeatedFieldProxyInternalPrivateAccessHelper<T>::field(cont),
-      value);
+  return google::protobuf::erase(internal::RepeatedFieldProxyInternalPrivateAccessHelper<
+                           T, false>::field(cont),
+                       value);
+}
+
+
+template <int&... DeductionBarrier, typename T, typename Pred>
+size_t erase_if(internal::RepeatedFieldOrProxy<T> cont, Pred pred) {
+  return google::protobuf::erase_if(
+      internal::RepeatedFieldProxyInternalPrivateAccessHelper<
+          T, true>::field(cont),
+      pred);
+}
+
+
+template <int&... DeductionBarrier, typename T, typename U>
+size_t erase(internal::RepeatedFieldOrProxy<T> cont, const U& value) {
+  return google::protobuf::erase(internal::RepeatedFieldProxyInternalPrivateAccessHelper<
+                           T, true>::field(cont),
+                       value);
 }
 
 
@@ -686,6 +1020,28 @@ void c_stable_sort(RepeatedFieldProxy<T> cont, Compare cmp) {
 
 template <int&... DeductionBarrier, typename T>
 void c_stable_sort(RepeatedFieldProxy<T> cont) {
+  google::protobuf::stable_sort(cont.begin(), cont.end());
+}
+
+
+template <int&..., typename T, typename Compare>
+void c_sort(internal::RepeatedFieldOrProxy<T> cont, Compare cmp) {
+  google::protobuf::sort(cont.begin(), cont.end(), cmp);
+}
+
+template <int&..., typename T>
+void c_sort(internal::RepeatedFieldOrProxy<T> cont) {
+  google::protobuf::sort(cont.begin(), cont.end());
+}
+
+template <int&..., typename T, typename Compare>
+void c_stable_sort(internal::RepeatedFieldOrProxy<T> cont, Compare cmp) {
+  google::protobuf::stable_sort(cont.begin(), cont.end(), cmp);
+}
+
+
+template <int&..., typename T>
+void c_stable_sort(internal::RepeatedFieldOrProxy<T> cont) {
   google::protobuf::stable_sort(cont.begin(), cont.end());
 }
 
