@@ -35,14 +35,12 @@ namespace js {
 
 
 
-
 enum class TryNoteKind : uint8_t {
   Catch,
   Finally,
   ForIn,
   Destructuring,
   ForOf,
-  ForOfIterClose,
   Loop
 };
 

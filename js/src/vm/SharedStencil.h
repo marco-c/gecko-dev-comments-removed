@@ -17,9 +17,8 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
-#include "frontend/SourceNotes.h"  
-#include "frontend/TypedIndex.h"   
-
+#include "frontend/SourceNotes.h"      
+#include "frontend/TypedIndex.h"       
 #include "js/AllocPolicy.h"            
 #include "js/ColumnNumber.h"           
 #include "js/TypeDecls.h"              
@@ -84,7 +83,6 @@ struct TryNote {
         return true;
       case TryNoteKind::Catch:
       case TryNoteKind::Finally:
-      case TryNoteKind::ForOfIterClose:
       case TryNoteKind::Destructuring:
         return false;
     }

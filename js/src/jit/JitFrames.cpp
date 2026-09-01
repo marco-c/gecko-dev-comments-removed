@@ -377,8 +377,6 @@ static void HandleExceptionIon(JSContext* cx, const InlineFrameIterator& frame,
       case TryNoteKind::Loop:
         break;
 
-      
-      
       default:
         MOZ_CRASH("Unexpected try note");
     }
@@ -575,8 +573,6 @@ static bool ProcessTryNotesBaseline(JSContext* cx, const JSJitFrameIter& frame,
       case TryNoteKind::Loop:
         break;
 
-      
-      
       default:
         MOZ_CRASH("Invalid try note");
     }

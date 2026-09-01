@@ -1272,8 +1272,6 @@ static HandleErrorContinuation ProcessTryNotes(JSContext* cx,
       case TryNoteKind::Loop:
         break;
 
-      
-      
       default:
         MOZ_CRASH("Invalid try note");
     }
