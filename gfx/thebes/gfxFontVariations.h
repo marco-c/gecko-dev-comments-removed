@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFX_FONT_VARIATIONS_H
 #define GFX_FONT_VARIATIONS_H
 
@@ -24,18 +22,12 @@ struct gfxFontVariationAxis {
 };
 
 
-struct gfxFontVariationValue {
-  uint32_t mAxis;
-  float mValue;
-};
-
-
 
 
 
 struct gfxFontVariationInstance {
   nsCString mName;
-  CopyableTArray<gfxFontVariationValue> mValues;
+  CopyableTArray<gfxFontVariation> mValues;
 };
 
 #endif
