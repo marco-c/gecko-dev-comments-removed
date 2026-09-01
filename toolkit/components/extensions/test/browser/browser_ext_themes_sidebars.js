@@ -1,6 +1,14 @@
 "use strict";
 
 
+const novaEnabled = Services.prefs.getBoolPref(
+  "browser.nova.enabled",
+  true 
+);
+
+info(`Run with Nova browser styles ${novaEnabled ? "enabled" : "disabled"}`);
+
+
 const LIGHT_SALMON = "#ffa07a";
 
 
@@ -9,15 +17,6 @@ const { SidebarTestUtils } = ChromeUtils.importESModule(
 );
 SidebarTestUtils.init(this);
 SidebarTestUtils.restoreStateAtCleanup(window);
-
-add_setup(async () => {
-  
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["sidebar.updatedBookmarks.enabled", false]],
-  });
-});
 
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref(
@@ -291,6 +290,10 @@ async function check_themes() {
   }
 }
 add_task(async function test_old_sidebar_colors() {
+  if (novaEnabled) {
+    info("SKIP unsupported old sidebar when Nova is enabled");
+    return;
+  }
   await SpecialPowers.pushPrefEnv({
     set: [["sidebar.revamp", false]],
   });
@@ -299,6 +302,10 @@ add_task(async function test_old_sidebar_colors() {
 });
 
 add_task(async function test_old_sidebar_border_color() {
+  if (novaEnabled) {
+    info("SKIP unsupported old sidebar when Nova is enabled");
+    return;
+  }
   await SpecialPowers.pushPrefEnv({
     set: [["sidebar.revamp", false]],
   });
@@ -377,11 +384,16 @@ add_task(async function test_support_sidebar_border_color() {
 
   await extension.startup();
 
-  const sidebarPanel = document.getElementById("sidebar");
+  const sidebarPanel = document.getElementById(
+    novaEnabled ? "sidebar-box" : "sidebar"
+  );
   const sidebarPanelCS = window.getComputedStyle(sidebarPanel);
 
+  
   is(
-    sidebarPanelCS.outlineColor,
+    novaEnabled
+      ? sidebarPanelCS.borderBlockStartColor
+      : sidebarPanelCS.outlineColor,
     hexToCSS(LIGHT_SALMON),
     "The card border of the history sidebar panel should be colored properly"
   );
