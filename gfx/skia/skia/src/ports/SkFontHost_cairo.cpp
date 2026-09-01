@@ -403,7 +403,19 @@ public:
         return result;
     }
 
-    void getPostScriptGlyphNames(SkString*) const override {}
+    void getPostScriptGlyphNames(SkString* dstArray) const override
+    {
+        mozilla_LockSharedFTFace(fFTFaceContext, nullptr);
+        if (FT_HAS_GLYPH_NAMES(fFTFace)) {
+            for (FT_Long gID = 0; gID < fFTFace->num_glyphs; ++gID) {
+                char glyphName[128];  
+                if (!FT_Get_Glyph_Name(fFTFace, gID, glyphName, sizeof(glyphName))) {
+                    dstArray[gID] = glyphName;
+                }
+            }
+        }
+        mozilla_UnlockSharedFTFace(fFTFaceContext);
+    }
 
     void getGlyphToUnicodeMap(SkSpan<SkUnichar> dstArray) const override
     {
@@ -548,7 +560,19 @@ SkScalerContext_CairoFT::SkScalerContext_CairoFT(
     }
 
     if ((fRec.fFlags & SkScalerContext::kEmbeddedBitmapText_Flag) == 0) {
-        loadFlags |= FT_LOAD_NO_BITMAP;
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        const bool isBitmapOnly = fFTFace && !FT_IS_SCALABLE(fFTFace);
+        if (!isBitmapOnly) {
+            loadFlags |= FT_LOAD_NO_BITMAP;
+        }
     }
 
     
