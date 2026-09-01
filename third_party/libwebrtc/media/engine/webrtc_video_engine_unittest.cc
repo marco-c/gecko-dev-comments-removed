@@ -2689,6 +2689,26 @@ TEST_F(WebRtcVideoChannelBaseTest, RequestEncoderSwitchWithNullopt) {
   EXPECT_EQ("VP8", codec->name);
 }
 
+TEST_F(WebRtcVideoChannelBaseTest, RequestEncoderSwitchWithNoCodecs) {
+  VideoSenderParameters parameters;
+  parameters.codecs.push_back(GetEngineCodec("VP9"));
+  EXPECT_TRUE(send_channel_->SetSenderParameters(parameters));
+
+  std::optional<Codec> codec = send_channel_->GetSendCodec();
+  ASSERT_TRUE(codec);
+  EXPECT_EQ("VP9", codec->name);
+
+  
+  
+  
+  SendImpl()->RequestEncoderSwitch(std::nullopt,
+                                   false);
+  time_controller_.AdvanceTime(kFrameDuration);
+  codec = send_channel_->GetSendCodec();
+  ASSERT_TRUE(codec);
+  EXPECT_EQ("VP9", codec->name);
+}
+
 TEST_F(WebRtcVideoChannelBaseTest, RequestEncoderSwitchDefaultFallback) {
   VideoSenderParameters parameters;
   parameters.codecs.push_back(GetEngineCodec("VP9"));
