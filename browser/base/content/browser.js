@@ -2111,6 +2111,7 @@ var XULBrowserWindow = {
         aWebProgress.isTopLevel
       ) {
         this.busyUI = true;
+        StatusPanel.update();
 
         
         
