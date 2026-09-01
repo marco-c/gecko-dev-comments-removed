@@ -82,18 +82,6 @@ async function setup() {
     await DoHController._uninit();
     await DoHConfigController._uninit();
   } catch (e) {}
-
-  
-  
-  
-  
-  
-  for (let pref of Object.values(prefs)) {
-    if (pref != prefs.FIRST_RUN_PREF) {
-      Services.prefs.clearUserPref(pref);
-    }
-  }
-
   SpecialPowers.pushPrefEnv({
     set: [["security.notification_enable_delay", 0]],
   });
