@@ -404,7 +404,7 @@ void HttpChannelParent::InvokeEarlyHintPreloader(
   MOZ_ASSERT(NS_IsMainThread());
 
   ContentParentId cpId =
-      static_cast<ContentParent*>(Manager()->Manager())->ChildID();
+      mozilla::ipc::ActorCast<ContentParent>(Manager()->Manager())->ChildID();
 
   RefPtr<EarlyHintRegistrar> ehr = EarlyHintRegistrar::GetOrCreate();
   if (NS_SUCCEEDED(rv)) {
@@ -920,8 +920,8 @@ mozilla::ipc::IPCResult HttpChannelParent::RecvRedirect2Verify(
             return false;
           }
           nsCOMPtr<nsIPrincipal> principal = principalOrErr.unwrap();
-          if (!cp->ValidatePrincipal(principal,
-                                     {ValidatePrincipalOptions::AllowSystem})) {
+          if (!cp->ValidatePrincipal(
+                  principal, {ValidatePrincipalOptions::AllowSystemIfLoaded})) {
             ContentParent::LogAndAssertFailedPrincipalValidationInfo(principal,
                                                                      __func__);
             return false;

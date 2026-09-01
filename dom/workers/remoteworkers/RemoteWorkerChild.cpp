@@ -11,11 +11,13 @@
 #include "mozilla/ArrayAlgorithm.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/Components.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/PermissionManager.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Services.h"
+#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/FetchEventOpProxyChild.h"
 #include "mozilla/dom/IndexedDatabaseManager.h"
 #include "mozilla/dom/MessagePort.h"
@@ -130,6 +132,69 @@ class RemoteWorkerCSPEventListener final : public nsICSPEventListener {
 
 NS_IMPL_ISUPPORTS(RemoteWorkerCSPEventListener, nsICSPEventListener)
 
+
+
+class LoadedOriginAddedObserver final : public nsIObserver {
+ public:
+  NS_DECL_ISUPPORTS
+
+  static constexpr const char* kTopic = "content-loaded-origin-added";
+
+  LoadedOriginAddedObserver(nsIPrincipal* aPrincipal,
+                            nsISerialEventTarget* aWorkerTarget,
+                            nsIRunnable* aWorkerInitRunnable)
+      : mPrincipal(aPrincipal),
+        mWorkerTarget(aWorkerTarget),
+        mWorkerInitRunnable(aWorkerInitRunnable) {}
+
+  nsresult CallWhenReady() {
+    RefPtr<LoadedOriginSet> loadedOrigins = CurrentLoadedOriginSet();
+    if (!loadedOrigins ||
+        loadedOrigins->Has(mPrincipal, LoadedOriginSet::Level::Full)) {
+      return Dispatch();
+    }
+
+    MOZ_ASSERT(
+        loadedOrigins->Has(mPrincipal, LoadedOriginSet::Level::Tentative),
+        "Our caller must have previously marked as tentative");
+
+    
+    
+    nsCOMPtr<nsIObserverService> obs = components::Observer::Service();
+    return obs ? obs->AddObserver(this, kTopic,  false)
+               : NS_ERROR_NOT_AVAILABLE;
+  }
+
+  NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
+                     const char16_t* aData) override {
+    MOZ_ASSERT(!strcmp(aTopic, kTopic));
+    nsCOMPtr<nsIPrincipal> principal = do_QueryInterface(aSubject);
+    if (mPrincipal && mPrincipal->Equals(principal)) {
+      Dispatch();
+
+      nsCOMPtr<nsIObserverService> obs = components::Observer::Service();
+      obs->RemoveObserver(this, kTopic);
+    }
+    return NS_OK;
+  }
+
+ private:
+  ~LoadedOriginAddedObserver() = default;
+
+  nsresult Dispatch() {
+    nsresult rv = mWorkerTarget->Dispatch(mWorkerInitRunnable.forget());
+    mWorkerTarget = nullptr;
+    mPrincipal = nullptr;
+    return rv;
+  }
+
+  nsCOMPtr<nsIPrincipal> mPrincipal;
+  nsCOMPtr<nsISerialEventTarget> mWorkerTarget;
+  nsCOMPtr<nsIRunnable> mWorkerInitRunnable;
+};
+
+NS_IMPL_ISUPPORTS(LoadedOriginAddedObserver, nsIObserver)
+
 }  
 
 RemoteWorkerChild::RemoteWorkerChild(const RemoteWorkerData& aData)
@@ -236,6 +301,15 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(
   }
 
   nsCOMPtr<nsIPrincipal> principal = principalOrErr.unwrap();
+
+  
+  
+  
+  
+  
+  if (RefPtr<LoadedOriginSet> loadedOrigins = CurrentLoadedOriginSet()) {
+    loadedOrigins->AddTentative(principal);
+  }
 
   auto loadingPrincipalOrErr =
       PrincipalInfoToPrincipal(aData.loadingPrincipalInfo());
@@ -417,25 +491,15 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(
     lock->as<Pending>().mWorkerPrivate = std::move(workerPrivate);
   }
 
-  if (mIsServiceWorker) {
-    nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-        __func__, [workerTarget,
-                   initializeWorkerRunnable = std::move(runnable)]() mutable {
-          (void)NS_WARN_IF(NS_FAILED(
-              workerTarget->Dispatch(initializeWorkerRunnable.forget())));
-        });
-
-    RefPtr<PermissionManager> permissionManager =
-        PermissionManager::GetInstance();
-    if (!permissionManager) {
-      return NS_ERROR_FAILURE;
-    }
-    permissionManager->WhenPermissionsAvailable(principal, r);
-  } else {
-    if (NS_WARN_IF(NS_FAILED(workerTarget->Dispatch(runnable.forget())))) {
-      rv = NS_ERROR_FAILURE;
-      return rv;
-    }
+  
+  
+  
+  
+  auto loadedOriginObs =
+      MakeRefPtr<LoadedOriginAddedObserver>(principal, workerTarget, runnable);
+  if (NS_WARN_IF(NS_FAILED(loadedOriginObs->CallWhenReady()))) {
+    rv = NS_ERROR_FAILURE;
+    return rv;
   }
 
   scopeExit.release();
@@ -926,7 +990,7 @@ IPCResult RemoteWorkerChild::RecvPFetchEventOpProxyConstructor(
     const ParentToChildServiceWorkerFetchEventOpArgs& aArgs) {
   MOZ_ASSERT(aActor);
 
-  (static_cast<FetchEventOpProxyChild*>(aActor))->Initialize(aArgs);
+  mozilla::ipc::ActorCast<FetchEventOpProxyChild>(aActor)->Initialize(aArgs);
 
   return IPC_OK();
 }

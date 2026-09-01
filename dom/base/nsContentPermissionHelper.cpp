@@ -118,7 +118,8 @@ void ContentPermissionRequestParent::ActorDestroy(ActorDestroyReason why) {
 bool ContentPermissionRequestParent::IsBeingDestroyed() {
   
   
-  ContentParent* contentParent = static_cast<ContentParent*>(Manager());
+  ContentParent* contentParent =
+      mozilla::ipc::ActorCast<ContentParent>(Manager());
   return !contentParent->IsAlive();
 }
 

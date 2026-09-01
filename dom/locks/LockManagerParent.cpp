@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "LockManagerParent.h"
 
 #include "LockRequestParent.h"
@@ -124,7 +122,8 @@ IPCResult LockManagerParent::RecvQuery(QueryResolver&& aResolver) {
       info.mMode.Construct(request->Data().lockMode());
       info.mName.Construct(request->Data().name());
       info.mClientId.Construct(
-          static_cast<LockManagerParent*>(request->Manager())->mClientId);
+          mozilla::ipc::ActorCast<LockManagerParent>(request->Manager())
+              ->mClientId);
       if (!snapshot.mPending.Value().AppendElement(info, mozilla::fallible)) {
         return IPC_FAIL(this, "Out of memory");
       };
@@ -135,7 +134,8 @@ IPCResult LockManagerParent::RecvQuery(QueryResolver&& aResolver) {
     info.mMode.Construct(request->Data().lockMode());
     info.mName.Construct(request->Data().name());
     info.mClientId.Construct(
-        static_cast<LockManagerParent*>(request->Manager())->mClientId);
+        mozilla::ipc::ActorCast<LockManagerParent>(request->Manager())
+            ->mClientId);
     if (!snapshot.mHeld.Value().AppendElement(info, mozilla::fallible)) {
       return IPC_FAIL(this, "Out of memory");
     };

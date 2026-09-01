@@ -487,7 +487,7 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvCreateFileSystemManagerParent(
   
   EnumSet<dom::ValidatePrincipalOptions> options;
   if (BackgroundParent::GetRemoteType(this) == INFERENCE_REMOTE_TYPE) {
-    options += dom::ValidatePrincipalOptions::AllowSystem;
+    options += dom::ValidatePrincipalOptions::AllowSystemIfLoaded;
   }
   if (!BackgroundParent::ValidatePrincipalInfo(this, aPrincipalInfo, options)) {
     aResolver(NS_ERROR_FAILURE);
@@ -513,8 +513,9 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvCreateWebTransportParent(
     return IPC_FAIL(this, "CreateWebTransport aPrincipal is invalid");
   }
 
-  if (!dom::ClientIsValidPrincipalInfo(aClientInfo.principalInfo(),
-                                       BackgroundParent::GetRemoteType(this))) {
+  if (!dom::ClientIsValidPrincipalInfo(
+          aClientInfo.principalInfo(),
+          BackgroundParent::GetLoadedOrigins(this))) {
     return IPC_FAIL(
         this,
         "CreateWebTransport ClientInfo principal not valid for remote type");
@@ -614,15 +615,15 @@ IPCResult BackgroundParentImpl::RecvPSharedWorkerConstructor(
   }
 
   mozilla::dom::SharedWorkerParent* actor =
-      static_cast<mozilla::dom::SharedWorkerParent*>(aActor);
+      mozilla::ipc::ActorCast<mozilla::dom::SharedWorkerParent>(aActor);
   actor->Initialize(aData, aWindowID, aPortIdentifier);
   return IPC_OK();
 }
 
 bool BackgroundParentImpl::DeallocPSharedWorkerParent(
     mozilla::dom::PSharedWorkerParent* aActor) {
-  RefPtr<mozilla::dom::SharedWorkerParent> actor =
-      dont_AddRef(static_cast<mozilla::dom::SharedWorkerParent*>(aActor));
+  RefPtr<mozilla::dom::SharedWorkerParent> actor = dont_AddRef(
+      mozilla::ipc::ActorCast<mozilla::dom::SharedWorkerParent>(aActor));
   return true;
 }
 
@@ -651,7 +652,8 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvPFileCreatorConstructor(
     isFileRemoteType = parent->GetRemoteType() == FILE_REMOTE_TYPE;
   }
 
-  dom::FileCreatorParent* actor = static_cast<dom::FileCreatorParent*>(aActor);
+  dom::FileCreatorParent* actor =
+      mozilla::ipc::ActorCast<dom::FileCreatorParent>(aActor);
 
   
   
@@ -668,7 +670,7 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvPFileCreatorConstructor(
 bool BackgroundParentImpl::DeallocPFileCreatorParent(
     dom::PFileCreatorParent* aActor) {
   RefPtr<dom::FileCreatorParent> actor =
-      dont_AddRef(static_cast<dom::FileCreatorParent*>(aActor));
+      dont_AddRef(mozilla::ipc::ActorCast<dom::FileCreatorParent>(aActor));
   return true;
 }
 
@@ -680,7 +682,7 @@ BackgroundParentImpl::AllocPTemporaryIPCBlobParent() {
 mozilla::ipc::IPCResult BackgroundParentImpl::RecvPTemporaryIPCBlobConstructor(
     dom::PTemporaryIPCBlobParent* aActor) {
   dom::TemporaryIPCBlobParent* actor =
-      static_cast<dom::TemporaryIPCBlobParent*>(aActor);
+      mozilla::ipc::ActorCast<dom::TemporaryIPCBlobParent>(aActor);
   return actor->CreateAndShareFile();
 }
 
@@ -854,8 +856,8 @@ bool BackgroundParentImpl::DeallocPCookieStoreParent(
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aActor);
 
-  RefPtr<mozilla::dom::CookieStoreParent> actor =
-      dont_AddRef(static_cast<mozilla::dom::CookieStoreParent*>(aActor));
+  RefPtr<mozilla::dom::CookieStoreParent> actor = dont_AddRef(
+      mozilla::ipc::ActorCast<mozilla::dom::CookieStoreParent>(aActor));
   return true;
 }
 
@@ -875,8 +877,8 @@ bool BackgroundParentImpl::DeallocPServiceWorkerManagerParent(
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aActor);
 
-  RefPtr<dom::ServiceWorkerManagerParent> parent =
-      dont_AddRef(static_cast<dom::ServiceWorkerManagerParent*>(aActor));
+  RefPtr<dom::ServiceWorkerManagerParent> parent = dont_AddRef(
+      mozilla::ipc::ActorCast<dom::ServiceWorkerManagerParent>(aActor));
   MOZ_ASSERT(parent);
   return true;
 }
@@ -924,7 +926,7 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvPMessagePortConstructor(
   AssertIsInMainProcess();
   AssertIsOnBackgroundThread();
 
-  MessagePortParent* mp = static_cast<MessagePortParent*>(aActor);
+  MessagePortParent* mp = mozilla::ipc::ActorCast<MessagePortParent>(aActor);
   if (!mp->Entangle(aDestinationUUID, aSequenceID)) {
     return IPC_FAIL_NO_REASON(this);
   }
@@ -937,7 +939,7 @@ bool BackgroundParentImpl::DeallocPMessagePortParent(
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aActor);
 
-  delete static_cast<MessagePortParent*>(aActor);
+  delete mozilla::ipc::ActorCast<MessagePortParent>(aActor);
   return true;
 }
 
@@ -1235,8 +1237,7 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvCreateMLSTransaction(
 
   RefPtr<ThreadsafeContentParentHandle> parent =
       BackgroundParent::GetContentParentHandle(this);
-  if (parent && !dom::ValidatePrincipalCouldPotentiallyBeLoadedBy(
-                    aPrincipal, parent->GetRemoteType())) {
+  if (parent && !parent->ValidatePrincipal(aPrincipal)) {
     dom::ContentParent::LogAndAssertFailedPrincipalValidationInfo(aPrincipal,
                                                                   __func__);
     return IPC_FAIL(this, "Principal validation failed");
@@ -1369,8 +1370,9 @@ BackgroundParentImpl::RecvPServiceWorkerRegistrationConstructor(
     return IPC_FAIL(this, "Invalid principal for PServiceWorkerRegistration");
   }
 
-  if (!dom::ClientIsValidPrincipalInfo(aForClient.principalInfo(),
-                                       BackgroundParent::GetRemoteType(this))) {
+  if (!dom::ClientIsValidPrincipalInfo(
+          aForClient.principalInfo(),
+          BackgroundParent::GetLoadedOrigins(this))) {
     return IPC_FAIL(this, "Invalid ClientInfo for PServiceWorkerRegistration");
   }
 
