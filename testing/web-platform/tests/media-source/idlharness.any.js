@@ -4,12 +4,20 @@
 
 
 
+
 'use strict';
 
 idl_test(
   ['media-source'],
   ['dom', 'html', 'url'],
   async idl_array => {
+    
+    
+    
+    if (!GLOBAL.isWindow()) {
+      return;
+    }
+
     idl_array.add_objects({
       MediaSource: ['mediaSource'],
       SourceBuffer: ['sourceBuffer'],
