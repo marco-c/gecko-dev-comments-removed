@@ -2,14 +2,12 @@
 
 
 
-
-
 #ifndef DOM_NOTIFICATION_NotificationHandler_H_
 #define DOM_NOTIFICATION_NotificationHandler_H_
 
 #include "ErrorList.h"
 #include "nsINotificationHandler.h"
-#include "nsStringFwd.h"
+#include "nsReadableUtils.h"
 
 class nsIPrincipal;
 namespace mozilla::dom {
@@ -22,7 +20,8 @@ nsresult RespondOnClick(nsIPrincipal* aPrincipal, const nsAString& aScope,
                         const IPCNotification& aNotification,
                         const nsAString& aActionName);
 
-nsresult OpenWindowFor(nsIPrincipal* aPrincipal);
+nsresult OpenWindowFor(nsIPrincipal* aPrincipal,
+                       const nsCString& aURL = EmptyCString());
 
 class NotificationHandler final : public nsINotificationHandler {
  public:
