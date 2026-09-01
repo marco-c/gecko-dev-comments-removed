@@ -141,8 +141,6 @@ Structure:
     os: {
         name: <string>, // "Windows_NT" or null on failure
         version: <string>, // e.g. "6.1", null on failure
-        servicePackMajor: <number>, // windows only or null on failure
-        servicePackMinor: <number>, // windows only or null on failure
         windowsBuildNumber: <number>, // windows only or null on failure
         windowsUBR: <number>, // windows 10 only or null on failure
         locale: <string>, // "en" or null on failure
@@ -249,54 +247,6 @@ Structure:
       firewall: [ <string>, ... ],     // null if unavailable on platform: Product name(s) of registered firewall programs
     },
   },
-  addons: {
-    activeAddons: { // the currently enabled add-ons
-      <addon id>: {
-        blocklisted: <bool>,
-        description: <string>, // null if not available
-        name: <string>,
-        userDisabled: <bool>,
-        appDisabled: <bool>,
-        version: <string>,
-        scope: <integer>,
-        type: <string>, // "extension", "locale", ...
-        foreignInstall: <bool>,
-        hasBinaryComponents: <bool>,
-        installDay: <number>, // days since UNIX epoch, 0 on failure
-        updateDay: <number>, // days since UNIX epoch, 0 on failure
-        signedState: <integer>, // whether the add-on is signed by AMO
-        signedTypes: <string>, // JSON-stringified array of signature types found (see nsIAppSignatureInfo's SignatureAlgorithm enum)
-        isSystem: <bool>, // true if this is a System Add-on
-        isWebExtension: <bool>, // true if this is a WebExtension
-        multiprocessCompatible: <bool>, // true if this add-on does *not* require e10s shims
-      },
-      ...
-    },
-    theme: { // the active theme
-      id: <string>,
-      blocklisted: <bool>,
-      description: <string>,
-      name: <string>,
-      userDisabled: <bool>,
-      appDisabled: <bool>,
-      version: <string>,
-      scope: <integer>,
-      foreignInstall: <bool>,
-      hasBinaryComponents: <bool>
-      installDay: <number>, // days since UNIX epoch, 0 on failure
-      updateDay: <number>, // days since UNIX epoch, 0 on failure
-      signedState: <integer>, // whether the add-on is signed by AMO
-      signedTypes: <string>, // JSON-stringified array of signature types found (see nsIAppSignatureInfo's SignatureAlgorithm enum)
-    },
-    activeGMPlugins: {
-        <gmp id>: {
-            version: <string>,
-            userDisabled: <bool>,
-            applyBackgroundUpdates: <integer>,
-        },
-        ...
-    },
-  },
   experiments: {
     "<experiment id>": { branch: "<branch>", type: "<type>", enrollmentId: "<id>" },
     // ...
@@ -382,9 +332,6 @@ The following is a partial list of [collected preferences](https://searchfox.org
 - `security.tls.version.enable-deprecated`: True if deprecated versions of TLS (1.0 and 1.1) have been enabled by the user. Defaults to false.
 - `privacy.firstparty.isolate`: True if the user has changed the (unsupported, hidden) First Party Isolation preference. Defaults to false.
 - `privacy.resistFingerprinting`: True if the user has changed the (unsupported, hidden) Resist Fingerprinting preference. Defaults to false.
-- `app.normandy.test-prefs.bool`: Test pref that will help troubleshoot uneven unenrollment in experiments. Defaults to false.
-- `app.normandy.test-prefs.integer`: Test pref that will help troubleshoot uneven unenrollment in experiments. Defaults to 0.
-- `app.normandy.test-prefs.string`: Test pref that will help troubleshoot uneven unenrollment in experiments. Defaults to "".
 - `network.trr.mode`: User-set DNS over HTTPS mode. Defaults to 0.
 - `network.trr.strict_native_fallback`: Whether strict fallback mode is enabled for DoH mode 2. Defaults to true on Nightly, false elsewhere.
 - `extensions.InstallTrigger.enabled`: Whether the InstallTrigger property should be enabled (or completely hidden).
@@ -494,26 +441,12 @@ This object contains operating system information.
 
 - `name`: the name of the OS.
 - `version`: a string representing the OS version.
-- `servicePackMajor`: the Windows only major version number for the installed service pack.
-- `servicePackMinor`: the Windows only minor version number for the installed service pack.
 - `windowsBuildNumber`: the Windows build number.
 - `windowsUBR`: the Windows UBR number, only available for Windows >= 10. This value is incremented by Windows cumulative updates patches.
 - `installYear`: the Windows only integer representing the year the OS was installed.
 - `locale`: the string representing the OS locale.
 - `hasPrefetch`: the Windows-only boolean representing whether or not the OS-based prefetch application start-up optimization is set to use the default settings.
 - `hasSuperfetch`: the Windows-only boolean representing whether or not the OS-based superfetch application start-up optimization service is running and using the default settings.
-
-## addons
-
-### activeAddons
-
-Starting from Firefox 44, the length of the following string fields: `name`, `description` and `version` is limited to 100 characters. The same limitation applies to the same fields in `theme`.
-
-Some of the fields in the record for each add-on are not available during startup. The fields that will always be present are `id`, `version`, `type`, `updateDate`, `scope`, `isSystem`, `isWebExtension`, and `multiprocessCompatible`. All the other fields documented above become present shortly after the `sessionstore-windows-restored` observer topic is notified.
-
-### activeGMPPlugins
-
-Up-to-date information is not available immediately during startup. The field will be populated with dummy information until the blocklist is loaded. At the latest, this will happen just after the `sessionstore-windows-restored` observer topic is notified.
 
 ## experiments
 
@@ -529,6 +462,10 @@ In the event any of these fields are truncated, a warning is printed to the cons
 Note that this list includes other types of deliveries, including Normandy rollouts and Nimbus feature defaults.
 
 ## Version History
+
+- Firefox 155:
+
+  - Removed `addons.activeAddons`/`theme`/`activeGMPlugins` from the environment. The `addons` Glean ping should be used instead. ([bug 2055613](https://bugzilla.mozilla.org/show_bug.cgi?id=2055613))
 
 - Firefox 137:
 
