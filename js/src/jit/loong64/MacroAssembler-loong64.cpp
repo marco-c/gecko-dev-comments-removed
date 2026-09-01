@@ -22,6 +22,18 @@
 namespace js {
 namespace jit {
 
+
+static inline constexpr bool is_two_int12(int64_t n) {
+  
+  return -4096 <= n && n <= 4094;
+}
+
+static constexpr std::pair<int16_t, int16_t> ToTwoInt12(int32_t n) {
+  MOZ_ASSERT(is_two_int12(n));
+  return std::make_pair(static_cast<int16_t>(n / 2),
+                        static_cast<int16_t>(n - (n / 2)));
+}
+
 void MacroAssembler::clampDoubleToUint8(FloatRegister input, Register output) {
   UseScratchRegisterScope temps(asMasm());
   Register scratch = temps.Acquire();
