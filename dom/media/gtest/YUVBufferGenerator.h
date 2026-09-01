@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef YUVBufferGenerator_h
 #define YUVBufferGenerator_h
 
@@ -15,7 +13,10 @@
 
 class YUVBufferGenerator {
  public:
-  void Init(const mozilla::gfx::IntSize& aSize);
+  
+  
+  void Init(const mozilla::gfx::IntSize& aSize, uint8_t aLuma = 0x10,
+            uint8_t aChroma = 0x80);
   mozilla::gfx::IntSize GetSize() const;
   already_AddRefed<mozilla::layers::Image> GenerateI420Image();
   already_AddRefed<mozilla::layers::Image> GenerateNV12Image();
