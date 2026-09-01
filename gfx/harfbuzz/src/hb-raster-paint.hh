@@ -130,6 +130,21 @@ struct hb_raster_paint_t
 
   
 
+
+
+  int64_t work_left = HB_RASTER_MAX_PAINT_WORK;
+
+  
+
+  
+
+  bool charge_work (int64_t work)
+  {
+    if (unlikely (work_left <= 0)) return false;
+    work_left -= work;
+    return true;
+  }
+
   hb_raster_image_t *acquire_surface ()
   {
     hb_raster_image_t *img;

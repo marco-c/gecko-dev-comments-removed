@@ -40,6 +40,7 @@ struct hb_paint_extents_context_t
     transforms.clear ();
     clips.clear ();
     groups.clear ();
+    work_left = HB_PAINT_EXTENTS_MAX_WORK;
 
     transforms.push (hb_transform_t<>{});
     clips.push (hb_bounds_t<>{hb_bounds_t<>::UNBOUNDED});
@@ -130,6 +131,12 @@ struct hb_paint_extents_context_t
 
     group.union_ (clip);
   }
+
+  
+
+
+
+  int64_t work_left = HB_PAINT_EXTENTS_MAX_WORK;
 
   protected:
   hb_vector_t<hb_transform_t<>> transforms;

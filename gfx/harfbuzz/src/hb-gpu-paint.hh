@@ -278,6 +278,13 @@ struct hb_gpu_paint_t
 
 
 
+  int64_t work_left = HB_GPU_PAINT_MAX_WORK;
+
+  
+
+
+
+
 
 
 

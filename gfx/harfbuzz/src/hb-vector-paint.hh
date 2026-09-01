@@ -65,6 +65,12 @@ struct hb_vector_paint_t
 
   unsigned clip_rect_counter = 0;
   unsigned clip_path_counter = 0;
+  
+
+
+
+
+  int64_t work_left = HB_VECTOR_MAX_PAINT_WORK;
   hb_vector_path_sink_t clip_path_sink = {nullptr, 0, 1.f, 1.f};
   unsigned gradient_counter = 0;
   unsigned color_glyph_depth = 0;

@@ -29,6 +29,17 @@
 
 #include "hb.hh"
 
+#include "hb-raster.h"
+
+
+
+
+
+
+
+HB_INTERNAL int64_t
+hb_raster_draw_get_edge_work (hb_raster_draw_t *draw, unsigned max_rows);
+
 
 
 static HB_ALWAYS_INLINE uint8_t

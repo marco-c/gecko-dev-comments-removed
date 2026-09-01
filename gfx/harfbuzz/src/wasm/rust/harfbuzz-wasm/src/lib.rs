@@ -45,6 +45,8 @@ extern "C" {
     fn face_copy_table(font: u32, tag: u32, blob: *mut Blob) -> bool;
     fn buffer_copy_contents(buffer: u32, cbuffer: *mut CBufferContents) -> bool;
     fn buffer_set_contents(buffer: u32, cbuffer: &CBufferContents) -> bool;
+    fn feature_copy_contents(features: u32, num_features: u32, output: *mut CFFeatures) -> bool;
+    fn features_free(features: *mut CFFeatures);
     fn debugprint(s: *const u8);
     fn shape_with(
         font: u32,
@@ -363,12 +365,46 @@ pub struct CGlyphExtents {
     pub height: i32,
 }
 
+
+#[derive(Debug, Clone, Copy)]
+pub struct Feature {
+    
+    pub tag: [u8; 4],
+    
+    pub value: u32,
+    
+    pub start: u32,
+    
+    pub end: u32,
+}
+
+
+pub const FEATURE_GLOBAL_START: u32 = 0;
+
+pub const FEATURE_GLOBAL_END: u32 = u32::MAX;
+
 #[derive(Debug)]
 #[repr(C)]
 struct CBufferContents {
     length: u32,
     info: *mut CGlyphInfo,
     position: *mut CGlyphPosition,
+}
+
+#[derive(Debug)]
+#[repr(C)]
+struct CFFeatures {
+    length: u32,
+    features: *mut CFeature,
+}
+
+#[derive(Debug, Clone, Copy)]
+#[repr(C)]
+struct CFeature {
+    tag: u32,
+    value: u32,
+    start: u32,
+    end: u32,
 }
 
 
@@ -454,6 +490,78 @@ struct CGlyphOutline {
 
 
 pub type GlyphBuffer = Buffer<Glyph>;
+
+
+#[derive(Debug)]
+pub struct Features {
+    features: Vec<Feature>,
+}
+
+fn u32_to_tag(tag: u32) -> [u8; 4] {
+    [
+        ((tag >> 24) & 0xFF) as u8,
+        ((tag >> 16) & 0xFF) as u8,
+        ((tag >> 8) & 0xFF) as u8,
+        (tag & 0xFF) as u8,
+    ]
+}
+
+impl Features {
+    
+    
+    pub fn from_raw(ptr: u32, count: u32) -> Self {
+        let mut c_features = CFFeatures {
+            length: 0,
+            features: std::ptr::null_mut(),
+        };
+        if count > 0 {
+            unsafe {
+                feature_copy_contents(ptr, count, &mut c_features);
+            }
+        }
+        let slice =
+            unsafe { std::slice::from_raw_parts(c_features.features, c_features.length as usize) };
+        let features: Vec<Feature> = slice
+            .iter()
+            .map(|f| Feature {
+                tag: u32_to_tag(f.tag),
+                value: f.value,
+                start: f.start,
+                end: f.end,
+            })
+            .collect();
+        Features { features }
+    }
+
+    
+    pub fn len(&self) -> usize {
+        self.features.len()
+    }
+
+    
+    pub fn is_empty(&self) -> bool {
+        self.features.is_empty()
+    }
+
+    
+    pub fn as_slice(&self) -> &[Feature] {
+        &self.features
+    }
+
+    
+    pub fn iter(&self) -> impl Iterator<Item = &Feature> {
+        self.features.iter()
+    }
+}
+
+impl Drop for Features {
+    fn drop(&mut self) {
+        
+        
+        
+        
+    }
+}
 
 
 pub fn debug(s: &str) {
