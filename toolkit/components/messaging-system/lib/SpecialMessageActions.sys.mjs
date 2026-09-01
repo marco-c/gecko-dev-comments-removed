@@ -33,6 +33,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AIWindow:
     // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
+  AIWindowUI:
+    // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs",
   CustomIconManager:
     // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
     "moz-src:///browser/components/shell/CustomIconManager.sys.mjs",
@@ -400,9 +403,6 @@ export const SpecialMessageActions = {
       "browser.firefox-view.feature-tour",
       "browser.pdfjs.feature-tour",
       "browser.newtab.feature-tour",
-      "cookiebanners.service.mode",
-      "cookiebanners.service.mode.privateBrowsing",
-      "cookiebanners.service.detectOnly",
       "datareporting.healthreport.uploadEnabled",
       "datareporting.policy.currentPolicyVersion",
       "datareporting.policy.dataSubmissionPolicyAcceptedVersion",
@@ -1120,6 +1120,9 @@ export const SpecialMessageActions = {
         await lazy.GenAI.summarizeCurrentPage(window, entry);
         break;
       }
+      case "OPEN_ORGANIZE_TABS_PANEL":
+        lazy.AIWindowUI.toggleGroupTabsPanel(window);
+        break;
       case "OPEN_PANEL": {
         let { anchor_id, widget_id, panel_id, fallback_to_app_menu } =
           action.data;
