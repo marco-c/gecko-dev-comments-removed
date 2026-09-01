@@ -271,13 +271,26 @@ SharedCompileArgs CompileArgs::build(JSContext* cx,
   }
 
   
+  bool forceDebug = JS::Prefs::wasm_baseline_debug() && baseline;
+
   
   
   
-  bool debug = cx->realm() && cx->realm()->debuggerObservesWasm();
+  
+  
+  bool debug = (cx->realm() && cx->realm()->debuggerObservesWasm()) ||
+               forceDebug;
 
   bool forceTiering =
       cx->options().testWasmAwaitTier2() || JitOptions.wasmDelayTier2;
+
+  if (forceDebug) {
+    
+    
+    
+    ion = false;
+    forceTiering = false;
+  }
 
   
   
