@@ -94,13 +94,8 @@ struct EmbedderColorSchemes {
   PrefersColorSchemeOverride mUsed{};
   PrefersColorSchemeOverride mPreferred{};
 
-  bool operator==(const EmbedderColorSchemes& aOther) const {
-    return mUsed == aOther.mUsed && mPreferred == aOther.mPreferred;
-  }
-
-  bool operator!=(const EmbedderColorSchemes& aOther) const {
-    return !(*this == aOther);
-  }
+  bool operator==(const EmbedderColorSchemes& aOther) const = default;
+  bool operator!=(const EmbedderColorSchemes& aOther) const = default;
 };
 
 

@@ -744,10 +744,7 @@ struct SegmentKind {
     return mozilla::HashGeneric(mState, mType, mProtect, mIsStack);
   }
 
-  bool operator==(const SegmentKind& aOther) const {
-    return mState == aOther.mState && mType == aOther.mType &&
-           mProtect == aOther.mProtect && mIsStack == aOther.mIsStack;
-  }
+  bool operator==(const SegmentKind& aOther) const = default;
 };
 
 struct SegmentStats {
@@ -756,7 +753,7 @@ struct SegmentStats {
 };
 
 class WindowsAddressSpaceReporter final : public nsIMemoryReporter {
-  ~WindowsAddressSpaceReporter() {}
+  ~WindowsAddressSpaceReporter() = default;
 
  public:
   NS_DECL_ISUPPORTS
@@ -926,7 +923,7 @@ NS_IMPL_ISUPPORTS(WindowsAddressSpaceReporter, nsIMemoryReporter)
 
 #ifdef HAVE_VSIZE_MAX_CONTIGUOUS_REPORTER
 class VsizeMaxContiguousReporter final : public nsIMemoryReporter {
-  ~VsizeMaxContiguousReporter() {}
+  ~VsizeMaxContiguousReporter() = default;
 
  public:
   NS_DECL_ISUPPORTS
@@ -947,7 +944,7 @@ NS_IMPL_ISUPPORTS(VsizeMaxContiguousReporter, nsIMemoryReporter)
 
 #ifdef HAVE_PRIVATE_REPORTER
 class PrivateReporter final : public nsIMemoryReporter {
-  ~PrivateReporter() {}
+  ~PrivateReporter() = default;
 
  public:
   NS_DECL_ISUPPORTS

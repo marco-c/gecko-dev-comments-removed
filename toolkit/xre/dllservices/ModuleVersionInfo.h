@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ModuleVersionInfo_h
 #define mozilla_ModuleVersionInfo_h
 
@@ -48,9 +46,7 @@ class ModuleVersionInfo {
 
     uint64_t Version64() const { return mVersion64; }
 
-    bool operator==(const VersionNumber& aOther) const {
-      return mVersion64 == aOther.mVersion64;
-    }
+    bool operator==(const VersionNumber& aOther) const = default;
 
     nsCString ToString() const {
       nsCString ret;
