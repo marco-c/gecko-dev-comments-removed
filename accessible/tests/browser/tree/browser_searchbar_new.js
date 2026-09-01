@@ -24,6 +24,12 @@ add_setup(async function () {
   let gCUITestUtils = new CustomizableUITestUtils(window);
   searchbar = await gCUITestUtils.addSearchBar();
   registerCleanupFunction(() => gCUITestUtils.removeSearchBar());
+
+  
+  
+  
+  
+  await TestUtils.waitForCondition(() => searchbar.matches(":popover-open"));
 });
 
 
@@ -32,6 +38,12 @@ add_task(async function test_searchbar_a11y_tree() {
     role: ROLE_GROUPING,
 
     children: [
+      
+      {
+        role: ROLE_SECTION,
+        children: [],
+      },
+
       
       {
         role: ROLE_SECTION,
