@@ -1087,7 +1087,7 @@ void arena_t::RemoveChunk(arena_chunk_t* aChunk) {
   MOZ_ASSERT(aChunk->mArena == this);
 
   
-  MOZ_ASSERT(mSpare != aChunk);
+  MOZ_ASSERT(!mSpares.ElementProbablyInList(aChunk));
   MOZ_ASSERT(!mChunksDirty.ElementProbablyInList(aChunk));
 
   
@@ -1126,23 +1126,31 @@ void arena_t::RemoveChunk(arena_chunk_t* aChunk) {
 }
 
 arena_chunk_t* arena_t::DemoteChunkToSpare(arena_chunk_t* aChunk) {
-  MOZ_ASSERT(aChunk != mSpare);
-
-  if (aChunk->mNumDirty && !aChunk->mIsPurging) {
-    MOZ_ASSERT(mChunksDirty.ElementProbablyInList(aChunk));
-    mChunksDirty.remove(aChunk);
-  }
-
-  arena_chunk_t* chunk_dealloc = mSpare;
-  mSpare = aChunk;
-
-  if (chunk_dealloc) {
-    
+  arena_chunk_t* chunk_dealloc = nullptr;
+  if (!mSpares.isEmpty()) {
+    chunk_dealloc = mSpares.popBack();
     
     MOZ_ASSERT(!chunk_dealloc->mIsPurging);
     MOZ_ASSERT(!mChunksDirty.ElementProbablyInList(chunk_dealloc));
     RemoveChunk(chunk_dealloc);
+
+    
+    
+    MOZ_ASSERT(mSpares.isEmpty());
   }
+
+  
+  
+  
+  
+  
+  if (aChunk->mNumDirty && !aChunk->mIsPurging) {
+    MOZ_ASSERT(mChunksDirty.ElementProbablyInList(aChunk));
+    mChunksDirty.remove(aChunk);
+  }
+  MOZ_ASSERT(!mChunksDirty.ElementProbablyInList(aChunk));
+  MOZ_ASSERT(!mSpares.ElementProbablyInList(aChunk));
+  mSpares.pushFront(aChunk);
 
   return chunk_dealloc;
 }
@@ -1164,10 +1172,9 @@ arena_run_t* arena_t::AllocRun(size_t aSize, bool aLarge, bool aZero) {
     MOZ_ASSERT((chunk->mPageMap[pageind].bits & CHUNK_MAP_BUSY) == 0);
     run = (arena_run_t*)(uintptr_t(chunk) + (pageind << gPageSize2Pow));
     mRunsAvail.Remove(mapelm);
-  } else if (mSpare && !mSpare->mIsPurging) {
-    
-    arena_chunk_t* chunk = mSpare;
-    mSpare = nullptr;
+  } else if (!mSpares.isEmpty()) {
+    arena_chunk_t* chunk = mSpares.popFront();
+    MOZ_ASSERT(!chunk->mIsPurging);
 
     if (chunk->mNumDirty) {
       MOZ_ASSERT(!mChunksDirty.ElementProbablyInList(chunk));
@@ -1320,10 +1327,9 @@ ArenaPurgeResult arena_t::Purge(
       ndirty += chunk.mNumDirty;
     }
 
-    if (mSpare) {
-      
-      MOZ_ASSERT(!mChunksDirty.ElementProbablyInList(mSpare));
-      ndirty += mSpare->mNumDirty;
+    
+    for (auto& chunk : mSpares) {
+      ndirty += chunk.mNumDirty;
     }
 
     
@@ -1345,21 +1351,30 @@ ArenaPurgeResult arena_t::Purge(
     
     
     
-    if (mSpare && mSpare->mNumDirty) {
+
+    
+    
+    
+    
+    
+    for (arena_chunk_t& spare : mSpares) {
       
       
       
-      
-      
-      chunk = mSpare;
-      mSpare = nullptr;
-      
-      MOZ_ASSERT(!mChunksDirty.ElementProbablyInList(chunk));
-    } else {
+      if (spare.mNumDirty) {
+        MOZ_ASSERT(!spare.mIsPurging);
+        chunk = &spare;
+        mSpares.remove(chunk);
+        break;
+      }
+    }
+
+    if (!chunk) {
       if (!mChunksDirty.isEmpty()) {
         chunk = mChunksDirty.popFront();
       }
     }
+
     if (!chunk) {
       
       
@@ -3045,8 +3060,9 @@ arena_t::~arena_t() {
                      "Arena is still registered");
   MOZ_RELEASE_ASSERT(!mStats.allocated_small && !mStats.allocated_large,
                      "Arena is not empty");
-  if (mSpare) {
-    arena_chunk_dealloc(mChunkAllocator, mSpare, kChunkSize);
+  while (!mSpares.isEmpty()) {
+    arena_chunk_t* spare = mSpares.popFront();
+    arena_chunk_dealloc(mChunkAllocator, spare, kChunkSize);
   }
   for (i = 0; i < NUM_SMALL_CLASSES; i++) {
     MOZ_RELEASE_ASSERT(mBins[i].mNonFullRuns.isEmpty(), "Bin is not empty");

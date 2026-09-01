@@ -299,7 +299,10 @@ struct arena_t : public BaseAllocClass {
   
   
   
-  arena_chunk_t* mSpare MOZ_GUARDED_BY(mLock) = nullptr;
+  
+  
+  mozilla::DoublyLinkedList<arena_chunk_t, mozilla::DirtyChunkListTrait> mSpares
+      MOZ_GUARDED_BY(mLock);
 
   
   
