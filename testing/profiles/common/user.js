@@ -31,6 +31,16 @@ user_pref("browser.preonboarding.enabled", false);
 
 user_pref("browser.search.region", "US");
 
+
+
+
+user_pref("doh-rollout.enabled", false);
+
+
+
+
+user_pref("network.trr.allow_default_http3_first", false);
+
 user_pref("browser.search.removeEngineInfobar.enabled", false);
 
 
