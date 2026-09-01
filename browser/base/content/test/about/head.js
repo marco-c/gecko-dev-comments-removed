@@ -1,9 +1,85 @@
 ChromeUtils.defineESModuleGetters(this, {
   FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
+  NetErrorParent: "resource://gre/actors/NetErrorParent.sys.mjs",
   SearchTestUtils: "resource://testing-common/SearchTestUtils.sys.mjs",
+  sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
 SearchTestUtils.init(this);
+
+
+
+
+
+function stubSearchCTASupportedEngine() {
+  const sandbox = sinon.createSandbox();
+  sandbox
+    .stub(NetErrorParent.prototype, "isSupportedSearchEngine")
+    .returns(true);
+  registerCleanupFunction(() => sandbox.restore());
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function loadDnsNotFoundPage(failedURL, win = window) {
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    win.gBrowser,
+    "about:blank"
+  );
+  const browser = tab.linkedBrowser;
+  const url = `about:neterror?e=dnsNotFound&u=${encodeURIComponent(failedURL)}`;
+  const pageLoaded = BrowserTestUtils.waitForErrorPage(browser);
+  SpecialPowers.spawn(browser, [url], errorUrl => {
+    content.location = errorUrl;
+  });
+  await pageLoaded;
+  return { browser, tab };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function waitForSettledNetErrorCard(browser, { clickQuery = null } = {}) {
+  await SpecialPowers.spawn(browser, [clickQuery], async query => {
+    const card = await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector("net-error-card")?.wrappedJSObject,
+      "The net-error-card is present"
+    );
+    if (card.shouldShowSearchCTA()) {
+      await ContentTaskUtils.waitForCondition(
+        () => card.searchCTAResolved,
+        "The search CTA decision came back from the parent"
+      );
+    }
+    await card.updateComplete;
+    if (query) {
+      card[query].click();
+    }
+  });
+}
 
 function getCertChainAsString(certBase64Array) {
   let certChain = "";
