@@ -121,14 +121,14 @@ inline size_t GrowEltsByDoubling(size_t aOldElts, size_t aIncr) {
 
 
 template <typename AP, size_t EltSize>
-static size_t ComputeGrowth(size_t aOldElts, size_t aIncr, int) {
+size_t ComputeGrowth(size_t aOldElts, size_t aIncr, int) {
   return GrowEltsByDoubling<EltSize>(aOldElts, aIncr);
 }
 
 
 
 template <typename AP, size_t EltSize>
-static size_t ComputeGrowth(
+size_t ComputeGrowth(
     size_t aOldElts, size_t aIncr,
     decltype(std::declval<AP>().template computeGrowth<EltSize>(0, 0),
              bool()) aOverloadSelector) {
@@ -558,6 +558,22 @@ class MOZ_NON_PARAM MOZ_GSL_OWNER Vector final : private AllocPolicy {
   bool empty() const { return mLength == 0; }
 
   size_t capacity() const { return mTail.mCapacity; }
+
+#ifdef DEBUG
+  
+
+
+
+
+
+
+
+
+
+  bool isStorageConsistent() const {
+    return usingInlineStorage() == (mTail.mCapacity == kInlineCapacity);
+  }
+#endif
 
   T* begin() {
     MOZ_ASSERT(!mEntered);
