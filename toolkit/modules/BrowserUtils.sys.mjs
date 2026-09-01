@@ -729,7 +729,9 @@ export var BrowserUtils = {
    * @param {string} options.categoryName
    *        What category's consumers to call.
    * @param {boolean} [options.idleDispatch=false]
-   *        If set to true, call each consumer in an idle task.
+   *        If set to true, call each consumer in an idle task. If jsGlobal is a
+   *        window that has closed by the time the idle task runs, the consumer
+   *        is dropped, so we don't initialize (and leak) a closing window.
    * @param {string} [options.profilerMarker=""]
    *        If specified, will create a profiler marker with the provided
    *        identifier for each consumer.
@@ -800,6 +802,12 @@ export var BrowserUtils = {
         allTasks.push(
           new Promise(resolve => {
             ChromeUtils.idleDispatch(() => {
+              // Drop the task if it targets a window that has closed in the
+              // meantime, to avoid initializing (and leaking) a closing window.
+              if (jsGlobal?.closed) {
+                resolve();
+                return;
+              }
               resolve(callSingleListener(listener));
             });
           })
@@ -820,7 +828,6 @@ export var BrowserUtils = {
     VPN: 1,
     RELAY: 2,
     PIN: 4,
-    COOKIE_BANNERS: 5,
   },
 
   /**
@@ -843,7 +850,6 @@ export var BrowserUtils = {
       case this.PromoType.VPN:
       case this.PromoType.PIN:
       case this.PromoType.RELAY:
-      case this.PromoType.COOKIE_BANNERS:
         break;
       default:
         throw new Error("Unknown promo type: ", promoType);
@@ -960,12 +966,6 @@ let PromoInfo = {
         "identity.fxaccounts.remote.pairing.uri",
         "identity.sync.tokenserver.uri",
       ].every(pref => !Services.prefs.prefHasUserValue(pref)),
-  },
-  [BrowserUtils.PromoType.COOKIE_BANNERS]: {
-    enabledPref: "browser.promo.cookiebanners.enabled",
-    lazyStringSetPrefs: {},
-    illegalRegions: [],
-    showForEnterprise: true,
   },
 };
 

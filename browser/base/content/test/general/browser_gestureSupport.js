@@ -31,7 +31,7 @@ async function test() {
   });
 
   
-  gGestureSupport.init(false);
+  gGestureSupport.uninit();
 
   test_utils = window.windowUtils;
 
@@ -42,7 +42,7 @@ async function test() {
 
   
   
-  gGestureSupport.init(true);
+  gGestureSupport.init();
 
   const aPage = "about:about";
   test_normalTab = await BrowserTestUtils.openNewForegroundTab(

@@ -13,6 +13,9 @@
 
 
 
+const BACK_COMMAND = "Browser:BackOrBackDuplicate";
+const FORWARD_COMMAND = "Browser:ForwardOrForwardDuplicate";
+
 var gGestureSupport = {
   _currentRotation: 0,
   _lastRotateDelta: 0,
@@ -21,10 +24,24 @@ var gGestureSupport = {
   
 
 
+  init() {
+    this._toggleListeners(true);
+  },
+
+  
+
+
+  uninit() {
+    this._toggleListeners(false);
+  },
+
+  
 
 
 
-  init: function GS_init(aAddListener) {
+
+
+  _toggleListeners(aAddListener) {
     const gestureEvents = [
       "SwipeGestureMayStart",
       "SwipeGestureStart",
@@ -188,12 +205,17 @@ var gGestureSupport = {
 
 
 
-  _swipeNavigatesHistory: function GS__swipeNavigatesHistory(aEvent) {
+
+
+  _swipeNavigatesHistory: function GS__swipeNavigatesHistory(
+    leftCommand,
+    rightCommand
+  ) {
     return (
-      this._getCommand(aEvent, ["swipe", "left"]) ==
-        "Browser:BackOrBackDuplicate" &&
-      this._getCommand(aEvent, ["swipe", "right"]) ==
-        "Browser:ForwardOrForwardDuplicate"
+      leftCommand == BACK_COMMAND ||
+      leftCommand == FORWARD_COMMAND ||
+      rightCommand == BACK_COMMAND ||
+      rightCommand == FORWARD_COMMAND
     );
   },
 
@@ -207,7 +229,10 @@ var gGestureSupport = {
 
 
   _shouldDoSwipeGesture: function GS__shouldDoSwipeGesture(aEvent) {
-    if (!this._swipeNavigatesHistory(aEvent)) {
+    const leftCommand = this._getCommand(aEvent, ["swipe", "left"]);
+    const rightCommand = this._getCommand(aEvent, ["swipe", "right"]);
+
+    if (!this._swipeNavigatesHistory(leftCommand, rightCommand)) {
       return false;
     }
 
@@ -236,12 +261,19 @@ var gGestureSupport = {
     let canGoForward = gHistorySwipeAnimation.canGoForward();
     let isLTR = gHistorySwipeAnimation.isLTR;
 
-    if (canGoBack) {
+    if (
+      (leftCommand == BACK_COMMAND && canGoBack) ||
+      (leftCommand == FORWARD_COMMAND && canGoForward)
+    ) {
       aEvent.allowedDirections |= isLTR
         ? aEvent.DIRECTION_LEFT
         : aEvent.DIRECTION_RIGHT;
     }
-    if (canGoForward) {
+
+    if (
+      (rightCommand == BACK_COMMAND && canGoBack) ||
+      (rightCommand == FORWARD_COMMAND && canGoForward)
+    ) {
       aEvent.allowedDirections |= isLTR
         ? aEvent.DIRECTION_RIGHT
         : aEvent.DIRECTION_LEFT;
@@ -263,7 +295,10 @@ var gGestureSupport = {
     gHistorySwipeAnimation.startAnimation();
 
     this._doUpdate = function GS__doUpdate(aEvent) {
-      gHistorySwipeAnimation.updateAnimation(aEvent.delta);
+      gHistorySwipeAnimation.updateAnimation({
+        event: aEvent,
+        delta: aEvent.delta,
+      });
     };
 
     this._doEnd = function GS__doEnd() {
@@ -703,7 +738,7 @@ var gHistorySwipeAnimation = {
     if (this.active) {
       this._addBoxes();
     }
-    this.updateAnimation(0);
+    this.updateAnimation({ event: null, delta: 0 });
   },
 
   
@@ -740,16 +775,24 @@ var gHistorySwipeAnimation = {
     }
   },
 
-  _willGoBack: function HSA_willGoBack(aVal) {
-    return (
-      ((aVal > 0 && this.isLTR) || (aVal < 0 && !this.isLTR)) && this._canGoBack
-    );
+  _swipeCommand: function HSA_swipeCommand(aSwipeUpdate) {
+    if (!aSwipeUpdate.event || aSwipeUpdate.delta == 0) {
+      return "";
+    }
+    const direction = aSwipeUpdate.delta < 0 == this.isLTR ? "right" : "left";
+    return gGestureSupport._getCommand(aSwipeUpdate.event, [
+      "swipe",
+      direction,
+    ]);
   },
 
-  _willGoForward: function HSA_willGoForward(aVal) {
+  _willGoBack: function HSA_willGoBack(aSwipeUpdate) {
+    return this._swipeCommand(aSwipeUpdate) == BACK_COMMAND && this._canGoBack;
+  },
+
+  _willGoForward: function HSA_willGoForward(aSwipeUpdate) {
     return (
-      ((aVal > 0 && !this.isLTR) || (aVal < 0 && this.isLTR)) &&
-      this._canGoForward
+      this._swipeCommand(aSwipeUpdate) == FORWARD_COMMAND && this._canGoForward
     );
   },
 
@@ -761,7 +804,9 @@ var gHistorySwipeAnimation = {
 
 
 
-  updateAnimation: function HSA_updateAnimation(aVal) {
+
+
+  updateAnimation: function HSA_updateAnimation(aSwipeUpdate) {
     if (!this.isAnimationRunning() || this._isStoppingAnimation) {
       return;
     }
@@ -769,7 +814,7 @@ var gHistorySwipeAnimation = {
     
     
     
-    const progress = Math.min(Math.abs(aVal) * 4, 1.0);
+    const progress = Math.min(Math.abs(aSwipeUpdate.delta) * 4, 1.0);
 
     
     let translate =
@@ -782,7 +827,7 @@ var gHistorySwipeAnimation = {
     
     const radius =
       this.minRadius + progress * (this.maxRadius - this.minRadius);
-    if (this._willGoBack(aVal)) {
+    if (this._willGoBack(aSwipeUpdate)) {
       this._prevBox.collapsed = false;
       this._nextBox.collapsed = true;
       this._prevBox.style.translate = `${translate}px 0px`;
@@ -792,7 +837,7 @@ var gHistorySwipeAnimation = {
           .setAttribute("r", `${radius}`);
       }
 
-      if (Math.abs(aVal) >= 0.25) {
+      if (Math.abs(aSwipeUpdate.delta) >= 0.25) {
         
         
         
@@ -800,7 +845,7 @@ var gHistorySwipeAnimation = {
       } else {
         this._prevBox.querySelector("svg").classList.remove("will-navigate");
       }
-    } else if (this._willGoForward(aVal)) {
+    } else if (this._willGoForward(aSwipeUpdate)) {
       
       this._nextBox.collapsed = false;
       this._prevBox.collapsed = true;
@@ -811,7 +856,7 @@ var gHistorySwipeAnimation = {
           .setAttribute("r", `${radius}`);
       }
 
-      if (Math.abs(aVal) >= 0.25) {
+      if (Math.abs(aSwipeUpdate.delta) >= 0.25) {
         
         this._nextBox.querySelector("svg").classList.add("will-navigate");
       } else {
