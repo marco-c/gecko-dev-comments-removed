@@ -454,6 +454,18 @@ async function cleanupPlaces() {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 function makeBookmarkResult(
   queryContext,
   {
@@ -465,6 +477,10 @@ function makeBookmarkResult(
     source = UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     bookmarkDateMs = undefined,
     lastVisit = undefined,
+    isPinned = undefined,
+    isSponsored = undefined,
+    sendAttributionRequest = undefined,
+    providerName = undefined,
   }
 ) {
   let payload = {
@@ -492,12 +508,22 @@ function makeBookmarkResult(
   if (lastVisit !== undefined) {
     payload.lastVisit = lastVisit;
   }
+  if (isPinned !== undefined) {
+    payload.isPinned = isPinned;
+  }
+  if (isSponsored !== undefined) {
+    payload.isSponsored = isSponsored;
+  }
+  if (sendAttributionRequest !== undefined) {
+    payload.sendAttributionRequest = sendAttributionRequest;
+  }
 
   return new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.URL,
     source,
     heuristic,
     payload,
+    providerName,
   });
 }
 
@@ -906,6 +932,15 @@ function makeSearchResult(
 
 
 
+
+
+
+
+
+
+
+
+
 function makeVisitResult(
   queryContext,
   {
@@ -919,6 +954,9 @@ function makeVisitResult(
     isAutofillFallback = false,
     bookmarkDateMs = undefined,
     lastVisit = undefined,
+    isPinned = undefined,
+    isSponsored = undefined,
+    sendAttributionRequest = undefined,
   }
 ) {
   let payload = {
@@ -934,10 +972,20 @@ function makeVisitResult(
   if (lastVisit !== undefined) {
     payload.lastVisit = lastVisit;
   }
+  if (isPinned !== undefined) {
+    payload.isPinned = isPinned;
+  }
+  if (isSponsored !== undefined) {
+    payload.isSponsored = isSponsored;
+  }
+  if (sendAttributionRequest !== undefined) {
+    payload.sendAttributionRequest = sendAttributionRequest;
+  }
 
   if (
     !heuristic &&
     providerName != "UrlbarProviderAboutPages" &&
+    providerName != "UrlbarProviderTopSites" &&
     source == UrlbarShared.RESULT_SOURCE.HISTORY
   ) {
     payload.isBlockable = true;
