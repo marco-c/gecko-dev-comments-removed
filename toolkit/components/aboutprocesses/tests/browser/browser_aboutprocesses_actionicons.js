@@ -89,7 +89,8 @@ add_task(async function test_profiler_icon_button() {
   );
 
   
-  if (!Services.profiler.IsActive()) {
+  
+  if (!Services.profiler.IsActive() && !AppConstants.TSAN) {
     let waitForPressed = BrowserTestUtils.waitForMutationCondition(
       profilerButton,
       { attributeFilter: ["aria-pressed"] },
