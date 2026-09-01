@@ -203,8 +203,8 @@ class RTCPReceiver final {
 
     void AddRtt(TimeDelta rtt);
 
-    TimeDelta last_rtt() const { return last_rtt_; }
-    TimeDelta average_rtt() const { return sum_rtt_ / num_rtts_; }
+    std::optional<TimeDelta> last_rtt() const;
+    std::optional<TimeDelta> average_rtt() const;
 
    private:
     TimeDelta last_rtt_ = TimeDelta::Zero();
@@ -336,7 +336,7 @@ class RTCPReceiver final {
       RTC_GUARDED_BY(rtcp_receiver_lock_);
 
   
-  flat_map<uint32_t, RttStats> rtts_ RTC_GUARDED_BY(rtcp_receiver_lock_);
+  RttStats rtts_ RTC_GUARDED_BY(rtcp_receiver_lock_);
   
   flat_map<uint32_t, NonSenderRttStats> non_sender_rtts_
       RTC_GUARDED_BY(rtcp_receiver_lock_);
