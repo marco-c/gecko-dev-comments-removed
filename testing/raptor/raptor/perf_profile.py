@@ -169,6 +169,8 @@ class PerfProfile(RaptorProfiling):
             "record",
             "-a",  
             "-g",  
+            "-k",  
+            "mono",
             "-F",  
             str(SAMPLING_FREQUENCY),  
             "-o",
