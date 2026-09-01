@@ -439,14 +439,7 @@ bool Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
     
     
     
-    if (mAutoAlignStartTime) {
-      mAutoAlignStartTime = false;
-      
-      
-      if (mHoldTime.IsNull() && mStartTime.IsNull()) {
-        previousProgress.SetValue(0.0);
-      }
-    }
+    mAutoAlignStartTime = false;
     if (!previousProgress.IsNull()) {
       
       
