@@ -7,6 +7,11 @@ let mockCA = makeMockContentAnalysis();
 
 add_setup(async function test_setup() {
   mockCA = await mockContentAnalysisService(mockCA);
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.download.alwaysOpenPanel", false]],
+  });
 });
 
 const DOWNLOAD_URL =

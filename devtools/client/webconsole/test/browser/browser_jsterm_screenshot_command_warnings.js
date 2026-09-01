@@ -46,6 +46,12 @@ const TEST_URI_AREA = `data:text/html;charset=utf8,<!DOCTYPE html>
    </style>
   <div class="big-area"></div>`;
 
+add_setup(async function () {
+  
+  
+  await pushPref("browser.download.alwaysOpenPanel", false);
+});
+
 add_task(async function test_dimension_truncation_horizontal() {
   info("Check that screenshots get truncated for width dimension limits");
 

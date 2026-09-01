@@ -105,6 +105,16 @@ async function resetDownloads() {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
 async function runTest(url, link, checkFunction, description) {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -114,6 +124,23 @@ async function runTest(url, link, checkFunction, description) {
   });
   requestLongerTimeout(2);
   await resetDownloads();
+
+  
+  
+  
+  
+  
+  
+  let downloadList = await Downloads.getList(Downloads.PUBLIC);
+  let downloadAdded = new Promise(resolve => {
+    let view = {
+      onDownloadAdded(download) {
+        downloadList.removeView(view);
+        resolve(download);
+      },
+    };
+    downloadList.addView(view);
+  });
 
   let tab = BrowserTestUtils.addTab(gBrowser, url);
   gBrowser.selectedTab = tab;
@@ -135,6 +162,8 @@ async function runTest(url, link, checkFunction, description) {
   await checkPromise;
   ok(true, description);
   BrowserTestUtils.removeTab(tab);
+
+  return downloadAdded;
 }
 
 
@@ -144,15 +173,30 @@ async function runTest(url, link, checkFunction, description) {
 
 
 add_task(async function test_mixed_download() {
-  await runTest(
+  let download = await runTest(
     SECURE_BASE_URL,
     "insecure",
     () => Promise.all([shouldTriggerDownload(), shouldConsoleError()]),
     "Secure -> Insecure should Error"
   );
+  is(
+    download.source.url,
+    "http://" + DOWNLOAD_URL,
+    "The download the test triggered was added to the public list"
+  );
+
   
-  let downloadsPromise = Downloads.getList(Downloads.PUBLIC);
-  let downloadList = await downloadsPromise;
-  let [download] = downloadList._downloads;
+  
+  
+  await BrowserTestUtils.waitForPopupEvent(DownloadsPanel.panel, "shown");
+  let panelHidden = BrowserTestUtils.waitForPopupEvent(
+    DownloadsPanel.panel,
+    "hidden"
+  );
+  DownloadsPanel.hidePanel();
+  await panelHidden;
+
+  
+  let downloadList = await Downloads.getList(Downloads.PUBLIC);
   await downloadList.remove(download);
 });
