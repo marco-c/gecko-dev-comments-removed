@@ -265,6 +265,32 @@ function TargetMixin(parentClass) {
       return null;
     }
 
+    
+
+
+
+
+
+
+    async getSourceContentForResource(resourceActor) {
+      const { resourceCommand } = this.commands;
+      switch (resourceActor.sourceObject.type) {
+        case resourceCommand.TYPES.STYLESHEET: {
+          const stylesheetsFront = await this.getFront("stylesheets");
+          const sourceStr = await stylesheetsFront.getText(resourceActor.id);
+          return { source: await sourceStr.string(), contentType: "text/css" };
+        }
+        case resourceCommand.TYPES.SOURCE: {
+          const sourceFront = this.threadFront.source({
+            actor: resourceActor.id,
+          });
+          const { source, contentType } = await sourceFront.source();
+          return { source, contentType };
+        }
+      }
+      return null;
+    }
+
     get client() {
       return this._client;
     }
