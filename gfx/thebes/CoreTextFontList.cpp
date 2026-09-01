@@ -540,8 +540,8 @@ void CTFontEntry::InitSkrifaFontFace() {
     
     
     nsAutoCString psname;
-    if (skrifa_font_get_preferred_name(
-            skf, gfxFontUtils::NAME_ID_POSTSCRIPT, &psname)) {
+    if (skrifa_font_get_preferred_name(skf, gfxFontUtils::NAME_ID_POSTSCRIPT,
+                                       &psname)) {
       if (psname == mName) {
         SetSkrifaFont(skf, std::move(file));
         return;
