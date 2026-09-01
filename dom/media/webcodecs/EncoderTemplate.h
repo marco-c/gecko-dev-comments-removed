@@ -44,6 +44,7 @@ class EncoderTemplate : public DOMEventTargetHelper {
   
  protected:
   class ConfigureMessage;
+  class DebugInfoMessage;
   class EncodeMessage;
   class FlushMessage;
 
@@ -58,6 +59,7 @@ class EncoderTemplate : public DOMEventTargetHelper {
     virtual RefPtr<ConfigureMessage> AsConfigureMessage() { return nullptr; }
     virtual RefPtr<EncodeMessage> AsEncodeMessage() { return nullptr; }
     virtual RefPtr<FlushMessage> AsFlushMessage() { return nullptr; }
+    virtual RefPtr<DebugInfoMessage> AsDebugInfoMessage() { return nullptr; }
 
     
     const WebCodecsId mConfigureId;
@@ -151,6 +153,23 @@ class EncoderTemplate : public DOMEventTargetHelper {
     }
   };
 
+  class DebugInfoMessage final
+      : public ControlMessage,
+        public MessageRequestHolder<EncoderAgent::DebugInfoPromise> {
+   public:
+    explicit DebugInfoMessage(WebCodecsId aConfigureId);
+    virtual void Cancel() override { Disconnect(); }
+    virtual bool IsProcessing() override { return Exists(); };
+    virtual RefPtr<DebugInfoMessage> AsDebugInfoMessage() override {
+      return this;
+    }
+
+    nsCString ToString() const override {
+      return nsFmtCString("DebugInfoMessage(#{}, #{})", this->mConfigureId,
+                          this->mMessageId);
+    }
+  };
+
  protected:
   EncoderTemplate(nsIGlobalObject* aGlobalObject,
                   RefPtr<WebCodecsErrorCallback>&& aErrorCallback,
@@ -188,6 +207,10 @@ class EncoderTemplate : public DOMEventTargetHelper {
   void Close(ErrorResult& aRv);
 
   
+  
+  already_AddRefed<Promise> MozRequestDebugInfo(ErrorResult& aRv);
+
+  
  protected:
   virtual RefPtr<OutputType> EncodedDataToOutputType(
       nsIGlobalObject* aGlobalObject, const RefPtr<MediaRawData>& aData) = 0;
@@ -223,7 +246,8 @@ class EncoderTemplate : public DOMEventTargetHelper {
                                       const nsresult& aResult);
 
   void ProcessControlMessageQueue();
-  void CancelPendingControlMessagesAndFlushPromises(const nsresult& aResult);
+  void CancelPendingControlMessagesAndPromises(const nsresult& aResult);
+  void CancelPendingPromises(const nsresult& aResult);
 
   template <typename Func>
   void QueueATask(const char* aName, Func&& aSteps);
@@ -234,6 +258,9 @@ class EncoderTemplate : public DOMEventTargetHelper {
   MessageProcessedResult ProcessEncodeMessage(RefPtr<EncodeMessage> aMessage);
 
   MessageProcessedResult ProcessFlushMessage(RefPtr<FlushMessage> aMessage);
+
+  MessageProcessedResult ProcessDebugInfoMessage(
+      RefPtr<DebugInfoMessage> aMessage);
 
   void Configure(RefPtr<ConfigureMessage> aMessage);
   void Reconfigure(RefPtr<ConfigureMessage> aMessage);
@@ -261,6 +288,11 @@ class EncoderTemplate : public DOMEventTargetHelper {
   
   
   SimpleMap<int64_t, RefPtr<Promise>> mPendingFlushPromises;
+
+  
+  
+  
+  SimpleMap<int64_t, RefPtr<Promise>> mPendingDebugInfoPromises;
 
   uint32_t mEncodeQueueSize;
   bool mDequeueEventScheduled;

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_MEDIA_WEBCODECS_EncoderAgent_H
 #define DOM_MEDIA_WEBCODECS_EncoderAgent_H
 
@@ -14,6 +12,7 @@
 #include "mozilla/DefineEnum.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TaskQueue.h"
+#include "mozilla/dom/MediaDebugInfoBinding.h"
 
 class nsISerialEventTarget;
 
@@ -55,10 +54,13 @@ class EncoderAgent final {
       const RefPtr<const EncoderConfigurationChangeList>& aConfigChange);
   RefPtr<ShutdownPromise> Shutdown();
   using EncodePromise = MediaDataEncoder::EncodePromise;
-  RefPtr<EncodePromise> Encode(MediaData* aInput);
+  RefPtr<EncodePromise> Encode(nsTArray<RefPtr<MediaData>>&& aInputs);
   
   
   RefPtr<EncodePromise> Drain();
+  using DebugInfoPromise =
+      MozPromise<dom::EncoderDebugInfo, MediaResult, true >;
+  RefPtr<DebugInfoPromise> RequestDebugInfo();
 
   const WebCodecsId mId;
 
@@ -68,11 +70,10 @@ class EncoderAgent final {
   
   
   
-  RefPtr<EncodePromise> Dry();
-  void DryUntilDrain();
+  void Dry(MediaDataEncoder::EncodedData&& aPendingOutputs);
 
   MOZ_DEFINE_ENUM_CLASS_WITH_TOSTRING_AT_CLASS_SCOPE(
-      State, (Unconfigured, Configuring, Configured, Encoding, Flushing,
+      State, (Unconfigured, Configuring, Configured, Encoding, Draining,
               ShuttingDown, Error));
   void SetState(State aState);
 
@@ -103,7 +104,6 @@ class EncoderAgent final {
   
   MozPromiseRequestHolder<EncodePromise> mDrainRequest;
   MozPromiseHolder<EncodePromise> mDrainPromise;
-  MediaDataEncoder::EncodedData mDrainData;
 };
 
 }  

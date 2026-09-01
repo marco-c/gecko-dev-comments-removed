@@ -2059,9 +2059,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   MediaEventProducer<float> mEffectiveVolumeChangeEvent;
 };
 
-
-bool HasDebuggerOrTabsPrivilege(JSContext* aCx, JSObject* aObj);
-
 }  
 
 inline nsISupports* ToSupports(mozilla::dom::HTMLMediaElement* aElement) {

@@ -1,0 +1,17 @@
+
+
+
+
+#ifndef mozilla_dom_MediaUtils_h
+#define mozilla_dom_MediaUtils_h
+
+#include "jsapi.h"
+
+namespace mozilla::MediaUtils {
+
+
+bool HasDebuggerOrTabsPrivilege(JSContext* aCx, JSObject* aObj);
+
+}  
+
+#endif  
