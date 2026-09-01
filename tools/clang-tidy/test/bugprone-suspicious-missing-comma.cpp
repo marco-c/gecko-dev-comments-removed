@@ -1,9 +1,0 @@
-const char* Cartoons[] = {
-  "Bugs Bunny",
-  "Homer Simpson",
-  "Mickey Mouse",
-  "Bart Simpson",
-  "Charlie Brown"  
-  "Fred Flintstone",
-  "Popeye",
-};

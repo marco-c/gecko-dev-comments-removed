@@ -1,5 +1,0 @@
-#ifndef FOO
-#ifdef FOO 
-void f();
-#endif
-#endif
