@@ -824,6 +824,10 @@ class gfxFontEntry {
 
   
   
+  void SetSkrifaFont(mozilla::gfx::SkrifaFontRef* aSkrifaFont);
+
+  
+  
   virtual void InitSkrifaFontFace() {}
 
   mozilla::Atomic<mozilla::gfx::SkrifaFontRef*> mSkrifaFontFace;

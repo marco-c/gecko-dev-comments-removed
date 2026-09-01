@@ -26,7 +26,12 @@
 #include "nsProxyRelease.h"
 #include "nsTHashSet.h"
 
+#if MOZ_FONTATIONS
+#include "mozilla/gfx/fontations_glue_generated.h"
+#endif
+
 using namespace mozilla;
+using namespace mozilla::gfx;
 
 mozilla::LogModule* gfxUserFontSet::GetUserFontsLog() {
   static LazyLogModule sLog("userfonts");
@@ -230,7 +235,8 @@ void gfxUserFontEntry::StoreUserFontData(gfxFontEntry* aFontEntry,
                                          const nsACString& aOriginalName,
                                          FallibleTArray<uint8_t>* aMetadata,
                                          uint32_t aMetaOrigLen,
-                                         uint8_t aCompression) {
+                                         uint8_t aCompression,
+                                         RefPtr<FontData>&& aFontData) {
   if (!aFontEntry->mUserFontData) {
     aFontEntry->mUserFontData = MakeUnique<gfxUserFontData>();
   }
@@ -258,6 +264,7 @@ void gfxUserFontEntry::StoreUserFontData(gfxFontEntry* aFontEntry,
     userFontData->mMetaOrigLen = aMetaOrigLen;
     userFontData->mCompression = aCompression;
   }
+  userFontData->mFontData = std::move(aFontData);
 }
 
 size_t gfxUserFontData::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
@@ -497,7 +504,7 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aIsContinue) {
         
         
         StoreUserFontData(fe, mCurrentSrcIndex, false, nsCString(), nullptr, 0,
-                          gfxUserFontData::kUnknownCompression);
+                          gfxUserFontData::kUnknownCompression, nullptr);
         mPlatformFontEntry = fe.forget();
         SetLoadState(STATUS_LOADED);
         glean::webfont::srctype.AccumulateSingleSample(currSrc.mSourceType + 1);
@@ -793,10 +800,6 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
 
   
   
-  mFontData = std::move(fontData);
-
-  
-  
   
   FallibleTArray<uint8_t> metadata;
   uint32_t metaOrigLen = 0;
@@ -811,6 +814,20 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
     compression = gfxUserFontData::kBrotliCompression;
   }
 
+#if MOZ_FONTATIONS
+  
+  
+  SkrifaFontRef* skf =
+      skrifa_font_new(fontData->Data(), fontData->Length());
+  if (skf) {
+    fe->SetSkrifaFont(skf);
+#  if NIGHTLY_BUILD
+    
+    originalFullName.AppendLiteral(" (skrifa)");
+#  endif
+  }
+#endif
+
   
   
   fe->mFeatureSettings.AppendElements(mFeatureSettings);
@@ -822,8 +839,10 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
   fe->mDescentOverride = mDescentOverride;
   fe->mLineGapOverride = mLineGapOverride;
   fe->mSizeAdjust = mSizeAdjust;
+  
   StoreUserFontData(fe, aSrcIndex, fontSet->GetPrivateBrowsing(),
-                    originalFullName, &metadata, metaOrigLen, compression);
+                    originalFullName, &metadata, metaOrigLen, compression,
+                    std::move(fontData));
   LOG(
       ("userfonts (%p) [src %d] loaded uri: (%s) for (%s) "
        "(%p) gen: %8.8x compress: %d%%\n",

@@ -130,12 +130,7 @@ inline bool operator==(const gfxFontFaceSrc& a, const gfxFontFaceSrc& b) {
 }
 
 
-
-
-
-
-
-class gfxUserFontData {
+class gfxUserFontData final {
  public:
   gfxUserFontData()
       : mSrcIndex(0),
@@ -149,6 +144,7 @@ class gfxUserFontData {
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
+  RefPtr<FontData> mFontData;   
   nsTArray<uint8_t> mMetadata;  
   RefPtr<gfxFontSrcURI> mURI;   
   RefPtr<gfxFontSrcPrincipal>
@@ -773,7 +769,8 @@ class gfxUserFontEntry : public gfxFontEntry {
   void StoreUserFontData(gfxFontEntry* aFontEntry, uint32_t aSrcIndex,
                          bool aPrivate, const nsACString& aOriginalName,
                          FallibleTArray<uint8_t>* aMetadata,
-                         uint32_t aMetaOrigLen, uint8_t aCompression);
+                         uint32_t aMetaOrigLen, uint8_t aCompression,
+                         RefPtr<FontData>&& aFontData);
 
   
   
@@ -813,10 +810,6 @@ class gfxUserFontEntry : public gfxFontEntry {
       mLoader;  
   RefPtr<gfxUserFontSet> mLoadingFontSet;
   RefPtr<gfxFontSrcPrincipal> mPrincipal;
-
-  
-  
-  RefPtr<FontData> mFontData;
 };
 
 #endif
