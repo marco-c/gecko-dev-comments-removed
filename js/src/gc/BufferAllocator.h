@@ -400,6 +400,9 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   MainThreadOrGCTaskData<ChunkLists> availableChunks;
 
   
+  mozilla::Atomic<size_t, mozilla::Relaxed> totalChunkCount;
+
+  
   MainThreadOrGCTaskData<LargeAllocList> largeNurseryAllocs;
 
   
