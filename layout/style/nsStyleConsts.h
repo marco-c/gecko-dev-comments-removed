@@ -194,13 +194,6 @@ enum class StyleFlexDirection : uint8_t {
 };
 
 
-enum class StyleFlexWrap : uint8_t {
-  Nowrap,
-  Wrap,
-  WrapReverse,
-};
-
-
 enum class StyleGridTrackBreadth : uint8_t {
   MaxContent = 1,
   MinContent = 2,

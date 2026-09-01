@@ -144,7 +144,7 @@ static bool IsSingleLine(const nsIFrame* aFlexContainer,
     
     return true;
   }
-  return aStylePos->mFlexWrap == StyleFlexWrap::Nowrap;
+  return aStylePos->mFlexWrap == StyleFlexWrap::NOWRAP;
 }
 
 
@@ -4209,7 +4209,7 @@ void FlexboxAxisInfo::InitAxesFromModernProps(const nsIFrame* aFlexContainer) {
   }
 
   
-  mIsCrossAxisReversed = stylePos->mFlexWrap == StyleFlexWrap::WrapReverse;
+  mIsCrossAxisReversed = !!(stylePos->mFlexWrap & StyleFlexWrap::WRAP_REVERSE);
 }
 
 FlexboxAxisTracker::FlexboxAxisTracker(

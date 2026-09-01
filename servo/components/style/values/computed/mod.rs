@@ -76,7 +76,7 @@ pub use self::flex::FlexBasis;
 pub use self::font::{FontFamily, FontLanguageOverride, FontPalette, FontStyle};
 pub use self::font::{FontFeatureSettings, FontVariantLigatures, FontVariantNumeric};
 pub use self::font::{
-    FontSize, FontSizeAdjust, FontStretch, FontSynthesis, FontSynthesisStyle, LineHeight,
+    FontSize, FontSizeAdjust, FontSynthesis, FontSynthesisStyle, FontWidth, LineHeight,
 };
 pub use self::font::{FontVariantAlternates, FontWeight};
 pub use self::font::{FontVariantEastAsian, FontVariationSettings};
@@ -104,7 +104,7 @@ pub use self::position::PositionTryOrder;
 pub use self::position::PositionVisibility;
 pub use self::position::ScopedName;
 pub use self::position::{
-    GridAutoFlow, GridTemplateAreas, MasonryAutoFlow, Position, PositionOrAuto, ZIndex,
+    FlexWrap, GridAutoFlow, GridTemplateAreas, MasonryAutoFlow, Position, PositionOrAuto, ZIndex,
 };
 pub use self::position::{PositionArea, PositionAreaKeyword};
 pub use self::ratio::Ratio;
