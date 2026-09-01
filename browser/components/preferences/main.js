@@ -37,7 +37,7 @@ ChromeUtils.defineESModuleGetters(this, {
   TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
   TranslationsUtils:
     "chrome://global/content/translations/TranslationsUtils.mjs",
-  LaunchOnLogin: "resource://gre/modules/LaunchOnLogin.sys.mjs",
+  WindowsLaunchOnLogin: "resource://gre/modules/WindowsLaunchOnLogin.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   FormAutofillPreferences:
     "resource://autofill/FormAutofillPreferences.sys.mjs",
@@ -148,11 +148,17 @@ Preferences.addSetting(
     
     
     setup() {
-      if (!LaunchOnLogin.isSupported()) {
+      if (AppConstants.platform !== "win") {
+        
+
+
+
+
+
         return;
       }
       
-      LaunchOnLogin.isAllowed().then(val => {
+      WindowsLaunchOnLogin.getLaunchOnLoginApproved().then(val => {
         this._getLaunchOnLoginApprovedCachedValue = val;
       });
     },
@@ -178,7 +184,13 @@ Preferences.addSetting(
       return this._getLaunchOnLoginEnabledValue;
     },
     setup(emitChange) {
-      if (!LaunchOnLogin.isSupported()) {
+      if (AppConstants.platform !== "win") {
+        
+
+
+
+
+
         return;
       }
 
@@ -197,7 +209,7 @@ Preferences.addSetting(
         maybeEmitChange();
       } else {
         
-        LaunchOnLogin.isEnabled().then(val => {
+        WindowsLaunchOnLogin.getLaunchOnLoginEnabled().then(val => {
           getLaunchOnLoginEnabledValue = val;
           maybeEmitChange();
         });
@@ -205,7 +217,7 @@ Preferences.addSetting(
     },
     visible: ({ windowsLaunchOnLoginEnabled }) => {
       let isVisible =
-        LaunchOnLogin.isSupported() && windowsLaunchOnLoginEnabled.value;
+        AppConstants.platform === "win" && windowsLaunchOnLoginEnabled.value;
       if (isVisible) {
         
         NimbusFeatures.windowsLaunchOnLogin.recordExposureEvent({
@@ -226,7 +238,7 @@ Preferences.addSetting(
         
         
         
-        LaunchOnLogin.enable();
+        WindowsLaunchOnLogin.createLaunchOnLogin();
         Services.prefs.setBoolPref(
           "browser.startup.windowsLaunchOnLogin.disableLaunchOnLoginPrompt",
           true
@@ -234,7 +246,7 @@ Preferences.addSetting(
       } else {
         
         
-        LaunchOnLogin.disable();
+        WindowsLaunchOnLogin.removeLaunchOnLogin();
       }
     },
   })
@@ -244,7 +256,7 @@ Preferences.addSetting({
   id: "windowsLaunchOnLoginDisabledProfileBox",
   deps: ["windowsLaunchOnLoginEnabled"],
   visible: ({ windowsLaunchOnLoginEnabled }) => {
-    if (!LaunchOnLogin.isSupported()) {
+    if (AppConstants.platform !== "win") {
       return false;
     }
     let startWithLastProfile = Cc[
@@ -259,7 +271,7 @@ Preferences.addSetting({
   id: "windowsLaunchOnLoginDisabledBox",
   deps: ["launchOnLoginApproved", "windowsLaunchOnLoginEnabled"],
   visible: ({ launchOnLoginApproved, windowsLaunchOnLoginEnabled }) => {
-    if (!LaunchOnLogin.isSupported()) {
+    if (AppConstants.platform !== "win") {
       return false;
     }
     let startWithLastProfile = Cc[
