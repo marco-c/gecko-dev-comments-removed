@@ -2261,6 +2261,22 @@ EPlatformDisabledState PlatformDisabledState() {
   return ReadPlatformDisabledState();
 }
 
+void MaybeStartForceEnabled() {
+  if (!XRE_IsParentProcess()) {
+    
+    return;
+  }
+  
+  
+  if (PlatformDisabledState() != ePlatformIsForceEnabled) {
+    return;
+  }
+  if (GetAccService()) {
+    return;
+  }
+  GetOrCreateAccService(nsAccessibilityService::ePlatformAPI);
+}
+
 EPlatformDisabledState ReadPlatformDisabledState() {
   sPlatformDisabledState =
       Preferences::GetInt(PREF_ACCESSIBILITY_FORCE_DISABLED, 0);
