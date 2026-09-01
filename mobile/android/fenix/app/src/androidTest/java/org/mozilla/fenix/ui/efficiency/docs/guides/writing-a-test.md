@@ -1,12 +1,12 @@
 # Writing an efficiency test
 
-Once the building blocks exist, the test is a short, fluent description of *what* to check. It
+Once the building blocks exist, the test is a short, fluent description of _what_ to check. It
 extends `BaseTest`, which owns the compose rule, retries, cleanup, and the mock web server.
 
 ## Structure
 
 ```kotlin
-class OnboardingTest : BaseTest(skipOnboarding = false) {
+class OnboardingTest : BaseTest(LaunchConfig(skipOnboarding = false)) {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3349493
     @SmokeTest
@@ -18,9 +18,10 @@ class OnboardingTest : BaseTest(skipOnboarding = false) {
 }
 ```
 
-- **`BaseTest(...)` options** configure the launch: `skipOnboarding` (default true),
-  `isPocketEnabled`, `isRecentlyVisitedFeatureEnabled`, `isPageLoadTranslationsPromptEnabled`. Set
-  the ones the scenario needs.
+- **`BaseTest(LaunchConfig(...))`** configures the launch. Every flag and its default lives in
+  `navigation/LaunchConfig.kt` --- set only the ones the scenario needs, and read that file rather
+  than a list here, which is the sort of thing that goes stale. Override `launchConfig()` instead
+  when the launch varies per case.
 - **`on`** is the `PageContext` — `on.<page>` gives the typed page object.
 - **`navigateToPage()`** routes + confirms arrival; `navigateToPage(url)` on `browserPage` loads a
   page. Chain `moz*` verbs off it.
@@ -45,8 +46,9 @@ interstitial card) rather than branching logic in the test.
 
 1. Run the test in isolation until green (atomic runner or its shard).
 2. Confirm parity: every legacy assertion has an equivalent here.
-3. Only THEN add the `replacedBy` marker to the legacy test method. Adding it before green inflates
-   the conversion burndown with tests that don't actually pass.
+3. Only THEN add the `replacedBy` marker to the legacy test method — but in the **same commit** as the
+   conversion. Adding it before green inflates the conversion burndown with tests that don't actually
+   pass; leaving it for a follow-up pass means the conversion lands looking unconverted.
 4. If the moved/added test belongs to a CI-run shard package, update the Flank configs in the SAME
    diff (there are three: arm-experimental-api-tests.yml runs them; arm64-v8a.yml and
    arm64-v8a-detect-leaks.yml exclude them) — otherwise coverage silently changes.

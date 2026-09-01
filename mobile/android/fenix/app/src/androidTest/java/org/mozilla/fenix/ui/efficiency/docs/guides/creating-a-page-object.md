@@ -1,7 +1,7 @@
 # Creating a page object
 
 A page object models one screen (or a distinct component) so tests can reach it and read its state
-without knowing *how*. It extends `BasePage`, names itself, registers how it's reached, and exposes
+without knowing _how_. It extends `BasePage`, names itself, registers how it's reached, and exposes
 its selectors by group. Keep behavior in the harness/selectors — a page object is thin.
 
 ## Steps
@@ -15,7 +15,7 @@ its selectors by group. Keep behavior in the harness/selectors — a page object
    - `override fun mozGetSelectorsByGroup(group) = <Screen>Selectors.all.filter { it.groups.contains(group) }`
      — this is how `navigateToPage()` finds the `requiredForPage` locators to confirm arrival.
 3. **Register it in `helpers/PageContext.kt`.** Add the import and a `val <camelName> =
-   <Screen>Page(composeRule)` in lexicographic order. This matters: `PageCatalog` discovers pages by
+<Screen>Page(composeRule)` in lexicographic order. This matters: `PageCatalog` discovers pages by
    reflecting over `PageContext`, and the reachability factory + `on.<name>` access depend on it.
 4. **Add selectors** in a sibling `<Screen>Selectors.kt` (see `authoring-selectors.md`). At minimum,
    tag the element that proves you're on the screen with the `requiredForPage` group.
@@ -29,7 +29,7 @@ class OnboardingPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestR
     override val pageName = "OnboardingPage"
 
     init {
-        // Reached at launch when BaseTest(skipOnboarding = false); no steps needed.
+        // Reached at launch when BaseTest(LaunchConfig(skipOnboarding = false)); no steps needed.
         NavigationRegistry.register(from = "AppEntry", to = pageName, steps = listOf())
     }
 
