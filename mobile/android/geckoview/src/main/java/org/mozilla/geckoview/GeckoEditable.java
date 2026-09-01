@@ -139,7 +139,16 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       if (mCancelled) {
         return;
       }
-      mSession.getTextInput().getDelegate().hideSoftInput(mSession);
+
+      
+      
+      final SessionTextInput textInput = mSession.getTextInput();
+      final View view = textInput.getView();
+      if (view != null && !view.hasFocus()) {
+        return;
+      }
+
+      textInput.getDelegate().hideSoftInput(mSession);
     }
 
     public void cancel() {
