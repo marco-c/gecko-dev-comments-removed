@@ -1287,6 +1287,10 @@ pub unsafe extern "C" fn wr_render_backend_pool_new(
     if size == 0 {
         return std::ptr::null_mut();
     }
+
+    
+    set_profiler_hooks(Some(&PROFILER_HOOKS));
+
     let font_namespace = next_namespace_id();
     let fonts = SharedFontResources::new(font_namespace);
     let pool_fonts = fonts.clone();
@@ -1316,6 +1320,7 @@ pub unsafe extern "C" fn wr_render_backend_pool_new(
 #[no_mangle]
 pub unsafe extern "C" fn wr_render_backend_pool_delete(pool: *mut WrRenderBackendPool) {
     if !pool.is_null() {
+        
         mem::drop(Box::from_raw(pool));
     }
 }
@@ -2247,6 +2252,9 @@ pub extern "C" fn wr_window_new(
         false
     };
 
+    let enable_shared_instance_buffer =
+        static_prefs::pref!("gfx.webrender.shared-instance-buffer");
+
     let opts = WebRenderOptions {
         enable_aa: true,
         enable_subpixel_aa,
@@ -2315,6 +2323,7 @@ pub extern "C" fn wr_window_new(
         low_quality_pinch_zoom,
         max_shared_surface_size,
         enable_dithering,
+        enable_shared_instance_buffer,
         ..Default::default()
     };
 
@@ -2516,6 +2525,7 @@ pub extern "C" fn wr_transaction_remove_pipeline(txn: &mut Transaction, pipeline
 pub extern "C" fn wr_transaction_set_display_list(
     txn: &mut Transaction,
     epoch: WrEpoch,
+    namespace: WrIdNamespace,
     pipeline_id: WrPipelineId,
     dl_descriptor: BuiltDisplayListDescriptor,
     dl_items_data: &mut WrVecU8,
@@ -2528,7 +2538,7 @@ pub extern "C" fn wr_transaction_set_display_list(
 
     let dl = BuiltDisplayList::from_data(payload, dl_descriptor);
 
-    txn.set_display_list(epoch, (pipeline_id, dl));
+    txn.set_display_list(epoch, namespace, (pipeline_id, dl));
 }
 
 #[no_mangle]
@@ -2861,13 +2871,14 @@ pub extern "C" fn wr_api_send_transaction(dh: &mut DocumentHandle, transaction: 
 pub unsafe extern "C" fn wr_transaction_clear_display_list(
     txn: &mut Transaction,
     epoch: WrEpoch,
+    namespace: WrIdNamespace,
     pipeline_id: WrPipelineId,
 ) {
     let mut frame_builder = WebRenderFrameBuilder::new(pipeline_id);
     
     frame_builder.dl_builder.begin(60.0);
 
-    txn.set_display_list(epoch, frame_builder.dl_builder.end());
+    txn.set_display_list(epoch, namespace, frame_builder.dl_builder.end());
 }
 
 #[no_mangle]
@@ -3714,11 +3725,8 @@ pub extern "C" fn wr_dp_push_image(
     color: ColorF,
     prefer_compositor_surface: bool,
     supports_external_compositing: bool,
-    sub_rect: *const DeviceIntRect,
 ) {
     debug_assert!(unsafe { is_in_main_thread() || is_in_compositor_thread() });
-
-    let sub_rect = unsafe { sub_rect.as_ref().cloned() };
 
     let space_and_clip = parent.to_webrender(state.pipeline_id);
 
@@ -3748,15 +3756,7 @@ pub extern "C" fn wr_dp_push_image(
     state
         .frame_builder
         .dl_builder
-        .push_image(
-            &prim_info,
-            bounds,
-            image_rendering,
-            alpha_type,
-            key,
-            color,
-            sub_rect,
-        );
+        .push_image(&prim_info, bounds, image_rendering, alpha_type, key, color);
 }
 
 #[no_mangle]
@@ -4188,7 +4188,7 @@ pub extern "C" fn wr_dp_push_border(
     state
         .frame_builder
         .dl_builder
-        .push_border(&prim_info, rect, widths, border_details);
+        .push_border(&prim_info, rect, widths, border_details, &[]);
 }
 
 #[repr(C)]
@@ -4235,7 +4235,7 @@ pub extern "C" fn wr_dp_push_border_image(
     state
         .frame_builder
         .dl_builder
-        .push_border(&prim_info, rect, params.widths, border_details);
+        .push_border(&prim_info, rect, params.widths, border_details, &[]);
 }
 
 #[no_mangle]
@@ -4261,10 +4261,11 @@ pub extern "C" fn wr_dp_push_border_gradient(
     let stops_slice = unsafe { make_slice(stops, stops_count) };
     let stops_vector = stops_slice.to_owned();
 
-    let gradient = state
-        .frame_builder
-        .dl_builder
-        .create_gradient(start_point, end_point, stops_vector, extend_mode);
+    let (gradient, stops_vector) =
+        state
+            .frame_builder
+            .dl_builder
+            .create_gradient(start_point, end_point, stops_vector, extend_mode);
 
     let border_details = BorderDetails::NinePatch(NinePatchBorder {
         source: NinePatchBorderSource::Gradient(gradient),
@@ -4288,7 +4289,7 @@ pub extern "C" fn wr_dp_push_border_gradient(
     state
         .frame_builder
         .dl_builder
-        .push_border(&prim_info, rect, widths, border_details);
+        .push_border(&prim_info, rect, widths, border_details, &stops_vector);
 }
 
 #[no_mangle]
@@ -4318,10 +4319,11 @@ pub extern "C" fn wr_dp_push_border_radial_gradient(
         widths.left as i32,
     );
 
-    let gradient = state
-        .frame_builder
-        .dl_builder
-        .create_radial_gradient(center, radius, stops_vector, extend_mode);
+    let (gradient, stops_vector) =
+        state
+            .frame_builder
+            .dl_builder
+            .create_radial_gradient(center, radius, stops_vector, extend_mode);
 
     let border_details = BorderDetails::NinePatch(NinePatchBorder {
         source: NinePatchBorderSource::RadialGradient(gradient),
@@ -4345,7 +4347,7 @@ pub extern "C" fn wr_dp_push_border_radial_gradient(
     state
         .frame_builder
         .dl_builder
-        .push_border(&prim_info, rect, widths, border_details);
+        .push_border(&prim_info, rect, widths, border_details, &stops_vector);
 }
 
 #[no_mangle]
@@ -4375,10 +4377,11 @@ pub extern "C" fn wr_dp_push_border_conic_gradient(
         widths.left as i32,
     );
 
-    let gradient = state
-        .frame_builder
-        .dl_builder
-        .create_conic_gradient(center, angle, stops_vector, extend_mode);
+    let (gradient, stops_vector) =
+        state
+            .frame_builder
+            .dl_builder
+            .create_conic_gradient(center, angle, stops_vector, extend_mode);
 
     let border_details = BorderDetails::NinePatch(NinePatchBorder {
         source: NinePatchBorderSource::ConicGradient(gradient),
@@ -4402,7 +4405,7 @@ pub extern "C" fn wr_dp_push_border_conic_gradient(
     state
         .frame_builder
         .dl_builder
-        .push_border(&prim_info, rect, widths, border_details);
+        .push_border(&prim_info, rect, widths, border_details, &stops_vector);
 }
 
 #[no_mangle]
@@ -4425,10 +4428,11 @@ pub extern "C" fn wr_dp_push_linear_gradient(
     let stops_slice = unsafe { make_slice(stops, stops_count) };
     let stops_vector = stops_slice.to_owned();
 
-    let gradient = state
-        .frame_builder
-        .dl_builder
-        .create_gradient(start_point, end_point, stops_vector, extend_mode);
+    let (gradient, stops_vector) =
+        state
+            .frame_builder
+            .dl_builder
+            .create_gradient(start_point, end_point, stops_vector, extend_mode);
 
     let space_and_clip = parent.to_webrender(state.pipeline_id);
 
@@ -4442,7 +4446,7 @@ pub extern "C" fn wr_dp_push_linear_gradient(
     state
         .frame_builder
         .dl_builder
-        .push_gradient(&prim_info, rect, gradient, tile_size, tile_spacing);
+        .push_gradient(&prim_info, rect, gradient, tile_size, tile_spacing, &stops_vector);
 }
 
 #[no_mangle]
@@ -4465,10 +4469,11 @@ pub extern "C" fn wr_dp_push_radial_gradient(
     let stops_slice = unsafe { make_slice(stops, stops_count) };
     let stops_vector = stops_slice.to_owned();
 
-    let gradient = state
-        .frame_builder
-        .dl_builder
-        .create_radial_gradient(center, radius, stops_vector, extend_mode);
+    let (gradient, stops_vector) =
+        state
+            .frame_builder
+            .dl_builder
+            .create_radial_gradient(center, radius, stops_vector, extend_mode);
 
     let space_and_clip = parent.to_webrender(state.pipeline_id);
 
@@ -4479,10 +4484,14 @@ pub extern "C" fn wr_dp_push_radial_gradient(
         flags: prim_flags(is_backface_visible,  false),
     };
 
-    state
-        .frame_builder
-        .dl_builder
-        .push_radial_gradient(&prim_info, rect, gradient, tile_size, tile_spacing);
+    state.frame_builder.dl_builder.push_radial_gradient(
+        &prim_info,
+        rect,
+        gradient,
+        tile_size,
+        tile_spacing,
+        &stops_vector,
+    );
 }
 
 #[no_mangle]
@@ -4505,10 +4514,11 @@ pub extern "C" fn wr_dp_push_conic_gradient(
     let stops_slice = unsafe { make_slice(stops, stops_count) };
     let stops_vector = stops_slice.to_owned();
 
-    let gradient = state
-        .frame_builder
-        .dl_builder
-        .create_conic_gradient(center, angle, stops_vector, extend_mode);
+    let (gradient, stops_vector) =
+        state
+            .frame_builder
+            .dl_builder
+            .create_conic_gradient(center, angle, stops_vector, extend_mode);
 
     let space_and_clip = parent.to_webrender(state.pipeline_id);
 
@@ -4519,10 +4529,14 @@ pub extern "C" fn wr_dp_push_conic_gradient(
         flags: prim_flags(is_backface_visible,  false),
     };
 
-    state
-        .frame_builder
-        .dl_builder
-        .push_conic_gradient(&prim_info, rect, gradient, tile_size, tile_spacing);
+    state.frame_builder.dl_builder.push_conic_gradient(
+        &prim_info,
+        rect,
+        gradient,
+        tile_size,
+        tile_spacing,
+        &stops_vector,
+    );
 }
 
 #[no_mangle]
