@@ -112,6 +112,10 @@ add_task(async function testFullscreenCloseAddonInstallPrompt() {
   );
 
   
+  
+  gBrowser.selectedBrowser.focus();
+
+  
   await changeFullscreen(gBrowser.selectedBrowser, true);
   await TestUtils.waitForCondition(
     () => window.fullScreen,
