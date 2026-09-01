@@ -180,12 +180,6 @@ mr2022-background-update-toast-primary-button-label = Open { -brand-shorter-name
 # exceeding characters will be truncated.
 mr2022-background-update-toast-secondary-button-label = Remind Me Later
 
-## Cookie Banner Handling CFR
-
-cookie-banner-blocker-onboarding-header = { -brand-short-name } just refused a cookie banner for you
-cookie-banner-blocker-onboarding-body = Less distractions, less cookies tracking you on this site.
-cookie-banner-blocker-onboarding-learn-more = Learn more
-
 ## These strings are used in the Fox doodle Pin/set default spotlights
 
 july-jam-headline = We’ve got you covered
@@ -254,22 +248,6 @@ pdf-default-notification-set-default-button =
     .label = Set as default
 pdf-default-notification-decline-button =
     .label = Not now
-
-## Launch on login infobar notification
-
-launch-on-login-infobar-message = <strong>Open { -brand-short-name } every time you restart your computer?</strong> Now you can set { -brand-short-name } to open automatically when you restart your device.
-launch-on-login-learnmore = Learn more
-launch-on-login-infobar-confirm-button = Yes, open { -brand-short-name }
-  .accesskey = Y
-launch-on-login-infobar-reject-button = Not now
-  .accesskey = N
-
-## These string variants are used when the “launch on login” infobar
-## notification is displayed for a second time.
-
-launch-on-login-infobar-final-message = <strong>Open { -brand-short-name } every time you restart your computer?</strong> To manage your Startup preferences, search “startup” in settings.
-launch-on-login-infobar-final-reject-button = No thanks
-  .accesskey = N
 
 ## Launch on login "show and tell" infobar notification
 ##
