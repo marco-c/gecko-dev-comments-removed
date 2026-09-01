@@ -462,6 +462,10 @@ pref("browser.urlbar.ipc.chromeMessagePassing", false);
 
 
 
+pref("browser.urlbar.newtab.featureGate", false);
+
+
+
 pref("browser.urlbar.loglevel", "Error");
 
 
