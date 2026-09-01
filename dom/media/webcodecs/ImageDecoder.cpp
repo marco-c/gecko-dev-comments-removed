@@ -82,8 +82,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(ImageDecoder)
   
   
   tmp->CloseWithoutRef(
-      MediaResult(NS_ERROR_DOM_ABORT_ERR, "Cycle-collected decoder"_ns),
-       false);
+      MediaResult(NS_ERROR_DOM_ABORT_ERR, "Cycle-collected decoder"_ns));
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mParent)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mTracks)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mReadRequest)
@@ -123,8 +122,7 @@ ImageDecoder::~ImageDecoder() {
   MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Debug, "ImageDecoder {} ~ImageDecoder",
               fmt::ptr(this));
   
-  CloseWithoutRef(MediaResult(NS_ERROR_DOM_ABORT_ERR, "Destroyed decoder"_ns),
-                   false);
+  CloseWithoutRef(MediaResult(NS_ERROR_DOM_ABORT_ERR, "Destroyed decoder"_ns));
 }
 
 JSObject* ImageDecoder::WrapObject(JSContext* aCx,
@@ -243,7 +241,14 @@ MessageProcessedResult ImageDecoder::ProcessConfigureMessage(
   mMessageQueueBlocked = true;
 
   NS_DispatchToCurrentThread(NS_NewCancelableRunnableFunction(
-      "ImageDecoder::ProcessConfigureMessage", [self = RefPtr{this}] {
+      "ImageDecoder::ProcessConfigureMessage",
+      [self = RefPtr{this}]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+        
+        
+        
+        
+        
+        
         
         
         
@@ -272,9 +277,10 @@ MessageProcessedResult ImageDecoder::ProcessDecodeMetadataMessage(
       [self = RefPtr{this}](const image::DecodeMetadataResult& aMetadata) {
         self->OnMetadataSuccess(aMetadata);
       },
-      [self = RefPtr{this}](const nsresult& aErr) {
-        self->OnMetadataFailed(aErr);
-      });
+      [self = RefPtr{this}](const nsresult& aErr)
+          MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION -> void {
+            self->OnMetadataFailed(aErr);
+          });
   return MessageProcessedResult::Processed;
 }
 
@@ -646,14 +652,16 @@ void ImageDecoder::Initialize(const GlobalObject& aGlobal,
     
     
     
-    mReadRequest = MakeAndAddRef<ImageDecoderReadRequest>(mSourceBuffer);
-    if (NS_WARN_IF(!mReadRequest->Initialize(aGlobal, this, stream))) {
+    RefPtr<ImageDecoderReadRequest> readRequest =
+        MakeAndAddRef<ImageDecoderReadRequest>(mSourceBuffer);
+    if (NS_WARN_IF(!readRequest->Initialize(aGlobal, this, stream))) {
       MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error,
                   "ImageDecoder {} Initialize -- create read request failed",
                   fmt::ptr(this));
       aRv.ThrowInvalidStateError("Could not create reader for ReadableStream");
       return;
     }
+    mReadRequest = std::move(readRequest);
   } else if (aInit.mData.IsArrayBufferView()) {
     
     isBufferSource = true;
@@ -894,9 +902,10 @@ void ImageDecoder::RequestFrameCount(uint32_t aKnownFrameCount) {
           [self = RefPtr{this}](const image::DecodeFrameCountResult& aResult) {
             self->OnFrameCountSuccess(aResult);
           },
-          [self = RefPtr{this}](const nsresult& aErr) {
-            self->OnFrameCountFailed(aErr);
-          });
+          [self = RefPtr{this}](const nsresult& aErr)
+              MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION -> void {
+                self->OnFrameCountFailed(aErr);
+              });
 }
 
 void ImageDecoder::RequestDecodeFrames(uint32_t aFramesToDecode) {
@@ -1084,13 +1093,32 @@ void ImageDecoder::ResetWithoutRef(const MediaResult& aResult) {
 
 void ImageDecoder::Close(const MediaResult& aResult) {
   RefPtr<ImageDecoder> kungFuDeathGrip(this);
-  CloseWithoutRef(aResult);
+  CloseAndCancelWithoutRef(aResult);
 }
 
-void ImageDecoder::CloseWithoutRef(const MediaResult& aResult,
-                                   bool aCancelReadRequest) {
+void ImageDecoder::CloseWithoutRef(const MediaResult& aResult) {
+  if (RefPtr<ImageDecoderReadRequest> readRequest = CloseCommon(aResult)) {
+    readRequest->Destroy();
+  }
+}
+
+void ImageDecoder::CloseAndCancelWithoutRef(const MediaResult& aResult) {
+  if (RefPtr<ImageDecoderReadRequest> readRequest = CloseCommon(aResult)) {
+    
+    
+    
+    
+    
+    
+    
+    readRequest->DestroyAndCancel();
+  }
+}
+
+already_AddRefed<ImageDecoderReadRequest> ImageDecoder::CloseCommon(
+    const MediaResult& aResult) {
   if (mClosed) {
-    return;
+    return nullptr;
   }
 
   MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Debug, "ImageDecoder {} Close '{}'",
@@ -1108,10 +1136,7 @@ void ImageDecoder::CloseWithoutRef(const MediaResult& aResult,
     mDecoder->Destroy();
   }
 
-  if (mReadRequest) {
-    mReadRequest->Destroy(aCancelReadRequest);
-    mReadRequest = nullptr;
-  }
+  RefPtr<ImageDecoderReadRequest> readRequest = std::move(mReadRequest);
 
   mSourceBuffer = nullptr;
   mDecoder = nullptr;
@@ -1135,6 +1160,8 @@ void ImageDecoder::CloseWithoutRef(const MediaResult& aResult,
     mShutdownWatcher->Destroy();
     mShutdownWatcher = nullptr;
   }
+
+  return readRequest.forget();
 }
 
 void ImageDecoder::Reset() {
@@ -1147,7 +1174,11 @@ void ImageDecoder::Close() {
 }
 
 void ImageDecoder::OnShutdown() {
-  Close(MediaResult(NS_ERROR_DOM_ABORT_ERR, "Shutdown"_ns));
+  
+  
+  
+  RefPtr<ImageDecoder> kungFuDeathGrip(this);
+  CloseWithoutRef(MediaResult(NS_ERROR_DOM_ABORT_ERR, "Shutdown"_ns));
 }
 
 }  
