@@ -35,6 +35,12 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(BarProp)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
+void BarProp::SetVisible(bool, CallerType aCallerType, ErrorResult& aRv) {
+  if (aCallerType == CallerType::System) {
+    aRv.ThrowNotAllowedError("BarProps are readonly, effectively");
+  }
+}
+
 bool BarProp::GetVisibleByIsPopup() {
   
   
