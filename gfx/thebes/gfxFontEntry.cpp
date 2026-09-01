@@ -99,6 +99,12 @@ gfxFontEntry::~gfxFontEntry() {
   gfxCharacterMap* cmap = mCharacterMap.exchange(nullptr);
   NS_IF_RELEASE(cmap);
 
+#ifdef MOZ_FONTATIONS
+  if (SkrifaFontRef* font = mSkrifaFontFace) {
+    skrifa_font_delete(font);
+  }
+#endif
+
   
   
   
@@ -123,6 +129,22 @@ void gfxFontEntry::InitializeFrom(fontlist::Face* aFace,
   MOZ_POP_THREAD_SAFETY
   TrySetShmemCharacterMap();
 }
+
+#ifdef MOZ_FONTATIONS
+void gfxFontEntry::SetSkrifaFont(SkrifaFontRef* aSkrifaFont,
+                                 MemoryMappedFile&& aSkrifaFontFile) {
+  
+  
+  if (mSkrifaFontFace.compareExchange(nullptr, aSkrifaFont)) {
+    
+    mSkrifaFontFile = std::move(aSkrifaFontFile);
+  } else {
+    
+    
+    skrifa_font_delete(aSkrifaFont);
+  }
+}
+#endif
 
 bool gfxFontEntry::TrySetShmemCharacterMap() {
   auto* pfl = gfxPlatformFontList::PlatformFontList();
