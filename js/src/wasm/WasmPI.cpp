@@ -17,11 +17,13 @@
 #include "wasm/WasmPI.h"
 
 #include "jsfriendapi.h"
+
 #include "builtin/Promise.h"
 #include "debugger/DebugAPI.h"
 #include "debugger/Debugger.h"
 #include "jit/MIRGenerator.h"
 #include "js/CallAndConstruct.h"
+#include "js/Exception.h"  
 #include "js/Printf.h"
 #include "js/Wrapper.h"
 #include "vm/Compartment.h"
@@ -1169,11 +1171,20 @@ static bool WasmPromisingFunction(JSContext* cx, unsigned argc, Value* vp) {
 
   
   
-  JSObject* newPromise = NewPromiseObject(cx, nullptr);
-  if (!newPromise) {
-    return false;
+  
+  
+  
+  
+  
+  Rooted<PromiseObject*> promiseObject(cx);
+  {
+    JS::AutoSaveExceptionState savedExc(cx);
+    JSObject* newPromise = NewPromiseObject(cx, nullptr);
+    if (!newPromise) {
+      return false;
+    }
+    promiseObject = &newPromise->as<PromiseObject>();
   }
-  Rooted<PromiseObject*> promiseObject(cx, &newPromise->as<PromiseObject>());
   args.rval().setObject(*promiseObject);
   return RejectPromiseWithPendingError(cx, promiseObject);
 }
@@ -1245,7 +1256,7 @@ static bool WasmPromiseReaction(JSContext* cx, unsigned argc, Value* vp) {
   JS::RootedValueArray<2> argv(cx);
   JS::Rooted<JS::Value> rval(cx);
   argv[0].set(callee->getExtendedSlot(CONT_SLOT));
-  argv[1].set(ObjectValue(*promisingPromiseObject));
+  argv[1].setObject(*promisingPromiseObject);
 
   if (Call(cx, UndefinedHandleValue, reactionFunc, argv, &rval)) {
     return true;
