@@ -24,8 +24,9 @@ add_task(async function testHorizontalScrolling() {
   
   
   
-  const expectedWidth =
-    1280 + (Services.prefs.getBoolPref("browser.nova.enabled") ? 14 : 0);
+  
+  
+  const expectedWidth = 1280 + 2 * toolboxBorderWidth;
   const expectedHeight = 1040;
   if (
     window.innerWidth != expectedWidth ||
