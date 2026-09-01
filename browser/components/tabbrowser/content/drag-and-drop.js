@@ -963,6 +963,7 @@
       }
       clearInterval(this.#staleDragCheckTimer);
       this.#staleDragCheckTimer = null;
+      this.#dropAnimationEndTime = 0;
       window.removeEventListener("mousedown", this.#onMouseDown, {
         capture: true,
       });
@@ -985,10 +986,19 @@
         return;
       }
 
+      let session = this.#dragSession;
+      let label = session ? "session_live" : "session_ended";
+      if (this.#dropAnimationEndTime) {
+        
+        
+        label += "_after_drop";
+      }
+      Glean.tab.staleDragRecovery[label].add(1);
+
       
       
       
-      this.#dragSession?.endDragSession(false);
+      session?.endDragSession(false);
 
       let draggedItem = this._tabbrowserTabs.dragAndDropElements.find(
         item => item._dragData
