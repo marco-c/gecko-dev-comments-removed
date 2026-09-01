@@ -53,13 +53,11 @@ const lazy = XPCOMUtils.declareLazy({
   AIWindow:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
   BrowserUIUtils: "resource:///modules/BrowserUIUtils.sys.mjs",
-  BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   ExtensionSearchHandler:
     "resource://gre/modules/ExtensionSearchHandler.sys.mjs",
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
-  PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
   ReaderMode: "moz-src:///toolkit/components/reader/ReaderMode.sys.mjs",
@@ -132,7 +130,7 @@ export class UrlbarInput extends HTMLElement {
         <html:panel-list class="searchmode-switcher-panel-list">
           <html:div class="searchmode-switcher-panel-description" role="heading" />
 ${
-  Services.prefs.getBoolPref("browser.nova.enabled", false)
+  UrlbarPrefs.get("browser.nova.enabled")
     ? '<html:hr class="searchmode-switcher-panel-installed-engine-separator"/><html:hr class="searchmode-switcher-panel-footer-separator"/>'
     : '<html:hr/><html:hr class="searchmode-switcher-panel-installed-engine-separator searchmode-switcher-panel-footer-separator"/>'
 }
@@ -255,6 +253,7 @@ ${
 
   _resultForCurrentValue = null;
   _untrimmedValue = "";
+  _wwwIsTrimmed = false;
   _enableAutofillPlaceholder = true;
 
   constructor() {
@@ -369,8 +368,7 @@ ${
 
     searchModeSwitcherDescription.setAttribute(
       "data-l10n-id",
-      this.#isAddressbar &&
-        !Services.prefs.getBoolPref("browser.nova.enabled", false)
+      this.#isAddressbar && !UrlbarPrefs.get("browser.nova.enabled")
         ? "urlbar-searchmode-popup-one-off-header"
         : "urlbar-searchmode-popup-header"
     );
@@ -442,6 +440,8 @@ ${
     if (!this.controller) {
       this.#init();
     }
+
+    this.searchModeSwitcher.connect();
 
     if (this.inOverflowPanel && this.view.isOpen) {
       this.view.close();
@@ -562,6 +562,8 @@ ${
       // but we don't notice because the search service observer is inactive.
       this.searchMode = null;
     }
+
+    this.searchModeSwitcher.disconnect();
 
     if (this._copyCutController) {
       this.inputField.controllers.removeController(this._copyCutController);
@@ -830,7 +832,8 @@ ${
       start: this.value ? this.selectionStart : 0,
       end: this.value ? this.selectionEnd : Number.MAX_SAFE_INTEGER,
       // When restoring a URI from an empty value, we don't want to untrim it.
-      shouldUntrim: this.value && !this._protocolIsTrimmed,
+      shouldUntrim:
+        this.value && !this._protocolIsTrimmed && !this._wwwIsTrimmed,
     };
   }
 
@@ -969,11 +972,12 @@ ${
     }
 
     const previousUntrimmedValue = this.untrimmedValue;
-    // When calculating the selection indices we must take into account a
-    // trimmed protocol.
-    let offset = this._protocolIsTrimmed
-      ? lazy.BrowserUIUtils.trimURLProtocol.length
-      : 0;
+    // When calculating the selection indices we must take into account any
+    // trimmed prefix (protocol and potentially "www.").
+    let offset =
+      (this._protocolIsTrimmed
+        ? lazy.BrowserUIUtils.trimURLProtocol.length
+        : 0) + (this._wwwIsTrimmed ? "www.".length : 0);
     const previousSelectionStart = this.selectionStart + offset;
     const previousSelectionEnd = this.selectionEnd + offset;
 
@@ -1231,6 +1235,15 @@ ${
   }
 
   /**
+   * The selected browser's id, or null in a window without `gBrowser`.
+   *
+   * @type {?number}
+   */
+  get #selectedBrowserId() {
+    return this.window.gBrowser?.selectedBrowser?.browserId ?? null;
+  }
+
+  /**
    * Records the engagement and a search against an engine, adds it to form
    * history, and opens its SERP through the parent controller, which builds the
    * submission URL and annotates the load as a search visit. Shared by the
@@ -1267,11 +1280,19 @@ ${
       searchSource: this.getSearchSource(event),
       windowMode: this.windowMode,
     });
-    this._recordSearch(engine.id, event, {}, where == "tab");
-    lazy.UrlbarUtils.addToFormHistory(this, searchString, engine.name).catch(
-      console.error
+    this._recordSearch({
+      engine,
+      event,
+      where,
+      query: searchString,
+    });
+    this.controller.openSERP(
+      engine.id,
+      searchString,
+      where,
+      inBackground,
+      this.#selectedBrowserId
     );
-    this.controller.openSERP(engine.id, searchString, where, inBackground);
   }
 
   /**
@@ -1433,7 +1454,7 @@ ${
     // before it resolves must not steal the load. The chrome address bar reads
     // its selected tab here; a content-process moz-urlbar has no gBrowser and
     // leaves the target to the parent (its own tab).
-    let browserId = this.window.gBrowser?.selectedBrowser?.browserId ?? null;
+    let browserId = this.#selectedBrowserId;
 
     if (this.#isAddressbar && URL.canParse(url)) {
       // Annotate if the untrimmed value contained a scheme, to later potentially
@@ -1623,7 +1644,7 @@ ${
       result.payload?.url &&
       !this.isPrivate
     ) {
-      lazy.UrlbarUtils.clearAutofillBackspaceEntryForUrl(result.payload.url);
+      this.controller.clearAutofillBackspaceEntryForUrl(result.payload.url);
     }
 
     if (
@@ -1732,10 +1753,7 @@ ${
       openParams.forceForeground = true;
     }
 
-    let keepViewOpen = lazy.BrowserUtils.willLoadInBackground(
-      where,
-      openParams
-    );
+    let keepViewOpen = this.controller.willLoadInBackground(where, openParams);
     openParams.avoidBrowserFocus = keepViewOpen;
 
     if (!this.#providesSearchMode(result) && !keepViewOpen) {
@@ -1901,7 +1919,14 @@ ${
           result.payload.engine
         );
 
-        this._recordSearch(engine.id, event, actionDetails, where == "tab");
+        this._recordSearch({
+          engine,
+          event,
+          where,
+          query: result.payload.suggestion || result.payload.query,
+          searchActionDetails: actionDetails,
+          opensInPrivateWindow: result.payload.inPrivateWindow,
+        });
 
         if (
           this.#isAddressbar &&
@@ -1936,14 +1961,6 @@ ${
                 .catch(console.error);
             }
           }
-        }
-
-        if (!result.payload.inPrivateWindow) {
-          lazy.UrlbarUtils.addToFormHistory(
-            this,
-            result.payload.suggestion || result.payload.query,
-            engine.name
-          ).catch(console.error);
         }
         break;
       }
@@ -2094,36 +2111,7 @@ ${
         (!result.autofill || result.autofill.type == "url") &&
         result.type == UrlbarShared.RESULT_TYPE.URL
       ) {
-        let isOrigin = lazy.UrlbarUtils.isOriginUrl(url);
-        let clear = isOrigin
-          ? lazy.UrlbarUtils.clearOriginAutofillBlock(url)
-          : lazy.UrlbarUtils.clearOriginPageAutofillBlock(url);
-        clear
-          .then(wasBlocked => {
-            // getBackspaceBlock reads and removes the {blockedAt} entry for
-            // telemetry. clearAutofillBackspaceEntryForUrl then removes any
-            // remaining sub-threshold {count} entry. Together they always
-            // clear the in-memory counter — visiting the url is a positive
-            // signal regardless of whether a database block existed.
-            let entry = lazy.UrlbarUtils.getBackspaceBlock(url);
-            lazy.UrlbarUtils.clearAutofillBackspaceEntryForUrl(url);
-
-            if (!wasBlocked) {
-              return;
-            }
-
-            let level = isOrigin ? "origin" : "url";
-            Glean.urlbarAutofill.reintegration[level].add(1);
-
-            // For backspace-induced blocks, record the unblock delay: fast
-            // unblocks suggest the original block was accidental.
-            if (entry?.level === level) {
-              Glean.urlbarAutofill.reintegrationAfterBackspace[
-                level
-              ].accumulateSingleSample(Date.now() - entry.blockedAt);
-            }
-          })
-          .catch(console.error);
+        this.controller.handleAutofillReintegration(url);
       }
     }
 
@@ -2632,7 +2620,12 @@ ${
     let trimmedValue = value.trim();
     this._lastSearchString = trimmedValue;
     if (trimmedValue) {
-      this._recordSearch(searchEngine.id, event, {}, where.startsWith("tab"));
+      this._recordSearch({
+        engine: searchEngine,
+        query: trimmedValue,
+        event,
+        where,
+      });
 
       if (where == "current") {
         // Enter search mode so:
@@ -2656,11 +2649,17 @@ ${
         searchEngine.id,
         trimmedValue,
         where,
-        inBackground
+        inBackground,
+        this.#selectedBrowserId
       );
     } else {
       // Telemetry is handled by the function.
-      this.controller.openSearchForm(searchEngine.id, where, inBackground);
+      this.controller.openSearchForm(
+        searchEngine.id,
+        where,
+        inBackground,
+        this.#selectedBrowserId
+      );
     }
   }
 
@@ -2978,6 +2977,15 @@ ${
     return this._lastSearchString;
   }
 
+  /**
+   * @type {Promise<void>}
+   *
+   * Resolves once the search mode last assigned through the `searchMode`
+   * setter has been applied. Applying it resolves the engine, which may have
+   * to wait for the engine store.
+   */
+  #searchModeApplied = Promise.resolve();
+
   get searchMode() {
     if (!this.window.gBrowser) {
       // This only happens before DOMContentLoaded.
@@ -2987,7 +2995,10 @@ ${
   }
 
   set searchMode(searchMode) {
-    this.setSearchMode(searchMode, this.window.gBrowser.selectedBrowser);
+    this.#searchModeApplied = this.setSearchMode(
+      searchMode,
+      this.window.gBrowser.selectedBrowser
+    );
 
     this.controller.engineStore
       .getEngineByName(this.searchMode?.engineName)
@@ -3169,13 +3180,25 @@ ${
       return false;
     }
 
+    if (startQuery) {
+      // Closing the view discards a previewed search mode, so the mode has to
+      // be confirmed before the query below gets a chance to run.
+      searchMode.isPreview = false;
+    }
     this.searchMode = searchMode;
 
     let value = result.payload.query?.trimStart() || "";
     this.setValue(value);
 
     if (startQuery) {
-      this.startQuery({ allowAutofill: false });
+      // Search mode stores the value to restore on tab switch. For a confirmed
+      // mode that's the query string, not the keyword that entered it.
+      this.userTypedValue = this.untrimmedValue;
+
+      // The query has to run in the search mode we just entered.
+      this.#searchModeApplied.then(() =>
+        this.startQuery({ allowAutofill: false })
+      );
     }
 
     return true;
@@ -3412,10 +3435,6 @@ ${
           "--urlbar-container-height",
           px(getBoundsWithoutFlushing(this.parentNode).height)
         );
-        this.style.setProperty(
-          "--urlbar-height",
-          px(getBoundsWithoutFlushing(this).height)
-        );
 
         if (this.#breakoutBlockerCount) {
           return;
@@ -3458,12 +3477,21 @@ ${
     }
     this._untrimmedValue = untrimmedValue ?? val;
     this._protocolIsTrimmed = false;
+    this._wwwIsTrimmed = false;
     if (allowTrim) {
       let oldVal = val;
       val = this._trimValue(val);
-      this._protocolIsTrimmed =
-        oldVal.startsWith(lazy.BrowserUIUtils.trimURLProtocol) &&
-        !val.startsWith(lazy.BrowserUIUtils.trimURLProtocol);
+      // Derive what was trimmed from the authoritative prefix logic (a "www."
+      // is only ever stripped together with the protocol). _trimValue may
+      // decline to trim (e.g. RTL or mixed-content values), so also confirm the
+      // prefix was actually removed from the displayed value.
+      let trimmedPrefix = lazy.BrowserUIUtils.getTrimmedURLPrefix(oldVal);
+      if (trimmedPrefix && !val.startsWith(trimmedPrefix)) {
+        this._protocolIsTrimmed = trimmedPrefix.startsWith(
+          lazy.BrowserUIUtils.trimURLProtocol
+        );
+        this._wwwIsTrimmed = trimmedPrefix.endsWith("www.");
+      }
     }
 
     this.valueIsTyped = valueIsTyped;
@@ -3707,7 +3735,7 @@ ${
 
     let isRTL =
       this.getAttribute("domaindir") === "rtl" &&
-      lazy.UrlbarUtils.isTextDirectionRTL(this.value, this.window);
+      this.controller.isTextDirectionRTL(this.value);
 
     this.window.promiseDocumentFlushed(() => {
       // Check overflow again to ensure it didn't change in the meanwhile.
@@ -3781,7 +3809,7 @@ ${
     if (
       this.selectionStart > 0 ||
       selectedVal == "" ||
-      (this.valueIsTyped && !this._protocolIsTrimmed)
+      (this.valueIsTyped && !this._protocolIsTrimmed && !this._wwwIsTrimmed)
     ) {
       return selectedVal;
     }
@@ -3840,13 +3868,11 @@ ${
     // Just the beginning of the URL is selected, or we want a decoded
     // url. First check for a trimmed value.
 
-    if (
-      !selectedVal.startsWith(lazy.BrowserUIUtils.trimURLProtocol) &&
-      // Note _trimValue may also trim a trailing slash, thus we can't just do
-      // a straight string compare to tell if the protocol was trimmed.
-      !displaySpec.startsWith(this._trimValue(displaySpec))
-    ) {
-      selectedVal = lazy.BrowserUIUtils.trimURLProtocol + selectedVal;
+    // _trimValue may also trim a trailing slash, so we can't compare strings
+    // directly to tell what was trimmed; consult the trimmed prefix instead.
+    let trimmedPrefix = lazy.BrowserUIUtils.getTrimmedURLPrefix(displaySpec);
+    if (trimmedPrefix && !selectedVal.startsWith(trimmedPrefix)) {
+      selectedVal = trimmedPrefix + selectedVal;
     }
 
     // If selection starts from the beginning and part or all of the URL
@@ -3896,41 +3922,58 @@ ${
   }
 
   /**
-   * Hands a loading search to the parent controller, which records it.
+   * @typedef {object} SearchActionDetails
    *
-   * @param {string} engineId
-   *   The engine to generate the query for.
-   * @param {Event} event
-   *   The event that triggered this query.
-   * @param {object} [searchActionDetails]
-   *   The details associated with this search query.
-   * @param {boolean} [searchActionDetails.isSuggestion]
+   * @property {boolean} [isSuggestion]
    *   True if this query was initiated from a suggestion from the search engine.
-   * @param {boolean} [searchActionDetails.alias]
-   *   True if this query was initiated via a search alias.
-   * @param {boolean} [searchActionDetails.isFormHistory]
+   * @property {string} [alias]
+   *   The search engine alias this query was initiated with, if any.
+   * @property {boolean} [isFormHistory]
    *   True if this query was initiated from a form history result.
-   * @param {string} [searchActionDetails.url]
+   * @property {string} [url]
    *   The url this query was triggered with.
-   * @param {boolean} [inNewTab]
-   *   Whether the search opens in a new tab, in which case it is recorded
-   *   against that tab's browser once the load opens it (parent-side); otherwise
-   *   against the selected browser.
    */
-  _recordSearch(engineId, event, searchActionDetails = {}, inNewTab = false) {
+
+  /**
+   * Records search telemetry for a search and adds it to form history.
+   *
+   * @param {object} options
+   * @param {PartialSearchEngine} options.engine
+   *   The engine to record the query for.
+   * @param {string} options.query
+   *   The search query.
+   * @param {Event} options.event
+   *   The event that triggered this query.
+   * @param {string} [options.where]
+   *   Where the search opens.
+   * @param {SearchActionDetails} [options.searchActionDetails]
+   *   The details associated with this search query.
+   * @param {boolean} [options.opensInPrivateWindow]
+   *   Whether the search opens in a new private window.
+   */
+  _recordSearch({
+    engine,
+    query,
+    event,
+    where = "current",
+    searchActionDetails = {},
+    opensInPrivateWindow = false,
+  }) {
     const isOneOff = this.view.oneOffSearchButtons?.eventTargetIsAOneOff(event);
     const searchSource = this.getSearchSource(event);
 
     let searchData = {
-      engineId,
+      engineId: engine.id,
       searchSource,
+      query,
+      opensInPrivateWindow,
       details: {
         ...searchActionDetails,
         isOneOff,
         newtabSessionId: this._handoffSession,
       },
     };
-    if (inNewTab) {
+    if (where.startsWith("tab")) {
       this.controller.recordSearchInOpenedTab(searchData);
     } else {
       this.controller.recordSearch(searchData);
@@ -3954,7 +3997,7 @@ ${
       : val;
     // Only trim value if the directionality doesn't change to RTL and we're not
     // showing a strikeout https protocol.
-    return lazy.UrlbarUtils.isTextDirectionRTL(trimmedValue, this.window) ||
+    return this.controller.isTextDirectionRTL(trimmedValue) ||
       this.#lazy.valueFormatter.willShowFormattedMixedContentProtocol(val)
       ? val
       : trimmedValue;
@@ -4354,7 +4397,7 @@ ${
     // Check if we can untrim the current value.
     if (
       !UrlbarPrefs.getScotchBonnetPref("untrimOnUserInteraction.featureGate") ||
-      !this._protocolIsTrimmed ||
+      (!this._protocolIsTrimmed && !this._wwwIsTrimmed) ||
       !this.focused ||
       (!ignoreSelection && this.#allTextSelected)
     ) {
@@ -4364,8 +4407,12 @@ ${
     let selectionStart = this.selectionStart;
     let selectionEnd = this.selectionEnd;
 
-    // Correct the selection taking the trimmed protocol into account.
-    let offset = lazy.BrowserUIUtils.trimURLProtocol.length;
+    // Correct the selection taking the trimmed prefix (protocol and
+    // leading "www.") into account.
+    let offset =
+      (this._protocolIsTrimmed
+        ? lazy.BrowserUIUtils.trimURLProtocol.length
+        : 0) + (this._wwwIsTrimmed ? "www.".length : 0);
 
     // In case of autofill, we may have to adjust its boundaries.
     if (this._autofillPlaceholder) {
@@ -4590,7 +4637,7 @@ ${
       return hidden;
     }
 
-    let isOrigin = lazy.UrlbarUtils.isOriginUrl(result.payload.url);
+    let isOrigin = UrlbarShared.isOriginUrl(result.payload.url);
     return {
       showDismiss: !this.isPrivate,
       showForget: !isOrigin,
@@ -4610,20 +4657,9 @@ ${
       return;
     }
 
-    Glean.urlbarAutofill.inputContextMenuDismissal[action].add(1);
-
-    let { url } = result.payload;
-    if (action === "forget") {
-      await lazy.PlacesUtils.history.remove(url).catch(console.error);
-    } else {
-      let blockUntilMs =
-        Date.now() + UrlbarPrefs.get("autoFill.dismissalBlockDurationMs");
-      await lazy.UrlbarUtils.blockAutofill(url, blockUntilMs).catch(
-        console.error
-      );
-    }
-
-    lazy.UrlbarUtils.clearAutofillBackspaceEntryForUrl(url);
+    await this.controller
+      .dismissAutofill(result.payload.url, action)
+      .catch(console.error);
 
     this.setValue(this._lastSearchString);
     this.startQuery({
@@ -4935,9 +4971,9 @@ ${
       return;
     }
 
-    let prefName =
-      "browser.urlbar.placeholderName" + (this.isPrivate ? ".private" : "");
-    let engineName = Services.prefs.getStringPref(prefName, "");
+    let engineName = UrlbarPrefs.get(
+      "placeholderName" + (this.isPrivate ? ".private" : "")
+    );
     if (engineName) {
       this._setPlaceholder(engineName);
     }
@@ -5270,26 +5306,30 @@ ${
     // This is necessary when a protocol was typed, but the whole url has
     // invalid parts, like the origin, then editing and confirming the trimmed
     // value would execute a search instead of visiting the typed url.
-    if (this.#isAddressbar && this._protocolIsTrimmed) {
-      let untrim = false;
-      let fixedDisplaySpec = this.controller.getFixupInfo(
-        this.value
-      )?.preferredURIDisplaySpec;
-      if (fixedDisplaySpec) {
-        let expectedDisplaySpec = this.controller.getDisplaySpec(
-          this._untrimmedValue
-        );
-        if (expectedDisplaySpec == null) {
-          untrim = true;
-        } else if (
-          UrlbarPrefs.getScotchBonnetPref("trimHttps") &&
-          this._untrimmedValue.startsWith("https://")
-        ) {
-          untrim =
-            fixedDisplaySpec.replace("http://", "https://") !=
-            expectedDisplaySpec; // FIXME bug 1847723: Figure out a way to do this without manually messing with the fixed up URI.
-        } else {
-          untrim = fixedDisplaySpec != expectedDisplaySpec;
+    // When "www." was trimmed we always untrim, so the user sees the full URL
+    // and has to explicitly remove the prefix to load the bare domain.
+    if (this.#isAddressbar && (this._protocolIsTrimmed || this._wwwIsTrimmed)) {
+      let untrim = this._wwwIsTrimmed;
+      if (!untrim) {
+        let fixedDisplaySpec = this.controller.getFixupInfo(
+          this.value
+        )?.preferredURIDisplaySpec;
+        if (fixedDisplaySpec) {
+          let expectedDisplaySpec = this.controller.getDisplaySpec(
+            this._untrimmedValue
+          );
+          if (expectedDisplaySpec == null) {
+            untrim = true;
+          } else if (
+            UrlbarPrefs.getScotchBonnetPref("trimHttps") &&
+            this._untrimmedValue.startsWith("https://")
+          ) {
+            untrim =
+              fixedDisplaySpec.replace("http://", "https://") !=
+              expectedDisplaySpec; // FIXME bug 1847723: Figure out a way to do this without manually messing with the fixed up URI.
+          } else {
+            untrim = fixedDisplaySpec != expectedDisplaySpec;
+          }
         }
       }
       if (untrim) {
@@ -5425,7 +5465,7 @@ ${
         event.inputType === "deleteContentForward")
     ) {
       // Take a telemetry if user deleted whole autofilled value.
-      Glean.urlbar.autofillDeletion.add(1);
+      this.controller.recordAutofillDeletion();
     }
 
     if (
@@ -5445,6 +5485,7 @@ ${
     this.valueIsTyped = true;
     this._untrimmedValue = value;
     this._protocolIsTrimmed = false;
+    this._wwwIsTrimmed = false;
     this._resultForCurrentValue = null;
 
     this.userTypedValue = value;
