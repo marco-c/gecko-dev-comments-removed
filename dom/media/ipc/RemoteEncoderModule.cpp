@@ -106,6 +106,7 @@ media::EncodeSupportSet RemoteEncoderModule::Supports(
   
   
   
+  auto hwPref = aConfig.mHardwarePreference;
 
 #ifdef MOZ_APPLEMEDIA
   
@@ -134,10 +135,19 @@ media::EncodeSupportSet RemoteEncoderModule::Supports(
         return media::EncodeSupportSet{};
     }
   }
+
+  
+  
+  
+  if ((aConfig.mCodec == CodecType::VP8 || aConfig.mCodec == CodecType::VP9) &&
+      aConfig.mUsage == Usage::Realtime &&
+      aConfig.mHardwarePreference == HardwarePreference::None) {
+    hwPref = HardwarePreference::RequireSoftware;
+  }
 #endif
 
   media::EncodeSupportSet supports = SupportsCodec(aConfig.mCodec);
-  switch (aConfig.mHardwarePreference) {
+  switch (hwPref) {
     case HardwarePreference::RequireHardware:
       supports -= media::EncodeSupport::SoftwareEncode;
       break;
