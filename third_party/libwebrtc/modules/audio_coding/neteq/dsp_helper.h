@@ -14,6 +14,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <span>
+
 #include "modules/audio_coding/neteq/audio_multi_vector.h"
 #include "modules/audio_coding/neteq/audio_vector.h"
 
@@ -102,7 +104,7 @@ class DspHelper {
   
   
   
-  static void ParabolicFit(int16_t* signal_points,
+  static void ParabolicFit(std::span<const int16_t> signal_points,
                            int fs_mult,
                            size_t* peak_index,
                            int16_t* peak_value);
