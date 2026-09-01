@@ -454,7 +454,10 @@ void FlattenBezier(const BezierControlPoints& aControlPoints, PathSink* aSink,
     return;
   }
 
-  double t1min = t1, t1max = t1, t2min = t2, t2max = t2;
+  double t1min = t1, t1max = t1, t2min, t2max;
+  if (count > 1) {
+    t2min = t2max = t2;
+  }
 
   BezierControlPoints remainingCP = aControlPoints;
 
@@ -464,6 +467,7 @@ void FlattenBezier(const BezierControlPoints& aControlPoints, PathSink* aSink,
     FindInflectionApproximationRange(aControlPoints, &t1min, &t1max, t1,
                                      aTolerance);
   }
+
   if (count > 1 && t2 >= 0 && t2 < 1.0) {
     FindInflectionApproximationRange(aControlPoints, &t2min, &t2max, t2,
                                      aTolerance);
