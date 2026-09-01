@@ -3,6 +3,7 @@
 
 
 use api::FontInstanceFlags;
+use api::euclid::{Box2D, Scale};
 use api::units::*;
 use crate::command_buffer::PrimitiveCommand;
 use crate::pattern::PatternKind;
@@ -26,8 +27,8 @@ use crate::renderer::{BlendMode, GpuBufferBuilder, ShaderColorMode};
 use crate::resource_cache::GlyphFetchResult;
 use crate::space::SpaceMapper;
 use crate::transform::TransformPalette;
-use crate::util::MaxRect;
 use crate::visibility::{PrimitiveVisibilityFlags, DrawState};
+use std::fmt;
 
 
 
@@ -238,27 +239,30 @@ impl BatchKey {
 
 
 
-fn map_pic_to_device(
-    rect: &PictureRect,
-    surface_spatial_node_index: SpatialNodeIndex,
+
+
+
+
+fn map_to_device<F: fmt::Debug>(
+    rect: &Box2D<f32, F>,
+    from_spatial_node_index: SpatialNodeIndex,
     raster_spatial_node_index: SpatialNodeIndex,
+    bounds: RasterRect,
     device_pixel_scale: DevicePixelScale,
     spatial_tree: &SpatialTree,
 ) -> Option<DeviceRect> {
-    let raster_rect = if raster_spatial_node_index != surface_spatial_node_index {
-        let pic_to_raster: SpaceMapper<PicturePixel, WorldPixel> = SpaceMapper::new_with_target(
-            raster_spatial_node_index,
-            surface_spatial_node_index,
-            WorldRect::max_rect(),
-            spatial_tree,
-        );
+    let map_to_raster: SpaceMapper<F, RasterPixel> = SpaceMapper::new_with_target(
+        raster_spatial_node_index,
+        from_spatial_node_index,
+        bounds,
+        spatial_tree,
+    );
 
-        pic_to_raster.map(rect)?
-    } else {
-        rect.cast_unit()
-    };
+    Some(map_to_raster.map(rect)? * raster_to_device(device_pixel_scale))
+}
 
-    Some(raster_rect * device_pixel_scale)
+fn raster_to_device(device_pixel_scale: DevicePixelScale) -> Scale<f32, RasterPixel, DevicePixel> {
+    Scale::new(device_pixel_scale.0)
 }
 
 pub struct BatchRects {
@@ -1129,14 +1133,19 @@ impl BatchBuilder {
                             };
                             let text_offset = LayoutVector2D::zero();
 
-                            let pic_bounding_rect = if run_scratch.used_font.flags.contains(FontInstanceFlags::TRANSFORM_GLYPHS) {
+                            let device_tight_rect = if run_scratch.used_font.flags.contains(FontInstanceFlags::TRANSFORM_GLYPHS) {
                                 let mut device_bounding_rect = DeviceRect::default();
 
+                                
+                                
                                 
                                 let glyph_transform = ctx.spatial_tree.get_relative_transform(
                                     prim_spatial_node_index,
                                     root_spatial_node_index,
-                                ).into_transform().with_destination::<DevicePixel>();
+                                )
+                                    .into_transform()
+                                    .then_scale(device_pixel_scale.0, device_pixel_scale.0, 1.0)
+                                    .with_destination::<DevicePixel>();
 
                                 let glyph_translation = DeviceVector2D::new(glyph_transform.m41, glyph_transform.m42);
 
@@ -1167,14 +1176,7 @@ impl BatchBuilder {
                                 }
 
                                 if use_tight_bounding_rect {
-                                    let map_device_to_surface: SpaceMapper<PicturePixel, DevicePixel> = SpaceMapper::new_with_target(
-                                        root_spatial_node_index,
-                                        surface_spatial_node_index,
-                                        device_bounding_rect,
-                                        ctx.spatial_tree,
-                                    );
-
-                                    map_device_to_surface.unmap(&device_bounding_rect)
+                                    Some(device_bounding_rect)
                                 } else {
                                     None
                                 }
@@ -1195,24 +1197,15 @@ impl BatchBuilder {
                                     local_bounding_rect = local_bounding_rect.union(&local_glyph_rect);
                                 }
 
-                                let map_prim_to_surface: SpaceMapper<LayoutPixel, PicturePixel> = SpaceMapper::new_with_target(
-                                    surface_spatial_node_index,
+                                map_to_device(
+                                    &local_bounding_rect,
                                     prim_spatial_node_index,
-                                    prim_info.clip_chain.pic_coverage_rect,
-                                    ctx.spatial_tree,
-                                );
-                                map_prim_to_surface.map(&local_bounding_rect)
-                            };
-
-                            let device_tight_rect = pic_bounding_rect.and_then(|rect| {
-                                map_pic_to_device(
-                                    &rect,
-                                    surface_spatial_node_index,
                                     root_spatial_node_index,
+                                    *bounding_rect / raster_to_device(device_pixel_scale),
                                     device_pixel_scale,
                                     ctx.spatial_tree,
                                 )
-                            });
+                            };
 
                             match device_tight_rect {
                                 
