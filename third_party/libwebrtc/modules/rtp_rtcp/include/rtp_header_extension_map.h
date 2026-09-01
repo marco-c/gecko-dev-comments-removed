@@ -14,7 +14,6 @@
 #include <array>
 #include <span>
 
-#include "absl/base/macros.h"
 #include "absl/strings/string_view.h"
 #include "api/rtp_header_extension_id.h"
 #include "api/rtp_parameters.h"
@@ -39,34 +38,15 @@ class RtpHeaderExtensionMap {
   bool Register(RtpHeaderExtensionId id) {
     return Register(id, Extension::kId, Extension::Uri());
   }
-  
-  
-  template <typename Extension>
-  [[deprecated]] ABSL_REFACTOR_INLINE bool Register(int id) {
-    return Register<Extension>(RtpHeaderExtensionId(id));
-  }
   bool RegisterByType(RtpHeaderExtensionId id, RTPExtensionType type);
-  [[deprecated]] ABSL_REFACTOR_INLINE bool RegisterByType(
-      int id,
-      RTPExtensionType type) {
-    return RegisterByType(RtpHeaderExtensionId(id), type);
-  }
   bool RegisterByUri(RtpHeaderExtensionId id, absl::string_view uri);
-  [[deprecated]] ABSL_REFACTOR_INLINE bool RegisterByUri(
-      int id,
-      absl::string_view uri) {
-    return RegisterByUri(RtpHeaderExtensionId(id), uri);
-  }
 
   bool IsRegistered(RTPExtensionType type) const {
     return GetId(type) != kInvalidId;
   }
   
   RTPExtensionType GetType(RtpHeaderExtensionId id) const;
-  
-  [[deprecated]] ABSL_REFACTOR_INLINE RTPExtensionType GetType(int id) const {
-    return GetType(RtpHeaderExtensionId(id));
-  }
+
   
   RtpHeaderExtensionId GetId(RTPExtensionType type) const {
     RTC_DCHECK_GT(type, kRtpExtensionNone);

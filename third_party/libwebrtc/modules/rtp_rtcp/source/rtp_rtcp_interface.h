@@ -19,7 +19,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/base/macros.h"
 #include "absl/strings/string_view.h"
 #include "api/frame_transformer_interface.h"
 #include "api/rtp_header_extension_id.h"
@@ -217,13 +216,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   
   virtual void RegisterRtpHeaderExtension(absl::string_view uri,
                                           RtpHeaderExtensionId id) = 0;
-  
-  
-  [[deprecated]] ABSL_REFACTOR_INLINE void RegisterRtpHeaderExtension(
-      absl::string_view uri,
-      int id) {
-    RegisterRtpHeaderExtension(uri, RtpHeaderExtensionId(id));
-  }
 
   virtual void DeregisterSendRtpHeaderExtension(absl::string_view uri) = 0;
 
