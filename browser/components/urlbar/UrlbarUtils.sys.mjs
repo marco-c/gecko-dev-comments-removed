@@ -189,146 +189,6 @@ export var UrlbarUtils = {
     return mimeStream.QueryInterface(Ci.nsIInputStream);
   },
 
-  _compareIgnoringDiacritics: null,
-
-  /**
-   * Returns a list of all the token substring matches in a string.  Matching is
-   * case insensitive.  Each match in the returned list is a tuple: [matchIndex,
-   * matchLength].  matchIndex is the index in the string of the match, and
-   * matchLength is the length of the match.
-   *
-   * @param {Array} tokens The tokens to search for.
-   * @param {string} str The string to match against.
-   * @param {Values<typeof UrlbarShared.HIGHLIGHT>} highlightType
-   *   One of the HIGHLIGHT values:
-   *     TYPED: match ranges matching the tokens; or
-   *     SUGGESTED: match ranges for words not matching the tokens and the
-   *                endings of words that start with a token.
-   *     ALL: match all ranges of str.
-   * @returns {Array} An array: [
-   *            [matchIndex_0, matchLength_0],
-   *            [matchIndex_1, matchLength_1],
-   *            ...
-   *            [matchIndex_n, matchLength_n]
-   *          ].
-   *          The array is sorted by match indexes ascending.
-   */
-  getTokenMatches(tokens, str, highlightType) {
-    if (highlightType == UrlbarShared.HIGHLIGHT.ALL) {
-      return [[0, str.length]];
-    }
-
-    if (!tokens?.length) {
-      return [];
-    }
-
-    // Only search a portion of the string, because not more than a certain
-    // amount of characters are visible in the UI, matching over what is visible
-    // would be expensive and pointless.
-    str = str.substring(0, UrlbarShared.MAX_TEXT_LENGTH).toLocaleLowerCase();
-    // To generate non-overlapping ranges, we start from a 0-filled array with
-    // the same length of the string, and use it as a collision marker, setting
-    // 1 where the text should be highlighted.
-    let hits = new Array(str.length).fill(
-      highlightType == UrlbarShared.HIGHLIGHT.SUGGESTED ? 1 : 0
-    );
-    let compareIgnoringDiacritics;
-    for (let i = 0, totalTokensLength = 0; i < tokens.length; i++) {
-      const { lowerCaseValue: needle } = tokens[i];
-
-      // Ideally we should never hit the empty token case, but just in case
-      // the `needle` check protects us from an infinite loop.
-      if (!needle) {
-        continue;
-      }
-      let index = 0;
-      let found = false;
-      // First try a diacritic-sensitive search.
-      for (;;) {
-        index = str.indexOf(needle, index);
-        if (index < 0) {
-          break;
-        }
-
-        if (highlightType == UrlbarShared.HIGHLIGHT.SUGGESTED) {
-          // We de-emphasize the match only if it's preceded by a space, thus
-          // it's a perfect match or the beginning of a longer word.
-          let previousSpaceIndex = str.lastIndexOf(" ", index) + 1;
-          if (index != previousSpaceIndex) {
-            index += needle.length;
-            // We found the token but we won't de-emphasize it, because it's not
-            // after a word boundary.
-            found = true;
-            continue;
-          }
-        }
-
-        hits.fill(
-          highlightType == UrlbarShared.HIGHLIGHT.SUGGESTED ? 0 : 1,
-          index,
-          index + needle.length
-        );
-        index += needle.length;
-        found = true;
-      }
-      // If that fails to match anything, try a (computationally intensive)
-      // diacritic-insensitive search.
-      if (!found) {
-        if (!compareIgnoringDiacritics) {
-          if (!this._compareIgnoringDiacritics) {
-            // Diacritic insensitivity in the search engine follows a set of
-            // general rules that are not locale-dependent, so use a generic
-            // English collator for highlighting matching words instead of a
-            // collator for the user's particular locale.
-            this._compareIgnoringDiacritics = new Intl.Collator("en", {
-              sensitivity: "base",
-            }).compare;
-          }
-          compareIgnoringDiacritics = this._compareIgnoringDiacritics;
-        }
-        index = 0;
-        while (index < str.length) {
-          let hay = str.substr(index, needle.length);
-          if (compareIgnoringDiacritics(needle, hay) === 0) {
-            if (highlightType == UrlbarShared.HIGHLIGHT.SUGGESTED) {
-              let previousSpaceIndex = str.lastIndexOf(" ", index) + 1;
-              if (index != previousSpaceIndex) {
-                index += needle.length;
-                continue;
-              }
-            }
-            hits.fill(
-              highlightType == UrlbarShared.HIGHLIGHT.SUGGESTED ? 0 : 1,
-              index,
-              index + needle.length
-            );
-            index += needle.length;
-          } else {
-            index++;
-          }
-        }
-      }
-
-      totalTokensLength += needle.length;
-      if (totalTokensLength > UrlbarShared.MAX_TEXT_LENGTH) {
-        // Limit the number of tokens to reduce calculate time.
-        break;
-      }
-    }
-    // Starting from the collision array, generate [start, len] tuples
-    // representing the ranges to be highlighted.
-    let ranges = [];
-    for (let index = hits.indexOf(1); index >= 0 && index < hits.length; ) {
-      let len = 0;
-      // eslint-disable-next-line no-empty
-      for (let j = index; j < hits.length && hits[j]; ++j, ++len) {}
-      ranges.push([index, len]);
-      // Move to the next 1.
-      index = hits.indexOf(1, index + len);
-    }
-    return ranges;
-  },
-
   /**
    * Returns the group for a result.
    *
@@ -839,7 +699,7 @@ export var UrlbarUtils = {
    *   Epoch timestamp in ms after which the block expires.
    */
   async blockAutofill(url, blockUntilMs) {
-    if (this.isOriginUrl(url)) {
+    if (UrlbarShared.isOriginUrl(url)) {
       await this.blockOriginAutofill(url, blockUntilMs);
     } else {
       await this.blockOriginPageAutofill(url, blockUntilMs);
@@ -1069,7 +929,7 @@ export var UrlbarUtils = {
     }
     let basehost = origin.host.replace(/^www\./, "");
     let scope = /** @type {"origin" | "page"} */ (
-      this.isOriginUrl(url) ? "origin" : "page"
+      UrlbarShared.isOriginUrl(url) ? "origin" : "page"
     );
     return `${scope}:${basehost}`;
   },
@@ -1169,7 +1029,7 @@ export var UrlbarUtils = {
       return null;
     }
     /** @type {"origin" | "url"} */
-    let level = this.isOriginUrl(url) ? "origin" : "url";
+    let level = UrlbarShared.isOriginUrl(url) ? "origin" : "url";
     return { blockedAt: entry.blockedAt, level };
   },
 
@@ -1187,20 +1047,59 @@ export var UrlbarUtils = {
   },
 
   /**
-   * Returns whether a URL is an origin URL, i.e. it has no path beyond "/",
-   * no query string, and no hash.
+   * Dismisses an autofill result, either by blocking the autofill pairing for
+   * `autoFill.dismissalBlockDurationMs` or by removing the URL from history
+   * entirely, and clears the URL's backspace bookkeeping either way. Failures
+   * are reported and swallowed so a caller can still re-run its query.
    *
    * @param {string} url
-   *   The URL to check.
-   * @returns {boolean}
-   *   True if the URL is an origin URL, false if it has a path, query, hash,
-   *   or is unparseable.
+   *   The dismissed autofill result's URL.
+   * @param {object} [options]
+   *   Options object.
+   * @param {boolean} [options.removeFromHistory]
+   *   Whether to remove the URL from history instead of blocking autofill
+   *   for it.
    */
-  isOriginUrl(url) {
-    let parsed = URL.parse(url);
-    return (
-      !!parsed && parsed.pathname === "/" && !parsed.search && !parsed.hash
-    );
+  async dismissAutofill(url, { removeFromHistory = false } = {}) {
+    if (removeFromHistory) {
+      await lazy.PlacesUtils.history.remove(url).catch(console.error);
+    } else {
+      await this.blockAutofill(
+        url,
+        Date.now() + lazy.UrlbarPrefs.get("autoFill.dismissalBlockDurationMs")
+      ).catch(console.error);
+    }
+
+    this.clearAutofillBackspaceEntryForUrl(url);
+  },
+
+  /**
+   * Re-integrates an autofill URL the user navigated to anyway: clears the
+   * URL's autofill block and its backspace bookkeeping, and reports what
+   * happened so the caller can record re-integration telemetry.
+   *
+   * @param {string} url
+   *   The URL being re-integrated.
+   * @returns {Promise<{wasBlocked: boolean, level: "origin" | "url", backspaceBlock: ?{blockedAt: number, level: "origin" | "url"}}>}
+   *   `wasBlocked` is whether a database block was actually cleared, `level`
+   *   the scope it was cleared at, and `backspaceBlock` the consumed backspace
+   *   block, if the URL had one.
+   */
+  async reintegrateAutofill(url) {
+    let isOrigin = UrlbarShared.isOriginUrl(url);
+    let wasBlocked = isOrigin
+      ? await this.clearOriginAutofillBlock(url)
+      : await this.clearOriginPageAutofillBlock(url);
+
+    // getBackspaceBlock reads and removes the {blockedAt} entry for telemetry.
+    // clearAutofillBackspaceEntryForUrl then removes any remaining
+    // sub-threshold {count} entry. Together they always clear the in-memory
+    // counter — visiting the url is a positive signal regardless of whether a
+    // database block existed.
+    let backspaceBlock = this.getBackspaceBlock(url);
+    this.clearAutofillBackspaceEntryForUrl(url);
+
+    return { wasBlocked, level: isOrigin ? "origin" : "url", backspaceBlock };
   },
 
   /**
@@ -1285,13 +1184,14 @@ export var UrlbarUtils = {
    * Add the search to form history.  This also updates any existing form
    * history for the search.
    *
-   * @param {UrlbarInput} input The UrlbarInput object requesting the addition.
+   * @param {boolean} isPrivate
+   *   Whether the search is private is in a private window.
    * @param {string} value The value to add.
    * @param {string} [source] The source of the addition, usually
    *        the name of the engine the search was made with.
    * @returns {Promise<void>} resolved once the operation is complete
    */
-  addToFormHistory(input, value, source) {
+  async addToFormHistory(isPrivate, value, source) {
     // If the user types a search engine alias without a search string,
     // we have an empty search string and we can't bump it.
     // We also don't want to add history in private browsing mode.
@@ -1299,13 +1199,13 @@ export var UrlbarUtils = {
     // particularly useful to the user.
     if (
       !value ||
-      input.isPrivate ||
+      isPrivate ||
       value.length >
         lazy.SearchSuggestionController.SEARCH_HISTORY_MAX_VALUE_LENGTH
     ) {
-      return Promise.resolve();
+      return;
     }
-    return lazy.FormHistory.update({
+    await lazy.FormHistory.update({
       op: "bump",
       fieldname: lazy.DEFAULT_FORM_HISTORY_PARAM,
       value,
@@ -1337,19 +1237,6 @@ export var UrlbarUtils = {
     return uri.length > UrlbarShared.MAX_TEXT_LENGTH
       ? uri
       : Services.textToSubURI.unEscapeURIForUI(uri);
-  },
-
-  /**
-   * Checks whether a given text has right-to-left direction or not.
-   *
-   * @param {string} value The text which should be check for RTL direction.
-   * @param {Window} window The window where 'value' is going to be displayed.
-   * @returns {boolean} Returns true if text has right-to-left direction and
-   *                    false otherwise.
-   */
-  isTextDirectionRTL(value, window) {
-    let directionality = window.windowUtils.getDirectionFromText(value);
-    return directionality == window.windowUtils.DIRECTION_RTL;
   },
 
   /**
