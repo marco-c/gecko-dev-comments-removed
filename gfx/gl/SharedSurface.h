@@ -42,6 +42,7 @@ class LayersIPCChannel;
 class SharedSurfaceTextureClient;
 class SurfaceDescriptor;
 class TextureClient;
+class TextureHost;
 enum class TextureFlags : uint32_t;
 enum class TextureType : int8_t;
 }  
@@ -83,6 +84,7 @@ class SharedSurface {
  protected:
   bool mIsLocked = false;
   bool mIsProducerAcquired = false;
+  RefPtr<layers::TextureHost> mTextureHost;
 
   SharedSurface(const SharedSurfaceDesc&, UniquePtr<MozFramebuffer>);
 
@@ -98,6 +100,12 @@ class SharedSurface {
 
   
   void UnlockProd();
+
+  RefPtr<layers::TextureHost> GetTextureHost();
+
+  void SetTextureHost(layers::TextureHost* aTextureHost);
+
+  void ClearTextureHost();
 
   
   
