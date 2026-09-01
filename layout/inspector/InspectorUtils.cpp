@@ -1125,8 +1125,7 @@ static bool IsFrameOutsideOfAncestor(const nsIFrame* aFrame,
                                      const nsIFrame* aAncestorFrame,
                                      const nsRect& aAncestorRect) {
   nsRect frameRectInAncestorSpace = nsLayoutUtils::TransformFrameRectToAncestor(
-      aFrame, aFrame->ScrollableOverflowRect(), RelativeTo{aAncestorFrame},
-      nullptr, nullptr, false, nullptr);
+      aFrame, aFrame->ScrollableOverflowRect(), RelativeTo{aAncestorFrame});
 
   
   
