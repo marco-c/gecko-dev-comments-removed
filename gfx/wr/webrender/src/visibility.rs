@@ -384,7 +384,6 @@ pub fn update_prim_visibility(
             
             
             
-            
             let leaf = frame_state.clip_tree.get_leaf_mut(leaf_id);
             let unsnapped = leaf.unsnapped_local_clip_rect;
             leaf.snapped_local_clip_rect = if unsnapped == LayoutRect::max_rect() {
@@ -393,7 +392,6 @@ pub fn update_prim_visibility(
                 match policy.clip {
                     ClipSnap::Nearest => snapper.snap_rect(&unsnapped),
                     ClipSnap::Exact => unsnapped,
-                    ClipSnap::Text(rounding) => snapper.snap_rect_rounded(&unsnapped, rounding),
                 }
             };
 

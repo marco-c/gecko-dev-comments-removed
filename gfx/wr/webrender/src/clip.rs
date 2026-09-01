@@ -108,7 +108,7 @@ use crate::render_task::RenderTask;
 use crate::render_task_graph::RenderTaskGraphBuilder;
 use crate::resource_cache::{ImageRequest, ResourceCache};
 use crate::scene_builder_thread::Interners;
-use crate::space::{SnapRounding, SpaceMapper, SpaceSnapper};
+use crate::space::{SpaceMapper, SpaceSnapper};
 use crate::util::{extract_inner_rect_safe, project_rect, MatrixHelpers, MaxRect, ScaleOffset};
 use euclid::approxeq::ApproxEq;
 use std::{iter, ops, u32, mem};
@@ -154,7 +154,6 @@ impl ClipTreeNode {
         &self,
         snapper: &mut SpaceSnapper,
         spatial_tree: &SpatialTree,
-        rounding: SnapRounding,
     ) -> LayoutRect {
         debug_assert!(self.spatial_node_index != SpatialNodeIndex::INVALID);
         snapper.set_target_spatial_node(self.spatial_node_index, spatial_tree);
@@ -164,9 +163,9 @@ impl ClipTreeNode {
             
             
             let anchor = self.unsnapped_clip_rect.inflate(outset, outset);
-            snapper.snap_rect_rounded(&anchor, rounding).inflate(-outset, -outset)
+            snapper.snap_rect(&anchor).inflate(-outset, -outset)
         } else {
-            snapper.snap_rect_rounded(&self.unsnapped_clip_rect, rounding)
+            snapper.snap_rect(&self.unsnapped_clip_rect)
         }
     }
 }
@@ -1353,7 +1352,7 @@ impl ClipNodeInfo {
 
                     let repetitions = image_tiling::repetitions(
                         &rect,
-                        &visible_rect,
+                        &visible_rect.intersection_unchecked(&rect),
                         rect.size(),
                     );
 
@@ -1453,7 +1452,17 @@ pub struct ClipChainInstance {
     pub clips_range: ClipNodeRange,
     
     
+    
+    
+    
+    
+    
     pub local_clip_rect: LayoutRect,
+    
+    
+    
+    
+    pub local_coverage_rect: LayoutRect,
     pub has_non_local_clips: bool,
     
     
@@ -1473,6 +1482,7 @@ impl ClipChainInstance {
                 count: 0,
             },
             local_clip_rect: LayoutRect::zero(),
+            local_coverage_rect: LayoutRect::zero(),
             has_non_local_clips: false,
             needs_mask: false,
             pic_coverage_rect: PictureRect::zero(),
@@ -1536,7 +1546,6 @@ impl ClipStore {
         
         
         
-        
         let mut local_clip_rect = clip_leaf.snapped_local_clip_rect;
         let mut current = clip_leaf.node_id;
 
@@ -1544,24 +1553,13 @@ impl ClipStore {
             let node = clip_tree.get_node(current);
 
             let clip_rect = match clip_snap {
-                ClipSnap::Nearest =>
-                    node.snapped_clip_rect(snapper, spatial_tree, SnapRounding::Nearest),
+                ClipSnap::Nearest => node.snapped_clip_rect(snapper, spatial_tree),
                 
                 
                 
                 
                 
                 
-                
-                
-                
-                
-                
-                
-                
-                
-                ClipSnap::Text(_) =>
-                    node.snapped_clip_rect(snapper, spatial_tree, SnapRounding::RoundOut),
                 
                 ClipSnap::Exact => node.unsnapped_clip_rect,
             };
@@ -1775,6 +1773,7 @@ impl ClipStore {
             clips_range,
             has_non_local_clips,
             local_clip_rect,
+            local_coverage_rect: local_bounding_rect,
             pic_coverage_rect,
             pic_spatial_node_index: prim_to_pic_mapper.ref_spatial_node_index,
             needs_mask,

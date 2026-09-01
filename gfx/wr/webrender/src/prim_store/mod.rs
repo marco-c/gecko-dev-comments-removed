@@ -13,7 +13,7 @@ use crate::renderer::GpuBufferHandle;
 use crate::segment::EdgeMask;
 use crate::debug_item::{DebugItem, DebugMessage};
 use crate::debug_colors;
-use glyph_rasterizer::{GlyphKey, SubpixelDirection};
+use glyph_rasterizer::GlyphKey;
 use crate::gpu_types::QuadSegment;
 use crate::intern;
 use crate::picture::{PictureInstance, PictureScratch};
@@ -374,7 +374,6 @@ pub struct PrimitiveInstance {
 
 
 
-
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum ClipSnap {
     
@@ -382,13 +381,9 @@ pub enum ClipSnap {
     Nearest,
     
     
+    
     Exact,
-    
-    
-    
-    Text(SnapRounding),
 }
-
 
 
 
@@ -427,24 +422,9 @@ impl PrimitiveInstance {
     
     
     
-    
-    
-    
     pub fn snap_policy(&self, snaps: bool, data_stores: &DataStores) -> SnapPolicy {
         if !snaps {
-            let clip = if let PrimitiveKind::TextRun { data_handle, .. } = self.kind {
-                ClipSnap::Text(match data_stores.text_run[data_handle].font.get_subpx_dir() {
-                    SubpixelDirection::Horizontal =>
-                        SnapRounding::RoundOutNonSubpx { subpx_horizontal: true },
-                    SubpixelDirection::Vertical =>
-                        SnapRounding::RoundOutNonSubpx { subpx_horizontal: false },
-                    SubpixelDirection::None |
-                    SubpixelDirection::Mixed => SnapRounding::RoundOut,
-                })
-            } else {
-                ClipSnap::Exact
-            };
-            return SnapPolicy { rect: SnapRounding::RoundOut, clip };
+            return SnapPolicy { rect: SnapRounding::RoundOut, clip: ClipSnap::Exact };
         }
         let rect = match self.kind {
             PrimitiveKind::LineDecoration { data_handle, .. } => SnapRounding::Line {
