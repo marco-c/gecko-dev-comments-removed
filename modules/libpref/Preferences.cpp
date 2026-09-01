@@ -5588,30 +5588,16 @@ nsresult PreferencesImpl::WritePrefFile(
       }
     }
 
-    if (mCurrentFile) {
-      rv = mCurrentFile->Equals(aFile, &writingToCurrent);
-      if (NS_FAILED(rv)) {
-        REJECT_IF_PROMISE_HOLDER_EXISTS(rv);
-      }
-    }
-
-    bool async = aSaveMethod == SaveMethod::Asynchronous;
-
     
     
     
-    if (!writingToCurrent) {
-      MOZ_ASSERT(!aPromiseHolder || async,
+    if (aPromiseHolder) {
+      MOZ_ASSERT(aSaveMethod == SaveMethod::Asynchronous,
                  "Backup writes are always asynchronous");
       PreferencesWriter::sPendingWriteCount++;
-      RefPtr<nsIRunnable> runnable =
-          new PWRunnable(aFile, std::move(prefs), std::move(aPromiseHolder));
-      if (async) {
-        rv = mAsyncTarget->Dispatch(runnable,
-                                    nsIEventTarget::DISPATCH_EVENT_MAY_BLOCK);
-      } else {
-        rv = SyncRunnable::DispatchToThread(mAsyncTarget, runnable, true);
-      }
+      rv = mAsyncTarget->Dispatch(
+          new PWRunnable(aFile, std::move(prefs), std::move(aPromiseHolder)),
+          nsIEventTarget::DISPATCH_EVENT_MAY_BLOCK);
       if (NS_FAILED(rv)) {
         PreferencesWriter::sPendingWriteCount--;
         
@@ -5620,10 +5606,28 @@ nsresult PreferencesImpl::WritePrefFile(
       return NS_OK;
     }
 
-    
+    if (mCurrentFile) {
+      rv = mCurrentFile->Equals(aFile, &writingToCurrent);
+      if (NS_FAILED(rv)) {
+        REJECT_IF_PROMISE_HOLDER_EXISTS(rv);
+      }
+    }
+
     
     
     prefs.reset(PreferencesWriter::sPendingWriteData.exchange(prefs.release()));
+    if (prefs && !writingToCurrent) {
+      MOZ_ASSERT(!aPromiseHolder,
+                 "Shouldn't be able to enter here if aPromiseHolder is set");
+      
+      
+      
+      return NS_OK;
+    }
+
+    
+    
+    bool async = aSaveMethod == SaveMethod::Asynchronous;
 
     
     
