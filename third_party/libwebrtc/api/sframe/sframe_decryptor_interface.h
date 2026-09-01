@@ -19,6 +19,12 @@
 
 namespace webrtc {
 
+enum class SframeDecryptErrorType {
+  kAuthentication,  
+  kKeyId,           
+  kSyntax,          
+};
+
 
 class SframeDecryptorInterface : public RefCountInterface {
  public:

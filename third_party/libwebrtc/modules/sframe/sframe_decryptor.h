@@ -1,0 +1,67 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef MODULES_SFRAME_SFRAME_DECRYPTOR_H_
+#define MODULES_SFRAME_SFRAME_DECRYPTOR_H_
+
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <span>
+
+#include "absl/base/nullability.h"
+#include "api/rtc_error.h"
+#include "api/scoped_refptr.h"
+#include "api/sequence_checker.h"
+#include "api/sframe/sframe_types.h"
+#include "modules/sframe/sframe_media_decryptor_interface.h"
+#include "rtc_base/system/no_unique_address.h"
+#include "rtc_base/thread_annotations.h"
+
+namespace sframe {
+class Context;
+}  
+
+namespace webrtc {
+
+class SframeDecryptor : public SframeMediaDecryptorInterface {
+ public:
+  
+  static absl_nonnull scoped_refptr<SframeDecryptor> Create(
+      SframeCipherSuite cipher_suite);
+
+  ~SframeDecryptor() override;
+
+  
+  RTCError AddDecryptionKey(uint64_t key_id,
+                            std::span<const uint8_t> key_material) override;
+  RTCError RemoveDecryptionKey(uint64_t key_id) override;
+
+  
+  SframeDecryptResult Decrypt(std::span<const uint8_t> encrypted_frame,
+                              std::span<const uint8_t> additional_data,
+                              std::span<uint8_t> frame) override;
+
+  size_t GetMaxPlaintextByteSize(size_t encrypted_frame_size) override;
+
+ protected:
+  explicit SframeDecryptor(SframeCipherSuite cipher_suite);
+
+ private:
+  
+  
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_;
+
+  std::unique_ptr<sframe::Context> context_ RTC_GUARDED_BY(sequence_checker_);
+};
+
+}  
+
+#endif  

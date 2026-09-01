@@ -39,7 +39,6 @@ class SframeEncryptor : public SframeMediaEncryptorInterface {
       SframeMode mode,
       SframeCipherSuite cipher_suite);
 
-  SframeEncryptor(SframeMode mode, SframeCipherSuite cipher_suite);
   ~SframeEncryptor() override;
 
   
@@ -54,6 +53,9 @@ class SframeEncryptor : public SframeMediaEncryptorInterface {
   size_t GetMaxCiphertextByteSize(size_t frame_size) override;
 
   SframeMode mode() const override { return mode_; }
+
+ protected:
+  SframeEncryptor(SframeMode mode, SframeCipherSuite cipher_suite);
 
  private:
   
