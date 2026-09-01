@@ -21,7 +21,6 @@
 #include "api/media_types.h"
 #include "api/rtc_error.h"
 #include "api/transport/sctp_transport_factory_interface.h"
-#include "media/base/media_engine.h"
 #include "media/base/stream_params.h"
 #include "p2p/base/ice_credentials_iterator.h"
 #include "p2p/base/transport_description.h"
@@ -36,13 +35,6 @@
 namespace webrtc {
 
 
-class ConnectionContext;
-
-}  
-
-namespace webrtc {
-
-
 
 
 
@@ -51,11 +43,7 @@ class MediaSessionDescriptionFactory {
   
   
   
-  
-  
   MediaSessionDescriptionFactory(const Environment& env,
-                                 const MediaEngineInterface* media_engine,
-                                 bool rtx_enabled,
                                  UniqueRandomIdGenerator* ssrc_generator,
                                  const TransportDescriptionFactory* factory,
                                  SctpTransportFactoryInterface* sctp_factory,
