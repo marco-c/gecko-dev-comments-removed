@@ -6,6 +6,7 @@
 #define XPCOM_THREADS_ABSTRACTTHREAD_H_
 
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/DefineEnum.h"
 #include "mozilla/ThreadLocal.h"
 #include "nsISerialEventTarget.h"
 #include "nsISupports.h"
@@ -18,6 +19,30 @@ class nsIThread;
 namespace mozilla {
 
 class TaskDispatcher;
+
+MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING(
+    TailDispatchPolicy, uint8_t,
+    (
+        
+        
+        NoTailDispatch,
+        
+        
+        
+        
+        
+        
+        ConsistentOrdering,
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        TargetAtomicity));
 
 
 
@@ -47,8 +72,8 @@ class AbstractThread : public nsISerialEventTarget {
   
   static AbstractThread* GetCurrent() { return sCurrentThreadTLS.get(); }
 
-  AbstractThread(bool aSupportsTailDispatch)
-      : mSupportsTailDispatch(aSupportsTailDispatch) {}
+  AbstractThread(TailDispatchPolicy aTailDispatchPolicy)
+      : mTailDispatcherPolicy(aTailDispatchPolicy) {}
 
   
   
@@ -91,7 +116,14 @@ class AbstractThread : public nsISerialEventTarget {
   bool HasTailTasksFor(AbstractThread* aThread);
 
   
-  bool SupportsTailDispatch() const { return mSupportsTailDispatch; }
+  bool SupportsTailDispatch() const {
+    return mTailDispatcherPolicy != TailDispatchPolicy::NoTailDispatch;
+  }
+
+  
+  TailDispatchPolicy TailDispatcherPolicy() const {
+    return mTailDispatcherPolicy;
+  }
 
   
   
@@ -121,7 +153,8 @@ class AbstractThread : public nsISerialEventTarget {
 
   
   
-  const bool mSupportsTailDispatch;
+  
+  const TailDispatchPolicy mTailDispatcherPolicy;
 };
 
 }  

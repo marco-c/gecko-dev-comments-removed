@@ -3669,13 +3669,6 @@ TEST(TestAudioTrackGraph, MessageOrdering)
     EXPECT_CALL(checkpoint, Call(StrEq("processed task on main")))
         .Times(AtLeast(1));
     EXPECT_CALL(checkpoint, Call(StrEq("2-main->graph + 1-graph->main")));
-
-    
-    
-    
-    EXPECT_CALL(checkpoint, Call(StrEq("processed task on main")))
-        .Times(AtLeast(1));
-
     EXPECT_CALL(checkpoint,
                 Call(StrEq("2-main->graph + 2-direct + graph->main")));
     EXPECT_CALL(checkpoint, Call(StrEq("3-main->graph + 1-graph->main")));
@@ -3921,7 +3914,7 @@ TEST(TestAudioTrackGraph, MessageAtomicity)
 
   auto tq =
       TaskQueue::Create(GetMediaThreadPool(MediaThreadType::WEBRTC_WORKER),
-                        __func__, true);
+                        __func__, TailDispatchPolicy::ConsistentOrdering);
 
   
   

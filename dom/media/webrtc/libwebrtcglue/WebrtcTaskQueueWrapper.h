@@ -20,6 +20,7 @@ class TaskQueueFactory;
 
 namespace mozilla {
 class TaskQueue;
+enum class TailDispatchPolicy : uint8_t;
 
 
 
@@ -35,7 +36,8 @@ class TaskQueue;
 
 std::unique_ptr<webrtc::TaskQueueBase, webrtc::TaskQueueDeleter>
 CreateWebrtcTaskQueue(already_AddRefed<nsIEventTarget> aTarget,
-                      const nsACString& aName, bool aSupportsTailDispatch);
+                      const nsACString& aName,
+                      TailDispatchPolicy aTailDispatchPolicy);
 
 
 
@@ -56,7 +58,7 @@ CreateWebrtcTaskQueue(already_AddRefed<nsIEventTarget> aTarget,
 
 RefPtr<TaskQueue> CreateWebrtcTaskQueueWrapper(
     already_AddRefed<nsIEventTarget> aTarget, const nsLiteralCString& aName,
-    bool aSupportsTailDispatch);
+    TailDispatchPolicy aTailDispatchPolicy);
 
 
 
