@@ -250,12 +250,10 @@ impl PropertyDeclaration {
     
     
     fn is_longhand_value(&self) -> bool {
-        match *self {
-            % for v in data.declaration_extra_variants:
-            PropertyDeclaration::${v["name"]}(..) => false,
-            % endfor
-            _ => true,
-        }
+        !matches!(
+            *self,
+            ${" | ".join("PropertyDeclaration::%s(..)" % v["name"] for v in data.declaration_extra_variants)}
+        )
     }
 
     
@@ -326,9 +324,9 @@ pub mod property_counts {
     pub const LONGHANDS_AND_SHORTHANDS: usize = LONGHANDS + SHORTHANDS;
     
     pub const NON_CUSTOM: usize = LONGHANDS_AND_SHORTHANDS + ALIASES;
-    
     <% longhand_property_names = set(list(map(lambda p: p.name, data.longhands))) %>
     <% enabled_prioritary_properties = PRIORITARY_PROPERTIES.intersection(longhand_property_names) %>
+    
     pub const PRIORITARY: usize = ${len(enabled_prioritary_properties)};
     
     pub const MAX_SHORTHAND_EXPANDED: usize =
@@ -340,21 +338,18 @@ pub mod property_counts {
 }
 
 % if engine == "gecko":
-#[allow(dead_code)]
-unsafe fn static_assert_noncustomcsspropertyid() {
-    unsafe {
+const _: () = {
     % for i, property in enumerate(data.longhands + data.shorthands + data.all_aliases()):
-    std::mem::transmute::<[u8; ${i}], [u8; ${property.noncustomcsspropertyid()} as usize]>([0; ${i}]); 
+    assert!(${i} == ${property.noncustomcsspropertyid()} as usize, "${property.name}");
     % endfor
-    }
-}
+};
 % endif
 
 impl NonCustomPropertyId {
     
     #[inline]
     pub fn name(self) -> &'static str {
-        static MAP: [&'static str; property_counts::NON_CUSTOM] = [
+        static MAP: [&str; property_counts::NON_CUSTOM] = [
             % for property in data.longhands + data.shorthands + data.all_aliases():
             "${property.name}",
             % endfor
@@ -861,7 +856,7 @@ impl LonghandId {
         %>
 
         
-        static MAP: [&'static [ShorthandId]; property_counts::LONGHANDS] = [
+        static MAP: [&[ShorthandId]; property_counts::LONGHANDS] = [
         % for property in data.longhands:
             &[
                 % for shorthand in longhand_to_shorthand_map.get(property.ident, []):
@@ -962,7 +957,7 @@ pub enum ShorthandId {
 impl ShorthandId {
     
     pub fn longhands(self) -> NonCustomPropertyIterator<LonghandId> {
-        static MAP: [&'static [LonghandId]; property_counts::SHORTHANDS] = [
+        static MAP: [&[LonghandId]; property_counts::SHORTHANDS] = [
         % for property in data.shorthands:
             &[
                 % for sub in property.sub_properties:
@@ -2173,7 +2168,7 @@ where
         match *self {
             StyleStructRef::Owned(..) => false,
             StyleStructRef::Borrowed(s) => {
-                s as *const T == struct_to_copy_from as *const T
+                std::ptr::eq(s, struct_to_copy_from)
             }
             StyleStructRef::Vacated => panic!("Accessed vacated style struct")
         }
@@ -2228,7 +2223,7 @@ impl<'a, T: 'a> ops::Deref for StyleStructRef<'a, T> {
 
     fn deref(&self) -> &T {
         match *self {
-            StyleStructRef::Owned(ref v) => &**v,
+            StyleStructRef::Owned(ref v) => v,
             StyleStructRef::Borrowed(v) => v,
             StyleStructRef::Vacated => panic!("Accessed vacated style struct")
         }
@@ -2515,7 +2510,7 @@ impl<'a> StyleBuilder<'a> {
 
     
     pub fn is_pseudo_element(&self) -> bool {
-        self.pseudo.map_or(false, |p| !p.is_anon_box())
+        self.pseudo.is_some_and(|p| !p.is_anon_box())
     }
 
     
@@ -2720,7 +2715,7 @@ impl<'a> StyleBuilder<'a> {
         if matches!(line_height, computed::LineHeight::Normal) {
             self.add_flags(flag);
         }
-        let lh = device.calc_line_height(&font, writing_mode, None);
+        let lh = device.calc_line_height(font, writing_mode, None);
         if line_height_base == LineHeightBase::InheritedStyle {
             
             computed::NonNegativeLength::new(self.effective_zoom_for_inheritance.zoom(lh.px()))
@@ -2895,7 +2890,7 @@ pub(crate) fn restyle_damage_${effect_name} (old: &ComputedValues, new: &Compute
 % endfor
 % endif
 
-
+## Descriptor types for @-rules like @font-face and @counter-style.
 <%def name="generate_descriptors(descriptors)">
 use super::*;
 #[allow(unused_imports)]
@@ -2920,7 +2915,7 @@ impl DescriptorId {
 
     
     pub fn name(&self) -> &'static str {
-        const NAMES: [&'static str; DescriptorId::COUNT] = [
+        const NAMES: [&str; DescriptorId::COUNT] = [
         % for descriptor in descriptors:
             "${descriptor.name}",
         % endfor

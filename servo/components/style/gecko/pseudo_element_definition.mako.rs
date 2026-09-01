@@ -49,14 +49,10 @@ impl PseudoElement {
     
     #[inline]
     pub fn is_tree_pseudo_element(&self) -> bool {
-        match *self {
-            % for pseudo in PSEUDOS:
-            % if pseudo.name.startswith("-moz-tree-"):
-            ${pseudo_element_variant(pseudo)} => true,
-            % endif
-            % endfor
-            _ => false,
-        }
+        matches!(
+            *self,
+            ${" | ".join(capture(pseudo_element_variant, pseudo) for pseudo in PSEUDOS if pseudo.name.startswith("-moz-tree-"))}
+        )
     }
 
     #[inline]
@@ -146,16 +142,16 @@ impl PseudoElement {
         }
     }
 
-    
+    /// Construct a `PseudoStyleType`.
     #[inline]
     pub fn pseudo_type(&self) -> PseudoStyleType {
-        
+        // SAFETY: PseudoStyleType has the same variants as PseudoElement
         unsafe { std::mem::transmute::<u8, PseudoStyleType>(self.discriminant()) }
     }
 
-    
-    
-    
+    /// Returns the relevant PseudoStyleType, and an atom as an argument, if any.
+    /// FIXME: we probably have to return the arguments of -moz-tree. However, they are multiple
+    /// names, so we skip them for now (until we really need them).
     #[inline]
     pub fn pseudo_type_and_argument(&self) -> (PseudoStyleType, Option<&Atom>) {
         let ty = self.pseudo_type();
@@ -274,7 +270,7 @@ impl ToCss for PseudoElement {
                 let mut iter = args.iter();
                 if let Some(first) = iter.next() {
                     dest.write_char('(')?;
-                    serialize_atom_identifier(&first, dest)?;
+                    serialize_atom_identifier(first, dest)?;
                     for item in iter {
                         dest.write_str(", ")?;
                         serialize_atom_identifier(item, dest)?;
