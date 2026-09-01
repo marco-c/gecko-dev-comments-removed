@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/DecompressionStream.h"
 
 #include "BaseAlgorithms.h"
@@ -28,10 +26,13 @@ using namespace compression;
 
 
 static Result<already_AddRefed<DecompressionStreamAlgorithms>, nsresult>
-CreateDecompressionStreamAlgorithms(CompressionFormat aFormat) {
+CreateDecompressionStreamAlgorithms(CompressionFormat aFormat, bool aIsPDFJS) {
   if (aFormat == CompressionFormat::Brotli) {
+    bool enableLargeWindow =
+        aIsPDFJS ||
+        StaticPrefs::dom_compression_streams_brotli_large_window_enabled();
     RefPtr<DecompressionStreamAlgorithms> brotliAlgos =
-        MOZ_TRY(BrotliDecompressionStreamAlgorithms::Create());
+        MOZ_TRY(BrotliDecompressionStreamAlgorithms::Create(enableLargeWindow));
     return brotliAlgos.forget();
   }
   if (aFormat == CompressionFormat::Zstd) {
@@ -76,6 +77,8 @@ already_AddRefed<DecompressionStream> DecompressionStream::Constructor(
     return nullptr;
   }
 
+  bool isPDFJS = nsContentUtils::IsPDFJS(aGlobal.GetSubjectPrincipal());
+
   
   
   
@@ -88,7 +91,7 @@ already_AddRefed<DecompressionStream> DecompressionStream::Constructor(
   
 
   Result<already_AddRefed<DecompressionStreamAlgorithms>, nsresult> algorithms =
-      CreateDecompressionStreamAlgorithms(aFormat);
+      CreateDecompressionStreamAlgorithms(aFormat, isPDFJS);
   if (algorithms.isErr()) {
     aRv.ThrowUnknownError("Not enough memory");
     return nullptr;

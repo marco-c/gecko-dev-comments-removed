@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_COMPRESSION_FORMATBROTLI_H_
 #define DOM_COMPRESSION_FORMATBROTLI_H_
 
@@ -55,12 +53,12 @@ class BrotliDecompressionStreamAlgorithms
                                            DecompressionStreamAlgorithms)
 
   static Result<already_AddRefed<BrotliDecompressionStreamAlgorithms>, nsresult>
-  Create();
+  Create(bool aEnableLargeWindow);
 
  private:
   BrotliDecompressionStreamAlgorithms() = default;
 
-  [[nodiscard]] nsresult Init();
+  [[nodiscard]] nsresult Init(bool aEnableLargeWindow);
 
   
   
