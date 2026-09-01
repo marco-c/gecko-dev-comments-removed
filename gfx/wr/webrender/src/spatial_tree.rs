@@ -604,6 +604,14 @@ impl<Src, Dst> CoordinateSpaceMapping<Src, Dst> {
         }
     }
 
+    pub fn coplanar_scale_factors(&self) -> Option<(f32, f32)> {
+        match *self {
+            CoordinateSpaceMapping::Local => Some((1.0, 1.0)),
+            CoordinateSpaceMapping::ScaleOffset(ref scale_offset) => Some((scale_offset.scale.x.abs(), scale_offset.scale.y.abs())),
+            CoordinateSpaceMapping::Transform(ref transform) => transform.coplanar_scale_factors(),
+        }
+    }
+
     pub fn inverse(&self) -> Option<CoordinateSpaceMapping<Dst, Src>> {
         match *self {
             CoordinateSpaceMapping::Local => Some(CoordinateSpaceMapping::Local),
