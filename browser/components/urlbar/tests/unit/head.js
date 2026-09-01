@@ -1235,6 +1235,8 @@ async function check_results({
     
     
     suggestionObject: { ignore: true },
+    
+    viewTemplate: { optional: true },
     ...conditionalPayloadProperties,
   };
 
