@@ -34,6 +34,13 @@
 constexpr auto COOKIES_SCHEMA_VERSION = 17;
 
 
+
+
+
+constexpr int32_t COOKIES_MAX_WAL_BYTES = 2048000;
+constexpr int32_t COOKIES_JOURNAL_OVERHEAD_BYTES = 2048000;
+
+
 constexpr auto IDX_NAME = 0;
 constexpr auto IDX_VALUE = 1;
 constexpr auto IDX_HOST = 2;
@@ -508,11 +515,6 @@ already_AddRefed<CookiePersistentStorage> CookiePersistentStorage::Create() {
 
   return storage.forget();
 }
-
-CookiePersistentStorage::CookiePersistentStorage()
-    : mMonitor("CookiePersistentStorage"),
-      mInitialized(false),
-      mCorruptFlag(OK) {}
 
 void CookiePersistentStorage::NotifyChangedInternal(
     nsICookieNotification* aNotification, bool aOldCookieIsSession) {
@@ -2241,10 +2243,39 @@ nsresult CookiePersistentStorage::InitDBConnInternal() {
   mDBConn->ExecuteSimpleSQL("PRAGMA synchronous = NORMAL"_ns);
 
   
-  
   mDBConn->ExecuteSimpleSQL(nsLiteralCString(MOZ_STORAGE_UNIQUIFY_QUERY_STR
                                              "PRAGMA journal_mode = WAL"));
-  mDBConn->ExecuteSimpleSQL("PRAGMA wal_autocheckpoint = 16"_ns);
+
+  
+  
+  int32_t pageSize = 0;
+  {
+    nsCOMPtr<mozIStorageStatement> stmt;
+    rv = mDBConn->CreateStatement(
+        nsLiteralCString(MOZ_STORAGE_UNIQUIFY_QUERY_STR "PRAGMA page_size"),
+        getter_AddRefs(stmt));
+    if (NS_SUCCEEDED(rv)) {
+      bool hasResult = false;
+      if (NS_SUCCEEDED(stmt->ExecuteStep(&hasResult)) && hasResult) {
+        (void)stmt->GetInt32(0, &pageSize);
+      }
+    }
+  }
+
+  if (pageSize <= 0 && NS_FAILED(mDBConn->GetDefaultPageSize(&pageSize))) {
+    pageSize = 0;
+  }
+
+  if (pageSize > 0) {
+    nsAutoCString checkpointPragma("PRAGMA wal_autocheckpoint = ");
+    checkpointPragma.AppendInt(COOKIES_MAX_WAL_BYTES / pageSize);
+    mDBConn->ExecuteSimpleSQL(checkpointPragma);
+  }
+
+  nsAutoCString journalSizePragma("PRAGMA journal_size_limit = ");
+  journalSizePragma.AppendInt(COOKIES_MAX_WAL_BYTES +
+                              COOKIES_JOURNAL_OVERHEAD_BYTES);
+  mDBConn->ExecuteSimpleSQL(journalSizePragma);
 
   
   rv = mDBConn->CreateAsyncStatement(
