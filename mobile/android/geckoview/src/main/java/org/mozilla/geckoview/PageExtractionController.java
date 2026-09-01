@@ -31,6 +31,14 @@ public class PageExtractionController {
 
 
 
+    public final boolean isGated;
+
+    
+
+
+
+
+
 
 
 
@@ -38,11 +46,13 @@ public class PageExtractionController {
         @NonNull final String[] structuredDataTypes,
         final int wordCount,
         @NonNull final String language,
-        final boolean isReaderable) {
+        final boolean isReaderable,
+        final boolean isGated) {
       this.structuredDataTypes = structuredDataTypes;
       this.wordCount = wordCount;
       this.language = language;
       this.isReaderable = isReaderable;
+      this.isGated = isGated;
     }
 
      static PageMetadata fromBundle(@NonNull final GeckoBundle bundle) {
@@ -50,8 +60,9 @@ public class PageExtractionController {
       final int wordCount = bundle.getInt("wordCount", -1);
       final String language = bundle.getString("language");
       final boolean isReaderable = bundle.getBoolean("isReaderable", false);
+      final boolean isGated = bundle.getBoolean("isGated", false);
 
-      return new PageMetadata(structuredDataTypes, wordCount, language, isReaderable);
+      return new PageMetadata(structuredDataTypes, wordCount, language, isReaderable, isGated);
     }
   }
 
