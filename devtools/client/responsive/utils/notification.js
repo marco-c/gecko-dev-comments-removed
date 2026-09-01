@@ -26,6 +26,7 @@ loader.lazyRequireGetter(
 
 
 
+
 async function showNotification(
   window,
   tab,
@@ -45,16 +46,22 @@ async function showNotification(
   }
 
   const value = "devtools-responsive";
-  if (nbox.getNotificationWithValue(value)) {
+  let notificationMessage = nbox.getNotificationWithValue(value);
+  if (notificationMessage) {
     
-    return;
+    return notificationMessage;
   }
 
   if (!priority) {
     priority = nbox.PRIORITY_INFO_MEDIUM;
   }
 
-  nbox.appendNotification(value, { label: msg, priority });
+  notificationMessage = await nbox.appendNotification(value, {
+    label: msg,
+    priority,
+  });
+
+  return notificationMessage;
 }
 
 exports.showNotification = showNotification;
