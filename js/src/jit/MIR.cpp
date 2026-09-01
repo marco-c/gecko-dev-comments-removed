@@ -7931,6 +7931,29 @@ MDefinition* MTimeClip::foldsTo(TempAllocator& alloc) {
 
 JSOp MBinaryCache::jsop() const { return JSOp(*resumePoint()->pc()); }
 
+template <typename T>
+static wasm::MaybeRefType GetBaseRefTypeForWasmLoadOrStore(T ins) {
+  const MDefinition* structObject;
+  if (ins->base()->type() == MIRType::WasmStructData) {
+    MOZ_RELEASE_ASSERT(ins->base()->isWasmLoadField());
+    structObject = ins->base()->toWasmLoadField()->base();
+  } else {
+    structObject = ins->base();
+  }
+  return structObject->wasmRefType().asNonNullable();
+}
+
+
+
+
+
+
+
+
+
+
+
+
 MDefinition::AliasType MWasmLoadField::mightAlias(
     const MDefinition* ins) const {
   if (!(getAliasSet().flags() & ins->getAliasSet().flags())) {
@@ -7938,27 +7961,27 @@ MDefinition::AliasType MWasmLoadField::mightAlias(
   }
   MOZ_ASSERT(!isEffectful() && ins->isEffectful());
 
-  
-  
-  
-  
-  
+  wasm::MaybeRefType insType;
+  uint32_t insOffset;
   if (ins->isWasmStoreField()) {
     const MWasmStoreField* store = ins->toWasmStoreField();
-    if (offset() != store->offset() ||
-        !wasm::MaybeRefType::mayHaveValuesInCommon(
-            base()->wasmRefType().asNonNullable(),
-            store->base()->wasmRefType().asNonNullable())) {
-      return AliasType::NoAlias;
-    }
+    insType = GetBaseRefTypeForWasmLoadOrStore(store);
+    insOffset = store->offset();
   } else if (ins->isWasmStoreFieldRef()) {
     const MWasmStoreFieldRef* store = ins->toWasmStoreFieldRef();
-    if (offset() != store->offset() ||
-        !wasm::MaybeRefType::mayHaveValuesInCommon(
-            base()->wasmRefType().asNonNullable(),
-            store->base()->wasmRefType().asNonNullable())) {
-      return AliasType::NoAlias;
-    }
+    insType = GetBaseRefTypeForWasmLoadOrStore(store);
+    insOffset = store->offset();
+  } else {
+    
+    
+    
+    return AliasType::MayAlias;
+  }
+
+  wasm::MaybeRefType thisType = GetBaseRefTypeForWasmLoadOrStore(this);
+  if (offset() != insOffset ||
+      !wasm::MaybeRefType::mayHaveValuesInCommon(thisType, insType)) {
+    return AliasType::NoAlias;
   }
 
   return AliasType::MayAlias;
