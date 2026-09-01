@@ -376,33 +376,42 @@ mozilla::Maybe<FuncType> FlattenFuncType(const ComponentFuncType& funcType,
                                          CanonMode mode, bool* memoryRequired,
                                          bool* reallocRequired, bool* tooDeep);
 
+enum class ComponentNameAttribute : uint8_t {
+  Constructor,
+  Method,
+  Static,
+  Get,
+  Set,
+};
+using ComponentNameAttributes = mozilla::EnumSet<ComponentNameAttribute>;
+
+
+
+[[nodiscard]] bool CanonicalizeName(mozilla::Span<const char> name,
+                                    CacheableName* result);
 
 
 
 
+struct ComponentName {
+  CacheableName name;
+  ComponentNameAttributes attributes;
 
-
-
-
-
-
-
-
-struct StronglyUniqueNameHasher {
-  using Key = CacheableName;
-  using Lookup = mozilla::Span<const char>;
-
-  static HashNumber hash(const Lookup& aLookup);
-  static bool match(const Key& aKey, const Lookup& aLookup);
+  explicit ComponentName() = default;
+  explicit ComponentName(CacheableName&& name,
+                         ComponentNameAttributes attributes)
+      : name(std::move(name)), attributes(attributes) {}
 };
 
 
 
 class StronglyUniqueNameSet {
-  mozilla::HashSet<CacheableName, StronglyUniqueNameHasher, SystemAllocPolicy>
-      data_;
+  
+  mozilla::HashSet<CacheableName, CacheableNameHasher, SystemAllocPolicy> data_;
 
  public:
+  
+  
   [[nodiscard]] bool add(mozilla::Span<const char> name, bool* duplicate);
 };
 
@@ -835,27 +844,27 @@ class ComponentExternDesc {
 static_assert(std::is_default_constructible_v<ComponentExternDesc>);
 
 class ComponentImport {
-  CacheableName name_;
+  ComponentName name_;
   ComponentExternDesc externDesc_;
 
  public:
-  explicit ComponentImport(CacheableName&& name,
+  explicit ComponentImport(ComponentName&& name,
                            const ComponentExternDesc& externDesc)
       : name_(std::move(name)), externDesc_(externDesc) {}
 
-  const CacheableName& name() const { return name_; }
+  const ComponentName& name() const { return name_; }
   const ComponentExternDesc& externDesc() const { return externDesc_; }
 };
 
 class ComponentExport {
-  CacheableName name_;
+  ComponentName name_;
   ComponentExternDesc externDesc_;
 
  public:
-  explicit ComponentExport(CacheableName&& name, ComponentExternDesc externDesc)
+  explicit ComponentExport(ComponentName&& name, ComponentExternDesc externDesc)
       : name_(std::move(name)), externDesc_(externDesc) {}
 
-  const CacheableName& name() const { return name_; }
+  const ComponentName& name() const { return name_; }
   const ComponentExternDesc& externDesc() const { return externDesc_; }
 };
 

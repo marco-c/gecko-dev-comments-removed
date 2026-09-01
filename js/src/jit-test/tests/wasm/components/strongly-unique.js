@@ -18,12 +18,50 @@ function assertNotStronglyUnique(okNames, badName) {
 const specOkExamples = [
   "foo", "foo-bar",
   "[constructor]foo",
-  "[method]foo.bar", "[method]foo.baz",
+  "[method]foo.bar", "[static]foo.baz",
+  "[get]prop", "[set]prop",
+  "[method][get]foo.prop", "[method][set]foo.prop",
+  "[static][get]foo.prop-2", "[static][set]foo.prop-2",
+  
+  
+  "[method]foo.get-prop", "[method]foo.set-prop",
 ];
 assertAllStronglyUnique(specOkExamples);
 
+
 assertNotStronglyUnique(specOkExamples, "foo");
-assertNotStronglyUnique(specOkExamples, "foo-BAR");
-assertNotStronglyUnique(specOkExamples, "[constructor]foo-BAR");
+assertNotStronglyUnique(specOkExamples, "FOO");
 assertNotStronglyUnique(specOkExamples, "[method]foo.foo");
+assertNotStronglyUnique(specOkExamples, "[get]foo");
+assertNotStronglyUnique(specOkExamples, "[method][get]foo.foo");
+assertNotStronglyUnique(specOkExamples, "[static][set]foo.FOO");
+
+
+assertNotStronglyUnique(specOkExamples, "foo-BAR");
+assertNotStronglyUnique(specOkExamples, "[static]foo-BAR.FOO-bar");
+
+
+assertNotStronglyUnique(specOkExamples, "[constructor]FOO");
+
+
 assertNotStronglyUnique(specOkExamples, "[method]foo.BAR");
+assertNotStronglyUnique(specOkExamples, "[static]foo.bar");
+
+
+assertNotStronglyUnique(specOkExamples, "[method]foo.baz");
+
+
+assertNotStronglyUnique(specOkExamples, "prop");
+
+
+assertNotStronglyUnique(specOkExamples, "[set]PROP");
+
+
+assertNotStronglyUnique(specOkExamples, "[method]foo.prop");
+assertNotStronglyUnique(specOkExamples, "[static]foo.PROP");
+assertNotStronglyUnique(specOkExamples, "[method][get]foo.PROP");
+assertNotStronglyUnique(specOkExamples, "[static][get]foo.prop");
+
+
+assertNotStronglyUnique(specOkExamples, "[method][set]foo.PROP");
+assertNotStronglyUnique(specOkExamples, "[static][set]foo.prop");

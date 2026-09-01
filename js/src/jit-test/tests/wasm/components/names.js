@@ -80,9 +80,15 @@ validFuncName("[constructor]my-resource");
 invalidFuncName("[constructor]foo.bar", /invalid character/);
 
 
+invalidFuncName("[constructor][get]foo", /cannot use \[get\] or \[set\]/);
+invalidFuncName("[constructor][set]foo", /cannot use \[get\] or \[set\]/);
+
+
 validFuncName("[method]foo.bar");
 validFuncName("[method]foo.BAR");
 validFuncName("[method]my-resource.my-method");
+validFuncName("[method][get]foo.bar");
+validFuncName("[method][set]foo.bar");
 invalidFuncName("[method]foo", /ended unexpectedly/);
 invalidFuncName("[method]foo.", /ended unexpectedly/);
 invalidFuncName("[method].bar", /invalid character/);
@@ -92,10 +98,20 @@ invalidFuncName("[method]foo.bar.baz", /invalid character/);
 validFuncName("[static]foo.bar");
 validFuncName("[static]FOO.bar");
 validFuncName("[static]my-resource.my-method");
+validFuncName("[static][get]foo.bar");
+validFuncName("[static][set]foo.bar");
 invalidFuncName("[static]foo", /ended unexpectedly/);
 invalidFuncName("[static]foo.", /ended unexpectedly/);
 invalidFuncName("[static].bar", /invalid character/);
 invalidFuncName("[static]foo.bar.baz", /invalid character/);
+
+
+validFuncName("[get]foo");
+validFuncName("[set]foo");
+validFuncName("[get]foo-BAR");
+validFuncName("[set]foo-BAR");
+invalidFuncName("[get]foo.bar", /invalid character/);
+invalidFuncName("[set]foo.bar", /invalid character/);
 
 
 invalidFuncName("[unknown]foo", /invalid character/);
@@ -105,3 +121,24 @@ invalidFuncName("[methodfoo.bar", /invalid character/);
 
 
 invalidFuncName("[constructor]0bad", /start with a letter/);
+
+
+invalidFuncName("[constructor][constructor]foo", /invalid character/);
+invalidFuncName("[constructor][method]foo", /invalid character/);
+invalidFuncName("[constructor][static]foo", /invalid character/);
+invalidFuncName("[method][constructor]foo", /invalid character/);
+invalidFuncName("[static][constructor]foo", /invalid character/);
+invalidFuncName("[method][method]foo.foo", /invalid character/);
+invalidFuncName("[method][static]foo.foo", /invalid character/);
+invalidFuncName("[static][static]foo.foo", /invalid character/);
+invalidFuncName("[static][method]foo.foo", /invalid character/);
+invalidFuncName("[get][constructor]foo", /invalid character/);
+invalidFuncName("[set][constructor]foo", /invalid character/);
+invalidFuncName("[get][method]foo", /invalid character/);
+invalidFuncName("[set][method]foo", /invalid character/);
+invalidFuncName("[get][static]foo", /invalid character/);
+invalidFuncName("[get][static]foo", /invalid character/);
+invalidFuncName("[get][get]foo", /invalid character/);
+invalidFuncName("[get][set]foo", /invalid character/);
+invalidFuncName("[set][set]foo", /invalid character/);
+invalidFuncName("[set][get]foo", /invalid character/);
