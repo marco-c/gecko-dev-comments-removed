@@ -42,7 +42,11 @@
 use nserror::{NS_ERROR_NOT_AVAILABLE, NS_ERROR_UNEXPECTED, nsresult};
 use nsstring::nsAString;
 use std::sync::LazyLock;
-use windows::{ApplicationModel::Package, UI::Shell::TaskbarManager, core::Error as WinError};
+use windows::{
+    ApplicationModel::Package,
+    UI::Shell::{ITaskbarManagerDesktopAppSupportStatics, TaskbarManager},
+    core::{Error as WinError, factory},
+};
 
 use crate::{
     limited_access_features::LimitedAccessFeatureService,
@@ -51,6 +55,8 @@ use crate::{
 
 use super::PinResult;
 
+
+
 static LAF_LOCK: LazyLock<Result<(), nsresult>> = LazyLock::new(|| {
     let svc = LimitedAccessFeatureService::new();
     let feature_id = svc.get_taskbar_pin_feature_id()?;
@@ -58,7 +64,22 @@ static LAF_LOCK: LazyLock<Result<(), nsresult>> = LazyLock::new(|| {
     feature.unlock()?.then_some(()).ok_or(NS_ERROR_UNEXPECTED)
 });
 
-pub(super) fn is_pinning_allowed() -> bool {
+
+
+pub(super) enum CanPin {
+    Supported { allowed: bool },
+    Unsupported,
+}
+
+
+
+
+
+
+
+
+
+pub(super) fn can_pin() -> Result<CanPin, WinError> {
     if let Err(_e) = *LAF_LOCK {
         
         
@@ -67,9 +88,26 @@ pub(super) fn is_pinning_allowed() -> bool {
         );
     }
 
-    TaskbarManager::GetDefault()
-        .and_then(|m| m.IsPinningAllowed())
-        .unwrap_or(false)
+    
+    
+    if factory::<TaskbarManager, ITaskbarManagerDesktopAppSupportStatics>().is_err() {
+        return Ok(CanPin::Unsupported);
+    }
+
+    match Package::Current() {
+        Ok(_) => Ok(CanPin::Supported {
+            allowed: TaskbarManager::GetDefault()?.IsPinningAllowed()?,
+        }),
+        Err(_) => {
+            
+            
+            
+            
+            
+            
+            Ok(CanPin::Supported { allowed: true })
+        }
+    }
 }
 
 
