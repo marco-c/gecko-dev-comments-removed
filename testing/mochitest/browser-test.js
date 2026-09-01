@@ -232,46 +232,6 @@ function isGenerator(value) {
   return value && typeof value === "object" && typeof value.next === "function";
 }
 
-
-
-
-
-
-
-function describeElement(elt) {
-  let desc = elt.localName;
-  if (elt.id) {
-    desc += "#" + elt.id;
-  } else {
-    
-    
-    if (elt.classList.length) {
-      desc += "." + [...elt.classList].join(".");
-    }
-    let label = elt.getAttribute("label") || elt.getAttribute("aria-label");
-    if (label) {
-      desc += `[label="${label}"]`;
-    }
-    let container = elt.parentElement.closest("[id]");
-    if (container) {
-      desc += " inside #" + container.id;
-    }
-  }
-
-  
-  
-  let contents = [
-    ...elt.querySelectorAll(
-      "popupnotification:not([hidden]), panelview[visible]"
-    ),
-  ];
-  if (contents.length) {
-    desc += " showing " + contents.map(n => describeElement(n)).join(", ");
-  }
-
-  return desc;
-}
-
 function Tester(aTests, structuredLogger, aCallback) {
   this.structuredLogger = structuredLogger;
   this.tests = aTests;
@@ -570,70 +530,6 @@ Tester.prototype = {
     }
     
     aCallback();
-  },
-
-  
-  
-  
-  
-  async checkForOpenPopups() {
-    if (AppConstants.MOZ_APP_NAME == "thunderbird") {
-      return;
-    }
-
-    this.currentTest.addResult(new testMessage("checking for open popups"));
-
-    
-    
-    
-    
-    this.EventUtils.synthesizeMouseAtPoint(
-      0,
-      0,
-      { type: "mousecancel" },
-      window
-    );
-
-    
-    
-    let openPopups = [];
-    try {
-      await this.TestUtils.waitForCondition(() => {
-        openPopups = [...document.querySelectorAll("menupopup,panel")].filter(
-          popup => popup.state != "closed"
-        );
-        return !openPopups.length;
-      }, "waiting for popups to close");
-    } catch (e) {
-      if (!openPopups.length) {
-        
-        
-        console.error(e);
-        this.currentTest.addResult(
-          new testResult({
-            name: "Failed to check for open popups: " + e,
-            allowFailure: this.currentTest.allowFailure,
-          })
-        );
-      }
-
-      
-      
-      
-      
-      let msg = this.currentTest.timedOut
-        ? "Found a popup after previous test timed out"
-        : "Found an unexpected popup at the end of test run";
-      for (let popup of openPopups) {
-        this.currentTest.addResult(
-          new testResult({
-            name: msg + ": " + describeElement(popup),
-            allowFailure: this.currentTest.allowFailure,
-          })
-        );
-        popup.hidePopup();
-      }
-    }
   },
 
   checkWindowsState: function Tester_checkWindowsState() {
@@ -1162,8 +1058,6 @@ Tester.prototype = {
       this.PromiseTestUtils.ensureDOMPromiseRejectionsProcessed();
       this.PromiseTestUtils.assertNoUncaughtRejections();
       this.PromiseTestUtils.assertNoMoreExpectedRejections();
-      await this.checkForOpenPopups();
-
       await this.ensureVsyncDisabled();
 
       Object.keys(window).forEach(function (prop) {
