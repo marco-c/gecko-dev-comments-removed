@@ -17,6 +17,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/RangeUtils.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/ToString.h"
 #include "mozilla/dom/CharacterData.h"
 #include "mozilla/dom/ChildIterator.h"
@@ -1787,17 +1788,28 @@ void nsRange::CutContents(DocumentFragment** aFragment,
     *aFragment = nullptr;
   }
 
-  if (!CanAccess(*GetMayCrossShadowBoundaryStartContainer()) ||
-      !CanAccess(*GetMayCrossShadowBoundaryEndContainer())) {
-    aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+  const bool handleInFlatTree =
+      StaticPrefs::dom_range_cut_contents_use_flat_tree();
+  const AllowRangeCrossShadowBoundary allowRangeCrossShadowBoundary =
+      handleInFlatTree ? AllowRangeCrossShadowBoundary::Yes
+                       : AllowRangeCrossShadowBoundary::No;
+
+  const RangeBoundary startRef =
+      handleInFlatTree ? MayCrossShadowBoundaryStartRef() : StartRef();
+  const RangeBoundary endRef =
+      handleInFlatTree ? MayCrossShadowBoundaryEndRef() : EndRef();
+
+  const RefPtr<Document> doc = startRef.GetContainer()->OwnerDoc();
+
+  nsCOMPtr<nsINode> commonAncestor =
+      GetCommonAncestorContainer(aRv, allowRangeCrossShadowBoundary);
+  if (aRv.Failed()) {
     return;
   }
 
-  nsCOMPtr<Document> doc = mStart.GetContainer()->OwnerDoc();
-
-  nsCOMPtr<nsINode> commonAncestor =
-      GetCommonAncestorContainer(aRv, AllowRangeCrossShadowBoundary::Yes);
-  if (aRv.Failed()) {
+  if (!CanAccess(*startRef.GetContainer()) ||
+      !CanAccess(*endRef.GetContainer())) {
+    aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return;
   }
 
@@ -1807,13 +1819,22 @@ void nsRange::CutContents(DocumentFragment** aFragment,
     retval =
         new (doc->NodeInfoManager()) DocumentFragment(doc->NodeInfoManager());
   }
+
+  
+  
+  if (!handleInFlatTree && mCrossShadowBoundaryRange &&
+      mCrossShadowBoundaryRange->IsPositioned() &&
+      !mCrossShadowBoundaryRange->IsPositionedInSameRangeRoot()) {
+    if (aFragment) {
+      retval.forget(aFragment);
+    }
+    return;
+  }
+
   nsCOMPtr<nsINode> commonCloneAncestor = retval.get();
 
   
   
-
-  const RangeBoundary startRef = MayCrossShadowBoundaryStartRef();
-  const RangeBoundary endRef = MayCrossShadowBoundaryEndRef();
 
   
   
@@ -1824,9 +1845,8 @@ void nsRange::CutContents(DocumentFragment** aFragment,
     
     
     
-    nsCOMPtr<Document> commonAncestorDocument =
-        do_QueryInterface(commonAncestor);
-    if (commonAncestorDocument) {
+    if (Document* const commonAncestorDocument =
+            Document::FromNode(commonAncestor)) {
       if (const DocumentType* const doctype =
               commonAncestorDocument->GetDoctype()) {
         
@@ -1860,7 +1880,7 @@ void nsRange::CutContents(DocumentFragment** aFragment,
 
   RangeSubtreeIterator iter;
 
-  aRv = iter.Init(this, AllowRangeCrossShadowBoundary::Yes);
+  aRv = iter.Init(this, allowRangeCrossShadowBoundary);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
@@ -1894,7 +1914,10 @@ void nsRange::CutContents(DocumentFragment** aFragment,
 
     iter.Next();
     nsCOMPtr<nsINode> nextNode = iter.GetCurrentNode();
-    while (nextNode && nextNode->IsInclusiveFlatTreeDescendantOf(node)) {
+    while (nextNode &&
+           (handleInFlatTree
+                ? nextNode->IsInclusiveFlatTreeDescendantOf(node)
+                : nextNode->IsShadowIncludingInclusiveDescendantOf(node))) {
       iter.Next();
       nextNode = iter.GetCurrentNode();
     }
@@ -2035,6 +2058,7 @@ void nsRange::CutContents(DocumentFragment** aFragment,
         }
       }
 
+      
       
       
       
