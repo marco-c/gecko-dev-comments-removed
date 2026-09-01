@@ -3431,8 +3431,8 @@ static PreRecordedMetaInformation PreRecordMetaInformation(
 #if defined(GP_OS_windows)
       
       
-      OSVERSIONINFO ovi = {sizeof(OSVERSIONINFO)};
-    if (GetVersionEx(&ovi)) {
+      OSVERSIONINFOW ovi = {sizeof(OSVERSIONINFOW)};
+    if (GetVersionExW(&ovi)) {
       info.mHttpOscpu.AppendLiteral("Windows ");
       
       
@@ -8100,7 +8100,7 @@ void profiler_mark_thread_awake() {
   LONG priority;
   static const auto get_thread_information_fn =
       reinterpret_cast<decltype(&::GetThreadInformation)>(::GetProcAddress(
-          ::GetModuleHandle(L"Kernel32.dll"), "GetThreadInformation"));
+          ::GetModuleHandleW(L"Kernel32.dll"), "GetThreadInformation"));
 
   if (!get_thread_information_fn ||
       !get_thread_information_fn(GetCurrentThread(), ThreadAbsoluteCpuPriority,
@@ -8110,7 +8110,7 @@ void profiler_mark_thread_awake() {
 
   static const auto nt_query_information_thread_fn =
       reinterpret_cast<decltype(&::NtQueryInformationThread)>(::GetProcAddress(
-          ::GetModuleHandle(L"ntdll.dll"), "NtQueryInformationThread"));
+          ::GetModuleHandleW(L"ntdll.dll"), "NtQueryInformationThread"));
 
   LONG currentPriority = 0;
   if (nt_query_information_thread_fn) {
