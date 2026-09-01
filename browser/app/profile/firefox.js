@@ -2425,7 +2425,7 @@ pref("browser.smartwindow.searchQuery.apiKey", "");
 
 
 
-pref("browser.smartwindow.searchTheWebFast", false);
+pref("browser.smartwindow.searchTheWebFast", true);
 
 
 pref("browser.smartwindow.chatHistory.loglevel", "Error");
