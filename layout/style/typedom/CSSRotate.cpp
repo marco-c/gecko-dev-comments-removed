@@ -12,6 +12,7 @@
 #include "mozilla/dom/CSSNumericValueBinding.h"
 #include "mozilla/dom/CSSRotateBinding.h"
 #include "mozilla/dom/CSSUnitValue.h"
+#include "mozilla/dom/DOMMatrix.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
 
@@ -59,12 +60,16 @@ JSObject* CSSRotate::WrapObject(JSContext* aCx,
 
 
 
-
-
 already_AddRefed<CSSRotate> CSSRotate::Constructor(const GlobalObject& aGlobal,
                                                    CSSNumericValue& aAngle,
                                                    ErrorResult& aRv) {
   nsCOMPtr<nsISupports> global = aGlobal.GetAsSupports();
+
+  
+  if (!aAngle.GetNumericType().MatchesAngle()) {
+    aRv.ThrowTypeError("Angle must match <angle>");
+    return nullptr;
+  }
 
   
   RefPtr<CSSNumericValue> x = CSSUnitValue::Create(global, 0.0);
@@ -79,17 +84,35 @@ already_AddRefed<CSSRotate> CSSRotate::Constructor(const GlobalObject& aGlobal,
 
 
 
-
-
 already_AddRefed<CSSRotate> CSSRotate::Constructor(
     const GlobalObject& aGlobal, const CSSNumberish& aX, const CSSNumberish& aY,
     const CSSNumberish& aZ, CSSNumericValue& aAngle, ErrorResult& aRv) {
   nsCOMPtr<nsISupports> global = aGlobal.GetAsSupports();
 
   
+  if (!aAngle.GetNumericType().MatchesAngle()) {
+    aRv.ThrowTypeError("Angle must match <angle>");
+    return nullptr;
+  }
+
+  
   RefPtr<CSSNumericValue> x = CSSNumericValue::Create(global, aX);
   RefPtr<CSSNumericValue> y = CSSNumericValue::Create(global, aY);
   RefPtr<CSSNumericValue> z = CSSNumericValue::Create(global, aZ);
+
+  
+  if (!x->GetNumericType().MatchesNumber()) {
+    aRv.ThrowTypeError("X must match <number>");
+    return nullptr;
+  }
+  if (!y->GetNumericType().MatchesNumber()) {
+    aRv.ThrowTypeError("Y must match <number>");
+    return nullptr;
+  }
+  if (!z->GetNumericType().MatchesNumber()) {
+    aRv.ThrowTypeError("Z must match <number>");
+    return nullptr;
+  }
 
   
   return MakeAndAddRef<CSSRotate>(std::move(global),  false,
@@ -102,7 +125,15 @@ void CSSRotate::GetX(OwningCSSNumberish& aRetVal) const {
 }
 
 void CSSRotate::SetX(const CSSNumberish& aArg, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  
+  RefPtr<CSSNumericValue> x = CSSNumericValue::Create(mParent, aArg);
+
+  if (!x->GetNumericType().MatchesNumber()) {
+    aRv.ThrowTypeError("X must match <number>");
+    return;
+  }
+
+  mX = std::move(x);
 }
 
 void CSSRotate::GetY(OwningCSSNumberish& aRetVal) const {
@@ -110,7 +141,15 @@ void CSSRotate::GetY(OwningCSSNumberish& aRetVal) const {
 }
 
 void CSSRotate::SetY(const CSSNumberish& aArg, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  
+  RefPtr<CSSNumericValue> y = CSSNumericValue::Create(mParent, aArg);
+
+  if (!y->GetNumericType().MatchesNumber()) {
+    aRv.ThrowTypeError("Y must match <number>");
+    return;
+  }
+
+  mY = std::move(y);
 }
 
 void CSSRotate::GetZ(OwningCSSNumberish& aRetVal) const {
@@ -118,16 +157,61 @@ void CSSRotate::GetZ(OwningCSSNumberish& aRetVal) const {
 }
 
 void CSSRotate::SetZ(const CSSNumberish& aArg, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  
+  RefPtr<CSSNumericValue> z = CSSNumericValue::Create(mParent, aArg);
+
+  if (!z->GetNumericType().MatchesNumber()) {
+    aRv.ThrowTypeError("Z must match <number>");
+    return;
+  }
+
+  mZ = std::move(z);
 }
 
 CSSNumericValue* CSSRotate::Angle() const { return mAngle; }
 
 void CSSRotate::SetAngle(CSSNumericValue& aArg, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  if (!aArg.GetNumericType().MatchesAngle()) {
+    aRv.ThrowTypeError("Angle must match <angle>");
+    return;
+  }
+
+  mAngle = &aArg;
 }
 
 
+
+already_AddRefed<DOMMatrix> CSSRotate::ToMatrix(ErrorResult& aRv) {
+  auto matrix = MakeRefPtr<DOMMatrix>(mParent);
+
+  auto angle = mAngle->ToStyleUnitValue("deg"_ns, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  if (Is2D()) {
+    matrix->RotateAxisAngleSelf(0, 0, 1, angle->value);
+  } else {
+    auto x = mX->ToStyleUnitValue("number"_ns, aRv);
+    if (aRv.Failed()) {
+      return nullptr;
+    }
+
+    auto y = mY->ToStyleUnitValue("number"_ns, aRv);
+    if (aRv.Failed()) {
+      return nullptr;
+    }
+
+    auto z = mZ->ToStyleUnitValue("number"_ns, aRv);
+    if (aRv.Failed()) {
+      return nullptr;
+    }
+
+    matrix->RotateAxisAngleSelf(x->value, y->value, z->value, angle->value);
+  }
+
+  return matrix.forget();
+}
 
 void CSSRotate::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                                       nsACString& aDest) const {
