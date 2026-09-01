@@ -25,6 +25,7 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_clipboard.h"
 #include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/TextUtils.h"
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/widget/WebCustomFormatUtils.h"
 #include "nsArrayUtils.h"
@@ -92,6 +93,35 @@ static inline nsresult CheckClipboardByteSize(HGLOBAL aHGlobal,
   }
 
   return NS_OK;
+}
+
+
+
+
+
+
+
+
+
+static bool IsWebCustomFormatSlotName(const nsACString& aFormatName) {
+  constexpr auto kSlotPrefix = "Web Custom Format"_ns;
+  if (!StringBeginsWith(aFormatName, kSlotPrefix)) {
+    return false;
+  }
+  if (kSlotPrefix.Length() >= aFormatName.Length() ||
+      (aFormatName.Length() - kSlotPrefix.Length() > 3)) {
+    return false;
+  }
+
+  uint32_t index = 0;
+  for (uint32_t i = kSlotPrefix.Length(); i < aFormatName.Length(); ++i) {
+    if (!mozilla::IsAsciiDigit(aFormatName.CharAt(i))) {
+      return false;
+    }
+    index = index * 10;
+    index += static_cast<uint32_t>(aFormatName.CharAt(i) - '0');
+  }
+  return index <= 100;
 }
 
 
@@ -1214,7 +1244,7 @@ nsClipboard::GetDataFromDataObject(IDataObject* aDataObject, UINT anIndex,
     nsDependentCSubstring essence(
         Substring(aFlavor, strlen(kWebCustomFormatPrefix)));
     auto entry = map.Lookup(essence);
-    if (!entry) {
+    if (!entry || !IsWebCustomFormatSlotName(entry.Data())) {
       return nsCOMPtr<nsISupports>{};
     }
     format = GetFormat(entry.Data().get());
@@ -1741,7 +1771,7 @@ nsClipboard::HasNativeClipboardDataMatchingFlavors(
       nsDependentCSubstring essence(
           Substring(flavor, strlen(kWebCustomFormatPrefix)));
       auto entry = webCustomFormatMap.Lookup(essence);
-      if (!entry) {
+      if (!entry || !IsWebCustomFormatSlotName(entry.Data())) {
         continue;
       }
       UINT cf = GetFormat(entry.Data().get());
