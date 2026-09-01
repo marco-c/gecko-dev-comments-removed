@@ -2371,7 +2371,7 @@ pref("browser.smartwindow.agent.supportedRegions", "US,CA");
 
 
 
-pref("browser.smartwindow.worldcup.enabled", true);
+pref("browser.smartwindow.worldcup.enabled", false);
 pref("browser.smartwindow.worldcup.endpointURL", "https://merino.services.mozilla.com");
 pref("browser.smartwindow.worldcup.timeoutMs", 2000);
 
