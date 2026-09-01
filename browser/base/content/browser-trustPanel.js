@@ -483,8 +483,11 @@ class TrustPanel {
 
 
 
+
+
+
   async onNavigationComplete() {
-    if (!this.#enabled || !this.#uri || this.#blockersChecked) {
+    if (!this.#enabled || !this.#uri) {
       return;
     }
     if (
@@ -493,15 +496,15 @@ class TrustPanel {
     ) {
       return;
     }
-    
-    
     const uri = this.#uri;
     await this.#updateToolbarTrackerCount();
-    if (this.#uri !== uri || this.#blockersChecked) {
+    if (this.#uri !== uri) {
       return;
     }
-    this.#blockersChecked = true;
-    this.#updateUrlbarIcon();
+    if (!this.#blockersChecked) {
+      this.#blockersChecked = true;
+      this.#updateUrlbarIcon();
+    }
   }
 
   updateIdentity(state, uri) {
@@ -532,17 +535,13 @@ class TrustPanel {
     this.#qwacStatusPromise = null;
     this.#pageExtensionPolicy = WebExtensionPolicy.getByURI(uri);
     this.#breachedStatus = null;
+    
     if (this.#sameSiteNavigation) {
-      
-      
-      
-      
-      this.#isFirstVisit = false;
-    } else {
-      this.#trackerCount = null;
-      this.#trackerCountPromise = null;
-      this.#isFirstVisit = false;
+      this.#blockersChecked = true;
     }
+    this.#trackerCount = null;
+    this.#trackerCountPromise = null;
+    this.#isFirstVisit = false;
     
     
     this.#updateUrlbarIcon();
@@ -637,12 +636,6 @@ class TrustPanel {
     }
 
     
-    
-    if (this.#sameSiteNavigation && !targetClasses.has("scanning")) {
-      targetClasses.add("same-site-nav");
-    }
-
-    
     if (targetClasses.has("breached")) {
       this.#blockersChecked = true;
     }
@@ -660,6 +653,9 @@ class TrustPanel {
         });
         
         
+      } else if (icon.classList.contains("breach-animating")) {
+        
+        targetClasses.add("breach-animating");
       }
     }
 
@@ -808,6 +804,10 @@ class TrustPanel {
       !ContentBlockingAllowList.canHandle(window.gBrowser.selectedBrowser)
     );
 
+    
+    
+    void this.#updateToolbarTrackerCount();
+
     await this.#updateBlockerView();
   }
 
@@ -815,16 +815,20 @@ class TrustPanel {
     if (this.#trackerCountPromise) {
       return this.#trackerCountPromise;
     }
-    this.#trackerCountPromise = (async () => {
+    const p = (async () => {
       let count = this.#fetchSmartBlocked().length;
       for (let blocker of Object.values(this.#blockers)) {
-        if (blocker.isBlocking(this.#lastEvent)) {
-          count += await blocker.getBlockerCount();
-        }
+        count += await blocker.getBlockerCount();
       }
       return count;
     })();
-    return this.#trackerCountPromise;
+    this.#trackerCountPromise = p;
+    p.finally(() => {
+      if (this.#trackerCountPromise === p) {
+        this.#trackerCountPromise = null;
+      }
+    });
+    return p;
   }
 
   async #markFirstVisit() {
@@ -885,11 +889,6 @@ class TrustPanel {
       return;
     }
 
-    
-    
-    if (this.#sameSiteNavigation && count === 0 && this.#trackerCount > 0) {
-      count = this.#trackerCount;
-    }
     this.#trackerCount = count;
     
     if (count > 0) {
