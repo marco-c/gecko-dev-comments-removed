@@ -5,14 +5,8 @@ const { PermissionTestUtils } = ChromeUtils.importESModule(
 );
 
 add_setup(async function () {
-  
-  
-  
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["media.navigator.permission.fake", true],
-      ["media.navigator.streams.fake", true],
-    ],
+    set: [["media.navigator.permission.fake", true]],
   });
 });
 
