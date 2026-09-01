@@ -773,6 +773,55 @@ add_task(async function test_sessionWatermark_readWrite_and_migration() {
 
 
 
+
+add_task(async function test_generationRunTimestamp_readWrite_and_migration() {
+  await MemoryStore.updateMeta({
+    last_generation_run_ts: 0,
+    last_session_memory_ts: 0,
+  });
+
+  
+  await MemoriesManager.setLastGenerationRunTimestamp(123456);
+  Assert.equal(
+    await MemoriesManager.getLastGenerationRunTimestamp(),
+    123456,
+    "Should read back the persisted generation run timestamp."
+  );
+
+  
+  await MemoryStore.updateMeta({
+    last_generation_run_ts: 0,
+    last_session_memory_ts: 500,
+  });
+  Assert.equal(
+    await MemoriesManager.getLastGenerationRunTimestamp(),
+    500,
+    "Should seed from the session watermark when no run timestamp is stored."
+  );
+
+  
+  
+  await MemoryStore.updateMeta({
+    last_generation_run_ts: 700,
+    last_session_memory_ts: 900,
+  });
+  Assert.equal(
+    await MemoriesManager.getLastGenerationRunTimestamp(),
+    700,
+    "A stored run timestamp should win over the session watermark."
+  );
+
+  
+  await MemoryStore.updateMeta({
+    last_generation_run_ts: 0,
+    last_session_memory_ts: 0,
+  });
+});
+
+
+
+
+
 add_task(
   async function test_runMemoryMaintenance_hardDeletesSoftDeletedMemories() {
     await clearMemories();
@@ -1277,8 +1326,8 @@ add_task(async function test_generateMemoriesFromSessions_caps_delta_run() {
     
     Assert.equal(
       getRecentHistory.firstCall.args[0].sinceMicros,
-      watermarkMs * 1000,
-      "A set watermark should pull history from the watermark forward."
+      MemoriesManager.getSessionMemoryDeltaStartMs(watermarkMs) * 1000,
+      "A set watermark should pull history from one ms past the watermark."
     );
 
     Assert.equal(
