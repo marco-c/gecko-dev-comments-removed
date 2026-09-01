@@ -1086,7 +1086,8 @@ void WebrtcAudioConduit::CreateRecvStream() {
     return;
   }
 
-  mRecvStream = mCall->Call()->CreateAudioReceiveStream(mRecvStreamConfig);
+  mRecvStream =
+      mCall->Call()->CreateAudioReceiveStream(mRecvStreamConfig.Copy());
   
   mRecvStream->SetBaseMinimumPlayoutDelayMs(mJitterBufferTargetMs);
 }
