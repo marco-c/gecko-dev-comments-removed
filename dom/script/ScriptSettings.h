@@ -334,14 +334,8 @@ class AutoNoJSAPI : protected ScriptSettingsStackEntry,
   
   explicit AutoNoJSAPI(JSContext* aCx);
 
-  
-  
-  
-  
-  
-  JSContext* mCx;
-
   AutoYieldJSThreadExecution mExecutionYield;
+  JS::AutoHideScriptedCaller mCallerOverride;
 };
 
 }  

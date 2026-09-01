@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ScriptSettings.h"
 
 #include "MainThreadUtils.h"
@@ -616,20 +614,13 @@ AutoIncumbentScript::~AutoIncumbentScript() { ScriptSettingsStack::Pop(this); }
 AutoNoJSAPI::AutoNoJSAPI(JSContext* aCx)
     : ScriptSettingsStackEntry(nullptr, eNoJSAPI),
       JSAutoNullableRealm(aCx, nullptr),
-      mCx(aCx) {
-  
-  
-  JS::HideScriptedCaller(aCx);
-
+      mCallerOverride(aCx) {
   
   
   ScriptSettingsStack::Push(this);
 }
 
-AutoNoJSAPI::~AutoNoJSAPI() {
-  ScriptSettingsStack::Pop(this);
-  JS::UnhideScriptedCaller(mCx);
-}
+AutoNoJSAPI::~AutoNoJSAPI() { ScriptSettingsStack::Pop(this); }
 
 }  
 
