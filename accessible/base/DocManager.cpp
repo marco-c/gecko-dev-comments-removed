@@ -34,6 +34,10 @@
 #include "nsIWebProgress.h"
 #include "xpcAccessibleDocument.h"
 
+#if defined(ANDROID)
+#  include "mozilla/Monitor.h"
+#endif
+
 using namespace mozilla;
 using namespace mozilla::a11y;
 using namespace mozilla::dom;
@@ -245,8 +249,8 @@ void DocManager::NotifyOfPrintDocument(dom::Document* aDoc) {
     
     ipcDoc->SendPrinting();
   } else if (XRE_IsParentProcess()) {
-    if (BrowsingContext* bc = aDoc->GetBrowsingContext()) {
-      PdfStructTreeBuilder::Init(bc);
+    if (dom::WindowContext* wc = aDoc->GetWindowContext()) {
+      PdfStructTreeBuilder::Init(wc);
     }
   }
 }
@@ -275,6 +279,18 @@ void DocManager::Shutdown() {
   }
 
   ClearDocCache();
+  
+  
+  
+  
+  if (sRemoteDocuments) {
+#if defined(ANDROID)
+    MonitorAutoLock mal(nsAccessibilityService::GetAndroidMonitor());
+#endif
+    for (size_t i = sRemoteDocuments->Length(); i-- > 0;) {
+      (*sRemoteDocuments)[i]->Destroy();
+    }
+  }
 }
 
 

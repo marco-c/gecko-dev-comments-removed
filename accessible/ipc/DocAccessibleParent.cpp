@@ -1319,15 +1319,14 @@ void DocAccessibleParent::MaybeInitWindowEmulation() {
     isActive = GetBrowsingContext()->IsActive();
   }
 
-  
-  
-  
   RefPtr<DocAccessibleParent> thisRef = this;
-  nsWinUtils::NativeWindowCreateProc onCreate([thisRef](HWND aHwnd) -> void {
-    ::SetPropW(aHwnd, kPropNameDocAccParent,
-               reinterpret_cast<HANDLE>(thisRef.get()));
-    thisRef->SetEmulatedWindowHandle(aHwnd);
-  });
+  nsWinUtils::NativeWindowCreateProc onCreate(
+      [thisRef](HWND aHwnd) mutable -> void {
+        thisRef->SetEmulatedWindowHandle(aHwnd);
+        HANDLE val;
+        thisRef.forget(&val);  
+        ::SetPropW(aHwnd, kPropNameDocAccParent, val);
+      });
 
   HWND parentWnd = reinterpret_cast<HWND>(rootDocument->GetNativeWindow());
   DebugOnly<HWND> hWnd = nsWinUtils::CreateNativeWindow(
@@ -1339,6 +1338,7 @@ void DocAccessibleParent::MaybeInitWindowEmulation() {
 void DocAccessibleParent::SetEmulatedWindowHandle(HWND aWindowHandle) {
   if (!aWindowHandle && mEmulatedWindowHandle && IsTopLevel()) {
     ::DestroyWindow(mEmulatedWindowHandle);
+    Release();  
   }
   mEmulatedWindowHandle = aWindowHandle;
 }
