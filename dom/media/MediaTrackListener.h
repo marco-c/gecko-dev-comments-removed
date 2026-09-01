@@ -132,7 +132,7 @@ class DirectMediaTrackListener : public MediaTrackListener {
 
   virtual void NotifyRealtimeTrackData(MediaTrackGraph* aGraph,
                                        TrackTime aTrackOffset,
-                                       const MediaSegment& aMedia) {}
+                                       const MediaSegment& aMedia) = 0;
 
   
 
