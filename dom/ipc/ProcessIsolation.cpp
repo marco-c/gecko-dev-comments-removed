@@ -1499,9 +1499,9 @@ bool IsIsolateHighValueSiteEnabled() {
 bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
     nsIPrincipal* aPrincipal, const nsACString& aRemoteType,
     const EnumSet<ValidatePrincipalOptions>& aOptions,
-    FunctionRef<bool(nsIPrincipal*)> aIsPrincipalLoaded) {
+    LoadedOriginSet* aLoadedOriginSet) {
 #ifdef DEBUG
-  if (!aIsPrincipalLoaded) {
+  if (!aLoadedOriginSet) {
     MOZ_ASSERT(
         aOptions.contains(ValidatePrincipalOptions::AllowNotLoadedOrigin),
         "`AllowNotLoadedOrigin` is required if calling "
@@ -1512,6 +1512,17 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
         "ValidatePrincipalCouldPotentiallyBeLoadedBy directly");
   }
 #endif
+
+  
+  
+  auto isPrincipalLoaded = [&](nsIPrincipal* prin) {
+    auto threshold = aOptions.contains(
+                         ValidatePrincipalOptions::Internal_ValidatingPrecursor)
+                         ? LoadedOriginSet::Level::PrecursorOnly
+                         : LoadedOriginSet::Level::SiteOnly;
+    return !StaticPrefs::dom_ipc_validatePrincipal_validateSiteLoaded() ||
+           aLoadedOriginSet->Has(prin, threshold, OriginAttributes::STRIP_ALL);
+  };
 
   
   if (aRemoteType == NOT_REMOTE_TYPE) {
@@ -1525,7 +1536,15 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
 
   
   
+  
   if (aPrincipal->GetIsNullPrincipal()) {
+    if (nsCOMPtr<nsIPrincipal> precursor =
+            aPrincipal->GetPrecursorPrincipal()) {
+      return ValidatePrincipalCouldPotentiallyBeLoadedBy(
+          precursor, aRemoteType,
+          aOptions + ValidatePrincipalOptions::Internal_ValidatingPrecursor,
+          aLoadedOriginSet);
+    }
     return true;
   }
 
@@ -1533,7 +1552,7 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
   if (aPrincipal->IsSystemPrincipal()) {
     return aOptions.contains(ValidatePrincipalOptions::AlwaysAllowSystem) ||
            (aOptions.contains(ValidatePrincipalOptions::AllowSystemIfLoaded) &&
-            aIsPrincipalLoaded(aPrincipal));
+            isPrincipalLoaded(aPrincipal));
   }
 
   
@@ -1556,7 +1575,7 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
     const auto& allowList = expandedPrincipal->AllowList();
     for (const auto& innerPrincipal : allowList) {
       if (!ValidatePrincipalCouldPotentiallyBeLoadedBy(
-              innerPrincipal, aRemoteType, aOptions, aIsPrincipalLoaded)) {
+              innerPrincipal, aRemoteType, aOptions, aLoadedOriginSet)) {
         return false;
       }
     }
@@ -1599,7 +1618,7 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
   
   
   if (!aOptions.contains(ValidatePrincipalOptions::AllowNotLoadedOrigin) &&
-      !aIsPrincipalLoaded(aPrincipal)) {
+      !isPrincipalLoaded(aPrincipal)) {
     return false;
   }
 
@@ -1633,7 +1652,11 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
                                      true,
                                      false)) {
       case IsolationBehavior::Parent:
-        return false;
+        
+        
+        
+        return aOptions.contains(
+            ValidatePrincipalOptions::Internal_ValidatingPrecursor);
       case IsolationBehavior::Anywhere:
         return true;
       case IsolationBehavior::AboutReader:
@@ -1687,6 +1710,7 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
     return true;
   }
 
+  
   
   int32_t suffixIdx = typeOrigin.RFindChar('^');
   nsDependentCSubstring typeOriginNoSuffix(typeOrigin, 0, suffixIdx);

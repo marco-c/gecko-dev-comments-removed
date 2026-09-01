@@ -18,6 +18,7 @@
 namespace mozilla::dom {
 
 class CanonicalBrowsingContext;
+class LoadedOriginSet;
 class WindowGlobalParent;
 
 extern mozilla::LazyLogModule gProcessIsolationLog;
@@ -133,14 +134,48 @@ bool IsIsolateHighValueSiteEnabled();
 
 
 
+
+
+
+
+
+
 enum class ValidatePrincipalOptions {
-  AllowNullPtr,  
-  AllowSystem,
+  
+  AllowNullPtr,
+
+  
+  
   AllowExpanded,
+
+  
+  
+  
+  
+  AllowSystemIfLoaded,
+
+  
+  
+  AllowNotLoadedOrigin,
+
+  
+  AlwaysAllowSystem,
+
+  
+  Internal_ValidatingPrecursor,
 };
+
+
+
+
+
+
+
+
 bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
     nsIPrincipal* aPrincipal, const nsACString& aRemoteType,
-    const EnumSet<ValidatePrincipalOptions>& aOptions = {});
+    const EnumSet<ValidatePrincipalOptions>& aOptions,
+    LoadedOriginSet* aLoadedOriginSet = nullptr);
 
 }  
 
