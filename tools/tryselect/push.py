@@ -6,6 +6,7 @@ import json
 import os
 import shlex
 import stat
+import subprocess
 import sys
 import tempfile
 from functools import cache
@@ -212,12 +213,28 @@ def push_to_git_backing(prefix: str) -> str:
     client = get_client("secrets", [f"secrets:get:{GIT_BACKING_SECRET}"])
     key = client.get(GIT_BACKING_SECRET)["secret"]["ssh_privkey"]
 
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".pem") as keyfile:
-        keyfile.write(key)
-        os.chmod(keyfile.name, stat.S_IRUSR | stat.S_IWUSR)
-        keyfile.flush()
+    fd, keyfile_name = tempfile.mkstemp(suffix=".pem")
+    try:
+        with os.fdopen(fd, "w") as keyfile:
+            keyfile.write(key)
+        os.chmod(keyfile_name, stat.S_IRUSR | stat.S_IWUSR)
+        if sys.platform == "win32":
+            
+            
+            subprocess.run(
+                [
+                    "icacls",
+                    keyfile_name,
+                    "/inheritance:r",
+                    "/grant:r",
+                    f"{os.environ['USERNAME']}:F",
+                ],
+                check=True,
+                capture_output=True,
+            )
+
         ssh_command = (
-            f"ssh -F /dev/null -i {shlex.quote(keyfile.name)} "
+            f"ssh -F /dev/null -i {shlex.quote(keyfile_name)} "
             "-o IdentitiesOnly=yes -o IdentityAgent=none "
             "-o StrictHostKeyChecking=accept-new"
         )
@@ -231,6 +248,8 @@ def push_to_git_backing(prefix: str) -> str:
             env={"GIT_SSH_COMMAND": ssh_command},
         )
         return sha
+    finally:
+        os.remove(keyfile_name)
 
 
 def push_to_try(
@@ -293,8 +312,9 @@ def push_to_try(
     if GIT_BACKING_ENABLED and _is_hg_try(remote) and vcs.name != "hg":
         
         
+        prefix = "try"
         metrics.mach_try.git_backing_push_duration.start()
-        backing_sha = push_to_git_backing(prefix="try")
+        backing_sha = push_to_git_backing(prefix=prefix)
         metrics.mach_try.git_backing_push_duration.stop()
 
         try_task_config = try_task_config or {}
@@ -302,6 +322,7 @@ def push_to_try(
         try_task_config.setdefault("parameters", {})
         try_task_config["parameters"]["head_git_repository"] = GIT_BACKING_REPO
         try_task_config["parameters"]["head_git_rev"] = backing_sha
+        try_task_config["parameters"]["head_git_ref"] = f"{prefix}/{backing_sha}"
 
     if try_task_config:
         changed_files["try_task_config.json"] = (
