@@ -723,7 +723,7 @@ nsresult HTMLEditor::InsertTableColumnsWithTransaction(
     }
 
     
-    Element* previousCellElement =
+    RefPtr<Element> previousCellElement =
         aPointToInsert.IsEndOfContainer()
             ? HTMLEditUtils::GetLastTableCellElementChild(
                   *aPointToInsert.ContainerAs<Element>())

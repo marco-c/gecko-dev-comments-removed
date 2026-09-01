@@ -319,7 +319,7 @@ nsresult EditorBase::InitInternal(Document& aDocument, Element* aRootElement,
     
     
     
-    Selection* selection = aSelectionController.GetSelection(
+    RefPtr<Selection> selection = aSelectionController.GetSelection(
         nsISelectionController::SELECTION_NORMAL);
     NS_WARNING_ASSERTION(selection,
                          "SelectionController::GetSelection() failed");

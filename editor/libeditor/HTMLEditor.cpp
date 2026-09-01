@@ -670,7 +670,7 @@ NS_IMETHODIMP HTMLEditor::NotifySelectionChanged(Document* aDocument,
   }
 
   if (mHasFocus) {
-    if (auto focusedElement = GetFocusedElement()) {
+    if (RefPtr focusedElement = GetFocusedElement()) {
       
       
       auto newStateOrError = GetPreferredIMEState();
@@ -7411,7 +7411,7 @@ void HTMLEditor::NotifyEditingHostMaybeChanged() {
   }
 
   
-  Element* const editingHost = ComputeEditingHost();
+  const RefPtr<Element> editingHost = ComputeEditingHost();
   if (NS_WARN_IF(!editingHost)) {
     return;
   }
