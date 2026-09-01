@@ -14,7 +14,7 @@ use neqo_http3::{
     connect_udp::{ClientSession as _, ServerEvent, ServerSession},
     webtransport::ClientSession as _,
 };
-use neqo_transport::ConnectionParameters;
+use neqo_transport::{ConnectionParameters, StreamType};
 use nss::AuthenticationStatus;
 use test_fixture::{
     DEFAULT_ADDR, default_http3_client, default_http3_server, exchange_packets, fixture_init,
@@ -666,9 +666,53 @@ fn session_lifecycle_with_http_datagram_capsule() {
 #[test]
 fn connect_udp_session_protocol_is_not_webtransport() {
     fixture_init();
-    let (client, _proxy, session_id, _proxy_session) = establish_new_session();
+    let (mut client, _proxy, session_id, _proxy_session) = establish_new_session();
     assert_eq!(
         client.webtransport_session_protocol(session_id).unwrap(),
-        None
+        None,
+    );
+    assert_eq!(
+        client.stream_commit(session_id, now()),
+        Err(Error::Unavailable),
+        "commit() not implemented for CONNECT-UDP"
+    );
+}
+
+
+
+
+#[test]
+fn connect_udp_session_has_no_webtransport_stats() {
+    fixture_init();
+    let (client, _proxy, session_id, _proxy_session) = establish_new_session();
+    assert_eq!(
+        client.webtransport_session_stats(session_id),
+        Err(Error::InvalidStreamId)
+    );
+}
+
+
+
+
+#[test]
+fn connect_udp_session_rejected_by_webtransport_close_session() {
+    fixture_init();
+    let (mut client, _proxy, session_id, _proxy_session) = establish_new_session();
+    assert_eq!(
+        client.webtransport_close_session(session_id, 0, "", now()),
+        Err(Error::InvalidStreamId)
+    );
+}
+
+
+
+
+#[test]
+fn connect_udp_session_rejected_by_webtransport_create_stream() {
+    fixture_init();
+    let (mut client, _proxy, session_id, _proxy_session) = establish_new_session();
+    assert_eq!(
+        client.webtransport_create_stream(session_id, StreamType::UniDi),
+        Err(Error::InvalidStreamId)
     );
 }

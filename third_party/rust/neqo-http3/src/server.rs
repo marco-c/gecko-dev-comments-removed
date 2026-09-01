@@ -721,7 +721,7 @@ mod tests {
         
         let control_stream = neqo_trans_conn.stream_create(StreamType::UniDi).unwrap();
         
-        let sent = neqo_trans_conn.stream_send(control_stream, &[0x0, 0xd, 0x1, 0xf]);
+        let sent = neqo_trans_conn.stream_send(control_stream, &[0x0, 0x7, 0x1, 0x5]);
         assert_eq!(sent, Ok(4));
         let out = neqo_trans_conn.process_output(now());
         hconn.process(out.dgram(), now());
@@ -811,9 +811,21 @@ mod tests {
     }
 
     
+    
     #[test]
-    fn server_push_promise_frame_on_control_stream() {
-        test_wrong_frame_on_control_stream(&[0x5, 0x2, 0x1, 0x2]);
+    fn server_cancel_push_frame_on_control_stream() {
+        test_wrong_frame_on_control_stream(&[0x03, 0x01, 0x05]);
+    }
+
+    
+    
+    #[test]
+    fn server_max_push_id_frame_ignored() {
+        let (mut hconn, mut peer_conn) = connect();
+        peer_conn.control_send(&[0x0d, 0x01, 0x05]);
+        let out = peer_conn.process_output(now());
+        hconn.process(out.dgram(), now());
+        assert_not_closed(&hconn);
     }
 
     
@@ -851,16 +863,14 @@ mod tests {
     }
 
     
+    
     #[test]
     fn server_received_push_stream() {
         let (mut hconn, mut peer_conn) = connect();
-
-        
-        let push_stream_id = peer_conn.stream_create(StreamType::UniDi).unwrap();
-        _ = peer_conn.stream_send(push_stream_id, &[0x1]).unwrap();
+        let push_stream = peer_conn.stream_create(StreamType::UniDi).unwrap();
+        _ = peer_conn.stream_send(push_stream, &[0x01]).unwrap();
         let out = peer_conn.process_output(now());
-        let out = hconn.process(out.dgram(), now());
-        drop(peer_conn.conn.process(out.dgram(), now()));
+        drop(hconn.process(out.dgram(), now()));
         assert_closed(&hconn, &Error::HttpStreamCreation);
     }
 
@@ -910,45 +920,6 @@ mod tests {
         hconn.process(out.dgram(), now());
 
         assert_not_closed(&hconn);
-
-        
-        sent = peer_conn.stream_send(control_stream, &[0x5]);
-        assert_eq!(sent, Ok(1));
-        let out = peer_conn.process_output(now());
-        hconn.process(out.dgram(), now());
-
-        sent = peer_conn.stream_send(control_stream, &[0x5]);
-        assert_eq!(sent, Ok(1));
-        let out = peer_conn.process_output(now());
-        hconn.process(out.dgram(), now());
-
-        sent = peer_conn.stream_send(control_stream, &[0x4]);
-        assert_eq!(sent, Ok(1));
-        let out = peer_conn.process_output(now());
-        hconn.process(out.dgram(), now());
-
-        sent = peer_conn.stream_send(control_stream, &[0x61]);
-        assert_eq!(sent, Ok(1));
-        let out = peer_conn.process_output(now());
-        hconn.process(out.dgram(), now());
-
-        sent = peer_conn.stream_send(control_stream, &[0x62]);
-        assert_eq!(sent, Ok(1));
-        let out = peer_conn.process_output(now());
-        hconn.process(out.dgram(), now());
-
-        sent = peer_conn.stream_send(control_stream, &[0x63]);
-        assert_eq!(sent, Ok(1));
-        let out = peer_conn.process_output(now());
-        hconn.process(out.dgram(), now());
-
-        sent = peer_conn.stream_send(control_stream, &[0x64]);
-        assert_eq!(sent, Ok(1));
-        let out = peer_conn.process_output(now());
-        hconn.process(out.dgram(), now());
-
-        
-        assert_closed(&hconn, &Error::HttpFrameUnexpected);
     }
 
     

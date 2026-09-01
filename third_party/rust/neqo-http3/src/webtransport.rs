@@ -160,13 +160,15 @@ pub trait ClientSession {
     
     
     
+    
+    
     fn webtransport_close_session(
         &mut self,
         session_id: StreamId,
         error: u32,
         message: &str,
         now: Instant,
-    ) -> Res<()>;
+    ) -> Res<extended_connect::stats::SessionStats>;
 
     
     
@@ -307,7 +309,7 @@ impl ClientSession for Http3Client {
         error: u32,
         message: &str,
         now: Instant,
-    ) -> Res<()> {
+    ) -> Res<extended_connect::stats::SessionStats> {
         let (conn, handler) = self.connection_and_handler();
         handler.webtransport_close_session(conn, session_id, error, message, now)
     }
@@ -410,7 +412,7 @@ trait Handler {
         error: u32,
         message: &str,
         now: Instant,
-    ) -> Res<()>;
+    ) -> Res<extended_connect::stats::SessionStats>;
 
     fn webtransport_send_datagram<I: Into<DatagramTracking>>(
         &self,
@@ -472,9 +474,25 @@ impl Handler for Http3Connection {
         error: u32,
         message: &str,
         now: Instant,
-    ) -> Res<()> {
+    ) -> Res<extended_connect::stats::SessionStats> {
         qtrace!("Close WebTransport session {session_id:?}");
-        self.extended_connect_close_session(conn, session_id, error, message, now)
+        
+        
+        
+        
+        
+        
+        
+        let stats = self.webtransport_session_stats(session_id)?;
+        self.extended_connect_close_session(
+            conn,
+            session_id,
+            extended_connect::ExtendedConnectType::WebTransport,
+            error,
+            message,
+            now,
+        )?;
+        Ok(stats)
     }
 
     fn webtransport_send_datagram<I: Into<DatagramTracking>>(
@@ -506,7 +524,7 @@ pub(crate) trait ServerHandler {
         error: u32,
         message: &str,
         now: Instant,
-    ) -> Res<()>;
+    ) -> Res<extended_connect::stats::SessionStats>;
 
     fn webtransport_create_stream(
         &mut self,
@@ -546,7 +564,7 @@ impl ServerHandler for Http3ServerHandler {
         error: u32,
         message: &str,
         now: Instant,
-    ) -> Res<()> {
+    ) -> Res<extended_connect::stats::SessionStats> {
         self.mark_needs_processing();
         self.base_handler_mut()
             .webtransport_close_session(conn, session_id, error, message, now)
@@ -638,7 +656,14 @@ impl ServerSession {
     
     
     
-    pub fn close_session(&self, error: u32, message: &str, now: Instant) -> Res<()> {
+    
+    
+    pub fn close_session(
+        &self,
+        error: u32,
+        message: &str,
+        now: Instant,
+    ) -> Res<extended_connect::stats::SessionStats> {
         self.stream_handler
             .handler
             .borrow_mut()

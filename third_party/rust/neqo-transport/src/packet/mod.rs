@@ -990,7 +990,10 @@ impl<'a> Public<'a> {
         
         
         if rx.needs_update() {
-            crypto.key_update_received(release_at).map_err(make_err)?;
+            let rx_epoch = rx.epoch();
+            crypto
+                .key_update_received(rx_epoch, release_at)
+                .map_err(make_err)?;
         }
         crypto.check_pn_overlap().map_err(make_err)?;
         Ok(Decrypted {

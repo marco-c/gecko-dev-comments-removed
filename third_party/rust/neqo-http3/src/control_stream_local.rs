@@ -67,10 +67,7 @@ impl ControlStreamLocal {
 
             
             
-            debug_assert!(matches!(
-                update_stream.stream_type(),
-                Http3StreamType::Http | Http3StreamType::Push
-            ));
+            debug_assert!(matches!(update_stream.stream_type(), Http3StreamType::Http));
             let stream = update_stream.http_stream().ok_or(Error::Internal)?;
 
             

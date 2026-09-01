@@ -49,6 +49,25 @@ fn emits_reset_stream_at_on_wire() {
 }
 
 
+#[test]
+fn check_peer_support() {
+    
+    let mut client = default_client();
+    let mut server = default_server();
+    connect(&mut client, &mut server);
+    assert!(client.peer_supports_reliable_stream_reset());
+    assert!(server.peer_supports_reliable_stream_reset());
+
+    
+    
+    let mut client = default_client();
+    let mut server = new_server(ConnectionParameters::default().reliable_stream_reset(false));
+    connect(&mut client, &mut server);
+    assert!(!client.peer_supports_reliable_stream_reset());
+    assert!(server.peer_supports_reliable_stream_reset());
+}
+
+
 
 #[test]
 fn commit_unavailable_without_peer_support() {

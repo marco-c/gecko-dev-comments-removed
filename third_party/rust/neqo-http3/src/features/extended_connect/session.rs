@@ -20,7 +20,7 @@ use crate::{
     CloseType, Error, Http3StreamType, HttpRecvStream, Priority, ReceiveOutput, RecvStream, Res,
     SendStream, Stream,
     features::extended_connect::{
-        ExtendedConnectEvents, ExtendedConnectType, HeaderListener, Headers,
+        ExtendedConnectEvents, ExtendedConnectType, HeaderListener, Headers, stats::SessionStats,
     },
     frames::HFrame,
     priority::PriorityHandler,
@@ -105,8 +105,7 @@ impl Session {
                 },
                 qpack_decoder,
                 Box::new(Rc::clone(&stream_event_listener)),
-                None,
-                PriorityHandler::new(false, Priority::default()),
+                PriorityHandler::new(Priority::default()),
             )),
             control_stream_send: Box::new(SendMessage::new(
                 MessageType::Request,
@@ -452,6 +451,12 @@ impl Session {
         self.protocol.validate_send_group(group_id)
     }
 
+    
+    #[must_use]
+    pub(crate) fn stats(&self) -> Option<SessionStats> {
+        self.protocol.stats().copied()
+    }
+
     fn has_data_to_send(&self) -> bool {
         self.control_stream_send.has_data_to_send()
     }
@@ -610,6 +615,21 @@ pub(crate) trait Protocol: Debug + Display {
     }
 
     fn process_response_headers(&mut self, _headers: &[Header]) {}
+
+    
+    
+    
+    
+    
+    
+    
+    fn stats(&self) -> Option<&SessionStats> {
+        debug_assert!(
+            false,
+            "stats called for extended connect protocol not tracking stats"
+        );
+        None
+    }
 
     fn protocol(&self) -> Option<&str> {
         None

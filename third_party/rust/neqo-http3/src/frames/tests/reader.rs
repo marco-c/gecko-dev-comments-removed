@@ -17,7 +17,7 @@ use neqo_transport::{Connection, StreamId, StreamType};
 use test_fixture::{connect, now};
 
 use crate::{
-    Error, PushId, Res,
+    Error, Res,
     frames::{
         FrameReader, HFrame, HFrameType, StreamReaderConnectionWrapper, WebTransportFrame,
         capsule::{Capsule, MAX_DATAGRAM_BYTES},
@@ -131,30 +131,6 @@ fn frame_reading_with_stream_settings2() {
 }
 
 
-#[test]
-fn frame_reading_with_stream_push_promise() {
-    let mut fr = FrameReaderTest::new();
-
-    
-    for i in &[0x05, 0x05, 0x41, 0x01, 0x01, 0x02] {
-        assert!(fr.process::<HFrame>(&[*i]).is_none());
-    }
-    let frame = fr.process(&[0x3]);
-
-    assert!(frame.is_some());
-    if let HFrame::PushPromise {
-        push_id,
-        header_block,
-    } = frame.unwrap()
-    {
-        assert_eq!(push_id, PushId::new(257));
-        assert_eq!(header_block, &[0x1, 0x2, 0x3]);
-    } else {
-        panic!("wrong frame type");
-    }
-}
-
-
 
 fn assert_cap_boundary<T: FrameDecoder<T> + PartialEq + Debug>(frame_type: HFrameType, cap: usize) {
     let mut fr = FrameReaderTest::new();
@@ -167,6 +143,7 @@ fn assert_cap_boundary<T: FrameDecoder<T> + PartialEq + Debug>(frame_type: HFram
 }
 
 
+
 const HFRAME_CAPS: &[(usize, &[HFrameType])] = &[
     (
         MAX_HEADER_BYTES,
@@ -175,8 +152,8 @@ const HFRAME_CAPS: &[(usize, &[HFrameType])] = &[
     (
         MAX_SINGLE_VARINT_FRAME_BYTES,
         &[
-            HFrameType::CANCEL_PUSH,
             HFrameType::GOAWAY,
+            HFrameType::CANCEL_PUSH,
             HFrameType::MAX_PUSH_ID,
         ],
     ),
@@ -247,13 +224,42 @@ fn unknown_frame() {
     assert!(fr.process::<HFrame>(&buf).is_none());
 
     
-    let frame = fr.process(&[0x03, 0x01, 0x05]);
+    let frame = fr.process(&[0x07, 0x01, 0x05]);
     assert!(frame.is_some());
-    if let HFrame::CancelPush { push_id } = frame.unwrap() {
-        assert_eq!(push_id, PushId::new(5));
+    if let HFrame::Goaway { stream_id } = frame.unwrap() {
+        assert_eq!(stream_id, StreamId::new(5));
     } else {
         panic!("wrong frame type");
     }
+}
+
+
+
+#[test]
+fn server_push_frames_are_recognized() {
+    let mut fr = FrameReaderTest::new();
+    assert_eq!(
+        fr.process::<HFrame>(&[0x03, 0x01, 0x05]),
+        Some(HFrame::CancelPush)
+    );
+
+    let mut fr = FrameReaderTest::new();
+    assert_eq!(
+        fr.process::<HFrame>(&[0x05, 0x05, 0x04, 0x61, 0x62, 0x63, 0x64]),
+        Some(HFrame::PushPromise)
+    );
+
+    let mut fr = FrameReaderTest::new();
+    assert_eq!(
+        fr.process::<HFrame>(&[0x0d, 0x01, 0x05]),
+        Some(HFrame::MaxPushId)
+    );
+
+    let mut fr = FrameReaderTest::new();
+    assert_eq!(
+        fr.process::<HFrame>(&[0x80, 0x0f, 0x07, 0x01, 0x01, 0x0a]),
+        Some(HFrame::PriorityUpdatePush)
+    );
 }
 
 
@@ -513,15 +519,6 @@ fn complete_and_incomplete_frames() {
     test_complete_and_incomplete_frame::<HFrame>(&buf, buf.len());
 
     
-    let f = HFrame::CancelPush {
-        push_id: PushId::new(5),
-    };
-    let mut enc = Encoder::default();
-    f.encode(&mut enc);
-    let buf: Vec<_> = enc.into();
-    test_complete_and_incomplete_frame::<HFrame>(&buf, buf.len());
-
-    
     let f = HFrame::Settings {
         settings: HSettings::new(&[HSetting::new(HSettingType::MaxHeaderListSize, 4)]),
     };
@@ -531,27 +528,8 @@ fn complete_and_incomplete_frames() {
     test_complete_and_incomplete_frame::<HFrame>(&buf, buf.len());
 
     
-    let f = HFrame::PushPromise {
-        push_id: PushId::new(4),
-        header_block: HEADER_BLOCK.to_vec(),
-    };
-    let mut enc = Encoder::default();
-    f.encode(&mut enc);
-    let buf: Vec<_> = enc.into();
-    test_complete_and_incomplete_frame::<HFrame>(&buf, buf.len());
-
-    
     let f = HFrame::Goaway {
         stream_id: StreamId::new(5),
-    };
-    let mut enc = Encoder::default();
-    f.encode(&mut enc);
-    let buf: Vec<_> = enc.into();
-    test_complete_and_incomplete_frame::<HFrame>(&buf, buf.len());
-
-    
-    let f = HFrame::MaxPushId {
-        push_id: PushId::new(5),
     };
     let mut enc = Encoder::default();
     f.encode(&mut enc);

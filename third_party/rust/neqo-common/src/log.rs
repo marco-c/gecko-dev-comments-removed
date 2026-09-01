@@ -18,6 +18,10 @@ fn since_start() -> Duration {
     START_TIME.get_or_init(Instant::now).elapsed()
 }
 
+
+
+
+
 pub fn init(level_filter: Option<log::LevelFilter>) {
     static INIT_ONCE: Once = Once::new();
 
@@ -49,47 +53,71 @@ pub fn init(level_filter: Option<log::LevelFilter>) {
     });
 }
 
+
+
+
+
 #[macro_export]
 #[clippy::format_args]
 macro_rules! qerror {
     ($($arg:tt)*) => ( {
-        #[cfg(any(test, feature = "bench"))]
+        #[cfg(test)]
         ::neqo_common::log::init(None);
         ::log::error!($($arg)*);
     } );
 }
+
+
+
+
+
 #[macro_export]
 #[clippy::format_args]
 macro_rules! qwarn {
     ($($arg:tt)*) => ( {
-        #[cfg(any(test, feature = "bench"))]
+        #[cfg(test)]
         ::neqo_common::log::init(None);
         ::log::warn!($($arg)*);
     } );
 }
+
+
+
+
+
 #[macro_export]
 #[clippy::format_args]
 macro_rules! qinfo {
     ($($arg:tt)*) => ( {
-        #[cfg(any(test, feature = "bench"))]
+        #[cfg(test)]
         ::neqo_common::log::init(None);
         ::log::info!($($arg)*);
     } );
 }
+
+
+
+
+
 #[macro_export]
 #[clippy::format_args]
 macro_rules! qdebug {
     ($($arg:tt)*) => ( {
-        #[cfg(any(test, feature = "bench"))]
+        #[cfg(test)]
         ::neqo_common::log::init(None);
         ::log::debug!($($arg)*);
     } );
 }
+
+
+
+
+
 #[macro_export]
 #[clippy::format_args]
 macro_rules! qtrace {
     ($($arg:tt)*) => ( {
-        #[cfg(any(test, feature = "bench"))]
+        #[cfg(test)]
         ::neqo_common::log::init(None);
         ::log::trace!($($arg)*);
     } );
