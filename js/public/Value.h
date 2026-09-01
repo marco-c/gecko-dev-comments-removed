@@ -338,9 +338,6 @@ enum JSWhyMagic {
   JS_NO_ITER_VALUE,
 
   
-  JS_GENERATOR_CLOSING,
-
-  
   JS_ARG_POISON,
 
   

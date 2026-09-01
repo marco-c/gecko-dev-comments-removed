@@ -100,7 +100,7 @@ class PropertyEnumerator {
   bool forObjectKeys_ = false;
 
   bool hasOwnDenseElements_ = false;
-  bool hasDenseElementsFromProto_ = false;
+  mozilla::DebugOnly<bool> hasDenseElementsFromProto_ = false;
 
   enum class IndicesState {
     
@@ -149,7 +149,13 @@ class PropertyEnumerator {
   void setForObjectKeys(bool value) { forObjectKeys_ = value; }
 
   bool hasOwnDenseElements() const { return hasOwnDenseElements_; }
-  bool hasDenseElementsFromProto() const { return hasDenseElementsFromProto_; }
+  bool hasDenseElementsFromProto() const {
+#ifdef DEBUG
+    return hasDenseElementsFromProto_;
+#else
+    return false;
+#endif
+  }
 
  private:
   template <bool CheckForDuplicates>
@@ -651,10 +657,12 @@ bool PropertyEnumerator::snapshot(JSContext* cx) {
   bool checkForDuplicates = !(flags_ & JSITER_OWNONLY);
 
   do {
+#ifdef DEBUG
     if (enumeratingProtoChain_ &&
         ObjectMayHaveExtraIndexedOwnProperties(obj_)) {
       hasDenseElementsFromProto_ = true;
     }
+#endif
 
     if (obj_->getClass()->getNewEnumerate()) {
       markIndicesUnsupported();
@@ -1762,23 +1770,13 @@ bool js::IteratorCloseForException(JSContext* cx, HandleObject obj) {
   MOZ_ASSERT(cx->isExceptionPending());
 
   
-  bool isClosingGenerator = cx->isClosingGenerator();
-
-  
-  
-  
   
   JS::AutoSaveExceptionState savedExc(cx);
 
   
   
   
-  
-  
-  
-  auto completionKind =
-      isClosingGenerator ? CompletionKind::Return : CompletionKind::Throw;
-  return CloseIterOperation(cx, obj, completionKind);
+  return CloseIterOperation(cx, obj, CompletionKind::Throw);
 }
 
 void js::UnwindIteratorForUncatchableException(JSObject* obj) {
