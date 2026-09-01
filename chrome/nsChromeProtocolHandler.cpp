@@ -9,6 +9,7 @@
 
 
 #include "nsChromeProtocolHandler.h"
+#include "mozilla/Components.h"
 #include "nsChromeRegistry.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
@@ -93,7 +94,8 @@ nsChromeProtocolHandler::NewChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo,
   if (!nsChromeRegistry::gChromeRegistry) {
     
     
-    nsCOMPtr<nsIChromeRegistry> reg = mozilla::services::GetChromeRegistry();
+    nsCOMPtr<nsIChromeRegistry> reg =
+        mozilla::components::ChromeRegistry::Service();
     NS_ENSURE_TRUE(nsChromeRegistry::gChromeRegistry, NS_ERROR_FAILURE);
   }
 
