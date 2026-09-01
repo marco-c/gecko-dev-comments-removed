@@ -16,12 +16,6 @@ PageInformation::PageInformation(uint64_t aTabID, uint64_t aInnerWindowID,
       mEmbedderInnerWindowID(aEmbedderInnerWindowID),
       mIsPrivateBrowsing(aIsPrivateBrowsing) {}
 
-bool PageInformation::Equals(PageInformation* aOtherPageInfo) const {
-  
-  
-  return InnerWindowID() == aOtherPageInfo->InnerWindowID();
-}
-
 void PageInformation::StreamJSON(SpliceableJSONWriter& aWriter) const {
   
   
