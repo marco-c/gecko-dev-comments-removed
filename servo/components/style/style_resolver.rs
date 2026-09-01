@@ -173,7 +173,10 @@ where
         rule_inclusion: RuleInclusion,
         pseudo_resolution: PseudoElementResolution,
     ) -> Self {
-        debug_assert_eq!(element.as_node().depth(), context.thread_local.current_dom_depth);
+        debug_assert_eq!(
+            element.as_node().depth(),
+            context.thread_local.current_dom_depth
+        );
         Self {
             element,
             context,
@@ -228,14 +231,21 @@ where
     
     
     fn needs_visited_matching(&self) -> bool {
-        self.element.is_link()
-            || self
-                .context
-                .shared
-                .stylist
-                .any_applicable_rule_data(self.element, |data| {
-                    data.has_non_link_visited_dependency()
-                })
+        if self.element.is_link() {
+            return true;
+        }
+        if self.element.implemented_pseudo_element().is_some()
+            && self
+                .element
+                .pseudo_element_originating_element()
+                .is_some_and(|e| e.is_link())
+        {
+            return true;
+        }
+        self.context
+            .shared
+            .stylist
+            .any_applicable_rule_data(self.element, |data| data.has_non_link_visited_dependency())
     }
 
     fn cascade_primary_style(
