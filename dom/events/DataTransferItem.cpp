@@ -163,7 +163,8 @@ void DataTransferItem::FillInExternalData() {
     trans->Init(nullptr);
     trans->AddDataFlavor(format);
 
-    if (mDataTransfer->GetEventMessage() == ePaste) {
+    if (mDataTransfer->GetEventMessage() == ePaste ||
+        mDataTransfer->GetEventMessage() == ePasteNoFormatting) {
       MOZ_ASSERT(mIndex == 0, "index in clipboard must be 0");
 
       if (mDataTransfer->ClipboardType().isNothing()) {
@@ -543,10 +544,12 @@ already_AddRefed<nsIVariant> DataTransferItem::Data(nsIPrincipal* aPrincipal,
     return nullptr;
   }
 
-  bool checkItemPrincipal = mDataTransfer->IsCrossDomainSubFrameDrop() ||
-                            (mDataTransfer->GetEventMessage() != eDrop &&
-                             mDataTransfer->GetEventMessage() != ePaste &&
-                             mDataTransfer->GetEventMessage() != eEditorInput);
+  bool checkItemPrincipal =
+      mDataTransfer->IsCrossDomainSubFrameDrop() ||
+      (mDataTransfer->GetEventMessage() != eDrop &&
+       mDataTransfer->GetEventMessage() != ePaste &&
+       mDataTransfer->GetEventMessage() != ePasteNoFormatting &&
+       mDataTransfer->GetEventMessage() != eEditorInput);
 
   
   
