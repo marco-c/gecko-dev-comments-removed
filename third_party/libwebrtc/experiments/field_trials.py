@@ -41,9 +41,6 @@ class FieldTrial:
 
 ACTIVE_FIELD_TRIALS: FrozenSet[FieldTrial] = frozenset([
     
-    FieldTrial('WebRTC-AV1-OverridePriorityBitrate',
-               42226119,
-               date(2024, 4, 1)),
     FieldTrial('WebRTC-Aec3BufferingMaxAllowedExcessRenderBlocksOverride',
                337900458,
                date(2024, 9, 1)),
