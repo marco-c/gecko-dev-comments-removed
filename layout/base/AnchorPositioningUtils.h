@@ -432,6 +432,27 @@ struct AnchorPositioningUtils {
   static nsRect ReassembleAnchorRect(const nsIFrame* aAnchor,
                                      const nsIFrame* aContainingBlock);
 
+  struct CombinedFragments {
+    
+    
+    const nsIFrame* mSkippedPrevContinuation = nullptr;
+    
+    const nsIFrame* mSkippedNextContinuation = nullptr;
+    
+    nsRect mRect;
+  };
+  
+
+
+
+
+
+
+
+
+  static CombinedFragments GetCombinedFragmentRects(
+      const nsIFrame* aFrame, const nsIFrame* aContainingBlock = nullptr);
+
   
   static const dom::ShadowRoot* GetShadowRootForTreeScope(
       const dom::Element& aElement, const StyleCascadeLevel& aTreeScope);
