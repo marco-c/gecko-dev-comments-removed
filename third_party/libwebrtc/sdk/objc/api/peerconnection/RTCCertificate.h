@@ -20,10 +20,10 @@ RTC_OBJC_EXPORT
 @interface RTC_OBJC_TYPE (RTCCertificate) : NSObject <NSCopying>
 
 
-@property(nonatomic, readonly, copy) NSString *private_key;
+@property(nonatomic, readonly) NSString *private_key;
 
 
-@property(nonatomic, readonly, copy) NSString *certificate;
+@property(nonatomic, readonly) NSString *certificate;
 
 
 

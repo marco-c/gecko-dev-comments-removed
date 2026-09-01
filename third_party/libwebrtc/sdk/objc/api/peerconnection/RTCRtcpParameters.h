@@ -18,7 +18,7 @@ RTC_OBJC_EXPORT
 @interface RTC_OBJC_TYPE (RTCRtcpParameters) : NSObject
 
 
-@property(nonatomic, readonly, copy) NSString *cname;
+@property(nonatomic, readonly) NSString *cname;
 
 
 @property(nonatomic, assign) BOOL isReducedSize;

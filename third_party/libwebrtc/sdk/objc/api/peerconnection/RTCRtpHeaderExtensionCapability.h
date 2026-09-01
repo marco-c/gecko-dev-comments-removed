@@ -20,7 +20,7 @@ RTC_OBJC_EXPORT
 @interface RTC_OBJC_TYPE (RTCRtpHeaderExtensionCapability) : NSObject
 
 
-@property(nonatomic, readonly, copy) NSString *uri;
+@property(nonatomic, readonly) NSString *uri;
 
 
 @property(nonatomic, readonly, nullable) NSNumber* preferredId;

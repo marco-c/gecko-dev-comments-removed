@@ -114,10 +114,10 @@ RTC_OBJC_EXPORT
 
 
 
-@property(nonatomic, readonly, copy)
+@property(nonatomic, readonly)
     NSArray<RTC_OBJC_TYPE(RTCRtpHeaderExtensionCapability) *>
         *headerExtensionsToNegotiate;
-@property(nonatomic, readonly, copy)
+@property(nonatomic, readonly)
     NSArray<RTC_OBJC_TYPE(RTCRtpHeaderExtensionCapability) *>
         *negotiatedHeaderExtensions;
 
