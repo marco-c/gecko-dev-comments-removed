@@ -48,6 +48,11 @@ var gExceptionPaths = [
   "chrome://activity-stream/content/data/content/assets/fox-doodle-backup-restore.svg",
   "chrome://browser/content/asrouter/assets/kit-peek-bottom.svg",
   "chrome://browser/content/asrouter/assets/kit-peek.svg",
+  "chrome://browser/content/asrouter/assets/tabgroups/vert-animated-dark.svg",
+  "chrome://browser/content/asrouter/assets/tabgroups/vert-animated-light.svg",
+  "chrome://browser/content/asrouter/assets/tabgroups/vert-static-dark.svg",
+  "chrome://browser/content/asrouter/assets/tabgroups/vert-static-light.svg",
+  "chrome://activity-stream/content/data/content/assets/backdrop-adaptive.svg",
 
   
   "resource://pdf.js/web/images/",
