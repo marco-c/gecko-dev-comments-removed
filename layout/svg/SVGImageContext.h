@@ -113,17 +113,15 @@ class SVGImageContext {
            mLinkParameters == aOther.mLinkParameters;
   }
 
-  bool operator!=(const SVGImageContext&) const = default;
-
   PLDHashNumber Hash() const {
     PLDHashNumber hash = 0;
     if (mContextPaint) {
-      hash = HashGeneric(hash, mContextPaint->Hash());
+      hash = AddToHash(hash, mContextPaint->Hash());
     }
-    return HashGeneric(hash, mViewportSize.map(HashSize).valueOr(0),
-                       mPreserveAspectRatio.map(HashPAR).valueOr(0),
-                       mColorScheme.map(HashColorScheme).valueOr(0),
-                       HashLinkParameters(mLinkParameters));
+    return AddToHash(hash, mViewportSize.map(HashSize).valueOr(0),
+                     mPreserveAspectRatio.map(HashPAR).valueOr(0),
+                     mColorScheme.map(HashColorScheme).valueOr(0),
+                     HashLinkParameters(mLinkParameters));
   }
 
  private:
@@ -137,20 +135,15 @@ class SVGImageContext {
     return HashGeneric(uint8_t(aScheme));
   }
   static PLDHashNumber HashLinkParam(const StyleLinkParam& aLinkParam) {
-    PLDHashNumber valueHash = 0;
-    if (aLinkParam.value.IsSpecified()) {
-      const auto& value = aLinkParam.value.AsSpecified().AsString();
-      valueHash = HashBytes(value.BeginReading(), value.Length());
-    }
-
-    return HashGeneric(aLinkParam.name.AsAtom()->hash(), valueHash);
+    return AddToHash(aLinkParam.name.AsAtom()->hash(),
+                     HashString(aLinkParam.value.AsString()));
   }
 
   static PLDHashNumber HashLinkParameters(
       const StyleLinkParameters& aLinkParameters) {
     PLDHashNumber hash = 0;
     for (const auto& p : aLinkParameters._0.AsSpan()) {
-      hash = HashGeneric(hash, HashLinkParam(p));
+      hash = AddToHash(hash, HashLinkParam(p));
     }
     return hash;
   }

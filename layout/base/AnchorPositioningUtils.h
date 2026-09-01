@@ -43,7 +43,6 @@ class DistanceToNearestScrollContainer {
   bool Valid() const { return mDistance != kInvalid; }
 
   bool operator==(const DistanceToNearestScrollContainer&) const = default;
-  bool operator!=(const DistanceToNearestScrollContainer&) const = default;
 
  private:
   
