@@ -7,6 +7,7 @@ package org.mozilla.fenix.ui
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Converted
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
@@ -37,6 +38,11 @@ class SettingsPageSummariesTest {
     val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4036042
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.SettingsPageSummariesTest#verifyPageSummariesUITest"],
+        bug = 2062914,
+        since = "2026-08",
+    )
     @SmokeTest
     @Test
     fun verifyPageSummariesUITest() {
@@ -50,7 +56,6 @@ class SettingsPageSummariesTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4036045
-    @Ignore("Disabling to ease uplift. See bug 2049060.")
     @Test
     fun verifyTheSummarizePagesToggleBehaviourTest() {
         val articlePage = mockWebServer.articleSummaryAsset
@@ -68,7 +73,6 @@ class SettingsPageSummariesTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4035976
-    @Ignore("Disabling to ease uplift. See bug 2049060.")
     @Test
     fun verifyTheShakeToSummarizeCFRTest() {
         val articlePage = mockWebServer.articleSummaryAsset
@@ -82,7 +86,6 @@ class SettingsPageSummariesTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4035977
-    @Ignore("Disabling to ease uplift. See bug 2049060.")
     @Test
     fun verifyTheShakeToSummarizeCFRIsOnlyDisplayedOnceTest() {
         val firstWebsite = mockWebServer.articleSummaryAsset
