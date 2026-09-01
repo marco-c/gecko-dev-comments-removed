@@ -1338,9 +1338,11 @@ static nsresult CheckAllowLoadByTriggeringRemoteType(nsIChannel* aChannel) {
 
   
   
-  if (!ValidatePrincipalCouldPotentiallyBeLoadedBy(
+  if (!loadInfo->IsPrincipalToInheritTrusted() &&
+      !ValidatePrincipalCouldPotentiallyBeLoadedBy(
           loadInfo->PrincipalToInherit(), triggeringRemoteType,
-          {ValidatePrincipalOptions::AllowNullPtr})) {
+          {ValidatePrincipalOptions::AllowNullPtr,
+           ValidatePrincipalOptions::AllowNotLoadedOrigin})) {
     if (MOZ_LOG_TEST(sUELLog, LogLevel::Warning)) {
       nsAutoCString origin;
       loadInfo->PrincipalToInherit()->GetOrigin(origin);
