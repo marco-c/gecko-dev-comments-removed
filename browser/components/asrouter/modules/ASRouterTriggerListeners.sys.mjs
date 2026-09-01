@@ -107,9 +107,17 @@ function checkURLMatch(
   const originalLocation = aRequest.QueryInterface(Ci.nsIChannel).originalURI;
   // We have been redirected
   if (originalLocation.spec !== aLocationURI.spec) {
-    if (hosts.has(originalLocation.host)) {
+    let originalHost;
+    try {
+      originalHost = originalLocation.host;
+    } catch (e) {
+      // nsIURI.host can throw for non-nsStandardURL nsIURIs
+      return false;
+    }
+
+    if (hosts.has(originalHost)) {
       return {
-        host: originalLocation.host,
+        host: originalHost,
         url: originalLocation.spec,
       };
     }
@@ -118,7 +126,7 @@ function checkURLMatch(
       for (const regex of regexPatterns) {
         if (regex.test(originalLocation.spec)) {
           return {
-            host: originalLocation.host,
+            host: originalHost,
             url: originalLocation.spec,
           };
         }
@@ -1649,93 +1657,6 @@ export const ASRouterTriggerListeners = new Map([
         "nsIObserver",
         "nsISupportsWeakReference",
       ]),
-    },
-  ],
-  [
-    "cookieBannerDetected",
-    {
-      id: "cookieBannerDetected",
-      _initialized: false,
-      _triggerHandler: null,
-
-      init(triggerHandler) {
-        this._triggerHandler = triggerHandler;
-        if (!this._initialized) {
-          lazy.EveryWindow.registerCallback(
-            this.id,
-            win => {
-              win.addEventListener("cookiebannerdetected", this);
-            },
-            win => {
-              win.removeEventListener("cookiebannerdetected", this);
-            }
-          );
-          this._initialized = true;
-        }
-      },
-      handleEvent(event) {
-        if (this._initialized) {
-          const win = event.target || Services.wm.getMostRecentBrowserWindow();
-          if (!win) {
-            return;
-          }
-          this._triggerHandler(win.gBrowser.selectedBrowser, {
-            id: this.id,
-          });
-        }
-      },
-      uninit() {
-        if (this._initialized) {
-          lazy.EveryWindow.unregisterCallback(this.id);
-          this._initialized = false;
-          this._triggerHandler = null;
-        }
-      },
-    },
-  ],
-  [
-    "cookieBannerHandled",
-    {
-      id: "cookieBannerHandled",
-      _initialized: false,
-      _triggerHandler: null,
-
-      init(triggerHandler) {
-        this._triggerHandler = triggerHandler;
-        if (!this._initialized) {
-          lazy.EveryWindow.registerCallback(
-            this.id,
-            win => {
-              win.addEventListener("cookiebannerhandled", this);
-            },
-            win => {
-              win.removeEventListener("cookiebannerhandled", this);
-            }
-          );
-          this._initialized = true;
-        }
-      },
-      handleEvent(event) {
-        if (this._initialized) {
-          const browser =
-            event.detail.windowContext.rootFrameLoader?.ownerElement;
-          const win = browser?.documentGlobal;
-          // We only want to show messages in the active browser window.
-          if (
-            win === Services.wm.getMostRecentBrowserWindow() &&
-            browser === win.gBrowser.selectedBrowser
-          ) {
-            this._triggerHandler(browser, { id: this.id });
-          }
-        }
-      },
-      uninit() {
-        if (this._initialized) {
-          lazy.EveryWindow.unregisterCallback(this.id);
-          this._initialized = false;
-          this._triggerHandler = null;
-        }
-      },
     },
   ],
   [
