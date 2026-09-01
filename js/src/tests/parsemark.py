@@ -76,7 +76,9 @@ def bench(
     """Return a list of milliseconds for the counted runs."""
     assert '"' not in filepath
     code = JS_CODE_TEMPLATE.substitute(
-        filepath=filepath,
+        
+        
+        filepath=filepath.replace("\\", "\\\\"),
         warmup_run_count=warmup_runs,
         real_run_count=counted_runs,
         prepare=prepare,
