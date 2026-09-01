@@ -4,7 +4,6 @@
 
 package mozilla.components.browser.errorpages
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import androidx.annotation.StringRes
@@ -52,7 +51,6 @@ object ErrorPages {
      * [archiveUrlFor]), the page is given the parameters needed to offer an archived copy of the
      * failed page. Defaults to `false` so the action is opt-in per consumer.
      */
-    @SuppressLint("StringFormatInvalid")
     fun createUrlEncodedErrorPage(
         context: Context,
         errorType: ErrorType,
@@ -242,6 +240,11 @@ enum class ErrorType(
         imageNameRes = iconsR.string.mozac_error_asleep,
     ),
     ERROR_CONNECTION_REFUSED(
+        R.string.mozac_browser_errorpages_connection_failure_title,
+        R.string.mozac_browser_errorpages_connection_failure_message,
+        imageNameRes = iconsR.string.mozac_error_confused,
+    ),
+    ERROR_LOCAL_NETWORK_ACCESS_DENIED(
         R.string.mozac_browser_errorpages_connection_failure_title,
         R.string.mozac_browser_errorpages_connection_failure_message,
         imageNameRes = iconsR.string.mozac_error_confused,
