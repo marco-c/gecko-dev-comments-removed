@@ -59,6 +59,7 @@ extern "C" fn C_Initialize(_pInitArgs: CK_VOID_PTR) -> CK_RV {
             CKF_USER_PIN_INITIALIZED | CKF_LOGIN_REQUIRED | CKF_TOKEN_INITIALIZED,
             Vec::new(),
             Vec::new(),
+            Vec::new(),
         ),
         Backend::new(
             SLOT_DESCRIPTIONS_BYTES[1],
@@ -69,19 +70,27 @@ extern "C" fn C_Initialize(_pInitArgs: CK_VOID_PTR) -> CK_RV {
                 | CKF_LOGIN_REQUIRED
                 | CKF_TOKEN_INITIALIZED,
             vec![
-                include_str!("client-cert-rsa.pem"),
-                include_str!("client-cert-ecdsa.pem"),
+                (
+                    include_str!("client-cert-rsa.pem"),
+                    include_str!("client-cert-rsa.key"),
+                ),
+                (
+                    include_str!("client-cert-ecdsa.pem"),
+                    include_str!("client-cert-ecdsa.key"),
+                ),
             ],
             vec![
-                include_str!("client-cert-rsa.key"),
-                include_str!("client-cert-ecdsa.key"),
+                include_str!("test-int-ee.pem"),
+                include_str!("test-int.pem"),
             ],
+            vec![include_str!("test-ca.pem")],
         ),
         Backend::new(
             SLOT_DESCRIPTIONS_BYTES[2],
             TOKEN_LABELS_BYTES[2],
             CKF_REMOVABLE_DEVICE,
             CKF_TOKEN_INITIALIZED,
+            Vec::new(),
             Vec::new(),
             Vec::new(),
         ),
@@ -129,7 +138,7 @@ declare_unsupported_pkcs11_functions!();
 
 
 static FUNCTION_LIST: CK_FUNCTION_LIST = CK_FUNCTION_LIST {
-    version: CK_VERSION { major: 2, minor: 2 },
+    version: CK_VERSION { major: 3, minor: 2 },
     C_Initialize: Some(C_Initialize),
     C_Finalize: Some(C_Finalize),
     C_GetInfo: Some(C_GetInfo),
