@@ -11,16 +11,15 @@
 #ifndef PC_SCTP_UTILS_H_
 #define PC_SCTP_UTILS_H_
 
+#include <cstdint>
+#include <optional>
 #include <string>
 
+#include "absl/strings/string_view.h"
 #include "api/data_channel_interface.h"
 #include "api/priority.h"
-#include "api/transport/data_channel_transport_interface.h"
-#include "media/base/media_channel.h"
-#include "media/sctp/sctp_transport_internal.h"
 #include "net/dcsctp/public/types.h"
 #include "rtc_base/copy_on_write_buffer.h"
-#include "rtc_base/ssl_stream_adapter.h"  
 
 namespace webrtc {
 class CopyOnWriteBuffer;
@@ -59,14 +58,14 @@ bool ParseDataChannelOpenMessage(const CopyOnWriteBuffer& payload,
 
 bool ParseDataChannelOpenAckMessage(const CopyOnWriteBuffer& payload);
 
-bool WriteDataChannelOpenMessage(const std::string& label,
-                                 const std::string& protocol,
+bool WriteDataChannelOpenMessage(absl::string_view label,
+                                 absl::string_view protocol,
                                  std::optional<PriorityValue> priority,
                                  bool ordered,
                                  std::optional<int> max_retransmits,
                                  std::optional<int> max_retransmit_time,
                                  CopyOnWriteBuffer* payload);
-bool WriteDataChannelOpenMessage(const std::string& label,
+bool WriteDataChannelOpenMessage(absl::string_view label,
                                  const DataChannelInit& config,
                                  CopyOnWriteBuffer* payload);
 void WriteDataChannelOpenAckMessage(CopyOnWriteBuffer* payload);

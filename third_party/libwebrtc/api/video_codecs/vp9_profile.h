@@ -14,6 +14,7 @@
 #include <optional>
 #include <string>
 
+#include "absl/strings/string_view.h"
 #include "api/rtp_parameters.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -35,7 +36,7 @@ RTC_EXPORT std::string VP9ProfileToString(VP9Profile profile);
 
 
 
-std::optional<VP9Profile> StringToVP9Profile(const std::string& str);
+RTC_EXPORT std::optional<VP9Profile> StringToVP9Profile(absl::string_view str);
 
 
 
