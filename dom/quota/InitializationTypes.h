@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_QUOTA_INITIALIZATIONTYPES_H_
 #define DOM_QUOTA_INITIALIZATIONTYPES_H_
 
@@ -30,9 +28,10 @@ enum class Initialization {
   UpgradeStorageFrom2_0To2_1 = 1 << 6,
   UpgradeStorageFrom2_1To2_2 = 1 << 7,
   UpgradeStorageFrom2_2To2_3 = 1 << 8,
-  UpgradeFromIndexedDBDirectory = 1 << 9,
-  UpgradeFromPersistentStorageDirectory = 1 << 10,
-  PersistentRepository = 1 << 11,
+  UpgradeStorageFrom2_3To2_4 = 1 << 9,
+  UpgradeFromIndexedDBDirectory = 1 << 10,
+  UpgradeFromPersistentStorageDirectory = 1 << 11,
+  PersistentRepository = 1 << 12,
 };
 
 enum class GroupInitialization {

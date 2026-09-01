@@ -233,7 +233,7 @@ namespace {
 
 
 
-const uint32_t kSQLitePageSizeOverride = 512;
+const uint32_t kSQLitePageSizeOverride = 4096;
 
 
 
@@ -254,7 +254,7 @@ const uint32_t kSQLitePageSizeOverride = 512;
 const uint32_t kMajorStorageVersion = 2;
 
 
-const uint32_t kMinorStorageVersion = 3;
+const uint32_t kMinorStorageVersion = 4;
 
 
 
@@ -5110,6 +5110,38 @@ nsresult QuotaManager::UpgradeStorageFrom2_2To2_3(
                                innerFunc);
 }
 
+nsresult QuotaManager::UpgradeStorageFrom2_3To2_4(
+    mozIStorageConnection* aConnection) {
+  AssertIsOnIOThread();
+  MOZ_ASSERT(aConnection);
+
+  const auto innerFunc = [&aConnection](const auto&) -> nsresult {
+#ifdef DEBUG
+    {
+      QM_TRY_INSPECT(
+          const int32_t& storageVersion,
+          MOZ_TO_RESULT_INVOKE_MEMBER(aConnection, GetSchemaVersion));
+
+      MOZ_ASSERT(storageVersion == MakeStorageVersion(2, 3));
+    }
+#endif
+
+    QM_TRY(MOZ_TO_RESULT(aConnection->ExecuteSimpleSQL(nsPrintfCString(
+        "PRAGMA page_size = %" PRIu32 ";", kSQLitePageSizeOverride))));
+
+    QM_TRY(MOZ_TO_RESULT(
+        aConnection->ExecuteSimpleSQL("PRAGMA auto_vacuum = INCREMENTAL;"_ns)));
+
+    QM_TRY(
+        MOZ_TO_RESULT(aConnection->SetSchemaVersion(MakeStorageVersion(2, 4))));
+
+    return NS_OK;
+  };
+
+  return ExecuteInitialization(Initialization::UpgradeStorageFrom2_3To2_4,
+                               innerFunc);
+}
+
 nsresult QuotaManager::MaybeRemoveLocalStorageDataAndArchive(
     nsIFile& aLsArchiveFile) {
   AssertIsOnIOThread();
@@ -5546,12 +5578,17 @@ nsresult QuotaManager::MaybeCreateOrUpgradeStorage(
         QM_TRY(MOZ_TO_RESULT(aConnection.ExecuteSimpleSQL(nsPrintfCString(
             "PRAGMA page_size = %" PRIu32 ";", kSQLitePageSizeOverride))));
       }
+
+      QM_TRY(MOZ_TO_RESULT(aConnection.ExecuteSimpleSQL(
+          "PRAGMA auto_vacuum = INCREMENTAL;"_ns)));
     }
 
     mozStorageTransaction transaction(
         &aConnection, false, mozIStorageConnection::TRANSACTION_IMMEDIATE);
 
     QM_TRY(MOZ_TO_RESULT(transaction.Start()));
+
+    bool vacuum = false;
 
     
     
@@ -5574,7 +5611,7 @@ nsresult QuotaManager::MaybeCreateOrUpgradeStorage(
                            "VALUES (0)"))));
     } else {
       
-      static_assert(kStorageVersion == int32_t((2 << 16) + 3),
+      static_assert(kStorageVersion == int32_t((2 << 16) + 4),
                     "Upgrade function needed due to storage version increase.");
 
       while (storageVersion != kStorageVersion) {
@@ -5588,6 +5625,9 @@ nsresult QuotaManager::MaybeCreateOrUpgradeStorage(
           QM_TRY(MOZ_TO_RESULT(UpgradeStorageFrom2_1To2_2(&aConnection)));
         } else if (storageVersion == MakeStorageVersion(2, 2)) {
           QM_TRY(MOZ_TO_RESULT(UpgradeStorageFrom2_2To2_3(&aConnection)));
+        } else if (storageVersion == MakeStorageVersion(2, 3)) {
+          QM_TRY(MOZ_TO_RESULT(UpgradeStorageFrom2_3To2_4(&aConnection)));
+          vacuum = true;
         } else {
           QM_FAIL(NS_ERROR_FAILURE, []() {
             NS_WARNING(
@@ -5604,6 +5644,14 @@ nsresult QuotaManager::MaybeCreateOrUpgradeStorage(
     }
 
     QM_TRY(MOZ_TO_RESULT(transaction.Commit()));
+
+    
+    
+    
+    if (vacuum) {
+      QM_WARNONLY_TRY(
+          MOZ_TO_RESULT(aConnection.ExecuteSimpleSQL("VACUUM;"_ns)));
+    }
   }
 
   return NS_OK;
