@@ -200,13 +200,6 @@ add_task(async function test_engine() {
   await engine.resetLocalSyncID();
   Assert.notEqual(await engine.getSyncID(), null);
 
-  Assert.equal(await engine.getLastSync(), 0);
-  
-  await engine.setLastSync(1234.567);
-  
-  Assert.equal(await engine.getLastSync(), 1234.57);
-  await engine.setLastSync(0);
-
   
   await extensionStorageSync.set({ id: "ext-2" }, { ext_2_key: "ext_2_value" });
   
