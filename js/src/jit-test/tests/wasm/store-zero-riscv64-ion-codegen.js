@@ -12,7 +12,8 @@ codegenTestRISCV64_adhoc(
          (i32.store (local.get 0) (i32.const 0))))`,
     "f",
     `add\\.uw  t4, a0, s7
-     sw        zero, 0\\(t4\\)`);
+     sw        zero, 0\\(t4\\)`,
+    {no_prefix: true});
 
 codegenTestRISCV64_adhoc(
     `(module
@@ -21,7 +22,8 @@ codegenTestRISCV64_adhoc(
          (i32.store8 (local.get 0) (i32.const 0))))`,
     "f",
     `add\\.uw  t4, a0, s7
-     sb        zero, 0\\(t4\\)`);
+     sb        zero, 0\\(t4\\)`,
+    {no_prefix: true});
 
 codegenTestRISCV64_adhoc(
     `(module
@@ -30,7 +32,8 @@ codegenTestRISCV64_adhoc(
          (i32.store16 (local.get 0) (i32.const 0))))`,
     "f",
     `add\\.uw  t4, a0, s7
-     sh        zero, 0\\(t4\\)`);
+     sh        zero, 0\\(t4\\)`,
+    {no_prefix: true});
 
 
 
@@ -41,7 +44,8 @@ codegenTestRISCV64_adhoc(
          (i64.store (local.get 0) (i64.const 0))))`,
     "f",
     `add\\.uw  t4, a0, s7
-     sd        zero, 0\\(t4\\)`);
+     sd        zero, 0\\(t4\\)`,
+    {no_prefix: true});
 
 codegenTestRISCV64_adhoc(
     `(module
@@ -50,7 +54,8 @@ codegenTestRISCV64_adhoc(
          (i64.store8 (local.get 0) (i64.const 0))))`,
     "f",
     `add\\.uw  t4, a0, s7
-     sb        zero, 0\\(t4\\)`);
+     sb        zero, 0\\(t4\\)`,
+    {no_prefix: true});
 
 codegenTestRISCV64_adhoc(
     `(module
@@ -59,7 +64,8 @@ codegenTestRISCV64_adhoc(
          (i64.store16 (local.get 0) (i64.const 0))))`,
     "f",
     `add\\.uw  t4, a0, s7
-     sh        zero, 0\\(t4\\)`);
+     sh        zero, 0\\(t4\\)`,
+    {no_prefix: true});
 
 codegenTestRISCV64_adhoc(
     `(module
@@ -68,7 +74,8 @@ codegenTestRISCV64_adhoc(
          (i64.store32 (local.get 0) (i64.const 0))))`,
     "f",
     `add\\.uw  t4, a0, s7
-     sw        zero, 0\\(t4\\)`);
+     sw        zero, 0\\(t4\\)`,
+    {no_prefix: true});
 
 
 
