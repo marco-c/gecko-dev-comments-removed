@@ -75,6 +75,9 @@ enum class TransformMatrixFlag : uint8_t {
   
   
   StopAtStackingContextAndDisplayPort,
+  
+  
+  IgnoreScrolling,
 };
 using TransformMatrixFlags = mozilla::EnumSet<TransformMatrixFlag>;
 

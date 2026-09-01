@@ -8235,6 +8235,12 @@ Matrix4x4Flagged nsIFrame::GetTransformMatrix(
     nsIFrame** aOutAncestor, TransformMatrixFlags aFlags) const {
   MOZ_ASSERT(aOutAncestor, "Need a place to put the ancestor!");
 
+  auto GetPositionMaybeIgnoringScrolling = [aFlags](const nsIFrame* aFrame) {
+    return aFlags.contains(TransformMatrixFlag::IgnoreScrolling)
+               ? aFrame->GetPositionIgnoringScrolling()
+               : aFrame->GetPosition();
+  };
+
   
 
 
@@ -8269,7 +8275,7 @@ Matrix4x4Flagged nsIFrame::GetTransformMatrix(
     
     
     *aOutAncestor = GetParent();
-    nsPoint delta = GetPosition();
+    nsPoint delta = GetPositionMaybeIgnoringScrolling(this);
     
     result.PostTranslate(NSAppUnitsToFloatPixels(delta.x, scaleFactor),
                          NSAppUnitsToFloatPixels(delta.y, scaleFactor), 0.0f);
@@ -8331,7 +8337,7 @@ Matrix4x4Flagged nsIFrame::GetTransformMatrix(
   
   const int32_t finalAPD = PresContext()->AppUnitsPerDevPixel();
   
-  nsPoint offset = GetPosition();
+  nsPoint offset = GetPositionMaybeIgnoringScrolling(this);
 
   int32_t currAPD = (*aOutAncestor)->PresContext()->AppUnitsPerDevPixel();
   
@@ -8341,7 +8347,7 @@ Matrix4x4Flagged nsIFrame::GetTransformMatrix(
 
   while (*aOutAncestor != aStopAtAncestor.mFrame &&
          !shouldStopAt(current, aStopAtAncestor, *aOutAncestor, aFlags)) {
-    docOffset += (*aOutAncestor)->GetPosition();
+    docOffset += GetPositionMaybeIgnoringScrolling(*aOutAncestor);
 
     nsIFrame* parent = (*aOutAncestor)->GetParent();
     if (!parent) {

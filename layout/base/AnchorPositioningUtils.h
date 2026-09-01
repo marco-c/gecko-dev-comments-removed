@@ -458,7 +458,20 @@ struct AnchorPositioningUtils {
     SameContainingBlockOnly,
   };
 
+  enum class ApplyTransform : bool {
+    
+    
+    No,
+    
+    
+    Yes,
+  };
   
+
+
+
+
+
 
 
 
@@ -472,7 +485,7 @@ struct AnchorPositioningUtils {
 
   static CombinedFragments GetCombinedFragmentRects(
       const nsIFrame* aFrame, const nsIFrame* aContainingBlock,
-      UnionFragments aUnionFragments);
+      UnionFragments aUnionFragments, ApplyTransform aApplyTransform);
 
   
   static const dom::ShadowRoot* GetShadowRootForTreeScope(
