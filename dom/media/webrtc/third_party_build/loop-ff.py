@@ -24,6 +24,7 @@ from run_operations import (
     run_hg,
     run_shell,
 )
+from save_patch_stack import save_patch_stack
 
 
 
@@ -335,22 +336,15 @@ After a successful build, you may resume this script:
 
         
         echo_log("Save patch-stack")
-        run_command([
-            "./mach",
-            "python",
-            f"{script_dir}/save_patch_stack.py",
-            "--skip-startup-sanity",
-            "--repo-path",
+        save_patch_stack(
             libwebrtc_src,
-            "--branch",
             libwebrtc_branch,
-            "--patch-path",
-            "third_party/libwebrtc/moz-patch-stack",
-            "--state-path",
+            os.path.abspath("third_party/libwebrtc/moz-patch-stack"),
             state_dir,
-            "--target-branch-head",
             target,
-        ])
+            None,
+            False,
+        )
 
         modified_build_related_file_cnt = len(
             run_shell(f"bash {script_dir}/get_build_file_changes.sh")
