@@ -2872,6 +2872,9 @@ var gCSSProperties = {
       "calc(2em / (4 / 3))",
       "calc(4 * (2em / 3))",
 
+      
+      "calc(5em / 5em * 5em)",
+
       "min(5px)",
       "min(5px,2em)",
 
@@ -2924,7 +2927,6 @@ var gCSSProperties = {
       "calc(5 + 5)",
       "calc(5 * 5)",
       "calc(5em * 5em)",
-      "calc(5em / 5em * 5em)",
 
       "calc(4 * 3 / 2em)",
       "calc((4 * 3) / 2em)",
@@ -5689,7 +5691,7 @@ var gCSSProperties = {
       "font-size",
       "line-height",
       "font-family",
-      "font-stretch",
+      "font-width",
       "font-size-adjust",
       "font-feature-settings",
       "font-language-override",
@@ -5938,8 +5940,8 @@ var gCSSProperties = {
       "cap-height, 0.8",
     ],
   },
-  "font-stretch": {
-    domProp: "fontStretch",
+  "font-width": {
+    domProp: "fontWidth",
     inherited: true,
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
@@ -9364,6 +9366,10 @@ var gCSSProperties = {
       "calc(50%)",
       "calc(50px/2)",
       "calc(50px/(2 - 1))",
+      "calc((3em / 100%) * 3em)",
+      "calc(3em / 100% * 3em)",
+      "calc(3em * (3em / 100%))",
+      "calc(3em * 3em / 100%)",
       "calc(min(5px))",
       "calc(min(5px,2em))",
       "calc(max(5px))",
@@ -9392,16 +9398,6 @@ var gCSSProperties = {
       "-moz-max(5px)",
       "-moz-min(5px,2em)",
       "-moz-max(5px,2em)",
-      
-
-
-
-
-
-      "calc((3em / 100%) * 3em)",
-      "calc(3em / 100% * 3em)",
-      "calc(3em * (3em / 100%))",
-      "calc(3em * 3em / 100%)",
     ],
     quirks_values: { 5: "5px" },
   },
@@ -10710,6 +10706,10 @@ var gCSSProperties = {
       "calc(50%)",
       "calc(50px/2)",
       "calc(50px/(2 - 1))",
+      "calc((3em / 100%) * 3em)",
+      "calc(3em / 100% * 3em)",
+      "calc(3em * (3em / 100%))",
+      "calc(3em * 3em / 100%)",
       "calc(min(5px))",
       "calc(min(5px,2em))",
       "calc(max(5px))",
@@ -10734,15 +10734,6 @@ var gCSSProperties = {
       "-moz-max(5px)",
       "-moz-min(5px,2em)",
       "-moz-max(5px,2em)",
-      
-      
-      
-      
-      
-      "calc((3em / 100%) * 3em)",
-      "calc(3em / 100% * 3em)",
-      "calc(3em * (3em / 100%))",
-      "calc(3em * 3em / 100%)",
       "anchor-size()",
       "anchor-size(--a width)",
       "anchor-size(--a width, 10px)",
@@ -10830,6 +10821,18 @@ var gCSSProperties = {
   },
 
   
+  "font-stretch": {
+    domProp: "fontStretch",
+    inherited: true,
+    type: CSS_TYPE_SHORTHAND_AND_LONGHAND,
+    alias_for: "font-width",
+    applies_to_first_letter: true,
+    applies_to_first_line: true,
+    applies_to_marker: true,
+    applies_to_placeholder: true,
+    applies_to_cue: true,
+    subproperties: ["font-width"],
+  },
   "word-wrap": {
     domProp: "wordWrap",
     inherited: true,
@@ -12270,7 +12273,8 @@ var gCSSProperties = {
   "-webkit-line-clamp": {
     domProp: "webkitLineClamp",
     inherited: false,
-    type: CSS_TYPE_LONGHAND,
+    type: CSS_TYPE_LEGACY_SHORTHAND,
+    subproperties: ["line-clamp"],
     initial_values: ["none"],
     other_values: ["1", "2"],
     invalid_values: ["auto", "0", "-1"],
@@ -12426,7 +12430,71 @@ var gCSSProperties = {
     alias_for: "mask-size",
     subproperties: ["mask-size"],
   },
+  "view-transition-name": {
+    domProp: "viewTransitionName",
+    inherited: false,
+    type: CSS_TYPE_LONGHAND,
+    initial_values: ["none"],
+    other_values: [
+      "all",
+      "ball",
+      "mall",
+      "color",
+      "foobar",
+      "\\32bounce",
+      "-bounce",
+      "-\\32bounce",
+      "\\32 0bounce",
+      "-\\32 0bounce",
+      "\\2bounce",
+      "-\\2bounce",
+    ],
+    invalid_values: ["auto", "abc --bounce", "10px", "rgb(1, 2, 3)"],
+  },
+  "view-transition-class": {
+    domProp: "viewTransitionClass",
+    inherited: false,
+    type: CSS_TYPE_LONGHAND,
+    initial_values: ["none"],
+    other_values: [
+      "all",
+      "ball",
+      "mall",
+      "color",
+      "foobar",
+      "\\32bounce",
+      "-bounce",
+      "-\\32bounce",
+      "\\32 0bounce",
+      "-\\32 0bounce",
+      "\\2bounce",
+      "-\\2bounce",
+      "abc abc",
+      "\\32bounce abc",
+    ],
+    invalid_values: ["abc none", "10px", "rgb(1, 2, 3)", "default"],
+  },
 }; 
+
+if (IsCSSPropertyPrefEnabled("layout.css.line-clamp.enabled")) {
+  gCSSProperties["line-clamp"] = {
+    domProp: "lineClamp",
+    inherited: false,
+    type: CSS_TYPE_LONGHAND,
+    initial_values: ["none"],
+    other_values: [
+      "1",
+      "2",
+      "auto 3",
+      "3 auto",
+      "3 no-ellipsis",
+      "3 -webkit-legacy",
+    ],
+    invalid_values: ["0", "-1", "auto", "no-ellipsis", "-webkit-legacy"],
+  };
+} else {
+  gCSSProperties["-webkit-line-clamp"].subproperties = [];
+}
 
 
 
@@ -14207,18 +14275,23 @@ if (IsCSSPropertyPrefEnabled("layout.css.scroll-driven-animations.enabled")) {
     domProp: "viewTimeline",
     inherited: false,
     type: CSS_TYPE_TRUE_SHORTHAND,
-    subproperties: ["view-timeline-name", "view-timeline-axis"],
-    initial_values: ["none block", "none"],
+    subproperties: [
+      "view-timeline-name",
+      "view-timeline-axis",
+      "view-timeline-inset",
+    ],
+    initial_values: ["none block auto", "none"],
     other_values: [
-      "--auto inline",
-      "--bounce inline",
+      "--auto inline 2px",
+      "--bounce inline 5px auto",
       "--bounce y",
-      "--\\32bounce inline",
-      "--bounce block",
-      "--\\32 0bounce y",
-      "--\\32 0bounce x",
+      "--\\32bounce inline 5em 1vh",
+      "--bounce block auto 20px",
+      "--\\32 0bounce y 15px 20px",
+      "--\\32 0bounce x 32% 20%",
       "--a, --b, --c",
       "--a block, --b inline, --c y",
+      "--a block 30px, --b inline 15px 10px, --c y 20% 10%",
     ],
     invalid_values: ["", ",", "--abc --abc", "x --a", "block --abc"],
   };
@@ -14561,55 +14634,6 @@ if (IsCSSPropertyPrefEnabled("layout.css.field-sizing.enabled")) {
   });
 }
 
-if (IsCSSPropertyPrefEnabled("dom.viewTransitions.enabled")) {
-  Object.assign(gCSSProperties, {
-    "view-transition-name": {
-      domProp: "viewTransitionName",
-      inherited: false,
-      type: CSS_TYPE_LONGHAND,
-      initial_values: ["none"],
-      other_values: [
-        "all",
-        "ball",
-        "mall",
-        "color",
-        "foobar",
-        "\\32bounce",
-        "-bounce",
-        "-\\32bounce",
-        "\\32 0bounce",
-        "-\\32 0bounce",
-        "\\2bounce",
-        "-\\2bounce",
-      ],
-      invalid_values: ["auto", "abc --bounce", "10px", "rgb(1, 2, 3)"],
-    },
-    "view-transition-class": {
-      domProp: "viewTransitionClass",
-      inherited: false,
-      type: CSS_TYPE_LONGHAND,
-      initial_values: ["none"],
-      other_values: [
-        "all",
-        "ball",
-        "mall",
-        "color",
-        "foobar",
-        "\\32bounce",
-        "-bounce",
-        "-\\32bounce",
-        "\\32 0bounce",
-        "-\\32 0bounce",
-        "\\2bounce",
-        "-\\2bounce",
-        "abc abc",
-        "\\32bounce abc",
-      ],
-      invalid_values: ["abc none", "10px", "rgb(1, 2, 3)", "default"],
-    },
-  });
-}
-
 if (IsCSSPropertyPrefEnabled("layout.css.text-decoration-inset.enabled")) {
   Object.assign(gCSSProperties, {
     "text-decoration-inset": {
@@ -14825,10 +14849,10 @@ if (IsCSSPropertyPrefEnabled("layout.css.link-parameters.enabled")) {
         .concat(basicShapeXywhRectValues)
         .concat(basicShapeShapeValues)
         .concat(basicShapeShapeValuesWithFillRule)
-        .map(i => `param(--a, ${i})`)
-        .concat("param(--foo)")
-        .concat("param(--foo), param(--bar)"),
+        .map(i => `param(--a, ${i})`),
       invalid_values: [
+        "param(--foo)",
+        "param(--foo), param(--bar)",
         "param(--foo) param(--bar)", 
       ],
     },
