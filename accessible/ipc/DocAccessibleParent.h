@@ -20,6 +20,8 @@ namespace mozilla {
 namespace dom {
 class BrowserParent;
 class CanonicalBrowsingContext;
+class WindowContext;
+class WindowGlobalParent;
 }  
 
 namespace a11y {
@@ -94,21 +96,28 @@ class DocAccessibleParent : public RemoteAccessible,
   void MarkAsShutdown() {
     MOZ_ASSERT(mChildDocs.IsEmpty());
     MOZ_ASSERT(mAccessibles.Count() == 0);
-    MOZ_ASSERT(!mBrowsingContext);
     mShutdown = true;
-  }
-
-  void SetBrowsingContext(dom::CanonicalBrowsingContext* aBrowsingContext);
-
-  dom::CanonicalBrowsingContext* GetBrowsingContext() const {
-    return mBrowsingContext;
   }
 
   
 
 
 
-  dom::BrowserParent* Manager() const;
+  dom::CanonicalBrowsingContext* GetBrowsingContext() const;
+
+  
+
+
+
+
+  dom::WindowGlobalParent* Manager() const;
+
+  
+
+
+
+
+  dom::BrowserParent* GetBrowserParent() const;
 
   
 
@@ -327,7 +336,7 @@ class DocAccessibleParent : public RemoteAccessible,
   Maybe<LayoutDeviceIntRect> mFocusedAccBounds;
 #endif
 
-  static DocAccessibleParent* GetFrom(dom::BrowsingContext* aBrowsingContext);
+  static DocAccessibleParent* GetFrom(dom::WindowContext* aWindowContext);
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) override;
 
@@ -439,7 +448,6 @@ class DocAccessibleParent : public RemoteAccessible,
   bool mShutdown : 1;
   bool mIsPrintDoc : 1 = false;
   bool mIsInitialTreeDone : 1 = false;
-  RefPtr<dom::CanonicalBrowsingContext> mBrowsingContext;
 
   nsTHashSet<RefPtr<dom::BrowserBridgeParent>> mPendingOOPChildDocs;
 
