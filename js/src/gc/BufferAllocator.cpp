@@ -1586,10 +1586,15 @@ void BufferAllocator::abortMajorSweeping(const AutoLock& lock) {
 }
 
 void BufferAllocator::clearMarkBitsInStolenChunks() {
+#ifdef JS_GC_CONCURRENT_MARKING
   
   
   
   
+  
+  
+  
+
   
   
   
@@ -1605,13 +1610,18 @@ void BufferAllocator::clearMarkBitsInStolenChunks() {
        chunk.next()) {
     chunk->clearMarkBitsIfStolenChunk();
   }
+#endif
 }
 
 void BufferChunk::clearMarkBitsIfStolenChunk() {
+#ifdef JS_GC_CONCURRENT_MARKING
   if (stolenFromSweepList) {
     clearMarkBits();
     stolenFromSweepList = false;
   }
+#else
+  MOZ_ASSERT(!stolenFromSweepList);
+#endif
 }
 
 void BufferAllocator::clearAllocatedDuringCollectionState(
@@ -1695,10 +1705,7 @@ void BufferAllocator::mergeSweptData(const AutoLock& lock) {
         !chunk->allocatedDuringCollection);
 
     if (majorSweepingStartedWhileMinorSweeping) {
-      if (chunk->stolenFromSweepList) {
-        clearChunkMarkBits(chunk);
-        chunk->stolenFromSweepList = false;
-      }
+      chunk->clearMarkBitsIfStolenChunk();
     }
 
     if (majorFinishedWhileMinorSweeping) {
@@ -2654,40 +2661,56 @@ static inline StallAndRetry ShouldStallAndRetry(bool inGC) {
 }
 
 bool BufferAllocator::stealOrAllocNewChunk(size_t sizeClass, bool inGC) {
-  
-  
   if (majorState == State::Marking && !tenuredChunksToSweep.ref().isEmpty() &&
       gc->isNormalGC()) {
-    BufferChunk* chunk = tenuredChunksToSweep.ref().getLast();
-    MOZ_ASSERT(chunk->ownsFreeLists);
-
-    
-    
-    size_t minSizeClass = std::max(sizeClass, MaxMediumAllocClass - 1);
-    if (chunk->freeLists.ref().getLastAvailableSizeClass(
-            minSizeClass, MaxMediumAllocClass) != SIZE_MAX) {
-      
-      tenuredChunksToSweep.ref().remove(chunk);
-
-      
-      chunk->allocatedDuringCollection = true;
-
-      
-      
-      chunk->stolenFromSweepList = true;
-
-      
-      MOZ_ASSERT(!chunk->hasNurseryOwnedAllocs);
-      currentTenuredChunks.ref().pushBack(chunk);
-      freeLists.ref().append(std::move(chunk->freeLists.ref()));
-      chunk->ownsFreeLists = false;
-      chunk->freeLists.ref().assertEmpty();
-
+    if (tryToStealQueuedChunk(sizeClass)) {
       return true;
     }
   }
 
   return allocNewChunk(inGC);
+}
+
+bool BufferAllocator::tryToStealQueuedChunk(size_t sizeClass) {
+  
+  
+
+  MOZ_ASSERT(majorState == State::Marking);
+  MOZ_ASSERT(!tenuredChunksToSweep.ref().isEmpty());
+
+  BufferChunk* chunk = tenuredChunksToSweep.ref().getLast();
+  MOZ_ASSERT(chunk->ownsFreeLists);
+
+  
+  
+  size_t minSizeClass = std::max(sizeClass, MaxMediumAllocClass - 1);
+  if (chunk->freeLists.ref().getLastAvailableSizeClass(
+          minSizeClass, MaxMediumAllocClass) == SIZE_MAX) {
+    return false;
+  }
+
+  
+  tenuredChunksToSweep.ref().remove(chunk);
+
+  
+  chunk->allocatedDuringCollection = true;
+
+#ifdef JS_GC_CONCURRENT_MARKING
+  
+  
+  chunk->stolenFromSweepList = true;
+#else
+  chunk->clearMarkBits();
+#endif
+
+  
+  MOZ_ASSERT(!chunk->hasNurseryOwnedAllocs);
+  currentTenuredChunks.ref().pushBack(chunk);
+  freeLists.ref().append(std::move(chunk->freeLists.ref()));
+  chunk->ownsFreeLists = false;
+  chunk->freeLists.ref().assertEmpty();
+
+  return true;
 }
 
 bool BufferAllocator::allocNewChunk(bool inGC) {
