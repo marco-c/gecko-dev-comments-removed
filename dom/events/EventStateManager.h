@@ -271,7 +271,6 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
   void SetPresContext(nsPresContext* aPresContext);
   void ClearFrameRefs(nsIFrame* aFrame);
-  void MaybeLeavePendingLink(bool aWasCanceled);
 
   nsIFrame* GetEventTarget();
   nsIContent* GetExplicitEventTargetContent(const WidgetEvent* = nullptr);
@@ -318,13 +317,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
   nsIContent* GetActiveContent() const { return mActiveContent; }
 
-  void SetLinkOverFrame(nsIFrame* aFrame) {
-    mLinkOverFrame = aFrame;
-    if (aFrame) {
-      mPendingLeaveLinkElement = nullptr;
-    }
-  }
-  nsIFrame* GetLinkOverFrame() const { return mLinkOverFrame.GetFrame(); }
+  void SetLinkOverFrame(nsIFrame* aFrame) { mLinkOverFrame = aFrame; }
 
   void NativeAnonymousContentRemoved(nsIContent* aAnonContent);
   void ContentInserted(nsIContent* aChild, const ContentInsertInfo& aInfo);
@@ -1473,7 +1466,6 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   
   
   WeakFrame mLinkOverFrame;
-  RefPtr<dom::Element> mPendingLeaveLinkElement;
 
   nsPresContext* mPresContext;      
   RefPtr<dom::Document> mDocument;  
