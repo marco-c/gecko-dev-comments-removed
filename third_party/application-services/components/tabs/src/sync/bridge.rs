@@ -4,13 +4,17 @@
 
 use crate::sync::engine::TabsEngine;
 use crate::TabsStore;
+use anyhow::Result;
 use std::sync::Arc;
+use sync15::engine::BridgedEngineAdaptor;
+use sync15::ServerTimestamp;
 
 impl TabsStore {
     
     pub fn bridged_engine(self: Arc<Self>) -> Arc<TabsBridgedEngine> {
         let engine = TabsEngine::new(self);
-        Arc::new(TabsBridgedEngine::new(Box::new(engine)))
+        let bridged_engine = TabsBridgedEngineAdaptor { engine };
+        Arc::new(TabsBridgedEngine::new(Box::new(bridged_engine)))
     }
 }
 
@@ -18,7 +22,32 @@ impl TabsStore {
 
 
 
-sync15::uniffi_bridged_engine!(TabsBridgedEngine);
+
+struct TabsBridgedEngineAdaptor {
+    engine: TabsEngine,
+}
+
+impl BridgedEngineAdaptor for TabsBridgedEngineAdaptor {
+    fn last_sync(&self) -> Result<i64> {
+        Ok(self.engine.get_last_sync()?.unwrap_or_default().as_millis())
+    }
+
+    fn set_last_sync(&self, last_sync_millis: i64) -> Result<()> {
+        self.engine
+            .set_last_sync(ServerTimestamp::from_millis(last_sync_millis))
+    }
+
+    fn engine(&self) -> &dyn sync15::engine::SyncEngine {
+        &self.engine
+    }
+}
+
+
+
+
+
+
+sync15::uniffi_bridged_engine!(TabsBridgedEngine, sync_guid::Guid);
 
 #[cfg(test)]
 mod tests {
@@ -85,7 +114,7 @@ mod tests {
             ]),
         };
         bridge
-            .set_clients(&serde_json::to_string(&client_data).unwrap())
+            .prepare_for_sync(&serde_json::to_string(&client_data).unwrap())
             .expect("should work");
 
         let records = vec![
@@ -149,8 +178,7 @@ mod tests {
 
         bridge.store_incoming(incoming).expect("should store");
 
-        
-        let out = bridge.apply(0).expect("should apply");
+        let out = bridge.apply().expect("should apply");
 
         assert_eq!(out.len(), 1);
         let ours = serde_json::from_str::<serde_json::Value>(&out[0]).unwrap();
@@ -181,7 +209,7 @@ mod tests {
 
         
         assert_eq!(bridge.last_sync().unwrap(), 0);
-        bridge.set_uploaded(3, vec![]).unwrap();
+        bridge.set_last_sync(3).unwrap();
         assert_eq!(bridge.last_sync().unwrap(), 3);
 
         assert!(bridge.sync_id().unwrap().is_none());
@@ -190,16 +218,14 @@ mod tests {
         assert_eq!(bridge.sync_id().unwrap(), Some("some_guid".to_string()));
         
         assert_eq!(bridge.last_sync().unwrap(), 0);
-        
-        bridge.set_uploaded(3, vec![]).unwrap();
+        bridge.set_last_sync(3).unwrap();
 
         bridge.reset_sync_id().unwrap();
         
         assert_ne!(bridge.sync_id().unwrap(), Some("some_guid".to_string()));
         
         assert_eq!(bridge.last_sync().unwrap(), 0);
-        
-        bridge.set_uploaded(3, vec![]).unwrap();
+        bridge.set_last_sync(3).unwrap();
 
         
         bridge.reset().unwrap();

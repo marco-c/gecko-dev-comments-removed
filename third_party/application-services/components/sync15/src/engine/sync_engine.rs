@@ -124,13 +124,19 @@ pub trait SyncEngine {
     fn collection_name(&self) -> CollectionName;
 
     
-    fn sync_started(&self) -> Result<()> {
-        Ok(())
-    }
-
     
     
-    fn set_clients(&self, _get_client_data: &dyn Fn() -> ClientData) -> Result<()> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn prepare_for_sync(&self, _get_client_data: &dyn Fn() -> ClientData) -> Result<()> {
         Ok(())
     }
 
@@ -222,21 +228,6 @@ pub trait SyncEngine {
     
     
     fn wipe(&self) -> Result<()>;
-
-    
-    
-    
-    
-    
-    
-    fn last_sync(&self) -> Result<Option<ServerTimestamp>> {
-        unimplemented!("This engine is not used as a bridged engine");
-    }
-
-    
-    fn reset_last_sync(&self) -> Result<()> {
-        unimplemented!("This engine is not used as a bridged engine");
-    }
 }
 
 #[cfg(test)]

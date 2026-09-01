@@ -2,8 +2,12 @@
 
 
 
+use crate::db::models::address::InternalAddress;
+use crate::sync::engine::ConfigSyncEngine;
 use crate::Store;
+use anyhow::Result;
 use std::sync::Arc;
+use sync15::engine::BridgedEngineAdaptor;
 
 impl Store {
     
@@ -11,13 +15,40 @@ impl Store {
     
     pub fn addresses_bridged_engine(self: Arc<Self>) -> Arc<AddressesBridgedEngine> {
         let engine = crate::sync::address::create_engine(self);
-        Arc::new(AddressesBridgedEngine::new(Box::new(engine)))
+        Arc::new(AddressesBridgedEngine::new(Box::new(
+            AddressesBridgedEngineAdaptor { engine },
+        )))
     }
 }
 
 
 
-sync15::uniffi_bridged_engine!(AddressesBridgedEngine);
+
+
+
+struct AddressesBridgedEngineAdaptor {
+    engine: ConfigSyncEngine<InternalAddress>,
+}
+
+impl BridgedEngineAdaptor for AddressesBridgedEngineAdaptor {
+    fn last_sync(&self) -> Result<i64> {
+        Ok(self.engine.get_last_sync_millis()?)
+    }
+
+    fn set_last_sync(&self, last_sync_millis: i64) -> Result<()> {
+        self.engine.set_last_sync_millis(last_sync_millis)?;
+        Ok(())
+    }
+
+    fn engine(&self) -> &dyn sync15::engine::SyncEngine {
+        &self.engine
+    }
+}
+
+
+
+
+sync15::uniffi_bridged_engine!(AddressesBridgedEngine, String);
 
 #[cfg(test)]
 mod tests {
@@ -33,10 +64,9 @@ mod tests {
         let store = Arc::new(Store::new_shared_memory("addresses-bridge").unwrap());
         let bridge = store.addresses_bridged_engine();
 
-        bridge.sync_started().unwrap();
         
         assert_eq!(bridge.last_sync().unwrap(), 0);
-        bridge.set_uploaded(3, vec![]).unwrap();
+        bridge.set_last_sync(3).unwrap();
         assert_eq!(bridge.last_sync().unwrap(), 3);
 
         assert!(bridge.sync_id().unwrap().is_none());
@@ -45,12 +75,12 @@ mod tests {
         assert_eq!(bridge.sync_id().unwrap(), Some("some_guid".to_string()));
         
         assert_eq!(bridge.last_sync().unwrap(), 0);
-        bridge.set_uploaded(3, vec![]).unwrap();
+        bridge.set_last_sync(3).unwrap();
 
         bridge.reset_sync_id().unwrap();
         assert_ne!(bridge.sync_id().unwrap(), Some("some_guid".to_string()));
         assert_eq!(bridge.last_sync().unwrap(), 0);
-        bridge.set_uploaded(3, vec![]).unwrap();
+        bridge.set_last_sync(3).unwrap();
 
         
         bridge.reset().unwrap();
@@ -84,7 +114,11 @@ mod tests {
         let bridge = store.clone().addresses_bridged_engine();
 
         
-        bridge.sync_started().expect("should prepare for sync");
+        
+        bridge
+            .prepare_for_sync(r#"{"local_client_id":"my-client","recent_clients":{}}"#)
+            .expect("should prepare for sync");
+        bridge.sync_started().unwrap();
 
         
         
@@ -110,7 +144,7 @@ mod tests {
 
         
         
-        let outgoing = bridge.apply(1234).expect("should apply");
+        let outgoing = bridge.apply().expect("should apply");
         let changes: HashMap<String, serde_json::Value> = outgoing
             .into_iter()
             .map(|s| {
@@ -135,13 +169,15 @@ mod tests {
             .expect("remote address should have been stored");
         assert_eq!(stored.street_address, "99 Remote Road");
 
-        assert_eq!(bridge.last_sync().unwrap(), 1234);
-        bridge.set_uploaded(5678, vec![local.guid.clone()]).unwrap();
+        
+        
+        assert_eq!(bridge.last_sync().unwrap(), 0);
+        bridge.set_uploaded(1234, vec![local.guid.clone()]).unwrap();
         bridge.sync_finished().unwrap();
-        assert_eq!(bridge.last_sync().unwrap(), 5678);
+        assert_eq!(bridge.last_sync().unwrap(), 1234);
 
         
         
-        assert!(bridge.apply(5678).expect("should apply again").is_empty());
+        assert!(bridge.apply().expect("should apply again").is_empty());
     }
 }

@@ -5,14 +5,9 @@
 use anyhow::Result;
 use rusqlite::Transaction;
 use std::sync::{Arc, Weak};
-use sync15::bso::{IncomingBso, OutgoingBso};
-use sync15::engine::{CollSyncIds, CollectionRequest, EngineSyncAssociation, SyncEngine};
-use sync15::{telemetry, CollectionName, ServerTimestamp};
+use sync15::bso::IncomingBso;
+use sync15::engine::{ApplyResults, BridgedEngine as Sync15BridgedEngine};
 use sync_guid::Guid as SyncGuid;
-
-
-
-const COLLECTION_NAME: &str = "extension-storage";
 
 use crate::db::{delete_meta, get_meta, put_meta, ThreadSafeStorageDb};
 use crate::schema;
@@ -26,19 +21,28 @@ const SYNC_ID_META_KEY: &str = "sync_id";
 impl WebExtStorageStore {
     
     pub fn bridged_engine(self: Arc<Self>) -> Arc<WebExtStorageBridgedEngine> {
-        let engine = Box::new(WebExtSyncEngine::new(&self.db));
+        let engine = Box::new(BridgedEngine::new(&self.db));
         Arc::new(WebExtStorageBridgedEngine::new(engine))
     }
 }
 
-pub struct WebExtSyncEngine {
+
+
+
+
+
+
+
+
+
+pub struct BridgedEngine {
     db: Weak<ThreadSafeStorageDb>,
 }
 
-impl WebExtSyncEngine {
+impl BridgedEngine {
     
     pub fn new(db: &Arc<ThreadSafeStorageDb>) -> Self {
-        WebExtSyncEngine {
+        BridgedEngine {
             db: Arc::downgrade(db),
         }
     }
@@ -59,42 +63,57 @@ impl WebExtSyncEngine {
     }
 }
 
-impl SyncEngine for WebExtSyncEngine {
-    fn collection_name(&self) -> CollectionName {
-        COLLECTION_NAME.into()
-    }
-
-    
-    
-    fn last_sync(&self) -> Result<Option<ServerTimestamp>> {
+impl Sync15BridgedEngine for BridgedEngine {
+    fn last_sync(&self) -> Result<i64> {
         let shared_db = self.thread_safe_storage_db()?;
         let db = shared_db.lock();
         let conn = db.get_connection()?;
-        Ok(get_meta::<i64>(conn, LAST_SYNC_META_KEY)?.map(ServerTimestamp))
+        Ok(get_meta(conn, LAST_SYNC_META_KEY)?.unwrap_or(0))
     }
 
-    fn reset_last_sync(&self) -> Result<()> {
+    fn set_last_sync(&self, last_sync_millis: i64) -> Result<()> {
+        let shared_db = self.thread_safe_storage_db()?;
+        let db = shared_db.lock();
+        let conn = db.get_connection()?;
+        put_meta(conn, LAST_SYNC_META_KEY, &last_sync_millis)?;
+        Ok(())
+    }
+
+    fn sync_id(&self) -> Result<Option<String>> {
+        let shared_db = self.thread_safe_storage_db()?;
+        let db = shared_db.lock();
+        let conn = db.get_connection()?;
+        Ok(get_meta(conn, SYNC_ID_META_KEY)?)
+    }
+
+    fn reset_sync_id(&self) -> Result<String> {
         let shared_db = self.thread_safe_storage_db()?;
         let db = shared_db.lock();
         let conn = db.get_connection()?;
         let tx = conn.unchecked_transaction()?;
-        delete_meta(&tx, LAST_SYNC_META_KEY)?;
+        let new_id = SyncGuid::random().to_string();
+        self.do_reset(&tx)?;
+        put_meta(&tx, SYNC_ID_META_KEY, &new_id)?;
         tx.commit()?;
-        Ok(())
+        Ok(new_id)
     }
 
-    fn get_sync_assoc(&self) -> Result<EngineSyncAssociation> {
+    fn ensure_current_sync_id(&self, sync_id: &str) -> Result<String> {
         let shared_db = self.thread_safe_storage_db()?;
         let db = shared_db.lock();
         let conn = db.get_connection()?;
-        
-        
-        Ok(match get_meta::<String>(conn, SYNC_ID_META_KEY)? {
-            Some(coll) => EngineSyncAssociation::Connected(CollSyncIds {
-                global: SyncGuid::empty(),
-                coll: coll.into(),
-            }),
-            None => EngineSyncAssociation::Disconnected,
+        let current: Option<String> = get_meta(conn, SYNC_ID_META_KEY)?;
+        Ok(match current {
+            Some(current) if current == sync_id => current,
+            _ => {
+                let conn = db.get_connection()?;
+                let tx = conn.unchecked_transaction()?;
+                self.do_reset(&tx)?;
+                let result = sync_id.to_string();
+                put_meta(&tx, SYNC_ID_META_KEY, &result)?;
+                tx.commit()?;
+                result
+            }
         })
     }
 
@@ -106,11 +125,7 @@ impl SyncEngine for WebExtSyncEngine {
         Ok(())
     }
 
-    fn stage_incoming(
-        &self,
-        incoming_bsos: Vec<IncomingBso>,
-        _telem: &mut telemetry::Engine,
-    ) -> Result<()> {
+    fn store_incoming(&self, incoming_bsos: Vec<IncomingBso>) -> Result<()> {
         let shared_db = self.thread_safe_storage_db()?;
         let db = shared_db.lock();
         let signal = db.begin_interrupt_scope()?;
@@ -125,11 +140,7 @@ impl SyncEngine for WebExtSyncEngine {
         Ok(())
     }
 
-    fn apply(
-        &self,
-        timestamp: ServerTimestamp,
-        _telem: &mut telemetry::Engine,
-    ) -> Result<Vec<OutgoingBso>> {
+    fn apply(&self) -> Result<ApplyResults> {
         let shared_db = self.thread_safe_storage_db()?;
         let db = shared_db.lock();
         let signal = db.begin_interrupt_scope()?;
@@ -142,28 +153,18 @@ impl SyncEngine for WebExtSyncEngine {
             .collect();
         apply_actions(&tx, actions, &signal)?;
         stage_outgoing(&tx)?;
-        
-        
-        
-        if timestamp != ServerTimestamp(0) {
-            put_meta(&tx, LAST_SYNC_META_KEY, &timestamp.as_millis())?;
-        }
         tx.commit()?;
 
-        Ok(get_outgoing(conn, &signal)?)
+        Ok(get_outgoing(conn, &signal)?.into())
     }
 
-    fn set_uploaded(&self, new_timestamp: ServerTimestamp, ids: Vec<SyncGuid>) -> Result<()> {
+    fn set_uploaded(&self, _server_modified_millis: i64, ids: &[SyncGuid]) -> Result<()> {
         let shared_db = self.thread_safe_storage_db()?;
         let db = shared_db.lock();
         let conn = db.get_connection()?;
         let signal = db.begin_interrupt_scope()?;
         let tx = conn.unchecked_transaction()?;
-        record_uploaded(&tx, &ids, &signal)?;
-        
-        if new_timestamp != ServerTimestamp(0) {
-            put_meta(&tx, LAST_SYNC_META_KEY, &new_timestamp.as_millis())?;
-        }
+        record_uploaded(&tx, ids, &signal)?;
         tx.commit()?;
 
         Ok(())
@@ -177,41 +178,13 @@ impl SyncEngine for WebExtSyncEngine {
         Ok(())
     }
 
-    fn get_collection_request(
-        &self,
-        server_timestamp: ServerTimestamp,
-    ) -> Result<Option<CollectionRequest>> {
-        let shared_db = self.thread_safe_storage_db()?;
-        let db = shared_db.lock();
-        let conn = db.get_connection()?;
-        let since = ServerTimestamp(get_meta::<i64>(conn, LAST_SYNC_META_KEY)?.unwrap_or(0));
-        Ok(if since == server_timestamp {
-            None
-        } else {
-            Some(
-                CollectionRequest::new(COLLECTION_NAME.into())
-                    .full()
-                    .newer_than(since),
-            )
-        })
-    }
-
-    fn reset(&self, assoc: &EngineSyncAssociation) -> Result<()> {
+    fn reset(&self) -> Result<()> {
         let shared_db = self.thread_safe_storage_db()?;
         let db = shared_db.lock();
         let conn = db.get_connection()?;
         let tx = conn.unchecked_transaction()?;
         self.do_reset(&tx)?;
-        
-        
-        match assoc {
-            EngineSyncAssociation::Disconnected => {
-                delete_meta(&tx, SYNC_ID_META_KEY)?;
-            }
-            EngineSyncAssociation::Connected(ids) => {
-                put_meta(&tx, SYNC_ID_META_KEY, &ids.coll.to_string())?;
-            }
-        }
+        delete_meta(&tx, SYNC_ID_META_KEY)?;
         tx.commit()?;
         Ok(())
     }
@@ -236,7 +209,8 @@ impl SyncEngine for WebExtSyncEngine {
 
 
 
-sync15::uniffi_bridged_engine!(WebExtStorageBridgedEngine);
+
+sync15::uniffi_bridged_engine!(WebExtStorageBridgedEngine, sync_guid::Guid);
 
 impl From<anyhow::Error> for crate::error::Error {
     fn from(value: anyhow::Error) -> Self {
@@ -249,16 +223,7 @@ mod tests {
     use super::*;
     use crate::db::test::new_mem_thread_safe_storage_db;
     use crate::db::StorageDb;
-    use sync15::engine::BridgedEngineWrapper;
-
-    
-    
-    
-    
-    
-    fn wrapper(db: &Arc<ThreadSafeStorageDb>) -> BridgedEngineWrapper {
-        BridgedEngineWrapper::new(Box::new(WebExtSyncEngine::new(db)))
-    }
+    use sync15::engine::BridgedEngine;
 
     fn query_count(db: &StorageDb, table: &str) -> u32 {
         let conn = db.get_connection().expect("should retrieve connection");
@@ -269,10 +234,11 @@ mod tests {
     }
 
     
-    fn setup_mock_data(db: &Arc<ThreadSafeStorageDb>) -> Result<()> {
+    fn setup_mock_data(engine: &super::BridgedEngine) -> Result<()> {
         {
-            let shared = db.lock();
-            let conn = shared.get_connection().expect("should retrieve connection");
+            let shared = engine.thread_safe_storage_db()?;
+            let db = shared.lock();
+            let conn = db.get_connection().expect("should retrieve connection");
             conn.execute(
                 "INSERT INTO storage_sync_data (ext_id, data, sync_change_counter)
                     VALUES ('ext-a', 'invalid-json', 2)",
@@ -284,27 +250,24 @@ mod tests {
                 [],
             )?;
         }
-        
-        {
-            let shared = db.lock();
-            let conn = shared.get_connection().expect("should retrieve connection");
-            put_meta(conn, LAST_SYNC_META_KEY, &1i64)?;
-        }
+        engine.set_last_sync(1)?;
 
-        let shared = db.lock();
+        let shared = engine.thread_safe_storage_db()?;
+        let db = shared.lock();
         
-        assert_eq!(query_count(&shared, "storage_sync_data"), 1);
-        assert_eq!(query_count(&shared, "storage_sync_mirror"), 1);
-        assert_eq!(query_count(&shared, "meta"), 1);
+        assert_eq!(query_count(&db, "storage_sync_data"), 1);
+        assert_eq!(query_count(&db, "storage_sync_mirror"), 1);
+        assert_eq!(query_count(&db, "meta"), 1);
         Ok(())
     }
 
     
-    fn assert_reset(db: &Arc<ThreadSafeStorageDb>) -> Result<()> {
+    fn assert_reset(engine: &super::BridgedEngine) -> Result<()> {
         
-        let shared = db.lock();
-        let conn = shared.get_connection().expect("should retrieve connection");
-        assert_eq!(query_count(&shared, "storage_sync_data"), 1);
+        let shared = engine.thread_safe_storage_db()?;
+        let db = shared.lock();
+        let conn = db.get_connection().expect("should retrieve connection");
+        assert_eq!(query_count(&db, "storage_sync_data"), 1);
 
         
         let cc = conn.query_row_and_then(
@@ -314,24 +277,25 @@ mod tests {
         )?;
         assert_eq!(cc, 1);
         
-        assert_eq!(query_count(&shared, "storage_sync_mirror"), 0);
+        assert_eq!(query_count(&db, "storage_sync_mirror"), 0);
         
         assert!(get_meta::<i64>(conn, LAST_SYNC_META_KEY)?.is_none());
         Ok(())
     }
 
     
-    fn assert_not_reset(db: &Arc<ThreadSafeStorageDb>) -> Result<()> {
-        let shared = db.lock();
-        let conn = shared.get_connection().expect("should retrieve connection");
-        assert_eq!(query_count(&shared, "storage_sync_data"), 1);
+    fn assert_not_reset(engine: &super::BridgedEngine) -> Result<()> {
+        let shared = engine.thread_safe_storage_db()?;
+        let db = shared.lock();
+        let conn = db.get_connection().expect("should retrieve connection");
+        assert_eq!(query_count(&db, "storage_sync_data"), 1);
         let cc = conn.query_row_and_then(
             "SELECT sync_change_counter FROM storage_sync_data WHERE ext_id = 'ext-a';",
             [],
             |row| row.get::<_, u32>(0),
         )?;
         assert_eq!(cc, 2);
-        assert_eq!(query_count(&shared, "storage_sync_mirror"), 1);
+        assert_eq!(query_count(&db, "storage_sync_mirror"), 1);
         
         assert!(get_meta::<i64>(conn, LAST_SYNC_META_KEY)?.is_some());
         Ok(())
@@ -340,11 +304,15 @@ mod tests {
     #[test]
     fn test_wipe() -> Result<()> {
         let strong = new_mem_thread_safe_storage_db();
-        setup_mock_data(&strong)?;
+        let engine = super::BridgedEngine::new(&strong);
 
-        wrapper(&strong).wipe()?;
+        setup_mock_data(&engine)?;
 
-        let db = strong.lock();
+        engine.wipe()?;
+
+        let shared = engine.thread_safe_storage_db()?;
+        let db = shared.lock();
+
         assert_eq!(query_count(&db, "storage_sync_data"), 0);
         assert_eq!(query_count(&db, "storage_sync_mirror"), 0);
         assert_eq!(query_count(&db, "meta"), 0);
@@ -353,16 +321,18 @@ mod tests {
 
     #[test]
     fn test_reset() -> Result<()> {
-        let strong = new_mem_thread_safe_storage_db();
-        setup_mock_data(&strong)?;
+        let strong = &new_mem_thread_safe_storage_db();
+        let engine = super::BridgedEngine::new(strong);
+
+        setup_mock_data(&engine)?;
         {
             let db = strong.lock();
             let conn = db.get_connection()?;
             put_meta(conn, SYNC_ID_META_KEY, &"sync-id".to_string())?;
         }
 
-        wrapper(&strong).reset()?;
-        assert_reset(&strong)?;
+        engine.reset()?;
+        assert_reset(&engine)?;
 
         {
             let db = strong.lock();
@@ -377,72 +347,83 @@ mod tests {
     #[test]
     fn test_ensure_missing_sync_id() -> Result<()> {
         let strong = new_mem_thread_safe_storage_db();
-        setup_mock_data(&strong)?;
+        let engine = super::BridgedEngine::new(&strong);
 
-        assert_eq!(wrapper(&strong).sync_id()?, None);
+        setup_mock_data(&engine)?;
+
+        assert_eq!(engine.sync_id()?, None);
         
-        wrapper(&strong).ensure_current_sync_id("new-id")?;
+        engine.ensure_current_sync_id("new-id")?;
         
-        assert_reset(&strong)?;
+        assert_reset(&engine)?;
         Ok(())
     }
 
     #[test]
     fn test_ensure_new_sync_id() -> Result<()> {
         let strong = new_mem_thread_safe_storage_db();
-        setup_mock_data(&strong)?;
+        let engine = super::BridgedEngine::new(&strong);
+
+        setup_mock_data(&engine)?;
 
         {
-            let db = strong.lock();
+            let storage_db = &engine.thread_safe_storage_db()?;
+            let db = storage_db.lock();
             let conn = db.get_connection()?;
             put_meta(conn, SYNC_ID_META_KEY, &"old-id".to_string())?;
         }
 
-        assert_not_reset(&strong)?;
-        assert_eq!(wrapper(&strong).sync_id()?, Some("old-id".to_string()));
+        assert_not_reset(&engine)?;
+        assert_eq!(engine.sync_id()?, Some("old-id".to_string()));
 
-        wrapper(&strong).ensure_current_sync_id("new-id")?;
+        engine.ensure_current_sync_id("new-id")?;
         
-        assert_reset(&strong)?;
+        assert_reset(&engine)?;
         
-        assert_eq!(wrapper(&strong).sync_id()?, Some("new-id".to_string()));
+        assert_eq!(engine.sync_id()?, Some("new-id".to_string()));
         Ok(())
     }
 
     #[test]
     fn test_ensure_same_sync_id() -> Result<()> {
         let strong = new_mem_thread_safe_storage_db();
-        setup_mock_data(&strong)?;
-        assert_not_reset(&strong)?;
+        let engine = super::BridgedEngine::new(&strong);
+
+        setup_mock_data(&engine)?;
+        assert_not_reset(&engine)?;
 
         {
-            let db = strong.lock();
+            let storage_db = &engine.thread_safe_storage_db()?;
+            let db = storage_db.lock();
             let conn = db.get_connection()?;
             put_meta(conn, SYNC_ID_META_KEY, &"sync-id".to_string())?;
         }
 
-        wrapper(&strong).ensure_current_sync_id("sync-id")?;
+        engine.ensure_current_sync_id("sync-id")?;
         
-        assert_not_reset(&strong)?;
+        assert_not_reset(&engine)?;
         Ok(())
     }
 
     #[test]
     fn test_reset_sync_id() -> Result<()> {
         let strong = new_mem_thread_safe_storage_db();
-        setup_mock_data(&strong)?;
+        let engine = super::BridgedEngine::new(&strong);
+
+        setup_mock_data(&engine)?;
 
         {
-            let db = strong.lock();
+            let storage_db = &engine.thread_safe_storage_db()?;
+            let db = storage_db.lock();
             let conn = db.get_connection()?;
             put_meta(conn, SYNC_ID_META_KEY, &"sync-id".to_string())?;
         }
 
-        assert_eq!(wrapper(&strong).sync_id()?, Some("sync-id".to_string()));
-        let new_id = wrapper(&strong).reset_sync_id()?;
+        assert_eq!(engine.sync_id()?, Some("sync-id".to_string()));
+        let new_id = engine.reset_sync_id()?;
         
-        assert_reset(&strong)?;
-        assert_eq!(wrapper(&strong).sync_id()?, Some(new_id));
+        assert_reset(&engine)?;
+        assert_eq!(engine.sync_id()?, Some(new_id));
         Ok(())
     }
 }

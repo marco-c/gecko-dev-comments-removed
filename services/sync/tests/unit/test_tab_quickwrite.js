@@ -146,7 +146,7 @@ add_task(async function test_tab_quickwrite_keeps_old_tabs() {
 
   
   
-  await engine.resetLastSync();
+  engine.setLastSync(0);
   await Service.sync({ engines: ["tabs"] });
 
   
