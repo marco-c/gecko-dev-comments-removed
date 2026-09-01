@@ -206,7 +206,12 @@ function checkEnvironmentAddonBuilderData(
   }
 
   
-  if (data.addons.theme) {
+  
+  
+  
+  
+  
+  if (data.addons.theme?.id) {
     checkTheme(data.addons.theme);
   }
 
@@ -482,9 +487,8 @@ add_task(async function test_addonsWatch_InterestingChange() {
 
   let sandbox = sinon.createSandbox();
   sandbox
-    .stub(AMTelemetry.telemetryAddonBuilder, "_onEnvironmentChange")
-    .callsFake(async (changeReason, _oldEnvironment) => {
-      Assert.equal(changeReason, "addons-changed");
+    .stub(AMTelemetry.telemetryAddonBuilder, "_scheduleGleanPingAddonsUpdated")
+    .callsFake(() => {
       receivedNotifications++;
       Services.obs.notifyObservers(
         null,
@@ -578,9 +582,8 @@ add_task(async function test_addonsWatch_NotInterestingChange() {
 
   let sandbox = sinon.createSandbox();
   sandbox
-    .stub(AMTelemetry.telemetryAddonBuilder, "_onEnvironmentChange")
-    .callsFake(async (changeReason, _oldEnvironment) => {
-      Assert.equal(changeReason, "addons-changed");
+    .stub(AMTelemetry.telemetryAddonBuilder, "_scheduleGleanPingAddonsUpdated")
+    .callsFake(() => {
       Assert.ok(
         !receivedNotification,
         "Should not receive multiple notifications"
@@ -705,9 +708,8 @@ add_task(async function test_addons() {
   let deferred = Promise.withResolvers();
   let sandbox = sinon.createSandbox();
   sandbox
-    .stub(AMTelemetry.telemetryAddonBuilder, "_onEnvironmentChange")
-    .callsFake(async (changeReason, _oldEnvironment) => {
-      Assert.equal(changeReason, "addons-changed");
+    .stub(AMTelemetry.telemetryAddonBuilder, "_scheduleGleanPingAddonsUpdated")
+    .callsFake(() => {
       deferred.resolve();
     });
 
@@ -800,9 +802,8 @@ add_task(async function test_signedAddon() {
   let deferred = Promise.withResolvers();
   let sandbox = sinon.createSandbox();
   sandbox
-    .stub(AMTelemetry.telemetryAddonBuilder, "_onEnvironmentChange")
-    .callsFake(async (changeReason, _oldEnvironment) => {
-      Assert.equal(changeReason, "addons-changed");
+    .stub(AMTelemetry.telemetryAddonBuilder, "_scheduleGleanPingAddonsUpdated")
+    .callsFake(() => {
       deferred.resolve();
     });
 
@@ -836,9 +837,8 @@ add_task(async function test_signedAddon() {
   
   deferred = Promise.withResolvers();
   sandbox
-    .stub(AMTelemetry.telemetryAddonBuilder, "_onEnvironmentChange")
-    .callsFake(async (changeReason, _oldEnvironment) => {
-      Assert.equal(changeReason, "addons-changed");
+    .stub(AMTelemetry.telemetryAddonBuilder, "_scheduleGleanPingAddonsUpdated")
+    .callsFake(() => {
       deferred.resolve();
     });
 
@@ -864,9 +864,8 @@ add_task(async function test_addonsFieldsLimit() {
   let deferred = Promise.withResolvers();
   let sandbox = sinon.createSandbox();
   sandbox
-    .stub(AMTelemetry.telemetryAddonBuilder, "_onEnvironmentChange")
-    .callsFake(async (changeReason, _oldEnvironment) => {
-      Assert.equal(changeReason, "addons-changed");
+    .stub(AMTelemetry.telemetryAddonBuilder, "_scheduleGleanPingAddonsUpdated")
+    .callsFake(() => {
       deferred.resolve();
     });
 
@@ -953,9 +952,8 @@ add_task(async function test_collectionWithbrokenAddonData() {
 
   let sandbox = sinon.createSandbox();
   sandbox
-    .stub(AMTelemetry.telemetryAddonBuilder, "_onEnvironmentChange")
-    .callsFake(async (changeReason, _oldEnvironment) => {
-      Assert.equal(changeReason, "addons-changed");
+    .stub(AMTelemetry.telemetryAddonBuilder, "_scheduleGleanPingAddonsUpdated")
+    .callsFake(() => {
       receivedNotifications++;
       Services.obs.notifyObservers(
         null,
@@ -1049,9 +1047,8 @@ add_task(async function nonSystemBuiltinAddon() {
   let deferred = Promise.withResolvers();
   let sandbox = sinon.createSandbox();
   sandbox
-    .stub(AMTelemetry.telemetryAddonBuilder, "_onEnvironmentChange")
-    .callsFake(async (changeReason, _oldEnvironment) => {
-      Assert.equal(changeReason, "addons-changed");
+    .stub(AMTelemetry.telemetryAddonBuilder, "_scheduleGleanPingAddonsUpdated")
+    .callsFake(() => {
       deferred.resolve();
     });
 
