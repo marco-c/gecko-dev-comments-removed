@@ -988,7 +988,26 @@ const AVAILABLE_SHIMS = [
     
     
     file: "empty-script.js",
-    matches: ["https://platform.twitter.com/widgets.js"],
+    matches: [
+      "https://platform.twitter.com/widgets.js",
+      "https://platform.x.com/widgets.js",
+      {
+        patterns: [
+          
+          
+          "*://platform.twitter.com/widgets/widget_iframe.*",
+          "*://platform.x.com/widgets/widget_iframe.*",
+          
+          
+          "*://platform.twitter.com/embed/index.html*",
+          "*://platform.x.com/embed/index.html*",
+          "*://platform.twitter.com/embed/Tweet.html*",
+          "*://platform.x.com/embed/Tweet.html*",
+        ],
+        types: ["sub_frame"],
+        target: "empty-page.html",
+      },
+    ],
     logos: ["x-logo.svg"],
     needsShimHelpers: [
       "embedClicked",
@@ -1000,7 +1019,9 @@ const AVAILABLE_SHIMS = [
     onlyIfBlockedByETP: true,
     unblocksOnOptIn: [
       "*://platform.twitter.com/*",
+      "*://platform.x.com/*",
       "*://syndication.twitter.com/*",
+      "*://syndication.x.com/*",
       "*://cdn.syndication.twimg.com/*",
       "*://video.twimg.com/*",
       "*://pbs.twimg.com/*",
