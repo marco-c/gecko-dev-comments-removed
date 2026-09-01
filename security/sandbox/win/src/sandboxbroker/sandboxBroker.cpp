@@ -964,16 +964,20 @@ void AddShaderCachesToPolicy(sandboxing::SizeTrackingConfig* aConfig,
   if (sProfileDir) {
     
     
-    
-    
-    
-    
-    
-    AddCachedDirRule(aConfig, sandbox::FileSemantics::kAllowAny, sProfileDir,
-                     u"\\shader-cache"_ns);
+    static constexpr auto kShaderCacheDir = u"\\shader-cache"_ns;
+    static constexpr auto kShaderCacheDirAnyEntry = u"\\shader-cache\\*"_ns;
+    nsAutoString rulePath(*sProfileDir);
+    rulePath.Append(kShaderCacheDir);
+    if (!::CreateDirectoryW(rulePath.get(), nullptr) &&
+        ::GetLastError() != ERROR_ALREADY_EXISTS) {
+      LOG_W("Failed to create shader-cache");
+    }
+
+    AddCachedDirRule(aConfig, sandbox::FileSemantics::kAllowReadonly,
+                     sProfileDir, kShaderCacheDir);
 
     AddCachedDirRule(aConfig, sandbox::FileSemantics::kAllowAny, sProfileDir,
-                     u"\\shader-cache\\*"_ns);
+                     kShaderCacheDirAnyEntry);
   }
 
   
