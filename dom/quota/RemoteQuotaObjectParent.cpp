@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RemoteQuotaObjectParent.h"
 
 #include "CanonicalQuotaObject.h"
@@ -26,6 +24,11 @@ mozilla::ipc::IPCResult RemoteQuotaObjectParent::RecvMaybeUpdateSize(
   MOZ_ASSERT(!NS_IsMainThread());
   MOZ_ASSERT(!mozilla::ipc::IsOnBackgroundThread());
   MOZ_ASSERT(!GetCurrentThreadWorkerPrivate());
+
+  QM_TRY(OkIf(aSize >= 0), [&aResult](const auto&) {
+    *aResult = false;
+    return IPC_OK();
+  });
 
   *aResult = mCanonicalQuotaObject->MaybeUpdateSize(aSize, aTruncate);
   return IPC_OK();
