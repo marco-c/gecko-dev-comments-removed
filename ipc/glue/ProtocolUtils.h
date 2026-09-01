@@ -5,6 +5,7 @@
 #ifndef mozilla_ipc_ProtocolUtils_h
 #define mozilla_ipc_ProtocolUtils_h
 
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <utility>
@@ -151,6 +152,19 @@ typedef IPCMessageStart ProtocolId;
 
 
 const char* ProtocolIdToName(IPCMessageStart aId);
+
+
+template <class T>
+struct ActorTraits;
+
+
+
+
+template <typename T>
+concept IPDLActorType = std::derived_from<T, IProtocol> && requires {
+  { ActorTraits<T>::kProtocolId } -> std::convertible_to<ProtocolId>;
+  { ActorTraits<T>::kSide } -> std::convertible_to<Side>;
+};
 
 class IRefCountedProtocol;
 class IToplevelProtocol;
@@ -639,6 +653,37 @@ MOZ_NEVER_INLINE void SentinelReadError(const char* aElementName);
 
 
 void AnnotateSystemError();
+
+
+
+
+
+
+
+
+template <IPDLActorType To, IPDLActorType From>
+  requires(ActorTraits<From>::kProtocolId == ActorTraits<To>::kProtocolId &&
+           ActorTraits<From>::kSide == ActorTraits<To>::kSide)
+constexpr To* ActorCast(From* aActor) {
+  return static_cast<To*>(aActor);
+}
+
+
+
+
+
+
+
+
+
+template <IPDLActorType To>
+constexpr To* ActorDynCast(IProtocol* aActor) {
+  if (aActor && aActor->GetProtocolId() == ActorTraits<To>::kProtocolId &&
+      aActor->GetSide() == ActorTraits<To>::kSide) {
+    return static_cast<To*>(aActor);
+  }
+  return nullptr;
+}
 
 
 
