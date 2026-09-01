@@ -679,6 +679,7 @@ var FullScreen = {
   cleanup() {
     if (!window.fullScreen) {
       this._mouseTargetRectObserver?.disconnect();
+      this._collapsedToolboxObserver?.disconnect();
       MousePosTracker.removeListener(this);
       document.removeEventListener("keypress", this._keyToggleCallback);
       document.removeEventListener("popupshown", this._setPopupOpen);
@@ -977,12 +978,40 @@ var FullScreen = {
     FullScreen.hideNavToolbox(true);
   },
 
+  
+  
+  
+  _setCollapsedToolboxMargin(height) {
+    let marginTop = `${-height}px`;
+    if (gNavToolbox.style.marginTop != marginTop) {
+      gNavToolbox.style.marginTop = marginTop;
+    }
+  },
+
+  
+  
+  
+  
+  _updateCollapsedToolboxMargin() {
+    return window
+      .promiseDocumentFlushed(
+        () => window.windowUtils.getBoundsWithoutFlushing(gNavToolbox).height
+      )
+      .then(height => {
+        if (this._isChromeCollapsed) {
+          this._setCollapsedToolboxMargin(height);
+        }
+      })
+      .catch(() => {});
+  },
+
   showNavToolbox(trackMouse = true) {
     if (BrowserHandler.kiosk) {
       return;
     }
     this.fullScreenToggler.hidden = true;
     gNavToolbox.removeAttribute("fullscreenShouldAnimate");
+    this._collapsedToolboxObserver?.disconnect();
     gNavToolbox.style.marginTop = "";
 
     if (!this._isChromeCollapsed) {
@@ -1081,8 +1110,13 @@ var FullScreen = {
       gNavToolbox.setAttribute("fullscreenShouldAnimate", true);
     }
 
-    gNavToolbox.style.marginTop =
-      -gNavToolbox.getBoundingClientRect().height + "px";
+    
+    
+    
+    
+    this._setCollapsedToolboxMargin(
+      window.windowUtils.getBoundsWithoutFlushing(gNavToolbox).height
+    );
     this._isChromeCollapsed = true;
     document.documentElement.toggleAttribute(
       "fullscreenNavToolboxHidden",
@@ -1096,6 +1130,20 @@ var FullScreen = {
 
     this._mouseTargetRectObserver?.disconnect();
     MousePosTracker.removeListener(this);
+
+    
+    
+    
+    
+    
+    
+    
+    if (!this._collapsedToolboxObserver) {
+      this._collapsedToolboxObserver = new ResizeObserver(() =>
+        this._updateCollapsedToolboxMargin()
+      );
+    }
+    this._collapsedToolboxObserver.observe(gNavToolbox);
   },
 };
 
