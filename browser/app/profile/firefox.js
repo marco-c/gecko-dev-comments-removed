@@ -2411,6 +2411,8 @@ pref("browser.smartwindow.smartformfill.disallowedRegions", "FR");
 pref("browser.smartwindow.agent.enabled", false);
 pref("browser.smartwindow.agent.supportedRegions", "US,CA");
 
+pref("browser.smartwindow.agent.toolbar.enabled", false);
+
 
 
 pref("browser.smartwindow.worldcup.enabled", false);
