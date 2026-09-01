@@ -23,6 +23,16 @@ gWindowlessBrowser.docShell.createAboutBlankDocumentViewer(
   gSystemPrincipal
 );
 
+var gPrompt = {
+  QueryInterface: ChromeUtils.generateQI(["nsIPrompt"]),
+
+  promptPassword(_dialogTitle, _text, password, _checkMsg) {
+    
+    password.value = "";
+    return true;
+  },
+};
+
 
 
 
@@ -34,8 +44,7 @@ var gWindowWatcher = {
     return gWindowlessBrowser.document.defaultView;
   },
   getNewPrompter: () => {
-    ok(false, "not expecting getNewPrompter() to be called");
-    return null;
+    return gPrompt;
   },
   openWindow(_parent, url, _name, _features, args) {
     equal(

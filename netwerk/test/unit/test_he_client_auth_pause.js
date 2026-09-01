@@ -86,10 +86,38 @@ const gClientAuthDialogService = {
   },
 };
 
+
+
+var gPrompt = {
+  QueryInterface: ChromeUtils.generateQI(["nsIPrompt"]),
+
+  
+  
+  
+  alert(_title, text) {
+    const EXPECTED_PROMPT_TEXT =
+      "Please authenticate to the token “Test PKCS11 Tokeñ 2 Label”. How to do so depends on the token (for example, using a fingerprint reader or entering a code with a keypad).";
+    equal(text, EXPECTED_PROMPT_TEXT, "expecting alert() to be called");
+  },
+
+  promptPassword(_dialogTitle, _text, password, _checkMsg) {
+    
+    password.value = "";
+    return true;
+  },
+};
+
+const gPromptFactory = {
+  QueryInterface: ChromeUtils.generateQI(["nsIPromptFactory"]),
+  getPrompt: () => gPrompt,
+};
+
 MockRegistrar.register(
   "@mozilla.org/security/ClientAuthDialogService;1",
   gClientAuthDialogService
 );
+
+MockRegistrar.register("@mozilla.org/prompter;1", gPromptFactory);
 
 function makeChan(uri, browserId) {
   let chan = NetUtil.newChannel({

@@ -24,6 +24,16 @@ pub const ENCODED_OID_BYTES_SECP521R1: &[u8] = &[0x06, 0x05, 0x2b, 0x81, 0x04, 0
 
 
 
+pub unsafe fn char_ptr_to_slice<'a>(ptr: CK_UTF8CHAR_PTR, len: CK_ULONG) -> &'a [u8] {
+    if ptr.is_null() {
+        &[]
+    } else {
+        std::slice::from_raw_parts(ptr, len as usize)
+    }
+}
+
+
+
 pub fn serialize_uint<T: TryInto<u64>>(value: T) -> Result<Vec<u8>, Error> {
     let value_size = std::mem::size_of::<T>();
     let mut value_buf = Vec::with_capacity(value_size);
