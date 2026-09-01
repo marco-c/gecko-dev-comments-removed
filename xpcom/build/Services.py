@@ -16,15 +16,7 @@ def service(name, iface, contractid):
 
 
 
-service("ChromeRegistry", "nsIChromeRegistry", "@mozilla.org/chrome/chrome-registry;1")
-service("IOService", "nsIIOService", "@mozilla.org/network/io-service;1")
 service("ObserverService", "nsIObserverService", "@mozilla.org/observer-service;1")
-service("PermissionManager", "nsIPermissionManager", "@mozilla.org/permissionmanager;1")
-service(
-    "AsyncShutdownService",
-    "nsIAsyncShutdownService",
-    "@mozilla.org/async-shutdown-service;1",
-)
 
 
 
@@ -32,33 +24,9 @@ service(
 CPP_INCLUDES = """
 #include "mozilla/Likely.h"
 #include "mozilla/Services.h"
-#include "mozIThirdPartyUtil.h"
 #include "nsComponentManager.h"
 #include "nsIObserverService.h"
-#include "nsNetCID.h"
-#include "nsObserverService.h"
 #include "nsXPCOMPrivate.h"
-#include "nsIIOService.h"
-#include "nsIDirectoryService.h"
-#include "nsIChromeRegistry.h"
-#include "nsIStringBundle.h"
-#include "nsIToolkitChromeRegistry.h"
-#include "IHistory.h"
-#include "nsIXPConnect.h"
-#include "nsIPermissionManager.h"
-#include "nsIPrefService.h"
-#include "nsIServiceWorkerManager.h"
-#include "nsICacheStorageService.h"
-#include "nsIStreamTransportService.h"
-#include "nsISocketTransportService.h"
-#include "nsIURIClassifier.h"
-#include "nsIHttpActivityObserver.h"
-#include "nsIAsyncShutdown.h"
-#include "nsIUUIDGenerator.h"
-#include "nsIGfxInfo.h"
-#include "nsIURIFixup.h"
-#include "nsIBits.h"
-#include "nsIXULRuntime.h"
 """
 
 
