@@ -11,9 +11,12 @@
 
 #include "frontend/BytecodeControlStructures.h"  
 #include "frontend/IteratorKind.h"               
+#include "frontend/JumpList.h"                   
 #include "frontend/SelfHostedIter.h"             
 #include "frontend/TryEmitter.h"                 
 #include "frontend/UsingEmitter.h"               
+#include "js/AllocPolicy.h"                      
+#include "js/Vector.h"                           
 #include "vm/CompletionKind.h"                   
 
 namespace js {
@@ -57,6 +60,9 @@ class ForOfLoopControl : public LoopControl {
   
   
   
+  
+  
+  
   mozilla::Maybe<TryEmitter> tryCatch_;
 
   SelfHostedIter selfHostedIter_;
@@ -64,6 +70,20 @@ class ForOfLoopControl : public LoopControl {
   IteratorKind iterKind_;
 
   mozilla::Maybe<ForOfDisposalEmitter> forOfDisposalEmitter_;
+
+  
+  
+  struct Continuation {
+    NestableControl* target;
+    NonLocalExitKind kind;
+    JumpList jumps;
+
+    Continuation(NestableControl* target, NonLocalExitKind kind)
+        : target(target), kind(kind) {}
+  };
+  Vector<Continuation, 2, TempAllocPolicy> continuations_;
+
+  [[nodiscard]] bool emitIteratorCloseForNonLocalExits(BytecodeEmitter* bce);
 
  public:
   ForOfLoopControl(BytecodeEmitter* bce, int32_t iterDepth,
@@ -81,10 +101,10 @@ class ForOfLoopControl : public LoopControl {
   [[nodiscard]] bool emitIteratorCloseInScope(BytecodeEmitter* bce,
                                               EmitterScope& currentScope,
                                               CompletionKind completionKind);
-
-  [[nodiscard]] bool emitPrepareForNonLocalJumpFromScope(
-      BytecodeEmitter* bce, EmitterScope& currentScope, bool isTarget,
-      BytecodeOffset* tryNoteStart);
+  [[nodiscard]] bool emitJumpToIteratorClose(BytecodeEmitter* bce,
+                                             NestableControl* target,
+                                             NonLocalExitKind kind);
+  [[nodiscard]] bool emitEnd(BytecodeEmitter* bce);
 };
 template <>
 inline bool NestableControl::is<ForOfLoopControl>() const {

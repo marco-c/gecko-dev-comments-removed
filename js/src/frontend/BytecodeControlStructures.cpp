@@ -285,10 +285,6 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
 
   
   
-  bool emitIteratorCloseAtTarget = kind_ != NonLocalExitKind::Continue;
-
-  
-  
   
 #ifdef DEBUG
   bool mayHaveExpressionValues = kind_ == NonLocalExitKind::Return &&
@@ -310,15 +306,22 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
   
   
   
-  Vector<BytecodeOffset, 4> forOfIterCloseScopeStarts(bce_->fc);
-
   
   
-  bool jumpingToCleanup = false;
-
   
-  for (NestableControl* control = startingControl;
-       control != target && !jumpingToCleanup; control = control->enclosing()) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  for (NestableControl* control = startingControl; control != target;
+       control = control->enclosing()) {
     
     
     
@@ -336,15 +339,12 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
           return false;
         }
         if (!finallyControl.emittingSubroutine()) {
-          jumpingToCleanup = true;
-
+          
           uint32_t idx;
           if (!finallyControl.allocateContinuation(target, kind_, &idx)) {
             return false;
           }
-          if (!bce_->emitJumpToFinally(&finallyControl.finallyJumps_, idx)) {
-            return false;
-          }
+          return bce_->emitJumpToFinally(&finallyControl.finallyJumps_, idx);
         }
         break;
       }
@@ -355,37 +355,28 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
         if (!popToStackDepth(*control->nonLocalExitStackDepth())) {
           return false;
         }
+        
+        
         auto& destructuringControl = control->as<DestructuringControl>();
-        if (!destructuringControl.emitJumpToIteratorClose(bce_)) {
-          return false;
-        }
-        jumpingToCleanup = true;
-        break;
+        return destructuringControl.emitJumpToIteratorClose(bce_);
       }
 
       case StatementKind::ForOfLoop: {
         if (!popToStackDepth(*control->nonLocalExitStackDepth())) {
           return false;
         }
-        BytecodeOffset tryNoteStart;
-        ForOfLoopControl& loopinfo = control->as<ForOfLoopControl>();
-        if (!loopinfo.emitPrepareForNonLocalJumpFromScope(
-                bce_, *es,
-                 false, &tryNoteStart)) {
-          
-          return false;
-        }
-        if (!forOfIterCloseScopeStarts.append(tryNoteStart)) {
-          return false;
-        }
-        break;
+        
+        ForOfLoopControl& forOfControl = control->as<ForOfLoopControl>();
+        return forOfControl.emitJumpToIteratorClose(bce_, target, kind_);
       }
 
       case StatementKind::ForInLoop:
         if (!popToStackDepth(*control->nonLocalExitStackDepth())) {
           return false;
         }
-
+        
+        
+        
         
         if (!bce_->emit1(JSOp::EndIter)) {
           
@@ -398,70 +389,51 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
     }
   }
 
-  if (!jumpingToCleanup) {
-    
-    
-    
-    
-    
-    
-    EmitterScope* targetEmitterScope =
-        target ? target->emitterScope() : bce_->varEmitterScope;
-    for (; es != targetEmitterScope; es = es->enclosingInFrame()) {
-      if (!leaveScope(es)) {
-        return false;
-      }
-    }
-
-    if (target && emitIteratorCloseAtTarget && target->is<ForOfLoopControl>()) {
-      BytecodeOffset tryNoteStart;
-      ForOfLoopControl& loopinfo = target->as<ForOfLoopControl>();
-      if (!loopinfo.emitPrepareForNonLocalJumpFromScope(bce_, *es,
-                                                         true,
-                                                        &tryNoteStart)) {
-        
-        return false;
-      }
-      if (!forOfIterCloseScopeStarts.append(tryNoteStart)) {
-        return false;
-      }
-    }
-
-    
-    MOZ_ASSERT_IF(target && target->nonLocalExitStackDepth().isSome(),
-                  bce_->bytecodeSection().stackDepth() ==
-                      *target->nonLocalExitStackDepth());
-
-    switch (kind_) {
-      case NonLocalExitKind::Continue: {
-        LoopControl* loop = &target->as<LoopControl>();
-        if (!bce_->emitJump(JSOp::Goto, &loop->continues)) {
-          return false;
-        }
-        break;
-      }
-      case NonLocalExitKind::Break: {
-        BreakableControl* breakable = &target->as<BreakableControl>();
-        if (!bce_->emitJump(JSOp::Goto, &breakable->breaks)) {
-          return false;
-        }
-        break;
-      }
-      case NonLocalExitKind::Return:
-        MOZ_ASSERT(!target);
-        if (!bce_->finishReturn(setRvalOffset_)) {
-          return false;
-        }
-        break;
+  
+  EmitterScope* targetEmitterScope =
+      target ? target->emitterScope() : bce_->varEmitterScope;
+  for (; es != targetEmitterScope; es = es->enclosingInFrame()) {
+    if (!leaveScope(es)) {
+      return false;
     }
   }
 
   
-  BytecodeOffset end = bce_->bytecodeSection().offset();
-  for (BytecodeOffset start : forOfIterCloseScopeStarts) {
-    if (!bce_->addTryNote(TryNoteKind::ForOfIterClose, 0, start, end)) {
-      return false;
+  MOZ_ASSERT_IF(target && target->nonLocalExitStackDepth().isSome(),
+                bce_->bytecodeSection().stackDepth() ==
+                    *target->nonLocalExitStackDepth());
+
+  switch (kind_) {
+    case NonLocalExitKind::Continue: {
+      LoopControl* loop = &target->as<LoopControl>();
+      if (!bce_->emitJump(JSOp::Goto, &loop->continues)) {
+        return false;
+      }
+      break;
     }
+    case NonLocalExitKind::Break: {
+      if (target->is<ForOfLoopControl>()) {
+        
+        
+        
+        ForOfLoopControl& forOfControl = target->as<ForOfLoopControl>();
+        if (!forOfControl.emitJumpToIteratorClose(bce_, target, kind_)) {
+          return false;
+        }
+      } else {
+        BreakableControl* breakable = &target->as<BreakableControl>();
+        if (!bce_->emitJump(JSOp::Goto, &breakable->breaks)) {
+          return false;
+        }
+      }
+      break;
+    }
+    case NonLocalExitKind::Return:
+      MOZ_ASSERT(!target);
+      if (!bce_->finishReturn(setRvalOffset_)) {
+        return false;
+      }
+      break;
   }
 
   return true;

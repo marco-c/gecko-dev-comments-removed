@@ -18,7 +18,8 @@ ForOfLoopControl::ForOfLoopControl(BytecodeEmitter* bce, int32_t iterDepth,
     : LoopControl(bce, StatementKind::ForOfLoop),
       iterDepth_(iterDepth),
       selfHostedIter_(selfHostedIter),
-      iterKind_(iterKind) {}
+      iterKind_(iterKind),
+      continuations_(bce->fc) {}
 
 bool ForOfLoopControl::emitBeginCodeNeedingIteratorClose(BytecodeEmitter* bce) {
   tryCatch_.emplace(bce, TryEmitter::Kind::TryCatch,
@@ -119,25 +120,41 @@ bool ForOfLoopControl::emitIteratorCloseInScope(BytecodeEmitter* bce,
                                        selfHostedIter_);
 }
 
+bool ForOfLoopControl::emitJumpToIteratorClose(BytecodeEmitter* bce,
+                                               NestableControl* target,
+                                               NonLocalExitKind kind) {
+  
+  MOZ_ASSERT(bce->bytecodeSection().stackDepth() == *nonLocalExitStackDepth());
 
+  MOZ_ASSERT_IF(target == this, kind == NonLocalExitKind::Break);
 
+  
+  Continuation* continuation = nullptr;
+  for (Continuation& c : continuations_) {
+    if (c.target == target && c.kind == kind) {
+      continuation = &c;
+      break;
+    }
+  }
+  if (!continuation) {
+    if (!continuations_.emplaceBack(target, kind)) {
+      return false;
+    }
+    continuation = &continuations_.back();
+  }
 
+  return bce->emitJump(JSOp::Goto, &continuation->jumps);
+}
 
-
-
-
-
-
-bool ForOfLoopControl::emitPrepareForNonLocalJumpFromScope(
-    BytecodeEmitter* bce, EmitterScope& currentScope, bool isTarget,
-    BytecodeOffset* tryNoteStart) {
+bool ForOfLoopControl::emitIteratorCloseForNonLocalExits(BytecodeEmitter* bce) {
   
   MOZ_ASSERT(bce->bytecodeSection().stackDepth() == *nonLocalExitStackDepth());
 
   
   
-  
-  
+  MOZ_ASSERT(bce->innermostEmitterScope() == emitterScope());
+  EmitterScope& currentScope = *emitterScope();
+
   if (!bce->emit1(JSOp::Pop)) {
     
     return false;
@@ -152,8 +169,6 @@ bool ForOfLoopControl::emitPrepareForNonLocalJumpFromScope(
     
     return false;
   }
-
-  *tryNoteStart = bce->bytecodeSection().offset();
 
   
   
@@ -181,24 +196,59 @@ bool ForOfLoopControl::emitPrepareForNonLocalJumpFromScope(
     return false;
   }
 
-  if (isTarget) {
+  if (!bce->emit1(JSOp::Pop)) {
     
-    
-    
-    if (!bce->emit1(JSOp::Undefined)) {
-      
-      return false;
-    }
-    if (!bce->emit1(JSOp::Undefined)) {
-      
-      return false;
-    }
-  } else {
-    if (!bce->emit1(JSOp::Pop)) {
-      
-      return false;
-    }
+    return false;
   }
 
   return true;
+}
+
+bool ForOfLoopControl::emitEnd(BytecodeEmitter* bce) {
+  if (continuations_.empty()) {
+    
+    return true;
+  }
+
+  const int32_t normalDepth = bce->bytecodeSection().stackDepth();
+  MOZ_ASSERT(normalDepth == *nonLocalExitStackDepth() - 3);
+
+  JumpList done;
+  if (!bce->emitJumpNoFallthrough(JSOp::Goto, &done)) {
+    return false;
+  }
+
+  const size_t numContinuations = continuations_.length();
+
+  for (const auto& continuation : continuations_) {
+    bce->bytecodeSection().setStackDepth(*nonLocalExitStackDepth());
+    if (!bce->emitJumpTargetAndPatch(continuation.jumps)) {
+      
+      return false;
+    }
+
+    if (!emitIteratorCloseForNonLocalExits(bce)) {
+      
+      return false;
+    }
+
+    if (continuation.target == this) {
+      
+      if (!bce->emitJumpNoFallthrough(JSOp::Goto, &done)) {
+        return false;
+      }
+    } else {
+      
+      NonLocalExitControl nle(bce, continuation.kind);
+      if (!nle.emitNonLocalJump(continuation.target, this)) {
+        return false;
+      }
+    }
+
+    MOZ_RELEASE_ASSERT(continuations_.length() == numContinuations,
+                       "iterator closing must not add new continuations");
+  }
+
+  bce->bytecodeSection().setStackDepth(normalDepth);
+  return bce->emitJumpTargetAndPatch(done);
 }
