@@ -5,12 +5,10 @@
 package org.mozilla.samples.compose.browser.settings
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 
-/**
- * Screen displaying the settings of the browser.
- */
+/** Screen displaying the settings of the browser. */
 @Composable
 fun SettingsScreen() {
     Column {

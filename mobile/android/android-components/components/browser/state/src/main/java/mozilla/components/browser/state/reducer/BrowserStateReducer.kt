@@ -9,7 +9,6 @@ import mozilla.components.browser.state.action.AwesomeBarAction
 import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.ContainerAction
 import mozilla.components.browser.state.action.ContentAction
-import mozilla.components.browser.state.action.CookieBannerAction
 import mozilla.components.browser.state.action.CopyInternetResourceAction
 import mozilla.components.browser.state.action.CrashAction
 import mozilla.components.browser.state.action.CustomTabListAction
@@ -67,7 +66,6 @@ internal object BrowserStateReducer {
             is TabGroupAction -> TabGroupReducer.reduce(state, action)
             is TrackingProtectionAction -> TrackingProtectionStateReducer.reduce(state, action)
             is TranslationsAction -> TranslationsStateReducer.reduce(state, action)
-            is CookieBannerAction -> CookieBannerStateReducer.reduce(state, action)
             is WebExtensionAction -> WebExtensionReducer.reduce(state, action)
             is MediaSessionAction -> MediaSessionReducer.reduce(state, action)
             is DownloadAction -> DownloadStateReducer.reduce(state, action)
@@ -92,12 +90,12 @@ internal object BrowserStateReducer {
 /**
  * Finds the corresponding tab or custom tab in the [BrowserState] and updates it using [update].
  *
- * Consider using the specialized [updateTabState] or [updateCustomTabState] to limit the tabs to be updated
- * if the properties you want changed are not common to both [SessionState] implementations.
+ * Consider using the specialized [updateTabState] or [updateCustomTabState] to limit the tabs to be updated if the
+ * properties you want changed are not common to both [SessionState] implementations.
  *
  * @param tabId ID of the tab to change.
- * @param update Returns a new version of the tab state. Must be the same class,
- * preferably using [SessionState.createCopy].
+ * @param update Returns a new version of the tab state. Must be the same class, preferably using
+ *   [SessionState.createCopy].
  */
 @Suppress("Unchecked_Cast")
 internal fun BrowserState.updateTabOrCustomTabState(
@@ -116,9 +114,9 @@ internal fun BrowserState.updateTabOrCustomTabState(
 /**
  * Finds the corresponding tab in the [BrowserState] and replaces it using [update].
  *
- * This will only update a [TabSessionState] if such exists with the given [tabId].
- * Consider using the other specialized [updateCustomTabState] method for updating only [CustomTabSessionState]
- * or the general [updateTabOrCustomTabState] to update any tab or custom tab with a given [tabId].
+ * This will only update a [TabSessionState] if such exists with the given [tabId]. Consider using the other specialized
+ * [updateCustomTabState] method for updating only [CustomTabSessionState] or the general [updateTabOrCustomTabState] to
+ * update any tab or custom tab with a given [tabId].
  *
  * @param tabId ID of the tab to change.
  * @param update Returns a new version of [TabSessionState].
@@ -135,9 +133,9 @@ internal fun BrowserState.updateTabState(
 /**
  * Finds the corresponding custom tab in the [BrowserState] and replaces it using [update].
  *
- * This will only update a [CustomTabSessionState] if such exists with the given [tabId].
- * Consider using the other specialized [updateTabState] method for updating only [TabSessionState]
- * or the general [updateTabOrCustomTabState] to update any tab or custom tab with a given [tabId].
+ * This will only update a [CustomTabSessionState] if such exists with the given [tabId]. Consider using the other
+ * specialized [updateTabState] method for updating only [TabSessionState] or the general [updateTabOrCustomTabState] to
+ * update any tab or custom tab with a given [tabId].
  *
  * @param tabId ID of the tab to change.
  * @param update Returns a new version of [CustomTabSessionState].
@@ -153,6 +151,7 @@ internal fun BrowserState.updateCustomTabState(
 
 /**
  * Finds the corresponding tab in the list and replaces it using [update].
+ *
  * @param tabId ID of the tab to change.
  * @param update Returns a new version of the tab state.
  */

@@ -6,71 +6,52 @@ package mozilla.components.service.fxrelay.eligibility
 
 import mozilla.components.lib.state.Action
 import mozilla.components.lib.state.State
+import mozilla.components.service.fxrelay.EmailMask
 
 /**
- * Sentinel value indicating that the Relay entitlement cache
- * has never been established (i.e., eligibility has never been checked).
+ * Sentinel value indicating that the Relay entitlement cache has never been established (i.e., eligibility has never
+ * been checked).
  */
 internal const val NO_ENTITLEMENT_CHECK_YET_MS = 0L
 
-/**
- * Relay eligibility states.
- */
+/** Relay eligibility states. */
 sealed interface EligibilityState
 
-/**
- * The user is not eligible to use Firefox Relay.
- */
+/** The user is not eligible to use Firefox Relay. */
 sealed interface Ineligible : EligibilityState {
-    /**
-     * The user is not logged into FxA and cannot access any Firefox Relay features.
-     */
+    /** The user is not logged into FxA and cannot access any Firefox Relay features. */
     data object FirefoxAccountNotLoggedIn : Ineligible
 
-    /**
-     * The user is logged into FxA but does not have a Relay-enabled FxA account.
-     */
+    /** The user is logged into FxA but does not have a Relay-enabled FxA account. */
     data object NoRelay : Ineligible
 }
 
-/**
- * The user is eligible to use Firefox Relay.
- */
+/** The user is eligible to use Firefox Relay. */
 sealed interface Eligible : EligibilityState {
     /**
      * The user has access to the free tier of Firefox Relay.
      *
-     * @property remaining The number of free Relay email masks the user has left.
+     * @property totalMasksUsed The number of free Relay email masks the user has.
      */
-    data class Free(val remaining: Int) : Eligible
+    data class Free(val totalMasksUsed: Int) : Eligible
 
-    /**
-     * The user has an active Firefox Relay Premium subscription, with
-     * access to unlimited Relay masks.
-     */
+    /** The user has an active Firefox Relay Premium subscription, with access to unlimited Relay masks. */
     data object Premium : Eligible
 }
 
-/**
- * State stored by the feature to drive UI and decisions.
- */
+/** State stored by the feature to drive UI and decisions. */
 data class RelayState(
     val eligibilityState: EligibilityState = Ineligible.FirefoxAccountNotLoggedIn,
     val lastEntitlementCheckMs: Long = NO_ENTITLEMENT_CHECK_YET_MS,
+    val lastUsed: EmailMask? = null,
 ) : State
 
-/**
- * Actions that can trigger Relay state transitions.
- */
+/** Actions that can trigger Relay state transitions. */
 sealed interface RelayEligibilityAction : Action {
-    /**
-     * Re-evaluate eligibility after the app enters the foreground.
-     */
+    /** Re-evaluate eligibility after the app enters the foreground. */
     data class AccountLoginStatusChanged(val isLoggedIn: Boolean) : RelayEligibilityAction
 
-    /**
-     * Fired when the user's Firefox Account profile information has been updated.
-     */
+    /** Fired when the user's Firefox Account profile information has been updated. */
     data object AccountProfileUpdated : RelayEligibilityAction
 
     /**
@@ -81,22 +62,31 @@ sealed interface RelayEligibilityAction : Action {
     data class TtlExpired(val nowMs: Long) : RelayEligibilityAction
 
     /**
+     * The last used email mask provided to the embedder for form autofill.
+     *
+     * @param emailMask the email address.
+     */
+    data class UpdateLastUsed(val emailMask: EmailMask?) : RelayEligibilityAction
+
+    /**
      * Result of a Relay status fetch.
      *
      * @param fetchSucceeded Whether the fetch succeeded.
      * @param relayPlanTier The user’s plan, or NONE if unavailable.
-     * @param remaining Remaining free aliases for FREE users.
+     * @param totalMasksUsed The number of free Relay email masks the user has.
      * @param lastCheckedMs Stores the timestamp for when the last check was performed.
      */
     data class RelayStatusResult(
         val fetchSucceeded: Boolean,
         val relayPlanTier: RelayPlanTier?,
-        val remaining: Int,
+        val totalMasksUsed: Int,
         val lastCheckedMs: Long,
     ) : RelayEligibilityAction
 }
 
-/**
- * Relay subscription plan tier.
- */
-enum class RelayPlanTier { NONE, FREE, PREMIUM }
+/** Relay subscription plan tier. */
+enum class RelayPlanTier {
+    NONE,
+    FREE,
+    PREMIUM,
+}

@@ -11,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Scaffold
+import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -22,9 +22,7 @@ import org.mozilla.samples.compose.browser.browser.BrowserScreen
 import org.mozilla.samples.compose.browser.ext.components
 import org.mozilla.samples.compose.browser.settings.SettingsScreen
 
-/**
- * Ladies and gentleman, the browser. ¯\_(ツ)_/¯
- */
+/** Ladies and gentleman, the browser. ¯\_(ツ)_/¯ */
 class BrowserComposeActivity : AppCompatActivity() {
     companion object {
         const val ROUTE_BROWSER = "browser"

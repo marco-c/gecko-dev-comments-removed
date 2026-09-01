@@ -12,22 +12,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.core.view.isVisible
+import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.concept.storage.Login
 import mozilla.components.feature.prompts.concept.AutocompletePrompt
 import mozilla.components.feature.prompts.concept.ExpandablePrompt
 import mozilla.components.feature.prompts.concept.SelectablePromptView
 import mozilla.components.feature.prompts.concept.ToggleablePrompt
 
-/**
- * A customizable multiple login selection bar implementing [SelectablePromptView].
- */
-class LoginSelectBar @JvmOverloads constructor(
+/** A customizable multiple login selection bar implementing [SelectablePromptView]. */
+class LoginSelectBar
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
-) : AbstractComposeView(context, attrs, defStyleAttr),
-    AutocompletePrompt<Login>,
-    ExpandablePrompt {
+) : AbstractComposeView(context, attrs, defStyleAttr), AutocompletePrompt<Login>, ExpandablePrompt {
 
     private var logins by mutableStateOf(listOf<Login>())
     private var isExpanded by mutableStateOf(false)
@@ -41,20 +40,22 @@ class LoginSelectBar @JvmOverloads constructor(
 
     @Composable
     override fun Content() {
-        LoginPicker(
-            logins = logins,
-            isExpanded = isExpanded,
-            onExpandToggleClick = {
-                when (it) {
-                    true -> expandablePromptListener?.onExpanded()
-                    false -> expandablePromptListener?.onCollapsed()
-                }
-                isExpanded = it
-            },
-            onLoginSelected = { selectablePromptListener?.onOptionSelect(it) },
-            onManagePasswordClicked = { selectablePromptListener?.onManageOptions() },
-            loginPickerColors = loginPickerColors,
-        )
+        AcornTheme {
+            LoginPicker(
+                logins = logins,
+                isExpanded = isExpanded,
+                onExpandToggleClick = {
+                    when (it) {
+                        true -> expandablePromptListener?.onExpanded()
+                        false -> expandablePromptListener?.onCollapsed()
+                    }
+                    isExpanded = it
+                },
+                onLoginSelected = { selectablePromptListener?.onOptionSelect(it) },
+                onManagePasswordClicked = { selectablePromptListener?.onManageOptions() },
+                loginPickerColors = loginPickerColors,
+            )
+        }
     }
 
     override fun populate(options: List<Login>) {

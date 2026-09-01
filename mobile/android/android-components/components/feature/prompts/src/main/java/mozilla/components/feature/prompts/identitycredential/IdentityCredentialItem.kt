@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,7 +33,6 @@ import mozilla.components.feature.prompts.identitycredential.previews.DialogPrev
  * @param modifier The modifier to apply to this layout.
  * @param onClick Invoked when the item is clicked.
  * @param beforeItemContent An optional layout to display before the item.
- *
  */
 @Composable
 internal fun IdentityCredentialItem(
@@ -45,10 +44,7 @@ internal fun IdentityCredentialItem(
     beforeItemContent: (@Composable () -> Unit)? = null,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 6.dp),
+        modifier = modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         beforeItemContent?.invoke()
@@ -56,23 +52,25 @@ internal fun IdentityCredentialItem(
         Column {
             Text(
                 text = title,
-                style = TextStyle(
-                    fontSize = 16.sp,
-                    lineHeight = 24.sp,
-                    color = colors.title,
-                    letterSpacing = 0.15.sp,
-                ),
+                style =
+                    TextStyle(
+                        fontSize = 16.sp,
+                        lineHeight = 24.sp,
+                        color = colors.title,
+                        letterSpacing = 0.15.sp,
+                    ),
                 maxLines = 1,
             )
 
             Text(
                 text = description,
-                style = TextStyle(
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp,
-                    color = colors.description,
-                    letterSpacing = 0.25.sp,
-                ),
+                style =
+                    TextStyle(
+                        fontSize = 14.sp,
+                        lineHeight = 20.sp,
+                        color = colors.description,
+                        letterSpacing = 0.25.sp,
+                    ),
                 maxLines = 1,
             )
         }
@@ -84,7 +82,7 @@ internal fun IdentityCredentialItem(
 private fun ProviderItemPreview() {
     DialogPreviewMaterialTheme {
         IdentityCredentialItem(
-            modifier = Modifier.background(MaterialTheme.colors.background),
+            modifier = Modifier.background(MaterialTheme.colorScheme.background),
             title = "Title",
             description = "Description",
             onClick = {},

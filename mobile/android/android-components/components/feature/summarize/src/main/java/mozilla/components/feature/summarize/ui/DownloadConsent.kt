@@ -20,9 +20,9 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.OutlinedButton
 import mozilla.components.compose.base.theme.AcornTheme
+import mozilla.components.feature.summarize.DownloadConsentAction
 import mozilla.components.feature.summarize.LocalProductName
 import mozilla.components.feature.summarize.R
-import mozilla.components.feature.summarize.SummarizationAction.DownloadConsentAction
 
 @Composable
 internal fun DownloadConsent(
@@ -102,9 +102,7 @@ private fun DownloadConsentButtons(
     onClickAllow: () -> Unit,
     onClickCancel: () -> Unit,
 ) {
-    Column(
-        modifier = modifier,
-    ) {
+    Column(modifier = modifier) {
         FilledButton(
             modifier = Modifier.fillMaxWidth(),
             onClick = onClickAllow,

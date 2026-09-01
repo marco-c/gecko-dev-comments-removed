@@ -7,6 +7,7 @@ package mozilla.components.browser.tabstray
 import android.view.View
 import android.widget.FrameLayout
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertIs
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.tabstray.TabsAdapter.Companion.PAYLOAD_DONT_HIGHLIGHT_SELECTED_ITEM
@@ -14,7 +15,6 @@ import mozilla.components.browser.tabstray.TabsAdapter.Companion.PAYLOAD_HIGHLIG
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers
@@ -24,6 +24,7 @@ import org.mockito.Mockito.verify
 
 private class TestTabViewHolder(view: View) : TabViewHolder(view) {
     override var tab: TabSessionState? = null
+
     override fun bind(
         tab: TabSessionState,
         isSelected: Boolean,
@@ -45,19 +46,20 @@ class TabsAdapterTest {
 
         val type = adapter.onCreateViewHolder(FrameLayout(testContext), 0)
 
-        assertTrue(type is DefaultTabViewHolder)
+        assertIs<DefaultTabViewHolder>(type)
     }
 
     @Test
     fun `onCreateViewHolder will create whatever TabViewHolder is provided`() {
-        val adapter = TabsAdapter(
-            viewHolderProvider = { _ -> TestTabViewHolder(View(testContext)) },
-            delegate = mock(),
-        )
+        val adapter =
+            TabsAdapter(
+                viewHolderProvider = { _ -> TestTabViewHolder(View(testContext)) },
+                delegate = mock(),
+            )
 
         val type = adapter.onCreateViewHolder(FrameLayout(testContext), 0)
 
-        assertTrue(type is TestTabViewHolder)
+        assertIs<TestTabViewHolder>(type)
     }
 
     @Test

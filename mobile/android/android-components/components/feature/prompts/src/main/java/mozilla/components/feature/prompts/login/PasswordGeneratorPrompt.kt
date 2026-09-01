@@ -14,9 +14,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,7 +60,9 @@ data class PasswordGeneratorPromptColors(
     val primaryText: Color,
     val headerText: Color,
 ) {
-    constructor(context: Context) : this(
+    constructor(
+        context: Context
+    ) : this(
         primaryText = context.primaryColor,
         headerText = context.headerColor,
     )
@@ -80,11 +82,12 @@ fun PasswordGeneratorPrompt(
     colors: PasswordGeneratorPromptColors,
 ) {
     Row(
-        modifier = modifier
-            .clickable { onGeneratedPasswordPromptClick() }
-            .fillMaxWidth()
-            .height(48.dp)
-            .padding(horizontal = 16.dp),
+        modifier =
+            modifier
+                .clickable { onGeneratedPasswordPromptClick() }
+                .fillMaxWidth()
+                .height(48.dp)
+                .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start,
     ) {
@@ -100,7 +103,7 @@ fun PasswordGeneratorPrompt(
             text = stringResource(id = R.string.mozac_feature_prompts_suggest_strong_password_2),
             color = colors.headerText,
             fontSize = 16.sp,
-            style = MaterialTheme.typography.subtitle2,
+            style = MaterialTheme.typography.titleSmall,
         )
     }
 }
@@ -111,10 +114,11 @@ private fun PasswordGeneratorPromptPreview() {
     DialogPreviewMaterialTheme {
         PasswordGeneratorPrompt(
             onGeneratedPasswordPromptClick = {},
-            colors = PasswordGeneratorPromptColors(
-                primaryText = MaterialTheme.colors.primary,
-                headerText = MaterialTheme.colors.onBackground,
-            ),
+            colors =
+                PasswordGeneratorPromptColors(
+                    primaryText = MaterialTheme.colorScheme.primary,
+                    headerText = MaterialTheme.colorScheme.onBackground,
+                ),
             modifier = Modifier.background(Color.White),
         )
     }

@@ -6,6 +6,7 @@ package mozilla.components.browser.engine.gecko
 
 import android.os.Looper.getMainLooper
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertIs
 import mozilla.components.concept.engine.pageextraction.PageExtractionError
 import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
@@ -26,9 +27,7 @@ import org.mozilla.geckoview.PageExtractionController.PageMetadata
 import org.mozilla.geckoview.PageExtractionController.SessionPageExtractor
 import org.robolectric.Shadows.shadowOf
 
-/**
- * Test cases for the "Page Extraction" feature of [GeckoEngineSession]
- */
+/** Test cases for the "Page Extraction" feature of [GeckoEngineSession] */
 @RunWith(AndroidJUnit4::class)
 class GeckoEngineSessionPageExtractionTest {
 
@@ -42,22 +41,22 @@ class GeckoEngineSessionPageExtractionTest {
         val mockedGeckoSession: GeckoSession = mock()
         whenever(mockedGeckoSession.sessionPageExtractor).thenReturn(mockedSessionPageExtractor)
 
-        engineSession = GeckoEngineSession(
-            runtime = mock(),
-            geckoSessionProvider = { mockedGeckoSession },
-        )
+        engineSession =
+            GeckoEngineSession(
+                runtime = mock(),
+                geckoSessionProvider = { mockedGeckoSession },
+            )
     }
 
     @Test
     fun `given page extractor returns successfully but null result, then an unexpected null error is returned`() {
         // given that page extractor returns null content
-        whenever(mockedSessionPageExtractor.getPageContent(any()))
-            .thenReturn(GeckoResult.fromValue(null))
+        whenever(mockedSessionPageExtractor.getPageContent(any())).thenReturn(GeckoResult.fromValue(null))
 
         // when we attempt to get page content
         var resultError: Throwable? = null
         engineSession.getPageContent(
-            onResult = { },
+            onResult = {},
             onException = { resultError = it },
         )
 
@@ -65,7 +64,7 @@ class GeckoEngineSessionPageExtractionTest {
         shadowOf(getMainLooper()).idle()
 
         // then assert that an unexpected null exception is received
-        assertTrue(resultError is PageExtractionError.UnexpectedNull)
+        assertIs<PageExtractionError.UnexpectedNull>(resultError)
     }
 
     @Test
@@ -77,7 +76,7 @@ class GeckoEngineSessionPageExtractionTest {
         // when we attempt to get page content
         var resultError: Throwable? = null
         engineSession.getPageContent(
-            onResult = { },
+            onResult = {},
             onException = { resultError = it },
         )
 
@@ -85,7 +84,7 @@ class GeckoEngineSessionPageExtractionTest {
         shadowOf(getMainLooper()).idle()
 
         // then assert that an unexpected null exception is received
-        assertTrue(resultError is PageExtractionError.UnexpectedNull)
+        assertIs<PageExtractionError.UnexpectedNull>(resultError)
     }
 
     @Test
@@ -97,7 +96,7 @@ class GeckoEngineSessionPageExtractionTest {
         // when we attempt to get page content
         var resultError: Throwable? = null
         engineSession.getPageContent(
-            onResult = { },
+            onResult = {},
             onException = { resultError = it },
         )
 
@@ -105,7 +104,7 @@ class GeckoEngineSessionPageExtractionTest {
         shadowOf(getMainLooper()).idle()
 
         // then assert that a malformed result error is received
-        assertTrue(resultError is PageExtractionError.MalformedResult)
+        assertIs<PageExtractionError.MalformedResult>(resultError)
     }
 
     @Test
@@ -117,7 +116,7 @@ class GeckoEngineSessionPageExtractionTest {
         // when we attempt to get page content
         var resultError: Throwable? = null
         engineSession.getPageContent(
-            onResult = { },
+            onResult = {},
             onException = { resultError = it },
         )
 
@@ -125,7 +124,7 @@ class GeckoEngineSessionPageExtractionTest {
         shadowOf(getMainLooper()).idle()
 
         // then assert that an unknown error is received
-        assertTrue(resultError is PageExtractionError.UnknownError)
+        assertIs<PageExtractionError.UnknownError>(resultError)
     }
 
     @Test
@@ -152,18 +151,17 @@ class GeckoEngineSessionPageExtractionTest {
 
     @Test
     fun `given page metadata extractor returns successfully but null result, then an unexpected null error is returned`() {
-        whenever(mockedSessionPageExtractor.pageMetadata)
-            .thenReturn(GeckoResult.fromValue(null))
+        whenever(mockedSessionPageExtractor.pageMetadata).thenReturn(GeckoResult.fromValue(null))
 
         var resultError: Throwable? = null
         engineSession.getPageMetadata(
-            onResult = { },
+            onResult = {},
             onException = { resultError = it },
         )
 
         shadowOf(getMainLooper()).idle()
 
-        assertTrue(resultError is PageExtractionError.UnexpectedNull)
+        assertIs<PageExtractionError.UnexpectedNull>(resultError)
     }
 
     @Test
@@ -173,13 +171,13 @@ class GeckoEngineSessionPageExtractionTest {
 
         var resultError: Throwable? = null
         engineSession.getPageMetadata(
-            onResult = { },
+            onResult = {},
             onException = { resultError = it },
         )
 
         shadowOf(getMainLooper()).idle()
 
-        assertTrue(resultError is PageExtractionError.UnexpectedNull)
+        assertIs<PageExtractionError.UnexpectedNull>(resultError)
     }
 
     @Test
@@ -189,13 +187,13 @@ class GeckoEngineSessionPageExtractionTest {
 
         var resultError: Throwable? = null
         engineSession.getPageMetadata(
-            onResult = { },
+            onResult = {},
             onException = { resultError = it },
         )
 
         shadowOf(getMainLooper()).idle()
 
-        assertTrue(resultError is PageExtractionError.MalformedResult)
+        assertIs<PageExtractionError.MalformedResult>(resultError)
     }
 
     @Test
@@ -205,13 +203,13 @@ class GeckoEngineSessionPageExtractionTest {
 
         var resultError: Throwable? = null
         engineSession.getPageMetadata(
-            onResult = { },
+            onResult = {},
             onException = { resultError = it },
         )
 
         shadowOf(getMainLooper()).idle()
 
-        assertTrue(resultError is PageExtractionError.UnknownError)
+        assertIs<PageExtractionError.UnknownError>(resultError)
     }
 
     @Test

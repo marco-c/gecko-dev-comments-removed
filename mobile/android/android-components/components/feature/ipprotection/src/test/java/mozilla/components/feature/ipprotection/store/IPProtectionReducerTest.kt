@@ -17,9 +17,13 @@ import mozilla.components.feature.ipprotection.buildIPProtectionState
 import mozilla.components.feature.ipprotection.store.state.AccountState
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.Authorized
+import mozilla.components.feature.ipprotection.store.state.Country
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
+import mozilla.components.feature.ipprotection.store.state.LocationState
+import mozilla.components.feature.ipprotection.store.state.Recommended
 import mozilla.components.feature.ipprotection.store.state.Uninitialized
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Test
 
@@ -41,12 +45,13 @@ class IPProtectionReducerTest {
     @Test
     fun `WHEN ToolkitStateChanged is dispatched THEN data fields are updated`() {
         val state = buildIPProtectionState()
-        val info = StateInfo(
-            serviceState = ServiceState.Uninitialized,
-            remaining = 1000L,
-            max = 5000L,
-            resetTime = "2026-06-01T00:00:00Z",
-        )
+        val info =
+            StateInfo(
+                serviceState = ServiceState.Uninitialized,
+                remaining = 1000L,
+                max = 5000L,
+                resetTime = "2026-06-01T00:00:00Z",
+            )
         assertEquals(
             state.copy(
                 remainingDataBytes = 1000L,
@@ -132,33 +137,37 @@ class IPProtectionReducerTest {
         val state = buildIPProtectionState().copy(activate = true)
         assertEquals(
             state.copy(activate = null),
-            iPProtectionReducer(state, IPProtectionAction.ToggleFailed),
+            iPProtectionReducer(state, IPProtectionAction.ToggleFailed()),
         )
     }
 
     @Test
     fun `GIVEN user has already finished auth flow successfully but service is still unauthenticated WHEN ToggleFailed is dispatched THEN activate is cleared and account is set for another check`() {
-        val state = buildIPProtectionState().copy(
-            activate = true,
-            accountState = AccountState(status = AccountStatus.EnrolledAndEntitled),
-            serviceStatus = ServiceState.Unauthenticated,
-        )
+        val state =
+            buildIPProtectionState()
+                .copy(
+                    activate = true,
+                    accountState = AccountState(status = AccountStatus.EnrolledAndEntitled),
+                    serviceStatus = ServiceState.Unauthenticated,
+                )
         assertEquals(
             state.copy(activate = null, accountState = state.accountState.copy(status = AccountStatus.TryAgain)),
-            iPProtectionReducer(state, IPProtectionAction.ToggleFailed),
+            iPProtectionReducer(state, IPProtectionAction.ToggleFailed()),
         )
     }
 
     @Test
     fun `GIVEN user is entitled and service is ready WHEN ToggleFailed is dispatched THEN activate is cleared and account does not do extra checks`() {
-        val state = buildIPProtectionState().copy(
-            activate = true,
-            accountState = AccountState(status = AccountStatus.EnrolledAndEntitled),
-            serviceStatus = ServiceState.Ready,
-        )
+        val state =
+            buildIPProtectionState()
+                .copy(
+                    activate = true,
+                    accountState = AccountState(status = AccountStatus.EnrolledAndEntitled),
+                    serviceStatus = ServiceState.Ready,
+                )
         assertEquals(
             state.copy(activate = null, accountState = state.accountState),
-            iPProtectionReducer(state, IPProtectionAction.ToggleFailed),
+            iPProtectionReducer(state, IPProtectionAction.ToggleFailed()),
         )
     }
 
@@ -216,10 +225,12 @@ class IPProtectionReducerTest {
 
     @Test
     fun `WHEN engine settles to ready while a pending activate was queued THEN activate is cleared`() {
-        val state = buildIPProtectionState(
-            serviceStatus = ServiceState.Ready,
-            proxyStatus = Authorized.Activating,
-        ).copy(activate = true)
+        val state =
+            buildIPProtectionState(
+                    serviceStatus = ServiceState.Ready,
+                    proxyStatus = Authorized.Activating,
+                )
+                .copy(activate = true)
         val info = StateInfo(serviceState = ServiceState.Ready, proxyState = PROXY_STATE_READY)
         val nextState = iPProtectionReducer(state, IPProtectionAction.EngineStateChanged(info))
         assertEquals(
@@ -290,24 +301,27 @@ class IPProtectionReducerTest {
     }
 
     @Test
-    fun `WHEN AccountManagerStateChanged to Uninitialized is dispatched THEN data and proxy flags are reset to defaults`() {
-        val dirtyState = buildIPProtectionState(
-            accountStatus = AccountStatus.EnrolledAndEntitled,
-            serviceStatus = ServiceState.Ready,
-            proxyStatus = Authorized.Active,
-        ).copy(
-            eligibilityStatus = EligibilityStatus.Eligible,
-            remainingDataBytes = 1000L,
-            maxDataBytes = 5000L,
-            resetDate = "2026-06-01T00:00:00Z",
-            proxyActiveShown = true,
-            activate = true,
-        )
+    fun `WHEN AccountManagerStateChanged to NoAccount is dispatched THEN data and proxy flags are reset to defaults`() {
+        val dirtyState =
+            buildIPProtectionState(
+                    accountStatus = AccountStatus.EnrolledAndEntitled,
+                    serviceStatus = ServiceState.Ready,
+                    proxyStatus = Authorized.Active,
+                )
+                .copy(
+                    eligibilityStatus = EligibilityStatus.Eligible,
+                    remainingDataBytes = 1000L,
+                    maxDataBytes = 5000L,
+                    resetDate = "2026-06-01T00:00:00Z",
+                    proxyActiveShown = true,
+                    activate = true,
+                )
 
-        val resultState = iPProtectionReducer(
-            dirtyState,
-            InternalAction.AccountManagerStateChanged(AccountStatus.Uninitialized),
-        )
+        val resultState =
+            iPProtectionReducer(
+                dirtyState,
+                InternalAction.AccountManagerStateChanged(AccountStatus.NoAccount),
+            )
 
         assertEquals(
             dirtyState.copy(
@@ -316,7 +330,7 @@ class IPProtectionReducerTest {
                 resetDate = null,
                 proxyActiveShown = false,
                 activate = false,
-                accountState = AccountState(AccountStatus.Uninitialized),
+                accountState = AccountState(AccountStatus.NoAccount),
             ),
             resultState,
         )
@@ -374,32 +388,36 @@ class IPProtectionReducerTest {
     fun `WHEN Toggle is dispatched while unauthenticated and the account is not in good standing THEN authentication is requested`() {
         // The user must sign in before the proxy can start.
         listOf(
-            AccountStatus.NeedsAuthentication,
-            AccountStatus.Uninitialized,
-            AccountStatus.WarmingUp,
-        ).forEach { accountStatus ->
-            val state = buildIPProtectionState(
-                accountStatus = accountStatus,
-                serviceStatus = ServiceState.Unauthenticated,
+                AccountStatus.NeedsAuthentication,
+                AccountStatus.Uninitialized,
+                AccountStatus.WarmingUp,
+                AccountStatus.NoAccount,
             )
+            .forEach { accountStatus ->
+                val state =
+                    buildIPProtectionState(
+                        accountStatus = accountStatus,
+                        serviceStatus = ServiceState.Unauthenticated,
+                    )
 
-            val resultState = iPProtectionReducer(state, IPProtectionAction.Toggle)
+                val resultState = iPProtectionReducer(state, IPProtectionAction.Toggle)
 
-            assertEquals(
-                "Toggle from $accountStatus should request authentication",
-                AccountStatus.RequestingAuthentication,
-                resultState.accountState.status,
-            )
-        }
+                assertEquals(
+                    "Toggle from $accountStatus should request authentication",
+                    AccountStatus.RequestingAuthentication,
+                    resultState.accountState.status,
+                )
+            }
     }
 
     @Test
     fun `WHEN Toggle is dispatched while unauthenticated and the account only needs authorization THEN authorization is requested`() {
         // The account itself is valid, but the VPN scope still needs to be authorized.
-        val state = buildIPProtectionState(
-            accountStatus = AccountStatus.NeedsAuthorization,
-            serviceStatus = ServiceState.Unauthenticated,
-        )
+        val state =
+            buildIPProtectionState(
+                accountStatus = AccountStatus.NeedsAuthorization,
+                serviceStatus = ServiceState.Unauthenticated,
+            )
 
         val resultState = iPProtectionReducer(state, IPProtectionAction.Toggle)
 
@@ -409,10 +427,11 @@ class IPProtectionReducerTest {
     @Test
     fun `WHEN Toggle is dispatched while unauthenticated and the account check is in progress THEN authorization is still requested`() {
         // The account itself is valid, but we don't know yet if the VPN scope needs to be authorized.
-        val state = buildIPProtectionState(
-            accountStatus = AccountStatus.TryAgain,
-            serviceStatus = ServiceState.Unauthenticated,
-        )
+        val state =
+            buildIPProtectionState(
+                accountStatus = AccountStatus.TryAgain,
+                serviceStatus = ServiceState.Unauthenticated,
+            )
 
         val resultState = iPProtectionReducer(state, IPProtectionAction.Toggle)
 
@@ -422,10 +441,11 @@ class IPProtectionReducerTest {
     @Test
     fun `WHEN Toggle is dispatched while unauthenticated but the account is already authenticated THEN the invalid state is rejected`() {
         // An authenticated account with an unauthenticated service is a contradiction the state machine cannot resolve.
-        val state = buildIPProtectionState(
-            accountStatus = AccountStatus.Authenticated,
-            serviceStatus = ServiceState.Unauthenticated,
-        )
+        val state =
+            buildIPProtectionState(
+                accountStatus = AccountStatus.Authenticated,
+                serviceStatus = ServiceState.Unauthenticated,
+            )
 
         assertThrows(IllegalStateException::class.java) {
             iPProtectionReducer(state, IPProtectionAction.Toggle)
@@ -434,10 +454,11 @@ class IPProtectionReducerTest {
 
     @Test
     fun `WHEN AccountStateChanged is dispatched THEN the account status reflects the external signal`() {
-        val resultState = iPProtectionReducer(
-            buildIPProtectionState(),
-            IPProtectionAction.AccountStateChanged(AccountStatus.Authenticated),
-        )
+        val resultState =
+            iPProtectionReducer(
+                buildIPProtectionState(),
+                IPProtectionAction.AccountStateChanged(AccountStatus.Authenticated),
+            )
 
         assertEquals(AccountStatus.Authenticated, resultState.accountState.status)
     }
@@ -477,6 +498,36 @@ class IPProtectionReducerTest {
     }
 
     @Test
+    fun `GIVEN the user is signed in WHEN the service reports Ready THEN entitlement is short-circuited`() {
+        val state =
+            buildIPProtectionState(
+                accountStatus = AccountStatus.Authenticated,
+                serviceStatus = ServiceState.Unauthenticated,
+            )
+        val info = StateInfo(serviceState = ServiceState.Ready, proxyState = PROXY_STATE_READY)
+
+        val resultState = iPProtectionReducer(state, IPProtectionAction.EngineStateChanged(info))
+
+        assertEquals(AccountStatus.EnrolledAndEntitled, resultState.accountState.status)
+    }
+
+    @Test
+    fun `GIVEN the user is signed out WHEN the service reports Ready THEN entitlement is not short-circuited`() {
+        val state =
+            buildIPProtectionState(
+                accountStatus = AccountStatus.NoAccount,
+                serviceStatus = ServiceState.Unauthenticated,
+            )
+        // A stale Ready update can intermittently arrive right after sign-out, before the engine
+        // reflects the new account status
+        val info = StateInfo(serviceState = ServiceState.Ready, proxyState = PROXY_STATE_READY)
+
+        val resultState = iPProtectionReducer(state, IPProtectionAction.EngineStateChanged(info))
+
+        assertEquals(AccountStatus.NoAccount, resultState.accountState.status)
+    }
+
+    @Test
     fun `WHEN the engine reports an error message THEN it is surfaced as the last error`() {
         val info = StateInfo(serviceState = ServiceState.Ready, proxyState = PROXY_STATE_ERROR, lastError = "boom")
 
@@ -498,67 +549,73 @@ class IPProtectionReducerTest {
     fun `WHEN AccountManagerStateChanged reports an in-flight auth state THEN the status is left to the auth flow`() {
         // Only the auth flow itself may advance these; the account manager must not clobber an in-flight UI state.
         listOf(
-            AccountStatus.RequestingAuthentication,
-            AccountStatus.RequestingAuthorization,
-            AccountStatus.TryAgain,
-            AccountStatus.AwaitingAuthentication,
-            AccountStatus.AwaitingAuthorization,
-            AccountStatus.AwaitingEnrollment,
-        ).forEach { incomingStatus ->
-            val state = buildIPProtectionState(accountStatus = AccountStatus.WarmingUp)
-
-            val resultState = iPProtectionReducer(
-                state,
-                InternalAction.AccountManagerStateChanged(incomingStatus),
+                AccountStatus.RequestingAuthentication,
+                AccountStatus.RequestingAuthorization,
+                AccountStatus.TryAgain,
+                AccountStatus.AwaitingAuthentication,
+                AccountStatus.AwaitingAuthorization,
+                AccountStatus.AwaitingEnrollment,
             )
+            .forEach { incomingStatus ->
+                val state = buildIPProtectionState(accountStatus = AccountStatus.WarmingUp)
 
-            assertEquals(
-                "In-flight status $incomingStatus should be ignored",
-                AccountStatus.WarmingUp,
-                resultState.accountState.status,
-            )
-        }
+                val resultState =
+                    iPProtectionReducer(
+                        state,
+                        InternalAction.AccountManagerStateChanged(incomingStatus),
+                    )
+
+                assertEquals(
+                    "In-flight status $incomingStatus should be ignored",
+                    AccountStatus.WarmingUp,
+                    resultState.accountState.status,
+                )
+            }
     }
 
     @Test
     fun `WHEN AccountManagerStateChanged reports an authoritative account standing THEN it is applied`() {
         // These statuses reflect the account manager's authoritative view of the account.
         listOf(
-            AccountStatus.WarmingUp,
-            AccountStatus.NoAccount,
-            AccountStatus.NeedsAuthentication,
-            AccountStatus.NeedsAuthorization,
-            AccountStatus.Authenticated,
-        ).forEach { incomingStatus ->
-            val resultState = iPProtectionReducer(
-                buildIPProtectionState(),
-                InternalAction.AccountManagerStateChanged(incomingStatus),
+                AccountStatus.WarmingUp,
+                AccountStatus.NoAccount,
+                AccountStatus.NeedsAuthentication,
+                AccountStatus.NeedsAuthorization,
+                AccountStatus.Authenticated,
             )
+            .forEach { incomingStatus ->
+                val resultState =
+                    iPProtectionReducer(
+                        buildIPProtectionState(),
+                        InternalAction.AccountManagerStateChanged(incomingStatus),
+                    )
 
-            assertEquals(
-                "Status $incomingStatus should be applied directly",
-                incomingStatus,
-                resultState.accountState.status,
-            )
-        }
+                assertEquals(
+                    "Status $incomingStatus should be applied directly",
+                    incomingStatus,
+                    resultState.accountState.status,
+                )
+            }
     }
 
     @Test
     fun `WHEN AccountManagerStateChanged reports AuthFailed THEN the user is rolled back to needing authentication`() {
-        val resultState = iPProtectionReducer(
-            buildIPProtectionState(),
-            InternalAction.AccountManagerStateChanged(AccountStatus.AuthFailed),
-        )
+        val resultState =
+            iPProtectionReducer(
+                buildIPProtectionState(),
+                InternalAction.AccountManagerStateChanged(AccountStatus.AuthFailed),
+            )
 
         assertEquals(AccountStatus.NeedsAuthentication, resultState.accountState.status)
     }
 
     @Test
     fun `WHEN internal EligibilityChanged is dispatched THEN eligibilityStatus is updated`() {
-        val resultState = iPProtectionReducer(
-            buildIPProtectionState(),
-            InternalAction.EligibilityChanged(EligibilityStatus.Eligible),
-        )
+        val resultState =
+            iPProtectionReducer(
+                buildIPProtectionState(),
+                InternalAction.EligibilityChanged(EligibilityStatus.Eligible),
+            )
 
         assertEquals(EligibilityStatus.Eligible, resultState.eligibilityStatus)
     }
@@ -572,20 +629,22 @@ class IPProtectionReducerTest {
 
     @Test
     fun `WHEN UpdateServiceState is dispatched THEN serviceStatus records the snapshot`() {
-        val resultState = iPProtectionReducer(
-            buildIPProtectionState(),
-            InternalAction.UpdateServiceState(ServiceState.Ready),
-        )
+        val resultState =
+            iPProtectionReducer(
+                buildIPProtectionState(),
+                InternalAction.UpdateServiceState(ServiceState.Ready),
+            )
 
         assertEquals(ServiceState.Ready, resultState.serviceStatus)
     }
 
     @Test
     fun `WHEN AwaitingAuth is dispatched THEN the account is parked at the given intermediary status`() {
-        val resultState = iPProtectionReducer(
-            buildIPProtectionState(),
-            InternalAction.AwaitingAuth(AccountStatus.AwaitingAuthentication),
-        )
+        val resultState =
+            iPProtectionReducer(
+                buildIPProtectionState(),
+                InternalAction.AwaitingAuth(AccountStatus.AwaitingAuthentication),
+            )
 
         assertEquals(AccountStatus.AwaitingAuthentication, resultState.accountState.status)
     }
@@ -609,22 +668,78 @@ class IPProtectionReducerTest {
     }
 
     @Test
-    fun `WHEN CountryListChanged is dispatched THEN country list is updated`() {
+    fun `WHEN CountryListChanged is dispatched THEN countries are added to location list and recommended option is preserved`() {
         val initialState = buildIPProtectionState()
-        val countries = listOf(
-            IPProtectionHandler.Country(code = "dk", available = true),
-            IPProtectionHandler.Country(code = "fr", available = true),
-            IPProtectionHandler.Country(code = "gb", available = false),
-            IPProtectionHandler.Country(code = "us", available = true),
-        )
+        val countries =
+            listOf(
+                IPProtectionHandler.Country(code = "DK", available = true),
+                IPProtectionHandler.Country(code = "FR", available = true),
+                IPProtectionHandler.Country(code = "GB", available = false),
+                IPProtectionHandler.Country(code = "US", available = true),
+            )
 
-        assertEquals(emptyList<IPProtectionHandler.Country>(), initialState.countries)
+        assertEquals(LocationState(), initialState.locationState)
 
-        val resultState = iPProtectionReducer(
-            state = initialState,
-            action = IPProtectionAction.CountryListChanged(countries),
-        )
+        val resultState =
+            iPProtectionReducer(
+                state = initialState,
+                action = IPProtectionAction.CountryListChanged(countries),
+            )
 
-        assertEquals(countries, resultState.countries)
+        countries.forEach { country ->
+            assertNotNull(resultState.locationState.locations.find { it.countryCode == country.code })
+        }
+
+        assert(resultState.locationState.locations.contains(Recommended()))
+    }
+
+    @Test
+    fun `WHEN CountrySelected is dispatched THEN user selected country is updated`() {
+        val updatedLocation = Country("JP", available = true)
+        val initialState = buildIPProtectionState()
+
+        assertEquals(Recommended(), initialState.locationState.selectedLocation)
+
+        val resultState =
+            iPProtectionReducer(
+                state = initialState,
+                action = IPProtectionAction.LocationChanged(updatedLocation),
+            )
+
+        assertEquals(updatedLocation, resultState.locationState.selectedLocation)
+    }
+
+    @Test
+    fun `GIVEN an active proxy connection WHEN when user changes the location THEN the feature activates the selected location`() {
+        val updatedLocation = Country("JP", available = true)
+        val initialState = buildIPProtectionState(serviceStatus = ServiceState.Ready, proxyStatus = Authorized.Active)
+
+        assertEquals(Recommended(), initialState.locationState.selectedLocation)
+
+        val resultState =
+            iPProtectionReducer(
+                state = initialState,
+                action = IPProtectionAction.LocationChanged(updatedLocation),
+            )
+
+        assertEquals(updatedLocation, resultState.locationState.selectedLocation)
+        assertEquals(true, resultState.activate)
+    }
+
+    @Test
+    fun `GIVEN no active proxy connection WHEN when user changes the location THEN the feature does not activate the selected location`() {
+        val updatedLocation = Country("JP", available = true)
+        val initialState = buildIPProtectionState(serviceStatus = ServiceState.Ready, proxyStatus = Authorized.Idle)
+
+        assertEquals(Recommended(), initialState.locationState.selectedLocation)
+
+        val resultState =
+            iPProtectionReducer(
+                state = initialState,
+                action = IPProtectionAction.LocationChanged(updatedLocation),
+            )
+
+        assertEquals(updatedLocation, resultState.locationState.selectedLocation)
+        assertEquals(null, resultState.activate)
     }
 }

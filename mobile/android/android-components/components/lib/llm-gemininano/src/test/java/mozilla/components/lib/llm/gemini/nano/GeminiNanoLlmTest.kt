@@ -6,9 +6,9 @@ package mozilla.components.lib.llm.gemini.nano
 
 import com.google.mlkit.genai.common.FeatureStatus
 import com.google.mlkit.genai.common.GenAiException
+import kotlin.test.assertIs
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
-import mozilla.components.concept.llm.ErrorCode
 import mozilla.components.concept.llm.Llm
 import mozilla.components.concept.llm.Prompt
 import mozilla.components.lib.llm.gemini.nano.fakes.FakeGenerativeModel
@@ -19,51 +19,55 @@ import org.junit.Test
 class GeminiNanoLlmTest {
     @Test
     fun `prompt returns Success when model is AVAILABLE and processes without error`() = runTest {
-        val fakeModel = FakeGenerativeModel(
-            status = sequenceOf(FeatureStatus.AVAILABLE),
-            responseMap = mapOf("test prompt" to listOf("test response")),
-        )
-
-        val llm = GeminiNanoLlm(buildModel = { fakeModel })
-
-        val results = llm.prompt(Prompt("test prompt")).toList()
-
-        assertEquals(2, results.size)
-        assertEquals(Llm.Response.Success.ReplyPart("test response"), results[0])
-        assertEquals(Llm.Response.Success.ReplyFinished, results[1])
-        assertEquals("test prompt", fakeModel.lastPromptProcessed)
-    }
-
-    @Test
-    fun `prompt returns Failure when GenAiException is thrown`() = runTest {
-        val fakeModel = FakeGenerativeModel(
-            status = sequenceOf(FeatureStatus.AVAILABLE),
-            exception = GenAiException(null, GenAiException.ErrorCode.REQUEST_PROCESSING_ERROR),
-        )
+        val fakeModel =
+            FakeGenerativeModel(
+                status = sequenceOf(FeatureStatus.AVAILABLE),
+                responseMap = mapOf("test prompt" to listOf("test response")),
+            )
 
         val llm = GeminiNanoLlm(buildModel = { fakeModel })
 
         val results = llm.prompt(Prompt("test prompt")).toList()
 
         assertEquals(1, results.size)
-        val failure = results[0] as Llm.Response.Failure
-        assertEquals(0, failure.exception.errorCode.value)
-        assertTrue(failure.exception.message?.startsWith("Gemini Nano inference failed:") == true)
+        assertEquals("test response", results[0])
+        assertEquals("test prompt", fakeModel.lastPromptProcessed)
+    }
+
+    @Test
+    fun `prompt returns Failure when GenAiException is thrown`() = runTest {
+        val fakeModel =
+            FakeGenerativeModel(
+                status = sequenceOf(FeatureStatus.AVAILABLE),
+                exception = GenAiException(null, GenAiException.ErrorCode.REQUEST_PROCESSING_ERROR),
+            )
+
+        val llm = GeminiNanoLlm(buildModel = { fakeModel })
+        val result = runCatching { llm.prompt(Prompt("test prompt")).toList() }
+
+        assertTrue(result.isFailure)
+        assertIs<Llm.Exception>(result.exceptionOrNull())
+        assertEquals(
+            "Gemini Nano inference failed: [ErrorCode 4] Request doesn't pass certain policy check. Please try a different input.",
+            result.exceptionOrNull()?.message,
+        )
     }
 
     @Test
     fun `logger delivers useful messaging during prompt and download flow`() = runTest {
         val logMessages = mutableListOf<String>()
         val prompt = "test"
-        val fakeModel = FakeGenerativeModel(
-            status = sequenceOf(FeatureStatus.AVAILABLE),
-            responseMap = mapOf(prompt to listOf("response")),
-        )
+        val fakeModel =
+            FakeGenerativeModel(
+                status = sequenceOf(FeatureStatus.AVAILABLE),
+                responseMap = mapOf(prompt to listOf("response")),
+            )
 
-        val llm = GeminiNanoLlm(
-            buildModel = { fakeModel },
-            logger = { logMessages.add(it) },
-        )
+        val llm =
+            GeminiNanoLlm(
+                buildModel = { fakeModel },
+                logger = { logMessages.add(it) },
+            )
 
         llm.prompt(Prompt(prompt)).toList()
 

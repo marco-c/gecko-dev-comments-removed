@@ -24,9 +24,7 @@ import mozilla.components.ui.colors.NovaColors
 private const val CFR_GRADIENT_ANGLE = 135f
 private const val ACCENT_GRADIENT_ANGLE = 96f
 
-/**
- * The types of gradients that are provided in the Acorn design system.
- */
+/** The types of gradients that are provided in the Acorn design system. */
 @Immutable
 sealed interface AcornGradientType {
 
@@ -36,6 +34,9 @@ sealed interface AcornGradientType {
      * @property angleInDegrees Angle of the gradient axis.
      */
     data class Linear(val angleInDegrees: Float) : AcornGradientType
+
+    /** A vertical gradient. */
+    data object Vertical : AcornGradientType
 }
 
 /**
@@ -49,15 +50,18 @@ data class AcornGradient(
     val type: AcornGradientType,
     val colorStops: List<ColorStop>,
 ) {
-    /**
-     * A [Brush] that paints the current gradient.
-     */
-    val brush: Brush = when (type) {
-        is AcornGradientType.Linear -> LinearGradientBrush(
-            colorStops = colorStops,
-            angleInDegrees = type.angleInDegrees,
-        )
-    }
+    /** A [Brush] that paints the current gradient. */
+    val brush: Brush =
+        when (type) {
+            is AcornGradientType.Linear ->
+                LinearGradientBrush(
+                    colorStops = colorStops,
+                    angleInDegrees = type.angleInDegrees,
+                )
+
+            AcornGradientType.Vertical ->
+                Brush.verticalGradient(colorStops = colorStops.map { it.position to it.color }.toTypedArray())
+        }
 }
 
 /**
@@ -67,6 +71,7 @@ data class AcornGradient(
  * @param accent More prominent gradient color against surface, for bold brand accents.
  * @param accentSubtle Less prominent gradient color against surface, for subtle brand accents.
  * @param tabOutline Border around active tabs.
+ * @param privacyMask Use for the mask on the 72x72 private mode icon.
  */
 @Immutable
 data class AcornGradientScheme(
@@ -74,76 +79,109 @@ data class AcornGradientScheme(
     val accent: AcornGradient,
     val accentSubtle: AcornGradient,
     val tabOutline: AcornGradient,
+    val privacyMask: AcornGradient,
 )
 
-private val cfr = AcornGradient(
-    type = AcornGradientType.Linear(angleInDegrees = CFR_GRADIENT_ANGLE),
-    colorStops = listOf(
-        ColorStop(0f, NovaColors.Violet60),
-        ColorStop(1f, NovaColors.Violet50),
-    ),
-)
+private val cfr =
+    AcornGradient(
+        type = AcornGradientType.Linear(angleInDegrees = CFR_GRADIENT_ANGLE),
+        colorStops =
+            listOf(
+                ColorStop(0f, NovaColors.Violet60),
+                ColorStop(1f, NovaColors.Violet50),
+            ),
+    )
 
-private val darkAccent = AcornGradient(
-    type = AcornGradientType.Linear(angleInDegrees = ACCENT_GRADIENT_ANGLE),
-    colorStops = listOf(
-        ColorStop(0f, NovaColors.Violet30),
-        ColorStop(0.71f, NovaColors.Violet50),
-    ),
-)
-
-private val tabOutline = AcornGradient(
-    type = AcornGradientType.Linear(angleInDegrees = ACCENT_GRADIENT_ANGLE),
-    colorStops = listOf(
-        ColorStop(0f, NovaColors.Violet30),
-        ColorStop(0.71f, NovaColors.Violet50),
-    ),
-)
-
-val lightAcornGradientScheme = AcornGradientScheme(
-    cfr = cfr,
-    accent = AcornGradient(
+private val darkAccent =
+    AcornGradient(
         type = AcornGradientType.Linear(angleInDegrees = ACCENT_GRADIENT_ANGLE),
-        colorStops = listOf(
-            ColorStop(0f, NovaColors.Violet30),
-            ColorStop(0.71f, NovaColors.Orange30),
-        ),
-    ),
-    accentSubtle = AcornGradient(
-        type = AcornGradientType.Linear(angleInDegrees = ACCENT_GRADIENT_ANGLE),
-        colorStops = listOf(
-            ColorStop(0.4f, NovaColors.Violet10A50),
-            ColorStop(1f, NovaColors.Orange10A50),
-        ),
-    ),
-    tabOutline = tabOutline,
-)
+        colorStops =
+            listOf(
+                ColorStop(0f, NovaColors.Violet30),
+                ColorStop(0.71f, NovaColors.Violet50),
+            ),
+    )
 
-val darkAcornGradientScheme = AcornGradientScheme(
-    cfr = cfr,
-    accent = darkAccent,
-    accentSubtle = AcornGradient(
+private val tabOutline =
+    AcornGradient(
         type = AcornGradientType.Linear(angleInDegrees = ACCENT_GRADIENT_ANGLE),
-        colorStops = listOf(
-            ColorStop(0.4f, NovaColors.VioletDesaturated90A50),
-            ColorStop(1f, NovaColors.Orange70A50),
-        ),
-    ),
-    tabOutline = tabOutline,
-)
+        colorStops =
+            listOf(
+                ColorStop(0f, NovaColors.Violet30),
+                ColorStop(0.71f, NovaColors.Violet50),
+            ),
+    )
 
-val privateAcornGradientScheme = AcornGradientScheme(
-    cfr = cfr,
-    accent = darkAccent,
-    accentSubtle = AcornGradient(
-        type = AcornGradientType.Linear(angleInDegrees = ACCENT_GRADIENT_ANGLE),
-        colorStops = listOf(
-            ColorStop(0.4f, NovaColors.VioletDesaturated90),
-            ColorStop(1f, NovaColors.VioletDesaturated90),
-        ),
-    ),
-    tabOutline = tabOutline,
-)
+private val privacyMask =
+    AcornGradient(
+        type = AcornGradientType.Vertical,
+        colorStops =
+            listOf(
+                ColorStop(0f, NovaColors.Violet20),
+                ColorStop(1f, NovaColors.White),
+            ),
+    )
+
+val lightAcornGradientScheme =
+    AcornGradientScheme(
+        cfr = cfr,
+        accent =
+            AcornGradient(
+                type = AcornGradientType.Linear(angleInDegrees = ACCENT_GRADIENT_ANGLE),
+                colorStops =
+                    listOf(
+                        ColorStop(0f, NovaColors.Violet30),
+                        ColorStop(0.71f, NovaColors.Orange30),
+                    ),
+            ),
+        accentSubtle =
+            AcornGradient(
+                type = AcornGradientType.Linear(angleInDegrees = ACCENT_GRADIENT_ANGLE),
+                colorStops =
+                    listOf(
+                        ColorStop(0.4f, NovaColors.Violet10A50),
+                        ColorStop(1f, NovaColors.Orange10A50),
+                    ),
+            ),
+        tabOutline = tabOutline,
+        privacyMask = privacyMask,
+    )
+
+val darkAcornGradientScheme =
+    AcornGradientScheme(
+        cfr = cfr,
+        accent = darkAccent,
+        accentSubtle =
+            AcornGradient(
+                type = AcornGradientType.Linear(angleInDegrees = ACCENT_GRADIENT_ANGLE),
+                colorStops =
+                    listOf(
+                        ColorStop(0.4f, NovaColors.VioletDesaturated90A50),
+                        ColorStop(1f, NovaColors.Orange70A50),
+                    ),
+            ),
+        tabOutline = tabOutline,
+        privacyMask = privacyMask,
+    )
+
+val privateAcornGradientScheme =
+    AcornGradientScheme(
+        cfr = cfr,
+        accent = darkAccent,
+        accentSubtle =
+            AcornGradient(
+                type = AcornGradientType.Linear(angleInDegrees = ACCENT_GRADIENT_ANGLE),
+                colorStops =
+                    listOf(
+                        ColorStop(0.4f, NovaColors.VioletDesaturated90),
+                        ColorStop(1f, NovaColors.VioletDesaturated90),
+                    ),
+            ),
+        tabOutline = tabOutline,
+        privacyMask = privacyMask,
+    )
+
+val oledAcornGradientScheme = darkAcornGradientScheme
 
 internal val localAcornGradients = staticCompositionLocalOf {
     lightAcornGradientScheme
@@ -153,13 +191,13 @@ internal val localAcornGradients = staticCompositionLocalOf {
 private fun GradientSwatch(gradient: AcornGradient) {
     Surface {
         Box(
-            modifier = Modifier
-                .padding(AcornTheme.layout.space.static200)
-                .size(80.dp)
-                .background(
-                    brush = gradient.brush,
-                    shape = MaterialTheme.shapes.large,
-                ),
+            modifier =
+                Modifier.padding(AcornTheme.layout.space.static200)
+                    .size(80.dp)
+                    .background(
+                        brush = gradient.brush,
+                        shape = MaterialTheme.shapes.large,
+                    )
         )
     }
 }
@@ -193,5 +231,13 @@ private fun AccentSubtleGradientPreview() {
 private fun TabOutlineGradientPreview() {
     AcornTheme {
         GradientSwatch(gradient = AcornTheme.gradients.tabOutline)
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun PrivacyMaskGradientPreview() {
+    AcornTheme {
+        GradientSwatch(gradient = AcornTheme.gradients.privacyMask)
     }
 }

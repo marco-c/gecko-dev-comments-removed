@@ -4,14 +4,11 @@
 
 package mozilla.components.feature.prompts.identitycredential
 
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-/**
- * Represents the colors used by the dialogs.
- */
+/** Represents the colors used by the dialogs. */
 data class DialogColors(
     val title: Color,
     val description: Color,
@@ -20,38 +17,29 @@ data class DialogColors(
     companion object {
 
         /**
-         * Creates an [DialogColors] that represents the default colors used in an
-         * IdentityCredential dialog.
+         * Creates an [DialogColors] that represents the default colors used in an IdentityCredential dialog.
          *
          * @param title The text color for the title of a suggestion.
          * @param description The text color for the description of a suggestion.
          */
         @Composable
         fun default(
-            title: Color = MaterialTheme.colors.onBackground,
-            description: Color = MaterialTheme.colors.onBackground.copy(
-                alpha = ContentAlpha.medium,
-            ),
-        ) = DialogColors(
-            title,
-            description,
-        )
+            title: Color = MaterialTheme.colorScheme.onBackground,
+            description: Color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.74f),
+        ) =
+            DialogColors(
+                title,
+                description,
+            )
 
-        /**
-         * Creates a provider that provides the default [DialogColors]
-         */
+        /** Creates a provider that provides the default [DialogColors] */
         fun defaultProvider() = DialogColorsProvider { default() }
     }
 }
 
-/**
- * An [DialogColorsProvider] implementation can provide an [DialogColors]
- */
+/** An [DialogColorsProvider] implementation can provide an [DialogColors] */
 fun interface DialogColorsProvider {
 
-    /**
-     * Provides [DialogColors]
-     */
-    @Composable
-    fun provideColors(): DialogColors
+    /** Provides [DialogColors] */
+    @Composable fun provideColors(): DialogColors
 }

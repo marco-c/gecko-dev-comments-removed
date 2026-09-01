@@ -5,18 +5,15 @@
 package mozilla.components.feature.search.icons
 
 import mozilla.appservices.remotesettings.RemoteSettingsClient
+import mozilla.appservices.remotesettings.RemoteSettingsException
 import mozilla.appservices.remotesettings.RemoteSettingsRecord
 import mozilla.components.feature.search.RemoteSettingsRepository
 import mozilla.components.support.remotesettings.RemoteSettingsService
 
 internal const val SEARCH_CONFIG_ICONS_COLLECTION_NAME = "search-config-icons"
 
-/**
- * Service for updating search configuration icons from Remote Settings.
- */
-class SearchConfigIconsUpdateService(
-    private val client: RemoteSettingsClient?,
-) {
+/** Service for updating search configuration icons from Remote Settings. */
+class SearchConfigIconsUpdateService(private val client: RemoteSettingsClient?) {
 
     /**
      * Fetches the latest search config icons.
@@ -35,9 +32,15 @@ class SearchConfigIconsUpdateService(
     /**
      * Fetches the latest search config icons.
      *
-     * @param record The [RemoteSettingsRecord] who's attachment is to be fetched.
-=     */
-    fun fetchIconAttachment(record: RemoteSettingsRecord): ByteArray? {
-        return client?.getAttachment(record)
+     * @param record The [RemoteSettingsRecord] who's attachment is to be fetched. =
+     */
+    fun fetchIconAttachment(record: RemoteSettingsRecord?): ByteArray? {
+        return record?.let {
+            try {
+                client?.getAttachment(it)
+            } catch (e: RemoteSettingsException) {
+                null
+            }
+        }
     }
 }

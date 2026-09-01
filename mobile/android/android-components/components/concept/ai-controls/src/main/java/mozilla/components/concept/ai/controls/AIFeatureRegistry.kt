@@ -4,30 +4,22 @@
 
 package mozilla.components.concept.ai.controls
 
-/**
- * A registry for [AIControllableFeature]s that can be managed by AI controls.
- */
+/** A registry for [AIControllableFeature]s that can be managed by AI controls. */
 interface AIFeatureRegistry {
-    /**
-     * Registers [feature] with this registry.
-     */
+    /** Registers [feature] with this registry. */
     fun register(feature: AIControllableFeature)
 
-    /**
-     * Returns all registered [AIControllableFeature]s.
-     */
+    /** Returns all registered [AIControllableFeature]s. */
     fun getFeatures(): List<AIControllableFeature>
 
     companion object {
-        /**
-         * Creates a simple in-memory implementation of [AIFeatureRegistry] for use in tests or previews.
-         */
+        /** Creates a simple in-memory implementation of [AIFeatureRegistry] for use in tests or previews. */
         fun inMemory(): AIFeatureRegistry = InMemoryAIFeatureRegistry()
     }
 }
 
 private class InMemoryAIFeatureRegistry : AIFeatureRegistry {
-    private val features = LinkedHashMap<AIControllableFeature.FeatureId, AIControllableFeature>()
+    private val features = LinkedHashMap<AIFeatureMetadata.FeatureId, AIControllableFeature>()
 
     override fun register(feature: AIControllableFeature) {
         features[feature.id] = feature

@@ -16,8 +16,7 @@ import org.json.JSONObject
  *
  * The class is open, so that consumers can override specific functions to customize that behavior.
  */
-open class TestEngineSession(override val settings: Settings = DefaultSettings()) :
-    EngineSession() {
+open class TestEngineSession(override val settings: Settings = DefaultSettings()) : EngineSession() {
 
     override fun loadUrl(
         url: String,
@@ -51,11 +50,6 @@ open class TestEngineSession(override val settings: Settings = DefaultSettings()
     override fun updateTrackingProtection(policy: TrackingProtectionPolicy) = Unit
 
     override fun toggleDesktopMode(enable: Boolean, reload: Boolean) = Unit
-
-    override fun hasCookieBannerRuleForSession(
-        onResult: (Boolean) -> Unit,
-        onException: (Throwable) -> Unit,
-    ) = Unit
 
     override fun checkForPdfViewer(
         onResult: (Boolean) -> Unit,
