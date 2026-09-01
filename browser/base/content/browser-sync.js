@@ -488,6 +488,11 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
     this._updateDevicesPromise = Promise.resolve();
 
     this._initDeviceList();
+
+    
+    
+    
+    gSync.refreshFxaDevices();
   }
 
   observe(subject, topic) {
@@ -2678,6 +2683,11 @@ var gSync = {
     }
 
     devicesPopup.appendChild(fragment);
+
+    
+    
+    
+    this.refreshFxaDevices();
   },
 
   _appendSendTabDeviceList(
