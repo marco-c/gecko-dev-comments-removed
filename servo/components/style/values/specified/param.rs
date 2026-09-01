@@ -94,7 +94,7 @@ impl Parse for LinkParameters {
                 input.expect_comma()?;
                 
                 
-                let parsed = VariableValue::parse(input, None, &context.url_data)?;
+                let parsed = VariableValue::parse(input, None, context.url_data)?;
                 let value = LinkParamValue(OwnedStr::from(parsed.css));
                 Ok(LinkParam { name, value })
             })

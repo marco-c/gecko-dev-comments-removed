@@ -112,8 +112,8 @@ impl Color {
 
     
     pub fn resolve_contrast_color(bg_color: &AbsoluteColor) -> AbsoluteColor {
-        if Self::contrast_ratio(&bg_color, &AbsoluteColor::BLACK)
-            > Self::contrast_ratio(&bg_color, &AbsoluteColor::WHITE)
+        if Self::contrast_ratio(bg_color, &AbsoluteColor::BLACK)
+            > Self::contrast_ratio(bg_color, &AbsoluteColor::WHITE)
         {
             AbsoluteColor::BLACK
         } else {

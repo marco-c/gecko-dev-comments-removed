@@ -92,7 +92,7 @@ impl SVGPathData {
         if !ok || (allow_empty == AllowEmpty::No && path.0.is_empty()) {
             return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
         }
-        return Ok(path);
+        Ok(path)
     }
 
     
@@ -731,7 +731,7 @@ impl<'a> PathParser<'a> {
         
         loop {
             skip_wsp(&mut self.chars);
-            if self.chars.peek().map_or(true, |&m| m == b'M' || m == b'm') {
+            if self.chars.peek().is_none_or(|&m| m == b'M' || m == b'm') {
                 break;
             }
 
@@ -778,8 +778,7 @@ impl<'a> PathParser<'a> {
         self.path.push(PathCommand::Move { point });
 
         
-        if !skip_wsp(&mut self.chars) || self.chars.peek().map_or(true, |c| c.is_ascii_alphabetic())
-        {
+        if !skip_wsp(&mut self.chars) || self.chars.peek().is_none_or(|c| c.is_ascii_alphabetic()) {
             return Ok(());
         }
         skip_comma_wsp(&mut self.chars);
@@ -1007,7 +1006,7 @@ fn parse_number(iter: &mut Peekable<Cloned<slice::Iter<u8>>>) -> Result<CSSFloat
     
     let sign = if iter
         .peek()
-        .map_or(false, |&sign| sign == b'+' || sign == b'-')
+        .is_some_and(|&sign| sign == b'+' || sign == b'-')
     {
         if iter.next().unwrap() == b'-' {
             -1.
@@ -1020,17 +1019,17 @@ fn parse_number(iter: &mut Peekable<Cloned<slice::Iter<u8>>>) -> Result<CSSFloat
 
     
     let mut integral_part: f64 = 0.;
-    let got_dot = if !iter.peek().map_or(false, |&n| n == b'.') {
+    let got_dot = if iter.peek().is_none_or(|&n| n != b'.') {
         
-        if iter.peek().map_or(true, |n| !n.is_ascii_digit()) {
+        if iter.peek().is_none_or(|n| !n.is_ascii_digit()) {
             return Err(());
         }
 
-        while iter.peek().map_or(false, |n| n.is_ascii_digit()) {
+        while iter.peek().is_some_and(|n| n.is_ascii_digit()) {
             integral_part = integral_part * 10. + (iter.next().unwrap() - b'0') as f64;
         }
 
-        iter.peek().map_or(false, |&n| n == b'.')
+        iter.peek().is_some_and(|&n| n == b'.')
     } else {
         true
     };
@@ -1041,12 +1040,12 @@ fn parse_number(iter: &mut Peekable<Cloned<slice::Iter<u8>>>) -> Result<CSSFloat
         
         iter.next();
         
-        if iter.peek().map_or(true, |n| !n.is_ascii_digit()) {
+        if iter.peek().is_none_or(|n| !n.is_ascii_digit()) {
             return Err(());
         }
 
         let mut factor = 0.1;
-        while iter.peek().map_or(false, |n| n.is_ascii_digit()) {
+        while iter.peek().is_some_and(|n| n.is_ascii_digit()) {
             fractional_part += (iter.next().unwrap() - b'0') as f64 * factor;
             factor *= 0.1;
         }
@@ -1056,12 +1055,12 @@ fn parse_number(iter: &mut Peekable<Cloned<slice::Iter<u8>>>) -> Result<CSSFloat
 
     
     
-    if iter.peek().map_or(false, |&exp| exp == b'E' || exp == b'e') {
+    if iter.peek().is_some_and(|&exp| exp == b'E' || exp == b'e') {
         
         iter.next();
         let exp_sign = if iter
             .peek()
-            .map_or(false, |&sign| sign == b'+' || sign == b'-')
+            .is_some_and(|&sign| sign == b'+' || sign == b'-')
         {
             if iter.next().unwrap() == b'-' {
                 -1.
@@ -1073,7 +1072,7 @@ fn parse_number(iter: &mut Peekable<Cloned<slice::Iter<u8>>>) -> Result<CSSFloat
         };
 
         let mut exp: f64 = 0.;
-        while iter.peek().map_or(false, |n| n.is_ascii_digit()) {
+        while iter.peek().is_some_and(|n| n.is_ascii_digit()) {
             exp = exp * 10. + (iter.next().unwrap() - b'0') as f64;
         }
 
@@ -1094,7 +1093,7 @@ fn skip_wsp(iter: &mut Peekable<Cloned<slice::Iter<u8>>>) -> bool {
     
     
     
-    while iter.peek().map_or(false, |c| c.is_ascii_whitespace()) {
+    while iter.peek().is_some_and(|c| c.is_ascii_whitespace()) {
         iter.next();
     }
     iter.peek().is_some()

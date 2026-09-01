@@ -57,8 +57,8 @@ impl<'a> SelectorParser<'a> {
     
     
     
-    pub fn parse_author_origin_no_namespace<'i>(
-        input: &'i str,
+    pub fn parse_author_origin_no_namespace(
+        input: &str,
         url_data: &UrlExtraData,
     ) -> Result<SelectorList<SelectorImpl>, ParseError> {
         let namespaces = Namespaces::default();

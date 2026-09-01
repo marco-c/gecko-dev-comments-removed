@@ -39,10 +39,11 @@ where
 }
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Default, Eq, MallocSizeOf, Ord, PartialEq, PartialOrd)]
 pub enum DataValidity {
     
     
+    #[default]
     Valid = 0,
 
     
@@ -51,12 +52,6 @@ pub enum DataValidity {
 
     
     FullyInvalid = 2,
-}
-
-impl Default for DataValidity {
-    fn default() -> Self {
-        DataValidity::Valid
-    }
 }
 
 
@@ -130,7 +125,7 @@ where
     }
 
     
-    pub fn sheets<'b>(&'b self) -> impl Iterator<Item = &'b S> {
+    pub fn sheets(&self) -> impl Iterator<Item = &S> {
         self.entries.iter().map(|entry| &entry.sheet)
     }
 }
@@ -449,6 +444,15 @@ macro_rules! sheet_set_methods {
     };
 }
 
+impl<S> Default for DocumentStylesheetSet<S>
+where
+    S: StylesheetInDocument + PartialEq + 'static,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<S> DocumentStylesheetSet<S>
 where
     S: StylesheetInDocument + PartialEq + 'static,
@@ -575,6 +579,15 @@ where
 {
     
     pub sheets: SheetCollectionFlusher<'a, S>,
+}
+
+impl<S> Default for AuthorStylesheetSet<S>
+where
+    S: StylesheetInDocument + PartialEq + 'static,
+{
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<S> AuthorStylesheetSet<S>

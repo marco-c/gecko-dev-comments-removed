@@ -51,7 +51,7 @@ impl Animate for Ratio {
         
         
         if matches!(procedure, Procedure::Add | Procedure::Accumulate { .. }) {
-            return Ok(self.clone());
+            return Ok(*self);
         }
 
         

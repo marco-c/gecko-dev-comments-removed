@@ -22,7 +22,7 @@ pub mod numeric_declaration;
 pub mod numeric_type;
 pub mod sum_value;
 
-pub use numeric_type::NumericType;
+pub use numeric_type::{NumericBaseType, NumericType};
 
 
 
@@ -920,7 +920,7 @@ pub trait ToTyped {
     }
 }
 
-impl<'a, T> ToTyped for &'a T
+impl<T> ToTyped for &T
 where
     T: ToTyped + ?Sized,
 {

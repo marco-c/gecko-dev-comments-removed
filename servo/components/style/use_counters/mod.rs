@@ -16,14 +16,13 @@ const BITS_PER_ENTRY: usize = 32;
 
 #[derive(Debug, Default)]
 pub struct CountedUnknownPropertyUseCounters {
-    storage:
-        [AtomicUsize; (property_counts::COUNTED_UNKNOWN + BITS_PER_ENTRY - 1) / BITS_PER_ENTRY],
+    storage: [AtomicUsize; property_counts::COUNTED_UNKNOWN.div_ceil(BITS_PER_ENTRY)],
 }
 
 
 #[derive(Debug, Default)]
 pub struct NonCustomPropertyUseCounters {
-    storage: [AtomicUsize; (property_counts::NON_CUSTOM + BITS_PER_ENTRY - 1) / BITS_PER_ENTRY],
+    storage: [AtomicUsize; property_counts::NON_CUSTOM.div_ceil(BITS_PER_ENTRY)],
 }
 
 
@@ -50,8 +49,7 @@ impl CustomUseCounter {
 
 #[derive(Debug, Default)]
 pub struct CustomUseCounters {
-    storage:
-        [AtomicUsize; ((CustomUseCounter::Last as usize) + BITS_PER_ENTRY - 1) / BITS_PER_ENTRY],
+    storage: [AtomicUsize; (CustomUseCounter::Last as usize).div_ceil(BITS_PER_ENTRY)],
 }
 
 macro_rules! use_counters_methods {

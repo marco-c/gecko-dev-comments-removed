@@ -107,8 +107,6 @@ impl RestyleHint {
 
     
     pub fn propagate(&mut self, traversal_flags: &TraversalFlags) -> Self {
-        use std::mem;
-
         
         
         if traversal_flags.for_animation_only() {
@@ -123,7 +121,7 @@ impl RestyleHint {
         );
 
         
-        mem::replace(self, Self::empty()).propagate_for_non_animation_restyle()
+        std::mem::take(self).propagate_for_non_animation_restyle()
     }
 
     

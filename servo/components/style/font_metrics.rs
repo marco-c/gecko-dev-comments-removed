@@ -93,7 +93,7 @@ impl FontMetrics {
         
         
         
-        self.cap_height.unwrap_or_else(|| self.ascent)
+        self.cap_height.unwrap_or(self.ascent)
     }
 
     
@@ -106,7 +106,7 @@ impl FontMetrics {
         
         
         
-        self.ic_width.unwrap_or_else(|| reference_font_size)
+        self.ic_width.unwrap_or(reference_font_size)
     }
 }
 

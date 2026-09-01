@@ -499,13 +499,8 @@ impl SelectorVisitor for NegationScopeVisitor {
     }
 
     fn visit_simple_selector(&mut self, component: &Component<Self::Impl>) -> bool {
-        if self.in_negation {
-            match component {
-                Component::Scope => {
-                    self.found_scope_in_negation = true;
-                },
-                _ => {},
-            }
+        if self.in_negation && component == &Component::Scope {
+            self.found_scope_in_negation = true;
         }
         true
     }
@@ -744,21 +739,19 @@ where
     ) -> bool {
         let mut sibling_invalidations = InvalidationVector::new();
 
-        let result = self.invalidate_child(
+        
+        
+        
+        
+        
+        
+
+        self.invalidate_child(
             child,
             invalidations,
             &mut sibling_invalidations,
             DescendantInvalidationKind::Dom,
-        );
-
-        
-        
-        
-        
-        
-        
-
-        result
+        )
     }
 
     
@@ -1217,7 +1210,7 @@ where
                 ));
             }
         }
-        return (result, next_invalidations);
+        (result, next_invalidations)
     }
 
     

@@ -64,7 +64,7 @@ impl<Image> ToTyped for Cursor<Image> {
     
     
     fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
-        if self.images.len() != 0 {
+        if !self.images.is_empty() {
             return Err(());
         }
 

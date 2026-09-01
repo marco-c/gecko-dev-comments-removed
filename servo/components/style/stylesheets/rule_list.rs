@@ -4,6 +4,7 @@
 
 
 
+use crate::derives::*;
 use crate::shared_lock::{DeepCloneWithLock, Locked};
 use crate::shared_lock::{SharedRwLock, SharedRwLockReadGuard, ToCssWithGuard};
 use crate::stylesheets::loader::StylesheetLoader;
@@ -74,7 +75,7 @@ impl CssRules {
 
         {
             
-            let ref rule = self.0[index];
+            let rule = &self.0[index];
 
             
             if let CssRule::Namespace(..) = *rule {
@@ -155,7 +156,7 @@ impl CssRules {
 
         
         CssRule::parse(
-            &rule,
+            rule,
             insert_rule_context,
             parent_stylesheet_contents,
             lock,

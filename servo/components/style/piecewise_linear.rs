@@ -3,6 +3,7 @@
 
 
 
+use crate::derives::*;
 use crate::values::computed::Percentage;
 use core::slice::Iter;
 
@@ -92,7 +93,7 @@ impl PiecewiseLinearFunction {
             return next.y;
         }
         let slope = (next.y - prev.y) / (next.x - prev.x);
-        return slope * (x - asymptote.x) + asymptote.y;
+        slope * (x - asymptote.x) + asymptote.y
     }
 
     

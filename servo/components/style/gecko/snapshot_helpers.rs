@@ -162,7 +162,7 @@ pub(super) fn imported_part(
 fn atom_array_atoms(atom_array: &AttrAtomArray) -> &[structs::RefPtr<nsAtom>] {
     
     let array = atom_array.mArray.0.as_ptr() as *const structs::nsTArray<structs::RefPtr<nsAtom>>;
-    unsafe { &**array }
+    unsafe { &*array }
 }
 
 #[inline(always)]

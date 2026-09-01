@@ -498,7 +498,7 @@ fn parse_relative_alpha(
         
         return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
     }
-    Ok(ColorFunction::Alpha(origin_color.into(), alpha))
+    Ok(ColorFunction::Alpha(origin_color, alpha))
 }
 
 

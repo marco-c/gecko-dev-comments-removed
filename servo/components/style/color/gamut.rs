@@ -82,7 +82,7 @@ impl AbsoluteColor {
         
 
         
-        let mut current_oklch = origin_oklch.clone();
+        let mut current_oklch = origin_oklch;
 
         
         let mut clipped = current_oklch.clip_to_dest_space(dest_color_space);
@@ -158,7 +158,7 @@ impl AbsoluteColor {
     
     
     fn clip(&self) -> Self {
-        let mut result = self.clone();
+        let mut result = *self;
         result.components = result.components.map(|c| c.clamp(0.0, 1.0));
         result
     }
