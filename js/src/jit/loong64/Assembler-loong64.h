@@ -1285,6 +1285,17 @@ class AssemblerLOONG64 : public AssemblerShared {
   BufferOffset as_sc_d(Register rd, Register rj, int32_t si14);
 
   
+  BufferOffset as_amswap_b(Register rd, Register rj, Register rk);
+  BufferOffset as_amswap_h(Register rd, Register rj, Register rk);
+  BufferOffset as_amadd_b(Register rd, Register rj, Register rk);
+  BufferOffset as_amadd_h(Register rd, Register rj, Register rk);
+
+  BufferOffset as_amswap_db_b(Register rd, Register rj, Register rk);
+  BufferOffset as_amswap_db_h(Register rd, Register rj, Register rk);
+  BufferOffset as_amadd_db_b(Register rd, Register rj, Register rk);
+  BufferOffset as_amadd_db_h(Register rd, Register rj, Register rk);
+
+  
   BufferOffset as_dbar(int32_t hint);
   BufferOffset as_ibar(int32_t hint);
 
