@@ -195,6 +195,10 @@ nsresult LoadInfoArgsToLoadInfo(const mozilla::net::LoadInfoArgs& aLoadInfoArgs,
   GETTER(bool, IsMetaRefresh, isMetaRefresh, false)                            \
   SETTER(bool, IsMetaRefresh)                                                  \
                                                                                \
+  GETTER(bool, ActivatedFromNavigationalPrefetch,                              \
+         activatedFromNavigationalPrefetch, false)                             \
+  SETTER(bool, ActivatedFromNavigationalPrefetch)                              \
+                                                                               \
   GETTER(bool, IsFromProcessingFrameAttributes,                                \
          isFromProcessingFrameAttributes, false)                               \
                                                                                \
@@ -211,10 +215,6 @@ nsresult LoadInfoArgsToLoadInfo(const mozilla::net::LoadInfoArgs& aLoadInfoArgs,
   GETTER(bool, IsOriginTrialCoepCredentiallessEnabledForTopLevel,              \
          originTrialCoepCredentiallessEnabledForTopLevel, false)               \
   SETTER(bool, IsOriginTrialCoepCredentiallessEnabledForTopLevel)              \
-                                                                               \
-  GETTER(bool, HasInjectedCookieForCookieBannerHandling,                       \
-         hasInjectedCookieForCookieBannerHandling, false)                      \
-  SETTER(bool, HasInjectedCookieForCookieBannerHandling)                       \
                                                                                \
   GETTER(nsILoadInfo::HTTPSUpgradeTelemetryType, HttpsUpgradeTelemetry,        \
          httpsUpgradeTelemetry, nsILoadInfo::NOT_INITIALIZED)                  \

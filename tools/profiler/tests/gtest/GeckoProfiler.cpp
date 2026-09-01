@@ -1948,17 +1948,17 @@ TEST(GeckoProfiler, GetBacktrace)
     static const int N = 100;
     {
       UniqueProfilerBacktrace u[N];
-      for (int i = 0; i < N; i++) {
-        u[i] = profiler_get_backtrace();
-        ASSERT_TRUE(u[i]);
+      for (auto& i : u) {
+        i = profiler_get_backtrace();
+        ASSERT_TRUE(i);
       }
     }
 
     
     UniqueProfilerBacktrace u[N];
-    for (int i = 0; i < N; i++) {
-      u[i] = profiler_get_backtrace();
-      ASSERT_TRUE(u[i]);
+    for (auto& i : u) {
+      i = profiler_get_backtrace();
+      ASSERT_TRUE(i);
     }
 
     profiler_stop();
@@ -2654,6 +2654,8 @@ TEST(GeckoProfiler, Markers)
        false,
        classOfService2,
        NS_BINDING_ABORTED,
+       ""_ns,
+       false,
        nullptr,
       
 
@@ -2689,6 +2691,8 @@ TEST(GeckoProfiler, Markers)
        false,
        classOfService3,
        NS_ERROR_UNEXPECTED,
+       ""_ns,
+       false,
        nullptr,
       
 
@@ -2723,6 +2727,8 @@ TEST(GeckoProfiler, Markers)
        false,
        classOfService4,
        NS_ERROR_DOCSHELL_DYING,
+       ""_ns,
+       false,
        nullptr,
       
 
@@ -2757,6 +2763,8 @@ TEST(GeckoProfiler, Markers)
        false,
        classOfService5,
        NS_ERROR_DOM_CORP_FAILED,
+       ""_ns,
+       false,
        nullptr,
       
 
@@ -2791,6 +2799,8 @@ TEST(GeckoProfiler, Markers)
        false,
        classOfService6,
        NS_ERROR_BLOCKED_BY_POLICY,
+       ""_ns,
+       false,
        nullptr,
       
 
@@ -2856,6 +2866,47 @@ TEST(GeckoProfiler, Markers)
        false,
        classOfService8,
        NS_OK);
+
+  
+  
+  
+  RefPtr<MockClassOfService> classOfService9 =
+      new MockClassOfService(nsIClassOfService::Leader);
+  profiler_add_network_marker(
+       uri,
+       "GET"_ns,
+       34,
+       9,
+       net::NetworkLoadType::LOAD_START,
+       ts1,
+       ts2,
+       56,
+      
+      nsICacheInfoChannel::kCacheHit,
+       78,
+       false,
+       classOfService9,
+       NS_OK,
+       "prefetch;anonymous-client-ip"_ns,
+       false);
+
+  profiler_add_network_marker(
+       uri,
+       "GET"_ns,
+       34,
+       10,
+       net::NetworkLoadType::LOAD_START,
+       ts1,
+       ts2,
+       56,
+      
+      nsICacheInfoChannel::kCacheHit,
+       78,
+       false,
+       classOfService9,
+       NS_OK,
+       ""_ns,
+       true);
 
   EXPECT_TRUE(profiler_add_marker_impl(
       "Text in main thread with stack", geckoprofiler::category::OTHER,
@@ -2958,6 +3009,8 @@ TEST(GeckoProfiler, Markers)
     S_NetworkMarkerPayload_redirect_internal_sts,
     S_NetworkMarkerPayload_private_browsing,
     S_NetworkMarkerPayload_priorityHeader,
+    S_NetworkMarkerPayload_prefetch,
+    S_NetworkMarkerPayload_prefetchActivation,
 
     S_TextWithStack,
     S_TextToMTWithStack,
@@ -3313,6 +3366,8 @@ TEST(GeckoProfiler, Markers)
                   EXPECT_TRUE(payload["isHttpToHttpsRedirect"].isNull());
                   EXPECT_TRUE(payload["redirectId"].isNull());
                   EXPECT_TRUE(payload["contentType"].isNull());
+                  EXPECT_TRUE(payload["secPurpose"].isNull());
+                  EXPECT_TRUE(payload["deliveryType"].isNull());
 
                 } else if (nameString == "Load 2: http://mozilla.org/") {
                   EXPECT_EQ(state, S_NetworkMarkerPayload_stop);
@@ -3480,6 +3535,24 @@ TEST(GeckoProfiler, Markers)
                   EXPECT_TRUE(payload["contentType"].isNull());
                   EXPECT_FALSE(payload["priorityHeader"].isNull());
                   EXPECT_EQ_JSON(payload["priorityHeader"], String, "u=4, i");
+
+                } else if (nameString == "Load 9: http://mozilla.org/") {
+                  EXPECT_EQ(state, S_NetworkMarkerPayload_prefetch);
+                  state = State(S_NetworkMarkerPayload_prefetch + 1);
+                  EXPECT_EQ(typeString, "Network");
+                  EXPECT_EQ_JSON(payload["id"], Int64, 9);
+                  EXPECT_EQ_JSON(payload["secPurpose"], String,
+                                 "prefetch;anonymous-client-ip");
+                  EXPECT_TRUE(payload["deliveryType"].isNull());
+
+                } else if (nameString == "Load 10: http://mozilla.org/") {
+                  EXPECT_EQ(state, S_NetworkMarkerPayload_prefetchActivation);
+                  state = State(S_NetworkMarkerPayload_prefetchActivation + 1);
+                  EXPECT_EQ(typeString, "Network");
+                  EXPECT_EQ_JSON(payload["id"], Int64, 10);
+                  EXPECT_TRUE(payload["secPurpose"].isNull());
+                  EXPECT_EQ_JSON(payload["deliveryType"], String,
+                                 "navigational-prefetch");
 
                 } else if (nameString == "Text in main thread with stack") {
                   EXPECT_EQ(state, S_TextWithStack);
@@ -5646,8 +5719,8 @@ struct LatencyHist {
 
   uint64_t Count() const {
     uint64_t count = 0;
-    for (int i = 0; i < kSlots; ++i) {
-      count += mBuckets[i];
+    for (unsigned long long mBucket : mBuckets) {
+      count += mBucket;
     }
     return count;
   }
