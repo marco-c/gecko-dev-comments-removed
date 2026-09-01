@@ -368,7 +368,7 @@ void AtomRefRuntime::recordRef(JSContext* cx, T* thing) {
   
   ReadBarrier(thing);
 
-  return inlinedRecordRef(cx->zone(), thing);
+  inlinedRecordRefInfallible(cx->zone(), thing);
 }
 
 template void AtomRefRuntime::recordRef(JSContext* cx, JSAtom* thing);

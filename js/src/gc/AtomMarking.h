@@ -33,15 +33,12 @@ class AtomRefRuntime {
   js::GCLockData<Vector<size_t, 0, SystemAllocPolicy>> pendingFreeArenaIndexes;
   mozilla::Atomic<bool, mozilla::Relaxed> hasPendingFreeArenaIndexes;
 
-  inline void recordChildren(Zone* zone, JSAtom*);
-  inline void recordChildren(Zone* zone, JS::Symbol* symbol);
-
  public:
   
   
-  mozilla::Atomic<size_t, mozilla::SequentiallyConsistent> allocatedWords;
+  mozilla::Atomic<size_t, mozilla::SequentiallyConsistent> allocatedWords{0};
 
-  AtomRefRuntime() : allocatedWords(0) {}
+  AtomRefRuntime() = default;
 
   
   size_t allocateIndex(GCRuntime* gc);
@@ -88,6 +85,9 @@ class AtomRefRuntime {
   
   void refineZoneBitmapForCollectedZone(Zone* zone, Arena* arena);
 
+  template <typename T>
+  MOZ_ALWAYS_INLINE bool inlinedRecordRefInternal(Zone* zone, T* thing);
+
  public:
   
   template <typename T>
@@ -95,10 +95,8 @@ class AtomRefRuntime {
 
   
   
-  template <typename T, bool Fallible>
-  MOZ_ALWAYS_INLINE bool inlinedRecordRefInternal(Zone* zone, T* thing);
   template <typename T>
-  MOZ_ALWAYS_INLINE void inlinedRecordRef(Zone* zone, T* thing);
+  MOZ_ALWAYS_INLINE void inlinedRecordRefInfallible(Zone* zone, T* thing);
   template <typename T>
   [[nodiscard]] MOZ_ALWAYS_INLINE bool inlinedRecordRefFallible(Zone* zone,
                                                                 T* thing);
