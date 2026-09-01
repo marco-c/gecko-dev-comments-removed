@@ -3,26 +3,32 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 // eslint-disable-next-line no-unused-vars
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useSelector, batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { useIntersectionObserver } from "../../../lib/utils";
+import { useWidgetTelemetry } from "../useWidgetTelemetry";
 import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 import { WidgetMenuFooter } from "../WidgetMenuFooter";
 import { SizeSubmenu } from "../SizeSubmenu";
 import { StockTicker } from "./StockTicker";
 import { StocksError } from "./StocksError";
 
-const USER_ACTION_TYPES = {
-  CHANGE_SIZE: "change_size",
-  SEARCH_TICKERS: "search_tickers",
-  LEARN_MORE: "learn_more",
-};
-
 const STOCKS_ENTRY = WIDGET_REGISTRY.find(w => w.id === "stocks");
 const STOCKS_PLACEHOLDER_COUNT = 4;
 
-function Stocks({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
+// The two lists the dropdown switches between: "markets" (the default ETFs)
+// and "watchlist" (the user's picks). Each id maps to its menu/button label.
+const STOCKS_LISTS = [
+  { id: "markets", l10nId: "newtab-stocks-list-markets" },
+  { id: "watchlist", l10nId: "newtab-stocks-list-watchlist" },
+];
+
+function Stocks({
+  dispatch,
+  handleUserInteraction,
+  widgetsMayBeMaximized,
+  widgetEnabledMap,
+}) {
   const prefs = useSelector(state => state.Prefs.values);
   const { tickers, error } = useSelector(state => state.Stocks);
 
@@ -30,25 +36,49 @@ function Stocks({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
   // default can apply.
   const widgetSize = resolveWidgetSize(STOCKS_ENTRY, prefs);
   const showError = error && !tickers.length;
-  const impressionFired = useRef(false);
 
-  const handleIntersection = useCallback(() => {
-    if (impressionFired.current) {
-      return;
+  // Show the "New" badge until the user first interacts with the widget;
+  // handleInteraction flips widgets.stocks.interaction, which removes it.
+  const hasInteracted = prefs["widgets.stocks.interaction"];
+
+  const { impressionRef, recordUserAction, recordError } = useWidgetTelemetry({
+    dispatch,
+    widget: STOCKS_ENTRY,
+    widgetSize,
+  });
+
+  // Any user action flips widgets.stocks.interaction (idempotent, one-way),
+  // matching the other widgets. Hiding the widget is not an interaction.
+  const handleInteraction = useCallback(
+    () => handleUserInteraction("stocks"),
+    [handleUserInteraction]
+  );
+
+  // Switching lists counts as an interaction; reselecting the current list does not.
+  const [selectedList, setSelectedList] = useState("markets");
+  const handleSelectList = useCallback(
+    list => {
+      if (list === selectedList) {
+        return;
+      }
+      setSelectedList(list);
+      recordUserAction("change_list", { source: "widget", value: list });
+      handleInteraction();
+    },
+    [selectedList, recordUserAction, handleInteraction]
+  );
+  const selectedListL10nId = STOCKS_LISTS.find(
+    l => l.id === selectedList
+  ).l10nId;
+  const showDropdown = widgetSize === "large";
+
+  // Without the dropdown (medium/small) there's no way to switch lists, so reset to
+  // Markets; otherwise a leftover "watchlist" selection would leave the body empty.
+  useEffect(() => {
+    if (!showDropdown && selectedList !== "markets") {
+      setSelectedList("markets");
     }
-    impressionFired.current = true;
-    dispatch(
-      ac.AlsoToMain({
-        type: at.WIDGETS_IMPRESSION,
-        data: {
-          widget_name: "stocks",
-          widget_size: widgetSize,
-        },
-      })
-    );
-  }, [dispatch, widgetSize]);
-
-  const widgetRef = useIntersectionObserver(handleIntersection);
+  }, [showDropdown, selectedList]);
 
   const handleChangeSize = useCallback(
     size => {
@@ -59,66 +89,76 @@ function Stocks({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
             data: { name: STOCKS_ENTRY.sizePref, value: size },
           })
         );
-        dispatch(
-          ac.OnlyToMain({
-            type: at.WIDGETS_USER_EVENT,
-            data: {
-              widget_name: "stocks",
-              widget_source: "context_menu",
-              user_action: USER_ACTION_TYPES.CHANGE_SIZE,
-              action_value: size,
-              widget_size: size,
-            },
-          })
-        );
+        recordUserAction("change_size", {
+          source: "context_menu",
+          value: size,
+          size,
+        });
+        handleInteraction();
       });
     },
-    [dispatch]
+    [dispatch, recordUserAction, handleInteraction]
   );
 
   // Placeholder: a real ticker search will replace this telemetry-only stub in
   // a follow-up.
   function handleSearchTickers() {
-    dispatch(
-      ac.OnlyToMain({
-        type: at.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "stocks",
-          widget_source: "context_menu",
-          user_action: USER_ACTION_TYPES.SEARCH_TICKERS,
-          widget_size: widgetSize,
-        },
-      })
-    );
+    recordUserAction("search_tickers", { source: "context_menu" });
+    handleInteraction();
   }
 
   // The shared footer opens the support link; here we only record the click.
   function handleLearnMore() {
-    dispatch(
-      ac.OnlyToMain({
-        type: at.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "stocks",
-          widget_source: "context_menu",
-          user_action: USER_ACTION_TYPES.LEARN_MORE,
-          widget_size: widgetSize,
-        },
-      })
-    );
+    recordUserAction("learn_more", { source: "context_menu" });
+    handleInteraction();
   }
 
   return (
     <article
       className={`stocks widget col-4 ${widgetSize}-widget`}
-      ref={el => {
-        widgetRef.current = [el];
-      }}
+      ref={impressionRef}
+      aria-labelledby="stocks-widget-label"
     >
       <div className="stocks-title-wrapper">
-        <span
-          className="stocks-title"
-          data-l10n-id="newtab-stocks-widget-title"
-        ></span>
+        <div className="stocks-badge-title-wrapper">
+          {!hasInteracted && !!tickers.length && (
+            <moz-badge
+              className="stocks-new-badge"
+              data-l10n-id="newtab-widget-lists-label-new"
+            ></moz-badge>
+          )}
+          {/* Keep the heading mounted so aria-labelledby always resolves. */}
+          <h2
+            id="stocks-widget-label"
+            className={`stocks-heading${showDropdown ? " sr-only" : ""}`}
+            data-l10n-id="newtab-stocks-widget-title"
+          />
+          {showDropdown && (
+            <>
+              <moz-button
+                className="stocks-list-button"
+                type="ghost"
+                size="small"
+                iconSrc="chrome://global/skin/icons/arrow-down-12.svg"
+                iconPosition="end"
+                menuId="stocks-list-menu"
+                data-l10n-id={selectedListL10nId}
+              ></moz-button>
+              <panel-list id="stocks-list-menu">
+                {STOCKS_LISTS.map(({ id, l10nId }) => (
+                  <panel-item
+                    key={id}
+                    type="checkbox"
+                    checked={selectedList === id || undefined}
+                    onClick={() => handleSelectList(id)}
+                    data-list={id}
+                    data-l10n-id={l10nId}
+                  />
+                ))}
+              </panel-list>
+            </>
+          )}
+        </div>
         <div className="stocks-context-menu-wrapper">
           <moz-button
             className="stocks-context-menu-button"
@@ -158,47 +198,51 @@ function Stocks({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
       </div>
 
       <div className="stocks-body">
-        {showError && (
-          <StocksError widgetSize={widgetSize} dispatch={dispatch} />
-        )}
-        {!showError && widgetSize === "medium" && (
-          <ul
-            className={`stocks-grid${tickers.length ? "" : " stocks-grid--loading"}`}
-          >
-            {tickers.length
-              ? tickers.map(t => (
-                  <StockTicker
-                    key={t.ticker}
-                    name={t.name}
-                    ticker={t.ticker}
-                    price={t.last_price}
-                    changePercent={t.todays_change_perc}
-                  />
-                ))
-              : Array.from({ length: STOCKS_PLACEHOLDER_COUNT }).map((_, i) => (
-                  <StockTicker key={i} loading={true} />
-                ))}
-          </ul>
-        )}
-        {!showError && widgetSize === "large" && (
-          <ul
-            className={`stocks-list${tickers.length ? "" : " stocks-list--loading"}`}
-          >
-            {tickers.length
-              ? tickers.map(t => (
-                  <StockTicker
-                    key={t.ticker}
-                    size="large"
-                    name={t.name}
-                    ticker={t.ticker}
-                    price={t.last_price}
-                    changePercent={t.todays_change_perc}
-                  />
-                ))
-              : Array.from({ length: STOCKS_PLACEHOLDER_COUNT }).map((_, i) => (
-                  <StockTicker key={i} size="large" loading={true} />
-                ))}
-          </ul>
+        {selectedList === "markets" && (
+          <>
+            {showError && <StocksError recordError={recordError} />}
+            {!showError && widgetSize === "medium" && (
+              <ul
+                className={`stocks-grid${tickers.length ? "" : " stocks-grid--loading"}`}
+              >
+                {tickers.length
+                  ? tickers.map(t => (
+                      <StockTicker
+                        key={t.ticker}
+                        name={t.name}
+                        ticker={t.ticker}
+                        price={t.last_price}
+                        changePercent={t.todays_change_perc}
+                      />
+                    ))
+                  : Array.from({ length: STOCKS_PLACEHOLDER_COUNT }).map(
+                      (_, i) => <StockTicker key={i} loading={true} />
+                    )}
+              </ul>
+            )}
+            {!showError && widgetSize === "large" && (
+              <ul
+                className={`stocks-list${tickers.length ? "" : " stocks-list--loading"}`}
+              >
+                {tickers.length
+                  ? tickers.map(t => (
+                      <StockTicker
+                        key={t.ticker}
+                        size="large"
+                        name={t.name}
+                        ticker={t.ticker}
+                        price={t.last_price}
+                        changePercent={t.todays_change_perc}
+                      />
+                    ))
+                  : Array.from({ length: STOCKS_PLACEHOLDER_COUNT }).map(
+                      (_, i) => (
+                        <StockTicker key={i} size="large" loading={true} />
+                      )
+                    )}
+              </ul>
+            )}
+          </>
         )}
       </div>
     </article>
