@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_mips_shared_MacroAssembler_mips_shared_inl_h
 #define jit_mips_shared_MacroAssembler_mips_shared_inl_h
 
@@ -115,6 +113,11 @@ void MacroAssembler::xor32(const Address& src, Register dest) {
   Register scratch2 = temps.Acquire();
   load32(src, scratch2);
   ma_xor(dest, scratch2);
+}
+
+void MacroAssembler::nor32(Imm32 imm, Register src, Register dest) {
+  or32(imm, src, dest);
+  not32(dest);
 }
 
 
@@ -1504,31 +1507,31 @@ void MacroAssembler::spectreZeroRegister(Condition cond, Register scratch,
 
 
 
-FaultingCodeOffset MacroAssembler::storeDouble(FloatRegister src,
+FaultingCodeRange MacroAssembler::storeDouble(FloatRegister src,
+                                              const Address& addr) {
+  return ma_sd(src, addr);
+}
+FaultingCodeRange MacroAssembler::storeDouble(FloatRegister src,
+                                              const BaseIndex& addr) {
+  return ma_sd(src, addr);
+}
+
+FaultingCodeRange MacroAssembler::storeFloat32(FloatRegister src,
                                                const Address& addr) {
-  return ma_sd(src, addr);
+  return ma_ss(src, addr);
 }
-FaultingCodeOffset MacroAssembler::storeDouble(FloatRegister src,
+FaultingCodeRange MacroAssembler::storeFloat32(FloatRegister src,
                                                const BaseIndex& addr) {
-  return ma_sd(src, addr);
-}
-
-FaultingCodeOffset MacroAssembler::storeFloat32(FloatRegister src,
-                                                const Address& addr) {
-  return ma_ss(src, addr);
-}
-FaultingCodeOffset MacroAssembler::storeFloat32(FloatRegister src,
-                                                const BaseIndex& addr) {
   return ma_ss(src, addr);
 }
 
-FaultingCodeOffset MacroAssembler::storeFloat16(FloatRegister src,
-                                                const Address& dest, Register) {
+FaultingCodeRange MacroAssembler::storeFloat16(FloatRegister src,
+                                               const Address& dest, Register) {
   MOZ_CRASH("Not supported for this target");
 }
-FaultingCodeOffset MacroAssembler::storeFloat16(FloatRegister src,
-                                                const BaseIndex& dest,
-                                                Register) {
+FaultingCodeRange MacroAssembler::storeFloat16(FloatRegister src,
+                                               const BaseIndex& dest,
+                                               Register) {
   MOZ_CRASH("Not supported for this target");
 }
 
