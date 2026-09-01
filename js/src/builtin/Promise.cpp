@@ -6186,13 +6186,7 @@ static bool Promise_static_try(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  
   RootedObject c(cx, &cVal.toObject());
-  Rooted<PromiseCapability> promiseCapability(cx);
-  if (!NewPromiseCapability(cx, c, &promiseCapability, false)) {
-    return false;
-  }
-  HandleObject promiseObject = promiseCapability.promise();
 
   
   size_t argCount = args.length();
@@ -6223,24 +6217,33 @@ static bool Promise_static_try(JSContext* cx, unsigned argc, Value* vp) {
     }
 
     
+    Rooted<PromiseCapability> promiseCapability(cx);
+    if (!NewPromiseCapability(cx, c, &promiseCapability, false)) {
+      return false;
+    }
+    HandleObject promiseObject = promiseCapability.promise();
+
+    
     
     if (!CallPromiseRejectFunction(cx, promiseCapability.reject(), reason,
                                    promiseObject, stack,
                                    UnhandledRejectionBehavior::Report)) {
       return false;
     }
-  } else {
+
     
-    
-    
-    if (!CallPromiseResolveFunction(cx, promiseCapability.resolve(), rval,
-                                    promiseObject)) {
-      return false;
-    }
+    args.rval().setObject(*promiseObject);
+    return true;
   }
 
   
-  args.rval().setObject(*promiseObject);
+  
+  RootedObject promise(cx, PromiseResolve(cx, c, rval));
+  if (!promise) {
+    return false;
+  }
+
+  args.rval().setObject(*promise);
   return true;
 }
 
