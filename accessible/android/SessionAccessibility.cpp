@@ -682,14 +682,31 @@ void SessionAccessibility::PopulateNodeInfo(
     hint.Append(accDesc);
   }
 
-  if ((state & states::REQUIRED) != 0) {
-    nsAutoString requiredString;
-    if (LocalizeString(u"stateRequired"_ns, requiredString)) {
+  if (mozilla::jni::GetAPIVersion() < 36) {
+    
+    
+    AutoTArray<nsString, 1> stateStrings;
+    if ((state & states::REQUIRED) != 0) {
+      nsAutoString requiredString;
+      if (LocalizeString(u"stateRequired"_ns, requiredString)) {
+        stateStrings.AppendElement(requiredString);
+      }
+    }
+
+    if ((state & states::MIXED) != 0 && (state & states::CHECKABLE) != 0) {
+      
+      nsAutoString partiallyCheckedString;
+      if (LocalizeString(u"statePartiallyChecked"_ns, partiallyCheckedString)) {
+        stateStrings.AppendElement(partiallyCheckedString);
+      }
+    }
+
+    if (!stateStrings.IsEmpty()) {
       if (!hint.IsEmpty()) {
         
         hint.AppendLiteral(", ");
       }
-      hint.Append(requiredString);
+      StringJoinAppend(hint, u" "_ns, stateStrings);
     }
   }
 
