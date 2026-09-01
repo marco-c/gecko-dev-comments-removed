@@ -720,6 +720,13 @@ class gfxFontEntry {
   mozilla::Atomic<bool> mGrFaceInitialized;
   mozilla::Atomic<bool> mCheckedForColorGlyph;
   mozilla::Atomic<bool> mCheckedForVariationAxes;
+#if MOZ_FONTATIONS
+  
+  
+  
+  
+  mozilla::Atomic<bool> mSkrifaFontInitialized;
+#endif
 
   
   
@@ -740,8 +747,23 @@ class gfxFontEntry {
   };
 
   std::atomic<SpaceFeatures> mHasSpaceFeatures;
-#ifdef MOZ_FONTATIONS
-  const mozilla::gfx::SkrifaFontRef* GetSkrifaFontFace() const {
+
+#if MOZ_FONTATIONS
+  
+  
+  
+  
+  const mozilla::gfx::SkrifaFontRef* GetSkrifaFont() {
+    if (mozilla::gfx::SkrifaFontRef* f = mSkrifaFontFace) {
+      return f;
+    }
+    if (!mSkrifaFontInitialized) {
+      mozilla::AutoWriteLock lock(mLock);
+      if (!mSkrifaFontInitialized) {
+        InitSkrifaFontFace();
+        mSkrifaFontInitialized = true;
+      }
+    }
     return mSkrifaFontFace;
   }
 #endif
@@ -793,8 +815,16 @@ class gfxFontEntry {
                       const mozilla::fontlist::Family* aFamily);
 
 #ifdef MOZ_FONTATIONS
+  
+  
+  
   void SetSkrifaFont(mozilla::gfx::SkrifaFontRef* aSkrifaFont,
                      mozilla::MemoryMappedFile&& aSkrifaFontFile);
+
+  
+  
+  virtual void InitSkrifaFontFace() {}
+
   mozilla::Atomic<mozilla::gfx::SkrifaFontRef*> mSkrifaFontFace;
   mozilla::MemoryMappedFile mSkrifaFontFile;
 #endif
