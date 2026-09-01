@@ -3,6 +3,7 @@
 
 
 #include "Shutdown.h"
+#include "mozilla/Components.h"
 #include "mozilla/Services.h"
 #include "mozilla/SimpleEnumerator.h"
 #include "nsComponentManagerUtils.h"
@@ -29,7 +30,7 @@ PlacesShutdownBlocker::PlacesShutdownBlocker(const nsString& aName)
   
   
   nsCOMPtr<nsIAsyncShutdownService> asyncShutdown =
-      services::GetAsyncShutdownService();
+      components::AsyncShutdown::Service();
   MOZ_ASSERT(asyncShutdown);
   if (asyncShutdown) {
     nsCOMPtr<nsIAsyncShutdownBarrier> barrier;
