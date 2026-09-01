@@ -303,7 +303,6 @@ export class _DSCard extends React.PureComponent {
           value: {
             event_source: "card",
             card_type: this.props.flightId ? "spoc" : "organic",
-            recommendation_id: this.props.recommendation_id,
             tile_id: this.props.id,
             ...(this.props.shim && this.props.shim.click
               ? { shim: this.props.shim.click }
@@ -354,7 +353,6 @@ export class _DSCard extends React.PureComponent {
                 ? { shim: this.props.shim.click }
                 : {}),
               type: this.props.flightId ? "spoc" : "organic",
-              recommendation_id: this.props.recommendation_id,
               topic: this.props.topic,
               selected_topics: this.props.selectedTopics,
               ...(this.props.format
@@ -612,6 +610,8 @@ export class _DSCard extends React.PureComponent {
     } = DiscoveryStream;
 
     const sectionsEnabled = Prefs.values[PREF_SECTIONS_ENABLED];
+    // @nova-cleanup(remove-pref): Delete this read and the two novaEnabled props
+    // passed to DSContextFooter below; that component drops the prop entirely.
     const novaEnabled = Prefs.values["nova.enabled"];
     // We can ignore hideDescriptions if we are in sections.
     const excerpt =
@@ -698,7 +698,6 @@ export class _DSCard extends React.PureComponent {
                 ...(this.props.shim && this.props.shim.impression
                   ? { shim: this.props.shim.impression }
                   : {}),
-                recommendation_id: this.props.recommendation_id,
                 corpus_item_id: this.props.corpus_item_id,
                 scheduled_corpus_item_id: this.props.scheduled_corpus_item_id,
                 recommended_at: this.props.recommended_at,
@@ -768,7 +767,6 @@ export class _DSCard extends React.PureComponent {
               onMenuUpdate={this.onMenuUpdate}
               onMenuShow={this.onMenuShow}
               isRecentSave={isRecentSave}
-              recommendation_id={this.props.recommendation_id}
               tile_id={this.props.id}
               block_key={this.props.id}
               corpus_item_id={this.props.corpus_item_id}

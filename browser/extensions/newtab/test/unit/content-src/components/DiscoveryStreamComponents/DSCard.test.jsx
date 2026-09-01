@@ -54,43 +54,6 @@ describe("<DSCard>", () => {
     assert.ok(wrapper.find(".ds-card"));
   });
 
-  it("should include nova-card-ui class when Nova is enabled in sections mode", () => {
-    wrapper.setProps({
-      mayHaveSectionsCards: true,
-      sectionsClassNames: "col-1-small",
-      Prefs: {
-        ...INITIAL_STATE.Prefs,
-        values: { ...INITIAL_STATE.Prefs.values, "nova.enabled": true },
-      },
-    });
-
-    assert.isTrue(wrapper.find("article.ds-card").hasClass("nova-card-ui"));
-  });
-
-  it("should include nova-card-ui class when Nova is enabled in CardGrid (no sections)", () => {
-    wrapper.setProps({
-      mayHaveSectionsCards: false,
-      Prefs: {
-        ...INITIAL_STATE.Prefs,
-        values: { ...INITIAL_STATE.Prefs.values, "nova.enabled": true },
-      },
-    });
-
-    assert.isTrue(wrapper.find("article.ds-card").hasClass("nova-card-ui"));
-  });
-
-  it("should not include nova-card-ui class when Nova is disabled", () => {
-    wrapper.setProps({
-      mayHaveSectionsCards: false,
-      Prefs: {
-        ...INITIAL_STATE.Prefs,
-        values: { ...INITIAL_STATE.Prefs.values, "nova.enabled": false },
-      },
-    });
-
-    assert.isFalse(wrapper.find("article.ds-card").hasClass("nova-card-ui"));
-  });
-
   it("should render a SafeAnchor", () => {
     wrapper.setProps({ url: "https://foo.com" });
 
@@ -287,7 +250,6 @@ describe("<DSCard>", () => {
           value: {
             event_source: "card",
             card_type: "organic",
-            recommendation_id: undefined,
             tile_id: "fooidx",
             scheduled_corpus_item_id: undefined,
             corpus_item_id: undefined,
@@ -312,7 +274,6 @@ describe("<DSCard>", () => {
               id: "fooidx",
               pos: 1,
               type: "organic",
-              recommendation_id: undefined,
               topic: undefined,
               selected_topics: undefined,
               format: "medium-card",
@@ -347,7 +308,6 @@ describe("<DSCard>", () => {
           value: {
             event_source: "card",
             card_type: "spoc",
-            recommendation_id: undefined,
             tile_id: "fooidx",
             scheduled_corpus_item_id: undefined,
             corpus_item_id: undefined,
@@ -372,7 +332,6 @@ describe("<DSCard>", () => {
               id: "fooidx",
               pos: 1,
               type: "spoc",
-              recommendation_id: undefined,
               topic: undefined,
               selected_topics: undefined,
               format: "spoc",
@@ -409,7 +368,6 @@ describe("<DSCard>", () => {
           value: {
             event_source: "card",
             card_type: "organic",
-            recommendation_id: undefined,
             tile_id: "fooidx",
             shim: "click shim",
             scheduled_corpus_item_id: undefined,
@@ -436,7 +394,6 @@ describe("<DSCard>", () => {
               pos: 1,
               shim: "click shim",
               type: "organic",
-              recommendation_id: undefined,
               topic: undefined,
               selected_topics: undefined,
               format: "medium-card",
