@@ -23,7 +23,6 @@ class SmoothingFilter {
   virtual ~SmoothingFilter() = default;
   virtual void AddSample(float sample, Timestamp now) = 0;
   virtual std::optional<float> GetAverage(Timestamp now) = 0;
-  virtual bool SetTimeConstantMs(int time_constant_ms) = 0;
 };
 
 
@@ -40,7 +39,6 @@ class SmoothingFilterImpl final : public SmoothingFilter {
   
   
   
-  
   explicit SmoothingFilterImpl(int init_time_ms);
 
   SmoothingFilterImpl() = delete;
@@ -51,22 +49,21 @@ class SmoothingFilterImpl final : public SmoothingFilter {
 
   void AddSample(float sample, Timestamp now) override;
   std::optional<float> GetAverage(Timestamp now) override;
-  bool SetTimeConstantMs(int time_constant_ms) override;
 
   
   float alpha() const { return alpha_; }
 
  private:
-  void UpdateAlpha(int time_constant_ms);
   void ExtrapolateLastSample(int64_t time_ms);
 
   const int init_time_ms_;
   const float init_factor_;
   const float init_const_;
+  const float alpha_;
 
   std::optional<int64_t> init_end_time_ms_;
   float last_sample_;
-  float alpha_;
+
   float state_;
   int64_t last_state_time_ms_;
 };

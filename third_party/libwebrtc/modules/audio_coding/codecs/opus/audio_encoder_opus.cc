@@ -507,24 +507,8 @@ void AudioEncoderOpusImpl::OnReceivedTargetAudioBitrate(
 void AudioEncoderOpusImpl::OnReceivedUplinkAllocation(
     BitrateAllocationUpdate update) {
   int target_audio_bitrate_bps = update.target_bitrate.bps();
-  std::optional<int64_t> bwe_period_ms =
-      update.bwe_period.IsFinite() ? std::make_optional(update.bwe_period.ms())
-                                   : std::nullopt;
   if (audio_network_adaptor_) {
     audio_network_adaptor_->SetTargetAudioBitrate(target_audio_bitrate_bps);
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (bwe_period_ms)
-      bitrate_smoother_->SetTimeConstantMs(*bwe_period_ms * 4);
     bitrate_smoother_->AddSample(target_audio_bitrate_bps,
                                  env_.clock().CurrentTime());
 
