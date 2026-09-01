@@ -69,6 +69,19 @@ using ComputeSizeFlags = mozilla::EnumSet<ComputeSizeFlag>;
 
 
 
+enum class TransformMatrixFlag : uint8_t {
+  
+  InCSSUnits,
+  
+  
+  StopAtStackingContextAndDisplayPort,
+};
+using TransformMatrixFlags = mozilla::EnumSet<TransformMatrixFlag>;
+
+
+
+
+
 
 
 inline constexpr CSSIntCoord kFallbackIntrinsicWidthInPixels(300);

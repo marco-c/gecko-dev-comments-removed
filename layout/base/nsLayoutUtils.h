@@ -964,7 +964,8 @@ class nsLayoutUtils {
 
 
   static Matrix4x4Flagged GetTransformToAncestor(
-      RelativeTo aFrame, RelativeTo aAncestor, uint32_t aFlags = 0,
+      RelativeTo aFrame, RelativeTo aAncestor,
+      mozilla::TransformMatrixFlags aFlags = {},
       nsIFrame** aOutAncestor = nullptr);
 
   
