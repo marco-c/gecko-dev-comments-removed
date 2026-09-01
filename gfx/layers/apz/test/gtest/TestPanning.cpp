@@ -169,9 +169,6 @@ TEST_F(APZCPanningTester, PanWithHistoricalTouchData) {
   
 
   APZEventResult result = TouchDown(apzc, ScreenIntPoint(0, 50), mcc->Time());
-  if (result.GetStatus() != nsEventStatus_eConsumeNoDefault) {
-    SetDefaultAllowedTouchBehavior(apzc, result.mInputBlockId);
-  }
 
   mcc->AdvanceByMillis(50);
   result = TouchMove(apzc, ScreenIntPoint(0, 45), mcc->Time());
@@ -190,9 +187,6 @@ TEST_F(APZCPanningTester, PanWithHistoricalTouchData) {
   
 
   result = TouchDown(apzc, ScreenIntPoint(0, 50), mcc->Time());
-  if (result.GetStatus() != nsEventStatus_eConsumeNoDefault) {
-    SetDefaultAllowedTouchBehavior(apzc, result.mInputBlockId);
-  }
 
   mcc->AdvanceByMillis(50);
   result = TouchMove(apzc, ScreenIntPoint(0, 45), mcc->Time());
@@ -207,9 +201,6 @@ TEST_F(APZCPanningTester, PanWithHistoricalTouchData) {
   
 
   result = TouchDown(apzc, ScreenIntPoint(0, 50), mcc->Time());
-  if (result.GetStatus() != nsEventStatus_eConsumeNoDefault) {
-    SetDefaultAllowedTouchBehavior(apzc, result.mInputBlockId);
-  }
 
   mcc->AdvanceByMillis(50);
   result = TouchMove(apzc, ScreenIntPoint(0, 45), mcc->Time());

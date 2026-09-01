@@ -324,17 +324,14 @@ class TestAsyncPanZoomController : public AsyncPanZoomController {
     return Some(std::move(behaviors));
   }
 
-  APZEventResult ReceiveInputEvent(
-      InputData& aEvent,
-      const Maybe<nsTArray<TouchBehaviorFlags>>& aTouchBehaviors = Nothing()) {
+  APZEventResult ReceiveInputEvent(InputData& aEvent) {
     
     
     
     
     APZEventResult result = GetInputQueue()->ReceiveInputEvent(
         this, TargetConfirmationFlags{!mWaitForMainThread}, aEvent,
-        aTouchBehaviors ? Some(aTouchBehaviors->Clone())
-                        : DefaultTouchBehaviors(aEvent));
+        DefaultTouchBehaviors(aEvent));
 
     if (aEvent.mInputType == PANGESTURE_INPUT &&
         aEvent.AsPanGestureInput().AllowsSwipe()) {

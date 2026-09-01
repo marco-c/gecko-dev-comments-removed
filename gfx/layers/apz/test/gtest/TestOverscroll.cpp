@@ -174,10 +174,7 @@ TEST_F(APZCOverscrollTester, OverScroll_Bug1152051b) {
   
   
   
-  APZEventResult result = TouchDown(apzc, ScreenIntPoint(10, 10), mcc->Time());
-  if (result.GetStatus() != nsEventStatus_eConsumeNoDefault) {
-    SetDefaultAllowedTouchBehavior(apzc, result.mInputBlockId);
-  }
+  TouchDown(apzc, ScreenIntPoint(10, 10), mcc->Time());
   TouchUp(apzc, ScreenIntPoint(10, 10), mcc->Time());
 
   
@@ -2344,7 +2341,6 @@ TEST_F(APZCOverscrollTester, NoResetTouchInputStateCalled) {
 
   ScreenIntPoint touchPoint(5, 5);
   APZEventResult result = TouchDown(apzc, touchPoint, mcc->Time());
-  SetDefaultAllowedTouchBehavior(apzc, result.mInputBlockId);
   apzc->ContentReceivedInputBlock(result.mInputBlockId,
                                   true);
 
@@ -2381,7 +2377,6 @@ TEST_F(APZCOverscrollTester, ResetTouchInputStateJustOnce) {
 
   ScreenIntPoint touchPoint(5, 5);
   APZEventResult result = TouchDown(apzc, touchPoint, mcc->Time());
-  SetDefaultAllowedTouchBehavior(apzc, result.mInputBlockId);
   apzc->ContentReceivedInputBlock(result.mInputBlockId,
                                   true);
 
