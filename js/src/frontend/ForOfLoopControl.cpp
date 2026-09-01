@@ -6,7 +6,6 @@
 
 #include "frontend/BytecodeEmitter.h"  
 #include "frontend/EmitterScope.h"     
-#include "frontend/IfEmitter.h"        
 #include "vm/CompletionKind.h"         
 #include "vm/Opcodes.h"                
 
@@ -18,7 +17,6 @@ ForOfLoopControl::ForOfLoopControl(BytecodeEmitter* bce, int32_t iterDepth,
                                    IteratorKind iterKind)
     : LoopControl(bce, StatementKind::ForOfLoop),
       iterDepth_(iterDepth),
-      numYieldsAtBeginCodeNeedingIterClose_(UINT32_MAX),
       selfHostedIter_(selfHostedIter),
       iterKind_(iterKind) {}
 
@@ -29,9 +27,6 @@ bool ForOfLoopControl::emitBeginCodeNeedingIteratorClose(BytecodeEmitter* bce) {
   if (!tryCatch_->emitTry()) {
     return false;
   }
-
-  MOZ_ASSERT(numYieldsAtBeginCodeNeedingIterClose_ == UINT32_MAX);
-  numYieldsAtBeginCodeNeedingIterClose_ = bce->bytecodeSection().numYields();
 
   return true;
 }
@@ -97,70 +92,11 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
     return false;
   }
 
-  
-  
-  
-  
-  
-  
-  uint32_t numYieldsEmitted = bce->bytecodeSection().numYields();
-  if (numYieldsEmitted > numYieldsAtBeginCodeNeedingIterClose_) {
-    if (!tryCatch_->emitFinally()) {
-      return false;
-    }
-    
-    InternalIfEmitter ifGeneratorClosing(bce);
-    if (!bce->emitPickN(2)) {
-      
-      return false;
-    }
-    if (!bce->emit1(JSOp::IsGenClosing)) {
-      
-      return false;
-    }
-    if (!ifGeneratorClosing.emitThen()) {
-      
-      return false;
-    }
-    if (forOfDisposalEmitter_.isSome()) {
-      if (!bce->emit1(JSOp::Swap)) {
-        
-        return false;
-      }
-      if (!forOfDisposalEmitter_->prepareForForOfIteratorClose()) {
-        
-        return false;
-      }
-      if (!bce->emit1(JSOp::Swap)) {
-        
-        return false;
-      }
-    }
-    if (!bce->emitDupAt(slotFromTop + 1)) {
-      
-      return false;
-    }
-    if (!emitIteratorCloseInInnermostScopeWithTryNote(bce,
-                                                      CompletionKind::Normal)) {
-      
-      return false;
-    }
-    if (!ifGeneratorClosing.emitEnd()) {
-      
-      return false;
-    }
-    if (!bce->emitUnpickN(2)) {
-      
-      return false;
-    }
-  }
-
   if (!tryCatch_->emitEnd()) {
     return false;
   }
 
   tryCatch_.reset();
-  numYieldsAtBeginCodeNeedingIterClose_ = UINT32_MAX;
 
   return true;
 }

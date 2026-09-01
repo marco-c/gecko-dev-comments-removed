@@ -226,7 +226,6 @@ EnterJitStatus js::jit::MaybeEnterJit(JSContext* cx, RunState& state) {
     
     
     
-    
     JitScript* jitScript = script->jitScript();
     uint8_t* code;
     if (state.asGeneratorResume()->resumeKind() != GeneratorResumeKind::Next &&

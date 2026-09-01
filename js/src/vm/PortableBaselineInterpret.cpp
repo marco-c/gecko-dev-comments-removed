@@ -8093,12 +8093,6 @@ PBIResult PortableBaselineInterpret(
         goto do_return;
       }
 
-      CASE(IsGenClosing) {
-        bool result = VIRTSP(0).asValue() == MagicValue(JS_GENERATOR_CLOSING);
-        VIRTPUSH(StackVal(BooleanValue(result)));
-        END_OP(IsGenClosing);
-      }
-
       CASE(AsyncAwait) {
         
         JSObject* promise;
@@ -8199,27 +8193,6 @@ PBIResult PortableBaselineInterpret(
         GeneratorResumeKind resumeKind = ResumeKindFromPC(pc);
         VIRTPUSH(StackVal(Int32Value(int32_t(resumeKind))));
         END_OP(ResumeKind);
-      }
-
-      CASE(CheckResumeKind) {
-        
-        {
-          GeneratorResumeKind resumeKind =
-              IntToResumeKind(VIRTPOP().asValue().toInt32());
-          ReservedRooted<JSObject*> obj0(
-              &state.obj0,
-              &VIRTPOP().asValue().toObject());  
-          ReservedRooted<Value> value0(&state.value0,
-                                       VIRTSP(0).asValue());  
-          if (resumeKind != GeneratorResumeKind::Next) {
-            PUSH_EXIT_FRAME();
-            MOZ_ALWAYS_FALSE(GeneratorThrowOrReturn(
-                cx, frame, obj0.as<AbstractGeneratorObject>(), value0,
-                resumeKind));
-            GOTO_ERROR();
-          }
-        }
-        END_OP(CheckResumeKind);
       }
 
       CASE(Resume) {
@@ -9375,7 +9348,10 @@ bool PortablebaselineInterpreterStackCheck(JSContext* cx, RunState& state,
   StackVal* base = reinterpret_cast<StackVal*>(pbs.base);
   StackVal* top = reinterpret_cast<StackVal*>(pbs.top);
   ssize_t margin = kStackMargin / sizeof(StackVal);
-  ssize_t needed = numActualArgs + state.script()->nslots() + margin;
+  size_t numFormals =
+      state.isInvoke() ? state.script()->function()->nargs() : 0;
+  ssize_t needed =
+      std::max(numActualArgs, numFormals) + state.script()->nslots() + margin;
   return (top - base) >= needed;
 }
 

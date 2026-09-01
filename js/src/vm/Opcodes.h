@@ -2065,16 +2065,6 @@
 
 
 
- \
-    MACRO(IsGenClosing, is_gen_closing, NULL, 1, 1, 2, JOF_BYTE) \
-    
-
-
-
-
-
-
-
 
 
 
@@ -2230,21 +2220,6 @@
 
  \
     MACRO(ResumeKind, resume_kind, NULL, 2, 0, 1, JOF_UINT8) \
-    
-
-
-
-
-
-
-
-
-
-
-
-
- \
-    MACRO(CheckResumeKind, check_resume_kind, NULL, 1, 3, 1, JOF_BYTE) \
     
 
 
@@ -3618,6 +3593,8 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+  MACRO(239)                                   \
+  MACRO(240)                                   \
   MACRO(241)                                   \
   MACRO(242)                                   \
   MACRO(243)                                   \

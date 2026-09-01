@@ -2182,14 +2182,6 @@ bool WarpBuilder::build_CloseIter(BytecodeLocation loc) {
   return buildIC(loc, CacheKind::CloseIter, {iter});
 }
 
-bool WarpBuilder::build_IsGenClosing(BytecodeLocation) {
-  MDefinition* def = current->peek(-1);
-  MInstruction* ins = MIsGenClosing::New(alloc(), def);
-  current->add(ins);
-  current->push(ins);
-  return true;
-}
-
 bool WarpBuilder::build_IsNoIter(BytecodeLocation) {
   MDefinition* def = current->peek(-1);
   MOZ_ASSERT(def->isIteratorMore());
@@ -2894,39 +2886,6 @@ bool WarpBuilder::build_ResumeKind(BytecodeLocation loc) {
   GeneratorResumeKind resumeKind = loc.resumeKind();
 
   current->push(constant(Int32Value(static_cast<int32_t>(resumeKind))));
-  return true;
-}
-
-bool WarpBuilder::build_CheckResumeKind(BytecodeLocation loc) {
-  MOZ_ASSERT(resumeAnalysis_.isSome());
-
-  MDefinition* resumeKind = current->pop();
-  MDefinition* gen = current->pop();
-  MDefinition* rval = current->peek(-1);
-
-  
-  resumeKind->setImplicitlyUsedUnchecked();
-  gen->setImplicitlyUsedUnchecked();
-  rval->setImplicitlyUsedUnchecked();
-
-  
-  
-  MOZ_RELEASE_ASSERT(resumeKind->isConstant());
-  MConstant* cst = resumeKind->toConstant();
-
-  
-  if (cst->isInt32(int32_t(GeneratorResumeKind::Next))) {
-    return true;
-  }
-
-  
-  
-  MOZ_RELEASE_ASSERT(cst->isInt32(int32_t(GeneratorResumeKind::Return)));
-
-  MBail* bail = MBail::New(alloc(), BailoutKind::Inevitable);
-  current->add(bail);
-  current->setAlwaysBails();
-
   return true;
 }
 

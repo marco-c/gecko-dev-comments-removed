@@ -59,10 +59,6 @@ class ForOfLoopControl : public LoopControl {
   
   mozilla::Maybe<TryEmitter> tryCatch_;
 
-  
-  
-  uint32_t numYieldsAtBeginCodeNeedingIterClose_;
-
   SelfHostedIter selfHostedIter_;
 
   IteratorKind iterKind_;

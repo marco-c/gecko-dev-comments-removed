@@ -448,39 +448,9 @@ bool DisposalEmitter::emitEnd(EmitterScope& es) {
     return false;
   }
 
-  if (bce_->sc->isSuspendableContext() &&
-      bce_->sc->asSuspendableContext()->isGenerator()) {
+  if (!bce_->emitPickN(4)) {
     
-
-    
-    
-    
-    
-    
-    if (!bce_->emit1(JSOp::IsGenClosing)) {
-      
-      return false;
-    }
-
-    if (!bce_->emit1(JSOp::Not)) {
-      
-      return false;
-    }
-
-    if (!bce_->emitPickN(5)) {
-      
-      return false;
-    }
-
-    if (!bce_->emit1(JSOp::BitAnd)) {
-      
-      return false;
-    }
-  } else {
-    if (!bce_->emitPickN(4)) {
-      
-      return false;
-    }
+    return false;
   }
 
   
@@ -1145,36 +1115,6 @@ bool UsingEmitter::emitEnd() {
   if (!emitDisposeResourcesForEnvironment(*es)) {
     
     return false;
-  }
-
-  if (bce_->sc->isSuspendableContext() &&
-      bce_->sc->asSuspendableContext()->isGenerator()) {
-    
-
-    if (!bce_->emit1(JSOp::Swap)) {
-      
-      return false;
-    }
-
-    if (!bce_->emit1(JSOp::IsGenClosing)) {
-      
-      return false;
-    }
-
-    if (!bce_->emit1(JSOp::Not)) {
-      
-      return false;
-    }
-
-    if (!bce_->emitPickN(2)) {
-      
-      return false;
-    }
-
-    if (!bce_->emit1(JSOp::BitAnd)) {
-      
-      return false;
-    }
   }
 
   if (!emitThrowIfException()) {
