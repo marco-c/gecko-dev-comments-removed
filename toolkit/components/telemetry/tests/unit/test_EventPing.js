@@ -52,10 +52,6 @@ add_task(async function setup() {
   
   do_get_profile(true);
   
-  
-  
-  fakeIntlReady();
-  
   await setEmptyPrefWatchlist();
 
   await TelemetryController.testSetup();

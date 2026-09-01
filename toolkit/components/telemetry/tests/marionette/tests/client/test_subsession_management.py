@@ -68,6 +68,8 @@ class TestSubsessionManagement(TelemetryTestCase):
 
         ping2 = self.wait_for_ping(self.install_addon, MAIN_ENVIRONMENT_CHANGE_PING)
 
+        [addon_id] = self.addon_ids  
+
         
         
         
@@ -121,8 +123,6 @@ class TestSubsessionManagement(TelemetryTestCase):
         
         
         
-        
-        
 
         self.assertEqual(ping3["clientId"], client_id)
 
@@ -142,3 +142,6 @@ class TestSubsessionManagement(TelemetryTestCase):
         scalars3 = ping3["payload"]["processes"]["parent"]["scalars"]
         self.assertNotIn("browser.engagement.window_open_event_count", scalars3)
         self.assertNotIn("browser.engagement.tab_open_event_count", scalars3)
+
+        active_addons = ping3["environment"]["addons"]["activeAddons"]
+        self.assertIn(addon_id, active_addons)

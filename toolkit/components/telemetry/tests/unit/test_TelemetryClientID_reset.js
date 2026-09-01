@@ -30,10 +30,6 @@ add_task(async function test_setup() {
   
   do_get_profile();
   
-  
-  
-  fakeIntlReady();
-  
   await setEmptyPrefWatchlist();
 
   Services.prefs.setBoolPref(TelemetryUtils.Preferences.FhrUploadEnabled, true);
