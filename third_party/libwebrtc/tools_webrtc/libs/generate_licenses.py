@@ -80,10 +80,9 @@ LIB_TO_LICENSES_DICT = {
     'jni_zero': ['third_party/jni_zero/LICENSE'],
     'protobuf-javascript': ['third_party/protobuf-javascript/LICENSE'],
     'perfetto': ['third_party/perfetto/LICENSE'],
-    
+
     
     'android_deps': [],
-    
     'androidx': [],
 
     
