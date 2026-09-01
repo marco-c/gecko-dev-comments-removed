@@ -363,10 +363,12 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   
   
-  MainThreadOrGCTaskData<BufferChunkList> mixedChunks;
+  
+  MainThreadOrGCTaskData<BufferChunkList> currentMixedChunks;
 
   
-  MainThreadOrGCTaskData<BufferChunkList> tenuredChunks;
+  
+  MainThreadOrGCTaskData<BufferChunkList> currentTenuredChunks;
 
   
   
