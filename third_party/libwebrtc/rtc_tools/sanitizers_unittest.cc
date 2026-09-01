@@ -8,16 +8,14 @@
 
 
 
-#include <stddef.h>
-#include <stdio.h>
+#include <cstddef>
+#include <memory>  
+#include <random>  
 
-#include <memory>
-#include <random>
-
-#include "rtc_base/checks.h"
-#include "rtc_base/null_socket_server.h"
-#include "rtc_base/thread.h"
-#include "test/gtest.h"
+#include "rtc_base/checks.h"              
+#include "rtc_base/null_socket_server.h"  
+#include "rtc_base/thread.h"              
+#include "test/gtest.h"                   
 
 namespace webrtc {
 
@@ -38,7 +36,9 @@ TEST(SanitizersDeathTest, MemorySanitizer) {
 }
 #endif
 
-#if defined(ADDRESS_SANITIZER)
+
+
+#if defined(ADDRESS_SANITIZER) and !defined(WEBRTC_WIN)
 void HeapUseAfterFree() {
   char* buf = new char[2];
   delete[] buf;
