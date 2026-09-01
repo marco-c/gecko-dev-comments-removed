@@ -243,6 +243,15 @@ void HappyEyeballsTransaction::Transition(State aNext,
         }
       }
 
+      
+      
+      
+      
+      
+      if (Entered0RTT()) {
+        mRealTxn->RefreshSecurityInfoAfter0RTTAdopt();
+      }
+
       SetConnection(nullptr);
       
       
