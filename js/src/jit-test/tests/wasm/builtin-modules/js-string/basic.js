@@ -402,8 +402,21 @@ for (let a of testStrings) {
   assertSameBehavior(
     builtinExports['fromCharCodeArray'],
     polyfillExports['fromCharCodeArray'],
-    arrayMutI16, 0, length
+    
+    arrayMutI16, (length > 3) ? (length % 3) : 0, length
   );
+  if (length > 3) {
+   assertSameBehavior(
+     builtinExports['fromCharCodeArray'],
+     polyfillExports['fromCharCodeArray'],
+     arrayMutI16, length % 3, length
+   );
+    assertSameBehavior(
+      builtinExports['fromCharCodeArray'],
+      polyfillExports['fromCharCodeArray'],
+      arrayMutI16, 0, length % 3
+    );
+  }
 
   for (let i = 0; i < length; i++) {
     
