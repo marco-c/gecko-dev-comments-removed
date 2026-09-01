@@ -699,6 +699,17 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
+
+
+
+  MOZ_CAN_RUN_SCRIPT void CollapseToStartOf(const AbstractRange& aRange,
+                                            mozilla::ErrorResult& aRv);
+
+  
+
+
+
+
   MOZ_CAN_RUN_SCRIPT void CollapseToEnd(mozilla::ErrorResult& aRv);
 
  private:

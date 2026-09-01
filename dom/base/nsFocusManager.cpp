@@ -3389,38 +3389,48 @@ void nsFocusManager::MoveCaretToFocus(PresShell* aPresShell,
     return;
   }
   nsCOMPtr<Document> doc = aPresShell->GetDocument();
-  if (doc) {
-    RefPtr<nsFrameSelection> frameSelection = aPresShell->FrameSelection();
-    RefPtr<Selection> domSelection = &frameSelection->NormalSelection();
-    MOZ_ASSERT(domSelection);
+  if (!doc) {
+    return;
+  }
 
-    
+  RefPtr<nsFrameSelection> frameSelection = aPresShell->FrameSelection();
+  RefPtr<Selection> domSelection = &frameSelection->NormalSelection();
+  MOZ_ASSERT(domSelection);
+
+  if (!aContent) {
     
     domSelection->RemoveAllRanges(IgnoreErrors());
-    if (aContent) {
-      ErrorResult rv;
-      RefPtr<nsRange> newRange = doc->CreateRange(rv);
-      if (NS_WARN_IF(rv.Failed())) {
-        rv.SuppressException();
-        return;
-      }
-
-      
-      
-      newRange->SelectNodeContents(*aContent, IgnoreErrors());
-
-      if (!aContent->GetFirstChild() || aContent->IsHTMLFormControlElement()) {
-        
-        
-        
-        newRange->SetStartBefore(*aContent, IgnoreErrors());
-        newRange->SetEndBefore(*aContent, IgnoreErrors());
-      }
-      domSelection->AddRangeAndSelectFramesAndNotifyListeners(*newRange,
-                                                              IgnoreErrors());
-      domSelection->CollapseToStart(IgnoreErrors());
-    }
+    return;
   }
+
+  ErrorResult rv;
+  RefPtr<nsRange> newRange = doc->CreateRange(rv);
+  if (NS_WARN_IF(rv.Failed())) {
+    rv.SuppressException();
+    domSelection->RemoveAllRanges(IgnoreErrors());
+    return;
+  }
+
+  
+  
+  newRange->SelectNodeContents(*aContent, IgnoreErrors());
+
+  if (!aContent->GetFirstChild() || aContent->IsHTMLFormControlElement()) {
+    
+    
+    
+    newRange->SetStartBefore(*aContent, IgnoreErrors());
+    newRange->SetEndBefore(*aContent, IgnoreErrors());
+  }
+  
+  
+  
+  
+  
+  
+  domSelection->SetInterlinePosition(
+      Selection::InterlinePosition::StartOfNextLine);
+  domSelection->CollapseToStartOf(*newRange, IgnoreErrors());
 }
 
 nsresult nsFocusManager::SetCaretVisible(PresShell* aPresShell, bool aVisible,
