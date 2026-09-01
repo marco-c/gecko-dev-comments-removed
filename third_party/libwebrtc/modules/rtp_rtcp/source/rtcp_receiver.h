@@ -101,15 +101,10 @@ class RTCPReceiver final {
 
   void IncomingPacket(std::span<const uint8_t> packet);
 
-  int64_t LastReceivedReportBlockMs() const;
-
   void set_local_media_ssrc(uint32_t ssrc);
   uint32_t local_media_ssrc() const;
 
   void SetRemoteSSRC(uint32_t ssrc);
-  uint32_t RemoteSSRC() const;
-
-  bool receiver_only() const { return receiver_only_; }
 
   
   std::optional<RtpRtcpInterface::SenderReportStats> GetSenderReportStats()
@@ -142,19 +137,7 @@ class RTCPReceiver final {
   
   std::vector<ReportBlockData> GetLatestReportBlockData() const;
 
-  
-  
-  bool RtcpRrTimeout();
-
-  
-  
-  
-  
-  bool RtcpRrSequenceNumberTimeout();
-
   std::vector<rtcp::TmmbItem> TmmbrReceived();
-  
-  bool UpdateTmmbrTimers();
   std::vector<rtcp::TmmbItem> BoundingSet(bool* tmmbr_owner);
   
   void NotifyTmmbrUpdated();
@@ -190,9 +173,6 @@ class RTCPReceiver final {
     };
 
     Timestamp last_time_received = Timestamp::Zero();
-
-    bool ready_for_delete = false;
-
     std::vector<rtcp::TmmbItem> tmmbn;
     std::map<uint32_t, TimedTmmbrItem> tmmbr;
   };
@@ -367,7 +347,6 @@ class RTCPReceiver final {
   bool xr_rrtr_status_ RTC_GUARDED_BY(rtcp_receiver_lock_);
   std::optional<TimeDelta> xr_rr_rtt_;
 
-  Timestamp oldest_tmmbr_info_ RTC_GUARDED_BY(rtcp_receiver_lock_);
   
   flat_map<uint32_t, TmmbrInformation> tmmbr_infos_
       RTC_GUARDED_BY(rtcp_receiver_lock_);
