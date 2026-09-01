@@ -264,14 +264,6 @@ static bool isGarbageCollecting;
 static uint32_t eventloopNestingLevel = 0;
 static time_t inactiveStateStart = 0;
 
-static
-#if defined(XP_UNIX)
-    pthread_t
-#elif defined(XP_WIN)  
-    DWORD
-#endif                 
-        gMainThreadId;
-
 
 static Mutex* dumpSafetyLock;
 static bool isSafeToDump = false;
@@ -292,32 +284,6 @@ static int serverSocketFd = -1;
 static int crashHelperClientFd = -1;
 #  endif
 #endif
-
-void RecordMainThreadId() {
-  gMainThreadId =
-#if defined(XP_UNIX)
-      pthread_self()
-#elif defined(XP_WIN)  
-      GetCurrentThreadId()
-#endif                 
-      ;
-}
-
-bool SignalSafeIsMainThread() {
-  
-  
-  
-  
-  
-
-#if defined(XP_UNIX)
-  pthread_t th = pthread_self();
-  return pthread_equal(th, gMainThreadId);
-#elif defined(XP_WIN)  
-  DWORD th = GetCurrentThreadId();
-  return th == gMainThreadId;
-#endif                 
-}
 
 #if defined(XP_WIN)
 
@@ -2119,8 +2085,6 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force ) {
   SetJitExceptionHandler();
 #  endif
 
-  RecordMainThreadId();
-
   
   gBlockUnhandledExceptionFilter = true;
   gKernel32Intercept.Init("kernel32.dll");
@@ -3530,8 +3494,6 @@ bool SetRemoteExceptionHandler(int& aArgc, char** aArgv) {
                                             true,     
                                             crash_pipe);
 #endif
-
-  RecordMainThreadId();
 
   oldTerminateHandler = std::set_terminate(&TerminateHandler);
 
