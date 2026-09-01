@@ -356,6 +356,12 @@ class nsSocketTransportService final : public nsPISocketTransportService,
 extern nsSocketTransportService* gSocketTransportService;
 bool OnSocketThread();
 
+
+
+
+nsresult DispatchToCurrent(already_AddRefed<nsIRunnable> aEvent);
+nsresult DispatchToCurrent(nsIRunnable* aEvent);
+
 }  
 }  
 

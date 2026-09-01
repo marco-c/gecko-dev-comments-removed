@@ -858,7 +858,7 @@ void HappyEyeballsConnectionAttempt::DNSLookup(
   }
 
   
-  NS_DispatchToCurrentThread(
+  DispatchToCurrent(
       NS_NewRunnableFunction("HappyEyeballsConnectionAttempt::DNSLookup",
                              [self = RefPtr{this}, rv, aType, aId]() {
                                switch (aType) {
