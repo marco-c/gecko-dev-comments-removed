@@ -576,7 +576,8 @@ class gfxFontEntry {
   mutable mozilla::RWLock mLock;
   mutable mozilla::Mutex mFeatureInfoLock;
 
-  mozilla::Atomic<gfxCharacterMap*> mCharacterMap MOZ_GUARDED_BY(mLock);  
+  mozilla::Atomic<gfxCharacterMap*> mCharacterMap
+      MOZ_GUARDED_BY(mLock);  
   gfxCharacterMap* GetCharacterMap() const {
     mozilla::AutoReadLock lock(mLock);
     return mCharacterMap;
