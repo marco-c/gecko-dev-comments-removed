@@ -2092,7 +2092,7 @@ void FragmentOrElement::SetInnerHTMLInternal(const nsAString& aInnerHTML,
   
   
   Maybe<RefPtr<CustomElementRegistry>> customElementRegistry =
-      nsContentUtils::GetCustomElementRegistry(this);
+      nsContentUtils::GetCustomElementRegistry(target);
 
   if (doc->IsHTMLDocument()) {
     doc->SuspendDOMNotifications();
