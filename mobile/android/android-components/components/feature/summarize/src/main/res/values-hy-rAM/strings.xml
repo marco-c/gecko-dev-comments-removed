@@ -51,6 +51,8 @@
   <string name="mozac_summarize_download_error_negative_button">Չեղարկել</string>
   <!-- Title for the error screen when page is too long to summarize -->
   <string name="mozac_summarize_content_too_long_error_title">Էջը չափազանց մեծ է ամփոփելու համար</string>
+  <!-- Title for the error screen when the page content is behind a paywall -->
+  <string name="mozac_summarize_paywalled_content_error_title">Հնարավոր չէ ամփոփել վճարովի բովանդակությունը</string>
   <!-- Title for the info error screen -->
   <string name="mozac_summarize_info_error_title">Հիմա հնարավոր չէ ամփոփել</string>
   <!-- Generic fallback message for the info error screen -->
@@ -95,4 +97,10 @@
   <string name="mozac_ai_controls_page_summary_description">Էջերը և ամփոփագրերը երբեք չեն պահվում։</string>
   <!-- Button text for the Error dismiss button on Shake to Summarize -->
   <string name="mozac_summarize_error_dissmiss">Բաց թողնել</string>
+  <!-- Title for the Mozilla account sign-in screen, shown when summarization results in a connection failure. -->
+  <string name="mozac_summarize_fxa_sign_in_title">Մուտք գործեք՝ ամփոփելու համար</string>
+  <!-- Message on the sign-in screen, inviting the user to continue with an existing Mozilla account or create a new one -->
+  <string xmlns:ns0="http://schemas.android.com/tools" name="mozac_summarize_fxa_sign_in_message" ns0:ignore="BrandUsage">Օգտագործեք ձեր Mozilla հաշիվը շարունակելու համար կամ ստեղծեք մեկը՝ սկսելու համար։</string>
+  <!-- Label for the button that starts the sign-in flow -->
+  <string name="mozac_summarize_fxa_sign_in_button_positive">Մուտք գործել</string>
 </resources>
