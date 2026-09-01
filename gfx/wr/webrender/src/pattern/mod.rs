@@ -31,32 +31,33 @@ pub enum PatternKind {
 
     Mask = 3,
     BoxShadow = 4,
+    BoxShadowSuperellipse = 5,
     
     
     
     
-    TextureExternal = 5,
-    TextureExternalBT709 = 6,
-    TextureRect = 7,
+    TextureExternal = 6,
+    TextureExternalBT709 = 7,
+    TextureRect = 8,
     
     
     
     
-    Yuv = 8,
-    YuvTextureExternal = 9,
-    YuvTextureExternalBT709 = 10,
-    YuvTextureRect = 11,
+    Yuv = 9,
+    YuvTextureExternal = 10,
+    YuvTextureExternalBT709 = 11,
+    YuvTextureRect = 12,
     
-    Backdrop = 12,
+    Backdrop = 13,
     
-    Blend = 13,
+    Blend = 14,
     
     
-    MixBlend = 14,
+    MixBlend = 15,
     
 }
 
-pub const NUM_PATTERNS: u32 = 15;
+pub const NUM_PATTERNS: u32 = 16;
 
 impl PatternKind {
     pub fn from_u32(val: u32) -> Self {
