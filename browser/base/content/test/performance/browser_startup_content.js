@@ -46,6 +46,10 @@ const known_scripts = {
     
     "resource://gre/modules/ExtensionProcessScript.sys.mjs",
     "resource://gre/modules/ExtensionUtils.sys.mjs",
+
+    
+    "resource://gre/modules/EnterprisePolicies.sys.mjs",
+    "resource://gre/modules/EnterprisePoliciesContent.sys.mjs",
   ]),
   frameScripts: new Set([
     
@@ -71,8 +75,6 @@ const intermittently_loaded_scripts = {
     
     "resource://gre/modules/sessionstore/SessionHistory.sys.mjs",
 
-    
-    "resource://gre/actors/CookieBannerChild.sys.mjs",
     "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 
     

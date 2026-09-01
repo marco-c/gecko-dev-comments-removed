@@ -30,6 +30,7 @@
 #include "mozilla/dom/NavigationUtils.h"
 #include "mozilla/dom/ProcessIsolation.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
+#include "mozilla/dom/ServiceWorkerUtils.h"
 #include "mozilla/dom/nsHTTPSOnlyUtils.h"
 #include "mozilla/net/DocumentLoadListener.h"
 #include "mozilla/StaticPrefs_browser.h"
@@ -1486,6 +1487,16 @@ nsLoadFlags nsDocShellLoadState::CalculateChannelLoadFlags(
   
   
   if (IsForceReloadType(loadType)) {
+    loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
+  } else if (aBrowsingContext->IsTopContent()) {
+    
+    
+    if (dom::IsServiceWorkersDisabledByPolicy(mURI)) {
+      loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
+    }
+  } else if (aBrowsingContext->Top()->ServiceWorkersDisabledByPolicy()) {
+    
+    
     loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
   }
 

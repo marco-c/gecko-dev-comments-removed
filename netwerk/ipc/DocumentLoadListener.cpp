@@ -36,6 +36,7 @@
 #include "mozilla/dom/ProcessIsolation.h"
 #include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/RemoteWebProgressRequest.h"
+#include "mozilla/dom/ServiceWorkerUtils.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/ipc/IdType.h"
@@ -2696,6 +2697,17 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
            this));
       RedirectToRealChannelFinished(rv);
       return;
+    }
+
+    
+    
+    
+    
+    
+    
+    if (aDestinationBrowsingContext->IsTopContent()) {
+      (void)aDestinationBrowsingContext->SetServiceWorkersDisabledByPolicy(
+          dom::IsServiceWorkersDisabledByPolicy(docURI));
     }
   }
 

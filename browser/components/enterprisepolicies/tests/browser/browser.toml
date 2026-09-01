@@ -153,7 +153,13 @@ support-files = [
 
 ["browser_policy_set_startpage.js"]
 
-["browser_policy_sitepolicies.js"]
+["browser_policy_sitepolicies_https.js"]
+https_first_disabled = true
+support-files = [
+  "sitepolicies_https_subresource.html",
+]
+
+["browser_policy_sitepolicies_jit.js"]
 https_first_disabled = true
 support-files = [
   "framed.html",
@@ -161,6 +167,13 @@ support-files = [
   "worker.html",
   "service-worker.js",
   "shared-worker.js",
+]
+
+["browser_policy_sitepolicies_serviceworkers.js"]
+support-files = [
+  "sitepolicies_sw_fetch.html",
+  "sitepolicies_sw_framed.html",
+  "sw_fetch_intercept.js",
 ]
 
 ["browser_policy_support_menu.js"]
