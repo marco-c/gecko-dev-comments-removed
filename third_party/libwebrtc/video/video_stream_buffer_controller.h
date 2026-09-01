@@ -28,7 +28,6 @@
 #include "api/video/video_content_type.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/timing/timing.h"
-#include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
@@ -139,13 +138,6 @@ class VideoStreamBufferController {
   
   bool decoder_ready_for_new_frame_ RTC_GUARDED_BY(&worker_sequence_checker_) =
       false;
-
-  
-  
-  
-  
-  
-  FieldTrialParameter<unsigned> zero_playout_delay_max_decode_queue_size_;
 
   ScopedTaskSafety worker_safety_;
 };

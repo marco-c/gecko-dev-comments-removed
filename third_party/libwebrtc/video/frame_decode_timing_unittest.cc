@@ -55,7 +55,7 @@ class FrameDecodeTimingTest : public ::testing::Test {
       : clock_(Timestamp::Millis(1000)),
         env_(CreateTestEnvironment({.time = &clock_})),
         timing_(env_, TimeDelta::Zero()),
-        frame_decode_scheduler_(&clock_, &timing_, env_.field_trials()) {
+        frame_decode_scheduler_(&clock_, &timing_) {
     timing_.OnCompleteFrame({.rtp_timestamp = kNextRtp,
                              .time = clock_.CurrentTime(),
                              .last_spatial_layer = true});
@@ -145,7 +145,7 @@ TEST(FrameDecodeTimingMaxWaitingTimeTest, IsZeroForZeroRenderTime) {
 
   VCMTiming timing(env, kRenderDelay);
   timing.set_playout_delay({TimeDelta::Zero(), TimeDelta::Zero()});
-  FrameDecodeTiming decode_timing(&clock, &timing, env.field_trials());
+  FrameDecodeTiming decode_timing(&clock, &timing);
 
   for (int i = 0; i < 10; ++i) {
     clock.AdvanceTime(kTimeDelta);
@@ -175,16 +175,15 @@ TEST(FrameDecodeTimingMaxWaitingTimeTest, IsZeroForZeroRenderTime) {
 TEST(FrameDecodeTimingMaxWaitingTimeTest, WithZeroDelayPacingActive) {
   
   
-  constexpr TimeDelta kMinPacing = TimeDelta::Millis(3);
+  constexpr TimeDelta kMinPacing =
+      FrameDecodeTiming::kZeroPlayoutDelayMinPacing;
   constexpr int64_t kStartTimeUs = 3.15e13;  
   constexpr TimeDelta kTimeDelta = 1 / Frequency::Hertz(60);
   constexpr Timestamp kZeroRenderTime = Timestamp::Zero();
   SimulatedClock clock(kStartTimeUs);
-  Environment env = CreateTestEnvironment(
-      {.field_trials = "WebRTC-ZeroPlayoutDelay/min_pacing:3ms/",
-       .time = &clock});
+  Environment env = CreateTestEnvironment({.time = &clock});
   VCMTiming timing(env, kRenderDelay);
-  FrameDecodeTiming decode_timing(&clock, &timing, env.field_trials());
+  FrameDecodeTiming decode_timing(&clock, &timing);
 
   
   for (int i = 0; i < 10; ++i) {
@@ -225,17 +224,15 @@ TEST(FrameDecodeTimingMaxWaitingTimeTest, WithZeroDelayPacingActive) {
 }
 
 TEST(FrameDecodeTimingMaxWaitingTimeTest,
-     DefaultMaxWaitingTimeUnaffectedByPacingExperiment) {
+     DefaultMaxWaitingTimeUnaffectedByZeroPlayoutPacing) {
   
   
   constexpr int64_t kStartTimeUs = 3.15e13;  
   const TimeDelta kTimeDelta = TimeDelta::Millis(1000.0 / 60.0);
   SimulatedClock clock(kStartTimeUs);
-  Environment env = CreateTestEnvironment(
-      {.field_trials = "WebRTC-ZeroPlayoutDelay/min_pacing:3ms/",
-       .time = &clock});
+  Environment env = CreateTestEnvironment({.time = &clock});
   VCMTiming timing(env, kRenderDelay);
-  FrameDecodeTiming decode_timing(&clock, &timing, env.field_trials());
+  FrameDecodeTiming decode_timing(&clock, &timing);
 
   clock.AdvanceTime(kTimeDelta);
   Timestamp now = clock.CurrentTime();
@@ -260,16 +257,15 @@ TEST(FrameDecodeTimingMaxWaitingTimeTest,
 TEST(FrameDecodeTimingMaxWaitingTimeTest, ReturnsZeroIfTooManyFramesAreQueued) {
   
   
-  constexpr TimeDelta kMinPacing = TimeDelta::Millis(3);
+  constexpr TimeDelta kMinPacing =
+      FrameDecodeTiming::kZeroPlayoutDelayMinPacing;
   constexpr int64_t kStartTimeUs = 3.15e13;  
   const TimeDelta kTimeDelta = TimeDelta::Millis(1000.0 / 60.0);
   constexpr Timestamp kZeroRenderTime = Timestamp::Zero();
   SimulatedClock clock(kStartTimeUs);
-  Environment env = CreateTestEnvironment(
-      {.field_trials = "WebRTC-ZeroPlayoutDelay/min_pacing:3ms/",
-       .time = &clock});
+  Environment env = CreateTestEnvironment({.time = &clock});
   VCMTiming timing(env, kRenderDelay);
-  FrameDecodeTiming decode_timing(&clock, &timing, env.field_trials());
+  FrameDecodeTiming decode_timing(&clock, &timing);
 
   
   for (int i = 0; i < 10; ++i) {
@@ -301,7 +297,7 @@ TEST(FrameDecodeTimingMaxWaitingTimeTest, WithVaryingRenderTimes) {
   Environment env = CreateTestEnvironment({.time = &clock});
   VCMTiming timing(env, kRenderDelay);
   UpdateDecodeTimer(timing, clock, kDecodeTime);
-  FrameDecodeTiming decode_timing(&clock, &timing, env.field_trials());
+  FrameDecodeTiming decode_timing(&clock, &timing);
 
   Timestamp on_time = clock.CurrentTime() + kDecodeTime + kRenderDelay;
 
