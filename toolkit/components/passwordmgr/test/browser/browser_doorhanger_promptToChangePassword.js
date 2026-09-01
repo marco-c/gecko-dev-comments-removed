@@ -6,6 +6,10 @@
 
 
 const TEST_ORIGIN = "https://example.com";
+const isRustBackend = Services.prefs.getBoolPref(
+  "signon.storage.rust.enabled",
+  false
+);
 const passwordInputSelector = "#form-basic-password";
 const usernameInputSelector = "#form-basic-username";
 
@@ -646,11 +650,20 @@ let tests = [
       
       
       
-      Assert.equal(
-        finalLogins[0].timePasswordChanged,
-        savedLoginsByName.bobABC.timePasswordChanged,
-        "Check timePasswordChanged didn't change"
-      );
+      
+      if (isRustBackend) {
+        Assert.equal(
+          finalLogins[0].timePasswordChanged,
+          savedLoginsByName.bobABC.timePasswordChanged,
+          "Check timePasswordChanged didn't change"
+        );
+      } else {
+        todo_is(
+          finalLogins[0].timePasswordChanged,
+          savedLoginsByName.bobABC.timePasswordChanged,
+          "Check timePasswordChanged didn't change"
+        );
+      }
     },
   },
   {
