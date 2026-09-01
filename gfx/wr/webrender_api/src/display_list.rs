@@ -1406,7 +1406,6 @@ impl DisplayListBuilder {
         alpha_type: di::AlphaType,
         key: ImageKey,
         color: ColorF,
-        sub_rect: Option<DeviceIntRect>,
     ) {
         let (common, offset) = self.normalize_common(common);
         let item = di::DisplayItem::Image(di::ImageDisplayItem {
@@ -1416,7 +1415,6 @@ impl DisplayListBuilder {
             image_rendering,
             alpha_type,
             color,
-            sub_rect,
         });
 
         self.push_item(&item);
@@ -1925,7 +1923,7 @@ impl DisplayListBuilder {
         flags: di::StackingContextFlags,
         snapshot: Option<di::SnapshotInfo>
     ) {
-        self.push_filters_normalized(filters, filter_datas, spatial_id);
+        self.push_filters(filters, filter_datas, spatial_id);
 
         let item = di::DisplayItem::PushStackingContext(di::PushStackingContextDisplayItem {
             spatial_id,
@@ -2002,7 +2000,8 @@ impl DisplayListBuilder {
         
         
         
-        self.push_filters(filters, filter_datas);
+        
+        self.push_filters(filters, filter_datas, common.spatial_id);
 
         let (common, _offset) = self.normalize_common(common);
         let item = di::DisplayItem::BackdropFilter(di::BackdropFilterDisplayItem {
@@ -2015,34 +2014,34 @@ impl DisplayListBuilder {
     
     
     
-    fn push_filters_normalized(
+    
+    
+    
+    
+    
+    fn push_filters(
         &mut self,
         filters: &[di::FilterOp],
         filter_datas: &[di::FilterData],
         spatial_id: di::SpatialId,
     ) {
         let offset = self.accumulated_scroll_offset(spatial_id);
-        if offset.is_zero() {
-            self.push_filters(filters, filter_datas);
-            return;
-        }
-
-        let mut filters = filters.to_vec();
-        let grid = self.au_grid;
-        let off_grid = &mut self.off_grid_coords;
-        for filter in &mut filters {
-            if let Some(node) = filter.svgfe_node_mut() {
-                node.subregion = grid.rect(node.subregion, offset, off_grid);
+        let normalized = if offset.is_zero() {
+            
+            None
+        } else {
+            let grid = self.au_grid;
+            let off_grid = &mut self.off_grid_coords;
+            let mut filters = filters.to_vec();
+            for filter in &mut filters {
+                if let Some(node) = filter.svgfe_node_mut() {
+                    node.subregion = grid.rect(node.subregion, offset, off_grid);
+                }
             }
-        }
-        self.push_filters(&filters, filter_datas);
-    }
+            Some(filters)
+        };
+        let filters = normalized.as_deref().unwrap_or(filters);
 
-    pub fn push_filters(
-        &mut self,
-        filters: &[di::FilterOp],
-        filter_datas: &[di::FilterData],
-    ) {
         if !filters.is_empty() {
             self.push_item(&di::DisplayItem::SetFilterOps);
             self.push_iter(filters);
