@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-
-
-
-
+<!--
+     Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0
+-->
 <html>
 <head>
   <title>CSS Test: Testing for full height grid container in a button.</title>
@@ -23,6 +23,7 @@
       grid-template-rows: auto;
       justify-content: space-between;
       align-items: stretch;
+      align-content: normal;
     }
 
     .grid > * {
@@ -39,13 +40,13 @@
   </style>
 </head>
 <body>
-  
+  <!-- 3 columns/1 row -->
   <button class="grid">
     <div></div>
     <div></div>
     <div></div>
   </button>
-  
+  <!-- 1 column/3 rows, using "fr" units to fill container -->
   <button class="grid vertical">
     <div></div>
     <div></div>
