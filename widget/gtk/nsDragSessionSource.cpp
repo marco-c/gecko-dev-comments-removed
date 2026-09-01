@@ -485,6 +485,14 @@ void nsDragSessionSource::SourceEndDragSession(GdkDragContext* aContext,
   LOGDRAGSERVICE("SourceEndDragSession(%p) result %s\n", aContext,
                  kGtkDragResults[aResult]);
 
+  
+  
+  
+  
+  if (mSourceWindow) {
+    mSourceWindow->SetDragSource(nullptr);
+  }
+
   mSourceDataItems = nullptr;
 
   GdkAtom property = sXdndDirectSaveTypeAtom;
