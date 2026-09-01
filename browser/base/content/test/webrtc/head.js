@@ -378,33 +378,56 @@ function promiseMessage(
   });
 }
 
+
+
+
+let gPendingPopupshownListeners = new Set();
+registerCleanupFunction(() => {
+  for (let stopListening of gPendingPopupshownListeners) {
+    stopListening();
+  }
+});
+
 function promisePopupNotificationShown(aName, aAction, aWindow = window) {
   let startTime = ChromeUtils.now();
   return new Promise(resolve => {
-    aWindow.PopupNotifications.panel.addEventListener(
-      "popupshown",
-      function () {
-        ok(
-          !!aWindow.PopupNotifications.getNotification(aName),
-          aName + " notification shown"
-        );
-        ok(aWindow.PopupNotifications.isPanelOpen, "notification panel open");
-        ok(
-          !!aWindow.PopupNotifications.panel.firstElementChild,
-          "notification panel populated"
-        );
+    let panel = aWindow.PopupNotifications.panel;
+    function stopListening() {
+      panel.removeEventListener("popupshown", popupshown);
+      gPendingPopupshownListeners.delete(stopListening);
+    }
+    function popupshown() {
+      
+      
+      
+      let panelState = panel.state;
+      if (panelState != "open") {
+        info(`Ignoring popupshown for ${aName}, panel state: ${panelState}`);
+        return;
+      }
+      stopListening();
 
-        executeSoon(() => {
-          ChromeUtils.addProfilerMarker(
-            "promisePopupNotificationShown",
-            { startTime, category: "Test" },
-            aName
-          );
-          resolve();
-        });
-      },
-      { once: true }
-    );
+      ok(
+        !!aWindow.PopupNotifications.getNotification(aName),
+        aName + " notification shown"
+      );
+      ok(aWindow.PopupNotifications.isPanelOpen, "notification panel open");
+      ok(
+        !!aWindow.PopupNotifications.panel.firstElementChild,
+        "notification panel populated"
+      );
+
+      executeSoon(() => {
+        ChromeUtils.addProfilerMarker(
+          "promisePopupNotificationShown",
+          { startTime, category: "Test" },
+          aName
+        );
+        resolve();
+      });
+    }
+    panel.addEventListener("popupshown", popupshown);
+    gPendingPopupshownListeners.add(stopListening);
 
     if (aAction) {
       aAction();
