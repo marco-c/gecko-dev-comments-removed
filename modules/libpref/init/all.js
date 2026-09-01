@@ -480,8 +480,6 @@ pref("ui.textHighlightForeground", "#ffffff");
 
 
 
-
-
 pref("accessibility.force_disabled", 0);
 
 pref("focusmanager.testmode", false);
