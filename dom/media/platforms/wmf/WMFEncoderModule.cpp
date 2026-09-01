@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WMFEncoderModule.h"
 
 #include "EncoderConfig.h"
@@ -39,6 +37,12 @@ EncodeSupportSet WMFEncoderModule::Supports(
     return EncodeSupportSet{};
   }
   if (aConfig.IsAudio()) {
+    return EncodeSupportSet{};
+  }
+  
+  
+  
+  if (!IsFrameSizeSupportedForNV12Input(aConfig.mSize)) {
     return EncodeSupportSet{};
   }
   if (aConfig.mScalabilityMode != ScalabilityMode::None &&

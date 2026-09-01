@@ -35,6 +35,11 @@ extern LazyLogModule sPEMLog;
 
 GUID CodecToSubtype(CodecType aCodec);
 
+
+
+
+bool IsFrameSizeSupportedForNV12Input(const gfx::IntSize& aSize);
+
 media::EncodeSupportSet CanCreateWMFEncoder(const EncoderConfig& aConfig);
 
 already_AddRefed<MediaByteBuffer> ParseH264Parameters(

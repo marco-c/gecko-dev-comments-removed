@@ -32,6 +32,10 @@ GUID CodecToSubtype(CodecType aCodec) {
   }
 }
 
+bool IsFrameSizeSupportedForNV12Input(const gfx::IntSize& aSize) {
+  return aSize.width % 2 == 0;
+}
+
 static bool IsNotRealtimeOrHwRequired(const EncoderConfig& aConfig) {
   
   
