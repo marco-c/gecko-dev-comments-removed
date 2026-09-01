@@ -185,6 +185,12 @@ class TrustPanel {
 
   
   
+  
+  
+  #lastBrowser = null;
+
+  
+  
   #blockerViewUpdateId = 0;
 
   #popupToggleDelayTimer = null;
@@ -506,8 +512,14 @@ class TrustPanel {
     } catch (ex) {
       this.#uriHasHost = false;
     }
-    
-    this.#sameSiteNavigation = this.#isSameSite(uri, this.#uri);
+
+    const browser = gBrowser.selectedBrowser;
+    this.#sameSiteNavigation =
+      
+      
+      
+      browser === this.#lastBrowser && this.#isSameSite(uri, this.#uri);
+    this.#lastBrowser = browser;
 
     this.#state = state;
     this.#uri = uri;
@@ -519,6 +531,9 @@ class TrustPanel {
     this.#pageExtensionPolicy = WebExtensionPolicy.getByURI(uri);
     this.#breachedStatus = null;
     if (this.#sameSiteNavigation) {
+      
+      
+      
       
       this.#isFirstVisit = false;
     } else {
@@ -630,9 +645,9 @@ class TrustPanel {
       this.#blockersChecked = true;
     }
 
+    const browser = gBrowser.selectedBrowser;
     
     if (targetClasses.has("breached")) {
-      let browser = gBrowser.selectedBrowser;
       if (browser.lastAnimatedBreachURI !== this.#uri?.spec) {
         
         targetClasses.add("breach-animating");
@@ -646,6 +661,17 @@ class TrustPanel {
     
     
     let appliedIconClasses = [...icon.classList];
+
+    if (
+      targetClasses.has("has-blocked-trackers") &&
+      browser.lastTrackerCountShownURI !== this.#uri?.spec
+    ) {
+      browser.lastTrackerCountShownURI = this.#uri?.spec;
+      Glean.trustpanel.trackerCountShown.record({
+        first_visit: targetClasses.has("first-visit"),
+      });
+    }
+
     for (let cls of appliedIconClasses) {
       if (!targetClasses.has(cls)) {
         icon.classList.remove(cls);
@@ -822,8 +848,13 @@ class TrustPanel {
     }
     
     
+    const browser = gBrowser.selectedBrowser;
     this.#isFirstVisit =
-      rows.length === 0 || !UrlbarPrefs.get("trackerCountShown");
+      (rows.length === 0 || !UrlbarPrefs.get("trackerCountShown")) &&
+      browser.lastFirstVisitURI !== uri.spec;
+    if (this.#isFirstVisit) {
+      browser.lastFirstVisitURI = uri.spec;
+    }
     this.#updateUrlbarIcon();
   }
 
