@@ -29,9 +29,6 @@ struct BitrateAllocationUpdate {
   TimeDelta round_trip_time = TimeDelta::PlusInfinity();
   
   
-  TimeDelta bwe_period = TimeDelta::PlusInfinity();
-  
-  
   
   double cwnd_reduce_ratio = 0;
 };
