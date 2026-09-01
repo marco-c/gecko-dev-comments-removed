@@ -486,54 +486,54 @@ class XPCShellTestThread(Thread):
 
         
         
-        
-        
         self.timedout = True
 
-        
-        
-        self.killTimeout(proc)
+        try:
+            
+            
+            self.killTimeout(proc)
 
-        
-        
-        
-        
-        if proc is not None and hasattr(proc, "pid"):
-            deadline = time.time() + TIMEOUT_MINIDUMP_WAIT
-            while self.poll(proc) is None and time.time() < deadline:
-                time.sleep(0.1)
-        self.checkForCrashes(
-            self.tempDir, self.symbolsPath, test_name=self.test_object["id"]
-        )
+            
+            
+            
+            
+            if proc is not None and hasattr(proc, "pid"):
+                deadline = time.time() + TIMEOUT_MINIDUMP_WAIT
+                while self.poll(proc) is None and time.time() < deadline:
+                    time.sleep(0.1)
+            self.checkForCrashes(
+                self.tempDir, self.symbolsPath, test_name=self.test_object["id"]
+            )
 
-        
-        
-        
-        self.report_message({
-            "action": "log",
-            "level": "ERROR",
-            "message": (
-                f"{self.test_object['id']} | Timed out and was force-killed by "
-                "the harness; the crash dump reported for this test is that "
-                "force-killed process, not an actual crash."
-            ),
-        })
+            
+            
+            
+            self.report_message({
+                "action": "log",
+                "level": "ERROR",
+                "message": (
+                    f"{self.test_object['id']} | Timed out and was force-killed by "
+                    "the harness; the crash dump reported for this test is that "
+                    "force-killed process, not an actual crash."
+                ),
+            })
 
-        self.reportTimeoutResult()
+            self.reportTimeoutResult()
 
-        self.log.info(f"xpcshell return code: {self.getReturnCode(proc)}")
-        self.postCheck(proc)
-        self.clean_temp_dirs(self.test_object["path"])
-
-        
-        
-        self.lock.release()
-
-        
-        
-        
-        
-        self.done = True
+            self.log.info(f"xpcshell return code: {self.getReturnCode(proc)}")
+            self.postCheck(proc)
+            self.clean_temp_dirs(self.test_object["path"])
+        finally:
+            
+            
+            
+            
+            
+            
+            
+            
+            self.lock.release()
+            self.done = True
 
     def reportTimeoutResult(self):
         """Log the structured failure for a timed-out test: a FAIL test_status
