@@ -43,13 +43,11 @@ const TEST_DATA_INITIAL = [
 ];
 
 add_task(async function () {
+  
+  
+  await setMockCompatibilityDataset();
   await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
   const { inspector, view } = await openRuleView();
-
-  
-  
-  
-  
 
   await runCSSCompatibilityTests(view, inspector, TEST_DATA_INITIAL);
 });

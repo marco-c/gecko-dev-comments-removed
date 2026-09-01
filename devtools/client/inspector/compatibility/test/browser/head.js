@@ -18,7 +18,19 @@ const {
   toCamelCase,
 } = require("resource://devtools/client/inspector/compatibility/utils/cases.js");
 
-async function openCompatibilityView() {
+
+
+
+
+
+
+
+
+async function openCompatibilityView({ mockDataset = true } = {}) {
+  if (mockDataset) {
+    await setMockCompatibilityDataset();
+  }
+
   info("Open the compatibility view");
   const { inspector } = await openInspectorSidebarTab("compatibilityview");
   await Promise.all([

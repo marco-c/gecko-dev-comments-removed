@@ -2370,28 +2370,8 @@ function simulateLinkClick(element) {
 
 
 
-
-
-function logCssCompatDataPropertiesWithoutMDNUrl() {
-  const cssPropertiesCompatData = require("resource://devtools/shared/compatibility/dataset/css-properties.json");
-
-  function walk(node) {
-    for (const propertyName in node) {
-      const property = node[propertyName];
-      if (property.__compat) {
-        if (!property.__compat.mdn_url) {
-          dump(
-            `"${propertyName}" - MDN URL: ${
-              property.__compat.mdn_url || "❌"
-            } - Spec URL: ${property.__compat.spec_url || "❌"}\n`
-          );
-        }
-      } else if (typeof property == "object") {
-        walk(property);
-      }
-    }
-  }
-  walk(cssPropertiesCompatData);
+async function setMockCompatibilityDataset() {
+  await pushPref("devtools.compatibility.use-mock-dataset", true);
 }
 
 
