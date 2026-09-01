@@ -43,6 +43,11 @@ class DepthAndStencilBuffer final : public SupportsWeakPtr {
 };
 
 class MozFramebuffer final {
+ public:
+  
+  enum class ColorBackingOwnership { Owned, Borrowed };
+
+ private:
   const WeakPtr<GLContext> mWeakGL;
 
  public:
@@ -54,6 +59,7 @@ class MozFramebuffer final {
  private:
   const RefPtr<DepthAndStencilBuffer> mDepthAndStencilBuffer;
   const GLuint mColorName;
+  const ColorBackingOwnership mColorBackingOwnership;
 
  public:
   
@@ -64,9 +70,13 @@ class MozFramebuffer final {
 
   
   
+  
+  
   static UniquePtr<MozFramebuffer> CreateForBacking(
       GLContext* gl, const gfx::IntSize& size, uint32_t samples, bool depth,
-      bool stencil, GLenum colorTarget, GLuint colorName);
+      bool stencil, GLenum colorTarget, GLuint colorName,
+      ColorBackingOwnership colorBackingOwnership =
+          ColorBackingOwnership::Owned);
 
   
   
@@ -76,19 +86,23 @@ class MozFramebuffer final {
   static UniquePtr<MozFramebuffer> CreateForBackingWithSharedDepthAndStencil(
       const gfx::IntSize& size, const uint32_t samples, GLenum colorTarget,
       GLuint colorName,
-      const RefPtr<DepthAndStencilBuffer>& depthAndStencilBuffer);
+      const RefPtr<DepthAndStencilBuffer>& depthAndStencilBuffer,
+      ColorBackingOwnership colorBackingOwnership =
+          ColorBackingOwnership::Owned);
 
  private:
   MozFramebuffer(GLContext* gl, const gfx::IntSize& size, GLuint fb,
                  uint32_t samples,
                  RefPtr<DepthAndStencilBuffer> depthAndStencilBuffer,
-                 GLenum colorTarget, GLuint colorName);
+                 GLenum colorTarget, GLuint colorName,
+                 ColorBackingOwnership colorBackingOwnership);
 
   
   static UniquePtr<MozFramebuffer> CreateImpl(
       GLContext* const gl, const gfx::IntSize& size, const uint32_t samples,
       const RefPtr<DepthAndStencilBuffer>& depthAndStencilBuffer,
-      const GLenum colorTarget, const GLuint colorName);
+      const GLenum colorTarget, const GLuint colorName,
+      ColorBackingOwnership colorBackingOwnership);
 
  public:
   ~MozFramebuffer();
