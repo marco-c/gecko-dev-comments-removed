@@ -1877,10 +1877,6 @@ void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {
   if (GetBrowsingContext()->IsTopContent() &&
       !mDocumentPrincipal->SchemeIs("about")) {
     
-    uint32_t pageLoaded = 1;
-    glean::mixed_content::unblock_counter.AccumulateSingleSample(pageLoaded);
-
-    
     enum {
       NO_MIXED_CONTENT = 0,  
       MIXED_DISPLAY_CONTENT =
