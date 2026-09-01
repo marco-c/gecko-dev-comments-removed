@@ -16,6 +16,7 @@
 
 namespace mozilla {
 class DataChannel;
+class PeerConnectionImpl;
 
 namespace dom {
 class Blob;
@@ -28,6 +29,7 @@ class RTCDataChannel final : public DOMEventTargetHelper {
                  bool aOrdered, Nullable<uint16_t> aMaxLifeTime,
                  Nullable<uint16_t> aMaxRetransmits,
                  const nsACString& aProtocol, bool aNegotiated,
+                 PeerConnectionImpl* aPc,
                  already_AddRefed<DataChannel>& aDataChannel,
                  nsPIDOMWindowInner* aWindow);
 
@@ -149,6 +151,11 @@ class RTCDataChannel final : public DOMEventTargetHelper {
 
   
   RefPtr<RTCDataChannel> mSelfRef;
+  
+  
+  
+  RefPtr<PeerConnectionImpl> mPeerConnection;
+  
   RefPtr<StrongWorkerRef> mWorkerRef;
   
   const RefPtr<DataChannel> mDataChannel;

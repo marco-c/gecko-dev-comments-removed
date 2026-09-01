@@ -884,6 +884,8 @@ class PeerConnectionImpl final
   std::set<std::pair<std::string, std::string>> mLocalIceCredentialsToReplace;
 
   nsTArray<RefPtr<dom::RTCRtpTransceiver>> mTransceivers;
+  
+  nsTArray<RefPtr<dom::RTCDataChannel>> mMainthreadDatachannels;
   RTCDtlsTransportMap mTransportIdToRTCDtlsTransport;
   RefPtr<dom::RTCSctpTransport> mSctpTransport;
   
