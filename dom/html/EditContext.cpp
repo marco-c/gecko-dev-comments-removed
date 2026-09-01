@@ -577,6 +577,10 @@ void EditContext::DoSetSelection(WidgetSelectionEvent& aEvent) {
   if (aEvent.mReversed) {
     std::swap(mSelectionStart, mSelectionEnd);
   }
+  if (IMEContentObserver* observer =
+          IMEStateManager::GetActiveContentObserver()) {
+    observer->EditContextSelectionChanged();
+  }
   
   
   FireTextUpdate(0, 0, u""_ns);

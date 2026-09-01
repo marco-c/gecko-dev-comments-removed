@@ -3169,11 +3169,13 @@ function synthesizeQueryCaretRect(aOffset, aWindow) {
 
 
 
+
 async function synthesizeSelectionSet(
   aOffset,
   aLength,
   aReverse,
-  aWindow = window
+  aWindow = window,
+  aFlags = 0
 ) {
   const utils = _getDOMWindowUtils(aWindow);
   if (!utils) {
@@ -3185,7 +3187,7 @@ async function synthesizeSelectionSet(
   await new Promise(resolve =>
     aWindow.requestAnimationFrame(() => aWindow.requestAnimationFrame(resolve))
   );
-  const flags = aReverse ? SELECTION_SET_FLAG_REVERSE : 0;
+  const flags = aFlags | (aReverse ? SELECTION_SET_FLAG_REVERSE : 0);
   return utils.sendSelectionSetEvent(aOffset, aLength, flags);
 }
 
