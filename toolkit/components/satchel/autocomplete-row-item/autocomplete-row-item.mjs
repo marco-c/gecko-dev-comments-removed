@@ -22,6 +22,12 @@ class AutocompleteRowItem extends MozLitElement {
     actions: { type: Object },
     selected: { type: Boolean, reflect: true },
     subfocused: { type: Boolean, reflect: true },
+    type: { type: String },
+    sources: { type: Array },
+    sourcesLabel: { type: String },
+    loading: { type: Boolean },
+    loadingLabel: { type: String },
+    emptySourcesLabel: { type: String },
   };
 
   #openActionsMenu(anchor, actions) {
@@ -89,6 +95,7 @@ class AutocompleteRowItem extends MozLitElement {
         @mouseup=${stopMouseEvents}
         type="icon ghost"
         aria-label=${ifDefined(label)}
+        title=${ifDefined(label)}
         .iconSrc=${this.getSecondaryActionItemIcon(type)}
         class=${classMap({
           "secondary-action": true,
@@ -105,6 +112,7 @@ class AutocompleteRowItem extends MozLitElement {
         @mouseup=${stopMouseEvents}
         type="icon ghost"
         aria-label=${ifDefined(label)}
+        title=${ifDefined(label)}
         .iconSrc=${this.getSecondaryActionItemIcon(type)}
         class=${classMap({
           "secondary-action": true,
@@ -115,6 +123,33 @@ class AutocompleteRowItem extends MozLitElement {
     }
 
     return "";
+  }
+
+  renderSourcesValue() {
+    if (this.loading) {
+      return this.loadingLabel;
+    }
+
+    if (this.sources?.length) {
+      return html`
+        <span class="sources-list">
+          ${this.sources.map(
+            source => html`
+              <span class="source-pill">
+                <img
+                  role="presentation"
+                  class="source-favicon"
+                  src=${source.favicon}
+                />
+                <span class="source-label">${source.label}</span>
+              </span>
+            `
+          )}
+        </span>
+      `;
+    }
+
+    return this.emptySourcesLabel;
   }
 
   render() {
@@ -130,10 +165,20 @@ class AutocompleteRowItem extends MozLitElement {
         )}
         <div class="labels-container">
           <span class="label">${this.label}</span>
-          ${when(
-            this.description,
-            () => html`<span class="description">${this.description}</span>`
-          )}
+          ${this.type == "smartFormFill"
+            ? html`
+                <span class="description smart-form-fill-sources">
+                  <span class="sources-label">${this.sourcesLabel}</span>
+                  ${" "}
+                  <span class="sources-value">
+                    ${this.renderSourcesValue()}
+                  </span>
+                </span>
+              `
+            : when(
+                this.description,
+                () => html`<span class="description">${this.description}</span>`
+              )}
         </div>
         ${when(this.actions?.secondary, () =>
           this.renderSecondaryActionButton()
