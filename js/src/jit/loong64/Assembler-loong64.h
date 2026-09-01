@@ -1030,6 +1030,8 @@ class AssemblerLOONG64 : public AssemblerShared {
   
   size_t size() const;
   
+  size_t readableSize() const;
+  
   size_t jumpRelocationTableBytes() const;
   size_t dataRelocationTableBytes() const;
 

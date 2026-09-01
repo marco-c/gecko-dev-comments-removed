@@ -273,6 +273,9 @@ bool AssemblerLOONG64::oom() const {
 size_t AssemblerLOONG64::size() const { return m_buffer.size(); }
 
 
+size_t AssemblerLOONG64::readableSize() const { return m_buffer.size(); }
+
+
 size_t AssemblerLOONG64::jumpRelocationTableBytes() const {
   return jumpRelocations_.length();
 }
