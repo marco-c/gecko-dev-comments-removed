@@ -124,6 +124,8 @@ var EditContextMenu = {
 
 
 
+
+
   addItems({ matches, createItems, onShowing, after }) {
     let itemSet = { matches, createItems, onShowing, after, items: [] };
     this._itemSets.push(itemSet);
@@ -132,6 +134,21 @@ var EditContextMenu = {
     if (popup) {
       this._insertItems(popup, itemSet);
     }
+    return itemSet;
+  },
+
+  
+
+
+
+
+
+  removeItems(itemSet) {
+    this._itemSets = this._itemSets.filter(set => set != itemSet);
+    for (let item of itemSet.items) {
+      item.remove();
+    }
+    itemSet.items = [];
   },
 
   
