@@ -127,11 +127,3 @@ const RESET_PROBLEMATIC_TEST_STATUSES = [
   ],
   ["browser.preferences.config_warning.warningProcessSandbox.dismissed", true],
 ];
-
-
-
-
-
-
-
-
