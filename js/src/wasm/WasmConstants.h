@@ -244,6 +244,10 @@ enum class Trap {
   Limit
 };
 
+
+
+bool TrapMightResume(Trap t);
+
 #ifdef JS_JITSPEW
 const char* NameOfTrap(Trap t);
 #endif

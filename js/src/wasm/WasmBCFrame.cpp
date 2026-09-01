@@ -139,33 +139,39 @@ void BaseLocalIter::operator++(int) {
 
 
 
-bool BaseCompiler::createStackMap(const char* who) {
+bool BaseCompiler::createStackMap(Maybe<Trap> reason) {
   const ExitStubMapVector noExtras;
   StackMap* stackMap;
-  return stackMapGenerator_.createStackMap(
-             who, noExtras, HasDebugFrameWithLiveRefs::No, stk_, &stackMap) &&
+  return stackMapGenerator_.createStackMap(reason, noExtras,
+                                           HasDebugFrameWithLiveRefs::No, stk_,
+                                           &stackMap) &&
          (!stackMap || stackMaps_->add(masm.currentOffset(), stackMap));
 }
 
-bool BaseCompiler::createStackMap(const char* who, CodeOffset assemblerOffset) {
+bool BaseCompiler::createStackMap(Maybe<Trap> reason,
+                                  CodeOffset assemblerOffset) {
   const ExitStubMapVector noExtras;
   StackMap* stackMap;
-  return stackMapGenerator_.createStackMap(
-             who, noExtras, HasDebugFrameWithLiveRefs::No, stk_, &stackMap) &&
+  return stackMapGenerator_.createStackMap(reason, noExtras,
+                                           HasDebugFrameWithLiveRefs::No, stk_,
+                                           &stackMap) &&
          (!stackMap || stackMaps_->add(assemblerOffset.offset(), stackMap));
 }
 
 bool BaseCompiler::createStackMap(
-    const char* who, HasDebugFrameWithLiveRefs debugFrameWithLiveRefs) {
+    Maybe<Trap> reason, HasDebugFrameWithLiveRefs debugFrameWithLiveRefs) {
   const ExitStubMapVector noExtras;
   StackMap* stackMap;
   return stackMapGenerator_.createStackMap(
-             who, noExtras, debugFrameWithLiveRefs, stk_, &stackMap) &&
+             reason, noExtras, debugFrameWithLiveRefs, stk_, &stackMap) &&
          (!stackMap || stackMaps_->add(masm.currentOffset(), stackMap));
 }
 
 [[nodiscard]] bool BaseCompiler::createAbortingOutOfLineTrapStackMap(
-    StackMap** result) {
+    StackMap** result, Trap t) {
+  
+  MOZ_ASSERT(!TrapMightResume(t));
+
   if (MOZ_LIKELY(!compilerEnv_.debugEnabled())) {
     *result = nullptr;
     return true;
@@ -173,7 +179,7 @@ bool BaseCompiler::createStackMap(
 
   ExitStubMapVector extras;
   return stackMapGenerator_.createStackMap(
-      "OutOfLineTrap", extras, HasDebugFrameWithLiveRefs::Maybe, stk_, result);
+      Some(t), extras, HasDebugFrameWithLiveRefs::Maybe, stk_, result);
 }
 
 bool MachineStackTracker::cloneTo(MachineStackTracker* dst) {
@@ -192,7 +198,7 @@ bool StackMapGenerator::generateStackmapEntriesForTrapExit(
 }
 
 bool StackMapGenerator::createStackMap(
-    const char* who, const ExitStubMapVector& extras,
+    Maybe<Trap> reason, const ExitStubMapVector& extras,
     HasDebugFrameWithLiveRefs debugFrameWithLiveRefs, const StkVector& stk,
     wasm::StackMap** result) {
   
@@ -289,16 +295,36 @@ bool StackMapGenerator::createStackMap(
   MOZ_ASSERT_IF(framePushedAtEntryToBody.isNothing(), stk.empty());
   MOZ_ASSERT_IF(framePushedExcludingArgs.isNothing(), stk.empty());
 
+  
+  
+  
+  
+  bool allowRefsInRegs =
+      
+      reason.isSome() &&
+      
+      !TrapMightResume(reason.value());
+
   for (const Stk& v : stk) {
+    
+    
+    if (MOZ_LIKELY(!allowRefsInRegs)) {
+      MOZ_RELEASE_ASSERT(v.kind() != Stk::RegisterRef);
+    }
+
+    
+    
+    
+    
+
 #ifndef DEBUG
     
-    
-    
-    MOZ_RELEASE_ASSERT(v.kind() != Stk::RegisterRef);
     if (v.kind() != Stk::MemRef) {
       continue;
     }
+
 #else
+    
     
     
     switch (v.kind()) {
@@ -356,14 +382,20 @@ bool StackMapGenerator::createStackMap(
         continue;
       case Stk::RegisterRef:
         
-        MOZ_CRASH("createStackMap: operand stack contains RegisterRef");
+        
+        MOZ_RELEASE_ASSERT(allowRefsInRegs);
+        
+        
+        continue;
       default:
         MOZ_CRASH("createStackMap: unknown operand stack element");
     }
 #endif
+
     
     
     
+    MOZ_ASSERT(v.kind() == Stk::MemRef);
     MOZ_ASSERT(v.offs() <= framePushedExcludingArgs.value());
     uint32_t offsFromMapLowest = framePushedExcludingArgs.value() - v.offs();
     MOZ_ASSERT(0 == offsFromMapLowest % sizeof(void*));

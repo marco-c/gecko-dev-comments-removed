@@ -944,22 +944,27 @@ struct BaseCompiler final {
   
   
   
+  
+  
+  
+  
 
   
-  [[nodiscard]] bool createStackMap(const char* who);
+  [[nodiscard]] bool createStackMap(Maybe<Trap> reason);
 
   
-  [[nodiscard]] bool createStackMap(const char* who,
+  [[nodiscard]] bool createStackMap(Maybe<Trap> reason,
                                     CodeOffset assemblerOffset);
 
   
   
   [[nodiscard]] bool createStackMap(
-      const char* who, HasDebugFrameWithLiveRefs debugFrameWithLiveRefs);
+      Maybe<Trap> reason, HasDebugFrameWithLiveRefs debugFrameWithLiveRefs);
 
   
   
-  [[nodiscard]] bool createAbortingOutOfLineTrapStackMap(StackMap** result);
+  [[nodiscard]] bool createAbortingOutOfLineTrapStackMap(StackMap** result,
+                                                         Trap t);
 
   
   
@@ -1793,12 +1798,12 @@ struct BaseCompiler final {
   
   struct NoNullCheck {
     static void emitNullCheck(BaseCompiler* bc, RegRef rp) {}
-    static void emitTrapSite(BaseCompiler* bc, FaultingCodeOffset fco,
+    static void emitTrapSite(BaseCompiler* bc, FaultingCodeRange fcr,
                              TrapMachineInsn tmi) {}
   };
   struct SignalNullCheck {
     static void emitNullCheck(BaseCompiler* bc, RegRef rp);
-    static void emitTrapSite(BaseCompiler* bc, FaultingCodeOffset fco,
+    static void emitTrapSite(BaseCompiler* bc, FaultingCodeRange fcr,
                              TrapMachineInsn tmi);
   };
 

@@ -1384,8 +1384,18 @@ struct StackMapGenerator {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   [[nodiscard]] bool createStackMap(
-      const char* who, const ExitStubMapVector& extras,
+      Maybe<Trap> reason, const ExitStubMapVector& extras,
       HasDebugFrameWithLiveRefs debugFrameWithLiveRefs, const StkVector& stk,
       wasm::StackMap** result);
 };
