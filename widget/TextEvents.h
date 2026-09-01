@@ -1027,7 +1027,8 @@ class WidgetCompositionEvent final : public WidgetGUIEvent {
   }
 
   bool IsFollowedByCompositionEnd() const {
-    return IsFollowedByCompositionEnd(mOriginalMessage);
+    return IsFollowedByCompositionEnd(mOriginalMessage ? mOriginalMessage
+                                                       : mMessage);
   }
 
   static bool IsFollowedByCompositionEnd(EventMessage aEventMessage) {
@@ -1207,10 +1208,6 @@ class WidgetQueryContentEvent final : public WidgetGUIEvent {
     
     
     bool mRelativeToInsertionPoint = false;
-    
-    
-    
-    bool mIsFirstCharFallbackRect = false;
 
     Input() = default;
 
