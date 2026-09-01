@@ -200,8 +200,17 @@ int32_t VideoCaptureImpl::IncomingFrame(uint8_t* videoFrame,
   
   
   
-  scoped_refptr<I420Buffer> buffer = I420Buffer::Create(
+  scoped_refptr<I420Buffer> buffer = I420Buffer::CreateOrNull(
       target_width, target_height, stride_y, stride_uv, stride_uv);
+  if (!buffer) {
+    RTC_LOG(LS_ERROR) << "Unable to allocate I420Buffer"
+                      << " (w: " << target_width
+                      << ", h: " << target_height
+                      << ", stride_y: " << stride_y
+                      << ", stride_u: " << stride_uv
+                      << ", stride_v: " << stride_uv << ")";
+    return -1;
+  }
 
   libyuv::RotationMode rotation_mode = libyuv::kRotate0;
   if (apply_rotation_) {

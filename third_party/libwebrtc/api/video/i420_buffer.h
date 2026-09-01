@@ -32,6 +32,11 @@ class RTC_EXPORT I420Buffer : public I420BufferInterface {
                                           int stride_y,
                                           int stride_u,
                                           int stride_v);
+  static scoped_refptr<I420Buffer> CreateOrNull(int width,
+                                                int height,
+                                                int stride_y,
+                                                int stride_u,
+                                                int stride_v);
 
   
   static scoped_refptr<I420Buffer> Copy(const I420BufferInterface& buffer);
@@ -100,7 +105,15 @@ class RTC_EXPORT I420Buffer : public I420BufferInterface {
 
  protected:
   I420Buffer(int width, int height);
-  I420Buffer(int width, int height, int stride_y, int stride_u, int stride_v);
+  
+  
+  
+  I420Buffer(int width,
+             int height,
+             int stride_y,
+             int stride_u,
+             int stride_v,
+             uint8_t* data = nullptr);
 
   ~I420Buffer() override;
 
