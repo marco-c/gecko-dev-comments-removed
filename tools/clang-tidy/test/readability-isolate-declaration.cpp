@@ -1,0 +1,7 @@
+void f() {
+  int * pointer = nullptr, value = 42, * const const_ptr = &value;
+  
+  
+  
+  
+}

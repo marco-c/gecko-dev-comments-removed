@@ -1,0 +1,6 @@
+
+
+void f(int x, int y);
+void g() {
+  f(0, 0);
+}
