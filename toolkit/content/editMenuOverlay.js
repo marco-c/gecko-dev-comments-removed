@@ -145,6 +145,12 @@ var EditContextMenu = {
   open(input, event) {
     let popup = this._ensurePopup();
 
+    
+    
+    if (document.commandDispatcher.focusedElement != input) {
+      input.focus();
+    }
+
     goUpdateGlobalEditMenuItems(true);
     for (let itemSet of this._itemSets) {
       let matches = itemSet.matches(input);
