@@ -54,11 +54,11 @@ add_task(async function () {
     return new Promise(resolve => {
       sandbox
         .stub(gURLBar.controller, "loadURL")
-        .callsFake(({ url, where }) => {
+        .callsFake(({ loadRequest, where }) => {
           sandbox.restore();
           
           
-          resolve([url, where]);
+          resolve([loadRequest, where]);
           return {};
         });
     });
@@ -116,13 +116,15 @@ add_task(async function no_heuristic_test() {
 
   async function promiseLoadURL() {
     return new Promise(resolve => {
-      sinon.stub(gURLBar.controller, "loadURL").callsFake(({ url, where }) => {
-        gURLBar.controller.loadURL.restore();
-        
-        
-        resolve([url, where]);
-        return {};
-      });
+      sinon
+        .stub(gURLBar.controller, "loadURL")
+        .callsFake(({ loadRequest, where }) => {
+          gURLBar.controller.loadURL.restore();
+          
+          
+          resolve([loadRequest, where]);
+          return {};
+        });
     });
   }
 
@@ -141,7 +143,7 @@ add_task(async function no_heuristic_test() {
     
     
     
-    new URL((await promise)[0]);
+    new URL((await promise)[0].urlLoad.url);
     Assert.ok(stub.called, "invoked getHeuristicResult");
   }
 });

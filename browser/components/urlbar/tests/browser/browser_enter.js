@@ -183,18 +183,6 @@ add_task(async function searchOnEnterSoon() {
   );
 
   
-  Assert.equal(
-    gURLBar.selectionStart,
-    gURLBar.value.length,
-    "The selectionStart indicates at ending of the value"
-  );
-  Assert.equal(
-    gURLBar.selectionEnd,
-    gURLBar.value.length,
-    "The selectionEnd indicates at ending of the value"
-  );
-
-  
   EventUtils.synthesizeKey("x", { type: "keyup" });
   EventUtils.synthesizeKey("KEY_Enter", { type: "keyup" });
 
@@ -207,18 +195,6 @@ add_task(async function searchOnEnterSoon() {
   
   const result = await onResult;
   is(result, "unload", "Keyup event is not captured.");
-
-  
-  Assert.equal(
-    gURLBar.selectionStart,
-    0,
-    "The selectionStart indicates at beginning of the value"
-  );
-  Assert.equal(
-    gURLBar.selectionEnd,
-    0,
-    "The selectionEnd indicates at beginning of the value"
-  );
 
   
   await onLoad;
@@ -261,6 +237,42 @@ add_task(async function searchByMultipleEnters() {
     ownerDocument.activeElement,
     gBrowser.selectedBrowser,
     "The focus is moved to the browser"
+  );
+
+  
+  BrowserTestUtils.removeTab(tab);
+});
+
+
+
+add_task(async function goToBeginningAfterKeyup() {
+  info("Search on Enter, keeping the key down");
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    START_VALUE
+  );
+  const url = "https://example.com/some/url";
+
+  EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {});
+  gURLBar.value = url;
+  EventUtils.synthesizeKey("KEY_Enter", { type: "keydown" });
+
+  
+  
+  await TestUtils.waitForTick();
+  Assert.equal(
+    gURLBar.selectionStart,
+    gURLBar.value.length,
+    "The selectionStart indicates at ending of the value"
+  );
+
+  
+  
+  
+  EventUtils.synthesizeKey("KEY_Enter", { type: "keyup" });
+  await TestUtils.waitForCondition(
+    () => !gURLBar.selectionStart && !gURLBar.selectionEnd,
+    "The caret moved to the beginning of the value"
   );
 
   
