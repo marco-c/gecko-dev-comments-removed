@@ -236,8 +236,8 @@ class gfxUserFontEntry;
 class gfxOTSMessageContext;
 
 struct gfxUserFontAttributes {
-  using FontStretch = mozilla::FontStretch;
-  using StretchRange = mozilla::StretchRange;
+  using FontWidth = mozilla::FontWidth;
+  using WidthRange = mozilla::WidthRange;
   using FontSlantStyle = mozilla::FontSlantStyle;
   using SlantStyleRange = mozilla::SlantStyleRange;
   using FontWeight = mozilla::FontWeight;
@@ -247,9 +247,9 @@ struct gfxUserFontAttributes {
   using RangeFlags = gfxFontEntry::RangeFlags;
 
   WeightRange mWeight = WeightRange(FontWeight::NORMAL);
-  StretchRange mStretch = StretchRange(FontStretch::NORMAL);
+  WidthRange mWidth = WidthRange(FontWidth::NORMAL);
   SlantStyleRange mStyle = SlantStyleRange(FontSlantStyle::NORMAL);
-  RangeFlags mRangeFlags = RangeFlags::eAutoWeight | RangeFlags::eAutoStretch |
+  RangeFlags mRangeFlags = RangeFlags::eAutoWeight | RangeFlags::eAutoWidth |
                            RangeFlags::eAutoSlantStyle;
   mozilla::StyleFontDisplay mFontDisplay = mozilla::StyleFontDisplay::Auto;
   float mAscentOverride = -1.0;
@@ -270,8 +270,8 @@ class gfxUserFontSet {
   friend class gfxOTSMessageContext;
 
  public:
-  using FontStretch = mozilla::FontStretch;
-  using StretchRange = mozilla::StretchRange;
+  using FontWidth = mozilla::FontWidth;
+  using WidthRange = mozilla::WidthRange;
   using FontSlantStyle = mozilla::FontSlantStyle;
   using SlantStyleRange = mozilla::SlantStyleRange;
   using FontWeight = mozilla::FontWeight;
@@ -452,7 +452,7 @@ class gfxUserFontSet {
             mozilla::HashString(aKey->mFontEntry->FamilyName()),
             aKey->mFontEntry->Weight().AsScalar(),
             aKey->mFontEntry->SlantStyle().AsScalar(),
-            aKey->mFontEntry->Stretch().AsScalar(),
+            aKey->mFontEntry->Width().AsScalar(),
             aKey->mFontEntry->AutoRangeFlags(),
             aKey->mFontEntry->mLanguageOverride);
       }
@@ -572,7 +572,6 @@ class gfxUserFontSet {
 
   mutable mozilla::RecursiveMutex mMutex;
 };
-
 
 
 class gfxUserFontEntry : public gfxFontEntry {
@@ -727,7 +726,7 @@ class gfxUserFontEntry : public gfxFontEntry {
   
   
   
-  void FontDataDownloadComplete(uint32_t aSrcIndex, const uint8_t* aFontData,
+  void FontDataDownloadComplete(uint32_t aSrcIndex, const uint8_t*&& aFontData,
                                 uint32_t aLength, nsresult aDownloadStatus,
                                 nsIFontLoadCompleteCallback* aCallback);
 
@@ -735,31 +734,33 @@ class gfxUserFontEntry : public gfxFontEntry {
   
   
   
-  bool LoadPlatformFontSync(uint32_t aSrcIndex, const uint8_t* aFontData,
+  bool LoadPlatformFontSync(uint32_t aSrcIndex, const uint8_t*&& aFontData,
                             uint32_t aLength);
 
-  void LoadPlatformFontAsync(uint32_t aSrcIndex, const uint8_t* aFontData,
+  void LoadPlatformFontAsync(uint32_t aSrcIndex, const uint8_t*&& aFontData,
                              uint32_t aLength,
                              nsIFontLoadCompleteCallback* aCallback);
 
   
   void StartPlatformFontLoadOnBackgroundThread(
-      uint32_t aSrcIndex, const uint8_t* aFontData, uint32_t aLength,
+      uint32_t aSrcIndex, const uint8_t*&& aFontData, uint32_t aLength,
       nsMainThreadPtrHandle<nsIFontLoadCompleteCallback> aCallback);
 
   
   void ContinuePlatformFontLoadOnMainThread(
-      uint32_t aSrcIndex, const uint8_t* aOriginalFontData,
+      uint32_t aSrcIndex, const uint8_t*&& aOriginalFontData,
       uint32_t aOriginalLength, gfxUserFontType aFontType,
-      const uint8_t* aSanitizedFontData, uint32_t aSanitizedLength,
+      const uint8_t*&& aSanitizedFontData, uint32_t aSanitizedLength,
       nsTArray<OTSMessage>&& aMessages,
       nsMainThreadPtrHandle<nsIFontLoadCompleteCallback> aCallback);
 
   
   
-  bool LoadPlatformFont(uint32_t aSrcIndex, const uint8_t* aOriginalFontData,
+  
+  
+  bool LoadPlatformFont(uint32_t aSrcIndex, const uint8_t*&& aOriginalFontData,
                         uint32_t aOriginalLength, gfxUserFontType aFontType,
-                        const uint8_t* aSanitizedFontData,
+                        const uint8_t*&& aSanitizedFontData,
                         uint32_t aSanitizedLength,
                         nsTArray<OTSMessage>&& aMessages);
 
@@ -811,6 +812,10 @@ class gfxUserFontEntry : public gfxFontEntry {
       mLoader;  
   RefPtr<gfxUserFontSet> mLoadingFontSet;
   RefPtr<gfxFontSrcPrincipal> mPrincipal;
+
+  
+  
+  RefPtr<FontData> mFontData;
 };
 
 #endif

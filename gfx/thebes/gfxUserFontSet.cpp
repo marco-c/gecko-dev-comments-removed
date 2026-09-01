@@ -53,7 +53,7 @@ gfxUserFontEntry::gfxUserFontEntry(nsTArray<gfxFontFaceSrc>&& aFontFaceSrcList,
   mSrcList = std::move(aFontFaceSrcList);
   mCurrentSrcIndex = 0;
   mWeightRange = aAttr.mWeight;
-  mStretchRange = aAttr.mStretch;
+  mWidthRange = aAttr.mWidth;
   mStyleRange = aAttr.mStyle;
   mFeatureSettings = std::move(aAttr.mFeatureSettings);
   mVariationSettings = std::move(aAttr.mVariationSettings);
@@ -76,7 +76,7 @@ void gfxUserFontEntry::UpdateAttributes(gfxUserFontAttributes&& aAttr) {
 
   mFontDisplay = aAttr.mFontDisplay;
   mWeightRange = aAttr.mWeight;
-  mStretchRange = aAttr.mStretch;
+  mWidthRange = aAttr.mWidth;
   mStyleRange = aAttr.mStyle;
   mFeatureSettings = std::move(aAttr.mFeatureSettings);
   mVariationSettings = std::move(aAttr.mVariationSettings);
@@ -102,7 +102,7 @@ gfxUserFontEntry::~gfxUserFontEntry() {
 
 bool gfxUserFontEntry::Matches(const nsTArray<gfxFontFaceSrc>& aFontFaceSrcList,
                                const gfxUserFontAttributes& aAttr) {
-  return mWeightRange == aAttr.mWeight && mStretchRange == aAttr.mStretch &&
+  return mWeightRange == aAttr.mWeight && mWidthRange == aAttr.mWidth &&
          mStyleRange == aAttr.mStyle &&
          mFeatureSettings == aAttr.mFeatureSettings &&
          mVariationSettings == aAttr.mVariationSettings &&
@@ -466,7 +466,7 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aIsContinue) {
       if (!pfl->IsFontFamilyWhitelistActive()) {
         fe = gfxPlatform::GetPlatform()->LookupLocalFont(
             fontSet->GetFontVisibilityProvider(), currSrc.mLocalName, Weight(),
-            Stretch(), SlantStyle());
+            Width(), SlantStyle());
         
         
         mSeenLocalSource = true;
@@ -576,7 +576,8 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aIsContinue) {
               fontSet->SyncLoadFontData(this, &currSrc, buffer, bufferLength);
 
           if (NS_SUCCEEDED(rv) &&
-              LoadPlatformFontSync(mCurrentSrcIndex, buffer, bufferLength)) {
+              LoadPlatformFontSync(mCurrentSrcIndex, std::move(buffer),
+                                   bufferLength)) {
             SetLoadState(STATUS_LOADED);
             glean::webfont::srctype.AccumulateSingleSample(currSrc.mSourceType +
                                                            1);
@@ -629,8 +630,8 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aIsContinue) {
 
       
       currSrc.mBuffer->TakeBuffer(buffer, bufferLength);
-      if (buffer &&
-          LoadPlatformFontSync(mCurrentSrcIndex, buffer, bufferLength)) {
+      if (buffer && LoadPlatformFontSync(mCurrentSrcIndex, std::move(buffer),
+                                         bufferLength)) {
         
         
         SetLoadState(STATUS_LOADED);
@@ -661,7 +662,7 @@ void gfxUserFontEntry::SetLoadState(UserFontLoadState aLoadState) {
 }
 
 bool gfxUserFontEntry::LoadPlatformFontSync(uint32_t aSrcIndex,
-                                            const uint8_t* aFontData,
+                                            const uint8_t*&& aFontData,
                                             uint32_t aLength) {
   AUTO_PROFILER_LABEL("gfxUserFontEntry::LoadPlatformFontSync", OTHER);
   NS_ASSERTION((mUserFontLoadState == STATUS_NOT_LOADED ||
@@ -681,12 +682,13 @@ bool gfxUserFontEntry::LoadPlatformFontSync(uint32_t aSrcIndex,
   const uint8_t* sanitaryData =
       SanitizeOpenTypeData(aFontData, aLength, sanitaryLen, fontType, messages);
 
-  return LoadPlatformFont(aSrcIndex, aFontData, aLength, fontType, sanitaryData,
-                          sanitaryLen, std::move(messages));
+  return LoadPlatformFont(aSrcIndex, std::move(aFontData), aLength, fontType,
+                          std::move(sanitaryData), sanitaryLen,
+                          std::move(messages));
 }
 
 void gfxUserFontEntry::StartPlatformFontLoadOnBackgroundThread(
-    uint32_t aSrcIndex, const uint8_t* aFontData, uint32_t aLength,
+    uint32_t aSrcIndex, const uint8_t*&& aFontData, uint32_t aLength,
     nsMainThreadPtrHandle<nsIFontLoadCompleteCallback> aCallback) {
   MOZ_ASSERT(!NS_IsMainThread());
 
@@ -708,16 +710,22 @@ void gfxUserFontEntry::StartPlatformFontLoadOnBackgroundThread(
 }
 
 bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
-                                        const uint8_t* aOriginalFontData,
+                                        const uint8_t*&& aOriginalFontData,
                                         uint32_t aOriginalLength,
                                         gfxUserFontType aFontType,
-                                        const uint8_t* aSanitizedFontData,
+                                        const uint8_t*&& aSanitizedFontData,
                                         uint32_t aSanitizedLength,
                                         nsTArray<OTSMessage>&& aMessages) {
+  
+  auto atExit = MakeScopeExit([=]() { free((void*)aOriginalFontData); });
+
+  
+  
+  RefPtr fontData =
+      MakeRefPtr<FontData>(std::move(aSanitizedFontData), aSanitizedLength);
+
   RefPtr<gfxUserFontSet> fontSet = GetUserFontSet();
   if (NS_WARN_IF(!fontSet)) {
-    free((void*)aOriginalFontData);
-    free((void*)aSanitizedFontData);
     return false;
   }
 
@@ -727,18 +735,28 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
                                        : nsIScriptError::errorFlag);
   }
 
-  if (!aSanitizedFontData) {
+  if (!fontData->Data() || !fontData->Length()) {
     fontSet->LogMessage(this, aSrcIndex, "rejected by sanitizer");
-  } else {
-    
-    
-    
-    if (gfxFontUtils::DetermineFontDataType(
-            aSanitizedFontData, aSanitizedLength) != GFX_USERFONT_OPENTYPE) {
-      fontSet->LogMessage(this, aSrcIndex, "not a supported OpenType format");
-      free((void*)aSanitizedFontData);
-      aSanitizedFontData = nullptr;
-    }
+    return false;
+  }
+
+  
+  
+  
+  if (gfxFontUtils::DetermineFontDataType(
+          fontData->Data(), fontData->Length()) != GFX_USERFONT_OPENTYPE) {
+    fontSet->LogMessage(this, aSrcIndex, "not a supported OpenType format");
+    return false;
+  }
+
+  uint32_t fontCompressionRatio =
+      uint32_t(100.0 * aOriginalLength / aSanitizedLength + 0.5);
+  if (aFontType == GFX_USERFONT_WOFF) {
+    glean::webfont::compression_woff.AccumulateSingleSample(
+        fontCompressionRatio);
+  } else if (aFontType == GFX_USERFONT_WOFF2) {
+    glean::webfont::compression_woff2.AccumulateSingleSample(
+        fontCompressionRatio);
   }
 
   
@@ -746,40 +764,31 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
   
   nsAutoCString originalFullName;
 
-  RefPtr<gfxFontEntry> fe;
-  uint32_t fontCompressionRatio = 0;
+  
+  
+  
+  
+  gfxFontUtils::GetFullNameFromSFNT(fontData->Data(), fontData->Length(),
+                                    originalFullName);
 
-  if (aSanitizedFontData) {
-    if (aSanitizedLength) {
-      fontCompressionRatio =
-          uint32_t(100.0 * aOriginalLength / aSanitizedLength + 0.5);
-      if (aFontType == GFX_USERFONT_WOFF) {
-        glean::webfont::compression_woff.AccumulateSingleSample(
-            fontCompressionRatio);
-      } else if (aFontType == GFX_USERFONT_WOFF2) {
-        glean::webfont::compression_woff2.AccumulateSingleSample(
-            fontCompressionRatio);
-      }
-    }
-
-    
-    
-    
-    
-    gfxFontUtils::GetFullNameFromSFNT(aSanitizedFontData, aSanitizedLength,
-                                      originalFullName);
-
-    
-    
-    fe = gfxPlatform::GetPlatform()->MakePlatformFont(
-        mName, Weight(), Stretch(), SlantStyle(), aSanitizedFontData,
-        aSanitizedLength);
-    if (!fe) {
-      fontSet->LogMessage(this, aSrcIndex, "not usable by platform");
-    }
+  
+  RefPtr<gfxFontEntry> fe = gfxPlatform::GetPlatform()->MakePlatformFont(
+      mName, Weight(), Width(), SlantStyle(), fontData);
+  if (!fe) {
+    fontSet->LogMessage(this, aSrcIndex, "not usable by platform");
   }
 
   if (fe) {
+    
+    
+    mFontData = std::move(fontData);
+
+#if MOZ_FONTATIONS
+    SkrifaFontRef* skrifa =
+        skrifa_font_new(mFontData->Data(), mFontData->Length());
+    fe->SetSkrifaFont(skrifa);
+#endif
+
     
     
     
@@ -831,10 +840,6 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
          FamilyName().get()));
   }
 
-  
-  
-  free((void*)aOriginalFontData);
-
   return fe != nullptr;
 }
 
@@ -849,7 +854,7 @@ void gfxUserFontEntry::Load() {
 
 
 void gfxUserFontEntry::FontDataDownloadComplete(
-    uint32_t aSrcIndex, const uint8_t* aFontData, uint32_t aLength,
+    uint32_t aSrcIndex, const uint8_t*&& aFontData, uint32_t aLength,
     nsresult aDownloadStatus, nsIFontLoadCompleteCallback* aCallback) {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -860,7 +865,7 @@ void gfxUserFontEntry::FontDataDownloadComplete(
   
   if (NS_SUCCEEDED(aDownloadStatus) &&
       mFontDataLoadingState != LOADING_TIMED_OUT) {
-    LoadPlatformFontAsync(aSrcIndex, aFontData, aLength, aCallback);
+    LoadPlatformFontAsync(aSrcIndex, std::move(aFontData), aLength, aCallback);
     return;
   }
 
@@ -885,7 +890,7 @@ void gfxUserFontEntry::FontDataDownloadComplete(
 }
 
 void gfxUserFontEntry::LoadPlatformFontAsync(
-    uint32_t aSrcIndex, const uint8_t* aFontData, uint32_t aLength,
+    uint32_t aSrcIndex, const uint8_t*&& aFontData, uint32_t aLength,
     nsIFontLoadCompleteCallback* aCallback) {
   nsMainThreadPtrHandle<nsIFontLoadCompleteCallback> cb(
       new nsMainThreadPtrHolder<nsIFontLoadCompleteCallback>("FontLoader",
@@ -909,24 +914,21 @@ void gfxUserFontEntry::LoadPlatformFontAsync(
                         nsMainThreadPtrHandle<nsIFontLoadCompleteCallback>>(
           "gfxUserFontEntry::StartPlatformFontLoadOnBackgroundThread", this,
           &gfxUserFontEntry::StartPlatformFontLoadOnBackgroundThread, aSrcIndex,
-          aFontData, aLength, cb);
+          std::move(aFontData), aLength, cb);
   MOZ_ALWAYS_SUCCEEDS(NS_DispatchBackgroundTask(event.forget()));
 }
 
 void gfxUserFontEntry::ContinuePlatformFontLoadOnMainThread(
-    uint32_t aSrcIndex, const uint8_t* aOriginalFontData,
+    uint32_t aSrcIndex, const uint8_t*&& aOriginalFontData,
     uint32_t aOriginalLength, gfxUserFontType aFontType,
-    const uint8_t* aSanitizedFontData, uint32_t aSanitizedLength,
+    const uint8_t*&& aSanitizedFontData, uint32_t aSanitizedLength,
     nsTArray<OTSMessage>&& aMessages,
     nsMainThreadPtrHandle<nsIFontLoadCompleteCallback> aCallback) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  bool loaded = LoadPlatformFont(aSrcIndex, aOriginalFontData, aOriginalLength,
-                                 aFontType, aSanitizedFontData,
-                                 aSanitizedLength, std::move(aMessages));
-  aOriginalFontData = nullptr;
-  aSanitizedFontData = nullptr;
-
+  bool loaded = LoadPlatformFont(
+      aSrcIndex, std::move(aOriginalFontData), aOriginalLength, aFontType,
+      std::move(aSanitizedFontData), aSanitizedLength, std::move(aMessages));
   if (loaded) {
     aCallback->FontLoadComplete();
   } else {
@@ -1044,7 +1046,7 @@ void gfxUserFontSet::AddUserFontEntry(const nsCString& aFamilyName,
     nsAutoCString weightString;
     aUserFontEntry->Weight().ToString(weightString);
     nsAutoCString stretchString;
-    aUserFontEntry->Stretch().ToString(stretchString);
+    aUserFontEntry->Width().ToString(stretchString);
     LOG(
         ("userfonts (%p) added to \"%s\" (%p) style: %s weight: %s "
          "stretch: %s display: %d",
@@ -1217,7 +1219,7 @@ bool gfxUserFontSet::UserFontCache::Entry::KeyEquals(
 
   if (mFontEntry->SlantStyle() != fe->SlantStyle() ||
       mFontEntry->Weight() != fe->Weight() ||
-      mFontEntry->Stretch() != fe->Stretch() ||
+      mFontEntry->Width() != fe->Width() ||
       mFontEntry->AutoRangeFlags() != fe->AutoRangeFlags() ||
       mFontEntry->mFeatureSettings != fe->mFeatureSettings ||
       mFontEntry->mVariationSettings != fe->mVariationSettings ||

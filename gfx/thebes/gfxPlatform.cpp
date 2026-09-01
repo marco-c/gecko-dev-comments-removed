@@ -1904,20 +1904,18 @@ bool gfxPlatform::IsKnownIconFontFamily(const nsAtom* aFamilyName) const {
 already_AddRefed<gfxFontEntry> gfxPlatform::LookupLocalFont(
     FontVisibilityProvider* aFontVisibilityProvider,
     const nsACString& aFontName, const WeightRange& aWeightForEntry,
-    const StretchRange& aStretchForEntry,
-    const SlantStyleRange& aStyleForEntry) {
+    const WidthRange& aWidthForEntry, const SlantStyleRange& aStyleForEntry) {
   return gfxPlatformFontList::PlatformFontList()->LookupLocalFont(
-      aFontVisibilityProvider, aFontName, aWeightForEntry, aStretchForEntry,
+      aFontVisibilityProvider, aFontName, aWeightForEntry, aWidthForEntry,
       aStyleForEntry);
 }
 
 already_AddRefed<gfxFontEntry> gfxPlatform::MakePlatformFont(
     const nsACString& aFontName, const WeightRange& aWeightForEntry,
-    const StretchRange& aStretchForEntry, const SlantStyleRange& aStyleForEntry,
-    const uint8_t* aFontData, uint32_t aLength) {
+    const WidthRange& aWidthForEntry, const SlantStyleRange& aStyleForEntry,
+    FontData* aFontData) {
   return gfxPlatformFontList::PlatformFontList()->MakePlatformFont(
-      aFontName, aWeightForEntry, aStretchForEntry, aStyleForEntry, aFontData,
-      aLength);
+      aFontName, aWeightForEntry, aWidthForEntry, aStyleForEntry, aFontData);
 }
 
 BackendPrefsData gfxPlatform::GetBackendPrefs() const {
@@ -3799,6 +3797,12 @@ void gfxPlatform::GetFrameStats(mozilla::widget::InfoObject& aObj) {
 }
 
 void gfxPlatform::GetCMSSupportInfo(mozilla::widget::InfoObject& aObj) {
+  const bool forcedSRGB = StaticPrefs::gfx_color_management_native_srgb() ||
+                          StaticPrefs::gfx_color_management_force_srgb();
+  aObj.DefineProperty("CMSOutputProfileInUse",
+                      forcedSRGB ? "sRGB (overridden by native_srgb/force_srgb)"
+                                 : "configured CMSOutputProfile");
+
   nsTArray<uint8_t> outputProfileData =
       gfxPlatform::GetPlatform()->GetPlatformCMSOutputProfileData();
   if (outputProfileData.IsEmpty()) {

@@ -74,15 +74,14 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
   
   
   explicit gfxFontconfigFontEntry(const nsACString& aFaceName,
-                                  WeightRange aWeight, StretchRange aStretch,
+                                  WeightRange aWeight, WidthRange aWidth,
                                   SlantStyleRange aStyle,
                                   RefPtr<mozilla::gfx::SharedFTFace>&& aFace);
 
   
   explicit gfxFontconfigFontEntry(const nsACString& aFaceName,
                                   FcPattern* aFontPattern, WeightRange aWeight,
-                                  StretchRange aStretch,
-                                  SlantStyleRange aStyle);
+                                  WidthRange aWidth, SlantStyleRange aStyle);
 
   gfxFontEntry* Clone() const override;
 
@@ -278,12 +277,12 @@ class gfxFcPlatformFontList final : public gfxPlatformFontList {
   already_AddRefed<gfxFontEntry> LookupLocalFont(
       FontVisibilityProvider* aFontVisibilityProvider,
       const nsACString& aFontName, WeightRange aWeightForEntry,
-      StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry) override;
+      WidthRange aWidthForEntry, SlantStyleRange aStyleForEntry) override;
 
   already_AddRefed<gfxFontEntry> MakePlatformFont(
       const nsACString& aFontName, WeightRange aWeightForEntry,
-      StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry,
-      const uint8_t* aFontData, uint32_t aLength) override;
+      WidthRange aWidthForEntry, SlantStyleRange aStyleForEntry,
+      FontData* aFontData) override;
 
   bool FindAndAddFamiliesLocked(
       FontVisibilityProvider* aFontVisibilityProvider,

@@ -12,6 +12,7 @@
 #include "gfxFontInfoLoader.h"
 #include "gfxFontUtils.h"
 #include "gfxPlatform.h"
+#include "gfxUserFontSet.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/MemoryReporting.h"
@@ -182,7 +183,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   friend class InitOtherFamilyNamesRunnable;
 
  public:
-  typedef mozilla::StretchRange StretchRange;
+  typedef mozilla::WidthRange WidthRange;
   typedef mozilla::SlantStyleRange SlantStyleRange;
   typedef mozilla::WeightRange WeightRange;
   typedef mozilla::intl::Script Script;
@@ -496,7 +497,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   virtual already_AddRefed<gfxFontEntry> LookupLocalFont(
       FontVisibilityProvider* aFontVisibilityProvider,
       const nsACString& aFontName, WeightRange aWeightForEntry,
-      StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry) = 0;
+      WidthRange aWidthForEntry, SlantStyleRange aStyleForEntry) = 0;
 
   
 
@@ -511,8 +512,8 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
   virtual already_AddRefed<gfxFontEntry> MakePlatformFont(
       const nsACString& aFontName, WeightRange aWeightForEntry,
-      StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry,
-      const uint8_t* aFontData, uint32_t aLength) = 0;
+      WidthRange aWidthForEntry, SlantStyleRange aStyleForEntry,
+      FontData* aFontData) = 0;
 
   
   
@@ -905,7 +906,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   already_AddRefed<gfxFontEntry> LookupInSharedFaceNameList(
       FontVisibilityProvider* aFontVisibilityProvider,
       const nsACString& aFaceName, WeightRange aWeightForEntry,
-      StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry)
+      WidthRange aWidthForEntry, SlantStyleRange aStyleForEntry)
       MOZ_REQUIRES(mLock);
 
   
