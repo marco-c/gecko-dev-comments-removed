@@ -524,6 +524,12 @@ class XPCShellTestThread(Thread):
         
         self.lock.release()
 
+        
+        
+        
+        
+        self.done = True
+
     def reportTimeoutResult(self):
         """Log the structured failure for a timed-out test: a FAIL test_status
         pointing at the uploaded profile (when one was written), followed by a
