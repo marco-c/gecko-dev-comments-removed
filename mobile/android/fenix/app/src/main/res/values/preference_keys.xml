@@ -248,9 +248,6 @@
     <string name="pref_key_https_only_in_all_tabs" translatable="false">pref_key_https_only_in_all_tabs</string>
     <string name="pref_key_https_only_in_private_tabs" translatable="false">pref_key_https_only_in_private_tabs</string>
 
-    <!-- Cookie Banner Reduction Settings-->
-    <string name="pref_key_cookie_banner_private_mode" translatable="false">pref_key_cookie_banner_private_mode</string>
-
     <!-- DNS over HTTPS Settings -->
     <string name="pref_key_doh_settings" translatable="false">pref_key_doh_settings</string>
     <string name="pref_key_doh_settings_mode" translatable="false">pref_key_doh_settings_mode</string>
@@ -497,6 +494,8 @@
     <string name="pref_key_enable_uninstall_survey" translatable="false">pref_key_enable_uninstall_survey</string>
     <string name="pref_key_enable_homepage_customization" translatable="false">pref_key_enable_homepage_customization</string>
     <string name="pref_key_enable_homepage_trending_recent_search" translatable="false">pref_key_enable_homepage_trending_recent_search</string>
+    <string name="pref_key_enable_oled_theme" translatable="false">pref_key_enable_oled_theme</string>
+    <string name="pref_key_enable_pdf_tools" translatable="false">pref_key_enable_pdf_tools</string>
     <!-- Preference for the feature flag -->
     <string name="pref_key_enable_shake_to_summarize" translatable="false">pref_key_enable_shake_to_summarize</string>
     <string name="pref_key_page_summaries" translatable="false">pref_key_page_summaries</string>
