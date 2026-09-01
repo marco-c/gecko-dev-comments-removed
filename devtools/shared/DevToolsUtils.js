@@ -28,16 +28,6 @@ if (!isWorker) {
     },
     { global: "contextual" }
   );
-
-  const { XPCOMUtils } = ChromeUtils.importESModule(
-    "resource://gre/modules/XPCOMUtils.sys.mjs"
-  );
-  XPCOMUtils.defineLazyPreferenceGetter(
-    lazy,
-    "executeSoonDelay",
-    "devtools.testing.executeSoonDelay",
-    0
-  );
 }
 
 
@@ -70,45 +60,23 @@ for (const key of Object.keys(ThreadSafeDevToolsUtils)) {
 
 
 
-
-
-
-
-
-
-function getMainThreadExecutor(fn, debugLabel) {
-  let executor;
-  
-  
-  if (AppConstants.DEBUG_JS_MODULES || flags.testing) {
-    const stack = getStack();
-    executor = () => {
-      callFunctionWithAsyncStack(fn, stack, debugLabel);
-    };
-  } else {
-    executor = fn;
-  }
-
-  
-  
-  if (lazy.executeSoonDelay) {
-    return () => setTimeout(executor, lazy.executeSoonDelay);
-  }
-
-  return executor;
-}
-
-
-
-
 exports.executeSoon = function (fn) {
   if (isWorker) {
     setImmediate(fn);
   } else {
+    let executor;
+    
+    
+    if (AppConstants.DEBUG_JS_MODULES || flags.testing) {
+      const stack = getStack();
+      executor = () => {
+        callFunctionWithAsyncStack(fn, stack, "DevToolsUtils.executeSoon");
+      };
+    } else {
+      executor = fn;
+    }
     Services.tm.dispatchToMainThread({
-      run: exports.makeInfallible(
-        getMainThreadExecutor(fn, "DevToolsUtils.executeSoon")
-      ),
+      run: exports.makeInfallible(executor),
     });
   }
 };
@@ -121,10 +89,23 @@ exports.executeSoonWithMicroTask = function (fn) {
   if (isWorker) {
     setImmediate(fn);
   } else {
+    let executor;
+    
+    
+    if (AppConstants.DEBUG_JS_MODULES || flags.testing) {
+      const stack = getStack();
+      executor = () => {
+        callFunctionWithAsyncStack(
+          fn,
+          stack,
+          "DevToolsUtils.executeSoonWithMicroTask"
+        );
+      };
+    } else {
+      executor = fn;
+    }
     Services.tm.dispatchToMainThreadWithMicroTask({
-      run: exports.makeInfallible(
-        getMainThreadExecutor(fn, "DevToolsUtils.executeSoonWithMicroTask")
-      ),
+      run: exports.makeInfallible(executor),
     });
   }
 };
