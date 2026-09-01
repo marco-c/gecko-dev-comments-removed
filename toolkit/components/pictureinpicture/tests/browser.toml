@@ -55,9 +55,6 @@ prefs = [
 ["browser_autotoggle.js"]
 
 ["browser_backgroundTab.js"]
-skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && opt && nova", # Bug 2057890
-]
 
 ["browser_cannotTriggerFromContent.js"]
 
@@ -162,6 +159,8 @@ support-files = ["test-page-with-nan-video-duration.html"]
 ["browser_reconnectPiPAfterVideoReparented.js"]
 
 ["browser_removeVideoElement.js"]
+
+["browser_resistFingerprinting.js"]
 
 ["browser_resizeVideo.js"]
 skip-if = [
