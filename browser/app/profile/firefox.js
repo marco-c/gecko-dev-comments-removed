@@ -483,7 +483,6 @@ pref("browser.urlbar.suggest.quickactions",         true);
 pref("browser.urlbar.allowSearchSuggestionsForSimpleOrigins", true);
 
 pref("browser.urlbar.deduplication.enabled", true);
-pref("browser.urlbar.deduplication.thresholdDays", 0);
 
 pref("browser.urlbar.scotchBonnet.enableOverride", true);
 
@@ -673,6 +672,7 @@ pref("browser.urlbar.maxCharsForSearchSuggestions", 100);
 
 pref("browser.urlbar.trimURLs", true);
 pref("browser.urlbar.trimHttps", false);
+pref("browser.urlbar.trimWww", false);
 pref("browser.urlbar.untrimOnUserInteraction.featureGate", false);
 
 
@@ -1164,6 +1164,11 @@ pref("browser.tabs.groups.smart.topicModelRevision", "latest");
 pref("browser.tabs.groups.smart.embeddingModelRevision", "latest");
 
 pref("browser.tabs.groups.smart.nearestNeighborThresholdInt", 275);
+
+pref("browser.tabs.groups.smart.clusterMethod", "AGGLOMERATIVE");
+
+
+pref("browser.tabs.groups.smart.agglomerativeThresholdInt", 850);
 pref("browser.tabs.groups.smart.optin", false);
 
 pref("browser.tabs.dragDrop.createGroup.enabled", true);
@@ -1423,6 +1428,10 @@ pref("mousewheel.with_meta.action", 1);
 
 pref("browser.xul.error_pages.expert_bad_cert", false);
 pref("browser.xul.error_pages.show_safe_browsing_details_on_load", false);
+
+
+
+pref("browser.netError.searchCTA.enabled", false);
 
 
 pref("network.captive-portal-service.enabled", true);
@@ -2175,7 +2184,7 @@ pref("browser.aboutwelcome.experimentsGate.maxDisplayMs", 8000);
 
 #ifdef NIGHTLY_BUILD
   pref("browser.nova.enabled", true);
-#else 
+#else
   pref("browser.nova.enabled", false);
 #endif
 
@@ -2280,6 +2289,7 @@ pref("sidebar.updatedBookmarks.enabled", false);
 pref("sidebar.openTabsPanel.enabled", false);
 pref("sidebar.openTabsPanel.collapsedWindows", "{}");
 pref("sidebar.openTabsPanel.sortOption", "tabStripOrder");
+pref("sidebar.openTabsPanel.hoverPreview.enabled", true);
 
 pref("sidebar.notification.badge.aichat", false);
 
@@ -2323,7 +2333,7 @@ pref("browser.ml.pageAssist.enabled", false);
 
 pref("browser.smartwindow.enabled", false);
 
-pref("browser.smartwindow.endpoint", "https://mlpa-prod-prod-mozilla.global.ssl.fastly.net/v1");
+pref("browser.smartwindow.endpoint", "https://mlpa-prod-prod-mozilla.freetls.fastly.net/v1");
 pref("browser.smartwindow.memories.generateFromHistory", true);
 pref("browser.smartwindow.memories.generateFromConversation", true);
 pref("browser.smartwindow.memories.hasSeenMemories", false);
@@ -2343,7 +2353,7 @@ pref("places.semanticHistory.smartwindow.distanceThreshold", "0.6");
 
 
 pref("browser.smartwindow.autoTabGrouping.enabled", false);
-pref("browser.smartwindow.autoTabGrouping.maxGroups", 3);
+pref("browser.smartwindow.autoTabGrouping.maxGroups", 5);
 pref("browser.smartwindow.autoTabGrouping.minTabsPerGroup", 2);
 pref("browser.smartwindow.autoTabGrouping.minCandidateTabs", 4);
 pref("browser.smartwindow.autoTabGrouping.minCohesion", "0.15");
@@ -2357,6 +2367,8 @@ pref("browser.smartwindow.smartformfill.disallowedRegions", "FR");
 
 
 pref("browser.smartwindow.agent.enabled", false);
+pref("browser.smartwindow.agent.supportedRegions", "US,CA");
+
 
 
 pref("browser.smartwindow.worldcup.enabled", true);
@@ -2364,7 +2376,7 @@ pref("browser.smartwindow.worldcup.endpointURL", "https://merino.services.mozill
 pref("browser.smartwindow.worldcup.timeoutMs", 2000);
 
 
-pref("browser.smartwindow.searchQuery.endpointURL", "https://mlpa-prod-prod-mozilla.global.ssl.fastly.net/v1/search");
+pref("browser.smartwindow.searchQuery.endpointURL", "https://mlpa-prod-prod-mozilla.freetls.fastly.net/v1/search");
 pref("browser.smartwindow.searchQuery.apiKey", "");
 
 
@@ -2659,10 +2671,6 @@ pref("browser.contentblocking.report.vpn_regions", "as,at,au,bd,be,bg,br,ca,ch,c
 
 
 pref("browser.promo.pin.enabled", true);
-
-
-
-pref("browser.promo.cookiebanners.enabled", false);
 
 pref("browser.contentblocking.report.hide_vpn_banner", false);
 pref("browser.contentblocking.report.vpn_sub_id", "sub_HrfCZF7VPHzZkA");
@@ -3462,13 +3470,6 @@ pref("first-startup.category-tasks-enabled", true);
 #endif
 
 
-#if defined(EARLY_BETA_OR_EARLIER)
-  pref("app.normandy.test-prefs.bool", false);
-  pref("app.normandy.test-prefs.integer", 0);
-  pref("app.normandy.test-prefs.string", "");
-#endif
-
-
 #ifdef MOZ_DEV_EDITION
   pref("browser.menu.showViewImageInfo", true);
 #else
@@ -3519,9 +3520,6 @@ pref("browser.firefox-view.virtual-list.enabled", true);
 
 
 pref("browser.pdfjs.feature-tour", "{\"screen\":\"\",\"complete\":false}");
-
-
-pref("cookiebanners.ui.desktop.showCallout", false);
 
 
 
@@ -3650,6 +3648,8 @@ pref("browser.ipProtection.openedPanelWithLocation", false);
 
 pref("browser.ipProtection.features.siteExceptions", true);
 
+pref("browser.ipProtection.features.siteInclusions", false);
+
 pref("browser.ipProtection.siteExceptionsHintsEnabled", true);
 pref("browser.ipProtection.log", false);
 pref("browser.ipProtection.guardian.endpoint", "https://vpn.mozilla.org/");
@@ -3699,6 +3699,9 @@ pref("browser.contentsharing.enabled", false);
 
 
 pref("browser.referrals.enabled", false);
+
+
+pref("browser.referrals.pingSubmitted", false);
 
 
 
