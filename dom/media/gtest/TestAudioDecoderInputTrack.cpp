@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <utility>
 
 #include "AudioDecoderInputTrack.h"
@@ -30,7 +28,7 @@ constexpr uint32_t kChannels = 2;
 class MockTestGraph : public MediaTrackGraphImpl {
  public:
   explicit MockTestGraph(TrackRate aRate)
-      : MediaTrackGraphImpl(0, aRate, nullptr, NS_GetCurrentThread()) {
+      : MediaTrackGraphImpl(0, aRate, nullptr, AbstractThread::GetCurrent()) {
     ON_CALL(*this, OnGraphThread).WillByDefault(Return(true));
   }
 
@@ -102,8 +100,6 @@ class TestAudioDecoderInputTrack : public testing::Test {
     mTrack->Close();
     mTrack->Destroy();
     
-    
-    mGraph->RemoveTrackGraphThread(mTrack);
     mGraph->Destroy();
   }
 

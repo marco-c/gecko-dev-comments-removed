@@ -12,6 +12,7 @@
 #include "GraphDriver.h"
 #include "MediaEventSource.h"
 #include "MediaTrackGraph.h"
+#include "mozilla/AbstractThread.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/TimeStamp.h"
@@ -20,6 +21,7 @@
 #include "nsIMemoryReporter.h"
 #include "nsINamed.h"
 #include "nsIRunnable.h"
+#include "nsISerialEventTarget.h"
 #include "nsIThreadInternal.h"
 #include "nsITimer.h"
 
@@ -89,11 +91,6 @@ class ControlMessage : public MediaTrack::ControlMessageInterface {
   MediaTrack* const mTrack;
 };
 
-class MessageBlock {
- public:
-  nsTArray<nsCOMPtr<nsIRunnable>> mMessages;
-};
-
 
 
 
@@ -105,6 +102,7 @@ class MessageBlock {
 
 class MediaTrackGraphImpl : public MediaTrackGraph,
                             public GraphInterface,
+                            public AbstractThread,
                             public nsIDirectTaskDispatcher,
                             public nsIMemoryReporter,
                             public nsIObserver,
@@ -133,12 +131,12 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
   explicit MediaTrackGraphImpl(uint64_t aWindowID, TrackRate aSampleRate,
                                CubebUtils::AudioDeviceID aOutputDeviceID,
-                               nsISerialEventTarget* aMainThread);
+                               AbstractThread* aMainThread);
 
   static MediaTrackGraphImpl* GetInstance(
       GraphDriverType aGraphDriverRequested, uint64_t aWindowID,
       TrackRate aSampleRate, CubebUtils::AudioDeviceID aPrimaryOutputDeviceID,
-      nsISerialEventTarget* aMainThread);
+      AbstractThread* aMainThread);
   static MediaTrackGraphImpl* GetInstanceIfExists(
       uint64_t aWindowID, TrackRate aSampleRate,
       CubebUtils::AudioDeviceID aPrimaryOutputDeviceID);
@@ -685,6 +683,23 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
   void InterruptJS();
 
+  
+  [[nodiscard]] nsresult Dispatch(
+      already_AddRefed<nsIRunnable> aEvent,
+      DispatchReason aReason = NormalDispatch) override;
+  bool IsCurrentThreadIn() const override;
+  TaskDispatcher& TailDispatcher() override;
+  NS_IMETHOD RegisterShutdownTask(nsITargetShutdownTask* aTask) override;
+  NS_IMETHOD UnregisterShutdownTask(nsITargetShutdownTask* aTask) override;
+  NS_IMETHOD_(FeatureFlags) GetFeatures() override;
+
+ protected:
+  [[nodiscard]] nsresult QueueMessageForTailDispatch(
+      already_AddRefed<nsIRunnable> aEvent);
+  [[nodiscard]] nsresult TailDispatchMessage(
+      already_AddRefed<nsIRunnable> aEvent);
+
+ public:
   class TrackSet {
    public:
     class iterator {
@@ -750,7 +765,10 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  size_t mMainThreadTrackCount = 0;
+
+
+
+  Atomic<size_t> mMainThreadTrackCount{0};
 
   
 
@@ -759,7 +777,10 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  size_t mMainThreadPortCount = 0;
+
+
+
+  Atomic<size_t> mMainThreadPortCount{0};
 
   
 
@@ -880,12 +901,12 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  nsTArray<MessageBlock> mFrontMessageQueue;
+  nsTArray<nsCOMPtr<nsIRunnable>> mFrontMessageQueue;
   
 
 
 
-  nsTArray<MessageBlock> mBackMessageQueue MOZ_GUARDED_BY(mMonitor);
+  nsTArray<nsCOMPtr<nsIRunnable>> mBackMessageQueue MOZ_GUARDED_BY(mMonitor);
 
   
   bool MessagesQueued() const MOZ_REQUIRES(mMonitor) {
@@ -943,16 +964,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   LifecycleState mLifecycleState MOZ_GUARDED_BY(mMonitor);
-  LifecycleState& LifecycleStateRef() MOZ_NO_THREAD_SAFETY_ANALYSIS {
-#if DEBUG
-    if (mGraphDriverRunning) {
-      mMonitor.AssertCurrentThreadOwns();
-    } else {
-      MOZ_ASSERT(NS_IsMainThread());
-    }
-#endif
-    return mLifecycleState;
-  }
   const LifecycleState& LifecycleStateRef() const
       MOZ_NO_THREAD_SAFETY_ANALYSIS {
 #if DEBUG
@@ -1034,7 +1045,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   bool mTrackOrderDirty;
-  const RefPtr<nsISerialEventTarget> mMainThread;
+  const RefPtr<AbstractThread> mMainThread;
 
   
   
@@ -1216,6 +1227,11 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   AudioMixer mMixer;
+  
+
+
+
+  Maybe<TaskDispatcher&> mTaskDispatcher;
 };
 
 }  

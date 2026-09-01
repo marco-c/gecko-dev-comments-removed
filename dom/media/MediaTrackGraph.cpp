@@ -9,6 +9,7 @@
 #include "AudioSegment.h"
 #include "CrossGraphPort.h"
 #include "CubebDeviceEnumerator.h"
+#include "ErrorList.h"
 #include "ForwardedInputTrack.h"
 #include "ImageContainer.h"
 #include "MediaTrackGraphImpl.h"
@@ -17,6 +18,7 @@
 #include "mozilla/Logging.h"
 #include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
+#include "nsISerialEventTarget.h"
 #include "nsPrintfCString.h"
 #include "nsServiceManagerUtils.h"
 #include "prerror.h"
@@ -33,10 +35,12 @@
 #include "VideoFrameContainer.h"
 #include "VideoUtils.h"
 #include "mozilla/AbstractThread.h"
+#include "mozilla/AppShutdown.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "mozilla/TaskDispatcher.h"
 #include "mozilla/dom/BaseAudioContextBinding.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/WorkletThread.h"
@@ -1263,16 +1267,12 @@ void MediaTrackGraphImpl::RunMessagesInQueue() {
   
   
   
-  for (uint32_t i = 0; i < mFrontMessageQueue.Length(); ++i) {
-    nsTArray<nsCOMPtr<nsIRunnable>>& messages = mFrontMessageQueue[i].mMessages;
-
-    for (const auto& message : messages) {
-      TRACE("ControlMessage::Run");
-      AUTO_PROFILE_FOLLOWING_RUNNABLE(message);
-      message->Run();
-    }
+  for (const auto& message : mFrontMessageQueue) {
+    LogRunnable::Run log(message);
+    AUTO_PROFILE_FOLLOWING_RUNNABLE(message);
+    message->Run();
   }
-  mFrontMessageQueue.Clear();
+  mFrontMessageQueue.ClearAndRetainStorage();
 }
 
 void MediaTrackGraphImpl::UpdateGraph(GraphTime aEndBlockingDecisions) {
@@ -1582,6 +1582,40 @@ auto MediaTrackGraphImpl::OneIterationImpl(
   TRACE_AUDIO_CALLBACK_FRAME_COUNT(
       "MTG graph advance", aStateTime - mStateComputedTime, mSampleRate);
 
+  class MOZ_RAII DispatchGuard {
+    NS_DECL_OWNINGTHREAD
+    MediaTrackGraphImpl* mGraph;
+    const SerialEventTargetGuard mGuard;
+    AbstractThread* mLastCurrentThread;
+    Maybe<AutoTaskDispatcher> mTaskDispatcher;
+
+   public:
+    explicit DispatchGuard(MediaTrackGraphImpl* aGraph)
+        : mGraph(aGraph),
+          mGuard(aGraph),
+          mLastCurrentThread(sCurrentThreadTLS.get()) {
+      MOZ_ASSERT(mGraph->OnGraphThread());
+      MOZ_ASSERT(mGraph->mTaskDispatcher.isNothing());
+
+      sCurrentThreadTLS.set(mGraph);
+      mTaskDispatcher.emplace(aGraph,  true);
+      mGraph->mTaskDispatcher.emplace(*mTaskDispatcher);
+    }
+    ~DispatchGuard() {
+      NS_ASSERT_OWNINGTHREAD(DispatchGuard);
+      MOZ_ASSERT(mTaskDispatcher);
+      MOZ_ASSERT(mGraph->mTaskDispatcher.isSome());
+
+      
+      
+      mGraph->mTaskDispatcher = Nothing();
+      mTaskDispatcher.reset();
+      sCurrentThreadTLS.set(mLastCurrentThread);
+    }
+  };
+
+  Maybe<DispatchGuard> guard(std::in_place, this);
+
   if (SoftRealTimeLimitReached()) {
     TRACE("MTG::Demoting real-time thread!");
     DemoteThreadFromRealTime();
@@ -1628,9 +1662,24 @@ auto MediaTrackGraphImpl::OneIterationImpl(
 
   ProcessChunkMetadata(oldProcessedTime);
 
+  
+  
   DrainDirectTasks();
 
-  if (!UpdateMainThreadState()) {
+  bool stillProcessing = UpdateMainThreadState();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  guard.reset();
+  if (!stillProcessing) {
     if (Switching()) {
       
       
@@ -1889,7 +1938,8 @@ class MediaTrackGraphShutDownRunnable : public Runnable {
       
       
       NS_ASSERTION(mGraph->mForceShutDownReceived, "Not in forced shutdown?");
-      mGraph->LifecycleStateRef() =
+      MonitorAutoLock lock(mGraph->mMonitor);
+      mGraph->mLifecycleState =
           MediaTrackGraphImpl::LIFECYCLE_WAITING_FOR_TRACK_DESTRUCTION;
     }
     return NS_OK;
@@ -1980,34 +2030,28 @@ void MediaTrackGraphImpl::RunInStableState(bool aSourceIsMTG) {
 
     mMainThreadGraphTime = mNextMainThreadGraphTime;
 
-    if (mCurrentTaskMessageQueue.IsEmpty()) {
-      if (LifecycleStateRef() == LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP &&
-          IsEmpty()) {
-        
-        
-        
-        
-        
-        LifecycleStateRef() = LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN;
-        LOG(LogLevel::Debug,
-            ("{}: Sending MediaTrackGraphShutDownRunnable", fmt::ptr(this)));
-        nsCOMPtr<nsIRunnable> event = new MediaTrackGraphShutDownRunnable(this);
-        mMainThread->Dispatch(event.forget());
-      }
-    } else {
-      if (LifecycleStateRef() <= LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP) {
-        MessageBlock* block = mBackMessageQueue.AppendElement();
-        block->mMessages = std::move(mCurrentTaskMessageQueue);
-        EnsureNextIteration();
-      }
-
+    if (LifecycleStateRef() == LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP &&
+        IsEmpty()) {
+      MOZ_ASSERT(!AbstractThread::GetCurrent()->HasTailTasksFor(this));
+      MOZ_ASSERT(mBackMessageQueue.IsEmpty());
       
       
       
-      MOZ_DIAGNOSTIC_ASSERT(LifecycleStateRef() <
-                                LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP ||
-                            mForceShutDownReceived);
+      
+      
+      mLifecycleState = LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN;
+      LOG(LogLevel::Debug,
+          ("{}: Sending MediaTrackGraphShutDownRunnable", fmt::ptr(this)));
+      nsCOMPtr<nsIRunnable> event = new MediaTrackGraphShutDownRunnable(this);
+      mMainThread->Dispatch(event.forget());
     }
+
+    
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(LifecycleStateRef() <
+                              LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP ||
+                          mForceShutDownReceived || IsEmpty());
 
     if (LifecycleStateRef() == LIFECYCLE_THREAD_NOT_STARTED) {
       
@@ -2019,7 +2063,7 @@ void MediaTrackGraphImpl::RunInStableState(bool aSourceIsMTG) {
           ("{}: Starting a graph with a {}", fmt::ptr(this),
            CurrentDriver()->AsAudioCallbackDriver() ? "AudioCallbackDriver"
                                                     : "SystemClockDriver"));
-      LifecycleStateRef() = LIFECYCLE_RUNNING;
+      mLifecycleState = LIFECYCLE_RUNNING;
       mGraphDriverRunning = true;
       RefPtr<GraphDriver> driver = CurrentDriver();
       driver->Start();
@@ -2035,14 +2079,18 @@ void MediaTrackGraphImpl::RunInStableState(bool aSourceIsMTG) {
         mForceShutDownReceived) {
       
       
-      for (uint32_t i = 0; i < mBackMessageQueue.Length(); ++i) {
-        MessageBlock& mb = mBackMessageQueue[i];
-        runnablesToRunDuringShutdown.AppendElements(std::move(mb.mMessages));
+      for (auto& message : mBackMessageQueue) {
+        runnablesToRunDuringShutdown.AppendElement(std::move(message));
       }
       mBackMessageQueue.Clear();
-      MOZ_ASSERT(mCurrentTaskMessageQueue.IsEmpty());
       
-      LifecycleStateRef() = LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN;
+      
+      
+      
+      
+      MOZ_ASSERT(!AbstractThread::GetCurrent()->HasTailTasksFor(this));
+      
+      mLifecycleState = LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN;
       nsCOMPtr<nsIRunnable> event = new MediaTrackGraphShutDownRunnable(this);
       mMainThread->Dispatch(event.forget());
     }
@@ -2058,8 +2106,9 @@ void MediaTrackGraphImpl::RunInStableState(bool aSourceIsMTG) {
 
   for (const auto& runnable : runnablesToRunDuringShutdown) {
     nsCOMPtr<nsIDiscardableRunnable> discardable = do_QueryInterface(runnable);
-    MOZ_ASSERT(discardable, "MediaTrackGraph runnables must be discardable");
-    discardable->OnDiscard();
+    if (discardable) {
+      discardable->OnDiscard();
+    }
   }
 
 #ifdef DEBUG
@@ -2068,8 +2117,9 @@ void MediaTrackGraphImpl::RunInStableState(bool aSourceIsMTG) {
       LifecycleStateRef() >= LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN;
 #endif
 
-  for (uint32_t i = 0; i < runnables.Length(); ++i) {
-    runnables[i]->Run();
+  for (const auto& runnable : runnables) {
+    AUTO_PROFILE_FOLLOWING_RUNNABLE(runnable);
+    runnable->Run();
   }
 }
 
@@ -2103,7 +2153,7 @@ void MediaTrackGraphImpl::SignalMainThreadCleanup() {
   MOZ_DIAGNOSTIC_ASSERT(mLifecycleState <= LIFECYCLE_RUNNING);
   LOG(LogLevel::Debug,
       ("{}: MediaTrackGraph waiting for main thread cleanup", fmt::ptr(this)));
-  LifecycleStateRef() =
+  mLifecycleState =
       MediaTrackGraphImpl::LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP;
   EnsureStableStateEventPosted();
 }
@@ -2111,40 +2161,15 @@ void MediaTrackGraphImpl::SignalMainThreadCleanup() {
 void MediaTrackGraphImpl::AppendMessage(
     UniquePtr<ControlMessageInterface> aMessage) {
   MOZ_ASSERT(NS_IsMainThread(), "main thread only");
-  MOZ_DIAGNOSTIC_ASSERT(mMainThreadTrackCount > 0 || mMainThreadPortCount > 0);
+  MOZ_ASSERT(mMainThreadTrackCount > 0 || mMainThreadPortCount > 0);
 
-  if (!mGraphDriverRunning &&
-      LifecycleStateRef() > LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP) {
-    
-    
-    
-    
-    
-#ifdef DEBUG
-    MOZ_ASSERT(mCanRunMessagesSynchronously);
-    mCanRunMessagesSynchronously = false;
-#endif
-    aMessage->RunDuringShutdown();
-#ifdef DEBUG
-    mCanRunMessagesSynchronously = true;
-#endif
-    if (IsEmpty() &&
-        LifecycleStateRef() >= LIFECYCLE_WAITING_FOR_TRACK_DESTRUCTION) {
-      Destroy();
-    }
-    return;
-  }
-
-  nsCOMPtr<nsIRunnable> runnable =
-      MakeAndAddRef<ControlMessageWrapper>(std::move(aMessage));
-  MOZ_ASSERT(nsCOMPtr<nsIDiscardableRunnable>(do_QueryInterface(runnable)),
-             "MediaTrackGraph runnables must be discardable");
-  mCurrentTaskMessageQueue.AppendElement(runnable.forget());
-  EnsureRunInStableState();
+  MOZ_ALWAYS_SUCCEEDS(QueueMessageForTailDispatch(
+      MakeAndAddRef<ControlMessageWrapper>(std::move(aMessage))));
 }
 
 void MediaTrackGraphImpl::DispatchToMainThread(
     already_AddRefed<nsIRunnable> aRunnable) {
+  MOZ_ASSERT(RequiresTailDispatch(mMainThread));
   mMainThread->Dispatch(std::move(aRunnable));
 }
 
@@ -2479,7 +2504,7 @@ void MediaTrackGraphImpl::IncrementOutputDeviceRefCnt(
                  false));
   MediaTrackGraph* newGraph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::AUDIO_THREAD_DRIVER, mWindowID, sampleRate, aDeviceID,
-      GetMainThreadSerialEventTarget());
+      AbstractThread::MainThread());
   
   RefPtr receiver = newGraph->CreateCrossGraphReceiver(mSampleRate);
   receiver->AddAudioOutput(nullptr, aDeviceID, sampleRate);
@@ -3379,8 +3404,9 @@ void ProcessedMediaTrack::DestroyImpl() {
 MediaTrackGraphImpl::MediaTrackGraphImpl(uint64_t aWindowID,
                                          TrackRate aSampleRate,
                                          AudioDeviceID aPrimaryOutputDeviceID,
-                                         nsISerialEventTarget* aMainThread)
+                                         AbstractThread* aMainThread)
     : MediaTrackGraph(aSampleRate, aPrimaryOutputDeviceID),
+      AbstractThread(true),
       mWindowID(aWindowID),
       mFirstCycleBreaker(0)
       
@@ -3516,7 +3542,7 @@ MediaTrackGraph* MediaTrackGraph::GetInstanceIfExists(
 MediaTrackGraphImpl* MediaTrackGraphImpl::GetInstance(
     GraphDriverType aGraphDriverRequested, uint64_t aWindowID,
     TrackRate aSampleRate, AudioDeviceID aPrimaryOutputDeviceID,
-    nsISerialEventTarget* aMainThread) {
+    AbstractThread* aMainThread) {
   MOZ_ASSERT(NS_IsMainThread(), "Main thread only");
   MOZ_ASSERT(aSampleRate > 0);
   MOZ_ASSERT(aGraphDriverRequested != OFFLINE_THREAD_DRIVER,
@@ -3559,18 +3585,17 @@ MediaTrackGraph* MediaTrackGraph::GetInstance(
                             RFPTarget::AudioSampleRate));
   return MediaTrackGraphImpl::GetInstance(
       aGraphDriverRequested, aWindow->WindowID(), sampleRate,
-      aPrimaryOutputDeviceID, GetMainThreadSerialEventTarget());
+      aPrimaryOutputDeviceID, AbstractThread::MainThread());
 }
 
 MediaTrackGraph* MediaTrackGraphImpl::CreateNonRealtimeInstance(
     TrackRate aSampleRate) {
   MOZ_ASSERT(NS_IsMainThread(), "Main thread only");
 
-  nsISerialEventTarget* mainThread = GetMainThreadSerialEventTarget();
   
   
   MediaTrackGraphImpl* graph = new MediaTrackGraphImpl(
-      0, aSampleRate, DEFAULT_OUTPUT_DEVICE, mainThread);
+      0, aSampleRate, DEFAULT_OUTPUT_DEVICE, AbstractThread::MainThread());
   graph->Init(OFFLINE_THREAD_DRIVER, DIRECT_DRIVER, 0);
 
   LOG(LogLevel::Debug,
@@ -3592,9 +3617,9 @@ void MediaTrackGraph::ForceShutDown() {
   graph->ForceShutDown();
 }
 
-NS_IMPL_ISUPPORTS(MediaTrackGraphImpl, nsIDirectTaskDispatcher,
-                  nsIMemoryReporter, nsIObserver, nsIThreadObserver,
-                  nsITimerCallback, nsINamed)
+NS_IMPL_ISUPPORTS(MediaTrackGraphImpl, nsISerialEventTarget, nsIEventTarget,
+                  nsIDirectTaskDispatcher, nsIMemoryReporter, nsIObserver,
+                  nsIThreadObserver, nsITimerCallback, nsINamed)
 
 NS_IMETHODIMP
 MediaTrackGraphImpl::CollectReports(nsIHandleReportCallback* aHandleReport,
@@ -4408,6 +4433,186 @@ MediaTrackGraphImpl::HaveDirectTasks(bool* aResult) {
   }
   *aResult = !mDirectMessages.IsEmpty();
   return NS_OK;
+}
+
+
+
+nsresult MediaTrackGraphImpl::Dispatch(
+    already_AddRefed<nsIRunnable> aEvent,
+    DispatchReason aReason ) {
+  nsCOMPtr<nsIRunnable> event(aEvent);
+  if (!nsCOMPtr<nsIDiscardableRunnable>(do_QueryInterface(event))) {
+    class DefaultShutdownRunnableWrapper : public DiscardableRunnable {
+      nsCOMPtr<nsIRunnable> mEvent;
+
+     public:
+      explicit DefaultShutdownRunnableWrapper(
+          already_AddRefed<nsIRunnable> aEvent)
+          : DiscardableRunnable(
+                "MediaTrackGraphImpl::DefaultShutdownRunnableWrapper"),
+            mEvent(aEvent) {}
+
+      NS_IMETHODIMP Run() override {
+        AUTO_PROFILE_FOLLOWING_RUNNABLE(mEvent);
+        return mEvent->Run();
+      }
+
+      void OnDiscard() override { Run(); }
+    };
+    event = MakeAndAddRef<DefaultShutdownRunnableWrapper>(event.forget());
+  }
+
+  MOZ_ASSERT(RequiresTailDispatchFromCurrentThread(),
+             "Tail dispatch will be used for the Dispatch below");
+
+  if (aReason == TailDispatch) {
+    return TailDispatchMessage(event.forget());
+  }
+  return QueueMessageForTailDispatch(event.forget());
+}
+
+bool MediaTrackGraphImpl::IsCurrentThreadIn() const { return OnGraphThread(); }
+
+TaskDispatcher& MediaTrackGraphImpl::TailDispatcher() {
+  MOZ_ASSERT(OnGraphThread());
+  MOZ_ASSERT(mTaskDispatcher);
+  return *mTaskDispatcher;
+}
+
+NS_IMETHODIMP MediaTrackGraphImpl::RegisterShutdownTask(
+    nsITargetShutdownTask* aTask) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP MediaTrackGraphImpl::UnregisterShutdownTask(
+    nsITargetShutdownTask* aTask) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+nsIEventTarget::FeatureFlags MediaTrackGraphImpl::GetFeatures() {
+  return SUPPORTS_BASE;
+}
+
+nsresult MediaTrackGraphImpl::TailDispatchMessage(
+    already_AddRefed<nsIRunnable> aEvent) {
+  nsCOMPtr event = aEvent;
+  MOZ_ASSERT(
+      nsCOMPtr<nsIDiscardableRunnable>(do_QueryInterface(event)),
+      "Events dispatched to the graph must be discardable as discard "
+      "controls whether the runnable can run during shutdown. Whether or not "
+      "to run during shutdown should be a conscious decision by most "
+      "callers.");
+
+  LOG(LogLevel::Verbose, ("MediaTrackGraph {} moving tail-dispatched group "
+                          "to back message queue",
+                          fmt::ptr(this)));
+
+  if (NS_IsMainThread()) {
+    
+    
+    
+    EnsureRunInStableState();
+  }
+
+  MonitorAutoLock lock(mMonitor);
+  if (!NS_IsMainThread()) {
+    MOZ_DIAGNOSTIC_ASSERT(
+        mMainThreadTrackCount > 0 || mMainThreadPortCount > 0,
+        "Clients must guarantee that any non-main thread tail dispatches to "
+        "the graph are outlived by a main-thread controlled track or port");
+  }
+
+  if (!mGraphDriverRunning &&
+      mLifecycleState > LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP) {
+    MOZ_ASSERT(!NS_IsMainThread(),
+               "Main thread may not dispatch after removing the last track");
+    
+    
+    
+    
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
+        "MediaTrackGraphImpl::NonMainThreadDispatch",
+        [this, self = RefPtr(this), event = std::move(event)] {
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+          const size_t trackCount = mMainThreadTrackCount;
+          const size_t portCount = mMainThreadPortCount;
+#endif
+#ifdef DEBUG
+          MOZ_ASSERT(mCanRunMessagesSynchronously);
+          mCanRunMessagesSynchronously = false;
+#endif
+          if (nsCOMPtr<nsIDiscardableRunnable> discardable =
+                  do_QueryInterface(event)) {
+            discardable->OnDiscard();
+          }
+#ifdef DEBUG
+          mCanRunMessagesSynchronously = true;
+#endif
+          MOZ_DIAGNOSTIC_ASSERT(trackCount == mMainThreadTrackCount);
+          MOZ_DIAGNOSTIC_ASSERT(portCount == mMainThreadPortCount);
+          if (IsEmpty() &&
+              LifecycleStateRef() >= LIFECYCLE_WAITING_FOR_TRACK_DESTRUCTION) {
+            Destroy();
+          }
+        }));
+    return NS_OK;
+  }
+
+  mBackMessageQueue.EmplaceBack(std::move(event));
+  EnsureNextIteration();
+  return NS_OK;
+}
+
+nsresult MediaTrackGraphImpl::QueueMessageForTailDispatch(
+    already_AddRefed<nsIRunnable> aEvent) {
+  nsCOMPtr event = aEvent;
+  MOZ_ASSERT(
+      nsCOMPtr<nsIDiscardableRunnable>(do_QueryInterface(event)),
+      "Events dispatched to the graph must be discardable as discard "
+      "controls whether the runnable can run during shutdown. Whether or not "
+      "to run during shutdown should be a conscious decision by most callers.");
+  MOZ_DIAGNOSTIC_ASSERT(
+      mMainThreadTrackCount > 0 || mMainThreadPortCount > 0,
+      "Clients must guarantee that any dispatches to the graph are "
+      "outlived by a main-thread controlled track or port");
+
+  if (NS_IsMainThread()) {
+    
+    
+    
+    if (!mGraphDriverRunning &&
+        LifecycleStateRef() > LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP) {
+      
+      
+      
+      
+      
+#ifdef DEBUG
+      MOZ_ASSERT(mCanRunMessagesSynchronously);
+      mCanRunMessagesSynchronously = false;
+#endif
+      if (nsCOMPtr<nsIDiscardableRunnable> discardable =
+              do_QueryInterface(event)) {
+        discardable->OnDiscard();
+      }
+#ifdef DEBUG
+      mCanRunMessagesSynchronously = true;
+#endif
+      if (IsEmpty() &&
+          LifecycleStateRef() >= LIFECYCLE_WAITING_FOR_TRACK_DESTRUCTION) {
+        Destroy();
+      }
+      return NS_OK;
+    }
+    if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownNetTeardown)) {
+      
+      
+      MOZ_ASSERT(!AbstractThread::GetCurrent()->HasTailTasksFor(this));
+      return TailDispatchMessage(event.forget());
+    }
+  }
+  return AbstractThread::GetCurrent()->TailDispatcher().AddTask(this,
+                                                                event.forget());
 }
 }  
 

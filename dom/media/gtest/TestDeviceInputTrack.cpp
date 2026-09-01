@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AudioGenerator.h"
 #include "DeviceInputTrack.h"
 #include "MediaTrackGraphImpl.h"
@@ -26,7 +24,7 @@ namespace {
 class MockGraphImpl : public MediaTrackGraphImpl {
  public:
   explicit MockGraphImpl(TrackRate aRate)
-      : MediaTrackGraphImpl(0, aRate, nullptr, NS_GetCurrentThread()) {
+      : MediaTrackGraphImpl(0, aRate, nullptr, AbstractThread::GetCurrent()) {
     ON_CALL(*this, OnGraphThread).WillByDefault(Return(true));
   }
 
@@ -174,10 +172,7 @@ TEST_F(TestDeviceInputTrack, DeviceInputConsumerTrack) {
   EXPECT_TRUE(track2->ConnectedToNonNativeDevice());
 
   track2->Destroy();
-  mGraph->RemoveTrackGraphThread(track2);
-
   track1->Destroy();
-  mGraph->RemoveTrackGraphThread(track1);
 }
 
 TEST_F(TestDeviceInputTrack, NativeInputTrackData) {
@@ -236,7 +231,6 @@ TEST_F(TestDeviceInputTrack, NativeInputTrackData) {
 
   
   track->Destroy();
-  mGraph->RemoveTrackGraphThread(track);
 }
 
 class MockEventListener : public AudioInputSource::EventListener {
@@ -352,7 +346,6 @@ TEST_F(TestDeviceInputTrack, StartAndStop) {
 
   
   track->Destroy();
-  mGraph->RemoveTrackGraphThread(track);
 }
 
 TEST_F(TestDeviceInputTrack, NonNativeInputTrackData) {
@@ -448,7 +441,6 @@ TEST_F(TestDeviceInputTrack, NonNativeInputTrackData) {
 
   
   track->Destroy();
-  mGraph->RemoveTrackGraphThread(track);
 }
 
 TEST_F(TestDeviceInputTrack, NonNativeDeviceChangedCallback) {
@@ -506,7 +498,6 @@ TEST_F(TestDeviceInputTrack, NonNativeDeviceChangedCallback) {
 
   
   track->Destroy();
-  mGraph->RemoveTrackGraphThread(track);
 }
 
 TEST_F(TestDeviceInputTrack, NonNativeErrorCallback) {
@@ -566,5 +557,4 @@ TEST_F(TestDeviceInputTrack, NonNativeErrorCallback) {
 
   
   track->Destroy();
-  mGraph->RemoveTrackGraphThread(track);
 }
