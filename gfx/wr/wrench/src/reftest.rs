@@ -27,6 +27,7 @@ use crate::yaml_frame_reader::YamlFrameReader;
 const OPTION_DISABLE_SUBPX: &str = "disable-subpixel";
 const OPTION_DISABLE_AA: &str = "disable-aa";
 const OPTION_ALLOW_MIPMAPS: &str = "allow-mipmaps";
+const OPTION_ENABLE_COMPOSITOR_CLIPS: &str = "enable-compositor-clips";
 
 
 
@@ -121,6 +122,10 @@ enum ExtraCheck {
     DrawCalls(usize),
     AlphaTargets(usize),
     ColorTargets(usize),
+    
+    Overlays(usize),
+    
+    Underlays(usize),
 }
 
 impl ExtraCheck {
@@ -132,6 +137,10 @@ impl ExtraCheck {
                 x == results.last().unwrap().stats.alpha_target_count,
             ExtraCheck::ColorTargets(x) =>
                 x == results.last().unwrap().stats.color_target_count,
+            ExtraCheck::Overlays(x) =>
+                x == results.last().unwrap().compositor_surface_overlays,
+            ExtraCheck::Underlays(x) =>
+                x == results.last().unwrap().compositor_surface_underlays,
         }
     }
 }
@@ -161,6 +170,10 @@ pub struct Reftest {
     
     
     scales: Vec<f32>,
+    
+    
+    
+    allow_compositor_clips: bool,
 }
 
 impl Reftest {
@@ -448,6 +461,7 @@ impl ReftestManifest {
             let mut font_render_mode = None;
             let mut extra_checks = vec![];
             let mut allow_mipmaps = false;
+            let mut allow_compositor_clips = false;
             let mut force_subpixel_aa_where_possible = None;
             let mut max_surface_override = None;
             let mut scales = Vec::new();
@@ -546,6 +560,14 @@ impl ReftestManifest {
                         let (_, args, _) = parse_function(function);
                         extra_checks.push(ExtraCheck::ColorTargets(args[0].parse().unwrap()));
                     }
+                    function if function.starts_with("overlays(") => {
+                        let (_, args, _) = parse_function(function);
+                        extra_checks.push(ExtraCheck::Overlays(args[0].parse().unwrap()));
+                    }
+                    function if function.starts_with("underlays(") => {
+                        let (_, args, _) = parse_function(function);
+                        extra_checks.push(ExtraCheck::Underlays(args[0].parse().unwrap()));
+                    }
                     function if function.starts_with("max_surface_size(") => {
                         let (_, args, _) = parse_function(function);
                         max_surface_override = Some(args[0].parse().unwrap());
@@ -570,6 +592,9 @@ impl ReftestManifest {
                         }
                         if args.iter().any(|arg| arg == &OPTION_ALLOW_MIPMAPS) {
                             allow_mipmaps = true;
+                        }
+                        if args.iter().any(|arg| arg == &OPTION_ENABLE_COMPOSITOR_CLIPS) {
+                            allow_compositor_clips = true;
                         }
                     }
                     _ => return false,
@@ -711,6 +736,7 @@ impl ReftestManifest {
                 force_subpixel_aa_where_possible,
                 max_surface_override,
                 scales,
+                allow_compositor_clips,
             });
         }
 
@@ -943,6 +969,11 @@ impl<'a> ReftestHarness<'a> {
         };
 
         self.wrench.set_quality_settings(quality_settings);
+
+        
+        
+        
+        self.wrench.set_compositor_clips_enabled(t.allow_compositor_clips);
 
         if let Some(max_surface_override) = t.max_surface_override {
             self.wrench
