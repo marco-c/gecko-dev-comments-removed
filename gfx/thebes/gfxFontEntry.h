@@ -818,7 +818,7 @@ class gfxFontEntry {
       FontInfoData* aFontInfoData, uint32_t& aUVSOffset);
 
   
-  virtual bool TestCharacterMap(uint32_t aCh) MOZ_EXCLUDES(mLock);
+  bool TestCharacterMap(uint32_t aCh) MOZ_EXCLUDES(mLock);
 
   
   

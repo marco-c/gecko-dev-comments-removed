@@ -73,8 +73,7 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
  public:
   
   explicit gfxFontconfigFontEntry(const nsACString& aFaceName,
-                                  FcPattern* aFontPattern,
-                                  bool aIgnoreFcCharmap);
+                                  FcPattern* aFontPattern);
 
   
   
@@ -95,7 +94,6 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
   FcPattern* GetPattern() { return mFontPattern; }
 
   nsresult ReadCMAP(FontInfoData* aFontInfoData = nullptr) override;
-  bool TestCharacterMap(uint32_t aCh) override;
 
   mozilla::gfx::SharedFTFace* GetFTFace();
   FTUserFontData* GetUserFontData() override;
@@ -145,13 +143,6 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
   
   
   mozilla::Atomic<FontTableCache*> mFontTableCache;
-
-  
-  
-  
-  
-  
-  bool mIgnoreFcCharmap;
 
   
   
