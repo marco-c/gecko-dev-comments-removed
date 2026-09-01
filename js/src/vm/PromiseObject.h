@@ -24,34 +24,6 @@ class JSONPrinter;
 
 class SavedFrame;
 
-enum PromiseSlots {
-  
-  PromiseSlot_Flags = 0,
-
-  
-  
-  
-  
-  
-  
-  PromiseSlot_ReactionsOrResult,
-
-  
-  
-  
-  
-  PromiseSlot_RejectFunction,
-
-  
-  
-  
-  
-  
-  PromiseSlot_DebugInfo,
-
-  PromiseSlots,
-};
-
 
 
 #define PROMISE_FLAG_RESOLVED 0x1
@@ -101,7 +73,31 @@ struct PromiseReactionRecordBuilder;
 
 class PromiseObject : public NativeObject {
  public:
-  static const unsigned RESERVED_SLOTS = PromiseSlots;
+  
+  JS_DEFINE_TYPED_SLOT(0, FLAGS_SLOT, Int32);
+
+  
+  
+  
+  
+  
+  
+  JS_DEFINE_UNTYPED_SLOT(1, REACTIONS_OR_RESULT_SLOT);
+
+  
+  
+  
+  
+  JS_DEFINE_TYPED_SLOT(2, REJECT_FUNCTION_SLOT, Object, Undefined);
+
+  
+  
+  
+  
+  
+  JS_DEFINE_TYPED_SLOT(3, DEBUG_INFO_SLOT, Object, Double, Undefined);
+
+  static const unsigned RESERVED_SLOTS = 4;
   static const JSClass class_;
   static const JSClass protoClass_;
   static PromiseObject* create(JSContext* cx, JS::Handle<JSObject*> executor,
@@ -136,11 +132,11 @@ class PromiseObject : public NativeObject {
   static PromiseObject* unforgeableResolveWithNonPromise(
       JSContext* cx, JS::Handle<JS::Value> value);
 
-  int32_t flags() const { return getFixedSlot(PromiseSlot_Flags).toInt32(); }
+  int32_t flags() const { return getFixedSlotTyped(FLAGS_SLOT).toInt32(); }
 
   void setHandled() {
-    setNeverGCThingFixedSlot(PromiseSlot_Flags,
-                             JS::Int32Value(flags() | PROMISE_FLAG_HANDLED));
+    setFixedSlotTyped(FLAGS_SLOT,
+                      JS::Int32Value(flags() | PROMISE_FLAG_HANDLED));
   }
 
   JS::PromiseState state() const {
@@ -157,22 +153,22 @@ class PromiseObject : public NativeObject {
 
   JS::Value reactions() const {
     MOZ_ASSERT(state() == JS::PromiseState::Pending);
-    return getFixedSlot(PromiseSlot_ReactionsOrResult);
+    return getFixedSlot(REACTIONS_OR_RESULT_SLOT);
   }
 
   JS::Value value() const {
     MOZ_ASSERT(state() == JS::PromiseState::Fulfilled);
-    return getFixedSlot(PromiseSlot_ReactionsOrResult);
+    return getFixedSlot(REACTIONS_OR_RESULT_SLOT);
   }
 
   JS::Value reason() const {
     MOZ_ASSERT(state() == JS::PromiseState::Rejected);
-    return getFixedSlot(PromiseSlot_ReactionsOrResult);
+    return getFixedSlot(REACTIONS_OR_RESULT_SLOT);
   }
 
   JS::Value valueOrReason() const {
     MOZ_ASSERT(state() != JS::PromiseState::Pending);
-    return getFixedSlot(PromiseSlot_ReactionsOrResult);
+    return getFixedSlot(REACTIONS_OR_RESULT_SLOT);
   }
 
   [[nodiscard]] static bool resolve(JSContext* cx,

@@ -496,13 +496,14 @@ class PromiseDebugInfo : public NativeObject {
     debugInfo->setFixedSlot(Slot_AllocationTime,
                             DoubleValue(MillisecondsSinceStartup()));
     debugInfo->setFixedSlot(Slot_ResolutionTime, NumberValue(0));
-    promise->setFixedSlot(PromiseSlot_DebugInfo, ObjectValue(*debugInfo));
+    promise->setFixedSlotTyped(PromiseObject::DEBUG_INFO_SLOT,
+                               ObjectValue(*debugInfo));
 
     return debugInfo;
   }
 
   static PromiseDebugInfo* FromPromise(PromiseObject* promise) {
-    Value val = promise->getFixedSlot(PromiseSlot_DebugInfo);
+    Value val = promise->getFixedSlotTyped(PromiseObject::DEBUG_INFO_SLOT);
     if (val.isObject()) {
       return &val.toObject().as<PromiseDebugInfo>();
     }
@@ -516,10 +517,10 @@ class PromiseDebugInfo : public NativeObject {
 
 
   static uint64_t id(PromiseObject* promise) {
-    Value idVal(promise->getFixedSlot(PromiseSlot_DebugInfo));
+    Value idVal(promise->getFixedSlotTyped(PromiseObject::DEBUG_INFO_SLOT));
     if (idVal.isUndefined()) {
       idVal.setDouble(++gIDGenerator);
-      promise->setFixedSlot(PromiseSlot_DebugInfo, idVal);
+      promise->setFixedSlotTyped(PromiseObject::DEBUG_INFO_SLOT, idVal);
     } else if (idVal.isObject()) {
       PromiseDebugInfo* debugInfo = FromPromise(promise);
       idVal = debugInfo->getFixedSlot(Slot_Id);
@@ -564,7 +565,8 @@ class PromiseDebugInfo : public NativeObject {
     
     Rooted<PromiseDebugInfo*> debugInfo(cx, FromPromise(promise));
     if (!debugInfo) {
-      RootedValue idVal(cx, promise->getFixedSlot(PromiseSlot_DebugInfo));
+      RootedValue idVal(
+          cx, promise->getFixedSlotTyped(PromiseObject::DEBUG_INFO_SLOT));
       debugInfo = create(cx, promise);
       if (!debugInfo) {
         cx->clearPendingException();
@@ -1176,13 +1178,14 @@ ThenableJob* NewThenableJob(JSContext* cx, ThenableJob::TargetFunction target,
 
 static void AddPromiseFlags(PromiseObject& promise, int32_t flag) {
   int32_t flags = promise.flags();
-  promise.setNeverGCThingFixedSlot(PromiseSlot_Flags, Int32Value(flags | flag));
+  promise.setFixedSlotTyped(PromiseObject::FLAGS_SLOT,
+                            Int32Value(flags | flag));
 }
 
 static void RemovePromiseFlags(PromiseObject& promise, int32_t flag) {
   int32_t flags = promise.flags();
-  promise.setNeverGCThingFixedSlot(PromiseSlot_Flags,
-                                   Int32Value(flags & ~flag));
+  promise.setFixedSlotTyped(PromiseObject::FLAGS_SLOT,
+                            Int32Value(flags & ~flag));
 }
 
 static bool PromiseHasAnyFlag(PromiseObject& promise, int32_t flag) {
@@ -1310,8 +1313,8 @@ void js::SetAlreadyResolvedPromiseWithDefaultResolvingFunction(
     PromiseObject* promise) {
   MOZ_ASSERT(IsPromiseWithDefaultResolvingFunction(promise));
 
-  promise->setFixedSlot(
-      PromiseSlot_Flags,
+  promise->setFixedSlotTyped(
+      PromiseObject::FLAGS_SLOT,
       JS::Int32Value(
           promise->flags() |
           PROMISE_FLAG_DEFAULT_RESOLVING_FUNCTIONS_ALREADY_RESOLVED));
@@ -2047,7 +2050,7 @@ static bool CanUseSameRealmEnqueue(JSContext* cx, HandleObject reactionObj,
   
   
   
-  promise->setFixedSlot(PromiseSlot_ReactionsOrResult, valueOrReason);
+  promise->setFixedSlot(PromiseObject::REACTIONS_OR_RESULT_SLOT, valueOrReason);
 
   
   
@@ -2058,10 +2061,11 @@ static bool CanUseSameRealmEnqueue(JSContext* cx, HandleObject reactionObj,
   if (state == JS::PromiseState::Fulfilled) {
     flags |= PROMISE_FLAG_FULFILLED;
   }
-  promise->setNeverGCThingFixedSlot(PromiseSlot_Flags, Int32Value(flags));
+  promise->setFixedSlotTyped(PromiseObject::FLAGS_SLOT, Int32Value(flags));
 
   
-  promise->setFixedSlot(PromiseSlot_RejectFunction, UndefinedValue());
+  promise->setFixedSlotTyped(PromiseObject::REJECT_FUNCTION_SLOT,
+                             UndefinedValue());
 
   
 
@@ -2182,7 +2186,8 @@ enum GetCapabilitiesExecutorSlots {
     return nullptr;
   }
 
-  promise->setFixedSlot(PromiseSlot_RejectFunction, ObjectValue(*reject));
+  promise->setFixedSlotTyped(PromiseObject::REJECT_FUNCTION_SLOT,
+                             ObjectValue(*reject));
 
   
   
@@ -2394,6 +2399,7 @@ static bool GetCapabilitiesExecutor(JSContext* cx, unsigned argc, Value* vp) {
   return ResolvePromise(cx, promise, reason, JS::PromiseState::Rejected,
                         unwrappedRejectionStack);
 }
+
 
 
 
@@ -3199,7 +3205,8 @@ static JSFunction* GetRejectFunctionFromResolve(JSFunction* resolve) {
 }
 
 static JSFunction* GetResolveFunctionFromPromise(PromiseObject* promise) {
-  Value rejectFunVal = promise->getFixedSlot(PromiseSlot_RejectFunction);
+  Value rejectFunVal =
+      promise->getFixedSlotTyped(PromiseObject::REJECT_FUNCTION_SLOT);
   if (rejectFunVal.isUndefined()) {
     return nullptr;
   }
@@ -3266,7 +3273,7 @@ CreatePromiseObjectInternal(JSContext* cx, HandleObject proto ,
   }
 
   
-  promise->initFixedSlot(PromiseSlot_Flags, Int32Value(0));
+  promise->initFixedSlotTyped(PromiseObject::FLAGS_SLOT, Int32Value(0));
 
   
   
@@ -3461,18 +3468,20 @@ PromiseObject* PromiseObject::create(JSContext* cx, HandleObject executor,
   }
 
   
-  MOZ_ASSERT(promise->getFixedSlot(PromiseSlot_RejectFunction).isUndefined(),
-             "Slot must be undefined so initFixedSlot can be used");
+  MOZ_ASSERT(promise->getFixedSlotTyped(PromiseObject::REJECT_FUNCTION_SLOT)
+                 .isUndefined(),
+             "Slot must be undefined so initFixedSlotTyped can be used");
   if (needsWrapping) {
     AutoRealm ar(cx, promise);
     RootedField<JSObject*, 5> wrappedRejectFn(roots, rejectFn);
     if (!cx->compartment()->wrap(cx, &wrappedRejectFn)) {
       return nullptr;
     }
-    promise->initFixedSlot(PromiseSlot_RejectFunction,
-                           ObjectValue(*wrappedRejectFn));
+    promise->initFixedSlotTyped(PromiseObject::REJECT_FUNCTION_SLOT,
+                                ObjectValue(*wrappedRejectFn));
   } else {
-    promise->initFixedSlot(PromiseSlot_RejectFunction, ObjectValue(*rejectFn));
+    promise->initFixedSlotTyped(PromiseObject::REJECT_FUNCTION_SLOT,
+                                ObjectValue(*rejectFn));
   }
 
   
@@ -7664,7 +7673,7 @@ bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
 
   if (reactionsVal.isUndefined()) {
     
-    promise->setFixedSlot(PromiseSlot_ReactionsOrResult, reactionVal);
+    promise->setFixedSlot(PromiseObject::REACTIONS_OR_RESULT_SLOT, reactionVal);
     return true;
   }
 
@@ -7695,7 +7704,7 @@ bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
     reactions->initDenseElement(0, reactionsVal);
     reactions->initDenseElement(1, reactionVal);
 
-    promise->setFixedSlot(PromiseSlot_ReactionsOrResult,
+    promise->setFixedSlot(PromiseObject::REACTIONS_OR_RESULT_SLOT,
                           ObjectValue(*reactions));
   } else {
     
@@ -7968,7 +7977,8 @@ bool PromiseObject::reject(JSContext* cx, Handle<PromiseObject*> promise,
     return CallDefaultPromiseRejectFunction(cx, promise, rejectionValue);
   }
 
-  RootedValue funVal(cx, promise->getFixedSlot(PromiseSlot_RejectFunction));
+  RootedValue funVal(
+      cx, promise->getFixedSlotTyped(PromiseObject::REJECT_FUNCTION_SLOT));
   MOZ_ASSERT(IsCallable(funVal));
 
   RootedValue dummy(cx);
@@ -8288,7 +8298,7 @@ void PromiseObject::dumpOwnFields(js::JSONPrinter& json) const {
     json.endObject();
   }
 
-  JS::Value debugInfo = getFixedSlot(PromiseSlot_DebugInfo);
+  JS::Value debugInfo = getFixedSlotTyped(DEBUG_INFO_SLOT);
   if (debugInfo.isNumber()) {
     json.formatProperty("id", "%lf", debugInfo.toNumber());
   } else if (debugInfo.isObject() &&
