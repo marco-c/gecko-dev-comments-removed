@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "device_info_avfoundation.h"
 #include <CoreVideo/CVPixelBuffer.h>
 
@@ -11,7 +9,6 @@
 
 #include "components/capturer/RTCCameraVideoCapturer.h"
 #import "helpers/NSString+StdString.h"
-#include "media/base/video_common.h"
 #include "modules/video_capture/video_capture_defines.h"
 #include "rtc_base/logging.h"
 
@@ -83,7 +80,7 @@ int32_t DeviceInfoAvFoundation::GetDeviceName(
     uint32_t aDeviceNumber, char* aDeviceNameUTF8, uint32_t aDeviceNameLength,
     char* aDeviceUniqueIdUTF8, uint32_t aDeviceUniqueIdUTF8Length,
     char* , uint32_t ,
-    pid_t* ) {
+    pid_t* , bool* ) {
   RTC_DCHECK_RUN_ON(&mChecker);
   
   
