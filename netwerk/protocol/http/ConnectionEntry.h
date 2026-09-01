@@ -9,6 +9,7 @@
 #include "PendingTransactionInfo.h"
 #include "PendingTransactionQueue.h"
 #include "mozilla/WeakPtr.h"
+#include "nsHttpConnectionInfo.h"
 #include "nsTHashSet.h"
 
 namespace mozilla {
@@ -137,7 +138,7 @@ class ConnectionEntry : public SupportsWeakPtr {
   
   
 
-  nsTArray<HashNumber> mCoalescingKeys;
+  nsTArray<CoalescingKey> mCoalescingKeys;
 
   
   
@@ -249,7 +250,7 @@ class ConnectionEntry : public SupportsWeakPtr {
 
   const nsTArray<RefPtr<nsIWebTransportHash>>& GetServerCertHashes();
 
-  const HashNumber& OriginFrameHashKey();
+  const CoalescingKey& OriginFrameHashKey();
 
  private:
   void MaybeRemoveFromPendingSet();
@@ -278,7 +279,7 @@ class ConnectionEntry : public SupportsWeakPtr {
   PendingTransactionQueue mPendingQ;
   ~ConnectionEntry();
 
-  Maybe<HashNumber> mOriginFrameHashKey;
+  Maybe<CoalescingKey> mOriginFrameHashKey;
 
   bool mRetriedDifferentIPFamilyForHttp3 = false;
 };

@@ -306,16 +306,22 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
 
   
   
-  nsClassHashtable<nsUint32HashKey, nsTArray<nsWeakPtr>> mCoalescingHash;
+  
+  
+  
+  struct CoalescedConnection {
+    nsWeakPtr mConn;
+    nsCString mKey;
+  };
+  nsClassHashtable<nsUint32HashKey, nsTArray<CoalescedConnection>>
+      mCoalescingHash;
 
   HttpConnectionBase* FindCoalescableConnection(ConnectionEntry* ent,
                                                 bool justKidding, bool aNoHttp2,
                                                 bool aNoHttp3);
-  HttpConnectionBase* FindCoalescableConnectionByHashKey(ConnectionEntry* ent,
-                                                         HashNumber key,
-                                                         bool justKidding,
-                                                         bool aNoHttp2,
-                                                         bool aNoHttp3);
+  HttpConnectionBase* FindCoalescableConnectionByHashKey(
+      ConnectionEntry* ent, const CoalescingKey& key, bool justKidding,
+      bool aNoHttp2, bool aNoHttp3);
   void UpdateCoalescingForNewConn(HttpConnectionBase* conn,
                                   ConnectionEntry* ent, bool aNoHttp3);
 
