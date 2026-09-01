@@ -844,71 +844,28 @@ function createHighlightButton({ highlighterTypes, id }) {
     isToolSupported: toolbox =>
       toolbox.commands.descriptorFront.isTabDescriptor,
     async onClick(event, toolbox) {
-      
-      
-      const { targetConfigurationCommand } = toolbox.commands;
-      if (await targetConfigurationCommand.supports("enabledHighlighters")) {
-        const { configuration } = targetConfigurationCommand;
-        let highlighters = configuration.enabledHighlighters || [];
-        
-        if (highlighterTypes.every(type => highlighters.includes(type))) {
-          
-          highlighters = highlighters.filter(
-            type => !highlighterTypes.includes(type)
-          );
-        } else {
-          
-          highlighters = [...highlighters, ...highlighterTypes];
-        }
-        
-        await targetConfigurationCommand.updateConfiguration({
-          enabledHighlighters: highlighters,
-        });
-      } else {
-        const inspectorFront = await toolbox.target.getFront("inspector");
-        await Promise.all(
-          highlighterTypes.map(async name => {
-            const highlighter =
-              await inspectorFront.getOrCreateHighlighterByType(name);
-
-            if (highlighter.isShown()) {
-              await highlighter.hide();
-            } else {
-              await highlighter.show();
-            }
-          })
-        );
-      }
-    },
-    isChecked(toolbox) {
       const { targetConfigurationCommand } = toolbox.commands;
       const { configuration } = targetConfigurationCommand;
+      let highlighters = configuration.enabledHighlighters || [];
       
-      
-      
-      
-      
-      if ("enabledHighlighters" in configuration) {
-        const highlighters = configuration.enabledHighlighters || [];
-        const isChecked = highlighterTypes.every(type =>
-          highlighters.includes(type)
+      if (highlighterTypes.every(type => highlighters.includes(type))) {
+        
+        highlighters = highlighters.filter(
+          type => !highlighterTypes.includes(type)
         );
-        return isChecked;
+      } else {
+        
+        highlighters = [...highlighters, ...highlighterTypes];
       }
       
-      
-      const inspectorFront = toolbox.target.getCachedFront("inspector");
-      if (!inspectorFront) {
-        
-        
-        
-        
-        return false;
-      }
-
-      return highlighterTypes.every(name =>
-        inspectorFront.getKnownHighlighter(name)?.isShown()
-      );
+      await targetConfigurationCommand.updateConfiguration({
+        enabledHighlighters: highlighters,
+      });
+    },
+    isChecked(toolbox) {
+      const { configuration } = toolbox.commands.targetConfigurationCommand;
+      const highlighters = configuration.enabledHighlighters || [];
+      return highlighterTypes.every(type => highlighters.includes(type));
     },
     isToggle: true,
   };
