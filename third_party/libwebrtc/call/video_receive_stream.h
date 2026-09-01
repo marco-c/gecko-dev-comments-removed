@@ -118,8 +118,7 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
     
     uint32_t frames_decoded = 0;
     
-    
-    FrameCounts decoded_frame_counts;
+    uint32_t key_frames_decoded = 0;
     
     uint64_t packets_discarded = 0;
     
