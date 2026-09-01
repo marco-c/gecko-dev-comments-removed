@@ -1,59 +1,28 @@
-#define MOZ_NEEDS_NO_VTABLE_TYPE                                               \
-  __attribute__((annotate("moz_needs_no_vtable_type")))
+#define MOZ_NEEDS_NO_VTABLE_TYPE __attribute__((annotate("moz_needs_no_vtable_type")))
 
 template <class T>
-struct MOZ_NEEDS_NO_VTABLE_TYPE
-    PickyConsumer { 
-                    
-                    
-                    
-                    
-                    
-                    
+struct MOZ_NEEDS_NO_VTABLE_TYPE PickyConsumer { 
   T *m;
 };
 
 template <class T>
-struct MOZ_NEEDS_NO_VTABLE_TYPE
-    PickyConsumer_A { 
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-  T *m;
-};
-template <class T> struct PickyConsumerWrapper {
-  PickyConsumer_A<T>
-      m; 
-         
-         
-         
-         
-};
-
-template <class T>
-struct MOZ_NEEDS_NO_VTABLE_TYPE
-    PickyConsumer_B { 
-                      
-                      
-                      
-                      
-                      
-                      
-                      
+struct MOZ_NEEDS_NO_VTABLE_TYPE PickyConsumer_A { 
   T *m;
 };
 template <class T>
-struct PickyConsumerSubclass : PickyConsumer_B<T> {
-}; 
-   
-   
-   
+struct PickyConsumerWrapper {
+  PickyConsumer_A<T> m; 
+};
 
-template <class T> struct NonPickyConsumer {
+template <class T>
+struct MOZ_NEEDS_NO_VTABLE_TYPE PickyConsumer_B { 
+  T *m;
+};
+template <class T>
+struct PickyConsumerSubclass : PickyConsumer_B<T> {}; 
+
+template <class T>
+struct NonPickyConsumer {
   T *m;
 };
 
@@ -83,7 +52,6 @@ void f() {
 
   {
     PickyConsumer<B> a1; 
-                         
     PickyConsumerWrapper<B> a2;
     PickyConsumerSubclass<B> a3;
     NonPickyConsumer<B> a4;
@@ -105,7 +73,6 @@ void f() {
 
   {
     PickyConsumer<E> a1; 
-                         
     PickyConsumerWrapper<E> a2;
     PickyConsumerSubclass<E> a3;
     NonPickyConsumer<E> a4;
@@ -113,7 +80,6 @@ void f() {
 
   {
     PickyConsumer<F> a1; 
-                         
     PickyConsumerWrapper<F> a2;
     PickyConsumerSubclass<F> a3;
     NonPickyConsumer<F> a4;
@@ -121,7 +87,6 @@ void f() {
 
   {
     PickyConsumer<G> a1; 
-                         
     PickyConsumerWrapper<G> a2;
     PickyConsumerSubclass<G> a3;
     NonPickyConsumer<G> a4;

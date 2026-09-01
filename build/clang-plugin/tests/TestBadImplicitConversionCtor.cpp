@@ -2,60 +2,49 @@
 
 struct Foo {
   Foo(int); 
-            
-            
-  Foo(int, char = 0); 
-                      
-                      
+  Foo(int, char=0); 
   Foo(...); 
-            
-            
-  template <class T>
+  template<class T>
   Foo(float); 
-              
-              
   Foo(int, unsigned);
-  Foo(Foo &);
-  Foo(const Foo &);
-  Foo(volatile Foo &);
-  Foo(const volatile Foo &);
-  Foo(Foo &&);
-  Foo(const Foo &&);
-  Foo(volatile Foo &&);
-  Foo(const volatile Foo &&);
+  Foo(Foo&);
+  Foo(const Foo&);
+  Foo(volatile Foo&);
+  Foo(const volatile Foo&);
+  Foo(Foo&&);
+  Foo(const Foo&&);
+  Foo(volatile Foo&&);
+  Foo(const volatile Foo&&);
 };
 
 struct Bar {
   explicit Bar(int);
-  explicit Bar(int, char = 0);
+  explicit Bar(int, char=0);
   explicit Bar(...);
 };
 
 struct Baz {
   MOZ_IMPLICIT Baz(int);
-  MOZ_IMPLICIT Baz(int, char = 0);
+  MOZ_IMPLICIT Baz(int, char=0);
   MOZ_IMPLICIT Baz(...);
 };
 
 struct Barn {
   Barn(int) = delete;
-  Barn(int, char = 0) = delete;
+  Barn(int, char=0) = delete;
   Barn(...) = delete;
 };
 
 struct Abstract {
   Abstract(int);
-  Abstract(int, char = 0);
+  Abstract(int, char=0);
   Abstract(...);
   virtual void f() = 0;
 };
 
-template <class T> struct Template {
+template<class T>
+struct Template {
   Template(int); 
-                 
-                 
-  template <class U>
+  template<class U>
   Template(float); 
-                   
-                   
 };

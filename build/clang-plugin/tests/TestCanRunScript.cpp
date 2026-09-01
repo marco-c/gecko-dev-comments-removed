@@ -1,47 +1,58 @@
-#include <mozilla/Maybe.h>
 #include <mozilla/RefPtr.h>
+#include <mozilla/Maybe.h>
 
 #define MOZ_CAN_RUN_SCRIPT __attribute__((annotate("moz_can_run_script")))
-#define MOZ_CAN_RUN_SCRIPT_BOUNDARY                                            \
-  __attribute__((annotate("moz_can_run_script_boundary")))
+#define MOZ_CAN_RUN_SCRIPT_BOUNDARY __attribute__((annotate("moz_can_run_script_boundary")))
 
-MOZ_CAN_RUN_SCRIPT void test() {}
+MOZ_CAN_RUN_SCRIPT void test() {
+
+}
 
 void test_parent() { 
   test(); 
-          
 }
 
-MOZ_CAN_RUN_SCRIPT void test_parent2() { test(); }
+MOZ_CAN_RUN_SCRIPT void test_parent2() {
+  test();
+}
 
 struct RefCountedBase;
-MOZ_CAN_RUN_SCRIPT void test2(RefCountedBase *param) {}
+MOZ_CAN_RUN_SCRIPT void test2(RefCountedBase* param) {
+
+}
 
 struct RefCountedBase {
   void AddRef();
   void Release();
 
-  MOZ_CAN_RUN_SCRIPT void method_test() { test(); }
-
-  MOZ_CAN_RUN_SCRIPT void method_test2() { test2(this); }
-
-  virtual void
-  method_test3() { 
-    test(); 
-            
+  MOZ_CAN_RUN_SCRIPT void method_test() {
+    test();
   }
 
-  MOZ_CAN_RUN_SCRIPT void method_test4() { method_test(); }
+  MOZ_CAN_RUN_SCRIPT void method_test2() {
+    test2(this);
+  }
 
-  MOZ_CAN_RUN_SCRIPT void method_test5() { this->method_test(); }
+  virtual void method_test3() { 
+    test(); 
+  }
+
+  MOZ_CAN_RUN_SCRIPT void method_test4() {
+    method_test();
+  }
+
+  MOZ_CAN_RUN_SCRIPT void method_test5() {
+    this->method_test();
+  }
 };
 
 MOZ_CAN_RUN_SCRIPT void testLambda() {
-  auto doIt = []() MOZ_CAN_RUN_SCRIPT { test(); };
+  auto doIt = []() MOZ_CAN_RUN_SCRIPT {
+    test();
+  };
 
   auto doItWrong = []() { 
     test(); 
-            
   };
 
   doIt();
@@ -49,66 +60,42 @@ MOZ_CAN_RUN_SCRIPT void testLambda() {
 }
 
 void test2_parent() { 
-  test2(
-      new RefCountedBase); 
-                           
-                           
-                           
-                           
-                           
-                           
+  test2(new RefCountedBase); 
+
 }
 
 MOZ_CAN_RUN_SCRIPT void test2_parent2() {
   test2(new RefCountedBase); 
-                             
-                             
-                             
-                             
 }
 
-MOZ_CAN_RUN_SCRIPT void test2_parent3(RefCountedBase *param) {
+MOZ_CAN_RUN_SCRIPT void test2_parent3(RefCountedBase* param) {
   test2(param);
 
-  RefCountedBase *&paramRef = param;
+  RefCountedBase*& paramRef = param;
   test2(paramRef);
 }
 
 MOZ_CAN_RUN_SCRIPT void test2_parent4() {
   RefPtr<RefCountedBase> refptr = new RefCountedBase;
   test2(refptr);
-  RefPtr<RefCountedBase> &refptrRef = refptr;
+  RefPtr<RefCountedBase>& refptrRef = refptr;
   test2(refptrRef);
-  const RefPtr<RefCountedBase> &refptrConstRef = refptr;
+  const RefPtr<RefCountedBase>& refptrConstRef = refptr;
   test2(refptrConstRef);
 
   RefPtr<RefCountedBase> refptrOther = refptr;
-  RefPtr<RefCountedBase> &refptrRef2 = refptr ? refptr : refptrOther;
+  RefPtr<RefCountedBase>& refptrRef2 = refptr ? refptr : refptrOther;
   test2(refptrRef2);
 
-  RefPtr<RefCountedBase> *refPtrInHeap = new RefPtr<RefCountedBase>;
-  RefPtr<RefCountedBase> &refptrRefUnsafe1 = *refPtrInHeap;
-  test2(
-      refptrRefUnsafe1); 
-                         
-                         
-                         
+  RefPtr<RefCountedBase>* refPtrInHeap = new RefPtr<RefCountedBase>;
+  RefPtr<RefCountedBase>& refptrRefUnsafe1 = *refPtrInHeap;
+  test2(refptrRefUnsafe1); 
 
-  RefPtr<RefCountedBase> &refptrRefUnsafe2 =
-      refPtrInHeap ? *refPtrInHeap : refptr;
-  test2(
-      refptrRefUnsafe2); 
-                         
-                         
-                         
+  RefPtr<RefCountedBase>& refptrRefUnsafe2 = refPtrInHeap ? *refPtrInHeap : refptr;
+  test2(refptrRefUnsafe2); 
 
-  RefPtr<RefCountedBase> &refptrRefUnsafe3 =
-      refPtrInHeap ? refptr : *refPtrInHeap;
-  test2(
-      refptrRefUnsafe3); 
-                         
-                         
-                         
+  RefPtr<RefCountedBase>& refptrRefUnsafe3 = refPtrInHeap ? refptr : *refPtrInHeap;
+  test2(refptrRefUnsafe3); 
 }
 
 MOZ_CAN_RUN_SCRIPT void test2_parent5() {
@@ -119,106 +106,62 @@ MOZ_CAN_RUN_SCRIPT void test2_parent6() {
   RefPtr<RefCountedBase> refptr = new RefCountedBase;
   refptr->method_test();
   refptr->method_test2();
-  RefPtr<RefCountedBase> &refptrRef = refptr;
+  RefPtr<RefCountedBase>& refptrRef = refptr;
   refptrRef->method_test();
   refptrRef->method_test2();
 
   RefPtr<RefCountedBase> refptrOther = refptr;
-  RefPtr<RefCountedBase> &refptrRef2 = refptr ? refptr : refptrOther;
+  RefPtr<RefCountedBase>& refptrRef2 = refptr ? refptr : refptrOther;
   refptrRef2->method_test();
   refptrRef2->method_test2();
 
-  RefPtr<RefCountedBase> *refPtrInHeap = new RefPtr<RefCountedBase>;
-  RefPtr<RefCountedBase> &refptrRefUnsafe1 = *refPtrInHeap;
-  refptrRefUnsafe1
-      ->method_test(); 
-                       
-                       
-                       
-  refptrRefUnsafe1
-      ->method_test2(); 
-                        
-                        
-                        
+  RefPtr<RefCountedBase>* refPtrInHeap = new RefPtr<RefCountedBase>;
+  RefPtr<RefCountedBase>& refptrRefUnsafe1 = *refPtrInHeap;
+  refptrRefUnsafe1->method_test(); 
+  refptrRefUnsafe1->method_test2(); 
 
-  RefPtr<RefCountedBase> &refptrRefUnsafe2 =
-      refPtrInHeap ? *refPtrInHeap : refptr;
-  refptrRefUnsafe2
-      ->method_test(); 
-                       
-                       
-                       
-  refptrRefUnsafe2
-      ->method_test2(); 
-                        
-                        
-                        
+  RefPtr<RefCountedBase>& refptrRefUnsafe2 = refPtrInHeap ? *refPtrInHeap : refptr;
+  refptrRefUnsafe2->method_test(); 
+  refptrRefUnsafe2->method_test2(); 
 
-  RefPtr<RefCountedBase> &refptrRefUnsafe3 =
-      refPtrInHeap ? refptr : *refPtrInHeap;
-  refptrRefUnsafe3
-      ->method_test(); 
-                       
-                       
-                       
-  refptrRefUnsafe3
-      ->method_test2(); 
-                        
-                        
-                        
+  RefPtr<RefCountedBase>& refptrRefUnsafe3 = refPtrInHeap ? refptr : *refPtrInHeap;
+  refptrRefUnsafe3->method_test(); 
+  refptrRefUnsafe3->method_test2(); 
 }
 
 MOZ_CAN_RUN_SCRIPT void test2_parent7() {
-  RefCountedBase *t = new RefCountedBase;
-  t->method_test();  
-                     
-                     
-                     
+  RefCountedBase* t = new RefCountedBase;
+  t->method_test(); 
   t->method_test2(); 
-                     
-                     
-                     
 
-  RefCountedBase *&tRef = t;
-  tRef->method_test();  
-                        
-                        
-                        
+  RefCountedBase*& tRef = t;
+  tRef->method_test(); 
   tRef->method_test2(); 
-                        
-                        
-                        
 }
 
-MOZ_CAN_RUN_SCRIPT void test2_parent8() { test2(nullptr); }
+MOZ_CAN_RUN_SCRIPT void test2_parent8() {
+  test2(nullptr);
+}
 
-MOZ_CAN_RUN_SCRIPT void test3(int *param) {}
+MOZ_CAN_RUN_SCRIPT void test3(int* param) {}
 
-MOZ_CAN_RUN_SCRIPT void test3_parent() { test3(new int); }
+MOZ_CAN_RUN_SCRIPT void test3_parent() {
+  test3(new int);
+}
 
 struct RefCountedChild : public RefCountedBase {
-  virtual void method_test3()
-      override; 
-                
-                
+  virtual void method_test3() override; 
 };
 
 void RefCountedChild::method_test3() {
   test(); 
-          
 }
 
 struct RefCountedSubChild : public RefCountedChild {
-  MOZ_CAN_RUN_SCRIPT void
-  method_test3() override; 
-                           
-                           
+  MOZ_CAN_RUN_SCRIPT void method_test3() override; 
 };
 
 void RefCountedSubChild::method_test3() { 
-                                          
-                                          
-                                          
   test();
 }
 
@@ -251,51 +194,39 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void test5() {
 }
 
 
-void test5_b() { test5(); }
-
-MOZ_CAN_RUN_SCRIPT void test6() {
-  void *x = new RefCountedBase();
-  test2(
-      (RefCountedBase *)
-          x); 
-              
-              
+void test5_b() {
+  test5();
 }
 
-MOZ_CAN_RUN_SCRIPT void test_ref(const RefCountedBase &) {}
+MOZ_CAN_RUN_SCRIPT void test6() {
+  void* x = new RefCountedBase();
+  test2((RefCountedBase*)x); 
+}
+
+MOZ_CAN_RUN_SCRIPT void test_ref(const RefCountedBase&) {
+
+}
 
 MOZ_CAN_RUN_SCRIPT void test_ref_1() {
-  RefCountedBase *t = new RefCountedBase;
-  test_ref(
-      *t); 
-           
-           
+  RefCountedBase* t = new RefCountedBase;
+  test_ref(*t); 
 }
 
 MOZ_CAN_RUN_SCRIPT void test_ref_2() {
-  RefCountedBase *t = new RefCountedBase;
+  RefCountedBase* t = new RefCountedBase;
   (*t).method_test(); 
-                      
-                      
-                      
 }
 
 MOZ_CAN_RUN_SCRIPT void test_ref_3() {
-  RefCountedBase *t = new RefCountedBase;
-  auto &ref = *t;
-  test_ref(
-      ref); 
-            
-            
+  RefCountedBase* t = new RefCountedBase;
+  auto& ref = *t;
+  test_ref(ref); 
 }
 
 MOZ_CAN_RUN_SCRIPT void test_ref_4() {
-  RefCountedBase *t = new RefCountedBase;
-  auto &ref = *t;
+  RefCountedBase* t = new RefCountedBase;
+  auto& ref = *t;
   ref.method_test(); 
-                     
-                     
-                     
 }
 
 MOZ_CAN_RUN_SCRIPT void test_ref_5() {
@@ -310,56 +241,44 @@ MOZ_CAN_RUN_SCRIPT void test_ref_6() {
 
 MOZ_CAN_RUN_SCRIPT void test_ref_7() {
   RefPtr<RefCountedBase> t = new RefCountedBase;
-  auto &ref = *t;
+  auto& ref = *t;
   MOZ_KnownLive(ref).method_test();
 }
 
 MOZ_CAN_RUN_SCRIPT void test_ref_8() {
   RefPtr<RefCountedBase> t = new RefCountedBase;
-  auto &ref = *t;
+  auto& ref = *t;
   test_ref(MOZ_KnownLive(ref));
 }
 
 MOZ_CAN_RUN_SCRIPT void test_ref_9() {
-  void *x = new RefCountedBase();
-  test_ref(*(RefCountedBase *)
-               x); 
-                   
-                   
-                   
+  void* x = new RefCountedBase();
+  test_ref(*(RefCountedBase*)x); 
 }
 
 MOZ_CAN_RUN_SCRIPT void test_maybe() {
-  mozilla::Maybe<RefCountedBase *> unsafe;
+  mozilla::Maybe<RefCountedBase*> unsafe;
   unsafe.emplace(new RefCountedBase);
-  (*unsafe)
-      ->method_test(); 
-                       
-                       
-                       
+  (*unsafe)->method_test(); 
 }
 
 MOZ_CAN_RUN_SCRIPT void test_maybe_2() {
   
   mozilla::Maybe<RefPtr<RefCountedBase>> safe;
   safe.emplace(new RefCountedBase);
-  (*safe)
-      ->method_test(); 
-                       
-                       
-                       
+  (*safe)->method_test(); 
 }
 
-MOZ_CAN_RUN_SCRIPT void test_defaults_helper_1(RefCountedBase *arg = nullptr) {}
+MOZ_CAN_RUN_SCRIPT void test_defaults_helper_1(RefCountedBase* arg = nullptr) {
+}
 
-MOZ_CAN_RUN_SCRIPT void test_defaults_1() { test_defaults_helper_1(); }
+MOZ_CAN_RUN_SCRIPT void test_defaults_1() {
+  test_defaults_helper_1();
+}
 
 MOZ_CAN_RUN_SCRIPT void test_defaults_2() {
-  RefCountedBase *t = new RefCountedBase;
-  test_defaults_helper_1(
-      t); 
-          
-          
+  RefCountedBase* t = new RefCountedBase;
+  test_defaults_helper_1(t); 
 }
 
 MOZ_CAN_RUN_SCRIPT void test_defaults_3() {
@@ -367,23 +286,16 @@ MOZ_CAN_RUN_SCRIPT void test_defaults_3() {
   test_defaults_helper_1(t);
 }
 
-MOZ_CAN_RUN_SCRIPT void test_defaults_helper_2(
-    RefCountedBase *arg =
-        new RefCountedBase()) { 
-                                
-                                
-                                
-                                
+MOZ_CAN_RUN_SCRIPT void test_defaults_helper_2(RefCountedBase* arg = new RefCountedBase()) { 
 }
 
-MOZ_CAN_RUN_SCRIPT void test_defaults_4() { test_defaults_helper_2(); }
+MOZ_CAN_RUN_SCRIPT void test_defaults_4() {
+  test_defaults_helper_2();
+}
 
 MOZ_CAN_RUN_SCRIPT void test_defaults_5() {
-  RefCountedBase *t = new RefCountedBase;
-  test_defaults_helper_2(
-      t); 
-          
-          
+  RefCountedBase* t = new RefCountedBase;
+  test_defaults_helper_2(t); 
 }
 
 MOZ_CAN_RUN_SCRIPT void test_defaults_6() {
@@ -391,100 +303,54 @@ MOZ_CAN_RUN_SCRIPT void test_defaults_6() {
   test_defaults_helper_2(t);
 }
 
-MOZ_CAN_RUN_SCRIPT void test_arg_deref_helper(RefCountedBase &) {}
+MOZ_CAN_RUN_SCRIPT void test_arg_deref_helper(RefCountedBase&) {
+}
 
-MOZ_CAN_RUN_SCRIPT void test_arg_deref(RefCountedBase *arg) {
+MOZ_CAN_RUN_SCRIPT void test_arg_deref(RefCountedBase* arg) {
   test_arg_deref_helper(*arg);
 }
 
 struct RefCountedDerefTester : public RefCountedBase {
-  MOZ_CAN_RUN_SCRIPT void foo() { test_arg_deref_helper(*this); }
+  MOZ_CAN_RUN_SCRIPT void foo() {
+    test_arg_deref_helper(*this);
+  }
 };
 
 struct DisallowMemberArgs {
   RefPtr<RefCountedBase> mRefCounted;
   MOZ_CAN_RUN_SCRIPT void foo() {
-    mRefCounted
-        ->method_test(); 
-                         
-                         
-                         
-                         
+    mRefCounted->method_test(); 
 
-    RefPtr<RefCountedBase> &unsafeMemberRef = mRefCounted;
-    unsafeMemberRef
-        ->method_test(); 
-                         
-                         
-                         
-                         
+    RefPtr<RefCountedBase>& unsafeMemberRef = mRefCounted;
+    unsafeMemberRef->method_test(); 
 
     RefPtr<RefCountedBase> safeRefCounted = mRefCounted;
-    RefPtr<RefCountedBase> &maybeUnsafeMemberRef1 =
-        mRefCounted ? mRefCounted : safeRefCounted;
-    maybeUnsafeMemberRef1
-        ->method_test(); 
-                         
-                         
-                         
-                         
-    RefPtr<RefCountedBase> &maybeUnsafeMemberRef2 =
-        safeRefCounted ? safeRefCounted : mRefCounted;
-    maybeUnsafeMemberRef2
-        ->method_test(); 
-                         
-                         
-                         
-                         
+    RefPtr<RefCountedBase>& maybeUnsafeMemberRef1 = mRefCounted ? mRefCounted : safeRefCounted;
+    maybeUnsafeMemberRef1->method_test(); 
+    RefPtr<RefCountedBase>& maybeUnsafeMemberRef2 = safeRefCounted ? safeRefCounted : mRefCounted;
+    maybeUnsafeMemberRef2->method_test(); 
   }
   MOZ_CAN_RUN_SCRIPT void bar() {
     test2(mRefCounted); 
-                        
-                        
-                        
 
-    RefPtr<RefCountedBase> &unsafeMemberRef = mRefCounted;
+    RefPtr<RefCountedBase>& unsafeMemberRef = mRefCounted;
     test2(unsafeMemberRef); 
-                            
-                            
-                            
-                            
 
     RefPtr<RefCountedBase> safeRefCounted = mRefCounted;
-    RefPtr<RefCountedBase> &maybeUnsafeMemberRef1 =
-        mRefCounted ? mRefCounted : safeRefCounted;
-    test2(
-        maybeUnsafeMemberRef1); 
-                                
-                                
-                                
-                                
-    RefPtr<RefCountedBase> &maybeUnsafeMemberRef2 =
-        safeRefCounted ? safeRefCounted : mRefCounted;
-    test2(
-        maybeUnsafeMemberRef2); 
-                                
-                                
-                                
-                                
+    RefPtr<RefCountedBase>& maybeUnsafeMemberRef1 = mRefCounted ? mRefCounted : safeRefCounted;
+    test2(maybeUnsafeMemberRef1); 
+    RefPtr<RefCountedBase>& maybeUnsafeMemberRef2 = safeRefCounted ? safeRefCounted : mRefCounted;
+    test2(maybeUnsafeMemberRef2); 
   }
 };
 
 struct DisallowMemberArgsWithGet {
   RefPtr<RefCountedBase> mRefCounted;
   MOZ_CAN_RUN_SCRIPT void foo() {
-    mRefCounted.get()
-        ->method_test(); 
-                         
-                         
-                         
+    mRefCounted.get()->method_test(); 
   }
   MOZ_CAN_RUN_SCRIPT void bar() {
-    test2(mRefCounted
-              .get()); 
-                       
-                       
-                       
+    test2(mRefCounted.get()); 
   }
 };
 
@@ -493,67 +359,39 @@ struct AllowKnownLiveMemberArgs {
   MOZ_CAN_RUN_SCRIPT void foo() {
     MOZ_KnownLive(mRefCounted)->method_test();
 
-    RefPtr<RefCountedBase> &unsafeMemberRef = mRefCounted;
+    RefPtr<RefCountedBase>& unsafeMemberRef = mRefCounted;
     MOZ_KnownLive(unsafeMemberRef)->method_test();
   }
   MOZ_CAN_RUN_SCRIPT void bar() {
     test2(MOZ_KnownLive(mRefCounted));
 
-    RefPtr<RefCountedBase> &unsafeMemberRef = mRefCounted;
+    RefPtr<RefCountedBase>& unsafeMemberRef = mRefCounted;
     test2(MOZ_KnownLive(unsafeMemberRef));
   }
 };
 
 struct WeakPtrReturner : public RefCountedBase {
-  RefCountedBase *getWeakPtr() { return new RefCountedBase(); }
+  RefCountedBase* getWeakPtr() { return new RefCountedBase(); }
 };
 
 struct DisallowMemberCallsOnRandomKnownLive {
   RefPtr<WeakPtrReturner> mWeakPtrReturner1;
-  WeakPtrReturner *mWeakPtrReturner2;
+  WeakPtrReturner* mWeakPtrReturner2;
 
   MOZ_CAN_RUN_SCRIPT void test_refptr_method() {
-    MOZ_KnownLive(mWeakPtrReturner1)
-        ->getWeakPtr()
-        ->method_test(); 
-                         
-                         
-                         
-                         
-                         
+    MOZ_KnownLive(mWeakPtrReturner1)->getWeakPtr()->method_test(); 
   }
 
   MOZ_CAN_RUN_SCRIPT void test_refptr_function() {
-    test2(
-        MOZ_KnownLive(mWeakPtrReturner1)
-            ->getWeakPtr()); 
-                             
-                             
-                             
-                             
-                             
+    test2(MOZ_KnownLive(mWeakPtrReturner1)->getWeakPtr()); 
   }
 
   MOZ_CAN_RUN_SCRIPT void test_raw_method() {
-    MOZ_KnownLive(mWeakPtrReturner2)
-        ->getWeakPtr()
-        ->method_test(); 
-                         
-                         
-                         
-                         
-                         
+    MOZ_KnownLive(mWeakPtrReturner2)->getWeakPtr()->method_test(); 
   }
 
   MOZ_CAN_RUN_SCRIPT void test_raw_function() {
-    test2(
-        MOZ_KnownLive(mWeakPtrReturner2)
-            ->getWeakPtr()); 
-                             
-                             
-                             
-                             
-                             
+    test2(MOZ_KnownLive(mWeakPtrReturner2)->getWeakPtr()); 
   }
 };
 
@@ -562,29 +400,25 @@ struct AllowConstMemberArgs {
   MOZ_CAN_RUN_SCRIPT void foo() {
     mRefCounted->method_test();
 
-    const RefPtr<RefCountedBase> &safeMemberRef1 = mRefCounted;
+    const RefPtr<RefCountedBase>& safeMemberRef1 = mRefCounted;
     safeMemberRef1->method_test();
 
     const RefPtr<RefCountedBase> safeRefCounted = new RefCountedBase;
-    const RefPtr<RefCountedBase> &safeMemberRef2 =
-        safeRefCounted ? safeRefCounted : mRefCounted;
+    const RefPtr<RefCountedBase>& safeMemberRef2 = safeRefCounted ? safeRefCounted : mRefCounted;
     safeMemberRef2->method_test();
-    const RefPtr<RefCountedBase> &safeMemberRef3 =
-        mRefCounted ? mRefCounted : safeRefCounted;
+    const RefPtr<RefCountedBase>& safeMemberRef3 = mRefCounted ? mRefCounted : safeRefCounted;
     safeMemberRef3->method_test();
   }
   MOZ_CAN_RUN_SCRIPT void bar() {
     test2(mRefCounted);
 
-    const RefPtr<RefCountedBase> &safeMemberRef1 = mRefCounted;
+    const RefPtr<RefCountedBase>& safeMemberRef1 = mRefCounted;
     test2(safeMemberRef1);
 
     const RefPtr<RefCountedBase> safeRefCounted = new RefCountedBase;
-    const RefPtr<RefCountedBase> &safeMemberRef2 =
-        safeRefCounted ? safeRefCounted : mRefCounted;
+    const RefPtr<RefCountedBase>& safeMemberRef2 = safeRefCounted ? safeRefCounted : mRefCounted;
     test2(safeMemberRef2);
-    const RefPtr<RefCountedBase> &safeMemberRef3 =
-        mRefCounted ? mRefCounted : safeRefCounted;
+    const RefPtr<RefCountedBase>& safeMemberRef3 = mRefCounted ? mRefCounted : safeRefCounted;
     test2(safeMemberRef3);
   }
 };
@@ -594,29 +428,25 @@ struct AllowConstMemberArgsWithExplicitThis {
   MOZ_CAN_RUN_SCRIPT void foo() {
     this->mRefCounted->method_test();
 
-    const RefPtr<RefCountedBase> &safeMemberRef1 = this->mRefCounted;
+    const RefPtr<RefCountedBase>& safeMemberRef1 = this->mRefCounted;
     safeMemberRef1->method_test();
 
     const RefPtr<RefCountedBase> safeRefCounted = new RefCountedBase;
-    const RefPtr<RefCountedBase> &safeMemberRef2 =
-        safeRefCounted ? safeRefCounted : this->mRefCounted;
+    const RefPtr<RefCountedBase>& safeMemberRef2 = safeRefCounted ? safeRefCounted : this->mRefCounted;
     safeMemberRef2->method_test();
-    const RefPtr<RefCountedBase> &safeMemberRef3 =
-        this->mRefCounted ? this->mRefCounted : safeRefCounted;
+    const RefPtr<RefCountedBase>& safeMemberRef3 = this->mRefCounted ? this->mRefCounted : safeRefCounted;
     safeMemberRef3->method_test();
   }
   MOZ_CAN_RUN_SCRIPT void bar() {
     test2(this->mRefCounted);
 
-    const RefPtr<RefCountedBase> &safeMemberRef1 = this->mRefCounted;
+    const RefPtr<RefCountedBase>& safeMemberRef1 = this->mRefCounted;
     test2(safeMemberRef1);
 
     const RefPtr<RefCountedBase> safeRefCounted = new RefCountedBase;
-    const RefPtr<RefCountedBase> &safeMemberRef2 =
-        safeRefCounted ? safeRefCounted : this->mRefCounted;
+    const RefPtr<RefCountedBase>& safeMemberRef2 = safeRefCounted ? safeRefCounted : this->mRefCounted;
     test2(safeMemberRef2);
-    const RefPtr<RefCountedBase> &safeMemberRef3 =
-        this->mRefCounted ? this->mRefCounted : safeRefCounted;
+    const RefPtr<RefCountedBase>& safeMemberRef3 = this->mRefCounted ? this->mRefCounted : safeRefCounted;
     test2(safeMemberRef3);
   }
 };
@@ -624,113 +454,50 @@ struct AllowConstMemberArgsWithExplicitThis {
 struct DisallowConstMemberArgsOfMembers {
   RefPtr<AllowConstMemberArgs> mMember;
   MOZ_CAN_RUN_SCRIPT void foo() {
-    mMember->mRefCounted
-        ->method_test(); 
-                         
-                         
-                         
-                         
+    mMember->mRefCounted->method_test(); 
 
-    const RefPtr<RefCountedBase> &unsafeMemberRef = mMember->mRefCounted;
-    unsafeMemberRef
-        ->method_test(); 
-                         
-                         
-                         
-                         
+    const RefPtr<RefCountedBase>& unsafeMemberRef = mMember->mRefCounted;
+    unsafeMemberRef->method_test(); 
 
     const RefPtr<RefCountedBase> safeRefCounted = new RefCountedBase;
-    const RefPtr<RefCountedBase> &maybeUnsafeMemberRef1 =
-        safeRefCounted ? safeRefCounted : mMember->mRefCounted;
-    maybeUnsafeMemberRef1
-        ->method_test(); 
-                         
-                         
-                         
-                         
-    const RefPtr<RefCountedBase> &maybeUnsafeMemberRef2 =
-        mMember->mRefCounted ? mMember->mRefCounted : safeRefCounted;
-    maybeUnsafeMemberRef2
-        ->method_test(); 
-                         
-                         
-                         
-                         
+    const RefPtr<RefCountedBase>& maybeUnsafeMemberRef1 = safeRefCounted ? safeRefCounted : mMember->mRefCounted;
+    maybeUnsafeMemberRef1->method_test(); 
+    const RefPtr<RefCountedBase>& maybeUnsafeMemberRef2 = mMember->mRefCounted ? mMember->mRefCounted : safeRefCounted;
+    maybeUnsafeMemberRef2->method_test(); 
   }
   MOZ_CAN_RUN_SCRIPT void bar() {
-    test2(
-        mMember->mRefCounted); 
-                               
-                               
-                               
-                               
+    test2(mMember->mRefCounted); 
 
-    const RefPtr<RefCountedBase> &unsafeMemberRef = mMember->mRefCounted;
+    const RefPtr<RefCountedBase>& unsafeMemberRef = mMember->mRefCounted;
     test2(unsafeMemberRef); 
-                            
-                            
-                            
-                            
 
     const RefPtr<RefCountedBase> safeRefCounted = new RefCountedBase;
-    const RefPtr<RefCountedBase> &maybeUnsafeMemberRef1 =
-        safeRefCounted ? safeRefCounted : mMember->mRefCounted;
-    test2(
-        maybeUnsafeMemberRef1); 
-                                
-                                
-                                
-                                
-    const RefPtr<RefCountedBase> &maybeUnsafeMemberRef2 =
-        mMember->mRefCounted ? mMember->mRefCounted : safeRefCounted;
-    test2(
-        maybeUnsafeMemberRef2); 
-                                
-                                
-                                
-                                
+    const RefPtr<RefCountedBase>& maybeUnsafeMemberRef1 = safeRefCounted ? safeRefCounted : mMember->mRefCounted;
+    test2(maybeUnsafeMemberRef1); 
+    const RefPtr<RefCountedBase>& maybeUnsafeMemberRef2 = mMember->mRefCounted ? mMember->mRefCounted : safeRefCounted;
+    test2(maybeUnsafeMemberRef2); 
   }
 };
 
 struct DisallowConstNonRefPtrMemberArgs {
-  RefCountedBase *const mRefCounted;
+  RefCountedBase* const mRefCounted;
   MOZ_CAN_RUN_SCRIPT void foo() {
-    mRefCounted
-        ->method_test(); 
-                         
-                         
-                         
+    mRefCounted->method_test(); 
 
-    RefCountedBase *const &unsafeMemberRefCounted = mRefCounted;
-    unsafeMemberRefCounted
-        ->method_test(); 
-                         
-                         
-                         
-                         
+    RefCountedBase* const& unsafeMemberRefCounted = mRefCounted;
+    unsafeMemberRefCounted->method_test(); 
   }
   MOZ_CAN_RUN_SCRIPT void bar() {
     test2(mRefCounted); 
-                        
-                        
-                        
 
-    RefCountedBase *const &unsafeMemberRefCounted = mRefCounted;
+    RefCountedBase* const& unsafeMemberRefCounted = mRefCounted;
     test2(unsafeMemberRefCounted); 
-                                   
-                                   
-                                   
-                                   
-                                   
   }
 };
 
 MOZ_CAN_RUN_SCRIPT void test_temporary_1() {
 #ifdef MOZ_CLANG_PLUGIN_ALPHA
-  RefPtr<RefCountedBase>(new RefCountedBase())
-      ->method_test(); 
-                       
-                       
+  RefPtr<RefCountedBase>(new RefCountedBase())->method_test(); 
 #else
   RefPtr<RefCountedBase>(new RefCountedBase())->method_test();
 #endif
@@ -741,66 +508,52 @@ MOZ_CAN_RUN_SCRIPT void test_temporary_2() {
 }
 
 struct WeakSmartPtr {
-  RefCountedBase *member;
+  RefCountedBase* member;
 
-  explicit WeakSmartPtr(RefCountedBase *arg) : member(arg) {}
+  explicit WeakSmartPtr(RefCountedBase* arg) : member(arg) {}
 
-  RefCountedBase *operator->() const { return member; }
+  RefCountedBase* operator->() const {
+    return member;
+  }
 
-  RefCountedBase &operator*() const { return *member; }
+  RefCountedBase& operator*() const {
+    return *member;
+  }
 
-  operator RefCountedBase *() const { return member; }
+  operator RefCountedBase*() const {
+    return member;
+  }
 };
 
 MOZ_CAN_RUN_SCRIPT void test_temporary_3() {
-  WeakSmartPtr(new RefCountedBase())
-      ->method_test(); 
-                       
-                       
-                       
-                       
+  WeakSmartPtr(new RefCountedBase())->method_test(); 
 }
 
 MOZ_CAN_RUN_SCRIPT void test_temporary_4() {
-  test_ref(*WeakSmartPtr(
-      new RefCountedBase())); 
-                              
-                              
-                              
-                              
-                              
+  test_ref(*WeakSmartPtr(new RefCountedBase())); 
 }
 
 MOZ_CAN_RUN_SCRIPT void test_temporary_5() {
-  test2(WeakSmartPtr(
-      new RefCountedBase())); 
-                              
-                              
-                              
-                              
-                              
+  test2(WeakSmartPtr(new RefCountedBase())); 
 }
 
-template <typename T> struct TArray {
-  TArray() { mArray[0] = new RefCountedBase(); }
-  T &operator[](unsigned int index) { return mArray[index]; }
+
+template<typename T>
+struct TArray {
+  TArray() {
+    mArray[0] = new RefCountedBase();
+  }
+  T& operator[](unsigned int index) { return mArray[index]; }
   T mArray[1];
 };
 
 struct DisallowRawTArrayElement {
-  TArray<RefCountedBase *> mArray;
+  TArray<RefCountedBase*> mArray;
   MOZ_CAN_RUN_SCRIPT void foo() {
-    mArray[0]
-        ->method_test(); 
-                         
-                         
-                         
+    mArray[0]->method_test(); 
   }
   MOZ_CAN_RUN_SCRIPT void bar() {
     test2(mArray[0]); 
-                      
-                      
-                      
   }
 };
 
@@ -808,25 +561,24 @@ struct DisallowRefPtrTArrayElement {
   TArray<RefPtr<RefCountedBase>> mArray;
   MOZ_CAN_RUN_SCRIPT void foo() {
     mArray[0]->method_test(); 
-                              
-                              
-                              
-                              
   }
   MOZ_CAN_RUN_SCRIPT void bar() {
     test2(mArray[0]); 
-                      
-                      
-                      
   }
 };
 
 struct AllowConstexprMembers {
-  static constexpr RefCountedBase *mRefCounted = nullptr;
-  static constexpr RefCountedBase *mRefCounted2 = nullptr;
-  MOZ_CAN_RUN_SCRIPT void foo() { mRefCounted->method_test(); }
-  MOZ_CAN_RUN_SCRIPT void bar() { test2(mRefCounted); }
-  MOZ_CAN_RUN_SCRIPT void baz() { test_ref(*mRefCounted); }
+  static constexpr RefCountedBase* mRefCounted = nullptr;
+  static constexpr RefCountedBase* mRefCounted2 = nullptr;
+  MOZ_CAN_RUN_SCRIPT void foo() {
+    mRefCounted->method_test();
+  }
+  MOZ_CAN_RUN_SCRIPT void bar() {
+    test2(mRefCounted);
+  }
+  MOZ_CAN_RUN_SCRIPT void baz() {
+    test_ref(*mRefCounted);
+  }
 };
 
 MOZ_CAN_RUN_SCRIPT void test_constexpr_1() {
@@ -841,173 +593,144 @@ MOZ_CAN_RUN_SCRIPT void test_constexpr_3() {
   test_ref(*AllowConstexprMembers::mRefCounted);
 }
 
-MOZ_CAN_RUN_SCRIPT void test_ternary_1(RefCountedBase *arg1,
-                                       RefCountedBase *arg2) {
+MOZ_CAN_RUN_SCRIPT void test_ternary_1(RefCountedBase* arg1, RefCountedBase* arg2) {
   (arg1 ? arg1 : arg2)->method_test();
-  RefCountedBase *&safeArg = arg1 ? arg1 : arg2;
+  RefCountedBase*& safeArg = arg1 ? arg1 : arg2;
   safeArg->method_test();
 }
 
-MOZ_CAN_RUN_SCRIPT void test_ternary_2(RefCountedBase *arg1,
-                                       RefCountedBase *arg2) {
+MOZ_CAN_RUN_SCRIPT void test_ternary_2(RefCountedBase* arg1, RefCountedBase* arg2) {
   test2(arg1 ? arg1 : arg2);
-  RefCountedBase *&safeArg = arg1 ? arg1 : arg2;
+  RefCountedBase*& safeArg = arg1 ? arg1 : arg2;
   test2(safeArg);
 }
 
-MOZ_CAN_RUN_SCRIPT void test_ternary_3(RefCountedBase *arg1,
-                                       RefCountedBase &arg2) {
+MOZ_CAN_RUN_SCRIPT void test_ternary_3(RefCountedBase* arg1, RefCountedBase& arg2) {
   (arg1 ? *arg1 : arg2).method_test();
-  RefCountedBase &safeArg = arg1 ? *arg1 : arg2;
+  RefCountedBase& safeArg = arg1 ? *arg1 : arg2;
   safeArg.method_test();
 }
 
-MOZ_CAN_RUN_SCRIPT void test_ternary_4(RefCountedBase *arg1,
-                                       RefCountedBase &arg2) {
+MOZ_CAN_RUN_SCRIPT void test_ternary_4(RefCountedBase* arg1, RefCountedBase& arg2) {
   test_ref(arg1 ? *arg1 : arg2);
-  RefCountedBase &safeArg = arg1 ? *arg1 : arg2;
+  RefCountedBase& safeArg = arg1 ? *arg1 : arg2;
   test_ref(safeArg);
 }
 
-MOZ_CAN_RUN_SCRIPT void test_ternary_5(RefCountedBase *arg) {
+MOZ_CAN_RUN_SCRIPT void test_ternary_5(RefCountedBase* arg) {
   RefPtr<RefCountedBase> local = new RefCountedBase();
   (arg ? arg : local.get())->method_test();
 }
 
-MOZ_CAN_RUN_SCRIPT void test_ternary_6(RefCountedBase *arg) {
+MOZ_CAN_RUN_SCRIPT void test_ternary_6(RefCountedBase* arg) {
   RefPtr<RefCountedBase> local = new RefCountedBase();
   test2(arg ? arg : local.get());
 }
 
-MOZ_CAN_RUN_SCRIPT void test_ternary_7(RefCountedBase *arg) {
+MOZ_CAN_RUN_SCRIPT void test_ternary_7(RefCountedBase* arg) {
   RefPtr<RefCountedBase> local = new RefCountedBase();
   (arg ? *arg : *local).method_test();
-  RefCountedBase &safeArgOrLocal = arg ? *arg : *local;
+  RefCountedBase& safeArgOrLocal = arg ? *arg : *local;
   safeArgOrLocal.method_test();
 }
 
-MOZ_CAN_RUN_SCRIPT void test_ternary_8(RefCountedBase *arg) {
+MOZ_CAN_RUN_SCRIPT void test_ternary_8(RefCountedBase* arg) {
   RefPtr<RefCountedBase> local = new RefCountedBase();
   test_ref(arg ? *arg : *local);
-  RefCountedBase &safeArgOrLocal = arg ? *arg : *local;
+  RefCountedBase& safeArgOrLocal = arg ? *arg : *local;
   test_ref(safeArgOrLocal);
 }
 
-MOZ_CAN_RUN_SCRIPT void test_ternary_9(RefCountedBase *arg) {
+MOZ_CAN_RUN_SCRIPT void test_ternary_9(RefCountedBase* arg) {
   (arg ? arg : AllowConstexprMembers::mRefCounted)->method_test();
 }
 
-MOZ_CAN_RUN_SCRIPT void test_ternary_10(RefCountedBase *arg) {
+MOZ_CAN_RUN_SCRIPT void test_ternary_10(RefCountedBase* arg) {
   test2(arg ? arg : AllowConstexprMembers::mRefCounted);
 }
 
-MOZ_CAN_RUN_SCRIPT void test_ternary_11(RefCountedBase *arg) {
+MOZ_CAN_RUN_SCRIPT void test_ternary_11(RefCountedBase* arg) {
   (arg ? *arg : *AllowConstexprMembers::mRefCounted).method_test();
-  RefCountedBase &safeArgOrMember =
-      arg ? *arg : *AllowConstexprMembers::mRefCounted;
+  RefCountedBase& safeArgOrMember = arg ? *arg : *AllowConstexprMembers::mRefCounted;
   safeArgOrMember.method_test();
 }
 
-MOZ_CAN_RUN_SCRIPT void test_ternary_12(RefCountedBase *arg) {
+MOZ_CAN_RUN_SCRIPT void test_ternary_12(RefCountedBase* arg) {
   test_ref(arg ? *arg : *AllowConstexprMembers::mRefCounted);
-  RefCountedBase &safeArgOrMember =
-      arg ? *arg : *AllowConstexprMembers::mRefCounted;
+  RefCountedBase& safeArgOrMember = arg ? *arg : *AllowConstexprMembers::mRefCounted;
   test_ref(safeArgOrMember);
 }
 
-MOZ_CAN_RUN_SCRIPT void test_ternary_13(RefCountedBase *arg1,
-                                        RefCountedBase &arg2) {
+MOZ_CAN_RUN_SCRIPT void test_ternary_13(RefCountedBase* arg1, RefCountedBase& arg2) {
   (arg1 ? arg1 : &arg2)->method_test();
 }
 
-MOZ_CAN_RUN_SCRIPT void test_ternary_44(RefCountedBase *arg1,
-                                        RefCountedBase &arg2) {
+MOZ_CAN_RUN_SCRIPT void test_ternary_44(RefCountedBase* arg1, RefCountedBase& arg2) {
   test2(arg1 ? arg1 : &arg2);
 }
 
 MOZ_CAN_RUN_SCRIPT void test_ternary_13(bool arg) {
-  (arg ? AllowConstexprMembers::mRefCounted
-       : AllowConstexprMembers::mRefCounted2)
-      ->method_test();
-  RefCountedBase *const &safeConstexprMember =
-      arg ? AllowConstexprMembers::mRefCounted
-          : AllowConstexprMembers::mRefCounted2;
+  (arg ?
+   AllowConstexprMembers::mRefCounted :
+   AllowConstexprMembers::mRefCounted2)->method_test();
+  RefCountedBase* const& safeConstexprMember = arg ? AllowConstexprMembers::mRefCounted : AllowConstexprMembers::mRefCounted2;
   safeConstexprMember->method_test();
 }
 
 MOZ_CAN_RUN_SCRIPT void test_ternary_14(bool arg) {
-  test2(arg ? AllowConstexprMembers::mRefCounted
-            : AllowConstexprMembers::mRefCounted2);
-  RefCountedBase *const &safeConstexprMember =
-      arg ? AllowConstexprMembers::mRefCounted
-          : AllowConstexprMembers::mRefCounted2;
+  test2(arg ?
+	AllowConstexprMembers::mRefCounted :
+	AllowConstexprMembers::mRefCounted2);
+  RefCountedBase* const& safeConstexprMember = arg ? AllowConstexprMembers::mRefCounted : AllowConstexprMembers::mRefCounted2;
   test2(safeConstexprMember);
 }
 
 MOZ_CAN_RUN_SCRIPT void test_ternary_15(bool arg) {
-  (arg ? *AllowConstexprMembers::mRefCounted
-       : *AllowConstexprMembers::mRefCounted2)
-      .method_test();
-  RefCountedBase &safeConstexprMember =
-      arg ? *AllowConstexprMembers::mRefCounted
-          : *AllowConstexprMembers::mRefCounted2;
+  (arg ?
+   *AllowConstexprMembers::mRefCounted :
+   *AllowConstexprMembers::mRefCounted2).method_test();
+  RefCountedBase& safeConstexprMember = arg ? *AllowConstexprMembers::mRefCounted : *AllowConstexprMembers::mRefCounted2;
   safeConstexprMember.method_test();
 }
 
 MOZ_CAN_RUN_SCRIPT void test_ternary_16(bool arg) {
-  test_ref(arg ? *AllowConstexprMembers::mRefCounted
-               : *AllowConstexprMembers::mRefCounted2);
-  RefCountedBase &safeConstexprMember =
-      arg ? *AllowConstexprMembers::mRefCounted
-          : *AllowConstexprMembers::mRefCounted2;
+  test_ref(arg ?
+	   *AllowConstexprMembers::mRefCounted :
+	   *AllowConstexprMembers::mRefCounted2);
+  RefCountedBase& safeConstexprMember = arg ? *AllowConstexprMembers::mRefCounted : *AllowConstexprMembers::mRefCounted2;
   test_ref(safeConstexprMember);
 }
 
-MOZ_CAN_RUN_SCRIPT void test_pointer_to_ref_1(RefCountedBase &arg) {
+MOZ_CAN_RUN_SCRIPT void test_pointer_to_ref_1(RefCountedBase& arg) {
   (&arg)->method_test();
 }
 
-MOZ_CAN_RUN_SCRIPT void test_pointer_to_ref_2(RefCountedBase &arg) {
+MOZ_CAN_RUN_SCRIPT void test_pointer_to_ref_2(RefCountedBase& arg) {
   test2(&arg);
 }
 
 struct DisallowMemberArgsViaReferenceAlias {
   RefPtr<RefCountedBase> mRefCounted;
   MOZ_CAN_RUN_SCRIPT void foo() {
-    RefPtr<RefCountedBase> &bogus = mRefCounted;
-    bogus
-        ->method_test(); 
-                         
-                         
-                         
+    RefPtr<RefCountedBase>& bogus = mRefCounted;
+    bogus->method_test(); 
   }
   MOZ_CAN_RUN_SCRIPT void bar() {
-    RefPtr<RefCountedBase> &bogus = mRefCounted;
+    RefPtr<RefCountedBase>& bogus = mRefCounted;
     test2(bogus); 
-                  
-                  
-                  
   }
 };
 
 struct DisallowMemberArgsViaReferenceAlias2 {
   RefPtr<RefCountedBase> mRefCountedArr[2];
   MOZ_CAN_RUN_SCRIPT void foo1() {
-    for (RefPtr<RefCountedBase> &item : mRefCountedArr) {
+    for (RefPtr<RefCountedBase>& item : mRefCountedArr) {
       item->method_test(); 
-                           
-                           
-                           
-                           
     }
   }
   MOZ_CAN_RUN_SCRIPT void foo2() {
-    for (auto &item : mRefCountedArr) {
+    for (auto& item : mRefCountedArr) {
       item->method_test(); 
-                           
-                           
-                           
-                           
     }
   }
   MOZ_CAN_RUN_SCRIPT void foo3() {
@@ -1021,19 +744,13 @@ struct DisallowMemberArgsViaReferenceAlias2 {
     }
   }
   MOZ_CAN_RUN_SCRIPT void bar1() {
-    for (RefPtr<RefCountedBase> &item : mRefCountedArr) {
+    for (RefPtr<RefCountedBase>& item : mRefCountedArr) {
       test2(item); 
-                   
-                   
-                   
     }
   }
   MOZ_CAN_RUN_SCRIPT void bar2() {
-    for (auto &item : mRefCountedArr) {
+    for (auto& item : mRefCountedArr) {
       test2(item); 
-                   
-                   
-                   
     }
   }
   MOZ_CAN_RUN_SCRIPT void bar3() {
@@ -1050,20 +767,20 @@ struct DisallowMemberArgsViaReferenceAlias2 {
 
 struct AllowMozKnownLiveMember {
 public:
-  MOZ_KNOWN_LIVE RefCountedBase *mWhatever;
+  MOZ_KNOWN_LIVE RefCountedBase* mWhatever;
   MOZ_KNOWN_LIVE RefPtr<RefCountedBase> mRefCountedWhatever;
-  MOZ_CAN_RUN_SCRIPT void fooPtr(RefCountedBase *aWhatever) {}
-  MOZ_CAN_RUN_SCRIPT void fooRef(RefCountedBase &aWhatever) {}
+  MOZ_CAN_RUN_SCRIPT void fooPtr(RefCountedBase* aWhatever) {}
+  MOZ_CAN_RUN_SCRIPT void fooRef(RefCountedBase& aWhatever) {}
   MOZ_CAN_RUN_SCRIPT void bar() {
     fooPtr(mWhatever);
     fooRef(*mWhatever);
     fooPtr(mRefCountedWhatever);
     fooRef(*mRefCountedWhatever);
 
-    RefCountedBase *&whateverRef = mWhatever;
+    RefCountedBase*& whateverRef = mWhatever;
     fooPtr(whateverRef);
     fooRef(*whateverRef);
-    RefPtr<RefCountedBase> &refCountedWhateverRef = mRefCountedWhatever;
+    RefPtr<RefCountedBase>&  refCountedWhateverRef = mRefCountedWhatever;
     fooPtr(refCountedWhateverRef);
     fooRef(*refCountedWhateverRef);
   }
@@ -1076,10 +793,10 @@ struct AllowMozKnownLiveMemberParent : AllowMozKnownLiveMember {
     fooPtr(mRefCountedWhatever);
     fooRef(*mRefCountedWhatever);
 
-    RefCountedBase *&whateverRef = mWhatever;
+    RefCountedBase*& whateverRef = mWhatever;
     fooPtr(whateverRef);
     fooRef(*whateverRef);
-    RefPtr<RefCountedBase> &refCountedWhateverRef = mRefCountedWhatever;
+    RefPtr<RefCountedBase>&  refCountedWhateverRef = mRefCountedWhatever;
     fooPtr(refCountedWhateverRef);
     fooRef(*refCountedWhateverRef);
   }
@@ -1087,30 +804,29 @@ struct AllowMozKnownLiveMemberParent : AllowMozKnownLiveMember {
 
 struct AllowMozKnownLiveParamMember {
 public:
-  MOZ_CAN_RUN_SCRIPT void foo(AllowMozKnownLiveMember &aAllow) {
+  MOZ_CAN_RUN_SCRIPT void foo(AllowMozKnownLiveMember& aAllow) {
     aAllow.fooPtr(aAllow.mWhatever);
     aAllow.fooRef(*aAllow.mWhatever);
     aAllow.fooPtr(aAllow.mRefCountedWhatever);
     aAllow.fooRef(*aAllow.mRefCountedWhatever);
 
-    RefCountedBase *&whateverRef = aAllow.mWhatever;
+    RefCountedBase*& whateverRef = aAllow.mWhatever;
     aAllow.fooPtr(whateverRef);
     aAllow.fooRef(*whateverRef);
-    RefPtr<RefCountedBase> &refCountedWhateverRef = aAllow.mRefCountedWhatever;
+    RefPtr<RefCountedBase>&  refCountedWhateverRef = aAllow.mRefCountedWhatever;
     aAllow.fooPtr(refCountedWhateverRef);
     aAllow.fooRef(*refCountedWhateverRef);
   }
-  MOZ_CAN_RUN_SCRIPT void bar(AllowMozKnownLiveMemberParent &aAllowParent) {
+  MOZ_CAN_RUN_SCRIPT void bar(AllowMozKnownLiveMemberParent& aAllowParent) {
     aAllowParent.fooPtr(aAllowParent.mWhatever);
     aAllowParent.fooRef(*aAllowParent.mWhatever);
     aAllowParent.fooPtr(aAllowParent.mRefCountedWhatever);
     aAllowParent.fooRef(*aAllowParent.mRefCountedWhatever);
 
-    RefCountedBase *&whateverRef = aAllowParent.mWhatever;
+    RefCountedBase*& whateverRef = aAllowParent.mWhatever;
     aAllowParent.fooPtr(whateverRef);
     aAllowParent.fooRef(*whateverRef);
-    RefPtr<RefCountedBase> &refCountedWhateverRef =
-        aAllowParent.mRefCountedWhatever;
+    RefPtr<RefCountedBase>&  refCountedWhateverRef = aAllowParent.mRefCountedWhatever;
     aAllowParent.fooPtr(refCountedWhateverRef);
     aAllowParent.fooRef(*refCountedWhateverRef);
   }
@@ -1118,142 +834,48 @@ public:
 
 MOZ_CAN_RUN_SCRIPT void AllowMozKnownLiveMemberInAutoStorage() {
   AllowMozKnownLiveMember inStack;
-  AllowMozKnownLiveMember *inHeap = new AllowMozKnownLiveMember();
+  AllowMozKnownLiveMember* inHeap = new AllowMozKnownLiveMember();
   inStack.fooPtr(inStack.mWhatever);
   inStack.fooRef(*inStack.mWhatever);
   inStack.fooPtr(inStack.mRefCountedWhatever);
   inStack.fooRef(*inStack.mRefCountedWhatever);
-  RefCountedBase *&whateverRefInStack = inStack.mWhatever;
+  RefCountedBase*& whateverRefInStack = inStack.mWhatever;
   inStack.fooPtr(whateverRefInStack);
   inStack.fooRef(*whateverRefInStack);
-  RefPtr<RefCountedBase> &refCountedWhateverRefInStack =
-      inStack.mRefCountedWhatever;
+  RefPtr<RefCountedBase>&  refCountedWhateverRefInStack = inStack.mRefCountedWhatever;
   inStack.fooPtr(refCountedWhateverRefInStack);
   inStack.fooRef(*refCountedWhateverRefInStack);
 
-  inStack.fooPtr(
-      inHeap
-          ->mWhatever); 
-                        
-                        
-                        
-  inStack.fooRef(
-      *inHeap->mWhatever); 
-                           
-                           
-                           
-                           
-  inStack.fooPtr(
-      inHeap
-          ->mRefCountedWhatever); 
-                                  
-                                  
-                                  
-                                  
-                                  
-  inStack.fooRef(
-      *inHeap->mRefCountedWhatever); 
-                                     
-                                     
-                                     
-                                     
-                                     
-                                     
-  RefCountedBase *&whateverRefInHeap = inHeap->mWhatever;
-  inStack.fooPtr(
-      whateverRefInHeap); 
-                          
-                          
-                          
-                          
-  inStack.fooRef(
-      *whateverRefInHeap); 
-                           
-                           
-                           
-                           
-  RefPtr<RefCountedBase> &refCountedWhateverRefInHeap =
-      inHeap->mRefCountedWhatever;
-  inStack.fooPtr(
-      refCountedWhateverRefInHeap); 
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-  inStack.fooRef(
-      *refCountedWhateverRefInHeap); 
-                                     
-                                     
-                                     
-                                     
-                                     
-                                     
+  inStack.fooPtr(inHeap->mWhatever); 
+  inStack.fooRef(*inHeap->mWhatever); 
+  inStack.fooPtr(inHeap->mRefCountedWhatever); 
+  inStack.fooRef(*inHeap->mRefCountedWhatever); 
+  RefCountedBase*& whateverRefInHeap = inHeap->mWhatever;
+  inStack.fooPtr(whateverRefInHeap); 
+  inStack.fooRef(*whateverRefInHeap); 
+  RefPtr<RefCountedBase>&  refCountedWhateverRefInHeap = inHeap->mRefCountedWhatever;
+  inStack.fooPtr(refCountedWhateverRefInHeap); 
+  inStack.fooRef(*refCountedWhateverRefInHeap); 
 }
 
 struct DisallowMozKnownLiveMemberNotFromKnownLive {
-  AllowMozKnownLiveMember *mMember;
-  MOZ_CAN_RUN_SCRIPT void fooPtr(RefCountedBase *aWhatever) {}
-  MOZ_CAN_RUN_SCRIPT void fooRef(RefCountedBase &aWhatever) {}
+  AllowMozKnownLiveMember* mMember;
+  MOZ_CAN_RUN_SCRIPT void fooPtr(RefCountedBase* aWhatever) {}
+  MOZ_CAN_RUN_SCRIPT void fooRef(RefCountedBase& aWhatever) {}
   MOZ_CAN_RUN_SCRIPT void bar() {
     fooPtr(mMember->mWhatever); 
-                                
-                                
-                                
-                                
-    fooRef(
-        *mMember->mWhatever); 
-                              
-                              
-                              
-                              
-    fooPtr(
-        mMember->mRefCountedWhatever); 
-                                       
-                                       
-                                       
-                                       
-                                       
-                                       
-    fooRef(
-        *mMember->mRefCountedWhatever); 
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-    RefCountedBase *&whateverRef = mMember->mWhatever;
+    fooRef(*mMember->mWhatever); 
+    fooPtr(mMember->mRefCountedWhatever); 
+    fooRef(*mMember->mRefCountedWhatever); 
+    RefCountedBase*& whateverRef = mMember->mWhatever;
     fooPtr(whateverRef); 
-                         
-                         
-                         
-    fooRef(
-        *whateverRef); 
-                       
-                       
-                       
-    RefPtr<RefCountedBase> &refCountedWhateverRef =
-        mMember->mRefCountedWhatever;
-    fooPtr(
-        refCountedWhateverRef); 
-                                
-                                
-                                
-                                
+    fooRef(*whateverRef); 
+    RefPtr<RefCountedBase>& refCountedWhateverRef = mMember->mRefCountedWhatever;
+    fooPtr(refCountedWhateverRef); 
     fooRef(*refCountedWhateverRef); 
-                                    
-                                    
-                                    
-                                    
-                                    
   }
 };
 
 void IncorrectlyUnmarkedEarlyDeclaration(); 
-                                            
 
-MOZ_CAN_RUN_SCRIPT void IncorrectlyUnmarkedEarlyDeclaration() {
-}; 
-   
+MOZ_CAN_RUN_SCRIPT void IncorrectlyUnmarkedEarlyDeclaration() {}; 

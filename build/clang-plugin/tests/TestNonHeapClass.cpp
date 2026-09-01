@@ -8,11 +8,12 @@ struct MOZ_NONHEAP_CLASS NonHeap {
   void *operator new(size_t blah, char *buffer) { return buffer; }
 };
 
-template <class T> struct MOZ_NONHEAP_CLASS TemplateClass {
+template <class T>
+struct MOZ_NONHEAP_CLASS TemplateClass {
   T i;
 };
 
-void gobble(void *) {}
+void gobble(void *) { }
 
 void misuseNonHeapClass(int len) {
   NonHeap valid;
@@ -25,19 +26,9 @@ void misuseNonHeapClass(int len) {
   gobble(&alsoValid[0]);
 
   gobble(new NonHeap); 
-                       
-                       
   gobble(new NonHeap[10]); 
-                           
-                           
   gobble(new TemplateClass<int>); 
-                                  
-                                  
-                                  
-  gobble(len <= 5 ? &valid
-                  : new NonHeap); 
-                                  
-                                  
+  gobble(len <= 5 ? &valid : new NonHeap); 
 
   char buffer[sizeof(NonHeap)];
   gobble(new (buffer) NonHeap);
@@ -46,8 +37,6 @@ void misuseNonHeapClass(int len) {
 NonHeap validStatic;
 struct RandomClass {
   NonHeap nonstaticMember; 
-                           
-                           
   static NonHeap staticMember;
 };
 struct MOZ_NONHEAP_CLASS RandomNonHeapClass {
@@ -55,30 +44,19 @@ struct MOZ_NONHEAP_CLASS RandomNonHeapClass {
   static NonHeap staticMember;
 };
 
-struct BadInherit : NonHeap {
-}; 
-   
+struct BadInherit : NonHeap {}; 
 struct MOZ_NONHEAP_CLASS GoodInherit : NonHeap {};
 
 void useStuffWrongly() {
-  gobble(new BadInherit);  
-                           
-                           
+  gobble(new BadInherit); 
   gobble(new RandomClass); 
-                           
-                           
 }
 
 
 struct MOZ_STACK_CLASS StackClass {};
 struct MOZ_NONHEAP_CLASS InferredStackClass : GoodInherit {
   NonHeap nonstaticMember;
-  StackClass
-      stackClass; 
-                  
+  StackClass stackClass; 
 };
 
-InferredStackClass
-    global; 
-            
-            
+InferredStackClass global; 

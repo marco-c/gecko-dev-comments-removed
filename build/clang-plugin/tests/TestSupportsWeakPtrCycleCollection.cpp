@@ -2,19 +2,16 @@
 
 
 
-#include "nsCycleCollectionParticipant.h"
 #include "nsISupports.h"
 #include "nsISupportsImpl.h"
-#include "nsWeakReference.h"
 #include <mozilla/WeakPtr.h>
+#include "nsCycleCollectionParticipant.h"
+#include "nsWeakReference.h"
 
 
 
-class BadClass
-    : public nsISupports, 
-                          
-                          
-      public mozilla::SupportsWeakPtr {
+class BadClass : public nsISupports, 
+                 public mozilla::SupportsWeakPtr {
 public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(BadClass)
@@ -26,19 +23,18 @@ protected:
 NS_IMPL_CYCLE_COLLECTING_ADDREF(BadClass)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(BadClass)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(BadClass)
-NS_INTERFACE_MAP_ENTRY(nsISupports)
+  NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTION_CLASS(BadClass)
-NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(
-    BadClass) 
-              
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(BadClass) 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(BadClass)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 
 
-class GoodClass : public nsISupports, public mozilla::SupportsWeakPtr {
+class GoodClass : public nsISupports,
+                  public mozilla::SupportsWeakPtr {
 public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(GoodClass)
@@ -50,13 +46,14 @@ protected:
 NS_IMPL_CYCLE_COLLECTING_ADDREF(GoodClass)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(GoodClass)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(GoodClass)
-NS_INTERFACE_MAP_ENTRY(nsISupports)
+  NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTION_WEAK_PTR(GoodClass)
 
 
 
-class ParentClass : public nsISupports, public mozilla::SupportsWeakPtr {
+class ParentClass : public nsISupports,
+                    public mozilla::SupportsWeakPtr {
 public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(ParentClass)
@@ -68,7 +65,7 @@ protected:
 NS_IMPL_CYCLE_COLLECTING_ADDREF(ParentClass)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(ParentClass)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ParentClass)
-NS_INTERFACE_MAP_ENTRY(nsISupports)
+  NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTION_WEAK_PTR(ParentClass)
 
@@ -90,16 +87,12 @@ NS_IMPL_CYCLE_COLLECTION_INHERITED(ChildClass, ParentClass)
 
 
 
-class NotCycleCollected : public mozilla::SupportsWeakPtr {};
+class NotCycleCollected : public mozilla::SupportsWeakPtr {
+};
 
 
 
-class BadWeakRefClass
-    : public nsSupportsWeakReference { 
-                                       
-                                       
-                                       
-                                       
+class BadWeakRefClass : public nsSupportsWeakReference { 
 public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(BadWeakRefClass)
@@ -111,16 +104,13 @@ protected:
 NS_IMPL_CYCLE_COLLECTING_ADDREF(BadWeakRefClass)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(BadWeakRefClass)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(BadWeakRefClass)
-NS_INTERFACE_MAP_ENTRY(nsISupports)
+  NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTION_CLASS(BadWeakRefClass)
-NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(
-    BadWeakRefClass) 
-                     
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(BadWeakRefClass) 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(BadWeakRefClass)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
-
 
 
 
@@ -136,11 +126,11 @@ protected:
 NS_IMPL_CYCLE_COLLECTING_ADDREF(GoodWeakRefClass)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(GoodWeakRefClass)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(GoodWeakRefClass)
-NS_INTERFACE_MAP_ENTRY(nsISupports)
+  NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTION_CLASS(GoodWeakRefClass)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(GoodWeakRefClass)
-NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_REFERENCE
+  NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_REFERENCE
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(GoodWeakRefClass)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END

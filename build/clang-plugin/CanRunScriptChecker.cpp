@@ -231,28 +231,29 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
   
   
   AstMatcher->addMatcher(
-      expr(anyOf(
-               
-               cxxMemberCallExpr(
-                   
-                   OptionalInvalidExplicitArg,
-                   
-                   optionally(on(InvalidArg)), expr().bind("callExpr")),
-               
-               callExpr(
-                   
-                   OptionalInvalidExplicitArg, expr().bind("callExpr")),
-               
-               cxxConstructExpr(
-                   
-                   OptionalInvalidExplicitArg, expr().bind("constructExpr"))),
+      expr(
+          anyOf(
+              
+              cxxMemberCallExpr(
+                  
+                  OptionalInvalidExplicitArg,
+                  
+                  optionally(on(InvalidArg)), expr().bind("callExpr")),
+              
+              callExpr(
+                  
+                  OptionalInvalidExplicitArg, expr().bind("callExpr")),
+              
+              cxxConstructExpr(
+                  
+                  OptionalInvalidExplicitArg, expr().bind("constructExpr"))),
 
-           
-           optionally(forFunction(
-               functionDecl().bind("nonCanRunScriptParentFunction"))),
+              
+              optionally(forFunction(functionDecl().bind("nonCanRunScriptParentFunction"))),
 
-           
-           isFirstParty()),
+              
+              isFirstParty()
+              ),
       this);
 }
 

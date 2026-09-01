@@ -1,63 +1,40 @@
-#define MOZ_NEEDS_MEMMOVABLE_TYPE                                              \
-  __attribute__((annotate("moz_needs_memmovable_type")))
-#define MOZ_RUNINIT __attribute__((annotate("moz_global_var")))
+#define MOZ_NEEDS_MEMMOVABLE_TYPE __attribute__((annotate("moz_needs_memmovable_type")))
+#define MOZ_RUNINIT  __attribute__((annotate("moz_global_var")))
 
-template <class T> class MOZ_NEEDS_MEMMOVABLE_TYPE Mover {
-  T mForceInst;
-}; 
-   
+template<class T>
+class MOZ_NEEDS_MEMMOVABLE_TYPE Mover { T mForceInst; }; 
 
-template <class T> struct MOZ_NEEDS_MEMMOVABLE_TYPE PtrMover {
-  T *mForceInst;
-};
+template<class T>
+struct MOZ_NEEDS_MEMMOVABLE_TYPE PtrMover { T* mForceInst; };
 
 namespace std {
 
 
-template <class C>
-class basic_string { 
-                     
-                     
-                     
-                     
-                     
-public:
+template<class C> class basic_string { 
+ public:
   basic_string();
-  basic_string(const basic_string &);
-  basic_string(basic_string &&);
-  basic_string &operator=(const basic_string &);
-  basic_string &operator=(basic_string &&);
+  basic_string(const basic_string&);
+  basic_string(basic_string&&);
+  basic_string& operator=(const basic_string&);
+  basic_string& operator=(basic_string&&);
   ~basic_string();
 };
 typedef basic_string<char> string;
-template <class T, class U> class pair {
-  T mT;
-  U mU;
-}; 
-   
+template<class T, class U> class pair { T mT; U mU; }; 
 
-struct has_nontrivial_dtor { 
-                             
-                             
-                             
+struct has_nontrivial_dtor {  
   has_nontrivial_dtor() = default;
   ~has_nontrivial_dtor();
 };
-struct has_nontrivial_copy { 
-                             
-                             
-                             
+struct has_nontrivial_copy {  
   has_nontrivial_copy() = default;
-  has_nontrivial_copy(const has_nontrivial_copy &);
-  has_nontrivial_copy &operator=(const has_nontrivial_copy &);
+  has_nontrivial_copy(const has_nontrivial_copy&);
+  has_nontrivial_copy& operator=(const has_nontrivial_copy&);
 };
-struct has_nontrivial_move { 
-                             
-                             
-                             
+struct has_nontrivial_move {  
   has_nontrivial_move() = default;
-  has_nontrivial_move(const has_nontrivial_move &);
-  has_nontrivial_move &operator=(const has_nontrivial_move &);
+  has_nontrivial_move(const has_nontrivial_move&);
+  has_nontrivial_move& operator=(const has_nontrivial_move&);
 };
 struct has_trivial_dtor {
   has_trivial_dtor() = default;
@@ -65,79 +42,54 @@ struct has_trivial_dtor {
 };
 struct has_trivial_copy {
   has_trivial_copy() = default;
-  has_trivial_copy(const has_trivial_copy &) = default;
-  has_trivial_copy &operator=(const has_trivial_copy &) = default;
+  has_trivial_copy(const has_trivial_copy&) = default;
+  has_trivial_copy& operator=(const has_trivial_copy&) = default;
 };
 struct has_trivial_move {
   has_trivial_move() = default;
-  has_trivial_move(const has_trivial_move &) = default;
-  has_trivial_move &operator=(const has_trivial_move &) = default;
+  has_trivial_move(const has_trivial_move&) = default;
+  has_trivial_move& operator=(const has_trivial_move&) = default;
 };
 
-template <class T> struct default_delete {
-  void operator()(T *ptr) { delete ptr; }
+template<class T>
+struct default_delete {
+  void operator()( T* ptr ) { delete ptr; }
 };
 
-template <typename T, typename D = default_delete<T>>
+template <typename T, typename D=default_delete<T>>
 struct unique_ptr { 
-                    
-                    
-                    
-  T *ptr;
+  T * ptr;
   D del;
   unique_ptr() = default;
   unique_ptr(T *p);
-  unique_ptr(unique_ptr const &) = delete;
+  unique_ptr(unique_ptr const&) = delete;
   unique_ptr(unique_ptr &&);
   ~unique_ptr();
 };
-} 
+}
 
-class HasString {
-  std::string m;
-}; 
-   
+class HasString { std::string m; }; 
 
-template <class T> struct custom_deleter : std::default_delete<T> {
+template<class T>
+struct custom_deleter : std::default_delete<T> {
   std::string m = {};
 };
 
-MOZ_RUNINIT static Mover<std::string>
-    bad; 
-         
-MOZ_RUNINIT static Mover<HasString>
-    bad_mem; 
-             
+MOZ_RUNINIT  static Mover<std::string> bad; 
+MOZ_RUNINIT  static Mover<HasString> bad_mem; 
 static Mover<std::pair<bool, int>> good;
-MOZ_RUNINIT static Mover<std::pair<bool, std::string>>
-    not_good; 
-              
+MOZ_RUNINIT static Mover<std::pair<bool, std::string>> not_good; 
 
-static Mover<std::has_nontrivial_dtor>
-    nontrivial_dtor; 
-                     
-static Mover<std::has_nontrivial_copy>
-    nontrivial_copy; 
-                     
-static Mover<std::has_nontrivial_move>
-    nontrivial_move; 
-                     
+static Mover<std::has_nontrivial_dtor> nontrivial_dtor; 
+static Mover<std::has_nontrivial_copy> nontrivial_copy; 
+static Mover<std::has_nontrivial_move> nontrivial_move; 
 static Mover<std::has_trivial_dtor> trivial_dtor;
 static Mover<std::has_trivial_copy> trivial_copy;
 static Mover<std::has_trivial_move> trivial_move;
 
-static Mover<std::pair<bool, std::has_nontrivial_dtor>>
-    pair_nontrivial_dtor; 
-                          
-                          
-static Mover<std::pair<bool, std::has_nontrivial_copy>>
-    pair_nontrivial_copy; 
-                          
-                          
-static Mover<std::pair<bool, std::has_nontrivial_move>>
-    pair_nontrivial_move; 
-                          
-                          
+static Mover<std::pair<bool, std::has_nontrivial_dtor>> pair_nontrivial_dtor; 
+static Mover<std::pair<bool, std::has_nontrivial_copy>> pair_nontrivial_copy; 
+static Mover<std::pair<bool, std::has_nontrivial_move>> pair_nontrivial_move; 
 static Mover<std::pair<bool, std::has_trivial_dtor>> pair_trivial_dtor;
 static Mover<std::pair<bool, std::has_trivial_copy>> pair_trivial_copy;
 static Mover<std::pair<bool, std::has_trivial_move>> pair_trivial_move;
@@ -146,11 +98,7 @@ static Mover<std::unique_ptr<int>> a_good_unique_ptr;
 
 
 static Mover<std::unique_ptr<std::string>> another_good_unique_ptr;
-static Mover<std::unique_ptr<std::string, custom_deleter<std::string>>>
-    bad_unique_ptr; 
-                    
-                    
-                    
+static Mover<std::unique_ptr<std::string, custom_deleter<std::string>>> bad_unique_ptr; 
 
 struct Fwd;
 

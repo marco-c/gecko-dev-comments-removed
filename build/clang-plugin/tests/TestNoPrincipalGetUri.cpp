@@ -1,6 +1,6 @@
 class nsIPrincipal {
 public:
-  void GetURI(int foo) {};
+  void GetURI(int foo){};
 };
 
 class SomePrincipal : public nsIPrincipal {
@@ -18,17 +18,14 @@ public:
 void f() {
   nsIPrincipal *a = new SomePrincipal();
   a->GetURI(0); 
-                
-                
 
   ::nsIPrincipal *b = new NullPrincipal();
   b->GetURI(0); 
-                
-                
 
   SomeURI *c = new SomeURI();
   c->GetURI(0);
 
   SomePrincipal *d = new SomePrincipal();
   d->GetURI(0);
+
 }

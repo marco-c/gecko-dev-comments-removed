@@ -1,12 +1,13 @@
-#define MOZ_ENUM_SERIALIZER_ALLOW_SENTINEL_UPPER_BOUND                         \
+#define MOZ_ENUM_SERIALIZER_ALLOW_SENTINEL_UPPER_BOUND \
   __attribute__((annotate("moz_enum_serializer_allow_sentinel_upper_bound")))
-#define MOZ_ENUM_SERIALIZER_ALLOW_MIN_MISMATCH                                 \
+#define MOZ_ENUM_SERIALIZER_ALLOW_MIN_MISMATCH \
   __attribute__((annotate("moz_enum_serializer_allow_min_mismatch")))
 
 
 template <typename E, typename EnumValidator> struct EnumSerializer {};
 
-template <typename E, E MinLegal, E HighBound> class ContiguousEnumValidator {};
+template <typename E, E MinLegal, E HighBound>
+class ContiguousEnumValidator {};
 
 template <typename E, E MinLegal, E MaxLegal>
 class ContiguousEnumValidatorInclusive {};
@@ -18,10 +19,10 @@ struct ContiguousEnumSerializer
 template <typename E, E MinLegal, E MaxLegal>
 struct ContiguousEnumSerializerInclusive
     : EnumSerializer<E,
-                     ContiguousEnumValidatorInclusive<E, MinLegal, MaxLegal>> {
-};
+                     ContiguousEnumValidatorInclusive<E, MinLegal, MaxLegal>> {};
 
-template <typename E, E AllBits> struct BitFlagsEnumSerializer {};
+template <typename E, E AllBits>
+struct BitFlagsEnumSerializer {};
 
 template <class P> struct ParamTraits;
 
@@ -31,33 +32,22 @@ enum class WithCount { A, B, C, OP_COUNT };
 
 template <>
 struct ParamTraits<WithCount> 
-                              
-                              
-                              
-                              
-    : ContiguousEnumSerializerInclusive<WithCount, WithCount::A,
-                                        WithCount::OP_COUNT> {};
+    : ContiguousEnumSerializerInclusive<
+          WithCount, WithCount::A, WithCount::OP_COUNT> {};
 
 enum class WithMax { None, Partial, Full, MAX };
 
 template <>
-struct ParamTraits<
-    WithMax> 
-             
-             
-    : ContiguousEnumSerializerInclusive<WithMax, WithMax::None, WithMax::MAX> {
-};
+struct ParamTraits<WithMax> 
+    : ContiguousEnumSerializerInclusive<
+          WithMax, WithMax::None, WithMax::MAX> {};
 
 enum class WithInvalid { Default, Verbose, Invalid };
 
 template <>
 struct ParamTraits<WithInvalid> 
-                                
-                                
-                                
-                                
-    : ContiguousEnumSerializerInclusive<WithInvalid, WithInvalid::Default,
-                                        WithInvalid::Invalid> {};
+    : ContiguousEnumSerializerInclusive<
+          WithInvalid, WithInvalid::Default, WithInvalid::Invalid> {};
 
 
 
@@ -65,11 +55,8 @@ enum class SkippedFirst { First = 0, Second = 1, Third = 2, NUM };
 
 template <>
 struct ParamTraits<SkippedFirst> 
-                                 
-                                 
-                                 
-    : ContiguousEnumSerializer<SkippedFirst, SkippedFirst::Second,
-                               SkippedFirst::NUM> {};
+    : ContiguousEnumSerializer<
+          SkippedFirst, SkippedFirst::Second, SkippedFirst::NUM> {};
 
 
 
@@ -77,28 +64,18 @@ enum class Rotation { R0 = 0, R90 = 90, R180 = 180, R270 = 270, SENTINEL };
 
 template <>
 struct ParamTraits<Rotation> 
-                             
-                             
-                             
-    : ContiguousEnumSerializer<Rotation, Rotation::R0, Rotation::SENTINEL> {};
+    : ContiguousEnumSerializer<
+          Rotation, Rotation::R0, Rotation::SENTINEL> {};
 
 
 
-enum class Duplicate {
-  First = 1,
-  Second = 2,
-  AlsoSecond = 2,
-  Fourth = 4,
-  Count
-};
+
+enum class Duplicate { First = 1, Second = 2, AlsoSecond = 2, Fourth = 4, Count };
 
 template <>
 struct ParamTraits<Duplicate> 
-                              
-                              
-                              
-    : ContiguousEnumSerializer<Duplicate, Duplicate::First, Duplicate::Count> {
-};
+    : ContiguousEnumSerializer<
+          Duplicate, Duplicate::First, Duplicate::Count> {};
 
 
 
@@ -113,10 +90,8 @@ enum class Flags {
 
 template <>
 struct ParamTraits<Flags> 
-                          
-                          
-                          
-    : ContiguousEnumSerializer<Flags, Flags::NONE, Flags::SENTINEL> {};
+    : ContiguousEnumSerializer<
+          Flags, Flags::NONE, Flags::SENTINEL> {};
 
 
 
@@ -138,66 +113,43 @@ struct ParamTraits<GoodInclusive>
 enum class ComboIssue { Clear = 0, Over = 1, Xor = 2, OP_COUNT };
 
 template <>
-struct ParamTraits<
-    ComboIssue> 
-                
-                
-                
-                
-                
-                
-    : ContiguousEnumSerializerInclusive<ComboIssue, ComboIssue::Over,
-                                        ComboIssue::OP_COUNT> {};
+struct ParamTraits<ComboIssue> 
+    : ContiguousEnumSerializerInclusive<
+          ComboIssue, ComboIssue::Over, ComboIssue::OP_COUNT> {};
 
 
 
-enum class StorageAccess {
-  Deny = -2,
-  Default = -1,
-  Allow = 0,
-  Prompt = 1,
-  Grant = 3
-};
+enum class StorageAccess { Deny = -2, Default = -1, Allow = 0, Prompt = 1, Grant = 3 };
 
 template <>
-struct ParamTraits<
-    StorageAccess> 
-                   
-                   
-    : ContiguousEnumSerializerInclusive<StorageAccess, StorageAccess::Deny,
-                                        StorageAccess::Grant> {};
+struct ParamTraits<StorageAccess> 
+    : ContiguousEnumSerializerInclusive<
+          StorageAccess, StorageAccess::Deny, StorageAccess::Grant> {};
 
 
 
 enum class MissedHigh { A = 0, B = 1, C = 2, D = 3 };
 
 template <>
-struct ParamTraits<
-    MissedHigh> 
-                
-                
-    : ContiguousEnumSerializerInclusive<MissedHigh, MissedHigh::A,
-                                        MissedHigh::B> {};
+struct ParamTraits<MissedHigh> 
+    : ContiguousEnumSerializerInclusive<
+          MissedHigh, MissedHigh::A, MissedHigh::B> {};
 
 
 
 enum class MissedHighExcl { A = 0, B = 1, C = 2, D = 3, Count };
 
 template <>
-struct ParamTraits<
-    MissedHighExcl> 
-                    
-                    
-    : ContiguousEnumSerializer<MissedHighExcl, MissedHighExcl::A,
-                               MissedHighExcl::C> {};
+struct ParamTraits<MissedHighExcl> 
+    : ContiguousEnumSerializer<
+          MissedHighExcl, MissedHighExcl::A, MissedHighExcl::C> {};
 
 
 
 enum class AllowedSentinel { A, B, C, END };
 
 template <>
-struct MOZ_ENUM_SERIALIZER_ALLOW_SENTINEL_UPPER_BOUND
-    ParamTraits<AllowedSentinel>
+struct MOZ_ENUM_SERIALIZER_ALLOW_SENTINEL_UPPER_BOUND ParamTraits<AllowedSentinel>
     : ContiguousEnumSerializerInclusive<AllowedSentinel, AllowedSentinel::A,
                                         AllowedSentinel::END> {};
 

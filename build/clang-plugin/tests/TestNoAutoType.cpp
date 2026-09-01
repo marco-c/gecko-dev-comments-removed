@@ -1,51 +1,28 @@
 #define MOZ_NON_AUTOABLE __attribute__((annotate("moz_non_autoable")))
-#define MOZ_RUNINIT __attribute__((annotate("moz_global_var")))
+#define MOZ_RUNINIT  __attribute__((annotate("moz_global_var")))
 
-template <class T> struct MOZ_NON_AUTOABLE ExplicitTypeTemplate {};
+template<class T>
+struct MOZ_NON_AUTOABLE ExplicitTypeTemplate {};
 struct MOZ_NON_AUTOABLE ExplicitType {};
 struct NonExplicitType {};
 
 void f() {
   {
     ExplicitType a;
-    auto b = a;   
-                  
-                  
+    auto b = a; 
     auto &br = a; 
-                  
-                  
-    const auto &brc =
-        a; 
-           
-           
+    const auto &brc = a; 
     auto *bp = &a; 
-                   
-                   
-    const auto *bpc =
-        &a; 
-            
-            
+    const auto *bpc = &a; 
   }
 
   {
     ExplicitTypeTemplate<int> a;
-    auto b = a;   
-                  
-                  
+    auto b = a; 
     auto &br = a; 
-                  
-                  
-    const auto &brc =
-        a; 
-           
-           
+    const auto &brc = a; 
     auto *bp = &a; 
-                   
-                   
-    const auto *bpc =
-        &a; 
-            
-            
+    const auto *bpc = &a; 
   }
 
   {
@@ -59,9 +36,7 @@ void f() {
 }
 
 ExplicitType A;
-MOZ_RUNINIT auto B = A; 
-                        
-                        
+MOZ_RUNINIT  auto B = A; 
 
 NonExplicitType C;
-MOZ_RUNINIT auto D = C;
+MOZ_RUNINIT  auto D = C;

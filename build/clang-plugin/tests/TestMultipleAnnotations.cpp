@@ -1,22 +1,19 @@
-#define MOZ_NON_TEMPORARY_CLASS                                                \
-  __attribute__((annotate("moz_non_temporary_class")))
+#define MOZ_NON_TEMPORARY_CLASS __attribute__((annotate("moz_non_temporary_class")))
 #define MOZ_STACK_CLASS __attribute__((annotate("moz_stack_class")))
 
 class MOZ_NON_TEMPORARY_CLASS MOZ_STACK_CLASS TestClass {};
 
 TestClass foo; 
-               
-               
 
-TestClass f() {
+TestClass f()
+{
   TestClass bar;
   return bar;
 }
 
-void gobbleref(const TestClass &) {}
+void gobbleref(const TestClass&) { }
 
-void g() {
+void g()
+{
   gobbleref(f()); 
-                  
-                  
 }

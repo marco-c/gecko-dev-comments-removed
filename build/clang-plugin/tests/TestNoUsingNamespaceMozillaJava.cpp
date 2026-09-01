@@ -1,27 +1,29 @@
 namespace mozilla {
 namespace java {
-namespace sdk {} 
+namespace sdk {
+}  
 
-namespace future {} 
-} 
-} 
+namespace future {
+}  
+}  
+}  
 
 namespace mozilla {
-using namespace java; 
-                      
-using namespace java::future; 
-                              
-} 
+  using namespace java;  
+  using namespace java::future;  
+}
 
-using namespace mozilla::java::sdk; 
-                                    
+using namespace mozilla::java::sdk;  
 
 namespace shouldPass {
-namespace java {}
+  namespace java {
+  }
 
-using namespace java;
-} 
+  using namespace java;
+}
 
 using namespace shouldPass::java;
 
-void test() {}
+
+void test() {
+}

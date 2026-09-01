@@ -8,14 +8,14 @@
 
 
 
-#define NS_DECL_CYCLE_COLLECTING_ISUPPORTS_META(...)                           \
-  virtual void AddRef() __VA_ARGS__;                                           \
+#define NS_DECL_CYCLE_COLLECTING_ISUPPORTS_META(...)                    \
+  virtual void AddRef() __VA_ARGS__;                                    \
   virtual void Release() __VA_ARGS__;
 
-#define NS_DECL_CYCLE_COLLECTING_ISUPPORTS                                     \
+#define NS_DECL_CYCLE_COLLECTING_ISUPPORTS \
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_META(override)
 
-#define NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL                               \
+#define NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL \
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_META(final)
 
 struct Base {
@@ -24,13 +24,8 @@ struct Base {
 };
 
 
-struct BadFinal final
-    : Base { 
-             
-             
+struct BadFinal final : Base { 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS 
-                                     
-                                     
 };
 
 

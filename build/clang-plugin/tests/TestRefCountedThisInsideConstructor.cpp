@@ -14,46 +14,14 @@ struct Foo : RefCountedBase {
 
 struct Bar : RefCountedBase {
   Bar() {
-    RefPtr<Bar> self =
-        this; 
-              
-              
-              
-    auto self2 = RefPtr(
-        this); 
-               
-               
-               
-    auto self3 = RefPtr{
-        this}; 
-               
-               
-               
-    RefPtr<Bar> self4(
-        this); 
-               
-               
-               
-    RefPtr<Bar> self5{
-        this}; 
-               
-               
-               
-    [self = RefPtr{this}] {
-    }(); 
-         
-         
-         
-    refptr(RefPtr{
-        this}); 
-                
-                
-                
-    refptr(
-        this); 
-               
-               
-               
+    RefPtr<Bar> self = this; 
+    auto self2 = RefPtr(this); 
+    auto self3 = RefPtr{this}; 
+    RefPtr<Bar> self4(this); 
+    RefPtr<Bar> self5{this}; 
+    [self=RefPtr{this}]{}(); 
+    refptr(RefPtr{this}); 
+    refptr(this); 
   }
 
   explicit Bar(float f) {
@@ -68,18 +36,8 @@ struct Bar : RefCountedBase {
 
   explicit Bar(short i);
 
-  explicit Bar(int i)
-      : mBar(this) {
-  } 
-    
-    
-    
-  explicit Bar(int i, int i2)
-      : mBar(RefPtr(this)) {
-  } 
-    
-    
-    
+  explicit Bar(int i): mBar(this) {} 
+  explicit Bar(int i, int i2): mBar(RefPtr(this)) {} 
 
   void Init() {
     
@@ -88,7 +46,7 @@ struct Bar : RefCountedBase {
     auto self3 = RefPtr{this};
   }
 
-  void refptr(const RefPtr<Bar> &aBar) {}
+  void refptr(const RefPtr<Bar>& aBar) {}
 
   RefPtr<Foo> mFoo;
   RefPtr<Bar> mBar;
@@ -96,21 +54,9 @@ struct Bar : RefCountedBase {
 
 
 Bar::Bar(short i) {
-  RefPtr<Bar> self =
-      this; 
-            
-            
-            
-  auto self2 = RefPtr(
-      this); 
-             
-             
-             
-  auto self3 = RefPtr{
-      this}; 
-             
-             
-             
+  RefPtr<Bar> self = this; 
+  auto self2 = RefPtr(this); 
+  auto self3 = RefPtr{this}; 
 }
 
 
@@ -123,11 +69,7 @@ public:
 
 class Baz : RefCountedBase {
   Baz() {
-    MyRefPtr<Baz> self =
-        this; 
-              
-              
-              
+    MyRefPtr<Baz> self = this; 
     (void)self;
   }
 };

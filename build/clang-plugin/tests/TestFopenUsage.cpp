@@ -1,76 +1,26 @@
+#include <stdio.h>
+#include <io.h>
 #include <fcntl.h>
 #include <fstream>
-#include <io.h>
-#include <stdio.h>
 #include <windows.h>
 
 void func_fopen() {
-  FILE *f1 =
-      fopen("dummy.txt",
-            "rt"); 
-                   
-                   
-                   
-                   
+  FILE *f1 = fopen("dummy.txt", "rt"); 
   FILE *f2;
-  fopen_s(&f2, "dummy.txt",
-          "rt"); 
-                 
-                 
-                 
-                 
+  fopen_s(&f2, "dummy.txt", "rt"); 
 
-  int fh1 = _open(
-      "dummy.txt",
-      _O_RDONLY); 
-                  
-                  
-                  
-                  
-  int fh2 = open(
-      "dummy.txt",
-      _O_RDONLY); 
-                  
-                  
-                  
-                  
-  int fh3 = _sopen(
-      "dummy.txt", _O_RDONLY,
-      _SH_DENYRW); 
-                   
-                   
-                   
-                   
+  int fh1 = _open("dummy.txt", _O_RDONLY); 
+  int fh2 = open("dummy.txt", _O_RDONLY); 
+  int fh3 = _sopen("dummy.txt", _O_RDONLY, _SH_DENYRW); 
   int fd4;
-  errno_t err =
-      _sopen_s(&fd4, "dummy.txt", _O_RDONLY, _SH_DENYRW,
-               0); 
-                   
-                   
-                   
-                   
+  errno_t err = _sopen_s(&fd4, "dummy.txt", _O_RDONLY, _SH_DENYRW, 0); 
 
   std::fstream fs1;
-  fs1.open(
-      "dummy.txt"); 
-                    
-                    
-                    
-                    
+  fs1.open("dummy.txt"); 
   std::ifstream ifs1;
-  ifs1.open(
-      "dummy.txt"); 
-                    
-                    
-                    
-                    
+  ifs1.open("dummy.txt"); 
   std::ofstream ofs1;
-  ofs1.open(
-      "dummy.txt"); 
-                    
-                    
-                    
-                    
+  ofs1.open("dummy.txt"); 
 #ifdef _MSC_VER
   std::fstream fs2;
   fs2.open(L"dummy.txt");
@@ -81,38 +31,20 @@ void func_fopen() {
 #endif
 
   LPOFSTRUCT buffer;
-  HFILE hFile1 = OpenFile(
-      "dummy.txt", buffer,
-      OF_READ); 
-                
-                
-                
-                
+  HFILE hFile1 = OpenFile("dummy.txt", buffer, OF_READ); 
 
 #ifndef UNICODE
   
   LPCSTR buffer2;
-  HANDLE hFile2 = CreateFile(
-      buffer2, GENERIC_WRITE, 0, NULL,
-      CREATE_NEW, 
-                  
-                  
-                  
-                  
-      FILE_ATTRIBUTE_NORMAL, NULL);
+  HANDLE hFile2 = CreateFile(buffer2, GENERIC_WRITE, 0, NULL, CREATE_NEW, 
+	  FILE_ATTRIBUTE_NORMAL, NULL);
 #else
   
   LPCWSTR buffer2;
   HANDLE hFile2 = CreateFile(buffer2, GENERIC_WRITE, 0, NULL, CREATE_NEW,
-                             FILE_ATTRIBUTE_NORMAL, NULL);
+	  FILE_ATTRIBUTE_NORMAL, NULL);
 #endif
   LPCSTR buffer3;
-  HANDLE hFile3 = CreateFileA(
-      buffer3, GENERIC_WRITE, 0, NULL,
-      CREATE_NEW, 
-                  
-                  
-                  
-                  
-      FILE_ATTRIBUTE_NORMAL, NULL);
+  HANDLE hFile3 = CreateFileA(buffer3, GENERIC_WRITE, 0, NULL, CREATE_NEW, 
+	  FILE_ATTRIBUTE_NORMAL, NULL);
 }

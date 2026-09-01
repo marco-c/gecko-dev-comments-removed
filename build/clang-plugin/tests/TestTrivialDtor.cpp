@@ -1,26 +1,24 @@
 #define MOZ_TRIVIAL_DTOR __attribute__((annotate("moz_trivial_dtor")))
 
-struct MOZ_TRIVIAL_DTOR EmptyClass {};
+struct MOZ_TRIVIAL_DTOR EmptyClass{};
 
-template <class T> struct MOZ_TRIVIAL_DTOR TemplateEmptyClass {};
+template <class T>
+struct MOZ_TRIVIAL_DTOR TemplateEmptyClass{};
 
 struct MOZ_TRIVIAL_DTOR NonEmptyClass {
   void *m;
 };
 
-template <class T> struct MOZ_TRIVIAL_DTOR TemplateNonEmptyClass {
-  T *m;
+template <class T>
+struct MOZ_TRIVIAL_DTOR TemplateNonEmptyClass {
+  T* m;
 };
 
-struct MOZ_TRIVIAL_DTOR
-    BadUserDefinedDtor { 
-                         
+struct MOZ_TRIVIAL_DTOR BadUserDefinedDtor { 
   ~BadUserDefinedDtor() {}
 };
 
-struct MOZ_TRIVIAL_DTOR
-    BadVirtualDtor { 
-                     
+struct MOZ_TRIVIAL_DTOR BadVirtualDtor { 
   virtual ~BadVirtualDtor() {}
 };
 
@@ -29,9 +27,7 @@ struct MOZ_TRIVIAL_DTOR OkVirtualMember {
 };
 
 void foo();
-struct MOZ_TRIVIAL_DTOR
-    BadNonEmptyCtorDtor { 
-                          
+struct MOZ_TRIVIAL_DTOR BadNonEmptyCtorDtor { 
   BadNonEmptyCtorDtor() { foo(); }
   ~BadNonEmptyCtorDtor() { foo(); }
 };
@@ -44,15 +40,10 @@ struct VirtualMember {
   virtual void f();
 };
 
-struct MOZ_TRIVIAL_DTOR BadNonTrivialDtorInBase
-    : NonTrivialDtor { 
-                       
+struct MOZ_TRIVIAL_DTOR BadNonTrivialDtorInBase : NonTrivialDtor { 
 };
 
-struct MOZ_TRIVIAL_DTOR
-    BadNonTrivialDtorInMember { 
-                                
-                                
+struct MOZ_TRIVIAL_DTOR BadNonTrivialDtorInMember { 
   NonTrivialDtor m;
 };
 
