@@ -30,7 +30,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/macros.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
@@ -523,16 +522,7 @@ struct RTC_EXPORT RtpExtension {
   static constexpr char kCorruptionDetectionUri[] =
       "http://www.webrtc.org/experiments/rtp-hdrext/corruption-detection";
 
-  
-  
-  [[deprecated]] ABSL_REFACTOR_INLINE static constexpr RtpHeaderExtensionId
-      kMinId = RtpHeaderExtensionId::kMinId;
-  [[deprecated]] ABSL_REFACTOR_INLINE static constexpr RtpHeaderExtensionId
-      kMaxId = RtpHeaderExtensionId::kMaxId;
   static constexpr int kMaxValueSize = 255;
-  [[deprecated]] ABSL_REFACTOR_INLINE static constexpr RtpHeaderExtensionId
-      kOneByteHeaderExtensionMaxId =
-          RtpHeaderExtensionId::kOneByteHeaderExtensionMaxId;
   static constexpr int kOneByteHeaderExtensionMaxValueSize = 16;
 
   std::string uri;
