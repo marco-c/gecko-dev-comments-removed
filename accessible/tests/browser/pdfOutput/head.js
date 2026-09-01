@@ -41,35 +41,56 @@ delete window.gDisableAccServiceInit;
 
 
 
-function simplifyStructTreeNode(node, contentItems) {
-  if (node.type == "content") {
-    
-    
-    node.content = [];
-    let inMarked = false;
-    for (const item of contentItems) {
-      if (item.type == "beginMarkedContentProps" && item.id == node.id) {
-        inMarked = true;
-        continue;
+
+
+
+
+
+
+
+function simplifyStructTree(root, contentItems) {
+  const structIds = new Map();
+  const nodesWithHeaders = [];
+  const walk = node => {
+    if (node.type == "content") {
+      
+      
+      node.content = [];
+      let inMarked = false;
+      for (const item of contentItems) {
+        if (item.type == "beginMarkedContentProps" && item.id == node.id) {
+          inMarked = true;
+          continue;
+        }
+        if (!inMarked) {
+          continue;
+        }
+        if (item.str) {
+          node.content.push(item.str);
+          continue;
+        }
+        if (item.type == "endMarkedContent") {
+          break;
+        }
       }
-      if (!inMarked) {
-        continue;
-      }
-      if (item.str) {
-        node.content.push(item.str);
-        continue;
-      }
-      if (item.type == "endMarkedContent") {
-        break;
-      }
+      delete node.type;
+      delete node.id;
     }
-    delete node.type;
-    delete node.id;
-  }
-  if (node.children) {
-    for (const child of node.children) {
-      simplifyStructTreeNode(child, contentItems);
+    if (node.structId) {
+      const newId = `id${structIds.size + 1}`;
+      structIds.set(node.structId, newId);
+      node.structId = newId;
     }
+    if (node.headers) {
+      nodesWithHeaders.push(node);
+    }
+    for (const child of node.children || []) {
+      walk(child);
+    }
+  };
+  walk(root);
+  for (const node of nodesWithHeaders) {
+    node.headers = node.headers.map(id => structIds.get(id) || id);
   }
 }
 
@@ -231,7 +252,7 @@ async function assertPdfStructTree(pdf, pageTrees) {
     const contentItems = (
       await page.getTextContent({ includeMarkedContent: true })
     ).items;
-    simplifyStructTreeNode(actualTree, contentItems);
+    simplifyStructTree(actualTree, contentItems);
     SimpleTest.isDeeply(
       actualTree,
       pageTrees[p],
