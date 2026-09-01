@@ -55,6 +55,7 @@
 #endif
 
 #if defined(MOZ_WIDGET_ANDROID)
+#  include "AndroidLocalNetworkPermission.h"
 #  include "AndroidNetworkBlockedReason.h"
 #endif
 
@@ -1611,6 +1612,15 @@ nsresult nsSocketTransport::InitiateSocket() {
            this));
     }
   }
+
+#if defined(MOZ_WIDGET_ANDROID)
+  
+  
+  
+  if (mNetAddr.GetIpAddressSpace() == nsILoadInfo::IPAddressSpace::Private) {
+    RequestAndroidLocalNetworkPermission();
+  }
+#endif
 
   status = PR_Connect(fd, &prAddr, NS_SOCKET_CONNECT_TIMEOUT);
   PRErrorCode code = PR_GetError();

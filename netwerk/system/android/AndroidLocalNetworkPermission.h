@@ -1,0 +1,40 @@
+
+
+
+
+#ifndef AndroidLocalNetworkPermission_h_
+#define AndroidLocalNetworkPermission_h_
+
+namespace mozilla::net {
+
+
+
+
+#define ANDROID_REQUEST_LOCAL_NETWORK_PERMISSION_TOPIC \
+  "network:request-local-network-permission"
+
+
+
+
+#define ANDROID_LOCAL_NETWORK_PERMISSION_RESULT_TOPIC \
+  "network:local-network-permission-result"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void RequestAndroidLocalNetworkPermission();
+
+}  
+
+#endif  
