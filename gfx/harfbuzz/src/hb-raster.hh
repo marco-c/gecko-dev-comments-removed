@@ -42,6 +42,24 @@ hb_raster_draw_get_edge_work (hb_raster_draw_t *draw, unsigned max_rows);
 
 
 
+
+
+HB_INTERNAL void
+hb_raster_draw_set_clip_box (hb_raster_draw_t *draw,
+			     float x0, float y0,
+			     float x1, float y1);
+
+
+
+
+
+
+HB_INTERNAL void
+hb_raster_draw_set_external_work (hb_raster_draw_t *draw,
+				  int64_t *work_left);
+
+
+
 static HB_ALWAYS_INLINE uint8_t
 hb_raster_div255 (unsigned a)
 {

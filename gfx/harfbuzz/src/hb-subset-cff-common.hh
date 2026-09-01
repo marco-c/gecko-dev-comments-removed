@@ -445,29 +445,81 @@ struct parsed_cs_str_t : parsed_values_t<parsed_cs_op_t>
     parsed (false),
     hint_dropped (false),
     has_prefix_ (false),
-    has_calls_ (false)
+    has_calls_ (false),
+    coalescing_ (false)
   {
     SUPER::init ();
   }
 
+  HB_ALWAYS_INLINE
   void add_op (op_code_t op, const byte_str_ref_t& str_ref)
   {
-    if (!is_parsed ())
-      SUPER::add_op (op, str_ref);
+    if (is_parsed ()) return;
+    if (coalescing_)
+    {
+      
+
+
+
+      penultimate_end_ = last_end_;
+      last_end_ = str_ref.get_offset ();
+      if (unlikely (op == OpCode_return || op == OpCode_endchar))
+	flush_segment (str_ref, last_end_);
+      return;
+    }
+    SUPER::add_op (op, str_ref);
   }
 
   void add_call_op (op_code_t op, const byte_str_ref_t& str_ref, unsigned int subr_num)
   {
-    if (!is_parsed ())
+    if (is_parsed ()) return;
+    has_calls_ = true;
+
+    if (coalescing_)
     {
-      has_calls_ = true;
-
       
-      values.pop ();
 
+      flush_segment (str_ref, penultimate_end_);
+      opStart = last_end_;
       SUPER::add_op (op, str_ref, {subr_num});
+      penultimate_end_ = last_end_ = str_ref.get_offset ();
+      return;
     }
+
+    
+    values.pop ();
+
+    SUPER::add_op (op, str_ref, {subr_num});
   }
+
+  
+  void flush_segment (const byte_str_ref_t& str_ref, unsigned end)
+  {
+    unsigned start = opStart;
+    if (end <= start) return;
+    while (start < end)
+    {
+      auto arr = str_ref.sub_array (start, hb_min (end - start, 255u));
+      if (unlikely (!arr.length)) break;
+      parsed_cs_op_t *val = values.push ();
+      val->ptr = arr.arrayZ;
+      val->length = arr.length;
+      start += arr.length;
+    }
+    opStart = end;
+  }
+
+  
+
+
+  void flush_coalesced (const byte_str_ref_t& str_ref)
+  {
+    if (coalescing_ && !is_parsed ())
+      flush_segment (str_ref, str_ref.get_offset ());
+  }
+
+  void enable_coalescing () { coalescing_ = true; }
+  bool is_coalescing () const { return coalescing_; }
 
   void set_prefix (const number_t &num, op_code_t op = OpCode_Invalid)
   {
@@ -532,6 +584,13 @@ struct parsed_cs_str_t : parsed_values_t<parsed_cs_op_t>
   bool    vsindex_dropped : 1;
   bool    has_prefix_ : 1;
   bool    has_calls_ : 1;
+  
+
+
+  bool    coalescing_ : 1;
+  
+  unsigned penultimate_end_ = 0;
+  unsigned last_end_ = 0;
   op_code_t	prefix_op_;
   number_t	prefix_num_;
 
@@ -612,14 +671,19 @@ struct subr_subset_param_t
 		       parsed_cs_str_vec_t *parsed_local_subrs_,
 		       hb_set_t *global_closure_,
 		       hb_set_t *local_closure_,
-		       bool drop_hints_) :
+		       bool drop_hints_,
+		       bool coalesce_ = false) :
       current_parsed_str (parsed_charstring_),
       parsed_charstring (parsed_charstring_),
       parsed_global_subrs (parsed_global_subrs_),
       parsed_local_subrs (parsed_local_subrs_),
       global_closure (global_closure_),
       local_closure (local_closure_),
-      drop_hints (drop_hints_) {}
+      drop_hints (drop_hints_),
+      coalesce (coalesce_)
+  {
+    if (coalesce) parsed_charstring->enable_coalescing ();
+  }
 
   parsed_cs_str_t *get_parsed_str_for_context (call_context_t &context)
   {
@@ -658,7 +722,10 @@ struct subr_subset_param_t
     else
     {
       if (!parsed_str->is_parsed ())
+      {
         parsed_str->alloc (env.str_ref.total_size ());
+        if (coalesce) parsed_str->enable_coalescing ();
+      }
       current_parsed_str = parsed_str;
     }
   }
@@ -671,6 +738,7 @@ struct subr_subset_param_t
   hb_set_t      *global_closure;
   hb_set_t      *local_closure;
   bool	  drop_hints;
+  bool	  coalesce;
 };
 
 struct subr_remap_t : hb_inc_bimap_t
@@ -789,6 +857,12 @@ struct subr_subsetter_t
     }
 
     
+
+
+    bool coalesce = !(plan->flags & HB_SUBSET_FLAGS_NO_HINTING) &&
+		    !plan->inprogress_accelerator;
+
+    
     for (auto _ : plan->new_to_old_gid_list)
     {
       hb_codepoint_t new_glyph = _.first;
@@ -820,7 +894,8 @@ struct subr_subsetter_t
                                   &parsed_local_subrs_storage[fd],
                                   &closures.global_closure,
                                   &closures.local_closures[fd],
-                                  plan->flags & HB_SUBSET_FLAGS_NO_HINTING);
+                                  plan->flags & HB_SUBSET_FLAGS_NO_HINTING,
+                                  coalesce);
 
       if (unlikely (!interp.interpret (param)))
         return false;
@@ -853,7 +928,10 @@ struct subr_subsetter_t
 
 
 
-      parsed_charstrings[new_glyph].compact ();
+
+
+      if (!coalesce)
+	parsed_charstrings[new_glyph].compact ();
     }
 
     

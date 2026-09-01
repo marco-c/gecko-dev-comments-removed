@@ -61,6 +61,11 @@ HB_SUBSET_PLAN_MEMBER (hb_set_t, drop_tables)
 
 HB_SUBSET_PLAN_MEMBER (hb_map_t, glyph_map_gsub)
 
+
+
+
+HB_SUBSET_PLAN_MEMBER (hb_vector_t<hb_codepoint_t>, glyph_map_gsub_flat)
+
 HB_SUBSET_PLAN_MEMBER (hb_set_t, _glyphset)
 HB_SUBSET_PLAN_MEMBER (hb_set_t, _glyphset_gsub)
 HB_SUBSET_PLAN_MEMBER (hb_set_t, _glyphset_mathed)

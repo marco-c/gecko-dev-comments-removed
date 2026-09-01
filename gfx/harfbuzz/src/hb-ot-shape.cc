@@ -922,7 +922,10 @@ hb_ot_substitute_plan (const hb_ot_shape_context_t *c)
   {
     hb_aat_layout_substitute (c->plan, c->font, c->buffer,
 			      c->user_features, c->num_user_features);
-    c->buffer->update_digest ();
+    
+
+    if (c->plan->apply_gpos)
+      c->buffer->update_digest ();
   }
   else
 #endif
@@ -973,8 +976,8 @@ hb_ot_substitute_post (const hb_ot_shape_context_t *c)
 static inline void
 adjust_mark_offsets (hb_glyph_position_t *pos)
 {
-  pos->x_offset -= pos->x_advance;
-  pos->y_offset -= pos->y_advance;
+  pos->x_offset = hb_saturate_sub (pos->x_offset, pos->x_advance);
+  pos->y_offset = hb_saturate_sub (pos->y_offset, pos->y_advance);
 }
 
 static inline void
