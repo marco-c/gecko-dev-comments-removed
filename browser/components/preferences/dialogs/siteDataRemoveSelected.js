@@ -2,25 +2,24 @@
 
 
 
-
 "use strict";
 
 
 
 
 
-window.addEventListener("load", () => {
-  document.addEventListener("dialogaccept", function () {
-    window.arguments[0].allowed = true;
-  });
-  document.addEventListener("dialogcancel", function () {
-    window.arguments[0].allowed = false;
-  });
 
+document.addEventListener("dialogaccept", function () {
+  window.arguments[0].allowed = true;
+});
+
+document.addEventListener("dialogcancel", function () {
+  window.arguments[0].allowed = false;
+});
+
+document.addEventListener("DOMContentLoaded", () => {
   let list = document.getElementById("removalList");
-
   let hosts = window.arguments[0].hosts;
-
   if (!hosts) {
     throw new Error("Must specify hosts option in arguments.");
   }
