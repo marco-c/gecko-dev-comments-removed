@@ -16,7 +16,10 @@
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/TimelineName.h"
 #include "mozilla/dom/ViewTimelineBinding.h"
+#include "mozilla/layout/StickyScrollContainer.h"
 #include "nsComputedDOMStyle.h"
+#include "nsIFrame.h"
+#include "nsIFrameInlines.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 
@@ -276,6 +279,92 @@ static std::pair<nscoord, nscoord> ComputeInsets(
   return {startInset, endInset};
 }
 
+nscoord ViewTimeline::StickyDisplacement::Earliest(
+    nscoord aOffsetIgnoringSticky) const {
+  if (mEndSideMax && aOffsetIgnoringSticky <= mEndSideUnstuckAt) {
+    return aOffsetIgnoringSticky - mEndSideMax;
+  }
+  if (mStartSideMax && aOffsetIgnoringSticky > mStartSideStuckAt) {
+    return aOffsetIgnoringSticky + mStartSideMax;
+  }
+  return aOffsetIgnoringSticky;
+}
+
+nscoord ViewTimeline::StickyDisplacement::Latest(
+    nscoord aOffsetIgnoringSticky) const {
+  if (mEndSideMax && aOffsetIgnoringSticky < mEndSideUnstuckAt) {
+    return aOffsetIgnoringSticky - mEndSideMax;
+  }
+  if (mStartSideMax && aOffsetIgnoringSticky >= mStartSideStuckAt) {
+    return aOffsetIgnoringSticky + mStartSideMax;
+  }
+  return aOffsetIgnoringSticky;
+}
+
+
+Maybe<std::pair<nscoord, ViewTimeline::StickyDisplacement>>
+ViewTimeline::ComputeStickyDisplacement(
+    const nsIFrame* aSubject, const ScrollContainerFrame* aScrollContainerFrame,
+    layers::ScrollDirection aAxis) {
+  StickyScrollContainer* stickyContainer =
+      aScrollContainerFrame->GetStickyContainer();
+  if (!stickyContainer) {
+    return Nothing();
+  }
+
+  const nsIFrame* scrolledFrame = aScrollContainerFrame->GetScrolledFrame();
+  const nsIFrame* sticky = nullptr;
+  for (const nsIFrame* f = aSubject; f && f != scrolledFrame;
+       f = f->GetParent()) {
+    if (!f->IsStickyPositioned()) {
+      continue;
+    }
+    const StickyScrollContainer* container =
+        StickyScrollContainer::GetForFrame(f);
+    if (!container || container->ScrollContainer() != aScrollContainerFrame) {
+      continue;
+    }
+    if (sticky) {
+      
+      
+      
+      return Nothing();
+    }
+    sticky = f;
+  }
+  if (!sticky) {
+    return Nothing();
+  }
+
+  const auto ranges =
+      stickyContainer->GetStickyScrollRangesForAxis(sticky, aAxis);
+  if (!ranges.mStartSide && !ranges.mEndSide) {
+    return Nothing();
+  }
+
+  StickyDisplacement displacement;
+  if (ranges.mStartSide) {
+    displacement.mStartSideStuckAt = ranges.mStartSide->mScrollPosition;
+    displacement.mStartSideMax = ranges.mStartSide->mMaxOffset;
+  }
+  if (ranges.mEndSide) {
+    displacement.mEndSideUnstuckAt = ranges.mEndSide->mScrollPosition;
+    displacement.mEndSideMax = ranges.mEndSide->mMaxOffset;
+  }
+
+  MOZ_ASSERT(displacement.mStartSideMax >= 0);
+  MOZ_ASSERT(displacement.mEndSideMax >= 0);
+  MOZ_ASSERT(
+      !displacement.mStartSideMax || !displacement.mEndSideMax ||
+          displacement.mEndSideUnstuckAt <= displacement.mStartSideStuckAt,
+      "End-side sticking should end before start-side sticking begins");
+
+  const nsPoint shift = sticky->GetPosition() - sticky->GetNormalPosition();
+  return Some(
+      std::pair{aAxis == layers::ScrollDirection::eVertical ? shift.y : shift.x,
+                displacement});
+}
+
 bool ViewTimeline::UpdateCachedCurrentTime() {
   const auto prevCachedCurrentTime = std::move(mCachedCurrentTime);
 
@@ -341,6 +430,24 @@ bool ViewTimeline::UpdateCachedCurrentTime() {
   const auto sideInsets =
       ComputeInsets(scrollContainerFrame, orientation, mAxis, mInset);
 
+  const auto stickyInfo =
+      ComputeStickyDisplacement(subject, scrollContainerFrame, orientation);
+
+  
+  
+  const auto takeStickyOut =
+      [&stickyInfo](
+          nscoord aSubjectPosition,
+          bool aIsReversed) -> std::pair<nscoord, StickyDisplacement> {
+    if (!stickyInfo) {
+      return {aSubjectPosition, StickyDisplacement{}};
+    }
+    const auto& [shift, displacement] = *stickyInfo;
+    aSubjectPosition += aIsReversed ? shift : -shift;
+    return {aSubjectPosition,
+            aIsReversed ? displacement.Reversed() : displacement};
+  };
+
   
   const WritingMode wm = scrolledFrame->GetWritingMode();
   switch (orientation) {
@@ -349,28 +456,32 @@ bool ViewTimeline::UpdateCachedCurrentTime() {
       
       
       const bool isBottomToTop = wm.IsVertical() && wm.IsInlineReversed();
-      mCachedCurrentTime.emplace(CurrentTimeData{
-          ScrollTimeline::CurrentTimeData{scrollPosition.y, scrollRange.height},
-          scrollPort.height,
+      const auto [subjectPosition, sticky] = takeStickyOut(
           isBottomToTop ? scrolledFrame->GetSize().height - subjectRect.YMost()
                         : subjectRect.y,
-          subjectRect.height, sideInsets.first, sideInsets.second});
+          isBottomToTop);
+      mCachedCurrentTime.emplace(CurrentTimeData{
+          ScrollTimeline::CurrentTimeData{scrollPosition.y, scrollRange.height},
+          scrollPort.height, subjectPosition, subjectRect.height,
+          sideInsets.first, sideInsets.second, sticky});
       break;
     }
-    case layers::ScrollDirection::eHorizontal:
+    case layers::ScrollDirection::eHorizontal: {
+      
+      
+      
+      
+      const bool isRightToLeft = wm.IsPhysicalRTL();
+      const auto [subjectPosition, sticky] = takeStickyOut(
+          isRightToLeft ? scrolledFrame->GetSize().width - subjectRect.XMost()
+                        : subjectRect.x,
+          isRightToLeft);
       mCachedCurrentTime.emplace(CurrentTimeData{
           ScrollTimeline::CurrentTimeData{scrollPosition.x, scrollRange.width},
-          scrollPort.width,
-          
-          
-          
-          
-          
-          wm.IsPhysicalRTL()
-              ? scrolledFrame->GetSize().width - subjectRect.XMost()
-              : subjectRect.x,
-          subjectRect.width, sideInsets.first, sideInsets.second});
+          scrollPort.width, subjectPosition, subjectRect.width,
+          sideInsets.first, sideInsets.second, sticky});
       break;
+    }
   }
 
   if (!prevCachedCurrentTime ||
@@ -380,37 +491,42 @@ bool ViewTimeline::UpdateCachedCurrentTime() {
   return mCachedCurrentTime != prevCachedCurrentTime;
 }
 
+ViewTimeline::AlignmentOffsetsIgnoringSticky
+ViewTimeline::ComputeAlignmentOffsetsIgnoringSticky() const {
+  MOZ_ASSERT(mCachedCurrentTime, "We should have a cached current time");
+  const CurrentTimeData& data = mCachedCurrentTime.ref();
+
+  
+  
+  const nscoord startAtViewEnd =
+      data.mSubjectPosition - data.mScrollPortSize + data.mInsetEnd;
+  
+  
+  const nscoord endAtViewStart =
+      data.mSubjectPosition + data.mSubjectSize - data.mInsetStart;
+  return {startAtViewEnd, endAtViewStart, endAtViewStart - data.mSubjectSize,
+          startAtViewEnd + data.mSubjectSize};
+}
 
 
 std::pair<nscoord, nscoord> ViewTimeline::IntervalForTimelineRangeName(
-    const StyleTimelineRangeName aName,
-    const ScrollTimeline::ComputedTimelineData& aData) const {
+    const StyleTimelineRangeName aName) const {
   MOZ_ASSERT(mCachedCurrentTime, "We should have a cached current time");
 
-  
-  
+  const auto& sticky = mCachedCurrentTime->mSticky;
+  const auto offsets = ComputeAlignmentOffsetsIgnoringSticky();
 
-  
-  
-  const nscoord alignedSubjectStartViewEnd = aData.mStart;
-  
-  
-  const nscoord alignedSubjectEndViewStart = aData.mEnd;
-  
-  
-  const nscoord alignedSubjectStartViewStart =
-      alignedSubjectEndViewStart - mCachedCurrentTime->mSubjectSize;
-  
-  
-  const nscoord alignedSubjectEndViewEnd =
-      alignedSubjectStartViewEnd + mCachedCurrentTime->mSubjectSize;
+  const nscoord coverStart = sticky.Latest(offsets.mSubjectStartAtViewEnd);
+  const nscoord coverEnd = sticky.Earliest(offsets.mSubjectEndAtViewStart);
 
   
   
   const nscoord containStart =
-      std::min(alignedSubjectStartViewStart, alignedSubjectEndViewEnd);
+      std::min(sticky.Earliest(offsets.mSubjectStartAtViewStart),
+               sticky.Earliest(offsets.mSubjectEndAtViewEnd));
   const nscoord containEnd =
-      std::max(alignedSubjectStartViewStart, alignedSubjectEndViewEnd);
+      std::max(sticky.Latest(offsets.mSubjectStartAtViewStart),
+               sticky.Latest(offsets.mSubjectEndAtViewEnd));
 
   
   
@@ -426,7 +542,7 @@ std::pair<nscoord, nscoord> ViewTimeline::IntervalForTimelineRangeName(
       
       
       
-      return {alignedSubjectStartViewEnd, alignedSubjectEndViewStart};
+      return {coverStart, coverEnd};
 
     case StyleTimelineRangeName::Contain:
       
@@ -456,36 +572,34 @@ std::pair<nscoord, nscoord> ViewTimeline::IntervalForTimelineRangeName(
       
       
       
-      return {alignedSubjectStartViewEnd, containStart};
+      
+      
+      
+      
+      return {coverStart, std::max(coverStart, containStart)};
 
     case StyleTimelineRangeName::Exit:
       
       
       
       
-      return {containEnd, alignedSubjectEndViewStart};
+      return {std::min(coverEnd, containEnd), coverEnd};
 
     case StyleTimelineRangeName::EntryCrossing:
       
       
       
-      
-      
-      
-      
-      
-      return {alignedSubjectStartViewEnd, alignedSubjectEndViewEnd};
+      return {
+          coverStart,
+          std::max(coverStart, sticky.Earliest(offsets.mSubjectEndAtViewEnd))};
 
     case StyleTimelineRangeName::ExitCrossing:
       
       
       
-      
-      
-      
-      
-      
-      return {alignedSubjectStartViewStart, alignedSubjectEndViewStart};
+      return {
+          std::min(coverEnd, sticky.Latest(offsets.mSubjectStartAtViewStart)),
+          coverEnd};
 
     case StyleTimelineRangeName::Scroll:
       
@@ -497,7 +611,7 @@ std::pair<nscoord, nscoord> ViewTimeline::IntervalForTimelineRangeName(
 
   MOZ_ASSERT_UNREACHABLE("All cases should be handled.");
   
-  return {alignedSubjectStartViewEnd, alignedSubjectEndViewStart};
+  return {coverStart, coverEnd};
 }
 
 
@@ -507,7 +621,7 @@ double ViewTimeline::ComputeOffsetToTimelineRange(
     const StyleTimelineRangeName& aName,
     const ScrollTimeline::ComputedTimelineData& aData,
     F&& aFuncToResolveValue) const {
-  const auto [nameStart, nameEnd] = IntervalForTimelineRangeName(aName, aData);
+  const auto [nameStart, nameEnd] = IntervalForTimelineRangeName(aName);
   const auto timelineRange = aData.mEnd - aData.mStart;
   const auto nameRange = nameEnd - nameStart;
   const auto positionInNameRange = nameStart + aFuncToResolveValue(nameRange);
@@ -564,25 +678,15 @@ Maybe<ScrollTimeline::ComputedTimelineData> ViewTimeline::ComputeTimelineData()
   }
 
   const CurrentTimeData& data = mCachedCurrentTime.ref();
+  const auto offsets = ComputeAlignmentOffsetsIgnoringSticky();
 
   
   
   
-
-  
-  
-  const nscoord startOffset =
-      data.mSubjectPosition - data.mScrollPortSize + data.mInsetEnd;
-  
-  
-  
-  const nscoord endOffset =
-      data.mSubjectPosition + data.mSubjectSize - data.mInsetStart;
-
   return Some(ComputedTimelineData{
       data.mScrollData.mPosition,
-      startOffset,
-      endOffset,
+      data.mSticky.Latest(offsets.mSubjectStartAtViewEnd),
+      data.mSticky.Earliest(offsets.mSubjectEndAtViewStart),
   });
 }
 
