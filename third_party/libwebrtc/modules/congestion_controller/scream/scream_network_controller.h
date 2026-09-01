@@ -17,6 +17,7 @@
 #include "api/transport/network_control.h"
 #include "api/transport/network_types.h"
 #include "api/units/data_rate.h"
+#include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "modules/congestion_controller/scream/scream_v2.h"
@@ -51,6 +52,12 @@ class ScreamNetworkController : public NetworkControllerInterface {
   NetworkControlUpdate CreateFirstUpdate(Timestamp now);
   NetworkControlUpdate CreateUpdate(Timestamp now);
   std::optional<PacerConfig> MaybeCreatePacerConfig(Timestamp now);
+  
+  
+  
+  
+  
+  double CalculateCwndReduceRatio() const;
 
   Environment env_;
   const ScreamV2Parameters params_;
@@ -68,6 +75,8 @@ class ScreamNetworkController : public NetworkControllerInterface {
   DataRate max_seen_total_allocated_bitrate_ = DataRate::Zero();
   Timestamp initial_bwe_probe_end_time_ = Timestamp::MinusInfinity();
   Timestamp padding_interval_end_time_ = Timestamp::MinusInfinity();
+  DataSize pacer_queue_size_ = DataSize::Zero();
+  DataSize data_in_flight_ = DataSize::Zero();
 
   
   
@@ -75,6 +84,7 @@ class ScreamNetworkController : public NetworkControllerInterface {
   DataRate reported_padding_rate_;
   DataRate reported_pacing_rate_;
   bool reported_is_bandwidth_limited_ = true;
+  double reported_cwnd_reduce_ratio_ = 0.0;
 };
 
 }  

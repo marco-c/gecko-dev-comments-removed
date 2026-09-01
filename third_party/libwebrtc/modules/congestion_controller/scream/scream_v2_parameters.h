@@ -159,6 +159,11 @@ struct ScreamV2Parameters {
 
   
   FieldTrialParameter<TimeDelta> received_rate_window;
+
+  
+  FieldTrialParameter<TimeDelta> min_pacing_delay_for_pushback;
+  
+  FieldTrialParameter<TimeDelta> max_pacing_delay_for_pushback;
 };
 
 }  
