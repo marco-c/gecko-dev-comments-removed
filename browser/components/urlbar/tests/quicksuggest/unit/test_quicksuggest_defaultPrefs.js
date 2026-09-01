@@ -36,28 +36,9 @@ const EXPECTED_PREFS_SUGGEST_DISABLED = {
 
 
 
-const EXPECTED_PREFS_EU_NATIVE = {
-  ...EXPECTED_PREFS_SUGGEST_DISABLED,
-  "quicksuggest.enabled": true,
-  "quicksuggest.settingsUi": QuickSuggest.SETTINGS_UI.OFFLINE_ONLY,
-  "suggest.quicksuggest.all": true,
-  "suggest.quicksuggest.sponsored": true,
-  "importantDates.featureGate": true,
-  "weather.featureGate": true,
-};
 
 
-
-const EXPECTED_PREFS_EU_EN = {
-  ...EXPECTED_PREFS_SUGGEST_DISABLED,
-  "quicksuggest.enabled": true,
-  "importantDates.featureGate": true,
-};
-
-
-
-
-const EXPECTED_PREFS_BASE_EN_NATIVE = {
+const EXPECTED_PREFS_BASE_NATIVE = {
   ...EXPECTED_PREFS_SUGGEST_DISABLED,
   "quicksuggest.enabled": true,
   "quicksuggest.settingsUi": QuickSuggest.SETTINGS_UI.OFFLINE_ONLY,
@@ -70,24 +51,32 @@ const EXPECTED_PREFS_BASE_EN_NATIVE = {
 };
 
 
+
+const EXPECTED_PREFS_EU_EN = {
+  ...EXPECTED_PREFS_SUGGEST_DISABLED,
+  "quicksuggest.enabled": true,
+  "importantDates.featureGate": true,
+};
+
+
 const EXPECTED_PREFS_BY_LOCALE_BY_REGION = {
   DE: {
-    de: EXPECTED_PREFS_EU_NATIVE,
+    de: EXPECTED_PREFS_BASE_NATIVE,
     ...Object.fromEntries(
       EN_LOCALES.map(locale => [locale, EXPECTED_PREFS_EU_EN])
     ),
   },
   FR: {
-    fr: EXPECTED_PREFS_EU_NATIVE,
+    fr: EXPECTED_PREFS_BASE_NATIVE,
     ...Object.fromEntries(
       EN_LOCALES.map(locale => [locale, EXPECTED_PREFS_EU_EN])
     ),
   },
   GB: Object.fromEntries(
-    EN_LOCALES.map(locale => [locale, EXPECTED_PREFS_BASE_EN_NATIVE])
+    EN_LOCALES.map(locale => [locale, EXPECTED_PREFS_BASE_NATIVE])
   ),
   IT: {
-    it: EXPECTED_PREFS_EU_NATIVE,
+    it: EXPECTED_PREFS_BASE_NATIVE,
     ...Object.fromEntries(
       EN_LOCALES.map(locale => [locale, EXPECTED_PREFS_EU_EN])
     ),
@@ -96,7 +85,7 @@ const EXPECTED_PREFS_BY_LOCALE_BY_REGION = {
     EN_LOCALES.map(locale => [
       locale,
       {
-        ...EXPECTED_PREFS_BASE_EN_NATIVE,
+        ...EXPECTED_PREFS_BASE_NATIVE,
         "addons.featureGate": true,
         "mdn.featureGate": true,
         "yelp.featureGate": true,
