@@ -24,7 +24,7 @@ double ExtractHighWaterMark(const QueuingStrategy& aStrategy,
 
 
 template <typename T>
-MOZ_CAN_RUN_SCRIPT static already_AddRefed<Promise> PromisifyAlgorithm(
+MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> PromisifyAlgorithm(
     nsIGlobalObject* aGlobal, T aFunc, mozilla::ErrorResult& aRv) {
   
   

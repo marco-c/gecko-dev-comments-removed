@@ -11,7 +11,7 @@
 #include "IDBDatabase.h"
 #include "IDBEvents.h"
 #include "IDBFactory.h"
-#include "IDBGetAllHelper.h"
+#include "IDBGetAllOptions.h"
 #include "IDBIndex.h"
 #include "IDBKeyRange.h"
 #include "IDBRequest.h"
@@ -385,13 +385,6 @@ nsresult GetAddInfoCallback(JSContext* aCx, void* aClosure) {
 }
 
 using indexedDB::WrapAsJSObject;
-
-template <typename T>
-JSObject* WrapAsJSObject(JSContext* const aCx, T& aBaseObject) {
-  JS::Rooted<JSObject*> result(aCx);
-  const bool res = WrapAsJSObject(aCx, aBaseObject, &result);
-  return res ? static_cast<JSObject*>(result) : nullptr;
-}
 
 JSObject* CopyingStructuredCloneReadCallback(
     JSContext* aCx, JSStructuredCloneReader* aReader,

@@ -6468,10 +6468,6 @@ struct KeyPopulateResponseHelper {
   }
 
   template <typename Response>
-  static constexpr void MaybeFillCloneInfo(Response& ,
-                                           FilesArray* const ) {}
-
-  template <typename Response>
   static constexpr size_t MaybeGetCloneInfoSize(const Response& ) {
     return 0;
   }
