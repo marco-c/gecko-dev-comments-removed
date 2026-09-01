@@ -134,11 +134,16 @@ add_task(async function test_session_outlives_the_drag() {
   );
   assertRecoveryRecorded("session_live");
 
+  
+  
+  
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
   EventUtils.synthesizeMouseAtCenter(
     gURLBar.inputField,
     { type: "mouseup" },
     window
   );
+  AccessibilityUtils.resetEnv();
   BrowserTestUtils.removeTab(tab);
 });
 
