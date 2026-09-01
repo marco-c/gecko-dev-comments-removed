@@ -131,8 +131,16 @@ add_setup(async function setup() {
   });
 
   const originalManager = AutoTabGroupingSuggestions._manager;
+  const originalLlmLabel = AutoTabGroupingSuggestions._llmLabelForGroup;
+  
+  
+  
+  AutoTabGroupingSuggestions._llmLabelForGroup = async () => {
+    throw new Error("force on-device");
+  };
   registerCleanupFunction(() => {
     AutoTabGroupingSuggestions._manager = originalManager;
+    AutoTabGroupingSuggestions._llmLabelForGroup = originalLlmLabel;
     AutoTabGroupingSuggestions._preloadPromise = null;
   });
 });

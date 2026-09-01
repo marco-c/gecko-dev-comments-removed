@@ -199,8 +199,36 @@ add_task(function test_selectClusters_handlesEmptyInput() {
   );
 });
 
+add_task(function test_manager_usesSmartWindowTopicModelSlot() {
+  const originalManager = AutoTabGroupingSuggestions._manager;
+  AutoTabGroupingSuggestions._manager = null;
+  try {
+    const { topicGeneration } = AutoTabGroupingSuggestions.manager.config;
+    
+    
+    
+    Assert.equal(
+      topicGeneration.featureId,
+      "smart-window-tab-topic",
+      "manager uses the Smart Window topic featureId, not the shared one"
+    );
+    Assert.equal(
+      topicGeneration.engineId,
+      "smart-window-tab-topic-engine",
+      "manager uses the Smart Window topic engineId"
+    );
+  } finally {
+    AutoTabGroupingSuggestions._manager = originalManager;
+  }
+});
+
 add_task(async function test_buildProposals_dropsUntitledGroups() {
   const originalManager = AutoTabGroupingSuggestions._manager;
+  const originalLlm = AutoTabGroupingSuggestions._llmLabelForGroup;
+  
+  AutoTabGroupingSuggestions._llmLabelForGroup = async () => {
+    throw new Error("force on-device");
+  };
   AutoTabGroupingSuggestions._manager = {
     async generateClusters() {
       return {
@@ -219,12 +247,17 @@ add_task(async function test_buildProposals_dropsUntitledGroups() {
     Assert.equal(proposals[0].label, "Work", "The labeled group is kept");
   } finally {
     AutoTabGroupingSuggestions._manager = originalManager;
+    AutoTabGroupingSuggestions._llmLabelForGroup = originalLlm;
     AutoTabGroupingSuggestions._labelCache.clear();
   }
 });
 
 add_task(async function test_buildProposals_cachesLabelsBySourceTabs() {
   const originalManager = AutoTabGroupingSuggestions._manager;
+  const originalLlm = AutoTabGroupingSuggestions._llmLabelForGroup;
+  AutoTabGroupingSuggestions._llmLabelForGroup = async () => {
+    throw new Error("force on-device");
+  };
   const tabs = [
     makeTab({ url: "https://a.example/" }),
     makeTab({ url: "https://b.example/" }),
@@ -256,6 +289,7 @@ add_task(async function test_buildProposals_cachesLabelsBySourceTabs() {
     );
   } finally {
     AutoTabGroupingSuggestions._manager = originalManager;
+    AutoTabGroupingSuggestions._llmLabelForGroup = originalLlm;
     AutoTabGroupingSuggestions._labelCache.clear();
   }
 });
