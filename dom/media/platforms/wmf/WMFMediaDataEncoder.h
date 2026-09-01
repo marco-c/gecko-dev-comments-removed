@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef WMFMediaDataEncoder_h_
 #define WMFMediaDataEncoder_h_
 
@@ -26,6 +24,7 @@ class WMFMediaDataEncoder final : public MediaDataEncoder {
 
   RefPtr<InitPromise> Init() override;
   RefPtr<EncodePromise> Encode(const MediaData* aSample) override;
+  RefPtr<EncodePromise> Encode(nsTArray<RefPtr<MediaData>>&& aSamples) override;
   RefPtr<EncodePromise> Drain() override;
   RefPtr<ShutdownPromise> Shutdown() override;
   RefPtr<GenericPromise> SetBitrate(uint32_t aBitsPerSec) override;
@@ -74,6 +73,8 @@ class WMFMediaDataEncoder final : public MediaDataEncoder {
   void SetConfigData(const nsTArray<UINT8>& aHeader);
 
   RefPtr<EncodePromise> ProcessEncode(RefPtr<const VideoData>&& aSample);
+  RefPtr<EncodePromise> ProcessEncodeBatch(
+      nsTArray<RefPtr<const VideoData>>&& aSamples);
   RefPtr<EncodePromise> ProcessDrain();
 
   already_AddRefed<IMFSample> ConvertToNV12InputSample(
@@ -101,9 +102,7 @@ class WMFMediaDataEncoder final : public MediaDataEncoder {
   
   Atomic<bool> mIsHardwareAccelerated;
 
-  MozPromiseHolder<EncodePromise> mEncodePromise;
-  MozPromiseRequestHolder<MFTEncoder::EncodePromise> mEncodeRequest;
-
+  AutoTArray<RefPtr<EncodePromise::Private>, 4> mEncodePromises;
   MozPromiseHolder<EncodePromise> mDrainPromise;
   MozPromiseRequestHolder<MFTEncoder::EncodePromise> mDrainRequest;
 };
