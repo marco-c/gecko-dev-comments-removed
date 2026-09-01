@@ -18,8 +18,6 @@
   class MozTabbrowserTabs extends MozElements.TabsBase {
     static observedAttributes = ["orient"];
 
-    #mustUpdateTabMinHeight = false;
-    #tabMinHeight = 36;
     #animatingGroups = new Set();
 
     constructor() {
@@ -111,10 +109,8 @@
       
       
       
-      
       Object.defineProperty(this.arrowScrollbox, "lineScrollAmount", {
-        get: () =>
-          this.verticalMode ? this.#tabMinHeight : this._tabMinWidthPref,
+        get: () => this._tabMinWidthPref,
       });
 
       this.baseConnect();
@@ -174,7 +170,6 @@
         }
       );
       this.#updateTabMinWidth(this._tabMinWidthPref);
-      this.#updateTabMinHeight();
 
       CustomizableUI.addListener(this);
       this._updateNewTabVisibility();
@@ -231,7 +226,6 @@
         
         this.removeAttribute("overflow");
         this.#updateTabMinWidth();
-        this.#updateTabMinHeight();
         this.pinnedTabsContainer?.setAttribute("orient", newValue);
       }
       super.attributeChangedCallback(name, oldValue, newValue);
@@ -831,7 +825,6 @@
 
     on_uidensitychanged() {
       this._updateCloseButtons();
-      this.#updateTabMinHeight();
       this._handleTabSelect(true);
     }
 
@@ -1238,10 +1231,6 @@
       }
 
       node.before(tab);
-
-      if (this.#mustUpdateTabMinHeight) {
-        this.#updateTabMinHeight();
-      }
     }
 
     #updateTabMinWidth(val) {
@@ -1249,53 +1238,6 @@
         "--tab-min-width-pref",
         (val ?? this._tabMinWidthPref) + "px"
       );
-    }
-
-    #updateTabMinHeight() {
-      if (!this.verticalMode || !window.toolbar.visible) {
-        this.#mustUpdateTabMinHeight = false;
-        return;
-      }
-
-      
-      let firstScrollableTab = this.visibleTabs.find(
-        this.arrowScrollbox._canScrollToElement
-      );
-
-      if (!firstScrollableTab) {
-        
-        
-        
-        
-        this.#mustUpdateTabMinHeight = true;
-        return;
-      }
-
-      let { height } =
-        window.windowUtils.getBoundsWithoutFlushing(firstScrollableTab);
-
-      
-      this.#tabMinHeight = height || 36;
-
-      
-      
-      window
-        .promiseDocumentFlushed(() => {})
-        .then(
-          () => {
-            height =
-              window.windowUtils.getBoundsWithoutFlushing(
-                firstScrollableTab
-              ).height;
-
-            if (height) {
-              this.#tabMinHeight = height;
-            }
-          },
-          () => {
-            
-          }
-        );
     }
 
     get _isCustomizing() {
