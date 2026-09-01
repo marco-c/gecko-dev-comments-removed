@@ -17,6 +17,7 @@ if _AGGREGATION_DIR not in sys.path:
     sys.path.insert(0, _AGGREGATION_DIR)
 
 import bhr_timeseries  
+from client_metrics import HyperLogLog  
 from profile_processor import ProfileProcessor  
 
 
@@ -82,10 +83,13 @@ def test_aggregate_day_dedups_identical_stacks():
         ],
         "20260401",
     )
-    day = bhr_timeseries.aggregate_day(profile, per_day_top_n=10)
+    day, total_sketch = bhr_timeseries.aggregate_day(profile, per_day_top_n=10)
     assert day[KEY_A]["ms"] == 150.0
     assert day[KEY_A]["count"] == 2.0
     assert day[KEY_B]["ms"] == 30.0
+    
+    assert day[KEY_A]["sketch"] is None
+    assert total_sketch is None
 
 
 def test_aggregate_day_keeps_only_top_n_by_ms():
@@ -93,7 +97,7 @@ def test_aggregate_day_keeps_only_top_n_by_ms():
         [_row(STACK_A, "20260401", 100.0), _row(STACK_B, "20260401", 30.0)],
         "20260401",
     )
-    day = bhr_timeseries.aggregate_day(profile, per_day_top_n=1)
+    day, _ = bhr_timeseries.aggregate_day(profile, per_day_top_n=1)
     assert list(day) == [KEY_A]
 
 
@@ -134,6 +138,10 @@ def test_build_timeseries_end_to_end(tmpdir):
 
     assert os.path.exists(os.path.join(work, "hangs_timeseries_main.json"))
     assert os.path.exists(os.path.join(work, "hangs_timeseries_main_state.json"))
+    
+    
+    assert "totalUsers" not in published
+    assert "affectedUsers" not in sig_a
 
 
 def test_build_timeseries_is_incremental_and_prunes(tmpdir):
@@ -236,6 +244,138 @@ def test_day_is_complete_only_below_the_cap():
     assert bhr_timeseries.day_is_complete({"a": 1, "b": 2}, 2) is False
     
     assert bhr_timeseries.day_is_complete({"a": 1}, None) is True
+
+
+def _sketch_for(client_ids):
+    """Sparse HLL sketch over a set of client ids, as the primary job emits."""
+    hll = HyperLogLog()
+    for client_id in client_ids:
+        hll.add(client_id)
+    return hll.serialize()
+
+
+def _reference_count(*client_id_sets):
+    """Exact HLL count over the union of several client-id sets, for comparison.
+
+    Built by the same estimator the job uses, so the assertion checks that the
+    job merged the right days rather than depending on HLL being exact.
+    """
+    hll = HyperLogLog()
+    for client_ids in client_id_sets:
+        for client_id in client_ids:
+            hll.add(client_id)
+    return hll.count()
+
+
+def _write_profile_with_clients(directory, date_str, rows, clients_by_key, tag="main"):
+    """Write a daily profile and graft on an affectedClients block.
+
+    `clients_by_key` maps a canonical signature key to the set of client ids
+    that hit it that day; the day total is their union.
+    """
+    profile = _profile_for_day(rows, date_str)
+    day_total = set()
+    for client_ids in clients_by_key.values():
+        day_total |= client_ids
+    profile["affectedClients"] = {
+        "totalSketch": _sketch_for(day_total),
+        "sketchBySignature": {
+            key: _sketch_for(client_ids) for key, client_ids in clients_by_key.items()
+        },
+    }
+    path = os.path.join(directory, f"hangs_{tag}_{date_str}.json")
+    with open(path, "w", encoding="utf-8") as out:
+        json.dump(profile, out)
+    return path
+
+
+def test_affected_users_merge_across_the_window(tmpdir):
+    work = str(tmpdir)
+    
+    
+    _write_profile_with_clients(
+        work,
+        "20260401",
+        [_row(STACK_A, "20260401", 100.0)],
+        {KEY_A: {"c1", "c2", "c3"}},
+    )
+    _write_profile_with_clients(
+        work,
+        "20260402",
+        [_row(STACK_A, "20260402", 40.0), _row(STACK_B, "20260402", 200.0)],
+        {KEY_A: {"c3", "c4"}, KEY_B: {"c5"}},
+    )
+
+    published = bhr_timeseries.build_timeseries(
+        input_dir=work, output_dir=work, window_days=2, top_count=10
+    )
+
+    
+    assert published["totalUsers"]["d365"] == _reference_count({
+        "c1",
+        "c2",
+        "c3",
+        "c4",
+        "c5",
+    })
+    assert published["affectedWindows"] == [7, 28, 365]
+
+    by_leaf = {tuple(s["frames"][0]): s for s in published["signatures"]}
+    sig_a = by_leaf[("leafA", "xul")]
+    sig_b = by_leaf[("leafB", "xul")]
+
+    
+    assert sig_a["affectedUsers"]["d365"] == _reference_count(
+        {"c1", "c2", "c3"}, {"c3", "c4"}
+    )
+    assert sig_b["affectedUsers"]["d365"] == _reference_count({"c5"})
+
+    
+    
+    total = published["totalUsers"]["d365"]
+    for label in ("d7", "d28", "d365"):
+        assert sig_a["affectedUsers"][label] == sig_a["affectedUsers"]["d365"]
+        assert sig_a["affectedPct"][label] == sig_a["affectedUsers"][label] / total
+
+    
+    
+    assert published["dates"] == ["20260401", "20260402"]
+    assert sig_a["affected"] == [
+        _reference_count({"c1", "c2", "c3"}),
+        _reference_count({"c3", "c4"}),
+    ]
+    assert sig_b["affected"] == [0, _reference_count({"c5"})]
+    
+    assert published["totalAffected"] == [
+        _reference_count({"c1", "c2", "c3"}),
+        _reference_count({"c3", "c4", "c5"}),
+    ]
+
+
+def test_affected_windows_are_trailing_suffixes(tmpdir):
+    
+    
+    
+    sketch_by_date = {
+        "20260401": _sketch_for({"old-only"}),
+        "20260402": _sketch_for({"c1", "c2"}),
+        "20260403": _sketch_for({"c2", "c3"}),
+    }
+    dates = ["20260401", "20260402", "20260403"]
+
+    
+    original = bhr_timeseries.AFFECTED_WINDOWS
+    bhr_timeseries.AFFECTED_WINDOWS = (("d2", 2), ("dall", 365))
+    try:
+        counts = bhr_timeseries.merge_window_counts(sketch_by_date, dates)
+    finally:
+        bhr_timeseries.AFFECTED_WINDOWS = original
+
+    
+    assert counts["d2"] == _reference_count({"c1", "c2"}, {"c2", "c3"})
+    
+    assert counts["dall"] == _reference_count({"old-only"}, {"c1", "c2"}, {"c2", "c3"})
+    assert counts["d2"] < counts["dall"]
 
 
 if __name__ == "__main__":
