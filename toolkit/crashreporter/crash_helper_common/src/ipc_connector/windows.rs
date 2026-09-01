@@ -47,27 +47,11 @@ const INVALID_ANCILLARY_DATA: usize = 0;
 const HANDLE_SIZE: usize = size_of::<usize>();
 const MAX_HANDLES_PER_MESSAGE: usize = 2;
 
+fn is_pseudo_handle(handle: HANDLE) -> bool {
+    let signed_handle = handle as isize;
 
-
-
-fn extract_buffer_and_handle(buffer: Vec<u8>) -> Result<(Vec<u8>, Vec<OwnedHandle>), IPCError> {
-    let mut handles = Vec::<OwnedHandle>::new();
-    for i in 0..MAX_HANDLES_PER_MESSAGE {
-        let offset = i * HANDLE_SIZE;
-        let handle_bytes = &buffer[offset..offset + HANDLE_SIZE];
-        let handle_bytes: Result<[u8; HANDLE_SIZE], _> = handle_bytes.try_into();
-        let Ok(handle_bytes) = handle_bytes else {
-            return Err(IPCError::InvalidAncillary);
-        };
-        match usize::from_ne_bytes(handle_bytes) {
-            INVALID_ANCILLARY_DATA => {}
-            handle => handles.push(unsafe { OwnedHandle::from_raw_handle(handle as RawHandle) }),
-        };
-    }
-
-    let data = &buffer[MAX_HANDLES_PER_MESSAGE * HANDLE_SIZE..];
-
-    Ok((data.to_vec(), handles))
+    
+    (-12..=-1).contains(&signed_handle)
 }
 
 pub type IPCConnectorKey = usize;
@@ -289,7 +273,8 @@ impl IPCConnector {
             BytesMut::with_capacity((MAX_HANDLES_PER_MESSAGE * HANDLE_SIZE) + payload.len());
 
         for handle in ancillary_data.into_iter() {
-            let handle = self.clone_handle(handle)?;
+            
+            let handle = handle.into_raw_handle();
             buffer.put_slice(&(handle as usize).to_ne_bytes());
         }
         for _i in handles_len..MAX_HANDLES_PER_MESSAGE {
@@ -330,7 +315,7 @@ impl IPCConnector {
         let buffer = self
             .recv_buffer((MAX_HANDLES_PER_MESSAGE * HANDLE_SIZE) + expected_size)
             .map_err(IPCError::ReceptionFailure)?;
-        extract_buffer_and_handle(buffer)
+        self.extract_buffer_and_handle(buffer)
     }
 
     fn recv_buffer(&self, expected_size: usize) -> Result<Vec<u8>, PlatformError> {
@@ -340,17 +325,54 @@ impl IPCConnector {
     
     
     
+    fn extract_buffer_and_handle(
+        &self,
+        buffer: Vec<u8>,
+    ) -> Result<(Vec<u8>, Vec<OwnedHandle>), IPCError> {
+        let mut handles = Vec::<OwnedHandle>::new();
+        for i in 0..MAX_HANDLES_PER_MESSAGE {
+            let offset = i * HANDLE_SIZE;
+            let handle_bytes = &buffer[offset..offset + HANDLE_SIZE];
+            let handle_bytes: Result<[u8; HANDLE_SIZE], _> = handle_bytes.try_into();
+            let Ok(handle_bytes) = handle_bytes else {
+                return Err(IPCError::InvalidAncillary);
+            };
+            match usize::from_ne_bytes(handle_bytes) {
+                INVALID_ANCILLARY_DATA => {}
+                handle => handles.push(
+                    self.clone_handle(handle as HANDLE)
+                        .map_err(IPCError::ReceptionFailure)?,
+                ),
+            };
+        }
+
+        let data = &buffer[MAX_HANDLES_PER_MESSAGE * HANDLE_SIZE..];
+
+        Ok((data.to_vec(), handles))
+    }
+
     
-    fn clone_handle(&self, handle: OwnedHandle) -> Result<HANDLE, PlatformError> {
-        let Some(dst_process) = self.process.as_ref() else {
+    
+    
+    
+    fn clone_handle(&self, handle: HANDLE) -> Result<OwnedHandle, PlatformError> {
+        let Some(src_process) = self.process.as_ref() else {
             return Err(PlatformError::MissingProcessHandle);
         };
+
+        if is_pseudo_handle(handle) {
+            return Err(PlatformError::DuplicatePseudoHandle);
+        }
+
         let mut dst_handle: HANDLE = null_mut();
+
+        
+        
         let res = unsafe {
             DuplicateHandle(
+                src_process.as_raw_handle(),
+                handle,
                 GetCurrentProcess(),
-                handle.into_raw_handle() as HANDLE,
-                dst_process.as_raw_handle() as HANDLE,
                 &mut dst_handle,
                  0,
                  FALSE,
@@ -362,7 +384,8 @@ impl IPCConnector {
             return Err(PlatformError::DuplicateHandleFailed(get_last_error()));
         }
 
-        Ok(dst_handle)
+        
+        Ok(unsafe { OwnedHandle::from_raw_handle(dst_handle) })
     }
 }
 
