@@ -236,7 +236,7 @@ public class IPProtectionController {
 
     @UiThread
     default @NonNull GeckoResult<String> onTokenRequest() {
-      return GeckoResult.fromException(new RuntimeException(ERROR_NO_GPI_TOKEN));
+      return GeckoResult.fromException(new RuntimeException(ERROR_LOGIN_NEEDED));
     }
   }
 
@@ -256,7 +256,7 @@ public class IPProtectionController {
 
     @UiThread
     default @NonNull GeckoResult<String> onTokenRequest() {
-      return GeckoResult.fromException(new RuntimeException(ERROR_NO_TOKEN));
+      return GeckoResult.fromException(new RuntimeException(ERROR_LOGIN_NEEDED));
     }
   }
 
@@ -531,13 +531,14 @@ public class IPProtectionController {
     }
     return EventDispatcher.getInstance()
         .queryVoid("GeckoView:IPProtection:Activate", bundle)
-        .map(
-            null,
-            e ->
-                IPProxyException.fromErrorString(
-                    e instanceof EventDispatcher.QueryException
-                        ? ((EventDispatcher.QueryException) e).data.toString()
-                        : null));
+        .map(null, IPProtectionController::toIPProxyException);
+  }
+
+  private static @NonNull IPProxyException toIPProxyException(final @NonNull Throwable e) {
+    return IPProxyException.fromErrorString(
+        e instanceof EventDispatcher.QueryException
+            ? ((EventDispatcher.QueryException) e).data.toString()
+            : null);
   }
 
   
@@ -565,7 +566,7 @@ public class IPProtectionController {
     ThreadUtils.assertOnHandlerThread();
     return EventDispatcher.getInstance()
         .queryVoid("GeckoView:IPProtection:Deactivate")
-        .map(null, e -> new IPProxyException(IPProxyException.ERROR_UNKNOWN));
+        .map(null, IPProtectionController::toIPProxyException);
   }
 
   
@@ -580,7 +581,7 @@ public class IPProtectionController {
     ThreadUtils.assertOnHandlerThread();
     return EventDispatcher.getInstance()
         .queryVoid("GeckoView:IPProtection:RefreshUsage")
-        .map(null, e -> new IPProxyException(IPProxyException.ERROR_UNKNOWN));
+        .map(null, IPProtectionController::toIPProxyException);
   }
 
   
@@ -605,6 +606,51 @@ public class IPProtectionController {
     public static final int ERROR_ACTIVATION_CANCELED = -6;
 
     
+    public static final int ERROR_CATASTROPHIC = -7;
+
+    
+    public static final int ERROR_VPN_UNAVAILABLE = -8;
+
+    
+    public static final int ERROR_GENERIC = -9;
+
+    
+    public static final int ERROR_NOT_READY = -10;
+
+    
+    public static final int ERROR_QUOTA_EXHAUSTED = -11;
+
+    
+    public static final int ERROR_AUTH_REQUIRED = -12;
+
+    
+    public static final int ERROR_ENROLLMENT_FAILED = -13;
+
+    
+    public static final int ERROR_NO_AUTH_PROVIDER = -14;
+
+    
+    public static final int ERROR_INVALID_RESPONSE = -15;
+
+    
+    public static final int ERROR_CONNECTION_FAILED = -16;
+
+    
+    public static final int ERROR_SERVERLIST_UNAVAILABLE = -17;
+
+    
+    public static final int ERROR_INTERNAL = -18;
+
+    
+    public static final int ERROR_NOT_ENTITLED = -19;
+
+    
+    public static final int ERROR_NO_GPI_PROVIDER = -20;
+
+    
+    public static final int ERROR_NO_GPI_TOKEN = -21;
+
+    
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
         value = {
@@ -614,6 +660,21 @@ public class IPProtectionController {
           ERROR_PASS_UNAVAILABLE,
           ERROR_SERVER_NOT_FOUND,
           ERROR_ACTIVATION_CANCELED,
+          ERROR_CATASTROPHIC,
+          ERROR_VPN_UNAVAILABLE,
+          ERROR_GENERIC,
+          ERROR_NOT_READY,
+          ERROR_QUOTA_EXHAUSTED,
+          ERROR_AUTH_REQUIRED,
+          ERROR_ENROLLMENT_FAILED,
+          ERROR_NO_AUTH_PROVIDER,
+          ERROR_INVALID_RESPONSE,
+          ERROR_CONNECTION_FAILED,
+          ERROR_SERVERLIST_UNAVAILABLE,
+          ERROR_INTERNAL,
+          ERROR_NOT_ENTITLED,
+          ERROR_NO_GPI_PROVIDER,
+          ERROR_NO_GPI_TOKEN,
         })
     public @interface Code {}
 
@@ -646,16 +707,53 @@ public class IPProtectionController {
           return new IPProxyException(ERROR_SERVER_NOT_FOUND);
         case "activation-canceled":
           return new IPProxyException(ERROR_ACTIVATION_CANCELED);
+        case "catastrophic-error":
+          return new IPProxyException(ERROR_CATASTROPHIC);
+        case "vpn-unavailable":
+          return new IPProxyException(ERROR_VPN_UNAVAILABLE);
+        case "generic-error":
+          return new IPProxyException(ERROR_GENERIC);
+        case "not-ready-error":
+          return new IPProxyException(ERROR_NOT_READY);
+        case "quota-exhausted":
+          return new IPProxyException(ERROR_QUOTA_EXHAUSTED);
+        case "login_needed":
+        case "unauthorized":
+          return new IPProxyException(ERROR_AUTH_REQUIRED);
+        case "enrollment_failed":
+          return new IPProxyException(ERROR_ENROLLMENT_FAILED);
+        case "no_auth_provider":
+          return new IPProxyException(ERROR_NO_AUTH_PROVIDER);
+        case "no_gpi_provider":
+          return new IPProxyException(ERROR_NO_GPI_PROVIDER);
+        case "no_gpi_token":
+          return new IPProxyException(ERROR_NO_GPI_TOKEN);
+        case "not_entitled":
+          return new IPProxyException(ERROR_NOT_ENTITLED);
+        case "invalid_response":
+        case "parse_error":
+        case "unexpected_status":
+          return new IPProxyException(ERROR_INVALID_RESPONSE);
+        case "connection-failed":
+          return new IPProxyException(ERROR_CONNECTION_FAILED);
+        case "serverlist-unavailable":
+          return new IPProxyException(ERROR_SERVERLIST_UNAVAILABLE);
+        case "missing-activation-promise":
+        case "missing-abort-controller":
+        case "missing-pass":
+          return new IPProxyException(ERROR_INTERNAL);
         default:
           return new IPProxyException(ERROR_UNKNOWN);
       }
     }
   }
 
-  private static final String ERROR_NO_AUTH_PROVIDER = "no-auth-provider";
-  private static final String ERROR_NO_TOKEN = "no-token";
-  private static final String ERROR_NO_GPI_PROVIDER = "no-gpi-provider";
-  private static final String ERROR_NO_GPI_TOKEN = "no-gpi-token";
+  
+  
+  private static final String ERROR_NO_AUTH_PROVIDER = "no_auth_provider";
+  private static final String ERROR_NO_GPI_PROVIDER = "no_gpi_provider";
+  private static final String ERROR_NO_GPI_TOKEN = "no_gpi_token";
+  private static final String ERROR_LOGIN_NEEDED = "login_needed";
 
   private class EventListener implements BundleEventListener {
     @Override
@@ -685,7 +783,7 @@ public class IPProtectionController {
                     .map(
                         token -> {
                           if (token == null || token.isEmpty()) {
-                            throw new RuntimeException(ERROR_NO_TOKEN);
+                            throw new RuntimeException(ERROR_LOGIN_NEEDED);
                           }
                           final GeckoBundle result = new GeckoBundle(1);
                           result.putString("token", token);
