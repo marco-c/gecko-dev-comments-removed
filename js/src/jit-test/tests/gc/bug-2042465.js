@@ -17,6 +17,7 @@ setJitCompilerOption("offthread-compilation.enable", 0);
 
 let g = newGlobal({newCompartment: true});
 g.eval('var s1 = Symbol("s1"); var s2 = Symbol("s2");');
+g.eval('addMarkObservers([s1, s2]);');
 let i1 = g.eval('getAtomMarkIndex(s1)');
 let i2 = g.eval('getAtomMarkIndex(s2)');
 
@@ -49,12 +50,22 @@ for (let i = 0; i < 5000; i++) {
 
 
 
+g.eval('grayRoot()[0] = s1; grayRoot()[1] = s2;');
+g.eval('s1 = undefined; s2 = undefined;');
+gc();
+assertEq(getMarks()[0], 'gray');
+assertEq(getMarks()[1], 'gray');
+assertEq(getAtomMarkColor(this, i1), 'gray');
+assertEq(getAtomMarkColor(this, i2), 'gray');
+assertEq(getAtomMarkColor(g, i1), 'gray');
+assertEq(getAtomMarkColor(g, i2), 'gray');
 
 
-schedulezone(this);
-schedulezone('atoms');
-gc('zone');
 
+
+g.eval('s1 = grayRoot()[0]; s2 = grayRoot()[1]; undefined;');
+assertEq(getMarks()[0], 'black');
+assertEq(getMarks()[1], 'black');
 assertEq(getAtomMarkColor(this, i1), 'gray');
 assertEq(getAtomMarkColor(this, i2), 'gray');
 assertEq(getAtomMarkColor(g, i1), 'black');

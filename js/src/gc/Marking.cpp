@@ -3136,6 +3136,20 @@ bool js::gc::IsMarkedInternal(JSRuntime* rt, T* thing) {
 }
 
 template <typename T>
+static void MaybeMarkWeaklyHeldAtom(T* thing) {
+  
+  
+  if constexpr (std::is_same_v<T, JS::Symbol>) {
+    thing->runtimeFromAnyThread()->gc.maybeMarkWeaklyHeldAtom(thing);
+  } else if constexpr (std::is_same_v<T, JSString>) {
+    if (thing->isAtom()) {
+      thing->runtimeFromAnyThread()->gc.maybeMarkWeaklyHeldAtom(
+          &thing->asAtom());
+    }
+  }
+}
+
+template <typename T>
 bool js::gc::IsAboutToBeFinalizedInternal(T* thing) {
   
   MOZ_ASSERT(!CurrentThreadIsGCFinalizing());
@@ -3160,7 +3174,13 @@ bool js::gc::IsAboutToBeFinalizedInternal(T* thing) {
   }
 #endif
 
-  return zone->isGCSweeping() && !TenuredThingIsMarkedAny(thing);
+  if (!zone->isGCSweeping()) {
+    return false;
+  }
+
+  MaybeMarkWeaklyHeldAtom(thing);
+
+  return !TenuredThingIsMarkedAny(thing);
 }
 
 template <typename T>
@@ -3188,11 +3208,10 @@ inline bool SweepingTracer::onEdge(T** thingp, const char* name) {
     return true;
   }
 
+  
   TenuredCell* cell = &thing->asTenured();
   Zone* zone = cell->zoneFromAnyThread();
-
 #ifdef DEBUG
-  
   if (IsOwnedByOtherRuntime(runtime(), thing)) {
     MOZ_ASSERT(!zone->wasGCStarted());
     MOZ_ASSERT(thing->isMarkedBlack());
@@ -3202,9 +3221,10 @@ inline bool SweepingTracer::onEdge(T** thingp, const char* name) {
   
   
   
-  if (cell->getTraceKind() == JS::TraceKind::Symbol && !cell->isMarkedBlack() &&
-      !allowSweepingSymbolsEarly) {
-    MOZ_ASSERT(!zone->isGCMarking());
+  if constexpr (std::is_same_v<T, JS::Symbol>) {
+    if (!thing->isMarkedBlack() && !allowSweepingSymbolsEarly) {
+      MOZ_ASSERT(!zone->isGCMarking());
+    }
   }
 #endif
 
@@ -3215,7 +3235,13 @@ inline bool SweepingTracer::onEdge(T** thingp, const char* name) {
   
   bool sweepZone =
       zone->isGCSweeping() || (zone->isAtomsZone() && zone->isGCMarking());
-  return !(sweepZone && !cell->isMarkedAny());
+  if (!sweepZone) {
+    return true;
+  }
+
+  MaybeMarkWeaklyHeldAtom(thing);
+
+  return TenuredThingIsMarkedAny(thing);
 }
 
 namespace js::gc {
