@@ -149,12 +149,12 @@
 
   @media -moz-pref("browser.nova.enabled") {
     /* Pull the splitter fully over sidebar-main so sidebar-main and sidebar-box
-     * sit flush. The factor 2 absorbs both the flexbox gap (--chrome-window-gap)
-     * and the splitter's own width. */
-    margin-inline-start: calc(-2 * var(--splitter-width));
+     * sit flush. The margin absorbs both the flexbox gap (--chrome-window-gap)
+     * and the splitter's own width, which differ in compact. */
+    margin-inline-start: calc(-1 * (var(--chrome-window-gap) + var(--splitter-width)));
 
     #sidebar-container[sidebar-positionend] + & {
-      margin-inline: 0 calc(-2 * var(--splitter-width));
+      margin-inline: 0 calc(-1 * (var(--chrome-window-gap) + var(--splitter-width)));
     }
   }
 
@@ -317,7 +317,6 @@ sidebar-main,
 
 :root[sidebar-expand-on-hover] {
   #sidebar-container {
-    border-radius: inherit;
     background-color: inherit;
     position: relative;
     inset: 0;
@@ -349,8 +348,10 @@ sidebar-main,
     }
 
     :root[lwtheme] & {
-      border-radius: unset;
-      border-inline: unset;
+      @media not -moz-pref("browser.nova.enabled") {
+        border-radius: unset;
+        border-inline: unset;
+      }
       color: var(--toolbox-text-color);
       background-color: var(--toolbox-background-color);
 
@@ -370,17 +371,15 @@ sidebar-main,
         --chrome-window-gap: 2px;
         margin-block-start: var(--chrome-window-gap);
       }
-      border-radius: var(--chrome-block-radius);
-      background-color: var(--toolbar-background-color);
+      :root:not([lwtheme]) & {
+        background-color: var(--toolbar-background-color);
+      }
       position: absolute;
-      inset-block-end: var(--chrome-window-gap);
-      inset-inline-start: var(--chrome-window-gap);
 
       /* stylelint-disable max-nesting-depth */
       &[sidebar-launcher-expanded],
       &[sidebar-ongoing-animations]:not([sidebar-launcher-expanded]) {
         background-image: none;
-        background-color: var(--toolbar-background-color);
 
         &:not([sidebar-positionend]) {
           border-inline-end: 1px solid var(--chrome-content-separator-color);
@@ -388,12 +387,6 @@ sidebar-main,
         &[sidebar-positionend] {
           border-inline-start: 1px solid var(--chrome-content-separator-color);
         }
-      }
-      /* stylelint-enable max-nesting-depth */
-
-      &[sidebar-positionend] {
-        inset-inline-start: unset;
-        inset-inline-end: var(--chrome-window-gap);
       }
     }
   }
@@ -507,6 +500,7 @@ sidebar-main,
     color: var(--sidebar-text-color);
     padding-block-end: 0;
     border-inline-start: none;
+    outline: 0.5px solid var(--sidebar-border-color);
   }
 
   #sidebar {
@@ -520,11 +514,12 @@ sidebar-main,
    * margin-inline absorbs 3px of that gap on each side, leaving 1px of empty
    * space + 4px splitter + 1px of empty space = 6px total. When the closest
    * split-view panel is selected, the content-side margin is widened to 3px
-   * (2px for the panel's outline + 1px clear) — see the :has() rules below. */
+   * (2px for the panel's outline + 1px clear) — see the
+   * [splitview-selected-column] rules below. */
   #sidebar-splitter {
     width: var(--chrome-window-gap);
     border-inline: none;
-    margin-inline: calc(-1 * var(--chrome-window-gap) + 1px);
+    margin-inline: calc(-1 * var(--chrome-window-gap));
 
     :root[uidensity="compact"] & {
       width: 2px;
@@ -536,7 +531,7 @@ sidebar-main,
    * the content area. Match the in-gap layout of #sidebar-splitter so the gap
    * between sidebar-main and the content area matches the sidebar-box case. */
   #sidebar-container:not([sidebar-panel-open]) + #sidebar-launcher-splitter {
-    margin-inline: calc(-1 * var(--chrome-window-gap) + 1px);
+    margin-inline: calc(-1 * var(--chrome-window-gap));
 
     :root[uidensity="compact"] & {
       width: 2px;
@@ -549,31 +544,27 @@ sidebar-main,
    * + 1px clear) so the splitter never touches the outline. The "closest"
    * panel is column-0 when the sidebar is on the inline-start side, and
    * column-1 when the sidebar is on the inline-end side. */
-  :root:has(#tabbrowser-tabpanels[splitview] .split-view-panel[column="0"].deck-selected) #sidebar-box:not([sidebar-positionend]) + #sidebar-splitter,
-  :root:has(#tabbrowser-tabpanels[splitview] .split-view-panel[column="0"].deck-selected)
-    #sidebar-container:not([sidebar-panel-open]):not([sidebar-positionend])
-    + #sidebar-launcher-splitter {
+  :root[splitview-selected-column="0"] #sidebar-box:not([sidebar-positionend]) + #sidebar-splitter,
+  :root[splitview-selected-column="0"] #sidebar-container:not([sidebar-panel-open]):not([sidebar-positionend]) + #sidebar-launcher-splitter {
     margin-inline-end: calc(-1 * var(--chrome-window-gap) + 3px);
   }
 
-  :root:has(#tabbrowser-tabpanels[splitview] .split-view-panel[column="1"].deck-selected) #sidebar-box[sidebar-positionend] + #sidebar-splitter,
-  :root:has(#tabbrowser-tabpanels[splitview] .split-view-panel[column="1"].deck-selected)
-    #sidebar-container[sidebar-positionend]:not([sidebar-panel-open])
-    + #sidebar-launcher-splitter {
+  :root[splitview-selected-column="1"] #sidebar-box[sidebar-positionend] + #sidebar-splitter,
+  :root[splitview-selected-column="1"] #sidebar-container[sidebar-positionend]:not([sidebar-panel-open]) + #sidebar-launcher-splitter {
     margin-inline-start: calc(-1 * var(--chrome-window-gap) + 3px);
   }
 
   /* When a panel is open, square the corners where sidebar-main and sidebar-box
    * meet so they read as one continuous surface. */
   #sidebar-container[sidebar-panel-open] {
-    &:not([sidebar-positionend]) {
-      border-start-end-radius: 0;
-      border-end-end-radius: 0;
-    }
+    border-radius: 0;
+  }
+
+  #sidebar-container:not([sidebar-panel-open]) {
+    border-radius: 0 var(--chrome-block-radius) 0;
 
     &[sidebar-positionend] {
-      border-start-start-radius: 0;
-      border-end-start-radius: 0;
+      border-radius: var(--chrome-block-radius) 0 0;
     }
   }
 
@@ -588,6 +579,18 @@ sidebar-main,
     &[sidebar-positionend] {
       border-start-end-radius: 0;
       border-end-end-radius: 0;
+    }
+  }
+
+  /* Without the launcher the panel sits flush against the window edges, so only
+   * the upper corner facing the content area is rounded. */
+  #sidebar-container[hidden] ~ #sidebar-box {
+    border-radius: 0;
+    border-start-end-radius: var(--chrome-block-radius);
+
+    &[sidebar-positionend] {
+      border-start-end-radius: 0;
+      border-start-start-radius: var(--chrome-block-radius);
     }
   }
 
