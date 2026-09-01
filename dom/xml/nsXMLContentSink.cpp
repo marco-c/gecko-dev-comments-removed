@@ -329,9 +329,7 @@ nsresult nsXMLContentSink::OnDocumentCreated(Document* aSourceDocument,
   
   
   if (viewer && viewer->GetDocument() == aSourceDocument) {
-    nsresult rv = viewer->SetDocumentInternal(aResultDocument, true);
-    NS_ENSURE_SUCCESS(rv, rv);
-    aResultDocument->BeginLoad();
+    return viewer->SetDocumentInternal(aResultDocument, true);
   }
   return NS_OK;
 }
@@ -409,9 +407,6 @@ nsresult nsXMLContentSink::OnTransformDone(Document* aSourceDocument,
     
     
     originalDocument->UnblockOnload(true);
-  }
-  if (aResultDocument->IsExpectingEndLoad()) {
-    aResultDocument->EndLoad();
   }
 
   DropParserAndPerfHint();
