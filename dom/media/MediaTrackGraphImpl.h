@@ -239,7 +239,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  void Dispatch(already_AddRefed<nsIRunnable> aRunnable);
+  void DispatchToMainThread(already_AddRefed<nsIRunnable> aRunnable);
 
   
 
