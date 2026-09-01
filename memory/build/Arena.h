@@ -8,6 +8,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/DoublyLinkedList.h"
 #include "mozilla/fallible.h"
+#include "mozilla/Result.h"
 #include "mozilla/XorShift128PlusRNG.h"
 
 #include "mozjemalloc_types.h"
@@ -432,7 +433,7 @@ struct arena_t : public BaseAllocClass {
   
   
   
-  bool RemoveChunk(arena_chunk_t* aChunk) MOZ_REQUIRES(mLock);
+  void RemoveChunk(arena_chunk_t* aChunk) MOZ_REQUIRES(mLock);
 
   
   
@@ -628,7 +629,11 @@ struct arena_t : public BaseAllocClass {
     
     
     
-    bool FindDirtyPages(bool aPurgedOnce) MOZ_REQUIRES(mArena.mLock);
+    
+    
+    
+    mozilla::Result<mozilla::Ok, arena_chunk_t*> FindDirtyPages(
+        bool aPurgedOnce) MOZ_REQUIRES(mArena.mLock);
 
     
     
@@ -641,14 +646,16 @@ struct arena_t : public BaseAllocClass {
 
     
     
-    
-    std::pair<bool, arena_chunk_t*> UpdatePagesAndCounts()
-        MOZ_REQUIRES(mArena.mLock);
+    bool UpdatePagesAndCounts() MOZ_REQUIRES(mArena.mLock);
 
     
     
     
-    void FinishPurgingInChunk(bool aAddToMAdvised, bool aAddToDirty)
+    
+    
+    
+    [[nodiscard]] arena_chunk_t* FinishPurgingInChunk(bool aAddToMAdvised,
+                                                      bool aAddToDirty)
         MOZ_REQUIRES(mArena.mLock);
 
     explicit PurgeInfo(arena_t& arena, arena_chunk_t* chunk,

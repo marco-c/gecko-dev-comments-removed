@@ -172,7 +172,6 @@ struct arena_chunk_t {
   uint16_t mDirtyRunHint = 0;
 
   bool mIsPurging = false;
-  bool mDying = false;
 
   
   arena_chunk_map_t mPageMap[];  
