@@ -5875,6 +5875,29 @@ nsresult QuotaManager::EnsureStorageIsInitializedInternal() {
             
             ErrToDefaultOk<nsCOMPtr<mozIStorageConnection>>));
 
+    
+    
+    
+    
+    
+    
+    
+    if (connection) {
+      QM_WARNONLY_TRY(DatabasePassesIntegrityCheck(*connection)
+                          .andThen([](bool ok) -> Result<Ok, nsresult> {
+                            return ok ? Result<Ok, nsresult>{Ok{}}
+                                      : Err(NS_ERROR_FILE_CORRUPTED);
+                          }),
+                      
+                      
+                      [&](const auto&) {
+                        
+                        
+                        connection->Close();
+                        connection = nullptr;
+                      });
+    }
+
     bool storageFileWasCorrupted = false;
 
     if (!connection) {
