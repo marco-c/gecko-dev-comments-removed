@@ -61,7 +61,7 @@ class ToolchainRunSchema(Schema, kw_only=True):
     toolchain_extract: Optional[bool] = None
     
     
-    clone_with: Optional[Literal["hg", "git"]] = "hg"
+    clone_with: Optional[Literal["hg", "git"]] = "git"
     
     workdir: Optional[str] = None
 

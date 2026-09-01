@@ -6,55 +6,56 @@ This transform construct tasks to perform diffs between builds, as
 defined in kind.yml
 """
 
+from typing import Optional, Union
+
 from taskgraph.transforms.base import TransformSequence
-from taskgraph.util.schema import LegacySchema
+from taskgraph.util.schema import Schema
 from taskgraph.util.taskcluster import get_artifact_path
-from voluptuous import Any, Optional, Required
 
-from gecko_taskgraph.transforms.task import task_description_schema
+from gecko_taskgraph.transforms.task import TaskDescriptionSchema
 
-index_or_string = Any(
-    str,
-    {Required("index-search"): str},
-)
 
-diff_description_schema = LegacySchema({
+class IndexSearchSchema(Schema):
+    index_search: str
+
+
+class DiffDescriptionSchema(Schema, kw_only=True):
     
-    Required("name"): str,
+    name: str
     
-    Required("tier"): int,
+    tier: int
     
-    Required("symbol"): str,
+    symbol: str
     
-    Optional("task-from"): str,
+    task_from: Optional[str] = None
     
-    Required("original"): index_or_string,
-    Required("new"): index_or_string,
-    
-    
-    Optional("args"): str,
-    
-    Optional("extra-args"): str,
-    
-    Optional("fail-on-diff"): bool,
+    original: Union[str, IndexSearchSchema]
+    new: Union[str, IndexSearchSchema]
     
     
+    args: Optional[str] = None
     
-    Optional("artifact"): str,
+    extra_args: Optional[str] = None
+    
+    fail_on_diff: Optional[bool] = None
     
     
     
-    Optional("unpack"): bool,
+    artifact: Optional[str] = None
     
-    Optional("pre-diff-commands"): [str],
     
-    Optional("run-on-projects"): task_description_schema["run-on-projects"],
-    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-    Optional("optimization"): task_description_schema["optimization"],
-})
+    
+    unpack: Optional[bool] = None
+    
+    pre_diff_commands: Optional[list[str]] = None
+    
+    run_on_projects: TaskDescriptionSchema.__annotations__["run_on_projects"] = None
+    run_on_repo_type: TaskDescriptionSchema.__annotations__["run_on_repo_type"] = None
+    optimization: TaskDescriptionSchema.__annotations__["optimization"] = None
+
 
 transforms = TransformSequence()
-transforms.add_validate(diff_description_schema)
+transforms.add_validate(DiffDescriptionSchema)
 
 
 @transforms.add
@@ -146,6 +147,7 @@ def fill_template(config, tasks):
             },
             "run": {
                 "using": "run-task",
+                "clone-with": "hg",
                 "checkout": task.get("unpack", False),
                 "command": "/builds/worker/bin/get_and_diffoscope{}{}".format(
                     " --unpack" if task.get("unpack") else "",

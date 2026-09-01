@@ -45,7 +45,7 @@ class RunTaskSchema(Schema, kw_only=True):
     shallow_clone: TOptional[bool] = None
     
     
-    clone_with: TOptional[Literal["hg", "git"]] = "hg"
+    clone_with: TOptional[Literal["hg", "git"]] = "git"
     
     
     comm_checkout: bool = False
@@ -119,7 +119,7 @@ worker_defaults = {
     "sparse-profile": None,
     "tooltool-downloads": False,
     "run-as-root": False,
-    "clone-with": "hg",
+    "clone-with": "git",
 }
 
 

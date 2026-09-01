@@ -62,7 +62,7 @@ class MozharnessTestRunSchema(Schema, kw_only=True):
     workdir: Optional[str] = None
     
     
-    clone_with: Optional[Literal["hg", "git"]] = "hg"
+    clone_with: Optional[Literal["hg", "git"]] = "git"
 
 
 def test_packages_url(taskdesc):
