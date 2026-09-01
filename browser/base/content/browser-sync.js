@@ -625,6 +625,8 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
 
 
 
+
+
   async _getMergedDeviceList() {
     let clients = await SyncedTabs.getTabClients();
     let devices = fxAccounts.device.recentDeviceList;
@@ -645,12 +647,16 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
     let merged = [];
     let matchedClients = new Set();
     for (let device of devices) {
+      let client = clientByFxaId.get(device.id);
+      if (client) {
+        
+        
+        matchedClients.add(client);
+      }
       if (device.isCurrentDevice) {
         continue;
       }
-      let client = clientByFxaId.get(device.id);
       if (client) {
-        matchedClients.add(client);
         merged.push(client);
       } else if (fxAccounts.commands.sendTab.isDeviceCompatible(device)) {
         merged.push({
