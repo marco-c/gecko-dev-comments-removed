@@ -62,7 +62,21 @@ fn can_pin(main_guard: MainThreadGuard) -> bool {
         Err(e) => log::error!("Error checking if we can pin via WinRT: {e:?}"),
     }
 
-    com::is_pinning_available(main_guard)
+    
+    
+    
+    
+    
+    
+    
+    if Package::Current().is_err() {
+        let present = com::is_pinning_available(main_guard);
+        log::trace!("COM pinning present: {present:?}");
+
+        return present;
+    }
+
+    false
 }
 
 
