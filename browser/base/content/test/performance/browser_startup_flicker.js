@@ -41,6 +41,10 @@ add_task(async function () {
         {
           name: "Shadow around active tab should not flicker on macOS (bug 1960967)",
           condition(r) {
+            if (Services.prefs.getBoolPref("browser.nova.enabled", false)) {
+              
+              return false;
+            }
             const tabRect = tabBoundingRect
               ? tabBoundingRect
               : (tabBoundingRect = gBrowser.tabContainer
@@ -63,6 +67,46 @@ add_task(async function () {
                 .getBoundingClientRect();
             }
             return rectMatchesBottomBorder(r, urlbarBoundingRect);
+          },
+        },
+        {
+          
+          
+          
+          
+          name: "urlbar focus ring settles during startup idle tasks (bug 2066735)",
+          condition(r) {
+            if (!urlbarBoundingRect) {
+              urlbarBoundingRect = document
+                .getElementById("urlbar")
+                .getBoundingClientRect();
+            }
+            
+            
+            
+            let tolerance = 2;
+            return (
+              inRange(
+                r.x1,
+                urlbarBoundingRect.left - tolerance,
+                urlbarBoundingRect.left + tolerance
+              ) &&
+              inRange(
+                r.y1,
+                urlbarBoundingRect.top - tolerance,
+                urlbarBoundingRect.top + tolerance
+              ) &&
+              inRange(
+                r.x2,
+                urlbarBoundingRect.right - tolerance,
+                urlbarBoundingRect.right + tolerance
+              ) &&
+              inRange(
+                r.y2,
+                urlbarBoundingRect.bottom - tolerance,
+                urlbarBoundingRect.bottom + tolerance
+              )
+            );
           },
         },
       ];
