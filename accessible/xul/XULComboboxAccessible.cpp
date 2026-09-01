@@ -9,9 +9,7 @@
 #include "States.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/a11y/Role.h"
-#include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Element.h"
-#include "mozilla/dom/WindowContext.h"
 #include "nsAccessibilityService.h"
 #include "nsCoreUtils.h"
 #include "nsFocusManager.h"
@@ -171,11 +169,9 @@ Accessible* XULContentSelectDropdownAccessible::Parent() const {
     nsFocusManager* focusManagerDOM = nsFocusManager::GetFocusManager();
     dom::BrowsingContext* focusedContext =
         focusManagerDOM->GetFocusedBrowsingContextInChrome();
-    dom::WindowContext* focusedWindow =
-        focusedContext ? focusedContext->GetCurrentWindowContext() : nullptr;
 
     DocAccessibleParent* focusedDoc =
-        DocAccessibleParent::GetFrom(focusedWindow);
+        DocAccessibleParent::GetFrom(focusedContext);
     if (NS_WARN_IF(!focusedDoc)) {
       
       

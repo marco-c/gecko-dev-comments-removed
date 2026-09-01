@@ -50,9 +50,10 @@ OuterDocAccessible::~OuterDocAccessible() = default;
 void OuterDocAccessible::SendEmbedderAccessible(
     dom::BrowserBridgeChild* aBridge) {
   MOZ_ASSERT(mDoc);
-  if (mDoc->IPCDoc()) {
+  DocAccessibleChild* ipcDoc = mDoc->IPCDoc();
+  if (ipcDoc) {
     uint64_t id = reinterpret_cast<uintptr_t>(UniqueID());
-    aBridge->SetEmbedderAccessible(id);
+    aBridge->SetEmbedderAccessible(ipcDoc, id);
   }
 }
 
@@ -92,7 +93,7 @@ void OuterDocAccessible::Shutdown() {
       
       
       
-      bridge->SetEmbedderAccessible(0);
+      bridge->SetEmbedderAccessible(nullptr, 0);
     }
   }
 
