@@ -149,7 +149,9 @@ struct FileHandleHelper {
   
   
   
-  bool operator==(const FileHandleHelper& aOther) const = default;
+  bool operator==(const FileHandleHelper& aOther) const {
+    return mHandle == aOther.mHandle;
+  }
 
  private:
   FileHandleType mHandle{kInvalidHandle};

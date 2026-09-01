@@ -159,7 +159,9 @@ class EnumSet {
   
 
 
-  bool operator==(const EnumSet& aEnumSet) const = default;
+  constexpr bool operator==(const EnumSet& aEnumSet) const {
+    return mBitField == aEnumSet.mBitField;
+  }
 
   
 
@@ -171,7 +173,9 @@ class EnumSet {
   
 
 
-  bool operator!=(const EnumSet& aEnumSet) const = default;
+  constexpr bool operator!=(const EnumSet& aEnumSet) const {
+    return !operator==(aEnumSet);
+  }
 
   
 
