@@ -993,7 +993,7 @@ pub trait MatchMethods: TElement {
         font_property_changed!(clone_font_family)
             || font_property_changed!(clone_font_style)
             || font_property_changed!(clone_font_weight)
-            || font_property_changed!(clone_font_stretch)
+            || font_property_changed!(clone_font_width)
     }
 
     
@@ -1065,12 +1065,12 @@ pub trait MatchMethods: TElement {
             
             
             if device.used_root_font_metrics() && device.update_root_font_metrics() {
-                child_restyle_hint |= RestyleHint::RESTYLE_IF_AFFECTED_BY_ANCESTOR_FONT;
+                child_restyle_hint |= RestyleHint::RESTYLE_IF_AFFECTED_BY_WM_OR_ANCESTOR_FONT;
             }
         }
 
         if font_size_changed || line_height_likely_changed {
-            child_restyle_hint |= RestyleHint::RESTYLE_IF_AFFECTED_BY_ANCESTOR_FONT;
+            child_restyle_hint |= RestyleHint::RESTYLE_IF_AFFECTED_BY_WM_OR_ANCESTOR_FONT;
         }
 
         if context.shared.stylist.quirks_mode() == QuirksMode::Quirks {
@@ -1101,6 +1101,13 @@ pub trait MatchMethods: TElement {
             Some(s) => s,
             None => return RestyleHint::RECASCADE_SELF,
         };
+
+        
+        
+        
+        if !old_primary_style.writing_mode_equals(new_primary_style) {
+            child_restyle_hint |= RestyleHint::RESTYLE_IF_AFFECTED_BY_WM_OR_ANCESTOR_FONT;
+        }
 
         let old_container_type = old_primary_style.clone_container_type();
         if old_container_type != new_container_type && !new_container_type.is_size_container_type()

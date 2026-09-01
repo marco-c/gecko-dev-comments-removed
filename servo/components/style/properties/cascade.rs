@@ -1003,7 +1003,7 @@ impl<'a> Cascade<'a> {
                 context.builder.color_scheme =
                     context.builder.get_inherited_ui().color_scheme_bits();
             },
-            MozDefaultAppearance | MathDepth | FontWeight | FontStretch | FontStyle
+            MozDefaultAppearance | MathDepth | FontWeight | FontWidth | FontStyle
             | FontSizeAdjust | ForcedColorAdjust | LineHeight => {},
         }
     }
@@ -1307,7 +1307,7 @@ impl<'a> Cascade<'a> {
             | ComputedValueFlags::IS_IN_APPEARANCE_BASE_SUBTREE
             | ComputedValueFlags::USES_CONTAINER_UNITS
             | ComputedValueFlags::USES_VIEWPORT_UNITS
-            | ComputedValueFlags::USES_FONT_RELATIVE_UNITS
+            | ComputedValueFlags::USES_FONT_OR_WM_RELATIVE_UNITS
             | ComputedValueFlags::DEPENDS_ON_CONTAINER_STYLE_QUERY
             | ComputedValueFlags::USES_SIBLING_COUNT
             | ComputedValueFlags::USES_SIBLING_INDEX;
