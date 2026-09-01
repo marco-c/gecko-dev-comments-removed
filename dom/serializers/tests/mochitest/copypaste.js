@@ -520,6 +520,13 @@ async function testCopyPaste(isXHTML) {
     setTimeout(resolve, 0);
   });
 
+  
+  await copyChildrenToClipboard("long");
+  testHtmlClipboardValue(
+    "text/html",
+    document.getElementById("long").textContent
+  );
+
   if (!isXHTML) {
     
 
