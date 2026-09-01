@@ -5,6 +5,10 @@
 
 
 
+requestLongerTimeout(2);
+
+
+
 
 
 
@@ -24,7 +28,7 @@ async function scrolling_works(useVerticalTabs, uiDensity) {
 
   await BrowserTestUtils.overflowTabs(null, win, {
     overflowAtStart: false,
-    overflowTabFactor: 3,
+    overflowTabFactor: 1.1,
   });
 
   await TestUtils.waitForCondition(() => {
@@ -43,11 +47,13 @@ async function scrolling_works(useVerticalTabs, uiDensity) {
   
   let { arrowScrollbox } = win.gBrowser.tabContainer;
   let side = useVerticalTabs ? "top" : "left";
-  let boxStart = arrowScrollbox.getBoundingClientRect()[side];
+  
+  
+  let boxStart = arrowScrollbox.scrollbox.getBoundingClientRect()[side];
   let firstPoint = boxStart + 5;
   Assert.equal(
-    gBrowser.tabs.indexOf(arrowScrollbox._elementFromPoint(firstPoint)),
-    gBrowser.tabs.indexOf(firstScrollableTab),
+    win.gBrowser.tabs.indexOf(arrowScrollbox._elementFromPoint(firstPoint)),
+    win.gBrowser.tabs.indexOf(firstScrollableTab),
     "First tab should be scrolled into view."
   );
 
@@ -64,6 +70,7 @@ async function scrolling_works(useVerticalTabs, uiDensity) {
         wheel: true,
         deltaY: 1,
         deltaMode: WheelEvent.DOM_DELTA_LINE,
+        asyncEnabled: true,
       },
       win
     );
@@ -98,4 +105,54 @@ add_task(async function test_horizontal_scroll() {
   for (let density of ["MODE_NORMAL", "MODE_COMPACT", "MODE_TOUCH"]) {
     await scrolling_works(false, density);
   }
+});
+
+
+
+
+
+
+
+add_task(async function test_periphery_keeps_height_while_overflowing() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["sidebar.revamp", true],
+      ["sidebar.verticalTabs", true],
+    ],
+  });
+
+  let win = await BrowserTestUtils.openNewBrowserWindow();
+  win.gUIDensity.update(win.gUIDensity.MODE_COMPACT);
+
+  await BrowserTestUtils.overflowTabs(null, win, {
+    overflowAtStart: false,
+    overflowTabFactor: 1.1,
+  });
+
+  await TestUtils.waitForCondition(() => {
+    return Array.from(win.gBrowser.tabs).every(tab => tab._fullyOpen);
+  });
+  await win.promiseDocumentFlushed(() => {});
+
+  let { tabContainer } = win.gBrowser;
+  Assert.ok(tabContainer.overflowing, "The tab strip is overflowing.");
+
+  let periphery = win.document.getElementById(
+    "tabbrowser-arrowscrollbox-periphery"
+  );
+  let inlineNewTabButton = win.document.getElementById("tabs-newtab-button");
+
+  Assert.equal(
+    win.getComputedStyle(inlineNewTabButton).display,
+    "none",
+    "The inline new tab button is hidden while overflowing."
+  );
+  Assert.greater(
+    periphery.getBoundingClientRect().height,
+    0,
+    "The periphery keeps a non-zero height."
+  );
+
+  await SpecialPowers.popPrefEnv();
+  await BrowserTestUtils.closeWindow(win);
 });
