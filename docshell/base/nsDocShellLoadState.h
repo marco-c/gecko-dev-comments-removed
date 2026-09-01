@@ -676,7 +676,6 @@ class nsDocShellLoadState final {
   MaybeDiscarded<BrowsingContext> mSourceBrowsingContext;
 
   
-  
   nsCOMPtr<nsIURI> mBaseURI;
 
   
