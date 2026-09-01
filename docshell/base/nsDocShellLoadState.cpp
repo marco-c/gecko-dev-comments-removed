@@ -192,11 +192,14 @@ nsDocShellLoadState::nsDocShellLoadState(
   
   
   if (XRE_IsParentProcess()) {
-    ContentParent* cp = ActorDynCast<ContentParent>(aActor->ToplevelProtocol());
-    if (!cp) {
+    mozilla::ipc::IToplevelProtocol* top = aActor->ToplevelProtocol();
+    if (!top ||
+        top->GetProtocolId() != mozilla::ipc::ProtocolId::PContentMsgStart ||
+        top->GetSide() != mozilla::ipc::ParentSide) {
       aActor->FatalError("nsDocShellLoadState must be received over PContent");
       return;
     }
+    ContentParent* cp = static_cast<ContentParent*>(top);
 
     
     
@@ -1623,8 +1626,13 @@ DocShellLoadStateInit nsDocShellLoadState::Serialize(
   loadState.NavigationAPIState() = mNavigationAPIState;
 
   if (XRE_IsParentProcess()) {
-    ContentParent* cp = ActorDynCast<ContentParent>(aActor->ToplevelProtocol());
-    MOZ_RELEASE_ASSERT(cp, "nsDocShellLoadState must be sent over PContent");
+    mozilla::ipc::IToplevelProtocol* top = aActor->ToplevelProtocol();
+    MOZ_RELEASE_ASSERT(top &&
+                           top->GetProtocolId() ==
+                               mozilla::ipc::ProtocolId::PContentMsgStart &&
+                           top->GetSide() == mozilla::ipc::ParentSide,
+                       "nsDocShellLoadState must be sent over PContent");
+    ContentParent* cp = static_cast<ContentParent*>(top);
     cp->StorePendingLoadState(this);
   }
 

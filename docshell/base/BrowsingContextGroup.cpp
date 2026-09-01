@@ -271,8 +271,8 @@ bool BrowsingContextGroup::IsKnownForMessageReader(
       
       
       
-      if (ContentParent* cp = ActorDynCast<ContentParent>(topActor);
-          cp && !mDestroyed && !mSubscribers.Contains(cp)) {
+      if (topActor->GetSide() == mozilla::ipc::ParentSide && !mDestroyed &&
+          !mSubscribers.Contains(static_cast<ContentParent*>(topActor))) {
         aReader->FatalError(
             "Process is not subscribed to this BrowsingContextGroup");
         return false;
