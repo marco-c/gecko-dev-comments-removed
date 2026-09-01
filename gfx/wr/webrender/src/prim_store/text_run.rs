@@ -5,6 +5,7 @@
 use api::{ColorF, FontInstanceFlags, GlyphInstance, RasterSpace};
 use api::units::{LayoutToWorldTransform, DevicePixelScale};
 use api::units::*;
+use crate::space::SpaceSnapper;
 use crate::scene_building::{IsVisible};
 use glyph_rasterizer::{FontInstance, FontTransform, GlyphKey, SubpixelDirection, FONT_SIZE_LIMIT};
 use crate::intern;
@@ -239,6 +240,11 @@ pub struct TextRunScratch {
     
     
     
+    pub snapped_clip_rect: LayoutRect,
+    
+    
+    
+    
     
     
     pub gpu_address: GpuBufferAddress,
@@ -454,6 +460,7 @@ impl TextRunTemplate {
     pub fn request_resources(
         &self,
         pattern_rect: LayoutRect,
+        local_clip_rect: LayoutRect,
         transform: &LayoutToWorldTransform,
         surface: &SurfaceInfo,
         spatial_node_index: SpatialNodeIndex,
@@ -530,6 +537,39 @@ impl TextRunTemplate {
         };
 
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let (snap_clip_x, snap_clip_y) = if local_raster {
+            (false, false)
+        } else {
+            match subpx_dir {
+                SubpixelDirection::None => (true, true),
+                SubpixelDirection::Horizontal => (false, true),
+                SubpixelDirection::Vertical => (true, false),
+                SubpixelDirection::Mixed => (false, false),
+            }
+        };
+        let snapped_clip_rect = if snap_clip_x || snap_clip_y {
+            let mut snapper = SpaceSnapper::new(surface, spatial_tree);
+            snapper.set_target_spatial_node(spatial_node_index, spatial_tree);
+            snapper.snap_rect_axes(&local_clip_rect, snap_clip_x, snap_clip_y)
+        } else {
+            local_clip_rect
+        };
+
+        
         let anchor_world = transform.transform_point2d(pattern_rect.min);
 
         let mut glyph_offsets: Vec<DeviceVector2D> = Vec::new();
@@ -599,6 +639,7 @@ impl TextRunTemplate {
             used_font,
             glyph_keys_range,
             pattern_rect,
+            snapped_clip_rect,
             gpu_address,
             raster_scale,
             local_raster,

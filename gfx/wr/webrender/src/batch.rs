@@ -1033,7 +1033,12 @@ impl BatchBuilder {
                     
                     
                     pattern_rect: run_scratch.pattern_rect,
-                    bounds: prim_info.clip_chain.local_clip_rect,
+                    
+                    
+                    
+                    
+                    
+                    bounds: run_scratch.snapped_clip_rect,
                     transform_id,
                     z: z_id,
                     render_task_address: self.batcher.render_task_address,
