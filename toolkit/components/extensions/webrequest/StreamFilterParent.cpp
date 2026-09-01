@@ -734,17 +734,22 @@ void StreamFilterParent::DoSendData(Data&& aData) {
     MutexAutoLock al(mBufferMutex);
     if (mPrependedBufferCount == 0) {
       mBufferedData.insertFront(new BufferedData(std::move(aData)));
+      ++mPrependedBufferCount;
     } else {
       MOZ_ASSERT(!mBufferedData.isEmpty());
       int i = 0;
+      bool inserted = false;
       for (BufferedData* item : mBufferedData) {
         if (++i == mPrependedBufferCount) {
           item->setNext(new BufferedData(std::move(aData)));
           ++mPrependedBufferCount;
+          inserted = true;
           break;
         }
       }
-      MOZ_ASSERT_UNREACHABLE("mPrependedBufferCount past end of mBufferedData");
+      if (!inserted) {
+        MOZ_ASSERT_UNREACHABLE("mPrependedBufferCount outside mBufferedData");
+      }
     }
   }
 
@@ -805,6 +810,19 @@ StreamFilterParent::OnDataAvailable(nsIRequest* aRequest,
   if (mState == State::Disconnecting) {
     MutexAutoLock al(mBufferMutex);
     BufferData(std::move(data));
+  } else if (mState == State::Disconnected) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    FlushBufferedData();
+    return Write(data);
   } else if (mState == State::Closed) {
     return NS_ERROR_FAILURE;
   } else {
