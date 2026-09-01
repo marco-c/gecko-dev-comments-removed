@@ -44,15 +44,6 @@ class VideoBitrateAllocator {
   virtual void SetLegacyConferenceMode(bool enabled);
 };
 
-class VideoBitrateAllocationObserver {
- public:
-  VideoBitrateAllocationObserver() {}
-  virtual ~VideoBitrateAllocationObserver() {}
-
-  virtual void OnBitrateAllocationUpdated(
-      const VideoBitrateAllocation& allocation) = 0;
-};
-
 }  
 
 #endif  
