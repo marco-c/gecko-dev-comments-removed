@@ -4,15 +4,11 @@
 
 #include "CssAltContent.h"
 
-#include "DocAccessible-inl.h"
-#include "mozilla/a11y/DocManager.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "nsCoreUtils.h"
 #include "nsIContent.h"
 #include "nsIFrame.h"
-#include "nsLayoutUtils.h"
-#include "nsNameSpaceManager.h"
 
 namespace mozilla::a11y {
 
@@ -53,7 +49,6 @@ CssAltContent::CssAltContent(nsIContent* aContent) {
     }
   }
   if (mPseudoElement) {
-    
     mRealElement = mPseudoElement->GetParentElement();
     if (!mRealElement) {
       return;
@@ -80,113 +75,10 @@ CssAltContent::CssAltContent(nsIContent* aContent) {
   for (const auto& item : mItems) {
     if (item.IsString()) {
       mText.Append(NS_ConvertUTF8toUTF16(item.AsString().AsString()));
-    } else if (item.IsAttr()) {
-      
-      
-      MOZ_ASSERT(mRealElement);
-      const auto& attr = item.AsAttr();
-      RefPtr<nsAtom> name = attr.attribute.AsAtom();
-      int32_t nsId = kNameSpaceID_None;
-      RefPtr<nsAtom> ns = attr.namespace_url.AsAtom();
-      if (!ns->IsEmpty()) {
-        nsresult rv = nsNameSpaceManager::GetInstance()->RegisterNameSpace(
-            ns.forget(), nsId);
-        if (NS_FAILED(rv)) {
-          continue;
-        }
-      }
-      if (mRealElement->IsHTMLElement() &&
-          mRealElement->OwnerDoc()->IsHTMLDocument()) {
-        ToLowerCaseASCII(name);
-      }
-      nsAutoString val;
-      if (!mRealElement->GetAttr(nsId, name, val)) {
-        if (RefPtr<nsAtom> fallback = attr.fallback.AsAtom()) {
-          fallback->ToString(val);
-        }
-      }
-      mText.Append(val);
     }
   }
 }
 
 void CssAltContent::AppendToString(nsAString& aOut) { aOut.Append(mText); }
-
-
-bool CssAltContent::HandleAttributeChange(nsIContent* aContent,
-                                          int32_t aNameSpaceID,
-                                          nsAtom* aAttribute) {
-  
-  if (CssAltContent(aContent).HandleAttributeChange(aNameSpaceID, aAttribute)) {
-    return true;
-  }
-  
-  for (dom::Element* pseudo : {nsLayoutUtils::GetBeforePseudo(aContent),
-                               nsLayoutUtils::GetAfterPseudo(aContent),
-                               nsLayoutUtils::GetMarkerPseudo(aContent),
-                               nsLayoutUtils::GetCheckmarkPseudo(aContent)}) {
-    
-    nsIContent* content = pseudo ? pseudo->GetFirstChild() : nullptr;
-    if (!content) {
-      content = pseudo;
-    }
-    if (content && CssAltContent(content).HandleAttributeChange(aNameSpaceID,
-                                                                aAttribute)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool CssAltContent::HandleAttributeChange(int32_t aNameSpaceID,
-                                          nsAtom* aAttribute) {
-  for (const auto& item : mItems) {
-    if (!item.IsAttr()) {
-      continue;
-    }
-    MOZ_ASSERT(mRealElement);
-    const auto& attr = item.AsAttr();
-    RefPtr<nsAtom> name = attr.attribute.AsAtom();
-    if (mRealElement->IsHTMLElement() &&
-        mRealElement->OwnerDoc()->IsHTMLDocument()) {
-      ToLowerCaseASCII(name);
-    }
-    if (name != aAttribute) {
-      continue;
-    }
-    int32_t nsId = kNameSpaceID_None;
-    RefPtr<nsAtom> ns = attr.namespace_url.AsAtom();
-    if (!ns->IsEmpty()) {
-      nsresult rv = nsNameSpaceManager::GetInstance()->RegisterNameSpace(
-          ns.forget(), nsId);
-      if (NS_FAILED(rv)) {
-        continue;
-      }
-    }
-    if (nsId != aNameSpaceID) {
-      continue;
-    }
-    
-    DocAccessible* docAcc = GetExistingDocAccessible(mRealElement->OwnerDoc());
-    MOZ_ASSERT(docAcc);
-    if (mPseudoElement) {
-      
-      
-      
-      
-      
-      docAcc->RecreateAccessible(mPseudoElement);
-    } else {
-      
-      MOZ_ASSERT(mRealElement->GetPrimaryFrame());
-      MOZ_ASSERT(mRealElement->GetPrimaryFrame()->IsReplaced());
-      LocalAccessible* acc = docAcc->GetAccessible(mRealElement);
-      MOZ_ASSERT(acc);
-      docAcc->FireDelayedEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE, acc);
-    }
-    return true;
-  }
-  return false;
-}
 
 }  

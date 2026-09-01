@@ -6,7 +6,6 @@
 
 use crate::counter_style::CounterStyle;
 use crate::derives::*;
-use crate::values::specified::Attr;
 use crate::values::CustomIdent;
 use std::fmt::{self, Write};
 use std::ops::Deref;
@@ -314,8 +313,6 @@ pub enum GenericContentItem<I> {
     
     #[cfg(feature = "gecko")]
     MozLabelContent,
-    
-    Attr(Attr),
     
     Image(I),
 }

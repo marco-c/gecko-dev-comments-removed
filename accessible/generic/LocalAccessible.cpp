@@ -1367,8 +1367,6 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
   
   
 
-  CssAltContent::HandleAttributeChange(mContent, aNameSpaceID, aAttribute);
-
   
   
   

@@ -24,19 +24,20 @@ using namespace mozilla::dom;
 
 
 
+
+
+
+
+
+
 class nsAttributeTextNode final : public nsTextNode,
                                   public nsStubMutationObserver {
  public:
   NS_DECL_ISUPPORTS_INHERITED
 
   nsAttributeTextNode(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
-                      int32_t aNameSpaceID, nsAtom* aAttrName,
-                      nsAtom* aFallback)
-      : nsTextNode(std::move(aNodeInfo)),
-        mNameSpaceID(aNameSpaceID),
-        mAttrName(aAttrName),
-        mFallback(aFallback) {
-    NS_ASSERTION(mNameSpaceID != kNameSpaceID_Unknown, "Must know namespace");
+                      nsAtom* aAttrName)
+      : nsTextNode(std::move(aNodeInfo)), mAttrName(aAttrName) {
     NS_ASSERTION(mAttrName, "Must have attr name");
   }
 
@@ -48,9 +49,8 @@ class nsAttributeTextNode final : public nsTextNode,
 
   already_AddRefed<CharacterData> CloneDataNode(
       mozilla::dom::NodeInfo* aNodeInfo, bool aCloneText) const override {
-    RefPtr<nsAttributeTextNode> it =
-        new (aNodeInfo->NodeInfoManager()) nsAttributeTextNode(
-            do_AddRef(aNodeInfo), mNameSpaceID, mAttrName, mFallback);
+    RefPtr<nsAttributeTextNode> it = new (aNodeInfo->NodeInfoManager())
+        nsAttributeTextNode(do_AddRef(aNodeInfo), mAttrName);
     if (aCloneText) {
       it->mBuffer = mBuffer;
     }
@@ -75,9 +75,7 @@ class nsAttributeTextNode final : public nsTextNode,
   
   Element* mOriginatingElement = nullptr;
   
-  int32_t mNameSpaceID;
   RefPtr<nsAtom> mAttrName;
-  RefPtr<nsAtom> mFallback;
 };
 
 nsTextNode::~nsTextNode() = default;
@@ -151,18 +149,16 @@ void nsTextNode::DumpContent(FILE* out, int32_t aIndent, bool aDumpAll) const {
 #endif
 
 nsresult NS_NewAttributeContent(nsNodeInfoManager* aNodeInfoManager,
-                                int32_t aNameSpaceID, nsAtom* aAttrName,
-                                nsAtom* aFallback, nsIContent** aResult) {
+                                nsAtom* aAttrName, nsIContent** aResult) {
   MOZ_ASSERT(aNodeInfoManager, "Missing nodeInfoManager");
   MOZ_ASSERT(aAttrName, "Must have an attr name");
-  MOZ_ASSERT(aNameSpaceID != kNameSpaceID_Unknown, "Must know namespace");
 
   *aResult = nullptr;
 
   RefPtr<mozilla::dom::NodeInfo> ni = aNodeInfoManager->GetTextNodeInfo();
 
-  RefPtr<nsAttributeTextNode> textNode = new (aNodeInfoManager)
-      nsAttributeTextNode(ni.forget(), aNameSpaceID, aAttrName, aFallback);
+  RefPtr<nsAttributeTextNode> textNode =
+      new (aNodeInfoManager) nsAttributeTextNode(ni.forget(), aAttrName);
   textNode.forget(aResult);
 
   return NS_OK;
@@ -215,7 +211,7 @@ void nsAttributeTextNode::AttributeChanged(Element* aElement,
                                            int32_t aNameSpaceID,
                                            nsAtom* aAttribute, AttrModType,
                                            const nsAttrValue* aOldValue) {
-  if (aNameSpaceID == mNameSpaceID && aAttribute == mAttrName &&
+  if (aNameSpaceID == kNameSpaceID_None && aAttribute == mAttrName &&
       aElement == mOriginatingElement) {
     
     
@@ -234,13 +230,10 @@ void nsAttributeTextNode::NodeWillBeDestroyed(nsINode* aNode) {
 
 void nsAttributeTextNode::UpdateText(bool aNotify) {
   if (mOriginatingElement) {
+    
+    
     nsAutoString attrValue;
-
-    if (!mOriginatingElement->GetAttr(mNameSpaceID, mAttrName, attrValue)) {
-      
-      mFallback->ToString(attrValue);
-    }
-
+    mOriginatingElement->GetAttr(mAttrName, attrValue);
     SetText(attrValue, aNotify);
   }
 }

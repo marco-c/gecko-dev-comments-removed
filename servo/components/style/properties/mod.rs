@@ -747,13 +747,7 @@ impl ShorthandId {
 }
 
 
-pub fn enabled_arbitrary_substitution_functions() -> &'static [&'static str] {
-    if static_prefs::pref!("layout.css.attr.enabled") {
-        &["var", "env", "attr"]
-    } else {
-        &["var", "env"]
-    }
-}
+pub const ARBITRARY_SUBSTITUTION_FUNCTIONS: &[&str] = &["var", "env", "attr"];
 
 fn parse_non_custom_property_declaration_value_into<'i>(
     declarations: &mut SourcePropertyDeclaration,
@@ -786,7 +780,7 @@ fn parse_non_custom_property_declaration_value_into<'i>(
     };
 
     input.reset(&start);
-    input.look_for_arbitrary_substitution_functions(enabled_arbitrary_substitution_functions());
+    input.look_for_arbitrary_substitution_functions(ARBITRARY_SUBSTITUTION_FUNCTIONS);
 
     let mut saw_arbitrary_substitution_functions = false;
     let err = match parse_entirely_into(declarations, input) {
