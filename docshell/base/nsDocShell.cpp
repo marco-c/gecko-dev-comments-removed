@@ -11353,42 +11353,16 @@ nsresult nsDocShell::LoadHistoryEntry(nsDocShellLoadState* aLoadState,
 
   
   
+  if (aLoadState->URI()->SchemeIs("javascript")) {
+    MOZ_ASSERT_UNREACHABLE("javascript: URIs should not enter session history");
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
   aLoadState->SetLoadType(aLoadType);
 
   SetOngoingNavigation(Some(OngoingNavigation::Traversal));
-
-  nsresult rv;
-  if (aLoadState->URI()->SchemeIs("javascript")) {
-    
-    
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIPrincipal> principal = aLoadState->PrincipalToInherit();
-    nsCOMPtr<nsIPrincipal> partitionedPrincipal =
-        aLoadState->PartitionedPrincipalToInherit();
-    rv = CreateAboutBlankDocumentViewer(
-        principal, partitionedPrincipal, nullptr, nullptr,
-         false, Nothing(), !aLoadingCurrentEntry);
-
-    if (NS_FAILED(rv)) {
-      
-      
-      
-      return NS_OK;
-    }
-
-    if (!aLoadState->TriggeringPrincipal()) {
-      
-      
-      
-      nsCOMPtr<nsIPrincipal> principal =
-          NullPrincipal::Create(GetOriginAttributes());
-      aLoadState->SetTriggeringPrincipal(principal);
-    }
-  }
 
   
 
@@ -11396,7 +11370,7 @@ nsresult nsDocShell::LoadHistoryEntry(nsDocShellLoadState* aLoadState,
 
   if ((aLoadType & LOAD_CMD_RELOAD) && aLoadState->PostDataStream()) {
     bool repost;
-    rv = ConfirmRepost(&repost);
+    nsresult rv = ConfirmRepost(&repost);
     if (NS_FAILED(rv)) {
       return rv;
     }
