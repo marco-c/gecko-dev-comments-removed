@@ -395,7 +395,7 @@ pub mod platform {
 pub mod platform {
     use crate::path::{find_binary, is_binary};
     use std::io::Error;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
     use winreg::RegKey;
     use winreg::enums::*;
 
@@ -413,6 +413,17 @@ pub mod platform {
             }
         };
         find_binary("firefox.exe")
+    }
+
+    
+    
+    
+    
+    
+    
+    fn is_browser_dir(path: &Path) -> bool {
+        path.parent()
+            .is_some_and(|install_dir| install_dir.join("browser").is_dir())
     }
 
     fn firefox_registry_path() -> Result<Option<PathBuf>, Error> {
@@ -438,7 +449,7 @@ pub mod platform {
                             let path_to_exe: Result<String, _> = bin_subtree.get_value("PathToExe");
                             if let Ok(path_to_exe) = path_to_exe {
                                 let path = PathBuf::from(path_to_exe);
-                                if is_binary(&path) {
+                                if is_browser_dir(&path) && is_binary(&path) {
                                     return Ok(Some(path));
                                 }
                             }
