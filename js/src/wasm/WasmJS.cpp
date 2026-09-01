@@ -592,13 +592,8 @@ static bool ReportCompileWarnings(JSContext* cx,
 }
 
 
-bool js::wasm::CompileForESM(JSContext* cx,
-                             const JS::ReadOnlyCompileOptions& options,
-                             const BytecodeSource& bytecodeSource,
-                             MutableHandleObject moduleObj) {
-  
-  
-
+SharedCompileArgs js::wasm::BuildCompileArgsForESM(
+    JSContext* cx, const JS::ReadOnlyCompileOptions& options) {
   FeatureOptions featureOptions;
   
   featureOptions.jsStringBuiltins = true;
@@ -606,56 +601,77 @@ bool js::wasm::CompileForESM(JSContext* cx,
   featureOptions.jsStringConstants = true;
   UniqueChars ns = DuplicateString(cx, "wasm:js/string-constants");
   if (!ns) {
-    return false;
+    return nullptr;
   }
   featureOptions.jsStringConstantsNamespace =
       cx->new_<ShareableChars>(std::move(ns));
   if (!featureOptions.jsStringConstantsNamespace) {
-    return false;
+    return nullptr;
   }
 
-  
-  
   ScriptedCaller scriptedCaller;
   if (options.filename()) {
     scriptedCaller.source = DuplicateString(cx, options.filename().c_str());
     if (!scriptedCaller.source) {
-      return false;
+      return nullptr;
     }
     scriptedCaller.kind = ScriptedCallerKind::Url;
   }
-  SharedCompileArgs compileArgs = CompileArgs::buildAndReport(
-      cx, std::move(scriptedCaller), featureOptions,  true);
-  if (!compileArgs) {
-    return false;
+  return CompileArgs::buildAndReport(cx, std::move(scriptedCaller),
+                                     featureOptions,  true);
+}
+
+ESMCompileResult js::wasm::CompileForESM(
+    const CompileArgs& compileArgs, const BytecodeSource& bytecodeSource) {
+  
+  
+
+  
+  
+  ESMCompileResult result;
+  result.module =
+      CompileModule(compileArgs, BytecodeBufferOrSource(bytecodeSource),
+                    &result.error, &result.warnings, nullptr);
+  if (result.module) {
+    result.status = ESMCompileResult::Status::Success;
+  } else if (result.error) {
+    result.status = ESMCompileResult::Status::Failed;
+  } else {
+    result.status = ESMCompileResult::Status::OutOfMemory;
   }
+  return result;
+}
 
-  UniqueChars error;
-  UniqueCharsVector warnings;
-  SharedModule module =
-      CompileModule(*compileArgs, BytecodeBufferOrSource(bytecodeSource),
-                    &error, &warnings, nullptr);
+bool js::wasm::FinishCompileForESM(JSContext* cx,
+                                   const CompileArgs& compileArgs,
+                                   const ESMCompileResult& compileResult,
+                                   MutableHandleObject moduleObj) {
+  const SharedModule& module = compileResult.module;
 
-  if (!ReportCompileWarnings(cx, warnings)) {
+  if (!ReportCompileWarnings(cx, compileResult.warnings)) {
     return false;
   }
 
   
-  if (!module) {
-    if (!error) {
+  switch (compileResult.status) {
+    case ESMCompileResult::Status::OutOfMemory:
       JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                                JSMSG_OUT_OF_MEMORY);
       return false;
-    }
-    RootedObject errorObj(cx);
-    RootedObject nullStack(cx, nullptr);
-    if (!CreateCompileError(cx, compileArgs->scriptedCaller, nullStack,
-                            error.get(), &errorObj)) {
+    case ESMCompileResult::Status::Failed: {
+      RootedObject errorObj(cx);
+      RootedObject nullStack(cx, nullptr);
+      if (!CreateCompileError(cx, compileArgs.scriptedCaller, nullStack,
+                              compileResult.error.get(), &errorObj)) {
+        return false;
+      }
+      RootedValue errorVal(cx, ObjectValue(*errorObj));
+      cx->setPendingException(errorVal, js::ShouldCaptureStack::Maybe);
       return false;
     }
-    RootedValue errorVal(cx, ObjectValue(*errorObj));
-    cx->setPendingException(errorVal, js::ShouldCaptureStack::Maybe);
-    return false;
+    case ESMCompileResult::Status::Success:
+      MOZ_ASSERT(module);
+      break;
   }
 
   
