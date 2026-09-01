@@ -9948,12 +9948,6 @@ void PresShell::EventHandler::DispatchTouchEventToDOM(
   WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
 
   
-  
-  
-  
-  AutoTArray<RefPtr<EventTarget>, 4> dispatchedTargets;
-
-  
   for (dom::Touch* touch : touchEvent->mTouches) {
     
     
@@ -9978,12 +9972,6 @@ void PresShell::EventHandler::DispatchTouchEventToDOM(
       }
       content = capturingContent;
     }
-
-    if (dispatchedTargets.Contains(targetPtr.get())) {
-      continue;
-    }
-    dispatchedTargets.AppendElement(targetPtr);
-
     
     MOZ_ASSERT(touchEvent->IsTrusted());
     WidgetTouchEvent newEvent(true, touchEvent->mMessage, touchEvent->mWidget);
