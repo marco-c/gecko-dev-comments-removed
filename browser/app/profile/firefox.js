@@ -1454,7 +1454,11 @@ pref("browser.xul.error_pages.show_safe_browsing_details_on_load", false);
 
 
 
+#ifdef NIGHTLY_BUILD
+pref("browser.netError.searchCTA.enabled", true);
+#else
 pref("browser.netError.searchCTA.enabled", false);
+#endif
 
 
 
