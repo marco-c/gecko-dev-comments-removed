@@ -20,30 +20,27 @@ namespace jit {
 
 
 #define WARP_UNSUPPORTED_OPCODE_LIST(_)
-                             \
-  _(EnterWith)                           \
-  _(LeaveWith)                           \
-  /* Eval */                             \
-  _(Eval)                                \
-  _(StrictEval)                          \
-  _(SpreadEval)                          \
-  _(StrictSpreadEval)                    \
-  _(BindVar)                             \
-  /* Super */                            \
-  _(SetPropSuper)                        \
-  _(SetElemSuper)                        \
-  _(StrictSetPropSuper)                  \
-  _(StrictSetElemSuper)                  \
-  /* Generators / Async (bug 1317690) */ \
-  _(IsGenClosing)                        \
-  _(Resume)                              \
-  /* Misc */                             \
-  _(DelName)                             \
-  _(SetIntrinsic)                        \
-  /* Private Fields */                   \
-  _(GetAliasedDebugVar)                  \
-  /* Non-syntactic scope */              \
-  _(NonSyntacticGlobalThis)              \
+                            \
+  _(EnterWith)                          \
+  _(LeaveWith)                          \
+  /* Eval */                            \
+  _(Eval)                               \
+  _(StrictEval)                         \
+  _(SpreadEval)                         \
+  _(StrictSpreadEval)                   \
+  _(BindVar)                            \
+  /* Super */                           \
+  _(SetPropSuper)                       \
+  _(SetElemSuper)                       \
+  _(StrictSetPropSuper)                 \
+  _(StrictSetElemSuper)                 \
+  /* Misc */                            \
+  _(DelName)                            \
+  _(SetIntrinsic)                       \
+  /* Private Fields */                  \
+  _(GetAliasedDebugVar)                 \
+  /* Non-syntactic scope */             \
+  _(NonSyntacticGlobalThis)             \
   // === !! WARNING WARNING WARNING !! ===
   
   
