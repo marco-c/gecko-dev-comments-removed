@@ -8,9 +8,17 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
+  SMART_TAB_GROUPING_CONFIG:
+    "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs",
   SmartTabGroupingManager:
     "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs",
 });
+
+// Dedicated topic-model slot so the SW naming model can be updated independently
+// of the shared Smart Tab Grouping model. The model + revision resolve from the
+// smart-window-tab-topic Remote Settings inference-options record.
+const SW_TOPIC_FEATURE_ID = "smart-window-tab-topic";
+const SW_TOPIC_ENGINE_ID = "smart-window-tab-topic-engine";
 
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
@@ -96,10 +104,16 @@ const MAX_LABEL_CACHE_ENTRIES = 50;
 export const AutoTabGroupingSuggestions = {
   _manager: null,
 
+  _preloadPromise: null,
+
   // Reopening the panel over an unchanged set of tabs reuses the title
   // instead of re-running the labeling model.
   _labelCache: new Map(),
 
+  // Organize Tabs is only reachable from an active Smart Window, which the user
+  // has already opted into, so the extra opt-in prefs that
+  // SmartTabGroupingManager.isEnabled checks for the tab strip's own suggestions
+  // don't apply here. All we need is on-device ML and isAllowed's locale check.
   get isAvailable() {
     return (
       Services.prefs.getBoolPref("browser.ml.enable", false) &&
@@ -124,9 +138,38 @@ export const AutoTabGroupingSuggestions = {
 
   get manager() {
     if (!this._manager) {
-      this._manager = new lazy.SmartTabGroupingManager();
+      const config = structuredClone(lazy.SMART_TAB_GROUPING_CONFIG);
+      config.topicGeneration.featureId = SW_TOPIC_FEATURE_ID;
+      config.topicGeneration.engineId = SW_TOPIC_ENGINE_ID;
+      this._manager = new lazy.SmartTabGroupingManager(config);
     }
     return this._manager;
+  },
+
+  /**
+   * Downloads the clustering and labeling models, so the first panel open runs
+   * against a warm cache. Repeated calls share one download and never reject. A
+   * failed download is not retried: every new Smart Window would try again, and
+   * opening the panel downloads the models anyway.
+   *
+   * @returns {Promise<void>}
+   */
+  preloadModels() {
+    if (!this.isAvailable) {
+      return Promise.resolve();
+    }
+    if (!this._preloadPromise) {
+      this._preloadPromise = this._preloadModels();
+    }
+    return this._preloadPromise;
+  },
+
+  async _preloadModels() {
+    try {
+      await this.manager.preloadAllModels();
+    } catch (e) {
+      lazy.console.warn("Preloading the tab grouping models failed", e);
+    }
   },
 
   /**
