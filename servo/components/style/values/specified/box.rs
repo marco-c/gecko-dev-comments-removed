@@ -200,6 +200,7 @@ impl DisplayInside {
     Hash,
     MallocSizeOf,
     PartialEq,
+    ToAnimatedValue,
     ToComputedValue,
     ToResolvedValue,
     ToShmem,
@@ -1509,7 +1510,6 @@ impl Parse for LineClamp {
             max_lines,
             block_ellipsis,
             webkit_legacy,
-            serialize_webkit_legacy: true,
         })
     }
 }
@@ -1527,11 +1527,30 @@ impl LineClamp {
                 max_lines: MaxLines::lines(value, false),
                 block_ellipsis: BlockEllipsis::Ellipsis,
                 webkit_legacy: true,
-                serialize_webkit_legacy: false,
             });
         }
         input.expect_ident_matching("none")?;
         Ok(Self::none())
+    }
+
+    
+    pub(crate) fn to_css_legacy<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: fmt::Write,
+    {
+        if self.is_none() {
+            return dest.write_str("none");
+        }
+
+        if !self.webkit_legacy || !self.block_ellipsis.is_ellipsis() {
+            return Ok(());
+        }
+
+        let Some(lines) = self.max_lines.lines_value() else {
+            return Ok(());
+        };
+
+        lines.to_css(dest)
     }
 }
 
@@ -1708,6 +1727,31 @@ impl Parse for ContainerName {
 
 
 pub type Perspective = GenericPerspective<NonNegativeLength>;
+
+impl Perspective {
+    
+    pub(crate) fn parse_legacy<'i>(
+        context: &ParserContext,
+        input: &mut Parser<'i, '_>,
+    ) -> Result<Self, ParseError<'i>> {
+        use crate::values::specified::{AllowQuirks, Length};
+        use crate::values::generics::NonNegative;
+        if let Ok(l) = input.try_parse(|input| {
+            Length::parse_non_negative_quirky(context, input, AllowQuirks::Always)
+        }) {
+            return Ok(Self::Length(NonNegative(l)));
+        }
+        Self::parse(context, input)
+    }
+
+    
+    pub(crate) fn to_css_legacy<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        self.to_css(dest)
+    }
+}
 
 
 #[allow(missing_docs)]
