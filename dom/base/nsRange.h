@@ -414,8 +414,18 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
 
 
+
+
+
+
+
+
+
   void CutContents(mozilla::dom::DocumentFragment** aFragment,
-                   ElementHandler aElementHandler, ErrorResult& aRv);
+                   ElementHandler aElementHandler,
+                   const mozilla::Maybe<AllowRangeCrossShadowBoundary>&
+                       aAllowCrossShadowBoundary,
+                   ErrorResult& aRv);
 
   static nsresult CloneParentsBetween(nsINode* aAncestor, nsINode* aNode,
                                       nsINode** aClosestAncestor,
