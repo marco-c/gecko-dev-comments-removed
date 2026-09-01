@@ -52,6 +52,18 @@ pub enum FontDescriptor {
     },
 }
 
+
+
+
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub struct FontInstanceDescriptor {
+    pub font_key: FontKey,
+    pub size: FontSize,
+    pub flags: FontInstanceFlags,
+    pub render_mode: Option<FontRenderMode>,
+    pub synthetic_italics: SyntheticItalics,
+}
+
 struct NotifierData {
     events_loop_proxy: Option<EventLoopProxy<()>>,
     frames_notified: u32,
@@ -215,6 +227,25 @@ pub struct Wrench {
     pub document_id: DocumentId,
     pub root_pipeline_id: PipelineId,
 
+    
+    
+    
+    
+    
+    
+    fonts: HashMap<FontDescriptor, FontKey>,
+    font_instances: HashMap<FontInstanceDescriptor, FontInstanceKey>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    dl_builders: HashMap<PipelineId, DisplayListBuilder>,
+
     window_title_to_set: Option<String>,
 
     graphics_api: webrender::GraphicsApiInfo,
@@ -224,6 +255,14 @@ pub struct Wrench {
     pub frame_start_sender: chase_lev::Worker<Instant>,
 
     pub callbacks: Arc<Mutex<blob::BlobCallbacks>>,
+
+    
+    
+    debug_flags: DebugFlags,
+
+    
+    
+    compositor_clips_override: Option<bool>,
 }
 
 impl Wrench {
@@ -244,6 +283,7 @@ impl Wrench {
         dump_shader_source: Option<String>,
         notifier: Option<Box<dyn RenderNotifier>>,
         layer_compositor: Option<Box<dyn LayerCompositor>>,
+        compositor_clips_override: Option<bool>,
     ) -> Self {
         println!("Shader override path: {:?}", shader_override_path);
 
@@ -251,6 +291,9 @@ impl Wrench {
         debug_flags.set(DebugFlags::DISABLE_BATCHING, no_batch);
         debug_flags.set(DebugFlags::MISSING_SNAPSHOT_PINK, true);
         debug_flags.set(DebugFlags::COLOR_TARGET_INIT, color_target_init);
+        if let Some(enabled) = compositor_clips_override {
+            debug_flags.set(DebugFlags::DISABLE_COMPOSITOR_CLIPS, !enabled);
+        }
         let callbacks = Arc::new(Mutex::new(blob::BlobCallbacks::new()));
 
         let precache_flags = if precache_shaders {
@@ -280,6 +323,7 @@ impl Wrench {
             
             
             clear_caches_with_quads: !window.is_software(),
+            enable_shared_instance_buffer: !cfg!(target_os = "windows"),
             compositor_config,
             enable_debugger: true,
             ..Default::default()
@@ -320,11 +364,17 @@ impl Wrench {
             rebuild_display_lists: do_rebuild,
 
             root_pipeline_id: PipelineId(0, 0),
+            fonts: HashMap::new(),
+            font_instances: HashMap::new(),
+            dl_builders: HashMap::new(),
 
             graphics_api,
             frame_start_sender: timing_sender,
 
             callbacks,
+
+            debug_flags,
+            compositor_clips_override,
         };
 
         wrench.set_title("start");
@@ -339,6 +389,21 @@ impl Wrench {
         let mut txn = Transaction::new();
         txn.set_quality_settings(settings);
         self.api.send_transaction(self.document_id, txn);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn set_compositor_clips_enabled(&mut self, enabled: bool) {
+        let enabled = self.compositor_clips_override.unwrap_or(enabled);
+        let mut flags = self.debug_flags;
+        flags.set(DebugFlags::DISABLE_COMPOSITOR_CLIPS, !enabled);
+        self.api.set_debug_flags(flags);
     }
 
     pub fn layout_simple_ascii(
@@ -405,6 +470,53 @@ impl Wrench {
         (indices, positions, bounding_rect)
     }
 
+    
+    
+    pub fn get_or_create_font(
+        &mut self,
+        desc: FontDescriptor,
+        load: impl FnOnce(&mut Self, &FontDescriptor) -> FontKey,
+    ) -> FontKey {
+        if let Some(key) = self.fonts.get(&desc) {
+            return *key;
+        }
+        let key = load(self, &desc);
+        self.fonts.insert(desc, key);
+        key
+    }
+
+    
+    pub fn get_or_create_font_instance(
+        &mut self,
+        desc: FontInstanceDescriptor,
+    ) -> FontInstanceKey {
+        if let Some(key) = self.font_instances.get(&desc) {
+            return *key;
+        }
+        let key = self.add_font_instance(
+            desc.font_key,
+            desc.size.to_f32_px(),
+            desc.flags,
+            desc.render_mode,
+            desc.synthetic_italics,
+        );
+        self.font_instances.insert(desc, key);
+        key
+    }
+
+    
+    
+    
+    pub fn take_dl_builder(&mut self, pipeline_id: PipelineId) -> DisplayListBuilder {
+        self.dl_builders
+            .remove(&pipeline_id)
+            .unwrap_or_else(|| DisplayListBuilder::new(pipeline_id))
+    }
+
+    pub fn put_dl_builder(&mut self, pipeline_id: PipelineId, builder: DisplayListBuilder) {
+        self.dl_builders.insert(pipeline_id, builder);
+    }
+
     pub fn set_title(&mut self, extra: &str) {
         self.window_title_to_set = Some(format!(
             "Wrench: {} - {} - {}",
@@ -446,6 +558,20 @@ impl Wrench {
             dwrote::FontStyle::Normal.to_u32(),
             dwrote::FontStretch::Normal.to_u32(),
         )
+    }
+
+    #[cfg(all(unix, not(target_os = "android")))]
+    pub fn font_key_from_name(&mut self, font_name: &str) -> FontKey {
+        let property = system_fonts::FontPropertyBuilder::new()
+            .family(font_name)
+            .build();
+        let (font, index) = system_fonts::get(&property).unwrap();
+        self.font_key_from_bytes(font, index as u32)
+    }
+
+    #[cfg(target_os = "android")]
+    pub fn font_key_from_name(&mut self, _font_name: &str) -> FontKey {
+        unimplemented!()
     }
 
     #[cfg(target_os = "windows")]
@@ -510,20 +636,6 @@ impl Wrench {
         unimplemented!()
     }
 
-    #[cfg(all(unix, not(target_os = "android")))]
-    pub fn font_key_from_name(&mut self, font_name: &str) -> FontKey {
-        let property = system_fonts::FontPropertyBuilder::new()
-            .family(font_name)
-            .build();
-        let (font, index) = system_fonts::get(&property).unwrap();
-        self.font_key_from_bytes(font, index as u32)
-    }
-
-    #[cfg(target_os = "android")]
-    pub fn font_key_from_name(&mut self, _font_name: &str) -> FontKey {
-        unimplemented!()
-    }
-
     pub fn font_key_from_bytes(&mut self, bytes: Vec<u8>, index: u32) -> FontKey {
         let key = self.api.generate_font_key();
         let mut txn = Transaction::new();
@@ -583,6 +695,7 @@ impl Wrench {
 
             txn.set_display_list(
                 Epoch(*frame_number),
+                self.api.get_namespace_id(),
                 (display_list.pipeline, display_list.payload),
             );
 
