@@ -582,15 +582,6 @@ nsClassHashtable<nsCStringHashKey, nsTArray<ContentParent*>>*
 
 namespace {
 
-uint64_t ComputeLoadedOriginHash(nsIPrincipal* aPrincipal) {
-  uint32_t originNoSuffix =
-      BasePrincipal::Cast(aPrincipal)->GetOriginNoSuffixHash();
-  uint32_t originSuffix =
-      BasePrincipal::Cast(aPrincipal)->GetOriginSuffixHash();
-
-  return ((uint64_t)originNoSuffix) << 32 | originSuffix;
-}
-
 ProcessID GetTelemetryProcessID(const nsACString& remoteType) {
   
   
@@ -984,10 +975,7 @@ UniqueContentParentKeepAlive ContentParent::GetUsedBrowserProcess(
     
     
     preallocated->mRemoteType.Assign(aRemoteType);
-    {
-      RecursiveMutexAutoLock lock(preallocated->mThreadsafeHandle->mMutex);
-      preallocated->mThreadsafeHandle->mRemoteType = preallocated->mRemoteType;
-    }
+    preallocated->LoadedOrigins()->SetRemoteType(preallocated->mRemoteType);
     preallocated->mRemoteTypeIsolationPrincipal =
         CreateRemoteTypeIsolationPrincipal(aRemoteType);
     preallocated->AddToPool(aContentParents);
@@ -1198,6 +1186,10 @@ bool ContentParent::WaitForLaunchSync(ProcessPriority aPriority) {
   return false;
 }
 
+LoadedOriginSet* ContentParent::LoadedOrigins() const {
+  return ThreadsafeHandle()->LoadedOrigins();
+}
+
 static nsIDocShell* GetOpenerDocShellHelper(Element* aFrameElement) {
   
   
@@ -1389,8 +1381,7 @@ mozilla::ipc::IPCResult ContentParent::PrincipalValidationIpcFail(
 bool ContentParent::ValidatePrincipal(
     nsIPrincipal* aPrincipal,
     const EnumSet<ValidatePrincipalOptions>& aOptions) {
-  return ValidatePrincipalCouldPotentiallyBeLoadedBy(aPrincipal, mRemoteType,
-                                                     aOptions);
+  return mThreadsafeHandle->ValidatePrincipal(aPrincipal, aOptions);
 }
 
 
@@ -3144,9 +3135,6 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
 
   
   
-  
-  
-  
   EnsurePermissionsByKey(""_ns, ""_ns);
 
   {
@@ -3160,7 +3148,6 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
       
       
       
-      
       if (!BlobURLProtocolHandler::IsBlobURLBroadcastPrincipal(aPrincipal)) {
         return true;
       }
@@ -3168,9 +3155,6 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
       registrations.AppendElement(
           BlobURLRegistrationData(nsCString(aURI), WrapNotNull(aPrincipal),
                                   nsCString(aPartitionKey), aRevoked));
-
-      nsresult rv = TransmitPermissionsForPrincipal(aPrincipal);
-      (void)NS_WARN_IF(NS_FAILED(rv));
       return true;
     });
 
@@ -3535,7 +3519,7 @@ mozilla::ipc::IPCResult ContentParent::RecvGetClipboardDataSnapshot(
     mozilla::NotNull<nsIPrincipal*> aRequestingPrincipal,
     GetClipboardDataSnapshotResolver&& aResolver) {
   if (!ValidatePrincipal(aRequestingPrincipal,
-                         {ValidatePrincipalOptions::AllowSystem,
+                         {ValidatePrincipalOptions::AlwaysAllowSystem,
                           ValidatePrincipalOptions::AllowExpanded})) {
     return PrincipalValidationIpcFail(aRequestingPrincipal, this, __func__);
   }
@@ -5849,8 +5833,6 @@ void ContentParent::BroadcastBlobURLRegistration(const nsACString& aURI,
                                                  nsIPrincipal* aPrincipal,
                                                  const nsCString& aPartitionKey,
                                                  ContentParent* aIgnoreThisCP) {
-  uint64_t originHash = ComputeLoadedOriginHash(aPrincipal);
-
   bool toBeSent =
       BlobURLProtocolHandler::IsBlobURLBroadcastPrincipal(aPrincipal);
 
@@ -5858,13 +5840,9 @@ void ContentParent::BroadcastBlobURLRegistration(const nsACString& aURI,
 
   for (auto* cp : AllProcesses(eLive)) {
     if (cp != aIgnoreThisCP) {
-      if (!toBeSent && !cp->mLoadedOriginHashes.Contains(originHash)) {
+      if (!toBeSent &&
+          !cp->LoadedOrigins()->Has(aPrincipal, LoadedOriginSet::Level::Full)) {
         continue;
-      }
-
-      nsresult rv = cp->TransmitPermissionsForPrincipal(aPrincipal);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        break;
       }
 
       (void)cp->SendBlobURLRegistration(uri, aPrincipal, aPartitionKey);
@@ -5878,18 +5856,15 @@ void ContentParent::BroadcastBlobURLUnregistration(
     ContentParent* aIgnoreThisCP) {
   struct DataRequest {
     const BroadcastBlobURLUnregistrationRequest& mRequest;
-    uint64_t mOriginHash;
     bool mToBeSent;
   };
 
   nsTArray<DataRequest> dataRequests(aRequests.Length());
   for (const BroadcastBlobURLUnregistrationRequest& request : aRequests) {
-    uint64_t originHash = ComputeLoadedOriginHash(request.principal());
-
     bool toBeSent = BlobURLProtocolHandler::IsBlobURLBroadcastPrincipal(
         request.principal());
 
-    dataRequests.AppendElement(DataRequest{request, originHash, toBeSent});
+    dataRequests.AppendElement(DataRequest{request, toBeSent});
   }
 
   for (auto* cp : AllProcesses(eLive)) {
@@ -5900,7 +5875,8 @@ void ContentParent::BroadcastBlobURLUnregistration(
     nsTArray<nsCString> urls;
     for (const DataRequest& data : dataRequests) {
       if (data.mToBeSent ||
-          cp->mLoadedOriginHashes.Contains(data.mOriginHash)) {
+          cp->LoadedOrigins()->Has(data.mRequest.principal(),
+                                   LoadedOriginSet::Level::Full)) {
         urls.AppendElement(data.mRequest.url());
       }
     }
@@ -5918,7 +5894,7 @@ mozilla::ipc::IPCResult ContentParent::RecvStoreAndBroadcastBlobURLRegistration(
     return IPC_FAIL(this, "No principal");
   }
 
-  if (!ValidatePrincipal(aPrincipal, {ValidatePrincipalOptions::AllowSystem})) {
+  if (!ValidatePrincipal(aPrincipal)) {
     return PrincipalValidationIpcFail(aPrincipal, this, __func__);
   }
 
@@ -5945,7 +5921,7 @@ ContentParent::RecvUnstoreAndBroadcastBlobURLUnregistration(
 
   for (const BroadcastBlobURLUnregistrationRequest& request : aRequests) {
     if (!ValidatePrincipal(request.principal(),
-                           {ValidatePrincipalOptions::AllowSystem})) {
+                           {ValidatePrincipalOptions::AlwaysAllowSystem})) {
       return PrincipalValidationIpcFail(request.principal(), this, __func__);
     }
 
@@ -6061,16 +6037,15 @@ nsresult ContentParent::AboutToLoadDocumentForChild(nsIChannel* aChannel) {
                                       getter_AddRefs(partitionedPrincipal));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  TransmitBlobURLsForPrincipal(principal);
-
-  
-  
-  
-  rv = TransmitPermissionsForPrincipal(principal);
+  rv = AboutToLoadOrigin(principal);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = TransmitPermissionsForPrincipal(partitionedPrincipal);
-  NS_ENSURE_SUCCESS(rv, rv);
+  
+  
+  if (partitionedPrincipal != principal) {
+    rv = AboutToLoadOrigin(partitionedPrincipal);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
   
   
@@ -6121,6 +6096,56 @@ nsresult ContentParent::AboutToLoadDocumentForChild(nsIChannel* aChannel) {
   return NS_OK;
 }
 
+NS_IMETHODIMP
+ContentParent::AboutToLoadOrigin(nsIPrincipal* aPrincipal) {
+  
+  
+  if (!ValidatePrincipal(aPrincipal,
+                         {ValidatePrincipalOptions::AllowNotLoadedOrigin,
+                          ValidatePrincipalOptions::AlwaysAllowSystem})) {
+    LogAndAssertFailedPrincipalValidationInfo(aPrincipal, "AboutToLoadOrigin");
+    return NS_ERROR_FAILURE;
+  }
+
+  MOZ_ASSERT_DEBUG_OR_FUZZING(!aPrincipal->GetIsExpandedPrincipal());
+
+  LoadedOriginSet::Level prev =
+      LoadedOrigins()->AddInternal(aPrincipal,  false);
+  if (prev < LoadedOriginSet::Level::Full) {
+    
+    
+    if (!BlobURLProtocolHandler::IsBlobURLBroadcastPrincipal(aPrincipal)) {
+      nsTArray<BlobURLRegistrationData> registrations;
+      BlobURLProtocolHandler::ForEachBlobURL(
+          [&](BlobImpl* aBlobImpl, nsIPrincipal* aBlobPrincipal,
+              const nsCString& aPartitionKey, const nsACString& aURI,
+              bool aRevoked) {
+            if (aBlobPrincipal->Equals(aPrincipal)) {
+              registrations.AppendElement(BlobURLRegistrationData(
+                  nsCString(aURI), WrapNotNull(aBlobPrincipal),
+                  nsCString(aPartitionKey), aRevoked));
+            }
+            return true;
+          });
+
+      if (!registrations.IsEmpty()) {
+        (void)SendInitBlobURLs(registrations);
+      }
+    }
+
+    
+    
+    
+    MOZ_ALWAYS_SUCCEEDS(TransmitPermissionsForPrincipal(aPrincipal));
+
+    
+    
+    (void)SendAddLoadedOrigin(WrapNotNull(aPrincipal));
+  }
+
+  return NS_OK;
+}
+
 nsresult ContentParent::TransmitPermissionsForPrincipal(
     nsIPrincipal* aPrincipal) {
   
@@ -6153,65 +6178,6 @@ void ContentParent::AddPrincipalToCookieInProcessCache(
 void ContentParent::TakeCookieInProcessCache(
     nsTArray<nsCOMPtr<nsIPrincipal>>& aList) {
   aList.SwapElements(mCookieInContentListCache);
-}
-
-void ContentParent::TransmitBlobURLsForPrincipal(nsIPrincipal* aPrincipal) {
-  
-  
-  if (BlobURLProtocolHandler::IsBlobURLBroadcastPrincipal(aPrincipal)) {
-    return;
-  }
-
-  
-  
-  if (nsCOMPtr<nsIExpandedPrincipal> ep = do_QueryInterface(aPrincipal)) {
-    for (const auto& prin : ep->AllowList()) {
-      TransmitBlobURLsForPrincipal(prin);
-    }
-    return;
-  }
-
-  uint64_t originHash = ComputeLoadedOriginHash(aPrincipal);
-
-  if (!mLoadedOriginHashes.Contains(originHash)) {
-    mLoadedOriginHashes.AppendElement(originHash);
-
-    nsTArray<BlobURLRegistrationData> registrations;
-    BlobURLProtocolHandler::ForEachBlobURL(
-        [&](BlobImpl* aBlobImpl, nsIPrincipal* aBlobPrincipal,
-            const nsCString& aPartitionKey, const nsACString& aURI,
-            bool aRevoked) {
-          
-          
-          
-          if (originHash != ComputeLoadedOriginHash(aBlobPrincipal)) {
-            return true;
-          }
-
-          registrations.AppendElement(BlobURLRegistrationData(
-              nsCString(aURI), WrapNotNull(aBlobPrincipal),
-              nsCString(aPartitionKey), aRevoked));
-
-          nsresult rv = TransmitPermissionsForPrincipal(aBlobPrincipal);
-          (void)NS_WARN_IF(NS_FAILED(rv));
-          return true;
-        });
-
-    if (!registrations.IsEmpty()) {
-      (void)SendInitBlobURLs(registrations);
-    }
-  }
-}
-
-void ContentParent::TransmitBlobDataIfBlobURL(nsIURI* aURI,
-                                              const OriginAttributes& aAttrs) {
-  MOZ_ASSERT(aURI);
-
-  nsCOMPtr<nsIPrincipal> principal;
-  if (BlobURLProtocolHandler::GetBlobURLPrincipal(aURI, aAttrs,
-                                                  getter_AddRefs(principal))) {
-    TransmitBlobURLsForPrincipal(principal);
-  }
 }
 
 void ContentParent::EnsurePermissionsByKey(const nsACString& aKey,
@@ -6287,22 +6253,22 @@ mozilla::ipc::IPCResult ContentParent::RecvRecordDiscardedData(
   return IPC_OK();
 }
 
-static bool WebdriverRunning() {
+static bool WebDriverSessionRunning() {
 #ifdef ENABLE_WEBDRIVER
   nsCOMPtr<nsIMarionette> marionette = do_GetService(NS_MARIONETTE_CONTRACTID);
   if (marionette) {
-    bool marionetteRunning = false;
-    marionette->GetRunning(&marionetteRunning);
-    if (marionetteRunning) {
+    bool isBrowserAutomationRunning = false;
+    marionette->GetIsBrowserAutomationRunning(&isBrowserAutomationRunning);
+    if (isBrowserAutomationRunning) {
       return true;
     }
   }
 
   nsCOMPtr<nsIRemoteAgent> agent = do_GetService(NS_REMOTEAGENT_CONTRACTID);
   if (agent) {
-    bool remoteAgentRunning = false;
-    agent->GetRunning(&remoteAgentRunning);
-    if (remoteAgentRunning) {
+    bool isBrowserAutomationRunning = false;
+    agent->GetIsBrowserAutomationRunning(&isBrowserAutomationRunning);
+    if (isBrowserAutomationRunning) {
       return true;
     }
   }
@@ -6487,7 +6453,7 @@ mozilla::ipc::IPCResult ContentParent::RecvRecordPageLoadEvent(
     const TimeStamp& aNavigationStartTime,
     const MaybeDiscarded<BrowsingContext>& aBrowsingContext) {
   
-  aPageloadEventData.set_usingWebdriver(WebdriverRunning());
+  aPageloadEventData.set_usingWebdriver(WebDriverSessionRunning());
 
 #if defined(ANDROID)
   
@@ -8169,8 +8135,7 @@ IPCResult ContentParent::RecvKillGPUProcess() {
 #endif
 
 nsCString ThreadsafeContentParentHandle::GetRemoteType() {
-  RecursiveMutexAutoLock lock(mMutex);
-  return mRemoteType;
+  return mLoadedOrigins->GetRemoteType();
 }
 
 UniqueThreadsafeContentParentKeepAlive
@@ -8186,6 +8151,12 @@ ThreadsafeContentParentHandle::TryAddKeepAlive(uint64_t aBrowserId) {
   ++mKeepAlivesPerBrowserId.LookupOrInsert(aBrowserId, 0);
   return UniqueThreadsafeContentParentKeepAlive{do_AddRef(this).take(),
                                                 {.mBrowserId = aBrowserId}};
+}
+
+bool ThreadsafeContentParentHandle::ValidatePrincipal(
+    nsIPrincipal* aPrincipal,
+    const EnumSet<ValidatePrincipalOptions>& aOptions) {
+  return mLoadedOrigins->ValidatePrincipal(aPrincipal, aOptions);
 }
 
 }  
