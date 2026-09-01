@@ -2,7 +2,7 @@
 
 
 const { _LastSession } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs"
+  "resource:///modules/sessionstore/SessionStore.sys.mjs"
 );
 
 const state = {
