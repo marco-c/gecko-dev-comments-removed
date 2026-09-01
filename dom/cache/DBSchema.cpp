@@ -2491,7 +2491,7 @@ struct Expect {
 nsresult Validate(mozIStorageConnection& aConn) {
   QM_TRY_INSPECT(const int32_t& schemaVersion,
                  GetEffectiveSchemaVersion(aConn));
-  QM_TRY(OkIf(schemaVersion == kLatestSchemaVersion), NS_ERROR_FAILURE);
+  QM_TRY(OkIf(schemaVersion == kLatestSchemaVersion), NS_ERROR_FILE_CORRUPTED);
 
 #ifdef DEBUG
   
@@ -2684,7 +2684,7 @@ nsresult Migrate(nsIFile& aDBDir, mozIStorageConnection& aConn) {
 
   
   
-  MOZ_ASSERT(currentVersion == kLatestSchemaVersion);
+  MOZ_ASSERT(currentVersion >= kLatestSchemaVersion);
 
   nsresult rv = NS_OK;
   if (rewriteSchema) {
