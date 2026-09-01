@@ -65,13 +65,36 @@ const PLATFORMS = {
   Linux: SOFTWARE_CODECS,
 };
 
+function applyOverride(base, videoPlatform) {
+  if (!base.isVideo) {
+    return base;
+  }
+  return { ...base, ...videoPlatform };
+}
+
 async function testWebCodecsEncodingProcess(hasGpu) {
+  
+  const remoteVideoPlatform = SpecialPowers.getBoolPref(
+    "media.use-remote-encoder.video.platform"
+  );
+  let configVideoPlatformOverride = {};
+  if (!remoteVideoPlatform) {
+    configVideoPlatformOverride.process = "content";
+  }
+
   const platformName = SpecialPowers.Services.appinfo.OS;
   const platformTest = PLATFORMS[platformName];
-  for (const test of platformTest) {
+  for (const baseTest of platformTest) {
+    const test = applyOverride(baseTest, configVideoPlatformOverride);
     try {
       
-      if (test.requireGpu !== undefined && test.requireGpu && !hasGpu) {
+      
+      
+      if (
+        test.requireGpu !== undefined &&
+        test.requireGpu &&
+        (!hasGpu || !remoteVideoPlatform)
+      ) {
         continue;
       }
       
