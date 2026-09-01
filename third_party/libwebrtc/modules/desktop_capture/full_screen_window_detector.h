@@ -47,10 +47,6 @@ class FullScreenWindowDetector
   FullScreenWindowDetector(const FullScreenWindowDetector&) = delete;
   FullScreenWindowDetector& operator=(const FullScreenWindowDetector&) = delete;
 
-  void SetHeuristicForFindingEditor(bool use_heuristic) {
-    
-  }
-
   
   
   
