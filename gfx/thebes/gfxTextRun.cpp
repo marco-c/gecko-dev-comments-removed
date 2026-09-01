@@ -2585,6 +2585,9 @@ static Script ResolveScriptForLang(const nsAtom* aLanguage, Script aDefault) {
       : public MruCache<const nsAtom*, std::pair<const nsAtom*, Script>,
                         LangScriptCache> {
    public:
+    static bool IsEmpty(const std::pair<const nsAtom*, Script>& aValue) {
+      return !aValue.first;
+    }
     static HashNumber Hash(const nsAtom* const& aKey) { return aKey->hash(); }
     static bool Match(const nsAtom* const& aKey,
                       const std::pair<const nsAtom*, Script>& aValue) {
@@ -2649,7 +2652,7 @@ void gfxFontGroup::InitTextRunLog(LogModule* aLog, const uint8_t* aString,
   MOZ_LOG(
       aLog, LogLevel::Warning,
       ("(%s) fontgroup: [%s] default: %s lang: %s script: %d "
-       "len %d weight: %g stretch: %g%% style: %s size: %6.2f "
+       "len %d weight: %g width: %g%% style: %s size: %6.2f "
        "%d-byte TEXTRUN [%s] ENDTEXTRUN\n",
        (mStyle.systemFont ? "textrunui" : "textrun"),
        FamilyListToString(mFamilyList).get(),
@@ -2659,7 +2662,7 @@ void gfxFontGroup::InitTextRunLog(LogModule* aLog, const uint8_t* aString,
                    ? "sans-serif"
                    : "none")),
        lang.get(), static_cast<int>(aRun.mScript), aRun.mLength,
-       mStyle.weight.ToFloat(), mStyle.stretch.ToFloat(), styleString.get(),
+       mStyle.weight.ToFloat(), mStyle.width.ToFloat(), styleString.get(),
        mStyle.size, aString ? 1 : 2,
        aTextPtr
            ? NS_ConvertUTF16toUTF8(aTextPtr + aRun.mOffset, aRun.mLength).get()
@@ -3432,7 +3435,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
           loading = true;
         }
 
-        gfxFontEntry* pfe = ufe->GetPlatformFontEntry();
+        RefPtr<gfxFontEntry> pfe = ufe->GetPlatformFontEntry();
         if (pfe && (pfe->HasCharacter(aCh) ||
                     (fallbackChar && pfe->HasCharacter(fallbackChar)))) {
           font = GetFontAt(i, aCh, &loading);

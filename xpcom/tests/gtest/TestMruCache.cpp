@@ -12,6 +12,7 @@ using namespace mozilla;
 
 struct IntMap : public MruCache<int, int, IntMap> {
   static HashNumber Hash(const KeyType& aKey) { return aKey - 1; }
+  static bool IsEmpty(const ValueType& aVal) { return !aVal; }
   static bool Match(const KeyType& aKey, const ValueType& aVal) {
     return aKey == aVal;
   }
@@ -34,6 +35,7 @@ struct StringStructMap
   static HashNumber Hash(const KeyType& aKey) {
     return *aKey.BeginReading() - 1;
   }
+  static bool IsEmpty(const ValueType& aVal) { return aVal.mKey.IsEmpty(); }
   static bool Match(const KeyType& aKey, const ValueType& aVal) {
     return aKey == aVal.mKey;
   }
@@ -41,12 +43,27 @@ struct StringStructMap
 
 
 
-struct CollideMap : public MruCache<int, int, CollideMap> {
+struct CollideMap : public MruCache<int, int, CollideMap, 8> {
   static HashNumber Hash(const KeyType&) { return 0; }
+  static bool IsEmpty(const ValueType& aVal) { return !aVal; }
   static bool Match(const KeyType& aKey, const ValueType& aVal) {
     return aKey == aVal;
   }
 };
+
+
+static constexpr size_t kCollideWays = CollideMap::kWays;
+
+
+static size_t CountLive(CollideMap& aMru) {
+  size_t live = 0;
+  for (size_t i = 1; i <= kCollideWays; i++) {
+    if (aMru.Lookup(i)) {
+      live++;
+    }
+  }
+  return live;
+}
 
 
 template <typename T>
@@ -137,16 +154,19 @@ TEST(MruCache, TestPutConvertable)
 TEST(MruCache, TestOverwriting)
 {
   
+  
   CollideMap mru;
+  for (size_t i = 1; i <= kCollideWays; i++) {
+    mru.Put(i, i);
+  }
+  EXPECT_EQ(CountLive(mru), kCollideWays);
 
-  mru.Put(1, 1);
-  mru.Put(2, 2);  
+  mru.Put(kCollideWays + 1, kCollideWays + 1);  
 
-  EXPECT_FALSE(mru.Lookup(1));
-
-  auto p = mru.Lookup(2);
+  auto p = mru.Lookup(kCollideWays + 1);
   EXPECT_TRUE(p);
-  EXPECT_EQ(p.Data(), 2);
+  EXPECT_EQ(p.Data(), kCollideWays + 1);
+  EXPECT_EQ(CountLive(mru), kCollideWays - 1);
 }
 
 TEST(MruCache, TestRemove)
@@ -268,27 +288,26 @@ TEST(MruCache, TestLookupAndOverwrite)
 {
   
   CollideMap mru;
+  for (size_t i = 1; i <= kCollideWays; i++) {
+    mru.Put(i, i);
+  }
 
   
-  mru.Put(1, 1);
-
-  
-  auto p = mru.Lookup(2);
+  const int key = kCollideWays + 1;
+  auto p = mru.Lookup(key);
   EXPECT_FALSE(p);  
 
   
-  p.Set(2);
+  p.Set(key);
   EXPECT_TRUE(p);
-  EXPECT_EQ(p.Data(), 2);
+  EXPECT_EQ(p.Data(), key);
 
   
-  p = mru.Lookup(1);
-  EXPECT_FALSE(p);
+  EXPECT_EQ(CountLive(mru), kCollideWays - 1);
 
-  
-  p = mru.Lookup(2);
+  p = mru.Lookup(key);
   EXPECT_TRUE(p);
-  EXPECT_EQ(p.Data(), 2);
+  EXPECT_EQ(p.Data(), key);
 }
 
 TEST(MruCache, TestLookupAndRemove)
@@ -343,4 +362,29 @@ TEST(MruCache, TestLookupAndSetWithMove)
 
   EXPECT_TRUE(p.Data().mKey == key);
   EXPECT_TRUE(p.Data().mOther == "foo"_ns);
+}
+
+TEST(MruCache, TestAssociativity)
+{
+  CollideMap mru;
+
+  for (size_t i = 1; i <= kCollideWays; i++) {
+    mru.Put(i, i);
+  }
+
+  for (size_t i = 1; i <= kCollideWays; i++) {
+    auto p = mru.Lookup(i);
+    EXPECT_TRUE(p);
+    EXPECT_EQ(p.Data(), i);
+  }
+}
+
+TEST(MruCache, TestPutReusesMatchingEntry)
+{
+  CollideMap mru;
+  
+  mru.Put(1, 1);
+  mru.Put(1, 1);
+  mru.Remove(1);
+  EXPECT_FALSE(mru.Lookup(1));
 }
