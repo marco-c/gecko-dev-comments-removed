@@ -4469,9 +4469,7 @@ void PresShell::HandlePostedReflowCallbacks(bool aInterruptible) {
     
     const auto flushType =
         aInterruptible ? FlushType::InterruptibleLayout : FlushType::Layout;
-    FlushPendingNotifications(ChangesToFlush(flushType,
-                                              false,
-                                              false));
+    FlushPendingNotifications(flushType);
   }
 }
 
