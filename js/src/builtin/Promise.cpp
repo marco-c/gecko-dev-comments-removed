@@ -2927,17 +2927,17 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx,
   
   
   RootedField<JSObject*, 3> promise(roots, &promiseToResolve.toObject());
-
   RootedField<JSObject*, 4> hostDefinedGlobalRepresentative(roots);
+  RootedField<JSObject*, 5> optionalHostDefinedData(roots);
 
-  if (!GetIncumbentGlobalRepresentative(cx, &hostDefinedGlobalRepresentative)) {
+  if (!GetObjectFromHostDefinedData(cx, &hostDefinedGlobalRepresentative,
+                                    &optionalHostDefinedData)) {
     return false;
   }
-  RootedField<JSObject*, 5> optionalHostDefinedDataIsOptimizedOut(roots,
-                                                                  nullptr);
+
   ThenableJob* thenableJob = NewThenableJob(
       cx, ThenableJob::PromiseResolveThenableJob, promise, thenable, then,
-      hostDefinedGlobalRepresentative, optionalHostDefinedDataIsOptimizedOut);
+      hostDefinedGlobalRepresentative, optionalHostDefinedData);
   if (!thenableJob) {
     return false;
   }
@@ -6320,19 +6320,6 @@ bool js::Promise_static_species(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-enum class HostDefinedDataObjectOption {
-  
-  Allocate,
-
-  
-  
-  OptimizeOut,
-
-  
-  
-  UnusedForDebugger,
-};
-
 
 
 
@@ -6345,51 +6332,26 @@ enum class HostDefinedDataObjectOption {
 
 static PromiseReactionRecord* NewReactionRecord(
     JSContext* cx, Handle<PromiseCapability> resultCapability,
-    HandleValue onFulfilled, HandleValue onRejected,
-    HostDefinedDataObjectOption hostDefinedDataObjectOption) {
+    HandleValue onFulfilled, HandleValue onRejected) {
+
 #ifdef DEBUG
-  if (resultCapability.promise()) {
-    if (hostDefinedDataObjectOption == HostDefinedDataObjectOption::Allocate) {
-      if (resultCapability.promise()->is<PromiseObject>()) {
-        
-        
-        
-        MOZ_ASSERT_IF(resultCapability.resolve(),
-                      IsCallable(resultCapability.resolve()));
-        MOZ_ASSERT_IF(resultCapability.reject(),
-                      IsCallable(resultCapability.reject()));
-      } else {
-        
-        
-        
-        MOZ_ASSERT(resultCapability.resolve());
-        MOZ_ASSERT(IsCallable(resultCapability.resolve()));
-        MOZ_ASSERT(resultCapability.reject());
-        MOZ_ASSERT(IsCallable(resultCapability.reject()));
-      }
-    } else if (hostDefinedDataObjectOption ==
-               HostDefinedDataObjectOption::UnusedForDebugger) {
-      
-      
-      
-      
-      
-      JSObject* unwrappedPromise = UncheckedUnwrap(resultCapability.promise());
-      MOZ_ASSERT(unwrappedPromise->is<PromiseObject>() ||
-                 JS_IsDeadWrapper(unwrappedPromise));
-      MOZ_ASSERT(!resultCapability.resolve());
-      MOZ_ASSERT(!resultCapability.reject());
-    }
-  } else {
-    
-    
-    
-    
-    
+  if (!resultCapability.promise()) {
     MOZ_ASSERT(!resultCapability.resolve());
     MOZ_ASSERT(!resultCapability.reject());
-    MOZ_ASSERT(hostDefinedDataObjectOption !=
-               HostDefinedDataObjectOption::UnusedForDebugger);
+  } else if (resultCapability.promise()->is<PromiseObject>()) {
+    MOZ_ASSERT_IF(resultCapability.resolve(),
+                  IsCallable(resultCapability.resolve()));
+    MOZ_ASSERT_IF(resultCapability.reject(),
+                  IsCallable(resultCapability.reject()));
+  } else if (resultCapability.resolve() || resultCapability.reject()) {
+    MOZ_ASSERT(resultCapability.resolve());
+    MOZ_ASSERT(IsCallable(resultCapability.resolve()));
+    MOZ_ASSERT(resultCapability.reject());
+    MOZ_ASSERT(IsCallable(resultCapability.reject()));
+  } else {
+    JSObject* unwrappedPromise = UncheckedUnwrap(resultCapability.promise());
+    MOZ_ASSERT(unwrappedPromise->is<PromiseObject>() ||
+               JS_IsDeadWrapper(unwrappedPromise));
   }
 #endif
 
@@ -6413,23 +6375,9 @@ static PromiseReactionRecord* NewReactionRecord(
   RootedObject incumbentGlobalRepresentative(cx, nullptr);
   RootedObject optionalHostDefinedData(cx);
 
-  
-  
-  
-  
-  
-  
-  if (hostDefinedDataObjectOption == HostDefinedDataObjectOption::Allocate) {
-    
-    if (!GetObjectFromHostDefinedData(cx, &incumbentGlobalRepresentative,
-                                      &optionalHostDefinedData)) {
-      return nullptr;
-    }
-  } else {
-    
-    if (!GetIncumbentGlobalRepresentative(cx, &incumbentGlobalRepresentative)) {
-      return nullptr;
-    }
+  if (!GetObjectFromHostDefinedData(cx, &incumbentGlobalRepresentative,
+                                    &optionalHostDefinedData)) {
+    return nullptr;
   }
 
   PromiseReactionRecord* reaction =
@@ -6631,14 +6579,8 @@ static bool PromiseThenNewPromiseCapability(
   RootedField<PromiseCapability, 2> resultCapability(roots);
   MOZ_ASSERT(!resultCapability.promise());
 
-  auto hostDefinedDataObjectOption =
-      unwrappedPromise->state() == JS::PromiseState::Pending
-          ? HostDefinedDataObjectOption::Allocate
-          : HostDefinedDataObjectOption::OptimizeOut;
-
   RootedField<PromiseReactionRecord*, 3> reaction(
-      roots, NewReactionRecord(cx, resultCapability, onFulfilled, onRejected,
-                               hostDefinedDataObjectOption));
+      roots, NewReactionRecord(cx, resultCapability, onFulfilled, onRejected));
   if (!reaction) {
     return false;
   }
@@ -6906,14 +6848,9 @@ template <typename T>
   RootedField<PromiseCapability, 4> resultCapability(roots);
   resultCapability.promise().set(resultPromise);
 
-  auto hostDefinedDataObjectOption =
-      unwrappedPromise->state() == JS::PromiseState::Pending
-          ? HostDefinedDataObjectOption::Allocate
-          : HostDefinedDataObjectOption::OptimizeOut;
-
   RootedField<PromiseReactionRecord*, 5> reaction(
       roots, NewReactionRecord(cx, resultCapability, onFulfilledValue,
-                               onRejectedValue, hostDefinedDataObjectOption));
+                               onRejectedValue));
   if (!reaction) {
     return false;
   }
@@ -7485,13 +7422,8 @@ bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
   
   
   
-  auto hostDefinedDataObjectOption =
-      promise->state() == JS::PromiseState::Pending
-          ? HostDefinedDataObjectOption::Allocate
-          : HostDefinedDataObjectOption::OptimizeOut;
   Rooted<PromiseReactionRecord*> reaction(
-      cx, NewReactionRecord(cx, resultCapability, onFulfilled, onRejected,
-                            hostDefinedDataObjectOption));
+      cx, NewReactionRecord(cx, resultCapability, onFulfilled, onRejected));
   if (!reaction) {
     return false;
   }
@@ -7527,20 +7459,10 @@ bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
   
   
   
-  auto hostDefinedDataObjectOption =
-      promise->state() == JS::PromiseState::Pending
-          ? HostDefinedDataObjectOption::Allocate
-          : HostDefinedDataObjectOption::OptimizeOut;
-
-  
-  
-  
-  
   
   
   Rooted<PromiseReactionRecord*> reaction(
-      cx, NewReactionRecord(cx, resultCapability, onFulfilled, onRejected,
-                            hostDefinedDataObjectOption));
+      cx, NewReactionRecord(cx, resultCapability, onFulfilled, onRejected));
   if (!reaction) {
     return false;
   }
@@ -7728,8 +7650,7 @@ bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
   capability.promise().set(dependentPromise);
 
   Rooted<PromiseReactionRecord*> reaction(
-      cx, NewReactionRecord(cx, capability, NullHandleValue, NullHandleValue,
-                            HostDefinedDataObjectOption::UnusedForDebugger));
+      cx, NewReactionRecord(cx, capability, NullHandleValue, NullHandleValue));
   if (!reaction) {
     return false;
   }
