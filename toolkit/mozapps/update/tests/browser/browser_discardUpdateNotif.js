@@ -39,6 +39,12 @@ add_task(async function aboutPrefs_foregroundCheck_discardUpdateNotif() {
         true,
         "An update avaliable doorhanger notification exists"
       );
+      
+      
+      await BrowserTestUtils.waitForPopupEvent(
+        PanelUI.notificationPanel,
+        "shown"
+      );
       let dismissButton = getNotificationButton(
         window,
         AppMenuNotifications.activeNotification.id,
