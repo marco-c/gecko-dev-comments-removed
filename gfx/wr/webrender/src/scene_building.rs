@@ -3995,7 +3995,6 @@ fn filter_datas_for_compositing(
 
 
 
-
 fn process_image_stretch_size(
     unsnapped_rect: &LayoutRect,
     repeat_size: LayoutSize,

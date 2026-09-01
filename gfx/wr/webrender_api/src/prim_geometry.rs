@@ -43,27 +43,25 @@ pub fn simplify_repeated_primitive(
 
 
 
-pub fn process_repeat_size(
-    snapped_rect: &LayoutRect,
-    unsnapped_rect: &LayoutRect,
-    repeat_size: LayoutSize,
-) -> LayoutSize {
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
+
+pub fn resolve_tile_size(prim_rect: &LayoutRect, repeat_size: LayoutSize) -> LayoutSize {
     const EPSILON: f32 = 0.001;
     LayoutSize::new(
-        if repeat_size.width.approx_eq_eps(&unsnapped_rect.width(), &EPSILON) {
-            snapped_rect.width()
+        if repeat_size.width.approx_eq_eps(&prim_rect.width(), &EPSILON) {
+            prim_rect.width()
         } else {
             repeat_size.width
         },
-        if repeat_size.height.approx_eq_eps(&unsnapped_rect.height(), &EPSILON) {
-            snapped_rect.height()
+        if repeat_size.height.approx_eq_eps(&prim_rect.height(), &EPSILON) {
+            prim_rect.height()
         } else {
             repeat_size.height
         },
