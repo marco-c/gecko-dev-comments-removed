@@ -971,6 +971,13 @@ void js::Nursery::forwardBufferPointer(uintptr_t* pSlotsElems) {
   
   auto* buffer = reinterpret_cast<void*>(*pSlotsElems);
 
+  
+  
+  
+  if ((uintptr_t(buffer) & ChunkMask) == 0) {
+    return;
+  }
+
   if (!isInside(buffer)) {
     return;
   }
