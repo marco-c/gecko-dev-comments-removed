@@ -370,7 +370,7 @@ struct arena_t : public BaseAllocClass {
 
   
   
-  bool mIsDeferredPurgeEnabled MOZ_GUARDED_BY(mLock);
+  bool mIsDeferredPurgeEnabled MOZ_GUARDED_BY(mLock) = false;
 
   
   

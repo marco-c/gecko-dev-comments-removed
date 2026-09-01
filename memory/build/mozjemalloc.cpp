@@ -267,7 +267,6 @@ class ArenaCollection {
     mDefaultArena =
         mLock.Init() ? CreateArena( false, &params) : nullptr;
     mPurgeListLock.Init();
-    mIsDeferredPurgeEnabled = false;
     return bool(mDefaultArena);
   }
 
@@ -472,22 +471,28 @@ class ArenaCollection {
   bool SetDeferredPurge(bool aEnable) {
     MOZ_ASSERT(IsOnMainThreadWeak());
 
-    bool ret = mIsDeferredPurgeEnabled;
+    
+    
+    bool previous;
     {
       MutexAutoLock lock(mLock);
+      previous = mIsDeferredPurgeEnabled;
       mIsDeferredPurgeEnabled = aEnable;
       for (auto* arena : iter()) {
         MaybeMutexAutoLock lock(arena->mLock);
         arena->mIsDeferredPurgeEnabled = aEnable;
       }
     }
-    if (ret != aEnable) {
+
+    if (previous != aEnable) {
       MayPurgeAll(PurgeIfThreshold, __func__);
     }
-    return ret;
+    return previous;
   }
 
-  bool IsDeferredPurgeEnabled() { return mIsDeferredPurgeEnabled; }
+  bool IsDeferredPurgeEnabled() MOZ_REQUIRES(mLock) {
+    return mIsDeferredPurgeEnabled;
+  }
 
   
   void AddToOutstandingPurges(arena_t* aArena) MOZ_EXCLUDES(mPurgeListLock);
@@ -570,9 +575,9 @@ class ArenaCollection {
   
   
   DoublyLinkedList<arena_t> mOutstandingPurges MOZ_GUARDED_BY(mPurgeListLock);
+
   
-  
-  Atomic<bool> mIsDeferredPurgeEnabled;
+  bool mIsDeferredPurgeEnabled MOZ_GUARDED_BY(mLock) = false;
 };
 
 constinit static ArenaCollection gArenas;
@@ -1507,11 +1512,11 @@ ArenaPurgeResult arena_t::PurgeLoop(PurgeCondition aCond, const char* aCaller,
 #endif
 
   uint64_t reuseGraceNS = (uint64_t)aReuseGraceMS * 1000 * 1000;
-  uint64_t now = aReuseGraceMS ? 0 : GetTimestampNS();
+  uint64_t now;
   ArenaPurgeResult pr;
   do {
     pr = Purge(aCond, purge_stats, aKeepGoing);
-    now = aReuseGraceMS ? 0 : GetTimestampNS();
+    now = aReuseGraceMS ? GetTimestampNS() : 0;
   } while (
       pr == NotDone &&
       (!aReuseGraceMS || (now - mLastSignificantReuseNS >= reuseGraceNS)) &&
@@ -2972,7 +2977,6 @@ arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate)
       mMaxDirtyBase((aParams && aParams->mMaxDirty) ? aParams->mMaxDirty
                                                     : (opt_dirty_max / 8)),
       mLastSignificantReuseNS(GetTimestampNS()),
-      mIsDeferredPurgeEnabled(gArenas.IsDeferredPurgeEnabled()),
       mChunkAllocator(&gSystemChunkAllocator) {
   MaybeMutex::DoLock doLock = MaybeMutex::MUST_LOCK;
   if (aParams) {
@@ -3077,6 +3081,8 @@ arena_t::~arena_t() {
 
 arena_t* ArenaCollection::CreateArena(bool aIsPrivate,
                                       arena_params_t* aParams) {
+  
+  
   arena_t* ret = new (fallible) arena_t(aParams, aIsPrivate);
   if (!ret) {
     
@@ -3091,6 +3097,17 @@ arena_t* ArenaCollection::CreateArena(bool aIsPrivate,
   }
 
   MutexAutoLock lock(mLock);
+
+  
+  
+  
+  {
+    
+    
+    
+    MaybeMutexAutoLock arena_lock(ret->mLock);
+    ret->mIsDeferredPurgeEnabled = mIsDeferredPurgeEnabled;
+  }
 
   
   if (!aIsPrivate) {
