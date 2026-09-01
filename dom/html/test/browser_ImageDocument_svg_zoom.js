@@ -14,7 +14,9 @@ function test_once() {
       );
       is(
         Math.round(rect.height),
-        content.innerHeight,
+        
+        
+        content.wrappedJSObject.innerHeight,
         "Should fill the viewport and not overflow"
       );
     });
