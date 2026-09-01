@@ -603,6 +603,21 @@ module.exports = function (config) {
               functions: 0,
               branches: 0,
             },
+            
+            
+            "content-src/components/Widgets/Clocks/ClockCityRegistry.mjs": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            
+            "content-src/components/Widgets/Clocks/useCuratedCityNames.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
             "content-src/components/Weather/LocationSearch.jsx": {
               statements: 0,
               lines: 0,
