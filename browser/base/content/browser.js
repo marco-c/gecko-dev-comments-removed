@@ -5008,16 +5008,23 @@ var ConfirmationHint = {
     
     
     const DURATION = showDescription ? 6000 : 3000;
-    this._panel.addEventListener(
-      "popupshown",
-      () => {
-        this._animationBox.setAttribute("animate", "true");
-        this._timerID = setTimeout(() => {
-          this._panel.hidePopup(true);
-        }, DURATION + 120);
-      },
-      { once: true }
-    );
+    let startAutoHideTimer = () => {
+      this._animationBox.setAttribute("animate", "true");
+      this._timerID = setTimeout(() => {
+        this._panel.hidePopup(true);
+      }, DURATION + 120);
+    };
+
+    if (this._panel.state == "open") {
+      
+      
+      startAutoHideTimer();
+      return;
+    }
+
+    this._panel.addEventListener("popupshown", startAutoHideTimer, {
+      once: true,
+    });
 
     this._panel.addEventListener(
       "popuphidden",
