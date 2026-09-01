@@ -244,22 +244,9 @@ def rust_analyzer_config(command_context):
     
     commtopsrcdir = command_context.substs.get("commtopsrcdir")
 
-    if commtopsrcdir:
-        
-        
-        
-        if sys.platform == "win32":
-            cargo_check_command = [sys.executable, "../../mach"]
-        else:
-            
-            
-            cargo_check_command = [os.path.join(command_context.topsrcdir, "mach")]
-    elif sys.platform == "win32":
-        cargo_check_command = [sys.executable, "mach"]
-    else:
-        cargo_check_command = ["./mach"]
-
-    cargo_check_command += [
+    cargo_check_command = [
+        sys.executable,
+        mozpath.join(command_context.topsrcdir, "mach"),
         "--log-no-times",
         "cargo",
         "check",
