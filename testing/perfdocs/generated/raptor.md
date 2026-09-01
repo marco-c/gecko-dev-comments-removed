@@ -1886,6 +1886,228 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
 
 ::::
 
+(media-capabilities-b)=
+
+::::{dropdown} media-capabilities
+:class-container: anchor-id-media-capabilities-b
+
+* **Command to Run Locally**
+
+  ```
+  ./mach raptor -t media-capabilities
+  ```
+
+**Owner**: :az and Media Team
+
+* **alert threshold**: 2.0
+* **apps**: firefox
+* **browser cycles**: 5
+* **cold**: true
+* **expected**: pass
+* **expose browser profiler**: true
+* **gecko profile interval**: 1
+* **link searchfox**: {searchfox}`testing/raptor/raptor/tests/benchmarks/media-capabilities.toml#12`
+* **lower is better**: true
+* **page cycles**: 1
+* **page timeout**: 360000
+* **preferences**: privacy.reduceTimerPrecision=false privacy.reduceTimerPrecision.unconditional=false
+* **subtest lower is better**: true
+* **subtest unit**: ms
+* **support class**: media_capabilities.py
+* **test url**: <http://\<host\>:\<port\>/media-capabilities/index.html?raptor>
+* **type**: benchmark
+* **unit**: ms
+* **Test Task**:
+
+:::{list-table} **test-linux2404-64-clang-trunk/opt**
+:widths: 30 15 15 15 15
+:header-rows: 1
+
+* - **Test Name**
+  - mozilla-central
+  - autoland
+  - mozilla-release
+  - mozilla-beta
+* - **browsertime-benchmark-firefox-media-capabilities**
+  - ❌
+  - ❌
+  - ❌
+  - ❌
+:::
+
+
+:::{list-table} **test-linux2404-64-nightlyasrelease/opt**
+:widths: 30 15 15 15 15
+:header-rows: 1
+
+* - **Test Name**
+  - mozilla-central
+  - autoland
+  - mozilla-release
+  - mozilla-beta
+* - **browsertime-benchmark-firefox-media-capabilities**
+  - ❌
+  - ❌
+  - ❌
+  - ❌
+:::
+
+
+:::{list-table} **test-linux2404-64-shippable/opt**
+:widths: 30 15 15 15 15
+:header-rows: 1
+
+* - **Test Name**
+  - mozilla-central
+  - autoland
+  - mozilla-release
+  - mozilla-beta
+* - **browsertime-benchmark-firefox-media-capabilities**
+  - ✅
+  - ✅
+  - ❌
+  - ❌
+:::
+
+
+:::{list-table} **test-linux2404-64/opt**
+:widths: 30 15 15 15 15
+:header-rows: 1
+
+* - **Test Name**
+  - mozilla-central
+  - autoland
+  - mozilla-release
+  - mozilla-beta
+* - **browsertime-benchmark-firefox-media-capabilities**
+  - ❌
+  - ❌
+  - ❌
+  - ❌
+:::
+
+
+:::{list-table} **test-macosx1470-64-nightlyasrelease/opt**
+:widths: 30 15 15 15 15
+:header-rows: 1
+
+* - **Test Name**
+  - mozilla-central
+  - autoland
+  - mozilla-release
+  - mozilla-beta
+* - **browsertime-benchmark-firefox-media-capabilities**
+  - ❌
+  - ❌
+  - ❌
+  - ❌
+:::
+
+
+:::{list-table} **test-macosx1470-64-shippable/opt**
+:widths: 30 15 15 15 15
+:header-rows: 1
+
+* - **Test Name**
+  - mozilla-central
+  - autoland
+  - mozilla-release
+  - mozilla-beta
+* - **browsertime-benchmark-firefox-media-capabilities**
+  - ✅
+  - ✅
+  - ❌
+  - ❌
+:::
+
+
+:::{list-table} **test-macosx1470-64/opt**
+:widths: 30 15 15 15 15
+:header-rows: 1
+
+* - **Test Name**
+  - mozilla-central
+  - autoland
+  - mozilla-release
+  - mozilla-beta
+* - **browsertime-benchmark-firefox-media-capabilities**
+  - ❌
+  - ❌
+  - ❌
+  - ❌
+:::
+
+
+:::{list-table} **test-macosx1500-aarch64-nightlyasrelease/opt**
+:widths: 30 15 15 15 15
+:header-rows: 1
+
+* - **Test Name**
+  - mozilla-central
+  - autoland
+  - mozilla-release
+  - mozilla-beta
+* - **browsertime-benchmark-firefox-media-capabilities**
+  - ❌
+  - ❌
+  - ❌
+  - ❌
+:::
+
+
+:::{list-table} **test-windows11-64-24h2-nightlyasrelease/opt**
+:widths: 30 15 15 15 15
+:header-rows: 1
+
+* - **Test Name**
+  - mozilla-central
+  - autoland
+  - mozilla-release
+  - mozilla-beta
+* - **browsertime-benchmark-firefox-media-capabilities**
+  - ❌
+  - ❌
+  - ❌
+  - ❌
+:::
+
+
+:::{list-table} **test-windows11-64-24h2-shippable/opt**
+:widths: 30 15 15 15 15
+:header-rows: 1
+
+* - **Test Name**
+  - mozilla-central
+  - autoland
+  - mozilla-release
+  - mozilla-beta
+* - **browsertime-benchmark-firefox-media-capabilities**
+  - ❌
+  - ❌
+  - ❌
+  - ❌
+:::
+
+
+:::{list-table} **test-windows11-64-24h2/opt**
+:widths: 30 15 15 15 15
+:header-rows: 1
+
+* - **Test Name**
+  - mozilla-central
+  - autoland
+  - mozilla-release
+  - mozilla-beta
+* - **browsertime-benchmark-firefox-media-capabilities**
+  - ❌
+  - ❌
+  - ❌
+  - ❌
+:::
+
+
+::::
+
 (motionmark-1-3-b)=
 
 ::::{dropdown} motionmark-1-3
@@ -6306,7 +6528,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
 * **expected**: pass
 * **expose browser profiler**: true
 * **gecko profile interval**: 1
-* **link searchfox**: {searchfox}`testing/raptor/raptor/tests/benchmarks/unity-webgl-desktop.toml#15`
+* **link searchfox**: {searchfox}`testing/raptor/raptor/tests/benchmarks/unity-webgl-desktop.toml#17`
 * **lower is better**: false
 * **page cycles**: 5
 * **page timeout**: 420000
@@ -6314,6 +6536,8 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
 * **repository path**: benchmarks/unity-webgl
 * **repository revision**: 61332db584026b73e37066d717a162825408c36b
 * **sparse checkout**: true
+* **subtest lower is better**: false
+* **subtest unit**: score
 * **test url**: <http://\<host\>:\<port\>/index.html?raptor>
 * **type**: benchmark
 * **unit**: score
@@ -6607,13 +6831,15 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
 * **expected**: pass
 * **expose browser profiler**: true
 * **gecko profile interval**: 1
-* **link searchfox**: {searchfox}`testing/raptor/raptor/tests/benchmarks/unity-webgl-mobile.toml#14`
+* **link searchfox**: {searchfox}`testing/raptor/raptor/tests/benchmarks/unity-webgl-mobile.toml#16`
 * **lower is better**: false
 * **page cycles**: 1
 * **page timeout**: 420000
 * **repository**: https://github.com/mozilla/perf-automation
 * **repository path**: benchmarks/unity-webgl
 * **repository revision**: 61332db584026b73e37066d717a162825408c36b
+* **subtest lower is better**: false
+* **subtest unit**: score
 * **test url**: <http://\<host\>:\<port\>/index.html?raptor>
 * **type**: benchmark
 * **unit**: score
