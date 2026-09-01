@@ -8307,14 +8307,16 @@ nscoord nsGridContainerFrame::ReflowInFragmentainer(
 
   
   uint32_t endRow = numRows;
-  for (uint32_t row = startRow; row < numRows; ++row) {
-    auto& sz = aGridRI.mRows.mSizes[row];
-    const nscoord bEnd = sz.mPosition + sz.mBase;
-    nscoord remainingAvailableSize = childAvailableSize - bEnd;
-    if (remainingAvailableSize < 0 ||
-        (isBDBClone && remainingAvailableSize < bpBEnd)) {
-      endRow = row;
-      break;
+  if (childAvailableSize != NS_UNCONSTRAINEDSIZE) {
+    for (uint32_t row = startRow; row < numRows; ++row) {
+      auto& sz = aGridRI.mRows.mSizes[row];
+      const nscoord bEnd = sz.mPosition + sz.mBase;
+      nscoord remainingAvailableSize = childAvailableSize - bEnd;
+      if (remainingAvailableSize < 0 ||
+          (isBDBClone && remainingAvailableSize < bpBEnd)) {
+        endRow = row;
+        break;
+      }
     }
   }
 
@@ -8406,7 +8408,9 @@ nscoord nsGridContainerFrame::ReflowInFragmentainer(
   }
 
   
-  bool overflow = bSize + bpBEnd > childAvailableSize;
+  
+  const bool overflow = childAvailableSize != NS_UNCONSTRAINEDSIZE &&
+                        bSize + bpBEnd > childAvailableSize;
   if (overflow) {
     if (avoidBreakInside) {
       aStatus.SetInlineLineBreakBeforeAndReset();
@@ -8467,7 +8471,7 @@ nscoord nsGridContainerFrame::ReflowInFragmentainer(
       aStatus.SetOverflowIncomplete();
       aStatus.SetNextInFlowNeedsReflow();
     }
-  } else {
+  } else if (childAvailableSize != NS_UNCONSTRAINEDSIZE) {
     
     childAvailableSize = std::max(childAvailableSize, bEndRow);
   }
