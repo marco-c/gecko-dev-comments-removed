@@ -134,7 +134,6 @@ const char* StreamTypeToString(VideoSendStream::StreamStats::StreamType type) {
 
 
 
-
 template <class T>
 std::vector<SdpVideoFormat> GetDefaultSupportedFormats(
     const T* absl_nullable factory,

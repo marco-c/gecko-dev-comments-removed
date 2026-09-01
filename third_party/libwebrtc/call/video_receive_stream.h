@@ -20,7 +20,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-
 #include "api/call/transport.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "api/crypto/crypto_options.h"
@@ -202,22 +201,19 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
   };
 
   struct Config {
-   private:
-    
-    
-    Config(const Config&);
-
    public:
     Config() = delete;
+    Config(const Config&) = delete;
+    Config& operator=(const Config&) = delete;
     Config(Config&&);
     Config(Transport* rtcp_send_transport,
            VideoDecoderFactory* decoder_factory = nullptr);
     Config& operator=(Config&&);
-    Config& operator=(const Config&) = delete;
     ~Config();
 
     
-    Config Copy() const { return Config(*this); }
+    
+    Config Copy() const;
 
     std::string ToString() const;
 
