@@ -16,8 +16,10 @@
 #include <vector>
 
 #include "api/scoped_refptr.h"
+#include "api/video/video_frame.h"
 #include "api/video/video_frame_buffer.h"
 #include "video/corruption_detection/halton_sequence.h"
+#include "video/corruption_detection/video_frame_sampler.h"
 
 namespace webrtc {
 
@@ -43,6 +45,7 @@ class HaltonFrameSampler {
   HaltonFrameSampler& operator=(const HaltonFrameSampler&) = default;
   HaltonFrameSampler& operator=(HaltonFrameSampler&&) = default;
 
+  bool ShouldSampleFrame(bool is_key_frame, uint32_t rtp_timestamp);
   std::vector<Coordinates> GetSampleCoordinatesForFrameIfFrameShouldBeSampled(
       bool is_key_frame,
       uint32_t rtp_timestamp,
@@ -67,6 +70,15 @@ class HaltonFrameSampler {
 
 
 std::vector<FilteredSample> GetSampleValuesForFrame(
+    const VideoFrame& frame,
+    std::vector<HaltonFrameSampler::Coordinates> sample_coordinates,
+    int scaled_width,
+    int scaled_height,
+    double std_dev_gaussian_blur);
+
+
+
+[[deprecated]] std::vector<FilteredSample> GetSampleValuesForFrame(
     scoped_refptr<I420BufferInterface> i420_frame_buffer,
     std::vector<HaltonFrameSampler::Coordinates> sample_coordinates,
     int scaled_width,
@@ -74,10 +86,8 @@ std::vector<FilteredSample> GetSampleValuesForFrame(
     double std_dev_gaussian_blur);
 
 
-double GetFilteredElement(int width,
-                          int height,
-                          int stride,
-                          const uint8_t* data,
+double GetFilteredElement(const VideoFrameSampler& frame_sampler,
+                          VideoFrameSampler::ChannelType channel,
                           int row,
                           int column,
                           double std_dev);
