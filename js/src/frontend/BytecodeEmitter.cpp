@@ -3147,6 +3147,10 @@ template <typename InnerEmitter>
 bool BytecodeEmitter::wrapWithDestructuringTryNote(int32_t iterDepth,
                                                    InnerEmitter emitter) {
   MOZ_ASSERT(bytecodeSection().stackDepth() >= iterDepth);
+#ifdef DEBUG
+  auto* control = findInnermostNestableControl<DestructuringControl>();
+  MOZ_ASSERT(*control->nonLocalExitStackDepth() == iterDepth);
+#endif
 
   
   
@@ -3569,6 +3573,12 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
   
   int32_t tryNoteDepth = bytecodeSection().stackDepth();
 
+  
+  
+  
+  DestructuringControl control(this, selfHostedIter);
+  control.setNonLocalExitStackDepth(tryNoteDepth);
+
   for (ParseNode* member : pattern->contents()) {
     bool isFirst = member == pattern->head();
     DebugOnly<bool> hasNext = !!member->pn_next;
@@ -3832,8 +3842,7 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
   
   
   
-
-  if (!emitDestructuringIteratorClose(selfHostedIter)) {
+  if (!control.emitEnd(this)) {
     
     return false;
   }

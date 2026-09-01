@@ -63,6 +63,7 @@ enum class StatementKind : uint8_t {
   Class,
 
   
+  Destructuring,
   Spread,
   YieldStar,
 };

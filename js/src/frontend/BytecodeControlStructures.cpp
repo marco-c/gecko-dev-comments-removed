@@ -4,6 +4,8 @@
 
 #include "frontend/BytecodeControlStructures.h"
 
+#include "mozilla/DebugOnly.h"
+
 #include "frontend/BytecodeEmitter.h"   
 #include "frontend/EmitterScope.h"      
 #include "frontend/ForOfLoopControl.h"  
@@ -101,6 +103,63 @@ bool LoopControl::emitLoopEnd(BytecodeEmitter* bce, JSOp op,
     return false;
   }
   return true;
+}
+
+DestructuringControl::DestructuringControl(BytecodeEmitter* bce,
+                                           SelfHostedIter selfHostedIter)
+    : NestableControl(bce, StatementKind::Destructuring),
+      selfHostedIter_(selfHostedIter) {
+  
+  MOZ_ASSERT(bce->bytecodeSection().stackDepth() >= 4);
+}
+
+bool DestructuringControl::emitJumpToIteratorClose(BytecodeEmitter* bce) {
+  MOZ_ASSERT(bce->bytecodeSection().stackDepth() == *nonLocalExitStackDepth());
+  return bce->emitJump(JSOp::Goto, &returnJumps_);
+}
+
+bool DestructuringControl::emitEnd(BytecodeEmitter* bce) {
+  
+
+  
+  
+  if (!bce->emitDestructuringIteratorClose(selfHostedIter_)) {
+    
+    return false;
+  }
+
+  
+  
+  
+
+  if (!returnJumps_.offset.valid()) {
+    return true;
+  }
+
+  mozilla::DebugOnly<int32_t> normalDepth = bce->bytecodeSection().stackDepth();
+  JumpList done;
+  if (!bce->emitJumpNoFallthrough(JSOp::Goto, &done)) {
+    return false;
+  }
+
+  bce->bytecodeSection().setStackDepth(*nonLocalExitStackDepth());
+  if (!bce->emitJumpTargetAndPatch(returnJumps_)) {
+    return false;
+  }
+
+  if (!bce->emitDestructuringIteratorClose(selfHostedIter_)) {
+    return false;
+  }
+
+  {
+    NonLocalExitControl nle(bce, NonLocalExitKind::Return);
+    if (!nle.emitNonLocalJump(nullptr, this)) {
+      return false;
+    }
+  }
+
+  MOZ_ASSERT(bce->bytecodeSection().stackDepth() == normalDepth);
+  return bce->emitJumpTargetAndPatch(done);
 }
 
 TryFinallyControl::TryFinallyControl(BytecodeEmitter* bce, StatementKind kind)
@@ -255,11 +314,11 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
 
   
   
-  bool jumpingToFinally = false;
+  bool jumpingToCleanup = false;
 
   
   for (NestableControl* control = startingControl;
-       control != target && !jumpingToFinally; control = control->enclosing()) {
+       control != target && !jumpingToCleanup; control = control->enclosing()) {
     
     
     
@@ -277,7 +336,7 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
           return false;
         }
         if (!finallyControl.emittingSubroutine()) {
-          jumpingToFinally = true;
+          jumpingToCleanup = true;
 
           uint32_t idx;
           if (!finallyControl.allocateContinuation(target, kind_, &idx)) {
@@ -287,6 +346,20 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
             return false;
           }
         }
+        break;
+      }
+
+      case StatementKind::Destructuring: {
+        MOZ_ASSERT(kind_ == NonLocalExitKind::Return);
+        MOZ_ASSERT(!target);
+        if (!popToStackDepth(*control->nonLocalExitStackDepth())) {
+          return false;
+        }
+        auto& destructuringControl = control->as<DestructuringControl>();
+        if (!destructuringControl.emitJumpToIteratorClose(bce_)) {
+          return false;
+        }
+        jumpingToCleanup = true;
         break;
       }
 
@@ -325,7 +398,7 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
     }
   }
 
-  if (!jumpingToFinally) {
+  if (!jumpingToCleanup) {
     
     
     
