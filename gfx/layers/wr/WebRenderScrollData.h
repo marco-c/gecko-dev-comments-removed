@@ -241,7 +241,7 @@ class WebRenderScrollData {
   
   
   
-  bool Validate() const;
+  bool ValidateShape() const;
 
   WebRenderLayerManager* GetManager() const;
 
