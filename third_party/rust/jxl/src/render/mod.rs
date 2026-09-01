@@ -42,13 +42,15 @@ pub(crate) use low_memory_pipeline::LowMemoryRenderPipeline;
 #[cfg(test)]
 pub(crate) use simple_pipeline::SimpleRenderPipeline;
 
+pub(crate) type ErasedLocalState = dyn Any + Send + Sync;
+
 pub enum StageSpecialCase {
     F32ToU8 { channel: usize, bit_depth: u8 },
     ModularToF32 { channel: usize, bit_depth: u8 },
 }
 
 
-pub trait RenderPipelineInPlaceStage: Any + std::fmt::Display {
+pub trait RenderPipelineInPlaceStage: Any + std::fmt::Display + Send + Sync {
     type Type: ImageDataType;
 
     fn process_row_chunk(
@@ -57,10 +59,10 @@ pub trait RenderPipelineInPlaceStage: Any + std::fmt::Display {
         xsize: usize,
         
         row: &mut [&mut [Self::Type]],
-        state: Option<&mut dyn Any>,
+        state: Option<&mut ErasedLocalState>,
     );
 
-    fn init_local_state(&self, _thread_index: usize) -> Result<Option<Box<dyn Any>>> {
+    fn init_local_state(&self) -> Result<Option<Box<ErasedLocalState>>> {
         Ok(None)
     }
 
@@ -83,7 +85,7 @@ pub trait RenderPipelineInPlaceStage: Any + std::fmt::Display {
 
 
 
-pub trait RenderPipelineInOutStage: Any + std::fmt::Display {
+pub trait RenderPipelineInOutStage: Any + std::fmt::Display + Send + Sync {
     type InputT: ImageDataType;
     type OutputT: ImageDataType;
 
@@ -98,10 +100,10 @@ pub trait RenderPipelineInOutStage: Any + std::fmt::Display {
         input_rows: &Channels<Self::InputT>,
         
         output_rows: &mut ChannelsMut<Self::OutputT>,
-        state: Option<&mut dyn Any>,
+        state: Option<&mut ErasedLocalState>,
     );
 
-    fn init_local_state(&self, _thread_index: usize) -> Result<Option<Box<dyn Any>>> {
+    fn init_local_state(&self) -> Result<Option<Box<ErasedLocalState>>> {
         Ok(None)
     }
 
@@ -112,8 +114,6 @@ pub trait RenderPipelineInOutStage: Any + std::fmt::Display {
     }
 }
 
-
-
 pub(crate) trait RenderPipeline: Sized {
     type Buffer: 'static;
 
@@ -122,17 +122,17 @@ pub(crate) trait RenderPipeline: Sized {
     
     
     
-    fn get_buffer<T: ImageDataType>(&mut self, channel: usize) -> Result<Image<T>>;
+    fn get_buffer<T: ImageDataType>(&self, channel: usize) -> Result<Image<T>>;
 
     
     
     fn set_buffer_for_group<T: ImageDataType>(
-        &mut self,
+        &self,
         channel: usize,
         group_id: usize,
         complete: bool,
         buf: Image<T>,
-        buffer_splitter: &mut BufferSplitter,
+        buffer_splitter: &BufferSplitter,
     ) -> Result<()>;
 
     
@@ -141,7 +141,7 @@ pub(crate) trait RenderPipeline: Sized {
     
     
     
-    fn render_outside_frame(&mut self, buffer_splitter: &mut BufferSplitter) -> Result<()>;
+    fn render_outside_frame(&mut self, buffer_splitter: &BufferSplitter) -> Result<()>;
 
     
     fn mark_group_to_rerender(&mut self, g: usize);

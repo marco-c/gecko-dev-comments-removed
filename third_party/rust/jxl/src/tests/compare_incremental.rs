@@ -32,8 +32,16 @@ pub fn run(path: &Path, expected_checkpoints: &[(usize, f32)]) {
     };
 
     
-    let (_, frames) =
-        decode_internal(&file, 123, false, true, None, Some(&mut flush_callback)).unwrap();
+    let (_, frames) = decode_internal(
+        &file,
+        123,
+        false,
+        true,
+        None,
+        Some(&mut flush_callback),
+        None,
+    )
+    .unwrap();
 
     
     actual_checkpoints.push((file.len(), 0.0));

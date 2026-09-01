@@ -3,7 +3,8 @@
 
 
 
-use std::{collections::HashMap, sync::atomic::AtomicUsize};
+use crate::util::sync::atomic::AtomicUsize;
+use std::collections::HashMap;
 
 use num_traits::FromPrimitive;
 

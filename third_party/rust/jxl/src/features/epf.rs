@@ -3,7 +3,7 @@
 
 
 
-use std::sync::Arc;
+use crate::util::sync::Arc;
 
 use crate::{
     error::{Error, Result},

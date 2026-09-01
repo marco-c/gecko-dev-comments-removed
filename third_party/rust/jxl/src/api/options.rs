@@ -3,15 +3,6 @@
 
 
 
-pub enum JxlProgressiveMode {
-    
-    Eager,
-    
-    Pass,
-    
-    FullFrame,
-}
-
 #[non_exhaustive]
 pub struct JxlDecoderOptions {
     pub adjust_orientation: bool,
@@ -19,7 +10,6 @@ pub struct JxlDecoderOptions {
     pub coalescing: bool,
     pub desired_intensity_target: Option<f32>,
     pub skip_preview: bool,
-    pub progressive_mode: JxlProgressiveMode,
     
     
     
@@ -51,7 +41,6 @@ impl Default for JxlDecoderOptions {
             coalescing: true,
             skip_preview: true,
             desired_intensity_target: None,
-            progressive_mode: JxlProgressiveMode::Pass,
             sample_limit: None,
             high_precision: false,
             premultiply_output: false,

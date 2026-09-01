@@ -3,7 +3,7 @@
 
 
 
-use crate::render::{Channels, ChannelsMut, RenderPipelineInOutStage};
+use crate::render::{Channels, ChannelsMut, ErasedLocalState, RenderPipelineInOutStage};
 use jxl_simd::{F32SimdVec, simd_function};
 
 
@@ -103,7 +103,7 @@ impl RenderPipelineInOutStage for GaborishStage {
         xsize: usize,
         input_rows: &Channels<f32>,
         output_rows: &mut ChannelsMut<f32>,
-        _state: Option<&mut dyn std::any::Any>,
+        _state: Option<&mut ErasedLocalState>,
     ) {
         gaborish_process_dispatch(self, xsize, input_rows, output_rows);
     }

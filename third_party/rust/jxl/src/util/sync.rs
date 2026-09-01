@@ -1,0 +1,15 @@
+
+
+
+
+
+#[cfg(feature = "shuttle")]
+pub use shuttle::sync::*;
+
+
+
+#[cfg(feature = "shuttle")]
+pub use std::sync::OnceLock;
+
+#[cfg(not(feature = "shuttle"))]
+pub use std::sync::*;

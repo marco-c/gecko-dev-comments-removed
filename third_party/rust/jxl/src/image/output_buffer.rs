@@ -5,6 +5,8 @@
 
 use std::{fmt::Debug, marker::PhantomData};
 
+use crate::image::ImageDataType;
+
 use super::{RawImageRectMut, Rect, internal::RawImageBuffer};
 
 #[derive(Debug)]
@@ -88,6 +90,10 @@ impl<'a> JxlOutputBuffer<'a> {
         }
     }
 
+    pub(crate) fn typed_row_mut<T: ImageDataType>(&mut self, row: usize) -> &mut [T] {
+        T::cast_slice_mut(self.row_mut(row))
+    }
+
     pub(crate) fn row_mut(&mut self, row: usize) -> &mut [u8] {
         
         unsafe { self.inner.row_mut(row) }
@@ -97,7 +103,12 @@ impl<'a> JxlOutputBuffer<'a> {
         self.inner.byte_size()
     }
 
-    pub fn rect(&mut self, rect: Rect) -> JxlOutputBuffer<'_> {
+    
+    
+    
+    pub(crate) unsafe fn rect(&self, rect: Rect) -> JxlOutputBuffer<'_> {
+        
+        
         
         
         Self {

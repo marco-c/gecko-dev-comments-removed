@@ -3,7 +3,7 @@
 
 
 
-use std::sync::Arc;
+use crate::util::sync::Arc;
 
 use crate::{
     error::Result,
@@ -87,7 +87,7 @@ impl ExtendToImageDimensionsStage {
 
 #[cfg(test)]
 mod test {
-    use std::sync::Arc;
+    use crate::util::sync::Arc;
 
     use test_log::test;
 
