@@ -927,17 +927,15 @@ void CompositorBridgeParent::DisconnectApzcTreeManager(
 }
 
 mozilla::ipc::IPCResult CompositorBridgeParent::RecvNotifyChildCreated(
-    const LayersId& aChild, const LayersId& aEmbedderId,
-    CompositorOptions* aOptions) {
+    const LayersId& child, CompositorOptions* aOptions) {
   StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
-  NotifyChildCreated(aChild, aEmbedderId);
+  NotifyChildCreated(child);
   *aOptions = mOptions;
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult CompositorBridgeParent::RecvNotifyChildRecreated(
-    const LayersId& aChild, const LayersId& aEmbedderId,
-    CompositorOptions* aOptions) {
+    const LayersId& aChild, CompositorOptions* aOptions) {
   StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
 
   if (sIndirectLayerTrees.find(aChild) != sIndirectLayerTrees.end()) {
@@ -945,22 +943,19 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvNotifyChildRecreated(
     return IPC_FAIL_NO_REASON(this);
   }
 
-  NotifyChildCreated(aChild, aEmbedderId);
+  NotifyChildCreated(aChild);
   *aOptions = mOptions;
   return IPC_OK();
 }
 
-void CompositorBridgeParent::NotifyChildCreated(LayersId aChild,
-                                                LayersId aEmbedderId) {
+void CompositorBridgeParent::NotifyChildCreated(LayersId aChild) {
   sIndirectLayerTreesLock.AssertCurrentThreadOwns();
-  LayerTreeState& state = sIndirectLayerTrees.try_emplace(aChild).first->second;
-  state.mParent = this;
-  state.mEmbedderLayersId = aEmbedderId;
+  sIndirectLayerTrees.try_emplace(aChild).first->second.mParent = this;
 }
 
 mozilla::ipc::IPCResult CompositorBridgeParent::RecvMapAndNotifyChildCreated(
-    const LayersId& aChild, const LayersId& aEmbedderId,
-    const base::ProcessId& aOwnerPid, CompositorOptions* aOptions) {
+    const LayersId& aChild, const base::ProcessId& aOwnerPid,
+    CompositorOptions* aOptions) {
   
   
   MOZ_ASSERT(XRE_IsGPUProcess());
@@ -968,7 +963,7 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvMapAndNotifyChildCreated(
   LayerTreeOwnerTracker::Get()->Map(aChild, aOwnerPid);
 
   StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
-  NotifyChildCreated(aChild, aEmbedderId);
+  NotifyChildCreated(aChild);
   *aOptions = mOptions;
   return IPC_OK();
 }
@@ -991,7 +986,7 @@ static CompositorOptionsChangeKind ClassifyCompositorOptionsChange(
 }
 
 mozilla::ipc::IPCResult CompositorBridgeParent::RecvAdoptChild(
-    const LayersId& child, const LayersId& embedderId) {
+    const LayersId& child) {
   RefPtr<APZUpdater> oldApzUpdater;
   RefPtr<APZCTreeManagerParent> parent;
   bool apzEnablementChanged = false;
@@ -1064,7 +1059,7 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvAdoptChild(
     StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
     
     
-    NotifyChildCreated(child, embedderId);
+    NotifyChildCreated(child);
   }
 
   if (oldApzUpdater) {

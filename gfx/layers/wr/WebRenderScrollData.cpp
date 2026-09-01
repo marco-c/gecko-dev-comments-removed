@@ -222,7 +222,7 @@ WebRenderScrollData::WebRenderScrollData(WebRenderLayerManager* aManager,
       mIsFirstPaint(false),
       mPaintSequenceNumber(0) {}
 
-bool WebRenderScrollData::ValidateShape() const {
+bool WebRenderScrollData::Validate() const {
   
   
   
