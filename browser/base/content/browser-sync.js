@@ -1517,6 +1517,8 @@ var gSync = {
 
 
 
+
+
   _updateSyncStatusButton(state) {
     const btn = PanelMultiView.getViewNode(
       document,
@@ -1566,11 +1568,16 @@ var gSync = {
 
     
     
+    const neverSignedIn = state.status == UIState.STATUS_NOT_CONFIGURED;
+
+    
+    
     btn.classList.toggle("subviewbutton-nav", syncOn);
 
-    let titleId = syncOn
-      ? "fxa-menu-sync-status-on"
+    let neverSignedInId = neverSignedIn
+      ? "fxa-menu-sync-your-data"
       : "fxa-menu-sync-status-off";
+    let titleId = syncOn ? "fxa-menu-sync-status-on" : neverSignedInId;
     titleEl.setAttribute("value", this.fluentStrings.formatValueSync(titleId));
 
     if (syncOn) {
@@ -1586,6 +1593,9 @@ var gSync = {
       } else {
         descEl.removeAttribute("value");
       }
+    } else if (neverSignedIn) {
+      descEl.classList.remove("fxa-menu-sync-status-description-error");
+      descEl.removeAttribute("value");
     } else {
       descEl.classList.add("fxa-menu-sync-status-description-error");
       descEl.setAttribute(
@@ -1595,6 +1605,9 @@ var gSync = {
         )
       );
     }
+
+    
+    descEl.hidden = !descEl.hasAttribute("value");
 
     btn.hidden = false;
   },
@@ -1921,6 +1934,10 @@ var gSync = {
       document,
       "PanelUI-fxa-menu-profiles-separator"
     );
+    const manageAccountSeparator = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-manage-account-separator"
+    );
     const secureSyncHeader = PanelMultiView.getViewNode(
       document,
       "PanelUI-fxa-menu-secure-sync-header"
@@ -1949,6 +1966,7 @@ var gSync = {
     syncSetupEl.setAttribute("hidden", "true");
     signedInContainer.hidden = false;
     manageAccountButtonEl.hidden = true;
+    manageAccountSeparator.hidden = true;
     signInPromoEl.hidden = true;
     signedOutCardEl.hidden = true;
     menuHeaderDescriptionEl.hidden = false;
@@ -1989,6 +2007,10 @@ var gSync = {
     let headerTitleL10nId;
     let headerDescription;
 
+    
+    
+    const profilesShown = !!SelectableProfileService?.isEnabled;
+
     switch (state.status) {
       case UIState.STATUS_NOT_CONFIGURED:
         signOutSeparator.hidden = true;
@@ -2023,6 +2045,9 @@ var gSync = {
         profilesSeparator.remove();
         secureSyncHeader.remove();
 
+        
+        
+        
         profilesSeparator.hidden = false;
         secureSyncHeader.hidden = false;
 
@@ -2073,18 +2098,26 @@ var gSync = {
         syncSetupSeparator.setAttribute("hidden", "true");
 
         
+        manageAccountSeparator.remove();
         profilesHeaderLabel.remove();
         profileButtonsContainer.remove();
         profilesSeparator.remove();
         secureSyncHeader.remove();
 
-        profilesSeparator.hidden = false;
+        
+        
+        manageAccountSeparator.hidden = false;
+        
+        profilesSeparator.hidden = !profilesShown;
         secureSyncHeader.hidden = false;
 
         manageAccountButtonEl.after(secureSyncHeader);
         manageAccountButtonEl.after(profilesSeparator);
         manageAccountButtonEl.after(profileButtonsContainer);
         manageAccountButtonEl.after(profilesHeaderLabel);
+        
+        
+        manageAccountButtonEl.after(manageAccountSeparator);
 
         break;
 
