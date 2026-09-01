@@ -82,8 +82,8 @@ class nsAVIFDecoder final : public Decoder {
   
   const uint8_t* mReadCursor = nullptr;
 
-  UniquePtr<AVIFParser> mParser = nullptr;
-  UniquePtr<AVIFDecoderInterface> mDecoder = nullptr;
+  UniquePtr<AVIFParser> mParser;
+  UniquePtr<AVIFDecoderInterface> mDecoder;
 
   bool mIsAnimated = false;
   bool mHasAlpha = false;
