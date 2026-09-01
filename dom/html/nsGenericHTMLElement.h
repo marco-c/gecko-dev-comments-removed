@@ -967,13 +967,13 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
 
 
-  virtual already_AddRefed<mozilla::EditorBase> GetAssociatedEditor();
+  mozilla::EditorBase* GetAssociatedExtantEditor() const;
 
   
 
 
 
-  static void SyncEditorsOnSubtree(nsIContent* content);
+  static void SyncSpellCheckerStateOfExtantEditorsOnSubtree(nsIContent&);
 
   [[nodiscard]] inline static bool IsEditableState(
       ContentEditableState aState) {

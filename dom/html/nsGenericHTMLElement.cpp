@@ -794,7 +794,7 @@ void nsGenericHTMLElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
       SetEventHandler(GetEventNameForAttr(aName),
                       nsAttrValueOrString(aValue).String());
     } else if (aNotify && aName == nsGkAtoms::spellcheck) {
-      SyncEditorsOnSubtree(this);
+      SyncSpellCheckerStateOfExtantEditorsOnSubtree(*this);
     } else if (aName == nsGkAtoms::popover) {
       nsContentUtils::AddScriptRunner(
           NewRunnableMethod("nsGenericHTMLElement::AfterSetPopoverAttr", this,
@@ -2553,28 +2553,55 @@ nsresult nsGenericHTMLElement::DispatchSimulatedClick(
   return EventDispatcher::Dispatch(aElement, aPresContext, &event);
 }
 
-already_AddRefed<EditorBase> nsGenericHTMLElement::GetAssociatedEditor() {
+EditorBase* nsGenericHTMLElement::GetAssociatedExtantEditor() const {
+  if (IsHTMLElement(nsGkAtoms::body)) {
+    
+    if (this != OwnerDoc()->GetBodyElement()) [[unlikely]] {
+      return nullptr;
+    }
+
+    
+    nsPresContext* const presContext = GetPresContext(eForComposedDoc);
+    if (!presContext) [[unlikely]] {
+      return nullptr;
+    }
+
+    nsIDocShell* const docShell = presContext->GetDocShell();
+    if (!docShell) [[unlikely]] {
+      return nullptr;
+    }
+
+    return docShell->GetHTMLEditor();
+  }
+
   
   
 
-  RefPtr<TextEditor> textEditor = GetTextEditorInternal();
-  return textEditor.forget();
+  auto* const textControlElement = TextControlElement::FromNode(*this);
+  if (!textControlElement) {
+    return nullptr;
+  }
+
+  return textControlElement->GetExtantTextEditor();
 }
 
 
-void nsGenericHTMLElement::SyncEditorsOnSubtree(nsIContent* content) {
+void nsGenericHTMLElement::SyncSpellCheckerStateOfExtantEditorsOnSubtree(
+    nsIContent& aContent) {
   
-  nsGenericHTMLElement* element = FromNode(content);
-  if (element) {
-    if (RefPtr<EditorBase> editorBase = element->GetAssociatedEditor()) {
+  if (nsGenericHTMLElement* const element = FromNode(aContent)) {
+    
+    
+    if (const RefPtr<EditorBase> editorBase =
+            element->GetAssociatedExtantEditor()) {
       editorBase->SyncRealTimeSpell();
     }
   }
 
   
-  for (nsIContent* child = content->GetFirstChild(); child;
+  for (nsIContent* child = aContent.GetFirstChild(); child;
        child = child->GetNextSibling()) {
-    SyncEditorsOnSubtree(child);
+    SyncSpellCheckerStateOfExtantEditorsOnSubtree(*child);
   }
 }
 
