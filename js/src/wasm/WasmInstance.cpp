@@ -14,8 +14,6 @@
 
 
 
-#include "wasm/WasmInstance-inl.h"
-
 #include "mozilla/CheckedInt.h"
 #include "mozilla/DebugOnly.h"
 
@@ -70,6 +68,7 @@
 #include "vm/ArrayBufferObject-inl.h"
 #include "vm/JSObject-inl.h"
 #include "wasm/WasmGcObject-inl.h"
+#include "wasm/WasmInstance-inl.h"
 
 using namespace js;
 using namespace js::jit;
@@ -1864,7 +1863,8 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
 
 #ifdef ENABLE_WASM_JSPI
 
- void* Instance::contNew(Instance* instance, void* funcRef) {
+ void* Instance::contNew(Instance* instance, void* funcRef,
+                                     void* baseFrameStub) {
   MOZ_ASSERT(SASigContNew.failureMode == FailureMode::FailOnNullPtr);
   JSContext* cx = instance->cx();
   Rooted<JSFunction*> target(cx, static_cast<JSFunction*>(funcRef));
@@ -1875,9 +1875,8 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   MOZ_ASSERT(target->isWasm());
 
   const Code& creatorCode = instance->code();
-  void* stub =
-      creatorCode.sharedStubs().codeBase + creatorCode.contBaseFrameOffset();
-  ContObject* cont = ContObject::create(cx, target, stub, &creatorCode);
+  ContObject* cont =
+      ContObject::create(cx, target, baseFrameStub, &creatorCode);
   return AnyRef::fromJSObjectOrNull(cont).forCompiledCode();
 }
 
@@ -2620,7 +2619,9 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
     }
 #ifdef ENABLE_WASM_JSPI
     else if (typeDef.kind() == TypeDefKind::Cont) {
-      
+      mozilla::Maybe<uint32_t> offset = code().contBaseFrameOffset(typeIndex);
+      typeDefData->cached.cont.baseFrameStub =
+          code().sharedStubs().codeBase + *offset;
     }
 #endif
     else {
@@ -3593,7 +3594,7 @@ bool wasm::ResultsToJSValue(JSContext* cx, ResultType type,
       }
     }
   }
-  rval.set(ObjectValue(*array));
+  rval.setObject(*array);
   return true;
 }
 

@@ -398,6 +398,45 @@ namespace js::wasm {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static_assert(JS_STACK_GROWTH_DIRECTION < 0,
               "Stack switching is implemented only for native stacks that "
               "grows down");
@@ -1353,6 +1392,8 @@ void EmitFindHandler(MacroAssembler& masm, Register instance, Register tag,
 
 
 
+
+
 static void EmitBuildSwitchTarget(MacroAssembler& masm,
                                   uint32_t switchTargetFramePushed,
                                   uint32_t returnFramePushed, Register instance,
@@ -1429,7 +1470,8 @@ void EmitSuspend(jit::MacroAssembler& masm, jit::Register instance,
                  jit::Register scratch1, jit::Register scratch2,
                  jit::Register scratch3, const CallSiteDesc& callSiteDesc,
                  jit::CodeOffset* suspendCodeOffset,
-                 uint32_t* suspendFramePushed) {
+                 uint32_t* suspendFramePushed,
+                 uint32_t suspendResultsAreaBase) {
   
   masm.loadPtr(Address(instance, wasm::Instance::offsetOfCx()), scratch1);
   masm.loadPtr(Address(scratch1, JSContext::offsetOfWasm() +
@@ -1490,9 +1532,28 @@ void EmitSuspend(jit::MacroAssembler& masm, jit::Register instance,
       Address(scratch1, wasm::ContStack::offsetOfStackTarget()), scratch4);
   
   masm.mov(&resumeLabel, scratch3);
+
   
   EmitBuildSwitchTarget(masm, switchTargetFramePushed, *suspendFramePushed,
-                        instance, scratch4, scratch3, scratch1);
+                        instance, scratch4, scratch3, scratch2);
+
+  
+  
+  
+  
+  
+  if (suspendResultsAreaBase) {
+    masm.computeEffectiveAddress(
+        Address(FramePointer, -static_cast<int32_t>(suspendResultsAreaBase)),
+        scratch1);
+  } else {
+    masm.movePtr(ImmWord(0), scratch1);
+  }
+  masm.storePtr(
+      scratch1,
+      Address(FramePointer, -static_cast<int32_t>(switchTargetFramePushed) +
+                                static_cast<int32_t>(
+                                    offsetof(wasm::SwitchTarget, paramsArea))));
 
   
   masm.computeEffectiveAddress(
@@ -1506,6 +1567,9 @@ void EmitSuspend(jit::MacroAssembler& masm, jit::Register instance,
   masm.addCodeLabel(resumeLabel);
   masm.append(callSiteDesc, *resumeLabel.target());
 
+  
+  
+  
   masm.freeStack(sizeof(wasm::SwitchTarget));
 }
 
@@ -1541,6 +1605,44 @@ static void EmitCheckContIsResumable(MacroAssembler& masm, Register cont,
 
   
   masm.assertPtrZero(Address(scratch1, wasm::ContStack::offsetOfHandlers()));
+}
+
+void EmitPrepareResume(MacroAssembler& masm, Register cont,
+                       uint32_t resumeParamsAreaBase, Register output,
+                       Register scratch1, Register scratch2, Label* fail) {
+  
+  EmitCheckContIsResumable(masm, cont, scratch1, fail);
+
+  
+  masm.loadPtr(Address(scratch1, wasm::ContStack::offsetOfResumeTarget()),
+               scratch2);
+
+  
+  masm.computeEffectiveAddress(
+      Address(scratch1, wasm::ContStack::offsetOfInitialResumeTarget()),
+      output);
+
+  Label reResume;
+  Label done;
+  masm.branchPtr(Assembler::NotEqual, scratch2, output, &reResume);
+
+  
+  
+  
+  masm.computeEffectiveAddress(
+      Address(FramePointer, -static_cast<int32_t>(resumeParamsAreaBase)),
+      output);
+  masm.storePtr(output,
+                Address(scratch2, offsetof(wasm::SwitchTarget, paramsArea)));
+  masm.jump(&done);
+
+  
+  
+  masm.bind(&reResume);
+  masm.loadPtr(Address(scratch2, offsetof(wasm::SwitchTarget, paramsArea)),
+               output);
+
+  masm.bind(&done);
 }
 
 
@@ -1645,7 +1747,7 @@ static void EmitInitializeHandler(
     MacroAssembler& masm, uint32_t handlersFramePushed,
     uint32_t handlerFramePushed, uint32_t returnFramePushed,
     HandlerJitOffsets& handler, CodeLabel* handlerLabel, Register instance,
-    Register handlersParamsArea, Register stackTarget, Register scratch2,
+    uint32_t handlersParamsAreaBase, Register stackTarget, Register scratch2,
     Register scratch3) {
   
   size_t tagObjectOffset = wasm::Instance::offsetInData(
@@ -1675,17 +1777,23 @@ static void EmitInitializeHandler(
       masm, handlerFramePushed - offsetof(wasm::Handler, target),
       returnFramePushed, instance, stackTarget, scratch2, scratch3);
 
-  if (handlersParamsArea != Register::Invalid()) {
-    masm.movePtr(handlersParamsArea, scratch2);
-    masm.addPtr(Imm32(handler.resultsAreaOffset), scratch2);
-    masm.storePtr(
-        scratch2,
-        Address(FramePointer,
-                -static_cast<int32_t>(handlerFramePushed) +
-                    static_cast<int32_t>(offsetof(wasm::Handler, target)) +
-                    static_cast<int32_t>(
-                        offsetof(wasm::SwitchTarget, paramsArea))));
-  }
+  
+  
+  
+  
+  MOZ_ASSERT(handlersParamsAreaBase != 0);
+  masm.computeEffectiveAddress(
+      Address(FramePointer,
+              -static_cast<int32_t>(handlersParamsAreaBase) +
+                  static_cast<int32_t>(handler.resultsAreaOffset)),
+      scratch2);
+  masm.storePtr(
+      scratch2,
+      Address(
+          FramePointer,
+          -static_cast<int32_t>(handlerFramePushed) +
+              static_cast<int32_t>(offsetof(wasm::Handler, target)) +
+              static_cast<int32_t>(offsetof(wasm::SwitchTarget, paramsArea))));
 }
 
 
@@ -1826,13 +1934,13 @@ static void EmitCallContUnwind(MacroAssembler& masm, Register instance,
 
 
 void EmitResume(MacroAssembler& masm, Register instance, Register cont,
-                Register handlersParamsArea, Register scratch1,
-                Register scratch2, Register scratch3, Label* fail,
+                uint32_t handlersParamsAreaBase, Register scratch1,
+                Register scratch2, Register scratch3,
                 mozilla::Span<HandlerJitOffsets> handlerOffsets,
                 mozilla::Span<jit::Label*> handlerLabels,
                 const wasm::CallSiteDesc& callSiteDesc,
-                jit::CodeOffset* resumeCodeOffset,
-                uint32_t* resumeFramePushed) {
+                jit::CodeOffset* resumeCodeOffset, uint32_t* resumeFramePushed,
+                uint32_t contResultsAreaBase) {
   MOZ_ASSERT(handlerOffsets.size() == handlerLabels.size());
   size_t numHandlers = handlerOffsets.size();
   size_t sizeOfHandlers = wasm::Handlers::sizeOf(numHandlers);
@@ -1846,7 +1954,8 @@ void EmitResume(MacroAssembler& masm, Register instance, Register cont,
     return;
   }
 
-  EmitCheckContIsResumable(masm, cont, scratch1, fail);
+  
+  
   EmitPushHandlers(masm, sizeOfHandlers, instance, scratch1, scratch2, scratch3,
                    &handlersFramePushed);
   
@@ -1856,6 +1965,22 @@ void EmitResume(MacroAssembler& masm, Register instance, Register cont,
   EmitBuildSwitchTarget(
       masm, handlersFramePushed - offsetof(wasm::Handlers, returnTarget),
       handlersFramePushed, instance, scratch1, scratch2, scratch3);
+  
+  
+  
+  
+  if (contResultsAreaBase) {
+    masm.computeEffectiveAddress(
+        Address(FramePointer, -static_cast<int32_t>(contResultsAreaBase)),
+        scratch3);
+  } else {
+    masm.movePtr(ImmWord(0), scratch3);
+  }
+  masm.storePtr(scratch3,
+                Address(FramePointer,
+                        -(int32_t)(handlersFramePushed -
+                                   offsetof(wasm::Handlers, returnTarget)) +
+                            (int32_t)offsetof(wasm::SwitchTarget, paramsArea)));
   
 
   masm.store32(
@@ -1868,14 +1993,20 @@ void EmitResume(MacroAssembler& masm, Register instance, Register cont,
     uint32_t returnFramePushed = handlersFramePushed - sizeOfHandlers;
     EmitInitializeHandler(masm, handlersFramePushed, handlerFramePushed,
                           returnFramePushed, handlerOffsets[i],
-                          &handlerCodeLabels[i], instance, handlersParamsArea,
-                          scratch1, scratch2, scratch3);
+                          &handlerCodeLabels[i], instance,
+                          handlersParamsAreaBase, scratch1, scratch2, scratch3);
   }
   
 
   
   
+  
+  
   EmitActivateResumeBase(masm, instance, cont, scratch1, scratch2, scratch3);
+
+  
+  
+  
 
   
   EmitSwitchStack(masm, scratch2, scratch1, scratch3, cont);

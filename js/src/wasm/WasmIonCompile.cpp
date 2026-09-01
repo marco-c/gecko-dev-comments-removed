@@ -5806,6 +5806,8 @@ class FunctionCompiler {
 #ifdef ENABLE_WASM_JSPI
   bool emitContNew();
   bool emitContBind();
+  [[nodiscard]] bool makeSwitchStackResultArea(const ValTypeVector& types,
+                                               MWasmStackResultArea** out);
   bool emitStoreSuspendParams(MDefinition* paramsArea,
                               const ValTypeVector& suspendTagParams,
                               const DefVector& suspendParams,
@@ -9331,22 +9333,23 @@ bool FunctionCompiler::emitContNew() {
     return false;
   }
 
-  const TypeDef& typeDef = codeMeta().types->type(typeIndex);
-  const ContType& contType = typeDef.contType();
-
-  
-  if (!contType.funcType().args().empty() ||
-      !contType.funcType().results().empty()) {
-    unimplementedTrap();
-    return true;
-  }
-
   if (inDeadCode()) {
     return true;
   }
 
+  
+  uint32_t stubOffset = wasm::Instance::offsetInData(
+      codeMeta().offsetOfContBaseFrameStub(typeIndex));
+  auto* stub = MWasmLoadInstance::New(alloc(), instancePointer_, stubOffset,
+                                      MIRType::Pointer, AliasSet::None());
+  if (!stub) {
+    return false;
+  }
+  curBlock_->add(stub);
+
   MDefinition* result = nullptr;
-  if (!emitInstanceCall1(readBytecodeOffset(), SASigContNew, func, &result)) {
+  if (!emitInstanceCall2(readBytecodeOffset(), SASigContNew, func, stub,
+                         &result)) {
     return false;
   }
   iter().setResult(result);
@@ -9412,6 +9415,26 @@ bool FunctionCompiler::emitStoreSuspendParams(
   return true;
 }
 
+
+
+bool FunctionCompiler::makeSwitchStackResultArea(const ValTypeVector& types,
+                                                 MWasmStackResultArea** out) {
+  *out = nullptr;
+  auto* area = MWasmStackResultArea::New(alloc());
+  if (!area || !area->init(alloc(), types.length())) {
+    return false;
+  }
+  size_t offset = 0;
+  for (uint32_t i = 0; i < types.length(); i++) {
+    MWasmStackResultArea::StackResult loc(offset, types[i].toMIRType());
+    area->initResult(i, loc);
+    offset = loc.endOffset();
+  }
+  curBlock_->add(area);
+  *out = area;
+  return true;
+}
+
 bool FunctionCompiler::emitSuspend() {
   uint32_t tagIndex;
   DefVector suspendParams;
@@ -9425,12 +9448,6 @@ bool FunctionCompiler::emitSuspend() {
 
   const TagDesc& tagDesc = codeMeta().tags[tagIndex];
   const TagType& tagType = *tagDesc.type;
-
-  
-  if (!tagType.resultTypes().empty()) {
-    unimplementedTrap();
-    return true;
-  }
 
   
   
@@ -9482,13 +9499,39 @@ bool FunctionCompiler::emitSuspend() {
   }
 
   
-  MWasmSuspend* suspend =
-      MWasmSuspend::New(alloc(), instancePointer_, suspendedCont, handler,
-                        callSiteDesc(CallSiteKind::StackSwitch));
+  
+  
+  const ValTypeVector& tagResults = tagType.resultTypes();
+  MWasmStackResultArea* suspendResultsArea = nullptr;
+  if (!makeSwitchStackResultArea(tagResults, &suspendResultsArea)) {
+    return false;
+  }
+
+  
+  MWasmSuspend* suspend = MWasmSuspend::New(
+      alloc(), instancePointer_, suspendedCont, handler, suspendResultsArea,
+      callSiteDesc(CallSiteKind::StackSwitch));
   if (!suspend) {
     return false;
   }
   curBlock_->add(suspend);
+
+  
+  if (!tagResults.empty()) {
+    DefVector resultDefs;
+    for (uint32_t i = 0; i < tagResults.length(); i++) {
+      if (!mirGen().ensureBallast()) {
+        return false;
+      }
+      MWasmStackResult* stackResult =
+          MWasmStackResult::New(alloc(), suspendResultsArea, i);
+      if (!stackResult || !resultDefs.append(stackResult)) {
+        return false;
+      }
+      curBlock_->add(stackResult);
+    }
+    iter().setResults(resultDefs.length(), resultDefs);
+  }
 
   return true;
 }
@@ -9507,25 +9550,15 @@ bool FunctionCompiler::emitResume() {
   }
 
   
-  const TypeDef& typeDef = codeMeta().types->type(typeIndex);
-  const ContType& contType = typeDef.contType();
-  if (!contType.funcType().args().empty() ||
-      !contType.funcType().results().empty()) {
-    unimplementedTrap();
-    return true;
-  }
-
-  
-  
   for (const HandlerExpr& handler : handlers) {
-    const TagDesc& tagDesc = codeMeta().tags[handler.tagIndex()];
-    const TagType& tagType = *tagDesc.type;
-
-    if (handler.isSwitch() || !tagType.resultTypes().empty()) {
+    if (handler.isSwitch()) {
       unimplementedTrap();
       return true;
     }
   }
+
+  const TypeDef& contTypeDef = codeMeta().types->type(typeIndex);
+  const FuncType& contFuncType = contTypeDef.contType().funcType();
 
   
   
@@ -9535,6 +9568,43 @@ bool FunctionCompiler::emitResume() {
     return false;
   }
   curBlock_->add(barrier);
+
+  
+  
+  
+  
+  
+  
+  
+  MWasmStackResultArea* resumeParamsArea = nullptr;
+  if (!makeSwitchStackResultArea(contFuncType.args(), &resumeParamsArea)) {
+    return false;
+  }
+  MWasmPrepareResume* prepareResume =
+      MWasmPrepareResume::New(alloc(), cont, resumeParamsArea, trapSiteDesc());
+  if (!prepareResume) {
+    return false;
+  }
+  curBlock_->add(prepareResume);
+  for (uint32_t i = 0; i < args.length(); i++) {
+    if (!mirGen().ensureBallast()) {
+      return false;
+    }
+    size_t argOffset = resumeParamsArea->result(i).offset();
+    MWasmStoreStackResult* store =
+        MWasmStoreStackResult::New(alloc(), prepareResume, argOffset, args[i]);
+    if (!store) {
+      return false;
+    }
+    curBlock_->add(store);
+  }
+
+  
+  
+  MWasmStackResultArea* contResultsArea = nullptr;
+  if (!makeSwitchStackResultArea(contFuncType.results(), &contResultsArea)) {
+    return false;
+  }
 
   MBasicBlock* fallthroughBlock = nullptr;
   MBasicBlock* prePadBlock = nullptr;
@@ -9563,19 +9633,18 @@ bool FunctionCompiler::emitResume() {
         1 + codeMeta().getTagType(handler.tagIndex()).argTypes().length();
   }
 
-  MWasmStackResultArea* handlersResultArea = nullptr;
-  if (numResultsAreaItems) {
-    handlersResultArea = MWasmStackResultArea::New(alloc());
-    if (!handlersResultArea ||
-        !handlersResultArea->init(alloc(), numResultsAreaItems)) {
-      return false;
-    }
-    curBlock_->add(handlersResultArea);
+  
+  
+  MWasmStackResultArea* handlersResultArea = MWasmStackResultArea::New(alloc());
+  if (!handlersResultArea ||
+      !handlersResultArea->init(alloc(), numResultsAreaItems)) {
+    return false;
   }
+  curBlock_->add(handlersResultArea);
 
-  MWasmResume* resume =
-      MWasmResume::New(alloc(), callSiteDesc(CallSiteKind::StackSwitch),
-                       tryNote, instancePointer_, cont, handlersResultArea);
+  MWasmResume* resume = MWasmResume::New(
+      alloc(), callSiteDesc(CallSiteKind::StackSwitch), tryNote,
+      instancePointer_, cont, handlersResultArea, contResultsArea);
   if (!resume ||
       !resume->init(fallthroughBlock, prePadBlock, handlers.length())) {
     return false;
@@ -9668,6 +9737,25 @@ bool FunctionCompiler::emitResume() {
 
   
   curBlock_ = fallthroughBlock;
+
+  
+  if (!contFuncType.results().empty()) {
+    size_t numResults = contFuncType.results().length();
+    DefVector resultDefs;
+    for (uint32_t i = 0; i < numResults; i++) {
+      if (!mirGen().ensureBallast()) {
+        return false;
+      }
+      MWasmStackResult* stackResult =
+          MWasmStackResult::New(alloc(), contResultsArea, i);
+      if (!stackResult || !resultDefs.append(stackResult)) {
+        return false;
+      }
+      curBlock_->add(stackResult);
+    }
+    iter().setResults(resultDefs.length(), resultDefs);
+  }
+
   return true;
 }
 

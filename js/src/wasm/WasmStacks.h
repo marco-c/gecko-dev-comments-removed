@@ -622,12 +622,17 @@ void EmitFindHandler(jit::MacroAssembler& masm, jit::Register instance,
 
 
 
+
+
+
+
+
 void EmitSuspend(jit::MacroAssembler& masm, jit::Register instance,
                  jit::Register suspendedCont, jit::Register handler,
                  jit::Register scratch1, jit::Register scratch2,
                  jit::Register scratch3, const CallSiteDesc& callSiteDesc,
                  jit::CodeOffset* suspendCodeOffset,
-                 uint32_t* suspendFramePushed);
+                 uint32_t* suspendFramePushed, uint32_t suspendResultsAreaBase);
 
 
 struct HandlerJitOffsets {
@@ -642,14 +647,45 @@ struct HandlerJitOffsets {
 
 
 
+
+
+
+
+
+
+
+void EmitPrepareResume(jit::MacroAssembler& masm, jit::Register cont,
+                       uint32_t resumeParamsAreaBase, jit::Register output,
+                       jit::Register scratch1, jit::Register scratch2,
+                       jit::Label* fail);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void EmitResume(jit::MacroAssembler& masm, jit::Register instance,
-                jit::Register cont, jit::Register handlersResultArea,
+                jit::Register cont, uint32_t handlersParamsAreaBase,
                 jit::Register scratch1, jit::Register scratch2,
-                jit::Register scratch3, jit::Label* fail,
+                jit::Register scratch3,
                 mozilla::Span<HandlerJitOffsets> handlerOffsets,
                 mozilla::Span<jit::Label*> handlerLabels,
                 const CallSiteDesc& callSiteDesc,
-                jit::CodeOffset* resumeCodeOffset, uint32_t* resumeFramePushed);
+                jit::CodeOffset* resumeCodeOffset, uint32_t* resumeFramePushed,
+                uint32_t contResultsAreaBase);
 
 #endif  
 

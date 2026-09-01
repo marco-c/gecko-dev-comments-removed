@@ -88,6 +88,11 @@ struct TypeDefInstanceData {
       
       uint32_t elemSize;
     } array;
+    struct {
+      
+      
+      void* baseFrameStub;
+    } cont;
   } cached;
 
   static constexpr size_t offsetOfShape() {
@@ -98,6 +103,9 @@ struct TypeDefInstanceData {
   }
   static constexpr size_t offsetOfArrayElemSize() {
     return offsetof(TypeDefInstanceData, cached.array.elemSize);
+  }
+  static constexpr size_t offsetOfContBaseFrameStub() {
+    return offsetof(TypeDefInstanceData, cached.cont.baseFrameStub);
   }
 };
 

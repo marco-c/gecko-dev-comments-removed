@@ -370,10 +370,8 @@ extern void GenerateDirectCallFromJit(jit::MacroAssembler& masm,
 
 
 
-
-
-
 extern bool GenerateContBaseFrameStub(jit::MacroAssembler& masm,
+                                      const FuncType& funcType,
                                       Offsets* offsets);
 #endif
 

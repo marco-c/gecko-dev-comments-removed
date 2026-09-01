@@ -948,6 +948,10 @@ using MutableCode = RefPtr<Code>;
 using MetadataAnalysisHashMap =
     HashMap<const char*, uint32_t, mozilla::CStringHasher, SystemAllocPolicy>;
 
+
+using ContBaseFrameOffsetMap =
+    HashMap<uint32_t, uint32_t, DefaultHasher<uint32_t>, SystemAllocPolicy>;
+
 class Code : public ShareableBase<Code> {
   struct ProtectedData {
     
@@ -1039,8 +1043,7 @@ class Code : public ShareableBase<Code> {
 
 #ifdef ENABLE_WASM_JSPI
   
-  
-  uint32_t contBaseFrameOffset_;
+  ContBaseFrameOffsetMap contBaseFrameOffsets_;
 #endif
 
   
@@ -1147,8 +1150,19 @@ class Code : public ShareableBase<Code> {
   }
 
 #ifdef ENABLE_WASM_JSPI
-  uint32_t contBaseFrameOffset() const { return contBaseFrameOffset_; }
-  void setContBaseFrameOffset(uint32_t offs) { contBaseFrameOffset_ = offs; }
+  void setContBaseFrameOffsets(ContBaseFrameOffsetMap&& offsets) {
+    contBaseFrameOffsets_ = std::move(offsets);
+  }
+  const ContBaseFrameOffsetMap& contBaseFrameOffsets() const {
+    return contBaseFrameOffsets_;
+  }
+  mozilla::Maybe<uint32_t> contBaseFrameOffset(uint32_t typeIndex) const {
+    auto p = contBaseFrameOffsets_.lookup(typeIndex);
+    if (!p) {
+      return mozilla::Nothing();
+    }
+    return mozilla::Some(p->value());
+  }
 #endif
 
   const FuncImport& funcImport(uint32_t funcIndex) const {

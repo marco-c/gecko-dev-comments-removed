@@ -86,9 +86,6 @@ ModuleGenerator::ModuleGenerator(const CodeMetadata& codeMeta,
       debugStubCodeOffset_(0),
       requestTierUpStubCodeOffset_(0),
       updateCallRefMetricsStubCodeOffset_(0),
-#ifdef ENABLE_WASM_JSPI
-      contBaseFrameOffset_(0),
-#endif
       lastPatchedCallSite_(0),
       startOfUnpatchedCallsites_(0),
       numCallRefMetrics_(0),
@@ -331,8 +328,6 @@ void ModuleGenerator::noteCodeRange(uint32_t codeRangeIndex,
       break;
 #ifdef ENABLE_WASM_JSPI
     case CodeRange::ContBaseFrame:
-      MOZ_ASSERT(!contBaseFrameOffset_);
-      contBaseFrameOffset_ = codeRange.begin();
       break;
 #endif
     case CodeRange::TrapExit:
@@ -408,6 +403,13 @@ bool ModuleGenerator::linkCompiledCode(CompiledCode& code) {
 
   
   tierStats_.mergeCompileStats(code.compileStats);
+
+#ifdef ENABLE_WASM_JSPI
+  
+  
+  MOZ_ASSERT_IF(codeBlock_->kind != CodeBlockKind::SharedStubs,
+                code.contBaseFrameOffsets.empty());
+#endif
 
   if (compilingTier1() && mode() == CompileMode::LazyTiering) {
     
@@ -1080,6 +1082,9 @@ bool ModuleGenerator::prepareTier1() {
       !linkCompiledCode(stubCode)) {
     return false;
   }
+#ifdef ENABLE_WASM_JSPI
+  contBaseFrameOffsets_ = std::move(stubCode.contBaseFrameOffsets);
+#endif
   stubCode.clear();
 
   return finishCodeBlock(&sharedStubs_);
@@ -1409,7 +1414,7 @@ SharedModule ModuleGenerator::finishModule(
   code->setRequestTierUpStubOffset(requestTierUpStubCodeOffset_);
   code->setUpdateCallRefMetricsStubOffset(updateCallRefMetricsStubCodeOffset_);
 #ifdef ENABLE_WASM_JSPI
-  code->setContBaseFrameOffset(contBaseFrameOffset_);
+  code->setContBaseFrameOffsets(std::move(contBaseFrameOffsets_));
 #endif
 
   

@@ -10720,11 +10720,14 @@ void CodeGenerator::visitWasmSuspend(LWasmSuspend* lir) {
   Register scratch2 = ToRegister(lir->temp1());
   Register scratch3 = ToRegister(lir->temp2());
 
+  uint32_t suspendResultsAreaBase =
+      lir->mir()->suspendResultsArea()->toWasmStackResultArea()->base();
+
   CodeOffset suspendedCodeOffset;
   uint32_t suspendedFramePushed;
   wasm::EmitSuspend(masm, instance, suspendedCont, handler, scratch1, scratch2,
                     scratch3, lir->mir()->callSiteDesc(), &suspendedCodeOffset,
-                    &suspendedFramePushed);
+                    &suspendedFramePushed, suspendResultsAreaBase);
 
   if (masm.oom()) {
     return;
@@ -10735,25 +10738,35 @@ void CodeGenerator::visitWasmSuspend(LWasmSuspend* lir) {
   lir->safepoint()->setWasmSafepointKind(WasmSafepointKind::StackSwitch);
 }
 
-void CodeGenerator::visitWasmResume(LWasmResume* lir) {
-  
-  
-  MWasmResume* mir = lir->mir();
-  wasm::TrapSiteDesc trapSiteDesc = mir->callSiteDesc().toTrapSiteDesc();
-  Register instance = ToRegister(lir->instance());
+void CodeGenerator::visitWasmPrepareResume(LWasmPrepareResume* lir) {
+  MWasmPrepareResume* mir = lir->mir();
   Register cont = ToRegister(lir->cont());
-  Register handlersParamsArea = lir->handlersParamsArea()->isBogus()
-                                    ? Register::Invalid()
-                                    : ToRegister(lir->handlersParamsArea());
+  Register output = ToRegister(lir->output());
   Register scratch1 = ToRegister(lir->temp0());
   Register scratch2 = ToRegister(lir->temp1());
-  Register scratch3 = ToRegister(lir->temp2());
+  uint32_t resumeParamsAreaBase =
+      mir->resumeParamsArea()->toWasmStackResultArea()->base();
+  wasm::TrapSiteDesc trapSiteDesc = mir->trapSiteDesc();
 
   auto* ool = new (alloc())
       LambdaOutOfLineCode([this, trapSiteDesc](OutOfLineCode& ool) {
         masm.wasmTrap(wasm::Trap::NullPointerDereference, trapSiteDesc);
       });
   addOutOfLineCode(ool, (const BytecodeSite*)nullptr);
+
+  wasm::EmitPrepareResume(masm, cont, resumeParamsAreaBase, output, scratch1,
+                          scratch2, ool->entry());
+}
+
+void CodeGenerator::visitWasmResume(LWasmResume* lir) {
+  MWasmResume* mir = lir->mir();
+  Register instance = ToRegister(lir->instance());
+  Register cont = ToRegister(lir->cont());
+  uint32_t handlersParamsAreaBase = mir->handlersParamsArea()->base();
+  uint32_t contResultsAreaBase = mir->contResultsArea()->base();
+  Register scratch1 = ToRegister(lir->temp0());
+  Register scratch2 = ToRegister(lir->temp1());
+  Register scratch3 = ToRegister(lir->temp2());
 
   
   
@@ -10776,9 +10789,10 @@ void CodeGenerator::visitWasmResume(LWasmResume* lir) {
 
   CodeOffset resumeCodeOffset;
   uint32_t resumeFramePushed;
-  wasm::EmitResume(masm, instance, cont, handlersParamsArea, scratch1, scratch2,
-                   scratch3, ool->entry(), mir->handlers(), handlerLabels,
-                   mir->callSiteDesc(), &resumeCodeOffset, &resumeFramePushed);
+  wasm::EmitResume(masm, instance, cont, handlersParamsAreaBase, scratch1,
+                   scratch2, scratch3, mir->handlers(), handlerLabels,
+                   mir->callSiteDesc(), &resumeCodeOffset, &resumeFramePushed,
+                   contResultsAreaBase);
 
   if (masm.oom()) {
     return;

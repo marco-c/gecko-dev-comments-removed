@@ -2850,7 +2850,9 @@ void wasm::ClobberWasmRegsForLongJmp(MacroAssembler& masm, Register jumpReg) {
 }
 
 #ifdef ENABLE_WASM_JSPI
+
 bool wasm::GenerateContBaseFrameStub(jit::MacroAssembler& masm,
+                                     const FuncType& funcType,
                                      Offsets* offsets) {
   AssertExpectedSP(masm);
   masm.haltingAlign(CodeAlignment);
@@ -2867,19 +2869,26 @@ bool wasm::GenerateContBaseFrameStub(jit::MacroAssembler& masm,
 
   
   
+  
   masm.storePtr(InstanceReg,
                 Address(FramePointer,
                         static_cast<int32_t>(
                             wasm::FrameWithInstances::calleeInstanceOffset())));
 
   
+  masm.loadPtr(
+      Address(FramePointer, offsetFromFPToStack +
+                                ContStack::offsetOfInitialResumeTarget() +
+                                offsetof(wasm::SwitchTarget, paramsArea)),
+      scratch1);
+
+  
   masm.computeEffectiveAddress(
       Address(FramePointer,
               offsetFromFPToStack + ContStack::offsetOfInitialResumeTarget()),
-      scratch1);
-  EmitClearSwitchTarget(masm, scratch1);
+      scratch2);
+  EmitClearSwitchTarget(masm, scratch2);
 
-  
   
   MOZ_ASSERT(scratch4 == WasmCallRefReg);
   masm.loadPtr(
@@ -2892,25 +2901,189 @@ bool wasm::GenerateContBaseFrameStub(jit::MacroAssembler& masm,
               offsetFromFPToStack + ContStack::offsetOfInitialResumeCallee()));
 
   
+
+  ArgTypeVector args(funcType);
+  size_t stackArgBytes = StackArgBytesForWasmABI(funcType);
+
+  ResultType results = ResultType::Vector(funcType.results());
+  uint32_t stackResultBytes = ABIResultIter::MeasureStackBytes(results);
+  size_t alignedStackResultBytes =
+      AlignBytes(stackResultBytes, WasmStackAlignment);
+
+  size_t reserveSize = ComputeByteAlignment(sizeof(Frame), WasmStackAlignment) +
+                       AlignBytes(stackArgBytes, WasmStackAlignment);
+
   
-  masm.reserveStack(
-      ComputeByteAlignment(sizeof(Frame), WasmStackAlignment) +
-      AlignBytes(wasm::FrameWithInstances::sizeOfInstanceFieldsAndShadowStack(),
-                 WasmStackAlignment));
+  
+  size_t stackResultAreaOffset = reserveSize;
+  reserveSize += alignedStackResultBytes;
+
+  masm.reserveStack(reserveSize);
   masm.assertStackAlignment(WasmStackAlignment);
+
+  
+  
+  
+  
+  
+  
+  {
+    size_t paramsAreaByteOffset = 0;
+    for (ABIArgIter iter(args, ABIKind::Wasm); !iter.done(); iter++) {
+      MIRType type = iter.mirType();
+      if (type == MIRType::StackResults) {
+        Address stackResultArea(masm.getStackPointer(), stackResultAreaOffset);
+        if (iter->kind() == ABIArg::GPR) {
+          masm.computeEffectiveAddress(stackResultArea, iter->gpr());
+        } else {
+          MOZ_ASSERT(iter->kind() == ABIArg::Stack);
+          masm.computeEffectiveAddress(stackResultArea, scratch3);
+          masm.storePtr(scratch3, Address(masm.getStackPointer(),
+                                          iter->offsetFromArgBase()));
+        }
+        
+        
+        continue;
+      }
+      Address src(scratch1, paramsAreaByteOffset);
+      if (iter->kind() == ABIArg::Stack) {
+        Address dst(masm.getStackPointer(), iter->offsetFromArgBase());
+        StackCopy(masm, type, scratch3, src, dst);
+      } else {
+        
+        switch (iter->kind()) {
+          case ABIArg::GPR:
+            if (type == MIRType::Int32) {
+              masm.load32(src, iter->gpr());
+            } else if (type == MIRType::Int64) {
+              masm.load64(src, iter->gpr64());
+            } else {
+              masm.loadPtr(src, iter->gpr());
+            }
+            break;
+          case ABIArg::FPU:
+            if (type == MIRType::Float32) {
+              masm.loadFloat32(src, iter->fpu());
+#  ifdef ENABLE_WASM_SIMD
+            } else if (type == MIRType::Simd128) {
+              masm.loadUnalignedSimd128(src, iter->fpu());
+#  endif
+            } else {
+              masm.loadDouble(src, iter->fpu());
+            }
+            break;
+#  ifdef JS_CODEGEN_REGISTER_PAIR
+          case ABIArg::GPR_PAIR:
+            masm.load64(src, iter->gpr64());
+            break;
+#  endif
+          default:
+            break;
+        }
+      }
+      paramsAreaByteOffset += MIRTypeToABIResultSize(type);
+    }
+  }
+
   wasm::CallSiteDesc callSite(CallSiteKind::FuncRef);
   wasm::CalleeDesc callee = wasm::CalleeDesc::wasmFuncRef();
   CodeOffset fastCallOffset;
   CodeOffset slowCallOffset;
   masm.wasmCallRef(callSite, callee, &fastCallOffset, &slowCallOffset);
-  
-  masm.freeStack(
-      wasm::FrameWithInstances::sizeOfInstanceFieldsAndShadowStack());
 
   
   
-  masm.loadPtr(Address(FramePointer, -ContStack::offsetOfBaseFrameFP() +
-                                         ContStack::offsetOfHandlers()),
+  
+  
+  
+  
+  if (!results.empty()) {
+    MOZ_ASSERT(scratch3 != ReturnReg);
+#  ifndef JS_PUNBOX64
+    MOZ_ASSERT(scratch3 != ReturnReg64.high && scratch3 != ReturnReg64.low);
+#  endif
+    masm.loadPtr(Address(FramePointer,
+                         offsetFromFPToStack + ContStack::offsetOfHandlers()),
+                 scratch3);
+    masm.loadPtr(
+        Address(scratch3, offsetof(wasm::Handlers, returnTarget) +
+                              offsetof(wasm::SwitchTarget, paramsArea)),
+        scratch3);
+
+    
+    
+    int32_t stackAreaSPOffset = static_cast<int32_t>(stackResultAreaOffset);
+
+    
+    
+    
+    
+    ABIResultIter iter(results);
+    while (!iter.done()) {
+      iter.next();
+    }
+    iter.switchToPrev();
+    size_t paramsAreaByteOffset = 0;
+    for (; !iter.done(); iter.prev()) {
+      const ABIResult& result = iter.cur();
+      MIRType type = result.type().toMIRType();
+      if (result.inRegister()) {
+        Address dst(scratch3, paramsAreaByteOffset);
+        switch (result.type().kind()) {
+          case ValType::I32:
+            masm.store32(result.gpr(), dst);
+            break;
+          case ValType::I64:
+            masm.store64(result.gpr64(), dst);
+            break;
+          case ValType::F32:
+            masm.storeFloat32(result.fpr(), dst);
+            break;
+          case ValType::F64:
+            masm.storeDouble(result.fpr(), dst);
+            break;
+          case ValType::Ref:
+            masm.storePtr(result.gpr(), dst);
+            break;
+#  ifdef ENABLE_WASM_SIMD
+          case ValType::V128:
+            masm.storeUnalignedSimd128(result.fpr(), dst);
+            break;
+#  endif
+          default:
+            MOZ_CRASH(
+                "unexpected register result type in typed base frame stub");
+        }
+      }
+      paramsAreaByteOffset += MIRTypeToABIResultSize(type);
+    }
+
+    
+    
+    
+    iter.reset();
+    while (!iter.done()) {
+      iter.next();
+    }
+    iter.switchToPrev();
+    paramsAreaByteOffset = 0;
+    for (; !iter.done(); iter.prev()) {
+      const ABIResult& result = iter.cur();
+      MIRType type = result.type().toMIRType();
+      if (!result.inRegister()) {
+        Address src(
+            masm.getStackPointer(),
+            stackAreaSPOffset + static_cast<int32_t>(result.stackOffset()));
+        Address dst(scratch3, paramsAreaByteOffset);
+        StackCopy(masm, type, scratch2, src, dst);
+      }
+      paramsAreaByteOffset += MIRTypeToABIResultSize(type);
+    }
+  }
+
+  
+  masm.loadPtr(Address(FramePointer,
+                       offsetFromFPToStack + ContStack::offsetOfHandlers()),
                scratch1);
   masm.computeEffectiveAddress(
       Address(scratch1, offsetof(wasm::Handlers, returnTarget)), scratch1);
@@ -3555,9 +3728,22 @@ bool wasm::GenerateStubs(const CodeMetadata& codeMeta,
 
 #ifdef ENABLE_WASM_JSPI
   if (codeMeta.stackSwitchingEnabled()) {
-    if (!GenerateContBaseFrameStub(masm, &offsets) ||
-        !code->codeRanges.emplaceBack(CodeRange::ContBaseFrame, offsets)) {
-      return false;
+    uint32_t numTypes = codeMeta.types->length();
+    for (uint32_t i = 0; i < numTypes; i++) {
+      const TypeDef& typeDef = codeMeta.types->type(i);
+      if (!typeDef.isContType()) {
+        continue;
+      }
+      const FuncType& funcType = typeDef.contType().funcType();
+      if (!GenerateContBaseFrameStub(masm, funcType, &offsets)) {
+        return false;
+      }
+      if (!code->codeRanges.emplaceBack(CodeRange::ContBaseFrame, offsets)) {
+        return false;
+      }
+      if (!code->contBaseFrameOffsets.putNew(i, offsets.begin)) {
+        return false;
+      }
     }
   }
 #endif
