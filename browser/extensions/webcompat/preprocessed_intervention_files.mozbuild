@@ -59,7 +59,7 @@ preprocessed_intervention_files = [
     "bug1902405-soffice.11st.co.kr-hide_browser_notice.css",
     "bug1902406-sp.hi.co.kr.js",
     "bug1902407-www.sigadoc.mt.gov.br.js",
-    "bug1902415-kaigetsu.staysee.jp-hide_browser_notice.css",
+    "bug1902415-kaigetsu.staysee.jp.js",
     "bug1902416-acionafacil.com.br.js",
     "bug1902419-jamsune.com.js",
     "bug1902520-www.keisan.nta.go.jp.js",
@@ -168,4 +168,8 @@ preprocessed_intervention_files = [
     "bug2051501-community.acer.com-fix_clipped_tables.css",
     "bug2051291-customers.extend-hide_preloader.css",
     "bug2053077-jobs.abbott-restore_otp_inputs.css",
+    "bug2057149-patreon.com.js",
+    "bug2058162-the-image-editor.com-allow_body_scrollbar.css",
+    "bug2059742-13coins.toast.site-vertically_shrink_menuitems.css",
+    "bug2060224-alreadyordered.no.js",
 ]
