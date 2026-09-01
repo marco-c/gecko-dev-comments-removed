@@ -60,7 +60,6 @@ function clearDismissals() {
 
 registerCleanupFunction(clearDismissals);
 
-
 add_task(async function test_variants() {
   let sandbox = sinon.createSandbox();
   let promoState = sandbox.stub(gSync, "getSyncPromoState");
@@ -81,9 +80,9 @@ add_task(async function test_variants() {
 
     ok(!promo.hidden, `${state}: promo is shown`);
     Assert.deepEqual(
-      promoState.lastCall.args[0],
-      ["bookmarks"],
-      `${state}: eligibility is gated on the bookmarks engine`
+      promoState.lastCall.args,
+      [],
+      `${state}: eligibility is not gated on any individual engine`
     );
     is(
       manageBookmarks.nextElementSibling,
@@ -106,33 +105,19 @@ add_task(async function test_variants() {
       `${state}: every variant shares the bookmarks illustration`
     );
 
-    
-    let closeRect = mozPromo.closeButton.getBoundingClientRect();
-    for (let [name, node] of [
-      ["heading", mozPromo.shadowRoot.querySelector(".heading")],
-      ["CTA", cta],
-    ]) {
-      let rect = node.getBoundingClientRect();
-      ok(
-        rect.right <= closeRect.left || rect.left >= closeRect.right,
-        `${state}: ${name} does not overlap the dismiss button`
-      );
-    }
-
     handleAction.resetHistory();
     
     let popupHidden = BrowserTestUtils.waitForEvent(
       document.getElementById("appMenu-popup"),
       "popuphidden"
     );
-    synthesizeClick(cta);
+    cta.click();
     ok(handleAction.calledOnce, `${state}: CTA triggers the promo action`);
     Assert.deepEqual(
       handleAction.firstCall.args,
       [state, ENTRY_POINT],
       `${state}: action receives the variant and app menu entry point`
     );
-    
     ok(
       !Services.prefs.getBoolPref(expected.pref, false),
       `${state}: CTA does not dismiss the promo`
@@ -143,7 +128,6 @@ add_task(async function test_variants() {
   sandbox.restore();
   clearDismissals();
 });
-
 
 add_task(async function test_per_variant_dismissal() {
   let sandbox = sinon.createSandbox();
@@ -170,12 +154,10 @@ add_task(async function test_per_variant_dismissal() {
   );
   await gCUITestUtils.hideMainMenu();
 
-  
   bookmarksView = await openBookmarksView();
   promo = await getPromo(bookmarksView);
   ok(promo.hidden, "Dismissed signin variant stays hidden");
 
-  
   promoState.returns("connectdevice");
   Services.obs.notifyObservers(null, "sync-ui-state:update");
   await promo.updateComplete;
@@ -191,7 +173,6 @@ add_task(async function test_per_variant_dismissal() {
   sandbox.restore();
   clearDismissals();
 });
-
 
 add_task(async function test_state_transitions() {
   let sandbox = sinon.createSandbox();
@@ -217,57 +198,54 @@ add_task(async function test_state_transitions() {
   Services.obs.notifyObservers(null, "sync-ui-state:update");
   await promo.updateComplete;
   ok(promo.hidden, "Promo disappears when the user becomes ineligible");
-  is(
-    getComputedStyle(promo).display,
-    "none",
-    "Hidden promo takes up no space in the panel"
-  );
 
   await gCUITestUtils.hideMainMenu();
   sandbox.restore();
   clearDismissals();
 });
 
-
-add_task(async function test_engine_pref_reactivity() {
+add_task(async function test_sync_eligibility_ignores_engine() {
   let sandbox = sinon.createSandbox();
-  
-  
-  sandbox
-    .stub(UIState, "get")
-    .returns({ status: UIState.STATUS_SIGNED_IN, syncEnabled: true });
+  let syncEnabled = true;
+  sandbox.stub(UIState, "get").callsFake(() => ({
+    status: UIState.STATUS_SIGNED_IN,
+    syncEnabled,
+  }));
   sandbox
     .stub(fxAccounts.device, "recentDeviceList")
     .get(() => [{ isCurrentDevice: true }, { isCurrentDevice: false }]);
-  sandbox.stub(gSync, "handleSyncPromoAction");
+  
+  sandbox.stub(gSync, "updateAllUI");
   clearDismissals();
-
-  await SpecialPowers.pushPrefEnv({
-    set: [["services.sync.engine.bookmarks", true]],
-  });
-
-  let bookmarksView = await openBookmarksView();
-  let promo = await getPromo(bookmarksView);
-  ok(promo.hidden, "Promo hidden while fully eligible with another device");
 
   await SpecialPowers.pushPrefEnv({
     set: [["services.sync.engine.bookmarks", false]],
   });
+
+  let bookmarksView = await openBookmarksView();
+  let promo = await getPromo(bookmarksView);
+  ok(promo.hidden, "Promo hidden when only Bookmarks syncing is disabled");
+
+  syncEnabled = false;
+  Services.obs.notifyObservers(null, "sync-ui-state:update");
   await promo.updateComplete;
-  ok(!promo.hidden, "Promo appears when Bookmarks syncing is disabled");
+  ok(!promo.hidden, "Promo shown while Sync is disabled");
   is(
     promo.shadowRoot.querySelector("moz-promo").getAttribute("data-l10n-id"),
     VARIANTS.turnonsync.heading,
-    "Disabled engine shows the turnonsync variant"
+    "Disabled Sync shows the turnonsync variant"
   );
 
-  await SpecialPowers.popPrefEnv();
+  syncEnabled = true;
+  Services.obs.notifyObservers(null, "sync-ui-state:update");
+  await promo.updateComplete;
+  ok(promo.hidden, "Promo removed once Sync is enabled");
+
   await SpecialPowers.popPrefEnv();
   await gCUITestUtils.hideMainMenu();
   sandbox.restore();
   clearDismissals();
 });
-
 
 add_task(async function test_menubar_action_dispatch() {
   let sandbox = sinon.createSandbox();

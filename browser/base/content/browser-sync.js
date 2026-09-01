@@ -1124,7 +1124,7 @@ var gSync = {
   
   
   
-  getSyncPromoState(requiredEngines) {
+  getSyncPromoState(requiredEngines = []) {
     if (!this.FXA_ENABLED) {
       return null;
     }
