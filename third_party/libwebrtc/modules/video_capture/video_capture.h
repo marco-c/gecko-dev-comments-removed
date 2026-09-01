@@ -155,6 +155,9 @@ class VideoCaptureModule : public RefCountInterface {
   
   virtual bool GetApplyRotation() = 0;
 
+  virtual void SetStride(int32_t stride) {};
+  virtual int32_t GetStride() { return 0; };
+
   
   virtual void SetTrackingId(uint32_t aTrackingIdProcId) {}
 

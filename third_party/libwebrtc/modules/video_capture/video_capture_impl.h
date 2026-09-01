@@ -70,6 +70,8 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {
   int32_t SetCaptureRotation(VideoRotation rotation) override;
   bool SetApplyRotation(bool enable) override;
   bool GetApplyRotation() override;
+  void SetStride(int32_t stride) override;
+  int32_t GetStride() override;
 
   const char* CurrentDeviceName() const override;
 
@@ -130,6 +132,10 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {
 
   
   bool apply_rotation_ RTC_GUARDED_BY(api_lock_);
+
+  
+  
+  int32_t stride_ RTC_GUARDED_BY(api_lock_);
 
   Clock* const clock_;
 };
