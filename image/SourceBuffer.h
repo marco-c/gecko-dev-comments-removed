@@ -483,7 +483,14 @@ class SourceBuffer final {
   
 
   void AddWaitingConsumer(IResumable* aConsumer) MOZ_REQUIRES(mMutex);
-  void ResumeWaitingConsumers() MOZ_REQUIRES(mMutex);
+
+  
+  
+  
+  
+  
+  void ResumeWaitingConsumers(nsTArray<RefPtr<IResumable>>* aOutConsumers)
+      MOZ_REQUIRES(mMutex);
 
   typedef SourceBufferIterator::State State;
 
@@ -499,7 +506,9 @@ class SourceBuffer final {
   
   
 
-  nsresult HandleError(nsresult aError) MOZ_REQUIRES(mMutex);
+  nsresult HandleError(nsresult aError,
+                       nsTArray<RefPtr<IResumable>>* aOutConsumers)
+      MOZ_REQUIRES(mMutex);
   bool IsEmpty() MOZ_REQUIRES(mMutex);
   bool IsLastChunk(uint32_t aChunk) MOZ_REQUIRES(mMutex);
 
