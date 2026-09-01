@@ -1374,7 +1374,7 @@ static int DoUpdate();
 
 class Action {
  public:
-  Action() : mProgressCost(1), mNext(nullptr) {}
+  Action() : mProgressCost(1), mNext(nullptr), mPrev(nullptr) {}
   virtual ~Action() = default;
 
   virtual int Parse(NS_tchar* line) = 0;
@@ -1401,6 +1401,7 @@ class Action {
 
  private:
   Action* mNext;
+  Action* mPrev;
 
   friend class ActionList;
 };
@@ -5060,6 +5061,7 @@ void ActionList::Append(Action* action) {
     mFirst = action;
   }
 
+  action->mPrev = mLast;
   mLast = action;
   mCount++;
 }
@@ -5144,7 +5146,13 @@ int ActionList::Execute() {
 }
 
 void ActionList::Finish(int status) {
-  Action* a = mFirst;
+  
+  
+  
+  
+  
+  
+  Action* a = status == OK ? mFirst : mLast;
   int i = 0;
   while (a) {
     a->Finish(status);
@@ -5153,7 +5161,7 @@ void ActionList::Finish(int status) {
     UpdateProgressUI(PROGRESS_PREPARE_SIZE + PROGRESS_DRAFT_SIZE +
                      PROGRESS_EXECUTE_SIZE + PROGRESS_FINISH_SIZE * percent);
 
-    a = a->mNext;
+    a = status == OK ? a->mNext : a->mPrev;
   }
 
   if (status == OK) {
