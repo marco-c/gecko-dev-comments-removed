@@ -30,9 +30,22 @@ IPCResult ClientHandleOpParent::Init(ClientOpConstructorArgs&& aArgs) {
   RefPtr<ClientHandleParent> handle =
       static_cast<ClientHandleParent*>(Manager());
 
+  auto* backgroundActor = handle->Manager()->Manager();
+
+  
+  
+  
+  
+  
+  
+  if ((aArgs.type() == ClientOpConstructorArgs::TClientControlledArgs ||
+       aArgs.type() == ClientOpConstructorArgs::TClientEvictBFCacheArgs) &&
+      BackgroundParent::IsOtherProcessActor(backgroundActor)) {
+    return IPC_FAIL(this, "Parent-only ClientOp received from content!");
+  }
+
   if (!IsValidClientOpConstructorArgs(
-          aArgs,
-          BackgroundParent::GetRemoteType(handle->Manager()->Manager()))) {
+          aArgs, BackgroundParent::GetLoadedOrigins(backgroundActor))) {
     return IPC_FAIL(this, "Invalid ClientOpConstructorArgs!");
   }
 
