@@ -3642,21 +3642,13 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
 
   
   
+  constexpr auto kInterestingStates =
+      GDK_WINDOW_STATE_ICONIFIED | GDK_WINDOW_STATE_MAXIMIZED |
+      GDK_WINDOW_STATE_FULLSCREEN | kTiledStates | kResizableStates;
+
   
   
-  
-  
-  
-  
-  bool waylandWasIconified =
-      (GdkIsWaylandDisplay() &&
-       aEvent->changed_mask & GDK_WINDOW_STATE_FOCUSED &&
-       aEvent->new_window_state & GDK_WINDOW_STATE_FOCUSED &&
-       mSizeMode == nsSizeMode_Minimized);
-  if (!waylandWasIconified &&
-      (aEvent->changed_mask &
-       (GDK_WINDOW_STATE_ICONIFIED | GDK_WINDOW_STATE_MAXIMIZED | kTiledStates |
-        kResizableStates | GDK_WINDOW_STATE_FULLSCREEN)) == 0) {
+  if (!(aEvent->changed_mask & kInterestingStates)) {
     LOG("\tearly return because no interesting bits changed\n");
     return;
   }
@@ -4969,8 +4961,9 @@ void nsWindow::SetInputRegion(const InputRegion& aInputRegion) {
     return;
   }
 
-  LOG("nsWindow::SetInputRegion(%d, %d)", aInputRegion.mFullyTransparent,
-      int(aInputRegion.mMargin));
+  int unscaledMargin = GetInputRegionMarginInGdkCoords();
+  LOG("nsWindow::SetInputRegion(%d, %d)", mInputRegion.mFullyTransparent,
+      unscaledMargin);
 
   cairo_rectangle_int_t rect = {0, 0, 0, 0};
   cairo_region_t* region = nullptr;
@@ -4980,11 +4973,11 @@ void nsWindow::SetInputRegion(const InputRegion& aInputRegion) {
     }
   });
 
-  if (aInputRegion.mFullyTransparent) {
+  if (mInputRegion.mFullyTransparent) {
     region = cairo_region_create_rectangle(&rect);
-  } else if (aInputRegion.mMargin != 0) {
+  } else if (unscaledMargin != 0) {
     DesktopIntRect inputRegion(DesktopIntPoint(), mLastSizeRequest);
-    inputRegion.Deflate(aInputRegion.mMargin);
+    inputRegion.Deflate(unscaledMargin);
     rect = {inputRegion.x, inputRegion.y, inputRegion.width,
             inputRegion.height};
     region = cairo_region_create_rectangle(&rect);
@@ -7393,34 +7386,12 @@ nsWindow* nsWindow::GetWindow(GdkWindow* window) {
 void nsWindow::OnMap() {
   LOG("nsWindow::OnMap");
 
-#ifdef MOZ_WAYLAND
-  if (AsWayland()) {
-    AsWayland()->MaybeCreatePipResources();
-  }
-#endif
+  mIsMapped = true;
 
-  {
-    mIsMapped = true;
+  RefreshScale( false);
 
-    RefreshScale( false);
-
-    if (mIsAlert) {
-      gdk_window_set_override_redirect(GetToplevelGdkWindow(), TRUE);
-    }
-  }
-
-#ifdef MOZ_X11
-  if (GdkIsX11Display()) {
-    
-    
-    XFlush(DefaultXDisplay());
-  }
-#endif
-
-  if (mIsDragPopup && GdkIsX11Display()) {
-    if (GtkWidget* parent = gtk_widget_get_parent(mShell)) {
-      gtk_widget_set_opacity(parent, 0.0);
-    }
+  if (mIsAlert) {
+    gdk_window_set_override_redirect(GetToplevelGdkWindow(), TRUE);
   }
 
   if (mWindowType == WindowType::Popup) {
@@ -7430,12 +7401,7 @@ void nsWindow::OnMap() {
 
   RefreshWindowClass();
 
-  if (GdkIsX11Display()) {
-    if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
-      remoteRenderer->SendResume();
-      remoteRenderer->SendForcePresent(wr::RenderReasons::WIDGET);
-    }
-  }
+  OnMapNative();
 
   LOG("  finished, GdkWindow %p XID 0x%lx\n", mGdkWindow, GetX11Window());
 }
