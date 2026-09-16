@@ -1746,6 +1746,24 @@
 
 
 
+        set_credential_properties: function(authenticator_id, credential_id, props, context=null) {
+            return window.test_driver_internal.set_credential_properties(authenticator_id, credential_id, props, context);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2668,6 +2686,10 @@
 
         async set_user_verified(authenticator_id, uv, context=null) {
             throw new Error("set_user_verified() is not implemented by testdriver-vendor.js");
+        },
+
+        async set_credential_properties(authenticator_id, credential_id, props, context=null) {
+            throw new Error("set_credential_properties() is not implemented by testdriver-vendor.js");
         },
 
         async set_storage_access(origin, embedding_origin, blocked, context=null) {
