@@ -253,6 +253,16 @@ add_task(async function () {
   assertNotPaused(dbg);
 
   
+  
+  
+  
+  
+  await toggleEventBreakpoint(dbg, "Mouse", "event.mouse.click");
+  await toggleEventBreakpoint(dbg, "XHR", "event.xhr.load");
+  await toggleEventBreakpoint(dbg, "Timer", "timer.timeout.set");
+  await toggleEventBreakpoint(dbg, "Timer", "timer.timeout.fire");
+
+  
   await clickElement(dbg, "blackbox");
   await waitForDispatch(dbg.store, "UNBLACKBOX_WHOLE_SOURCES");
 
