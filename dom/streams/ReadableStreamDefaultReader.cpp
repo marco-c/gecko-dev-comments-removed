@@ -274,8 +274,7 @@ already_AddRefed<Promise> ReadableStreamDefaultReader::Read(ErrorResult& aRv) {
 namespace streams_abstract {
 
 
-void ReadableStreamReaderGenericRelease(ReadableStreamGenericReader* aReader,
-                                        ErrorResult& aRv) {
+void ReadableStreamReaderGenericRelease(ReadableStreamGenericReader* aReader) {
   
   RefPtr<ReadableStream> stream = aReader->GetStream();
 
@@ -293,8 +292,9 @@ void ReadableStreamReaderGenericRelease(ReadableStreamGenericReader* aReader,
   } else {
     
     
-    RefPtr<Promise> promise = Promise::CreateRejectedWithTypeError(
-        aReader->GetParentObject(), "Lock Released"_ns, aRv);
+    RefPtr<Promise> promise =
+        Promise::CreateInfallible(aReader->GetParentObject());
+    promise->MaybeRejectWithTypeError("Lock Released"_ns);
     aReader->SetClosedPromise(promise.forget());
   }
 
@@ -338,10 +338,7 @@ void ReadableStreamDefaultReaderRelease(JSContext* aCx,
                                         ReadableStreamDefaultReader* aReader,
                                         ErrorResult& aRv) {
   
-  ReadableStreamReaderGenericRelease(aReader, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
+  ReadableStreamReaderGenericRelease(aReader);
 
   
   ErrorResult rv;
