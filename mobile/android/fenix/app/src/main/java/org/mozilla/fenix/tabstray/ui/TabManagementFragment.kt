@@ -84,6 +84,7 @@ import org.mozilla.fenix.ext.hideToolbar
 import org.mozilla.fenix.ext.registerForActivityResult
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
+import org.mozilla.fenix.ext.tabsClosedUndoMessage
 import org.mozilla.fenix.home.HomeScreenViewModel
 import org.mozilla.fenix.navigation.DefaultNavControllerProvider
 import org.mozilla.fenix.navigation.NavControllerProvider
@@ -247,6 +248,7 @@ class TabManagementFragment : Fragment() {
                 showUndoSnackbarForTab = ::showUndoSnackbarForTab,
                 showUndoSnackbarForInactiveTab = ::showUndoSnackbarForInactiveTab,
                 showUndoSnackbarForSyncedTab = ::showUndoSnackbarForSyncedTab,
+                showUndoSnackbarForMultipleTabs = ::showUndoSnackbarForMultipleTabs,
                 showCancelledDownloadWarning = ::showCancelledDownloadWarning,
                 showBookmarkSnackbar = ::showBookmarkSnackbar,
                 showCollectionSnackbar = ::showCollectionSnackbar,
@@ -998,6 +1000,27 @@ class TabManagementFragment : Fragment() {
         }
     }
 
+    private fun showUndoSnackbarForMultipleTabs(isPrivate: Boolean, tabCount: Int) {
+        context?.let { context ->
+            val requireComponents = context.components
+            val page = if (isPrivate) Page.PrivateTabs else Page.NormalTabs
+
+            lifecycleScope.launch {
+                snackbarHostState.displaySnackbar(
+                    message = context.tabsClosedUndoMessage(count = tabCount),
+                    actionLabel = getString(R.string.snackbar_deleted_undo),
+                    timeout = requireComponents.settings.getSnackbarTimeout(hasAction = true),
+                    onActionPerformed = {
+                        requireComponents.useCases.tabsUseCases.undo.invoke()
+                        runIfFragmentIsAttached {
+                            tabsTrayStore.dispatch(TabsTrayAction.PageSelected(page))
+                        }
+                    },
+                )
+            }
+        }
+    }
+
     private fun showUndoSnackbarForInactiveTab(numClosed: Int) {
         val snackbarMessage =
             when (numClosed == 1) {
@@ -1070,22 +1093,23 @@ class TabManagementFragment : Fragment() {
         }
     }
 
-    private fun showBookmarkSnackbar(
+    @VisibleForTesting
+    internal fun showBookmarkSnackbar(
         tabSize: Int,
         parentFolderTitle: String?,
     ) {
-        val displayFolderTitle = parentFolderTitle ?: getString(R.string.library_bookmarks)
-        val displayResId =
-            when {
-                tabSize > 1 -> {
-                    R.string.snackbar_message_bookmarks_saved_in_2
-                }
-
-                else -> {
-                    R.string.bookmark_saved_in_folder_snackbar
-                }
-            }
         lifecycleScope.launch {
+            val displayFolderTitle = parentFolderTitle ?: getString(R.string.library_bookmarks)
+            val displayResId =
+                when {
+                    tabSize > 1 -> {
+                        R.string.snackbar_message_bookmarks_saved_in_2
+                    }
+
+                    else -> {
+                        R.string.bookmark_saved_in_folder_snackbar
+                    }
+                }
             snackbarHostState.displaySnackbar(
                 message = getString(displayResId, displayFolderTitle),
                 actionLabel = getString(R.string.create_collection_view),
