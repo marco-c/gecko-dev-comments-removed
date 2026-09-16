@@ -11,9 +11,12 @@ ChromeUtils.defineESModuleGetters(this, {
     "resource://gre/modules/ContentBlockingAllowList.sys.mjs",
   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
   FX_MONITOR_OAUTH_CLIENT_ID: "resource://gre/modules/FxAccountsCommon.sys.mjs",
+  identifyType: "resource://gre/modules/TrackingDBService.sys.mjs",
   PanelMultiView:
     "moz-src:///browser/components/customizableui/PanelMultiView.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
+  privacyMetricsStatsCategories:
+    "moz-src:///browser/components/protections/PrivacyMetricsService.sys.mjs",
   QWACs: "resource://gre/modules/psm/QWACs.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   SiteDataManager: "resource:///modules/SiteDataManager.sys.mjs",
@@ -144,11 +147,6 @@ class TrustPanel {
 
   #clearFxaOauthClientCache = false;
   #breachAlertStoragePromise = null;
-  #trackerCount = null;
-  
-  
-  
-  #trackerCountPromise = null;
   #isFirstVisit = false;
   
   
@@ -191,10 +189,6 @@ class TrustPanel {
   
   
   #lastBrowser = null;
-
-  
-  
-  #blockerViewUpdateId = 0;
 
   #popupToggleDelayTimer = null;
   #openingReason = null;
@@ -282,9 +276,6 @@ class TrustPanel {
     
     this.anyDetected = false;
     this.#lastEvent = event;
-    
-    
-    this.#trackerCountPromise = null;
 
     
     this.hasException =
@@ -553,8 +544,6 @@ class TrustPanel {
     if (this.#sameSiteNavigation) {
       this.#blockersChecked = true;
     }
-    this.#trackerCount = null;
-    this.#trackerCountPromise = null;
     this.#isFirstVisit = false;
     
     
@@ -633,7 +622,7 @@ class TrustPanel {
       targetClasses.add("first-visit");
     }
     
-    if (this.#trackerCount > 0) {
+    if (this.#computeTrackerCount() > 0) {
       targetClasses.add("has-blocked-trackers");
     }
 
@@ -824,27 +813,18 @@ class TrustPanel {
     
     void this.#updateToolbarTrackerCount();
 
-    await this.#updateBlockerView();
+    this.#updateBlockerView();
   }
 
   #computeTrackerCount() {
-    if (this.#trackerCountPromise) {
-      return this.#trackerCountPromise;
-    }
-    const p = (async () => {
-      let count = this.#fetchSmartBlocked().length;
-      for (let blocker of Object.values(this.#blockers)) {
-        count += await blocker.getBlockerCount();
-      }
-      return count;
-    })();
-    this.#trackerCountPromise = p;
-    p.finally(() => {
-      if (this.#trackerCountPromise === p) {
-        this.#trackerCountPromise = null;
-      }
-    });
-    return p;
+    const log = JSON.parse(gBrowser.selectedBrowser.getContentBlockingLog());
+
+    const logEntriesToCount = Object.values(log).filter(
+      entry =>
+        typeof privacyMetricsStatsCategories[identifyType(entry)] !==
+        "undefined"
+    );
+    return logEntriesToCount.length;
   }
 
   async #markFirstVisit() {
@@ -897,15 +877,12 @@ class TrustPanel {
     
     
     const updateId = ++this.#toolbarTrackerCountUpdateId;
-    let [count] = await Promise.all([
-      this.#computeTrackerCount(),
-      this.#firstVisitPromise,
-    ]);
+    await this.#firstVisitPromise;
+    let count = this.#computeTrackerCount();
     if (this.#uri !== uri || this.#toolbarTrackerCountUpdateId !== updateId) {
       return;
     }
 
-    this.#trackerCount = count;
     
     if (count > 0) {
       this.#blockersChecked = true;
@@ -932,35 +909,18 @@ class TrustPanel {
     this.#updateUrlbarIcon();
   }
 
-  async #updateBlockerView() {
-    
-    
-    
-    
-    
-    
-    
-    const event = this.#lastEvent;
-    const updateId = ++this.#blockerViewUpdateId;
-
+  #updateBlockerView() {
     let blocked = [];
     let detected = [];
     for (let blocker of Object.values(this.#blockers)) {
-      if (blocker.isBlocking(event)) {
+      if (blocker.isBlocking(this.#lastEvent)) {
         blocked.push(blocker);
-      } else if (blocker.isDetected(event)) {
+      } else if (blocker.isDetected(this.#lastEvent)) {
         detected.push(blocker);
       }
     }
 
-    
-    
-    const count = await this.#computeTrackerCount();
-
-    
-    if (updateId !== this.#blockerViewUpdateId) {
-      return;
-    }
+    const count = this.#computeTrackerCount();
 
     this.#addButtons("trustpanel-blocked", blocked, true);
     this.#addButtons("trustpanel-detected", detected, false);
@@ -1055,13 +1015,13 @@ class TrustPanel {
       .showSubView("trustpanel-securityInformationView", event.target);
   }
 
-  async #openBlockerSubview(event) {
+  #openBlockerSubview(event) {
     document.l10n.setAttributes(
       document.getElementById("trustpanel-blockerView"),
       "trustpanel-blocker-header",
       { host: this.#displayHost }
     );
-    await this.#updateBlockerView();
+    this.#updateBlockerView();
     document
       .getElementById("trustpanel-popup-multiView")
       .showSubView("trustpanel-blockerView", event.target);
