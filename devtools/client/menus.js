@@ -91,6 +91,16 @@ exports.menuitems = [
   },
   {
     id: "menu_browserToolbox",
+    get disabled() {
+      
+      const chromeEnabled = Services.prefs.getBoolPref(
+        "devtools.chrome.enabled"
+      );
+      const devtoolsRemoteEnabled = Services.prefs.getBoolPref(
+        "devtools.debugger.remote-enabled"
+      );
+      return !chromeEnabled || !devtoolsRemoteEnabled;
+    },
     l10nKey: "browserToolboxMenu",
     oncommand() {
       lazy.BrowserToolboxLauncher.init();

@@ -835,22 +835,25 @@ class DevTools extends EventEmitter {
 
 
 
-
-
-
-  createCommandsForTabForWebExtension(tab) {
-    return CommandsFactory.forTab(tab, { isWebExtension: true });
+  closeAllToolboxes() {
+    for (const [, toolbox] of this.#toolboxesPerCommands) {
+      toolbox.closeToolbox();
+      toolbox.destroy();
+    }
   }
 
   
 
 
 
-  openBrowserConsole() {
-    const {
-      BrowserConsoleManager,
-    } = require("resource://devtools/client/webconsole/browser-console-manager.js");
-    BrowserConsoleManager.openBrowserConsoleOrFocus();
+
+
+
+
+
+
+  createCommandsForTabForWebExtension(tab) {
+    return CommandsFactory.forTab(tab, { isWebExtension: true });
   }
 
   
@@ -955,9 +958,7 @@ class DevTools extends EventEmitter {
   destroy({ shuttingDown }) {
     
     if (!shuttingDown) {
-      for (const [, toolbox] of this.#toolboxesPerCommands) {
-        toolbox.destroy();
-      }
+      gDevTools.closeAllToolboxes();
     }
 
     for (const [key] of this.getToolDefinitionMap()) {

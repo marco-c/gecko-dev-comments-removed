@@ -13,10 +13,15 @@ ChromeUtils.defineLazyGetter(this, "DevToolsStartup", () => {
 add_task(async function testDevToolsPanelInToolbar() {
   
   
-  DevToolsStartup.developerToggleCreated = false;
+  DevToolsStartup.developerToggle = null;
+  DevToolsStartup.developerToggleRegistered = false;
   CustomizableUI.destroyWidget("developer-button");
 
   const win = await BrowserTestUtils.openNewBrowserWindow();
+
+  
+  
+  DevToolsStartup.hookDeveloperToggle();
 
   CustomizableUI.addWidgetToArea(
     "developer-button",
