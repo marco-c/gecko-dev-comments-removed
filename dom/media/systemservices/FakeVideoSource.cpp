@@ -159,38 +159,68 @@ void FakeVideoSource::GenerateImage() {
                            mHeight, CaptureStage::ImageType::I420);
   }
 
-  
-  if (mCr <= 16) {
-    if (mCb < 240) {
-      mCb++;
-    } else {
-      mCr++;
-    }
-  } else if (mCb >= 240) {
-    if (mCr < 240) {
-      mCr++;
-    } else {
-      mCb--;
-    }
-  } else if (mCr >= 240) {
-    if (mCb > 16) {
-      mCb--;
-    } else {
-      mCr--;
-    }
-  } else {
-    mCr--;
-  }
-
   RefPtr<layers::PlanarYCbCrImage> ycbcr_image =
       mImageContainer->CreatePlanarYCbCrImage();
   const size_t yLen = mFrameData->mCbChannel - mFrameData->mYChannel;
   const size_t cbLen = mFrameData->mCrChannel - mFrameData->mCbChannel;
   const size_t crLen = cbLen;
   MOZ_RELEASE_ASSERT(mFrame.Length() == yLen + cbLen + crLen);
-  memset(mFrame.Elements(), 0x80, yLen);
-  memset(mFrame.Elements() + yLen, mCb, cbLen);
-  memset(mFrame.Elements() + yLen + cbLen, mCr, crLen);
+
+  if (StaticPrefs::media_getusermedia_camera_fake_rotation_test_pattern()) {
+    
+    
+    
+    
+    const int32_t yStride = mFrameData->mYStride;
+    const int32_t cbcrStride = mFrameData->mCbCrStride;
+    
+    memset(mFrame.Elements(), 81, yLen);
+    memset(mFrame.Elements() + yLen, 90, cbLen);
+    memset(mFrame.Elements() + yLen + cbLen, 240, crLen);
+    
+    const int32_t squareWidth = mWidth / 2;
+    const int32_t squareLeft = mWidth - squareWidth;
+    const int32_t squareTop = mHeight - mHeight / 2;
+    for (int32_t row = squareTop; row < mHeight; ++row) {
+      memset(mFrame.Elements() + row * yStride + squareLeft, 41, squareWidth);
+    }
+    const int32_t cbcrLeft = squareLeft / 2;
+    const int32_t cbcrTop = squareTop / 2;
+    const int32_t cbcrSquareCols = (mWidth + 1) / 2 - cbcrLeft;
+    const int32_t cbcrRows = (mHeight + 1) / 2;
+    for (int32_t row = cbcrTop; row < cbcrRows; ++row) {
+      memset(mFrame.Elements() + yLen + row * cbcrStride + cbcrLeft, 240,
+             cbcrSquareCols);
+      memset(mFrame.Elements() + yLen + cbLen + row * cbcrStride + cbcrLeft,
+             110, cbcrSquareCols);
+    }
+  } else {
+    
+    if (mCr <= 16) {
+      if (mCb < 240) {
+        mCb++;
+      } else {
+        mCr++;
+      }
+    } else if (mCb >= 240) {
+      if (mCr < 240) {
+        mCr++;
+      } else {
+        mCb--;
+      }
+    } else if (mCr >= 240) {
+      if (mCb > 16) {
+        mCb--;
+      } else {
+        mCr--;
+      }
+    } else {
+      mCr--;
+    }
+    memset(mFrame.Elements(), 0x80, yLen);
+    memset(mFrame.Elements() + yLen, mCb, cbLen);
+    memset(mFrame.Elements() + yLen + cbLen, mCr, crLen);
+  }
 
 #ifdef MOZ_WEBRTC
   uint64_t timestamp = PR_Now();
