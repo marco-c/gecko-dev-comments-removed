@@ -756,6 +756,10 @@ void nsToolkitProfileService::CompleteStartup() {
   }
 }
 
+const nsACString& nsToolkitProfileService::ProfileSelectionReason() {
+  return mStartupReason;
+}
+
 
 bool nsToolkitProfileService::IsProfileForCurrentInstall(
     nsToolkitProfile* aProfile) {
