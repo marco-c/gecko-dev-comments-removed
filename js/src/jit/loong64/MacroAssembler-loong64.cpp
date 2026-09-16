@@ -1107,36 +1107,19 @@ void MacroAssemblerLOONG64::branchWithCode(InstImm code, Label* label,
     
     if (code.encode() == inst_beq.encode()) {
       
-      addLongJump(nextOffset(), BufferOffset(label->offset()));
-      if (scratch == Register::Invalid()) {
-        UseScratchRegisterScope temps(asMasm());
-        Register scratch = temps.Acquire();
-        ma_liPatchable(scratch, ImmWord(LabelBase::INVALID_OFFSET));
-        as_jirl(zero, scratch, BOffImm16(0), target);  
-      } else {
-        ma_liPatchable(scratch, ImmWord(LabelBase::INVALID_OFFSET));
-        as_jirl(zero, scratch, BOffImm16(0), target);  
-      }
-      as_nop();
+      UseScratchRegisterScope temps(asMasm());
+      ma_jump36(offset,
+                scratch != Register::Invalid() ? scratch : temps.Acquire());
       return;
     }
 
     
     
     
-    InstImm code_r = invertBranch(code, BOffImm16(5 * sizeof(uint32_t)));
-    emit(code_r.encode());
-    addLongJump(nextOffset(), BufferOffset(label->offset()));
-    if (scratch == Register::Invalid()) {
-      UseScratchRegisterScope temps(asMasm());
-      Register scratch = temps.Acquire();
-      ma_liPatchable(scratch, ImmWord(LabelBase::INVALID_OFFSET));
-      as_jirl(zero, scratch, BOffImm16(0), target);  
-    } else {
-      ma_liPatchable(scratch, ImmWord(LabelBase::INVALID_OFFSET));
-      as_jirl(zero, scratch, BOffImm16(0), target);  
-    }
-    as_nop();
+    emit(invertBranch(code, BOffImm16(3 * sizeof(uint32_t))).encode());
+    UseScratchRegisterScope temps(asMasm());
+    ma_jump36(label->offset() - nextOffset().getOffset(),
+              scratch != Register::Invalid() ? scratch : temps.Acquire());
     return;
   }
 
@@ -1164,16 +1147,13 @@ void MacroAssemblerLOONG64::branchWithCode(InstImm code, Label* label,
 
   
   
-  m_buffer.ensureSpace(5 * sizeof(uint32_t));
+  m_buffer.ensureSpace((conditional ? 3 : 2) * sizeof(uint32_t));
 
-  BufferOffset bo = emit(code.encode(), target);  
+  BufferOffset bo = emit(code.encode(), target);
   writeInst(nextInChain);
   if (!oom()) {
     label->use(bo.getOffset());
   }
-  
-  as_nop();
-  as_nop();
   if (conditional) {
     as_nop();
   }
