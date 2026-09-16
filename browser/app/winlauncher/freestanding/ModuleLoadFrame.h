@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_freestanding_ModuleLoadFrame_h
 #define mozilla_freestanding_ModuleLoadFrame_h
 
@@ -34,10 +32,16 @@ class MOZ_RAII ModuleLoadFrame final {
   
 
 
+
+
+
+
   static void NotifySectionMap(nt::AllocatedUnicodeString&& aSectionName,
                                const void* aMapBaseAddr, NTSTATUS aMapNtStatus,
                                ModuleLoadInfo::Status aLoadStatus,
-                               bool aIsDependent);
+                               bool aIsDependent,
+                               nt::AutoHandle&& aSectionHandle,
+                               bool aSectionHandleUnavailable);
   static bool ExistsTopFrame();
 
   
@@ -57,12 +61,16 @@ class MOZ_RAII ModuleLoadFrame final {
 
   ModuleLoadFrame(nt::AllocatedUnicodeString&& aSectionName,
                   const void* aMapBaseAddr, NTSTATUS aNtStatus,
-                  ModuleLoadInfo::Status aLoadStatus, bool aIsDependent);
+                  ModuleLoadInfo::Status aLoadStatus, bool aIsDependent,
+                  nt::AutoHandle&& aSectionHandle,
+                  bool aSectionHandleUnavailable);
 
   void SetLSPSubstitutionRequired(PCUNICODE_STRING aLeafName);
   void OnSectionMap(nt::AllocatedUnicodeString&& aSectionName,
                     const void* aMapBaseAddr, NTSTATUS aMapNtStatus,
-                    ModuleLoadInfo::Status aLoadStatus, bool aIsDependent);
+                    ModuleLoadInfo::Status aLoadStatus, bool aIsDependent,
+                    nt::AutoHandle&& aSectionHandle,
+                    bool aSectionHandleUnavailable);
 
   
 
@@ -72,7 +80,9 @@ class MOZ_RAII ModuleLoadFrame final {
   static void OnBareSectionMap(nt::AllocatedUnicodeString&& aSectionName,
                                const void* aMapBaseAddr, NTSTATUS aMapNtStatus,
                                ModuleLoadInfo::Status aLoadStatus,
-                               bool aIsDependent);
+                               bool aIsDependent,
+                               nt::AutoHandle&& aSectionHandle,
+                               bool aSectionHandleUnavailable);
 
  private:
   

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Attributes.h"
 #include "mozilla/NativeNt.h"
 #include "mozilla/Types.h"
@@ -405,8 +403,9 @@ CrossProcessDllInterceptor::FuncHookType<NtMapViewOfSectionPtr>
 
 
 
-MOZ_NEVER_INLINE NTSTATUS AfterMapViewOfExecutableSection(
-    HANDLE aProcess, PVOID* aBaseAddress, NTSTATUS aStubStatus) {
+MOZ_NEVER_INLINE NTSTATUS
+AfterMapViewOfExecutableSection(HANDLE aSection, HANDLE aProcess,
+                                PVOID* aBaseAddress, NTSTATUS aStubStatus) {
   
   MEMORY_BASIC_INFORMATION mbi;
   NTSTATUS ntStatus =
@@ -527,9 +526,30 @@ MOZ_NEVER_INLINE NTSTATUS AfterMapViewOfExecutableSection(
   }
 
   if (nt::RtlGetProcessHeap()) {
+    
+    
+    
+    
+    nt::AutoHandle sectionForParent;
+    bool sectionForParentUnavailable = false;
+    if (gBlocklistInitFlags & eDllBlocklistInitFlagIsChildProcess) {
+      HANDLE duplicate = nullptr;
+      if (NT_SUCCESS(::NtDuplicateObject(
+              nt::kCurrentProcess, aSection, nt::kCurrentProcess, &duplicate,
+              SECTION_QUERY | SECTION_MAP_READ, 0, 0)) &&
+          duplicate) {
+        sectionForParent = nt::AutoHandle(duplicate);
+      } else {
+        
+        
+        sectionForParentUnavailable = true;
+      }
+    }
+
     ModuleLoadFrame::NotifySectionMap(
         nt::AllocatedUnicodeString(sectionFileName), *aBaseAddress, aStubStatus,
-        loadStatus, isInjectedDependent);
+        loadStatus, isInjectedDependent, std::move(sectionForParent),
+        sectionForParentUnavailable);
   }
 
   if (loadStatus == ModuleLoadInfo::Status::Loaded ||
@@ -606,8 +626,8 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
     return stubStatus;
   }
 
-  NTSTATUS rv =
-      AfterMapViewOfExecutableSection(aProcess, aBaseAddress, stubStatus);
+  NTSTATUS rv = AfterMapViewOfExecutableSection(aSection, aProcess,
+                                                aBaseAddress, stubStatus);
   if (FAILED(rv)) {
     rollback();
   }

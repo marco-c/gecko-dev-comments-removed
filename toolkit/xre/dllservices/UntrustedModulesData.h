@@ -15,9 +15,9 @@
 #  include "mozilla/Maybe.h"
 #  include "mozilla/RefPtr.h"
 #  include "mozilla/TypedEnumBits.h"
-#  include "mozilla/Variant.h"
 #  include "mozilla/Vector.h"
 #  include "mozilla/WinHeaderOnlyUtils.h"
+#  include "mozilla/ipc/FileDescriptor.h"
 #  include "nsCOMPtr.h"
 #  include "nsHashKeys.h"
 #  include "nsIFile.h"
@@ -109,23 +109,7 @@ class ModuleRecord final {
 
 
 
-struct ModuleIdentifiers final {
-  using SetType = nsTHashtable<nsStringCaseInsensitiveHashKey>;
-  using VecType = Vector<nsString>;
-
-  Variant<SetType, VecType> mModuleNtPaths;
-
-  template <typename T>
-  explicit ModuleIdentifiers(T&& aPaths)
-      : mModuleNtPaths(AsVariant(std::forward<T>(aPaths))) {}
-
-  ModuleIdentifiers() : mModuleNtPaths(VecType()) {}
-
-  ModuleIdentifiers(const ModuleIdentifiers& aOther) = delete;
-  ModuleIdentifiers(ModuleIdentifiers&& aOther) = default;
-  ModuleIdentifiers& operator=(const ModuleIdentifiers&) = delete;
-  ModuleIdentifiers& operator=(ModuleIdentifiers&&) = default;
-};
+using ModuleIdentifiers = nsTArray<mozilla::ipc::FileDescriptor>;
 
 class ProcessedModuleLoadEvent final {
  public:
@@ -388,64 +372,6 @@ struct ParamTraits<mozilla::ModulesMap> {
     }
 
     return true;
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::ModuleIdentifiers> {
-  typedef mozilla::ModuleIdentifiers paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    aParam.mModuleNtPaths.match(
-        [aWriter](const paramType::SetType& aSet) { WriteSet(aWriter, aSet); },
-        [aWriter](const paramType::VecType& aVec) {
-          WriteVector(aWriter, aVec);
-        });
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    uint32_t len;
-    if (!aReader->ReadUInt32(&len)) {
-      return false;
-    }
-
-    
-    
-    auto& vec = aResult->mModuleNtPaths.as<paramType::VecType>();
-    if (!vec.reserve(len)) {
-      return false;
-    }
-
-    for (uint32_t idx = 0; idx < len; ++idx) {
-      nsString str;
-      if (!ReadParam(aReader, &str)) {
-        return false;
-      }
-
-      if (!vec.emplaceBack(std::move(str))) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
- private:
-  
-  static void WriteSet(MessageWriter* aWriter, const paramType::SetType& aSet) {
-    aWriter->WriteUInt32(aSet.Count());
-    for (const auto& key : aSet.Keys()) {
-      WriteParam(aWriter, key);
-    }
-  }
-
-  
-  static void WriteVector(MessageWriter* aWriter,
-                          const paramType::VecType& aVec) {
-    aWriter->WriteUInt32(aVec.length());
-    for (auto const& item : aVec) {
-      WriteParam(aWriter, item);
-    }
   }
 };
 
