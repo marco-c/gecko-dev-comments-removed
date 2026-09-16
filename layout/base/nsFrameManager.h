@@ -10,7 +10,6 @@
 #include "mozilla/Attributes.h"
 #include "nsDebug.h"
 #include "nsFrameList.h"
-#include "nsIStatefulFrame.h"
 
 class nsContainerFrame;
 class nsIFrame;
@@ -22,6 +21,14 @@ namespace mozilla {
 struct FrameDestroyContext;
 class PresShell;
 class ViewportFrame;
+
+enum class CaptureStateFlag : uint8_t {
+  
+  
+  ForSessionHistory,
+};
+using CaptureStateFlags = EnumSet<CaptureStateFlag>;
+
 }  
 
 
