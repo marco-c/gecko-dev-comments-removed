@@ -104,10 +104,6 @@ void ModuleLoadRequest::ModuleLoaded() {
 
   mModuleScript = mLoader->GetFetchedModule(ModuleMapKey(URI(), mModuleType));
 
-  if (FetchInfo()->IsForModulePreload() != mLoadContext->IsPreload()) {
-    FetchInfo()->SetForModulePreload(mLoadContext->IsPreload());
-  }
-
   
   
   
