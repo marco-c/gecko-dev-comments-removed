@@ -13,12 +13,16 @@ async function getCurrentMetrics() {
   return {
     ipCount:
       await Glean.geolocation.geolocationService.network_ip.testGetValue(),
+    
+    otherProviderCount:
+      await Glean.geolocation.networkProvider.other.testGetValue(),
   };
 }
 
 async function checkMetrics() {
   let metrics = await getCurrentMetrics();
   Assert.equal(metrics.ipCount, 1);
+  Assert.equal(metrics.otherProviderCount, 1);
 }
 
 function terminate(succ) {
