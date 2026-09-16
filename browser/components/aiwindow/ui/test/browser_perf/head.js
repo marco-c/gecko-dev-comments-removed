@@ -1,0 +1,13 @@
+
+
+
+"use strict";
+
+
+
+
+const { AIWindowTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/AIWindowTestUtils.sys.mjs"
+);
+
+AIWindowTestUtils.init(this, window);
