@@ -727,19 +727,6 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
   }
 
   
-  
-  
-  mBackend = SpeechRecognitionBackend::Create(this, graphRate, effectiveLang,
-                                              phrasesForBackend);
-  if (!mBackend) {
-    LOGE("Failed to create the backend");
-    DispatchErrorAndEnd(SpeechRecognitionErrorCode::Service_not_allowed,
-                        "Local speech recognition is not available"_ns);
-    return;
-  }
-  mBackend->Start();
-
-  
   mStarted = true;
   mBackendListening = false;
   mStartDispatched = false;
@@ -751,13 +738,37 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
     KeepAliveIfHasListenersFor(atom);
   }
 
+  PendingSession session{std::move(audioTrack), aCallerType, effectiveLang,
+                         graphRate, std::move(phrasesForBackend)};
+
+  BeginSession(std::move(session));
+}
+
+void SpeechRecognition::BeginSession(PendingSession&& aSession) {
+  AssertIsOnMainThread();
+  MOZ_ASSERT(mStarted);
+  MOZ_ASSERT(!mBackend);
+
+  
+  
+  
+  mBackend = SpeechRecognitionBackend::Create(
+      this, aSession.mGraphRate, aSession.mLanguage, aSession.mPhrases);
+  if (!mBackend) {
+    LOGE("Failed to create the backend");
+    DispatchErrorAndEnd(SpeechRecognitionErrorCode::Service_not_allowed,
+                        "Local speech recognition is not available"_ns);
+    return;
+  }
+  mBackend->Start();
+
   
   
   
 
   
-  if (audioTrack) {
-    NotifyTrackAdded(audioTrack);
+  if (aSession.mTrack) {
+    NotifyTrackAdded(aSession.mTrack);
   } else {
     mListener = new TrackListener(this);
     
@@ -773,7 +784,7 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
     AutoNoJSAPI nojsapi;
     RefPtr<SpeechRecognition> self(this);
     MediaManager::Get()
-        ->GetUserMedia(GetOwnerWindow(), constraints, aCallerType)
+        ->GetUserMedia(GetOwnerWindow(), constraints, aSession.mCallerType)
         ->Then(
             GetCurrentSerialEventTarget(), __func__,
             [this, self, startedListener](RefPtr<DOMMediaStream>&& aStream) {

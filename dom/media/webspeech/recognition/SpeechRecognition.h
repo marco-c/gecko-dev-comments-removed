@@ -237,8 +237,20 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   void DispatchNoMatch();
   
   
+  struct PendingSession {
+    RefPtr<AudioStreamTrack> mTrack;
+    CallerType mCallerType;
+    nsString mLanguage;
+    uint32_t mGraphRate = 0;
+    nsTArray<nsString> mPhrases;
+  };
+
+  
+  
   void StartImpl(MediaStreamTrack* aAudioTrack, CallerType aCallerType,
                  ErrorResult& aRv);
+  
+  void BeginSession(PendingSession&& aSession);
   
   
   void MaybeDispatchStart();
