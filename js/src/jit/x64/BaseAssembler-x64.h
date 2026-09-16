@@ -15,6 +15,14 @@ namespace X86Encoding {
 class BaseAssemblerX64 : public BaseAssembler {
  public:
   
+  uint8_t getByteAtOffset(size_t offset) const {
+    MOZ_ASSERT(offset < m_formatter.size());
+    const uint8_t* code =
+        const_cast<X86InstructionFormatter&>(m_formatter).data();
+    return code[offset];
+  }
+
+  
 
   void adcq_rr(RegisterID src, RegisterID dst) {
     spew(currentOffset(), "adcq       %s, %s", GPReg64Name(src),
@@ -605,6 +613,11 @@ class BaseAssemblerX64 : public BaseAssembler {
   }
 
   void testq_ir(int32_t rhs, RegisterID lhs) {
+    
+    if (rhs == -1) {
+      testq_rr(lhs, lhs);
+      return;
+    }
     
     
     if (CAN_ZERO_EXTEND_32_64(rhs)) {
