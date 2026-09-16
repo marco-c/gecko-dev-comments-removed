@@ -68,10 +68,21 @@ import org.mozilla.gecko.annotation.WrapForJNI;
     super.close();
   }
 
+  
+  private static String getAuthorityWithoutUserId(final @NonNull Uri aUri) {
+    final String authority = aUri.getAuthority();
+    if (authority == null || authority.isEmpty()) {
+      return authority;
+    }
+    
+    final int index = authority.lastIndexOf('@');
+    return authority.substring(index + 1);
+  }
+
   private static boolean isExported(final @NonNull Context aCtx, final @NonNull Uri aUri) {
     
     
-    final String authority = aUri.getAuthority();
+    final String authority = getAuthorityWithoutUserId(aUri);
     final PackageManager packageManager = aCtx.getPackageManager();
     if (authority == null || packageManager == null) {
       return false;
@@ -100,7 +111,7 @@ import org.mozilla.gecko.annotation.WrapForJNI;
       final @NonNull Context aCtx, final @NonNull Uri aUri) {
     
     
-    final String authority = aUri.getAuthority();
+    final String authority = getAuthorityWithoutUserId(aUri);
     final PackageManager packageManager = aCtx.getPackageManager();
     if (authority == null || packageManager == null) {
       return false;
