@@ -25,13 +25,12 @@
 
 
 
-
-
 #include "jit/mips64/Simulator-mips64.h"
 
 #include "mozilla/Casting.h"
 #include "mozilla/IntegerPrintfMacros.h"
 
+#include <cmath>
 #include <float.h>
 #include <limits>
 
@@ -1490,8 +1489,11 @@ bool Simulator::setFCSRRoundError(double original, double rounded) {
     ret = true;
   }
 
-  if ((long double)rounded > (long double)std::numeric_limits<T>::max() ||
-      (long double)rounded < (long double)std::numeric_limits<T>::min()) {
+  
+  
+  
+  if (rounded >= std::ldexp(1.0, std::numeric_limits<T>::digits) ||
+      rounded < static_cast<double>(std::numeric_limits<T>::min())) {
     setFCSRBit(kFCSROverflowFlagBit, true);
     setFCSRBit(kFCSROverflowCauseBit, true);
     
