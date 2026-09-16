@@ -13,6 +13,7 @@
 #include <aclapi.h>
 #include <sddl.h>
 
+#include "mozilla/FileUtilsWin.h"
 #include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/UntrustedModulesProcessor.h"
 #include "nsCOMPtr.h"
@@ -140,7 +141,7 @@ class ScopedModuleCopy final {
 
 }  
 
-TEST(TestModuleFileValidation, AcceptsLoadedModule)
+TEST(TestModuleFileValidation, AcceptsLoadedModuleAndVerifiesPathsMatch)
 {
   wchar_t xulPath[MAX_PATH + 1] = {};
   ASSERT_NE(::GetModuleFileNameW(::GetModuleHandleW(L"xul.dll"), xulPath,
@@ -158,10 +159,21 @@ TEST(TestModuleFileValidation, AcceptsLoadedModule)
   ASSERT_TRUE(fd.IsValid());
 
   nsAutoString resolved;
-  EXPECT_TRUE(ValidateAndResolveModuleSection(fd, resolved));
+  ASSERT_TRUE(ValidateAndResolveModuleSection(fd, resolved));
+
+  
+  
+  
+  
+  
+  
   EXPECT_TRUE(StringBeginsWith(resolved, u"\\Device\\"_ns));
-  EXPECT_TRUE(StringEndsWith(resolved, u"\\xul.dll"_ns,
-                             nsCaseInsensitiveStringComparator));
+
+  nsAutoString resolvedDosPath;
+  ASSERT_TRUE(NtPathToDosPath(resolved, resolvedDosPath));
+  EXPECT_TRUE(resolvedDosPath.Equals(path, nsCaseInsensitiveStringComparator))
+      << "resolved: " << NS_ConvertUTF16toUTF8(resolvedDosPath).get()
+      << ", expected: " << NS_ConvertUTF16toUTF8(path).get();
 }
 
 
