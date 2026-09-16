@@ -9,6 +9,7 @@
 #include <speex/speex_resampler.h>
 
 #include <algorithm>
+#include <utility>
 
 #include "AudibilityMonitor.h"
 #include "AudioConfig.h"
@@ -150,14 +151,21 @@ SpeechRecognitionIPCActorUserGuard::~SpeechRecognitionIPCActorUserGuard() {
   }
 }
 
-static constexpr double IPC_BLOCK_SIZE_S = 0.5;
+
+
+
+
+static constexpr double IPC_BLOCK_SIZE_S = 0.04;
+
+
+
+
+static constexpr double RING_BUFFER_SIZE_S = 2.0;
 static constexpr uint32_t STREAMING_POLL_MS = 20;
 static constexpr int32_t SPEECH_RECOGNITION_TARGET_RATE = 16000;
 static constexpr auto SPEECH_RECOGNITION_ENGINE_ID = "parakeet-cpp"_ns;
 
 
-
-static constexpr uint32_t RING_BUFFER_IPC_BLOCKS = 4;
 static constexpr uint32_t PER_CALLBACK_MONO_BUFFER_INITIAL_NUM_FRAMES = 512;
 
 
@@ -192,8 +200,8 @@ SpeechRecognitionBackend::SpeechRecognitionBackend(
     : mParent(aParent),
       mLanguage(NS_ConvertUTF16toUTF8(aLanguage)),
       mPhrases(aPhrases.Clone()),
-      mRingBuffer(MakeUnique<SPSCQueue<float>>(AssertedCast<int>(
-          aGraphRate * IPC_BLOCK_SIZE_S * RING_BUFFER_IPC_BLOCKS))),
+      mRingBuffer(MakeUnique<SPSCQueue<float>>(
+          AssertedCast<int>(aGraphRate * RING_BUFFER_SIZE_S))),
       mResamplingThread(aResamplingThread),
       mResamplingCapability(aResamplingThread),
       mMonoBuffer(PER_CALLBACK_MONO_BUFFER_INITIAL_NUM_FRAMES),
@@ -414,36 +422,40 @@ void SpeechRecognitionBackend::DataCallback(MediaTrackGraph* aGraph,
     return;
   }
 
-  size_t frameCount = static_cast<size_t>(aChunk.mDuration);
+  const size_t frameCount = static_cast<size_t>(aChunk.mDuration);
   
   
   
   
   const bool isSilence = aChunk.IsNull();
 
-  if (mMonoBuffer.Capacity() < frameCount) {
-    LOGE("Warning: chunk size {} exceeds pre-allocated buffer capacity {}",
-         frameCount, mMonoBuffer.Capacity());
-    mMonoBuffer.SetCapacity(frameCount);
-    MOZ_DIAGNOSTIC_CRASH("Implement chunked downmixing");
-  }
-
-  mMonoBuffer.SetLengthAndRetainStorage(frameCount);
-
+  
+  
+  
   AudioDataValue* monoData = mMonoBuffer.Elements();
   Span<AudioDataValue* const> outputChannels(&monoData, 1);
+  const size_t capacity = mMonoBuffer.Capacity();
 
-  if (isSilence) {
-    PodZero(mMonoBuffer.Elements(), frameCount);
-  } else {
-    aChunk.DownMixTo(outputChannels);
-  }
+  for (size_t offset = 0; offset < frameCount; offset += capacity) {
+    const size_t sliceFrames = std::min(capacity, frameCount - offset);
+    mMonoBuffer.SetLengthAndRetainStorage(sliceFrames);
 
-  int written = mRingBuffer->Enqueue(mMonoBuffer.Elements(),
-                                     AssertedCast<int>(frameCount));
+    if (isSilence) {
+      PodZero(mMonoBuffer.Elements(), sliceFrames);
+    } else {
+      AudioChunk slice = aChunk;
+      slice.SliceTo(offset, offset + sliceFrames);
+      slice.DownMixTo(outputChannels);
+    }
 
-  if (written < static_cast<int>(frameCount)) {
-    LOG("Ring buffer overflow: wrote {} of {} frames", written, frameCount);
+    int written = mRingBuffer->Enqueue(mMonoBuffer.Elements(),
+                                       AssertedCast<int>(sliceFrames));
+    if (written < static_cast<int>(sliceFrames)) {
+      mFramesDropped += sliceFrames - written;
+      LOGE("Capture ring buffer overflow: wrote {} of {} frames, {}s"
+           " dropped total", written, sliceFrames,
+           double(mFramesDropped) / mGraphRate);
+    }
   }
 }
 

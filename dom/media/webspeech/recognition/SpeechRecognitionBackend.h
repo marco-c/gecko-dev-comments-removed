@@ -246,6 +246,9 @@ class SpeechRecognitionBackend {
   nsTArray<AudioDataValue> mMonoBuffer;
   const uint32_t mGraphRate;
   
+  
+  uint64_t mFramesDropped = 0;
+  
   bool mStopped MOZ_GUARDED_BY(sMainThreadCapability) = false;
   
   
