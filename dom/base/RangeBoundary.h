@@ -62,6 +62,20 @@ using ConstRawRangeBoundary =
 
 
 
+enum class RangeBoundarySide : bool { Start, End };
+
+inline auto format_as(const RangeBoundarySide aSide) {
+  return aSide == RangeBoundarySide::Start ? "Start" : "End";
+}
+
+inline std::ostream& operator<<(std::ostream& aStream,
+                                const RangeBoundarySide aSide) {
+  return aStream << format_as(aSide);
+}
+
+
+
+
 
 
 

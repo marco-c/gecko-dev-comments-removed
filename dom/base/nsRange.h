@@ -56,6 +56,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
   using DocGroup = mozilla::dom::DocGroup;
   using RangeBoundary = mozilla::RangeBoundary;
   using RangeBoundarySetBy = mozilla::RangeBoundarySetBy;
+  using RangeBoundarySide = mozilla::RangeBoundarySide;
   using RawRangeBoundary = mozilla::RawRangeBoundary;
   using AllowRangeCrossShadowBoundary =
       mozilla::dom::AllowRangeCrossShadowBoundary;
@@ -436,20 +437,37 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
   bool CanAccess(const nsINode&) const;
 
-  void AdjustNextRefsOnCharacterDataSplit(const nsIContent& aContent,
-                                          const CharacterDataChangeInfo& aInfo);
-
   struct RangeBoundariesAndRoot {
+    [[nodiscard]] bool HasNewBoundaries() const {
+      return mStart.IsSet() || mEnd.IsSet();
+    }
+    void SetUnsetBoundaries(const nsRange& aRange) {
+      if (!mStart.IsSet()) {
+        mStart.CopyFrom(aRange.StartRef(), RangeBoundarySetBy::Ref);
+      }
+      if (!mEnd.IsSet()) {
+        mEnd.CopyFrom(aRange.EndRef(), RangeBoundarySetBy::Ref);
+      }
+      if (!mRoot) {
+        mRoot = aRange.GetRoot();
+      }
+    }
+
     RawRangeBoundary mStart;
     RawRangeBoundary mEnd;
     nsINode* mRoot = nullptr;
   };
 
-  
+  struct NextSiblings {
+    [[nodiscard]] nsIContent* Get(RangeBoundarySide aSide) const {
+      return aSide == RangeBoundarySide::Start ? mStart : mEnd;
+    }
+    [[nodiscard]] inline bool HasSiblings() const { return mStart || mEnd; }
+    nsIContent* MOZ_NON_OWNING_REF mStart = nullptr;
+    nsIContent* MOZ_NON_OWNING_REF mEnd = nullptr;
+  };
 
-
-  RangeBoundariesAndRoot DetermineNewRangeBoundariesAndRootOnCharacterDataMerge(
-      nsIContent* aContent, const CharacterDataChangeInfo& aInfo) const;
+  class MOZ_STACK_CLASS AutoCharacterDataChangedHandler;
 
   
   
@@ -647,7 +665,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
 #ifdef DEBUG
   bool IsCleared() const {
     return !mRoot && !mRegisteredClosestCommonInclusiveAncestor &&
-           mSelections.IsEmpty() && !mNextStartRef && !mNextEndRef;
+           mSelections.IsEmpty() && !mNewCharacterDataOnSplitText.HasSiblings();
   }
 #endif  
 
@@ -658,8 +676,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
   
   
   
-  nsIContent* MOZ_NON_OWNING_REF mNextStartRef;
-  nsIContent* MOZ_NON_OWNING_REF mNextEndRef;
+  NextSiblings mNewCharacterDataOnSplitText;
 
   static nsTArray<RefPtr<nsRange>>* sCachedRanges;
 

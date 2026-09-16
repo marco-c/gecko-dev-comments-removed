@@ -56,6 +56,96 @@
 #  include "nsAccessibilityService.h"
 #endif
 
+
+
+
+class MOZ_STACK_CLASS nsRange::AutoCharacterDataChangedHandler {
+ public:
+  AutoCharacterDataChangedHandler(nsRange& aRange, nsIContent& aCharacterData,
+                                  const CharacterDataChangeInfo& aInfo)
+      : mRange(aRange),
+        mCharacterData(aCharacterData),
+        mParentNode(aCharacterData.GetParentNode()),
+        mInfo(aInfo) {}
+
+  [[nodiscard]] RangeBoundariesAndRoot ComputeNewBoundaries() {
+    RangeBoundariesAndRoot result = ComputeNewBoundariesOnModifyDataOrSplit();
+
+    if (mInfo.mDetails &&
+        mInfo.mDetails->mType == CharacterDataChangeInfo::Details::eMerge) {
+      MOZ_ASSERT(!result.mStart.IsSet());
+      MOZ_ASSERT(!result.mEnd.IsSet());
+      result = ComputeNewBoundariesOnMerge();
+    }
+
+    return result;
+  }
+
+  
+
+
+
+  [[nodiscard]] NextSiblings GetComingNewNextSiblings() const {
+    MOZ_ASSERT(mInfo.mDetails && mInfo.mDetails->mType ==
+                                     CharacterDataChangeInfo::Details::eSplit);
+    return NextSiblings{GetNextSiblingOnSplit(RangeBoundarySide::Start),
+                        GetNextSiblingOnSplit(RangeBoundarySide::End)};
+  }
+
+ private:
+  [[nodiscard]] nsIContent* GetNextSiblingOnSplit(
+      RangeBoundarySide aSide) const;
+
+  
+
+
+
+
+  [[nodiscard]] RangeBoundariesAndRoot ComputeNewBoundariesOnMerge() const {
+    MOZ_ASSERT(mInfo.mDetails && mInfo.mDetails->mType ==
+                                     CharacterDataChangeInfo::Details::eMerge);
+    auto [newStart, newRootAtStart] =
+        ComputeNewBoundaryOnMerge(RangeBoundarySide::Start);
+    auto [newEnd, newRootAtEnd] =
+        ComputeNewBoundaryOnMerge(RangeBoundarySide::End);
+    return {std::move(newStart), std::move(newEnd),
+            newRootAtEnd ? newRootAtEnd : newRootAtStart};
+  }
+
+  [[nodiscard]] std::pair<RawRangeBoundary, nsINode*> ComputeNewBoundaryOnMerge(
+      RangeBoundarySide aSide) const;
+
+  
+
+
+
+  [[nodiscard]] RangeBoundariesAndRoot
+  ComputeNewBoundariesOnModifyDataOrSplit() {
+    MOZ_ASSERT(!mInfo.mDetails || mInfo.mDetails->mType !=
+                                      CharacterDataChangeInfo::Details::eMerge);
+    auto [newStart, newRootAtStart] = ComputeNewBoundaryOnModifyDataOrSplit(
+        RangeBoundarySide::Start, nullptr);
+    auto [newEnd, newRootAtEnd] = ComputeNewBoundaryOnModifyDataOrSplit(
+        RangeBoundarySide::End, &newStart);
+    return {std::move(newStart), std::move(newEnd),
+            newRootAtEnd ? newRootAtEnd : newRootAtStart};
+  }
+
+  [[nodiscard]] std::pair<RawRangeBoundary, nsINode*>
+  ComputeNewBoundaryOnModifyDataOrSplit(
+      RangeBoundarySide aSide,
+      const RawRangeBoundary* aAlreadyComputedStartBoundary);
+
+  nsRange& mRange;
+  nsIContent& mCharacterData;
+  nsINode* const mParentNode;
+  const CharacterDataChangeInfo& mInfo;
+};
+
+
+
+
+
 namespace mozilla {
 extern LazyLogModule sSelectionAPILog;
 extern void LogStackForSelectionAPI();
@@ -190,9 +280,7 @@ nsRange::~nsRange() {
 }
 
 nsRange::nsRange(nsINode* aNode)
-    : AbstractRange(aNode,  true, TreeKind::DOM),
-      mNextStartRef(nullptr),
-      mNextEndRef(nullptr) {
+    : AbstractRange(aNode,  true, TreeKind::DOM) {
   
 
   static_assert(sizeof(nsRange) <= 248,
@@ -378,63 +466,55 @@ bool nsRange::MaybeInterruptLastRelease() {
   return interrupt;
 }
 
-void nsRange::AdjustNextRefsOnCharacterDataSplit(
-    const nsIContent& aContent, const CharacterDataChangeInfo& aInfo) {
-  
-  
-  
-  
-  
-  
-  
-  nsINode* parentNode = aContent.GetParentNode();
-  if (parentNode == mEnd.GetContainer()) {
-    if (&aContent == mEnd.Ref()) {
-      MOZ_ASSERT(aInfo.mDetails->mNextSibling);
-      mNextEndRef = aInfo.mDetails->mNextSibling;
-    }
-  }
 
-  if (parentNode == mStart.GetContainer()) {
-    if (&aContent == mStart.Ref()) {
-      MOZ_ASSERT(aInfo.mDetails->mNextSibling);
-      mNextStartRef = aInfo.mDetails->mNextSibling;
+
+
+
+nsIContent* nsRange::AutoCharacterDataChangedHandler::GetNextSiblingOnSplit(
+    RangeBoundarySide aSide) const {
+  
+  
+  
+  
+  
+  
+  
+  if (mParentNode == mRange.GetContainer(aSide)) {
+    if (&mCharacterData == mRange.BoundaryRef(aSide).Ref()) {
+      MOZ_ASSERT(mInfo.mDetails->mNextSibling);
+      return mInfo.mDetails->mNextSibling;
     }
   }
+  return nullptr;
 }
 
-nsRange::RangeBoundariesAndRoot
-nsRange::DetermineNewRangeBoundariesAndRootOnCharacterDataMerge(
-    nsIContent* aContent, const CharacterDataChangeInfo& aInfo) const {
-  RawRangeBoundary newStart;
-  RawRangeBoundary newEnd;
+std::pair<RawRangeBoundary, nsINode*>
+nsRange::AutoCharacterDataChangedHandler::ComputeNewBoundaryOnMerge(
+    RangeBoundarySide aSide) const {
+  MOZ_ASSERT(mInfo.mDetails);
+  MOZ_ASSERT(mInfo.mDetails->mType == CharacterDataChangeInfo::Details::eMerge);
+
+  nsIContent* const removedCharacterData = mInfo.mDetails->mNextSibling;
   nsINode* newRoot = nullptr;
-
-  
-  
-  nsIContent* removed = aInfo.mDetails->mNextSibling;
-  if (removed == mStart.GetContainer()) {
-    CheckedUint32 newStartOffset{
-        *mStart.Offset(RangeBoundary::OffsetFilter::kValidOrInvalidOffsets)};
-    newStartOffset += aInfo.mChangeStart;
-
+  nsINode* const boundaryContainer = mRange.GetContainer(aSide);
+  if (removedCharacterData != boundaryContainer &&
+      mParentNode != boundaryContainer) {
     
-    
-    newStart = {aContent, newStartOffset.value()};
-    if (MOZ_UNLIKELY(removed == mRoot)) {
-      newRoot = RangeUtils::ComputeRootNode(newStart.GetContainer());
-    }
+    return {RawRangeBoundary{}, newRoot};
   }
-  if (removed == mEnd.GetContainer()) {
-    CheckedUint32 newEndOffset{
-        *mEnd.Offset(RangeBoundary::OffsetFilter::kValidOrInvalidOffsets)};
-    newEndOffset += aInfo.mChangeStart;
+  RawRangeBoundary newBoundary;
+  uint32_t const boundaryOffset = mRange.Offset(aSide);
+  
+  
+  if (removedCharacterData == boundaryContainer) {
+    CheckedUint32 newOffset{boundaryOffset};
+    newOffset += mInfo.mChangeStart;
 
     
     
-    newEnd = {aContent, newEndOffset.value()};
-    if (MOZ_UNLIKELY(removed == mRoot)) {
-      newRoot = {RangeUtils::ComputeRootNode(newEnd.GetContainer())};
+    newBoundary = {&mCharacterData, newOffset.value()};
+    if (removedCharacterData == mRange.mRoot) [[unlikely]] {
+      newRoot = RangeUtils::ComputeRootNode(newBoundary.GetContainer());
     }
   }
   
@@ -443,38 +523,102 @@ nsRange::DetermineNewRangeBoundariesAndRootOnCharacterDataMerge(
   
   
   
-  nsINode* parentNode = aContent->GetParentNode();
-  if (parentNode == mStart.GetContainer() &&
-      *mStart.Offset(RangeBoundary::OffsetFilter::kValidOrInvalidOffsets) > 0 &&
-      *mStart.Offset(RangeBoundary::OffsetFilter::kValidOrInvalidOffsets) <
-          parentNode->GetChildCount() &&
-      removed == mStart.GetChildAtOffset()) {
-    newStart = {aContent, aInfo.mChangeStart};
+  if (mParentNode == boundaryContainer && boundaryOffset > 0 &&
+      boundaryOffset < mParentNode->GetChildCount() &&
+      removedCharacterData == mRange.GetChildAtOffset(aSide)) {
+    newBoundary = {&mCharacterData, aSide == RangeBoundarySide::Start
+                                        ? mInfo.mChangeStart
+                                        : mInfo.mChangeEnd};
   }
-  if (parentNode == mEnd.GetContainer() &&
-      *mEnd.Offset(RangeBoundary::OffsetFilter::kValidOrInvalidOffsets) > 0 &&
-      *mEnd.Offset(RangeBoundary::OffsetFilter::kValidOrInvalidOffsets) <
-          parentNode->GetChildCount() &&
-      removed == mEnd.GetChildAtOffset()) {
-    newEnd = {aContent, aInfo.mChangeEnd};
-  }
-
-  return {newStart, newEnd, newRoot};
+  return {std::move(newBoundary), newRoot};
 }
 
+std::pair<RawRangeBoundary, nsINode*>
+nsRange::AutoCharacterDataChangedHandler::ComputeNewBoundaryOnModifyDataOrSplit(
+    RangeBoundarySide aSide,
+    const RawRangeBoundary* aAlreadyComputedStartBoundary) {
+  MOZ_ASSERT_IF(aSide == RangeBoundarySide::Start,
+                !aAlreadyComputedStartBoundary);
+  MOZ_ASSERT_IF(aSide == RangeBoundarySide::End, aAlreadyComputedStartBoundary);
 
-
+  nsINode* const boundaryContainer = mRange.GetContainer(aSide);
+  
+  
+  if (&mCharacterData != boundaryContainer) {
+    return {RawRangeBoundary{}, nullptr};
+  }
+  const uint32_t boundaryOffset = mRange.Offset(aSide);
+  if (mInfo.mChangeStart >= boundaryOffset) {
+    return {RawRangeBoundary{}, nullptr};
+  }
+  if (mInfo.mDetails &&
+      (aSide == RangeBoundarySide::Start ||
+       aAlreadyComputedStartBoundary->GetContainer() ||
+       
+       
+       
+       mParentNode)) {
+    
+    NS_ASSERTION(
+        mInfo.mDetails->mType == CharacterDataChangeInfo::Details::eSplit,
+        "only a split can start before the end");
+    NS_ASSERTION(boundaryOffset <= mInfo.mChangeEnd + 1,
+                 fmt::format("Offset({}) is beyond the end of this node", aSide)
+                     .c_str());
+    const uint32_t newOffset = boundaryOffset - mInfo.mChangeStart;
+    RawRangeBoundary newBoundary{mInfo.mDetails->mNextSibling, newOffset};
+    nsINode* const newRoot = [&]() -> nsINode* {
+      
+      
+      
+      
+      
+      if (aSide == RangeBoundarySide::End) {
+        return nullptr;
+      }
+      
+      
+      
+      
+      if (&mCharacterData == mRange.mRoot) [[unlikely]] {
+        return RangeUtils::ComputeRootNode(newBoundary.GetContainer());
+      }
+      return nullptr;
+    }();
+    
+    const bool isCommonAncestor =
+        mRange.IsInAnySelection() &&
+        mRange.GetStartContainer() == mRange.GetEndContainer();
+    if (isCommonAncestor && (!aAlreadyComputedStartBoundary ||
+                             !aAlreadyComputedStartBoundary->GetContainer())) {
+      MOZ_DIAGNOSTIC_ASSERT(mRange.GetStartContainer() ==
+                            mRange.mRegisteredClosestCommonInclusiveAncestor);
+      mRange.UnregisterClosestCommonInclusiveAncestor();
+      mRange.RegisterClosestCommonInclusiveAncestor(newBoundary.GetContainer());
+    }
+    const bool
+        maybeSetDescendantOfClosestCommonInclusiveAncestorForRangeInSelection =
+            aSide == RangeBoundarySide::Start ||
+            (!isCommonAncestor ||
+             aAlreadyComputedStartBoundary->GetContainer());
+    if (maybeSetDescendantOfClosestCommonInclusiveAncestorForRangeInSelection) {
+      if (mRange.GetContainer(aSide)
+              ->IsDescendantOfClosestCommonInclusiveAncestorForRangeInSelection()) {
+        newBoundary.GetContainer()
+            ->SetDescendantOfClosestCommonInclusiveAncestorForRangeInSelection();
+      }
+    }
+    return {std::move(newBoundary), newRoot};
+  }
+  return {ComputeNewBoundaryWhenBoundaryInsideChangedText(
+              mInfo, mRange.BoundaryRef(aSide).AsRaw()),
+          nullptr};
+}
 
 void nsRange::CharacterDataChanged(nsIContent* aContent,
                                    const CharacterDataChangeInfo& aInfo) {
   MOZ_ASSERT(aContent);
   MOZ_ASSERT(mIsPositioned);
-  MOZ_ASSERT(!mNextEndRef);
-  MOZ_ASSERT(!mNextStartRef);
-
-  nsINode* newRoot = nullptr;
-  RawRangeBoundary newStart;
-  RawRangeBoundary newEnd;
 
   if (aInfo.mDetails &&
       aInfo.mDetails->mType == CharacterDataChangeInfo::Details::eSplit) {
@@ -483,124 +627,28 @@ void nsRange::CharacterDataChanged(nsIContent* aContent,
          aContent == mCrossShadowBoundaryRange->GetEndContainer())) {
       ResetCrossShadowBoundaryRange(ResetCommonAncestorIfInAnySelection::Yes);
     }
-    AdjustNextRefsOnCharacterDataSplit(*aContent, aInfo);
   }
 
-  
-  
-  if (aContent == mStart.GetContainer() &&
-      aInfo.mChangeStart <
-          *mStart.Offset(RangeBoundary::OffsetFilter::kValidOrInvalidOffsets)) {
-    if (aInfo.mDetails) {
-      
-      NS_ASSERTION(
-          aInfo.mDetails->mType == CharacterDataChangeInfo::Details::eSplit,
-          "only a split can start before the end");
-      NS_ASSERTION(
-          *mStart.Offset(RangeBoundary::OffsetFilter::kValidOrInvalidOffsets) <=
-              aInfo.mChangeEnd + 1,
-          "mStart.Offset() is beyond the end of this node");
-      const uint32_t newStartOffset =
-          *mStart.Offset(RangeBoundary::OffsetFilter::kValidOrInvalidOffsets) -
-          aInfo.mChangeStart;
-      newStart = {aInfo.mDetails->mNextSibling, newStartOffset};
-      if (MOZ_UNLIKELY(aContent == mRoot)) {
-        newRoot = RangeUtils::ComputeRootNode(newStart.GetContainer());
-      }
-
-      bool isCommonAncestor =
-          IsInAnySelection() && mStart.GetContainer() == mEnd.GetContainer();
-      if (isCommonAncestor) {
-        MOZ_DIAGNOSTIC_ASSERT(mStart.GetContainer() ==
-                              mRegisteredClosestCommonInclusiveAncestor);
-        UnregisterClosestCommonInclusiveAncestor();
-        RegisterClosestCommonInclusiveAncestor(newStart.GetContainer());
-      }
-      if (mStart.GetContainer()
-              ->IsDescendantOfClosestCommonInclusiveAncestorForRangeInSelection()) {
-        newStart.GetContainer()
-            ->SetDescendantOfClosestCommonInclusiveAncestorForRangeInSelection();
-      }
-    } else {
-      newStart = ComputeNewBoundaryWhenBoundaryInsideChangedText(
-          aInfo, mStart.AsRaw());
-    }
-  }
-
-  
-  
-  
-  if (aContent == mEnd.GetContainer() &&
-      aInfo.mChangeStart <
-          *mEnd.Offset(RangeBoundary::OffsetFilter::kValidOrInvalidOffsets)) {
-    if (aInfo.mDetails &&
-        (aContent->GetParentNode() || newStart.GetContainer())) {
-      
-      NS_ASSERTION(
-          aInfo.mDetails->mType == CharacterDataChangeInfo::Details::eSplit,
-          "only a split can start before the end");
-      MOZ_ASSERT(
-          *mEnd.Offset(RangeBoundary::OffsetFilter::kValidOrInvalidOffsets) <=
-              aInfo.mChangeEnd + 1,
-          "mEnd.Offset() is beyond the end of this node");
-
-      const uint32_t newEndOffset{
-          *mEnd.Offset(RangeBoundary::OffsetFilter::kValidOrInvalidOffsets) -
-          aInfo.mChangeStart};
-      newEnd = {aInfo.mDetails->mNextSibling, newEndOffset};
-
-      bool isCommonAncestor =
-          IsInAnySelection() && mStart.GetContainer() == mEnd.GetContainer();
-      if (isCommonAncestor && !newStart.GetContainer()) {
-        MOZ_DIAGNOSTIC_ASSERT(mStart.GetContainer() ==
-                              mRegisteredClosestCommonInclusiveAncestor);
-        
-        UnregisterClosestCommonInclusiveAncestor();
-        RegisterClosestCommonInclusiveAncestor(
-            mStart.GetContainer()->GetParentNode());
-        newEnd.GetContainer()
-            ->SetDescendantOfClosestCommonInclusiveAncestorForRangeInSelection();
-      } else if (
-          mEnd.GetContainer()
-              ->IsDescendantOfClosestCommonInclusiveAncestorForRangeInSelection()) {
-        newEnd.GetContainer()
-            ->SetDescendantOfClosestCommonInclusiveAncestorForRangeInSelection();
-      }
-    } else {
-      newEnd =
-          ComputeNewBoundaryWhenBoundaryInsideChangedText(aInfo, mEnd.AsRaw());
-    }
-  }
-
+  AutoCharacterDataChangedHandler handler(*this, *aContent, aInfo);
+  RangeBoundariesAndRoot newBoundaries = handler.ComputeNewBoundaries();
   if (aInfo.mDetails &&
-      aInfo.mDetails->mType == CharacterDataChangeInfo::Details::eMerge) {
-    MOZ_ASSERT(!newStart.IsSet());
-    MOZ_ASSERT(!newEnd.IsSet());
-
-    RangeBoundariesAndRoot rangeBoundariesAndRoot =
-        DetermineNewRangeBoundariesAndRootOnCharacterDataMerge(aContent, aInfo);
-
-    newStart = rangeBoundariesAndRoot.mStart;
-    newEnd = rangeBoundariesAndRoot.mEnd;
-    newRoot = rangeBoundariesAndRoot.mRoot;
+      aInfo.mDetails->mType == CharacterDataChangeInfo::Details::eSplit) {
+    mNewCharacterDataOnSplitText = handler.GetComingNewNextSiblings();
   }
-
-  if (newStart.IsSet() || newEnd.IsSet()) {
-    if (!newStart.IsSet()) {
-      newStart.CopyFrom(mStart, RangeBoundarySetBy::Ref);
-    }
-    if (!newEnd.IsSet()) {
-      newEnd.CopyFrom(mEnd, RangeBoundarySetBy::Ref);
-    }
-    DoSetRange(newStart, newEnd, newRoot ? newRoot : mRoot.get(),
-               !newEnd.GetContainer()->GetParentNode() ||
-                   !newStart.GetContainer()->GetParentNode());
-  } else {
+  if (!newBoundaries.HasNewBoundaries()) {
+    
     nsRange::AssertIfMismatchRootAndRangeBoundaries(
         mStart, mEnd, mRoot,
         (mStart.IsSet() && !mStart.GetContainer()->GetParentNode()) ||
             (mEnd.IsSet() && !mEnd.GetContainer()->GetParentNode()));
+    return;
   }
+  newBoundaries.SetUnsetBoundaries(*this);
+  const bool notYetInserted =
+      !newBoundaries.mEnd.GetContainer()->GetParentNode() ||
+      !newBoundaries.mStart.GetContainer()->GetParentNode();
+  DoSetRange(newBoundaries.mStart, newBoundaries.mEnd, newBoundaries.mRoot,
+             notYetInserted);
 }
 
 void nsRange::ContentAppended(nsIContent* aFirstNewContent,
@@ -622,18 +670,18 @@ void nsRange::ContentAppended(nsIContent* aFirstNewContent,
     }
   }
 
-  if (mNextStartRef || mNextEndRef) {
+  if (mNewCharacterDataOnSplitText.HasSiblings()) {
     
     
-    if (mNextStartRef) {
-      mStart = {mStart.GetContainer(), mNextStartRef};
-      MOZ_ASSERT(mNextStartRef == aFirstNewContent);
-      mNextStartRef = nullptr;
+    if (mNewCharacterDataOnSplitText.mStart) {
+      mStart = {mStart.GetContainer(), mNewCharacterDataOnSplitText.mStart};
+      MOZ_ASSERT(mNewCharacterDataOnSplitText.mStart == aFirstNewContent);
+      mNewCharacterDataOnSplitText.mStart = nullptr;
     }
-    if (mNextEndRef) {
-      mEnd = {mEnd.GetContainer(), mNextEndRef};
-      MOZ_ASSERT(mNextEndRef == aFirstNewContent);
-      mNextEndRef = nullptr;
+    if (mNewCharacterDataOnSplitText.mEnd) {
+      mEnd = {mEnd.GetContainer(), mNewCharacterDataOnSplitText.mEnd};
+      MOZ_ASSERT(mNewCharacterDataOnSplitText.mEnd == aFirstNewContent);
+      mNewCharacterDataOnSplitText.mEnd = nullptr;
     }
     DoSetRange(mStart, mEnd, mRoot, true);
   } else {
@@ -670,16 +718,16 @@ void nsRange::ContentInserted(nsIContent* aChild, const ContentInsertInfo&) {
     aChild->SetDescendantOfClosestCommonInclusiveAncestorForRangeInSelection();
   }
 
-  if (mNextStartRef || mNextEndRef) {
-    if (mNextStartRef) {
-      newStart = {mStart.GetContainer(), mNextStartRef};
-      MOZ_ASSERT(mNextStartRef == aChild);
-      mNextStartRef = nullptr;
+  if (mNewCharacterDataOnSplitText.HasSiblings()) {
+    if (mNewCharacterDataOnSplitText.mStart) {
+      newStart = {mStart.GetContainer(), mNewCharacterDataOnSplitText.mStart};
+      MOZ_ASSERT(mNewCharacterDataOnSplitText.mStart == aChild);
+      mNewCharacterDataOnSplitText.mStart = nullptr;
     }
-    if (mNextEndRef) {
-      newEnd = {mEnd.GetContainer(), mNextEndRef};
-      MOZ_ASSERT(mNextEndRef == aChild);
-      mNextEndRef = nullptr;
+    if (mNewCharacterDataOnSplitText.mEnd) {
+      newEnd = {mEnd.GetContainer(), mNewCharacterDataOnSplitText.mEnd};
+      MOZ_ASSERT(mNewCharacterDataOnSplitText.mEnd == aChild);
+      mNewCharacterDataOnSplitText.mEnd = nullptr;
     }
 
     updateBoundaries = true;

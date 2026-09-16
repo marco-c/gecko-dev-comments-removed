@@ -76,7 +76,7 @@ class AbstractRange : public nsISupports,
   const RangeBoundary& EndRef() const { return mEnd; }
   const RangeBoundary& MayCrossShadowBoundaryEndRef() const;
 
-  nsIContent* GetChildAtStartOffset() const {
+  [[nodiscard]] inline nsIContent* GetChildAtStartOffset() const {
     return mStart.GetChildAtOffset();
   }
   nsIContent* GetMayCrossShadowBoundaryChildAtStartOffset() const;
@@ -172,6 +172,98 @@ class AbstractRange : public nsISupports,
         *mEnd.Offset(RangeBoundary::OffsetFilter::kValidOrInvalidOffsets));
   }
   uint32_t MayCrossShadowBoundaryEndOffset() const;
+
+  
+
+
+
+  [[nodiscard]] inline Maybe<uint32_t> ValidStartOffset() const {
+    return mStart.Offset(RangeBoundary::OffsetFilter::kValidOffsets);
+  }
+  
+
+
+
+  [[nodiscard]] inline Maybe<uint32_t> ValidEndOffset() const {
+    return mEnd.Offset(RangeBoundary::OffsetFilter::kValidOffsets);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+  [[nodiscard]] const RangeBoundary& BoundaryRef(
+      RangeBoundarySide aSide) const {
+    return aSide == RangeBoundarySide::Start ? StartRef() : EndRef();
+  }
+  
+
+
+  [[nodiscard]] nsIContent* GetChildAtOffset(RangeBoundarySide aSide) const {
+    return aSide == RangeBoundarySide::Start ? GetChildAtStartOffset()
+                                             : GetChildAtEndOffset();
+  }
+  
+
+
+
+  [[nodiscard]] nsIContent* GetMayCrossShadowBoundaryChildAtOffset(
+      RangeBoundarySide aSide) const {
+    return aSide == RangeBoundarySide::Start
+               ? GetMayCrossShadowBoundaryChildAtStartOffset()
+               : GetMayCrossShadowBoundaryChildAtEndOffset();
+  }
+  
+
+
+  [[nodiscard]] nsINode* GetContainer(RangeBoundarySide aSide) const {
+    return aSide == RangeBoundarySide::Start ? GetStartContainer()
+                                             : GetEndContainer();
+  }
+  
+
+
+
+  [[nodiscard]] nsINode* GetMayCrossShadowBoundaryContainer(
+      RangeBoundarySide aSide) const {
+    return aSide == RangeBoundarySide::Start
+               ? GetMayCrossShadowBoundaryStartContainer()
+               : GetMayCrossShadowBoundaryEndContainer();
+  }
+  
+
+
+  [[nodiscard]] uint32_t Offset(RangeBoundarySide aSide) const {
+    return aSide == RangeBoundarySide::Start ? StartOffset() : EndOffset();
+  }
+  
+
+
+
+  [[nodiscard]] uint32_t MayCrossShadowBoundaryOffset(
+      RangeBoundarySide aSide) const {
+    return aSide == RangeBoundarySide::Start
+               ? MayCrossShadowBoundaryStartOffset()
+               : MayCrossShadowBoundaryEndOffset();
+  }
+  
+
+
+  [[nodiscard]] Maybe<uint32_t> ValidOffset(RangeBoundarySide aSide) const {
+    return aSide == RangeBoundarySide::Start ? ValidStartOffset()
+                                             : ValidEndOffset();
+  }
 
   bool Collapsed() const {
     return !mIsPositioned || (mStart.GetContainer() == mEnd.GetContainer() &&
