@@ -329,6 +329,15 @@ this.pageAction = class extends ExtensionAPIPersistent {
         { once: true }
       );
       await popup.contentReady;
+      if (popup.destroyed) {
+        
+        
+        if (this.popupNode === popup) {
+          this.popupNode = undefined;
+        }
+        ExtensionTelemetry.pageActionPopupOpen.stopwatchCancel(extension, this);
+        return;
+      }
       try {
         window.BrowserPageActions.togglePanelForAction(
           this.browserPageAction,
