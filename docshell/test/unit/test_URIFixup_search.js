@@ -108,7 +108,7 @@ if (extProtocolSvc && extProtocolSvc.externalProtocolHandlerExists("mailto")) {
 
 var len = data.length;
 
-add_task(async function setup() {
+add_setup(async () => {
   await setupSearchService();
   await addTestEngines();
 
@@ -120,11 +120,11 @@ add_task(async function setup() {
   );
 
   await SearchService.setDefault(
-    SearchService.getEngineByName(kSearchEngineID),
+    SearchService.getEngineByName(kSearchEngineName),
     SearchService.CHANGE_REASON.UNKNOWN
   );
   await SearchService.setDefaultPrivate(
-    SearchService.getEngineByName(kPrivateSearchEngineID),
+    SearchService.getEngineByName(kPrivateSearchEngineName),
     SearchService.CHANGE_REASON.UNKNOWN
   );
 });
@@ -140,4 +140,42 @@ add_task(function test_fix_unknown_schemes() {
     let { preferredURI } = Services.uriFixup.getFixupURIInfo(item.wrong, flags);
     Assert.equal(preferredURI.spec, item.fixed);
   }
+});
+
+
+
+add_task(function test_force_keyword_lookup() {
+  Services.prefs.setBoolPref("keyword.enabled", false);
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref("keyword.enabled");
+  });
+
+  let flags =
+    Services.uriFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
+    Services.uriFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
+  let forced =
+    Services.uriFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
+    Services.uriFixup.FIXUP_FLAG_FORCE_KEYWORD_LOOKUP;
+  let scheme = "whatever://this/is/a/test.html";
+
+  Assert.equal(
+    Services.uriFixup.getFixupURIInfo("firefox", flags).preferredURI.spec,
+    "http://firefox/",
+    "A keyword is a host with keyword.enabled off"
+  );
+  Assert.equal(
+    Services.uriFixup.getFixupURIInfo("firefox", forced).preferredURI.spec,
+    kSearchEngineURL.replace("{searchTerms}", "firefox"),
+    "A keyword is a search when the lookup is forced"
+  );
+  Assert.equal(
+    Services.uriFixup.getFixupURIInfo(scheme, flags).preferredURI.spec,
+    scheme,
+    "An unknown scheme is left alone with keyword.enabled off"
+  );
+  Assert.equal(
+    Services.uriFixup.getFixupURIInfo(scheme, forced).preferredURI.spec,
+    kSearchEngineURL.replace("{searchTerms}", encodeURIComponent(scheme)),
+    "An unknown scheme is a search when the lookup is forced"
+  );
 });

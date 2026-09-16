@@ -83,6 +83,7 @@ const {
   FIXUP_FLAGS_MAKE_ALTERNATE_URI,
   FIXUP_FLAG_PRIVATE_CONTEXT,
   FIXUP_FLAG_FIX_SCHEME_TYPOS,
+  FIXUP_FLAG_FORCE_KEYWORD_LOOKUP,
 } = Ci.nsIURIFixup;
 
 const COMMON_PROTOCOLS = ["http", "https", "file"];
@@ -337,7 +338,7 @@ URIFixup.prototype = {
     // instead of FIXUP_FLAG_FIX_SCHEME_TYPOS.
     if (
       info.fixedURI &&
-      lazy.keywordEnabled &&
+      keywordFixupEnabled(fixupFlags) &&
       fixupFlags & FIXUP_FLAG_FIX_SCHEME_TYPOS &&
       scheme &&
       !canHandleProtocol
@@ -421,8 +422,9 @@ URIFixup.prototype = {
 
     // See if it is a keyword and whether a keyword must be fixed up.
     if (
-      lazy.keywordEnabled &&
-      fixupFlags & FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP &&
+      keywordFixupEnabled(fixupFlags) &&
+      fixupFlags &
+        (FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP | FIXUP_FLAG_FORCE_KEYWORD_LOOKUP) &&
       !inputHadDuffProtocol &&
       !checkSuffix(info).suffix &&
       keywordURIFixup(uriString, info, isPrivateContext)
@@ -441,7 +443,11 @@ URIFixup.prototype = {
 
     // If we still haven't been able to construct a valid URI, try to force a
     // keyword match.
-    if (lazy.keywordEnabled && fixupFlags & FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP) {
+    if (
+      keywordFixupEnabled(fixupFlags) &&
+      fixupFlags &
+        (FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP | FIXUP_FLAG_FORCE_KEYWORD_LOOKUP)
+    ) {
       tryKeywordFixupForURIInfo(info.originalInput, info, isPrivateContext);
     }
 
@@ -529,7 +535,7 @@ URIFixup.prototype = {
       info.postData = submissionPostDataStream;
     }
 
-    info.keywordProviderName = engine.name;
+    info.keywordProviderId = engine.id;
     info.keywordAsSent = keyword;
     info.preferredURI = submission.uri;
     return info;
@@ -670,11 +676,11 @@ URIFixupInfo.prototype = {
     return this._fixedURI || null;
   },
 
-  set keywordProviderName(name) {
-    this._keywordProviderName = name;
+  set keywordProviderId(id) {
+    this._keywordProviderId = id;
   },
-  get keywordProviderName() {
-    return this._keywordProviderName || "";
+  get keywordProviderId() {
+    return this._keywordProviderId || "";
   },
 
   set keywordAsSent(keyword) {
@@ -858,7 +864,7 @@ function tryKeywordFixupForURIInfo(uriString, fixupInfo, isPrivateContext) {
       uriString,
       isPrivateContext
     );
-    fixupInfo.keywordProviderName = keywordInfo.keywordProviderName;
+    fixupInfo.keywordProviderId = keywordInfo.keywordProviderId;
     fixupInfo.keywordAsSent = keywordInfo.keywordAsSent;
     fixupInfo.preferredURI = keywordInfo.preferredURI;
     return true;
@@ -1003,6 +1009,19 @@ function makeURIWithFixedLocalHosts(uriString, fixupFlags) {
     }
   }
   return uri;
+}
+
+/**
+ * Whether keyword lookup is enabled, either by the keyword.enabled pref or
+ * because it's forced via fixup flags.
+ *
+ * @param {number} fixupFlags The fixup flags.
+ * @returns {boolean} Whether keyword lookup is enabled.
+ */
+function keywordFixupEnabled(fixupFlags) {
+  return (
+    lazy.keywordEnabled || !!(fixupFlags & FIXUP_FLAG_FORCE_KEYWORD_LOOKUP)
+  );
 }
 
 /**
@@ -1172,7 +1191,9 @@ function extractScheme(uriString, fixupFlags = FIXUP_FLAG_NONE) {
 function fixupViewSource(uriString, fixupFlags) {
   // We disable keyword lookup and alternate URIs so that small typos don't
   // cause us to look at very different domains.
-  let newFixupFlags = fixupFlags & ~FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
+  let newFixupFlags =
+    fixupFlags &
+    ~(FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP | FIXUP_FLAG_FORCE_KEYWORD_LOOKUP);
   let innerURIString = uriString.substring(12).trim();
 
   // Prevent recursion.
