@@ -2,30 +2,28 @@
 
 
 
-
-
-#ifndef SpeechRecognitionError_h_
-#define SpeechRecognitionError_h_
+#ifndef SpeechRecognitionErrorEvent_h_
+#define SpeechRecognitionErrorEvent_h_
 
 #include "mozilla/dom/Event.h"
-#include "mozilla/dom/SpeechRecognitionErrorBinding.h"
+#include "mozilla/dom/SpeechRecognitionErrorEventBinding.h"
 
 namespace mozilla::dom {
 
-class SpeechRecognitionError : public Event {
+class SpeechRecognitionErrorEvent : public Event {
  public:
-  SpeechRecognitionError(mozilla::dom::EventTarget* aOwner,
-                         nsPresContext* aPresContext, WidgetEvent* aEvent);
-  virtual ~SpeechRecognitionError();
+  SpeechRecognitionErrorEvent(mozilla::dom::EventTarget* aOwner,
+                              nsPresContext* aPresContext, WidgetEvent* aEvent);
+  virtual ~SpeechRecognitionErrorEvent();
 
-  static already_AddRefed<SpeechRecognitionError> Constructor(
+  static already_AddRefed<SpeechRecognitionErrorEvent> Constructor(
       const GlobalObject& aGlobal, const nsAString& aType,
-      const SpeechRecognitionErrorInit& aParam);
+      const SpeechRecognitionErrorEventInit& aParam);
 
   virtual JSObject* WrapObjectInternal(
       JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override {
-    return mozilla::dom::SpeechRecognitionError_Binding::Wrap(aCx, this,
-                                                              aGivenProto);
+    return mozilla::dom::SpeechRecognitionErrorEvent_Binding::Wrap(aCx, this,
+                                                                   aGivenProto);
   }
 
   void GetMessage(nsAString& aString);
