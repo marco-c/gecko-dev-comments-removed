@@ -1255,8 +1255,6 @@ class ScrollContainerFrame : public nsContainerFrame,
     return mRestorePos != nsPoint(-1, -1);
   }
 
-  bool IsProcessingScrollEvent() const { return mProcessingScrollEvent; }
-
   class AutoScrollbarRepaintSuppression;
   friend class AutoScrollbarRepaintSuppression;
   class AutoScrollbarRepaintSuppression {
@@ -1610,9 +1608,6 @@ class ScrollContainerFrame : public nsContainerFrame,
 
   
   bool mMinimumScaleSizeChanged : 1;
-
-  
-  bool mProcessingScrollEvent : 1;
 
   
   
