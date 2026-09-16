@@ -5,34 +5,34 @@
 #include "IPv4Parser.h"
 
 #include "mozilla/EndianUtils.h"
-#include "nsTArray.h"
 
 namespace mozilla::net::IPv4Parser {
 
 
 bool EndsInANumber(const nsCString& input) {
   
-  nsTArray<nsDependentCSubstring> parts;
-  for (const nsDependentCSubstring& part : input.Split('.')) {
-    parts.AppendElement(part);
-  }
-
-  if (parts.Length() == 0) {
+  
+  
+  if (input.IsEmpty()) {
     return false;
   }
 
   
   
   
-  if (parts.LastElement().IsEmpty()) {
-    if (parts.Length() == 1) {
-      return false;
-    }
-    (void)parts.PopLastElement();
+  
+  
+  uint32_t length = input.Length();
+  if (input.Last() == '.') {
+    length--;
   }
+  nsDependentCSubstring remaining(input, 0, length);
 
   
-  const nsDependentCSubstring& last = parts.LastElement();
+  
+  int32_t separator = remaining.RFindChar('.');
+  const nsDependentCSubstring last =
+      separator < 0 ? remaining : Substring(remaining, separator + 1);
 
   
   
