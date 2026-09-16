@@ -8,6 +8,7 @@
 
 #include "GeckoProfiler.h"
 #include "ScriptLoader.h"
+#include "ScriptTrace.h"        
 #include "js/CompileOptions.h"  
 #include "js/ContextOptions.h"  
 #include "js/MemoryFunctions.h"
@@ -275,47 +276,79 @@ nsresult ModuleLoader::CompileEmptyJavaScriptModule(
   return aModuleOut ? NS_OK : NS_ERROR_FAILURE;
 }
 
+#ifdef NIGHTLY_BUILD
+nsresult ModuleLoader::CompileWasmModuleBytes(
+    JSContext* aCx, JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
+    WasmBytesBuffer& aBytes, JS::MutableHandle<JSObject*> aModuleOut) {
+  JSObject* wasmModule;
+  if (aRequest->IsSourcePhaseRequest(aCx)) {
+    wasmModule = JS::CompileWasmModuleAsSource(aCx, aOptions, aBytes);
+  } else {
+    wasmModule = JS::CompileWasmModule(aCx, aOptions, aBytes);
+  }
+  if (!wasmModule) {
+    return NS_ERROR_FAILURE;
+  }
+
+  aModuleOut.set(wasmModule);
+  return NS_OK;
+}
+
+
+nsresult ModuleLoader::CompileEmptyWasmModule(
+    JSContext* aCx, JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
+    JS::MutableHandle<JSObject*> aModuleOut) {
+  TRACE_FOR_TEST(aRequest, "compile:wasm empty");
+
+  
+  
+  static constexpr uint8_t kEmptyWasmModule[] = {0x00, 0x61, 0x73, 0x6D,
+                                                 0x01, 0x00, 0x00, 0x00};
+
+  WasmBytesBuffer bytes;
+  if (!bytes.append(kEmptyWasmModule, sizeof(kEmptyWasmModule))) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  return CompileWasmModuleBytes(aCx, aOptions, aRequest, bytes, aModuleOut);
+}
+#endif
+
 nsresult ModuleLoader::CompileJavaScriptOrWasmModule(
     JSContext* aCx, JS::Handle<JSObject*> aGlobal, JS::CompileOptions& aOptions,
     ModuleLoadRequest* aRequest, JS::MutableHandle<JSObject*> aModuleOut) {
   GetScriptLoader()->CalculateCacheFlag(aRequest);
 
   if (!nsJSUtils::IsScriptable(aGlobal)) {
+    aRequest->GetScriptLoadContext()->MaybeCancelOffThreadScript();
+
 #ifdef NIGHTLY_BUILD
-    
-    
     if (aRequest->HasWasmMimeTypeEssence()) {
       MOZ_ASSERT(aRequest->IsWasmBytes());
-      return NS_ERROR_FAILURE;
+      return CompileEmptyWasmModule(aCx, aOptions, aRequest, aModuleOut);
     }
 #endif
 
-    aRequest->GetScriptLoadContext()->MaybeCancelOffThreadScript();
     return CompileEmptyJavaScriptModule(aCx, aOptions, aRequest, aModuleOut);
   }
 
 #ifdef NIGHTLY_BUILD
   if (aRequest->HasWasmMimeTypeEssence()) {
     MOZ_ASSERT(aRequest->IsWasmBytes());
-    if (aRequest->IsSourcePhaseRequest(aCx)) {
-      if (aRequest->GetScriptLoadContext()->mWasCompiledOMT) {
-        if (!aRequest->GetScriptLoadContext()->StealOffThreadWasmResult(
-                aCx, aModuleOut)) {
-          return NS_ERROR_FAILURE;
-        }
-      } else {
-        aModuleOut.set(JS::CompileWasmModuleAsSource(aCx, aOptions,
-                                                     aRequest->WasmBytes()));
+    
+    
+    
+    if (aRequest->GetScriptLoadContext()->mWasCompiledOMT) {
+      MOZ_ASSERT(aRequest->IsSourcePhaseRequest(aCx));
+      if (!aRequest->GetScriptLoadContext()->StealOffThreadWasmResult(
+              aCx, aModuleOut)) {
+        return NS_ERROR_FAILURE;
       }
-    } else {
-      aModuleOut.set(
-          JS::CompileWasmModule(aCx, aOptions, aRequest->WasmBytes()));
-    }
-    if (!aModuleOut) {
-      return NS_ERROR_FAILURE;
+      return NS_OK;
     }
 
-    return NS_OK;
+    return CompileWasmModuleBytes(aCx, aOptions, aRequest,
+                                  aRequest->WasmBytes(), aModuleOut);
   }
 #endif
   MOZ_ASSERT(!aRequest->IsWasmBytes());
