@@ -6,12 +6,24 @@
 
 
 
+
+
+
+
 function createPaymentMethodIdentifierUrl(testId, options = {}) {
-  const url = new URL(`https://${location.host}/payment-method-manifest/resources/payment-method-identifier.py`);
+  const host = options.host || location.host;
+  const url = new URL(`https://${
+      host}/payment-method-manifest/resources/payment-method-identifier.py`);
   url.searchParams.set('id', testId);
   if (options.link !== undefined) {
     const links = Array.isArray(options.link) ? options.link : [options.link];
     links.forEach(l => url.searchParams.append('link', l));
+  }
+  if (options.num_redirects !== undefined) {
+    url.searchParams.set('num_redirects', options.num_redirects);
+  }
+  if (options.redirect_location !== undefined) {
+    url.searchParams.set('redirect_location', options.redirect_location);
   }
   return url.href;
 }
@@ -22,9 +34,17 @@ function createPaymentMethodIdentifierUrl(testId, options = {}) {
 
 
 
-function createPaymentMethodManifestUrl(testId) {
-  const url = new URL(`https://${location.host}/payment-method-manifest/resources/payment-method-manifest.py`);
+
+
+
+function createPaymentMethodManifestUrl(testId, options = {}) {
+  const host = options.host || location.host;
+  const url = new URL(`https://${
+      host}/payment-method-manifest/resources/payment-method-manifest.py`);
   url.searchParams.set('id', testId);
+  if (options.redirect_location !== undefined) {
+    url.searchParams.set('redirect_location', options.redirect_location);
+  }
   return url.href;
 }
 
