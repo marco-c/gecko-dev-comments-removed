@@ -113,6 +113,11 @@ const ERR_PARENT_PID_PERSISTS =
 const ERR_BGTASK_EXCLUSIVE =
   "failed to exclusively open executable file from background task: ";
 
+
+
+
+const EXIT_VALUE_CRASHED = "crashed";
+
 const LOG_SVC_SUCCESSFUL_LAUNCH = "Process was started... waiting on result.";
 const LOG_SVC_UNSUCCESSFUL_LAUNCH =
   "The install directory path is not valid for this application.";
@@ -2292,7 +2297,16 @@ function runUpdate(
 
   let process = Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
   process.init(launchBin);
-  process.run(true, args, args.length);
+  try {
+    process.run(true, args, args.length);
+  } catch (e) {
+    
+    
+    
+    if (process.exitValue >= 0) {
+      throw e;
+    }
+  }
 
   resetEnvironment();
 
@@ -2300,15 +2314,19 @@ function runUpdate(
     Services.env.set("MOZ_TEST_SHORTER_WAIT_PID", "");
   }
 
+  let exitValue = process.exitValue;
+  let expectCrash = aExpectedExitValue == EXIT_VALUE_CRASHED;
+  let checkExitValue = !gIsServiceTest && !expectCrash;
+
   let status = readStatusFile();
   if (
-    (!gIsServiceTest && process.exitValue != aExpectedExitValue) ||
+    (checkExitValue && exitValue != aExpectedExitValue) ||
     (status != aExpectedStatus && !gIsServiceTest && !isInvalidArgTest)
   ) {
-    if (process.exitValue != aExpectedExitValue) {
+    if (checkExitValue && exitValue != aExpectedExitValue) {
       logTestInfo(
         "updater exited with unexpected value! Got: " +
-          process.exitValue +
+          exitValue +
           ", Expected: " +
           aExpectedExitValue
       );
@@ -2331,9 +2349,9 @@ function runUpdate(
     }
   }
 
-  if (!gIsServiceTest) {
+  if (checkExitValue) {
     Assert.equal(
-      process.exitValue,
+      exitValue,
       aExpectedExitValue,
       "the process exit value" + MSG_SHOULD_EQUAL
     );

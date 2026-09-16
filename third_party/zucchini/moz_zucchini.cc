@@ -114,49 +114,14 @@ static constexpr DWORD kMsvcCppExceptionCode = 0xE06D7363;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static int FilterRecoverableException(EXCEPTION_RECORD* aExceptionRecord,
-                                      DWORD& aOutExceptionCode) {
-  aOutExceptionCode = aExceptionRecord->ExceptionCode;
-
-  if (aOutExceptionCode == EXCEPTION_BREAKPOINT ||
-      aOutExceptionCode == EXCEPTION_ILLEGAL_INSTRUCTION ||
-      aOutExceptionCode ==
-          kMsvcCppExceptionCode ) {
-    return EXCEPTION_EXECUTE_HANDLER;
-  }
-
-  return EXCEPTION_CONTINUE_SEARCH;
-}
-
-#  define BEGIN_ENTRY_POINT()           \
-    DWORD mozZucchiniExceptionCode = 0; \
+#  define BEGIN_ENTRY_POINT()                                              \
     __try {
-#  define END_ENTRY_POINT()                                                    \
-    }                                                                          \
-    __except (                                                                 \
-        FilterRecoverableException(GetExceptionInformation()->ExceptionRecord, \
-                                   mozZucchiniExceptionCode)) {                \
-      if (mozZucchiniExceptionCode == kMsvcCppExceptionCode) {                 \
-        LOG(ERROR) << "std::bad_alloc caught in zucchini.";                    \
-        return status::kStatusOutOfMemory;                                     \
-      }                                                                        \
-      LOG(ERROR) << "hard crash caught in zucchini; this is a bug.";           \
-      return status::kStatusFatal;                                             \
+#  define END_ENTRY_POINT()                                                \
+    }                                                                      \
+    __except (GetExceptionInformation()->ExceptionRecord->ExceptionCode == \
+              kMsvcCppExceptionCode) {                                     \
+      LOG(ERROR) << "std::bad_alloc caught in zucchini.";                  \
+      return status::kStatusOutOfMemory;                                   \
     }
 
 
