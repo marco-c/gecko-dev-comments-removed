@@ -1296,7 +1296,15 @@ void SpeechRecognition::HandleRecognitionResultFromBackend(
   RefPtr<SpeechRecognitionAlternative> alternative =
       new SpeechRecognitionAlternative(this);
 
+  
+  
+  
+  
+  
   alternative->mTranscript = NS_ConvertUTF8toUTF16(aTranscript);
+  if (!mRecognitionResults.IsEmpty()) {
+    alternative->mTranscript.Insert(u' ', 0);
+  }
   
   
   
