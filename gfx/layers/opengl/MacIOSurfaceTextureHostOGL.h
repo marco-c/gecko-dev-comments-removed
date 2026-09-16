@@ -15,8 +15,6 @@ class MacIOSurface;
 namespace mozilla {
 namespace layers {
 
-class GpuFence;
-
 
 
 
@@ -78,7 +76,6 @@ class MacIOSurfaceTextureHostOGL : public TextureHost {
 
   const SurfaceDescriptorMacIOSurface mDescriptor;
   const RefPtr<MacIOSurface> mSurface;
-  const RefPtr<GpuFence> mGpuFence;
 
  protected:
   RefPtr<GLTextureSource> mTextureSource;
