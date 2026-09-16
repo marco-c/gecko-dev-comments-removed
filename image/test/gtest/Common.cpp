@@ -1057,13 +1057,6 @@ ImageTestCase LargeJXLTestCase() {
                        TEST_CASE_IGNORE_OUTPUT);
 }
 
-
-
-ImageTestCase LargeJXLReferenceWebPTestCase() {
-  return ImageTestCase("large-jxl-reference.webp", "image/webp",
-                       IntSize(1200, 660), TEST_CASE_IGNORE_OUTPUT);
-}
-
 ImageTestCase TransparentJXLTestCase() {
   auto testCase = ImageTestCase("transparent.jxl", "image/jxl",
                                 IntSize(100, 100), TEST_CASE_IS_TRANSPARENT);
