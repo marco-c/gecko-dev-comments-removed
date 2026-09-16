@@ -256,6 +256,14 @@ void js::jit::JitActivation::startWasmTrap(wasm::Trap trap,
   
   
   
+  if (unwound) {
+    cx()->setRealmForJitExceptionHandler(
+        wasm::GetNearestEffectiveInstance(fp)->realm());
+  }
+
+  
+  
+  
   
   
   wasmTrapCode_ = wasm::LookupCode(state.pc);
