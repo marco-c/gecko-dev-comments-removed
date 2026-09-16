@@ -1157,7 +1157,9 @@ void SpeechRecognition::DispatchNoMatch() {
   
   
   RootedDictionary<SpeechRecognitionEventInit> init(RootingCx());
-  init.mBubbles = true;
+  
+  
+  init.mBubbles = false;
   init.mCancelable = false;
   init.mResultIndex = 0;
   init.mResults = new SpeechRecognitionResultList(this);
@@ -1266,7 +1268,9 @@ void SpeechRecognition::DispatchError(SpeechRecognitionErrorCode aErrorCode,
   RefPtr<SpeechRecognitionErrorEvent> srError =
       new SpeechRecognitionErrorEvent(nullptr, nullptr, nullptr);
 
-  srError->InitSpeechRecognitionError(u"error"_ns, true, false, aErrorCode,
+  
+  
+  srError->InitSpeechRecognitionError(u"error"_ns, false, false, aErrorCode,
                                       aMessage);
   srError->SetTrusted(true);
 
@@ -1383,7 +1387,9 @@ void SpeechRecognition::HandleRecognitionResultFromBackend(
   }
 
   RootedDictionary<SpeechRecognitionEventInit> init(RootingCx());
-  init.mBubbles = true;
+  
+  
+  init.mBubbles = false;
   init.mCancelable = false;
   init.mResultIndex = resultIndex;
   init.mResults = resultList;
