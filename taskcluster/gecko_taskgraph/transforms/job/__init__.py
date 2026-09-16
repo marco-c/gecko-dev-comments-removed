@@ -221,7 +221,14 @@ def get_platform(job):
             return f"{platform}-aarch64"
         return platform
     elif "macosx" in job["worker"]["os"]:
-        return "macosx64"
+        platform = "macosx64"
+        
+        
+        
+        worker_type = job["worker-type"]
+        if "arm64" in worker_type or "-m" in worker_type:
+            return f"{platform}-aarch64"
+        return platform
     else:
         raise ValueError(f"unexpected worker.os value {job['worker']['os']}")
 
