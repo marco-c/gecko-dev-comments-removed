@@ -4,10 +4,6 @@
 
 "use strict";
 
-const { IPPExceptionsManager } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs"
-);
-
 const MOCK_SITE_NAME = "https://example.com";
 
 const PERM_NAME = "ipp-vpn";
@@ -74,7 +70,6 @@ add_task(async function test_site_exclusion_toggle_with_siteData() {
   setupService({
     isReady: true,
   });
-  await IPPFxaAuthProvider.checkForUpgrade();
 
   let content = await openPanel({
     isProtectionEnabled: false,
@@ -129,7 +124,6 @@ add_task(async function test_site_exclusion_toggle_no_siteData() {
   setupService({
     isReady: true,
   });
-  await IPPFxaAuthProvider.checkForUpgrade();
 
   let content = await openPanel({
     isProtectionEnabled: false,
@@ -155,7 +149,6 @@ add_task(async function test_site_exclusion_VPN_error() {
   setupService({
     isReady: true,
   });
-  await IPPFxaAuthProvider.checkForUpgrade();
 
   let content = await openPanel({
     isProtectionEnabled: true,
@@ -206,7 +199,6 @@ add_task(async function test_site_exclusion_toggle_pressed_isExclusion() {
   setupService({
     isReady: true,
   });
-  await IPPFxaAuthProvider.checkForUpgrade();
 
   let content = await openPanel({
     isProtectionEnabled: true,
@@ -273,9 +265,8 @@ add_task(
     setupService({
       isReady: true,
     });
-    await IPPFxaAuthProvider.checkForUpgrade();
 
-    let setExclusionSpy = sandbox.spy(IPPExceptionsManager, "setExclusion");
+    let setRuleSpy = sandbox.spy(IPPPermissionRules, "setRule");
     sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
 
     
@@ -320,13 +311,13 @@ add_task(
 
     Assert.ok(true, "Disable VPN protection for site event was dispatched");
     Assert.ok(
-      setExclusionSpy.calledOnce,
-      "IPPExceptionsManager.setExclusion should be called after disabling VPN"
+      setRuleSpy.calledOnce,
+      "IPPPermissionRules.setRule should be called after disabling VPN"
     );
     Assert.strictEqual(
-      setExclusionSpy.firstCall.args[1],
-      true,
-      "IPPExceptionsManager.setExclusion should be called with shouldExclude=true"
+      setRuleSpy.firstCall.args[1],
+      IPPPrincipalRules.EXCLUDED,
+      "IPPPermissionRules.setRule should be called with EXCLUDED"
     );
     Assert.ok(
       toolbarButton.classList.contains("ipprotection-excluded"),
@@ -343,13 +334,13 @@ add_task(
 
     Assert.ok(true, "Enable VPN protection for site event was dispatched");
     Assert.ok(
-      setExclusionSpy.calledTwice,
-      "IPPExceptionsManager.setExclusion should be called two times now"
+      setRuleSpy.calledTwice,
+      "IPPPermissionRules.setRule should be called two times now"
     );
     Assert.strictEqual(
-      setExclusionSpy.secondCall.args[1],
-      false,
-      "IPPExceptionsManager.setExclusion should be called with shouldExclude=false"
+      setRuleSpy.secondCall.args[1],
+      IPPPrincipalRules.DEFAULT,
+      "IPPPermissionRules.setRule should be called with DEFAULT to clear it"
     );
     Assert.ok(
       toolbarButton.classList.contains("ipprotection-on"),
@@ -376,7 +367,6 @@ add_task(
     setupService({
       isReady: true,
     });
-    await IPPFxaAuthProvider.checkForUpgrade();
 
     sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
 
@@ -470,7 +460,6 @@ add_task(async function test_site_exclusion_updates_on_navigation_same_tab() {
   setupService({
     isReady: true,
   });
-  await IPPFxaAuthProvider.checkForUpgrade();
 
   sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
 
@@ -558,7 +547,6 @@ add_task(async function test_site_exclusion_updates_on_tab_switch() {
   setupService({
     isReady: true,
   });
-  await IPPFxaAuthProvider.checkForUpgrade();
 
   sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
 
@@ -688,6 +676,8 @@ add_task(async function test_site_exclusion_description_visibility() {
 
 
 
+
+
 add_task(async function test_site_exclusion_toggle_privileged_page() {
   const sandbox = sinon.createSandbox();
   const ABOUT_PAGE = "about:about";
@@ -695,10 +685,9 @@ add_task(async function test_site_exclusion_toggle_privileged_page() {
   setupService({
     isReady: true,
   });
-  await IPPFxaAuthProvider.checkForUpgrade();
 
-  let panel = IPProtection.getPanel(window);
-  sandbox.stub(panel, "_isPrivilegedPage").returns(true);
+  sandbox.stub(IPPSiteRuleManager, "canManage").returns(false);
+  sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
 
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, ABOUT_PAGE);
 
@@ -713,6 +702,16 @@ add_task(async function test_site_exclusion_toggle_privileged_page() {
   Assert.ok(
     !content.siteExclusionControlEl,
     "Site exclusion control should not be present on privileged pages"
+  );
+
+  let toolbarButton = document.getElementById(IPProtectionWidget.WIDGET_ID);
+  Assert.ok(
+    toolbarButton.classList.contains("ipprotection-on"),
+    "Toolbar icon should show the connection status on privileged pages"
+  );
+  Assert.ok(
+    !toolbarButton.classList.contains("ipprotection-excluded"),
+    "Toolbar icon should not show excluded status on privileged pages"
   );
 
   await closePanel();
