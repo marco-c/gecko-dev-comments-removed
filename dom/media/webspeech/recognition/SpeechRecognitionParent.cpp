@@ -518,7 +518,11 @@ void SpeechRecognitionParent::InitializeParakeetContext(
 
   
   
-  ProcessAudioStreaming();
+  
+  
+  mRecognitionThread->Dispatch(NS_NewRunnableFunction(
+      "Parakeet streaming loop",
+      [self = RefPtr{this}]() { self->ProcessAudioStreaming(); }));
 }
 
 SpeechRecognitionParent::~SpeechRecognitionParent() {
