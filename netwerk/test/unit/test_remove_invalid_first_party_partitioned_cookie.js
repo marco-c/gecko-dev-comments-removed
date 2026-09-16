@@ -146,6 +146,9 @@ add_task(async function run_test() {
   }
 
   
+  
+  
+  const invalidCookiesRemoved = new _promise_observer("cookie-saved-on-disk");
   await promise_load_profile();
 
   
@@ -177,6 +180,7 @@ add_task(async function run_test() {
   }
 
   
+  await invalidCookiesRemoved;
   {
     const dbConnection = Services.storage.openDatabase(
       do_get_cookie_file(profile)
