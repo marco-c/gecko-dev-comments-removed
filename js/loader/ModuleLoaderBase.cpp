@@ -1374,8 +1374,14 @@ void ModuleLoaderBase::StartFetchingModuleDependencies(
   
   
   
+  
+  
+  
+  
+  Rooted<JSObject*> global(cx, mGlobalObject->GetGlobalJSObject());
   bool isSync = aRequest->URI()->SchemeIs("chrome") ||
-                aRequest->URI()->SchemeIs("resource");
+                aRequest->URI()->SchemeIs("resource") ||
+                !mGlobalObject->CanRunJSMicroTask(global);
 
   
   if (aRequest->HasScriptLoadContext() && !isSync) {
