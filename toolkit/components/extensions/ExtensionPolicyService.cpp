@@ -375,7 +375,8 @@ static bool IsTabOrExtensionBrowser(dom::BrowsingContext* aBC) {
 
 #ifdef MOZ_THUNDERBIRD
   
-  rv = rv || group == u"single-site"_ns || group == u"single-page"_ns;
+  rv = rv || group == u"mail-message"_ns || group == u"single-site"_ns ||
+       group == u"single-page"_ns;
 #endif
 
   return rv;
