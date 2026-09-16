@@ -137,7 +137,7 @@ def bootstrap(command_context, **kwargs):
     orig_dir = os.getcwd()
     os.chdir(ensure_dir_exists(tools_dir()))
     try:
-        kwargs["from_build"] = ("linux64-gcc-10-sixgill", "linux64-gcc-10")
+        kwargs["from_build"] = ("linux64-gcc-11-sixgill", "linux64-gcc-11")
         command_context._mach_context.commands.dispatch(
             "artifact", command_context._mach_context, subcommand="toolchain", **kwargs
         )
@@ -327,23 +327,19 @@ def gather_hazard_data(command_context, **kwargs):
 
     work_dir = get_work_dir(command_context, project, kwargs["work_dir"])
     ensure_dir_exists(work_dir)
-    with open(os.path.join(work_dir, "defaults.py"), "w") as fh:
-        data = textwrap.dedent(
-            """\
-            analysis_scriptdir = "{script_dir}"
-            objdir = "{objdir}"
-            source = "{srcdir}"
-            sixgill = "{sixgill_dir}/usr/libexec/sixgill"
-            sixgill_bin = "{sixgill_dir}/usr/bin"
-        """
-        ).format(
-            script_dir=script_dir(command_context),
-            objdir=objdir,
-            srcdir=command_context.topsrcdir,
-            sixgill_dir=sixgill_dir(),
-            gcc_dir=gcc_dir(),
+    with open(os.path.join(work_dir, "config.json"), "w") as fh:
+        json.dump(
+            {
+                "analysis_scriptdir": script_dir(command_context),
+                "objdir": objdir,
+                "source": command_context.topsrcdir,
+                "sixgill": os.path.join(sixgill_dir(), "usr", "libexec", "sixgill"),
+                "sixgill_bin": os.path.join(sixgill_dir(), "usr", "bin"),
+            },
+            fh,
+            indent=4,
         )
-        fh.write(data)
+        fh.write("\n")
 
     buildscript = " ".join([
         command_context.topsrcdir + "/mach hazards compile",
@@ -547,7 +543,14 @@ def annotated_source(filename, query):
 
     fh = open(filename)
 
-    out = "<pre>"
+    out = """
+<style>
+:target {
+  scroll-margin-top: 4rem; /* show 4 lines above the targeted line */
+}
+</style>
+<pre>
+"""
     for lineno, line in enumerate(fh, 1):
         processed = f"{lineno} <span id='{lineno}'"
         if line0 <= lineno <= line1:
@@ -591,7 +594,7 @@ def view_hazards(command_context, project, haz_objdir, work_dir, port, serve_onl
     httpd = None
 
     def serve_source_file(request, path):
-        info = {"req": path}
+        info = {"req": path, "path": path}
 
         def log(fmt, level=logging.INFO):
             return command_context.log(level, "view-hazards", info, fmt)
@@ -606,11 +609,12 @@ def view_hazards(command_context, project, haz_objdir, work_dir, port, serve_onl
         roots = (command_context.topsrcdir, haz_objdir)
 
         try:
-            
-            
             command_context.log(
                 logging.DEBUG, "view-hazards", {"path": path}, "Raw path: {path}"
             )
+
+            
+            
             path_component = r"\w[\w\-\.\+]*"
             if not re.match(f"({path_component}/)*{path_component}$", path):
                 raise ValueError("invalid path")
