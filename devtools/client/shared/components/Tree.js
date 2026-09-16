@@ -970,42 +970,14 @@ class Tree extends Component {
       : !!this.props.getChildren(item).length;
   }
 
-  
-
-
-
-
-
-
-
-
-  _getDefaultSelectedItem(traversal) {
-    return traversal[0]?.item;
-  }
-
   render() {
     const traversal = this._dfsFromRoots();
     const { active, focused } = this.props;
-    const focusedKey = focused != null ? this.props.getKey(focused) : null;
-
-    
-    
-    let activeDescendantId;
-    if (this.props.onFocus) {
-      if (focused != null) {
-        activeDescendantId = focusedKey;
-      } else {
-        
-        const defaultItem = this._getDefaultSelectedItem(traversal);
-        if (defaultItem != null) {
-          activeDescendantId = this.props.getKey(defaultItem);
-        }
-      }
-    }
 
     const nodes = traversal.map((v, i) => {
       const { item, depth } = traversal[i];
-      const key = this.props.getKey(item);
+      const key = this.props.getKey(item, i);
+      const focusedKey = focused ? this.props.getKey(focused, i) : null;
       return TreeNodeFactory({
         
         
@@ -1055,7 +1027,7 @@ class Tree extends Component {
         onKeyPress: this._preventArrowKeyScrolling,
         onKeyUp: this._preventArrowKeyScrolling,
         onFocus: ({ nativeEvent }) => {
-          if (focused != null || !nativeEvent || !this.treeRef.current) {
+          if (focused || !nativeEvent || !this.treeRef.current) {
             return;
           }
 
@@ -1067,13 +1039,13 @@ class Tree extends Component {
             explicitOriginalTarget !== this.treeRef.current &&
             !this.treeRef.current.contains(explicitOriginalTarget)
           ) {
-            this._focus(this._getDefaultSelectedItem(traversal));
+            this._focus(traversal[0].item);
           }
         },
         onBlur: this._onBlur,
         "aria-label": this.props.label,
         "aria-labelledby": this.props.labelledby,
-        "aria-activedescendant": activeDescendantId,
+        "aria-activedescendant": focused && this.props.getKey(focused),
         style,
       },
       nodes

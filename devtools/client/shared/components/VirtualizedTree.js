@@ -743,18 +743,6 @@ class Tree extends Component {
     this._focus(parentIndex, parent, { alignTo: "top" });
   }
 
-  
-
-
-
-
-
-
-
-  _getDefaultSelectedItem(traversalSlice) {
-    return traversalSlice[0]?.item;
-  }
-
   render() {
     const traversal = this._dfsFromRoots();
 
@@ -833,21 +821,6 @@ class Tree extends Component {
       })
     );
 
-    
-    
-    let activeDescendantId;
-    if (this.props.onFocus) {
-      if (focused != null) {
-        activeDescendantId = this.props.getKey(focused);
-      } else {
-        
-        const defaultItem = this._getDefaultSelectedItem(toRender);
-        if (defaultItem != null) {
-          activeDescendantId = this.props.getKey(defaultItem);
-        }
-      }
-    }
-
     return dom.div(
       {
         className: "tree",
@@ -861,14 +834,14 @@ class Tree extends Component {
         onMouseDown: () => this.setState({ mouseDown: true }),
         onMouseUp: () => this.setState({ mouseDown: false }),
         onFocus: () => {
-          if (focused != null || this.state.mouseDown) {
+          if (focused || this.state.mouseDown) {
             return;
           }
 
           
           
           
-          this._focus(begin, this._getDefaultSelectedItem(toRender));
+          this._focus(begin, toRender[0].item);
         },
         onBlur: e => {
           if (active != null) {
@@ -884,7 +857,7 @@ class Tree extends Component {
         },
         "aria-label": this.props.label,
         "aria-labelledby": this.props.labelledby,
-        "aria-activedescendant": activeDescendantId,
+        "aria-activedescendant": focused && this.props.getKey(focused),
         style: {
           padding: 0,
           margin: 0,
