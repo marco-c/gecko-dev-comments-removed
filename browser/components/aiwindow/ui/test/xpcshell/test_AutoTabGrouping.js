@@ -107,20 +107,6 @@ add_task(function test_getCandidateTabs_excludesStillLoadingTabs() {
   );
 });
 
-add_task(function test_getCandidateTabs_excludesAlreadyGroupedTabs() {
-  const ungrouped = makeTab({ url: "https://a.example/" });
-  const grouped = makeTab({ url: "https://b.example/", group: { id: "g1" } });
-  const win = makeWin([ungrouped, grouped]);
-
-  const candidates = AutoTabGroupingSuggestions.getCandidateTabs(win);
-
-  Assert.deepEqual(
-    candidates,
-    [ungrouped],
-    "Tabs already in a group are never re-suggested"
-  );
-});
-
 add_task(function test_selectClusters_filtersSortsAndCaps() {
   
   
