@@ -6,10 +6,10 @@
 
 #include <stdint.h>
 
-#include <cmath>  
 #include <memory>
 #include <utility>
 
+#include "api/frame_transformer_factory.h"
 #include "api/frame_transformer_interface.h"
 #include "js/RootingAPI.h"
 #include "jsapi/RTCEncodedFrameBase.h"
@@ -31,7 +31,10 @@ RTCEncodedAudioFrame::RTCEncodedAudioFrame(
     std::unique_ptr<webrtc::TransformableFrameInterface> aFrame,
     uint64_t aCounter, RTCRtpScriptTransformer* aOwner,
     const Maybe<RTCStatsTimestampMaker>& aTimestampMaker)
-    : RTCEncodedFrameBase(aGlobal, std::move(aFrame), aCounter, aOwner) {
+    : RTCEncodedAudioFrameData{RTCEncodedFrameState{std::move(aFrame), aCounter,
+                                                     0}},
+      RTCEncodedFrameBase(aGlobal, static_cast<RTCEncodedFrameState&>(*this),
+                          aOwner) {
   mMetadata.mSynchronizationSource.Construct(mFrame->GetSsrc());
   mMetadata.mPayloadType.Construct(mFrame->GetPayloadType());
   mMetadata.mMimeType.Construct(NS_ConvertASCIItoUTF16(mFrame->GetMimeType()));
@@ -71,14 +74,13 @@ RTCEncodedAudioFrame::RTCEncodedAudioFrame(
 }
 
 RTCEncodedAudioFrame::RTCEncodedAudioFrame(nsIGlobalObject* aGlobal,
-                                           RTCEncodedAudioFrameData aData,
-                                           JS::Handle<JSObject*> aBuffer)
-    : RTCEncodedFrameBase(aGlobal, aBuffer),
-      mMetadata(std::move(aData.mMetadata)) {}
-
-RTCEncodedAudioFrameData RTCEncodedAudioFrame::CloneMetadata() const {
-  return {RTCEncodedAudioFrameMetadata(mMetadata)};
-}
+                                           RTCEncodedAudioFrameData&& aData)
+    : RTCEncodedAudioFrameData{RTCEncodedFrameState{std::move(aData.mFrame),
+                                                    aData.mCounter,
+                                                    aData.mTimestamp},
+                               std::move(aData.mMetadata)},
+      RTCEncodedFrameBase(aGlobal, static_cast<RTCEncodedFrameState&>(*this),
+                          nullptr) {}
 
 JSObject* RTCEncodedAudioFrame::WrapObject(JSContext* aCx,
                                            JS::Handle<JSObject*> aGivenProto) {
@@ -95,29 +97,14 @@ already_AddRefed<RTCEncodedAudioFrame> RTCEncodedAudioFrame::Constructor(
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
   }
-
-  JSContext* cx = aGlobal.Context();
-  JS::Rooted<JSObject*> buffer(cx);
-  if (!aOriginalFrame.CopyData(cx, &buffer)) {
-    aRv.NoteJSContextException(cx);
-    return nullptr;
-  }
-  auto frame = MakeRefPtr<RTCEncodedAudioFrame>(
-      global, aOriginalFrame.CloneMetadata(), buffer);
+  auto frame = MakeRefPtr<RTCEncodedAudioFrame>(global, aOriginalFrame.Clone());
 
   if (aOptions.mMetadata.WasPassed()) {
     const auto& src = aOptions.mMetadata.Value();
     auto& dst = frame->mMetadata;
 
     auto set_if = [](auto& dst, const auto& src) {
-      if (!src.WasPassed()) {
-        return;
-      }
-      if (!dst.WasPassed()) {
-        
-        dst.Construct();
-      }
-      dst.Value() = src.Value();
+      if (src.WasPassed()) dst.Value() = src.Value();
     };
     set_if(dst.mSynchronizationSource, src.mSynchronizationSource);
     set_if(dst.mPayloadType, src.mPayloadType);
@@ -131,9 +118,12 @@ already_AddRefed<RTCEncodedAudioFrame> RTCEncodedAudioFrame::Constructor(
   return frame.forget();
 }
 
-unsigned long RTCEncodedAudioFrame::Timestamp() const {
-  return mMetadata.mRtpTimestamp.WasPassed() ? mMetadata.mRtpTimestamp.Value()
-                                             : 0;
+RTCEncodedAudioFrameData RTCEncodedAudioFrameData::Clone() const {
+  return RTCEncodedAudioFrameData{
+      RTCEncodedFrameState{webrtc::CloneAudioFrame(
+          static_cast<webrtc::TransformableAudioFrameInterface*>(
+              mFrame.get()))},
+      RTCEncodedAudioFrameMetadata(mMetadata)};
 }
 
 void RTCEncodedAudioFrame::GetMetadata(
@@ -141,16 +131,15 @@ void RTCEncodedAudioFrame::GetMetadata(
   aMetadata = mMetadata;
 }
 
+bool RTCEncodedAudioFrame::CheckOwner(RTCRtpScriptTransformer* aOwner) const {
+  return aOwner == mOwner;
+}
+
 
 
 JSObject* RTCEncodedAudioFrame::ReadStructuredClone(
     JSContext* aCx, nsIGlobalObject* aGlobal, JSStructuredCloneReader* aReader,
-    RTCEncodedAudioFrameData aData) {
-  JS::Rooted<JSObject*> buffer(aCx);
-  if (!ReadData(aCx, aReader, &buffer)) {
-    return nullptr;
-  }
-
+    RTCEncodedAudioFrameData& aData) {
   JS::Rooted<JS::Value> value(aCx, JS::NullValue());
   
   
@@ -159,8 +148,7 @@ JSObject* RTCEncodedAudioFrame::ReadStructuredClone(
   
   
   {
-    auto frame =
-        MakeRefPtr<RTCEncodedAudioFrame>(aGlobal, std::move(aData), buffer);
+    auto frame = MakeRefPtr<RTCEncodedAudioFrame>(aGlobal, std::move(aData));
     if (!GetOrCreateDOMReflector(aCx, frame, &value) || !value.isObject()) {
       return nullptr;
     }
@@ -169,22 +157,20 @@ JSObject* RTCEncodedAudioFrame::ReadStructuredClone(
 }
 
 bool RTCEncodedAudioFrame::WriteStructuredClone(
-    JSContext* aCx, JSStructuredCloneWriter* aWriter,
-    StructuredCloneHolder* aHolder) const {
+    JSStructuredCloneWriter* aWriter, StructuredCloneHolder* aHolder) const {
   AssertIsOnOwningThread();
 
   
-  
   const uint32_t index =
       static_cast<uint32_t>(aHolder->RtcEncodedAudioFrames().Length());
-  if (NS_WARN_IF(!JS_WriteUint32Pair(aWriter, SCTAG_DOM_RTCENCODEDAUDIOFRAME,
-                                     index)) ||
-      !WriteData(aCx, aWriter)) {
-    return false;
-  }
-
-  aHolder->RtcEncodedAudioFrames().AppendElement(CloneMetadata());
-  return true;
+  
+  
+  
+  
+  
+  aHolder->RtcEncodedAudioFrames().AppendElement(Clone());
+  return !NS_WARN_IF(
+      !JS_WriteUint32Pair(aWriter, SCTAG_DOM_RTCENCODEDAUDIOFRAME, index));
 }
 
 }  

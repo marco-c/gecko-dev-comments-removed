@@ -11,8 +11,6 @@
 #include "mozilla/dom/TypedArray.h"  
 
 class nsIGlobalObject;
-struct JSStructuredCloneReader;
-struct JSStructuredCloneWriter;
 
 namespace webrtc {
 class TransformableFrameInterface;
@@ -20,24 +18,34 @@ class TransformableFrameInterface;
 
 namespace mozilla::dom {
 
+struct RTCEncodedFrameState {
+  std::unique_ptr<webrtc::TransformableFrameInterface> mFrame;
+  uint64_t mCounter = 0;
+  unsigned long mTimestamp = 0;
+
+  explicit RTCEncodedFrameState(
+      std::unique_ptr<webrtc::TransformableFrameInterface> aFrame,
+      uint64_t aCounter = 0, unsigned long aTimestamp = 0);
+
+  
+  ~RTCEncodedFrameState();
+
+  
+  RTCEncodedFrameState() = default;
+  RTCEncodedFrameState(RTCEncodedFrameState&&) noexcept = default;
+  RTCEncodedFrameState& operator=(RTCEncodedFrameState&&) noexcept = default;
+  RTCEncodedFrameState(const RTCEncodedFrameState&) = delete;
+  RTCEncodedFrameState& operator=(const RTCEncodedFrameState&) = delete;
+};
+
 class RTCRtpScriptTransformer;
 
 class RTCEncodedFrameBase : public nsISupports, public nsWrapperCache {
  public:
-  
-  
-  RTCEncodedFrameBase(
-      nsIGlobalObject* aGlobal,
-      std::unique_ptr<webrtc::TransformableFrameInterface> aFrame,
-      uint64_t aCounter, RTCRtpScriptTransformer* aOwner);
+  explicit RTCEncodedFrameBase(nsIGlobalObject* aGlobal,
+                               RTCEncodedFrameState& aState,
+                               RTCRtpScriptTransformer* aOwner);
 
-  
-  
-  
-  
-  RTCEncodedFrameBase(nsIGlobalObject* aGlobal, JS::Handle<JSObject*> aData);
-
-  
   
   RTCEncodedFrameBase(const RTCEncodedFrameBase&) = delete;
   RTCEncodedFrameBase& operator=(const RTCEncodedFrameBase&) = delete;
@@ -50,52 +58,36 @@ class RTCEncodedFrameBase : public nsISupports, public nsWrapperCache {
 
   nsIGlobalObject* GetParentObject() const;
 
+  
+  unsigned long Timestamp() const;
+
   void SetData(const ArrayBuffer& aData);
 
   void GetData(JSContext* aCx, JS::Rooted<JSObject*>* aObj) const;
-
-  
-  
-  bool HasData() const { return mData; }
 
   uint64_t GetCounter() const;
 
   size_t Size() const;
 
-  bool CheckOwner(RTCRtpScriptTransformer* aOwner) const {
-    return aOwner == mOwner;
-  }
+  virtual bool CheckOwner(RTCRtpScriptTransformer* aOwner) const = 0;
 
   std::unique_ptr<webrtc::TransformableFrameInterface> TakeFrame();
+
+  virtual bool IsVideo() const = 0;
 
  protected:
   virtual ~RTCEncodedFrameBase();
   void DetachData();
 
-  
-  
-  [[nodiscard]] bool CopyData(JSContext* aCx,
-                              JS::MutableHandle<JSObject*> aData) const;
-
-  
-  
-  
-  
-  [[nodiscard]] bool WriteData(JSContext* aCx,
-                               JSStructuredCloneWriter* aWriter) const;
-
-  
-  [[nodiscard]] static bool ReadData(JSContext* aCx,
-                                     JSStructuredCloneReader* aReader,
-                                     JS::MutableHandle<JSObject*> aData);
-
   RefPtr<nsIGlobalObject> mGlobal;
-  JS::Heap<JSObject*> mData;
+  RefPtr<RTCRtpScriptTransformer> mOwner;
 
   
-  RefPtr<RTCRtpScriptTransformer> mOwner;
-  std::unique_ptr<webrtc::TransformableFrameInterface> mFrame;
-  uint64_t mCounter = 0;
+  
+  
+  
+  RTCEncodedFrameState& mState;
+  JS::Heap<JSObject*> mData;
 };
 
 }  

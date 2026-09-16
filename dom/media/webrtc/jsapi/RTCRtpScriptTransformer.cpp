@@ -333,11 +333,6 @@ void RTCRtpScriptTransformer::TransformFrame(
                                         ++mLastEnqueuedFrameCounter, this,
                                         mTimestampMaker);
   }
-  if (NS_WARN_IF(!domFrame->HasData())) {
-    
-    return;
-  }
-
   mReadableSource->Enqueue(domFrame);
 }
 
