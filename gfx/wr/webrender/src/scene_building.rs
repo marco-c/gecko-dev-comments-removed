@@ -79,7 +79,7 @@ use crate::prim_store::borders::ImageBorder;
 use crate::prim_store::gradient::{
     GradientStopKey,
 };
-use crate::prim_store::image::{Image, StretchSizeKey, SubRectKey, YuvImage};
+use crate::prim_store::image::{Image, StretchSizeKey, YuvImage};
 use crate::prim_store::line_dec::LineDecoration;
 use crate::prim_store::picture::{Picture, PictureKey};
 use crate::picture_composite_mode::{PictureCompositeKey, PictureCompositeMode};
@@ -2972,43 +2972,6 @@ impl<'a> SceneBuilder<'a> {
             .. *info
         };
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let repeats = stretch_size_for_simplify.width < prim_rect.width()
-            || stretch_size_for_simplify.height < prim_rect.height()
-            || tile_spacing != LayoutSize::zero();
-        let visible = info.clip_rect.intersection_unchecked(&prim_rect);
-        let sub_rect = if repeats
-            || visible.is_empty()
-            || prim_rect.width() <= 0.0
-            || prim_rect.height() <= 0.0
-            || visible.contains_box(&prim_rect)
-        {
-            None
-        } else {
-            let fraction = |v: f32, min: f32, extent: f32| ((v - min) / extent).clamp(0.0, 1.0);
-            Some(SubRectKey {
-                min: api::key_types::PointKey {
-                    x: fraction(visible.min.x, prim_rect.min.x, prim_rect.width()),
-                    y: fraction(visible.min.y, prim_rect.min.y, prim_rect.height()),
-                },
-                max: api::key_types::PointKey {
-                    x: fraction(visible.max.x, prim_rect.min.x, prim_rect.width()),
-                    y: fraction(visible.max.y, prim_rect.min.y, prim_rect.height()),
-                },
-            })
-        };
-
         self.add_primitive(
             spatial_node_index,
             clip_node_id,
@@ -3020,7 +2983,6 @@ impl<'a> SceneBuilder<'a> {
                 color: color.into(),
                 image_rendering,
                 alpha_type,
-                sub_rect,
             },
         );
     }
