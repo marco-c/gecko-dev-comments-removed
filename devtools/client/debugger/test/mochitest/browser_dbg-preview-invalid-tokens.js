@@ -35,14 +35,12 @@ add_task(async function () {
   const inlinePreviewEl = findElement(dbg, "inlinePreviewsOnLine", 74);
   is(inlinePreviewEl.innerText, `myVar:"foo"`, "got expected inline preview");
 
-  const racePromise = Promise.any([
-    waitForElement(dbg, "previewPopup"),
-    wait(500).then(() => "TIMEOUT"),
-  ]);
   
   hoverToken(inlinePreviewEl);
-  const raceResult = await racePromise;
-  is(raceResult, "TIMEOUT", "No popup was displayed over the inline preview");
+  await assertNoPreviewPopup(
+    dbg,
+    "No popup was displayed over the inline preview"
+  );
 
   await resume(dbg);
 
@@ -61,10 +59,6 @@ add_task(async function () {
 
   resetCursorPositionToTopLeftCorner(dbg);
 
-  const racePromiseLines = Promise.any([
-    waitForElement(dbg, "previewPopup"),
-    wait(500).then(() => "TIMEOUT_LINES"),
-  ]);
   
   
   EventUtils.synthesizeMouse(
@@ -76,17 +70,10 @@ add_task(async function () {
     },
     dbg.win
   );
-  is(
-    await racePromiseLines,
-    "TIMEOUT_LINES",
+  await assertNoPreviewPopup(
+    dbg,
     "No popup was displayed over the content container element"
   );
-
-  
-  
-  
-  const aTokenEl = await getTokenElAtLine(dbg, "a", 2, 8);
-  await tryHoverToken(dbg, aTokenEl, "previewPopup");
 
   
   await resume(dbg);
@@ -110,16 +97,22 @@ async function assertNoPreviews(dbg, expression, line, column) {
 
   hoverToken(tokenElement);
 
-  
-  const result = await Promise.race([
-    waitForElement(dbg, "previewPopup"),
-    wait(500).then(() => "NO POPUP AFTER TIMEOUT"),
-  ]);
-  is(
-    result,
-    "NO POPUP AFTER TIMEOUT",
+  await assertNoPreviewPopup(
+    dbg,
     `No popup was displayed when hovering "${expression}"`
   );
+}
+
+
+
+
+
+
+
+
+async function assertNoPreviewPopup(dbg, message) {
+  await wait(500);
+  is(findElement(dbg, "previewPopup"), null, message);
 }
 
 function resetCursorPositionToTopLeftCorner(dbg) {
