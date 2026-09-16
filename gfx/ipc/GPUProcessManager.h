@@ -161,6 +161,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   
   bool AllocateAndConnectLayerTreeId(PCompositorBridgeChild* aCompositorBridge,
                                      base::ProcessId aOtherPid,
+                                     LayersId aEmbedderLayersId,
                                      LayersId* aOutLayersId,
                                      CompositorOptions* aOutCompositorOptions);
 
