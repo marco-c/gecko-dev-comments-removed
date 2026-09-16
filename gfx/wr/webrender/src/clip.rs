@@ -176,8 +176,7 @@ impl ClipTreeNode {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(MallocSizeOf)]
 pub struct ClipTreeLeaf {
-    pub node_id: ClipNodeId,
-
+    
     
     
     
@@ -393,7 +392,6 @@ impl ClipTree {
             let leaf = &leaves[id.0 as usize];
 
             pt.new_level(format!("{:?}", id));
-            pt.add_item(format!("node_id: {:?}", leaf.node_id));
             pt.add_item(format!("unsnapped_local_clip_rect: {:?}", leaf.unsnapped_local_clip_rect));
             pt.end_level();
         }
@@ -929,7 +927,7 @@ impl ClipTreeBuilder {
         &mut self,
         clip_node_id: ClipNodeId,
         extra_clips: &[ClipId],
-    ) -> ClipLeafId {
+    ) -> ClipNodeId {
         self.clip_handles_buffer.clear();
 
         for clip_id in extra_clips {
@@ -937,38 +935,19 @@ impl ClipTreeBuilder {
             self.clip_handles_buffer.push(entry);
         }
 
-        let node_id = self.tree.add(
+        self.tree.add(
             clip_node_id,
             &self.clip_handles_buffer,
-        );
-
-        let clip_leaf_id = ClipLeafId(self.tree.leaves.len() as u32);
-
-        self.tree.leaves.push(ClipTreeLeaf {
-            node_id,
-            
-            unsnapped_local_clip_rect: LayoutRect::max_rect(),
-        });
-
-        clip_leaf_id
+        )
     }
 
     
-    pub fn build_for_picture(
-        &mut self,
-        clip_node_id: ClipNodeId,
-    ) -> ClipLeafId {
-        let node_id = self.tree.add(
-            clip_node_id,
-            &[],
-        );
-
+    
+    
+    pub fn build_for_picture(&mut self) -> ClipLeafId {
         let clip_leaf_id = ClipLeafId(self.tree.leaves.len() as u32);
 
-        
-        
         self.tree.leaves.push(ClipTreeLeaf {
-            node_id,
             unsnapped_local_clip_rect: LayoutRect::max_rect(),
         });
 
@@ -981,8 +960,6 @@ impl ClipTreeBuilder {
         clip_node_id: ClipNodeId,
         info: &LayoutPrimitiveInfo,
     ) -> ClipLeafId {
-        let node_id = clip_node_id;
-
         
         
         
@@ -990,7 +967,7 @@ impl ClipTreeBuilder {
         #[cfg(debug_assertions)]
         {
             let inherited_root = self.clip_stack.last().unwrap().clip_node_id;
-            let mut cur = node_id;
+            let mut cur = clip_node_id;
             while cur != inherited_root && cur != ClipNodeId::NONE {
                 cur = self.tree.nodes[cur.0 as usize].parent;
             }
@@ -1003,7 +980,6 @@ impl ClipTreeBuilder {
         let clip_leaf_id = ClipLeafId(self.tree.leaves.len() as u32);
 
         self.tree.leaves.push(ClipTreeLeaf {
-            node_id,
             unsnapped_local_clip_rect: info.clip_rect,
         });
 
@@ -1485,7 +1461,9 @@ impl ClipStore {
         visibility_spatial_node_index: SpatialNodeIndex,
         snapper: &mut SpaceSnapper,
         clip_snap: ClipSnap,
-        clip_leaf_id: ClipLeafId,
+        
+        
+        clip_node_id: ClipNodeId,
         
         
         
@@ -1504,8 +1482,6 @@ impl ClipStore {
         self.active_local_clip_rect = None;
         self.active_pic_coverage_rect = PictureRect::max_rect();
 
-        let clip_leaf = clip_tree.get_leaf(clip_leaf_id);
-
         
         
         
@@ -1515,7 +1491,7 @@ impl ClipStore {
         
         
         let mut local_clip_rect = snapped_leaf_clip_rect;
-        let mut current = clip_leaf.node_id;
+        let mut current = clip_node_id;
 
         while current != clip_root && current != ClipNodeId::NONE {
             let node = clip_tree.get_node(current);
