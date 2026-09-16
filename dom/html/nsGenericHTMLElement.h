@@ -509,9 +509,6 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
   static bool ParseImageAttribute(nsAtom* aAttribute, const nsAString& aString,
                                   nsAttrValue& aResult);
 
-  static bool ParseReferrerAttribute(const nsAString& aString,
-                                     nsAttrValue& aResult);
-
   
 
 
