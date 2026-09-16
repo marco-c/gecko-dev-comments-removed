@@ -515,8 +515,27 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
   }
 
   if (readBytes == 0 && baseBlocksOffset != 0) {
-    mPlainBytes = mEncryptedBlock->MaxPayloadLength();
-    mNextByte = mEncryptedBlock->MaxPayloadLength();
+    
+    
+    
+    
+    rv = (*mBaseSeekableStream)
+             ->Seek(NS_SEEK_SET, (baseBlocksOffset - 1) * *mBlockSize);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    rv = ParseNextChunk(true , &readBytes);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    if (NS_WARN_IF(readBytes != mEncryptedBlock->MaxPayloadLength())) {
+      return NS_ERROR_CORRUPTED_CONTENT;
+    }
+
+    mPlainBytes = readBytes;
+    mNextByte = readBytes;
   } else {
     mPlainBytes = readBytes;
     mNextByte = nextByteOffset;
