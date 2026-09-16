@@ -278,10 +278,7 @@ void Http2Session::ShutdownStream(Http2StreamBase* aStream, nsresult aReason) {
   } else if (!mCleanShutdown && PossibleZeroRTTRetryError(aReason)) {
     CloseStream(aStream, aReason);
   } else {
-    
-    
-    
-    CloseStream(aStream, NS_ERROR_NET_UNCLEAN_SHUTDOWN);
+    CloseStream(aStream, NS_ERROR_ABORT);
   }
 }
 
