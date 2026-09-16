@@ -644,13 +644,10 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
     
     void SetFlexFecPayload(int payload_type);
 
-    void RecreateReceiveStream();
     void CreateReceiveStream();
 
     
-    
-    
-    bool ReconfigureCodecs(const std::vector<VideoCodecSettings>& recv_codecs);
+    void ReconfigureCodecs(const std::vector<VideoCodecSettings>& recv_codecs);
 
     const Environment env_;
     Call* const call_;

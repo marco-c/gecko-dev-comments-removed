@@ -170,6 +170,7 @@ class VideoReceiveStream2
   void SetAssociatedPayloadTypes(
       std::map<int, int> associated_payload_types) override;
   void SetRawPayloadTypes(std::set<int> raw_payload_types) override;
+  void SetDecoders(std::vector<Decoder> decoders) override;
 
   webrtc::VideoReceiveStreamInterface::Stats GetStats() const override;
 
@@ -256,6 +257,13 @@ class VideoReceiveStream2
 
   void UpdateHistograms();
   void ConfigureCodecs() RTC_RUN_ON(worker_sequence_checker_);
+  
+  
+  
+  void RegisterCodecsOnReceiver(const std::vector<Decoder>& old_decoders,
+                                const std::vector<Decoder>& new_decoders);
+  std::vector<RtpVideoStreamReceiver2::ReceiveCodec> GetReceiveCodecConfig()
+      const RTC_RUN_ON(worker_sequence_checker_);
   void CalculateCorruptionScore(
       const VideoFrame& frame,
       FrameInstrumentationData frame_instrumentation_data,
