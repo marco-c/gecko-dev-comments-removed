@@ -1038,6 +1038,12 @@ class MochitestDesktop:
     
     test_name = "automation.py"
 
+    
+    
+    
+    lastTestSeen = None
+    lastTestFinished = False
+
     def __init__(self, flavor, logger_options, staged_addons=None, quiet=False):
         update_mozinfo()
         self.flavor = flavor
@@ -3063,6 +3069,7 @@ toolbar#nav-bar {
 
             
             self.lastTestSeen = self.test_name
+            self.lastTestFinished = False
             self.lastManifest = currentManifest
             startTime = datetime.now()
 
@@ -3220,9 +3227,7 @@ toolbar#nav-bar {
                     
                     self.message_logger.process_message(message)
             else:
-                self.lastTestSeen = (
-                    currentManifest or "Main app process exited normally"
-                )
+                self.log.info("runtests.py | Main app process exited normally")
 
             self.log.info(
                 f"runtests.py | Application ran for: {str(datetime.now() - startTime)}"
@@ -4578,8 +4583,10 @@ toolbar#nav-bar {
             """record last test on harness"""
             if message["action"] == "test_start":
                 self.harness.lastTestSeen = message["test"]
+                self.harness.lastTestFinished = False
             elif message["action"] == "test_end":
-                self.harness.lastTestSeen = "{} (finished)".format(message["test"])
+                self.harness.lastTestSeen = message["test"]
+                self.harness.lastTestFinished = True
             return message
 
         def dumpScreenOnTimeout(self, message):
@@ -4610,7 +4617,7 @@ toolbar#nav-bar {
                     if message["action"] == "log"
                     else message["data"]
                 )
-                if "(finished)" in self.harness.lastTestSeen:
+                if self.harness.lastTestFinished:
                     self.lsanLeaks.log(line, self.harness.lastManifest)
                 else:
                     self.lsanLeaks.log(line, self.harness.lastTestSeen)
@@ -4624,7 +4631,7 @@ toolbar#nav-bar {
                     else message["data"]
                 )
                 pid = message.get("process")
-                if "(finished)" in self.harness.lastTestSeen:
+                if self.harness.lastTestFinished:
                     scope = self.harness.lastManifest
                 else:
                     scope = self.harness.lastTestSeen

@@ -346,13 +346,15 @@ class MochiRemoteIos(MochitestDesktop):
         
         outputHandler.finish()
 
-        lastTestSeen = currentManifest or "Main app process exited normally"
+        
+        
+        lastTestSeen = self.lastTestSeen or currentManifest
 
         crashed = self.check_for_crashes(symbolsPath, lastTestSeen)
         if crashed:
             status = 1
 
-        return status, lastTestSeen
+        return status, lastTestSeen or "Main app process exited normally"
 
     def check_for_crashes(self, symbols_path, last_test_seen):
         """

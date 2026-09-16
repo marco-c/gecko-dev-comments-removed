@@ -219,7 +219,9 @@ TestRunner._checkForHangs = function () {
       ) {
         TestRunner._haltTests = true;
 
-        TestRunner.currentTestURL = "(SimpleTest/TestRunner.js)";
+        
+        
+        
         reportError(
           frameWindow,
           TestRunner.maxTimeouts + " test timeouts, giving up."

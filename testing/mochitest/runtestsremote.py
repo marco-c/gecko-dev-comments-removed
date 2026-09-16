@@ -396,7 +396,9 @@ class MochiRemote(MochitestDesktop):
             % str(datetime.datetime.now() - startTime)
         )
 
-        lastTestSeen = currentManifest or "Main app process exited normally"
+        
+        
+        lastTestSeen = rpm.test_in_flight or currentManifest
 
         crashed = self.check_for_crashes(symbolsPath, lastTestSeen)
         if crashed:
@@ -406,7 +408,7 @@ class MochiRemote(MochitestDesktop):
         self.countfail += rpm.counts["fail"]
         self.counttodo += rpm.counts["todo"]
 
-        return status, lastTestSeen
+        return status, lastTestSeen or "Main app process exited normally"
 
     def check_for_crashes(self, symbols_path, last_test_seen):
         """
