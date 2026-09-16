@@ -21,10 +21,6 @@
 
 #include <regex>
 
-#ifdef XP_WIN
-#  include <windows.h>
-#endif  
-
 class nsBaseClipboard;
 class nsIPrincipal;
 class nsIPrintSettings;
@@ -87,9 +83,8 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
                          dom::WindowGlobalParent* aWindowGlobal,
                          dom::WindowGlobalParent* aSourceWindowGlobal);
 
-  ContentAnalysisRequest(const nsTArray<uint8_t> aPrintData,
-                         nsCOMPtr<nsIURI> aUrl, nsString aPrinterName,
-                         Reason aReason,
+  ContentAnalysisRequest(nsTArray<uint8_t> aPrintData, nsCOMPtr<nsIURI> aUrl,
+                         nsString aPrinterName, Reason aReason,
                          dom::WindowGlobalParent* aWindowGlobalParent);
 
   ContentAnalysisRequest(const ContentAnalysisRequest&) = delete;
@@ -145,7 +140,7 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
   int64_t mUserActionRequestsCount = 1;
 
   
-  OperationType mOperationTypeForDisplay = OperationType::eClipboard;
+  OperationType mOperationTypeForDisplay = OperationType::ePasteClipboard;
 
   
   
@@ -155,12 +150,9 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
   nsString mPrinterName;
 
   RefPtr<dom::WindowGlobalParent> mWindowGlobalParent;
-#ifdef XP_WIN
+
   
-  HANDLE mPrintDataHandle = 0;
-  
-  uint64_t mPrintDataSize = 0;
-#endif
+  nsTArray<uint8_t> mPrintData;
 
   
   RefPtr<mozilla::dom::WindowGlobalParent> mSourceWindowGlobal;
@@ -196,7 +188,6 @@ class ContentAnalysis final : public nsIContentAnalysis,
   ContentAnalysis(const ContentAnalysis&) = delete;
   ContentAnalysis& operator=(ContentAnalysis&) = delete;
 
-#if defined(XP_WIN)
   struct PrintAllowedResult final {
     bool mAllowed;
     dom::MaybeDiscarded<dom::BrowsingContext>
@@ -227,7 +218,6 @@ class ContentAnalysis final : public nsIContentAnalysis,
   PrintToPDFToDetermineIfPrintAllowed(
       dom::CanonicalBrowsingContext* aBrowsingContext,
       nsIPrintSettings* aPrintSettings);
-#endif  
 
   
   
