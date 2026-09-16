@@ -6,7 +6,7 @@ prefs = [
 ]
 support-files = [
   "head.js",
-  "../head.js",
+  "../head-common.js",
   "head_smart_window.js",
 ]
 tags = "os_integration"
@@ -32,6 +32,8 @@ tags = "os_integration"
 ["browser_aiFeatures_smart_window_model_settings_custom.js"]
 
 ["browser_aiFeatures_smart_window_telemetry.js"]
+
+["browser_aiFeatures_speech_recognition.js"]
 
 ["browser_aiFeatures_telemetry.js"]
 
