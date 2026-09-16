@@ -18,6 +18,8 @@ ChromeUtils.defineESModuleGetters(
       "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs",
     JSON_NUMBER:
       "resource://devtools/client/shared/components/reps/reps/constants.mjs",
+    isJsonlMimeType: "resource://devtools/client/shared/jsonl-mime-types.mjs",
+    parseJsonl: "resource://devtools/client/shared/jsonl-utils.mjs",
   },
   { global: "contextual" }
 );
@@ -706,6 +708,62 @@ function isBase64(payload) {
 
 
 
+const JSONLINES_VIEW_MIME_TYPE = "application/vnd.mozilla.jsonlines.view";
+
+
+
+
+
+
+
+
+function isJsonlContentType(contentType) {
+  if (!contentType) {
+    return false;
+  }
+  const mimeType = contentType.split(";")[0].trim().toLowerCase();
+  return (
+    mimeType === JSONLINES_VIEW_MIME_TYPE || lazy.isJsonlMimeType(mimeType)
+  );
+}
+
+
+
+
+
+
+
+
+
+
+function isJsonlResponse(mimeType, url) {
+  if (isJsonlContentType(mimeType)) {
+    return true;
+  }
+  try {
+    return getUrlBaseName(url).toLowerCase().endsWith(".jsonl");
+  } catch (err) {
+    
+    return false;
+  }
+}
+
+
+
+
+
+
+
+
+function parseJSONL(payload) {
+  const json = lazy.parseJsonl(payload);
+  return json.length ? { json } : {};
+}
+
+
+
+
+
 
 
 
@@ -895,7 +953,10 @@ module.exports = {
   processNetworkUpdates,
   propertiesEqual,
   ipToLong,
+  isJsonlContentType,
+  isJsonlResponse,
   parseJSON,
+  parseJSONL,
   getRequestHeadersRawText,
   responseIsFresh,
 };

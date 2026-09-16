@@ -102,6 +102,7 @@ const JSON_B64_URL = EXAMPLE_URL + "html_json-b64.html";
 const JSON_BASIC_URL = EXAMPLE_URL + "html_json-basic.html";
 const JSON_EMPTY_URL = EXAMPLE_URL + "html_json-empty.html";
 const JSON_XSSI_PROTECTION_URL = EXAMPLE_URL + "html_json-xssi-protection.html";
+const JSONL_URL = EXAMPLE_URL + "html_jsonl-test-page.html";
 const FONTS_URL = EXAMPLE_URL + "html_fonts-test-page.html";
 const SORTING_URL = EXAMPLE_URL + "html_sorting-test-page.html";
 const FILTERING_URL = EXAMPLE_URL + "html_filter-test-page.html";
@@ -1249,51 +1250,6 @@ function waitForRequestData(store, fields, id, index = 0) {
   });
 }
 
-
-
-
-
-
-
-
-
-
-function checkTelemetryEvent(expectedEvent, query) {
-  const events = queryTelemetryEvents(query);
-  is(events.length, 1, "There was only 1 event logged");
-
-  const [event] = events;
-  Assert.greater(
-    Number(event.session_id),
-    0,
-    "There is a valid session_id in the logged event"
-  );
-
-  const f = e => JSON.stringify(e, null, 2);
-  is(
-    f(event),
-    f({
-      ...expectedEvent,
-      session_id: event.session_id,
-    }),
-    "The event has the expected data"
-  );
-}
-
-function queryTelemetryEvents(query) {
-  const ALL_CHANNELS = Ci.nsITelemetry.DATASET_ALL_CHANNELS;
-  const snapshot = Services.telemetry.snapshotEvents(ALL_CHANNELS, true);
-  const category = query.category || "devtools.main";
-  const object = query.object || "netmonitor";
-
-  const filtersChangedEvents = snapshot.parent.filter(
-    event =>
-      event[1] === category && event[2] === query.method && event[3] === object
-  );
-
-  
-  return filtersChangedEvents.map(event => event[5]);
-}
 
 
 
