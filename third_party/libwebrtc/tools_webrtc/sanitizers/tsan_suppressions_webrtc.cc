@@ -25,10 +25,6 @@ char kTSanDefaultSuppressions[] =
 
     
     
-    "race:rtc_base/logging.cc\n"
-
-    
-    
     "race:*trace_event_unique_catstatic*\n"
 
     
