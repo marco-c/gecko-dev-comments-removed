@@ -2,7 +2,7 @@
 
 
 
-use cssparser::{Parser, ParserInput};
+use cssparser::Parser;
 use servo_arc::Arc;
 use style::custom_properties::{
     CssEnvironment, CustomPropertiesBuilder, CustomPropertiesMap, Name, SpecifiedValue,
@@ -17,8 +17,7 @@ fn cascade(
     let values = name_and_value
         .iter()
         .map(|&(name, value)| {
-            let mut input = ParserInput::new(value);
-            let mut parser = Parser::new(&mut input);
+            let mut parser = Parser::new(value);
             (
                 Name::from(name),
                 SpecifiedValue::parse(&mut parser).unwrap(),

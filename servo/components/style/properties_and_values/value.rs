@@ -687,8 +687,7 @@ impl CustomAnimatedValue {
                     
                     ComputedValue::universal(Arc::clone(value))
                 } else {
-                    let mut input = cssparser::ParserInput::new(&value.css);
-                    let mut input = CSSParser::new(&mut input);
+                    let mut input = CSSParser::new(&value.css);
                     SpecifiedValue::compute(
                         &mut input,
                         registration,

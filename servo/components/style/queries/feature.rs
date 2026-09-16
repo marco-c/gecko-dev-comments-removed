@@ -27,7 +27,7 @@ pub type KeywordSerializer = fn(KeywordDiscriminant) -> String;
 
 pub type KeywordParser = for<'a, 'i, 't> fn(
     context: &'a ParserContext,
-    input: &'a mut Parser<'i, 't>,
+    input: &'a mut Parser<'i>,
 ) -> Result<KeywordDiscriminant, ParseError>;
 
 

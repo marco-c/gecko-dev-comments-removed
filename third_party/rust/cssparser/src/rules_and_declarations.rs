@@ -6,7 +6,7 @@
 
 use super::{BasicParseError, BasicParseErrorKind, Delimiter, ParseError, Parser, Token};
 use crate::cow_rc_str::CowRcStr;
-use crate::parser::{parse_nested_block, parse_until_after, ParseUntilErrorBehavior, ParserState};
+use crate::parser::{ParseUntilErrorBehavior, ParserState, parse_nested_block, parse_until_after};
 use crate::tokenizer::SourceLocation;
 
 
@@ -49,7 +49,7 @@ pub trait DeclarationParser<'i> {
     fn parse_value(
         &mut self,
         _name: CowRcStr<'i>,
-        _input: &mut Parser<'i, '_>,
+        _input: &mut Parser<'i>,
         _declaration_start: &ParserState,
     ) -> Result<Self::Declaration, ParseError<Self::Error>> {
         Err(ParseError::unexpected_token())
@@ -93,7 +93,7 @@ pub trait AtRuleParser<'i> {
     fn parse_prelude(
         &mut self,
         _name: CowRcStr<'i>,
-        _input: &mut Parser<'i, '_>,
+        _input: &mut Parser<'i>,
     ) -> Result<Self::Prelude, ParseError<Self::Error>> {
         Err(ParseError::from_basic_kind(
             BasicParseErrorKind::AtRuleInvalid,
@@ -133,7 +133,7 @@ pub trait AtRuleParser<'i> {
         &mut self,
         prelude: Self::Prelude,
         start: &ParserState,
-        _input: &mut Parser<'i, '_>,
+        _input: &mut Parser<'i>,
     ) -> Result<Self::AtRule, ParseError<Self::Error>> {
         let _ = prelude;
         let _ = start;
@@ -174,7 +174,7 @@ pub trait QualifiedRuleParser<'i> {
     
     fn parse_prelude(
         &mut self,
-        _input: &mut Parser<'i, '_>,
+        _input: &mut Parser<'i>,
     ) -> Result<Self::Prelude, ParseError<Self::Error>> {
         Err(ParseError::from_basic_kind(
             BasicParseErrorKind::QualifiedRuleInvalid,
@@ -192,7 +192,7 @@ pub trait QualifiedRuleParser<'i> {
         &mut self,
         prelude: Self::Prelude,
         start: &ParserState,
-        _input: &mut Parser<'i, '_>,
+        _input: &mut Parser<'i>,
     ) -> Result<Self::QualifiedRule, ParseError<Self::Error>> {
         let _ = prelude;
         let _ = start;
@@ -203,9 +203,9 @@ pub trait QualifiedRuleParser<'i> {
 }
 
 
-pub struct RuleBodyParser<'i, 't, 'a, P, I, E> {
+pub struct RuleBodyParser<'i, 'a, P, I, E> {
     
-    pub input: &'a mut Parser<'i, 't>,
+    pub input: &'a mut Parser<'i>,
     
     pub parser: &'a mut P,
 
@@ -226,7 +226,7 @@ pub trait RuleBodyItemParser<'i, DeclOrRule, Error>:
     fn parse_qualified(&self) -> bool;
 }
 
-impl<'i, 't, 'a, P, I, E> RuleBodyParser<'i, 't, 'a, P, I, E> {
+impl<'i, 'a, P, I, E> RuleBodyParser<'i, 'a, P, I, E> {
     
     
     
@@ -241,7 +241,7 @@ impl<'i, 't, 'a, P, I, E> RuleBodyParser<'i, 't, 'a, P, I, E> {
     
     
     
-    pub fn new(input: &'a mut Parser<'i, 't>, parser: &'a mut P) -> Self {
+    pub fn new(input: &'a mut Parser<'i>, parser: &'a mut P) -> Self {
         Self {
             input,
             parser,
@@ -251,7 +251,7 @@ impl<'i, 't, 'a, P, I, E> RuleBodyParser<'i, 't, 'a, P, I, E> {
 }
 
 
-impl<'i, I, P, E> Iterator for RuleBodyParser<'i, '_, '_, P, I, E>
+impl<'i, I, P, E> Iterator for RuleBodyParser<'i, '_, P, I, E>
 where
     P: RuleBodyItemParser<'i, I, E>,
 {
@@ -266,14 +266,14 @@ where
                 | Token::WhiteSpace(..)
                 | Token::Semicolon
                 | Token::Comment(..) => continue,
-                Token::AtKeyword(ref name) => {
+                Token::AtKeyword(name) => {
                     let name = name.clone();
                     return Some(parse_at_rule(&start, name, self.input, &mut *self.parser));
                 }
                 
                 
                 
-                Token::Ident(ref name) if self.parser.parse_declarations() => {
+                Token::Ident(name) if self.parser.parse_declarations() => {
                     let name = name.clone();
                     let parse_qualified = self.parser.parse_qualified();
                     let result = {
@@ -339,9 +339,9 @@ where
 }
 
 
-pub struct StyleSheetParser<'i, 't, 'a, P> {
+pub struct StyleSheetParser<'i, 'a, P> {
     
-    pub input: &'a mut Parser<'i, 't>,
+    pub input: &'a mut Parser<'i>,
 
     
     pub parser: &'a mut P,
@@ -349,7 +349,7 @@ pub struct StyleSheetParser<'i, 't, 'a, P> {
     any_rule_so_far: bool,
 }
 
-impl<'i, 't, 'a, R, P, E> StyleSheetParser<'i, 't, 'a, P>
+impl<'i, 'a, R, P, E> StyleSheetParser<'i, 'a, P>
 where
     P: QualifiedRuleParser<'i, QualifiedRule = R, Error = E>
         + AtRuleParser<'i, AtRule = R, Error = E>,
@@ -360,7 +360,7 @@ where
     
     
     
-    pub fn new(input: &'a mut Parser<'i, 't>, parser: &'a mut P) -> Self {
+    pub fn new(input: &'a mut Parser<'i>, parser: &'a mut P) -> Self {
         Self {
             input,
             parser,
@@ -370,7 +370,7 @@ where
 }
 
 
-impl<'i, R, P, E> Iterator for StyleSheetParser<'i, '_, '_, P>
+impl<'i, R, P, E> Iterator for StyleSheetParser<'i, '_, P>
 where
     P: QualifiedRuleParser<'i, QualifiedRule = R, Error = E>
         + AtRuleParser<'i, AtRule = R, Error = E>,
@@ -429,7 +429,7 @@ where
 
 
 pub fn parse_one_declaration<'i, P, E>(
-    input: &mut Parser<'i, '_>,
+    input: &mut Parser<'i>,
     parser: &mut P,
 ) -> Result<<P as DeclarationParser<'i>>::Declaration, (ParseError<E>, &'i str, SourceLocation)>
 where
@@ -448,7 +448,7 @@ where
 
 
 pub fn parse_one_rule<'i, R, P, E>(
-    input: &mut Parser<'i, '_>,
+    input: &mut Parser<'i>,
     parser: &mut P,
 ) -> Result<R, ParseError<E>>
 where
@@ -481,7 +481,7 @@ where
 fn parse_at_rule<'i, P, E>(
     start: &ParserState,
     name: CowRcStr<'i>,
-    input: &mut Parser<'i, '_>,
+    input: &mut Parser<'i>,
     parser: &mut P,
 ) -> Result<<P as AtRuleParser<'i>>::AtRule, (ParseError<E>, &'i str, SourceLocation)>
 where
@@ -536,7 +536,7 @@ fn looks_like_a_custom_property(input: &mut Parser) -> bool {
 
 fn parse_qualified_rule<'i, P, E>(
     start: &ParserState,
-    input: &mut Parser<'i, '_>,
+    input: &mut Parser<'i>,
     parser: &mut P,
     nested: bool,
 ) -> Result<<P as QualifiedRuleParser<'i>>::QualifiedRule, ParseError<E>>

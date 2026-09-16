@@ -2,7 +2,7 @@
 
 
 
-use cssparser::{Parser, ParserInput, ToCss};
+use cssparser::{Parser, ToCss};
 use selectors::parser::SelectorList;
 use style::selector_parser::{SelectorImpl, SelectorParser};
 use style::stylesheets::{Namespaces, Origin};

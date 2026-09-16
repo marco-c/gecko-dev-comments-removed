@@ -2,7 +2,7 @@
 
 
 
-use super::{BasicParseError, Parser, ParserInput, Token};
+use super::{BasicParseError, Parser, Token};
 
 
 
@@ -117,8 +117,7 @@ fn parse_n_dash_digits(string: &str) -> Result<i32, ()> {
 }
 
 fn parse_number_saturate(string: &str) -> Result<i32, ()> {
-    let mut input = ParserInput::new(string);
-    let mut parser = Parser::new(&mut input);
+    let mut parser = Parser::new(string);
     let int = if let Ok(&Token::Number {
         int_value: Some(int),
         ..

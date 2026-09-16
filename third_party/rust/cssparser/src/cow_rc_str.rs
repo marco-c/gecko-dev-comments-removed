@@ -42,7 +42,10 @@ impl<'a> From<&'a str> for CowRcStr<'a> {
     #[inline]
     fn from(s: &'a str) -> Self {
         let len = s.len();
-        assert!(len < usize::MAX);
+        
+        
+        
+        debug_assert!(len < usize::MAX);
         CowRcStr {
             ptr: unsafe { ptr::NonNull::new_unchecked(s.as_ptr() as *mut ()) },
             borrowed_len_or_max: len,
@@ -99,11 +102,17 @@ impl Clone for CowRcStr<'_> {
     }
 }
 
+#[cold]
+#[inline(never)]
+unsafe fn drop_slow(ptr: *const String) {
+    unsafe { mem::drop(Rc::from_raw(ptr)) }
+}
+
 impl Drop for CowRcStr<'_> {
     #[inline]
     fn drop(&mut self) {
         if let Err(ptr) = self.unpack() {
-            mem::drop(unsafe { Rc::from_raw(ptr) })
+            unsafe { drop_slow(ptr) }
         }
     }
 }
