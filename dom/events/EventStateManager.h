@@ -561,10 +561,6 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
     return mGestureDownContent;
   }
 
-  dom::BrowserParent* GetTrackingDragGestureTopLevelRemoteTarget() const {
-    return mGestureDownTopLevelRemoteTarget;
-  }
-
   
   
   void NotifyContentWillBeRemovedForGesture(nsIContent& aContent);
@@ -1450,7 +1446,6 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   
   
   nsCOMPtr<nsIContent> mGestureDownFrameOwner;
-  RefPtr<dom::BrowserParent> mGestureDownTopLevelRemoteTarget;
   
   RefPtr<dom::RemoteDragStartData> mGestureDownDragStartData;
   
