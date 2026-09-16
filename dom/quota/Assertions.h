@@ -13,11 +13,17 @@
 namespace mozilla::dom::quota {
 
 template <typename T>
-void AssertNoOverflow(uint64_t aDest, T aArg);
+void AssertNoOverflow(int64_t aDest, T aArg);
 
 template <typename T, typename U>
-void AssertNoUnderflow(T aDest, U aArg,
-                       const nsACString& context = EmptyCString());
+void AssertNoUnderflow(T aDest, U aArg);
+
+template <typename T>
+void AssertNotNegative(T aValue, const nsACString& context = EmptyCString());
+
+
+uint64_t ClampToZero(int64_t aValue,
+                     const nsACString& context = EmptyCString());
 
 
 
@@ -51,19 +57,33 @@ void AssertCurrentThreadOwnsQuotaMutex();
 
 
 #if defined(NIGHTLY_BUILD) || defined(DEBUG)
-#  define QM_ASSERT_NO_UNDERFLOW(aDest, aArg) \
-    mozilla::dom::quota::AssertNoUnderflow(   \
-        aDest, aArg,                          \
-        nsDependentCString(__func__) + "::"_ns + nsDependentCString(#aDest))
-#  define QM_ASSERT_NO_UNDERFLOW_2(aDest, aArg, aFieldContext) \
-    mozilla::dom::quota::AssertNoUnderflow(                    \
-        aDest, aArg,                                           \
+#  define QM_ASSERT_NOT_NEGATIVE(aValue)    \
+    mozilla::dom::quota::AssertNotNegative( \
+        aValue,                             \
+        nsDependentCString(__func__) + "::"_ns + nsDependentCString(#aValue))
+#  define QM_ASSERT_NOT_NEGATIVE_2(aValue, aFieldContext) \
+    mozilla::dom::quota::AssertNotNegative(               \
+        aValue,                                           \
         nsDependentCString(__func__) + "::"_ns + nsAutoCString(aFieldContext))
 #else
-#  define QM_ASSERT_NO_UNDERFLOW(aDest, aArg) \
-    mozilla::dom::quota::AssertNoUnderflow(aDest, aArg)
-#  define QM_ASSERT_NO_UNDERFLOW_2(aDest, aArg, aFieldContext) \
-    mozilla::dom::quota::AssertNoUnderflow(aDest, aArg)
+#  define QM_ASSERT_NOT_NEGATIVE(aValue) \
+    mozilla::dom::quota::AssertNotNegative(aValue)
+#  define QM_ASSERT_NOT_NEGATIVE_2(aValue, aFieldContext) \
+    mozilla::dom::quota::AssertNotNegative(aValue)
+#endif
+
+
+
+
+
+
+#if defined(NIGHTLY_BUILD) || defined(DEBUG)
+#  define QM_CLAMP_TO_ZERO(aValue)    \
+    mozilla::dom::quota::ClampToZero( \
+        aValue,                       \
+        nsDependentCString(__func__) + "::"_ns + nsDependentCString(#aValue))
+#else
+#  define QM_CLAMP_TO_ZERO(aValue) mozilla::dom::quota::ClampToZero(aValue)
 #endif
 
 #endif  
