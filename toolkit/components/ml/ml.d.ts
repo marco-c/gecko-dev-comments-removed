@@ -178,6 +178,108 @@ export type MLPerfScenario = (
 ) => Promise<MLPerfMeasurements>;
 
 
+export type MLPerfEngineOptionOverrides = {
+  [Name in keyof PipelineOptions]?: {
+    
+    expectValue: PipelineOptions[Name];
+
+    
+    replaceWith: PipelineOptions[Name];
+  };
+};
+
+
+export interface MLPerfEngineConfig {
+  
+  featureId: string;
+
+  
+  expectedRuns?: number;
+
+  
+  overrides?: MLPerfEngineOptionOverrides;
+}
+
+
+export interface MLPerfEngineCreationObservation {
+  
+  featureId: string;
+
+  
+  start: number;
+
+  
+  end: number;
+}
+
+
+export interface MLPerfObservedRunResult {
+  
+  resourcesBefore?: ResourceMeasurement;
+
+  
+  resourcesAfter?: ResourceMeasurement;
+}
+
+
+export interface MLPerfEngineRunObservation extends MLPerfObservedRunResult {
+  
+  featureId: string;
+
+  
+  engine: MLEngine<EngineFeatureIds>;
+
+  
+  start: number;
+
+  
+  end: number;
+}
+
+
+export interface MLPerfEngineRunCapture {
+  
+  engineRuns: MLPerfEngineRunObservation[];
+
+  
+
+
+
+
+  cleanup(): void;
+}
+
+
+export interface MLPerfScenarioObservation {
+  
+  measurements: MLPerfMeasurements;
+
+  
+  engineCreations: MLPerfEngineCreationObservation[];
+
+  
+  engineRuns: MLPerfEngineRunObservation[];
+
+  
+  peakMemory?: number;
+}
+
+
+export interface MLPerfScenarioInvocationOptions {
+  
+  engines?: MLPerfEngineConfig[];
+
+  
+  captureEngineCreation?: boolean;
+
+  
+  samplePeakMemory?: boolean;
+
+  
+  peakMemorySampleIntervalMs?: number;
+}
+
+
 export interface MLPerfAssertions {
   
 
@@ -195,6 +297,15 @@ export interface MLPerfAssertions {
 
 
   greater(actual: number, expected: number, message?: string): void;
+
+  
+
+
+
+
+
+
+  equal(actual: unknown, expected: unknown, message?: string): void;
 }
 
 
@@ -243,6 +354,9 @@ export interface RunPerfScenarioConfig extends MLPerfTestHarness {
   scenario: MLPerfScenario;
 
   
+  engines?: MLPerfEngineConfig[];
+
+  
   measureFirstUse?: boolean;
 
   
@@ -263,7 +377,7 @@ export interface RunPerfScenarioConfig extends MLPerfTestHarness {
 
 
 
-interface ResourceMeasurement {
+export interface ResourceMeasurement {
   cpuTime: number | null;
   memory: number | null;
 }
