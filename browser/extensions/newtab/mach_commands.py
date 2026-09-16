@@ -20,6 +20,9 @@ from zipfile import ZipFile
 import requests
 import yaml
 from colorama import Fore, Style
+from fluent.syntax import parse as fluent_parse
+from fluent.syntax import serialize as fluent_serialize
+from fluent.syntax.ast import Message, Resource
 from mach.decorators import (
     Command,
     CommandArgument,
@@ -61,11 +64,42 @@ SUPPORTED_LOCALES_PATH = Path(WEBEXT_LOCALES_PATH, "supported-locales.json")
 
 
 
+
+PREFERENCES_EXTRACT_IDS = (
+    "home-homepage-title",
+    "home-homepage-new-windows",
+    "home-homepage-new-tabs",
+    "home-homepage-custom-homepage-button",
+    "home-custom-homepage-card-header",
+    "home-custom-homepage-address",
+    "home-custom-homepage-address-button",
+    "home-custom-homepage-no-results",
+    "home-custom-homepage-delete-address-button",
+    "home-custom-homepage-replace-with-prompt",
+    "home-custom-homepage-current-pages-button",
+    "home-custom-homepage-bookmarks-button",
+    "home-prefs-homepage-extension-option",
+)
+
+
+
+
+
+PREFERENCES_FTL_ANCESTRY = Path("browser", "browser", "preferences")
+PREFERENCES_FTL_NAME = "preferences.ftl"
+LOCAL_PREFERENCES_EN_US_PATH = Path(
+    "browser", "locales", "en-US", "browser", "preferences", "preferences.ftl"
+)
+
+
+
+
+
 BETA_SCHEDULE_QUERY = "https://whattrainisitnow.com/api/release/schedule/?version=beta"
 RELEASE_SCHEDULE_QUERY = (
     "https://whattrainisitnow.com/api/release/schedule/?version=release"
 )
-BETA_FALLBACK_THRESHOLD = timedelta(weeks=3)
+BETA_FALLBACK_THRESHOLD = timedelta(weeks=2)
 TASKCLUSTER_ROOT_URL = "https://firefox-ci-tc.services.mozilla.com"
 BEETMOVER_TASK_NAME = "beetmover-newtab"
 SIGNING_TASK_NAME = "release-signing-newtab"
@@ -143,6 +177,41 @@ def watch(command_context):
     )
 
 
+
+def _extract_preferences_messages(preferences_path):
+    """Return a serialized Fluent block containing the IDs in
+    PREFERENCES_EXTRACT_IDS from preferences_path, or an empty string if the
+    file is missing or has none of the target IDs."""
+    try:
+        source = Path(preferences_path).read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return ""
+    resource = fluent_parse(source)
+    wanted = set(PREFERENCES_EXTRACT_IDS)
+    picked = [
+        entry
+        for entry in resource.body
+        if isinstance(entry, Message) and entry.id.name in wanted
+    ]
+    if not picked:
+        return ""
+    return fluent_serialize(Resource(body=picked))
+
+
+
+def _append_extract_to_webext_glue(webext_glue_ftl_path, extract_block):
+    """Append the extract block, with a header comment, to a webext-glue newtab.ftl file."""
+    if not extract_block:
+        return
+    header = (
+        "\n## Below strings are extracted from preferences.ftl by\n"
+        "## ./mach newtab update-locales - edit them in preferences.ftl.\n\n"
+    )
+    with open(webext_glue_ftl_path, "a", encoding="utf-8") as handle:
+        handle.write(header)
+        handle.write(extract_block)
+
+
 @SubCommand(
     "newtab",
     "update-locales",
@@ -188,6 +257,15 @@ def update_locales(command_context):
             destination_file.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(fluent_file_abs_path, destination_file)
 
+            
+            
+            
+            locale_preferences_path = (
+                root_dir / locale / PREFERENCES_FTL_ANCESTRY / PREFERENCES_FTL_NAME
+            )
+            extract_block = _extract_preferences_messages(locale_preferences_path)
+            _append_extract_to_webext_glue(destination_file, extract_block)
+
         
         shutil.rmtree(clone_dir)
 
@@ -202,8 +280,23 @@ def update_locales(command_context):
 
     
     
+    en_us_extract = _extract_preferences_messages(LOCAL_PREFERENCES_EN_US_PATH)
+    _append_extract_to_webext_glue(dest_en_ftl_path, en_us_extract)
+
+    
+    
     print("Computing local message commit dates…")
     message_dates = get_message_dates(LOCAL_EN_US_PATH)
+
+    
+    
+    
+    
+    message_dates.update({
+        message_id: date
+        for message_id, date in get_message_dates(LOCAL_PREFERENCES_EN_US_PATH).items()
+        if message_id in PREFERENCES_EXTRACT_IDS
+    })
 
     
     
