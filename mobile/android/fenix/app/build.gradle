@@ -498,6 +498,7 @@ dependencies {
     implementation project(':components:feature-share')
     implementation project(':components:feature-sitepermissions')
     implementation project(':components:feature-summarize')
+    implementation project(':components:feature-listentopage')
     implementation project(':components:feature-syncedtabs')
     implementation project(':components:feature-toolbar')
     implementation project(':components:feature-tab-collections')
@@ -628,6 +629,7 @@ dependencies {
 
     testImplementation libs.androidx.compose.ui.test
     testImplementation libs.androidx.test.core
+    testImplementation libs.androidx.test.espresso.intents
     testImplementation libs.androidx.test.junit
     testImplementation libs.androidx.test.runner
     testImplementation libs.androidx.work.testing
@@ -676,6 +678,9 @@ dependencies {
         // espresso-contrib pulls hamcrest 2.2 only at runtime; align the test compile classpath to match.
         androidTestImplementation(libs.hamcrest.core)
         androidTestImplementation(libs.hamcrest.library)
+        // espresso-intents does the same on the unit test classpath.
+        testImplementation(libs.hamcrest.core)
+        testImplementation(libs.hamcrest.library)
     }
 
     androidTestUtil libs.androidx.test.orchestrator
