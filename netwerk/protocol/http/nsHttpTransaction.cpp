@@ -2036,6 +2036,29 @@ nsresult nsHttpTransaction::Restart() {
   mRestarted = true;
 
   
+  
+  TimingStruct prevTimings;
+  {
+    MutexAutoLock lock(mLock);
+    prevTimings = mTimings;
+    mTimings = TimingStruct();
+    mTimings.transactionPending = prevTimings.transactionPending;
+  }
+
+  
+  const TimeStamp prevEarlyDataSent = mEarlyDataSentTime;
+  mEarlyDataSentTime = TimeStamp();
+
+  
+  
+  
+  
+  const auto prevEarlyData = mEarlyDataDisposition;
+  if (prevEarlyData == EARLY_ACCEPTED) {
+    mEarlyDataDisposition = EARLY_NONE;
+  }
+
+  
   if (mConnInfo->GetEchConfig().IsEmpty() &&
       StaticPrefs::security_tls_ech_disable_grease_on_fallback()) {
     mCaps |= NS_HTTP_DISALLOW_ECH;
@@ -2052,7 +2075,17 @@ nsresult nsHttpTransaction::Restart() {
     gHttpHandler->ConnMgr()->ResetIPFamilyPreference(mConnInfo);
   }
 
-  return gHttpHandler->InitiateTransaction(this, mPriority);
+  nsresult rv = gHttpHandler->InitiateTransaction(this, mPriority);
+  if (NS_SUCCEEDED(rv)) {
+    return rv;
+  }
+
+  
+  mEarlyDataSentTime = prevEarlyDataSent;
+  mEarlyDataDisposition = prevEarlyData;
+  MutexAutoLock lock(mLock);
+  mTimings = prevTimings;
+  return rv;
 }
 
 bool nsHttpTransaction::TakeRestartedState() {
@@ -3090,6 +3123,19 @@ void nsHttpTransaction::SetResponseStart(mozilla::TimeStamp timeStamp,
     return;  
   }
   mTimings.responseStart = timeStamp;
+}
+
+void nsHttpTransaction::SetResponseIsComplete() {
+  if (!mResponseIsComplete.compareExchange(false, true)) {
+    return;
+  }
+
+  
+  
+  gHttpHandler->ObserveHttpActivityWithArgs(
+      HttpActivityArgs(mChannelId), NS_HTTP_ACTIVITY_TYPE_HTTP_TRANSACTION,
+      NS_HTTP_ACTIVITY_SUBTYPE_RESPONSE_COMPLETE, PR_Now(),
+      static_cast<uint64_t>(mContentRead), ""_ns);
 }
 
 void nsHttpTransaction::SetResponseEnd(mozilla::TimeStamp timeStamp,
