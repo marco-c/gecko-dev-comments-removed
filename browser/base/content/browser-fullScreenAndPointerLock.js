@@ -483,6 +483,7 @@ var FullScreen = {
   },
 
   _currentToolbarShift: 0,
+  _menubarShift: 0,
 
   
 
@@ -497,20 +498,40 @@ var FullScreen = {
       return;
     }
 
+    let wasRevealed = this._menubarShift > 0;
+    this._menubarShift = shiftSize;
+
+    
+    
+    
+    
+    if (shiftSize > 0 && !wasRevealed && !this.fullScreenToggler.hidden) {
+      this.showNavToolbox();
+    }
+
+    this.updateMacToolbarShift();
+  },
+
+  
+
+
+
+
+
+  updateMacToolbarShift() {
+    let shiftSize = this._isChromeCollapsed ? 0 : this._menubarShift;
     
     
     shiftSize = shiftSize.toFixed(2);
     let translate = shiftSize > 0 ? `0 ${shiftSize}px` : "";
     gNavToolbox.classList.toggle("fullscreen-floating-toolbox", shiftSize > 0);
     gNavToolbox.style.translate = translate;
-    if (shiftSize > 0) {
-      
-      
-      
-      if (!this.fullScreenToggler.hidden) {
-        this.showNavToolbox();
-      }
-    }
+    
+    
+    document.documentElement.style.setProperty(
+      "--fullscreen-menubar-shift",
+      shiftSize > 0 ? `${shiftSize}px` : ""
+    );
 
     this._currentToolbarShift = shiftSize;
   },
@@ -674,9 +695,11 @@ var FullScreen = {
 
   cleanup() {
     if (!window.fullScreen) {
+      this._expandedMouseTargetRect = null;
       this._mouseTargetRectObserver?.disconnect();
       this._collapsedToolboxObserver?.disconnect();
       MousePosTracker.removeListener(this);
+      MousePosTracker.removeListener(this._launcherEdgeListener);
       document.removeEventListener("keypress", this._keyToggleCallback);
       document.removeEventListener("popupshown", this._setPopupOpen);
       document.removeEventListener("popuphidden", this._setPopupOpen);
@@ -858,6 +881,59 @@ var FullScreen = {
     return gMultiProcessBrowser && aBrowser.hasAttribute("remote");
   },
 
+  
+  
+  _expandedMouseTargetRect: null,
+
+  
+  
+  
+  
+  
+  _launcherEdgeListener: {
+    _suppressEnter: false,
+    
+    
+    
+    
+    getMouseTargetRect() {
+      let { width, height } = window.windowUtils.getBoundsWithoutFlushing(
+        document.documentElement
+      );
+      let container = SidebarController.sidebarContainer;
+      if (!container || container.hidden) {
+        
+        return { top: 0, bottom: -1, left: 0, right: -1 };
+      }
+      let atStart =
+        window.windowUtils.getBoundsWithoutFlushing(container).left < width / 2;
+      return {
+        top: 0,
+        bottom: height,
+        left: atStart ? 0 : width - 2,
+        right: atStart ? 2 : width,
+      };
+    },
+    onMouseEnter() {
+      if (!this._suppressEnter) {
+        FullScreen.showNavToolbox();
+      }
+    },
+  },
+
+  _watchLauncherEdge() {
+    let listener = this._launcherEdgeListener;
+    MousePosTracker.removeListener(listener);
+    if (document.documentElement.hasAttribute("inDOMFullscreen")) {
+      return;
+    }
+    
+    
+    listener._suppressEnter = true;
+    MousePosTracker.addListener(listener);
+    listener._suppressEnter = false;
+  },
+
   getMouseTargetRect() {
     return this._mouseTargetRect;
   },
@@ -1022,9 +1098,13 @@ var FullScreen = {
       
       
       
-      this._mouseTargetRect = this._mouseTargetRectFromBounds(
-        window.windowUtils.getBoundsWithoutFlushing(gBrowser.tabpanels)
-      );
+      
+      
+      this._mouseTargetRect =
+        this._expandedMouseTargetRect ??
+        this._mouseTargetRectFromBounds(
+          window.windowUtils.getBoundsWithoutFlushing(gBrowser.tabpanels)
+        );
       this._updateMouseTargetRect();
       if (!this._mouseTargetRectObserver) {
         this._mouseTargetRectObserver = new ResizeObserver(() =>
@@ -1036,10 +1116,18 @@ var FullScreen = {
       
       
       
+      MousePosTracker.removeListener(this._launcherEdgeListener);
       MousePosTracker.addListener(this);
+      
+      
+      
+      this._hover = false;
     }
 
     this._isChromeCollapsed = false;
+    if (this._menubarShift) {
+      this.updateMacToolbarShift();
+    }
     document.documentElement.removeAttribute("fullscreenNavToolboxHidden");
     Services.obs.notifyObservers(
       gNavToolbox,
@@ -1107,6 +1195,11 @@ var FullScreen = {
     }
 
     
+    this._expandedMouseTargetRect = this._mouseTargetRectFromBounds(
+      window.windowUtils.getBoundsWithoutFlushing(gBrowser.tabpanels)
+    );
+
+    
     
     
     
@@ -1114,6 +1207,9 @@ var FullScreen = {
       window.windowUtils.getBoundsWithoutFlushing(gNavToolbox).height
     );
     this._isChromeCollapsed = true;
+    if (this._menubarShift) {
+      this.updateMacToolbarShift();
+    }
     document.documentElement.toggleAttribute(
       "fullscreenNavToolboxHidden",
       true
@@ -1126,6 +1222,7 @@ var FullScreen = {
 
     this._mouseTargetRectObserver?.disconnect();
     MousePosTracker.removeListener(this);
+    this._watchLauncherEdge();
 
     
     
