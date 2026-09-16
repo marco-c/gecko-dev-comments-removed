@@ -3406,23 +3406,20 @@ static void AtomicEffectOp(MacroAssembler& masm,
                  offsetTemp, maskTemp);
 }
 
-
-
-
-void MacroAssembler::atomicEffectOpJS(Scalar::Type arrayType,
-                                      Synchronization sync, AtomicOp op,
-                                      Register value, const BaseIndex& mem,
-                                      Register valueTemp, Register offsetTemp,
-                                      Register maskTemp) {
+void MacroAssembler::atomicEffectOp(Scalar::Type arrayType,
+                                    Synchronization sync, AtomicOp op,
+                                    Register value, const BaseIndex& mem,
+                                    Register valueTemp, Register offsetTemp,
+                                    Register maskTemp) {
   AtomicEffectOp(*this, nullptr, arrayType, sync, op, mem, value, valueTemp,
                  offsetTemp, maskTemp);
 }
 
-void MacroAssembler::atomicEffectOpJS(Scalar::Type arrayType,
-                                      Synchronization sync, AtomicOp op,
-                                      Register value, const Address& mem,
-                                      Register valueTemp, Register offsetTemp,
-                                      Register maskTemp) {
+void MacroAssembler::atomicEffectOp(Scalar::Type arrayType,
+                                    Synchronization sync, AtomicOp op,
+                                    Register value, const Address& mem,
+                                    Register valueTemp, Register offsetTemp,
+                                    Register maskTemp) {
   AtomicEffectOp(*this, nullptr, arrayType, sync, op, mem, value, valueTemp,
                  offsetTemp, maskTemp);
 }
@@ -3472,11 +3469,17 @@ void MacroAssembler::atomicFetchOp(Scalar::Type type, Synchronization sync,
                 offsetTemp, maskTemp, output);
 }
 
+
+
+
 void MacroAssembler::atomicPause() {
   
   
   fence(0b0001, 0b0000);
 }
+
+
+
 
 void MacroAssembler::branchPtrInNurseryChunk(Condition cond, Register ptr,
                                              Register temp, Label* label) {

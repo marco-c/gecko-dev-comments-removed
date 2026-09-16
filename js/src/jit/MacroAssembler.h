@@ -4447,6 +4447,34 @@ class MacroAssembler : public MacroAssemblerSpecific {
       DEFINED_ON(mips64, loong64, riscv64);
 
   
+
+  void atomicEffectOp(Scalar::Type arrayType, Synchronization sync, AtomicOp op,
+                      Register value, const Address& mem, Register temp)
+      DEFINED_ON(arm, arm64, x86_shared);
+
+  void atomicEffectOp(Scalar::Type arrayType, Synchronization sync, AtomicOp op,
+                      Register value, const BaseIndex& mem, Register temp)
+      DEFINED_ON(arm, arm64, x86_shared);
+
+  void atomicEffectOp(Scalar::Type arrayType, Synchronization sync, AtomicOp op,
+                      Imm32 value, const Address& mem, Register temp)
+      DEFINED_ON(x86_shared);
+
+  void atomicEffectOp(Scalar::Type arrayType, Synchronization sync, AtomicOp op,
+                      Imm32 value, const BaseIndex& mem, Register temp)
+      DEFINED_ON(x86_shared);
+
+  void atomicEffectOp(Scalar::Type arrayType, Synchronization sync, AtomicOp op,
+                      Register value, const Address& mem, Register valueTemp,
+                      Register offsetTemp, Register maskTemp)
+      DEFINED_ON(mips64, loong64, riscv64);
+
+  void atomicEffectOp(Scalar::Type arrayType, Synchronization sync, AtomicOp op,
+                      Register value, const BaseIndex& mem, Register valueTemp,
+                      Register offsetTemp, Register maskTemp)
+      DEFINED_ON(mips64, loong64, riscv64);
+
+  
   
   
   
@@ -4760,38 +4788,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
   
-  
-  
-  
-  
-  
-  
-
-  void atomicEffectOpJS(Scalar::Type arrayType, Synchronization sync,
-                        AtomicOp op, Register value, const Address& mem,
-                        Register temp) DEFINED_ON(arm, arm64, x86_shared);
-
-  void atomicEffectOpJS(Scalar::Type arrayType, Synchronization sync,
-                        AtomicOp op, Register value, const BaseIndex& mem,
-                        Register temp) DEFINED_ON(arm, arm64, x86_shared);
-
-  void atomicEffectOpJS(Scalar::Type arrayType, Synchronization sync,
-                        AtomicOp op, Imm32 value, const Address& mem,
-                        Register temp) DEFINED_ON(x86_shared);
-
-  void atomicEffectOpJS(Scalar::Type arrayType, Synchronization sync,
-                        AtomicOp op, Imm32 value, const BaseIndex& mem,
-                        Register temp) DEFINED_ON(x86_shared);
-
-  void atomicEffectOpJS(Scalar::Type arrayType, Synchronization sync,
-                        AtomicOp op, Register value, const Address& mem,
-                        Register valueTemp, Register offsetTemp,
-                        Register maskTemp) DEFINED_ON(mips64, loong64, riscv64);
-
-  void atomicEffectOpJS(Scalar::Type arrayType, Synchronization sync,
-                        AtomicOp op, Register value, const BaseIndex& mem,
-                        Register valueTemp, Register offsetTemp,
-                        Register maskTemp) DEFINED_ON(mips64, loong64, riscv64);
 
   void atomicIsLockFreeJS(Register value, Register output);
 
