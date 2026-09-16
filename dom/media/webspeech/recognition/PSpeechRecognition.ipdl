@@ -55,7 +55,7 @@ parent:
 
 child: 
   
-  async OnRecognitionResult(nsCString transcript, bool isFinal);
+  async OnRecognitionResult(nsCString transcript, bool isFinal, float confidence);
   async OnRecognitionError(nsCString error);
   
   async OnSpeechChange(bool speechDetected);

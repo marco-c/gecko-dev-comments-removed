@@ -652,7 +652,8 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
     }
   };
 
-  auto emit = [self = RefPtr{this}](const nsCString& aText, bool aFinal) {
+  auto emit = [self = RefPtr{this}](const nsCString& aText, bool aFinal,
+                                    float aConfidence) {
     
     
     if (aText.IsEmpty()) {
@@ -663,11 +664,11 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
     }
     NS_DispatchToMainThread(NS_NewRunnableFunction(
         "SpeechRecognitionParent::StreamResult",
-        [self, payload = nsCString(aText), aFinal]() {
-          LOGV("Sending streaming result: '{}' (final={})", payload.get(),
-               aFinal);
+        [self, payload = nsCString(aText), aFinal, aConfidence]() {
+          LOGV("Sending streaming result: '{}' (final={}, conf={})",
+               payload.get(), aFinal, aConfidence);
           if (self->CanSend()) {
-            (void)self->SendOnRecognitionResult(payload, aFinal);
+            (void)self->SendOnRecognitionResult(payload, aFinal, aConfidence);
           }
         }));
   };
@@ -677,31 +678,32 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
   
   
   
-  nsCString pending;
-  auto consume = [&](char* aText, bool aForce) {
-    if (aText) {
-      nsCString delta(aText);
-      lib->parakeet_capi_free_string(aText);
-      stripTags(delta);
-      pending.Append(delta);
+  auto emitFinalizedWords = [&]() {
+    parakeet_stream_word* words = nullptr;
+    int n = lib->parakeet_capi_stream_drain_words(mCapiStream, &words);
+    if (n > 0) {
+      nsCString text;
+      float confSum = 0.0f;
+      int counted = 0;
+      for (int i = 0; i < n; ++i) {
+        nsCString w(words[i].text ? words[i].text : "");
+        stripTags(w);  
+        w.Trim(" \t\n\r");
+        if (w.IsEmpty()) {
+          continue;
+        }
+        if (!text.IsEmpty()) {
+          text.Append(' ');
+        }
+        text.Append(w);
+        confSum += words[i].conf;
+        ++counted;
+        LOGV("  word '{}' [{:.2f}-{:.2f}] conf={:.2f}", w.get(), words[i].start,
+             words[i].end, words[i].conf);
+      }
+      emit(text,  true, counted ? confSum / counted : 1.0f);
     }
-    if (aForce) {
-      nsCString out(pending);
-      out.Trim(" \t\n\r");
-      pending.Truncate();
-      emit(out,  true);
-      return;
-    }
-    int32_t lastSpace = pending.RFindChar(' ');
-    if (lastSpace == kNotFound) {
-      return;  
-    }
-    nsCString out(Substring(pending, 0, lastSpace));
-    out.Trim(" \t\n\r");
-    if (!out.IsEmpty()) {
-      emit(out,  true);
-    }
-    pending.Cut(0, lastSpace + 1);  
+    lib->parakeet_capi_free_words(words, n > 0 ? n : 0);
   };
 
   nsTArray<float> chunk;
@@ -728,18 +730,25 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
     TimeStamp feedStart = TimeStamp::Now();
     char* fed = lib->parakeet_capi_stream_feed(mCapiStream, chunk.Elements(),
                                                AssertedCast<int>(got), &eou);
+    if (fed) {
+      lib->parakeet_capi_free_string(fed);  
+    }
     PROFILER_MARKER_TEXT(
         "Parakeet stream_feed", MEDIA_PLAYBACK,
         MarkerOptions(MarkerTiming::IntervalUntilNowFrom(feedStart)),
         nsFmtCString("fed={:.0f}ms queued={:.0f}ms",
                      1000.0 * got / PARAKEET_SAMPLE_RATE,
                      1000.0 * available / PARAKEET_SAMPLE_RATE));
-    consume(fed,  false);
+    emitFinalizedWords();
     (void)eou;
   }
 
   
-  consume(lib->parakeet_capi_stream_finalize(mCapiStream),  true);
+  char* tail = lib->parakeet_capi_stream_finalize(mCapiStream);
+  if (tail) {
+    lib->parakeet_capi_free_string(tail);
+  }
+  emitFinalizedWords();
   LOGD("Streaming loop exiting");
 
   

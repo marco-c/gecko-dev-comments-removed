@@ -169,7 +169,7 @@ class SpeechRecognition final : public DOMEventTargetHelper,
                                          TimeStamp aTimeStamp);
   
   void HandleRecognitionResultFromBackend(const nsCString& aTranscript,
-                                          bool aIsFinal);
+                                          bool aIsFinal, float aConfidence);
   void HandleRecognitionErrorFromBackend(const nsCString& aError);
   
   

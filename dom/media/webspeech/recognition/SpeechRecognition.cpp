@@ -5,6 +5,7 @@
 #include "SpeechRecognition.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include "AudioSegment.h"
 #include "CubebUtils.h"
@@ -846,10 +847,10 @@ void SpeechRecognition::DispatchTrustedEventWithTimestamp(
 }
 
 void SpeechRecognition::HandleRecognitionResultFromBackend(
-    const nsCString& aTranscript, bool aIsFinal) {
+    const nsCString& aTranscript, bool aIsFinal, float aConfidence) {
   MOZ_ASSERT(NS_IsMainThread(), "Must be called on main thread");
-  LOG("HandleRecognitionResultFromBackend: {} (final={})", aTranscript.get(),
-      aIsFinal);
+  LOG("HandleRecognitionResultFromBackend: {} (final={}, conf={})",
+      aTranscript.get(), aIsFinal, aConfidence);
 
   
   if (!mBackend) {
@@ -877,8 +878,8 @@ void SpeechRecognition::HandleRecognitionResultFromBackend(
   
   
   
-  
-  alternative->mConfidence = 1.0f;
+  alternative->mConfidence =
+      std::isfinite(aConfidence) ? std::clamp(aConfidence, 0.0f, 1.0f) : 0.0f;
 
   result->mItems.AppendElement(alternative);
 
