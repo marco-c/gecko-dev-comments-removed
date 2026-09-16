@@ -1206,6 +1206,9 @@ WrFiltersStatus FilterInstance::BuildWebRenderSVGFiltersImpl(
     nsIFrame* aFilteredFrame, Span<const StyleFilter> aFilters,
     StyleFilterType aStyleFilterType, WrFiltersHolder& aWrFilters,
     const nsPoint& aOffsetForSVGFilters) {
+  MOZ_ASSERT(!aFilters.IsEmpty(),
+             "a filter graph is only built for a non-empty filter chain");
+
   
   
   aWrFilters.filters.Clear();
@@ -1314,6 +1317,13 @@ WrFiltersStatus FilterInstance::BuildWebRenderSVGFiltersImpl(
   aWrFilters.filters.AppendElement(wr::FilterOp::SVGFESourceAlpha(sourceNode));
 
   
+  
+  
+  
+  const bool clampOutputToFilterRegion =
+      aFilters[aFilters.Length() - 1].IsUrl();
+
+  
   WrFiltersStatus status = WrFiltersStatus::SVGFE;
 
   for (uint32_t i = 0; i < instance.mFilterDescription.mPrimitives.Length();
@@ -1336,7 +1346,8 @@ WrFiltersStatus FilterInstance::BuildWebRenderSVGFiltersImpl(
     
     
     
-    if (i == instance.mFilterDescription.mPrimitives.Length() - 1) {
+    if (clampOutputToFilterRegion &&
+        i == instance.mFilterDescription.mPrimitives.Length() - 1) {
       if (graphNode.subregion.min.x < filterRegion.min.x) {
         graphNode.subregion.min.x = filterRegion.min.x;
       }
