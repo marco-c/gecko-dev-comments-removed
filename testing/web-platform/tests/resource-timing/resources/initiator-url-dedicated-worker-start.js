@@ -1,0 +1,16 @@
+
+
+
+
+const workerScriptUrl = label =>
+    getUrl('/resource-timing/resources/initiator-url-worker.js?label=' + label);
+
+
+new Worker(workerScriptUrl('classic-worker-from-js'));
+new Worker(workerScriptUrl('module-worker-from-js'), {type: 'module'});
+
+function startDedicatedWorkers() {
+  new Worker(workerScriptUrl('classic-worker-from-setTimeout'));
+  new Worker(workerScriptUrl('module-worker-from-setTimeout'),
+             {type: 'module'});
+}
