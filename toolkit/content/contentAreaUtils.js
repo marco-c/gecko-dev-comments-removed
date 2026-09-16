@@ -492,6 +492,25 @@ function internalPersist(persistArgs) {
   var targetFileURL = makeFileURI(persistArgs.targetFile);
 
   
+  
+  var filesFolder = null;
+  if (
+    persistArgs.sourceDocument &&
+    persistArgs.targetContentType != "text/plain"
+  ) {
+    filesFolder = persistArgs.targetFile.clone();
+
+    var nameWithoutExtension = getFileBaseName(filesFolder.leafName);
+    
+    
+    
+    
+    var filesFolderLeafName = nameWithoutExtension + "_files";
+
+    filesFolder.leafName = filesFolderLeafName;
+  }
+
+  
   var tr = Cc["@mozilla.org/transfer;1"].createInstance(Ci.nsITransfer);
   tr.init(
     persistArgs.sourceURI,
@@ -504,7 +523,9 @@ function internalPersist(persistArgs) {
     persist,
     persistArgs.isPrivate,
     Ci.nsITransfer.DOWNLOAD_ACCEPTABLE,
-    persistArgs.sourceReferrerInfo
+    persistArgs.sourceReferrerInfo,
+    false ,
+    filesFolder
   );
   persist.progressListener = new DownloadListener(window, tr);
   const { saveCompleteCallback } = persistArgs;
@@ -517,21 +538,6 @@ function internalPersist(persistArgs) {
 
   if (persistArgs.sourceDocument) {
     
-    var filesFolder = null;
-    if (persistArgs.targetContentType != "text/plain") {
-      
-      filesFolder = persistArgs.targetFile.clone();
-
-      var nameWithoutExtension = getFileBaseName(filesFolder.leafName);
-      
-      
-      
-      
-      var filesFolderLeafName = nameWithoutExtension + "_files";
-
-      filesFolder.leafName = filesFolderLeafName;
-    }
-
     var encodingFlags = 0;
     if (persistArgs.targetContentType == "text/plain") {
       encodingFlags |= nsIWBP.ENCODE_FLAGS_FORMATTED;
