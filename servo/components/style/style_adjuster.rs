@@ -1030,18 +1030,17 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     ) where
         E: TElement,
     {
-        if cfg!(debug_assertions) {
-            if let Some(e) = element {
-                if let Some(p) = e.implemented_pseudo_element() {
-                    
-                    
-                    
-                    debug_assert!(
-                        self.style.pseudo.is_some(),
-                        "Someone really messed up (no pseudo style for {e:?}, {p:?})"
-                    );
-                }
-            }
+        if cfg!(debug_assertions)
+            && let Some(e) = element
+            && let Some(p) = e.implemented_pseudo_element()
+        {
+            
+            
+            
+            debug_assert!(
+                self.style.pseudo.is_some(),
+                "Someone really messed up (no pseudo style for {e:?}, {p:?})"
+            );
         }
         
         

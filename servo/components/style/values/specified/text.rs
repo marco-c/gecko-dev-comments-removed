@@ -987,13 +987,12 @@ impl Parse for TextIndent {
         
         while !input.is_exhausted() {
             
-            if length.is_none() {
-                if let Ok(len) = input
+            if length.is_none()
+                && let Ok(len) = input
                     .try_parse(|i| LengthPercentage::parse_quirky(context, i, AllowQuirks::Yes))
-                {
-                    length = Some(len);
-                    continue;
-                }
+            {
+                length = Some(len);
+                continue;
             }
 
             

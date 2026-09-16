@@ -264,9 +264,8 @@ impl ValidationData {
         self.parent_style_identity
             .get_or_insert_with(|| {
                 let parent = el.inheritance_parent().unwrap();
-                let values =
-                    OpaqueComputedValues::from(parent.borrow_data().unwrap().styles.primary());
-                values
+
+                OpaqueComputedValues::from(parent.borrow_data().unwrap().styles.primary())
             })
             .clone()
     }
@@ -595,7 +594,7 @@ impl<E: TElement> StyleSharingCache<E> {
     }
 
     
-
+    
     
     
     

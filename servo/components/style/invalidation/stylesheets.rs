@@ -378,10 +378,8 @@ impl StylesheetInvalidationSet {
                     *invalidation = Some(Invalidation::Class(class));
                 }
             },
-            Component::ID(ref id) => {
-                if invalidation.is_none_or(|s| !s.is_id()) {
-                    *invalidation = Some(Invalidation::ID(id));
-                }
+            Component::ID(ref id) if invalidation.is_none_or(|s| !s.is_id()) => {
+                *invalidation = Some(Invalidation::ID(id));
             },
             _ => {
                 

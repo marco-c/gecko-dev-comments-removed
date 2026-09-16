@@ -471,20 +471,20 @@ where
     fn collect_dependencies_in_invalidation_map(&mut self, map: &'selectors InvalidationMap) {
         let quirks_mode = self.matching_context.quirks_mode();
         let removed_id = self.removed_id;
-        if let Some(id) = removed_id {
-            if let Some(deps) = map.id_to_selector.get(id, quirks_mode) {
-                for dep in deps {
-                    self.scan_dependency(dep, false);
-                }
+        if let Some(id) = removed_id
+            && let Some(deps) = map.id_to_selector.get(id, quirks_mode)
+        {
+            for dep in deps {
+                self.scan_dependency(dep, false);
             }
         }
 
         let added_id = self.added_id;
-        if let Some(id) = added_id {
-            if let Some(deps) = map.id_to_selector.get(id, quirks_mode) {
-                for dep in deps {
-                    self.scan_dependency(dep, false);
-                }
+        if let Some(id) = added_id
+            && let Some(deps) = map.id_to_selector.get(id, quirks_mode)
+        {
+            for dep in deps {
+                self.scan_dependency(dep, false);
             }
         }
 
@@ -591,25 +591,25 @@ where
         }
 
         if let DependencyInvalidationKind::Scope(scope_kind) = invalidation_kind {
-            if scope_kind == ScopeDependencyInvalidationKind::ImplicitScope {
-                if let Some(ref next) = dependency.next {
-                    
-                    
-                    
-                    
-                    for dep in next.as_ref().slice() {
-                        let invalidation = Invalidation::new_always_effective_for_next_descendant(
-                            dep,
-                            self.matching_context.current_host,
-                            self.matching_context.scope_element,
-                        );
+            if scope_kind == ScopeDependencyInvalidationKind::ImplicitScope
+                && let Some(ref next) = dependency.next
+            {
+                
+                
+                
+                
+                for dep in next.as_ref().slice() {
+                    let invalidation = Invalidation::new_always_effective_for_next_descendant(
+                        dep,
+                        self.matching_context.current_host,
+                        self.matching_context.scope_element,
+                    );
 
-                        self.descendant_invalidations
-                            .dom_descendants
-                            .push(invalidation);
-                    }
-                    return;
+                    self.descendant_invalidations
+                        .dom_descendants
+                        .push(invalidation);
                 }
+                return;
             }
 
             if dependency.selector.is_rightmost(dependency.selector_offset) {

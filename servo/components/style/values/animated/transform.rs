@@ -823,8 +823,6 @@ fn decompose_3d_matrix(mut matrix: Matrix3D) -> Result<MatrixDecomposed3D, ()> {
 
 
 
-
-
 fn decompose_2d_matrix(matrix: &Matrix3D) -> Result<MatrixDecomposed3D, ()> {
     
     
@@ -999,8 +997,8 @@ impl Animate for ComputedTransform {
                                     };
 
                                     TransformOperation::animate_mismatched_transforms(
-                                        &[from.clone()],
-                                        &[to.clone()],
+                                        std::slice::from_ref(from),
+                                        std::slice::from_ref(to),
                                         procedure,
                                     )
                                 },

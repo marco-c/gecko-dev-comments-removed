@@ -396,8 +396,10 @@ pub enum AnimationComposition {
     ToShmem,
 )]
 #[repr(u8)]
+#[derive(Default)]
 pub enum Scroller {
     
+    #[default]
     Nearest,
     
     Root,
@@ -411,12 +413,6 @@ impl Scroller {
     #[inline]
     fn is_default(&self) -> bool {
         matches!(*self, Self::Nearest)
-    }
-}
-
-impl Default for Scroller {
-    fn default() -> Self {
-        Self::Nearest
     }
 }
 
@@ -442,8 +438,10 @@ impl Default for Scroller {
     ToTyped,
 )]
 #[repr(u8)]
+#[derive(Default)]
 pub enum ScrollAxis {
     
+    #[default]
     Block = 0,
     
     Inline = 1,
@@ -458,12 +456,6 @@ impl ScrollAxis {
     #[inline]
     pub fn is_default(&self) -> bool {
         matches!(*self, Self::Block)
-    }
-}
-
-impl Default for ScrollAxis {
-    fn default() -> Self {
-        Self::Block
     }
 }
 

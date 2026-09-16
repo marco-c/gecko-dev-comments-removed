@@ -37,6 +37,7 @@ use style_traits::{CssWriter, ToCss};
     ToTyped,
 )]
 #[repr(u8)]
+#[derive(Default)]
 pub enum ShapeGeometryBox {
     
     
@@ -45,17 +46,12 @@ pub enum ShapeGeometryBox {
     
     
     #[css(skip)]
+    #[default]
     ElementDependent,
     FillBox,
     StrokeBox,
     ViewBox,
     ShapeBox(ShapeBox),
-}
-
-impl Default for ShapeGeometryBox {
-    fn default() -> Self {
-        Self::ElementDependent
-    }
 }
 
 

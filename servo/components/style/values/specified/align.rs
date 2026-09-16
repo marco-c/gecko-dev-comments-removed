@@ -241,10 +241,10 @@ impl ContentDistribution {
         }
 
         
-        if axis == AxisDirection::Block {
-            if let Ok(value) = input.try_parse(parse_baseline) {
-                return Ok(ContentDistribution::new(value));
-            }
+        if axis == AxisDirection::Block
+            && let Ok(value) = input.try_parse(parse_baseline)
+        {
+            return Ok(ContentDistribution::new(value));
         }
 
         

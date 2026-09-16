@@ -465,11 +465,11 @@ impl Stylesheet {
                     Ok(rule_start) => {
                         
                         if let Some(ref mut data) = sanitization_data {
-                            if let Some(rule) = iter.parser.rules.last() {
-                                if !data.kind.allows(rule, &shared_lock.read()) {
-                                    iter.parser.rules.pop();
-                                    continue;
-                                }
+                            if let Some(rule) = iter.parser.rules.last()
+                                && !data.kind.allows(rule, &shared_lock.read())
+                            {
+                                iter.parser.rules.pop();
+                                continue;
                             }
                             let end = iter.input.position().byte_index();
                             data.output.push_str(&css[rule_start.byte_index()..end]);
