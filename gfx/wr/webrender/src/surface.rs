@@ -16,7 +16,7 @@ use crate::render_task_graph::{RenderTaskId, RenderTaskGraphBuilder};
 use crate::render_target::ResolveOp;
 use crate::render_task::{RenderTask, RenderTaskKind, RenderTaskLocation};
 use crate::space::SpaceMapper;
-use crate::spatial_tree::{CoordinateSpaceMapping, SpatialTree, SpatialNodeIndex};
+use crate::spatial_tree::{CoordinateSpaceMapping, CoordinateSystemId, SpatialTree, SpatialNodeIndex};
 use crate::util::{MaxRect, ScaleOffset};
 use crate::visibility::{DrawState, PrimitiveDrawHeader, FrameVisibilityContext};
 pub use crate::picture_composite_mode::get_surface_rects;
@@ -201,6 +201,20 @@ pub struct SurfaceInfo {
     
     pub clipping_rect: PictureRect,
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub culling_rect: VisRect,
     
     
@@ -282,6 +296,35 @@ impl SurfaceInfo {
         let visibility_spatial_node_index =
             visibility_node(raster_spatial_node_index, spatial_tree);
 
+        
+        
+        
+        
+        let map_vis_to_root: SpaceMapper<VisPixel, DevicePixel> = SpaceMapper::new_with_target(
+            spatial_tree.root_reference_frame_index(),
+            visibility_spatial_node_index,
+            global_culling_rect,
+            spatial_tree,
+        );
+
+        let culling_rect = match map_vis_to_root.unmap(&global_culling_rect) {
+            Some(rect) => rect,
+            None => {
+                
+                
+                
+                
+                debug_assert_ne!(
+                    spatial_tree
+                        .get_spatial_node(visibility_spatial_node_index)
+                        .coordinate_system_id,
+                    CoordinateSystemId::root(),
+                    "screen rect has no pre-image in an axis-aligned vis space",
+                );
+                VisRect::max_rect()
+            }
+        };
+
         SurfaceInfo {
             unclipped_local_rect: PictureRect::zero(),
             clipped_local_rect: PictureRect::zero(),
@@ -298,9 +341,7 @@ impl SurfaceInfo {
             allow_snapping,
             force_scissor_rect,
             svgfe_source_map: ScaleOffset::identity(),
-            
-            
-            culling_rect: global_culling_rect.cast_unit(),
+            culling_rect,
         }
     }
 
