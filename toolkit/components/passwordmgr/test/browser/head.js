@@ -793,6 +793,10 @@ async function openPasswordContextMenu(
 
   await contextMenuShownPromise;
 
+  
+  
+  await doc.defaultView.gContextMenu?.passwordItemsReady;
+
   if (assertCallback) {
     let shouldContinue = await assertCallback();
     if (!shouldContinue) {
