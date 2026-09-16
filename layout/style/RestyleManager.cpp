@@ -860,7 +860,8 @@ static bool RecomputePosition(nsIFrame* aFrame) {
   
   
   if (aFrame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW | NS_FRAME_IS_DIRTY |
-                              NS_FRAME_SVG_LAYOUT)) {
+                              NS_FRAME_SVG_LAYOUT) ||
+      aFrame->IsInSVGTextSubtree()) {
     return true;
   }
 
