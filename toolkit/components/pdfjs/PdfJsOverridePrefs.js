@@ -15,8 +15,12 @@
 
 #if defined(ANDROID)
 
-  
+
+#ifdef NIGHTLY_BUILD
+  pref("pdfjs.annotationEditorMode", 0);
+#else
   pref("pdfjs.annotationEditorMode", -1);
+#endif
 
   pref("pdfjs.capCanvasAreaFactor", 100);
 
@@ -45,8 +49,4 @@ pref("pdfjs.enableOptimizedPartialRendering", true);
 
 
 
-#ifdef NIGHTLY_BUILD
-  pref("pdfjs.enableSignatureVerification", true);
-#else
-  pref("pdfjs.enableSignatureVerification", false);
-#endif
+pref("pdfjs.enableSignatureVerification", false);
