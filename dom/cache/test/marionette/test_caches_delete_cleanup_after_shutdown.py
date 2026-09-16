@@ -36,6 +36,10 @@ class CachesDeleteCleanupAtShutdownTestCase(MarionetteTestCase):
         super().setUp()
         self.marionette.restart(in_app=False, clean=True)
         self.marionette.set_pref(QM_TESTING_PREF, True)
+        
+        
+        with self.marionette.using_context("chrome"):
+            self.marionette.execute_script("Services.prefs.savePrefFile(null);")
 
     def tearDown(self):
         self.marionette.restart(in_app=False, clean=True)
