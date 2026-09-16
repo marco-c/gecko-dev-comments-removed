@@ -11,12 +11,9 @@ const { IPProtectionToolbarButton } = ChromeUtils.importESModule(
 
 
 
-add_task(function test_update_icon_status() {
-  Services.prefs.setBoolPref(
-    "browser.ipProtection.features.siteExceptions",
-    true
-  );
 
+
+function createFakeToolbarButton() {
   const browser = Services.appShell.createWindowlessBrowser(true);
   const principal = Services.scriptSecurityManager.getSystemPrincipal();
   browser.docShell.createAboutBlankDocumentViewer(principal, principal);
@@ -32,12 +29,27 @@ add_task(function test_update_icon_status() {
     document,
   };
 
-  let fakeToolbarItem = document.createXULElement("toolbaritem");
-  
-  let fakeToolbarButton = new IPProtectionToolbarButton(
-    fakeWindow,
-    "test-toolbarbutton"
+  return {
+    toolbarButton: new IPProtectionToolbarButton(
+      fakeWindow,
+      "test-toolbarbutton"
+    ),
+    toolbarItem: document.createXULElement("toolbaritem"),
+  };
+}
+
+
+
+
+
+add_task(function test_update_icon_status() {
+  Services.prefs.setBoolPref(
+    "browser.ipProtection.features.siteExceptions",
+    true
   );
+
+  let { toolbarButton: fakeToolbarButton, toolbarItem: fakeToolbarItem } =
+    createFakeToolbarButton();
 
   Assert.equal(
     fakeToolbarItem.classList.length,
@@ -158,4 +170,130 @@ add_task(function test_update_icon_status() {
   
   fakeToolbarButton.uninit();
   Services.prefs.clearUserPref("browser.ipProtection.features.siteExceptions");
+});
+
+
+
+
+
+add_task(function test_update_icon_status_included() {
+  Services.prefs.setBoolPref(
+    "browser.ipProtection.features.siteInclusions",
+    true
+  );
+
+  let { toolbarButton: fakeToolbarButton, toolbarItem: fakeToolbarItem } =
+    createFakeToolbarButton();
+
+  
+  fakeToolbarButton.updateIconStatus(fakeToolbarItem, {
+    isActive: false,
+    isError: false,
+    isNetworkError: false,
+    isExcluded: false,
+    isIncluded: true,
+    isPaused: false,
+  });
+
+  Assert.ok(
+    fakeToolbarItem.classList.contains("ipprotection-included"),
+    "Toolbaritem classlist should include ipprotection-included"
+  );
+  Assert.ok(
+    !fakeToolbarItem.classList.contains("ipprotection-on"),
+    "Toolbaritem classlist should not include ipprotection-on"
+  );
+
+  
+  fakeToolbarButton.updateIconStatus(fakeToolbarItem, {
+    isActive: true,
+    isError: false,
+    isNetworkError: false,
+    isExcluded: false,
+    isIncluded: true,
+    isPaused: false,
+  });
+
+  Assert.ok(
+    fakeToolbarItem.classList.contains("ipprotection-on"),
+    "Toolbaritem classlist should include ipprotection-on"
+  );
+  Assert.ok(
+    !fakeToolbarItem.classList.contains("ipprotection-included"),
+    "Toolbaritem classlist should not include ipprotection-included when active"
+  );
+
+  
+  fakeToolbarButton.updateIconStatus(fakeToolbarItem, {
+    isActive: false,
+    isError: false,
+    isNetworkError: false,
+    isExcluded: false,
+    isIncluded: true,
+    isPaused: true,
+  });
+
+  Assert.ok(
+    fakeToolbarItem.classList.contains("ipprotection-paused"),
+    "Toolbaritem classlist should include ipprotection-paused"
+  );
+  Assert.ok(
+    !fakeToolbarItem.classList.contains("ipprotection-included"),
+    "Toolbaritem classlist should not include ipprotection-included when paused"
+  );
+
+  
+  fakeToolbarButton.updateIconStatus(fakeToolbarItem, {
+    isActive: false,
+    isError: true,
+    isNetworkError: false,
+    isExcluded: false,
+    isIncluded: true,
+    isPaused: false,
+  });
+
+  Assert.ok(
+    fakeToolbarItem.classList.contains("ipprotection-error"),
+    "Toolbaritem classlist should include ipprotection-error"
+  );
+  Assert.ok(
+    !fakeToolbarItem.classList.contains("ipprotection-included"),
+    "Toolbaritem classlist should not include ipprotection-included when errored"
+  );
+
+  
+  Services.prefs.setBoolPref(
+    "browser.ipProtection.features.siteInclusions",
+    false
+  );
+
+  fakeToolbarButton.updateIconStatus(fakeToolbarItem, {
+    isActive: false,
+    isError: false,
+    isNetworkError: false,
+    isExcluded: false,
+    isIncluded: true,
+    isPaused: false,
+  });
+
+  Assert.equal(
+    fakeToolbarItem.classList.length,
+    0,
+    "Toolbaritem classlist should be empty when site inclusions are disabled"
+  );
+
+  
+  fakeToolbarButton.uninit();
+  Services.prefs.clearUserPref("browser.ipProtection.features.siteInclusions");
+});
+
+
+
+
+
+add_task(function test_icon_layer_states_cover_included() {
+  Assert.ok(
+    IPProtectionToolbarButton.ICON_LAYER_STATES.includes("included"),
+    "ICON_LAYER_STATES should contain the included state"
+  );
 });
