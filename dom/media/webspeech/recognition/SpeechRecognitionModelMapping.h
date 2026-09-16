@@ -7,8 +7,8 @@
 #ifndef DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHRECOGNITIONMODELMAPPING_H_
 #define DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHRECOGNITIONMODELMAPPING_H_
 
+#include "mozilla/Maybe.h"
 #include "nsString.h"
-#include "nsTArray.h"
 
 namespace mozilla::dom {
 
@@ -27,14 +27,19 @@ struct SpeechModelIdentifier {
   nsCString ToString() const;
 };
 
+struct SpeechModelMatch {
+  nsCString mId;
+  nsCString mLocale;
+};
+
+
+
+Maybe<SpeechModelMatch> SpeechModelFor(const nsACString& aLanguage);
 
 
 
 
-
-
-
-nsCString LanguagesToSpeechModelId(const nsTArray<nsCString>& aLanguages);
+SpeechModelMatch DefaultSpeechModel();
 
 
 
