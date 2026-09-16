@@ -139,6 +139,10 @@ impl<T> UniqueArc<T> {
 
 impl<T> UniqueArc<mem::MaybeUninit<T>> {
     
+    
+    
+    
+    
     #[inline]
     pub unsafe fn assume_init(this: Self) -> UniqueArc<T> {
         UniqueArc(Arc {
@@ -151,7 +155,7 @@ impl<T> UniqueArc<mem::MaybeUninit<T>> {
 impl<T> Deref for UniqueArc<T> {
     type Target = T;
     fn deref(&self) -> &T {
-        &*self.0
+        &self.0
     }
 }
 
@@ -255,6 +259,8 @@ impl<T> Arc<T> {
     
     
     
+    
+    
     #[inline]
     pub unsafe fn from_raw(ptr: *const T) -> Self {
         
@@ -266,6 +272,10 @@ impl<T> Arc<T> {
         }
     }
 
+    
+    
+    
+    
     
     #[inline]
     pub unsafe fn from_raw_addrefed(ptr: *const T) -> Self {
@@ -576,10 +586,6 @@ impl<T: ?Sized + PartialEq> PartialEq for Arc<T> {
     fn eq(&self, other: &Arc<T>) -> bool {
         Self::ptr_eq(self, other) || *(*self) == *(*other)
     }
-
-    fn ne(&self, other: &Arc<T>) -> bool {
-        !Self::ptr_eq(self, other) && *(*self) != *(*other)
-    }
 }
 
 impl<T: ?Sized + PartialOrd> PartialOrd for Arc<T> {
@@ -650,14 +656,14 @@ impl<T> From<T> for Arc<T> {
 impl<T: ?Sized> borrow::Borrow<T> for Arc<T> {
     #[inline]
     fn borrow(&self) -> &T {
-        &**self
+        self
     }
 }
 
 impl<T: ?Sized> AsRef<T> for Arc<T> {
     #[inline]
     fn as_ref(&self) -> &T {
-        &**self
+        self
     }
 }
 
@@ -756,6 +762,12 @@ impl<H, T> HeaderSlice<H, T> {
     #[inline(always)]
     pub fn len(&self) -> usize {
         self.len
+    }
+
+    
+    #[inline(always)]
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
     }
 }
 
@@ -966,6 +978,9 @@ impl<'a, T> ArcBorrow<'a, T> {
 
     
     
+    
+    
+    
     #[inline]
     pub unsafe fn from_ref(r: &'a T) -> Self {
         ArcBorrow(r)
@@ -973,8 +988,9 @@ impl<'a, T> ArcBorrow<'a, T> {
 
     
     
+    #[inline]
     pub fn ptr_eq(this: &Self, other: &Self) -> bool {
-        this.0 as *const T == other.0 as *const T
+        std::ptr::eq(this.0, other.0)
     }
 
     
