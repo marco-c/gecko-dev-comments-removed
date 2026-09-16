@@ -1383,7 +1383,12 @@ function checkAppBundleModTime() {
 
 
 
+
 function checkUpdateTelemetry() {
+  if (AppConstants.platform == "macosx") {
+    checkNoUpdateTelemetry();
+    return;
+  }
   let telemetryFile = getApplyDirFile("update_telemetry.json");
   Assert.ok(
     telemetryFile.exists(),
