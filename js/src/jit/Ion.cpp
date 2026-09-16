@@ -1616,20 +1616,6 @@ bool OptimizeMIR(MIRGenerator* mir) {
     }
   }
 
-  
-  
-  if (!mir->compilingWasm()) {
-    if (!AddPostWriteBarriers(graph)) {
-      return false;
-    }
-    mir->spewPass("Add Post Write Barriers");
-    AssertGraphCoherency(graph);
-
-    if (mir->shouldCancel("Add Post Write Barriers")) {
-      return false;
-    }
-  }
-
   AssertGraphCoherency(graph,  true);
 
   if (JitSpewEnabled(JitSpew_MIRExpressions)) {

@@ -81,8 +81,6 @@ void RenumberBlocks(MIRGraph& graph);
 
 [[nodiscard]] bool AddKeepAliveInstructions(MIRGraph& graph);
 
-[[nodiscard]] bool AddPostWriteBarriers(MIRGraph& graph);
-
 [[nodiscard]] bool MarkLoadsUsedAsPropertyKeys(MIRGraph& graph);
 
 
