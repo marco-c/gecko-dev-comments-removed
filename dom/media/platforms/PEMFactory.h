@@ -2,8 +2,6 @@
 
 
 
-
-
 #if !defined(PEMFactory_h_)
 #  define PEMFactory_h_
 
@@ -16,6 +14,7 @@ class StaticMutex;
 enum class RemoteMediaIn;
 
 using PEMCreateEncoderPromise = PlatformEncoderModule::CreateEncoderPromise;
+using PEMSupportsEncoderPromise = PlatformEncoderModule::SupportsEncoderPromise;
 
 class PEMFactory final {
  public:
@@ -35,6 +34,13 @@ class PEMFactory final {
 
   media::EncodeSupportSet Supports(const EncoderConfig& aConfig) const;
   media::EncodeSupportSet SupportsCodec(CodecType aCodec) const;
+
+  
+  
+  
+  
+  RefPtr<PEMSupportsEncoderPromise> SupportsAsync(
+      const EncoderConfig& aConfig) const;
 
   static media::MediaCodecsSupported Supported(bool aForceRefresh = false);
   static media::EncodeSupportSet SupportsCodec(

@@ -10,6 +10,7 @@
 #include "EncoderConfig.h"
 #include "MediaCodecsSupport.h"
 #include "PerformanceRecorder.h"
+#include "PlatformEncoderModule.h"
 #include "api/video/video_codec_type.h"
 #include "api/video_codecs/sdp_video_format.h"
 
@@ -29,8 +30,10 @@ class MediaDataCodec {
 
 
 
-  static media::EncodeSupportSet SupportsEncoderCodec(
-      const EncoderConfig& aConfig);
+
+
+  static RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
+  SupportsEncoderCodec(const EncoderConfig& aConfig);
 
   
 

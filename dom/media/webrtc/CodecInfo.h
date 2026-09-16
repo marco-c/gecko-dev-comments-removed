@@ -8,6 +8,8 @@
 #include <memory>
 
 #include "MediaCodecsSupport.h"
+#include "PlatformDecoderModule.h"
+#include "PlatformEncoderModule.h"
 
 namespace mozilla {
 class EncoderConfig;
@@ -16,12 +18,12 @@ struct SupportDecoderParams;
 
 
 
-[[nodiscard]] media::DecodeSupportSet SupportsVideoDecodeForWebrtc(
-    const MediaExtendedMIMEType& aMime, const SupportDecoderParams& aParams);
 
-
-[[nodiscard]] media::EncodeSupportSet SupportsVideoEncodeForWebrtc(
-    const EncoderConfig& aConfig);
+[[nodiscard]] RefPtr<PlatformDecoderModule::SupportsDecoderPromise>
+SupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType& aMime,
+                             const SupportDecoderParams& aParams);
+[[nodiscard]] RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
+SupportsVideoEncodeForWebrtc(const EncoderConfig& aConfig);
 
 
 

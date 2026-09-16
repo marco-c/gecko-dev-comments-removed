@@ -46,6 +46,20 @@ class PlatformEncoderModule {
       const EncoderConfig& aConfig) const = 0;
   virtual media::EncodeSupportSet SupportsCodec(CodecType aCodecType) const = 0;
 
+  using SupportsEncoderPromise =
+      MozPromise<media::EncodeSupportSet, nsresult,  true>;
+
+  
+  
+  
+  
+  
+  virtual RefPtr<SupportsEncoderPromise> SupportsAsync(
+      const EncoderConfig& aConfig) const {
+    return SupportsEncoderPromise::CreateAndResolve(Supports(aConfig),
+                                                    __func__);
+  }
+
   
   virtual const char* GetName() const = 0;
 
