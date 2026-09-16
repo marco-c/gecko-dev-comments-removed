@@ -236,10 +236,49 @@ class MessagePayload extends Component {
         formattedDataTitle: "JSON",
       };
     }
+
+    
+    
+    const jsonlPayload = this.parseJsonl(payload);
+    if (jsonlPayload) {
+      return {
+        formattedData: jsonlPayload,
+        formattedDataTitle: "JSON Lines",
+      };
+    }
+
     return {
       formattedData: null,
       formattedDataTitle: "",
     };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  parseJsonl(payload) {
+    const lines = payload.split("\n").filter(line => line.trim());
+    if (lines.length < 2) {
+      return null;
+    }
+
+    const entries = [];
+    for (const line of lines) {
+      const { json } = parseJSON(line);
+      if (!json) {
+        return null;
+      }
+      entries.push(json);
+    }
+    return entries;
   }
 
   parseSocketIOPayload(payload) {
