@@ -1333,13 +1333,6 @@ nsresult nsHttpChannel::HandleOverrideResponse() {
   rv = mOverrideResponse->VisitResponseHeaders(&visitor);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (WillRedirect(*mResponseHead)) {
-    
-    
-    LOG(("Skipping read of overridden response redirect entity\n"));
-    return AsyncCall(&nsHttpChannel::HandleAsyncRedirect);
-  }
-
   
   
   {
@@ -1376,6 +1369,13 @@ nsresult nsHttpChannel::HandleOverrideResponse() {
 
   if ((statusCode < 500) && (statusCode != 421)) {
     ProcessAltService();
+  }
+
+  if (WillRedirect(*mResponseHead)) {
+    
+    
+    LOG(("Skipping read of overridden response redirect entity\n"));
+    return AsyncCall(&nsHttpChannel::HandleAsyncRedirect);
   }
 
   nsAutoCString body;
