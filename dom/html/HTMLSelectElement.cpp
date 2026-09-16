@@ -1438,7 +1438,10 @@ bool HTMLSelectElement::IsValueMissing(IgnoredOptionList aIgnored) const {
         continue;
       }
       first = false;
-      if (!Multiple() && Size() <= 1 && option->GetParent() == this) {
+      
+      
+      
+      if (IsCombobox() && !ComputeNearestAncestors(*option).mOptGroup) {
         nsAutoString value;
         option->GetValue(value);
         if (value.IsEmpty()) {
