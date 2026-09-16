@@ -27,7 +27,8 @@ function above(ratio) {
 
 function heightRatio(win) {
   return (
-    win.gUIDensity.AUTO_COMPACT_REFERENCE_TABSTRIP_HEIGHT / win.innerHeight
+    win.gUIDensity.AUTO_COMPACT_REFERENCE_TABSTRIP_HEIGHT /
+    win.gUIDensity._densityReferenceSize().height
   );
 }
 
@@ -67,7 +68,8 @@ async function withLauncherWidthCheckOnly(win, callback) {
   let originalRefWidth =
     gUIDensity.AUTO_COMPACT_REFERENCE_SIDEBAR_LAUNCHER_WIDTH;
   gUIDensity.AUTO_COMPACT_REFERENCE_TABSTRIP_HEIGHT = 0;
-  gUIDensity.AUTO_COMPACT_REFERENCE_SIDEBAR_LAUNCHER_WIDTH = win.innerWidth;
+  gUIDensity.AUTO_COMPACT_REFERENCE_SIDEBAR_LAUNCHER_WIDTH =
+    gUIDensity._densityReferenceSize().width;
   Services.prefs.setCharPref(PREF_THRESHOLD, below(1));
   try {
     await callback();
