@@ -1966,19 +1966,12 @@ int ScalePlane(const uint8_t* src,
     int dy = 0;
     int y = 0;
     
+    
     if (dst_height <= src_height) {
       dy = FixedDiv(src_height, dst_height);
       y = CENTERSTART(dy, -32768);  
     } else if (src_height > 1 && dst_height > 1) {
-      
-      
-      if (filtering == kFilterNone) {
-        dy = FixedDiv(src_height, dst_height);
-        y = CENTERSTART(dy, 0);
-      } else {
-        
-        dy = FixedDiv1(src_height, dst_height);
-      }
+      dy = FixedDiv1(src_height, dst_height);
     }
     
     ScalePlaneVertical(src_height, dst_width, dst_height, src_stride,
@@ -2081,19 +2074,15 @@ int ScalePlane_16(const uint16_t* src,
     int dy = 0;
     int y = 0;
     
+    
     if (dst_height <= src_height) {
       dy = FixedDiv(src_height, dst_height);
       y = CENTERSTART(dy, -32768);  
+      
+      
+      
     } else if (src_height > 1 && dst_height > 1) {
-      
-      
-      if (filtering == kFilterNone) {
-        dy = FixedDiv(src_height, dst_height);
-        y = CENTERSTART(dy, 0);
-      } else {
-        
-        dy = FixedDiv1(src_height, dst_height);
-      }
+      dy = FixedDiv1(src_height, dst_height);
     }
     
     ScalePlaneVertical_16(src_height, dst_width, dst_height, src_stride,
