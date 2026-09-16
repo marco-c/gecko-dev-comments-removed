@@ -97,6 +97,38 @@ pub const MAX_SURFACE_SIZE: usize = 4096;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn max_surface_size_for_screen(
+    screen_size: DeviceIntSize,
+    max_target_size: i32,
+) -> usize {
+    let longest_edge = screen_size.width.max(screen_size.height).max(0) as u32;
+
+    let rounded = longest_edge
+        .checked_next_power_of_two()
+        .map_or(usize::MAX, |size| size as usize);
+
+    rounded
+        .max(MAX_SURFACE_SIZE)
+        .min(max_target_size.max(0) as usize)
+}
+
+
+
 static NEXT_TILE_ID: AtomicUsize = AtomicUsize::new(0);
 
 
@@ -226,13 +258,11 @@ pub struct Tile {
     
     pub tile_offset: TileOffset,
     
-    pub world_tile_rect: WorldRect,
+    pub device_tile_rect: DeviceRect,
     
     
     
     pub device_dirty_rect: DeviceRect,
-    
-    pub world_valid_rect: WorldRect,
     
     pub device_valid_rect: DeviceRect,
     
@@ -261,8 +291,7 @@ impl Tile {
 
         Tile {
             tile_offset,
-            world_tile_rect: WorldRect::zero(),
-            world_valid_rect: WorldRect::zero(),
+            device_tile_rect: DeviceRect::zero(),
             device_valid_rect: DeviceRect::zero(),
             device_dirty_rect: DeviceRect::zero(),
             surface: None,
@@ -329,12 +358,12 @@ impl Tile {
 
         self.local_raster_rect = ctx.local_to_raster.map_rect(&self.cached_surface.local_rect);
 
-        self.world_tile_rect = ctx.pic_to_world_mapper
+        self.device_tile_rect = ctx.pic_to_device_mapper
             .map(&self.cached_surface.local_rect)
             .expect("bug: map local tile rect");
 
         
-        self.is_visible = self.world_tile_rect.intersects(&ctx.global_screen_world_rect);
+        self.is_visible = self.device_tile_rect.intersects(&ctx.global_screen_device_rect);
 
         
         self.cached_surface.pre_update(
@@ -404,18 +433,18 @@ impl Tile {
             .and_then(|r| r.intersection(&self.cached_surface.current_descriptor.local_valid_rect))
             .unwrap_or_else(PictureRect::zero);
 
-        
-        
-        self.world_valid_rect = ctx.pic_to_world_mapper
-            .map(&self.cached_surface.current_descriptor.local_valid_rect)
-            .expect("bug: map local valid rect");
 
         
         
         
         
-        let device_rect = (self.world_tile_rect * ctx.global_device_pixel_scale).round();
-        self.device_valid_rect = (self.world_valid_rect * ctx.global_device_pixel_scale)
+        let device_rect = self.device_tile_rect.round();
+
+        
+        
+        self.device_valid_rect = ctx.pic_to_device_mapper
+            .map(&self.cached_surface.current_descriptor.local_valid_rect)
+            .expect("bug: map local valid rect")
             .round_out()
             .intersection(&device_rect)
             .unwrap_or_else(DeviceRect::zero);
@@ -1035,7 +1064,7 @@ impl TileCacheInstance {
         surface_index: SurfaceIndex,
         frame_context: &FrameVisibilityContext,
         frame_state: &mut FrameVisibilityState,
-    ) -> WorldRect {
+    ) {
         let surface = &frame_state.surfaces[surface_index.0];
         let pic_rect = surface.unclipped_local_rect;
 
@@ -1058,14 +1087,14 @@ impl TileCacheInstance {
 
         
         
-        let pic_to_world_mapper = SpaceMapper::new_with_target(
+        let pic_to_root_mapper = SpaceMapper::new_with_target(
             frame_context.root_spatial_node_index,
             self.spatial_node_index,
-            frame_context.global_screen_world_rect,
+            frame_context.global_screen_device_rect,
             frame_context.spatial_tree,
         );
-        self.screen_rect_in_pic_space = pic_to_world_mapper
-            .unmap(&frame_context.global_screen_world_rect)
+        self.screen_rect_in_pic_space = pic_to_root_mapper
+            .unmap(&frame_context.global_screen_device_rect)
             .expect("unable to unmap screen rect");
 
         let pic_to_vis_mapper = SpaceMapper::new_with_target(
@@ -1113,7 +1142,6 @@ impl TileCacheInstance {
                 pic_rect.cast_unit(),
                 &map_local_to_picture,
                 &pic_to_vis_mapper,
-                frame_context.spatial_tree,
                 &mut frame_state.frame_gpu_data.f32,
                 frame_state.resource_cache,
                 &surface.culling_rect,
@@ -1334,14 +1362,9 @@ impl TileCacheInstance {
             });
         }
 
-        let world_tile_size = WorldSize::new(
-            self.current_tile_size.width as f32 / frame_context.global_device_pixel_scale.0,
-            self.current_tile_size.height as f32 / frame_context.global_device_pixel_scale.0,
-        );
-
         self.tile_size = PictureSize::new(
-            world_tile_size.width / self.local_to_raster.scale.x,
-            world_tile_size.height / self.local_to_raster.scale.y,
+            self.current_tile_size.width as f32 / self.local_to_raster.scale.x,
+            self.current_tile_size.height as f32 / self.local_to_raster.scale.y,
         );
 
         
@@ -1458,12 +1481,10 @@ impl TileCacheInstance {
         self.tile_bounds_p1 = TileOffset::new(x1, y1);
         self.tile_rect = new_tile_rect;
 
-        let mut world_culling_rect = WorldRect::zero();
-
         let mut ctx = TilePreUpdateContext {
-            pic_to_world_mapper,
+            pic_to_device_mapper: pic_to_root_mapper,
             background_color: self.background_color,
-            global_screen_world_rect: frame_context.global_screen_world_rect,
+            global_screen_device_rect: frame_context.global_screen_device_rect,
             tile_size: self.tile_size,
             frame_id: self.frame_id,
             local_to_raster: self.local_to_raster,
@@ -1475,22 +1496,6 @@ impl TileCacheInstance {
         for sub_slice in &mut self.sub_slices {
             for tile in sub_slice.tiles.values_mut() {
                 tile.pre_update(&ctx);
-
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                if tile.is_visible {
-                    world_culling_rect = world_culling_rect.union(&tile.world_tile_rect);
-                }
             }
 
             
@@ -1536,8 +1541,6 @@ impl TileCacheInstance {
                 }
             }
         }
-
-        world_culling_rect
     }
 
     fn can_promote_to_surface(
@@ -1663,10 +1666,10 @@ impl TileCacheInstance {
             return Err(NotRootTileCache);
         }
 
-        let mapper : SpaceMapper<PicturePixel, WorldPixel> = SpaceMapper::new_with_target(
+        let mapper : SpaceMapper<PicturePixel, DevicePixel> = SpaceMapper::new_with_target(
             frame_context.root_spatial_node_index,
             prim_spatial_node_index,
-            frame_context.global_screen_world_rect,
+            frame_context.global_screen_device_rect,
             &frame_context.spatial_tree);
         let transform = mapper.get_transform();
         if !transform.is_2d_scale_translation() {
@@ -1856,18 +1859,18 @@ impl TileCacheInstance {
             return Ok(surface_kind);
         }
 
-        let pic_to_world_mapper = SpaceMapper::new_with_target(
+        let pic_to_root_mapper = SpaceMapper::new_with_target(
             frame_context.root_spatial_node_index,
             self.spatial_node_index,
-            frame_context.global_screen_world_rect,
+            frame_context.global_screen_device_rect,
             frame_context.spatial_tree,
         );
 
-        let world_clip_rect = pic_to_world_mapper
+        let device_clip_rect = pic_to_root_mapper
             .map(&prim_info.prim_clip_box)
-            .expect("bug: unable to map clip to world space");
+            .expect("bug: unable to map clip to device space");
 
-        let is_visible = world_clip_rect.intersects(&frame_context.global_screen_world_rect);
+        let is_visible = device_clip_rect.intersects(&frame_context.global_screen_device_rect);
         if !is_visible {
             return Ok(surface_kind);
         }
@@ -1919,8 +1922,7 @@ impl TileCacheInstance {
             compositor_transform_index,
         ).size();
 
-        let clip_rect = (world_clip_rect * frame_context.global_device_pixel_scale).round();
-
+        let clip_rect = device_clip_rect.round();
 
         let mut compositor_clip_index = None;
 
@@ -3012,10 +3014,10 @@ impl TileCacheInstance {
             self.raster_to_device,
         );
 
-        let map_pic_to_world = SpaceMapper::new_with_target(
+        let map_pic_to_root = SpaceMapper::new_with_target(
             frame_context.root_spatial_node_index,
             self.spatial_node_index,
-            frame_context.global_screen_world_rect,
+            frame_context.global_screen_device_rect,
             frame_context.spatial_tree,
         );
 
@@ -3108,16 +3110,15 @@ impl TileCacheInstance {
             }
         }
 
-        let pic_to_world_mapper = SpaceMapper::new_with_target(
+        let pic_to_root_mapper = SpaceMapper::new_with_target(
             frame_context.root_spatial_node_index,
             self.spatial_node_index,
-            frame_context.global_screen_world_rect,
+            frame_context.global_screen_device_rect,
             frame_context.spatial_tree,
         );
 
         let ctx = TileUpdateDirtyContext {
-            pic_to_world_mapper,
-            global_device_pixel_scale: frame_context.global_device_pixel_scale,
+            pic_to_device_mapper: pic_to_root_mapper,
             opacity_bindings: &self.opacity_bindings,
             color_bindings: &self.color_bindings,
             local_rect: self.local_rect,
@@ -3216,13 +3217,13 @@ impl TileCacheInstance {
 
         
         for underlay in &self.underlays {
-            if let Some(world_surface_rect) = underlay.get_occluder_rect(
+            if let Some(occluder_rect) = underlay.get_occluder_rect(
                 &self.local_clip_rect,
-                &map_pic_to_world,
+                &map_pic_to_root,
             ) {
                 composite_state.register_occluder(
                     underlay.z_id,
-                    world_surface_rect,
+                    occluder_rect,
                     self.compositor_clip,
                 );
             }
@@ -3231,13 +3232,13 @@ impl TileCacheInstance {
         for sub_slice in &self.sub_slices {
             for compositor_surface in &sub_slice.compositor_surfaces {
                 if compositor_surface.is_opaque {
-                    if let Some(world_surface_rect) = compositor_surface.descriptor.get_occluder_rect(
+                    if let Some(occluder_rect) = compositor_surface.descriptor.get_occluder_rect(
                         &self.local_clip_rect,
-                        &map_pic_to_world,
+                        &map_pic_to_root,
                     ) {
                         composite_state.register_occluder(
                             compositor_surface.descriptor.z_id,
-                            world_surface_rect,
+                            occluder_rect,
                             self.compositor_clip,
                         );
                     }
@@ -3257,15 +3258,15 @@ impl TileCacheInstance {
                 });
 
             if let Some(backdrop_rect) = backdrop_rect {
-                let world_backdrop_rect = map_pic_to_world
+                let device_backdrop_rect = map_pic_to_root
                     .map(&backdrop_rect)
-                    .expect("bug: unable to map backdrop to world space");
+                    .expect("bug: unable to map backdrop to device space");
 
                 
                 
                 composite_state.register_occluder(
                     z_id_backdrop,
-                    world_backdrop_rect,
+                    device_backdrop_rect,
                     self.compositor_clip,
                 );
             }
@@ -3381,13 +3382,13 @@ impl Display for SurfacePromotionFailure {
 
 struct TilePreUpdateContext {
     
-    pic_to_world_mapper: SpaceMapper<PicturePixel, WorldPixel>,
+    pic_to_device_mapper: SpaceMapper<PicturePixel, DevicePixel>,
 
     
     background_color: Option<ColorF>,
 
     
-    global_screen_world_rect: WorldRect,
+    global_screen_device_rect: DeviceRect,
 
     
     tile_size: PictureSize,
@@ -3424,4 +3425,40 @@ struct TilePostUpdateState<'a> {
 
     
     composite_state: &'a mut CompositeState,
+}
+
+#[test]
+fn test_max_surface_size_for_screen() {
+    const DEVICE_LIMIT: i32 = 16384;
+    let for_screen = |w, h| max_surface_size_for_screen(DeviceIntSize::new(w, h), DEVICE_LIMIT);
+
+    
+    
+    
+    assert_eq!(for_screen(1065, 665), MAX_SURFACE_SIZE);
+    assert_eq!(for_screen(1920, 1080), MAX_SURFACE_SIZE);
+    assert_eq!(for_screen(3840, 2160), MAX_SURFACE_SIZE);
+
+    
+    
+    assert_eq!(for_screen(1265, 665), for_screen(1268, 666));
+    assert_eq!(for_screen(4865, 765), for_screen(5865, 1665));
+
+    
+    
+    assert_eq!(for_screen(4865, 765), 8192);
+    assert_eq!(for_screen(5865, 1665), 8192);
+    assert_eq!(for_screen(6016, 3384), 8192);
+
+    
+    assert_eq!(for_screen(1080, 5000), 8192);
+
+    
+    
+    assert_eq!(max_surface_size_for_screen(DeviceIntSize::new(6016, 3384), 4096), 4096);
+    assert_eq!(max_surface_size_for_screen(DeviceIntSize::new(1920, 1080), 2048), 2048);
+
+    
+    assert_eq!(for_screen(0, 0), MAX_SURFACE_SIZE);
+    assert_eq!(for_screen(-1, -1), MAX_SURFACE_SIZE);
 }

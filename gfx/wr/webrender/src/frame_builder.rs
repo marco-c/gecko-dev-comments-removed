@@ -413,11 +413,9 @@ impl FrameBuilder {
                     visibility_state.clip_tree.push_clip_root_node(node);
                 }
 
-                let culling_rect = DeviceRect::max_rect();
                 update_prim_visibility(
                     *pic_index,
                     None,
-                    &culling_rect,
                     &scene.prim_store,
                     true,
                     &visibility_context,
@@ -460,7 +458,7 @@ impl FrameBuilder {
                         
                         
                         
-                        let culling_rect = tile_cache.pre_update(
+                        tile_cache.pre_update(
                             surface_index,
                             &visibility_context,
                             &mut visibility_state,
@@ -477,7 +475,6 @@ impl FrameBuilder {
                         update_prim_visibility(
                             *pic_index,
                             None,
-                            &culling_rect,
                             &scene.prim_store,
                             true,
                             &visibility_context,
