@@ -745,10 +745,12 @@ RegExpRunStatus RegExpShared::execute(JSContext* cx,
     return RegExpShared::executeAtom(re, input, start, matches);
   }
 
+  
+  MOZ_ASSERT(cx->maybeReportDelayedOverRecursed());
+
   uint32_t interruptRetries = 0;
   const uint32_t maxInterruptRetries = 4;
   do {
-    DebugOnly<bool> alreadyThrowing = cx->isExceptionPending();
     RegExpRunStatus result = irregexp::Execute(cx, re, input, start, matches);
 #ifdef DEBUG
     
@@ -758,32 +760,18 @@ RegExpRunStatus RegExpShared::execute(JSContext* cx,
     }
 #endif
     if (result == RegExpRunStatus::Error) {
-      
-
-
-
-
-
-
-
-
-
-      if (cx->isExceptionPending()) {
-        
-        
-        
-        
-        MOZ_ASSERT(alreadyThrowing);
+      if (!cx->maybeReportDelayedOverRecursed()) {
         return RegExpRunStatus::Error;
       }
       if (cx->hasAnyPendingInterrupt()) {
         if (!CheckForInterrupt(cx)) {
           return RegExpRunStatus::Error;
         }
+
+        
+        
+        MOZ_ASSERT_IF(IsNativeRegExpEnabled(), interruptRetries == 0);
         if (interruptRetries++ < maxInterruptRetries) {
-          
-          
-          
           
           if (!compileIfNecessary(cx, re, input,
                                   RegExpShared::CodeKind::Jitcode)) {
@@ -791,9 +779,20 @@ RegExpRunStatus RegExpShared::execute(JSContext* cx,
           }
           continue;
         }
+        
+        
+        JS_ReportErrorASCII(cx, "regexp timed out");
       }
       
-      ReportOverRecursed(cx);
+      
+      
+      
+      
+      
+      
+      
+      
+      MOZ_ASSERT(cx->isExceptionPending() || cx->hadUncatchableException());
       return RegExpRunStatus::Error;
     }
 
@@ -1330,7 +1329,7 @@ JS_PUBLIC_API bool JS::CheckRegExpSyntax(JSContext* cx, const char16_t* chars,
   bool success = irregexp::CheckPatternSyntax(
       cx->tempLifoAlloc(), cx->stackLimitForCurrentPrincipal(),
       dummyTokenStream, source, flags);
-  error.set(UndefinedValue());
+  error.setUndefined();
   if (!success) {
     if (!fc.convertToRuntimeErrorAndClear()) {
       return false;

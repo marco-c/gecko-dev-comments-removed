@@ -1667,6 +1667,10 @@ bool js::RegExpMatcher(JSContext* cx, unsigned argc, Value* vp) {
 bool js::RegExpMatcherRaw(JSContext* cx, HandleObject regexp,
                           HandleString input, int32_t lastIndex,
                           MatchPairs* maybeMatches, MutableHandleValue output) {
+  if (!cx->maybeReportDelayedOverRecursed()) {
+    return false;
+  }
+
   MOZ_ASSERT(lastIndex >= 0 && size_t(lastIndex) <= input->length());
 
   
@@ -1748,6 +1752,10 @@ bool js::RegExpSearcher(JSContext* cx, unsigned argc, Value* vp) {
 bool js::RegExpSearcherRaw(JSContext* cx, HandleObject regexp,
                            HandleString input, int32_t lastIndex,
                            MatchPairs* maybeMatches, int32_t* result) {
+  if (!cx->maybeReportDelayedOverRecursed()) {
+    return false;
+  }
+
   MOZ_ASSERT(lastIndex >= 0 && size_t(lastIndex) <= input->length());
 
   
@@ -1830,6 +1838,10 @@ bool js::RegExpBuiltinExecMatchFromJit(JSContext* cx,
                                        HandleString input,
                                        MatchPairs* maybeMatches,
                                        MutableHandleValue output) {
+  if (!cx->maybeReportDelayedOverRecursed()) {
+    return false;
+  }
+
   int32_t lastIndex = 0;
   if (regexp->isGlobalOrSticky()) {
     lastIndex = regexp->getLastIndex().toInt32();
@@ -1872,6 +1884,10 @@ static bool RegExpBuiltinExecTestRaw(JSContext* cx,
 bool js::RegExpBuiltinExecTestFromJit(JSContext* cx,
                                       Handle<RegExpObject*> regexp,
                                       HandleString input, bool* result) {
+  if (!cx->maybeReportDelayedOverRecursed()) {
+    return false;
+  }
+
   int32_t lastIndex = 0;
   if (regexp->isGlobalOrSticky()) {
     lastIndex = regexp->getLastIndex().toInt32();

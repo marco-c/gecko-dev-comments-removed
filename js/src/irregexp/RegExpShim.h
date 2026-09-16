@@ -1169,10 +1169,6 @@ using DisallowGarbageCollection = JS::AutoAssertNoGC;
 
 
 
-
-
-
-
 class AllowGarbageCollection {
  public:
   AllowGarbageCollection() = default;
@@ -1477,7 +1473,7 @@ class Isolate {
   
   
   
-  void StackOverflow() {}
+  void StackOverflow() { cx_->noteDelayedOverRecursed(); }
 
 #ifndef V8_INTL_SUPPORT
   unibrow::Mapping<unibrow::Ecma262UnCanonicalize>* jsregexp_uncanonicalize() {
