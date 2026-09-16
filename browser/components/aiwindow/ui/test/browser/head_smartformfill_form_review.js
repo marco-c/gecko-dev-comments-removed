@@ -77,6 +77,7 @@ const { NonPrivateTabs } = ChromeUtils.importESModule(
 
 
 
+
 function respondToFormReviewMetadataRequest(schemaName, requestData, respond) {
   switch (schemaName) {
     case FIELD_CLASSIFICATION_SCHEMA:
@@ -385,6 +386,7 @@ async function getFormReviewSnapshot(reviewBrowser) {
     return {
       state: review.state,
       errorType: review.errorType,
+      filledFieldCount: review.filledFieldCount,
       fields: review.fields.map(field => ({ ...field })),
       l10nIds: [...review.renderRoot.querySelectorAll("[data-l10n-id]")].map(
         element => element.getAttribute("data-l10n-id")
