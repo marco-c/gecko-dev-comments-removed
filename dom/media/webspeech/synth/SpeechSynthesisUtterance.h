@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_dom_SpeechSynthesisUtterance_h
-#define mozilla_dom_SpeechSynthesisUtterance_h
+#ifndef DOM_MEDIA_WEBSPEECH_SYNTH_SPEECHSYNTHESISUTTERANCE_H_
+#define DOM_MEDIA_WEBSPEECH_SYNTH_SPEECHSYNTHESISUTTERANCE_H_
 
 #include "js/TypeDecls.h"
 #include "mozilla/DOMEventTargetHelper.h"
@@ -109,4 +109,4 @@ class SpeechSynthesisUtterance final : public DOMEventTargetHelper {
 
 }  
 
-#endif
+#endif  

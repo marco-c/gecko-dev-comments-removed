@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_dom_SpeechGrammar_h
-#define mozilla_dom_SpeechGrammar_h
+#ifndef DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHGRAMMAR_H_
+#define DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHGRAMMAR_H_
 
 #include "js/TypeDecls.h"
 #include "nsCOMPtr.h"
@@ -57,4 +57,4 @@ class SpeechGrammar final : public nsISupports, public nsWrapperCache {
 }  
 }  
 
-#endif
+#endif  

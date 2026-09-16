@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_dom_SpeechRecognitionResultList_h
-#define mozilla_dom_SpeechRecognitionResultList_h
+#ifndef DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHRECOGNITIONRESULTLIST_H_
+#define DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHRECOGNITIONRESULTLIST_H_
 
 #include "SpeechRecognitionResult.h"
 #include "js/TypeDecls.h"
@@ -45,4 +45,4 @@ class SpeechRecognitionResultList final : public nsISupports,
 
 }  
 
-#endif
+#endif  

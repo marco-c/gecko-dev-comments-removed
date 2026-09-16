@@ -2,10 +2,8 @@
 
 
 
-
-
-#ifndef mozilla_dom_SapiService_h
-#define mozilla_dom_SapiService_h
+#ifndef DOM_MEDIA_WEBSPEECH_SYNTH_WINDOWS_SAPISERVICE_H_
+#define DOM_MEDIA_WEBSPEECH_SYNTH_WINDOWS_SAPISERVICE_H_
 
 
 
@@ -57,4 +55,4 @@ class SapiService final : public nsISpeechService, public nsIObserver {
 
 }  
 
-#endif
+#endif  

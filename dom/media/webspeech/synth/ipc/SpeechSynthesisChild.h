@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_dom_SpeechSynthesisChild_h
-#define mozilla_dom_SpeechSynthesisChild_h
+#ifndef DOM_MEDIA_WEBSPEECH_SYNTH_IPC_SPEECHSYNTHESISCHILD_H_
+#define DOM_MEDIA_WEBSPEECH_SYNTH_IPC_SPEECHSYNTHESISCHILD_H_
 
 #include "mozilla/dom/PSpeechSynthesisChild.h"
 #include "mozilla/dom/PSpeechSynthesisRequestChild.h"
@@ -128,4 +128,4 @@ class SpeechTaskChild : public nsSpeechTask {
 
 }  
 
-#endif
+#endif  

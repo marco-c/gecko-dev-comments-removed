@@ -2,10 +2,8 @@
 
 
 
-
-
-#ifndef mozilla_dom_SpeechSynthesisService_h
-#define mozilla_dom_SpeechSynthesisService_h
+#ifndef DOM_MEDIA_WEBSPEECH_SYNTH_ANDROID_SPEECHSYNTHESISSERVICE_H_
+#define DOM_MEDIA_WEBSPEECH_SYNTH_ANDROID_SPEECHSYNTHESISSERVICE_H_
 
 #include "mozilla/StaticPtr.h"
 #include "mozilla/java/SpeechSynthesisServiceNatives.h"
@@ -65,4 +63,4 @@ class SpeechSynthesisService final
 
 }  
 }  
-#endif
+#endif  

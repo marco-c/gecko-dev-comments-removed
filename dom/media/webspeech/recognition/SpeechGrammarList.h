@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_dom_SpeechGrammarList_h
-#define mozilla_dom_SpeechGrammarList_h
+#ifndef DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHGRAMMARLIST_H_
+#define DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHGRAMMARLIST_H_
 
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
@@ -67,4 +67,4 @@ class SpeechGrammarList final : public nsISupports, public nsWrapperCache {
 }  
 }  
 
-#endif
+#endif  

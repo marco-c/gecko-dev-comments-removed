@@ -2,10 +2,8 @@
 
 
 
-
-
-#ifndef mozilla_dom_SpeechDispatcherService_h
-#define mozilla_dom_SpeechDispatcherService_h
+#ifndef DOM_MEDIA_WEBSPEECH_SYNTH_SPEECHD_SPEECHDISPATCHERSERVICE_H_
+#define DOM_MEDIA_WEBSPEECH_SYNTH_SPEECHD_SPEECHDISPATCHERSERVICE_H_
 
 #include "mozilla/StaticPtr.h"
 #include "nsIObserver.h"
@@ -64,4 +62,4 @@ class SpeechDispatcherService final : public nsIObserver,
 
 }  
 }  
-#endif
+#endif  

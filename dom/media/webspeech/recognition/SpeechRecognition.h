@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_dom_SpeechRecognition_h
-#define mozilla_dom_SpeechRecognition_h
+#ifndef DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHRECOGNITION_H_
+#define DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHRECOGNITION_H_
 
 #include "DOMMediaStream.h"
 #include "SpeechGrammarList.h"
@@ -274,4 +274,4 @@ inline nsISupports* ToSupports(dom::SpeechRecognition* aRec) {
 
 }  
 
-#endif
+#endif  

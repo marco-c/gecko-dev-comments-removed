@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_dom_SpeechRecognitionAlternative_h
-#define mozilla_dom_SpeechRecognitionAlternative_h
+#ifndef DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHRECOGNITIONALTERNATIVE_H_
+#define DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHRECOGNITIONALTERNATIVE_H_
 
 #include "js/TypeDecls.h"
 #include "nsCycleCollectionParticipant.h"
@@ -42,4 +42,4 @@ class SpeechRecognitionAlternative final : public nsISupports,
 
 }  
 
-#endif
+#endif  

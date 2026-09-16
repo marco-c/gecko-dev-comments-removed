@@ -2,10 +2,8 @@
 
 
 
-
-
-#ifndef mozilla_dom_nsSynthVoiceRegistry_h
-#define mozilla_dom_nsSynthVoiceRegistry_h
+#ifndef DOM_MEDIA_WEBSPEECH_SYNTH_NSSYNTHVOICEREGISTRY_H_
+#define DOM_MEDIA_WEBSPEECH_SYNTH_NSSYNTHVOICEREGISTRY_H_
 
 #include "nsISynthVoiceRegistry.h"
 #include "nsRefPtrHashtable.h"
@@ -98,4 +96,4 @@ class nsSynthVoiceRegistry final : public nsISynthVoiceRegistry {
 
 }  
 
-#endif
+#endif  

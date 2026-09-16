@@ -2,10 +2,8 @@
 
 
 
-
-
-#ifndef nsFakeSynthServices_h
-#define nsFakeSynthServices_h
+#ifndef DOM_MEDIA_WEBSPEECH_SYNTH_TEST_NSFAKESYNTHSERVICES_H_
+#define DOM_MEDIA_WEBSPEECH_SYNTH_TEST_NSFAKESYNTHSERVICES_H_
 
 #include "mozilla/Monitor.h"
 #include "mozilla/StaticPtr.h"
@@ -39,4 +37,4 @@ class nsFakeSynthServices : public nsIObserver {
 
 }  
 
-#endif
+#endif  

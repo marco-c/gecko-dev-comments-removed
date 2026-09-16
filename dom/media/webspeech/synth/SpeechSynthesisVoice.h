@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_dom_SpeechSynthesisVoice_h
-#define mozilla_dom_SpeechSynthesisVoice_h
+#ifndef DOM_MEDIA_WEBSPEECH_SYNTH_SPEECHSYNTHESISVOICE_H_
+#define DOM_MEDIA_WEBSPEECH_SYNTH_SPEECHSYNTHESISVOICE_H_
 
 #include "js/TypeDecls.h"
 #include "nsCOMPtr.h"
@@ -50,4 +50,4 @@ class SpeechSynthesisVoice final : public nsISupports, public nsWrapperCache {
 
 }  
 
-#endif
+#endif  

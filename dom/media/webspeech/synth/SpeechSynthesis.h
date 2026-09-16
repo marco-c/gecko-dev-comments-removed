@@ -2,10 +2,8 @@
 
 
 
-
-
-#ifndef mozilla_dom_SpeechSynthesis_h
-#define mozilla_dom_SpeechSynthesis_h
+#ifndef DOM_MEDIA_WEBSPEECH_SYNTH_SPEECHSYNTHESIS_H_
+#define DOM_MEDIA_WEBSPEECH_SYNTH_SPEECHSYNTHESIS_H_
 
 #include "SpeechSynthesisUtterance.h"
 #include "SpeechSynthesisVoice.h"
@@ -59,6 +57,8 @@ class SpeechSynthesis final : public DOMEventTargetHelper,
 
   void ForceEnd();
 
+  void DisconnectFromOwner() override;
+
   IMPL_EVENT_HANDLER(voiceschanged)
 
  private:
@@ -84,4 +84,4 @@ class SpeechSynthesis final : public DOMEventTargetHelper,
 };
 
 }  
-#endif
+#endif  

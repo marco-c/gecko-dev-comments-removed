@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_dom_SpeechStreamListener_h
-#define mozilla_dom_SpeechStreamListener_h
+#ifndef DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHTRACKLISTENER_H_
+#define DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHTRACKLISTENER_H_
 
 #include "AudioSegment.h"
 #include "MediaTrackGraph.h"
@@ -49,4 +49,4 @@ class SpeechTrackListener : public MediaTrackListener {
 }  
 }  
 
-#endif
+#endif  
