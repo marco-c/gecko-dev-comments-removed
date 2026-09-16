@@ -2422,6 +2422,11 @@ pref("browser.smartwindow.agent.toolbar.enabled", false);
 
 
 
+
+pref("browser.smartwindow.agent.monitorAnnouncement", false);
+
+
+
 pref("browser.smartwindow.searchQuery.endpointURL", "https://mlpa-prod-prod-mozilla.freetls.fastly.net/v1/search");
 pref("browser.smartwindow.searchQuery.apiKey", "");
 
