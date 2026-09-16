@@ -332,6 +332,15 @@ constexpr bool ValueTypeIsGCThing(JSValueType type) {
 
 enum JSWhyMagic {
   
+
+
+
+
+
+
+  JS_UNINITIALIZED_LEXICAL,
+
+  
   JS_ELEMENTS_HOLE,
 
   
@@ -357,9 +366,6 @@ enum JSWhyMagic {
 
   
   JS_OPTIMIZED_OUT,
-
-  
-  JS_UNINITIALIZED_LEXICAL,
 
   
   JS_MISSING_ARGUMENTS,
@@ -923,8 +929,6 @@ class Value {
   
 
   bool operator==(const Value& rhs) const = default;
-
-  bool operator!=(const Value& rhs) const = default;
 
   friend inline bool SameType(const Value& lhs, const Value& rhs);
 
