@@ -8777,14 +8777,6 @@ class MPostWriteBarrier : public MBinaryInstruction,
 
   AliasSet getAliasSet() const override { return AliasSet::None(); }
 
-#ifdef DEBUG
-  bool isConsistentFloat32Use(MUse* use) const override {
-    
-    
-    return use == getUseFor(1);
-  }
-#endif
-
   ALLOW_CLONE(MPostWriteBarrier)
 };
 
@@ -8806,14 +8798,6 @@ class MPostWriteElementBarrier
   NAMED_OPERANDS((0, object), (1, value), (2, index))
 
   AliasSet getAliasSet() const override { return AliasSet::None(); }
-
-#ifdef DEBUG
-  bool isConsistentFloat32Use(MUse* use) const override {
-    
-    
-    return use == getUseFor(1);
-  }
-#endif
 
   ALLOW_CLONE(MPostWriteElementBarrier)
 };
