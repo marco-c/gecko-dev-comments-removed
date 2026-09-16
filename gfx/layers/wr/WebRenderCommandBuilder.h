@@ -6,6 +6,7 @@
 #define GFX_WEBRENDERCOMMANDBUILDER_H
 
 #include "ImgDrawResult.h"
+#include "mozilla/EnumeratedArray.h"
 #include "mozilla/SVGIntegrationUtils.h"  
 #include "mozilla/layers/ClipManager.h"
 #include "mozilla/layers/HitTestInfoManager.h"
@@ -216,6 +217,7 @@ class WebRenderCommandBuilder final {
 
  private:
   RenderRootStateManager* GetRenderRootStateManager();
+  void ReportBlobStats();
   void CreateWebRenderCommands(nsDisplayItem* aItem,
                                mozilla::wr::DisplayListBuilder& aBuilder,
                                mozilla::wr::IpcResourceUpdateQueue& aResources,
@@ -268,6 +270,31 @@ class WebRenderCommandBuilder final {
   
   
   bool mContainsSVGGroup;
+
+  
+  
+  
+  struct BlobStats {
+    
+    uint32_t mGroupBlobs = 0;
+    
+    uint32_t mGroupBlobsPainted = 0;
+    
+    uint32_t mFallbackBlobs = 0;
+    
+    uint64_t mBlobArea = 0;
+    
+    EnumeratedArray<DisplayItemType, uint32_t,
+                    size_t(DisplayItemType::TYPE_MAX)>
+        mGroupedItems;
+    
+    EnumeratedArray<DisplayItemType, uint32_t,
+                    size_t(DisplayItemType::TYPE_MAX)>
+        mSplits;
+
+    void Reset() { *this = BlobStats(); }
+  };
+  BlobStats mBlobStats;
 };
 
 }  
