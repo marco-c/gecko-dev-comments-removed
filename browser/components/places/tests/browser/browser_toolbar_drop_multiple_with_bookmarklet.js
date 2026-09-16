@@ -18,12 +18,12 @@ add_task(async function test() {
   
   let placesItems = document.getElementById("PlacesToolbarItems");
   Assert.ok(placesItems, "PlacesToolbarItems should not be null");
-  let simulateDragDrop = async function (aEffect, aMimeType) {
-    let urls = [
-      "https://example.com/1/",
-      `javascript: (() => {alert('Hello, World!');})();`,
-      "https://example.com/2/",
-    ];
+  let simulateDragDrop = async function (
+    aEffect,
+    aMimeType,
+    aJsUrl = `javascript: (() => {alert('Hello, World!');})();`
+  ) {
+    let urls = ["https://example.com/1/", aJsUrl, "https://example.com/2/"];
 
     let data = urls.map(spec => spec + "\n" + spec).join("\n");
 
@@ -43,8 +43,13 @@ add_task(async function test() {
 
   
   let mimeType = ["text/x-moz-url"];
-  let effects = ["copy", "link"];
-  for (let effect of effects) {
-    await simulateDragDrop(effect, mimeType);
+  for (let effect of ["copy", "link"]) {
+    for (let jsUrl of [
+      `javascript: (() => {alert('Hello, World!');})();`,
+      `JavaScript: (() => {})();`,
+      ` javascript: (() => {})();`,
+    ]) {
+      await simulateDragDrop(effect, mimeType, jsUrl);
+    }
   }
 });
