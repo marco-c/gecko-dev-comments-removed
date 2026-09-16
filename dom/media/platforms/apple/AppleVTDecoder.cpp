@@ -11,6 +11,7 @@
 
 #include "AOMDecoder.h"
 #include "AppleDecoderModule.h"
+#include "AppleVTColorSpace.h"
 #include "CallbackThreadRegistry.h"
 #include "H264.h"
 #include "H265.h"
@@ -92,6 +93,24 @@ AppleVTDecoder::~AppleVTDecoder() { MOZ_COUNT_DTOR(AppleVTDecoder); }
 
 RefPtr<MediaDataDecoder::InitPromise> AppleVTDecoder::Init() {
   AUTO_PROFILER_LABEL("AppleVTDecoder::Init", MEDIA_PLAYBACK);
+  if (mSession) {
+    MOZ_ASSERT_UNREACHABLE(
+        "Cannot initialize decoder again without shutting down");
+    return InitPromise::CreateAndReject(
+        MediaResult(NS_ERROR_ALREADY_INITIALIZED,
+                    RESULT_DETAIL("Decoder initialization already attempted")),
+        __func__);
+  }
+
+  if (mFormat) {
+    MOZ_ASSERT_UNREACHABLE(
+        "Cannot initialize decoder again after previous initialization failed");
+    return InitPromise::CreateAndReject(
+        MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                    RESULT_DETAIL("Previous decoder initialization failed")),
+        __func__);
+  }
+
   MediaResult rv = InitializeSession();
 
   if (NS_SUCCEEDED(rv)) {
@@ -414,6 +433,40 @@ nsCString AppleVTDecoder::GetCodecName() const {
   return nsCString(EnumValueToString(mStreamType));
 }
 
+CFStringRef CGColorSpaceNameForFrame(gfx::TransferFunction aTransferFunction,
+                                     gfx::ColorSpace2 aColorPrimaries) {
+  if (__builtin_available(macOS 11.0, *)) {
+    if (aTransferFunction == gfx::TransferFunction::PQ) {
+      return kCGColorSpaceITUR_2100_PQ;
+    }
+    if (aTransferFunction == gfx::TransferFunction::HLG) {
+      return kCGColorSpaceITUR_2100_HLG;
+    }
+  }
+  if (aColorPrimaries == gfx::ColorSpace2::BT2020) {
+    return kCGColorSpaceITUR_2020;
+  }
+  return nullptr;
+}
+
+bool MaybeAttachCGColorSpace(CVImageBufferRef aImage,
+                             gfx::TransferFunction aTransferFunction,
+                             gfx::ColorSpace2 aColorPrimaries) {
+  CFStringRef colorSpaceName =
+      CGColorSpaceNameForFrame(aTransferFunction, aColorPrimaries);
+  if (!colorSpaceName) {
+    return false;
+  }
+  AutoCFTypeRef<CGColorSpaceRef> colorSpace(
+      CGColorSpaceCreateWithName(colorSpaceName));
+  if (!colorSpace) {
+    return false;
+  }
+  CVBufferSetAttachment(aImage, kCVImageBufferCGColorSpaceKey, colorSpace,
+                        kCVAttachmentMode_ShouldPropagate);
+  return true;
+}
+
 
 void AppleVTDecoder::OutputFrame(CVPixelBufferRef aImage,
                                  AppleVTDecoder::AppleFrameRef aFrameRef) {
@@ -583,25 +636,10 @@ void AppleVTDecoder::OutputFrame(CVPixelBufferRef aImage,
 
     
     
-    CFStringRef colorSpaceName = nullptr;
-    if (__builtin_available(macOS 11.0, *)) {
-      if (mTransferFunction == gfx::TransferFunction::PQ) {
-        colorSpaceName = kCGColorSpaceITUR_2100_PQ;
-      } else if (mTransferFunction == gfx::TransferFunction::HLG) {
-        colorSpaceName = kCGColorSpaceITUR_2100_HLG;
-      }
-    }
-    if (!colorSpaceName) {
-      colorSpaceName = mColorPrimaries == gfx::ColorSpace2::BT2020
-                           ? kCGColorSpaceITUR_2020
-                           : kCGColorSpaceITUR_709;
-    }
-    AutoCFTypeRef<CGColorSpaceRef> colorSpace(
-        CGColorSpaceCreateWithName(colorSpaceName));
-    if (colorSpace) {
-      CVBufferSetAttachment(aImage, kCVImageBufferCGColorSpaceKey, colorSpace,
-                            kCVAttachmentMode_ShouldPropagate);
-    }
+    
+    
+    
+    MaybeAttachCGColorSpace(aImage, mTransferFunction, mColorPrimaries);
 
     CFTypeRefPtr<IOSurfaceRef> surface =
         CFTypeRefPtr<IOSurfaceRef>::WrapUnderGetRule(
