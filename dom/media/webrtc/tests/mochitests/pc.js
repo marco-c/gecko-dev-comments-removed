@@ -1038,7 +1038,7 @@ PeerConnectionWrapper.prototype = {
     
     
     element.srcObject = new MediaStream([track]);
-    element.play();
+    element.play().catch(() => {});
   },
 
   addSendStream(stream) {

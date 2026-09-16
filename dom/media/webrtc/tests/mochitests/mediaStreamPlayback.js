@@ -95,7 +95,7 @@ MediaStreamPlayback.prototype = {
 
     
     this.mediaElement.srcObject = this.mediaStream;
-    this.mediaElement.play();
+    this.mediaElement.play().catch(() => {});
   },
 
   
