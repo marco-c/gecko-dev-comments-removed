@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGANIMATEDPATHSEGLIST_H_
 #define DOM_SVG_SVGANIMATEDPATHSEGLIST_H_
 
@@ -61,6 +59,8 @@ class SVGAnimatedPathSegList final {
 
   nsresult SetBaseValueString(const nsAString& aValue);
 
+  bool FirstSegmentIsValid(
+      const dom::Sequence<dom::SVGPathSegmentInit>& aValues) const;
   void SetBaseValueFromPathSegments(
       const dom::Sequence<dom::SVGPathSegmentInit>& aValues);
 
