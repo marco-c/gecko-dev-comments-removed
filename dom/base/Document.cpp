@@ -4299,6 +4299,7 @@ nsresult Document::InitFeaturePolicy(nsIChannel* aChannel) {
   }
 
   
+  
   if (!StaticPrefs::dom_security_featurePolicy_header_enabled()) {
     return NS_OK;
   }
@@ -4315,10 +4316,10 @@ nsresult Document::InitFeaturePolicy(nsIChannel* aChannel) {
 
   
   nsAutoCString value;
-  rv = httpChannel->GetResponseHeader("Feature-Policy"_ns, value);
+  rv = httpChannel->GetResponseHeader("Permissions-Policy"_ns, value);
   if (NS_SUCCEEDED(rv)) {
-    FeaturePolicy()->SetDeclaredPolicy(this, NS_ConvertUTF8toUTF16(value),
-                                       NodePrincipal(), nullptr);
+    FeaturePolicy()->SetDeclaredHeaderPolicy(this, NS_ConvertUTF8toUTF16(value),
+                                             NodePrincipal());
   }
 
   return NS_OK;

@@ -106,6 +106,12 @@ class FeaturePolicy final : public nsISupports, public nsWrapperCache {
 
   
   
+  void SetDeclaredHeaderPolicy(mozilla::dom::Document* aDocument,
+                               const nsAString& aPolicyString,
+                               nsIPrincipal* aSelfOrigin);
+
+  
+  
   
   void MaybeSetAllowedPolicy(const nsAString& aFeatureName);
 
