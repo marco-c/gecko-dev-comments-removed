@@ -16,7 +16,7 @@ pub struct CrashContext {
 }
 
 #[link(name = "kernel32")]
-unsafe extern "system" {
+extern "system" {
     #[link_name = "RtlCaptureContext"]
     pub fn capture_context(ctx_rec: *mut CONTEXT);
 }

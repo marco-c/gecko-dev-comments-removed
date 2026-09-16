@@ -1,9 +1,7 @@
 
-use core::ffi::c_int;
 
 
-
-pub type kern_return_t = c_int;
+pub type kern_return_t = ::libc::c_int;
 
 pub const KERN_SUCCESS: kern_return_t = 0;
 pub const KERN_INVALID_ADDRESS: kern_return_t = 1;

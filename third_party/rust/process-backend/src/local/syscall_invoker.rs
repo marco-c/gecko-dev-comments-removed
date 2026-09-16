@@ -1,8 +1,7 @@
-use crate::wrapper::errno;
-use core::ffi::c_int;
+use {super::errno, core::ffi::c_int};
 
 #[derive(Debug, Default)]
-pub(crate) struct SyscallInvoker(Option<c_int>);
+pub struct SyscallInvoker(Option<c_int>);
 
 impl SyscallInvoker {
     
@@ -13,7 +12,7 @@ impl SyscallInvoker {
     
     
     
-    pub(crate) fn invoke<T, F>(&mut self, f: F) -> Result<T, c_int>
+    pub fn invoke<T, F>(&mut self, f: F) -> Result<T, c_int>
     where
         F: FnOnce() -> Result<T, ()>,
     {
@@ -25,7 +24,7 @@ impl SyscallInvoker {
     }
 
     
-    pub(crate) fn invoke_standard<T, F>(&mut self, f: F) -> Result<T, c_int>
+    pub fn invoke_standard<T, F>(&mut self, f: F) -> Result<T, c_int>
     where
         F: FnOnce() -> T,
         T: From<i8> + core::cmp::PartialEq,
@@ -41,7 +40,7 @@ impl SyscallInvoker {
 
     
     #[cfg(feature = "testing")]
-    pub(crate) fn fail_one_syscall_with(&mut self, errno: c_int) {
+    pub fn fail_one_syscall_with(&mut self, errno: c_int) {
         self.0 = Some(errno);
     }
 }

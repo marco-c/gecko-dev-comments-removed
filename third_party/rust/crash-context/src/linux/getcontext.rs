@@ -1,6 +1,6 @@
 
 
-unsafe extern "C" {
+extern "C" {
     
     
     
@@ -20,11 +20,5 @@ cfg_if::cfg_if! {
         mod aarch64;
     } else if #[cfg(target_arch = "arm")] {
         mod arm;
-    } else if #[cfg(target_arch = "riscv64")] {
-        mod riscv64;
-    } else if #[cfg(target_arch = "s390x")] {
-        mod s390x;
-    } else if #[cfg(target_arch = "loongarch64")] {
-        mod loongarch64;
     }
 }
