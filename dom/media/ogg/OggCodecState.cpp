@@ -909,7 +909,8 @@ bool OpusState::ReconstructOpusGranulepos(void) {
       mPrevPageGranulepos = last_gp;
       return true;
     }
-    NS_WARNING("No previous granule position to use for Opus end trimming.");
+    LOG(LogLevel::Debug,
+        ("No previous granule position to use for Opus end trimming."));
     
     
     
