@@ -649,6 +649,15 @@ bool Watchtower::watchPropertyRemoveSlow(JSContext* cx,
 }
 
 
+void Watchtower::finishPropertyRemove(JSContext* cx, NativeObject* obj,
+                                      PropertyInfo propInfo) {
+  MOZ_ASSERT(obj->hasObjectFuse());
+  if (auto* objFuse = cx->zone()->objectFuses.get(obj)) {
+    objFuse->finishPropertyRemove(propInfo);
+  }
+}
+
+
 bool Watchtower::watchPropertyFlagsChangeSlow(JSContext* cx,
                                               Handle<NativeObject*> obj,
                                               HandleId id,

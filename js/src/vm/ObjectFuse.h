@@ -171,6 +171,10 @@ class ObjectFuse {
   }
 
  public:
+  
+  
+  static bool tracksPropertyKey(PropertyKey key) { return !key.isInt(); }
+
   uint32_t generationMaybeInvalid() const {
     return generation_.valueMaybeInvalid();
   }
@@ -178,7 +182,7 @@ class ObjectFuse {
     return invalidatedConstantProperty_;
   }
 
-  bool tryOptimizeConstantProperty(PropertyInfo prop);
+  bool tryOptimizeConstantProperty(PropertyKey key, PropertyInfo prop);
 
   
   
@@ -222,6 +226,7 @@ class ObjectFuse {
   void handlePropertyValueChange(JSContext* cx, PropertyInfo prop);
   void handlePropertyRemove(JSContext* cx, PropertyInfo prop,
                             bool* wasTrackedProp);
+  void finishPropertyRemove(PropertyInfo prop);
   void handleTeleportingShadowedProperty(JSContext* cx, PropertyInfo prop);
   void handleTeleportingProtoMutation(JSContext* cx);
   void handleShadowedGlobalProperty(JSContext* cx, PropertyInfo prop);
