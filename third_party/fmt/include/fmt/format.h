@@ -56,7 +56,6 @@
 #  endif
 #  include <stdexcept>     
 #  include <string>        
-#  include <system_error>  
 
 
 #  if FMT_HAS_INCLUDE(<bit>) && FMT_CPLUSPLUS > 201703L
