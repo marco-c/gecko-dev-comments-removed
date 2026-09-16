@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/nullability.h"
 #include "absl/flags/flag.h"
 #include "absl/strings/string_view.h"
 #include "api/audio/audio_device.h"
@@ -150,11 +151,20 @@ class VideoRtcpAndSyncObserver : public test::RtpRtcpObserver,
   }
 
   void CheckStats() {
-    if (!receive_stream_)
+    if (video_receive_stream_ == nullptr || audio_receive_stream_ == nullptr)
       return;
 
-    VideoReceiveStreamInterface::Stats stats = receive_stream_->GetStats();
-    if (stats.sync_offset_ms == std::numeric_limits<int>::max())
+    const VideoReceiveStreamInterface::Stats video_stats =
+        video_receive_stream_->GetStats();
+    if (video_stats.sync_offset_ms == std::numeric_limits<int>::max())
+      return;
+
+    const AudioReceiveStreamInterface::Stats audio_stats =
+        audio_receive_stream_->GetStats(
+            false);
+    
+    
+    if (audio_stats.packets_received == 0 || audio_stats.decoding_normal == 0)
       return;
 
     Timestamp now = clock_->CurrentTime();
@@ -163,7 +173,7 @@ class VideoRtcpAndSyncObserver : public test::RtpRtcpObserver,
     
     if (time_since_creation < kStartupTimeMs)
       return;
-    if (std::abs(stats.sync_offset_ms) < kInSyncThresholdMs) {
+    if (std::abs(video_stats.sync_offset_ms) < kInSyncThresholdMs) {
       if (first_time_in_sync_ == -1) {
         first_time_in_sync_ = now.ms();
         GetGlobalMetricsLogger()->LogSingleValueMetric(
@@ -176,13 +186,16 @@ class VideoRtcpAndSyncObserver : public test::RtpRtcpObserver,
     }
     if (first_time_in_sync_ != -1)
       sync_offset_ms_list_.AddSample(
-          {.value = static_cast<double>(stats.sync_offset_ms), .time = now});
+          {.value = static_cast<double>(video_stats.sync_offset_ms),
+           .time = now});
   }
 
-  void set_receive_stream(VideoReceiveStreamInterface* receive_stream) {
+  void set_receive_streams(
+      VideoReceiveStreamInterface* absl_nullable video_receive_stream,
+      AudioReceiveStreamInterface* absl_nullable audio_receive_stream) {
     RTC_DCHECK_EQ(task_queue_, TaskQueueBase::Current());
-    
-    receive_stream_ = receive_stream;
+    video_receive_stream_ = video_receive_stream;
+    audio_receive_stream_ = audio_receive_stream;
   }
 
   void PrintResults() {
@@ -196,7 +209,8 @@ class VideoRtcpAndSyncObserver : public test::RtpRtcpObserver,
   const std::string test_label_;
   const int64_t creation_time_ms_;
   int64_t first_time_in_sync_ = -1;
-  VideoReceiveStreamInterface* receive_stream_ = nullptr;
+  VideoReceiveStreamInterface* absl_nullable video_receive_stream_ = nullptr;
+  AudioReceiveStreamInterface* absl_nullable audio_receive_stream_ = nullptr;
   SamplesStatsCounter sync_offset_ms_list_;
   TaskQueueBase* const task_queue_;
 };
@@ -294,7 +308,6 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
 
     AudioSendStream::Config audio_send_config(audio_send_transport.get());
     audio_send_config.rtp.ssrc = kAudioSendSsrc;
-    
     audio_send_config.send_codec_spec = AudioSendStream::Config::SendCodecSpec(
         test::VideoTestConstants::kAudioSendPayloadType, {"OPUS", 48000, 2});
     audio_send_config.min_bitrate_bps = 6000;
@@ -336,7 +349,8 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
           std::move(audio_recv_config));
     }
     EXPECT_EQ(1u, video_receive_streams_.size());
-    observer->set_receive_stream(video_receive_streams_[0]);
+    observer->set_receive_streams(video_receive_streams_[0],
+                                  audio_receive_stream);
     drifting_clock =
         std::make_unique<DriftingClock>(&env().clock(), video_ntp_speed);
     CreateFrameGeneratorCapturerWithDrift(
@@ -356,7 +370,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
 
   SendTask(task_queue(), [&]() {
     
-    observer->set_receive_stream(nullptr);
+    observer->set_receive_streams(nullptr, nullptr);
 
     audio_send_stream->Stop();
     audio_receive_stream->Stop();
