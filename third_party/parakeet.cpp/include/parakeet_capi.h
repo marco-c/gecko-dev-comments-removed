@@ -244,6 +244,26 @@ void parakeet_capi_free_events(parakeet_stream_event* events);
 
 
 
+typedef struct parakeet_stream_word {
+    const char* text;  
+    float start;       
+    float end;
+    float conf;        
+} parakeet_stream_word;
+
+
+
+
+
+int parakeet_capi_stream_drain_words(parakeet_stream* s,
+                                     parakeet_stream_word** out_words);
+
+
+
+void parakeet_capi_free_words(parakeet_stream_word* words, int count);
+
+
+
 
 
 

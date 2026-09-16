@@ -63,6 +63,7 @@ void StreamingSession::reset() {
     words_.clear();
     words_finalized_ = 0;
     words_taken_ = 0;
+    eou_closed_words_ = 0;
 }
 
 void StreamingSession::process_emitted(const std::vector<int32_t>& emitted) {
@@ -143,12 +144,16 @@ std::vector<int32_t> StreamingSession::feed_mel_chunk(const std::vector<float>& 
     
     
     size_t evi = prev_events;
+    size_t eou_word_tokens = 0;
     for (size_t i = 0; i < emitted.size(); ++i) {
         if (emitted[i] == eou_id_ || emitted[i] == eob_id_) {
             const int abs_frame = base_frame + (int)local_frames[i];
             events_[evi].encoder_frame = abs_frame;
             events_[evi].time_sec = abs_frame * frame_sec_;
             ++evi;
+            
+            
+            eou_word_tokens = word_tokens_.size();
         } else {
             TokenInfo ti = chunk_tokens[i];
             ti.frame += base_frame;  
@@ -157,7 +162,8 @@ std::vector<int32_t> StreamingSession::feed_mel_chunk(const std::vector<float>& 
     }
     
     
-    regroup_words(false);
+    
+    regroup_words(false, eou_word_tokens);
 
     
     
@@ -200,7 +206,7 @@ std::string StreamingSession::finalize() {
     return take_new_text();
 }
 
-void StreamingSession::regroup_words(bool flush_all) {
+void StreamingSession::regroup_words(bool flush_all, size_t eou_word_tokens) {
     
     
     
@@ -210,8 +216,33 @@ void StreamingSession::regroup_words(bool flush_all) {
     words_ = group_words(word_tokens_, ml_.config().tokenizer_pieces, frame_sec_f_);
     if (words_.empty()) {
         words_finalized_ = 0;
+    } else if (flush_all) {
+        words_finalized_ = words_.size();
     } else {
-        words_finalized_ = flush_all ? words_.size() : (words_.size() - 1);
+        words_finalized_ = words_.size() - 1;
+        
+        
+        
+        
+        
+        
+        
+        if (eou_word_tokens > 0) {
+            const std::vector<Word> closed = group_words(
+                std::vector<TokenInfo>(word_tokens_.begin(),
+                                       word_tokens_.begin() + eou_word_tokens),
+                ml_.config().tokenizer_pieces, frame_sec_f_);
+            if (closed.size() > eou_closed_words_) {
+                eou_closed_words_ = closed.size();
+            }
+        }
+        
+        
+        
+        
+        if (eou_closed_words_ > words_finalized_) {
+            words_finalized_ = eou_closed_words_;
+        }
     }
     
     if (words_finalized_ < words_taken_) words_finalized_ = words_taken_;
