@@ -24,10 +24,14 @@ constinit extern uint32_t
     gNumNormalOrHighPriorityQueuesHaveTaskScheduledMainThread;
 
 
-class WebTaskSchedulingState {
+
+
+
+
+class WebTaskSchedulingState final : public nsISupports {
  public:
-  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(WebTaskSchedulingState)
-  NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(WebTaskSchedulingState)
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
+  NS_DECL_CYCLE_COLLECTION_CLASS(WebTaskSchedulingState)
 
   void Reset() {
     mAbortSource = nullptr;
