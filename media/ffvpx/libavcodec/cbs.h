@@ -299,14 +299,6 @@ typedef struct CodedBitstreamContext {
 
 
 
-
-
-extern const enum AVCodecID CBS_FUNC(all_codec_ids)[];
-
-
-
-
-
 int CBS_FUNC(init)(CodedBitstreamContext **ctx,
                 enum AVCodecID codec_id, void *log_ctx);
 

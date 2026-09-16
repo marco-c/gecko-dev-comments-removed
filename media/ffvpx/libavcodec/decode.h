@@ -42,8 +42,7 @@ typedef struct FrameDecodeData {
 
 
     int (*post_process)(void *logctx, AVFrame *frame);
-    void *post_process_opaque;
-    void (*post_process_opaque_free)(void *opaque);
+    void *post_process_opaque;                        
 
     
 
@@ -96,6 +95,10 @@ int ff_attach_decode_data(AVCodecContext *avctx, AVFrame *frame);
 
 
 int ff_copy_palette(void *dst, const AVPacket *src, void *logctx);
+
+
+
+
 
 
 
@@ -226,36 +229,5 @@ int ff_decode_content_light_new(const AVCodecContext *avctx, AVFrame *frame,
 int ff_decode_content_light_new_ext(const AVCodecContext *avctx,
                                     AVFrameSideData ***sd, int *nb_sd,
                                     struct AVContentLightMetadata **clm);
-
-#if CONFIG_EXIF
-enum AVExifHeaderMode;
-
-
-
-
-
-
-
-
-
-
-
-int ff_decode_exif_attach_buffer(AVCodecContext *avctx, AVFrame *frame, AVBufferRef **buf,
-                                 enum AVExifHeaderMode header_mode);
-
-struct AVExifMetadata;
-
-
-
-
-
-
-
-
-
-
-int ff_decode_exif_attach_ifd(AVCodecContext *avctx, AVFrame *frame,
-                              const struct AVExifMetadata *ifd);
-#endif
 
 #endif 

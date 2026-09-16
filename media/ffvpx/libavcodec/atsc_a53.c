@@ -19,9 +19,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "libavutil/intreadwrite.h"
 #include "libavutil/mem.h"
 #include "atsc_a53.h"
-#include "get_bits.h"
 
 int ff_alloc_a53_sei(const AVFrame *frame, size_t prefix_len,
                      void **data, size_t *sei_size)
@@ -69,33 +69,25 @@ int ff_alloc_a53_sei(const AVFrame *frame, size_t prefix_len,
 int ff_parse_a53_cc(AVBufferRef **pbuf, const uint8_t *data, int size)
 {
     AVBufferRef *buf = *pbuf;
-    GetBitContext gb;
     size_t new_size, old_size = buf ? buf->size : 0;
     int ret, cc_count;
 
     if (size < 3)
         return AVERROR_INVALIDDATA;
 
-    ret = init_get_bits8(&gb, data, size);
-    if (ret < 0)
-        return ret;
-
-    if (get_bits(&gb, 8) != 0x3) 
+    if (data[0] != 0x3) 
         return 0;
 
-    skip_bits(&gb, 1); 
-    if (!get_bits(&gb, 1)) 
+    if (!(data[1] & 0x40)) 
         return 0;
 
-    skip_bits(&gb, 1); 
-    cc_count = get_bits(&gb, 5);
+    cc_count = data[1] & 0x1F;
     if (!cc_count)
         return 0;
 
-    skip_bits(&gb, 8); 
-
     
-    if (cc_count * 3 >= (get_bits_left(&gb) >> 3))
+    
+    if (cc_count * 3 >= size - 3)
         return AVERROR_INVALIDDATA;
 
     new_size = (old_size + cc_count * 3);
@@ -110,11 +102,7 @@ int ff_parse_a53_cc(AVBufferRef **pbuf, const uint8_t *data, int size)
 
     buf = *pbuf;
     
-    for (int i = 0; i < cc_count; i++) {
-        buf->data[old_size++] = get_bits(&gb, 8);
-        buf->data[old_size++] = get_bits(&gb, 8);
-        buf->data[old_size++] = get_bits(&gb, 8);
-    }
+    memcpy(buf->data + old_size, data + 3, cc_count * 3);
 
     return cc_count;
 }

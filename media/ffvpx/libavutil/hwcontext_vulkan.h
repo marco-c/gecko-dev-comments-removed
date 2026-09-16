@@ -116,58 +116,6 @@ typedef struct AVVulkanDeviceContext {
     const char * const *enabled_dev_extensions;
     int nb_enabled_dev_extensions;
 
-#if FF_API_VULKAN_FIXED_QUEUES
-    
-
-
-
-
-
-
-    attribute_deprecated
-    int queue_family_index;
-    attribute_deprecated
-    int nb_graphics_queues;
-
-    
-
-
-
-    attribute_deprecated
-    int queue_family_tx_index;
-    attribute_deprecated
-    int nb_tx_queues;
-
-    
-
-
-
-    attribute_deprecated
-    int queue_family_comp_index;
-    attribute_deprecated
-    int nb_comp_queues;
-
-    
-
-
-
-
-    attribute_deprecated
-    int queue_family_encode_index;
-    attribute_deprecated
-    int nb_encode_queues;
-
-    
-
-
-
-
-    attribute_deprecated
-    int queue_family_decode_index;
-    attribute_deprecated
-    int nb_decode_queues;
-#endif
-
 #if FF_API_VULKAN_SYNC_QUEUES
     
 
@@ -199,6 +147,9 @@ typedef struct AVVulkanDeviceContext {
 
     AVVulkanDeviceQueueFamily qf[64];
     int nb_qf;
+
+    
+    VkDeviceQueueCreateFlags queue_flags;
 } AVVulkanDeviceContext;
 
 
@@ -336,7 +287,7 @@ struct AVVkFrame {
     
 
 
-    VkAccessFlagBits access[AV_NUM_DATA_POINTERS];
+    VkAccessFlagBits2 access[AV_NUM_DATA_POINTERS];
     VkImageLayout layout[AV_NUM_DATA_POINTERS];
 
     
@@ -358,11 +309,6 @@ struct AVVkFrame {
     
 
 
-    struct AVVkFrameInternal *internal;
-
-    
-
-
 
     ptrdiff_t offset[AV_NUM_DATA_POINTERS];
 
@@ -372,6 +318,11 @@ struct AVVkFrame {
 
 
     uint32_t queue_family[AV_NUM_DATA_POINTERS];
+
+    
+
+
+    struct AVVkFrameInternal *internal;
 };
 
 

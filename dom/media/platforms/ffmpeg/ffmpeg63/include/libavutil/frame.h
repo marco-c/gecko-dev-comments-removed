@@ -299,12 +299,6 @@ enum AVFrameSideDataType {
 
 
     AV_FRAME_DATA_RAW_COLOR_PARAMS,
-
-    
-
-
-
-    AV_FRAME_DATA_DOWNMIX_MATRIX,
 };
 
 enum AVActiveFormatDescription {
