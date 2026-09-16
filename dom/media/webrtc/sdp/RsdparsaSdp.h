@@ -10,57 +10,34 @@
 #include "sdp/RsdparsaSdpGlue.h"
 #include "sdp/RsdparsaSdpInc.h"
 #include "sdp/RsdparsaSdpMediaSection.h"
-#include "sdp/Sdp.h"
+#include "sdp/SdpImpl.h"
 
 namespace mozilla {
 
 class RsdparsaSdpParser;
 class SdpParser;
 
-class RsdparsaSdp final : public Sdp {
+class RsdparsaSdp final : public SdpImpl {
   friend class RsdparsaSdpParser;
 
  public:
   explicit RsdparsaSdp(RsdparsaSessionHandle session, const SdpOrigin& origin);
-
-  UniquePtr<Sdp> Clone() const override;
-
-  const SdpOrigin& GetOrigin() const override;
-
-  
-  uint32_t GetBandwidth(const std::string& type) const override;
-
-  size_t GetMediaSectionCount() const override {
-    return sdp_media_section_count(mSession.get());
-  }
-
-  const SdpAttributeList& GetAttributeList() const override {
-    return *mAttributeList;
-  }
-
-  SdpAttributeList& GetAttributeList() override { return *mAttributeList; }
-
-  const SdpMediaSection& GetMediaSection(size_t level) const override;
-
-  SdpMediaSection& GetMediaSection(size_t level) override;
-
-  SdpMediaSection& AddMediaSection(const SdpMediaSection::MediaType media,
-                                   const SdpDirectionAttribute::Direction dir,
-                                   const uint16_t port,
-                                   const SdpMediaSection::Protocol proto,
-                                   const sdp::AddrType addrType,
-                                   const std::string& addr) override;
-
-  void Serialize(std::ostream&) const override;
+  RsdparsaSdp() = delete;
 
  private:
-  RsdparsaSdp() : mOrigin("", 0, 0, sdp::kIPv4, "") {}
-  RsdparsaSdp(const RsdparsaSdp& aOrig);
+  
+  
+  static UniquePtr<SdpAttributeListImpl> CreateAttributeList(
+      const RsdparsaSessionHandle& session);
+
+  
+  RsdparsaSdpAttributeList& RsdparsaAttributeList() {
+    return *static_cast<RsdparsaSdpAttributeList*>(mAttributeList.get());
+  }
+
+  void LoadBandwidths();
 
   RsdparsaSessionHandle mSession;
-  SdpOrigin mOrigin;
-  UniquePtr<RsdparsaSdpAttributeList> mAttributeList;
-  std::vector<UniquePtr<RsdparsaSdpMediaSection>> mMediaSections;
 };
 
 }  
