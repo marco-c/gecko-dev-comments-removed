@@ -17,7 +17,7 @@ class SearchDispatcher extends WorkerDispatcher {
   }
 
   
-  
+  getMatches = this.task("getMatches");
   searchInResource = this.task("searchInResource");
 }
 

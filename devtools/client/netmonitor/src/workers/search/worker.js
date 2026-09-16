@@ -7,11 +7,11 @@
 
 
 
-
 importScripts(
+  "resource://devtools/client/netmonitor/src/utils/build-query.js",
   "resource://devtools/client/netmonitor/src/workers/search/search.js",
   "resource://devtools/client/shared/worker-utils.js"
 );
 
 
-self.onmessage = workerHandler({ searchInResource });
+self.onmessage = workerHandler({ getMatches, searchInResource });

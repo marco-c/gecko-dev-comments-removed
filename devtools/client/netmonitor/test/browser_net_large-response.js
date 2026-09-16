@@ -42,7 +42,7 @@ add_task(async function () {
   const requestsListStatus = requestItem.querySelector(".status-code");
   EventUtils.sendMouseEvent({ type: "mouseover" }, requestsListStatus);
   await waitUntil(() => requestsListStatus.title);
-  await waitForDOMIfNeeded(requestItem, ".requests-list-timings-total");
+  await waitForDOM(requestItem, ".requests-list-timings-total");
 
   await verifyRequestItemTarget(
     document,
@@ -77,7 +77,7 @@ add_task(async function () {
   getCMEditor(monitor).focus();
   synthesizeKeyShortcut("CmdOrCtrl+F");
   const searchInput = await waitFor(() =>
-    document.querySelector(".cm-editor .cm-search input.cm-textfield")
+    document.querySelector(".search-field input")
   );
   Assert.equal(
     searchInput.ownerDocument.activeElement,
