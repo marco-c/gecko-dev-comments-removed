@@ -1459,6 +1459,8 @@ interface nsIAlertAction extends nsISupports {
   
   readonly iconURL: string;
   
+  readonly navigate: nsIURI;
+  
   readonly windowsSystemActivationType: boolean;
   
   readonly opaqueRelaunchData: string;
@@ -1474,6 +1476,8 @@ interface nsIAlertNotification extends nsISupports {
   readonly id: string;
   
   readonly name: string;
+  
+  readonly countId: u64;
   
   readonly imageURL: string;
   
@@ -3312,8 +3316,6 @@ interface nsIURIFixup extends nsISupports {
   readonly FIXUP_FLAG_PRIVATE_CONTEXT?: 4;
   
   readonly FIXUP_FLAG_FIX_SCHEME_TYPOS?: 8;
-  
-  readonly FIXUP_FLAG_FORCE_KEYWORD_LOOKUP?: 16;
 
   
   getFixupURIInfo(aURIText: string, aFixupFlags?: u32): nsIURIFixupInfo;
@@ -5584,6 +5586,16 @@ interface nsIScriptError extends nsIConsoleMessage {
 
 
 
+interface mozITestInterfaceJS extends nsISupports {
+  
+  testThrowNsresult(): void;
+  
+  testThrowNsresultFromNative(): void;
+}
+
+
+
+
 
 
 interface nsIGeolocationUIUtils extends nsISupports {
@@ -5902,6 +5914,8 @@ interface nsINotificationActionStorageEntry extends nsISupports {
   readonly name: string;
   
   readonly title: string;
+  
+  readonly navigate: string;
 }
 
 
@@ -5920,6 +5934,8 @@ interface nsINotificationStorageEntry extends nsISupports {
   readonly tag: string;
   
   readonly icon: string;
+  
+  readonly navigate: string;
   
   readonly requireInteraction: boolean;
   
@@ -7263,8 +7279,6 @@ interface nsIWebAuthnService extends nsISupports {
   
   runCommand(aCommand: string): void;
 }
-
-
 
 
 
@@ -9461,6 +9475,54 @@ interface nsISVGPaintContext extends nsISupports {
 
 
 
+}  
+
+
+declare enum nsILayoutDebuggingTools_DumpFrameFlags {
+  
+  DUMP_FRAME_FLAGS_CSS_PIXELS = 1,
+  
+  DUMP_FRAME_FLAGS_DETERMINISTIC = 2,
+}
+
+declare global {
+
+namespace nsILayoutDebuggingTools {
+  type DumpFrameFlags = nsILayoutDebuggingTools_DumpFrameFlags;
+}
+
+
+interface nsILayoutDebuggingTools extends nsISupports, Enums<typeof nsILayoutDebuggingTools_DumpFrameFlags> {
+  
+  init(win: mozIDOMWindow): void;
+  
+  forceRefresh(): void;
+  
+  setReflowCounts(enabled: boolean): void;
+  
+  setPagedMode(enabled: boolean): void;
+  
+  dumpContent(anonymousSubtrees: boolean): void;
+  
+  dumpFrames(flags: u8): void;
+  
+  dumpTextRuns(): void;
+  
+  dumpCounterManager(): void;
+  
+  dumpRetainedDisplayList(): void;
+  
+  dumpStyleSheets(): void;
+  
+  dumpMatchedRules(): void;
+  
+  dumpComputedStyles(): void;
+  
+  dumpReflowStats(): void;
+}
+
+
+
 
 interface nsIPreloadedStyleSheet extends nsISupports {
 }
@@ -10106,6 +10168,8 @@ interface nsIMLModelHub extends nsISupports {
   isModelInstalled(aEngineId: string, aModel: string, aRevision: string, aFilename: string): Promise<any>;
   
   downloadModel(aEngineId: string, aTaskName: string, aModel: string, aRevision: string, aFiles: string[], aProgressToken: string, aProgressCallback: nsIMLModelDownloadProgressCallback, aCompletionCallback: nsIMLModelDownloadCompletionCallback): string;
+  
+  cancelDownload(aProgressToken: string): void;
   
   getModelBlob(aEngineId: string, aTaskName: string, aModel: string, aRevision: string, aFile: string): Promise<any>;
 }
@@ -11518,7 +11582,7 @@ interface nsILoadInfo extends nsISupports, Enums<typeof nsILoadInfo_StoragePermi
   
   setTriggeringPrincipalForTesting(aPrincipal: nsIPrincipal): void;
   
-  triggeringRemoteType: string;
+  readonly triggeringRemoteType: string;
   
   principalToInherit: nsIPrincipal;
   
@@ -12050,8 +12114,6 @@ interface nsINullChannel extends nsISupports {
 interface nsIParentChannel extends nsIStreamListener {
   
   delete(): void;
-  
-  readonly remoteType: string;
 }
 
 
@@ -17044,7 +17106,7 @@ interface nsIX509CertDB extends nsISupports, Enums<typeof nsIX509CertDB_VerifyUs
   
   addCertFromBase64(base64: string, trust: string): nsIX509Cert;
   
-  getCerts(): nsIX509Cert[];
+  getCerts(): Promise<any>;
   
   asPKCS7Blob(certList: nsIX509Cert[]): string;
   
@@ -18127,37 +18189,11 @@ interface mozISandboxSettings extends nsISupports {
 
 
 
-interface mozISandboxReport extends nsISupports {
+interface mozISandboxTest extends nsISupports {
   
-  readonly msecAgo: u64;
+  startTests(aProcessesList: string[]): void;
   
-  readonly pid: i32;
-  
-  readonly tid: i32;
-  
-  readonly procType: string;
-  
-  readonly syscall: u32;
-  
-  readonly numArgs: u32;
-  
-  getArg(aIndex: u32): string;
-}
-
-
-interface mozISandboxReportArray extends nsISupports {
-  
-  readonly begin: u64;
-  
-  readonly end: u64;
-  
-  getElement(aIndex: u64): mozISandboxReport;
-}
-
-
-interface mozISandboxReporter extends nsISupports {
-  
-  snapshot(): mozISandboxReportArray;
+  finishTests(): void;
 }
 
 
@@ -19275,6 +19311,8 @@ interface nsIBounceTrackingProtection extends nsISupports, Enums<typeof nsIBounc
   removeSiteHostExceptions(aSiteHosts: string[]): void;
   
   hasRecentlyPurgedSite(aSiteHost: string): boolean;
+  
+  getRecentPurgedChainEntriesForSite(aSiteHost: string): nsIBounceTrackingPurgeEntry[];
   
   testGetSiteHostExceptions(): string[];
   
@@ -22119,22 +22157,6 @@ interface nsINativeMessagingPortal extends nsISupports {
 
 
 
-interface nsINativeMessagingProxy extends nsISupports {
-  
-  shouldUse(): boolean;
-  
-  readonly available: Promise<any>;
-  
-  closeSession(aHandle: string): Promise<any>;
-  
-  getManifest(aName: string, aExtension: string): Promise<any>;
-  
-  start(aName: string, aExtension: string): Promise<any>;
-}
-
-
-
-
 interface nsIWebVTTListener extends nsISupports {
   
   onCue(cue: any): void;
@@ -22743,6 +22765,14 @@ interface nsIGfxInfoDebug extends nsISupports {
   spoofDeviceID(aDeviceID: string): void;
   
   spoofDriverVersion(aDriverVersion: string): void;
+  
+  spoofVendorID2(aVendorID: string): void;
+  
+  spoofDeviceID2(aDeviceID: string): void;
+  
+  spoofDriverVendor2(aDriverVendor: string): void;
+  
+  spoofDriverVersion2(aDriverVersion: string): void;
   
   spoofOSVersion(aVersion: u32): void;
   
@@ -23496,14 +23526,6 @@ interface nsIAvailableMemoryWatcherBase extends nsISupports {
   registerTabUnloader(aTabUnloader: nsITabUnloader): void;
   
   onUnloadAttemptCompleted(aResult: nsresult): void;
-}
-
-
-
-
-interface nsIAvailableMemoryWatcherTestingLinux extends nsISupports {
-  
-  setPSIPathForTesting(aPSIPath: string): void;
 }
 
 
@@ -26417,6 +26439,32 @@ interface nsIControllers extends nsISupports {
 
 
 
+interface nsIASWebAuthSessionRequest extends nsISupports {
+  
+  readonly uuid: string;
+  
+  readonly url: string;
+  
+  readonly callbackScheme: string;
+  
+  readonly hasCallback: boolean;
+  
+  readonly useEphemeralSession: boolean;
+  
+  readonly additionalHeaderNames: string[];
+  
+  getAdditionalHeader(name: string): string;
+  
+  matchesCallbackURL(url: string): boolean;
+  
+  complete(callbackURL: string): void;
+  
+  cancel(): void;
+}
+
+
+
+
 interface nsINativeAppSupport extends nsISupports {
   
   start(): boolean;
@@ -26655,6 +26703,7 @@ interface nsIXPCComponents_Interfaces {
   nsITextInputProcessorListener: nsJSIID<nsITextInputProcessorListener>;
   nsIScriptErrorNote: nsJSIID<nsIScriptErrorNote>;
   nsIScriptError: nsJSIID<nsIScriptError>;
+  mozITestInterfaceJS: nsJSIID<mozITestInterfaceJS>;
   nsIGeolocationUIUtils: nsJSIID<nsIGeolocationUIUtils>;
   nsIDOMGeoPosition: nsJSIID<nsIDOMGeoPosition>;
   nsIDOMGeoPositionCallback: nsJSIID<nsIDOMGeoPositionCallback>;
@@ -26857,6 +26906,7 @@ interface nsIXPCComponents_Interfaces {
   nsIKeyValueVoidCallback: nsJSIID<nsIKeyValueVoidCallback>;
   nsILayoutHistoryState: nsJSIID<nsILayoutHistoryState>;
   nsISVGPaintContext: nsJSIID<nsISVGPaintContext>;
+  nsILayoutDebuggingTools: nsJSIID<nsILayoutDebuggingTools, typeof nsILayoutDebuggingTools_DumpFrameFlags>;
   nsIPreloadedStyleSheet: nsJSIID<nsIPreloadedStyleSheet>;
   nsIStyleSheetService: nsJSIID<nsIStyleSheetService>;
   nsITreeSelection: nsJSIID<nsITreeSelection>;
@@ -27245,9 +27295,7 @@ interface nsIXPCComponents_Interfaces {
   nsIApplicationReputationQuery: nsJSIID<nsIApplicationReputationQuery>;
   nsIApplicationReputationCallback: nsJSIID<nsIApplicationReputationCallback>;
   mozISandboxSettings: nsJSIID<mozISandboxSettings>;
-  mozISandboxReport: nsJSIID<mozISandboxReport>;
-  mozISandboxReportArray: nsJSIID<mozISandboxReportArray>;
-  mozISandboxReporter: nsJSIID<mozISandboxReporter>;
+  mozISandboxTest: nsJSIID<mozISandboxTest>;
   nsIFormFillFocusListener: nsJSIID<nsIFormFillFocusListener>;
   nsIFormFillController: nsJSIID<nsIFormFillController>;
   nsIFormFillCompleteObserver: nsJSIID<nsIFormFillCompleteObserver>;
@@ -27430,7 +27478,6 @@ interface nsIXPCComponents_Interfaces {
   mozIExtensionAPIRequestHandler: nsJSIID<mozIExtensionAPIRequestHandler>;
   mozIExtensionProcessScript: nsJSIID<mozIExtensionProcessScript>;
   nsINativeMessagingPortal: nsJSIID<nsINativeMessagingPortal>;
-  nsINativeMessagingProxy: nsJSIID<nsINativeMessagingProxy>;
   nsIWebVTTListener: nsJSIID<nsIWebVTTListener>;
   nsIWebVTTParserWrapper: nsJSIID<nsIWebVTTParserWrapper>;
   nsIBaseWindow: nsJSIID<nsIBaseWindow>;
@@ -27480,7 +27527,6 @@ interface nsIXPCComponents_Interfaces {
   nsIWindowWatcher: nsJSIID<nsIWindowWatcher>;
   nsITabUnloader: nsJSIID<nsITabUnloader>;
   nsIAvailableMemoryWatcherBase: nsJSIID<nsIAvailableMemoryWatcherBase>;
-  nsIAvailableMemoryWatcherTestingLinux: nsJSIID<nsIAvailableMemoryWatcherTestingLinux>;
   nsIConsoleListener: nsJSIID<nsIConsoleListener>;
   nsIConsoleMessage: nsJSIID<nsIConsoleMessage>;
   nsIConsoleService: nsJSIID<nsIConsoleService, typeof nsIConsoleService_OutputMode>;
@@ -27655,6 +27701,7 @@ interface nsIXPCComponents_Interfaces {
   nsIController: nsJSIID<nsIController>;
   nsICommandController: nsJSIID<nsICommandController>;
   nsIControllers: nsJSIID<nsIControllers>;
+  nsIASWebAuthSessionRequest: nsJSIID<nsIASWebAuthSessionRequest>;
   nsINativeAppSupport: nsJSIID<nsINativeAppSupport>;
   nsIXREDirProvider: nsJSIID<nsIXREDirProvider>;
   nsIZipWriter: nsJSIID<nsIZipWriter>;

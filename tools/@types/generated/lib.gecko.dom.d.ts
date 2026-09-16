@@ -778,6 +778,49 @@ interface CollectedData {
     xpath?: Record<string, CollectedFormDataValue>;
 }
 
+interface CollectorLogEdge {
+    
+    label: string;
+    
+    other: CollectorLogNode;
+}
+
+interface CollectorLogNode {
+    
+    flags: number;
+    
+    index: number;
+    
+    label: string;
+    
+    ptr: string;
+    
+    referenceCount: number;
+}
+
+interface CollectorLogNodeAdjacents {
+    
+    fromSelf: CollectorLogEdge[];
+    
+    toSelf: CollectorLogEdge[];
+}
+
+interface CollectorLogRootPath {
+    
+    kind: CollectorLogRootKind;
+    
+    path: CollectorLogEdge[];
+    
+    weakMapPaths: CollectorLogWeakMapPath[];
+}
+
+interface CollectorLogWeakMapPath {
+    
+    key: CollectorLogNode;
+    
+    path: CollectorLogEdge[];
+}
+
 interface CommandEventInit extends EventInit {
     
     command?: string;
@@ -1357,6 +1400,20 @@ interface ElementCreationOptions {
 interface ElementDefinitionOptions {
     
     extends?: string;
+}
+
+interface EncapsulatedBits {
+    
+    ciphertext: ArrayBuffer;
+    
+    sharedKey: ArrayBuffer;
+}
+
+interface EncapsulatedKey {
+    
+    ciphertext: ArrayBuffer;
+    
+    sharedKey: CryptoKey;
 }
 
 interface EncodedAudioChunkInit {
@@ -4030,6 +4087,8 @@ interface NotificationAction {
     
     action: string;
     
+    navigate?: string;
+    
     title: string;
 }
 
@@ -4864,6 +4923,15 @@ interface ProcessActorOptions extends JSActorOptions {
     loadInDevToolsLoader?: boolean;
     
     parent?: JSActorSidedOptions;
+}
+
+interface ProfilerCounterOptions {
+    
+    category: string;
+    
+    description?: string;
+    
+    name: string;
 }
 
 interface ProfilerMarkerOptions {
@@ -6421,9 +6489,9 @@ interface SocketOptions {
     useSecureTransport?: boolean;
 }
 
-interface SpeechRecognitionErrorInit extends EventInit {
+interface SpeechRecognitionErrorEventInit extends EventInit {
     
-    error?: SpeechRecognitionErrorCode;
+    error: SpeechRecognitionErrorCode;
     
     message?: string;
 }
@@ -6436,7 +6504,29 @@ interface SpeechRecognitionEventInit extends EventInit {
     
     resultIndex?: number;
     
-    results?: SpeechRecognitionResultList | null;
+    results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionOptions {
+    
+    langs: string[];
+    
+    processLocally?: boolean;
+    
+    quality?: SpeechRecognitionQuality;
+}
+
+interface SpeechRecognitionPerfStats {
+    
+    engineReadyDuration?: number;
+    
+    fedAudioDuration?: number;
+    
+    finalizationDuration?: number;
+    
+    firstResultDuration?: number;
+    
+    inferenceDuration?: number;
 }
 
 interface SpeechSynthesisErrorEventInit extends SpeechSynthesisEventInit {
@@ -10634,6 +10724,10 @@ interface CSSStyleProperties extends CSSStyleDeclaration {
     
     MozPerspectiveOrigin: string;
     
+    MozScrollbarInsetBlock: string;
+    
+    MozScrollbarInsetInline: string;
+    
     MozSubtreeHiddenOnlyVisually: string;
     
     MozTabSize: string;
@@ -12918,6 +13012,39 @@ declare var CloseWatcher: {
 };
 
 
+interface CollectorLogAnalyzer {
+    
+    getInitProgress(): number;
+    
+    getNodeAdjacents(node: CollectorLogNode): Promise<CollectorLogNodeAdjacents>;
+    
+    getPathToRoot(node: CollectorLogNode): Promise<CollectorLogRootPath>;
+    
+    getQueryProgress(): number;
+    
+    init(): Promise<void>;
+    
+    queryNodes(query: string): Promise<CollectorLogNode[]>;
+    
+    sampleNodes(): Promise<CollectorLogNode[]>;
+    
+    readonly MAX_QUERY_RESULTS: 500;
+    
+    readonly SAMPLE_COUNT: 20;
+}
+
+declare var CollectorLogAnalyzer: {
+    prototype: CollectorLogAnalyzer;
+    new(ccLogPath: string, gcLogPath: string): CollectorLogAnalyzer;
+    
+    readonly MAX_QUERY_RESULTS: 500;
+    
+    readonly SAMPLE_COUNT: 20;
+    
+    isInstance: IsInstance<CollectorLogAnalyzer>;
+};
+
+
 interface CommandEvent extends Event {
     
     readonly command: string;
@@ -14552,6 +14679,7 @@ interface Document extends Node, ARIANotifyMixin, DocumentOrShadowRoot, FontFace
     createEvent(eventInterface: "ScrollAreaEvent"): ScrollAreaEvent;
     createEvent(eventInterface: "SecurityPolicyViolationEvent"): SecurityPolicyViolationEvent;
     createEvent(eventInterface: "SimpleGestureEvent"): SimpleGestureEvent;
+    createEvent(eventInterface: "SpeechRecognitionErrorEvent"): SpeechRecognitionErrorEvent;
     createEvent(eventInterface: "SpeechRecognitionEvent"): SpeechRecognitionEvent;
     createEvent(eventInterface: "SpeechSynthesisErrorEvent"): SpeechSynthesisErrorEvent;
     createEvent(eventInterface: "SpeechSynthesisEvent"): SpeechSynthesisEvent;
@@ -26279,6 +26407,8 @@ interface Notification extends EventTarget {
     
     readonly lang: string;
     
+    readonly navigate: string;
+    
     onclick: ((this: Notification, ev: Event) => any) | null;
     
     onclose: ((this: Notification, ev: Event) => any) | null;
@@ -28178,6 +28308,19 @@ declare var ProcessingInstruction: {
     new(): ProcessingInstruction;
     
     isInstance: IsInstance<ProcessingInstruction>;
+};
+
+
+interface ProfilerCounter {
+    
+    add(delta: number): void;
+}
+
+declare var ProfilerCounter: {
+    prototype: ProfilerCounter;
+    new(): ProfilerCounter;
+    
+    isInstance: IsInstance<ProfilerCounter>;
 };
 
 
@@ -32466,7 +32609,7 @@ interface Serial extends EventTarget {
     
     resetToDefaultMockDevices(): Promise<void>;
     
-    simulateDeviceConnection(deviceId: string, devicePath: string, vendorId?: number, productId?: number): Promise<void>;
+    simulateDeviceConnection(deviceId: string, devicePath: string, vendorId?: number, productId?: number, bluetoothServiceClassId?: string): Promise<void>;
     
     simulateDeviceDisconnection(deviceId: string): Promise<void>;
     addEventListener<K extends keyof SerialEventMap>(type: K, listener: (this: Serial, ev: SerialEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
@@ -32904,7 +33047,7 @@ interface SpeechGrammarList {
     
     addFromURI(src: string, weight?: number): void;
     
-    item(index: number): SpeechGrammar;
+    item(index: number): SpeechGrammar | null;
     [index: number]: SpeechGrammar;
 }
 
@@ -32928,6 +33071,9 @@ interface SpeechRecognitionEventMap {
     "speechstart": Event;
     "start": Event;
 }
+
+
+
 
 
 interface SpeechRecognition extends EventTarget {
@@ -32964,11 +33110,18 @@ interface SpeechRecognition extends EventTarget {
     
     onstart: ((this: SpeechRecognition, ev: Event) => any) | null;
     
-    serviceURI: string;
+    phrases: SpeechRecognitionPhrase[];
+    
+    processLocally: boolean;
+    
+    unspokenPunctuation: boolean;
     
     abort(): void;
     
-    start(stream?: MediaStream): void;
+    getPerfStats(): Promise<SpeechRecognitionPerfStats>;
+    
+    start(): void;
+    start(audioTrack: MediaStreamTrack): void;
     
     stop(): void;
     addEventListener<K extends keyof SpeechRecognitionEventMap>(type: K, listener: (this: SpeechRecognition, ev: SpeechRecognitionEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
@@ -32982,7 +33135,14 @@ declare var SpeechRecognition: {
     new(): SpeechRecognition;
     
     isInstance: IsInstance<SpeechRecognition>;
+    
+    available(options: SpeechRecognitionOptions): Promise<AvailabilityStatus>;
+    
+    install(options: SpeechRecognitionOptions): Promise<boolean>;
 };
+
+
+
 
 
 interface SpeechRecognitionAlternative {
@@ -33000,19 +33160,25 @@ declare var SpeechRecognitionAlternative: {
 };
 
 
-interface SpeechRecognitionError extends Event {
+
+
+
+interface SpeechRecognitionErrorEvent extends Event {
     
     readonly error: SpeechRecognitionErrorCode;
     
-    readonly message: string | null;
+    readonly message: string;
 }
 
-declare var SpeechRecognitionError: {
-    prototype: SpeechRecognitionError;
-    new(type: string, eventInitDict?: SpeechRecognitionErrorInit): SpeechRecognitionError;
+declare var SpeechRecognitionErrorEvent: {
+    prototype: SpeechRecognitionErrorEvent;
+    new(type: string, eventInitDict: SpeechRecognitionErrorEventInit): SpeechRecognitionErrorEvent;
     
-    isInstance: IsInstance<SpeechRecognitionError>;
+    isInstance: IsInstance<SpeechRecognitionErrorEvent>;
 };
+
+
+
 
 
 interface SpeechRecognitionEvent extends Event {
@@ -33028,10 +33194,31 @@ interface SpeechRecognitionEvent extends Event {
 
 declare var SpeechRecognitionEvent: {
     prototype: SpeechRecognitionEvent;
-    new(type: string, eventInitDict?: SpeechRecognitionEventInit): SpeechRecognitionEvent;
+    new(type: string, eventInitDict: SpeechRecognitionEventInit): SpeechRecognitionEvent;
     
     isInstance: IsInstance<SpeechRecognitionEvent>;
 };
+
+
+
+
+
+interface SpeechRecognitionPhrase {
+    
+    readonly boost: number;
+    
+    readonly phrase: string;
+}
+
+declare var SpeechRecognitionPhrase: {
+    prototype: SpeechRecognitionPhrase;
+    new(phrase: string, boost?: number): SpeechRecognitionPhrase;
+    
+    isInstance: IsInstance<SpeechRecognitionPhrase>;
+};
+
+
+
 
 
 interface SpeechRecognitionResult {
@@ -33040,7 +33227,7 @@ interface SpeechRecognitionResult {
     
     readonly length: number;
     
-    item(index: number): SpeechRecognitionAlternative;
+    item(index: number): SpeechRecognitionAlternative | null;
     [index: number]: SpeechRecognitionAlternative;
 }
 
@@ -33052,11 +33239,14 @@ declare var SpeechRecognitionResult: {
 };
 
 
+
+
+
 interface SpeechRecognitionResultList {
     
     readonly length: number;
     
-    item(index: number): SpeechRecognitionResult;
+    item(index: number): SpeechRecognitionResult | null;
     [index: number]: SpeechRecognitionResult;
 }
 
@@ -33553,6 +33743,10 @@ declare var SubmitEvent: {
 
 interface SubtleCrypto {
     
+    decapsulateBits(decapsulationAlgorithm: AlgorithmIdentifier, decapsulationKey: CryptoKey, ciphertext: BufferSource): Promise<ArrayBuffer>;
+    
+    decapsulateKey(decapsulationAlgorithm: AlgorithmIdentifier, decapsulationKey: CryptoKey, ciphertext: BufferSource, sharedKeyAlgorithm: AlgorithmIdentifier, extractable: boolean, keyUsages: KeyUsage[]): Promise<CryptoKey>;
+    
     decrypt(algorithm: AlgorithmIdentifier, key: CryptoKey, data: BufferSource): Promise<any>;
     
     deriveBits(algorithm: AlgorithmIdentifier, baseKey: CryptoKey, length?: number | null): Promise<any>;
@@ -33560,6 +33754,10 @@ interface SubtleCrypto {
     deriveKey(algorithm: AlgorithmIdentifier, baseKey: CryptoKey, derivedKeyType: AlgorithmIdentifier, extractable: boolean, keyUsages: KeyUsage[]): Promise<any>;
     
     digest(algorithm: AlgorithmIdentifier, data: BufferSource): Promise<any>;
+    
+    encapsulateBits(encapsulationAlgorithm: AlgorithmIdentifier, encapsulationKey: CryptoKey): Promise<EncapsulatedBits>;
+    
+    encapsulateKey(encapsulationAlgorithm: AlgorithmIdentifier, encapsulationKey: CryptoKey, sharedKeyAlgorithm: AlgorithmIdentifier, extractable: boolean, keyUsages: KeyUsage[]): Promise<EncapsulatedKey>;
     
     encrypt(algorithm: AlgorithmIdentifier, key: CryptoKey, data: BufferSource): Promise<any>;
     
@@ -42481,6 +42679,8 @@ declare namespace ChromeUtils {
     
     function CreateOriginAttributesFromOriginSuffix(suffix: string): OriginAttributesDictionary;
     
+    function addProfilerCounter(options: ProfilerCounterOptions): ProfilerCounter;
+    
     function addProfilerMarker(name: string, options?: ProfilerMarkerOptions | number, data?: any): void;
     
     function androidMoveTaskToBack(): void;
@@ -42653,6 +42853,10 @@ declare namespace ChromeUtils {
     function vsyncEnabled(): boolean;
     
     function waiveXrays(val: any): any;
+}
+
+
+declare namespace CollectorNodeFlags {
 }
 
 
@@ -44566,6 +44770,7 @@ type AudioSessionType = "ambient" | "auto" | "play-and-record" | "playback" | "t
 type AutoKeyword = "auto";
 type AutoplayPolicy = "allowed" | "allowed-muted" | "disallowed";
 type AutoplayPolicyMediaType = "audiocontext" | "mediaelement";
+type AvailabilityStatus = "available" | "downloadable" | "downloading" | "unavailable";
 type AvcBitstreamFormat = "annexb" | "avc";
 type Base64URLDecodePadding = "ignore" | "reject" | "require";
 type BinaryType = "arraybuffer" | "blob";
@@ -44593,6 +44798,7 @@ type ChannelCountMode = "clamped-max" | "explicit" | "max";
 type ChannelInterpretation = "discrete" | "speakers";
 type CheckerboardReason = "recent" | "severe";
 type CodecState = "closed" | "configured" | "unconfigured";
+type CollectorLogRootKind = "hard" | "none" | "soft";
 type ColorGamut = "p3" | "rec2020" | "srgb";
 type ColorSpaceConversion = "default" | "none";
 type CompositeOperation = "accumulate" | "add" | "replace";
@@ -44809,7 +45015,8 @@ type ShadowRootMode = "closed" | "open";
 type SlotAssignmentMode = "manual" | "named";
 type SocketReadyState = "closed" | "closing" | "halfclosed" | "open" | "opening";
 type SourceBufferAppendMode = "segments" | "sequence";
-type SpeechRecognitionErrorCode = "aborted" | "audio-capture" | "bad-grammar" | "language-not-supported" | "network" | "no-speech" | "not-allowed" | "service-not-allowed";
+type SpeechRecognitionErrorCode = "aborted" | "audio-capture" | "bad-grammar" | "language-not-supported" | "network" | "no-speech" | "not-allowed" | "phrases-not-supported" | "service-not-allowed";
+type SpeechRecognitionQuality = "command" | "conversation" | "dictation";
 type SpeechSynthesisErrorCode = "audio-busy" | "audio-hardware" | "canceled" | "interrupted" | "invalid-argument" | "language-unavailable" | "network" | "synthesis-failed" | "synthesis-unavailable" | "text-too-long" | "voice-unavailable";
 type StreamFilterStatus = "closed" | "disconnected" | "failed" | "finishedtransferringdata" | "suspended" | "transferringdata" | "uninitialized";
 type StringType = "inline" | "literal" | "other" | "stringbuffer";
@@ -45304,7 +45511,11 @@ interface StyleSheetList {
 
 interface SubtleCrypto {
     
+    decapsulateKey(decapsulationAlgorithm: AlgorithmIdentifier, decapsulationKey: CryptoKey, ciphertext: BufferSource, sharedKeyAlgorithm: AlgorithmIdentifier, extractable: boolean, keyUsages: Iterable<KeyUsage>): Promise<CryptoKey>;
+    
     deriveKey(algorithm: AlgorithmIdentifier, baseKey: CryptoKey, derivedKeyType: AlgorithmIdentifier, extractable: boolean, keyUsages: Iterable<KeyUsage>): Promise<any>;
+    
+    encapsulateKey(encapsulationAlgorithm: AlgorithmIdentifier, encapsulationKey: CryptoKey, sharedKeyAlgorithm: AlgorithmIdentifier, extractable: boolean, keyUsages: Iterable<KeyUsage>): Promise<EncapsulatedKey>;
     
     generateKey(algorithm: AlgorithmIdentifier, extractable: boolean, keyUsages: Iterable<KeyUsage>): Promise<any>;
     
