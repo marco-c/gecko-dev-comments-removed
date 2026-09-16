@@ -63,6 +63,8 @@ class SpeechRecognitionInstallTransaction final {
   nsTArray<RefPtr<Promise>> mPromises;
 };
 
+
+
 class SpeechRecognition final : public DOMEventTargetHelper,
                                 public SupportsWeakPtr {
  public:
@@ -110,6 +112,9 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   
   bool ProcessLocally() const;
   void SetProcessLocally(bool aProcessLocally);
+
+  bool UnspokenPunctuation() const;
+  void SetUnspokenPunctuation(bool aUnspokenPunctuation);
 
   
   void OnSetPhrases(SpeechRecognitionPhrase& aPhrase, uint32_t aIndex,
@@ -265,6 +270,10 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   bool mInterimResults;
   uint32_t mMaxAlternatives;
   bool mProcessLocally = false;
+  
+  
+  
+  bool mUnspokenPunctuation = false;
   
   
   
