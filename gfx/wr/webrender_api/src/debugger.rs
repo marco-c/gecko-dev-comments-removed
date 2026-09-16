@@ -43,6 +43,13 @@ pub enum DebuggerMessage {
     SetDebugFlags(SetDebugFlagsMessage),
     InitProfileCounters(InitProfileCountersMessage),
     UpdateFrameLog(FrameLogMessage),
+    
+    
+    
+    
+    
+    
+    ShaderCompileErrors(Vec<ShaderDiagnostic>),
 }
 
 

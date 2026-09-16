@@ -1891,11 +1891,27 @@ impl Renderer {
         
         
         #[cfg(feature = "debugger")]
-        self.debugger.update(
-            self.debug_flags,
-            &self.profiler,
-            &self.command_log,
-        );
+        {
+            
+            
+            
+            let shader_errors: Vec<ShaderDiagnostic> = self
+                .renderer_errors
+                .iter()
+                .filter_map(|error| match error {
+                    RendererError::Shader(error) => Some(error),
+                    _ => None,
+                })
+                .flat_map(shader_diagnostics)
+                .collect();
+
+            self.debugger.update(
+                self.debug_flags,
+                &self.profiler,
+                &self.command_log,
+                &shader_errors,
+            );
+        }
 
         
         self.profiler.update();
