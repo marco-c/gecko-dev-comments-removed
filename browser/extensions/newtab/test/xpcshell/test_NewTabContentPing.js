@@ -35,12 +35,13 @@ add_task(async function test_recordEvent_sanitizes_and_buffers() {
     recommended_at: "1748877997039",
     received_rank: 0,
     event_source: "card",
+    
+    section_position: "2",
   };
 
   
   let expectedFields = {
     section: "business",
-    section_position: "2",
     layout_name: "card-layout",
     position: "12",
     selected_topics: "",
