@@ -11,6 +11,7 @@
 #define js_ForOfIterator_h
 
 #include "mozilla/Attributes.h"  
+#include "mozilla/Maybe.h"       
 
 #include <stdint.h>  
 
@@ -108,6 +109,15 @@ class MOZ_STACK_CLASS JS_PUBLIC_API ForOfIterator {
 
 
   bool valueIsIterable() const { return iteratorOrArray_ != nullptr; }
+
+  
+
+
+
+
+
+
+  mozilla::Maybe<uint32_t> sizeHint() const;
 
  private:
   inline bool nextFromOptimizedArray(MutableHandle<Value> val, bool* done);
