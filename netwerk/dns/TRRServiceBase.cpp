@@ -312,7 +312,7 @@ void TRRServiceBase::AsyncCreateTRRConnectionInfoInternal(
           self->RegisterProxyChangeListener();
         }
       },
-      dnsURI, 0, nullptr);
+      dnsURI, 0,  true, nullptr);
 
   
   

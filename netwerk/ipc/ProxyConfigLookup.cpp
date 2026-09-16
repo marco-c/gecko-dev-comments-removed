@@ -9,6 +9,7 @@
 #include "nsContentUtils.h"
 #include "nsICancelable.h"
 #include "nsIChannel.h"
+#include "nsIHttpChannelInternal.h"
 #include "nsIProtocolProxyService.h"
 #include "nsIProtocolProxyService2.h"
 #include "nsNetUtil.h"
@@ -20,20 +21,22 @@ namespace net {
 
 nsresult ProxyConfigLookup::Create(
     std::function<void(nsIProxyInfo*, nsresult)>&& aCallback, nsIURI* aURI,
-    uint32_t aProxyResolveFlags, nsICancelable** aLookupCancellable) {
+    uint32_t aProxyResolveFlags, bool aIsTRRServiceChannel,
+    nsICancelable** aLookupCancellable) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  RefPtr<ProxyConfigLookup> lookUp =
-      new ProxyConfigLookup(std::move(aCallback), aURI, aProxyResolveFlags);
+  RefPtr<ProxyConfigLookup> lookUp = new ProxyConfigLookup(
+      std::move(aCallback), aURI, aProxyResolveFlags, aIsTRRServiceChannel);
   return lookUp->DoProxyResolve(aLookupCancellable);
 }
 
 ProxyConfigLookup::ProxyConfigLookup(
     std::function<void(nsIProxyInfo*, nsresult)>&& aCallback, nsIURI* aURI,
-    uint32_t aProxyResolveFlags)
+    uint32_t aProxyResolveFlags, bool aIsTRRServiceChannel)
     : mCallback(std::move(aCallback)),
       mURI(aURI),
-      mProxyResolveFlags(aProxyResolveFlags) {}
+      mProxyResolveFlags(aProxyResolveFlags),
+      mIsTRRServiceChannel(aIsTRRServiceChannel) {}
 
 ProxyConfigLookup::~ProxyConfigLookup() = default;
 
@@ -41,7 +44,7 @@ nsresult ProxyConfigLookup::DoProxyResolve(nsICancelable** aLookupCancellable) {
   if (!XRE_IsParentProcess()) {
     RefPtr<ProxyConfigLookup> self = this;
     bool result = ProxyConfigLookupChild::Create(
-        mURI, mProxyResolveFlags,
+        mURI, mProxyResolveFlags, mIsTRRServiceChannel,
         [self](nsIProxyInfo* aProxyinfo, nsresult aResult) {
           self->OnProxyAvailable(nullptr, nullptr, aProxyinfo, aResult);
         });
@@ -56,6 +59,18 @@ nsresult ProxyConfigLookup::DoProxyResolve(nsICancelable** aLookupCancellable) {
                      nsIContentPolicy::TYPE_OTHER);
   if (NS_FAILED(rv)) {
     return rv;
+  }
+
+  
+  
+  
+  
+  
+  if (mIsTRRServiceChannel) {
+    if (nsCOMPtr<nsIHttpChannelInternal> internal =
+            do_QueryInterface(channel)) {
+      (void)internal->SetIsTRRServiceChannel(true);
+    }
   }
 
   nsCOMPtr<nsIProtocolProxyService> pps;
