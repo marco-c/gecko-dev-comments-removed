@@ -54,6 +54,11 @@ already_AddRefed<Sanitizer> Sanitizer::GetInstance(
     const OwningSanitizerOrSanitizerConfigOrSanitizerPresets& aOptions,
     bool aSafe, ErrorResult& aRv) {
   
+  
+  MOZ_ASSERT(aOptions.IsSanitizer() || aOptions.IsSanitizerPresets() ||
+             aOptions.IsSanitizerConfig());
+
+  
   if (aOptions.IsSanitizerPresets()) {
     
     MOZ_ASSERT(aOptions.GetAsSanitizerPresets() == SanitizerPresets::Default);
@@ -67,16 +72,15 @@ already_AddRefed<Sanitizer> Sanitizer::GetInstance(
   }
 
   
-  
   if (aOptions.IsSanitizerConfig()) {
     
     RefPtr<Sanitizer> sanitizer = new Sanitizer(aGlobal);
 
     
     
+    
     sanitizer->SetConfig(aOptions.GetAsSanitizerConfig(), !aSafe, aRv);
 
-    
     if (aRv.Failed()) {
       return nullptr;
     }
@@ -84,9 +88,6 @@ already_AddRefed<Sanitizer> Sanitizer::GetInstance(
     
     return sanitizer.forget();
   }
-
-  
-  MOZ_ASSERT(aOptions.IsSanitizer());
 
   
   RefPtr<Sanitizer> sanitizer = aOptions.GetAsSanitizer();
@@ -115,10 +116,8 @@ already_AddRefed<Sanitizer> Sanitizer::Constructor(
   }
 
   
-  
   sanitizer->SetConfig(aConfig.GetAsSanitizerConfig(), true, aRv);
 
-  
   if (aRv.Failed()) {
     return nullptr;
   }
@@ -140,8 +139,10 @@ void Sanitizer::SetDefaultConfig() {
   
   
   
+  
   mComments = false;
   mDataAttributes = Some(false);
+  mJavascriptURLs = false;
 
   if (sDefaultHTMLElements) {
     
@@ -358,9 +359,9 @@ static CanonicalElementAttributes CanonicalizeElementAttributes(
 }
 
 
-void Sanitizer::CanonicalizeConfiguration(
-    const SanitizerConfig& aConfig, bool aAllowCommentsPIsAndDataAttributes,
-    ErrorResult& aRv) {
+void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
+                                          bool aPermissiveDefaults,
+                                          ErrorResult& aRv) {
   
   AssertNoLists();
 
@@ -385,7 +386,7 @@ void Sanitizer::CanonicalizeConfiguration(
       !aConfig.mRemoveProcessingInstructions.WasPassed()) {
     
     
-    if (aAllowCommentsPIsAndDataAttributes) {
+    if (aPermissiveDefaults) {
       mRemoveProcessingInstructions.emplace();
     } else {
       
@@ -535,7 +536,7 @@ void Sanitizer::CanonicalizeConfiguration(
     
     mComments = aConfig.mComments.Value();
   } else {
-    mComments = aAllowCommentsPIsAndDataAttributes;
+    mComments = aPermissiveDefaults;
   }
 
   
@@ -545,7 +546,16 @@ void Sanitizer::CanonicalizeConfiguration(
     
     mDataAttributes = Some(aConfig.mDataAttributes.Value());
   } else if (aConfig.mAttributes.WasPassed()) {
-    mDataAttributes = Some(aAllowCommentsPIsAndDataAttributes);
+    mDataAttributes = Some(aPermissiveDefaults);
+  }
+
+  
+  
+  if (aConfig.mJavascriptURLs.WasPassed()) {
+    
+    mJavascriptURLs = aConfig.mJavascriptURLs.Value();
+  } else {
+    mJavascriptURLs = aPermissiveDefaults;
   }
 }
 
@@ -813,10 +823,9 @@ void Sanitizer::AssertIsValid() const {
 
 
 void Sanitizer::SetConfig(const SanitizerConfig& aConfig,
-                          bool aAllowCommentsPIsAndDataAttributes,
-                          ErrorResult& aRv) {
+                          bool aPermissiveDefaults, ErrorResult& aRv) {
   
-  CanonicalizeConfiguration(aConfig, aAllowCommentsPIsAndDataAttributes, aRv);
+  CanonicalizeConfiguration(aConfig, aPermissiveDefaults, aRv);
   if (aRv.Failed()) {
     return;
   }
@@ -995,6 +1004,8 @@ void Sanitizer::Get(SanitizerConfig& aConfig) {
   if (mDataAttributes) {
     aConfig.mDataAttributes.Construct(*mDataAttributes);
   }
+
+  aConfig.mJavascriptURLs.Construct(mJavascriptURLs);
 
   
 }
@@ -1628,6 +1639,24 @@ bool Sanitizer::SetDataAttributes(bool aAllow) {
 }
 
 
+bool Sanitizer::SetJavascriptURLs(bool aAllow) {
+  
+  
+  AssertIsValid();
+
+  
+  if (mJavascriptURLs == aAllow) {
+    return false;
+  }
+
+  
+  mJavascriptURLs = aAllow;
+
+  
+  return true;
+}
+
+
 
 #define FOR_EACH_BASELINE_REMOVE_ELEMENT(ELEMENT) \
   ELEMENT(XHTML, xhtml, base)                     \
@@ -1681,6 +1710,13 @@ bool Sanitizer::RemoveUnsafe() {
         }
       });
 
+  
+  if (mJavascriptURLs) {
+    
+    result = true;
+    
+    mJavascriptURLs = false;
+  }
   
   return result;
 }
@@ -1930,9 +1966,14 @@ bool Sanitizer::ShouldRemoveAttributeInternal(
   }
 
   
-  return aMatch.mSafe && ShouldRemoveJavascriptNavigationURLAttribute(
-                             aMatch.mLocalName, aMatch.mNamespaceID, aLocalName,
-                             aNamespaceID, aGetValue);
+  if (!aMatch.mSafe && mJavascriptURLs) {
+    return false;
+  }
+
+  
+  return ShouldRemoveJavascriptNavigationURLAttribute(
+      aMatch.mLocalName, aMatch.mNamespaceID, aLocalName, aNamespaceID,
+      aGetValue);
 }
 
 
@@ -2167,7 +2208,6 @@ bool Sanitizer::AttributeListsAllow(StaticAtomSet* aElementAttributes,
   MOZ_ASSERT(!nsContentUtils::IsEventAttributeName(
       aAttrLocalName, EventNameType_All & ~EventNameType_XUL));
 
-  
   return true;
 }
 
@@ -2242,7 +2282,6 @@ bool Sanitizer::AttributeListsAllow(
     }
   }
 
-  
   return true;
 }
 
