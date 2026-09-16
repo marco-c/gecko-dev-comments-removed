@@ -55,7 +55,7 @@ struct AnimationValue {
 
   
   
-  nscolor GetColor(nscolor aForegroundColor) const;
+  nscolor GetColor(const StyleAbsoluteColor& aForegroundColor) const;
 
   
   

@@ -25,7 +25,7 @@ class ServoStyleSet;
 struct URLExtraData;
 struct StyleAbsoluteColor;
 struct StyleFontFamilyList;
-struct StyleFontStretch;
+struct StyleFontWidth;
 struct StyleFontWeight;
 struct StyleFontStyle;
 struct StyleLockedDeclarationBlock;
@@ -86,9 +86,13 @@ class ServoCSSParser {
 
 
 
+
+
+
+
+
   static bool ComputeColor(const StylePerDocumentStyleData* aStyleData,
-                           nscolor aCurrentColor, const nsACString& aValue,
-                           nscolor* aResultColor,
+                           const nsACString& aValue, nscolor* aResultColor,
                            bool* aWasCurrentColor = nullptr,
                            css::Loader* aLoader = nullptr);
 
@@ -97,12 +101,9 @@ class ServoCSSParser {
 
 
 
-
-
-
-
   static Maybe<StyleAbsoluteColor> ComputeAbsoluteColor(
-      const StylePerDocumentStyleData* aStyleData, const nsACString& aValue);
+      const StylePerDocumentStyleData* aStyleData, const nsACString& aValue,
+      bool* aWasCurrentColor = nullptr, css::Loader* aLoader = nullptr);
 
   
 
@@ -213,9 +214,8 @@ class ServoCSSParser {
 
   static bool ParseFontShorthandForMatching(
       const nsACString& aValue, URLExtraData* aUrl, StyleFontFamilyList& aList,
-      StyleFontStyle& aStyle, StyleFontStretch& aStretch,
-      StyleFontWeight& aWeight, float* aSize = nullptr,
-      bool* aSmallCaps = nullptr);
+      StyleFontStyle& aStyle, StyleFontWidth& aWidth, StyleFontWeight& aWeight,
+      float* aSize = nullptr, bool* aSmallCaps = nullptr);
 
   
 

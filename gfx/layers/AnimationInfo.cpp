@@ -367,9 +367,7 @@ static void SetAnimatable(NonCustomCSSPropertyId aProperty,
     case eCSSProperty_background_color: {
       
       
-      nscolor foreground =
-          aFrame->Style()->GetVisitedDependentColor(&nsStyleText::mColor);
-      aAnimatable = aAnimationValue.GetColor(foreground);
+      aAnimatable = aAnimationValue.GetColor(aFrame->StyleText()->mColor);
       break;
     }
     case eCSSProperty_opacity:

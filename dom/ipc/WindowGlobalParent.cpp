@@ -1327,9 +1327,8 @@ already_AddRefed<mozilla::dom::Promise> WindowGlobalParent::DrawSnapshot(
   }
 
   nscolor color;
-  if (NS_WARN_IF(!ServoCSSParser::ComputeColor(nullptr, NS_RGB(0, 0, 0),
-                                               aBackgroundColor, &color,
-                                               nullptr, nullptr))) {
+  if (NS_WARN_IF(
+          !ServoCSSParser::ComputeColor(nullptr, aBackgroundColor, &color))) {
     aRv = NS_ERROR_FAILURE;
     return nullptr;
   }
@@ -1888,36 +1887,6 @@ void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {
 
   if (GetBrowsingContext()->IsTopContent() &&
       !mDocumentPrincipal->SchemeIs("about")) {
-    
-    enum {
-      NO_MIXED_CONTENT = 0,  
-      MIXED_DISPLAY_CONTENT =
-          1,  
-      MIXED_ACTIVE_CONTENT =
-          2,  
-      MIXED_DISPLAY_AND_ACTIVE_CONTENT = 3  
-                                            
-    };
-
-    bool hasMixedDisplay =
-        mSecurityState &
-        (nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT |
-         nsIWebProgressListener::STATE_BLOCKED_MIXED_DISPLAY_CONTENT);
-    bool hasMixedActive =
-        mSecurityState &
-        (nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT |
-         nsIWebProgressListener::STATE_BLOCKED_MIXED_ACTIVE_CONTENT);
-
-    uint32_t mixedContentLevel = NO_MIXED_CONTENT;
-    if (hasMixedDisplay && hasMixedActive) {
-      mixedContentLevel = MIXED_DISPLAY_AND_ACTIVE_CONTENT;
-    } else if (hasMixedActive) {
-      mixedContentLevel = MIXED_ACTIVE_CONTENT;
-    } else if (hasMixedDisplay) {
-      mixedContentLevel = MIXED_DISPLAY_CONTENT;
-    }
-    glean::mixed_content::page_load.AccumulateSingleSample(mixedContentLevel);
-
     if (GetDocTreeHadMedia()) {
       glean::media::element_in_page_count.Add(1);
     }

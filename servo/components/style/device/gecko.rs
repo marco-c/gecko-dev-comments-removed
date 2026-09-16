@@ -69,7 +69,7 @@ impl Device {
             environment: CssEnvironment,
             
             
-            body_text_color: AtomicU32::new(prefs.mLightColors.mDefault),
+            body_text_color: RwLock::new(AbsoluteColor::from_nscolor(prefs.mLightColors.mDefault)),
             extra: ExtraDeviceData { document },
         }
     }

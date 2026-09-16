@@ -84,8 +84,7 @@ pub struct Device {
     
     
     
-    
-    body_text_color: AtomicU32,
+    body_text_color: RwLock<AbsoluteColor>,
 
     
     extra: ExtraDeviceData,
@@ -281,15 +280,14 @@ impl Device {
 
     
     pub fn body_text_color(&self) -> AbsoluteColor {
-        AbsoluteColor::from_nscolor(self.body_text_color.load(Ordering::Relaxed))
+        *self.body_text_color.read()
     }
 
     
     
     
     pub fn set_body_text_color(&self, color: AbsoluteColor) {
-        self.body_text_color
-            .store(color.to_nscolor(), Ordering::Relaxed)
+        *self.body_text_color.write() = color;
     }
 
     
