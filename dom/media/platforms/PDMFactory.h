@@ -18,6 +18,7 @@
 
 namespace mozilla {
 
+class AllocPolicy;
 class CDMProxy;
 class MediaDataDecoder;
 class MediaResult;
@@ -52,6 +53,18 @@ class PDMFactory final {
   
   RefPtr<PDMSupportsDecoderPromise> SupportsAsync(
       const SupportDecoderParams& aParams) const;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static RefPtr<PDMSupportsDecoderPromise> StrictSupportsAsync(
+      const CreateDecoderParams& aParams, AllocPolicy* aPolicy = nullptr);
 
   
   
