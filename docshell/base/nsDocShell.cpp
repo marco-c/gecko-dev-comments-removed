@@ -3756,12 +3756,6 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
   
   NS_ENSURE_FALSE(messageStr.IsEmpty(), NS_ERROR_FAILURE);
 
-  if ((NS_ERROR_NET_INTERRUPT == aError || NS_ERROR_NET_RESET == aError) &&
-      aURI->SchemeIs("https")) {
-    
-    error = "nssFailure2";
-  }
-
   if (mBrowsingContext->GetUseErrorPages()) {
     
     nsresult loadedPage =
