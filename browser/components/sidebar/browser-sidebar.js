@@ -568,9 +568,7 @@ var SidebarController = {
       };
       window.addEventListener("keydown", this._sidebarMainKeydownHandler);
       this.revampComponentsLoaded = true;
-      this._state.initializeState(this._showLauncherAfterInit);
-      
-      delete this._showLauncherAfterInit;
+      this._state.initializeState();
 
       
       
@@ -706,15 +704,6 @@ var SidebarController = {
     this._splitterAriaUpdateTask = null;
     this._disableLauncherDragging();
     this._disablePinnedTabsDragging();
-  },
-
-  
-
-
-
-
-  enabledViaSettings(isEnabled = false) {
-    this._showLauncherAfterInit = isEnabled;
   },
 
   
@@ -919,10 +908,11 @@ var SidebarController = {
       return message?.attributes?.find(a => a.name === "label")?.value ?? "";
     };
     const items = [];
-    for (const tool of this.getTools().filter(t => !t.hidden && !t.disabled)) {
+    
+    for (const tool of this.getTools().filter(t => !t.hidden)) {
       items.push({ view: tool.view, label: await resolveLabel(tool.l10nId) });
     }
-    for (const ext of this.getExtensions().filter(e => !e.disabled)) {
+    for (const ext of this.getExtensions()) {
       items.push({ view: ext.view, label: ext.tooltiptext ?? "" });
     }
     const customize = this.sidebars.get("viewCustomizeSidebar");
