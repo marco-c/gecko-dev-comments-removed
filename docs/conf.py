@@ -70,7 +70,7 @@ root_for_relative_js_paths = ".."
 jsdoc_config_path = "jsdoc.json"
 
 templates_path = ["_templates"]
-source_suffix = [".rst", ".md"]
+source_suffix = [".md"]
 master_doc = "index"
 project = "Firefox Source Docs"
 
