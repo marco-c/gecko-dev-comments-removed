@@ -34,7 +34,8 @@ nsresult nsHtml5StringParser::ParseFragment(
     nsAtom* aContextLocalName, int32_t aContextNamespace, bool aQuirks,
     bool aPreventScriptExecution, bool aAllowDeclarativeShadowRoots,
     mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
-        aCustomElementRegistry) {
+        aCustomElementRegistry,
+    mozilla::dom::Sanitizer* aSanitizer, bool aSanitizerSafe) {
   NS_ENSURE_TRUE(aSourceBuffer.Length() <= INT32_MAX, NS_ERROR_OUT_OF_MEMORY);
 
   Document* doc = aTargetNode->OwnerDoc();
@@ -43,9 +44,12 @@ nsresult nsHtml5StringParser::ParseFragment(
 
   
   
-  
   mTreeBuilder->setFragmentContext(aContextLocalName, aContextNamespace,
                                    aTargetNode, aQuirks);
+  
+  
+  
+  mTreeBuilder->SetSanitizer(aSanitizer, aSanitizerSafe);
 
   
   
@@ -82,7 +86,8 @@ nsresult nsHtml5StringParser::ParseFragment(
 
 nsresult nsHtml5StringParser::ParseDocument(
     const nsAString& aSourceBuffer, Document* aTargetDoc,
-    bool aScriptingEnabledForNoscriptParsing) {
+    bool aScriptingEnabledForNoscriptParsing,
+    mozilla::dom::Sanitizer* aSanitizer, bool aSanitizerSafe) {
   MOZ_ASSERT(!aTargetDoc->GetFirstChild());
 
   NS_ENSURE_TRUE(aSourceBuffer.Length() <= INT32_MAX, NS_ERROR_OUT_OF_MEMORY);
@@ -90,6 +95,7 @@ nsresult nsHtml5StringParser::ParseDocument(
   mTreeBuilder->setFragmentContext(nullptr, kNameSpaceID_None, nullptr, false);
   mTreeBuilder->SetCustomElementRegistry(mozilla::Nothing());
 
+  mTreeBuilder->SetSanitizer(aSanitizer, aSanitizerSafe);
   mTreeBuilder->SetPreventScriptExecution(true);
 
   return Tokenize(aSourceBuffer, aTargetDoc,
@@ -165,6 +171,8 @@ nsresult nsHtml5StringParser::Tokenize(const nsAString& aSourceBuffer,
 
   mTokenizer->end();
   mBuilder->Finish();
+  MOZ_ASSERT(!mTreeBuilder->HasSanitizer(),
+             "Sanitizer should have cleared at mTokenizer-end()");
   mAtomTable.Clear();
   TryCache();
   return rv;

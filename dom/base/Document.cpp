@@ -21454,7 +21454,9 @@ already_AddRefed<Document> Document::ParseHTMLUnsafe(
   }
 
   
-  bool sanitize = aOptions.mSanitizer.WasPassed();
+  const bool sanitize = aOptions.mSanitizer.WasPassed();
+  const bool sanitizeWhileParsing =
+      sanitize && StaticPrefs::dom_security_sanitizer_while_parsing();
 
   
   
@@ -21465,25 +21467,29 @@ already_AddRefed<Document> Document::ParseHTMLUnsafe(
 
   
   
+  RefPtr<Sanitizer> sanitizer;
+  if (sanitize) {
+    sanitizer = Sanitizer::GetInstance(global, aOptions.mSanitizer.Value(),
+                                        false, aError);
+    if (aError.Failed()) {
+      return nullptr;
+    }
+  }
+
+  
+  
+  
   
   aError = nsContentUtils::ParseDocumentHTML(
       *compliantString, doc,
-       sanitize);
+       sanitize,
+      sanitizeWhileParsing ? sanitizer.get() : nullptr,  false);
   if (aError.Failed()) {
     return nullptr;
   }
 
-  if (sanitize) {
+  if (sanitize && !sanitizeWhileParsing) {
     
-    
-    nsCOMPtr<nsIGlobalObject> global =
-        do_QueryInterface(aGlobal.GetAsSupports());
-    RefPtr<Sanitizer> sanitizer = Sanitizer::GetInstance(
-        global, aOptions.mSanitizer.Value(),  false, aError);
-    if (aError.Failed()) {
-      return nullptr;
-    }
-
     
     sanitizer->Sanitize(doc,  false, aError);
     if (aError.Failed()) {
@@ -21510,15 +21516,6 @@ already_AddRefed<Document> Document::ParseHTML(GlobalObject& aGlobal,
 
   
   
-  
-  aError = nsContentUtils::ParseDocumentHTML(
-      aHTML, doc,  true);
-  if (aError.Failed()) {
-    return nullptr;
-  }
-
-  
-  
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
   RefPtr<Sanitizer> sanitizer = Sanitizer::GetInstance(
       global, aOptions.mSanitizer,  true, aError);
@@ -21526,10 +21523,27 @@ already_AddRefed<Document> Document::ParseHTML(GlobalObject& aGlobal,
     return nullptr;
   }
 
+  const bool sanitizeWhileParsing =
+      StaticPrefs::dom_security_sanitizer_while_parsing();
+
   
-  sanitizer->Sanitize(doc,  true, aError);
+  
+  
+  
+  aError = nsContentUtils::ParseDocumentHTML(
+      aHTML, doc,  true,
+      sanitizeWhileParsing ? sanitizer.get() : nullptr,  true);
   if (aError.Failed()) {
     return nullptr;
+  }
+
+  if (!sanitizeWhileParsing) {
+    
+    
+    sanitizer->Sanitize(doc,  true, aError);
+    if (aError.Failed()) {
+      return nullptr;
+    }
   }
 
   

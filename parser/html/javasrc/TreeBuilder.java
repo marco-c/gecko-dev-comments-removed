@@ -2081,7 +2081,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                 reconstructTheActiveFormattingElements();
                                 if (TreeBuilder.NOT_FOUND_ON_STACK != findLastInScope("nobr")) {
                                     errFooSeenWhenFooOpen(name);
-                                    adoptionAgencyEndTag("nobr");
+                                    if (!adoptionAgencyEndTag("nobr")) {
+                                        anyOtherEndTagInBody("nobr");
+                                    }
                                     reconstructTheActiveFormattingElements();
                                 }
                                 appendToCurrentNodeAndPushFormattingElementMayFoster(
@@ -3695,30 +3697,8 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                             
                             
                         default:
-                            if (isCurrent(name)) {
-                                pop();
-                                break endtagloop;
-                            }
-
-                            eltPos = currentPtr;
-                            for (;;) {
-                                StackNode<T> node = stack[eltPos];
-                                if (node.ns == "http://www.w3.org/1999/xhtml" && node.name == name) {
-                                    generateImpliedEndTags();
-                                    if (errorHandler != null
-                                            && !isCurrent(name)) {
-                                        errUnclosedElements(eltPos, name);
-                                    }
-                                    while (currentPtr >= eltPos) {
-                                        pop();
-                                    }
-                                    break endtagloop;
-                                } else if (eltPos == 0 || node.isSpecial()) {
-                                    errStrayEndTag(name);
-                                    break endtagloop;
-                                }
-                                eltPos--;
-                            }
+                            anyOtherEndTagInBody(name);
+                            break endtagloop;
                     }
                     
                 case IN_HEAD:
@@ -4436,6 +4416,36 @@ public abstract class TreeBuilder<T> implements TokenHandler,
     
 
 
+    private void anyOtherEndTagInBody(@Local String name) throws SAXException {
+        if (isCurrent(name)) {
+            pop();
+            return;
+        }
+
+        int eltPos = currentPtr;
+        for (;;) {
+            StackNode<T> node = stack[eltPos];
+            if (node.ns == "http://www.w3.org/1999/xhtml" && node.name == name) {
+                generateImpliedEndTags();
+                if (errorHandler != null
+                        && !isCurrent(name)) {
+                    errUnclosedElements(eltPos, name);
+                }
+                while (currentPtr >= eltPos) {
+                    pop();
+                }
+                return;
+            } else if (eltPos == 0 || node.isSpecial()) {
+                errStrayEndTag(name);
+                return;
+            }
+            eltPos--;
+        }
+    }
+
+    
+
+
 
 
 
@@ -4587,17 +4597,29 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                 node.release(this); 
                 node = newNode;
                 
+                
+                
+                
+                
+                
                 detachFromParent(lastNode.node);
                 appendElement(lastNode.node, nodeFromStackWithBlinkCompat(nodePos));
                 lastNode = node;
+                
             }
             
             
             if (commonAncestor.isFosterParenting()) {
                 fatal();
                 detachFromParent(lastNode.node);
-                insertIntoFosterParent(lastNode.node);
+                insertIntoFosterParent(lastNode.node
+                        
+                        );
             } else {
+                
+                
+                
+                
                 detachFromParent(lastNode.node);
                 appendElement(lastNode.node, insertionCommonAncestor);
             }
@@ -4945,16 +4967,20 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         return instance;
     }
 
-    private void insertIntoFosterParent(T child) throws SAXException {
+    private void insertIntoFosterParent(T child
+            
+            ) throws SAXException {
         int tablePos = findLastOrRoot(TreeBuilder.TABLE);
         int templatePos = findLastOrRoot(TreeBuilder.TEMPLATE);
 
         if (templatePos >= tablePos) {
+            
             appendElement(child, stack[templatePos].node);
             return;
         }
 
         StackNode<T> node = stack[tablePos];
+        
         insertFosterParentedChild(child, node.node, stack[tablePos - 1].node);
     }
 
@@ -5283,6 +5309,10 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         
         T currentNode = nodeFromStackWithBlinkCompat(currentPtr);
         
+        
+        
+        boolean sanitizerDropsTemplate = false;
+        
         String shadowRootMode = null;
         boolean shadowRootIsClonable = false;
         boolean shadowRootIsSerializable = false;
@@ -5290,7 +5320,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         boolean shadowRootCustomElementRegistry = false;
         String shadowRootReferenceTarget = null;
         String shadowRootSlotAssignment = null;
-        if (isAllowDeclarativeShadowRoots()) {
+        if (isAllowDeclarativeShadowRoots() && !sanitizerDropsTemplate) {
             shadowRootMode = Portability.newStringFromString(attributes.getValue(AttributeName.SHADOWROOTMODE));
             if (shadowRootMode != null) {
                 shadowRootIsClonable = attributes.contains(AttributeName.SHADOWROOTCLONABLE);

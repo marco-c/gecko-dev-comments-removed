@@ -176,6 +176,7 @@ class DataTransfer;
 enum class DeprecatedOperations : uint16_t;
 class Document;
 class DocumentFragment;
+class Sanitizer;
 class DOMArena;
 class Element;
 class Event;
@@ -2034,12 +2035,19 @@ class nsContentUtils {
 
 
 
+
+
+
+
+
   static nsresult ParseFragmentHTML(
       const nsAString& aSourceBuffer, nsIContent* aTargetNode,
       nsAtom* aContextLocalName, int32_t aContextNamespace, bool aQuirks,
       bool aPreventScriptExecution, int32_t aFlags,
       mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
-          aCustomElementRegistry);
+          aCustomElementRegistry,
+      mozilla::dom::Sanitizer* aSanitizer = nullptr,
+      bool aSanitizerSafe = false);
 
   
 
@@ -2081,9 +2089,16 @@ class nsContentUtils {
 
 
 
-  static nsresult ParseDocumentHTML(const nsAString& aSourceBuffer,
-                                    Document* aTargetDocument,
-                                    bool aScriptingEnabledForNoscriptParsing);
+
+
+
+
+
+  static nsresult ParseDocumentHTML(
+      const nsAString& aSourceBuffer, Document* aTargetDocument,
+      bool aScriptingEnabledForNoscriptParsing,
+      mozilla::dom::Sanitizer* aSanitizer = nullptr,
+      bool aSanitizerSafe = false);
 
   
 

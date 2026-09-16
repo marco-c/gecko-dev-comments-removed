@@ -19,6 +19,7 @@ class Maybe;
 namespace dom {
 class CustomElementRegistry;
 class Document;
+class Sanitizer;
 }  
 }  
 
@@ -48,12 +49,19 @@ class nsHtml5StringParser : public nsParserBase {
 
 
 
+
+
+
+
+
   nsresult ParseFragment(
       const nsAString& aSourceBuffer, nsIContent* aTargetNode,
       nsAtom* aContextLocalName, int32_t aContextNamespace, bool aQuirks,
       bool aPreventScriptExecution, bool aAllowDeclarativeShadowRoots,
       mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
-          aCustomElementRegistry);
+          aCustomElementRegistry,
+      mozilla::dom::Sanitizer* aSanitizer = nullptr,
+      bool aSanitizerSafe = false);
 
   
 
@@ -62,7 +70,9 @@ class nsHtml5StringParser : public nsParserBase {
 
   nsresult ParseDocument(const nsAString& aSourceBuffer,
                          mozilla::dom::Document* aTargetDoc,
-                         bool aScriptingEnabledForNoscriptParsing);
+                         bool aScriptingEnabledForNoscriptParsing,
+                         mozilla::dom::Sanitizer* aSanitizer,
+                         bool aSanitizerSafe);
 
  private:
   virtual ~nsHtml5StringParser();
