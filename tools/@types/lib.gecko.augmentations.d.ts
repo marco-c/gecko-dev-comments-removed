@@ -12,6 +12,7 @@ interface MozElementBase {
 declare global {
   const MozElements: Readonly<{
     MozElementMixin<T extends MozElementBase>(base: T): T;
+    TabsBase: typeof TabsBase;
   }>;
 
   class MozXULElement extends XULElement implements MozElementBase {
@@ -19,6 +20,27 @@ declare global {
   }
   class MozHTMLElement extends HTMLElement implements MozElementBase {
     static implementCustomInterface(cls: MozElementBase, ifaces: nsIID[]): void;
+  }
+
+  
+  
+  
+  class TabsBase extends MozXULElement {
+    disabled: boolean;
+    tabIndex: number;
+    selectedIndex: number;
+    
+    
+    
+    findNextTab<T extends Element>(
+      startTab: T,
+      opts?: {
+        direction?: number;
+        wrap?: boolean;
+        startWithAdjacent?: boolean;
+        filter?: (tab: T) => boolean;
+      }
+    ): T | null;
   }
 
   type MozBrowser =
