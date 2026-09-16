@@ -5,8 +5,6 @@
 
 
 
-
-
 #include "HTMLLabelElement.h"
 
 #include "mozilla/EventDispatcher.h"
@@ -61,6 +59,17 @@ nsGenericHTMLElement* HTMLLabelElement::GetControlForBindings() const {
   Element* element = retargeted->AsElement();
   MOZ_ASSERT(element);
   return static_cast<nsGenericHTMLElement*>(element);
+}
+
+nsChangeHint HTMLLabelElement::GetAttributeChangeHint(
+    const nsAtom* aAttribute, AttrModType aModType) const {
+  nsChangeHint retval =
+      nsGenericHTMLElement::GetAttributeChangeHint(aAttribute, aModType);
+  if (OwnerDoc()->ChromeRulesEnabled() &&
+      (aAttribute == nsGkAtoms::crop || aAttribute == nsGkAtoms::value)) {
+    retval |= nsChangeHint_ReconstructFrame;
+  }
+  return retval;
 }
 
 void HTMLLabelElement::Focus(const FocusOptions& aOptions,
