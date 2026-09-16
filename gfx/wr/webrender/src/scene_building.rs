@@ -2985,7 +2985,7 @@ impl<'a> SceneBuilder<'a> {
         image_rendering: ImageRendering,
     ) {
         let format = yuv_data.get_format();
-        let yuv_key = yuv_planes(&yuv_data);
+        let yuv_key = yuv_data.planes();
 
         self.add_primitive(
             spatial_node_index,
@@ -4017,21 +4017,8 @@ fn validate_image_key(key: ImageKey, namespace: IdNamespace) -> bool {
 }
 
 
-
-
-fn yuv_planes(yuv_data: &YuvData) -> [ImageKey; 3] {
-    match *yuv_data {
-        YuvData::NV12(p0, p1)
-        | YuvData::P010(p0, p1)
-        | YuvData::NV16(p0, p1)
-        | YuvData::P210(p0, p1) => [p0, p1, ImageKey::DUMMY],
-        YuvData::PlanarYCbCr(p0, p1, p2) => [p0, p1, p2],
-        YuvData::InterleavedYCbCr(p0) => [p0, ImageKey::DUMMY, ImageKey::DUMMY],
-    }
-}
-
 fn validate_yuv_data(yuv_data: &YuvData, namespace: IdNamespace) -> bool {
-    yuv_planes(yuv_data).iter().all(|key| validate_image_key(*key, namespace))
+    yuv_data.planes().iter().all(|key| validate_image_key(*key, namespace))
 }
 
 fn validate_font_instance_key(key: FontInstanceKey, namespace: IdNamespace) -> bool {
