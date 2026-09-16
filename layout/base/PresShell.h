@@ -381,7 +381,10 @@ class PresShell final : public nsStubDocumentObserver,
   enum class ResizeEventKind : uint8_t { Regular, Visual };
   void ScheduleResizeEventIfNeeded(ResizeEventKind = ResizeEventKind::Regular);
 
-  void PostScrollEvent(mozilla::Runnable*);
+  
+  
+  [[nodiscard]] uint32_t PostScrollEvent(mozilla::Runnable*);
+  uint32_t GetScrollEventGeneration() const { return mScrollEventGeneration; }
 
   
 
@@ -3375,6 +3378,10 @@ class PresShell final : public nsStubDocumentObserver,
   nsTHashSet<ScrollContainerFrame*> mPendingScrollResnap;
   
   nsTArray<RefPtr<Runnable>> mPendingScrollEvents;
+
+  
+  
+  uint32_t mScrollEventGeneration = 1;
 
   nsTHashSet<nsIContent*> mHiddenContentInForcedLayout;
 

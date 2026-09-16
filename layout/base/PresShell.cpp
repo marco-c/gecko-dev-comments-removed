@@ -1924,7 +1924,7 @@ bool PresShell::CanHandleUserInputEvents(WidgetGUIEvent* aGUIEvent) {
   return true;
 }
 
-void PresShell::PostScrollEvent(Runnable* aEvent) {
+uint32_t PresShell::PostScrollEvent(Runnable* aEvent) {
   MOZ_ASSERT(aEvent);
   mPendingScrollEvents.AppendElement(aEvent);
 
@@ -1938,6 +1938,7 @@ void PresShell::PostScrollEvent(Runnable* aEvent) {
   mPresContext->RefreshDriver()->ScheduleRenderingPhases(
       {RenderingPhase::ScrollSteps, RenderingPhase::Layout,
        RenderingPhase::UpdateIntersectionObservations});
+  return mScrollEventGeneration;
 }
 
 void PresShell::ScheduleResizeEventIfNeeded(ResizeEventKind aKind) {
@@ -2123,6 +2124,11 @@ void PresShell::RunScrollSteps() {
   
   
   auto events = std::move(mPendingScrollEvents);
+  
+  
+  if (++mScrollEventGeneration == 0) {
+    ++mScrollEventGeneration;
+  }
   for (auto& event : events) {
     event->Run();
   }

@@ -24,17 +24,10 @@ using namespace mozilla::dom;
 class VisualViewport::VisualViewportScrollEndEvent : public Runnable {
  public:
   NS_DECL_NSIRUNNABLE
-  VisualViewportScrollEndEvent(VisualViewport* aViewport,
-                               nsPresContext* aPresContext);
-  bool HasPresContext(nsPresContext* aContext) const;
-  void Revoke();
+  explicit VisualViewportScrollEndEvent(VisualViewport* aViewport);
 
  protected:
-  
-  
-  
-  VisualViewport* mViewport;
-  WeakPtr<nsPresContext> mPresContext;
+  RefPtr<VisualViewport> mViewport;
 };
 
 class VisualViewport::VisualViewportScrollEvent
@@ -42,11 +35,10 @@ class VisualViewport::VisualViewportScrollEvent
  public:
   NS_DECL_NSIRUNNABLE
   VisualViewportScrollEvent(VisualViewport* aViewport,
-                            nsPresContext* aPresContext,
                             const nsPoint& aPrevVisualOffset,
                             const nsPoint& aPrevLayoutOffset);
-  nsPoint PrevVisualOffset() const { return mPrevVisualOffset; }
-  nsPoint PrevLayoutOffset() const { return mPrevLayoutOffset; }
+  const nsPoint& PrevVisualOffset() const { return mPrevVisualOffset; }
+  const nsPoint& PrevLayoutOffset() const { return mPrevLayoutOffset; }
 
  private:
   
@@ -65,15 +57,7 @@ class VisualViewport::VisualViewportScrollEvent
 VisualViewport::VisualViewport(nsPIDOMWindowInner* aWindow)
     : DOMEventTargetHelper(aWindow) {}
 
-VisualViewport::~VisualViewport() {
-  if (mScrollEvent) {
-    mScrollEvent->Revoke();
-  }
-
-  if (mScrollEndEvent) {
-    mScrollEndEvent->Revoke();
-  }
-}
+VisualViewport::~VisualViewport() = default;
 
 
 JSObject* VisualViewport::WrapObject(JSContext* aCx,
@@ -223,144 +207,98 @@ void VisualViewport::FireResizeEvent() {
 
 void VisualViewport::PostScrollEvent(const nsPoint& aPrevVisualOffset,
                                      const nsPoint& aPrevLayoutOffset) {
-  VVP_LOG("%p: PostScrollEvent, prevRelativeOffset=%s (pre-existing: %d)\n",
-          this, ToString(aPrevVisualOffset - aPrevLayoutOffset).c_str(),
-          !!mScrollEvent);
-  nsPresContext* presContext = GetPresContext();
-  if (mScrollEvent && mScrollEvent->HasPresContext(presContext)) {
+  VVP_LOG("%p: PostScrollEvent, prevRelativeOffset=%s\n", this,
+          ToString(aPrevVisualOffset - aPrevLayoutOffset).c_str());
+  nsPresContext* pc = GetPresContext();
+  if (!pc) {
     return;
   }
-
-  if (mScrollEvent) {
-    
-    mScrollEvent->Revoke();
-    mScrollEvent = nullptr;
+  auto* ps = pc->PresShell();
+  if (mScrollEventGeneration == ps->GetScrollEventGeneration()) {
+    return;
   }
-
-  if (presContext) {
-    mScrollEvent = new VisualViewportScrollEvent(
-        this, presContext, aPrevVisualOffset, aPrevLayoutOffset);
-    VVP_LOG("%p: Registering PostScroll on %p %p\n", this, presContext,
-            presContext->RefreshDriver());
-    presContext->PresShell()->PostScrollEvent(mScrollEvent);
-  }
+  RefPtr event =
+      new VisualViewportScrollEvent(this, aPrevVisualOffset, aPrevLayoutOffset);
+  VVP_LOG("%p: Registering PostScroll on %p %p\n", this, pc,
+          pc->RefreshDriver());
+  mScrollEventGeneration = ps->PostScrollEvent(event);
 }
 
 VisualViewport::VisualViewportScrollEvent::VisualViewportScrollEvent(
-    VisualViewport* aViewport, nsPresContext* aPresContext,
-    const nsPoint& aPrevVisualOffset, const nsPoint& aPrevLayoutOffset)
-    : VisualViewportScrollEndEvent(aViewport, aPresContext),
+    VisualViewport* aViewport, const nsPoint& aPrevVisualOffset,
+    const nsPoint& aPrevLayoutOffset)
+    : VisualViewportScrollEndEvent(aViewport),
       mPrevVisualOffset(aPrevVisualOffset),
       mPrevLayoutOffset(aPrevLayoutOffset) {}
 
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
 VisualViewport::VisualViewportScrollEvent::Run() {
-  if (RefPtr<VisualViewport> viewport = mViewport) {
-    viewport->FireScrollEvent();
+  nsPoint prevVisualOffset = PrevVisualOffset();
+  nsPoint prevLayoutOffset = PrevLayoutOffset();
+  RefPtr pc = mViewport->GetPresContext();
+  if (!pc) {
+    return NS_OK;
+  }
+
+  RefPtr ps = pc->PresShell();
+  if (ps->GetVisualViewportOffset() != prevVisualOffset) {
+    
+    
+    VVP_LOG("%p: FireScrollEvent, fire mozvisualscroll\n", mViewport.get());
+    WidgetEvent mozEvent(true, eMozVisualScroll);
+    mozEvent.mFlags.mOnlySystemGroupDispatch = true;
+    EventDispatcher::Dispatch(MOZ_KnownLive(mViewport), pc, &mozEvent);
+  }
+
+  
+  
+  
+  nsPoint curRelativeOffset =
+      ps->GetVisualViewportOffsetRelativeToLayoutViewport();
+  nsPoint prevRelativeOffset = prevVisualOffset - prevLayoutOffset;
+  VVP_LOG(
+      "%p: FireScrollEvent, curRelativeOffset %s, "
+      "prevRelativeOffset %s\n",
+      mViewport.get(), ToString(curRelativeOffset).c_str(),
+      ToString(prevRelativeOffset).c_str());
+  if (curRelativeOffset != prevRelativeOffset) {
+    VVP_LOG("%p, FireScrollEvent, fire VisualViewport scroll\n",
+            mViewport.get());
+    WidgetGUIEvent event(true, eScroll, nullptr);
+    event.mFlags.mBubbles = false;
+    event.mFlags.mCancelable = false;
+    EventDispatcher::Dispatch(MOZ_KnownLive(mViewport), pc, &event);
   }
   return NS_OK;
-}
-
-void VisualViewport::FireScrollEvent() {
-  MOZ_ASSERT(mScrollEvent);
-  nsPoint prevVisualOffset = mScrollEvent->PrevVisualOffset();
-  nsPoint prevLayoutOffset = mScrollEvent->PrevLayoutOffset();
-  mScrollEvent->Revoke();
-  mScrollEvent = nullptr;
-
-  if (RefPtr<PresShell> presShell = GetPresShell()) {
-    RefPtr<nsPresContext> presContext = GetPresContext();
-
-    if (presShell->GetVisualViewportOffset() != prevVisualOffset) {
-      
-      
-      VVP_LOG("%p: FireScrollEvent, fire mozvisualscroll\n", this);
-      WidgetEvent mozEvent(true, eMozVisualScroll);
-      mozEvent.mFlags.mOnlySystemGroupDispatch = true;
-      EventDispatcher::Dispatch(this, presContext, &mozEvent);
-    }
-
-    
-    
-    
-    nsPoint curRelativeOffset =
-        presShell->GetVisualViewportOffsetRelativeToLayoutViewport();
-    nsPoint prevRelativeOffset = prevVisualOffset - prevLayoutOffset;
-    VVP_LOG(
-        "%p: FireScrollEvent, curRelativeOffset %s, "
-        "prevRelativeOffset %s\n",
-        this, ToString(curRelativeOffset).c_str(),
-        ToString(prevRelativeOffset).c_str());
-    if (curRelativeOffset != prevRelativeOffset) {
-      VVP_LOG("%p, FireScrollEvent, fire VisualViewport scroll\n", this);
-      WidgetGUIEvent event(true, eScroll, nullptr);
-      event.mFlags.mBubbles = false;
-      event.mFlags.mCancelable = false;
-      EventDispatcher::Dispatch(this, presContext, &event);
-    }
-  }
 }
 
 
 
 void VisualViewport::PostScrollEndEvent() {
-  VVP_LOG("%p: PostScrollEndEvent (pre-existing: %d)\n", this,
-          !!mScrollEndEvent);
-  nsPresContext* presContext = GetPresContext();
-  if (mScrollEndEvent && mScrollEndEvent->HasPresContext(presContext)) {
-    return;
-  }
-  if (mScrollEndEvent) {
+  if (nsPresContext* pc = GetPresContext()) {
+    RefPtr event = new VisualViewportScrollEndEvent(this);
     
     
-    mScrollEndEvent->Revoke();
-    mScrollEndEvent = nullptr;
-  }
-
-  if (presContext) {
-    mScrollEndEvent = new VisualViewportScrollEndEvent(this, presContext);
-    VVP_LOG("%p: Registering PostScrollEnd on %p %p\n", this, presContext,
-            presContext->RefreshDriver());
-    presContext->PresShell()->PostScrollEvent(mScrollEndEvent);
+    
+    (void)pc->PresShell()->PostScrollEvent(event);
   }
 }
 
 VisualViewport::VisualViewportScrollEndEvent::VisualViewportScrollEndEvent(
-    VisualViewport* aViewport, nsPresContext* aPresContext)
+    VisualViewport* aViewport)
     : Runnable("VisualViewport::VisualViewportScrollEvent"),
-      mViewport(aViewport),
-      mPresContext(aPresContext) {}
-
-bool VisualViewport::VisualViewportScrollEndEvent::HasPresContext(
-    nsPresContext* aContext) const {
-  return mPresContext.get() == aContext;
-}
-
-void VisualViewport::VisualViewportScrollEndEvent::Revoke() {
-  mViewport = nullptr;
-  mPresContext = nullptr;
-}
+      mViewport(aViewport) {}
 
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
 VisualViewport::VisualViewportScrollEndEvent::Run() {
-  if (RefPtr<VisualViewport> viewport = mViewport) {
-    viewport->FireScrollEndEvent();
-  }
-  return NS_OK;
-}
-
-void VisualViewport::FireScrollEndEvent() {
-  MOZ_ASSERT(mScrollEndEvent);
-  mScrollEndEvent->Revoke();
-  mScrollEndEvent = nullptr;
-
-  RefPtr<nsPresContext> presContext = GetPresContext();
-
-  VVP_LOG("%p, FireScrollEndEvent, fire VisualViewport scrollend\n", this);
+  VVP_LOG("%p, FireScrollEndEvent, fire VisualViewport scrollend\n",
+          mViewport.get());
+  RefPtr<nsPresContext> presContext = mViewport->GetPresContext();
   WidgetEvent event(true, eScrollend);
   event.mFlags.mBubbles = false;
   event.mFlags.mCancelable = false;
-  EventDispatcher::Dispatch(this, presContext, &event);
+  EventDispatcher::Dispatch(MOZ_KnownLive(mViewport), presContext, &event);
+  return NS_OK;
 }
