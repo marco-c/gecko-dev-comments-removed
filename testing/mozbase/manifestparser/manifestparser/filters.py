@@ -11,6 +11,7 @@ possible to define custom filters if the built-in ones are not enough.
 import functools
 import itertools
 import os
+from bisect import bisect_left
 from collections import defaultdict
 from collections.abc import MutableSequence
 
@@ -21,7 +22,7 @@ from .util import norm_needed, normsep
 
 
 
-@functools.lru_cache(maxsize=None)  
+@functools.cache
 def _match(exprs, strict, **values):
     """Return the first matching expression, or None if no match."""
     for e in exprs.splitlines():
@@ -164,53 +165,6 @@ class subsuite(InstanceFilter):
                     yield test
             elif test.get("subsuite", "") == self.name:
                 yield test
-
-
-class chunk_by_slice(InstanceFilter):
-    """
-    Basic chunking algorithm that splits tests evenly across total chunks.
-
-    :param this_chunk: the current chunk, 1 <= this_chunk <= total_chunks
-    :param total_chunks: the total number of chunks
-    :param disabled: Whether to include disabled tests in the chunking
-                     algorithm. If False, each chunk contains an equal number
-                     of non-disabled tests. If True, each chunk contains an
-                     equal number of tests (default False)
-    """
-
-    def __init__(self, this_chunk, total_chunks, disabled=False):
-        assert 1 <= this_chunk <= total_chunks
-        InstanceFilter.__init__(self, this_chunk, total_chunks, disabled=disabled)
-        self.this_chunk = this_chunk
-        self.total_chunks = total_chunks
-        self.disabled = disabled
-
-    def __call__(self, tests, values, strict=False):
-        tests = list(tests)
-        if self.disabled:
-            chunk_tests = tests[:]
-        else:
-            chunk_tests = [t for t in tests if "disabled" not in t]
-
-        tests_per_chunk = float(len(chunk_tests)) / self.total_chunks
-        
-        start = int(round((self.this_chunk - 1) * tests_per_chunk))
-        end = int(round(self.this_chunk * tests_per_chunk))
-
-        if not self.disabled:
-            
-            
-            
-            if self.this_chunk == 1:
-                start = 0
-            elif start < len(chunk_tests):
-                start = tests.index(chunk_tests[start])
-
-            if self.this_chunk == self.total_chunks:
-                end = len(tests)
-            elif end < len(chunk_tests):
-                end = tests.index(chunk_tests[end])
-        return (t for t in tests[start:end])
 
 
 class chunk_by_dir(InstanceFilter):
@@ -362,33 +316,49 @@ class chunk_by_runtime(InstanceFilter):
         
         runtimes = [(self.runtimes[m], m) for m in manifests if m in self.runtimes]
 
-        
-        times = [r[0] for r in runtimes]
-        
-        
-        avg = round(sum(times) / len(times), 2) if times else 0
-        missing = sorted([m for m in manifests if m not in self.runtimes])
-        self.logger.debug(
-            "Applying average runtime of {}s to the following missing manifests:\n{}".format(
-                avg, "  " + "\n  ".join(missing)
+        if len(runtimes) != len(self.runtimes):
+            
+            times = [r[0] for r in runtimes]
+            
+            
+            avg = round(sum(times) / len(times), 2) if times else 0
+
+            missing = sorted([m for m in manifests if m not in self.runtimes])
+            self.logger.debug(
+                "Applying average runtime of {}s to the following missing manifests:\n{}".format(
+                    avg, "  " + "\n  ".join(missing)
+                )
             )
-        )
-        runtimes.extend([(avg, m) for m in missing])
+            runtimes.extend([(avg, m) for m in missing])
 
         
         chunks = [[0, []] for i in range(self.total_chunks)]
+
+        def key(x):
+            return (x[0], len(x[1]))
 
         
         for runtime, manifest in sorted(runtimes, reverse=True):
             
             
-            chunks.sort(key=lambda x: (x[0], len(x[1]), x[1]))
-            chunks[0][0] += runtime
-            chunks[0][1].append(manifest)
+            chunk0 = chunks[0]
+            chunk0[0] += runtime
+            chunk0[1].append(manifest)
 
-        
-        
-        chunks.sort(key=lambda x: (x[0], len(x[1])))
+            
+            insertion_point = bisect_left(chunks, key(chunk0), lo=1, key=key)
+
+            
+            
+            
+            
+            
+            
+            
+            for i in range(insertion_point - 1):
+                chunks[i] = chunks[i + 1]
+            chunks[insertion_point - 1] = chunk0
+
         return chunks
 
     def __call__(self, tests, values, strict=False):
