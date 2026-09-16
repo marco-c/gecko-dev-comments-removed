@@ -1,0 +1,5 @@
+def main(request, response):
+    
+    response.headers.set(b"Content-Type", b"application/json")
+    
+    return b'\xef\xbb\xbf{"key":"value"}'
