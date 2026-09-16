@@ -2,46 +2,77 @@
 
 
 
-var content = "line 1\nline 2\nline 3";
-
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  });
-});
+const LINES = 800; 
+const CONTENT = (() => {
+  let c = "";
+  for (let i = 1; i <= LINES; ++i) {
+    c += `line ${i}\n`;
+  }
+  return c;
+})();
 
 add_task(async function () {
   
-  let tab = await openDocument("data:text/html," + encodeURIComponent(content));
+  info("Testing text/html");
+  let tab = await openDocument("data:text/html," + encodeURIComponent(CONTENT));
   await checkViewSource(tab);
   gBrowser.removeTab(tab);
 
-  tab = await openDocument("data:text/plain," + encodeURIComponent(content));
+  info("Testing text/plain");
+  tab = await openDocument("data:text/plain," + encodeURIComponent(CONTENT));
   await checkViewSource(tab);
   gBrowser.removeTab(tab);
 });
 
 var checkViewSource = async function (aTab) {
   let browser = aTab.linkedBrowser;
-  await SpecialPowers.spawn(browser, [content], async function (text) {
+  await SpecialPowers.spawn(browser, [CONTENT], async function (text) {
     is(content.document.body.textContent, text, "Correct content loaded");
   });
 
-  for (let i = 1; i <= 3; i++) {
+  
+  for (let lineNumber of [1, 100, 800, 100, 1]) {
+    info(`Going to line ${lineNumber}`);
     browser.sendMessageToActor(
       "ViewSource:GoToLine",
       {
-        lineNumber: i,
+        lineNumber,
       },
       "ViewSourcePage"
     );
-    await SpecialPowers.spawn(browser, [i], async function (i) {
+    await SpecialPowers.spawn(browser, [lineNumber], async function (i) {
       let selection = content.getSelection();
       Assert.equal(
         selection.toString().trim(),
         "line " + i,
         "Correct text selected"
       );
+
+      
+      await new Promise(r => {
+        content.requestAnimationFrame(() => content.requestAnimationFrame(r));
+      });
+
+      let foundNonEmptyRect = false;
+      for (let rect of selection.getRangeAt(0).getClientRects()) {
+        if (rect.width == 0 || rect.height == 0) {
+          continue;
+        }
+        info(`Testing selection rect: ${JSON.stringify(rect)}`);
+        info(`Current scroll position: ${content.scrollY}`);
+        foundNonEmptyRect = true;
+        Assert.greaterOrEqual(
+          rect.top,
+          0,
+          "Top of the selection should be in viewport (top)"
+        );
+        Assert.lessOrEqual(
+          rect.bottom,
+          content.innerHeight,
+          "Top of the selection should be in viewport (bottom)"
+        );
+      }
+      Assert.ok(foundNonEmptyRect, "Should have some non-empty rects");
     });
   }
 };

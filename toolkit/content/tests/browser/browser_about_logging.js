@@ -81,10 +81,6 @@ async function getElementFromDocumentByText(document, text) {
 
 
 add_setup(async function saveRestoreLogModules() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  });
-
   let savedLogModules = Services.env.get("MOZ_LOG");
   Services.env.set("MOZ_LOG", "");
   registerCleanupFunction(() => {
