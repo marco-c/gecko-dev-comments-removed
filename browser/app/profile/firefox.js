@@ -2704,11 +2704,7 @@ pref("browser.contentblocking.report.lockwise.enabled", true);
 pref("browser.contentblocking.report.monitor.enabled", false);
 
 
-#ifdef NIGHTLY_BUILD
-  pref("browser.contentblocking.report.privacy_metrics.enabled", true);
-#else
-  pref("browser.contentblocking.report.privacy_metrics.enabled", false);
-#endif
+pref("browser.contentblocking.report.privacy_metrics.enabled", false);
 
 
 pref("browser.contentblocking.report.show_mobile_app", true);
