@@ -5,8 +5,8 @@
 #ifndef js_wasm_WasmFeatures_h
 #define js_wasm_WasmFeatures_h
 
-#include "js/WasmFeatures.h"
 #include "js/TypeDecls.h"
+#include "js/WasmFeatures.h"
 
 namespace js {
 
@@ -93,7 +93,7 @@ bool SimdAvailable(JSContext* cx);
 
 bool IsPrivilegedContext(JSContext* cx);
 
-#if defined(ENABLE_WASM_SIMD) && defined(DEBUG)
+#if defined(ENABLE_JIT_SIMD) && defined(DEBUG)
 
 void ReportSimdAnalysis(const char* data);
 #endif

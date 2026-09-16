@@ -6,7 +6,6 @@
 #define A64_ASSEMBLER_A64_H_
 
 #include "jit/arm64/vixl/Assembler-vixl.h"
-
 #include "jit/CompactBuffer.h"
 #include "jit/shared/Disassembler-shared.h"
 #include "wasm/WasmTypeDecls.h"
@@ -54,7 +53,7 @@ struct ScratchFloat32Scope : public AutoFloatRegisterScope {
       : AutoFloatRegisterScope(masm, ScratchFloat32Reg_) {}
 };
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 static constexpr FloatRegister ReturnSimd128Reg = {FloatRegisters::v0,
                                                    FloatRegisters::Simd128};
 static constexpr FloatRegister ScratchSimd128Reg = {FloatRegisters::v31,
