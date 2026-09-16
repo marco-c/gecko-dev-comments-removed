@@ -273,8 +273,17 @@ module.exports = {
     
     
     "csstools/use-logical": null,
+    
+    
+    
+    
+    "media-query-no-invalid": null,
+    "stylelint-plugin-mozilla/media-query-no-invalid": true,
+    "stylelint-plugin-mozilla/no-background-without-text-color": true,
     "stylelint-plugin-mozilla/no-base-design-tokens": true,
+    "stylelint-plugin-mozilla/no-has-selector": true,
     "stylelint-plugin-mozilla/use-design-tokens": true,
+    "stylelint-plugin-mozilla/use-paired-color-tokens": true,
   },
 
   overrides: [
@@ -282,6 +291,13 @@ module.exports = {
       files: "*.scss",
       customSyntax: "postcss-scss",
       extends: "stylelint-config-recommended-scss",
+      rules: {
+        
+        
+        
+        
+        "stylelint-plugin-mozilla/media-query-no-invalid": null,
+      },
     },
     {
       files: [
@@ -454,6 +470,19 @@ module.exports = {
       files: ["toolkit/**/*.css", "toolkit/**/*.scss"],
       rules: {
         "stylelint-plugin-mozilla/no-browser-refs-in-toolkit": true,
+      },
+    },
+    {
+      
+      
+      name: "has-selector-rule-off",
+      files: [
+        "browser/components/aboutwelcome/**",
+        "browser/components/asrouter/**",
+        "browser/extensions/newtab/**",
+      ],
+      rules: {
+        "stylelint-plugin-mozilla/no-has-selector": null,
       },
     },
     {
