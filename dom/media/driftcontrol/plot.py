@@ -21,7 +21,6 @@
 
 
 import argparse
-from collections import OrderedDict
 
 import pandas
 from bokeh.io import output_file, show
@@ -49,7 +48,7 @@ MOZ_LOG_FILE=/tmp/driftcontrol.csv       \
 
     
     tabs = []
-    for id in list(OrderedDict.fromkeys(all_df["id"])):
+    for id in dict.fromkeys(all_df["id"]):
         df = all_df[all_df["id"] == id]
 
         t = df["t"]
