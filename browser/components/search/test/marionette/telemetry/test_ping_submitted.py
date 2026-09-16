@@ -39,22 +39,6 @@ class TestPingSubmitted(MarionetteTestCase):
         """
         self.marionette.execute_async_script(script)
 
-        self.wait_for_fog()
-
-    def wait_for_fog(self):
-        
-        
-        
-        
-        Wait(self.marionette, timeout=60).until(
-            lambda _: self.marionette.execute_script(
-                """
-                return Services.fog.initialized;
-                """
-            ),
-            message="FOG should be initialized before reading Glean metrics.",
-        )
-
     def test_ping_submit_on_start(self):
         
         self.marionette.execute_script(
@@ -94,8 +78,6 @@ class TestPingSubmitted(MarionetteTestCase):
         )
 
         self.marionette.restart(clean=False, in_app=True)
-
-        self.wait_for_fog()
 
         Wait(self.marionette, timeout=60).until(
             lambda _: self.marionette.execute_script(
