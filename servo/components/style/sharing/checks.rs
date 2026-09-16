@@ -184,7 +184,8 @@ where
 }
 
 
-pub fn have_shareable_tree_counting_functions<E>(
+
+pub fn have_shareable_element_dependent_functions<E>(
     target: &StyleSharingTarget<E>,
     candidate: &StyleSharingCandidate<E>,
 ) -> bool
@@ -202,6 +203,11 @@ where
     if styles.uses_tree_counting_function(TreeCountingFunction::SiblingCount)
         && target.parent_element() != candidate.parent_element()
     {
+        return false;
+    }
+
+    if styles.uses_element_scoped_random() {
+        
         return false;
     }
 
