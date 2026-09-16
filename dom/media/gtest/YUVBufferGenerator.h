@@ -5,28 +5,65 @@
 #ifndef YUVBufferGenerator_h
 #define YUVBufferGenerator_h
 
+#include <cstddef>
+#include <cstdint>
+
 #include "ImageContainer.h"
 #include "Point.h"  
+#include "Rect.h"   
 #include "mozilla/AlreadyAddRefed.h"
 #include "nsTArray.h"
 
 
 class YUVBufferGenerator {
  public:
+  struct ChannelColor {
+    uint8_t mY;
+    uint8_t mCb;
+    uint8_t mCr;
+  };
+
+  enum class ChannelColorIndex : std::size_t {
+    Black,
+    White,
+    Red,
+  };
   
   
-  void Init(const mozilla::gfx::IntSize& aSize, uint8_t aLuma = 0x10,
-            uint8_t aChroma = 0x80);
+  inline static constexpr ChannelColor kChannelColors[] = {
+      {0x10, 0x80, 0x80},  
+      {0xEB, 0x80, 0x80},  
+      {0x51, 0x5A, 0xF0},  
+  };
+
+  bool Init(
+      const mozilla::gfx::IntSize& aSize,
+      const ChannelColor& aColor =
+          kChannelColors[static_cast<std::size_t>(ChannelColorIndex::Black)]);
+  bool Init(const mozilla::gfx::IntSize& aSize, uint8_t aLuma, uint8_t aChroma);
+  bool Init(
+      const mozilla::gfx::IntRect& aPictureRect,
+      const ChannelColor& aColor =
+          kChannelColors[static_cast<std::size_t>(ChannelColorIndex::Black)]);
   mozilla::gfx::IntSize GetSize() const;
   already_AddRefed<mozilla::layers::Image> GenerateI420Image();
   already_AddRefed<mozilla::layers::Image> GenerateNV12Image();
   already_AddRefed<mozilla::layers::Image> GenerateNV21Image();
 
  private:
-  mozilla::layers::Image* CreateI420Image();
-  mozilla::layers::Image* CreateNV12Image();
-  mozilla::layers::Image* CreateNV21Image();
-  mozilla::gfx::IntSize mImageSize;
+  void FillI420SourceBuffer();
+  void FillNVSourceBuffer(uint8_t aFirstChromaValue,
+                          uint8_t aSecondChromaValue);
+
+  mozilla::gfx::IntRect mPictureRect;
+  mozilla::gfx::IntSize mYDataSize;
+  
+  
+  mozilla::gfx::IntSize mChromaSize;
+  size_t mYPlaneLength = 0;
+  size_t mChromaPlaneLength = 0;
+  ChannelColor mColor =
+      kChannelColors[static_cast<std::size_t>(ChannelColorIndex::Black)];
   nsTArray<uint8_t> mSourceBuffer;
 };
 
