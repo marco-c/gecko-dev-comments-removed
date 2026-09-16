@@ -261,15 +261,29 @@ add_task(async function test_findmarks_highlight_toggle() {
 
 
 async function getMarks(browser, increase, shouldBeOnHScrollbar = false) {
-  let results = await SpecialPowers.spawn(browser, [], () => {
-    let { marks, onHorizontalScrollbar } = content.lastMarks;
-    content.lastMarks = {};
-    return {
-      onHorizontalScrollbar,
-      marks: marks || [],
-      count: content.eventsCount,
-    };
-  });
+  
+  
+  let results = await SpecialPowers.spawn(
+    browser,
+    [increase, gUpdateCount],
+    async (shouldWait, lastCount) => {
+      if (shouldWait && (content.eventsCount ?? 0) <= lastCount) {
+        await ContentTaskUtils.waitForEvent(
+          content,
+          "find-scrollmarks-changed",
+          true
+        );
+      }
+
+      let { marks, onHorizontalScrollbar } = content.lastMarks;
+      content.lastMarks = {};
+      return {
+        onHorizontalScrollbar,
+        marks: marks || [],
+        count: content.eventsCount,
+      };
+    }
+  );
 
   
   
