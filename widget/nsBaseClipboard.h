@@ -162,6 +162,15 @@ class nsBaseClipboard : public nsIClipboard {
   static bool IsValidFlavor(const nsACString& aFlavor);
 
  private:
+  
+  
+  using SetDataCompletion = mozilla::MoveOnlyFunction<void(nsresult)>;
+
+  nsresult SetDataImpl(nsITransferable* aTransferable,
+                       nsIClipboardOwner* aOwner, ClipboardType aWhichClipboard,
+                       mozilla::dom::WindowContext* aWindowContext,
+                       SetDataCompletion&& aCompletion = nullptr);
+
   void RejectPendingAsyncSetDataRequestIfAny(ClipboardType aClipboardType);
 
   class AsyncSetClipboardData final : public nsIAsyncSetClipboardData {
