@@ -65,7 +65,9 @@ myst_enable_extensions = [
 
 
 
-mermaid_width = "fit-content"
+
+
+mermaid_width = "min(100%, 45rem)"
 mermaid_height = "auto"
 
 
