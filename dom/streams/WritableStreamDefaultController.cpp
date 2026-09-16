@@ -186,7 +186,7 @@ void SetUpWritableStreamDefaultController(
   
   RefPtr<Promise> startPromise =
       Promise::CreateInfallible(aStream->GetParentObject());
-  startPromise->MaybeSafeResolve(startResult);
+  startPromise->MaybeResolve(startResult);
 
   
   startPromise->AddCallbacksWithCycleCollectedArgs(
