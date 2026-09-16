@@ -36,6 +36,14 @@ bool IsFrameSizeSupportedForNV12Input(const gfx::IntSize& aSize) {
   return aSize.width % 2 == 0;
 }
 
+static bool IsNotRecordOrHwRequired(const EncoderConfig& aConfig) {
+  
+  
+  
+  return aConfig.mUsage != Usage::Record ||
+         aConfig.mHardwarePreference == HardwarePreference::RequireHardware;
+}
+
 static bool IsNotRealtimeOrHwRequired(const EncoderConfig& aConfig) {
   
   
@@ -44,14 +52,35 @@ static bool IsNotRealtimeOrHwRequired(const EncoderConfig& aConfig) {
          aConfig.mHardwarePreference == HardwarePreference::RequireHardware;
 }
 
-static bool CanUseWMFHwEncoder(const EncoderConfig& aConfig) {
+bool CanUseWMFHwEncoder(const GUID& aSubtype) {
+  if (!gfx::gfxVars::IsInitialized() || !XRE_IsGPUProcess()) {
+    return false;
+  }
+
+  if (IsEqualGUID(aSubtype, MFVideoFormat_H264)) {
+    return gfx::gfxVars::UseH264HwEncode();
+  }
+
+  if (IsEqualGUID(aSubtype, MFVideoFormat_VP90)) {
+    return gfx::gfxVars::UseVP9HwEncode();
+  }
+
+  if (IsEqualGUID(aSubtype, MFVideoFormat_VP80)) {
+    return gfx::gfxVars::UseVP8HwEncode();
+  }
+
+  return false;
+}
+
+bool CanUseWMFHwEncoder(const EncoderConfig& aConfig) {
   if (!gfx::gfxVars::IsInitialized() || !XRE_IsGPUProcess()) {
     return false;
   }
 
   switch (aConfig.mCodec) {
     case CodecType::H264:
-      return gfx::gfxVars::UseH264HwEncode();
+      return IsNotRecordOrHwRequired(aConfig) &&
+             gfx::gfxVars::UseH264HwEncode();
     case CodecType::VP8:
       return IsNotRealtimeOrHwRequired(aConfig) &&
              gfx::gfxVars::UseVP8HwEncode();

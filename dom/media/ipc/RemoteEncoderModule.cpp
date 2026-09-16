@@ -139,6 +139,14 @@ media::EncodeSupportSet RemoteEncoderModule::Supports(
   
   
   
+  if (aConfig.mCodec == CodecType::H264 && aConfig.mUsage == Usage::Record &&
+      aConfig.mHardwarePreference == HardwarePreference::None) {
+    hwPref = HardwarePreference::RequireSoftware;
+  }
+
+  
+  
+  
   if ((aConfig.mCodec == CodecType::VP8 || aConfig.mCodec == CodecType::VP9) &&
       aConfig.mUsage == Usage::Realtime &&
       aConfig.mHardwarePreference == HardwarePreference::None) {
