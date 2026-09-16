@@ -1351,6 +1351,21 @@ class Document : public nsINode,
       const nsAString& aThirdPartyOrigin, const bool aRequireUserInteraction,
       ErrorResult& aRv);
 
+ private:
+  
+  
+  
+  void ConsumeUserGestureAndRejectRequestStorageAccessPromise(
+      Promise* aPromise);
+
+  
+  
+  
+  
+  bool MaybeResolveOrRejectRequestStorageAccessPromise(
+      const Maybe<bool>& aMaybeResult, Promise* aPromise);
+
+ public:
   bool UseRegularPrincipal() const;
 
   
