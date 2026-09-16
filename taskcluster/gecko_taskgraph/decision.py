@@ -442,6 +442,13 @@ def get_decision_parameters(graph_config, options):
     )
 
     
+    
+    
+    parameters["shipping"] = (
+        "SHIPPING" in commit_message and options["tasks_for"] == "hg-push"
+    )
+
+    
     parameters["backstop"] = is_backstop(parameters)
 
     
