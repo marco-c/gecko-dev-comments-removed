@@ -46,6 +46,9 @@ class FrameDecodeScheduler {
 
   
   virtual void Stop() = 0;
+
+  
+  virtual bool stopped() const = 0;
 };
 
 }  
