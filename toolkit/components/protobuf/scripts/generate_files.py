@@ -1,12 +1,15 @@
 
 
+
+
+
+
 import pathlib
 import re
 import subprocess
 import sys
 
 import buildconfig
-
 from protoc_wrapper import protoc_binary
 
 TOPSRCDIR = pathlib.Path(buildconfig.topsrcdir)
@@ -50,7 +53,9 @@ if __name__ == "__main__":
     run_protoc(
         "csd.proto",
         cpp_out="toolkit/components/reputationservice/chromium/chrome/common/safe_browsing",
-        includes=["toolkit/components/reputationservice/chromium/chrome/common/safe_browsing"],
+        includes=[
+            "toolkit/components/reputationservice/chromium/chrome/common/safe_browsing"
+        ],
     )
     run_protoc(
         "safebrowsing.proto",
