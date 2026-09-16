@@ -24,9 +24,13 @@ extern LazyLogModule gSHistoryLog;
 #define LOG(format) MOZ_LOG(gSHistoryLog, mozilla::LogLevel::Debug, format)
 
 static bool CheckNavigationRateLimit(BrowsingContext* aContext,
-                                     CallerType aCallerType) {
+                                     CallerType aCallerType, ErrorResult& aRv) {
   if (aContext) {
-    return aContext->CheckNavigationRateLimit(aCallerType);
+    nsresult rv = aContext->CheckNavigationRateLimit(aCallerType);
+    if (NS_FAILED(rv)) {
+      aRv.Throw(rv);
+      return false;
+    }
   }
 
   return true;
@@ -101,7 +105,7 @@ void nsHistory::SetScrollRestoration(mozilla::dom::ScrollRestoration aMode,
     return;
   }
 
-  if (!CheckNavigationRateLimit(win->GetBrowsingContext(), aCallerType)) {
+  if (!CheckNavigationRateLimit(win->GetBrowsingContext(), aCallerType, aRv)) {
     return;
   }
 
@@ -171,15 +175,19 @@ void nsHistory::PushOrReplaceState(JSContext* aCx, JS::Handle<JS::Value> aData,
     return;
   }
 
-  if (!win->IsFullyActive()) {
+  if (!win->HasActiveDocument()) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
 
     return;
   }
 
+  if (!CheckNavigationRateLimit(win->GetBrowsingContext(), aCallerType, aRv)) {
+    return;
+  }
+
   
   
-  RefPtr docShell = nsDocShell::Cast(win->GetDocShell());
+  nsCOMPtr<nsIDocShell> docShell = win->GetDocShell();
 
   if (!docShell) {
     aRv.Throw(NS_ERROR_FAILURE);
@@ -189,7 +197,8 @@ void nsHistory::PushOrReplaceState(JSContext* aCx, JS::Handle<JS::Value> aData,
 
   
   
-  aRv = docShell->AddState(aData, aTitle, aUrl, aCallerType, aReplace, aCx);
+
+  aRv = docShell->AddState(aData, aTitle, aUrl, aReplace, aCx);
 }
 
 already_AddRefed<ChildSHistory> nsHistory::GetSessionHistory() const {
@@ -217,8 +226,8 @@ void nsHistory::DeltaTraverse(mozilla::Maybe<NotNull<JSContext*>> aCx,
     return;
   }
 
-  
-  if (!CheckNavigationRateLimit(win->GetBrowsingContext(), aCallerType)) {
+  if (!CheckNavigationRateLimit(win->GetBrowsingContext(), aCallerType, aRv)) {
+    MOZ_LOG(gSHistoryLog, LogLevel::Debug, ("Rejected"));
     return;
   }
 

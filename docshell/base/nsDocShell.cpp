@@ -8725,15 +8725,6 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     }
   }
 
-  CallerType callerType = aLoadState->TriggeringPrincipal()->IsSystemPrincipal()
-                              ? CallerType::System
-                              : CallerType::NonSystem;
-
-  if (!aLoadState->LoadIsFromSessionHistory() &&
-      !mBrowsingContext->CheckNavigationRateLimit(callerType)) {
-    return NS_OK;
-  }
-
   
   
   
@@ -10906,10 +10897,9 @@ bool nsDocShell::CollectWireframe() {
 
 
 
-nsresult nsDocShell::AddState(JS::Handle<JS::Value> aData,
-                              const nsAString& aTitle, const nsAString& aURL,
-                              CallerType aCallerType, bool aReplace,
-                              JSContext* aCx) {
+NS_IMETHODIMP
+nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
+                     const nsAString& aURL, bool aReplace, JSContext* aCx) {
   MOZ_LOG(gSHLog, LogLevel::Debug,
           ("nsDocShell[%p]: AddState(..., %s, %s, %d)", this,
            NS_ConvertUTF16toUTF8(aTitle).get(),
@@ -11071,10 +11061,6 @@ nsresult nsDocShell::AddState(JS::Handle<JS::Value> aData,
     }
 
   }  
-
-  if (!mBrowsingContext->CheckNavigationRateLimit(aCallerType)) {
-    return NS_OK;
-  }
 
   
   
