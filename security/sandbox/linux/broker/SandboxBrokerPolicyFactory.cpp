@@ -333,6 +333,8 @@ static void AddMemoryReporting(SandboxBroker::Policy* aPolicy, pid_t aPid) {
   
   aPolicy->AddPath(rdonly, nsPrintfCString("/proc/%d/statm", aPid).get());
   aPolicy->AddPath(rdonly, nsPrintfCString("/proc/%d/smaps", aPid).get());
+  aPolicy->AddPath(rdonly,
+                   nsPrintfCString("/proc/%d/smaps_rollup", aPid).get());
 }
 
 static void AddDynamicPathList(SandboxBroker::Policy* policy,
