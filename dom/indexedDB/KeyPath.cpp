@@ -115,7 +115,9 @@ nsresult GetJSValFromKeyPathString(
         
         
         Blob* blob;
-        if (NS_SUCCEEDED(UNWRAP_OBJECT(Blob, &obj, blob))) {
+        
+        JS::Rooted<JSObject*> blobObj(aCx, obj);
+        if (NS_SUCCEEDED(UNWRAP_OBJECT(Blob, &blobObj, blob))) {
           if (token.EqualsLiteral("size")) {
             ErrorResult rv;
             uint64_t size = blob->GetSize(rv);
