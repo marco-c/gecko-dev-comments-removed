@@ -802,8 +802,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<Boolean>("privacy.globalprivacycontrol.enabled", false);
    final Pref<Boolean> mGlobalPrivacyControlEnabledPrivateMode =
       new Pref<Boolean>("privacy.globalprivacycontrol.pbmode.enabled", true);
-   final Pref<Boolean> mGlobalPrivacyControlFunctionalityEnabled =
-      new Pref<Boolean>("privacy.globalprivacycontrol.functionality.enabled", true);
    final PrefWithoutDefault<Boolean> mFingerprintingProtection =
       new PrefWithoutDefault<Boolean>("privacy.fingerprintingProtection");
    final PrefWithoutDefault<Boolean> mFingerprintingProtectionPrivateMode =
@@ -984,7 +982,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     mGlobalPrivacyControlEnabled.commit(enabled);
     
     mGlobalPrivacyControlEnabledPrivateMode.commit(true);
-    mGlobalPrivacyControlFunctionalityEnabled.commit(true);
     return this;
   }
 

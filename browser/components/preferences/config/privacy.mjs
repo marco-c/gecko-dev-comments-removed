@@ -391,7 +391,6 @@ Preferences.addAll([
 
   // Do not track and Global Privacy Control
   { id: "privacy.donottrackheader.enabled", type: "bool" },
-  { id: "privacy.globalprivacycontrol.functionality.enabled", type: "bool" },
   { id: "privacy.globalprivacycontrol.enabled", type: "bool" },
   {
     id: "browser.preferences.config_warning.donottrackheader.dismissed",
@@ -995,6 +994,7 @@ SettingGroupManager.registerGroups({
       {
         id: "historyMode",
         control: "moz-radio-group",
+        l10nId: "history-mode-radio-group",
         options: [
           {
             value: "remember",
@@ -1137,6 +1137,7 @@ SettingGroupManager.registerGroups({
       {
         id: "dohRadioGroup",
         control: "moz-radio-group",
+        l10nId: "preferences-doh-radio-group",
         options: [
           {
             id: "dohRadioDefault",
@@ -1241,6 +1242,7 @@ SettingGroupManager.registerGroups({
       {
         id: "contentBlockingCategoryRadioGroup",
         control: "moz-radio-group",
+        l10nId: "preferences-etp-level-radio-group",
         options: [
           {
             id: "etpLevelStandard",
@@ -2313,16 +2315,8 @@ Preferences.addSetting({
 });
 
 Preferences.addSetting({
-  id: "gpcFunctionalityEnabled",
-  pref: "privacy.globalprivacycontrol.functionality.enabled",
-});
-Preferences.addSetting({
   id: "gpcEnabled",
   pref: "privacy.globalprivacycontrol.enabled",
-  deps: ["gpcFunctionalityEnabled"],
-  visible: ({ gpcFunctionalityEnabled }) => {
-    return gpcFunctionalityEnabled.value;
-  },
 });
 Preferences.addSetting({
   id: "relayFeature",
@@ -3004,7 +2998,7 @@ Preferences.addSetting({
     );
   },
   getControlConfig(config, { privateBrowsingAutoStart }, setting) {
-    let l10nId = null;
+    let { l10nId } = config;
     if (!srdSectionEnabled("history2")) {
       if (setting.value == "remember") {
         l10nId = "history-remember-description4";

@@ -68,6 +68,11 @@ already_AddRefed<WorkerNavigator> WorkerNavigator::Create(bool aOnLine) {
   RuntimeService::NavigatorProperties properties =
       rts->GetNavigatorProperties();
 
+  WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
+  if (workerPrivate && !workerPrivate->GetLanguageOverride().IsEmpty()) {
+    properties.mLanguages = workerPrivate->GetLanguageOverride().Clone();
+  }
+
   RefPtr<WorkerNavigator> navigator = new WorkerNavigator(properties, aOnLine);
 
   return navigator.forget();
@@ -116,11 +121,11 @@ bool WorkerNavigator::GlobalPrivacyControl() const {
       }
     }
   }
-  return StaticPrefs::privacy_globalprivacycontrol_functionality_enabled() &&
-         gpcStatus;
+  return gpcStatus;
 }
 
 void WorkerNavigator::SetLanguages(const nsTArray<nsString>& aLanguages) {
+  WorkerNavigator_Binding::ClearCachedLanguageValue(this);
   WorkerNavigator_Binding::ClearCachedLanguagesValue(this);
   mProperties.mLanguages = aLanguages.Clone();
 }

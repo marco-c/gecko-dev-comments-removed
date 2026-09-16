@@ -5,10 +5,8 @@
 
 "use strict";
 
-const FEATURE_PREF = "privacy.globalprivacycontrol.functionality.enabled";
 const MODE_PREF = "privacy.globalprivacycontrol.enabled";
 const DNT_PREF = "privacy.donottrackheader.enabled";
-const RELAY_PREF = "signon.firefoxRelay.feature";
 
 const SECTION_ID = "nonTechnicalPrivacyGroup";
 const GPC_CHECKBOX_ID = "gpcEnabled";
@@ -24,32 +22,9 @@ add_setup(function () {
 
 
 
-add_task(async function test_section_hidden_when_feature_flag_disabled() {
+add_task(async function test_section_shown() {
   await SpecialPowers.pushPrefEnv({
     set: [
-      [FEATURE_PREF, false],
-      [MODE_PREF, false],
-      [RELAY_PREF, undefined],
-    ],
-  });
-
-  await BrowserTestUtils.withNewTab(
-    { gBrowser, url: "about:preferences#privacy" },
-    async function (browser) {
-      let section = browser.contentDocument.getElementById(SECTION_ID);
-      is_element_hidden(section, "#nonTechnicalPrivacyGroup is hidden");
-    }
-  );
-
-  await SpecialPowers.popPrefEnv();
-});
-
-
-
-add_task(async function test_section_shown_when_feature_flag_enabled() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      [FEATURE_PREF, true],
       [DNT_PREF, true],
       [MODE_PREF, false],
     ],
@@ -74,7 +49,6 @@ add_task(async function test_section_shown_when_feature_flag_enabled() {
 add_task(async function test_section_hide_dnt_link_when_disabled() {
   await SpecialPowers.pushPrefEnv({
     set: [
-      [FEATURE_PREF, true],
       [DNT_PREF, false],
       [MODE_PREF, false],
     ],
@@ -96,10 +70,7 @@ add_task(async function test_section_hide_dnt_link_when_disabled() {
 
 add_task(async function test_checkbox_unchecked_disabled_mode() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [FEATURE_PREF, true],
-      [MODE_PREF, false],
-    ],
+    set: [[MODE_PREF, false]],
   });
 
   await BrowserTestUtils.withNewTab(
@@ -116,10 +87,7 @@ add_task(async function test_checkbox_unchecked_disabled_mode() {
 
 add_task(async function test_checkbox_modifies_prefs() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [FEATURE_PREF, true],
-      [MODE_PREF, false],
-    ],
+    set: [[MODE_PREF, false]],
   });
 
   await BrowserTestUtils.withNewTab(
