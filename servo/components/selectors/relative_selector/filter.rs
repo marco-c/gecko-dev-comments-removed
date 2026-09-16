@@ -27,14 +27,14 @@ enum TraversalKind {
     Descendants,
 }
 
-fn add_to_filter<E: Element>(element: &E, filter: &mut BloomFilter, kind: TraversalKind) -> bool {
+fn add_to_filter<E: Element>(element: E, filter: &mut BloomFilter, kind: TraversalKind) -> bool {
     let mut child = element.first_element_child();
     while let Some(e) = child {
         if !e.add_element_unique_hashes(filter) {
             return false;
         }
         if kind == TraversalKind::Descendants {
-            if !add_to_filter(&e, filter, kind) {
+            if !add_to_filter(e, filter, kind) {
                 return false;
             }
         }
@@ -84,7 +84,7 @@ fn fast_reject<Impl: SelectorImpl>(
 }
 
 impl RelativeSelectorFilterMap {
-    fn get_filter<E: Element>(&mut self, element: &E, kind: TraversalKind) -> Option<&BloomFilter> {
+    fn get_filter<E: Element>(&mut self, element: E, kind: TraversalKind) -> Option<&BloomFilter> {
         
         
         let key = Key(element.opaque(), kind);
@@ -115,7 +115,7 @@ impl RelativeSelectorFilterMap {
     
     pub fn fast_reject<Impl: SelectorImpl, E: Element>(
         &mut self,
-        element: &E,
+        element: E,
         selector: &RelativeSelector<Impl>,
         quirks_mode: QuirksMode,
     ) -> bool {
@@ -147,9 +147,9 @@ impl RelativeSelectorFilterMap {
             
             
             
-            element.parent_element().map_or(false, |parent| {
-                self.get_filter(&parent, kind)
-                    .map_or(false, |filter| fast_reject(selector, quirks_mode, filter))
+            element.parent_element().is_some_and(|parent| {
+                self.get_filter(parent, kind)
+                    .is_some_and(|filter| fast_reject(selector, quirks_mode, filter))
             })
         } else {
             self.get_filter(element, kind)
