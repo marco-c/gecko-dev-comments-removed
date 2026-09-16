@@ -3522,6 +3522,29 @@ class MToFloat16 : public MToFPInstruction {
 };
 
 
+class MUnsignedToFloat32 : public MUnaryInstruction, public NoTypePolicy::Data {
+  explicit MUnsignedToFloat32(MDefinition* def)
+      : MUnaryInstruction(classOpcode, def) {
+    setResultType(MIRType::Float32);
+    setMovable();
+  }
+
+ public:
+  INSTRUCTION_HEADER(UnsignedToFloat32)
+  TRIVIAL_NEW_WRAPPERS
+
+  MDefinition* foldsTo(TempAllocator& alloc) override;
+  bool congruentTo(const MDefinition* ins) const override {
+    return congruentIfOperandsEqual(ins);
+  }
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
+
+  bool canProduceFloat32() const override { return true; }
+
+  ALLOW_CLONE(MUnsignedToFloat32)
+};
+
+
 class MInt32ToIntPtr : public MUnaryInstruction,
                        public UnboxedInt32Policy<0>::Data {
   bool canBeNegative_ = true;
