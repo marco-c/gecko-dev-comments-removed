@@ -35,7 +35,16 @@ async function fetchInFrame(t, frameUrl, url, expected_count) {
   const frame = await with_iframe(frameUrl);
   t.add_cleanup(() => frame.remove());
 
-  const init = { mode: 'no-cors', cache: 'no-store' };
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const init = {mode: 'no-cors', credentials: 'include', cache: 'no-store'};
   let future_reports = observeReports(frame.contentWindow, expected_count);
   await frame.contentWindow.fetch(url, init).catch(() => {});
 
