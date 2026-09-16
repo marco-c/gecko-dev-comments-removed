@@ -7937,8 +7937,11 @@ JSOp MBinaryCache::jsop() const { return JSOp(*resumePoint()->pc()); }
 template <typename T>
 static wasm::MaybeRefType GetBaseRefTypeForWasmLoadOrStore(T ins) {
   const MDefinition* structObject;
-  if (ins->base()->type() == MIRType::WasmStructData) {
-    MOZ_RELEASE_ASSERT(ins->base()->isWasmLoadField());
+  if (ins->base()->type() == MIRType::WasmStructData &&
+      ins->base()->isWasmLoadField()) {
+    
+    
+    
     structObject = ins->base()->toWasmLoadField()->base();
   } else {
     structObject = ins->base();
