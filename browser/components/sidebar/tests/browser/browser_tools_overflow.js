@@ -61,6 +61,11 @@ function getToolsHeight({ SidebarController } = window) {
 
 async function resetToolsHeight() {
   
+  
+  await SidebarController.updateUIState({ launcherExpanded: false });
+  await SidebarController.sidebarMain.updateComplete;
+
+  
   await resizeTools(-500);
   await SidebarController.sidebarMain.requestUpdate();
   await SidebarController.sidebarMain.updateComplete;
