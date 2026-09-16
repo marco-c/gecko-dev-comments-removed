@@ -1451,9 +1451,14 @@ class Editor extends EventEmitter {
                 class: marker.positionClassName,
               });
               classDecoration.markerType = marker.id;
-              newMarkerDecorations.push(
-                classDecoration.range(position.from, position.to)
-              );
+              
+              
+              
+              if (position.from < position.to) {
+                newMarkerDecorations.push(
+                  classDecoration.range(position.from, position.to)
+                );
+              }
             }
           }
           continue;
@@ -1888,7 +1893,7 @@ class Editor extends EventEmitter {
       return [];
     }
     const {
-      codemirrorView: { Decoration, ViewPlugin, EditorView, MatchDecorator },
+      codemirrorView: { Decoration, ViewPlugin, EditorView },
       codemirrorSearch: { RegExpCursor },
     } = this.#CodeMirror6;
 
@@ -1899,24 +1904,42 @@ class Editor extends EventEmitter {
     this.searchState.cursors = Array.from(searchCursor);
     this.searchState.currentCursorIndex = -1;
 
-    const patternMatcher = new MatchDecorator({
-      regexp: pattern,
-      decorate: (add, from, to) => {
-        add(from, to, Decoration.mark({ class: className }));
-      },
-    });
-
     const searchHighlightView = ViewPlugin.fromClass(
       class {
         decorations;
         constructor(view) {
-          this.decorations = patternMatcher.createDeco(view);
+          this.decorations = this.getDecorations(view);
         }
         update(viewUpdate) {
-          this.decorations = patternMatcher.updateDeco(
-            viewUpdate,
-            this.decorations
-          );
+          
+          if (viewUpdate.docChanged || viewUpdate.viewportChanged) {
+            this.decorations = this.getDecorations(viewUpdate.view);
+          }
+        }
+        getDecorations(view) {
+          const decorations = [];
+
+          
+          for (const { from, to } of view.visibleRanges) {
+            const text = view.state.doc.sliceString(from, to);
+            let match;
+
+            while ((match = pattern.exec(text)) !== null) {
+              
+              if (match[0].length === 0) {
+                pattern.lastIndex++;
+                continue;
+              }
+
+              const start = from + match.index;
+              const end = start + match[0].length;
+
+              decorations.push(
+                Decoration.mark({ class: className }).range(start, end)
+              );
+            }
+          }
+          return Decoration.set(decorations);
         }
       },
       {
