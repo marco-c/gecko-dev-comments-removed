@@ -53,14 +53,6 @@ char kLSanDefaultSuppressions[] =
     
     "leak:webrtc::FakeNetworkInterface::SetOption\n"
     "leak:CodecTest_TestCodecOperators_Test::TestBody\n"
-    "leak:VideoEngineTest*::ConstrainNewCodecBody\n"
-    "leak:VideoMediaChannelTest*::AddRemoveRecvStreams\n"
-    "leak:WebRtcVideoCapturerTest_TestCapture_Test::TestBody\n"
-    "leak:WebRtcVideoEngineTestFake_MultipleSendStreamsWithOneCapturer_Test::"
-    "TestBody\n"
-    "leak:WebRtcVideoEngineTestFake_SetBandwidthInConference_Test::TestBody\n"
-    "leak:WebRtcVideoEngineTestFake_SetSendCodecsRejectBadFormat_Test::"
-    "TestBody\n"
 
     
     
