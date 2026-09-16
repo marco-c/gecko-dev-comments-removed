@@ -631,13 +631,20 @@ TEST(ScreamV2Test, KeepsTrackOfReceivedRateOver100msWindow) {
   EXPECT_EQ(scream.received_rate(), DataRate::PlusInfinity());
 
   
-  clock.AdvanceTime(TimeDelta::Millis(50));
+  
+  
+  clock.AdvanceTime(TimeDelta::Millis(200));
   TransportPacketsFeedback feedback2 =
       CreateFeedback(clock.CurrentTime(), TimeDelta::Millis(100),
                      3,
                      20);
+  for (auto& pkt : feedback2.packet_feedbacks) {
+    pkt.receive_time =
+        feedback1.packet_feedbacks.back().receive_time + TimeDelta::Millis(50);
+  }
   scream.OnTransportPacketsFeedback(feedback2);
 
+  
   
   
   
@@ -645,13 +652,20 @@ TEST(ScreamV2Test, KeepsTrackOfReceivedRateOver100msWindow) {
 
   
   
-  clock.AdvanceTime(TimeDelta::Millis(51));
+  
+  clock.AdvanceTime(TimeDelta::Millis(250));
   TransportPacketsFeedback feedback3 =
       CreateFeedback(clock.CurrentTime(), TimeDelta::Millis(100),
                      2,
                      20);
+  for (auto& pkt : feedback3.packet_feedbacks) {
+    pkt.receive_time =
+        feedback2.packet_feedbacks.back().receive_time + TimeDelta::Millis(51);
+  }
   scream.OnTransportPacketsFeedback(feedback3);
 
+  
+  
   
   
   

@@ -47,6 +47,9 @@ struct ScreamFeedback {
 
   
   TimeDelta rtt_sample = TimeDelta::Zero();
+
+  
+  Timestamp last_packet_receive_time = Timestamp::MinusInfinity();
 };
 
 
