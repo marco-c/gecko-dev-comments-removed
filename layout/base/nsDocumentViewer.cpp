@@ -88,18 +88,15 @@
 
 
 
-#ifdef NS_PRINTING
 
-#  include "nsDeviceContextSpecProxy.h"
-#  include "nsIWebBrowserPrint.h"
-#  include "nsPrintJob.h"
+#include "nsDeviceContextSpecProxy.h"
+#include "nsIWebBrowserPrint.h"
+#include "nsPrintJob.h"
 
 
-#  include "nsIPrintSettings.h"
-#  include "nsIPrintSettingsService.h"
-#  include "nsISimpleEnumerator.h"
-
-#endif  
+#include "nsIPrintSettings.h"
+#include "nsIPrintSettingsService.h"
+#include "nsISimpleEnumerator.h"
 
 
 #include "mozilla/EventDispatcher.h"
@@ -138,11 +135,9 @@ using PrintPreviewResolver =
 
 extern mozilla::LazyLogModule gPageCacheLog;
 
-#ifdef NS_PRINTING
 mozilla::LazyLogModule gPrintingLog("printing");
 
-#  define PR_PL(_p1) MOZ_LOG(gPrintingLog, mozilla::LogLevel::Debug, _p1);
-#endif  
+#define PR_PL(_p1) MOZ_LOG(gPrintingLog, mozilla::LogLevel::Debug, _p1);
 
 #define PRT_YESNO(_p) ((_p) ? "YES" : "NO")
 
@@ -275,11 +270,8 @@ using viewer_detail::BFCachePreventionObserver;
 
 class nsDocumentViewer final : public nsIDocumentViewer,
                                public nsIDocumentViewerEdit,
-                               public nsIDocumentViewerPrint
-#ifdef NS_PRINTING
-    ,
+                               public nsIDocumentViewerPrint,
                                public nsIWebBrowserPrint
-#endif
 
 {
   friend class nsDocViewerSelectionListener;
@@ -298,10 +290,8 @@ class nsDocumentViewer final : public nsIDocumentViewer,
   
   NS_DECL_NSIDOCUMENTVIEWEREDIT
 
-#ifdef NS_PRINTING
   
   NS_DECL_NSIWEBBROWSERPRINT
-#endif
 
   
   NS_DECL_NSIDOCUMENTVIEWERPRINT
@@ -401,12 +391,10 @@ class nsDocumentViewer final : public nsIDocumentViewer,
   unsigned mInPermitUnload : 1;
   unsigned mInPermitUnloadPrompt : 1;
 
-#ifdef NS_PRINTING
   unsigned mClosingWhilePrinting : 1;
   unsigned mCloseWindowAfterPrint : 1;
 
   RefPtr<nsPrintJob> mPrintJob;
-#endif  
 
   
   int32_t mReloadEncodingSource;
@@ -444,28 +432,23 @@ void nsDocumentViewer::PrepareToStartLoad() {
   mLoaded = false;
   mDeferredWindowClose = false;
 
-#ifdef NS_PRINTING
   mClosingWhilePrinting = false;
 
   
   if (RefPtr job = std::move(mPrintJob)) {
     job->Destroy();
   }
-
-#endif  
 }
 
 bool nsDocumentViewer::ShouldHaveGalleyPresentation() const {
   if (!mDocument) {
     return false;
   }
-#ifdef NS_PRINTING
   if (mPrintJob) {
     
     
     return false;
   }
-#endif
   return true;
 }
 
@@ -479,10 +462,8 @@ nsDocumentViewer::nsDocumentViewer()
       mIsSticky(true),
       mInPermitUnload(false),
       mInPermitUnloadPrompt(false),
-#ifdef NS_PRINTING
       mClosingWhilePrinting(false),
       mCloseWindowAfterPrint(false),
-#endif  
       mReloadEncodingSource(kCharsetUninitialized),
       mReloadEncoding(nullptr),
       mInitializedForPrintPreview(false),
@@ -498,9 +479,7 @@ NS_INTERFACE_MAP_BEGIN(nsDocumentViewer)
   NS_INTERFACE_MAP_ENTRY(nsIDocumentViewerEdit)
   NS_INTERFACE_MAP_ENTRY(nsIDocumentViewerPrint)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIDocumentViewer)
-#ifdef NS_PRINTING
   NS_INTERFACE_MAP_ENTRY(nsIWebBrowserPrint)
-#endif
 NS_INTERFACE_MAP_END
 
 nsDocumentViewer::~nsDocumentViewer() {
@@ -510,11 +489,9 @@ nsDocumentViewer::~nsDocumentViewer() {
     doc->Destroy();
   }
 
-#ifdef NS_PRINTING
   if (RefPtr job = std::move(mPrintJob)) {
     job->Destroy();
   }
-#endif
 
   MOZ_RELEASE_ASSERT(mDestroyBlockedCount == 0);
   NS_ASSERTION(!mPresShell && !mPresContext,
@@ -621,10 +598,8 @@ nsresult nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow) {
              "InitPresentationStuff must only be called when scripts are "
              "blocked");
   NS_ASSERTION(!mPresShell, "Someone should have destroyed the presshell!");
-#ifdef NS_PRINTING
   MOZ_ASSERT(!mPrintJob,
              "Shouldn't be creating a presentation for a print job");
-#endif
 
   
   nsCOMPtr<Document> doc = mDocument;
@@ -749,13 +724,9 @@ nsresult nsDocumentViewer::InitInternal(nsIWidget* aParentWidget,
           mDocument, nsPresContext::eContext_Galley, containerFrame);
       mPresContext->Init(mDeviceContext);
 
-#ifdef NS_PRINTING
       makeCX = !GetIsPrintPreview() &&
                aNeedMakeCX;  
                              
-#else
-      makeCX = true;
-#endif
     }
 
     if (mPresContext) {
@@ -1023,7 +994,6 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
       JS::GCReason::LOAD_END,
       mDocument ? mDocument->GetWrapperPreserveColor() : nullptr);
 
-#ifdef NS_PRINTING
   
   if (window) {
     window->StopDelayingPrintingUntilAfterLoad();
@@ -1042,7 +1012,6 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
       MOZ_ASSERT(!window->DelayedCloseForPrinting());
     }
   }
-#endif
 
   return NS_OK;
 }
@@ -1367,15 +1336,12 @@ nsDocumentViewer::Close() {
     return NS_OK;
   }
 
-#ifdef NS_PRINTING
   
   
   
   if (mPrintJob && !mClosingWhilePrinting) {
     mClosingWhilePrinting = true;
-  } else
-#endif
-  {
+  } else {
     
     mDocument->SetScriptGlobalObject(nullptr);
 
@@ -1397,7 +1363,6 @@ nsDocumentViewer::Destroy() {
     return NS_OK;
   }
 
-#ifdef NS_PRINTING
   
   
   
@@ -1408,7 +1373,6 @@ nsDocumentViewer::Destroy() {
   if (mPrintJob && mPrintJob->CheckBeforeDestroy()) {
     return NS_OK;
   }
-#endif
 
   
   
@@ -1435,7 +1399,6 @@ nsDocumentViewer::Destroy() {
   
   
 
-#ifdef NS_PRINTING
   if (RefPtr printJob = std::move(mPrintJob)) {
     if (printJob->CreatedForPrintPreview()) {
       printJob->FinishPrintPreview();
@@ -1444,7 +1407,6 @@ nsDocumentViewer::Destroy() {
     MOZ_ASSERT(!mPrintJob,
                "mPrintJob shouldn't be recreated while destroying it");
   }
-#endif
 
   
   if (mPreviousViewer) {
@@ -2400,8 +2362,6 @@ NS_IMETHODIMP nsDocViewerSelectionListener::NotifySelectionChanged(
 
 
 
-#ifdef NS_PRINTING
-
 NS_IMETHODIMP
 nsDocumentViewer::Print(nsIPrintSettings* aPrintSettings,
                         RemotePrintJobChild* aRemotePrintJob,
@@ -2757,16 +2717,13 @@ nsDocumentViewer::GetPrintPreviewNumPages(int32_t* aPrintPreviewNumPages) {
 
 
 
-#endif  
 
 
 
 bool nsDocumentViewer::GetIsPrinting() const {
-#ifdef NS_PRINTING
   if (mPrintJob) {
     return mPrintJob->GetIsPrinting();
   }
-#endif
   return false;
 }
 
@@ -2775,11 +2732,7 @@ bool nsDocumentViewer::GetIsPrinting() const {
 
 
 bool nsDocumentViewer::GetIsPrintPreview() const {
-#ifdef NS_PRINTING
   return mPrintJob && mPrintJob->CreatedForPrintPreview();
-#else
-  return false;
-#endif
 }
 
 
@@ -2825,7 +2778,6 @@ void nsDocumentViewer::DecrementDestroyBlockedCount() {
 
 
 void nsDocumentViewer::OnDonePrinting() {
-#ifdef NS_PRINTING
   RefPtr printJob = std::move(mPrintJob);
   if (!printJob) {
     
@@ -2849,13 +2801,13 @@ void nsDocumentViewer::OnDonePrinting() {
 
 
 
-#  ifdef ANDROID
+#ifdef ANDROID
   
   
   bool closeWindowAfterPrint = !printJob->CreatedForPrintPreview();
-#  else
+#else
   bool closeWindowAfterPrint = GetCloseWindowAfterPrint();
-#  endif
+#endif
   if (closeWindowAfterPrint) {
     if (mContainer) {
       if (nsCOMPtr<nsPIDOMWindowOuter> win = mContainer->GetWindow()) {
@@ -2868,12 +2820,10 @@ void nsDocumentViewer::OnDonePrinting() {
     }
     mClosingWhilePrinting = false;
   }
-#endif  
 }
 
 NS_IMETHODIMP nsDocumentViewer::SetPrintSettingsForSubdocument(
     nsIPrintSettings* aPrintSettings, RemotePrintJobChild* aRemotePrintJob) {
-#ifdef NS_PRINTING
   {
     nsAutoScriptBlocker scriptBlocker;
 
@@ -2905,7 +2855,6 @@ NS_IMETHODIMP nsDocumentViewer::SetPrintSettingsForSubdocument(
 
   RefPtr<PresShell> shell = mPresShell;
   shell->FlushPendingNotifications(FlushType::Layout);
-#endif
   return NS_OK;
 }
 
