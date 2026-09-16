@@ -54,6 +54,8 @@ class JsepCodecPreferences {
 
     
     os << "  AV1Enabled: " << (aPrefs.AV1Enabled() ? "true" : "false") << "\n";
+    os << "  AV1Preferred: " << (aPrefs.AV1Preferred() ? "true" : "false")
+       << "\n";
     os << "  H264Enabled: " << (aPrefs.H264Enabled() ? "true" : "false")
        << "\n";
     os << "  SoftwareH264Enabled: "
@@ -597,10 +599,13 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
     
     
     
+    
     auto codec = MakeUnique<JsepVideoCodecDescription>("99", "AV1", 90000);
     codec->mEnabled = aPrefs.AV1Enabled();
     codec->mStronglyPreferred = aPrefs.AV1Preferred();
-    codec->mAv1Config.mProfile = Nothing();
+    codec->mAv1Config.mProfile = Some(uint8_t(0));
+    codec->mAv1Config.mLevelIdx = Some(uint8_t(9));  
+    codec->mAv1Config.mTier = Some(uint8_t(0));
     if (aPrefs.UseRtx()) {
       codec->EnableRtx("100");
     }
@@ -799,10 +804,10 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
         MOZ_RELEASE_ASSERT(aFmtp->codec_type == SdpRtpmapAttributeList::kAV1);
         av1Params =
             static_cast<const SdpFmtpAttributeList::Av1Parameters&>(*aFmtp);
-        av1Params.profile = mAv1Config.mProfile;
-        av1Params.levelIdx = mAv1Config.mLevelIdx;
-        av1Params.tier = mAv1Config.mTier;
       }
+      av1Params.profile = mAv1Config.mProfile;
+      av1Params.levelIdx = mAv1Config.mLevelIdx;
+      av1Params.tier = mAv1Config.mTier;
       aFmtp = av1Params.Clone();
     }
   }
@@ -1077,33 +1082,6 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
     NegotiateRtcpFb(remote, &mOtherFbTypes);
   }
 
-  
-  
-  
-  
-  template <typename T>
-  static auto NegotiateHierarchicalParam(const sdp::Direction direction,
-                                         const Maybe<T>& localParam,
-                                         const Maybe<T>& remoteParam,
-                                         const T& defaultValue) -> Maybe<T> {
-    const auto maybe_min = [&](const Maybe<T>& a,
-                               const Maybe<T>& b) -> Maybe<T> {
-      auto val = std::min(a.valueOr(defaultValue), b.valueOr(defaultValue));
-      if (val == defaultValue) {
-        
-        
-        if (a != Some(defaultValue) && b != Some(defaultValue)) {
-          return Nothing();
-        }
-      }
-      return Some(val);
-    };
-    if (direction == sdp::kSend) {
-      return maybe_min(localParam, remoteParam);
-    }
-    return localParam;
-  }
-
   bool Negotiate(const std::string& pt, const SdpMediaSection& remoteMsection,
                  bool remoteIsOffer,
                  Maybe<const SdpMediaSection&> localMsection) override {
@@ -1149,28 +1127,16 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
         }
       }
     } else if (mName == "AV1") {
-      using Av1Params = SdpFmtpAttributeList::Av1Parameters;
-      Av1Params av1Params(GetAv1Parameters(mDefaultPt, remoteMsection));
-
-      Maybe<SdpFmtpAttributeList::Av1Parameters> localParams =
-          localMsection.isSome()
-              ? Some(GetAv1Parameters(mDefaultPt, *localMsection))
-              : Nothing();
-      auto localProfile =
-          localParams.isSome() ? localParams.value().profile : Nothing();
-      auto localLevelIdx =
-          localParams.isSome() ? localParams.value().levelIdx : Nothing();
-      auto tier = localParams.isSome() ? localParams.value().tier : Nothing();
-
-      av1Params.profile = NegotiateHierarchicalParam(
-          mDirection, localProfile, av1Params.profile,
-          Av1Params::kDefaultProfile);
-      av1Params.levelIdx = NegotiateHierarchicalParam(
-          mDirection, localLevelIdx, av1Params.levelIdx,
-          Av1Params::kDefaultLevelIdx);
-      av1Params.tier = NegotiateHierarchicalParam(
-          mDirection, tier, av1Params.tier, Av1Params::kDefaultTier);
-      mAv1Config = Av1Config(av1Params);
+      
+      
+      
+      
+      
+      
+      
+      if (mDirection == sdp::kSend) {
+        mAv1Config = Av1Config(GetAv1Parameters(mDefaultPt, remoteMsection));
+      }
     }
 
     if (mRtxEnabled && (mDirection == sdp::kSend || remoteIsOffer)) {
@@ -1425,12 +1391,20 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
         : mProfile(aParams.profile),
           mLevelIdx(aParams.levelIdx),
           mTier(aParams.tier) {}
-    auto ProfileOrDefault() const -> uint8_t { return mProfile.valueOr(0); }
-    auto LevelIdxDefault() const -> uint8_t { return mLevelIdx.valueOr(5); }
-    auto TierOrDefault() const -> uint8_t { return mTier.valueOr(0); }
+    auto ProfileOrDefault() const -> uint8_t {
+      return mProfile.valueOr(
+          SdpFmtpAttributeList::Av1Parameters::kDefaultProfile);
+    }
+    auto LevelIdxOrDefault() const -> uint8_t {
+      return mLevelIdx.valueOr(
+          SdpFmtpAttributeList::Av1Parameters::kDefaultLevelIdx);
+    }
+    auto TierOrDefault() const -> uint8_t {
+      return mTier.valueOr(SdpFmtpAttributeList::Av1Parameters::kDefaultTier);
+    }
     auto operator==(const Av1Config& aOther) const -> bool {
       return ProfileOrDefault() == aOther.ProfileOrDefault() &&
-             LevelIdxDefault() == aOther.LevelIdxDefault() &&
+             LevelIdxOrDefault() == aOther.LevelIdxOrDefault() &&
              TierOrDefault() == aOther.TierOrDefault();
     }
   } mAv1Config;

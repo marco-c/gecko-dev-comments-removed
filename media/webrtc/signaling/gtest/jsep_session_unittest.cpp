@@ -3563,7 +3563,7 @@ TEST_F(JsepSessionTest, ValidateOfferedVideoCodecParams) {
   ASSERT_TRUE(video_attrs.HasAttribute(SdpAttribute::kFmtpAttribute));
   const auto& fmtps = video_attrs.GetFmtp().mFmtps;
 
-  ASSERT_EQ(10U, fmtps.size());
+  ASSERT_EQ(11U, fmtps.size());
 
   
   const SdpFmtpAttributeList::Parameters* vp8_params =
@@ -3683,7 +3683,18 @@ TEST_F(JsepSessionTest, ValidateOfferedVideoCodecParams) {
   ASSERT_FALSE(h264__baseline_0_rtx_params);
 
   
-  
+  const SdpFmtpAttributeList::Parameters* av1_params =
+      video_section.FindFmtp("99");
+  ASSERT_TRUE(av1_params);
+  ASSERT_EQ(SdpRtpmapAttributeList::kAV1, av1_params->codec_type);
+
+  const auto& parsed_av1_params =
+      *static_cast<const SdpFmtpAttributeList::Av1Parameters*>(av1_params);
+
+  ASSERT_EQ(Some((uint8_t)0), parsed_av1_params.profile);
+  ASSERT_EQ(Some((uint8_t)9), parsed_av1_params.levelIdx);
+  ASSERT_EQ(Some((uint8_t)0), parsed_av1_params.tier);
+
   
   const SdpFmtpAttributeList::Parameters* av1_rtx_params =
       video_section.FindFmtp("100");
@@ -3757,7 +3768,7 @@ TEST_F(JsepSessionTest, ValidateOfferedRecvonlyVideoCodecParams) {
   ASSERT_TRUE(video_attrs.HasAttribute(SdpAttribute::kFmtpAttribute));
   const auto& fmtps = video_attrs.GetFmtp().mFmtps;
 
-  ASSERT_EQ(14U, fmtps.size());
+  ASSERT_EQ(15U, fmtps.size());
 
   
   const SdpFmtpAttributeList::Parameters* vp8_params =
@@ -3909,7 +3920,18 @@ TEST_F(JsepSessionTest, ValidateOfferedRecvonlyVideoCodecParams) {
   ASSERT_EQ((uint32_t)103, parsed_h264_baseline_0_rtx_params.apt);
 
   
-  
+  const SdpFmtpAttributeList::Parameters* av1_params =
+      video_section.FindFmtp("99");
+  ASSERT_TRUE(av1_params);
+  ASSERT_EQ(SdpRtpmapAttributeList::kAV1, av1_params->codec_type);
+
+  const auto& parsed_av1_params =
+      *static_cast<const SdpFmtpAttributeList::Av1Parameters*>(av1_params);
+
+  ASSERT_EQ(Some((uint8_t)0), parsed_av1_params.profile);
+  ASSERT_EQ(Some((uint8_t)9), parsed_av1_params.levelIdx);
+  ASSERT_EQ(Some((uint8_t)0), parsed_av1_params.tier);
+
   
   const SdpFmtpAttributeList::Parameters* av1_rtx_params =
       video_section.FindFmtp("100");
@@ -4073,8 +4095,8 @@ TEST_F(JsepSessionTest, ValidateNoFmtpLineForRedInOfferAndAnswer) {
     fmtpFormats.push_back(fmtp.format);
   }
 
-  ASSERT_THAT(fmtpFormats, ElementsAre("126", "105", "120", "124", "121", "125",
-                                       "127", "106", "100", "119"));
+  ASSERT_THAT(fmtpFormats, ElementsAre("126", "105", "99", "120", "124", "121",
+                                       "125", "127", "106", "100", "119"));
   SetLocalAnswer(answer);
   SetRemoteAnswer(answer);
 
@@ -4162,6 +4184,12 @@ static void GetCodec(JsepSession& session, size_t transceiverIndex,
                   ->GetEncoding(encodingIndex)
                   .GetCodecs()[codecIndex]
                   ->Clone();
+}
+
+static void ForceAv1Only(JsepSession& session) {
+  for (auto& codec : session.Codecs()) {
+    codec->mEnabled = (codec->mName == "AV1");
+  }
 }
 
 static void ForceH264(JsepSession& session, uint32_t profileLevelId) {
@@ -4302,6 +4330,112 @@ TEST_F(JsepSessionTest, TestH264NegotiationOffererNoFmtp) {
   const JsepVideoCodecDescription* answererVideoRecvCodec(
       static_cast<const JsepVideoCodecDescription*>(answererRecvCodec.get()));
   ASSERT_EQ((uint32_t)0x42000A, answererVideoRecvCodec->mProfileLevelId);
+}
+
+TEST_F(JsepSessionTest, TestAV1NegotiationDefault) {
+  ForceAv1Only(*mSessionOff);
+  ForceAv1Only(*mSessionAns);
+
+  AddTracks(*mSessionOff, "video");
+  AddTracks(*mSessionAns, "video");
+
+  std::string offer(CreateOffer());
+  SetLocalOffer(offer, CHECK_SUCCESS);
+  SetRemoteOffer(offer, CHECK_SUCCESS);
+  std::string answer(CreateAnswer());
+  SetRemoteAnswer(answer, CHECK_SUCCESS);
+  SetLocalAnswer(answer, CHECK_SUCCESS);
+
+  UniquePtr<JsepCodecDescription> offererSendCodec;
+  GetCodec(*mSessionOff, 0, sdp::kSend, 0, 0, &offererSendCodec);
+  ASSERT_TRUE(offererSendCodec);
+  ASSERT_EQ("AV1", offererSendCodec->mName);
+  const JsepVideoCodecDescription* offererVideoSendCodec(
+      static_cast<const JsepVideoCodecDescription*>(offererSendCodec.get()));
+  ASSERT_EQ(0U, offererVideoSendCodec->mAv1Config.ProfileOrDefault());
+  ASSERT_EQ(9U, offererVideoSendCodec->mAv1Config.LevelIdxOrDefault());
+  ASSERT_EQ(0U, offererVideoSendCodec->mAv1Config.TierOrDefault());
+
+  UniquePtr<JsepCodecDescription> answererSendCodec;
+  GetCodec(*mSessionAns, 0, sdp::kSend, 0, 0, &answererSendCodec);
+  ASSERT_TRUE(answererSendCodec);
+  ASSERT_EQ("AV1", answererSendCodec->mName);
+  const JsepVideoCodecDescription* answererVideoSendCodec(
+      static_cast<const JsepVideoCodecDescription*>(answererSendCodec.get()));
+  ASSERT_EQ(0U, answererVideoSendCodec->mAv1Config.ProfileOrDefault());
+  ASSERT_EQ(9U, answererVideoSendCodec->mAv1Config.LevelIdxOrDefault());
+  ASSERT_EQ(0U, answererVideoSendCodec->mAv1Config.TierOrDefault());
+}
+
+TEST_F(JsepSessionTest, TestAV1NegotiationAsymmetricLevel) {
+  ForceAv1Only(*mSessionOff);
+  ForceAv1Only(*mSessionAns);
+
+  AddTracks(*mSessionOff, "video");
+  AddTracks(*mSessionAns, "video");
+
+  std::string offer(CreateOffer());
+  SetLocalOffer(offer, CHECK_SUCCESS);
+  SetRemoteOffer(offer, CHECK_SUCCESS);
+  std::string answer(CreateAnswer());
+
+  
+  
+  
+  Replace("level-idx=9", "level-idx=5", &answer);
+
+  SetRemoteAnswer(answer, CHECK_SUCCESS);
+  SetLocalAnswer(answer, CHECK_SUCCESS);
+
+  UniquePtr<JsepCodecDescription> offererSendCodec;
+  GetCodec(*mSessionOff, 0, sdp::kSend, 0, 0, &offererSendCodec);
+  ASSERT_TRUE(offererSendCodec);
+  ASSERT_EQ("AV1", offererSendCodec->mName);
+  const JsepVideoCodecDescription* offererVideoSendCodec(
+      static_cast<const JsepVideoCodecDescription*>(offererSendCodec.get()));
+  
+  ASSERT_EQ(5U, offererVideoSendCodec->mAv1Config.LevelIdxOrDefault());
+
+  UniquePtr<JsepCodecDescription> offererRecvCodec;
+  GetCodec(*mSessionOff, 0, sdp::kRecv, 0, 0, &offererRecvCodec);
+  ASSERT_EQ("AV1", offererRecvCodec->mName);
+  const JsepVideoCodecDescription* offererVideoRecvCodec(
+      static_cast<const JsepVideoCodecDescription*>(offererRecvCodec.get()));
+  
+  
+  ASSERT_EQ(9U, offererVideoRecvCodec->mAv1Config.LevelIdxOrDefault());
+}
+
+TEST_F(JsepSessionTest, TestAV1NegotiationOffererNoFmtp) {
+  ForceAv1Only(*mSessionOff);
+  ForceAv1Only(*mSessionAns);
+
+  AddTracks(*mSessionOff, "video");
+  AddTracks(*mSessionAns, "video");
+
+  std::string offer(CreateOffer());
+  SetLocalOffer(offer, CHECK_SUCCESS);
+
+  Replace("a=fmtp:99", "a=oops:99", &offer);
+
+  SetRemoteOffer(offer, CHECK_SUCCESS);
+  std::string answer(CreateAnswer());
+
+  SetRemoteAnswer(answer, CHECK_SUCCESS);
+  SetLocalAnswer(answer, CHECK_SUCCESS);
+
+  UniquePtr<JsepCodecDescription> answererSendCodec;
+  GetCodec(*mSessionAns, 0, sdp::kSend, 0, 0, &answererSendCodec);
+  ASSERT_TRUE(answererSendCodec);
+  ASSERT_EQ("AV1", answererSendCodec->mName);
+  const JsepVideoCodecDescription* answererVideoSendCodec(
+      static_cast<const JsepVideoCodecDescription*>(answererSendCodec.get()));
+  
+  
+  
+  ASSERT_EQ(0U, answererVideoSendCodec->mAv1Config.ProfileOrDefault());
+  ASSERT_EQ(5U, answererVideoSendCodec->mAv1Config.LevelIdxOrDefault());
+  ASSERT_EQ(0U, answererVideoSendCodec->mAv1Config.TierOrDefault());
 }
 
 TEST_F(JsepSessionTest, TestH264LevelAsymmetryDisallowedByOffererWithLowLevel) {
