@@ -5,11 +5,22 @@
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   AdsClient: "resource://newtab/lib/AdsClient.sys.mjs",
   _AdsClient: "resource://newtab/lib/AdsClient.sys.mjs",
+  TestUtils: "resource://testing-common/TestUtils.sys.mjs",
+  sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
 const PREF_UNIFIED_ADS_ADSCLIENT_ENABLED = "unifiedAds.adsClient.enabled";
+
+let gSandbox;
+add_setup(() => {
+  gSandbox = lazy.sinon.createSandbox();
+  registerCleanupFunction(() => {
+    gSandbox.restore();
+  });
+});
 
 add_setup(function test_setup_fog() {
   do_get_profile();
@@ -182,4 +193,67 @@ add_task(function test_buildTelemetry_resolvesMetricsLate() {
     "recorded once available",
     "the late-registered category is used without rebuilding the client"
   );
+});
+
+add_task(async function test_shutdown_blocker() {
+  Services.prefs.setBoolPref("toolkit.asyncshutdown.testing", true);
+
+  const adsClient = new lazy._AdsClient();
+  Assert.ok(
+    !adsClient.hasShutdown,
+    "adsClient should not be uninitialized yet"
+  );
+
+  const client = adsClient.getClient();
+  Assert.ok(client, "getClient builds and returns a MozAdsClient");
+
+  await lazy.TestUtils.waitForTick();
+  gSandbox.spy(adsClient, "uninit");
+
+  
+  lazy.AsyncShutdown.profileChangeTeardown._trigger();
+  await lazy.TestUtils.waitForTick();
+  await lazy.TestUtils.waitForCondition(
+    () => adsClient.uninit.calledOnce,
+    "The `uninit` function should be called on shutdown"
+  );
+  Assert.ok(adsClient.hasShutdown, "adsClient should now be uninitialized");
+
+  lazy.AsyncShutdown.profileChangeTeardown._reset();
+  Services.prefs.clearUserPref("toolkit.asyncshutdown.testing");
+  gSandbox.restore();
+});
+
+add_task(async function test_dont_register_blocker_if_in_shutdown() {
+  
+  
+  
+  
+  
+  
+  Services.prefs.setBoolPref("toolkit.asyncshutdown.testing", true);
+  await lazy.TestUtils.waitForTick();
+
+  const adsClient = new lazy._AdsClient();
+  Assert.ok(!adsClient.hasShutdown, "adsClient not be uninitialized yet");
+  gSandbox.spy(adsClient, "uninit");
+
+  
+  lazy.AsyncShutdown.profileChangeTeardown._trigger();
+  Assert.ok(
+    !adsClient.hasShutdown,
+    "adsClient should not have shut down before creation"
+  );
+
+  
+  
+  Assert.equal(
+    adsClient.getClient(),
+    null,
+    "adsClient should be null on creation if past profileChangeTeardown"
+  );
+
+  lazy.AsyncShutdown.profileChangeTeardown._reset();
+  Services.prefs.clearUserPref("toolkit.asyncshutdown.testing");
+  gSandbox.restore();
 });
