@@ -152,7 +152,8 @@
 #include "mozilla/glean/PFOGTransport.h"
 #include "mozilla/hal_sandbox/PHalParent.h"
 #ifndef ANDROID
-#  include "mozilla/hwinference/PHWInferenceManagerChild.h"
+#  include "mozilla/hwinference/HWInferenceParent.h"
+#  include "mozilla/hwinference/PSpeechRecognitionChild.h"
 #endif  
 #include "mozilla/intl/L10nRegistry.h"
 #include "mozilla/intl/LocaleService.h"
@@ -5175,16 +5176,35 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateAudioIPCConnection(
 }
 
 #ifndef ANDROID
-mozilla::ipc::IPCResult ContentParent::RecvRequestHWInferenceConnection(
-    Endpoint<hwinference::PHWInferenceManagerParent>&& aEndpoint) {
-  RefPtr<UtilityProcessKeepAlive> keepAlive =
-      UtilityProcessManager::GetSingleton()->StartContentHWInferenceManager(
-          std::move(aEndpoint), mChildID);
+void ContentParent::EnsureHWInferenceConnection() {
+  
+  
+  mHWInferenceKeepAlive =
+      UtilityProcessManager::GetSingleton()->AcquireContentHWInferenceProcess();
+}
 
+mozilla::ipc::IPCResult ContentParent::RecvAcquireHWInferenceProcess() {
   ++mHWInferenceConnections;
+  EnsureHWInferenceConnection();
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult ContentParent::RecvCreateSpeechRecognition(
+    Endpoint<hwinference::PSpeechRecognitionParent>&& aEndpoint) {
+  if (!mHWInferenceConnections) {
+    return IPC_FAIL(this, "Must be holding a HWInference connection");
+  }
+
+  EnsureHWInferenceConnection();
+
   
   
-  mHWInferenceKeepAlive = std::move(keepAlive);
+  if (!mHWInferenceKeepAlive) {
+    return IPC_OK();
+  }
+
+  hwinference::HWInferenceParent::StartContentSpeechRecognition(
+      std::move(aEndpoint), mChildID);
   return IPC_OK();
 }
 
@@ -5192,7 +5212,7 @@ mozilla::ipc::IPCResult ContentParent::RecvReleaseHWInferenceConnection() {
   if (mHWInferenceConnections == 0) {
     return IPC_FAIL(this,
                     "ReleaseHWInferenceConnection without a matching "
-                    "RequestHWInferenceConnection");
+                    "AcquireHWInferenceProcess");
   }
 
   if (--mHWInferenceConnections == 0) {
@@ -7299,8 +7319,12 @@ mozilla::ipc::IPCResult ContentParent::RecvBlurToParent(
       !aBrowsingContextToClear.IsNullOrDiscarded() &&
       (focusedBrowsingContext->OwnerProcessId() !=
        aBrowsingContextToClear.get_canonical()->OwnerProcessId())) {
-    MOZ_RELEASE_ASSERT(!ancestorDifferent,
-                       "This combination is not supposed to happen.");
+    if (ancestorDifferent) {
+      return IPC_FAIL(this,
+                      "RecvBlurToParent: browsingContextToClear and "
+                      "ancestorBrowsingContextToFocus can't both be in a "
+                      "different process than focusedBrowsingContext.");
+    }
     if (ContentParent* cp =
             aBrowsingContextToClear.get_canonical()->GetContentParent()) {
       (void)cp->SendSetFocusedElement(aBrowsingContextToClear, false);

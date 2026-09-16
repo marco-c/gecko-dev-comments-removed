@@ -8,6 +8,7 @@
 #include "mozilla/MemoryReportingProcess.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProfilerMarkers.h"
+#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/SyncRunnable.h"  
 #ifndef ANDROID
@@ -674,6 +675,14 @@ void UtilityProcessManager::OnProcessUnexpectedShutdown(
   for (auto& it : mProcesses) {
     if (it && it->mProcess && it->mProcess == aHost) {
       it->mNumUnexpectedCrashes++;
+#ifndef ANDROID
+      if (it->mSandbox == SandboxingKind::HW_INFERENCE) {
+        
+        
+        
+        mHWInferenceRestarts++;
+      }
+#endif  
       DestroyProcess(it->mSandbox);
       return;
     }
@@ -697,6 +706,14 @@ void UtilityProcessManager::CleanShutdownAllProcesses() {
 void UtilityProcessManager::CleanShutdown(SandboxingKind aSandbox) {
   LOGD("[%p] UtilityProcessManager::CleanShutdown SandboxingKind=%" PRIu64,
        this, aSandbox);
+
+#ifndef ANDROID
+  if (aSandbox == SandboxingKind::HW_INFERENCE) {
+    
+    
+    mHWInferenceRestarts = 0;
+  }
+#endif  
 
   DestroyProcess(aSandbox);
 }
@@ -809,39 +826,24 @@ RefPtr<MemoryReportingProcess> UtilityProcessManager::GetProcessMemoryReporter(
 
 #ifndef ANDROID
 already_AddRefed<UtilityProcessKeepAlive>
-UtilityProcessManager::StartContentHWInferenceManager(
-    Endpoint<hwinference::PHWInferenceManagerParent>&& aEndpoint,
-    dom::ContentParentId aChildId) {
-  LOGD(
-      "[%p] UtilityProcessManager::StartContentHWInferenceManager for content "
-      "%d",
-      this, static_cast<int>(aChildId));
+UtilityProcessManager::AcquireContentHWInferenceProcess() {
+  MOZ_ASSERT(NS_IsMainThread());
 
   
   
-  RefPtr<hwinference::HWInferenceParent> hwip =
-      hwinference::HWInferenceParent::GetSingleton();
-  MOZ_ASSERT(hwip, "Unable to get a singleton for HWInference");
-
-  RefPtr<UtilityProcessKeepAlive> keepAlive =
-      LaunchProcessWithKeepAlive(SandboxingKind::HW_INFERENCE);
-  if (!keepAlive) {
+  if (!GetProcess(SandboxingKind::HW_INFERENCE) &&
+      mHWInferenceRestarts >=
+          StaticPrefs::browser_ml_hwinference_max_restarts()) {
     return nullptr;
   }
 
-  keepAlive->StartUtility(hwip)->Then(
-      GetMainThreadSerialEventTarget(), __func__,
-      [hwip, endpoint = std::move(aEndpoint), aChildId]() mutable {
-        
-        if (!hwip->SendNewContentHWInferenceManager(std::move(endpoint),
-                                                    aChildId)) {
-          LOGD("Failed to send endpoint to utility process");
-        }
-      },
-      [](LaunchError&& aError) {
-        LOGD("Failed to start HWInference: %s", aError.FunctionName().get());
-      });
-
+  RefPtr<UtilityProcessKeepAlive> keepAlive =
+      LaunchProcessWithKeepAlive(SandboxingKind::HW_INFERENCE);
+  if (keepAlive) {
+    
+    
+    keepAlive->StartUtility(hwinference::HWInferenceParent::GetSingleton());
+  }
   return keepAlive.forget();
 }
 #endif  

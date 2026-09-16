@@ -6,6 +6,7 @@
 #ifndef TOOLKIT_COMPONENTS_ML_IPC_HWINFERENCEPARENT_H_
 #define TOOLKIT_COMPONENTS_ML_IPC_HWINFERENCEPARENT_H_
 
+#include "mozilla/MozPromise.h"
 #include "mozilla/ProcInfo.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ipc/Endpoint.h"
@@ -44,12 +45,31 @@ class HWInferenceParent final : public PHWInferenceParent {
   nsresult BindToUtilityProcess(
       const RefPtr<ipc::UtilityProcessParent>& aUtilityParent);
 
+  
+  
+  RefPtr<GenericNonExclusivePromise> WhenReady() { return mReadyPromise; }
+
+  
+  
+  
+  static void StartContentSpeechRecognition(
+      Endpoint<PSpeechRecognitionParent>&& aEndpoint,
+      dom::ContentParentId aChildId);
+
   static RefPtr<HWInferenceParent> GetSingleton();
 
  private:
   friend PHWInferenceParent;
   static StaticRefPtr<HWInferenceParent> sInstance;
   ~HWInferenceParent() = default;
+
+  
+  
+  RefPtr<ipc::UtilityProcessParent> mUtilityParent;
+
+  const RefPtr<GenericNonExclusivePromise::Private> mReadyPromise =
+      new GenericNonExclusivePromise::Private(
+          "HWInferenceParent::mReadyPromise");
 };
 
 }  

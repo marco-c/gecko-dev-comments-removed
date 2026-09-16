@@ -7,7 +7,6 @@
 #include "mozilla/StaticPtr.h"
 #include "nsTHashSet.h"
 #include "HWInferenceParent.h"
-#include "HWInferenceManagerParent.h"
 #include "mozilla/dom/Blob.h"
 #include "mozilla/dom/BlobBinding.h"
 #include "mozilla/ipc/FileDescriptor.h"
@@ -173,12 +172,12 @@ RefPtr<HWInferenceParent> HWInferenceParent::GetSingleton() {
   
   
   
-  
-  if (sInstance && sInstance->CanSend()) {
+  if (sInstance && sInstance->mUtilityParent) {
     RefPtr<ipc::UtilityProcessManager> upm =
         ipc::UtilityProcessManager::GetIfExists();
-    if (!upm || !upm->Process(ipc::SandboxingKind::HW_INFERENCE)) {
-      LOGD("{} - evicting stale instance", __func__);
+    if (!upm || upm->GetProcessParent(ipc::SandboxingKind::HW_INFERENCE) !=
+                    sInstance->mUtilityParent) {
+      LOGD("{} - evicting instance bound to a gone process", __func__);
       RefPtr<HWInferenceParent> stale = sInstance;
       sInstance = nullptr;
       
@@ -193,8 +192,30 @@ RefPtr<HWInferenceParent> HWInferenceParent::GetSingleton() {
   return sInstance;
 }
 
+
+void HWInferenceParent::StartContentSpeechRecognition(
+    Endpoint<PSpeechRecognitionParent>&& aEndpoint,
+    dom::ContentParentId aChildId) {
+  RefPtr<HWInferenceParent> self = GetSingleton();
+  self->WhenReady()->Then(
+      GetMainThreadSerialEventTarget(), __func__,
+      [self, endpoint = std::move(aEndpoint), aChildId]() mutable {
+        if (!self->SendNewContentSpeechRecognition(std::move(endpoint),
+                                                   aChildId)) {
+          LOGD("Failed to send endpoint to utility process");
+        }
+      },
+      []() {
+        LOGD("HWInference never came up: dropping the speech endpoint");
+      });
+}
+
 void HWInferenceParent::ActorDestroy(ActorDestroyReason aReason) {
   LOGD("{}", __func__);
+  
+  
+  mReadyPromise->Reject(NS_ERROR_NOT_AVAILABLE, __func__);
+  mUtilityParent = nullptr;
   
   
   if (sInstance == this) {
@@ -220,6 +241,8 @@ nsresult HWInferenceParent::BindToUtilityProcess(
 
   LOGD("StartHWInferenceService sent successfully, binding parent endpoint");
   MOZ_ALWAYS_TRUE(parentEnd.Bind(this));
+  mUtilityParent = aUtilityParent;
+  mReadyPromise->Resolve(true, __func__);
   return NS_OK;
 }
 

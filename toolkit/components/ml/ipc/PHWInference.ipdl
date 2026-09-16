@@ -3,7 +3,7 @@
 
 
 
-include protocol PHWInferenceManager;
+include protocol PSpeechRecognition;
 
 using mozilla::dom::ContentParentId from "mozilla/dom/ipc/IdType.h";
 
@@ -66,9 +66,8 @@ protocol PHWInference
                        nsCString id) returns (GetModelFileResult result);
 
   child:
-    
-    async NewContentHWInferenceManager(Endpoint<PHWInferenceManagerParent> endpoint,
-                                       ContentParentId contentId);
+    async NewContentSpeechRecognition(Endpoint<PSpeechRecognitionParent> endpoint,
+                                      ContentParentId contentId);
 };
 
 } 

@@ -1,0 +1,36 @@
+
+
+
+
+
+using class mozilla::TimeStamp from "mozilla/TimeStamp.h";
+
+namespace mozilla {
+namespace hwinference {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[ParentProc=Utility, ChildProc=Content]
+async protocol PSpeechRecognition
+{
+parent: 
+  
+  
+  async IsModelAvailable(nsCString[] languages) returns (bool available);
+};
+
+} 
+} 

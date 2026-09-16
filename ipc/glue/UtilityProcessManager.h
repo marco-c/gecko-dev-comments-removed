@@ -8,7 +8,6 @@
 #include "mozilla/ipc/UtilityProcessHost.h"
 #ifndef ANDROID
 #  include "mozilla/hwinference/HWInferenceParent.h"
-#  include "mozilla/hwinference/PHWInferenceManagerChild.h"
 #endif  
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/ProcInfo.h"
@@ -120,9 +119,8 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
   
   
   
-  already_AddRefed<UtilityProcessKeepAlive> StartContentHWInferenceManager(
-      Endpoint<hwinference::PHWInferenceManagerParent>&& aEndpoint,
-      dom::ContentParentId aChildId);
+  
+  already_AddRefed<UtilityProcessKeepAlive> AcquireContentHWInferenceProcess();
 #endif  
 
   void OnProcessUnexpectedShutdown(UtilityProcessHost* aHost);
@@ -286,6 +284,12 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
 
 #ifdef XP_WIN
   RefPtr<dom::WindowsUtilsParent> mWindowsUtils;
+#endif  
+
+#ifndef ANDROID
+  
+  
+  uint32_t mHWInferenceRestarts = 0;
 #endif  
 };
 
