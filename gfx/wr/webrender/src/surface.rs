@@ -135,13 +135,52 @@ fn resolve_dest_to_src_raster(
 
 
 
+
+
+
+
+
+
+
+
 pub fn visibility_node(
     raster_spatial_node_index: SpatialNodeIndex,
+    allow_snapping: bool,
     spatial_tree: &SpatialTree,
 ) -> SpatialNodeIndex {
     debug_assert_ne!(raster_spatial_node_index, SpatialNodeIndex::INVALID);
 
-    spatial_tree.root_reference_frame_index()
+    if allow_snapping {
+        raster_spatial_node_index
+    } else {
+        spatial_tree.root_reference_frame_index()
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fn vis_to_root_mapper(
+    visibility_spatial_node_index: SpatialNodeIndex,
+    bounds: DeviceRect,
+    spatial_tree: &SpatialTree,
+) -> SpaceMapper<VisPixel, DevicePixel> {
+    SpaceMapper::new_with_target(
+        spatial_tree.root_reference_frame_index(),
+        visibility_spatial_node_index,
+        bounds,
+        spatial_tree,
+    )
 }
 
 
@@ -298,14 +337,10 @@ impl SurfaceInfo {
         );
 
         let visibility_spatial_node_index =
-            visibility_node(raster_spatial_node_index, spatial_tree);
+            visibility_node(raster_spatial_node_index, allow_snapping, spatial_tree);
 
         
-        
-        
-        
-        let map_vis_to_root: SpaceMapper<VisPixel, DevicePixel> = SpaceMapper::new_with_target(
-            spatial_tree.root_reference_frame_index(),
+        let map_vis_to_root = vis_to_root_mapper(
             visibility_spatial_node_index,
             global_culling_rect,
             spatial_tree,
@@ -396,12 +431,64 @@ impl SurfaceInfo {
         }
     }
 
+    
+    
+    
+    
+    
     pub fn update_culling_rect(
         &mut self,
+        parent_vis_spatial_node_index: SpatialNodeIndex,
         parent_culling_rect: VisRect,
         composite_mode: &PictureCompositeMode,
         frame_context: &FrameVisibilityContext,
     ) {
+        
+        
+        
+        
+        if parent_culling_rect == VisRect::max_rect() {
+            self.culling_rect = parent_culling_rect;
+            return;
+        }
+
+        let parent_culling_rect = if parent_vis_spatial_node_index == self.visibility_spatial_node_index {
+            parent_culling_rect
+        } else {
+            
+            
+            
+            
+            let map_parent_to_root = vis_to_root_mapper(
+                parent_vis_spatial_node_index,
+                frame_context.global_screen_device_rect,
+                frame_context.spatial_tree,
+            );
+            let map_vis_to_root = vis_to_root_mapper(
+                self.visibility_spatial_node_index,
+                frame_context.global_screen_device_rect,
+                frame_context.spatial_tree,
+            );
+
+            let projected = map_parent_to_root
+                .as_2d_scale_offset()
+                .and_then(|_| map_parent_to_root.map(&parent_culling_rect))
+                .and_then(|device_rect| {
+                    map_vis_to_root
+                        .as_2d_scale_offset()
+                        .and_then(|_| map_vis_to_root.unmap(&device_rect))
+                });
+
+            match projected {
+                Some(rect) => rect,
+                None => {
+                    
+                    self.culling_rect = VisRect::max_rect();
+                    return;
+                }
+            }
+        };
+
         
         
         
