@@ -1185,8 +1185,9 @@ nsString nsContentSecurityUtils::GetIsElementNonceableNonce(
   
   if (nsCOMPtr<nsIScriptElement> script =
           do_QueryInterface(const_cast<Element*>(&aElement))) {
-    auto containsScriptOrStyle = [](const nsAString& aStr) {
-      return aStr.LowerCaseFindASCII("<script") != kNotFound ||
+    auto containsLinkScriptOrStyle = [](const nsAString& aStr) {
+      return aStr.LowerCaseFindASCII("<link") != kNotFound ||
+             aStr.LowerCaseFindASCII("<script") != kNotFound ||
              aStr.LowerCaseFindASCII("<style") != kNotFound;
     };
 
@@ -1197,18 +1198,18 @@ nsString nsContentSecurityUtils::GetIsElementNonceableNonce(
       
       const nsAttrName* name = info.mName;
       if (nsAtom* prefix = name->GetPrefix()) {
-        if (containsScriptOrStyle(nsDependentAtomString(prefix))) {
+        if (containsLinkScriptOrStyle(nsDependentAtomString(prefix))) {
           return EmptyString();
         }
       }
-      if (containsScriptOrStyle(nsDependentAtomString(name->LocalName()))) {
+      if (containsLinkScriptOrStyle(nsDependentAtomString(name->LocalName()))) {
         return EmptyString();
       }
 
       
       
       info.mValue->ToString(value);
-      if (containsScriptOrStyle(value)) {
+      if (containsLinkScriptOrStyle(value)) {
         return EmptyString();
       }
     }
