@@ -20,7 +20,6 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/OperatorNewExtensions.h"
-#include "mozilla/PodOperations.h"
 #include "mozilla/ReentrancyGuard.h"
 #include "mozilla/Span.h"
 
@@ -272,13 +271,16 @@ struct VectorImpl<T, N, AP, true> {
   template <typename U>
   static inline void copyConstruct(T* aDst, const U* aSrcStart,
                                    const U* aSrcEnd) {
+    
+
+
+
+
+
+
     MOZ_ASSERT(aSrcStart <= aSrcEnd);
-    if constexpr (std::is_same_v<T, U>) {
-      PodCopy(aDst, aSrcStart, PointerRangeSize(aSrcStart, aSrcEnd));
-    } else {
-      for (const U* p = aSrcStart; p < aSrcEnd; ++p, ++aDst) {
-        new_(aDst, *p);
-      }
+    for (const U* p = aSrcStart; p < aSrcEnd; ++p, ++aDst) {
+      new_(aDst, *p);
     }
   }
 
