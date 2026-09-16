@@ -685,6 +685,23 @@ nsJARURI::GetInnermostURI(nsIURI** uri) {
   return NS_ImplGetInnermostURI(this, uri);
 }
 
+
+static bool AreJARPartsCanonical(nsIURI* aJARFile, nsIURL* aJAREntry) {
+  nsAutoCString entrySpec;
+  if (NS_FAILED(aJAREntry->GetSpec(entrySpec))) {
+    return false;
+  }
+
+  
+  
+  if (!StringBeginsWith(entrySpec, NS_BOGUS_ENTRY_SCHEME) ||
+      entrySpec.Find(NS_JAR_DELIMITER) != kNotFound) {
+    return false;
+  }
+
+  return true;
+}
+
 void nsJARURI::Serialize(URIParams& aParams) {
   JARURIParams params;
 
@@ -718,6 +735,11 @@ bool nsJARURI::Deserialize(const URIParams& aParams) {
   nsCOMPtr<nsIURL> entryURL = do_QueryInterface(entry);
   if (!entryURL) {
     NS_ERROR("Couldn't QI jar entry URI to nsIURL!");
+    return false;
+  }
+
+  if (!AreJARPartsCanonical(file, entryURL)) {
+    NS_WARNING("Received structurally invalid jar URI parts!");
     return false;
   }
 

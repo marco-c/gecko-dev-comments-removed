@@ -200,6 +200,9 @@ class SubstitutingJARURI : public nsIJARURI,
   bool Deserialize(const mozilla::ipc::URIParams& aParams);
   nsresult ReadPrivate(nsIObjectInputStream* aStream);
 
+  
+  static nsresult ResolveSource(nsIURI* aSource, SubstitutingJARURI** aResult);
+
  public:
   class Mutator final : public nsIURIMutator,
                         public BaseURIMutator<SubstitutingJARURI>,
