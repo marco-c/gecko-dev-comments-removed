@@ -1208,7 +1208,8 @@ class MOZ_RAII LineClampLineIterator {
       : mCur(aFrame->LinesBegin()),
         mEnd(aFrame->LinesEnd()),
         mCurrentFrame(mCur == mEnd ? nullptr : aFrame),
-        mLastFrameToExit(aLastFrameToExit) {
+        mLastFrameToExit(aLastFrameToExit),
+        mEnteredLastFrameToExit(aFrame == aLastFrameToExit) {
     if (mCur != mEnd && !mCur->IsInline()) {
       Advance();
     }
@@ -1231,6 +1232,8 @@ class MOZ_RAII LineClampLineIterator {
     Advance();
   }
 
+  bool IsLastFrameOrDescendant() { return mEnteredLastFrameToExit; }
+
  private:
   void Advance() {
     for (;;) {
@@ -1252,6 +1255,9 @@ class MOZ_RAII LineClampLineIterator {
         mEnd = mCurrentFrame->LinesEnd();
       } else if (mCur->IsBlock()) {
         if (nsBlockFrame* child = GetAsLineClampDescendant(mCur->mFirstChild)) {
+          if (child == mLastFrameToExit) {
+            mEnteredLastFrameToExit = true;
+          }
           nsBlockFrame::LineIterator next = mCur;
           ++next;
           mStack.AppendElement(std::tuple(mCurrentFrame, next,
@@ -1307,6 +1313,9 @@ class MOZ_RAII LineClampLineIterator {
   nscoord mAccumulatedBEndBP = 0;
 
   WritingMode mWm = mLastFrameToExit->GetWritingMode();
+
+  
+  bool mEnteredLastFrameToExit;
 
   
   
@@ -2132,8 +2141,9 @@ nsReflowStatus nsBlockFrame::TrialReflow(nsPresContext* aPresContext,
   
   if (IsLineClampRoot(this)) {
     ClearLineClampEllipsis();
-    SetLineClampRootMaxHeight(std::min(aReflowInput.ComputedMaxBSize(),
-                                       aReflowInput.ComputedBSize()) +
+    nscoord rootMaxBSize =
+        aReflowInput.ApplyMinMaxBSize(aReflowInput.ComputedBSize());
+    SetLineClampRootMaxHeight(rootMaxBSize +
                               GetLogicalUsedBorderAndPadding(GetWritingMode())
                                   .BStartEnd(GetWritingMode()));
   }
@@ -2347,25 +2357,57 @@ Maybe<nsBlockFrame::LineClampTarget> nsBlockFrame::FindLineClampAutoTarget(
                          GetLogicalUsedBorderAndPadding(wm).BEnd(wm) -
                          aCollapsingBEndMargin;
 
+  nscoord thisMinBSize = aReflowInput.ComputedMinBSize();
+
   nsLineBox* prevLine = nullptr;
   nsBlockFrame* prevFrame = nullptr;
   nscoord prevBEdge = 0;
   for (LineClampLineIterator iter(aLineClampRoot, this);
        nsLineBox* line = iter.GetCurrentLine(); iter.Next()) {
-    if (line->IsEmpty() && line->BSize() == 0) {
-      continue;
-    }
-
     nsBlockFrame* frame = iter.GetCurrentFrame();
 
+    const bool isNewFrame = frame != prevFrame && line == frame->LinesBegin();
+
+    
+    
+    
+    
+    
+    
+    
+    const bool bSizeIsConstrained =
+        !frame->StylePosition()
+             ->MinBSize(wm, AnchorPosResolutionParams::From(frame))
+             ->IsAuto();
+
+    if (isNewFrame && bSizeIsConstrained) {
+      const nscoord sizeToCheck = frame == this ? thisMinBSize : frame->BSize();
+      if (sizeToCheck + prevBEdge > rootMaxBSize) {
+        
+        if (iter.IsLastFrameOrDescendant() && frame != this) {
+          
+          return Some(
+              nsBlockFrame::LineClampTarget{prevFrame, prevLine, prevBEdge});
+        }
+        
+        
+        return Nothing();
+      }
+    }
+
     const bool bSizeIsDefinite =
-        frame && !frame->StylePosition()
-                      ->BSize(wm, AnchorPosResolutionParams::From(frame))
-                      ->IsAuto();
+        !frame->StylePosition()
+             ->BSize(wm, AnchorPosResolutionParams::From(frame))
+             ->IsAuto();
     
     
-    if (bSizeIsDefinite && frame != prevFrame && frame != aLineClampRoot &&
+    if (bSizeIsDefinite && isNewFrame && frame != aLineClampRoot &&
         !frame->IsPlaceholderFrame()) {
+      
+      if (!iter.IsLastFrameOrDescendant()) {
+        return Nothing();
+      }
+
       
       if (frame->BSize() + prevBEdge > rootMaxBSize) {
         return Some(
@@ -2390,11 +2432,20 @@ Maybe<nsBlockFrame::LineClampTarget> nsBlockFrame::FindLineClampAutoTarget(
       for (nsLineBox* lineCatchup = nullptr; lineCatchup != nextLine;
            lineCatchup = iter.GetCurrentLine()) {
         iter.Next();
+        if (!iter.GetCurrentLine()) {
+          
+          
+          return Nothing();
+        }
       }
 
       prevLine = nextLine;
       prevFrame = nextFrame;
       prevBEdge = frame->BSize() + prevBEdge;
+      continue;
+    }
+
+    if (line->IsEmpty() && line->BSize() == 0) {
       continue;
     }
 
