@@ -6,13 +6,19 @@
 
 
 
+
+
+
+
+const ROUTER_URL = `${EXAMPLE_URL}ember/quickstart/dist/assets/quickstart/router.js`;
+
 add_task(async function () {
   const dbg = await initDebugger("ember/quickstart/dist/");
 
   await invokeWithBreakpoint(
     dbg,
     "mapTestFunction",
-    "router.js",
+    ROUTER_URL,
     { line: 13, column: 3 },
     async () => {
       info("Assert the original variable mapping notifications are visible");
