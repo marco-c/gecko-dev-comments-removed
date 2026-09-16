@@ -316,6 +316,9 @@ class DOMMatrix : public DOMMatrixReadOnly {
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
+  
+  
+  
   DOMMatrix* MultiplySelf(const DOMMatrixInit& aOther, ErrorResult& aRv);
   DOMMatrix* PreMultiplySelf(const DOMMatrixInit& aOther, ErrorResult& aRv);
   DOMMatrix* TranslateSelf(double aTx, double aTy, double aTz = 0);
@@ -329,6 +332,9 @@ class DOMMatrix : public DOMMatrixReadOnly {
   DOMMatrix* RotateFromVectorSelf(double aX, double aY);
   DOMMatrix* RotateAxisAngleSelf(double aX, double aY, double aZ,
                                  double aAngle);
+  
+  
+  DOMMatrix* SkewSelf(double aSx, double aSy);
   DOMMatrix* SkewXSelf(double aSx);
   DOMMatrix* SkewYSelf(double aSy);
   DOMMatrix* InvertSelf();

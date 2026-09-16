@@ -171,6 +171,10 @@ class CSSNumericValue : public CSSStyleValue {
   StyleOptional<StyleUnitValue> ToStyleUnitValue(const nsACString& aUnit,
                                                  ErrorResult& aRv) const;
 
+  
+  
+  StyleUnitValue ToStyleUnitValue(const nsACString& aUnit) const;
+
  protected:
   virtual ~CSSNumericValue() = default;
 
