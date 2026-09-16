@@ -248,7 +248,6 @@ def render_v2(json_path, png_path, out_html):
     strategy = SelectorStrategy.{strat_name},
     value = "{value}",
     description = "{label}",
-    groups = listOf(),  // e.g., "toolbar", "mainMenu", "requiredForPage"
 )'''
 
             group_info.append({
