@@ -174,6 +174,9 @@
 - (NSNumber* _Nullable)moxVisited;
 
 
+- (NSNumber* _Nullable)moxGrabbed;
+
+
 - (NSNumber* _Nullable)moxExpanded;
 
 

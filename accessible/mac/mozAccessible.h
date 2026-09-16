@@ -211,6 +211,9 @@ enum CheckedState {
 - (NSNumber*)moxSelected;
 
 
+- (NSNumber*)moxGrabbed;
+
+
 - (NSNumber*)moxExpanded;
 
 

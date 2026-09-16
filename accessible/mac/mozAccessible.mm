@@ -760,6 +760,11 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
   return @NO;
 }
 
+- (NSNumber*)moxGrabbed {
+  NSString* grabbed = utils::GetAccAttr(self, nsGkAtoms::aria_grabbed);
+  return @([grabbed isEqualToString:@"true"]);
+}
+
 - (NSNumber*)moxExpanded {
   return @([self stateWithMask:states::EXPANDED] != 0);
 }
@@ -1279,6 +1284,17 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
       nsAutoString nameNotUsed;
       if (ProvidesTitle(mGeckoAccessible, nameNotUsed)) {
         [self moxPostNotification:NSAccessibilityTitleChangedNotification];
+      }
+      break;
+    }
+    case nsIAccessibleEvent::EVENT_DESCRIPTION_CHANGE: {
+      
+      
+      nsAutoString description;
+      mGeckoAccessible->Description(description);
+      if (!description.IsEmpty()) {
+        [self handleAnnouncementEvent:nsCocoaUtils::ToNSString(description)
+                             priority:nsIAccessibleAnnouncementEvent::POLITE];
       }
       break;
     }
