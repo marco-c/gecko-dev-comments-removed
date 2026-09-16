@@ -64,10 +64,13 @@ requestLongerTimeout(2);
 
 add_task(async function chromeUITest() {
   
-  SpecialPowers.pushPrefEnv({
+  await SpecialPowers.pushPrefEnv({
     set: [
       ["toolkit.pioneer.testCachedContent", "[]"],
       ["toolkit.pioneer.testCachedAddons", "[]"],
+      
+      
+      ["browser.vpn_promo.enabled", false],
     ],
   });
   
@@ -138,6 +141,8 @@ add_task(async function chromeUITest() {
       );
     });
   }
+
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_webpage() {
@@ -669,8 +674,6 @@ add_task(async function test_reader_uri() {
   );
 
   gBrowser.removeTab(newTab);
-
-  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_data_uri() {
