@@ -5,8 +5,6 @@
 
 requestLongerTimeout(2);
 
-
-
 const { ExtensionPermissions } = ChromeUtils.importESModule(
   "resource://gre/modules/ExtensionPermissions.sys.mjs"
 );
