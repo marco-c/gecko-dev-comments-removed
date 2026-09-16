@@ -273,6 +273,23 @@ let JSWINDOWACTORS = {
     remoteTypes: ["parent"],
   },
 
+  AITab: {
+    parent: {
+      esModuleURI:
+        "moz-src:///browser/components/aiwindow/ui/actors/AITabParent.sys.mjs",
+    },
+    child: {
+      esModuleURI:
+        "moz-src:///browser/components/aiwindow/ui/actors/AITabChild.sys.mjs",
+      events: {
+        "AITab:RequestPage": { wantUntrusted: true },
+      },
+    },
+    matches: ["about:aitab", "about:aitab?*"],
+    remoteTypes: ["privilegedabout"],
+    enablePreference: "browser.smartwindow.aitab.enabled",
+  },
+
   SmartWindowTasks: {
     parent: {
       esModuleURI:
@@ -615,7 +632,7 @@ let JSWINDOWACTORS = {
       "about:home",
       "about:newtab",
       "about:welcome",
-      "chrome://browser/content/syncedtabs/sidebar.xhtml",
+      "chrome://browser/content/syncedtabs/sidebar.html",
       "chrome://browser/content/places/historySidebar.xhtml",
       "chrome://browser/content/places/bookmarksSidebar.xhtml",
       "chrome://browser/content/sidebar/sidebar-bookmarks.html",
@@ -780,6 +797,7 @@ let JSWINDOWACTORS = {
         ThemePickerUpdateTheme: { wantUntrusted: true },
         ThemePickerUpdateAppearance: { wantUntrusted: true },
         ThemePickerUpdateNativeTheme: { wantUntrusted: true },
+        ThemePickerShown: { wantUntrusted: true },
       },
     },
     matches: [
