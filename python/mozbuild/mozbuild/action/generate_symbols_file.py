@@ -69,7 +69,7 @@ def generate_symbols_file(output, *args):
         
         
         assert ext == ".def"
-        output.write(f"LIBRARY {libname}\nEXPORTS\n  " + "\n  ".join(symbols) + "\n")
+        output.write("LIBRARY %s\nEXPORTS\n  %s\n" % (libname, "\n  ".join(symbols)))
     elif (
         buildconfig.substs.get("GCC_USE_GNU_LD")
         or buildconfig.substs["OS_TARGET"] == "SunOS"
@@ -85,13 +85,11 @@ def generate_symbols_file(output, *args):
         
         
         output.write(
-            f"{libname} {{\nglobal:\n  "
-            + ";\n  ".join(symbols)
-            + ";\nlocal:\n  *;\n}};"
+            "%s {\nglobal:\n  %s;\nlocal:\n  *;\n};" % (libname, ";\n  ".join(symbols))
         )
     elif buildconfig.substs["OS_TARGET"] == "Darwin":
         
         
-        output.write("".join(f"_{s}\n" for s in symbols))
+        output.write("".join("_%s\n" % s for s in symbols))
 
     return set(pp.includes)
