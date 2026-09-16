@@ -1738,15 +1738,17 @@ static bool IsUnsafeElement(nsAtom* aLocalName, int32_t aNamespaceID) {
 
 
 
-static bool RemoveJavascriptNavigationURLAttribute(Element* aElement,
-                                                   nsAtom* aLocalName,
-                                                   int32_t aNamespaceID) {
+static bool ShouldRemoveJavascriptNavigationURLAttribute(
+    nsAtom* aElementLocalName, int32_t aElementNamespaceID, nsAtom* aLocalName,
+    int32_t aNamespaceID, FunctionRef<void(nsAString&)> aGetValue) {
+  auto isElement = [&](int32_t aNs, nsAtom* aName) {
+    return aElementNamespaceID == aNs && aElementLocalName == aName;
+  };
+
   
   auto containsJavascriptURL = [&]() {
     nsAutoString value;
-    if (!aElement->GetAttr(aNamespaceID, aLocalName, value)) {
-      return false;
-    }
+    aGetValue(value);
 
     
     
@@ -1763,16 +1765,19 @@ static bool RemoveJavascriptNavigationURLAttribute(Element* aElement,
   
   
   
-  if ((aElement->IsAnyOfHTMLElements(nsGkAtoms::a, nsGkAtoms::area) &&
+  if (((isElement(kNameSpaceID_XHTML, nsGkAtoms::a) ||
+        isElement(kNameSpaceID_XHTML, nsGkAtoms::area)) &&
        aLocalName == nsGkAtoms::href && aNamespaceID == kNameSpaceID_None) ||
-      (aElement->IsAnyOfHTMLElements(nsGkAtoms::button, nsGkAtoms::input) &&
+      ((isElement(kNameSpaceID_XHTML, nsGkAtoms::button) ||
+        isElement(kNameSpaceID_XHTML, nsGkAtoms::input)) &&
        aLocalName == nsGkAtoms::formaction &&
        aNamespaceID == kNameSpaceID_None) ||
-      (aElement->IsHTMLElement(nsGkAtoms::form) &&
+      (isElement(kNameSpaceID_XHTML, nsGkAtoms::form) &&
        aLocalName == nsGkAtoms::action && aNamespaceID == kNameSpaceID_None) ||
-      (aElement->IsHTMLElement(nsGkAtoms::iframe) &&
+      (isElement(kNameSpaceID_XHTML, nsGkAtoms::iframe) &&
        aLocalName == nsGkAtoms::src && aNamespaceID == kNameSpaceID_None) ||
-      (aElement->IsSVGElement(nsGkAtoms::a) && aLocalName == nsGkAtoms::href &&
+      (isElement(kNameSpaceID_SVG, nsGkAtoms::a) &&
+       aLocalName == nsGkAtoms::href &&
        (aNamespaceID == kNameSpaceID_None ||
         aNamespaceID == kNameSpaceID_XLink))) {
     if (containsJavascriptURL()) {
@@ -1783,7 +1788,8 @@ static bool RemoveJavascriptNavigationURLAttribute(Element* aElement,
   
   
   
-  if (aElement->IsMathMLElement() && aLocalName == nsGkAtoms::href &&
+  if (aElementNamespaceID == kNameSpaceID_MathML &&
+      aLocalName == nsGkAtoms::href &&
       (aNamespaceID == kNameSpaceID_None ||
        aNamespaceID == kNameSpaceID_XLink)) {
     if (containsJavascriptURL()) {
@@ -1796,17 +1802,186 @@ static bool RemoveJavascriptNavigationURLAttribute(Element* aElement,
   
   if (aLocalName == nsGkAtoms::attributeName &&
       aNamespaceID == kNameSpaceID_None &&
-      aElement->IsAnyOfSVGElements(
-          nsGkAtoms::animate, nsGkAtoms::animateTransform, nsGkAtoms::set)) {
+      (isElement(kNameSpaceID_SVG, nsGkAtoms::animate) ||
+       isElement(kNameSpaceID_SVG, nsGkAtoms::animateTransform) ||
+       isElement(kNameSpaceID_SVG, nsGkAtoms::set))) {
     nsAutoString value;
-    if (!aElement->GetAttr(aNamespaceID, aLocalName, value)) {
-      return false;
-    }
-
+    aGetValue(value);
     return value.EqualsLiteral("href") || StringEndsWith(value, u":href"_ns);
   }
 
   return false;
+}
+
+
+
+
+
+
+
+
+template <bool IsDefaultConfig>
+SanitizerElementMatch Sanitizer::MatchElementInternal(nsAtom* aLocalName,
+                                                      int32_t aNamespaceID,
+                                                      bool aSafe) const {
+  
+  
+  SanitizerElementMatch match;
+  match.mSafe = aSafe;
+  match.mLocalName = aLocalName;
+  match.mNamespaceID = aNamespaceID;
+
+  if constexpr (!IsDefaultConfig) {
+    sanitizer::CanonicalElement elementName(aLocalName,
+                                            ToNamespace(aNamespaceID));
+
+    
+    
+    
+    
+    if (aSafe && IsUnsafeElement(aLocalName, aNamespaceID)) {
+      match.mAction = SanitizerElementAction::Remove;
+      return match;
+    }
+
+    
+    
+    if (mReplaceWithChildrenElements &&
+        mReplaceWithChildrenElements->Contains(elementName)) {
+      match.mAction = SanitizerElementAction::ReplaceWithChildren;
+      return match;
+    }
+
+    
+    if (mElements) {
+      
+      
+      match.mAttributes = mElements->Lookup(elementName).DataPtrOrNull();
+      if (!match.mAttributes) {
+        match.mAction = SanitizerElementAction::Remove;
+        return match;
+      }
+    }
+
+    
+    
+    if (mRemoveElements && mRemoveElements->Contains(elementName)) {
+      match.mAction = SanitizerElementAction::Remove;
+      return match;
+    }
+
+  } else {
+    
+    
+    bool found = false;
+    if (aLocalName->IsStatic()) {
+      ElementsWithAttributes* elements = nullptr;
+      if (aNamespaceID == kNameSpaceID_XHTML) {
+        elements = sDefaultHTMLElements;
+      } else if (aNamespaceID == kNameSpaceID_MathML) {
+        elements = sDefaultMathMLElements;
+      } else if (aNamespaceID == kNameSpaceID_SVG) {
+        elements = sDefaultSVGElements;
+      }
+      if (elements) {
+        if (auto lookup = elements->Lookup(aLocalName->AsStatic())) {
+          found = true;
+          match.mDefaultAttributes = lookup->get();
+        }
+      }
+    }
+    if (!found) {
+      match.mAction = SanitizerElementAction::Remove;
+      return match;
+    }
+    MOZ_ASSERT(!IsUnsafeElement(aLocalName, aNamespaceID),
+               "The default config has no unsafe elements");
+  }
+
+  MOZ_ASSERT(match.mAction == SanitizerElementAction::Keep);
+  return match;
+}
+
+template <bool IsDefaultConfig>
+bool Sanitizer::MatchAllowsAttribute(const SanitizerElementMatch& aMatch,
+                                     nsAtom* aAttrLocalName,
+                                     int32_t aAttrNs) const {
+  if constexpr (IsDefaultConfig) {
+    return AttributeListsAllow(aMatch.mDefaultAttributes, aAttrLocalName,
+                               aAttrNs, aMatch.mSafe);
+  } else {
+    return AttributeListsAllow(aMatch.mAttributes, aAttrLocalName, aAttrNs,
+                               aMatch.mSafe);
+  }
+}
+
+
+
+template <bool IsDefaultConfig>
+bool Sanitizer::ShouldRemoveAttributeInternal(
+    const SanitizerElementMatch& aMatch, nsAtom* aLocalName,
+    int32_t aNamespaceID, FunctionRef<void(nsAString&)> aGetValue) const {
+  
+  
+  
+  if (!MatchAllowsAttribute<IsDefaultConfig>(aMatch, aLocalName,
+                                             aNamespaceID)) {
+    return true;
+  }
+
+  
+  return aMatch.mSafe && ShouldRemoveJavascriptNavigationURLAttribute(
+                             aMatch.mLocalName, aMatch.mNamespaceID, aLocalName,
+                             aNamespaceID, aGetValue);
+}
+
+
+
+
+
+
+template <bool IsDefaultConfig>
+SanitizerElementAction Sanitizer::SanitizeElementInternal(Element* aElement,
+                                                          bool aSafe) const {
+  SanitizerElementMatch match = MatchElementInternal<IsDefaultConfig>(
+      aElement->NodeInfo()->NameAtom(), aElement->NodeInfo()->NamespaceID(),
+      aSafe);
+  if (match.mAction != SanitizerElementAction::Keep) {
+    return match.mAction;
+  }
+
+  
+
+  
+  
+  
+  if (CustomElementData* data = aElement->GetCustomElementData();
+      data && data->GetIs(aElement)) [[unlikely]] {
+    if (!MatchAllowsAttribute<IsDefaultConfig>(match, nsGkAtoms::is,
+                                               kNameSpaceID_None)) {
+      aElement->ClearCustomElementData();
+    }
+  }
+
+  
+  for (uint32_t i = aElement->GetAttrCount(); i > 0; --i) {
+    const nsAttrName* attr = aElement->GetAttrNameAt(i - 1);
+    RefPtr<nsAtom> attrLocalName = attr->LocalName();
+    int32_t attrNs = attr->NamespaceID();
+
+    if (ShouldRemoveAttributeInternal<IsDefaultConfig>(
+            match, attrLocalName, attrNs, [&](nsAString& aValue) {
+              aElement->GetAttr(attrNs, attrLocalName, aValue);
+            })) {
+      DebugOnly<uint32_t> countBefore = aElement->GetAttrCount();
+      aElement->UnsetAttr(attrNs, attrLocalName,  false);
+      MOZ_ASSERT(aElement->GetAttrCount() == countBefore - 1,
+                 "UnsetAttr() must only remove the attribute it was given");
+    }
+  }
+
+  
+  return SanitizerElementAction::Keep;
 }
 
 
@@ -1848,36 +2023,12 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) const {
     MOZ_ASSERT(child->IsElement());
 
     
-    
-    nsAtom* nameAtom = child->NodeInfo()->NameAtom();
-    int32_t namespaceID = child->NodeInfo()->NamespaceID();
-    
-    Maybe<CanonicalElement> elementName;
-    std::conditional_t<IsDefaultConfig, StaticAtomSet*,
-                       CanonicalElementAttributes*>
-        elementAttributes = nullptr;
-    if constexpr (!IsDefaultConfig) {
-      elementName.emplace(nameAtom, ToNamespace(namespaceID));
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (aSafe && IsUnsafeElement(nameAtom, namespaceID)) {
+    switch (
+        SanitizeElementInternal<IsDefaultConfig>(child->AsElement(), aSafe)) {
+      case SanitizerElementAction::Remove:
         child->Remove();
         continue;
-      }
-
-      
-      
-      
-      if (mReplaceWithChildrenElements &&
-          mReplaceWithChildrenElements->Contains(*elementName)) {
+      case SanitizerElementAction::ReplaceWithChildren: {
         
         
         
@@ -1900,64 +2051,8 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) const {
         }
         continue;
       }
-
-      
-      
-      if (mRemoveElements) {
-        if (mRemoveElements->Contains(*elementName)) {
-          
-          child->Remove();
-          
-          continue;
-        }
-      }
-
-      
-      
-      if (mElements) {
-        elementAttributes = mElements->Lookup(*elementName).DataPtrOrNull();
-        if (!elementAttributes) {
-          
-          child->Remove();
-          
-          continue;
-        }
-      }
-    } else {
-      
-      
-
-      
-      
-
-      bool found = false;
-      if (nameAtom->IsStatic()) {
-        ElementsWithAttributes* elements = nullptr;
-        if (namespaceID == kNameSpaceID_XHTML) {
-          elements = sDefaultHTMLElements;
-        } else if (namespaceID == kNameSpaceID_MathML) {
-          elements = sDefaultMathMLElements;
-        } else if (namespaceID == kNameSpaceID_SVG) {
-          elements = sDefaultSVGElements;
-        }
-        if (elements) {
-          if (auto lookup = elements->Lookup(nameAtom->AsStatic())) {
-            found = true;
-            
-            
-            elementAttributes = lookup->get();
-          }
-        }
-      }
-      if (!found) {
-        
-        child->Remove();
-        
-        continue;
-      }
-
-      MOZ_ASSERT(!IsUnsafeElement(nameAtom, namespaceID),
-                 "The default config has no unsafe elements");
+      case SanitizerElementAction::Keep:
+        break;
     }
 
     
@@ -1976,56 +2071,6 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) const {
     }
 
     
-    if (CustomElementData* data = child->AsElement()->GetCustomElementData();
-        data && data->GetIs(child->AsElement())) [[unlikely]] {
-      
-      
-      
-      
-      if (IsDefaultConfig ||
-          !IsAttributeAllowed(elementAttributes, nsGkAtoms::is,
-                              kNameSpaceID_None, aSafe)) {
-        
-        
-        
-        child->AsElement()->ClearCustomElementData();
-      }
-    }
-
-    
-    int32_t attrCount = int32_t(child->AsElement()->GetAttrCount());
-    for (int32_t i = attrCount - 1; i >= 0; --i) {
-      
-      
-      const nsAttrName* attr = child->AsElement()->GetAttrNameAt(i);
-      RefPtr<nsAtom> attrLocalName = attr->LocalName();
-      int32_t attrNs = attr->NamespaceID();
-
-      
-      
-      bool remove =
-          !IsAttributeAllowed(elementAttributes, attrLocalName, attrNs, aSafe);
-
-      
-      if (aSafe && !remove) {
-        remove = RemoveJavascriptNavigationURLAttribute(child->AsElement(),
-                                                        attrLocalName, attrNs);
-      }
-
-      if (remove) {
-        child->AsElement()->UnsetAttr(attrNs, attrLocalName,
-                                       false);
-
-        
-        
-        
-        --attrCount;
-        i = attrCount;  
-                        
-      }
-    }
-
-    
     
     
     SanitizeChildren<IsDefaultConfig>(child, aSafe);
@@ -2038,9 +2083,9 @@ static inline bool IsDataAttribute(nsAtom* aName, int32_t aNamespaceID) {
 }
 
 
-bool Sanitizer::IsAttributeAllowed(StaticAtomSet* aElementAttributes,
-                                   nsAtom* aAttrLocalName, int32_t aAttrNs,
-                                   bool) const {
+bool Sanitizer::AttributeListsAllow(StaticAtomSet* aElementAttributes,
+                                    nsAtom* aAttrLocalName, int32_t aAttrNs,
+                                    bool) const {
   MOZ_ASSERT(mIsDefaultConfig);
 
   
@@ -2093,7 +2138,7 @@ bool Sanitizer::IsAttributeAllowed(StaticAtomSet* aElementAttributes,
   return true;
 }
 
-bool Sanitizer::IsAttributeAllowed(
+bool Sanitizer::AttributeListsAllow(
     CanonicalElementAttributes* aElementAttributes, nsAtom* aAttrLocalName,
     int32_t aAttrNs, bool aSafe) const {
   MOZ_ASSERT(!mIsDefaultConfig);
