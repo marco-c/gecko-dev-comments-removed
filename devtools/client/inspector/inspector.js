@@ -179,6 +179,7 @@ class Inspector extends EventEmitter {
   
   #panels = new Map();
   #fluentL10n;
+  #defaultNodeSelected = false;
   #defaultStartupNode;
   #defaultStartupNodeDomReference;
   #defaultStartupNodeSelectionReason;
@@ -249,6 +250,11 @@ class Inspector extends EventEmitter {
     
     this.#defaultNode = null;
 
+    this.breadcrumbs = new HTMLBreadcrumbs(this);
+    this.styleChangeTracker = new InspectorStyleChangeTracker(this);
+    this.#setupSearchBox();
+    this.#createInspectorShortcuts();
+
     await this.commands.targetCommand.watchTargets({
       types: [this.commands.targetCommand.TYPES.FRAME],
       onAvailable: this.#onTargetAvailable,
@@ -282,18 +288,6 @@ class Inspector extends EventEmitter {
     
     this.previousURL = this.currentTarget.url;
 
-    
-    
-    
-    this.styleChangeTracker = new InspectorStyleChangeTracker(this);
-    this.#setupSidebar();
-    this.breadcrumbs = new HTMLBreadcrumbs(this);
-    this.#setupExtensionSidebars();
-    this.#setupSearchBox();
-    this.#createInspectorShortcuts();
-
-    this.#onNewSelection();
-
     this.toolbox.on("host-changed", this.#onHostChanged);
     this.toolbox.nodePicker.on("picker-node-hovered", this.onPickerHovered);
     this.toolbox.nodePicker.on("picker-node-canceled", this.onPickerCanceled);
@@ -309,6 +303,17 @@ class Inspector extends EventEmitter {
     );
 
     return this;
+  }
+
+  
+
+
+
+  #onDefaultNodeSelected() {
+    this.#setupSidebar();
+    this.#setupExtensionSidebars();
+
+    this.#onNewSelection();
   }
 
   
@@ -435,6 +440,12 @@ class Inspector extends EventEmitter {
 
       // Setup the toolbar again, since its content may depend on the current document.
       await this.#setupToolbar();
+
+      // Finalize initialization when a default node is successfully selected.
+      if (!this.#defaultNodeSelected) {
+        this.#defaultNodeSelected = true;
+        this.#onDefaultNodeSelected();
+      }
     } catch (e) {
       this.#handleRejectionIfNotDestroyed(e);
       // Show the AppErrorBoundary if the markup view failed to render, unless:
@@ -1451,6 +1462,12 @@ class Inspector extends EventEmitter {
 
 
   addExtensionSidebar(id, { title }) {
+    if (!this.#defaultNodeSelected) {
+      
+      
+      return;
+    }
+
     if (this.#panels.has(id)) {
       throw new Error(
         `Cannot create an extension sidebar for the existent id: ${id}`
@@ -1485,6 +1502,11 @@ class Inspector extends EventEmitter {
 
 
   removeExtensionSidebar(id) {
+    if (!this.#defaultNodeSelected) {
+      
+      return;
+    }
+
     if (!this.#panels.has(id)) {
       throw new Error(`Unable to find a sidebar panel with id "${id}"`);
     }
@@ -1817,14 +1839,17 @@ class Inspector extends EventEmitter {
     this.toolbox.nodePicker.off("picker-node-picked", this.onPickerPicked);
 
     
-    
-    this.sidebar.destroy();
-    
-    
-    this.sidebar.off("select", this.onSidebarSelect);
-    this.sidebar.off("show", this.onSidebarShown);
-    this.sidebar.off("hide", this.onSidebarHidden);
-    this.sidebar.off("destroy", this.onSidebarHidden);
+    if (this.sidebar) {
+      
+      
+      this.sidebar.destroy();
+      
+      
+      this.sidebar.off("select", this.onSidebarSelect);
+      this.sidebar.off("show", this.onSidebarShown);
+      this.sidebar.off("hide", this.onSidebarHidden);
+      this.sidebar.off("destroy", this.onSidebarHidden);
+    }
 
     for (const [, panel] of this.#panels) {
       panel.destroy({ fromInspectorDestroy: true });
@@ -1840,7 +1865,7 @@ class Inspector extends EventEmitter {
       this.#search = null;
     }
 
-    this.ruleViewSideBar.destroy();
+    this.ruleViewSideBar?.destroy();
     this.ruleViewSideBar = null;
 
     this.#destroyMarkup();
