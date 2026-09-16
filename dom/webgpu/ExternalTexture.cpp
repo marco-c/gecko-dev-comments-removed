@@ -843,7 +843,7 @@ ExternalTextureSourceHost::CreateFromMacIOSurfaceTextureHost(
   
   
   
-  MOZ_ASSERT(aTextureHost->mDescriptor.fencesHolderId().isNothing());
+  MOZ_ASSERT(!aTextureHost->mGpuFence);
 
   const gfx::SurfaceFormat format = ioSurface->GetFormat();
   const gfx::YUVRangedColorSpace colorSpace = gfx::ToYUVRangedColorSpace(

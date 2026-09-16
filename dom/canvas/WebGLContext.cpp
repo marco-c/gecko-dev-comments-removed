@@ -1386,6 +1386,15 @@ bool WebGLContext::PushRemoteTexture(
   Maybe<layers::SurfaceDescriptor> desc;
   if (surf) {
     desc = surf->ToSurfaceDescriptor();
+    
+    
+    
+    
+    if (desc && desc->type() ==
+                    layers::SurfaceDescriptor::TSurfaceDescriptorMacIOSurface) {
+      auto& ioDesc = desc->get_SurfaceDescriptorMacIOSurface();
+      ioDesc.gpuFence() = surf->TakeGpuFence();
+    }
   }
   if (!desc) {
     if (surf && surf->mDesc.type != gl::SharedSurfaceType::Basic) {
