@@ -2748,11 +2748,22 @@ ContentAnalysis::PrintToPDFToDetermineIfPrintAllowed(
   return promise;
 }
 
+
+
+
+
 static nsresult CheckClipboard(
-    ContentAnalysisCallback* aCallback, Maybe<int32_t> aClipboardSequenceNumber,
-    bool aStoreInCache, nsITransferable* aTransferable,
+    ContentAnalysisCallback* aCallback,
+    nsIContentAnalysisRequest::Reason aReason,
+    Maybe<int32_t> aClipboardSequenceNumber, bool aStoreInCache,
+    nsITransferable* aTransferable,
     mozilla::dom::WindowGlobalParent* aWindowGlobal,
     mozilla::dom::WindowGlobalParent* aSourceWindowGlobal) {
+  MOZ_ASSERT(aReason == nsIContentAnalysisRequest::Reason::eClipboardCopy ||
+             aReason == nsIContentAnalysisRequest::Reason::eClipboardPaste);
+  const bool useCache =
+      aReason != nsIContentAnalysisRequest::Reason::eClipboardCopy;
+
   NoContentAnalysisResult caResult =
       NoContentAnalysisResult::DENY_DUE_TO_OTHER_ERROR;
   auto respondOnFailure = MakeScopeExit([&]() {
@@ -2774,14 +2785,13 @@ static nsresult CheckClipboard(
                     : nullptr;
 
   auto request = MakeRefPtr<ContentAnalysisRequest>(
-      nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
-      nsIContentAnalysisRequest::Reason::eClipboardPaste, aTransferable,
-      aWindowGlobal, aSourceWindowGlobal);
+      TextAnalysisTypeForReason(aReason), aReason, aTransferable, aWindowGlobal,
+      aSourceWindowGlobal);
 
   
   
   
-  if (!aStoreInCache && aClipboardSequenceNumber.isSome()) {
+  if (useCache && !aStoreInCache && aClipboardSequenceNumber.isSome()) {
     bool isValid = false;
     nsIContentAnalysisResponse::Action action =
         nsIContentAnalysisResponse::Action::eUnspecified;
@@ -2800,7 +2810,7 @@ static nsresult CheckClipboard(
   }
 
   RefPtr wrapperCallback = aCallback;
-  if (aStoreInCache && aClipboardSequenceNumber.isSome()) {
+  if (useCache && aStoreInCache && aClipboardSequenceNumber.isSome()) {
     
     wrapperCallback = MakeRefPtr<ContentAnalysisCallback>(
         [aClipboardSequenceNumber, uri,
@@ -2828,6 +2838,8 @@ static nsresult CheckClipboard(
   return contentAnalysis->AnalyzeContentRequestsCallback(
       requests, true , wrapperCallback);
 }
+
+
 
 
 
@@ -2875,8 +2887,49 @@ void ContentAnalysis::CheckClipboardContentAnalysis(
           .map<decltype(Some<int>)>(Some)
           .unwrapOr(Nothing());
 
-  CheckClipboard(aResolver, maybeSequenceNumber, aForFullClipboard,
-                 aTransferable, aWindow, sourceWindowGlobal);
+  CheckClipboard(aResolver, nsIContentAnalysisRequest::Reason::eClipboardPaste,
+                 maybeSequenceNumber, aForFullClipboard, aTransferable, aWindow,
+                 sourceWindowGlobal);
+
+  issueNoAnalysisResponse.release();
+}
+
+void ContentAnalysis::CheckClipboardCopyContentAnalysis(
+    mozilla::dom::WindowGlobalParent* aWindow, nsITransferable* aTransferable,
+    ContentAnalysisCallback* aResolver) {
+  
+  
+  NoContentAnalysisResult noCAResult =
+      NoContentAnalysisResult::DENY_DUE_TO_OTHER_ERROR;
+  auto issueNoAnalysisResponse = MakeScopeExit([&]() {
+    LOGD("CheckClipboardCopyContentAnalysis skipping CA.  Response = %d",
+         (int)noCAResult);
+    auto result = MakeRefPtr<ContentAnalysisNoResult>(noCAResult);
+    aResolver->ContentResult(result);
+  });
+
+  nsCOMPtr<nsIContentAnalysis> contentAnalysis =
+      mozilla::components::nsIContentAnalysis::Service();
+  if (!contentAnalysis || !aWindow) {
+    noCAResult = NoContentAnalysisResult::DENY_DUE_TO_OTHER_ERROR;
+    return;
+  }
+
+  bool contentAnalysisIsActive;
+  nsresult rv = contentAnalysis->GetIsActive(&contentAnalysisIsActive);
+  if (MOZ_LIKELY(NS_FAILED(rv) || !contentAnalysisIsActive)) {
+    noCAResult =
+        NoContentAnalysisResult::ALLOW_DUE_TO_CONTENT_ANALYSIS_NOT_ACTIVE;
+    return;
+  }
+
+  
+  
+  
+  CheckClipboard(aResolver, nsIContentAnalysisRequest::Reason::eClipboardCopy,
+                 Nothing() ,
+                 false , aTransferable, aWindow,
+                 aWindow );
 
   issueNoAnalysisResponse.release();
 }

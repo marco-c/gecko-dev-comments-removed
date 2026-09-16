@@ -86,6 +86,18 @@ class nsBaseClipboard : public nsIClipboard {
       mozilla::dom::WindowContext* aRequestingWindowContext,
       nsIClipboardGetDataSnapshotCallback* aCallback);
 
+  using SetDataCompletion = mozilla::MoveOnlyFunction<void(nsresult)>;
+
+  
+  
+  
+  
+  void SetDataWithCompletion(nsITransferable* aTransferable,
+                             nsIClipboardOwner* aOwner,
+                             ClipboardType aWhichClipboard,
+                             mozilla::dom::WindowContext* aWindowContext,
+                             SetDataCompletion&& aCompletion);
+
   using GetNativeDataCallback = mozilla::MoveOnlyFunction<void(
       mozilla::Result<nsCOMPtr<nsISupports>, nsresult>)>;
   using HasMatchingFlavorsCallback = mozilla::MoveOnlyFunction<void(
@@ -164,12 +176,63 @@ class nsBaseClipboard : public nsIClipboard {
  private:
   
   
-  using SetDataCompletion = mozilla::MoveOnlyFunction<void(nsresult)>;
+  
+  
+  class PendingCopy final {
+   public:
+    NS_INLINE_DECL_REFCOUNTING(PendingCopy)
 
+    PendingCopy(nsITransferable* aTransferable, nsIClipboardOwner* aOwner,
+                mozilla::dom::WindowContext* aWindowContext,
+                SetDataCompletion&& aCompletion)
+        : mTransferable(aTransferable),
+          mOwner(aOwner),
+          mWindowContext(aWindowContext),
+          mCompletion(std::move(aCompletion)) {}
+
+    
+    
+    void Complete(nsresult aResult) {
+      if (mCompletion) {
+        SetDataCompletion completion = std::move(mCompletion);
+        completion(aResult);
+      }
+    }
+
+    const nsCOMPtr<nsITransferable> mTransferable;
+    const nsCOMPtr<nsIClipboardOwner> mOwner;
+    const RefPtr<mozilla::dom::WindowContext> mWindowContext;
+
+   private:
+    ~PendingCopy() = default;
+    SetDataCompletion mCompletion;
+  };
+
+  
+  
+  
   nsresult SetDataImpl(nsITransferable* aTransferable,
                        nsIClipboardOwner* aOwner, ClipboardType aWhichClipboard,
                        mozilla::dom::WindowContext* aWindowContext,
+                       bool aCheckContentAnalysis,
                        SetDataCompletion&& aCompletion = nullptr);
+
+  
+  bool NeedsCopyContentAnalysis(nsITransferable* aTransferable,
+                                ClipboardType aWhichClipboard,
+                                mozilla::dom::WindowContext* aWindowContext);
+
+  
+  void OnCopyContentAnalysisResult(ClipboardType aWhichClipboard,
+                                   PendingCopy* aPendingCopy, bool aAllowed);
+
+  
+  
+  void WriteCopyBlockedPlaceholder(ClipboardType aWhichClipboard);
+
+  
+  
+  void CancelPendingCopy(ClipboardType aClipboardType, nsresult aReason);
 
   void RejectPendingAsyncSetDataRequestIfAny(ClipboardType aClipboardType);
 
@@ -315,6 +378,10 @@ class nsBaseClipboard : public nsIClipboard {
   mozilla::Array<mozilla::UniquePtr<ClipboardCache>,
                  nsIClipboard::kClipboardTypeCount>
       mCaches;
+
+  
+  
+  RefPtr<PendingCopy> mPendingCopy;
   const mozilla::dom::ClipboardCapabilities mClipboardCaps;
   bool mIgnoreEmptyNotification = false;
 };

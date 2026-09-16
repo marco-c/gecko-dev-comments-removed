@@ -234,6 +234,13 @@ class ContentAnalysis final : public nsIContentAnalysis,
       nsIClipboard::ClipboardType aClipboardType,
       ContentAnalysisCallback* aResolver, bool aForFullClipboard = false);
 
+  
+  
+  
+  static void CheckClipboardCopyContentAnalysis(
+      mozilla::dom::WindowGlobalParent* aWindow, nsITransferable* aTransferable,
+      ContentAnalysisCallback* aResolver);
+
   using FilesAllowedPromise = MozPromise<nsCOMArray<nsIFile>, nsresult, true>;
   
   

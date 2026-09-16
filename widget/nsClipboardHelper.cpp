@@ -106,6 +106,8 @@ nsClipboardHelper::CopyString(
   
   rv = CopyStringToClipboard(aString, nsIClipboard::kGlobalClipboard,
                              aSettingWindowContext, aSensitive);
+  
+  
   NS_ENSURE_SUCCESS(rv, rv);
 
   
