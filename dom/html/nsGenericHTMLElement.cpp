@@ -1161,7 +1161,8 @@ bool nsGenericHTMLElement::ParseBackgroundAttribute(int32_t aNamespaceID,
   return false;
 }
 
-bool nsGenericHTMLElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool nsGenericHTMLElement::IsNoNamespaceAttrMapped(
+    const nsAtom* aAttribute) const {
   static const MappedAttributeEntry* const map[] = {sCommonAttributeMap};
 
   return FindAttributeDependence(aAttribute, map);
@@ -1361,8 +1362,10 @@ static inline void MapLangAttributeInto(MappedDeclarationsBuilder& aBuilder) {
   
   
   
+  
+  
   RefPtr<nsAtom> lang = langValue->GetAtomValue();
-  nsAtomCString langStr(lang);
+  nsAutoAtomCString langStr(lang);
   intl::Locale loc;
   if (intl::LocaleParser::TryParse(langStr, loc).isOk() &&
       loc.Canonicalize().isOk()) {
@@ -1373,7 +1376,7 @@ static inline void MapLangAttributeInto(MappedDeclarationsBuilder& aBuilder) {
     }
   }
 
-  aBuilder.SetIdentAtomValueIfUnset(eCSSProperty__x_lang, lang);
+  aBuilder.SetIdentAtomValue(eCSSProperty__x_lang, lang);
   if (!aBuilder.PropertyIsSet(eCSSProperty_text_emphasis_position)) {
     if (nsStyleUtil::MatchesLanguagePrefix(lang, u"zh")) {
       aBuilder.SetKeywordValue(eCSSProperty_text_emphasis_position,
@@ -1394,6 +1397,8 @@ static inline void MapLangAttributeInto(MappedDeclarationsBuilder& aBuilder) {
 void nsGenericHTMLElement::MapCommonAttributesIntoExceptHidden(
     MappedDeclarationsBuilder& aBuilder) {
   MapLangAttributeInto(aBuilder);
+  
+  MapXmlLangAttrInto(aBuilder);
 }
 
 void nsGenericHTMLElement::MapCommonAttributesInto(

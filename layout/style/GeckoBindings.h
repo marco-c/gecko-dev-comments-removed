@@ -152,8 +152,6 @@ bool Gecko_MatchLang(const mozilla::dom::Element*, nsAtom* override_lang,
 bool Gecko_MatchViewTransitionClass(const mozilla::dom::Element*,
                                     const nsTArray<mozilla::StyleAtom>*);
 
-nsAtom* Gecko_GetXMLLangValue(const mozilla::dom::Element*);
-
 const mozilla::PreferenceSheet::Prefs* Gecko_GetPrefSheetPrefs(
     const mozilla::dom::Document*);
 
@@ -196,8 +194,7 @@ const mozilla::StyleLockedDeclarationBlock* Gecko_GetViewTransitionDynamicRule(
     const mozilla::dom::Element* element);
 
 const mozilla::StyleLockedDeclarationBlock*
-Gecko_GetHTMLPresentationAttrDeclarationBlock(
-    const mozilla::dom::Element* element);
+Gecko_GetMappedAttributeDeclarations(const mozilla::dom::Element* element);
 
 const mozilla::StyleLockedDeclarationBlock*
 Gecko_GetExtraContentStyleDeclarations(const mozilla::dom::Element* element);
@@ -409,7 +406,7 @@ void Gecko_EnsureStyleViewTimelineArrayLength(void* array, size_t len);
 
 
 
-mozilla::Keyframe* Gecko_GetOrCreateKeyframeAtEnd(
+mozilla::Keyframe* Gecko_GetOrCreateKeyframeForPercentageOffset(
     nsTArray<mozilla::Keyframe>* keyframes, float offset,
     const mozilla::StyleComputedTimingFunction* timingFunction,
     const mozilla::dom::CompositeOperationOrAuto composition);
@@ -417,31 +414,12 @@ mozilla::Keyframe* Gecko_GetOrCreateKeyframeAtEnd(
 
 
 
-mozilla::Keyframe* Gecko_GetOrCreateKeyframeWithRangeName(
+mozilla::Keyframe* Gecko_GetOrCreateKeyframeForTimelineRangeOffset(
     nsTArray<mozilla::Keyframe>* aKeyframes,
     const mozilla::StyleTimelineRangeName aRangeName, float aOffset,
     const mozilla::StyleComputedTimingFunction* aTimingFunction,
     const mozilla::dom::CompositeOperationOrAuto aComposition,
     size_t* aMatchedIdx);
-
-
-
-
-
-
-mozilla::Keyframe* Gecko_GetOrCreateInitialKeyframe(
-    nsTArray<mozilla::Keyframe>* keyframes,
-    const mozilla::StyleComputedTimingFunction* timingFunction,
-    const mozilla::dom::CompositeOperationOrAuto composition);
-
-
-
-
-
-mozilla::Keyframe* Gecko_GetOrCreateFinalKeyframe(
-    nsTArray<mozilla::Keyframe>* keyframes,
-    const mozilla::StyleComputedTimingFunction* timingFunction,
-    const mozilla::dom::CompositeOperationOrAuto composition);
 
 void Gecko_ResetFilters(nsStyleEffects* effects, size_t new_len);
 

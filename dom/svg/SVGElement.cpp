@@ -25,7 +25,6 @@
 #include "SVGMotionSMILAttr.h"
 #include "mozAutoDocUpdate.h"
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/DeclarationBlock.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/RestyleManager.h"
@@ -34,14 +33,11 @@
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/BindContext.h"
-#include "mozilla/dom/CSSRuleBinding.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/MutationObservers.h"
 #include "mozilla/dom/SVGElementBinding.h"
-#include "mozilla/dom/SVGGeometryElement.h"
-#include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/dom/SVGTests.h"
 #include "mozilla/dom/SVGUnitTypesBinding.h"
@@ -52,7 +48,6 @@
 #include "nsDOMCSSAttrDeclaration.h"
 #include "nsError.h"
 #include "nsGkAtoms.h"
-#include "nsICSSDeclaration.h"
 #include "nsIContentInlines.h"
 #include "nsIFrame.h"
 #include "nsIMutationObserver.h"
@@ -944,14 +939,13 @@ void SVGElement::NodeInfoChanged(Document* aOldDoc) {
   SVGElementBase::NodeInfoChanged(aOldDoc);
 }
 
-NS_IMETHODIMP_(bool)
-SVGElement::IsAttributeMapped(const nsAtom* name) const {
+bool SVGElement::IsNoNamespaceAttrMapped(const nsAtom* name) const {
   if (name == nsGkAtoms::lang) {
     return true;
   }
 
   if (IsSVGAnimationElement()) {
-    return SVGElementBase::IsAttributeMapped(name);
+    return SVGElementBase::IsNoNamespaceAttrMapped(name);
   }
 
   static const MappedAttributeEntry attributes[] = {
@@ -1019,7 +1013,7 @@ SVGElement::IsAttributeMapped(const nsAtom* name) const {
   static const MappedAttributeEntry* const map[] = {attributes};
 
   return FindAttributeDependence(name, map) ||
-         SVGElementBase::IsAttributeMapped(name);
+         SVGElementBase::IsNoNamespaceAttrMapped(name);
 }
 
 
@@ -1213,6 +1207,8 @@ class MOZ_STACK_CLASS MappedAttrParser {
   void ParseMappedAttrValue(nsAtom* aMappedAttrName,
                             const nsAString& aMappedAttrValue);
 
+  void MapLang(nsAtom* aLangValue);
+
   void TellStyleAlreadyParsedResult(nsAtom const* aAtom,
                                     SVGAnimatedLength const& aLength);
   void TellStyleAlreadyParsedResult(const SVGAnimatedPathSegList&);
@@ -1255,36 +1251,29 @@ void MappedAttrParser::ParseMappedAttrValue(nsAtom* aMappedAttrName,
   
   NonCustomCSSPropertyId propertyId =
       nsCSSProps::LookupProperty(nsAutoAtomCString(aMappedAttrName));
-  if (propertyId != eCSSProperty_UNKNOWN) {
-    bool changed = false;  
-    NS_ConvertUTF16toUTF8 value(aMappedAttrValue);
+  MOZ_ASSERT(propertyId != eCSSProperty_UNKNOWN);
+  bool changed = false;  
+  NS_ConvertUTF16toUTF8 value(aMappedAttrValue);
 
-    auto* doc = mElement.OwnerDoc();
-    changed = Servo_DeclarationBlock_SetPropertyById(
-        &EnsureDeclarationBlock(), propertyId, &value, false,
-        &EnsureExtraData(), StyleParsingMode::ALLOW_UNITLESS_LENGTH,
-        doc->GetCompatibilityMode(), &doc->EnsureCSSLoader(),
-        StyleCssRuleType::Style, {});
+  auto* doc = mElement.OwnerDoc();
+  changed = Servo_DeclarationBlock_SetPropertyById(
+      &EnsureDeclarationBlock(), propertyId, &value, false, &EnsureExtraData(),
+      StyleParsingMode::ALLOW_UNITLESS_LENGTH, doc->GetCompatibilityMode(),
+      &doc->EnsureCSSLoader(), StyleCssRuleType::Style, {});
 
-    
-    
-    
-    if (changed && StaticPrefs::layout_css_use_counters_enabled()) {
-      UseCounter useCounter = nsCSSProps::UseCounterFor(propertyId);
-      MOZ_ASSERT(useCounter != eUseCounter_UNKNOWN);
-      doc->SetUseCounter(useCounter);
-    }
-    return;
-  }
-  MOZ_ASSERT(aMappedAttrName == nsGkAtoms::lang,
-             "Only 'lang' should be unrecognized!");
   
-  if (aMappedAttrName == nsGkAtoms::lang) {
-    propertyId = eCSSProperty__x_lang;
-    RefPtr<nsAtom> atom = NS_Atomize(aMappedAttrValue);
-    Servo_DeclarationBlock_SetIdentStringValue(&EnsureDeclarationBlock(),
-                                               propertyId, atom);
+  
+  
+  if (changed && StaticPrefs::layout_css_use_counters_enabled()) {
+    UseCounter useCounter = nsCSSProps::UseCounterFor(propertyId);
+    MOZ_ASSERT(useCounter != eUseCounter_UNKNOWN);
+    doc->SetUseCounter(useCounter);
   }
+}
+
+void MappedAttrParser::MapLang(nsAtom* aLangValue) {
+  Servo_DeclarationBlock_SetIdentStringValue(&EnsureDeclarationBlock(),
+                                             eCSSProperty__x_lang, aLangValue);
 }
 
 void MappedAttrParser::TellStyleAlreadyParsedResult(
@@ -1321,20 +1310,21 @@ void SVGElement::UpdateMappedDeclarationBlock() {
   const bool lengthAffectsStyle =
       SVGGeometryProperty::ElementMapsLengthsToStyle(this);
   uint32_t i = 0;
+  const nsAttrValue* xmlLang = nullptr;
   while (BorrowedAttrInfo info = GetAttrInfoAt(i++)) {
     const nsAttrName* attrName = info.mName;
     if (!attrName->IsAtom()) {
+      if (!IsAttrMapped(attrName->NamespaceID(), attrName->LocalName())) {
+        continue;
+      }
+      
+      MOZ_ASSERT(attrName->Equals(nsGkAtoms::lang, kNameSpaceID_XML));
+      xmlLang = info.mValue;
       continue;
     }
 
     nsAtom* nameAtom = attrName->Atom();
-    if (!IsAttributeMapped(nameAtom)) {
-      continue;
-    }
-
-    if (nameAtom == nsGkAtoms::lang &&
-        HasAttr(kNameSpaceID_XML, nsGkAtoms::lang)) {
-      
+    if (!IsNoNamespaceAttrMapped(nameAtom)) {
       continue;
     }
 
@@ -1387,9 +1377,18 @@ void SVGElement::UpdateMappedDeclarationBlock() {
       continue;
     }
 
+    if (nameAtom == nsGkAtoms::lang) {
+      mappedAttrParser.MapLang(info.mValue->GetAtomValue());
+      continue;
+    }
+
     nsAutoString value;
     info.mValue->ToString(value);
     mappedAttrParser.ParseMappedAttrValue(nameAtom, value);
+  }
+
+  if (xmlLang) {
+    mappedAttrParser.MapLang(xmlLang->GetAtomValue());
   }
 
   
