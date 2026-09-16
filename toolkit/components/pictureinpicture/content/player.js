@@ -172,6 +172,7 @@ let Player = {
     "command",
     "dblclick",
     "keydown",
+    "mousedown",
     "mouseup",
     "mousemove",
     "MozDOMFullscreen:Entered",
@@ -514,7 +515,7 @@ let Player = {
           this.cyclePlaybackRate(event.key == ">" ? 1 : -1);
         } else if (
           Services.prefs.getBoolPref(KEYBOARD_CONTROLS_ENABLED_PREF, false) &&
-          (event.keyCode != KeyEvent.DOM_VK_SPACE || !event.target.id)
+          (event.key != " " || !event.target.closest(".control-button, .panel"))
         ) {
           
           
@@ -522,6 +523,11 @@ let Player = {
           this.onKeyDown(event);
         }
 
+        break;
+      }
+
+      case "mousedown": {
+        this.onMouseDown(event);
         break;
       }
 
@@ -1253,6 +1259,21 @@ let Player = {
       dragDirection = "draggedUp";
     }
     return dragDirection;
+  },
+
+  
+
+
+
+
+
+  onMouseDown(event) {
+    
+    
+    
+    if (event.target.closest(".control-button")) {
+      event.preventDefault();
+    }
   },
 
   
