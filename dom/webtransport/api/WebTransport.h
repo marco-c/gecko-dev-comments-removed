@@ -154,6 +154,11 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
       const WebTransportSendStreamOptions& aOptions,
       WebTransportSendGroup* aSendGroup, int64_t aSendOrder, ErrorResult& aRv);
 
+  
+  
+  
+  void SendGetStatsRequest(Promise* aPromise);
+
   nsCOMPtr<nsIGlobalObject> mGlobal;
   
   

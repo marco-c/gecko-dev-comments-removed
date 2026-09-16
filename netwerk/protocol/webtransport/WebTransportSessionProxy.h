@@ -177,6 +177,9 @@ class WebTransportSessionProxy final
   void GetMaxDatagramSizeInternal(
       const RefPtr<WebTransportSessionBase>& aSession);
   void OnMaxDatagramSizeInternal(uint64_t aSize);
+  void GetStatsInternal(const RefPtr<WebTransportSessionBase>& aSession);
+  void OnStatsAvailableInternal(
+      const Maybe<mozilla::dom::WebTransportStatsData>& aStats);
   void OnOutgoingDatagramOutComeInternal(
       uint64_t aId, WebTransportSessionEventListener::DatagramOutcome aOutCome);
   void OnStopSendingInternal(uint64_t aStreamId, nsresult aError);

@@ -12,6 +12,7 @@
 #include "mozilla/dom/WebTransportLog.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/net/WebTransportHash.h"
+#include "mozilla/net/WebTransportSessionProxy.h"
 #include "nsIEventTarget.h"
 #include "nsIOService.h"
 #include "nsIPrincipal.h"
@@ -168,6 +169,9 @@ IPCResult WebTransportParent::RecvClose(const uint32_t& aCode,
     MOZ_ASSERT(!mClosed);
     mClosed.Flip();
   }
+  
+  
+  ResolvePendingGetStats(Nothing());
   mWebTransport->CloseSession(aCode, aReason);
   Close();
   return IPC_OK();
@@ -476,6 +480,34 @@ IPCResult WebTransportParent::RecvCreateSendGroup(uint64_t aGroupId) {
   return IPC_OK();
 }
 
+IPCResult WebTransportParent::RecvGetStats(GetStatsResolver&& aResolver) {
+  LOG(("GetStats for %p", this));
+  MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
+
+  if (!mWebTransport) {
+    aResolver(Nothing());
+    return IPC_OK();
+  }
+
+  bool gatherAlreadyInFlight = !mGetStatsResolvers.IsEmpty();
+  mGetStatsResolvers.AppendElement(std::move(aResolver));
+  if (gatherAlreadyInFlight) {
+    
+    
+    return IPC_OK();
+  }
+
+  
+  
+  
+  nsresult rv = mWebTransport->GetStats();
+  if (NS_FAILED(rv)) {
+    LOG(("GetStats: dispatch failed: %x", static_cast<uint32_t>(rv)));
+    ResolvePendingGetStats(Nothing());
+  }
+  return IPC_OK();
+}
+
 IPCResult WebTransportParent::RecvCreateUnidirectionalStream(
     int64_t aSendOrder, Maybe<uint64_t> aSendGroupId,
     CreateUnidirectionalStreamResolver&& aResolver) {
@@ -624,6 +656,11 @@ WebTransportParent::OnSessionClosed(const bool aCleanly,
          aErrorCode, PromiseFlatCString(aReason).get()));
     
     rv = NS_ERROR_FAILURE;
+    
+    
+    mSocketThread->Dispatch(NS_NewRunnableFunction(
+        "WebTransportParent::OnSessionClosed",
+        [self = RefPtr{this}] { self->ResolvePendingGetStats(Nothing()); }));
     mOwningEventTarget->Dispatch(NS_NewRunnableFunction(
         "WebTransportParent::OnSessionClosed",
         [self = RefPtr{this}, result = rv] {
@@ -709,6 +746,8 @@ void WebTransportParent::NotifyRemoteClosed(bool aCleanly, uint32_t aErrorCode,
   mSocketThread->Dispatch(NS_NewRunnableFunction(
       __func__, [self = RefPtr{this}, aErrorCode, reason = nsCString{aReason},
                  aCleanly]() {
+        
+        self->ResolvePendingGetStats(Nothing());
         
         (void)self->SendRemoteClosed(aCleanly, aErrorCode, reason);
         
@@ -911,5 +950,43 @@ NS_IMETHODIMP WebTransportParent::OnMaxDatagramSize(uint64_t aSize) {
   mMaxDatagramSizeResolver(aSize);
   mMaxDatagramSizeResolver = nullptr;
   return NS_OK;
+}
+
+
+
+
+
+NS_IMETHODIMP WebTransportParent::OnStatsAvailable(
+    WebTransportStatsData* aStats) {
+  MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
+  if (aStats) {
+    LOG(
+        ("Stats available: bytesSent=%llu, bytesReceived=%llu, minRtt=%f, "
+         "smoothedRtt=%f",
+         (unsigned long long)aStats->bytesSent(),
+         (unsigned long long)aStats->bytesReceived(), aStats->minRtt(),
+         aStats->smoothedRtt()));
+  } else {
+    LOG(("Stats unavailable"));
+  }
+
+  
+  
+  
+  if (mGetStatsResolvers.IsEmpty()) {
+    return NS_OK;
+  }
+
+  ResolvePendingGetStats(aStats ? Some(*aStats) : Nothing());
+  return NS_OK;
+}
+
+void WebTransportParent::ResolvePendingGetStats(
+    const Maybe<WebTransportStatsData>& aStats) {
+  MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
+  nsTArray<GetStatsResolver> resolvers = std::move(mGetStatsResolvers);
+  for (auto& resolver : resolvers) {
+    resolver(aStats);
+  }
 }
 }  

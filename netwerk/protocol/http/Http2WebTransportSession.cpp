@@ -83,6 +83,16 @@ nsresult Http2WebTransportSessionImpl::ExportKeyingMaterial(
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
+void Http2WebTransportSessionImpl::GetStats() {
+  
+  
+  
+  if (RefPtr<WebTransportSessionEventListener> listener = GetListener()) {
+    mozilla::dom::WebTransportStatsData stats;
+    listener->OnStatsAvailable(&stats);
+  }
+}
+
 nsresult Http2WebTransportSessionImpl::RegisterSendGroup(uint64_t aGroupId) {
   
   return NS_OK;

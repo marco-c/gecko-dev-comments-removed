@@ -54,6 +54,8 @@ class WebTransportParent : public PWebTransportParent,
                                      Maybe<nsTArray<uint8_t>>&& aContext,
                                      ExportKeyingMaterialResolver&& aResolver);
 
+  IPCResult RecvGetStats(GetStatsResolver&& aResolver);
+
   IPCResult RecvCreateUnidirectionalStream(
       int64_t aSendOrder, Maybe<uint64_t> aSendGroupId,
       CreateUnidirectionalStreamResolver&& aResolver);
@@ -94,6 +96,10 @@ class WebTransportParent : public PWebTransportParent,
   void NotifyRemoteClosed(bool aCleanly, uint32_t aErrorCode,
                           const nsACString& aReason);
 
+  
+  
+  void ResolvePendingGetStats(const Maybe<WebTransportStatsData>& aStats);
+
   using ResolveType = std::tuple<const nsresult&, const uint8_t&>;
   nsCOMPtr<nsISerialEventTarget> mSocketThread;
   Atomic<bool> mSessionReady{false};
@@ -106,6 +112,10 @@ class WebTransportParent : public PWebTransportParent,
   std::function<void()> mExecuteAfterResolverCallback MOZ_GUARDED_BY(mMutex);
   OutgoingDatagramResolver mOutgoingDatagramResolver;
   GetMaxDatagramSizeResolver mMaxDatagramSizeResolver;
+  
+  
+  
+  nsTArray<GetStatsResolver> mGetStatsResolvers;
   FlippedOnce<false> mClosed MOZ_GUARDED_BY(mMutex);
 
   nsCOMPtr<nsIWebTransport> mWebTransport;
