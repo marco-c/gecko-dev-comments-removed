@@ -391,7 +391,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void Push(RegisterOrSP reg);
 #endif
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   
   
   
@@ -5929,6 +5929,10 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void timeClip(FloatRegister time, FloatRegister output);
   void timeClip(FloatRegister time, FloatRegister output, Register scratch,
                 const LiveRegisterSet& liveRegs);
+
+  
+  void unpackTime(ValueOperand packedVal, Register dest, Register temp,
+                  uint32_t shiftImm, uint32_t maskImm);
 
   void computeImplicitThis(Register env, ValueOperand output, Label* slowPath);
 

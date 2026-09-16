@@ -1189,7 +1189,7 @@ void LIRGenerator::visitTest(MTest* test) {
     }
   }
 
-#if defined(ENABLE_WASM_SIMD) &&                           \
+#if defined(ENABLE_JIT_SIMD) &&                            \
     (defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64) || \
      defined(JS_CODEGEN_ARM64))
   
@@ -7259,7 +7259,7 @@ void LIRGenerator::visitWasmParameter(MWasmParameter* ins) {
     );
   } else {
     MOZ_ASSERT(IsNumberType(ins->type()) || ins->type() == MIRType::WasmAnyRef
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
                || ins->type() == MIRType::Simd128
 #endif
     );
@@ -7283,7 +7283,7 @@ void LIRGenerator::visitWasmReturn(MWasmReturn* ins) {
     returnReg = useFixed(rval, ReturnFloat32Reg);
   } else if (rval->type() == MIRType::Double) {
     returnReg = useFixed(rval, ReturnDoubleReg);
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   } else if (rval->type() == MIRType::Simd128) {
     returnReg = useFixed(rval, ReturnSimd128Reg);
 #endif
@@ -8435,6 +8435,18 @@ void LIRGenerator::visitDateFromTime(MDateFromTime* ins) {
   defineReturn(lir, ins);
 }
 
+void LIRGenerator::visitUnpackTime(MUnpackTime* ins) {
+  
+  
+#ifdef JS_NUNBOX32
+  auto* lir = new (alloc()) LUnpackTime(useBox(ins->packedVal()), temp());
+#else
+  auto* lir = new (alloc())
+      LUnpackTime(useBoxAtStart(ins->packedVal()), LDefinition::BogusTemp());
+#endif
+  define(lir, ins);
+}
+
 void LIRGenerator::visitPostIntPtrConversion(MPostIntPtrConversion* ins) {
   
   redefine(ins, ins->input());
@@ -8528,7 +8540,7 @@ void LIRGenerator::visitWasmFloatConstant(MWasmFloatConstant* ins) {
     case MIRType::Float32:
       define(new (alloc()) LFloat32(ins->toFloat32()), ins);
       break;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     case MIRType::Simd128:
       define(new (alloc()) LSimd128(ins->toSimd128()), ins);
       break;

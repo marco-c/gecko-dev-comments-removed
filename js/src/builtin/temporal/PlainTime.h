@@ -32,6 +32,8 @@ class PlainTimeObject : public NativeObject {
 
 
   Time time() const {
+    
+    
     auto packed = PackedTime{mozilla::BitwiseCast<uint64_t>(
         getFixedSlotTyped(PACKED_TIME_SLOT).toDouble())};
     return PackedTime::unpack(packed);
