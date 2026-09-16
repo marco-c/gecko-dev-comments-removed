@@ -4,23 +4,21 @@
 
 use std::any::Any;
 use std::borrow::Cow;
-use std::collections::HashSet;
 use std::collections::{hash_map::Entry, HashMap};
 use std::mem;
 use std::sync::{Arc, Mutex};
 
 use malloc_size_of::MallocSizeOf;
+use rusqlite::params;
 
-use crate::common_metric_data::{CommonMetricData, CommonMetricDataInternal, DynamicLabelType};
-use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorType};
+use crate::common_metric_data::{CommonMetricData, LabelCheck, MetricLabel};
+use crate::error_recording::{test_get_num_recorded_errors, ErrorType};
 use crate::histogram::HistogramType;
 use crate::metrics::{
     BooleanMetric, CounterMetric, CustomDistributionMetric, MemoryDistributionMetric, MemoryUnit,
-    Metric, MetricType, QuantityMetric, StringMetric, TestGetValue, TimeUnit,
-    TimingDistributionMetric,
+    MetricType, QuantityMetric, StringMetric, TestGetValue, TimeUnit, TimingDistributionMetric,
 };
 use crate::storage::StorageManager;
-use crate::Glean;
 
 const MAX_LABELS: usize = 16;
 const OTHER_LABEL: &str = "__other__";
@@ -253,16 +251,18 @@ where
     
     
     
-    fn new_metric_with_name(&self, name: String) -> T {
-        self.submetric.with_name(name)
+    fn new_metric_with_label(&self, label: MetricLabel) -> T {
+        self.submetric.with_label(label)
     }
 
     
     
     
     
-    fn new_metric_with_dynamic_label(&self, label: DynamicLabelType) -> T {
-        self.submetric.with_dynamic_label(label)
+    
+    
+    fn new_metric_with_dynamic_label(&self, label: MetricLabel) -> T {
+        self.submetric.with_label(label)
     }
 
     
@@ -320,13 +320,11 @@ where
                 let metric = match self.labels {
                     Some(_) => {
                         let label = self.static_label(label);
-                        self.new_metric_with_name(combine_base_identifier_and_label(
-                            &self.submetric.meta().inner.name,
-                            label,
-                        ))
+                        self.new_metric_with_label(MetricLabel::Static(label.to_string()))
                     }
-                    None => self
-                        .new_metric_with_dynamic_label(DynamicLabelType::Label(label.to_string())),
+                    None => {
+                        self.new_metric_with_dynamic_label(MetricLabel::Label(label.to_string()))
+                    }
                 };
                 let metric = Arc::new(metric);
                 entry.insert(Arc::clone(&metric));
@@ -371,7 +369,7 @@ where
             StorageManager.snapshot_labels(
                 glean.storage(),
                 queried_ping_name,
-                &self.submetric.meta().identifier(glean),
+                &self.submetric.meta().base_identifier(),
                 self.submetric.meta().inner.lifetime,
             )
         });
@@ -385,73 +383,48 @@ where
     }
 }
 
-
-pub fn combine_base_identifier_and_label(base_identifer: &str, label: &str) -> String {
-    format!("{}/{}", base_identifer, label)
-}
-
-
-pub fn strip_label(identifier: &str) -> &str {
-    identifier.split_once('/').map_or(identifier, |s| s.0)
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn validate_dynamic_label(
-    glean: &Glean,
-    meta: &CommonMetricDataInternal,
+pub fn validate_dynamic_label_sqlite(
+    tx: &rusqlite::Connection,
     base_identifier: &str,
     label: &str,
-) -> String {
-    let key = combine_base_identifier_and_label(base_identifier, label);
-    for store in &meta.inner.send_in_pings {
-        if glean.storage().has_metric(meta.inner.lifetime, store, &key) {
-            return key;
+) -> LabelCheck {
+    let existing_labels_sql = "SELECT DISTINCT labels FROM telemetry WHERE id = ?1";
+
+    let mut label_already_used = false;
+    let mut label_count = 0;
+    {
+        let Ok(mut stmt) = tx.prepare(existing_labels_sql) else {
+            
+            return LabelCheck::Label(label.to_string());
+        };
+
+        let Ok(mut rows) = stmt.query(params![base_identifier]) else {
+            
+            return LabelCheck::Label(label.to_string());
+        };
+
+        while let Ok(Some(row)) = rows.next() {
+            let existing_label: String = row.get(0).unwrap();
+
+            label_count += 1;
+            if existing_label == label {
+                label_already_used = true;
+                break;
+            }
         }
     }
 
-    let mut labels = HashSet::new();
-    let prefix = &key[..=base_identifier.len()];
-    let mut snapshotter = |metric_id: &[u8], _: &Metric| {
-        labels.insert(metric_id.to_vec());
-    };
-
-    let lifetime = meta.inner.lifetime;
-    for store in &meta.inner.send_in_pings {
-        glean
-            .storage()
-            .iter_store_from(lifetime, store, Some(prefix), &mut snapshotter);
-    }
-
-    let label_count = labels.len();
-    let error = if label_count >= MAX_LABELS {
-        true
+    if !label_already_used && label_count >= MAX_LABELS {
+        LabelCheck::Label(String::from(OTHER_LABEL))
     } else if label.len() > MAX_LABEL_LENGTH {
-        let msg = format!(
-            "label length {} exceeds maximum of {}",
+        log::warn!(
+            "Metric {:?}: label length {} exceeds maximum of {}",
+            base_identifier,
             label.len(),
             MAX_LABEL_LENGTH
         );
-        record_error(glean, meta, ErrorType::InvalidLabel, msg, None);
-        true
+        LabelCheck::Error(String::from(OTHER_LABEL), 1)
     } else {
-        false
-    };
-
-    if error {
-        combine_base_identifier_and_label(base_identifier, OTHER_LABEL)
-    } else {
-        key
+        LabelCheck::Label(label.to_string())
     }
 }

@@ -2,6 +2,8 @@
 
 
 
+use std::{collections::HashMap, marker::PhantomData};
+
 
 
 
@@ -18,11 +20,12 @@ pub enum Lifetime {
 }
 
 #[derive(uniffi::Enum)]
-pub enum DynamicLabelType {
+pub enum MetricLabel {
+    Static(String),
     Label(String),
-    KeyOnly(String),
-    CategoryOnly(String),
-    KeyAndCategory(String),
+    KeyOnly(String, String),
+    CategoryOnly(String, String),
+    KeyAndCategory(String, String),
 }
 
 #[derive(uniffi::Record, Default)]
@@ -32,7 +35,7 @@ pub struct CommonMetricData {
     pub send_in_pings: Vec<String>,
     pub lifetime: Lifetime,
     pub disabled: bool,
-    pub dynamic_label: Option<DynamicLabelType>,
+    pub label: Option<MetricLabel>,
     pub in_session: bool,
 }
 
@@ -82,6 +85,7 @@ pub struct DistributionData {
 }
 
 #[derive(uniffi::Record)]
+#[cfg_attr(not(feature = "active"), derive(Default))]
 pub struct TimerId {
     id: u64,
 }
@@ -135,3 +139,172 @@ pub enum HistogramType {
 }
 
 pub type CowString = std::borrow::Cow<'static, str>;
+
+pub trait ExtraKeys {
+    
+    const ALLOWED_KEYS: &'static [&'static str];
+
+    
+    fn into_ffi_extra(self) -> HashMap<String, String>;
+}
+
+pub enum NoExtraKeys {}
+
+impl ExtraKeys for NoExtraKeys {
+    const ALLOWED_KEYS: &'static [&'static str] = &[];
+
+    fn into_ffi_extra(self) -> HashMap<String, String> {
+        unimplemented!("non-existing extra keys can't be turned into a list")
+    }
+}
+
+
+
+
+
+
+pub struct EventMetric<K> {
+    pub(crate) inner: crate::metrics::EventMetric,
+    extra_keys: PhantomData<K>,
+}
+
+impl<K: ExtraKeys> EventMetric<K> {
+    
+    pub fn new(meta: CommonMetricData) -> Self {
+        let allowed_extra_keys = K::ALLOWED_KEYS.iter().map(|s| s.to_string()).collect();
+        let inner = crate::metrics::EventMetric::new(meta, allowed_extra_keys);
+        Self {
+            inner,
+            extra_keys: PhantomData,
+        }
+    }
+
+    
+    
+    
+    
+    
+    pub fn record<M: Into<Option<K>>>(&self, extra: M) {
+        let extra = extra
+            .into()
+            .map(|e| e.into_ffi_extra())
+            .unwrap_or_else(HashMap::new);
+        self.inner.record(extra);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_num_recorded_errors(&self, error: ErrorType) -> i32 {
+        self.inner.test_get_num_recorded_errors(error)
+    }
+}
+
+#[cfg(not(feature = "active"))]
+pub struct PingType;
+
+#[cfg(feature = "active")]
+pub struct PingType {
+    inner: crate::metrics::PingType,
+}
+
+#[cfg(feature = "active")]
+impl PingType {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[allow(clippy::too_many_arguments)]
+    pub fn new<A: Into<String>>(
+        name: A,
+        include_client_id: bool,
+        send_if_empty: bool,
+        precise_timestamps: bool,
+        include_info_sections: bool,
+        enabled: bool,
+        schedules_pings: Vec<String>,
+        reason_codes: Vec<String>,
+        follows_collection_enabled: bool,
+        uploader_capabilities: Vec<String>,
+    ) -> Self {
+        let inner = crate::metrics::PingType::new(
+            name.into(),
+            include_client_id,
+            send_if_empty,
+            precise_timestamps,
+            include_info_sections,
+            enabled,
+            schedules_pings,
+            reason_codes,
+            follows_collection_enabled,
+            uploader_capabilities,
+        );
+
+        Self { inner }
+    }
+
+    pub fn submit(&self, reason: Option<&str>) {
+        self.inner.submit(reason.map(|s| s.to_string()))
+    }
+
+    pub fn set_enabled(&self, enabled: bool) {
+        self.inner.set_enabled(enabled)
+    }
+}
+
+#[cfg(not(feature = "active"))]
+impl PingType {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[allow(clippy::too_many_arguments)]
+    pub fn new<A: Into<String>>(
+        _name: A,
+        _include_client_id: bool,
+        _send_if_empty: bool,
+        _precise_timestamps: bool,
+        _include_info_sections: bool,
+        _enabled: bool,
+        _schedules_pings: Vec<String>,
+        _reason_codes: Vec<String>,
+        _follows_collection_enabled: bool,
+        _uploader_capabilities: Vec<String>,
+    ) -> Self {
+        Self
+    }
+
+    pub fn submit(&self, _reason: Option<&str>) {}
+
+    pub fn set_enabled(&self, _enabled: bool) {}
+}

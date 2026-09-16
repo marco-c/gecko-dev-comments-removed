@@ -1,0 +1,13 @@
+
+
+
+
+use super::*;
+
+pub fn name(callable: &general::Callable) -> String {
+    if callable.is_primary_constructor() {
+        "__init__".to_string()
+    } else {
+        names::function_name(&callable.name)
+    }
+}

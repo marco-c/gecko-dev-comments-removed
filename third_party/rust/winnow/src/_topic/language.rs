@@ -133,6 +133,7 @@
 
 
 
+
 #![doc = include_str!("../../examples/string/parser.rs")]
 
 
@@ -317,6 +318,19 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+#![doc = include_str!("../../examples/c_expression/parser.rs")]
+
+
 #![allow(unused_imports)]
 use crate::ascii::dec_int;
 use crate::ascii::dec_uint;
@@ -324,3 +338,4 @@ use crate::ascii::escaped;
 use crate::ascii::float;
 use crate::ascii::hex_uint;
 use crate::ascii::take_escaped;
+use crate::combinator::expression;

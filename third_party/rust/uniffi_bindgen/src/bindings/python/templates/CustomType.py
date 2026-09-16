@@ -25,12 +25,18 @@ class {{ custom.self_type.ffi_converter_name }}:
 
 {
 {{ custom.name }} = {{ builtin.type_name -}}
+{
+  *might* associate a trailing docstring with the type, so...
+
+{{ custom.docstring|docstring(0) -}}
 
 {%- when Some(config) %}
 
 {%- if let Some(type_name) = config.type_name %}
 {
 {{ custom.name }} = {{ type_name }}
+{
+{{ custom.docstring|docstring(0) -}}
 {%- endif %}
 
 {

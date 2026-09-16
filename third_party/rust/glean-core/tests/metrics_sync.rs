@@ -29,6 +29,8 @@ static DEFINITION_ONLY: &[&str] = &[
     "glean.session_start",
     
     "glean.validation.foreground_count",
+    
+    "glean.database.rkv_load_error",
 ];
 
 #[derive(Clone, Default, Debug, Eq, PartialEq)]

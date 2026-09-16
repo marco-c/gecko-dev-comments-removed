@@ -54,7 +54,7 @@
 
 
 
-#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(elided_lifetimes_in_paths)]
 #![deny(unreachable_pub)]
 #![deny(missing_docs)]
@@ -81,10 +81,10 @@ use core::ops::Deref;
 use std::io;
 
 #[cfg(feature = "derive")]
-pub use askama_derive::Template;
+pub use askama_macros::Template;
+#[cfg(feature = "derive")]
+pub use askama_macros::filter_fn;
 
-#[doc(hidden)]
-pub use crate as shared;
 pub use crate::error::{Error, Result};
 pub use crate::helpers::PrimitiveType;
 pub use crate::values::{NO_VALUES, Value, Values, get_value};
@@ -112,12 +112,24 @@ pub use crate::values::{NO_VALUES, Value, Values, get_value};
 
 pub trait Template: fmt::Display + FastWritable {
     
+    
+    
+    
+    
+    
+    
     #[inline]
     #[cfg(feature = "alloc")]
     fn render(&self) -> Result<String> {
         self.render_with_values(NO_VALUES)
     }
 
+    
+    
+    
+    
+    
+    
     
     #[inline]
     #[cfg(feature = "alloc")]
@@ -129,30 +141,54 @@ pub trait Template: fmt::Display + FastWritable {
     }
 
     
+    
+    
+    
+    
+    
+    
     #[inline]
-    fn render_into<W: fmt::Write + ?Sized>(&self, writer: &mut W) -> Result<()> {
+    fn render_into(&self, writer: &mut dyn fmt::Write) -> Result<()> {
         self.render_into_with_values(writer, NO_VALUES)
     }
 
     
-    fn render_into_with_values<W: fmt::Write + ?Sized>(
+    
+    
+    
+    
+    
+    
+    fn render_into_with_values(
         &self,
-        writer: &mut W,
+        writer: &mut dyn fmt::Write,
         values: &dyn Values,
     ) -> Result<()>;
 
     
+    
+    
+    
+    
+    
+    
     #[inline]
     #[cfg(feature = "std")]
-    fn write_into<W: io::Write + ?Sized>(&self, writer: &mut W) -> io::Result<()> {
+    fn write_into(&self, writer: &mut dyn io::Write) -> io::Result<()> {
         self.write_into_with_values(writer, NO_VALUES)
     }
 
     
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "std")]
-    fn write_into_with_values<W: io::Write + ?Sized>(
+    fn write_into_with_values(
         &self,
-        writer: &mut W,
+        writer: &mut dyn io::Write,
         values: &dyn Values,
     ) -> io::Result<()> {
         struct Wrapped<W: io::Write> {
@@ -161,6 +197,7 @@ pub trait Template: fmt::Display + FastWritable {
         }
 
         impl<W: io::Write> fmt::Write for Wrapped<W> {
+            #[inline]
             fn write_str(&mut self, s: &str) -> fmt::Result {
                 if let Err(err) = self.writer.write_all(s.as_bytes()) {
                     self.err = Some(err);
@@ -176,7 +213,7 @@ pub trait Template: fmt::Display + FastWritable {
             Ok(())
         } else {
             let err = wrapped.err.take();
-            Err(err.unwrap_or_else(|| io::Error::new(io::ErrorKind::Other, fmt::Error)))
+            Err(err.unwrap_or_else(|| io::Error::other(fmt::Error)))
         }
     }
 
@@ -207,14 +244,14 @@ impl<T: Template + ?Sized> Template for &T {
     }
 
     #[inline]
-    fn render_into<W: fmt::Write + ?Sized>(&self, writer: &mut W) -> Result<()> {
+    fn render_into(&self, writer: &mut dyn fmt::Write) -> Result<()> {
         <T as Template>::render_into(self, writer)
     }
 
     #[inline]
-    fn render_into_with_values<W: fmt::Write + ?Sized>(
+    fn render_into_with_values(
         &self,
-        writer: &mut W,
+        writer: &mut dyn fmt::Write,
         values: &dyn Values,
     ) -> Result<()> {
         <T as Template>::render_into_with_values(self, writer, values)
@@ -222,15 +259,15 @@ impl<T: Template + ?Sized> Template for &T {
 
     #[inline]
     #[cfg(feature = "std")]
-    fn write_into<W: io::Write + ?Sized>(&self, writer: &mut W) -> io::Result<()> {
+    fn write_into(&self, writer: &mut dyn io::Write) -> io::Result<()> {
         <T as Template>::write_into(self, writer)
     }
 
     #[inline]
     #[cfg(feature = "std")]
-    fn write_into_with_values<W: io::Write + ?Sized>(
+    fn write_into_with_values(
         &self,
-        writer: &mut W,
+        writer: &mut dyn io::Write,
         values: &dyn Values,
     ) -> io::Result<()> {
         <T as Template>::write_into_with_values(self, writer, values)
@@ -286,6 +323,7 @@ impl<T: Template> DynTemplate for T {
         <Self as Template>::render(self)
     }
 
+    #[inline]
     #[cfg(feature = "alloc")]
     fn dyn_render_with_values(&self, values: &dyn Values) -> Result<String> {
         <Self as Template>::render_with_values(self, values)
@@ -296,6 +334,7 @@ impl<T: Template> DynTemplate for T {
         <Self as Template>::render_into(self, writer)
     }
 
+    #[inline]
     fn dyn_render_into_with_values(
         &self,
         writer: &mut dyn fmt::Write,
@@ -304,6 +343,7 @@ impl<T: Template> DynTemplate for T {
         <Self as Template>::render_into_with_values(self, writer, values)
     }
 
+    #[inline]
     #[cfg(feature = "std")]
     fn dyn_write_into(&self, writer: &mut dyn io::Write) -> io::Result<()> {
         <Self as Template>::write_into(self, writer)
@@ -374,20 +414,16 @@ macro_rules! impl_for_ref {
 
 pub trait FastWritable {
     
-    fn write_into<W: fmt::Write + ?Sized>(
-        &self,
-        dest: &mut W,
-        values: &dyn Values,
-    ) -> crate::Result<()>;
+    fn write_into(&self, dest: &mut dyn fmt::Write, values: &dyn Values) -> crate::Result<()>;
 }
 
 const _: () = {
     crate::impl_for_ref! {
         impl FastWritable for T {
             #[inline]
-            fn write_into<W: fmt::Write + ?Sized>(
+            fn write_into(
                 &self,
-                dest: &mut W,
+                dest: &mut dyn fmt::Write,
                 values: &dyn Values,
             ) -> crate::Result<()> {
                 <T>::write_into(self, dest, values)
@@ -401,23 +437,15 @@ const _: () = {
         <T as Deref>::Target: FastWritable,
     {
         #[inline]
-        fn write_into<W: fmt::Write + ?Sized>(
-            &self,
-            dest: &mut W,
-            values: &dyn Values,
-        ) -> crate::Result<()> {
+        fn write_into(&self, dest: &mut dyn fmt::Write, values: &dyn Values) -> crate::Result<()> {
             self.as_ref().get_ref().write_into(dest, values)
         }
     }
 
     #[cfg(feature = "alloc")]
-    impl<T: FastWritable + alloc::borrow::ToOwned> FastWritable for alloc::borrow::Cow<'_, T> {
+    impl<T: FastWritable + alloc::borrow::ToOwned + ?Sized> FastWritable for alloc::borrow::Cow<'_, T> {
         #[inline]
-        fn write_into<W: fmt::Write + ?Sized>(
-            &self,
-            dest: &mut W,
-            values: &dyn Values,
-        ) -> crate::Result<()> {
+        fn write_into(&self, dest: &mut dyn fmt::Write, values: &dyn Values) -> crate::Result<()> {
             T::write_into(self.as_ref(), dest, values)
         }
     }
@@ -427,9 +455,9 @@ const _: () = {
         ($($ty:ty)*) => { $(
             impl FastWritable for $ty {
                 #[inline]
-                fn write_into<W: fmt::Write + ?Sized>(
+                fn write_into(
                     &self,
-                    dest: &mut W,
+                    dest: &mut dyn fmt::Write,
                     values: &dyn Values,
                 ) -> crate::Result<()> {
                     itoa::Buffer::new().format(*self).write_into(dest, values)
@@ -448,9 +476,9 @@ const _: () = {
         ($($id:ident)*) => { $(
             impl FastWritable for core::num::$id {
                 #[inline]
-                fn write_into<W: fmt::Write + ?Sized>(
+                fn write_into(
                     &self,
-                    dest: &mut W,
+                    dest: &mut dyn fmt::Write,
                     values: &dyn Values,
                 ) -> crate::Result<()> {
                     self.get().write_into(dest, values)
@@ -466,11 +494,7 @@ const _: () = {
 
     impl FastWritable for str {
         #[inline]
-        fn write_into<W: fmt::Write + ?Sized>(
-            &self,
-            dest: &mut W,
-            _: &dyn Values,
-        ) -> crate::Result<()> {
+        fn write_into(&self, dest: &mut dyn fmt::Write, _: &dyn Values) -> crate::Result<()> {
             Ok(dest.write_str(self)?)
         }
     }
@@ -478,22 +502,14 @@ const _: () = {
     #[cfg(feature = "alloc")]
     impl FastWritable for alloc::string::String {
         #[inline]
-        fn write_into<W: fmt::Write + ?Sized>(
-            &self,
-            dest: &mut W,
-            values: &dyn Values,
-        ) -> crate::Result<()> {
+        fn write_into(&self, dest: &mut dyn fmt::Write, values: &dyn Values) -> crate::Result<()> {
             self.as_str().write_into(dest, values)
         }
     }
 
     impl FastWritable for bool {
         #[inline]
-        fn write_into<W: fmt::Write + ?Sized>(
-            &self,
-            dest: &mut W,
-            _: &dyn Values,
-        ) -> crate::Result<()> {
+        fn write_into(&self, dest: &mut dyn fmt::Write, _: &dyn Values) -> crate::Result<()> {
             Ok(dest.write_str(match self {
                 true => "true",
                 false => "false",
@@ -503,21 +519,14 @@ const _: () = {
 
     impl FastWritable for char {
         #[inline]
-        fn write_into<W: fmt::Write + ?Sized>(
-            &self,
-            dest: &mut W,
-            _: &dyn Values,
-        ) -> crate::Result<()> {
+        fn write_into(&self, dest: &mut dyn fmt::Write, _: &dyn Values) -> crate::Result<()> {
             Ok(dest.write_char(*self)?)
         }
     }
 
     impl FastWritable for fmt::Arguments<'_> {
-        fn write_into<W: fmt::Write + ?Sized>(
-            &self,
-            dest: &mut W,
-            _: &dyn Values,
-        ) -> crate::Result<()> {
+        #[inline]
+        fn write_into(&self, dest: &mut dyn fmt::Write, _: &dyn Values) -> crate::Result<()> {
             Ok(match self.as_str() {
                 Some(s) => dest.write_str(s),
                 None => dest.write_fmt(*self),
@@ -527,9 +536,9 @@ const _: () = {
 
     impl<S: crate::Template + ?Sized> filters::WriteWritable for &filters::Writable<'_, S> {
         #[inline]
-        fn askama_write<W: fmt::Write + ?Sized>(
+        fn askama_write(
             &self,
-            dest: &mut W,
+            dest: &mut dyn fmt::Write,
             values: &dyn Values,
         ) -> crate::Result<()> {
             self.0.render_into_with_values(dest, values)
@@ -538,9 +547,9 @@ const _: () = {
 
     impl<S: FastWritable + ?Sized> filters::WriteWritable for &&filters::Writable<'_, S> {
         #[inline]
-        fn askama_write<W: fmt::Write + ?Sized>(
+        fn askama_write(
             &self,
-            dest: &mut W,
+            dest: &mut dyn fmt::Write,
             values: &dyn Values,
         ) -> crate::Result<()> {
             self.0.write_into(dest, values)
@@ -549,11 +558,7 @@ const _: () = {
 
     impl<S: fmt::Display + ?Sized> filters::WriteWritable for &&&filters::Writable<'_, S> {
         #[inline]
-        fn askama_write<W: fmt::Write + ?Sized>(
-            &self,
-            dest: &mut W,
-            _: &dyn Values,
-        ) -> crate::Result<()> {
+        fn askama_write(&self, dest: &mut dyn fmt::Write, _: &dyn Values) -> crate::Result<()> {
             Ok(write!(dest, "{}", self.0)?)
         }
     }
@@ -575,9 +580,9 @@ mod tests {
         struct Test;
 
         impl Template for Test {
-            fn render_into_with_values<W: fmt::Write + ?Sized>(
+            fn render_into_with_values(
                 &self,
-                writer: &mut W,
+                writer: &mut dyn fmt::Write,
                 _values: &dyn Values,
             ) -> Result<()> {
                 Ok(writer.write_str("test")?)
@@ -595,11 +600,7 @@ mod tests {
 
         impl FastWritable for Test {
             #[inline]
-            fn write_into<W: fmt::Write + ?Sized>(
-                &self,
-                f: &mut W,
-                values: &dyn Values,
-            ) -> crate::Result<()> {
+            fn write_into(&self, f: &mut dyn fmt::Write, values: &dyn Values) -> crate::Result<()> {
                 self.render_into_with_values(f, values)
             }
         }

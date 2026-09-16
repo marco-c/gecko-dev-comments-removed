@@ -1,14 +1,18 @@
 
 
 
+mod stream;
 #[cfg(test)]
 mod tests;
 
+pub use self::stream::BitOffsets;
+pub use self::stream::Bits;
+
 use crate::combinator::trace;
 use crate::error::{ErrorConvert, Needed, ParserError};
-use crate::lib::std::ops::{AddAssign, Div, Shl, Shr};
 use crate::stream::{Stream, StreamIsPartial, ToUsize};
 use crate::{Parser, Result};
+use core::ops::{AddAssign, Div, Shl, Shr};
 
 
 const BYTE: usize = u8::BITS as usize;
@@ -50,17 +54,17 @@ pub fn bits<Input, Output, BitError, ByteError, ParseNext>(
     mut parser: ParseNext,
 ) -> impl Parser<Input, Output, ByteError>
 where
-    BitError: ParserError<(Input, usize)> + ErrorConvert<ByteError>,
+    BitError: ParserError<Bits<Input>> + ErrorConvert<ByteError>,
     ByteError: ParserError<Input>,
-    (Input, usize): Stream,
+    Bits<Input>: Stream,
     Input: Stream + Clone,
-    ParseNext: Parser<(Input, usize), Output, BitError>,
+    ParseNext: Parser<Bits<Input>, Output, BitError>,
 {
     trace("bits", move |input: &mut Input| {
-        let mut bit_input = (input.clone(), 0);
+        let mut bit_input = Bits(input.clone(), 0);
         match parser.parse_next(&mut bit_input) {
             Ok(result) => {
-                let (mut rest, offset) = bit_input;
+                let Bits(mut rest, offset) = bit_input;
                 
                 
                 
@@ -119,15 +123,15 @@ where
 
 pub fn bytes<Input, Output, ByteError, BitError, ParseNext>(
     mut parser: ParseNext,
-) -> impl Parser<(Input, usize), Output, BitError>
+) -> impl Parser<Bits<Input>, Output, BitError>
 where
     ByteError: ParserError<Input> + ErrorConvert<BitError>,
-    BitError: ParserError<(Input, usize)>,
+    BitError: ParserError<Bits<Input>>,
     Input: Stream<Token = u8> + Clone,
     ParseNext: Parser<Input, Output, ByteError>,
 {
-    trace("bytes", move |bit_input: &mut (Input, usize)| {
-        let (mut input, offset) = bit_input.clone();
+    trace("bytes", move |bit_input: &mut Bits<Input>| {
+        let Bits(mut input, offset) = bit_input.clone();
         let _ = if offset % BYTE != 0 {
             input.next_slice(1 + offset / BYTE)
         } else {
@@ -135,7 +139,7 @@ where
         };
         match parser.parse_next(&mut input) {
             Ok(res) => {
-                *bit_input = (input, 0);
+                *bit_input = Bits(input, 0);
                 Ok(res)
             }
             Err(e) => match e.needed() {
@@ -192,16 +196,17 @@ where
 
 
 
+
 #[inline(always)]
-pub fn take<Input, Output, Count, Error>(count: Count) -> impl Parser<(Input, usize), Output, Error>
+pub fn take<Input, Output, Count, Error>(count: Count) -> impl Parser<Bits<Input>, Output, Error>
 where
     Input: Stream<Token = u8> + StreamIsPartial + Clone,
     Output: From<u8> + AddAssign + Shl<usize, Output = Output> + Shr<usize, Output = Output>,
     Count: ToUsize,
-    Error: ParserError<(Input, usize)>,
+    Error: ParserError<Bits<Input>>,
 {
     let count = count.to_usize();
-    trace("take", move |input: &mut (Input, usize)| {
+    trace("take", move |input: &mut Bits<Input>| {
         if <Input as StreamIsPartial>::is_partial_supported() {
             take_::<_, _, _, true>(input, count)
         } else {
@@ -210,8 +215,8 @@ where
     })
 }
 
-fn take_<I, O, E: ParserError<(I, usize)>, const PARTIAL: bool>(
-    bit_input: &mut (I, usize),
+fn take_<I, O, E: ParserError<Bits<I>>, const PARTIAL: bool>(
+    bit_input: &mut Bits<I>,
     count: usize,
 ) -> Result<O, E>
 where
@@ -222,12 +227,12 @@ where
     if count == 0 {
         Ok(0u8.into())
     } else {
-        let (mut input, bit_offset) = bit_input.clone();
+        let Bits(mut input, bit_offset) = bit_input.clone();
         if input.eof_offset() * BYTE < count + bit_offset {
             if PARTIAL && input.is_partial() {
                 Err(ParserError::incomplete(bit_input, Needed::new(count)))
             } else {
-                Err(ParserError::from_input(&(input, bit_offset)))
+                Err(ParserError::from_input(&Bits(input, bit_offset)))
             }
         } else {
             let cnt = (count + bit_offset).div(BYTE);
@@ -257,7 +262,7 @@ where
                 }
             }
             let _ = input.next_slice(cnt);
-            *bit_input = (input, end_offset);
+            *bit_input = Bits(input, end_offset);
             Ok(acc)
         }
     }
@@ -316,14 +321,16 @@ where
 
 
 
+
+
 #[inline(always)]
 #[doc(alias = "literal")]
 #[doc(alias = "just")]
 #[doc(alias = "tag")]
-pub fn pattern<Input, Output, Count, Error: ParserError<(Input, usize)>>(
+pub fn pattern<Input, Output, Count, Error: ParserError<Bits<Input>>>(
     pattern: Output,
     count: Count,
-) -> impl Parser<(Input, usize), Output, Error>
+) -> impl Parser<Bits<Input>, Output, Error>
 where
     Input: Stream<Token = u8> + StreamIsPartial + Clone,
     Count: ToUsize,
@@ -334,7 +341,7 @@ where
         + PartialEq,
 {
     let count = count.to_usize();
-    trace("pattern", move |input: &mut (Input, usize)| {
+    trace("pattern", move |input: &mut Bits<Input>| {
         let start = input.checkpoint();
 
         take(count).parse_next(input).and_then(|o| {
@@ -383,14 +390,14 @@ where
 
 
 
+
+
 #[doc(alias = "any")]
-pub fn bool<Input, Error: ParserError<(Input, usize)>>(
-    input: &mut (Input, usize),
-) -> Result<bool, Error>
+pub fn bool<Input, Error: ParserError<Bits<Input>>>(input: &mut Bits<Input>) -> Result<bool, Error>
 where
     Input: Stream<Token = u8> + StreamIsPartial + Clone,
 {
-    trace("bool", |input: &mut (Input, usize)| {
+    trace("bool", |input: &mut Bits<Input>| {
         let bit: u32 = take(1usize).parse_next(input)?;
         Ok(bit != 0)
     })

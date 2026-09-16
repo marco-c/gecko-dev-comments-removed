@@ -81,11 +81,7 @@ impl<T: fmt::Display, E: Escaper> fmt::Display for EscapeDisplay<T, E> {
 
 impl<T: FastWritable, E: Escaper> FastWritable for EscapeDisplay<T, E> {
     #[inline]
-    fn write_into<W: fmt::Write + ?Sized>(
-        &self,
-        dest: &mut W,
-        values: &dyn Values,
-    ) -> crate::Result<()> {
+    fn write_into(&self, dest: &mut dyn fmt::Write, values: &dyn Values) -> crate::Result<()> {
         self.0.write_into(&mut EscapeWriter(dest, self.1), values)
     }
 }
@@ -287,6 +283,7 @@ impl<'a, T: HtmlSafe + ?Sized> AutoEscape for &AutoEscaper<'a, T, Html> {
 
 
 
+
 pub enum MaybeSafe<T> {
     
     Safe(T),
@@ -310,11 +307,7 @@ const _: () = {
     
     impl<T: FastWritable> FastWritable for MaybeSafe<T> {
         #[inline]
-        fn write_into<W: fmt::Write + ?Sized>(
-            &self,
-            dest: &mut W,
-            values: &dyn Values,
-        ) -> crate::Result<()> {
+        fn write_into(&self, dest: &mut dyn fmt::Write, values: &dyn Values) -> crate::Result<()> {
             let inner = match self {
                 MaybeSafe::Safe(inner) => inner,
                 MaybeSafe::NeedsEscaping(inner) => inner,
@@ -349,11 +342,7 @@ const _: () = {
     }
 
     impl<T: FastWritable + ?Sized, E: Escaper> FastWritable for Wrapped<'_, T, E> {
-        fn write_into<W: fmt::Write + ?Sized>(
-            &self,
-            dest: &mut W,
-            values: &dyn Values,
-        ) -> crate::Result<()> {
+        fn write_into(&self, dest: &mut dyn fmt::Write, values: &dyn Values) -> crate::Result<()> {
             match *self {
                 Wrapped::Safe(t) => t.write_into(dest, values),
                 Wrapped::NeedsEscaping(t, e) => EscapeDisplay(t, e).write_into(dest, values),
@@ -410,6 +399,7 @@ const _: () = {
 
 
 
+
 pub struct Safe<T>(pub T);
 
 const _: () = {
@@ -424,11 +414,7 @@ const _: () = {
     
     impl<T: FastWritable> FastWritable for Safe<T> {
         #[inline]
-        fn write_into<W: fmt::Write + ?Sized>(
-            &self,
-            dest: &mut W,
-            values: &dyn Values,
-        ) -> crate::Result<()> {
+        fn write_into(&self, dest: &mut dyn fmt::Write, values: &dyn Values) -> crate::Result<()> {
             self.0.write_into(dest, values)
         }
     }
@@ -510,11 +496,7 @@ pub struct Writable<'a, S: ?Sized>(pub &'a S);
 
 pub trait WriteWritable {
     
-    fn askama_write<W: fmt::Write + ?Sized>(
-        &self,
-        dest: &mut W,
-        values: &dyn Values,
-    ) -> crate::Result<()>;
+    fn askama_write(&self, dest: &mut dyn fmt::Write, values: &dyn Values) -> crate::Result<()>;
 }
 
 #[test]

@@ -38,6 +38,118 @@ use crate::Result;
 
 
 
+pub fn iterator<Input, Output, Error, ParseNext>(
+    input: &mut Input,
+    parser: ParseNext,
+) -> ParserIterator<'_, ParseNext, Input, Output, Error>
+where
+    ParseNext: Parser<Input, Output, Error>,
+    Input: Stream,
+    Error: ParserError<Input>,
+{
+    ParserIterator {
+        parser,
+        input,
+        state: State::Running,
+        marker: Default::default(),
+    }
+}
+
+
+pub struct ParserIterator<'i, F, I, O, E>
+where
+    F: Parser<I, O, E>,
+    I: Stream,
+{
+    parser: F,
+    input: &'i mut I,
+    state: State<E>,
+    marker: core::marker::PhantomData<O>,
+}
+
+impl<F, I, O, E> ParserIterator<'_, F, I, O, E>
+where
+    F: Parser<I, O, E>,
+    I: Stream,
+    E: ParserError<I>,
+{
+    
+    pub fn finish(self) -> Result<(), E> {
+        match self.state {
+            State::Running | State::Done => Ok(()),
+            State::Cut(e) => Err(e),
+        }
+    }
+}
+
+impl<F, I, O, E> core::iter::Iterator for &mut ParserIterator<'_, F, I, O, E>
+where
+    F: Parser<I, O, E>,
+    I: Stream,
+    E: ParserError<I>,
+{
+    type Item = O;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if matches!(self.state, State::Running) {
+            let start = self.input.checkpoint();
+
+            match self.parser.parse_next(self.input) {
+                Ok(o) => {
+                    self.state = State::Running;
+                    Some(o)
+                }
+                Err(e) if e.is_backtrack() => {
+                    self.input.reset(&start);
+                    self.state = State::Done;
+                    None
+                }
+                Err(e) => {
+                    self.state = State::Cut(e);
+                    None
+                }
+            }
+        } else {
+            None
+        }
+    }
+}
+
+enum State<E> {
+    Running,
+    Done,
+    Cut(E),
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -124,10 +236,7 @@ where
     Repeat {
         occurrences: occurrences.into(),
         parser,
-        i: Default::default(),
-        o: Default::default(),
-        c: Default::default(),
-        e: Default::default(),
+        marker: Default::default(),
     }
 }
 
@@ -141,10 +250,7 @@ where
 {
     occurrences: Range,
     parser: P,
-    i: core::marker::PhantomData<I>,
-    o: core::marker::PhantomData<O>,
-    c: core::marker::PhantomData<C>,
-    e: core::marker::PhantomData<E>,
+    marker: core::marker::PhantomData<(I, O, C, E)>,
 }
 
 impl<ParseNext, Input, Output, Error> Repeat<ParseNext, Input, Output, (), Error>
@@ -1383,6 +1489,8 @@ where
 
 
 
+
+
 pub fn separated_foldl1<Input, Output, Sep, Error, ParseNext, SepParser, Op>(
     mut parser: ParseNext,
     mut sep: SepParser,
@@ -1454,6 +1562,8 @@ where
 
 
 
+
+
 #[cfg(feature = "alloc")]
 pub fn separated_foldr1<Input, Output, Sep, Error, ParseNext, SepParser, Op>(
     mut parser: ParseNext,
@@ -1469,7 +1579,7 @@ where
 {
     trace("separated_foldr1", move |i: &mut Input| {
         let ol = parser.parse_next(i)?;
-        let all: crate::lib::std::vec::Vec<(Sep, Output)> =
+        let all: alloc::vec::Vec<(Sep, Output)> =
             repeat(0.., (sep.by_ref(), parser.by_ref())).parse_next(i)?;
         if let Some((s, or)) = all
             .into_iter()

@@ -67,13 +67,11 @@
 
 
 use crate::alloc::alloc::{alloc, dealloc, handle_alloc_error, Layout};
-use core::isize;
 use core::mem;
 use core::num::{NonZeroU64, NonZeroUsize};
 use core::ptr::{self, NonNull};
 use core::slice;
 use core::str;
-use core::usize;
 
 const PTR_BYTES: usize = mem::size_of::<NonNull<u8>>();
 
@@ -163,8 +161,6 @@ impl Identifier {
             0x100_0000_0000_0000..=0xffff_ffff_ffff_ffff => {
                 unreachable!("please refrain from storing >64 petabytes of text in semver version");
             }
-            #[cfg(no_exhaustive_int_match)] 
-            _ => unreachable!(),
         }
     }
 
@@ -199,6 +195,10 @@ impl Identifier {
             
             unsafe { ptr_as_str(&self.head) }
         }
+    }
+
+    pub(crate) fn ptr_eq(&self, rhs: &Self) -> bool {
+        self.head == rhs.head && self.tail == rhs.tail
     }
 }
 
@@ -259,10 +259,10 @@ impl Drop for Identifier {
 
 impl PartialEq for Identifier {
     fn eq(&self, rhs: &Self) -> bool {
-        if self.is_empty_or_inline() {
+        if self.ptr_eq(rhs) {
             
-            self.head == rhs.head && self.tail == rhs.tail
-        } else if rhs.is_empty_or_inline() {
+            true
+        } else if self.is_empty_or_inline() || rhs.is_empty_or_inline() {
             false
         } else {
             
@@ -306,7 +306,7 @@ fn repr_to_ptr(modified: NonNull<u8>) -> *const u8 {
 }
 
 fn repr_to_ptr_mut(repr: NonNull<u8>) -> *mut u8 {
-    repr_to_ptr(repr) as *mut u8
+    repr_to_ptr(repr).cast_mut()
 }
 
 
@@ -318,14 +318,7 @@ unsafe fn inline_len(repr: &Identifier) -> NonZeroUsize {
     
     
     
-    let repr = unsafe { ptr::read(repr as *const Identifier as *const NonZeroU64) };
-
-    
-    
-    
-    
-    #[cfg(no_nonzero_bitscan)]
-    let repr = repr.get();
+    let repr = unsafe { ptr::addr_of!(*repr).cast::<NonZeroU64>().read() };
 
     #[cfg(target_endian = "little")]
     let zero_bits_on_string_end = repr.leading_zeros();
@@ -342,7 +335,7 @@ unsafe fn inline_len(repr: &Identifier) -> NonZeroUsize {
 
 
 unsafe fn inline_as_str(repr: &Identifier) -> &str {
-    let ptr = repr as *const Identifier as *const u8;
+    let ptr = ptr::addr_of!(*repr).cast::<u8>();
     let len = unsafe { inline_len(repr) }.get();
     
     
@@ -364,7 +357,7 @@ unsafe fn decode_len(ptr: *const u8) -> NonZeroUsize {
     
     
     
-    let [first, second] = unsafe { ptr::read(ptr as *const [u8; 2]) };
+    let [first, second] = unsafe { ptr.cast::<[u8; 2]>().read() };
     if second < 0x80 {
         
         
@@ -413,9 +406,6 @@ unsafe fn ptr_as_str(repr: &NonNull<u8>) -> &str {
 
 
 fn bytes_for_varint(len: NonZeroUsize) -> usize {
-    #[cfg(no_nonzero_bitscan)] 
-    let len = len.get();
-
     let usize_bits = mem::size_of::<usize>() * 8;
     let len_bits = usize_bits - len.leading_zeros() as usize;
     (len_bits + 6) / 7

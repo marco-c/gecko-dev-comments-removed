@@ -36,9 +36,16 @@ pub fn channel<T>() -> (Sender<T>, Receiver<T>) {
 impl<T> Sender<T> {
     
     pub fn send(self, value: T) {
-        let mut inner = self.0.lock().unwrap();
-        inner.value = Some(value);
-        if let Some(waker) = inner.waker.take() {
+        let waker = {
+            let mut inner = self.0.lock().unwrap();
+            inner.value = Some(value);
+            inner.waker.take()
+        };
+        
+        
+        
+        
+        if let Some(waker) = waker {
             waker.wake();
         }
     }

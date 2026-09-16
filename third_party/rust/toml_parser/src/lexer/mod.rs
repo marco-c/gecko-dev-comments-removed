@@ -46,11 +46,7 @@ impl<'i> Lexer<'i> {
 
     #[cfg(feature = "alloc")]
     pub fn into_vec(self) -> Vec<Token> {
-        #![allow(unused_qualifications)] 
-        let capacity = core::cmp::min(
-            self.stream.len(),
-            usize::MAX / core::mem::size_of::<Token>(),
-        );
+        let capacity = self.stream.len().div_ceil(4);
         let mut vec = Vec::with_capacity(capacity);
         vec.extend(self);
         vec
@@ -213,6 +209,8 @@ fn lex_comment(stream: &mut Stream<'_>) -> Token {
 }
 
 
+
+
 pub(crate) const COMMENT_START_SYMBOL: u8 = b'#';
 
 
@@ -300,8 +298,9 @@ fn lex_literal_string(stream: &mut Stream<'_>) -> Token {
 }
 
 
-pub(crate) const APOSTROPHE: u8 = b'\'';
 
+
+pub(crate) const APOSTROPHE: u8 = b'\'';
 
 
 
@@ -371,7 +370,11 @@ fn lex_ml_literal_string(stream: &mut Stream<'_>) -> Token {
 }
 
 
+
+
 pub(crate) const ML_LITERAL_STRING_DELIM: &str = "'''";
+
+
 
 
 
@@ -481,12 +484,14 @@ fn lex_basic_string(stream: &mut Stream<'_>) -> Token {
 }
 
 
+
+
 pub(crate) const QUOTATION_MARK: u8 = b'"';
 
 
+
+
 pub(crate) const ESCAPE: u8 = b'\\';
-
-
 
 
 
@@ -593,6 +598,8 @@ fn lex_ml_basic_string(stream: &mut Stream<'_>) -> Token {
     let span = Span::new_unchecked(start, end);
     Token::new(TokenKind::MlBasicString, span)
 }
+
+
 
 
 pub(crate) const ML_BASIC_STRING_DELIM: &str = "\"\"\"";

@@ -73,27 +73,47 @@ impl<T> Slice<T> {
     }
 
     
-    pub fn first(&self) -> Option<&T> {
-        self.entries.first().map(Bucket::key_ref)
+    pub const fn first(&self) -> Option<&T> {
+        if let [first, ..] = &self.entries {
+            Some(&first.key)
+        } else {
+            None
+        }
     }
 
     
-    pub fn last(&self) -> Option<&T> {
-        self.entries.last().map(Bucket::key_ref)
+    pub const fn last(&self) -> Option<&T> {
+        if let [.., last] = &self.entries {
+            Some(&last.key)
+        } else {
+            None
+        }
     }
 
+    
     
     
     
     #[track_caller]
-    pub fn split_at(&self, index: usize) -> (&Self, &Self) {
+    pub const fn split_at(&self, index: usize) -> (&Self, &Self) {
         let (first, second) = self.entries.split_at(index);
         (Self::from_slice(first), Self::from_slice(second))
     }
 
     
     
-    pub fn split_first(&self) -> Option<(&T, &Self)> {
+    
+    pub const fn split_at_checked(&self, index: usize) -> Option<(&Self, &Self)> {
+        if let Some((first, second)) = self.entries.split_at_checked(index) {
+            Some((Self::from_slice(first), Self::from_slice(second)))
+        } else {
+            None
+        }
+    }
+
+    
+    
+    pub const fn split_first(&self) -> Option<(&T, &Self)> {
         if let [first, rest @ ..] = &self.entries {
             Some((&first.key, Self::from_slice(rest)))
         } else {
@@ -103,7 +123,7 @@ impl<T> Slice<T> {
 
     
     
-    pub fn split_last(&self) -> Option<(&T, &Self)> {
+    pub const fn split_last(&self) -> Option<(&T, &Self)> {
         if let [rest @ .., last] = &self.entries {
             Some((&last.key, Self::from_slice(rest)))
         } else {
@@ -166,8 +186,7 @@ impl<T> Slice<T> {
     where
         T: PartialOrd,
     {
-        
-        self.is_sorted_by(T::le)
+        self.entries.is_sorted_by(|a, b| a.key <= b.key)
     }
 
     
@@ -176,16 +195,7 @@ impl<T> Slice<T> {
     where
         F: FnMut(&'a T, &'a T) -> bool,
     {
-        
-        let mut iter = self.entries.iter();
-        match iter.next() {
-            Some(mut prev) => iter.all(move |next| {
-                let sorted = cmp(&prev.key, &next.key);
-                prev = next;
-                sorted
-            }),
-            None => true,
-        }
+        self.entries.is_sorted_by(move |a, b| cmp(&a.key, &b.key))
     }
 
     
@@ -195,16 +205,7 @@ impl<T> Slice<T> {
         F: FnMut(&'a T) -> K,
         K: PartialOrd,
     {
-        
-        let mut iter = self.entries.iter().map(move |a| sort_key(&a.key));
-        match iter.next() {
-            Some(mut prev) => iter.all(move |next| {
-                let sorted = prev <= next;
-                prev = next;
-                sorted
-            }),
-            None => true,
-        }
+        self.entries.is_sorted_by_key(move |a| sort_key(&a.key))
     }
 
     
@@ -393,6 +394,7 @@ mod tests {
         let slice = set.as_slice();
 
         
+        #[expect(clippy::redundant_slicing)]
         check(&vec[..], &set[..], &slice[..]);
 
         for i in 0usize..10 {

@@ -8,6 +8,8 @@ use derive_builder::Builder;
 use semver::VersionReq;
 use serde::{Deserialize, Deserializer, Serialize};
 
+use crate::Source;
+
 #[derive(Eq, PartialEq, Clone, Debug, Copy, Hash, Serialize, Deserialize, Default)]
 
 pub enum DependencyKind {
@@ -51,7 +53,7 @@ pub struct Dependency {
     
     pub name: String,
     
-    pub source: Option<String>,
+    pub source: Option<Source>,
     
     pub req: VersionReq,
     

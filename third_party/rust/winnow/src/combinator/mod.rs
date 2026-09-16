@@ -159,22 +159,38 @@
 
 
 
+
 mod branch;
 mod core;
 mod debug;
+mod expression;
 mod multi;
 mod sequence;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "ascii", feature = "binary"))]
 mod tests;
 
 pub mod impls;
 
-pub use self::branch::*;
-pub use self::core::*;
-pub use self::debug::*;
-pub use self::multi::*;
-pub use self::sequence::*;
+#[doc(inline)]
+pub use crate::dispatch;
+#[doc(inline)]
+pub use crate::seq;
+#[doc(inline)]
+pub use crate::unordered_seq;
+
+pub use self::branch::{alt, Alt};
+pub use self::core::{backtrack_err, cond, cut_err, empty, eof, fail, not, opt, peek, todo};
+pub use self::debug::trace;
+pub use self::expression::{expression, Expression, Infix, Postfix, Prefix};
+#[cfg(feature = "alloc")]
+pub use self::multi::separated_foldr1;
+pub use self::multi::{
+    fill, iterator, repeat, repeat_till, separated, separated_foldl1, ParserIterator, Repeat,
+};
+pub use self::sequence::{delimited, preceded, separated_pair, terminated};
+
+pub(crate) use self::debug::{trace_result, DisplayDebug};
 
 #[allow(unused_imports)]
 use crate::Parser;

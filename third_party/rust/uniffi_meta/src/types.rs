@@ -17,16 +17,26 @@
 
 
 
-use crate::{Checksum, Node};
+use crate::Checksum;
+use uniffi_pipeline::{MapNode, Node};
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Checksum, Ord, PartialOrd, Node)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Checksum, Ord, PartialOrd, Node, MapNode)]
 pub enum ObjectImpl {
     
     Struct,
     
-    Trait,
+    Trait(TraitKind),
+}
+
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Checksum, Ord, PartialOrd, Node, MapNode)]
+pub enum TraitKind {
     
-    CallbackTrait,
+    RustOnly,
+    
+    Both,
+    
+    ForeignOnly,
 }
 
 impl ObjectImpl {
@@ -43,18 +53,34 @@ impl ObjectImpl {
     }
 
     pub fn is_trait_interface(&self) -> bool {
-        matches!(self, Self::Trait | Self::CallbackTrait)
+        matches!(self, Self::Trait(_))
     }
 
     pub fn has_callback_interface(&self) -> bool {
-        matches!(self, Self::CallbackTrait)
+        matches!(self, Self::Trait(TraitKind::Both | TraitKind::ForeignOnly))
+    }
+
+    pub fn has_struct(&self) -> bool {
+        matches!(self, Self::Struct)
+    }
+}
+
+impl TraitKind {
+    
+    pub fn has_foreign(&self) -> bool {
+        matches!(self, Self::Both | Self::ForeignOnly)
+    }
+
+    
+    pub fn has_rust(&self) -> bool {
+        matches!(self, Self::RustOnly | Self::Both)
     }
 }
 
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq, Checksum, Ord, PartialOrd, Node)]
+#[derive(Debug, Clone, Eq, PartialEq, Checksum, Ord, PartialOrd)]
 pub enum Type {
     
     UInt8,
@@ -94,6 +120,11 @@ pub enum Type {
         name: String,
     },
     
+    
+    
+    Box {
+        inner_type: Box<Type>,
+    },
     Optional {
         inner_type: Box<Type>,
     },
@@ -103,6 +134,9 @@ pub enum Type {
     Map {
         key_type: Box<Type>,
         value_type: Box<Type>,
+    },
+    Set {
+        inner_type: Box<Type>,
     },
     
     Custom {
@@ -121,9 +155,9 @@ impl Type {
     
     pub fn iter_nested_types(&self) -> TypeIterator<'_> {
         match self {
-            Type::Optional { inner_type } | Type::Sequence { inner_type } => {
-                inner_type.iter_types()
-            }
+            Type::Optional { inner_type }
+            | Type::Sequence { inner_type }
+            | Type::Set { inner_type } => inner_type.iter_types(),
             Type::Map {
                 key_type,
                 value_type,
@@ -179,7 +213,9 @@ impl Type {
 
         
         match self {
-            Type::Optional { inner_type } | Type::Sequence { inner_type } => {
+            Type::Optional { inner_type }
+            | Type::Sequence { inner_type }
+            | Type::Set { inner_type } => {
                 inner_type.rename_recursive(name_transformer);
             }
             Type::Map {

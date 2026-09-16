@@ -63,13 +63,14 @@ macro_rules! cmd {
 
 pub struct VirtualEnv<'a> {
     shell: &'a Shell,
+    dir: PathBuf,
     _env: Vec<PushEnv<'a>>,
 }
 
 fn guess_python(sh: &Shell) -> Result<&'static str, Error> {
     #[cfg(windows)]
     {
-        if xshell::cmd!(sh, "python3.exe --version").run().is_ok() {
+        if xshell::cmd!(sh, "python3.exe --version").read().is_ok() {
             return Ok("python3.exe");
         }
 
@@ -80,7 +81,7 @@ fn guess_python(sh: &Shell) -> Result<&'static str, Error> {
         }
     }
 
-    if xshell::cmd!(sh, "python3 --version").run().is_ok() {
+    if xshell::cmd!(sh, "python3 --version").read().is_ok() {
         return Ok("python3");
     }
 
@@ -111,8 +112,8 @@ fn create_venv(sh: &Shell, path: &Path) -> Result<(), Error> {
     }
 
     
-    sh.remove_path(lock_path)?;
     drop(lock);
+    sh.remove_path(lock_path)?;
 
     Ok(())
 }
@@ -121,26 +122,13 @@ fn find_directory(name: &str) -> PathBuf {
     #[allow(clippy::never_loop)]
     let mut venv_dir = loop {
         
-        if let Ok(target_dir) = env::var("CARGO_TARGET_DIR") {
-            break PathBuf::from(target_dir);
-        }
-
-        
-        
         
         
         
         
         
         if let Ok(out_dir) = env::var("OUT_DIR") {
-            let path = Path::new(&out_dir);
-            let path = path
-                .parent()
-                .and_then(|p| p.parent())
-                .and_then(|p| p.parent());
-            if let Some(out_dir) = path {
-                break PathBuf::from(out_dir);
-            }
+            break PathBuf::from(out_dir);
         }
 
         
@@ -151,6 +139,11 @@ fn find_directory(name: &str) -> PathBuf {
             let mut p = PathBuf::from(manifest_dir);
             p.push("target");
             break p;
+        }
+
+        
+        if let Ok(target_dir) = env::var("CARGO_TARGET_DIR") {
+            break PathBuf::from(target_dir);
         }
 
         
@@ -238,7 +231,16 @@ impl<'a> VirtualEnv<'a> {
         env.push(shell.push_env("VIRTUAL_ENV", format!("{}", venv_dir.display())));
         env.push(shell.push_env("PATH", path));
 
-        Ok(VirtualEnv { shell, _env: env })
+        Ok(VirtualEnv {
+            shell,
+            dir: venv_dir.to_path_buf(),
+            _env: env,
+        })
+    }
+
+    
+    pub fn dir(&self) -> &Path {
+        &self.dir
     }
 
     

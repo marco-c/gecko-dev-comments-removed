@@ -15,6 +15,9 @@ pub use dir_builder::DirBuilder;
 pub use file::File;
 
 
+
+
+
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
 pub async fn canonicalize(path: impl AsRef<Path>) -> io::Result<PathBuf> {
     let path = path.as_ref();
@@ -22,6 +25,10 @@ pub async fn canonicalize(path: impl AsRef<Path>) -> io::Result<PathBuf> {
         .await
         .map_err(|err| Error::build(err, ErrorKind::Canonicalize, path))
 }
+
+
+
+
 
 
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
@@ -33,6 +40,8 @@ pub async fn copy(from: impl AsRef<Path>, to: impl AsRef<Path>) -> Result<u64, i
 }
 
 
+
+
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
 pub async fn create_dir(path: impl AsRef<Path>) -> io::Result<()> {
     let path = path.as_ref();
@@ -40,6 +49,9 @@ pub async fn create_dir(path: impl AsRef<Path>) -> io::Result<()> {
         .await
         .map_err(|err| Error::build(err, ErrorKind::CreateDir, path))
 }
+
+
+
 
 
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
@@ -51,13 +63,22 @@ pub async fn create_dir_all(path: impl AsRef<Path>) -> io::Result<()> {
 }
 
 
+
+
+
+
+
+
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
-pub async fn hard_link(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
-    let (src, dst) = (src.as_ref(), dst.as_ref());
-    tokio::fs::hard_link(src, dst)
+pub async fn hard_link(original: impl AsRef<Path>, link: impl AsRef<Path>) -> io::Result<()> {
+    let (original, link) = (original.as_ref(), link.as_ref());
+    tokio::fs::hard_link(original, link)
         .await
-        .map_err(|err| SourceDestError::build(err, SourceDestErrorKind::HardLink, src, dst))
+        .map_err(|err| SourceDestError::build(err, SourceDestErrorKind::HardLink, link, original))
 }
+
+
+
 
 
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
@@ -69,6 +90,19 @@ pub async fn metadata(path: impl AsRef<Path>) -> io::Result<Metadata> {
 }
 
 
+
+
+#[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
+pub async fn try_exists(path: impl AsRef<Path>) -> io::Result<bool> {
+    let path = path.as_ref();
+    tokio::fs::try_exists(path)
+        .await
+        .map_err(|err| Error::build(err, ErrorKind::FileExists, path))
+}
+
+
+
+
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
 pub async fn read(path: impl AsRef<Path>) -> io::Result<Vec<u8>> {
     let path = path.as_ref();
@@ -76,6 +110,8 @@ pub async fn read(path: impl AsRef<Path>) -> io::Result<Vec<u8>> {
         .await
         .map_err(|err| Error::build(err, ErrorKind::Read, path))
 }
+
+
 
 
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
@@ -87,6 +123,9 @@ pub async fn read_link(path: impl AsRef<Path>) -> io::Result<PathBuf> {
 }
 
 
+
+
+
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
 pub async fn read_to_string(path: impl AsRef<Path>) -> io::Result<String> {
     let path = path.as_ref();
@@ -94,6 +133,8 @@ pub async fn read_to_string(path: impl AsRef<Path>) -> io::Result<String> {
         .await
         .map_err(|err| Error::build(err, ErrorKind::Read, path))
 }
+
+
 
 
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
@@ -105,6 +146,8 @@ pub async fn remove_dir(path: impl AsRef<Path>) -> io::Result<()> {
 }
 
 
+
+
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
 pub async fn remove_dir_all(path: impl AsRef<Path>) -> io::Result<()> {
     let path = path.as_ref();
@@ -112,6 +155,8 @@ pub async fn remove_dir_all(path: impl AsRef<Path>) -> io::Result<()> {
         .await
         .map_err(|err| Error::build(err, ErrorKind::RemoveDir, path))
 }
+
+
 
 
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
@@ -123,6 +168,9 @@ pub async fn remove_file(path: impl AsRef<Path>) -> io::Result<()> {
 }
 
 
+
+
+
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
 pub async fn rename(from: impl AsRef<Path>, to: impl AsRef<Path>) -> io::Result<()> {
     let (from, to) = (from.as_ref(), to.as_ref());
@@ -130,6 +178,8 @@ pub async fn rename(from: impl AsRef<Path>, to: impl AsRef<Path>) -> io::Result<
         .await
         .map_err(|err| SourceDestError::build(err, SourceDestErrorKind::Rename, from, to))
 }
+
+
 
 
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
@@ -141,6 +191,8 @@ pub async fn set_permissions(path: impl AsRef<Path>, perm: Permissions) -> io::R
 }
 
 
+
+
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
 pub async fn symlink_metadata(path: impl AsRef<Path>) -> io::Result<Metadata> {
     let path = path.as_ref();
@@ -150,34 +202,51 @@ pub async fn symlink_metadata(path: impl AsRef<Path>) -> io::Result<Metadata> {
 }
 
 
+
+
+
+
 #[cfg(unix)]
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
-pub async fn symlink(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
-    let (src, dst) = (src.as_ref(), dst.as_ref());
-    tokio::fs::symlink(src, dst)
+pub async fn symlink(original: impl AsRef<Path>, link: impl AsRef<Path>) -> io::Result<()> {
+    let (original, link) = (original.as_ref(), link.as_ref());
+    tokio::fs::symlink(original, link)
         .await
-        .map_err(|err| SourceDestError::build(err, SourceDestErrorKind::Symlink, src, dst))
+        .map_err(|err| SourceDestError::build(err, SourceDestErrorKind::Symlink, link, original))
 }
+
+
+
+
 
 
 #[cfg(windows)]
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
-pub async fn symlink(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
-    let (src, dst) = (src.as_ref(), dst.as_ref());
-    tokio::fs::symlink_dir(src, dst)
+pub async fn symlink_dir(original: impl AsRef<Path>, link: impl AsRef<Path>) -> io::Result<()> {
+    let (original, link) = (original.as_ref(), link.as_ref());
+    tokio::fs::symlink_dir(original, link)
         .await
-        .map_err(|err| SourceDestError::build(err, SourceDestErrorKind::SymlinkDir, src, dst))
+        .map_err(|err| SourceDestError::build(err, SourceDestErrorKind::SymlinkDir, link, original))
 }
+
+
+
+
 
 
 #[cfg(windows)]
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
-pub async fn symlink_file(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
-    let (src, dst) = (src.as_ref(), dst.as_ref());
-    tokio::fs::symlink_file(src, dst)
+pub async fn symlink_file(original: impl AsRef<Path>, link: impl AsRef<Path>) -> io::Result<()> {
+    let (original, link) = (original.as_ref(), link.as_ref());
+    tokio::fs::symlink_file(original, link)
         .await
-        .map_err(|err| SourceDestError::build(err, SourceDestErrorKind::SymlinkFile, src, dst))
+        .map_err(|err| {
+            SourceDestError::build(err, SourceDestErrorKind::SymlinkFile, link, original)
+        })
 }
+
+
+
 
 
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]

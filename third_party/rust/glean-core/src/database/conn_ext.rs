@@ -1,0 +1,30 @@
+
+
+
+
+use rusqlite::Connection;
+
+
+
+pub trait ConnExt {
+    
+    fn conn(&self) -> &Connection;
+
+    
+    fn execute_one(&self, stmt: &str) -> Result<(), rusqlite::Error> {
+        match self.conn().execute(stmt, []) {
+            Ok(_) => Ok(()),
+            
+            
+            Err(rusqlite::Error::ExecuteReturnedResults) => Ok(()),
+            Err(e) => Err(e),
+        }
+    }
+}
+
+impl ConnExt for Connection {
+    #[inline]
+    fn conn(&self) -> &Connection {
+        self
+    }
+}

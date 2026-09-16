@@ -3,8 +3,12 @@
 
 
 use std::mem;
+use std::sync::Mutex;
 
-use super::{RustFutureContinuationCallback, RustFuturePoll};
+use crate::{RustFutureContinuationBoundCallback, RustFuturePoll};
+
+
+
 
 
 
@@ -20,7 +24,7 @@ use super::{RustFutureContinuationCallback, RustFuturePoll};
 
 
 #[derive(Debug)]
-pub(super) enum Scheduler {
+enum State<Callback> {
     
     Empty,
     
@@ -30,67 +34,121 @@ pub(super) enum Scheduler {
     
     Cancelled,
     
-    Set(RustFutureContinuationCallback, u64),
+    Set(Callback),
 }
 
-impl Scheduler {
-    pub(super) fn new() -> Self {
-        Self::Empty
+pub struct Scheduler<Callback = RustFutureContinuationBoundCallback> {
+    state: Mutex<State<Callback>>,
+}
+
+
+pub trait RustFutureCallback {
+    fn invoke(self, poll: RustFuturePoll);
+}
+
+impl RustFutureCallback for RustFutureContinuationBoundCallback {
+    fn invoke(self, poll: RustFuturePoll) {
+        (self.callback)(self.data, poll)
+    }
+}
+
+impl<Callback: RustFutureCallback> Default for Scheduler<Callback> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<Callback: RustFutureCallback> Scheduler<Callback> {
+    pub fn new() -> Self {
+        Self {
+            state: Mutex::new(State::Empty),
+        }
     }
 
     
     
-    pub(super) fn store(&mut self, callback: RustFutureContinuationCallback, data: u64) {
-        match self {
-            Self::Empty => *self = Self::Set(callback, data),
-            Self::Set(old_callback, old_data) => {
-                trace!(
-                    "store: observed `Self::Set` state.  Is poll() being called from multiple threads at once?"
-                );
-                old_callback(*old_data, RustFuturePoll::Ready);
-                *self = Self::Set(callback, data);
+    pub fn store(&self, callback: Callback) {
+        let to_invoke = {
+            let mut state = self.state.lock().unwrap();
+
+            match *state {
+                State::Empty => {
+                    *state = State::Set(callback);
+                    None
+                }
+                State::Set(_) => {
+                    trace!(
+                        "store: observed `Self::Set` state.  Is poll() being called from multiple threads at once?"
+                    );
+                    let State::Set(old_callback) = mem::replace(&mut *state, State::Set(callback))
+                    else {
+                        unreachable!();
+                    };
+                    Some((old_callback, RustFuturePoll::Wake))
+                }
+                State::Waked => {
+                    *state = State::Empty;
+                    Some((callback, RustFuturePoll::Wake))
+                }
+                State::Cancelled => Some((callback, RustFuturePoll::Ready)),
             }
-            Self::Waked => {
-                *self = Self::Empty;
-                callback(data, RustFuturePoll::Wake);
-            }
-            Self::Cancelled => {
-                callback(data, RustFuturePoll::Ready);
-            }
+        };
+
+        if let Some((cb, poll)) = to_invoke {
+            cb.invoke(poll);
         }
     }
 
-    pub(super) fn wake(&mut self) {
-        match self {
-            
-            Self::Set(callback, old_data) => {
-                let old_data = *old_data;
-                let callback = *callback;
-                *self = Self::Empty;
-                callback(old_data, RustFuturePoll::Wake);
+    
+    
+    
+    
+    
+    
+    
+    pub fn wake(&self) {
+        let callback = {
+            let mut state = self.state.lock().unwrap();
+
+            match *state {
+                
+                State::Set(_) => {
+                    let State::Set(callback) = mem::replace(&mut *state, State::Empty) else {
+                        unreachable!();
+                    };
+                    Some(callback)
+                }
+                
+                
+                State::Empty => {
+                    *state = State::Waked;
+                    None
+                }
+                
+                _ => None,
             }
-            
-            
-            Self::Empty => *self = Self::Waked,
-            
-            _ => (),
+        };
+
+        if let Some(cb) = callback {
+            cb.invoke(RustFuturePoll::Wake);
         }
     }
 
-    pub(super) fn cancel(&mut self) {
-        if let Self::Set(callback, old_data) = mem::replace(self, Self::Cancelled) {
-            callback(old_data, RustFuturePoll::Ready);
+    pub fn cancel(&self) {
+        let callback = {
+            let mut state = self.state.lock().unwrap();
+            match mem::replace(&mut *state, State::Cancelled) {
+                State::Set(cb) => Some(cb),
+                _ => None,
+            }
+        };
+
+        if let Some(cb) = callback {
+            cb.invoke(RustFuturePoll::Ready);
         }
     }
 
-    pub(super) fn is_cancelled(&self) -> bool {
-        matches!(self, Self::Cancelled)
+    pub fn is_cancelled(&self) -> bool {
+        matches!(*self.state.lock().unwrap(), State::Cancelled)
     }
 }
-
-
-
-
-
-unsafe impl Send for Scheduler {}
-unsafe impl Sync for Scheduler {}

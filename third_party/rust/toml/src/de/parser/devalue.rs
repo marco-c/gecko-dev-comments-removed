@@ -48,6 +48,12 @@ impl DeInteger<'_> {
     pub fn radix(&self) -> u32 {
         self.radix
     }
+
+    
+    pub fn make_owned(&mut self) {
+        let owned = core::mem::take(&mut self.inner);
+        self.inner = Cow::Owned(owned.into_owned());
+    }
 }
 
 impl Default for DeInteger<'_> {
@@ -97,6 +103,12 @@ impl DeFloat<'_> {
     
     pub fn as_str(&self) -> &str {
         self.inner.as_ref()
+    }
+
+    
+    pub fn make_owned(&mut self) {
+        let owned = core::mem::take(&mut self.inner);
+        self.inner = Cow::Owned(owned.into_owned());
     }
 }
 
@@ -162,10 +174,13 @@ impl<'i> DeValue<'i> {
                 let owned = core::mem::take(v);
                 *v = Cow::Owned(owned.into_owned());
             }
-            DeValue::Integer(..)
-            | DeValue::Float(..)
-            | DeValue::Boolean(..)
-            | DeValue::Datetime(..) => {}
+            DeValue::Integer(v) => {
+                v.make_owned();
+            }
+            DeValue::Float(v) => {
+                v.make_owned();
+            }
+            DeValue::Boolean(..) | DeValue::Datetime(..) => {}
             DeValue::Array(v) => {
                 for e in v.iter_mut() {
                     e.get_mut().make_owned();

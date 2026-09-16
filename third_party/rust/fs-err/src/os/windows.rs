@@ -3,20 +3,31 @@ pub mod fs {
     use crate::{SourceDestError, SourceDestErrorKind};
     use std::io;
     use std::path::Path;
+
     
-    pub fn symlink_dir<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<()> {
-        let src = src.as_ref();
-        let dst = dst.as_ref();
-        std::os::windows::fs::symlink_dir(src, dst)
-            .map_err(|err| SourceDestError::build(err, SourceDestErrorKind::SymlinkDir, src, dst))
+    
+    
+    
+    
+    pub fn symlink_dir<P: AsRef<Path>, Q: AsRef<Path>>(original: P, link: Q) -> io::Result<()> {
+        let original = original.as_ref();
+        let link = link.as_ref();
+        std::os::windows::fs::symlink_dir(original, link).map_err(|err| {
+            SourceDestError::build(err, SourceDestErrorKind::SymlinkDir, link, original)
+        })
     }
 
     
-    pub fn symlink_file<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<()> {
-        let src = src.as_ref();
-        let dst = dst.as_ref();
-        std::os::windows::fs::symlink_file(src, dst)
-            .map_err(|err| SourceDestError::build(err, SourceDestErrorKind::SymlinkFile, src, dst))
+    
+    
+    
+    
+    pub fn symlink_file<P: AsRef<Path>, Q: AsRef<Path>>(original: P, link: Q) -> io::Result<()> {
+        let original = original.as_ref();
+        let link = link.as_ref();
+        std::os::windows::fs::symlink_file(original, link).map_err(|err| {
+            SourceDestError::build(err, SourceDestErrorKind::SymlinkFile, link, original)
+        })
     }
 
     

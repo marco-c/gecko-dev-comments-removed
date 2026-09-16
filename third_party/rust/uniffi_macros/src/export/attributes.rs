@@ -15,11 +15,28 @@ use syn::{
 };
 use uniffi_meta::UniffiTraitDiscriminants;
 
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Default)]
 pub struct ExportTraitArgs {
     pub(crate) async_runtime: Option<AsyncRuntime>,
+    
     pub(crate) callback_interface: Option<kw::callback_interface>,
+    
     pub(crate) with_foreign: Option<kw::with_foreign>,
+    
+    pub(crate) rust: Option<kw::rust>,
+    
+    pub(crate) foreign: Option<kw::foreign>,
 }
 
 impl Parse for ExportTraitArgs {
@@ -48,8 +65,18 @@ impl UniffiAttributeArgs for ExportTraitArgs {
                 with_foreign: input.parse()?,
                 ..Self::default()
             })
+        } else if lookahead.peek(kw::rust) {
+            Ok(Self {
+                rust: input.parse()?,
+                ..Self::default()
+            })
+        } else if lookahead.peek(kw::foreign) {
+            Ok(Self {
+                foreign: input.parse()?,
+                ..Self::default()
+            })
         } else {
-            Ok(Self::default())
+            Err(lookahead.error())
         }
     }
 
@@ -61,10 +88,20 @@ impl UniffiAttributeArgs for ExportTraitArgs {
                 other.callback_interface,
             )?,
             with_foreign: either_attribute_arg(self.with_foreign, other.with_foreign)?,
+            rust: either_attribute_arg(self.rust, other.rust)?,
+            foreign: either_attribute_arg(self.foreign, other.foreign)?,
         };
+        let has_new_flags = merged.rust.is_some() || merged.foreign.is_some();
+        let has_legacy_flags = merged.callback_interface.is_some() || merged.with_foreign.is_some();
+        if has_new_flags && has_legacy_flags {
+            return Err(syn::Error::new(
+                proc_macro2::Span::call_site(),
+                "`rust`/`foreign` flags cannot be combined with `callback_interface` or `with_foreign`",
+            ));
+        }
         if merged.callback_interface.is_some() && merged.with_foreign.is_some() {
             return Err(syn::Error::new(
-                merged.callback_interface.unwrap().span,
+                proc_macro2::Span::call_site(),
                 "`callback_interface` and `with_foreign` are mutually exclusive",
             ));
         }

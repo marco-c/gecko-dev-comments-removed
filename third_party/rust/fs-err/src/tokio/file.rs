@@ -9,6 +9,11 @@ use tokio::fs;
 use tokio::fs::File as TokioFile;
 use tokio::io::{AsyncRead, AsyncSeek, AsyncWrite, ReadBuf};
 
+use super::OpenOptions;
+
+#[allow(unused_imports)]
+use crate as fs_err; 
+
 
 
 #[derive(Debug)]
@@ -20,6 +25,8 @@ pub struct File {
 
 impl File {
     
+    
+    
     pub async fn open(path: impl Into<PathBuf>) -> io::Result<File> {
         let path = path.into();
         let f = TokioFile::open(&path)
@@ -28,6 +35,8 @@ impl File {
         Ok(File::from_parts(f, path))
     }
 
+    
+    
     
     pub async fn create(path: impl Into<PathBuf>) -> io::Result<File> {
         let path = path.into();
@@ -38,11 +47,33 @@ impl File {
     }
 
     
+    
+    
+    pub async fn create_new(path: impl Into<PathBuf>) -> Result<Self, io::Error> {
+        let path = path.into();
+        match fs::File::create_new(&path).await {
+            Ok(file) => Ok(File::from_parts(file, path)),
+            Err(err) => Err(Error::build(err, ErrorKind::CreateFile, path)),
+        }
+    }
+
+    
+    
+    
+    pub fn options() -> OpenOptions {
+        OpenOptions::new()
+    }
+
+    
+    
+    
     pub fn from_std(std: crate::File) -> File {
         let (std, path) = std.into_parts();
         File::from_parts(TokioFile::from_std(std), path)
     }
 
+    
+    
     
     pub async fn sync_all(&self) -> io::Result<()> {
         self.tokio
@@ -52,6 +83,9 @@ impl File {
     }
 
     
+    
+    
+    
     pub async fn sync_data(&self) -> io::Result<()> {
         self.tokio
             .sync_data()
@@ -59,6 +93,8 @@ impl File {
             .map_err(|err| self.error(err, ErrorKind::SyncFile))
     }
 
+    
+    
     
     pub async fn set_len(&self, size: u64) -> io::Result<()> {
         self.tokio
@@ -68,6 +104,8 @@ impl File {
     }
 
     
+    
+    
     pub async fn metadata(&self) -> io::Result<Metadata> {
         self.tokio
             .metadata()
@@ -75,6 +113,10 @@ impl File {
             .map_err(|err| self.error(err, ErrorKind::Metadata))
     }
 
+    
+    
+    
+    
     
     pub async fn try_clone(&self) -> io::Result<File> {
         match self.tokio.try_clone().await {
@@ -84,10 +126,15 @@ impl File {
     }
 
     
+    
+    
+    
     pub async fn into_std(self) -> crate::File {
         crate::File::from_parts(self.tokio.into_std().await, self.path)
     }
 
+    
+    
     
     pub fn try_into_std(self) -> Result<crate::File, File> {
         match self.tokio.try_into_std() {
@@ -97,6 +144,8 @@ impl File {
     }
 
     
+    
+    
     pub async fn set_permissions(&self, perm: Permissions) -> io::Result<()> {
         self.tokio
             .set_permissions(perm)
@@ -104,7 +153,6 @@ impl File {
             .map_err(|err| self.error(err, ErrorKind::SetPermissions))
     }
 }
-
 
 
 impl File {

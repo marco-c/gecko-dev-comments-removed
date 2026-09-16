@@ -35,11 +35,15 @@ impl OpenOptions {
     }
 
     
+    
+    
     pub fn read(&mut self, read: bool) -> &mut OpenOptions {
         self.tokio.read(read);
         self
     }
 
+    
+    
     
     pub fn write(&mut self, write: bool) -> &mut OpenOptions {
         self.tokio.write(write);
@@ -47,11 +51,15 @@ impl OpenOptions {
     }
 
     
+    
+    
     pub fn append(&mut self, append: bool) -> &mut OpenOptions {
         self.tokio.append(append);
         self
     }
 
+    
+    
     
     pub fn truncate(&mut self, truncate: bool) -> &mut OpenOptions {
         self.tokio.truncate(truncate);
@@ -59,17 +67,23 @@ impl OpenOptions {
     }
 
     
+    
+    
     pub fn create(&mut self, create: bool) -> &mut OpenOptions {
         self.tokio.create(create);
         self
     }
 
     
+    
+    
     pub fn create_new(&mut self, create_new: bool) -> &mut OpenOptions {
         self.tokio.create_new(create_new);
         self
     }
 
+    
+    
     
     pub async fn open(&self, path: impl AsRef<Path>) -> io::Result<File> {
         let path = path.as_ref();
@@ -84,11 +98,15 @@ impl OpenOptions {
 #[cfg(unix)]
 impl OpenOptions {
     
+    
+    
     pub fn mode(&mut self, mode: u32) -> &mut OpenOptions {
         self.tokio.mode(mode);
         self
     }
 
+    
+    
     
     pub fn custom_flags(&mut self, flags: i32) -> &mut OpenOptions {
         self.tokio.custom_flags(flags);

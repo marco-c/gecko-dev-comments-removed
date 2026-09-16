@@ -47,6 +47,29 @@ macro_rules! trace {
     ($($tt:tt)*) => {};
 }
 
+
+
+
+#[cfg(feature = "ffi-trace")]
+#[macro_export]
+macro_rules! trace_and_return {
+    ($expr:expr, $($tt:tt)*) => {
+        {
+            ::std::println!($($tt)*);
+            $expr
+        }
+    }
+}
+
+#[cfg(not(feature = "ffi-trace"))]
+#[macro_export]
+macro_rules! trace_and_return {
+    ($expr:expr, $($tt:tt)*) => {
+        #[allow(clippy::let_and_return)]
+        $expr
+    };
+}
+
 use anyhow::bail;
 use bytes::buf::Buf;
 

@@ -242,6 +242,7 @@
 
 
 #![no_std]
+#![doc(html_root_url = "https://docs.rs/unicode-ident/1.0.12")]
 #![allow(clippy::doc_markdown, clippy::must_use_candidate)]
 
 #[rustfmt::skip]

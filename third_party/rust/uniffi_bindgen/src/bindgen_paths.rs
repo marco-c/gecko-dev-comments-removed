@@ -4,7 +4,7 @@
 
 use std::fs;
 
-use anyhow::{bail, Context};
+use anyhow::bail;
 use camino::Utf8PathBuf;
 
 use crate::Result;
@@ -33,25 +33,22 @@ impl BindgenPaths {
     
     
     
-    pub fn add_config_override_layer(&mut self, path: Utf8PathBuf) {
-        self.add_layer(ConfigOverrideLayer { path })
-    }
-
-    
-    
-    
     pub fn add_layer(&mut self, layer: impl BindgenPathsLayer + 'static) {
         self.layers.push(Box::new(layer));
     }
 
     
-    pub fn get_config(&self, crate_name: &str) -> Result<toml::value::Table> {
-        for layer in &self.layers {
-            if let Some(table) = layer.get_config(crate_name)? {
-                return Ok(table);
-            }
-        }
-        Ok(toml::value::Table::default())
+    pub fn get_crate_root(&self, crate_name: &str) -> Option<Utf8PathBuf> {
+        self.layers
+            .iter()
+            .find_map(|l| l.get_crate_root(crate_name))
+    }
+
+    
+    pub fn get_config_path(&self, crate_name: &str) -> Option<Utf8PathBuf> {
+        self.layers
+            .iter()
+            .find_map(|l| l.get_config_path(crate_name))
     }
 
     
@@ -71,39 +68,28 @@ impl BindgenPaths {
 }
 
 
+
+
+
 pub trait BindgenPathsLayer {
     
-    
-    
-    
-    
-    
-    
-    
-    fn get_config(&self, _crate_name: &str) -> Result<Option<toml::value::Table>> {
-        Ok(None)
-    }
-
-    
-    
-    
-    fn get_udl_path(&self, _crate_name: &str, _udl_name: &str) -> Option<Utf8PathBuf> {
+    fn get_crate_root(&self, _crate_name: &str) -> Option<Utf8PathBuf> {
         None
     }
-}
 
-struct ConfigOverrideLayer {
-    path: Utf8PathBuf,
-}
+    
+    
+    
+    fn get_config_path(&self, crate_name: &str) -> Option<Utf8PathBuf> {
+        self.get_crate_root(crate_name)
+            .map(|root| root.join("uniffi.toml"))
+    }
 
-impl BindgenPathsLayer for ConfigOverrideLayer {
-    fn get_config(&self, _crate_name: &str) -> Result<Option<toml::value::Table>> {
-        
-        
-        let contents = fs::read_to_string(&self.path)
-            .with_context(|| format!("read file: {:?}", self.path))?;
-        let toml = toml::de::from_str(&contents)
-            .with_context(|| format!("parse toml: {:?}", self.path))?;
-        Ok(Some(toml))
+    
+    
+    
+    fn get_udl_path(&self, crate_name: &str, udl_name: &str) -> Option<Utf8PathBuf> {
+        self.get_crate_root(crate_name)
+            .map(|root| root.join("src").join(format!("{udl_name}.udl")))
     }
 }

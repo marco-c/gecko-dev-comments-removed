@@ -2,12 +2,17 @@
 
 
 
-use std::{any::type_name, io::Write, marker::PhantomData, process::Command};
+use std::{
+    any::{type_name, Any},
+    io::Write,
+    marker::PhantomData,
+    process::Command,
+};
 
 use anyhow::{anyhow, Context, Result};
 use heck::{ToLowerCamelCase, ToShoutySnakeCase, ToSnakeCase, ToUpperCamelCase};
 
-use super::Node;
+use super::{MapNode, Node};
 
 
 
@@ -30,7 +35,7 @@ pub struct Pass {
 
 type PassFn = Box<dyn FnMut(Box<dyn Node>) -> Result<Box<dyn Node>>>;
 
-pub fn new_pipeline<Input: Node>() -> Pipeline<Input, Input> {
+pub fn new_pipeline<Input>() -> Pipeline<Input, Input> {
     Pipeline {
         passes: vec![],
         input: PhantomData,
@@ -38,43 +43,37 @@ pub fn new_pipeline<Input: Node>() -> Pipeline<Input, Input> {
     }
 }
 
-impl<Input: Node, Output: Node> Pipeline<Input, Output> {
+impl<Input, Output> Pipeline<Input, Output>
+where
+    Input: Node,
+    Output: Node,
+{
     
     
     
-    pub fn convert_ir_pass<NewOutput: Node>(mut self) -> Pipeline<Input, NewOutput> {
-        self.passes.push(Pass {
-            name: format!("Convert root to {}", type_name::<NewOutput>()),
-            func: Box::new(|mut root| {
-                let root = NewOutput::try_from_value(root.take_into_value())
-                    .map_err(|e| e.into_anyhow())?;
-                Ok(Box::new(root))
+    
+    pub fn pass<NewOutput, Context>(self, context: Context) -> Pipeline<Input, NewOutput>
+    where
+        Output: MapNode<NewOutput, Context> + Any,
+        NewOutput: Node,
+        Context: 'static,
+    {
+        let mut passes = self.passes;
+        passes.push(Pass {
+            name: type_name::<NewOutput>().to_string(),
+            func: Box::new(move |root| {
+                let output = root
+                    .to_box_any()
+                    .downcast::<Output>()
+                    .map_err(|_| anyhow!("Error casting root node to {}", type_name::<Output>()))?;
+                Ok(output.map_node(&context)?)
             }),
         });
         Pipeline {
-            passes: self.passes,
-            input: self.input,
+            passes,
+            input: PhantomData,
             output: PhantomData,
         }
-    }
-
-    
-    
-    
-    
-    pub fn pass<F, N>(mut self, mut pass_func: F) -> Self
-    where
-        F: FnMut(&mut N) -> Result<()> + 'static,
-        N: Node,
-    {
-        self.passes.push(Pass {
-            name: type_name::<F>().to_string(),
-            func: Box::new(move |mut root| {
-                root.try_visit_descendents_recurse_mut(&mut pass_func)?;
-                Ok(root)
-            }),
-        });
-        self
     }
 
     
@@ -149,7 +148,7 @@ impl<Input: Node, Output: Node> Pipeline<Input, Output> {
         let mut root: Box<dyn Node> = Box::new(root);
         for pass in self.passes.iter_mut() {
             root = (pass.func)(root).with_context(|| format!("pass: {}", pass.name))?;
-            recorder.record_pass(&pass.name, root.as_ref());
+            recorder.record_pass(&pass.name, &*root);
         }
         let root = root
             .to_box_any()
@@ -218,8 +217,9 @@ impl PrintOptions {
 
     fn matches_node(&self, node: &dyn Node, child: &dyn Node) -> bool {
         if let Some(filter_type) = &self.filter_type {
-            if node.type_name() != Some(filter_type) {
-                return false;
+            match node.type_name() {
+                Some(name) if name.to_lowercase() == filter_type.to_lowercase() => (),
+                _ => return false,
             }
         }
         if let Some(filter_name) = &self.filter_name {
@@ -249,9 +249,8 @@ fn pass_content(node: &dyn Node, opts: &PrintOptions) -> String {
         return "Empty".to_string();
     }
     let mut content = String::new();
-    for (path, node_content) in search.results {
-        let path = format!(" {path} ");
-        content.push_str(&format!("{path:-^78}\n{node_content}\n"));
+    for node_content in search.results {
+        content.push_str(&format!("{node_content}\n"));
     }
     content
 }
@@ -259,15 +258,13 @@ fn pass_content(node: &dyn Node, opts: &PrintOptions) -> String {
 
 struct NodeFilterSearch<'a> {
     opts: &'a PrintOptions,
-    current_path: Vec<String>,
-    results: Vec<(String, String)>,
+    results: Vec<String>,
 }
 
 impl<'a> NodeFilterSearch<'a> {
     fn new(opts: &'a PrintOptions) -> Self {
         Self {
             opts,
-            current_path: vec!["root".to_string()],
             results: vec![],
         }
     }
@@ -275,23 +272,14 @@ impl<'a> NodeFilterSearch<'a> {
     fn search(&mut self, node: &dyn Node) {
         
         let mut child_match = false;
-        node.visit_children(&mut |_, child| {
+        node.visit_children(&mut |child| {
             child_match = child_match || self.opts.matches_node(node, child);
-            Ok(())
-        })
-        .unwrap();
+        });
         if child_match {
-            self.results
-                .push((self.current_path.join(""), format!("{node:#?}")));
+            self.results.push(format!("{node:#?}"));
         } else {
             
-            node.visit_children(&mut |field_name, child| {
-                self.current_path.push(field_name.to_string());
-                self.search(child);
-                self.current_path.pop();
-                Ok(())
-            })
-            .unwrap();
+            node.visit_children(&mut |child| self.search(child));
         }
     }
 }

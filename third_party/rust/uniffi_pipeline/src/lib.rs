@@ -2,12 +2,12 @@
 
 
 
+mod map_node;
 mod node;
 mod pipeline;
-mod value;
 
 pub use anyhow::{bail, Result};
-pub use node::{FromValueError, Node};
-pub use pipeline::{new_pipeline, Pass, Pipeline, PipelineRecorder, PrintOptions};
-pub use uniffi_internal_macros::Node;
-pub use value::Value;
+pub use map_node::MapNode;
+pub use node::Node;
+pub use pipeline::{new_pipeline, Pipeline, PipelineRecorder, PrintOptions};
+pub use uniffi_internal_macros::{use_prev_node, MapNode, Node};

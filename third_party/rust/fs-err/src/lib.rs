@@ -66,7 +66,46 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/fs-err/2.9.0")]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/fs-err/3.3.1")]
 #![deny(missing_debug_implementations, missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
@@ -92,6 +131,8 @@ pub use open_options::OpenOptions;
 pub use path::PathExt;
 
 
+
+
 pub fn read<P: AsRef<Path>>(path: P) -> io::Result<Vec<u8>> {
     let path = path.as_ref();
     let mut file = file::open(path).map_err(|err_gen| err_gen(path.to_path_buf()))?;
@@ -100,6 +141,8 @@ pub fn read<P: AsRef<Path>>(path: P) -> io::Result<Vec<u8>> {
         .map_err(|err| Error::build(err, ErrorKind::Read, path))?;
     Ok(bytes)
 }
+
+
 
 
 pub fn read_to_string<P: AsRef<Path>>(path: P) -> io::Result<String> {
@@ -112,6 +155,8 @@ pub fn read_to_string<P: AsRef<Path>>(path: P) -> io::Result<String> {
 }
 
 
+
+
 pub fn write<P: AsRef<Path>, C: AsRef<[u8]>>(path: P, contents: C) -> io::Result<()> {
     let path = path.as_ref();
     file::create(path)
@@ -119,6 +164,9 @@ pub fn write<P: AsRef<Path>, C: AsRef<[u8]>>(path: P, contents: C) -> io::Result
         .write_all(contents.as_ref())
         .map_err(|err| Error::build(err, ErrorKind::Write, path))
 }
+
+
+
 
 
 pub fn copy<P, Q>(from: P, to: Q) -> io::Result<u64>
@@ -133,6 +181,8 @@ where
 }
 
 
+
+
 pub fn create_dir<P>(path: P) -> io::Result<()>
 where
     P: AsRef<Path>,
@@ -140,6 +190,8 @@ where
     let path = path.as_ref();
     fs::create_dir(path).map_err(|source| Error::build(source, ErrorKind::CreateDir, path))
 }
+
+
 
 
 pub fn create_dir_all<P>(path: P) -> io::Result<()>
@@ -151,6 +203,8 @@ where
 }
 
 
+
+
 pub fn remove_dir<P>(path: P) -> io::Result<()>
 where
     P: AsRef<Path>,
@@ -158,6 +212,8 @@ where
     let path = path.as_ref();
     fs::remove_dir(path).map_err(|source| Error::build(source, ErrorKind::RemoveDir, path))
 }
+
+
 
 
 pub fn remove_dir_all<P>(path: P) -> io::Result<()>
@@ -169,6 +225,8 @@ where
 }
 
 
+
+
 pub fn remove_file<P>(path: P) -> io::Result<()>
 where
     P: AsRef<Path>,
@@ -178,10 +236,24 @@ where
 }
 
 
+
+
 pub fn metadata<P: AsRef<Path>>(path: P) -> io::Result<fs::Metadata> {
     let path = path.as_ref();
     fs::metadata(path).map_err(|source| Error::build(source, ErrorKind::Metadata, path))
 }
+
+
+
+
+#[cfg(rustc_1_81)]
+pub fn exists<P: AsRef<Path>>(path: P) -> io::Result<bool> {
+    let path = path.as_ref();
+    fs::exists(path).map_err(|source| Error::build(source, ErrorKind::FileExists, path))
+}
+
+
+
 
 
 pub fn canonicalize<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
@@ -190,18 +262,29 @@ pub fn canonicalize<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
 }
 
 
-pub fn hard_link<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<()> {
-    let src = src.as_ref();
-    let dst = dst.as_ref();
-    fs::hard_link(src, dst)
-        .map_err(|source| SourceDestError::build(source, SourceDestErrorKind::HardLink, src, dst))
+
+
+
+
+
+
+pub fn hard_link<P: AsRef<Path>, Q: AsRef<Path>>(original: P, link: Q) -> io::Result<()> {
+    let original = original.as_ref();
+    let link = link.as_ref();
+    fs::hard_link(original, link).map_err(|source| {
+        SourceDestError::build(source, SourceDestErrorKind::HardLink, link, original)
+    })
 }
+
+
 
 
 pub fn read_link<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
     let path = path.as_ref();
     fs::read_link(path).map_err(|source| Error::build(source, ErrorKind::ReadLink, path))
 }
+
+
 
 
 pub fn rename<P: AsRef<Path>, Q: AsRef<Path>>(from: P, to: Q) -> io::Result<()> {
@@ -212,15 +295,22 @@ pub fn rename<P: AsRef<Path>, Q: AsRef<Path>>(from: P, to: Q) -> io::Result<()> 
 }
 
 
+
+
+
+
 #[deprecated = "replaced with std::os::unix::fs::symlink and \
 std::os::windows::fs::{symlink_file, symlink_dir}"]
-pub fn soft_link<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<()> {
-    let src = src.as_ref();
-    let dst = dst.as_ref();
+pub fn soft_link<P: AsRef<Path>, Q: AsRef<Path>>(original: P, link: Q) -> io::Result<()> {
+    let original = original.as_ref();
+    let link = link.as_ref();
     #[allow(deprecated)]
-    fs::soft_link(src, dst)
-        .map_err(|source| SourceDestError::build(source, SourceDestErrorKind::SoftLink, src, dst))
+    fs::soft_link(original, link).map_err(|source| {
+        SourceDestError::build(source, SourceDestErrorKind::SoftLink, link, original)
+    })
 }
+
+
 
 
 pub fn symlink_metadata<P: AsRef<Path>>(path: P) -> io::Result<fs::Metadata> {
@@ -228,6 +318,8 @@ pub fn symlink_metadata<P: AsRef<Path>>(path: P) -> io::Result<fs::Metadata> {
     fs::symlink_metadata(path)
         .map_err(|source| Error::build(source, ErrorKind::SymlinkMetadata, path))
 }
+
+
 
 
 pub fn set_permissions<P: AsRef<Path>>(path: P, perm: fs::Permissions) -> io::Result<()> {

@@ -1,4 +1,10 @@
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(missing_docs)]
+
+
+
+
+
 
 
 
@@ -91,6 +97,7 @@ use std::process::{Command, Stdio};
 use std::str::{from_utf8, FromStr};
 
 pub use camino;
+pub use cargo_platform;
 pub use semver;
 use semver::Version;
 
@@ -120,6 +127,108 @@ mod errors;
 #[cfg(feature = "unstable")]
 pub mod libtest;
 mod messages;
+
+macro_rules! str_newtype {
+    (
+        $(#[doc = $docs:literal])*
+        $name:ident
+    ) => {
+        $(#[doc = $docs])*
+        #[derive(Serialize, Debug, Clone, Eq, PartialOrd, Ord, Hash)]
+        #[serde(transparent)]
+        pub struct $name<T: AsRef<str> = String>(T);
+
+        impl<T: AsRef<str>> $name<T> {
+            /// Convert the wrapped string into its inner type `T`
+            pub fn into_inner(self) -> T {
+                self.0
+            }
+        }
+
+        impl<T: AsRef<str>> AsRef<str> for $name<T> {
+            fn as_ref(&self) -> &str {
+                self.0.as_ref()
+            }
+        }
+
+        impl<T: AsRef<str>> std::ops::Deref for $name<T> {
+            type Target = T;
+
+            fn deref(&self) -> &Self::Target {
+                &self.0
+            }
+        }
+
+        impl<T: AsRef<str>> std::borrow::Borrow<str> for $name<T> {
+            fn borrow(&self) -> &str {
+                self.0.as_ref()
+            }
+        }
+
+        impl<'a> std::str::FromStr for $name<String> {
+            type Err = std::convert::Infallible;
+
+            fn from_str(value: &str) -> Result<Self, Self::Err> {
+                Ok(Self::new(value.to_owned()))
+            }
+        }
+
+        impl<'de, T: AsRef<str> + serde::Deserialize<'de>> serde::Deserialize<'de> for $name<T> {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: serde::Deserializer<'de>,
+            {
+                let inner = T::deserialize(deserializer)?;
+                Ok(Self::new(inner))
+            }
+        }
+
+        impl<T: AsRef<str>> fmt::Display for $name<T> {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                self.0.as_ref().fmt(f)
+            }
+        }
+
+        // Note: The next two implementations are not based on Cargo string newtype implementations.
+
+        impl<T: AsRef<str>> $name<T> {
+            /// Create a new wrapped string
+            pub fn new(name: T) -> Self {
+                Self(name)
+            }
+        }
+
+        impl<T: AsRef<str>, Rhs: AsRef<str>> PartialEq<Rhs> for $name<T> {
+            fn eq(&self, other: &Rhs) -> bool {
+                self.as_ref() == other.as_ref()
+            }
+        }
+    };
+}
+
+str_newtype!(
+    /// Feature name newtype
+    ///
+    /// Based on [cargo-util-schema's string newtype] but with two crucial differences:
+    ///
+    /// - This newtype does not verify the wrapped string.
+    /// - This newtype allows comparison with arbitrary types that implement `AsRef<str>`.
+    ///
+    /// [cargo-util-schema's string newtype]: https://github.com/epage/cargo/blob/d8975d2901e132c02b3f6b1d107f2f50b275a058/crates/cargo-util-schemas/src/manifest/mod.rs#L1355-L1413
+    FeatureName
+);
+
+str_newtype!(
+    /// Package name newtype
+    ///
+    /// Based on [cargo-util-schema's string newtype] but with two crucial differences:
+    ///
+    /// - This newtype does not verify the wrapped string.
+    /// - This newtype allows comparison with arbitrary types that implement `AsRef<str>`.
+    ///
+    /// [cargo-util-schema's string newtype]: https://github.com/epage/cargo/blob/d8975d2901e132c02b3f6b1d107f2f50b275a058/crates/cargo-util-schemas/src/manifest/mod.rs#L1355-L1413
+    PackageName
+);
 
 
 
@@ -169,6 +278,9 @@ pub struct Metadata {
     pub workspace_root: Utf8PathBuf,
     
     pub target_directory: Utf8PathBuf,
+    
+    
+    pub build_directory: Option<Utf8PathBuf>,
     
     #[serde(rename = "metadata", default, skip_serializing_if = "is_null")]
     pub workspace_metadata: serde_json::Value,
@@ -223,7 +335,7 @@ impl<'a> std::ops::Index<&'a PackageId> for Metadata {
         self.packages
             .iter()
             .find(|p| p.id == *idx)
-            .unwrap_or_else(|| panic!("no package with this id: {:?}", idx))
+            .unwrap_or_else(|| panic!("no package with this id: {idx:?}"))
     }
 }
 
@@ -296,7 +408,7 @@ impl<'a> std::ops::Index<&'a PackageId> for Resolve {
         self.nodes
             .iter()
             .find(|p| p.id == *idx)
-            .unwrap_or_else(|| panic!("no Node with this id: {:?}", idx))
+            .unwrap_or_else(|| panic!("no Node with this id: {idx:?}"))
     }
 }
 
@@ -320,7 +432,7 @@ pub struct Node {
 
     
     #[serde(default)]
-    pub features: Vec<String>,
+    pub features: Vec<FeatureName>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
@@ -329,6 +441,12 @@ pub struct Node {
 #[cfg_attr(feature = "builder", builder(pattern = "owned", setter(into)))]
 
 pub struct NodeDep {
+    
+    
+    
+    
+    
+    
     
     
     pub name: String,
@@ -375,7 +493,7 @@ pub struct DepKindInfo {
 pub struct Package {
     
     
-    pub name: String,
+    pub name: PackageName,
     
     pub version: Version,
     
@@ -384,6 +502,7 @@ pub struct Package {
     pub authors: Vec<String>,
     
     pub id: PackageId,
+    
     
     
     #[cfg_attr(feature = "builder", builder(default))]
@@ -498,7 +617,7 @@ pub struct Package {
 impl PackageBuilder {
     
     pub fn new(
-        name: impl Into<String>,
+        name: impl Into<PackageName>,
         version: impl Into<Version>,
         id: impl Into<PackageId>,
         path: impl Into<Utf8PathBuf>,
@@ -822,9 +941,11 @@ impl fmt::Display for CrateType {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[non_exhaustive]
+#[derive(Default)]
 pub enum Edition {
     
     #[serde(rename = "2015")]
+    #[default]
     E2015,
     
     #[serde(rename = "2018")]
@@ -861,12 +982,6 @@ impl Edition {
 impl fmt::Display for Edition {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.as_str())
-    }
-}
-
-impl Default for Edition {
-    fn default() -> Self {
-        Self::E2015
     }
 }
 
@@ -909,7 +1024,8 @@ pub struct MetadataCommand {
     other_options: Vec<String>,
     
     
-    env: BTreeMap<OsString, OsString>,
+    
+    env: BTreeMap<OsString, Option<OsString>>,
     
     verbose: bool,
 }
@@ -1029,7 +1145,26 @@ impl MetadataCommand {
         key: K,
         val: V,
     ) -> &mut MetadataCommand {
-        self.env.insert(key.into(), val.into());
+        self.env.insert(key.into(), Some(val.into()));
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn env_remove<K: Into<OsString>>(&mut self, key: K) -> &mut MetadataCommand {
+        self.env.insert(key.into(), None);
         self
     }
 
@@ -1073,7 +1208,12 @@ impl MetadataCommand {
         }
         cmd.args(&self.other_options);
 
-        cmd.envs(&self.env);
+        for (key, val) in &self.env {
+            match val {
+                Some(val) => cmd.env(key, val),
+                None => cmd.env_remove(key),
+            };
+        }
 
         cmd
     }
@@ -1180,5 +1320,11 @@ mod test {
             bare_version_err("1.2.0+123"),
             "build metadata is not supported in rust-version"
         );
+    }
+
+    #[test]
+    fn package_name_eq() {
+        let my_package_name = super::PackageName::new("my_package");
+        assert_eq!(my_package_name, "my_package");
     }
 }

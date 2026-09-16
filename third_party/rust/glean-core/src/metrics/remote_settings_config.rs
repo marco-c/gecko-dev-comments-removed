@@ -46,6 +46,11 @@ pub struct RemoteSettingsConfig {
     
     #[serde(default)]
     pub session_sample_rate: Option<f64>,
+
+    
+    
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub events_ping_acceleration_factor: Option<usize>,
 }
 
 impl RemoteSettingsConfig {

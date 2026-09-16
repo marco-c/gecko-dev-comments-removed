@@ -4,12 +4,18 @@
 
 use super::*;
 
-pub fn pass(cb: &mut Callable) -> Result<()> {
-    
-    if let Some(node) = cb.throws_type.ty.as_mut() {
-        if let Type::Custom { builtin, .. } = &node.ty {
-            node.ty = *builtin.clone();
-        }
+pub fn is_from_interface(throws_ty: &general::ThrowsType) -> bool {
+    match &throws_ty.ty {
+        None => false,
+        Some(tn) => is_from_interface_inner(&tn.ty),
     }
-    Ok(())
+}
+
+fn is_from_interface_inner(ty: &Type) -> bool {
+    match ty {
+        
+        Type::Custom { builtin, .. } => is_from_interface_inner(builtin),
+        Type::Interface { .. } => true,
+        _ => false,
+    }
 }

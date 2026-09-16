@@ -46,18 +46,20 @@
 
 
 use std::{
-    collections::{BTreeMap, BTreeSet, HashSet},
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
     iter,
 };
 
 use anyhow::{anyhow, bail, ensure, Context, Result};
 
 pub mod universe;
-pub use uniffi_meta::{AsType, EnumShape, ObjectImpl, Type};
+pub use uniffi_meta::{AsType, EnumShape, ObjectImpl, TraitKind, Type};
 use universe::{TypeIterator, TypeUniverse};
 
 mod callbacks;
 pub use callbacks::CallbackInterface;
+mod custom_type;
+pub use custom_type::CustomType;
 mod enum_;
 pub use enum_::{Enum, Variant};
 mod function;
@@ -67,6 +69,8 @@ pub use object::{Constructor, Method, Object, UniffiTrait, UniffiTraitMethods};
 mod record;
 pub use record::{Field, Record};
 
+mod exclude;
+pub use exclude::apply_exclusions;
 mod rename;
 pub use rename::rename;
 
@@ -97,9 +101,12 @@ pub struct ComponentInterface {
     records: Vec<Record>,
     functions: Vec<Function>,
     objects: Vec<Object>,
+    custom_types: Vec<CustomType>,
     pub(crate) callback_interfaces: Vec<CallbackInterface>,
     
     errors: HashSet<String>,
+    
+    recursive_types: HashSet<String>,
     
     callback_interface_throws_types: BTreeSet<Type>,
     
@@ -160,6 +167,7 @@ impl ComponentInterface {
         
         self.types.add_known_type(&Type::String)?;
         crate::macro_metadata::add_group_to_ci(self, group)?;
+        self.infer_recursive_types();
         Ok(())
     }
 
@@ -215,6 +223,11 @@ impl ComponentInterface {
     
     pub fn get_record_definition(&self, name: &str) -> Option<&Record> {
         self.records.iter().find(|o| o.name == name)
+    }
+
+    
+    pub fn get_custom_type_definition(&self, name: &str) -> Option<&CustomType> {
+        self.custom_types.iter().find(|c| c.name == name)
     }
 
     
@@ -424,6 +437,13 @@ impl ComponentInterface {
         self.types
             .iter_local_types()
             .any(|t| matches!(t, Type::Map { .. }))
+    }
+
+    
+    pub fn contains_set_types(&self) -> bool {
+        self.types
+            .iter_local_types()
+            .any(|t| matches!(t, Type::Set { .. }))
     }
 
     
@@ -930,6 +950,25 @@ impl ComponentInterface {
         Ok(())
     }
 
+    pub(super) fn add_custom_type_definition(&mut self, defn: CustomType) -> Result<()> {
+        if let Some(existing) = self.custom_types.iter_mut().find(|c| c.name == defn.name) {
+            
+            
+            anyhow::ensure!(
+                existing.builtin == defn.builtin && existing.module_path == defn.module_path,
+                "conflicting custom type definitions for {:?}",
+                defn.name,
+            );
+            
+            if defn.docstring.is_some() && existing.docstring.is_none() {
+                existing.docstring = defn.docstring;
+            }
+            return Ok(());
+        }
+        self.custom_types.push(defn);
+        Ok(())
+    }
+
     
     pub(super) fn add_function_definition(&mut self, defn: Function) -> Result<()> {
         
@@ -1177,6 +1216,44 @@ impl ComponentInterface {
         }
         Ok(())
     }
+
+    
+    fn infer_recursive_types(&mut self) {
+        let deps = self.type_dep_graph();
+        self.recursive_types =
+            crate::pipeline::general::infer_recursive_enums::find_recursive_enum_names(&deps);
+    }
+
+    
+    pub fn is_recursive(&self, name: &str) -> bool {
+        self.recursive_types.contains(name)
+    }
+
+    
+    
+    
+    
+    
+    fn type_dep_graph(&self) -> HashMap<String, HashSet<String>> {
+        let enum_entries = self.enums.iter().map(|e| {
+            let deps: HashSet<String> = e
+                .variants()
+                .iter()
+                .flat_map(|v| v.fields())
+                .flat_map(|f| type_names_in_type(&f.as_type()))
+                .collect();
+            (e.name().to_string(), deps)
+        });
+        let record_entries = self.records.iter().map(|r| {
+            let deps: HashSet<String> = r
+                .fields()
+                .iter()
+                .flat_map(|f| type_names_in_type(&f.as_type()))
+                .collect();
+            (r.name().to_string(), deps)
+        });
+        enum_entries.chain(record_entries).collect()
+    }
 }
 
 fn get_object<'a>(objects: &'a mut [Object], name: &str) -> Option<&'a mut Object> {
@@ -1336,6 +1413,30 @@ fn throws_name(throws: &Option<Type>) -> Option<&str> {
             Some(name)
         }
         _ => panic!("unknown throw type: {throws:?}"),
+    }
+}
+
+
+
+
+
+
+fn type_names_in_type(ty: &Type) -> Vec<String> {
+    match ty {
+        Type::Enum { name, .. } | Type::Record { name, .. } => vec![name.clone()],
+        Type::Box { inner_type }
+        | Type::Optional { inner_type }
+        | Type::Sequence { inner_type }
+        | Type::Set { inner_type } => type_names_in_type(inner_type),
+        Type::Map {
+            key_type,
+            value_type,
+        } => {
+            let mut names = type_names_in_type(key_type);
+            names.extend(type_names_in_type(value_type));
+            names
+        }
+        _ => vec![],
     }
 }
 
@@ -1617,5 +1718,198 @@ new definition: Enum {
         
         assert_eq!(ci.namespace_for_module_path("crate").unwrap(), "ns");
         assert!(ci.namespace_for_module_path("oops").is_err());
+    }
+
+    #[test]
+    fn dep_graph_no_deps() {
+        let ci = ComponentInterface::from_webidl(
+            r#"
+            namespace test {};
+            enum Apple { "one", "two" };
+            enum Orange { "a", "b" };
+            "#,
+            "crate",
+        )
+        .unwrap();
+        let graph = ci.type_dep_graph();
+        assert!(graph["Apple"].is_empty());
+        assert!(graph["Orange"].is_empty());
+    }
+
+    #[test]
+    fn dep_graph_self_referential() {
+        let ci = ComponentInterface::from_webidl(
+            r#"
+            namespace test {};
+            [Enum]
+            interface Quine {
+                Recurse(Quine value);
+            };
+            "#,
+            "crate",
+        )
+        .unwrap();
+        let graph = ci.type_dep_graph();
+        assert_eq!(graph["Quine"], HashSet::from(["Quine".to_string()]));
+    }
+
+    #[test]
+    fn dep_graph_deduplicates_repeated_dep() {
+        
+        let ci = ComponentInterface::from_webidl(
+            r#"
+            namespace test {};
+            [Enum]
+            interface Socks {
+                WithLeft(Sock left);
+                WithRight(Sock right);
+            };
+            enum Sock { "left", "right" };
+            "#,
+            "crate",
+        )
+        .unwrap();
+        let graph = ci.type_dep_graph();
+        assert_eq!(graph["Socks"], HashSet::from(["Sock".to_string()]));
+    }
+
+    #[test]
+    fn dep_graph_optional_field_propagates_dep() {
+        let ci = ComponentInterface::from_webidl(
+            r#"
+            namespace test {};
+            [Enum]
+            interface Outer {
+                WithInner(Inner? value);
+            };
+            enum Inner { "a", "b" };
+            "#,
+            "crate",
+        )
+        .unwrap();
+        let graph = ci.type_dep_graph();
+        assert_eq!(graph["Outer"], HashSet::from(["Inner".to_string()]));
+    }
+
+    #[test]
+    fn dep_graph_sequence_field_propagates_dep() {
+        let ci = ComponentInterface::from_webidl(
+            r#"
+            namespace test {};
+            [Enum]
+            interface Outer {
+                WithInners(sequence<Inner> values);
+            };
+            enum Inner { "a", "b" };
+            "#,
+            "crate",
+        )
+        .unwrap();
+        let graph = ci.type_dep_graph();
+        assert_eq!(graph["Outer"], HashSet::from(["Inner".to_string()]));
+    }
+
+    #[test]
+    fn dep_graph_map_value_propagates_dep() {
+        let ci = ComponentInterface::from_webidl(
+            r#"
+            namespace test {};
+            [Enum]
+            interface Outer {
+                WithMap(record<DOMString, Inner> map);
+            };
+            enum Inner { "a", "b" };
+            "#,
+            "crate",
+        )
+        .unwrap();
+        let graph = ci.type_dep_graph();
+        assert_eq!(graph["Outer"], HashSet::from(["Inner".to_string()]));
+    }
+
+    #[test]
+    fn dep_graph_primitive_fields_have_no_deps() {
+        let ci = ComponentInterface::from_webidl(
+            r#"
+            namespace test {};
+            [Enum]
+            interface Mixed {
+                WithInt(u32 value);
+                WithStr(string value);
+            };
+            "#,
+            "crate",
+        )
+        .unwrap();
+        let graph = ci.type_dep_graph();
+        assert!(graph["Mixed"].is_empty());
+    }
+
+    #[test]
+    fn dep_graph_interface_field_has_no_dep() {
+        
+        
+        let ci = ComponentInterface::from_webidl(
+            r#"
+            namespace test {};
+            [Enum]
+            interface Verdict {
+                Guilty(Judge judge);
+            };
+            interface Judge {
+                Sentence sentence();
+            };
+            enum Sentence { "life", "parole" };
+            "#,
+            "crate",
+        )
+        .unwrap();
+        let graph = ci.type_dep_graph();
+        assert!(graph["Verdict"].is_empty());
+    }
+
+    #[test]
+    fn test_custom_type_docstring_upgrade() {
+        
+        
+        let mut ci = ComponentInterface::new("crate_name");
+        ci.add_custom_type_definition(CustomType {
+            name: "Guid".into(),
+            module_path: "crate_name".into(),
+            builtin: Type::String,
+            docstring: None,
+        })
+        .unwrap();
+        ci.add_custom_type_definition(CustomType {
+            name: "Guid".into(),
+            module_path: "crate_name".into(),
+            builtin: Type::String,
+            docstring: Some("A globally unique identifier.".into()),
+        })
+        .unwrap();
+        assert_eq!(
+            ci.get_custom_type_definition("Guid").unwrap().docstring(),
+            Some("A globally unique identifier.")
+        );
+    }
+
+    #[test]
+    fn test_custom_type_conflicting_builtin_is_error() {
+        let mut ci = ComponentInterface::new("crate_name");
+        ci.add_custom_type_definition(CustomType {
+            name: "Guid".into(),
+            module_path: "crate_name".into(),
+            builtin: Type::String,
+            docstring: None,
+        })
+        .unwrap();
+        assert!(ci
+            .add_custom_type_definition(CustomType {
+                name: "Guid".into(),
+                module_path: "crate_name".into(),
+                builtin: Type::Int32,
+                docstring: None,
+            })
+            .is_err());
     }
 }

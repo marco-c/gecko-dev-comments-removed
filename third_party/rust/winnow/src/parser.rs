@@ -1,6 +1,5 @@
 
 
-use crate::ascii::Caseless as AsciiCaseless;
 use crate::combinator::impls;
 #[cfg(feature = "unstable-recover")]
 #[cfg(feature = "std")]
@@ -94,6 +93,57 @@ pub trait Parser<I, O, E> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    fn parse_iter(&mut self, input: I) -> impls::ParseIter<'_, Self, I, O, E>
+    where
+        Self: core::marker::Sized,
+        I: Stream,
+        
+        I: StreamIsPartial,
+        E: ParserError<I>,
+        <E as ParserError<I>>::Inner: ParserError<I>,
+    {
+        debug_assert!(
+            !I::is_partial_supported(),
+            "partial streams need to handle `ErrMode::Incomplete`"
+        );
+
+        let start = input.checkpoint();
+        impls::ParseIter {
+            parser: self,
+            input: Some(input),
+            start: Some(start),
+            marker: Default::default(),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
     fn parse_next(&mut self, input: &mut I) -> Result<O, E>;
 
     
@@ -161,6 +211,8 @@ pub trait Parser<I, O, E> {
     
     
     
+    
+    
     #[inline(always)]
     fn by_ref(&mut self) -> impls::ByRef<'_, Self, I, O, E>
     where
@@ -168,9 +220,7 @@ pub trait Parser<I, O, E> {
     {
         impls::ByRef {
             p: self,
-            i: Default::default(),
-            o: Default::default(),
-            e: Default::default(),
+            marker: Default::default(),
         }
     }
 
@@ -202,9 +252,7 @@ pub trait Parser<I, O, E> {
         impls::Value {
             parser: self,
             val,
-            i: Default::default(),
-            o: Default::default(),
-            e: Default::default(),
+            marker: Default::default(),
         }
     }
 
@@ -234,10 +282,7 @@ pub trait Parser<I, O, E> {
     {
         impls::DefaultValue {
             parser: self,
-            o2: Default::default(),
-            i: Default::default(),
-            o: Default::default(),
-            e: Default::default(),
+            marker: Default::default(),
         }
     }
 
@@ -266,9 +311,7 @@ pub trait Parser<I, O, E> {
     {
         impls::Void {
             parser: self,
-            i: Default::default(),
-            o: Default::default(),
-            e: Default::default(),
+            marker: Default::default(),
         }
     }
 
@@ -301,10 +344,7 @@ pub trait Parser<I, O, E> {
     {
         impls::OutputInto {
             parser: self,
-            i: Default::default(),
-            o: Default::default(),
-            o2: Default::default(),
-            e: Default::default(),
+            marker: Default::default(),
         }
     }
 
@@ -337,12 +377,12 @@ pub trait Parser<I, O, E> {
     {
         impls::Take {
             parser: self,
-            i: Default::default(),
-            o: Default::default(),
-            e: Default::default(),
+            marker: Default::default(),
         }
     }
 
+    
+    
     
     
     
@@ -379,12 +419,12 @@ pub trait Parser<I, O, E> {
     {
         impls::WithTaken {
             parser: self,
-            i: Default::default(),
-            o: Default::default(),
-            e: Default::default(),
+            marker: Default::default(),
         }
     }
 
+    
+    
     
     
     
@@ -412,12 +452,12 @@ pub trait Parser<I, O, E> {
     {
         impls::Span {
             parser: self,
-            i: Default::default(),
-            o: Default::default(),
-            e: Default::default(),
+            marker: Default::default(),
         }
     }
 
+    
+    
     
     
     
@@ -454,9 +494,7 @@ pub trait Parser<I, O, E> {
     {
         impls::WithSpan {
             parser: self,
-            i: Default::default(),
-            o: Default::default(),
-            e: Default::default(),
+            marker: Default::default(),
         }
     }
 
@@ -490,10 +528,7 @@ pub trait Parser<I, O, E> {
         impls::Map {
             parser: self,
             map,
-            i: Default::default(),
-            o: Default::default(),
-            o2: Default::default(),
-            e: Default::default(),
+            marker: Default::default(),
         }
     }
 
@@ -533,11 +568,7 @@ pub trait Parser<I, O, E> {
         impls::TryMap {
             parser: self,
             map,
-            i: Default::default(),
-            o: Default::default(),
-            o2: Default::default(),
-            e: Default::default(),
-            e2: Default::default(),
+            marker: Default::default(),
         }
     }
 
@@ -579,13 +610,14 @@ pub trait Parser<I, O, E> {
         impls::VerifyMap {
             parser: self,
             map,
-            i: Default::default(),
-            o: Default::default(),
-            o2: Default::default(),
-            e: Default::default(),
+            marker: Default::default(),
         }
     }
 
+    
+    
+    
+    
     
     
     
@@ -628,11 +660,7 @@ pub trait Parser<I, O, E> {
         impls::FlatMap {
             f: self,
             g: map,
-            h: Default::default(),
-            i: Default::default(),
-            o: Default::default(),
-            o2: Default::default(),
-            e: Default::default(),
+            marker: Default::default(),
         }
     }
 
@@ -667,13 +695,12 @@ pub trait Parser<I, O, E> {
         impls::AndThen {
             outer: self,
             inner,
-            i: Default::default(),
-            o: Default::default(),
-            o2: Default::default(),
-            e: Default::default(),
+            marker: Default::default(),
         }
     }
 
+    
+    
     
     
     
@@ -704,10 +731,7 @@ pub trait Parser<I, O, E> {
     {
         impls::ParseTo {
             p: self,
-            i: Default::default(),
-            o: Default::default(),
-            o2: Default::default(),
-            e: Default::default(),
+            marker: Default::default(),
         }
     }
 
@@ -741,17 +765,14 @@ pub trait Parser<I, O, E> {
         Self: core::marker::Sized,
         G: FnMut(&O2) -> bool,
         I: Stream,
-        O: crate::lib::std::borrow::Borrow<O2>,
+        O: core::borrow::Borrow<O2>,
         O2: ?Sized,
         E: ParserError<I>,
     {
         impls::Verify {
             parser: self,
             filter,
-            i: Default::default(),
-            o: Default::default(),
-            o2: Default::default(),
-            e: Default::default(),
+            marker: Default::default(),
         }
     }
 
@@ -790,14 +811,12 @@ pub trait Parser<I, O, E> {
         I: Stream,
         E: AddContext<I, C>,
         E: ParserError<I>,
-        C: Clone + crate::lib::std::fmt::Debug,
+        C: Clone + core::fmt::Debug,
     {
         impls::Context {
             parser: self,
             context,
-            i: Default::default(),
-            o: Default::default(),
-            e: Default::default(),
+            marker: Default::default(),
         }
     }
 
@@ -839,17 +858,13 @@ pub trait Parser<I, O, E> {
         E: AddContext<I, C>,
         E: ParserError<I>,
         F: Fn() -> FI + Clone,
-        C: crate::lib::std::fmt::Debug,
+        C: core::fmt::Debug,
         FI: Iterator<Item = C>,
     {
         impls::ContextWith {
             parser: self,
             context,
-            i: Default::default(),
-            o: Default::default(),
-            e: Default::default(),
-            c: Default::default(),
-            fi: Default::default(),
+            marker: Default::default(),
         }
     }
 
@@ -887,10 +902,7 @@ pub trait Parser<I, O, E> {
         impls::MapErr {
             parser: self,
             map,
-            i: Default::default(),
-            o: Default::default(),
-            e: Default::default(),
-            e2: Default::default(),
+            marker: Default::default(),
         }
     }
 
@@ -919,9 +931,7 @@ pub trait Parser<I, O, E> {
     {
         impls::CompleteErr {
             p: self,
-            i: Default::default(),
-            o: Default::default(),
-            e: Default::default(),
+            marker: Default::default(),
         }
     }
 
@@ -934,10 +944,7 @@ pub trait Parser<I, O, E> {
     {
         impls::ErrInto {
             parser: self,
-            i: Default::default(),
-            o: Default::default(),
-            e: Default::default(),
-            e2: Default::default(),
+            marker: Default::default(),
         }
     }
 
@@ -962,9 +969,7 @@ pub trait Parser<I, O, E> {
         impls::RetryAfter {
             parser: self,
             recover,
-            i: Default::default(),
-            o: Default::default(),
-            e: Default::default(),
+            marker: Default::default(),
         }
     }
 
@@ -986,9 +991,7 @@ pub trait Parser<I, O, E> {
         impls::ResumeAfter {
             parser: self,
             recover,
-            i: Default::default(),
-            o: Default::default(),
-            e: Default::default(),
+            marker: Default::default(),
         }
     }
 }
@@ -1107,74 +1110,9 @@ where
 
 
 
-
-
-
-impl<'s, I, E: ParserError<I>> Parser<I, <I as Stream>::Slice, E> for AsciiCaseless<&'s [u8]>
-where
-    I: Compare<AsciiCaseless<&'s [u8]>> + StreamIsPartial,
-    I: Stream,
-{
-    #[inline(always)]
-    fn parse_next(&mut self, i: &mut I) -> Result<<I as Stream>::Slice, E> {
-        crate::token::literal(*self).parse_next(i)
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 impl<'s, I, E: ParserError<I>, const N: usize> Parser<I, <I as Stream>::Slice, E> for &'s [u8; N]
 where
     I: Compare<&'s [u8; N]> + StreamIsPartial,
-    I: Stream,
-{
-    #[inline(always)]
-    fn parse_next(&mut self, i: &mut I) -> Result<<I as Stream>::Slice, E> {
-        crate::token::literal(*self).parse_next(i)
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-impl<'s, I, E: ParserError<I>, const N: usize> Parser<I, <I as Stream>::Slice, E>
-    for AsciiCaseless<&'s [u8; N]>
-where
-    I: Compare<AsciiCaseless<&'s [u8; N]>> + StreamIsPartial,
     I: Stream,
 {
     #[inline(always)]
@@ -1212,38 +1150,6 @@ where
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-impl<'s, I, E: ParserError<I>> Parser<I, <I as Stream>::Slice, E> for AsciiCaseless<&'s str>
-where
-    I: Compare<AsciiCaseless<&'s str>> + StreamIsPartial,
-    I: Stream,
-{
-    #[inline(always)]
-    fn parse_next(&mut self, i: &mut I) -> Result<<I as Stream>::Slice, E> {
-        crate::token::literal(*self).parse_next(i)
-    }
-}
-
 impl<I: Stream, E: ParserError<I>> Parser<I, (), E> for () {
     #[inline(always)]
     fn parse_next(&mut self, _i: &mut I) -> Result<(), E> {
@@ -1252,20 +1158,20 @@ impl<I: Stream, E: ParserError<I>> Parser<I, (), E> for () {
 }
 
 macro_rules! impl_parser_for_tuple {
-  ($($index:tt $parser:ident $output:ident),+) => (
-    #[allow(non_snake_case)]
-    impl<I: Stream, $($output),+, E: ParserError<I>, $($parser),+> Parser<I, ($($output),+,), E> for ($($parser),+,)
-    where
-      $($parser: Parser<I, $output, E>),+
-    {
-      #[inline(always)]
-      fn parse_next(&mut self, i: &mut I) -> Result<($($output),+,), E> {
-        $(let $output = self.$index.parse_next(i)?;)+
+    ($($index:tt $parser:ident $output:ident),+) => (
+        #[allow(non_snake_case)]
+        impl<I: Stream, $($output),+, E: ParserError<I>, $($parser),+> Parser<I, ($($output),+,), E> for ($($parser),+,)
+        where
+            $($parser: Parser<I, $output, E>),+
+        {
+            #[inline(always)]
+            fn parse_next(&mut self, i: &mut I) -> Result<($($output),+,), E> {
+                $(let $output = self.$index.parse_next(i)?;)+
 
-        Ok(($($output),+,))
-      }
-    }
-  )
+                Ok(($($output),+,))
+            }
+        }
+    )
 }
 
 macro_rules! impl_parser_for_tuples {
@@ -1292,22 +1198,11 @@ impl_parser_for_tuples!(
   7 P7 O7,
   8 P8 O8,
   9 P9 O9,
-  10 P10 O10,
-  11 P11 O11,
-  12 P12 O12,
-  13 P13 O13,
-  14 P14 O14,
-  15 P15 O15,
-  16 P16 O16,
-  17 P17 O17,
-  18 P18 O18,
-  19 P19 O19,
-  20 P20 O20,
-  21 P21 O21
+  10 P10 O10
 );
 
 #[cfg(feature = "alloc")]
-use crate::lib::std::boxed::Box;
+use alloc::boxed::Box;
 
 #[cfg(feature = "alloc")]
 impl<I, O, E> Parser<I, O, E> for Box<dyn Parser<I, O, E> + '_> {
@@ -1346,10 +1241,10 @@ where
     I: Stream,
     I: StreamIsPartial,
     R: FromRecoverableError<Recoverable<I, R>, E>,
-    R: crate::lib::std::fmt::Debug,
+    R: core::fmt::Debug,
     E: FromRecoverableError<Recoverable<I, R>, E>,
     E: ParserError<Recoverable<I, R>>,
-    E: crate::lib::std::fmt::Debug,
+    E: core::fmt::Debug,
 {
     fn recoverable_parse(&mut self, input: I) -> (I, Option<O>, Vec<R>) {
         debug_assert!(
@@ -1385,7 +1280,7 @@ where
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "ascii", feature = "binary"))]
 mod tests {
     use super::*;
 
@@ -1402,10 +1297,10 @@ mod tests {
     #[doc(hidden)]
     #[macro_export]
     macro_rules! assert_size (
-    ($t:ty, $sz:expr) => (
-      assert!($crate::lib::std::mem::size_of::<$t>() <= $sz, "{} <= {} failed", $crate::lib::std::mem::size_of::<$t>(), $sz);
+        ($t:ty, $sz:expr) => (
+            assert!(core::mem::size_of::<$t>() <= $sz, "{} <= {} failed", core::mem::size_of::<$t>(), $sz);
+        );
     );
-  );
 
     #[test]
     #[cfg(target_pointer_width = "64")]

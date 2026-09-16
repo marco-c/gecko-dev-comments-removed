@@ -65,6 +65,8 @@ pub struct Configuration {
     pub session_sample_rate: f64,
     
     pub session_inactivity_timeout: Duration,
+    
+    pub events_ping_acceleration_factor: Option<usize>,
 }
 
 
@@ -127,6 +129,8 @@ pub struct Builder {
     pub session_sample_rate: f64,
     
     pub session_inactivity_timeout: Duration,
+    
+    pub events_ping_acceleration_factor: Option<usize>,
 }
 
 impl Builder {
@@ -157,6 +161,7 @@ impl Builder {
             session_mode: SessionMode::Auto,
             session_sample_rate: 1.0,
             session_inactivity_timeout: Duration::from_secs(30 * 60),
+            events_ping_acceleration_factor: None,
         }
     }
 
@@ -183,6 +188,7 @@ impl Builder {
             session_mode: self.session_mode,
             session_sample_rate: self.session_sample_rate,
             session_inactivity_timeout: self.session_inactivity_timeout,
+            events_ping_acceleration_factor: self.events_ping_acceleration_factor,
         }
     }
 
@@ -279,6 +285,12 @@ impl Builder {
     
     pub fn with_ping_lifetime_max_time(mut self, value: Duration) -> Self {
         self.ping_lifetime_max_time = value;
+        self
+    }
+
+    
+    pub fn with_events_ping_acceleration_factor(mut self, factor: usize) -> Self {
+        self.events_ping_acceleration_factor = Some(factor);
         self
     }
 }

@@ -1,6 +1,3 @@
-
-#![deny(unsafe_code)]
-#![warn(rust_2018_idioms)]
 #![no_std]
 
 
@@ -109,6 +106,7 @@ extern crate alloc;
 extern crate std;
 
 mod arbitrary;
+mod inner;
 #[macro_use]
 mod macros;
 #[cfg(feature = "borsh")]
@@ -174,13 +172,13 @@ where
 
 impl<K, V> Bucket<K, V> {
     
-    fn key_ref(&self) -> &K {
+    const fn key_ref(&self) -> &K {
         &self.key
     }
-    fn value_ref(&self) -> &V {
+    const fn value_ref(&self) -> &V {
         &self.value
     }
-    fn value_mut(&mut self) -> &mut V {
+    const fn value_mut(&mut self) -> &mut V {
         &mut self.value
     }
     fn key(self) -> K {
@@ -192,13 +190,13 @@ impl<K, V> Bucket<K, V> {
     fn key_value(self) -> (K, V) {
         (self.key, self.value)
     }
-    fn refs(&self) -> (&K, &V) {
+    const fn refs(&self) -> (&K, &V) {
         (&self.key, &self.value)
     }
-    fn ref_mut(&mut self) -> (&K, &mut V) {
+    const fn ref_mut(&mut self) -> (&K, &mut V) {
         (&self.key, &mut self.value)
     }
-    fn muts(&mut self) -> (&mut K, &mut V) {
+    const fn muts(&mut self) -> (&mut K, &mut V) {
         (&mut self.key, &mut self.value)
     }
 }
@@ -255,9 +253,7 @@ impl core::fmt::Display for TryReserveError {
     }
 }
 
-#[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-impl std::error::Error for TryReserveError {}
+impl core::error::Error for TryReserveError {}
 
 
 
@@ -285,6 +281,4 @@ impl core::fmt::Display for GetDisjointMutError {
     }
 }
 
-#[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-impl std::error::Error for GetDisjointMutError {}
+impl core::error::Error for GetDisjointMutError {}

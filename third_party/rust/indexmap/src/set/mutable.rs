@@ -17,7 +17,8 @@ use crate::map::MutableKeys;
 
 
 
-pub trait MutableValues: private::Sealed {
+#[expect(private_bounds)]
+pub trait MutableValues: Sealed {
     type Value;
 
     
@@ -79,8 +80,6 @@ where
     }
 }
 
-mod private {
-    pub trait Sealed {}
+trait Sealed {}
 
-    impl<T, S> Sealed for super::IndexSet<T, S> {}
-}
+impl<T, S> Sealed for IndexSet<T, S> {}

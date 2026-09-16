@@ -5,6 +5,11 @@ use std::path::PathBuf;
 
 use crate::errors::{Error, ErrorKind};
 
+#[allow(unused_imports)]
+use crate as fs_err; 
+
+
+
 
 pub fn read_dir<P: Into<PathBuf>>(path: P) -> io::Result<ReadDir> {
     let path = path.into();
@@ -14,9 +19,6 @@ pub fn read_dir<P: Into<PathBuf>>(path: P) -> io::Result<ReadDir> {
         Err(source) => Err(Error::build(source, ErrorKind::ReadDir, path)),
     }
 }
-
-
-
 
 
 
@@ -43,8 +45,6 @@ impl Iterator for ReadDir {
 
 
 
-
-
 #[derive(Debug)]
 pub struct DirEntry {
     inner: fs::DirEntry,
@@ -52,10 +52,14 @@ pub struct DirEntry {
 
 impl DirEntry {
     
+    
+    
     pub fn path(&self) -> PathBuf {
         self.inner.path()
     }
 
+    
+    
     
     pub fn metadata(&self) -> io::Result<fs::Metadata> {
         self.inner
@@ -64,12 +68,16 @@ impl DirEntry {
     }
 
     
+    
+    
     pub fn file_type(&self) -> io::Result<fs::FileType> {
         self.inner
             .file_type()
             .map_err(|source| Error::build(source, ErrorKind::Metadata, self.path()))
     }
 
+    
+    
     
     pub fn file_name(&self) -> OsString {
         self.inner.file_name()

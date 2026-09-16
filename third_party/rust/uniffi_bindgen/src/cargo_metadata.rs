@@ -30,11 +30,16 @@ impl CrateConfigSupplier {
 }
 
 
-
 impl BindgenPathsLayer for CrateConfigSupplier {
-    fn get_config(&self, crate_name: &str) -> Result<Option<toml::value::Table>> {
-        let crate_root = self.paths.get(crate_name);
-        let Some(crate_root) = crate_root else {
+    fn get_crate_root(&self, crate_name: &str) -> Option<Utf8PathBuf> {
+        self.paths.get(crate_name).cloned()
+    }
+}
+
+
+impl BindgenCrateConfigSupplier for CrateConfigSupplier {
+    fn get_toml(&self, crate_name: &str) -> Result<Option<toml::value::Table>> {
+        let Some(crate_root) = self.get_crate_root(crate_name) else {
             return Ok(None);
         };
         
@@ -47,19 +52,6 @@ impl BindgenPathsLayer for CrateConfigSupplier {
         let toml = toml::de::from_str(&contents)
             .with_context(|| format!("parse toml: {:?}", config_path))?;
         Ok(Some(toml))
-    }
-
-    fn get_udl_path(&self, crate_name: &str, udl_name: &str) -> Option<Utf8PathBuf> {
-        self.paths
-            .get(crate_name)
-            .map(|p| p.join("src").join(format!("{udl_name}.udl")))
-    }
-}
-
-
-impl BindgenCrateConfigSupplier for CrateConfigSupplier {
-    fn get_toml(&self, crate_name: &str) -> Result<Option<toml::value::Table>> {
-        self.get_config(crate_name)
     }
 
     fn get_udl(&self, crate_name: &str, udl_name: &str) -> Result<String> {

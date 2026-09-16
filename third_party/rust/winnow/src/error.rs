@@ -20,14 +20,17 @@
 
 
 #[cfg(feature = "alloc")]
-use crate::lib::std::borrow::ToOwned;
-use crate::lib::std::fmt;
-use core::num::NonZeroUsize;
+use alloc::borrow::ToOwned;
+use core::fmt;
 
+#[cfg(feature = "binary")]
+use crate::binary::bits::Bits;
 use crate::stream::AsBStr;
 use crate::stream::Stream;
 #[allow(unused_imports)] 
 use crate::Parser;
+
+pub use crate::stream::Needed;
 
 
 
@@ -50,48 +53,6 @@ pub type ModalResult<O, E = ContextError> = Result<O, ErrMode<E>>;
 
 #[cfg(test)]
 pub(crate) type TestResult<I, O> = ModalResult<O, InputError<I>>;
-
-
-
-
-
-
-
-
-
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum Needed {
-    
-    Unknown,
-    
-    
-    
-    Size(NonZeroUsize),
-}
-
-impl Needed {
-    
-    pub fn new(s: usize) -> Self {
-        match NonZeroUsize::new(s) {
-            Some(sz) => Needed::Size(sz),
-            None => Needed::Unknown,
-        }
-    }
-
-    
-    pub fn is_known(&self) -> bool {
-        *self != Needed::Unknown
-    }
-
-    
-    #[inline]
-    pub fn map<F: Fn(NonZeroUsize) -> usize>(self, f: F) -> Needed {
-        match self {
-            Needed::Unknown => Needed::Unknown,
-            Needed::Size(n) => Needed::new(f(n)),
-        }
-    }
-}
 
 
 
@@ -194,7 +155,7 @@ impl<I: Stream, E: ParserError<I>> ParserError<I> for ErrMode<E> {
     #[inline(always)]
     fn assert(input: &I, message: &'static str) -> Self
     where
-        I: crate::lib::std::fmt::Debug,
+        I: core::fmt::Debug,
     {
         ErrMode::Cut(E::assert(input, message))
     }
@@ -349,7 +310,7 @@ pub trait ParserError<I: Stream>: Sized {
     #[inline(always)]
     fn assert(input: &I, _message: &'static str) -> Self
     where
-        I: crate::lib::std::fmt::Debug,
+        I: core::fmt::Debug,
     {
         #[cfg(debug_assertions)]
         panic!("assert `{_message}` failed at {input:#?}");
@@ -555,20 +516,6 @@ impl<I: Clone, E> FromExternalError<I, E> for InputError<I> {
     }
 }
 
-impl<I: Clone> ErrorConvert<InputError<(I, usize)>> for InputError<I> {
-    #[inline]
-    fn convert(self) -> InputError<(I, usize)> {
-        self.map_input(|i| (i, 0))
-    }
-}
-
-impl<I: Clone> ErrorConvert<InputError<I>> for InputError<(I, usize)> {
-    #[inline]
-    fn convert(self) -> InputError<I> {
-        self.map_input(|(i, _o)| i)
-    }
-}
-
 
 impl<I: Clone + fmt::Display> fmt::Display for InputError<I> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -630,8 +577,8 @@ impl ErrorConvert<EmptyError> for EmptyError {
     }
 }
 
-impl crate::lib::std::fmt::Display for EmptyError {
-    fn fmt(&self, f: &mut crate::lib::std::fmt::Formatter<'_>) -> crate::lib::std::fmt::Result {
+impl core::fmt::Display for EmptyError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         "failed to parse".fmt(f)
     }
 }
@@ -680,7 +627,7 @@ impl ErrorConvert<()> for () {
 #[derive(Debug)]
 pub struct ContextError<C = StrContext> {
     #[cfg(feature = "alloc")]
-    context: crate::lib::std::vec::Vec<C>,
+    context: alloc::vec::Vec<C>,
     #[cfg(not(feature = "alloc"))]
     context: core::marker::PhantomData<C>,
     #[cfg(feature = "std")]
@@ -831,8 +778,8 @@ impl<C: core::cmp::PartialEq> core::cmp::PartialEq for ContextError<C> {
     }
 }
 
-impl crate::lib::std::fmt::Display for ContextError<StrContext> {
-    fn fmt(&self, f: &mut crate::lib::std::fmt::Formatter<'_>) -> crate::lib::std::fmt::Result {
+impl core::fmt::Display for ContextError<StrContext> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         #[cfg(feature = "alloc")]
         {
             let expression = self.context().find_map(|c| match c {
@@ -845,7 +792,7 @@ impl crate::lib::std::fmt::Display for ContextError<StrContext> {
                     StrContext::Expected(c) => Some(c),
                     _ => None,
                 })
-                .collect::<crate::lib::std::vec::Vec<_>>();
+                .collect::<alloc::vec::Vec<_>>();
 
             let mut newline = false;
 
@@ -901,8 +848,8 @@ pub enum StrContext {
     Expected(StrContextValue),
 }
 
-impl crate::lib::std::fmt::Display for StrContext {
-    fn fmt(&self, f: &mut crate::lib::std::fmt::Formatter<'_>) -> crate::lib::std::fmt::Result {
+impl core::fmt::Display for StrContext {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::Label(name) => write!(f, "invalid {name}"),
             Self::Expected(value) => write!(f, "expected {value}"),
@@ -936,8 +883,8 @@ impl From<&'static str> for StrContextValue {
     }
 }
 
-impl crate::lib::std::fmt::Display for StrContextValue {
-    fn fmt(&self, f: &mut crate::lib::std::fmt::Formatter<'_>) -> crate::lib::std::fmt::Result {
+impl core::fmt::Display for StrContextValue {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::CharLiteral('\n') => "newline".fmt(f),
             Self::CharLiteral('`') => "'`'".fmt(f),
@@ -1140,12 +1087,32 @@ where
 }
 
 #[cfg(feature = "std")]
+#[cfg(feature = "binary")]
+impl<I, C> ErrorConvert<TreeError<Bits<I>, C>> for TreeError<I, C> {
+    #[inline]
+    fn convert(self) -> TreeError<Bits<I>, C> {
+        self.map_input(|i| Bits(i, 0))
+    }
+}
+
+#[cfg(feature = "std")]
+#[cfg(feature = "binary")]
+impl<I, C> ErrorConvert<TreeError<I, C>> for TreeError<Bits<I>, C> {
+    #[inline]
+    fn convert(self) -> TreeError<I, C> {
+        self.map_input(|Bits(i, _o)| i)
+    }
+}
+
+
+#[cfg(feature = "std")]
 impl<I, C> ErrorConvert<TreeError<(I, usize), C>> for TreeError<I, C> {
     #[inline]
     fn convert(self) -> TreeError<(I, usize), C> {
         self.map_input(|i| (i, 0))
     }
 }
+
 
 #[cfg(feature = "std")]
 impl<I, C> ErrorConvert<TreeError<I, C>> for TreeError<(I, usize), C> {
@@ -1158,7 +1125,7 @@ impl<I, C> ErrorConvert<TreeError<I, C>> for TreeError<(I, usize), C> {
 #[cfg(feature = "std")]
 impl<I, C> TreeError<I, C>
 where
-    I: crate::lib::std::fmt::Display,
+    I: core::fmt::Display,
     C: fmt::Display,
 {
     fn write(&self, f: &mut fmt::Formatter<'_>, indent: usize) -> fmt::Result {
@@ -1308,12 +1275,12 @@ impl<I, E> ParseError<I, E> {
 impl<I: AsBStr, E> ParseError<I, E> {
     
     #[inline]
-    pub fn char_span(&self) -> crate::lib::std::ops::Range<usize> {
+    pub fn char_span(&self) -> core::ops::Range<usize> {
         char_boundary(self.input.as_bstr(), self.offset())
     }
 }
 
-fn char_boundary(input: &[u8], offset: usize) -> crate::lib::std::ops::Range<usize> {
+fn char_boundary(input: &[u8], offset: usize) -> core::ops::Range<usize> {
     let len = input.len();
     if offset == len {
         return offset..offset;
@@ -1436,7 +1403,7 @@ fn translate_position(input: &[u8], index: usize) -> (usize, usize) {
     let line = input[0..line_start].iter().filter(|b| **b == b'\n').count();
 
     
-    let column = crate::lib::std::str::from_utf8(&input[line_start..=index])
+    let column = core::str::from_utf8(&input[line_start..=index])
         .map(|s| s.chars().count() - 1)
         .unwrap_or_else(|_| index - line_start);
     let column = column + column_offset;

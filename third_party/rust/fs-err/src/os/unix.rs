@@ -3,15 +3,57 @@ pub mod fs {
     use std::io;
     use std::path::Path;
 
-    use crate::SourceDestError;
-    use crate::SourceDestErrorKind;
+    #[allow(unused_imports)]
+    use crate::{Error, ErrorKind};
+    use crate::{SourceDestError, SourceDestErrorKind};
 
     
-    pub fn symlink<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<()> {
-        let src = src.as_ref();
-        let dst = dst.as_ref();
-        std::os::unix::fs::symlink(src, dst)
-            .map_err(|err| SourceDestError::build(err, SourceDestErrorKind::Symlink, src, dst))
+    
+    
+    
+    
+    pub fn symlink<P: AsRef<Path>, Q: AsRef<Path>>(original: P, link: Q) -> io::Result<()> {
+        let original = original.as_ref();
+        let link = link.as_ref();
+        std::os::unix::fs::symlink(original, link).map_err(|err| {
+            SourceDestError::build(err, SourceDestErrorKind::Symlink, link, original)
+        })
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(rustc_1_73)]
+    pub fn chown<P: AsRef<Path>>(path: P, uid: Option<u32>, gid: Option<u32>) -> io::Result<()> {
+        let path = path.as_ref();
+        std::os::unix::fs::chown(path, uid, gid)
+            .map_err(|err| Error::build(err, ErrorKind::Chown, path))
+    }
+
+    
+    
+    
+    
+    
+    
+    #[cfg(rustc_1_73)]
+    pub fn lchown<P: AsRef<Path>>(path: P, uid: Option<u32>, gid: Option<u32>) -> io::Result<()> {
+        let path = path.as_ref();
+        std::os::unix::fs::lchown(path, uid, gid)
+            .map_err(|err| Error::build(err, ErrorKind::Lchown, path))
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(rustc_1_56)]
+    pub fn chroot<P: AsRef<Path>>(path: P) -> io::Result<()> {
+        let path = path.as_ref();
+        std::os::unix::fs::chroot(path).map_err(|err| Error::build(err, ErrorKind::Chroot, path))
     }
 
     
@@ -22,7 +64,11 @@ pub mod fs {
         
         fn read_at(&self, buf: &mut [u8], offset: u64) -> io::Result<usize>;
         
+        fn read_exact_at(&self, buf: &mut [u8], offset: u64) -> io::Result<()>;
+        
         fn write_at(&self, buf: &[u8], offset: u64) -> io::Result<usize>;
+        
+        fn write_all_at(&self, buf: &[u8], offset: u64) -> io::Result<()>;
     }
 
     

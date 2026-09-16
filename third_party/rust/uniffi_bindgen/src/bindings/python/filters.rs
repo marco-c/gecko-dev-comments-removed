@@ -19,6 +19,7 @@ use askama::Result;
 
 
 
+#[askama::filter_fn]
 pub fn docstring(
     docstring: &Option<String>,
     _: &dyn askama::Values,
@@ -36,6 +37,7 @@ pub fn docstring(
 }
 
 
+#[askama::filter_fn]
 pub fn import_statement(module: &str, _: &dyn askama::Values) -> Result<String> {
     Ok(if module.starts_with('.') {
         let Some((from, name)) = module.rsplit_once('.') else {

@@ -1,6 +1,10 @@
+#[allow(unused_imports)]
+use crate::errors::{Error, ErrorKind};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+
+use crate as fs_err; 
 
 
 
@@ -9,18 +13,40 @@ use std::path::{Path, PathBuf};
 
 pub trait PathExt: crate::Sealed {
     
+    
+    
+    #[cfg(rustc_1_63)]
+    fn fs_err_try_exists(&self) -> io::Result<bool>;
+    
+    
+    
     fn fs_err_metadata(&self) -> io::Result<fs::Metadata>;
+    
+    
     
     fn fs_err_symlink_metadata(&self) -> io::Result<fs::Metadata>;
     
+    
+    
+    
     fn fs_err_canonicalize(&self) -> io::Result<PathBuf>;
+    
+    
     
     fn fs_err_read_link(&self) -> io::Result<PathBuf>;
     
-    fn fs_err_read_dir(&self) -> io::Result<crate::ReadDir>;
+    
+    
+    fn fs_err_read_dir(&self) -> io::Result<fs_err::ReadDir>;
 }
 
 impl PathExt for Path {
+    #[cfg(rustc_1_63)]
+    fn fs_err_try_exists(&self) -> io::Result<bool> {
+        self.try_exists()
+            .map_err(|source| Error::build(source, ErrorKind::FileExists, self))
+    }
+
     fn fs_err_metadata(&self) -> io::Result<fs::Metadata> {
         crate::metadata(self)
     }
@@ -37,7 +63,7 @@ impl PathExt for Path {
         crate::read_link(self)
     }
 
-    fn fs_err_read_dir(&self) -> io::Result<crate::ReadDir> {
+    fn fs_err_read_dir(&self) -> io::Result<fs_err::ReadDir> {
         crate::read_dir(self)
     }
 }

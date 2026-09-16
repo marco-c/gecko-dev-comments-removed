@@ -2,33 +2,51 @@
 
 
 
-use super::*;
+
+use anyhow::Result;
+use indexmap::IndexMap;
 use serde::Deserialize;
 
-pub fn pass(namespace: &mut Namespace) -> Result<()> {
-    let config = match &namespace.config_toml {
-        Some(toml) => toml::from_str(toml)?,
-        None => Config::default(),
-    };
-    let mut config = config.bindings.python;
-    namespace.visit_mut(|custom: &mut CustomType| {
-        custom.config = config.custom_types.shift_remove(&custom.name);
-    });
-    namespace.config = config;
-    Ok(())
-}
+use uniffi_pipeline::Node;
 
 
 
-
-#[derive(Debug, Clone, Deserialize, Node)]
+#[derive(Debug, Clone, Default, Deserialize)]
 pub struct Config {
     #[serde(default)]
-    bindings: BindingsConfig,
+    pub bindings: BindingsConfig,
 }
 
-#[derive(Debug, Clone, Deserialize, Node)]
+#[derive(Debug, Clone, Default, Deserialize)]
 pub struct BindingsConfig {
     #[serde(default)]
-    python: PythonConfig,
+    pub python: PythonConfig,
+}
+
+
+#[derive(Debug, Clone, Default, Deserialize)]
+pub struct PythonConfig {
+    pub(super) cdylib_name: Option<String>,
+    #[serde(default)]
+    pub custom_types: IndexMap<String, CustomTypeConfig>,
+    #[serde(default)]
+    pub external_packages: IndexMap<String, String>,
+}
+
+#[derive(Debug, Clone, Node, Default, Deserialize)]
+#[serde(default)]
+pub struct CustomTypeConfig {
+    pub imports: Option<Vec<String>>,
+    pub type_name: Option<String>, 
+    pub into_custom: String,       
+    pub lift: String,
+    pub from_custom: String, 
+    pub lower: String,
+}
+
+impl PythonConfig {
+    pub fn from_uniffi_toml(toml: &str) -> Result<Self> {
+        let root: Config = toml::from_str(toml)?;
+        Ok(root.bindings.python)
+    }
 }

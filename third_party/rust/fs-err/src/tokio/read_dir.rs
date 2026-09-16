@@ -7,6 +7,8 @@ use std::task::{ready, Context, Poll};
 use tokio::fs;
 
 
+
+
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
 pub async fn read_dir(path: impl AsRef<Path>) -> io::Result<ReadDir> {
     let path = path.as_ref();
@@ -32,6 +34,8 @@ pub struct ReadDir {
 
 impl ReadDir {
     
+    
+    
     pub async fn next_entry(&mut self) -> io::Result<Option<DirEntry>> {
         match self.tokio.next_entry().await {
             Ok(entry) => Ok(entry.map(|e| DirEntry { tokio: e })),
@@ -39,6 +43,8 @@ impl ReadDir {
         }
     }
 
+    
+    
     
     pub fn poll_next_entry(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<Option<DirEntry>>> {
         Poll::Ready(match ready!(self.tokio.poll_next_entry(cx)) {
@@ -59,15 +65,22 @@ pub struct DirEntry {
 
 impl DirEntry {
     
+    
+    
     pub fn path(&self) -> PathBuf {
         self.tokio.path()
     }
 
     
+    
+    
+    
     pub fn file_name(&self) -> OsString {
         self.tokio.file_name()
     }
 
+    
+    
     
     pub async fn metadata(&self) -> io::Result<Metadata> {
         self.tokio
@@ -76,6 +89,8 @@ impl DirEntry {
             .map_err(|err| Error::build(err, ErrorKind::Metadata, self.path()))
     }
 
+    
+    
     
     pub async fn file_type(&self) -> io::Result<FileType> {
         self.tokio
@@ -87,6 +102,8 @@ impl DirEntry {
 
 #[cfg(unix)]
 impl DirEntry {
+    
+    
     
     pub fn ino(&self) -> u64 {
         self.tokio.ino()

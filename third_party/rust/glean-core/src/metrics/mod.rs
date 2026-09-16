@@ -31,7 +31,7 @@ mod quantity;
 mod rate;
 mod recorded_experiment;
 mod remote_settings_config;
-mod string;
+pub(crate) mod string;
 mod string_list;
 mod text;
 mod time_unit;
@@ -41,7 +41,7 @@ mod url;
 mod uuid;
 
 use crate::common_metric_data::CommonMetricDataInternal;
-pub use crate::common_metric_data::DynamicLabelType;
+pub use crate::common_metric_data::MetricLabel;
 pub use crate::event_database::RecordedEvent;
 use crate::histogram::{Functional, Histogram, PrecomputedExponential, PrecomputedLinear};
 pub use crate::metrics::datetime::Datetime;
@@ -196,7 +196,7 @@ pub trait MetricType {
     }
 
     
-    fn with_dynamic_label(&self, _label: DynamicLabelType) -> Self
+    fn with_label(&self, _label: MetricLabel) -> Self
     where
         Self: Sized,
     {
@@ -255,17 +255,13 @@ pub trait MetricType {
         let remote_settings_config = &glean.remote_settings_config.lock().unwrap();
         
         let current_disabled = {
-            let base_id = self.meta().base_identifier();
-            let identifier = base_id
-                .split_once('/')
-                .map(|split| split.0)
-                .unwrap_or(&base_id);
+            let identifier = self.meta().base_identifier();
             
             
             
 
             if !remote_settings_config.metrics_enabled.is_empty() {
-                if let Some(is_enabled) = remote_settings_config.metrics_enabled.get(identifier) {
+                if let Some(is_enabled) = remote_settings_config.metrics_enabled.get(&identifier) {
                     u8::from(!*is_enabled)
                 } else {
                     u8::from(self.meta().inner.disabled)
@@ -288,7 +284,7 @@ pub trait MetricType {
 
 pub trait MetricIdentifier<'a> {
     
-    fn get_identifiers(&'a self) -> (&'a str, &'a str, Option<&'a str>);
+    fn get_identifiers(&'a self) -> (&'a str, &'a str, Option<String>);
 }
 
 
@@ -319,9 +315,13 @@ impl<'a, T> MetricIdentifier<'a> for T
 where
     T: MetricType,
 {
-    fn get_identifiers(&'a self) -> (&'a str, &'a str, Option<&'a str>) {
+    fn get_identifiers(&'a self) -> (&'a str, &'a str, Option<String>) {
         let meta = &self.meta().inner;
-        (&meta.category, &meta.name, meta.dynamic_label.as_deref())
+        (
+            &meta.category,
+            &meta.name,
+            meta.label.as_ref().map(|label| label.to_string()),
+        )
     }
 }
 

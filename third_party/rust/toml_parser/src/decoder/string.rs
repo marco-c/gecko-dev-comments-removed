@@ -4,17 +4,17 @@ use winnow::stream::ContainsToken as _;
 use winnow::stream::Offset as _;
 use winnow::stream::Stream as _;
 
+use crate::ErrorSink;
+use crate::Expected;
+use crate::ParseError;
+use crate::Raw;
+use crate::Span;
 use crate::decoder::StringBuilder;
 use crate::lexer::APOSTROPHE;
 use crate::lexer::ML_BASIC_STRING_DELIM;
 use crate::lexer::ML_LITERAL_STRING_DELIM;
 use crate::lexer::QUOTATION_MARK;
 use crate::lexer::WSCHAR;
-use crate::ErrorSink;
-use crate::Expected;
-use crate::ParseError;
-use crate::Raw;
-use crate::Span;
 
 const ALLOCATION_ERROR: &str = "could not allocate for string";
 
@@ -82,12 +82,16 @@ pub(crate) fn decode_literal_string<'i>(
 }
 
 
+
+
 const LITERAL_CHAR: (
     u8,
     RangeInclusive<u8>,
     RangeInclusive<u8>,
     RangeInclusive<u8>,
 ) = (0x9, 0x20..=0x26, 0x28..=0x7E, NON_ASCII);
+
+
 
 
 
@@ -153,7 +157,7 @@ pub(crate) fn decode_ml_literal_string<'i>(
                         .with_unexpected(Span::new_unchecked(offset, offset)),
                 );
             }
-        } else if !MLL_CHAR.contains_token(b) {
+        } else if !LITERAL_CHAR.contains_token(b) {
             let offset = (&s.as_bytes()[i..]).offset_from(&raw.as_bytes());
             error.report_error(
                 ParseError::new(INVALID_STRING)
@@ -170,14 +174,6 @@ pub(crate) fn decode_ml_literal_string<'i>(
         );
     }
 }
-
-
-const MLL_CHAR: (
-    u8,
-    RangeInclusive<u8>,
-    RangeInclusive<u8>,
-    RangeInclusive<u8>,
-) = (0x9, 0x20..=0x26, 0x28..=0x7E, NON_ASCII);
 
 
 
@@ -267,6 +263,8 @@ pub(crate) fn decode_basic_string<'i>(
 }
 
 
+
+
 fn basic_unescaped<'i>(stream: &mut &'i str) -> &'i str {
     let offset = stream
         .as_bytes()
@@ -294,6 +292,8 @@ fn basic_invalid<'i>(stream: &mut &'i str) -> &'i str {
 }
 
 
+
+
 #[allow(clippy::type_complexity)]
 const BASIC_UNESCAPED: (
     (u8, u8),
@@ -302,6 +302,8 @@ const BASIC_UNESCAPED: (
     RangeInclusive<u8>,
     RangeInclusive<u8>,
 ) = (WSCHAR, 0x21, 0x23..=0x5B, 0x5D..=0x7E, NON_ASCII);
+
+
 
 
 const ESCAPE: u8 = b'\\';
@@ -317,14 +319,18 @@ const ESCAPE: u8 = b'\\';
 
 
 
+
+
 fn escape_seq_char(stream: &mut &str, raw: Raw<'_>, error: &mut dyn ErrorSink) -> char {
     const EXPECTED_ESCAPES: &[Expected] = &[
         Expected::Literal("b"),
+        Expected::Literal("e"),
         Expected::Literal("f"),
         Expected::Literal("n"),
         Expected::Literal("r"),
         Expected::Literal("\\"),
         Expected::Literal("\""),
+        Expected::Literal("x"),
         Expected::Literal("u"),
         Expected::Literal("U"),
     ];
@@ -342,10 +348,12 @@ fn escape_seq_char(stream: &mut &str, raw: Raw<'_>, error: &mut dyn ErrorSink) -
     };
     match id {
         'b' => '\u{8}',
+        'e' => '\u{1b}',
         'f' => '\u{c}',
         'n' => '\n',
         'r' => '\r',
         't' => '\t',
+        'x' => hexescape(stream, 2, raw, error),
         'u' => hexescape(stream, 4, raw, error),
         'U' => hexescape(stream, 8, raw, error),
         '\\' => '\\',
@@ -406,8 +414,12 @@ fn hexescape(
 }
 
 
+
+
 const HEXDIG: (RangeInclusive<u8>, RangeInclusive<u8>, RangeInclusive<u8>) =
     (DIGIT, b'A'..=b'F', b'a'..=b'f');
+
+
 
 
 const DIGIT: RangeInclusive<u8> = b'0'..=b'9';
@@ -417,8 +429,6 @@ fn strip_start_newline(s: &str) -> &str {
         .or_else(|| s.strip_prefix("\r\n"))
         .unwrap_or(s)
 }
-
-
 
 
 
@@ -643,7 +653,7 @@ fn mlb_escaped_nl(stream: &mut &str, raw: Raw<'_>, error: &mut dyn ErrorSink) {
 fn mlb_unescaped<'i>(stream: &mut &'i str) -> &'i str {
     let offset = stream
         .as_bytes()
-        .offset_for(|b| !(MLB_UNESCAPED, b'"', b'\n').contains_token(b))
+        .offset_for(|b| !(BASIC_UNESCAPED, b'"', b'\n').contains_token(b))
         .unwrap_or(stream.len());
     #[cfg(feature = "unsafe")] 
     unsafe {
@@ -656,7 +666,7 @@ fn mlb_unescaped<'i>(stream: &mut &'i str) -> &'i str {
 fn mlb_invalid<'i>(stream: &mut &'i str) -> &'i str {
     let offset = stream
         .as_bytes()
-        .offset_for(|b| (MLB_UNESCAPED, b'"', b'\n', ESCAPE, '\r').contains_token(b))
+        .offset_for(|b| (BASIC_UNESCAPED, b'"', b'\n', ESCAPE, '\r').contains_token(b))
         .unwrap_or(stream.len());
     #[cfg(feature = "unsafe")] 
     unsafe {
@@ -665,16 +675,6 @@ fn mlb_invalid<'i>(stream: &mut &'i str) -> &'i str {
     #[cfg(not(feature = "unsafe"))]
     stream.next_slice(offset)
 }
-
-
-#[allow(clippy::type_complexity)]
-const MLB_UNESCAPED: (
-    (u8, u8),
-    u8,
-    RangeInclusive<u8>,
-    RangeInclusive<u8>,
-    RangeInclusive<u8>,
-) = (WSCHAR, 0x21, 0x23..=0x5B, 0x5D..=0x7E, NON_ASCII);
 
 
 
@@ -702,20 +702,46 @@ pub(crate) fn decode_unquoted_key<'i>(
         );
     }
 
-    for (i, b) in s.as_bytes().iter().enumerate() {
-        if !UNQUOTED_CHAR.contains_token(b) {
-            error.report_error(
-                ParseError::new("invalid unquoted key")
-                    .with_context(Span::new_unchecked(0, s.len()))
-                    .with_expected(&[
-                        Expected::Description("letters"),
-                        Expected::Description("numbers"),
-                        Expected::Literal("-"),
-                        Expected::Literal("_"),
-                    ])
-                    .with_unexpected(Span::new_unchecked(i, i)),
-            );
+    let mut span = None;
+    for (i, _b) in s
+        .as_bytes()
+        .iter()
+        .enumerate()
+        .filter(|(_, b)| !UNQUOTED_CHAR.contains_token(*b))
+    {
+        if let Some((start, end)) = span {
+            if i == end {
+                span = Some((start, i + 1));
+            } else {
+                error.report_error(
+                    ParseError::new("invalid unquoted key")
+                        .with_context(Span::new_unchecked(0, s.len()))
+                        .with_expected(&[
+                            Expected::Description("letters"),
+                            Expected::Description("numbers"),
+                            Expected::Literal("-"),
+                            Expected::Literal("_"),
+                        ])
+                        .with_unexpected(Span::new_unchecked(start, end)),
+                );
+                span = Some((i, i + 1));
+            }
+        } else {
+            span = Some((i, i + 1));
         }
+    }
+    if let Some((start, end)) = span {
+        error.report_error(
+            ParseError::new("invalid unquoted key")
+                .with_context(Span::new_unchecked(0, s.len()))
+                .with_expected(&[
+                    Expected::Description("letters"),
+                    Expected::Description("numbers"),
+                    Expected::Literal("-"),
+                    Expected::Literal("_"),
+                ])
+                .with_unexpected(Span::new_unchecked(start, end)),
+        );
     }
 
     if !output.push_str(s) {
@@ -724,6 +750,8 @@ pub(crate) fn decode_unquoted_key<'i>(
         );
     }
 }
+
+
 
 
 const UNQUOTED_CHAR: (
@@ -892,6 +920,9 @@ trimmed in raw strings.
                     "b",
                 ),
                 Literal(
+                    "e",
+                ),
+                Literal(
                     "f",
                 ),
                 Literal(
@@ -905,6 +936,9 @@ trimmed in raw strings.
                 ),
                 Literal(
                     "\"",
+                ),
+                Literal(
+                    "x",
                 ),
                 Literal(
                     "u",
@@ -1111,6 +1145,9 @@ The quick brown \
                     "b",
                 ),
                 Literal(
+                    "e",
+                ),
+                Literal(
                     "f",
                 ),
                 Literal(
@@ -1124,6 +1161,9 @@ The quick brown \
                 ),
                 Literal(
                     "\"",
+                ),
+                Literal(
+                    "x",
                 ),
                 Literal(
                     "u",

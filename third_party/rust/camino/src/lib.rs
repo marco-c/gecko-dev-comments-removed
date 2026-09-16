@@ -2,7 +2,10 @@
 
 
 #![warn(missing_docs)]
-#![cfg_attr(doc_cfg, feature(doc_cfg, doc_auto_cfg))]
+#![cfg_attr(doc_cfg, feature(doc_cfg))]
+
+
+
 
 
 
@@ -105,8 +108,6 @@ mod tests;
 
 
 #[derive(Clone, Default)]
-#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "serde1", serde(transparent))]
 #[repr(transparent)]
 pub struct Utf8PathBuf(PathBuf);
 
@@ -120,11 +121,32 @@ impl Utf8PathBuf {
     
     
     
+    
+    
     #[must_use]
+    #[cfg(pathbuf_const_new)]
+    #[expect(clippy::incompatible_msrv)]
+    pub const fn new() -> Utf8PathBuf {
+        Utf8PathBuf(PathBuf::new())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[must_use]
+    #[cfg(not(pathbuf_const_new))]
     pub fn new() -> Utf8PathBuf {
         Utf8PathBuf(PathBuf::new())
     }
 
+    
+    
     
     
     
@@ -178,6 +200,46 @@ impl Utf8PathBuf {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn from_os_string(os_string: OsString) -> Result<Utf8PathBuf, OsString> {
+        match os_string.into_string() {
+            Ok(string) => Ok(Utf8PathBuf::from(string)),
+            Err(os_string) => Err(os_string),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[must_use = "`self` will be dropped if the result is not used"]
     pub fn into_std_path_buf(self) -> PathBuf {
         self.into()
@@ -201,9 +263,7 @@ impl Utf8PathBuf {
     
     
     
-    
-    
-    #[cfg(path_buf_capacity)]
+    #[allow(clippy::incompatible_msrv)]
     #[must_use]
     pub fn with_capacity(capacity: usize) -> Utf8PathBuf {
         Utf8PathBuf(PathBuf::with_capacity(capacity))
@@ -223,6 +283,29 @@ impl Utf8PathBuf {
     pub fn as_path(&self) -> &Utf8Path {
         
         unsafe { Utf8Path::assume_utf8(&self.0) }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(os_string_pathbuf_leak)]
+    #[allow(clippy::incompatible_msrv)]
+    #[inline]
+    pub fn leak<'a>(self) -> &'a mut Utf8Path {
+        
+        unsafe { Utf8Path::assume_utf8_mut(self.0.leak()) }
     }
 
     
@@ -351,6 +434,45 @@ impl Utf8PathBuf {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(path_add_extension)]
+    #[expect(clippy::incompatible_msrv)]
+    pub fn add_extension<S: AsRef<str>>(&mut self, extension: S) -> bool {
+        self.0.add_extension(extension.as_ref())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[must_use = "`self` will be dropped if the result is not used"]
     pub fn into_string(self) -> String {
         self.into_os_string().into_string().unwrap()
@@ -388,9 +510,7 @@ impl Utf8PathBuf {
     
     
     
-    
-    
-    #[cfg(path_buf_capacity)]
+    #[allow(clippy::incompatible_msrv)]
     #[must_use]
     pub fn capacity(&self) -> usize {
         self.0.capacity()
@@ -399,9 +519,7 @@ impl Utf8PathBuf {
     
     
     
-    
-    
-    #[cfg(path_buf_capacity)]
+    #[allow(clippy::incompatible_msrv)]
     pub fn clear(&mut self) {
         self.0.clear()
     }
@@ -409,9 +527,7 @@ impl Utf8PathBuf {
     
     
     
-    
-    
-    #[cfg(path_buf_capacity)]
+    #[allow(clippy::incompatible_msrv)]
     pub fn reserve(&mut self, additional: usize) {
         self.0.reserve(additional)
     }
@@ -422,6 +538,7 @@ impl Utf8PathBuf {
     
     
     #[cfg(try_reserve_2)]
+    #[allow(clippy::incompatible_msrv)]
     #[inline]
     pub fn try_reserve(
         &mut self,
@@ -433,9 +550,7 @@ impl Utf8PathBuf {
     
     
     
-    
-    
-    #[cfg(path_buf_capacity)]
+    #[allow(clippy::incompatible_msrv)]
     pub fn reserve_exact(&mut self, additional: usize) {
         self.0.reserve_exact(additional)
     }
@@ -446,6 +561,7 @@ impl Utf8PathBuf {
     
     
     #[cfg(try_reserve_2)]
+    #[allow(clippy::incompatible_msrv)]
     #[inline]
     pub fn try_reserve_exact(
         &mut self,
@@ -457,9 +573,7 @@ impl Utf8PathBuf {
     
     
     
-    
-    
-    #[cfg(path_buf_capacity)]
+    #[allow(clippy::incompatible_msrv)]
     pub fn shrink_to_fit(&mut self) {
         self.0.shrink_to_fit()
     }
@@ -467,9 +581,7 @@ impl Utf8PathBuf {
     
     
     
-    
-    
-    #[cfg(shrink_to)]
+    #[allow(clippy::incompatible_msrv)]
     #[inline]
     pub fn shrink_to(&mut self, min_capacity: usize) {
         self.0.shrink_to(min_capacity)
@@ -481,6 +593,15 @@ impl Deref for Utf8PathBuf {
 
     fn deref(&self) -> &Utf8Path {
         self.as_path()
+    }
+}
+
+
+#[cfg(path_buf_deref_mut)]
+#[allow(clippy::incompatible_msrv)]
+impl std::ops::DerefMut for Utf8PathBuf {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        unsafe { Utf8Path::assume_utf8_mut(&mut self.0) }
     }
 }
 
@@ -592,6 +713,8 @@ impl Utf8Path {
     
     
     
+    
+    
     pub fn from_path(path: &Path) -> Option<&Utf8Path> {
         path.as_os_str().to_str().map(Utf8Path::new)
     }
@@ -614,6 +737,41 @@ impl Utf8Path {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn from_os_str(path: &OsStr) -> Option<&Utf8Path> {
+        path.to_str().map(Utf8Path::new)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
     pub fn as_std_path(&self) -> &Path {
         self.as_ref()
     }
@@ -633,10 +791,11 @@ impl Utf8Path {
     
     
     
+    #[inline]
     #[must_use]
     pub fn as_str(&self) -> &str {
         
-        unsafe { assume_utf8(self.as_os_str()) }
+        unsafe { str_assume_utf8(self.as_os_str()) }
     }
 
     
@@ -649,6 +808,7 @@ impl Utf8Path {
     
     
     
+    #[inline]
     #[must_use]
     pub fn as_os_str(&self) -> &OsStr {
         self.0.as_os_str()
@@ -664,6 +824,7 @@ impl Utf8Path {
     
     
     
+    #[inline]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
     pub fn to_path_buf(&self) -> Utf8PathBuf {
@@ -688,6 +849,7 @@ impl Utf8Path {
     
     
     
+    #[inline]
     #[must_use]
     pub fn is_absolute(&self) -> bool {
         self.0.is_absolute()
@@ -706,6 +868,7 @@ impl Utf8Path {
     
     
     
+    #[inline]
     #[must_use]
     pub fn is_relative(&self) -> bool {
         self.0.is_relative()
@@ -727,6 +890,7 @@ impl Utf8Path {
     
     
     
+    #[inline]
     #[must_use]
     pub fn has_root(&self) -> bool {
         self.0.has_root()
@@ -749,6 +913,7 @@ impl Utf8Path {
     
     
     
+    #[inline]
     #[must_use]
     pub fn parent(&self) -> Option<&Utf8Path> {
         self.0.parent().map(|path| {
@@ -785,6 +950,7 @@ impl Utf8Path {
     
     
     
+    #[inline]
     pub fn ancestors(&self) -> Utf8Ancestors<'_> {
         Utf8Ancestors(self.0.ancestors())
     }
@@ -808,11 +974,12 @@ impl Utf8Path {
     
     
     
+    #[inline]
     #[must_use]
     pub fn file_name(&self) -> Option<&str> {
         self.0.file_name().map(|s| {
             
-            unsafe { assume_utf8(s) }
+            unsafe { str_assume_utf8(s) }
         })
     }
 
@@ -844,6 +1011,7 @@ impl Utf8Path {
     
     
     
+    #[inline]
     pub fn strip_prefix(&self, base: impl AsRef<Path>) -> Result<&Utf8Path, StripPrefixError> {
         self.0.strip_prefix(base).map(|path| {
             
@@ -874,6 +1042,7 @@ impl Utf8Path {
     
     
     
+    #[inline]
     #[must_use]
     pub fn starts_with(&self, base: impl AsRef<Path>) -> bool {
         self.0.starts_with(base)
@@ -897,6 +1066,7 @@ impl Utf8Path {
     
     
     
+    #[inline]
     #[must_use]
     pub fn ends_with(&self, base: impl AsRef<Path>) -> bool {
         self.0.ends_with(base)
@@ -921,11 +1091,12 @@ impl Utf8Path {
     
     
     
+    #[inline]
     #[must_use]
     pub fn file_stem(&self) -> Option<&str> {
         self.0.file_stem().map(|s| {
             
-            unsafe { assume_utf8(s) }
+            unsafe { str_assume_utf8(s) }
         })
     }
 
@@ -948,11 +1119,45 @@ impl Utf8Path {
     
     
     
+    
+    
+    
+    #[cfg(path_add_extension)]
+    #[expect(clippy::incompatible_msrv)]
+    #[inline]
+    #[must_use]
+    pub fn file_prefix(&self) -> Option<&str> {
+        self.0.file_prefix().map(|s| {
+            
+            unsafe { str_assume_utf8(s) }
+        })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
     #[must_use]
     pub fn extension(&self) -> Option<&str> {
         self.0.extension().map(|s| {
             
-            unsafe { assume_utf8(s) }
+            unsafe { str_assume_utf8(s) }
         })
     }
 
@@ -967,6 +1172,7 @@ impl Utf8Path {
     
     
     
+    #[inline]
     #[must_use]
     pub fn join(&self, path: impl AsRef<Utf8Path>) -> Utf8PathBuf {
         Utf8PathBuf(self.0.join(&path.as_ref().0))
@@ -984,6 +1190,7 @@ impl Utf8Path {
     
     
     
+    #[inline]
     #[must_use]
     pub fn join_os(&self, path: impl AsRef<Path>) -> PathBuf {
         self.0.join(path)
@@ -1004,6 +1211,7 @@ impl Utf8Path {
     
     
     
+    #[inline]
     #[must_use]
     pub fn with_file_name(&self, file_name: impl AsRef<str>) -> Utf8PathBuf {
         Utf8PathBuf(self.0.with_file_name(file_name.as_ref()))
@@ -1026,6 +1234,7 @@ impl Utf8Path {
     
     
     
+    #[inline]
     pub fn with_extension(&self, extension: impl AsRef<str>) -> Utf8PathBuf {
         Utf8PathBuf(self.0.with_extension(extension.as_ref()))
     }
@@ -1048,6 +1257,13 @@ impl Utf8Path {
     
     
     
+    #[cfg(path_add_extension)]
+    #[expect(clippy::incompatible_msrv)]
+    #[inline]
+    pub fn with_added_extension<S: AsRef<str>>(&self, extension: S) -> Utf8PathBuf {
+        Utf8PathBuf(self.0.with_added_extension(extension.as_ref()))
+    }
+
     
     
     
@@ -1062,7 +1278,26 @@ impl Utf8Path {
     
     
     
-    pub fn components(&self) -> Utf8Components {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn components(&self) -> Utf8Components<'_> {
         Utf8Components(self.0.components())
     }
 
@@ -1085,6 +1320,7 @@ impl Utf8Path {
     
     
     
+    #[inline]
     pub fn iter(&self) -> Iter<'_> {
         Iter {
             inner: self.components(),
@@ -1107,6 +1343,7 @@ impl Utf8Path {
     
     
     
+    #[inline]
     pub fn metadata(&self) -> io::Result<fs::Metadata> {
         self.0.metadata()
     }
@@ -1124,6 +1361,7 @@ impl Utf8Path {
     
     
     
+    #[inline]
     pub fn symlink_metadata(&self) -> io::Result<fs::Metadata> {
         self.0.symlink_metadata()
     }
@@ -1146,6 +1384,7 @@ impl Utf8Path {
     
     
     
+    #[inline]
     pub fn canonicalize(&self) -> io::Result<PathBuf> {
         self.0.canonicalize()
     }
@@ -1195,6 +1434,7 @@ impl Utf8Path {
     
     
     
+    #[inline]
     pub fn read_link(&self) -> io::Result<PathBuf> {
         self.0.read_link()
     }
@@ -1245,6 +1485,7 @@ impl Utf8Path {
     
     
     
+    #[inline]
     pub fn read_dir(&self) -> io::Result<fs::ReadDir> {
         self.0.read_dir()
     }
@@ -1305,6 +1546,7 @@ impl Utf8Path {
     
     
     #[must_use]
+    #[inline]
     pub fn exists(&self) -> bool {
         self.0.exists()
     }
@@ -1331,19 +1573,16 @@ impl Utf8Path {
     
     
     
+    
+    
+    
+    
     #[inline]
     pub fn try_exists(&self) -> io::Result<bool> {
-        
-        
         match fs::metadata(self) {
             Ok(_) => Ok(true),
-            Err(error) => {
-                if error.kind() == io::ErrorKind::NotFound {
-                    Ok(false)
-                } else {
-                    Err(error)
-                }
-            }
+            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(false),
+            Err(error) => Err(error),
         }
     }
 
@@ -1375,6 +1614,7 @@ impl Utf8Path {
     
     
     #[must_use]
+    #[inline]
     pub fn is_file(&self) -> bool {
         self.0.is_file()
     }
@@ -1401,6 +1641,7 @@ impl Utf8Path {
     
     
     #[must_use]
+    #[inline]
     pub fn is_dir(&self) -> bool {
         self.0.is_dir()
     }
@@ -1440,6 +1681,7 @@ impl Utf8Path {
 
     
     #[must_use = "`self` will be dropped if the result is not used"]
+    #[inline]
     pub fn into_path_buf(self: Box<Utf8Path>) -> Utf8PathBuf {
         let ptr = Box::into_raw(self) as *mut Path;
         
@@ -1452,10 +1694,17 @@ impl Utf8Path {
     }
 
     
+    #[inline]
     unsafe fn assume_utf8(path: &Path) -> &Utf8Path {
         
         
         &*(path as *const Path as *const Utf8Path)
+    }
+
+    #[cfg(path_buf_deref_mut)]
+    #[inline]
+    unsafe fn assume_utf8_mut(path: &mut Path) -> &mut Utf8Path {
+        &mut *(path as *mut Path as *mut Utf8Path)
     }
 }
 
@@ -1507,7 +1756,7 @@ impl fmt::Debug for Utf8Path {
 #[repr(transparent)]
 pub struct Utf8Ancestors<'a>(Ancestors<'a>);
 
-impl<'a> fmt::Debug for Utf8Ancestors<'a> {
+impl fmt::Debug for Utf8Ancestors<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(&self.0, f)
     }
@@ -1516,6 +1765,7 @@ impl<'a> fmt::Debug for Utf8Ancestors<'a> {
 impl<'a> Iterator for Utf8Ancestors<'a> {
     type Item = &'a Utf8Path;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next().map(|path| {
             
@@ -1525,7 +1775,7 @@ impl<'a> Iterator for Utf8Ancestors<'a> {
     }
 }
 
-impl<'a> FusedIterator for Utf8Ancestors<'a> {}
+impl FusedIterator for Utf8Ancestors<'_> {}
 
 
 
@@ -1564,6 +1814,7 @@ impl<'a> Utf8Components<'a> {
     
     
     #[must_use]
+    #[inline]
     pub fn as_path(&self) -> &'a Utf8Path {
         
         
@@ -1574,6 +1825,7 @@ impl<'a> Utf8Components<'a> {
 impl<'a> Iterator for Utf8Components<'a> {
     type Item = Utf8Component<'a>;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next().map(|component| {
             
@@ -1583,9 +1835,10 @@ impl<'a> Iterator for Utf8Components<'a> {
     }
 }
 
-impl<'a> FusedIterator for Utf8Components<'a> {}
+impl FusedIterator for Utf8Components<'_> {}
 
-impl<'a> DoubleEndedIterator for Utf8Components<'a> {
+impl DoubleEndedIterator for Utf8Components<'_> {
+    #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         self.0.next_back().map(|component| {
             
@@ -1595,31 +1848,35 @@ impl<'a> DoubleEndedIterator for Utf8Components<'a> {
     }
 }
 
-impl<'a> fmt::Debug for Utf8Components<'a> {
+impl fmt::Debug for Utf8Components<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(&self.0, f)
     }
 }
 
 impl AsRef<Utf8Path> for Utf8Components<'_> {
+    #[inline]
     fn as_ref(&self) -> &Utf8Path {
         self.as_path()
     }
 }
 
 impl AsRef<Path> for Utf8Components<'_> {
+    #[inline]
     fn as_ref(&self) -> &Path {
         self.as_path().as_ref()
     }
 }
 
 impl AsRef<str> for Utf8Components<'_> {
+    #[inline]
     fn as_ref(&self) -> &str {
         self.as_path().as_ref()
     }
 }
 
 impl AsRef<OsStr> for Utf8Components<'_> {
+    #[inline]
     fn as_ref(&self) -> &OsStr {
         self.as_path().as_os_str()
     }
@@ -1668,30 +1925,35 @@ impl<'a> Iter<'a> {
     
     
     #[must_use]
+    #[inline]
     pub fn as_path(&self) -> &'a Utf8Path {
         self.inner.as_path()
     }
 }
 
 impl AsRef<Utf8Path> for Iter<'_> {
+    #[inline]
     fn as_ref(&self) -> &Utf8Path {
         self.as_path()
     }
 }
 
 impl AsRef<Path> for Iter<'_> {
+    #[inline]
     fn as_ref(&self) -> &Path {
         self.as_path().as_ref()
     }
 }
 
 impl AsRef<str> for Iter<'_> {
+    #[inline]
     fn as_ref(&self) -> &str {
         self.as_path().as_ref()
     }
 }
 
 impl AsRef<OsStr> for Iter<'_> {
+    #[inline]
     fn as_ref(&self) -> &OsStr {
         self.as_path().as_os_str()
     }
@@ -1700,12 +1962,14 @@ impl AsRef<OsStr> for Iter<'_> {
 impl<'a> Iterator for Iter<'a> {
     type Item = &'a str;
 
+    #[inline]
     fn next(&mut self) -> Option<&'a str> {
         self.inner.next().map(|component| component.as_str())
     }
 }
 
 impl<'a> DoubleEndedIterator for Iter<'a> {
+    #[inline]
     fn next_back(&mut self) -> Option<&'a str> {
         self.inner.next_back().map(|component| component.as_str())
     }
@@ -1770,7 +2034,7 @@ impl<'a> Utf8Component<'a> {
             Component::RootDir => Utf8Component::RootDir,
             Component::CurDir => Utf8Component::CurDir,
             Component::ParentDir => Utf8Component::ParentDir,
-            Component::Normal(s) => Utf8Component::Normal(assume_utf8(s)),
+            Component::Normal(s) => Utf8Component::Normal(str_assume_utf8(s)),
         }
     }
 
@@ -1786,10 +2050,11 @@ impl<'a> Utf8Component<'a> {
     
     
     #[must_use]
+    #[inline]
     pub fn as_str(&self) -> &'a str {
         
         
-        unsafe { assume_utf8(self.as_os_str()) }
+        unsafe { str_assume_utf8(self.as_os_str()) }
     }
 
     
@@ -1815,37 +2080,41 @@ impl<'a> Utf8Component<'a> {
     }
 }
 
-impl<'a> fmt::Debug for Utf8Component<'a> {
+impl fmt::Debug for Utf8Component<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(self.as_os_str(), f)
     }
 }
 
-impl<'a> fmt::Display for Utf8Component<'a> {
+impl fmt::Display for Utf8Component<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(self.as_str(), f)
     }
 }
 
 impl AsRef<Utf8Path> for Utf8Component<'_> {
+    #[inline]
     fn as_ref(&self) -> &Utf8Path {
         self.as_str().as_ref()
     }
 }
 
 impl AsRef<Path> for Utf8Component<'_> {
+    #[inline]
     fn as_ref(&self) -> &Path {
         self.as_os_str().as_ref()
     }
 }
 
 impl AsRef<str> for Utf8Component<'_> {
+    #[inline]
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 
 impl AsRef<OsStr> for Utf8Component<'_> {
+    #[inline]
     fn as_ref(&self) -> &OsStr {
         self.as_os_str()
     }
@@ -1919,7 +2188,7 @@ pub enum Utf8Prefix<'a> {
     Disk(u8),
 }
 
-impl<'a> Utf8Prefix<'a> {
+impl Utf8Prefix<'_> {
     
     
     
@@ -1937,10 +2206,7 @@ impl<'a> Utf8Prefix<'a> {
     #[must_use]
     pub fn is_verbatim(&self) -> bool {
         use Utf8Prefix::*;
-        match self {
-            Verbatim(_) | VerbatimDisk(_) | VerbatimUNC(..) => true,
-            _ => false,
-        }
+        matches!(self, Verbatim(_) | VerbatimDisk(_) | VerbatimUNC(..))
     }
 }
 
@@ -1991,17 +2257,17 @@ impl<'a> Utf8PrefixComponent<'a> {
         
         
         match self.0.kind() {
-            Prefix::Verbatim(prefix) => Utf8Prefix::Verbatim(unsafe { assume_utf8(prefix) }),
+            Prefix::Verbatim(prefix) => Utf8Prefix::Verbatim(unsafe { str_assume_utf8(prefix) }),
             Prefix::VerbatimUNC(server, share) => {
-                let server = unsafe { assume_utf8(server) };
-                let share = unsafe { assume_utf8(share) };
+                let server = unsafe { str_assume_utf8(server) };
+                let share = unsafe { str_assume_utf8(share) };
                 Utf8Prefix::VerbatimUNC(server, share)
             }
             Prefix::VerbatimDisk(drive) => Utf8Prefix::VerbatimDisk(drive),
-            Prefix::DeviceNS(prefix) => Utf8Prefix::DeviceNS(unsafe { assume_utf8(prefix) }),
+            Prefix::DeviceNS(prefix) => Utf8Prefix::DeviceNS(unsafe { str_assume_utf8(prefix) }),
             Prefix::UNC(server, share) => {
-                let server = unsafe { assume_utf8(server) };
-                let share = unsafe { assume_utf8(share) };
+                let server = unsafe { str_assume_utf8(server) };
+                let share = unsafe { str_assume_utf8(share) };
                 Utf8Prefix::UNC(server, share)
             }
             Prefix::Disk(drive) => Utf8Prefix::Disk(drive),
@@ -2010,30 +2276,33 @@ impl<'a> Utf8PrefixComponent<'a> {
 
     
     #[must_use]
+    #[inline]
     pub fn as_str(&self) -> &'a str {
         
         
-        unsafe { assume_utf8(self.as_os_str()) }
+        unsafe { str_assume_utf8(self.as_os_str()) }
     }
 
     
     #[must_use]
+    #[inline]
     pub fn as_os_str(&self) -> &'a OsStr {
         self.0.as_os_str()
     }
 }
 
-impl<'a> fmt::Debug for Utf8PrefixComponent<'a> {
+impl fmt::Debug for Utf8PrefixComponent<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(&self.0, f)
     }
 }
 
-impl<'a> fmt::Display for Utf8PrefixComponent<'a> {
+impl fmt::Display for Utf8PrefixComponent<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(self.as_str(), f)
     }
 }
+
 
 
 
@@ -2219,6 +2488,17 @@ impl Utf8DirEntry {
     #[inline]
     pub fn into_inner(self) -> fs::DirEntry {
         self.inner
+    }
+
+    
+    
+    
+    
+    
+    #[inline]
+    #[must_use = "`self` will be dropped if the result is not used"]
+    pub fn into_path(self) -> Utf8PathBuf {
+        self.path
     }
 }
 
@@ -2429,6 +2709,42 @@ impl TryFrom<PathBuf> for Utf8PathBuf {
     }
 }
 
+impl TryFrom<OsString> for Utf8PathBuf {
+    type Error = FromOsStringError;
+
+    fn try_from(os_string: OsString) -> Result<Utf8PathBuf, Self::Error> {
+        Utf8PathBuf::from_os_string(os_string).map_err(|os_string| FromOsStringError {
+            os_string,
+            error: FromOsStrError(()),
+        })
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 impl<'a> TryFrom<&'a Path> for &'a Utf8Path {
     type Error = FromPathError;
 
@@ -2436,6 +2752,35 @@ impl<'a> TryFrom<&'a Path> for &'a Utf8Path {
         Utf8Path::from_path(path).ok_or(FromPathError(()))
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+impl<'a> TryFrom<&'a OsStr> for &'a Utf8Path {
+    type Error = FromOsStrError;
+
+    fn try_from(os_str: &'a OsStr) -> Result<&'a Utf8Path, Self::Error> {
+        Utf8Path::from_os_str(os_str).ok_or(FromOsStrError(()))
+    }
+}
+
+
 
 
 
@@ -2475,11 +2820,13 @@ pub struct FromPathBufError {
 
 impl FromPathBufError {
     
+    #[inline]
     pub fn as_path(&self) -> &Path {
         &self.path
     }
 
     
+    #[inline]
     pub fn into_path_buf(self) -> PathBuf {
         self.path
     }
@@ -2488,6 +2835,7 @@ impl FromPathBufError {
     
     
     
+    #[inline]
     pub fn from_path_error(&self) -> FromPathError {
         self.error
     }
@@ -2515,6 +2863,8 @@ impl error::Error for FromPathBufError {
         Some(&self.error)
     }
 }
+
+
 
 
 
@@ -2575,61 +2925,212 @@ impl error::Error for FromPathError {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FromOsStringError {
+    os_string: OsString,
+    error: FromOsStrError,
+}
+
+impl FromOsStringError {
+    
+    #[inline]
+    pub fn as_os_str(&self) -> &OsStr {
+        &self.os_string
+    }
+
+    
+    #[inline]
+    pub fn into_os_string(self) -> OsString {
+        self.os_string
+    }
+
+    
+    
+    
+    
+    #[inline]
+    pub fn from_os_str_error(&self) -> FromOsStrError {
+        self.error
+    }
+
+    
+    
+    
+    
+    
+    pub fn into_io_error(self) -> io::Error {
+        
+        
+        io::Error::new(io::ErrorKind::InvalidData, self)
+    }
+}
+
+impl fmt::Display for FromOsStringError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "OsString contains invalid UTF-8: {}",
+            // self.os_string.display() // this item is stable since `1.87.0`
+            PathBuf::from(&self.os_string).display() // msrv hack
+        )
+    }
+}
+
+impl error::Error for FromOsStringError {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        Some(&self.error)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct FromOsStrError(());
+
+impl FromOsStrError {
+    
+    
+    
+    
+    
+    pub fn into_io_error(self) -> io::Error {
+        
+        
+        io::Error::new(io::ErrorKind::InvalidData, self)
+    }
+}
+
+impl fmt::Display for FromOsStrError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "OsStr contains invalid UTF-8")
+    }
+}
+
+impl error::Error for FromOsStrError {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        None
+    }
+}
+
+
+
+
+
 impl AsRef<Utf8Path> for Utf8Path {
+    #[inline]
     fn as_ref(&self) -> &Utf8Path {
         self
     }
 }
 
 impl AsRef<Utf8Path> for Utf8PathBuf {
+    #[inline]
     fn as_ref(&self) -> &Utf8Path {
         self.as_path()
     }
 }
 
 impl AsRef<Utf8Path> for str {
+    #[inline]
     fn as_ref(&self) -> &Utf8Path {
         Utf8Path::new(self)
     }
 }
 
 impl AsRef<Utf8Path> for String {
+    #[inline]
     fn as_ref(&self) -> &Utf8Path {
         Utf8Path::new(self)
     }
 }
 
 impl AsRef<Path> for Utf8Path {
+    #[inline]
     fn as_ref(&self) -> &Path {
         &self.0
     }
 }
 
 impl AsRef<Path> for Utf8PathBuf {
+    #[inline]
     fn as_ref(&self) -> &Path {
         &self.0
     }
 }
 
 impl AsRef<str> for Utf8Path {
+    #[inline]
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 
 impl AsRef<str> for Utf8PathBuf {
+    #[inline]
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 
 impl AsRef<OsStr> for Utf8Path {
+    #[inline]
     fn as_ref(&self) -> &OsStr {
         self.as_os_str()
     }
 }
 
 impl AsRef<OsStr> for Utf8PathBuf {
+    #[inline]
     fn as_ref(&self) -> &OsStr {
         self.as_os_str()
     }
@@ -2640,6 +3141,7 @@ impl AsRef<OsStr> for Utf8PathBuf {
 
 
 impl Borrow<Utf8Path> for Utf8PathBuf {
+    #[inline]
     fn borrow(&self) -> &Utf8Path {
         self.as_path()
     }
@@ -2648,6 +3150,7 @@ impl Borrow<Utf8Path> for Utf8PathBuf {
 impl ToOwned for Utf8Path {
     type Owned = Utf8PathBuf;
 
+    #[inline]
     fn to_owned(&self) -> Utf8PathBuf {
         self.to_path_buf()
     }
@@ -2666,6 +3169,7 @@ impl<P: AsRef<Utf8Path>> std::iter::FromIterator<P> for Utf8PathBuf {
 
 
 impl PartialEq for Utf8PathBuf {
+    #[inline]
     fn eq(&self, other: &Utf8PathBuf) -> bool {
         self.components() == other.components()
     }
@@ -2674,14 +3178,16 @@ impl PartialEq for Utf8PathBuf {
 impl Eq for Utf8PathBuf {}
 
 impl Hash for Utf8PathBuf {
+    #[inline]
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.as_path().hash(state)
     }
 }
 
 impl PartialOrd for Utf8PathBuf {
+    #[inline]
     fn partial_cmp(&self, other: &Utf8PathBuf) -> Option<Ordering> {
-        self.components().partial_cmp(other.components())
+        Some(self.cmp(other))
     }
 }
 
@@ -2692,6 +3198,7 @@ impl Ord for Utf8PathBuf {
 }
 
 impl PartialEq for Utf8Path {
+    #[inline]
     fn eq(&self, other: &Utf8Path) -> bool {
         self.components().eq(other.components())
     }
@@ -2700,16 +3207,16 @@ impl PartialEq for Utf8Path {
 impl Eq for Utf8Path {}
 
 impl Hash for Utf8Path {
+    #[inline]
     fn hash<H: Hasher>(&self, state: &mut H) {
-        for component in self.components() {
-            component.hash(state)
-        }
+        self.0.hash(state)
     }
 }
 
 impl PartialOrd for Utf8Path {
+    #[inline]
     fn partial_cmp(&self, other: &Utf8Path) -> Option<Ordering> {
-        self.components().partial_cmp(other.components())
+        Some(self.cmp(other))
     }
 }
 
@@ -2722,6 +3229,7 @@ impl Ord for Utf8Path {
 impl<'a> IntoIterator for &'a Utf8PathBuf {
     type Item = &'a str;
     type IntoIter = Iter<'a>;
+    #[inline]
     fn into_iter(self) -> Iter<'a> {
         self.iter()
     }
@@ -2730,6 +3238,7 @@ impl<'a> IntoIterator for &'a Utf8PathBuf {
 impl<'a> IntoIterator for &'a Utf8Path {
     type Item = &'a str;
     type IntoIter = Iter<'a>;
+    #[inline]
     fn into_iter(self) -> Iter<'a> {
         self.iter()
     }
@@ -2925,6 +3434,110 @@ impl_cmp_os_str!(&'a Utf8Path, OsString);
 
 
 
-unsafe fn assume_utf8(string: &OsStr) -> &str {
-    &*(string as *const OsStr as *const str)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(absolute_path)]
+pub fn absolute_utf8<P: AsRef<Path>>(path: P) -> io::Result<Utf8PathBuf> {
+    
+    
+    
+    
+    
+    
+    let path = path.as_ref();
+    #[allow(clippy::incompatible_msrv)]
+    Utf8PathBuf::try_from(std::path::absolute(path)?).map_err(|error| error.into_io_error())
+}
+
+
+#[inline]
+unsafe fn str_assume_utf8(string: &OsStr) -> &str {
+    #[cfg(os_str_bytes)]
+    {
+        
+        unsafe {
+            std::str::from_utf8_unchecked(
+                #[allow(clippy::incompatible_msrv)]
+                string.as_encoded_bytes(),
+            )
+        }
+    }
+    #[cfg(not(os_str_bytes))]
+    {
+        
+        match string.to_str() {
+            Some(val) => val,
+            None => std::hint::unreachable_unchecked(),
+        }
+    }
 }

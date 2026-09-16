@@ -39,7 +39,7 @@ use std::{env, path::PathBuf};
 
 use xshell_venv::{Result, Shell, VirtualEnv};
 
-const GLEAN_PARSER_VERSION: &str = "20.0.0";
+const GLEAN_PARSER_VERSION: &str = "20.1.0";
 
 
 pub struct Builder {
@@ -137,9 +137,10 @@ impl Builder {
         } else {
             let venv = VirtualEnv::new(&sh, "py3-glean_parser")?;
 
-            let glean_parser = format!("glean_parser~={GLEAN_PARSER_VERSION}");
             
-            venv.pip_install("setuptools")?;
+            venv.pip_upgrade("pip")?;
+
+            let glean_parser = format!("glean_parser~={GLEAN_PARSER_VERSION}");
             venv.pip_install(&glean_parser)?;
             venv
         };

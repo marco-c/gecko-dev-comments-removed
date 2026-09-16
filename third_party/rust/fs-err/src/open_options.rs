@@ -1,9 +1,14 @@
 use std::{fs, io, path::PathBuf};
+
+use crate::errors::{Error, ErrorKind};
+
 #[derive(Clone, Debug)]
 
 pub struct OpenOptions(fs::OpenOptions);
 
 impl OpenOptions {
+    
+    
     
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
@@ -11,11 +16,15 @@ impl OpenOptions {
     }
 
     
+    
+    
     pub fn read(&mut self, read: bool) -> &mut Self {
         self.0.read(read);
         self
     }
 
+    
+    
     
     pub fn write(&mut self, write: bool) -> &mut Self {
         self.0.write(write);
@@ -23,11 +32,15 @@ impl OpenOptions {
     }
 
     
+    
+    
     pub fn append(&mut self, append: bool) -> &mut Self {
         self.0.append(append);
         self
     }
 
+    
+    
     
     pub fn truncate(&mut self, truncate: bool) -> &mut Self {
         self.0.truncate(truncate);
@@ -35,11 +48,15 @@ impl OpenOptions {
     }
 
     
+    
+    
     pub fn create(&mut self, create: bool) -> &mut Self {
         self.0.create(create);
         self
     }
 
+    
+    
     
     pub fn create_new(&mut self, create_new: bool) -> &mut Self {
         self.0.create_new(create_new);
@@ -47,19 +64,19 @@ impl OpenOptions {
     }
 
     
+    
+    
     pub fn open<P>(&self, path: P) -> io::Result<crate::File>
     where
         P: Into<PathBuf>,
     {
-        
-        
-        
-        
-        #[allow(deprecated)]
-        crate::File::from_options(path.into(), self.options())
+        let path = path.into();
+        match self.0.open(&path) {
+            Ok(file) => Ok(crate::File::from_parts(file, path)),
+            Err(source) => Err(Error::build(source, ErrorKind::OpenFile, path)),
+        }
     }
 }
-
 
 
 impl OpenOptions {

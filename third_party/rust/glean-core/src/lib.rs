@@ -3,6 +3,7 @@
 
 
 #![allow(clippy::doc_overindented_list_items)]
+#![allow(clippy::large_const_arrays)] 
 #![allow(clippy::significant_drop_in_scrutinee)]
 #![allow(clippy::uninlined_format_args)]
 #![deny(rustdoc::broken_intra_doc_links)]
@@ -64,7 +65,7 @@ mod util;
 #[cfg(all(not(target_os = "android"), not(target_os = "ios")))]
 mod fd_logger;
 
-pub use crate::common_metric_data::{CommonMetricData, DynamicLabelType, Lifetime};
+pub use crate::common_metric_data::{CommonMetricData, Lifetime, MetricLabel};
 pub use crate::core::Glean;
 pub use crate::core_metrics::{AttributionMetrics, ClientInfoMetrics, DistributionMetrics};
 use crate::dispatcher::is_test_mode;
@@ -181,6 +182,8 @@ pub struct InternalConfiguration {
     
     
     pub session_inactivity_timeout_ms: u64,
+    
+    pub events_ping_acceleration_factor: Option<u32>,
 }
 
 
@@ -786,10 +789,18 @@ pub fn shutdown() {
     uploader_shutdown();
 
     
-    core::with_glean(|glean| {
+    core::with_glean_mut(|glean| {
         if let Err(e) = glean.persist_ping_lifetime_data() {
             log::info!("Can't persist ping lifetime data: {:?}", e);
         }
+
+        if let Some(database) = &glean.data_store {
+            if let Err(e) = database.run_maintenance(false) {
+                log::info!("Can't run database maintenance on shutdown: {:?}", e);
+            }
+        }
+
+        glean.close_db();
     });
 }
 
@@ -1337,7 +1348,7 @@ pub fn glean_test_destroy_glean(clear_stores: bool, data_path: Option<String>) {
                 if clear_stores {
                     glean.test_clear_all_stores()
                 }
-                glean.destroy_db()
+                glean.close_db()
             });
         }
 
@@ -1643,30 +1654,27 @@ pub fn glean_enable_logging_to_fd(_fd: u64) {
     
 }
 
-#[allow(missing_docs)]
 
-#[allow(clippy::all)]
-mod ffi {
-    use super::*;
-    uniffi::include_scaffolding!("glean");
 
-    type CowString = Cow<'static, str>;
+uniffi::include_scaffolding!("glean");
 
-    uniffi::custom_type!(CowString, String, {
-        remote,
-        lower: |s| s.into_owned(),
-        try_lift: |s| Ok(Cow::from(s))
-    });
+type CowString = Cow<'static, str>;
 
-    type JsonValue = serde_json::Value;
+uniffi::custom_type!(CowString, String, {
+    remote,
+    lower: |s| s.into_owned(),
+    try_lift: |s| Ok(Cow::from(s))
+});
 
-    uniffi::custom_type!(JsonValue, String, {
-        remote,
-        lower: |s| serde_json::to_string(&s).unwrap(),
-        try_lift: |s| Ok(serde_json::from_str(&s)?)
-    });
-}
-pub use ffi::*;
+type JsonValue = serde_json::Value;
+
+uniffi::custom_type!(JsonValue, String, {
+    remote,
+    lower: |s| serde_json::to_string(&s).unwrap(),
+    try_lift: |s| Ok(serde_json::from_str(&s)?)
+});
+
+
 
 
 #[cfg(test)]
