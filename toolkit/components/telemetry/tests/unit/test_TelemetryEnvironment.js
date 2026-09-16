@@ -52,6 +52,20 @@ add_setup(async function setup() {
 });
 
 add_task(async function test_checkEnvironment() {
+  let data = TelemetryEnvironment.currentEnvironment;
+
+  
+  Assert.equal(
+    typeof data.settings.intl,
+    "object",
+    "intl is initially an object"
+  );
+  Assert.equal(
+    Object.keys(data.settings.intl).length,
+    0,
+    "intl is initially empty"
+  );
+
   
   let initPromise = TelemetryEnvironment.onInitialized();
   finishAddonManagerStartup();
@@ -646,6 +660,69 @@ if (gIsWindows) {
     );
   });
 }
+
+add_task(
+  { skip_if: () => AppConstants.MOZ_APP_NAME == "thunderbird" },
+  async function test_environmentServicesInfo() {
+    let cache = TelemetryEnvironment.testCleanRestart();
+    await cache.onInitialized();
+    let oldGetFxaSignedInUser = cache._getFxaSignedInUser;
+    try {
+      
+
+      
+      Services.prefs.setStringPref(
+        "services.sync.username",
+        "c00lperson123@example.com"
+      );
+      let calledFxa = false;
+      cache._getFxaSignedInUser = () => {
+        calledFxa = true;
+        return null;
+      };
+
+      await cache._updateServicesInfo();
+      ok(
+        !calledFxa,
+        "Shouldn't need to ask FxA if they're definitely signed in"
+      );
+      deepEqual(cache.currentEnvironment.services, {
+        accountEnabled: true,
+        syncEnabled: true,
+      });
+
+      
+      Services.prefs.clearUserPref("services.sync.username");
+      
+      cache._getFxaSignedInUser = async () => {
+        return {};
+      };
+      await cache._updateServicesInfo();
+      deepEqual(cache.currentEnvironment.services, {
+        accountEnabled: true,
+        syncEnabled: false,
+      });
+      
+      cache._getFxaSignedInUser = async () => {
+        return null;
+      };
+      await cache._updateServicesInfo();
+      deepEqual(cache.currentEnvironment.services, {
+        accountEnabled: false,
+        syncEnabled: false,
+      });
+      
+      cache._getFxaSignedInUser = () => {
+        throw new Error("You'll never know");
+      };
+      await cache._updateServicesInfo();
+      equal(cache.currentEnvironment.services, null);
+    } finally {
+      cache._getFxaSignedInUser = oldGetFxaSignedInUser;
+      Services.prefs.clearUserPref("services.sync.username");
+    }
+  }
+);
 
 add_task(async function test_environmentShutdown() {
   
