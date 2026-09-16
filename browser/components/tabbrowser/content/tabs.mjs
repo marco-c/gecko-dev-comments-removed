@@ -1,11 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-
-
+// This is loaded into all browser windows. Wrap in a block to prevent
+// leaking to window scope.
 {
   const DIRECTION_BACKWARD = -1;
   const DIRECTION_FORWARD = 1;
@@ -34,8 +32,8 @@
       this.addEventListener("TabNoteIconHoverEnd", this);
       this.addEventListener("TabGroupLabelHoverStart", this);
       this.addEventListener("TabGroupLabelHoverEnd", this);
-      
-      
+      // Capture collapse/expand early so we mark animating groups before
+      // overflow/underflow handlers run.
       this.addEventListener("TabGroupExpand", this, true);
       this.addEventListener("TabGroupCollapse", this, true);
       this.addEventListener("TabGroupAnimationComplete", this);
@@ -75,8 +73,8 @@
         this.getAttribute("orient")
       );
 
-      
-      
+      // Override arrowscrollbox.js method, since our scrollbox's children are
+      // inherited from the scrollbox binding parent (this).
       this.arrowScrollbox._getScrollableElements = () => {
         return this.ariaFocusableItems.reduce((elements, item) => {
           if (this.arrowScrollbox._canScrollToElement(item)) {
@@ -87,7 +85,7 @@
               item.group.collapsed &&
               item.selected
             ) {
-              
+              // overflow container is scrollable, but not in focus order
               elements.push(item.group.overflowContainer);
             }
           }
@@ -101,14 +99,14 @@
         return true;
       };
 
-      
-      
-      
-      
-      
-      
-      
-      
+      // Override for performance reasons. This is the size of a single element
+      // that can be scrolled when using mouse wheel scrolling. If we don't do
+      // this then arrowscrollbox computes this value by calling
+      // _getScrollableElements and dividing the box size by that number.
+      // However in the tabstrip case we already know the answer to this as,
+      // when we're overflowing, it is always the same as the tab min width.
+      // Vertical mode scrolls natively and takes the amount from
+      // -moz-line-scroll-amount.
       Object.defineProperty(this.arrowScrollbox, "lineScrollAmount", {
         get: () => this._tabMinWidthPref,
       });
@@ -181,7 +179,7 @@
         false
       );
 
-      
+      // The base class set these up before we had the arrowscrollbox.
       this.updateWheelListeners();
 
       XPCOMUtils.defineLazyPreferenceGetter(
@@ -221,29 +219,29 @@
       this.tabDragAndDrop.init();
     }
 
-    attributeChangedCallback(name, oldValue, newValue) {
-      if (name == "orient") {
-        
+    attributeChangedCallback(attrName, oldValue, newValue) {
+      if (attrName == "orient") {
+        // reset this attribute so we don't have incorrect styling for vertical tabs
         this.removeAttribute("overflow");
         this.#updateTabMinWidth();
         this.pinnedTabsContainer?.setAttribute("orient", newValue);
       }
-      super.attributeChangedCallback(name, oldValue, newValue);
+      super.attributeChangedCallback(attrName, oldValue, newValue);
     }
 
-    
+    // Event handlers
 
     handleEvent(aEvent) {
       switch (aEvent.type) {
         case "mouseout": {
-          
-          
+          // If the "related target" (the node to which the pointer went) is not
+          // a child of the current document, the mouse just left the window.
           let relatedTarget = aEvent.relatedTarget;
           if (relatedTarget && relatedTarget.ownerDocument == document) {
             break;
           }
         }
-        
+        // fall through
         case "mousemove":
           if (
             document.getElementById("tabContextMenu").state != "open" &&
@@ -266,17 +264,17 @@
       }
     }
 
-    
-
-
+    /**
+     * @param {CustomEvent} event
+     */
     on_TabSelect(event) {
       const {
         target: newTab,
         detail: { previousTab },
       } = event;
 
-      
-      
+      // In some cases (e.g. by selecting a tab in a collapsed tab group),
+      // changing the selected tab may cause a tab to appear/disappear.
       if (previousTab.group?.collapsed || newTab.group?.collapsed) {
         this._invalidateCachedVisibleTabs();
       }
@@ -377,8 +375,8 @@
     }
 
     on_TabGroupAnimationComplete(event) {
-      
-      
+      // Delay clearing the animating flag so overflow/underflow handlers
+      // triggered by the size change can observe it and skip auto-scroll.
       window.requestAnimationFrame(() => {
         this.#animatingGroups.delete(event.target.id);
       });
@@ -400,9 +398,9 @@
       this._invalidateCachedTabs();
     }
 
-    
-
-
+    /**
+     * @param {TransitionEvent} event
+     */
     on_transitionend(event) {
       if (event.propertyName != "max-width") {
         return;
@@ -429,15 +427,15 @@
     }
 
     on_dblclick(event) {
-      
-      
-      
+      // When the tabbar has an unified appearance with the titlebar
+      // and menubar, a double-click in it should have the same behavior
+      // as double-clicking the titlebar
       if (CustomTitlebar.enabled && !this.verticalMode) {
         return;
       }
 
-      
-      
+      // Make sure it is the primary button, we are hitting our arrowscrollbox,
+      // and we're not hitting the scroll buttons.
       if (
         event.button != 0 ||
         event.target != this.arrowScrollbox ||
@@ -455,30 +453,30 @@
 
     on_click(event) {
       if (event.eventPhase == Event.CAPTURING_PHASE && event.button == 0) {
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        /* Catches extra clicks meant for the in-tab close button.
+         * Placed here to avoid leaking (a temporary handler added from the
+         * in-tab close button binding would close over the tab and leak it
+         * until the handler itself was removed). (bug 897751)
+         *
+         * The only sequence in which a second click event (i.e. dblclik)
+         * can be dispatched on an in-tab close button is when it is shown
+         * after the first click (i.e. the first click event was dispatched
+         * on the tab). This happens when we show the close button only on
+         * the active tab. (bug 352021)
+         * The only sequence in which a third click event can be dispatched
+         * on an in-tab close button is when the tab was opened with a
+         * double click on the tabbar. (bug 378344)
+         * In both cases, it is most likely that the close button area has
+         * been accidentally clicked, therefore we do not close the tab.
+         *
+         * We don't want to ignore processing of more than one click event,
+         * though, since the user might actually be repeatedly clicking to
+         * close many tabs at once.
+         */
         let target = event.originalTarget;
         if (target.classList.contains("tab-close-button")) {
-          
-          
+          // We preemptively set this to allow the closing-multiple-tabs-
+          // in-a-row case.
           if (this._blockDblClick) {
             target._ignoredCloseButtonClicks = true;
           } else if (event.detail > 1 && !target._ignoredCloseButtonClicks) {
@@ -486,18 +484,18 @@
             event.stopPropagation();
             return;
           } else {
-            
+            // Reset the "ignored click" flag
             target._ignoredCloseButtonClicks = false;
           }
         }
 
-        
-
-
-
-
-
-
+        /* Protects from close-tab-button errant doubleclick:
+         * Since we're removing the event target, if the user
+         * double-clicks the button, the dblclick event will be dispatched
+         * with the tabbar as its event target (and explicit/originalTarget),
+         * which treats that as a mouse gesture for opening a new tab.
+         * In this context, we're manually blocking the dblclick event.
+         */
         if (this._blockDblClick) {
           if (!("_clickedTabBarOnce" in this)) {
             this._clickedTabBarOnce = true;
@@ -535,8 +533,8 @@
             "widget.gtk.titlebar-action-middle-click-enabled"
           )
         ) {
-          
-          
+          // Check whether the click
+          // was dispatched on the open space of it.
           let visibleTabs = this.visibleTabs;
           let lastTab = visibleTabs.at(-1);
           let winUtils = window.windowUtils;
@@ -624,8 +622,8 @@
             gBrowser.moveTabToEnd(undefined, moveOptions);
             break;
           default:
-            
-            
+            // Consume the keydown event for the above keyboard
+            // shortcuts only.
             return;
         }
 
@@ -670,8 +668,8 @@
             break;
           }
           default:
-            
-            
+            // Consume the keydown event for the above keyboard
+            // shortcuts only.
             return;
         }
 
@@ -679,17 +677,17 @@
       }
     }
 
-    
-
-
+    /**
+     * @param {FocusEvent} event
+     */
     on_focusin(event) {
       if (event.target == this.selectedItem) {
         this.tablistHasFocus = true;
         if (!this.ariaFocusedItem) {
-          
-          
-          
-          
+          // If the active tab is receiving focus and there isn't a keyboard
+          // focus target yet, set the keyboard focus target to the active
+          // tab. Do not override the keyboard-focused item if the user
+          // already set a keyboard focus.
           this.ariaFocusedItem = this.selectedItem;
         }
       }
@@ -705,9 +703,9 @@
       }
     }
 
-    
-
-
+    /**
+     * @param {FocusEvent} event
+     */
     on_focusout(event) {
       this.cancelTabGroupPreview();
       if (event.target == this.selectedItem) {
@@ -745,13 +743,13 @@
       this.tabDragAndDrop.handle_dragleave(event);
     }
 
-    
-
-
-
+    /**
+     * Only reached while switching tabs by scrolling is enabled, since that's
+     * when the listener exists.
+     */
     on_wheel(event) {
-      
-      
+      // The tabs are switched from the legacy scroll event in tabbox.js. Keep
+      // the arrowscrollbox from scrolling on top of that.
       event.stopImmediatePropagation();
     }
 
@@ -759,7 +757,7 @@
       super.updateWheelListeners();
 
       if (!this.arrowScrollbox) {
-        
+        // Called from the base class constructor, before init().
         return;
       }
       if (this.switchByScrolling) {
@@ -770,7 +768,7 @@
     }
 
     on_overflow(event) {
-      
+      // Ignore overflow events from nested scrollable elements
       if (event.target != this.arrowScrollbox) {
         return;
       }
@@ -788,9 +786,9 @@
     }
 
     on_underflow(event) {
-      
-      
-      
+      // Ignore underflow events:
+      // - from nested scrollable elements
+      // - corresponding to an overflow event that we ignored
       if (event.target != this.arrowScrollbox || !this.overflowing) {
         return;
       }
@@ -813,10 +811,10 @@
     }
 
     on_contextmenu(event) {
-      
-      
-      
-      
+      // When pressing the context menu key (as opposed to right-clicking)
+      // while a tab group label has aria focus (as opposed to DOM focus),
+      // open the tab group context menu as if the label had DOM focus.
+      // The button property is used to differentiate between key and mouse.
       if (event.button == 0 && isTabGroupLabel(this.ariaFocusedItem)) {
         gBrowser.tabGroupMenu.openEditModal(this.ariaFocusedItem.group);
         event.preventDefault();
@@ -828,10 +826,10 @@
       this._handleTabSelect(true);
     }
 
-    
+    // Utilities
 
     get emptyTabTitle() {
-      
+      // Normal tab title is used also in the permanent private browsing mode.
       const l10nId =
         PrivateBrowsingUtils.isWindowPrivate(window) &&
         !Services.prefs.getBoolPref("browser.privatebrowsing.autostart")
@@ -869,18 +867,18 @@
       if (this.#allTabs) {
         return this.#allTabs;
       }
-      
+      // Remove temporary periphery element added at drag start.
       let pinnedChildren = Array.from(this.pinnedTabsContainer.children);
       if (pinnedChildren?.at(-1)?.id == "pinned-tabs-container-periphery") {
         pinnedChildren.pop();
       }
       let unpinnedChildren = Array.from(this.arrowScrollbox.children);
-      
+      // remove arrowScrollbox periphery element.
       unpinnedChildren.pop();
 
-      
-      
-      
+      // explode tab groups and split view wrappers
+      // Iterate backwards over the array to preserve indices while we modify
+      // things in place
       for (let i = unpinnedChildren.length - 1; i >= 0; i--) {
         if (
           unpinnedChildren[i].tagName == "tab-group" ||
@@ -916,10 +914,10 @@
       return splitViews;
     }
 
-    
-
-
-
+    /**
+     * Returns all tabs in the current window, including hidden tabs and tabs
+     * in collapsed groups, but excluding closing tabs and the Firefox View tab.
+     */
     get openTabs() {
       if (!this.#openTabs) {
         this.#openTabs = this.allTabs.filter(tab => tab.isOpen);
@@ -928,9 +926,9 @@
     }
     #openTabs;
 
-    
-
-
+    /**
+     * Same as `openTabs` but excluding hidden tabs.
+     */
     get nonHiddenTabs() {
       if (!this.#nonHiddenTabs) {
         this.#nonHiddenTabs = this.openTabs.filter(tab => !tab.hidden);
@@ -939,9 +937,9 @@
     }
     #nonHiddenTabs;
 
-    
-
-
+    /**
+     * Same as `openTabs` but excluding hidden tabs and tabs in collapsed groups.
+     */
     get visibleTabs() {
       if (!this.#visibleTabs) {
         this.#visibleTabs = this.openTabs.filter(tab => tab.visible);
@@ -950,32 +948,32 @@
     }
     #visibleTabs;
 
-    
-
-
+    /**
+     * @returns {boolean} true if the keyboard focus is on the active tab
+     */
     get tablistHasFocus() {
       return this.hasAttribute("tablist-has-focus");
     }
 
-    
-
-
+    /**
+     * @param {boolean} hasFocus true if the keyboard focus is on the active tab
+     */
     set tablistHasFocus(hasFocus) {
       this.toggleAttribute("tablist-has-focus", hasFocus);
     }
 
-    
+    /** @typedef {MozTabbrowserTab|MozTextLabel} FocusableItem */
 
-    
+    /** @type {FocusableItem[]} */
     #focusableItems;
 
-    
+    /** @type {dragAndDropElements[]} */
     #dragAndDropElements;
 
-    
-
-
-
+    /**
+     * @returns {FocusableItem[]}
+     * @override
+     */
     get ariaFocusableItems() {
       if (this.#focusableItems) {
         return this.#focusableItems;
@@ -1009,12 +1007,12 @@
       return this.#focusableItems;
     }
 
-    
-
-
-
-
-
+    /**
+     * @returns {dragAndDropElements[]}
+     * Representation of every drag and drop element including tabs, tab group labels and split view wrapper.
+     * We keep this separate from ariaFocusableItems because not every element for drag n'drop also needs to be
+     * focusable (ex, we don't want the splitview container to be focusable, only its children).
+     */
     get dragAndDropElements() {
       if (this.#dragAndDropElements) {
         return this.#dragAndDropElements;
@@ -1057,17 +1055,17 @@
       return this.#dragAndDropElements;
     }
 
-    
-
-
-
-
-
+    /**
+     * Moves the ARIA focus in the tab strip left or right, as appropriate, to
+     * the next tab or tab group label.
+     *
+     * @param {-1|1} direction
+     */
     #advanceFocus(direction) {
       let currentIndex = this.ariaFocusableItems.indexOf(this.ariaFocusedItem);
       let newIndex = currentIndex + direction;
 
-      
+      // Clamp the index so that the focus stops at the edges of the tab strip
       newIndex = Math.min(
         this.ariaFocusableItems.length - 1,
         Math.max(0, newIndex)
@@ -1076,8 +1074,8 @@
       let itemToFocus = this.ariaFocusableItems[newIndex];
       this.ariaFocusedItem = itemToFocus;
 
-      
-      
+      // If the newly-focused item is a tab group label and the group is collapsed,
+      // proactively show the tab group preview
       if (isTabGroupLabel(this.ariaFocusedItem)) {
         this.showTabGroupPreview(this.ariaFocusedItem.group);
       }
@@ -1092,9 +1090,9 @@
       this.#openTabs = null;
       this.#nonHiddenTabs = null;
       this.#visibleTabs = null;
-      
-      
-      
+      // Focusable items must also be visible, but they do not depend on
+      // this.#visibleTabs, so changes to visible tabs need to also invalidate
+      // the focusable items and dragAndDropElements cache.
       this.#focusableItems = null;
       this.#dragAndDropElements = null;
     }
@@ -1112,12 +1110,12 @@
       );
     }
 
-    
-
-
-
-
-
+    /**
+     * @override
+     * @param {-1|1} aDir
+     * @param {boolean} aWrap
+     * @param {Event} [aEvent] The DOM event that triggered this call.
+     */
     advanceSelectedTab(aDir, aWrap, aEvent) {
       let prevTab = gBrowser.selectedTab;
       super.advanceSelectedTab(aDir, aWrap, aEvent);
@@ -1131,33 +1129,33 @@
       }
     }
 
-    
-
-
-
-
-
-
-
-
-
-
+    /**
+     * Changes the selected tab or tab group label on the tab strip
+     * relative to the ARIA-focused tab strip element or the active tab. This
+     * is intended for traversing the tab strip visually, e.g by using keyboard
+     * arrows. For cases where keyboard shortcuts or other logic should only
+     * select tabs (and never tab group labels), see `advanceSelectedTab`.
+     *
+     * @override
+     * @param {-1|1} direction
+     * @param {boolean} shouldWrap
+     */
     advanceSelectedItem(aDir, aWrap) {
       let groupPanel = this.previewPanel?.tabGroupPanel;
       if (groupPanel && groupPanel.isActive) {
-        
-        
+        // if the group panel is open, it should receive keyboard focus here
+        // instead of moving to the next item in the tabstrip.
         groupPanel.focusPanel(aDir);
         return;
       }
 
-      
+      // cancel any pending group popup since we expect to deselect the label
       this.cancelTabGroupPreview();
 
       let { ariaFocusableItems, ariaFocusedIndex } = this;
 
-      
-      
+      // Advance relative to the ARIA-focused item if set, otherwise advance
+      // relative to the active tab.
       let currentItemIndex =
         ariaFocusedIndex >= 0
           ? ariaFocusedIndex
@@ -1182,9 +1180,9 @@
         return;
       }
 
-      
-      
-      
+      // If the next item is a tab, select it. If the next item is a tab group
+      // label, keep the active tab selected and just set ARIA focus on the tab
+      // group label.
       let newItem = ariaFocusableItems[newItemIndex];
       if (isTab(newItem)) {
         let prevTab = gBrowser.selectedTab;
@@ -1200,8 +1198,8 @@
       }
       this.ariaFocusedItem = newItem;
 
-      
-      
+      // If the newly-focused item is a tab group label and the group is collapsed,
+      // proactively show the tab group preview
       if (isTabGroupLabel(this.ariaFocusedItem)) {
         this.showTabGroupPreview(this.ariaFocusedItem.group);
       }
@@ -1226,7 +1224,7 @@
       }
 
       if (node == null) {
-        
+        // We have a container for non-tab elements at the end of the scrollbox.
         node = this.arrowScrollbox.lastChild;
       }
 
@@ -1244,9 +1242,9 @@
       return document.documentElement.hasAttribute("customizing");
     }
 
-    
-    
-    
+    // This overrides the TabsBase _selectNewTab method so that we can
+    // potentially interrupt keyboard tab switching when sharing the
+    // window or screen.
     _selectNewTab(aNewTab, aFallbackDir, aWrap) {
       if (!gSharedTabWarning.willShowSharedTabWarning(aNewTab)) {
         super._selectNewTab(aNewTab, aFallbackDir, aWrap);
@@ -1256,39 +1254,39 @@
     observe(aSubject, aTopic) {
       switch (aTopic) {
         case "nsPref:changed": {
-          
-          
-          
+          // This is has to deal with changes in
+          // privacy.userContext.enabled and
+          // privacy.userContext.newTabContainerOnLeftClick.enabled.
           let containersEnabled =
             Services.prefs.getBoolPref("privacy.userContext.enabled") &&
             !PrivateBrowsingUtils.isWindowPrivate(window);
 
-          
+          // This pref won't change so often, so just recreate the menu.
           const newTabLeftClickOpensContainersMenu = Services.prefs.getBoolPref(
             "privacy.userContext.newTabContainerOnLeftClick.enabled"
           );
 
-          
-          
-          
+          // There are separate "new tab" buttons for horizontal tabs toolbar, vertical tabs and
+          // for when the tab strip is overflowed (which is shared by vertical and horizontal tabs);
+          // Attach the long click popup to all of them.
           const newTab = document.getElementById("new-tab-button");
           const newTab2 = this.newTabButton;
           const newTabVertical = document.getElementById(
             "vertical-tabs-newtab-button"
           );
 
-          for (let parent of [newTab, newTab2, newTabVertical]) {
-            if (!parent) {
+          for (let button of [newTab, newTab2, newTabVertical]) {
+            if (!button) {
               continue;
             }
 
-            parent.removeAttribute("type");
-            if (parent.menupopup) {
-              parent.menupopup.remove();
+            button.removeAttribute("type");
+            if (button.menupopup) {
+              button.menupopup.remove();
             }
 
             if (containersEnabled) {
-              parent.setAttribute("context", "new-tab-button-popup");
+              button.setAttribute("context", "new-tab-button-popup");
 
               let popup = document
                 .getElementById("new-tab-button-popup")
@@ -1297,27 +1295,27 @@
               popup.className = "new-tab-popup";
               popup.setAttribute("position", "after_end");
               popup.addEventListener("popupshowing", CreateContainerTabMenu);
-              parent.prepend(popup);
-              parent.setAttribute("type", "menu");
-              
-              DynamicShortcutTooltip.nodeToTooltipMap[parent.id] =
+              button.prepend(popup);
+              button.setAttribute("type", "menu");
+              // Update tooltip text
+              DynamicShortcutTooltip.nodeToTooltipMap[button.id] =
                 newTabLeftClickOpensContainersMenu
                   ? "newTabAlwaysContainer.tooltip"
                   : "newTabContainer.tooltip";
             } else {
-              DynamicShortcutTooltip.nodeToTooltipMap[parent.id] =
+              DynamicShortcutTooltip.nodeToTooltipMap[button.id] =
                 "newTabButton.tooltip";
-              parent.removeAttribute("context", "new-tab-button-popup");
+              button.removeAttribute("context", "new-tab-button-popup");
             }
-            
-            DynamicShortcutTooltip.cache.delete(parent.id);
+            // evict from tooltip cache
+            DynamicShortcutTooltip.cache.delete(button.id);
 
-            
-            
+            // If containers and press-hold container menu are both used,
+            // add to gClickAndHoldListenersOnElement; otherwise, remove.
             if (containersEnabled && !newTabLeftClickOpensContainersMenu) {
-              gClickAndHoldListenersOnElement.add(parent);
+              gClickAndHoldListenersOnElement.add(button);
             } else {
-              gClickAndHoldListenersOnElement.remove(parent);
+              gClickAndHoldListenersOnElement.remove(button);
             }
           }
 
@@ -1328,7 +1326,7 @@
 
     _updateCloseButtons() {
       if (this.overflowing) {
-        
+        // Tabs are at their minimum widths.
         this.setAttribute("closebuttons", "activetab");
         return;
       }
@@ -1338,27 +1336,27 @@
       }
       this._closeButtonsUpdatePending = true;
 
-      
-      
+      // Wait until after the next paint to get current layout data from
+      // getBoundsWithoutFlushing.
       window.requestAnimationFrame(() => {
         window.requestAnimationFrame(() => {
           this._closeButtonsUpdatePending = false;
 
-          
-          
+          // The scrollbox may have started overflowing since we checked
+          // overflow earlier, so check again.
           if (this.overflowing) {
             this.setAttribute("closebuttons", "activetab");
             return;
           }
 
-          
-          
-          
+          // Check if tab widths are below the threshold where we want to
+          // remove close buttons from background tabs so that people don't
+          // accidentally close tabs by selecting them.
           let rect = ele => {
             return window.windowUtils.getBoundsWithoutFlushing(ele);
           };
-          
-          
+          // See bug 2007766, we need to find the first tab that isn't
+          // inside a split view, because those can be narrower than the threshold.
           let tab = this.visibleTabs
             .slice(gBrowser.pinnedTabCount)
             .find(t => !t.splitview);
@@ -1371,9 +1369,9 @@
       });
     }
 
-    
-
-
+    /**
+     * @param {boolean} [aInstant]
+     */
     _handleTabSelect(aInstant) {
       let selectedTab = this.selectedItem;
       this.#ensureTabIsVisible(selectedTab, aInstant);
@@ -1381,10 +1379,10 @@
       selectedTab._notselectedsinceload = false;
     }
 
-    
-
-
-
+    /**
+     * @param {MozTabbrowserTab} tab
+     * @param {boolean} [shouldScrollInstantly=false]
+     */
     #ensureTabIsVisible(tab, shouldScrollInstantly = false) {
       let arrowScrollbox = tab.closest("arrowscrollbox");
       if (arrowScrollbox?.overflowing) {
@@ -1392,9 +1390,9 @@
       }
     }
 
-    
-
-
+    /**
+     * Try to keep the active tab's close button under the mouse cursor
+     */
     _lockTabSizing(aClosingTab, aTabWidth) {
       if (this.verticalMode) {
         return;
@@ -1404,7 +1402,7 @@
       let numPinned = gBrowser.pinnedTabCount;
 
       if (tabs.length <= numPinned) {
-        
+        // There are no unpinned tabs left.
         return;
       }
 
@@ -1426,26 +1424,26 @@
       }
 
       if (this.overflowing) {
-        
-        
+        // Don't need to do anything if we're in overflow mode and aren't scrolled
+        // all the way to the right, or if we're closing the last tab.
         if (isEndTab || !this.arrowScrollbox.hasAttribute("scrolledtoend")) {
           return;
         }
-        
-        
-        
+        // If the tab has an owner that will become the active tab, the owner will
+        // be to the left of it, so we actually want the left tab to slide over.
+        // This can't be done as easily in non-overflow mode, so we don't bother.
         if (aClosingTab?.owner) {
           return;
         }
         this._expandSpacerBy(aTabWidth);
-      }  else {
+      } /* non-overflow mode */ else {
         if (isEndTab && !this._hasTabTempMaxWidth) {
-          
+          // Locking is neither in effect nor needed, so let tabs expand normally.
           return;
         }
-        
-        
-        
+        // Force tabs to stay the same width, unless we're closing the last tab,
+        // which case we need to let them expand just enough so that the overall
+        // tabbar width is the same.
         if (isEndTab) {
           let numNormalTabs = tabs.length - numPinned;
           aTabWidth = (aTabWidth * (numNormalTabs + 1)) / numNormalTabs;
@@ -1459,7 +1457,7 @@
           let tab = tabs[i];
           tab.style.setProperty("max-width", aTabWidth, "important");
           if (!isEndTab) {
-            
+            // keep tabs the same width
             tab.animationsEnabled = false;
             tabsToReset.push(tab);
           }
@@ -1497,9 +1495,9 @@
 
       if (this._hasTabTempMaxWidth) {
         this._hasTabTempMaxWidth = false;
-        
-        
-        
+        // Only visible tabs have their sizes locked, but those visible tabs
+        // could become invisible before being unlocked (e.g. by being inside
+        // of a collapsing tab group), so it's better to reset all tabs.
         let tabs = this.allTabs;
         for (let i = 0; i < tabs.length; i++) {
           tabs[i].style.maxWidth = "";
@@ -1543,17 +1541,17 @@
             ];
           })
           .then(([tabToScrollIntoView, scrollRect, tabRect, selectedRect]) => {
-            
+            // First off, remove the promise so we can re-enter if necessary.
             delete this._backgroundTabScrollPromise;
-            
-            
-            
+            // Then, if the layout info isn't for the last-scrolled-to-tab, re-run
+            // the code above to get layout info for *that* tab, and don't do
+            // anything here, as we really just want to run this for the last-opened tab.
             if (this._lastTabToScrollIntoView != tabToScrollIntoView) {
               this._notifyBackgroundTab(this._lastTabToScrollIntoView);
               return;
             }
             delete this._lastTabToScrollIntoView;
-            
+            // Is the new tab already completely visible?
             if (
               this.verticalMode
                 ? scrollRect.top <= tabRect.top &&
@@ -1565,7 +1563,7 @@
             }
 
             if (this.arrowScrollbox.smoothScroll) {
-              
+              // Can we make both the new tab and the selected tab completely visible?
               if (
                 !selectedRect ||
                 (this.verticalMode
@@ -1622,9 +1620,9 @@
         this._notifyBackgroundTab(tab);
       }
 
-      
-      
-      
+      // If this browser isn't lazy (indicating it's probably created by
+      // session restore), preload the next about:newtab if we don't
+      // already have a preloaded browser.
       if (tab.linkedPanel) {
         NewTabPagePreloading.maybeCreatePreloadedBrowser(window);
       }
@@ -1638,26 +1636,26 @@
       return !aTab.closing;
     }
 
-    
-
-
-
-
+    /**
+     * Returns the panel associated with a tab if it has a connected browser
+     * and/or it is the selected tab.
+     * For background lazy browsers, this will return null.
+     */
     getRelatedElement(aTab) {
       if (!aTab) {
         return null;
       }
 
-      
+      // Cannot access gBrowser before it's initialized.
       if (!gBrowser._initialized) {
         return this.tabbox.tabpanels.firstElementChild;
       }
 
-      
-      
-      
-      
-      
+      // If the tab's browser is lazy, we need to call `insertBrowser()` in
+      // order to have a linkedPanel.  This will also serve to bind the browser
+      // and make it ready to use. We only do this if the tab is selected
+      // because otherwise, callers might end up unintentionally binding the
+      // browser for lazy background tabs.
       if (!aTab.linkedPanel) {
         if (!aTab.selected) {
           return null;
@@ -1668,20 +1666,20 @@
     }
 
     _updateNewTabVisibility() {
-      
+      // Helper functions to help deal with customize mode wrapping some items
       let wrap = n =>
         n.parentNode.localName == "toolbarpaletteitem" ? n.parentNode : n;
       let unwrap = n =>
         n && n.localName == "toolbarpaletteitem" ? n.firstElementChild : n;
 
-      
-      
-      
-      
-      
-      
-      
-      
+      // Starting from the tabs element, find the next sibling that:
+      // - isn't hidden; and
+      // - isn't the all-tabs button.
+      // If it's the new tab button, consider the new tab button adjacent to the tabs.
+      // If the new tab button is marked as adjacent and the tabstrip doesn't
+      // overflow, we'll display the 'new tab' button inline in the tabstrip.
+      // In all other cases, the separate new tab button is displayed in its
+      // customized location.
       let sib = this;
       do {
         sib = unwrap(wrap(sib).nextElementSibling);
@@ -1713,8 +1711,8 @@
     }
 
     _hiddenSoundPlayingStatusChanged(tab, opts) {
-      let closed = opts && opts.closed;
-      if (!closed && tab.soundPlaying && !tab.visible) {
+      let isClosed = opts && opts.closed;
+      if (!isClosed && tab.soundPlaying && !tab.visible) {
         this._hiddenSoundPlayingTabs.add(tab);
         this.toggleAttribute("hiddensoundplaying", true);
       } else {
@@ -1734,7 +1732,7 @@
     }
 
     updateTabSoundLabel(tab) {
-      
+      // Add aria-label for inline audio button
       const [unmute, mute, unblock] =
         gBrowser.tabLocalization.formatMessagesSync([
           "tabbrowser-unmute-tab-audio-aria-label",
