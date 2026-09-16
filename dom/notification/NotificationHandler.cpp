@@ -21,6 +21,25 @@ namespace mozilla::dom::notification {
 nsresult RespondOnClick(nsIPrincipal* aPrincipal, const nsAString& aScope,
                         const IPCNotification& aNotification,
                         const nsAString& aActionName) {
+  if (StaticPrefs::dom_webnotifications_navigate_enabled()) {
+    nsIURI* navigate = nullptr;
+    if (aActionName.IsEmpty()) {
+      navigate = aNotification.options().navigate();
+    } else {
+      for (const IPCNotificationAction& action :
+           aNotification.options().actions()) {
+        if (action.name() == aActionName) {
+          navigate = action.navigate();
+          break;
+        }
+      }
+    }
+    if (navigate) {
+      nsAutoCString spec;
+      navigate->GetSpec(spec);
+      return OpenWindowFor(aPrincipal, spec);
+    }
+  }
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
   if (!swm) {
     return NS_ERROR_FAILURE;
@@ -40,14 +59,10 @@ nsresult RespondOnClick(nsIPrincipal* aPrincipal, const nsAString& aScope,
   return NS_OK;
 }
 
-nsresult OpenWindowFor(nsIPrincipal* aPrincipal) {
+nsresult OpenWindowFor(nsIPrincipal* aPrincipal, const nsCString& aURL) {
   nsAutoCString origin;
   MOZ_TRY(aPrincipal->GetOriginNoSuffix(origin));
-
-  if (!StringBeginsWith(origin, "https://"_ns)) {
-    
-    
-    
+  if (!aPrincipal->GetIsOriginPotentiallyTrustworthy()) {
     
     return NS_ERROR_INVALID_ARG;
   }
@@ -57,7 +72,7 @@ nsresult OpenWindowFor(nsIPrincipal* aPrincipal) {
   MOZ_TRY(PrincipalToPrincipalInfo(aPrincipal, &info));
 
   (void)ClientOpenWindow(nullptr,
-                         ClientOpenWindowArgs(info, Nothing(), ""_ns, origin));
+                         ClientOpenWindowArgs(info, Nothing(), aURL, origin));
   return NS_OK;
 }
 
