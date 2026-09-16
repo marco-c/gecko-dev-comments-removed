@@ -2915,7 +2915,7 @@ void SVGTextFrame::ReflowSVGNonDisplayText() {
 
   
   
-  this->MarkSubtreeDirty();
+  MarkSubtreeDirty();
 
   
   
@@ -5161,8 +5161,8 @@ void SVGTextFrame::MaybeReflowAnonymousBlockChild() {
     return;
   }
 
-  NS_ASSERTION(!kid->HasAnyStateBits(NS_FRAME_IN_REFLOW),
-               "should not be in reflow when about to reflow again");
+  MOZ_ASSERT(!kid->HasAnyStateBits(NS_FRAME_IN_REFLOW),
+             "should not be in reflow when about to reflow again");
 
   if (IsSubtreeDirty()) {
     if (HasAnyStateBits(NS_FRAME_IS_DIRTY)) {
