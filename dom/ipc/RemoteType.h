@@ -6,6 +6,7 @@
 #define mozilla_dom_RemoteType_h
 
 #include "mozilla/HashFunctions.h"
+#include "mozilla/Result.h"
 #include "nsString.h"
 
 namespace mozilla {
@@ -207,7 +208,13 @@ struct RemoteType {
   
   
   
-  [[nodiscard]] bool CheckValidity() const;
+  [[nodiscard]] Result<Ok, const char*> CheckValidity() const;
+  void ReleaseAssertValidity() const;
+  void DebugAssertValidity() const {
+#ifdef DEBUG
+    ReleaseAssertValidity();
+#endif
+  }
 
   Kind mKind = Kind::Unknown;
 
