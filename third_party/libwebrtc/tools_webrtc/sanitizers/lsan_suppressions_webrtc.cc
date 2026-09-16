@@ -51,16 +51,6 @@ char kLSanDefaultSuppressions[] =
     
 
     
-    
-    "leak:webrtc::unstarted_task_test_DoNotDeleteTask2_Test::TestBody\n"
-    "leak:webrtc::HttpServer::HandleConnection\n"
-    "leak:webrtc::HttpServer::Connection::onHttpHeaderComplete\n"
-    "leak:webrtc::HttpResponseData::set_success\n"
-    "leak:webrtc::HttpData::changeHeader\n"
-    
-    "leak:StartDNSLookup\n"
-
-    
     "leak:webrtc::FakeNetworkInterface::SetOption\n"
     "leak:CodecTest_TestCodecOperators_Test::TestBody\n"
     "leak:VideoEngineTest*::ConstrainNewCodecBody\n"
