@@ -183,8 +183,10 @@ DeviceColor PaintState::GetColor(uint16_t aPaletteIndex, float aAlpha) const {
                               hb_color_get_blue(c), hb_color_get_alpha(c));
   } else if (aPaletteIndex == 0xffff) {
     color = mCurrentColor;
-  } else {  
-    color = sRGBColor();
+  } else {
+    
+    
+    color = sRGBColor(0, 0, 0, 0.25);
   }
   color.a *= aAlpha;
   return ToDeviceColor(color);
@@ -2666,20 +2668,24 @@ nsTArray<hb_color_t> COLRFonts::CreateColorPalette(
   count =
       hb_ot_color_palette_get_colors(aFace, paletteIndex, 0, nullptr, nullptr);
   nsTArray<hb_color_t> palette;
-  palette.SetLength(count);
-  hb_ot_color_palette_get_colors(aFace, paletteIndex, 0, &count,
-                                 palette.Elements());
-
   
-  if (fpv) {
-    for (const auto overrideColor : fpv->mOverrides) {
-      if (overrideColor.mIndex < palette.Length()) {
-        
-        
-        
-        nscolor c = overrideColor.mColor;
-        palette[overrideColor.mIndex] =
-            HB_COLOR(NS_GET_B(c), NS_GET_G(c), NS_GET_R(c), NS_GET_A(c));
+  
+  
+  if (palette.SetLength(count, fallible)) {
+    hb_ot_color_palette_get_colors(aFace, paletteIndex, 0, &count,
+                                   palette.Elements());
+
+    
+    if (fpv) {
+      for (const auto overrideColor : fpv->mOverrides) {
+        if (overrideColor.mIndex < palette.Length()) {
+          
+          
+          
+          nscolor c = overrideColor.mColor;
+          palette[overrideColor.mIndex] =
+              HB_COLOR(NS_GET_B(c), NS_GET_G(c), NS_GET_R(c), NS_GET_A(c));
+        }
       }
     }
   }
