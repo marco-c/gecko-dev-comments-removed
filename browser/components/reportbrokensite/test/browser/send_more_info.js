@@ -15,6 +15,13 @@ Services.scriptloader.loadSubScript(
   this
 );
 
+
+
+function optedIntoBlockedTrackers(overrides) {
+  const { antitracking } = overrides ?? {};
+  return !!(antitracking?.blockedOrigins || antitracking?.btpPurgeHistory);
+}
+
 async function reformatExpectedWebCompatInfo(tab, overrides) {
   const gfxInfo = Cc["@mozilla.org/gfx/info;1"].getService(Ci.nsIGfxInfo);
   const snapshot = await Troubleshoot.snapshot();
@@ -52,7 +59,11 @@ async function reformatExpectedWebCompatInfo(tab, overrides) {
     atOverrides?.isPrivateBrowsing ?? antitracking.isPrivateBrowsing;
   const btpHasPurgedSite =
     atOverrides?.btpHasPurgedSite ?? antitracking.btpHasPurgedSite;
+  const btpPurgeHistory =
+    atOverrides?.btpPurgeHistory ?? antitracking.btpPurgeHistory;
   const etpCategory = atOverrides?.etpCategory ?? antitracking.etpCategory;
+  
+  const sendBlockedUrls = optedIntoBlockedTrackers(overrides);
 
   const extra_labels = [];
   const frameworks = overrides.frameworks ?? {
@@ -152,6 +163,17 @@ async function reformatExpectedWebCompatInfo(tab, overrides) {
   }
 
   
+  
+  
+  
+  
+  if (sendBlockedUrls) {
+    reformatted.details.additionalData.tabInfo.antitracking.btpPurgeHistory =
+      btpPurgeHistory;
+    reformatted.details["btp purge history"] = btpPurgeHistory;
+  }
+
+  
   if (AppConstants.platform != "linux") {
     delete prefs.forcedAcceleratedLayers;
   } else {
@@ -174,6 +196,7 @@ async function reformatExpectedWebCompatInfo(tab, overrides) {
     delete reformatted.details["mixed passive content blocked"];
     delete reformatted.details["tracking content blocked"];
     delete reformatted.details["btp has purged site"];
+    delete reformatted.details["btp purge history"];
   } else {
     const { fastclick, mobify, marfeel } = frameworks;
     if (fastclick) {
@@ -215,7 +238,7 @@ async function testSendMoreInfo(tab, menu, expectedOverrides = {}) {
     await isNotPressed(screenshotToggle);
   }
 
-  if (expectedOverrides?.antitracking?.blockedOrigins) {
+  if (optedIntoBlockedTrackers(expectedOverrides)) {
     const { blockedTrackersToggle } = rbs;
     await isVisible(blockedTrackersToggle);
     if (!blockedTrackersToggle.pressed) {
