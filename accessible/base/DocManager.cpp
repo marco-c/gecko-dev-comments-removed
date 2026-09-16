@@ -539,10 +539,12 @@ DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument,
 
   
   
+  
+  
   if (!nsCoreUtils::IsDocumentVisibleConsideringInProcessAncestors(aDocument) ||
       aDocument->IsResourceDoc() ||
       (!aAllowStatic && aDocument->IsStaticDocument()) ||
-      !aDocument->IsActive()) {
+      !aDocument->IsActive() || !aDocument->IsCurrentActiveDocument()) {
     return nullptr;
   }
 

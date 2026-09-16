@@ -775,6 +775,15 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
     }
 #endif
 
+    if (!mDocument->DocumentNode()->IsCurrentActiveDocument()) {
+      
+      
+      
+      
+      mDocument->Shutdown();
+      return;
+    }
+
     mDocument->DoInitialUpdate();
     if (AppShutdown::IsShutdownImpending()) {
       return;

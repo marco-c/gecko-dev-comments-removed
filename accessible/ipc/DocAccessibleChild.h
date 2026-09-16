@@ -34,6 +34,8 @@ class DocAccessibleChild : public PDocAccessibleChild {
     SendShutdown();
   }
 
+  DocAccessible* GetDocAccessible() const { return mDoc; }
+
   
 
 
