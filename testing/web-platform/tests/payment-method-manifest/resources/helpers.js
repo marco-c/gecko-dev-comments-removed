@@ -10,6 +10,7 @@
 
 
 
+
 function createPaymentMethodIdentifierUrl(testId, options = {}) {
   const host = options.host || location.host;
   const url = new URL(`https://${
@@ -25,8 +26,14 @@ function createPaymentMethodIdentifierUrl(testId, options = {}) {
   if (options.redirect_location !== undefined) {
     url.searchParams.set('redirect_location', options.redirect_location);
   }
+  if (options.status !== undefined) {
+    url.searchParams.set('status', options.status);
+  }
   return url.href;
 }
+
+
+
 
 
 
@@ -44,6 +51,15 @@ function createPaymentMethodManifestUrl(testId, options = {}) {
   url.searchParams.set('id', testId);
   if (options.redirect_location !== undefined) {
     url.searchParams.set('redirect_location', options.redirect_location);
+  }
+  if (options.status !== undefined) {
+    url.searchParams.set('status', options.status);
+  }
+  if (options.body !== undefined) {
+    url.searchParams.set('body', options.body);
+  }
+  if (options.content_type !== undefined) {
+    url.searchParams.set('content_type', options.content_type);
   }
   return url.href;
 }
