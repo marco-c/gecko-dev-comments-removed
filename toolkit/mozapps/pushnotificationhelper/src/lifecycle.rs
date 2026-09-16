@@ -11,15 +11,22 @@
 
 
 
+
+
+
+
 use std::ffi::OsStr;
 use std::hash::Hasher;
 use std::os::windows::ffi::OsStrExt;
 use std::path::Path;
 
 use fnv::FnvHasher;
-use windows_sys::Win32::Foundation::{CloseHandle, GetLastError, HANDLE, WAIT_OBJECT_0};
+use windows_sys::Win32::Foundation::{
+    CloseHandle, GetLastError, ERROR_ALREADY_EXISTS, HANDLE, WAIT_OBJECT_0,
+};
 use windows_sys::Win32::System::Threading::{
-    CreateEventW, OpenEventW, SetEvent, WaitForSingleObject, EVENT_MODIFY_STATE, INFINITE,
+    CreateEventW, CreateMutexW, OpenEventW, SetEvent, WaitForSingleObject, EVENT_MODIFY_STATE,
+    INFINITE,
 };
 
 
@@ -27,6 +34,9 @@ use windows_sys::Win32::System::Threading::{
 const PREFIX: &str = "Local\\MozillaNotificationHelper";
 
 struct OwnedHandle(HANDLE);
+
+
+
 
 
 
@@ -50,6 +60,36 @@ impl Drop for OwnedHandle {
         
         
         unsafe { CloseHandle(self.0) };
+    }
+}
+
+
+
+
+
+pub struct ProfileGuard {
+    _handle: OwnedHandle,
+}
+
+impl ProfileGuard {
+    
+    
+    
+    pub fn acquire(profile: &Path) -> Result<Option<Self>, String> {
+        let name = wide(&object_name("profile", profile)?);
+
+        
+        
+        let handle = unsafe { CreateMutexW(std::ptr::null(), 1, name.as_ptr()) };
+        let handle = OwnedHandle::new(handle)
+            .ok_or_else(|| format!("CreateMutexW failed: {}", last_error()))?;
+
+        if last_error() == ERROR_ALREADY_EXISTS {
+            
+            return Ok(None);
+        }
+
+        Ok(Some(ProfileGuard { _handle: handle }))
     }
 }
 
@@ -97,6 +137,7 @@ pub fn signal(profile: &Path) -> Result<(), String> {
         return Ok(());
     };
 
+    
     
     
     if unsafe { SetEvent(handle.get()) } == 0 {
@@ -168,6 +209,18 @@ mod tests {
         );
     }
 
+    
+    
+    #[test]
+    fn a_guard_never_collides_with_a_stop_event() {
+        let profile = Path::new(r"c:\profiles\kinds");
+
+        assert_ne!(
+            object_name("profile", profile).unwrap(),
+            object_name("stop", profile).unwrap()
+        );
+    }
+
     #[test]
     fn signal_wakes_a_waiting_helper() {
         let profile = Path::new(r"c:\profiles\signal-wakes");
@@ -202,5 +255,32 @@ mod tests {
 
         signal(mine).unwrap();
         waiter.join().unwrap().unwrap();
+    }
+
+    #[test]
+    fn a_second_helper_is_refused_then_allowed_once_the_first_exits() {
+        let profile = Path::new(r"c:\profiles\guard-test");
+
+        let first = ProfileGuard::acquire(profile).unwrap();
+        assert!(first.is_some(), "the first helper takes the guard");
+        assert!(
+            ProfileGuard::acquire(profile).unwrap().is_none(),
+            "a second helper is refused while the first holds it"
+        );
+
+        drop(first);
+
+        assert!(
+            ProfileGuard::acquire(profile).unwrap().is_some(),
+            "the guard is released when its owner exits"
+        );
+    }
+
+    #[test]
+    fn separate_profiles_do_not_block_each_other() {
+        let one = ProfileGuard::acquire(Path::new(r"c:\profiles\one")).unwrap();
+        let two = ProfileGuard::acquire(Path::new(r"c:\profiles\two")).unwrap();
+
+        assert!(one.is_some() && two.is_some());
     }
 }
