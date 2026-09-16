@@ -123,7 +123,7 @@ void AbstractRange::UpdateDescendantsInFlattenedTree(nsINode& aNode,
     return;
   }
 
-  TreeIterator<FlattenedChildIterator> iter(*target->AsContent());
+  TreeIterator<FlattenedChildIteratorForSelection> iter(*target->AsContent());
   iter.GetNext();  
   while (nsIContent* curNode = iter.GetCurrent()) {
     UpdateDescendant(curNode);
