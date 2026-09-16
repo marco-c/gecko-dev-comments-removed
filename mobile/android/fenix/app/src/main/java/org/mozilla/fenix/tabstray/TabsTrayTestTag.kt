@@ -44,6 +44,7 @@ internal object TabsTrayTestTag {
     const val EMPTY_NORMAL_TABS_LIST = "$NORMAL_TABS_LIST.empty"
     const val EMPTY_PRIVATE_TABS_LIST = "$PRIVATE_TABS_LIST.empty"
     const val EMPTY_TAB_GROUPS_LIST = "$TAB_GROUPS_LIST.empty"
+    const val COLLECTIONS_MIGRATION_CARD = "$TAB_GROUPS_LIST.collectionsMigrationCard"
     const val UNAUTHENTICATED_SYNCED_TABS_PAGE = "$SYNCED_TABS_LIST.unauthenticated"
 
     // Tab items
@@ -68,7 +69,6 @@ internal object TabsTrayTestTag {
     // Bottom sheet group items
     const val TAB_GROUP_BOTTOM_SHEET_ROOT = "$TAB_GROUP_ROOT.bottomSheet"
     const val BOTTOM_SHEET_ADD_TAB_BUTTON = "$TAB_GROUP_BOTTOM_SHEET_ROOT.addTab"
-    const val BOTTOM_SHEET_SHARE_BUTTON = "$TAB_GROUP_BOTTOM_SHEET_ROOT.share"
     const val BOTTOM_SHEET_CIRCLE = "$TAB_GROUP_BOTTOM_SHEET_ROOT.circle"
     const val BOTTOM_SHEET_COLOR_LIST = "$TAB_GROUP_BOTTOM_SHEET_ROOT.colors"
     const val EDIT_BOTTOM_SHEET_SAVE = "$TAB_GROUP_BOTTOM_SHEET_ROOT.save"
@@ -82,6 +82,7 @@ internal object TabsTrayTestTag {
     const val EDIT_TAB_GROUP = "$TAB_GROUP_THREE_DOT_BUTTON.editGroup"
     const val CLOSE_TAB_GROUP = "$TAB_GROUP_THREE_DOT_BUTTON.closeGroup"
     const val UNGROUP_TAB_GROUP = "$TAB_GROUP_THREE_DOT_BUTTON.ungroup"
+    const val SHARE_TAB_GROUP = "$TAB_GROUP_THREE_DOT_BUTTON.shareGroup"
     const val DELETE_TAB_GROUP = "$TAB_GROUP_THREE_DOT_BUTTON.deleteGroup"
 
     // Bottom app bar
