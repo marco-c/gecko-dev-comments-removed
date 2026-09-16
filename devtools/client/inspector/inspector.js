@@ -144,6 +144,9 @@ const DEFAULT_COLOR_UNIT_PREF = "devtools.defaultColorUnit";
 
 
 
+
+
+
 class Inspector extends EventEmitter {
   constructor(toolbox, commands, win) {
     super();
@@ -186,6 +189,7 @@ class Inspector extends EventEmitter {
     this.defaultColorUnit = Services.prefs.getStringPref(
       DEFAULT_COLOR_UNIT_PREF
     );
+    this.#firstNodeSelectedPromiseResolvers = Promise.withResolvers();
   }
 
   #toolbox;
@@ -194,7 +198,7 @@ class Inspector extends EventEmitter {
   
   #panels = new Map();
   #fluentL10n;
-  #defaultNodeSelected = false;
+  #styleChangeTracker;
   #defaultStartupNode;
   #defaultStartupNodeDomReference;
   #defaultStartupNodeSelectionReason;
@@ -218,6 +222,7 @@ class Inspector extends EventEmitter {
   #splitOrientationL10nStrings;
   #splitOrientationPrefValue;
   #updateProgress;
+  #firstNodeSelectedPromiseResolvers;
 
   
 
@@ -272,7 +277,6 @@ class Inspector extends EventEmitter {
     this.#defaultNode = null;
 
     this.breadcrumbs = new HTMLBreadcrumbs(this);
-    this.styleChangeTracker = new InspectorStyleChangeTracker(this);
     this.#setupSearchBox();
     this.#createInspectorShortcuts();
 
@@ -295,9 +299,7 @@ class Inspector extends EventEmitter {
     
     
     
-    const isBrowserToolbox =
-      this.commands.descriptorFront.isBrowserProcessDescriptor;
-    if (isBrowserToolbox) {
+    if (this.#isBrowserToolbox) {
       this.#watchedResources.push(TYPES.ROOT_NODE);
     }
 
@@ -308,6 +310,31 @@ class Inspector extends EventEmitter {
     
     
     this.previousURL = this.currentTarget.url;
+
+    
+    
+    
+    this.#firstNodeSelectedPromiseResolvers.promise
+      .then(() => {
+        this.#setupSidebar();
+        this.#setupExtensionSidebars();
+        this.#onNewSelection();
+      })
+      .catch(e => {
+        console.error(
+          "Failed to finalize inspector init after the first node selection",
+          e
+        );
+      });
+
+    
+    
+    
+    this.#styleChangeTracker = new InspectorStyleChangeTracker(this);
+    this.#styleChangeTracker.on(
+      "style-changed",
+      this.#onStyleChangeTrackerStyleChanged
+    );
 
     this.toolbox.on("host-changed", this.#onHostChanged);
     this.toolbox.nodePicker.on("picker-node-hovered", this.onPickerHovered);
@@ -326,16 +353,9 @@ class Inspector extends EventEmitter {
     return this;
   }
 
-  
-
-
-
-  #onDefaultNodeSelected() {
-    this.#setupSidebar();
-    this.#setupExtensionSidebars();
-
-    this.#onNewSelection();
-  }
+  #onStyleChangeTrackerStyleChanged = () => {
+    this.emit("style-changed");
+  };
 
   
   
@@ -371,11 +391,18 @@ class Inspector extends EventEmitter {
       return;
     }
 
-    const { walker } = await targetFront.getFront("inspector");
-    const rootNodeFront = await walker.getRootNode();
+    const isFirstBrowserToolboxTarget =
+      this.#isBrowserToolbox && !this.#newRootStart;
 
     
-    await this.onRootNodeAvailable(rootNodeFront);
+    
+    if (!isFirstBrowserToolboxTarget) {
+      const { walker } = await targetFront.getFront("inspector");
+      const rootNodeFront = await walker.getRootNode();
+
+      
+      await this.onRootNodeAvailable(rootNodeFront);
+    }
   };
 
   #onTargetDestroyed = ({ targetFront }) => {
@@ -471,11 +498,9 @@ class Inspector extends EventEmitter {
       // Setup the toolbar again, since its content may depend on the current document.
       await this.#setupToolbar();
 
-      // Finalize initialization when a default node is successfully selected.
-      if (!this.#defaultNodeSelected) {
-        this.#defaultNodeSelected = true;
-        this.#onDefaultNodeSelected();
-      }
+      // Resolve the firstNodeSelectedPromiseResolvers promise, to finalize the
+      // inspector init.
+      this.#firstNodeSelectedPromiseResolvers.resolve();
     } catch (e) {
       this.#handleRejectionIfNotDestroyed(e);
       // Show the AppErrorBoundary if the markup view failed to render, unless:
@@ -615,6 +640,10 @@ class Inspector extends EventEmitter {
     }
 
     return this.#highlighters;
+  }
+
+  get #isBrowserToolbox() {
+    return this.commands.descriptorFront.isBrowserProcessDescriptor;
   }
 
   get #threePanePrefName() {
@@ -1632,7 +1661,7 @@ class Inspector extends EventEmitter {
 
 
   addExtensionSidebar(id, { title }) {
-    if (!this.#defaultNodeSelected) {
+    if (!this.sidebar) {
       
       
       return;
@@ -1672,7 +1701,7 @@ class Inspector extends EventEmitter {
 
 
   removeExtensionSidebar(id) {
-    if (!this.#defaultNodeSelected) {
+    if (!this.sidebar) {
       
       return;
     }
@@ -2035,6 +2064,14 @@ class Inspector extends EventEmitter {
       this.#search = null;
     }
 
+    if (this.#styleChangeTracker) {
+      this.#styleChangeTracker.off(
+        "style-changed",
+        this.#onStyleChangeTrackerStyleChanged
+      );
+      this.#styleChangeTracker.destroy();
+    }
+
     this.ruleViewSideBar?.destroy();
     this.ruleViewSideBar = null;
 
@@ -2045,7 +2082,6 @@ class Inspector extends EventEmitter {
     this.prefObserver.destroy();
 
     this.breadcrumbs.destroy();
-    this.styleChangeTracker.destroy();
     this.inspectorShortcuts.destroy();
     this.inspectorShortcuts = null;
 
