@@ -282,7 +282,7 @@ add_UITour_task(async function test_setSearchTerm() {
 
   
   
-  await waitForConditionPromise(
+  await TestUtils.waitForCondition(
     () => searchbar.value == TERM,
     "Correct term set"
   );
@@ -298,7 +298,7 @@ add_UITour_task(async function test_clearSearchTerm() {
 
   
   
-  await waitForConditionPromise(
+  await TestUtils.waitForCondition(
     () => searchbar.value == "",
     "Search term cleared"
   );
