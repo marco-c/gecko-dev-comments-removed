@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_FeaturePolicy_h
 #define mozilla_dom_FeaturePolicy_h
 
@@ -105,6 +103,12 @@ class FeaturePolicy final : public nsISupports, public nsWrapperCache {
   void SetDeclaredPolicy(mozilla::dom::Document* aDocument,
                          const nsAString& aPolicyString,
                          nsIPrincipal* aSelfOrigin, nsIPrincipal* aSrcOrigin);
+
+  
+  
+  void SetDeclaredHeaderPolicy(mozilla::dom::Document* aDocument,
+                               const nsAString& aPolicyString,
+                               nsIPrincipal* aSelfOrigin);
 
   
   

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FeaturePolicy.h"
 
 #include "mozilla/BasePrincipal.h"
@@ -171,6 +169,25 @@ void FeaturePolicy::SetDeclaredPolicy(Document* aDocument,
 
   (void)NS_WARN_IF(!FeaturePolicyParser::ParseString(
       aPolicyString, aDocument, aSelfOrigin, aSrcOrigin, mFeatures));
+
+  
+  for (const Feature& feature : mFeatures) {
+    if (feature.HasAllowList()) {
+      AppendToDeclaredAllowInAncestorChain(feature);
+    }
+  }
+}
+
+void FeaturePolicy::SetDeclaredHeaderPolicy(Document* aDocument,
+                                            const nsAString& aPolicyString,
+                                            nsIPrincipal* aSelfOrigin) {
+  ResetDeclaredPolicy();
+
+  mDeclaredString = aPolicyString;
+  mSelfOrigin = aSelfOrigin;
+
+  (void)NS_WARN_IF(!FeaturePolicyParser::ParsePolicyFromHeader(
+      NS_ConvertUTF16toUTF8(aPolicyString), aDocument, aSelfOrigin, mFeatures));
 
   
   for (const Feature& feature : mFeatures) {
