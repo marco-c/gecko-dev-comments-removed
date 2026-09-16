@@ -4083,6 +4083,16 @@ pref("extensions.formautofill.useml.twoHead", true);
 
 pref("extensions.formautofill.useml.timeoutMS", 120000);
 
+
+
+
+
+pref("extensions.formautofill.useml.features", "[]");
+
+
+
+pref("extensions.formautofill.useml.modelVersion", "");
+
 pref("extensions.formautofill.addresses.enabled", true);
 pref("extensions.formautofill.addresses.capture.enabled", true);
 
