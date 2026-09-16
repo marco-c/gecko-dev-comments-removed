@@ -120,14 +120,14 @@ TextureType TexTypeForWebgl(KnowsCompositor* const knowsCompositor,
 #endif
 
   if (kIsAndroid) {
-    if (gfx::gfxVars::UseAHardwareBufferSharedSurfaceWebglOop()) {
-      return TextureType::AndroidHardwareBuffer;
-    }
     
     
     if (aIsWebglOop && !gfx::gfxVars::UseWebRenderANGLE() &&
         StaticPrefs::webgl_enable_egl_image()) {
       return TextureType::EGLImage;
+    }
+    if (gfx::gfxVars::UseAHardwareBufferSharedSurfaceWebglOop()) {
+      return TextureType::AndroidHardwareBuffer;
     }
     if (!gfx::gfxVars::UseWebRenderANGLE() &&
         StaticPrefs::webgl_enable_surface_texture()) {
