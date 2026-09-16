@@ -132,16 +132,19 @@ impl LazilyCompiledShader {
         Ok(shader)
     }
 
+    #[cfg(feature = "debugger")]
     pub fn name(&self) -> &'static str {
         self.name
     }
 
+    #[cfg(feature = "debugger")]
     pub fn features(&self) -> &[&'static str] {
         &self.features
     }
 
     
     
+    #[cfg(feature = "debugger")]
     pub fn full_name(&self) -> String {
         if self.features.is_empty() {
             self.name.to_string()
@@ -157,6 +160,7 @@ impl LazilyCompiledShader {
     
     
     
+    #[cfg(feature = "debugger")]
     pub fn is_compiled(&self) -> bool {
         self.program.as_ref().map_or(false, Program::is_initialized)
     }
@@ -170,6 +174,7 @@ impl LazilyCompiledShader {
     
     
     
+    #[cfg(feature = "debugger")]
     fn discard_unlinked_program(&mut self, device: &mut Device) {
         if self.program.as_ref().map_or(true, Program::is_initialized) {
             return;
@@ -207,6 +212,7 @@ impl LazilyCompiledShader {
 
     
     
+    #[cfg(feature = "debugger")]
     fn build_program(&self, device: &mut Device) -> Result<Program, ShaderError> {
         let mut program = device.create_program(self.name, &self.features)?;
 
@@ -478,6 +484,7 @@ impl ShaderLoader {
     
     
     
+    #[cfg(feature = "debugger")]
     pub fn reload(
         &mut self,
         device: &mut Device,
@@ -552,6 +559,7 @@ impl ShaderLoader {
         Ok(count)
     }
 
+    #[cfg(feature = "debugger")]
     pub fn shaders(&self) -> &[LazilyCompiledShader] {
         &self.shaders
     }
@@ -1178,6 +1186,7 @@ impl Shaders {
 
     
     
+    #[cfg(feature = "debugger")]
     pub fn reload(
         &mut self,
         device: &mut Device,
@@ -1187,6 +1196,7 @@ impl Shaders {
     }
 
     
+    #[cfg(feature = "debugger")]
     pub fn variants(&self) -> &[LazilyCompiledShader] {
         self.loader.shaders()
     }

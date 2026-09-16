@@ -12,7 +12,9 @@ use api::units::*;
 use euclid::default::Transform3D;
 use gleam::gl;
 use crate::render_api::MemoryReport;
-use crate::internal_types::{FastHashMap, FastHashSet, RenderTargetInfo, Swizzle, SwizzleSettings};
+use crate::internal_types::{FastHashMap, RenderTargetInfo, Swizzle, SwizzleSettings};
+#[cfg(feature = "debugger")]
+use crate::internal_types::FastHashSet;
 use crate::util::round_up_to_multiple;
 use crate::profiler;
 use log::Level;
@@ -38,7 +40,6 @@ use webrender_build::shader::{
     ProgramSourceDigest, ShaderFeatureFlags, ShaderKind, ShaderLogLine, ShaderSourceMap,
     ShaderVersion,
     build_shader_main_string, build_shader_prefix_string, do_build_shader_string,
-    shader_include_closure,
     shader_source_from_file,
 };
 use malloc_size_of::MallocSizeOfOps;
@@ -703,7 +704,8 @@ pub struct ProgramSourceInfo {
     
     
     
-    has_source_override: bool,
+    #[cfg(feature = "debugger")]
+    from_source_override: bool,
     digest: ProgramSourceDigest,
 }
 
@@ -818,7 +820,8 @@ impl ProgramSourceInfo {
             features: features.to_vec(),
             full_name_cstr: Rc::new(std::ffi::CString::new(full_name).unwrap()),
             source_type,
-            has_source_override,
+            #[cfg(feature = "debugger")]
+            from_source_override: has_source_override,
             digest: hasher.into(),
         }
     }
@@ -867,6 +870,19 @@ impl ProgramSourceInfo {
 
     fn full_name(&self) -> String {
         Self::make_full_name(self.base_filename, &self.features)
+    }
+
+    
+    
+    
+    #[cfg(feature = "debugger")]
+    fn from_source_override(&self) -> bool {
+        self.from_source_override
+    }
+
+    #[cfg(not(feature = "debugger"))]
+    fn from_source_override(&self) -> bool {
+        false
     }
 }
 
@@ -1349,11 +1365,13 @@ pub struct Device {
     
     
     
+    #[cfg(feature = "debugger")]
     shader_source_overrides: FastHashMap<String, String>,
 
     
     
     
+    #[cfg(feature = "debugger")]
     shader_include_closures: RefCell<FastHashMap<String, FastHashSet<String>>>,
 
     surface_origin_is_top_left: bool,
@@ -2190,7 +2208,9 @@ impl Device {
             is_software_webrender,
             required_transfer_stride,
             dump_shader_source,
+            #[cfg(feature = "debugger")]
             shader_source_overrides: FastHashMap::default(),
+            #[cfg(feature = "debugger")]
             shader_include_closures: RefCell::new(FastHashMap::default()),
             surface_origin_is_top_left,
 
@@ -2869,7 +2889,7 @@ impl Device {
             }
 
             if let Some(ref cached_programs) = self.cached_programs {
-                if !info.has_source_override
+                if !info.from_source_override()
                     && !cached_programs.entries.borrow().contains_key(&info.digest)
                 {
                     let (buffer, format) = self.gl.get_program_binary(program.id);
@@ -3415,11 +3435,13 @@ impl Device {
     
     
     
+    #[cfg(feature = "debugger")]
     pub fn supports_shader_source_override(&self) -> bool {
         !self.is_software_webrender
     }
 
     
+    #[cfg(feature = "debugger")]
     pub fn shader_file_names(&self) -> Vec<&'static str> {
         let mut names: Vec<&'static str> = UNOPTIMIZED_SHADERS.keys().cloned().collect();
         names.sort_unstable();
@@ -3427,12 +3449,14 @@ impl Device {
     }
 
     
+    #[cfg(feature = "debugger")]
     pub fn builtin_shader_source(&self, name: &str) -> Option<&'static str> {
         UNOPTIMIZED_SHADERS.get(name).map(|entry| entry.source)
     }
 
     
     
+    #[cfg(feature = "debugger")]
     pub fn get_shader_source(&self, name: &str) -> Cow<'static, str> {
         match self.shader_source_overrides.get(name) {
             Some(source) => Cow::Owned(source.clone()),
@@ -3440,20 +3464,32 @@ impl Device {
         }
     }
 
+    
+    
+    
+    #[cfg(not(feature = "debugger"))]
+    pub fn get_shader_source(&self, name: &str) -> Cow<'static, str> {
+        get_unoptimized_shader_source(name, self.resource_override_path.as_ref())
+    }
+
+    #[cfg(feature = "debugger")]
     pub fn shader_source_override(&self, name: &str) -> Option<&str> {
         self.shader_source_overrides.get(name).map(String::as_str)
     }
 
+    #[cfg(feature = "debugger")]
     pub fn has_shader_source_overrides(&self) -> bool {
         !self.shader_source_overrides.is_empty()
     }
 
+    #[cfg(feature = "debugger")]
     pub fn set_shader_source_override(&mut self, name: &str, source: String) {
         self.shader_source_overrides.insert(name.to_string(), source);
         self.shader_include_closures.borrow_mut().clear();
     }
 
     
+    #[cfg(feature = "debugger")]
     pub fn clear_shader_source_override(&mut self, name: &str) -> bool {
         let had_override = self.shader_source_overrides.remove(name).is_some();
         if had_override {
@@ -3463,13 +3499,17 @@ impl Device {
     }
 
     
+    #[cfg(feature = "debugger")]
     pub fn shader_include_closure(&self, base_filename: &str) -> FastHashSet<String> {
         if let Some(closure) = self.shader_include_closures.borrow().get(base_filename) {
             return closure.clone();
         }
 
         let closure: FastHashSet<String> =
-            shader_include_closure(base_filename, &|f| self.get_shader_source(f))
+            webrender_build::shader::shader_include_closure(
+                base_filename,
+                &|f| self.get_shader_source(f),
+            )
                 .into_iter()
                 .collect();
         self.shader_include_closures
@@ -3481,6 +3521,7 @@ impl Device {
 
     
     
+    #[cfg(feature = "debugger")]
     fn has_shader_source_override_for(&self, base_filename: &str) -> bool {
         
         
@@ -3499,9 +3540,17 @@ impl Device {
 
     
     
+    #[cfg(not(feature = "debugger"))]
+    fn has_shader_source_override_for(&self, _base_filename: &str) -> bool {
+        false
+    }
+
     
     
     
+    
+    
+    #[cfg(feature = "debugger")]
     pub fn expanded_shader_source(
         &self,
         base_filename: &str,
