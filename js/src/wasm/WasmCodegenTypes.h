@@ -46,6 +46,7 @@ class ABIArgIter;
 namespace wasm {
 
 struct CodeMetadata;
+struct StackMap;
 struct TableDesc;
 struct V128;
 
@@ -892,6 +893,18 @@ struct TrapData {
   
   
   mozilla::Maybe<FaultInfo> faultInfo;
+};
+
+
+
+
+
+
+
+class StackMapRegistry {
+ public:
+  [[nodiscard]]
+  virtual bool addMap(StackMap* map, FaultingCodeRange insnRange) = 0;
 };
 
 
