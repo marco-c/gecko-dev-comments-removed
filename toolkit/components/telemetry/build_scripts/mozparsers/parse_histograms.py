@@ -3,13 +3,11 @@
 
 
 import atexit
-import collections
 import itertools
 import json
 import math
 import os
 import re
-from collections import OrderedDict
 from ctypes import c_int
 
 from . import shared_telemetry_utils as utils
@@ -702,7 +700,7 @@ class Histogram:
 
 
 def load_histograms_into_dict(ordered_pairs, strict_type_checks):
-    d = collections.OrderedDict()
+    d = {}
     for key, value in ordered_pairs:
         if strict_type_checks and key in d:
             ParserError(
@@ -751,7 +749,7 @@ def from_files(filenames, strict_type_checks=True):
     if strict_type_checks:
         load_allowlist()
 
-    all_histograms = OrderedDict()
+    all_histograms = {}
     for filename in filenames:
         parser = None
         for checkFn in FILENAME_PARSERS:
@@ -768,8 +766,8 @@ def from_files(filenames, strict_type_checks=True):
         
         
         
-        if not isinstance(histograms, OrderedDict):
-            ParserError("Histogram parser did not provide an OrderedDict.").handle_now()
+        if not isinstance(histograms, dict):
+            ParserError("Histogram parser did not provide a dict.").handle_now()
 
         for name, definition in histograms.items():
             if name in all_histograms:
