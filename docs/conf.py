@@ -68,7 +68,7 @@ myst_enable_extensions = [
 
 
 
-mermaid_width = "min(100%, 45rem)"
+mermaid_width = "fit-content"
 mermaid_height = "auto"
 
 
@@ -79,6 +79,14 @@ mermaid_init_config = {
     "themeVariables": {
         "fontSize": "18px",
     },
+    
+    
+    "flowchart": {"useMaxWidth": False},
+    "sequence": {"useMaxWidth": False},
+    "class": {"useMaxWidth": False},
+    "state": {"useMaxWidth": False},
+    "gantt": {"useMaxWidth": False},
+    "er": {"useMaxWidth": False},
 }
 
 
