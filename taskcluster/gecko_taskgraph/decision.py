@@ -5,6 +5,7 @@
 import logging
 import os
 import shutil
+import subprocess
 import sys
 import time
 from collections import defaultdict
@@ -40,6 +41,22 @@ logger = logging.getLogger(__name__)
 
 ARTIFACTS_DIR = os.environ.get("MOZ_UPLOAD_DIR", "artifacts")
 GIT_BACKING_REPO = "https://github.com/mozilla-releng/git-backing"
+
+
+
+
+
+
+SOURCE_BUNDLE_MAX_AGE_DAYS = 2
+
+
+
+
+
+
+
+
+SOURCE_BUNDLE_RECENT_REVS = 20000
 
 
 
@@ -271,6 +288,8 @@ def taskgraph_decision(options, parameters):
     }
     for target, dest in to_copy.items():
         shutil.copy2(target, dest)
+
+    write_source_bundle(tgg.parameters["head_rev"], tgg.parameters["repository_type"])
 
     
     create_tasks(
@@ -521,6 +540,63 @@ def set_decision_indexes(decision_task_id, params, graph_config):
 
     for index_path in index_paths:
         insert_index(index_path.format(**subs), decision_task_id)
+
+
+def write_source_bundle(head_rev, repository_type):
+    """Write a Mercurial bundle of recent changesets as a public artifact.
+
+    Downstream build and source-test tasks can apply this bundle to obtain the
+    head revision without an expensive ``getbundle`` against hg.mozilla.org. The
+    bundle only covers changesets newer than ``SOURCE_BUNDLE_MAX_AGE_DAYS``,
+    which is the delta a task would otherwise pull on top of the CDN clone
+    bundle.
+
+    Only produced for Mercurial checkouts; git checkouts are served elsewhere.
+    """
+    if repository_type != "hg":
+        logger.info("source checkout is not Mercurial; skipping source bundle")
+        return
+
+    if not os.path.isdir(ARTIFACTS_DIR):
+        os.mkdir(ARTIFACTS_DIR)
+
+    path = os.path.join(ARTIFACTS_DIR, "checkout.bundle")
+    
+    
+    
+    
+    
+    
+    
+    base = (
+        f"ancestors({head_rev}) and public() and not "
+        f"(last(all(), {SOURCE_BUNDLE_RECENT_REVS}) "
+        f"and date('-{SOURCE_BUNDLE_MAX_AGE_DAYS}'))"
+    )
+    logger.info(f"writing source bundle artifact `{path}`")
+    try:
+        subprocess.run(
+            [
+                "hg",
+                "--cwd",
+                GECKO,
+                "bundle",
+                "--type",
+                "gzip-v2",
+                "--rev",
+                head_rev,
+                "--base",
+                base,
+                path,
+            ],
+            check=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as e:
+        
+        
+        logger.warning(f"failed to write source bundle artifact: {e}")
+        if os.path.exists(path):
+            os.remove(path)
 
 
 def write_artifact(filename, data):

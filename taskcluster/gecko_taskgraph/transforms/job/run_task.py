@@ -88,6 +88,16 @@ def common_setup(config, job, taskdesc, command):
         if clone_type(config, job) == "git" and run.get("shallow-clone", True):
             command.append("--gecko-shallow-clone")
 
+        
+        
+        
+        
+        
+        if clone_type(config, job) == "hg":
+            taskdesc["worker"].setdefault("env", {})["GECKO_HEAD_BUNDLE"] = {
+                "artifact-reference": "<decision/public/checkout.bundle>"
+            }
+
         if run_cwd:
             run_cwd = path.normpath(run_cwd.format(checkout=gecko_path))
 
