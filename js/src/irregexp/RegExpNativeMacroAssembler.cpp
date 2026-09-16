@@ -528,11 +528,6 @@ bool SMRegExpMacroAssembler::SkipUntilBitInTableUseSimd(int advance_by) {
   if (!js::jit::Assembler::HasSSE3()) {
     return false;
   }
-  
-  
-  if (!js::jit::Assembler::HasAVX()) {
-    return false;
-  }
 #  endif
   
   
