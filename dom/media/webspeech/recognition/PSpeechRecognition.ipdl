@@ -31,6 +31,9 @@ parent:
   
   async IsModelAvailable(nsCString[] languages) returns (bool available);
   
+  
+  async IsModelInstalled(nsCString[] languages) returns (bool installed);
+  
   async InstallModels(nsCString[] languages) returns (bool success);
   
   

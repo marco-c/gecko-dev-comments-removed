@@ -49,6 +49,8 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
 
   ipc::IPCResult RecvIsModelAvailable(const nsTArray<nsCString>& aLanguages,
                                       IsModelAvailableResolver&& aResolver);
+  ipc::IPCResult RecvIsModelInstalled(const nsTArray<nsCString>& aLanguages,
+                                      IsModelInstalledResolver&& aResolver);
   mozilla::ipc::IPCResult RecvInstallModels(
       const nsTArray<nsCString>& aLanguages, InstallModelsResolver&& aResolver);
   mozilla::ipc::IPCResult RecvInit(const nsCString& aEngineId,
@@ -72,6 +74,7 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
 
   const dom::ContentParentId mContentId;
 
+  
   
   
   
@@ -146,6 +149,10 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
   MozPromiseRequestHolder<
       hwinference::PHWInferenceChild::IsModelAvailablePromise>
       mIsModelAvailableRequest;
+  
+  MozPromiseRequestHolder<
+      hwinference::PHWInferenceChild::IsModelInstalledPromise>
+      mIsModelInstalledRequest;
   
   
   MozPromiseRequestHolder<
