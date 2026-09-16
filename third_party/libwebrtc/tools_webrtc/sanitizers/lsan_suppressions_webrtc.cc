@@ -51,21 +51,8 @@ char kLSanDefaultSuppressions[] =
     
 
     
-    "leak:webrtc::FakeNetworkInterface::SetOption\n"
-    "leak:CodecTest_TestCodecOperators_Test::TestBody\n"
-
-    
-    
-    "leak:DtmfSenderTest_InsertEmptyTonesToCancelPreviousTask_Test::TestBody\n"
-    "leak:testing::internal::CmpHelperEQ\n"
     "leak:webrtc::AudioDeviceLinuxALSA::InitMicrophone\n"
     "leak:webrtc::AudioDeviceLinuxALSA::InitSpeaker\n"
-    "leak:webrtc::CreateIceCandidate\n"
-    "leak:PeerConnectionInterfaceTest_SsrcInOfferAnswer_Test::TestBody\n"
-    "leak:WebRtcSdpTest::TestDeserializeRtcpFb\n"
-    "leak:WebRtcSdpTest::TestSerialize\n"
-    "leak:WebRtcSdpTest_SerializeSessionDescriptionWithBandwidth_Test::"
-    "TestBody\n"
 
     
 
