@@ -75,6 +75,7 @@ struct ProbeControllerConfig {
 
   
   FieldTrialParameter<bool> probe_on_max_allocated_bitrate_change;
+  FieldTrialParameter<bool> probe_on_max_allocated_bitrate_change_without_alr;
   FieldTrialOptional<double> first_allocation_probe_scale;
   FieldTrialOptional<double> second_allocation_probe_scale;
   FieldTrialParameter<double> allocation_probe_limit_by_current_scale;
@@ -146,8 +147,8 @@ class ProbeController {
   
   void EnableRepeatedInitialProbing(bool enable);
 
-  void SetAlrStartTimeMs(std::optional<int64_t> alr_start_time);
-  void SetAlrEndedTimeMs(int64_t alr_end_time);
+  void SetAlrStartTime(std::optional<Timestamp> alr_start_time);
+  void SetAlrEndedTime(Timestamp alr_end_time);
 
   ABSL_MUST_USE_RESULT std::vector<ProbeClusterConfig> RequestProbe(
       Timestamp at_time);
