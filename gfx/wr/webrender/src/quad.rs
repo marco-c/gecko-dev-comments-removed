@@ -155,10 +155,26 @@ impl QuadTransformState {
     }
 
     
+    
+    pub fn raster_scale_factors(&self) -> (f32, f32) {
+        self.map_prim_to_raster.scale_factors()
+    }
+
+    
     pub fn scale_factors(&self) -> (f32, f32) {
-        let s = self.map_prim_to_raster.scale_factors();
+        let s = self.raster_scale_factors();
 
         (s.0 * self.device_pixel_scale().0, s.1 * self.device_pixel_scale().0)
+    }
+
+    
+    
+    
+    pub fn coplanar_scale_factors(&self) -> Option<(f32, f32)> {
+        let (x, y) = self.map_prim_to_raster.coplanar_scale_factors()?;
+        let device_pixel_scale = self.device_pixel_scale().0;
+
+        Some((x * device_pixel_scale, y * device_pixel_scale))
     }
 
     pub fn prim_spatial_node_index(&self) -> SpatialNodeIndex {

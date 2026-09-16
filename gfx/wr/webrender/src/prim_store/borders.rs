@@ -21,7 +21,6 @@ use crate::prim_store::{
 use crate::resource_cache::ImageRequest;
 use crate::render_task::{RenderTask, RenderTaskKind};
 use crate::render_task_graph::RenderTaskId;
-use crate::spatial_tree::SpatialNodeIndex;
 use crate::util::clamp_to_scale_factor;
 
 
@@ -45,8 +44,6 @@ impl NormalBorderData {
         &self,
         desc: &QuadDescriptor,
         clip_chain: &ClipChainInstance,
-        prim_spatial_node_index: SpatialNodeIndex,
-        device_pixel_scale: DevicePixelScale,
         quad_transform: &mut QuadTransformState,
         frame_context: &FrameBuildingContext,
         pic_context: &PictureContext,
@@ -59,10 +56,8 @@ impl NormalBorderData {
         
         
         
-        let scale = frame_context
-            .spatial_tree
-            .get_world_transform(prim_spatial_node_index)
-            .scale_factors();
+        let raster_scale = quad_transform.raster_scale_factors();
+        let device_pixel_scale = quad_transform.device_pixel_scale();
 
         
         
@@ -85,37 +80,38 @@ impl NormalBorderData {
         
         
         
-        let snap_width = |w: f32, s: f32| {
-            if w >= 1.0 && s > 0.0 { (w * s).round().max(1.0) / s } else { w }
-        };
-        let device_scale_x = scale.0 * device_pixel_scale.0;
-        let device_scale_y = scale.1 * device_pixel_scale.0;
+        
+        
+        
         let mut widths = self.widths;
-        widths.left = snap_width(widths.left, device_scale_x);
-        widths.right = snap_width(widths.right, device_scale_x);
-        widths.top = snap_width(widths.top, device_scale_y);
-        widths.bottom = snap_width(widths.bottom, device_scale_y);
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let snap_radius = |r: f32, w: f32, s: f32| {
-            if r > w && s > 0.0 { (r * s).floor().max(w * s) / s } else { r }
-        };
         let mut border = self.border;
-        {
+        if let Some((device_scale_x, device_scale_y)) = quad_transform.coplanar_scale_factors() {
+            let snap_width = |w: f32, s: f32| {
+                if w >= 1.0 && s > 0.0 { (w * s).round().max(1.0) / s } else { w }
+            };
+            widths.left = snap_width(widths.left, device_scale_x);
+            widths.right = snap_width(widths.right, device_scale_x);
+            widths.top = snap_width(widths.top, device_scale_y);
+            widths.bottom = snap_width(widths.bottom, device_scale_y);
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let snap_radius = |r: f32, w: f32, s: f32| {
+                if r > w && s > 0.0 { (r * s).floor().max(w * s) / s } else { r }
+            };
             let r = &mut border.radius;
             r.top_left.width = snap_radius(r.top_left.width, widths.left, device_scale_x);
             r.top_left.height = snap_radius(r.top_left.height, widths.top, device_scale_y);
@@ -127,11 +123,20 @@ impl NormalBorderData {
             r.bottom_right.height = snap_radius(r.bottom_right.height, widths.bottom, device_scale_y);
         }
 
-        let scale_width = clamp_to_scale_factor(scale.0, false);
-        let scale_height = clamp_to_scale_factor(scale.1, false);
         
-        let world_scale = LayoutToWorldScale::new(scale_width.max(scale_height));
-        let mut scale = world_scale * device_pixel_scale;
+        
+        
+        
+        
+        
+        
+        
+        let scale_width = clamp_to_scale_factor(raster_scale.0, false);
+        let scale_height = clamp_to_scale_factor(raster_scale.1, false);
+        
+        let mut scale = LayoutToDeviceScale::new(
+            scale_width.max(scale_height) * device_pixel_scale.0,
+        );
 
         
         
