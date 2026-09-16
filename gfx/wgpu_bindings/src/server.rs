@@ -3228,7 +3228,7 @@ fn enqueue_signal_semaphores_destruction(
     let device = global.resolve_device_id(device_id);
     let queue = global.resolve_queue_id(queue_id);
 
-    if !submission_errored {
+    if submission_errored {
         
         
         
