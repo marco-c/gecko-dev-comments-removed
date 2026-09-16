@@ -149,7 +149,7 @@ var SidebarController = {
           elementId: "sidebar-switcher-tabs",
           url: this.sidebarRevampEnabled
             ? "chrome://browser/content/sidebar/sidebar-syncedtabs.html"
-            : "chrome://browser/content/syncedtabs/sidebar.xhtml",
+            : "chrome://browser/content/syncedtabs/sidebar.html",
           menuId: "menu_tabsSidebar",
           classAttribute: "sync-ui-item",
           menuL10nId: "menu-view-synced-tabs-sidebar",
@@ -2800,22 +2800,7 @@ var SidebarController = {
       document.removeEventListener("popuphidden", this);
       window.removeEventListener("uidensitychanged", this);
       this._launcherCollapsedWidthStale = false;
-      
-      if (
-        this._state.launcherExpanded &&
-        this._state.expandedToolsHeight !== undefined &&
-        this.sidebarMain.buttonGroup
-      ) {
-        this.sidebarMain.buttonGroup.style.height =
-          this._state.expandedToolsHeight;
-      } else if (
-        !this._state.launcherExpanded &&
-        this._state.collapsedToolsHeight !== undefined &&
-        this.sidebarMain.buttonGroup
-      ) {
-        this.sidebarMain.buttonGroup.style.height =
-          this._state.collapsedToolsHeight;
-      }
+      this._state.updateToolsHeight();
     }
 
     document.documentElement.toggleAttribute(
