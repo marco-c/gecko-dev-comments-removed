@@ -2195,7 +2195,8 @@ bool DocAccessible::UpdateAccessibleOnAttrChange(dom::Element* aElement,
     
     
     
-    if (aElement->IsHTMLElement(nsGkAtoms::a)) {
+    if (aElement->IsHTMLElement(nsGkAtoms::a) ||
+        aElement->IsMathMLElement(nsGkAtoms::a)) {
       LocalAccessible* acc = GetAccessible(aElement);
       if (!acc) {
         return false;
