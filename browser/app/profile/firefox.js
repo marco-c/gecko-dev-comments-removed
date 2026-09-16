@@ -1147,12 +1147,6 @@ pref("browser.tabs.delayHidingAudioPlayingIconMS", 3000);
 
 pref("browser.tabs.remote.separatePrivilegedContentProcess", true);
 
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_ASAN)
-  
-  
-  pref("browser.tabs.remote.enforceRemoteTypeRestrictions", true);
-#endif
-
 
 
 
@@ -3067,8 +3061,6 @@ pref("toolkit.coverage.endpoint.base", "https://coverage.mozilla.org");
 
 
 pref("browser.discovery.enabled", true);
-pref("browser.discovery.containers.enabled", true);
-pref("browser.discovery.sites", "addons.mozilla.org");
 
 pref("browser.engagement.recent_visited_origins.expiry", 86400); 
 pref("browser.engagement.downloads-button.has-used", false);
