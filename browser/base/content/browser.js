@@ -4763,13 +4763,9 @@ var gDialogBox = {
     
     window.focus();
 
-    try {
-      
-      for (let urlbar of document.querySelectorAll(".urlbar")) {
-        urlbar.incrementPopoverBlockerCount();
-      }
-    } catch (ex) {
-      console.error(ex);
+    
+    for (let urlbar of document.querySelectorAll(".urlbar")) {
+      urlbar.view?.close();
     }
 
     try {
@@ -4795,10 +4791,6 @@ var gDialogBox = {
       this._updateMenuAndCommandState(true );
       this._dialog = null;
       UpdatePopupNotificationsVisibility();
-      
-      for (let urlbar of document.querySelectorAll(".urlbar")) {
-        urlbar.decrementPopoverBlockerCount();
-      }
     }
     if (this._queued.length) {
       setTimeout(() => this._openNextDialog(), 0);
