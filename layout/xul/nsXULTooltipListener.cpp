@@ -57,6 +57,16 @@ NS_IMPL_ISUPPORTS(nsXULTooltipListener, nsIDOMEventListener)
 
 void nsXULTooltipListener::MouseOut(Event* aEvent) {
   
+  
+  
+  
+  nsCOMPtr<nsIContent> previousTarget =
+      do_QueryReferent(mPreviousMouseMoveTarget);
+  if (previousTarget != aEvent->GetOriginalTarget()) {
+    return;
+  }
+
+  
   mTooltipShownOnce = false;
   mPreviousMouseMoveTarget = nullptr;
 
@@ -143,11 +153,6 @@ void nsXULTooltipListener::MouseMove(Event* aEvent) {
 
   auto* const sourceContent =
       nsIContent::FromEventTargetOrNull(aEvent->GetCurrentTarget());
-  mSourceNode = do_GetWeakReference(sourceContent);
-  mIsSourceTree = sourceContent->IsXULElement(nsGkAtoms::treechildren);
-  if (mIsSourceTree) {
-    CheckTreeBodyMove(mouseEvent);
-  }
 
   
   
@@ -160,6 +165,16 @@ void nsXULTooltipListener::MouseMove(Event* aEvent) {
   if (!isSameTarget) {
     HideTooltip();
     mTooltipShownOnce = false;
+  }
+
+  mIsSourceTree = sourceContent->IsXULElement(nsGkAtoms::treechildren);
+  
+  
+  
+  
+  mSourceNode = do_GetWeakReference(sourceContent);
+  if (mIsSourceTree) {
+    CheckTreeBodyMove(mouseEvent);
   }
 
   
