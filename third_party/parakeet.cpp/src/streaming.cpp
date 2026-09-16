@@ -197,6 +197,16 @@ std::vector<int32_t> StreamingSession::feed_mel_chunk(const std::vector<float>& 
         state_.last_token = -1;     
         state_.have_token = false;
         tokens_since_boundary_ = 0;
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        enc_.reset_caches();
     }
     return emitted;
 }
