@@ -619,11 +619,6 @@ void PipeToPump::OnReadFulfilled(JSContext* aCx, JS::Handle<JS::Value> aChunk,
          const RefPtr<WritableStreamDefaultWriter>& aWriter,
          JS::Handle<JS::Value> aChunk)
           MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION -> already_AddRefed<Promise> {
-            
-            if (aSelf->mShuttingDown) {
-              return nullptr;
-            }
-
             RefPtr<Promise> promise =
                 WritableStreamDefaultWriterWrite(aCx, aWriter, aChunk, aRv);
 
