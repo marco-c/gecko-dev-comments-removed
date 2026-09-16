@@ -1651,6 +1651,7 @@ NSEvent* gLastDragMouseDownEvent = nil;
   mGeckoChild = inChild;
   mBlockedLastMouseDown = NO;
   mExpectingWheelStop = NO;
+  mZoomStateAtLastSingleClick = NO;
 
   mLastMouseDownEvent = nil;
   mLastKeyDownEvent = nil;
@@ -2411,12 +2412,30 @@ NSEvent* gLastDragMouseDownEvent = nil;
   }
 
   
+  
+  
+  
+  
+  
+  
+  if (nsCocoaFeatures::OnGoldenGateOrLater() && [theEvent clickCount] == 1) {
+    mZoomStateAtLastSingleClick = [[self window] isZoomed];
+  }
+
+  
   if (!defaultPrevented && [theEvent clickCount] == 2 &&
       !mGeckoChild->GetNonDraggableRegion().Contains(pos.x, pos.y)) {
-    if (nsCocoaUtils::ShouldZoomOnTitlebarDoubleClick()) {
-      [[self window] performZoom:nil];
-    } else if (nsCocoaUtils::ShouldMinimizeOnTitlebarDoubleClick()) {
-      [[self window] performMiniaturize:nil];
+    
+    bool zoomStateAlreadyChanged =
+        nsCocoaFeatures::OnGoldenGateOrLater() &&
+        ([[self window] isZoomed] != mZoomStateAtLastSingleClick);
+
+    if (!zoomStateAlreadyChanged) {
+      if (nsCocoaUtils::ShouldZoomOnTitlebarDoubleClick()) {
+        [[self window] performZoom:nil];
+      } else if (nsCocoaUtils::ShouldMinimizeOnTitlebarDoubleClick()) {
+        [[self window] performMiniaturize:nil];
+      }
     }
   }
 

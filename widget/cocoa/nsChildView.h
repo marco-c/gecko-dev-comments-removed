@@ -141,6 +141,9 @@ class WidgetRenderingContext;
   BOOL mPerformedDrag;
 
   
+  BOOL mZoomStateAtLastSingleClick;
+
+  
   
   
   
