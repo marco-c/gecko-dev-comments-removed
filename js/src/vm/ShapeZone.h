@@ -240,6 +240,10 @@ struct ShapeZone {
   
   bool useDictionaryModeTeleportation();
 
+  void disableDictionaryModeTeleportation() {
+    reshapeCounter = RESHAPE_MAX + 1;
+  }
+
  private:
   
   
