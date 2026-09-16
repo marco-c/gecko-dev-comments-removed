@@ -8,7 +8,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Iterator, Literal
+    from collections.abc import Iterator
+    from typing import Literal
 
 
 class PlatformDirsABC(ABC):  
@@ -17,7 +18,7 @@ class PlatformDirsABC(ABC):
     def __init__(  
         self,
         appname: str | None = None,
-        appauthor: str | None | Literal[False] = None,
+        appauthor: str | Literal[False] | None = None,
         version: str | None = None,
         roaming: bool = False,  
         multipath: bool = False,  
@@ -90,6 +91,12 @@ class PlatformDirsABC(ABC):
     def _optionally_create_directory(self, path: str) -> None:
         if self.ensure_exists:
             Path(path).mkdir(parents=True, exist_ok=True)
+
+    def _first_item_as_path_if_multipath(self, directory: str) -> Path:
+        if self.multipath:
+            
+            directory = directory.partition(os.pathsep)[0]
+        return Path(directory)
 
     @property
     @abstractmethod

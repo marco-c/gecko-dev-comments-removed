@@ -1,5 +1,6 @@
-import types
 import functools
+import types
+from typing import Callable, TypeVar
 
 
 
@@ -102,3 +103,33 @@ def pass_none(func):
             return func(param, *args, **kwargs)
 
     return wrapper
+
+
+
+def noop(*args, **kwargs):
+    """
+    A no-operation function that does nothing.
+
+    >>> noop(1, 2, three=3)
+    """
+
+
+_T = TypeVar('_T')
+
+
+
+def passthrough(func: Callable[..., object]) -> Callable[[_T], _T]:
+    """
+    Wrap the function to always return the first parameter.
+
+    >>> passthrough(print)('3')
+    3
+    '3'
+    """
+
+    @functools.wraps(func)
+    def wrapper(first: _T, *args, **kwargs) -> _T:
+        func(first, *args, **kwargs)
+        return first
+
+    return wrapper  

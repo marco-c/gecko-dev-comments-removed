@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import functools
 import logging
 import os
@@ -5,9 +7,10 @@ import shutil
 import sys
 import uuid
 import zipfile
+from collections.abc import Collection, Iterable, Sequence
 from optparse import Values
 from pathlib import Path
-from typing import Any, Collection, Dict, Iterable, List, Optional, Sequence, Union
+from typing import Any
 
 from pip._vendor.packaging.markers import Marker
 from pip._vendor.packaging.requirements import Requirement
@@ -71,17 +74,17 @@ class InstallRequirement:
 
     def __init__(
         self,
-        req: Optional[Requirement],
-        comes_from: Optional[Union[str, "InstallRequirement"]],
+        req: Requirement | None,
+        comes_from: str | InstallRequirement | None,
         editable: bool = False,
-        link: Optional[Link] = None,
-        markers: Optional[Marker] = None,
-        use_pep517: Optional[bool] = None,
+        link: Link | None = None,
+        markers: Marker | None = None,
+        use_pep517: bool | None = None,
         isolated: bool = False,
         *,
-        global_options: Optional[List[str]] = None,
-        hash_options: Optional[Dict[str, List[str]]] = None,
-        config_settings: Optional[Dict[str, Union[str, List[str]]]] = None,
+        global_options: list[str] | None = None,
+        hash_options: dict[str, list[str]] | None = None,
+        config_settings: dict[str, str | list[str]] | None = None,
         constraint: bool = False,
         extras: Collection[str] = (),
         user_supplied: bool = False,
@@ -99,7 +102,7 @@ class InstallRequirement:
         
         
         
-        self.source_dir: Optional[str] = None
+        self.source_dir: str | None = None
         if self.editable:
             assert link
             if link.is_file:
@@ -115,14 +118,14 @@ class InstallRequirement:
         
         
         
-        self.cached_wheel_source_link: Optional[Link] = None
+        self.cached_wheel_source_link: Link | None = None
 
         
         
-        self.download_info: Optional[DirectUrl] = None
+        self.download_info: DirectUrl | None = None
 
         
-        self.local_file_path: Optional[str] = None
+        self.local_file_path: str | None = None
         if self.link and self.link.is_file:
             self.local_file_path = self.link.file_path
 
@@ -137,14 +140,14 @@ class InstallRequirement:
         self.markers = markers
 
         
-        self.satisfied_by: Optional[BaseDistribution] = None
+        self.satisfied_by: BaseDistribution | None = None
         
         
         self.should_reinstall = False
         
-        self._temp_build_dir: Optional[TempDirectory] = None
+        self._temp_build_dir: TempDirectory | None = None
         
-        self.install_succeeded: Optional[bool] = None
+        self.install_succeeded: bool | None = None
         
         self.global_options = global_options if global_options else []
         self.hash_options = hash_options if hash_options else {}
@@ -163,16 +166,16 @@ class InstallRequirement:
         
         
         
-        self.metadata_directory: Optional[str] = None
+        self.metadata_directory: str | None = None
 
         
-        self.pyproject_requires: Optional[List[str]] = None
+        self.pyproject_requires: list[str] | None = None
 
         
-        self.requirements_to_check: List[str] = []
+        self.requirements_to_check: list[str] = []
 
         
-        self.pep517_backend: Optional[BuildBackendHookCaller] = None
+        self.pep517_backend: BuildBackendHookCaller | None = None
 
         
         
@@ -195,7 +198,7 @@ class InstallRequirement:
         self.needs_more_preparation = False
 
         
-        self._archive_source: Optional[Path] = None
+        self._archive_source: Path | None = None
 
     def __str__(self) -> str:
         if self.req:
@@ -214,7 +217,7 @@ class InstallRequirement:
             s += f" in {location}"
         if self.comes_from:
             if isinstance(self.comes_from, str):
-                comes_from: Optional[str] = self.comes_from
+                comes_from: str | None = self.comes_from
             else:
                 comes_from = self.comes_from.from_path()
             if comes_from:
@@ -240,7 +243,7 @@ class InstallRequirement:
 
     
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str | None:
         if self.req is None:
             return None
         return self.req.name
@@ -277,7 +280,7 @@ class InstallRequirement:
         specifiers = self.req.specifier
         return len(specifiers) == 1 and next(iter(specifiers)).operator in {"==", "==="}
 
-    def match_markers(self, extras_requested: Optional[Iterable[str]] = None) -> bool:
+    def match_markers(self, extras_requested: Iterable[str] | None = None) -> bool:
         if not extras_requested:
             
             
@@ -326,13 +329,13 @@ class InstallRequirement:
             good_hashes.setdefault(link.hash_name, []).append(link.hash)
         return Hashes(good_hashes)
 
-    def from_path(self) -> Optional[str]:
+    def from_path(self) -> str | None:
         """Format a nice indicator to show where this "comes from" """
         if self.req is None:
             return None
         s = str(self.req)
         if self.comes_from:
-            comes_from: Optional[str]
+            comes_from: str | None
             if isinstance(self.comes_from, str):
                 comes_from = self.comes_from
             else:
@@ -699,7 +702,7 @@ class InstallRequirement:
     
     def uninstall(
         self, auto_confirm: bool = False, verbose: bool = False
-    ) -> Optional[UninstallPathSet]:
+    ) -> UninstallPathSet | None:
         """
         Uninstall the distribution currently satisfying this requirement.
 
@@ -737,7 +740,7 @@ class InstallRequirement:
         name = _clean_zip_name(path, rootdir)
         return self.req.name + "/" + name
 
-    def archive(self, build_dir: Optional[str]) -> None:
+    def archive(self, build_dir: str | None) -> None:
         """Saves archive to provided build_dir.
 
         Used for saving downloaded VCS requirements as part of `pip download`.
@@ -806,10 +809,10 @@ class InstallRequirement:
 
     def install(
         self,
-        global_options: Optional[Sequence[str]] = None,
-        root: Optional[str] = None,
-        home: Optional[str] = None,
-        prefix: Optional[str] = None,
+        global_options: Sequence[str] | None = None,
+        root: str | None = None,
+        home: str | None = None,
+        prefix: str | None = None,
         warn_script_location: bool = True,
         use_user_site: bool = False,
         pycompile: bool = True,
@@ -837,7 +840,7 @@ class InstallRequirement:
                     "try using --config-settings editable_mode=compat. "
                     "Please consult the setuptools documentation for more information"
                 ),
-                gone_in="25.1",
+                gone_in="25.3",
                 issue=11457,
             )
             if self.config_settings:
@@ -905,7 +908,7 @@ def check_invalid_constraint_type(req: InstallRequirement) -> str:
     return problem
 
 
-def _has_option(options: Values, reqs: List[InstallRequirement], option: str) -> bool:
+def _has_option(options: Values, reqs: list[InstallRequirement], option: str) -> bool:
     if getattr(options, option, None):
         return True
     for req in reqs:
@@ -916,7 +919,7 @@ def _has_option(options: Values, reqs: List[InstallRequirement], option: str) ->
 
 def check_legacy_setup_py_options(
     options: Values,
-    reqs: List[InstallRequirement],
+    reqs: list[InstallRequirement],
 ) -> None:
     has_build_options = _has_option(options, reqs, "build_options")
     has_global_options = _has_option(options, reqs, "global_options")
@@ -925,7 +928,7 @@ def check_legacy_setup_py_options(
             reason="--build-option and --global-option are deprecated.",
             issue=11859,
             replacement="to use --config-settings",
-            gone_in=None,
+            gone_in="25.3",
         )
         logger.warning(
             "Implying --no-binary=:all: due to the presence of "

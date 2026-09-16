@@ -6,7 +6,4 @@ else:
     import importlib.metadata as metadata  
 
 
-if sys.version_info < (3, 9):
-    import importlib_resources as resources  
-else:
-    import importlib.resources as resources  
+import importlib.resources as resources  

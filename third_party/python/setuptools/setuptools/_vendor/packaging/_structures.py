@@ -2,8 +2,13 @@
 
 
 
+import typing
 
+
+@typing.final
 class InfinityType:
+    __slots__ = ()
+
     def __repr__(self) -> str:
         return "Infinity"
 
@@ -32,7 +37,10 @@ class InfinityType:
 Infinity = InfinityType()
 
 
+@typing.final
 class NegativeInfinityType:
+    __slots__ = ()
+
     def __repr__(self) -> str:
         return "-Infinity"
 

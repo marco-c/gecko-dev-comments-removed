@@ -17,6 +17,7 @@ import re
 from collections.abc import Sequence
 from distutils._log import log
 
+from ..ccompiler import CCompiler, CompileError, LinkError, new_compiler
 from ..core import Command
 from ..errors import DistutilsExecError
 from ..sysconfig import customize_compiler
@@ -88,14 +89,8 @@ class config(Command):
         """Check that 'self.compiler' really is a CCompiler object;
         if not, make it one.
         """
-        
-        
-        from ..ccompiler import CCompiler, new_compiler
-
         if not isinstance(self.compiler, CCompiler):
-            self.compiler = new_compiler(
-                compiler=self.compiler, dry_run=self.dry_run, force=True
-            )
+            self.compiler = new_compiler(compiler=self.compiler, force=True)
             customize_compiler(self.compiler)
             if self.include_dirs:
                 self.compiler.set_include_dirs(self.include_dirs)
@@ -161,14 +156,6 @@ class config(Command):
                 pass
 
     
-    
-    
-    
-    
-    
-    
-
-    
 
     def try_cpp(self, body=None, headers=None, include_dirs=None, lang="c"):
         """Construct a source file from 'body' (a string containing lines
@@ -177,8 +164,6 @@ class config(Command):
         preprocessor succeeded, false if there were any errors.
         ('body' probably isn't of much use, but what the heck.)
         """
-        from ..ccompiler import CompileError
-
         self._check_compiler()
         ok = True
         try:
@@ -213,8 +198,6 @@ class config(Command):
         """Try to compile a source file built from 'body' and 'headers'.
         Return true on success, false otherwise.
         """
-        from ..ccompiler import CompileError
-
         self._check_compiler()
         try:
             self._compile(body, headers, include_dirs, lang)
@@ -239,8 +222,6 @@ class config(Command):
         'headers', to executable form.  Return true on success, false
         otherwise.
         """
-        from ..ccompiler import CompileError, LinkError
-
         self._check_compiler()
         try:
             self._link(body, headers, include_dirs, libraries, library_dirs, lang)
@@ -265,8 +246,6 @@ class config(Command):
         built from 'body' and 'headers'.  Return true on success, false
         otherwise.
         """
-        from ..ccompiler import CompileError, LinkError
-
         self._check_compiler()
         try:
             src, obj, exe = self._link(

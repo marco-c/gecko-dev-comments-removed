@@ -12,6 +12,7 @@ import calendar
 import logging
 import re
 import time
+import weakref
 from email.utils import parsedate_tz
 from typing import TYPE_CHECKING, Collection, Mapping
 
@@ -323,7 +324,7 @@ class CacheController:
     def cache_response(
         self,
         request: PreparedRequest,
-        response: HTTPResponse,
+        response_or_ref: HTTPResponse | weakref.ReferenceType[HTTPResponse],
         body: bytes | None = None,
         status_codes: Collection[int] | None = None,
     ) -> None:
@@ -332,6 +333,16 @@ class CacheController:
 
         This assumes a requests Response object.
         """
+        if isinstance(response_or_ref, weakref.ReferenceType):
+            response = response_or_ref()
+            if response is None:
+                
+                
+                
+                return
+        else:
+            response = response_or_ref
+
         
         
         cacheable_status_codes = status_codes or self.cacheable_status_codes
