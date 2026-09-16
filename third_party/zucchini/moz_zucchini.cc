@@ -85,8 +85,8 @@ static void MaybeTriggerTestCheckFailure() {
 
 static LogFunctionPtr gLogFunction = nullptr;
 
-bool LogMessageHandler(int aSeverity, const char* aFile, int aLine,
-                       size_t aMessageStart, const std::string& aStr) {
+static bool LogMessageHandler(int aSeverity, const char* aFile, int aLine,
+                              size_t aMessageStart, const std::string& aStr) {
   if (!gLogFunction) {
     return false;
   }
@@ -102,42 +102,6 @@ void SetLogFunction(LogFunctionPtr aLogFunction) {
 uint32_t ComputeCrc32(const uint8_t* aBuf, size_t aBufSize) {
   return CalculateCrc32(aBuf, aBuf + aBufSize);
 }
-
-
-
-status::Code ApplyBufferUnsafe(ConstBufferView aCheckedOldImage,
-                               const EnsemblePatchReader& aPatchReader,
-                               MutableBufferView aNewImage) {
-  for (const auto& elementPatch : aPatchReader.elements()) {
-    ElementMatch match = elementPatch.element_match();
-    if (!ApplyElement(match.exe_type(),
-                      aCheckedOldImage[match.old_element.region()],
-                      elementPatch, aNewImage[match.new_element.region()]))
-      return status::kStatusFatal;
-  }
-
-  if (!aPatchReader.CheckNewFile(ConstBufferView(aNewImage))) {
-    LOG(ERROR) << "Invalid aNewImage.";
-    return status::kStatusInvalidNewImage;
-  }
-  return status::kStatusSuccess;
-}
-
-class MappedPatchImpl {
- public:
-  MappedPatchImpl() = default;
-  ~MappedPatchImpl() = default;
-  std::optional<MappedFileReader> mFileReader;
-  EnsemblePatchReader mPatchReader;
-#if BUILDFLAG(IS_WIN)
-  ExceptionFilterHelper mExceptionFilterHelper;
-  DWORD mLastExceptionCode = 0;
-#endif  
-};
-
-MappedPatch::MappedPatch() : mImpl(new MappedPatchImpl()) {}
-
-MappedPatch::~MappedPatch() { delete mImpl; }
 
 #if BUILDFLAG(IS_WIN)
 #  if !defined(HAVE_SEH_EXCEPTIONS) || !HAVE_SEH_EXCEPTIONS
@@ -163,18 +127,15 @@ static constexpr DWORD kMsvcCppExceptionCode = 0xE06D7363;
 
 
 
-static int FilterZucchiniException(
-    EXCEPTION_RECORD* aExceptionRecord,
-    ExceptionFilterHelper& aPageErrorHelper,
-    DWORD& aOutExceptionCode) {
-  aOutExceptionCode = aExceptionRecord->ExceptionCode;
 
-  
-  
-  int pageResult = aPageErrorHelper.FilterPageError(aExceptionRecord);
-  if (pageResult == EXCEPTION_EXECUTE_HANDLER) {
-    return EXCEPTION_EXECUTE_HANDLER;
-  }
+
+
+
+
+
+static int FilterRecoverableException(EXCEPTION_RECORD* aExceptionRecord,
+                                      DWORD& aOutExceptionCode) {
+  aOutExceptionCode = aExceptionRecord->ExceptionCode;
 
   if (aOutExceptionCode == EXCEPTION_BREAKPOINT ||
       aOutExceptionCode == EXCEPTION_ILLEGAL_INSTRUCTION ||
@@ -186,41 +147,79 @@ static int FilterZucchiniException(
   return EXCEPTION_CONTINUE_SEARCH;
 }
 
-#  define BEGIN_TRY_EXCEPT() __try {
-#  define END_TRY_EXCEPT()                                                 \
+#  define BEGIN_ENTRY_POINT()           \
+    DWORD mozZucchiniExceptionCode = 0; \
+    __try {
+#  define END_ENTRY_POINT()                                                    \
+    }                                                                          \
+    __except (                                                                 \
+        FilterRecoverableException(GetExceptionInformation()->ExceptionRecord, \
+                                   mozZucchiniExceptionCode)) {                \
+      if (mozZucchiniExceptionCode == kMsvcCppExceptionCode) {                 \
+        LOG(ERROR) << "std::bad_alloc caught in zucchini.";                    \
+        return status::kStatusOutOfMemory;                                     \
+      }                                                                        \
+      LOG(ERROR) << "hard crash caught in zucchini; this is a bug.";           \
+      return status::kStatusFatal;                                             \
+    }
+
+
+
+
+
+#  define BEGIN_PAGE_ERROR_TRY_EXCEPT() __try {
+#  define END_PAGE_ERROR_TRY_EXCEPT()                                      \
     }                                                                      \
-    __except (FilterZucchiniException(                                     \
-        GetExceptionInformation()->ExceptionRecord,                        \
-        mImpl->mExceptionFilterHelper, mImpl->mLastExceptionCode)) {       \
-      if (mImpl->mLastExceptionCode == EXCEPTION_IN_PAGE_ERROR) {          \
-        LOG(ERROR) << "EXCEPTION_IN_PAGE_ERROR while "                     \
-                   << (mImpl->mExceptionFilterHelper.is_write()            \
-                           ? "writing to"                                  \
-                           : "reading from")                               \
-                   << " mapped files; NTSTATUS = "                         \
-                   << mImpl->mExceptionFilterHelper.nt_status();           \
-        return mImpl->mExceptionFilterHelper.nt_status() ==                \
-                       STATUS_DISK_FULL                                    \
-                   ? status::kStatusDiskFull                               \
-                   : status::kStatusIoError;                               \
-      }                                                                    \
-      if (mImpl->mLastExceptionCode == kMsvcCppExceptionCode) {            \
-        return status::kStatusOutOfMemory;                                 \
-      }                                                                    \
-      LOG(ERROR) << "CHECK failure (exception 0x" << std::hex              \
-                 << mImpl->mLastExceptionCode                              \
-                 << ") caught in zucchini; this is a bug.";                \
-      return status::kStatusFatal;                                         \
+    __except (mImpl->mExceptionFilterHelper.FilterPageError(               \
+        GetExceptionInformation()->ExceptionRecord)) {                     \
+      LOG(ERROR) << "EXCEPTION_IN_PAGE_ERROR while "                       \
+                 << (mImpl->mExceptionFilterHelper.is_write()              \
+                         ? "writing to"                                    \
+                         : "reading from")                                 \
+                 << " mapped files; NTSTATUS = "                           \
+                 << mImpl->mExceptionFilterHelper.nt_status();             \
+      return mImpl->mExceptionFilterHelper.nt_status() == STATUS_DISK_FULL \
+                 ? status::kStatusDiskFull                                 \
+                 : status::kStatusIoError;                                 \
     }
 #else
-#  define BEGIN_TRY_EXCEPT()
-#  define END_TRY_EXCEPT()
+#  define BEGIN_ENTRY_POINT()
+#  define END_ENTRY_POINT()
+#  define BEGIN_PAGE_ERROR_TRY_EXCEPT()
+#  define END_PAGE_ERROR_TRY_EXCEPT()
 #endif  
 
+class MappedPatchImpl {
+ public:
+  MappedPatchImpl() = default;
+  ~MappedPatchImpl() = default;
+  std::optional<MappedFileReader> mFileReader;
+  EnsemblePatchReader mPatchReader;
+#if BUILDFLAG(IS_WIN)
+  ExceptionFilterHelper mExceptionFilterHelper;
+#endif  
+};
 
-status::Code MappedPatch::Load(FILE* aPatchFile, uint32_t* aSourceSize,
-                               uint32_t* aDestinationSize,
-                               uint32_t* aSourceCrc32) {
+status::Code MappedPatch::Initialize() {
+  BEGIN_ENTRY_POINT()
+  mImpl = new MappedPatchImpl();
+  return status::kStatusSuccess;
+  END_ENTRY_POINT()
+}
+
+status::Code MappedPatch::Finalize() {
+  BEGIN_ENTRY_POINT()
+  auto* impl = mImpl;
+  mImpl = nullptr;
+  delete impl;
+  return status::kStatusSuccess;
+  END_ENTRY_POINT()
+}
+
+
+status::Code MappedPatch::LoadImpl(FILE* aPatchFile, uint32_t* aSourceSize,
+                                   uint32_t* aDestinationSize,
+                                   uint32_t* aSourceCrc32) {
   base::File patchFile = base::FILEToFile(aPatchFile);
   if (!patchFile.IsValid()) {
     LOG(ERROR) << "Invalid patch file.";
@@ -239,7 +238,7 @@ status::Code MappedPatch::Load(FILE* aPatchFile, uint32_t* aSourceSize,
   mImpl->mExceptionFilterHelper.AddRange(
       {fileReader.data(), fileReader.length()});
 #endif
-  BEGIN_TRY_EXCEPT()
+  BEGIN_PAGE_ERROR_TRY_EXCEPT()
 #ifdef ENABLE_TESTS
   ScopedDestructorMarker destructorTester;
   MaybeTriggerTestBadAlloc();
@@ -257,13 +256,45 @@ status::Code MappedPatch::Load(FILE* aPatchFile, uint32_t* aSourceSize,
   *aDestinationSize = header.new_size;
   *aSourceCrc32 = header.old_crc;
   return status::kStatusSuccess;
-  END_TRY_EXCEPT()
+  END_PAGE_ERROR_TRY_EXCEPT()
+}
+
+status::Code MappedPatch::Load(FILE* aPatchFile, uint32_t* aSourceSize,
+                               uint32_t* aDestinationSize,
+                               uint32_t* aSourceCrc32) {
+  if (!mImpl) {
+    return mInitStatus;
+  }
+  BEGIN_ENTRY_POINT()
+  return LoadImpl(aPatchFile, aSourceSize, aDestinationSize, aSourceCrc32);
+  END_ENTRY_POINT()
 }
 
 
-status::Code MappedPatch::ApplyUnsafe(const uint8_t* aCheckedOldImage,
-                                      size_t aCheckedOldImageSize,
-                                      FILE* aNewFile) {
+
+static status::Code ApplyBufferUnsafe(ConstBufferView aCheckedOldImage,
+                                      const EnsemblePatchReader& aPatchReader,
+                                      MutableBufferView aNewImage) {
+  for (const auto& elementPatch : aPatchReader.elements()) {
+    ElementMatch match = elementPatch.element_match();
+    if (!ApplyElement(match.exe_type(),
+                      aCheckedOldImage[match.old_element.region()],
+                      elementPatch, aNewImage[match.new_element.region()]))
+      return status::kStatusFatal;
+  }
+
+  if (!aPatchReader.CheckNewFile(ConstBufferView(aNewImage))) {
+    LOG(ERROR) << "Invalid aNewImage.";
+    return status::kStatusInvalidNewImage;
+  }
+
+  return status::kStatusSuccess;
+}
+
+
+status::Code MappedPatch::ApplyUnsafeImpl(const uint8_t* aCheckedOldImage,
+                                          size_t aCheckedOldImageSize,
+                                          FILE* aNewFile) {
   ConstBufferView oldImageView(aCheckedOldImage, aCheckedOldImageSize);
 
   base::File newFile = base::FILEToFile(aNewFile);
@@ -272,7 +303,7 @@ status::Code MappedPatch::ApplyUnsafe(const uint8_t* aCheckedOldImage,
     return status::kStatusFileWriteError;
   }
 
-  BEGIN_TRY_EXCEPT()
+  BEGIN_PAGE_ERROR_TRY_EXCEPT()
   PatchHeader header = mImpl->mPatchReader.header();
   base::FilePath name;
   name = name.AppendASCII("old_name");
@@ -304,7 +335,18 @@ status::Code MappedPatch::ApplyUnsafe(const uint8_t* aCheckedOldImage,
   }
 
   return status::kStatusSuccess;
-  END_TRY_EXCEPT()
+  END_PAGE_ERROR_TRY_EXCEPT()
+}
+
+status::Code MappedPatch::ApplyUnsafe(const uint8_t* aCheckedOldImage,
+                                      size_t aCheckedOldImageSize,
+                                      FILE* aNewFile) {
+  if (!mImpl) {
+    return mInitStatus;
+  }
+  BEGIN_ENTRY_POINT()
+  return ApplyUnsafeImpl(aCheckedOldImage, aCheckedOldImageSize, aNewFile);
+  END_ENTRY_POINT()
 }
 
 }  

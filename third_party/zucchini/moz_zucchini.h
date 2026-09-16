@@ -69,21 +69,33 @@ class MappedPatchImpl;
 
 class MappedPatch {
  public:
-  MappedPatch();
-  ~MappedPatch();
+  MappedPatch() : mImpl(nullptr), mInitStatus(Initialize()) { }
+  ~MappedPatch() { (void)Finalize(); }
 
-  status::Code Load(FILE* aPatchFile, uint32_t* aSourceSize,
-                    uint32_t* aDestinationSize, uint32_t* aSourceCrc32);
+  [[nodiscard]] status::Code Load(FILE* aPatchFile, uint32_t* aSourceSize,
+                                  uint32_t* aDestinationSize,
+                                  uint32_t* aSourceCrc32);
 
   
   
   
   
-  status::Code ApplyUnsafe(const uint8_t* aCheckedOldImage,
-                           size_t aCheckedOldImageSize, FILE* aNewFile);
+  [[nodiscard]] status::Code ApplyUnsafe(const uint8_t* aCheckedOldImage,
+                                         size_t aCheckedOldImageSize,
+                                         FILE* aNewFile);
+
+  
+  [[nodiscard]] status::Code Finalize();
 
  private:
+  status::Code Initialize();
+  status::Code LoadImpl(FILE* aPatchFile, uint32_t* aSourceSize,
+                        uint32_t* aDestinationSize, uint32_t* aSourceCrc32);
+  status::Code ApplyUnsafeImpl(const uint8_t* aCheckedOldImage,
+                               size_t aCheckedOldImageSize, FILE* aNewFile);
+
   MappedPatchImpl* mImpl;
+  status::Code mInitStatus;
 };
 
 }  
