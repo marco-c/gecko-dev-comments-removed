@@ -503,7 +503,14 @@ void SessionAccessibility::MaybeSendLiveRegionEvents(Accessible* aAccessible,
   }
 
   Maybe<bool> atomic;
-  liveRegion->LiveRegionAttributes(nullptr, nullptr, &atomic, nullptr);
+  nsAutoString busy;
+  liveRegion->LiveRegionAttributes(nullptr, nullptr, &atomic, &busy);
+  if (busy.EqualsIgnoreCase("true")) {
+    
+    
+    
+    return;
+  }
 
   if (aStartTextOffset < 0) {
     
