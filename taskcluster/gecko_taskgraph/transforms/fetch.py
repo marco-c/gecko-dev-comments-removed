@@ -19,11 +19,16 @@ from taskgraph.util.schema import Schema, validate_schema
 from taskgraph.util.treeherder import join_symbol
 
 import gecko_taskgraph
+from gecko_taskgraph import GECKO
 from gecko_taskgraph.transforms.task import TaskDescriptionSchema
+from gecko_taskgraph.util.hash import hash_paths
 
 from ..util.cached_tasks import add_optimization
 
 CACHE_TYPE = "content.v1"
+
+CRX3_SCRIPT = "taskcluster/scripts/misc/fetch-crx3.py"
+ONNXRUNTIME_DEPS_SCRIPT = "taskcluster/scripts/misc/fetch-onnxruntime-deps.sh"
 
 
 class FetchTypeSchema(Schema, forbid_unknown_fields=False, kw_only=True):
@@ -360,7 +365,7 @@ def create_onnxruntime_deps_fetch_task(config, name, fetch):
     artifact_name = fetch.get("artifact-name")
     workdir = "/builds/worker"
 
-    script = os.path.join(workdir, "bin/fetch-onnxruntime-deps.sh")
+    script = os.path.join(workdir, "bin", os.path.basename(ONNXRUNTIME_DEPS_SCRIPT))
     repo = fetch["repo"]
     revision = fetch["revision"]
 
@@ -374,6 +379,7 @@ def create_onnxruntime_deps_fetch_task(config, name, fetch):
             f"repo={repo}",
             f"revision={revision}",
             f"artifact_name={artifact_name}",
+            hash_paths(GECKO, [ONNXRUNTIME_DEPS_SCRIPT]),
         ],
     }
 
@@ -387,6 +393,55 @@ class ChromiumFetchSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     revision: Optional[str] = None
     
     artifact_name: str
+
+
+class Crx3UrlFetchSchema(Schema, forbid_unknown_fields=False, kw_only=True):
+    type: Literal["crx3-url"]
+    
+    url: str
+    
+    sha256: str
+    
+    size: int
+    
+    artifact_name: str
+    
+    add_prefix: Optional[str] = None
+    
+    
+
+
+@fetch_builder("crx3-url", schema=Crx3UrlFetchSchema)
+def create_crx3_fetch_task(config, name, fetch):
+    artifact_name = fetch["artifact-name"]
+    if not artifact_name.endswith(".tar.zst"):
+        raise Exception(f"Only producing .tar.zst archives is supported: {name}")
+
+    add_prefix = fetch.get("add-prefix", "")
+    command = [
+        "/builds/worker/bin/fetch-crx3.py",
+        "--sha256",
+        fetch["sha256"],
+        "--size",
+        str(fetch["size"]),
+    ]
+    if add_prefix:
+        command.extend(["--add-prefix", add_prefix])
+    command.extend([fetch["url"], f"/builds/worker/artifacts/{artifact_name}"])
+
+    return {
+        "command": command,
+        "artifact_name": artifact_name,
+        "docker-image": "fetch-more",
+        
+        
+        "digest_data": [
+            fetch["sha256"],
+            add_prefix,
+            artifact_name,
+            hash_paths(GECKO, [CRX3_SCRIPT]),
+        ],
+    }
 
 
 @fetch_builder("chromium-fetch", schema=ChromiumFetchSchema)
