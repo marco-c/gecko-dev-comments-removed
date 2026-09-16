@@ -343,16 +343,28 @@ void CSSAnimationKeyframeEffect::UpdateTiming(
 void CSSAnimationKeyframeEffect::SetKeyframes(JSContext* aContext,
                                               JS::Handle<JSObject*> aKeyframes,
                                               ErrorResult& aRv) {
+  nsTArray<Keyframe> keyframes = KeyframeUtils::GetKeyframesFromObject(
+      aContext, mDocument, aKeyframes, "KeyframeEffect.setKeyframes", aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+
+  
+  
+  
+  
   
   
   
   mIgnoreKeyframesGeneration = true;
-  KeyframeEffect::SetKeyframes(aContext, aKeyframes, aRv);
 
-  if (aRv.Failed()) {
-    mIgnoreKeyframesGeneration = false;
-    return;
-  }
+  
+  
+  RefPtr<const ComputedStyle> style = GetTargetComputedStyle(Flush::None);
+  KeyframeEffect::SetKeyframes(
+      std::move(keyframes), style,
+      mAnimation ? mAnimation->GetTimeline() : nullptr,
+      mAnimation ? &mAnimation->GetTimelineRange() : nullptr);
 
   if (CSSAnimation* cssAnimation = GetOwningCSSAnimation()) {
     cssAnimation->PropertiesWillSetFromJS(CSSAnimationProperties::Keyframes);
