@@ -1,7 +1,7 @@
 
 
 
-import platform
+import os
 
 import filters
 from cmdline import FIREFOX_APPS
@@ -16,13 +16,21 @@ ADDITIONAL_METRICS = [
 ]
 
 
+def test_platform_from_label(task_label):
+    """The test platform a task runs on, e.g. windows11-64-24h2-hw-ref-shippable."""
+    if not task_label.startswith("test-"):
+        return ""
+    return task_label[len("test-") :].split("/")[0]
+
+
 class BasePythonSupport:
     def __init__(self, **kwargs):
         self.power_test = None
         self.app = None
         self.raw_result = []
         self.bt_result = []
-        self.platform = platform.system()
+        self.task_label = os.environ.get("RAPTOR_TASK_LABEL", "")
+        self.test_platform = test_platform_from_label(self.task_label)
 
     def save_data(self, raw_result, bt_result):
         """
