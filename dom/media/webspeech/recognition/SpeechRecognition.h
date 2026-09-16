@@ -271,6 +271,10 @@ class SpeechRecognition final
   
   void MaybeDispatchStart();
   SpeechRecognitionPerfStats BuildPerfStats() const;
+  
+  
+  
+  void RecordSessionEnded();
 
   RefPtr<DOMMediaStream> mStream;
   RefPtr<AudioStreamTrack> mTrack;
@@ -329,6 +333,18 @@ class SpeechRecognition final
     EnginePerfStats mEngine;
   };
   PerfTimeline mPerf;
+
+  
+  
+  TimeStamp mSessionStartTime;
+  
+  
+  nsCString mSessionId;
+  
+  
+  
+  Maybe<SpeechRecognitionErrorCode> mSessionError;
+
   RefPtr<TrackListener> mListener;
   
   RefPtr<SpeechRecognitionBackend> mBackend;
