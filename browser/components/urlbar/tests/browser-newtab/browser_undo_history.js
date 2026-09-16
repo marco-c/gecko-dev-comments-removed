@@ -7,6 +7,7 @@
 
 
 
+
 "use strict";
 
 const TEST_VALUE = "example.com";
@@ -51,8 +52,7 @@ add_task(async function undoAfterViewClose() {
       );
 
       EventUtils.synthesizeKey("z", { accelKey: true }, content);
-      
-      todo_is(bar.inputField.value, "", "Undo removed the typed string.");
+      Assert.equal(bar.inputField.value, "", "undo removed the typed string");
     }
   );
 
