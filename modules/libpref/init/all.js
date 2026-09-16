@@ -4097,6 +4097,25 @@ pref("extensions.formautofill.addresses.capture.enabled", true);
 pref("extensions.formautofill.addresses.ignoreAutocompleteOff", true);
 
 pref("extensions.formautofill.addresses.supportedCountries", "US,CA,GB,FR,DE,BR,ES,JP,AT,IN,IT,PL,AU,NL");
+
+
+
+
+pref("extensions.formautofill.addresses.storage.rust.enabled", false);
+
+
+
+pref("extensions.formautofill.addresses.storage.rust.active", false);
+
+
+pref("extensions.formautofill.addresses.storage.rust.runMigrationTest", false);
+
+
+pref("extensions.formautofill.addresses.storage.rust.migrationTestVersion", 0);
+
+
+pref("extensions.formautofill.addresses.storage.rust.migrationAttempts", 0);
+
 pref("extensions.formautofill.creditCards.supported", "on");
 pref("extensions.formautofill.creditCards.enabled", true);
 pref("extensions.formautofill.creditCards.ignoreAutocompleteOff", true);
