@@ -214,6 +214,9 @@ pub struct WebRenderOptions {
     pub enable_instancing: bool,
     
     
+    pub enable_shared_instance_buffer: bool,
+    
+    
     pub reject_software_rasterizer: bool,
     
     
@@ -296,6 +299,7 @@ impl Default for WebRenderOptions {
             
             
             enable_instancing: true,
+            enable_shared_instance_buffer: false,
             reject_software_rasterizer: false,
             low_quality_pinch_zoom: false,
             max_shared_surface_size: 2048,
@@ -355,7 +359,6 @@ pub fn create_webrender_instance(
     
     
     let (result_tx, result_rx) = unbounded_channel();
-    let gl_type = gl.get_type();
 
     let mut device = Device::new(
         gl,
@@ -419,7 +422,7 @@ pub fn create_webrender_instance(
     let shaders = match shaders {
         Some(shaders) => Rc::clone(shaders),
         None => {
-            let mut shaders = Shaders::new(&mut device, gl_type, &options)?;
+            let mut shaders = Shaders::new(&mut device, &options)?;
             if options.precache_flags.intersects(ShaderPrecacheFlags::ASYNC_COMPILE | ShaderPrecacheFlags::FULL_COMPILE) {
                 let mut pending_shaders = shaders.precache_all(options.precache_flags);
                 while shaders.resume_precache(&mut device, &mut pending_shaders)? {}
@@ -513,9 +516,17 @@ pub fn create_webrender_instance(
 
     let max_primitive_instance_count =
         WebRenderOptions::MAX_INSTANCE_BUFFER_SIZE / mem::size_of::<PrimitiveInstanceData>();
+
+    
+    
+    let use_shared_instance_buffer = options.enable_shared_instance_buffer
+        && options.enable_instancing
+        && device.get_capabilities().supports_base_instance;
+
     let vaos = vertex::RendererVAOs::new(
         &mut device,
         if options.enable_instancing { None } else { NonZeroUsize::new(max_primitive_instance_count) },
+        use_shared_instance_buffer,
     );
 
     let texture_upload_pbo_pool = UploadPBOPool::new(&mut device, options.upload_pbo_default_size);
@@ -817,6 +828,7 @@ pub fn create_webrender_instance(
         buffer_damage_tracker: BufferDamageTracker::default(),
         max_primitive_instance_count,
         enable_instancing: options.enable_instancing,
+        use_shared_instance_buffer,
         consecutive_oom_frames: 0,
         target_frame_publish_id: None,
         pending_result_msg: None,

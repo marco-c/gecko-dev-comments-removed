@@ -20,7 +20,6 @@ const ALLOWLIST: &[&str] = &[
     "screen_capture.rs",
     "renderer/init.rs",
     "renderer/mod.rs",
-    "renderer/shade.rs",
 ];
 
 

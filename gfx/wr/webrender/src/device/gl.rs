@@ -33,7 +33,9 @@ use std::{
     time::Duration,
 };
 use webrender_build::shader::{
-    ProgramSourceDigest, ShaderKind, ShaderSourceMap, ShaderVersion, build_shader_main_string, build_shader_prefix_string, do_build_shader_string, shader_source_from_file,
+    ProgramSourceDigest, ShaderFeatureFlags, ShaderKind, ShaderSourceMap, ShaderVersion,
+    build_shader_main_string, build_shader_prefix_string, do_build_shader_string,
+    shader_source_from_file,
 };
 use malloc_size_of::MallocSizeOfOps;
 
@@ -1035,6 +1037,12 @@ pub struct Capabilities {
     
     pub supports_image_external_essl3: bool,
     
+    pub supports_texture_rect: bool,
+    
+    pub supports_texture_external: bool,
+    
+    pub supports_texture_external_bt709: bool,
+    
     pub requires_vao_rebind_after_orphaning: bool,
     
     
@@ -1871,6 +1879,13 @@ impl Device {
             _ => supports_extension(&extensions, "GL_OES_EGL_image_external_essl3"),
         };
 
+        let (supports_texture_rect, supports_texture_external) = match gl.get_type() {
+            gl::GlType::Gl => (true, false),
+            gl::GlType::Gles => (false, true),
+        };
+        let supports_texture_external_bt709 =
+            supports_texture_external && supports_extension(&extensions, "GL_EXT_YUV_target");
+
         let mut requires_batched_texture_uploads = None;
         if is_software_webrender {
             
@@ -1992,6 +2007,9 @@ impl Device {
                 uses_native_clip_mask,
                 uses_native_antialiasing,
                 supports_image_external_essl3,
+                supports_texture_rect,
+                supports_texture_external,
+                supports_texture_external_bt709,
                 requires_vao_rebind_after_orphaning,
                 supports_bgra_read,
                 supports_base_instance,
@@ -2092,6 +2110,24 @@ impl Device {
 
     pub fn get_capabilities(&self) -> &Capabilities {
         &self.capabilities
+    }
+
+    pub fn shader_feature_flags(&self) -> ShaderFeatureFlags {
+        match self.gl.get_type() {
+            gl::GlType::Gl => ShaderFeatureFlags::GL,
+            gl::GlType::Gles => {
+                let mut flags = ShaderFeatureFlags::GLES;
+                flags |= if self.capabilities.supports_image_external_essl3 {
+                    ShaderFeatureFlags::TEXTURE_EXTERNAL
+                } else {
+                    ShaderFeatureFlags::TEXTURE_EXTERNAL_ESSL1
+                };
+                if self.capabilities.supports_texture_external_bt709 {
+                    flags |= ShaderFeatureFlags::TEXTURE_EXTERNAL_BT709;
+                }
+                flags
+            }
+        }
     }
 
     pub fn preferred_color_formats(&self) -> TextureFormatPair<ImageFormat> {
