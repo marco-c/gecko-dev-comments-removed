@@ -409,6 +409,13 @@ class DisplayPortUtils {
   
 
 
+  static const ActiveScrolledRoot* GetASRForAbsPosFrame(
+      nsIFrame* aFrame, const ActiveScrolledRoot* aContainingBlockASR,
+      nsDisplayListBuilder* aBuilder);
+
+  
+
+
 
   static bool ShouldAsyncScrollWithAnchor(nsIFrame* aFrame, nsIFrame* aAnchor,
                                           nsDisplayListBuilder* aBuilder,

@@ -1152,7 +1152,8 @@ FrameAndASRKind DisplayPortUtils::OneStepInASRChain(
       nsLayoutUtils::GetCrossDocParentFrameInProcess(aFrameAndASRKind.mFrame);
   if (aLimitAncestor && parent &&
       (parent == aLimitAncestor ||
-       parent->FirstContinuation() == aLimitAncestor->FirstContinuation())) {
+       nsLayoutUtils::FirstContinuationOrIBSplitSibling(parent) ==
+           nsLayoutUtils::FirstContinuationOrIBSplitSibling(aLimitAncestor))) {
     return FrameAndASRKind::default_value();
   }
   return {parent, ActiveScrolledRoot::ASRKind::Scroll};
@@ -1220,9 +1221,14 @@ const ActiveScrolledRoot* DisplayPortUtils::ActivateDisplayportOnASRAncestors(
   FrameAndASRKind frameAndASRKind{aAnchor, ActiveScrolledRoot::ASRKind::Scroll};
   frameAndASRKind =
       OneStepInASRChain(frameAndASRKind, aBuilder, aLimitAncestor);
-  while (frameAndASRKind.mFrame && frameAndASRKind.mFrame != aLimitAncestor &&
-         (!aLimitAncestor || frameAndASRKind.mFrame->FirstContinuation() !=
-                                 aLimitAncestor->FirstContinuation())) {
+  const nsIFrame* limitAncestorFirst =
+      aLimitAncestor
+          ? nsLayoutUtils::FirstContinuationOrIBSplitSibling(aLimitAncestor)
+          : nullptr;
+  while (
+      frameAndASRKind.mFrame && frameAndASRKind.mFrame != aLimitAncestor &&
+      (!aLimitAncestor || nsLayoutUtils::FirstContinuationOrIBSplitSibling(
+                              frameAndASRKind.mFrame) != limitAncestorFirst)) {
     
     
     
@@ -1281,6 +1287,40 @@ const ActiveScrolledRoot* DisplayPortUtils::ActivateDisplayportOnASRAncestors(
                                                   asrFrame.mASRKind);
   }
   return asr;
+}
+
+const ActiveScrolledRoot* DisplayPortUtils::GetASRForAbsPosFrame(
+    nsIFrame* aFrame, const ActiveScrolledRoot* aContainingBlockASR,
+    nsDisplayListBuilder* aBuilder) {
+  MOZ_ASSERT(aFrame->IsAbsolutelyPositioned());
+  if (!aBuilder->IsPaintingToWindow() ||
+      
+      
+      
+      aBuilder->IsInViewTransitionCapture() ||
+      
+      
+      
+      
+      aFrame->PresContext()->Document()->GetActiveViewTransition()) {
+    return aContainingBlockASR;
+  }
+  nsIFrame* scrollsWithAnchor =
+      AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(aFrame, aBuilder);
+  if (!scrollsWithAnchor) {
+    return aContainingBlockASR;
+  }
+  if (aBuilder->IsRetainingDisplayList()) {
+    if (aBuilder->IsPartialUpdate()) {
+      aBuilder->SetPartialBuildFailed(true);
+    } else {
+      aBuilder->SetDisablePartialUpdates(true);
+    }
+  }
+  
+  
+  return ActivateDisplayportOnASRAncestors(
+      scrollsWithAnchor, aFrame->GetParent(), aContainingBlockASR, aBuilder);
 }
 
 static bool CheckAxes(ScrollContainerFrame* aScrollFrame, PhysicalAxes aAxes) {
@@ -1343,6 +1383,8 @@ static bool ShouldAsyncScrollWithAnchorNotCached(nsIFrame* aFrame,
   *aReportToDoc = true;
   nsIFrame* limitAncestor = aFrame->GetParent();
   MOZ_ASSERT(limitAncestor);
+  const nsIFrame* limitAncestorFirst =
+      nsLayoutUtils::FirstContinuationOrIBSplitSibling(limitAncestor);
   
   nsIFrame* frame = aAnchor;
   bool firstIteration = true;
@@ -1353,7 +1395,8 @@ static bool ShouldAsyncScrollWithAnchorNotCached(nsIFrame* aFrame,
   
   bool sawPotentialASR = false;
   while (frame && !frame->IsMenuPopupFrame() && frame != limitAncestor &&
-         (frame->FirstContinuation() != limitAncestor->FirstContinuation())) {
+         (nsLayoutUtils::FirstContinuationOrIBSplitSibling(frame) !=
+          limitAncestorFirst)) {
     
     
 

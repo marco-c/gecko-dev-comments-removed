@@ -4607,30 +4607,6 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
   if (savedOutOfFlowData) {
     aBuilder->SetBuildingInvisibleItems(false);
 
-    nsIFrame* scrollsWithAnchor = nullptr;
-    if (aBuilder->IsPaintingToWindow() &&
-        
-        
-        
-        !aBuilder->IsInViewTransitionCapture() &&
-        child->IsAbsolutelyPositioned(disp) &&
-        
-        
-        
-        
-        !PresContext()->Document()->GetActiveViewTransition()) {
-      scrollsWithAnchor = AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(
-          child, aBuilder);
-
-      if (scrollsWithAnchor && aBuilder->IsRetainingDisplayList()) {
-        if (aBuilder->IsPartialUpdate()) {
-          aBuilder->SetPartialBuildFailed(true);
-        } else {
-          aBuilder->SetDisablePartialUpdates(true);
-        }
-      }
-    }
-
     const ActiveScrolledRoot* asr =
         savedOutOfFlowData->mContainingBlockActiveScrolledRoot;
 
@@ -4669,12 +4645,8 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
     }
 #endif
 
-    if (scrollsWithAnchor) {
-      asr = DisplayPortUtils::ActivateDisplayportOnASRAncestors(
-          scrollsWithAnchor, child->GetParent(), asr, aBuilder);
-
-      
-      
+    if (child->IsAbsolutelyPositioned(disp)) {
+      asr = DisplayPortUtils::GetASRForAbsPosFrame(child, asr, aBuilder);
     }
 
     if (aBuilder->IsInViewTransitionCapture()) {
