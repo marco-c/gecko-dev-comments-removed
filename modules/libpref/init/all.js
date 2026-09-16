@@ -4120,7 +4120,13 @@ pref("extensions.formautofill.addresses.storage.rust.enabled", false);
 pref("extensions.formautofill.addresses.storage.rust.active", false);
 
 
-pref("extensions.formautofill.addresses.storage.rust.runMigrationTest", false);
+
+
+#ifdef NIGHTLY_BUILD
+  pref("extensions.formautofill.addresses.storage.rust.runMigrationTest", true);
+#else
+  pref("extensions.formautofill.addresses.storage.rust.runMigrationTest", false);
+#endif
 
 
 pref("extensions.formautofill.addresses.storage.rust.migrationTestVersion", 0);

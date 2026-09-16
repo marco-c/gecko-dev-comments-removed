@@ -217,7 +217,7 @@ function diffRecords(a, b) {
 
 async function setupStorageWithFullRecords(fileName, records) {
   Services.prefs.setBoolPref(ENABLED_PREF, false);
-  Services.prefs.clearUserPref(TEST_MODE_PREF);
+  Services.prefs.setBoolPref(TEST_MODE_PREF, false);
   Services.prefs.clearUserPref(ACTIVE_PREF);
   Services.prefs.clearUserPref(TEST_VERSION_PREF);
   Services.prefs.clearUserPref(ATTEMPTS_PREF);
@@ -362,6 +362,29 @@ add_task(async function test_dry_run_measures_and_then_undoes_itself() {
   
   s = await restart(s);
   Assert.equal(migrationEvents().length, 1, "the dry run does not repeat");
+
+  await s._finalize();
+});
+
+add_task(async function test_a_measured_profile_leaves_the_store_shut() {
+  
+  
+  
+  
+  let { s } = await setupStorageWithRecords("mig-dryrun-once.json", ["Once"]);
+
+  s = await restart(s, { [TEST_MODE_PREF]: true });
+  Assert.equal(migrationEvents().length, 1, "the dry run ran");
+
+  RustAutofillAddressesAdapter._instance = null;
+  s = await restart(s);
+
+  Assert.equal(migrationEvents().length, 1, "the next launch does not measure");
+  Assert.equal(
+    RustAutofillAddressesAdapter._instance,
+    null,
+    "and never opens the Rust store"
+  );
 
   await s._finalize();
 });
