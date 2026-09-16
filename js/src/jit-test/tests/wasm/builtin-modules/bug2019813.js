@@ -1,3 +1,5 @@
+
+
 const bytes = wasmTextToBinary(`(module
   (import "wasm:js-string" "length" (func (param externref) (result i32)))
   (import "m" "mem" (memory 0))

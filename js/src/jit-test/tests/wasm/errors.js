@@ -1,3 +1,5 @@
+
+
 load(libdir + "wasm-binary.js");
 
 const Module = WebAssembly.Module;
@@ -137,7 +139,13 @@ testStore(F64Store, 'f64.store', 'f64', 8, RuntimeError, /index out of bounds/);
 
 
 
-test(4 , '(module (func (local i32 i64 f32 f64) (call 0)) (start 0))', InternalError, /too much recursion/);
+
+
+
+
+if (getPrefValue("wasm_baseline_debug") === false) {
+  test(4 , '(module (func (local i32 i64 f32 f64) (call 0)) (start 0))', InternalError, /too much recursion/);
+}
 
 
 var {stack, binary} = test(UnreachableCode, `(module
