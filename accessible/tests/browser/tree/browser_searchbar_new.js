@@ -24,12 +24,6 @@ add_setup(async function () {
   let gCUITestUtils = new CustomizableUITestUtils(window);
   searchbar = await gCUITestUtils.addSearchBar();
   registerCleanupFunction(() => gCUITestUtils.removeSearchBar());
-
-  
-  
-  
-  
-  await TestUtils.waitForCondition(() => searchbar.matches(":popover-open"));
 });
 
 
@@ -39,32 +33,22 @@ add_task(async function test_searchbar_a11y_tree() {
 
     children: [
       
+      
+
+      
       {
-        role: ROLE_SECTION,
-        children: [],
+        role: ROLE_PUSHBUTTON,
+        
       },
 
       
       {
-        role: ROLE_SECTION,
-
-        children: [
-          
-          {
-            role: ROLE_PUSHBUTTON,
-            
-          },
-
-          
-          {
-            role: ROLE_EDITCOMBOBOX,
-            children: [],
-          },
-
-          
-          
-        ],
+        role: ROLE_EDITCOMBOBOX,
+        children: [],
       },
+
+      
+      
     ],
   });
 });
@@ -86,40 +70,30 @@ add_task(async function test_searchbar_a11y_tree_with_results() {
 
     children: [
       
+      
+
+      
       {
-        role: ROLE_SECTION,
-        children: [],
+        role: ROLE_PUSHBUTTON,
+        
       },
 
       
       {
-        role: ROLE_SECTION,
-
+        role: ROLE_EDITCOMBOBOX,
         children: [
-          
           {
-            role: ROLE_PUSHBUTTON,
-            
-          },
-
-          
-          {
-            role: ROLE_EDITCOMBOBOX,
-            children: [
-              {
-                role: ROLE_TEXT_LEAF,
-                name: "example",
-                children: [],
-              },
-            ],
-          },
-
-          
-          {
-            role: ROLE_PUSHBUTTON,
+            role: ROLE_TEXT_LEAF,
+            name: "example",
             children: [],
           },
         ],
+      },
+
+      
+      {
+        role: ROLE_PUSHBUTTON,
+        children: [],
       },
 
       

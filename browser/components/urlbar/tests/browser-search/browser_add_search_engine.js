@@ -303,14 +303,7 @@ add_task(async function context_after_customize() {
     gCustomizeMode.exit();
     await promise;
 
-    
-    
-    
-    await TestUtils.waitForCondition(() => {
-      return window.gURLBar.parentNode.style.getPropertyValue(
-        "--urlbar-container-height"
-      );
-    });
+    await window.promiseDocumentFlushed(() => {});
 
     await UrlbarTestUtils.withContextMenu(window, async popup => {
       info("The separator and the add engine item should be present.");

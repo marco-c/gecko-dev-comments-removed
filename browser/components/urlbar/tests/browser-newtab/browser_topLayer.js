@@ -16,13 +16,13 @@ add_setup(async function () {
   });
 });
 
-add_task(async function topLayerFollowsTheViewAndFocus() {
+add_task(async function topLayerFollowsTheView() {
   let tab = await NewtabSearchbarTestUtils.openNewTabPage();
   let browser = tab.linkedBrowser;
 
   Assert.ok(
     !(await NewtabSearchbarTestUtils.getState(browser)).popoverOpen,
-    "a closed bar is ordinary page content"
+    "a closed view is ordinary page content"
   );
 
   await NewtabSearchbarTestUtils.promiseAutocompleteResultPopup({
@@ -31,27 +31,31 @@ add_task(async function topLayerFollowsTheViewAndFocus() {
   });
   let state = await NewtabSearchbarTestUtils.getState(browser);
   Assert.ok(state.viewVisible, "the view is painted");
-  Assert.ok(state.popoverOpen, "an open bar is in the top layer");
+  Assert.ok(state.popoverOpen, "an open view is in the top layer");
 
   await NewtabSearchbarTestUtils.blur(browser);
   await NewtabSearchbarTestUtils.waitForViewClosed(browser);
   Assert.ok(
     !(await NewtabSearchbarTestUtils.getState(browser)).popoverOpen,
-    "the bar gives the top layer back"
+    "the view gives the top layer back"
   );
 
   BrowserTestUtils.removeTab(tab);
 });
 
-add_task(async function modalDialogTakesTheFocus() {
+add_task(async function focusAloneStaysOutOfTheTopLayer() {
   let tab = await NewtabSearchbarTestUtils.openNewTabPage();
 
   await NewtabSearchbarTestUtils.spawn(tab.linkedBrowser, [], async () => {
     let utils = NewtabSearchbarContentTestUtils;
     utils.getUrlbar(content).focus();
     await ContentTaskUtils.waitForCondition(
-      () => utils.getState(content).popoverOpen,
-      "a focused bar is in the top layer"
+      () => utils.getState(content).focused,
+      "the bar takes focus"
+    );
+    Assert.ok(
+      !utils.getState(content).popoverOpen,
+      "focus alone puts nothing in the top layer"
     );
 
     let dialog = content.document.body.appendChild(
@@ -60,7 +64,7 @@ add_task(async function modalDialogTakesTheFocus() {
     dialog.showModal();
     Assert.ok(
       !utils.getState(content).popoverOpen,
-      "the dialog takes the focus, and the bar gives the top layer back"
+      "the dialog paints over a bar that was never above it"
     );
     dialog.remove();
   });
