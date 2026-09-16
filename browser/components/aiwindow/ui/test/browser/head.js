@@ -1,6 +1,10 @@
 
 
 
+
+
+
+
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
@@ -10,6 +14,7 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs",
   AIWindowAccountAuth:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowAccountAuth.sys.mjs",
+  AIWindowTestUtils: "resource://testing-common/AIWindowTestUtils.sys.mjs",
   Chat: "moz-src:///browser/components/aiwindow/models/Chat.sys.mjs",
   ChatConversation:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs",
@@ -35,6 +40,7 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 SearchTestUtils.init(this);
+AIWindowTestUtils.init(this, window);
 
 const { _setLoadPromptForTesting } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs"
@@ -59,16 +65,41 @@ const { _clearDismissedResumeMemoriesForTesting } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/ResumeActivityDismissals.sys.mjs"
 );
 
-
-
-
-
 async function modelFor(choiceId) {
   return (await getModelForChoice(choiceId)).model;
 }
 
 const AIWINDOW_URL = "chrome://browser/content/aiwindow/aiWindow.html";
 const FIRSTRUN_URL = "chrome://browser/content/aiwindow/firstrun.html";
+
+
+function openAIWindow(options) {
+  return AIWindowTestUtils.openReadyAIWindow(options);
+}
+
+function getAichatBrowser(browser) {
+  return AIWindowTestUtils.getAichatBrowser(browser);
+}
+
+function selectExplicitSmartbarAction(browser, action) {
+  return AIWindowTestUtils.selectExplicitSmartbarAction(browser, action);
+}
+
+function waitForSmartbarAction(browser, expectedAction) {
+  return AIWindowTestUtils.waitForSmartbarAction(browser, expectedAction);
+}
+
+function startMockOpenAI(options) {
+  return AIWindowTestUtils.startMockOpenAI(options);
+}
+
+function stopMockOpenAI(server) {
+  return AIWindowTestUtils.stopMockOpenAI(server);
+}
+
+function withServer(serverOptions, task) {
+  return AIWindowTestUtils.withServer(serverOptions, task);
+}
 
 let gIntentEngineStub;
 
@@ -347,30 +378,6 @@ add_setup(async function () {
     _setLoadPromptForTesting(null);
   });
 });
-
-
-
-
-
-
-
-
-async function openAIWindow({ waitForTabURL = AIWINDOW_URL } = {}) {
-  info("Opening new AI Window");
-  const win = await BrowserTestUtils.openNewBrowserWindow({
-    aiWindow: true,
-    waitForTabURL,
-  });
-  info("Waiting for AI window attr");
-  await BrowserTestUtils.waitForMutationCondition(
-    win.document.documentElement,
-    { attributes: true },
-    () => win.document.documentElement.hasAttribute("ai-window")
-  );
-  info("Promising focus");
-  await SimpleTest.promiseFocus(win);
-  return win;
-}
 
 
 
@@ -974,42 +981,6 @@ async function submitSmartbar(browser, { useButton = false } = {}) {
 
 
 
-
-async function selectExplicitSmartbarAction(browser, action) {
-  await SpecialPowers.spawn(browser, [action], async actionType => {
-    const aiWindow = content.document.querySelector("ai-window");
-    await ContentTaskUtils.waitForMutationCondition(
-      aiWindow.shadowRoot,
-      { childList: true, subtree: true },
-      () => aiWindow.shadowRoot.querySelector("#ai-window-smartbar")
-    );
-    const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
-    const inputCta = smartbar.querySelector("input-cta");
-    const mozButton = inputCta.shadowRoot.querySelector("moz-button");
-
-    await ContentTaskUtils.waitForMutationCondition(
-      mozButton.shadowRoot,
-      { childList: true, subtree: true },
-      () => mozButton.shadowRoot.querySelector("#chevron-button")
-    );
-    const chevronButton = mozButton.shadowRoot.querySelector("#chevron-button");
-    const panelList = inputCta.shadowRoot.querySelector("panel-list");
-    const shownPromise = ContentTaskUtils.waitForEvent(panelList, "shown");
-    chevronButton.click();
-    await shownPromise;
-
-    const actionItem = panelList.querySelector(
-      `panel-item[icon="${actionType}"]`
-    );
-    actionItem.click();
-  });
-}
-
-
-
-
-
-
 async function selectSmartbarSearchEngine(browser) {
   const inputCta = BrowserTestUtils.querySelectorDeep(
     browser.contentDocument,
@@ -1035,28 +1006,6 @@ async function selectSmartbarSearchEngine(browser) {
     searchSubpanel.querySelector('panel-item[icon="engine"]')
   );
   engineItem.click();
-}
-
-
-
-
-
-
-
-async function waitForSmartbarAction(browser, expectedAction) {
-  await SpecialPowers.spawn(browser, [expectedAction], async action => {
-    const aiWindow = content.document.querySelector("ai-window");
-    await ContentTaskUtils.waitForMutationCondition(
-      aiWindow.shadowRoot,
-      { childList: true, subtree: true },
-      () => aiWindow.shadowRoot.querySelector("#ai-window-smartbar")
-    );
-    const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
-    await ContentTaskUtils.waitForCondition(
-      () => smartbar.smartbarAction === action,
-      `Wait for smartbar action to be "${action}"`
-    );
-  });
 }
 
 
@@ -1700,250 +1649,6 @@ async function checkForNumberOfElementsInChatMessage(
 
 
 
-const { HttpServer } = ChromeUtils.importESModule(
-  "resource://testing-common/httpd.sys.mjs"
-);
-
-function readRequestBody(request) {
-  const stream = request.bodyInputStream;
-  const available = stream.available();
-  return NetUtil.readInputStreamToString(stream, available, {
-    charset: "UTF-8",
-  });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function startMockOpenAI({
-  streamChunks = ["Hello from mock."],
-  streamChunkDelayMs = 0,
-  toolCall = null,
-  followupChunks = ["Tool complete."],
-  onRequest,
-} = {}) {
-  const server = new HttpServer();
-
-  server.registerPathHandler("/v1/chat/completions", (request, response) => {
-    let bodyText = "";
-    if (request.method === "POST") {
-      try {
-        bodyText = readRequestBody(request);
-      } catch (_) {}
-    }
-
-    let body;
-    try {
-      body = JSON.parse(bodyText || "{}");
-    } catch (_) {
-      body = {};
-    }
-
-    onRequest?.(body);
-
-    const wantsStream = !!body.stream;
-    const tools = Array.isArray(body.tools) ? body.tools : [];
-    const askedForTools = tools.length;
-    const messages = Array.isArray(body.messages) ? body.messages : [];
-    const hasToolResult = messages.some(m => m && m.role === "tool");
-    const timestamp = Math.floor(Date.now() / 1000);
-
-    const startSSE = () => {
-      response.setStatusLine(request.httpVersion, 200, "OK");
-      response.setHeader(
-        "Content-Type",
-        "text/event-stream; charset=utf-8",
-        false
-      );
-      response.setHeader("Cache-Control", "no-cache", false);
-      response.setHeader("Access-Control-Allow-Origin", "*", false);
-      response.processAsync();
-    };
-
-    const sendSSE = obj => {
-      
-      response.write(
-        Array.from(
-          new TextEncoder().encode(`data: ${JSON.stringify(obj)}\n\n`),
-          b => String.fromCharCode(b)
-        ).join("")
-      );
-    };
-
-    if (wantsStream && toolCall && askedForTools && !hasToolResult) {
-      startSSE();
-
-      sendSSE({
-        id: "chatcmpl-aiwindow-stream-tool-1",
-        object: "chat.completion.chunk",
-        created: timestamp,
-        model: "aiwindow-mock",
-        choices: [
-          {
-            index: 0,
-            delta: {
-              content: "",
-              tool_calls: [
-                {
-                  index: 0,
-                  id: "call_1",
-                  type: "function",
-                  function: {
-                    name: toolCall.name,
-                    arguments: toolCall.args ?? "{}",
-                  },
-                },
-              ],
-            },
-            finish_reason: null,
-          },
-        ],
-      });
-
-      sendSSE({
-        id: "chatcmpl-aiwindow-stream-tool-2",
-        object: "chat.completion.chunk",
-        created: timestamp,
-        model: "aiwindow-mock",
-        choices: [{ index: 0, delta: {}, finish_reason: "tool_calls" }],
-      });
-
-      response.write("data: [DONE]\n\n");
-      response.finish();
-      return;
-    }
-
-    if (wantsStream && toolCall && askedForTools && hasToolResult) {
-      startSSE();
-
-      followupChunks.forEach((chunk, index) => {
-        sendSSE({
-          id: `chatcmpl-aiwindow-stream-tool-followup-${index}`,
-          object: "chat.completion.chunk",
-          created: timestamp,
-          model: "aiwindow-mock",
-          choices: [
-            {
-              index: 0,
-              delta: { content: chunk },
-              finish_reason:
-                index === followupChunks.length - 1 ? "stop" : null,
-            },
-          ],
-        });
-      });
-
-      response.write("data: [DONE]\n\n");
-      response.finish();
-      return;
-    }
-
-    if (wantsStream) {
-      startSSE();
-
-      (async () => {
-        for (const [index, chunk] of streamChunks.entries()) {
-          if (streamChunkDelayMs) {
-            await new Promise(resolve =>
-              setTimeout(resolve, streamChunkDelayMs)
-            );
-          }
-          sendSSE({
-            id: `chatcmpl-aiwindow-stream-${index}`,
-            object: "chat.completion.chunk",
-            created: timestamp,
-            model: "aiwindow-mock",
-            choices: [
-              {
-                index: 0,
-                delta: { content: chunk },
-                finish_reason:
-                  index === streamChunks.length - 1 ? "stop" : null,
-              },
-            ],
-          });
-        }
-
-        response.write("data: [DONE]\n\n");
-        response.finish();
-      })();
-      return;
-    }
-
-    
-    response.setStatusLine(request.httpVersion, 200, "OK");
-    response.setHeader("Content-Type", "application/json", false);
-    response.write(
-      JSON.stringify({
-        id: "chatcmpl-aiwindow-non-stream",
-        object: "chat.completion",
-        created: timestamp,
-        model: "aiwindow-mock",
-        choices: [
-          {
-            index: 0,
-            message: { role: "assistant", content: "Mock response" },
-            finish_reason: "stop",
-          },
-        ],
-      })
-    );
-  });
-
-  server.start(-1);
-  return { server, port: server.identity.primaryPort };
-}
-
-
-
-
-
-
-
-function stopMockOpenAI(server) {
-  return new Promise(resolve => server.stop(resolve));
-}
-
-
-
-
-
 
 
 
@@ -1989,77 +1694,4 @@ async function getUserMessageChipLabels(sidebarBrowser, messageIndex = 0) {
       chip => chip.shadowRoot?.querySelector(".chip-label")?.textContent ?? ""
     );
   });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function withServer(serverOptions, task) {
-  const { server, port } = startMockOpenAI(serverOptions);
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.smartwindow.endpoint", `http://localhost:${port}/v1`],
-      ["browser.smartwindow.customEndpoint", `http://localhost:${port}/v1`],
-    ],
-  });
-
-  const getFxAccountTokenStub = sinon
-    .stub(openAIEngine, "getFxAccountToken")
-    .resolves("mock-fxa-token");
-
-  try {
-    await task({ port });
-  } finally {
-    getFxAccountTokenStub.restore();
-    await SpecialPowers.popPrefEnv();
-    await stopMockOpenAI(server);
-  }
-}
-
-
-
-
-
-
-
-async function getAichatBrowser(browser) {
-  const aiWindowEl = await TestUtils.waitForCondition(
-    () => browser.contentDocument?.querySelector("ai-window"),
-    "Wait for ai-window element to exist"
-  );
-
-  await TestUtils.waitForCondition(
-    () => aiWindowEl.shadowRoot,
-    "Wait for ai-window shadowRoot to be ready"
-  );
-
-  const aichatBrowser = await TestUtils.waitForCondition(
-    () => aiWindowEl.shadowRoot.querySelector("#aichat-browser"),
-    "Wait for aichat-browser element"
-  );
-
-  if (aichatBrowser.currentURI?.spec !== "about:aichatcontent") {
-    await BrowserTestUtils.browserLoaded(
-      aichatBrowser,
-      false,
-      "about:aichatcontent"
-    );
-  }
-
-  Assert.equal(
-    aichatBrowser.currentURI.spec,
-    "about:aichatcontent",
-    "aichat-browser should be loaded with about:aichatcontent"
-  );
-
-  return aichatBrowser;
 }
