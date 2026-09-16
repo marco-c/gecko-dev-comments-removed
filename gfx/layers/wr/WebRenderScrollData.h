@@ -97,7 +97,6 @@ class WebRenderLayerScrollData final {
     return mRemoteDocumentSize;
   }
   void SetReferentId(LayersId aReferentId) { mReferentId = Some(aReferentId); }
-  void ClearReferentId() { mReferentId = Nothing(); }
   Maybe<LayersId> GetReferentId() const { return mReferentId; }
 
   void SetScrollbarData(const ScrollbarData& aData) { mScrollbarData = aData; }
@@ -242,7 +241,7 @@ class WebRenderScrollData {
   
   
   
-  bool ValidateShape() const;
+  bool Validate() const;
 
   WebRenderLayerManager* GetManager() const;
 
