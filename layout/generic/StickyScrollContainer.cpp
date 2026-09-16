@@ -428,10 +428,8 @@ void StickyScrollContainer::PositionContinuations(nsIFrame* aFrame) {
   NS_ASSERTION(nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(aFrame),
                "Should be starting from the first continuation");
   bool hadProperty;
-  nsPoint translation =
-      ComputePosition(aFrame) - aFrame->GetNormalPosition(&hadProperty);
-  if (NS_WARN_IF(!hadProperty)) {
-    
+  const nsPoint normalPosition = aFrame->GetNormalPosition(&hadProperty);
+  if (!hadProperty) {
     
     
     
@@ -439,6 +437,7 @@ void StickyScrollContainer::PositionContinuations(nsIFrame* aFrame) {
   }
 
   
+  const nsPoint translation = ComputePosition(aFrame) - normalPosition;
   for (nsIFrame* cont = aFrame; cont;
        cont = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
     cont->SetPosition(cont->GetNormalPosition() + translation);
