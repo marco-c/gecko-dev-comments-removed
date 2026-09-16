@@ -44,9 +44,6 @@ char kTSanDefaultSuppressions[] =
     "race:libpulsecommon*.so\n"
 
     
-    "race:absl::synchronization_internal::Waiter::Post\n"
-
-    
     ;  
 
 #endif  
