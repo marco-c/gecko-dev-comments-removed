@@ -607,7 +607,8 @@ class StyleRuleActor extends Actor {
             registeredProperty &&
             
             
-            
+            !decl.value.includes("attr(") &&
+            !decl.value.includes("env(") &&
             !decl.value.includes("var(") &&
             !InspectorUtils.valueMatchesSyntax(
               targetDocument,
