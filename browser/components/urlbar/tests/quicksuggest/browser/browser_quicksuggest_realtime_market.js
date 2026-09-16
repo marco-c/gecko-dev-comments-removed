@@ -271,17 +271,52 @@ add_task(async function activate() {
       gBrowser,
       expectedURL
     );
-    await EventUtils.synthesizeMouseAtCenter(
-      items[i],
-      {},
-      items[i].documentGlobal
-    );
+    EventUtils.synthesizeMouseAtCenter(items[i], {}, items[i].documentGlobal);
     await onLocationChange;
     Assert.ok(true, `Expected URL is loaded [${expectedURL}]`);
 
     await UrlbarTestUtils.promisePopupClose(window);
     gURLBar.handleRevert();
   }
+});
+
+
+
+add_task(async function noInputHistory() {
+  MerinoTestUtils.server.response.body.suggestions = TEST_MERINO_SINGLE;
+
+  let sandbox = sinon.createSandbox();
+  let addToInputHistorySpy = sandbox.spy(UrlbarUtils, "addToInputHistory");
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "only match the Merino suggestion",
+  });
+  let { element, result } = await UrlbarTestUtils.getDetailsOfResultAt(
+    window,
+    1
+  );
+  Assert.ok(result.payload.engine, "The result carries an engine");
+
+  let { query } = TEST_MERINO_SINGLE[0].custom_details.polygon.values[0];
+  let urlParam = new URLSearchParams({ q: query });
+  let onLocationChange = BrowserTestUtils.waitForLocationChange(
+    gBrowser,
+    `https://example.com/?${urlParam}`
+  );
+  let item = element.row.querySelector(".urlbarView-realtime-item");
+  EventUtils.synthesizeMouseAtCenter(item, {}, item.documentGlobal);
+  await onLocationChange;
+
+  Assert.equal(
+    addToInputHistorySpy.getCalls().length,
+    0,
+    "UrlbarUtils.addToInputHistory() not called"
+  );
+
+  sandbox.restore();
+  await UrlbarTestUtils.promisePopupClose(window);
+  gURLBar.handleRevert();
 });
 
 function assertItemUI(item, expected) {
