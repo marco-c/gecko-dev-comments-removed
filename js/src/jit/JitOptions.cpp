@@ -394,10 +394,6 @@ DefaultJitOptions::DefaultJitOptions() {
   
 
   
-  SET_DEFAULT(js_regexp_modifiers, true);
-  
-  SET_DEFAULT(js_regexp_duplicate_named_groups, true);
-  
   
   
   SET_DEFAULT(js_regexp_buffer_boundaries, false);
