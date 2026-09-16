@@ -3532,9 +3532,6 @@ pref("first-startup.category-tasks-enabled", true);
   
   pref("app.backgroundNotifications.receivePushMessages.perMessageTimeoutMs", 5000);
   pref("app.backgroundNotifications.receivePushMessages.totalTimeoutMs", 60000);
-
-  
-  pref("app.backgroundNotifications.helper.enabled", false);
 #endif
 
 
