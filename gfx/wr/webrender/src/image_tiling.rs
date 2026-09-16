@@ -8,16 +8,6 @@ use crate::segment::EdgeMask;
 use euclid::{point2, size2};
 use std::ops::Range;
 
-
-
-
-
-
-
-
-
-pub use api::prim_geometry::simplify_repeated_primitive;
-
 pub struct Repetition {
     pub origin: LayoutPoint,
     pub edge_flags: EdgeMask,

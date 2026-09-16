@@ -48,9 +48,9 @@ use api::{ReferenceTransformBinding, Rotation, FillRule, SpatialTreeItem, Refere
 use api::{FilterOpGraphPictureBufferId, SVGFE_GRAPH_MAX};
 use api::channel::{unbounded_channel, Receiver, Sender};
 use api::units::*;
-use crate::image_tiling::simplify_repeated_primitive;
 use api::prim_geometry::{
-    conic_gradient_prim, linear_gradient_prim, radial_gradient_prim,
+    conic_gradient_prim, image_stretch_size, linear_gradient_prim, radial_gradient_prim,
+    simplify_repeated_primitive,
 };
 use crate::box_shadow::BLUR_SAMPLE_SCALE;
 use crate::clip::{ClipIntern, ClipItemKey, ClipItemKeyKind, ClipStore};
@@ -91,7 +91,6 @@ use crate::spatial_node::{
     ReferenceFrameInfo, StickyFrameInfo, ScrollFrameKind, SpatialNodeType
 };
 use crate::tile_cache::TileCacheBuilder;
-use euclid::approxeq::ApproxEq;
 use std::mem;
 use std::sync::Arc;
 use crate::util::{VecHelper, MaxRect};
@@ -1371,7 +1370,7 @@ impl<'a> SceneBuilder<'a> {
                     info.bounds,
                 );
 
-                let stretch_size = process_image_stretch_size(
+                let stretch_size = image_stretch_size(
                     &layout.rect,
                     info.stretch_size,
                 );
@@ -2952,13 +2951,8 @@ impl<'a> SceneBuilder<'a> {
         let mut prim_rect = info.rect;
         
         
-        let prim_size = prim_rect.size();
-        let stored: LayoutSize = stretch_size.size.into();
-        let stretch_size_for_simplify = LayoutSize::new(
-            if stretch_size.fills_width { prim_size.width } else { stored.width },
-            if stretch_size.fills_height { prim_size.height } else { stored.height },
-        );
-        simplify_repeated_primitive(&stretch_size_for_simplify, &mut tile_spacing, &mut prim_rect);
+        let stretch = stretch_size.resolve(&prim_rect);
+        simplify_repeated_primitive(&stretch, &mut tile_spacing, &mut prim_rect);
         let info = LayoutPrimitiveInfo {
             rect: prim_rect,
             .. *info
@@ -3966,33 +3960,6 @@ fn filter_datas_for_compositing(
         });
     }
     filter_datas
-}
-
-
-
-
-
-
-
-
-fn process_image_stretch_size(
-    unsnapped_rect: &LayoutRect,
-    repeat_size: LayoutSize,
-) -> StretchSizeKey {
-    const EPSILON: f32 = 0.001;
-    let fills_width = repeat_size.width.approx_eq_eps(&unsnapped_rect.width(), &EPSILON);
-    let fills_height = repeat_size.height.approx_eq_eps(&unsnapped_rect.height(), &EPSILON);
-    
-    
-    let stored = LayoutSize::new(
-        if fills_width { 0.0 } else { repeat_size.width },
-        if fills_height { 0.0 } else { repeat_size.height },
-    );
-    StretchSizeKey {
-        size: stored.into(),
-        fills_width,
-        fills_height,
-    }
 }
 
 

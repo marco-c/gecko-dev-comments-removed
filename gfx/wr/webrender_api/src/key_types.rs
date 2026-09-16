@@ -490,6 +490,16 @@ impl StretchSizeKey {
             fills_height: true,
         }
     }
+
+    
+    
+    pub fn resolve(&self, prim_rect: &LayoutRect) -> LayoutSize {
+        let stored: LayoutSize = self.size.into();
+        LayoutSize::new(
+            if self.fills_width { prim_rect.width() } else { stored.width },
+            if self.fills_height { prim_rect.height() } else { stored.height },
+        )
+    }
 }
 
 
