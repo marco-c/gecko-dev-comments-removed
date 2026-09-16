@@ -27,19 +27,6 @@ function getCustomPropertyPx(win, el, name) {
 
 
 
-
-function getBlockRadius(win) {
-  return getCustomPropertyPx(
-    win,
-    win.document.documentElement,
-    "--chrome-block-radius"
-  );
-}
-
-
-
-
-
 function getContentCornerRadius(win) {
   return getCustomPropertyPx(
     win,
@@ -272,7 +259,6 @@ const CORNER_RADIUS_PROPS = [
 
 
 
-
 function assertSplitViewPanels(win, label) {
   let tabpanels = win.document.getElementById("tabbrowser-tabpanels");
   let panels = [
@@ -294,9 +280,11 @@ function assertSplitViewPanels(win, label) {
   for (let panel of panels) {
     let container = panel.querySelector(".browserContainer");
     let style = win.getComputedStyle(container);
-    let expected = NOVA_ENABLED
-      ? getBlockRadius(win)
-      : getCustomPropertyPx(win, container, "--border-radius-medium");
+    let expected = getCustomPropertyPx(
+      win,
+      container,
+      "--border-radius-medium"
+    );
     for (let prop of CORNER_RADIUS_PROPS) {
       Assert.equal(
         parseFloat(style[prop]) || 0,
