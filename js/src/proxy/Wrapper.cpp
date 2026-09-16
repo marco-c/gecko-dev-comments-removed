@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/Wrapper.h"
 
 #include "js/CallAndConstruct.h"      
@@ -314,10 +312,8 @@ JSObject* Wrapper::wrappedObject(JSObject* wrapper) {
 }
 
 JS_PUBLIC_API JSObject* js::UncheckedUnwrapWithoutExpose(JSObject* wrapped) {
-  while (true) {
-    if (!wrapped->is<WrapperObject>() || MOZ_UNLIKELY(IsWindowProxy(wrapped))) {
-      break;
-    }
+  while (wrapped && wrapped->is<WrapperObject>() &&
+         MOZ_LIKELY(!IsWindowProxy(wrapped))) {
     wrapped = wrapped->as<WrapperObject>().target();
 
     
