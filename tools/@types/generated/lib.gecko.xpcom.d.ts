@@ -22117,6 +22117,22 @@ interface nsINativeMessagingPortal extends nsISupports {
 
 
 
+interface nsINativeMessagingProxy extends nsISupports {
+  
+  shouldUse(): boolean;
+  
+  readonly available: Promise<any>;
+  
+  closeSession(aHandle: string): Promise<any>;
+  
+  getManifest(aName: string, aExtension: string): Promise<any>;
+  
+  start(aName: string, aExtension: string): Promise<any>;
+}
+
+
+
+
 interface nsIWebVTTListener extends nsISupports {
   
   onCue(cue: any): void;
@@ -27412,6 +27428,7 @@ interface nsIXPCComponents_Interfaces {
   mozIExtensionAPIRequestHandler: nsJSIID<mozIExtensionAPIRequestHandler>;
   mozIExtensionProcessScript: nsJSIID<mozIExtensionProcessScript>;
   nsINativeMessagingPortal: nsJSIID<nsINativeMessagingPortal>;
+  nsINativeMessagingProxy: nsJSIID<nsINativeMessagingProxy>;
   nsIWebVTTListener: nsJSIID<nsIWebVTTListener>;
   nsIWebVTTParserWrapper: nsJSIID<nsIWebVTTParserWrapper>;
   nsIBaseWindow: nsJSIID<nsIBaseWindow>;
