@@ -492,13 +492,17 @@ std::vector<SdpExtmapAttributeList::Extmap> JsepSessionImpl::GetRtpExtensions(
       break;
     case SdpMediaSection::kVideo:
       mediaType = JsepMediaType::kVideo;
-      
-      if (includes_send && StaticPrefs::media_peerconnection_video_use_dd() &&
-          msection.GetAttributeList().HasAttribute(
-              SdpAttribute::kSimulcastAttribute)) {
+      if (StaticPrefs::media_peerconnection_video_use_dd()) {
+        
+        
+        
+        const bool sendSimulcast =
+            includes_send && msection.GetAttributeList().HasAttribute(
+                                 SdpAttribute::kSimulcastAttribute);
         AddVideoRtpExtension(
             nsLiteralCString(webrtc::RtpExtension::kDependencyDescriptorUri),
-            SdpDirectionAttribute::kSendonly);
+            sendSimulcast ? SdpDirectionAttribute::kSendrecv
+                          : SdpDirectionAttribute::kRecvonly);
       }
       if (msection.GetAttributeList().HasAttribute(
               SdpAttribute::kRidAttribute)) {
