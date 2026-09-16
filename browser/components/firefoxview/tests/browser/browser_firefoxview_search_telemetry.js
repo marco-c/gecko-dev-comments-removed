@@ -27,10 +27,6 @@ const cleanUp = () => {
 };
 
 add_setup(async () => {
-  await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  });
-
   gInitialTab = gBrowser.selectedTab;
   gInitialTabURL = gBrowser.selectedBrowser.currentURI.spec;
   registerCleanupFunction(async () => {
@@ -350,7 +346,7 @@ add_task(async function test_sort_history_search_telemetry() {
     }, "There is one matching search result.");
     Services.fog.testResetFOG();
     
-    await EventUtils.synthesizeMouseAtCenter(
+    EventUtils.synthesizeMouseAtCenter(
       historyComponent.sortInputs[1],
       {},
       content
@@ -369,7 +365,7 @@ add_task(async function test_sort_history_search_telemetry() {
     Services.fog.testResetFOG();
 
     
-    await EventUtils.synthesizeMouseAtCenter(
+    EventUtils.synthesizeMouseAtCenter(
       historyComponent.sortInputs[0],
       {},
       content

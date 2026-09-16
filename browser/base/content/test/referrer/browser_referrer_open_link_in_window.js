@@ -25,11 +25,6 @@ function startNewWindowTestCase(aTestNumber) {
 function test() {
   waitForExplicitFinish();
 
-  SpecialPowers.pushPrefEnv(
-    { set: [["test.wait300msAfterTabSwitch", true]] },
-    function () {
-      requestLongerTimeout(10); 
-      startReferrerTest(startNewWindowTestCase);
-    }
-  );
+  requestLongerTimeout(10); 
+  startReferrerTest(startNewWindowTestCase);
 }

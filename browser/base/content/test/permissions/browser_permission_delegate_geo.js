@@ -117,7 +117,6 @@ add_setup(async function () {
     SpecialPowers.pushPrefEnv(
       {
         set: [
-          ["test.wait300msAfterTabSwitch", true],
           ["dom.security.featurePolicy.header.enabled", true],
           ["dom.security.featurePolicy.webidl.enabled", true],
           

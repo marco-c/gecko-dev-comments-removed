@@ -9,10 +9,6 @@ let gInitialTab;
 let gInitialTabURL;
 
 add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  });
-
   
   requestLongerTimeout(3);
   gInitialTab = gBrowser.selectedTab;

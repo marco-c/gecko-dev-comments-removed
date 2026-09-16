@@ -27,10 +27,7 @@ const bookmarksInfo = [
 
 add_task(async function test_bookmarks_toolbar_telemetry() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["test.wait300msAfterTabSwitch", true],
-      ["browser.toolbars.bookmarks.visibility", "newtab"],
-    ],
+    set: [["browser.toolbars.bookmarks.visibility", "newtab"]],
   });
 
   

@@ -7,7 +7,6 @@ add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.urlbar.trustPanel.featureGate", false],
-      ["test.wait300msAfterTabSwitch", true],
       
       
       [SEC_DELAY_PREF, 1000],
@@ -98,7 +97,7 @@ add_task(async function test_smartblock_embed_replaced() {
   );
 
   
-  await EventUtils.synthesizeMouseAtCenter(blockedEmbedToggle.buttonEl, {});
+  EventUtils.synthesizeMouseAtCenter(blockedEmbedToggle.buttonEl, {});
 
   await embedScriptFinished;
 
@@ -201,7 +200,7 @@ add_task(async function test_smartblock_embed_replaced() {
 
   
   
-  await EventUtils.synthesizeMouseAtCenter(blockedEmbedToggle.buttonEl, {});
+  EventUtils.synthesizeMouseAtCenter(blockedEmbedToggle.buttonEl, {});
 
   
   await smartblockScriptFinished;
