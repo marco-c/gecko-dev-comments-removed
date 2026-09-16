@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_quota_DecryptingInputStream_impl_h
 #define mozilla_dom_quota_DecryptingInputStream_impl_h
 
@@ -154,7 +152,7 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::ReadSegments(
 
     
     
-    uint32_t bytesRead;
+    uint32_t bytesRead = 0;
     rv = ParseNextChunk(false , &bytesRead);
     if (NS_FAILED(rv)) {
       return rv;
@@ -191,6 +189,15 @@ nsresult DecryptingInputStream<CipherStrategy>::ParseNextChunk(
   }
 
   
+  
+  
+  const size_t actualPayloadLength = mEncryptedBlock->ActualPayloadLength();
+  if (NS_WARN_IF(actualPayloadLength == 0) ||
+      NS_WARN_IF(actualPayloadLength > mEncryptedBlock->MaxPayloadLength())) {
+    return NS_ERROR_CORRUPTED_CONTENT;
+  }
+
+  
   rv = mCipherStrategy.Cipher(mEncryptedBlock->MutableCipherPrefix(),
                               mEncryptedBlock->Payload(),
                               AsWritableBytes(Span{mPlainBuffer}));
@@ -198,7 +205,7 @@ nsresult DecryptingInputStream<CipherStrategy>::ParseNextChunk(
     return rv;
   }
 
-  *aBytesReadOut = mEncryptedBlock->ActualPayloadLength();
+  *aBytesReadOut = actualPayloadLength;
 
   return NS_OK;
 }
@@ -330,7 +337,7 @@ nsresult DecryptingInputStream<CipherStrategy>::EnsureDecryptedStreamSize() {
       return Err(rv);
     }
 
-    uint32_t bytesRead;
+    uint32_t bytesRead = 0;
     rv = ParseNextChunk(true , &bytesRead);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return Err(rv);
