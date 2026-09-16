@@ -204,11 +204,6 @@ var allowlist = [
 
   
   {
-    file: "moz-src:///browser/components/aiwindow/ui/modules/AITabStore.sys.mjs",
-  },
-
-  
-  {
     file: "moz-src:///browser/components/aiwindow/ui/modules/ConversationStore.sys.mjs",
   },
 
