@@ -648,6 +648,14 @@ bool TextEditor::IsCopyToClipboardAllowedInternal() const {
 
   
   
+  if (const Element* const textControlElement = GetExposedRoot()) {
+    if (textControlElement->State().HasState(ElementState::REVEALED)) {
+      return true;
+    }
+  }
+
+  
+  
   if (IsAllMasked() || IsMaskingPassword() || !UnmaskedLength()) {
     return false;
   }
@@ -1014,9 +1022,17 @@ void TextEditor::MaskString(nsString& aString, const Text& aTextNode,
   MOZ_ASSERT(aTextNode.HasFlag(NS_MAYBE_MASKED));
   MOZ_ASSERT(aStartOffsetInString == 0 || aStartOffsetInText == 0);
 
-  uint32_t unmaskStart = UINT32_MAX, unmaskLength = 0;
   const TextEditor* const textEditor =
       nsContentUtils::GetExtantTextEditorFromAnonymousNode(&aTextNode);
+  if (textEditor) {
+    
+    const Element* const textControlElement = textEditor->GetExposedRoot();
+    if (textControlElement &&
+        textControlElement->State().HasState(ElementState::REVEALED)) {
+      return;
+    }
+  }
+  uint32_t unmaskStart = UINT32_MAX, unmaskLength = 0;
   if (textEditor && textEditor->UnmaskedLength() > 0) {
     unmaskStart = textEditor->UnmaskedStart();
     unmaskLength = textEditor->UnmaskedLength();
