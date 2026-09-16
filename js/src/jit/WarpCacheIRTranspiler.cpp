@@ -377,6 +377,9 @@ bool WarpCacheIRTranspiler::transpile(
   
   
   
+  
+  
+  
   MOZ_ASSERT_IF(effectful_,
                 effectful_->resumePoint() || effectful_->isIonToWasmCall() ||
                     effectful_->isLoadUnboxedScalar() ||
@@ -5241,7 +5244,7 @@ bool WarpCacheIRTranspiler::emitAtomicsCompareExchangeResult(
   auto* elements = MArrayBufferViewElements::New(alloc(), obj);
   add(elements);
 
-  bool forceDoubleForUint32 = true;
+  bool forceDoubleForUint32 = false;
   MIRType knownType =
       MIRTypeForArrayBufferViewRead(elementType, forceDoubleForUint32);
 
@@ -5254,7 +5257,10 @@ bool WarpCacheIRTranspiler::emitAtomicsCompareExchangeResult(
   if (Scalar::isBigIntType(elementType)) {
     result =
         MInt64ToBigInt::New(alloc(), cas, Scalar::isSignedIntType(elementType));
-
+  } else if (elementType == Scalar::Uint32) {
+    result = MUnsignedToDouble::New(alloc(), cas);
+  }
+  if (result != cas) {
     
     result->setNotMovable();
 
@@ -5279,7 +5285,7 @@ bool WarpCacheIRTranspiler::emitAtomicsExchangeResult(
   auto* elements = MArrayBufferViewElements::New(alloc(), obj);
   add(elements);
 
-  bool forceDoubleForUint32 = true;
+  bool forceDoubleForUint32 = false;
   MIRType knownType =
       MIRTypeForArrayBufferViewRead(elementType, forceDoubleForUint32);
 
@@ -5292,7 +5298,10 @@ bool WarpCacheIRTranspiler::emitAtomicsExchangeResult(
   if (Scalar::isBigIntType(elementType)) {
     result = MInt64ToBigInt::New(alloc(), exchange,
                                  Scalar::isSignedIntType(elementType));
-
+  } else if (elementType == Scalar::Uint32) {
+    result = MUnsignedToDouble::New(alloc(), exchange);
+  }
+  if (result != exchange) {
     
     result->setNotMovable();
 
@@ -5318,7 +5327,7 @@ bool WarpCacheIRTranspiler::emitAtomicsBinaryOp(
   auto* elements = MArrayBufferViewElements::New(alloc(), obj);
   add(elements);
 
-  bool forceDoubleForUint32 = true;
+  bool forceDoubleForUint32 = false;
   MIRType knownType =
       MIRTypeForArrayBufferViewRead(elementType, forceDoubleForUint32);
 
@@ -5338,7 +5347,10 @@ bool WarpCacheIRTranspiler::emitAtomicsBinaryOp(
   if (Scalar::isBigIntType(elementType)) {
     result = MInt64ToBigInt::New(alloc(), binop,
                                  Scalar::isSignedIntType(elementType));
-
+  } else if (elementType == Scalar::Uint32) {
+    result = MUnsignedToDouble::New(alloc(), binop);
+  }
+  if (result != binop) {
     
     result->setNotMovable();
 

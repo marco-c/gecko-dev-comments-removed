@@ -430,36 +430,19 @@ void LIRGeneratorX86Shared::lowerCompareExchangeTypedArrayElement(
   
   
   
-  
-  
-  
 
-  bool fixedOutput = false;
-  LDefinition tempDef = LDefinition::BogusTemp();
+  LAllocation oldval = useRegister(ins->oldval());
+
   LAllocation newval;
-  if (ins->arrayType() == Scalar::Uint32 && IsFloatingPointType(ins->type())) {
-    tempDef = tempFixed(eax);
+  if (useI386ByteRegisters && ins->isByteArray()) {
+    newval = useFixed(ins->newval(), ebx);
+  } else {
     newval = useRegister(ins->newval());
-  } else {
-    fixedOutput = true;
-    if (useI386ByteRegisters && ins->isByteArray()) {
-      newval = useFixed(ins->newval(), ebx);
-    } else {
-      newval = useRegister(ins->newval());
-    }
   }
 
-  const LAllocation oldval = useRegister(ins->oldval());
-
-  LCompareExchangeTypedArrayElement* lir =
-      new (alloc()) LCompareExchangeTypedArrayElement(elements, index, oldval,
-                                                      newval, tempDef);
-
-  if (fixedOutput) {
-    defineFixed(lir, ins, LAllocation(AnyRegister(eax)));
-  } else {
-    define(lir, ins);
-  }
+  auto* lir = new (alloc())
+      LCompareExchangeTypedArrayElement(elements, index, oldval, newval);
+  defineFixed(lir, ins, LAllocation(AnyRegister(eax)));
 }
 
 void LIRGeneratorX86Shared::lowerAtomicExchangeTypedArrayElement(
@@ -480,18 +463,9 @@ void LIRGeneratorX86Shared::lowerAtomicExchangeTypedArrayElement(
   
   
   
-  
-  
-  
 
-  LDefinition tempDef = LDefinition::BogusTemp();
-  if (ins->arrayType() == Scalar::Uint32) {
-    MOZ_ASSERT(ins->type() == MIRType::Double);
-    tempDef = temp();
-  }
-
-  LAtomicExchangeTypedArrayElement* lir = new (alloc())
-      LAtomicExchangeTypedArrayElement(elements, index, value, tempDef);
+  auto* lir =
+      new (alloc()) LAtomicExchangeTypedArrayElement(elements, index, value);
 
   if (useI386ByteRegisters && ins->isByteArray()) {
     defineFixed(lir, ins, LAllocation(AnyRegister(eax)));
@@ -525,18 +499,12 @@ void LIRGeneratorX86Shared::lowerAtomicTypedArrayElementBinop(
       value = useRegisterOrConstant(ins->value());
     }
 
-    LAtomicTypedArrayElementBinopForEffect* lir = new (alloc())
+    auto* lir = new (alloc())
         LAtomicTypedArrayElementBinopForEffect(elements, index, value);
-
     add(lir, ins);
     return;
   }
 
-  
-  
-  
-  
-  
   
   
   
@@ -570,31 +538,21 @@ void LIRGeneratorX86Shared::lowerAtomicTypedArrayElementBinop(
       !(ins->operation() == AtomicOp::Add || ins->operation() == AtomicOp::Sub);
   bool fixedOutput = true;
   bool reuseInput = false;
-  LDefinition tempDef1 = LDefinition::BogusTemp();
-  LDefinition tempDef2 = LDefinition::BogusTemp();
+  LDefinition tempDef = LDefinition::BogusTemp();
   LAllocation value;
 
-  if (ins->arrayType() == Scalar::Uint32 && IsFloatingPointType(ins->type())) {
-    value = useRegisterOrConstant(ins->value());
-    fixedOutput = false;
-    if (bitOp) {
-      tempDef1 = tempFixed(eax);
-      tempDef2 = temp();
-    } else {
-      tempDef1 = temp();
-    }
-  } else if (useI386ByteRegisters && ins->isByteArray()) {
+  if (useI386ByteRegisters && ins->isByteArray()) {
     if (ins->value()->isConstant()) {
       value = useRegisterOrConstant(ins->value());
     } else {
       value = useFixed(ins->value(), ebx);
     }
     if (bitOp) {
-      tempDef1 = tempFixed(ecx);
+      tempDef = tempFixed(ecx);
     }
   } else if (bitOp) {
     value = useRegisterOrConstant(ins->value());
-    tempDef1 = temp();
+    tempDef = temp();
   } else if (ins->value()->isConstant()) {
     fixedOutput = false;
     value = useRegisterOrConstant(ins->value());
@@ -604,8 +562,8 @@ void LIRGeneratorX86Shared::lowerAtomicTypedArrayElementBinop(
     value = useRegisterAtStart(ins->value());
   }
 
-  LAtomicTypedArrayElementBinop* lir = new (alloc())
-      LAtomicTypedArrayElementBinop(elements, index, value, tempDef1, tempDef2);
+  auto* lir = new (alloc())
+      LAtomicTypedArrayElementBinop(elements, index, value, tempDef);
 
   if (fixedOutput) {
     defineFixed(lir, ins, LAllocation(AnyRegister(eax)));

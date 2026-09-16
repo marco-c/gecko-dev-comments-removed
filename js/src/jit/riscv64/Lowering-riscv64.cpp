@@ -706,17 +706,9 @@ void LIRGenerator::visitCompareExchangeTypedArrayElement(
   LAllocation oldval = useRegister(ins->oldval());
   LAllocation newval = useRegister(ins->newval());
 
-  
-  
-
-  LDefinition outTemp = LDefinition::BogusTemp();
   LDefinition valueTemp = LDefinition::BogusTemp();
   LDefinition offsetTemp = LDefinition::BogusTemp();
   LDefinition maskTemp = LDefinition::BogusTemp();
-
-  if (ins->arrayType() == Scalar::Uint32 && IsFloatingPointType(ins->type())) {
-    outTemp = temp();
-  }
 
   if (Scalar::byteSize(ins->arrayType()) < 4) {
     valueTemp = temp();
@@ -725,8 +717,7 @@ void LIRGenerator::visitCompareExchangeTypedArrayElement(
   }
 
   auto* lir = new (alloc()) LCompareExchangeTypedArrayElement(
-      elements, index, oldval, newval, outTemp, valueTemp, offsetTemp,
-      maskTemp);
+      elements, index, oldval, newval, valueTemp, offsetTemp, maskTemp);
   define(lir, ins);
 }
 
@@ -752,17 +743,9 @@ void LIRGenerator::visitAtomicExchangeTypedArrayElement(
 
   LAllocation value = useRegisterAtStart(ins->value());
 
-  LDefinition outTemp = LDefinition::BogusTemp();
   LDefinition valueTemp = LDefinition::BogusTemp();
   LDefinition offsetTemp = LDefinition::BogusTemp();
   LDefinition maskTemp = LDefinition::BogusTemp();
-
-  
-  
-  if (ins->arrayType() == Scalar::Uint32) {
-    MOZ_ASSERT(ins->type() == MIRType::Double);
-    outTemp = temp();
-  }
 
   if (Scalar::byteSize(ins->arrayType()) < 4) {
     valueTemp = temp();
@@ -771,7 +754,7 @@ void LIRGenerator::visitAtomicExchangeTypedArrayElement(
   }
 
   auto* lir = new (alloc()) LAtomicExchangeTypedArrayElement(
-      elements, index, value, outTemp, valueTemp, offsetTemp, maskTemp);
+      elements, index, value, valueTemp, offsetTemp, maskTemp);
   define(lir, ins);
 }
 
@@ -825,15 +808,8 @@ void LIRGenerator::visitAtomicTypedArrayElementBinop(
     return;
   }
 
-  
-  
-  LDefinition outTemp = LDefinition::BogusTemp();
-  if (ins->arrayType() == Scalar::Uint32 && IsFloatingPointType(ins->type())) {
-    outTemp = temp();
-  }
-
   auto* lir = new (alloc()) LAtomicTypedArrayElementBinop(
-      elements, index, value, outTemp, valueTemp, offsetTemp, maskTemp);
+      elements, index, value, valueTemp, offsetTemp, maskTemp);
   define(lir, ins);
 }
 

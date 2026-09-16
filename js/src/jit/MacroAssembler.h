@@ -4770,90 +4770,76 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
   void compareExchangeJS(Scalar::Type arrayType, Synchronization sync,
                          const Address& mem, Register expected,
-                         Register replacement, Register temp,
-                         AnyRegister output) DEFINED_ON(arm, arm64, x86_shared);
+                         Register replacement, Register output)
+      DEFINED_ON(arm, arm64, x86_shared);
 
   void compareExchangeJS(Scalar::Type arrayType, Synchronization sync,
                          const BaseIndex& mem, Register expected,
-                         Register replacement, Register temp,
-                         AnyRegister output) DEFINED_ON(arm, arm64, x86_shared);
+                         Register replacement, Register output)
+      DEFINED_ON(arm, arm64, x86_shared);
 
   void compareExchangeJS(Scalar::Type arrayType, Synchronization sync,
                          const Address& mem, Register expected,
                          Register replacement, Register valueTemp,
-                         Register offsetTemp, Register maskTemp, Register temp,
-                         AnyRegister output)
-      DEFINED_ON(mips64, loong64, riscv64);
+                         Register offsetTemp, Register maskTemp,
+                         Register output) DEFINED_ON(mips64, loong64, riscv64);
 
   void compareExchangeJS(Scalar::Type arrayType, Synchronization sync,
                          const BaseIndex& mem, Register expected,
                          Register replacement, Register valueTemp,
-                         Register offsetTemp, Register maskTemp, Register temp,
-                         AnyRegister output)
-      DEFINED_ON(mips64, loong64, riscv64);
+                         Register offsetTemp, Register maskTemp,
+                         Register output) DEFINED_ON(mips64, loong64, riscv64);
 
   void atomicExchangeJS(Scalar::Type arrayType, Synchronization sync,
-                        const Address& mem, Register value, Register temp,
-                        AnyRegister output) DEFINED_ON(arm, arm64, x86_shared);
+                        const Address& mem, Register value, Register output)
+      DEFINED_ON(arm, arm64, x86_shared);
 
   void atomicExchangeJS(Scalar::Type arrayType, Synchronization sync,
-                        const BaseIndex& mem, Register value, Register temp,
-                        AnyRegister output) DEFINED_ON(arm, arm64, x86_shared);
+                        const BaseIndex& mem, Register value, Register output)
+      DEFINED_ON(arm, arm64, x86_shared);
 
   void atomicExchangeJS(Scalar::Type arrayType, Synchronization sync,
                         const Address& mem, Register value, Register valueTemp,
-                        Register offsetTemp, Register maskTemp, Register temp,
-                        AnyRegister output)
+                        Register offsetTemp, Register maskTemp, Register output)
       DEFINED_ON(mips64, loong64, riscv64);
 
   void atomicExchangeJS(Scalar::Type arrayType, Synchronization sync,
                         const BaseIndex& mem, Register value,
                         Register valueTemp, Register offsetTemp,
-                        Register maskTemp, Register temp, AnyRegister output)
+                        Register maskTemp, Register output)
       DEFINED_ON(mips64, loong64, riscv64);
 
   void atomicFetchOpJS(Scalar::Type arrayType, Synchronization sync,
                        AtomicOp op, Register value, const Address& mem,
-                       Register temp1, Register temp2, AnyRegister output)
+                       Register temp, Register output)
       DEFINED_ON(arm, arm64, x86_shared);
 
   void atomicFetchOpJS(Scalar::Type arrayType, Synchronization sync,
                        AtomicOp op, Register value, const BaseIndex& mem,
-                       Register temp1, Register temp2, AnyRegister output)
+                       Register temp, Register output)
       DEFINED_ON(arm, arm64, x86_shared);
 
   void atomicFetchOpJS(Scalar::Type arrayType, Synchronization sync,
                        AtomicOp op, Imm32 value, const Address& mem,
-                       Register temp1, Register temp2, AnyRegister output)
-      DEFINED_ON(x86_shared);
+                       Register temp, Register output) DEFINED_ON(x86_shared);
 
   void atomicFetchOpJS(Scalar::Type arrayType, Synchronization sync,
                        AtomicOp op, Imm32 value, const BaseIndex& mem,
-                       Register temp1, Register temp2, AnyRegister output)
-      DEFINED_ON(x86_shared);
+                       Register temp, Register output) DEFINED_ON(x86_shared);
 
   void atomicFetchOpJS(Scalar::Type arrayType, Synchronization sync,
                        AtomicOp op, Register value, const Address& mem,
                        Register valueTemp, Register offsetTemp,
-                       Register maskTemp, Register temp, AnyRegister output)
+                       Register maskTemp, Register output)
       DEFINED_ON(mips64, loong64, riscv64);
 
   void atomicFetchOpJS(Scalar::Type arrayType, Synchronization sync,
                        AtomicOp op, Register value, const BaseIndex& mem,
                        Register valueTemp, Register offsetTemp,
-                       Register maskTemp, Register temp, AnyRegister output)
+                       Register maskTemp, Register output)
       DEFINED_ON(mips64, loong64, riscv64);
 
   void atomicEffectOpJS(Scalar::Type arrayType, Synchronization sync,
