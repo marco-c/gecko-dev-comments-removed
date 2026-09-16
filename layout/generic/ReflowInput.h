@@ -237,11 +237,6 @@ struct ReflowInput : public SizeComputationInput {
   
   
   
-  nscoord mBOffsetToLineClampRoot = 0;
-
-  
-  
-  
   
   nscoord AvailableWidth() const { return mAvailableSize.Width(mWritingMode); }
   nscoord AvailableHeight() const {
@@ -569,9 +564,6 @@ struct ReflowInput : public SizeComputationInput {
     
     bool mShouldApplyTextBoxTrimAtBlockEnd : 1;
     bool mShouldApplyTextBoxTrimAtFragmentEnd : 1;
-
-    
-    bool mIsInLineClampContainer : 1;
   };
   Flags mFlags;
 
