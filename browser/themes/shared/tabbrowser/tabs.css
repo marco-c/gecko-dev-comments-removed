@@ -162,6 +162,21 @@
     &[uidensity="compact"] {
       --tab-inner-inline-margin: 7px;
     }
+
+    /* Hold the collapsed strip at 50px in normal and compact density, so the
+     * scrollbar has room next to the tab backgrounds instead of being drawn
+     * over them. Touch density keeps its natural, wider strip. */
+    @media -moz-pref("browser.nova.enabled") {
+      /* 32px tab background + 2 * 9px. */
+      &:not([uidensity="touch"]) {
+        --tab-inner-inline-margin: 9px;
+      }
+
+      /* 28px tab background + 2 * 11px. */
+      &[uidensity="compact"] {
+        --tab-inner-inline-margin: 11px;
+      }
+    }
   }
 }
 
@@ -1362,6 +1377,10 @@ tab-group > tab-split-view-wrapper {
 }
 
 #tabbrowser-tabs[orient="horizontal"] tab-split-view-wrapper {
+  /* Height value that allows us to match the height of a tab inside vs outside
+     a split view. */
+  --split-view-tab-height: calc(var(--tab-min-height) - 2 * var(--split-view-padding-block));
+
   margin-block: var(--tab-margin-block);
   margin-inline: 0;
   align-items: flex-end;
@@ -1406,6 +1425,16 @@ tab-group > tab-split-view-wrapper {
 
   .tabbrowser-tab {
     padding-inline: var(--split-view-tab-padding-inline);
+
+    .tab-background {
+      min-height: var(--split-view-tab-height);
+    }
+
+    /* With a relatively larger font, the label's line box can be taller than
+       --split-view-tab-height in compact mode. */
+    .tab-label-container {
+      height: var(--split-view-tab-height);
+    }
 
     tab-group & {
       overflow: visible;
@@ -1488,7 +1517,6 @@ tab-group > tab-split-view-wrapper {
 
     :root[uidensity="compact"] & {
       --tab-collapsed-background-width: 24px;
-      --tab-min-height: 24px;
     }
 
     .tab-background {
