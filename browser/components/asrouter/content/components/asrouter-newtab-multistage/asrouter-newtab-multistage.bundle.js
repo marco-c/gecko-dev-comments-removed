@@ -3255,8 +3255,12 @@ const EmbeddedMigrationWizard = ({
 
 
 
-const EmbeddedThemePicker = () => {
-  return external_React_default().createElement("theme-picker", null);
+const EmbeddedThemePicker = ({
+  installSource
+}) => {
+  return external_React_default().createElement("theme-picker", {
+    installsource: installSource
+  });
 };
 ;
 
@@ -4099,7 +4103,8 @@ const ContentTiles = props => {
         tiles: tile
       }
     }), tile.type === "theme-picker" && external_React_default().createElement(EmbeddedThemePicker, {
-      handleAction: props.handleAction
+      handleAction: props.handleAction,
+      installSource: tile.data?.installSource
     }), tile.type === "action_checklist" && tile.data && external_React_default().createElement(ActionChecklist, {
       content: content,
       message_id: props.messageId,
