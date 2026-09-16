@@ -10,7 +10,41 @@ add_task(async function test() {
     await changeSizeMode("restore");
   }
 
-  const { outerWidth, outerHeight, screenX, screenY } = win;
+  const { outerWidth, outerHeight } = win;
+  
+  
+  
+  const baseWindow = win.docShell.treeOwner.QueryInterface(Ci.nsIBaseWindow);
+  const scale = baseWindow.devicePixelsPerDesktopPixel;
+  function getPosition() {
+    const posX = {},
+      posY = {};
+    baseWindow.getPosition(posX, posY);
+    return { x: posX.value / scale, y: posY.value / scale };
+  }
+
+  
+  
+  
+  
+  
+  {
+    const pos = getPosition();
+    baseWindow.setPositionDesktopPix(pos.x + 1, pos.y + 1);
+    await TestUtils.waitForCondition(
+      () => getPosition().x == pos.x + 1 && getPosition().y == pos.y + 1,
+      "Window should have moved"
+    );
+    await TestUtils.waitForCondition(
+      () =>
+        win.document.documentElement.getAttribute("screenX") ==
+        String(pos.x + 1),
+      "Persisted screenX attribute should catch up with the window position"
+    );
+  }
+
+  const { x: screenX, y: screenY } = getPosition();
+
   function checkCurrentState(sizemode) {
     let state = ss.getWindowState(win);
     let winState = state.windows[0];
