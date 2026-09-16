@@ -408,7 +408,7 @@ impl Frame {
         Ok(())
     }
 
-    pub fn finalize(mut self) -> Result<Option<DecoderState>> {
+    pub fn finalize(mut self: Box<Self>) -> Result<Option<DecoderState>> {
         
         
         self.render_pipeline = None;

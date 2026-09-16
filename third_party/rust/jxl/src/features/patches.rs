@@ -709,7 +709,7 @@ impl PatchesDictionary {
         }
 
         
-        patches_for_row_result.sort();
+        patches_for_row_result.sort_unstable();
     }
 
     #[inline(always)]
