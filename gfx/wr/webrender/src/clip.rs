@@ -185,19 +185,6 @@ pub struct ClipTreeLeaf {
     
     
     
-    
-    
-    
-    
-    pub prim_clip_root: ClipNodeId,
-
-    
-    
-    
-    
-    
-    
-    
     pub unsnapped_local_clip_rect: LayoutRect,
 }
 
@@ -209,11 +196,6 @@ pub struct ClipNodeId(u32);
 
 impl ClipNodeId {
     pub const NONE: ClipNodeId = ClipNodeId(0);
-    
-    
-    
-    
-    pub const INVALID: ClipNodeId = ClipNodeId(u32::MAX);
 }
 
 impl std::fmt::Debug for ClipNodeId {
@@ -965,7 +947,6 @@ impl ClipTreeBuilder {
         self.tree.leaves.push(ClipTreeLeaf {
             node_id,
             
-            prim_clip_root: ClipNodeId::INVALID,
             unsnapped_local_clip_rect: LayoutRect::max_rect(),
         });
 
@@ -986,17 +967,8 @@ impl ClipTreeBuilder {
 
         
         
-        
-        
-        
-        
-        
-        
-        let prim_clip_root = self.clip_stack.last().unwrap().clip_node_id;
-
         self.tree.leaves.push(ClipTreeLeaf {
             node_id,
-            prim_clip_root,
             unsnapped_local_clip_rect: LayoutRect::max_rect(),
         });
 
@@ -1008,23 +980,7 @@ impl ClipTreeBuilder {
         &mut self,
         clip_node_id: ClipNodeId,
         info: &LayoutPrimitiveInfo,
-        
-        
-        snap_clips: bool,
     ) -> ClipLeafId {
-        
-        
-        
-        
-        
-        
-        
-        let prim_clip_root = if snap_clips {
-            self.clip_stack.last().unwrap().clip_node_id
-        } else {
-            ClipNodeId::INVALID
-        };
-
         let node_id = clip_node_id;
 
         
@@ -1032,14 +988,15 @@ impl ClipTreeBuilder {
         
         
         #[cfg(debug_assertions)]
-        if snap_clips {
+        {
+            let inherited_root = self.clip_stack.last().unwrap().clip_node_id;
             let mut cur = node_id;
-            while cur != prim_clip_root && cur != ClipNodeId::NONE {
+            while cur != inherited_root && cur != ClipNodeId::NONE {
                 cur = self.tree.nodes[cur.0 as usize].parent;
             }
             debug_assert_eq!(
-                cur, prim_clip_root,
-                "prim_clip_root is not an ancestor of the leaf node: clip-stack desync between build_clip_set and build_for_prim",
+                cur, inherited_root,
+                "inherited clip root is not an ancestor of the leaf node: clip-stack desync between build_clip_set and build_for_prim",
             );
         }
 
@@ -1047,7 +1004,6 @@ impl ClipTreeBuilder {
 
         self.tree.leaves.push(ClipTreeLeaf {
             node_id,
-            prim_clip_root,
             unsnapped_local_clip_rect: info.clip_rect,
         });
 
@@ -2537,55 +2493,6 @@ mod tests {
         assert_eq!(rad.bottom_right.width, 0.0);
     }
 
-    #[test]
-    fn device_text_runs_do_not_snap_their_clips() {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        use crate::prim_store::text_run::TextRun;
-        use crate::prim_store::InternablePrimitive;
-
-        
-        assert!(
-            !TextRun::SNAP_CLIPS,
-            "device-space text must not snap its clips (bug 2050692)",
-        );
-
-        let mut builder = ClipTreeBuilder::new();
-        let info = LayoutPrimitiveInfo::with_clip_rect(
-            lr(0.0, 0.0, 100.0, 100.0),
-            lr(0.0, 0.0, 100.0, 100.0),
-        );
-
-        
-        let text_leaf =
-            builder.build_for_prim(ClipNodeId::NONE, &info, TextRun::SNAP_CLIPS);
-        assert_eq!(
-            builder.get_leaf(text_leaf).prim_clip_root,
-            ClipNodeId::INVALID,
-            "a device-space text run must record the INVALID snap sentinel so its clips are not snapped",
-        );
-
-        
-        
-        let snapping_leaf =
-            builder.build_for_prim(ClipNodeId::NONE, &info, true);
-        assert_ne!(
-            builder.get_leaf(snapping_leaf).prim_clip_root,
-            ClipNodeId::INVALID,
-            "a snapping primitive must record a real prim_clip_root so its clips snap",
-        );
-    }
 
     #[test]
     fn test_intersect_linux_window_corners() {

@@ -260,6 +260,24 @@ pub enum PrimitiveKind {
 }
 
 impl PrimitiveKind {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn snaps(&self) -> bool {
+        !matches!(self, PrimitiveKind::TextRun { .. })
+    }
+}
+
+impl PrimitiveKind {
     pub fn as_pic(&self) -> PictureIndex {
         match self {
             PrimitiveKind::Picture { pic_index, .. } => *pic_index,
@@ -338,9 +356,8 @@ impl PrimitiveInstance {
     
     
     
-    
-    pub fn snap_policy(&self, snaps: bool, data_stores: &DataStores) -> SnapPolicy {
-        if !snaps {
+    pub fn snap_policy(&self, data_stores: &DataStores) -> SnapPolicy {
+        if !self.kind.snaps() {
             return SnapPolicy { rect: SnapRounding::RoundOut, clip: ClipSnap::Exact };
         }
         let rect = match self.kind {
@@ -829,12 +846,6 @@ impl Default for PrimitiveStore {
 
 pub trait InternablePrimitive: intern::Internable<InternData = ()> + Sized {
     
-    
-    
-    
-    const SNAP_CLIPS: bool = true;
-
-    
     fn into_key(
         self,
         info: &LayoutPrimitiveInfo,
@@ -847,6 +858,39 @@ pub trait InternablePrimitive: intern::Internable<InternData = ()> + Sized {
     ) -> PrimitiveKind;
 }
 
+
+#[test]
+fn device_text_runs_do_not_snap_their_clips() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    use crate::intern::Handle;
+
+    assert!(
+        !PrimitiveKind::TextRun { data_handle: Handle::INVALID }.snaps(),
+        "device-space text must not snap its clips (bug 2050692)",
+    );
+
+    
+    
+    assert!(
+        PrimitiveKind::Rectangle { data_handle: Handle::INVALID }.snaps(),
+        "a snapping primitive must snap its clips",
+    );
+    assert!(
+        PrimitiveKind::Picture {
+            data_handle: Handle::INVALID,
+            pic_index: PictureIndex::INVALID,
+        }.snaps(),
+        "a picture must snap its clips so image-mask clips stay aligned",
+    );
+}
 
 #[test]
 #[cfg(target_pointer_width = "64")]
