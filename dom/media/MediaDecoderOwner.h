@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef MediaDecoderOwner_h_
 #define MediaDecoderOwner_h_
 
@@ -167,8 +165,13 @@ class MediaDecoderOwner {
   
   enum class ImageSizeChanged { No, Yes };
   enum class ForceInvalidate { No, Yes };
+  
+  
+  
+  
   virtual void Invalidate(ImageSizeChanged aImageSizeChanged,
                           const Maybe<nsIntSize>& aNewIntrinsicSize,
+                          const Maybe<VideoRotation>& aNewRotation,
                           ForceInvalidate aForceInvalidate) {}
 
   

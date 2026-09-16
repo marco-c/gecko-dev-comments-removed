@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "VideoFrameContainer.h"
 
 #include "mozilla/Logging.h"
@@ -132,11 +130,43 @@ void VideoFrameContainer::SetCurrentFramesLocked(
                  std::all_of(aImages.begin(), aImages.end(), Is8BitImage),
              "Images should be 8-bit");
 
+  Maybe<gfx::IntSize> newIntrinsicSize;
   if (auto size = Some(aIntrinsicSize); size != mIntrinsicSize) {
     mIntrinsicSize = size;
+    newIntrinsicSize = size;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  Maybe<VideoRotation> newRotation;
+  if (!aImages.IsEmpty()) {
+    Maybe<VideoRotation> rotation = aImages[0].mRotation;
+    
+    
+    
+    if (rotation.valueOr(VideoRotation::kDegree_0) !=
+        mRotation.valueOr(VideoRotation::kDegree_0)) {
+      newRotation = Some(rotation.valueOr(VideoRotation::kDegree_0));
+    }
+    mRotation = rotation;
+  }
+
+  if (newIntrinsicSize || newRotation) {
     mMainThread->Dispatch(NS_NewRunnableFunction(
-        "IntrinsicSizeChanged", [this, self = RefPtr(this), size]() {
-          mMainThreadState.mNewIntrinsicSize = size;
+        "IntrinsicSizeOrRotationChanged",
+        [this, self = RefPtr(this), newIntrinsicSize, newRotation]() {
+          if (newIntrinsicSize) {
+            mMainThreadState.mNewIntrinsicSize = newIntrinsicSize;
+          }
+          if (newRotation) {
+            mMainThreadState.mNewRotation = newRotation;
+          }
         }));
   }
 
@@ -171,7 +201,8 @@ void VideoFrameContainer::SetCurrentFramesLocked(
     mImageContainer->SetCurrentImages(aImages);
   }
   gfx::IntSize newFrameSize = mImageContainer->GetCurrentSize();
-  bool imageSizeChanged = (oldFrameSize != newFrameSize);
+  bool imageSizeChanged =
+      (oldFrameSize != newFrameSize) || newRotation.isSome();
 
   if (principalHandle != PRINCIPAL_HANDLE_NONE || imageSizeChanged) {
     RefPtr<VideoFrameContainer> self = this;
@@ -209,7 +240,7 @@ void VideoFrameContainer::ClearFutureFrames(TimeStamp aNow) {
     currentFrame.AppendElement(ImageContainer::NonOwningImage(
         img->mImage, img->mTimeStamp, img->mFrameID, img->mProducerID,
         img->mProcessingDuration, img->mMediaTime, img->mWebrtcCaptureTime,
-        img->mWebrtcReceiveTime, img->mRtpTimestamp));
+        img->mWebrtcReceiveTime, img->mRtpTimestamp, img->mRotation));
     mImageContainer->SetCurrentImages(currentFrame);
   }
 }
@@ -248,10 +279,13 @@ void VideoFrameContainer::InvalidateWithFlags(uint32_t aFlags) {
   mMainThreadState.mImageSizeChanged = false;
 
   auto newIntrinsicSize = std::move(mMainThreadState.mNewIntrinsicSize);
+  auto newRotation = std::move(mMainThreadState.mNewRotation);
 
   MediaDecoderOwner::ForceInvalidate forceInvalidate{
       (aFlags & INVALIDATE_FORCE) != 0};
-  mOwner->Invalidate(imageSizeChanged, newIntrinsicSize, forceInvalidate);
+
+  mOwner->Invalidate(imageSizeChanged, newIntrinsicSize, newRotation,
+                     forceInvalidate);
 }
 
 }  

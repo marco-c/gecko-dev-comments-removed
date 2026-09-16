@@ -410,10 +410,11 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
-  virtual void UpdateMediaSize(const nsIntSize& aSize);
+  virtual void UpdateMediaSize(const nsIntSize& aSize, VideoRotation aRotation);
 
   void Invalidate(ImageSizeChanged aImageSizeChanged,
                   const Maybe<nsIntSize>& aNewIntrinsicSize,
+                  const Maybe<VideoRotation>& aNewRotation,
                   ForceInvalidate aForceInvalidate) override;
 
   

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef VIDEOFRAMECONTAINER_H_
 #define VIDEOFRAMECONTAINER_H_
 
@@ -123,6 +121,11 @@ class VideoFrameContainer {
     
     
     Maybe<gfx::IntSize> mNewIntrinsicSize;
+    
+    
+    
+    
+    Maybe<VideoRotation> mNewRotation;
   } mMainThreadState;
 
   Mutex mMutex;
@@ -132,6 +135,9 @@ class VideoFrameContainer {
   
   
   Maybe<gfx::IntSize> mIntrinsicSize MOZ_GUARDED_BY(mMutex);
+  
+  
+  Maybe<VideoRotation> mRotation MOZ_GUARDED_BY(mMutex);
   
   
   ImageContainer::FrameID mFrameID;
