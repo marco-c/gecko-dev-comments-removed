@@ -321,7 +321,7 @@ class ByteStreamTeeSourceAlgorithms final
       }
 
       
-      mTeeState->CancelPromise()->MaybeResolve(cancelResult);
+      mTeeState->CancelPromise()->MaybeSafeResolve(cancelResult);
     }
 
     
@@ -441,7 +441,7 @@ struct PullWithDefaultReaderReadRequest final : public ReadRequest {
                     cx, "Error during ReadableByteStreamControllerError")) {
               return;
             }
-            mTeeState->CancelPromise()->MaybeResolve(promise);
+            mTeeState->CancelPromise()->MaybeSafeResolve(promise);
 
             
             return;
@@ -721,7 +721,7 @@ class PullWithBYOBReader_ReadIntoRequest final : public ReadIntoRequest {
             if (rv.MaybeSetPendingException(cx)) {
               return;
             }
-            mTeeState->CancelPromise()->MaybeResolve(cancelPromise);
+            mTeeState->CancelPromise()->MaybeSafeResolve(cancelPromise);
 
             
             return;

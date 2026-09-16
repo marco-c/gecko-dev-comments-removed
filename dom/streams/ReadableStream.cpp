@@ -284,7 +284,7 @@ class ReadableStreamFromAlgorithms final
 
     
     RefPtr<Promise> nextPromise = Promise::CreateInfallible(mGlobal);
-    nextPromise->MaybeResolve(nextResult);
+    nextPromise->MaybeSafeResolve(nextResult);
 
     
     
@@ -392,7 +392,7 @@ class ReadableStreamFromAlgorithms final
     
     
     RefPtr<Promise> returnPromise = Promise::CreateInfallible(mGlobal);
-    returnPromise->MaybeResolve(returnResult);
+    returnPromise->MaybeSafeResolve(returnResult);
 
     
     
@@ -934,7 +934,7 @@ ReadableStreamDefaultTeeSourceAlgorithms::CancelCallback(
     }
 
     
-    mTeeState->CancelPromise()->MaybeResolve(cancelResult);
+    mTeeState->CancelPromise()->MaybeSafeResolve(cancelResult);
   }
 
   
@@ -1111,7 +1111,7 @@ struct IteratorReadRequest : public ReadRequest {
   void ChunkSteps(JSContext* aCx, JS::Handle<JS::Value> aChunk,
                   ErrorResult& aRv) override {
     
-    mPromise->MaybeResolve(aChunk);
+    mPromise->MaybeSafeResolve(aChunk);
   }
 
   
