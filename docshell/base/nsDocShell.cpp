@@ -3262,6 +3262,43 @@ void nsDocShell::UnblockEmbedderLoadEventForFailure(bool aFireFrameErrorEvent) {
   }
 }
 
+
+
+
+
+static already_AddRefed<nsIURI> GetUnhandledRedirectURI(nsIChannel* aChannel) {
+  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
+  if (!httpChannel) {
+    return nullptr;
+  }
+
+  nsAutoCString location;
+  if (NS_FAILED(httpChannel->GetResponseHeader("Location"_ns, location))) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIURI> channelURI;
+  if (NS_FAILED(httpChannel->GetURI(getter_AddRefs(channelURI)))) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIURI> redirectURI;
+  if (NS_FAILED(NS_NewURI(getter_AddRefs(redirectURI), location, nullptr,
+                          channelURI))) {
+    return nullptr;
+  }
+
+  nsAutoCString channelScheme;
+  nsAutoCString redirectScheme;
+  channelURI->GetScheme(channelScheme);
+  redirectURI->GetScheme(redirectScheme);
+  if (channelScheme.Equals(redirectScheme)) {
+    return nullptr;
+  }
+
+  return redirectURI.forget();
+}
+
 NS_IMETHODIMP
 nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
                              const char16_t* aURL, nsIChannel* aFailedChannel,
@@ -3299,10 +3336,19 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
     NS_ENSURE_ARG_POINTER(aURI);
 
     
+    
+    
+    nsCOMPtr<nsIURI> unknownProtocolURI =
+        GetUnhandledRedirectURI(aFailedChannel);
+    if (!unknownProtocolURI) {
+      unknownProtocolURI = aURI;
+    }
+
+    
     nsAutoCString scheme;
-    aURI->GetScheme(scheme);
+    unknownProtocolURI->GetScheme(scheme);
     CopyASCIItoUTF16(scheme, *formatStrs.AppendElement());
-    nsCOMPtr<nsINestedURI> nestedURI = do_QueryInterface(aURI);
+    nsCOMPtr<nsINestedURI> nestedURI = do_QueryInterface(unknownProtocolURI);
     while (nestedURI) {
       nsCOMPtr<nsIURI> tempURI;
       nsresult rv2;

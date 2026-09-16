@@ -375,6 +375,9 @@ support-files = ["overlink_test.html"]
 
 ["browser_platform_emulation.js"]
 
+["browser_purge_shistory_keeps_current.js"]
+support-files = ["dummy_iframe_page.html"]
+
 ["browser_replace_state_during_navigation.js"]
 support-files = ["file_replace_state_during_navigation.html"]
 
@@ -398,6 +401,9 @@ skip-if = [
 ["browser_title_in_session_history.js"]
 
 ["browser_ua_emulation.js"]
+
+["browser_unknownProtocolFound_redirect.js"]
+support-files = ["redirect_to_unknown_protocol.sjs"]
 
 ["browser_uriFixupAlternateRedirects.js"]
 https_first_disabled = true
