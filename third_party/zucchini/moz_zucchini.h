@@ -50,6 +50,8 @@ namespace mozilla {
 #ifdef ENABLE_TESTS
 
 
+
+
 struct TestOptions {
   bool logDestructorMarker = false;
   bool triggerBadAlloc = false;
@@ -61,40 +63,27 @@ void SetTestOptions(const TestOptions& aOptions);
 using LogFunctionPtr = void (*)(const char* aMessage);
 void SetLogFunction(LogFunctionPtr aLogFunction);
 
-[[nodiscard]] status::Code ComputeCrc32(const uint8_t* aBuf, size_t aBufSize,
-                                        uint32_t& aOutCrc32);
+uint32_t ComputeCrc32(const uint8_t* aBuf, size_t aBufSize);
 
 class MappedPatchImpl;
 
 class MappedPatch {
  public:
-  MappedPatch() : mImpl(nullptr), mInitStatus(Initialize()) { }
-  ~MappedPatch() { (void)Finalize(); }
+  MappedPatch();
+  ~MappedPatch();
 
-  [[nodiscard]] status::Code Load(FILE* aPatchFile, uint32_t* aSourceSize,
-                                  uint32_t* aDestinationSize,
-                                  uint32_t* aSourceCrc32);
-
-  
-  
-  
-  
-  [[nodiscard]] status::Code ApplyUnsafe(const uint8_t* aCheckedOldImage,
-                                         size_t aCheckedOldImageSize,
-                                         FILE* aNewFile);
+  status::Code Load(FILE* aPatchFile, uint32_t* aSourceSize,
+                    uint32_t* aDestinationSize, uint32_t* aSourceCrc32);
 
   
-  [[nodiscard]] status::Code Finalize();
+  
+  
+  
+  status::Code ApplyUnsafe(const uint8_t* aCheckedOldImage,
+                           size_t aCheckedOldImageSize, FILE* aNewFile);
 
  private:
-  status::Code Initialize();
-  status::Code LoadImpl(FILE* aPatchFile, uint32_t* aSourceSize,
-                        uint32_t* aDestinationSize, uint32_t* aSourceCrc32);
-  status::Code ApplyUnsafeImpl(const uint8_t* aCheckedOldImage,
-                               size_t aCheckedOldImageSize, FILE* aNewFile);
-
   MappedPatchImpl* mImpl;
-  status::Code mInitStatus;
 };
 
 }  

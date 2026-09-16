@@ -113,11 +113,6 @@ const ERR_PARENT_PID_PERSISTS =
 const ERR_BGTASK_EXCLUSIVE =
   "failed to exclusively open executable file from background task: ";
 
-
-
-
-const EXIT_VALUE_CRASHED = "crashed";
-
 const LOG_SVC_SUCCESSFUL_LAUNCH = "Process was started... waiting on result.";
 const LOG_SVC_UNSUCCESSFUL_LAUNCH =
   "The install directory path is not valid for this application.";
@@ -2297,16 +2292,7 @@ function runUpdate(
 
   let process = Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
   process.init(launchBin);
-  try {
-    process.run(true, args, args.length);
-  } catch (e) {
-    
-    
-    
-    if (process.exitValue >= 0) {
-      throw e;
-    }
-  }
+  process.run(true, args, args.length);
 
   resetEnvironment();
 
@@ -2314,19 +2300,15 @@ function runUpdate(
     Services.env.set("MOZ_TEST_SHORTER_WAIT_PID", "");
   }
 
-  let exitValue = process.exitValue;
-  let expectCrash = aExpectedExitValue == EXIT_VALUE_CRASHED;
-  let checkExitValue = !gIsServiceTest && !expectCrash;
-
   let status = readStatusFile();
   if (
-    (checkExitValue && exitValue != aExpectedExitValue) ||
+    (!gIsServiceTest && process.exitValue != aExpectedExitValue) ||
     (status != aExpectedStatus && !gIsServiceTest && !isInvalidArgTest)
   ) {
-    if (checkExitValue && exitValue != aExpectedExitValue) {
+    if (process.exitValue != aExpectedExitValue) {
       logTestInfo(
         "updater exited with unexpected value! Got: " +
-          exitValue +
+          process.exitValue +
           ", Expected: " +
           aExpectedExitValue
       );
@@ -2349,9 +2331,9 @@ function runUpdate(
     }
   }
 
-  if (checkExitValue) {
+  if (!gIsServiceTest) {
     Assert.equal(
-      exitValue,
+      process.exitValue,
       aExpectedExitValue,
       "the process exit value" + MSG_SHOULD_EQUAL
     );
@@ -4319,15 +4301,11 @@ function checkFilesAfterUpdateCommon(aStageDirExists, aToBeDeletedDirExists) {
 function checkToBeDeletedFileCount(aExpectedCount) {
   let toBeDeletedDir = getApplyDirFile(DIR_TOBEDELETED);
   let relocatedFiles = [];
-  
-  
-  if (toBeDeletedDir.exists()) {
-    let dirEntries = toBeDeletedDir.directoryEntries;
-    while (dirEntries.hasMoreElements()) {
-      let entry = dirEntries.nextFile;
-      if (entry.isFile() && entry.leafName.startsWith("moz")) {
-        relocatedFiles.push(entry);
-      }
+  let dirEntries = toBeDeletedDir.directoryEntries;
+  while (dirEntries.hasMoreElements()) {
+    let entry = dirEntries.nextFile;
+    if (entry.isFile() && entry.leafName.startsWith("moz")) {
+      relocatedFiles.push(entry);
     }
   }
   Assert.equal(
