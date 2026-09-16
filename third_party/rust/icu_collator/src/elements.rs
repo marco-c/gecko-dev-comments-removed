@@ -184,11 +184,13 @@ pub(crate) const QUATERNARY_MASK: u16 = 0xC0;
 
 
 
+pub const SPECIAL_CE32_LOW_BYTE: u8 = 0xC0;
 
-const SPECIAL_CE32_LOW_BYTE: u8 = 0xC0;
 pub(crate) const FALLBACK_CE32: CollationElement32 =
     CollationElement32(SPECIAL_CE32_LOW_BYTE as u32);
 const LONG_PRIMARY_CE32_LOW_BYTE: u8 = 0xC1; 
+
+pub const LONG_PRIMARY_FOR_REORDERABLE_CE32_LOW_BYTE: u8 = 0xCB; 
 
 
 
@@ -197,6 +199,14 @@ pub(crate) const IDENTICAL_PREFIX_HANGUL_MARKER_CE32: CollationElement32 = Colla
 const COMMON_SECONDARY_CE: u64 = 0x05000000;
 const COMMON_TERTIARY_CE: u64 = 0x0500;
 const COMMON_SEC_AND_TER_CE: u64 = COMMON_SECONDARY_CE | COMMON_TERTIARY_CE;
+
+
+#[cfg(feature = "datagen")]
+pub const COMMON_SEC_AND_TER_CE32: u16 = 0x0505;
+
+
+#[cfg(feature = "datagen")]
+pub const MAX_INDEX: usize = 0x7FFFF;
 
 const UNASSIGNED_IMPLICIT_BYTE: u8 = 0xFE;
 
@@ -279,11 +289,17 @@ fn in_inclusive_range(c: char, start: char, end: char) -> bool {
 #[derive(Eq, PartialEq, Debug)]
 #[allow(dead_code)]
 #[repr(u8)] 
-pub(crate) enum Tag {
+pub enum Tag {
     
     
     
     Fallback = 0,
+    
+    
+    
+    
+    
+    
     
     
     LongPrimary = 1,
@@ -306,6 +322,12 @@ pub(crate) enum Tag {
     
     
     Expansion32 = 5,
+    
+    
+    
+    
+    
+    
     
     
     
@@ -341,7 +363,9 @@ pub(crate) enum Tag {
     
     
     
-    U0000 = 11,
+    
+    
+    LongPrimaryForReorderable = 11,
     
     
     
@@ -354,7 +378,8 @@ pub(crate) enum Tag {
     
     
     
-    LeadSurrogate = 13,
+    
+    ExpansionForReorderable = 13,
     
     
     
@@ -395,17 +420,25 @@ pub(crate) enum Tag {
 
 
 #[derive(Copy, Clone, PartialEq, Debug)]
-pub(crate) struct CollationElement32(u32);
+pub struct CollationElement32(u32);
 
 impl CollationElement32 {
+    
     #[inline(always)]
     pub fn new(bits: u32) -> Self {
         CollationElement32(bits)
     }
 
     #[inline(always)]
-    pub fn new_from_ule(ule: RawBytesULE<4>) -> Self {
+    pub(crate) fn new_from_ule(ule: RawBytesULE<4>) -> Self {
         CollationElement32(u32::from_unaligned(ule))
+    }
+
+    
+    #[cfg(feature = "datagen")]
+    #[inline(always)]
+    pub fn bits(self) -> u32 {
+        self.0
     }
 
     #[inline(always)]
@@ -413,8 +446,9 @@ impl CollationElement32 {
         self.0 as u8
     }
 
+    
     #[inline(always)]
-    pub(crate) fn tag_checked(self) -> Option<Tag> {
+    pub fn tag_checked(self) -> Option<Tag> {
         let t = self.low_byte();
         if t < SPECIAL_CE32_LOW_BYTE {
             None
@@ -439,37 +473,40 @@ impl CollationElement32 {
     }
 
     
+    
+    
     #[cfg(feature = "latin1")]
     #[inline(always)]
-    pub fn to_primary_simple(self) -> Option<u32> {
+    pub(crate) fn to_primary_simple(self) -> u32 {
         let t = self.low_byte();
         if t < SPECIAL_CE32_LOW_BYTE {
             
-            Some(self.0 & 0xFFFF0000)
+            self.0 & 0xFFFF0000
         } else {
-            None
+            0
         }
     }
 
     
     
+    
+    
     #[inline(always)]
-    pub fn to_primary_in_quick_check(self, data: &CollationData) -> Option<u32> {
+    pub(crate) fn to_primary_in_quick_check(self, data: &CollationData) -> u32 {
         let t = self.low_byte();
         if t < SPECIAL_CE32_LOW_BYTE {
             
-            Some(self.0 & 0xFFFF0000)
+            self.0 & 0xFFFF0000
         } else if t == LONG_PRIMARY_CE32_LOW_BYTE {
-            Some(self.0 - u32::from(t))
+            self.0 - u32::from(t)
         } else {
             let tag = self.tag();
             if tag == Tag::Expansion {
                 
-                Some(data.get_primary_from_ces(self.index()))
+                data.get_primary_from_ces(self.index())
             } else {
-                None
+                0
             }
-            
             
             
             
@@ -480,34 +517,31 @@ impl CollationElement32 {
     
     
     
+    
+    
     #[inline(always)]
-    pub fn to_primary_in_quick_check_numeric(
-        self,
-        data: &CollationData,
-        numeric: bool,
-    ) -> Option<u32> {
+    pub(crate) fn to_primary_in_quick_check_numeric(self, data: &CollationData, numeric: bool) -> u32 {
         let mut ce32 = self;
         loop {
             let t = ce32.low_byte();
             if t < SPECIAL_CE32_LOW_BYTE {
                 
-                return Some(ce32.0 & 0xFFFF0000);
+                return ce32.0 & 0xFFFF0000;
             }
             if t == LONG_PRIMARY_CE32_LOW_BYTE {
-                return Some(ce32.0 - u32::from(t));
+                return ce32.0 - u32::from(t);
             }
             let tag = ce32.tag();
             if tag == Tag::Expansion {
                 
-                return Some(data.get_primary_from_ces(ce32.index()));
+                return data.get_primary_from_ces(ce32.index());
             }
             
             if tag == Tag::Digit && !numeric {
                 ce32 = data.get_ce32(ce32.index());
                 continue;
             }
-            return None;
-            
+            return 0;
             
             
             
@@ -517,7 +551,7 @@ impl CollationElement32 {
     
     
     #[inline(always)]
-    pub fn to_ce_simple_or_long_primary(self) -> Option<CollationElement> {
+    pub(crate) fn to_ce_simple_or_long_primary(self) -> Option<CollationElement> {
         let t = self.low_byte();
         if t < SPECIAL_CE32_LOW_BYTE {
             
@@ -525,7 +559,8 @@ impl CollationElement32 {
             Some(CollationElement::new(
                 ((as64 & 0xFFFF0000) << 32) | ((as64 & 0xFF00) << 16) | (u64::from(t) << 8),
             ))
-        } else if t == LONG_PRIMARY_CE32_LOW_BYTE {
+        } else if t == LONG_PRIMARY_CE32_LOW_BYTE || t == LONG_PRIMARY_FOR_REORDERABLE_CE32_LOW_BYTE
+        {
             let as64 = u64::from(self.0);
             Some(CollationElement::new(
                 ((as64 - u64::from(t)) << 32) | COMMON_SEC_AND_TER_CE,
@@ -540,7 +575,7 @@ impl CollationElement32 {
     
     
     #[inline(always)]
-    pub fn to_ce_self_contained(self) -> Option<CollationElement> {
+    pub(crate) fn to_ce_self_contained(self) -> Option<CollationElement> {
         if let Some(ce) = self.to_ce_simple_or_long_primary() {
             return Some(ce);
         }
@@ -554,7 +589,7 @@ impl CollationElement32 {
     
     
     #[inline(always)]
-    pub fn to_ce_self_contained_or_gigo(self) -> CollationElement {
+    pub(crate) fn to_ce_self_contained_or_gigo(self) -> CollationElement {
         unwrap_or_gigo(self.to_ce_self_contained(), FFFD_CE)
     }
 
@@ -564,8 +599,12 @@ impl CollationElement32 {
     
     
     #[inline(always)]
-    pub fn len(self) -> usize {
-        debug_assert!(self.tag() == Tag::Expansion32 || self.tag() == Tag::Expansion);
+    pub(crate) fn len(self) -> usize {
+        debug_assert!(
+            self.tag() == Tag::Expansion32
+                || self.tag() == Tag::Expansion
+                || self.tag() == Tag::ExpansionForReorderable
+        );
         ((self.0 >> 8) & 31) as usize
     }
 
@@ -575,10 +614,11 @@ impl CollationElement32 {
     
     
     #[inline(always)]
-    pub fn index(self) -> usize {
+    pub(crate) fn index(self) -> usize {
         debug_assert!(
             self.tag() == Tag::Expansion32
                 || self.tag() == Tag::Expansion
+                || self.tag() == Tag::ExpansionForReorderable
                 || self.tag() == Tag::Contraction
                 || self.tag() == Tag::Digit
                 || self.tag() == Tag::Prefix
@@ -588,23 +628,23 @@ impl CollationElement32 {
     }
 
     #[inline(always)]
-    pub fn digit(self) -> u8 {
+    pub(crate) fn digit(self) -> u8 {
         debug_assert!(self.tag() == Tag::Digit);
         ((self.0 >> 8) & 0xF) as u8
     }
 
     #[inline(always)]
-    pub fn every_suffix_starts_with_combining(self) -> bool {
+    pub(crate) fn every_suffix_starts_with_combining(self) -> bool {
         debug_assert!(self.tag() == Tag::Contraction);
         (self.0 & CONTRACT_NEXT_CCC) != 0
     }
     #[inline(always)]
-    pub fn at_least_one_suffix_contains_starter(self) -> bool {
+    pub(crate) fn at_least_one_suffix_contains_starter(self) -> bool {
         debug_assert!(self.tag() == Tag::Contraction);
         (self.0 & CONTRACT_HAS_STARTER) != 0
     }
     #[inline(always)]
-    pub fn at_least_one_suffix_ends_with_non_starter(self) -> bool {
+    pub(crate) fn at_least_one_suffix_ends_with_non_starter(self) -> bool {
         debug_assert!(self.tag() == Tag::Contraction);
         (self.0 & CONTRACT_TRAILING_CCC) != 0
     }
@@ -1996,7 +2036,7 @@ where
                                 }
                                 break 'ce32loop;
                             }
-                            Tag::Expansion => {
+                            Tag::Expansion | Tag::ExpansionForReorderable => {
                                 let ces = data.get_ces(ce32.index(), ce32.len());
                                 for u in ces.iter() {
                                     self.pending.push(CollationElement::new(u));
@@ -2414,11 +2454,10 @@ where
                             Tag::Fallback
                             | Tag::Reserved3
                             | Tag::LongPrimary
+                            | Tag::LongPrimaryForReorderable
                             | Tag::LongSecondary
                             | Tag::BuilderData
-                            | Tag::LeadSurrogate
                             | Tag::LatinExpansion
-                            | Tag::U0000
                             | Tag::Hangul => {
                                 debug_assert!(false);
                                 
