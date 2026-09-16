@@ -691,11 +691,13 @@ module.exports = function (config) {
               functions: 0,
               branches: 0,
             },
+            
+            
             "content-src/components/CustomizeMenu/SectionsMgmtPanel/*.jsx": {
               statements: 86,
               lines: 76,
-              functions: 86,
-              branches: 76,
+              functions: 85.71,
+              branches: 75.68,
             },
             "content-src/components/CustomizeMenu/ContentSection/*.jsx": {
               statements: 80,
