@@ -1463,8 +1463,15 @@ pref("browser.netError.searchCTA.enabled", false);
 
 
 
+
+
 pref("browser.netError.searchCTA.connectivityFreshnessMs", 60000);
 pref("browser.netError.searchCTA.connectivityRecheckTimeoutMs", 3000);
+
+
+
+
+pref("browser.netError.searchCTA.decisionTimeoutMs", 300);
 
 
 pref("network.captive-portal-service.enabled", true);

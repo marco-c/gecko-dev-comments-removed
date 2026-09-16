@@ -17,6 +17,7 @@ const EXPECTED_QUERY = "doesnotexist-searchctapbm.com";
 
 add_setup(async function () {
   stubSearchCTASupportedEngine();
+  pinSearchCTADecisionDeadline();
   
   
   

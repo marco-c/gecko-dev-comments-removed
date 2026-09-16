@@ -13,12 +13,37 @@ SearchTestUtils.init(this);
 
 
 
+
+
+
+function getAccessKeyModifiers() {
+  const contentAccess = Services.prefs.getIntPref("ui.key.contentAccess", 5);
+  return {
+    shiftKey: !!(contentAccess & 1),
+    ctrlKey: !!(contentAccess & 2),
+    altKey: !!(contentAccess & 4),
+    metaKey: !!(contentAccess & 8),
+  };
+}
+
+
+
+
+
 function stubSearchCTASupportedEngine() {
   const sandbox = sinon.createSandbox();
   sandbox
     .stub(NetErrorParent.prototype, "isSupportedSearchEngine")
     .returns(true);
   registerCleanupFunction(() => sandbox.restore());
+}
+
+
+
+function pinSearchCTADecisionDeadline() {
+  const pref = "browser.netError.searchCTA.decisionTimeoutMs";
+  Services.prefs.setIntPref(pref, 0);
+  registerCleanupFunction(() => Services.prefs.clearUserPref(pref));
 }
 
 
