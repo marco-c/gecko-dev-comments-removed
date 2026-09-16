@@ -162,6 +162,18 @@ struct nsRoleMapEntry {
   }
 
   
+
+
+
+
+  bool IsSelectableIfDefined() const {
+    return attributeMap1 == mozilla::a11y::aria::eARIASelectableIfDefined ||
+           attributeMap2 == mozilla::a11y::aria::eARIASelectableIfDefined ||
+           attributeMap3 == mozilla::a11y::aria::eARIASelectableIfDefined ||
+           attributeMap4 == mozilla::a11y::aria::eARIASelectableIfDefined;
+  }
+
+  
   nsStaticAtom* const roleAtom;
 
   

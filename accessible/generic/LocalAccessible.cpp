@@ -1589,6 +1589,32 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
   
   if ((mContent->IsXULElement() && aAttribute == nsGkAtoms::selected) ||
       aAttribute == nsGkAtoms::aria_selected) {
+    if (aAttribute == nsGkAtoms::aria_selected) {
+      const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
+      if (!roleMapEntry && IsHTMLTableCell() && Role() == roles::GRID_CELL) {
+        
+        
+        roleMapEntry = aria::GetRoleMap(nsGkAtoms::gridcell);
+      }
+      if (roleMapEntry && roleMapEntry->IsSelectableIfDefined()) {
+        
+        
+        
+        
+        
+        const bool wasDefined =
+            aOldValue && !aOldValue->IsEmptyString() &&
+            !aOldValue->Equals(nsGkAtoms::_undefined, eCaseMatters);
+        const bool isDefined =
+            nsAccUtils::HasDefinedARIAToken(elm, nsGkAtoms::aria_selected);
+        if (wasDefined != isDefined) {
+          auto stateChangeEvent = MakeRefPtr<AccStateChangeEvent>(
+              this, states::SELECTABLE, isDefined);
+          mDoc->FireDelayedEvent(stateChangeEvent);
+        }
+      }
+    }
+
     LocalAccessible* widget = nsAccUtils::GetSelectableContainer(this, State());
     if (widget) {
       AccSelChangeEvent::SelChangeType selChangeType;
