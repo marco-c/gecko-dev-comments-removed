@@ -1539,7 +1539,11 @@ already_AddRefed<layers::KnowsCompositor> MediaCapabilities::GetCompositor() {
     return nullptr;
   }
   RefPtr<layers::KnowsCompositor> knows = renderer->AsKnowsCompositor();
-  if (NS_WARN_IF(!knows)) {
+  if (!knows) {
+    
+    
+    
+    LOG("No compositor available yet for window {}", window->WindowID());
     return nullptr;
   }
   return knows->GetForMedia().forget();
