@@ -1146,12 +1146,13 @@ bool nsLayoutUtils::IsAncestorFrameCrossDocInProcessConsideringContinuations(
     const nsIFrame* aCommonAncestor) {
   MOZ_ASSERT(aAncestorFrame);
   const nsIFrame* ancestorFirstContinuation =
-      aAncestorFrame->FirstContinuation();
+      FirstContinuationOrIBSplitSibling(aAncestorFrame);
   const nsIFrame* commonFirstContinuation =
-      aCommonAncestor ? aCommonAncestor->FirstContinuation() : nullptr;
+      aCommonAncestor ? FirstContinuationOrIBSplitSibling(aCommonAncestor)
+                      : nullptr;
 
   for (const nsIFrame* f = aFrame; f; f = GetCrossDocParentFrameInProcess(f)) {
-    auto* first = f->FirstContinuation();
+    auto* first = FirstContinuationOrIBSplitSibling(f);
     if (first == ancestorFirstContinuation) {
       return true;
     }
@@ -1395,6 +1396,21 @@ nsLayoutUtils::GetNearestScrollContainerFrameToScrollTowards(
         scrollContainerFrame->SidesToScrollForUserInputEvents().Intersects(
             aSideBits)) {
       return scrollContainerFrame;
+    }
+
+    
+    
+    
+    
+    if (f->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
+        nsLayoutUtils::IsReallyFixedPos(f)) {
+      ScrollContainerFrame* rootScrollContainerFrame =
+          f->PresShell()->GetRootScrollContainerFrame();
+      if (rootScrollContainerFrame &&
+          rootScrollContainerFrame->SidesToScrollForUserInputEvents()
+              .Intersects(aSideBits)) {
+        return rootScrollContainerFrame;
+      }
     }
   }
   return nullptr;
