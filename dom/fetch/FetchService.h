@@ -202,6 +202,11 @@ class FetchService final : public nsIObserver {
     bool IsLocalHostFetch() const;
 
     
+    
+    
+    bool IsServiceWorkerEligible() const;
+
+    
     void OnResponseEnd(FetchDriverObserver::EndReason aReason,
                        JS::Handle<JS::Value> aReasonDetails) override;
     void OnResponseAvailableInternal(
