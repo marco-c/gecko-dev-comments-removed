@@ -9,6 +9,7 @@
 
 #include "AudioSegment.h"
 #include "MainThreadUtils.h"
+#include "mozilla/AudioCaptureTiming.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/EventTargetCapability.h"
 #include "mozilla/LazyIdleThread.h"
@@ -162,8 +163,11 @@ class SpeechRecognitionBackend {
 
   
   void ProcessAudioChunk() MOZ_REQUIRES(mResamplingCapability);
-  void SendAudioDataViaIPC(nsTArray<float>&& aAudioData)
+  void SendAudioDataViaIPC(nsTArray<float>&& aAudioData,
+                           TimeStamp aCaptureEndTime)
       MOZ_REQUIRES(mResamplingCapability);
+  
+  TimeStamp CaptureTimeForTrackPosition(TrackTime aPosition);
 
   
   
@@ -172,7 +176,8 @@ class SpeechRecognitionBackend {
       const nsACString& aLanguage, hwinference::SpeechRecognitionChild* aChild)
       MOZ_REQUIRES(sIPCCapability);
   void HandleRecognitionResult(const nsACString& aTranscript, bool aIsFinal,
-                               float aConfidence) MOZ_REQUIRES(sIPCCapability);
+                               float aConfidence, TimeStamp aEventTime)
+      MOZ_REQUIRES(sIPCCapability);
   void HandleRecognitionError(const nsACString& aError)
       MOZ_REQUIRES(sIPCCapability);
 
@@ -248,6 +253,12 @@ class SpeechRecognitionBackend {
   
   
   uint64_t mFramesDropped = 0;
+  
+  
+  
+  TripleBuffer<SampleTimeReference> mLastTrackPositionRef;
+  
+  TrackTime mFramesDequeuedTotal MOZ_GUARDED_BY(mResamplingCapability) = 0;
   
   bool mStopped MOZ_GUARDED_BY(sMainThreadCapability) = false;
   

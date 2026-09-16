@@ -48,6 +48,9 @@ static LazyLogModule gSpeechRecognitionParentLog("SpeechRecognitionParent");
 
 static constexpr int32_t PARAKEET_SAMPLE_RATE = 16000;
 
+
+static constexpr size_t kMaxCaptureTimeSamples = 64;
+
 void SpeechRecognitionParent::ResolveOrRejectInitOnIPCThread(
     InitResolver&& aResolver, bool aSuccess) {
   if (!aSuccess) {
@@ -195,7 +198,8 @@ SpeechRecognitionParent::SpeechRecognitionParent(
       
       
       mAudioQueue(PARAKEET_SAMPLE_RATE * 30),
-      mProcessedAudioPos(0) {
+      mProcessedAudioPos(0),
+      mTimingLock("SpeechRecognitionParent::mTimingLock") {
   
   
   
@@ -553,7 +557,7 @@ mozilla::ipc::IPCResult SpeechRecognitionParent::RecvInit(
 }
 
 mozilla::ipc::IPCResult SpeechRecognitionParent::RecvProcessAudioData(
-    nsTArray<float>&& aAudioData) {
+    nsTArray<float>&& aAudioData, const TimeStamp& aCaptureEndTime) {
   LOGV("{} {} samples", __func__, aAudioData.Length());
 
   
@@ -561,14 +565,46 @@ mozilla::ipc::IPCResult SpeechRecognitionParent::RecvProcessAudioData(
   int length = AssertedCast<int>(aAudioData.Length());
   if (mAudioQueue.AvailableWrite() < length) {
     LOGE("Audio queue full, dropping {} samples", length);
-  } else {
-    int written = mAudioQueue.Enqueue(aAudioData.Elements(), length);
-    if (written != length) {
-      LOGE("Audio queue accepted only {} of {} samples", written, length);
+    return IPC_OK();
+  }
+  int written = mAudioQueue.Enqueue(aAudioData.Elements(), length);
+  if (written != length) {
+    LOGE("Audio queue accepted only {} of {} samples", written, length);
+  }
+
+  {
+    MutexAutoLock lock(mTimingLock);
+    
+    
+    mEnqueuedAudioPos += written;
+    mCaptureTimeSamples.push_back({mEnqueuedAudioPos, aCaptureEndTime});
+    
+    
+    
+    
+    
+    while (mCaptureTimeSamples.size() > kMaxCaptureTimeSamples) {
+      mCaptureTimeSamples.pop_front();
     }
   }
 
   return IPC_OK();
+}
+
+TimeStamp SpeechRecognitionParent::CaptureTimeForPosition(size_t aPosition) {
+  MutexAutoLock lock(mTimingLock);
+  
+  
+  while (mCaptureTimeSamples.size() > 1 &&
+         mCaptureTimeSamples.front().mPosition < aPosition) {
+    mCaptureTimeSamples.pop_front();
+  }
+  if (mCaptureTimeSamples.empty()) {
+    return TimeStamp::Now();
+  }
+  const CaptureTimeSample& sample = mCaptureTimeSamples.front();
+  return EstimateSampleTimeStamp(int64_t(sample.mPosition), sample.mTimeStamp,
+                                 int64_t(aPosition), PARAKEET_SAMPLE_RATE);
 }
 
 mozilla::ipc::IPCResult SpeechRecognitionParent::RecvStop(
@@ -653,7 +689,7 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
   };
 
   auto emit = [self = RefPtr{this}](const nsCString& aText, bool aFinal,
-                                    float aConfidence) {
+                                    float aConfidence, TimeStamp aEventTime) {
     
     
     if (aText.IsEmpty()) {
@@ -664,11 +700,12 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
     }
     NS_DispatchToMainThread(NS_NewRunnableFunction(
         "SpeechRecognitionParent::StreamResult",
-        [self, payload = nsCString(aText), aFinal, aConfidence]() {
+        [self, payload = nsCString(aText), aFinal, aConfidence, aEventTime]() {
           LOGV("Sending streaming result: '{}' (final={}, conf={})",
                payload.get(), aFinal, aConfidence);
           if (self->CanSend()) {
-            (void)self->SendOnRecognitionResult(payload, aFinal, aConfidence);
+            (void)self->SendOnRecognitionResult(payload, aFinal, aConfidence,
+                                                aEventTime);
           }
         }));
   };
@@ -701,7 +738,8 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
         LOGV("  word '{}' [{:.2f}-{:.2f}] conf={:.2f}", w.get(), words[i].start,
              words[i].end, words[i].conf);
       }
-      emit(text,  true, counted ? confSum / counted : 1.0f);
+      emit(text,  true, counted ? confSum / counted : 1.0f,
+           CaptureTimeForPosition(mProcessedAudioPos));
     }
     lib->parakeet_capi_free_words(words, n > 0 ? n : 0);
   };

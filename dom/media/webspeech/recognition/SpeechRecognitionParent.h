@@ -7,13 +7,16 @@
 #ifndef DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHRECOGNITIONPARENT_H_
 #define DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHRECOGNITIONPARENT_H_
 
+#include <deque>
 #include <functional>
 
 #include "WavDumper.h"
+#include "mozilla/AudioCaptureTiming.h"
 #include "mozilla/FileUtils.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/SPSCQueue.h"
 #include "mozilla/ThreadSafety.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ipc/IdType.h"
@@ -57,7 +60,8 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
                                    const nsCString& aLanguage,
                                    const nsTArray<nsString>& aPhrases,
                                    InitResolver&& aResolver);
-  mozilla::ipc::IPCResult RecvProcessAudioData(nsTArray<float>&& aAudioData);
+  mozilla::ipc::IPCResult RecvProcessAudioData(
+      nsTArray<float>&& aAudioData, const TimeStamp& aCaptureEndTime);
   mozilla::ipc::IPCResult RecvStop(StopResolver&& aResolver);
 
   void ActorDestroy(ActorDestroyReason aReason) override;
@@ -105,6 +109,11 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
   void SignalError(const nsCString& aErrorMessage);
 
   
+  
+  
+  TimeStamp CaptureTimeForPosition(size_t aPosition) MOZ_EXCLUDES(mTimingLock);
+
+  
   static StaticMutex sSessionMutex;
   static StaticRefPtr<SpeechRecognitionParent> sActiveSession
       MOZ_GUARDED_BY(sSessionMutex);
@@ -146,8 +155,18 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
   bool mEmittedFinalResult = false;
 
   
-  
   size_t mProcessedAudioPos;
+
+  
+  
+  
+  struct CaptureTimeSample {
+    size_t mPosition = 0;
+    TimeStamp mTimeStamp;
+  };
+  Mutex mTimingLock;
+  size_t mEnqueuedAudioPos MOZ_GUARDED_BY(mTimingLock) = 0;
+  std::deque<CaptureTimeSample> mCaptureTimeSamples MOZ_GUARDED_BY(mTimingLock);
 
   
   
