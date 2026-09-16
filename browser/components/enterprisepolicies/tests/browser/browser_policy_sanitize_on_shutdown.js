@@ -87,6 +87,20 @@ add_task(async function test_sanitizeOnShutdown_object_locked_false() {
 });
 
 
+add_task(async function test_locked_policy_still_allows_sub_settings() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      SanitizeOnShutdown: { Cookies: true, Locked: true },
+    },
+  });
+  await checkPrivacyPreferences({
+    historyMode: true,
+    shutdownClearingExceptions: false,
+    clearDataSettings: false,
+  });
+});
+
+
 
 
 add_task(async function test_sanitizeOnShutdown_exceptions_honored() {
