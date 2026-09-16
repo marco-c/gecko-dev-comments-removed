@@ -244,18 +244,47 @@ class URLParams final {
   template <typename ParamHandler>
   static bool Parse(const nsACString& aInput, bool aShouldDecode,
                     ParamHandler aParamHandler) {
+    return ParseWithEquals(aInput, aShouldDecode,
+                           [&](nsCString&& aName, nsCString&& aValue, bool) {
+                             return aParamHandler(std::move(aName),
+                                                  std::move(aValue));
+                           });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template <typename ParamHandler>
+  static bool ParseWithEquals(const nsACString& aInput, bool aShouldDecode,
+                              ParamHandler aParamHandler) {
     const char* start = aInput.BeginReading();
     const char* const end = aInput.EndReading();
 
     while (start != end) {
       nsAutoCString name;
       nsAutoCString value;
+      bool hasEquals = false;
 
-      if (!ParseNextInternal(start, end, aShouldDecode, &name, &value)) {
+      if (!ParseNextInternal(start, end, aShouldDecode, &name, &value,
+                             hasEquals)) {
         continue;
       }
 
-      if (!aParamHandler(std::move(name), std::move(value))) {
+      if (!aParamHandler(std::move(name), std::move(value), hasEquals)) {
         return false;
       }
     }
@@ -344,7 +373,8 @@ class URLParams final {
  private:
   static bool ParseNextInternal(const char*& aStart, const char* aEnd,
                                 bool aShouldDecode, nsACString* aOutputName,
-                                nsACString* aOutputValue);
+                                nsACString* aOutputValue,
+                                bool& aOutputHasEquals);
 
   struct Param {
     nsCString mKey;
