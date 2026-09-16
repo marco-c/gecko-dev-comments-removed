@@ -519,6 +519,7 @@ def target_tasks_mozilla_central(full_task_graph, parameters, graph_config):
         build_platform = task.attributes.get("build_platform")
         build_type = task.attributes.get("build_type")
         shippable = task.attributes.get("shippable", False)
+        ccov = task.attributes.get("ccov", False)
 
         if not build_platform or not build_type:
             return True
@@ -532,7 +533,7 @@ def target_tasks_mozilla_central(full_task_graph, parameters, graph_config):
         
         
         is_regular_opt = (
-            family == "android" and not shippable
+            family == "android" and not shippable and not ccov
         ) or "-" not in build_platform
 
         if build_type != "opt" or not is_regular_opt:
