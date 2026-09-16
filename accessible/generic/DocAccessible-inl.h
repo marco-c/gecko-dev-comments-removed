@@ -112,8 +112,17 @@ inline void DocAccessible::NotifyOfLoad(uint32_t aLoadEventType) {
 
 inline void DocAccessible::MaybeNotifyOfValueChange(
     LocalAccessible* aAccessible) {
-  if (nsAccUtils::CanFireValueChangeEvent(aAccessible)) {
-    FireDelayedEvent(nsIAccessibleEvent::EVENT_TEXT_VALUE_CHANGE, aAccessible);
+  
+  
+  
+  for (LocalAccessible* acc = aAccessible; acc; acc = acc->LocalParent()) {
+    if (nsAccUtils::ShouldFireValueChangeForDescendantChanges(acc)) {
+      FireDelayedEvent(nsIAccessibleEvent::EVENT_TEXT_VALUE_CHANGE, acc);
+      return;
+    }
+    if (!acc->HasValueDependent()) {
+      return;
+    }
   }
 }
 

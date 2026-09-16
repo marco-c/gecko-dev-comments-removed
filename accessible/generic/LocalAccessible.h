@@ -702,6 +702,12 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
+
+  bool HasValueDependent() const { return mContextFlags & eHasValueDependent; }
+
+  
+
+
   bool IsInsideAlert() const { return mContextFlags & eInsideAlert; }
 
   
@@ -864,8 +870,9 @@ class LocalAccessible : public nsISupports, public Accessible {
     eHasNameDependent = 1 << 0,  
     eInsideAlert = 1 << 1,
     eHasDescriptionDependent = 1 << 2,  
+    eHasValueDependent = 1 << 3,        
 
-    eLastContextFlag = eHasDescriptionDependent
+    eLastContextFlag = eHasValueDependent
   };
 
  protected:
@@ -1003,7 +1010,7 @@ class LocalAccessible : public nsISupports, public Accessible {
   RefPtr<const ComputedStyle> mOldComputedStyle;
 
   static const uint8_t kStateFlagsBits = 11;
-  static const uint8_t kContextFlagsBits = 3;
+  static const uint8_t kContextFlagsBits = 4;
 
   
 

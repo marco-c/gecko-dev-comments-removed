@@ -2907,6 +2907,12 @@ void LocalAccessible::BindToParent(LocalAccessible* aParent,
   } else {
     mContextFlags &= ~eHasDescriptionDependent;
   }
+  if (mParent->HasValueDependent() ||
+      nsAccUtils::ShouldFireValueChangeForDescendantChanges(mParent)) {
+    mContextFlags |= eHasValueDependent;
+  } else {
+    mContextFlags &= ~eHasValueDependent;
+  }
 
   
   
@@ -2971,7 +2977,7 @@ void LocalAccessible::UnbindFromParent() {
 
   delete mGroupInfo;
   mGroupInfo = nullptr;
-  mContextFlags &= ~eHasNameDependent & ~eInsideAlert;
+  mContextFlags &= ~eHasNameDependent & ~eHasValueDependent & ~eInsideAlert;
 }
 
 

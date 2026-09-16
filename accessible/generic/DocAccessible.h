@@ -214,6 +214,7 @@ class DocAccessible : public HyperTextAccessible,
   
 
 
+
   void MaybeNotifyOfValueChange(LocalAccessible* aAccessible);
 
   void SetAnchorJump(nsIContent* aTargetNode) { mAnchorJumpElm = aTargetNode; }
