@@ -4,7 +4,6 @@
 
 #include "NSSCipherStrategy.h"
 
-#include <cstring>
 #include <utility>
 
 #include "CipherStrategyUtils.h"
@@ -28,15 +27,11 @@ Result<NSSCipherStrategy::KeyType, nsresult> NSSCipherStrategy::GenerateKey() {
 }
 
 nsresult NSSCipherStrategy::Init(const CipherMode aMode,
-                                 const Span<const uint8_t> aKey,
-                                 const Span<const uint8_t> aInitialIv) {
-  MOZ_ASSERT_IF(CipherMode::Encrypt == aMode, aInitialIv.Length() == 32);
+                                 const Span<const uint8_t> aKey) {
   MOZ_RELEASE_ASSERT(EnsureNSSInitializedChromeOrContent(),
                      "Could not initialize NSS.");
 
   mMode.init(aMode);
-
-  mIv.AppendElements(aInitialIv);
 
   const auto slot = UniquePK11SlotInfo{PK11_GetInternalSlot()};
   if (slot == nullptr) {
@@ -70,11 +65,6 @@ nsresult NSSCipherStrategy::Init(const CipherMode aMode,
 nsresult NSSCipherStrategy::Cipher(const Span<uint8_t> aIv,
                                    const Span<const uint8_t> aIn,
                                    const Span<uint8_t> aOut) {
-  if (CipherMode::Encrypt == *mMode) {
-    MOZ_RELEASE_ASSERT(aIv.Length() == mIv.Length());
-    memcpy(aIv.Elements(), mIv.Elements(), aIv.Length());
-  }
-
   
   constexpr size_t tagLen = 16;
   const auto tag = aIv.Last(tagLen);
@@ -83,17 +73,29 @@ nsresult NSSCipherStrategy::Cipher(const Span<uint8_t> aIv,
   const auto iv = aIv.First(12);
   MOZ_ASSERT(tag.Length() + iv.Length() <= aIv.Length());
 
+  if (CipherMode::Encrypt == *mMode) {
+    
+    
+    
+    
+    
+    
+    
+    const auto generated = aIv.First(aIv.Length() - tagLen);
+    if (PK11_GenerateRandom(generated.Elements(),
+                            static_cast<int>(generated.Length())) !=
+        SECSuccess) {
+      return NS_ERROR_FAILURE;
+    }
+  }
+
   int outLen;
   
   
   const SECStatus rv = PK11_AEADOp(
-      mPK11Context->get(), CKG_GENERATE_COUNTER, 0, iv.Elements(), iv.Length(),
+      mPK11Context->get(), CKG_NO_GENERATE, 0, iv.Elements(), iv.Length(),
       nullptr, 0, aOut.Elements(), &outLen, aOut.Length(), tag.Elements(),
       tag.Length(), aIn.Elements(), aIn.Length());
-
-  if (CipherMode::Encrypt == *mMode) {
-    memcpy(mIv.Elements(), aIv.Elements(), aIv.Length());
-  }
 
   return MapSECStatus(rv);
 }

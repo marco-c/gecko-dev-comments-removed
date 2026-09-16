@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_quota_DummyCipherStrategy_h
 #define mozilla_dom_quota_DummyCipherStrategy_h
 
@@ -32,8 +30,7 @@ struct DummyCipherStrategy {
 
   static Result<KeyType, nsresult> GenerateKey() { return KeyType{}; }
 
-  nsresult Init(CipherMode aCipherMode, Span<const uint8_t> aKey,
-                Span<const uint8_t> aInitialIv = Span<const uint8_t>{}) {
+  nsresult Init(CipherMode aCipherMode, Span<const uint8_t> aKey) {
     return NS_OK;
   }
 

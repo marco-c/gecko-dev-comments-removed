@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_quota_NSSCipherStrategy_h
 #define mozilla_dom_quota_NSSCipherStrategy_h
 
@@ -17,7 +15,6 @@
 #include "mozilla/InitializedOnce.h"
 #include "mozilla/Result.h"
 #include "mozilla/Span.h"
-#include "nsTArray.h"
 
 namespace mozilla::dom::quota {
 
@@ -30,9 +27,13 @@ struct NSSCipherStrategy {
 
   static Result<KeyType, nsresult> GenerateKey();
 
-  nsresult Init(CipherMode aCipherMode, Span<const uint8_t> aKey,
-                Span<const uint8_t> aInitialIv = Span<const uint8_t>{});
+  nsresult Init(CipherMode aCipherMode, Span<const uint8_t> aKey);
 
+  
+  
+  
+  
+  
   nsresult Cipher(Span<uint8_t> aIv, Span<const uint8_t> aIn,
                   Span<uint8_t> aOut);
 
@@ -47,7 +48,6 @@ struct NSSCipherStrategy {
   
   LazyInitializedOnceEarlyDestructible<const CipherMode> mMode;
   LazyInitializedOnceEarlyDestructible<const UniquePK11Context> mPK11Context;
-  nsTArray<uint8_t> mIv;
 };
 
 }  

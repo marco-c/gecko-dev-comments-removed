@@ -271,9 +271,13 @@ static void* obfsEncode(ObfsFile* p,
   MOZ_ASSERT(payloadLength > 0);
   
   
-  p->encryptCipherStrategy->Cipher(
-      Span{aIv}, Span{a + i, static_cast<unsigned>(payloadLength)},
-      Span{pOut + i, static_cast<unsigned>(payloadLength)});
+  
+  
+  if (NS_WARN_IF(NS_FAILED(p->encryptCipherStrategy->Cipher(
+          Span{aIv}, Span{a + i, static_cast<unsigned>(payloadLength)},
+          Span{pOut + i, static_cast<unsigned>(payloadLength)})))) {
+    return nullptr;
+  }
   memcpy(pOut + nByte - kReservedBytes, aIv, kIvBytes);
 
   return pOut;
@@ -851,8 +855,7 @@ static int obfsOpen(sqlite3_vfs* pVfs, const char* zName, sqlite3_file* pFile,
   auto resetMethods = MakeScopeExit([pFile] { pFile->pMethods = nullptr; });
 
   if (NS_WARN_IF(NS_FAILED(encryptCipherStrategy->Init(
-          CipherMode::Encrypt, Span{aKey, sizeof(aKey)},
-          IPCStreamCipherStrategy::MakeBlockPrefix())))) {
+          CipherMode::Encrypt, Span{aKey, sizeof(aKey)})))) {
     return SQLITE_ERROR;
   }
 
