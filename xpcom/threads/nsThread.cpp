@@ -624,9 +624,6 @@ nsresult nsThread::Init(const nsACString& aName) {
     if (!(thread = PR_CreateThread(PR_USER_THREAD, ThreadFunc, initData.get(),
                                    PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD,
                                    PR_JOINABLE_THREAD, mStackSize))) {
-      
-      
-      
       PRErrorCode prError = PR_GetError();
       PRInt32 osError = PR_GetOSError();
       CrashReporter::RecordAnnotationNSCString(
@@ -1503,6 +1500,16 @@ void PerformanceCounterState::RunnableDidRun(const nsCString& aName,
   }
 }
 
+struct LongTaskMarker : public BaseMarkerType<LongTaskMarker> {
+  static constexpr const char* Name = "MainThreadLongTask";
+
+  static constexpr bool StoreName = true;
+
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
+                                               MS::Location::MarkerTable};
+};
+
 void PerformanceCounterState::MaybeReportAccumulatedTime(const nsCString& aName,
                                                          TimeStamp aNow) {
   MOZ_ASSERT(mCurrentTimeSliceStart,
@@ -1528,22 +1535,6 @@ void PerformanceCounterState::MaybeReportAccumulatedTime(const nsCString& aName,
     mLastLongTaskEnd = aNow;
 
     if (profiler_thread_is_being_profiled_for_markers()) {
-      struct LongTaskMarker {
-        static constexpr Span<const char> MarkerTypeName() {
-          return MakeStringSpan("MainThreadLongTask");
-        }
-        static void StreamJSONMarkerData(
-            baseprofiler::SpliceableJSONWriter& aWriter) {
-          aWriter.StringProperty("category", "LongTask");
-        }
-        static MarkerSchema MarkerTypeDisplay() {
-          using MS = MarkerSchema;
-          MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-          schema.AddKeyLabelFormat("category", "Type", MS::Format::String);
-          return schema;
-        }
-      };
-
       profiler_add_marker(mCurrentRunnableIsIdleRunnable
                               ? ProfilerString8View("LongIdleTask")
                               : ProfilerString8View("LongTask"),
