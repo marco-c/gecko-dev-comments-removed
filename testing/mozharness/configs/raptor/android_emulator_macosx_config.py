@@ -38,8 +38,10 @@ config = {
         "-ranchu",
         "-selinux",
         "permissive",
+        
+        
         "-memory",
-        "3072",
+        "6144",
         "-cores",
         "4",
         "-skin",
