@@ -8,9 +8,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AddonRepository: "resource://gre/modules/addons/AddonRepository.sys.mjs",
 });
 
-export const TESTING_XPI_BASE_URL =
-  "browser.theme.testing.extraThemesXPIBaseUrl";
-
 /**
  * @typedef {string} ThemesInstallSource
  *   Telemetry source string recorded when a theme is installed (e.g. "about:addons",
@@ -286,12 +283,16 @@ class ThemesList {
    *
    * @param {string} themeId - The addon ID of the theme to toggle.
    * @param {boolean} enabled - Whether to enable or disable the theme.
-   * @param {AddonInstallListener} [installListener] - Optional listener forwarded to
+   * @param {object} [options]
+   * @param {string} [options.layout] - The layout mode of the picker that made
+   *   the selection, recorded on `theme_picker.change`. When absent, the call
+   *   logs an error and records `"unknown"`.
+   * @param {AddonInstallListener} [options.installListener] - Optional listener forwarded to
    *   {@link AddonInstall#addListener} when a download and install is required.
    * @returns {Promise<boolean>} `true` if the request completed successfully, `false` if it
    *   failed or the given `themeId` is not managed by this instance.
    */
-  async updateThemeState(themeId, enabled, installListener) {
+  async updateThemeState(themeId, enabled, { layout, installListener } = {}) {
     if (!this.hasThemeId(themeId)) {
       console.error(
         "ThemesList.updateThemeState can only update themes managed by it"
@@ -306,32 +307,33 @@ class ThemesList {
         await addon?.disable();
         return true;
       }
+
+      if (!layout) {
+        console.error(
+          'ThemesList.updateThemeState called without a layout, so theme_picker.change records "unknown"'
+        );
+      }
+      const eventExtras = {
+        source: this.#installSource,
+        layout: layout ?? "unknown",
+        property: "theme",
+        theme_id: themeId,
+      };
+
       if (addon) {
         await addon.enable();
+        Glean.themePicker.change.record(eventExtras);
         return true;
       }
 
-      let installUrl;
-      let installName;
-      // TODO(Bug 2053220): restrict use of this testing url pref to non-release channels.
-      const testingBaseUrl = Services.prefs.getStringPref(
-        TESTING_XPI_BASE_URL,
-        ""
-      );
-      if (testingBaseUrl) {
-        installUrl = `${testingBaseUrl}/${themeId}.xpi`;
-        installName = themeId;
-      } else {
-        const [repoAddon] = await lazy.AddonRepository.getAddonsByIDs([
-          themeId,
-        ]);
-        if (!repoAddon?.sourceURI) {
-          console.error("Unable to resolve the XPI url for the theme", themeId);
-          return false;
-        }
-        installUrl = repoAddon.sourceURI.spec;
-        installName = repoAddon.name;
+      const [repoAddon] = await lazy.AddonRepository.getAddonsByIDs([themeId]);
+      if (!repoAddon?.sourceURI) {
+        console.error("Unable to resolve the XPI url for the theme", themeId);
+        return false;
       }
+
+      const installUrl = repoAddon.sourceURI.spec;
+      const installName = repoAddon.name;
 
       install = await lazy.AddonManager.getInstallForURL(installUrl, {
         name: installName,
@@ -345,6 +347,7 @@ class ThemesList {
       }
       const theme = await install.install();
       await theme.enable();
+      Glean.themePicker.change.record(eventExtras);
       return true;
     } catch (err) {
       console.error(
