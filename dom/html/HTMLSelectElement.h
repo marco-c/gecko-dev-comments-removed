@@ -181,6 +181,19 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   };
   static NearestAncestors ComputeNearestAncestors(const nsINode&);
 
+  
+
+
+
+
+  static bool IsOptionListItem(const Element& aElement, const nsINode& aRoot);
+
+  
+
+
+
+  uint32_t CountRenderedRows();
+
   int32_t SelectedIndex() const;
   
   
