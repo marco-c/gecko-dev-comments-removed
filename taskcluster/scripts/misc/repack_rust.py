@@ -529,9 +529,18 @@ def build_src(install_dir, host, targets, patches):
 
         
         
-        command = ["python3", "x.py", "install", "-v", "--host", host, "--build", host]
-        for target in targets:
-            command.extend(["--target", target])
+        command = [
+            "python3",
+            "x.py",
+            "install",
+            "-v",
+            "--host",
+            host,
+            "--build",
+            host,
+            "--target",
+            ",".join(targets),
+        ]
 
         subprocess.check_call(command, stderr=subprocess.STDOUT, env=env, cwd=rust_dir)
 
