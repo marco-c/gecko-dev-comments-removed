@@ -103,18 +103,23 @@ async function cleanupSmartFormFillAutocompleteTest(context) {
     get: async () => MOCK_RS_RECORDS,
   });
 
-  if (context.win && !context.win.closed) {
-    await closeAutocomplete(context.win.gBrowser.selectedBrowser);
-  }
-
   context.mockEngineManager?.rejectAllRequests();
   context.mockEngineManager?.cleanupMocks();
 
-  await SpecialPowers.popPrefEnv();
-  Region._setHomeRegion(context.originalRegion, false);
+  try {
+    if (context.win && !context.win.closed) {
+      await closeAutocomplete(context.win.gBrowser.selectedBrowser);
+    }
+  } finally {
+    try {
+      await SpecialPowers.popPrefEnv();
+    } finally {
+      Region._setHomeRegion(context.originalRegion, false);
 
-  if (context.win && !context.win.closed) {
-    await BrowserTestUtils.closeWindow(context.win);
+      if (context.win && !context.win.closed) {
+        await BrowserTestUtils.closeWindow(context.win);
+      }
+    }
   }
 }
 
@@ -206,12 +211,63 @@ function respondToMetadataRequest(
 
 
 
+
+
+async function captureMetadataRequests(
+  mockEngineManager,
+  {
+    expectedSchemas = [FIELD_CLASSIFICATION_SCHEMA, RELEVANT_TABS_SCHEMA],
+    selectedSourceUrl = null,
+  } = {}
+) {
+  const requestDataBySchema = new Map();
+
+  while (expectedSchemas.some(schema => !requestDataBySchema.has(schema))) {
+    const { request, respond } = await mockEngineManager.captureRequest({
+      purpose: SMART_FORM_FILL_MODEL_PURPOSE,
+    });
+    const schemaName = getModelRequestSchema(request);
+
+    Assert.ok(
+      expectedSchemas.includes(schemaName),
+      `The ${schemaName} request should be expected`
+    );
+    Assert.ok(
+      !requestDataBySchema.has(schemaName),
+      `The ${schemaName} request should only run once`
+    );
+
+    const requestData = getModelRequestData(request);
+    requestDataBySchema.set(schemaName, requestData);
+    respondToMetadataRequest(
+      schemaName,
+      requestData,
+      respond,
+      selectedSourceUrl
+    );
+  }
+
+  return requestDataBySchema;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 function settlePendingMetadataRequests(
   mockEngineManager,
   handledSchemas,
   selectedSourceUrl,
   failedSchemas,
-  schemasToSettle = [FIELD_CLASSIFICATION_SCHEMA, RELEVANT_TABS_SCHEMA]
+  schemasToSettle = [FIELD_CLASSIFICATION_SCHEMA, RELEVANT_TABS_SCHEMA],
+  requestDataBySchema = null
 ) {
   const engine = mockEngineManager.engines.get(SMART_FORM_FILL_MODEL_PURPOSE);
   if (!engine) {
@@ -224,13 +280,16 @@ function settlePendingMetadataRequests(
       continue;
     }
 
+    const requestData = getModelRequestData(request);
+    requestDataBySchema?.set(schemaName, requestData);
+
     if (failedSchemas.includes(schemaName)) {
       engine.runRequests.delete(requestId);
       reject(new Error(`Test failure for ${schemaName}`));
     } else {
       respondToMetadataRequest(
         schemaName,
-        getModelRequestData(request),
+        requestData,
         response => engine.respond(requestId, response),
         selectedSourceUrl
       );
@@ -238,6 +297,7 @@ function settlePendingMetadataRequests(
     handledSchemas.add(schemaName);
   }
 }
+
 
 
 
@@ -261,6 +321,7 @@ async function waitForMetadataAndUpdatedRow(
   failedSchemas
 ) {
   const handledSchemas = new Set();
+  const requestDataBySchema = new Map();
   let row;
 
   await TestUtils.waitForCondition(() => {
@@ -268,7 +329,9 @@ async function waitForMetadataAndUpdatedRow(
       mockEngineManager,
       handledSchemas,
       selectedSourceUrl,
-      failedSchemas
+      failedSchemas,
+      undefined,
+      requestDataBySchema
     );
 
     row = popup
@@ -283,7 +346,40 @@ async function waitForMetadataAndUpdatedRow(
   }, "Waiting for Smart Form Fill metadata and autocomplete refresh");
 
   await row.updateComplete;
-  return { row, handledSchemas };
+  return { row, handledSchemas, requestDataBySchema };
+}
+
+function getSmartFormFillActor(browser) {
+  return browser.browsingContext.currentWindowGlobal.getActor("SmartFormFill");
+}
+
+function getFieldsByName(formData) {
+  return new Map(formData.fields.map(field => [field.name, field]));
+}
+
+function hasSmartFormFillProvider(browser, selector) {
+  return SpecialPowers.spawn(browser, [selector], fieldSelector => {
+    const input = content.document.querySelector(fieldSelector);
+    const autocompleteActor =
+      input.documentGlobal.windowGlobalChild.getActor("AutoComplete");
+
+    return [...autocompleteActor.providersByInput(input)].some(
+      provider => provider.actorName === "SmartFormFill"
+    );
+  });
+}
+
+async function waitForFocusedForm(browser, selector, check, message) {
+  await waitForSmartFormFillProvider(browser, selector, { focus: true });
+
+  const actor = getSmartFormFillActor(browser);
+  let formData;
+  await TestUtils.waitForCondition(async () => {
+    formData = await actor.sendQuery("SmartFormFill:GetFocusedForm");
+    return formData && check(formData);
+  }, message);
+
+  return formData;
 }
 
 
