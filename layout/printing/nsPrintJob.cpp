@@ -83,7 +83,7 @@ static const char sPrintSettingsServiceContractID[] =
 #include "nsPageSequenceFrame.h"
 #include "nsRange.h"
 
-#if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
+#ifdef ACCESSIBILITY
 #  include "mozilla/a11y/DocManager.h"
 #  include "mozilla/a11y/PdfStructTreeBuilder.h"
 #endif
@@ -904,7 +904,7 @@ nsresult nsPrintJob::SetupToPrintContent() {
   
   
   if (mIsDoingPrinting) {
-#if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
+#ifdef ACCESSIBILITY
     if (!mIsCreatingPrintPreview) {
       a11y::DocManager::NotifyOfPrintDocument(mPrintObject->mDocument);
       
