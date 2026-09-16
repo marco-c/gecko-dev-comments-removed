@@ -1825,6 +1825,9 @@ class PatchFileDecoder {
   virtual int Apply(const uint8_t* aCheckedSrcBuf, size_t aCheckedSrcBufSize,
                     FILE* aDstFile) = 0;
 
+  
+  virtual int Finalize() { return OK; }
+
  protected:
   virtual int Load(FILE* aPatchFile) = 0;
 };
@@ -1948,6 +1951,8 @@ class ZucchiniPatchFileDecoder : public PatchFileDecoder {
   int Apply(const uint8_t* aCheckedSrcBuf, size_t aCheckedSrcBufSize,
             FILE* aDstFile) override;
 
+  int Finalize() override;
+
  protected:  
   ZucchiniPatchFileDecoder() = default;
   int Load(FILE* aPatchFile) override;
@@ -1989,6 +1994,10 @@ int ZucchiniPatchFileDecoder::Apply(const uint8_t* aCheckedSrcBuf,
   
   return FromZucchiniStatus(
       mMappedPatch.ApplyUnsafe(aCheckedSrcBuf, aCheckedSrcBufSize, aDstFile));
+}
+
+int ZucchiniPatchFileDecoder::Finalize() {
+  return FromZucchiniStatus(mMappedPatch.Finalize());
 }
 #endif  
 
@@ -2356,6 +2365,12 @@ int PatchFile::ApplyPatchTo(PatchDest aDest) {
   
   
   rv = mPatchFileDecoder->Apply(mBuf.get(), mBufSize, ofile);
+
+  if (rv == OK) {
+    
+    
+    rv = mPatchFileDecoder->Finalize();
+  }
 
   
   
