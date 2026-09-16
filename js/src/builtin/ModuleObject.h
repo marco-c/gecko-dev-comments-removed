@@ -78,7 +78,9 @@ enum class ImportNameValueType : uint8_t {
   String,
   Namespace,
   Source,
-  AllButDefault
+  
+  
+  All
 };
 
 class ModuleRequestObject : public NativeObject {

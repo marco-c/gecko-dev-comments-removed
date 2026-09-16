@@ -685,6 +685,9 @@ class StencilModuleEntry {
   
   
   
+  
+  
+  
   MaybeModuleRequestIndex moduleRequest;
   TaggedParserAtomIndex localName;
   TaggedParserAtomIndex importName;
@@ -800,7 +803,7 @@ class StencilModuleEntry {
     MOZ_ASSERT(moduleRequest.isSome());
     StencilModuleEntry entry(lineno, column);
     entry.moduleRequest = MaybeModuleRequestIndex(moduleRequest);
-    entry.importNameValueType = js::ImportNameValueType::AllButDefault;
+    entry.importNameValueType = js::ImportNameValueType::All;
     return entry;
   }
 };

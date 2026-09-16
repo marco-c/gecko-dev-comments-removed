@@ -747,6 +747,18 @@ static ModuleObject* GetImportedModule(
 
 
 
+
+
+static bool ExportStarDefaultEnabled() {
+#ifdef NIGHTLY_BUILD
+  return JS::Prefs::experimental_export_star_default();
+#else
+  return false;
+#endif
+}
+
+
+
 static bool ModuleGetExportedNames(
     JSContext* cx, Handle<ModuleObject*> module,
     MutableHandle<ModuleSet> exportStarSet,
@@ -822,7 +834,13 @@ static bool ModuleGetExportedNames(
     
     for (JSAtom* name : starNames) {
       
-      if (name != cx->names().default_) {
+
+      
+      
+      
+      
+      
+      if (ExportStarDefaultEnabled() || name != cx->names().default_) {
         
         if (!ContainsElement(exportedNames, name)) {
           
@@ -1037,7 +1055,14 @@ static bool CyclicModuleResolveExport(JSContext* cx,
   }
 
   
-  if (exportName == cx->names().default_) {
+
+  
+  
+  
+  
+  
+  
+  if (!ExportStarDefaultEnabled() && exportName == cx->names().default_) {
     
     
     
