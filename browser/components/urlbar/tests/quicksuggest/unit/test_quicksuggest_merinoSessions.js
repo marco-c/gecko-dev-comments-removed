@@ -20,7 +20,7 @@ add_setup(async () => {
 
 
 add_task(async function singleEngagement() {
-  let controller = UrlbarTestUtils.newMockController();
+  let controller = UrlbarTestUtils.mockChildController();
 
   for (let i = 0; i < 3; i++) {
     let searchString = "search" + i;
@@ -59,7 +59,7 @@ add_task(async function manyEngagements_abandonment() {
 });
 
 async function doManyEngagementsTest(state) {
-  let controller = UrlbarTestUtils.newMockController();
+  let controller = UrlbarTestUtils.mockChildController();
 
   for (let i = 0; i < 3; i++) {
     let searchString = "search" + i;
@@ -85,7 +85,7 @@ async function doManyEngagementsTest(state) {
 
 
 add_task(async function canceledQueries() {
-  let controller = UrlbarTestUtils.newMockController();
+  let controller = UrlbarTestUtils.mockChildController();
 
   for (let i = 0; i < 3; i++) {
     

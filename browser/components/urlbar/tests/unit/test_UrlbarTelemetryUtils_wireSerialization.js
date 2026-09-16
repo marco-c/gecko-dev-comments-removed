@@ -147,9 +147,39 @@ add_task(function test_recordedEngagement_roundtrip() {
   );
 });
 
+add_task(function test_recordedEngagement_resolves_live_results() {
+  let engagement = makeRecordedEngagement();
+  
+  let liveResults = engagement.visibleResults;
+  liveResults.forEach((result, i) => (result.id = i + 1));
+  let wire = structuredClone(toWire(engagement));
+  
+  liveResults.forEach(result => (result.rowIndex = undefined));
+
+  let restored = UrlbarTelemetryUtils.recordedEngagementFromWire(
+    wire,
+    liveResults
+  );
+
+  Assert.strictEqual(
+    restored.internalDetails.result,
+    liveResults[0],
+    "the picked result resolved to the parent's own result"
+  );
+  Assert.equal(
+    restored.internalDetails.result.rowIndex,
+    2,
+    "the wire's rowIndex carried over to it"
+  );
+  Assert.ok(
+    restored.visibleResults.every((result, i) => result === liveResults[i]),
+    "the visible results resolved to the parent's own results"
+  );
+});
+
 add_task(function test_recordFromChild_records_engagement() {
   Services.fog.testResetFOG();
-  let controller = UrlbarTestUtils.newMockController();
+  let controller = UrlbarTestUtils.mockChildController();
 
   
   controller.recordEngagement(
@@ -221,7 +251,7 @@ add_task(function test_collectBounceSnapshot() {
 
 add_task(function test_recordFromChild_records_exposures() {
   Services.fog.testResetFOG();
-  let controller = UrlbarTestUtils.newMockController();
+  let controller = UrlbarTestUtils.mockChildController();
 
   
   

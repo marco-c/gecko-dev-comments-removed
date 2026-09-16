@@ -102,7 +102,7 @@ add_task(async function noTabToSearchResultsInSmartbar() {
   ]);
 
   
-  let urlbarController = UrlbarTestUtils.newMockController();
+  let urlbarController = UrlbarTestUtils.mockChildController();
   let urlbarContext = createContext("examp", {
     isPrivate: false,
   });
@@ -116,7 +116,7 @@ add_task(async function noTabToSearchResultsInSmartbar() {
   );
 
   
-  let smartbarController = UrlbarTestUtils.newMockController({
+  let smartbarController = UrlbarTestUtils.mockChildController({
     sapName: "smartbar",
   });
   let smartbarContext = createContext("examp", {

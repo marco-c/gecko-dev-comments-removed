@@ -163,7 +163,7 @@ add_task(async function test_bookmarkBehaviorDisabled_tagged() {
   
   Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
 
-  let controller = UrlbarTestUtils.newMockController();
+  let controller = UrlbarTestUtils.mockChildController();
   
   let searchString = "MoZ oRg";
   let context = createContext(searchString, { isPrivate: false });
@@ -215,7 +215,7 @@ add_task(async function test_bookmarkBehaviorDisabled_untagged() {
   
   Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
 
-  let controller = UrlbarTestUtils.newMockController();
+  let controller = UrlbarTestUtils.mockChildController();
   
   let searchString = "MoZ oRg";
   let context = createContext(searchString, { isPrivate: false });
@@ -263,7 +263,7 @@ add_task(async function test_diacritics() {
   
   Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", true);
 
-  let controller = UrlbarTestUtils.newMockController();
+  let controller = UrlbarTestUtils.mockChildController();
   let searchString = "agui";
   let context = createContext(searchString, { isPrivate: false });
 
