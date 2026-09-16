@@ -29,9 +29,6 @@ registerCleanupFunction(() => {
 
 
 async function test_tls_fail_on_ws_server_over_proxy() {
-  
-  Services.prefs.setIntPref("network.websocket.timeout.open", 1);
-
   let proxy = new NodeHTTPSProxyServer();
   await proxy.start();
 
@@ -43,7 +40,6 @@ async function test_tls_fail_on_ws_server_over_proxy() {
   registerCleanupFunction(async () => {
     await wss.stop();
     await proxy.stop();
-    Services.prefs.clearUserPref("network.websocket.timeout.open");
   });
 
   Assert.notEqual(wss.port(), null);
@@ -56,6 +52,9 @@ async function test_tls_fail_on_ws_server_over_proxy() {
   const msg = "test tls fail on ws server over proxy";
   let [status] = await openWebSocketChannelPromise(chan, url, msg);
 
-  Assert.equal(status, Cr.NS_ERROR_NET_TIMEOUT_EXTERNAL);
+  
+  
+  
+  Assert.equal(status, 0x804b0052); 
 }
 add_task(test_tls_fail_on_ws_server_over_proxy);
