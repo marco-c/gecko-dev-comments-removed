@@ -31,7 +31,7 @@ struct MediaConfig {
   
   
   
-  bool stats_timestamp_with_environment_clock = false;
+  bool stats_timestamp_with_environment_clock = true;
 
   
   struct Video {
