@@ -8,16 +8,18 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
  * @import {BrowserSearchTelemetry} from "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs"
  * @import {ProvidersManager} from "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs"
  * @import {SearchEngine} from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
- * @import {SapLocation, SmartbarInput} from "moz-src:///browser/components/urlbar/content/SmartbarInput.mjs"
+ * @import {SapLocation} from "moz-src:///browser/components/urlbar/content/SmartbarInput.mjs"
  * @import {UrlbarView} from "chrome://browser/content/urlbar/UrlbarView.mjs"
  * @import {WindowMode} from "moz-src:///browser/components/urlbar/content/UrlbarInputBase.mjs"
  * @import {SearchEngineInfo} from "chrome://browser/content/urlbar/SearchEngineStore.mjs"
  * @import {UrlbarLoadRequest} from "chrome://browser/content/urlbar/UrlbarShared.mjs"
+ * @import {UrlbarChildControllerProxy, UrlbarInputProxy, UrlbarViewProxy} from "moz-src:///browser/components/urlbar/actors/UrlbarParent.sys.mjs"
  */
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
   AppProvidedConfigEngine:
     "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
@@ -102,12 +104,12 @@ export class UrlbarParentController {
   static _lastAutofillReintegrationPromise = Promise.resolve();
 
   /**
-   * The paired UrlbarChildController, which registers itself via setChild().
+   * The paired UrlbarChildController or an object that can forward calls to it.
    * Listener registration and notification dispatch live on it, keeping
    * dispatch on the side where the listeners (the view, the event bufferer)
    * live. The child is always set before any query runs.
    *
-   * @type {UrlbarChildController}
+   * @type {UrlbarChildControllerProxy | UrlbarChildController}
    */
   #child = null;
 
@@ -168,10 +170,9 @@ export class UrlbarParentController {
   }
 
   /**
-   * The input, owned by the paired `UrlbarChildController` and read through it
-   * for the query-lifecycle and telemetry call sites that need it.
+   * The input or an object that can forward calls to the input.
    *
-   * @type {UrlbarInput}
+   * @type {UrlbarInputProxy | UrlbarInput}
    */
   get input() {
     return this.#child?.input;
@@ -221,9 +222,9 @@ export class UrlbarParentController {
   }
 
   /**
-   * The view.
+   * The view or an object that can forward calls to the view.
    *
-   * @type {UrlbarView}
+   * @type {UrlbarViewProxy | UrlbarView}
    */
   get view() {
     return this.#child?.view;
@@ -444,7 +445,10 @@ export class UrlbarParentController {
    */
   recordEngagement(wire) {
     this.engagementEvent.recordFromChild(
-      lazy.UrlbarTelemetryUtils.recordedEngagementFromWire(wire)
+      lazy.UrlbarTelemetryUtils.recordedEngagementFromWire(
+        wire,
+        this.liveResults
+      )
     );
   }
 
@@ -600,34 +604,38 @@ export class UrlbarParentController {
    * to form history. The parent-side counterpart to the content-side
    * `_recordSearch()`.
    *
-   * @param {object} options
-   * @param {string} options.engineId
+   * @param {object} searchData
+   * @param {string} searchData.engineId
    *   The id of the engine handling the search.
-   * @param {string} options.query
-   * @param {string} options.searchSource
+   * @param {string} searchData.query
+   * @param {string} searchData.searchSource
    *   Where the search originated from.
-   * @param {object} options.details
+   * @param {object} searchData.details
    *   The search action details, per `BrowserSearchTelemetry.recordSearch()`.
-   * @param {number} [options.browserId]
-   *   The id of the browser where the search is being opened; defaults to the
-   *   selected browser.
-   * @param {boolean} [options.opensInPrivateWindow]
+   * @param {boolean} [searchData.opensInPrivateWindow]
    *   Whether the search opens in a new private window, in which case it's
    *   not added to form history. If this is false but the current window
    *   is private, it's not added either.
    */
-  recordSearch({
+  recordSearch(searchData) {
+    let browser = this.browserWindow.gBrowser.selectedBrowser;
+    this.#recordSearchForBrowser({ ...searchData, browser });
+  }
+
+  /**
+   * See this.recordSearch().
+   *
+   * @param {Parameters<typeof this.recordSearch>[0] & {browser: MozBrowser}} searchData
+   *   The data for `recordSearch` and the browser where the search is loading.
+   */
+  #recordSearchForBrowser({
+    browser,
     engineId,
     query,
     searchSource,
     details,
-    browserId,
     opensInPrivateWindow,
   }) {
-    let browser =
-      this.resolveTargetBrowser(browserId) ||
-      this.browserWindow.gBrowser.selectedBrowser;
-
     // Record when the user uses the search bar to be used for message
     // targeting. This is arbitrarily capped at 100, only to prevent the number
     // from growing infinitely.
@@ -648,6 +656,11 @@ export class UrlbarParentController {
         "browser.search.widget.lastUsed",
         new Date().toISOString()
       );
+    }
+
+    if (this.sapName == "newtab_searchbar") {
+      let newtabBrowser = this.#actor.browsingContext.top.embedderElement;
+      details.newtabSessionId = lazy.AboutNewTab.getVisitId(newtabBrowser);
     }
 
     lazy.ASRouter.sendTriggerMessage({
@@ -683,15 +696,15 @@ export class UrlbarParentController {
    * the next-opened tab is the search tab. Reaching its browser is parent-only.
    *
    * @param {Parameters<typeof this.recordSearch>[0]} searchData
-   *   The data for `recordSearch`; its `browserId` is filled in here.
+   *   The data for `recordSearch`.
    */
   recordSearchInOpenedTab(searchData) {
     this.browserWindow.gBrowser.tabContainer.addEventListener(
       "TabOpen",
       tabEvent => {
-        this.recordSearch({
+        this.#recordSearchForBrowser({
           ...searchData,
-          browserId: tabEvent.target.linkedBrowser.browserId,
+          browser: tabEvent.target.linkedBrowser,
         });
       },
       { once: true }
@@ -784,7 +797,7 @@ export class UrlbarParentController {
    * and notification dispatch. It must be set before any query runs, since
    * the query lifecycle notifies through it.
    *
-   * @param {object} child The paired UrlbarChildController.
+   * @param {UrlbarChildControllerProxy | UrlbarChildController} child
    */
   setChild(child) {
     this.#child = child;
@@ -867,9 +880,8 @@ export class UrlbarParentController {
   }
 
   /**
-   * Returns the icon URL of the engine with the given id. This can be a blob
-   * URL, which only resolves in this process, so UrlbarParent serializes it
-   * before handing it to another process.
+   * Returns the icon URL of the engine with the given id, in a form the view
+   * can load.
    *
    * @param {string} engineId
    * @returns {Promise<?string>}
@@ -881,7 +893,7 @@ export class UrlbarParentController {
       lazy.logger.warn(`No engine found for id ${engineId}`);
       return null;
     }
-    return (await engine.getIconURL()) ?? null;
+    return (await lazy.UrlbarUtils.getEngineIconUrl(engine, this)) ?? null;
   }
 
   /**
@@ -1281,6 +1293,16 @@ export class UrlbarParentController {
   }
 
   /**
+   * The last query's results, which are the authoritative objects a result
+   * reconstructed from the wire resolves back to. See `UrlbarResult.fromWire()`.
+   *
+   * @type {UrlbarResult[]}
+   */
+  get liveResults() {
+    return this._lastQueryContextWrapper?.queryContext.results ?? [];
+  }
+
+  /**
    * Notifies listeners of results, by dispatching through the paired
    * UrlbarChildController, which owns the listeners.
    *
@@ -1288,7 +1310,18 @@ export class UrlbarParentController {
    * @param {object} params Parameters to pass with the notification.
    */
   notify(name, ...params) {
-    this.#child.notify(name, ...params);
+    if (this.#child.isProxy === true) {
+      this.#child.notifyFromWire(
+        name,
+        ...params.map(param =>
+          param instanceof lazy.UrlbarQueryContext
+            ? { serializedQueryContext: param.toWire() }
+            : param
+        )
+      );
+    } else {
+      this.#child.notify(name, ...params);
+    }
   }
 
   #engineStoreInitStarted = false;
@@ -1623,7 +1656,6 @@ export class TelemetryEvent {
       // `#internalRecord()`.)
       if (!details.isSessionOngoing) {
         this._startEventInfo = null;
-        this._discarded = false;
       }
     }
   }
@@ -1774,7 +1806,8 @@ export class TelemetryEvent {
    * @param {string} data.searchSource
    *   The search source.
    * @param {object} data.internalDetails
-   *   The interaction details (picked result reconstructed; event/element null).
+   *   The interaction details; `event` and `element` are null on the message
+   *   path.
    * @param {?object[]} data.exposures
    *   The resolved exposure list, or null when the session stays open.
    * @param {?UrlbarResult[]} data.visibleResults
@@ -1811,27 +1844,6 @@ export class TelemetryEvent {
       // this engagement or abandonment (the candidate was built content-side).
       if (disableBuilt) {
         this.startTrackingDisableSuggest(disableBuilt, searchSource);
-      }
-
-      // On the message path internalDetails.result was reconstructed from
-      // structured clone, which strips data that doesn't survive it (e.g. a Rust
-      // suggestion's UniFFI class) and yields an object distinct from the
-      // parent's authoritative result. Resolve it back to the live result by id
-      // so provider engagement handling -- notably dismissal against the Rust
-      // store -- operates on the live object, and carry the view-assigned
-      // rowIndex the wire preserves so the selection ping's position is right
-      // (the live result never went through a view). visibleResults stay as the
-      // wire results; the impression/abandonment hooks match them by id.
-      // TODO(bug 2055935): remove this or bake the resolution into the actor
-      // result deserialization.
-      let liveResult = queryContext?.results?.find(
-        r => r.id === internalDetails.result?.id
-      );
-      if (liveResult) {
-        if (internalDetails.result.rowIndex != null) {
-          liveResult.rowIndex = internalDetails.result.rowIndex;
-        }
-        internalDetails.result = liveResult;
       }
 
       this._controller.manager.notifyEngagementChange(
@@ -2244,7 +2256,6 @@ export class TelemetryEvent {
   discard() {
     if (this._startEventInfo) {
       this._startEventInfo = null;
-      this._discarded = true;
     }
   }
 

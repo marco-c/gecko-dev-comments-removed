@@ -270,7 +270,14 @@ class BrowserSearchTelemetryHandler {
           this.#recordSearch(browser, source);
           break;
       }
-      if (["urlbar_handoff", "about_home", "about_newtab"].includes(source)) {
+      if (
+        [
+          "about_home",
+          "about_newtab",
+          "newtab_searchbar",
+          "urlbar_handoff",
+        ].includes(source)
+      ) {
         Glean.newtabSearch.issued.record({
           newtab_visit_id: details.newtabSessionId,
           search_access_point: source,
