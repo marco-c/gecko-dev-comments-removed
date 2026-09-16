@@ -812,7 +812,8 @@ gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, SVGBBoxFlags aFlags,
     aFrame = aFrame->GetParent();
   }
 
-  if (aFrame->IsInSVGTextSubtree()) {
+  if (aFrame->IsInSVGTextSubtree() &&
+      !aFlags.contains(SVGBBoxFlag::TextContentBounds)) {
     
     
     
@@ -822,10 +823,36 @@ gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, SVGBBoxFlags aFlags,
 
   ISVGDisplayableFrame* svg = do_QueryFrame(aFrame);
   const bool hasSVGLayout = aFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT);
-  if (hasSVGLayout && !svg) {
-    
-    
-    return gfxRect();
+  if (!svg) {
+    if (hasSVGLayout) {
+      
+      
+      return gfxRect();
+    }
+    if (aFrame->IsInSVGTextSubtree()) {
+      SVGTextFrame* text =
+          static_cast<SVGTextFrame*>(nsLayoutUtils::GetClosestFrameOfType(
+              aFrame->GetParent(), LayoutFrameType::SVGText));
+
+      if (text->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
+        return gfxRect();
+      }
+
+      gfxRect rec = text->TransformFrameRectFromTextChild(
+          aFrame->GetRectRelativeToSelf(), aFrame);
+
+      
+      
+      
+      rec += ThebesPoint(
+          CSSPoint::FromAppUnits(text->GetPosition()).ToUnknownPoint());
+
+      if (aFlags.contains(SVGBBoxFlag::DisregardCSSZoom)) {
+        rec.Scale(1 / aFrame->Style()->EffectiveZoom().ToFloat());
+      }
+
+      return rec;
+    }
   }
 
   const bool isOuterSVG = svg && !hasSVGLayout;

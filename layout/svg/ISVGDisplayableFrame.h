@@ -43,6 +43,12 @@ enum class SVGBBoxFlag : uint16_t {
   
   UseFrameBoundsForOuterSVG,
   
+  
+  TextContentBounds,
+  
+  
+  DisregardCSSZoom,
+  
   ForGetClientRects,
   
   

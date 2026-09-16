@@ -50,46 +50,15 @@ already_AddRefed<SVGRect> SVGGraphicsElement::GetBBox(
   }
   ISVGDisplayableFrame* svgframe = do_QueryFrame(frame);
 
-  if (!svgframe) {
-    if (!frame->IsInSVGTextSubtree()) {
-      return ZeroBBox(*this);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    SVGTextFrame* text =
-        static_cast<SVGTextFrame*>(nsLayoutUtils::GetClosestFrameOfType(
-            frame->GetParent(), LayoutFrameType::SVGText));
-
-    if (text->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
-      return ZeroBBox(*this);
-    }
-
-    gfxRect rec = text->TransformFrameRectFromTextChild(
-        frame->GetRectRelativeToSelf(), frame);
-
-    
-    
-    
-    rec.x += float(text->GetPosition().x) / AppUnitsPerCSSPixel();
-    rec.y += float(text->GetPosition().y) / AppUnitsPerCSSPixel();
-
-    rec.Scale(1 / dom::UserSpaceMetrics::GetZoom(this));
-
-    return MakeAndAddRef<SVGRect>(this, ToRect(rec));
+  if (!svgframe && !frame->IsInSVGTextSubtree()) {
+    return ZeroBBox(*this);
   }
 
   if (!NS_SVGNewGetBBoxEnabled()) {
     return MakeAndAddRef<SVGRect>(
         this,
         ToRect(SVGUtils::GetBBox(frame, {SVGBBoxFlag::IncludeFillGeometry,
+                                         SVGBBoxFlag::TextContentBounds,
                                          SVGBBoxFlag::UseUserSpaceOfUseElement,
                                          SVGBBoxFlag::DisregardCSSZoom})));
   }
@@ -107,10 +76,10 @@ already_AddRefed<SVGRect> SVGGraphicsElement::GetBBox(
     flags += {SVGBBoxFlag::IncludeFillGeometry, SVGBBoxFlag::IncludeClipped};
   }
   if (flags.isEmpty()) {
-    return MakeAndAddRef<SVGRect>(this, gfx::Rect());
+    return ZeroBBox(*this);
   }
-  flags +=
-      {SVGBBoxFlag::UseUserSpaceOfUseElement, SVGBBoxFlag::DisregardCSSZoom};
+  flags += {SVGBBoxFlag::UseUserSpaceOfUseElement,
+            SVGBBoxFlag::TextContentBounds, SVGBBoxFlag::DisregardCSSZoom};
   return MakeAndAddRef<SVGRect>(this, ToRect(SVGUtils::GetBBox(frame, flags)));
 }
 
