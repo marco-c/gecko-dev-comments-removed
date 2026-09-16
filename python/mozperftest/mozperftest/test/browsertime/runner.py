@@ -1,7 +1,6 @@
 
 
 
-import collections
 import json
 import os
 import pathlib
@@ -227,9 +226,7 @@ class BrowsertimeRunner(NodeRunner):
                 )
 
             with package_json_path.open() as f:
-                existing_body = json.loads(
-                    f.read(), object_pairs_hook=collections.OrderedDict
-                )
+                existing_body = json.loads(f.read())
 
             existing_body["devDependencies"]["browsertime"] = install_url
             updated_body = json.dumps(existing_body)
