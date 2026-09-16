@@ -109,8 +109,6 @@ WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp)
     const TrapData& trapData = activation->wasmTrapData();
     void* unwoundPC = trapData.unwoundPC;
 
-    code_ = &instance_->code();
-
     const wasm::CodeRange* unwoundCodeRange = nullptr;
     const wasm::Code* unwoundCode = LookupCode(unwoundPC, &unwoundCodeRange);
     MOZ_RELEASE_ASSERT(unwoundCode);
@@ -141,6 +139,7 @@ WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp)
 
     
     
+    code_ = &instance_->code();
     MOZ_RELEASE_ASSERT(unwoundCode == code_);
     bytecodeOffset_ = trapData.trapSite.bytecodeOffset.offset();
     funcIndex_ =
