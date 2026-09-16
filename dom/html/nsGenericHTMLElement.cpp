@@ -206,6 +206,8 @@ static const nsAttrValue::EnumTableEntry* kPopoverTableInvalidValueDefault =
     &kPopoverTable[3];
 }  
 
+static void MakeContentDescendantsEditable(nsIContent* aContent);
+
 void nsGenericHTMLElement::GetFetchPriority(nsAString& aFetchPriority) const {
   
   GetEnumAttr(nsGkAtoms::fetchpriority, kFetchPriorityAttributeValueAuto,
@@ -453,16 +455,37 @@ void nsGenericHTMLElement::SetEditContext(mozilla::dom::EditContext* aContext,
   }
   EditContext::SetForElement(*this, aContext);
 
-  
-  
-  
-  
-  RefPtr doc = OwnerDoc();
-  doc->UpdateTextEditContext();
-
   int32_t delta = (aContext != nullptr) - (oldEditContext != nullptr);
+  RefPtr doc = OwnerDoc();
+  
+  
+  
   if (delta) {
-    ChangeEditableState(delta);
+    nsAutoScriptBlocker scriptBlocker;
+    MakeContentDescendantsEditable(this);
+  }
+  if (MOZ_UNLIKELY(GetEditContext() != aContext)) {
+    
+    return;
+  }
+  
+  doc->UpdateTextEditContext();
+  if (MOZ_UNLIKELY(GetEditContext() != aContext)) {
+    
+    return;
+  }
+  if (delta) {
+    
+    
+    
+    
+    doc->ChangeContentEditableCount(this, delta);
+    
+    
+    
+    if (RefPtr<HTMLEditor> editor = doc->GetHTMLEditor()) {
+      editor->NotifyEditingHostMaybeChanged();
+    }
 #ifdef ACCESSIBILITY
     if (nsAccessibilityService* accService = GetAccService()) {
       accService->NotifyOfEditContextAttachmentChange(this);

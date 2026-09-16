@@ -139,6 +139,16 @@ nsresult HTMLEditor::InitEditorContentAndSelection() {
     return NS_OK;
   }
 
+  
+  
+  
+  if (Element* body = GetBodyElement()) {
+    if (body->HasFlag(ELEMENT_HAS_EDIT_CONTEXT) &&
+        !body->GetParentNode()->IsEditable()) {
+      return NS_OK;
+    }
+  }
+
   nsresult rv = MaybeCreatePaddingBRElementForEmptyEditor();
   if (NS_FAILED(rv)) {
     NS_WARNING(
