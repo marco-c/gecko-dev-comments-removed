@@ -8,7 +8,7 @@ const { LoginTestUtils } = ChromeUtils.importESModule(
 );
 
 const { LoginBreaches } = ChromeUtils.importESModule(
-  "resource:///modules/LoginBreaches.sys.mjs"
+  "moz-src:///browser/components/aboutlogins/LoginBreaches.sys.mjs"
 );
 
 const { RemoteSettings } = ChromeUtils.importESModule(
@@ -34,7 +34,8 @@ const gBrowserGlue = Cc["@mozilla.org/browser/browserglue;1"].getService(
 );
 
 ChromeUtils.defineESModuleGetters(this, {
-  LoginBreaches: "resource:///modules/LoginBreaches.sys.mjs",
+  LoginBreaches:
+    "moz-src:///browser/components/aboutlogins/LoginBreaches.sys.mjs",
 });
 
 const BREACH_EXAMPLE = {
@@ -222,8 +223,8 @@ async function checkNotificationInteractionTelemetry(
 function setInputValue(loginForm, fieldElement, value) {
   info(`Filling ${fieldElement} with value '${value}'.`);
   const field = loginForm.shadowRoot.querySelector(fieldElement);
-  field.input.value = value;
-  field.input.dispatchEvent(
+  field.inputEl.value = value;
+  field.inputEl.dispatchEvent(
     new InputEvent("input", {
       composed: true,
       bubbles: true,
