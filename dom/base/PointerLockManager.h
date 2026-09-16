@@ -54,6 +54,7 @@ class PointerLockManager final {
 
   
   
+  MOZ_CAN_RUN_SCRIPT
   static void SetLockedRemoteTarget(dom::BrowserParent* aBrowserParent,
                                     const bool& aUnadjustedMovement,
                                     nsACString& aError);
