@@ -339,6 +339,12 @@ export function newGeneratedSources(sourceResources) {
       
       const selectedLocation = getSelectedLocation(getState());
       for (const sourceActor of newSourceActors) {
+        
+        
+        
+        if (sourceActor.targetFront.isDestroyed()) {
+          continue;
+        }
         if (
           selectedLocation?.source == sourceActor.sourceObject &&
           sourceActor.sourceObject.isHTML &&
@@ -356,6 +362,9 @@ export function newGeneratedSources(sourceResources) {
       
       
       for (const sourceActor of newSourceActors) {
+        if (sourceActor.targetFront.isDestroyed()) {
+          continue;
+        }
         dispatch(
           checkPendingBreakpoints(sourceActor.sourceObject, sourceActor)
         );
