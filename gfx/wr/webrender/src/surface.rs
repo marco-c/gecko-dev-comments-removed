@@ -7,9 +7,8 @@
 
 
 use api::units::*;
-use crate::box_shadow::BLUR_SAMPLE_SCALE;
 use crate::command_buffer::{CommandBufferBuilderKind, CommandBufferList, CommandBufferBuilder, CommandBufferIndex};
-use crate::internal_types::{FastHashMap, FastHashSet, Filter};
+use crate::internal_types::{FastHashMap, FastHashSet};
 use crate::picture_composite_mode::PictureCompositeMode;
 use crate::tile_cache::{TileKey, SubSliceIndex, MAX_COMPOSITOR_SURFACES};
 use crate::prim_store::PictureIndex;
@@ -340,36 +339,26 @@ impl SurfaceInfo {
     ) {
         
         
-        self.culling_rect = parent_culling_rect;
+        
+        
+        
+        let map_surface_to_vis: SpaceMapper<PicturePixel, VisPixel> = SpaceMapper::new_with_target(
+            self.visibility_spatial_node_index,
+            self.surface_spatial_node_index,
+            parent_culling_rect,
+            frame_context.spatial_tree,
+        );
 
-        if let PictureCompositeMode::Filter(Filter::Blur { width, height, should_inflate, .. }) = composite_mode {
-            if *should_inflate {
-                
-                let map_surface_to_vis = SpaceMapper::new_with_target(
-                    self.visibility_spatial_node_index,
-                    self.surface_spatial_node_index,
-                    parent_culling_rect,
-                    frame_context.spatial_tree,
-                );
+        
+        
+        let expanded = map_surface_to_vis
+            .unmap(&parent_culling_rect)
+            .map(|local_rect| composite_mode.get_required_source_rect(self, local_rect.cast_unit()))
+            .and_then(|required_rect| map_surface_to_vis.map(&required_rect.cast_unit()));
 
-                
-                
-                if let Some(local_parent_culling_rect) = map_surface_to_vis.unmap(&parent_culling_rect) {
-                    let (width_factor, height_factor) = self.clamp_blur_radius(*width, *height);
-
-                    
-                    let expanded_rect: PictureBox2D = local_parent_culling_rect.inflate(
-                        width_factor.ceil() * BLUR_SAMPLE_SCALE,
-                        height_factor.ceil() * BLUR_SAMPLE_SCALE,
-                    );
-
-                    
-                    if let Some(rect) = map_surface_to_vis.map(&expanded_rect) {
-                        self.culling_rect = rect;
-                    }
-                }
-            }
-        }
+        
+        
+        self.culling_rect = expanded.unwrap_or_else(VisRect::max_rect);
     }
 
     pub fn map_to_device_rect(
