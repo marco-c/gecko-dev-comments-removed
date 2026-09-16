@@ -6,9 +6,22 @@
 
 
 
+type WindowID = import("../SessionStore.sys.mjs").WindowID;
+type WindowStateData = import("../SessionStore.sys.mjs").WindowStateData;
+
+type TabStateData = import("../TabState.sys.mjs").TabStateData;
+type ClosedTabStateData = import("../TabState.sys.mjs").ClosedTabStateData;
+
 type TabGroupId = import("../TabGroupState.sys.mjs").TabGroupId;
 type TabGroupStateData = import("../TabGroupState.sys.mjs").TabGroupStateData;
 type ClosedTabGroupStateData =
   import("../TabGroupState.sys.mjs").ClosedTabGroupStateData;
 type SavedTabGroupStateData =
   import("../TabGroupState.sys.mjs").SavedTabGroupStateData;
+
+
+
+interface TabSplitViewStateData {
+  id: number;
+  numberOfTabs: number;
+}
