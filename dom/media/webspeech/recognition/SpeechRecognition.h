@@ -5,29 +5,30 @@
 #ifndef mozilla_dom_SpeechRecognition_h
 #define mozilla_dom_SpeechRecognition_h
 
-#include "AudioSegment.h"
 #include "DOMMediaStream.h"
-#include "MediaTrackGraph.h"
 #include "SpeechGrammarList.h"
 #include "SpeechRecognitionResultList.h"
 #include "js/TypeDecls.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/SpeechRecognitionError.h"
+#include "mozilla/dom/SpeechRecognitionBinding.h"
+#include "mozilla/dom/SpeechRecognitionErrorBinding.h"
 #include "nsCOMPtr.h"
 #include "nsProxyRelease.h"
 #include "nsString.h"
 #include "nsTArray.h"
+#include "nsTHashMap.h"
+#include "nsTHashSet.h"
 #include "nsWrapperCache.h"
 
 namespace mozilla {
 
-namespace media {
-class ShutdownBlocker;
-}
-
 namespace dom {
+
+class Promise;
+class SpeechRecognitionBackend;
+class SpeechRecognitionPhrase;
 
 #define SPEECH_RECOGNITION_TEST_EVENT_REQUEST_TOPIC \
   "SpeechRecognitionTest:RequestEvent"
@@ -38,9 +39,13 @@ class AudioStreamTrack;
 class MediaStreamTrack;
 class SpeechTrackListener;
 
+enum class DownloadOutcome { Failed, Succeeded };
+
 class SpeechRecognition final : public DOMEventTargetHelper,
                                 public SupportsWeakPtr {
  public:
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(SpeechRecognition)
+
   explicit SpeechRecognition(nsPIDOMWindowInner* aOwnerWindow);
 
   NS_DECL_ISUPPORTS_INHERITED
@@ -49,6 +54,8 @@ class SpeechRecognition final : public DOMEventTargetHelper,
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
+
+  void DisconnectFromOwner() override;
 
   static already_AddRefed<SpeechRecognition> Constructor(
       const GlobalObject& aGlobal, ErrorResult& aRv);
@@ -76,16 +83,36 @@ class SpeechRecognition final : public DOMEventTargetHelper,
 
   uint32_t MaxAlternatives() const;
 
-  TaskQueue* GetTaskQueueForEncoding() const;
-
   void SetMaxAlternatives(uint32_t aArg);
 
-  void GetServiceURI(nsString& aRetVal, ErrorResult& aRv) const;
+  
+  bool ProcessLocally() const;
+  void SetProcessLocally(bool aProcessLocally);
 
-  void SetServiceURI(const nsAString& aArg, ErrorResult& aRv);
+  
+  void OnSetPhrases(SpeechRecognitionPhrase& aPhrase, uint32_t aIndex,
+                    ErrorResult& aRv);
+  void OnDeletePhrases(SpeechRecognitionPhrase& aPhrase, uint32_t aIndex,
+                       ErrorResult& aRv);
 
-  void Start(const Optional<NonNull<DOMMediaStream>>& aStream,
-             CallerType aCallerType, ErrorResult& aRv);
+  
+  static already_AddRefed<Promise> Available(
+      const GlobalObject& aGlobal, const SpeechRecognitionOptions& aOptions,
+      ErrorResult& aRv);
+  static already_AddRefed<Promise> Install(
+      const GlobalObject& aGlobal, const SpeechRecognitionOptions& aOptions,
+      ErrorResult& aRv);
+
+  static void RemoveDownloadingLanguage(const nsCString& aLanguage,
+                                        DownloadOutcome aOutcome);
+  static already_AddRefed<GenericNonExclusivePromise>
+  GetDownloadCompletionPromise(const nsCString& aLanguage);
+
+  
+  
+  void Start(CallerType aCallerType, ErrorResult& aRv);
+  void Start(MediaStreamTrack& aAudioTrack, CallerType aCallerType,
+             ErrorResult& aRv);
 
   void Stop();
 
@@ -130,6 +157,24 @@ class SpeechRecognition final : public DOMEventTargetHelper,
                      const char (&aMessage)[N]) {
     DispatchError(aErrorCode, nsLiteralCString(aMessage));
   }
+  
+  
+  
+  
+  
+  
+  void DispatchErrorAndEnd(SpeechRecognitionErrorCode aErrorCode,
+                           const nsACString& aMessage);
+  void DispatchTrustedEventWithTimestamp(const nsAString& aEventName,
+                                         TimeStamp aTimeStamp);
+  
+  void HandleRecognitionResultFromBackend(const nsCString& aTranscript,
+                                          bool aIsFinal);
+  void HandleRecognitionErrorFromBackend(const nsCString& aError);
+  
+  
+  
+  void NotifyBackendListening();
 
  private:
   virtual ~SpeechRecognition();
@@ -137,19 +182,37 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   NS_IMETHOD StartRecording(RefPtr<AudioStreamTrack>& aDOMStream);
   RefPtr<GenericNonExclusivePromise> StopRecording();
 
-  uint32_t ProcessAudioSegment(AudioSegment* aSegment, TrackRate aTrackRate);
-
   void Reset();
   void ResetAndEnd();
+  
+  
+  
+  
+  
+  
+  
+  void PostResetAndEnd();
+  
+  
+  void StartImpl(MediaStreamTrack* aAudioTrack, CallerType aCallerType,
+                 ErrorResult& aRv);
+  
+  
+  void MaybeDispatchStart();
 
   RefPtr<DOMMediaStream> mStream;
   RefPtr<AudioStreamTrack> mTrack;
   bool mTrackIsOwned = false;
   RefPtr<GenericNonExclusivePromise> mStopRecordingPromise;
   RefPtr<SpeechTrackListener> mSpeechListener;
-  RefPtr<media::ShutdownBlocker> mShutdownBlocker;
 
-  bool mAborted;
+  
+  bool mStarted;
+  
+  
+  bool mBackendListening = false;
+  
+  bool mStartDispatched = false;
 
   nsString mLang;
 
@@ -157,21 +220,25 @@ class SpeechRecognition final : public DOMEventTargetHelper,
 
   bool mContinuous;
   bool mInterimResults;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   uint32_t mMaxAlternatives;
-
+  bool mProcessLocally = false;
+  
+  
+  
+  nsTArray<RefPtr<SpeechRecognitionPhrase>> mPhrases;
+  nsTArray<RefPtr<SpeechRecognitionResult>> mRecognitionResults;
   RefPtr<TrackListener> mListener;
+  
+  RefPtr<SpeechRecognitionBackend> mBackend;
+
+  static nsTHashSet<nsCString> sDownloadingLanguages
+      MOZ_GUARDED_BY(sMainThreadCapability);
+  
+  
+  
+  static nsTHashMap<nsCStringHashKey,
+                    RefPtr<GenericNonExclusivePromise::Private>>
+      sLanguageDownloadPromises MOZ_GUARDED_BY(sMainThreadCapability);
 };
 
 }  

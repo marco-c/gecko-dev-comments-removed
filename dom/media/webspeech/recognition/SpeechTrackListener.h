@@ -16,15 +16,15 @@ class AudioSegment;
 
 namespace dom {
 
-class SpeechRecognition;
+class SpeechRecognitionBackend;
 
 class SpeechTrackListener : public MediaTrackListener {
  private:
-  explicit SpeechTrackListener(SpeechRecognition* aRecognition);
+  explicit SpeechTrackListener(SpeechRecognitionBackend* aBackend);
 
  public:
   static already_AddRefed<SpeechTrackListener> Create(
-      SpeechRecognition* aRecognition);
+      SpeechRecognitionBackend* aBackend);
 
   ~SpeechTrackListener() = default;
 
@@ -36,7 +36,10 @@ class SpeechTrackListener : public MediaTrackListener {
   void NotifyRemoved(MediaTrackGraph* aGraph) override;
 
  private:
-  nsMainThreadPtrHandle<SpeechRecognition> mRecognition;
+  
+  
+  
+  RefPtr<SpeechRecognitionBackend> mBackend;
   MozPromiseHolder<GenericNonExclusivePromise> mRemovedHolder;
 
  public:

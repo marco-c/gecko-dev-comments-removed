@@ -38,10 +38,13 @@ class SpeechRecognitionResult final : public nsISupports,
 
   nsTArray<RefPtr<SpeechRecognitionAlternative>> mItems;
 
+  void SetFinal(bool aIsFinal) { mIsFinal = aIsFinal; }
+
  private:
   ~SpeechRecognitionResult();
 
   RefPtr<SpeechRecognition> mParent;
+  bool mIsFinal = true;  
 };
 
 }  

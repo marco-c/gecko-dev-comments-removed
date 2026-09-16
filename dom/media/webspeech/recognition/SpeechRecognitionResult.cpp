@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SpeechRecognitionResult.h"
 
 #include "SpeechRecognition.h"
@@ -52,8 +50,6 @@ already_AddRefed<SpeechRecognitionAlternative> SpeechRecognitionResult::Item(
   return alternative.forget();
 }
 
-bool SpeechRecognitionResult::IsFinal() const {
-  return true;  
-}
+bool SpeechRecognitionResult::IsFinal() const { return mIsFinal; }
 
 }  
