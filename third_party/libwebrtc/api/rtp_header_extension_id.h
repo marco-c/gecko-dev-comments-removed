@@ -11,7 +11,10 @@
 #ifndef API_RTP_HEADER_EXTENSION_ID_H_
 #define API_RTP_HEADER_EXTENSION_ID_H_
 
+#include <optional>
+
 #include "absl/strings/str_format.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/strong_alias.h"
 
 namespace webrtc {
@@ -37,13 +40,18 @@ class RtpHeaderExtensionId
   }
 
   
-  constexpr RtpHeaderExtensionId() : StrongAlias(0) {}
+  
+  static constexpr std::optional<RtpHeaderExtensionId> Create(int id);
 
   
-  
-  
-  
-  explicit constexpr RtpHeaderExtensionId(int id) : StrongAlias(id) {}
+  constexpr RtpHeaderExtensionId() : StrongAlias(0) {}
+
+  explicit constexpr RtpHeaderExtensionId(int id) : StrongAlias(id) {
+    
+    
+    RTC_DCHECK_GE(id, 0);
+    RTC_DCHECK_LE(id, 255);
+  }
 
   
   constexpr bool Valid() const {
@@ -65,6 +73,14 @@ inline constexpr RtpHeaderExtensionId RtpHeaderExtensionId::kMaxId =
 inline constexpr RtpHeaderExtensionId
     RtpHeaderExtensionId::kOneByteHeaderExtensionMaxId =
         RtpHeaderExtensionId(14);
+
+inline constexpr std::optional<RtpHeaderExtensionId>
+RtpHeaderExtensionId::Create(int id) {
+  if (id >= kMinId.value() && id <= kMaxId.value()) {
+    return RtpHeaderExtensionId(id);
+  }
+  return std::nullopt;
+}
 
 }  
 
