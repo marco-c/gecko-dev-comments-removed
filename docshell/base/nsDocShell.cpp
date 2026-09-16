@@ -9496,9 +9496,10 @@ bool nsDocShell::ShouldDoInitialAboutBlankSyncLoad(
     return false;
   }
 
-  if (mHasStartedLoadingOtherThanInitialBlankURI || !mDocumentViewer ||
-      !mDocumentViewer->GetDocument() ||
-      !mDocumentViewer->GetDocument()->IsUncommittedInitialDocument()) {
+  Document* doc = mDocumentViewer->GetDocument();
+
+  if (mHasStartedLoadingOtherThanInitialBlankURI || !mDocumentViewer || !doc ||
+      !doc->IsUncommittedInitialDocument()) {
     return false;
   }
 
@@ -9524,6 +9525,19 @@ bool nsDocShell::ShouldDoInitialAboutBlankSyncLoad(
         !mBrowsingContext->Group()
              ->UsesOriginAgentCluster(aPrincipalToInherit)
              .isSome()) {
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    if (aLoadState->LoadIsFromSessionHistory() &&
+        !aPrincipalToInherit->Equals(doc->GetPrincipal())) {
       return false;
     }
   }
@@ -11105,7 +11119,6 @@ nsresult nsDocShell::UpdateURLAndHistory(
 
     UpdateActiveEntry(false,
                        Some(scrollPos), aNewURI,
-                       nullptr,
                        referrerInfo,
                        aDocument->NodePrincipal(),
                       policyContainer, title, scrollRestorationIsManual, aData,
@@ -11114,9 +11127,6 @@ nsresult nsDocShell::UpdateURLAndHistory(
     MOZ_LOG(gSHLog, LogLevel::Debug,
             ("nsDocShell %p UpdateActiveEntry (replacing) mActiveEntry %p",
              this, mActiveEntry.get()));
-    
-    
-    
     
     nsString title;
     nsCOMPtr<nsIReferrerInfo> referrerInfo;
@@ -11127,7 +11137,7 @@ nsresult nsDocShell::UpdateURLAndHistory(
       referrerInfo = nullptr;
     }
     UpdateActiveEntry(
-        true,  Nothing(), aNewURI, aNewURI,
+        true,  Nothing(), aNewURI,
          referrerInfo, aDocument->NodePrincipal(),
         aDocument->GetPolicyContainer(), title,
         mActiveEntry && mActiveEntry->GetScrollRestorationIsManual(), aData,
@@ -11235,7 +11245,7 @@ void nsDocShell::SetCacheKeyOnHistoryEntry(uint32_t aCacheKey) {
 
 void nsDocShell::UpdateActiveEntry(
     bool aReplace, const Maybe<nsPoint>& aPreviousScrollPos, nsIURI* aURI,
-    nsIURI* aOriginalURI, nsIReferrerInfo* aReferrerInfo,
+    nsIReferrerInfo* aReferrerInfo,
     nsIPrincipal* aTriggeringPrincipal, nsIPolicyContainer* aPolicyContainer,
     const nsAString& aTitle, bool aScrollRestorationIsManual,
     nsIStructuredCloneContainer* aData, bool aURIWasModified) {
@@ -11269,7 +11279,6 @@ void nsDocShell::UpdateActiveEntry(
         aURI, aTriggeringPrincipal, doc->NodePrincipal(), nullptr,
         aPolicyContainer, mContentTypeHint);
   }
-  mActiveEntry->SetOriginalURI(aOriginalURI);
   mActiveEntry->SetUnstrippedURI(nullptr);
   mActiveEntry->SetReferrerInfo(aReferrerInfo);
   mActiveEntry->SetTitle(aTitle);
