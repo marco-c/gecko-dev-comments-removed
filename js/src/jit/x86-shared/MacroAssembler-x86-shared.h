@@ -180,7 +180,6 @@ class MacroAssemblerX86Shared : public Assembler {
     
     
     
-    
     zeroDouble(dest);
     vcvtsi2sd(src, dest, dest);
   }
@@ -401,7 +400,7 @@ class MacroAssemblerX86Shared : public Assembler {
     
     vmovapd(src, dest);
   }
-  void zeroDouble(FloatRegister reg) { vxorpd(reg, reg, reg); }
+  void zeroDouble(FloatRegister reg) { vxorps(reg, reg, reg); }
   void zeroFloat32(FloatRegister reg) { vxorps(reg, reg, reg); }
   void convertFloat32ToDouble(FloatRegister src, FloatRegister dest) {
     
@@ -997,7 +996,7 @@ class MacroAssemblerX86Shared : public Assembler {
 
   bool maybeInlineSimd128Int(const SimdConstant& v, const FloatRegister& dest) {
     if (v.isZeroBits()) {
-      vpxor(dest, dest, dest);
+      vxorps(dest, dest, dest);
       return true;
     }
     if (v.isOneBits()) {

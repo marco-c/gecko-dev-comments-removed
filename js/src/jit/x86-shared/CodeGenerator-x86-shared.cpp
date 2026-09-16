@@ -3610,7 +3610,7 @@ void CodeGenerator::visitWasmReduceAndBranchSimd128(
       
       
       ScratchSimd128Scope tmp(masm);
-      masm.vpxor(tmp, tmp, tmp);
+      masm.vxorps(tmp, tmp, tmp);
       switch (ins->simdOp()) {
         case wasm::SimdOp::I8x16AllTrue:
           masm.vpcmpeqb(Operand(src), tmp, tmp);

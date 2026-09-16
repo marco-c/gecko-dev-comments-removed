@@ -2,9 +2,8 @@
 
 
 
-
-
 #include "jit/MacroAssembler.h"
+
 #include "jit/x86-shared/MacroAssembler-x86-shared.h"
 
 #include "jit/MacroAssembler-inl.h"
@@ -25,7 +24,7 @@ void MacroAssemblerX86Shared::splatX16(Register input, FloatRegister output) {
     vbroadcastb(Operand(output), output);
     return;
   }
-  vpxor(scratch, scratch, scratch);
+  vxorps(scratch, scratch, scratch);
   vpshufb(scratch, output, output);
 }
 
@@ -1293,14 +1292,14 @@ void MacroAssemblerX86Shared::unsignedConvertInt32x4ToFloat32x4(
     FloatRegister src, FloatRegister dest) {
   ScratchSimd128Scope scratch(asMasm());
   src = asMasm().moveSimd128IntIfNotAVX(src, dest);
-  vpxor(Operand(scratch), scratch, scratch);  
-  vpblendw(0x55, src, scratch, scratch);      
-  vpsubd(Operand(scratch), src, dest);        
-  vcvtdq2ps(scratch, scratch);                
-  vpsrld(Imm32(1), dest, dest);               
-  vcvtdq2ps(dest, dest);                      
-  vaddps(Operand(dest), dest, dest);          
-  vaddps(Operand(scratch), dest, dest);       
+  vxorps(Operand(scratch), scratch, scratch);  
+  vpblendw(0x55, src, scratch, scratch);       
+  vpsubd(Operand(scratch), src, dest);         
+  vcvtdq2ps(scratch, scratch);                 
+  vpsrld(Imm32(1), dest, dest);                
+  vcvtdq2ps(dest, dest);                       
+  vaddps(Operand(dest), dest, dest);           
+  vaddps(Operand(scratch), dest, dest);        
 }
 
 void MacroAssemblerX86Shared::truncSatFloat32x4ToInt32x4(FloatRegister src,
@@ -1380,7 +1379,7 @@ void MacroAssemblerX86Shared::unsignedTruncSatFloat32x4ToInt32x4(
   
   
   
-  vpxor(Operand(scratch), scratch, scratch);
+  vxorps(Operand(scratch), scratch, scratch);
   vpmaxsd(Operand(scratch), temp, temp);
 
   
@@ -1439,7 +1438,7 @@ void MacroAssemblerX86Shared::unsignedTruncSatFloat64x2ToInt32x4(
     FloatRegister src, FloatRegister temp, FloatRegister dest) {
   src = asMasm().moveSimd128FloatIfNotAVX(src, dest);
 
-  vxorpd(temp, temp, temp);
+  vxorps(temp, temp, temp);
   vmaxpd(Operand(temp), src, dest);
 
   asMasm().vminpdSimd128(SimdConstant::SplatX2(4294967295.0), dest, dest);
