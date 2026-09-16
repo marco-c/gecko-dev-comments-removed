@@ -142,6 +142,16 @@ impl LazilyCompiledShader {
 
     
     
+    pub fn full_name(&self) -> String {
+        if self.features.is_empty() {
+            self.name.to_string()
+        } else {
+            format!("{}_{}", self.name, self.features.join("_"))
+        }
+    }
+
+    
+    
     
     
     

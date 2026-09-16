@@ -1016,6 +1016,11 @@ pub enum DebugCommand {
     
     
     SetSceneDebugOverride(crate::api::debugger::SceneDebugOverride, Sender<Result<(), String>>),
+    #[cfg(feature = "debugger")]
+    
+    
+    
+    SetShaderSource(String, Option<String>, Sender<crate::api::debugger::ShaderReloadReply>),
 }
 
 
