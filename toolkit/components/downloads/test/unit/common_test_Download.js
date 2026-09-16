@@ -397,9 +397,12 @@ add_task(async function test_windows_zoneInformation() {
     return;
   }
 
+  
+  
+  
   let normalTargetFile = await IOUtils.getFile(
     Services.dirsvc.get("LocalAppData", Ci.nsIFile).path,
-    "xpcshell-download-test.txt"
+    `xpcshell-download-test-${gUseLegacySaver ? "legacy" : "core"}.txt`
   );
 
   
