@@ -5614,6 +5614,7 @@ class BCPaintBorderIterator {
   void ResetVerInfo();
   void StoreColumnWidth(int32_t aIndex);
   bool BlockDirSegmentOwnsCorner();
+  nsTableCellFrame* GetBStartAdjacentCell(int32_t aRelColIndex) const;
 
   nsTableFrame* mTable;
   nsTableFrame* mTableFirstInFlow;
@@ -5626,26 +5627,26 @@ class BCPaintBorderIterator {
   nsTableRowGroupFrame* mRg;
   bool mIsRepeatedHeader;
   bool mIsRepeatedFooter;
-  nsTableRowGroupFrame* mStartRg;   
-  int32_t mRgIndex;                 
-                                    
-  int32_t mFifRgFirstRowIndex;      
-                                    
-  int32_t mRgFirstRowIndex;         
-                                    
-  int32_t mRgLastRowIndex;          
-                                    
-  int32_t mNumTableRows;            
-                                    
-  int32_t mNumTableCols;            
-  int32_t mColIndex;                
-  int32_t mRowIndex;                
-  int32_t mRepeatedHeaderRowIndex;  
-                                    
-                                    
-                                    
-                                    
-                                    
+  
+  
+  
+  
+  
+  bool mPrevRgIsRepeatedHeader;
+  nsTableRowGroupFrame* mStartRg;  
+  int32_t mRgIndex;                
+                                   
+  int32_t mFifRgFirstRowIndex;     
+                                   
+  int32_t mRgFirstRowIndex;        
+                                   
+  int32_t mRgLastRowIndex;         
+                                   
+  int32_t mNumTableRows;           
+                                   
+  int32_t mNumTableCols;           
+  int32_t mColIndex;               
+  int32_t mRowIndex;               
   bool mIsNewRow;
   bool mAtEnd;  
                 
@@ -5685,8 +5686,8 @@ class BCPaintBorderIterator {
   }
 
   TableArea mDamageArea;  
-  bool IsAfterRepeatedHeader() {
-    return !mIsRepeatedHeader && (mRowIndex == (mRepeatedHeaderRowIndex + 1));
+  bool IsAfterRepeatedHeader() const {
+    return mPrevRgIsRepeatedHeader && mRowIndex == mRgFirstRowIndex;
   }
   bool StartRepeatedFooter() const {
     return mIsRepeatedFooter && mRowIndex == mRgFirstRowIndex &&
@@ -5732,6 +5733,7 @@ BCPaintBorderIterator::BCPaintBorderIterator(nsTableFrame* aTable)
       mRg(nullptr),
       mIsRepeatedHeader(false),
       mIsRepeatedFooter(false),
+      mPrevRgIsRepeatedHeader(false),
       mStartRg(nullptr),
       mRgIndex(0),
       mFifRgFirstRowIndex(0),
@@ -5760,9 +5762,17 @@ BCPaintBorderIterator::BCPaintBorderIterator(nsTableFrame* aTable)
   mInitialOffsetB = mTable->GetPrevInFlow() ? 0 : bp.BStart(mTableWM);
   mNumTableRows = mTable->GetRowCount();
   mNumTableCols = mTable->GetColCount();
+}
 
-  
-  mRepeatedHeaderRowIndex = -99;
+
+
+
+
+static nsTableRowFrame* GetNextRowInSameRowGroup(nsTableRowFrame* aRow) {
+  nsIFrame* sibling = aRow->GetNextSibling();
+  MOZ_ASSERT(!sibling || static_cast<nsTableRowFrame*>(do_QueryFrame(sibling)),
+             "How do we have a non-row sibling?");
+  return static_cast<nsTableRowFrame*>(sibling);
 }
 
 bool BCPaintBorderIterator::SetDamageArea(const nsRect& aDirtyRect) {
@@ -5776,7 +5786,7 @@ bool BCPaintBorderIterator::SetDamageArea(const nsRect& aDirtyRect) {
   for (uint32_t rgIdx = 0; rgIdx < mRowGroups.Length() && !done; rgIdx++) {
     nsTableRowGroupFrame* rgFrame = mRowGroups[rgIdx];
     for (nsTableRowFrame* rowFrame = rgFrame->GetFirstRow(); rowFrame;
-         rowFrame = rowFrame->GetNextRow()) {
+         rowFrame = GetNextRowInSameRowGroup(rowFrame)) {
       
       nscoord rowBSize = rowFrame->BSize(mTableWM);
       const nscoord onePx = mTable->PresContext()->DevPixelsToAppUnits(1);
@@ -5882,6 +5892,9 @@ void BCPaintBorderIterator::Reset() {
   mRowIndex = 0;
   mColIndex = 0;
   mRgIndex = -1;
+  mIsRepeatedHeader = false;
+  mIsRepeatedFooter = false;
+  mPrevRgIsRepeatedHeader = false;
   mPrevCell = nullptr;
   mCell = nullptr;
   mPrevCellData = nullptr;
@@ -5958,9 +5971,6 @@ bool BCPaintBorderIterator::SetNewRow(nsTableRowFrame* aRow) {
     mRowIndex = mRow->GetRowIndex();
     mColIndex = mDamageArea.StartCol();
     mPrevInlineSegBSize = 0;
-    if (mIsRepeatedHeader) {
-      mRepeatedHeaderRowIndex = mRowIndex;
-    }
   } else {
     mAtEnd = true;
   }
@@ -5973,6 +5983,7 @@ bool BCPaintBorderIterator::SetNewRow(nsTableRowFrame* aRow) {
 bool BCPaintBorderIterator::SetNewRowGroup() {
   mRgIndex++;
 
+  mPrevRgIsRepeatedHeader = mIsRepeatedHeader;
   mIsRepeatedHeader = false;
   mIsRepeatedFooter = false;
 
@@ -6606,9 +6617,7 @@ void BCInlineDirSeg::Start(BCPaintBorderIterator& aIter,
   mLength = -offset;
   mWidth = aInlineSegBSize;
   mFirstCell = aIter.mCell;
-  mAjaCell = (aIter.IsDamageAreaBStartMost())
-                 ? nullptr
-                 : aIter.mBlockDirInfo[relColIndex].mLastCell;
+  mAjaCell = aIter.GetBStartAdjacentCell(relColIndex);
 }
 
 
@@ -6795,6 +6804,28 @@ void BCPaintBorderIterator::StoreColumnWidth(int32_t aIndex) {
     mBlockDirInfo[aIndex].mColWidth = col->ISize(mTableWM);
   }
 }
+
+
+
+
+
+
+
+
+nsTableCellFrame* BCPaintBorderIterator::GetBStartAdjacentCell(
+    int32_t aRelColIndex) const {
+  
+  
+  if (IsDamageAreaBStartMost()) {
+    return nullptr;
+  }
+  if (IsAfterRepeatedHeader() || StartRepeatedFooter()) {
+    MOZ_ASSERT(mRowIndex > 0, "Repeated header/footer at the first row?");
+    return mTableCellMap->GetCellInfoAt(mRowIndex - 1, mColIndex);
+  }
+  return mBlockDirInfo[aRelColIndex].mLastCell;
+}
+
 
 
 
