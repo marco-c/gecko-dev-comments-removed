@@ -5,7 +5,7 @@
 use api::{ImageBufferKind, units::DeviceSize};
 use crate::batch::{BatchKey, BatchKind, BatchFeatures};
 use crate::composite::{CompositeFeatures, CompositeSurfaceFormat};
-use crate::device::{Device, Program, ShaderError};
+use crate::device::{Device, Program, ShaderError, VertexDescriptor};
 use crate::pattern::PatternKind;
 use crate::telemetry::Telemetry;
 use euclid::default::Transform3D;
@@ -58,6 +58,22 @@ pub const IMAGE_BUFFER_KINDS: [ImageBufferKind; 4] = [
     ImageBufferKind::TextureRect,
     ImageBufferKind::TextureExternal,
     ImageBufferKind::TextureExternalBT709,
+];
+
+
+
+const SAMPLER_BINDINGS: &[(&'static str, TextureSampler)] = &[
+    ("sColor0", TextureSampler::Color0),
+    ("sColor1", TextureSampler::Color1),
+    ("sColor2", TextureSampler::Color2),
+    ("sDither", TextureSampler::Dither),
+    ("sTransformPalette", TextureSampler::TransformPalette),
+    ("sRenderTasks", TextureSampler::RenderTasks),
+    ("sPrimitiveHeadersF", TextureSampler::PrimitiveHeadersF),
+    ("sPrimitiveHeadersI", TextureSampler::PrimitiveHeadersI),
+    ("sClipMask", TextureSampler::ClipMask),
+    ("sGpuBufferF", TextureSampler::GpuBufferF),
+    ("sGpuBufferI", TextureSampler::GpuBufferI),
 ];
 
 const DITHERING_FEATURE: &str = "DITHERING";
@@ -114,6 +130,85 @@ impl LazilyCompiledShader {
         };
 
         Ok(shader)
+    }
+
+    pub fn name(&self) -> &'static str {
+        self.name
+    }
+
+    pub fn features(&self) -> &[&'static str] {
+        &self.features
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn is_compiled(&self) -> bool {
+        self.program.as_ref().map_or(false, Program::is_initialized)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn discard_unlinked_program(&mut self, device: &mut Device) {
+        if self.program.as_ref().map_or(true, Program::is_initialized) {
+            return;
+        }
+
+        if let Some(program) = self.program.take() {
+            device.delete_program(program);
+        }
+        self.cached_projection = Transform3D::identity();
+    }
+
+    fn vertex_descriptor(&self) -> &'static VertexDescriptor {
+        let vertex_format = match self.kind {
+            ShaderKind::Primitive |
+            ShaderKind::Text => VertexArrayKind::Primitive,
+            ShaderKind::Cache(format) => format,
+            ShaderKind::Composite => VertexArrayKind::Composite,
+            ShaderKind::Clear => VertexArrayKind::Clear,
+            ShaderKind::Copy => VertexArrayKind::Copy,
+        };
+
+        match vertex_format {
+            VertexArrayKind::Primitive => &desc::PRIM_INSTANCES,
+            VertexArrayKind::LineDecoration => &desc::LINE,
+            VertexArrayKind::Blur => &desc::BLUR,
+            VertexArrayKind::Border => &desc::BORDER,
+            VertexArrayKind::Scale => &desc::SCALE,
+            VertexArrayKind::SvgFilterNode => &desc::SVG_FILTER_NODE,
+            VertexArrayKind::Composite => &desc::COMPOSITE,
+            VertexArrayKind::Clear => &desc::CLEAR,
+            VertexArrayKind::Copy => &desc::COPY,
+            VertexArrayKind::Mask => &desc::MASK,
+        }
+    }
+
+    
+    
+    fn build_program(&self, device: &mut Device) -> Result<Program, ShaderError> {
+        let mut program = device.create_program(self.name, &self.features)?;
+
+        if let Err(err) = device.link_program(&mut program, self.vertex_descriptor()) {
+            device.delete_program(program);
+            return Err(err);
+        }
+
+        device.bind_program(&program);
+        device.bind_shader_samplers(&program, SAMPLER_BINDINGS);
+
+        Ok(program)
     }
 
     pub fn precache(
@@ -210,27 +305,7 @@ impl LazilyCompiledShader {
         if needs_link {
             let start_time = zeitstempel::now();
 
-            let vertex_format = match self.kind {
-                ShaderKind::Primitive |
-                ShaderKind::Text => VertexArrayKind::Primitive,
-                ShaderKind::Cache(format) => format,
-                ShaderKind::Composite => VertexArrayKind::Composite,
-                ShaderKind::Clear => VertexArrayKind::Clear,
-                ShaderKind::Copy => VertexArrayKind::Copy,
-            };
-
-            let vertex_descriptor = match vertex_format {
-                VertexArrayKind::Primitive => &desc::PRIM_INSTANCES,
-                VertexArrayKind::LineDecoration => &desc::LINE,
-                VertexArrayKind::Blur => &desc::BLUR,
-                VertexArrayKind::Border => &desc::BORDER,
-                VertexArrayKind::Scale => &desc::SCALE,
-                VertexArrayKind::SvgFilterNode => &desc::SVG_FILTER_NODE,
-                VertexArrayKind::Composite => &desc::COMPOSITE,
-                VertexArrayKind::Clear => &desc::CLEAR,
-                VertexArrayKind::Copy => &desc::COPY,
-                VertexArrayKind::Mask => &desc::MASK,
-            };
+            let vertex_descriptor = self.vertex_descriptor();
 
             let program = self.program.as_mut().unwrap();
             if let Err(err) = device.link_program(program, vertex_descriptor) {
@@ -246,22 +321,7 @@ impl LazilyCompiledShader {
 
             let program = self.program.as_mut().unwrap();
             device.bind_program(program);
-            device.bind_shader_samplers(
-                &program,
-                &[
-                    ("sColor0", TextureSampler::Color0),
-                    ("sColor1", TextureSampler::Color1),
-                    ("sColor2", TextureSampler::Color2),
-                    ("sDither", TextureSampler::Dither),
-                    ("sTransformPalette", TextureSampler::TransformPalette),
-                    ("sRenderTasks", TextureSampler::RenderTasks),
-                    ("sPrimitiveHeadersF", TextureSampler::PrimitiveHeadersF),
-                    ("sPrimitiveHeadersI", TextureSampler::PrimitiveHeadersI),
-                    ("sClipMask", TextureSampler::ClipMask),
-                    ("sGpuBufferF", TextureSampler::GpuBufferF),
-                    ("sGpuBufferI", TextureSampler::GpuBufferI),
-                ],
-            );
+            device.bind_shader_samplers(&program, SAMPLER_BINDINGS);
 
             if let Some(profile) = &mut profile {
                 let end_time = zeitstempel::now();
@@ -398,6 +458,92 @@ impl ShaderLoader {
         }
 
         self.shaders[shader.0].precache(device, flags)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn reload(
+        &mut self,
+        device: &mut Device,
+        changed_file: &str,
+    ) -> Result<usize, Vec<ShaderError>> {
+        
+        
+        
+        const MAX_REPORTED_FAILURES: usize = 8;
+
+        let affected: Vec<usize> = {
+            let device = &*device;
+            self.shaders
+                .iter()
+                .enumerate()
+                .filter(|(_, shader)| {
+                    shader.name() == changed_file
+                        || device.shader_include_closure(shader.name()).contains(changed_file)
+                })
+                .map(|(index, _)| index)
+                .collect()
+        };
+
+        
+        
+        
+        for &index in &affected {
+            self.shaders[index].discard_unlinked_program(device);
+        }
+
+        let to_rebuild: Vec<usize> = affected
+            .iter()
+            .cloned()
+            .filter(|&index| self.shaders[index].is_compiled())
+            .collect();
+
+        let mut rebuilt = Vec::with_capacity(to_rebuild.len());
+        let mut errors = Vec::new();
+
+        for &index in &to_rebuild {
+            match self.shaders[index].build_program(device) {
+                Ok(program) => rebuilt.push((index, program)),
+                Err(err) => {
+                    errors.push(err);
+                    if errors.len() >= MAX_REPORTED_FAILURES {
+                        break;
+                    }
+                }
+            }
+        }
+
+        if !errors.is_empty() {
+            for (_, program) in rebuilt {
+                device.delete_program(program);
+            }
+            return Err(errors);
+        }
+
+        let count = rebuilt.len();
+
+        for (index, program) in rebuilt {
+            let shader = &mut self.shaders[index];
+            if let Some(old_program) = shader.program.replace(program) {
+                device.delete_program(old_program);
+            }
+            
+            
+            
+            shader.cached_projection = Transform3D::identity();
+        }
+
+        Ok(count)
+    }
+
+    pub fn shaders(&self) -> &[LazilyCompiledShader] {
+        &self.shaders
     }
 
     pub fn all_handles(&self) -> Vec<ShaderHandle> {
@@ -1019,6 +1165,21 @@ impl Shaders {
     pub fn ps_mask_superellipse(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.ps_mask_superellipse) }
     pub fn ps_clear(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.ps_clear) }
     pub fn ps_copy(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.ps_copy) }
+
+    
+    
+    pub fn reload(
+        &mut self,
+        device: &mut Device,
+        changed_file: &str,
+    ) -> Result<usize, Vec<ShaderError>> {
+        self.loader.reload(device, changed_file)
+    }
+
+    
+    pub fn variants(&self) -> &[LazilyCompiledShader] {
+        self.loader.shaders()
+    }
 
     pub fn deinit(self, device: &mut Device) {
         self.loader.deinit(device);
