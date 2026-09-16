@@ -9682,6 +9682,23 @@ MConstant* MDefinition::maybeConstantValue() {
   return nullptr;
 }
 
+
+inline bool ValueNeedsPostBarrier(MDefinition* value) {
+  if (value->isBox()) {
+    value = value->toBox()->input();
+  }
+  
+  if (value->isConstant()) {
+    MOZ_ASSERT(
+        JS::GCPolicy<Value>::isTenured(value->toConstant()->toJSValue()));
+    return false;
+  }
+  if (value->type() == MIRType::Value) {
+    return true;
+  }
+  return NeedsPostBarrier(value->type());
+}
+
 }  
 }  
 
