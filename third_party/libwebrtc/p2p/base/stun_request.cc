@@ -157,18 +157,15 @@ bool StunRequestManager::CheckResponse(StunMessage* msg) {
     if (msg->integrity() == StunMessage::IntegrityStatus::kNotSet) {
       
       msg->ValidateMessageIntegrity(request->msg()->password());
-    } else if (msg->integrity() == StunMessage::IntegrityStatus::kIntegrityOk &&
-               msg->password() == request->msg()->password()) {
+    } else if (msg->password() == request->msg()->password()) {
       
       
-    } else if (msg->integrity() ==
-               StunMessage::IntegrityStatus::kIntegrityBad) {
+    } else {
+      
       
       
       
       msg->RevalidateMessageIntegrity(request->msg()->password());
-    } else {
-      RTC_CHECK_NOTREACHED();
     }
   }
 
