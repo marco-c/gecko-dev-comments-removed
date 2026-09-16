@@ -1159,6 +1159,29 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
   }
 };
 
+
+
+const AVATAR_MENU_ONLY_PROFILES_COUNT_EVENT_TYPES = new Set([
+  "copy_primary_profile",
+  "create_new_profile_cta_button",
+  "create_new_profile_cta_label",
+  "edit_primary_profile",
+  "launch_secondary_profile_all_profiles",
+  "manage_all_profiles",
+  "manage_profiles",
+  "view_all_profiles",
+  "what_are_profiles",
+]);
+
+const AVATAR_MENU_ONLY_PROFILES_EVENT_TYPES = new Set([
+  ...AVATAR_MENU_ONLY_PROFILES_COUNT_EVENT_TYPES,
+  "create_new_profile_submenu",
+  "get_firefox_for_mobile_cta",
+  "launch_secondary_profile",
+  "manage_primary_profile",
+  "sync_your_data_cta",
+]);
+
 var gSync = {
   _initialized: false,
   _isCurrentlySyncing: false,
@@ -1178,6 +1201,7 @@ var gSync = {
     "send_tab_exposed",
     "send_tab_opened",
     "synced_device_submenu",
+    ...AVATAR_MENU_ONLY_PROFILES_EVENT_TYPES,
   ]),
 
   get log() {
@@ -1851,6 +1875,7 @@ var gSync = {
         this.openPrefsFromFxaMenu("sync_settings", anchor);
       } else {
         
+        this.emitFxaToolbarTelemetry("sync_your_data_cta", anchor);
         this.openFxAEmailFirstPageFromFxaMenu(anchor);
       }
       CustomizableUI.hidePanelForNode(anchor);
@@ -1863,6 +1888,7 @@ var gSync = {
         this.openSyncSetup("sync_settings", button);
         break;
       case "PanelUI-fxa-menu-get-firefox-mobile":
+        this.emitFxaToolbarTelemetry("get_firefox_for_mobile_cta", button);
         this.openGetFirefoxMobile();
         break;
 
@@ -2452,6 +2478,15 @@ var gSync = {
       return;
     }
     const entryPoint = this._getEntryPointForElement(sourceElement);
+    if (
+      AVATAR_MENU_ONLY_PROFILES_EVENT_TYPES.has(type) &&
+      entryPoint !== "fxa_avatar_menu"
+    ) {
+      
+      
+      return;
+    }
+
     let category = null;
     if (entryPoint == "fxa_avatar_menu") {
       category = "fxaAvatarMenu";
@@ -2469,6 +2504,13 @@ var gSync = {
       fxa_sync_on: state.syncEnabled,
       ...extraOpts,
     };
+
+    if (AVATAR_MENU_ONLY_PROFILES_COUNT_EVENT_TYPES.has(type)) {
+      
+      
+      extraOptions.profile_count =
+        SelectableProfileService?.getCachedProfileCount() ?? 0;
+    }
 
     
     
@@ -2738,7 +2780,12 @@ var gSync = {
     }
     
     
-    if (sourceElement.closest?.('[id^="PanelUI-fxa-menu"]')) {
+    
+    
+    
+    if (
+      sourceElement.closest?.('[id^="PanelUI-fxa-menu"], #PanelUI-profiles')
+    ) {
       return "fxa_avatar_menu";
     }
     return "fxa_discoverability_native";
