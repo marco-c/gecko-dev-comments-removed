@@ -189,6 +189,7 @@ class SpeechRecognitionBackend {
 
   static void AcquireIPCActorUser() MOZ_REQUIRES(sMainThreadCapability);
   static void ReleaseIPCActorUser() MOZ_REQUIRES(sMainThreadCapability);
+  static void CancelIdleCloseTimer() MOZ_REQUIRES(sMainThreadCapability);
 
   
   
@@ -215,6 +216,11 @@ class SpeechRecognitionBackend {
   
   
   static int32_t sIPCActorUsers MOZ_GUARDED_BY(sMainThreadCapability);
+  
+  
+  
+  static StaticRefPtr<nsITimer> sIdleCloseTimer
+      MOZ_GUARDED_BY(sMainThreadCapability);
   
   WeakPtr<SpeechRecognition> mParent MOZ_GUARDED_BY(sMainThreadCapability);
 

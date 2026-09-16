@@ -17,9 +17,11 @@
 #include "SpeechRecognition.h"
 #include "SpeechTrackListener.h"
 #include "mozilla/AbstractThread.h"
+#include "mozilla/AppShutdown.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/PodOperations.h"
+#include "mozilla/StaticPrefs_media.h"
 #include "mozilla/dom/AudioStreamTrack.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/Promise.h"
@@ -39,6 +41,7 @@ using namespace mozilla::ipc;
 StaticAutoPtr<mozilla::EventTargetCapability<nsISerialEventTarget>>
     SpeechRecognitionBackend::sIPCCapability;
 int32_t SpeechRecognitionBackend::sIPCActorUsers = 0;
+StaticRefPtr<nsITimer> SpeechRecognitionBackend::sIdleCloseTimer;
 
 static LazyLogModule gSpeechRecognitionBackendLog("SpeechRecognitionBackend");
 
@@ -56,8 +59,86 @@ static LazyLogModule gSpeechRecognitionBackendLog("SpeechRecognitionBackend");
 
 static constexpr uint32_t IPC_THREAD_IDLE_TIMEOUT_MS = 5000;
 
-SpeechRecognitionBackend::SpeechRecognitionIPCActorUserGuard::
-    ~SpeechRecognitionIPCActorUserGuard() {
+
+void SpeechRecognitionBackend::CancelIdleCloseTimer() {
+  if (sIdleCloseTimer) {
+    sIdleCloseTimer->Cancel();
+    sIdleCloseTimer = nullptr;
+  }
+}
+
+
+void SpeechRecognitionBackend::AcquireIPCActorUser() {
+  AssertIsOnMainThread();
+  bool connectionHeld = sIdleCloseTimer;
+  
+  
+  CancelIdleCloseTimer();
+  if (sIPCActorUsers++ || connectionHeld) {
+    return;
+  }
+
+  ContentChild::GetSingleton()->SendAcquireHWInferenceProcess();
+}
+
+
+void SpeechRecognitionBackend::ReleaseIPCActorUser() {
+  AssertIsOnMainThread();
+  MOZ_ASSERT(sIPCActorUsers > 0);
+  if (--sIPCActorUsers) {
+    return;
+  }
+
+  uint32_t graceMs =
+      StaticPrefs::media_webspeech_recognition_idle_shutdown_grace_ms();
+  
+  
+  if (!graceMs ||
+      AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+    ContentChild::GetSingleton()->SendReleaseHWInferenceConnection();
+    return;
+  }
+
+  
+  
+  
+  
+  
+  static bool sRegisteredShutdownBlocker = false;
+  if (!sRegisteredShutdownBlocker) {
+    sRegisteredShutdownBlocker = true;
+    RunOnShutdown([]() {
+      AssertIsOnMainThread();
+      CancelIdleCloseTimer();
+    });
+  }
+
+  LOG("Last HWInference user gone, closing the connection in {}ms", graceMs);
+  nsCOMPtr<nsITimer> timer;
+  nsresult rv = NS_NewTimerWithCallback(
+      getter_AddRefs(timer),
+      [](nsITimer*) {
+        AssertIsOnMainThread();
+        
+        
+        sIdleCloseTimer = nullptr;
+        ContentChild::GetSingleton()->SendReleaseHWInferenceConnection();
+      },
+      graceMs, nsITimer::TYPE_ONE_SHOT,
+      "SpeechRecognitionBackend::IdleClose"_ns);
+
+  if (NS_FAILED(rv)) {
+    ContentChild::GetSingleton()->SendReleaseHWInferenceConnection();
+    return;
+  }
+  sIdleCloseTimer = timer.forget();
+}
+
+SpeechRecognitionIPCActorUserGuard::SpeechRecognitionIPCActorUserGuard() {
+  SpeechRecognitionBackend::AcquireIPCActorUser();
+}
+
+SpeechRecognitionIPCActorUserGuard::~SpeechRecognitionIPCActorUserGuard() {
   if (NS_IsMainThread()) {
     SpeechRecognitionBackend::ReleaseIPCActorUser();
   } else {
@@ -67,30 +148,6 @@ SpeechRecognitionBackend::SpeechRecognitionIPCActorUserGuard::
           SpeechRecognitionBackend::ReleaseIPCActorUser();
         }));
   }
-}
-
-
-void SpeechRecognitionBackend::AcquireIPCActorUser() {
-  AssertIsOnMainThread();
-  ++sIPCActorUsers;
-}
-
-
-void SpeechRecognitionBackend::ReleaseIPCActorUser() {
-  AssertIsOnMainThread();
-  MOZ_ASSERT(sIPCActorUsers > 0);
-  if (--sIPCActorUsers || !sIPCCapability) {
-    return;
-  }
-
-  
-  
-  
-  
-  nsCOMPtr<nsIRunnable> close = NS_NewRunnableFunction(
-      "SpeechRecognitionBackend::CloseHWInferenceChildIfAny",
-      [] { CloseHWInferenceChildIfAny(); });
-  sIPCCapability->Dispatch(close.forget());
 }
 
 static constexpr double IPC_BLOCK_SIZE_S = 0.5;
