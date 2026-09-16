@@ -3064,6 +3064,18 @@ ScriptLoader::DiskCacheStrategy ScriptLoader::GetDiskCacheStrategy() {
   return strategy;
 }
 
+
+
+
+static bool IsScriptingDisabled(ModuleLoadRequest* aRequest) {
+  
+  
+  nsIGlobalObject* global = aRequest->mLoader->GetGlobalObject();
+  MOZ_ASSERT(global && global->GetGlobalJSObject());
+
+  return !xpc::Scriptability::AllowedIfExists(global->GetGlobalJSObject());
+}
+
 void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
   using mozilla::TimeDuration;
   using mozilla::TimeStamp;
@@ -3117,6 +3129,18 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
         return;
       }
 #endif
+
+      if (IsScriptingDisabled(moduleLoadRequest)) {
+        LOG(("ScriptLoadRequest (%p): Bytecode-cache: Skip all: empty module",
+             aRequest));
+        aRequest->MarkNotCacheable();
+        
+        
+        if (!UsesMemoryCache()) {
+          aRequest->getLoadedScript()->DropDiskCacheReferenceAndSRI();
+        }
+        return;
+      }
     } else {
       LOG(("ScriptLoadRequest (%p): Bytecode-cache: Skip all: synthetic module",
            aRequest));
