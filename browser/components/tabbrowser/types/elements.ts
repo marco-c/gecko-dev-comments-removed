@@ -62,41 +62,8 @@ interface MozTabbrowserTab extends XULElement {
   _originalRegisteredOpenURI: any;
 }
 
-
-
-
-type TabGroupColor =
-  | "blue"
-  | "purple"
-  | "cyan"
-  | "orange"
-  | "yellow"
-  | "pink"
-  | "green"
-  | "gray"
-  | "red";
-
-interface MozTabbrowserTabGroup extends XULElement {
-  
-  
-  pinned: false;
-  splitview: null;
-  group: null;
-
-  tabs: MozTabbrowserTab[];
-  tabsAndSplitViews: (MozTabbrowserTab | MozTabSplitViewWrapper)[];
-  label: string;
-  name: string;
-  color: TabGroupColor;
-  collapsed: boolean;
-  saveOnWindowClose: boolean;
-  removedByAdoption: boolean;
-  select(): void;
-  addTabs(
-    tabsOrSplitViews: (MozTabbrowserTab | MozTabSplitViewWrapper)[],
-    metricsContext?: import("../TabMetrics.sys.mjs").TabMetricsContext
-  ): void;
-}
+type MozTabbrowserTabGroup =
+  import("../content/tabgroup.mjs").MozTabbrowserTabGroup;
 
 interface MozTabbrowserTabGroupLabel extends XULElement {
   
@@ -108,30 +75,10 @@ interface MozTabbrowserTabGroupLabel extends XULElement {
   group: MozTabbrowserTabGroup;
 }
 
+type MozTabSplitViewWrapper =
+  import("../content/tabsplitview.mjs").MozTabSplitViewWrapper;
 
 
 
-type TabSplitViewStateData = { id: number; numberOfTabs: number };
-
-interface MozTabSplitViewWrapper extends XULElement {
-  
-  splitview: null;
-
-  tabs: MozTabbrowserTab[];
-  splitViewId: number;
-  state: TabSplitViewStateData;
-  group: MozTabbrowserTabGroup | null;
-  pinned: false;
-  visible: boolean;
-  multiselected: boolean;
-  hasActiveTab: boolean;
-  shouldMoveAllTabsAtOnce: boolean;
-  addTabs(
-    tabs: MozTabbrowserTab[],
-    options?: { isSessionRestore?: boolean; indexOfReplacedTab?: number }
-  ): void;
-  replaceTab(tabToReplace: MozTabbrowserTab, newTab: MozTabbrowserTab): void;
-  unsplitTabs(trigger?: string): void;
-  reverseTabs(trigger?: string): void;
-  close(trigger?: string): void;
-}
+type TabSplitViewStateData =
+  import("../content/tabsplitview.mjs").TabSplitViewStateData;
