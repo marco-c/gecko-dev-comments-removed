@@ -50,6 +50,14 @@ class PDMFactorySupport final {
   
   
   
+  
+  static RefPtr<PDMSupportsDecoderPromise> IsSupportedAsync(
+      const SupportDecoderParams& aParams);
+
+  
+  
+  
+  
   static RefPtr<PDMFactorySupport> Instance();
 
   
@@ -68,6 +76,11 @@ class PDMFactorySupport final {
       const SupportDecoderParams& aParams,
       DecoderDoctorDiagnostics* aDiagnostics) const {
     return mFactory->Supports(aParams, aDiagnostics);
+  }
+
+  RefPtr<PDMSupportsDecoderPromise> SupportsAsync(
+      const SupportDecoderParams& aParams) const {
+    return mFactory->SupportsAsync(aParams);
   }
 
   
