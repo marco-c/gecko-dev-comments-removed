@@ -981,6 +981,19 @@ impl UniformLocation {
     pub const INVALID: Self = UniformLocation(-1);
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum GraphicsApi {
+    OpenGL,
+}
+
+
+#[derive(Clone, Debug)]
+pub struct GraphicsApiInfo {
+    pub kind: GraphicsApi,
+    pub renderer: String,
+    pub version: String,
+}
+
 #[derive(Debug)]
 pub struct Capabilities {
     
@@ -2118,6 +2131,27 @@ impl Device {
 
     pub fn get_capabilities(&self) -> &Capabilities {
         &self.capabilities
+    }
+
+    pub fn api_info(&self) -> GraphicsApiInfo {
+        GraphicsApiInfo {
+            kind: GraphicsApi::OpenGL,
+            version: self.gl.get_string(gl::VERSION),
+            renderer: self.gl.get_string(gl::RENDERER),
+        }
+    }
+
+    
+    
+    pub fn take_out_of_memory_error(&self) -> bool {
+        
+        self.gl.get_error() == gl::OUT_OF_MEMORY
+    }
+
+    
+    
+    pub fn blend_barrier(&self) {
+        self.gl.blend_barrier_khr();
     }
 
     pub fn shader_feature_flags(&self) -> ShaderFeatureFlags {
