@@ -1355,7 +1355,11 @@ var gSync = {
       const state = UIState.get();
       
       
-      if (state.status != UIState.STATUS_NOT_CONFIGURED) {
+      
+      if (
+        state.status != UIState.STATUS_NOT_CONFIGURED ||
+        this._hasSignedOutOfSync
+      ) {
         this.updateAllUI(state);
       }
     }
@@ -1431,6 +1435,22 @@ var gSync = {
       novaFxaLabel.label = novaSignIn;
     }
 
+    
+    
+    for (const [id, l10nId] of [
+      ["appMenu-fxa-signed-out-title", "fxa-menu-signed-out-title"],
+      ["appMenu-fxa-signed-out-message", "fxa-menu-signed-out-description"],
+      [
+        "appMenu-fxa-signed-out-sign-in-button",
+        "fxa-menu-signed-out-sign-in-button",
+      ],
+    ]) {
+      document.l10n.setAttributes(
+        PanelMultiView.getViewNode(document, id),
+        l10nId
+      );
+    }
+
     for (let topic of this._obs) {
       Services.obs.addObserver(this, topic, true);
     }
@@ -1443,6 +1463,12 @@ var gSync = {
     PanelMultiView.getViewNode(
       document,
       "appMenu-fxa-sign-in-promo-button"
+    ).addEventListener("click", this);
+
+    
+    PanelMultiView.getViewNode(
+      document,
+      "appMenu-fxa-signed-out-sign-in-button"
     ).addEventListener("click", this);
 
     let fxaPanelView = PanelMultiView.getViewNode(document, "PanelUI-fxa");
@@ -1682,6 +1708,17 @@ var gSync = {
 
 
 
+  get _hasSignedOutOfSync() {
+    return Services.prefs.prefHasUserValue("services.sync.lastversion");
+  },
+
+  
+
+
+
+
+
+
 
 
 
@@ -1753,16 +1790,18 @@ var gSync = {
 
     
     
-    const neverSignedIn = state.status == UIState.STATUS_NOT_CONFIGURED;
+    const neverSignedIn =
+      state.status == UIState.STATUS_NOT_CONFIGURED &&
+      !this._hasSignedOutOfSync;
 
     
     
     btn.classList.toggle("subviewbutton-nav", syncOn);
 
-    let neverSignedInId = neverSignedIn
+    let syncOffTitleId = neverSignedIn
       ? "fxa-menu-sync-your-data"
       : "fxa-menu-sync-status-off";
-    let titleId = syncOn ? "fxa-menu-sync-status-on" : neverSignedInId;
+    let titleId = syncOn ? "fxa-menu-sync-status-on" : syncOffTitleId;
     titleEl.setAttribute("value", this.fluentStrings.formatValueSync(titleId));
 
     if (syncOn) {
@@ -1857,6 +1896,7 @@ var gSync = {
         this.openFxAEmailFirstPageFromFxaMenu(button);
         break;
       case "appMenu-fxa-sign-in-promo-button":
+      case "appMenu-fxa-signed-out-sign-in-button":
         
         this.openFxAEmailFirstPageFromFxaMenu(button);
         PanelUI.hide();
@@ -2196,10 +2236,11 @@ var gSync = {
 
         
         
-        
-        
-        
-        signInPromoEl.hidden = false;
+        if (this._hasSignedOutOfSync) {
+          this._showFxASignedOutCard(signedOutCardEl, state);
+        } else {
+          signInPromoEl.hidden = false;
+        }
 
         headerTitleL10nId = this.FXA_CTA_MENU_ENABLED
           ? "synced-tabs-fxa-sign-in"
@@ -2342,6 +2383,7 @@ var gSync = {
 
   
   
+  
   _showFxASignedOutCard(cardEl, state) {
     const emailEl = PanelMultiView.getViewNode(
       document,
@@ -2356,13 +2398,22 @@ var gSync = {
       "PanelUI-fxa-menu-signed-out-separator"
     );
 
-    emailEl.value = state.email ?? "";
-    document.l10n.setAttributes(
-      messageEl,
-      state.status === UIState.STATUS_NOT_VERIFIED
-        ? "fxa-menu-signed-out-message-unverified"
-        : "fxa-menu-signed-out-message-login-failed"
-    );
+    if (state.status === UIState.STATUS_NOT_CONFIGURED) {
+      
+      
+      emailEl.value = this.fluentStrings.formatValueSync(
+        "fxa-menu-signed-out-title"
+      );
+      document.l10n.setAttributes(messageEl, "fxa-menu-signed-out-description");
+    } else {
+      emailEl.value = state.email ?? "";
+      document.l10n.setAttributes(
+        messageEl,
+        state.status === UIState.STATUS_NOT_VERIFIED
+          ? "fxa-menu-signed-out-message-unverified"
+          : "fxa-menu-signed-out-message-login-failed"
+      );
+    }
 
     cardEl.hidden = false;
     separatorEl.hidden = false;
@@ -2452,6 +2503,10 @@ var gSync = {
       document,
       "appMenu-header-description"
     );
+    const appMenuSignedOutRow = PanelMultiView.getViewNode(
+      document,
+      "appMenu-fxa-signed-out-row"
+    );
     const fxaPanelView = PanelMultiView.getViewNode(document, "PanelUI-fxa");
 
     let defaultLabel = this.fluentStrings.formatValueSync(
@@ -2460,12 +2515,31 @@ var gSync = {
     
     appMenuLabel.setAttribute("label", defaultLabel);
     appMenuLabel.removeAttribute("aria-labelledby");
+    appMenuLabel.hidden = false;
+    appMenuSignedOutRow.hidden = true;
     appMenuStatus.removeAttribute("fxastatus");
 
+    
+    
+    
+    
+    const signedOut =
+      status == UIState.STATUS_NOT_CONFIGURED && this._hasSignedOutOfSync;
+    document.documentElement.toggleAttribute("fxasignedout", signedOut);
+
     if (status == UIState.STATUS_NOT_CONFIGURED) {
-      appMenuHeaderText.hidden = false;
       appMenuStatus.classList.add("toolbaritem-combined-buttons");
       appMenuLabel.classList.remove("subviewbutton-nav");
+
+      if (signedOut) {
+        appMenuStatus.setAttribute("fxastatus", "signed-out");
+        appMenuHeaderText.hidden = true;
+        appMenuLabel.hidden = true;
+        appMenuSignedOutRow.hidden = false;
+        return;
+      }
+
+      appMenuHeaderText.hidden = false;
       appMenuHeaderTitle.hidden = true;
       appMenuHeaderDescription.value = defaultLabel;
       return;
