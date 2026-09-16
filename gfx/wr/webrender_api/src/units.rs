@@ -110,15 +110,6 @@ pub type WorldVector2D = Vector2D<f32, WorldPixel>;
 pub type WorldVector3D = Vector3D<f32, WorldPixel>;
 
 
-
-
-
-#[derive(Hash, Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, Ord, PartialOrd, Deserialize, Serialize, PeekPoke)]
-pub struct VisPixel;
-
-pub type VisRect = Box2D<f32, VisPixel>;
-
-
 #[derive(Hash, Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Tiles;
 pub type TileOffset = Point2D<i32, Tiles>;
@@ -135,7 +126,6 @@ pub type LayoutToDeviceScale = Scale<f32, LayoutPixel, DevicePixel>;
 pub type LayoutTransform = Transform3D<f32, LayoutPixel, LayoutPixel>;
 pub type LayoutToWorldTransform = Transform3D<f32, LayoutPixel, WorldPixel>;
 pub type WorldToLayoutTransform = Transform3D<f32, WorldPixel, LayoutPixel>;
-pub type LayoutToVisTransform = Transform3D<f32, LayoutPixel, VisPixel>;
 
 pub type LayoutToPictureTransform = Transform3D<f32, LayoutPixel, PicturePixel>;
 pub type PictureToLayoutTransform = Transform3D<f32, PicturePixel, LayoutPixel>;

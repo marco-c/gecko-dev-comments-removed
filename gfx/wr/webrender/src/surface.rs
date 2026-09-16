@@ -136,38 +136,14 @@ fn resolve_dest_to_src_raster(
 
 
 
-
-
-
-pub fn visibility_node(
+fn raster_to_root_mapper(
     raster_spatial_node_index: SpatialNodeIndex,
-) -> SpatialNodeIndex {
-    debug_assert_ne!(raster_spatial_node_index, SpatialNodeIndex::INVALID);
-
-    raster_spatial_node_index
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-fn vis_to_root_mapper(
-    visibility_spatial_node_index: SpatialNodeIndex,
     bounds: DeviceRect,
     spatial_tree: &SpatialTree,
-) -> SpaceMapper<VisPixel, DevicePixel> {
+) -> SpaceMapper<RasterPixel, DevicePixel> {
     SpaceMapper::new_with_target(
         spatial_tree.root_reference_frame_index(),
-        visibility_spatial_node_index,
+        raster_spatial_node_index,
         bounds,
         spatial_tree,
     )
@@ -244,7 +220,7 @@ pub struct SurfaceInfo {
     
     
     
-    pub culling_rect: VisRect,
+    pub culling_rect: RasterRect,
     
     
     
@@ -256,9 +232,6 @@ pub struct SurfaceInfo {
     pub surface_spatial_node_index: SpatialNodeIndex,
     
     pub raster_spatial_node_index: SpatialNodeIndex,
-    
-    
-    pub visibility_spatial_node_index: SpatialNodeIndex,
     
     pub device_pixel_scale: DevicePixelScale,
     
@@ -326,11 +299,9 @@ impl SurfaceInfo {
             pic_bounds,
         );
 
-        let visibility_spatial_node_index = visibility_node(raster_spatial_node_index);
-
         
-        let map_vis_to_root = vis_to_root_mapper(
-            visibility_spatial_node_index,
+        let map_raster_to_root = raster_to_root_mapper(
+            raster_spatial_node_index,
             global_culling_rect,
             spatial_tree,
         );
@@ -338,9 +309,9 @@ impl SurfaceInfo {
         
         
         
-        let projected = map_vis_to_root
+        let projected = map_raster_to_root
             .as_2d_scale_offset()
-            .and_then(|_| map_vis_to_root.unmap(&global_culling_rect));
+            .and_then(|_| map_raster_to_root.unmap(&global_culling_rect));
 
         let mut culling_rect_projection_failed = false;
         let culling_rect = match projected {
@@ -350,12 +321,12 @@ impl SurfaceInfo {
                 
                 debug_assert_ne!(
                     spatial_tree
-                        .get_spatial_node(visibility_spatial_node_index)
+                        .get_spatial_node(raster_spatial_node_index)
                         .coordinate_system_id,
                     CoordinateSystemId::root(),
-                    "vis node in the root coordinate system must give an exact culling rect",
+                    "raster node in the root coordinate system must give an exact culling rect",
                 );
-                VisRect::max_rect()
+                RasterRect::max_rect()
             }
         };
 
@@ -373,7 +344,7 @@ impl SurfaceInfo {
         #[cfg(debug_assertions)]
         if let Some(round_trip) = Some(&culling_rect)
             .filter(|_| !culling_rect_projection_failed)
-            .and_then(|rect| map_vis_to_root.map(rect))
+            .and_then(|rect| map_raster_to_root.map(rect))
         {
             const EPSILON: f32 = 0.05;
             debug_assert!(
@@ -393,7 +364,6 @@ impl SurfaceInfo {
             map_local_to_picture,
             raster_spatial_node_index,
             surface_spatial_node_index,
-            visibility_spatial_node_index,
             device_pixel_scale,
             world_scale_factors,
             blur_scale_factors,
@@ -440,8 +410,8 @@ impl SurfaceInfo {
     
     pub fn update_culling_rect(
         &mut self,
-        parent_vis_spatial_node_index: SpatialNodeIndex,
-        parent_culling_rect: VisRect,
+        parent_raster_spatial_node_index: SpatialNodeIndex,
+        parent_culling_rect: RasterRect,
         composite_mode: &PictureCompositeMode,
         frame_context: &FrameVisibilityContext,
     ) {
@@ -449,25 +419,25 @@ impl SurfaceInfo {
         
         
         
-        if parent_culling_rect == VisRect::max_rect() {
+        if parent_culling_rect == RasterRect::max_rect() {
             self.culling_rect = parent_culling_rect;
             return;
         }
 
-        let parent_culling_rect = if parent_vis_spatial_node_index == self.visibility_spatial_node_index {
+        let parent_culling_rect = if parent_raster_spatial_node_index == self.raster_spatial_node_index {
             parent_culling_rect
         } else {
             
             
             
             
-            let map_parent_to_root = vis_to_root_mapper(
-                parent_vis_spatial_node_index,
+            let map_parent_to_root = raster_to_root_mapper(
+                parent_raster_spatial_node_index,
                 frame_context.global_screen_device_rect,
                 frame_context.spatial_tree,
             );
-            let map_vis_to_root = vis_to_root_mapper(
-                self.visibility_spatial_node_index,
+            let map_raster_to_root = raster_to_root_mapper(
+                self.raster_spatial_node_index,
                 frame_context.global_screen_device_rect,
                 frame_context.spatial_tree,
             );
@@ -476,16 +446,16 @@ impl SurfaceInfo {
                 .as_2d_scale_offset()
                 .and_then(|_| map_parent_to_root.map(&parent_culling_rect))
                 .and_then(|device_rect| {
-                    map_vis_to_root
+                    map_raster_to_root
                         .as_2d_scale_offset()
-                        .and_then(|_| map_vis_to_root.unmap(&device_rect))
+                        .and_then(|_| map_raster_to_root.unmap(&device_rect))
                 });
 
             match projected {
                 Some(rect) => rect,
                 None => {
                     
-                    self.culling_rect = VisRect::max_rect();
+                    self.culling_rect = RasterRect::max_rect();
                     return;
                 }
             }
@@ -496,8 +466,8 @@ impl SurfaceInfo {
         
         
         
-        let map_surface_to_vis: SpaceMapper<PicturePixel, VisPixel> = SpaceMapper::new_with_target(
-            self.visibility_spatial_node_index,
+        let map_surface_to_raster: SpaceMapper<PicturePixel, RasterPixel> = SpaceMapper::new_with_target(
+            self.raster_spatial_node_index,
             self.surface_spatial_node_index,
             parent_culling_rect,
             frame_context.spatial_tree,
@@ -505,14 +475,14 @@ impl SurfaceInfo {
 
         
         
-        let expanded = map_surface_to_vis
+        let expanded = map_surface_to_raster
             .unmap(&parent_culling_rect)
             .map(|local_rect| composite_mode.get_required_source_rect(self, local_rect.cast_unit()))
-            .and_then(|required_rect| map_surface_to_vis.map(&required_rect.cast_unit()));
+            .and_then(|required_rect| map_surface_to_raster.map(&required_rect.cast_unit()));
 
         
         
-        self.culling_rect = expanded.unwrap_or_else(VisRect::max_rect);
+        self.culling_rect = expanded.unwrap_or_else(RasterRect::max_rect);
     }
 
     pub fn map_to_device_rect(

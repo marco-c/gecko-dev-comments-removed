@@ -19,18 +19,14 @@ use crate::util::MaxRect;
 
 
 
-
-
-
-
 #[derive(Clone)]
 pub struct DirtyRegion {
     
-    pub combined: VisRect,
+    pub combined: RasterRect,
 
     
     
-    pub visibility_spatial_node: SpatialNodeIndex,
+    pub raster_spatial_node: SpatialNodeIndex,
     
     local_spatial_node: SpatialNodeIndex,
 }
@@ -38,12 +34,12 @@ pub struct DirtyRegion {
 impl DirtyRegion {
     
     pub fn new(
-        visibility_spatial_node: SpatialNodeIndex,
+        raster_spatial_node: SpatialNodeIndex,
         local_spatial_node: SpatialNodeIndex,
     ) -> Self {
         DirtyRegion {
-            combined: VisRect::zero(),
-            visibility_spatial_node,
+            combined: RasterRect::zero(),
+            raster_spatial_node,
             local_spatial_node,
         }
     }
@@ -51,11 +47,11 @@ impl DirtyRegion {
     
     pub fn reset(
         &mut self,
-        visibility_spatial_node: SpatialNodeIndex,
+        raster_spatial_node: SpatialNodeIndex,
         local_spatial_node: SpatialNodeIndex,
     ) {
-        self.combined = VisRect::zero();
-        self.visibility_spatial_node = visibility_spatial_node;
+        self.combined = RasterRect::zero();
+        self.raster_spatial_node = raster_spatial_node;
         self.local_spatial_node = local_spatial_node;
     }
 
@@ -67,15 +63,15 @@ impl DirtyRegion {
         spatial_tree: &SpatialTree,
     ) {
         debug_assert_ne!(
-            self.visibility_spatial_node,
+            self.raster_spatial_node,
             SpatialNodeIndex::INVALID,
             "dirty region used before being targeted for this frame",
         );
 
         let map_pic_to_raster = SpaceMapper::new_with_target(
-            self.visibility_spatial_node,
+            self.raster_spatial_node,
             self.local_spatial_node,
-            VisRect::max_rect(),
+            RasterRect::max_rect(),
             spatial_tree,
         );
 
