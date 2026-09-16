@@ -1038,14 +1038,11 @@ void MacroAssemblerLOONG64::ma_b(Address addr, ImmGCPtr imm, Label* label,
 
 void MacroAssemblerLOONG64::ma_bl(Label* label) {
   LabelDoc target = refLabel(label);
+  UseScratchRegisterScope temps(asMasm());
+  Register scratch = temps.Acquire();
+
   if (label->bound()) {
-    
-    
-    addLongJump(nextOffset(), BufferOffset(label->offset()));
-    UseScratchRegisterScope temps(asMasm());
-    Register scratch = temps.Acquire();
-    ma_liPatchable(scratch, ImmWord(LabelBase::INVALID_OFFSET));
-    as_jirl(ra, scratch, BOffImm16(0), target);
+    ma_call36(label->offset() - nextOffset().getOffset(), scratch);
     return;
   }
 
@@ -1055,17 +1052,17 @@ void MacroAssemblerLOONG64::ma_bl(Label* label) {
 
   
   
-  m_buffer.ensureSpace(5 * sizeof(uint32_t));
+  m_buffer.ensureSpace(2 * sizeof(uint32_t));
 
-  BufferOffset bo = emit(getBranchCode(BranchIsCall).encode(), target);
+  
+  
+  
+  BufferOffset bo =
+      emit(InstImm(op_pcaddu18i, 0, scratch, false).encode(), target);
   writeInst(nextInChain);
   if (!oom()) {
     label->use(bo.getOffset());
   }
-  
-  as_nop();
-  as_nop();
-  as_nop();
 }
 
 void MacroAssemblerLOONG64::ma_jump36(int32_t offset, Register scratch) {
@@ -3019,10 +3016,10 @@ void MacroAssembler::call(ImmPtr target) {
 void MacroAssembler::call(JitCode* c) {
   UseScratchRegisterScope temps(asMasm());
   Register scratch = temps.Acquire();
-  BufferOffset bo = m_buffer.nextOffset();
-  addPendingJump(bo, ImmPtr(c->raw()), RelocationKind::JITCODE);
-  ma_liPatchable(scratch, ImmPtr(c->raw()));
-  callJitNoProfiler(scratch);
+  addPendingJump(m_buffer.nextOffset(), ImmPtr(c->raw()),
+                 RelocationKind::JITCODE);
+  as_pcaddu18i(scratch, 0);
+  as_jirl(ra, scratch, BOffImm16(0));
 }
 
 CodeOffset MacroAssembler::nopPatchableToCall() {
@@ -6259,11 +6256,11 @@ CodeOffset MacroAssemblerLOONG64Compat::toggledCall(JitCode* target,
   BufferOffset bo = nextOffset();
   CodeOffset offset(bo.getOffset());  
   addPendingJump(bo, ImmPtr(target->raw()), RelocationKind::JITCODE);
-  ma_liPatchable(scratch, ImmPtr(target->raw()));
+  as_pcaddu18i(scratch, 0);
   if (enabled) {
     as_jirl(ra, scratch, BOffImm16(0));
   } else {
-    as_nop();
+    emit(InstImm(op_bne, BOffImm16(0), zero, zero).encode());
   }
   MOZ_ASSERT_IF(!oom(), nextOffset().getOffset() - offset.offset() ==
                             ToggledCallSize(nullptr));

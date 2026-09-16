@@ -556,7 +556,7 @@ class MacroAssemblerLOONG64Compat : public MacroAssemblerLOONG64 {
     Register scratch = temps.Acquire();
     BufferOffset bo = m_buffer.nextOffset();
     addPendingJump(bo, ImmPtr(c->raw()), RelocationKind::JITCODE);
-    ma_liPatchable(scratch, ImmPtr(c->raw()));
+    as_pcaddu18i(scratch, 0);
     as_jirl(zero, scratch, BOffImm16(0));
   }
   void branch(const Register reg) { as_jirl(zero, reg, BOffImm16(0)); }
@@ -606,7 +606,7 @@ class MacroAssemblerLOONG64Compat : public MacroAssemblerLOONG64 {
 
   static size_t ToggledCallSize(uint8_t* code) {
     
-    return 4 * sizeof(uint32_t);
+    return 2 * sizeof(uint32_t);
   }
 
   CodeOffset pushWithPatch(ImmWord imm) {
