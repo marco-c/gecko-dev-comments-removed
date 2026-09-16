@@ -66,6 +66,17 @@ class nsCopySupport {
   
   
   
+  static nsString GetDocumentSourceURL(mozilla::dom::Document& aDocument);
+
+  
+
+
+  static nsresult AppendSourceURL(nsITransferable& aTransferable,
+                                  const nsAString& aSourceURL);
+
+  
+  
+  
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   static nsresult GetTransferableForNode(nsINode* aNode,

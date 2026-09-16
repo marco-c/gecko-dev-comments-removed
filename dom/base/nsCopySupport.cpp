@@ -29,6 +29,7 @@
 #include "nsPIDOMWindow.h"
 #include "nsRange.h"
 #include "nsServiceManagerUtils.h"
+#include "nsURLHelper.h"
 #include "nsWidgetsCID.h"
 #include "nsXPCOM.h"
 
@@ -289,27 +290,6 @@ static nsresult CreateTransferable(
                         kTextMime);
       NS_ENSURE_SUCCESS(rv, rv);
     }
-
-    
-    nsIURI* uri = aDocument.GetDocumentURI();
-    if (uri) {
-      nsAutoCString spec;
-      nsresult rv = uri->GetSpec(spec);
-      NS_ENSURE_SUCCESS(rv, rv);
-      if (!spec.IsEmpty()) {
-        nsAutoString shortcut;
-        AppendUTF8toUTF16(spec, shortcut);
-
-        
-        
-        
-        
-        
-        
-        rv = AppendString(aTransferable, shortcut, kURLPrivateMime);
-        NS_ENSURE_SUCCESS(rv, rv);
-      }
-    }
   } else {
     if (!aEncodedDocumentWithContext.mSerializationForTextPlain.IsEmpty()) {
       
@@ -320,7 +300,47 @@ static nsresult CreateTransferable(
     }
   }
 
-  return rv;
+  
+  return nsCopySupport::AppendSourceURL(
+      *aTransferable, nsCopySupport::GetDocumentSourceURL(aDocument));
+}
+
+nsString nsCopySupport::GetDocumentSourceURL(
+    mozilla::dom::Document& aDocument) {
+  
+  if (nsContentUtils::IsChromeDoc(&aDocument) ||
+      nsContentUtils::IsAddonDoc(&aDocument) ||
+      aDocument.ChromeRulesEnabled()) {
+    return EmptyString();
+  }
+
+  
+  
+  if (aDocument.IsInPrivateBrowsing()) {
+    return u"about:internet"_ns;
+  }
+
+  nsAutoCString origin;
+  MOZ_ALWAYS_SUCCEEDS(aDocument.NodePrincipal()->GetOriginNoSuffix(origin));
+
+  return NS_ConvertUTF8toUTF16(origin);
+}
+
+nsresult nsCopySupport::AppendSourceURL(nsITransferable& aTransferable,
+                                        const nsAString& aSourceURL) {
+  if (aSourceURL.IsEmpty()) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  return AppendString(&aTransferable, aSourceURL, kURLPrivateMime);
 }
 
 static nsresult PutToClipboard(
@@ -948,6 +968,11 @@ bool nsCopySupport::FireClipboardEvent(
           clipboardData->GetTransferable(0, doc->GetLoadContext());
 
       NS_ENSURE_TRUE(transferable, false);
+
+      if (NS_FAILED(
+              AppendSourceURL(*transferable, GetDocumentSourceURL(*doc)))) {
+        return false;
+      }
 
       
       WindowContext* settingWindowContext = nullptr;
