@@ -72,6 +72,9 @@ class gfxMacFont final : public gfxFont {
                         gfxFloat aConvFactor);
 
   
+  void InitMetricsByGlyphMeasurement(CFDataRef aCmap, gfxFloat aConvFactor);
+
+  
   CGFontRef mCGFont;
 
   
