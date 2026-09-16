@@ -495,6 +495,15 @@ static int opus_decode_frame(OpusDecoder *st, const unsigned char *data,
         OPUS_COPY(pcm, pcm_silk, frame_size*st->channels);
      }
    }
+#ifdef ENABLE_OSCE_BWE
+   else {
+      
+
+
+
+      st->DecControl.osce_extended_mode = OSCE_MODE_CELT_ONLY;
+   }
+#endif
 
    start_band = 0;
    if (!decode_fec && mode != MODE_CELT_ONLY && data != NULL
@@ -733,6 +742,8 @@ int opus_decode_native(OpusDecoder *st, const unsigned char *data,
    if ((decode_fec || len==0 || data==NULL) && frame_size%(st->Fs/400)!=0)
       return OPUS_BAD_ARG;
 #ifdef ENABLE_DRED
+   if (dred != NULL && dred->process_stage != 2)
+      return OPUS_BAD_ARG;
    if (dred != NULL && dred->process_stage == 2) {
       int F10;
       int features_per_frame;
@@ -1528,6 +1539,7 @@ OpusDRED *opus_dred_alloc(int *error)
       *error = OPUS_ALLOC_FAIL;
     return NULL;
   }
+  OPUS_CLEAR(dec, 1);
   return dec;
 #else
   if (error)
@@ -1559,11 +1571,9 @@ int opus_dred_parse(OpusDREDDecoder *dred_dec, OpusDRED *dred, const unsigned ch
       return payload_len;
    if (payload != NULL)
    {
-      int offset;
-      int min_feature_frames;
-      offset = 100*max_dred_samples/sampling_rate;
-      min_feature_frames = IMIN(2 + offset, 2*DRED_NUM_REDUNDANCY_FRAMES);
-      dred_ec_decode(dred, payload, payload_len, min_feature_frames, dred_frame_offset);
+      int max_dred_features;
+      max_dred_features = (100*max_dred_samples + sampling_rate - 1)/sampling_rate;
+      dred_ec_decode(dred, payload, payload_len, max_dred_features, dred_frame_offset);
       if (!defer_processing)
          opus_dred_process(dred_dec, dred, dred);
       if (dred_end) *dred_end = IMAX(0, -dred->dred_offset*sampling_rate/400);
@@ -1595,6 +1605,7 @@ int opus_dred_process(OpusDREDDecoder *dred_dec, const OpusDRED *src, OpusDRED *
       OPUS_COPY(dst, src, 1);
    if (dst->process_stage == 2)
       return OPUS_OK;
+   celt_assert(dst->nb_latents >= 0 && dst->nb_latents <= DRED_NUM_REDUNDANCY_FRAMES/2);
    DRED_rdovae_decode_all(&dred_dec->model, dst->fec_features, dst->state, dst->latents, dst->nb_latents, dred_dec->arch);
    dst->process_stage = 2;
    return OPUS_OK;
@@ -1612,7 +1623,6 @@ int opus_decoder_dred_decode(OpusDecoder *st, const OpusDRED *dred, opus_int32 d
    VARDECL(float, out);
    int ret, i;
    ALLOC_STACK;
-
    if(frame_size<=0)
    {
       RESTORE_STACK;
