@@ -23,6 +23,7 @@
 #include "mozilla/StateMirroring.h"
 #include "mozilla/gtest/MozHelpers.h"
 #include "mozilla/gtest/WaitFor.h"
+#include "mozilla/ipc/IOThread.h"
 #include "nsComponentManager.h"
 #include "nsITargetShutdownTask.h"
 #include "nsIThreadInternal.h"
@@ -3910,11 +3911,12 @@ class TestRunnable : public Runnable, public nsIDiscardableRunnable {
     mCheckpoint.Call(nsPrintfCString("%s::%s", mName, __func__).get());
   }
 
- private:
+ protected:
   ~TestRunnable() override {
     mCheckpoint.Call(nsPrintfCString("~%s", mName).get());
   }
 
+ private:
   const char* mName;
   const bool mDiscardable;
   MockFunction<void(const char*)>& mCheckpoint;
@@ -4392,6 +4394,125 @@ TEST(TestAudioTrackGraph, TargetShutdownTaskOnMainThread)
   });
 
   DispatchFunction([&] { checkpoint.Call("Final call"); });
+
+  
+  
+  
+  (void)WaitFor(destroyPromise).unwrap()[0];
+  ProcessEventQueue();
+}
+
+namespace {
+
+
+
+
+
+class IPCTestRunnable final : public TestRunnable {
+ public:
+  IPCTestRunnable(MediaTrackGraphImpl* aGraph,
+                  MockFunction<void(const char*)>& aCheckpoint)
+      : TestRunnable("IPCDispatch", true, aCheckpoint),
+        mGraph(aGraph) {}
+
+  void OnDiscard() override {
+    EXPECT_TRUE(mGraph->IsOnCurrentThread());
+    TestRunnable::OnDiscard();
+  }
+
+ private:
+  ~IPCTestRunnable() = default;
+
+  const RefPtr<MediaTrackGraphImpl> mGraph;
+};
+}  
+
+TEST(TestAudioTrackGraph, IOThreadDispatchDuringShutdown)
+{
+  ASSERT_TRUE(ipc::IOThread::Get());
+
+  MockCubeb* cubeb = new MockCubeb(MockCubeb::RunningMode::Manual);
+  CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
+
+  RefPtr<MediaTrackGraphImpl> graph = MediaTrackGraphImpl::GetInstance(
+      MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
+      CubebUtils::PreferredSampleRate( false),
+      nullptr, AbstractThread::MainThread());
+
+  
+  RefPtr processedTrack = new MockProcessedMediaTrack(graph->GraphRate());
+
+  MockFunction<void(const char* name)> checkpoint;
+  EXPECT_CALL(*processedTrack, AddListenerImpl);
+  EXPECT_CALL(*processedTrack, ProcessInput).Times(AtLeast(1));
+  EXPECT_CALL(*processedTrack, RemoveListenerImpl);
+  {
+    InSequence s;
+    EXPECT_CALL(checkpoint, Call(StrEq("Now manual")));
+    EXPECT_CALL(checkpoint, Call(StrEq("Final track removed")));
+    
+    
+    
+    
+    EXPECT_CALL(checkpoint, Call(StrEq("IPCDispatch::OnDiscard")));
+    EXPECT_CALL(checkpoint, Call(StrEq("~IPCDispatch")));
+  }
+
+  RefPtr<OnFallbackListener> fallbackListener;
+  DispatchFunction([&] {
+    
+    graph->AddTrack(processedTrack);
+    processedTrack->AddAudioOutput(reinterpret_cast<void*>(1), nullptr);
+    fallbackListener = new OnFallbackListener(processedTrack);
+    processedTrack->AddListener(fallbackListener);
+  });
+
+  RefPtr<SmartMockCubebStream> stream = WaitFor(cubeb->StreamInitEvent());
+  while (stream->State().isNothing()) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+  EXPECT_EQ(*stream->State(), CUBEB_STATE_STARTED);
+  
+  DispatchFunction([&] {
+    while (fallbackListener->OnFallback()) {
+      EXPECT_EQ(stream->ManualDataCallback(WEBAUDIO_BLOCK_SIZE),
+                MockCubebStream::KeepProcessing::Yes);
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    
+    checkpoint.Call("Now manual");
+  });
+
+  auto destroyPromise = TakeN(cubeb->StreamDestroyEvent(), 1);
+  DispatchFunction([&] { graph->ForceShutDown(); });
+
+  DispatchFunction([&] {
+    
+    EXPECT_EQ(stream->ManualDataCallback(0),
+              MockCubebStream::KeepProcessing::No);
+  });
+
+  
+  DispatchFunction([&] {
+    processedTrack->RemoveListener(fallbackListener);
+    processedTrack->Destroy();
+  });
+
+  DispatchFunction([&] { checkpoint.Call("Final track removed"); });
+
+  DispatchFunction([&] {
+    
+    
+    
+    
+    
+    MOZ_ALWAYS_SUCCEEDS(ipc::IOThread::Get()->GetEventTarget()->Dispatch(
+        NS_NewRunnableFunction(__func__, [graph, &checkpoint] {
+          MOZ_ALWAYS_SUCCEEDS(graph->Dispatch(
+              MakeAndAddRef<IPCTestRunnable>(graph, checkpoint)));
+        })));
+  });
 
   
   

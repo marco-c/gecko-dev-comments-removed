@@ -4456,6 +4456,14 @@ MediaTrackGraphImpl::HaveDirectTasks(bool* aResult) {
 
 
 
+
+
+[[maybe_unused]] static bool OnIPCIOThread() {
+  ipc::IOThread* ioThread = ipc::IOThread::Get();
+  return ioThread &&
+         ioThread->GetEventTarget() == GetCurrentSerialEventTarget();
+}
+
 nsresult MediaTrackGraphImpl::Dispatch(
     already_AddRefed<nsIRunnable> aEvent,
     DispatchReason aReason ) {
@@ -4483,9 +4491,7 @@ nsresult MediaTrackGraphImpl::Dispatch(
 
   
   
-  MOZ_ASSERT_IF(
-      ipc::IOThread::Get()->GetEventTarget() != GetCurrentSerialEventTarget(),
-      RequiresTailDispatchFromCurrentThread());
+  MOZ_ASSERT_IF(!OnIPCIOThread(), RequiresTailDispatchFromCurrentThread());
 
   if (aReason == TailDispatch || !RequiresTailDispatchFromCurrentThread()) {
     return TailDispatchMessage(event.forget());
@@ -4547,8 +4553,15 @@ nsresult MediaTrackGraphImpl::TailDispatchMessage(
 
   MonitorAutoLock lock(mMonitor);
   if (!NS_IsMainThread()) {
+    
+    
+    
+    
+    
+    
     MOZ_DIAGNOSTIC_ASSERT(
-        mMainThreadTrackCount > 0 || mMainThreadPortCount > 0,
+        mMainThreadTrackCount > 0 || mMainThreadPortCount > 0 ||
+            OnIPCIOThread(),
         "Clients must guarantee that any non-main thread tail dispatches to "
         "the graph are outlived by a main-thread controlled track or port");
   }
