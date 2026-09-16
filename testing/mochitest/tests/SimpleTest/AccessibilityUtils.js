@@ -619,11 +619,8 @@ this.AccessibilityUtils = (function () {
     }
     let ariaRole = node.getAttribute("role");
     
-    const isMozInputBox =
-      node.tagName == "moz-input-box" &&
-      node.classList.contains("urlbar-input-box");
     const isSearchbar = node.tagName == "searchbar" && node.id == "searchbar";
-    return (isMozInputBox || isSearchbar) && ariaRole == "combobox";
+    return isSearchbar && ariaRole == "combobox";
   }
 
   
