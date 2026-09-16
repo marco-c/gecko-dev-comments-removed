@@ -1158,6 +1158,10 @@ class Toolbox extends EventEmitter {
         await lazy.LocalModeMappings.setup(this);
       }
 
+      
+      
+      this.component?.setCanRender();
+
       this.emit("ready");
       this.#resolveIsOpen();
     } catch (exception) {
@@ -1185,28 +1189,28 @@ class Toolbox extends EventEmitter {
       }
 
       try {
-        
-        
+        // React may not be fully loaded yet and still waiting for Fluent or toolbox.xhtml document load.
+        // Wait for it in order to have a functional AppErrorBoundary
         await this.onReactLoaded;
 
-        
-        
+        // If React managed to load, try to display the exception to the user via AppErrorBoundary component.
+        // But ignore the exception if the React component itself thrown while rendering (errorInfo is defined)
         if (this.#appBoundary && !this.#appBoundary.state.errorInfo) {
           this.#appBoundary.handleException(exception, this, true);
         }
       } catch (e) {
-        
-        
+        // Ignore any further error related to AppErrorBoundary as it would prevent closing the toolbox.
+        // The exception was already logged to stdout.
       }
     }
   }
 
-  
-
-
-
-
-
+  /**
+   * Retrieve the ChromeEventHandler associated to the toolbox frame.
+   * When DevTools are loaded in a content frame, this will return the containing chrome
+   * frame. Events from nested frames will bubble up to this chrome frame, which allows to
+   * listen to events from nested frames.
+   */
   getChromeEventHandler() {
     if (!this.win || !this.win.docShell) {
       return null;
@@ -1214,36 +1218,36 @@ class Toolbox extends EventEmitter {
     return this.win.docShell.chromeEventHandler;
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Attach events on the chromeEventHandler for the current window. When loaded in a
+   * frame with type set to "content", events will not bubble across frames. The
+   * chromeEventHandler does not have this limitation and will catch all events triggered
+   * on any of the frames under the devtools document.
+   *
+   * Events relying on the chromeEventHandler need to be added and removed at specific
+   * moments in the lifecycle of the toolbox, so all the events relying on it should be
+   * grouped here.
+   */
   #addChromeEventHandlerEvents() {
-    
-    
-    
-    
+    // win.docShell.chromeEventHandler might not be accessible anymore when removing the
+    // events, so we can't rely on a dynamic getter here.
+    // Keep a reference on the chromeEventHandler used to addEventListener to be sure we
+    // can remove the listeners afterwards.
     this.#chromeEventHandler = this.getChromeEventHandler();
     if (!this.#chromeEventHandler) {
       return;
     }
 
-    
+    // Add shortcuts and window-host-shortcuts that use the ChromeEventHandler as target.
     this.#addShortcuts();
     this.#addWindowHostShortcuts();
 
-    
-    
-    
-    
-    
-    
+    // We want to have both keydown and keypress: the split console should be toggled
+    // after an Escape keypress, but we might want to prevent the event to be fired
+    // if the current panel's `shouldPreventSplitConsoleToggle` needs to handle
+    // the Escape key before that. For example, if we have opened popover in a panel,
+    // the keypress event happens too late and the popover is already dismissed,
+    // so we can't check if we should toggle the split console or not.
     this.#chromeEventHandler.addEventListener("keydown", this.#onKeydown);
     this.#chromeEventHandler.addEventListener(
       "keypress",
@@ -1552,7 +1556,7 @@ class Toolbox extends EventEmitter {
 
   get AppErrorBoundary() {
     return this.browserRequire(
-      "resource://devtools/client/shared/components/AppErrorBoundary.js"
+      "resource:
     );
   }
 
@@ -1581,7 +1585,7 @@ class Toolbox extends EventEmitter {
 
     const {
       ParserDispatcher,
-    } = require("resource://devtools/client/debugger/src/workers/parser/index.js");
+    } = require("resource:
 
     this.#parserWorker = new ParserDispatcher();
     return this.#parserWorker;

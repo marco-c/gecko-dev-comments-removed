@@ -124,6 +124,11 @@ class ToolboxController extends Component {
   }
 
   setCanRender() {
+    
+    
+    if (this.state.canRender) {
+      return;
+    }
     this.setState({ canRender: true }, this.updateButtonIds);
   }
 
