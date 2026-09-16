@@ -2201,6 +2201,17 @@ Element* Element::GetAttrAssociatedElementForBindings(nsAtom* aAttr) const {
 
 Maybe<nsTArray<RefPtr<Element>>> Element::GetAttrAssociatedElementsInternal(
     nsAtom* aAttr, bool aForBindings) {
+  if (aForBindings || !StaticPrefs::dom_shadowdom_referenceTarget_enabled()) {
+    return GetUnresolvedAttributeTargetElements(aAttr);
+  } else {
+    return GetResolvedAttributeTargetElements(aAttr);
+  }
+}
+
+Maybe<nsTArray<RefPtr<Element>>> Element::GetUnresolvedAttributeTargetElements(
+    nsAtom* aAttr) {
+  
+  
   
   nsTArray<RefPtr<Element>> elements;
   auto& [explicitlySetAttrElements, _] =
@@ -2209,7 +2220,6 @@ Maybe<nsTArray<RefPtr<Element>>> Element::GetAttrAssociatedElementsInternal(
   if (explicitlySetAttrElements) {
     
     for (const nsWeakPtr& weakEl : *explicitlySetAttrElements) {
-      
       
       if (RefPtr<Element> attrEl = do_QueryReferent(weakEl)) {
         
@@ -2222,7 +2232,6 @@ Maybe<nsTArray<RefPtr<Element>>> Element::GetAttrAssociatedElementsInternal(
       }
     }
   } else {
-    
     
     const nsAttrValue* value = GetParsedAttr(aAttr);
     
@@ -2247,27 +2256,35 @@ Maybe<nsTArray<RefPtr<Element>>> Element::GetAttrAssociatedElementsInternal(
       }
     }
   }
-  if (!StaticPrefs::dom_shadowdom_referenceTarget_enabled()) {
-    return Some(std::move(elements));
-  }
+  
+  return Some(std::move(elements));
+}
 
+Maybe<nsTArray<RefPtr<Element>>> Element::GetResolvedAttributeTargetElements(
+    nsAtom* aAttr) {
+  
+  
+  
+  Maybe<nsTArray<RefPtr<Element>>> maybeUnresolvedTargets =
+      GetUnresolvedAttributeTargetElements(aAttr);
+  if (maybeUnresolvedTargets.isNothing()) {
+    return Nothing();
+  }
+  nsTArray<RefPtr<Element>> unresolvedTargets =
+      maybeUnresolvedTargets.extract();
   
   nsTArray<RefPtr<Element>> resolvedElements;
   
-  for (const RefPtr<Element>& element : elements) {
+  for (const RefPtr<Element>& element : unresolvedTargets) {
     
     
     if (Element* resolvedCandidate = element->ResolveReferenceTarget()) {
       
-      if (aForBindings) {
-        
-        resolvedElements.AppendElement(element);
-      } else {
-        
-        resolvedElements.AppendElement(resolvedCandidate);
-      }
+      
+      resolvedElements.AppendElement(resolvedCandidate);
     }
   }
+  
   return Some(std::move(resolvedElements));
 }
 

@@ -1487,6 +1487,21 @@ class Element : public FragmentOrElement {
       nsAtom* aAttr, bool* aUseCachedValue,
       Nullable<nsTArray<RefPtr<Element>>>& aElements);
 
+ private:
+  
+
+
+
+  Maybe<nsTArray<RefPtr<Element>>> GetUnresolvedAttributeTargetElements(
+      nsAtom* aAttr);
+  
+
+
+
+  Maybe<nsTArray<RefPtr<Element>>> GetResolvedAttributeTargetElements(
+      nsAtom* aAttr);
+
+ public:
   typedef bool (*AttrTargetObserver)(Element* aOldElement, Element* aNewElement,
                                      Element* thisElement);
   
