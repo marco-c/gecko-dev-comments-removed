@@ -143,6 +143,35 @@ pub trait ParseCallbacks: fmt::Debug {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn field_attributes(&self, _info: &FieldAttributeInfo<'_>) -> Vec<String> {
+        vec![]
+    }
+
+    
     fn process_comment(&self, _comment: &str) -> Option<String> {
         None
     }
@@ -155,6 +184,11 @@ pub trait ParseCallbacks: fmt::Debug {
         &self,
         _info: FieldInfo<'_>,
     ) -> Option<crate::FieldVisibilityKind> {
+        None
+    }
+
+    
+    fn field_name(&self, _info: FieldInfo<'_>) -> Option<String> {
         None
     }
 
@@ -250,6 +284,18 @@ pub enum DiscoveredItem {
         
         parent: DiscoveredItemId,
     }, 
+
+    
+    Constant {
+        
+        final_name: String,
+    },
+
+    
+    Variable {
+        
+        final_name: String,
+    },
 }
 
 
@@ -318,6 +364,27 @@ pub struct FieldInfo<'a> {
     pub type_name: &'a str,
     
     pub field_name: &'a str,
+    
+    pub field_type_name: Option<&'a str>,
+}
+
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct FieldAttributeInfo<'a> {
+    
+    pub type_name: &'a str,
+
+    
+    pub type_kind: TypeKind,
+
+    
+    
+    
+    
+    pub field_name: &'a str,
+
     
     pub field_type_name: Option<&'a str>,
 }

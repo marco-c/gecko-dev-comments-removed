@@ -65,7 +65,10 @@ impl Enum {
             return Err(ParseError::Continue);
         }
 
-        let declaration = ty.declaration().canonical();
+        
+        
+        
+        let declaration = ty.declaration();
         let repr = declaration
             .enum_type()
             .and_then(|et| Item::from_ty(&et, declaration, None, ctx).ok());
@@ -303,8 +306,15 @@ impl EnumVariant {
     }
 
     
-    pub(crate) fn comment(&self) -> Option<&str> {
-        self.comment.as_deref()
+    
+    pub(crate) fn doc_comment(&self, ctx: &BindgenContext) -> Option<String> {
+        if !ctx.options().generate_comments {
+            return None;
+        }
+
+        self.comment
+            .as_ref()
+            .map(|comment| ctx.options().process_comment(comment))
     }
 
     

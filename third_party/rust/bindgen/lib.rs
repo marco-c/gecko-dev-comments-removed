@@ -167,22 +167,17 @@ impl Default for CodegenConfig {
 }
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[non_exhaustive]
 pub enum Formatter {
     
     None,
     
+    #[default]
     Rustfmt,
     #[cfg(feature = "prettyplease")]
     
     Prettyplease,
-}
-
-impl Default for Formatter {
-    fn default() -> Self {
-        Self::Rustfmt
-    }
 }
 
 impl FromStr for Formatter {
@@ -318,6 +313,14 @@ fn get_extra_clang_args(
 impl Builder {
     
     pub fn generate(mut self) -> Result<Bindings, BindgenError> {
+        
+        
+        if self.options.input_headers.is_empty() &&
+            self.options.input_header_contents.is_empty()
+        {
+            return Err(BindgenError::NoHeadersProvided);
+        }
+
         
         self.options.rust_features = match self.options.rust_edition {
             Some(edition) => {
@@ -632,6 +635,8 @@ pub enum BindgenError {
     
     InsufficientPermissions(PathBuf),
     
+    NoHeadersProvided,
+    
     NotExist(PathBuf),
     
     ClangDiagnostic(String),
@@ -649,6 +654,9 @@ impl std::fmt::Display for BindgenError {
             }
             BindgenError::InsufficientPermissions(h) => {
                 write!(f, "insufficient permissions to read '{}'", h.display())
+            }
+            BindgenError::NoHeadersProvided => {
+                write!(f, "no input headers were provided")
             }
             BindgenError::NotExist(h) => {
                 write!(f, "header '{}' does not exist.", h.display())
@@ -685,7 +693,7 @@ fn rust_to_clang_target(rust_target: &str) -> Box<str> {
 
     let mut triple: Vec<&str> = rust_target.split_terminator('-').collect();
 
-    assert!(!triple.is_empty(), "{}", TRIPLE_HYPHENS_MESSAGE);
+    assert!(!triple.is_empty(), "{TRIPLE_HYPHENS_MESSAGE}");
     triple.resize(4, "");
 
     
@@ -791,10 +799,10 @@ impl Bindings {
         
         
         if !explicit_target && !is_host_build {
-            options.clang_args.insert(
-                0,
-                format!("--target={effective_target}").into_boxed_str(),
-            );
+            let target_arg =
+                format!("--target={effective_target}").into_boxed_str();
+            options.clang_args.insert(0, target_arg.clone());
+            options.fallback_clang_args.insert(0, target_arg);
         }
 
         fn detect_include_paths(options: &mut BindgenOptions) {
@@ -863,7 +871,10 @@ impl Bindings {
                 for path in search_paths {
                     if let Ok(path) = path.into_os_string().into_string() {
                         options.clang_args.push("-isystem".into());
-                        options.clang_args.push(path.into_boxed_str());
+                        options.clang_args.push(path.clone().into_boxed_str());
+
+                        options.fallback_clang_args.push("-isystem".into());
+                        options.fallback_clang_args.push(path.into_boxed_str());
                     }
                 }
             }
@@ -937,12 +948,12 @@ impl Bindings {
             .truncate(true)
             .create(true)
             .open(path.as_ref())?;
-        self.write(Box::new(file))?;
+        self.write(file)?;
         Ok(())
     }
 
     
-    pub fn write<'a>(&self, mut writer: Box<dyn Write + 'a>) -> io::Result<()> {
+    pub fn write(&self, mut writer: impl Write) -> io::Result<()> {
         const NL: &str = if cfg!(windows) { "\r\n" } else { "\n" };
 
         if !self.options.disable_header_comment {
@@ -1095,7 +1106,7 @@ fn rustfmt_non_fatal_error_diagnostic(msg: &str, _options: &BindgenOptions) {
 impl std::fmt::Display for Bindings {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut bytes = vec![];
-        self.write(Box::new(&mut bytes) as Box<dyn Write>)
+        self.write(&mut bytes)
             .expect("writing to a vec cannot fail");
         f.write_str(
             std::str::from_utf8(&bytes)

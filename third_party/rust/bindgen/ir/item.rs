@@ -1,6 +1,8 @@
 
 
-use super::super::codegen::{EnumVariation, CONSTIFIED_ENUM_MODULE_REPR_NAME};
+use super::super::codegen::{
+    AliasVariation, EnumVariation, CONSTIFIED_ENUM_MODULE_REPR_NAME,
+};
 use super::analysis::{HasVtable, HasVtableResult, Sizedness, SizednessResult};
 use super::annotations::Annotations;
 use super::comp::{CompKind, MethodKind};
@@ -515,6 +517,13 @@ impl Item {
     }
 
     
+    pub(crate) fn set_comment_if_none(&mut self, comment: String) {
+        if self.comment.is_none() {
+            self.comment = Some(comment);
+        }
+    }
+
+    
     pub(crate) fn kind(&self) -> &ItemKind {
         &self.kind
     }
@@ -856,7 +865,7 @@ impl Item {
         }
 
         
-        let mut ids_iter = target
+        let ids_iter = target
             .parent_id()
             .ancestors(ctx)
             .filter(|id| *id != ctx.root_module())
@@ -882,7 +891,7 @@ impl Item {
 
             
             if target.is_anon() {
-                for id in ids_iter.by_ref() {
+                for id in ids_iter {
                     ids.push(id);
 
                     if !ctx.resolve_item(id).is_anon() {
@@ -1102,6 +1111,20 @@ impl Item {
     
     pub(crate) fn must_use(&self, ctx: &BindgenContext) -> bool {
         self.annotations().must_use_type() || ctx.must_use_type_by_name(self)
+    }
+
+    
+    pub(crate) fn alias_style(&self, ctx: &BindgenContext) -> AliasVariation {
+        let name = self.canonical_name(ctx);
+        if ctx.options().type_alias.matches(&name) {
+            AliasVariation::TypeAlias
+        } else if ctx.options().new_type_alias.matches(&name) {
+            AliasVariation::NewType
+        } else if ctx.options().new_type_alias_deref.matches(&name) {
+            AliasVariation::NewTypeDeref
+        } else {
+            ctx.options().default_alias_style
+        }
     }
 }
 
@@ -1701,8 +1724,7 @@ impl Item {
                 if let Err(ParseError::Recurse) = result {
                     warn!(
                         "Unknown type, assuming named template type: \
-                         id = {:?}; spelling = {}",
-                        id,
+                         id = {id:?}; spelling = {}",
                         ty.spelling()
                     );
                     Item::type_param(Some(id), location, ctx)
@@ -1732,13 +1754,10 @@ impl Item {
 
         debug!(
             "Item::type_param:\n\
-             \twith_id = {:?},\n\
-             \tty = {} {:?},\n\
-             \tlocation: {:?}",
-            with_id,
+             \twith_id = {with_id:?},\n\
+             \tty = {} {ty:?},\n\
+             \tlocation: {location:?}",
             ty.spelling(),
-            ty,
-            location
         );
 
         if ty.kind() != clang_sys::CXType_Unexposed {
