@@ -1,11 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-
-
+// This is loaded into chrome windows with the subscript loader. Wrap in
+// a block to prevent accidentally leaking globals onto `window`.
 {
   const { TabMetrics } = ChromeUtils.importESModule(
     "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs"
@@ -24,41 +22,41 @@
       </vbox>
       `;
 
-    
+    /** @type {string} */
     #defaultGroupName = "";
 
-    
+    /** @type {string} */
     #label;
 
-    
+    /** @type {MozTextLabel} */
     #labelElement;
 
-    
+    /** @type {MozXULElement} */
     #labelContainerElement;
 
-    
+    /** @type {MozTextLabel} */
     #overflowCountLabel;
 
-    
+    /** @type {MozXULElement} */
     overflowContainer;
 
-    
+    /** @type {string} */
     #colorCode;
 
-    
+    /** @type {MutationObserver} */
     #tabChangeObserver;
 
-    
+    /** @type {boolean} */
     #wasCreatedByAdoption = false;
 
-    
-
-
-
-
-
-
-
+    /**
+     * Whether a drag collapsed this tab group, as opposed to the user, and it
+     * therefore has to be expanded again when the drag ends. Stays true until
+     * the group's tabs are back to their full size, which is how long the tab
+     * strip keeps reserving space for them.
+     *
+     * @type {boolean}
+     */
     collapsedByDrag = false;
 
     #observerRemoved = false;
@@ -81,15 +79,15 @@
     }
 
     connectedCallback() {
-      
-      
-      
-      
-      
+      // Always set the mutation observer to listen for tab change events, even
+      // if we are already initialized.
+      // This is needed to ensure events continue to fire even if the tab group is
+      // moved from the horizontal to vertical tab layout or vice-versa, which
+      // causes the component to be repositioned in the DOM.
       this.#observeTabChanges();
 
-      
-      
+      // Similar to above, always set up TabSelect listener, as this gets
+      // removed in disconnectedCallback
       this.documentGlobal.addEventListener("TabSelect", this);
       this.addEventListener("SplitViewTabChange", this);
 
@@ -116,7 +114,7 @@
       this.#labelContainerElement = this.querySelector(
         ".tab-group-label-container"
       );
-      
+      // Mirroring MozTabbrowserTab
       this.#labelElement.container = gBrowser.tabContainer;
       this.#labelElement.group = this;
       this.#labelElement.pinned = false;
@@ -148,9 +146,9 @@
           detail: tabGroupCreateDetail,
         })
       );
-      
-      
-      
+      // Reset `wasCreatedByAdoption` to default of false so that we only
+      // claim that a tab group was created by adoption the first time it
+      // mounts after getting created by `Tabbrowser.adoptTabGroup`.
       this.#wasCreatedByAdoption = false;
     }
 
@@ -204,8 +202,8 @@
                 hasActiveTab = true;
               }
 
-              
-              
+              // Renumber tabs so that a11y tools can tell users that a given
+              // tab is "2 of 7" in the group, for example.
               tab.setAttribute("aria-posinset", index + 1);
               tab.setAttribute("aria-setsize", tabCount);
             });
@@ -294,16 +292,16 @@
       this.setAttribute("id", val);
     }
 
-    
-
-
+    /**
+     * @returns {boolean}
+     */
     get hasActiveTab() {
       return this.hasAttribute("hasactivetab");
     }
 
-    
-
-
+    /**
+     * @param {boolean} val
+     */
     set hasActiveTab(val) {
       this.toggleAttribute("hasactivetab", val);
     }
@@ -316,8 +314,8 @@
       let diff = val !== this.#label;
       this.#label = val;
 
-      
-      
+      // If the group name is empty, use a zero width space so we
+      // always create a text node and get consistent layout.
       this.setAttribute("label", val || "\u200b");
       this.#updateLabelAriaAttributes();
       this.#updateTooltip();
@@ -328,7 +326,7 @@
       }
     }
 
-    
+    // alias for label
     get name() {
       return this.label;
     }
@@ -347,7 +345,7 @@
       }
       if (val) {
         for (let tab of this.tabs) {
-          
+          // Unlock tab sizes.
           tab.style.maxWidth = "";
         }
       }
@@ -413,7 +411,7 @@
     }
 
     async #updateTooltip() {
-      
+      // Disable the tooltip for collapsed groups when tab group hover preview is enabled
       if (this._showTabGroupHoverPreview && this.collapsed) {
         delete this.dataset.tooltip;
         return;
@@ -432,9 +430,9 @@
         });
     }
 
-    
-
-
+    /**
+     * @param {MozTabbrowserTab} tab
+     */
     #updateTabAriaHidden(tab) {
       if (tab.splitview) {
         if (
@@ -453,9 +451,9 @@
     }
 
     #updateOverflowLabel() {
-      
-      
-      
+      // When a group containing the active tab is collapsed,
+      // the overflow count displays the number of additional tabs
+      // in the group adjacent to the active tab.
       if (this.overflowContainer) {
         let overflowCountLabel = this.overflowContainer.querySelector(
           ".tab-group-overflow-count"
@@ -499,33 +497,33 @@
       }
     }
 
-    
-
-
-
-
-
+    /**
+     * A tab group can be handed to code that also takes tabs and split views,
+     * which reads these three off whatever it was given.
+     *
+     * @returns {false}
+     */
     get pinned() {
       return false;
     }
 
-    
-
-
+    /**
+     * @returns {null}
+     */
     get splitview() {
       return null;
     }
 
-    
-
-
+    /**
+     * @returns {null}
+     */
     get group() {
       return null;
     }
 
-    
-
-
+    /**
+     * @returns {MozTabbrowserTab[]}
+     */
     get tabs() {
       let childrenArray = Array.from(this.children);
       for (let i = childrenArray.length - 1; i >= 0; i--) {
@@ -536,19 +534,19 @@
       return childrenArray.filter(node => node.matches("tab"));
     }
 
-    
-
-
+    /**
+     * @returns {MozTabbrowserTab|MozTabSplitViewWrapper[]}
+     */
     get tabsAndSplitViews() {
       return Array.from(this.children).filter(
         node => node.matches("tab") || node.tagName == "tab-split-view-wrapper"
       );
     }
 
-    
-
-
-
+    /**
+     * @param {MozTabbrowserTab} tab
+     * @returns {boolean}
+     */
     isTabVisibleInGroup(tab) {
       if (this.isBeingDragged) {
         return false;
@@ -564,16 +562,16 @@
       return true;
     }
 
-    
-
-
+    /**
+     * @returns {MozTextLabel}
+     */
     get labelElement() {
       return this.#labelElement;
     }
 
-    
-
-
+    /**
+     * @returns {MozXULElement}
+     */
     get labelContainerElement() {
       return this.#labelContainerElement;
     }
@@ -582,49 +580,49 @@
       return this.#overflowCountLabel;
     }
 
-    
-
-
+    /**
+     * @param {boolean} value
+     */
     set wasCreatedByAdoption(value) {
       this.#wasCreatedByAdoption = value;
     }
 
-    
-
-
+    /**
+     * @returns {boolean}
+     */
     get isBeingDragged() {
       return this.hasAttribute("movingtabgroup");
     }
 
-    
-
-
+    /**
+     * @param {boolean} val
+     */
     set isBeingDragged(val) {
       this.toggleAttribute("movingtabgroup", val);
     }
 
-    
-
-
+    /**
+     * @returns {boolean}
+     */
     get hoverPreviewPanelActive() {
       return this.hasAttribute("previewpanelactive");
     }
 
-    
-
-
+    /**
+     * @param {boolean} val
+     */
     set hoverPreviewPanelActive(val) {
       this.toggleAttribute("previewpanelactive", val);
       this.#updateLabelAriaAttributes();
     }
 
-    
-
-
-
-
-
-
+    /**
+     * add tabs to the group
+     *
+     * @param {(MozTabbrowserTab|MozTabSplitViewWrapper)[]} tabsOrSplitViews
+     * @param {TabMetricsContext} [metricsContext]
+     *   Optional context to record for metrics purposes.
+     */
     addTabs(tabsOrSplitViews, metricsContext = null) {
       if (metricsContext?.isUserTriggered) {
         let tabCount = tabsOrSplitViews.reduce(
@@ -670,12 +668,12 @@
       this.#lastAddedTo = Date.now();
     }
 
-    
-
-
-
-
-
+    /**
+     * Remove all tabs from the group and delete the group.
+     *
+     * @param {TabMetricsContext} [metricsContext]
+     *   The context for the operation
+     */
     ungroupTabs(metricsContext = TabMetrics.UNKNOWN_CONTEXT) {
       this.dispatchEvent(
         new CustomEvent("TabGroupUngroup", {
@@ -692,12 +690,12 @@
       }
     }
 
-    
-
-
-
-
-
+    /**
+     * Save group data to session store.
+     *
+     * @param {TabMetricsContext} [metricsContext]
+     *   The context for the operation
+     */
     save(metricsContext = TabMetrics.UNKNOWN_CONTEXT) {
       SessionStore.addSavedTabGroup(this);
       this.dispatchEvent(
@@ -713,9 +711,9 @@
       gBrowser.removeTabGroup(this, { metricsContext });
     }
 
-    
-
-
+    /**
+     * @param {PointerEvent} event
+     */
     on_click(event) {
       let isToggleElement =
         event.target === this.#labelElement ||
@@ -725,7 +723,7 @@
         this.collapsed = !this.collapsed;
         gBrowser.tabGroupMenu.close();
 
-        
+        /** @type {GleanCounter} */
         let interactionMetric = this.collapsed
           ? Glean.tabgroup.groupInteractions.collapse
           : Glean.tabgroup.groupInteractions.expand;
@@ -733,12 +731,12 @@
       }
     }
 
-    
-
-
+    /**
+     * @param {CustomEvent} event
+     */
     on_mouseover(event) {
-      
-      
+      // Only fire the event if we are entering the tab group label.
+      // mouseover also fires events when moving between elements inside the tab group.
       if (!this.#labelContainerElement.contains(event.relatedTarget)) {
         this.#labelElement.dispatchEvent(
           new CustomEvent("TabGroupLabelHoverStart", { bubbles: true })
@@ -746,12 +744,12 @@
       }
     }
 
-    
-
-
+    /**
+     * @param {CustomEvent} event
+     */
     on_mouseout(event) {
-      
-      
+      // Only fire the event if we are leaving the tab group label.
+      // mouseout also fires events when moving between elements inside the tab group.
       if (!this.#labelContainerElement.contains(event.relatedTarget)) {
         this.#labelElement.dispatchEvent(
           new CustomEvent("TabGroupLabelHoverEnd", { bubbles: true })
@@ -759,9 +757,9 @@
       }
     }
 
-    
-
-
+    /**
+     * @param {CustomEvent} event
+     */
     on_TabSelect(event) {
       const { previousTab } = event.detail;
       this.hasActiveTab = event.target.group === this;
@@ -783,11 +781,11 @@
       this.#updateOverflowLabel();
     }
 
-    
-
-
-
-
+    /**
+     * If one of this group's tabs is the selected tab, this will do nothing.
+     * Otherwise, it will expand the group if collapsed, and select the first
+     * tab in its list.
+     */
     select() {
       this.collapsed = false;
       if (gBrowser.selectedTab.group == this) {
