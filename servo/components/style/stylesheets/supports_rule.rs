@@ -212,7 +212,7 @@ impl SupportsCondition {
     }
 
     
-    pub fn eval(&self, cx: &ParserContext) -> bool {
+    pub fn eval(&self, cx: &mut ParserContext) -> bool {
         match *self {
             SupportsCondition::Not(ref cond) => !cond.eval(cx),
             SupportsCondition::Parenthesized(ref cond) => cond.eval(cx),
@@ -395,7 +395,7 @@ impl Declaration {
     
     
     
-    pub fn eval(&self, context: &ParserContext) -> bool {
+    pub fn eval(&self, context: &mut ParserContext) -> bool {
         debug_assert!(context.rule_types().contains(CssRuleType::Style));
 
         let mut input = Parser::new(&self.0);

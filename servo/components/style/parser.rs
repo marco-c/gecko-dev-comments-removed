@@ -7,11 +7,13 @@
 use crate::context::QuirksMode;
 use crate::custom_properties::{AttrTaint, AttrTaintedRange};
 use crate::error_reporting::{ContextualParseError, ParseErrorReporter};
+use crate::properties::PropertyIdRef;
 use crate::stylesheets::{CssRuleType, CssRuleTypes, Namespaces, Origin, UrlExtraData};
 use crate::use_counters::UseCounters;
 use cssparser::{Parser, SourceLocation, UnicodeRange};
 use selectors::parser::ParseRelative;
 use std::borrow::Cow;
+use std::cell::Cell;
 use style_traits::{OneOrMoreSeparated, ParseError, ParsingMode, Separator};
 
 
@@ -69,6 +71,27 @@ impl NestingContext {
 }
 
 
+#[derive(Debug, Default)]
+pub struct PropertyDeclarationContext<'a> {
+    
+    property_id: Option<PropertyIdRef<'a>>,
+}
+
+impl<'a> PropertyDeclarationContext<'a> {
+    fn set(&mut self, property_id: PropertyIdRef<'a>) {
+        debug_assert!(
+            self.property_id.is_none(),
+            "Previous declaration should be empty"
+        );
+        self.property_id = Some(property_id);
+    }
+
+    fn clear(&mut self) {
+        self.property_id = None;
+    }
+}
+
+
 pub struct ParserContext<'a> {
     
     
@@ -89,6 +112,8 @@ pub struct ParserContext<'a> {
     pub nesting_context: NestingContext,
     
     pub attr_tainted_regions: AttrTaint,
+    
+    pub property_declaration_context: PropertyDeclarationContext<'a>,
 }
 
 impl<'a> ParserContext<'a> {
@@ -115,7 +140,21 @@ impl<'a> ParserContext<'a> {
             use_counters,
             nesting_context: NestingContext::new_from_rule(rule_type),
             attr_tainted_regions,
+            property_declaration_context: Default::default(),
         }
+    }
+
+    
+    
+    pub fn with_property_declaration<R>(
+        &mut self,
+        property_id: PropertyIdRef<'a>,
+        cb: impl FnOnce(&Self) -> R,
+    ) -> R {
+        self.property_declaration_context.set(property_id);
+        let r = cb(self);
+        self.property_declaration_context.clear();
+        r
     }
 
     

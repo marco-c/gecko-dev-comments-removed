@@ -7161,7 +7161,7 @@ pub unsafe extern "C" fn Servo_CSSSupports(
 
     
     
-    let context = ParserContext::new(
+    let mut context = ParserContext::new(
         params.origin,
         url_data,
         Some(CssRuleType::Style),
@@ -7173,7 +7173,7 @@ pub unsafe extern "C" fn Servo_CSSSupports(
          Default::default(),
     );
 
-    cond.eval(&context)
+    cond.eval(&mut context)
 }
 
 #[unsafe(no_mangle)]
@@ -10768,6 +10768,9 @@ pub unsafe extern "C" fn Servo_Value_Matches_Syntax(
         None,
         AllowComputationallyDependent::Yes,
          Default::default(),
+        
+        
+        None,
     )
     .is_ok()
 }
@@ -11614,6 +11617,9 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
 
         let Ok(result) = custom_properties::substitute(
             &variable_value,
+            
+            
+            None,
             &substitution_functions,
             stylist,
             &context,
