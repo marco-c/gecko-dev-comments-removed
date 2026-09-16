@@ -7,9 +7,12 @@
 #ifndef mozilla_gtest_ScopedPrefSetter_h
 #define mozilla_gtest_ScopedPrefSetter_h
 
+#include <initializer_list>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Preferences.h"
+#include "nsTArray.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {
@@ -19,15 +22,30 @@ namespace mozilla {
 
 class MOZ_RAII ScopedPrefSetter {
  public:
+  struct PrefAndValue {
+    const char* mPrefName;
+    bool mValue;
+  };
+
   ScopedPrefSetter(const char* aPrefName, bool aValue)
-      : mPrefName(aPrefName),
-        mOriginalValue(Preferences::GetBool(aPrefName, false)) {
+      : ScopedPrefSetter({{aPrefName, aValue}}) {}
+
+  explicit ScopedPrefSetter(std::initializer_list<PrefAndValue> aPrefs) {
     MOZ_ASSERT(NS_IsMainThread());
-    Preferences::SetBool(mPrefName, aValue);
+    mOriginalValues.SetCapacity(aPrefs.size());
+    for (const auto& pref : aPrefs) {
+      mOriginalValues.AppendElement(PrefAndValue{
+          pref.mPrefName, Preferences::GetBool(pref.mPrefName, false)});
+      Preferences::SetBool(pref.mPrefName, pref.mValue);
+    }
   }
+
   ~ScopedPrefSetter() {
     MOZ_ASSERT(NS_IsMainThread());
-    Preferences::SetBool(mPrefName, mOriginalValue);
+    while (!mOriginalValues.IsEmpty()) {
+      const auto pref = mOriginalValues.PopLastElement();
+      Preferences::SetBool(pref.mPrefName, pref.mValue);
+    }
   }
 
   ScopedPrefSetter(const ScopedPrefSetter&) = delete;
@@ -36,8 +54,7 @@ class MOZ_RAII ScopedPrefSetter {
   ScopedPrefSetter& operator=(ScopedPrefSetter&&) = delete;
 
  private:
-  const char* mPrefName;
-  const bool mOriginalValue;
+  AutoTArray<PrefAndValue, 1> mOriginalValues;
 };
 
 }  
