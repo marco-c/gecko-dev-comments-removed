@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_UniFFICallbacks_h
 #define mozilla_UniFFICallbacks_h
 
@@ -136,7 +134,7 @@ class AsyncCallbackMethodHandlerBase {
    private:
     UniquePtr<AsyncCallbackMethodHandlerBase> mHandler;
 
-    ~PromiseHandler() = default;
+    ~PromiseHandler();
   };
 };
 

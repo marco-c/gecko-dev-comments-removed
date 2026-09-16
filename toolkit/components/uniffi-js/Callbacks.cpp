@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsPrintfCString.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
@@ -154,5 +152,7 @@ void AsyncCallbackMethodHandlerBase::PromiseHandler::RejectedCallback(
   callResult.mCode = dom::UniFFIScaffoldingCallCode::Internal_error;
   mHandler->HandleReturn(callResult, aRv);
 }
+
+AsyncCallbackMethodHandlerBase::PromiseHandler::~PromiseHandler() = default;
 
 }  
