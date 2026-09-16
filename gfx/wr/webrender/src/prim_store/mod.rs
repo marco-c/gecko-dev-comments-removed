@@ -5,7 +5,7 @@
 use api::ColorF;
 use api::{ImageRendering, LineOrientation, PrimitiveFlags};
 use api::units::*;
-use crate::clip::ClipLeafId;
+use crate::clip::{ClipLeafId, ClipNodeId};
 use crate::render_backend::DataStores;
 use crate::space::SnapRounding;
 use crate::quad::QuadTileClassifier;
@@ -305,6 +305,10 @@ pub struct PrimitiveInstance {
     pub kind: PrimitiveKind,
 
     
+    
+    pub clip_node_id: ClipNodeId,
+
+    
     pub clip_leaf_id: ClipLeafId,
 }
 
@@ -335,10 +339,12 @@ pub struct SnapPolicy {
 impl PrimitiveInstance {
     pub fn new(
         kind: PrimitiveKind,
+        clip_node_id: ClipNodeId,
         clip_leaf_id: ClipLeafId,
     ) -> Self {
         PrimitiveInstance {
             kind,
+            clip_node_id,
             clip_leaf_id,
         }
     }
