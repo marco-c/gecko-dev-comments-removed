@@ -299,6 +299,9 @@ class Editor extends EventEmitter {
       autoCloseEnabled: useAutoClose,
       theme: "mozilla",
       themeSwitching: true,
+      
+      
+      editorLabel: null,
       autocomplete: false,
       autocompleteOpts: {},
       
@@ -854,6 +857,13 @@ class Editor extends EventEmitter {
     }
 
     const extensions = [
+      
+      
+      EditorView.contentAttributes.of({
+        "aria-label":
+          this.config.editorLabel || L10N.getStr("sourceEditor.label"),
+        tabindex: "0",
+      }),
       bracketMatching(),
       this.#compartments.indentCompartment.of(indentUnit.of(indentStr)),
       this.#compartments.tabSizeCompartment.of(
