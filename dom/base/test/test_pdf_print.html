@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title></title>
+  <title><!-- TODO: insert title here --></title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
   <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
 </head>
@@ -24,7 +24,7 @@
 
     addLoadEvent(function() {
       // blob:// URLs inherit their origin, so the window inside blobFrame
-      // should be same-orgin with us except for the PDF viewer messing with
+      // should be same-origin with us except for the PDF viewer messing with
       // origins.
       const printFunc = blobFrame.contentWindow.print;
       is(typeof printFunc, "function", "Should have a 'print' function");
