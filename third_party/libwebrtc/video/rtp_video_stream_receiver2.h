@@ -12,7 +12,6 @@
 #define VIDEO_RTP_VIDEO_STREAM_RECEIVER2_H_
 
 #include <array>
-#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -121,10 +120,23 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
       scoped_refptr<FrameTransformerInterface> frame_transformer);
   ~RtpVideoStreamReceiver2() override;
 
+  struct ReceiveCodec {
+    uint8_t payload_type = 0;
+    VideoCodecType video_codec = kVideoCodecGeneric;
+    CodecParameterMap codec_params;
+    bool raw_payload = false;
+  };
+
   void AddReceiveCodec(uint8_t payload_type,
                        VideoCodecType video_codec,
                        const CodecParameterMap& codec_params,
                        bool raw_payload);
+
+  
+  
+  
+  
+  void SetReceiveCodecs(const std::vector<ReceiveCodec>& codecs);
 
   
   void RemoveReceiveCodecs();
@@ -450,8 +462,15 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   std::map<uint8_t, CodecParameterMap> pt_codec_params_
       RTC_GUARDED_BY(worker_queue_);
 
+  struct CodecTypeAndRaw {
+    VideoCodecType video_codec = kVideoCodecGeneric;
+    bool raw_payload = false;
+
+    bool operator==(const CodecTypeAndRaw& other) const = default;
+  };
+
   
-  std::map<uint8_t, VideoCodecType> pt_codec_ RTC_GUARDED_BY(worker_queue_);
+  std::map<uint8_t, CodecTypeAndRaw> pt_codec_ RTC_GUARDED_BY(worker_queue_);
 
   int16_t last_payload_type_ RTC_GUARDED_BY(worker_queue_) = -1;
 
