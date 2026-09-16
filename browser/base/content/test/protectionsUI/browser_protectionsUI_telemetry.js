@@ -2,6 +2,10 @@
 
 
 
+const { StartupTelemetry } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/StartupTelemetry.sys.mjs"
+);
+
 const PREF = "privacy.trackingprotection.enabled";
 const BENIGN_PAGE =
   
@@ -10,23 +14,17 @@ const TRACKING_PAGE =
   
   "http://tracking.example.org/browser/browser/base/content/test/protectionsUI/trackingPage.html";
 
-
-
-
-var oldCanRecord = Services.telemetry.canRecordExtended;
-Services.telemetry.canRecordExtended = true;
 registerCleanupFunction(function () {
   UrlClassifierTestUtils.cleanupTestTrackers();
-  Services.telemetry.canRecordExtended = oldCanRecord;
   Services.prefs.clearUserPref(PREF);
+  Services.fog.testResetFOG();
 });
 
-function getShieldHistogram() {
-  return Services.telemetry.getHistogramById("TRACKING_PROTECTION_SHIELD");
-}
-
 function getShieldCounts() {
-  return getShieldHistogram().snapshot().values;
+  
+  return (
+    Glean.contentblocking.trackingProtectionShield.testGetValue()?.values ?? {}
+  );
 }
 
 add_setup(async function () {
@@ -37,10 +35,18 @@ add_setup(async function () {
   ok(TrackingProtection, "TP is attached to the browser window");
   ok(!TrackingProtection.enabled, "TP is not enabled");
 
-  let enabledCounts = Services.telemetry
-    .getHistogramById("TRACKING_PROTECTION_ENABLED")
-    .snapshot().values;
-  is(enabledCounts[0], 1, "TP was not enabled on start up");
+  
+  
+  
+  Services.fog.testResetFOG();
+  StartupTelemetry.contentBlocking();
+  
+  
+  is(
+    Glean.contentblocking.trackingProtectionEnabled.false.testGetValue(),
+    1,
+    "TP was not enabled on start up"
+  );
 });
 
 add_task(async function testShieldHistogram() {
@@ -48,7 +54,7 @@ add_task(async function testShieldHistogram() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
 
   
-  getShieldHistogram().clear();
+  Services.fog.testResetFOG();
 
   await BrowserTestUtils.loadURIString({
     browser: tab.linkedBrowser,
@@ -96,5 +102,5 @@ add_task(async function testShieldHistogram() {
   gBrowser.removeCurrentTab();
 
   
-  getShieldHistogram().clear();
+  Services.fog.testResetFOG();
 });
