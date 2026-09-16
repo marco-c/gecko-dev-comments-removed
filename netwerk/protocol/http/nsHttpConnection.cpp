@@ -741,8 +741,10 @@ nsresult nsHttpConnection::AddTransaction(nsAHttpTransaction* httpTransaction,
 
   
   
-  if (transCI->UsingConnect()) {
-    MOZ_ASSERT(mProxyConnectResponseHead);
+  
+  
+  
+  if (transCI->UsingConnect() && mProxyConnectResponseHead) {
     httpTransaction->OnProxyConnectComplete(mProxyConnectResponseHead);
   }
 
