@@ -56,6 +56,7 @@ namespace webrtc {
 
 class DataChannelController;
 class LegacyStatsCollector;
+class PeerConnectionTracerInterface;
 
 
 
@@ -97,6 +98,8 @@ class PeerConnectionSdpMethods {
   virtual DataChannelController* data_channel_controller() = 0;
   virtual PortAllocator* port_allocator() = 0;
   virtual LegacyStatsCollector* legacy_stats() = 0;
+  virtual PeerConnectionTracerInterface* tracer() = 0;
+  virtual const PeerConnectionTracerInterface* tracer() const = 0;
   
   
   virtual void RunWithObserver(

@@ -66,6 +66,7 @@ class PeerConnectionWrapper {
   MockPeerConnectionObserver* observer();
 
   PeerConnection* GetInternalPeerConnection();
+  const PeerConnection* GetInternalPeerConnection() const;
 
   
   

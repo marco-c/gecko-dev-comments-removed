@@ -156,6 +156,12 @@ class MediaFactory;
 
 
 
+
+
+class PeerConnectionTracerInterface;
+
+
+
 class StreamCollectionInterface : public RefCountInterface {
  public:
   
@@ -1415,6 +1421,14 @@ struct RTC_EXPORT PeerConnectionDependencies final {
   
   
   std::unique_ptr<FieldTrialsView> trials;
+
+  
+  
+  
+  
+  
+  
+  std::unique_ptr<PeerConnectionTracerInterface> tracer;
 };
 
 
