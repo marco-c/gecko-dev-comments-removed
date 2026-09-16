@@ -169,7 +169,9 @@ nsresult LNAPermissionRequest::RequestPermission() {
       return Cancel();
     }
   } else {
-    Maybe<dom::FeaturePolicyInfo> fpInfo = bc->GetContainerFeaturePolicy();
+    Maybe<dom::PermissionsPolicyInfo> fpInfo =
+        bc->GetContainerPermissionsPolicy();
+    
     
     
     

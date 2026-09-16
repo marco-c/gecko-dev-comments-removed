@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_dom_FeaturePolicyUtils_h
-#define mozilla_dom_FeaturePolicyUtils_h
+#ifndef mozilla_dom_PermissionsPolicyUtils_h
+#define mozilla_dom_PermissionsPolicyUtils_h
 
 #include <functional>
 
@@ -22,9 +22,9 @@ namespace dom {
 
 class Document;
 
-class FeaturePolicyUtils final {
+class PermissionsPolicyUtils final {
  public:
-  enum FeaturePolicyValue {
+  enum PermissionsPolicyValue {
     
     eAll,
 
@@ -51,7 +51,7 @@ class FeaturePolicyUtils final {
   static void ForEachFeature(const std::function<void(const char*)>& aCallback);
 
   
-  static FeaturePolicyValue DefaultAllowListFeature(
+  static PermissionsPolicyValue DefaultAllowListFeature(
       const nsAString& aFeatureName);
 
   
@@ -75,12 +75,12 @@ template <typename T>
 struct ParamTraits;
 
 template <>
-struct ParamTraits<mozilla::dom::FeaturePolicyInfo> {
-  using paramType = mozilla::dom::FeaturePolicyInfo;
+struct ParamTraits<mozilla::dom::PermissionsPolicyInfo> {
+  using paramType = mozilla::dom::PermissionsPolicyInfo;
   static void Write(MessageWriter* aWriter,
-                    const mozilla::dom::FeaturePolicyInfo& aParam);
+                    const mozilla::dom::PermissionsPolicyInfo& aParam);
   static bool Read(MessageReader* aReader,
-                   mozilla::dom::FeaturePolicyInfo* aResult);
+                   mozilla::dom::PermissionsPolicyInfo* aResult);
 };
 
 }  

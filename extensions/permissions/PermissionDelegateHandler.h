@@ -101,7 +101,7 @@ class PermissionDelegateHandler final : public nsIPermissionDelegateHandler {
 
 
 
-    eDelegateUseFeaturePolicy,
+    eDelegateUsePermissionsPolicy,
 
     
     ePersistDeniedCrossOrigin,
@@ -176,7 +176,7 @@ class PermissionDelegateHandler final : public nsIPermissionDelegateHandler {
 
 
 
-  bool HasFeaturePolicyAllowed(const PermissionDelegateInfo* info) const;
+  bool HasPermissionsPolicyAllowed(const PermissionDelegateInfo* info) const;
 
   
 

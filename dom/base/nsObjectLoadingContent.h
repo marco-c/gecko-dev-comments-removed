@@ -25,7 +25,7 @@ class nsFrameLoader;
 
 namespace mozilla::dom {
 struct BindContext;
-class FeaturePolicy;
+class PermissionsPolicy;
 template <typename T>
 class Sequence;
 class HTMLIFrameElement;
@@ -218,7 +218,7 @@ class nsObjectLoadingContent : public nsIStreamListener,
 
 
 
-  void RefreshFeaturePolicy();
+  void RefreshPermissionsPolicy();
 
  private:
   
@@ -393,14 +393,14 @@ class nsObjectLoadingContent : public nsIStreamListener,
 
 
 
-  void MaybeStoreCrossOriginFeaturePolicy();
+  void MaybeStoreCrossOriginPermissionsPolicy();
 
   
 
 
 
 
-  static already_AddRefed<nsIPrincipal> GetFeaturePolicyDefaultOrigin(
+  static already_AddRefed<nsIPrincipal> GetPermissionsPolicyDefaultOrigin(
       nsINode* aNode);
 
   
@@ -478,7 +478,7 @@ class nsObjectLoadingContent : public nsIStreamListener,
   
   
   
-  RefPtr<mozilla::dom::FeaturePolicy> mFeaturePolicy;
+  RefPtr<mozilla::dom::PermissionsPolicy> mPermissionsPolicy;
 };
 
 #endif

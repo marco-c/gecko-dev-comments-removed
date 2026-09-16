@@ -15,7 +15,7 @@ namespace mozilla::dom {
 class OwningTrustedHTMLOrString;
 class TrustedHTMLOrString;
 
-class FeaturePolicy;
+class PermissionsPolicy;
 
 class HTMLIFrameElement final : public nsGenericHTMLFrameElement {
  public:
@@ -152,7 +152,7 @@ class HTMLIFrameElement final : public nsGenericHTMLFrameElement {
   bool FullscreenFlag() const { return mFullscreenFlag; }
   void SetFullscreenFlag(bool aValue) { mFullscreenFlag = aValue; }
 
-  mozilla::dom::FeaturePolicy* FeaturePolicy() const;
+  mozilla::dom::PermissionsPolicy* PermissionsPolicy() const;
 
   void SetLoading(const nsAString& aLoading, ErrorResult& aError) {
     SetHTMLAttr(nsGkAtoms::loading, aLoading, aError);
@@ -187,14 +187,14 @@ class HTMLIFrameElement final : public nsGenericHTMLFrameElement {
 
   static const DOMTokenListSupportedToken sSupportedSandboxTokens[];
 
-  void RefreshFeaturePolicy(bool aParseAllowAttribute);
+  void RefreshPermissionsPolicy(bool aParseAllowAttribute);
   void RefreshEmbedderReferrerPolicy(ReferrerPolicy aPolicy);
 
   
   
   
   
-  already_AddRefed<nsIPrincipal> GetFeaturePolicyDefaultOrigin() const;
+  already_AddRefed<nsIPrincipal> GetPermissionsPolicyDefaultOrigin() const;
 
   
 
@@ -211,9 +211,9 @@ class HTMLIFrameElement final : public nsGenericHTMLFrameElement {
 
 
 
-  void MaybeStoreCrossOriginFeaturePolicy();
+  void MaybeStoreCrossOriginPermissionsPolicy();
 
-  RefPtr<dom::FeaturePolicy> mFeaturePolicy;
+  RefPtr<dom::PermissionsPolicy> mPermissionsPolicy;
   RefPtr<nsDOMTokenList> mSandbox;
 
   

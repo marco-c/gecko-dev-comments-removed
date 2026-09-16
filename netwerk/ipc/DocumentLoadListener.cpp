@@ -847,8 +847,8 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
   OriginAttributes attrs;
   loadingContext->GetOriginAttributes(attrs);
 
-  aLoadInfo->SetContinerFeaturePolicy(
-      loadingContext->GetContainerFeaturePolicy());
+  aLoadInfo->SetContinerPermissionsPolicy(
+      loadingContext->GetContainerPermissionsPolicy());
 
   mLoadIdentifier = aLoadState->GetLoadIdentifier();
   
@@ -2351,9 +2351,9 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
             
             
             nsCOMPtr<nsILoadInfo> loadInfo = self->mChannel->LoadInfo();
-            if (aBrowsingContext->GetContainerFeaturePolicy()) {
-              loadInfo->SetContainerFeaturePolicyInfo(
-                  *aBrowsingContext->GetContainerFeaturePolicy());
+            if (aBrowsingContext->GetContainerPermissionsPolicy()) {
+              loadInfo->SetContainerPermissionsPolicyInfo(
+                  *aBrowsingContext->GetContainerPermissionsPolicy());
             }
 
             MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,

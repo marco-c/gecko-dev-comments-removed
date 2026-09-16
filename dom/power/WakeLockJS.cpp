@@ -63,7 +63,7 @@ WakeLockJS::RequestError WakeLockJS::WakeLockAllowedForDocument(
   }
 
   
-  if (!FeaturePolicyUtils::IsFeatureAllowed(aDoc, u"screen-wake-lock"_ns)) {
+  if (!PermissionsPolicyUtils::IsFeatureAllowed(aDoc, u"screen-wake-lock"_ns)) {
     return RequestError::PolicyDisallowed;
   }
 

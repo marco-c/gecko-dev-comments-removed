@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_dom_FeaturePolicyParser_h
-#define mozilla_dom_FeaturePolicyParser_h
+#ifndef mozilla_dom_PermissionsPolicyParser_h
+#define mozilla_dom_PermissionsPolicyParser_h
 
 #include "nsString.h"
 
@@ -14,7 +14,7 @@ namespace mozilla::dom {
 class Document;
 class Feature;
 
-class FeaturePolicyParser final {
+class PermissionsPolicyParser final {
  public:
   
   
