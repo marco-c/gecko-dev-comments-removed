@@ -4271,7 +4271,8 @@ add_task(async function test_fetchSites_callsAdsClientWhenEnabled() {
   
   Assert.ok(
     AdsClient.requestOptions.calledOnceWithExactly(
-      feed.store.getState().Prefs.values
+      feed.store.getState().Prefs.values,
+      "duckduckgo"
     )
   );
   Assert.ok(
