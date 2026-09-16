@@ -438,7 +438,6 @@ def set_perftest_attributes(config, jobs):
         yield job
 
 
-
 transforms.add(linux_perf_platform_restrictions.restrict_perftest_to_2404)
 
 
@@ -457,10 +456,6 @@ def setup_autoland_retriggers(config, jobs):
         ):
             attrs["task_duplicates"] = 4
         yield job
-
-
-
-transforms.add(linux_perf_platform_restrictions.restrict_perftest_to_1804)
 
 
 @transforms.add
