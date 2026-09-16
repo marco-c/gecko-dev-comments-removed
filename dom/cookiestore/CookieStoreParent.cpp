@@ -580,8 +580,12 @@ bool CookieStoreParent::DeleteRequestOnMainThread(
   nsAutoCString hostName;
   nsContentUtils::GetHostOrIPv6WithBrackets(aCookieURI, hostName);
 
+  
+  
+  const bool hostOnly = aDomain.IsEmpty();
+
   nsAutoCString cookiesForDomain;
-  if (aDomain.IsEmpty()) {
+  if (hostOnly) {
     cookiesForDomain = std::move(hostName);
   } else {
     cookiesForDomain = NS_ConvertUTF16toUTF8(aDomain);
@@ -611,7 +615,12 @@ bool CookieStoreParent::DeleteRequestOnMainThread(
     if (!matchName.Equals(cookie->Name())) {
       continue;
     }
-    if (!CookieCommons::DomainMatches(cookie, cookiesForDomain)) {
+    
+    
+    
+    const bool cookieIsHostOnly = !cookie->IsDomain();
+    if (cookieIsHostOnly != hostOnly ||
+        !cookie->RawHost().Equals(cookiesForDomain)) {
       continue;
     }
 
