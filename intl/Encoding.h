@@ -269,14 +269,6 @@ class Encoding final {
   
 
 
-  inline bool IsJapaneseLegacy() const {
-    return this == SHIFT_JIS_ENCODING || this == EUC_JP_ENCODING ||
-           this == ISO_2022_JP_ENCODING;
-  }
-
-  
-
-
 
   inline NotNull<const mozilla::Encoding*> OutputEncoding() const {
     return WrapNotNull(encoding_output_encoding(this));
@@ -653,10 +645,7 @@ class Encoding final {
 
 
 
-  inline UniquePtr<Decoder> NewDecoder() const {
-    UniquePtr<Decoder> decoder(encoding_new_decoder(this));
-    return decoder;
-  }
+  UniquePtr<Decoder> NewDecoder() const;
 
   
 
@@ -678,10 +667,7 @@ class Encoding final {
 
 
 
-  inline UniquePtr<Decoder> NewDecoderWithBOMRemoval() const {
-    UniquePtr<Decoder> decoder(encoding_new_decoder_with_bom_removal(this));
-    return decoder;
-  }
+  UniquePtr<Decoder> NewDecoderWithBOMRemoval() const;
 
   
 
@@ -708,10 +694,7 @@ class Encoding final {
 
 
 
-  inline UniquePtr<Decoder> NewDecoderWithoutBOMHandling() const {
-    UniquePtr<Decoder> decoder(encoding_new_decoder_without_bom_handling(this));
-    return decoder;
-  }
+  UniquePtr<Decoder> NewDecoderWithoutBOMHandling() const;
 
   
 
@@ -732,10 +715,7 @@ class Encoding final {
   
 
 
-  inline UniquePtr<Encoder> NewEncoder() const {
-    UniquePtr<Encoder> encoder(encoding_new_encoder(this));
-    return encoder;
-  }
+  UniquePtr<Encoder> NewEncoder() const;
 
   
 
@@ -1352,6 +1332,26 @@ class Encoder final {
   Encoder(const Encoder&) = delete;
   Encoder& operator=(const Encoder&) = delete;
 };
+
+inline UniquePtr<Decoder> Encoding::NewDecoder() const {
+  UniquePtr<Decoder> decoder(encoding_new_decoder(this));
+  return decoder;
+}
+
+inline UniquePtr<Decoder> Encoding::NewDecoderWithBOMRemoval() const {
+  UniquePtr<Decoder> decoder(encoding_new_decoder_with_bom_removal(this));
+  return decoder;
+}
+
+inline UniquePtr<Decoder> Encoding::NewDecoderWithoutBOMHandling() const {
+  UniquePtr<Decoder> decoder(encoding_new_decoder_without_bom_handling(this));
+  return decoder;
+}
+
+inline UniquePtr<Encoder> Encoding::NewEncoder() const {
+  UniquePtr<Encoder> encoder(encoding_new_encoder(this));
+  return encoder;
+}
 
 };  
 
