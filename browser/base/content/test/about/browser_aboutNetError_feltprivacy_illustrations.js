@@ -41,14 +41,9 @@ add_task(async function test_noConnection_illustration() {
       "noConnection illustration src is correct"
     );
     Assert.equal(
-      img.getAttribute("data-l10n-id"),
-      "fp-neterror-illustration-alt",
-      "noConnection illustration data-l10n-id is correct"
-    );
-    Assert.equal(
-      img.getAttribute("data-l10n-attrs"),
-      "alt",
-      "data-l10n-attrs is set to 'alt'"
+      img.getAttribute("alt"),
+      "",
+      "noConnection illustration is decorative"
     );
   });
 
@@ -85,14 +80,9 @@ add_task(async function test_workOffline_showsNoConnectionIllustration() {
       "work offline illustration src is correct"
     );
     Assert.equal(
-      img.getAttribute("data-l10n-id"),
-      "fp-neterror-illustration-alt",
-      "work offline illustration data-l10n-id is correct"
-    );
-    Assert.equal(
-      img.getAttribute("data-l10n-attrs"),
-      "alt",
-      "data-l10n-attrs is set to 'alt'"
+      img.getAttribute("alt"),
+      "",
+      "work offline illustration is decorative"
     );
   });
 
@@ -115,16 +105,69 @@ add_task(async function test_securityError_illustration() {
       "securityError illustration src is correct"
     );
     Assert.equal(
-      img.getAttribute("data-l10n-id"),
-      "fp-certerror-illustration-alt",
-      "securityError illustration data-l10n-id is correct"
-    );
-    Assert.equal(
-      img.getAttribute("data-l10n-attrs"),
-      "alt",
-      "data-l10n-attrs is set to 'alt'"
+      img.getAttribute("alt"),
+      "",
+      "securityError illustration is decorative"
     );
   });
 
   BrowserTestUtils.removeTab(tab);
+});
+
+add_task(async function test_illustrationPrefOff_securityError() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.netError.illustration.enabled", false]],
+  });
+
+  const tab = await openErrorPage("https://expired.example.com/");
+  const browser = tab.linkedBrowser;
+
+  await SpecialPowers.spawn(browser, [], async () => {
+    const netErrorCard = content.document.querySelector("net-error-card");
+    await netErrorCard.wrappedJSObject.getUpdateComplete();
+    Assert.ok(
+      !netErrorCard.shadowRoot.querySelector(".img-container"),
+      "no illustration container when the pref is off"
+    );
+    Assert.ok(
+      netErrorCard.shadowRoot.querySelector(".container"),
+      "error content still renders without the illustration"
+    );
+  });
+
+  BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_illustrationPrefOff_noConnection() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.netError.illustration.enabled", false]],
+  });
+
+  let browser, tab;
+  await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    () => {
+      gBrowser.selectedTab = BrowserTestUtils.addTab(
+        gBrowser,
+        SERVER_ERROR_PAGE
+      );
+      browser = gBrowser.selectedBrowser;
+      tab = gBrowser.selectedTab;
+    },
+    false
+  );
+  await BrowserTestUtils.waitForErrorPage(browser);
+
+  await SpecialPowers.spawn(browser, [], async () => {
+    const netErrorCard = content.document.querySelector("net-error-card");
+    await netErrorCard.wrappedJSObject.getUpdateComplete();
+    Assert.ok(
+      !netErrorCard.shadowRoot.querySelector(".img-container"),
+      "no illustration container when the pref is off"
+    );
+  });
+
+  BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
 });

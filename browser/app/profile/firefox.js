@@ -1448,6 +1448,9 @@ pref("browser.xul.error_pages.expert_bad_cert", false);
 pref("browser.xul.error_pages.show_safe_browsing_details_on_load", false);
 
 
+pref("browser.netError.illustration.enabled", true);
+
+
 
 #ifdef NIGHTLY_BUILD
 pref("browser.netError.searchCTA.enabled", true);
