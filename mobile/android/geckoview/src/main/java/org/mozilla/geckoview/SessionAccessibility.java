@@ -580,6 +580,17 @@ public class SessionAccessibility {
       return;
     }
 
+    if (eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED
+        && eventData == null
+        && (sourceId == mAccessibilityFocusedNode || sourceId == mFocusedNode)) {
+      
+      
+      
+      
+      sendEvent(AccessibilityEvent.TYPE_VIEW_SELECTED, sourceId, className, eventData);
+      return;
+    }
+
     final AccessibilityEvent event = AccessibilityEvent.obtain(eventType);
     event.setPackageName(GeckoAppShell.getApplicationContext().getPackageName());
     event.setSource(mView, sourceId);
