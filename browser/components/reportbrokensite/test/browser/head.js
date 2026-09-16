@@ -475,6 +475,21 @@ class ReportBrokenSiteHelper {
   click(elem, options = {}) {
     return new Promise(r => {
       elem.scrollIntoView({ behavior: "instant" });
+      
+      
+      
+      const rects = elem.getClientRects();
+      if (rects.length > 1) {
+        const bounds = elem.getBoundingClientRect();
+        return EventUtils.synthesizeMouse(
+          elem,
+          rects[0].x - bounds.x + rects[0].width / 2,
+          rects[0].y - bounds.y + rects[0].height / 2,
+          options,
+          this.win,
+          r
+        );
+      }
       return EventUtils.synthesizeMouseAtCenter(elem, options, this.win, r);
     });
   }
