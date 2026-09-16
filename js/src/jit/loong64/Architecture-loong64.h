@@ -517,6 +517,9 @@ enum class LOONG64Extension : uint32_t {
 
   
   LamBh,
+
+  
+  Lamcas,
 };
 
 using LOONG64Extensions = mozilla::EnumSet<LOONG64Extension>;
@@ -545,6 +548,10 @@ class LOONG64Flags final {
 
   static bool HasLamBhExtension() {
     return extensions.contains(LOONG64Extension::LamBh);
+  }
+
+  static bool HasLamcasExtension() {
+    return extensions.contains(LOONG64Extension::Lamcas);
   }
 };
 
