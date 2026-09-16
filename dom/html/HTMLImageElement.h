@@ -356,7 +356,7 @@ class HTMLImageElement final : public nsGenericHTMLElement,
 
   
   
-  RefPtr<HTMLFormElement> mForm;
+  HTMLFormElement* mForm = nullptr;
 
  private:
   bool SourceElementMatches(Element* aSourceElement);
