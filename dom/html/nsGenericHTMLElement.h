@@ -435,7 +435,7 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
   bool ParseBackgroundAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
                                 const nsAString& aValue, nsAttrValue& aResult);
 
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
+  bool IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const override;
   nsMapRuleToAttributesFunc GetAttributeMappingFunction() const override;
 
   
@@ -1203,6 +1203,8 @@ class nsGenericHTMLFormControlElement : public nsGenericHTMLFormElement,
       already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo, FormControlType);
 
   NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(nsGenericHTMLFormControlElement,
+                                           nsGenericHTMLFormElement);
 
   NS_IMPL_FROMNODE_HELPER(nsGenericHTMLFormControlElement,
                           IsHTMLFormControlElement())
@@ -1263,7 +1265,7 @@ class nsGenericHTMLFormControlElement : public nsGenericHTMLFormElement,
   void SetFormAutofillState(const nsAString& aState);
 
   
-  mozilla::dom::HTMLFormElement* mForm;
+  RefPtr<mozilla::dom::HTMLFormElement> mForm;
 
   
   mozilla::dom::HTMLFieldSetElement* mFieldSet;
