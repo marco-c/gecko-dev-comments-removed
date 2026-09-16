@@ -1288,6 +1288,8 @@ __webpack_require__.r(__webpack_exports__);
 const DEFAULT_AUTO_ADVANCE_MS = 20000;
 const CORNER_IMAGE_POSITIONS = new Set(["bottom-left", "bottom-right", "top-left", "top-right"]);
 const DEFAULT_CORNER_IMAGE_POSITION = "bottom-right";
+const CORNER_IMAGE_ENTRANCE_ANIMATIONS = new Set(["none", "fade", "slide-block", "slide-inline", "slide-corner", "zoom"]);
+const DEFAULT_CORNER_IMAGE_ENTRANCE_ANIMATION = "none";
 const MultiStageProtonScreen = props => {
   const {
     autoAdvance,
@@ -1741,6 +1743,8 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
   renderCornerImage() {
     const cornerImage = this.props.content.corner_image;
     const position = CORNER_IMAGE_POSITIONS.has(cornerImage.position) ? cornerImage.position : DEFAULT_CORNER_IMAGE_POSITION;
+    const entranceAnimation = cornerImage.entrance_animation ?? {};
+    const entranceType = CORNER_IMAGE_ENTRANCE_ANIMATIONS.has(entranceAnimation.type) ? entranceAnimation.type : DEFAULT_CORNER_IMAGE_ENTRANCE_ANIMATION;
     return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "corner-image-container"
     }, this.renderPicture({
@@ -1752,8 +1756,15 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       width: cornerImage.width,
       marginBlock: cornerImage.marginBlock,
       marginInline: cornerImage.marginInline,
-      style: cornerImage.style,
-      className: `corner-image ${position}`
+      style: {
+        
+        
+        "--corner-image-entrance-distance": entranceAnimation.distance,
+        "--corner-image-entrance-duration": entranceAnimation.duration,
+        "--corner-image-entrance-delay": entranceAnimation.delay,
+        ...cornerImage.style
+      },
+      className: `corner-image ${position} entrance-${entranceType}`
     }));
   }
   renderLanguageSwitcher() {
@@ -2192,7 +2203,7 @@ const buttonPropTypes = prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___defa
 });
 const screenContentShape = {
   
-  position: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().oneOf(["center", "split", "callout"]),
+  position: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().oneOf(["center", "center-large", "split", "callout"]),
   
   fullscreen: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().bool),
   
@@ -2301,6 +2312,48 @@ const screenContentShape = {
     width: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
     
     height: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string)
+  }),
+  
+  
+  
+  corner_image: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().shape({
+    
+    imageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+    
+    darkModeImageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+    
+    reducedMotionImageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+    
+    darkModeReducedMotionImageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+    
+    position: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().oneOf(["bottom-left", "bottom-right", "top-left", "top-right"]),
+    
+    width: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+    
+    height: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+    
+    marginBlock: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+    
+    marginInline: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+    
+    
+    
+    style: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().object),
+    
+    
+    
+    
+    entrance_animation: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().shape({
+      
+      type: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().oneOf(["none", "fade", "slide-block", "slide-inline", "slide-corner", "zoom"]),
+      
+      distance: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+      
+      duration: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+      
+      
+      delay: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string)
+    })
   }),
   
   title: localizableThingPropTypes,

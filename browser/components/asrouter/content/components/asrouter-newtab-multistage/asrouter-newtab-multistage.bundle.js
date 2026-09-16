@@ -4213,6 +4213,8 @@ const ContentTiles = props => {
 const DEFAULT_AUTO_ADVANCE_MS = 20000;
 const CORNER_IMAGE_POSITIONS = new Set(["bottom-left", "bottom-right", "top-left", "top-right"]);
 const DEFAULT_CORNER_IMAGE_POSITION = "bottom-right";
+const CORNER_IMAGE_ENTRANCE_ANIMATIONS = new Set(["none", "fade", "slide-block", "slide-inline", "slide-corner", "zoom"]);
+const DEFAULT_CORNER_IMAGE_ENTRANCE_ANIMATION = "none";
 const MultiStageProtonScreen = props => {
   const {
     autoAdvance,
@@ -4666,6 +4668,8 @@ class ProtonScreen extends (external_React_default()).PureComponent {
   renderCornerImage() {
     const cornerImage = this.props.content.corner_image;
     const position = CORNER_IMAGE_POSITIONS.has(cornerImage.position) ? cornerImage.position : DEFAULT_CORNER_IMAGE_POSITION;
+    const entranceAnimation = cornerImage.entrance_animation ?? {};
+    const entranceType = CORNER_IMAGE_ENTRANCE_ANIMATIONS.has(entranceAnimation.type) ? entranceAnimation.type : DEFAULT_CORNER_IMAGE_ENTRANCE_ANIMATION;
     return external_React_default().createElement("div", {
       className: "corner-image-container"
     }, this.renderPicture({
@@ -4677,8 +4681,15 @@ class ProtonScreen extends (external_React_default()).PureComponent {
       width: cornerImage.width,
       marginBlock: cornerImage.marginBlock,
       marginInline: cornerImage.marginInline,
-      style: cornerImage.style,
-      className: `corner-image ${position}`
+      style: {
+        
+        
+        "--corner-image-entrance-distance": entranceAnimation.distance,
+        "--corner-image-entrance-duration": entranceAnimation.duration,
+        "--corner-image-entrance-delay": entranceAnimation.delay,
+        ...cornerImage.style
+      },
+      className: `corner-image ${position} entrance-${entranceType}`
     }));
   }
   renderLanguageSwitcher() {
@@ -5117,7 +5128,7 @@ const buttonPropTypes = prop_types_default().exact({
 });
 const screenContentShape = {
   
-  position: prop_types_default().oneOf(["center", "split", "callout"]),
+  position: prop_types_default().oneOf(["center", "center-large", "split", "callout"]),
   
   fullscreen: (prop_types_default()).bool,
   
@@ -5226,6 +5237,48 @@ const screenContentShape = {
     width: (prop_types_default()).string,
     
     height: (prop_types_default()).string
+  }),
+  
+  
+  
+  corner_image: prop_types_default().shape({
+    
+    imageURL: (prop_types_default()).string,
+    
+    darkModeImageURL: (prop_types_default()).string,
+    
+    reducedMotionImageURL: (prop_types_default()).string,
+    
+    darkModeReducedMotionImageURL: (prop_types_default()).string,
+    
+    position: prop_types_default().oneOf(["bottom-left", "bottom-right", "top-left", "top-right"]),
+    
+    width: (prop_types_default()).string,
+    
+    height: (prop_types_default()).string,
+    
+    marginBlock: (prop_types_default()).string,
+    
+    marginInline: (prop_types_default()).string,
+    
+    
+    
+    style: (prop_types_default()).object,
+    
+    
+    
+    
+    entrance_animation: prop_types_default().shape({
+      
+      type: prop_types_default().oneOf(["none", "fade", "slide-block", "slide-inline", "slide-corner", "zoom"]),
+      
+      distance: (prop_types_default()).string,
+      
+      duration: (prop_types_default()).string,
+      
+      
+      delay: (prop_types_default()).string
+    })
   }),
   
   title: localizableThingPropTypes,
