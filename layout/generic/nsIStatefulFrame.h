@@ -10,11 +10,20 @@
 #ifndef _nsIStatefulFrame_h
 #define _nsIStatefulFrame_h
 
+#include "mozilla/EnumSet.h"
 #include "nsContentUtils.h"
 #include "nsQueryFrame.h"
 
 namespace mozilla {
 class PresState;
+
+enum class CaptureStateFlag : uint8_t {
+  
+  
+  ForSessionHistory,
+};
+using CaptureStateFlags = EnumSet<CaptureStateFlag>;
+
 }  
 
 class nsIStatefulFrame {
@@ -22,7 +31,8 @@ class nsIStatefulFrame {
   NS_DECL_QUERYFRAME_TARGET(nsIStatefulFrame)
 
   
-  virtual mozilla::UniquePtr<mozilla::PresState> SaveState() = 0;
+  virtual mozilla::UniquePtr<mozilla::PresState> SaveState(
+      mozilla::CaptureStateFlags aFlags) = 0;
 
   
   NS_IMETHOD RestoreState(mozilla::PresState* aState) = 0;

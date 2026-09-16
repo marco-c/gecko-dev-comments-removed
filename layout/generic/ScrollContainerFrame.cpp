@@ -7397,7 +7397,7 @@ void ScrollContainerFrame::ResetScrollInfoIfNeeded(
   mInScrollingGesture = aInScrollingGesture;
 }
 
-UniquePtr<PresState> ScrollContainerFrame::SaveState() {
+UniquePtr<PresState> ScrollContainerFrame::SaveState(CaptureStateFlags aFlags) {
   nsIScrollbarMediator* mediator = do_QueryFrame(GetScrolledFrame());
   if (mediator) {
     
@@ -7441,6 +7441,12 @@ UniquePtr<PresState> ScrollContainerFrame::SaveState() {
   }
   state->scrollState() = pt;
   state->allowScrollOriginDowngrade() = allowScrollOriginDowngrade;
+  
+  
+  if (!aFlags.contains(CaptureStateFlag::ForSessionHistory)) {
+    state->scrollEventGeneration() = mScrollEventGeneration;
+    state->scrollEndEventGeneration() = mScrollEndEventGeneration;
+  }
   if (mIsRoot) {
     
     state->resolution() = PresShell()->GetResolution();
@@ -7463,6 +7469,8 @@ NS_IMETHODIMP ScrollContainerFrame::RestoreState(PresState* aState) {
   
   mLastScrollOrigin = ScrollOrigin::Other;
   mDidHistoryRestore = true;
+  mScrollEventGeneration = aState->scrollEventGeneration();
+  mScrollEndEventGeneration = aState->scrollEndEventGeneration();
   mLastPos = mScrolledFrame ? GetLogicalVisualViewportOffset() : nsPoint(0, 0);
   SCROLLRESTORE_LOG("%p: RestoreState, set mRestorePos=%s mLastPos=%s\n", this,
                     ToString(mRestorePos).c_str(), ToString(mLastPos).c_str());

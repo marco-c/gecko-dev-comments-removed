@@ -10,6 +10,7 @@
 #include "mozilla/Attributes.h"
 #include "nsDebug.h"
 #include "nsFrameList.h"
+#include "nsIStatefulFrame.h"
 
 class nsContainerFrame;
 class nsIFrame;
@@ -73,12 +74,12 @@ class nsFrameManager {
 
 
 
-  void CaptureFrameState(nsIFrame* aFrame, nsILayoutHistoryState* aState);
+  void CaptureFrameState(nsIFrame*, nsILayoutHistoryState*,
+                         mozilla::CaptureStateFlags);
 
   
-
-
-  void CaptureFrameStateFor(nsIFrame* aFrame, nsILayoutHistoryState* aState);
+  void CaptureFrameStateFor(nsIFrame*, nsILayoutHistoryState*,
+                            mozilla::CaptureStateFlags);
 
   void RestoreFrameStateFor(nsIFrame* aFrame, nsILayoutHistoryState* aState);
 

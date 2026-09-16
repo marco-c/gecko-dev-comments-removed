@@ -125,7 +125,8 @@ void nsFrameManager::RemoveFrame(DestroyContext& aContext,
 
 
 void nsFrameManager::CaptureFrameStateFor(nsIFrame* aFrame,
-                                          nsILayoutHistoryState* aState) {
+                                          nsILayoutHistoryState* aState,
+                                          CaptureStateFlags aFlags) {
   if (!aFrame || !aState) {
     NS_WARNING("null frame, or state");
     return;
@@ -138,7 +139,7 @@ void nsFrameManager::CaptureFrameStateFor(nsIFrame* aFrame,
   }
 
   
-  UniquePtr<PresState> frameState = statefulFrame->SaveState();
+  UniquePtr<PresState> frameState = statefulFrame->SaveState(aFlags);
   if (!frameState) {
     return;
   }
@@ -158,11 +159,12 @@ void nsFrameManager::CaptureFrameStateFor(nsIFrame* aFrame,
 }
 
 void nsFrameManager::CaptureFrameState(nsIFrame* aFrame,
-                                       nsILayoutHistoryState* aState) {
+                                       nsILayoutHistoryState* aState,
+                                       CaptureStateFlags aFlags) {
   MOZ_ASSERT(nullptr != aFrame && nullptr != aState,
              "null parameters passed in");
 
-  CaptureFrameStateFor(aFrame, aState);
+  CaptureFrameStateFor(aFrame, aState, aFlags);
 
   
   for (const auto& childList : aFrame->ChildLists()) {
@@ -182,7 +184,7 @@ void nsFrameManager::CaptureFrameState(nsIFrame* aFrame,
       
       
       if (MOZ_LIKELY(realChild)) {
-        CaptureFrameState(realChild, aState);
+        CaptureFrameState(realChild, aState, aFlags);
       }
     }
   }
