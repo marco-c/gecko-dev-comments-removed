@@ -15,6 +15,16 @@ def enum(variants):
     return '"' + '"|"'.join(sorted(variants)) + '"'
 
 
+
+
+
+EXTRA_TYPES = {
+    "string": "string",
+    "boolean": "string|boolean",
+    "quantity": "string|number",
+}
+
+
 def metric(obj):
     if obj.type.startswith("labeled_"):
         labels = enum(obj.labels) if obj.labels else "string"
@@ -24,9 +34,10 @@ def metric(obj):
         if not obj.allowed_extra_keys:
             return "GleanEventNoExtras"
 
-        
-        
-        props = [f"{key}?: string" for key in obj.allowed_extra_keys]
+        props = [
+            f"{key}?: {EXTRA_TYPES[extra_type]}"
+            for (key, extra_type) in obj.allowed_extra_keys_with_types
+        ]
         return f"GleanEventWithExtras<{{ {', '.join(props)} }}>"
 
     return "Glean" + util.Camelize(obj.type)
