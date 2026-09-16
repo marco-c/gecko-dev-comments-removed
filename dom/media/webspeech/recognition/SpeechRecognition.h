@@ -7,6 +7,7 @@
 
 #include "DOMMediaStream.h"
 #include "SpeechGrammarList.h"
+#include "SpeechRecognitionBackend.h"
 #include "SpeechRecognitionResultList.h"
 #include "js/TypeDecls.h"
 #include "mozilla/DOMEventTargetHelper.h"
@@ -32,7 +33,6 @@ namespace mozilla {
 namespace dom {
 
 class Promise;
-class SpeechRecognitionBackend;
 class SpeechRecognitionPhrase;
 
 #define SPEECH_RECOGNITION_TEST_EVENT_REQUEST_TOPIC \
@@ -133,6 +133,9 @@ class SpeechRecognition final : public DOMEventTargetHelper,
       ErrorResult& aRv);
 
   
+  already_AddRefed<Promise> GetPerfStats(ErrorResult& aRv);
+
+  
   
   void Start(CallerType aCallerType, ErrorResult& aRv);
   void Start(MediaStreamTrack& aAudioTrack, CallerType aCallerType,
@@ -199,7 +202,7 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   
   
   
-  void OnSessionFinished(bool aProducedResult);
+  void OnSessionFinished(bool aProducedResult, EnginePerfStats aEngineStats);
   
   
   
@@ -262,6 +265,7 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   
   
   void MaybeDispatchStart();
+  SpeechRecognitionPerfStats BuildPerfStats() const;
 
   RefPtr<DOMMediaStream> mStream;
   RefPtr<AudioStreamTrack> mTrack;
@@ -306,6 +310,20 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   
   nsTArray<RefPtr<SpeechRecognitionPhrase>> mPhrases;
   nsTArray<RefPtr<SpeechRecognitionResult>> mRecognitionResults;
+
+  
+  
+  
+  
+  struct PerfTimeline {
+    TimeStamp mStart;
+    Maybe<TimeStamp> mStop;
+    Maybe<TimeDuration> mEngineReady;
+    Maybe<TimeDuration> mFirstResult;
+    Maybe<TimeDuration> mFinalization;
+    EnginePerfStats mEngine;
+  };
+  PerfTimeline mPerf;
   RefPtr<TrackListener> mListener;
   
   RefPtr<SpeechRecognitionBackend> mBackend;

@@ -58,7 +58,8 @@ parent:
   
   
   
-  async Stop() returns (bool anyFinalResult);
+  
+  async Stop() returns (bool anyFinalResult, double fedAudioMs, double inferenceMs);
 
 child: 
   

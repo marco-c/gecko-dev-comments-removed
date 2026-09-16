@@ -51,6 +51,13 @@ enum class TrailingEvents { Fire, Skip };
 
 
 
+struct EnginePerfStats {
+  double mFedAudioMs = 0.0;
+  double mInferenceMs = 0.0;
+};
+
+
+
 
 
 
@@ -175,7 +182,7 @@ class SpeechRecognitionBackend {
   
   
   
-  void NotifySessionFinished(bool aProducedResult);
+  void NotifySessionFinished(bool aProducedResult, EnginePerfStats aStats);
 
   
   void ProcessAudioChunk() MOZ_REQUIRES(mResamplingCapability);

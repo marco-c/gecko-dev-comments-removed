@@ -280,6 +280,9 @@ void SpeechRecognition::Reset() {
 
 void SpeechRecognition::ResetAndEnd() {
   Reset();
+  if (mPerf.mStop) {
+    mPerf.mFinalization = Some(TimeStamp::Now() - *mPerf.mStop);
+  }
   DispatchTrustedEvent(u"end"_ns);
 }
 
@@ -319,6 +322,7 @@ void SpeechRecognition::MaybeDispatchStart() {
 void SpeechRecognition::NotifyBackendListening() {
   AssertIsOnMainThread();
   mBackendListening = true;
+  mPerf.mEngineReady = Some(TimeStamp::Now() - mPerf.mStart);
   MaybeDispatchStart();
 }
 
@@ -652,6 +656,32 @@ already_AddRefed<Promise> SpeechRecognition::Install(
   return promise.forget();
 }
 
+SpeechRecognitionPerfStats SpeechRecognition::BuildPerfStats() const {
+  SpeechRecognitionPerfStats stats;
+  if (mPerf.mEngineReady) {
+    stats.mEngineReadyDuration = mPerf.mEngineReady->ToMilliseconds();
+  }
+  if (mPerf.mFirstResult) {
+    stats.mFirstResultDuration = mPerf.mFirstResult->ToMilliseconds();
+  }
+  if (mPerf.mFinalization) {
+    stats.mFinalizationDuration = mPerf.mFinalization->ToMilliseconds();
+  }
+  stats.mFedAudioDuration = mPerf.mEngine.mFedAudioMs;
+  stats.mInferenceDuration = mPerf.mEngine.mInferenceMs;
+  return stats;
+}
+
+already_AddRefed<Promise> SpeechRecognition::GetPerfStats(ErrorResult& aRv) {
+  AssertIsOnMainThread();
+  RefPtr<Promise> promise = Promise::Create(GetParentObject(), aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+  promise->MaybeResolve(BuildPerfStats());
+  return promise.forget();
+}
+
 void SpeechRecognition::Start(CallerType aCallerType, ErrorResult& aRv) {
   StartImpl(nullptr, aCallerType, aRv);
 }
@@ -776,6 +806,8 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
     return;
   }
 
+  mPerf = PerfTimeline{};
+
   
   
   mStarted = true;
@@ -859,6 +891,10 @@ void SpeechRecognition::BeginSession(PendingSession&& aSession) {
   AssertIsOnMainThread();
   MOZ_ASSERT(mStarted);
   MOZ_ASSERT(!mBackend);
+
+  
+  
+  mPerf.mStart = TimeStamp::Now();
 
   
   
@@ -956,6 +992,7 @@ void SpeechRecognition::Stop() {
     return;
   }
   mStopping = true;
+  mPerf.mStop = Some(TimeStamp::Now());
 
   if (mAwaitingModelInstall) {
     
@@ -971,9 +1008,11 @@ void SpeechRecognition::Stop() {
   mBackend->Stop();
 }
 
-void SpeechRecognition::OnSessionFinished(bool aProducedResult) {
+void SpeechRecognition::OnSessionFinished(bool aProducedResult,
+                                          EnginePerfStats aEngineStats) {
   AssertIsOnMainThread();
   LOG("OnSessionFinished: producedResult={}", aProducedResult);
+  mPerf.mEngine = aEngineStats;
   mBackend = nullptr;
 
   if (!aProducedResult) {
@@ -1162,6 +1201,11 @@ void SpeechRecognition::HandleRecognitionResultFromBackend(
   domEvent->SetTrusted(true);
   if (!aEventTime.IsNull()) {
     domEvent->WidgetEventPtr()->mTimeStamp = aEventTime;
+  }
+  
+  
+  if (!mPerf.mFirstResult) {
+    mPerf.mFirstResult = Some(TimeStamp::Now() - mPerf.mStart);
   }
   DispatchEvent(*domEvent);
 }

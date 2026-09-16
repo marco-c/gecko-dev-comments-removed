@@ -104,6 +104,8 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
   void ProcessAudioStreaming();
   bool IsRunning() MOZ_EXCLUDES(mLock);
   
+  std::pair<double, double> PerfCounters() MOZ_EXCLUDES(mTimingLock);
+  
   void DestroyParakeetContext(mozilla::llama::LlamaLibWrapper* aLib);
   void SignalError(const nsCString& aErrorMessage);
 
@@ -156,6 +158,11 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
 
   
   size_t mProcessedAudioPos;
+
+  
+  
+  uint64_t mFedAudioFrames MOZ_GUARDED_BY(mTimingLock) = 0;
+  uint64_t mInferenceMicroseconds MOZ_GUARDED_BY(mTimingLock) = 0;
 
   
   

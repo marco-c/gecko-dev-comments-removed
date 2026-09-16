@@ -299,7 +299,8 @@ void SpeechRecognitionBackend::Shutdown(bool aWaitForFlush,
           AssertOnIPCThread();
           LOG("Stopping HWInference speech recognition session");
           if (!child->CanSend()) {
-            self->NotifySessionFinished( true);
+            self->NotifySessionFinished( true,
+                                        EnginePerfStats{});
             return;
           }
           child->SendStop()->Then(
@@ -307,10 +308,17 @@ void SpeechRecognitionBackend::Shutdown(bool aWaitForFlush,
               [self, child](hwinference::PSpeechRecognitionChild::StopPromise::
                                 ResolveOrRejectValue&& aValue) {
                 child->Close();
-                
-                
-                self->NotifySessionFinished(aValue.IsReject() ||
-                                            aValue.ResolveValue());
+                if (aValue.IsReject()) {
+                  
+                  
+                  self->NotifySessionFinished( true,
+                                              EnginePerfStats{});
+                  return;
+                }
+                const auto& [any, fedAudioMs, inferenceMs] =
+                    aValue.ResolveValue();
+                self->NotifySessionFinished(
+                    any, EnginePerfStats{fedAudioMs, inferenceMs});
               });
         });
     sIPCCapability->Dispatch(stopSession.forget());
@@ -329,7 +337,7 @@ void SpeechRecognitionBackend::Shutdown(bool aWaitForFlush,
   } else if (aWaitForFlush) {
     
     
-    NotifySessionFinished( true);
+    NotifySessionFinished( true, EnginePerfStats{});
   }
 
   
@@ -377,11 +385,13 @@ void SpeechRecognitionBackend::DispatchTrailingEvents() {
                              }));
 }
 
-void SpeechRecognitionBackend::NotifySessionFinished(bool aProducedResult) {
-  DispatchToParentIfAlive("SpeechRecognitionBackend::NotifySessionFinished",
-                          [aProducedResult](SpeechRecognition* aParent) {
-                            aParent->OnSessionFinished(aProducedResult);
-                          });
+void SpeechRecognitionBackend::NotifySessionFinished(bool aProducedResult,
+                                                     EnginePerfStats aStats) {
+  DispatchToParentIfAlive(
+      "SpeechRecognitionBackend::NotifySessionFinished",
+      [aProducedResult, aStats](SpeechRecognition* aParent) {
+        aParent->OnSessionFinished(aProducedResult, aStats);
+      });
 }
 
 void SpeechRecognitionBackend::AttachToTrack(AudioStreamTrack* aTrack) {
