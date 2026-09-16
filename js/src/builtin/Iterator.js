@@ -504,7 +504,6 @@ function* IteratorFilterGenerator(iterator, nextMethod, predicate) {
 
 
 
-
 function IteratorTake(limit) {
   
   var iterator = this;
@@ -536,7 +535,10 @@ function IteratorTake(limit) {
     ThrowRangeError(JSMSG_LIMIT_TOO_LARGE);
   }
 
+  
   var integerLimit = std_Math_trunc(numLimit);
+
+  
   if (!(integerLimit >= 0)) {
     try {
       IteratorClose(iterator);
@@ -564,7 +566,6 @@ function IteratorTake(limit) {
   
   return result;
 }
-
 
 
 
@@ -604,7 +605,6 @@ function* IteratorTakeGenerator(iterator, nextMethod, remaining) {
 
 
 
-
 function IteratorDrop(limit) {
   
   var iterator = this;
@@ -636,7 +636,10 @@ function IteratorDrop(limit) {
     ThrowRangeError(JSMSG_LIMIT_TOO_LARGE);
   }
 
+  
   var integerLimit = std_Math_trunc(numLimit);
+
+  
   if (!(integerLimit >= 0)) {
     try {
       IteratorClose(iterator);
@@ -664,7 +667,6 @@ function IteratorDrop(limit) {
   
   return result;
 }
-
 
 
 
