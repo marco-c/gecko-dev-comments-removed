@@ -458,8 +458,7 @@ pref("browser.urlbar.ipc.chromeMessagePassing", false);
 
 
 
-
-#if defined(NIGHTLY_BUILD) && !defined(DEBUG)
+#ifdef NIGHTLY_BUILD
 pref("browser.urlbar.newtab.featureGate", true);
 #else
 pref("browser.urlbar.newtab.featureGate", false);
