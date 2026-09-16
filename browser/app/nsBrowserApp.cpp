@@ -106,7 +106,7 @@ using namespace mozilla;
 
 
 
-#if defined(MOZ_BACKGROUNDTASKS) && defined(XP_WIN)
+#if defined(MOZ_BACKGROUNDTASKS) && defined(XP_WIN) && !MOZ_WINCONSOLE
 static bool gIsBackgroundTask = false;
 #endif
 
@@ -181,7 +181,7 @@ static bool IsFlag(const char* arg, const char* s) {
   return false;
 }
 
-#if defined(MOZ_BACKGROUNDTASKS) && defined(XP_WIN)
+#if defined(MOZ_BACKGROUNDTASKS) && defined(XP_WIN) && !MOZ_WINCONSOLE
 
 
 
@@ -342,7 +342,7 @@ int main(int argc, char* argv[], char* envp[]) {
   ReserveDefaultFileDescriptors();
 #endif
 
-#if defined(MOZ_BACKGROUNDTASKS) && defined(XP_WIN)
+#if defined(MOZ_BACKGROUNDTASKS) && defined(XP_WIN) && !MOZ_WINCONSOLE
   
   
   gIsBackgroundTask = HasFlag(argc, argv, "backgroundtask");
