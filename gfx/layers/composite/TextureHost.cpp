@@ -270,8 +270,8 @@ already_AddRefed<TextureHost> CreateBackendIndependentTextureHost(
             
             
             
-            gfxCriticalError() << "Failed texture host with unmappable shmem.";
-            return nullptr;
+            gfxCriticalNote << "Failed texture host with unmappable shmem.";
+            return CreateDummyBufferTextureHost(aBackend, aFlags);
           }
 
           size_t bufSize = shmem.Size<char>();
