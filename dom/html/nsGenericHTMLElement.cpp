@@ -1945,10 +1945,9 @@ nsresult nsGenericHTMLFormElement::BindToTree(BindContext& aContext,
     if (HasAttr(nsGkAtoms::form) ? IsInComposedDoc() : aParent.IsContent()) {
       UpdateFormOwner(true, nullptr);
     }
+    
+    UpdateFieldSet(false);
   }
-
-  
-  UpdateFieldSet(false);
   return NS_OK;
 }
 
@@ -1956,7 +1955,8 @@ void nsGenericHTMLFormElement::UnbindFromTree(UnbindContext& aContext) {
   
   SaveState();
 
-  if (IsFormAssociatedElement()) {
+  const bool formAssociated = IsFormAssociatedElement();
+  if (formAssociated) {
     if (HTMLFormElement* form = GetFormInternal()) {
       
       if (aContext.IsUnbindRoot(this)) {
@@ -1982,8 +1982,10 @@ void nsGenericHTMLFormElement::UnbindFromTree(UnbindContext& aContext) {
 
   nsGenericHTMLElement::UnbindFromTree(aContext);
 
-  
-  UpdateFieldSet(false);
+  if (formAssociated) {
+    
+    UpdateFieldSet(false);
+  }
 }
 
 void nsGenericHTMLFormElement::BeforeSetAttr(int32_t aNameSpaceID,
@@ -2259,43 +2261,47 @@ void nsGenericHTMLFormElement::UpdateFormOwner(bool aBindToTree,
 }
 
 void nsGenericHTMLFormElement::UpdateFieldSet(bool aNotify) {
-  if (IsInNativeAnonymousSubtree() || !IsFormAssociatedElement()) {
-    MOZ_ASSERT_IF(IsFormAssociatedElement(), !GetFieldSetInternal());
+  MOZ_ASSERT(IsFormAssociatedElement());
+  if (IsInNativeAnonymousSubtree()) {
+    MOZ_ASSERT(!GetFieldSetInternal());
     return;
   }
-
-  nsIContent* parent = nullptr;
-  nsIContent* prev = nullptr;
-  HTMLFieldSetElement* fieldset = GetFieldSetInternal();
-
-  for (parent = GetParent(); parent;
-       prev = parent, parent = parent->GetParent()) {
-    HTMLFieldSetElement* parentFieldset = HTMLFieldSetElement::FromNode(parent);
-    if (parentFieldset && (!prev || parentFieldset->GetFirstLegend() != prev)) {
-      if (fieldset == parentFieldset) {
-        
-        return;
-      }
-
-      if (fieldset) {
-        fieldset->RemoveElement(this);
-      }
-      SetFieldSetInternal(parentFieldset);
-      parentFieldset->AddElement(this);
-
-      
-      FieldSetDisabledChanged(aNotify);
-      return;
-    }
+  if (IsFormAssociatedCustomElement() &&
+      GetCustomElementData()->mState != CustomElementData::State::eCustom) {
+    MOZ_ASSERT(!GetFieldSetInternal());
+    return;
   }
-
-  
-  if (fieldset) {
-    fieldset->RemoveElement(this);
-    SetFieldSetInternal(nullptr);
+  auto* oldFieldSet = GetFieldSetInternal();
+  auto* newFieldSet = FirstAncestorOfType<HTMLFieldSetElement>();
+  if (newFieldSet == oldFieldSet) {
     
-    FieldSetDisabledChanged(aNotify);
+    return;
   }
+  if (oldFieldSet) {
+    oldFieldSet->RemoveElement(this);
+  }
+  SetFieldSetInternal(newFieldSet);
+  if (newFieldSet) {
+    newFieldSet->AddElement(this);
+  }
+  
+  FieldSetDisabledChanged(aNotify);
+}
+
+
+bool nsGenericHTMLFormElement::IsDisabledByAncestorFieldSet() const {
+  for (auto* fieldset = GetFieldSetInternal(); fieldset;
+       fieldset = fieldset->GetFieldSet()) {
+    if (!fieldset->IsDisabled()) {
+      continue;
+    }
+    const nsIContent* legend = fieldset->GetFirstLegend();
+    if (legend && IsInclusiveDescendantOf(legend)) {
+      continue;
+    }
+    return true;
+  }
+  return false;
 }
 
 void nsGenericHTMLFormElement::UpdateDisabledState(bool aNotify) {
@@ -2303,9 +2309,8 @@ void nsGenericHTMLFormElement::UpdateDisabledState(bool aNotify) {
     return;
   }
 
-  HTMLFieldSetElement* fieldset = GetFieldSetInternal();
   const bool isDisabled =
-      HasAttr(nsGkAtoms::disabled) || (fieldset && fieldset->IsDisabled());
+      HasAttr(nsGkAtoms::disabled) || IsDisabledByAncestorFieldSet();
 
   const ElementState disabledStates =
       isDisabled ? ElementState::DISABLED : ElementState::ENABLED;
