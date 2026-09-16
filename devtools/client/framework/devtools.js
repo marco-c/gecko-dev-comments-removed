@@ -533,6 +533,7 @@ class DevTools extends EventEmitter {
 
 
 
+
   async showToolbox(
     commands,
     {
@@ -578,6 +579,12 @@ class DevTools extends EventEmitter {
       this.#creatingToolboxes.set(commands, toolboxPromise);
       toolbox = await toolboxPromise;
       this.#creatingToolboxes.delete(commands);
+
+      
+      
+      if (toolbox.isDestroying()) {
+        return null;
+      }
 
       if (startTime) {
         this.logToolboxOpenTime(toolbox, startTime);

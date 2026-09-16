@@ -1053,7 +1053,6 @@ class Toolbox extends EventEmitter {
       this.#buildInitialPanelDefinitions();
       this.#setDebugTargetData();
 
-      this.#addWindowListeners();
       this.#addChromeEventHandlerEvents();
 
       
@@ -2000,12 +1999,14 @@ class Toolbox extends EventEmitter {
   postMessage(msg) {
     
     
-    if (!this.#destroyer) {
-      
-      
-      msg.frameId = this.frameId;
-      this.topWindow.postMessage(msg, "*");
+    if (this.#destroyer) {
+      return;
     }
+
+    
+    
+    msg.frameId = this.frameId;
+    this.topWindow.postMessage(msg, "*");
   }
 
   
@@ -2077,6 +2078,10 @@ class Toolbox extends EventEmitter {
         this.#URL
       );
     });
+
+    
+    
+    this.#addWindowListeners();
 
     
     
