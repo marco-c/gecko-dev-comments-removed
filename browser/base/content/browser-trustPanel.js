@@ -120,7 +120,10 @@ const SMARTBLOCK_EMBED_INFO = [
     displayName: "TikTok",
   },
   {
-    matchPatterns: ["https://platform.twitter.com/*"],
+    matchPatterns: [
+      "https://platform.twitter.com/*",
+      "https://platform.x.com/*",
+    ],
     shimId: "TwitterEmbed",
     displayName: "X",
   },
@@ -354,6 +357,11 @@ class TrustPanel {
   }
 
   async showPopup(opts = {}) {
+    
+    
+    let anchor = this.#anchor();
+    anchor?.setAttribute("open", "true");
+
     this.#initializePopup();
 
     
@@ -377,7 +385,7 @@ class TrustPanel {
 
     this.#openingReason = opts.reason;
 
-    PanelMultiView.openPopup(this.#popup, this.#anchor(), {
+    PanelMultiView.openPopup(this.#popup, anchor, {
       position: "bottomleft topleft",
       triggerEvent: opts.event,
     });
@@ -602,7 +610,9 @@ class TrustPanel {
       document.getElementById("trust-icon-container"),
       document.getElementById("identity-icon-box"),
     ];
-    return anchors.find(element => element.checkVisibility());
+    return anchors.find(element =>
+      element.checkVisibility(PopupNotifications.CHECK_VISIBILITY_OPTIONS)
+    );
   }
 
   #updateUrlbarIcon() {
@@ -2032,6 +2042,9 @@ class TrustPanel {
 
   onPopupHidden() {
     window.removeEventListener("focus", this, true);
+    for (let id of ["trust-icon-container", "identity-icon-box"]) {
+      document.getElementById(id)?.removeAttribute("open");
+    }
   }
 
   
