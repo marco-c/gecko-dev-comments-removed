@@ -16,6 +16,11 @@ class TestDeletionRequestPing(FOGTestCase):
 
         self.navigate_in_new_tab("about:glean")
 
+        
+        
+        
+        self.restart_browser()
+
         ping1 = self.wait_for_ping(
             self.disable_telemetry,
             FOG_DELETION_REQUEST_PING,
