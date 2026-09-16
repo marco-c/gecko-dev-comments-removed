@@ -431,8 +431,8 @@ add_task(async function test_rowReuse() {
   
   
   await TestUtils.waitForCondition(
-    () => !win.gURLBar.hasAttribute("breakout-extend"),
-    "Wait for breakout-extend to finish"
+    () => !win.gURLBar.matches(":popover-open"),
+    "Wait for the popover to close"
   );
 
   
