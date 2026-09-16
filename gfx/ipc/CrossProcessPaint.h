@@ -35,6 +35,7 @@ class WindowGlobalParent;
 namespace gfx {
 
 class CrossProcessPaint;
+class SourceSurface;
 
 enum class CrossProcessPaintFlags {
   None = 0,
@@ -107,6 +108,12 @@ class CrossProcessPaint final {
   typedef nsRefPtrHashtable<nsUint64HashKey, RecordedDependentSurface>
       ResolvedFragmentMap;
   typedef MozPromise<ResolvedFragmentMap, nsresult, true> ResolvePromise;
+
+  
+
+
+  typedef MozPromise<RefPtr<SourceSurface>, nsresult, true> SnapshotPromise;
+
   
 
 
@@ -125,14 +132,22 @@ class CrossProcessPaint final {
 
 
 
-
-  static bool Start(dom::WindowGlobalParent* aRoot, const dom::DOMRect* aRect,
+  static void Start(dom::WindowGlobalParent* aRoot, const dom::DOMRect* aRect,
                     float aScale, nscolor aBackgroundColor,
                     CrossProcessPaintFlags aFlags, dom::Promise* aPromise);
 
   static RefPtr<ResolvePromise> Start(
+      dom::TabId aRootTabId, uint64_t aRootWindowContextId,
       nsTHashSet<uint64_t>&& aDependencies,
       CrossProcessPaintFlags aFlags = CrossProcessPaintFlags::None);
+
+  
+
+
+  static RefPtr<SnapshotPromise> Start(dom::WindowGlobalParent* aRoot,
+                                       const Maybe<IntRect>& aRect,
+                                       float aScale, nscolor aBackgroundColor,
+                                       CrossProcessPaintFlags aFlags);
 
   void ReceiveFragment(dom::WindowGlobalParent* aWGP,
                        PaintFragment&& aFragment);
@@ -141,7 +156,8 @@ class CrossProcessPaint final {
  private:
   typedef nsTHashMap<nsUint64HashKey, PaintFragment> ReceivedFragmentMap;
 
-  CrossProcessPaint(float aScale, dom::TabId aRoot,
+  CrossProcessPaint(float aScale, dom::TabId aRootTabId,
+                    uint64_t aRootWindowContextId,
                     CrossProcessPaintFlags aFlags);
   ~CrossProcessPaint();
 
@@ -180,7 +196,9 @@ class CrossProcessPaint final {
   }
 
   MozPromiseHolder<ResolvePromise> mPromise;
-  dom::TabId mRoot;
+  
+  const dom::TabId mRootTabId;
+  const uint64_t mRootWindowContextId;
   float mScale;
   uint32_t mPendingFragments;
   ReceivedFragmentMap mReceivedFragments;
