@@ -102,6 +102,14 @@ var EditContextMenu = {
 
 
 
+
+  input: null,
+
+  
+
+
+
+
   get popup() {
     return this._ensurePopup();
   },
@@ -163,8 +171,13 @@ var EditContextMenu = {
 
 
 
-  open(input, event) {
+
+
+
+
+  open(input, event, { anchor } = {}) {
     let popup = this._ensurePopup();
+    this.input = input;
 
     
     
@@ -183,7 +196,11 @@ var EditContextMenu = {
       }
     }
 
-    popup.openPopupAtScreen(event.screenX, event.screenY, true, event);
+    if (anchor) {
+      popup.openPopup(anchor, "after_start", 0, 0, true, false, event);
+    } else {
+      popup.openPopupAtScreen(event.screenX, event.screenY, true, event);
+    }
   },
 
   _ensurePopup() {

@@ -33,8 +33,8 @@ async function setupSmartbar(win) {
     "Wait for Smartbar to be focused"
   );
 
-  const inputBox = smartbar.querySelector("moz-input-box");
-  return { editor, smartbar, inputBox, menupopup: inputBox.menupopup };
+  const menupopup = smartbar.documentGlobal.EditContextMenu.popup;
+  return { editor, smartbar, menupopup };
 }
 
 
@@ -45,9 +45,18 @@ async function setupSmartbar(win) {
 
 
 
-async function openAndCloseContextMenu(menupopup) {
+
+async function openAndCloseContextMenu(smartbar, menupopup) {
   const popupShown = BrowserTestUtils.waitForEvent(menupopup, "popupshown");
-  menupopup.openPopupAtScreen(50, 50, true);
+  getInputField(smartbar).dispatchEvent(
+    new PointerEvent("contextmenu", {
+      bubbles: true,
+      cancelable: true,
+      button: 2,
+      screenX: 50,
+      screenY: 50,
+    })
+  );
   await popupShown;
 
   const popupHidden = BrowserTestUtils.waitForEvent(menupopup, "popuphidden");
@@ -64,10 +73,9 @@ async function openAndCloseContextMenu(menupopup) {
 
 
 
-
-function activateMenuCommand(menupopup, cmd) {
-  const item = menupopup.querySelector(`[cmd="${cmd}"]`);
-  Assert.ok(item, `${cmd} menu item exists`);
+function activateMenuCommand(menupopup, id) {
+  const item = menupopup.querySelector(`#${id}`);
+  Assert.ok(item, `${id} menu item exists`);
   item.doCommand();
 }
 
@@ -104,7 +112,7 @@ add_task(async function test_smartbar_context_menu_keyboard() {
   Assert.equal(
     menupopup.state,
     "open",
-    "Keyboard contextmenu opens the moz-input-box popup"
+    "Keyboard contextmenu opens the text context menu"
   );
 
   const popupHidden = BrowserTestUtils.waitForEvent(menupopup, "popuphidden");
@@ -137,7 +145,7 @@ add_task(async function test_smartbar_context_menu_mouse() {
   Assert.equal(
     menupopup.state,
     "open",
-    "Mouse contextmenu opens the moz-input-box popup"
+    "Mouse contextmenu opens the text context menu"
   );
 
   const popupHidden = BrowserTestUtils.waitForEvent(menupopup, "popuphidden");
@@ -153,16 +161,18 @@ add_task(async function test_smartbar_context_menu_mouse() {
 
 add_task(async function test_smartbar_context_menu_paste() {
   const win = await openAIWindow();
-  const { editor, menupopup } = await setupSmartbar(win);
+  const { editor, smartbar, menupopup } = await setupSmartbar(win);
 
   SpecialPowers.clipboardCopyString(PASTE_TEXT);
 
-  await openAndCloseContextMenu(menupopup);
-  const pasteItem = menupopup.querySelector('[cmd="cmd_paste"]');
+  await openAndCloseContextMenu(smartbar, menupopup);
+  const pasteItem = menupopup.querySelector("#edit-contextmenu-paste");
   Assert.ok(pasteItem, "Paste menu item exists");
   Assert.ok(!pasteItem.disabled, "Paste menu item is enabled");
 
-  activateMenuCommand(menupopup, "cmd_paste");
+  const sb = sinon.createSandbox();
+  const paste = sb.spy(smartbar.inputField, "paste");
+  activateMenuCommand(menupopup, "edit-contextmenu-paste");
 
   await TestUtils.waitForCondition(
     () => editor.value == PASTE_TEXT,
@@ -173,16 +183,20 @@ add_task(async function test_smartbar_context_menu_paste() {
     PASTE_TEXT,
     "Context-menu Paste should insert clipboard text into the Smartbar"
   );
+  
+  
+  Assert.ok(paste.called, "Paste is routed through the editor");
 
+  sb.restore();
   await BrowserTestUtils.closeWindow(win);
 });
 
 add_task(async function test_smartbar_context_menu_paste_and_go_exists() {
   const win = await openAIWindow();
-  const { inputBox, menupopup } = await setupSmartbar(win);
+  const { smartbar, menupopup } = await setupSmartbar(win);
 
-  await openAndCloseContextMenu(menupopup);
-  const pasteAndGo = inputBox.getMenuItem("paste-and-go");
+  await openAndCloseContextMenu(smartbar, menupopup);
+  const pasteAndGo = menupopup.querySelector(`[anonid="paste-and-go"]`);
   Assert.ok(pasteAndGo, "Paste and Go menu item exists");
 
   await BrowserTestUtils.closeWindow(win);
@@ -190,19 +204,19 @@ add_task(async function test_smartbar_context_menu_paste_and_go_exists() {
 
 add_task(async function test_smartbar_context_menu_paste_and_go_disabled() {
   const win = await openAIWindow();
-  const { inputBox, menupopup } = await setupSmartbar(win);
+  const { smartbar, menupopup } = await setupSmartbar(win);
 
   Services.clipboard.emptyClipboard(Ci.nsIClipboard.kGlobalClipboard);
 
-  await openAndCloseContextMenu(menupopup);
-  const pasteAndGo = inputBox.getMenuItem("paste-and-go");
+  await openAndCloseContextMenu(smartbar, menupopup);
+  const pasteAndGo = menupopup.querySelector(`[anonid="paste-and-go"]`);
   Assert.ok(
     pasteAndGo.disabled,
     "Paste and Go is disabled with an empty clipboard"
   );
 
   SpecialPowers.clipboardCopyString(PASTE_URL);
-  await openAndCloseContextMenu(menupopup);
+  await openAndCloseContextMenu(smartbar, menupopup);
   Assert.ok(
     !pasteAndGo.disabled,
     "Paste and Go is enabled once the clipboard has content"
@@ -213,12 +227,12 @@ add_task(async function test_smartbar_context_menu_paste_and_go_disabled() {
 
 add_task(async function test_smartbar_context_menu_paste_and_go_submits() {
   const win = await openAIWindow();
-  const { editor, inputBox, smartbar, menupopup } = await setupSmartbar(win);
+  const { editor, smartbar, menupopup } = await setupSmartbar(win);
 
   SpecialPowers.clipboardCopyString(PASTE_URL);
 
-  await openAndCloseContextMenu(menupopup);
-  const pasteAndGo = inputBox.getMenuItem("paste-and-go");
+  await openAndCloseContextMenu(smartbar, menupopup);
+  const pasteAndGo = menupopup.querySelector(`[anonid="paste-and-go"]`);
 
   const sb = sinon.createSandbox();
   const loadURL = sb.stub(smartbar.parentController, "loadURL").returns({});
