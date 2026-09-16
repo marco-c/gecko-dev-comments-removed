@@ -124,6 +124,7 @@ if (typeof Mozilla == "undefined") {
 
 
 
+
   
 
 
@@ -180,6 +181,7 @@ if (typeof Mozilla == "undefined") {
   };
 
   
+
 
 
 
@@ -324,6 +326,7 @@ if (typeof Mozilla == "undefined") {
 
 
 
+
   
 
 
@@ -397,16 +400,8 @@ if (typeof Mozilla == "undefined") {
 
 
 
-  
-
-
-
-
 
   
-
-
-
 
 
 
@@ -422,65 +417,9 @@ if (typeof Mozilla == "undefined") {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   
 
 
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
 
 
 
@@ -515,6 +454,66 @@ if (typeof Mozilla == "undefined") {
 
 
 
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   
 
 
@@ -536,7 +535,22 @@ if (typeof Mozilla == "undefined") {
 
 
 
+
+
+
+
   
+
+
+
+
+
+
+
+
+
+  
+
 
 
 
@@ -728,6 +742,24 @@ if (typeof Mozilla == "undefined") {
 
   Mozilla.UITour.pinToTaskbar = function () {
     _sendEvent("pinToTaskbar");
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  Mozilla.UITour.setNewtabWallpaper = function (wallpaper) {
+    _sendEvent("setNewtabWallpaper", {
+      wallpaper,
+    });
   };
 
   
