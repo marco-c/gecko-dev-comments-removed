@@ -2188,12 +2188,16 @@ class nsLayoutUtils {
 
 
 
+
+
+
   static mozilla::gfx::IntSize ComputeImageContainerDrawingParameters(
       imgIContainer* aImage, nsIFrame* aForFrame,
       const LayoutDeviceRect& aDestRect, const LayoutDeviceRect& aFillRect,
       const StackingContextHelper& aSc, uint32_t aFlags,
       mozilla::SVGImageContext& aSVGContext,
-      mozilla::Maybe<mozilla::image::ImageIntRegion>& aRegion);
+      mozilla::Maybe<mozilla::image::ImageIntRegion>& aRegion,
+      bool* aRasterizedForDest = nullptr);
 
   
 
