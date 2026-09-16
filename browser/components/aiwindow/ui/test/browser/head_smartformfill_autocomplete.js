@@ -73,6 +73,10 @@ async function setupSmartFormFillAutocompleteTest() {
       [SMART_FORM_FILL_PREF, true],
       ["signon.rememberSignons", true],
       ["signon.showAutoCompleteFooter", true],
+      
+      
+      
+      ["signon.autofillForms", false],
     ],
   });
 
@@ -392,34 +396,57 @@ async function waitForFocusedForm(browser, selector, check, message) {
 
 
 
-function waitForSmartFormFillProvider(
+async function waitForSmartFormFillProvider(
   browser,
   selector,
   { focus: shouldFocus = false } = {}
 ) {
-  return SpecialPowers.spawn(
-    browser,
-    [selector, shouldFocus],
-    async (fieldSelector, focusField) => {
-      const input = content.document.querySelector(fieldSelector);
-      const autocompleteActor =
-        input.documentGlobal.windowGlobalChild.getActor("AutoComplete");
+  await SpecialPowers.spawn(browser, [selector], async fieldSelector => {
+    const input = content.document.querySelector(fieldSelector);
+    const autocompleteActor =
+      input.documentGlobal.windowGlobalChild.getActor("AutoComplete");
 
-      await ContentTaskUtils.waitForCondition(
-        () =>
-          [...autocompleteActor.providersByInput(input)].some(
-            provider => provider.actorName === "SmartFormFill"
-          ),
-        "Waiting for Smart Form Fill to register as an autocomplete provider"
-      );
+    await ContentTaskUtils.waitForCondition(
+      () =>
+        [...autocompleteActor.providersByInput(input)].some(
+          provider => provider.actorName === "SmartFormFill"
+        ),
+      "Waiting for Smart Form Fill to register as an autocomplete provider"
+    );
+  });
 
-      if (focusField) {
+  if (!shouldFocus) {
+    return SpecialPowers.spawn(
+      browser,
+      [],
+      () => content.document.activeElement?.id ?? null
+    );
+  }
+
+  
+  
+  
+  
+  
+  let focusedField = null;
+  await TestUtils.waitForCondition(async () => {
+    await SimpleTest.promiseFocus(browser);
+    focusedField = await SpecialPowers.spawn(
+      browser,
+      [selector],
+      fieldSelector => {
+        const input = content.document.querySelector(fieldSelector);
         input.focus();
+        return content.document.hasFocus() &&
+          content.document.activeElement === input
+          ? input.id
+          : null;
       }
+    );
+    return focusedField !== null;
+  }, "Waiting for the form field to actually hold focus");
 
-      return content.document.activeElement?.id ?? null;
-    }
-  );
+  return focusedField;
 }
 
 
@@ -462,8 +489,6 @@ async function openLoadingAutocomplete(win, selector) {
 
   await SimpleTest.promiseFocus(browser);
 
-  const popupShown = BrowserTestUtils.waitForPopupEvent(popup, "shown");
-
   const focusedField = await waitForSmartFormFillProvider(browser, selector, {
     focus: true,
   });
@@ -475,7 +500,10 @@ async function openLoadingAutocomplete(win, selector) {
   );
 
   await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
-  await popupShown;
+  await TestUtils.waitForCondition(
+    () => popup.state == "open",
+    "Waiting for the autocomplete popup to open"
+  );
 
   let item = popup.querySelector('[originaltype="smartFormFill"]');
   if (!item) {
