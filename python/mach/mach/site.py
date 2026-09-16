@@ -1202,12 +1202,12 @@ class ExternalPythonSite:
                 
                 "-S",
                 "-c",
-                "import sys; from collections import OrderedDict; "
+                "import sys;"
                 
                 
                 
                 
-                "print(list(OrderedDict.fromkeys(sys.path[1:])))",
+                "print(list(dict.fromkeys(sys.path[1:])))",
             ],
             universal_newlines=True,
             env=env,
