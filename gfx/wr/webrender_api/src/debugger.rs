@@ -2,7 +2,7 @@
 
 
 
-use crate::{ColorF, DebugFlags, PictureRect, DeviceRect, LayoutRect, RenderCommandInfo};
+use crate::{DebugFlags, PictureRect, DeviceRect, RenderCommandInfo};
 use crate::image::ImageFormat;
 
 
@@ -76,84 +76,4 @@ pub struct DebuggerTextureContent {
     pub height: u32,
     pub format: ImageFormat,
     pub data: Vec<u8>,
-}
-
-
-
-
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SceneDebugNode {
-    
-    
-    pub prim_index: Option<u32>,
-    
-    pub picture_index: Option<u32>,
-    
-    pub kind: String,
-    
-    pub detail: String,
-    
-    
-    pub color: Option<ColorF>,
-    pub spatial_node_index: u32,
-    
-    
-    pub local_rect: LayoutRect,
-    
-    
-    pub device_rect: Option<DeviceRect>,
-    
-    
-    pub draw_state: String,
-    pub children: Vec<SceneDebugNode>,
-}
-
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SceneDebugTree {
-    
-    
-    
-    pub scene_generation: u64,
-    pub prim_count: u32,
-    pub roots: Vec<SceneDebugNode>,
-}
-
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum SceneDebugHighlightMode {
-    
-    
-    Replace,
-    
-    
-    
-    Overlay,
-}
-
-
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SceneDebugOverride {
-    
-    
-    pub scene_generation: u64,
-    
-    pub highlighted: Option<u32>,
-    pub highlight_mode: SceneDebugHighlightMode,
-    
-    
-    pub disabled: Vec<u32>,
-}
-
-impl Default for SceneDebugOverride {
-    fn default() -> Self {
-        SceneDebugOverride {
-            scene_generation: 0,
-            highlighted: None,
-            highlight_mode: SceneDebugHighlightMode::Replace,
-            disabled: Vec::new(),
-        }
-    }
 }

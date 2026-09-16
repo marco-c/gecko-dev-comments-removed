@@ -521,11 +521,6 @@ impl PrimitiveFrameScratch {
     }
 
     
-    pub fn instance_count(&self) -> usize {
-        self.instance_to_draw.len()
-    }
-
-    
     pub fn draw_index_for_instance(
         &self,
         prim_instance_index: PrimitiveInstanceIndex,
