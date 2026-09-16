@@ -1396,10 +1396,9 @@ nsresult CacheIndex::GetEntryForEviction(EvictionSortedSnapshot& aSnapshot,
       continue;
     }
 
-    if (IsForcedValidEntry(&hash)) {
-      continue;
-    }
-
+    
+    
+    
     
     
     
@@ -1443,19 +1442,6 @@ nsresult CacheIndex::GetEntryForEviction(EvictionSortedSnapshot& aSnapshot,
   aSnapshot[recordPosition] = nullptr;  
 
   return NS_OK;
-}
-
-
-bool CacheIndex::IsForcedValidEntry(const SHA1Sum::Hash* aHash) {
-  RefPtr<CacheFileHandle> handle;
-
-  CacheFileIOManager::gInstance->mHandles.GetHandle(aHash,
-                                                    getter_AddRefs(handle));
-
-  if (!handle) return false;
-
-  nsCString hashKey = handle->Key();
-  return CacheStorageService::Self()->IsForcedValidEntry(hashKey);
 }
 
 

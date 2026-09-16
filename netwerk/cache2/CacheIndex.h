@@ -828,11 +828,6 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   static EvictionSortedSnapshot GetSortedSnapshotForEviction();
 
   
-  
-  
-  static bool IsForcedValidEntry(const SHA1Sum::Hash* aHash);
-
-  
   static nsresult GetCacheSize(uint32_t* _retval);
 
   
