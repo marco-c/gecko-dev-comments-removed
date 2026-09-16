@@ -4998,7 +4998,7 @@ class ProtonScreen extends (external_React_default()).PureComponent {
       className: `main-content ${hideStepsIndicator ? "no-steps" : ""}`,
       style: {
         background: isCenterPosition && !isCenterLargeFullscreen && this.getEffectiveBackground(content) ? this.getEffectiveBackground(content) : null,
-        width: content.width && !["split", "card-stack"].includes(content.position) ? content.width : null,
+        width: content.width && content.position !== "split" ? content.width : null,
         paddingBlock: content.split_content_padding_block ? content.split_content_padding_block : null,
         paddingInline: content.split_content_padding_inline ? content.split_content_padding_inline : null,
         justifyContent: screenStyleJustifyContent
@@ -5128,7 +5128,7 @@ const buttonPropTypes = prop_types_default().exact({
 });
 const screenContentShape = {
   
-  position: prop_types_default().oneOf(["center", "center-large", "split", "callout", "card-stack"]),
+  position: prop_types_default().oneOf(["center", "center-large", "split", "callout"]),
   
   fullscreen: (prop_types_default()).bool,
   
@@ -5931,7 +5931,7 @@ const renderSingleSecondaryCTAButton = ({
 }) => {
   let buttonStyling = button?.has_arrow_icon ? `secondary arrow-icon` : `secondary`;
   const isPrimary = button?.style === "primary";
-  const isTextLink = !["split", "callout", "center-large", "card-stack"].includes(content.position) && content.tiles?.type !== "addons-picker" && !isPrimary;
+  const isTextLink = !["split", "callout", "center-large"].includes(content.position) && content.tiles?.type !== "addons-picker" && !isPrimary;
   const isSplitButton = content.submenu_button?.attached_to === targetElement;
   let className = "secondary-cta";
   if (position) {
@@ -6466,16 +6466,12 @@ function MultistageWithDismiss({
     handleBlock?.();
     handleDismiss?.();
   }
-
-  
-  
-  const isCardStack = config.screens?.[0]?.content?.position === "card-stack";
   return external_React_default().createElement("div", {
     className: "multistage-newtab-wrapper",
     style: config.wrapper_content_style ? MultiStageUtils.getValidStyle(config.wrapper_content_style, ["height"]) : {
       height: "500px"
     }
-  }, isCardStack ? null : external_React_default().createElement("moz-button", {
+  }, external_React_default().createElement("moz-button", {
     type: "icon ghost",
     size: "small",
     iconsrc: "chrome://global/skin/icons/close.svg",
