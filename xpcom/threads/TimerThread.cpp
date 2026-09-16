@@ -320,8 +320,6 @@ void TimerEventAllocator::Free(void* aPtr) {
 
 struct TimerMarker : public BaseMarkerType<TimerMarker> {
   static constexpr const char* Name = "Timer";
-  
-  static constexpr bool StoreName = true;
   using MS = MarkerSchema;
   static constexpr MS::PayloadField PayloadFields[] = {
       {"delay", MS::InputType::TimeDuration, "Delay", MS::Format::Milliseconds},
@@ -396,9 +394,6 @@ struct TimerMarker : public BaseMarkerType<TimerMarker> {
 
 struct AddRemoveTimerMarker : public BaseMarkerType<AddRemoveTimerMarker> {
   static constexpr const char* Name = "AddRemoveTimer";
-  
-  
-  static constexpr bool StoreName = true;
   using MS = MarkerSchema;
   static constexpr MS::PayloadField PayloadFields[] = {
       {"name", MS::InputType::CString, "Name", MS::Format::String},
