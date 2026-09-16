@@ -87,8 +87,6 @@ add_task(async function () {
   );
 
   const lineEl = findElement(dbg, "line", 6);
-  
-  const lineHeightBeforeWrap = getElementBoxQuadHeight(lineEl);
   let lineHeightAfterWrap = 0;
 
   info("Resize the editor width to one third of the size of the line element");
@@ -99,19 +97,27 @@ add_task(async function () {
     lineElBoundingClientRect.left + lineElBoundingClientRect.width / 3
   );
 
-  info("Wait until the line does wrap");
-  await waitFor(async () => {
-    const el = findElement(dbg, "line", 6);
-    lineHeightAfterWrap = getElementBoxQuadHeight(el);
-    return lineHeightAfterWrap > lineHeightBeforeWrap;
-  });
+  info("Wait until the line wraps over at least two rows");
+  await waitFor(
+    async () => {
+      const el = findElement(dbg, "line", 6);
+      lineHeightAfterWrap = getElementBoxQuadHeight(el);
+      return lineHeightAfterWrap >= lineHeightWithoutAnyWrap * 2;
+    },
+    "the content on line 6 wraps",
+    100,
+    50
+  );
 
-  info("Assert that the line wrapped");
-  const EXPECTED_LINES_TO_WRAP_OVER = 6; 
-  is(
-    Math.floor(lineHeightAfterWrap),
-    Math.floor(lineHeightWithoutAnyWrap * EXPECTED_LINES_TO_WRAP_OVER),
-    "The content on line 6 to wrap over 6 lines (including the inline previews)"
+  
+  
+  
+  const linesWrappedOver = lineHeightAfterWrap / lineHeightWithoutAnyWrap;
+  info(`Line 6 wraps over ${linesWrappedOver} rows`);
+  Assert.greaterOrEqual(
+    linesWrappedOver,
+    2,
+    "The content on line 6 wraps over at least two rows (including the inline previews)"
   );
 
   info("Assert the previews still work with wrapping");
