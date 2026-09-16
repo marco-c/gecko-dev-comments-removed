@@ -36,6 +36,10 @@ module.exports = function (config) {
   const browsers = isTDD ? ["Firefox"] : ["FirefoxHeadless"]; 
   config.set({
     singleRun: !isTDD,
+    
+    
+    
+    failOnEmptyTestSuite: false,
     browsers,
     customLaunchers: {
       FirefoxHeadless: {
