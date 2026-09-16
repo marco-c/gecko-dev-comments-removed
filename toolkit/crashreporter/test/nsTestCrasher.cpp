@@ -15,6 +15,15 @@
 #  include <sys/fcntl.h>
 #  include <unistd.h>
 #  include <dlfcn.h>  
+#  include <sys/syscall.h>
+static void InvokeNonExistentSyscall() {
+#  pragma clang diagnostic push
+  
+#  pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  
+  syscall(0x7ffffff0);
+#  pragma clang diagnostic pop
+}
 
 #  define GUARD_CLOSE (1u << 0)
 #  define GUARD_DUP (1u << 1)
@@ -116,6 +125,9 @@ const int16_t CRASH_EXC_GUARD = 25;
 const int16_t CRASH_STACK_OVERFLOW = 26;
 #endif
 const int16_t CRASH_STL_VECTOR_OOB = 27;
+#ifdef XP_MACOSX
+const int16_t CRASH_SIGSYS = 28;
+#endif
 
 #if XP_WIN && HAVE_64BIT_BUILD && defined(_M_X64) && !defined(__MINGW32__)
 
@@ -290,6 +302,10 @@ extern "C" NS_EXPORT void Crash(int16_t how) {
     }
 #endif  
 #ifdef XP_MACOSX
+    case CRASH_SIGSYS: {
+      InvokeNonExistentSyscall();
+      break;  
+    }
     case CRASH_EXC_GUARD: {
       guarded_open_np_t dl_guarded_open_np;
       void* kernellib =

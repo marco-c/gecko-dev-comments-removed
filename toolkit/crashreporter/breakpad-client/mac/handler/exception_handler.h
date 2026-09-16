@@ -37,8 +37,10 @@
 #define CLIENT_MAC_HANDLER_EXCEPTION_HANDLER_H__
 
 #include <mach/mach.h>
+#include <signal.h>
 #include <TargetConditionals.h>
 
+#include <array>
 #include <string>
 
 #include "mac/handler/ucontext_compat.h"
@@ -218,6 +220,9 @@ class ExceptionHandler {
   static void SignalHandler(int sig, siginfo_t* info, void* uc);
 
   
+  static constexpr auto kCaughtSignals = std::to_array({SIGABRT, SIGSYS});
+
+  
   explicit ExceptionHandler(const ExceptionHandler &);
   void operator=(const ExceptionHandler &);
 
@@ -283,8 +288,7 @@ class ExceptionHandler {
   bool use_minidump_write_mutex_;
 
   
-  
-  scoped_ptr<struct sigaction> old_handler_;
+  std::array<scoped_ptr<struct sigaction>, kCaughtSignals.size()> old_handlers_;
 
 #if !TARGET_OS_IPHONE
   
