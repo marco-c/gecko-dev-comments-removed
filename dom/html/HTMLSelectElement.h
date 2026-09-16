@@ -194,6 +194,16 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   uint32_t CountRenderedRows();
 
+  
+
+
+
+
+
+
+  void GetListItems(HTMLOptGroupElement* aGroup,
+                    nsTArray<RefPtr<Element>>& aResult);
+
   int32_t SelectedIndex() const;
   
   
