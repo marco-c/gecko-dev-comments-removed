@@ -6,15 +6,20 @@
 #define mozilla_dom_SpeculationRules_h
 
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/speculationrules_ffi_generated.h"
 #include "nsClassHashtable.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsHashKeys.h"
+#include "nsTArrayForwardDeclare.h"
+#include "nsTHashSet.h"
 
 class nsIScriptElement;
+class nsIURI;
 
 namespace mozilla::dom {
 
 class Document;
+class Element;
 class SpeculationRuleSet;
 
 class SpeculationRules final {
@@ -31,8 +36,21 @@ class SpeculationRules final {
   void ConsiderLoads();
   void InnerConsiderLoads();
 
+  void AddLink(Element* aElement) { mLinks.Insert(aElement); }
+  void RemoveLink(Element* aElement) { mLinks.Remove(aElement); }
+
+  void FindMatchingLinks(nsTArray<const Element*>& aLinks);
+
  private:
   virtual ~SpeculationRules() = default;
+
+  
+  
+  
+  
+  
+  
+  void EnactCandidates(nsIURI* aURL, Eagerness aTriggerLevel);
 
   RefPtr<Document> mDocument;
 
@@ -42,6 +60,19 @@ class SpeculationRules final {
 
   
   bool mConsiderSpeculativeLoadsMicrotaskQueued{false};
+
+  
+  
+  
+  
+  
+  nsTHashSet<Element*> mLinks;
+
+  
+  
+  
+  
+  nsTArray<PrefetchCandidate> mCandidateGroups;
 };
 
 }  

@@ -7,6 +7,7 @@
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/PrefetchCandidates.h"
+#include "mozilla/dom/PrefetchLog.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
 #include "mozilla/dom/SpeculationRuleSet.h"
 #include "mozilla/dom/SpeculationRulesManager.h"
@@ -16,7 +17,9 @@
 #include "nsIFrame.h"
 #include "nsIScriptElement.h"
 #include "nsIURI.h"
+#include "nsNetUtil.h"
 #include "nsTArray.h"
+#include "nsTHashMap.h"
 
 namespace mozilla::dom {
 
@@ -167,14 +170,58 @@ void SpeculationRules::InnerConsiderLoads() {
   
   
   prefetchCandidates->Group();
+  mCandidateGroups = prefetchCandidates->AsArray();
 
   
   
-  SpeculationRulesManager* srm = mDocument->EnsureSpeculationRulesManager();
-  for (const PrefetchCandidate& candidate : prefetchCandidates->AsArray()) {
-    if (candidate.eagerness == Eagerness::Immediate) {
-      srm->StartPrefetch(mDocument, candidate);
+  
+  
+  EnactCandidates(nullptr, Eagerness::Immediate);
+}
+
+void SpeculationRules::EnactCandidates(nsIURI* aURL, Eagerness aTriggerLevel) {
+  LOG_SPECRULES(("EnactCandidates: %zu group(s), eagerness>=%d, url=%s",
+                 mCandidateGroups.Length(), static_cast<int>(aTriggerLevel),
+                 aURL ? aURL->GetSpecOrDefault().get() : "(any)"));
+  if (mCandidateGroups.IsEmpty() || !mDocument || !mDocument->IsFullyActive()) {
+    return;
+  }
+
+  
+  
+  
+  nsTHashMap<nsCString, const PrefetchCandidate*> leastEager;
+  for (const PrefetchCandidate& candidate : mCandidateGroups) {
+    if (candidate.eagerness < aTriggerLevel) {
+      continue;
     }
+
+    if (aURL) {
+      
+      
+      
+      nsCOMPtr<nsIURI> uri;
+      bool equals = false;
+      if (NS_FAILED(NS_NewURI(getter_AddRefs(uri), candidate.url)) ||
+          NS_FAILED(aURL->Equals(uri, &equals)) || !equals) {
+        continue;
+      }
+    }
+
+    const PrefetchCandidate*& slot =
+        leastEager.LookupOrInsert(candidate.url, nullptr);
+    if (!slot || candidate.eagerness < slot->eagerness) {
+      slot = &candidate;
+    }
+  }
+
+  if (leastEager.IsEmpty()) {
+    return;
+  }
+
+  SpeculationRulesManager* srm = mDocument->EnsureSpeculationRulesManager();
+  for (const PrefetchCandidate* candidate : leastEager.Values()) {
+    srm->StartPrefetch(mDocument, *candidate);
   }
 }
 

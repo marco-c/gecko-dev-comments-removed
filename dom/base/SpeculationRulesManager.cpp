@@ -36,6 +36,18 @@ void SpeculationRulesManager::StartPrefetch(Document* aDocument,
     return;
   }
 
+  
+  
+  
+  for (const RefPtr<PrefetchRecordChild>& record : mPrefetchRecords) {
+    bool equals = false;
+    if (record->URL() && NS_SUCCEEDED(record->URL()->Equals(uri, &equals)) &&
+        equals) {
+      LOG_SPECRULES(("StartPrefetch: already prefetching %s", aCand.url.get()));
+      return;
+    }
+  }
+
   nsCOMPtr<nsIReferrerInfo> referrerInfo =
       new ReferrerInfo(aDocument->GetDocumentURIAsReferrer(),
                        static_cast<ReferrerPolicy>(aCand.referrer_policy));
