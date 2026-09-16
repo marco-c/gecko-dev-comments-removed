@@ -2,13 +2,11 @@
 
 
 
-#ifndef SIPCCSDPMEDIASECTION_H_
-#define SIPCCSDPMEDIASECTION_H_
-
-#include <map>
+#ifndef DOM_MEDIA_WEBRTC_SDP_SIPCCSDPMEDIASECTION_H_
+#define DOM_MEDIA_WEBRTC_SDP_SIPCCSDPMEDIASECTION_H_
 
 #include "mozilla/UniquePtr.h"
-#include "sdp/SdpMediaSection.h"
+#include "sdp/SdpMediaSectionImpl.h"
 #include "sdp/SipccSdpAttributeList.h"
 
 extern "C" {
@@ -22,76 +20,43 @@ class SdpParser;
 
 using InternalResults = SdpParser::InternalResults;
 
-class SipccSdpBandwidths final : public std::map<std::string, uint32_t> {
- public:
-  bool Load(sdp_t* sdp, uint16_t level, InternalResults& results);
-  void Serialize(std::ostream& os) const;
-};
+bool LoadBandwidths(sdp_t* sdp, const uint16_t level, InternalResults& results,
+                    SdpBandwidths& bandwidths);
 
-class SipccSdpMediaSection final : public SdpMediaSection {
+class SipccSdpMediaSection final : public SdpMediaSectionImpl {
   friend class SipccSdp;
 
  public:
   ~SipccSdpMediaSection() = default;
 
-  virtual MediaType GetMediaType() const override { return mMediaType; }
-
-  virtual unsigned int GetPort() const override;
-  virtual void SetPort(unsigned int port) override;
-  virtual unsigned int GetPortCount() const override;
-  virtual Protocol GetProtocol() const override;
-  virtual const SdpConnection& GetConnection() const override;
-  virtual SdpConnection& GetConnection() override;
-  virtual uint32_t GetBandwidth(const std::string& type) const override;
-  virtual const std::vector<std::string>& GetFormats() const override;
-
-  virtual const SdpAttributeList& GetAttributeList() const override;
-  virtual SdpAttributeList& GetAttributeList() override;
-  virtual SdpDirectionAttribute GetDirectionAttribute() const override;
-
-  virtual void AddCodec(const std::string& pt, const std::string& name,
-                        uint32_t clockrate, uint16_t channels) override;
-  virtual void ClearCodecs() override;
-
-  virtual void AddDataChannel(const std::string& name, uint16_t port,
-                              uint16_t streams, uint32_t message_size) override;
-
-  virtual void Serialize(std::ostream&) const override;
-
  private:
-  SipccSdpMediaSection(size_t level, const SipccSdpAttributeList* sessionLevel)
-      : SdpMediaSection(level),
-        mMediaType(static_cast<MediaType>(0)),
-        mPort(0),
-        mPortCount(0),
-        mProtocol(static_cast<Protocol>(0)),
-        mAttributeList(sessionLevel) {}
+  SipccSdpMediaSection(const size_t level,
+                       const SipccSdpAttributeList* sessionLevel)
+      : SdpMediaSectionImpl(level,
+                            UniquePtr<SdpAttributeListImpl>(
+                                new SipccSdpAttributeList(sessionLevel))) {}
 
   SipccSdpMediaSection(const SipccSdpMediaSection& aOrig,
                        const SipccSdpAttributeList* sessionLevel);
 
-  bool Load(sdp_t* sdp, uint16_t level, InternalResults& results);
+  
+  SipccSdpAttributeList& SipccAttributeList() {
+    return *static_cast<SipccSdpAttributeList*>(mAttributeList.get());
+  }
+  const SipccSdpAttributeList& SipccAttributeList() const {
+    return *static_cast<const SipccSdpAttributeList*>(mAttributeList.get());
+  }
+
+  bool Load(sdp_t* sdp, const uint16_t level, InternalResults& results);
   bool LoadConnection(sdp_t* sdp, uint16_t level, InternalResults& results);
-  bool LoadProtocol(sdp_t* sdp, uint16_t level, InternalResults& results);
-  bool LoadFormats(sdp_t* sdp, uint16_t level, InternalResults& results);
-  bool ValidateSimulcast(sdp_t* sdp, uint16_t level,
+  bool LoadProtocol(sdp_t* sdp, const uint16_t level, InternalResults& results);
+  bool LoadFormats(sdp_t* sdp, const uint16_t level, InternalResults& results);
+  bool ValidateSimulcast(sdp_t* sdp, const uint16_t level,
                          InternalResults& results) const;
   bool ValidateSimulcastVersions(
-      sdp_t* sdp, uint16_t level,
-      const SdpSimulcastAttribute::Versions& versions, sdp::Direction direction,
-      InternalResults& results) const;
-
-  
-  MediaType mMediaType;
-  uint16_t mPort;
-  uint16_t mPortCount;
-  Protocol mProtocol;
-  std::vector<std::string> mFormats;
-
-  UniquePtr<SdpConnection> mConnection;
-  SipccSdpBandwidths mBandwidths;
-
-  SipccSdpAttributeList mAttributeList;
+      sdp_t* sdp, const uint16_t level,
+      const SdpSimulcastAttribute::Versions& versions,
+      const sdp::Direction direction, InternalResults& results) const;
 };
 }  
 

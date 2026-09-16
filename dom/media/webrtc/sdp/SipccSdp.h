@@ -62,14 +62,14 @@ class SipccSdp final : public Sdp {
  private:
   using InternalResults = SdpParser::InternalResults;
 
-  SipccSdp() : mOrigin("", 0, 0, sdp::kIPv4, ""), mAttributeList(nullptr) {}
+  SipccSdp() = default;
 
   bool Load(sdp_t* sdp, InternalResults& results);
   bool LoadOrigin(sdp_t* sdp, InternalResults& results);
 
-  SdpOrigin mOrigin;
-  SipccSdpBandwidths mBandwidths;
-  SipccSdpAttributeList mAttributeList;
+  SdpOrigin mOrigin{"", 0, 0, sdp::kIPv4, ""};
+  SdpBandwidths mBandwidths;
+  SipccSdpAttributeList mAttributeList{nullptr};
   std::vector<UniquePtr<SipccSdpMediaSection>> mMediaSections;
 };
 
