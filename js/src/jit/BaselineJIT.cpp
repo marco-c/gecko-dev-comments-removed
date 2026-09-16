@@ -473,10 +473,6 @@ MethodStatus jit::BaselineCompile(JSContext* cx, JSScript* script,
 
 static MethodStatus CanEnterBaselineJIT(JSContext* cx, HandleScript script,
                                         AbstractFramePtr osrSourceFrame) {
-  if (!CanBaselineCompileScript(cx, script)) {
-    return Method_CantCompile;
-  }
-
   
   
   
@@ -504,6 +500,10 @@ static MethodStatus CanEnterBaselineJIT(JSContext* cx, HandleScript script,
 
   if (script->hasBaselineScript()) {
     return Method_Compiled;
+  }
+
+  if (!CanBaselineCompileScript(cx, script)) {
+    return Method_CantCompile;
   }
 
   if (script->isBaselineCompilingOffThread()) {
@@ -1374,6 +1374,15 @@ uint8_t* BaselineInterpreter::retAddrForIC(JSOp op) const {
   for (const ICReturnOffset& entry : icReturnOffsets_) {
     if (entry.op == op) {
       return codeAtOffset(entry.offset);
+    }
+  }
+  MOZ_CRASH("Unexpected op");
+}
+
+uint8_t* BaselineInterpreter::bailoutStubAddrForIC(JSOp op) const {
+  for (const ICReturnOffset& entry : icReturnOffsets_) {
+    if (entry.op == op) {
+      return codeAtOffset(entry.bailoutStubOffset);
     }
   }
   MOZ_CRASH("Unexpected op");
