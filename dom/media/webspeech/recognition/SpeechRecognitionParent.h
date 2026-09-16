@@ -7,26 +7,40 @@
 #ifndef DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHRECOGNITIONPARENT_H_
 #define DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHRECOGNITIONPARENT_H_
 
+#include <atomic>
 #include <functional>
 
 #include "WavDumper.h"
+#include "mozilla/FileUtils.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/ThreadSafety.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ipc/IdType.h"
+#include "mozilla/hwinference/PHWInferenceChild.h"
 #include "mozilla/hwinference/PSpeechRecognitionParent.h"
 #include "nsCOMPtr.h"
 #include "nsISupportsImpl.h"
+#include "nsIThread.h"
 #include "nsStringFwd.h"
+
+namespace mozilla::llama {
+struct LlamaLibWrapper;
+}
 
 namespace mozilla::hwinference {
 class HWInferenceChild;
 }
 
+
+struct parakeet_ctx;
+struct parakeet_stream;
+
 namespace mozilla::hwinference {
 
 class SpeechRecognitionParent final : public PSpeechRecognitionParent {
  public:
-  NS_INLINE_DECL_REFCOUNTING(SpeechRecognitionParent, override)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SpeechRecognitionParent, override)
 
   
   
@@ -37,6 +51,13 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
                                       IsModelAvailableResolver&& aResolver);
   mozilla::ipc::IPCResult RecvInstallModels(
       const nsTArray<nsCString>& aLanguages, InstallModelsResolver&& aResolver);
+  mozilla::ipc::IPCResult RecvInit(const nsCString& aEngineId,
+                                   const nsCString& aLanguage,
+                                   const nsTArray<nsString>& aPhrases,
+                                   InitResolver&& aResolver);
+  mozilla::ipc::IPCResult RecvProcessAudioData(nsTArray<float>&& aAudioData);
+  mozilla::ipc::IPCResult RecvStop();
+
   void ActorDestroy(ActorDestroyReason aReason) override;
 
   struct ModelIdentifier {
@@ -49,8 +70,12 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
   ModelIdentifier LanguagesToModelIdentifier(
       const nsTArray<nsCString>& aLanguages);
 
+  void ResolveOrRejectInitOnIPCThread(InitResolver&& aResolver, bool aSuccess)
+      MOZ_EXCLUDES(mLock);
+
  private:
   ~SpeechRecognitionParent();
+  void LoadPreferences();
 
   const dom::ContentParentId mContentId;
 
@@ -59,12 +84,81 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
   
   
   
+  
+  using BoolPromise = hwinference::PHWInferenceChild::IsModelAvailablePromise;
   mozilla::ipc::IPCResult RunHWInferenceBoolQuery(
       const char* aFuncName,
-      std::function<RefPtr<MozPromise<bool, ipc::ResponseRejectReason, true>>(
-          hwinference::HWInferenceChild*)>
+      std::function<RefPtr<BoolPromise>(hwinference::HWInferenceChild*)>
           aSendFunc,
-      std::function<void(const bool&)> aResolver);
+      std::function<void(const bool&)> aResolver,
+      MozPromiseRequestHolder<BoolPromise>& aRequestHolder);
+
+  void InitializeParakeetContext(InitResolver&& aResolver);
+  void RetrieveModel(InitResolver&& aResolver);
+  
+  
+  void FetchModelFile(const nsCString& aModelId, InitResolver&& aResolver);
+  
+  void ProcessAudioStreaming();
+  void SignalError(const nsCString& aErrorMessage);
+
+  
+  static StaticMutex sSessionMutex;
+  static StaticRefPtr<SpeechRecognitionParent> sActiveSession
+      MOZ_GUARDED_BY(sSessionMutex);
+
+  Mutex mLock;
+  
+  
+  nsCString mLanguage MOZ_GUARDED_BY(mLock);
+  
+  
+  nsTArray<nsString> mPhrases MOZ_GUARDED_BY(mLock);
+  
+  
+  mozilla::UniquePtr<FILE, mozilla::FCloseDeleter> mModelFile
+      MOZ_GUARDED_BY(mLock);
+  
+  
+  parakeet_ctx* mCapiCtx = nullptr;
+  parakeet_stream* mCapiStream = nullptr;
+
+  
+  
+  nsCOMPtr<nsIThread> mRecognitionThread;
+
+  
+  
+  
+  WavDumper mRecognitionAudioDumper;
+
+  
+  
+  
+  std::atomic<bool> mShouldContinueProcessing;
+
+  
+  
+  
+  
+  
+  std::atomic<bool> mActorDestroyed{false};
+
+  
+  
+  
+  MozPromiseRequestHolder<
+      hwinference::PHWInferenceChild::IsModelAvailablePromise>
+      mIsModelAvailableRequest;
+  
+  
+  MozPromiseRequestHolder<
+      hwinference::PHWInferenceChild::IsModelInstalledPromise>
+      mRetrieveModelIsInstalledRequest;
+  MozPromiseRequestHolder<hwinference::PHWInferenceChild::InstallModelPromise>
+      mInstallModelRequest;
+  MozPromiseRequestHolder<hwinference::PHWInferenceChild::GetModelFilePromise>
+      mGetModelFileRequest;
 };
 
 }  
