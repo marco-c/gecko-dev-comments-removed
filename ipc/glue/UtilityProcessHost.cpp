@@ -12,7 +12,9 @@
 
 #include "chrome/common/process_watcher.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_general.h"
+#include "nsXULAppAPI.h"
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
 #  include "mozilla/Sandbox.h"
@@ -80,6 +82,11 @@ UtilityProcessHost::~UtilityProcessHost() {
 #else
   LOGD("[%p] UtilityProcessHost::~UtilityProcessHost", this);
 #endif
+
+  
+  
+  MOZ_ASSERT(!mForceKillTimer);
+  MOZ_ASSERT(mShutdownPromise.IsEmpty());
 }
 
 bool UtilityProcessHost::Launch(geckoargs::ChildProcessArgs aExtraOpts) {
@@ -235,10 +242,13 @@ void UtilityProcessHost::InitAfterConnect(bool aSucceeded) {
   
 }
 
-void UtilityProcessHost::Shutdown() {
+RefPtr<UtilityProcessHost::ShutdownPromiseType> UtilityProcessHost::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!mShutdownRequested);
   LOGD("[%p] UtilityProcessHost::Shutdown", this);
+
+  RefPtr<ShutdownPromiseType> shutdownPromise =
+      mShutdownPromise.Ensure(__func__);
 
   RejectPromise(LaunchError("aborted by UtilityProcessHost::Shutdown"));
 
@@ -252,25 +262,52 @@ void UtilityProcessHost::Shutdown() {
 
     
     if (mUtilityProcessParent->CanSend()) {
-      mUtilityProcessParent->Close();
+      (void)mUtilityProcessParent->SendShutdown();
+      
+      
+      StartForceKillTimer();
     }
 
-#ifndef NS_FREE_PERMANENT_DATA
-    
-    
-    KillHard("NormalShutdown");
-#endif
-
     
     
     
     
     
     
-    return;
+    return shutdownPromise;
   }
 
   DestroyProcess();
+  return shutdownPromise;
+}
+
+void UtilityProcessHost::StartForceKillTimer() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mForceKillTimer) {
+    return;
+  }
+
+  uint32_t timeoutSecs =
+      StaticPrefs::dom_ipc_utilityProcess_shutdownTimeoutSecs();
+  if (timeoutSecs == 0) {
+    return;
+  }
+
+  NS_NewTimerWithCallback(
+      getter_AddRefs(mForceKillTimer),
+      [this, liveToken = mLiveToken](nsITimer*) {
+        if (!*liveToken) {
+          
+          return;
+        }
+        LOGD("[%p] UtilityProcessHost force kill timer fired", this);
+        NS_WARNING(
+            "Utility process did not acknowledge shutdown in time, killing.");
+        KillHard("ShutdownTimeout");
+      },
+      timeoutSecs * 1000, nsITimer::TYPE_ONE_SHOT,
+      "ipc::UtilityProcessHost::StartForceKillTimer"_ns);
 }
 
 void UtilityProcessHost::OnChannelClosed(
@@ -296,14 +333,39 @@ void UtilityProcessHost::OnChannelClosed(
 
 void UtilityProcessHost::KillHard(const char* aReason) {
   MOZ_ASSERT(NS_IsMainThread());
-  LOGD("[%p] UtilityProcessHost::KillHard", this);
+  LOGD("[%p] UtilityProcessHost::KillHard %s", this, aReason);
 
-  ProcessHandle handle = GetChildProcessHandle();
-  if (!base::KillProcess(handle, base::PROCESS_END_KILLED_BY_USER)) {
+  if (mForceKillTimer) {
+    mForceKillTimer->Cancel();
+    mForceKillTimer = nullptr;
+  }
+
+  
+  
+  ProcessHandle handle = 0;
+  base::ProcessId pid = GetChildProcessId();
+  bool haveHandle = pid && base::OpenProcessHandle(pid, &handle);
+  if (!haveHandle) {
+    NS_WARNING("Failed to open subprocess handle when attempting kill!");
+  } else if (!base::KillProcess(handle, base::PROCESS_END_KILLED_BY_USER)) {
     NS_WARNING("failed to kill subprocess!");
   }
 
   SetAlreadyDead();
+
+  
+  
+  if (mUtilityProcessParent && mUtilityProcessParent->CanSend()) {
+    mUtilityProcessParent->GetIPCChannel()->InduceConnectionError();
+  }
+
+  if (haveHandle) {
+    
+    XRE_GetAsyncIOEventTarget()->Dispatch(
+        NewRunnableFunction("EnsureProcessTerminatedRunnable",
+                            &ProcessWatcher::EnsureProcessTerminated, handle,
+                             true));
+  }
 }
 
 void UtilityProcessHost::DestroyProcess() {
@@ -311,6 +373,14 @@ void UtilityProcessHost::DestroyProcess() {
   LOGD("[%p] UtilityProcessHost::DestroyProcess", this);
 
   RejectPromise(LaunchError("UtilityProcessHost::DestroyProcess"));
+
+  if (mForceKillTimer) {
+    mForceKillTimer->Cancel();
+    mForceKillTimer = nullptr;
+  }
+
+  
+  mShutdownPromise.ResolveIfExists(Ok{}, __func__);
 
   
   *mLiveToken = false;

@@ -11,6 +11,7 @@
 #endif  
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/ProcInfo.h"
+#include "nsIAsyncShutdown.h"
 #include "nsIObserver.h"
 #include "nsTArray.h"
 
@@ -207,8 +208,19 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
   bool IsProcessDestroyed(SandboxingKind aSandbox);
 
   
+  
+  void OnXPCOMWillShutdown();
+
+  
+  
   void OnXPCOMShutdown();
   void OnPreferenceChange(const char16_t* aData);
+
+  
+  void OnProcessShutdownComplete();
+
+  void RegisterShutdownBlocker();
+  void RemoveShutdownBlocker();
 
   UtilityProcessManager();
 
@@ -232,6 +244,33 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
   friend class Observer;
 
   RefPtr<Observer> mObserver;
+
+  
+  
+  
+  class ShutdownBlocker final : public nsIAsyncShutdownBlocker {
+   public:
+    NS_DECL_ISUPPORTS
+    NS_DECL_NSIASYNCSHUTDOWNBLOCKER
+
+    explicit ShutdownBlocker(UtilityProcessManager* aManager)
+        : mManager(aManager) {}
+
+   protected:
+    ~ShutdownBlocker() = default;
+
+    RefPtr<UtilityProcessManager> mManager;
+  };
+
+  RefPtr<ShutdownBlocker> mShutdownBlocker;
+  nsCOMPtr<nsIAsyncShutdownClient> mShutdownBlockerClient;
+
+  
+  uint32_t mPendingShutdowns = 0;
+
+  
+  
+  bool mBlockingShutdownPhase = false;
 
   class ProcessFields final {
    public:

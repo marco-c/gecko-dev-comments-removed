@@ -379,6 +379,43 @@ UtilityProcessChild::RecvUnblockUntrustedModulesThread() {
 }
 #endif  
 
+mozilla::ipc::IPCResult UtilityProcessChild::RecvShutdown() {
+  
+  
+  glean::FlushFOGData(
+      [](ByteBuf&& aBuf) { glean::SendFOGData(std::move(aBuf)); });
+
+  if (mProfilerController) {
+    ProfileAndAdditionalInformation shutdownProfileAndAdditionalInformation =
+        mProfilerController->GrabShutdownProfileAndShutdown();
+    mProfilerController = nullptr;
+
+    if (const size_t len = shutdownProfileAndAdditionalInformation.SizeOf();
+        len >= size_t(IPC::Channel::kMaximumMessageSize)) {
+      shutdownProfileAndAdditionalInformation.mProfile = nsPrintfCString(
+          "*Profile from pid %u bigger (%zu) than IPC max (%zu)",
+          unsigned(profiler_current_process_id().ToNumber()), len,
+          size_t(IPC::Channel::kMaximumMessageSize));
+      shutdownProfileAndAdditionalInformation.mAdditionalInformation.reset();
+    }
+
+    
+    
+    (void)SendShutdownProfile(
+        std::move(shutdownProfileAndAdditionalInformation));
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  (void)SendFinishShutdown();
+  return IPC_OK();
+}
+
 void UtilityProcessChild::ActorDestroy(ActorDestroyReason aWhy) {
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
   DestroySandboxProfiler();
@@ -389,14 +426,12 @@ void UtilityProcessChild::ActorDestroy(ActorDestroyReason aWhy) {
     ipc::ProcessChild::QuickExit();
   }
 
-  
-  glean::FlushFOGData(
-      [](ByteBuf&& aBuf) { glean::SendFOGData(std::move(aBuf)); });
-
 #ifndef NS_FREE_PERMANENT_DATA
   ProcessChild::QuickExit();
 #else
 
+  
+  
   if (mProfilerController) {
     mProfilerController->Shutdown();
     mProfilerController = nullptr;

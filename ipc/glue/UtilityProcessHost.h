@@ -5,7 +5,9 @@
 #ifndef _include_ipc_glue_UtilityProcessHost_h_
 #define _include_ipc_glue_UtilityProcessHost_h_
 
+#include "mozilla/MozPromise.h"
 #include "mozilla/UniquePtr.h"
+#include "nsITimer.h"
 #include "mozilla/ipc/UtilityProcessParent.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
@@ -63,11 +65,17 @@ class UtilityProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
 
   
   
+  using ShutdownPromiseType = MozPromise<Ok, nsresult, false>;
+
   
   
   
   
-  void Shutdown();
+  
+  
+  
+  
+  RefPtr<ShutdownPromiseType> Shutdown();
 
   
   
@@ -103,6 +111,10 @@ class UtilityProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   void KillHard(const char* aReason);
 
+  
+  
+  void StartForceKillTimer();
+
   void DestroyProcess();
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
@@ -126,6 +138,10 @@ class UtilityProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   UniquePtr<ipc::SharedPreferenceSerializer> mPrefSerializer{};
 
   bool mShutdownRequested = false;
+
+  nsCOMPtr<nsITimer> mForceKillTimer;
+
+  MozPromiseHolder<ShutdownPromiseType> mShutdownPromise;
 
   void ResolvePromise();
   void RejectPromise(LaunchError);
