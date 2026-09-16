@@ -930,13 +930,8 @@ void APZCTreeManager::SampleForWebRender(const Maybe<VsyncId>& aVsyncId,
       if (RefPtr<UiCompositorControllerParent> uiController =
               UiCompositorControllerParent::GetFromRootLayerTreeId(
                   mRootLayersId)) {
-        nsTArray<CompositorScrollUpdate> updates;
-
-        for (const auto& update : apzc->GetCompositorScrollUpdates()) {
-          updates.AppendElement(update);
-        }
-
-        uiController->NotifyCompositorScrollUpdates(std::move(updates));
+        uiController->NotifyCompositorScrollUpdates(
+            apzc->GetCompositorScrollUpdates());
       }
     }
   }
@@ -1156,24 +1151,17 @@ void APZCTreeManager::StartScrollbarDrag(const ScrollableLayerGuid& aGuid,
   mInputQueue->ConfirmDragBlock(inputBlockId, apzc, aDragMetrics);
 }
 
-bool APZCTreeManager::StartAutoscroll(const ScrollableLayerGuid& aGuid,
+void APZCTreeManager::StartAutoscroll(const ScrollableLayerGuid& aGuid,
                                       const ScreenPoint& aAnchorLocation) {
   APZThreadUtils::AssertOnControllerThread();
 
   RefPtr<AsyncPanZoomController> apzc = GetTargetAPZC(aGuid);
   if (!apzc) {
-    if (XRE_IsGPUProcess()) {
-      
-      
-      
-      
-      NotifyAutoscrollRejected(aGuid);
-    }
-    return false;
+    NotifyAutoscrollRejected(aGuid);
+    return;
   }
 
   apzc->StartAutoscroll(aAnchorLocation);
-  return true;
 }
 
 void APZCTreeManager::StopAutoscroll(const ScrollableLayerGuid& aGuid) {
@@ -1208,8 +1196,9 @@ void APZCTreeManager::NotifyAutoscrollRejected(
     const ScrollableLayerGuid& aGuid) const {
   RefPtr<GeckoContentController> controller =
       GetContentController(aGuid.mLayersId);
-  MOZ_ASSERT(controller);
-  controller->NotifyAsyncAutoscrollRejected(aGuid.mScrollId);
+  if (controller) {
+    controller->NotifyAsyncAutoscrollRejected(aGuid.mScrollId);
+  }
 }
 
 void SetHitTestData(HitTestingTreeNode* aNode,

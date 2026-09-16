@@ -1812,7 +1812,7 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
-  bool StartAsyncAutoscroll(const ScreenPoint& aAnchorLocation,
+  void StartAsyncAutoscroll(const ScreenPoint& aAnchorLocation,
                             const ScrollableLayerGuid& aGuid);
 
   
