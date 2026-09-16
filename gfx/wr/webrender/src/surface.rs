@@ -125,6 +125,27 @@ fn resolve_dest_to_src_raster(
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+pub fn visibility_node(
+    raster_spatial_node_index: SpatialNodeIndex,
+    spatial_tree: &SpatialTree,
+) -> SpatialNodeIndex {
+    debug_assert_ne!(raster_spatial_node_index, SpatialNodeIndex::INVALID);
+
+    spatial_tree.root_reference_frame_index()
+}
+
+
 const MAX_BLUR_RADIUS: f32 = 100.;
 
 
@@ -259,8 +280,8 @@ impl SurfaceInfo {
             pic_bounds,
         );
 
-        
-        let visibility_spatial_node_index = spatial_tree.root_reference_frame_index();
+        let visibility_spatial_node_index =
+            visibility_node(raster_spatial_node_index, spatial_tree);
 
         SurfaceInfo {
             unclipped_local_rect: PictureRect::zero(),
@@ -325,8 +346,7 @@ impl SurfaceInfo {
             if *should_inflate {
                 
                 let map_surface_to_vis = SpaceMapper::new_with_target(
-                    
-                    frame_context.root_spatial_node_index,
+                    self.visibility_spatial_node_index,
                     self.surface_spatial_node_index,
                     parent_culling_rect,
                     frame_context.spatial_tree,
