@@ -801,7 +801,7 @@ void RTCRtpReceiver::UpdateTransport() {
   }
 }
 
-bool RTCRtpReceiver::CanReceiveEarlyMedia() const {
+bool RTCRtpReceiver::CanReceiveEarlyMedia() {
   MOZ_ASSERT(NS_IsMainThread());
   if (!GetJsepTransceiver().mRecvTrack.GetReceptive()) {
     
@@ -811,7 +811,11 @@ bool RTCRtpReceiver::CanReceiveEarlyMedia() const {
     
     return false;
   }
-  if (GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails()) {
+  if (mPc->GetSignalingState() != RTCSignalingState::Have_local_offer) {
+    
+    return false;
+  }
+  if (!HasNegotiatedBundleOwner()) {
     
     
     
@@ -820,27 +824,19 @@ bool RTCRtpReceiver::CanReceiveEarlyMedia() const {
   
   
   
-  return GetJsepTransceiver().HasBundleLevel() && HasNegotiatedBundleOwner();
+  
+  return mPc->LocalOfferedRecvParamsChanged(GetMid());
 }
 
-bool RTCRtpReceiver::HasNegotiatedBundleOwner() const {
+bool RTCRtpReceiver::HasNegotiatedBundleOwner() {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(GetJsepTransceiver().HasBundleLevel());
   
   
   
   
   
-  nsTArray<RefPtr<RTCRtpTransceiver>> transceivers;
-  mPc->GetTransceivers(transceivers);
-  for (const auto& transceiver : transceivers) {
-    const JsepTransceiver& jsepTransceiver = transceiver->GetJsepTransceiver();
-    if (jsepTransceiver.HasLevel() &&
-        jsepTransceiver.GetLevel() == GetJsepTransceiver().BundleLevel()) {
-      return jsepTransceiver.IsNegotiated();
-    }
-  }
-  return false;
+  
+  return GetJsepTransceiver().CanUseExistingTransport();
 }
 
 void RTCRtpReceiver::UpdateConduit() {
@@ -889,8 +885,19 @@ void RTCRtpReceiver::UpdateVideoConduit() {
     }
   }
 
-  if (GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails() &&
-      GetJsepTransceiver().mRecvTrack.GetActive()) {
+  if (CanReceiveEarlyMedia()) {
+    
+    
+    std::vector<VideoCodecConfig> configs;
+    RTCRtpTransceiver::EarlyRecvCodecsToVideoCodecConfigs(
+        GetJsepTransceiver().mRecvTrack, &configs);
+    if (!configs.empty()) {
+      mVideoCodecs = configs;
+      mVideoRtpRtcpConfig =
+          Some(RtpRtcpConfig(webrtc::RtcpMode::kCompound, true));
+    }
+  } else if (GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails() &&
+             GetJsepTransceiver().mRecvTrack.GetActive()) {
     const auto& details(
         *GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails());
 
@@ -920,17 +927,6 @@ void RTCRtpReceiver::UpdateVideoConduit() {
 
     mVideoCodecs = configs;
     mVideoRtpRtcpConfig = Some(details.GetRtpRtcpConfig());
-  } else if (CanReceiveEarlyMedia()) {
-    
-    
-    std::vector<VideoCodecConfig> configs;
-    RTCRtpTransceiver::EarlyRecvCodecsToVideoCodecConfigs(
-        GetJsepTransceiver().mRecvTrack, &configs);
-    if (!configs.empty()) {
-      mVideoCodecs = configs;
-      mVideoRtpRtcpConfig =
-          Some(RtpRtcpConfig(webrtc::RtcpMode::kCompound, true));
-    }
   }
 }
 
@@ -959,8 +955,17 @@ void RTCRtpReceiver::UpdateAudioConduit() {
     }
   }
 
-  if (GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails() &&
-      GetJsepTransceiver().mRecvTrack.GetActive()) {
+  if (CanReceiveEarlyMedia()) {
+    
+    
+    std::vector<AudioCodecConfig> configs;
+    RTCRtpTransceiver::EarlyRecvCodecsToAudioCodecConfigs(
+        GetJsepTransceiver().mRecvTrack, &configs);
+    if (!configs.empty()) {
+      mAudioCodecs = configs;
+    }
+  } else if (GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails() &&
+             GetJsepTransceiver().mRecvTrack.GetActive()) {
     const auto& details(
         *GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails());
     std::vector<AudioCodecConfig> configs;
@@ -989,15 +994,6 @@ void RTCRtpReceiver::UpdateAudioConduit() {
     }
 
     mAudioCodecs = configs;
-  } else if (CanReceiveEarlyMedia()) {
-    
-    
-    std::vector<AudioCodecConfig> configs;
-    RTCRtpTransceiver::EarlyRecvCodecsToAudioCodecConfigs(
-        GetJsepTransceiver().mRecvTrack, &configs);
-    if (!configs.empty()) {
-      mAudioCodecs = configs;
-    }
   }
 }
 

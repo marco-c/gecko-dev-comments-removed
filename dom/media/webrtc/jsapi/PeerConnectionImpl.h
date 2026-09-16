@@ -485,6 +485,12 @@ class PeerConnectionImpl final
       const std::string& aTransceiverId);
 
   
+  bool LocalOfferedRecvParamsChanged(const std::string& aMid) {
+    MOZ_ASSERT(NS_IsMainThread());
+    return mJsepSession && mJsepSession->LocalOfferedRecvParamsChanged(aMid);
+  }
+
+  
   dom::RTCSignalingState GetSignalingState() const;
 
   already_AddRefed<dom::Promise> OnSetDescriptionSuccess(

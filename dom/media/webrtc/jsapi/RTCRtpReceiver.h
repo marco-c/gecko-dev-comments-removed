@@ -181,12 +181,16 @@ class RTCRtpReceiver : public nsISupports,
   
   
   
-  bool CanReceiveEarlyMedia() const;
+  
+  
+  
+  
+  bool CanReceiveEarlyMedia();
 
   
   
   
-  bool HasNegotiatedBundleOwner() const;
+  bool HasNegotiatedBundleOwner();
 
   std::string GetMid() const;
   JsepTransceiver& GetJsepTransceiver();

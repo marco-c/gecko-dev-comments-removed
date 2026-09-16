@@ -133,6 +133,21 @@ class JsepTransceiver {
 
   void ClearBundleLevel() { mBundleLevel = SIZE_MAX; }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool CanUseExistingTransport() const { return mCanUseExistingTransport; }
+
+  void SetCanUseExistingTransport(bool aValue) {
+    mCanUseExistingTransport = aValue;
+  }
+
   size_t GetTransportLevel() const {
     MOZ_ASSERT(HasLevel());
     if (HasBundleLevel()) {
@@ -203,6 +218,7 @@ class JsepTransceiver {
   size_t mLevel = SIZE_MAX;  
   
   size_t mBundleLevel = SIZE_MAX;  
+  bool mCanUseExistingTransport = false;
   
   
   

@@ -105,6 +105,13 @@ class JsepSession {
   virtual bool RemoteIsIceLite() const = 0;
   virtual std::vector<std::string> GetIceOptions() const = 0;
 
+  
+  
+  
+  
+  
+  virtual bool LocalOfferedRecvParamsChanged(const std::string& aMid) = 0;
+
   virtual nsresult AddDtlsFingerprint(const nsACString& algorithm,
                                       const std::vector<uint8_t>& value) = 0;
 
