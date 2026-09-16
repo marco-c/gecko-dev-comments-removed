@@ -207,6 +207,19 @@ class SheetLoadData final
   bool mShouldEmulateNotificationsForCachedLoad : 1;
 
   
+  bool mSheetCompleteCalled : 1 = false;
+
+  
+  
+  bool mIntentionallyDropped : 1 = false;
+
+  const bool mRecordErrors : 1;
+
+  
+  
+  bool mFinalURISameOrigin : 1 = false;
+
+  
   
   
   
@@ -236,17 +249,8 @@ class SheetLoadData final
   const nsCompatibility mCompatMode;
 
   
-  bool mSheetCompleteCalled = false;
-
-  
-  
-  bool mIntentionallyDropped = false;
-
-  
   
   TimeStamp mLoadStart;
-
-  const bool mRecordErrors;
 
   RefPtr<SubResourceNetworkMetadataHolder> mNetworkMetadata;
 
