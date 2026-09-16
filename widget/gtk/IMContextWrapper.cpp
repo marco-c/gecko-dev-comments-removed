@@ -372,6 +372,33 @@ class MOZ_STACK_CLASS IMContextWrapper::AutoHandlingCompositionSignalHelper {
                mIMContextWrapper.mHandlingKeyEvent->state);
   }
 
+  
+
+
+
+  [[nodiscard]] bool MaybeShortcutOrAccessKeyPress(
+      const gchar* aUTF8CommitString) const {
+    
+    
+    
+    if (!mIMContextWrapper.mHandlingKeyEvent ||
+        mIMContextWrapper.mHandlingKeyEvent->type != GDK_KEY_PRESS ||
+        KeymapWrapper::EditorMayHandleKeyPressEventAsTextInput(
+            mIMContextWrapper.mHandlingKeyEvent->state)) {
+      return false;
+    }
+    
+    
+    char keyval_utf8[8];  
+    gint keyval_utf8_len;
+    guint32 keyval_unicode;
+    keyval_unicode =
+        gdk_keyval_to_unicode(mIMContextWrapper.mHandlingKeyEvent->keyval);
+    keyval_utf8_len = g_unichar_to_utf8(keyval_unicode, keyval_utf8);
+    keyval_utf8[keyval_utf8_len] = '\0';
+    return !strcmp(aUTF8CommitString, keyval_utf8);
+  }
+
  private:
   IMContextWrapper& mIMContextWrapper;
   GUniquePtr<GdkEventKey> mTemporarilySetEvent;
@@ -2070,12 +2097,25 @@ void IMContextWrapper::OnCommitCompositionNative(GtkIMContext* aContext,
         
         
         !signalHandlerHelper.ShouldNotDispatchKeyEvents()) {
-      
-      
-      
-      
-      
-      if (signalHandlerHelper.EditorMayHandleKeyPressEventAsTextInput()) {
+      const bool editorMayHandleKeyPressAsTextInput =
+          signalHandlerHelper.EditorMayHandleKeyPressEventAsTextInput();
+      const bool treatAsNormalKeyPress = [&]() {
+        
+        
+        
+        
+        
+        if (editorMayHandleKeyPressAsTextInput) {
+          return true;
+        }
+        
+        
+        
+        
+        return signalHandlerHelper.MaybeShortcutOrAccessKeyPress(
+            utf8CommitString);
+      }();
+      if (treatAsNormalKeyPress) {
         
         
         if (signalHandlerHelper.IsCallingGtkIMContextFilterKeypress()) {
@@ -2106,7 +2146,7 @@ void IMContextWrapper::OnCommitCompositionNative(GtkIMContext* aContext,
             return;
           }
         }
-      } else if (!mHandlingKeyEvent) {
+      } else if (!mHandlingKeyEvent && editorMayHandleKeyPressAsTextInput) {
         
         
         
