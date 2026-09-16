@@ -1110,17 +1110,27 @@ class Window extends WindowBase {
     
     
     
+    
+    
+    
+    const resizeExpected =
+      window.fullScreen ||
+      (initialState != window.STATE_MINIMIZED &&
+        expectedState != window.STATE_MINIMIZED);
+
     let onResize;
-    let promiseExitFullscreenResize;
-    if (initialState == window.STATE_FULLSCREEN || window.fullScreen) {
-      
-      
-      
-      
-      promiseExitFullscreenResize = new Promise(resolve => {
+    let promiseResize;
+    if (resizeExpected) {
+      promiseResize = new Promise(resolve => {
         onResize = resolve;
         window.addEventListener("resize", onResize);
       });
+    }
+
+    
+    
+    
+    if (initialState == window.STATE_FULLSCREEN || window.fullScreen) {
       window.fullScreen = false;
     }
 
@@ -1164,11 +1174,11 @@ class Window extends WindowBase {
       });
     }
 
-    if (promiseExpectedSizeMode || promiseExitFullscreenResize) {
+    if (promiseExpectedSizeMode || promiseResize) {
       
       
       await Promise.any([
-        Promise.all([promiseExpectedSizeMode, promiseExitFullscreenResize]),
+        Promise.all([promiseExpectedSizeMode, promiseResize]),
         new Promise(resolve => setTimeout(resolve, noWindowManagerTimeout)),
       ]);
 
