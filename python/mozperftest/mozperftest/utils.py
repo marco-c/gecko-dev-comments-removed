@@ -323,12 +323,17 @@ def install_requirements_file(
 
 
 
+
+
 _TRY_MAPPING = {
-    Path("accessible"): Path("mochitest", "browser", "accessible"),
-    Path("browser"): Path("mochitest", "browser", "browser"),
-    Path("netwerk"): Path("xpcshell", "tests", "netwerk"),
-    Path("dom"): Path("mochitest", "tests", "dom"),
-    Path("toolkit"): Path("mochitest", "browser", "toolkit"),
+    Path("accessible"): [Path("mochitest", "browser", "accessible")],
+    Path("browser"): [Path("mochitest", "browser", "browser")],
+    Path("netwerk"): [Path("xpcshell", "tests", "netwerk")],
+    Path("dom"): [
+        Path("mochitest", "tests", "dom"),
+        Path("mochitest", "browser", "dom"),
+    ],
+    Path("toolkit"): [Path("mochitest", "browser", "toolkit")],
 }
 
 
@@ -359,11 +364,18 @@ def build_test_list(tests):
         p_test = Path(test)
         if ON_TRY and not p_test.resolve().exists():
             
-            for src_path, ci_path in _TRY_MAPPING.items():
-                src_path, ci_path = str(src_path), str(ci_path)  
-                if test.startswith(src_path):
-                    p_test = Path(test.replace(src_path, ci_path, 1))
-                    break
+            for src_path, ci_paths in _TRY_MAPPING.items():
+                src_path = str(src_path)
+                if not test.startswith(src_path):
+                    continue
+                candidates = [
+                    Path(test.replace(src_path, str(ci_path), 1))
+                    for ci_path in ci_paths
+                ]
+                p_test = next(
+                    (c for c in candidates if c.resolve().exists()), candidates[0]
+                )
+                break
 
         resolved_test = p_test.resolve()
 
