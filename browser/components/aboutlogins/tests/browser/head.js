@@ -25,6 +25,10 @@ let { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 
+const { PromiseTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromiseTestUtils.sys.mjs"
+);
+
 
 if (OSKeyStoreTestUtils.canTestOSKeyStoreLogin() && OSKeyStore.canReauth()) {
   
@@ -82,7 +86,13 @@ const CryptoErrors = {
   INVALID_ARG_ENCRYPT: "Need at least one plaintext to encrypt",
   INVALID_ARG_DECRYPT: "Need at least one ciphertext to decrypt",
   DECRYPTION_FAILURE: "Couldn't decrypt string",
+  PRIMARY_PASSWORD_LOCKED: "Primary password locked",
 };
+
+
+
+
+PromiseTestUtils.allowMatchingRejectionsGlobally(/Primary password locked/);
 
 async function addLogin(login) {
   const result = await Services.logins.addLoginAsync(login);
@@ -178,6 +188,10 @@ add_setup(async function setup_head() {
       msg.errorMessage ==
       "NotFoundError: No such JSWindowActor 'MarionetteEvents'"
     ) {
+      
+      return;
+    }
+    if (msg.errorMessage.includes(CryptoErrors.PRIMARY_PASSWORD_LOCKED)) {
       
       return;
     }
