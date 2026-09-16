@@ -56,8 +56,18 @@ fn check_profile(path: &Path) -> Result<(), String> {
 
 fn run(profile: &Path) -> ExitCode {
     
-    
-    
+    let _guard = match lifecycle::ProfileGuard::acquire(profile) {
+        Ok(Some(guard)) => guard,
+        Ok(None) => {
+            
+            return ExitCode::SUCCESS;
+        }
+        Err(message) => {
+            eprintln!("{PROGRAM}: {message}");
+            return ExitCode::FAILURE;
+        }
+    };
+
     let stop = match lifecycle::StopEvent::open(profile) {
         Ok(stop) => stop,
         Err(message) => {
@@ -171,5 +181,16 @@ mod tests {
     #[test]
     fn stop_takes_no_value() {
         assert!(Args::try_parse_from([PROGRAM, "--stop=yes", "--profile", r"c:\p"]).is_err());
+    }
+
+    
+    
+    #[test]
+    fn run_declines_quietly_when_a_helper_already_has_the_profile() {
+        let profile = Path::new(r"c:\profiles\run-declines");
+
+        let _held = lifecycle::ProfileGuard::acquire(profile).unwrap().unwrap();
+
+        assert_eq!(run(profile), ExitCode::SUCCESS);
     }
 }
