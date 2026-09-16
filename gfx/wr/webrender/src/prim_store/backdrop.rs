@@ -8,7 +8,6 @@ use crate::prim_store::{
     InternablePrimitive, PrimitiveKind, PrimKey, PrimTemplate,
     PrimTemplateCommonData, PrimitiveStore, PictureIndex,
 };
-use crate::scene_building::IsVisible;
 
 
 
@@ -125,17 +124,5 @@ impl InternablePrimitive for BackdropRender {
             data_handle,
             pic_index: PictureIndex::INVALID,
         }
-    }
-}
-
-impl IsVisible for BackdropCapture {
-    fn is_visible(&self) -> bool {
-        true
-    }
-}
-
-impl IsVisible for BackdropRender {
-    fn is_visible(&self) -> bool {
-        true
     }
 }

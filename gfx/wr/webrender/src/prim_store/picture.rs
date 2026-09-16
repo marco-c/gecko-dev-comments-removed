@@ -3,7 +3,6 @@
 
 
 use api::RasterSpace;
-use crate::scene_building::IsVisible;
 use crate::intern::{Internable, InternDebug, Handle as InternHandle};
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::picture_composite_mode::PictureCompositeKey;
@@ -77,12 +76,6 @@ impl InternablePrimitive for Picture {
         
         
         unreachable!();
-    }
-}
-
-impl IsVisible for Picture {
-    fn is_visible(&self) -> bool {
-        true
     }
 }
 
