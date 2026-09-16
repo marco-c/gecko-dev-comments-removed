@@ -32,8 +32,8 @@ common_metric_data_args = [
     "send_in_pings",
     "lifetime",
     "disabled",
-    "dynamic_label",
     "in_session",
+    "label",
 ]
 
 
@@ -194,7 +194,7 @@ def output_file(objs, output_fd, options={}):
         if isinstance(value, Rate):  
             args = []
             for arg_name in common_metric_data_args:
-                if arg_name == "dynamic_label":
+                if arg_name == "label":
                     
                     
                     
@@ -211,7 +211,7 @@ def output_file(objs, output_fd, options={}):
         for metric in metrics.values():
             metric_arg_list = [camel_to_snake(metric.__class__.__name__)]
             for arg in common_metric_data_args:
-                if arg in ["category", "dynamic_label"]:
+                if arg in ["category", "label"]:
                     continue
                 metric_arg_list.append(getattr(metric, arg))
             extra = {}
