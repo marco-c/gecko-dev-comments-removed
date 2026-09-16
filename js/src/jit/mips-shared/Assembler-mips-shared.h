@@ -128,6 +128,10 @@ static constexpr Register RegExpSearcherRegExpReg = CallTempReg0;
 static constexpr Register RegExpSearcherStringReg = CallTempReg1;
 static constexpr Register RegExpSearcherLastIndexReg = CallTempReg2;
 
+
+
+static constexpr Register BailoutStubHandlerReg = CallTempReg0;
+
 static constexpr uint32_t CodeAlignment = 8;
 
 

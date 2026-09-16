@@ -652,7 +652,7 @@ void FallbackICCodeCompiler::emitBailoutStub(BailoutReturnKind kind) {
   
   
   
-  code.initBailoutReturnOffset(kind, masm.currentOffset());
+  code.initBailoutReturnOffset(kind, masm.call(BailoutStubHandlerReg).offset());
 }
 
 void FallbackICCodeCompiler::assumeStubFrame() {

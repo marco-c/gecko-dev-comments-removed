@@ -7159,6 +7159,7 @@ void BaselineInterpreterGenerator::emitICBailoutStub() {
   
   
   
+  entry.offset = masm.call(BailoutStubHandlerReg).offset();
   masm.jump(&icReturn);
 }
 

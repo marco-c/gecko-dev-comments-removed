@@ -167,6 +167,10 @@ static constexpr Register RegExpSearcherLastIndexReg = CallTempReg3;
 
 
 
+static constexpr Register BailoutStubHandlerReg = CallTempReg0;
+
+
+
 #if defined(__GNUC__) && !defined(__MINGW32__)
 static constexpr uint32_t ABIStackAlignment = 16;
 #else

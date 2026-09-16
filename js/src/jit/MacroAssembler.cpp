@@ -4115,42 +4115,85 @@ void MacroAssembler::generateBailoutTail(Register scratch,
     AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
     MOZ_ASSERT_IF(!IsHiddenSP(getStackPointer()),
                   !regs.has(AsRegister(getStackPointer())));
+    regs.take(scratch);
     regs.take(bailoutInfo);
+    regs.take(BailoutStubHandlerReg);
 
-    Register temp = regs.takeAny();
+    Register copyCur = regs.takeAny();
+    Register copyEnd = regs.takeAny();
+    Register stubInfo = regs.takeAny();
 
 #ifdef DEBUG
     
     
     Label ok;
     loadPtr(Address(bailoutInfo, offsetof(BaselineBailoutInfo, incomingStack)),
-            temp);
-    branchStackPtr(Assembler::Equal, temp, &ok);
+            scratch);
+    branchStackPtr(Assembler::Equal, scratch, &ok);
     assumeUnreachable("Unexpected stack pointer value");
     bind(&ok);
 #endif
 
-    Register copyCur = regs.takeAny();
-    Register copyEnd = regs.takeAny();
-
     
     loadPtr(Address(bailoutInfo, offsetof(BaselineBailoutInfo, copyStackTop)),
             copyCur);
-    loadPtr(
-        Address(bailoutInfo, offsetof(BaselineBailoutInfo, copyStackBottom)),
-        copyEnd);
-    {
-      Label copyLoop;
-      Label endOfCopy;
-      bind(&copyLoop);
-      branchPtr(Assembler::BelowOrEqual, copyCur, copyEnd, &endOfCopy);
-      subPtr(Imm32(sizeof(uintptr_t)), copyCur);
-      subFromStackPtr(Imm32(sizeof(uintptr_t)));
-      loadPtr(Address(copyCur, 0), temp);
-      storePtr(temp, Address(getStackPointer(), 0));
-      jump(&copyLoop);
-      bind(&endOfCopy);
-    }
+    
+    
+    
+    computeEffectiveAddress(Address(bailoutInfo, sizeof(BaselineBailoutInfo)),
+                            stubInfo);
+
+    CodeLabel bailoutStubHandler;
+    
+    mov(&bailoutStubHandler, BailoutStubHandlerReg);
+
+#ifdef JS_USE_LINK_REGISTER
+    
+    
+    Label copyFrame;
+    jump(&copyFrame);
+#endif
+
+    bind(&bailoutStubHandler);
+    addCodeLabel(bailoutStubHandler);
+
+#ifdef JS_USE_LINK_REGISTER
+    
+    
+    pushReturnAddress();
+    bind(&copyFrame);
+#endif
+
+    
+    
+    
+    loadPtr(Address(stubInfo, offsetof(BailoutStubInfo, frameBoundary)),
+            copyEnd);
+
+    Label copyLoop;
+    Label endOfCopy;
+    bind(&copyLoop);
+    branchStackPtr(Assembler::BelowOrEqual, copyEnd, &endOfCopy);
+    subPtr(Imm32(sizeof(uintptr_t)), copyCur);
+    subFromStackPtr(Imm32(sizeof(uintptr_t)));
+    loadPtr(Address(copyCur, 0), scratch);
+    storePtr(scratch, Address(getStackPointer(), 0));
+    jump(&copyLoop);
+
+    bind(&endOfCopy);
+    
+    loadPtr(Address(stubInfo, offsetof(BailoutStubInfo, bailoutStub)), scratch);
+    
+    addPtr(Imm32(sizeof(BailoutStubInfo)), stubInfo);
+    Label copyDone;
+    
+    branchTestPtr(Assembler::Zero, scratch, scratch, &copyDone);
+
+    
+    subPtr(Imm32(sizeof(uintptr_t)), copyCur);
+    jump(scratch);
+
+    bind(&copyDone);
 
     loadPtr(Address(bailoutInfo, offsetof(BaselineBailoutInfo, resumeFramePtr)),
             FramePointer);
@@ -4168,7 +4211,7 @@ void MacroAssembler::generateBailoutTail(Register scratch,
 
     
     using Fn = bool (*)(BaselineBailoutInfo* bailoutInfoArg);
-    setupUnalignedABICall(temp);
+    setupUnalignedABICall(scratch);
     passABIArg(bailoutInfo);
     callWithABI<Fn, FinishBailoutToBaseline>(
         ABIType::General, CheckUnsafeCallWithABI::DontCheckHasExitFrame);

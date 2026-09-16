@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_wasm32_Assembler_wasm32_h
 #define jit_wasm32_Assembler_wasm32_h
 
@@ -77,6 +75,8 @@ static constexpr Register RegExpExecTestStringReg{Registers::invalid_reg};
 static constexpr Register RegExpSearcherRegExpReg{Registers::invalid_reg};
 static constexpr Register RegExpSearcherStringReg{Registers::invalid_reg};
 static constexpr Register RegExpSearcherLastIndexReg{Registers::invalid_reg};
+
+static constexpr Register BailoutStubHandlerReg{Registers::invalid_reg};
 
 
 static constexpr Register JSReturnReg_Type{Registers::invalid_reg2};
