@@ -22,7 +22,6 @@
 #include "mozilla/ThreadSafety.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WeakPtr.h"
-#include "mozilla/dom/SpeechRecognitionBinding.h"
 #include "mozilla/hwinference/HWInferenceTypes.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "nsIThread.h"
@@ -139,12 +138,6 @@ class SpeechRecognitionBackend {
 
   static already_AddRefed<Promise> Available(
       nsIGlobalObject* aGlobal, const nsTArray<nsCString>& aLanguages);
-  
-  
-  
-  
-  static void ResolveAvailability(Promise* aPromise,
-                                  AvailabilityStatus aStatus);
   
   
   

@@ -40,7 +40,6 @@
 #include "mozilla/dom/SpeechRecognitionErrorEvent.h"
 #include "mozilla/dom/SpeechRecognitionEvent.h"
 #include "mozilla/dom/SpeechRecognitionPhrase.h"
-#include "mozilla/glean/DomMediaWebspeechMetrics.h"
 #include "mozilla/hwinference/PSpeechRecognitionChild.h"
 #include "mozilla/intl/Locale.h"
 #include "nsCOMPtr.h"
@@ -50,7 +49,6 @@
 #include "nsGkAtoms.h"
 #include "nsGlobalWindowInner.h"
 #include "nsIContent.h"
-#include "nsID.h"
 #include "nsIPermissionManager.h"
 #include "nsIPrincipal.h"
 #include "nsPIDOMWindow.h"
@@ -72,8 +70,6 @@ class Promise;
 namespace mozilla::dom {
 
 static LazyLogModule gSpeechRecognitionLog("SpeechRecognition");
-
-using InitFailure = glean::media_speech_recognition::InitFailureLabel;
 
 #define LOG(...) \
   MOZ_LOG_FMT(gSpeechRecognitionLog, LogLevel::Debug, __VA_ARGS__)
@@ -249,75 +245,9 @@ already_AddRefed<SpeechRecognition> SpeechRecognition::Constructor(
   return object.forget();
 }
 
-
-static glean::media_speech_recognition::ErrorLabel ErrorCodeLabel(
-    SpeechRecognitionErrorCode aCode) {
-  using Label = glean::media_speech_recognition::ErrorLabel;
-  switch (aCode) {
-    case SpeechRecognitionErrorCode::No_speech:
-      return Label::eNoSpeech;
-    case SpeechRecognitionErrorCode::Aborted:
-      return Label::eAborted;
-    case SpeechRecognitionErrorCode::Audio_capture:
-      return Label::eAudioCapture;
-    case SpeechRecognitionErrorCode::Network:
-      return Label::eNetwork;
-    case SpeechRecognitionErrorCode::Not_allowed:
-      return Label::eNotAllowed;
-    case SpeechRecognitionErrorCode::Service_not_allowed:
-      return Label::eServiceNotAllowed;
-    case SpeechRecognitionErrorCode::Bad_grammar:
-      return Label::eBadGrammar;
-    case SpeechRecognitionErrorCode::Language_not_supported:
-      return Label::eLanguageNotSupported;
-    case SpeechRecognitionErrorCode::Phrases_not_supported:
-      return Label::ePhrasesNotSupported;
-    default:
-      MOZ_ASSERT_UNREACHABLE(
-          "Unhandled SpeechRecognitionErrorCode, add a label for it in "
-          "metrics.yaml");
-      return Label::e__Other__;
-  }
-}
-
-void SpeechRecognition::RecordSessionEnded() {
-  AssertIsOnMainThread();
-  MOZ_ASSERT(mStarted);
-
-  glean::media_speech_recognition::SessionEndedExtra extra;
-  if (mSessionError) {
-    extra.outcome.emplace("error"_ns);
-    
-    
-    nsAutoCString errorCode(GetEnumString(*mSessionError));
-    errorCode.ReplaceChar('-', '_');
-    extra.errorCode.emplace(errorCode);
-  } else if (mAborting) {
-    extra.outcome.emplace("aborted"_ns);
-    extra.errorCode.emplace(EmptyCString());
-  } else if (mStopping) {
-    extra.outcome.emplace("stopped"_ns);
-    extra.errorCode.emplace(EmptyCString());
-  } else {
-    extra.outcome.emplace("discarded"_ns);
-    extra.errorCode.emplace(EmptyCString());
-  }
-  if (!mSessionStartTime.IsNull()) {
-    extra.duration.emplace(static_cast<uint32_t>(
-        (TimeStamp::Now() - mSessionStartTime).ToMilliseconds()));
-  }
-  extra.sessionId.emplace(mSessionId);
-  if (mResultLatencySampleCount) {
-    glean::media_speech_recognition::result_latency.AccumulateRawDuration(
-        mResultLatencyTotal.MultDouble(1.0 / mResultLatencySampleCount));
-  }
-  glean::media_speech_recognition::session_ended.Record(Some(std::move(extra)));
-}
-
 void SpeechRecognition::Reset() {
   MOZ_ASSERT(NS_IsMainThread(), "Reset must be on main thread");
   if (mStarted) {
-    RecordSessionEnded();
     for (nsStaticAtom* atom : kKeepAliveEventTypes) {
       IgnoreKeepAliveIfHasListenersFor(atom);
     }
@@ -541,32 +471,28 @@ already_AddRefed<Promise> SpeechRecognition::Available(
   
   
   if (!aOptions.mProcessLocally) {
-    SpeechRecognitionBackend::ResolveAvailability(
-        promise, AvailabilityStatus::Unavailable);
+    promise->MaybeResolve(AvailabilityStatus::Unavailable);
     return promise.forget();
   }
 
   Document* doc = window->GetExtantDoc();
   if (!doc || !FeaturePolicyUtils::IsFeatureAllowed(
                   doc, u"on-device-speech-recognition"_ns)) {
-    SpeechRecognitionBackend::ResolveAvailability(
-        promise, AvailabilityStatus::Unavailable);
+    promise->MaybeResolve(AvailabilityStatus::Unavailable);
     return promise.forget();
   }
 
   
   if (IsBlockedByAIControls()) {
     doc->WarnOnceAbout(Document::eSpeechRecognitionBlockedByAIControls);
-    SpeechRecognitionBackend::ResolveAvailability(
-        promise, AvailabilityStatus::Unavailable);
+    promise->MaybeResolve(AvailabilityStatus::Unavailable);
     return promise.forget();
   }
 
   
   
   if (aOptions.mLangs.IsEmpty()) {
-    SpeechRecognitionBackend::ResolveAvailability(
-        promise, AvailabilityStatus::Unavailable);
+    promise->MaybeResolve(AvailabilityStatus::Unavailable);
     return promise.forget();
   }
 
@@ -861,38 +787,20 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
   
   
   
-  bool langFromUserLanguage = false;
   if (effectiveLang.IsEmpty()) {
     if (Document* doc = win->GetExtantDoc()) {
       doc->WarnOnceAbout(
           Document::eSpeechRecognitionLangDefaultedToUserLanguage);
     }
     win->Navigator()->GetLanguage(effectiveLang);
-    langFromUserLanguage = true;
   }
 
   
   
   
-  
-  
-  
-  SpeechModelMatch model;
-  if (effectiveLang.IsEmpty()) {
-    
-    
-    model = DefaultSpeechModel();
-  } else if (Maybe<SpeechModelMatch> match =
-                 SpeechModelFor(NS_ConvertUTF16toUTF8(effectiveLang))) {
-    model = std::move(*match);
-  } else {
+  if (!effectiveLang.IsEmpty() &&
+      SpeechModelFor(NS_ConvertUTF16toUTF8(effectiveLang)).isNothing()) {
     LOGE("No on-device model recognizes this language");
-    
-    
-    
-    glean::media_speech_recognition::init_failure
-        .EnumGet(InitFailure::eLanguageNotSupported)
-        .Add();
     DispatchErrorAndEnd(SpeechRecognitionErrorCode::Service_not_allowed,
                         "No on-device model recognizes this language"_ns);
     return;
@@ -906,26 +814,6 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
   mBackendListening = false;
   mStartDispatched = false;
   const uint32_t generation = ++mSessionGeneration;
-
-  mSessionStartTime = TimeStamp::Now();
-  mResultLatencyTotal = TimeDuration();
-  mResultLatencySampleCount = 0;
-  mSessionError = Nothing();
-  mSessionId = nsIDToCString(nsID::GenerateUUID()).get();
-
-  {
-    glean::media_speech_recognition::SessionStartedExtra extra;
-    extra.lang.emplace(NS_ConvertUTF16toUTF8(effectiveLang));
-    extra.langSource.emplace(!mLang.IsEmpty()          ? "attribute"_ns
-                             : effectiveLang.IsEmpty() ? "none"_ns
-                             : langFromUserLanguage    ? "user"_ns
-                                                       : "document"_ns);
-    extra.modelId.emplace(model.mId);
-    extra.modelLocale.emplace(model.mLocale);
-    extra.sessionId.emplace(mSessionId);
-    glean::media_speech_recognition::session_started.Record(
-        Some(std::move(extra)));
-  }
 
   
   
@@ -980,9 +868,6 @@ void SpeechRecognition::OnModelInstalled(
     
     
     LOGE("Could not ask for the on-device model");
-    glean::media_speech_recognition::init_failure
-        .EnumGet(InitFailure::eModelInstallUnavailable)
-        .Add();
     DispatchErrorAndEnd(SpeechRecognitionErrorCode::Service_not_allowed,
                         "Local speech recognition is not available"_ns);
     return;
@@ -1027,9 +912,6 @@ void SpeechRecognition::BeginSession(PendingSession&& aSession) {
       this, aSession.mGraphRate, aSession.mLanguage, aSession.mPhrases);
   if (!mBackend) {
     LOGE("Failed to create the backend");
-    glean::media_speech_recognition::init_failure
-        .EnumGet(InitFailure::eBackendCreationFailed)
-        .Add();
     DispatchErrorAndEnd(SpeechRecognitionErrorCode::Service_not_allowed,
                         "Local speech recognition is not available"_ns);
     return;
@@ -1215,10 +1097,6 @@ void SpeechRecognition::DispatchError(SpeechRecognitionErrorCode aErrorCode,
                                       const nsACString& aMessage) {
   MOZ_ASSERT(NS_IsMainThread(), "DispatchError must be on main thread");
 
-  glean::media_speech_recognition::error.EnumGet(ErrorCodeLabel(aErrorCode))
-      .Add(1);
-  mSessionError = Some(aErrorCode);
-
   RefPtr<SpeechRecognitionErrorEvent> srError =
       new SpeechRecognitionErrorEvent(nullptr, nullptr, nullptr);
 
@@ -1285,11 +1163,6 @@ void SpeechRecognition::HandleRecognitionResultFromBackend(
   
   
   
-
-  if (!aEventTime.IsNull()) {
-    mResultLatencyTotal += TimeStamp::Now() - aEventTime;
-    mResultLatencySampleCount++;
-  }
 
   RefPtr<SpeechRecognitionResult> result = new SpeechRecognitionResult(this);
 

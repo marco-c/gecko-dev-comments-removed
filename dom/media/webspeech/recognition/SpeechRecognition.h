@@ -266,10 +266,6 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   
   void MaybeDispatchStart();
   SpeechRecognitionPerfStats BuildPerfStats() const;
-  
-  
-  
-  void RecordSessionEnded();
 
   RefPtr<DOMMediaStream> mStream;
   RefPtr<AudioStreamTrack> mTrack;
@@ -328,20 +324,6 @@ class SpeechRecognition final : public DOMEventTargetHelper,
     EnginePerfStats mEngine;
   };
   PerfTimeline mPerf;
-
-  
-  
-  TimeStamp mSessionStartTime;
-  
-  
-  nsCString mSessionId;
-  TimeDuration mResultLatencyTotal;
-  uint32_t mResultLatencySampleCount = 0;
-  
-  
-  
-  Maybe<SpeechRecognitionErrorCode> mSessionError;
-
   RefPtr<TrackListener> mListener;
   
   RefPtr<SpeechRecognitionBackend> mBackend;
