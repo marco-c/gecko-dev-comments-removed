@@ -2436,21 +2436,13 @@ void AppWindow::SizeShell() {
     specHeight += windowDiff.height;
   }
 
-  bool positionSet = !mIgnoreXULPosition;
   nsCOMPtr<nsIAppWindow> parentWindow(do_QueryReferent(mParentWindow));
-#if defined(XP_UNIX) && !defined(XP_MACOSX)
   
   
   
-  if (!parentWindow) positionSet = false;
-#endif
-  if (positionSet) {
-    
-    
-    
-    
-    positionSet = LoadPositionFromXUL(specWidth, specHeight);
-  }
+  
+  bool positionSet =
+      !mIgnoreXULPosition && LoadPositionFromXUL(specWidth, specHeight);
 
   if (gotSize) {
     SetSpecifiedSize(specWidth, specHeight);
