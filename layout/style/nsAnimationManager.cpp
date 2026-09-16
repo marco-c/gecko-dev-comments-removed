@@ -574,6 +574,10 @@ static void UpdateNamedTimelineAnimation(
     return;
   }
   const auto target = aAnimation->GetTargetForAnimation();
+  if (MOZ_UNLIKELY(!target.mElement)) {
+    
+    return;
+  }
   
   
   const RefPtr<dom::AnimationTimeline> newTimeline =
@@ -643,6 +647,8 @@ void nsAnimationManager::UpdateDeferredTimelineChanges() {
   if (mAnimationsWithDeferredUpdate.IsEmpty()) {
     return;
   }
+  
+  nsAutoScriptBlocker scriptBlocker;
   auto* document = mPresContext->Document();
   for (auto* animation : mAnimationsWithDeferredUpdate) {
     if (!animation->GetTimelineName().mName) {
