@@ -100,9 +100,10 @@ class FeaturePolicy final : public nsISupports, public nsWrapperCache {
 
   
   
-  void SetDeclaredPolicy(mozilla::dom::Document* aDocument,
-                         const nsAString& aPolicyString,
-                         nsIPrincipal* aSelfOrigin, nsIPrincipal* aSrcOrigin);
+  void SetDeclaredAttributePolicy(mozilla::dom::Document* aDocument,
+                                  const nsAString& aPolicyString,
+                                  nsIPrincipal* aSelfOrigin,
+                                  nsIPrincipal* aSrcOrigin);
 
   
   

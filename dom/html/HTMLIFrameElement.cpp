@@ -305,8 +305,8 @@ void HTMLIFrameElement::RefreshFeaturePolicy(bool aParseAllowAttribute) {
 
     if (!allow.IsEmpty()) {
       
-      mFeaturePolicy->SetDeclaredPolicy(OwnerDoc(), allow, NodePrincipal(),
-                                        origin);
+      mFeaturePolicy->SetDeclaredAttributePolicy(OwnerDoc(), allow,
+                                                 NodePrincipal(), origin);
     }
   }
 
