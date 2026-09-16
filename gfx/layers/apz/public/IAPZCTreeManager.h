@@ -18,7 +18,6 @@ namespace mozilla {
 namespace layers {
 
 class APZInputBridge;
-class KeyboardMap;
 struct ZoomTarget;
 
 enum AllowedTouchBehavior {
@@ -39,8 +38,6 @@ enum ZoomToRectBehavior : uint32_t {
   ZOOM_TO_FOCUSED_INPUT_ON_RESIZES_VISUAL = 1 << 4,
 };
 
-enum class BrowserGestureResponse : bool;
-
 class AsyncDragMetrics;
 struct APZHandledResult;
 
@@ -48,11 +45,6 @@ class IAPZCTreeManager {
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
  public:
-  
-
-
-  virtual void SetKeyboardMap(const KeyboardMap& aKeyboardMap) = 0;
-
   
 
 
@@ -96,8 +88,6 @@ class IAPZCTreeManager {
       const ScrollableLayerGuid& aGuid,
       const Maybe<ZoomConstraints>& aConstraints) = 0;
 
-  virtual void SetDPI(float aDpiValue) = 0;
-
   
 
 
@@ -110,24 +100,8 @@ class IAPZCTreeManager {
   virtual void SetAllowedTouchBehavior(
       uint64_t aInputBlockId, const nsTArray<TouchBehaviorFlags>& aValues) = 0;
 
-  virtual void SetBrowserGestureResponse(uint64_t aInputBlockId,
-                                         BrowserGestureResponse aResponse) = 0;
-
   virtual void StartScrollbarDrag(const ScrollableLayerGuid& aGuid,
                                   const AsyncDragMetrics& aDragMetrics) = 0;
-
-  virtual void StartAutoscroll(const ScrollableLayerGuid& aGuid,
-                               const ScreenPoint& aAnchorLocation) = 0;
-
-  virtual void StopAutoscroll(const ScrollableLayerGuid& aGuid) = 0;
-
-  
-
-
-
-
-
-  virtual void SetLongTapEnabled(bool aTapGestureEnabled) = 0;
 
   
 

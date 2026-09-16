@@ -20,10 +20,20 @@ namespace layers {
 class APZInputBridgeParent;
 class AsyncPanZoomController;
 class InputBlockState;
+class KeyboardMap;
 class TouchBlockState;
 struct ScrollableLayerGuid;
 struct TargetConfirmationFlags;
 struct PointerEventsConsumableFlags;
+
+
+
+
+
+enum class BrowserGestureResponse : bool {
+  NotConsumed = 0,  
+  Consumed = 1,  
+};
 
 enum class APZHandledPlace : uint8_t {
   Unhandled = 0,         
@@ -205,6 +215,9 @@ struct APZEventResult {
 
 
   uint64_t mInputBlockId;
+
+  
+  bool mTargetCanScrollHorizontally = false;
 };
 
 
@@ -270,6 +283,29 @@ class APZInputBridge {
   
   static Maybe<APZWheelAction> ActionForWheelEvent(WidgetWheelEvent* aEvent);
 
+  
+
+
+  virtual void SetKeyboardMap(const KeyboardMap& aKeyboardMap) = 0;
+
+  virtual void SetDPI(float aDpiValue) = 0;
+
+  virtual void SetBrowserGestureResponse(uint64_t aInputBlockId,
+                                         BrowserGestureResponse aResponse) = 0;
+
+  virtual void StartAutoscroll(const ScrollableLayerGuid& aGuid,
+                               const ScreenPoint& aAnchorLocation) = 0;
+
+  virtual void StopAutoscroll(const ScrollableLayerGuid& aGuid) = 0;
+
+  
+
+
+
+
+
+  virtual void SetLongTapEnabled(bool aTapGestureEnabled) = 0;
+
  protected:
   friend class APZInputBridgeParent;
 
@@ -290,15 +326,6 @@ class APZInputBridge {
 
 std::ostream& operator<<(std::ostream& aOut,
                          const APZHandledResult& aHandledResult);
-
-
-
-
-
-enum class BrowserGestureResponse : bool {
-  NotConsumed = 0,  
-  Consumed = 1,  
-};
 
 }  
 }  

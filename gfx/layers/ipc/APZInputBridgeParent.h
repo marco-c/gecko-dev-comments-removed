@@ -12,12 +12,14 @@ namespace layers {
 
 class IAPZCTreeManager;
 
-class APZInputBridgeParent : public PAPZInputBridgeParent {
-  NS_INLINE_DECL_REFCOUNTING(APZInputBridgeParent, final)
+class APZInputBridgeParent final : public PAPZInputBridgeParent {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(APZInputBridgeParent, final)
 
  public:
-  static APZInputBridgeParent* Create(
-      const LayersId& aLayersId, Endpoint<PAPZInputBridgeParent>&& aEndpoint);
+  explicit APZInputBridgeParent(const LayersId& aLayersId);
+
+  static void Create(const LayersId& aLayersId,
+                     Endpoint<PAPZInputBridgeParent>&& aEndpoint);
 
   mozilla::ipc::IPCResult RecvReceiveMultiTouchInputEvent(
       const MultiTouchInput& aEvent, bool aWantsCallback,
@@ -57,10 +59,23 @@ class APZInputBridgeParent : public PAPZInputBridgeParent {
       ScrollableLayerGuid* aOutTargetGuid, uint64_t* aOutFocusSequenceNumber,
       LayersId* aOutLayersId);
 
+  mozilla::ipc::IPCResult RecvSetKeyboardMap(const KeyboardMap& aKeyboardMap);
+
+  mozilla::ipc::IPCResult RecvSetDPI(const float& aDpiValue);
+
+  mozilla::ipc::IPCResult RecvSetBrowserGestureResponse(
+      const uint64_t& aInputBlockId, const BrowserGestureResponse& aResponse);
+
+  mozilla::ipc::IPCResult RecvStartAutoscroll(
+      const ScrollableLayerGuid& aGuid, const ScreenPoint& aAnchorLocation);
+
+  mozilla::ipc::IPCResult RecvStopAutoscroll(const ScrollableLayerGuid& aGuid);
+
+  mozilla::ipc::IPCResult RecvSetLongTapEnabled(const bool& aTapGestureEnabled);
+
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
  protected:
-  explicit APZInputBridgeParent(const LayersId& aLayersId);
   virtual ~APZInputBridgeParent();
 
  private:
