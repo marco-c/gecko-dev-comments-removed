@@ -1049,6 +1049,13 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
     wordCount = 0;
   };
 
+  
+  
+  const bool engineMarksBoundaries =
+      lib->parakeet_capi_stream_has_eou(mCapiStream) == 1;
+  const double endpointBlankSeconds =
+      StaticPrefs::media_webspeech_recognition_endpoint_blank_ms() / 1000.0;
+
   nsTArray<float> chunk;
   uint64_t realtimeFactorSum = 0;
   uint32_t realtimeFactorCount = 0;
@@ -1108,6 +1115,20 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
            CaptureTimeForPosition(mProcessedAudioPos), wordCount);
     }
     if (eou) {
+      flushUtterance();
+    } else if (!engineMarksBoundaries && endpointBlankSeconds > 0.0 &&
+               lib->parakeet_capi_stream_blank_seconds(mCapiStream) >=
+                   endpointBlankSeconds) {
+      
+      
+      
+      
+      char* closed = lib->parakeet_capi_stream_end_utterance(mCapiStream);
+      if (closed) {
+        
+        lib->parakeet_capi_free_string(closed);
+      }
+      drainWords();
       flushUtterance();
     }
   }

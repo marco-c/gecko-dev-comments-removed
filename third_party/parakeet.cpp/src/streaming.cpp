@@ -139,6 +139,17 @@ std::vector<int32_t> StreamingSession::feed_mel_chunk(const std::vector<float>& 
 
     
     
+    
+    
+    if (emitted.empty()) {
+        blank_frames_ += n_valid;
+    } else {
+        blank_frames_ = n_valid - 1 - local_frames.back();
+        tokens_since_boundary_ += emitted.size();
+    }
+
+    
+    
     const size_t prev_events = events_.size();
     process_emitted(emitted);
     
@@ -185,8 +196,46 @@ std::vector<int32_t> StreamingSession::feed_mel_chunk(const std::vector<float>& 
         state_.state      = pred_.zero_state();
         state_.last_token = -1;     
         state_.have_token = false;
+        tokens_since_boundary_ = 0;
     }
     return emitted;
+}
+
+std::string StreamingSession::end_utterance() {
+    
+    
+    
+    
+    
+    if (tokens_since_boundary_ == 0) {
+        blank_frames_ = 0;
+        return {};
+    }
+    
+    
+    
+    
+    regroup_words(true);
+    eou_closed_words_ = words_.size();
+    
+    
+    blank_frames_ = 0;
+    tokens_since_boundary_ = 0;
+    
+    
+    
+    
+    
+    state_.state      = pred_.zero_state();
+    state_.last_token = -1;
+    state_.have_token = false;
+    
+    
+    
+    
+    
+    enc_.reset_caches();
+    return take_new_text();
 }
 
 std::string StreamingSession::finalize() {

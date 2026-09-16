@@ -84,6 +84,19 @@ public:
     
     
     
+    std::string end_utterance();
+
+    
+    bool has_eou() const { return eou_id_ >= 0; }
+
+    
+    
+    
+    double blank_seconds() const { return blank_frames_ * frame_sec_; }
+
+    
+    
+    
     
     
     
@@ -155,6 +168,13 @@ private:
     std::vector<int32_t> non_special_;  
     std::string text_;
     size_t text_taken_ = 0;        
+
+    
+    int64_t blank_frames_ = 0;
+    
+    
+    
+    size_t tokens_since_boundary_ = 0;
 
     bool last_chunk_had_eou_ = false;
     std::vector<EouEvent> events_;

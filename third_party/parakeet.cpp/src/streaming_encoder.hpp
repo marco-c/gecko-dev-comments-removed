@@ -35,7 +35,17 @@ public:
     explicit StreamingEncoder(const ModelLoader& ml);
 
     
-    void reset();
+    
+    
+    
+    
+    void reset_caches();
+
+    
+    void reset() {
+        reset_caches();
+        step_ = 0;
+    }
 
     
     

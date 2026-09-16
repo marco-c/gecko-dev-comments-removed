@@ -45,6 +45,11 @@ typedef struct parakeet_ctx parakeet_ctx;
 
 
 
+
+
+
+
+
 int parakeet_capi_abi_version(void);
 
 
@@ -254,6 +259,22 @@ int parakeet_capi_stream_drain_events(parakeet_stream* s,
 
 
 void parakeet_capi_free_events(parakeet_stream_event* events);
+
+
+
+int parakeet_capi_stream_has_eou(parakeet_stream* s);
+
+
+
+
+
+double parakeet_capi_stream_blank_seconds(parakeet_stream* s);
+
+
+
+
+
+char* parakeet_capi_stream_end_utterance(parakeet_stream* s);
 
 
 
