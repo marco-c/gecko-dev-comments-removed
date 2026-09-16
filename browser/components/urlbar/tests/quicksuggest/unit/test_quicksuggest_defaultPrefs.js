@@ -15,8 +15,6 @@ ChromeUtils.defineESModuleGetters(this, {
 
 const { SUGGEST_TOU_TIMESTAMP } = QuickSuggest;
 
-const EN_LOCALES = ["en-CA", "en-GB", "en-US", "en-ZA"];
-
 
 const EXPECTED_PREFS_SUGGEST_DISABLED = {
   "quicksuggest.enabled": false,
@@ -35,10 +33,7 @@ const EXPECTED_PREFS_SUGGEST_DISABLED = {
 };
 
 
-
-
-
-const EXPECTED_PREFS_BASE_NATIVE = {
+const EXPECTED_PREFS_BASE_US_GB_EU_3 = {
   ...EXPECTED_PREFS_SUGGEST_DISABLED,
   "quicksuggest.enabled": true,
   "quicksuggest.settingsUi": QuickSuggest.SETTINGS_UI.OFFLINE_ONLY,
@@ -51,47 +46,31 @@ const EXPECTED_PREFS_BASE_NATIVE = {
 };
 
 
+const EXPECTED_PREFS_US = {
+  ...EXPECTED_PREFS_BASE_US_GB_EU_3,
+  "addons.featureGate": true,
+  "mdn.featureGate": true,
+  "yelp.featureGate": true,
+};
 
-const EXPECTED_PREFS_EU_EN = {
+
+
+const EXPECTED_PREFS_EU_3_EN = {
   ...EXPECTED_PREFS_SUGGEST_DISABLED,
   "quicksuggest.enabled": true,
   "importantDates.featureGate": true,
 };
 
 
-const EXPECTED_PREFS_BY_LOCALE_BY_REGION = {
-  DE: {
-    de: EXPECTED_PREFS_BASE_NATIVE,
-    ...Object.fromEntries(
-      EN_LOCALES.map(locale => [locale, EXPECTED_PREFS_EU_EN])
-    ),
-  },
-  FR: {
-    fr: EXPECTED_PREFS_BASE_NATIVE,
-    ...Object.fromEntries(
-      EN_LOCALES.map(locale => [locale, EXPECTED_PREFS_EU_EN])
-    ),
-  },
-  GB: Object.fromEntries(
-    EN_LOCALES.map(locale => [locale, EXPECTED_PREFS_BASE_NATIVE])
-  ),
-  IT: {
-    it: EXPECTED_PREFS_BASE_NATIVE,
-    ...Object.fromEntries(
-      EN_LOCALES.map(locale => [locale, EXPECTED_PREFS_EU_EN])
-    ),
-  },
-  US: Object.fromEntries(
-    EN_LOCALES.map(locale => [
-      locale,
-      {
-        ...EXPECTED_PREFS_BASE_NATIVE,
-        "addons.featureGate": true,
-        "mdn.featureGate": true,
-        "yelp.featureGate": true,
-      },
-    ])
-  ),
+
+const EXPECTED_PREFS_EU_157 = {
+  ...EXPECTED_PREFS_SUGGEST_DISABLED,
+  "quicksuggest.enabled": true,
+  "quicksuggest.settingsUi": QuickSuggest.SETTINGS_UI.OFFLINE_ONLY,
+  "suggest.quicksuggest.all": true,
+  "suggest.quicksuggest.sponsored": true,
+  "amp.featureGate": true,
+  "wikipedia.featureGate": true,
 };
 
 add_setup(async () => {
@@ -101,35 +80,205 @@ add_setup(async () => {
 add_task(async function primary() {
   let tests = [
     
-    { region: "DE", locale: "de" },
-    { region: "DE", locale: "en-GB" },
-    { region: "DE", locale: "en-US" },
-
-    { region: "FR", locale: "fr" },
-    { region: "FR", locale: "en-GB" },
-    { region: "FR", locale: "en-US" },
-
-    { region: "GB", locale: "en-US" },
-    { region: "GB", locale: "en-CA" },
-    { region: "GB", locale: "en-GB" },
-
-    { region: "IT", locale: "it" },
-    { region: "IT", locale: "en-GB" },
-    { region: "IT", locale: "en-US" },
-
-    { region: "US", locale: "en-US" },
-    { region: "US", locale: "en-CA" },
-    { region: "US", locale: "en-GB" },
+    {
+      region: "US",
+      locale: "en-CA",
+      expectedPrefs: EXPECTED_PREFS_US,
+    },
+    {
+      region: "US",
+      locale: "en-GB",
+      expectedPrefs: EXPECTED_PREFS_US,
+    },
+    {
+      region: "US",
+      locale: "en-US",
+      expectedPrefs: EXPECTED_PREFS_US,
+    },
+    {
+      region: "US",
+      locale: "es-MX",
+      expectedPrefs: EXPECTED_PREFS_SUGGEST_DISABLED,
+    },
 
     
-    { region: "CA", locale: "en-US" },
-    { region: "CA", locale: "en-CA" },
-    { region: "GB", locale: "de" },
-    { region: "US", locale: "de" },
+    {
+      region: "DE",
+      locale: "de",
+      expectedPrefs: EXPECTED_PREFS_BASE_US_GB_EU_3,
+    },
+    {
+      region: "DE",
+      locale: "en-GB",
+      expectedPrefs: EXPECTED_PREFS_EU_3_EN,
+    },
+    {
+      region: "DE",
+      locale: "en-US",
+      expectedPrefs: EXPECTED_PREFS_EU_3_EN,
+    },
+    {
+      region: "DE",
+      locale: "xx",
+      expectedPrefs: EXPECTED_PREFS_SUGGEST_DISABLED,
+    },
+
+    {
+      region: "FR",
+      locale: "fr",
+      expectedPrefs: EXPECTED_PREFS_BASE_US_GB_EU_3,
+    },
+    {
+      region: "FR",
+      locale: "en-GB",
+      expectedPrefs: EXPECTED_PREFS_EU_3_EN,
+    },
+    {
+      region: "FR",
+      locale: "en-US",
+      expectedPrefs: EXPECTED_PREFS_EU_3_EN,
+    },
+    {
+      region: "FR",
+      locale: "xx",
+      expectedPrefs: EXPECTED_PREFS_SUGGEST_DISABLED,
+    },
+
+    {
+      region: "GB",
+      locale: "en-GB",
+      expectedPrefs: EXPECTED_PREFS_BASE_US_GB_EU_3,
+    },
+    {
+      region: "GB",
+      locale: "en-US",
+      expectedPrefs: EXPECTED_PREFS_BASE_US_GB_EU_3,
+    },
+    {
+      region: "GB",
+      locale: "xx",
+      expectedPrefs: EXPECTED_PREFS_SUGGEST_DISABLED,
+    },
+
+    {
+      region: "IT",
+      locale: "it",
+      expectedPrefs: EXPECTED_PREFS_BASE_US_GB_EU_3,
+    },
+    {
+      region: "IT",
+      locale: "en-GB",
+      expectedPrefs: EXPECTED_PREFS_EU_3_EN,
+    },
+    {
+      region: "IT",
+      locale: "en-US",
+      expectedPrefs: EXPECTED_PREFS_EU_3_EN,
+    },
+    {
+      region: "IT",
+      locale: "xx",
+      expectedPrefs: EXPECTED_PREFS_SUGGEST_DISABLED,
+    },
+
+    
+    {
+      region: "AT",
+      locale: "at",
+      expectedPrefs: EXPECTED_PREFS_EU_157,
+    },
+    {
+      region: "BE",
+      locale: "be",
+      expectedPrefs: EXPECTED_PREFS_EU_157,
+    },
+    {
+      region: "CH",
+      locale: "ch",
+      expectedPrefs: EXPECTED_PREFS_EU_157,
+    },
+    {
+      region: "CZ",
+      locale: "cz",
+      expectedPrefs: EXPECTED_PREFS_EU_157,
+    },
+    {
+      region: "DK",
+      locale: "dk",
+      expectedPrefs: EXPECTED_PREFS_EU_157,
+    },
+    {
+      region: "ES",
+      locale: "es",
+      expectedPrefs: EXPECTED_PREFS_EU_157,
+    },
+    {
+      region: "FI",
+      locale: "fi",
+      expectedPrefs: EXPECTED_PREFS_EU_157,
+    },
+    {
+      region: "HU",
+      locale: "hu",
+      expectedPrefs: EXPECTED_PREFS_EU_157,
+    },
+    {
+      region: "IE",
+      locale: "ie",
+      expectedPrefs: EXPECTED_PREFS_EU_157,
+    },
+    {
+      region: "LU",
+      locale: "lu",
+      expectedPrefs: EXPECTED_PREFS_EU_157,
+    },
+    {
+      region: "NL",
+      locale: "nl",
+      expectedPrefs: EXPECTED_PREFS_EU_157,
+    },
+    {
+      region: "NO",
+      locale: "no",
+      expectedPrefs: EXPECTED_PREFS_EU_157,
+    },
+    {
+      region: "PL",
+      locale: "pl",
+      expectedPrefs: EXPECTED_PREFS_EU_157,
+    },
+    {
+      region: "PT",
+      locale: "pt",
+      expectedPrefs: EXPECTED_PREFS_EU_157,
+    },
+    {
+      region: "SE",
+      locale: "se",
+      expectedPrefs: EXPECTED_PREFS_EU_157,
+    },
+    {
+      region: "SK",
+      locale: "sk",
+      expectedPrefs: EXPECTED_PREFS_EU_157,
+    },
+
+    {
+      region: "AT",
+      locale: "xx",
+      expectedPrefs: EXPECTED_PREFS_EU_157,
+    },
+
+    
+    {
+      region: "JP",
+      locale: "ja",
+      expectedPrefs: EXPECTED_PREFS_SUGGEST_DISABLED,
+    },
   ];
 
-  for (let { locale, region } of tests) {
-    await doPrimaryTest({ locale, region });
+  for (let { locale, region, expectedPrefs } of tests) {
+    await doPrimaryTest({ locale, region, expectedPrefs });
   }
 });
 
@@ -144,11 +293,9 @@ add_task(async function primary() {
 
 
 
-async function doPrimaryTest({ locale, region }) {
-  let expectedPrefs =
-    EXPECTED_PREFS_BY_LOCALE_BY_REGION[region]?.[locale] ??
-    EXPECTED_PREFS_SUGGEST_DISABLED;
 
+
+async function doPrimaryTest({ locale, region, expectedPrefs }) {
   let defaultBranch = new Preferences({
     branch: "browser.urlbar.",
     defaultBranch: true,
