@@ -460,23 +460,11 @@ class Animation : public DOMEventTargetHelper,
 
 
   enum class ProgressTimelinePosition : uint8_t { Boundary, NotBoundary };
-  static ProgressTimelinePosition AtProgressTimelineBoundary(
-      const Nullable<TimeDuration>& aTimelineDuration,
-      const Nullable<TimeDuration>& aCurrentTime,
-      const TimeDuration& aEffectStartTime, const double aPlaybackRate);
-  ProgressTimelinePosition AtProgressTimelineBoundary() const {
-    Nullable<TimeDuration> currentTime = GetUnconstrainedCurrentTime();
-    return AtProgressTimelineBoundary(
-        mTimeline ? mTimeline->TimelineDuration(mTimelineRange) : nullptr,
-        
-        
-        
-        
-        
-        !currentTime.IsNull() ? currentTime : GetCurrentTimeAsDuration(),
-        mStartTime.IsNull() ? TimeDuration() : mStartTime.Value(),
-        PlaybackRateInternal());
-  }
+  static ProgressTimelinePosition AtTimelineBoundary(
+      const Nullable<TimeDuration>& aTimelineTime,
+      const TimeDuration& aMinimumTimelineTime,
+      const TimeDuration& aMaximumTimelineTime);
+  ProgressTimelinePosition AtTimelineBoundary() const;
 
   void UpdateNormalizedTimingForTimelineDataChange();
   void MaybeUpdateKeyframeComputedOffsets();

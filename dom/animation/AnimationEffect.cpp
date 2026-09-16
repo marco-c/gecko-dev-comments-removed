@@ -53,10 +53,6 @@ bool AnimationEffect::IsCurrent() const {
 
   const AnimationTimeline* timeline = mAnimation->GetTimeline();
   
-  if (timeline && timeline->IsInactiveTimeline()) {
-    return false;
-  }
-  
   
   
   
@@ -85,7 +81,7 @@ bool AnimationEffect::IsInEffect() const {
   const auto* timeline = mAnimation ? mAnimation->GetTimeline() : nullptr;
   
   
-  if (timeline && timeline->IsInactiveTimeline()) {
+  if (timeline && timeline->IsUnresolvedTimeline()) {
     return false;
   }
   ComputedTiming computedTiming = GetComputedTiming();
@@ -299,7 +295,7 @@ ComputedTiming AnimationEffect::GetComputedTiming(
   const double playbackRate =
       mAnimation ? mAnimation->PlaybackRateInternal() : 1;
   const auto progressTimelinePosition =
-      mAnimation ? mAnimation->AtProgressTimelineBoundary()
+      mAnimation ? mAnimation->AtTimelineBoundary()
                  : Animation::ProgressTimelinePosition::NotBoundary;
   return GetComputedTimingAt(
       GetLocalTime(), aTiming ? *aTiming : NormalizedTiming(), playbackRate,
@@ -341,7 +337,7 @@ void AnimationEffect::GetComputedTimingAsDict(
   double playbackRate = mAnimation ? mAnimation->PlaybackRateInternal() : 1;
   const Nullable<TimeDuration> currentTime = GetLocalTime();
   const auto progressTimelinePosition =
-      mAnimation ? mAnimation->AtProgressTimelineBoundary()
+      mAnimation ? mAnimation->AtTimelineBoundary()
                  : Animation::ProgressTimelinePosition::NotBoundary;
   ComputedTiming computedTiming = GetComputedTimingAt(
       currentTime, NormalizedTiming(), playbackRate, progressTimelinePosition);
@@ -400,6 +396,14 @@ void AnimationEffect::GetComputedTimingAsDict(
 
 void AnimationEffect::UpdateTiming(const OptionalEffectTiming& aTiming,
                                    ErrorResult& aRv) {
+  const bool isFiniteTimeline =
+      mAnimation ? mAnimation->HasFiniteTimeline() : false;
+
+  if (isFiniteTimeline && aTiming.mIterations.WasPassed() &&
+      aTiming.mIterations.Value() >= double(UINT64_MAX)) {
+    aRv.ThrowTypeError("Infinite iterations for finite timeline");
+    return;
+  }
   TimingParams timing =
       TimingParams::MergeOptionalEffectTiming(mTiming, aTiming, aRv);
   if (aRv.Failed()) {

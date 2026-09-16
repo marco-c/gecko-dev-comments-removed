@@ -2185,50 +2185,42 @@ void Animation::ResetPendingTasks() {
 }
 
 
- Animation::ProgressTimelinePosition
-Animation::AtProgressTimelineBoundary(
-    const Nullable<TimeDuration>& aTimelineDuration,
-    const Nullable<TimeDuration>& aCurrentTime,
-    const TimeDuration& aEffectStartTime, const double aPlaybackRate) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aTimelineDuration.IsNull() || aTimelineDuration.Value().IsZero() ||
-      aPlaybackRate == 0.0) {
+ Animation::ProgressTimelinePosition Animation::AtTimelineBoundary(
+    const Nullable<TimeDuration>& aTimelineTime,
+    const TimeDuration& aMinimumTimelineTime,
+    const TimeDuration& aMaximumTimelineTime) {
+  const auto timelineTime =
+      aTimelineTime.IsNull() ? TimeDuration{} : aTimelineTime.Value();
+  if (AnimationUtils::IsWithinAnimationTimeTolerance(timelineTime,
+                                                     aMinimumTimelineTime) ||
+      AnimationUtils::IsWithinAnimationTimeTolerance(timelineTime,
+                                                     aMaximumTimelineTime)) {
+    return ProgressTimelinePosition::Boundary;
+  }
+
+  return ProgressTimelinePosition::NotBoundary;
+}
+
+Animation::ProgressTimelinePosition Animation::AtTimelineBoundary() const {
+  if (!mTimeline || !mTimeline->IsScrollTimeline() ||
+      mTimeline->IsUnresolvedTimeline()) {
+    
+    
+    
+    
+    
     return ProgressTimelinePosition::NotBoundary;
   }
 
-  
-  
-  const TimeDuration& effectiveStartTime = aEffectStartTime;
+  const auto timelineRange =
+      mTimeline->AsScrollTimeline()->IntervalForAttachmentRange(mTimelineRange);
 
-  
-  
-  
-  
-  const TimeDuration effectiveTimelineTime =
-      (aCurrentTime.IsNull()
-           ? TimeDuration()
-           : aCurrentTime.Value().MultDouble(1.0 / aPlaybackRate)) +
-      effectiveStartTime;
-
-  
-  
-  
-  
-  return effectiveTimelineTime.IsZero() ||
-                 (AnimationUtils::IsWithinAnimationTimeTolerance(
-                     effectiveTimelineTime, aTimelineDuration.Value()))
-             ? ProgressTimelinePosition::Boundary
-             : ProgressTimelinePosition::NotBoundary;
+  return AtTimelineBoundary(
+      mTimeline->GetCurrentTimeAsDuration(),
+      TimeDuration::FromMilliseconds(timelineRange.first *
+                                     PROGRESS_TIMELINE_DURATION_MILLISEC),
+      TimeDuration::FromMilliseconds(timelineRange.second *
+                                     PROGRESS_TIMELINE_DURATION_MILLISEC));
 }
 
 void Animation::UpdateNormalizedTimingForTimelineDataChange() {
