@@ -1,5 +1,3 @@
-
-
 import pytest
 from webdriver.bidi.undefined import UNDEFINED
 
