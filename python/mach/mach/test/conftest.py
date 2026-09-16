@@ -2,6 +2,8 @@
 
 
 
+from __future__ import annotations
+
 import unittest
 from collections.abc import Iterable
 from io import StringIO

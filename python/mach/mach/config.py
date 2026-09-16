@@ -14,6 +14,8 @@ ConfigProvider classes are associated with ConfigSettings and define what
 settings are available.
 """
 
+from __future__ import annotations
+
 import collections
 import collections.abc
 import sys
@@ -244,11 +246,15 @@ class ConfigSettings(collections.abc.Mapping):
             meta = self.get_meta(option)
             meta["type_cls"].validate(value)
 
-            if "choices" in meta and value not in meta["choices"]:
-                raise ValueError(
-                    "Value '%s' must be one of: %s"
-                    % (value, ", ".join(sorted(meta["choices"])))
-                )
+            if "choices" in meta:
+                choices = meta["choices"]
+                if callable(choices):
+                    choices = tuple(choices())
+                    meta["choices"] = choices
+                if value not in choices:
+                    raise ValueError(
+                        f"Value '{value}' must be one of: {', '.join(sorted(choices))}"
+                    )
 
         
         def __len__(self):

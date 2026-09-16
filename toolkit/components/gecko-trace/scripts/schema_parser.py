@@ -2,6 +2,8 @@
 
 
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -72,7 +74,7 @@ class SourceLocation:
     end_column: int
 
     @classmethod
-    def from_node(cls, node) -> "SourceLocation":
+    def from_node(cls, node) -> SourceLocation:
         return cls(
             file_path=Path(node.start_mark.name).relative_to(topsrcdir),
             

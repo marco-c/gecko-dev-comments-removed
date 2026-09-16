@@ -6,6 +6,8 @@
 
 
 
+from __future__ import annotations
+
 import functools
 import math
 import pathlib

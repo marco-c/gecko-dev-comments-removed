@@ -2,6 +2,8 @@
 
 
 
+from __future__ import annotations
+
 import ctypes
 import enum
 import os

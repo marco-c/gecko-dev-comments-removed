@@ -2,6 +2,8 @@
 
 
 
+from __future__ import annotations
+
 import concurrent.futures
 import lzma
 import plistlib
