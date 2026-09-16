@@ -21,8 +21,10 @@
 
 #ifdef XP_WIN
 
+
 #  include "util/WindowsWrapper.h"
 #  include <psapi.h>
+
 
 #else
 
@@ -283,6 +285,7 @@ static inline void* MapMemory(size_t length) {
   return MapInternal<commit, retry>(nullptr, length);
 }
 
+#ifdef JS_64BIT
 
 
 
@@ -296,6 +299,7 @@ static inline void* MapMemoryAtFuzzy(void* desired, size_t length) {
   
   return MapInternal<commit>(desired, length);
 }
+#endif
 
 
 
