@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_FS_PARENT_DATAMODEL_FILESYSTEMDATABASEMANAGERVERSION001_H_
 #define DOM_FS_PARENT_DATAMODEL_FILESYSTEMDATABASEMANAGERVERSION001_H_
 
@@ -112,7 +110,7 @@ class FileSystemDatabaseManagerVersion001 : public FileSystemDatabaseManager {
 
   nsresult EndUsageTracking(const FileId& aFileId) override;
 
-  virtual ~FileSystemDatabaseManagerVersion001() = default;
+  virtual ~FileSystemDatabaseManagerVersion001();
 
  protected:
   virtual Result<bool, QMResult> DoesFileIdExist(const FileId& aFileId) const;

@@ -2,13 +2,10 @@
 
 
 
-
-
 #ifndef mozilla_dom_localstorage_LSWriteOptimizer_h
 #define mozilla_dom_localstorage_LSWriteOptimizer_h
 
 #include <cstdint>
-#include <utility>
 
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
@@ -40,17 +37,9 @@ class LSWriteOptimizerBase {
   NS_DECL_OWNINGTHREAD
 
  public:
-  LSWriteOptimizerBase() : mLastSerialNumber(0), mTotalDelta(0) {}
+  LSWriteOptimizerBase();
 
-  LSWriteOptimizerBase(LSWriteOptimizerBase&& aWriteOptimizer)
-      : mTruncateInfo(std::move(aWriteOptimizer.mTruncateInfo)) {
-    AssertIsOnOwningThread();
-    MOZ_ASSERT(&aWriteOptimizer != this);
-
-    mWriteInfos.SwapElements(aWriteOptimizer.mWriteInfos);
-    mTotalDelta = aWriteOptimizer.mTotalDelta;
-    aWriteOptimizer.mTotalDelta = 0;
-  }
+  LSWriteOptimizerBase(LSWriteOptimizerBase&& aWriteOptimizer);
 
   void AssertIsOnOwningThread() const {
     NS_ASSERT_OWNINGTHREAD(LSWriteOptimizerBase);
@@ -66,12 +55,7 @@ class LSWriteOptimizerBase {
     return mTruncateInfo || !mWriteInfos.IsEmpty();
   }
 
-  void Reset() {
-    AssertIsOnOwningThread();
-
-    mTruncateInfo = nullptr;
-    mWriteInfos.Clear();
-  }
+  void Reset();
 
  protected:
   uint64_t NextSerialNumber() {
