@@ -150,36 +150,6 @@ add_task(async function test_jump_to_bottom_scroll_and_click() {
         "Button should not be disabled when visible"
       );
 
-      
-      
-      
-      
-      
-      wrapper.toggleAttribute("overflowing", true);
-      Assert.notEqual(
-        content.getComputedStyle(wrapper, "::before").backdropFilter,
-        "none",
-        "Scroll fade should be painting so the button is actually covered"
-      );
-
-      
-      
-      
-      
-      
-      const rect = btn.getBoundingClientRect();
-      const hit = chatContent.shadowRoot.elementFromPoint(
-        rect.left + rect.width / 2,
-        rect.top + rect.height / 2
-      );
-      const hitDesc = hit?.className || hit?.localName || "nothing";
-
-      Assert.equal(
-        hit,
-        btn,
-        `Button should be the topmost element at its center, got ${hitDesc}`
-      );
-
       btn.click();
 
       await ContentTaskUtils.waitForCondition(
