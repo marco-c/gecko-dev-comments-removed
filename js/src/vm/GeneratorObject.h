@@ -267,6 +267,13 @@ AbstractGeneratorObject* GetGeneratorObjectForFrame(JSContext* cx,
 
 
 
+AbstractGeneratorObject* GetGeneratorObjectForModule(ModuleObject* module);
+
+
+
+
+
+
 
 
 AbstractGeneratorObject* GetGeneratorObjectForEnvironment(JSContext* cx,

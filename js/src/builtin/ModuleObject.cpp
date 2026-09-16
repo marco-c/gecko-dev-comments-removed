@@ -19,6 +19,7 @@
 #include "js/friend/ErrorMessages.h"  
 #include "js/Modules.h"  
 #include "vm/EqualityOperations.h"  
+#include "vm/GeneratorObject.h"     
 #include "vm/Interpreter.h"    
 #include "vm/ModuleBuilder.h"  
 #include "vm/Modules.h"
@@ -1573,6 +1574,17 @@ bool ModuleObject::execute(JSContext* cx, Handle<ModuleObject*> self) {
 
 
 void ModuleObject::onTopLevelEvaluationFinished(ModuleObject* module) {
+  
+  
+  
+  
+  
+  
+  AbstractGeneratorObject* genObj = GetGeneratorObjectForModule(module);
+  if (genObj && genObj->isSuspended()) {
+    return;
+  }
+
   
   
   
