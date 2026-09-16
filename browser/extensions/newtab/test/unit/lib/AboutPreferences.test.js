@@ -27,9 +27,6 @@ describe("AboutPreferences Feed", () => {
     globals.set("NimbusFeatures", {
       newtab: { getAllVariables: sandbox.stub() },
     });
-    globals.set("Management", {
-      asyncLoadSettingsModules: sandbox.stub(),
-    });
   });
   afterEach(() => {
     globals.restore();
@@ -161,21 +158,17 @@ describe("AboutPreferences Feed", () => {
         registerGroups = sandbox.stub();
         getSettingGroup = sandbox.stub();
         getSettingGroup
-          .withArgs("homepage")
+          .withArgs("home")
           .onFirstCall()
           .throws(new Error("Not yet registered"));
-        getSettingGroup.withArgs("homepage").onSecondCall().returns(true);
+        getSettingGroup.withArgs("home").onSecondCall().returns(true);
         insertFTLIfNeeded = sandbox.stub();
-        
         globals.set("SettingGroupManager", {
           registerGroups,
           get: getSettingGroup,
         });
         globals.set("MozXULElement", { insertFTLIfNeeded });
-        
         sandbox.stub(instance, "_registerPreferences");
-        sandbox.stub(instance, "_setupHomepageGroup").returns({});
-        sandbox.stub(instance, "_setupCustomHomepageGroup").returns({});
         sandbox.stub(instance, "_setupHomeGroup").returns({});
       });
 
@@ -185,14 +178,15 @@ describe("AboutPreferences Feed", () => {
         assert.calledWith(insertFTLIfNeeded, "browser/newtab/newtab.ftl");
       });
 
-      it("should call SettingGroupManager.registerGroups with homepage, customHomepage, and home", async () => {
+      it("should call registerGroups with home only", async () => {
+        
         await instance.observe(window);
 
         assert.calledOnce(registerGroups);
-        assert.hasAllKeys(registerGroups.firstCall.args[0], [
+        assert.hasAllKeys(registerGroups.firstCall.args[0], ["home"]);
+        assert.doesNotHaveAnyKeys(registerGroups.firstCall.args[0], [
           "homepage",
           "customHomepage",
-          "home",
         ]);
       });
 

@@ -945,13 +945,6 @@ module.exports = function (config) {
             "../../../toolkit/content/vendor/react/react-redux.js"
           )
         ),
-        
-        
-        
-        new webpack.NormalModuleReplacementPlugin(
-          /^resource:\/\/gre\/modules\/AppConstants\.sys\.mjs$/,
-          path.resolve(__dirname, "test/unit/stubs/AppConstants.sys.mjs")
-        ),
       ],
       externals: [
         
