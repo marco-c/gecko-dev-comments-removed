@@ -25,7 +25,6 @@ char kTSanDefaultSuppressions[] =
 
     
     
-    "race:vp8cx_remove_encoder_threads\n"
     "race:third_party/libvpx/source/libvpx/vp9/common/vp9_scan.h\n"
 
     
