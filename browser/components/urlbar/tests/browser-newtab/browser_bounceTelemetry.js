@@ -5,6 +5,10 @@
 
 
 
+
+
+
+
 "use strict";
 
 const { Interactions } = ChromeUtils.importESModule(
@@ -13,10 +17,6 @@ const { Interactions } = ChromeUtils.importESModule(
 
 
 const MAX_VIEW_TIME_SECONDS = 10;
-
-
-
-let viewTime = (MAX_VIEW_TIME_SECONDS / 2) * 1000;
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
@@ -29,57 +29,66 @@ add_setup(async function () {
   });
   await SearchTestUtils.installSearchExtension({}, { setAsDefault: true });
 
-  sinon
-    .stub(Interactions, "getRecentInteractionsForBrowser")
-    .callsFake(() => [{ created_at: Date.now(), totalViewTime: viewTime }]);
+  
+  
+  sinon.stub(Interactions, "getRecentInteractionsForBrowser").callsFake(() => [
+    {
+      created_at: Date.now(),
+      totalViewTime: (MAX_VIEW_TIME_SECONDS / 2) * 1000,
+    },
+  ]);
 
   registerCleanupFunction(function () {
     sinon.restore();
   });
 });
 
-add_telemetry_task(async function test_bounce_back_button(browser) {
+add_telemetry_task(async function navigateBack(browser) {
   await doSearch(browser);
   await doEnter(browser);
   await assertEngagementTelemetry([{ sap: "newtab_searchbar" }]);
 
-  await goBack();
-
-  await assertBounceTelemetry([{ sap: "newtab_searchbar" }]);
-});
-
-add_telemetry_task(async function test_bounce_tab_close(browser) {
-  await doSearch(browser);
-  await doEnter(browser);
-  await assertEngagementTelemetry([{ sap: "newtab_searchbar" }]);
-
-  BrowserTestUtils.removeTab(gBrowser.getTabForBrowser(browser));
-
-  await assertBounceTelemetry([{ sap: "newtab_searchbar" }]);
-});
-
-
-add_telemetry_task(async function test_no_bounce(browser) {
-  viewTime = MAX_VIEW_TIME_SECONDS * 2 * 1000;
-  registerCleanupFunction(function () {
-    viewTime = (MAX_VIEW_TIME_SECONDS / 2) * 1000;
-  });
-
-  await doSearch(browser);
-  await doEnter(browser);
-  await assertEngagementTelemetry([{ sap: "newtab_searchbar" }]);
-
-  await goBack();
-  await Interactions.interactionUpdatePromise;
-
-  await assertBounceTelemetry([]);
-});
-
-async function goBack() {
   let onLocationChange = BrowserTestUtils.waitForLocationChange(
     gBrowser,
     "about:newtab"
   );
   gBrowser.goBack();
   await onLocationChange;
-}
+  await Interactions.interactionUpdatePromise;
+
+  await assertBounceTelemetry([]);
+});
+
+add_telemetry_task(async function closeTab(browser) {
+  await doSearch(browser);
+  await doEnter(browser);
+  await assertEngagementTelemetry([{ sap: "newtab_searchbar" }]);
+
+  BrowserTestUtils.removeTab(gBrowser.getTabForBrowser(browser));
+  await Interactions.interactionUpdatePromise;
+
+  await assertBounceTelemetry([]);
+});
+
+
+
+add_telemetry_task(async function addressBar(browser) {
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "x",
+  });
+  let loaded = BrowserTestUtils.browserLoaded(browser);
+  EventUtils.synthesizeKey("KEY_Enter");
+  await loaded;
+  await assertEngagementTelemetry([{ sap: "urlbar_newtab" }]);
+
+  let onLocationChange = BrowserTestUtils.waitForLocationChange(
+    gBrowser,
+    "about:newtab"
+  );
+  gBrowser.goBack();
+  await onLocationChange;
+  await Interactions.interactionUpdatePromise;
+
+  await assertBounceTelemetry([{ sap: "urlbar_newtab" }]);
+});
