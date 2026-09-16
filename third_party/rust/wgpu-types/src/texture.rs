@@ -1,6 +1,8 @@
 use core::ops::Range;
 
-use crate::{link_to_wgpu_docs, link_to_wgpu_item, Extent3d, Origin3d};
+use macro_rules_attribute::derive;
+
+use crate::{link_to_wgpu_docs, link_to_wgpu_item, ConstDefault, Extent3d, Origin3d};
 
 #[cfg(any(feature = "serde", test))]
 use serde::{Deserialize, Serialize};
@@ -36,7 +38,7 @@ pub enum TextureDimension {
 }
 
 
-#[derive(Clone, Copy, Default, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, ConstDefault!, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum TextureDataOrder {
     
@@ -48,7 +50,7 @@ pub enum TextureDataOrder {
     
     
     
-    #[default]
+    #[custom(default)]
     LayerMajor,
     
     
@@ -67,7 +69,7 @@ pub enum TextureDataOrder {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, ConstDefault!, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum TextureViewDimension {
     
@@ -75,7 +77,7 @@ pub enum TextureViewDimension {
     D1,
     
     #[cfg_attr(feature = "serde", serde(rename = "2d"))]
-    #[default]
+    #[custom(default)]
     D2,
     
     #[cfg_attr(feature = "serde", serde(rename = "2d-array"))]
@@ -113,12 +115,12 @@ impl TextureViewDimension {
 
 #[doc = link_to_wgpu_item!(struct Texture)]
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, ConstDefault!, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum TextureAspect {
     
-    #[default]
+    #[custom(default)]
     All,
     
     StencilOnly,
@@ -645,6 +647,21 @@ impl<L, V> TextureDescriptor<L, V> {
             TextureDimension::D2 => self.size.depth_or_array_layers,
         }
     }
+
+    
+    
+    
+    #[must_use]
+    pub fn theoretical_memory_footprint(&self) -> u64 {
+        (0..self.mip_level_count).fold(0, |acc, level| {
+            acc.saturating_add(
+                self.format.theoretical_memory_footprint(
+                    self.mip_level_size(level)
+                        .expect("mipmap level should be inbounds"),
+                ),
+            )
+        })
+    }
 }
 
 
@@ -727,7 +744,7 @@ impl<L> SamplerDescriptor<L> {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, ConstDefault!, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum AddressMode {
@@ -735,7 +752,7 @@ pub enum AddressMode {
     
     
     
-    #[default]
+    #[custom(default)]
     ClampToEdge = 0,
     
     
@@ -760,14 +777,14 @@ pub enum AddressMode {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, ConstDefault!, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum FilterMode {
     
     
     
-    #[default]
+    #[custom(default)]
     Nearest = 0,
     
     
@@ -780,14 +797,14 @@ pub enum FilterMode {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, ConstDefault!, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum MipmapFilterMode {
     
     
     
-    #[default]
+    #[custom(default)]
     Nearest = 0,
     
     
@@ -829,7 +846,7 @@ pub enum SamplerBorderColor {
 
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, ConstDefault!)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TexelCopyBufferLayout {
     
@@ -923,7 +940,7 @@ impl<T> TexelCopyTextureInfo<T> {
 
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, ConstDefault!, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct ImageSubresourceRange {

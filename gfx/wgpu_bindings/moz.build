@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "Graphics: WebGPU")
@@ -18,8 +16,8 @@ if CONFIG["COMPILE_ENVIRONMENT"]:
         "wgpu_ffi_generated.h",
         inputs=[
             "/gfx/wgpu_bindings",
-            "/third_party/rust/wgpu-core",
-            "/third_party/rust/wgpu-hal",
+            "/third_party/rust/wgpu-core-remote",
+            "/third_party/rust/wgpu-core-remote-types",
             "/third_party/rust/wgpu-types",
         ],
     )

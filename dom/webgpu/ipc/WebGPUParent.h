@@ -7,14 +7,12 @@
 
 #include <unordered_map>
 
-#include "WebGPUTypes.h"
 #include "base/timer.h"
 #include "mozilla/WeakPtr.h"
-#include "mozilla/ipc/SharedMemoryHandle.h"
+#include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/webgpu/ExternalTexture.h"
 #include "mozilla/webgpu/PWebGPUParent.h"
 #include "mozilla/webgpu/ffi/wgpu.h"
-#include "mozilla/webrender/WebRenderAPI.h"
 
 namespace mozilla {
 
@@ -26,56 +24,6 @@ namespace webgpu {
 
 class SharedTexture;
 class PresentationData;
-
-
-
-
-
-
-
-
-
-
-
-
-
-class ErrorBuffer {
-  
-  static constexpr unsigned BUFFER_SIZE = 512;
-  ffi::WGPUErrorBufferType mType = ffi::WGPUErrorBufferType_None;
-  char mMessageUtf8[BUFFER_SIZE] = {};
-  bool mAwaitingGetError = false;
-  RawId mDeviceId = 0;
-
- public:
-  ErrorBuffer();
-  ErrorBuffer(const ErrorBuffer&) = delete;
-  ~ErrorBuffer();
-
-  ffi::WGPUErrorBuffer ToFFI();
-
-  ffi::WGPUErrorBufferType GetType();
-
-  static Maybe<dom::GPUErrorFilter> ErrorTypeToFilterType(
-      ffi::WGPUErrorBufferType aType);
-
-  struct Error {
-    dom::GPUErrorFilter type;
-    bool isDeviceLost;
-    nsCString message;
-    RawId deviceId;
-  };
-
-  
-  
-  
-  
-  
-  
-  Maybe<Error> GetError();
-
-  void CoerceValidationToInternal();
-};
 
 
 
@@ -123,9 +71,6 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
                      layers::RemoteTextureTxnType aTxnType,
                      layers::RemoteTextureTxnId aTxnId);
 
-  void DevicePushErrorScope(RawId aDeviceId, dom::GPUErrorFilter);
-  PopErrorScopeResult DevicePopErrorScope(RawId aDeviceId);
-
   ipc::IPCResult GetFrontBufferSnapshot(
       IProtocol* aProtocol, const layers::RemoteTextureOwnerId& aOwnerId,
       const RawId& aCommandEncoderId, const RawId& aCommandBufferId,
@@ -139,6 +84,7 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
     bool mHasMapFlags;
     uint64_t mMappedOffset;
     uint64_t mMappedSize;
+    bool mIsMapped;
     RawId mDeviceId;
   };
 
@@ -171,8 +117,6 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
   void PostSharedTexture(const std::shared_ptr<SharedTexture>&& aSharedTexture,
                          const layers::RemoteTextureId aRemoteTextureId,
                          const layers::RemoteTextureOwnerId aOwnerId);
-
-  bool ForwardError(ErrorBuffer& aError);
 
   ffi::WGPUGlobal* GetContext() const { return mContext.get(); }
 
@@ -212,8 +156,6 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
   static void OnSubmittedWorkDoneCallback(
        uint8_t* userdata);
 
-  void ReportError(RawId aDeviceId, GPUErrorFilter, const nsCString& message);
-
   std::vector<std::shared_ptr<ipc::SharedMemoryMapping>> mTempMappings;
 
   
@@ -224,13 +166,8 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
   const dom::ContentParentId mContentId;
 
  private:
-  static void DeviceLostCallback(uint8_t* aUserData, uint8_t aReason,
-                                 const char* aMessage);
-
   virtual ~WebGPUParent();
   void MaintainDevices();
-  void LoseDevice(const RawId aDeviceId, dom::GPUDeviceLostReason aReason,
-                  const nsACString& aMessage);
 
   UniquePtr<ffi::WGPUGlobal> mContext;
   base::RepeatingTimer<WebGPUParent> mTimer;
@@ -242,18 +179,10 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
 
   RefPtr<layers::RemoteTextureOwnerClient> mRemoteTextureOwner;
 
-  
-  std::unordered_map<uint64_t, std::vector<ErrorScope>>
-      mErrorScopeStackByDevice;
-
   std::unordered_map<ffi::WGPUTextureId, std::shared_ptr<SharedTexture>>
       mSharedTextures;
 
   std::unordered_map<RawId, ExternalTextureSourceHost> mExternalTextureSources;
-
-  
-  
-  nsTHashSet<RawId> mLostDeviceIds;
 
   
   std::unordered_map<RawId, RefPtr<gfx::FileHandleWrapper>> mDeviceFenceHandles;

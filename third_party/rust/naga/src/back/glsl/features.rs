@@ -62,6 +62,13 @@ bitflags::bitflags! {
     }
 }
 
+impl core::fmt::Display for Features {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        
+        bitflags::parser::to_writer(self, f)
+    }
+}
+
 
 
 
@@ -144,7 +151,7 @@ impl FeaturesManager {
         if missing.is_empty() {
             Ok(())
         } else {
-            Err(Error::MissingFeatures(missing))
+            Err(Error::MissingFeatures(missing, version))
         }
     }
 

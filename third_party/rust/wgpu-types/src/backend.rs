@@ -3,10 +3,12 @@
 use alloc::string::{String, ToString};
 use core::{hash::Hash, str::FromStr};
 
+use macro_rules_attribute::derive;
+
 #[cfg(any(feature = "serde", test))]
 use serde::{Deserialize, Serialize};
 
-use crate::link_to_wgpu_docs;
+use crate::{link_to_wgpu_docs, ConstDefault};
 
 #[cfg(doc)]
 use crate::InstanceDescriptor;
@@ -39,14 +41,29 @@ pub enum Backend {
     
     
     Noop = 0,
+
     
     Vulkan = 1,
+
     
     Metal = 2,
+
     
     Dx12 = 3,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     Gl = 4,
+
     
     BrowserWebGpu = 5,
 }
@@ -207,7 +224,7 @@ impl Backends {
 
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Eq, PartialEq, ConstDefault!)]
 pub struct BackendOptions {
     
     pub gl: GlBackendOptions,
@@ -246,7 +263,7 @@ impl BackendOptions {
 
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Eq, PartialEq, ConstDefault!)]
 pub struct GlBackendOptions {
     
     pub gles_minor_version: Gles3MinorVersion,
@@ -303,7 +320,7 @@ impl GlBackendOptions {
 
 
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, ConstDefault!)]
 pub enum GlDebugFns {
     
     
@@ -312,7 +329,7 @@ pub enum GlDebugFns {
     
     
     
-    #[default]
+    #[custom(default)]
     Auto,
     
     
@@ -362,7 +379,7 @@ impl GlDebugFns {
 
 
 
-#[derive(Default, Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq, ConstDefault!)]
 pub struct ForceShaderModelToken {
     inner: Option<DxcShaderModel>,
 }
@@ -372,25 +389,25 @@ impl ForceShaderModelToken {
     
     
     
-    pub unsafe fn with_shader_model(sm: DxcShaderModel) -> Self {
+    pub const unsafe fn with_shader_model(sm: DxcShaderModel) -> Self {
         Self { inner: Some(sm) }
     }
 
     
-    pub fn get(&self) -> Option<DxcShaderModel> {
-        self.inner.clone()
+    pub const fn get(&self) -> Option<DxcShaderModel> {
+        self.inner
     }
 }
 
 
 
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, ConstDefault!, PartialEq, Eq)]
 pub enum Dx12AgilitySDKLoadFailure {
     
     
     
-    #[default]
+    #[custom(default)]
     Fallback,
     
     
@@ -471,7 +488,7 @@ impl Dx12AgilitySDKLoadFailure {
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Dx12AgilitySDK {
     
     
@@ -533,7 +550,7 @@ impl Dx12AgilitySDK {
 
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Eq, PartialEq, ConstDefault!)]
 pub struct Dx12BackendOptions {
     
     pub shader_compiler: Dx12Compiler,
@@ -602,7 +619,7 @@ impl Dx12BackendOptions {
 
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Eq, PartialEq, ConstDefault!)]
 pub struct NoopBackendOptions {
     
     
@@ -670,13 +687,13 @@ impl NoopBackendOptions {
     }
 }
 
-#[derive(Clone, Debug, Default, Copy, PartialEq, Eq)]
+#[derive(Clone, Debug, ConstDefault!, Copy, PartialEq, Eq)]
 
 pub enum Dx12SwapchainKind {
     
     
     
-    #[default]
+    #[custom(default)]
     DxgiFromHwnd,
     
     
@@ -723,7 +740,7 @@ impl Dx12SwapchainKind {
 }
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
 #[allow(missing_docs)]
 pub enum DxcShaderModel {
     V6_0,
@@ -775,7 +792,7 @@ impl DxcShaderModel {
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Eq, PartialEq, ConstDefault!)]
 pub enum Dx12Compiler {
     
     
@@ -799,7 +816,7 @@ pub enum Dx12Compiler {
     
     StaticDxc,
     
-    #[default]
+    #[custom(default)]
     Auto,
 }
 
@@ -860,13 +877,13 @@ impl FromStr for Dx12Compiler {
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Eq, PartialEq, ConstDefault!)]
 pub enum Dx12UseFrameLatencyWaitableObject {
     
     
     None,
     
-    #[default]
+    #[custom(default)]
     Wait,
     
     
@@ -910,10 +927,10 @@ impl Dx12UseFrameLatencyWaitableObject {
 
 
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Hash)]
+#[derive(Clone, Copy, Debug, ConstDefault!, Eq, PartialEq, Hash)]
 pub enum Gles3MinorVersion {
     
-    #[default]
+    #[custom(default)]
     Automatic,
 
     
@@ -960,10 +977,10 @@ impl Gles3MinorVersion {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, ConstDefault!)]
 pub enum GlFenceBehavior {
     
-    #[default]
+    #[custom(default)]
     Normal,
     
     

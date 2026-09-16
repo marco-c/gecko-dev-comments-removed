@@ -4,7 +4,7 @@ use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use core::any::Any;
 
 use ash::{khr, vk};
-use parking_lot::{Mutex, MutexGuard};
+use wgpu_sync::{Mutex, MutexGuard};
 
 use crate::vulkan::{
     conv, map_host_device_oom_and_lost_err,
@@ -299,6 +299,7 @@ impl Surface for NativeSurface {
             next_acquire_index: 0,
             present_semaphores,
             next_present_time: None,
+            next_present_chain: None,
         }))
     }
 
@@ -365,7 +366,25 @@ pub(crate) struct NativeSwapchain {
     
     
     next_present_time: Option<vk::PresentTimeGOOGLE>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    next_present_chain: Option<PresentChain>,
 }
+
+
+struct PresentChain(*mut vk::BaseOutStructure<'static>);
+
+
+
+unsafe impl Send for PresentChain {}
+unsafe impl Sync for PresentChain {}
 
 impl Drop for NativeSwapchain {
     fn drop(&mut self) {
@@ -595,7 +614,7 @@ impl Swapchain for NativeSwapchain {
 
         let mut display_timing;
         let present_times;
-        let vk_info = if let Some(present_time) = self.next_present_time.take() {
+        let mut vk_info = if let Some(present_time) = self.next_present_time.take() {
             debug_assert!(
                 self.device
                     .features
@@ -609,6 +628,20 @@ impl Swapchain for NativeSwapchain {
         } else {
             vk_info
         };
+
+        if let Some(PresentChain(chain)) = self.next_present_chain.take() {
+            
+            
+            
+            unsafe {
+                let mut tail = chain;
+                while !(*tail).p_next.is_null() {
+                    tail = (*tail).p_next;
+                }
+                (*tail).p_next = vk_info.p_next.cast_mut().cast();
+                vk_info.p_next = chain.cast();
+            }
+        }
 
         let suboptimal = {
             profiling::scope!("vkQueuePresentKHR");
@@ -661,6 +694,13 @@ impl NativeSwapchain {
                 features
             );
         }
+    }
+
+    
+    
+    
+    pub unsafe fn set_next_present_chain(&mut self, chain: *mut core::ffi::c_void) {
+        self.next_present_chain = Some(PresentChain(chain.cast()));
     }
 
     

@@ -9,7 +9,11 @@ use std::thread;
 
 use arrayvec::ArrayVec;
 use ash::{ext, khr, vk};
-use parking_lot::RwLock;
+use wgpu_sync::RwLock;
+
+
+#[cfg(target_env = "ohos")]
+const OHOS_SURFACE_EXTENSION_NAME: &CStr = c"VK_OHOS_surface";
 
 unsafe extern "system" fn debug_utils_messenger_callback(
     message_severity: vk::DebugUtilsMessageSeverityFlagsEXT,
@@ -158,7 +162,90 @@ unsafe extern "system" fn debug_utils_messenger_callback(
         crate::VALIDATION_CANARY.add(message.to_string());
     }
 
+    
+    
+    
+    
+    #[cfg(all(
+        debug_assertions,
+        feature = "internal_error_panic",
+        not(target_vendor = "apple")
+    ))]
+    if level == log::Level::Error
+        && message_type.contains(vk::DebugUtilsMessageTypeFlagsEXT::VALIDATION)
+        && !error_is_waived(cd.message_id_number)
+        && !cts_error_is_waived(cd.message_id_number)
+    {
+        use alloc::string::ToString as _;
+        panic!("{}", message.to_string());
+    }
+
     vk::FALSE
+}
+
+
+
+
+#[cfg(all(
+    debug_assertions,
+    feature = "internal_error_panic",
+    not(target_vendor = "apple")
+))]
+fn error_is_waived(message_id_number: i32) -> bool {
+    const WAIVED_MESSAGE_IDS: &[i32] = &[
+        
+        
+        
+        
+        0x5c0ec5d6_u32 as i32,
+    ];
+
+    WAIVED_MESSAGE_IDS.contains(&message_id_number)
+}
+
+
+
+
+
+#[cfg(all(
+    debug_assertions,
+    feature = "internal_error_panic",
+    not(target_vendor = "apple")
+))]
+fn cts_error_is_waived(message_id_number: i32) -> bool {
+    use wgpu_sync::Lazy;
+
+    static WGPU_CTS_XTASK: Lazy<bool> = Lazy::new(|| std::env::var_os("WGPU_CTS_XTASK").is_some());
+
+    if !*WGPU_CTS_XTASK {
+        return false;
+    }
+
+    const WAIVED_MESSAGE_IDS: &[i32] = &[
+        
+        
+        0x34d444b2_u32 as i32,
+        
+        
+        0x6b654496_u32 as i32,
+        
+        
+        0x82396078_u32 as i32,
+        
+        
+        0xa3614f8b_u32 as i32,
+        
+        
+        0xa4164ba5_u32 as i32,
+        
+        
+        0xb75da543_u32 as i32,
+        
+        
+        0xf6d454db_u32 as i32,
+    ];
+
+    WAIVED_MESSAGE_IDS.contains(&message_id_number)
 }
 
 impl super::DebugUtilsCreateInfo {
@@ -241,7 +328,10 @@ impl super::Instance {
         if cfg!(all(
             unix,
             not(target_os = "android"),
-            not(target_os = "macos")
+            not(target_os = "macos"),
+            // NOTE: OpenHarmony (`target_env = "ohos"`) reports `target_os = "linux"` and is
+            // unix, but has neither X11 nor Wayland.
+            not(target_env = "ohos")
         )) {
             
             extensions.push(khr::xlib_surface::NAME);
@@ -253,6 +343,11 @@ impl super::Instance {
         if cfg!(target_os = "android") {
             
             extensions.push(khr::android_surface::NAME);
+        }
+        #[cfg(target_env = "ohos")]
+        {
+            
+            extensions.push(OHOS_SURFACE_EXTENSION_NAME);
         }
         if cfg!(target_os = "windows") {
             
@@ -495,6 +590,96 @@ impl super::Instance {
         .map_err(|err| {
             crate::InstanceError::with_source(String::from("AndroidSurface failed"), err)
         })?;
+
+        Ok(self.create_surface_from_vk_surface_khr(surface, None))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(target_env = "ohos")]
+    fn create_surface_ohos(
+        &self,
+        window: *mut c_void,
+    ) -> Result<super::Surface, crate::InstanceError> {
+        
+        
+        #[repr(C)]
+        struct VkSurfaceCreateInfoOHOS {
+            s_type: vk::StructureType,
+            p_next: *const c_void,
+            flags: vk::Flags,
+            window: *mut c_void,
+        }
+
+        
+        
+        const S_TYPE_SURFACE_CREATE_INFO_OHOS: vk::StructureType =
+            vk::StructureType::from_raw(1000685000);
+
+        
+        
+        type PfnCreateSurfaceOHOS = unsafe extern "system" fn(
+            vk::Instance,
+            *const VkSurfaceCreateInfoOHOS,
+            *const vk::AllocationCallbacks,
+            *mut vk::SurfaceKHR,
+        ) -> vk::Result;
+
+        if !self
+            .shared
+            .extensions
+            .contains(&OHOS_SURFACE_EXTENSION_NAME)
+        {
+            return Err(crate::InstanceError::new(String::from(
+                "Vulkan driver does not support VK_OHOS_surface",
+            )));
+        }
+
+        let raw_instance = self.shared.raw.handle();
+
+        
+        
+        
+        
+        let create = unsafe {
+            self.shared
+                .entry
+                .get_instance_proc_addr(raw_instance, c"vkCreateSurfaceOHOS".as_ptr())
+        };
+        let create =
+            
+            
+            unsafe { core::mem::transmute::<vk::PFN_vkVoidFunction, Option<PfnCreateSurfaceOHOS>>(create) };
+        let Some(create) = create else {
+            return Err(crate::InstanceError::new(String::from(
+                "vkCreateSurfaceOHOS not exposed by Vulkan driver",
+            )));
+        };
+
+        let info = VkSurfaceCreateInfoOHOS {
+            s_type: S_TYPE_SURFACE_CREATE_INFO_OHOS,
+            p_next: core::ptr::null(),
+            flags: 0,
+            window,
+        };
+        let mut surface = vk::SurfaceKHR::null();
+        
+        
+        
+        
+        
+        let result = unsafe { create(raw_instance, &info, core::ptr::null(), &mut surface) };
+        if result != vk::Result::SUCCESS {
+            return Err(crate::InstanceError::new(format!(
+                "vkCreateSurfaceOHOS failed: {result:?}"
+            )));
+        }
 
         Ok(self.create_surface_from_vk_surface_khr(surface, None))
     }
@@ -924,6 +1109,8 @@ impl crate::Instance for super::Instance {
             (Rwh::AndroidNdk(handle), _) => {
                 self.create_surface_android(handle.a_native_window.as_ptr())
             }
+            #[cfg(target_env = "ohos")]
+            (Rwh::OhosNdk(handle), _) => self.create_surface_ohos(handle.native_window.as_ptr()),
             (Rwh::Win32(handle), _) => {
                 let hinstance = handle.hinstance.ok_or_else(|| {
                     crate::InstanceError::new(String::from(

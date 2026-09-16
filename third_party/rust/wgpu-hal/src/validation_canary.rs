@@ -1,6 +1,6 @@
 use alloc::{string::String, vec::Vec};
 
-use parking_lot::Mutex;
+use wgpu_sync::Mutex;
 
 
 
@@ -17,7 +17,8 @@ use parking_lot::Mutex;
 
 
 pub static VALIDATION_CANARY: ValidationCanary = ValidationCanary {
-    inner: Mutex::new(Vec::new()),
+    
+    inner: Mutex::const_new(wgpu_sync::RawMutex::new(), Vec::new()),
 };
 
 

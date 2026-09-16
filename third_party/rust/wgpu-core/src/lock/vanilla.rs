@@ -19,16 +19,16 @@ pub struct RankData;
 
 
 
-pub struct Mutex<T>(parking_lot::Mutex<T>);
+pub struct Mutex<T>(wgpu_sync::Mutex<T>);
 
 
 
 
-pub struct MutexGuard<'a, T>(parking_lot::MutexGuard<'a, T>);
+pub struct MutexGuard<'a, T>(wgpu_sync::MutexGuard<'a, T>);
 
 impl<T> Mutex<T> {
     pub fn new(_rank: LockRank, value: T) -> Mutex<T> {
-        Mutex(parking_lot::Mutex::new(value))
+        Mutex(wgpu_sync::Mutex::new(value))
     }
 
     pub fn lock(&self) -> MutexGuard<'_, T> {
@@ -74,21 +74,21 @@ impl<T: fmt::Debug> fmt::Debug for Mutex<T> {
 
 
 
-pub struct RwLock<T>(parking_lot::RwLock<T>);
+pub struct RwLock<T>(wgpu_sync::RwLock<T>);
 
 
 
 
-pub struct RwLockReadGuard<'a, T>(parking_lot::RwLockReadGuard<'a, T>);
+pub struct RwLockReadGuard<'a, T>(wgpu_sync::RwLockReadGuard<'a, T>);
 
 
 
 
-pub struct RwLockWriteGuard<'a, T>(parking_lot::RwLockWriteGuard<'a, T>);
+pub struct RwLockWriteGuard<'a, T>(wgpu_sync::RwLockWriteGuard<'a, T>);
 
 impl<T> RwLock<T> {
     pub fn new(_rank: LockRank, value: T) -> RwLock<T> {
-        RwLock(parking_lot::RwLock::new(value))
+        RwLock(wgpu_sync::RwLock::new(value))
     }
 
     pub fn read(&self) -> RwLockReadGuard<'_, T> {

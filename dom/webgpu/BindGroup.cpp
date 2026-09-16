@@ -2,12 +2,10 @@
 
 
 
-
 #include "BindGroup.h"
 
 #include "Device.h"
 #include "ExternalTexture.h"
-#include "ipc/WebGPUChild.h"
 #include "mozilla/dom/WebGPUBinding.h"
 
 namespace mozilla::webgpu {

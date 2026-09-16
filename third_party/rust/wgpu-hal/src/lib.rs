@@ -2767,11 +2767,67 @@ pub struct BufferBarrier<'a, B: DynBuffer + ?Sized> {
     pub usage: StateTransition<wgt::BufferUses>,
 }
 
+
+
+
+
+
+
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum QueueFamily {
+    
+    Explicit(u32),
+
+    
+    
+    External,
+
+    
+    
+    
+    
+    Foreign,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct QueueFamilyOwnershipTransfer {
+    
+    pub src: QueueFamily,
+    
+    pub dst: QueueFamily,
+}
+
 #[derive(Debug, Clone)]
 pub struct TextureBarrier<'a, T: DynTexture + ?Sized> {
     pub texture: &'a T,
     pub range: wgt::ImageSubresourceRange,
     pub usage: StateTransition<wgt::TextureUses>,
+    
+    
+    
+    
+    
+    
+    pub queue_family_ownership_transfer: Option<QueueFamilyOwnershipTransfer>,
 }
 
 #[derive(Clone, Copy, Debug)]

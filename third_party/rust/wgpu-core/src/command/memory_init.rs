@@ -9,7 +9,7 @@ use hashbrown::hash_map::Entry;
 use crate::{
     device::{Device, DeviceError},
     init_tracker::*,
-    resource::{DestroyedResourceError, ParentDevice, RawResourceAccess, Texture, Trackable},
+    resource::{ParentDevice, RawResourceAccess, Texture, Trackable},
     snatch::SnatchGuard,
     track::{DeviceTracker, TextureTracker},
     FastHashMap,
@@ -23,7 +23,11 @@ use super::{clear_texture, BakedCommands, ClearError};
 pub(crate) struct TextureSurfaceDiscard {
     pub texture: Arc<Texture>,
     pub mip_level: u32,
-    pub layer: u32,
+
+    
+    
+    
+    pub layer_or_depth_slice: u32,
 }
 
 pub(crate) type SurfacesInDiscardState = Vec<TextureSurfaceDiscard>;
@@ -33,6 +37,16 @@ pub(crate) struct CommandBufferTextureMemoryActions {
     
     
     init_actions: Vec<TextureInitTrackerAction>,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -51,11 +65,29 @@ impl CommandBufferTextureMemoryActions {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[must_use]
     pub(crate) fn register_init_action(
         &mut self,
         action: &TextureInitTrackerAction,
+        depth_slices: Option<Range<u32>>,
     ) -> SurfacesInDiscardState {
+        let is_3d = action.texture.desc.dimension == wgt::TextureDimension::D3;
+        debug_assert!(depth_slices.is_none() || is_3d);
+
+        
+        
+        
         let mut immediately_necessary_clears = SurfacesInDiscardState::new();
 
         
@@ -78,33 +110,54 @@ impl CommandBufferTextureMemoryActions {
         
         let init_actions = &mut self.init_actions;
         self.discards.retain(|discarded_surface| {
-            if discarded_surface.texture.is_equal(&action.texture)
-                && action.range.layer_range.contains(&discarded_surface.layer)
-                && action
+            if !discarded_surface.texture.is_equal(&action.texture)
+                || !action
                     .range
                     .mip_range
                     .contains(&discarded_surface.mip_level)
             {
-                if let MemoryInitKind::NeedsInitializedMemory = action.kind {
-                    immediately_necessary_clears.push(discarded_surface.clone());
+                return true;
+            }
 
-                    
-                    
-                    
+            let overlaps_discard = if is_3d {
+                
+                
+                depth_slices
+                    .as_ref()
+                    .is_none_or(|slices| slices.contains(&discarded_surface.layer_or_depth_slice))
+            } else {
+                action
+                    .range
+                    .layer_range
+                    .contains(&discarded_surface.layer_or_depth_slice)
+            };
+            if !overlaps_discard {
+                return true;
+            }
+
+            if let MemoryInitKind::NeedsInitializedMemory = action.kind {
+                immediately_necessary_clears.push(discarded_surface.clone());
+
+                
+                
+                
+                
+                
+                
+                if !is_3d {
+                    let layer = discarded_surface.layer_or_depth_slice;
                     init_actions.push(TextureInitTrackerAction {
                         texture: discarded_surface.texture.clone(),
                         range: TextureInitRange {
                             mip_range: discarded_surface.mip_level
                                 ..(discarded_surface.mip_level + 1),
-                            layer_range: discarded_surface.layer..(discarded_surface.layer + 1),
+                            layer_range: layer..(layer + 1),
                         },
                         kind: MemoryInitKind::ImplicitlyInitialized,
                     });
                 }
-                false
-            } else {
-                true
             }
+            false
         });
 
         immediately_necessary_clears
@@ -117,11 +170,14 @@ impl CommandBufferTextureMemoryActions {
         texture: &Arc<Texture>,
         range: TextureInitRange,
     ) {
-        let must_be_empty = self.register_init_action(&TextureInitTrackerAction {
-            texture: texture.clone(),
-            range,
-            kind: MemoryInitKind::ImplicitlyInitialized,
-        });
+        let must_be_empty = self.register_init_action(
+            &TextureInitTrackerAction {
+                texture: texture.clone(),
+                range,
+                kind: MemoryInitKind::ImplicitlyInitialized,
+            },
+            None,
+        );
         assert!(must_be_empty.is_empty());
     }
 }
@@ -138,12 +194,22 @@ pub(crate) fn fixup_discarded_surfaces<InitIter: Iterator<Item = TextureSurfaceD
     snatch_guard: &SnatchGuard<'_>,
 ) {
     for init in inits {
+        let (layer_range, depth_slice) = if init.texture.desc.dimension == wgt::TextureDimension::D3
+        {
+            (0..1, Some(init.layer_or_depth_slice))
+        } else {
+            (
+                init.layer_or_depth_slice..(init.layer_or_depth_slice + 1),
+                None,
+            )
+        };
         clear_texture(
             &init.texture,
             TextureInitRange {
                 mip_range: init.mip_level..(init.mip_level + 1),
-                layer_range: init.layer..(init.layer + 1),
+                layer_range,
             },
+            depth_slice,
             encoder,
             texture_tracker,
             &device.alignments,
@@ -158,11 +224,20 @@ pub(crate) fn fixup_discarded_surfaces<InitIter: Iterator<Item = TextureSurfaceD
 impl BakedCommands {
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub(crate) fn initialize_buffer_memory(
         &mut self,
         device_tracker: &mut DeviceTracker,
         snatch_guard: &SnatchGuard<'_>,
-    ) -> Result<(), DestroyedResourceError> {
+    ) {
         profiling::scope!("initialize_buffer_memory");
 
         
@@ -220,7 +295,9 @@ impl BakedCommands {
                 .buffers
                 .set_single(&buffer, wgt::BufferUses::COPY_DST);
 
-            let raw_buf = buffer.try_raw(snatch_guard)?;
+            let raw_buf = buffer
+                .try_raw(snatch_guard)
+                .expect("attempt to initialize a destroyed buffer");
 
             unsafe {
                 self.encoder.raw.transition_buffers(
@@ -251,9 +328,21 @@ impl BakedCommands {
                 }
             }
         }
-        Ok(())
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -263,33 +352,37 @@ impl BakedCommands {
         device_tracker: &mut DeviceTracker,
         device: &Device,
         snatch_guard: &SnatchGuard<'_>,
-    ) -> Result<(), DestroyedResourceError> {
+    ) -> Result<SurfacesInDiscardState, ClearError> {
         profiling::scope!("initialize_texture_memory");
+
+        let mut depth_slice_discards = SurfacesInDiscardState::new();
 
         let mut ranges: Vec<TextureInitRange> = Vec::new();
         for texture_use in self.texture_memory_actions.drain_init_actions() {
-            let mut initialization_status = texture_use.texture.initialization_status.write();
-            let use_range = texture_use.range;
-            let affected_mip_trackers = initialization_status
-                .mips
-                .iter_mut()
-                .enumerate()
-                .skip(use_range.mip_range.start as usize)
-                .take((use_range.mip_range.end - use_range.mip_range.start) as usize);
+            {
+                let mut initialization_status = texture_use.texture.initialization_status.write();
+                let use_range = texture_use.range;
+                let affected_mip_trackers = initialization_status
+                    .mips
+                    .iter_mut()
+                    .enumerate()
+                    .skip(use_range.mip_range.start as usize)
+                    .take((use_range.mip_range.end - use_range.mip_range.start) as usize);
 
-            match texture_use.kind {
-                MemoryInitKind::ImplicitlyInitialized => {
-                    for (_, mip_tracker) in affected_mip_trackers {
-                        mip_tracker.drain(use_range.layer_range.clone());
+                match texture_use.kind {
+                    MemoryInitKind::ImplicitlyInitialized => {
+                        for (_, mip_tracker) in affected_mip_trackers {
+                            mip_tracker.drain(use_range.layer_range.clone());
+                        }
                     }
-                }
-                MemoryInitKind::NeedsInitializedMemory => {
-                    for (mip_level, mip_tracker) in affected_mip_trackers {
-                        for layer_range in mip_tracker.drain(use_range.layer_range.clone()) {
-                            ranges.push(TextureInitRange {
-                                mip_range: (mip_level as u32)..(mip_level as u32 + 1),
-                                layer_range,
-                            });
+                    MemoryInitKind::NeedsInitializedMemory => {
+                        for (mip_level, mip_tracker) in affected_mip_trackers {
+                            for layer_range in mip_tracker.drain(use_range.layer_range.clone()) {
+                                ranges.push(TextureInitRange {
+                                    mip_range: (mip_level as u32)..(mip_level as u32 + 1),
+                                    layer_range,
+                                });
+                            }
                         }
                     }
                 }
@@ -300,6 +393,7 @@ impl BakedCommands {
                 let clear_result = clear_texture(
                     &texture_use.texture,
                     range,
+                    None,
                     self.encoder.raw.as_mut(),
                     &mut device_tracker.textures,
                     &device.alignments,
@@ -311,26 +405,89 @@ impl BakedCommands {
                 
                 
                 
-                if let Err(ClearError::DestroyedResource(e)) = clear_result {
-                    return Err(e);
-                }
-
                 
-                if let Err(error) = clear_result {
-                    panic!("{error}");
+                if matches!(clear_result, Err(ClearError::DestroyedResource(_))) {
+                    panic!("attempt to initialize a destroyed texture");
+                } else {
+                    clear_result?;
                 }
             }
         }
 
         
         
-        
-        for surface_discard in self.texture_memory_actions.discards.iter() {
-            surface_discard
-                .texture
-                .initialization_status
-                .write()
-                .discard(surface_discard.mip_level, surface_discard.layer);
+        for surface_discard in self.texture_memory_actions.discards.drain(..) {
+            if surface_discard.texture.desc.dimension == wgt::TextureDimension::D3 {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                depth_slice_discards.push(surface_discard);
+            } else {
+                
+                surface_discard
+                    .texture
+                    .initialization_status
+                    .write()
+                    .discard(
+                        surface_discard.mip_level,
+                        surface_discard.layer_or_depth_slice,
+                    );
+            }
+        }
+
+        Ok(depth_slice_discards)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub(crate) fn initialize_discarded_depth_slices(
+        &mut self,
+        discards: SurfacesInDiscardState,
+        device_tracker: &mut DeviceTracker,
+        device: &Device,
+        snatch_guard: &SnatchGuard<'_>,
+    ) -> Result<(), ClearError> {
+        for discard in discards {
+            assert!(
+                discard.texture.desc.dimension == wgt::TextureDimension::D3,
+                "unexpected texture dimension {:?} in initialize_discarded_depth_slices",
+                discard.texture.desc.dimension,
+            );
+            let range = TextureInitRange {
+                mip_range: discard.mip_level..(discard.mip_level + 1),
+                layer_range: 0..1,
+            };
+            let clear_result = clear_texture(
+                &discard.texture,
+                range,
+                Some(discard.layer_or_depth_slice),
+                self.encoder.raw.as_mut(),
+                &mut device_tracker.textures,
+                &device.alignments,
+                device.zero_buffer.as_ref(),
+                snatch_guard,
+                device.instance_flags,
+            );
+            
+            
+            
+            
+            if matches!(clear_result, Err(ClearError::DestroyedResource(_))) {
+                panic!("attempt to initialize a destroyed texture");
+            } else {
+                clear_result?;
+            }
         }
 
         Ok(())

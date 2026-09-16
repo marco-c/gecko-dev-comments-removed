@@ -16,7 +16,8 @@ use wgt::{
 };
 
 use crate::{
-    command::ColorAttachmentError, device::bgl, resource::InvalidResourceError,
+    command::ColorAttachmentError, device::bgl, pipeline::ColorStateError,
+    resource::InvalidResourceError,
     validation::shader_io_deductions::MaxFragmentShaderInputDeduction, FastHashMap, FastHashSet,
 };
 
@@ -25,7 +26,7 @@ pub mod shader_io_deductions;
 #[derive(Debug)]
 enum ResourceType {
     Buffer {
-        size: wgt::BufferSize,
+        minimum_binding_size: wgt::BufferSize,
     },
     Texture {
         dim: naga::ImageDimension,
@@ -150,9 +151,26 @@ impl fmt::Display for InterfaceVar {
     }
 }
 
+
+
+
+
+
+
 #[derive(Debug, Eq, PartialEq)]
 enum Varying {
-    Local { location: u32, iv: InterfaceVar },
+    
+    
+    
+    
+    
+    UserDefined { location: u32, iv: InterfaceVar },
+
+    
+    
+    
+    
+    
     BuiltIn(BuiltIn),
 }
 
@@ -267,13 +285,6 @@ impl BuiltIn {
     }
 }
 
-#[allow(unused)]
-#[derive(Debug)]
-struct SpecializationConstant {
-    id: u32,
-    ty: NumericType,
-}
-
 #[derive(Debug)]
 struct EntryPointMeshInfo {
     max_vertices: u32,
@@ -281,20 +292,66 @@ struct EntryPointMeshInfo {
     primitive_topology: wgt::PrimitiveTopology,
 }
 
+
+
+
 #[derive(Debug, Default)]
 struct EntryPoint {
+    
+    
+    
+    
+    
     inputs: Vec<Varying>,
+
+    
+    
+    
+    
+    
+    
+    
     outputs: Vec<Varying>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     resources: Vec<naga::Handle<Resource>>,
-    #[allow(unused)]
-    spec_constants: Vec<SpecializationConstant>,
+
+    
+    
+    
+    
+    
+    
     sampling_pairs: FastHashSet<(naga::Handle<Resource>, naga::Handle<Resource>)>,
+
+    
+    
+    
+    
+    
+    
     workgroup_size: [u32; 3],
+
+    
     dual_source_blending: bool,
+
+    
+    
     task_payload_size: Option<u32>,
+
+    
     mesh_info: Option<EntryPointMeshInfo>,
-    immediate_slots: naga::valid::ImmediateSlots,
-    immediate_size: u32,
+
+    
+    immediate_usage: naga::valid::ImmediateUsage,
 }
 
 #[derive(Debug, Hash, PartialEq, Eq)]
@@ -309,10 +366,35 @@ impl hashbrown::Equivalent<EntryPointKey> for EntryPointKeyRef<'_> {
     }
 }
 
+
+
+
 #[derive(Debug)]
 pub struct Interface {
+    
+    
+    
+    
+    
     limits: wgt::Limits,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     resources: naga::Arena<Resource>,
+
+    
+    
+    
+    
+    
     entry_points: FastHashMap<EntryPointKey, EntryPoint>,
 }
 
@@ -594,7 +676,9 @@ pub use wgpu_naga_bridge::map_storage_format_to_naga;
 impl Resource {
     fn check_binding_use(&self, entry: &BindGroupLayoutEntry) -> Result<(), BindingError> {
         match self.ty {
-            ResourceType::Buffer { size } => {
+            ResourceType::Buffer {
+                minimum_binding_size,
+            } => {
                 let min_size = match entry.ty {
                     BindingType::Buffer {
                         ty,
@@ -627,9 +711,9 @@ impl Resource {
                     }
                 };
                 match min_size {
-                    Some(non_zero) if non_zero < size => {
+                    Some(non_zero) if non_zero < minimum_binding_size => {
                         return Err(BindingError::WrongBufferSize {
-                            buffer_size: size,
+                            buffer_size: minimum_binding_size,
                             min_binding_size: non_zero,
                         })
                     }
@@ -797,7 +881,9 @@ impl Resource {
         is_reffed_by_sampler_in_entrypoint: bool,
     ) -> Result<BindingType, BindingError> {
         Ok(match self.ty {
-            ResourceType::Buffer { size } => BindingType::Buffer {
+            ResourceType::Buffer {
+                minimum_binding_size,
+            } => BindingType::Buffer {
                 ty: match self.class {
                     naga::AddressSpace::Uniform => wgt::BufferBindingType::Uniform,
                     naga::AddressSpace::Storage { access } => wgt::BufferBindingType::Storage {
@@ -806,7 +892,7 @@ impl Resource {
                     _ => return Err(BindingError::WrongBufferAddressSpace { space: self.class }),
                 },
                 has_dynamic_offset: false,
-                min_binding_size: Some(size),
+                min_binding_size: Some(minimum_binding_size),
             },
             ResourceType::Sampler { comparison } => BindingType::Sampler(if comparison {
                 wgt::SamplerBindingType::Comparison
@@ -1017,14 +1103,11 @@ impl NumericType {
         }
     }
 
-    fn is_subtype_of(&self, other: &NumericType) -> bool {
-        if self.scalar.width > other.scalar.width {
+    fn compatible_with_shader_output(self, shader: NumericType) -> bool {
+        if self.scalar.kind != shader.scalar.kind {
             return false;
         }
-        if self.scalar.kind != other.scalar.kind {
-            return false;
-        }
-        match (self.dim, other.dim) {
+        match (self.dim, shader.dim) {
             (NumericDimension::Scalar, NumericDimension::Scalar) => true,
             (NumericDimension::Scalar, NumericDimension::Vector(_)) => true,
             (NumericDimension::Vector(s0), NumericDimension::Vector(s1)) => s0 <= s1,
@@ -1037,16 +1120,34 @@ impl NumericType {
 }
 
 
-pub fn check_texture_format(
-    format: wgt::TextureFormat,
-    output: &NumericType,
-) -> Result<(), NumericType> {
-    let nt = NumericType::from_texture_format(format);
-    if nt.is_subtype_of(output) {
-        Ok(())
-    } else {
-        Err(nt)
+pub fn check_color_attachment_compatibility(
+    state: &wgt::ColorTargetState,
+    output_ty: NumericType,
+) -> Result<(), ColorStateError> {
+    let pipeline_ty = NumericType::from_texture_format(state.format);
+    if !pipeline_ty.compatible_with_shader_output(output_ty) {
+        return Err(ColorStateError::IncompatibleFormat {
+            pipeline: pipeline_ty,
+            shader: output_ty,
+        });
     }
+    if let Some(blend) = state.blend {
+        for (factor, name) in [
+            (blend.color.src_factor, "source"),
+            (blend.color.dst_factor, "destination"),
+        ] {
+            if factor.uses_source_alpha()
+                && output_ty.dim != NumericDimension::Vector(naga::VectorSize::Quad)
+            {
+                return Err(ColorStateError::InvalidAlphaBlend {
+                    which: name,
+                    factor,
+                });
+            }
+        }
+    }
+
+    Ok(())
 }
 
 pub enum BindingLayoutSource {
@@ -1081,11 +1182,23 @@ pub struct StageIo {
     
     
     pub primitive_index: Option<bool>,
-    pub immediate_slots_required: naga::valid::ImmediateSlots,
-    pub immediate_size_required: u32,
+    pub immediates: naga::valid::ImmediateUsage,
 }
 
 impl Interface {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn populate(
         list: &mut Vec<Varying>,
         binding: Option<&naga::Binding>,
@@ -1143,12 +1256,7 @@ impl Interface {
                 return;
             }
             ref other => {
-                
-                
-                
-                
-                
-                log::debug!("Unexpected varying type: {other:?}");
+                log::error!("Unexpected varying type: {other:?}");
                 return;
             }
         };
@@ -1160,7 +1268,7 @@ impl Interface {
                 sampling,
                 per_primitive,
                 blend_src: _,
-            }) => Varying::Local {
+            }) => Varying::UserDefined {
                 location,
                 iv: InterfaceVar {
                     ty: numeric_ty,
@@ -1228,6 +1336,11 @@ impl Interface {
         list.push(varying);
     }
 
+    
+    
+    
+    
+    
     pub fn new(module: &naga::Module, info: &naga::valid::ModuleInfo, limits: wgt::Limits) -> Self {
         let mut resources = naga::Arena::new();
         let mut resource_mapping = FastHashMap::default();
@@ -1258,7 +1371,8 @@ impl Interface {
                     ResourceType::AccelerationStructure { vertex_return }
                 }
                 ref other => ResourceType::Buffer {
-                    size: wgt::BufferSize::new(other.size(module.to_ctx()) as u64).unwrap(),
+                    minimum_binding_size: wgt::BufferSize::new(other.size(module.to_ctx()) as u64)
+                        .unwrap(),
                 },
             };
             let handle = resources.append(
@@ -1303,7 +1417,6 @@ impl Interface {
             }
             ep.dual_source_blending = func_info.dual_source_blending;
             ep.workgroup_size = entry_point.workgroup_size;
-            ep.immediate_slots = func_info.immediate_slots_used;
 
             
             
@@ -1313,12 +1426,16 @@ impl Interface {
                 .filter(|&(_, var)| var.space == naga::AddressSpace::Immediate)
                 .map(|(handle, _)| handle)
                 .filter(|&handle| !func_info[handle].is_empty());
-            ep.immediate_size = if let Some(immediate) = used_immediates.next() {
-                let ty = &module.types[module.global_variables[immediate].ty];
-                ty.inner.size(module.to_ctx())
-            } else {
-                0
-            };
+            ep.immediate_usage = used_immediates
+                .next()
+                .map(|handle| {
+                    naga::valid::ImmediateUsage::from_type(
+                        &module.types[module.global_variables[handle].ty].inner,
+                        &module.types,
+                        module.to_ctx(),
+                    )
+                })
+                .unwrap_or_default();
             assert!(used_immediates.next().is_none());
 
             if let Some(task_payload) = entry_point.task_payload {
@@ -1365,18 +1482,22 @@ impl Interface {
         }
     }
 
-    fn immediate_size_and_slots_required(
+    fn immediate_usage(
         &self,
         stage: naga::ShaderStage,
         entry_point_name: &str,
-    ) -> (u32, naga::valid::ImmediateSlots) {
+    ) -> naga::valid::ImmediateUsage {
         self.entry_points
             .get(&EntryPointKeyRef(stage, entry_point_name))
-            .map_or(Default::default(), |ep| {
-                (ep.immediate_size, ep.immediate_slots)
-            })
+            .map(|ep| ep.immediate_usage)
+            .unwrap_or_default()
     }
 
+    
+    
+    
+    
+    
     pub fn finalize_entry_point_name(
         &self,
         stage: naga::ShaderStage,
@@ -1402,10 +1523,29 @@ impl Interface {
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn check_stage(
         &self,
         layouts: &mut BindingLayoutSource,
-        shader_binding_sizes: &mut FastHashMap<naga::ResourceBinding, wgt::BufferSize>,
+        minimum_binding_sizes: &mut FastHashMap<naga::ResourceBinding, wgt::BufferSize>,
         entry_point_name: &str,
         shader_stage: ShaderStageForValidation,
         inputs: StageIo,
@@ -1429,13 +1569,16 @@ impl Interface {
                 match layouts {
                     BindingLayoutSource::Provided(pipeline_layout) => {
                         
-                        if let ResourceType::Buffer { size } = res.ty {
-                            match shader_binding_sizes.entry(res.bind) {
+                        if let ResourceType::Buffer {
+                            minimum_binding_size,
+                        } = res.ty
+                        {
+                            match minimum_binding_sizes.entry(res.bind) {
                                 Entry::Occupied(e) => {
-                                    *e.into_mut() = size.max(*e.get());
+                                    *e.into_mut() = minimum_binding_size.max(*e.get());
                                 }
                                 Entry::Vacant(e) => {
-                                    e.insert(size);
+                                    e.insert(minimum_binding_size);
                                 }
                             }
                         }
@@ -1590,7 +1733,7 @@ impl Interface {
         
         for input in entry_point.inputs.iter() {
             match *input {
-                Varying::Local { location, ref iv } => {
+                Varying::UserDefined { location, ref iv } => {
                     let result = inputs
                         .varyings
                         .get(&location)
@@ -1617,7 +1760,7 @@ impl Interface {
                                         ));
                                     }
                                     (
-                                        iv.ty.is_subtype_of(&provided.ty),
+                                        iv.ty == provided.ty,
                                         iv.per_primitive == provided.per_primitive,
                                     )
                                 }
@@ -1708,7 +1851,7 @@ impl Interface {
 
                 for output in entry_point.outputs.iter() {
                     match *output {
-                        Varying::Local { ref iv, location } => {
+                        Varying::UserDefined { ref iv, location } => {
                             if location > max_vertex_shader_output_location {
                                 return Err(StageError::VertexOutputLocationTooLarge {
                                     location,
@@ -1761,7 +1904,7 @@ impl Interface {
                     self.limits.max_inter_stage_shader_variables;
 
                 let deductions = entry_point.inputs.iter().filter_map(|output| match output {
-                    Varying::Local { .. } => None,
+                    Varying::UserDefined { .. } => None,
                     Varying::BuiltIn(builtin) => {
                         MaxFragmentShaderInputDeduction::from_inter_stage_builtin(builtin.to_naga())
                             .or_else(|| {
@@ -1788,7 +1931,7 @@ impl Interface {
 
                 for output in entry_point.inputs.iter() {
                     match *output {
-                        Varying::Local { ref iv, location } => {
+                        Varying::UserDefined { ref iv, location } => {
                             if location >= self.limits.max_inter_stage_shader_variables {
                                 return Err(StageError::FragmentInputLocationTooLarge {
                                     location,
@@ -1812,7 +1955,7 @@ impl Interface {
                 }
 
                 for output in &entry_point.outputs {
-                    let &Varying::Local { location, ref iv } = output else {
+                    let &Varying::UserDefined { location, ref iv } = output else {
                         continue;
                     };
                     if location >= self.limits.max_color_attachments {
@@ -1911,22 +2054,21 @@ impl Interface {
             .outputs
             .iter()
             .filter_map(|output| match *output {
-                Varying::Local { location, ref iv } => Some((location, iv.clone())),
+                Varying::UserDefined { location, ref iv } => Some((location, iv.clone())),
                 Varying::BuiltIn(_) => None,
             })
             .collect();
 
-        let (immediate_size_required, immediate_slots_required) =
-            self.immediate_size_and_slots_required(shader_stage.to_naga(), entry_point_name);
-        let immediate_slots_required = immediate_slots_required | inputs.immediate_slots_required;
-        let immediate_size_required = immediate_size_required.max(inputs.immediate_size_required);
+        let immediate_usage = self
+            .immediate_usage(shader_stage.to_naga(), entry_point_name)
+            .merge(&inputs.immediates);
 
         
         if let BindingLayoutSource::Provided(pipeline_layout) = layouts {
-            if pipeline_layout.immediate_size < immediate_size_required {
+            if pipeline_layout.immediate_size < immediate_usage.size() {
                 return Err(StageError::LayoutImmediateSize {
                     layout: pipeline_layout.immediate_size,
-                    required: immediate_size_required,
+                    required: immediate_usage.size(),
                 });
             }
         }
@@ -1939,8 +2081,7 @@ impl Interface {
             } else {
                 None
             },
-            immediate_slots_required,
-            immediate_size_required,
+            immediates: immediate_usage,
         })
     }
 }

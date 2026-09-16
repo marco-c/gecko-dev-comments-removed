@@ -1,6 +1,8 @@
 
 
-use crate::{link_to_wgpu_docs, Backends};
+use macro_rules_attribute::derive;
+
+use crate::{link_to_wgpu_docs, Backends, ConstDefault};
 
 #[cfg(doc)]
 use crate::{Backend, DownlevelFlags};
@@ -335,7 +337,7 @@ impl InstanceFlags {
 
 
 
-#[derive(Default, Clone, Debug, Copy)]
+#[derive(ConstDefault!, Clone, Debug, Copy, Eq, PartialEq)]
 pub struct MemoryBudgetThresholds {
     
     

@@ -38,13 +38,20 @@ mod swapchain;
 pub use adapter::PhysicalDeviceFeatures;
 
 use alloc::{boxed::Box, ffi::CString, sync::Arc, vec::Vec};
-use core::{borrow::Borrow, ffi::CStr, fmt, marker::PhantomData, mem, num::NonZeroU32};
+use core::{
+    borrow::Borrow,
+    ffi::{c_void, CStr},
+    fmt,
+    marker::PhantomData,
+    mem,
+    num::NonZeroU32,
+};
 
 use arrayvec::ArrayVec;
 use ash::{ext, khr, vk};
 use bytemuck::{Pod, Zeroable};
 use hashbrown::HashSet;
-use parking_lot::{Mutex, RwLock};
+use wgpu_sync::{Mutex, RwLock};
 
 use naga::FastHashMap;
 use wgt::InternalCounter;
@@ -274,6 +281,44 @@ impl Surface {
             .downcast_mut::<swapchain::NativeSwapchain>()
             .expect("Surface should have a native Vulkan swapchain")
             .set_next_present_time(present_timing);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub unsafe fn set_next_present_chain(&self, chain: *mut c_void) {
+        let mut swapchain = self.swapchain.write();
+        let swapchain = swapchain
+            .as_mut()
+            .expect("Surface should have been configured")
+            .as_any_mut()
+            .downcast_mut::<swapchain::NativeSwapchain>()
+            .expect("Surface should have a native Vulkan swapchain");
+        unsafe { swapchain.set_next_present_chain(chain) };
     }
 }
 
@@ -505,6 +550,7 @@ struct RenderPassKey {
 struct DeviceShared {
     raw: ash::Device,
     family_index: u32,
+    queue_flags: vk::QueueFlags,
     queue_index: u32,
     raw_queue: vk::Queue,
     instance: Arc<InstanceShared>,
@@ -1383,6 +1429,10 @@ impl crate::Queue for Queue {
 
         
         
+        
+        
+        
+        
         debug_assert!(
             {
                 let mut check = HashSet::with_capacity(surface_textures.len());
@@ -1709,6 +1759,9 @@ where
     pub extensions: &'arg mut Vec<&'static CStr>,
     
     pub device_features: &'arg mut PhysicalDeviceFeatures,
+    
+    
+    
     
     pub queue_create_infos: &'arg mut Vec<vk::DeviceQueueCreateInfo<'pnext>>,
     

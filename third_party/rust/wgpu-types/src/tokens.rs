@@ -1,7 +1,9 @@
-use crate::link_to_wgpu_item;
+use macro_rules_attribute::derive;
+
+use crate::{link_to_wgpu_item, ConstDefault};
 
 
-#[derive(Debug, Default, Copy, Clone)]
+#[derive(Debug, ConstDefault!, Copy, Clone, Eq, PartialEq)]
 pub struct ExperimentalFeatures {
     enabled: bool,
 }
@@ -45,7 +47,14 @@ impl ExperimentalFeatures {
 }
 
 
-#[derive(Debug, Default, Copy, Clone, Hash, PartialEq, Eq)]
+
+
+
+
+
+
+
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub struct LoadOpDontCare {
     
     
@@ -72,3 +81,7 @@ impl LoadOpDontCare {
         Self { _private: () }
     }
 }
+
+static_assertions::assert_not_impl_any!(LoadOpDontCare: Default);
+#[cfg(feature = "serde")]
+static_assertions::assert_not_impl_any!(LoadOpDontCare: serde::Deserialize<'static>);

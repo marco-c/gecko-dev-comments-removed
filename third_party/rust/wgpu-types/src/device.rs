@@ -1,7 +1,32 @@
 use core::ops::Range;
 
+use macro_rules_attribute::derive;
+
+use crate::ConstDefault;
+
 #[cfg(any(feature = "serde", test))]
 use serde::{Deserialize, Serialize};
+
+
+
+
+
+#[derive(Clone, Debug, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct QueueDescriptor<L> {
+    
+    pub label: L,
+}
+
+impl<L> QueueDescriptor<L> {
+    
+    #[must_use]
+    pub fn map_label<'a, K>(&'a self, fun: impl FnOnce(&'a L) -> K) -> QueueDescriptor<K> {
+        QueueDescriptor {
+            label: fun(&self.label),
+        }
+    }
+}
 
 
 
@@ -25,6 +50,10 @@ pub struct DeviceDescriptor<L> {
     
     pub required_limits: crate::Limits,
     
+    
+    
+    pub default_queue: QueueDescriptor<L>,
+    
     #[cfg_attr(feature = "serde", serde(skip))]
     pub experimental_features: crate::ExperimentalFeatures,
     
@@ -37,11 +66,12 @@ pub struct DeviceDescriptor<L> {
 impl<L> DeviceDescriptor<L> {
     
     #[must_use]
-    pub fn map_label<'a, K>(&'a self, fun: impl FnOnce(&'a L) -> K) -> DeviceDescriptor<K> {
+    pub fn map_label<'a, K>(&'a self, fun: impl Fn(&'a L) -> K) -> DeviceDescriptor<K> {
         DeviceDescriptor {
             label: fun(&self.label),
             required_features: self.required_features,
             required_limits: self.required_limits.clone(),
+            default_queue: self.default_queue.map_label(fun),
             experimental_features: self.experimental_features,
             memory_hints: self.memory_hints.clone(),
             trace: self.trace.clone(),
@@ -52,11 +82,11 @@ impl<L> DeviceDescriptor<L> {
 
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Eq, PartialEq, ConstDefault!)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum MemoryHints {
     
-    #[default]
+    #[custom(default)]
     Performance,
     
     MemoryUsage,
@@ -83,13 +113,13 @@ pub enum MemoryHints {
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, ConstDefault!)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 
 #[non_exhaustive]
 pub enum Trace {
     
-    #[default]
+    #[custom(default)]
     Off,
 
     

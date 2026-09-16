@@ -9,11 +9,10 @@ use crate::{
     device::{
         queue::Queue, resource::Device, DeviceDescriptor, DeviceError, UserClosures, WaitIdleError,
     },
-    global::Global,
-    id::{markers, AdapterId, DeviceId, QueueId, SurfaceId},
+    id::markers,
     limits::{self, check_limits, FailedLimit},
     lock::{rank, Mutex},
-    present::Presentation,
+    present::{ConfigureSurfaceError, Presentation},
     resource::ResourceType,
     resource_log,
     timestamp_normalization::TimestampNormalizerInitError,
@@ -22,8 +21,6 @@ use crate::{
 };
 
 use wgt::{Backend, Backends, InstanceFlags, PowerPreference};
-
-pub type RequestAdapterOptions = wgt::RequestAdapterOptions<SurfaceId>;
 
 #[test]
 fn downlevel_default_limits_less_than_default_limits() {
@@ -34,8 +31,8 @@ fn downlevel_default_limits_less_than_default_limits() {
     )
 }
 
-#[derive(Debug, Clone)]
-pub(crate) struct InstanceDevices(Arc<Mutex<WeakVec<Device>>>);
+#[derive(Debug)]
+pub(crate) struct InstanceDevices(Mutex<WeakVec<Device>>);
 
 impl Default for InstanceDevices {
     fn default() -> Self {
@@ -45,7 +42,7 @@ impl Default for InstanceDevices {
 
 impl InstanceDevices {
     pub(crate) fn new() -> Self {
-        Self(Arc::new(Mutex::new(rank::HUB_OTHER, WeakVec::new())))
+        Self(Mutex::new(rank::INSTANCE_DEVICES, WeakVec::new()))
     }
 
     pub(crate) fn push(&self, device: &Arc<Device>) {
@@ -128,7 +125,7 @@ impl Instance {
         name: &str,
         mut instance_desc: wgt::InstanceDescriptor,
         telemetry: Option<hal::Telemetry>,
-    ) -> Self {
+    ) -> Arc<Self> {
         let mut this = Self {
             _name: name.to_owned(),
             instance_per_backend: Vec::new(),
@@ -153,7 +150,7 @@ impl Instance {
         #[cfg(feature = "noop")]
         this.try_add_hal(hal::api::Noop, &instance_desc, telemetry);
 
-        this
+        Arc::new(this)
     }
 
     
@@ -207,11 +204,11 @@ impl Instance {
         }
     }
 
-    pub(crate) fn from_hal_instance<A: hal::Api>(
+    pub fn from_hal_instance<A: hal::Api>(
         name: String,
         hal_instance: <A as hal::Api>::Instance,
-    ) -> Self {
-        Self {
+    ) -> Arc<Self> {
+        Arc::new(Self {
             _name: name,
             instance_per_backend: vec![(A::VARIANT, Box::new(hal_instance))],
             requested_backends: A::VARIANT.into(),
@@ -219,7 +216,7 @@ impl Instance {
             flags: InstanceFlags::default(),
             display: None, 
             devices: InstanceDevices::new(),
-        }
+        })
     }
 
     pub fn raw(&self, backend: Backend) -> Option<&dyn hal::DynInstance> {
@@ -262,7 +259,7 @@ impl Instance {
         &self,
         display_handle: Option<raw_window_handle::RawDisplayHandle>,
         window_handle: raw_window_handle::RawWindowHandle,
-    ) -> Result<Surface, CreateSurfaceError> {
+    ) -> Result<Arc<Surface>, CreateSurfaceError> {
         profiling::scope!("Instance::create_surface");
 
         let instance_display_handle = self.display.as_ref().map(|d| {
@@ -308,10 +305,10 @@ impl Instance {
                 errors,
             ))
         } else {
-            let surface = Surface {
+            let surface = Arc::new(Surface {
                 presentation: Mutex::new(rank::SURFACE_PRESENTATION, None),
                 surface_per_backend,
-            };
+            });
 
             Ok(surface)
         }
@@ -338,7 +335,7 @@ impl Instance {
         width: u32,
         height: u32,
         refresh_rate: u32,
-    ) -> Result<Surface, CreateSurfaceError> {
+    ) -> Result<Arc<Surface>, CreateSurfaceError> {
         profiling::scope!("Instance::create_surface_from_drm");
 
         let mut errors = HashMap::default();
@@ -375,10 +372,10 @@ impl Instance {
                 errors,
             ))
         } else {
-            let surface = Surface {
+            let surface = Arc::new(Surface {
                 presentation: Mutex::new(rank::SURFACE_PRESENTATION, None),
                 surface_per_backend,
-            };
+            });
 
             Ok(surface)
         }
@@ -391,7 +388,7 @@ impl Instance {
     pub unsafe fn create_surface_metal(
         &self,
         layer: *mut core::ffi::c_void,
-    ) -> Result<Surface, CreateSurfaceError> {
+    ) -> Result<Arc<Surface>, CreateSurfaceError> {
         profiling::scope!("Instance::create_surface_metal");
 
         let instance = unsafe { self.as_hal::<hal::api::Metal>() }
@@ -413,10 +410,10 @@ impl Instance {
         let raw_surface: Box<dyn hal::DynSurface> =
             Box::new(instance.create_surface_from_layer(layer));
 
-        let surface = Surface {
+        let surface = Arc::new(Surface {
             presentation: Mutex::new(rank::SURFACE_PRESENTATION, None),
             surface_per_backend: core::iter::once((Backend::Metal, raw_surface)).collect(),
-        };
+        });
 
         Ok(surface)
     }
@@ -425,15 +422,15 @@ impl Instance {
     fn create_surface_dx12(
         &self,
         create_surface_func: impl FnOnce(&hal::dx12::Instance) -> hal::dx12::Surface,
-    ) -> Result<Surface, CreateSurfaceError> {
+    ) -> Result<Arc<Surface>, CreateSurfaceError> {
         let instance = unsafe { self.as_hal::<hal::api::Dx12>() }
             .ok_or(CreateSurfaceError::BackendNotEnabled(Backend::Dx12))?;
         let surface: Box<dyn hal::DynSurface> = Box::new(create_surface_func(instance));
 
-        let surface = Surface {
+        let surface = Arc::new(Surface {
             presentation: Mutex::new(rank::SURFACE_PRESENTATION, None),
             surface_per_backend: core::iter::once((Backend::Dx12, surface)).collect(),
-        };
+        });
 
         Ok(surface)
     }
@@ -445,7 +442,7 @@ impl Instance {
     pub unsafe fn create_surface_from_visual(
         &self,
         visual: *mut core::ffi::c_void,
-    ) -> Result<Surface, CreateSurfaceError> {
+    ) -> Result<Arc<Surface>, CreateSurfaceError> {
         profiling::scope!("Instance::instance_create_surface_from_visual");
         self.create_surface_dx12(|inst| unsafe { inst.create_surface_from_visual(visual) })
     }
@@ -457,7 +454,7 @@ impl Instance {
     pub unsafe fn create_surface_from_surface_handle(
         &self,
         surface_handle: *mut core::ffi::c_void,
-    ) -> Result<Surface, CreateSurfaceError> {
+    ) -> Result<Arc<Surface>, CreateSurfaceError> {
         profiling::scope!("Instance::instance_create_surface_from_surface_handle");
         self.create_surface_dx12(|inst| unsafe {
             inst.create_surface_from_surface_handle(surface_handle)
@@ -471,7 +468,7 @@ impl Instance {
     pub unsafe fn create_surface_from_swap_chain_panel(
         &self,
         swap_chain_panel: *mut core::ffi::c_void,
-    ) -> Result<Surface, CreateSurfaceError> {
+    ) -> Result<Arc<Surface>, CreateSurfaceError> {
         profiling::scope!("Instance::instance_create_surface_from_swap_chain_panel");
         self.create_surface_dx12(|inst| unsafe {
             inst.create_surface_from_swap_chain_panel(swap_chain_panel)
@@ -488,7 +485,7 @@ impl Instance {
     }
 
     pub fn enumerate_adapters(
-        &self,
+        self: &Arc<Self>,
         backends: Backends,
         apply_limit_buckets: bool,
     ) -> Vec<Arc<Adapter>> {
@@ -531,7 +528,7 @@ impl Instance {
                         }
                     })
                     .map(|raw| {
-                        let adapter = Adapter::new(raw, self.devices.clone());
+                        let adapter = Adapter::new(raw, self.clone());
                         api_log_debug!("Adapter {:?}", adapter.raw.info);
                         adapter
                     }),
@@ -541,7 +538,7 @@ impl Instance {
     }
 
     pub fn request_adapter(
-        &self,
+        self: &Arc<Self>,
         desc: &wgt::RequestAdapterOptions<&Surface>,
         backends: Backends,
     ) -> Result<Arc<Adapter>, wgt::RequestAdapterError> {
@@ -681,7 +678,7 @@ impl Instance {
 
         if let Some(adapter) = adapters.into_iter().next() {
             api_log_debug!("Request adapter result {:?}", adapter.info);
-            let adapter = Adapter::new(adapter, self.devices.clone());
+            let adapter = Adapter::new(adapter, self.clone());
             Ok(adapter)
         } else {
             Err(wgt::RequestAdapterError::NotFound {
@@ -731,12 +728,12 @@ impl Instance {
     
     
     pub unsafe fn create_adapter_from_hal(
-        &self,
+        self: &Arc<Self>,
         hal_adapter: hal::DynExposedAdapter,
     ) -> Arc<Adapter> {
         profiling::scope!("Instance::create_adapter_from_hal");
 
-        let adapter = Adapter::new(hal_adapter, self.devices.clone());
+        let adapter = Adapter::new(hal_adapter, self.clone());
 
         resource_log!("Created Adapter {:?}", Arc::as_ptr(&adapter));
         adapter
@@ -779,7 +776,9 @@ impl Surface {
         profiling::scope!("Surface::get_capabilities");
         let mut hal_caps = self.get_hal_capabilities(adapter)?;
 
-        hal_caps.formats.sort_by_key(|fc| !fc.format.is_srgb());
+        hal_caps
+            .formats
+            .sort_by_key(|fc| !fc.format.has_srgb_suffix());
 
         let usages = crate::conv::map_texture_usage_from_hal(hal_caps.usage);
 
@@ -856,6 +855,171 @@ impl Surface {
             .get(&backend)
             .map(|surface| surface.as_ref())
     }
+
+    pub fn configure(
+        self: &Arc<Self>,
+        device: &Arc<Device>,
+        config: &wgt::SurfaceConfiguration<Vec<wgt::TextureFormat>>,
+    ) -> Option<ConfigureSurfaceError> {
+        use ConfigureSurfaceError as E;
+        profiling::scope!("Surface::configure");
+
+        #[cfg(feature = "trace")]
+        if let Some(ref mut trace) = *device.trace.lock() {
+            use crate::device::trace::{Action, IntoTrace};
+
+            trace.add(Action::ConfigureSurface(self.to_trace(), config.clone()));
+        }
+
+        log::debug!("configuring surface with {config:?}");
+
+        let error = 'error: {
+            
+            let user_callbacks;
+            {
+                if let Err(e) = device.check_is_valid() {
+                    break 'error e.into();
+                }
+
+                let caps = match self.get_hal_capabilities(&device.adapter) {
+                    Ok(caps) => caps,
+                    Err(_) => break 'error E::UnsupportedQueueFamily,
+                };
+
+                let mut hal_view_formats = Vec::new();
+                for format in config.view_formats.iter() {
+                    if *format == config.format {
+                        continue;
+                    }
+                    if !caps.formats.iter().any(|fc| fc.format == config.format) {
+                        break 'error E::UnsupportedFormat {
+                            requested: config.format,
+                            available: caps.texture_formats().collect(),
+                        };
+                    }
+                    if config.format.remove_srgb_suffix() != format.remove_srgb_suffix() {
+                        break 'error E::InvalidViewFormat(*format, config.format);
+                    }
+                    hal_view_formats.push(*format);
+                }
+
+                if !hal_view_formats.is_empty() {
+                    if let Err(missing_flag) =
+                        device.require_downlevel_flags(wgt::DownlevelFlags::SURFACE_VIEW_FORMATS)
+                    {
+                        break 'error E::MissingDownlevelFlags(missing_flag);
+                    }
+                }
+
+                let maximum_frame_latency = config.desired_maximum_frame_latency.clamp(
+                    *caps.maximum_frame_latency.start(),
+                    *caps.maximum_frame_latency.end(),
+                );
+                let mut hal_config = hal::SurfaceConfiguration {
+                    maximum_frame_latency,
+                    present_mode: config.present_mode,
+                    composite_alpha_mode: config.alpha_mode,
+                    format: config.format,
+                    color_space: config.color_space,
+                    extent: wgt::Extent3d {
+                        width: config.width,
+                        height: config.height,
+                        depth_or_array_layers: 1,
+                    },
+                    usage: crate::conv::map_texture_usage(
+                        config.usage,
+                        hal::FormatAspects::COLOR,
+                        wgt::TextureFormatFeatureFlags::STORAGE_READ_ONLY
+                            | wgt::TextureFormatFeatureFlags::STORAGE_WRITE_ONLY
+                            | wgt::TextureFormatFeatureFlags::STORAGE_READ_WRITE,
+                    ),
+                    view_formats: hal_view_formats,
+                };
+
+                if let Err(error) = crate::device::surface_config::validate_surface_configuration(
+                    &mut hal_config,
+                    &caps,
+                    device.limits.max_texture_dimension_2d,
+                ) {
+                    break 'error error;
+                }
+
+                
+                let snatch_guard = device.snatchable_lock.read();
+
+                let maintain_result;
+                (user_callbacks, maintain_result) =
+                    device.maintain(wgt::PollType::wait_indefinitely(), snatch_guard);
+
+                match maintain_result {
+                    
+                    Ok(wgt::PollStatus::QueueEmpty) => {}
+                    Ok(wgt::PollStatus::WaitSucceeded) => {
+                        
+                        
+                        break 'error E::GpuWaitTimeout;
+                    }
+                    Ok(wgt::PollStatus::Poll) => {
+                        unreachable!("Cannot get a Poll result from a Wait action.")
+                    }
+                    Err(WaitIdleError::Timeout) if cfg!(target_family = "wasm") => {
+                        
+                        
+                        
+                        
+                    }
+                    Err(e) => {
+                        break 'error e.into();
+                    }
+                }
+
+                
+                if let Some(present) = self.presentation.lock().take() {
+                    if present.acquired_texture.is_some() {
+                        break 'error E::PreviousOutputExists;
+                    }
+                }
+
+                
+                
+                
+                
+                
+
+                let surface_raw = self.raw(device.backend()).unwrap();
+                match unsafe { surface_raw.configure(device.raw(), &hal_config) } {
+                    Ok(()) => (),
+                    Err(error) => {
+                        break 'error match error {
+                            hal::SurfaceError::Outdated
+                            | hal::SurfaceError::Lost
+                            | hal::SurfaceError::Occluded
+                            | hal::SurfaceError::Timeout => E::InvalidSurface,
+                            hal::SurfaceError::Device(error) => {
+                                E::Device(device.handle_hal_error(error))
+                            }
+                            hal::SurfaceError::Other(message) => {
+                                log::error!("surface configuration failed: {message}");
+                                E::InvalidSurface
+                            }
+                        }
+                    }
+                }
+
+                let mut presentation = self.presentation.lock();
+                *presentation = Some(Presentation {
+                    device: Arc::clone(device),
+                    config: config.clone(),
+                    acquired_texture: None,
+                });
+            }
+
+            user_callbacks.fire();
+            return None;
+        };
+
+        Some(error)
+    }
 }
 
 impl Drop for Surface {
@@ -876,12 +1040,12 @@ impl Drop for Surface {
 
 pub struct Adapter {
     pub(crate) raw: hal::DynExposedAdapter,
-    pub(crate) devices: InstanceDevices,
+    pub(crate) instance: Arc<Instance>,
 }
 
 impl Adapter {
-    pub(crate) fn new(raw: hal::DynExposedAdapter, devices: InstanceDevices) -> Arc<Self> {
-        Arc::new(Self { raw, devices })
+    pub(crate) fn new(raw: hal::DynExposedAdapter, instance: Arc<Instance>) -> Arc<Self> {
+        Arc::new(Self { raw, instance })
     }
 
     
@@ -1019,15 +1183,21 @@ impl Adapter {
         self: &Arc<Self>,
         hal_device: hal::DynOpenDevice,
         desc: &DeviceDescriptor,
-        instance_flags: InstanceFlags,
     ) -> Result<(Arc<Device>, Arc<Queue>), RequestDeviceError> {
         profiling::scope!("Adapter::create_device_and_queue_from_hal");
         api_log!("Adapter::create_device_and_queue_from_hal");
 
-        let device = Device::new(hal_device.device, self, desc, instance_flags)?;
+        let default_queue_desc = desc.default_queue.clone();
+
+        let device = Device::new(hal_device.device, self, desc, self.instance.flags)?;
         let device = Arc::new(device);
 
-        let queue = Queue::new(device.clone(), hal_device.queue, instance_flags)?;
+        let queue = Queue::new(
+            device.clone(),
+            hal_device.queue,
+            default_queue_desc,
+            self.instance.flags,
+        )?;
         let queue = Arc::new(queue);
 
         device.set_queue(&queue);
@@ -1036,21 +1206,26 @@ impl Adapter {
         resource_log!("Created Device {:?}", Arc::as_ptr(&device));
         resource_log!("Created Queue {:?}", Arc::as_ptr(&queue));
 
-        self.devices.push(&device);
+        self.instance.devices.push(&device);
 
         Ok((device, queue))
     }
 
-    pub fn request_device(
-        self: &Arc<Self>,
-        desc: &DeviceDescriptor,
-        instance_flags: InstanceFlags,
-    ) -> Result<(Arc<Device>, Arc<Queue>), RequestDeviceError> {
-        profiling::scope!("Adapter::request_device");
-        api_log!("Adapter::request_device");
-        let mut desc = desc.clone();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn validate_device_descriptor(
+        &self,
+        desc: &mut DeviceDescriptor,
+    ) -> Result<(), RequestDeviceError> {
         filter_features_and_limits(
-            instance_flags,
+            self.instance.flags,
             &mut desc.required_features,
             &mut desc.required_limits,
         );
@@ -1099,6 +1274,19 @@ impl Adapter {
             return Err(RequestDeviceError::LimitsExceeded(failed));
         }
 
+        Ok(())
+    }
+
+    pub fn request_device(
+        self: &Arc<Self>,
+        desc: &DeviceDescriptor,
+    ) -> Result<(Arc<Device>, Arc<Queue>), RequestDeviceError> {
+        profiling::scope!("Adapter::request_device");
+        api_log!("Adapter::request_device");
+
+        let mut desc = desc.clone();
+        self.validate_device_descriptor(&mut desc)?;
+
         let open = unsafe {
             self.raw.adapter.open(
                 desc.required_features,
@@ -1108,7 +1296,7 @@ impl Adapter {
         }
         .map_err(DeviceError::from_hal)?;
 
-        unsafe { self.create_device_and_queue_from_hal(open, &desc, instance_flags) }
+        unsafe { self.create_device_and_queue_from_hal(open, &desc) }
     }
 }
 
@@ -1166,297 +1354,6 @@ pub enum CreateSurfaceError {
         you must use `create_surface_unsafe()`."
     )]
     MissingDisplayHandle,
-}
-
-impl Global {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub unsafe fn instance_create_surface(
-        &self,
-        display_handle: Option<raw_window_handle::RawDisplayHandle>,
-        window_handle: raw_window_handle::RawWindowHandle,
-        id_in: Option<SurfaceId>,
-    ) -> Result<SurfaceId, CreateSurfaceError> {
-        let surface = unsafe { self.instance.create_surface(display_handle, window_handle) }?;
-        let id = self.surfaces.prepare(id_in).assign(Arc::new(surface));
-        Ok(id)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(drm)]
-    pub unsafe fn instance_create_surface_from_drm(
-        &self,
-        fd: i32,
-        plane: u32,
-        connector_id: u32,
-        width: u32,
-        height: u32,
-        refresh_rate: u32,
-        id_in: Option<SurfaceId>,
-    ) -> Result<SurfaceId, CreateSurfaceError> {
-        let surface = unsafe {
-            self.instance.create_surface_from_drm(
-                fd,
-                plane,
-                connector_id,
-                width,
-                height,
-                refresh_rate,
-            )
-        }?;
-        let id = self.surfaces.prepare(id_in).assign(Arc::new(surface));
-
-        Ok(id)
-    }
-
-    
-    
-    
-    #[cfg(metal)]
-    pub unsafe fn instance_create_surface_metal(
-        &self,
-        layer: *mut core::ffi::c_void,
-        id_in: Option<SurfaceId>,
-    ) -> Result<SurfaceId, CreateSurfaceError> {
-        let surface = unsafe { self.instance.create_surface_metal(layer) }?;
-        let id = self.surfaces.prepare(id_in).assign(Arc::new(surface));
-        Ok(id)
-    }
-
-    #[cfg(dx12)]
-    
-    
-    
-    pub unsafe fn instance_create_surface_from_visual(
-        &self,
-        visual: *mut core::ffi::c_void,
-        id_in: Option<SurfaceId>,
-    ) -> Result<SurfaceId, CreateSurfaceError> {
-        let surface = unsafe { self.instance.create_surface_from_visual(visual) }?;
-        let id = self.surfaces.prepare(id_in).assign(Arc::new(surface));
-        Ok(id)
-    }
-
-    #[cfg(dx12)]
-    
-    
-    
-    pub unsafe fn instance_create_surface_from_surface_handle(
-        &self,
-        surface_handle: *mut core::ffi::c_void,
-        id_in: Option<SurfaceId>,
-    ) -> Result<SurfaceId, CreateSurfaceError> {
-        let surface = unsafe {
-            self.instance
-                .create_surface_from_surface_handle(surface_handle)
-        }?;
-        let id = self.surfaces.prepare(id_in).assign(Arc::new(surface));
-        Ok(id)
-    }
-
-    #[cfg(dx12)]
-    
-    
-    
-    pub unsafe fn instance_create_surface_from_swap_chain_panel(
-        &self,
-        swap_chain_panel: *mut core::ffi::c_void,
-        id_in: Option<SurfaceId>,
-    ) -> Result<SurfaceId, CreateSurfaceError> {
-        let surface = unsafe {
-            self.instance
-                .create_surface_from_swap_chain_panel(swap_chain_panel)
-        }?;
-        let id = self.surfaces.prepare(id_in).assign(Arc::new(surface));
-        Ok(id)
-    }
-
-    pub fn surface_drop(&self, id: SurfaceId) {
-        self.surfaces.remove(id);
-    }
-
-    pub fn enumerate_adapters(
-        &self,
-        backends: Backends,
-        apply_limit_buckets: bool,
-    ) -> Vec<AdapterId> {
-        let adapters = self
-            .instance
-            .enumerate_adapters(backends, apply_limit_buckets);
-        adapters
-            .into_iter()
-            .map(|adapter| self.hub.adapters.prepare(None).assign(adapter))
-            .collect()
-    }
-
-    pub fn request_adapter(
-        &self,
-        desc: &RequestAdapterOptions,
-        backends: Backends,
-        id_in: Option<AdapterId>,
-    ) -> Result<AdapterId, wgt::RequestAdapterError> {
-        let compatible_surface = desc.compatible_surface.map(|id| self.surfaces.get(id));
-        let desc = wgt::RequestAdapterOptions {
-            power_preference: desc.power_preference,
-            force_fallback_adapter: desc.force_fallback_adapter,
-            compatible_surface: compatible_surface.as_deref(),
-            apply_limit_buckets: desc.apply_limit_buckets,
-        };
-        let adapter = self.instance.request_adapter(&desc, backends)?;
-        let id = self.hub.adapters.prepare(id_in).assign(adapter);
-        Ok(id)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub unsafe fn create_adapter_from_hal(
-        &self,
-        hal_adapter: hal::DynExposedAdapter,
-        input: Option<AdapterId>,
-    ) -> AdapterId {
-        let fid = self.hub.adapters.prepare(input);
-        fid.assign(unsafe { self.instance.create_adapter_from_hal(hal_adapter) })
-    }
-
-    pub fn adapter_get_info(&self, adapter_id: AdapterId) -> wgt::AdapterInfo {
-        let adapter = self.hub.adapters.get(adapter_id);
-        adapter.get_info()
-    }
-
-    pub fn adapter_get_texture_format_features(
-        &self,
-        adapter_id: AdapterId,
-        format: wgt::TextureFormat,
-    ) -> wgt::TextureFormatFeatures {
-        let adapter = self.hub.adapters.get(adapter_id);
-        adapter.get_texture_format_features(format)
-    }
-
-    pub fn adapter_features(&self, adapter_id: AdapterId) -> wgt::Features {
-        let adapter = self.hub.adapters.get(adapter_id);
-        adapter.features()
-    }
-
-    pub fn adapter_limits(&self, adapter_id: AdapterId) -> wgt::Limits {
-        let adapter = self.hub.adapters.get(adapter_id);
-        adapter.limits()
-    }
-
-    pub fn adapter_downlevel_capabilities(
-        &self,
-        adapter_id: AdapterId,
-    ) -> wgt::DownlevelCapabilities {
-        let adapter = self.hub.adapters.get(adapter_id);
-        adapter.downlevel_capabilities()
-    }
-
-    pub fn adapter_get_presentation_timestamp(
-        &self,
-        adapter_id: AdapterId,
-    ) -> wgt::PresentationTimestamp {
-        let adapter = self.hub.adapters.get(adapter_id);
-        adapter.get_presentation_timestamp()
-    }
-
-    pub fn adapter_cooperative_matrix_properties(
-        &self,
-        adapter_id: AdapterId,
-    ) -> Vec<wgt::CooperativeMatrixProperties> {
-        let adapter = self.hub.adapters.get(adapter_id);
-        adapter.cooperative_matrix_properties()
-    }
-
-    pub fn adapter_drop(&self, adapter_id: AdapterId) {
-        self.hub.adapters.remove(adapter_id);
-    }
-}
-
-impl Global {
-    pub fn adapter_request_device(
-        &self,
-        adapter_id: AdapterId,
-        desc: &DeviceDescriptor,
-        device_id_in: Option<DeviceId>,
-        queue_id_in: Option<QueueId>,
-    ) -> Result<(DeviceId, QueueId), RequestDeviceError> {
-        let device_fid = self.hub.devices.prepare(device_id_in);
-        let queue_fid = self.hub.queues.prepare(queue_id_in);
-
-        let adapter = self.hub.adapters.get(adapter_id);
-        let (device, queue) = adapter.request_device(desc, self.instance.flags)?;
-
-        let device_id = device_fid.assign(device);
-        resource_log!("Created Device {:?}", device_id);
-
-        let queue_id = queue_fid.assign(queue);
-        resource_log!("Created Queue {:?}", queue_id);
-
-        Ok((device_id, queue_id))
-    }
-
-    
-    
-    
-    
-    pub unsafe fn create_device_from_hal(
-        &self,
-        adapter_id: AdapterId,
-        hal_device: hal::DynOpenDevice,
-        desc: &DeviceDescriptor,
-        device_id_in: Option<DeviceId>,
-        queue_id_in: Option<QueueId>,
-    ) -> Result<(DeviceId, QueueId), RequestDeviceError> {
-        let devices_fid = self.hub.devices.prepare(device_id_in);
-        let queues_fid = self.hub.queues.prepare(queue_id_in);
-
-        let adapter = self.hub.adapters.get(adapter_id);
-        let (device, queue) = unsafe {
-            adapter.create_device_and_queue_from_hal(hal_device, desc, self.instance.flags)
-        }?;
-
-        let device_id = devices_fid.assign(device);
-
-        let queue_id = queues_fid.assign(queue);
-
-        Ok((device_id, queue_id))
-    }
 }
 
 

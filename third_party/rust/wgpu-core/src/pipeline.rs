@@ -24,7 +24,6 @@ use crate::{
         AttachmentData, Device, DeviceError, MissingDownlevelFlags, MissingFeatures,
         RenderPassContext,
     },
-    id::{PipelineCacheId, PipelineLayoutId, ShaderModuleId},
     pipeline_cache,
     resource::{InvalidResourceError, Labeled, ResourceState, TrackingData},
     resource_log,
@@ -125,6 +124,25 @@ impl ShaderModule {
         })
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub(crate) fn finalize_entry_point_name(
         &self,
         stage: naga::ShaderStage,
@@ -136,25 +154,33 @@ impl ShaderModule {
                 interface.finalize_entry_point_name(stage, entry_point)
             }
             ShaderMetaData::Passthrough(ref interface) => {
-                if let Some(ep) = entry_point {
-                    if interface.entry_point_names.contains(ep) {
-                        Ok(ep.to_owned())
-                    } else {
-                        Err(validation::StageError::MissingEntryPoint(ep.to_owned()))
-                    }
-                } else {
-                    if interface.entry_point_names.len() != 1 {
-                        return Err(validation::StageError::MultipleEntryPointsFound);
-                    }
-                    Ok(interface
-                        .entry_point_names
-                        .iter()
-                        .next()
-                        .unwrap()
-                        .to_owned())
-                }
+                finalize_passthrough_entry_point_name(interface, entry_point)
             }
         }
+    }
+}
+
+fn finalize_passthrough_entry_point_name(
+    interface: &validation::PassthroughInterface,
+    entry_point: Option<&str>,
+) -> Result<String, validation::StageError> {
+    if let Some(ep) = entry_point {
+        return if interface.entry_point_names.contains(ep) {
+            Ok(ep.to_owned())
+        } else {
+            Err(validation::StageError::MissingEntryPoint(ep.to_owned()))
+        };
+    }
+
+    match interface.entry_point_names.len() {
+        0 => Err(validation::StageError::NoEntryPointFound),
+        1 => Ok(interface
+            .entry_point_names
+            .iter()
+            .next()
+            .unwrap()
+            .to_owned()),
+        _ => Err(validation::StageError::MultipleEntryPointsFound),
     }
 }
 
@@ -220,9 +246,12 @@ impl WebGpuError for CreateShaderModuleError {
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ProgrammableStageDescriptor<'a, SM = ShaderModuleId> {
+/// cbindgen:ignore
+pub struct ProgrammableStageDescriptor<'a, SM = Arc<ShaderModule>> {
     
     pub module: SM,
+
+    
     
     
     
@@ -230,6 +259,8 @@ pub struct ProgrammableStageDescriptor<'a, SM = ShaderModuleId> {
     
     
     pub entry_point: Option<Cow<'a, str>>,
+
+    
     
     
     
@@ -238,16 +269,15 @@ pub struct ProgrammableStageDescriptor<'a, SM = ShaderModuleId> {
     
     
     pub constants: naga::back::PipelineConstants,
+
+    
+    
     
     
     
     
     pub zero_initialize_workgroup_memory: bool,
 }
-
-/// cbindgen:ignore
-pub type ResolvedProgrammableStageDescriptor<'a> =
-    ProgrammableStageDescriptor<'a, Arc<ShaderModule>>;
 
 
 pub type ImplicitBindGroupCount = u8;
@@ -279,11 +309,12 @@ impl WebGpuError for ImplicitLayoutError {
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+/// cbindgen:ignore
 pub struct ComputePipelineDescriptor<
     'a,
-    PLL = PipelineLayoutId,
-    SM = ShaderModuleId,
-    PLC = PipelineCacheId,
+    PLL = Arc<PipelineLayout>,
+    SM = Arc<ShaderModule>,
+    PLC = Arc<PipelineCache>,
 > {
     pub label: Label<'a>,
     
@@ -293,10 +324,6 @@ pub struct ComputePipelineDescriptor<
     
     pub cache: Option<PLC>,
 }
-
-/// cbindgen:ignore
-pub type ResolvedComputePipelineDescriptor<'a> =
-    ComputePipelineDescriptor<'a, Arc<PipelineLayout>, Arc<ShaderModule>, Arc<PipelineCache>>;
 
 #[derive(Clone, Debug, Error)]
 #[non_exhaustive]
@@ -421,17 +448,14 @@ impl ComputePipeline {
         self.layout()?.get_bind_group_layout(index, self.into())
     }
 
-    pub fn get_bind_group_layout(
-        self: &Arc<Self>,
-        index: u32,
-    ) -> (Arc<BindGroupLayout>, Option<GetBindGroupLayoutError>) {
-        let (bgl, error) = match self.get_bind_group_layout_inner(index) {
-            Ok(bgl) => (bgl, None),
-            Err(e) => (
-                BindGroupLayout::invalid(&self.device, String::new()),
-                Some(e),
-            ),
-        };
+    pub fn get_bind_group_layout(self: &Arc<Self>, index: u32) -> Arc<BindGroupLayout> {
+        let bgl = self
+            .get_bind_group_layout_inner(index)
+            .unwrap_or_else(|err| {
+                self.device
+                    .handle_error_nolabel(err, "ComputePipeline::get_bind_group_layout");
+                BindGroupLayout::invalid(&self.device, String::new())
+            });
         #[cfg(feature = "trace")]
         if let Some(ref mut trace) = *self.device.trace.lock() {
             use crate::device::trace;
@@ -442,7 +466,7 @@ impl ComputePipeline {
                 index,
             });
         };
-        (bgl, error)
+        bgl
     }
 }
 
@@ -576,48 +600,40 @@ impl Default for VertexBufferLayout<'_> {
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct VertexState<'a, SM = ShaderModuleId> {
+/// cbindgen:ignore
+pub struct VertexState<'a, SM = Arc<ShaderModule>> {
     
     pub stage: ProgrammableStageDescriptor<'a, SM>,
     
     pub buffers: Cow<'a, [Option<VertexBufferLayout<'a>>]>,
 }
 
-/// cbindgen:ignore
-pub type ResolvedVertexState<'a> = VertexState<'a, Arc<ShaderModule>>;
-
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct FragmentState<'a, SM = ShaderModuleId> {
+/// cbindgen:ignore
+pub struct FragmentState<'a, SM = Arc<ShaderModule>> {
     
     pub stage: ProgrammableStageDescriptor<'a, SM>,
     
     pub targets: Cow<'a, [Option<wgt::ColorTargetState>]>,
 }
 
-/// cbindgen:ignore
-pub type ResolvedFragmentState<'a> = FragmentState<'a, Arc<ShaderModule>>;
-
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct TaskState<'a, SM = ShaderModuleId> {
+pub struct TaskState<'a, SM = Arc<ShaderModule>> {
     
     pub stage: ProgrammableStageDescriptor<'a, SM>,
 }
 
-pub type ResolvedTaskState<'a> = TaskState<'a, Arc<ShaderModule>>;
-
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct MeshState<'a, SM = ShaderModuleId> {
+pub struct MeshState<'a, SM = Arc<ShaderModule>> {
     
     pub stage: ProgrammableStageDescriptor<'a, SM>,
 }
-
-pub type ResolvedMeshState<'a> = MeshState<'a, Arc<ShaderModule>>;
 
 
 
@@ -629,7 +645,7 @@ pub type ResolvedMeshState<'a> = MeshState<'a, Arc<ShaderModule>>;
 #[doc(hidden)]
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum RenderPipelineVertexProcessor<'a, SM = ShaderModuleId> {
+pub enum RenderPipelineVertexProcessor<'a, SM = Arc<ShaderModule>> {
     Vertex(VertexState<'a, SM>),
     Mesh(Option<TaskState<'a, SM>>, MeshState<'a, SM>),
 }
@@ -639,9 +655,9 @@ pub enum RenderPipelineVertexProcessor<'a, SM = ShaderModuleId> {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RenderPipelineDescriptor<
     'a,
-    PLL = PipelineLayoutId,
-    SM = ShaderModuleId,
-    PLC = PipelineCacheId,
+    PLL = Arc<PipelineLayout>,
+    SM = Arc<ShaderModule>,
+    PLC = Arc<PipelineCache>,
 > {
     pub label: Label<'a>,
     
@@ -670,9 +686,9 @@ pub struct RenderPipelineDescriptor<
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MeshPipelineDescriptor<
     'a,
-    PLL = PipelineLayoutId,
-    SM = ShaderModuleId,
-    PLC = PipelineCacheId,
+    PLL = Arc<PipelineLayout>,
+    SM = Arc<ShaderModule>,
+    PLC = Arc<PipelineCache>,
 > {
     pub label: Label<'a>,
     
@@ -711,9 +727,9 @@ pub struct MeshPipelineDescriptor<
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GeneralRenderPipelineDescriptor<
     'a,
-    PLL = PipelineLayoutId,
-    SM = ShaderModuleId,
-    PLC = PipelineCacheId,
+    PLL = Arc<PipelineLayout>,
+    SM = Arc<ShaderModule>,
+    PLC = Arc<PipelineCache>,
 > {
     pub label: Label<'a>,
     
@@ -809,6 +825,11 @@ pub enum ColorStateError {
         factor: wgt::BlendFactor,
         target: u32,
     },
+    #[error("The {which} blend factor {factor:?} is not valid because the shader output does have an alpha channel.")]
+    InvalidAlphaBlend {
+        which: &'static str,
+        factor: wgt::BlendFactor,
+    },
     #[error(
         "Blend factor {factor:?} for render target {target} is not valid. Blend factor must be `one` when using min/max blend operations."
     )]
@@ -816,6 +837,8 @@ pub enum ColorStateError {
         factor: wgt::BlendFactor,
         target: u32,
     },
+    #[error("Shader does not produce an output at this index")]
+    OutputNotPresent,
 }
 
 #[derive(Clone, Debug, Error)]
@@ -1108,17 +1131,14 @@ impl RenderPipeline {
         self.layout()?.get_bind_group_layout(index, self.into())
     }
 
-    pub fn get_bind_group_layout(
-        self: &Arc<Self>,
-        index: u32,
-    ) -> (Arc<BindGroupLayout>, Option<GetBindGroupLayoutError>) {
-        let (bgl, error) = match self.get_bind_group_layout_inner(index) {
-            Ok(bgl) => (bgl, None),
-            Err(e) => (
-                BindGroupLayout::invalid(&self.device, String::new()),
-                Some(e),
-            ),
-        };
+    pub fn get_bind_group_layout(self: &Arc<Self>, index: u32) -> Arc<BindGroupLayout> {
+        let bgl = self
+            .get_bind_group_layout_inner(index)
+            .unwrap_or_else(|err| {
+                self.device
+                    .handle_error_nolabel(err, "RenderPipeline::get_bind_group_layout");
+                BindGroupLayout::invalid(&self.device, String::new())
+            });
         #[cfg(feature = "trace")]
         if let Some(ref mut trace) = *self.device.trace.lock() {
             use crate::device::trace;
@@ -1129,6 +1149,54 @@ impl RenderPipeline {
                 index,
             });
         };
-        (bgl, error)
+        bgl
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn passthrough_interface(entry_point_names: &[&str]) -> validation::PassthroughInterface {
+        validation::PassthroughInterface {
+            entry_point_names: entry_point_names
+                .iter()
+                .map(|name| (*name).to_owned())
+                .collect(),
+        }
+    }
+
+    #[test]
+    fn select_implicit_passthrough_entry_point() {
+        let empty = passthrough_interface(&[]);
+        assert!(matches!(
+            finalize_passthrough_entry_point_name(&empty, None),
+            Err(validation::StageError::NoEntryPointFound)
+        ));
+
+        let single = passthrough_interface(&["main"]);
+        assert_eq!(
+            finalize_passthrough_entry_point_name(&single, None).unwrap(),
+            "main"
+        );
+
+        let multiple = passthrough_interface(&["vertex", "fragment"]);
+        assert!(matches!(
+            finalize_passthrough_entry_point_name(&multiple, None),
+            Err(validation::StageError::MultipleEntryPointsFound)
+        ));
+    }
+
+    #[test]
+    fn select_explicit_passthrough_entry_point() {
+        let interface = passthrough_interface(&["main"]);
+        assert_eq!(
+            finalize_passthrough_entry_point_name(&interface, Some("main")).unwrap(),
+            "main"
+        );
+        assert!(matches!(
+            finalize_passthrough_entry_point_name(&interface, Some("missing")),
+            Err(validation::StageError::MissingEntryPoint(name)) if name == "missing"
+        ));
     }
 }

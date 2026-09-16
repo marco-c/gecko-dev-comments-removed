@@ -1,6 +1,6 @@
 use alloc::{borrow::Cow, string::String};
 
-use parking_lot::Mutex;
+use wgpu_sync::Mutex;
 use windows::Win32::{Foundation, System::Diagnostics::Debug};
 
 

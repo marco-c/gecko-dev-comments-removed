@@ -2,137 +2,11 @@
 
 
 
+use std::{borrow::Cow, error::Error};
 
-
-
-use std::{
-    borrow::Cow,
-    error::Error,
-    fmt::{self, Display, Formatter},
-    os::raw::c_char,
-    ptr,
-};
-
-use nsstring::nsCString;
 use serde::{Deserialize, Serialize};
-use wgc::id;
+use wgpu_core_remote_types::id;
 use wgt::error::{ErrorType, WebGpuError};
-
-
-
-
-
-
-
-
-
-#[repr(C)]
-pub struct ErrorBuffer {
-    
-    
-    
-    
-    r#type: *mut ErrorBufferType,
-    
-    
-    
-    
-    
-    message: *mut c_char,
-    message_capacity: usize,
-    device_id: *mut wgc::id::DeviceId,
-}
-
-impl ErrorBuffer {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub(crate) fn init(&mut self, error: impl WebGpuError, device_id: wgc::id::DeviceId) {
-        let err_ty = match error.webgpu_error_type() {
-            ErrorType::Internal => ErrorBufferType::Internal,
-            ErrorType::OutOfMemory => ErrorBufferType::OutOfMemory,
-            ErrorType::Validation => ErrorBufferType::Validation,
-            ErrorType::DeviceLost => return, 
-        };
-        
-        unsafe { *self.r#type = err_ty };
-
-        unsafe { *self.device_id = device_id };
-
-        let message = error_to_string(&error);
-
-        assert_ne!(self.message_capacity, 0);
-        
-        
-        
-        let length = if message.len() >= self.message_capacity {
-            
-            
-            
-            
-            
-            let truncated_length = (0..self.message_capacity)
-                .rfind(|&offset| message.is_char_boundary(offset))
-                .unwrap_or(0);
-            log::warn!(
-                "Error message's length {} reached capacity {}, truncating to {}",
-                message.len(),
-                self.message_capacity,
-                truncated_length,
-            );
-            truncated_length
-        } else {
-            message.len()
-        };
-        unsafe {
-            ptr::copy_nonoverlapping(message.as_ptr(), self.message as *mut u8, length);
-            *self.message.add(length) = 0;
-        }
-    }
-}
-
-pub struct OwnedErrorBuffer {
-    device_id: Option<id::DeviceId>,
-    ty: ErrorBufferType,
-    message: nsCString,
-}
-
-impl OwnedErrorBuffer {
-    pub fn new() -> Self {
-        Self {
-            device_id: None,
-            ty: ErrorBufferType::None,
-            message: nsCString::new(),
-        }
-    }
-
-    pub(crate) fn init(&mut self, error: impl WebGpuError, device_id: id::DeviceId) {
-        assert!(self.device_id.is_none());
-
-        let ty = match error.webgpu_error_type() {
-            ErrorType::Internal => ErrorBufferType::Internal,
-            ErrorType::OutOfMemory => ErrorBufferType::OutOfMemory,
-            ErrorType::Validation => ErrorBufferType::Validation,
-            ErrorType::DeviceLost => return, 
-        };
-
-        self.device_id = Some(device_id);
-        self.ty = ty;
-
-        let message = error_to_string(&error);
-        self.message = nsCString::from(message);
-    }
-
-    pub(crate) fn get_inner_data(&self) -> Option<(id::DeviceId, ErrorBufferType, &nsCString)> {
-        Some((self.device_id?, self.ty, &self.message))
-    }
-}
 
 pub fn error_to_string(error: impl Error) -> String {
     use std::fmt::Write;
@@ -145,49 +19,28 @@ pub fn error_to_string(error: impl Error) -> String {
     message
 }
 
-
-
-
-
-
-#[repr(u8)]
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-pub(crate) enum ErrorBufferType {
-    None = 0,
-    DeviceLost = 1,
-    Internal = 2,
-    OutOfMemory = 3,
-    Validation = 4,
+#[derive(Debug, thiserror::Error, Serialize, Deserialize)]
+#[error("{message}")]
+pub struct GPUError<'a> {
+    pub message: Cow<'a, str>,
+    pub r#type: ErrorType,
 }
 
-
-
-#[derive(Clone, Debug)]
-pub(crate) struct ErrMsg {
-    pub(crate) message: Cow<'static, str>,
-    pub(crate) r#type: ErrorType,
+impl WebGpuError for GPUError<'static> {
+    fn webgpu_error_type(&self) -> ErrorType {
+        self.r#type
+    }
 }
 
-impl ErrMsg {
+impl GPUError<'static> {
     pub fn oom() -> Self {
         Self {
             message: "Out of memory".into(),
             r#type: ErrorType::OutOfMemory,
         }
     }
-}
 
-impl Display for ErrMsg {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let Self { message, r#type: _ } = self;
-        write!(f, "{message}")
-    }
-}
-
-impl Error for ErrMsg {}
-
-impl WebGpuError for ErrMsg {
-    fn webgpu_error_type(&self) -> ErrorType {
-        self.r#type
+    pub fn report(self, global: &wgpu_core_remote::global::Global, device_id: id::DeviceId) {
+        global.device_handle_error(device_id, self, None, "");
     }
 }

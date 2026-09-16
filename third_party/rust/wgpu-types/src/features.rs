@@ -14,7 +14,6 @@
 
 
 
-
 use crate::{link_to_wgpu_docs, link_to_wgpu_item, VertexFormat};
 #[cfg(feature = "serde")]
 use alloc::fmt;

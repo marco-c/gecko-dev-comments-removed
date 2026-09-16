@@ -1,11 +1,10 @@
 use alloc::sync::Arc;
 
-use crate::id;
-
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct PassTimestampWrites<QS = id::QuerySetId> {
+/// cbindgen:ignore
+pub struct PassTimestampWrites<QS = Arc<crate::resource::QuerySet>> {
     
     pub query_set: QS,
     
@@ -13,6 +12,3 @@ pub struct PassTimestampWrites<QS = id::QuerySetId> {
     
     pub end_of_pass_write_index: Option<u32>,
 }
-
-/// cbindgen:ignore
-pub type ArcPassTimestampWrites = PassTimestampWrites<Arc<crate::resource::QuerySet>>;

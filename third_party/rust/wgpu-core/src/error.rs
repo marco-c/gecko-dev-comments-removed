@@ -1,12 +1,301 @@
+use alloc::string::ToString as _;
 use alloc::{boxed::Box, string::String, sync::Arc, vec::Vec};
-use core::{error::Error, fmt};
+use core::fmt;
 
 use thiserror::Error;
 
-#[cfg(send_sync)]
-pub type ContextErrorSource = Box<dyn Error + Send + Sync + 'static>;
-#[cfg(not(send_sync))]
-pub type ContextErrorSource = Box<dyn Error + 'static>;
+use alloc::format;
+use core::error;
+
+use hashbrown::HashMap;
+use wgpu_sync::Mutex;
+use wgt::error::{Error, ErrorFilter, ErrorSource, ErrorType, UncapturedErrorHandler, WebGpuError};
+use wgt::WasmNotSendSync;
+
+use crate::device::Device;
+
+
+
+
+
+
+mod thread_id {
+    #[cfg(feature = "std")]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    pub struct ThreadId(std::thread::ThreadId);
+
+    #[cfg(feature = "std")]
+    impl ThreadId {
+        pub fn current() -> Self {
+            ThreadId(std::thread::current().id())
+        }
+    }
+
+    #[cfg(not(feature = "std"))]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    pub struct ThreadId(());
+
+    #[cfg(not(feature = "std"))]
+    impl ThreadId {
+        pub fn current() -> Self {
+            
+            
+            
+            ThreadId(())
+        }
+    }
+}
+
+struct ErrorScope {
+    pub error: Option<Error>,
+    pub filter: ErrorFilter,
+}
+
+struct InternalErrorSink {
+    scopes: HashMap<thread_id::ThreadId, Vec<ErrorScope>>,
+    uncaptured_handler: Option<Arc<dyn UncapturedErrorHandler>>,
+}
+
+pub struct ErrorSink(Mutex<InternalErrorSink>);
+
+impl ErrorSink {
+    pub fn new() -> ErrorSink {
+        
+        ErrorSink(Mutex::new(InternalErrorSink::new()))
+    }
+
+    #[cold]
+    #[track_caller]
+    #[inline(never)]
+    fn handle_error_inner(
+        &self,
+        error_type: ErrorType,
+        source: ErrorSource,
+        label: Option<&str>,
+        fn_ident: &'static str,
+    ) {
+        let source: ErrorSource = Box::new(ContextError {
+            fn_ident,
+            source,
+            label: label.unwrap_or_default().to_string(),
+        });
+        let final_error_handling = {
+            let mut sink = self.0.lock();
+            let error = match error_type {
+                ErrorType::Internal => {
+                    let description = format_error(&*source);
+                    Error::Internal {
+                        source,
+                        description,
+                    }
+                }
+                ErrorType::OutOfMemory => Error::OutOfMemory { source },
+                ErrorType::Validation => {
+                    let description = format_error(&*source);
+                    Error::Validation {
+                        source,
+                        description,
+                    }
+                }
+                ErrorType::DeviceLost => return, 
+            };
+            sink.handle_error_or_return_handler(error)
+        };
+
+        if let Some(f) = final_error_handling {
+            
+            
+            
+            f();
+        }
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn handle_error(
+        &self,
+        source: impl WebGpuError + WasmNotSendSync + 'static,
+        label: Option<&str>,
+        fn_ident: &'static str,
+    ) {
+        let error_type = source.webgpu_error_type();
+        self.handle_error_inner(error_type, Box::new(source), label, fn_ident)
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn handle_error_nolabel(
+        &self,
+        source: impl WebGpuError + WasmNotSendSync + 'static,
+        fn_ident: &'static str,
+    ) {
+        let error_type = source.webgpu_error_type();
+        self.handle_error_inner(error_type, Box::new(source), None, fn_ident)
+    }
+}
+
+impl InternalErrorSink {
+    fn new() -> InternalErrorSink {
+        InternalErrorSink {
+            scopes: HashMap::new(),
+            uncaptured_handler: None,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    #[must_use]
+    fn handle_error_or_return_handler(&mut self, err: Error) -> Option<impl FnOnce()> {
+        let filter = match err {
+            Error::OutOfMemory { .. } => ErrorFilter::OutOfMemory,
+            Error::Validation { .. } => ErrorFilter::Validation,
+            Error::Internal { .. } => ErrorFilter::Internal,
+        };
+        let thread_id = thread_id::ThreadId::current();
+        let scopes = self.scopes.entry(thread_id).or_default();
+        match scopes.iter_mut().rev().find(|scope| scope.filter == filter) {
+            Some(scope) => {
+                if scope.error.is_none() {
+                    scope.error = Some(err);
+                }
+                None
+            }
+            None => {
+                if let Some(custom_handler) = &self.uncaptured_handler {
+                    let custom_handler = Arc::clone(custom_handler);
+                    Some(move || (custom_handler)(err))
+                } else {
+                    
+                    default_error_handler(err)
+                }
+            }
+        }
+    }
+}
+
+impl fmt::Debug for InternalErrorSink {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ErrorSink")
+    }
+}
+
+#[track_caller]
+fn default_error_handler(err: Error) -> ! {
+    log::error!("Handling wgpu errors as fatal by default");
+    panic!("wgpu error: {err}\n");
+}
+
+#[derive(Debug, Error)]
+#[error("Error scope stack is empty")]
+pub struct EmptyErrorScopeStack;
+
+impl Device {
+    pub fn on_uncaptured_error(&self, handler: Arc<dyn UncapturedErrorHandler>) {
+        let mut error_sink = self.error_sink.0.lock();
+        error_sink.uncaptured_handler = Some(handler);
+    }
+
+    
+    pub fn push_error_scope(&self, filter: ErrorFilter) {
+        let mut error_sink = self.error_sink.0.lock();
+        let thread_id = thread_id::ThreadId::current();
+        let scopes = error_sink.scopes.entry(thread_id).or_default();
+        scopes.push(ErrorScope {
+            error: None,
+            filter,
+        });
+    }
+
+    
+    pub fn pop_error_scope(&self) -> Result<Option<Error>, EmptyErrorScopeStack> {
+        
+        if !self.is_valid() {
+            
+            return Ok(None);
+        }
+        let mut error_sink = self.error_sink.0.lock();
+
+        let thread_id = thread_id::ThreadId::current();
+        let scopes = error_sink.scopes.entry(thread_id).or_default();
+        
+        match scopes.pop() {
+            
+            
+            Some(scope) => Ok(scope.error),
+            
+            None => Err(EmptyErrorScopeStack),
+        }
+    }
+}
+
+impl Device {
+    
+    
+    pub fn error_sink(&self) -> &ErrorSink {
+        &self.error_sink
+    }
+}
+
+#[inline(never)]
+pub fn format_error(err: &(dyn error::Error + 'static)) -> String {
+    let mut output = String::new();
+    let mut level = 1;
+
+    fn print_tree(output: &mut String, level: &mut usize, e: &(dyn error::Error + 'static)) {
+        let mut print = |e: &(dyn error::Error + 'static)| {
+            use core::fmt::Write;
+            writeln!(output, "{}{}", " ".repeat(*level * 2), e).unwrap();
+
+            if let Some(e) = e.source() {
+                *level += 1;
+                print_tree(output, level, e);
+                *level -= 1;
+            }
+        };
+        if let Some(multi) = e.downcast_ref::<MultiError>() {
+            for e in multi.errors() {
+                print(e);
+            }
+        } else {
+            print(e);
+        }
+    }
+
+    print_tree(&mut output, &mut level, err);
+
+    format!("Validation Error\n\nCaused by:\n{output}")
+}
+
+impl Device {
+    #[inline]
+    #[track_caller]
+    pub fn handle_error(
+        &self,
+        source: impl WebGpuError + WasmNotSendSync + 'static,
+        label: Option<&str>,
+        fn_ident: &'static str,
+    ) {
+        self.error_sink.handle_error(source, label, fn_ident);
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn handle_error_nolabel(
+        &self,
+        source: impl WebGpuError + WasmNotSendSync + 'static,
+        fn_ident: &'static str,
+    ) {
+        self.error_sink.handle_error_nolabel(source, fn_ident);
+    }
+}
 
 #[derive(Debug, Error)]
 #[error(
@@ -18,18 +307,18 @@ pub type ContextErrorSource = Box<dyn Error + 'static>;
 pub struct ContextError {
     pub fn_ident: &'static str,
     #[source]
-    pub source: ContextErrorSource,
+    pub source: ErrorSource,
     pub label: String,
 }
 
 
 #[derive(Clone)]
 pub struct MultiError {
-    inner: Vec<Arc<dyn Error + Send + Sync + 'static>>,
+    inner: Vec<Arc<dyn error::Error + Send + Sync + 'static>>,
 }
 
 impl MultiError {
-    pub fn new<T: Error + Send + Sync + 'static>(
+    pub fn new<T: error::Error + Send + Sync + 'static>(
         iter: impl ExactSizeIterator<Item = T>,
     ) -> Option<Self> {
         if iter.len() == 0 {
@@ -40,7 +329,9 @@ impl MultiError {
         })
     }
 
-    pub fn errors(&self) -> Box<dyn Iterator<Item = &(dyn Error + Send + Sync + 'static)> + '_> {
+    pub fn errors(
+        &self,
+    ) -> Box<dyn Iterator<Item = &(dyn error::Error + Send + Sync + 'static)> + '_> {
         Box::new(self.inner.iter().map(|e| e.as_ref()))
     }
 }
@@ -57,8 +348,75 @@ impl fmt::Display for MultiError {
     }
 }
 
-impl Error for MultiError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
+impl error::Error for MultiError {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         self.inner[0].source()
+    }
+}
+
+
+impl Device {
+    pub fn push_error_scope_with_index(&self, filter: ErrorFilter) -> u32 {
+        let index = {
+            let mut error_sink = self.error_sink.0.lock();
+            let thread_id = thread_id::ThreadId::current();
+            let scopes = error_sink.scopes.entry(thread_id).or_default();
+            scopes
+                .len()
+                .try_into()
+                .expect("Greater than 2^32 nested error scopes")
+        };
+        self.push_error_scope(filter);
+        index
+    }
+
+    pub fn pop_error_scope_checked(&self, index: u32) -> Option<Error> {
+        #[cfg(feature = "std")]
+        fn is_panicking() -> bool {
+            std::thread::panicking()
+        }
+
+        #[cfg(not(feature = "std"))]
+        fn is_panicking() -> bool {
+            false
+        }
+
+        let mut error_sink = self.error_sink.0.lock();
+
+        
+        
+        let is_panicking = is_panicking();
+        let thread_id = thread_id::ThreadId::current();
+        let err = "Mismatched pop_error_scope call: no error scope for this thread. Error scopes are thread-local.";
+        let scopes = match error_sink.scopes.get_mut(&thread_id) {
+            Some(s) => s,
+            None => {
+                if !is_panicking {
+                    panic!("{err}");
+                } else {
+                    return None;
+                }
+            }
+        };
+        if scopes.is_empty() && !is_panicking {
+            panic!("{err}");
+        }
+        if index as usize != scopes.len() - 1 && !is_panicking {
+            panic!(
+                "Mismatched pop_error_scope call: error scopes must be popped in reverse order."
+            );
+        }
+
+        
+        
+        
+        
+        let scope = match scopes.pop() {
+            Some(s) => s,
+            None if !is_panicking => unreachable!(),
+            None => return None,
+        };
+
+        scope.error
     }
 }

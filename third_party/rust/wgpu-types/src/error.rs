@@ -1,6 +1,10 @@
 
 
 
+use alloc::boxed::Box;
+use alloc::string::String;
+use core::{error, fmt};
+
 
 
 
@@ -35,7 +39,110 @@ pub enum ErrorType {
 
 
 
-pub trait WebGpuError: core::error::Error + 'static {
+pub trait WebGpuError: error::Error + 'static {
     
     fn webgpu_error_type(&self) -> ErrorType;
+}
+
+
+
+
+pub trait UncapturedErrorHandler: Fn(Error) + Send + Sync + 'static {}
+impl<T> UncapturedErrorHandler for T where T: Fn(Error) + Send + Sync + 'static {}
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd)]
+pub enum ErrorFilter {
+    
+    OutOfMemory,
+    
+    Validation,
+    
+    Internal,
+}
+static_assertions::assert_impl_all!(ErrorFilter: Send, Sync);
+
+
+
+
+#[cfg(any(
+    not(target_family = "wasm"),
+    all(
+        feature = "fragile-send-sync-non-atomic-wasm",
+        not(target_feature = "atomics")
+    )
+))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
+pub type ErrorSource = Box<dyn error::Error + Send + Sync + 'static>;
+
+
+
+#[cfg(not(any(
+    not(target_family = "wasm"),
+    all(
+        feature = "fragile-send-sync-non-atomic-wasm",
+        not(target_feature = "atomics")
+    )
+)))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
+pub type ErrorSource = Box<dyn error::Error + 'static>;
+
+
+#[derive(Debug)]
+pub enum Error {
+    
+    OutOfMemory {
+        
+        source: ErrorSource,
+    },
+    
+    Validation {
+        
+        source: ErrorSource,
+        
+        description: String,
+    },
+    
+    
+    
+    Internal {
+        
+        source: ErrorSource,
+        
+        description: String,
+    },
+}
+
+impl error::Error for Error {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match self {
+            Error::OutOfMemory { source } => Some(source.as_ref()),
+            Error::Validation { source, .. } => Some(source.as_ref()),
+            Error::Internal { source, .. } => Some(source.as_ref()),
+        }
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Error::OutOfMemory { .. } => f.write_str("Out of Memory"),
+            Error::Validation { description, .. } => f.write_str(description),
+            Error::Internal { description, .. } => f.write_str(description),
+        }
+    }
+}
+
+impl WebGpuError for Error {
+    fn webgpu_error_type(&self) -> ErrorType {
+        match self {
+            Error::OutOfMemory { .. } => ErrorType::OutOfMemory,
+            Error::Validation { .. } => ErrorType::Validation,
+            Error::Internal { .. } => ErrorType::Internal,
+        }
+    }
 }

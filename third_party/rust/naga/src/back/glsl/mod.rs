@@ -417,8 +417,8 @@ pub enum Error {
     
     
     
-    #[error("The selected version doesn't support {0:?}")]
-    MissingFeatures(Features),
+    #[error("GLSL {1} doesn't support the required feature(s): {0}")]
+    MissingFeatures(Features, Version),
     
     
     #[error("Multiple immediates aren't supported")]
@@ -506,4 +506,5 @@ pub fn supported_capabilities() -> valid::Capabilities {
         | Caps::MEMORY_DECORATION_COHERENT
         | Caps::MEMORY_DECORATION_VOLATILE
         | Caps::STORAGE_TEXTURE_16BIT_NORM_FORMATS
+        | Caps::LINEAR_INTERPOLATION
 }

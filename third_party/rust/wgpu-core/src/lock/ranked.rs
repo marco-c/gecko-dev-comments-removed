@@ -68,7 +68,7 @@ pub use LockState as RankData;
 
 
 pub struct Mutex<T> {
-    inner: parking_lot::Mutex<T>,
+    inner: wgpu_sync::Mutex<T>,
     rank: LockRank,
 }
 
@@ -79,7 +79,7 @@ pub struct Mutex<T> {
 
 
 pub struct MutexGuard<'a, T> {
-    inner: parking_lot::MutexGuard<'a, T>,
+    inner: wgpu_sync::MutexGuard<'a, T>,
     #[cfg_attr(not(miri), expect(unused))] 
     saved: LockStateGuard,
 }
@@ -216,7 +216,7 @@ fn release(saved: LockState) {
 impl<T> Mutex<T> {
     pub fn new(rank: LockRank, value: T) -> Mutex<T> {
         Mutex {
-            inner: parking_lot::Mutex::new(value),
+            inner: wgpu_sync::Mutex::new(value),
             rank,
         }
     }
@@ -266,7 +266,7 @@ impl<T: fmt::Debug> fmt::Debug for Mutex<T> {
 
 
 pub struct RwLock<T> {
-    inner: parking_lot::RwLock<T>,
+    inner: wgpu_sync::RwLock<T>,
     rank: LockRank,
 }
 
@@ -277,7 +277,7 @@ pub struct RwLock<T> {
 
 
 pub struct RwLockReadGuard<'a, T> {
-    inner: parking_lot::RwLockReadGuard<'a, T>,
+    inner: wgpu_sync::RwLockReadGuard<'a, T>,
     saved: LockStateGuard,
 }
 
@@ -288,14 +288,14 @@ pub struct RwLockReadGuard<'a, T> {
 
 
 pub struct RwLockWriteGuard<'a, T> {
-    inner: parking_lot::RwLockWriteGuard<'a, T>,
+    inner: wgpu_sync::RwLockWriteGuard<'a, T>,
     saved: LockStateGuard,
 }
 
 impl<T> RwLock<T> {
     pub fn new(rank: LockRank, value: T) -> RwLock<T> {
         RwLock {
-            inner: parking_lot::RwLock::new(value),
+            inner: wgpu_sync::RwLock::new(value),
             rank,
         }
     }

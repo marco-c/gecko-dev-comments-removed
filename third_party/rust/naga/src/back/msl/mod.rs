@@ -875,6 +875,7 @@ pub fn supported_capabilities() -> crate::valid::Capabilities {
         
         
         | Caps::MEMORY_DECORATION_COHERENT
+        | Caps::LINEAR_INTERPOLATION
 }
 
 #[test]
