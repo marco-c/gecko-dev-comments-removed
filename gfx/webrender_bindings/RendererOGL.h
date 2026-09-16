@@ -71,7 +71,7 @@ class RendererOGL {
   void WaitForGPU();
 
   
-  RefPtr<layers::Fence> GetAndResetReleaseFence();
+  RefPtr<layers::Fence> GetAndResetReadFence();
 
   
   RenderedFrameId GetLastCompletedFrameId();

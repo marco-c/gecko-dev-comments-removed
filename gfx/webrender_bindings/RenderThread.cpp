@@ -925,10 +925,10 @@ void RenderThread::UpdateAndRender(
                           renderer->GetCompositorBridge(), info, aStartId,
                           aStartTime, start, end, render, *aStats));
 
-  RefPtr<layers::Fence> fence;
+  RefPtr<layers::Fence> readFence;
 
   if (latestFrameId.IsValid()) {
-    fence = renderer->GetAndResetReleaseFence();
+    readFence = renderer->GetAndResetReadFence();
 
     
     
@@ -957,7 +957,7 @@ void RenderThread::UpdateAndRender(
   
   MOZ_ASSERT(pipelineMgr);
   pipelineMgr->NotifyPipelinesUpdated(info, latestFrameId, lastCompletedFrameId,
-                                      std::move(fence));
+                                      std::move(readFence));
 }
 
 void RenderThread::Pause(wr::WindowId aWindowId) {
