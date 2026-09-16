@@ -2180,7 +2180,9 @@ impl Global {
             DeviceAction::CreateTexture(id, desc, swap_chain_id) => {
                 let desc = if let Some(swap_chain_id) = swap_chain_id {
                     
-                    assert!(!desc.usage.contains(wgt::TextureUsages::TRANSIENT_ATTACHMENT));
+                    assert!(!desc
+                        .usage
+                        .contains(wgt::TextureUsages::TRANSIENT_ATTACHMENT));
 
                     
                     
