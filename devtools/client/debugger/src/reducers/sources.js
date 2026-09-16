@@ -23,19 +23,6 @@ export function initialSourcesState() {
 
 
 
-
-
-
-
-
-    mutableBreakpointPositions: new Map(),
-
-    
-
-
-
-
-
     mutableDisabledStylesheetsIDs: new Set(),
 
     
@@ -230,34 +217,6 @@ function update(state = initialSourcesState(), action) {
       };
     }
 
-    case "ADD_BREAKPOINT_POSITIONS": {
-      
-      let positions = state.mutableBreakpointPositions.get(action.source.id);
-      if (positions) {
-        positions = { ...positions, ...action.positions };
-      } else {
-        positions = action.positions;
-      }
-
-      state.mutableBreakpointPositions.set(action.source.id, positions);
-
-      return {
-        ...state,
-      };
-    }
-
-    case "CLEAR_BREAKPOINT_POSITIONS": {
-      if (!state.mutableBreakpointPositions.has(action.source.id)) {
-        return state;
-      }
-
-      state.mutableBreakpointPositions.delete(action.source.id);
-
-      return {
-        ...state,
-      };
-    }
-
     case "REMOVE_SOURCES": {
       return removeSourcesAndActors(state, action);
     }
@@ -314,7 +273,6 @@ function removeSourcesAndActors(state, action) {
     mutableOriginalSources,
     mutableSourceActors,
     mutableOriginalBreakableLines,
-    mutableBreakpointPositions,
   } = state;
 
   const newState = { ...state };
@@ -359,29 +317,7 @@ function removeSourcesAndActors(state, action) {
         originalSourceIds = originalSourceIds.filter(id => id != sourceId);
         mutableOriginalSources.set(generatedSourceId, originalSourceIds);
       }
-
-      
-      
-      
-      
-      
-      const generatedBreakpointPositions =
-        mutableBreakpointPositions.get(generatedSourceId);
-      if (generatedBreakpointPositions) {
-        for (const line in generatedBreakpointPositions) {
-          for (const position of generatedBreakpointPositions[line]) {
-            
-            
-            
-            if (position.location.source == removedSource) {
-              position.location = position.generatedLocation;
-            }
-          }
-        }
-      }
     }
-
-    mutableBreakpointPositions.delete(sourceId);
 
     if (
       action.resetSelectedLocation &&
@@ -439,17 +375,6 @@ function insertSourceActors(state, action) {
       mutableSourceActors.set(sourceId, [...existing, sourceActor]);
     } else {
       mutableSourceActors.set(sourceId, [sourceActor]);
-    }
-  }
-
-  const scriptActors = sourceActors.filter(
-    item => item.introductionType === "scriptElement"
-  );
-  if (scriptActors.length) {
-    
-    
-    for (const { sourceObject } of scriptActors) {
-      state.mutableBreakpointPositions.delete(sourceObject.id);
     }
   }
 

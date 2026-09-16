@@ -2,8 +2,9 @@
 
 
 
-import { getSelectedSource, getBreakpointPositionsForLine } from "./sources";
+import { getSelectedSource } from "./sources";
 import { getBreakpointsList } from "./breakpoints";
+import { getBreakpointPositionsForLocationLine } from "./source-actors";
 
 function getColumn(column, selectedSource) {
   if (column) {
@@ -104,17 +105,11 @@ export function getClosestBreakpoint(state, position) {
   return breakpoint;
 }
 
-export function getClosestBreakpointPosition(state, position) {
-  const selectedSource = getSelectedSource(state);
-  if (!selectedSource) {
-    throw new Error("no selectedSource");
-  }
-
-  const columnBreakpoints = getBreakpointPositionsForLine(
+export function getClosestBreakpointPosition(state, location) {
+  const columnBreakpoints = getBreakpointPositionsForLocationLine(
     state,
-    selectedSource.id,
-    position.line
+    location
   );
 
-  return findClosestBreakpoint(columnBreakpoints, position.column);
+  return findClosestBreakpoint(columnBreakpoints, location.column);
 }

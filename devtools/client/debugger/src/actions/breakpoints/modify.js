@@ -9,8 +9,8 @@ import {
 } from "../../utils/breakpoint/index";
 import {
   getBreakpoint,
-  getBreakpointPositionsForLocation,
-  getFirstBreakpointPosition,
+  getBreakpointPositionsForLocationLineAndColumn,
+  getFirstBreakpointPositionForLocationLine,
   getSettledSourceTextContent,
   getBreakpointsList,
   getPendingBreakpointList,
@@ -125,14 +125,18 @@ export function addBreakpoint(
     await dispatch(setBreakpointPositions(initialLocation));
 
     const position = initialLocation.column
-      ? getBreakpointPositionsForLocation(getState(), initialLocation)
-      : getFirstBreakpointPosition(getState(), initialLocation);
+      ? getBreakpointPositionsForLocationLineAndColumn(
+          getState(),
+          initialLocation
+        )
+      : getFirstBreakpointPositionForLocationLine(getState(), initialLocation);
 
     
     
     if (!position) {
       console.error(
-        `Unable to add breakpoint at non-breakable location "${JSON.stringify(initialLocation)}"`
+        `Unable to add breakpoint at non-breakable location`,
+        initialLocation
       );
       return null;
     }

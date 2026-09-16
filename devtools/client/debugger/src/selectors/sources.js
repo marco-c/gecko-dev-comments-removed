@@ -6,7 +6,6 @@ import { createSelector } from "devtools/client/shared/vendor/reselect";
 
 import { getPrettySourceURL, isNotPrettyPrintable } from "../utils/source";
 
-import { findPosition } from "../utils/breakpoint/breakpointPositions";
 import { isFulfilled } from "../utils/async-value";
 
 import { prefs } from "../utils/prefs";
@@ -233,6 +232,48 @@ export function getFirstSourceActorForGeneratedSource(
 
 
 
+export function getRelevantSourceActorsForLocation(state, location) {
+  if (!location) {
+    return [];
+  }
+  
+  const generatedSource = location.source.isOriginal
+    ? location.source.generatedSource
+    : location.source;
+
+  let sourceActors;
+  if (generatedSource.isHTML) {
+    
+    
+    
+    
+    sourceActors = getSourceActorsForSource(state, generatedSource.id);
+  } else {
+    
+    
+    
+    
+    
+    
+    
+    sourceActors = [
+      location.sourceActor ||
+        getFirstSourceActorForGeneratedSource(state, generatedSource.id),
+    ];
+  }
+
+  return sourceActors;
+}
+
+
+
+
+
+
+
+
+
+
 export function getSourceActorsForSource(state, id) {
   return state.sources.mutableSourceActors.get(id) || [];
 }
@@ -296,56 +337,36 @@ export function getPrettyPrintMessage(state, location) {
   return L10N.getStr("sourceTabs.prettyPrint");
 }
 
-export function getBreakpointPositionsForSource(state, sourceId) {
-  return state.sources.mutableBreakpointPositions.get(sourceId);
-}
-
-
-export function hasBreakpointPositions(state, sourceId) {
-  return !!getBreakpointPositionsForSource(state, sourceId);
-}
-
-export function getBreakpointPositionsForLine(state, sourceId, line) {
-  const positions = getBreakpointPositionsForSource(state, sourceId);
-  return positions?.[line];
-}
-
-export function getBreakpointPositionsForLocation(state, location) {
-  const sourceId = location.source.id;
-  const positions = getBreakpointPositionsForSource(state, sourceId);
-  return findPosition(positions, location);
-}
-
-export function getBreakableLines(state, sourceId) {
-  if (!sourceId) {
-    return null;
+export function getBreakableLines(state, selectedLocation) {
+  if (selectedLocation.source.isOriginal) {
+    return state.sources.mutableOriginalBreakableLines.get(
+      selectedLocation.source.id
+    );
   }
-  const source = getSource(state, sourceId);
-  if (!source) {
-    return null;
-  }
-
-  if (source.isOriginal) {
-    return state.sources.mutableOriginalBreakableLines.get(sourceId);
-  }
-
-  const sourceActors = getSourceActorsForSource(state, sourceId);
+  const sourceActors = getRelevantSourceActorsForLocation(
+    state,
+    selectedLocation
+  );
   if (!sourceActors.length) {
     return null;
   }
 
   
   
-  return getBreakableLinesForSourceActors(state, sourceActors, source.isHTML);
+  return getBreakableLinesForSourceActors(
+    state,
+    sourceActors,
+    selectedLocation.source.isHTML
+  );
 }
 
 export const getSelectedBreakableLines = createSelector(
   state => {
-    const sourceId = getSelectedSourceId(state);
-    if (!sourceId) {
+    const selectedLocation = getSelectedLocation(state);
+    if (!selectedLocation) {
       return null;
     }
-    const breakableLines = getBreakableLines(state, sourceId);
+    const breakableLines = getBreakableLines(state, selectedLocation);
     
     if (!breakableLines || breakableLines instanceof Promise) {
       return null;

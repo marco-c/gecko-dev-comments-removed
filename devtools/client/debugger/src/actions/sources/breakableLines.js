@@ -34,7 +34,7 @@ export function setBreakableLines(location) {
       
       
       
-      let promise = getBreakableLines(getState(), location.source.id);
+      let promise = getBreakableLines(getState(), location);
       if (promise) {
         return promise;
       }

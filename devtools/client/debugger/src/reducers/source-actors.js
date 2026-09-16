@@ -25,6 +25,25 @@ function initialSourceActorsState() {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    mutableBreakpointPositions: new Map(),
+
+    
+    
+    
+    
+    
     mutableSourceActorsWithSourceMap: new Set(),
 
     
@@ -57,13 +76,16 @@ export default function update(state = initialSourceActorsState(), action) {
     }
 
     case "REMOVE_SOURCES": {
-      if (!action.actors.length) {
+      if (!action.actors.length && !action.keys.length) {
         return state;
       }
       for (const { id } of action.actors) {
         state.mutableSourceActors.delete(id);
         state.mutableBreakableLines.delete(id);
         state.mutableSourceActorsWithSourceMap.delete(id);
+      }
+      for (const key of action.keys) {
+        state.mutableBreakpointPositions.delete(key);
       }
       return {
         ...state,
@@ -79,6 +101,18 @@ export default function update(state = initialSourceActorsState(), action) {
       return {
         ...state,
       };
+
+    case "ADD_BREAKPOINT_POSITIONS": {
+      return addBreakpointPositions(state, action.sourceKey, action.positions);
+    }
+
+    case "CLEAR_BREAKPOINT_POSITIONS": {
+      return clearBreakpointPositions(state, action.sourceKey);
+    }
+
+    case "CLEAR_BREAKPOINT_POSITIONS_ORIGINAL_LOCATION": {
+      return clearBreakpointPositionOriginalLocation(state, action.sourceKey);
+    }
 
     case "CLEAR_SOURCE_ACTOR_MAP_URL":
       if (
@@ -108,4 +142,58 @@ export default function update(state = initialSourceActorsState(), action) {
   }
 
   return state;
+}
+
+function addBreakpointPositions(state, sourceKey, newPositions) {
+  
+  let positions = state.mutableBreakpointPositions.get(sourceKey);
+  if (positions) {
+    positions = { ...positions, ...newPositions };
+  } else {
+    positions = newPositions;
+  }
+
+  state.mutableBreakpointPositions.set(sourceKey, positions);
+
+  return {
+    ...state,
+  };
+}
+
+function clearBreakpointPositions(state, sourceKey) {
+  if (!state.mutableBreakpointPositions.has(sourceKey)) {
+    return state;
+  }
+
+  state.mutableBreakpointPositions.delete(sourceKey);
+
+  return {
+    ...state,
+  };
+}
+
+
+
+
+
+
+
+
+
+function clearBreakpointPositionOriginalLocation(state, sourceKey) {
+  const positions = state.mutableBreakpointPositions.get(sourceKey);
+  if (!positions) {
+    return state;
+  }
+
+  for (const line in positions) {
+    const linePositions = positions[line];
+    for (const columnPositions of linePositions) {
+      columnPositions.location = columnPositions.generatedLocation;
+    }
+  }
+
+  return {
+    ...state,
+  };
 }

@@ -469,6 +469,13 @@ export function removePrettyPrintedSource(source) {
       getState(),
       generatedSource.id
     );
+
+    
+    dispatch({
+      type: "CLEAR_BREAKPOINT_POSITIONS_ORIGINAL_LOCATION",
+      sourceKey: sourceActor.id,
+    });
+
     
     await dispatch(mapFrames(sourceActor.thread));
 

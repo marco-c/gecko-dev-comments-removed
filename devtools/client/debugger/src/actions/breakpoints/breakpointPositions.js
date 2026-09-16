@@ -3,9 +3,9 @@
 
 
 import {
-  getBreakpointPositionsForSource,
-  getSourceActorsForSource,
-  getFirstSourceActorForGeneratedSource,
+  getBreakpointPositionsForLocationSource,
+  getRelevantSourceActorsForLocation,
+  getBreakpointPositionsKeyForLocation,
 } from "../../selectors/index";
 
 import { makeBreakpointId } from "../../utils/breakpoint/index";
@@ -169,22 +169,9 @@ async function _setBreakpointPositions(location, thunkArgs) {
   }
 
   
-  let sourceActors;
-  if (generatedSource.isHTML) {
-    
-    sourceActors = getSourceActorsForSource(getState(), generatedSource.id);
-  } else {
-    
-    
-    
-    
-    
-    
-    
-    sourceActors = [
-      getFirstSourceActorForGeneratedSource(getState(), generatedSource.id),
-    ];
-  }
+  const sourceActors = getRelevantSourceActorsForLocation(getState(), location);
+  
+  const sourceKey = getBreakpointPositionsKeyForLocation(getState(), location);
 
   
   
@@ -247,22 +234,9 @@ async function _setBreakpointPositions(location, thunkArgs) {
 
   dispatch({
     type: "ADD_BREAKPOINT_POSITIONS",
-    source: location.source,
+    sourceKey,
     positions,
   });
-}
-
-function generatedSourceActorKey(state, source) {
-  if (source.isOriginal) {
-    return getFirstSourceActorForGeneratedSource(
-      state,
-      source.generatedSource.id
-    ).actor;
-  }
-  const actors = getSourceActorsForSource(state, source.id).map(
-    ({ actor }) => actor
-  );
-  return [source.id, ...actors].join(":");
 }
 
 
@@ -291,9 +265,9 @@ export const setBreakpointPositions = memoizeableAction(
   "setBreakpointPositions",
   {
     getValue: (location, { getState }) => {
-      const positions = getBreakpointPositionsForSource(
+      const positions = getBreakpointPositionsForLocationSource(
         getState(),
-        location.source.id
+        location
       );
       if (!positions) {
         return null;
@@ -312,10 +286,14 @@ export const setBreakpointPositions = memoizeableAction(
       return fulfilled(positions);
     },
     createKey(location, { getState }) {
-      const key = generatedSourceActorKey(getState(), location.source);
+      
+      const sourceKey = getBreakpointPositionsKeyForLocation(
+        getState(),
+        location
+      );
       return !location.source.isOriginal && location.line
-        ? `${key}-${location.line}`
-        : key;
+        ? `${sourceKey}-${location.line}`
+        : sourceKey;
     },
     action: async (location, thunkArgs) =>
       _setBreakpointPositions(location, thunkArgs),
@@ -326,9 +304,10 @@ export function updateBreakpointPositionsForNewPrettyPrintedSource(
   minifiedSource
 ) {
   return async ({ dispatch, getState }) => {
-    const oldPositions = getBreakpointPositionsForSource(
+    const location = createLocation({ source: minifiedSource });
+    const oldPositions = getBreakpointPositionsForLocationSource(
       getState(),
-      minifiedSource.id
+      location
     );
     if (!oldPositions) {
       return;
@@ -339,12 +318,20 @@ export function updateBreakpointPositionsForNewPrettyPrintedSource(
       Number(lineString)
     );
 
-    dispatch({ type: "CLEAR_BREAKPOINT_POSITIONS", source: minifiedSource });
+    const sourceKey = getBreakpointPositionsKeyForLocation(
+      getState(),
+      location
+    );
+    dispatch({ type: "CLEAR_BREAKPOINT_POSITIONS", sourceKey });
 
     
     await Promise.all(
       lines.map(line =>
-        dispatch(setBreakpointPositions({ source: minifiedSource, line }))
+        dispatch(
+          setBreakpointPositions(
+            createLocation({ source: minifiedSource, line })
+          )
+        )
       )
     );
   };
