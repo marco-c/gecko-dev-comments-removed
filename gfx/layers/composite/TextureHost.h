@@ -718,6 +718,10 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
 
   virtual void SetReadFence(Fence* aReadFence) {}
 
+  virtual SurfaceDescriptor GetSurfaceDescriptor() {
+    return SurfaceDescriptor();
+  }
+
   
   
   

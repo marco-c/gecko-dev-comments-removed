@@ -642,6 +642,9 @@ class AndroidImageReaderImageTextureHost : public TextureHost {
   
   bool NeedsDeferredDeletion() const override { return false; }
 
+  SurfaceDescriptor GetSurfaceDescriptor() override;
+
+  const AndroidImageReaderImageDescriptor mDescriptor;
   const layers::GpuProcessAndroidImageReaderId mImageReaderId;
   const layers::AndroidMediaCodecFrameId mFrameId;
   const gfx::IntSize mSize;

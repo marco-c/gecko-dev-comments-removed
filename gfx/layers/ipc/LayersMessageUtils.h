@@ -783,6 +783,13 @@ struct ParamTraits<mozilla::layers::GpuFence*> {
   }
 };
 
+template <>
+struct ParamTraits<mozilla::layers::RemoteDecoderVideoType>
+    : public ContiguousEnumSerializerInclusive<
+          mozilla::layers::RemoteDecoderVideoType,
+          mozilla::layers::RemoteDecoderVideoType::TypeNone,
+          mozilla::layers::kHighestRemoteDecoderVideoType> {};
+
 } 
 
 #define DEFINE_SERVO_PARAMTRAITS(ty_)                                \
