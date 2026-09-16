@@ -6,14 +6,10 @@ package org.mozilla.fenix.ui.efficiency.tests
 
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
-import org.mozilla.fenix.helpers.FxNimbusHelper
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 
 class TextSelectionTest : BaseTest() {
-
-    private val mockWebServer
-        get() = fenixTestRule.mockWebServer
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2326832
     @SmokeTest
@@ -60,7 +56,6 @@ class TextSelectionTest : BaseTest() {
     @SmokeTest
     @Test
     fun verifyCopyPDFTextOptionTest() {
-        FxNimbusHelper.updateAddressBarFocusModeStatus(false)
         val genericURL = mockWebServer.getGenericAsset(3)
 
         on.home.navigateToPage()
@@ -82,7 +77,7 @@ class TextSelectionTest : BaseTest() {
 
     @Test
     fun verifyCopyPDFTextOptionWithinAddressBarInFocusedModeTest() {
-        FxNimbusHelper.updateAddressBarFocusModeStatus(true)
+        composeRule.activityRule.applySettingsExceptions { it.showAddressBarInFocusMode = true }
         val genericURL = mockWebServer.getGenericAsset(3)
 
         on.home.navigateToPage()
