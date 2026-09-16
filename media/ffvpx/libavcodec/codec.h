@@ -27,11 +27,8 @@
 #include "libavutil/hwcontext.h"
 #include "libavutil/log.h"
 #include "libavutil/pixfmt.h"
-#include "libavutil/rational.h"
-#include "libavutil/samplefmt.h"
 
 #include "libavcodec/codec_id.h"
-#include "libavcodec/version_major.h"
 
 
 
@@ -191,18 +188,6 @@ typedef struct AVCodec {
     int capabilities;
     uint8_t max_lowres;                     
 
-    
-
-
-    attribute_deprecated
-    const AVRational *supported_framerates; 
-    attribute_deprecated
-    const enum AVPixelFormat *pix_fmts;     
-    attribute_deprecated
-    const int *supported_samplerates;       
-    attribute_deprecated
-    const enum AVSampleFormat *sample_fmts; 
-
     const AVClass *priv_class;              
     const AVProfile *profiles;              
 
@@ -217,13 +202,6 @@ typedef struct AVCodec {
 
 
     const char *wrapper_name;
-
-    
-
-
-
-    attribute_deprecated
-    const AVChannelLayout *ch_layouts;
 } AVCodec;
 
 

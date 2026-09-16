@@ -373,6 +373,21 @@ enum AVPacketSideDataType {
 
 
 
+    AV_PKT_DATA_DYNAMIC_HDR_SMPTE_2094_APP5,
+
+    
+
+
+
+
+
+    AV_PKT_DATA_HEVC_CONF,
+
+    
+
+
+
+
 
 
 
@@ -641,14 +656,6 @@ typedef struct AVPacket {
     void (*moz_crypto_info_release)(void*);
 } AVPacket;
 
-#if FF_API_INIT_PACKET
-attribute_deprecated
-typedef struct AVPacketList {
-    AVPacket pkt;
-    struct AVPacketList *next;
-} AVPacketList;
-#endif
-
 #define AV_PKT_FLAG_KEY     0x0001 ///< The packet contains a keyframe
 #define AV_PKT_FLAG_CORRUPT 0x0002 ///< The packet content is corrupted
 
@@ -826,7 +833,7 @@ uint8_t* av_packet_get_side_data(const AVPacket *pkt, enum AVPacketSideDataType 
 
 
 
-uint8_t *av_packet_pack_dictionary(AVDictionary *dict, size_t *size);
+uint8_t *av_packet_pack_dictionary(const AVDictionary *dict, size_t *size);
 
 
 

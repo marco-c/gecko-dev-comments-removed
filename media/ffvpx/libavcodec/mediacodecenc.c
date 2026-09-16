@@ -37,7 +37,6 @@
 #include "encode.h"
 #include "hwconfig.h"
 #include "fffjni.h"
-#include "jni.h"
 #include "mediacodec.h"
 #include "mediacodec_wrapper.h"
 #include "mediacodecdec_common.h"
@@ -831,9 +830,11 @@ static int mediacodec_send(AVCodecContext *avctx,
 
         if (frame->pict_type == AV_PICTURE_TYPE_I) {
             FFAMediaFormat *format = ff_AMediaFormat_new(s->use_ndk_codec);
-            ff_AMediaFormat_setInt32(format, "request-sync", 0);
-            ff_AMediaCodec_setParameters(codec, format);
-            ff_AMediaFormat_delete(format);
+            if (format) {
+                ff_AMediaFormat_setInt32(format, "request-sync", 0);
+                ff_AMediaCodec_setParameters(codec, format);
+                ff_AMediaFormat_delete(format);
+            }
         }
     } else {
         flags |= ff_AMediaCodec_getBufferFlagEndOfStream(codec);
