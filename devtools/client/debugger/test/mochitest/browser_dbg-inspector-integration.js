@@ -193,8 +193,9 @@ add_task(async function () {
   
   await wait(1000);
   ok(dbg.selectors.getIsCurrentThreadPaused(), "current thread is paused");
-  ok(
-    findElement(dbg, "threadsPaneItemPause", 2).classList.contains("selected"),
+  is(
+    findElement(dbg, "threadsPaneItemPause", 2).getAttribute("aria-pressed"),
+    "true",
     `iframe thread is still selected`
   );
 
