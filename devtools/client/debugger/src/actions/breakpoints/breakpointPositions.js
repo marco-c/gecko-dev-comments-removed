@@ -5,6 +5,7 @@
 import {
   getBreakpointPositionsForSource,
   getSourceActorsForSource,
+  getFirstSourceActorForGeneratedSource,
 } from "../../selectors/index";
 
 import { makeBreakpointId } from "../../utils/breakpoint/index";
@@ -141,99 +142,95 @@ async function _setBreakpointPositions(location, thunkArgs) {
   const { client, dispatch, getState, sourceMapLoader } = thunkArgs;
   const results = {};
   let generatedSource = location.source;
+
+  let ranges;
   if (location.source.isOriginal) {
-    const ranges = await sourceMapLoader.getGeneratedRangesForOriginal(
+    
+    
+    ranges = await sourceMapLoader.getGeneratedRangesForOriginal(
       location.source.id,
       true
     );
     generatedSource = location.source.generatedSource;
-
-    
-    
-    
-    for (const range of ranges) {
-      
-      
-      
-      if (range.end.column === Infinity) {
-        range.end = {
-          line: range.end.line + 1,
-          column: 0,
-        };
-      }
-
-      
-      
-      
-      
-      const allActorsPositions = await Promise.all(
-        getSourceActorsForSource(getState(), generatedSource.id).map(actor =>
-          client.getSourceActorBreakpointPositions(actor, range)
-        )
-      );
-
-      
-      
-      
-      
-      
-      
-      
-      
-      for (const actorPositions of allActorsPositions) {
-        for (const rangeLine in actorPositions) {
-          const columns = actorPositions[rangeLine];
-
-          
-          const existing = results[rangeLine];
-          if (existing) {
-            for (const column of columns) {
-              if (!existing.includes(column)) {
-                existing.push(column);
-              }
-            }
-          } else {
-            results[rangeLine] = columns;
-          }
-        }
-      }
-    }
   } else {
     const { line } = location;
     if (typeof line !== "number") {
       throw new Error("Line is required for generated sources");
     }
+    
+    
+    ranges = [
+      {
+        
+        start: { line, column: 0 },
+        end: { line: line + 1, column: 0 },
+      },
+    ];
+  }
 
+  
+  let sourceActors;
+  if (generatedSource.isHTML) {
+    
+    sourceActors = getSourceActorsForSource(getState(), generatedSource.id);
+  } else {
     
     
     
-    const allActorsBreakableColumns = await Promise.all(
-      getSourceActorsForSource(getState(), location.source.id).map(
-        async actor => {
-          const positions = await client.getSourceActorBreakpointPositions(
-            actor,
-            {
-              
-              start: { line, column: 0 },
-              end: { line: line + 1, column: 0 },
-            }
-          );
-          return positions[line] || [];
-        }
+    
+    
+    
+    
+    sourceActors = [
+      getFirstSourceActorForGeneratedSource(getState(), generatedSource.id),
+    ];
+  }
+
+  
+  
+  
+  for (const range of ranges) {
+    
+    
+    
+    if (range.end.column === Infinity) {
+      range.end = {
+        line: range.end.line + 1,
+        column: 0,
+      };
+    }
+
+    const allActorsPositions = await Promise.all(
+      sourceActors.map(actor =>
+        client.getSourceActorBreakpointPositions(actor, range)
       )
     );
 
-    for (const columns of allActorsBreakableColumns) {
+    
+    
+    
+    
+    
+    
+    
+    
+    for (const actorPositions of allActorsPositions) {
       
-      const existing = results[line];
-      if (existing) {
-        for (const column of columns) {
-          if (!existing.includes(column)) {
-            existing.push(column);
+      
+      for (const rangeLine in actorPositions) {
+        const columns = actorPositions[rangeLine];
+
+        
+        const existing = results[rangeLine];
+        if (existing) {
+          for (const column of columns) {
+            if (!existing.includes(column)) {
+              existing.push(column);
+            }
           }
+        } else {
+          results[rangeLine] = columns;
         }
-      } else {
-        results[line] = columns;
       }
     }
   }
@@ -256,12 +253,15 @@ async function _setBreakpointPositions(location, thunkArgs) {
 }
 
 function generatedSourceActorKey(state, source) {
-  const generatedSource = source.isOriginal ? source.generatedSource : source;
-  const actors = generatedSource
-    ? getSourceActorsForSource(state, generatedSource.id).map(
-        ({ actor }) => actor
-      )
-    : [];
+  if (source.isOriginal) {
+    return getFirstSourceActorForGeneratedSource(
+      state,
+      source.generatedSource.id
+    ).actor;
+  }
+  const actors = getSourceActorsForSource(state, source.id).map(
+    ({ actor }) => actor
+  );
   return [source.id, ...actors].join(":");
 }
 
