@@ -38,7 +38,8 @@ function getContentCornerRadius(win) {
 function getChromeBlocks(win, extraSelectors = "") {
   
   
-  let selector = ".chrome-block, .browserContainer";
+  let selector =
+    "#navigator-toolbox, #sidebar-box, #sidebar-container, .browserContainer";
   if (extraSelectors) {
     selector += ", " + extraSelectors;
   }
