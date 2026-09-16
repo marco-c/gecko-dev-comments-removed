@@ -118,52 +118,15 @@ void nsFrameManager::RemoveFrame(DestroyContext& aContext,
   }
 }
 
-
-
-
-
-
-void nsFrameManager::CaptureFrameStateFor(nsIFrame* aFrame,
-                                          nsILayoutHistoryState* aState,
-                                          CaptureStateFlags aFlags) {
-  if (!aFrame || !aState) {
-    NS_WARNING("null frame, or state");
-    return;
-  }
-
-  
-  ScrollContainerFrame* scrollFrame = do_QueryFrame(aFrame);
-  if (!scrollFrame) {
-    return;
-  }
-
-  
-  UniquePtr<PresState> frameState = scrollFrame->SaveState(aFlags);
-  if (!frameState) {
-    return;
-  }
-
-  
-  
-  nsAutoCString stateKey;
-  nsIContent* content = aFrame->GetContent();
-  Document* doc = content ? content->GetUncomposedDoc() : nullptr;
-  nsContentUtils::GenerateStateKey(content, doc, stateKey);
-  if (stateKey.IsEmpty()) {
-    return;
-  }
-
-  
-  aState->AddState(stateKey, std::move(frameState));
-}
-
 void nsFrameManager::CaptureFrameState(nsIFrame* aFrame,
                                        nsILayoutHistoryState* aState,
                                        CaptureStateFlags aFlags) {
-  MOZ_ASSERT(nullptr != aFrame && nullptr != aState,
-             "null parameters passed in");
+  MOZ_ASSERT(aFrame);
+  MOZ_ASSERT(aState);
 
-  CaptureFrameStateFor(aFrame, aState, aFlags);
+  if (ScrollContainerFrame* scrollFrame = do_QueryFrame(aFrame)) {
+    scrollFrame->SaveState(aFlags, aState);
+  }
 
   
   for (const auto& childList : aFrame->ChildLists()) {
@@ -200,35 +163,9 @@ void nsFrameManager::RestoreFrameStateFor(nsIFrame* aFrame,
   }
 
   
-  ScrollContainerFrame* scrollFrame = do_QueryFrame(aFrame);
-  if (!scrollFrame) {
-    return;
+  if (ScrollContainerFrame* scrollFrame = do_QueryFrame(aFrame)) {
+    scrollFrame->RestoreState(aState);
   }
-
-  
-  
-  nsIContent* content = aFrame->GetContent();
-  
-  
-  if (!content) {
-    return;
-  }
-
-  nsAutoCString stateKey;
-  Document* doc = content->GetUncomposedDoc();
-  nsContentUtils::GenerateStateKey(content, doc, stateKey);
-  if (stateKey.IsEmpty()) {
-    return;
-  }
-
-  
-  UniquePtr<PresState> frameState = aState->TakeState(stateKey);
-  if (!frameState) {
-    return;
-  }
-
-  
-  scrollFrame->RestoreState(frameState.get());
 }
 
 void nsFrameManager::AddSizeOfIncludingThis(nsWindowSizes& aSizes) const {

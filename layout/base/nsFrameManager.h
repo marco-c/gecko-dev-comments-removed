@@ -83,11 +83,6 @@ class nsFrameManager {
 
   void CaptureFrameState(nsIFrame*, nsILayoutHistoryState*,
                          mozilla::CaptureStateFlags);
-
-  
-  void CaptureFrameStateFor(nsIFrame*, nsILayoutHistoryState*,
-                            mozilla::CaptureStateFlags);
-
   void RestoreFrameStateFor(nsIFrame* aFrame, nsILayoutHistoryState* aState);
 
   void AddSizeOfIncludingThis(nsWindowSizes& aSizes) const;
