@@ -2,12 +2,6 @@
 
 "use strict";
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  });
-});
-
 async function createAndShowDropdown(browser) {
   
   await SpecialPowers.spawn(browser, [], async function () {

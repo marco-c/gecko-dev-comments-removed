@@ -13,10 +13,7 @@
 
 add_setup(async function setSharedPrefs() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["dom.media.autoplay-policy-detection.enabled", true],
-      ["test.wait300msAfterTabSwitch", true],
-    ],
+    set: [["dom.media.autoplay-policy-detection.enabled", true]],
   });
 });
 

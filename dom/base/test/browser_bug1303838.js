@@ -24,10 +24,7 @@ add_task(async function () {
   
   
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.tabs.remote.warmup.unloadDelayMs", 50],
-      ["test.wait300msAfterTabSwitch", true],
-    ],
+    set: [["browser.tabs.remote.warmup.unloadDelayMs", 50]],
   });
   await testLinkClick(false, false);
   await testLinkClick(false, true);
