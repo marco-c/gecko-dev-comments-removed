@@ -1196,6 +1196,13 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   
   
   uint32_t mProcessEntries MOZ_GUARDED_BY(sLock){0};
+  
+  
+  
+  
+  
+  
+  nsTArray<CacheIndexEntry*> mRWEntries MOZ_GUARDED_BY(sLock);
   char* mRWBuf MOZ_GUARDED_BY(sLock){nullptr};
   uint32_t mRWBufSize MOZ_GUARDED_BY(sLock){0};
   uint32_t mRWBufPos MOZ_GUARDED_BY(sLock){0};
