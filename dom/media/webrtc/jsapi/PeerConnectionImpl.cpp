@@ -4698,7 +4698,11 @@ void PeerConnectionImpl::GatherIfReady() {
   }
 
   
-  mQueuedIceCtxOperations.clear();
+  
+  
+  
+  
+  
   nsCOMPtr<nsIRunnable> runnable(WrapRunnable(
       RefPtr<PeerConnectionImpl>(this), &PeerConnectionImpl::EnsureIceGathering,
       GetPrefDefaultAddressOnly(), GetPrefObfuscateHostAddresses()));
