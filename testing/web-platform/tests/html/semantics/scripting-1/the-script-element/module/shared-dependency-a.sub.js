@@ -1,0 +1,5 @@
+
+
+
+import './shared-dependency-b.sub.js?token={{GET[token]}}';
+import '../serve-custom-response.py?key={{GET[token]}}';

@@ -1,0 +1,3 @@
+
+
+import '../serve-custom-response.py?key={{GET[token]}}';
