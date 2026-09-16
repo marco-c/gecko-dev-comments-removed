@@ -195,7 +195,7 @@ void RsdparsaSdpMediaSection::AddDataChannel(const std::string& name,
 
     
     RsdparsaSessionHandle sessHandle(sdp_new_reference(mSession.get()));
-    auto sessAttributes = mAttributeList->mSessionAttributes;
+    auto* sessAttributes = mAttributeList->SessionAttributes();
     mAttributeList.reset(new RsdparsaSdpAttributeList(
         std::move(sessHandle), GetSection(), sessAttributes));
   }
