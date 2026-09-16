@@ -854,6 +854,8 @@ add_task(
     
     
     const sb = sinon.createSandbox();
+    Services.fog.initializeFOG();
+    Services.fog.testResetFOG();
     try {
       let callCount = 0;
       const fakeEngine = {
@@ -949,6 +951,16 @@ add_task(
         callCount,
         1,
         "The turn ends at the handoff — the model is not re-invoked"
+      );
+
+      
+      
+      const toolCalls = Glean.smartWindow.toolCall.testGetValue();
+      Assert.equal(toolCalls?.length, 1, "One tool_call event is recorded");
+      Assert.equal(
+        toolCalls[0].extra.error,
+        "",
+        "A handoff is not reported as a failed search"
       );
 
       origLazy.AIWindow.openSidebarAndContinue = origOpenSidebar;
