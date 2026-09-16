@@ -216,31 +216,6 @@ void CodeGenerator::visitAtomicTypedArrayElementBinopForEffect64(
   masm.pop64(value);
 }
 
-void CodeGenerator::visitWasmUint32ToDouble(LWasmUint32ToDouble* lir) {
-  Register input = ToRegister(lir->input());
-  Register temp = ToRegister(lir->temp0());
-
-  if (input != temp) {
-    masm.mov(input, temp);
-  }
-
-  
-  masm.convertUInt32ToDouble(temp, ToFloatRegister(lir->output()));
-}
-
-void CodeGenerator::visitWasmUint32ToFloat32(LWasmUint32ToFloat32* lir) {
-  Register input = ToRegister(lir->input());
-  Register temp = ToRegister(lir->temp0());
-  FloatRegister output = ToFloatRegister(lir->output());
-
-  if (input != temp) {
-    masm.mov(input, temp);
-  }
-
-  
-  masm.convertUInt32ToFloat32(temp, output);
-}
-
 template <typename T>
 void CodeGeneratorX86::emitWasmLoad(T* ins) {
   const MWasmLoad* mir = ins->mir();
@@ -419,9 +394,11 @@ void CodeGenerator::visitWasmCompareExchangeI64(LWasmCompareExchangeI64* ins) {
   MOZ_ASSERT(ToOutRegister64(ins).low == eax);
   MOZ_ASSERT(ToOutRegister64(ins).high == edx);
 
-  masm.append(ins->mir()->access(), wasm::TrapMachineInsn::Atomic,
-              FaultingCodeOffset(masm.currentOffset()));
+  auto before = masm.currentOffset();
   masm.lock_cmpxchg8b(edx, eax, ecx, ebx, srcAddr);
+  auto after = masm.currentOffset();
+  masm.appendAndVerify(ins->mir()->access(), wasm::TrapMachineInsn::Atomic,
+                       FaultingCodeRange(before, after));
 }
 
 template <typename T>
@@ -443,9 +420,12 @@ void CodeGeneratorX86::emitWasmStoreOrExchangeAtomicI64(
 
   Label again;
   masm.bind(&again);
-  masm.append(access, wasm::TrapMachineInsn::Atomic,
-              FaultingCodeOffset(masm.currentOffset()));
+  auto before = masm.currentOffset();
   masm.lock_cmpxchg8b(edx, eax, ecx, ebx, srcAddr);
+  auto after = masm.currentOffset();
+  masm.appendAndVerify(access, wasm::TrapMachineInsn::Atomic,
+                       FaultingCodeRange(before, after));
+
   masm.j(Assembler::Condition::NonZero, &again);
 }
 
