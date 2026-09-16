@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_MessagePortChild_h
 #define mozilla_dom_MessagePortChild_h
 
@@ -19,7 +17,7 @@ class MessagePortChild final : public PMessagePortChild {
   friend class PMessagePortChild;
 
  public:
-  NS_INLINE_DECL_REFCOUNTING(MessagePortChild)
+  NS_INLINE_DECL_REFCOUNTING(MessagePortChild, override)
 
   MessagePortChild();
 
