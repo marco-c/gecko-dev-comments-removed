@@ -146,6 +146,7 @@ class JsepTrack {
       for (const auto& codec : rhs.mEarlyRecvCodecs) {
         mEarlyRecvCodecs.emplace_back(codec->Clone());
       }
+      mEarlyRtpExtensions = rhs.mEarlyRtpExtensions;
       if (rhs.mNegotiatedDetails) {
         mNegotiatedDetails.reset(
             new JsepTrackNegotiatedDetails(*rhs.mNegotiatedDetails));
@@ -197,6 +198,15 @@ class JsepTrack {
   template <class UnaryFunction>
   void ForEachEarlyRecvCodec(UnaryFunction func) {
     std::for_each(mEarlyRecvCodecs.begin(), mEarlyRecvCodecs.end(), func);
+  }
+
+  
+  
+  
+  
+  const std::vector<SdpExtmapAttributeList::Extmap>& GetEarlyRtpExtensions()
+      const {
+    return mEarlyRtpExtensions;
   }
 
   template <class BinaryPredicate>
@@ -308,6 +318,8 @@ class JsepTrack {
   
   
   std::vector<UniquePtr<JsepCodecDescription>> mEarlyRecvCodecs;
+  
+  std::vector<SdpExtmapAttributeList::Extmap> mEarlyRtpExtensions;
   
   
   

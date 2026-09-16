@@ -313,6 +313,17 @@ void JsepTrack::RecvTrackSetLocal(const SdpMediaSection& aMsection) {
   
   
   mReceptive = aMsection.IsReceiving();
+
+  mEarlyRtpExtensions.clear();
+  if (aMsection.GetAttributeList().HasAttribute(
+          SdpAttribute::kExtmapAttribute)) {
+    for (const auto& extmap :
+         aMsection.GetAttributeList().GetExtmap().mExtmaps) {
+      if (extmap.direction & sdp::kRecv) {
+        mEarlyRtpExtensions.push_back(extmap);
+      }
+    }
+  }
 }
 
 void JsepTrack::SendTrackSetRemote(SsrcGenerator& aSsrcGenerator,
