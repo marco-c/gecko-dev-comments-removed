@@ -42,6 +42,8 @@
 
 
 
+
+
 #ifndef Expat_INCLUDED
 #  define Expat_INCLUDED 1
 
@@ -1094,7 +1096,7 @@ XML_SetReparseDeferralEnabled(XML_Parser parser, XML_Bool enabled);
 
 #  define XML_MAJOR_VERSION 2
 #  define XML_MINOR_VERSION 8
-#  define XML_MICRO_VERSION 2
+#  define XML_MICRO_VERSION 3
 
 #  ifdef __cplusplus
 }

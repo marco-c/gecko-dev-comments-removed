@@ -72,6 +72,9 @@
 
 
 
+
+
+
 #define XML_BUILDING_EXPAT 1
 
 #include "expat_config.h"
@@ -220,12 +223,6 @@ typedef char ICHAR;
 
 #endif
 
-
-#ifdef XML_LARGE_SIZE
-#  define XML_INDEX_MAX LLONG_MAX
-#else
-#  define XML_INDEX_MAX LONG_MAX
-#endif
 
 
 #define ROUND_UP(n, sz) (((n) + ((sz) - 1)) & ~((sz) - 1))
@@ -768,7 +765,7 @@ struct XML_ParserStruct {
   char *m_bufferEnd;       
   const char *m_bufferLim; 
 
-  XML_Index m_parseEndByteIndex;
+  uint64_t m_parseEndByteIndex;
   const char *m_parseEndPtr;
   size_t m_partialTokenBytesBefore; 
   XML_Bool m_reparseDeferralEnabled;
@@ -2454,7 +2451,7 @@ XML_Parse(XML_Parser parser, const char *s, int len, int isFinal) {
     int nLeftOver;
     enum XML_Status result;
     
-    if (len > XML_INDEX_MAX - parser->m_parseEndByteIndex) {
+    if ((uint64_t)len > UINT64_MAX - parser->m_parseEndByteIndex) {
       parser->m_errorCode = XML_ERROR_NO_MEMORY;
       parser->m_eventPtr = parser->m_eventEndPtr = NULL;
       parser->m_processor = errorProcessor;
@@ -2572,7 +2569,7 @@ XML_ParseBuffer(XML_Parser parser, int len, int isFinal) {
   }
 
   
-  if (len > XML_INDEX_MAX - parser->m_parseEndByteIndex) {
+  if ((uint64_t)len > UINT64_MAX - parser->m_parseEndByteIndex) {
     parser->m_errorCode = XML_ERROR_NO_MEMORY;
     parser->m_eventPtr = parser->m_eventEndPtr = NULL;
     parser->m_processor = errorProcessor;
@@ -2838,14 +2835,20 @@ XML_Index XMLCALL
 XML_GetCurrentByteIndex(XML_Parser parser) {
   if (parser == NULL)
     return -1;
-  if (parser->m_eventPtr)
+  if (parser->m_eventPtr) {
+    
+    
+    
+    
+    
     return (XML_Index)(parser->m_parseEndByteIndex
                        - (parser->m_parseEndPtr - parser->m_eventPtr));
+  }
 
 #if 0
   return -1;
 #else
-  return parser->m_parseEndByteIndex;
+  return (XML_Index)parser->m_parseEndByteIndex;
 #endif
 
 }
@@ -2892,7 +2895,12 @@ XML_GetCurrentLineNumber(XML_Parser parser) {
                       parser->m_eventPtr, &parser->m_position);
     parser->m_positionPtr = parser->m_eventPtr;
   }
-  return parser->m_position.lineNumber + 1;
+  
+  
+  
+  
+  
+  return (XML_Size)(parser->m_position.lineNumber + 1);
 }
 
 XML_Size XMLCALL
@@ -2904,7 +2912,12 @@ XML_GetCurrentColumnNumber(XML_Parser parser) {
                       parser->m_eventPtr, &parser->m_position);
     parser->m_positionPtr = parser->m_eventPtr;
   }
-  return parser->m_position.columnNumber;
+  
+  
+  
+  
+  
+  return (XML_Size)parser->m_position.columnNumber;
 }
 
 
@@ -4125,14 +4138,22 @@ storeAtts(XML_Parser parser, const ENCODING *enc, const char *attStr,
     if (! attId)
       return XML_ERROR_NO_MEMORY;
 #ifdef XML_ATTR_INFO
+    
+    
+    
+    
+    
     currAttInfo->nameStart
-        = parser->m_parseEndByteIndex - (parser->m_parseEndPtr - currAtt->name);
+        = (XML_Index)(parser->m_parseEndByteIndex
+                      - (parser->m_parseEndPtr - currAtt->name));
     currAttInfo->nameEnd
         = currAttInfo->nameStart + XmlNameLength(enc, currAtt->name);
-    currAttInfo->valueStart = parser->m_parseEndByteIndex
-                              - (parser->m_parseEndPtr - currAtt->valuePtr);
-    currAttInfo->valueEnd = parser->m_parseEndByteIndex
-                            - (parser->m_parseEndPtr - currAtt->valueEnd);
+    currAttInfo->valueStart
+        = (XML_Index)(parser->m_parseEndByteIndex
+                      - (parser->m_parseEndPtr - currAtt->valuePtr));
+    currAttInfo->valueEnd
+        = (XML_Index)(parser->m_parseEndByteIndex
+                      - (parser->m_parseEndPtr - currAtt->valueEnd));
 #endif
     
 
@@ -6859,11 +6880,12 @@ storeAttributeValue(XML_Parser parser, const ENCODING *enc, XML_Bool isCdata,
         
         
         
-        if (textEnd != nextInEntity) {
+        if (nextInEntity < textEnd) {
           entity->processed
               = (int)(nextInEntity - (const char *)entity->textPtr);
           continue;
         }
+        assert(nextInEntity == textEnd);
 
         
         
@@ -8511,7 +8533,7 @@ poolGrow(STRING_POOL *pool) {
       pool->freeBlocks = tem;
       memcpy(pool->blocks->s, pool->start,
              (pool->end - pool->start) * sizeof(XML_Char));
-      pool->ptr = pool->blocks->s + (pool->ptr - pool->start);
+      pool->ptr = pool->blocks->s + EXPAT_SAFE_PTR_DIFF(pool->ptr, pool->start);
       pool->start = pool->blocks->s;
       pool->end = pool->start + pool->blocks->size;
       return XML_TRUE;
@@ -8524,7 +8546,8 @@ poolGrow(STRING_POOL *pool) {
 
     
 
-    const ptrdiff_t offsetInsideBlock = pool->ptr - pool->start;
+    const ptrdiff_t offsetInsideBlock
+        = EXPAT_SAFE_PTR_DIFF(pool->ptr, pool->start);
 
     if (blockSize < 0) {
       
@@ -8587,8 +8610,9 @@ poolGrow(STRING_POOL *pool) {
     tem->next = pool->blocks;
     pool->blocks = tem;
     if (pool->ptr != pool->start)
-      memcpy(tem->s, pool->start, (pool->ptr - pool->start) * sizeof(XML_Char));
-    pool->ptr = tem->s + (pool->ptr - pool->start);
+      memcpy(tem->s, pool->start,
+             EXPAT_SAFE_PTR_DIFF(pool->ptr, pool->start) * sizeof(XML_Char));
+    pool->ptr = tem->s + EXPAT_SAFE_PTR_DIFF(pool->ptr, pool->start);
     pool->start = tem->s;
     pool->end = tem->s + blockSize;
   }

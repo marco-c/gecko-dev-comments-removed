@@ -34,8 +34,12 @@
 
 
 
+
+
 #ifndef XmlTok_INCLUDED
 #  define XmlTok_INCLUDED 1
+
+#  include <stdint.h> 
 
 #  ifdef __cplusplus
 extern "C" {
@@ -145,8 +149,8 @@ extern "C" {
 
 typedef struct position {
   
-  XML_Size lineNumber;
-  XML_Size columnNumber;
+  uint64_t lineNumber;
+  uint64_t columnNumber;
 } POSITION;
 
 typedef struct {
