@@ -492,6 +492,14 @@
       row.description = line2?.textContent ?? null;
     }
 
+    _closeSecondaryActionMenus() {
+      for (const rowItem of this.richlistbox.querySelectorAll(
+        "autocomplete-row-item"
+      )) {
+        rowItem.closeActionsMenu();
+      }
+    }
+
     _appendAutocompleteResults() {
       const controller = this.mInput.controller;
       const matchCount = this.matchCount;
@@ -534,23 +542,42 @@
           row.icon = parsedComment?.icon ?? image;
           row.value = value;
           const secondaryAction = parsedComment?.secondaryAction;
-          row.actions = {
-            primary: () => {},
-            secondary: secondaryAction
-              ? {
-                  type: secondaryAction.type,
-                  label: secondaryAction.label,
-                  action: () =>
-                    lazy.AutoCompleteParent.getCurrentActor()?.selectAutoCompleteEntry(
-                      true
-                    ),
-                }
-              : null,
-          };
+          let secondary = null;
+          if (secondaryAction) {
+            secondary = {
+              type: secondaryAction.type,
+              label: secondaryAction.label,
+            };
+            
+            
+            
+            const activateAction = actionIndex => () =>
+              lazy.AutoCompleteParent.getCurrentActor()?.selectAutoCompleteEntry(
+                true,
+                actionIndex
+              );
+            if (secondaryAction.actions) {
+              secondary.actions = secondaryAction.actions.map(
+                ({ label }, index) => ({
+                  label,
+                  action: activateAction(index),
+                })
+              );
+            } else {
+              secondary.action = activateAction();
+            }
+          }
+          row.actions = { primary: () => {}, secondary };
+          
+          
+          row.closeActionsMenu();
 
           row.type = parsedComment?.type ?? null;
           row.sources = parsedComment?.sources ?? [];
           row.sourcesLabel = parsedComment?.sourcesLabel ?? null;
+          row.sourcesPillsLabel = parsedComment?.sourcesPillsLabel ?? null;
+          row.sourcesPillsLabelHover =
+            parsedComment?.sourcesPillsLabelHover ?? null;
           row.loading = parsedComment?.loading ?? false;
           row.loadingLabel = parsedComment?.loadingLabel ?? null;
           row.emptySourcesLabel = parsedComment?.emptySourcesLabel ?? null;
@@ -671,7 +698,14 @@
     }
 
     setListeners() {
-      this.addEventListener("popupshowing", () => {
+      
+      
+      const isOwnEvent = event => event.target == this;
+
+      this.addEventListener("popupshowing", event => {
+        if (!isOwnEvent(event)) {
+          return;
+        }
         
         
 
@@ -683,14 +717,22 @@
         this.mPopupOpen = true;
       });
 
-      this.addEventListener("popupshown", () => {
+      this.addEventListener("popupshown", event => {
+        if (!isOwnEvent(event)) {
+          return;
+        }
         if (this._adjustHeightOnPopupShown) {
           this._adjustHeightOnPopupShown = false;
           this.adjustHeight();
         }
       });
 
-      this.addEventListener("popuphiding", () => {
+      this.addEventListener("popuphiding", event => {
+        if (!isOwnEvent(event)) {
+          return;
+        }
+
+        this._closeSecondaryActionMenus();
         var isListActive = true;
         if (this.selectedIndex == -1) {
           isListActive = false;
