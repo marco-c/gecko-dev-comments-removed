@@ -1,0 +1,8 @@
+
+
+
+"use strict";
+
+ChromeUtils.defineESModuleGetters(this, {
+  sinon: "resource://testing-common/Sinon.sys.mjs",
+});
