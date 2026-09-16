@@ -1865,11 +1865,6 @@ void MacroAssembler::callWithABIPre(uint32_t* stackAdjust, bool callFromWasm) {
 }
 
 void MacroAssembler::callWithABIPost(uint32_t stackAdjust, ABIType result) {
-  
-  initPseudoStackPtr();
-
-  freeStack(stackAdjust);
-
   if (dynamicAlignment_) {
     
     
@@ -1882,7 +1877,12 @@ void MacroAssembler::callWithABIPost(uint32_t stackAdjust, ABIType result) {
     
     
     
-    Ldr(GetStackPointer64(), MemOperand(GetStackPointer64(), 0));
+    
+    
+    
+    
+    Ldr(GetStackPointer64(), MemOperand(sp, stackAdjust));
+    implicitPop(stackAdjust);
     syncStackPtr();
 
     
@@ -1895,6 +1895,11 @@ void MacroAssembler::callWithABIPost(uint32_t stackAdjust, ABIType result) {
     
     
     syncStackPtr();
+  } else {
+    
+    initPseudoStackPtr();
+
+    freeStack(stackAdjust);
   }
 
   
