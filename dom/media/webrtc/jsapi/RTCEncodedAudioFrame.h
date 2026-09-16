@@ -5,6 +5,7 @@
 #ifndef MOZILLA_DOM_MEDIA_WEBRTC_JSAPI_RTCENCODEDAUDIOFRAME_H_
 #define MOZILLA_DOM_MEDIA_WEBRTC_JSAPI_RTCENCODEDAUDIOFRAME_H_
 
+#include "mozilla/Maybe.h"
 #include "mozilla/dom/RTCEncodedAudioFrameBinding.h"
 #include "mozilla/dom/RTCEncodedFrameBase.h"
 #include "nsIGlobalObject.h"
@@ -15,18 +16,19 @@ class RTCStatsTimestampMaker;
 class StructuredCloneHolder;
 struct RTCEncodedAudioFrameOptions;
 
-struct RTCEncodedAudioFrameData : RTCEncodedFrameState {
-  RTCEncodedAudioFrameMetadata mMetadata;
 
-  [[nodiscard]] RTCEncodedAudioFrameData Clone() const;
+
+
+
+struct RTCEncodedAudioFrameData {
+  RTCEncodedAudioFrameMetadata mMetadata;
 };
 
 
 
 
 
-class RTCEncodedAudioFrame final : public RTCEncodedAudioFrameData,
-                                   public RTCEncodedFrameBase {
+class RTCEncodedAudioFrame final : public RTCEncodedFrameBase {
  public:
   explicit RTCEncodedAudioFrame(
       nsIGlobalObject* aGlobal,
@@ -34,14 +36,9 @@ class RTCEncodedAudioFrame final : public RTCEncodedAudioFrameData,
       uint64_t aCounter, RTCRtpScriptTransformer* aOwner,
       const Maybe<RTCStatsTimestampMaker>& aTimestampMaker);
 
-  explicit RTCEncodedAudioFrame(nsIGlobalObject* aGlobal,
-                                RTCEncodedAudioFrameData&& aData);
-
   
-  RTCEncodedAudioFrame(const RTCEncodedAudioFrame&) = delete;
-  RTCEncodedAudioFrame& operator=(const RTCEncodedAudioFrame&) = delete;
-  RTCEncodedAudioFrame(RTCEncodedAudioFrame&&) = delete;
-  RTCEncodedAudioFrame& operator=(RTCEncodedAudioFrame&&) = delete;
+  RTCEncodedAudioFrame(nsIGlobalObject* aGlobal, RTCEncodedAudioFrameData aData,
+                       JS::Handle<JSObject*> aBuffer);
 
   
   JSObject* WrapObject(JSContext* aCx,
@@ -51,25 +48,28 @@ class RTCEncodedAudioFrame final : public RTCEncodedAudioFrameData,
       const GlobalObject& aGlobal, const RTCEncodedAudioFrame& aOriginalFrame,
       const RTCEncodedAudioFrameOptions& aOptions, ErrorResult& aRv);
 
+  
+  unsigned long Timestamp() const;
+
   void GetMetadata(RTCEncodedAudioFrameMetadata& aMetadata) const;
-
-  bool CheckOwner(RTCRtpScriptTransformer* aOwner) const override;
-
-  bool IsVideo() const override { return false; }
 
   static JSObject* ReadStructuredClone(JSContext* aCx, nsIGlobalObject* aGlobal,
                                        JSStructuredCloneReader* aReader,
-                                       RTCEncodedAudioFrameData& aData);
-  bool WriteStructuredClone(JSStructuredCloneWriter* aWriter,
+                                       RTCEncodedAudioFrameData aData);
+  bool WriteStructuredClone(JSContext* aCx, JSStructuredCloneWriter* aWriter,
                             StructuredCloneHolder* aHolder) const;
 
  private:
   virtual ~RTCEncodedAudioFrame() = default;
 
+  RTCEncodedAudioFrameData CloneMetadata() const;
+
   
   void AssertIsOnOwningThread() const {
     NS_ASSERT_OWNINGTHREAD(RTCEncodedAudioFrame);
   }
+
+  RTCEncodedAudioFrameMetadata mMetadata;
 };
 
 }  

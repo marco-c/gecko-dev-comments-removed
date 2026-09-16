@@ -5,6 +5,7 @@
 #ifndef MOZILLA_DOM_MEDIA_WEBRTC_JSAPI_RTCENCODEDVIDEOFRAME_H_
 #define MOZILLA_DOM_MEDIA_WEBRTC_JSAPI_RTCENCODEDVIDEOFRAME_H_
 
+#include "mozilla/Maybe.h"
 #include "mozilla/dom/RTCEncodedFrameBase.h"
 #include "mozilla/dom/RTCEncodedVideoFrameBinding.h"
 #include "nsIGlobalObject.h"
@@ -16,20 +17,21 @@ class RTCStatsTimestampMaker;
 class StructuredCloneHolder;
 struct RTCEncodedVideoFrameOptions;
 
-struct RTCEncodedVideoFrameData : RTCEncodedFrameState {
-  RTCEncodedVideoFrameType mType;
+
+
+
+
+struct RTCEncodedVideoFrameData {
+  RTCEncodedVideoFrameType mType = RTCEncodedVideoFrameType::Delta;
   RTCEncodedVideoFrameMetadata mMetadata;
   Maybe<nsCString> mRid;
-
-  [[nodiscard]] RTCEncodedVideoFrameData Clone() const;
 };
 
 
 
 
 
-class RTCEncodedVideoFrame final : public RTCEncodedVideoFrameData,
-                                   public RTCEncodedFrameBase {
+class RTCEncodedVideoFrame final : public RTCEncodedFrameBase {
  public:
   explicit RTCEncodedVideoFrame(
       nsIGlobalObject* aGlobal,
@@ -37,14 +39,9 @@ class RTCEncodedVideoFrame final : public RTCEncodedVideoFrameData,
       uint64_t aCounter, RTCRtpScriptTransformer* aOwner,
       const Maybe<RTCStatsTimestampMaker>& aTimestampMaker);
 
-  explicit RTCEncodedVideoFrame(nsIGlobalObject* aGlobal,
-                                RTCEncodedVideoFrameData&& aData);
-
   
-  RTCEncodedVideoFrame(const RTCEncodedVideoFrame&) = delete;
-  RTCEncodedVideoFrame& operator=(const RTCEncodedVideoFrame&) = delete;
-  RTCEncodedVideoFrame(RTCEncodedVideoFrame&&) = delete;
-  RTCEncodedVideoFrame& operator=(RTCEncodedVideoFrame&&) = delete;
+  RTCEncodedVideoFrame(nsIGlobalObject* aGlobal, RTCEncodedVideoFrameData aData,
+                       JS::Handle<JSObject*> aBuffer);
 
   
   JSObject* WrapObject(JSContext* aCx,
@@ -56,13 +53,10 @@ class RTCEncodedVideoFrame final : public RTCEncodedVideoFrameData,
 
   RTCEncodedVideoFrameType Type() const;
 
-  void InitMetadata();
+  
+  unsigned long Timestamp() const;
 
   void GetMetadata(RTCEncodedVideoFrameMetadata& aMetadata);
-
-  bool CheckOwner(RTCRtpScriptTransformer* aOwner) const override;
-
-  bool IsVideo() const override { return true; }
 
   
   
@@ -70,17 +64,23 @@ class RTCEncodedVideoFrame final : public RTCEncodedVideoFrameData,
 
   static JSObject* ReadStructuredClone(JSContext* aCx, nsIGlobalObject* aGlobal,
                                        JSStructuredCloneReader* aReader,
-                                       RTCEncodedVideoFrameData& aData);
-  bool WriteStructuredClone(JSStructuredCloneWriter* aWriter,
+                                       RTCEncodedVideoFrameData aData);
+  bool WriteStructuredClone(JSContext* aCx, JSStructuredCloneWriter* aWriter,
                             StructuredCloneHolder* aHolder) const;
 
  private:
   virtual ~RTCEncodedVideoFrame() = default;
 
+  RTCEncodedVideoFrameData CloneMetadata() const;
+
   
   void AssertIsOnOwningThread() const {
     NS_ASSERT_OWNINGTHREAD(RTCEncodedVideoFrame);
   }
+
+  RTCEncodedVideoFrameType mType = RTCEncodedVideoFrameType::Delta;
+  RTCEncodedVideoFrameMetadata mMetadata;
+  Maybe<nsCString> mRid;
 };
 
 }  
