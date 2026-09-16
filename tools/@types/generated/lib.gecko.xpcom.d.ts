@@ -2843,8 +2843,6 @@ interface nsIDocShell extends nsIDocShellTreeItem, Enums<typeof nsIDocShell_DocS
   
   setCancelContentJSEpoch(aEpoch: i32): void;
   
-  addState(aData: any, aTitle: string, aURL: string, aReplace: boolean): void;
-  
   prepareForNewContentModel(): void;
   
   setCurrentURIForSessionStore(aURI: nsIURI): void;
@@ -3316,6 +3314,8 @@ interface nsIURIFixup extends nsISupports {
   readonly FIXUP_FLAG_PRIVATE_CONTEXT?: 4;
   
   readonly FIXUP_FLAG_FIX_SCHEME_TYPOS?: 8;
+  
+  readonly FIXUP_FLAG_FORCE_KEYWORD_LOOKUP?: 16;
 
   
   getFixupURIInfo(aURIText: string, aFixupFlags?: u32): nsIURIFixupInfo;
@@ -4196,6 +4196,8 @@ interface nsIBrowserDOMWindow extends nsISupports {
   readonly OPEN_NO_OPENER?: 4;
   
   readonly OPEN_NO_REFERRER?: 8;
+  
+  readonly OPEN_FORCE_ALLOW_DATA_URI?: 16;
 
   
   createContentWindow(aURI: nsIURI, aOpenWindowInfo: nsIOpenWindowInfo, aWhere: i16, aFlags: i32, aTriggeringPrincipal: nsIPrincipal, aPolicyContainer?: nsIPolicyContainer): BrowsingContext;
@@ -8359,6 +8361,8 @@ interface nsIFOG extends nsISupports {
   
   initializeFOG(aDataPathOverride?: string, aAppIdOverride?: string, aDisableInternalPings?: boolean): void;
   
+  readonly initialized: boolean;
+  
   registerCustomPings(): void;
   
   setLogPings(aEnableLogPings: boolean): void;
@@ -11762,8 +11766,6 @@ interface nsILoadInfo extends nsISupports, Enums<typeof nsILoadInfo_StoragePermi
   
   isMediaRequest: boolean;
   
-  isFromObjectOrEmbed: boolean;
-  
   unstrippedURI: nsIURI;
   
   schemelessInput: nsILoadInfo.SchemelessInputType;
@@ -15051,8 +15053,6 @@ interface nsIHttpChannelInternal extends nsISupports, Enums<typeof nsIHttpChanne
   getRequestVersion(major: OutParam<u32>, minor: OutParam<u32>): void;
   
   getResponseVersion(major: OutParam<u32>, minor: OutParam<u32>): void;
-  
-  setCookieHeaders(aCookieHeaders: string[]): void;
   
   thirdPartyFlags: u32;
   
@@ -20890,7 +20890,7 @@ interface nsITransfer extends nsIWebProgressListener2 {
   readonly DOWNLOAD_POTENTIALLY_UNSAFE?: 2;
 
   
-  init(aSource: nsIURI, aSourceOriginalURI: nsIURI, aTarget: nsIURI, aDisplayName: string, aMIMEInfo: nsIMIMEInfo, startTime: PRTime, aTempFile: nsIFile, aCancelable: nsICancelable, aIsPrivate: boolean, aDownloadClassification: i32, aReferrerInfo: nsIReferrerInfo, aOpenDownloadsListOnStart?: boolean): void;
+  init(aSource: nsIURI, aSourceOriginalURI: nsIURI, aTarget: nsIURI, aDisplayName: string, aMIMEInfo: nsIMIMEInfo, startTime: PRTime, aTempFile: nsIFile, aCancelable: nsICancelable, aIsPrivate: boolean, aDownloadClassification: i32, aReferrerInfo: nsIReferrerInfo, aOpenDownloadsListOnStart: boolean, aFilesFolder: nsIFile): void;
   
   initWithBrowsingContext(aSource: nsIURI, aTarget: nsIURI, aDisplayName: string, aMIMEInfo: nsIMIMEInfo, startTime: PRTime, aTempFile: nsIFile, aCancelable: nsICancelable, aIsPrivate: boolean, aDownloadClassification: i32, aReferrerInfo: nsIReferrerInfo, aOpenDownloadsListOnStart: boolean, aBrowsingContext: BrowsingContext, aHandleInternally: boolean, aHttpChannel: nsIHttpChannel): void;
   
@@ -21429,7 +21429,7 @@ interface nsIUrlClassifierUpdateObserver extends nsISupports {
   
   updateError(error: nsresult): void;
   
-  updateSuccess(requestedTimeout: u32): void;
+  updateSuccess(tables: string[], waitSeconds: u32[]): void;
 }
 
 
@@ -21576,6 +21576,8 @@ interface nsIUrlClassifierTestUtils extends nsISupports {
   makeUpdateResponseV5(aName: string, aSingleHash: u32): string;
   
   makeUpdateResponseV5_32b(aName: string, aFullHash: string): string;
+  
+  makeUpdateResponseV5WithWaitDurations(aNames: string[], aWaitSeconds: u32[]): string;
   
   makeFindFullHashResponseV5(aFullHash: string): string;
   
@@ -22152,6 +22154,22 @@ interface nsINativeMessagingPortal extends nsISupports {
   getManifest(aHandle: string, aName: string, aExtension: string): Promise<any>;
   
   start(aHandle: string, aName: string, aExtension: string): Promise<any>;
+}
+
+
+
+
+interface nsINativeMessagingProxy extends nsISupports {
+  
+  shouldUse(): boolean;
+  
+  readonly available: Promise<any>;
+  
+  closeSession(aHandle: string): Promise<any>;
+  
+  getManifest(aName: string, aExtension: string): Promise<any>;
+  
+  start(aName: string, aExtension: string): Promise<any>;
 }
 
 
@@ -27478,6 +27496,7 @@ interface nsIXPCComponents_Interfaces {
   mozIExtensionAPIRequestHandler: nsJSIID<mozIExtensionAPIRequestHandler>;
   mozIExtensionProcessScript: nsJSIID<mozIExtensionProcessScript>;
   nsINativeMessagingPortal: nsJSIID<nsINativeMessagingPortal>;
+  nsINativeMessagingProxy: nsJSIID<nsINativeMessagingProxy>;
   nsIWebVTTListener: nsJSIID<nsIWebVTTListener>;
   nsIWebVTTParserWrapper: nsJSIID<nsIWebVTTParserWrapper>;
   nsIBaseWindow: nsJSIID<nsIBaseWindow>;
