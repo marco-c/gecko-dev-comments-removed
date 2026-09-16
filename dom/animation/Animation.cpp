@@ -988,15 +988,17 @@ void Animation::Reverse(ErrorResult& aRv) {
         "Can't reverse an animation associated with an inactive timeline");
   }
 
-  double effectivePlaybackRate = mPendingPlaybackRate.valueOr(mPlaybackRate);
-
-  if (effectivePlaybackRate == 0.0) {
-    return;
-  }
+  const double effectivePlaybackRate = CurrentOrPendingPlaybackRate();
 
   Maybe<double> originalPendingPlaybackRate = mPendingPlaybackRate;
 
-  mPendingPlaybackRate = Some(-effectivePlaybackRate);
+  
+  
+  
+  
+  
+  mPendingPlaybackRate =
+      Some(effectivePlaybackRate == 0 ? 0 : -effectivePlaybackRate);
 
   Play(aRv, LimitBehavior::AutoRewind);
 
