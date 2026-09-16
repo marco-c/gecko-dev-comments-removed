@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "DOM: Security")
@@ -13,16 +11,16 @@ BROWSER_CHROME_MANIFESTS += ["test/browser/browser.toml"]
 
 EXPORTS.mozilla.dom += [
     "Feature.h",
-    "FeaturePolicy.h",
-    "FeaturePolicyParser.h",
-    "FeaturePolicyUtils.h",
+    "PermissionsPolicy.h",
+    "PermissionsPolicyParser.h",
+    "PermissionsPolicyUtils.h",
 ]
 
 UNIFIED_SOURCES += [
     "Feature.cpp",
-    "FeaturePolicy.cpp",
-    "FeaturePolicyParser.cpp",
-    "FeaturePolicyUtils.cpp",
+    "PermissionsPolicy.cpp",
+    "PermissionsPolicyParser.cpp",
+    "PermissionsPolicyUtils.cpp",
 ]
 
 LOCAL_INCLUDES += [

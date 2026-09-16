@@ -2,14 +2,14 @@
 
 
 
-#include "FeaturePolicyUtils.h"
+#include "PermissionsPolicyUtils.h"
 
 #include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/FeaturePolicyViolationReportBody.h"
 #include "mozilla/dom/PermissionMessageUtils.h"
+#include "mozilla/dom/PermissionsPolicyViolationReportBody.h"
 #include "mozilla/dom/ReportingUtils.h"
 #include "nsContentUtils.h"
 #include "nsIOService.h"

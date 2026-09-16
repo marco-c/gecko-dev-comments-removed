@@ -17,7 +17,6 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/ErrorEvent.h"
 #include "mozilla/dom/Event.h"
-#include "mozilla/dom/FeaturePolicy.h"
 #include "mozilla/dom/NavigationActivation.h"
 #include "mozilla/dom/NavigationBinding.h"
 #include "mozilla/dom/NavigationCurrentEntryChangeEvent.h"
@@ -25,6 +24,7 @@
 #include "mozilla/dom/NavigationTransition.h"
 #include "mozilla/dom/NavigationUtils.h"
 #include "mozilla/dom/PContent.h"
+#include "mozilla/dom/PermissionsPolicy.h"
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/RootedDictionary.h"
@@ -1369,7 +1369,7 @@ void Navigation::TraverseTo(JSContext* aCx, const nsAString& aKey,
   
   nsID key{};
   const bool foundKey =
-      key.Parse(NS_ConvertUTF16toUTF8(aKey).get()) &&
+      key.Parse(NS_ConvertUTF16toUTF8(aKey)) &&
       std::find_if(mEntries.begin(), mEntries.end(), [&](const auto& aEntry) {
         return aEntry->Key() == key;
       }) != mEntries.end();

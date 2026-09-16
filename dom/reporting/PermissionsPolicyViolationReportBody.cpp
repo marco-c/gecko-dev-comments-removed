@@ -2,12 +2,10 @@
 
 
 
-
-
-#include "mozilla/dom/FeaturePolicyViolationReportBody.h"
+#include "mozilla/dom/PermissionsPolicyViolationReportBody.h"
 
 #include "mozilla/JSONWriter.h"
-#include "mozilla/dom/FeaturePolicyBinding.h"
+#include "mozilla/dom/PermissionsPolicyBinding.h"
 
 namespace mozilla::dom {
 
