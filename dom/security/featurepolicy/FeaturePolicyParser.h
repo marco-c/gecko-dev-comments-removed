@@ -18,9 +18,11 @@ class FeaturePolicyParser final {
  public:
   
   
-  static bool ParseString(const nsAString& aPolicy, Document* aDocument,
-                          nsIPrincipal* aSelfOrigin, nsIPrincipal* aSrcOrigin,
-                          nsTArray<Feature>& aParsedFeatures);
+  static bool ParsePolicyFromAttribute(const nsAString& aPolicy,
+                                       Document* aDocument,
+                                       nsIPrincipal* aSelfOrigin,
+                                       nsIPrincipal* aSrcOrigin,
+                                       nsTArray<Feature>& aParsedFeatures);
 
   static bool ParsePolicyFromHeader(const nsACString& aPolicy,
                                     Document* aDocument,
