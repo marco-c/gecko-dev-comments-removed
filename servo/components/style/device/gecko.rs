@@ -186,6 +186,13 @@ impl Device {
     }
 
     
+    
+    #[inline]
+    pub fn document_random_seed(&self) -> u64 {
+        self.extra.document as u64
+    }
+
+    
     #[inline]
     fn pres_context(&self) -> Option<&structs::nsPresContext> {
         unsafe {

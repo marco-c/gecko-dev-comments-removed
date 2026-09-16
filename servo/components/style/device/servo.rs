@@ -150,6 +150,14 @@ impl Device {
     }
 
     
+    
+    #[inline]
+    pub fn document_random_seed(&self) -> u64 {
+        
+        0
+    }
+
+    
     pub fn base_size_for_generic(&self, generic: GenericFontFamily) -> Length {
         self.extra
             .font_metrics_provider
