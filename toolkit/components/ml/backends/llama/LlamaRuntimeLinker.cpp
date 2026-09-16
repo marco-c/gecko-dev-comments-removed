@@ -8,6 +8,7 @@
 #include "mozilla/Logging.h"
 #include "nsLocalFile.h"
 #include "nsXPCOMPrivate.h"
+#include "nsXULAppAPI.h"
 #include "prlink.h"
 
 #ifdef XP_WIN
@@ -171,6 +172,17 @@ bool LlamaRuntimeLinker::Init() {
     LOG(LogLevel::Error, "Failed to link llama library: %d", (int)res);
     return false;
   }
+
+#ifdef XP_MACOSX
+  
+  
+  
+  
+  
+  if (XRE_IsContentProcess()) {
+    sLlamaLib.ggml_backend_metal_disable();
+  }
+#endif
 
   sLinkStatus = LinkStatus_SUCCEEDED;
   LOG(LogLevel::Info, "Successfully initialized llama runtime linker");
