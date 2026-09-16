@@ -31,6 +31,18 @@ impl<'a> CommandContext<'a> {
     ) -> &str {
         self.args[key].as_str()
     }
+
+    
+    
+    
+    
+    
+    pub fn arg_opt(
+        &self,
+        key: &str,
+    ) -> Option<&str> {
+        self.args.get(key).map(String::as_str)
+    }
 }
 
 #[derive(Debug)]
