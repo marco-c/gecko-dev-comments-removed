@@ -278,7 +278,7 @@ void ChromeUtils::RegisterMarkerSchema(GlobalObject& aGlobal,
 
 struct JSCustomMarker : public ::mozilla::BaseMarkerType<JSCustomMarker> {
   static constexpr const char* Name = "";
-  static constexpr bool StoreName = true;
+  static constexpr bool ETWStoreName = true;
 
   using MS = ::mozilla::MarkerSchema;
 
