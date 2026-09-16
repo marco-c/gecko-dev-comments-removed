@@ -354,6 +354,11 @@ RefPtr<MediaSink::EndedPromise> AudioSink::ResetForReuse(
   
   
   mAudioStream->Resume();
+
+  
+  
+  mAudioStream->RebaseLive();
+
   ConnectAudioQueues();
 
   
@@ -361,9 +366,6 @@ RefPtr<MediaSink::EndedPromise> AudioSink::ResetForReuse(
 
   mStoppedForSeek = false;
 
-  
-  
-  mAudioStream->RebaseLive();
   return mAudioStream->ReinitEndedPromise();
 }
 

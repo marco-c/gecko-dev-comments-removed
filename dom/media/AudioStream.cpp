@@ -125,11 +125,18 @@ class FrameHistory {
   
   
   
-  void Rebase(int64_t aBaseOffset) {
+  
+  
+  
+  
+  void Rebase(int64_t aBaseOffset, uint32_t aUnplayed, uint32_t aRate) {
     LOG("FrameHistory::Rebase to base offset {}", aBaseOffset);
     mChunks.Clear();
     mBaseOffset = aBaseOffset;
     mBasePosition = 0;
+    if (aUnplayed > 0) {
+      Append(0, aUnplayed, aRate);
+    }
   }
 
  private:
@@ -438,7 +445,10 @@ void AudioStream::Resume() {
   MOZ_ASSERT(mState != SHUTDOWN, "Already ShutDown()ed.");
 
   
+  
+  
   if (mState == DRAINED || mState == ERRORED) {
+    mResumeKeptCubebRunning = false;
     return;
   }
 
@@ -446,7 +456,8 @@ void AudioStream::Resume() {
   
   
   
-  if (mKeepRunning && mCubebStarted) {
+  mResumeKeptCubebRunning = mKeepRunning && mCubebStarted;
+  if (mResumeKeptCubebRunning) {
     LOG("Resume: keep-running mode, tracking logical STARTED without starting "
         "cubeb");
     mState = STARTED;
@@ -503,7 +514,6 @@ void AudioStream::ShutDown() {
 
 void AudioStream::RebaseLive() {
   TRACE("AudioStream::RebaseLive");
-  
   int64_t rawFrames;
   {
 #ifndef XP_MACOSX
@@ -511,7 +521,21 @@ void AudioStream::RebaseLive() {
 #endif
     rawFrames = GetPositionInFramesUnlocked();
   }
-  mAudioClock.Rebase(rawFrames >= 0 ? rawFrames : 0);
+  
+  
+  
+  
+  
+  AudioClock::CarryUnplayed carry = AudioClock::CarryUnplayed::Yes;
+  if (rawFrames < 0) {
+    rawFrames = 0;
+    carry = AudioClock::CarryUnplayed::No;
+  } else if (!mResumeKeptCubebRunning || mState != STARTED || !mCubebStarted) {
+    carry = AudioClock::CarryUnplayed::No;
+  }
+  LOG("RebaseLive: raw frame count {}, carrying unplayed audio {}", rawFrames,
+      carry == AudioClock::CarryUnplayed::Yes);
+  mAudioClock.Rebase(rawFrames, carry);
 }
 
 RefPtr<MediaSink::EndedPromise> AudioStream::ReinitEndedPromise() {
@@ -839,24 +863,64 @@ void AudioClock::UpdateFrameHistory(uint32_t aServiced, uint32_t aUnderrun,
     mAudioThreadCallbackInfo.AppendElement(info);
   }
 #else
+  
+  
   MutexAutoLock lock(mMutex);
+  mHandoff.mTotal += aServiced + aUnderrun;
   mFrameHistory->Append(aServiced, aUnderrun, mOutRate);
 #endif
 }
 
-void AudioClock::Rebase(int64_t aBaseOffset) {
+void AudioClock::Rebase(int64_t aBaseOffset, CarryUnplayed aCarry) {
 #ifdef XP_MACOSX
+  
+  
   ApplyQueuedCallbackInfo();
-  
-  
-  
-  
-  mHandoff.mRebasedThrough = mHandoff.mTotal;
 #else
   MutexAutoLock lock(mMutex);
 #endif
 
-  mFrameHistory->Rebase(aBaseOffset);
+  
+  
+  const uint64_t writeCursor = mHandoff.mTotal;
+
+  uint32_t unplayed = 0;
+  if (aCarry == CarryUnplayed::Yes) {
+    MOZ_ASSERT(aBaseOffset >= 0, "a negative play cursor is not a position");
+    const uint64_t playCursor = static_cast<uint64_t>(aBaseOffset);
+    uint64_t gap = 0;
+    if (writeCursor >= playCursor) {
+      gap = writeCursor - playCursor;
+    } else {
+      
+      
+      LOGW("Rebase: play cursor {} above write cursor {}, carrying nothing",
+           playCursor, writeCursor);
+    }
+    
+    
+    
+    
+    constexpr uint64_t kMaxUnplayed = UINT32_MAX / 2;
+    if (gap > kMaxUnplayed) {
+      LOGW("Rebase: {} unplayed frames exceed the carry limit, carrying {}",
+           gap, kMaxUnplayed);
+      gap = kMaxUnplayed;
+    }
+    unplayed = static_cast<uint32_t>(gap);
+  }
+
+#ifdef XP_MACOSX
+  
+  
+  
+  
+  mHandoff.mRebasedThrough = writeCursor;
+#endif
+
+  LOG("Rebase: play cursor {}, write cursor {}, carrying {} unplayed frames",
+      aBaseOffset, writeCursor, unplayed);
+  mFrameHistory->Rebase(aBaseOffset, unplayed, mOutRate);
 }
 
 int64_t AudioClock::GetPositionInFrames(int64_t aFrames) {

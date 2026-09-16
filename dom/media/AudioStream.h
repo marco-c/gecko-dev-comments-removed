@@ -51,6 +51,10 @@ struct CallbackInfo {
 
 class AudioClock {
  public:
+  
+  
+  enum class CarryUnplayed { No, Yes };
+
   explicit AudioClock(uint32_t aInRate);
   
   
@@ -68,7 +72,10 @@ class AudioClock {
   
   
   
-  void Rebase(int64_t aBaseOffset);
+  
+  
+  
+  void Rebase(int64_t aBaseOffset, CarryUnplayed aCarry);
 
   
 

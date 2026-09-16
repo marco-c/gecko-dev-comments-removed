@@ -19,6 +19,7 @@ using namespace mozilla;
 
 
 
+
 TEST(AudioClock, RebaseOnReset)
 {
   const uint32_t rate = 48000;
@@ -28,7 +29,7 @@ TEST(AudioClock, RebaseOnReset)
   EXPECT_EQ(clock.GetPosition(rate), 1000000)
       << "one second of serviced frames reads as 1.0 s";
 
-  clock.Rebase(rate);
+  clock.Rebase(rate, AudioClock::CarryUnplayed::Yes);
   EXPECT_EQ(clock.GetPosition(rate), 0)
       << "rebasing at the current count makes that count read as 0";
 
@@ -36,7 +37,7 @@ TEST(AudioClock, RebaseOnReset)
   EXPECT_EQ(clock.GetPosition(rate + rate / 2), 500000)
       << "servicing half a second more reads as 0.5 s from the rebased base";
 
-  clock.Rebase(rate + rate / 2);
+  clock.Rebase(rate + rate / 2, AudioClock::CarryUnplayed::Yes);
   EXPECT_EQ(clock.GetPosition(rate + rate / 2), 0)
       << "a second rebase re-zeroes again at the current count";
 }
@@ -53,13 +54,15 @@ TEST(AudioClock, RebaseToZero)
   EXPECT_EQ(clock.GetPosition(rate), 1000000)
       << "one second of serviced frames reads as 1.0 s";
 
-  clock.Rebase(0);
+  clock.Rebase(0, AudioClock::CarryUnplayed::Yes);
   EXPECT_EQ(clock.GetPosition(0), 0)
-      << "Rebase(0) clears accumulated history so the count reads as 0";
+      << "Rebase(0) makes the current count read as 0";
 
   clock.UpdateFrameHistory(rate, 0, false);
-  EXPECT_EQ(clock.GetPosition(rate), 1000000)
-      << "later servicing accumulates from the rebased zero";
+  EXPECT_EQ(clock.GetPosition(rate), 0)
+      << "the first second is the carried-over audio, so it reads as 0";
+  EXPECT_EQ(clock.GetPosition(2 * rate), 1000000)
+      << "the second past it was serviced after the rebase and reads as 1.0 s";
 }
 
 
@@ -86,13 +89,11 @@ TEST(AudioClock, RebaseAfterQueueOverflowOfSilence)
       static_cast<int64_t>(callbacks) * static_cast<int64_t>(framesPerCallback);
   const int64_t played = written - framesPerCallback;
 
-  clock.Rebase(played);
+  clock.Rebase(played, AudioClock::CarryUnplayed::Yes);
   clock.UpdateFrameHistory(framesPerCallback, 0, false);
-  EXPECT_EQ(clock.GetPosition(written), 10000)
-      << "the post-seek callback advances the clock; the stranded silence was "
-         "already played and must not be counted again";
 
-  clock.UpdateFrameHistory(framesPerCallback, 0, false);
-  EXPECT_EQ(clock.GetPosition(written + framesPerCallback), 20000)
-      << "and it keeps advancing from there";
+  EXPECT_EQ(clock.GetPosition(written), 0) << "the unplayed window reads 0";
+  EXPECT_EQ(clock.GetPosition(written + rate / 1000), 1000)
+      << "1 ms past the carried window reads as 1 ms, not frozen by the "
+         "stranded silence";
 }
