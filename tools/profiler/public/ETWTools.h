@@ -423,6 +423,10 @@ static inline void EmitETWMarker(const mozilla::ProfilerString8View& aName,
   
   
   
+  if constexpr (MarkerSupportsETW<MarkerType>::value) {
+    
+    (void)MarkerType::ETWStoreName;
+  }
   if constexpr (mozilla::MarkerHasPayloadFields<MarkerType>::value) {
     if constexpr (mozilla::MarkerHasTranslator<MarkerType>::value) {
       
