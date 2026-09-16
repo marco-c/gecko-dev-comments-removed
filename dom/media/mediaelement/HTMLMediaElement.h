@@ -1725,7 +1725,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   MozPromiseRequestHolder<SetCDMPromise> mSetCDMRequest;
 
   
-  double mCurrentPlayRangeStart = 1.0;
+  Maybe<double> mCurrentPlayRangeStart;
 
   
   bool mLoadedDataFired = false;

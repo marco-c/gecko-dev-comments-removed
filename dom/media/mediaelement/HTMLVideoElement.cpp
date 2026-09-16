@@ -270,8 +270,7 @@ void HTMLVideoElement::MapAttributesIntoRule(
   MapCommonAttributesInto(aBuilder);
 }
 
-NS_IMETHODIMP_(bool)
-HTMLVideoElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLVideoElement::IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const {
   static const MappedAttributeEntry attributes[] = {
       {nsGkAtoms::width}, {nsGkAtoms::height}, {nullptr}};
 
@@ -609,10 +608,10 @@ double HTMLVideoElement::TotalPlayTime() const {
       total += end - begin;
     }
 
-    if (mCurrentPlayRangeStart != -1.0) {
+    if (mCurrentPlayRangeStart) {
       double now = CurrentTime();
-      if (mCurrentPlayRangeStart != now) {
-        total += now - mCurrentPlayRangeStart;
+      if (mCurrentPlayRangeStart.value() != now) {
+        total += now - mCurrentPlayRangeStart.value();
       }
     }
   }
