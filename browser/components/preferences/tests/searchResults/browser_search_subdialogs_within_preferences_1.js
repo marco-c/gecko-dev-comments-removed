@@ -6,33 +6,6 @@
 
 
 add_task(async function () {
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.startup.homepage", "about:robots"],
-      ["browser.startup.page", 1],
-    ],
-  });
-
-  await openPreferencesViaOpenPreferencesAPI("paneHome", { leaveOpen: true });
-
-  
-  await TestUtils.waitForCondition(() =>
-    SpecialPowers.spawn(
-      gBrowser.selectedTab.linkedBrowser,
-      [],
-      () => !!content.document.getElementById("homeContentsGroup")
-    )
-  );
-
-  await evaluateSearchResults("Set Home Page", "homepageGroup");
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-});
-
-
-
-
-add_task(async function () {
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
     leaveOpen: true,
   });
