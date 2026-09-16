@@ -575,6 +575,14 @@
             ? gBrowser.pinnedTabCount
             : dropIndex,
         });
+
+        
+        
+        
+        let periphery = draggedTab.ownerDocument.getElementById(
+          "tabbrowser-arrowscrollbox-periphery"
+        );
+        this.#releaseSpaceInScrolledContent(periphery);
       } else if (draggedTab) {
         
         
