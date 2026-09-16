@@ -1185,7 +1185,6 @@ static void TryEliminateGCBarriersForAllocation(MInstruction* allocation) {
       case MDefinition::Opcode::Constant:
       case MDefinition::Opcode::Box:
       case MDefinition::Opcode::Unbox:
-      case MDefinition::Opcode::AssertCanElidePostWriteBarrier:
         
         
         break;
@@ -1388,13 +1387,6 @@ static auto NeedToCanonicalizeNaN(const MDefinition* def) {
     case MDefinition::Opcode::StoreDataViewElement:
     case MDefinition::Opcode::StoreTypedArrayElementHole:
     case MDefinition::Opcode::TypedArrayFill:
-      
-      
-      MOZ_ASSERT(def->type() == MIRType::None);
-      return CanonicalizeNaN::No;
-
-    case MDefinition::Opcode::PostWriteBarrier:
-    case MDefinition::Opcode::PostWriteElementBarrier:
       
       
       MOZ_ASSERT(def->type() == MIRType::None);
