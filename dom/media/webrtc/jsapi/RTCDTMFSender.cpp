@@ -8,7 +8,6 @@
 #include <bitset>
 
 #include "RTCRtpTransceiver.h"
-#include "libwebrtcglue/MediaConduitInterface.h"
 #include "mozilla/dom/RTCDTMFSenderBinding.h"
 #include "mozilla/dom/RTCDTMFToneChangeEvent.h"
 #include "nsITimer.h"
@@ -79,6 +78,8 @@ bool RTCDTMFSender::CanInsertDTMF() const {
 
 void RTCDTMFSender::InsertDTMF(const nsAString& aTones, uint32_t aDuration,
                                uint32_t aInterToneGap, ErrorResult& aRv) {
+  
+  
   if (!mTransceiver->CanSendDTMF()) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
@@ -89,66 +90,110 @@ void RTCDTMFSender::InsertDTMF(const nsAString& aTones, uint32_t aDuration,
   std::transform(utf8Tones.begin(), utf8Tones.end(), utf8Tones.begin(),
                  [](const unsigned char c) { return std::toupper(c); });
 
+  
+  
   if (std::any_of(utf8Tones.begin(), utf8Tones.end(), IsUnrecognizedChar)) {
     aRv.Throw(NS_ERROR_DOM_INVALID_CHARACTER_ERR);
     return;
   }
 
+  
   CopyUTF8toUTF16(utf8Tones, mToneBuffer);
+
+  
+  
+  
+  
+  
   mDuration = std::clamp(aDuration, 40U, 6000U);
+
+  
+  
+  
+  
+  
   mInterToneGap = std::clamp(aInterToneGap, 30U, 6000U);
 
-  if (mToneBuffer.Length()) {
-    StartPlayout(0);
+  
+  if (!mToneBuffer.Length()) {
+    return;
+  }
+
+  
+  
+  
+  if (!mPlayoutScheduled) {
+    mPlayoutScheduled = true;
+    GetCurrentSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
+        __func__,
+        [this, self = RefPtr<RTCDTMFSender>(this)]() { DoPlayout(); }));
   }
 }
 
-void RTCDTMFSender::StopPlayout() {
+void RTCDTMFSender::SchedulePlayout(uint32_t aDelay) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!mSendTimer) {
+    mSendTimer = NS_NewTimer();
+    mSendTimer->InitWithCallback(this, aDelay, nsITimer::TYPE_ONE_SHOT);
+    mPlayoutScheduled = true;
+  }
+}
+
+nsresult RTCDTMFSender::Notify(nsITimer*) {
+  MOZ_ASSERT(NS_IsMainThread());
   if (mSendTimer) {
     mSendTimer->Cancel();
     mSendTimer = nullptr;
   }
+  DoPlayout();
+  return NS_OK;
 }
 
-void RTCDTMFSender::StartPlayout(uint32_t aDelay) {
-  if (!mSendTimer) {
-    mSendTimer = NS_NewTimer();
-    mSendTimer->InitWithCallback(this, aDelay, nsITimer::TYPE_ONE_SHOT);
-  }
-}
 
-nsresult RTCDTMFSender::Notify(nsITimer* timer) {
+void RTCDTMFSender::DoPlayout() {
   MOZ_ASSERT(NS_IsMainThread());
-  StopPlayout();
+  mPlayoutScheduled = false;
 
-  if (!mTransceiver->IsSending()) {
-    return NS_OK;
+  
+  
+  if (!mTransceiver->CanSendDTMF()) {
+    return;
   }
 
+  
+  
+  
+  
   RTCDTMFToneChangeEventInit init;
   if (!mToneBuffer.IsEmpty()) {
+    
+    
     uint16_t toneChar = mToneBuffer.CharAt(0);
     int tone = GetDTMFToneCode(toneChar);
-
     init.mTone.Assign(toneChar);
-
     mToneBuffer.Cut(0, 1);
 
     if (tone == -1) {
-      StartPlayout(2000);
+      
+      
+      
+      SchedulePlayout(2000);
     } else {
       
-      StartPlayout(mDuration + mInterToneGap);
+      
+      
+      
       mDtmfEvent.Notify(DtmfEvent(mPayloadType.ref(), mPayloadFrequency.ref(),
                                   tone, mDuration));
+      SchedulePlayout(mDuration + mInterToneGap);
     }
   }
 
+  
+  
   RefPtr<RTCDTMFToneChangeEvent> event =
       RTCDTMFToneChangeEvent::Constructor(this, u"tonechange"_ns, init);
   DispatchTrustedEvent(event);
-
-  return NS_OK;
 }
 
 nsresult RTCDTMFSender::GetName(nsACString& aName) {
