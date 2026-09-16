@@ -7,15 +7,15 @@
 
 #include <stdint.h>  
 
-#include <algorithm>  
+#include <algorithm>    
+#include <type_traits>  
 
 #include "mozilla/Likely.h"  
 #include "mozilla/gfx/BaseRect.h"
 #include "mozilla/gfx/Rect.h"
-#include "nsCoord.h"      
-#include "nsISupports.h"  
-#include "nsPoint.h"      
-#include "nsSize.h"       
+#include "nsCoord.h"  
+#include "nsPoint.h"  
+#include "nsSize.h"   
 
 #if !defined(ANDROID) && (defined(__SSE2__) || defined(_M_X64) || \
                           (defined(_M_IX86_FP) && _M_IX86_FP >= 2))
@@ -38,18 +38,12 @@ struct nsRect : public mozilla::gfx::BaseRect<nscoord, nsRect, nsPoint, nsSize,
       Super;
 
   
-  nsRect() { MOZ_COUNT_CTOR(nsRect); }
-  nsRect(const nsRect& aRect) : Super(aRect) { MOZ_COUNT_CTOR(nsRect); }
-  nsRect(const nsPoint& aOrigin, const nsSize& aSize) : Super(aOrigin, aSize) {
-    MOZ_COUNT_CTOR(nsRect);
-  }
+  nsRect() = default;
+  nsRect(const nsRect& aRect) = default;
+  nsRect(const nsPoint& aOrigin, const nsSize& aSize) : Super(aOrigin, aSize) {}
   nsRect(nscoord aX, nscoord aY, nscoord aWidth, nscoord aHeight)
-      : Super(aX, aY, aWidth, aHeight) {
-    MOZ_COUNT_CTOR(nsRect);
-  }
+      : Super(aX, aY, aWidth, aHeight) {}
   nsRect& operator=(const nsRect&) = default;
-
-  MOZ_COUNTED_DTOR(nsRect)
 
   
   
@@ -171,6 +165,10 @@ struct nsRect : public mozilla::gfx::BaseRect<nscoord, nsRect, nsPoint, nsSize,
     return mozilla::Some(nsRect(left, top, right - left, bottom - top));
   }
 };
+
+static_assert(std::is_trivially_copyable_v<nsRect>,
+              "nsRect must stay trivially copyable so that it is passed and "
+              "returned in registers");
 
 
 
