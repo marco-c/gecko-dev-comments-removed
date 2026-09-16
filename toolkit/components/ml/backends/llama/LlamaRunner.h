@@ -48,6 +48,7 @@
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/GlobalTeardownObserver.h"
+#include "mozilla/Mutex.h"
 
 namespace mozilla::dom {
 
@@ -117,6 +118,11 @@ class LlamaGenerateTask final : public mozilla::CancelableRunnable {
   
   
   bool MaybePushMessage(mozilla::Maybe<LlamaChatResponse> aMessage);
+  bool MaybePushMessageLocked(mozilla::Maybe<LlamaChatResponse> aMessage,
+                              const MutexAutoLock& aProofOfLock);
+
+  
+  void FailTask(nsCString aMessage);
 
   
   
@@ -152,6 +158,11 @@ class LlamaGenerateTask final : public mozilla::CancelableRunnable {
 
   
   Atomic<bool> mHasPendingConsumer{false};
+
+  
+  
+  
+  Mutex mMutex{"LlamaGenerateTask::mMutex"};
 
   
   SPSCQueue<mozilla::Maybe<LlamaChatResponse>> mMessagesQueue;
