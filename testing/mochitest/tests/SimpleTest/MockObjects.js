@@ -68,7 +68,11 @@ MockObjectRegisterer.prototype = {
     }
 
     
-    SpecialPowers.unregisterFactory(this._originalCID, this._contractID);
+    SpecialPowers.unregisterFactory(
+      this._originalCID,
+      this._contractID,
+      this._mockFactory
+    );
 
     
     this._originalCID = null;
