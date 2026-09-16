@@ -62,7 +62,7 @@ add_task(async function test_providers() {
     "onQueryResults"
   );
 
-  await providersManager.startQuery(context, controller);
+  await providersManager.startQuery(context, controller.parentController);
   
   
   providersManager.cancelQuery(context);
