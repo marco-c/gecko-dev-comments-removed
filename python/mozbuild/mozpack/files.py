@@ -1078,20 +1078,27 @@ class FileFinder(BaseFinder):
             if mozpath.match(path, p):
                 return
 
-        
-        
-        
-        for p in sorted(os.listdir(os.path.join(self.base, path))):
-            if p.startswith("."):
-                if p in (".", ".."):
+        entries = []
+        with os.scandir(os.path.join(self.base, path)) as scan:
+            for entry in scan:
+                if entry.name.startswith(".") and not self.find_dotfiles:
                     continue
-                if not self.find_dotfiles:
-                    continue
-            yield from self._find(mozpath.join(path, p))
+                entries.append((entry.name, entry.is_dir()))
 
-    def get(self, path):
+        
+        
+        
+        entries.sort()
+        for name, is_dir in entries:
+            child = mozpath.join(path, name)
+            if is_dir:
+                yield from self._find_dir(child)
+            elif f := self.get(child, known_to_exist=True):
+                yield child, f
+
+    def get(self, path, known_to_exist=False):
         srcpath = os.path.join(self.base, path)
-        if not os.path.lexists(srcpath):
+        if not known_to_exist and not os.path.lexists(srcpath):
             return None
 
         if self.ignore_broken_symlinks and not os.path.exists(srcpath):
