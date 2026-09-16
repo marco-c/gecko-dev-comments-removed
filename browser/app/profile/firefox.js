@@ -1009,6 +1009,15 @@ pref("browser.search.totalSearches", 0);
 
 pref("browser.search.visualSearch.featureGate", true);
 
+pref("browser.highlightToSearch.featureGate", false);
+
+
+pref("browser.highlightToSearch.enabled", true);
+
+
+pref("browser.highlightToSearch.search.enabled", true);
+pref("browser.highlightToSearch.copy.enabled", true);
+
 
 pref("browser.spin_cursor_while_busy", false);
 
