@@ -4,6 +4,7 @@
 
 
 using class mozilla::TimeStamp from "mozilla/TimeStamp.h";
+using mozilla::hwinference::ModelInstallResult from "mozilla/hwinference/HWInferenceTypes.h";
 
 namespace mozilla {
 namespace hwinference {
@@ -38,7 +39,8 @@ parent:
   
   
   
-  async InstallModels(nsCString[] languages, uint64_t innerWindowId) returns (bool success);
+  
+  async InstallModels(nsCString[] languages, uint64_t innerWindowId) returns (ModelInstallResult result);
   
   
   
