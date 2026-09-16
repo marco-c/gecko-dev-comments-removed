@@ -1978,7 +1978,7 @@ void nsGenericHTMLFormElement::BeforeSetAttr(int32_t aNameSpaceID,
                                              bool aNotify) {
   if (aNameSpaceID == kNameSpaceID_None && IsFormAssociatedElement()) {
     nsAutoString tmp;
-    HTMLFormElement* form = GetFormInternal();
+    HTMLFormElement* form = GetFormIfRegistered();
 
     
 
@@ -2034,7 +2034,7 @@ void nsGenericHTMLFormElement::AfterSetAttr(
         
         ClearForm(true, false);
       }
-    } else if (HTMLFormElement* form = GetFormInternal()) {
+    } else if (HTMLFormElement* form = GetFormIfRegistered()) {
       
       if (aName == nsGkAtoms::type) {
         nsAutoString tmp;
