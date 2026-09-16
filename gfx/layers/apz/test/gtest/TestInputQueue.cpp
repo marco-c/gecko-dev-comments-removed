@@ -2,22 +2,19 @@
 
 
 
-#include "APZCTreeManagerTester.h"
+#include "APZCBasicTester.h"
 #include "APZTestCommon.h"
 #include "InputUtils.h"
-#include "mozilla/layers/ScrollableLayerGuid.h"
 
 
 
-TEST_F(APZCTreeManagerTester, WheelInterruptedByMouseDrag) {
+TEST_F(APZCBasicTester, WheelInterruptedByMouseDrag) {
   
   SCOPED_GFX_PREF_BOOL("general.smoothScroll", true);
 
   
-  CreateSimpleScrollingLayer();
-  ScopedLayerTreeRegistration registration(LayersId{0}, mcc);
-  UpdateHitTestingTree();
-  RefPtr<TestAsyncPanZoomController> apzc = ApzcOf(root);
+  
+  apzc->GetScrollMetadata().SetLineScrollAmount({5, 10});
 
   
   uint64_t dragBlockId =
@@ -51,23 +48,17 @@ TEST_F(APZCTreeManagerTester, WheelInterruptedByMouseDrag) {
 
 
 
-TEST_F(APZCTreeManagerTester, HorizontalDeltaInterferesWithVerticalScrolling) {
-  ViewID rootScrollId = START_SCROLL_ID;
-  const char* treeShape = "x";
-  LayerIntRect layerVisibleRect[] = {
-      LayerIntRect(0, 0, 100, 100),
-  };
-  CreateScrollData(treeShape, layerVisibleRect);
+TEST_F(APZCBasicTester, HorizontalDeltaInterferesWithVerticalScrolling) {
   
-  SetScrollableFrameMetrics(layers[0], rootScrollId, CSSRect(0, 0, 100, 1000));
-
-  ScopedLayerTreeRegistration registration(LayersId{0}, mcc);
-  UpdateHitTestingTree();
-  RefPtr<TestAsyncPanZoomController> apzc = ApzcOf(root);
+  FrameMetrics fm;
+  fm.SetCompositionBounds(ParentLayerRect(0, 0, 100, 100));
+  fm.SetScrollableRect(CSSRect(0, 0, 100, 1000));
+  fm.SetIsRootContent(true);
+  apzc->SetFrameMetrics(fm);
 
   
   
-  apzc->SetWaitForMainThread();
+  MakeApzcWaitForMainThread();
 
   
   ScreenIntPoint cursorLocation(50, 50);
@@ -85,8 +76,8 @@ TEST_F(APZCTreeManagerTester, HorizontalDeltaInterferesWithVerticalScrolling) {
   EXPECT_EQ(wheelBlockId1, wheelBlockId2);
 
   
-  manager->ContentReceivedInputBlock(wheelBlockId1, false);
-  manager->SetTargetAPZC(wheelBlockId1, {apzc->GetGuid()});
+  apzc->ContentReceivedInputBlock(wheelBlockId1, false);
+  apzc->ConfirmTarget(wheelBlockId1);
 
   
   EXPECT_EQ(ParentLayerPoint(0, 10),
