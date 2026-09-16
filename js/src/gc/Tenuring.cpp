@@ -1190,21 +1190,11 @@ JSString* js::gc::TenuringTracer::promoteString(JSString* src) {
   AllocKind dstKind = src->getAllocKind();
   Zone* zone = src->nurseryZone();
 
+  
+  
+  
+  
   MOZ_ASSERT(!src->isAtom());
-
-  
-  
-  if (src->isAtomRef()) {
-    JSAtom* atom = src->atom();
-    StringRelocationOverlay::forwardString(src, atom);
-    gcprobes::PromoteToTenured(src, atom);
-    return atom;
-  }
-
-  
-  
-  
-  
   if (src->isLinear() && src->inStringToAtomCache() &&
       src->isDeduplicatable() && !src->hasBase()) {
     JSLinearString* linear = &src->asLinear();
