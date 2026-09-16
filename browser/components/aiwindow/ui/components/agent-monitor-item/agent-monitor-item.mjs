@@ -17,6 +17,8 @@ import "chrome://global/content/elements/moz-button.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/monitor-icon.mjs";
 // eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/aiwindow/components/monitor-status-chip.mjs";
+// eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/ai-website-chip.mjs";
 
 const SCHEDULE_TYPES = Object.freeze({
@@ -52,6 +54,26 @@ const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
     label,
   };
 });
+
+/**
+ * Rounds the user's local time up to the nearest TIME_OPTIONS slot, giving the
+ * time input a more useful default than always starting at 9:00. Seconds are
+ * ignored, so 2:00:10 PM still yields 2:00 PM while 2:01 PM yields 2:30 PM.
+ *
+ * @param {Date} [now] - The time to round up from
+ * @returns {string} An "HH:MM" value matching one of TIME_OPTIONS
+ */
+function nextTimeOption(now = new Date()) {
+  const minutesSinceMidnight = now.getHours() * 60 + now.getMinutes();
+  const slot = Math.ceil(minutesSinceMidnight / 30);
+
+  // Wrap past the final 11:30 PM option back to midnight.
+  if (slot >= TIME_OPTIONS.length) {
+    return TIME_OPTIONS[0].value;
+  }
+
+  return TIME_OPTIONS[slot].value;
+}
 
 // Indexed by the weekday values used by the scheduler (0 = Sunday)
 const WEEKDAYS = [
@@ -98,8 +120,6 @@ const WEEKDAYS = [
  *                               // hostname for URLs
  *    faviconText?: string,      // 1-2 char fallback favicon glyph
  *    faviconColor?: string,     // fallback favicon background
- *    value?: string,            // current value, e.g. "$278"
- *    valueMeta?: string,        // e.g. "checked 2:14 PM · was $299"
  *    condition?: string,        // e.g. "the price drops below $270"
  *    conditionPresets?: string[],
  *    status?: { label: string, kind?: "watching"|"paused" },
@@ -124,6 +144,10 @@ const WEEKDAYS = [
  * @property {boolean} editing - Whether the editable condition field is shown
  * @property {boolean} showLastResult - Whether to show the last check result chip (defaults to false)
  * @property {number} maxWatchUrls - How many pages one monitor may watch
+ * @property {boolean} selfContained - Whether the card stands on its own
+ *  (defaults to true). A self-contained card draws its own frame and states its
+ *  own title. Hosts that already frame and title it - a panel with a header, say
+ *  - set this to false and get just the contents.
  */
 export class AgentMonitorItem extends MozLitElement {
   static properties = {
@@ -134,6 +158,11 @@ export class AgentMonitorItem extends MozLitElement {
     editing: { type: Boolean, reflect: true },
     showLastResult: { type: Boolean },
     maxWatchUrls: { type: Number },
+    selfContained: {
+      type: Boolean,
+      reflect: true,
+      attribute: "self-contained",
+    },
     checkFrequency: { type: String, state: true },
     scheduleTime: { type: String, state: true },
     scheduleWeekday: { type: Number, state: true },
@@ -152,8 +181,9 @@ export class AgentMonitorItem extends MozLitElement {
     this.editing = false;
     this.showLastResult = false;
     this.maxWatchUrls = DEFAULT_MAX_WATCH_URLS;
+    this.selfContained = true;
     this.checkFrequency = SCHEDULE_TYPES.DAILY;
-    this.scheduleTime = "09:00";
+    this.scheduleTime = nextTimeOption();
     this.scheduleWeekday = 1;
     this.alertDescription = "";
     this.pageUrls = [];
@@ -313,6 +343,24 @@ export class AgentMonitorItem extends MozLitElement {
 
   get #monitorName() {
     return this.#draftName ?? this.agent?.monitorName ?? "";
+  }
+
+  focusName() {
+    this.shadowRoot?.querySelector(".monitor-name-input")?.focus();
+  }
+
+  /**
+   * moz-select renders its own popover-based list as soon as any option has an
+   * icon, and a popover goes in the document's top layer - which is the wrong
+   * place when the host is a XUL panel, because the panel is its own widget. So
+   * a hosted card drops the option icons to keep the native <select>, whose
+   * dropdown the platform positions correctly over a panel.
+   *
+   * @param {string} icon
+   * @returns {string|nothing}
+   */
+  #optionIcon(icon) {
+    return this.selfContained ? icon : nothing;
   }
 
   get #isFormValid() {
@@ -482,23 +530,9 @@ export class AgentMonitorItem extends MozLitElement {
   }
 
   #renderStatusChip() {
-    const statusInfo = this.agent?.status;
-    if (!statusInfo?.kind) {
-      return nothing;
-    }
-    const l10nId =
-      statusInfo.kind === "watching"
-        ? "ai-tasks-alert-status-watching"
-        : "ai-tasks-alert-status-paused";
-
-    return html`
-      <span
-        class="status-chip ${statusInfo.kind}"
-        data-kind=${statusInfo.kind}
-        data-l10n-id=${l10nId}
-      >
-      </span>
-    `;
+    return html`<monitor-status-chip
+      kind=${this.agent?.status?.kind ?? nothing}
+    ></monitor-status-chip>`;
   }
 
   #renderLastCheckedCondition() {
@@ -509,7 +543,9 @@ export class AgentMonitorItem extends MozLitElement {
     return html`
       ${mostRecentItem && mostRecentItem.conditionMet !== undefined
         ? html`<span
-            class="status-chip"
+            class="last-result ${mostRecentItem.conditionMet
+              ? "match"
+              : "not-match"}"
             data-l10n-id=${mostRecentItem.conditionMet
               ? "ai-tasks-alert-last-result-met"
               : "ai-tasks-alert-last-result-not-met"}
@@ -781,6 +817,7 @@ export class AgentMonitorItem extends MozLitElement {
         class="form-label"
         data-l10n-id="ai-tasks-alert-time-label"
       ></label>
+
       <moz-select
         class="form-select"
         .value=${this.scheduleTime}
@@ -791,7 +828,7 @@ export class AgentMonitorItem extends MozLitElement {
             html`<moz-option
               value=${opt.value}
               label=${opt.label}
-              iconsrc=${TIME_ICON}
+              iconsrc=${this.#optionIcon(TIME_ICON)}
             ></moz-option>`
         )}
       </moz-select>
@@ -815,12 +852,12 @@ export class AgentMonitorItem extends MozLitElement {
               <moz-option
                 value=${SCHEDULE_TYPES.DAILY}
                 data-l10n-id="ai-tasks-alert-schedule-daily"
-                iconsrc=${SCHEDULE_ICON}
+                iconsrc=${this.#optionIcon(SCHEDULE_ICON)}
               ></moz-option>
               <moz-option
                 value=${SCHEDULE_TYPES.WEEKLY}
                 data-l10n-id="ai-tasks-alert-schedule-weekly"
-                iconsrc=${SCHEDULE_ICON}
+                iconsrc=${this.#optionIcon(SCHEDULE_ICON)}
               ></moz-option>
             </moz-select>
           </div>
@@ -840,7 +877,7 @@ export class AgentMonitorItem extends MozLitElement {
                       html`<moz-option
                         value=${day.value}
                         data-l10n-id=${day.ftlId}
-                        iconsrc=${SCHEDULE_ICON}
+                        iconsrc=${this.#optionIcon(SCHEDULE_ICON)}
                       ></moz-option>`
                   )}
                 </moz-select>
@@ -853,16 +890,17 @@ export class AgentMonitorItem extends MozLitElement {
   }
 
   #renderCreate() {
-    const agent = this.agent ?? {};
     return html`
       <div class="monitor-card">
-        <div class="title-container">
-          <monitor-icon size="small"></monitor-icon>
-          <h2
-            class="monitor-card-state-title"
-            data-l10n-id="ai-tasks-alert-modal-title"
-          ></h2>
-        </div>
+        ${this.selfContained
+          ? html`<div class="title-container">
+              <monitor-icon size="small"></monitor-icon>
+              <h2
+                class="monitor-card-state-title"
+                data-l10n-id="ai-tasks-alert-modal-title"
+              ></h2>
+            </div>`
+          : nothing}
         <div class="monitor-card-head">
           <div class="monitor-name-field">
             <moz-input-text
@@ -875,14 +913,6 @@ export class AgentMonitorItem extends MozLitElement {
             ></moz-input-text>
           </div>
         </div>
-        ${agent.value
-          ? html`<div class="monitor-value">
-              <span class="now">${agent.value}</span>
-              ${agent.valueMeta
-                ? html`<span class="from">${agent.valueMeta}</span>`
-                : nothing}
-            </div>`
-          : nothing}
         ${this.#renderConditionField()} ${this.#renderPagesField()}
         ${this.#renderScheduler()}
 
@@ -941,14 +971,6 @@ export class AgentMonitorItem extends MozLitElement {
     const agent = this.agent ?? {};
     return html`
       <div class="watch-expand" @click=${e => e.stopPropagation()}>
-        ${agent.value
-          ? html`<div class="monitor-value">
-              <span class="now">${agent.value}</span>
-              ${agent.valueMeta
-                ? html`<span class="from">${agent.valueMeta}</span>`
-                : nothing}
-            </div>`
-          : nothing}
         ${this.editing
           ? html`${this.#renderConditionField()} ${this.#renderPagesField()}
             ${this.#renderScheduler()}`
