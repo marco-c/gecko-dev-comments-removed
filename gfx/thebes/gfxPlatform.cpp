@@ -565,9 +565,7 @@ static void WebRenderDebugPrefChangeCallback(const char* aPrefName, void*) {
 #undef GFX_WEBRENDER_DEBUG
   gfx::gfxVars::SetWebRenderDebugFlags(flags._0);
 
-  uint32_t threshold = Preferences::GetFloat(
-      StaticPrefs::GetPrefName_gfx_webrender_debug_slow_cpu_frame_threshold(),
-      10.0);
+  float threshold = StaticPrefs::gfx_webrender_debug_slow_cpu_frame_threshold();
   gfx::gfxVars::SetWebRenderSlowCpuFrameThreshold(threshold);
 }
 
@@ -576,25 +574,19 @@ static void WebRenderQualityPrefChangeCallback(const char* aPref, void*) {
 }
 
 static void WebRenderBatchingPrefChangeCallback(const char* aPrefName, void*) {
-  uint32_t count = Preferences::GetUint(
-      StaticPrefs::GetPrefName_gfx_webrender_batching_lookback(), 10);
-
+  uint32_t count = StaticPrefs::gfx_webrender_batching_lookback();
   gfx::gfxVars::SetWebRenderBatchingLookback(count);
 }
 
 static void WebRenderBlobTileSizePrefChangeCallback(const char* aPrefName,
                                                     void*) {
-  uint32_t tileSize = Preferences::GetUint(
-      StaticPrefs::GetPrefName_gfx_webrender_blob_tile_size(), 256);
+  uint32_t tileSize = StaticPrefs::gfx_webrender_blob_tile_size();
   gfx::gfxVars::SetWebRenderBlobTileSize(tileSize);
 }
 
 static void WebRenderUploadThresholdPrefChangeCallback(const char* aPrefName,
                                                        void*) {
-  int value = Preferences::GetInt(
-      StaticPrefs::GetPrefName_gfx_webrender_batched_upload_threshold(),
-      512 * 512);
-
+  int value = StaticPrefs::gfx_webrender_batched_upload_threshold();
   gfxVars::SetWebRenderBatchedUploadThreshold(value);
 }
 
@@ -939,10 +931,15 @@ void gfxPlatform::Init() {
   if (XRE_IsParentProcess()) {
     
     Preferences::RegisterCallbackAndCall(
-        VideoDecodingFailedChangedCallback,
+        HardwareVideoFailedChangedCallback,
         "media.hardware-video-decoding.failed");
+    Preferences::RegisterCallbackAndCall(
+        HardwareVideoFailedChangedCallback,
+        "media.hardware-video-encoding.failed");
     Preferences::RegisterCallbackAndCall(HWDRMFailedChangedCallback,
                                          "media.eme.hwdrm.failed");
+    Preferences::RegisterCallback(HWDRMFailedChangedCallback,
+                                  "media.wmf.media-engine.enabled");
   }
 
 #if defined(XP_WIN)
@@ -2409,7 +2406,7 @@ gfxImageFormat gfxPlatform::OptimalFormatForContent(gfxContentType aContent) {
 static mozilla::Atomic<bool> sLayersAccelerationPrefsInitialized(false);
 
 
-void gfxPlatform::VideoDecodingFailedChangedCallback(const char* aPref, void*) {
+void gfxPlatform::HardwareVideoFailedChangedCallback(const char* aPref, void*) {
   MOZ_ASSERT(XRE_IsParentProcess());
   if (gPlatform) {
     gPlatform->InitHardwareVideoConfig();
@@ -2420,7 +2417,7 @@ void gfxPlatform::VideoDecodingFailedChangedCallback(const char* aPref, void*) {
 void gfxPlatform::HWDRMFailedChangedCallback(const char* aPref, void*) {
   MOZ_ASSERT(XRE_IsParentProcess());
   if (gPlatform) {
-    gPlatform->InitPlatformHardwarDRMConfig();
+    gPlatform->InitPlatformHardwareDRMConfig();
   }
 }
 
@@ -2878,16 +2875,14 @@ void gfxPlatform::InitWebRenderConfig() {
     gfxVars::SetReuseDecoderDevice(true);
   }
 
-  if (Preferences::GetBool("gfx.webrender.flip-sequential", false)) {
-    if (gfxVars::UseWebRenderANGLE()) {
-      gfxVars::SetUseWebRenderFlipSequentialWin(true);
-    }
+  if (StaticPrefs::gfx_webrender_flip_sequential_AtStartup() &&
+      gfxVars::UseWebRenderANGLE()) {
+    gfxVars::SetUseWebRenderFlipSequentialWin(true);
   }
-  if (Preferences::GetBool("gfx.webrender.triple-buffering.enabled", false)) {
-    if (gfxVars::UseWebRenderDCompWin() ||
-        gfxVars::UseWebRenderFlipSequentialWin()) {
-      gfxVars::SetUseWebRenderTripleBufferingWin(true);
-    }
+  if (StaticPrefs::gfx_webrender_triple_buffering_enabled_AtStartup() &&
+      (gfxVars::UseWebRenderDCompWin() ||
+       gfxVars::UseWebRenderFlipSequentialWin())) {
+    gfxVars::SetUseWebRenderTripleBufferingWin(true);
   }
 
   if (StaticPrefs::
@@ -3119,9 +3114,16 @@ void gfxPlatform::InitHardwareVideoConfig() {
                             "Force disabled by gfxInfo", failureId);
   } else if (Preferences::GetBool("media.hardware-video-decoding.failed",
                                   false)) {
+    
+    
     featureEnc.ForceDisable(FeatureStatus::Unavailable,
                             "Force disabled by failed sanity test",
                             "FEATURE_FAILURE_SANITY_TEST_FAILED"_ns);
+  } else if (Preferences::GetBool("media.hardware-video-encoding.failed",
+                                  false)) {
+    featureEnc.ForceDisable(FeatureStatus::Unavailable,
+                            "Force disabled by failed encode sanity test",
+                            "FEATURE_FAILURE_SANITY_TEST_ENCODE_FAILED"_ns);
   }
 #ifdef XP_MACOSX
   else if (isXpcshell) {
@@ -3145,7 +3147,7 @@ void gfxPlatform::InitHardwareVideoConfig() {
   gfxVars::SetVideoHDR(featureHdr.IsEnabled());
 
   InitPlatformHardwareVideoConfig();
-  InitPlatformHardwarDRMConfig();
+  InitPlatformHardwareDRMConfig();
 
   nsCString message;
   gfxVars::SetCanUseHardwareVideoDecoding(featureDec.IsEnabled());
