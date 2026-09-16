@@ -190,6 +190,13 @@ const EXPECTED_TRANSCRIPT_BLOCK = [
 const EXPECTED_CONTENT = `${EXPECTED_METADATA_BLOCK}\n\n${EXPECTED_TRANSCRIPT_BLOCK}`;
 
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.pageextractor.youtube.enabled", true]],
+  });
+});
+
+
 
 
 add_task(function test_is_youtube_watch_url() {

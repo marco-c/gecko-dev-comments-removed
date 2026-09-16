@@ -3671,7 +3671,7 @@ pref("browser.ml.pageExtractor.headlessTimeoutMs", 15000);
 
 
 
-pref("browser.pageextractor.youtube.enabled", true);
+pref("browser.pageextractor.youtube.enabled", false);
 
 
 
