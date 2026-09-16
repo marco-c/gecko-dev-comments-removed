@@ -4611,7 +4611,8 @@ void nsTextFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   }
 
   
-  aContent->UnsetFlags(NS_CREATE_FRAME_IF_NON_WHITESPACE);
+  aContent->UnsetFlags(NS_CREATE_FRAME_IF_NON_WHITESPACE |
+                       NS_REFRAME_IF_WHITESPACE);
 
   
   
