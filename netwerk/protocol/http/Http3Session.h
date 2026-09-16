@@ -202,6 +202,14 @@ class Http3Session final : public Http3SessionBase,
                 uint32_t aProviderFlags, nsIInterfaceRequestor* callbacks,
                 nsIUDPSocket* socket, bool aIsTunnel = false);
 
+  
+  
+  
+  
+  
+  
+  void RekeyAfterHttp3OnlyHandOff(nsHttpConnectionInfo* aConnInfo);
+
   bool IsConnected() const { return mState == CONNECTED; }
   bool CanSendData() const {
     return (mState == CONNECTED) || (mState == ZERORTT);

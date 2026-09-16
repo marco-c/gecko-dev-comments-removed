@@ -100,6 +100,13 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   void ReportSpdyConnection(nsHttpConnection*, bool usingSpdy,
                             bool disallowHttp3);
 
+  
+  
+  
+  
+  already_AddRefed<ConnectionEntry> HandOffHttp3OnlyConnection(
+      HttpConnectionBase* aConn, ConnectionEntry* aFromEnt);
+
   void ReportHttp3Connection(HttpConnectionBase* conn,
                              ConnectionEntry* entry = nullptr);
 

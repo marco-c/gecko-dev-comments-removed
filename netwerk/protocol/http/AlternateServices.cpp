@@ -934,7 +934,7 @@ void AltSvcCache::UpdateAltServiceMapping(
     
     
     if (map->IsHttp3()) {
-      ci->SetHttp3Only(true);
+      ci->SetHttp3Policy(Http3Policy::Only);
     }
   }
 

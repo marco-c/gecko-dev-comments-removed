@@ -43,6 +43,26 @@ struct CoalescingKey {
   nsCString mString;
 };
 
+
+
+
+
+enum class Http3Policy : uint8_t {
+  
+  Allowed = 0,
+  
+  
+  
+  Disabled,
+  
+  
+  
+  
+  
+  
+  Only,
+};
+
 class nsHttpConnectionInfo final : public ARefBase {
  public:
   nsHttpConnectionInfo(const nsACString& originHost, int32_t originPort,
@@ -259,12 +279,12 @@ class nsHttpConnectionInfo final : public ARefBase {
   void SetIPv6Disabled(bool aNoIPv6);
   bool GetIPv6Disabled() const { return mIPv6Disabled; }
 
-  
-  
-  
-  
-  void SetHttp3Disabled(bool aHttp3Disabled);
-  bool GetHttp3Disabled() const { return mHttp3Disabled; }
+  void SetHttp3Policy(Http3Policy aPolicy);
+  Http3Policy GetHttp3Policy() const { return mHttp3Policy; }
+  bool GetHttp3Disabled() const {
+    return mHttp3Policy == Http3Policy::Disabled;
+  }
+  bool GetHttp3Only() const { return mHttp3Policy == Http3Policy::Only; }
 
   void SetWebTransport(bool aWebTransport);
   bool GetWebTransport() const { return mWebTransport; }
@@ -317,13 +337,6 @@ class nsHttpConnectionInfo final : public ARefBase {
   void SetHasIPHintAddress(bool aHasIPHint) { mHasIPHintAddress = aHasIPHint; }
   bool HasIPHintAddress() const { return mHasIPHintAddress; }
 
-  
-  
-  
-  
-  void SetHttp3Only(bool aHttp3Only) { mHttp3Only = aHttp3Only; }
-  bool GetHttp3Only() const { return mHttp3Only; }
-
   void SetEchConfig(const nsACString& aEchConfig) { mEchConfig = aEchConfig; }
   const nsCString& GetEchConfig() const { return mEchConfig; }
 
@@ -364,7 +377,8 @@ class nsHttpConnectionInfo final : public ARefBase {
   uint16_t mIsTrrServiceChannel : 1;
   uint16_t mIPv4Disabled : 1;
   uint16_t mIPv6Disabled : 1;
-  uint16_t mHttp3Disabled : 1;
+
+  Http3Policy mHttp3Policy = Http3Policy::Allowed;
 
   bool mLessThanTls13;  
                         
@@ -374,7 +388,6 @@ class nsHttpConnectionInfo final : public ARefBase {
   bool mWebTransport = false;
 
   bool mHasIPHintAddress = false;
-  bool mHttp3Only = false;
   nsCString mEchConfig;
 
   uint64_t mWebTransportId = 0;  

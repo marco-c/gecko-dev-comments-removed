@@ -47,7 +47,7 @@ ConnectionEntry::ConnectionEntry(nsHttpConnectionInfo* ci,
   mConnectionAttemptPool = new ConnectionAttemptPool(this);
 }
 
-bool ConnectionEntry::HasActiveH3Connection() const {
+bool ConnectionEntry::HasUsableH3Connection() const {
   for (const auto& conn : mActiveConns) {
     
     
@@ -61,7 +61,12 @@ bool ConnectionEntry::HasActiveH3Connection() const {
     }
   }
 
-  return mConnectionAttemptPool->UnconnectedUDPConnsLength() > 0;
+  return false;
+}
+
+bool ConnectionEntry::HasActiveH3Connection() const {
+  return HasUsableH3Connection() ||
+         mConnectionAttemptPool->UnconnectedUDPConnsLength() > 0;
 }
 
 bool ConnectionEntry::AvailableForDispatchNow() {

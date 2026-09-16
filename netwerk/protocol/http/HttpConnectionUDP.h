@@ -104,6 +104,8 @@ class HttpConnectionUDP final : public HttpConnectionBase,
 
   void OnConnected();
 
+  void RekeyAfterHttp3OnlyHandOff(nsHttpConnectionInfo* aConnInfo);
+
   void SetDontExclude() override;
 
   

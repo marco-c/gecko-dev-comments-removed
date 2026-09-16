@@ -231,6 +231,10 @@ class ConnectionEntry : public SupportsWeakPtr {
   
   uint32_t TotalActiveConnections() const;
 
+  
+  bool HasUsableH3Connection() const;
+
+  
   bool HasActiveH3Connection() const;
 
   bool RemoveTransFromPendingQ(nsHttpTransaction* aTrans);

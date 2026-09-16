@@ -44,6 +44,12 @@ class HappyEyeballsConnMgrDelegate {
   virtual void ProcessSpdyPendingQ(ConnectionEntry* aEntry) = 0;
 
   
+  
+  
+  virtual already_AddRefed<ConnectionEntry> HandOffHttp3OnlyConnection(
+      HttpConnectionBase* aConn, ConnectionEntry* aFromEnt) = 0;
+
+  
   virtual void InsertIntoActiveConns(ConnectionEntry* aEntry,
                                      HttpConnectionBase* aConn) = 0;
   virtual void RemoveConnectionAttempt(ConnectionEntry* aEntry,
