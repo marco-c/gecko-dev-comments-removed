@@ -127,7 +127,7 @@ def common_toolchain(config, job, taskdesc, is_docker):
 
     if is_docker:
         
-        worker.setdefault("docker-image", {"in-tree": "deb12-toolchain-build"})
+        worker.setdefault("docker-image", {"in-tree": "deb13-toolchain-build"})
 
     if job["worker"]["os"] == "windows":
         
