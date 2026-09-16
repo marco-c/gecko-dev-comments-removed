@@ -333,7 +333,7 @@ void WritableStream::MarkFirstWriteRequestInFlight() {
   MOZ_ASSERT(!mInFlightWriteRequest);
 
   
-  MOZ_ASSERT(!mWriteRequests.IsEmpty());
+  MOZ_RELEASE_ASSERT(!mWriteRequests.IsEmpty());
 
   
   

@@ -86,7 +86,7 @@ inline void DequeueValue(JSContext* aCx, QueueContainingClass aContainer,
                          ErrorResult& aRv) {
   
   
-  MOZ_ASSERT(!aContainer->Queue().isEmpty());
+  MOZ_RELEASE_ASSERT(!aContainer->Queue().isEmpty());
 
   
   
@@ -117,7 +117,7 @@ inline void PeekQueueValue(JSContext* aCx, QueueContainingClass aContainer,
   
   
   
-  MOZ_ASSERT(!aContainer->Queue().isEmpty());
+  MOZ_RELEASE_ASSERT(!aContainer->Queue().isEmpty());
 
   
   ValueWithSize* valueWithSize = aContainer->Queue().getFirst();

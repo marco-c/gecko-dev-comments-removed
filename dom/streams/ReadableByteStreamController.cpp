@@ -679,7 +679,7 @@ void ReadableStreamFulfillReadIntoRequest(JSContext* aCx,
   ReadableStreamBYOBReader* reader = aStream->GetReader()->AsBYOB();
 
   
-  MOZ_ASSERT(!reader->ReadIntoRequests().isEmpty());
+  MOZ_RELEASE_ASSERT(!reader->ReadIntoRequests().isEmpty());
 
   
   
@@ -1600,7 +1600,7 @@ void ReadableByteStreamControllerRespond(
     JSContext* aCx, ReadableByteStreamController* aController,
     uint64_t aBytesWritten, ErrorResult& aRv) {
   
-  MOZ_ASSERT(!aController->PendingPullIntos().isEmpty());
+  MOZ_RELEASE_ASSERT(!aController->PendingPullIntos().isEmpty());
 
   
   PullIntoDescriptor* firstDescriptor =
@@ -1657,7 +1657,7 @@ void ReadableByteStreamControllerRespondWithNewView(
   aRv.MightThrowJSException();
 
   
-  MOZ_ASSERT(!aController->PendingPullIntos().isEmpty());
+  MOZ_RELEASE_ASSERT(!aController->PendingPullIntos().isEmpty());
 
   
   bool isSharedMemory;

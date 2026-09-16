@@ -850,7 +850,7 @@ void ReadableStreamFulfillReadRequest(JSContext* aCx, ReadableStream* aStream,
   ReadableStreamDefaultReader* reader = aStream->GetDefaultReader();
 
   
-  MOZ_ASSERT(!reader->ReadRequests().isEmpty());
+  MOZ_RELEASE_ASSERT(!reader->ReadRequests().isEmpty());
 
   
   RefPtr<ReadRequest> readRequest = reader->ReadRequests().popFirst();
