@@ -5444,6 +5444,9 @@ gfxRect SVGTextFrame::TransformFrameRectFromTextChild(
     gfxRect rectInFrameUserSpace = AppUnitsToFloatCSSPixels(rectInTextFrame);
 
     
+    rectInFrameUserSpace.Scale(1.0 / mFontSizeScaleFactor);
+
+    
     TextRenderedRun::GeometryFlags flags(
         TextRenderedRun::GeometryFlag::IncludeFill,
         TextRenderedRun::GeometryFlag::IncludeStroke);
