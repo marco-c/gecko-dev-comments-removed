@@ -3004,6 +3004,13 @@ ParentLayerPoint APZCTreeManager::DispatchFling(
   ParentLayerPoint finalResidualVelocity = aHandoffState.mVelocity;
 
   ParentLayerPoint currentVelocity = aHandoffState.mVelocity;
+
+  
+  
+  
+  
+  ParentLayerPoint refusedVelocity;
+
   for (; startIndex < overscrollHandoffChainLength; startIndex++) {
     current = chain->GetApzcAtIndex(startIndex);
 
@@ -3026,18 +3033,20 @@ ParentLayerPoint APZCTreeManager::DispatchFling(
     }
 
     ParentLayerPoint availableVelocity = (endPoint - startPoint);
-    ParentLayerPoint residualVelocity;
 
     FlingHandoffState transformedHandoffState = aHandoffState;
-    transformedHandoffState.mVelocity = availableVelocity;
-
     
+    transformedHandoffState.mVelocity = availableVelocity - refusedVelocity;
+
     if (prevApzc) {
-      residualVelocity += prevApzc->AdjustHandoffVelocityForOverscrollBehavior(
+      refusedVelocity += prevApzc->AdjustHandoffVelocityForOverscrollBehavior(
           transformedHandoffState.mVelocity);
     }
 
-    residualVelocity += current->AttemptFling(transformedHandoffState);
+    ParentLayerPoint velocityToHandOff =
+        current->AttemptFling(transformedHandoffState);
+
+    ParentLayerPoint residualVelocity = refusedVelocity + velocityToHandOff;
 
     
     if (current->IsZero(residualVelocity)) {
@@ -3056,6 +3065,12 @@ ParentLayerPoint APZCTreeManager::DispatchFling(
       finalResidualVelocity.y *= (residualVelocity.y / availableVelocity.y);
     }
 
+    
+    
+    
+    if (current->IsZero(velocityToHandOff)) {
+      break;
+    }
     currentVelocity = residualVelocity;
   }
 
