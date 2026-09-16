@@ -135,6 +135,7 @@ class Startup_test:
         
         
         measurements[f"{self.test_name}.mean"] = test_measurements
+        measurements[self.test_name] = test_measurements
         return measurements
 
     def get_measurement(self, test_name, stdout):
