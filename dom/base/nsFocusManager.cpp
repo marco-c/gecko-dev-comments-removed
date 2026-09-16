@@ -4168,14 +4168,16 @@ void ScopedContentTraversal::Next() {
 
   
   if (mCurrent == mOwner) {
-    if (IsHostOrSlot(mCurrent)) {
-      StyleChildrenIterator iter(mCurrent);
-      SetCurrent(GetNextNonPopover(iter));
+    
+    
+    
+    if (Element* popover = GetAssociatedPopoverFromInvoker(mCurrent)) {
+      SetCurrent(popover);
       return;
     }
-
-    SetCurrent(GetAssociatedPopoverFromInvoker(mCurrent));
-    MOZ_ASSERT(mCurrent);
+    MOZ_ASSERT(IsHostOrSlot(mCurrent));
+    StyleChildrenIterator iter(mCurrent);
+    SetCurrent(GetNextNonPopover(iter));
     return;
   }
 
@@ -4192,8 +4194,12 @@ void ScopedContentTraversal::Next() {
   while (true) {
     
     
+    
     if (GetOpenPopoverInvoker(current) == mOwner) {
-      SetCurrent(nullptr);
+      
+      
+      StyleChildrenIterator iter(mOwner);
+      SetCurrent(GetNextNonPopover(iter));
       return;
     }
 
@@ -4228,40 +4234,11 @@ static nsIContent* GetPreviousNonPopover(StyleChildrenIterator& aIter) {
   return nullptr;
 }
 
-void ScopedContentTraversal::Prev() {
-  MOZ_ASSERT(mCurrent);
 
-  nsIContent* parent;
-  nsIContent* last;
-  if (mCurrent == mOwner) {
-    
-    if (IsHostOrSlot(mCurrent)) {
-      StyleChildrenIterator ownerIter(mCurrent, false );
-      last = GetPreviousNonPopover(ownerIter);
-    } else {
-      last = GetAssociatedPopoverFromInvoker(mCurrent);
-      MOZ_ASSERT(last);
-    }
 
-    parent = last;
-  } else {
-    parent = GetOpenPopoverInvoker(mCurrent);
-    if (parent) {
-      MOZ_ASSERT(parent == mOwner);
-      
-      
-      last = nullptr;
-    } else {
-      
-      parent = mCurrent->GetFlattenedTreeParent();
-      StyleChildrenIterator parentIter(parent);
-      parentIter.Seek(mCurrent);
-
-      
-      last = GetPreviousNonPopover(parentIter);
-    }
-  }
-
+static nsIContent* GetLastDescendantInSameScope(nsIContent& aContent) {
+  nsIContent* parent = nullptr;
+  nsIContent* last = &aContent;
   while (last) {
     parent = last;
     if (IsScopeOwner(parent)) {
@@ -4273,9 +4250,60 @@ void ScopedContentTraversal::Prev() {
     StyleChildrenIterator iter(parent, false );
     last = GetPreviousNonPopover(iter);
   }
+  MOZ_ASSERT(FindScopeOwner(parent) == FindScopeOwner(&aContent));
+  return parent;
+}
 
-  
-  SetCurrent(parent == mOwner ? nullptr : parent);
+void ScopedContentTraversal::Prev() {
+  MOZ_ASSERT(mCurrent);
+
+  nsIContent* parent;
+  nsIContent* last;
+  if (mCurrent == mOwner) {
+    
+    StyleChildrenIterator ownerIter(mCurrent, false );
+    last = GetPreviousNonPopover(ownerIter);
+    parent = mOwner;
+  } else {
+    parent = GetOpenPopoverInvoker(mCurrent);
+    if (parent) {
+      MOZ_ASSERT(parent == mOwner);
+      
+      
+      SetCurrent(nullptr);
+      return;
+    } else {
+      
+      parent = mCurrent->GetFlattenedTreeParent();
+      StyleChildrenIterator parentIter(parent);
+      parentIter.Seek(mCurrent);
+
+      
+      last = GetPreviousNonPopover(parentIter);
+    }
+  }
+
+  if (last) {
+    
+    
+    last = GetLastDescendantInSameScope(*last);
+  } else {
+    
+    last = parent;
+  }
+
+  if (last == mOwner) {
+    
+    
+    
+    
+    if (Element* popover = GetAssociatedPopoverFromInvoker(mOwner)) {
+      
+      
+      last = GetLastDescendantInSameScope(*popover);
+    }
+  }
+  SetCurrent(last == mOwner ? nullptr : last);
 }
 
 static nsGenericHTMLElement* GetAssociatedPopoverFromInvoker(
@@ -4300,6 +4328,9 @@ static bool IsScopeOwner(const nsIContent* aContent) {
   return aContent && (IsHostOrSlot(aContent) || aContent->IsDocument() ||
                       !!GetAssociatedPopoverFromInvoker(aContent));
 }
+
+
+
 
 
 
