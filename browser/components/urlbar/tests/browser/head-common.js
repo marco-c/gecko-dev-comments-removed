@@ -10,6 +10,8 @@ ChromeUtils.defineESModuleGetters(this, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
   TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.sys.mjs",
   TopSites: "resource:///modules/topsites/TopSites.sys.mjs",
+  UrlbarParentController:
+    "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs",
   UrlbarProvider: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   ProvidersManager:
     "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
@@ -63,6 +65,22 @@ ChromeUtils.defineLazyGetter(this, "SearchTestUtils", () => {
   module.init(this);
   return module;
 });
+
+
+
+
+
+
+
+
+async function addTopSites(url) {
+  for (let i = 0; i < 5; i++) {
+    await PlacesTestUtils.addVisits(url);
+  }
+  await updateTopSites(sites => {
+    return sites && sites[0] && sites[0].url == url;
+  });
+}
 
 
 
@@ -400,4 +418,87 @@ function waitForLoadStartOrTimeout(win = window, timeoutMs = 1000) {
     win.gBrowser.removeTabsProgressListener(listener);
     win.clearTimeout(timeout);
   });
+}
+
+
+
+
+
+function assertAbandonmentTelemetry(expectedExtraList) {
+  return waitForGleanTelemetry("abandonment", expectedExtraList);
+}
+
+function assertEngagementTelemetry(expectedExtraList) {
+  return waitForGleanTelemetry("engagement", expectedExtraList);
+}
+
+function assertExposureTelemetry(expectedExtraList) {
+  return waitForGleanTelemetry("exposure", expectedExtraList);
+}
+
+function assertDisableTelemetry(expectedExtraList) {
+  assertGleanTelemetry("disable", expectedExtraList);
+}
+
+function assertBounceTelemetry(expectedExtraList) {
+  return waitForGleanTelemetry("bounce", expectedExtraList);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function waitForGleanTelemetry(telemetryName, expectedExtraList) {
+  const camelName = telemetryName.replaceAll(/_(.)/g, (match, p1) =>
+    p1.toUpperCase()
+  );
+  await TestUtils.waitForCondition(
+    () =>
+      (Glean.urlbar[camelName].testGetValue() ?? []).length >=
+      expectedExtraList.length,
+    `Waiting for ${expectedExtraList.length} ${telemetryName} telemetry event(s)`
+  ).catch(() => {
+    
+  });
+  assertGleanTelemetry(telemetryName, expectedExtraList);
+}
+
+function assertGleanTelemetry(telemetryName, expectedExtraList) {
+  const camelName = telemetryName.replaceAll(/_(.)/g, (match, p1) =>
+    p1.toUpperCase()
+  );
+  const telemetries = Glean.urlbar[camelName].testGetValue() ?? [];
+  info(
+    "Asserting Glean telemetry is correct, actual events are: " +
+      JSON.stringify(telemetries)
+  );
+  Assert.equal(
+    telemetries.length,
+    expectedExtraList.length,
+    "Telemetry event length matches expected event length."
+  );
+
+  for (let i = 0; i < telemetries.length; i++) {
+    const telemetry = telemetries[i];
+    Assert.equal(telemetry.category, "urlbar");
+    Assert.equal(telemetry.name, telemetryName);
+
+    const expectedExtra = expectedExtraList[i];
+    for (const key of Object.keys(expectedExtra)) {
+      Assert.equal(
+        telemetry.extra[key],
+        expectedExtra[key],
+        `${key} is correct`
+      );
+    }
+  }
 }
