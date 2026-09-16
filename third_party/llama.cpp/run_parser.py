@@ -93,6 +93,14 @@ if __name__ == '__main__':
             all_exports.extend(headers)
             all_sources["{}".format(arch.upper())] = sources
 
+    
+    
+    
+    metal_dir = os.path.join(LLAMA_DIR, 'ggml/src/ggml-metal')
+    if os.path.exists(os.path.join(metal_dir, 'ggml-metal-device.m')):
+        os.rename(os.path.join(metal_dir, 'ggml-metal-device.m'),
+                  os.path.join(metal_dir, 'ggml-metal-device-m.m'))
+
     all_sources = deduplicate_into(all_sources, "COMMON")
     rename_rules = [
         ("ggml.c", "ggml-c.c"),
