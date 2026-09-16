@@ -1210,27 +1210,39 @@ class TaskCache(CacheManager):
         
         tree = tree.split("/")[1] if "/" in tree else tree
 
+        
+        
+        
+        
+        
+        
+        
         if job.endswith("-opt"):
-            tree += ".shippable"
-
-        namespace = f"{job_configuration.trust_domain}.v2.{tree}.revision.{rev}.{job_configuration.product}.{job}"
-        self.log(
-            logging.DEBUG,
-            "artifact",
-            {"namespace": namespace},
-            "Searching Taskcluster index with namespace: {namespace}",
-        )
+            if os.environ.get("MOZ_ARTIFACT_ALLOW_NON_SHIPPABLE"):
+                trees = [f"{tree}.shippable", tree]
+            else:
+                trees = [f"{tree}.shippable"]
+        else:
+            trees = [tree]
 
         from taskcluster.exceptions import TaskclusterRestFailure
 
-        try:
-            index = get_taskcluster_client("index")
-            task = index.findTask(namespace)
-            taskId = task["taskId"]
-        except (KeyError, TaskclusterRestFailure) as e:
-            if isinstance(e, TaskclusterRestFailure) and e.status_code != 404:
-                raise
-
+        index = get_taskcluster_client("index")
+        for candidate_tree in trees:
+            namespace = f"{job_configuration.trust_domain}.v2.{candidate_tree}.revision.{rev}.{job_configuration.product}.{job}"
+            self.log(
+                logging.DEBUG,
+                "artifact",
+                {"namespace": namespace},
+                "Searching Taskcluster index with namespace: {namespace}",
+            )
+            try:
+                taskId = index.findTask(namespace)["taskId"]
+                break
+            except (KeyError, TaskclusterRestFailure) as e:
+                if isinstance(e, TaskclusterRestFailure) and e.status_code != 404:
+                    raise
+        else:
             
             
             raise ValueError(f"Task for {namespace} does not exist (yet)!")
