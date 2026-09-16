@@ -25,10 +25,6 @@ char kTSanDefaultSuppressions[] =
 
     
     
-    "race:third_party/libvpx/source/libvpx/vp9/common/vp9_scan.h\n"
-
-    
-    
     "race:rtc_base/logging.cc\n"
 
     
