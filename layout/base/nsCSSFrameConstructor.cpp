@@ -11207,8 +11207,12 @@ bool nsCSSFrameConstructor::FrameConstructionItem::IsWhitespace(
   if (!mIsText) {
     return false;
   }
-  mContent->SetFlags(NS_CREATE_FRAME_IF_NON_WHITESPACE |
-                     NS_REFRAME_IF_WHITESPACE);
+  
+  
+  if (!(aState.mAdditionalStateBits & NS_FRAME_GENERATED_CONTENT)) {
+    mContent->SetFlags(NS_CREATE_FRAME_IF_NON_WHITESPACE |
+                       NS_REFRAME_IF_WHITESPACE);
+  }
   return mContent->TextIsOnlyWhitespace();
 }
 
