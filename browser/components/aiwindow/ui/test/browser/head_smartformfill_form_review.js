@@ -247,6 +247,27 @@ function waitForFormReviewTabChange(sourceEvent) {
 
 
 
+
+
+
+
+
+
+
+
+async function openTabAndWaitForTabList(win, url) {
+  const tabListUpdated = waitForFormReviewTabChange("TabAttrModified");
+  const tab = await BrowserTestUtils.openNewForegroundTab(win.gBrowser, url);
+  await tabListUpdated;
+
+  return tab;
+}
+
+
+
+
+
+
 async function setupFormReviewTest() {
   const context = {
     originalRegion: Region.home,
@@ -272,16 +293,8 @@ async function setupFormReviewTest() {
 
     context.win = await openAIWindow();
 
-    const sourceTabUpdated = waitForFormReviewTabChange("TabAttrModified");
-    await BrowserTestUtils.openNewForegroundTab(
-      context.win.gBrowser,
-      SOURCE_URL
-    );
-    await sourceTabUpdated;
-
-    const formTabUpdated = waitForFormReviewTabChange("TabAttrModified");
-    await BrowserTestUtils.openNewForegroundTab(context.win.gBrowser, FORM_URL);
-    await formTabUpdated;
+    await openTabAndWaitForTabList(context.win, SOURCE_URL);
+    await openTabAndWaitForTabList(context.win, FORM_URL);
 
     const sidebarBrowser = await BrowserTestUtils.waitForMutationCondition(
       context.win.document.documentElement,
@@ -539,7 +552,12 @@ async function editFormReviewInput(reviewBrowser, index, value) {
 
       EventUtils.synthesizeMouseAtCenter(input.inputEl, {}, content);
       EventUtils.synthesizeKey("a", { accelKey: true }, content);
-      await EventUtils.sendString(inputValue, content);
+      EventUtils.synthesizeKey("KEY_Backspace", {}, content);
+
+      if (inputValue) {
+        await EventUtils.sendString(inputValue, content);
+      }
+
       await review.updateComplete;
     }
   );

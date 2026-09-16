@@ -27,6 +27,9 @@ const CONTACT_FIELDS = 2;
 const TEST_MODEL_INFO = { model: "test-model", promptVersion: "42" };
 
 
+const GENERATED_VALUE = "generated value";
+
+
 
 
 
@@ -58,12 +61,52 @@ async function classifyEveryField(request, { onDispatch } = {}) {
 
 
 
+function classifyAs(typeByFieldName) {
+  return async (request, { onDispatch } = {}) => {
+    onDispatch?.(TEST_MODEL_INFO);
+
+    return {
+      fields: request.fields.map(({ id, name }) => ({
+        id,
+        type: typeByFieldName.get(name),
+        confidence: "high",
+      })),
+    };
+  };
+}
+
+
+
+
+
+
+
+
 
 
 async function selectNoTabs(request, { onDispatch } = {}) {
   onDispatch?.(TEST_MODEL_INFO);
 
   return { selectedTabs: [] };
+}
+
+
+
+
+
+
+
+
+
+
+async function selectTheFirstTab(request, { onDispatch } = {}) {
+  onDispatch?.(TEST_MODEL_INFO);
+
+  return {
+    selectedTabs: request.tabs
+      .slice(0, 1)
+      .map(({ id }) => ({ id, relevance: "high" })),
+  };
 }
 
 
@@ -83,7 +126,7 @@ async function generateEveryValue(request, { onDispatch } = {}) {
     fields: request.fields.map(({ id }) => ({
       id,
       action: "generate",
-      value: "generated value",
+      value: GENERATED_VALUE,
       confidence: "high",
     })),
     batches: { total: 1, failed: 0 },
@@ -142,6 +185,7 @@ async function closeFormReview(win, browser) {
 
 
 
+
 async function withFormPage(overrides, callback) {
   Services.fog.testResetFOG();
 
@@ -157,10 +201,14 @@ async function withFormPage(overrides, callback) {
     .callsFake(overrides.generateFormValues ?? generateEveryValue);
 
   const win = await openAIWindow();
-  const tab = await BrowserTestUtils.openNewForegroundTab(
-    win.gBrowser,
-    TEST_PAGE
-  );
+
+  
+  
+  for (const url of overrides.contextTabs ?? []) {
+    await openTabAndWaitForTabList(win, url);
+  }
+
+  const tab = await openTabAndWaitForTabList(win, TEST_PAGE);
   const browser = tab.linkedBrowser;
   const actor =
     browser.browsingContext.currentWindowGlobal.getActor("SmartFormFill");
@@ -296,7 +344,8 @@ async function runRoundOnForm(browser, actor, selector = "#email") {
 
 
 
-async function fillFormReview(win, browser) {
+
+async function getFormReview(win, browser) {
   const dialogManager = win.gBrowser
     .getTabDialogBox(browser)
     .getTabDialogManager();
@@ -311,8 +360,21 @@ async function fillFormReview(win, browser) {
   const reviewBrowser = dialog._frame.contentWindow.document.querySelector(
     "#form-review-browser"
   );
-
   await waitForFormReviewState(reviewBrowser, FORM_REVIEW_STATES.REVIEW);
+
+  return { dialog, reviewBrowser };
+}
+
+
+
+
+
+
+
+
+
+async function fillFormReview(win, browser) {
+  const { reviewBrowser } = await getFormReview(win, browser);
   
   
   await scrollFormReviewFieldsToBottom(reviewBrowser);
@@ -327,15 +389,56 @@ async function fillFormReview(win, browser) {
 
 
 
+async function cancelFormReview(win, browser) {
+  const { dialog, reviewBrowser } = await getFormReview(win, browser);
+  const closed = waitForFormReviewClose(win, dialog);
+  await activateFormReviewButton(
+    reviewBrowser,
+    "ai-smart-form-fill-cancel-review"
+  );
+  await closed;
+}
 
 
-async function fillContactForm(win, browser, actor) {
+
+
+
+
+
+
+function addFieldToForm(browser) {
+  return SpecialPowers.spawn(browser, [], () => {
+    const input = content.document.createElement("input");
+    input.type = "text";
+    input.name = "city";
+    content.document.getElementById("contact").append(input);
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function fillContactForm(
+  win,
+  browser,
+  actor,
+  fieldCount = CONTACT_FIELDS
+) {
   await runRoundOnForm(browser, actor);
   await fillFormReview(win, browser);
 
   
   
-  await waitForEvents("formFillField", CONTACT_FIELDS);
+  await waitForEvents("formFillField", fieldCount);
   await closeFormReview(win, browser);
   await SimpleTest.promiseFocus(browser);
 }
