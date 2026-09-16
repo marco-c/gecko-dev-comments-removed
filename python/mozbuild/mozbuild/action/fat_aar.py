@@ -34,7 +34,11 @@ def print_copy_result(elapsed, destdir, result):
     )
 
 
-def _download_zip(distdir, arch):
+def _artifact_job(arch, appservices_in_tree):
+    
+    
+    
+    
     
     
     
@@ -42,7 +46,24 @@ def _download_zip(distdir, arch):
         "arm64-v8a": "android-aarch64-opt",
         "armeabi-v7a": "android-arm-opt",
         "x86_64": "android-x86_64-opt",
+        "darwin-aarch64": "macosx64-aarch64-opt",
+        "darwin-x86-64": "macosx64-opt",
+        "linux-x86-64": "linux64-opt",
+        "linux-aarch64": "linux64-aarch64-opt",
+        "win32-x86-64": "win64-opt",
+        "win32-aarch64": "win64-aarch64-opt",
     }
+
+    job = jobs[arch]
+    if appservices_in_tree and job.startswith("android-"):
+        
+        
+        job = job.replace("-opt", "-appservices-opt")
+    return job
+
+
+def _download_zip(distdir, arch, artifact_filter):
+    job = _artifact_job(arch, buildconfig.substs.get("MOZ_APPSERVICES_IN_TREE"))
 
     dest = mozpath.join(distdir, "input", arch)
     subprocess.check_call([
@@ -51,20 +72,26 @@ def _download_zip(distdir, arch):
         "artifact",
         "install",
         "--job",
-        jobs[arch],
+        job,
         "--distdir",
         dest,
         "--no-tests",
         "--no-process",
         "--artifact-filter",
-        "public/build/target.maven.zip",
+        artifact_filter,
     ])
-    return mozpath.join(dest, "target.maven.zip")
+    return mozpath.join(dest, mozpath.basename(artifact_filter))
 
 
 def fat_aar(
-    distdir, zip_paths, no_process=False, no_compatibility_check=False, verbose=False
+    distdir,
+    android_zip_paths,
+    desktop_zip_paths=None,
+    no_process=False,
+    no_compatibility_check=False,
+    verbose=False,
 ):
+    desktop_zip_paths = desktop_zip_paths or {}
     if no_process:
         print("Not processing architecture-specific artifact Maven AARs.")
         return 0
@@ -77,8 +104,10 @@ def fat_aar(
     
     copier = FileCopier()
 
-    for arch, zip_path_opt in zip_paths.items():
-        zip_path = zip_path_opt or _download_zip(distdir, arch)
+    for arch, android_zip_path in android_zip_paths.items():
+        zip_path = android_zip_path or _download_zip(
+            distdir, arch, "public/build/target.maven.zip"
+        )
         if verbose:
             print(f"Processing '{zip_path}' for architecture {arch}")
         
@@ -127,7 +156,9 @@ def fat_aar(
 
         for key, aar_path, aar_file, aar_prefix in aars:
             if verbose:
-                print(f"Processing '{key}' AAR '{aar_path}' for architecture {arch}")
+                print(
+                    f"Processing '{key}' AAR '{aar_path}' for Android architecture {arch}"
+                )
 
             jar_finder = JarFinder(
                 aar_file.file.filename, JarReader(fileobj=aar_file.open())
@@ -218,6 +249,23 @@ def fat_aar(
     if not no_compatibility_check and (missing_arch_prefs or not_allowed):
         return 1
 
+    
+    for arch, desktop_zip_path in desktop_zip_paths.items():
+        if not desktop_zip_path:
+            print(
+                f"Disallowed: no archive was provided for Desktop architecture "
+                f"{arch}; Desktop app-services archives must be supplied "
+                "explicitly."
+            )
+            return 1
+
+        zip_path = desktop_zip_path
+        if verbose:
+            print(f"Processing '{zip_path}' for Desktop architecture {arch}")
+
+        for path, file in JarFinder(zip_path, JarReader(zip_path)):
+            copier.add(mozpath.join("desktop", "resources", arch, path), file)
+
     output_dir = mozpath.join(distdir, "output")
     result = copier.copy(output_dir)
 
@@ -234,12 +282,35 @@ def fat_aar(
 _ALL_ARCHS = ("armeabi-v7a", "arm64-v8a", "x86_64")
 
 
+_ALL_DESKTOP_ARCHS = (
+    "darwin-aarch64",
+    "darwin-x86-64",
+    "linux-x86-64",
+    "linux-aarch64",
+    "win32-x86-64",
+    "win32-aarch64",
+)
+
+
 def main(argv):
     description = """Fetch and unpack architecture-specific Maven zips, verify cross-architecture
 compatibility, and ready inputs to an Android multi-architecture fat AAR build."""
 
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("architectures", metavar="arch", nargs="+", choices=_ALL_ARCHS)
+    parser.add_argument(
+        "--android-architectures",
+        metavar="android-arch",
+        nargs="+",
+        choices=_ALL_ARCHS,
+        required=True,
+    )
+    parser.add_argument(
+        "--desktop-architectures",
+        metavar="desktop-arch",
+        nargs="*",
+        choices=_ALL_DESKTOP_ARCHS,
+        default=[],
+    )
     parser.add_argument(
         "--no-process", action="store_true", help="Do not process Maven AARs."
     )
@@ -251,21 +322,28 @@ compatibility, and ready inputs to an Android multi-architecture fat AAR build."
     parser.add_argument("--distdir", required=True)
     parser.add_argument("--verbose", "-v", action="store_true", default=False)
 
-    for arch in _ALL_ARCHS:
+    for arch in (*_ALL_ARCHS, *_ALL_DESKTOP_ARCHS):
         command_line_flag = arch.replace("_", "-")
         parser.add_argument(f"--{command_line_flag}", dest=arch)
 
     args = parser.parse_args(argv)
     args_dict = vars(args)
 
-    zip_paths = {arch: args_dict.get(arch) for arch in args.architectures}
+    android_zip_paths = {
+        arch: args_dict.get(arch) for arch in args.android_architectures
+    }
 
-    if not zip_paths:
-        raise ValueError("You must provide at least one Maven zip!")
+    if not android_zip_paths:
+        raise ValueError("You must provide at least one Android Maven zip!")
+
+    desktop_zip_paths = {
+        arch: args_dict.get(arch) for arch in args.desktop_architectures
+    }
 
     return fat_aar(
         args.distdir,
-        zip_paths,
+        android_zip_paths,
+        desktop_zip_paths,
         no_process=args.no_process,
         no_compatibility_check=args.no_compatibility_check,
         verbose=args.verbose,
