@@ -305,6 +305,13 @@ class nsAccUtils {
 
 
 
+  static bool ShouldFireValueChangeForDescendantChanges(
+      const LocalAccessible* aAccessible);
+
+  
+
+
+
   static bool IsValidDetailsTargetForAnchor(const Accessible* aDetails,
                                             const Accessible* aTarget);
 };
