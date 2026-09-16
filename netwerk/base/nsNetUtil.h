@@ -140,6 +140,12 @@ nsresult NS_GetSanitizedURIStringFromURI(nsIURI* aUri,
 
 
 
+void NS_GetSanitizedSpecFromSpec(const nsACString& aSpec,
+                                 nsACString& aSanitizedSpec);
+
+
+
+
 
 
 
@@ -1197,6 +1203,10 @@ void ParseSimpleURISchemes(const nsACString& schemeList);
 
 nsresult AddExtraHeaders(nsIHttpChannel* aHttpChannel,
                          const nsACString& aExtraHeaders, bool aMerge = true);
+
+
+
+nsILoadInfo::IPAddressSpace GetParentIPAddressSpace(nsILoadInfo* aLoadInfo);
 
 bool IsLocalOrPrivateNetworkAccess(
     nsILoadInfo::IPAddressSpace aParentIPAddressSpace,

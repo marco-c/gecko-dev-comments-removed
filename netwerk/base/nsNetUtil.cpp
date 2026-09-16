@@ -27,7 +27,9 @@
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
+#include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/nsCSPUtils.h"
 #include "mozilla/dom/nsHTTPSOnlyUtils.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
@@ -2148,6 +2150,31 @@ nsresult NS_GetSanitizedURIStringFromURI(nsIURI* aUri,
     aSanitizedSpec.Assign(cSpec);
   }
   return rv;
+}
+
+void NS_GetSanitizedSpecFromSpec(const nsACString& aSpec,
+                                 nsACString& aSanitizedSpec) {
+  aSanitizedSpec.Assign(aSpec);
+
+  
+  
+  
+  
+  if (!aSpec.Contains('@')) {
+    return;
+  }
+
+  nsCOMPtr<nsIURI> uri;
+  nsAutoCString password;
+  if (NS_FAILED(NS_NewURI(getter_AddRefs(uri), aSpec)) ||
+      NS_FAILED(uri->GetPassword(password)) || password.IsEmpty()) {
+    return;
+  }
+
+  
+  if (NS_FAILED(NS_GetSanitizedURIStringFromURI(uri, aSanitizedSpec))) {
+    aSanitizedSpec.Truncate();
+  }
 }
 
 nsresult NS_LoadPersistentPropertiesFromURISpec(
@@ -4276,6 +4303,31 @@ nsresult AddExtraHeaders(nsIHttpChannel* aHttpChannel,
     NS_ENSURE_SUCCESS(rv, rv);
   }
   return NS_OK;
+}
+
+nsILoadInfo::IPAddressSpace GetParentIPAddressSpace(nsILoadInfo* aLoadInfo) {
+  MOZ_ASSERT(aLoadInfo);
+
+  RefPtr<mozilla::dom::BrowsingContext> bc;
+  aLoadInfo->GetBrowsingContext(getter_AddRefs(bc));
+  if (bc) {
+    return bc->GetCurrentIPAddressSpace();
+  }
+
+  
+  
+  
+  nsCOMPtr<nsIPolicyContainer> policyContainer =
+      aLoadInfo->GetPolicyContainer();
+  if (policyContainer) {
+    nsILoadInfo::IPAddressSpace addressSpace =
+        PolicyContainer::Cast(policyContainer)->GetIPAddressSpace();
+    if (addressSpace != nsILoadInfo::Unknown) {
+      return addressSpace;
+    }
+  }
+
+  return aLoadInfo->GetParentIpAddressSpace();
 }
 
 bool IsLocalHostAccess(

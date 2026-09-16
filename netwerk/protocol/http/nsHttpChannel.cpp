@@ -2209,22 +2209,7 @@ nsresult nsHttpChannel::InitTransaction() {
   mLoadInfo->GetBrowsingContext(getter_AddRefs(bc));
 
   nsILoadInfo::IPAddressSpace parentAddressSpace =
-      nsILoadInfo::IPAddressSpace::Unknown;
-  
-  
-  Maybe<dom::ClientInfo> clientInfo = mLoadInfo->GetClientInfo();
-  if (clientInfo.isSome() && clientInfo->Type() != dom::ClientType::Window) {
-    nsCOMPtr<nsIPolicyContainer> policyContainer =
-        mLoadInfo->GetPolicyContainer();
-    if (policyContainer) {
-      parentAddressSpace =
-          PolicyContainer::Cast(policyContainer)->GetIPAddressSpace();
-    }
-  } else if (!bc) {
-    parentAddressSpace = mLoadInfo->GetParentIpAddressSpace();
-  } else {
-    parentAddressSpace = bc->GetCurrentIPAddressSpace();
-  }
+      mozilla::net::GetParentIPAddressSpace(mLoadInfo);
 
   
   
@@ -10044,20 +10029,7 @@ static void RecordLNATelemetry(nsHttpChannel* aChannel, bool aLoadSuccess) {
   loadInfo->GetBrowsingContext(getter_AddRefs(bc));
 
   nsILoadInfo::IPAddressSpace parentAddressSpace =
-      nsILoadInfo::IPAddressSpace::Unknown;
-  Maybe<dom::ClientInfo> clientInfo = loadInfo->GetClientInfo();
-  if (clientInfo.isSome() && clientInfo->Type() != dom::ClientType::Window) {
-    nsCOMPtr<nsIPolicyContainer> policyContainer =
-        loadInfo->GetPolicyContainer();
-    if (policyContainer) {
-      parentAddressSpace =
-          PolicyContainer::Cast(policyContainer)->GetIPAddressSpace();
-    }
-  } else if (!bc) {
-    parentAddressSpace = loadInfo->GetParentIpAddressSpace();
-  } else {
-    parentAddressSpace = bc->GetCurrentIPAddressSpace();
-  }
+      mozilla::net::GetParentIPAddressSpace(loadInfo);
 
   
   if (!mozilla::net::IsLocalOrPrivateNetworkAccess(

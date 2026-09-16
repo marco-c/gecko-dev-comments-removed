@@ -15,6 +15,7 @@
 #include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
 #include "nsIConsoleService.h"
+#include "nsIContentPolicy.h"
 #include "nsIIOService.h"
 #include "nsIOService.h"
 #include "nsIPermissionManager.h"
@@ -215,15 +216,22 @@ nsresult LNAPermissionRequest::RequestPermission() {
 
   
   
+  
+  
+  
+  
+  bool isNotificationIcon = mLoadInfo->InternalContentPolicyType() ==
+                            nsIContentPolicy::TYPE_INTERNAL_IMAGE_NOTIFICATION;
   Maybe<dom::ClientInfo> clientInfo = mLoadInfo->GetClientInfo();
-  if (clientInfo.isSome() &&
-      (clientInfo->Type() == dom::ClientType::Sharedworker ||
-       clientInfo->Type() == dom::ClientType::Serviceworker)) {
+  if (isNotificationIcon ||
+      (clientInfo.isSome() &&
+       (clientInfo->Type() == dom::ClientType::Sharedworker ||
+        clientInfo->Type() == dom::ClientType::Serviceworker))) {
     nsCOMPtr<nsIPermissionManager> permMgr =
         mozilla::components::PermissionManager::Service();
     if (!permMgr || !mPrincipal) {
       NS_WARNING(
-          "LNA worker permission check failed: no permission manager or "
+          "LNA non-prompting permission check failed: no permission manager or "
           "principal");
       return Cancel();
     }
@@ -241,7 +249,13 @@ nsresult LNAPermissionRequest::RequestPermission() {
       nsAutoCString origin;
       mPrincipal->GetOrigin(origin);
       nsAutoString msg;
-      msg.AppendLiteral("Local Network Access blocked: worker from origin ");
+      msg.AppendLiteral("Local Network Access blocked: ");
+      if (isNotificationIcon) {
+        msg.AppendLiteral("notification icon load");
+      } else {
+        msg.AppendLiteral("worker");
+      }
+      msg.AppendLiteral(" from origin ");
       msg.Append(NS_ConvertUTF8toUTF16(origin));
       msg.AppendLiteral(" attempted ");
       msg.Append(NS_ConvertUTF8toUTF16(mType));
