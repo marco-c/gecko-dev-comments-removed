@@ -3354,7 +3354,13 @@ void ScrollContainerFrame::ScrollToImpl(
   presContext->RecordInteractionTime(
       nsPresContext::InteractionType::ScrollInteraction, TimeStamp::Now());
 
-  PostScrollEvent(curPos);
+  
+  
+  const bool restoringNonRootScrollPosition =
+      aOrigin == ScrollOrigin::Restore && !mIsRoot;
+  if (!restoringNonRootScrollPosition) {
+    PostScrollEvent(curPos);
+  }
 
   
   
