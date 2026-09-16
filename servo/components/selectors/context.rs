@@ -168,6 +168,7 @@ where
 
     
     
+    #[allow(clippy::type_complexity)]
     pub pseudo_element_matching_fn: Option<&'a dyn Fn(&Impl::PseudoElement) -> bool>,
 
     
@@ -260,6 +261,7 @@ where
         )
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn new_internal(
         matching_mode: MatchingMode,
         bloom_filter: Option<&'a BloomFilter>,
