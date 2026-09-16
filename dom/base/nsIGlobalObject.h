@@ -419,7 +419,7 @@ class nsIGlobalObject : public nsISupports {
   nsTArray<RefPtr<mozilla::dom::ReportingObserver>> mReportingObservers;
   
   nsTArray<RefPtr<mozilla::dom::Report>> mReportBuffer;
-  nsTHashMap<nsString, uint32_t> mReportPerTypeCount;
+  nsTHashMap<RefPtr<nsAtom>, uint32_t> mReportPerTypeCount;
 
   
   RefPtr<mozilla::dom::Function> mCountQueuingStrategySizeFunction;

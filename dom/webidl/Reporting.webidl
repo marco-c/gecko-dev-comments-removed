@@ -1,4 +1,3 @@
-/* -*- Mode: IDL; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -21,8 +20,8 @@ interface ReportBody {
 interface Report {
   [Default] object toJSON
 ();
-  readonly attribute DOMString type;
-  readonly attribute DOMString url;
+  readonly attribute UTF8String type;
+  readonly attribute UTF8String url;
   readonly attribute ReportBody? body;
 };
 

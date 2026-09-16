@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/Report.h"
 
 #include "mozilla/dom/ReportBody.h"
@@ -21,10 +19,11 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(Report)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-Report::Report(nsIGlobalObject* aGlobal, const nsAString& aType,
-               const nsAString& aURL, ReportBody* aBody)
+Report::Report(nsIGlobalObject* aGlobal, nsAtom* aType, const nsACString& aURL,
+               ReportBody* aBody)
     : mGlobal(aGlobal), mType(aType), mURL(aURL), mBody(aBody) {
   MOZ_ASSERT(aGlobal);
+  MOZ_ASSERT(aType);
 }
 
 Report::~Report() = default;
@@ -39,9 +38,11 @@ JSObject* Report::WrapObject(JSContext* aCx,
   return Report_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-void Report::GetType(nsAString& aType) const { aType = mType; }
+nsAtom* Report::Type() const { return mType; }
 
-void Report::GetUrl(nsAString& aURL) const { aURL = mURL; }
+void Report::GetType(nsACString& aType) const { mType->ToUTF8String(aType); }
+
+void Report::GetUrl(nsACString& aURL) const { aURL = mURL; }
 
 ReportBody* Report::GetBody() const { return mBody; }
 
