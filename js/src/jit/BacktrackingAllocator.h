@@ -215,7 +215,7 @@ class LiveRange : public TempObject, public InlineForwardListNode<LiveRange> {
 
   
   
-  LiveBundle* bundle_;
+  LiveBundle* bundle_ = nullptr;
 
   
   Range range_;
@@ -228,23 +228,14 @@ class LiveRange : public TempObject, public InlineForwardListNode<LiveRange> {
   
   
   
-  size_t usesSpillWeight_;
+  uint32_t numFixedUses_ = 0;
+  uint32_t numRegisterUses_ = 0;
+  uint32_t numAnyUses_ = 0;
 
   
-  uint32_t numFixedUses_;
+  bool hasDefinition_ = false;
 
-  
-  bool hasDefinition_;
-
-  LiveRange(VirtualRegister* vreg, Range range)
-      : vreg_(vreg),
-        bundle_(nullptr),
-        range_(range),
-        usesSpillWeight_(0),
-        numFixedUses_(0),
-        hasDefinition_(false)
-
-  {
+  LiveRange(VirtualRegister* vreg, Range range) : vreg_(vreg), range_(range) {
     MOZ_ASSERT(!range.empty());
   }
 
@@ -308,8 +299,9 @@ class LiveRange : public TempObject, public InlineForwardListNode<LiveRange> {
     hasDefinition_ = true;
   }
 
-  size_t usesSpillWeight() { return usesSpillWeight_; }
-  uint32_t numFixedUses() { return numFixedUses_; }
+  uint32_t numFixedUses() const { return numFixedUses_; }
+  uint32_t numRegisterUses() const { return numRegisterUses_; }
+  uint32_t numAnyUses() const { return numAnyUses_; }
 
 #ifdef JS_JITSPEW
   
