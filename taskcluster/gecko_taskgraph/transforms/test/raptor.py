@@ -477,7 +477,7 @@ def apply_raptor_device_optimization(config, tests):
     
     for test in tests:
         if test["test-platform"].startswith("android-hw-a55"):
-            test["optimization"] = {"skip-unless-backstop": None}
+            test["optimization"] = {"perf-cadence-backstop": None}
         yield test
 
 

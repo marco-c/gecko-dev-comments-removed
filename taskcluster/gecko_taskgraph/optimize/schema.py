@@ -33,6 +33,11 @@ default_optimizations = (
     {"skip-unless-backstop": None},
     {"skip-unless-android-perftest-backstop": None},
     
+    {"perf-cadence-android": None},
+    {"perf-cadence-backstop": None},
+    {"perf-cadence-default": list(schedules.ALL_COMPONENTS)},
+    {"perf-cadence-expanded": None},
+    
     {"skip-unless-changed": [str]},
     {"skip-unless-missing-or-changed": [voluptuous.Any(str, [str])]},
     
@@ -72,6 +77,11 @@ class OptimizationSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     skip_unless_backstop: Optional[None] = None
     skip_unless_android_perftest_backstop: Optional[None] = None
     
+    perf_cadence_android: Optional[None] = None
+    perf_cadence_backstop: Optional[None] = None
+    perf_cadence_default: Optional[list[str]] = None
+    perf_cadence_expanded: Optional[None] = None
+    
     skip_unless_changed: Optional[list[str]] = None
     skip_unless_missing_or_changed: Optional[list[Union[str, list[str]]]] = None
     
@@ -92,6 +102,7 @@ class OptimizationSchema(Schema, forbid_unknown_fields=False, kw_only=True):
 
     _COMPONENT_FIELDS = (
         "build",
+        "perf_cadence_default",
         "skip_unless_schedules",
         "test",
         "test_inclusive",
