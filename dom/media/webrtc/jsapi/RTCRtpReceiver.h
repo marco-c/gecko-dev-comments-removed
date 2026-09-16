@@ -175,6 +175,19 @@ class RTCRtpReceiver : public nsISupports,
   void UpdateVideoConduit();
   void UpdateAudioConduit();
 
+  
+  
+  
+  
+  
+  
+  bool CanReceiveEarlyMedia() const;
+
+  
+  
+  
+  bool HasNegotiatedBundleOwner() const;
+
   std::string GetMid() const;
   JsepTransceiver& GetJsepTransceiver();
   const JsepTransceiver& GetJsepTransceiver() const;

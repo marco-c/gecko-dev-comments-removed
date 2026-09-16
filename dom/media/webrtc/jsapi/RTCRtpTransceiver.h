@@ -34,6 +34,7 @@ class MediaPipelineFilter;
 class MediaTransportHandler;
 class RTCStatsIdGenerator;
 class WebrtcCallWrapper;
+class JsepTrack;
 class JsepTrackNegotiatedDetails;
 class PeerConnectionImpl;
 enum class PrincipalPrivacy : uint8_t;
@@ -171,6 +172,17 @@ class RTCRtpTransceiver : public nsISupports, public nsWrapperCache {
   static void NegotiatedDetailsToVideoCodecConfigs(
       const JsepTrackNegotiatedDetails& aDetails,
       std::vector<VideoCodecConfig>* aConfigs);
+
+  
+  
+  
+  
+  
+  static void EarlyRecvCodecsToAudioCodecConfigs(
+      JsepTrack& aTrack, std::vector<AudioCodecConfig>* aConfigs);
+
+  static void EarlyRecvCodecsToVideoCodecConfigs(
+      JsepTrack& aTrack, std::vector<VideoCodecConfig>* aConfigs);
 
   static void ToDomRtpCodec(const JsepCodecDescription& aCodec,
                             RTCRtpCodec* aDomCodec);

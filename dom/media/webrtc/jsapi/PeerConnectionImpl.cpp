@@ -3089,12 +3089,17 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
           
           
           
+          
+          
+          
+          
           for (const auto& transceiverImpl : mTransceivers) {
             if ((transceiverImpl->Direction() ==
                  RTCRtpTransceiverDirection::Sendrecv) ||
                 (transceiverImpl->Direction() ==
                  RTCRtpTransceiverDirection::Recvonly)) {
               transceiverImpl->Receiver()->UpdateTransport();
+              transceiverImpl->Receiver()->UpdateConduit();
             }
           }
         }

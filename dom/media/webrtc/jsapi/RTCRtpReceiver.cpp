@@ -801,6 +801,48 @@ void RTCRtpReceiver::UpdateTransport() {
   }
 }
 
+bool RTCRtpReceiver::CanReceiveEarlyMedia() const {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!GetJsepTransceiver().mRecvTrack.GetReceptive()) {
+    
+    
+    
+    
+    
+    return false;
+  }
+  if (GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails()) {
+    
+    
+    
+    return false;
+  }
+  
+  
+  
+  return GetJsepTransceiver().HasBundleLevel() && HasNegotiatedBundleOwner();
+}
+
+bool RTCRtpReceiver::HasNegotiatedBundleOwner() const {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(GetJsepTransceiver().HasBundleLevel());
+  
+  
+  
+  
+  
+  nsTArray<RefPtr<RTCRtpTransceiver>> transceivers;
+  mPc->GetTransceivers(transceivers);
+  for (const auto& transceiver : transceivers) {
+    const JsepTransceiver& jsepTransceiver = transceiver->GetJsepTransceiver();
+    if (jsepTransceiver.HasLevel() &&
+        jsepTransceiver.GetLevel() == GetJsepTransceiver().BundleLevel()) {
+      return jsepTransceiver.IsNegotiated();
+    }
+  }
+  return false;
+}
+
 void RTCRtpReceiver::UpdateConduit() {
   if (mPipeline->mConduit->type() == MediaSessionConduit::VIDEO) {
     UpdateVideoConduit();
@@ -808,7 +850,7 @@ void RTCRtpReceiver::UpdateConduit() {
     UpdateAudioConduit();
   }
 
-  if ((mReceiving = mTransceiver->IsReceiving())) {
+  if ((mReceiving = mTransceiver->IsReceiving() || CanReceiveEarlyMedia())) {
     mHaveStartedReceiving = true;
   }
 }
@@ -878,6 +920,17 @@ void RTCRtpReceiver::UpdateVideoConduit() {
 
     mVideoCodecs = configs;
     mVideoRtpRtcpConfig = Some(details.GetRtpRtcpConfig());
+  } else if (CanReceiveEarlyMedia()) {
+    
+    
+    std::vector<VideoCodecConfig> configs;
+    RTCRtpTransceiver::EarlyRecvCodecsToVideoCodecConfigs(
+        GetJsepTransceiver().mRecvTrack, &configs);
+    if (!configs.empty()) {
+      mVideoCodecs = configs;
+      mVideoRtpRtcpConfig =
+          Some(RtpRtcpConfig(webrtc::RtcpMode::kCompound, true));
+    }
   }
 }
 
@@ -936,6 +989,15 @@ void RTCRtpReceiver::UpdateAudioConduit() {
     }
 
     mAudioCodecs = configs;
+  } else if (CanReceiveEarlyMedia()) {
+    
+    
+    std::vector<AudioCodecConfig> configs;
+    RTCRtpTransceiver::EarlyRecvCodecsToAudioCodecConfigs(
+        GetJsepTransceiver().mRecvTrack, &configs);
+    if (!configs.empty()) {
+      mAudioCodecs = configs;
+    }
   }
 }
 
