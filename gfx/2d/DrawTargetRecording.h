@@ -165,6 +165,19 @@ class DrawTargetRecording final : public DrawTarget {
 
 
 
+  virtual void StrokeCircle(
+      const Point& aOrigin, float aRadius, const Pattern& aPattern,
+      const StrokeOptions& aStrokeOptions = StrokeOptions(),
+      const DrawOptions& aOptions = DrawOptions()) override;
+
+  
+
+
+
+
+
+
+
   virtual void Stroke(const Path* aPath, const Pattern& aPattern,
                       const StrokeOptions& aStrokeOptions = StrokeOptions(),
                       const DrawOptions& aOptions = DrawOptions()) override;
