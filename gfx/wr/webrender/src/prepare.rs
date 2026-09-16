@@ -391,8 +391,7 @@ fn prepare_prim_for_render(
 
             let task = prim_data.kind.prepare(
                 prim_info.snapped_pattern_rect.size(),
-                prim_spatial_node_index,
-                frame_context,
+                quad_transform.scale_factors(),
                 frame_state,
             );
 
@@ -532,8 +531,6 @@ fn prepare_prim_for_render(
                     transformed_aa_edges,
                 },
                 &prim_info.clip_chain,
-                prim_spatial_node_index,
-                device_pixel_scale,
                 quad_transform,
                 frame_context,
                 pic_context,
@@ -1058,9 +1055,9 @@ fn prepare_prim_for_render(
             frame_state.surface_builder.register_resolve_source();
 
             if frame_context.debug_flags.contains(DebugFlags::HIGHLIGHT_BACKDROP_FILTERS) {
-                if let Some(world_rect) = pic_state.map_pic_to_vis.map(&prim_info.clip_chain.pic_coverage_rect) {
+                if let Some(device_rect) = pic_state.map_pic_to_device.map(&prim_info.clip_chain.pic_coverage_rect) {
                     scratch.push_debug_rect(
-                        world_rect.cast_unit(),
+                        device_rect,
                         2,
                         crate::debug_colors::MAGENTA,
                         ColorF::TRANSPARENT,
