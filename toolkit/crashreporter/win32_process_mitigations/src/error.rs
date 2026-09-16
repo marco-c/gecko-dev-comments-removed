@@ -8,10 +8,7 @@ use thiserror::Error;
 
 
 #[derive(Debug, Error)]
-pub enum DetectConflictError {
-    
-    #[error("exploit protection key missing")]
-    ExploitProtectionKeyMissing,
+pub enum MitigationOptionsError {
     
     #[error("failed to enumerate next registry subkey. code: {0}")]
     RegEnumKeyFailed(u32),
@@ -25,11 +22,16 @@ pub enum DetectConflictError {
     #[error("failed to open registry key. code: {0}")]
     RegOpenKeyFailed(u32),
     
-    #[error("exploit protection registry value too short")]
-    RegValueTooShort,
-    
     #[error("failed to query key for max subkey length. code: {0}")]
     RegQueryInfoKeyFailed(u32),
+    
+    #[error("registry value has length {actual}, expected {expected}")]
+    UnexpectedValueLength {
+        
+        expected: u32,
+        
+        actual: u32,
+    },
     
     #[error("key has unsupported value type: {0}")]
     UnsupportedValueType(u32),

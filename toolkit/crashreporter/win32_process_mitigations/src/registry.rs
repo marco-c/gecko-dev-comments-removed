@@ -4,7 +4,7 @@
 
 
 
-use super::error::DetectConflictError;
+use super::error::MitigationOptionsError;
 
 use std::ffi::{OsStr, OsString};
 use std::os::windows::ffi::{OsStrExt, OsStringExt};
@@ -15,10 +15,11 @@ use winapi::{
         winerror::{ERROR_FILE_NOT_FOUND, ERROR_NO_MORE_ITEMS, ERROR_SUCCESS},
     },
     um::{
-        winnt::{KEY_READ, REG_BINARY, REG_DWORD, REG_SZ},
+        winnt::{KEY_READ, REG_BINARY, REG_DWORD, REG_QWORD, REG_SZ},
         winreg::{
             RegCloseKey, RegEnumKeyExW, RegGetValueW, RegOpenKeyExW, RegQueryInfoKeyW,
-            HKEY_LOCAL_MACHINE, RRF_RT_REG_BINARY, RRF_RT_REG_DWORD, RRF_RT_REG_SZ,
+            HKEY_LOCAL_MACHINE, RRF_RT_REG_BINARY, RRF_RT_REG_DWORD, RRF_RT_REG_QWORD,
+            RRF_RT_REG_SZ,
         },
     },
 };
@@ -46,7 +47,7 @@ impl RegKey {
     pub fn try_open_subkey(
         &self,
         subkey: impl AsRef<OsStr>,
-    ) -> Result<Option<RegKey>, DetectConflictError> {
+    ) -> Result<Option<RegKey>, MitigationOptionsError> {
         let win32_subkey = to_win32_string(subkey.as_ref());
 
         let mut subkey_handle = std::ptr::null_mut();
@@ -71,7 +72,7 @@ impl RegKey {
                 }))
             }
             ERROR_FILE_NOT_FOUND => Ok(None),
-            _ => Err(DetectConflictError::RegOpenKeyFailed(rv)),
+            _ => Err(MitigationOptionsError::RegOpenKeyFailed(rv)),
         }
     }
     
@@ -82,7 +83,7 @@ impl RegKey {
     pub fn try_get_value(
         &self,
         value_name: impl AsRef<OsStr>,
-    ) -> Result<Option<RegValue>, DetectConflictError> {
+    ) -> Result<Option<RegValue>, MitigationOptionsError> {
         let win32_value_name = to_win32_string(value_name.as_ref());
 
         
@@ -94,7 +95,7 @@ impl RegKey {
                 self.handle,
                 std::ptr::null(), 
                 win32_value_name.as_ptr(),
-                RRF_RT_REG_BINARY | RRF_RT_REG_DWORD | RRF_RT_REG_SZ,
+                RRF_RT_REG_BINARY | RRF_RT_REG_DWORD | RRF_RT_REG_QWORD | RRF_RT_REG_SZ,
                 &mut value_type,
                 std::ptr::null_mut(), 
                 &mut value_len,
@@ -108,7 +109,7 @@ impl RegKey {
         }
 
         if rv != ERROR_SUCCESS || value_len == 0 {
-            return Err(DetectConflictError::RegGetValueLenFailed(rv));
+            return Err(MitigationOptionsError::RegGetValueLenFailed(rv));
         }
 
         if value_type == REG_SZ {
@@ -134,7 +135,7 @@ impl RegKey {
             .unwrap();
 
             if rv != ERROR_SUCCESS {
-                return Err(DetectConflictError::RegGetValueFailed(rv));
+                return Err(MitigationOptionsError::RegGetValueFailed(rv));
             }
 
             Ok(Some(RegValue::String(from_win32_string(&buffer))))
@@ -156,12 +157,17 @@ impl RegKey {
             .unwrap();
 
             if rv != ERROR_SUCCESS {
-                return Err(DetectConflictError::RegGetValueFailed(rv));
+                return Err(MitigationOptionsError::RegGetValueFailed(rv));
             }
 
             Ok(Some(RegValue::Binary(buffer)))
         } else if value_type == REG_DWORD {
-            assert_eq!(value_len, 4);
+            if value_len != 4 {
+                return Err(MitigationOptionsError::UnexpectedValueLength {
+                    expected: 4,
+                    actual: value_len,
+                });
+            }
 
             let mut buffer = 0u32;
 
@@ -180,12 +186,41 @@ impl RegKey {
             .unwrap();
 
             if rv != ERROR_SUCCESS {
-                return Err(DetectConflictError::RegGetValueFailed(rv));
+                return Err(MitigationOptionsError::RegGetValueFailed(rv));
             }
 
             Ok(Some(RegValue::Dword(buffer)))
+        } else if value_type == REG_QWORD {
+            if value_len != 8 {
+                return Err(MitigationOptionsError::UnexpectedValueLength {
+                    expected: 8,
+                    actual: value_len,
+                });
+            }
+
+            let mut buffer = 0u64;
+
+            let rv = unsafe {
+                RegGetValueW(
+                    self.handle,
+                    std::ptr::null(), 
+                    win32_value_name.as_ptr(),
+                    RRF_RT_REG_QWORD,
+                    std::ptr::null_mut(), 
+                    (&mut buffer as *mut u64).cast(),
+                    &mut value_len,
+                )
+            }
+            .try_into()
+            .unwrap();
+
+            if rv != ERROR_SUCCESS {
+                return Err(MitigationOptionsError::RegGetValueFailed(rv));
+            }
+
+            Ok(Some(RegValue::Qword(buffer)))
         } else {
-            Err(DetectConflictError::UnsupportedValueType(value_type))
+            Err(MitigationOptionsError::UnsupportedValueType(value_type))
         }
     }
     
@@ -236,7 +271,7 @@ impl<'a> SubkeyNames<'a> {
     }
     
     
-    fn create_buffer_if_needed(&mut self) -> Result<(), DetectConflictError> {
+    fn create_buffer_if_needed(&mut self) -> Result<(), MitigationOptionsError> {
         if self.buffer.is_some() {
             return Ok(());
         }
@@ -263,7 +298,7 @@ impl<'a> SubkeyNames<'a> {
         .unwrap();
 
         if rv != ERROR_SUCCESS {
-            return Err(DetectConflictError::RegQueryInfoKeyFailed(rv));
+            return Err(MitigationOptionsError::RegQueryInfoKeyFailed(rv));
         }
 
         
@@ -276,7 +311,7 @@ impl<'a> SubkeyNames<'a> {
 }
 
 impl<'a> Iterator for SubkeyNames<'a> {
-    type Item = Result<OsString, DetectConflictError>;
+    type Item = Result<OsString, MitigationOptionsError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Err(e) = self.create_buffer_if_needed() {
@@ -306,7 +341,7 @@ impl<'a> Iterator for SubkeyNames<'a> {
         }
 
         if rv != ERROR_SUCCESS {
-            return Some(Err(DetectConflictError::RegEnumKeyFailed(rv)));
+            return Some(Err(MitigationOptionsError::RegEnumKeyFailed(rv)));
         }
 
         self.index += 1;
@@ -325,6 +360,8 @@ pub enum RegValue {
     Binary(Vec<u8>),
     
     Dword(u32),
+    
+    Qword(u64),
     
     String(OsString),
 }
@@ -349,12 +386,9 @@ fn to_win32_string(s: &OsStr) -> Vec<u16> {
 
 
 
+
+
 fn from_win32_string(s: &[u16]) -> OsString {
-    for (idx, wc) in s.iter().enumerate() {
-        if *wc == 0 {
-            assert_eq!(idx, s.len() - 1);
-            return OsString::from_wide(&s[0..idx]);
-        }
-    }
-    panic!("missing null terminator at end of win32 string");
+    let end = s.iter().position(|wc| *wc == 0).unwrap_or(s.len());
+    OsString::from_wide(&s[0..end])
 }
