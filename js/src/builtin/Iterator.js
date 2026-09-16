@@ -526,6 +526,16 @@ function IteratorTake(limit) {
   }
 
   
+  if (
+    Number_isNaN(numLimit) ||
+    (Number_isFinite(numLimit) && numLimit > (2 ** 53) - 1)
+  ) {
+    try {
+      IteratorClose(iterator);
+    } catch {}
+    ThrowRangeError(JSMSG_LIMIT_TOO_LARGE);
+  }
+
   var integerLimit = std_Math_trunc(numLimit);
   if (!(integerLimit >= 0)) {
     try {
@@ -616,6 +626,16 @@ function IteratorDrop(limit) {
   }
 
   
+  if (
+    Number_isNaN(numLimit) ||
+    (Number_isFinite(numLimit) && numLimit > (2 ** 53) - 1)
+  ) {
+    try {
+      IteratorClose(iterator);
+    } catch {}
+    ThrowRangeError(JSMSG_LIMIT_TOO_LARGE);
+  }
+
   var integerLimit = std_Math_trunc(numLimit);
   if (!(integerLimit >= 0)) {
     try {
