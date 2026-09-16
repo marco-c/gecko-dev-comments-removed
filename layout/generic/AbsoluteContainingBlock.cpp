@@ -2250,17 +2250,6 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       
       isOverflowingCB = !fits;
       fallback.CommitCurrentFallback();
-      if (currentFallbackIndex.isNothing()) {
-        if (auto* prop = aKidFrame->GetProperty(
-                nsIFrame::LastSuccessfulPositionFallback())) {
-          
-          
-          MOZ_ASSERT(!fallbacks.IsEmpty(), "how?");
-          prop->mLastIndex.reset();
-          prop->mLastStyle = nullptr;
-          prop->mTriedAllFallbacks = isOverflowingCB;
-        }
-      }
       break;
     }
 
@@ -2349,11 +2338,14 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     }
   }();
 
-  if (currentFallbackIndex) {
-    auto* lastSuccessfulPosition = aKidFrame->GetOrCreateDeletableProperty(
-        nsIFrame::LastSuccessfulPositionFallback());
-    
-    
+  
+  
+  auto* lastSuccessfulPosition =
+      currentFallbackIndex
+          ? aKidFrame->GetOrCreateDeletableProperty(
+                nsIFrame::LastSuccessfulPositionFallback())
+          : aKidFrame->GetProperty(nsIFrame::LastSuccessfulPositionFallback());
+  if (lastSuccessfulPosition) {
     lastSuccessfulPosition->mLastIndex = currentFallbackIndex;
     lastSuccessfulPosition->mLastStyle = std::move(currentFallbackStyle);
     lastSuccessfulPosition->mTriedAllFallbacks = isOverflowingCB;
