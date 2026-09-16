@@ -1124,13 +1124,6 @@ void SpeechRecognition::HandleRecognitionResultFromBackend(
   
   
   
-  
-  
-  if (!mContinuous && !mRecognitionResults.IsEmpty()) {
-    LOG("Ignoring result - non-continuous session already delivered its final "
-        "result");
-    return;
-  }
 
   RefPtr<SpeechRecognitionResult> result = new SpeechRecognitionResult(this);
 
@@ -1171,15 +1164,6 @@ void SpeechRecognition::HandleRecognitionResultFromBackend(
     domEvent->WidgetEventPtr()->mTimeStamp = aEventTime;
   }
   DispatchEvent(*domEvent);
-
-  
-  
-  
-  
-  
-  if (aIsFinal && !mContinuous) {
-    Stop();
-  }
 }
 
 void SpeechRecognition::HandleRecognitionErrorFromBackend(
