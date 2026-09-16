@@ -193,19 +193,20 @@ boolean_t mach_exc_server(mach_msg_header_t* InHeadP,
   Request* In0P = (Request*)InHeadP;
   Reply* OutP = (Reply*)OutHeadP;
 
+  OutP->NDR = NDR_record;
   if (In0P->task.name != mach_task_self()) {
     
     
     
-    return TRUE;
+    OutP->RetCode = KERN_FAILURE;
   }
-
-  OutP->RetCode = ForwardException(In0P->task.name,
-                                   In0P->thread.name,
-                                   In0P->exception,
-                                   In0P->code,
-                                   In0P->codeCnt);
-  OutP->NDR = NDR_record;
+  else {
+    OutP->RetCode = ForwardException(In0P->task.name,
+                                     In0P->thread.name,
+                                     In0P->exception,
+                                     In0P->code,
+                                     In0P->codeCnt);
+  }
   return TRUE;
 }
 
