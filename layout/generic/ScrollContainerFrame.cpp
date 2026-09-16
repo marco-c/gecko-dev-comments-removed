@@ -6058,43 +6058,44 @@ void ScrollContainerFrame::EnableOverlayScrollbars() {
 
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP ScrollEvent::Run() {
-  RefPtr<nsPresContext> presContext = mTarget->OwnerDoc()->GetPresContext();
+  RefPtr<nsPresContext> pc = mTarget->OwnerDoc()->GetPresContext();
   AutoProfilerTracing scrollEventMarker(
       "ScrollEvent::Run", geckoprofiler::category::GRAPHICS,
       std::move(mBacktrace),
       geckoprofiler::markers::detail::
-          profiler_get_inner_window_id_from_docshell(
-              presContext ? presContext->GetDocShell() : nullptr));
+          profiler_get_inner_window_id_from_docshell(pc ? pc->GetDocShell()
+                                                        : nullptr));
 
-  WidgetGUIEvent event(true, eScroll, nullptr);
+  Maybe<layers::ScrollLinkedEffectDetector> detector;
+  if (pc) {
+    
+    detector.emplace(pc->Document(), pc->RefreshDriver()->MostRecentRefresh());
+  }
+
   nsEventStatus status = nsEventStatus_eIgnore;
-  
-  
-  mozilla::layers::ScrollLinkedEffectDetector detector(
-      mTarget->GetComposedDoc(),
-      presContext->RefreshDriver()->MostRecentRefresh());
+  WidgetGUIEvent event(true, eScroll, nullptr);
   
   
   event.mFlags.mBubbles = !mTarget->IsElement();
-  EventDispatcher::Dispatch(MOZ_KnownLive(mTarget), presContext, &event,
-                            nullptr, &status);
+  EventDispatcher::Dispatch(MOZ_KnownLive(mTarget), pc, &event, nullptr,
+                            &status);
   return NS_OK;
 }
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP ScrollEndEvent::Run() {
-  RefPtr<nsPresContext> presContext = mTarget->OwnerDoc()->GetPresContext();
+  RefPtr<nsPresContext> pc = mTarget->OwnerDoc()->GetPresContext();
   AutoProfilerTracing scrollEventMarker(
       "ScrollEndEvent::Run", geckoprofiler::category::GRAPHICS,
       std::move(mBacktrace),
       geckoprofiler::markers::detail::
-          profiler_get_inner_window_id_from_docshell(
-              presContext ? presContext->GetDocShell() : nullptr));
+          profiler_get_inner_window_id_from_docshell(pc ? pc->GetDocShell()
+                                                        : nullptr));
   nsEventStatus status = nsEventStatus_eIgnore;
   WidgetGUIEvent event(true, eScrollend, nullptr);
   event.mFlags.mBubbles = !mTarget->IsElement();
   event.mFlags.mCancelable = false;
-  EventDispatcher::Dispatch(MOZ_KnownLive(mTarget), presContext, &event,
-                            nullptr, &status);
+  EventDispatcher::Dispatch(MOZ_KnownLive(mTarget), pc, &event, nullptr,
+                            &status);
   return NS_OK;
 }
 
