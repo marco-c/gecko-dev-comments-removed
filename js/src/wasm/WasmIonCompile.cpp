@@ -5270,9 +5270,10 @@ class FunctionCompiler {
     }
 
     
+    
     auto* boundsCheck =
         MWasmBoundsCheck::New(alloc(), index, numElements, trapSiteDesc(),
-                              MWasmBoundsCheck::Target::Other);
+                              MWasmBoundsCheck::Target::Array);
     if (!boundsCheck) {
       return nullptr;
     }

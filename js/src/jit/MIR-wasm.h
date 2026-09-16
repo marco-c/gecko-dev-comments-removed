@@ -726,6 +726,8 @@ class MWasmBoundsCheck : public MBinaryInstruction, public NoTypePolicy::Data {
     Table,
     
     
+    Array,
+    
     Other,
   };
 
@@ -744,7 +746,8 @@ class MWasmBoundsCheck : public MBinaryInstruction, public NoTypePolicy::Data {
     MOZ_ASSERT(index->type() == boundsCheckLimit->type());
     MOZ_ASSERT_IF(target == Memory || target == Table,
                   targetIndex != UINT32_MAX);
-    MOZ_ASSERT_IF(target == Other, targetIndex == UINT32_MAX);
+    MOZ_ASSERT_IF(target == Array || target == Other,
+                  targetIndex == UINT32_MAX);
 
     
     setGuard();

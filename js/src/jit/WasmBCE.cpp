@@ -98,6 +98,26 @@ bool jit::EliminateBoundsChecks(const MIRGenerator* mir, MIRGraph& graph) {
             initialLength =
                 mir->wasmCodeMeta()->tables[bc->targetIndex()].initialLength();
           } break;
+          case MWasmBoundsCheck::Array: {
+            
+            
+            
+            
+            MDefinition* limit = bc->boundsCheckLimit();
+            if (!limit->isWasmLoadField() ||
+                !limit->toWasmLoadField()->base()->isWasmNewArrayObject()) {
+              continue;
+            }
+            MDefinition* numElements = limit->toWasmLoadField()
+                                           ->base()
+                                           ->toWasmNewArrayObject()
+                                           ->numElements();
+            if (!numElements->isConstant() ||
+                numElements->type() != MIRType::Int32) {
+              continue;
+            }
+            initialLength = numElements->toConstant()->toInt32();
+          } break;
           default:
             MOZ_CRASH();
         }
@@ -110,7 +130,8 @@ bool jit::EliminateBoundsChecks(const MIRGenerator* mir, MIRGraph& graph) {
             MOZ_ASSERT(!bc->hasUses());
           }
         }
-      } else {
+      } else if (bc->target() == MWasmBoundsCheck::Memory ||
+                 bc->target() == MWasmBoundsCheck::Table) {
         
         
 
