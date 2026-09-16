@@ -8,12 +8,14 @@
 #define mozilla_dom_SpeechRecognitionBackend_h
 
 #include "AudioSegment.h"
+#include "MainThreadUtils.h"
+#include "mozilla/DataMutex.h"
 #include "mozilla/EventTargetCapability.h"
 #include "mozilla/LazyIdleThread.h"
 #include "mozilla/MoveOnlyFunction.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/SPSCQueue.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/ThreadSafeWeakPtr.h"
 #include "mozilla/ThreadSafety.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WeakPtr.h"
@@ -30,6 +32,8 @@ class SpeechRecognitionChild;
 
 namespace mozilla {
 class AudibilityMonitor;
+class AudioConverter;
+class MediaTrackGraph;
 namespace dom {
 class AudioStreamTrack;
 class SpeechRecognition;
@@ -40,6 +44,11 @@ class SpeechTrackListener;
 namespace mozilla::dom {
 
 class Promise;
+
+
+
+
+enum class TrailingEvents { Fire, Skip };
 
 
 
@@ -65,22 +74,35 @@ class SpeechRecognitionIPCActorUserGuard final {
   ~SpeechRecognitionIPCActorUserGuard();
 };
 
-class SpeechRecognitionBackend
-    : public SupportsThreadSafeWeakPtr<SpeechRecognitionBackend> {
+
+
+
+
+
+
+
+
+
+
+
+class SpeechRecognitionBackend {
   friend class SpeechRecognitionIPCActorUserGuard;
 
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_MAIN_THREAD(
       SpeechRecognitionBackend)
 
-  SpeechRecognitionBackend(SpeechRecognition* aParent, uint32_t aGraphRate,
-                           const nsString& aLanguage,
-                           const nsTArray<nsString>& aPhrases)
+  
+  
+  static already_AddRefed<SpeechRecognitionBackend> Create(
+      SpeechRecognition* aParent, uint32_t aGraphRate,
+      const nsString& aLanguage, const nsTArray<nsString>& aPhrases)
       MOZ_REQUIRES(sMainThreadCapability);
+
   
   
   
-  nsresult Start() MOZ_REQUIRES(sMainThreadCapability);
+  void Start() MOZ_REQUIRES(sMainThreadCapability);
   
   
   
@@ -88,7 +110,10 @@ class SpeechRecognitionBackend
   
   
   
-  void Abort() MOZ_REQUIRES(sMainThreadCapability);
+  
+  
+  void Abort(TrailingEvents aTrailingEvents)
+      MOZ_REQUIRES(sMainThreadCapability);
 
   
   
@@ -100,7 +125,8 @@ class SpeechRecognitionBackend
   
   
   
-  void DataCallback(TrackTime aTime, const AudioChunk& aChunk);
+  void DataCallback(MediaTrackGraph* aGraph, TrackTime aTime,
+                    const AudioChunk& aChunk);
   
   void NotifyTrackEnded();
 
@@ -113,16 +139,41 @@ class SpeechRecognitionBackend
                          const nsTArray<nsCString>& aLanguages);
 
  private:
+  SpeechRecognitionBackend(SpeechRecognition* aParent,
+                           nsIThread* aResamplingThread, uint32_t aGraphRate,
+                           const nsString& aLanguage,
+                           const nsTArray<nsString>& aPhrases)
+      MOZ_REQUIRES(sMainThreadCapability);
   virtual ~SpeechRecognitionBackend();
 
   
-  void StartSpeechRecognitionSession(const nsCString& aLanguage)
+  
+  
+  void Shutdown(bool aWaitForFlush, TrailingEvents aTrailingEvents)
+      MOZ_REQUIRES(sMainThreadCapability);
+
+  
+  
+  void DispatchTrailingEvents() MOZ_REQUIRES(sMainThreadCapability);
+  
+  
+  
+  void NotifySessionFinished(bool aProducedResult);
+
+  
+  void ProcessAudioChunk() MOZ_REQUIRES(mResamplingCapability);
+  void SendAudioDataViaIPC(nsTArray<float>&& aAudioData)
+      MOZ_REQUIRES(mResamplingCapability);
+
+  
+  
+  
+  void StartSpeechRecognitionSession(
+      const nsACString& aLanguage, hwinference::SpeechRecognitionChild* aChild)
       MOZ_REQUIRES(sIPCCapability);
-  void StopSpeechRecognitionSession() MOZ_REQUIRES(sIPCCapability);
-  void HandleRecognitionResult(const nsCString& aTranscript, bool aIsFinal,
-                               float aConfidence, TimeStamp aEventTime)
+  void HandleRecognitionResult(const nsACString& aTranscript, bool aIsFinal)
       MOZ_REQUIRES(sIPCCapability);
-  void HandleRecognitionError(const nsCString& aError)
+  void HandleRecognitionError(const nsACString& aError)
       MOZ_REQUIRES(sIPCCapability);
 
   static void CreateSession(
@@ -149,6 +200,12 @@ class SpeechRecognitionBackend
   static auto RunWithTransientSession(SendFunc&& aSendFunc)
       MOZ_REQUIRES(sMainThreadCapability);
 
+  
+  
+  
+  template <typename Func>
+  void DispatchToParentIfAlive(const char* aName, Func&& aFunc);
+
  public:
   static StaticAutoPtr<mozilla::EventTargetCapability<nsISerialEventTarget>>
       sIPCCapability;
@@ -158,9 +215,67 @@ class SpeechRecognitionBackend
   
   
   static int32_t sIPCActorUsers MOZ_GUARDED_BY(sMainThreadCapability);
-  WeakPtr<SpeechRecognition> mParent;
-  nsCString mLanguage;
-  nsTArray<nsString> mPhrases;
+  
+  WeakPtr<SpeechRecognition> mParent MOZ_GUARDED_BY(sMainThreadCapability);
+
+  RefPtr<AudioStreamTrack> mTrack MOZ_GUARDED_BY(sMainThreadCapability);
+  RefPtr<SpeechTrackListener> mTrackListener
+      MOZ_GUARDED_BY(sMainThreadCapability);
+
+  
+  const nsCString mLanguage;
+  const nsTArray<nsString> mPhrases;
+  
+  
+  
+  const UniquePtr<SPSCQueue<float>> mRingBuffer;
+  
+  
+  
+  nsCOMPtr<nsIThread> mResamplingThread MOZ_GUARDED_BY(sMainThreadCapability);
+  
+  const mozilla::EventTargetCapability<nsIThread> mResamplingCapability;
+  
+  
+  nsTArray<AudioDataValue> mMonoBuffer;
+  const uint32_t mGraphRate;
+  
+  bool mStopped MOZ_GUARDED_BY(sMainThreadCapability) = false;
+  
+  
+  
+  
+  bool mCurrentlyAudible MOZ_GUARDED_BY(sMainThreadCapability) = false;
+  
+  
+  bool mSpeechDetected MOZ_GUARDED_BY(sMainThreadCapability) = false;
+  
+  bool mAudible MOZ_GUARDED_BY(mResamplingCapability) = false;
+  bool mAudioStartDispatched MOZ_GUARDED_BY(mResamplingCapability) = false;
+  
+  
+  
+  
+  
+  bool mAudioProcessingStopped MOZ_GUARDED_BY(mResamplingCapability) = false;
+  
+  UniquePtr<mozilla::AudibilityMonitor> mAudibilityMonitor;
+  
+  
+  
+  
+  
+  
+  
+  
+  struct Session {
+    RefPtr<hwinference::SpeechRecognitionChild> mChild;
+    bool mStopRequested = false;
+  };
+  DataMutex<Session> mSession{"SpeechRecognitionBackend::mSession"};
+
+  UniquePtr<AudioConverter> mAudioConverter
+      MOZ_GUARDED_BY(mResamplingCapability);
 };
 
 }  

@@ -174,13 +174,26 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   
   
   
+  void OnSessionFinished(bool aProducedResult);
+  
+  
+  
   void NotifyBackendListening();
+
+  
+  
+  
+  
+  
+  
+  bool IsCurrentBackend(const SpeechRecognitionBackend* aBackend) const {
+    return mBackend == aBackend;
+  }
 
  private:
   virtual ~SpeechRecognition();
 
   NS_IMETHOD StartRecording(RefPtr<AudioStreamTrack>& aDOMStream);
-  RefPtr<GenericNonExclusivePromise> StopRecording();
 
   void Reset();
   void ResetAndEnd();
@@ -191,7 +204,14 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   
   
   
+  
+  
+  
+  
+  
+  
   void PostResetAndEnd();
+  void DispatchNoMatch();
   
   
   void StartImpl(MediaStreamTrack* aAudioTrack, CallerType aCallerType,
@@ -203,11 +223,16 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   RefPtr<DOMMediaStream> mStream;
   RefPtr<AudioStreamTrack> mTrack;
   bool mTrackIsOwned = false;
-  RefPtr<GenericNonExclusivePromise> mStopRecordingPromise;
   RefPtr<SpeechTrackListener> mSpeechListener;
 
   
   bool mStarted;
+  
+  
+  bool mStopping = false;
+  
+  
+  bool mAborting = false;
   
   
   bool mBackendListening = false;

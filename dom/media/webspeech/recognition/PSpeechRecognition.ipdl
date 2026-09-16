@@ -37,11 +37,21 @@ parent:
   async InstallModels(nsCString[] languages) returns (bool success);
   
   
-  async Init(nsCString engineId, nsCString language, nsString[] phrases) returns (bool success);
+  
+  
+  
+  async Init(nsCString engineId, nsCString language, nsString[] phrases) returns (nsCString error);
   
   async ProcessAudioData(float[] audioData);
   
-  async Stop();
+  
+  
+  
+  
+  
+  
+  
+  async Stop() returns (bool anyFinalResult);
 
 child: 
   

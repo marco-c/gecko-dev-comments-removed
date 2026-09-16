@@ -50,16 +50,33 @@ static constexpr int32_t PARAKEET_SAMPLE_RATE = 16000;
 
 void SpeechRecognitionParent::ResolveOrRejectInitOnIPCThread(
     InitResolver&& aResolver, bool aSuccess) {
+  if (!aSuccess) {
+    
+    
+    
+    
+    
+    StaticMutexAutoLock lock(sSessionMutex);
+    if (sActiveSession == this) {
+      LOGD("Clearing active session after init failure");
+      sActiveSession = nullptr;
+    }
+  }
+  
+  
+  
+  
+  nsCString error = aSuccess ? nsCString() : nsCString("network");
   if (GetActorEventTarget()->IsOnCurrentThread()) {
-    LOGV("Resolving init on same thread {}", aSuccess);
-    aResolver(aSuccess);
+    LOGV("Resolving init on same thread, error='{}'", error.get());
+    aResolver(error);
   } else {
-    LOGV("Resolving init accross thread {}", aSuccess);
+    LOGV("Resolving init accross thread, error='{}'", error.get());
     GetActorEventTarget()->Dispatch(NS_NewRunnableFunction(
         "Speech recognition init runnable",
-        [resolver = std::move(aResolver), aSuccess]() {
-          LOGV("Resolving init accross thread {}", aSuccess);
-          resolver(aSuccess);
+        [resolver = std::move(aResolver), error = std::move(error)]() {
+          LOGV("Resolving init accross thread, error='{}'", error.get());
+          resolver(error);
         }));
   }
 }
@@ -501,13 +518,16 @@ mozilla::ipc::IPCResult SpeechRecognitionParent::RecvInit(
     StaticMutexAutoLock lock(sSessionMutex);
     if (sActiveSession) {
       LOGE("Rejecting Init - another recognition session is already active");
-      aResolver(false);
+      aResolver("concurrent-session"_ns);
       return IPC_OK();
     }
     sActiveSession = this;
     LOGD("Session registered as active");
   }
 
+  
+  
+  
   {
     MutexAutoLock lock(mLock);
     mState = State::Initializing;
@@ -523,7 +543,7 @@ mozilla::ipc::IPCResult SpeechRecognitionParent::RecvInit(
   
   if (StaticPrefs::browser_ml_modelHub_testing()) {
     LOGD("{} - testing mock: skipping model retrieval", __func__);
-    aResolver(true);
+    aResolver(""_ns);
     return IPC_OK();
   }
 
@@ -551,7 +571,8 @@ mozilla::ipc::IPCResult SpeechRecognitionParent::RecvProcessAudioData(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult SpeechRecognitionParent::RecvStop() {
+mozilla::ipc::IPCResult SpeechRecognitionParent::RecvStop(
+    StopResolver&& aResolver) {
   
   {
     StaticMutexAutoLock lock(sSessionMutex);
@@ -569,6 +590,28 @@ mozilla::ipc::IPCResult SpeechRecognitionParent::RecvStop() {
   }
 
   LOGD("Stopping speech recognition session and cleaning up resources");
+
+  if (!mRecognitionThread) {
+    
+    
+    aResolver(false);
+    return IPC_OK();
+  }
+
+  
+  
+  
+  
+  
+  mRecognitionThread->Dispatch(NS_NewRunnableFunction(
+      "SpeechRecognitionParent::ResolveStop",
+      [self = RefPtr{this}, resolver = std::move(aResolver)]() mutable {
+        self->GetActorEventTarget()->Dispatch(NS_NewRunnableFunction(
+            "SpeechRecognitionParent::ResolveStop",
+            [resolver = std::move(resolver),
+             any = self->mEmittedFinalResult]() { resolver(any); }));
+      }));
+
   return IPC_OK();
 }
 
@@ -610,8 +653,13 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
   };
 
   auto emit = [self = RefPtr{this}](const nsCString& aText, bool aFinal) {
+    
+    
     if (aText.IsEmpty()) {
       return;
+    }
+    if (aFinal) {
+      self->mEmittedFinalResult = true;
     }
     NS_DispatchToMainThread(NS_NewRunnableFunction(
         "SpeechRecognitionParent::StreamResult",

@@ -58,7 +58,7 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
                                    const nsTArray<nsString>& aPhrases,
                                    InitResolver&& aResolver);
   mozilla::ipc::IPCResult RecvProcessAudioData(nsTArray<float>&& aAudioData);
-  mozilla::ipc::IPCResult RecvStop();
+  mozilla::ipc::IPCResult RecvStop(StopResolver&& aResolver);
 
   void ActorDestroy(ActorDestroyReason aReason) override;
 
@@ -138,6 +138,12 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
   
   
   WavDumper mRecognitionAudioDumper;
+
+  
+  
+  
+  
+  bool mEmittedFinalResult = false;
 
   
   

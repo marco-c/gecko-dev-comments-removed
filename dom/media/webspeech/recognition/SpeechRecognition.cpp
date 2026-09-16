@@ -18,7 +18,6 @@
 #include "VideoUtils.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/ErrorNames.h"
 #include "mozilla/MediaManager.h"
 #include "mozilla/dom/AudioStreamTrack.h"
 #include "mozilla/dom/BindingUtils.h"
@@ -138,7 +137,7 @@ SpeechRecognition::~SpeechRecognition() {
 
   
   if (mBackend) {
-    mBackend->Abort();
+    mBackend->Abort(TrailingEvents::Skip);
     mBackend = nullptr;
   }
 }
@@ -151,7 +150,7 @@ JSObject* SpeechRecognition::WrapObject(JSContext* aCx,
 void SpeechRecognition::DisconnectFromOwner() {
   AssertIsOnMainThread();
   if (mBackend) {
-    mBackend->Abort();
+    mBackend->Abort(TrailingEvents::Skip);
     mBackend = nullptr;
   }
   Reset();
@@ -178,6 +177,8 @@ void SpeechRecognition::Reset() {
     }
   }
   mStarted = false;
+  mStopping = false;
+  mAborting = false;
   mBackendListening = false;
   mStartDispatched = false;
   
@@ -188,7 +189,6 @@ void SpeechRecognition::Reset() {
   }
   mTrack = nullptr;
   mTrackIsOwned = false;
-  mStopRecordingPromise = nullptr;
   
   
   
@@ -211,7 +211,16 @@ void SpeechRecognition::PostResetAndEnd() {
   RefPtr<SpeechRecognition> self = this;
   NS_DispatchToMainThread(NS_NewRunnableFunction(
       "SpeechRecognition::PostResetAndEnd", [self = std::move(self)]() {
+        
+        
         if (self->mBackend) {
+          return;
+        }
+        
+        
+        
+        
+        if (!self->mStarted) {
           return;
         }
         self->ResetAndEnd();
@@ -247,30 +256,6 @@ SpeechRecognition::StartRecording(RefPtr<AudioStreamTrack>& aTrack) {
   MaybeDispatchStart();
 
   return NS_OK;
-}
-
-RefPtr<GenericNonExclusivePromise> SpeechRecognition::StopRecording() {
-  AssertIsOnMainThread();
-  if (!mTrack) {
-    
-    return GenericNonExclusivePromise::CreateAndResolve(true, __func__);
-  }
-
-  if (mStopRecordingPromise) {
-    return mStopRecordingPromise;
-  }
-
-  if (mBackend) {
-    mBackend->DetachFromTrack();
-  }
-
-  if (mTrackIsOwned) {
-    mTrack->Stop();
-  }
-
-  DispatchTrustedEvent(u"audioend"_ns);
-
-  return nullptr;
 }
 
 already_AddRefed<SpeechGrammarList> SpeechRecognition::Grammars() const {
@@ -626,17 +611,15 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
   
   
   
-  mBackend = new SpeechRecognitionBackend(this, graphRate, effectiveLang,
-                                          phrasesForBackend);
-  nsresult rv = mBackend->Start();
-  if (NS_FAILED(rv)) {
-    LOGE("Failed to start backend: {} ({:x})", GetStaticErrorName(rv),
-         static_cast<uint32_t>(rv));
-    mBackend = nullptr;
+  mBackend = SpeechRecognitionBackend::Create(this, graphRate, effectiveLang,
+                                              phrasesForBackend);
+  if (!mBackend) {
+    LOGE("Failed to create the backend");
     DispatchErrorAndEnd(SpeechRecognitionErrorCode::Service_not_allowed,
                         "Local speech recognition is not available"_ns);
     return;
   }
+  mBackend->Start();
 
   
   mStarted = true;
@@ -718,36 +701,66 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
 void SpeechRecognition::Stop() {
   AssertIsOnMainThread();
   
-  if (!mStarted) {
+  
+  
+  if (!mStarted || mStopping || !mBackend) {
     return;
   }
+  mStopping = true;
 
-  if (mBackend) {
-    
-    
-    mBackend->Stop();
-    
-    
-    mBackend = nullptr;
+  
+  
+  
+  
+  
+  mBackend->Stop();
+}
 
-    
-    
-    
-    
-    
-    PostResetAndEnd();
+void SpeechRecognition::OnSessionFinished(bool aProducedResult) {
+  AssertIsOnMainThread();
+  LOG("OnSessionFinished: producedResult={}", aProducedResult);
+  mBackend = nullptr;
+
+  if (!aProducedResult) {
+    DispatchNoMatch();
   }
+  PostResetAndEnd();
+}
+
+void SpeechRecognition::DispatchNoMatch() {
+  AssertIsOnMainThread();
+  
+  
+  
+  
+  RootedDictionary<SpeechRecognitionEventInit> init(RootingCx());
+  init.mBubbles = true;
+  init.mCancelable = false;
+  init.mResultIndex = 0;
+  init.mResults = new SpeechRecognitionResultList(this);
+  init.mInterpretation = JS::NullValue();
+
+  RefPtr<SpeechRecognitionEvent> domEvent =
+      SpeechRecognitionEvent::Constructor(this, u"nomatch"_ns, init);
+  domEvent->SetTrusted(true);
+  DispatchEvent(*domEvent);
 }
 
 void SpeechRecognition::Abort() {
   AssertIsOnMainThread();
   
-  if (!mStarted) {
+  
+  
+  
+  
+  
+  if (!mStarted || mAborting) {
     return;
   }
+  mAborting = true;
 
   if (mBackend) {
-    mBackend->Abort();
+    mBackend->Abort(TrailingEvents::Fire);
     
     mBackend = nullptr;
   }
@@ -814,7 +827,7 @@ void SpeechRecognition::DispatchErrorAndEnd(
     return;
   }
   if (mBackend) {
-    mBackend->Abort();
+    mBackend->Abort(TrailingEvents::Skip);
     mBackend = nullptr;
   }
   PostResetAndEnd();
