@@ -4,6 +4,7 @@
 
 
 
+#include <atomic>
 #include <functional>
 #include <memory>
 #include "secerr.h"
@@ -230,6 +231,61 @@ TEST_F(TlsConnectTest, Tls13RejectsRehandshakeServer) {
   SECStatus rv = SSL_ReHandshake(server_->ssl_fd(), PR_TRUE);
   EXPECT_EQ(SECFailure, rv);
   EXPECT_EQ(SSL_ERROR_RENEGOTIATION_NOT_ALLOWED, PORT_GetError());
+}
+
+static std::atomic<bool> gStopQueryingChannelInfo(false);
+
+static void QueryChannelInfoThread(void* arg) {
+  PRFileDesc* fd = static_cast<PRFileDesc*>(arg);
+  while (!gStopQueryingChannelInfo.load(std::memory_order_relaxed)) {
+    SSLChannelInfo info;
+    (void)SSL_GetChannelInfo(fd, &info, sizeof(info));
+    SSLPreliminaryChannelInfo preinfo;
+    (void)SSL_GetPreliminaryChannelInfo(fd, &preinfo, sizeof(preinfo));
+  }
+}
+
+
+
+TEST_P(TlsConnectStreamPre13, RenegotiateServerWhileQueryingChannelInfo) {
+  Connect();
+
+  gStopQueryingChannelInfo = false;
+  PRThread* thread = PR_CreateThread(PR_USER_THREAD, QueryChannelInfoThread,
+                                     client_->ssl_fd(), PR_PRIORITY_NORMAL,
+                                     PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
+  ASSERT_NE(nullptr, thread);
+
+  for (int i = 0; i < 200; ++i) {
+    client_->PrepareForRenegotiate();
+    server_->StartRenegotiate();
+    Handshake();
+    CheckConnected();
+  }
+
+  gStopQueryingChannelInfo = true;
+  PR_JoinThread(thread);
+}
+
+
+
+TEST_F(TlsConnectStreamTls13, NewSessionTicketWhileQueryingChannelInfo) {
+  ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
+  Connect();
+
+  gStopQueryingChannelInfo = false;
+  PRThread* thread = PR_CreateThread(PR_USER_THREAD, QueryChannelInfoThread,
+                                     client_->ssl_fd(), PR_PRIORITY_NORMAL,
+                                     PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
+  ASSERT_NE(nullptr, thread);
+
+  for (int i = 0; i < 200; ++i) {
+    EXPECT_EQ(SECSuccess, SSL_SendSessionTicket(server_->ssl_fd(), NULL, 0));
+    SendReceive(50 + i);
+  }
+
+  gStopQueryingChannelInfo = true;
+  PR_JoinThread(thread);
 }
 
 }  

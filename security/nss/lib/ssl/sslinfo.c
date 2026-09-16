@@ -39,7 +39,7 @@ SSL_GetChannelInfo(PRFileDesc *fd, SSLChannelInfo *info, PRUintn len)
         SSLCipherSuiteInfo cinfo;
         SECStatus rv;
 
-        sid = ss->sec.ci.sid;
+        sid = ssl_ReferenceSocketSID(ss);
         inf.protocolVersion = ss->version;
         inf.authKeyBits = ss->sec.authKeyBits;
         inf.keaKeyBits = ss->sec.keaKeyBits;
@@ -58,6 +58,7 @@ SSL_GetChannelInfo(PRFileDesc *fd, SSLChannelInfo *info, PRUintn len)
         rv = SSL_GetCipherSuiteInfo(inf.cipherSuite,
                                     &cinfo, sizeof(cinfo));
         if (rv != SECSuccess) {
+            ssl_FreeSID(sid);
             return SECFailure; 
         }
         inf.symCipher = cinfo.symCipher;
@@ -77,7 +78,7 @@ SSL_GetChannelInfo(PRFileDesc *fd, SSLChannelInfo *info, PRUintn len)
         inf.signatureScheme = ss->sec.signatureScheme;
         
 
-        if (inf.signatureScheme == ssl_sig_none && sid->sigScheme) {
+        if (inf.signatureScheme == ssl_sig_none && sid && sid->sigScheme) {
             inf.signatureScheme = sid->sigScheme;
         }
         inf.resumed = ss->statelessResume || ss->ssl3.hs.isResuming;
@@ -112,6 +113,8 @@ SSL_GetChannelInfo(PRFileDesc *fd, SSLChannelInfo *info, PRUintn len)
             memcpy(inf.sessionID, sid->u.ssl3.sessionID, sidLen);
             inf.isFIPS = ssl_isFIPS(ss);
         }
+
+        ssl_FreeSID(sid);
     }
 
     memcpy(info, &inf, inf.length);
@@ -126,6 +129,7 @@ SSL_GetPreliminaryChannelInfo(PRFileDesc *fd,
 {
     sslSocket *ss;
     SSLPreliminaryChannelInfo inf;
+    sslSessionID *sid;
 
     
 
@@ -155,9 +159,10 @@ SSL_GetPreliminaryChannelInfo(PRFileDesc *fd,
     
     PORT_Assert(!ss->firstHsDone || !inf.canSendEarlyData);
 
-    if (ss->sec.ci.sid) {
+    sid = ssl_ReferenceSocketSID(ss);
+    if (sid) {
         PRUint32 ticketMaxEarlyData =
-            ss->sec.ci.sid->u.ssl3.locked.sessionTicket.max_early_data_size;
+            sid->u.ssl3.locked.sessionTicket.max_early_data_size;
 
         
         inf.ticketSupportsEarlyData = (ticketMaxEarlyData > 0);
@@ -173,6 +178,8 @@ SSL_GetPreliminaryChannelInfo(PRFileDesc *fd,
             }
         }
     }
+    ssl_FreeSID(sid);
+
     inf.zeroRttCipherSuite = ss->ssl3.hs.zeroRttSuite;
 
     inf.peerDelegCred = tls13_IsVerifyingWithDelegatedCredential(ss);

@@ -22,6 +22,7 @@
 
 
 
+
 #ifndef __Hacl_Ed25519_H
 #define __Hacl_Ed25519_H
 
@@ -36,6 +37,7 @@ extern "C" {
 
 #include "Hacl_Streaming_Types.h"
 #include "Hacl_Krmllib.h"
+
 
 
 
@@ -74,10 +76,11 @@ void Hacl_Ed25519_expand_keys(uint8_t *expanded_keys, uint8_t *private_key);
 
 void
 Hacl_Ed25519_sign_expanded(
-    uint8_t *signature,
-    uint8_t *expanded_keys,
-    uint32_t msg_len,
-    uint8_t *msg);
+  uint8_t *signature,
+  uint8_t *expanded_keys,
+  uint32_t msg_len,
+  uint8_t *msg
+);
 
 
 

@@ -5817,8 +5817,7 @@ ssl3_SendClientHello(sslSocket *ss, sslClientHelloType type)
     }
     ssl_ReleaseSpecWriteLock(ss);
 
-    ssl_FreeSID(ss->sec.ci.sid); 
-    ss->sec.ci.sid = sid;
+    ssl_SetSocketSID(ss, sid); 
 
     
 
@@ -6045,8 +6044,7 @@ ssl3_HandleHelloRequest(sslSocket *ss)
 
     if (sid) {
         ssl_UncacheSessionID(ss);
-        ssl_FreeSID(sid);
-        ss->sec.ci.sid = NULL;
+        ssl_SetSocketSID(ss, NULL);
     }
 
     if (IS_DTLS(ss)) {
@@ -7748,10 +7746,10 @@ ssl3_HandleServerHelloPart2(sslSocket *ss, const SECItem *sidBytes,
     
     sid->u.ssl3.keys.resumable = PR_FALSE;
     ssl_UncacheSessionID(ss);
-    ssl_FreeSID(sid);
 
     
-    ss->sec.ci.sid = sid = ssl3_NewSessionID(ss, PR_FALSE);
+    sid = ssl3_NewSessionID(ss, PR_FALSE);
+    ssl_SetSocketSID(ss, sid); 
     if (sid == NULL) {
         goto alert_loser; 
     }
@@ -9596,7 +9594,8 @@ ssl3_HandleClientHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
 
 
 
-        sid = ss->sec.ci.sid;
+        
+        sid = ssl_TakeSocketSID(ss);
         PORT_Assert(sid != NULL); 
 
         if (sidBytes.len > 0 && sidBytes.len <= SSL3_SESSIONID_BYTES) {
@@ -9607,13 +9606,11 @@ ssl3_HandleClientHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
         } else {
             sid->u.ssl3.sessionIDLength = 0;
         }
-        ss->sec.ci.sid = NULL;
     }
 
     
     if (ss->sec.ci.sid) {
-        ssl_FreeSID(ss->sec.ci.sid);
-        ss->sec.ci.sid = NULL;
+        ssl_SetSocketSID(ss, NULL);
     }
 
     if (sid != NULL) {
@@ -9873,10 +9870,12 @@ cipher_found:
             if (ss->sec.ci.sid) {
                 ssl_UncacheSessionID(ss);
                 PORT_Assert(ss->sec.ci.sid != sid); 
-                if (ss->sec.ci.sid != sid) {
-                    ssl_FreeSID(ss->sec.ci.sid);
+                if (ss->sec.ci.sid == sid) {
+                    
+                    (void)ssl_TakeSocketSID(ss);
+                } else {
+                    ssl_SetSocketSID(ss, NULL);
                 }
-                ss->sec.ci.sid = NULL;
             }
 
             
@@ -9885,7 +9884,7 @@ cipher_found:
                 break; 
             }
 
-            ss->sec.ci.sid = sid;
+            ssl_SetSocketSID(ss, sid);
             if (sid->peerCert != NULL) {
                 ss->sec.peerCert = CERT_DupCertificate(sid->peerCert);
             }
@@ -10005,7 +10004,7 @@ cipher_found:
         errCode = PORT_GetError();
         goto loser; 
     }
-    ss->sec.ci.sid = sid;
+    ssl_SetSocketSID(ss, sid);
 
     sid->u.ssl3.keys.extendedMasterSecretUsed =
         ssl3_ExtensionNegotiated(ss, ssl_extended_master_secret_xtn);
@@ -10221,7 +10220,7 @@ suite_found:
         errCode = PORT_GetError();
         goto loser; 
     }
-    ss->sec.ci.sid = sid;
+    ssl_SetSocketSID(ss, sid);
     
 
     
@@ -11961,7 +11960,8 @@ ssl_SetAuthKeyBits(sslSocket *ss, const SECKEYPublicKey *pubKey)
             break;
 
         default:
-            FATAL_ERROR(ss, SEC_ERROR_LIBRARY_FAILURE, internal_error);
+            FATAL_ERROR(ss, SSL_ERROR_UNSUPPORTED_CERTIFICATE_TYPE,
+                        unsupported_certificate);
             return SECFailure;
     }
 
@@ -14463,8 +14463,7 @@ ssl3_RedoHandshake(sslSocket *ss, PRBool flushCache)
 
     if (sid && flushCache) {
         ssl_UncacheSessionID(ss); 
-        ssl_FreeSID(sid);         
-        ss->sec.ci.sid = NULL;
+        ssl_SetSocketSID(ss, NULL); 
     }
 
     ssl_GetXmitBufLock(ss); 
@@ -14633,10 +14632,14 @@ ssl_cipherSpecIsFips(ssl3CipherSpec *spec)
 PRBool
 ssl_isFIPS(sslSocket *ss)
 {
-    if (!ssl_cipherSpecIsFips(ss->ssl3.crSpec)) {
-        return PR_FALSE;
-    }
-    return ssl_cipherSpecIsFips(ss->ssl3.cwSpec);
+    PRBool isFIPS;
+
+    ssl_GetSpecReadLock(ss);
+    isFIPS = ssl_cipherSpecIsFips(ss->ssl3.crSpec) &&
+             ssl_cipherSpecIsFips(ss->ssl3.cwSpec);
+    ssl_ReleaseSpecReadLock(ss);
+
+    return isFIPS;
 }
 
 

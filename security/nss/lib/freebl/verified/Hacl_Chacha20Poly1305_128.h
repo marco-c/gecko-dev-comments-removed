@@ -22,6 +22,7 @@
 
 
 
+
 #ifndef __Hacl_Chacha20Poly1305_128_H
 #define __Hacl_Chacha20Poly1305_128_H
 
@@ -55,14 +56,15 @@ extern "C" {
 
 void
 Hacl_Chacha20Poly1305_128_aead_encrypt(
-    uint8_t *k,
-    uint8_t *n,
-    uint32_t aadlen,
-    uint8_t *aad,
-    uint32_t mlen,
-    uint8_t *m,
-    uint8_t *cipher,
-    uint8_t *mac);
+  uint8_t *k,
+  uint8_t *n,
+  uint32_t aadlen,
+  uint8_t *aad,
+  uint32_t mlen,
+  uint8_t *m,
+  uint8_t *cipher,
+  uint8_t *mac
+);
 
 
 
@@ -87,14 +89,15 @@ Hacl_Chacha20Poly1305_128_aead_encrypt(
 
 uint32_t
 Hacl_Chacha20Poly1305_128_aead_decrypt(
-    uint8_t *k,
-    uint8_t *n,
-    uint32_t aadlen,
-    uint8_t *aad,
-    uint32_t mlen,
-    uint8_t *m,
-    uint8_t *cipher,
-    uint8_t *mac);
+  uint8_t *k,
+  uint8_t *n,
+  uint32_t aadlen,
+  uint8_t *aad,
+  uint32_t mlen,
+  uint8_t *m,
+  uint8_t *cipher,
+  uint8_t *mac
+);
 
 #if defined(__cplusplus)
 }

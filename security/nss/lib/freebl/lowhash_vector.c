@@ -21,13 +21,10 @@
 #include <dlfcn.h>
 #include "pratom.h"
 
-static PRLibrary *blLib;
-
 #define LSB(x) ((x) & 0xff)
 #define MSB(x) ((x) >> 8)
 
 static const NSSLOWVector *vector;
-static const char *libraryName = NULL;
 
 
 
@@ -89,8 +86,6 @@ freebl_LoadDSO(void)
                     LSB(dsoVersion) >= LSB(myVersion) &&
                     dsoVector->length >= sizeof(NSSLOWVector)) {
                     vector = dsoVector;
-                    libraryName = name;
-                    blLib = handle;
                     return PR_SUCCESS;
                 }
             }

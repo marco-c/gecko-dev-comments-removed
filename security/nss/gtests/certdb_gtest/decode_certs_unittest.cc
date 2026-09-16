@@ -4,6 +4,8 @@
 
 
 
+#include <atomic>
+
 #include "gtest/gtest.h"
 
 #include "cert.h"
@@ -11,11 +13,16 @@
 #include "certt.h"
 #include "nss_scoped_ptrs.h"
 #include "prerror.h"
+#include "prthread.h"
 #include "secerr.h"
 
 extern "C" SECStatus __CERT_AddTempCertToPerm(CERTCertificate* cert,
                                               char* nickname,
                                               CERTCertTrust* trust);
+
+extern "C" CERTCertificate* __CERT_DecodeDERCertificate(SECItem* derSignedCert,
+                                                        PRBool copyDER,
+                                                        char* nickname);
 
 class DecodeCertsTest : public ::testing::Test {};
 
@@ -155,4 +162,77 @@ TEST_F(DecodeCertsTest, ImportCert) {
   rv = PK11_ImportCert(slot.get(), cert2.get(), CK_INVALID_HANDLE, nickname2,
                        PR_TRUE);
   EXPECT_EQ(rv, SECSuccess);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+namespace {
+
+const unsigned int kDupThreads = 8;
+const unsigned int kDupRounds = 100;
+
+struct DupRace {
+  CERTCertificate* cert;
+  std::atomic<bool> go;
+  std::atomic<unsigned int> mismatches;
+};
+
+void DupOnce(void* arg) {
+  DupRace* race = static_cast<DupRace*>(arg);
+  while (!race->go) {
+    PR_Sleep(PR_INTERVAL_NO_WAIT);
+  }
+  CERTCertificate* dup = CERT_DupCertificate(race->cert);
+  if (dup != race->cert) {
+    race->mismatches++;
+  }
+  CERT_DestroyCertificate(dup);
+}
+
+}  
+
+TEST_F(DecodeCertsTest, ConcurrentFirstDuplication) {
+  for (unsigned int round = 0; round < kDupRounds; ++round) {
+    SECItem certDER = {siBuffer, kTestTempToPermCertDER,
+                       sizeof(kTestTempToPermCertDER)};
+    
+    
+    CERTCertificate* cert =
+        __CERT_DecodeDERCertificate(&certDER, PR_TRUE, nullptr);
+    ASSERT_NE(nullptr, cert);
+    ASSERT_EQ(nullptr, cert->nssCertificate);
+    cert->dbhandle = CERT_GetDefaultCertDB();
+
+    DupRace race;
+    race.cert = cert;
+    race.go = false;
+    race.mismatches = 0;
+
+    PRThread* threads[kDupThreads];
+    for (unsigned int i = 0; i < kDupThreads; ++i) {
+      threads[i] =
+          PR_CreateThread(PR_USER_THREAD, DupOnce, &race, PR_PRIORITY_NORMAL,
+                          PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
+      ASSERT_NE(nullptr, threads[i]);
+    }
+    race.go = true;
+    for (unsigned int i = 0; i < kDupThreads; ++i) {
+      ASSERT_EQ(PR_SUCCESS, PR_JoinThread(threads[i]));
+    }
+    ASSERT_EQ(0u, race.mismatches);
+
+    
+    
+    ASSERT_NE(nullptr, cert->nssCertificate);
+    CERT_DestroyCertificate(cert);
+  }
 }

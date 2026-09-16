@@ -1009,6 +1009,12 @@ struct sslConnectInfoStr {
     PRIPv6Addr peer;
     unsigned short port;
 
+    
+
+
+
+
+
     sslSessionID *sid;
 };
 
@@ -1328,6 +1334,9 @@ extern sslSessionID *ssl_LookupSID(PRTime now, const PRIPv6Addr *addr,
 extern void ssl_FreeSID(sslSessionID *sid);
 extern void ssl_DestroySID(sslSessionID *sid, PRBool freeIt);
 extern sslSessionID *ssl_ReferenceSID(sslSessionID *sid);
+extern void ssl_SetSocketSID(sslSocket *ss, sslSessionID *sid);
+extern sslSessionID *ssl_TakeSocketSID(sslSocket *ss);
+extern sslSessionID *ssl_ReferenceSocketSID(sslSocket *ss);
 
 extern int ssl3_SendApplicationData(sslSocket *ss, const PRUint8 *in,
                                     int len, int flags);

@@ -150,7 +150,7 @@ ssl_BeginClientHandshake(sslSocket *ss)
 
     
     if (ss->sec.ci.sid && ss->sec.ci.sid->cached == in_external_cache) {
-        sid = ss->sec.ci.sid;
+        sid = ssl_ReferenceSID(ss->sec.ci.sid);
         SSL_TRC(3, ("%d: SSL[%d]: using external token", SSL_GETPID(), ss->fd));
     } else if (!ss->opt.noCache) {
         
@@ -168,7 +168,7 @@ ssl_BeginClientHandshake(sslSocket *ss)
                 
 
 
-                ss->sec.ci.sid = NULL;
+                ssl_SetSocketSID(ss, NULL);
             }
             ssl_FreeSID(sid);
             sid = NULL;
@@ -182,7 +182,7 @@ ssl_BeginClientHandshake(sslSocket *ss)
         
         sid->u.ssl3.keys.resumable = PR_FALSE;
     }
-    ss->sec.ci.sid = sid;
+    ssl_SetSocketSID(ss, sid);
 
     ss->gs.state = GS_INIT;
     ss->handshake = ssl_GatherRecord1stHandshake;

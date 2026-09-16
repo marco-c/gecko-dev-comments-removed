@@ -255,6 +255,63 @@ ssl_ReferenceSID(sslSessionID *sid)
 
 
 
+
+void
+ssl_SetSocketSID(sslSocket *ss, sslSessionID *sid)
+{
+    sslSessionID *old;
+
+    LOCK_CACHE;
+    old = ss->sec.ci.sid;
+    ss->sec.ci.sid = sid;
+    if (old) {
+        ssl_FreeLockedSID(old);
+    }
+    UNLOCK_CACHE;
+}
+
+
+
+
+sslSessionID *
+ssl_TakeSocketSID(sslSocket *ss)
+{
+    sslSessionID *sid;
+
+    LOCK_CACHE;
+    sid = ss->sec.ci.sid;
+    ss->sec.ci.sid = NULL;
+    UNLOCK_CACHE;
+    return sid;
+}
+
+
+
+
+
+
+sslSessionID *
+ssl_ReferenceSocketSID(sslSocket *ss)
+{
+    sslSessionID *sid;
+
+    LOCK_CACHE;
+    sid = ss->sec.ci.sid;
+    if (sid) {
+        sid->references++;
+    }
+    UNLOCK_CACHE;
+    return sid;
+}
+
+
+
+
+
+
+
+
+
 sslSessionID *
 ssl_LookupSID(PRTime now, const PRIPv6Addr *addr, PRUint16 port, const char *peerID,
               const char *urlSvrName)

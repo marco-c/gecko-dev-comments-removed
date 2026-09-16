@@ -22,6 +22,7 @@
 
 
 
+
 #ifndef __Hacl_P256_H
 #define __Hacl_P256_H
 
@@ -73,13 +74,16 @@ extern "C" {
 
 
 
+
 bool
 Hacl_P256_ecdsa_sign_p256_without_hash(
-    uint8_t *signature,
-    uint32_t msg_len,
-    uint8_t *msg,
-    uint8_t *private_key,
-    uint8_t *nonce);
+  uint8_t *signature,
+  uint32_t msg_len,
+  uint8_t *msg,
+  uint8_t *private_key,
+  uint8_t *nonce
+);
+
 
 
 
@@ -103,11 +107,13 @@ Hacl_P256_ecdsa_sign_p256_without_hash(
 
 bool
 Hacl_P256_ecdsa_verif_without_hash(
-    uint32_t msg_len,
-    uint8_t *msg,
-    uint8_t *public_key,
-    uint8_t *signature_r,
-    uint8_t *signature_s);
+  uint32_t msg_len,
+  uint8_t *msg,
+  uint8_t *public_key,
+  uint8_t *signature_r,
+  uint8_t *signature_s
+);
+
 
 
 
@@ -140,6 +146,7 @@ bool Hacl_P256_validate_public_key(uint8_t *public_key);
 
 
 bool Hacl_P256_validate_private_key(uint8_t *private_key);
+
 
 
 
@@ -196,6 +203,7 @@ void Hacl_P256_raw_to_uncompressed(uint8_t *pk_raw, uint8_t *pk);
 
 
 void Hacl_P256_raw_to_compressed(uint8_t *pk_raw, uint8_t *pk);
+
 
 
 

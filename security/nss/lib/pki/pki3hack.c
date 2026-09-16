@@ -1054,22 +1054,26 @@ get_stan_trust(unsigned int t, PRBool isClientAuth)
     return nssTrustLevel_MustVerify;
 }
 
-NSS_EXTERN NSSCertificate *
-STAN_GetNSSCertificate(CERTCertificate *cc)
+
+
+
+
+
+
+
+
+
+
+
+
+static NSSCertificate *
+stan_CreateNSSCertificateLocked(CERTCertificate *cc)
 {
     NSSCertificate *c;
     nssCryptokiInstance *instance;
     nssPKIObject *pkiob;
     NSSArena *arena;
-    CERT_LockCertTempPerm(cc);
-    c = cc->nssCertificate;
-    CERT_UnlockCertTempPerm(cc);
-    if (c) {
-        return c;
-    }
-    
 
-    
     arena = NSSArena_Create();
     if (!arena) {
         return NULL;
@@ -1132,8 +1136,30 @@ STAN_GetNSSCertificate(CERTCertificate *cc)
         nssPKIObject_AddInstance(&c->object, instance);
     }
     c->decoding = create_decoded_pkix_cert_from_nss3cert(NULL, cc);
+    if (!c->decoding) {
+        nssArena_Destroy(arena);
+        return NULL;
+    }
+    return c;
+}
+
+NSS_EXTERN NSSCertificate *
+STAN_GetNSSCertificate(CERTCertificate *cc)
+{
+    NSSCertificate *c;
+
+    
+
+
+
+
+
     CERT_LockCertTempPerm(cc);
-    cc->nssCertificate = c;
+    c = cc->nssCertificate;
+    if (!c) {
+        c = stan_CreateNSSCertificateLocked(cc);
+        cc->nssCertificate = c;
+    }
     CERT_UnlockCertTempPerm(cc);
     return c;
 }

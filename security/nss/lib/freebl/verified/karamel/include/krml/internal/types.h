@@ -54,15 +54,15 @@ typedef const char *Prims_string;
 
 
 
-#if (defined(__x86_64__) ||                                          \
-     defined(__x86_64) ||                                            \
-     defined(__aarch64__) ||                                         \
-     (defined(__powerpc64__) && defined(__LITTLE_ENDIAN__)) ||       \
-     defined(__s390x__) ||                                           \
-     (defined(_MSC_VER) && defined(_M_X64) && defined(__clang__)) || \
-     (defined(__mips__) && defined(__LP64__)) ||                     \
-     (defined(__riscv) && __riscv_xlen == 64) ||                     \
-     defined(__SIZEOF_INT128__))
+#if (defined(__x86_64__) || \
+    defined(__x86_64) || \
+    defined(__aarch64__) || \
+    (defined(__powerpc64__) && defined(__LITTLE_ENDIAN__)) || \
+    defined(__s390x__) || \
+    (defined(_MSC_VER) && defined(_M_X64) && defined(__clang__)) || \
+    (defined(__mips__) && defined(__LP64__)) || \
+    (defined(__riscv) && __riscv_xlen == 64) || \
+    defined(__SIZEOF_INT128__))
 #define HAS_INT128 1
 #endif
 
@@ -70,14 +70,14 @@ typedef const char *Prims_string;
 
 
 #if !defined(KRML_VERIFIED_UINT128) && defined(IS_MSVC64)
-#include <emmintrin.h>
+#  include <emmintrin.h>
 typedef __m128i FStar_UInt128_uint128;
 #elif !defined(KRML_VERIFIED_UINT128) && defined(HAS_INT128)
 typedef unsigned __int128 FStar_UInt128_uint128;
 #else
 typedef struct FStar_UInt128_uint128_s {
-    uint64_t low;
-    uint64_t high;
+  uint64_t low;
+  uint64_t high;
 } FStar_UInt128_uint128;
 #endif
 
