@@ -6,6 +6,7 @@
 include protocol PSpeechRecognition;
 
 using mozilla::dom::ContentParentId from "mozilla/dom/ipc/IdType.h";
+using mozilla::hwinference::ModelInstallResult from "mozilla/hwinference/HWInferenceTypes.h";
 
 namespace mozilla {
 
@@ -54,10 +55,12 @@ protocol PHWInference
     
     
     
+    
+    
     async InstallModel(nsCString task,
                        nsCString id,
                        uint64_t innerWindowId,
-                       ContentParentId contentId) returns (bool success);
+                       ContentParentId contentId) returns (ModelInstallResult result);
 
     
     
