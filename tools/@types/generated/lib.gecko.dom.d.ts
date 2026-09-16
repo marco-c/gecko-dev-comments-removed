@@ -3138,8 +3138,6 @@ interface LoadURIOptions {
     
     triggeringSandboxFlags?: number;
     
-    triggeringStorageAccess?: boolean;
-    
     triggeringWindowId?: number;
 }
 

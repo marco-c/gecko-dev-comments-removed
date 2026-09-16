@@ -134,10 +134,6 @@ class nsDocShellLoadState final {
 
   void SetTriggeringWindowId(uint64_t aTriggeringWindowId);
 
-  bool TriggeringStorageAccess() const;
-
-  void SetTriggeringStorageAccess(bool aTriggeringStorageAccess);
-
   mozilla::net::ClassificationFlags TriggeringClassificationFlags() const;
   void SetTriggeringClassificationFlags(
       mozilla::net::ClassificationFlags aFlags);
@@ -562,10 +558,7 @@ class nsDocShellLoadState final {
   uint32_t mTriggeringSandboxFlags;
 
   
-  
-  
   uint64_t mTriggeringWindowId;
-  bool mTriggeringStorageAccess;
 
   
   

@@ -11602,8 +11602,6 @@ interface nsILoadInfo extends nsISupports, Enums<typeof nsILoadInfo_StoragePermi
   
   triggeringWindowId: u64;
   
-  triggeringStorageAccess: boolean;
-  
   triggeringFirstPartyClassificationFlags: u32;
   
   triggeringThirdPartyClassificationFlags: u32;

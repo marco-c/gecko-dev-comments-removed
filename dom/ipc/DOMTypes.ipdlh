@@ -178,7 +178,6 @@ struct DocShellLoadStateInit
   // responsible for causing the load to occur.
   uint32_t TriggeringSandboxFlags;
   uint64_t TriggeringWindowId;
-  bool TriggeringStorageAccess;
   ClassificationFlags TriggeringClassificationFlags;
   int32_t? CancelContentJSEpoch;
 
@@ -331,6 +330,7 @@ struct IPCImage {
 struct IPCNotificationAction {
   nsString name;
   nsString title;
+  nullable nsIURI navigate;
 };
 
 // Mostly same as NotificationOptions except:
@@ -345,6 +345,7 @@ struct IPCNotificationOptions {
   nsString body;
   nsString tag;
   nullable nsIURI icon;
+  nullable nsIURI navigate;
   bool requireInteraction;
   bool silent;
   uint32_t[] vibrate;
