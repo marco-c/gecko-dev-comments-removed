@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AudioWorkletImpl.h"
 
 #include "AudioContext.h"
@@ -87,6 +85,20 @@ void AudioWorkletImpl::OnAddModulePromiseSettled() const {
   profiler_add_marker(ProfilerStringView("AudioWorklet.addModule"),
                       geckoprofiler::category::MEDIA_RT,
                       {MarkerTiming::IntervalEnd()});
+}
+
+void AudioWorkletImpl::OnFinishedOnExecutionThread() {
+  if (mGlobalScopePortIdentifier.neutered()) {
+    
+    return;
+  }
+  
+  
+  
+  
+  MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "AudioWorkletImpl::ReleaseGlobalScopePortIdentifier",
+      [identifier = std::move(mGlobalScopePortIdentifier)] {})));
 }
 
 already_AddRefed<dom::WorkletGlobalScope>

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_worklet_WorkletImpl_h
 #define mozilla_dom_worklet_WorkletImpl_h
 
@@ -110,6 +108,14 @@ class WorkletImpl {
 
   virtual already_AddRefed<dom::WorkletGlobalScope> ConstructGlobalScope(
       JSContext* aCx) = 0;
+
+  
+
+
+
+
+
+  virtual void OnFinishedOnExecutionThread() {}
 
   
   ipc::PrincipalInfo mPrincipalInfo;

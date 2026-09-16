@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WorkletImpl.h"
 
 #include "Worklet.h"
@@ -145,6 +143,7 @@ void WorkletImpl::NotifyWorkletFinished() {
                                self->mFinishedOnExecutionThread = true;
                                self->mGlobalScope = nullptr;
                                self->mCSPContext = nullptr;
+                               self->OnFinishedOnExecutionThread();
                              }));
 
   mTerminated = true;

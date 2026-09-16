@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef AudioWorkletImpl_h
 #define AudioWorkletImpl_h
 
@@ -52,6 +50,8 @@ class AudioWorkletImpl final : public WorkletImpl {
   
   already_AddRefed<dom::WorkletGlobalScope> ConstructGlobalScope(
       JSContext* aCx) override;
+
+  void OnFinishedOnExecutionThread() override;
 
  private:
   AudioWorkletImpl(nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal,
