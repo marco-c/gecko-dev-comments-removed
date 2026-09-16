@@ -810,52 +810,6 @@ public class GeckoViewActivity extends AppCompatActivity
         }
       };
 
-  private final StringSetting mCookieBannerHandling =
-      new StringSetting(
-          R.string.key_cookie_banner_handling, R.string.cookie_banner_handling_default) {
-        @Override
-        public void setValue(final GeckoRuntimeSettings settings, final String value) {
-          int cbMode;
-          switch (value) {
-            case "disabled":
-              cbMode = ContentBlocking.CookieBannerMode.COOKIE_BANNER_MODE_DISABLED;
-              break;
-            case "reject_all":
-              cbMode = ContentBlocking.CookieBannerMode.COOKIE_BANNER_MODE_REJECT;
-              break;
-            case "reject_accept_all":
-              cbMode = ContentBlocking.CookieBannerMode.COOKIE_BANNER_MODE_REJECT_OR_ACCEPT;
-              break;
-            default:
-              throw new RuntimeException("Invalid Cookie Banner Handling mode: " + value);
-          }
-          settings.getContentBlocking().setCookieBannerMode(cbMode);
-        }
-      };
-
-  private final StringSetting mCookieBannerHandlingPrivateMode =
-      new StringSetting(
-          R.string.key_cookie_banner_handling_pb, R.string.cookie_banner_handling_pb_default) {
-        @Override
-        public void setValue(final GeckoRuntimeSettings settings, final String value) {
-          int cbPrivateMode;
-          switch (value) {
-            case "disabled":
-              cbPrivateMode = ContentBlocking.CookieBannerMode.COOKIE_BANNER_MODE_DISABLED;
-              break;
-            case "reject_all":
-              cbPrivateMode = ContentBlocking.CookieBannerMode.COOKIE_BANNER_MODE_REJECT;
-              break;
-            case "reject_accept_all":
-              cbPrivateMode = ContentBlocking.CookieBannerMode.COOKIE_BANNER_MODE_REJECT_OR_ACCEPT;
-              break;
-            default:
-              throw new RuntimeException("Invalid Cookie Banner Handling private mode: " + value);
-          }
-          settings.getContentBlocking().setCookieBannerModePrivateBrowsing(cbPrivateMode);
-        }
-      };
-
   private final BooleanSetting mDynamicFirstPartyIsolation =
       new BooleanSetting(R.string.key_dfpi, R.bool.dfpi_default) {
         @Override
@@ -1516,13 +1470,15 @@ public class GeckoViewActivity extends AppCompatActivity
 
   private void takeScreenshot() {
     mGeckoView
-        .capturePixels()
+        .captureFullPage()
         .map(
             bitmap -> {
               ContentResolver resolver = getContentResolver();
 
               ContentValues contentValues = new ContentValues();
-              contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, "screenshot.jpg");
+              contentValues.put(
+                  MediaStore.MediaColumns.DISPLAY_NAME,
+                  "screenshot-" + System.currentTimeMillis() + ".png");
               contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/png");
               contentValues.put(
                   MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES);
@@ -1549,6 +1505,11 @@ public class GeckoViewActivity extends AppCompatActivity
                 resolver.update(screenshotUri, contentValues, null);
               }
               return null;
+            })
+        .exceptionally(
+            exception -> {
+              Log.e(LOGTAG, "Error saving screenshot: " + exception.getMessage());
+              return GeckoResult.fromException(exception);
             });
   }
 
@@ -2345,16 +2306,6 @@ public class GeckoViewActivity extends AppCompatActivity
         toolbar.setTranslationY(toolbar.getHeight());
       }
     }
-
-    @Override
-    public void onCookieBannerDetected(final GeckoSession session) {
-      Log.d("BELL", "A cookie banner was detected on this website");
-    }
-
-    @Override
-    public void onCookieBannerHandled(final GeckoSession session) {
-      Log.d("BELL", "A cookie banner was handled on this website");
-    }
   }
 
   private class ExampleProgressDelegate implements GeckoSession.ProgressDelegate {
@@ -2727,6 +2678,8 @@ public class GeckoViewActivity extends AppCompatActivity
           return "ERROR_NET_TIMEOUT";
         case WebRequestError.ERROR_CONNECTION_REFUSED:
           return "ERROR_CONNECTION_REFUSED";
+        case WebRequestError.ERROR_LOCAL_NETWORK_ACCESS_DENIED:
+          return "ERROR_LOCAL_NETWORK_ACCESS_DENIED";
         case WebRequestError.ERROR_UNKNOWN_PROTOCOL:
           return "ERROR_UNKNOWN_PROTOCOL";
         case WebRequestError.ERROR_UNKNOWN_HOST:
