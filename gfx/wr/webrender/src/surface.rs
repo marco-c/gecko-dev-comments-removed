@@ -139,22 +139,12 @@ fn resolve_dest_to_src_raster(
 
 
 
-
-
-
-
 pub fn visibility_node(
     raster_spatial_node_index: SpatialNodeIndex,
-    allow_snapping: bool,
-    spatial_tree: &SpatialTree,
 ) -> SpatialNodeIndex {
     debug_assert_ne!(raster_spatial_node_index, SpatialNodeIndex::INVALID);
 
-    if allow_snapping {
-        raster_spatial_node_index
-    } else {
-        spatial_tree.root_reference_frame_index()
-    }
+    raster_spatial_node_index
 }
 
 
@@ -336,8 +326,7 @@ impl SurfaceInfo {
             pic_bounds,
         );
 
-        let visibility_spatial_node_index =
-            visibility_node(raster_spatial_node_index, allow_snapping, spatial_tree);
+        let visibility_spatial_node_index = visibility_node(raster_spatial_node_index);
 
         
         let map_vis_to_root = vis_to_root_mapper(
@@ -346,21 +335,25 @@ impl SurfaceInfo {
             spatial_tree,
         );
 
+        
+        
+        
+        let projected = map_vis_to_root
+            .as_2d_scale_offset()
+            .and_then(|_| map_vis_to_root.unmap(&global_culling_rect));
+
         let mut culling_rect_projection_failed = false;
-        let culling_rect = match map_vis_to_root.unmap(&global_culling_rect) {
+        let culling_rect = match projected {
             Some(rect) => rect,
             None => {
                 culling_rect_projection_failed = true;
-                
-                
-                
                 
                 debug_assert_ne!(
                     spatial_tree
                         .get_spatial_node(visibility_spatial_node_index)
                         .coordinate_system_id,
                     CoordinateSystemId::root(),
-                    "screen rect has no pre-image in an axis-aligned vis space",
+                    "vis node in the root coordinate system must give an exact culling rect",
                 );
                 VisRect::max_rect()
             }
@@ -371,8 +364,17 @@ impl SurfaceInfo {
         
         
         
+        
+        
+        
+        
+        
+        
         #[cfg(debug_assertions)]
-        if let Some(round_trip) = map_vis_to_root.map(&culling_rect) {
+        if let Some(round_trip) = Some(&culling_rect)
+            .filter(|_| !culling_rect_projection_failed)
+            .and_then(|rect| map_vis_to_root.map(rect))
+        {
             const EPSILON: f32 = 0.05;
             debug_assert!(
                 round_trip.inflate(EPSILON, EPSILON).contains_box(&global_culling_rect),
