@@ -6035,7 +6035,19 @@ __webpack_require__.r(__webpack_exports__);
 const EmbeddedThemePicker = ({
   installSource
 }) => {
+  const themePickerRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    if (installSource !== "about:welcome") {
+      return;
+    }
+    
+    
+    customElements.whenDefined("theme-picker").then(() => {
+      themePickerRef.current?.shown();
+    });
+  }, [installSource]);
   return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("theme-picker", {
+    ref: themePickerRef,
     installsource: installSource
   });
 };

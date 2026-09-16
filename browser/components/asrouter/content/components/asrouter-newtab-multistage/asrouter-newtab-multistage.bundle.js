@@ -3258,7 +3258,19 @@ const EmbeddedMigrationWizard = ({
 const EmbeddedThemePicker = ({
   installSource
 }) => {
+  const themePickerRef = (0,external_React_namespaceObject.useRef)(null);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (installSource !== "about:welcome") {
+      return;
+    }
+    
+    
+    customElements.whenDefined("theme-picker").then(() => {
+      themePickerRef.current?.shown();
+    });
+  }, [installSource]);
   return external_React_default().createElement("theme-picker", {
+    ref: themePickerRef,
     installsource: installSource
   });
 };
