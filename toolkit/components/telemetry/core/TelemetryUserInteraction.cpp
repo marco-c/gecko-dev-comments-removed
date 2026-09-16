@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsString.h"
 #include "MainThreadUtils.h"
 #include "TelemetryUserInteraction.h"
@@ -95,4 +93,8 @@ bool TelemetryUserInteraction::CanRecord(const nsAString& aName) {
   }
 
   return false;
+}
+
+bool TelemetryUserInteraction::IsRecordingEnabled() {
+  return gTelemetryUserInteractionCanRecord;
 }

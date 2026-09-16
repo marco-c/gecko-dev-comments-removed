@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef TelemetryUserInteraction_h_
 #define TelemetryUserInteraction_h_
 
@@ -14,6 +13,7 @@ void InitializeGlobalState(bool canRecord);
 void DeInitializeGlobalState();
 
 bool CanRecord(const nsAString& aName);
+bool IsRecordingEnabled();
 
 }  
 

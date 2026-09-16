@@ -315,7 +315,7 @@ bool Timers::StartUserInteraction(JSContext* aCx,
   
   
   if (!TelemetryUserInteraction::CanRecord(aUserInteraction)) {
-    if (!mSuppressErrors) {
+    if (TelemetryUserInteraction::IsRecordingEnabled() && !mSuppressErrors) {
       LogError(aCx, nsPrintfCString(
                         "UserInteraction with name \"%s\" cannot be recorded.",
                         NS_ConvertUTF16toUTF8(aUserInteraction).get()));
@@ -383,7 +383,7 @@ bool Timers::UpdateUserInteraction(JSContext* aCx,
   
   
   if (!TelemetryUserInteraction::CanRecord(aUserInteraction)) {
-    if (!mSuppressErrors) {
+    if (TelemetryUserInteraction::IsRecordingEnabled() && !mSuppressErrors) {
       LogError(aCx, nsPrintfCString(
                         "UserInteraction with name \"%s\" cannot be recorded.",
                         NS_ConvertUTF16toUTF8(aUserInteraction).get()));
@@ -416,7 +416,7 @@ bool Timers::FinishUserInteraction(
   
   
   if (!TelemetryUserInteraction::CanRecord(aUserInteraction)) {
-    if (!mSuppressErrors) {
+    if (TelemetryUserInteraction::IsRecordingEnabled() && !mSuppressErrors) {
       LogError(aCx, nsPrintfCString(
                         "UserInteraction with id \"%s\" cannot be recorded.",
                         NS_ConvertUTF16toUTF8(aUserInteraction).get()));
@@ -467,7 +467,7 @@ bool Timers::CancelUserInteraction(JSContext* aCx,
   
   
   if (!TelemetryUserInteraction::CanRecord(aUserInteraction)) {
-    if (!mSuppressErrors) {
+    if (TelemetryUserInteraction::IsRecordingEnabled() && !mSuppressErrors) {
       LogError(aCx, nsPrintfCString(
                         "UserInteraction with id \"%s\" cannot be recorded.",
                         NS_ConvertUTF16toUTF8(aUserInteraction).get()));
