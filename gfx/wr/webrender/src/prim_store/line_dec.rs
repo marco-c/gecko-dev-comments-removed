@@ -16,7 +16,7 @@ use crate::frame_builder::FrameBuildingState;
 use crate::intern;
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{
-    PrimKey, PrimTemplate, PrimTemplateCommonData,
+    PrimTemplate, PrimTemplateCommonData,
     InternablePrimitive, PrimitiveStore,
 };
 use crate::prim_store::PrimitiveKind;
@@ -37,9 +37,8 @@ pub struct LineDecorationCacheKey {
 
 
 
-pub use api::interned_prims::LineDecoration;
 
-pub type LineDecorationKey = PrimKey<LineDecoration>;
+pub use api::interned_prims::{LineDecoration, LineDecorationKey};
 
 impl intern::InternDebug for LineDecorationKey {}
 

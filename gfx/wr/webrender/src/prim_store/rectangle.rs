@@ -7,7 +7,7 @@ use crate::scene_building::{IsVisible};
 use crate::intern;
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{
-    PrimKey, InternablePrimitive, PrimitiveStore, PrimitiveKind,
+    InternablePrimitive, PrimitiveStore, PrimitiveKind,
     PrimTemplate, PrimTemplateCommonData,
 };
 use crate::scene::SceneProperties;
@@ -15,9 +15,8 @@ use std::ops;
 
 
 
-pub use api::interned_prims::RectanglePrim;
 
-pub type RectangleKey = PrimKey<RectanglePrim>;
+pub use api::interned_prims::{RectangleKey, RectanglePrim};
 
 pub type RectangleDataHandle = intern::Handle<RectanglePrim>;
 
