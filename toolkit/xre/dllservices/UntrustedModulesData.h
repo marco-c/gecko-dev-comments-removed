@@ -109,22 +109,22 @@ class ModuleRecord final {
 
 
 
-struct ModulePaths final {
+struct ModuleIdentifiers final {
   using SetType = nsTHashtable<nsStringCaseInsensitiveHashKey>;
   using VecType = Vector<nsString>;
 
   Variant<SetType, VecType> mModuleNtPaths;
 
   template <typename T>
-  explicit ModulePaths(T&& aPaths)
+  explicit ModuleIdentifiers(T&& aPaths)
       : mModuleNtPaths(AsVariant(std::forward<T>(aPaths))) {}
 
-  ModulePaths() : mModuleNtPaths(VecType()) {}
+  ModuleIdentifiers() : mModuleNtPaths(VecType()) {}
 
-  ModulePaths(const ModulePaths& aOther) = delete;
-  ModulePaths(ModulePaths&& aOther) = default;
-  ModulePaths& operator=(const ModulePaths&) = delete;
-  ModulePaths& operator=(ModulePaths&&) = default;
+  ModuleIdentifiers(const ModuleIdentifiers& aOther) = delete;
+  ModuleIdentifiers(ModuleIdentifiers&& aOther) = default;
+  ModuleIdentifiers& operator=(const ModuleIdentifiers&) = delete;
+  ModuleIdentifiers& operator=(ModuleIdentifiers&&) = default;
 };
 
 class ProcessedModuleLoadEvent final {
@@ -169,8 +169,7 @@ class ProcessedModuleLoadEvent final {
 class ModulesMap final
     : public nsRefPtrHashtable<nsStringCaseInsensitiveHashKey, ModuleRecord> {
  public:
-  ModulesMap()
-      : nsRefPtrHashtable<nsStringCaseInsensitiveHashKey, ModuleRecord>() {}
+  ModulesMap() = default;
 };
 
 struct ProcessedModuleLoadEventContainer final
@@ -393,8 +392,8 @@ struct ParamTraits<mozilla::ModulesMap> {
 };
 
 template <>
-struct ParamTraits<mozilla::ModulePaths> {
-  typedef mozilla::ModulePaths paramType;
+struct ParamTraits<mozilla::ModuleIdentifiers> {
+  typedef mozilla::ModuleIdentifiers paramType;
 
   static void Write(MessageWriter* aWriter, const paramType& aParam) {
     aParam.mModuleNtPaths.match(
@@ -633,7 +632,7 @@ namespace mozilla {
 
 
 using UntrustedModulesData = uint32_t;
-using ModulePaths = uint32_t;
+using ModuleIdentifiers = uint32_t;
 using ModulesMapResult = uint32_t;
 
 }  
