@@ -4418,6 +4418,7 @@ class Document : public nsINode,
 
   
   
+  
   already_AddRefed<mozilla::dom::FeaturePolicy> GetParentFeaturePolicy();
 
  public:

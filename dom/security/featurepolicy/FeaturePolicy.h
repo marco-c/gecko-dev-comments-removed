@@ -50,6 +50,7 @@
 
 
 
+
 class nsINode;
 
 namespace mozilla::dom {
@@ -182,6 +183,7 @@ class FeaturePolicy final : public nsISupports, public nsWrapperCache {
   
   
   
+  
   bool AllowsFeatureInternal(const nsAString& aFeatureName,
                              nsIPrincipal* aOrigin) const;
 
@@ -190,6 +192,7 @@ class FeaturePolicy final : public nsISupports, public nsWrapperCache {
 
   bool HasInheritedDeniedFeature(const nsAString& aFeatureName) const;
 
+  
   
   bool HasDeclaredFeature(const nsAString& aFeatureName) const;
 

@@ -1770,6 +1770,7 @@ nsObjectLoadingContent::UpgradeLoadToDocument(
   
   
   
+  
   RefreshFeaturePolicy();
 
   bc.forget(aBrowsingContext);

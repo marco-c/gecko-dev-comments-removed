@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/XRSystem.h"
 
 #include "VRDisplayClient.h"

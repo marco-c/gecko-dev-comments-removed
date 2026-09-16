@@ -23,7 +23,7 @@ requestLongerTimeout(4);
 
 
 add_task(async function test_feature_policy_same_origin_iframe() {
-  info("Test: Same-origin iframe inherits Feature Policy from parent");
+  info("Test: Same-origin iframe inherits Permissions Policy from parent");
   await restorePermissions();
   await SpecialPowers.pushPrefEnv({
     set: [["network.lna.address_space.public.override", "127.0.0.1:4443"]],
@@ -79,7 +79,7 @@ add_task(async function test_feature_policy_cross_origin_blocked() {
     "fetch",
     rand,
     Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
-    "Cross-origin iframe without allow should be blocked by Feature Policy"
+    "Cross-origin iframe without allow should be blocked by Permissions Policy"
   );
 
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, testURL);
@@ -92,7 +92,7 @@ add_task(async function test_feature_policy_cross_origin_blocked() {
   );
   ok(
     !popup,
-    "No permission prompt should appear when Feature Policy blocks request"
+    "No permission prompt should appear when Permissions Policy blocks request"
   );
 
   gBrowser.removeTab(tab);
@@ -455,7 +455,7 @@ add_task(
     await new Promise(resolve => setTimeout(resolve, 300));
 
     info(
-      "Step 2: Create cross-origin iframe WITHOUT allow - should be blocked by Feature Policy"
+      "Step 2: Create cross-origin iframe WITHOUT allow - should be blocked by Permissions Policy"
     );
     const promise2 = observeAndCheck(
       "fetch",
@@ -478,7 +478,7 @@ add_task(
       "loopback-network",
       tab.linkedBrowser
     );
-    ok(!popup, "No prompt should appear - Feature Policy blocks it");
+    ok(!popup, "No prompt should appear - Permissions Policy blocks it");
 
     gBrowser.removeTab(tab);
     await SpecialPowers.popPrefEnv();
@@ -506,7 +506,7 @@ add_task(
 
 add_task(async function test_feature_policy_nested_iframes() {
   info(
-    "Test: Nested iframes respect Feature Policy (cross-origin inside same-origin)"
+    "Test: Nested iframes respect Permissions Policy (cross-origin inside same-origin)"
   );
   await restorePermissions();
   await SpecialPowers.pushPrefEnv({
