@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
+!!! ALL SYMBOLS IN HERE ARE INTERNAL.
+Everything might change without any notice.
+"""
+
+
+from datetime import datetime, timezone
+
+
+def get_now_utc() -> datetime:
+    return datetime.now(tz=timezone.utc)
