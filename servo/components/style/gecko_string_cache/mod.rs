@@ -137,6 +137,22 @@ impl Borrow<WeakAtom> for Atom {
     }
 }
 
+impl ToOwned for WeakAtom {
+    type Owned = Atom;
+
+    #[inline]
+    fn to_owned(&self) -> Atom {
+        self.clone()
+    }
+}
+
+impl From<Cow<'_, WeakAtom>> for Atom {
+    #[inline]
+    fn from(cow: Cow<'_, WeakAtom>) -> Atom {
+        cow.into_owned()
+    }
+}
+
 impl ToShmem for Atom {
     fn to_shmem(&self, _builder: &mut SharedMemoryBuilder) -> to_shmem::Result<Self> {
         if !self.is_static() {
@@ -287,9 +303,10 @@ impl WeakAtom {
     }
 
     
-    pub fn to_ascii_lowercase(&self) -> Atom {
+    
+    pub fn to_ascii_lowercase(&self) -> Cow<'_, WeakAtom> {
         if self.is_ascii_lowercase() {
-            return self.clone();
+            return Cow::Borrowed(self);
         }
 
         let slice = self.as_slice();
@@ -308,7 +325,7 @@ impl WeakAtom {
                 *char16 = (*char16 as u8).to_ascii_lowercase() as u16
             }
         }
-        Atom::from(&*mutable_slice)
+        Cow::Owned(Atom::from(&*mutable_slice))
     }
 
     

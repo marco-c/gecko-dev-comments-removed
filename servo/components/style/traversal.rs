@@ -18,7 +18,7 @@ use selectors::matching::SelectorCaches;
 #[cfg(feature = "gecko")]
 use selectors::parser::PseudoElement as PseudoElementTrait;
 use smallvec::SmallVec;
-use std::collections::HashMap;
+use hashbrown::HashMap;
 
 
 pub type UndisplayedStyleCache =

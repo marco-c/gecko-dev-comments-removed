@@ -3,7 +3,7 @@
 
 
 
-use rustc_hash::FxHashMap;
+use crate::FxHashMap;
 
 use crate::bloom::BloomFilter;
 use crate::context::QuirksMode;

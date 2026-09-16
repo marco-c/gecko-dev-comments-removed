@@ -2,7 +2,7 @@
 
 
 
-use fxhash::FxHashMap;
+use crate::FxHashMap;
 
 
 

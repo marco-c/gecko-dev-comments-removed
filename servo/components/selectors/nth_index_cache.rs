@@ -4,8 +4,8 @@
 
 use std::hash::Hash;
 
+use crate::FxHashMap;
 use crate::{parser::Selector, tree::OpaqueElement, SelectorImpl};
-use fxhash::FxHashMap;
 
 
 
