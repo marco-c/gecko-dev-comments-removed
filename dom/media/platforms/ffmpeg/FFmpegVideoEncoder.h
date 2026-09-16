@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_MEDIA_PLATFORMS_FFMPEG_FFMPEGVIDEOENCODER_H_
 #define DOM_MEDIA_PLATFORMS_FFMPEG_FFMPEGVIDEOENCODER_H_
 
@@ -82,6 +80,19 @@ class FFmpegVideoEncoder<LIBAV_VER> final
     uint8_t CurrentTemporalLayerId();
   };
   Maybe<SVCInfo> mSVCInfo{};
+  struct FrameColorConfig {
+    AVColorPrimaries mPrimaries;
+    AVColorTransferCharacteristic mTransfer;
+    AVColorSpace mMatrix;
+    AVColorRange mRange;
+
+    bool Equals(const FrameColorConfig& aOther) const {
+      return mPrimaries == aOther.mPrimaries && mTransfer == aOther.mTransfer &&
+             mMatrix == aOther.mMatrix && mRange == aOther.mRange;
+    }
+  };
+  Maybe<FrameColorConfig> mLastFrameColorConfig;
+  bool mCanChangeColorPerFrame = false;
   
   Atomic<bool> mIsHardwareAccelerated{false};
 #ifdef MOZ_FFMPEG_ENCODER_USE_DURATION_MAP
