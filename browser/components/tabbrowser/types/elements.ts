@@ -99,6 +99,7 @@ interface MozTabbrowserTabGroup extends XULElement {
 
 interface MozTabbrowserTabGroupLabel extends XULElement {
   
+  pinned?: undefined;
   splitview?: undefined;
 
   container: any;
