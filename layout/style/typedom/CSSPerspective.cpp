@@ -13,6 +13,8 @@
 #include "mozilla/dom/CSSKeywordValue.h"
 #include "mozilla/dom/CSSKeywordValueBinding.h"
 #include "mozilla/dom/CSSNumericValue.h"
+#include "mozilla/dom/CSSUnitValue.h"
+#include "mozilla/dom/DOMMatrix.h"
 #include "nsCOMPtr.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
@@ -60,23 +62,15 @@ JSObject* CSSPerspective::WrapObject(JSContext* aCx,
 
 
 
-
-
 already_AddRefed<CSSPerspective> CSSPerspective::Constructor(
     const GlobalObject& aGlobal, const CSSPerspectiveValue& aLength,
     ErrorResult& aRv) {
   nsCOMPtr<nsISupports> global = aGlobal.GetAsSupports();
 
-  OwningCSSPerspectiveValue length;
-
   
-  if (aLength.IsCSSNumericValue()) {
-    length.SetAsCSSNumericValue() = aLength.GetAsCSSNumericValue();
-  } else {
-    CSSKeywordish keywordish;
-    ToCSSKeywordish(aLength, keywordish);
-
-    length.SetAsCSSKeywordValue() = CSSKeywordValue::Create(global, keywordish);
+  auto length = ConstructLength(global, aLength, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
   }
 
   
@@ -90,10 +84,32 @@ void CSSPerspective::GetLength(OwningCSSPerspectiveValue& aRetVal) const {
 
 void CSSPerspective::SetLength(const CSSPerspectiveValue& aArg,
                                ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  auto length = ConstructLength(mParent, aArg, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+
+  mLength = std::move(length);
 }
 
 
+
+already_AddRefed<DOMMatrix> CSSPerspective::ToMatrix(ErrorResult& aRv) {
+  auto matrix = MakeRefPtr<DOMMatrix>(mParent);
+
+  if (!mLength.IsCSSNumericValue()) {
+    return matrix.forget();
+  }
+
+  auto length = mLength.GetAsCSSNumericValue()->ToStyleUnitValue("px"_ns, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  matrix->PerspectiveSelf(std::max(length->value, 1.0f));
+
+  return matrix.forget();
+}
 
 void CSSPerspective::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                                            nsACString& aDest) const {
@@ -106,6 +122,49 @@ void CSSPerspective::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
   }
 
   aDest.Append(")"_ns);
+}
+
+
+
+
+
+OwningCSSPerspectiveValue CSSPerspective::ConstructLength(
+    nsCOMPtr<nsISupports> aGlobal, const CSSPerspectiveValue& aLength,
+    ErrorResult& aRv) {
+  OwningCSSPerspectiveValue result;
+
+  
+  if (aLength.IsCSSNumericValue()) {
+    auto& length = aLength.GetAsCSSNumericValue();
+
+    
+    if (!length.GetNumericType().MatchesLength()) {
+      aRv.ThrowTypeError("Numeric length must match <length>");
+      return result;
+    }
+
+    result.SetAsCSSNumericValue() = length;
+    return result;
+  }
+
+  
+  CSSKeywordish keywordish;
+  ToCSSKeywordish(aLength, keywordish);
+
+  
+  RefPtr<CSSKeywordValue> length =
+      CSSKeywordValue::Create(std::move(aGlobal), keywordish);
+
+  
+  if (!length->GetValue().Equals("none"_ns,
+                                 nsCaseInsensitiveUTF8StringComparator)) {
+    aRv.ThrowTypeError(
+        "Keyword length must match case-insensitive keyword 'none'");
+    return result;
+  }
+
+  result.SetAsCSSKeywordValue() = std::move(length);
+  return result;
 }
 
 const CSSPerspective& CSSTransformComponent::GetAsCSSPerspective() const {
