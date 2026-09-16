@@ -1344,7 +1344,31 @@ class nsIFrame : public nsQueryFrame {
     return aChild->GetPosition();
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
   nsPoint GetPositionIgnoringScrolling() const;
+
+  
+
+
+
+
+
+
+
+
+
+  nsPoint GetPositionIgnoringScrollingAndSticky() const;
 
 #define NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(prop, type, dtor)              \
   static const mozilla::FramePropertyDescriptor<type>* prop() {            \
@@ -3390,6 +3414,21 @@ class nsIFrame : public nsQueryFrame {
 
 
   nsPoint GetOffsetToIgnoringScrolling(const nsIFrame* aOther) const;
+
+  
+
+
+
+
+
+
+  nsPoint GetOffsetToIgnoringScrollingAndSticky(const nsIFrame* aOther) const;
+
+  
+
+
+
+  nsPoint GetScrollOffsetTo(const nsIFrame* aOther) const;
 
   
 

@@ -783,42 +783,18 @@ nsPoint AnchorPositioningUtils::GetScrollOffsetFor(
     PhysicalAxes aAxes, const nsIFrame* aPositioned,
     const AnchorPosDefaultAnchorCache& aDefaultAnchorCache) {
   MOZ_ASSERT(aPositioned);
-  if (!aDefaultAnchorCache.mAnchor || aAxes.isEmpty()) {
+  const nsIFrame* anchor = aDefaultAnchorCache.mAnchor;
+  if (!anchor || aAxes.isEmpty()) {
     return nsPoint{};
   }
-  nsPoint offset;
-  const bool trackHorizontal = aAxes.contains(PhysicalAxis::Horizontal);
-  const bool trackVertical = aAxes.contains(PhysicalAxis::Vertical);
 
   
   
   
-  
-  const auto* absoluteContainingBlock =
-      nsLayoutUtils::FirstContinuationOrIBSplitSibling(
-          aPositioned->GetParent());
-  if (GetNearestScrollFrame(aPositioned).mScrollContainer ==
-      aDefaultAnchorCache.mScrollContainer) {
-    
-    return nsPoint{};
-  }
-  
-  
-  for (const auto* f = aDefaultAnchorCache.mScrollContainer;
-       f && nsLayoutUtils::FirstContinuationOrIBSplitSibling(f) !=
-                absoluteContainingBlock;
-       f = f->GetParent()) {
-    if (const ScrollContainerFrame* scrollFrame = do_QueryFrame(f)) {
-      const auto o = scrollFrame->GetScrollPosition();
-      if (trackHorizontal) {
-        offset.x += o.x;
-      }
-      if (trackVertical) {
-        offset.y += o.y;
-      }
-    }
-  }
-  return offset;
+  const auto* absCB = aPositioned->GetParent();
+  const nsPoint offset = anchor->GetScrollOffsetTo(absCB);
+  return nsPoint(aAxes.contains(PhysicalAxis::Horizontal) ? offset.x : 0,
+                 aAxes.contains(PhysicalAxis::Vertical) ? offset.y : 0);
 }
 
 
@@ -1397,7 +1373,8 @@ auto AnchorPositioningUtils::GetCombinedFragmentRects(
           TransformMatrixFlag::IgnoreScrolling);
     }
     return aContinuation->GetRectRelativeToSelf() +
-           aContinuation->GetOffsetToIgnoringScrolling(aContainingBlock);
+           aContinuation->GetOffsetToIgnoringScrollingAndSticky(
+               aContainingBlock);
   };
 
   
@@ -1441,7 +1418,7 @@ nsRect AnchorPositioningUtils::ReassembleAnchorRect(
     
     
     return fragRect.mRect +
-           matchingCB->GetOffsetToIgnoringScrolling(aContainingBlock);
+           matchingCB->GetOffsetToIgnoringScrollingAndSticky(aContainingBlock);
   }
   
   
