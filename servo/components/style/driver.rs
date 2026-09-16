@@ -73,7 +73,7 @@ fn with_pool_in_place_scope<'scope>(
 
 
 fn work_unit_max() -> usize {
-    static_prefs::pref!("layout.css.stylo-work-unit-size") as usize
+    crate::pref!("layout.css.stylo-work-unit-size") as usize
 }
 
 

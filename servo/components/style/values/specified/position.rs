@@ -1746,10 +1746,7 @@ impl Parse for MasonryAutoFlow {
 
 #[inline]
 fn flex_wrap_balance_enabled() -> bool {
-    #[cfg(feature = "servo")]
-    return static_prefs::pref!("layout.flexbox.balance");
-    #[cfg(not(feature = "servo"))]
-    return false;
+    crate::pref!("layout.flexbox.balance", gecko = false)
 }
 
 
