@@ -36,11 +36,19 @@ class nsDynamicAtom;
 class nsAtom {
  public:
   
+  
+  
+  
+  
+  
   static constexpr bool ComputeIsAsciiLowercase(const char16_t* aString,
                                                 const uint32_t aLength) {
-    return std::all_of(aString, aString + aLength, [](char16_t c) {
-      return !mozilla::IsAsciiUppercaseAlpha(c);
-    });
+    for (uint32_t i = 0; i < aLength; ++i) {
+      if (mozilla::IsAsciiUppercaseAlpha(aString[i])) {
+        return false;
+      }
+    }
+    return true;
   }
 
   template <size_t N>
@@ -267,6 +275,7 @@ already_AddRefed<nsAtom> NS_Atomize(const nsAString& aUTF16String,
 
 
 already_AddRefed<nsAtom> NS_AtomizeMainThread(const nsAString& aUTF16String);
+already_AddRefed<nsAtom> NS_AtomizeMainThread(const nsACString& aUTF8String);
 
 
 
