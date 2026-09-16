@@ -347,6 +347,24 @@ class MOZ_STACK_CLASS IMContextWrapper::AutoHandlingCompositionSignalHelper {
     return mIMContextWrapper.mHandlingKeyEvent && !mTemporarilySetEvent;
   }
 
+  
+
+
+
+  [[nodiscard]] bool ShouldNotDispatchKeyEvents() const {
+    
+    
+    
+    
+    return IsCallingGtkIMContextFilterKeypress() &&
+           
+           
+           
+           
+           
+           mIMContextWrapper.mKeyboardEventWasDispatched;
+  }
+
   [[nodiscard]] bool EditorMayHandleKeyPressEventAsTextInput() const {
     return mIMContextWrapper.mHandlingKeyEvent &&
            mIMContextWrapper.mHandlingKeyEvent->type == GDK_KEY_PRESS &&
@@ -1211,11 +1229,13 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
   
   
   if (aKeyboardEventWasDispatched) {
+    MOZ_ASSERT(mGraphemeClusterFallbackToKeyEvent.IsVoid());
     return KeyHandlingState::eNotHandledButEventDispatched;
   }
   if (!mKeyboardEventWasDispatched) {
     return KeyHandlingState::eNotHandled;
   }
+  MOZ_ASSERT(mGraphemeClusterFallbackToKeyEvent.IsVoid());
   return mKeyboardEventWasConsumed
              ? KeyHandlingState::eNotHandledButEventConsumed
              : KeyHandlingState::eNotHandledButEventDispatched;
@@ -2018,15 +2038,15 @@ void IMContextWrapper::OnCommitCompositionNative(GtkIMContext* aContext,
       "{} OnCommitCompositionNative(aContext={}), "
       "current context={}, active context={}, utf8CommitString=\"{}\", "
       "mHandlingKeyEvent={}, mPendingKeyEvents.CountOfPendingEvents()={}, "
-      "IsComposingOn(aContext)={}, editorMayTreatKeyPressAsTypingText={}",
+      "IsComposingOn(aContext)={}, EditorMayTreatKeyPressAsTypingText={}, "
+      "ShouldNotDispatchKeyEvents()={}",
       static_cast<void*>(this), static_cast<void*>(aContext),
       static_cast<void*>(GetCurrentContext()),
       static_cast<void*>(GetActiveContext()), utf8CommitString,
       static_cast<void*>(mHandlingKeyEvent),
-      mPendingKeyEvents.CountOfPendingEvents(),
-      TrueOrFalse(IsComposingOn(aContext)),
-      TrueOrFalse(
-          signalHandlerHelper.EditorMayHandleKeyPressEventAsTextInput()));
+      mPendingKeyEvents.CountOfPendingEvents(), IsComposingOn(aContext),
+      signalHandlerHelper.EditorMayHandleKeyPressEventAsTextInput(),
+      signalHandlerHelper.ShouldNotDispatchKeyEvents());
 
   if (!IsComposingOn(aContext)) {
     
@@ -2043,7 +2063,13 @@ void IMContextWrapper::OnCommitCompositionNative(GtkIMContext* aContext,
     }
 
     if (KeymapWrapper::StringHasOnlyOneGraphemeCluster(utf16CommitString) &&
-        aContext == GetCurrentContext()) {
+        aContext == GetCurrentContext() &&
+        
+        
+        
+        
+        
+        !signalHandlerHelper.ShouldNotDispatchKeyEvents()) {
       
       
       
