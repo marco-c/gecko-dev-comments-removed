@@ -92,7 +92,8 @@ add_test(function test_update() {
   function updateSuccess(aEvent) {
     
     
-    Assert.equal("1000", aEvent);
+    
+    Assert.equal("goog-downloadwhite-digest256:1000", aEvent);
     info("All data processed");
     run_next_test();
   }

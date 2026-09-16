@@ -37,7 +37,11 @@ class ProtocolParser {
                  const nsTArray<nsCString>& aUpdateTables);
   virtual nsresult AppendStream(const nsACString& aData) = 0;
 
-  uint32_t UpdateWaitSec() { return mUpdateWaitSec; }
+  
+  
+  
+  
+  nsTArray<TableWaitDuration> TakeUpdateWaits();
 
   
   
@@ -76,7 +80,12 @@ class ProtocolParser {
   nsTArray<nsCString> mTablesToReset;
 
   
+  
   uint32_t mUpdateWaitSec;
+
+  
+  
+  nsTArray<TableWaitDuration> mUpdateWaits;
 };
 
 

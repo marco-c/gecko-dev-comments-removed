@@ -2,8 +2,6 @@
 
 
 
-
-
 const { NetUtil } = ChromeUtils.importESModule(
   "resource://gre/modules/NetUtil.sys.mjs"
 );
@@ -216,7 +214,11 @@ add_test(function test_local_list() {
   function updateSuccess(aEvent) {
     
     
-    Assert.equal("1000", aEvent);
+    
+    Assert.deepEqual(aEvent.split(",").sort(), [
+      "goog-badbinurl-shavar:1000",
+      "goog-downloadwhite-digest256:1000",
+    ]);
     info("All data processed");
     run_next_test();
   }

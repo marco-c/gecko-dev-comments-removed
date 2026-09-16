@@ -247,7 +247,9 @@ class nsUrlClassifierDBServiceWorker final : public nsIUrlClassifierDBService {
 
   TableUpdateArray mTableUpdates;
 
-  uint32_t mUpdateWaitSec = 0;
+  
+  
+  nsTArray<TableWaitDuration> mUpdateWaits;
 
   
   ConstCacheResultArray mLastResults;

@@ -281,7 +281,10 @@ add_test(function test_update() {
 
   
   function updateSuccess(aEvent) {
-    Assert.equal(SBRS_UPDATE_MINIMUM_DELAY, aEvent);
+    Assert.equal(
+      "content-fingerprinting-track-digest256:" + SBRS_UPDATE_MINIMUM_DELAY,
+      aEvent
+    );
     info("All data processed");
     run_next_test();
   }

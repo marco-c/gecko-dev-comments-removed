@@ -3,8 +3,6 @@
 
 
 
-
-
 ChromeUtils.defineESModuleGetters(this, {
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
 });
@@ -185,7 +183,8 @@ function waitForUpdates() {
     function updateSuccess(aEvent) {
       
       
-      Assert.equal("1000", aEvent);
+      
+      Assert.equal("goog-downloadwhite-digest256:1000", aEvent);
       info("All data processed");
       resolve(true);
     }
