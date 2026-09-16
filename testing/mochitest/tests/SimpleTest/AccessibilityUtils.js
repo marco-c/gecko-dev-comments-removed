@@ -128,6 +128,10 @@ this.AccessibilityUtils = (function () {
 
   
   
+  let gClickedNode = null;
+
+  
+  
   let SimpleTest = null;
 
   
@@ -792,10 +796,18 @@ this.AccessibilityUtils = (function () {
     );
   }
 
+  function describeNode({ id, tagName, className }) {
+    return `id: ${id}, tagName: ${tagName}, className: ${className}`;
+  }
+
   function buildMessage(message, DOMNode) {
     if (DOMNode) {
-      const { id, tagName, className } = DOMNode;
-      message += `: id: ${id}, tagName: ${tagName}, className: ${className}`;
+      message += `: ${describeNode(DOMNode)}`;
+      if (gClickedNode) {
+        message +=
+          `. The checks fell back to this node from the one the test ` +
+          `clicked: ${describeNode(gClickedNode)}`;
+      }
     }
 
     return message;
@@ -1261,11 +1273,22 @@ this.AccessibilityUtils = (function () {
         return;
       }
 
-      assertInteractive(acc);
-      assertFocusable(acc);
-      assertVisible(acc);
-      assertEnabled(acc);
-      assertLabelled(acc);
+      
+      
+      
+      if (acc.DOMNode != node) {
+        gClickedNode = node;
+      }
+
+      try {
+        assertInteractive(acc);
+        assertFocusable(acc);
+        assertVisible(acc);
+        assertEnabled(acc);
+        assertLabelled(acc);
+      } finally {
+        gClickedNode = null;
+      }
     },
 
     setEnv(env = DEFAULT_ENV) {
