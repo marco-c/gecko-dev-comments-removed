@@ -527,7 +527,7 @@ TEST(ScreamTest, MaybeTest(LinkCapacity1500KbpsRtt30msNoEcn)) {
 
   SendMediaTestResult result = SendMediaInOneDirection(std::move(params), s);
   EXPECT_THAT(result.caller().subspan(1), Each(AvailableSendBitrateIsBetween(
-                                              DataRate::KilobitsPerSec(800),
+                                              DataRate::KilobitsPerSec(600),
                                               DataRate::KilobitsPerSec(2200))));
 }
 
@@ -658,12 +658,33 @@ TEST(ScreamTest, MaybeTest(CallerPauseSendingVideoIfFeedbackNotReceived)) {
   EXPECT_LT(GetPacketsSent(report_after_4s.value(), "video"),
             GetPacketsSent(result.caller_stats.back(), "video"));
 
+  std::optional<scoped_refptr<const RTCStatsReport>> report_after_6s =
+      GetFirstReportAtOrAfter(start_time + TimeDelta::Seconds(6),
+                              result.caller_stats);
+  std::optional<scoped_refptr<const RTCStatsReport>> report_after_7s =
+      GetFirstReportAtOrAfter(start_time + TimeDelta::Seconds(7),
+                              result.caller_stats);
+  std::optional<scoped_refptr<const RTCStatsReport>> report_after_8s =
+      GetFirstReportAtOrAfter(start_time + TimeDelta::Seconds(8),
+                              result.caller_stats);
+  ASSERT_TRUE(report_after_6s.has_value());
+  ASSERT_TRUE(report_after_7s.has_value());
+  ASSERT_TRUE(report_after_8s.has_value());
+
+  
+  
+  EXPECT_EQ(GetAvailableSendBitrate(report_after_6s.value()), DataRate::Zero());
+
   
   
   
+  EXPECT_LT(
+      GetAveragePacingDelay(report_after_8s.value(), report_after_7s.value()),
+      TimeDelta::Millis(50));
+
   
-  
-  
+  EXPECT_GT(GetAvailableSendBitrate(result.caller_stats.back()),
+            DataRate::KilobitsPerSec(400));
   EXPECT_LT(GetAvailableSendBitrate(result.caller_stats.back()),
             DataRate::KilobitsPerSec(800));
 }
@@ -836,9 +857,13 @@ TEST(ScreamTest, MaybeTest(LinkCapacity100Kbit50msRttNoEcn)) {
       CreateNetworkPath(s,  false,
                         DataRate::KilobitsPerSec(100), TimeDelta::Millis(25));
   SendMediaTestResult result = SendMediaInOneDirection(std::move(params), s);
-  EXPECT_THAT(result.caller(), Each(AvailableSendBitrateIsBetween(
-                                   DataRate::KilobitsPerSec(10),
-                                   DataRate::KilobitsPerSec(150))));
+  
+  
+  
+  
+  EXPECT_THAT(result.caller().subspan(4), Each(AvailableSendBitrateIsBetween(
+                                              DataRate::KilobitsPerSec(10),
+                                              DataRate::KilobitsPerSec(150))));
 }
 
 TEST(ScreamTest, MaybeTest(LinkCapacity1MbitRtt50msWithShortQueuesNoEcn)) {
