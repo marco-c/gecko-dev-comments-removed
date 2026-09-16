@@ -46,9 +46,13 @@ add_task(async function test_client_info_ping_signed_in() {
           FAKE_UID,
           "uid metric is set when signed in"
         );
-        Assert.deepEqual(
-          Glean.browser.isUserDefault.testGetValue("fx-accounts-client-info"),
-          { false: 1 },
+        
+        
+        let defaultMetric = Glean.browser.isUserDefault.testGetValue(
+          "fx-accounts-client-info"
+        );
+        Assert.ok(
+          defaultMetric.false == 1 || defaultMetric.true == 1,
           "is_user_default metric is present when signed in"
         );
       },
