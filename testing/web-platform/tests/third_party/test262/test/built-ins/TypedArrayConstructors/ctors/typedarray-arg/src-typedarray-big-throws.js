@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var bigTypedArray;
+
+testWithBigIntTypedArrayConstructors(function(BTA, makeCtorArg) {
+
+  bigTypedArray = new BTA(makeCtorArg(16));
+
+  testWithTypedArrayConstructors(function(TA, makeCtorArg) {
+    assert.throws(TypeError, function() {
+      new TA(bigTypedArray);
+    });
+  });
+
+});
