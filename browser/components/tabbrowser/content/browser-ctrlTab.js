@@ -375,64 +375,54 @@ var ctrlTab = {
       return;
     }
 
+    let tabChanged = aPreview._tab != aTab;
     aPreview._tab = aTab;
 
-    if (aTab) {
-      let canvas = aPreview._canvas;
-      let canvasWidth = this.canvasWidth;
-      let canvasHeight = this.canvasHeight;
-      let existingPreview = canvas.firstChild;
-      if (!existingPreview) {
-        let placeholder = document.createElement("img");
-        placeholder.className = "ctrlTab-placeholder";
-        placeholder.setAttribute("width", canvasWidth);
-        placeholder.setAttribute("height", canvasHeight);
-        placeholder.setAttribute("alt", "");
-        canvas.appendChild(placeholder);
-        existingPreview = placeholder;
-      }
-      tabPreviews
-        .get(aTab)
-        .then(img => {
-          switch (aPreview._tab) {
-            case aTab:
-              if (img) {
-                img.style.width = canvasWidth + "px";
-                img.style.height = canvasHeight + "px";
-                canvas.replaceChild(img, existingPreview);
-              }
-              break;
-            case null:
-              
-              this._clearCanvas(canvas);
-              break;
-            
-            
-            
-          }
-        })
-        .catch(error => console.error(error));
-
-      aPreview._label.setAttribute("value", aTab.label);
-      aPreview.setAttribute("tooltiptext", aTab.label);
-      if (aTab.image) {
-        aPreview._favicon.setAttribute("src", aTab.image);
-      } else {
-        aPreview._favicon.removeAttribute("src");
-      }
-      aPreview.hidden = false;
-    } else {
-      this._clearCanvas(aPreview._canvas);
+    if (!aTab) {
+      aPreview._canvas.replaceChildren();
       aPreview.hidden = true;
       aPreview._label.removeAttribute("value");
       aPreview.removeAttribute("tooltiptext");
       aPreview._favicon.removeAttribute("src");
+      return;
     }
+
+    if (tabChanged) {
+      
+      
+      
+      aPreview._canvas.replaceChildren(this._makePlaceholder());
+    }
+
+    tabPreviews
+      .get(aTab)
+      .then(img => {
+        if (aPreview._tab != aTab || !img) {
+          return;
+        }
+        img.style.width = this.canvasWidth + "px";
+        img.style.height = this.canvasHeight + "px";
+        aPreview._canvas.replaceChildren(img);
+      })
+      .catch(error => console.error(error));
+
+    aPreview._label.setAttribute("value", aTab.label);
+    aPreview.setAttribute("tooltiptext", aTab.label);
+    if (aTab.image) {
+      aPreview._favicon.setAttribute("src", aTab.image);
+    } else {
+      aPreview._favicon.removeAttribute("src");
+    }
+    aPreview.hidden = false;
   },
 
-  
-  _clearCanvas(canvas) {
-    canvas.replaceChildren();
+  _makePlaceholder() {
+    let placeholder = document.createElement("img");
+    placeholder.className = "ctrlTab-placeholder";
+    placeholder.setAttribute("width", this.canvasWidth);
+    placeholder.setAttribute("height", this.canvasHeight);
+    placeholder.setAttribute("alt", "");
+    return placeholder;
   },
 
   advanceFocus: function ctrlTab_advanceFocus(aForward) {
