@@ -1352,6 +1352,36 @@ bool WebRenderBridgeParent::SetDisplayList(
   return success;
 }
 
+
+
+
+
+static void ClearUnconfirmedReferentIds(WebRenderScrollData& aScrollData,
+                                        LayersId aOwnLayersId) {
+  for (size_t i = 0; i < aScrollData.GetLayerCount(); i++) {
+    WebRenderLayerScrollData* layer = aScrollData.GetLayerData(i);
+    Maybe<LayersId> referent = layer->GetReferentId();
+    if (!referent) {
+      continue;
+    }
+    LayersId embedder;
+    bool found = CompositorBridgeParent::CallWithLayerTreeState(
+        *referent, [&](CompositorBridgeParent::LayerTreeState& aState) {
+          embedder = aState.mEmbedderLayersId;
+        });
+    if (!found || embedder != aOwnLayersId) {
+      layer->ClearReferentId();
+    }
+  }
+}
+
+
+
+static void SanitizeScrollData(WebRenderScrollData& aScrollData,
+                               LayersId aOwnLayersId) {
+  ClearUnconfirmedReferentIds(aScrollData, aOwnLayersId);
+}
+
 bool WebRenderBridgeParent::ProcessDisplayListData(
     DisplayListData& aDisplayList, wr::Epoch aWrEpoch,
     const TimeStamp& aTxnStartTime, bool aValidTransaction,
@@ -1360,13 +1390,18 @@ bool WebRenderBridgeParent::ProcessDisplayListData(
                              mRemoteTextureTxnScheduler, mFwdTransactionId);
   Maybe<wr::AutoTransactionSender> sender;
 
-  if (aDisplayList.mScrollData && !aDisplayList.mScrollData->Validate()) {
-    
-    
-    MOZ_ASSERT(
-        false,
-        "Content sent malformed scroll data (or validation check has a bug)");
-    aValidTransaction = false;
+  if (aDisplayList.mScrollData) {
+    if (!aDisplayList.mScrollData->ValidateShape()) {
+      
+      
+      
+      MOZ_ASSERT(false,
+                 "Content sent malformed scroll data (or validation check "
+                 "has a bug)");
+      aValidTransaction = false;
+    } else {
+      SanitizeScrollData(*aDisplayList.mScrollData, GetLayersId());
+    }
   }
 
   if (!aValidTransaction) {
