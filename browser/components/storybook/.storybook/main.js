@@ -138,6 +138,14 @@ module.exports = {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     let cssFileTest = /\.css$/.toString();
     let cssRuleIndex = config.module.rules.findIndex(
       rule => rule.test.toString() === cssFileTest
@@ -145,10 +153,23 @@ module.exports = {
     config.module.rules[cssRuleIndex] = {
       test: /\.css$/,
       exclude: [/\.storybook/, /node_modules/],
-      type: "asset/resource",
-      generator: {
-        filename: "[name].[contenthash].css",
-      },
+      oneOf: [
+        {
+          resourceQuery: /css-module/,
+          use: [
+            {
+              loader: "css-loader",
+              options: { import: false, exportType: "css-style-sheet" },
+            },
+          ],
+        },
+        {
+          type: "asset/resource",
+          generator: {
+            filename: "[name].[contenthash].css",
+          },
+        },
+      ],
     };
 
     
