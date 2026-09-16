@@ -3508,6 +3508,11 @@ nsresult nsNavHistoryFolderResultNode::OnItemMoved(
     
     
 
+    MOZ_ASSERT(node, "Can't find folder that is moving!");
+    if (!node) {
+      return NS_ERROR_FAILURE;
+    }
+
     
     int32_t maxIndex = std::max(node->mBookmarkIndex, aNewIndex);
     
@@ -3516,10 +3521,6 @@ nsresult nsNavHistoryFolderResultNode::OnItemMoved(
     ReindexRange(node->mBookmarkIndex + 1, maxIndex, -1);
     ReindexRange(aNewIndex, maxIndex, 1);
 
-    MOZ_ASSERT(node, "Can't find folder that is moving!");
-    if (!node) {
-      return NS_ERROR_FAILURE;
-    }
     MOZ_ASSERT(index < mChildren.Count(), "Invalid index!");
     node->mBookmarkIndex = aNewIndex;
 
