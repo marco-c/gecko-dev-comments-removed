@@ -1330,12 +1330,21 @@ _get_bitmap_surface (FT_Bitmap		     *bitmap,
 	    } else {
 		int i;
 		unsigned char *source, *dest;
+		
+
+
+		int row_bytes = (width + 7) >> 3;
+
+		if (bitmap->pitch < row_bytes) {
+		    free (data);
+		    return _cairo_error (CAIRO_STATUS_INVALID_FORMAT);
+		}
 
 		source = bitmap->buffer;
 		dest = data;
 		for (i = height; i; i--) {
-		    memcpy (dest, source, bitmap->pitch);
-		    memset (dest + bitmap->pitch, '\0', stride - bitmap->pitch);
+		    memcpy (dest, source, row_bytes);
+		    memset (dest + row_bytes, '\0', stride - row_bytes);
 
 		    source += bitmap->pitch;
 		    dest += stride;
@@ -1434,27 +1443,29 @@ _get_bitmap_surface (FT_Bitmap		     *bitmap,
 	    if (error)
 		return _cairo_error (_cairo_ft_to_cairo_error (error));
 
-	    FT_Bitmap_Done( library, bitmap );
-	    *bitmap = tmp;
+            
 
-	    stride = bitmap->pitch;
+	    stride = tmp.pitch;
 	    data = _cairo_malloc_ab (height, stride);
-	    if (!data)
+	    if (!data) {
+		FT_Bitmap_Done( library, &tmp );
 		return _cairo_error (CAIRO_STATUS_NO_MEMORY);
+	    }
 
-	    if (bitmap->num_grays != 256)
+	    if (tmp.num_grays != 256)
 	    {
 	      unsigned int x, y;
-	      unsigned int mul = 255 / (bitmap->num_grays - 1);
-	      FT_Byte *p = bitmap->buffer;
+	      unsigned int mul = 255 / (tmp.num_grays - 1);
+	      FT_Byte *p = tmp.buffer;
 	      for (y = 0; y < height; y++) {
 	        for (x = 0; x < width; x++)
 		  p[x] *= mul;
-		p += bitmap->pitch;
+		p += tmp.pitch;
 	      }
 	    }
 
-	    memcpy (data, bitmap->buffer, (size_t)stride * height);
+	    memcpy (data, tmp.buffer, (size_t)stride * height);
+	    FT_Bitmap_Done( library, &tmp );
 	    break;
 	}
 	
