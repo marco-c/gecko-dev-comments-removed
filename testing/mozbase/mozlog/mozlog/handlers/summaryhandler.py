@@ -2,7 +2,7 @@
 
 
 
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 
 from ..reader import LogHandler
 
@@ -20,7 +20,7 @@ class SummaryHandler(LogHandler):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.summary = OrderedDict()
+        self.summary = {}
         self.current_suite = None
 
     @property
@@ -117,8 +117,8 @@ class SummaryHandler(LogHandler):
                         "known_intermittent": defaultdict(int),
                     },
                 },
-                "unexpected_logs": OrderedDict(),
-                "intermittent_logs": OrderedDict(),
+                "unexpected_logs": {},
+                "intermittent_logs": {},
                 "harness_errors": [],
             }
 
