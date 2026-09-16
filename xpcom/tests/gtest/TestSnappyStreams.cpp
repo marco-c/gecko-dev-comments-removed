@@ -185,6 +185,19 @@ TEST(SnappyStream, UncompressCorruptCompressedDataContent)
   TestUncompressCorrupt(data, dataLength);
 }
 
+TEST(SnappyStream, UncompressCorruptCompressedDataLengthTooSmall)
+{
+  
+  
+  
+  
+  static const char data[] =
+      "\xff\x06\x00\x00sNaPpY"  
+      "\x00\x03\x00\x00xyz";    
+  static const uint32_t dataLength = (sizeof(data) / sizeof(const char)) - 1;
+  TestUncompressCorrupt(data, dataLength);
+}
+
 TEST(SnappyStream, UncompressCorruptCompressDataLengthTooLarge)
 {
   uint32_t compressedBufferLength =
