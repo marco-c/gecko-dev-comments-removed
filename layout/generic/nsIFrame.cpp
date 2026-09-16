@@ -4606,45 +4606,11 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
 
   if (savedOutOfFlowData) {
     aBuilder->SetBuildingInvisibleItems(false);
-
+#ifdef DEBUG
+    savedOutOfFlowData->CheckASR(aBuilder, child);
+#endif
     const ActiveScrolledRoot* asr =
         savedOutOfFlowData->mContainingBlockActiveScrolledRoot;
-
-#ifdef DEBUG
-    if (aBuilder->IsPaintingToWindow()) {
-      
-      if (savedOutOfFlowData->mContainingBlockInViewTransitionCapture) {
-        MOZ_ASSERT(asr == nullptr);
-        MOZ_ASSERT(aBuilder->IsInViewTransitionCapture());
-      } else if ((asr ? FrameAndASRKind{asr->mFrame, asr->mKind}
-                      : FrameAndASRKind::default_value()) !=
-                 DisplayPortUtils::GetASRAncestorFrame(
-                     {child->GetParent(), ActiveScrolledRoot::ASRKind::Scroll},
-                     aBuilder)) {
-        
-        
-        
-        
-        
-        
-        MOZ_ASSERT(asr == nullptr);
-        MOZ_ASSERT(PresContext()->Document()->GetActiveViewTransition());
-        MOZ_ASSERT(
-            child->GetParent()->GetContent()->IsInNativeAnonymousSubtree());
-        bool inTopLayer = false;
-        nsIFrame* curr = child->GetParent();
-        while (curr) {
-          if (curr->StyleDisplay()->mTopLayer == StyleTopLayer::Auto) {
-            inTopLayer = true;
-            break;
-          }
-          curr = curr->GetParent();
-        }
-        MOZ_ASSERT(inTopLayer);
-      }
-    }
-#endif
-
     if (child->IsAbsolutelyPositioned(disp)) {
       asr = DisplayPortUtils::GetASRForAbsPosFrame(child, asr, aBuilder);
     }
