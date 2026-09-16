@@ -11,6 +11,11 @@ from taskgraph.util.taskcluster import get_artifact_path
 transforms = TransformSequence()
 
 
+
+
+POLL_TIMEOUT_PADDING = 600
+
+
 @transforms.add
 def update_env(config, tasks):
     for task in tasks:
@@ -30,5 +35,6 @@ def update_env(config, tasks):
                 "artifact-reference": f"<build/{get_artifact_path(task, artifact)}>"
             },
             "INPUT_KEY": input_key,
+            "POLL_TIMEOUT": str(task["worker"]["max-run-time"] - POLL_TIMEOUT_PADDING),
         }
         yield task
