@@ -238,7 +238,7 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
   
   
   
-  bool mFromStaleCache = false;
+  mozilla::Atomic<bool, mozilla::Relaxed> mFromStaleCache{false};
 
   
   bool mDoomed = false;
