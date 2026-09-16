@@ -1427,9 +1427,11 @@ where
         {
             
             
-            self.upcoming.push(
-                CharacterAndClassAndTrieValue::new_with_non_decomposing_starter(c.character()),
+            debug_assert_eq!(
+                ccc_from_trie_value(decomposition),
+                CanonicalCombiningClass::NotReordered
             );
+            self.upcoming.push(c);
         } else {
             let high_zeros = (decomposition & HIGH_ZEROS_MASK) == 0;
             let low_zeros = (decomposition & LOW_ZEROS_MASK) == 0;
