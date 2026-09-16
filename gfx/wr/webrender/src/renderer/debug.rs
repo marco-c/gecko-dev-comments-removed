@@ -456,7 +456,6 @@ impl DebugOverlayState {
 
 
 pub fn update_debug_overlay(
-    device: &mut Device,
     compositor_config: &mut CompositorConfig,
     compositor_kind: CompositorKind,
     state: &mut DebugOverlayState,
@@ -485,7 +484,7 @@ pub fn update_debug_overlay(
         
         if let Some(current_size) = state.current_size {
             if !state.is_enabled || current_size != framebuffer_size {
-                compositor.destroy_surface(device, NativeSurfaceId::DEBUG_OVERLAY);
+                compositor.destroy_surface(NativeSurfaceId::DEBUG_OVERLAY);
                 state.current_size = None;
             }
         }
@@ -493,16 +492,12 @@ pub fn update_debug_overlay(
         
         if state.is_enabled && state.current_size.is_none() {
             compositor.create_surface(
-                device,
                 NativeSurfaceId::DEBUG_OVERLAY,
                 DeviceIntPoint::zero(),
                 framebuffer_size,
                 false,
             );
-            compositor.create_tile(
-                device,
-                NativeTileId::DEBUG_OVERLAY,
-            );
+            compositor.create_tile(NativeTileId::DEBUG_OVERLAY);
             state.current_size = Some(framebuffer_size);
         }
     }
@@ -525,13 +520,11 @@ pub fn bind_debug_overlay(
 
                 
                 compositor.invalidate_tile(
-                    device,
                     NativeTileId::DEBUG_OVERLAY,
                     DeviceIntRect::from_size(surface_size),
                 );
                 
                 let surface_info = compositor.bind(
-                    device,
                     NativeTileId::DEBUG_OVERLAY,
                     DeviceIntRect::from_size(surface_size),
                     DeviceIntRect::from_size(surface_size),
@@ -597,7 +590,6 @@ pub fn bind_debug_overlay(
 
 
 pub fn unbind_debug_overlay(
-    device: &mut Device,
     compositor_config: &mut CompositorConfig,
     compositor_kind: CompositorKind,
     state: &DebugOverlayState,
@@ -608,14 +600,13 @@ pub fn unbind_debug_overlay(
             CompositorKind::Native { .. } => {
                 let compositor = compositor_config.compositor().unwrap();
                 
-                compositor.unbind(device);
+                compositor.unbind();
 
                 let clip_rect = DeviceIntRect::from_size(
                     state.current_size.unwrap(),
                 );
 
                 compositor.add_surface(
-                    device,
                     NativeSurfaceId::DEBUG_OVERLAY,
                     CompositorSurfaceTransform::identity(),
                     clip_rect,
@@ -1004,7 +995,7 @@ pub fn draw_window_visibility_debug(
     let y: f32 = 40.0;
 
     if let CompositorConfig::Native { ref mut compositor, .. } = *compositor_config {
-        let visibility = compositor.get_window_visibility(device);
+        let visibility = compositor.get_window_visibility();
         let color = if visibility.is_fully_occluded {
             ColorU::new(255, 0, 0, 255)
 
