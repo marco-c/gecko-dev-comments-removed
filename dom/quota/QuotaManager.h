@@ -388,8 +388,7 @@ class QuotaManager final : public BackgroundThreadObject {
 
   
   uint64_t CollectOriginsForEviction(
-      uint64_t aMinSizeToBeFreed,
-      nsTArray<RefPtr<OriginDirectoryLock>>& aLocks);
+      int64_t aMinSizeToBeFreed, nsTArray<RefPtr<OriginDirectoryLock>>& aLocks);
 
   
 
@@ -715,8 +714,8 @@ class QuotaManager final : public BackgroundThreadObject {
 
   void SetThumbnailPrivateIdentityId(uint32_t aThumbnailPrivateIdentityId);
 
-  uint64_t GetGroupLimit() const;
-  static uint64_t GetGroupLimitForLimit(uint64_t aLimit);
+  int64_t GetGroupLimit() const;
+  static int64_t GetGroupLimitForLimit(int64_t aLimit);
 
   Maybe<OriginStateMetadata> GetOriginStateMetadata(
       const OriginMetadata& aOriginMetadata);

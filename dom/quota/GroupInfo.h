@@ -65,7 +65,13 @@ class GroupInfo final {
 
   GroupInfoPair* mGroupInfoPair;
   PersistenceType mPersistenceType;
-  uint64_t mUsage;
+
+  
+  
+  
+  
+  
+  int64_t mUsage;
 };
 
 }  
