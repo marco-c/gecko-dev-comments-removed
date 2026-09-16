@@ -1059,6 +1059,9 @@ ImageTestCase LargeJXLTestCase() {
 
 
 
+
+
+
 ImageTestCase LargeJXLReferenceWebPTestCase() {
   return ImageTestCase("large-jxl-reference.webp", "image/webp",
                        IntSize(1200, 660), TEST_CASE_IGNORE_OUTPUT);
