@@ -8,13 +8,12 @@
 
 #include "gfxContext.h"
 #include "mozilla/Logging.h"
+#include "mozilla/MozPrintCallbackRunner.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PrintedSheetFrame.h"
 #include "mozilla/ReflowInput.h"
 #include "mozilla/StaticPresData.h"
-#include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/DrawEventRecorder.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/intl/AppDateTimeFormat.h"
 #include "nsCOMPtr.h"
@@ -22,16 +21,12 @@
 #include "nsContentUtils.h"
 #include "nsDeviceContext.h"
 #include "nsDisplayList.h"
-#include "nsHTMLCanvasFrame.h"
-#include "nsICanvasRenderingContextInternal.h"
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
 #include "nsIPrintSettings.h"
-#include "nsPageFrame.h"
 #include "nsPresContext.h"
 #include "nsRegion.h"
 #include "nsServiceManagerUtils.h"
-#include "nsSubDocumentFrame.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -118,8 +113,9 @@ nsPageSequenceFrame::nsPageSequenceFrame(ComputedStyle* aStyle,
     : nsContainerFrame(aStyle, aPresContext, kClassID),
       mMaxSheetSize(mWritingMode),
       mScrollportSize(mWritingMode),
-      mCalledBeginPage(false),
-      mCurrentCanvasListSetup(false) {
+      mCalledBeginPage(false) {
+  MOZ_ASSERT(aPresContext->IsRootPaginatedDocument(),
+             "A Page Sequence is only for real pages");
   mPageData.mHeadFootFont =
       *PresContext()
            ->Document()
@@ -135,7 +131,7 @@ nsPageSequenceFrame::nsPageSequenceFrame(ComputedStyle* aStyle,
   SetPageNumberFormat("pageofpages", "%1$d of %2$d", false);
 }
 
-nsPageSequenceFrame::~nsPageSequenceFrame() { ResetPrintCanvasList(); }
+nsPageSequenceFrame::~nsPageSequenceFrame() = default;
 
 NS_QUERYFRAME_HEAD(nsPageSequenceFrame)
   NS_QUERYFRAME_ENTRY(nsPageSequenceFrame)
@@ -261,8 +257,6 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
                                  const ReflowInput& aReflowInput,
                                  nsReflowStatus& aStatus) {
   MarkInReflow();
-  MOZ_ASSERT(aPresContext->IsRootPaginatedDocument(),
-             "A Page Sequence is only for real pages");
   DO_GLOBAL_REFLOW_COUNT("nsPageSequenceFrame");
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
   NS_FRAME_TRACE_REFLOW_IN("nsPageSequenceFrame::Reflow");
@@ -544,56 +538,6 @@ nsresult nsPageSequenceFrame::StartPrint(nsPresContext* aPresContext,
   return NS_OK;
 }
 
-static void GetPrintCanvasElementsInFrame(
-    nsIFrame* aFrame, nsTArray<RefPtr<HTMLCanvasElement>>* aArr) {
-  if (!aFrame) {
-    return;
-  }
-  for (const auto& childList : aFrame->ChildLists()) {
-    for (nsIFrame* child : childList.mList) {
-      
-      if (nsHTMLCanvasFrame* canvasFrame = do_QueryFrame(child)) {
-        auto* canvas =
-            HTMLCanvasElement::FromNodeOrNull(canvasFrame->GetContent());
-        if (canvas && canvas->GetMozPrintCallback()) {
-          aArr->AppendElement(canvas);
-          continue;
-        }
-      }
-
-      if (!child->PrincipalChildList().FirstChild()) {
-        if (nsSubDocumentFrame* subdocumentFrame = do_QueryFrame(child)) {
-          
-          nsIFrame* root = subdocumentFrame->GetSubdocumentRootFrame();
-          child = root;
-        }
-      }
-      
-      
-      
-      GetPrintCanvasElementsInFrame(child, aArr);
-    }
-  }
-}
-
-
-
-static void GetPrintCanvasElementsInSheet(
-    PrintedSheetFrame* aSheetFrame, nsTArray<RefPtr<HTMLCanvasElement>>* aArr) {
-  MOZ_ASSERT(aSheetFrame, "Caller should've null-checked for us already");
-  for (nsIFrame* child : aSheetFrame->PrincipalChildList()) {
-    
-    
-    
-    MOZ_ASSERT(child->IsPageFrame(),
-               "PrintedSheetFrame's children must all be nsPageFrames");
-    auto* pageFrame = static_cast<nsPageFrame*>(child);
-    if (!pageFrame->HasAnyStateBits(NS_PAGE_SKIPPED_BY_CUSTOM_RANGE)) {
-      GetPrintCanvasElementsInFrame(pageFrame, aArr);
-    }
-  }
-}
-
 PrintedSheetFrame* nsPageSequenceFrame::GetCurrentSheetFrame() {
   uint32_t i = 0;
   for (nsIFrame* child : mFrames) {
@@ -608,6 +552,7 @@ PrintedSheetFrame* nsPageSequenceFrame::GetCurrentSheetFrame() {
 }
 
 nsresult nsPageSequenceFrame::PrePrintNextSheet(nsITimerCallback* aCallback,
+                                                MozPrintCallbackRunner& aRunner,
                                                 bool* aDone) {
   PrintedSheetFrame* currentSheet = GetCurrentSheetFrame();
   if (!currentSheet) {
@@ -615,99 +560,37 @@ nsresult nsPageSequenceFrame::PrePrintNextSheet(nsITimerCallback* aCallback,
     return NS_ERROR_FAILURE;
   }
 
-  if (!PresContext()->IsRootPaginatedDocument()) {
+  if (aRunner.HasCanvases()) {
     
-    
-    
-    
-    
-    *aDone = true;
+    *aDone = aRunner.AreCallbacksDone();
     return NS_OK;
   }
 
-  
-  
-  if (!mCurrentCanvasListSetup) {
-    mCurrentCanvasListSetup = true;
-    GetPrintCanvasElementsInSheet(currentSheet, &mCurrentCanvasList);
+  aRunner.CollectCanvases(currentSheet);
+  if (aRunner.HasCanvases()) {
+    
+    nsDeviceContext* dc = PresContext()->DeviceContext();
+    PR_PL(("\n"));
+    PR_PL(("***************** BeginPage *****************\n"));
+    const gfx::IntSize sizeInPoints =
+        currentSheet->GetPrintTargetSizeInPoints(dc->AppUnitsPerPhysicalInch());
+    MOZ_TRY(dc->BeginPage(sizeInPoints));
 
-    if (!mCurrentCanvasList.IsEmpty()) {
-      nsresult rv = NS_OK;
+    mCalledBeginPage = true;
 
-      
-      nsDeviceContext* dc = PresContext()->DeviceContext();
-      PR_PL(("\n"));
-      PR_PL(("***************** BeginPage *****************\n"));
-      const gfx::IntSize sizeInPoints =
-          currentSheet->GetPrintTargetSizeInPoints(
-              dc->AppUnitsPerPhysicalInch());
-      rv = dc->BeginPage(sizeInPoints);
-      NS_ENSURE_SUCCESS(rv, rv);
+    UniquePtr<gfxContext> renderingContext = dc->CreateRenderingContext();
+    NS_ENSURE_TRUE(renderingContext, NS_ERROR_OUT_OF_MEMORY);
 
-      mCalledBeginPage = true;
-
-      UniquePtr<gfxContext> renderingContext = dc->CreateRenderingContext();
-      NS_ENSURE_TRUE(renderingContext, NS_ERROR_OUT_OF_MEMORY);
-
-      DrawTarget* referenceDt = renderingContext->GetDrawTarget();
-      if (NS_WARN_IF(!referenceDt)) {
-        return NS_ERROR_FAILURE;
-      }
-
-      for (HTMLCanvasElement* canvas : Reversed(mCurrentCanvasList)) {
-        CSSIntSize size = canvas->GetSize();
-        RefPtr recorder = MakeAndAddRef<gfx::DrawEventRecorderMemory>(nullptr);
-        RefPtr<DrawTarget> canvasTarget =
-            gfx::Factory::CreateRecordingDrawTarget(
-                recorder, referenceDt,
-                gfx::IntRect(gfx::IntPoint(), size.ToUnknownSize()));
-        if (!canvasTarget) {
-          continue;
-        }
-
-        nsICanvasRenderingContextInternal* ctx = canvas->GetCurrentContext();
-        if (!ctx) {
-          continue;
-        }
-
-        
-        ctx->InitializeWithDrawTarget(nullptr, WrapNotNull(canvasTarget));
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        AutoWeakFrame weakFrame = this;
-        canvas->DispatchPrintCallback(aCallback);
-        NS_ENSURE_STATE(weakFrame.IsAlive());
-      }
+    DrawTarget* referenceDt = renderingContext->GetDrawTarget();
+    if (NS_WARN_IF(!referenceDt)) {
+      return NS_ERROR_FAILURE;
     }
-  }
-  uint32_t doneCounter = 0;
-  for (HTMLCanvasElement* canvas : mCurrentCanvasList) {
-    if (canvas->IsPrintCallbackDone()) {
-      doneCounter++;
-    }
-  }
-  
-  *aDone = doneCounter == mCurrentCanvasList.Length();
 
+    aRunner.DispatchCallbacks(referenceDt, aCallback);
+    
+  }
+  *aDone = aRunner.AreCallbacksDone();
   return NS_OK;
-}
-
-void nsPageSequenceFrame::ResetPrintCanvasList() {
-  for (int32_t i = mCurrentCanvasList.Length() - 1; i >= 0; i--) {
-    HTMLCanvasElement* canvas = mCurrentCanvasList[i];
-    canvas->ResetPrintCallback();
-  }
-
-  mCurrentCanvasList.Clear();
-  mCurrentCanvasListSetup = false;
 }
 
 nsresult nsPageSequenceFrame::PrintNextSheet() {
@@ -727,19 +610,17 @@ nsresult nsPageSequenceFrame::PrintNextSheet() {
 
   nsDeviceContext* dc = PresContext()->DeviceContext();
 
-  if (PresContext()->IsRootPaginatedDocument()) {
-    if (!mCalledBeginPage) {
-      
-      
-      
-      PR_PL(("\n"));
-      PR_PL(("***************** BeginPage *****************\n"));
-      const gfx::IntSize sizeInPoints =
-          currentSheetFrame->GetPrintTargetSizeInPoints(
-              dc->AppUnitsPerPhysicalInch());
-      rv = dc->BeginPage(sizeInPoints);
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
+  if (!mCalledBeginPage) {
+    
+    
+    
+    PR_PL(("\n"));
+    PR_PL(("***************** BeginPage *****************\n"));
+    const gfx::IntSize sizeInPoints =
+        currentSheetFrame->GetPrintTargetSizeInPoints(
+            dc->AppUnitsPerPhysicalInch());
+    rv = dc->BeginPage(sizeInPoints);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   PR_PL(("SeqFr::PrintNextSheet -> %p SheetIdx: %d", currentSheetFrame,
@@ -760,13 +641,11 @@ nsresult nsPageSequenceFrame::PrintNextSheet() {
 
 nsresult nsPageSequenceFrame::DoPageEnd() {
   nsresult rv = NS_OK;
-  if (PresContext()->IsRootPaginatedDocument()) {
-    PR_PL(("***************** End Page (DoPageEnd) *****************\n"));
-    rv = PresContext()->DeviceContext()->EndPage();
-    
-  }
 
-  ResetPrintCanvasList();
+  PR_PL(("***************** End Page (DoPageEnd) *****************\n"));
+  rv = PresContext()->DeviceContext()->EndPage();
+  
+
   mCalledBeginPage = false;
 
   mCurrentSheetIdx++;
