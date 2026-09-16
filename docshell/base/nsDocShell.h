@@ -1099,15 +1099,6 @@ class nsDocShell final : public nsDocLoader,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
-                    const nsAString& aURL, mozilla::dom::CallerType aCallerType,
-                    bool aReplace, JSContext* aCx);
-
-  
-
-
-
 
 
 

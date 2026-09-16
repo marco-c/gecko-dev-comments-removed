@@ -1060,7 +1060,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   
   
   
-  bool CheckNavigationRateLimit(CallerType aCallerType);
+  nsresult CheckNavigationRateLimit(CallerType aCallerType);
 
   void ResetNavigationRateLimit();
 
