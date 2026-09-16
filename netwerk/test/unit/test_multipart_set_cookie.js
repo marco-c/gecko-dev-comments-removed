@@ -1,5 +1,8 @@
 "use strict";
 
+
+
+
 const { HttpServer } = ChromeUtils.importESModule(
   "resource://testing-common/httpd.sys.mjs"
 );
@@ -25,34 +28,15 @@ function contentHandler(metadata, response) {
   response.bodyOutputStream.write(multipartBody, multipartBody.length);
 }
 
-let first = true;
-
 function responseHandler(request, buffer) {
   let channel = request.QueryInterface(Ci.nsIChannel);
   Assert.equal(buffer, "Some text");
   Assert.equal(channel.contentType, "text/plain");
 
   
-  if (first) {
-    
-    Assert.equal(
-      Services.cookies.getCookieStringFromHttp(channel.URI, channel),
-      ""
-    );
-    first = false;
-    Services.prefs.setBoolPref(
-      "network.cookie.prevent_set_cookie_from_multipart",
-      false
-    );
-    createConverterAndRequest();
-  } else {
-    
-    Assert.equal(
-      Services.cookies.getCookieStringFromHttp(channel.URI, channel),
-      "foo=bar"
-    );
-    httpserver.stop(do_test_finished);
-  }
+  Assert.equal(Services.cookies.cookies.length, 0, "no cookie was set");
+
+  httpserver.stop(do_test_finished);
 }
 
 var multipartListener = {
@@ -70,7 +54,6 @@ var multipartListener = {
   onDataAvailable(request, stream, offset, count) {
     try {
       this._buffer = this._buffer.concat(read_stream(stream, count));
-      dump("BUFFEEE: " + this._buffer + "\n\n");
     } catch (ex) {
       do_throw("Error in onDataAvailable: " + ex);
     }
