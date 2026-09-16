@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+type TabGroupId = import("../TabGroupState.sys.mjs").TabGroupId;
+type TabGroupStateData = import("../TabGroupState.sys.mjs").TabGroupStateData;
+type ClosedTabGroupStateData =
+  import("../TabGroupState.sys.mjs").ClosedTabGroupStateData;
+type SavedTabGroupStateData =
+  import("../TabGroupState.sys.mjs").SavedTabGroupStateData;

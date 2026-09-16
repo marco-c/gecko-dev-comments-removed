@@ -35,6 +35,12 @@ interface XULElementTagNameMap {
 }
 
 interface Document {
+  
+  createElementNS(
+    namespace: "http://www.w3.org/2000/svg",
+    qualifiedName: string,
+    options?: string | ElementCreationOptions
+  ): SVGElement;
   createXULElement<K extends keyof XULElementTagNameMap>(
     localName: K,
     options?: string | ElementCreationOptions
