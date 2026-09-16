@@ -110,11 +110,13 @@ class VoiceChannelFactoryInterface {
   
   
   virtual std::unique_ptr<VoiceMediaReceiveChannelInterface>
-  CreateReceiveChannel(const Environment& env,
-                       Call* call,
-                       const MediaConfig& config,
-                       const AudioOptions& options,
-                       const CryptoOptions& crypto_options) = 0;
+  CreateReceiveChannel(
+      const Environment& env,
+      Call* call,
+      const MediaConfig& config,
+      const AudioOptions& options,
+      const CryptoOptions& crypto_options,
+      absl::AnyInvocable<void(uint32_t ssrc)> on_first_packet) = 0;
 };
 
 
@@ -140,10 +142,12 @@ class VideoChannelFactoryInterface {
 
   
   virtual std::unique_ptr<VideoMediaReceiveChannelInterface>
-  CreateReceiveChannel(const Environment& env,
-                       Call* call,
-                       const MediaConfig& config,
-                       const CryptoOptions& crypto_options) = 0;
+  CreateReceiveChannel(
+      const Environment& env,
+      Call* call,
+      const MediaConfig& config,
+      const CryptoOptions& crypto_options,
+      absl::AnyInvocable<void(uint32_t ssrc)> on_first_packet) = 0;
 };
 
 class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface,
@@ -181,7 +185,8 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface,
       Call* call,
       const MediaConfig& config,
       const AudioOptions& options,
-      const CryptoOptions& crypto_options) override = 0;
+      const CryptoOptions& crypto_options,
+      absl::AnyInvocable<void(uint32_t ssrc)> on_first_packet) override = 0;
 
   
   
@@ -233,7 +238,8 @@ class VideoEngineInterface : public RtpHeaderExtensionQueryInterface,
       const Environment& env,
       Call* call,
       const MediaConfig& config,
-      const CryptoOptions& crypto_options) override = 0;
+      const CryptoOptions& crypto_options,
+      absl::AnyInvocable<void(uint32_t ssrc)> on_first_packet) override = 0;
 
   
   

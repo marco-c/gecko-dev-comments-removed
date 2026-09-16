@@ -82,6 +82,7 @@ class ChannelReceiveTest : public Test {
          0,
          false, audio_decoder_factory_,
          nullptr, crypto_options,
+         nullptr,
          nullptr, &packet_router_);
     channel->SetReceiveCodecs(
         {{kPayloadType, {kPayloadName, kSampleRateHz, 1}}});

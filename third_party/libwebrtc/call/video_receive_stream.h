@@ -20,6 +20,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "absl/functional/any_invocable.h"
 #include "api/call/transport.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "api/crypto/crypto_options.h"
@@ -315,6 +317,10 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
     CryptoOptions crypto_options;
 
     scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer;
+
+    
+    
+    absl::AnyInvocable<void(uint32_t ssrc) &&> on_first_packet;
   };
 
   

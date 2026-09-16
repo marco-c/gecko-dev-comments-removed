@@ -625,7 +625,8 @@ FakeVoiceEngine::CreateReceiveChannel(
     Call* call,
     const MediaConfig& ,
     const AudioOptions& options,
-    const CryptoOptions& ) {
+    const CryptoOptions& ,
+    absl::AnyInvocable<void(uint32_t ssrc)> ) {
   std::unique_ptr<FakeVoiceMediaReceiveChannel> ch =
       std::make_unique<FakeVoiceMediaReceiveChannel>(options,
                                                      call->network_thread());
@@ -704,7 +705,8 @@ FakeVideoEngine::CreateReceiveChannel(
     const Environment& ,
     Call* call,
     const MediaConfig& ,
-    const CryptoOptions& ) {
+    const CryptoOptions& ,
+    absl::AnyInvocable<void(uint32_t ssrc)> ) {
   std::unique_ptr<FakeVideoMediaReceiveChannel> ch =
       std::make_unique<FakeVideoMediaReceiveChannel>(call->network_thread());
   return ch;

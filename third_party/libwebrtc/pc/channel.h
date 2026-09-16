@@ -290,8 +290,6 @@ class BaseChannel : public ChannelInterface,
   scoped_refptr<PendingTaskSafetyFlag> alive_;
 
   
-  absl::AnyInvocable<void(const RtpPacketReceived&) &&>
-      on_first_packet_received_ RTC_GUARDED_BY(network_thread());
   absl::AnyInvocable<void() &&> on_first_packet_sent_
       RTC_GUARDED_BY(network_thread());
 

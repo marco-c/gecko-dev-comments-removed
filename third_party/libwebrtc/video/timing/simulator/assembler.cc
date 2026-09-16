@@ -64,6 +64,7 @@ Assembler::Assembler(const Environment& env,
                                   &nack_periodic_processor_,
                                   this,
                                   nullptr,
+                                  nullptr,
                                   nullptr),
       observer_(*observer),
       assembled_frame_cb_(*assembled_frame_cb) {

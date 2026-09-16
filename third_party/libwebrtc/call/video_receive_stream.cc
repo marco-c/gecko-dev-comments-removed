@@ -195,6 +195,8 @@ VideoReceiveStreamInterface::Config VideoReceiveStreamInterface::Config::Copy()
   config_copy.frame_decryptor = frame_decryptor;
   config_copy.crypto_options = crypto_options;
   config_copy.frame_transformer = frame_transformer;
+  
+  
   return config_copy;
 }
 
