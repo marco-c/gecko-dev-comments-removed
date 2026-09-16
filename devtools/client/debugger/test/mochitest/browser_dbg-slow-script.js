@@ -48,6 +48,11 @@ add_task(async function openDebuggerFromDialog() {
 
   
   
+  
+  
+  
+  ChromeUtils.notifyDevToolsOpened();
+  registerCleanupFunction(() => ChromeUtils.notifyDevToolsClosed());
   tab.linkedBrowser.browsingContext.watchedByDevTools = true;
 
   info("Execute an infinite loop");

@@ -25,6 +25,7 @@
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/BrowsingContextGroup.h"
 #include "mozilla/dom/BrowsingContextBinding.h"
+#include "mozilla/dom/ChromeUtils.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Document.h"
@@ -3854,18 +3855,34 @@ bool BrowsingContext::WatchedByDevTools() {
   return Top()->GetWatchedByDevToolsInternal();
 }
 
-
-
-bool BrowsingContext::CanSet(FieldIndex<IDX_WatchedByDevToolsInternal>,
+auto BrowsingContext::CanSet(FieldIndex<IDX_WatchedByDevToolsInternal>,
                              const bool& aWatchedByDevTools,
-                             ContentParent* aSource) {
-  return IsTop();
+                             ContentParent* aSource) -> CanSetResult {
+  
+  
+  if (!IsTop()) {
+    return CanSetResult::Deny;
+  }
+  
+  
+  if (aWatchedByDevTools && aSource && !ChromeUtils::IsDevToolsOpened()) {
+    return CanSetResult::Revert;
+  }
+  return CanSetResult::Allow;
 }
 void BrowsingContext::SetWatchedByDevTools(bool aWatchedByDevTools,
                                            ErrorResult& aRv) {
   if (!IsTop()) {
     aRv.ThrowInvalidModificationError(
         "watchedByDevTools can only be set on top BrowsingContext");
+    return;
+  }
+  
+  
+  if (aWatchedByDevTools && XRE_IsParentProcess() &&
+      !ChromeUtils::IsDevToolsOpened()) {
+    aRv.ThrowInvalidModificationError(
+        "watchedByDevTools can only be set when DevTools are opened");
     return;
   }
   SetWatchedByDevToolsInternal(aWatchedByDevTools, aRv);
