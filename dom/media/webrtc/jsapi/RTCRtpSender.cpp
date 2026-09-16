@@ -1009,6 +1009,7 @@ struct ParametersAndLevel {
   Maybe<std::set<std::tuple<FmtpParamKey, FmtpParamValue>>> mSet = Nothing();
   Maybe<uint32_t> mLevel = Nothing();
   Maybe<uint32_t> mSubprofile = Nothing();
+  Maybe<uint32_t> mProfile = Nothing();
 
   
   static Maybe<uint32_t> DefaultLevelForCodec(const nsString& aMimeType) {
@@ -1034,6 +1035,15 @@ struct ParametersAndLevel {
     
     if (aMimeType.LowerCaseEqualsASCII("video/h264")) {
       return Some(JsepVideoCodecDescription::GetSubprofile(0x420010));
+    }
+    return Nothing();
+  }
+
+  
+  
+  static Maybe<uint32_t> DefaultProfileForCodec(const nsString& aMimeType) {
+    if (aMimeType.LowerCaseEqualsASCII("video/av1")) {
+      return Some(0);
     }
     return Nothing();
   }
@@ -1081,6 +1091,26 @@ struct ParametersAndLevel {
     }
     return Nothing();
   }
+
+  
+  
+  
+  
+  
+  static Maybe<uint32_t> ExtractProfile(const nsString& aMimeType,
+                                        const FmtpParamKey& aKey,
+                                        const FmtpParamValue& aValue) {
+    if (aMimeType.LowerCaseEqualsASCII("video/av1") &&
+        aKey.EqualsLiteral("profile")) {
+      nsresult rv;
+      auto val = aValue.ToUnsignedInteger(&rv);
+      if (NS_FAILED(rv)) {
+        return Nothing();
+      }
+      return Some(val);
+    }
+    return Nothing();
+  }
 };
 
 
@@ -1095,6 +1125,7 @@ ParametersAndLevel FmtpToParametersAndLevel(const nsString& aMimeType,
   auto resultParams = std::set<std::tuple<FmtpParamKey, FmtpParamValue>>();
   Maybe<uint32_t> resultLevel = Nothing();
   Maybe<uint32_t> resultSubprofile = Nothing();
+  Maybe<uint32_t> resultProfile = Nothing();
   nsTArray<nsString> parts;
   for (const auto& kvp : aFmtp.Split(';')) {
     auto parts = nsTArray<nsString>();
@@ -1106,11 +1137,12 @@ ParametersAndLevel FmtpToParametersAndLevel(const nsString& aMimeType,
       
       auto level =
           ParametersAndLevel::ExtractLevel(aMimeType, parts[0], parts[1]);
-      if (level.isNothing()) {
-        
-        
-        resultParams.insert(std::make_tuple(parts[0], parts[1]));
-      } else {
+      
+      
+      
+      auto profile =
+          ParametersAndLevel::ExtractProfile(aMimeType, parts[0], parts[1]);
+      if (level.isSome()) {
         
         
         
@@ -1118,6 +1150,13 @@ ParametersAndLevel FmtpToParametersAndLevel(const nsString& aMimeType,
             aMimeType, parts[0], parts[1]);
         
         resultLevel = level;
+      } else if (profile.isSome()) {
+        
+        resultProfile = profile;
+      } else {
+        
+        
+        resultParams.insert(std::make_tuple(parts[0], parts[1]));
       }
     } else {
       
@@ -1128,6 +1167,9 @@ ParametersAndLevel FmtpToParametersAndLevel(const nsString& aMimeType,
             return ParametersAndLevel::DefaultLevelForCodec(aMimeType);
           }),
           .mSubprofile = resultSubprofile,
+          .mProfile = resultProfile.orElse([&]() -> Maybe<uint32_t> {
+            return ParametersAndLevel::DefaultProfileForCodec(aMimeType);
+          }),
       };
     }
   }
@@ -1137,6 +1179,9 @@ ParametersAndLevel FmtpToParametersAndLevel(const nsString& aMimeType,
         return ParametersAndLevel::DefaultLevelForCodec(aMimeType);
       }),
       .mSubprofile = resultSubprofile,
+      .mProfile = resultProfile.orElse([&]() -> Maybe<uint32_t> {
+        return ParametersAndLevel::DefaultProfileForCodec(aMimeType);
+      }),
   };
 }
 
@@ -1185,7 +1230,8 @@ bool DoesCodecParameterMatchCodec(const RTCRtpCodec& aCodec1,
         return false;
       }
       if (!aIgnoreLevels && (pset1.mLevel != pset2.mLevel ||
-                             pset1.mSubprofile != pset2.mSubprofile)) {
+                             pset1.mSubprofile != pset2.mSubprofile ||
+                             pset1.mProfile != pset2.mProfile)) {
         return false;
       }
       
