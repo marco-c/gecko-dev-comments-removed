@@ -13,6 +13,7 @@
 #include "IDSet.h"
 #include "JavaBuiltins.h"
 #include "LocalAccessible-inl.h"
+#include "Pivot.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/a11y/Accessible.h"
@@ -30,6 +31,7 @@
 #include "mozilla/widget/GeckoViewSupport.h"
 #include "nsAccUtils.h"
 #include "nsAccessibilityService.h"
+#include "nsIAccessiblePivot.h"
 #include "nsThreadUtils.h"
 
 #ifdef DEBUG
@@ -468,10 +470,106 @@ void SessionAccessibility::SendScrollingEvent(Accessible* aAccessible,
   SendWindowContentChangedEvent();
 }
 
-void SessionAccessibility::SendWindowContentChangedEvent() {
+class NamedLeafRule : public PivotRule {
+ public:
+  uint16_t Match(Accessible* aAcc) override {
+    uint16_t result = nsIAccessibleTraversalRule::FILTER_IGNORE;
+
+    if (nsAccUtils::MustPrune(aAcc)) {
+      result |= nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
+    }
+
+    if (aAcc->State() & states::INVISIBLE) {
+      result |= nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
+      return result;
+    }
+
+    if ((!aAcc->HasChildren() || nsAccUtils::MustPrune(aAcc)) &&
+        !aAcc->NameIsEmpty()) {
+      result |= nsIAccessibleTraversalRule::FILTER_MATCH;
+    }
+
+    return result;
+  }
+};
+
+void SessionAccessibility::MaybeSendLiveRegionEvents(Accessible* aAccessible,
+                                                     int32_t aStartTextOffset,
+                                                     int32_t aEndTextOffset) {
+  Accessible* liveRegion = nsAccUtils::GetLiveRegionRoot(aAccessible);
+  if (!liveRegion) {
+    
+    return;
+  }
+
+  Maybe<bool> atomic;
+  liveRegion->LiveRegionAttributes(nullptr, nullptr, &atomic, nullptr);
+
+  if (aStartTextOffset < 0) {
+    
+    
+    
+    auto p = a11y::Pivot((atomic && *atomic) ? liveRegion : aAccessible);
+    NamedLeafRule rule = NamedLeafRule();
+    Accessible* match = p.Next(nullptr, rule, true);
+    uint32_t matchCount = 1;
+    while (match) {
+      
+      SendWindowContentChangedEvent(match);
+      if (++matchCount > kLiveRegionContentChangedLimit) {
+        break;
+      }
+      match = p.Next(match, rule);
+    }
+  } else if (aEndTextOffset > 0) {
+    
+    
+    if (HyperTextAccessibleBase* ht = aAccessible->AsHyperTextBase()) {
+      uint32_t childCount = aAccessible->ChildCount();
+      for (uint32_t idx = ht->GetChildIndexAtOffset(aStartTextOffset);
+           idx < childCount && ht->GetChildOffset(idx) < aEndTextOffset;
+           idx++) {
+        Accessible* child = aAccessible->ChildAt(idx);
+        if (!child->IsTextLeaf()) {
+          continue;
+        }
+
+        if (atomic && *atomic) {
+          
+          
+          MaybeSendLiveRegionEvents(liveRegion);
+          return;
+        }
+
+        
+        
+        SendWindowContentChangedEvent(child);
+      }
+    }
+  }
+}
+
+void SessionAccessibility::SendWindowContentChangedEvent(
+    Accessible* aAccessible) {
+  int32_t virtualViewId =
+      aAccessible ? AccessibleWrap::GetVirtualViewID(aAccessible) : kNoID;
+  int32_t className = aAccessible
+                          ? AccessibleWrap::AndroidClass(aAccessible)
+                          : java::SessionAccessibility::CLASSNAME_WEBVIEW;
+
+  GECKOBUNDLE_START(eventInfo);
+  if (aAccessible) {
+    
+    GECKOBUNDLE_PUT(
+        eventInfo, "contentChangeType",
+        java::sdk::Integer::ValueOf(
+            java::sdk::AccessibilityEvent::CONTENT_CHANGE_TYPE_SUBTREE));
+  }
+  GECKOBUNDLE_FINISH(eventInfo);
+
   mSessionAccessibility->SendEvent(
-      java::sdk::AccessibilityEvent::TYPE_WINDOW_CONTENT_CHANGED, kNoID,
-      java::SessionAccessibility::CLASSNAME_WEBVIEW, nullptr);
+      java::sdk::AccessibilityEvent::TYPE_WINDOW_CONTENT_CHANGED, virtualViewId,
+      className, eventInfo);
 }
 
 void SessionAccessibility::SendWindowStateChangedEvent(
@@ -532,7 +630,12 @@ void SessionAccessibility::SendTextChangedEvent(Accessible* aAccessible,
                                                 bool aFromUser) {
   MOZ_ASSERT(NS_IsMainThread());
   if (!aFromUser) {
-    
+    if (aIsInsert) {
+      
+      
+      MaybeSendLiveRegionEvents(aAccessible, aStart, aStart + aLen);
+    }
+
     return;
   }
 
