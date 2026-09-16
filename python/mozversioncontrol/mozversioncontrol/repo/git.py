@@ -626,6 +626,9 @@ class GitRepository(Repository):
 
             
             self.set_config_key_value(key="core.untrackedCache", value="true")
+            
+            if not self._run("config", "--get", "checkout.workers", return_codes=[1]):
+                self.set_config_key_value(key="checkout.workers", value="0")
 
             
             if system == "Windows":
