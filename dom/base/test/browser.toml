@@ -178,12 +178,6 @@ support-files = [
   "file_js_cache_large_syntax_error.js",
 ]
 
-["browser_script_loader_js_cache_charset.js"]
-support-files = [
-  "empty.html",
-  "file_js_cache_charset.sjs",
-]
-
 ["browser_script_loader_js_cache_classic_vs_module.js"]
 support-files = [
   "empty.html",
@@ -236,6 +230,11 @@ support-files = [
   "file_js_cache_imported1.mjs",
   "file_js_cache_imported2.mjs",
   "file_js_cache_imported3.mjs",
+]
+
+["browser_script_loader_js_cache_module_csp.js"]
+support-files = [
+  "file_js_cache_module_csp.sjs",
 ]
 
 ["browser_script_loader_js_cache_module_preload.js"]
