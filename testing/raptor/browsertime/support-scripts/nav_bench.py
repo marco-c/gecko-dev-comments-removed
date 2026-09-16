@@ -12,7 +12,8 @@ LOG = RaptorLogger(component="perftest-nav-bench")
 
 
 
-PHASES = ("load", "subnav")
+
+PHASES = ("load", "subnav", "warm")
 
 
 SCORE_TARGET_MS = 60000.0
