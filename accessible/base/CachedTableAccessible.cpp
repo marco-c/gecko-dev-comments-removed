@@ -69,7 +69,7 @@ static StaticAutoPtr<CachedTablesMap> sCachedTables;
 
 
 CachedTableAccessible* CachedTableAccessible::GetFrom(Accessible* aAcc) {
-  MOZ_ASSERT(aAcc->IsTable());
+  MOZ_ASSERT(aAcc->IsTable() && !aAcc->IsCustomTable());
   if (!sCachedTables) {
     sCachedTables = new CachedTablesMap();
     if (NS_IsMainThread()) {
@@ -255,18 +255,15 @@ CachedTableCellAccessible* CachedTableCellAccessible::GetFrom(
     if (parent->IsDoc()) {
       break;  
     }
+    if (parent->IsCustomTable()) {
+      
+      
+      break;
+    }
     TableAccessible* table = parent->AsTable();
     if (!table) {
       continue;
     }
-    if (LocalAccessible* local = parent->AsLocal()) {
-      nsIContent* content = local->GetContent();
-      if (content && content->IsXULElement()) {
-        
-        break;
-      }
-    }
-    
     auto* cachedTable = static_cast<CachedTableAccessible*>(table);
     if (auto cellIdx = cachedTable->mAccToCellIdx.Lookup(aAcc)) {
       return &cachedTable->mCells[*cellIdx];
