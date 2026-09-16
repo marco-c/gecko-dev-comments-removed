@@ -592,11 +592,12 @@ static void PopulateConnectionStats(WebTransportConnectionStats& aStats,
                                     const WebTransportStatsData& aSource,
                                     uint64_t aDroppedIncoming,
                                     uint64_t aExpiredIncoming) {
+  
+  
+  
+  
+  
   aStats.mBytesSent.Construct(aSource.bytesSent());
-  
-  
-  
-  
   aStats.mBytesAcknowledged.Construct(aSource.bytesAcknowledged());
   aStats.mPacketsSent.Construct(aSource.packetsSent());
   aStats.mBytesLost.Construct(aSource.bytesLost());

@@ -2881,8 +2881,9 @@ pub unsafe extern "C" fn neqo_http3conn_export_keying_material(
 #[repr(C)]
 pub struct WebTransportSessionStats {
     
-    pub bytes_sent_total: u64,       
-    pub bytes_received_total: u64,   
+    
+    pub bytes_sent_total: u64,
+    pub bytes_received_total: u64,
     
     pub bytes_acked: u64,
     pub packets_sent: u64,
