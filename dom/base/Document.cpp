@@ -12530,9 +12530,7 @@ void Document::Destroy() {
     return;
   }
 
-  if (RefPtr transition = mActiveViewTransition) {
-    transition->SkipTransition(SkipTransitionReason::DocumentHidden);
-  }
+  MaybeSkipActiveViewTransition(SkipTransitionReason::DocumentHidden);
 
   RemoveCustomContentContainer();
 
@@ -12933,9 +12931,7 @@ void Document::OnPageHide(bool aPersisted, EventTarget* aDispatchStartTarget,
   }
 
   if (inFrameLoaderSwap) {
-    if (RefPtr transition = mActiveViewTransition) {
-      transition->SkipTransition(SkipTransitionReason::PageSwap);
-    }
+    MaybeSkipActiveViewTransition(SkipTransitionReason::PageSwap);
   } else {
     if (aPersisted) {
       
@@ -13045,9 +13041,7 @@ void Document::WillRemoveRoot() {
   
   
   
-  if (RefPtr transition = mActiveViewTransition) {
-    transition->SkipTransition(SkipTransitionReason::RootRemoved);
-  }
+  MaybeSkipActiveViewTransition(SkipTransitionReason::RootRemoved);
 
   RemoveCustomContentContainer();
   IncrementExpandoGeneration(*this);
@@ -17467,9 +17461,15 @@ bool Document::SetOrientationPendingPromise(Promise* aPromise) {
   return true;
 }
 
+void Document::MaybeSkipActiveViewTransition(SkipTransitionReason aReason) {
+  if (RefPtr transition = mActiveViewTransition) {
+    transition->SkipTransition(aReason);
+  }
+}
+
 void Document::MaybeSkipTransitionAfterVisibilityChange() {
-  if (Hidden() && mActiveViewTransition) {
-    mActiveViewTransition->SkipTransition(SkipTransitionReason::DocumentHidden);
+  if (Hidden()) {
+    MaybeSkipActiveViewTransition(SkipTransitionReason::DocumentHidden);
   }
 }
 
@@ -19775,13 +19775,11 @@ already_AddRefed<ViewTransition> Document::StartViewTransition(
     transition->SkipTransition(SkipTransitionReason::DocumentHidden);
     return transition.forget();
   }
-  if (mActiveViewTransition) {
-    
-    
-    
-    mActiveViewTransition->SkipTransition(
-        SkipTransitionReason::ClobberedActiveTransition);
-  }
+  
+  
+  
+  MaybeSkipActiveViewTransition(
+      SkipTransitionReason::ClobberedActiveTransition);
   
   mActiveViewTransition = transition;
 
