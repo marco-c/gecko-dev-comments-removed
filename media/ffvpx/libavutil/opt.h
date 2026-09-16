@@ -28,6 +28,7 @@
 
 
 #include "rational.h"
+#include "avutil.h"
 #include "channel_layout.h"
 #include "dict.h"
 #include "log.h"
@@ -885,6 +886,24 @@ int av_opt_set_chlayout(void *obj, const char *name, const AVChannelLayout *layo
 
 int av_opt_set_dict_val(void *obj, const char *name, const AVDictionary *val, int search_flags);
 
+#if FF_API_OPT_INT_LIST
+
+
+
+
+
+
+
+
+
+
+#define av_opt_set_int_list(obj, name, val, term, flags) \
+    (av_int_list_length(val, term) > INT_MAX / sizeof(*(val)) ? \
+     AVERROR(EINVAL) : \
+     av_opt_set_bin(obj, name, (const uint8_t *)(val), \
+                    av_int_list_length(val, term) * sizeof(*(val)), flags))
+#endif
+
 
 
 
@@ -1051,6 +1070,21 @@ int av_opt_eval_q     (void *obj, const AVOption *o, const char *val, AVRational
 
 
 
+
+#if FF_API_OPT_PTR
+
+
+
+
+
+
+
+
+
+
+attribute_deprecated
+void *av_opt_ptr(const AVClass *avclass, void *obj, const char *name);
+#endif
 
 
 

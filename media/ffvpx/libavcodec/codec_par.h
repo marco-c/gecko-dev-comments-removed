@@ -44,8 +44,6 @@
 
 
 
-
-
 typedef struct AVCodecParameters {
     
 
@@ -109,14 +107,9 @@ typedef struct AVCodecParameters {
 
 
 
-
     int bits_per_coded_sample;
 
     
-
-
-
-
 
 
 
@@ -138,20 +131,10 @@ typedef struct AVCodecParameters {
     
 
 
-
-
     int width;
-
-    
-
-
-
-
     int height;
 
     
-
-
 
 
 
@@ -170,20 +153,14 @@ typedef struct AVCodecParameters {
 
 
 
-
-
     AVRational framerate;
 
     
 
 
-
-
     enum AVFieldOrder                  field_order;
 
     
-
-
 
 
     enum AVColorRange                  color_range;
@@ -195,19 +172,13 @@ typedef struct AVCodecParameters {
     
 
 
-
-
     int video_delay;
 
     
 
 
-
-
     AVChannelLayout ch_layout;
     
-
-
 
 
     int      sample_rate;
@@ -217,20 +188,13 @@ typedef struct AVCodecParameters {
 
 
 
-
     int      block_align;
     
-
-
 
 
     int      frame_size;
 
     
-
-
-
-
 
 
 
@@ -243,14 +207,8 @@ typedef struct AVCodecParameters {
 
 
 
-
-
-
-
     int trailing_padding;
     
-
-
 
 
     int seek_preroll;
@@ -260,11 +218,6 @@ typedef struct AVCodecParameters {
 
     enum AVAlphaMode alpha_mode;
 } AVCodecParameters;
-
-
-
-
-
 
 
 
@@ -292,8 +245,6 @@ int avcodec_parameters_copy(AVCodecParameters *dst, const AVCodecParameters *src
 
 
 int av_get_audio_frame_duration2(AVCodecParameters *par, int frame_bytes);
-
-
 
 
 
