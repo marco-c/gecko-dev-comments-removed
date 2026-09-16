@@ -310,7 +310,28 @@ pub const INTERN_REMOVALS: usize = 139;
 
 pub const OFF_GRID_COORDS: usize = 140;
 
-pub const NUM_PROFILER_EVENTS: usize = 141;
+
+
+
+
+
+
+
+
+pub const VIS_CLIP_PROJECTIONS: usize = 141;
+
+
+pub const VIS_CLIP_PROJECTION_FAILS: usize = 142;
+
+
+
+pub const VIS_CLIP_REJECTS: usize = 143;
+
+
+
+pub const VIS_CULLING_RECT_FALLBACKS: usize = 144;
+
+pub const NUM_PROFILER_EVENTS: usize = 145;
 
 pub struct Profiler {
     counters: Vec<Counter>,
@@ -532,6 +553,11 @@ impl Profiler {
             int("Intern insertions", "", INTERN_INSERTIONS, Expected::none()),
             int("Intern removals", "", INTERN_REMOVALS, Expected::none()),
             int("Off-grid coords", "", OFF_GRID_COORDS, expected(0..1)),
+
+            int("Vis clip projections", "", VIS_CLIP_PROJECTIONS, Expected::none()),
+            int("Vis clip projection fails", "", VIS_CLIP_PROJECTION_FAILS, Expected::none()),
+            int("Vis clip rejects", "", VIS_CLIP_REJECTS, Expected::none()),
+            int("Vis culling rect fallbacks", "", VIS_CULLING_RECT_FALLBACKS, expected(0..1)),
         ];
 
         let mut counters = Vec::with_capacity(profile_counters.len());

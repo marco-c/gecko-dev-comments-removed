@@ -1164,7 +1164,6 @@ bitflags! {
     impl ClipNodeFlags : u8 {
         const SAME_SPATIAL_NODE = 0x1;
         const SAME_COORD_SYSTEM = 0x2;
-        const USE_FAST_PATH = 0x4;
     }
 }
 
@@ -1309,25 +1308,12 @@ impl ClipNodeInfo {
         gpu_buffer: &mut GpuBufferBuilderF,
         resource_cache: &mut ResourceCache,
         mask_tiles: &mut Vec<VisibleMaskImageTile>,
-        spatial_tree: &SpatialTree,
         rg_builder: &mut RenderTaskGraphBuilder,
         request_resources: bool,
     ) -> Option<ClipNodeInstance> {
         
         
-        let mut flags = self.conversion.to_flags();
-
-        
-        
-        
-        let is_raster_2d =
-            flags.contains(ClipNodeFlags::SAME_COORD_SYSTEM) ||
-            spatial_tree
-                .get_world_viewport_transform(self.spatial_node_index)
-                .is_2d_axis_aligned();
-        if is_raster_2d && node.item.kind.supports_fast_path_rendering(self.clip_rect) {
-            flags |= ClipNodeFlags::USE_FAST_PATH;
-        }
+        let flags = self.conversion.to_flags();
 
         let mut visible_tiles = None;
 
@@ -1442,6 +1428,20 @@ pub struct ClipStore {
     active_clip_node_info: Vec<ClipNodeInfo>,
     active_local_clip_rect: Option<LayoutRect>,
     active_pic_coverage_rect: PictureRect,
+
+    
+    
+    vis_stats: VisClipStats,
+}
+
+
+
+#[derive(Clone, Default, MallocSizeOf)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+pub struct VisClipStats {
+    pub projections: usize,
+    pub projection_fails: usize,
+    pub rejects: usize,
 }
 
 
@@ -1499,6 +1499,7 @@ impl ClipStore {
             active_clip_node_info: Vec::new(),
             active_local_clip_rect: None,
             active_pic_coverage_rect: PictureRect::max_rect(),
+            vis_stats: VisClipStats::default(),
         }
     }
 
@@ -1653,7 +1654,6 @@ impl ClipStore {
         local_prim_rect: LayoutRect,
         prim_to_pic_mapper: &SpaceMapper<LayoutPixel, PicturePixel>,
         pic_to_vis_mapper: &SpaceMapper<PicturePixel, VisPixel>,
-        spatial_tree: &SpatialTree,
         gpu_buffer: &mut GpuBufferBuilderF,
         resource_cache: &mut ResourceCache,
         culling_rect: &VisRect,
@@ -1696,11 +1696,13 @@ impl ClipStore {
                 }
                 ClipSpaceConversion::Transform(ref transform) => {
                     has_non_local_clips = true;
+                    self.vis_stats.projections += 1;
                     node.item.kind.get_clip_result_complex(
                         transform,
                         &vis_clip_rect,
                         culling_rect,
                         node_info.clip_rect,
+                        &mut self.vis_stats.projection_fails,
                     )
                 }
             };
@@ -1711,6 +1713,9 @@ impl ClipStore {
                 }
                 ClipResult::Reject => {
                     
+                    if matches!(node_info.conversion, ClipSpaceConversion::Transform(..)) {
+                        self.vis_stats.rejects += 1;
+                    }
                     return None;
                 }
                 ClipResult::Partial => {
@@ -1723,7 +1728,6 @@ impl ClipStore {
                         gpu_buffer,
                         resource_cache,
                         &mut self.mask_tiles,
-                        spatial_tree,
                         rg_builder,
                         request_resources,
                     ) {
@@ -1785,6 +1789,11 @@ impl ClipStore {
         mem::swap(&mut self.mask_tiles, &mut scratch.mask_tiles);
         self.clip_node_instances.clear();
         self.mask_tiles.clear();
+        self.vis_stats = VisClipStats::default();
+    }
+
+    pub fn vis_stats(&self) -> &VisClipStats {
+        &self.vis_stats
     }
 
     pub fn end_frame(&mut self, scratch: &mut ClipStoreScratchBuffer) {
@@ -1968,22 +1977,6 @@ impl ClipItemKind {
     
     
     
-    fn supports_fast_path_rendering(&self, clip_rect: LayoutRect) -> bool {
-        match *self {
-            ClipItemKind::Rectangle { .. } |
-            ClipItemKind::Image { .. } => {
-                false
-            }
-            ClipItemKind::RoundedRectangle { ref radius, .. } => {
-                radius.can_use_fast_path_in(&clip_rect)
-            }
-        }
-    }
-
-    
-    
-    
-    
     pub fn get_local_clip_rect(&self, clip_rect: LayoutRect) -> Option<LayoutRect> {
         match *self {
             ClipItemKind::Rectangle { mode: ClipMode::Clip } => Some(clip_rect),
@@ -2000,6 +1993,7 @@ impl ClipItemKind {
         prim_rect: &VisRect,
         culling_rect: &VisRect,
         clip_rect: LayoutRect,
+        projection_fails: &mut usize,
     ) -> ClipResult {
         let visible_rect = match prim_rect.intersection(culling_rect) {
             Some(rect) => rect,
@@ -2037,7 +2031,12 @@ impl ClipItemKind {
                     &culling_rect,
                 ) {
                     Some(outer_clip_rect) => outer_clip_rect,
-                    None => return ClipResult::Partial,
+                    None => {
+                        
+                        
+                        *projection_fails += 1;
+                        return ClipResult::Partial;
+                    }
                 };
 
                 match outer_clip_rect.intersection(prim_rect) {
