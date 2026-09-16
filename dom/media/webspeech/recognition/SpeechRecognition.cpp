@@ -719,11 +719,17 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
   }
 
   
+  
   nsString effectiveLang = mLang;
   if (effectiveLang.IsEmpty()) {
     if (nsCOMPtr<Document> doc = win->GetExtantDoc()) {
       if (Element* root = doc->GetRootElement()) {
         root->GetLang(effectiveLang);
+      }
+      if (effectiveLang.IsEmpty()) {
+        if (nsAtom* language = doc->GetContentLanguageAsAtomForStyle()) {
+          language->ToString(effectiveLang);
+        }
       }
     }
   }
