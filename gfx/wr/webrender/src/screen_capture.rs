@@ -8,7 +8,6 @@ use std::collections::HashMap;
 
 use api::{ImageFormat, ImageBufferKind};
 use api::units::*;
-use gleam::gl::GlType;
 
 use crate::device::{Device, PBO, DrawTarget, ReadTarget, Texture, TextureFilter};
 use crate::internal_types::RenderTargetInfo;
@@ -352,7 +351,7 @@ impl AsyncScreenshotGrabber {
                 || (image_format == ImageFormat::BGRA8 && dest == ImageFormat::RGBA8)
         });
 
-        let gl_type = device.gl().get_type();
+        let readback_rows_top_down = device.get_capabilities().readback_rows_top_down;
 
         let success = if let Some(bound_pbo) = device.map_pbo_for_readback(&pbo) {
             let src_buffer = &bound_pbo.data;
@@ -361,7 +360,7 @@ impl AsyncScreenshotGrabber {
                 screenshot_size.width as usize * image_format.bytes_per_pixel() as usize;
 
             for (src_slice, dst_slice) in self
-                .iter_src_buffer_chunked(gl_type, src_buffer, src_stride)
+                .iter_src_buffer_chunked(readback_rows_top_down, src_buffer, src_stride)
                 .zip(dst_buffer.chunks_mut(dst_stride))
                 .take(screenshot_size.height as usize)
             {
@@ -395,19 +394,18 @@ impl AsyncScreenshotGrabber {
 
     fn iter_src_buffer_chunked<'a>(
         &self,
-        gl_type: GlType,
+        readback_rows_top_down: bool,
         src_buffer: &'a [u8],
         src_stride: usize,
     ) -> Box<dyn Iterator<Item = &'a [u8]> + 'a> {
         use AsyncScreenshotGrabberMode::*;
 
-        let is_angle = cfg!(windows) && gl_type == GlType::Gles;
-
-        if self.mode == CompositionRecorder && !is_angle {
+        if self.mode == CompositionRecorder && !readback_rows_top_down {
             
             
             Box::new(src_buffer.chunks(src_stride).rev())
         } else {
+            
             
             
             

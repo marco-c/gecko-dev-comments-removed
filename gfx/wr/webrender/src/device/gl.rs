@@ -1043,6 +1043,9 @@ pub struct Capabilities {
     
     pub supports_texture_external_bt709: bool,
     
+    
+    pub readback_rows_top_down: bool,
+    
     pub requires_vao_rebind_after_orphaning: bool,
     
     
@@ -1886,6 +1889,10 @@ impl Device {
         let supports_texture_external_bt709 =
             supports_texture_external && supports_extension(&extensions, "GL_EXT_YUV_target");
 
+        
+        
+        let readback_rows_top_down = cfg!(windows) && gl.get_type() == gl::GlType::Gles;
+
         let mut requires_batched_texture_uploads = None;
         if is_software_webrender {
             
@@ -2010,6 +2017,7 @@ impl Device {
                 supports_texture_rect,
                 supports_texture_external,
                 supports_texture_external_bt709,
+                readback_rows_top_down,
                 requires_vao_rebind_after_orphaning,
                 supports_bgra_read,
                 supports_base_instance,

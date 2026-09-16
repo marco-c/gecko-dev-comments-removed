@@ -17,7 +17,6 @@ const DEVICE_DIR: &str = "device";
 
 const ALLOWLIST: &[&str] = &[
     "lib.rs",
-    "screen_capture.rs",
     "renderer/init.rs",
     "renderer/mod.rs",
 ];
