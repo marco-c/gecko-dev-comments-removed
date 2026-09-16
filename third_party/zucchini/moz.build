@@ -91,7 +91,19 @@ SOURCES[
     "/third_party/zucchini/chromium/base/strings/utf_string_conversions.cc"
 ].flags += ["-Wno-unused-template"]
 
+
+
+
+
+
+if CONFIG["CC_TYPE"] == "clang-cl":
+    CXXFLAGS += ["/EHs", "/GR"]
+else:
+    CXXFLAGS += ["-fexceptions", "-frtti"]
+
 if CONFIG["TARGET_OS"] == "WINNT":
+    CXXFLAGS += ["-U_HAS_EXCEPTIONS", "-D_HAS_EXCEPTIONS=1"]
+
     USE_STATIC_MSVCRT = True
 
     SOURCES += [
