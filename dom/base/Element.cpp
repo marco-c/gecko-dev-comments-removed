@@ -4853,11 +4853,6 @@ nsresult Element::PostHandleEventForLinks(EventChainPostVisitor& aVisitor) {
           }
         }
 
-        if (aVisitor.mPresContext) {
-          EventStateManager::SetActiveManager(
-              aVisitor.mPresContext->EventStateManager(), this);
-        }
-
         
         
         if (nsIDocShell* shell = OwnerDoc()->GetDocShell()) {
