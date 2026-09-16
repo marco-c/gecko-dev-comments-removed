@@ -79,7 +79,7 @@ bool ReadableStreamReaderGenericInitialize(ReadableStreamGenericReader* aReader,
     
     case ReadableStream::ReaderState::Closed:
       
-      aReader->ClosedPromise()->MaybeSafeResolve(JS::UndefinedHandleValue);
+      aReader->ClosedPromise()->MaybeResolve(JS::UndefinedHandleValue);
 
       return true;
     
@@ -158,7 +158,7 @@ void Read_ReadRequest::ChunkSteps(JSContext* aCx, JS::Handle<JS::Value> aChunk,
     return;
   }
 
-  mPromise->MaybeSafeResolve(value);
+  mPromise->MaybeResolve(value);
 }
 
 void Read_ReadRequest::CloseSteps(JSContext* aCx, ErrorResult& aRv) {
@@ -175,7 +175,7 @@ void Read_ReadRequest::CloseSteps(JSContext* aCx, ErrorResult& aRv) {
     return;
   }
 
-  mPromise->MaybeSafeResolve(value);
+  mPromise->MaybeResolve(value);
 }
 
 void Read_ReadRequest::ErrorSteps(JSContext* aCx, JS::Handle<JS::Value> e,
