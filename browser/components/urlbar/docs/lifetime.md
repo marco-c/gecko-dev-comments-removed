@@ -16,11 +16,11 @@ of April 2023.
 
 01. The user types a query (e.g. "coffee near me") into the *UrlbarInput*
     [\<input> DOM element](https://searchfox.org/mozilla-central/rev/1f4f99a8f331cce8467a50742178b6d46914ab89/browser/base/content/navigator-toolbox.inc.xhtml#330-336).
-    That DOM element {searchfox}`tells <mozilla-central/rev/1f4f99a8f331cce8467a50742178b6d46914ab89:browser/components/urlbar/UrlbarInput.sys.mjs#3312>`
+    That DOM element {searchfox}`tells <firefox-main/rev/88b0f8e6a5925058755d2671bdac5a76d84bd224:browser/components/urlbar/content/UrlbarInput.mjs#5567>`
     *UrlbarInput* that text is being input.
 
-02. *UrlbarInput* {searchfox}`starts a search <mozilla-central/rev/1f4f99a8f331cce8467a50742178b6d46914ab89:browser/components/urlbar/UrlbarInput.sys.mjs#3395>`.
-    It {searchfox}`creates <mozilla-central/rev/1f4f99a8f331cce8467a50742178b6d46914ab89:browser/components/urlbar/UrlbarInput.sys.mjs#1549>`
+02. *UrlbarInput* {searchfox}`starts a search <firefox-main/rev/88b0f8e6a5925058755d2671bdac5a76d84bd224:browser/components/urlbar/content/UrlbarInput.mjs#2372>`.
+    It {searchfox}`creates <firefox-main/rev/88b0f8e6a5925058755d2671bdac5a76d84bd224:browser/components/urlbar/content/UrlbarInput.mjs#5820>`
     a [UrlbarQueryContext](https://firefox-source-docs.mozilla.org/browser/urlbar/overview.html#the-urlbarquerycontext)
     and passes it to the {searchfox}`UrlbarChildController <browser/components/urlbar/content/UrlbarChildController.mjs>`,
     which forwards it to the *UrlbarParentController*. The controller is split in
@@ -82,10 +82,10 @@ of April 2023.
 
 11. *UrlbarParentController* {searchfox}`sends out a notification <browser/components/urlbar/UrlbarParentController.sys.mjs>`
     that results are ready to be shown. The notification is dispatched by the
-    *UrlbarChildController*, which *UrlbarView* was {searchfox}`listening <mozilla-central/rev/0ffaecaa075887ab07bf4c607c61ea2faa81b172:browser/components/urlbar/UrlbarView.sys.mjs#662>`
-    to. Once the view gets the notification, it {searchfox}`calls #updateResults <mozilla-central/rev/0ffaecaa075887ab07bf4c607c61ea2faa81b172:browser/components/urlbar/UrlbarView.sys.mjs#670>`
-    to create {searchfox}`DOM nodes <mozilla-central/rev/0ffaecaa075887ab07bf4c607c61ea2faa81b172:browser/components/urlbar/UrlbarView.sys.mjs#1185>`
-    for each *UrlbarResult* and {searchfox}`inserts them <mozilla-central/rev/0ffaecaa075887ab07bf4c607c61ea2faa81b172:browser/components/urlbar/UrlbarView.sys.mjs#1156>`
+    *UrlbarChildController*, which *UrlbarView* was {searchfox}`listening <firefox-main/rev/88b0f8e6a5925058755d2671bdac5a76d84bd224:browser/components/urlbar/content/UrlbarView.mjs#79>`
+    to. Once the view gets the notification, it {searchfox}`calls #updateResults <firefox-main/rev/88b0f8e6a5925058755d2671bdac5a76d84bd224:browser/components/urlbar/content/UrlbarView.mjs#1310>`
+    to create {searchfox}`DOM nodes <firefox-main/rev/88b0f8e6a5925058755d2671bdac5a76d84bd224:browser/components/urlbar/content/UrlbarView.mjs#1449>`
+    for each *UrlbarResult* and {searchfox}`inserts them <firefox-main/rev/88b0f8e6a5925058755d2671bdac5a76d84bd224:browser/components/urlbar/content/UrlbarView.mjs#1460>`
     into the view's DOM element.
 
     As described above, we may reach this step multiple times per search. That
@@ -94,11 +94,43 @@ of April 2023.
     "flickering" by the user. As a result, we try to limit the number of times
     the view needs to update.
 
-    :::{figure} assets/lifetime/lifetime.png
+    ```{mermaid}
     :align: center
-    :alt: |-
-    :  A chart with boxes representing the various components of the
-    :  address bar. An arrow moves between the boxes to illustrate a query
-    :  moving through the components.
-    :scale: 80%
-    :::
+    :caption: UrlbarQueryContext lifetime
+
+    ---
+    config:
+      flowchart:
+        wrappingWidth: 400
+    ---
+    %% wrappingWidth works around https://github.com/mermaid-js/mermaid/issues/5785,
+    %% which makes Firefox drop labels containing long words.
+    flowchart TD
+        dom([DOM])
+
+        subgraph uiModules ["UI modules"]
+            input[UrlbarInput]
+            child[UrlbarChildController]
+            view[UrlbarView]
+        end
+
+        subgraph parentSide ["Parent process"]
+            parent[UrlbarParentController]
+            manager[UrlbarProvidersManager]
+            providers["Providers<br/>UrlbarProviderPlaces<br/>UrlbarProviderSearchSuggestions<br/>UrlbarProviderTopSites<br/>..."]
+            muxer[UrlbarMuxer]
+        end
+
+        dom -- "1: text input" --> input
+        input -- "2: UrlbarQueryContext" --> child
+        child -- "2: UrlbarQueryContext" --> parent
+        parent -- "3: fetch results" --> manager
+        manager -- "4, 5: isActive, startQuery" --> providers
+        providers -. "6, 7: UrlbarResults" .-> manager
+        manager -- "8: sort" --> muxer
+        muxer -. "9: sorted results" .-> manager
+        manager -. "10: results ready" .-> parent
+        parent -. "11: notification" .-> child
+        child -. "11: notification" .-> view
+        view -. "result rows" .-> dom
+    ```
