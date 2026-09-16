@@ -158,6 +158,32 @@ add_task(async function testQueryParamIsStrippedWhenParamIsLowercase() {
 
 
 
+add_task(async function testEqualsSignNotAddedToValuelessParam() {
+  let originalUrl = "https://www.example.com/?utm_ad=test&x";
+  let shortenedUrl = "https://www.example.com/?x";
+  await testMenuItemEnabled({
+    validUrl: originalUrl,
+    strippedUrl: shortenedUrl,
+    useTestList: true,
+    expectedDisabled: false,
+  });
+});
+
+
+add_task(async function testGenuineEmptyValuePreserved() {
+  let originalUrl = "https://www.example.com/?utm_ad=test&x=";
+  let shortenedUrl = "https://www.example.com/?x=";
+  await testMenuItemEnabled({
+    validUrl: originalUrl,
+    strippedUrl: shortenedUrl,
+    useTestList: true,
+    expectedDisabled: false,
+  });
+});
+
+
+
+
 
 
 

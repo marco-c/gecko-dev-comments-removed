@@ -30,6 +30,45 @@ static const char kQueryStrippingEnabledPBMPref[] =
 static const char kQueryStrippingOnShareEnabledPref[] =
     "privacy.query_stripping.strip_on_share.enabled";
 
+struct QueryParam {
+  nsCString mName;
+  nsCString mValue;
+  bool mHasEquals = false;
+};
+
+
+
+void SplitQueryPreservingEquals(const nsACString& aQuery,
+                                nsTArray<QueryParam>& aOutParams) {
+  mozilla::URLParams::ParseWithEquals(
+      aQuery,  false,
+      [&](nsCString&& aName, nsCString&& aValue, bool aHasEquals) {
+        QueryParam* param = aOutParams.AppendElement();
+        param->mName = std::move(aName);
+        param->mValue = std::move(aValue);
+        param->mHasEquals = aHasEquals;
+        return true;
+      });
+}
+
+
+
+void SerializeQueryPreservingEquals(const nsTArray<QueryParam>& aParams,
+                                    nsACString& aOutQuery) {
+  aOutQuery.Truncate();
+  bool first = true;
+  for (const QueryParam& param : aParams) {
+    if (!first) {
+      aOutQuery.Append('&');
+    }
+    first = false;
+    aOutQuery.Append(param.mName);
+    if (param.mHasEquals) {
+      aOutQuery.Append('=');
+      aOutQuery.Append(param.mValue);
+    }
+  }
+}
 }  
 
 namespace mozilla {
@@ -276,27 +315,25 @@ nsresult URLQueryStringStripper::StripQueryString(nsIURI* aURI,
     return NS_OK;
   }
 
-  URLParams params;
+  nsTArray<QueryParam> params;
+  SplitQueryPreservingEquals(query, params);
 
-  URLParams::Parse(query, false, [&](nsCString&& name, nsCString&& value) {
+  params.RemoveElementsBy([&](const QueryParam& aParam) {
     nsAutoCString lowerCaseName;
-    ToLowerCase(name, lowerCaseName);
-
-    if (mList.Contains(lowerCaseName)) {
-      *aStripCount += 1;
-
-      
-      
-      
-      nsAutoCString telemetryLabel("param_");
-      telemetryLabel.Append(lowerCaseName);
-      glean::contentblocking::query_stripping_count_by_param.Get(telemetryLabel)
-          .Add();
-
-      return true;
+    ToLowerCase(aParam.mName, lowerCaseName);
+    if (!mList.Contains(lowerCaseName)) {
+      return false;
     }
 
-    params.Append(name, value);
+    *aStripCount += 1;
+
+    
+    
+    
+    nsAutoCString telemetryLabel("param_");
+    telemetryLabel.Append(lowerCaseName);
+    glean::contentblocking::query_stripping_count_by_param.Get(telemetryLabel)
+        .Add();
     return true;
   });
 
@@ -306,8 +343,7 @@ nsresult URLQueryStringStripper::StripQueryString(nsIURI* aURI,
   }
 
   nsAutoCString newQuery;
-  params.Serialize(newQuery, false);
-
+  SerializeQueryPreservingEquals(params, newQuery);
   (void)NS_MutateURI(uri).SetQuery(newQuery).Finalize(aOutput);
   return NS_OK;
 }
@@ -498,15 +534,19 @@ nsresult URLQueryStringStripper::StripForCopyOrShareInternal(
   rv = eTLDService->GetSchemelessSite(aURI, schemelessSite);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  URLParams params;
+  nsTArray<QueryParam> inParams;
+  SplitQueryPreservingEquals(query, inParams);
 
-  URLParams::Parse(query, false, [&](nsCString&& aName, nsCString&& aValue) {
-    if (ShouldStripParam(host, schemelessSite, aName)) {
+  nsTArray<QueryParam> outParams;
+  for (QueryParam& param : inParams) {
+    if (ShouldStripParam(host, schemelessSite, param.mName)) {
       aStripCount++;
       
       
-      
-      return !aDry;
+      if (aDry) {
+        break;
+      }
+      continue;
     }
 
     
@@ -514,15 +554,18 @@ nsresult URLQueryStringStripper::StripForCopyOrShareInternal(
     
     
     if (!aStripNestedURIs) {
-      aStripCount += TryStripValue(host, aValue, aDry);
-    }
-    if (aDry) {
-      return aStripCount == 0;
+      aStripCount += TryStripValue(host, param.mValue, aDry);
     }
 
-    params.Append(aName, aValue);
-    return true;
-  });
+    if (aDry) {
+      if (aStripCount == 0) {
+        continue;
+      }
+      break;
+    }
+
+    outParams.AppendElement(std::move(param));
+  }
 
   
   
@@ -531,7 +574,7 @@ nsresult URLQueryStringStripper::StripForCopyOrShareInternal(
   }
 
   nsAutoCString newQuery;
-  params.Serialize(newQuery, false);
+  SerializeQueryPreservingEquals(outParams, newQuery);
   return NS_MutateURI(aURI).SetQuery(newQuery).Finalize(aStrippedURI);
 }
 }  

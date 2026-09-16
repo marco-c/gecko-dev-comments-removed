@@ -147,6 +147,128 @@ add_task(async function testStripNothingDisabled() {
 
 
 
+
+add_task(async function testEqualsSignNotAddedToValuelessParam() {
+  let validUrl = "https://www.example.com/?utm_ad=test&x";
+  let shortenedUrl = "https://www.example.com/?x";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: true,
+    expectedDisabled: false,
+  });
+});
+
+
+
+add_task(async function testValuelessParamBeforeStrippedParam() {
+  let validUrl = "https://www.example.com/?x&utm_ad=test";
+  let shortenedUrl = "https://www.example.com/?x";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: true,
+    expectedDisabled: false,
+  });
+});
+
+
+add_task(async function testGenuineEmptyValuePreserved() {
+  let validUrl = "https://www.example.com/?utm_ad=test&x=";
+  let shortenedUrl = "https://www.example.com/?x=";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: true,
+    expectedDisabled: false,
+  });
+});
+
+
+add_task(async function testMixedValuelessAndValuedParams() {
+  let validUrl = "https://www.example.com/?utm_ad=test&x&y=1";
+  let shortenedUrl = "https://www.example.com/?x&y=1";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: true,
+    expectedDisabled: false,
+  });
+});
+
+
+add_task(async function testMultipleValuelessParams() {
+  let validUrl = "https://www.example.com/?utm_ad=test&x&y";
+  let shortenedUrl = "https://www.example.com/?x&y";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: true,
+    expectedDisabled: false,
+  });
+});
+
+
+add_task(async function testStrippingOnlyParamRemovesQuestionMark() {
+  let validUrl = "https://www.example.com/?utm_ad";
+  let shortenedUrl = "https://www.example.com/";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: true,
+    expectedDisabled: false,
+  });
+});
+
+
+
+add_task(async function testEqualsSignInsideValueNotSplitIncorrectly() {
+  let validUrl = "https://www.example.com/?utm_ad=test&a=b=c";
+  let shortenedUrl = "https://www.example.com/?a=b=c";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: true,
+    expectedDisabled: false,
+  });
+});
+
+
+add_task(async function testEmptyNameWithValue() {
+  let validUrl = "https://www.example.com/?utm_ad=test&=v";
+  let shortenedUrl = "https://www.example.com/?=v";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: true,
+    expectedDisabled: false,
+  });
+});
+
+
+
+add_task(async function testQueryParamNotOnListUnchanged() {
+  let validUrl = "https://www.example.com/?x";
+  let shortenedUrl = "https://www.example.com/?x";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: true,
+    expectedDisabled: true,
+  });
+});
+
+
+
 add_task(async function testErrorHandlingForNestedLinks() {
   let validUrl =
     "https://www.example.com/?test_3=magnet%3A%3Fxt%3Durn%3Abtih%3Asomesha1hash&test_4=1234&test_2=4321";
