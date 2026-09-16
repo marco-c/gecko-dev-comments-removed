@@ -4,7 +4,6 @@
 #include "AudioStream.h"
 
 #include <math.h>
-#include <stdio.h>
 
 #include <algorithm>
 #include <mutex>
@@ -222,6 +221,21 @@ nsresult AudioStream::EnsureTimeStretcherInitialized() {
     mTimeStretcher->setSetting(
         SETTING_OVERLAP_MS,
         StaticPrefs::media_audio_playbackrate_soundtouch_overlap_ms());
+
+    const uint32_t primeFrames =
+        (StaticPrefs::media_audio_playbackrate_soundtouch_sequence_ms() +
+         StaticPrefs::media_audio_playbackrate_soundtouch_seekwindow_ms()) *
+        mAudioClock.GetInputRate() / 1000;
+    AutoTArray<AudioDataValue, 2048> silence;
+    silence.SetLength(primeFrames * mOutChannels);
+    std::fill(silence.begin(), silence.end(), AudioDataValue(0));
+    mTimeStretcher->putSamples(silence.Elements(), primeFrames);
+    const uint32_t numOut =
+        mTimeStretcher->numSamples().unverified_safe_because(
+            "Bounded by the number of frames used to prime the stretcher.");
+    MOZ_ASSERT(numOut <= primeFrames);
+    silence.SetLength(numOut * mOutChannels);
+    mTimeStretcher->receiveSamples(silence.Elements(), numOut);
   }
   return NS_OK;
 }
@@ -590,18 +604,6 @@ void AudioStream::GetUnprocessed(AudioBufferWriter& aWriter) {
             return timeStretcher->receiveSamples(aPtr, aFrames);
           },
           aWriter.Available());
-
-      
-      
-      
-      mTimeStretcher->numUnprocessedSamples().copy_and_verify([](auto samples) {
-        NS_WARNING_ASSERTION(samples == 0, "no samples");
-      });
-    } else {
-      
-      
-      delete mTimeStretcher;
-      mTimeStretcher = nullptr;
     }
   }
 
@@ -689,6 +691,11 @@ void AudioStream::UpdatePlaybackRateIfNeeded() {
   }
 
   EnsureTimeStretcherInitialized();
+
+  if (mTimeStretcher && mAudioClock.GetPlaybackRate() != 1.0f &&
+      static_cast<float>(mPlaybackRate) == 1.0f) {
+    mTimeStretcher->flush();
+  }
 
   mAudioClock.SetPlaybackRate(mPlaybackRate);
   mAudioClock.SetPreservesPitch(mPreservesPitch);
