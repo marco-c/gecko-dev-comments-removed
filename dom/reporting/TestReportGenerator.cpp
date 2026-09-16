@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/TestReportGenerator.h"
 
 #include "mozilla/dom/Document.h"
@@ -33,7 +31,7 @@ already_AddRefed<Promise> TestReportGenerator::GenerateReport(
     return promise.forget();
   }
 
-  nsString reportGroup = aParams.mGroup;
+  NS_ConvertUTF16toUTF8 reportGroup(aParams.mGroup);
 
   nsPIDOMWindowInner* window = global->GetAsInnerWindow();
   if (NS_WARN_IF(!window)) {
@@ -52,9 +50,7 @@ already_AddRefed<Promise> TestReportGenerator::GenerateReport(
     return promise.forget();
   }
 
-  NS_ConvertUTF8toUTF16 docURIString(spec);
-
-  ReportingUtils::Report(global, nsGkAtoms::test, reportGroup, docURIString,
+  ReportingUtils::Report(global, nsGkAtoms::test, reportGroup, spec,
                          reportBody);
 
   AutoJSAPI jsapi;
