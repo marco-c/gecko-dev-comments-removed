@@ -602,17 +602,21 @@ NS_IMETHODIMP ContentClassifierService::BlockShutdown(
   
   
   
-  ShutdownRSClient();
-
-  nsCOMPtr<nsISerialEventTarget> buildThread;
+  
+  
   {
     MutexAutoLock lock(mLock);
-
     mInitPhase = InitPhase::ShutdownStarted;
-    
-    
-    
-    buildThread = std::move(mBuildThread);
+    mBuildThread = nullptr;
+  }
+
+  
+  
+  
+  ShutdownRSClient();
+
+  {
+    MutexAutoLock lock(mLock);
 
     Preferences::UnregisterCallback(
         &ContentClassifierService::OnPrefChange,
@@ -641,25 +645,10 @@ NS_IMETHODIMP ContentClassifierService::BlockShutdown(
 
     content_classifier_teardown_domain_resolver();
 
-    if (!buildThread) {
-      RemoveBlocker();
-      return NS_OK;
-    }
+    
+    
+    RemoveBlocker();
   }
-
-  
-  
-  
-  
-  RefPtr<ContentClassifierService> self = this;
-  buildThread->Dispatch(NS_NewRunnableFunction(
-      "ContentClassifierService::ShutdownFence", [self]() {
-        NS_DispatchToMainThread(NS_NewRunnableFunction(
-            "ContentClassifierService::FinishShutdown", [self]() {
-              MutexAutoLock lock(self->mLock);
-              self->RemoveBlocker();
-            }));
-      }));
 
   return NS_OK;
 }

@@ -26,6 +26,7 @@ LOCAL_INCLUDES += [
     "/netwerk/base",
     "/netwerk/protocol/http",
     "/netwerk/url-classifier",
+    "/toolkit/components/url-classifier",
 ]
 
 EXTRA_JS_MODULES += [
@@ -34,6 +35,10 @@ EXTRA_JS_MODULES += [
 
 XPCOM_MANIFESTS += [
     "components.conf",
+]
+
+XPCSHELL_TESTS_MANIFESTS += [
+    "test/unit/xpcshell.toml",
 ]
 
 BROWSER_CHROME_MANIFESTS += [

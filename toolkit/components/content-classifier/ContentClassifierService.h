@@ -80,6 +80,13 @@ struct ContentClassifierFeature {
   
   
   
+  
+  
+  bool mUseTopWindowAsSource;
+
+  
+  
+  
   Maybe<nsIScopedPrefs::Pref> mReferencedScopedPref;
 
   
@@ -105,22 +112,14 @@ enum class InitPhase {
 
 
 
-
-enum class ContentClassifierResultStatus : uint8_t {
-  Miss = 0,
-  Hit = 1,
-  Exception = 2,
-  ImportantHit = 3,
-  ImportantException = 4,
-};
-
-
-
-
-
 class ContentClassifierResult {
  public:
-  using Status = ContentClassifierResultStatus;
+  
+  
+  
+  
+  
+  using Status = nsIContentClassifierService::ProbeStatus;
 
   ContentClassifierResult() = default;
 
@@ -191,6 +190,49 @@ struct EnginesPrefsSnapshot {
   nsTArray<nsCString> mCancelPBM;
   nsTArray<nsCString> mAnnotate;
   nsTArray<nsCString> mAnnotatePBM;
+};
+
+class ContentClassifierProbeResult final
+    : public nsIContentClassifierProbeResult {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSICONTENTCLASSIFIERPROBERESULT
+
+  ContentClassifierProbeResult(const nsACString& aFeatureName, bool aMatched,
+                               bool aException, bool aImportant,
+                               nsresult aEngineResult)
+      : mFeatureName(aFeatureName),
+        mMatched(aMatched),
+        mException(aException),
+        mImportant(aImportant),
+        mEngineResult(aEngineResult) {}
+
+ private:
+  ~ContentClassifierProbeResult() = default;
+
+  nsCString mFeatureName;
+  bool mMatched;
+  bool mException;
+  bool mImportant;
+  nsresult mEngineResult;
+};
+
+class ContentClassifierProbeReport final
+    : public nsIContentClassifierProbeReport {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSICONTENTCLASSIFIERPROBEREPORT
+
+  ContentClassifierProbeReport(
+      nsIContentClassifierService::ProbeStatus aStatus,
+      nsTArray<RefPtr<nsIContentClassifierProbeResult>>&& aResults)
+      : mStatus(aStatus), mResults(std::move(aResults)) {}
+
+ private:
+  ~ContentClassifierProbeReport() = default;
+
+  nsIContentClassifierService::ProbeStatus mStatus;
+  nsTArray<RefPtr<nsIContentClassifierProbeResult>> mResults;
 };
 
 class ContentClassifierService final : public nsIAsyncShutdownBlocker,
@@ -350,6 +392,7 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   
   nsCOMPtr<nsIContentClassifierRemoteSettingsClient> mRSClient;
 
+  
   
   
   
