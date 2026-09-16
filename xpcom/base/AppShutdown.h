@@ -155,6 +155,17 @@ class AppShutdown {
       const nsCOMPtr<nsISupports>& aNotificationSubject);
 };
 
+
+
+
+
+
+
+
+
+
+void CollectShutdownHangAnnotations();
+
 }  
 
 #endif  

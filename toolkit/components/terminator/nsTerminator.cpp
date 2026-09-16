@@ -248,6 +248,8 @@ void RunWatchdog(void* arg) {
 
     NoteIntentionalCrash(XRE_GetProcessTypeString());
 
+    CollectShutdownHangAnnotations();
+
     MaybeSaveShutdownHangProfile();
 
     
