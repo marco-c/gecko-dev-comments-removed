@@ -41,18 +41,22 @@ function getIndividualPrefName(name) {
 }
 const kInterceptionPoints = [
   "clipboard",
+  "clipboard_copy",
   "download",
   "drag_and_drop",
   "file_upload",
   "print",
 ];
 
-let kInterceptionPointsOnByDefault = kInterceptionPoints.slice();
-kInterceptionPointsOnByDefault.splice(
-  kInterceptionPointsOnByDefault.indexOf("download"),
-  1
+const kInterceptionPointsOffByDefault = ["clipboard_copy", "download"];
+const kInterceptionPointsOnByDefault = kInterceptionPoints.filter(
+  point => !kInterceptionPointsOffByDefault.includes(point)
 );
-const kInterceptionPointsPlainTextOnly = ["clipboard", "drag_and_drop"];
+const kInterceptionPointsPlainTextOnly = [
+  "clipboard",
+  "clipboard_copy",
+  "drag_and_drop",
+];
 
 const ca = Cc["@mozilla.org/contentanalysis;1"].getService(
   Ci.nsIContentAnalysis
@@ -94,7 +98,8 @@ add_task(async function test_ca_active() {
   });
   ok(ca.isActive, "CA is active when enabled by enterprise policy pref");
   for (let interceptionPoint of kInterceptionPoints) {
-    const shouldBeEnabledByDefault = interceptionPoint !== "download";
+    const shouldBeEnabledByDefault =
+      !kInterceptionPointsOffByDefault.includes(interceptionPoint);
     is(
       Services.prefs.getBoolPref(
         `browser.contentanalysis.interception_point.${interceptionPoint}.enabled`
@@ -183,14 +188,11 @@ add_task(
       "A DLP agent",
       "agentName default"
     );
-    is(
-      Glean.contentAnalysis.interceptionPointsTurnedOff.testGetValue().length,
-      1,
-      "interceptionPointsTurnedOff default"
-    );
-    is(
-      Glean.contentAnalysis.interceptionPointsTurnedOff.testGetValue()[0],
-      "browser.contentanalysis.interception_point.download.enabled",
+    Assert.deepEqual(
+      Glean.contentAnalysis.interceptionPointsTurnedOff.testGetValue(),
+      kInterceptionPointsOffByDefault.map(
+        point => `browser.contentanalysis.interception_point.${point}.enabled`
+      ),
       "interceptionPointsTurnedOff default"
     );
     ok(
@@ -254,6 +256,10 @@ add_task(async function test_ca_enterprise_config() {
         InterceptionPoints: {
           Clipboard: {
             Enabled: false,
+            PlainTextOnly: false,
+          },
+          ClipboardCopy: {
+            Enabled: true,
             PlainTextOnly: false,
           },
           Download: {
@@ -339,7 +345,8 @@ add_task(async function test_ca_enterprise_config() {
       Services.prefs.getBoolPref(
         `browser.contentanalysis.interception_point.${interceptionPoint}.enabled`
       ),
-      interceptionPoint === "download",
+      interceptionPoint === "download" ||
+        interceptionPoint === "clipboard_copy",
       `${interceptionPoint} interception point match`
     );
   }
@@ -355,6 +362,104 @@ add_task(async function test_ca_enterprise_config() {
 
   PoliciesPrefTracker.stop();
 });
+
+
+
+
+
+const kInterceptionPointsOmittedFallsBackToOff = ["clipboard_copy"];
+
+add_task(async function test_ca_enterprise_config_omitted_interception_point() {
+  PoliciesPrefTracker.start();
+
+  
+  
+  
+  
+  await EnterprisePolicyTesting.setupPolicyEngineWithJson({
+    policies: {
+      ContentAnalysis: {
+        InterceptionPoints: {},
+        PipePathName: "abc",
+      },
+    },
+  });
+
+  for (let interceptionPoint of kInterceptionPoints) {
+    is(
+      Services.prefs.getBoolPref(
+        `browser.contentanalysis.interception_point.${interceptionPoint}.enabled`
+      ),
+      !kInterceptionPointsOmittedFallsBackToOff.includes(interceptionPoint),
+      `${interceptionPoint} enabled falls back to its default`
+    );
+  }
+  for (let interceptionPoint of kInterceptionPointsPlainTextOnly) {
+    is(
+      Services.prefs.getBoolPref(
+        `browser.contentanalysis.interception_point.${interceptionPoint}.plain_text_only`
+      ),
+      true,
+      `${interceptionPoint} plain_text_only falls back to its default`
+    );
+  }
+
+  PoliciesPrefTracker.stop();
+});
+
+add_task(
+  async function test_ca_enterprise_config_only_download_interception_point() {
+    PoliciesPrefTracker.start();
+
+    await EnterprisePolicyTesting.setupPolicyEngineWithJson({
+      policies: {
+        ContentAnalysis: {
+          InterceptionPoints: {
+            Download: {
+              Enabled: false,
+            },
+          },
+        },
+      },
+    });
+
+    for (let interceptionPoint of kInterceptionPoints) {
+      
+      if (interceptionPoint !== "download") {
+        is(
+          Services.prefs.getBoolPref(
+            `browser.contentanalysis.interception_point.${interceptionPoint}.enabled`
+          ),
+          !kInterceptionPointsOmittedFallsBackToOff.includes(interceptionPoint),
+          `${interceptionPoint} enabled falls back to its default`
+        );
+      }
+    }
+    
+    
+    
+    
+    is(
+      Services.prefs.getBoolPref(
+        `browser.contentanalysis.interception_point.download.enabled`
+      ),
+      false,
+      `download explicitly set to false`
+    );
+
+    for (let interceptionPoint of kInterceptionPointsPlainTextOnly) {
+      is(
+        Services.prefs.getBoolPref(
+          `browser.contentanalysis.interception_point.${interceptionPoint}.plain_text_only`
+        ),
+        true,
+        `${interceptionPoint} plain_text_only falls back to its default`
+      );
+    }
+
+    PoliciesPrefTracker.stop();
+  }
+);
 
 add_task(async function test_ca_enterprise_config_telemetry() {
   PoliciesPrefTracker.start();
@@ -384,6 +489,10 @@ add_task(async function test_ca_enterprise_config_telemetry() {
         InterceptionPoints: {
           Clipboard: {
             Enabled: false,
+            PlainTextOnly: false,
+          },
+          ClipboardCopy: {
+            Enabled: true,
             PlainTextOnly: false,
           },
           Download: {
