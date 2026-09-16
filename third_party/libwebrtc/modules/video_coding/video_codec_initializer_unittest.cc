@@ -54,6 +54,8 @@ constexpr uint32_t kScreenshareDefaultFramerate = 5;
 
 constexpr uint32_t kHighScreenshareTl0Bps = 800000;
 constexpr uint32_t kHighScreenshareTl1Bps = 1200000;
+
+constexpr uint32_t kEncoderMinBitrateKbps = 30;
 }  
 
 
@@ -804,6 +806,39 @@ TEST_F(VideoCodecInitializerTest,
   
   
   EXPECT_EQ(codec.GetScalabilityMode(), ScalabilityMode::kL1T2);
+}
+
+
+
+
+
+
+
+
+
+TEST_F(VideoCodecInitializerTest, ZeroMaxBitrateIsNotUncapped) {
+  SetUpFor(VideoCodecType::kVideoCodecVP8, 1, std::nullopt, 1, false);
+  VideoStream stream = DefaultStream();
+  stream.min_bitrate_bps = 0;
+  stream.target_bitrate_bps = 0;
+  stream.max_bitrate_bps = 0;
+  streams_.push_back(stream);
+  InitializeCodec();
+
+  
+  EXPECT_EQ(codec_out_.maxBitrate, kEncoderMinBitrateKbps);
+}
+
+TEST_F(VideoCodecInitializerTest, SubKilobitMaxBitrateIsNotUncapped) {
+  SetUpFor(VideoCodecType::kVideoCodecVP8, 1, std::nullopt, 1, false);
+  VideoStream stream = DefaultStream();
+  stream.min_bitrate_bps = 0;
+  stream.target_bitrate_bps = 0;
+  stream.max_bitrate_bps = 500;
+  streams_.push_back(stream);
+  InitializeCodec();
+
+  EXPECT_EQ(codec_out_.maxBitrate, kEncoderMinBitrateKbps);
 }
 
 }  

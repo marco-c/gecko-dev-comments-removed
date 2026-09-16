@@ -200,6 +200,9 @@ void OverrideStreamSettings(
   for (size_t i = 0; i < layers.size(); ++i) {
     const VideoStream& overrides = encoder_config.simulcast_layers[i];
     VideoStream& layer = layers[i];
+    
+    
+    const bool max_bitrate_configured = overrides.max_bitrate_bps >= 0;
     layer.active = overrides.active;
     layer.scalability_mode = overrides.scalability_mode;
     layer.scale_resolution_down_to = overrides.scale_resolution_down_to;
@@ -215,13 +218,13 @@ void OverrideStreamSettings(
     if (overrides.min_bitrate_bps > 0) {
       layer.min_bitrate_bps = overrides.min_bitrate_bps;
     }
-    if (overrides.max_bitrate_bps > 0) {
+    if (max_bitrate_configured) {
       layer.max_bitrate_bps = overrides.max_bitrate_bps;
     }
     if (overrides.target_bitrate_bps > 0) {
       layer.target_bitrate_bps = overrides.target_bitrate_bps;
     }
-    if (overrides.min_bitrate_bps > 0 && overrides.max_bitrate_bps > 0) {
+    if (overrides.min_bitrate_bps > 0 && max_bitrate_configured) {
       
       
       if (overrides.target_bitrate_bps <= 0)
@@ -234,7 +237,7 @@ void OverrideStreamSettings(
           std::max(layer.target_bitrate_bps, layer.min_bitrate_bps);
       layer.max_bitrate_bps =
           std::max(layer.max_bitrate_bps, layer.min_bitrate_bps);
-    } else if (overrides.max_bitrate_bps > 0) {
+    } else if (max_bitrate_configured) {
       
       
       
@@ -260,7 +263,7 @@ void OverrideStreamSettings(
   }
 
   bool is_highest_layer_max_bitrate_configured =
-      encoder_config.simulcast_layers[layers.size() - 1].max_bitrate_bps > 0;
+      encoder_config.simulcast_layers[layers.size() - 1].max_bitrate_bps >= 0;
   bool is_screencast =
       encoder_config.content_type == VideoEncoderConfig::ContentType::kScreen;
   if (!is_screencast && !is_highest_layer_max_bitrate_configured &&
@@ -368,8 +371,15 @@ std::vector<VideoStream> EncoderStreamFactory::CreateDefaultVideoStreams(
   
   
   
+  
+  
+  
+  
+  
+  const bool encoding_max_bitrate_configured =
+      encoder_config.simulcast_layers[0].max_bitrate_bps >= 0;
   std::optional<int> api_max_bitrate_bps;
-  if (encoder_config.simulcast_layers[0].max_bitrate_bps > 0) {
+  if (encoding_max_bitrate_configured) {
     api_max_bitrate_bps = encoder_config.simulcast_layers[0].max_bitrate_bps;
   }
   if (encoder_config.max_bitrate_bps > 0) {
@@ -459,12 +469,14 @@ std::vector<VideoStream> EncoderStreamFactory::CreateDefaultVideoStreams(
       RTC_DCHECK_GE(sum_max_bitrates_kbps, 0);
       if (!api_max_bitrate_bps.has_value()) {
         max_bitrate_bps = sum_max_bitrates_kbps * 1000;
-      } else if (encoder_config.simulcast_layers[0].max_bitrate_bps <= 0) {
+      } else if (!encoding_max_bitrate_configured) {
         
         max_bitrate_bps =
             std::min(max_bitrate_bps, sum_max_bitrates_kbps * 1000);
       }
-      max_bitrate_bps = std::max(min_bitrate_bps, max_bitrate_bps);
+      if (max_bitrate_bps > 0) {
+        max_bitrate_bps = std::max(min_bitrate_bps, max_bitrate_bps);
+      }
     }
   }
 
