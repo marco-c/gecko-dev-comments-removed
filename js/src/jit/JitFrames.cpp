@@ -1495,6 +1495,15 @@ void TraceJitFrames(JSTracer* trc, JitActivation* activation) {
       uint8_t* nextPC = frames.resumePCinCurrentFrame();
       MOZ_ASSERT(nextPC != nullptr);
       wasm::WasmFrameIter& wasmFrameIter = frames.asWasm();
+
+      
+      
+      
+      if (wasm::Instance* exitInstance = wasmFrameIter.exitInstance()) {
+        wasm::TraceInstanceEdge(trc, exitInstance,
+                                "WasmFrameIter exit instance");
+        wasmFrameIter.resetExitInstance();
+      }
 #ifdef ENABLE_WASM_JSPI
       if (wasmFrameIter.currentFrameStackSwitched()) {
         highestByteVisitedInPrevWasmFrame = 0;

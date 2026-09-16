@@ -699,6 +699,9 @@ void ContStack::traceSuspended(JSTracer* trc, JSObject* src) {
       static_cast<FrameWithInstances*>(resumeTarget_->framePointer),
       resumeTarget_->resumePC);
 
+  
+  MOZ_RELEASE_ASSERT(!iter.exitInstance());
+
 #  ifdef ENABLE_WASM_JSPI
   
   

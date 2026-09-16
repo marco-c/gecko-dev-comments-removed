@@ -175,6 +175,11 @@ WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp)
   
 
   
+  
+  
+  exitInstance_ = instance_;
+
+  
   popFrame(false);
   MOZ_ASSERT(!done() || unwoundCallerFP_);
 

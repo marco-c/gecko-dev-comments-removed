@@ -69,6 +69,8 @@ class WasmFrameIter {
   bool isLeavingFrames_ = false;
   bool enableInlinedFrames_ = false;
 
+  Instance* exitInstance_ = nullptr;
+
   
   
   
@@ -174,6 +176,13 @@ class WasmFrameIter {
     
     return instance_;
   }
+
+  
+  Instance* exitInstance() const { return exitInstance_; }
+
+  
+  
+  void resetExitInstance() { exitInstance_ = nullptr; }
 
   
   Frame* frame() const {
