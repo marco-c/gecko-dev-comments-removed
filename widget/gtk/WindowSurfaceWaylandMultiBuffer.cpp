@@ -242,7 +242,7 @@ void WindowSurfaceWaylandMB::HandlePartialUpdate(
         mozilla::gfx::CreateDataSourceSurfaceFromData(
             mFrontBuffer->GetSize().ToUnknownSize(),
             mFrontBuffer->GetSurfaceFormat(),
-            (const uint8_t*)mFrontBuffer->GetImageData(),
+            (const uint8_t*)mFrontBuffer->GetShmPool()->GetImageData(),
             mFrontBuffer->GetSize().width *
                 BytesPerPixel(mFrontBuffer->GetSurfaceFormat()));
     RefPtr<DrawTarget> dt = mInProgressBuffer->Lock();
