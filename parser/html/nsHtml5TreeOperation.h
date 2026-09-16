@@ -597,6 +597,34 @@ class nsHtml5TreeOperation final {
                          mozilla::dom::FromParser aFromParser,
                          nsHtml5DocumentBuilder* aBuilder);
 
+  
+  
+  
+  
+  
+  
+  
+  static nsresult InsertBefore(nsIContent* aNode, nsIContent* aParent,
+                               nsIContent* aBefore,
+                               nsHtml5DocumentBuilder* aBuilder);
+
+  static nsresult InsertTextBefore(const char16_t* aBuffer, uint32_t aLength,
+                                   nsIContent* aParent, nsIContent* aBefore,
+                                   nsHtml5DocumentBuilder* aBuilder);
+
+  static nsresult InsertCommentBefore(nsIContent* aParent, char16_t* aBuffer,
+                                      int32_t aLength, nsIContent* aBefore,
+                                      nsHtml5DocumentBuilder* aBuilder);
+
+  
+  
+  static void AbortNodeInsertion(nsINode* aNode);
+
+  
+  
+  
+  static bool CanInsert(nsIContent* aNode, nsIContent* aParent);
+
   static nsresult AppendToDocument(nsIContent* aNode,
                                    nsHtml5DocumentBuilder* aBuilder);
 
@@ -665,6 +693,11 @@ class nsHtml5TreeOperation final {
   static nsIContent* GetDocumentFragmentForTemplate(nsIContent* aNode);
   static void SetDocumentFragmentForTemplate(nsIContent* aNode,
                                              nsIContent* aDocumentFragment);
+
+  
+  
+  
+  static nsIContent* GetFosterParentForInsertBefore(nsIContent* aTable);
 
   static nsIContent* GetFosterParent(nsIContent* aTable,
                                      nsIContent* aStackParent);
