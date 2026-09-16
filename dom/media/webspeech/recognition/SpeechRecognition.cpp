@@ -33,6 +33,7 @@
 #include "mozilla/dom/MediaStreamBinding.h"
 #include "mozilla/dom/MediaStreamError.h"
 #include "mozilla/dom/MediaStreamTrackBinding.h"
+#include "mozilla/dom/Navigator.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/SpeechGrammar.h"
@@ -749,6 +750,19 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
         }
       }
     }
+  }
+
+  
+  
+  
+  
+  
+  if (effectiveLang.IsEmpty()) {
+    if (Document* doc = win->GetExtantDoc()) {
+      doc->WarnOnceAbout(
+          Document::eSpeechRecognitionLangDefaultedToUserLanguage);
+    }
+    win->Navigator()->GetLanguage(effectiveLang);
   }
 
   
