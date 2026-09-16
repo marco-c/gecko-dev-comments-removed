@@ -10619,12 +10619,10 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
       switchRealm = false;
       break;
     case wasm::CalleeDesc::BuiltinInstanceMethod: {
-      CodeOffset unused_trapStackMapKey;
-      masm.wasmCallBuiltinInstanceMethod(desc, callBase->instanceArg(),
-                                         callee.builtin(),
-                                         callBase->builtinMethodFailureMode(),
-                                         callBase->builtinMethodFailureTrap(),
-                                         &retOffset, &unused_trapStackMapKey);
+      masm.wasmCallBuiltinInstanceMethod(
+          desc, callBase->instanceArg(), callee.builtin(),
+          callBase->builtinMethodFailureMode(),
+          callBase->builtinMethodFailureTrap(), &retOffset, &secondRetOffset);
       
       
       
@@ -10671,7 +10669,9 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
   
   
   if (callee.which() == wasm::CalleeDesc::WasmTable ||
-      callee.which() == wasm::CalleeDesc::FuncRef) {
+      callee.which() == wasm::CalleeDesc::FuncRef ||
+      (callee.which() == wasm::CalleeDesc::BuiltinInstanceMethod &&
+       secondRetOffset.bound())) {
     markSafepointAt(secondRetOffset.offset(), lir);
   }
 
