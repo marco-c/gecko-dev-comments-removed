@@ -262,11 +262,11 @@ void nsMathMLmpaddedFrame::UpdateValue(const Attribute& aAttribute,
     }
 
     if (eCSSUnit_Number == unit) {
-      amount =
-          NSToCoordRound(float(scaler) * aAttribute.mValue.GetFloatValue());
+      amount = NSToCoordRoundWithClamp(float(scaler) *
+                                       aAttribute.mValue.GetFloatValue());
     } else if (eCSSUnit_Percent == unit) {
-      amount =
-          NSToCoordRound(float(scaler) * aAttribute.mValue.GetPercentValue());
+      amount = NSToCoordRoundWithClamp(float(scaler) *
+                                       aAttribute.mValue.GetPercentValue());
     } else {
       amount = CalcLength(aAttribute.mValue, aFontSizeInflation, this);
     }
@@ -366,7 +366,7 @@ void nsMathMLmpaddedFrame::Place(DrawTarget* aDrawTarget,
   
   
 
-  const bool isRTL = StyleVisibility()->mDirection == StyleDirection::Rtl;
+  const bool isRTL = GetWritingMode().IsBidiRTL();
   if (isRTL ? mWidth.IsValid() : mLeadingSpace.IsValid()) {
     
     
