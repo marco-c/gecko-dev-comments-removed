@@ -318,6 +318,13 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
                                          nsAtom* aAttribute,
                                          AttrModType aModType);
 
+  
+
+
+
+
+  void NotifyOfEditContextAttachmentChange(mozilla::dom::Element* aElement);
+
   void AriaNotify(nsINode* aNode, const nsAString& aAnnouncement,
                   const mozilla::dom::AriaNotificationOptions& aOptions);
 

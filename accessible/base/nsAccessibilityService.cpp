@@ -786,6 +786,28 @@ void nsAccessibilityService::NotifyARIAAttributeDefaultChanged(
   }
 }
 
+void nsAccessibilityService::NotifyOfEditContextAttachmentChange(
+    mozilla::dom::Element* aElement) {
+  dom::Document* doc = aElement->GetComposedDoc();
+  if (!doc) {
+    return;
+  }
+  DocAccessible* docAcc = GetExistingDocAccessible(doc);
+  if (!docAcc) {
+    return;
+  }
+  if (LocalAccessible* acc = docAcc->GetAccessible(aElement)) {
+    
+    
+    
+    
+    
+    
+    auto event = MakeRefPtr<AccStateChangeEvent>(acc, states::FOCUSABLE);
+    docAcc->FireDelayedEvent(event);
+  }
+}
+
 void nsAccessibilityService::AriaNotify(
     nsINode* aNode, const nsAString& aAnnouncement,
     const mozilla::dom::AriaNotificationOptions& aOptions) {
