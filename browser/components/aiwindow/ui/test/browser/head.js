@@ -1079,13 +1079,13 @@ async function stubLoadURL(browser, { captureURL = false } = {}) {
     if (capture) {
       content._stubLoadURLCalled = false;
       content._stubLoadedURL = null;
-      smartbar.controller.loadURL = ({ loadRequest }) => {
+      smartbar.parentController.loadURL = ({ loadRequest }) => {
         content._stubLoadURLCalled = true;
         content._stubLoadedURL = loadRequest.urlLoad?.url ?? null;
         return {};
       };
     } else {
-      smartbar.controller.loadURL = () => ({});
+      smartbar.parentController.loadURL = () => ({});
     }
   });
 }
@@ -1120,7 +1120,7 @@ async function stubOpenSERP(browser) {
     content._stubOpenSERPCalled = false;
     content._stubOpenSERPTerms = null;
     content._stubOpenSERPEngine = null;
-    smartbar.controller.openSERP = (engineId, searchTerms) => {
+    smartbar.parentController.openSERP = (engineId, searchTerms) => {
       content._stubOpenSERPCalled = true;
       content._stubOpenSERPTerms = searchTerms;
       content._stubOpenSERPEngine = engineId;

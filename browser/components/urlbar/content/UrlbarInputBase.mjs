@@ -475,14 +475,25 @@ ${
     // reflect value of keyword.enabled or set the searchbar placeholder.
     this._setPlaceholder(null);
 
-    if (this.controller.maybeInitEngineStore()) {
-      // Engine store is initialized now and placeholder with
-      // engine name will be set in #connectedCallback.
+    if (this.sapName != "newtab_searchbar") {
+      if (this.controller.maybeInitEngineStore()) {
+        // Engine store is initialized now and placeholder with
+        // engine name will be set in #connectedCallback.
+      } else {
+        // This happens on browser startup. We wait a bit before
+        // initializing the search service to improve startup times.
+        this.#initEngineStoreAfterPaint().then(
+          () => this.#deferUpdatePlaceholder(),
+          () => {} // Do nothing if search service failed.
+        );
+      }
     } else {
-      // This happens on browser startup. We wait a bit before
-      // initializing the search service to improve startup times.
-      this.#initEngineStoreAfterPaint().then(
-        () => this.#deferUpdatePlaceholder(),
+      // In newtab, we don't wait before initializing the search service.
+      // We also don't use #deferUpdatePlaceholder in newtab. This causes
+      // flicker but it should be less often because of newtab preloading
+      // and it allows us to never show the magnifying glass placeholder.
+      this.controller.engineStore.init().then(
+        () => this.searchModeSwitcher.updateSearchIcon(),
         () => {} // Do nothing if search service failed.
       );
     }
@@ -822,6 +833,10 @@ ${
     return lazy?.AIWindow.isAIWindowActive(this.window)
       ? "smartwindow"
       : "classic";
+  }
+
+  get parentController() {
+    return this.controller.parentController;
   }
 
   blur() {
@@ -1412,7 +1427,7 @@ ${
       where,
       query: searchString,
     });
-    this.controller.openSERP(
+    this.parentController.openSERP(
       engine.id,
       searchString,
       where,
@@ -1776,7 +1791,9 @@ ${
       result.payload?.url &&
       !this.isPrivate
     ) {
-      this.controller.clearAutofillBackspaceEntryForUrl(result.payload.url);
+      this.parentController.clearAutofillBackspaceEntryForUrl(
+        result.payload.url
+      );
     }
 
     if (
@@ -1992,7 +2009,7 @@ ${
           windowMode: this.windowMode,
         });
 
-        this.controller.switchToTab({
+        this.parentController.switchToTab({
           url: result.payload.url,
           searchString,
           userContextId: result.payload.userContext?.id,
@@ -2038,7 +2055,7 @@ ${
           // Because we are directly asking for a search here, bypassing the
           // docShell, we need to do the same ourselves.
           // See also keyword-uri-fixup.
-          this.controller.checkKeywordURIFixup(
+          this.parentController.checkKeywordURIFixup(
             originalUntrimmedValue.trim(),
             browserId
           );
@@ -2230,14 +2247,14 @@ ${
         // The origin root URL (e.g. http://example.com/) may not be in
         // moz_places yet. It's derived from a deep-link visit. Defer the
         // write until the navigation records the visit.
-        this.controller.addToInputHistory(url, this._lastSearchString, {
+        this.parentController.addToInputHistory(url, this._lastSearchString, {
           whenReady: true,
         });
       }
 
       // `input` may be an empty string, so do a strict comparison here.
       if (input !== undefined) {
-        this.controller.addToInputHistory(url, input);
+        this.parentController.addToInputHistory(url, input);
       }
 
       // Re-integration: If the user picks a non-autofill result, or a "url"
@@ -2248,7 +2265,7 @@ ${
         (!result.autofill || result.autofill.type == "url") &&
         result.type == UrlbarShared.RESULT_TYPE.URL
       ) {
-        this.controller.handleAutofillReintegration(url);
+        this.parentController.handleAutofillReintegration(url);
       }
     }
 
@@ -2798,7 +2815,7 @@ ${
           this.window.gBrowser?.selectedBrowser
         );
       }
-      this.controller.openSERP(
+      this.parentController.openSERP(
         searchEngine.id,
         trimmedValue,
         where,
@@ -2807,7 +2824,7 @@ ${
       );
     } else {
       // Telemetry is handled by the function.
-      this.controller.openSearchForm(
+      this.parentController.openSearchForm(
         searchEngine.id,
         where,
         inBackground,
@@ -2992,7 +3009,7 @@ ${
         this.userTypedValue = this.untrimmedValue;
         this.valueIsTyped = true;
         if (!searchMode.isPreview && !areSearchModesSame) {
-          this.controller.recordSearchMode(searchMode);
+          this.parentController.recordSearchMode(searchMode);
         }
       }
     }
@@ -3204,6 +3221,9 @@ ${
     }
 
     this.toggleAttribute("breakout-extend", true);
+    if (this.hasAttribute("in-page")) {
+      this.showPopover();
+    }
     this.#updateTextboxPosition();
 
     // Enable the animation only after the first extend call to ensure it
@@ -3230,6 +3250,9 @@ ${
     }
 
     this.toggleAttribute("breakout-extend", false);
+    if (this.hasAttribute("in-page")) {
+      this.hidePopover();
+    }
     this.#updateTextboxPosition();
   }
 
@@ -3613,8 +3636,17 @@ ${
 
         this.setAttribute("breakout", "true");
         this.parentNode.setAttribute("breakout", "true");
-        this.showPopover();
-        this.#fixAddressbarSearchbarOrder();
+        // A toolbar element is a popover for as long as it has the `breakout`
+        // attribute; an in-page one only while it also has `breakout-extend`,
+        // so that a modal dialog the page opens covers the closed element: the
+        // top layer paints in the order elements enter it, which z-index cannot
+        // reorder.
+        // TODO(bug 2022527): Take the in-page approach for toolbar elements
+        // too, which makes #fixAddressbarSearchbarOrder unnecessary.
+        if (!this.hasAttribute("in-page")) {
+          this.showPopover();
+          this.#fixAddressbarSearchbarOrder();
+        }
         this.#updateTextboxPosition();
 
         resolve();
@@ -4199,9 +4231,9 @@ ${
       },
     };
     if (where.startsWith("tab")) {
-      this.controller.recordSearchInOpenedTab(searchData);
+      this.parentController.recordSearchInOpenedTab(searchData);
     } else {
-      this.controller.recordSearch(searchData);
+      this.parentController.recordSearch(searchData);
     }
   }
 
@@ -4331,7 +4363,7 @@ ${
     });
 
     if (element.dataset.command == "manage") {
-      this.controller.openPreferences("search-locationBar");
+      this.parentController.openPreferences("search-locationBar");
       return;
     }
 
@@ -4484,7 +4516,7 @@ ${
     // Notify about the start of navigation.
     this.#notifyStartNavigation(resultDetails);
 
-    let loadStatus = await this.controller.loadURL({
+    let loadStatus = await this.parentController.loadURL({
       loadRequest,
       where,
       params,
@@ -4741,7 +4773,7 @@ ${
           this.window.goDoCommand("cmd_paste");
           this.setResultForCurrentValue(null);
           this.handleCommand();
-          this.controller.clearLastQueryContextCache();
+          this.parentController.clearLastQueryContextCache();
 
           this._suppressStartQuery = false;
         });
@@ -4867,7 +4899,7 @@ ${
       return;
     }
 
-    await this.controller
+    await this.parentController
       .dismissAutofill(result.payload.url, action)
       .catch(console.error);
 
@@ -5623,8 +5655,8 @@ ${
       case this: {
         this._mousedownOnUrlbarDescendant = true;
         if (
-          event.composedTarget != this.inputField &&
-          event.composedTarget != this._inputContainer
+          event.target != this.inputField &&
+          event.target != this._inputContainer
         ) {
           break;
         }
@@ -5635,7 +5667,7 @@ ${
         // Keep the focus status, since the attribute may be changed
         // upon calling this.focus().
         const hasFocus = this.hasAttribute("focused");
-        if (event.composedTarget != this.inputField) {
+        if (event.target != this.inputField) {
           this.focus();
         }
 
@@ -5707,7 +5739,7 @@ ${
         event.inputType === "deleteContentForward")
     ) {
       // Take a telemetry if user deleted whole autofilled value.
-      this.controller.recordAutofillDeletion();
+      this.parentController.recordAutofillDeletion();
     }
 
     if (
@@ -5718,7 +5750,7 @@ ${
       this.value === this.userTypedValue &&
       this._resultForCurrentValue?.payload?.url
     ) {
-      this.controller.recordAutofillBackspace(
+      this.parentController.recordAutofillBackspace(
         this._resultForCurrentValue.payload.url
       );
     }
@@ -6147,7 +6179,7 @@ ${
           const browserId = await keyDownEnterDeferred.promise;
           // The parent focuses the loading browser if it's still selected,
           // since only it can reach the browser element and the chrome window.
-          let { focused } = await this.controller.focusBrowser(browserId);
+          let { focused } = await this.parentController.focusBrowser(browserId);
           // focusBrowser resolves asynchronously; if the user began a fresh
           // search since this Enter (a later input bumped the epoch), its
           // caret must be left alone -- only keep the domain visible for our load.
@@ -6340,7 +6372,7 @@ ${
     let queryContext = this.#makeQueryContext({
       searchString: droppedString,
     });
-    this.controller.setLastQueryContextCache(queryContext);
+    this.parentController.setLastQueryContextCache(queryContext);
     this.controller.engagementEvent.start(event, queryContext);
     this.handleNavigation({ triggeringPrincipal: principal });
     // For safety reasons, in the drop case we don't want to immediately show

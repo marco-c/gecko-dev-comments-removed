@@ -57,7 +57,7 @@ async function pinUninitializedEngineStore(win) {
 
 
 async function flushParentRoundTrip(win, engineId) {
-  await win.gURLBar.controller.getEngineIconURL(engineId);
+  await win.gURLBar.parentController.getEngineIconURL(engineId);
   await TestUtils.waitForTick();
 }
 
