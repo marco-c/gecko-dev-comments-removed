@@ -19,6 +19,7 @@
 #include "mozilla/ServoCSSParser.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StyleAnimationValue.h"
 #include "mozilla/TimingParams.h"
 #include "mozilla/dom/BaseKeyframeTypesBinding.h"  
@@ -61,9 +62,9 @@ enum class ListAllowance { eDisallow, eAllow };
 
 
 struct PropertyValuesPair {
-  PropertyValuesPair() : mProperty(eCSSProperty_UNKNOWN) {}
+  PropertyValuesPair() = default;
 
-  CSSPropertyId mProperty;
+  CSSPropertyId mProperty{eCSSProperty_UNKNOWN};
   nsTArray<nsCString> mValues;
 };
 
@@ -287,11 +288,12 @@ nsTArray<Keyframe> KeyframeUtils::GetKeyframesFromObject(
 }
 
 
-KeyframesOffsetHasAny KeyframeUtils::ComputeMissingKeyframeOffsets(
+KeyframeOffsetsHasRangeOffset KeyframeUtils::ComputeMissingKeyframeOffsets(
     nsTArray<Keyframe>& aKeyframes, const dom::AnimationTimeline* aTimeline,
     const dom::AnimationRange* aRange) {
+  auto hasTimelineRangeOffset = KeyframeOffsetsHasRangeOffset::No;
   if (aKeyframes.IsEmpty()) {
-    return {false, false};
+    return hasTimelineRangeOffset;
   }
 
   
@@ -302,29 +304,22 @@ KeyframesOffsetHasAny KeyframeUtils::ComputeMissingKeyframeOffsets(
   
   nsTArray<Keyframe*> keyframesWithDoubleOrNullOffsets;
 
-  bool hasTimelineRangeOffset = false;
-  bool hasNullOrPercentageOffset = false;
-
   
   
   for (Keyframe& keyframe : aKeyframes) {
     const auto& offset = keyframe.mOffset;
     if (!offset) {
-      hasNullOrPercentageOffset = true;
       keyframesWithDoubleOrNullOffsets.AppendElement(&keyframe);
       continue;
     }
 
     if (offset->IsPercentageOffset()) {
-      if (!keyframe.mIsGenerated) {
-        hasNullOrPercentageOffset = true;
-      }
       keyframesWithDoubleOrNullOffsets.AppendElement(&keyframe);
       keyframe.mComputedOffset = offset->mPercentage;
       continue;
     }
 
-    hasTimelineRangeOffset = true;
+    hasTimelineRangeOffset = KeyframeOffsetsHasRangeOffset::Yes;
     keyframe.mComputedOffset =
         GetComputedOffset(offset.ref(), aTimeline, aRange);
   }
@@ -332,7 +327,7 @@ KeyframesOffsetHasAny KeyframeUtils::ComputeMissingKeyframeOffsets(
   
   DoComputeMissingKeyframeOffsets(keyframesWithDoubleOrNullOffsets);
 
-  return {hasTimelineRangeOffset, hasNullOrPercentageOffset};
+  return hasTimelineRangeOffset;
 }
 
 
@@ -365,7 +360,16 @@ double KeyframeUtils::GetComputedOffset(const Keyframe::OffsetType& aOffset,
   
   
   const auto& range = vt->IntervalForAttachmentRange(*aRange);
-  return (*offset - range.first) / (range.second - range.first);
+  const double rangeDelta = range.second - range.first;
+  
+  
+  
+  
+  
+  if (!rangeDelta) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
+  return (*offset - range.first) / rangeDelta;
 }
 
 
@@ -373,8 +377,7 @@ nsTArray<AnimationProperty> KeyframeUtils::GetAnimationPropertiesFromKeyframes(
     const nsTArray<Keyframe>& aKeyframes, dom::Element* aElement,
     const PseudoStyleRequest& aPseudoRequest, const ComputedStyle* aStyle,
     dom::CompositeOperation aEffectComposite,
-    const dom::AnimationTimeline* aTimeline,
-    const KeyframesOffsetHasAny& aOffsetHasAny) {
+    const dom::AnimationTimeline* aTimeline) {
   nsTArray<AnimationProperty> result;
 
   const nsTArray<ComputedKeyframeValues> computedValues =
@@ -388,27 +391,11 @@ nsTArray<AnimationProperty> KeyframeUtils::GetAnimationPropertiesFromKeyframes(
   MOZ_ASSERT(aKeyframes.Length() == computedValues.Length(),
              "Array length mismatch");
 
-  
-  
-  
-  
-  const auto& generatedKeyframesStatus =
-      CheckSkippableGeneratedKeyframes(aKeyframes, aTimeline, aOffsetHasAny);
-
   nsTArray<KeyframeValueEntry> entries(aKeyframes.Length());
 
   const size_t len = aKeyframes.Length();
   for (size_t i = 0; i < len; ++i) {
     const Keyframe& frame = aKeyframes[i];
-    
-    if (generatedKeyframesStatus.ShouldSkip(frame)) {
-      
-      
-      
-      
-      continue;
-    }
-
     if (frame.IsRangedKeyframe() && std::isnan(frame.mComputedOffset)) {
       
       
@@ -438,52 +425,11 @@ nsTArray<AnimationProperty> KeyframeUtils::GetAnimationPropertiesFromKeyframes(
 bool KeyframeUtils::IsAnimatableProperty(const CSSPropertyId& aProperty) {
   
   
-  
-  if (aProperty.mId == eCSSProperty_display) {
+  if (aProperty.mId == eCSSProperty_display &&
+      !StaticPrefs::layout_css_display_animations_enabled()) {
     return false;
   }
   return Servo_Property_IsAnimatable(&aProperty);
-}
-
-
-KeyframeUtils::GeneratedKeyframesStatus
-KeyframeUtils::CheckSkippableGeneratedKeyframes(
-    const nsTArray<Keyframe>& aKeyframes,
-    const dom::AnimationTimeline* aTimeline,
-    const KeyframesOffsetHasAny& aOffsetHasAny) {
-  if (!aTimeline || !aTimeline->IsViewTimeline()) {
-    
-    
-    
-    return {!aOffsetHasAny.mNonRangeOffset, !aOffsetHasAny.mNonRangeOffset};
-  }
-
-  
-  if (!aOffsetHasAny.mRangeOffset) {
-    return {false, false};
-  }
-
-  bool skipInitial = false;
-  bool skipFinal = false;
-  for (const auto& keyframe : aKeyframes) {
-    
-    
-    if (!keyframe.IsRangedKeyframe() || std::isnan(keyframe.mComputedOffset)) {
-      continue;
-    }
-
-    
-    
-    
-    
-    
-    if (keyframe.mComputedOffset <= 0.0) {
-      skipInitial = true;
-    } else if (keyframe.mComputedOffset >= 1.0) {
-      skipFinal = true;
-    }
-  }
-  return {skipInitial, skipFinal};
 }
 
 
