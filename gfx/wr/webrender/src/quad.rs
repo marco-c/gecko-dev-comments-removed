@@ -1513,9 +1513,12 @@ fn get_prim_render_strategy(
                     );
 
                     if let Some(clip_rect) = map_clip_to_prim.map(&clip_instance.clip_rect) {
+                        
+                        
+                        
                         let radius = map_clip_to_prim.map_vector(
                             LayoutVector2D::new(max_corner_width + max_inset_width, max_corner_height + max_inset_height)
-                        );
+                        ).abs();
                         return QuadRenderStrategy::NinePatch {
                             radius,
                             clip_rect,
