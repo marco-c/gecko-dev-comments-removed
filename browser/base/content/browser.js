@@ -4766,7 +4766,7 @@ var gDialogBox = {
     try {
       
       for (let urlbar of document.querySelectorAll(".urlbar")) {
-        urlbar.incrementBreakoutBlockerCount();
+        urlbar.incrementPopoverBlockerCount();
       }
     } catch (ex) {
       console.error(ex);
@@ -4797,7 +4797,7 @@ var gDialogBox = {
       UpdatePopupNotificationsVisibility();
       
       for (let urlbar of document.querySelectorAll(".urlbar")) {
-        urlbar.decrementBreakoutBlockerCount();
+        urlbar.decrementPopoverBlockerCount();
       }
     }
     if (this._queued.length) {
