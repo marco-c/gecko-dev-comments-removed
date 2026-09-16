@@ -1,6 +1,7 @@
 use {
     super::{CpuInfoError, ProcessInspector},
     crate::minidump_format::*,
+    failspot::failspot,
     scroll::Pwrite,
     std::{
         collections::HashSet,
@@ -135,7 +136,7 @@ fn parse_features(_val: &str) -> u32 {
 }
 
 pub fn write_cpu_information(
-    process_inspector: &ProcessInspector,
+    process_inspector: &dyn ProcessInspector,
     sys_info: &mut MDRawSystemInfo,
 ) -> Result<()> {
     
@@ -170,12 +171,14 @@ pub fn write_cpu_information(
     
     
     
-    if let Ok(mut present_file) = process_inspector.read_file("/sys/devices/system/cpu/present") {
+    if let Ok(mut present_file) =
+        process_inspector.read_file("/sys/devices/system/cpu/present".into())
+    {
         
         let cpus_present = parse_cpus_from_sysfile(&mut present_file).unwrap_or_default();
 
         if let Ok(mut possible_file) =
-            process_inspector.read_file("/sys/devices/system/cpu/possible")
+            process_inspector.read_file("/sys/devices/system/cpu/possible".into())
         {
             
             let cpus_possible = parse_cpus_from_sysfile(&mut possible_file).unwrap_or_default();
@@ -191,14 +194,13 @@ pub fn write_cpu_information(
     
     
 
-    let cpuinfo_file = match process_inspector.read_file("/proc/cpuinfo") {
-        Ok(x) => x,
-        Err(_) => {
-            
-            
-            return Ok(());
-        }
-    };
+    if failspot!(CpuInfoFileOpen) {
+        process_inspector.fail_one_syscall_with(libc::EPERM);
+    }
+
+    let cpuinfo_file = process_inspector
+        .read_file("/proc/cpuinfo".into())
+        .map_err(CpuInfoError::ReadFileError)?;
 
     let mut cpuid = 0;
     let mut elf_hwcaps = 0;
@@ -273,10 +275,10 @@ pub fn write_cpu_information(
         }
 
         
-        if field == "Features" {
-            if let Some(val) = value {
-                elf_hwcaps = parse_features(val);
-            }
+        if field == "Features"
+            && let Some(val) = value
+        {
+            elf_hwcaps = parse_features(val);
         }
     }
 
