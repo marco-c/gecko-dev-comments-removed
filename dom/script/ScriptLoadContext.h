@@ -18,6 +18,7 @@
 #include "js/loader/ScriptKind.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/PreloaderBase.h"
@@ -75,39 +76,65 @@ class Element;
 
 
 
+class ScriptDecodeTask;
 class StencilCompileOrDecodeTask;
 class WasmCompileTask;
 
 
 class CompileOrDecodeTask : public mozilla::Task {
  protected:
-  enum class Type : uint8_t { Stencil, Wasm };
+  enum class Type : uint8_t { Compile, Decode, Wasm };
 
   explicit CompileOrDecodeTask(Type aType);
   virtual ~CompileOrDecodeTask() = default;
 
-  bool IsCancelled(const MutexAutoLock& aProofOfLock) const {
-    return mIsCancelled;
-  }
+  
+  virtual TaskResult RunTask() MOZ_REQUIRES(mMutex) = 0;
 
  public:
-  
-  
-  void Cancel();
+  TaskResult Run() final;
 
-  bool IsStencilTask() const { return mType == Type::Stencil; }
+  
+  
+  
+  
+  
+  void Cancel() MOZ_EXCLUDES(mMutex);
+
+  
+  static void ForgetFinishedCancelledTasks();
+
+  bool IsStencilTask() const {
+    return mType == Type::Compile || mType == Type::Decode;
+  }
+  bool IsDecodeTask() const { return mType == Type::Decode; }
   bool IsWasmTask() const { return mType == Type::Wasm; }
 
   inline StencilCompileOrDecodeTask* AsStencilCompileOrDecodeTask();
   inline WasmCompileTask* AsWasmCompileTask();
+  ScriptDecodeTask* AsScriptDecodeTask();
 
  protected:
   
   mozilla::Mutex mMutex;
 
-  bool mIsCancelled = false;
+  mozilla::Atomic<bool> mIsCancelled{false};
 
  private:
+  
+  void TrackCancelled() MOZ_EXCLUDES(mMutex);
+
+  
+  static void EnsureCancelledTasksList();
+
+  
+  void WaitForRunningTask() MOZ_EXCLUDES(mMutex);
+
+  
+  bool MayStillRun() const { return mMayStillRun; }
+
+  mozilla::Atomic<bool> mMayStillRun{true};
+
   const Type mType;
 };
 
@@ -115,13 +142,12 @@ class CompileOrDecodeTask : public mozilla::Task {
 
 class StencilCompileOrDecodeTask : public CompileOrDecodeTask {
  protected:
-  StencilCompileOrDecodeTask();
+  explicit StencilCompileOrDecodeTask(Type aType);
   virtual ~StencilCompileOrDecodeTask();
 
   nsresult InitFrontendContext();
 
-  void DidRunTask(const MutexAutoLock& aProofOfLock,
-                  RefPtr<JS::Stencil>&& aStencil);
+  void DidRunTask(RefPtr<JS::Stencil>&& aStencil) MOZ_REQUIRES(mMutex);
 
  public:
   
@@ -131,6 +157,10 @@ class StencilCompileOrDecodeTask : public CompileOrDecodeTask {
   
   already_AddRefed<JS::Stencil> StealResult(
       JSContext* aCx, JS::InstantiationStorage* aInstantiationStorage);
+
+  
+  
+  JS::TranscodeBuffer TakeSRIAndSerializedStencil();
 
  protected:
   
@@ -163,7 +193,7 @@ class WasmCompileTask final : public CompileOrDecodeTask {
 
   nsresult Init(JSContext* aCx, JS::CompileOptions& aOptions);
 
-  TaskResult Run() override;
+  TaskResult RunTask() override MOZ_REQUIRES(mMutex);
 
   
   
