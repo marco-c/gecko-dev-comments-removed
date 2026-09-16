@@ -25,6 +25,7 @@
 #include "nsIThreadRetargetableRequest.h"
 #include "nsIThreadRetargetableStreamListener.h"
 #include "nsNetCID.h"
+#include "nsNetUtil.h"
 #include "nsServiceManagerUtils.h"
 #include "nsStreamUtils.h"
 #include "nsStringStream.h"
@@ -946,7 +947,18 @@ nsHTTPCompressConv::OnDataAvailable(nsIRequest* request, nsIInputStream* iStr,
       }
     } break;
 
-    default:
+    default: {
+      
+      
+      
+      
+      if (mDispatchToMainThread && !NS_IsMainThread()) {
+        nsAutoCString data;
+        MOZ_TRY(NS_ReadInputStreamToString(iStr, data, streamLen));
+        return do_OnDataAvailable(request, aSourceOffset, data.BeginReading(),
+                                  data.Length());
+      }
+
       nsCOMPtr<nsIStreamListener> listener;
       {
         MutexAutoLock lock(mMutex);
@@ -956,6 +968,7 @@ nsHTTPCompressConv::OnDataAvailable(nsIRequest* request, nsIInputStream* iStr,
       if (NS_FAILED(rv)) {
         return rv;
       }
+    } break;
   } 
 
   return NS_OK;
