@@ -155,15 +155,21 @@ class StickyScrollContainer final {
     IgnoreCurrentScroll,
   };
 
+  struct StickyLimits {
+    
+    nsRect mStick;
+    
+    nsRect mContain;
+  };
+
   
 
 
 
 
-
-  void ComputeStickyLimits(nsIFrame* aFrame, nsRect* aStick, nsRect* aContain,
-                           StickyLimitSpace aSpace =
-                               StickyLimitSpace::RelativeToCurrentScroll) const;
+  StickyLimits ComputeStickyLimits(
+      nsIFrame* aFrame, StickyLimitSpace aSpace =
+                            StickyLimitSpace::RelativeToCurrentScroll) const;
 
   ScrollContainerFrame* const mScrollContainerFrame;
   DepthOrderedFrameList mFrames;

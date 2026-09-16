@@ -110,10 +110,8 @@ static constexpr nscoord gUnboundedExtent = nscoord_MAX;
 static constexpr nscoord gUnboundedPositive =
     gUnboundedNegative + gUnboundedExtent;
 
-void StickyScrollContainer::ComputeStickyLimits(nsIFrame* aFrame,
-                                                nsRect* aStick,
-                                                nsRect* aContain,
-                                                StickyLimitSpace aSpace) const {
+StickyScrollContainer::StickyLimits StickyScrollContainer::ComputeStickyLimits(
+    nsIFrame* aFrame, StickyLimitSpace aSpace) const {
   NS_ASSERTION(nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(aFrame),
                "Can't sticky position individual continuations");
 
@@ -121,17 +119,16 @@ void StickyScrollContainer::ComputeStickyLimits(nsIFrame* aFrame,
                                      ? nsPoint()
                                      : mScrollPosition;
 
-  aStick->SetRect(gUnboundedNegative, gUnboundedNegative, gUnboundedExtent,
-                  gUnboundedExtent);
-  aContain->SetRect(gUnboundedNegative, gUnboundedNegative, gUnboundedExtent,
-                    gUnboundedExtent);
+  const nsRect unbounded(gUnboundedNegative, gUnboundedNegative,
+                         gUnboundedExtent, gUnboundedExtent);
+  StickyLimits limits{unbounded, unbounded};
 
   const nsMargin* computedOffsets =
       aFrame->GetProperty(nsIFrame::ComputedOffsetProperty());
   if (!computedOffsets) {
     
     
-    return;
+    return limits;
   }
 
   nsIFrame* scrolledFrame = mScrollContainerFrame->GetScrolledFrame();
@@ -163,11 +160,11 @@ void StickyScrollContainer::ComputeStickyLimits(nsIFrame* aFrame,
     
     MOZ_ASSERT(cbFrame->GetUsedBorder() == nsMargin(),
                "How did the ::-moz-scrolled-frame end up with border?");
-    *aContain = cbFrame->ScrollableOverflowRectRelativeToSelf();
-    aContain->Deflate(cbFrame->GetUsedPadding());
-    nsLayoutUtils::TransformRect(cbFrame, aFrame->GetParent(), *aContain);
+    limits.mContain = cbFrame->ScrollableOverflowRectRelativeToSelf();
+    limits.mContain.Deflate(cbFrame->GetUsedPadding());
+    nsLayoutUtils::TransformRect(cbFrame, aFrame->GetParent(), limits.mContain);
   } else {
-    *aContain = nsLayoutUtils::GetAllInFlowRectsUnion(
+    limits.mContain = nsLayoutUtils::GetAllInFlowRectsUnion(
         cbFrame, aFrame->GetParent(),
         nsLayoutUtils::GetAllInFlowRectsFlag::UseContentBox);
   }
@@ -180,11 +177,11 @@ void StickyScrollContainer::ComputeStickyLimits(nsIFrame* aFrame,
   
   
   
-  aContain->Deflate(marginRect - rect);
+  limits.mContain.Deflate(marginRect - rect);
 
   
   
-  aContain->Deflate(nsMargin(0, rect.width, rect.height, 0));
+  limits.mContain.Deflate(nsMargin(0, rect.width, rect.height, 0));
 
   nsMargin sfPadding = scrolledFrame->GetUsedPadding();
   nsPoint sfOffset = aFrame->GetParent()->GetOffsetTo(scrolledFrame);
@@ -229,39 +226,40 @@ void StickyScrollContainer::ComputeStickyLimits(nsIFrame* aFrame,
   
   const nsPoint frameOffset = aFrame->GetPosition() - rect.TopLeft();
 
-  aContain->MoveBy(frameOffset);
+  limits.mContain.MoveBy(frameOffset);
 
   
   if (computedOffsets->top != NS_AUTOOFFSET) {
-    aStick->SetTopEdge(scrollPosition.y + sfPadding.top + effectiveOffsets.top -
-                       sfOffset.y + frameOffset.y);
+    limits.mStick.SetTopEdge(scrollPosition.y + sfPadding.top +
+                             effectiveOffsets.top - sfOffset.y + frameOffset.y);
   }
 
   
   if (computedOffsets->bottom != NS_AUTOOFFSET) {
-    aStick->SetBottomEdge(scrollPosition.y + sfPadding.top + sfSize.height -
-                          effectiveOffsets.bottom - rect.height - sfOffset.y +
-                          frameOffset.y);
+    limits.mStick.SetBottomEdge(scrollPosition.y + sfPadding.top +
+                                sfSize.height - effectiveOffsets.bottom -
+                                rect.height - sfOffset.y + frameOffset.y);
   }
 
   
   if (computedOffsets->left != NS_AUTOOFFSET) {
-    aStick->SetLeftEdge(scrollPosition.x + sfPadding.left +
-                        effectiveOffsets.left - sfOffset.x + frameOffset.x);
+    limits.mStick.SetLeftEdge(scrollPosition.x + sfPadding.left +
+                              effectiveOffsets.left - sfOffset.x +
+                              frameOffset.x);
   }
 
   
   if (computedOffsets->right != NS_AUTOOFFSET) {
-    aStick->SetRightEdge(scrollPosition.x + sfPadding.left + sfSize.width -
-                         effectiveOffsets.right - rect.width - sfOffset.x +
-                         frameOffset.x);
+    limits.mStick.SetRightEdge(scrollPosition.x + sfPadding.left +
+                               sfSize.width - effectiveOffsets.right -
+                               rect.width - sfOffset.x + frameOffset.x);
   }
+
+  return limits;
 }
 
 nsPoint StickyScrollContainer::ComputePosition(nsIFrame* aFrame) const {
-  nsRect stick;
-  nsRect contain;
-  ComputeStickyLimits(aFrame, &stick, &contain);
+  const auto [stick, contain] = ComputeStickyLimits(aFrame);
 
   nsPoint position = aFrame->GetNormalPosition();
 
@@ -290,9 +288,7 @@ void StickyScrollContainer::GetScrollRanges(nsIFrame* aFrame,
   nsIFrame* firstCont =
       nsLayoutUtils::FirstContinuationOrIBSplitSibling(aFrame);
 
-  nsRect stickRect;
-  nsRect containRect;
-  ComputeStickyLimits(firstCont, &stickRect, &containRect);
+  const auto [stickRect, containRect] = ComputeStickyLimits(firstCont);
 
   nsRectAbsolute stick = nsRectAbsolute::FromRect(stickRect);
   nsRectAbsolute contain = nsRectAbsolute::FromRect(containRect);
@@ -367,10 +363,8 @@ StickyScrollContainer::GetStickyScrollRangesForAxis(
     return result;
   }
 
-  nsRect stick;
-  nsRect contain;
-  ComputeStickyLimits(firstCont, &stick, &contain,
-                      StickyLimitSpace::IgnoreCurrentScroll);
+  const auto [stick, contain] =
+      ComputeStickyLimits(firstCont, StickyLimitSpace::IgnoreCurrentScroll);
 
   const nsPoint normalPosition = firstCont->GetNormalPosition();
   const nscoord normal = isVertical ? normalPosition.y : normalPosition.x;
