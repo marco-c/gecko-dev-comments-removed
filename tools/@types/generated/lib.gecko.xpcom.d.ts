@@ -15604,9 +15604,9 @@ interface nsIWebSocketEventListener extends nsISupports {
   
   webSocketClosed(aWebSocketSerialID: u32, aWasClean: boolean, aCode: u16, aReason: string): void;
   
-  frameReceived(aWebSocketSerialID: u32, aFrame: nsIWebSocketFrame): void;
+  frameReceived(aWebSocketSerialID: u32, aHttpChannelId: u64, aFrame: nsIWebSocketFrame): void;
   
-  frameSent(aWebSocketSerialID: u32, aFrame: nsIWebSocketFrame): void;
+  frameSent(aWebSocketSerialID: u32, aHttpChannelId: u64, aFrame: nsIWebSocketFrame): void;
 }
 
 
