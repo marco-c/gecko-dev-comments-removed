@@ -1423,6 +1423,21 @@ static nsCString CopyStrippingTrailingDot(const nsACString& aDomain) {
 
 
 
+static bool DomainEndsWithMultipleDots(const nsACString& aDomain) {
+  return StringEndsWith(aDomain, ".."_ns);
+}
+
+static bool DomainEndsWithMultipleDots(const char* const* aDomains) {
+  for (const char* const* p = aDomains; *p; ++p) {
+    if (DomainEndsWithMultipleDots(nsDependentCString(*p))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+
 
 
 
@@ -3484,13 +3499,20 @@ nsPrefBranch::AddObserverImpl(const nsACString& aDomain, nsIObserver* aObserver,
       mozilla::UniquePtr<PrefCallback> existing;
       mObservers.Remove(&weakKey, &existing);
       if (existing) {
-        Preferences::UnregisterCallback(NotifyObserver, prefName,
-                                        existing.get(),
-                                         true);
+        nsresult rv = Preferences::UnregisterCallback(NotifyObserver, prefName,
+                                                      existing.get(),
+                                                       true);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          
+          
+          mObservers.InsertOrUpdate(&weakKey, std::move(existing));
+          return rv;
+        }
       }
     }
   }
 
+  nsresult rv = NS_OK;
   mObservers.WithEntryHandle(pCallback.get(), [&](auto&& p) {
     if (p) {
       NS_WARNING(
@@ -3498,16 +3520,16 @@ nsPrefBranch::AddObserverImpl(const nsACString& aDomain, nsIObserver* aObserver,
               .get());
     } else {
       
-      
-      
-      Preferences::RegisterCallback(NotifyObserver, prefName, pCallback.get(),
-                                     true);
-
-      p.Insert(std::move(pCallback));
+      rv = Preferences::RegisterCallback(NotifyObserver, prefName,
+                                         pCallback.get(),
+                                          true);
+      if (NS_SUCCEEDED(rv)) {
+        p.Insert(std::move(pCallback));
+      }
     }
   });
 
-  return NS_OK;
+  return rv;
 }
 
 NS_IMETHODIMP
@@ -3531,6 +3553,7 @@ nsPrefBranch::RemoveObserverImpl(const nsACString& aDomain,
   
   
   
+  
   const nsCString& prefName = GetPrefName(aDomain);
   PrefCallback key(prefName, aObserver, this);
   mozilla::UniquePtr<PrefCallback> pCallback;
@@ -3551,6 +3574,10 @@ nsPrefBranch::RemoveObserverImpl(const nsACString& aDomain,
     rv = Preferences::UnregisterCallback(NotifyObserver, prefName,
                                          pCallback.get(),
                                           true);
+    if (NS_FAILED(rv)) {
+      PrefCallback* raw = pCallback.get();
+      mObservers.InsertOrUpdate(raw, std::move(pCallback));
+    }
   }
 
   return rv;
@@ -5940,6 +5967,7 @@ nsresult PreferencesImpl::RegisterCallbackImpl(PrefChangedFunc aCallback,
                                                bool aIsPrefix) {
   MOZ_ASSERT(NS_IsMainThread());
   NS_ENSURE_ARG(aCallback);
+  NS_ENSURE_FALSE(DomainEndsWithMultipleDots(aPrefNode), NS_ERROR_INVALID_ARG);
   NS_ENSURE_TRUE(Preferences::InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
 
   RefPtr<CallbackNode> node =
@@ -5969,6 +5997,7 @@ nsresult PreferencesImpl::UnregisterCallbackImpl(PrefChangedFunc aCallback,
                                                  bool aIsPrefix) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aCallback);
+  NS_ENSURE_FALSE(DomainEndsWithMultipleDots(aPrefNode), NS_ERROR_INVALID_ARG);
   if (Preferences::sShutdown) {
     MOZ_ASSERT(!Preferences::sPreferences);
     return NS_OK;
