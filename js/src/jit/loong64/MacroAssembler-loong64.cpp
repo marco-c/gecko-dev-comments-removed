@@ -356,11 +356,9 @@ FaultingCodeRange MacroAssemblerLOONG64::ma_st_d(Register src,
 
 
 void MacroAssemblerLOONG64::ma_add_d(Register rd, Register rj, Imm32 imm) {
-  if (rd == rj && imm.value == 0) {
-    
-    return;
-  }
-  if (is_intN(imm.value, 12)) {
+  if (imm.value == 0) {
+    ma_move(rd, rj);
+  } else if (is_intN(imm.value, 12)) {
     as_addi_d(rd, rj, imm.value);
   } else if (rd != rj) {
     ma_li(rd, imm);
@@ -375,7 +373,9 @@ void MacroAssemblerLOONG64::ma_add_d(Register rd, Register rj, Imm32 imm) {
 }
 
 void MacroAssemblerLOONG64::ma_add_d(Register rd, Register rj, ImmWord imm) {
-  if (is_intN(imm.value, 12)) {
+  if (imm.value == 0) {
+    ma_move(rd, rj);
+  } else if (is_intN(imm.value, 12)) {
     as_addi_d(rd, rj, imm.value);
   } else if (rd != rj) {
     ma_li(rd, imm);
@@ -2768,7 +2768,7 @@ void MacroAssembler::PushRegsInMask(LiveRegisterSet set) {
     storePtr(*iter, Address(StackPointer, diff));
   }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 #  error "Needs more careful logic if SIMD is enabled"
 #endif
 
@@ -2793,7 +2793,7 @@ void MacroAssembler::PopRegsInMaskIgnore(LiveRegisterSet set,
     }
   }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 #  error "Needs more careful logic if SIMD is enabled"
 #endif
 
@@ -2824,7 +2824,7 @@ void MacroAssembler::storeRegsInMask(LiveRegisterSet set, Address dest,
   }
   MOZ_ASSERT(diffG == 0);
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 #  error "Needs more careful logic if SIMD is enabled"
 #endif
 
