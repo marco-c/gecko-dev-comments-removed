@@ -455,9 +455,24 @@ impl SpatialNode {
                     .to_transform()
                     .with_destination::<LayoutPixel>();
 
+                
+                
+                
+                let parent_flattens = {
+                    let parent = &coord_systems[state.current_coordinate_system_id.0 as usize];
+                    parent.should_flatten || parent.parent.is_none()
+                };
                 let mut reset_cs_id = match info.transform_style {
                     TransformStyle::Preserve3D => !state.preserves_3d,
-                    TransformStyle::Flat => state.preserves_3d,
+                    
+                    
+                    
+                    
+                    
+                    TransformStyle::Flat => {
+                        state.preserves_3d ||
+                        (matches!(info.kind, ReferenceFrameKind::Transform { .. }) && !parent_flattens)
+                    }
                 };
 
                 

@@ -3715,9 +3715,6 @@ void nsIFrame::BuildDisplayListForStackingContext(
         hasViewTransitionName || usingMask) {
       reasons |= StackingContextBits::ContainsBackdropFilter;
     }
-    if (!combines3DTransformWithAncestors) {
-      reasons |= StackingContextBits::MayContainNonIsolated3DTransform;
-    }
     return reasons;
   }();
 
@@ -3990,16 +3987,6 @@ void nsIFrame::BuildDisplayListForStackingContext(
                                                         &resultList);
         createdContainer = true;
       }
-
-      
-      
-      
-      const bool hasMaybe3dTransform =
-          hasPerspective || !transformItem->GetTransform().Is2D();
-      if (hasMaybe3dTransform) {
-        stackingContextTracker.AddToParent(
-            StackingContextBits::MayContainNonIsolated3DTransform);
-      }
     }
     if (clipCapturedBy ==
         ContainerItemType::OwnLayerForTransformWithRoundedClip) {
@@ -4094,11 +4081,6 @@ void nsIFrame::BuildDisplayListForStackingContext(
         nsDisplayItem::ContainerASRType::AncestorOfContained,
         ShouldForceIsolation()));
     createdContainer = true;
-  }
-
-  if (!isolated && aBuilder->MayContainNonIsolated3DTransform()) {
-    stackingContextTracker.AddToParent(
-        StackingContextBits::MayContainNonIsolated3DTransform);
   }
 
   if (aBuilder->IsReusingStackingContextItems()) {

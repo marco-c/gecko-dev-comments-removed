@@ -6954,7 +6954,9 @@ WebRenderCommandsResult nsDisplayTransform::CreateWebRenderCommands(
       GetTransformForRendering(&position, aDisplayListBuilder);
 
   gfx::Matrix4x4* transformForSC = &newTransformMatrix;
-  if (newTransformMatrix.IsIdentity()) {
+  if (newTransformMatrix.IsIdentity() && !mHasAssociatedPerspective) {
+    
+    
     
     
     
