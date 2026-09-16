@@ -2,6 +2,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
 const SANDBOX_ATTR = "allow-storage-access-by-user-activation";
 
 console.warn(
