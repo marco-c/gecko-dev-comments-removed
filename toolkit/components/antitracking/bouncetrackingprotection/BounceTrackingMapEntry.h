@@ -75,6 +75,8 @@ class BounceTrackingPurgeEntry final : public BTPMapEntry,
     mChainRecord = aRecord;
   }
 
+  BounceTrackingRecord* GetBounceChainRecord() const { return mChainRecord; }
+
  private:
   ~BounceTrackingPurgeEntry() = default;
   
