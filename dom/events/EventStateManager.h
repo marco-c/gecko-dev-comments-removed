@@ -1337,6 +1337,11 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   void RemoveNodeFromChainIfNeeded(ElementState aState,
                                    nsIContent* aContentRemoved, bool aNotify);
 
+  
+  
+  
+  void NotifySpeculationRulesOfHover(nsIContent* aNewHover);
+
   [[nodiscard]] bool IsEventOutsideDragThreshold(
       const WidgetInputEvent& aEvent) const;
 

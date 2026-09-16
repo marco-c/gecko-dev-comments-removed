@@ -7,13 +7,16 @@
 
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/speculationrules_ffi_generated.h"
+#include "nsCOMPtr.h"
 #include "nsClassHashtable.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsHashKeys.h"
 #include "nsTArrayForwardDeclare.h"
 #include "nsTHashSet.h"
 
+class nsIContent;
 class nsIScriptElement;
+class nsITimer;
 class nsIURI;
 
 namespace mozilla::dom {
@@ -41,8 +44,14 @@ class SpeculationRules final {
 
   void FindMatchingLinks(nsTArray<const Element*>& aLinks);
 
+  void HoverContentChanged(nsIContent* aContent);
+
  private:
-  virtual ~SpeculationRules() = default;
+  virtual ~SpeculationRules();
+
+  
+  
+  Element* FindInterestedLink(nsIContent* aContent) const;
 
   
   
@@ -51,6 +60,9 @@ class SpeculationRules final {
   
   
   void EnactCandidates(nsIURI* aURL, Eagerness aTriggerLevel);
+
+  void CancelHoverTimer();
+  static void HoverTimerFired(nsITimer* aTimer, void* aClosure);
 
   RefPtr<Document> mDocument;
 
@@ -73,6 +85,11 @@ class SpeculationRules final {
   
   
   nsTArray<PrefetchCandidate> mCandidateGroups;
+
+  
+  
+  RefPtr<Element> mHoverLink;
+  nsCOMPtr<nsITimer> mHoverTimer;
 };
 
 }  
