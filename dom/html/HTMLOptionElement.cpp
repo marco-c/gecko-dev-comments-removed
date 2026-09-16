@@ -63,17 +63,9 @@ void HTMLOptionElement::UpdateDisabledState(bool aNotify) {
 
   if (!isDisabled) {
     
-    
-    
-    for (nsINode* ancestor = GetParent(); ancestor;
-         ancestor = ancestor->GetParentNode()) {
-      if (IsOptionListBoundary(*ancestor)) {
-        break;
-      }
-      if (auto* optgroup = HTMLOptGroupElement::FromNode(ancestor)) {
-        isDisabled = optgroup->IsDisabled();
-        break;
-      }
+    if (auto* optgroup =
+            HTMLSelectElement::ComputeNearestAncestors(*this).mOptGroup) {
+      isDisabled = optgroup->IsDisabled();
     }
   }
 
@@ -313,40 +305,12 @@ void HTMLOptionElement::UnbindFromTree(UnbindContext& aContext) {
 }
 
 
-HTMLSelectElement* HTMLOptionElement::ComputeNearestAncestorSelect() const {
-  HTMLOptGroupElement* ancestorOptgroup = nullptr;
-  
-  for (nsINode* ancestor : Ancestors(*this)) {
-    
-    if (ancestor->IsAnyOfHTMLElements(nsGkAtoms::datalist, nsGkAtoms::hr,
-                                      nsGkAtoms::option)) {
-      return nullptr;
-    }
-    
-    if (auto* optgroup = HTMLOptGroupElement::FromNode(ancestor)) {
-      
-      if (ancestorOptgroup) {
-        return nullptr;
-      }
-      
-      ancestorOptgroup = optgroup;
-      continue;
-    }
-    
-    if (auto* select = HTMLSelectElement::FromNode(ancestor)) {
-      return select;
-    }
-  }
-  
-  return nullptr;
-}
-
-
 void HTMLOptionElement::UpdateNearestAncestorSelect() {
   
   
   
-  mCachedNearestAncestorSelect = ComputeNearestAncestorSelect();
+  mCachedNearestAncestorSelect =
+      HTMLSelectElement::ComputeNearestAncestors(*this).mSelect;
   
   
   

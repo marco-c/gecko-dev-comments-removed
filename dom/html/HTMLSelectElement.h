@@ -34,6 +34,7 @@ class FormData;
 class HTMLButtonElement;
 class HTMLCollection;
 class HTMLElementOrLong;
+class HTMLOptGroupElement;
 class HTMLOptionElementOrHTMLOptGroupElement;
 class HTMLSelectElement;
 class HTMLSelectedContentElement;
@@ -156,6 +157,30 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   HTMLCollection* SelectedOptions();
 
+  
+
+
+
+
+  static bool IsOptionListBoundary(const nsINode& aNode) {
+    return aNode.IsAnyOfHTMLElements(nsGkAtoms::select, nsGkAtoms::hr,
+                                     nsGkAtoms::option, nsGkAtoms::datalist);
+  }
+
+  
+
+
+
+
+
+
+
+  struct NearestAncestors {
+    HTMLSelectElement* mSelect = nullptr;
+    HTMLOptGroupElement* mOptGroup = nullptr;
+  };
+  static NearestAncestors ComputeNearestAncestors(const nsINode&);
+
   int32_t SelectedIndex() const;
   
   
@@ -245,7 +270,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   nsMapRuleToAttributesFunc GetAttributeMappingFunction() const override;
   nsChangeHint GetAttributeChangeHint(const nsAtom* aAttribute,
                                       AttrModType aModType) const override;
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
+  bool IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const override;
 
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 

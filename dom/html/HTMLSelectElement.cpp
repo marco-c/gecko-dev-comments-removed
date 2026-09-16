@@ -582,6 +582,40 @@ HTMLCollection* HTMLSelectElement::SelectedOptions() {
   return mSelectedOptions;
 }
 
+
+
+
+
+auto HTMLSelectElement::ComputeNearestAncestors(const nsINode& aNode)
+    -> NearestAncestors {
+  
+  HTMLOptGroupElement* ancestorOptGroup = nullptr;
+  
+  for (nsINode* ancestor : Ancestors(aNode)) {
+    
+    if (ancestor->IsAnyOfHTMLElements(nsGkAtoms::datalist, nsGkAtoms::hr,
+                                      nsGkAtoms::option)) {
+      return {nullptr, ancestorOptGroup};
+    }
+    
+    if (auto* optgroup = HTMLOptGroupElement::FromNode(ancestor)) {
+      
+      if (ancestorOptGroup) {
+        return {nullptr, ancestorOptGroup};
+      }
+      
+      ancestorOptGroup = optgroup;
+      continue;
+    }
+    
+    if (auto* select = FromNode(ancestor)) {
+      return {select, ancestorOptGroup};
+    }
+  }
+  
+  return {nullptr, ancestorOptGroup};
+}
+
 HTMLOptionElement* HTMLSelectElement::GetSelectedOption(
     IgnoredOptionList aIgnored) const {
   uint32_t len = Length();
@@ -863,20 +897,9 @@ bool HTMLSelectElement::IsOptionDisabled(HTMLOptionElement* aOption) const {
   if (aOption->Disabled()) {
     return true;
   }
-
   
-  
-  
-  for (Element* node = aOption->GetParentElement(); node;
-       node = node->GetParentElement()) {
-    if (HTMLOptionElement::IsOptionListBoundary(*node)) {
-      return false;
-    }
-    if (auto* optGroupElement = HTMLOptGroupElement::FromNode(node)) {
-      return optGroupElement->Disabled();
-    }
-  }
-  return false;
+  auto* optgroup = ComputeNearestAncestors(*aOption).mOptGroup;
+  return optgroup && optgroup->Disabled();
 }
 
 void HTMLSelectElement::GetValue(nsAString& aValue) const {
@@ -1168,8 +1191,8 @@ nsChangeHint HTMLSelectElement::GetAttributeChangeHint(
   return retval;
 }
 
-NS_IMETHODIMP_(bool)
-HTMLSelectElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLSelectElement::IsNoNamespaceAttrMapped(
+    const nsAtom* aAttribute) const {
   static const MappedAttributeEntry* const map[] = {sCommonAttributeMap,
                                                     sImageAlignAttributeMap};
 
