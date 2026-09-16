@@ -6,7 +6,6 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/MozPrintCallbackRunner.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/layout/RemotePrintJobChild.h"
 #include "nsCOMPtr.h"
@@ -249,10 +248,6 @@ class nsPrintJob final : public nsIWebProgressListener,
   RefPtr<nsPrintData> mPrt;
 
   RefPtr<nsPagePrintTimer> mPagePrintTimer;
-
-  
-  
-  mozilla::MozPrintCallbackRunner mPrintCallbackRunner;
 
   
   RefPtr<RemotePrintJobChild> mRemotePrintJob;

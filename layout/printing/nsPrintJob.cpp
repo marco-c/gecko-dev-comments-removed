@@ -1719,8 +1719,7 @@ bool nsPrintJob::PrePrintSheet() {
   
   bool done = false;
   nsPageSequenceFrame* pageSeqFrame = do_QueryFrame(mPageSeqFrame.GetFrame());
-  nsresult rv = pageSeqFrame->PrePrintNextSheet(mPagePrintTimer,
-                                                mPrintCallbackRunner, &done);
+  nsresult rv = pageSeqFrame->PrePrintNextSheet(mPagePrintTimer, &done);
   if (NS_FAILED(rv)) {
     
     
@@ -1793,7 +1792,6 @@ bool nsPrintJob::PrintSheet(nsPrintObject* aPO) {
   }
 
   pageSeqFrame->DoPageEnd();
-  mPrintCallbackRunner.Reset();
 
   
   
@@ -1843,7 +1841,10 @@ bool nsPrintJob::DonePrintingSheets(nsPrintObject* aPO, nsresult aResult) {
   
   
   
-  mPrintCallbackRunner.Reset();
+  if (mPageSeqFrame.IsAlive()) {
+    nsPageSequenceFrame* pageSeqFrame = do_QueryFrame(mPageSeqFrame.GetFrame());
+    pageSeqFrame->ResetPrintCanvasList();
+  }
 
   
   
