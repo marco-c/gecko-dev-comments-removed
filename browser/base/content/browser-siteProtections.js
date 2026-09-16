@@ -142,6 +142,17 @@ class ProtectionCategory {
 
 
 
+  subViewTitleL10nId(blocking) {
+    return this.l10nKeys.title[blocking ? "blocking" : "not-blocking"];
+  }
+
+  
+
+
+
+
+
+
   updateCategoryItem() {
     
     
@@ -936,48 +947,67 @@ let ThirdPartyCookies =
         return;
       }
 
-      let l10nId;
-      let siteException = gProtectionsHandler.hasException;
+      let l10nId = this.subViewTitleL10nId(!gProtectionsHandler.hasException);
+      if (!l10nId) {
+        return;
+      }
+
       switch (this.behaviorPref) {
         case Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN:
-          l10nId = siteException
-            ? "protections-not-blocking-cookies-third-party"
-            : "protections-blocking-cookies-third-party";
           this.subViewHeading.hidden = true;
           if (this.subViewHeading.nextSibling.nodeName == "toolbarseparator") {
             this.subViewHeading.nextSibling.hidden = true;
           }
           break;
         case Ci.nsICookieService.BEHAVIOR_REJECT:
-          l10nId = siteException
-            ? "protections-not-blocking-cookies-all"
-            : "protections-blocking-cookies-all";
           this.subViewHeading.hidden = true;
           if (this.subViewHeading.nextSibling.nodeName == "toolbarseparator") {
             this.subViewHeading.nextSibling.hidden = true;
           }
           break;
         case Ci.nsICookieService.BEHAVIOR_LIMIT_FOREIGN:
-          l10nId = "protections-blocking-cookies-unvisited";
           this.subViewHeading.hidden = true;
           if (this.subViewHeading.nextSibling.nodeName == "toolbarseparator") {
             this.subViewHeading.nextSibling.hidden = true;
           }
           break;
-        case Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER:
-        case Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN:
-          l10nId = siteException
-            ? "protections-not-blocking-cross-site-tracking-cookies"
-            : "protections-blocking-cookies-trackers";
-          break;
-        default:
-          console.error(
-            `Error: Unknown cookieBehavior pref when updating subview: ${this.behaviorPref}`
-          );
-          return;
       }
 
       document.l10n.setAttributes(this.subView, l10nId);
+    }
+
+    
+
+
+
+
+
+
+
+    subViewTitleL10nId(blocking) {
+      switch (this.behaviorPref) {
+        case Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN:
+          return blocking
+            ? "protections-blocking-cookies-third-party"
+            : "protections-not-blocking-cookies-third-party";
+        case Ci.nsICookieService.BEHAVIOR_REJECT:
+          return blocking
+            ? "protections-blocking-cookies-all"
+            : "protections-not-blocking-cookies-all";
+        case Ci.nsICookieService.BEHAVIOR_LIMIT_FOREIGN:
+          return "protections-blocking-cookies-unvisited";
+        case Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER:
+        case Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN:
+          return blocking
+            ? "protections-blocking-cookies-trackers"
+            : "protections-not-blocking-cross-site-tracking-cookies";
+        case Ci.nsICookieService.BEHAVIOR_ACCEPT:
+          return "protections-not-blocking-cross-site-tracking-cookies";
+      }
+      console.error(
+        `Error: Unknown cookieBehavior pref when updating subview: ${this.behaviorPref}`
+      );
+      return null;
     }
 
     _getExceptionState(origin) {
@@ -1264,227 +1294,6 @@ let SocialTracking =
 
 
 
-
-let cookieBannerHandling = new (class {
-  
-  
-  #isPrivateBrowsing = PrivateBrowsingUtils.isWindowPrivate(window);
-
-  constructor() {
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "_serviceModePref",
-      "cookiebanners.service.mode",
-      Ci.nsICookieBannerService.MODE_DISABLED
-    );
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "_serviceModePrefPrivateBrowsing",
-      "cookiebanners.service.mode.privateBrowsing",
-      Ci.nsICookieBannerService.MODE_DISABLED
-    );
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "_serviceDetectOnly",
-      "cookiebanners.service.detectOnly",
-      false
-    );
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "_uiEnabled",
-      "cookiebanners.ui.desktop.enabled",
-      false
-    );
-    ChromeUtils.defineLazyGetter(this, "_cookieBannerSection", () =>
-      document.getElementById("protections-popup-cookie-banner-section")
-    );
-    ChromeUtils.defineLazyGetter(this, "_cookieBannerSectionSeparator", () =>
-      document.getElementById(
-        "protections-popup-cookie-banner-section-separator"
-      )
-    );
-    ChromeUtils.defineLazyGetter(this, "_cookieBannerSwitch", () =>
-      document.getElementById("protections-popup-cookie-banner-switch")
-    );
-    ChromeUtils.defineLazyGetter(this, "_cookieBannerSubview", () =>
-      document.getElementById("protections-popup-cookieBannerView")
-    );
-    ChromeUtils.defineLazyGetter(this, "_cookieBannerEnableSite", () =>
-      document.getElementById("cookieBannerView-enable-site")
-    );
-    ChromeUtils.defineLazyGetter(this, "_cookieBannerDisableSite", () =>
-      document.getElementById("cookieBannerView-disable-site")
-    );
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  get #hasException() {
-    
-    if (!Services.cookieBanners.isEnabled) {
-      return false;
-    }
-
-    
-    
-    
-    let pref = Ci.nsICookieBannerService.MODE_UNSET;
-    try {
-      pref = Services.cookieBanners.getDomainPref(
-        gBrowser.currentURI,
-        this.#isPrivateBrowsing
-      );
-    } catch (ex) {
-      console.error(
-        "Cookie Banner Handling error checking for per-site exceptions: ",
-        ex
-      );
-    }
-    return pref == Ci.nsICookieBannerService.MODE_DISABLED;
-  }
-
-  
-
-
-
-
-
-
-  get isSiteSupported() {
-    return (
-      Services.cookieBanners.isEnabled &&
-      Services.cookieBanners.hasRuleForBrowsingContextTree(
-        gBrowser.selectedBrowser.browsingContext
-      )
-    );
-  }
-
-  
-
-
-  get #currentBaseDomain() {
-    return gBrowser.contentPrincipal.baseDomain;
-  }
-
-  
-
-
-
-
-
-
-
-  get #uiState() {
-    if (this.#hasException) {
-      return "site-disabled";
-    } else if (this.isSiteSupported) {
-      return "detected";
-    }
-    return "undetected";
-  }
-
-  updateSection() {
-    let showSection = this.#shouldShowSection();
-    let state = this.#uiState;
-
-    for (let el of [
-      this._cookieBannerSection,
-      this._cookieBannerSectionSeparator,
-    ]) {
-      el.hidden = !showSection;
-    }
-
-    this._cookieBannerSection.dataset.state = state;
-
-    
-    
-    if (state == "undetected") {
-      this._cookieBannerSection.setAttribute("disabled", true);
-      this._cookieBannerSwitch.classList.remove("subviewbutton-nav");
-      this._cookieBannerSwitch.setAttribute("disabled", true);
-    } else {
-      this._cookieBannerSection.removeAttribute("disabled");
-      this._cookieBannerSwitch.classList.add("subviewbutton-nav");
-      this._cookieBannerSwitch.removeAttribute("disabled");
-    }
-  }
-
-  #shouldShowSection() {
-    
-    
-    if (!this._uiEnabled || this._serviceDetectOnly) {
-      return false;
-    }
-
-    
-    
-    if (this.#isPrivateBrowsing) {
-      return (
-        this._serviceModePrefPrivateBrowsing !=
-        Ci.nsICookieBannerService.MODE_DISABLED
-      );
-    }
-    return this._serviceModePref != Ci.nsICookieBannerService.MODE_DISABLED;
-  }
-
-  
-
-
-  updateSubView() {
-    this._cookieBannerSubview.dataset.state = this.#uiState;
-
-    let baseDomain = JSON.stringify({ host: this.#currentBaseDomain });
-    this._cookieBannerEnableSite.setAttribute("data-l10n-args", baseDomain);
-    this._cookieBannerDisableSite.setAttribute("data-l10n-args", baseDomain);
-  }
-
-  async #disableCookieBannerHandling() {
-    
-    
-    
-    if (!this.#isPrivateBrowsing) {
-      await SiteDataManager.remove(this.#currentBaseDomain);
-    }
-    Services.cookieBanners.setDomainPref(
-      gBrowser.currentURI,
-      Ci.nsICookieBannerService.MODE_DISABLED,
-      this.#isPrivateBrowsing
-    );
-  }
-
-  #enableCookieBannerHandling() {
-    Services.cookieBanners.removeDomainPref(
-      gBrowser.currentURI,
-      this.#isPrivateBrowsing
-    );
-  }
-
-  async onCookieBannerToggleCommand() {
-    let hasException =
-      this._cookieBannerSection.toggleAttribute("hasException");
-    if (hasException) {
-      await this.#disableCookieBannerHandling();
-      Glean.securityUiProtectionspopup.clickCookiebToggleOff.record();
-    } else {
-      this.#enableCookieBannerHandling();
-      Glean.securityUiProtectionspopup.clickCookiebToggleOn.record();
-    }
-    gProtectionsHandler._hidePopup();
-    gBrowser.reloadTab(gBrowser.selectedTab);
-  }
-})();
-
-
-
-
 var gProtectionsHandler = {
   PREF_CB_CATEGORY: "browser.contentblocking.category",
 
@@ -1514,7 +1323,10 @@ var gProtectionsHandler = {
       displayName: "TikTok",
     },
     {
-      matchPatterns: ["https://platform.twitter.com/*"],
+      matchPatterns: [
+        "https://platform.twitter.com/*",
+        "https://platform.x.com/*",
+      ],
       shimId: "TwitterEmbed",
       displayName: "X",
     },
@@ -1576,11 +1388,6 @@ var gProtectionsHandler = {
         )
         .addEventListener("click", () =>
           gProtectionsHandler.openProtections(true)
-        );
-      document
-        .getElementById("protections-popup-cookie-banner-switch")
-        .addEventListener("click", () =>
-          gProtectionsHandler.onCookieBannerClick()
         );
     }
   },
@@ -1909,16 +1716,6 @@ var gProtectionsHandler = {
     await Cryptomining.updateSubView();
     this._protectionsPopupMultiView.showSubView(
       "protections-popup-cryptominersView"
-    );
-  },
-
-  async onCookieBannerClick() {
-    if (!cookieBannerHandling.isSiteSupported) {
-      return;
-    }
-    await cookieBannerHandling.updateSubView();
-    this._protectionsPopupMultiView.showSubView(
-      "protections-popup-cookieBannerView"
     );
   },
 
@@ -2338,13 +2135,6 @@ var gProtectionsHandler = {
           value: "cryptominers",
         });
         break;
-      case "protections-popup-cookieBannerView-cancel":
-        gProtectionsHandler._protectionsPopupMultiView.goBack();
-        break;
-      case "protections-popup-cookieBannerView-enable-button":
-      case "protections-popup-cookieBannerView-disable-button":
-        gProtectionsHandler.onCookieBannerToggleCommand();
-        break;
       case "protections-popup-toast-panel-tp-on-desc":
       case "protections-popup-toast-panel-tp-off-desc":
         
@@ -2461,8 +2251,6 @@ var gProtectionsHandler = {
     } else {
       this._protectionsPopup.removeAttribute("milestone");
     }
-
-    cookieBannerHandling.updateSection();
 
     this._protectionsPopup.toggleAttribute("detected", this.anyDetected);
     this._protectionsPopup.toggleAttribute("blocking", this.anyBlocking);
@@ -2759,10 +2547,6 @@ var gProtectionsHandler = {
     gBrowser.reloadTab(targetTab);
 
     delete this._TPSwitchCommanding;
-  },
-
-  onCookieBannerToggleCommand() {
-    cookieBannerHandling.onCookieBannerToggleCommand();
   },
 
   setTrackersBlockedCounter(trackerCount) {
