@@ -264,6 +264,13 @@ impl<'a> RequestBuilder<'a> {
 
         cmd.arg("--fail");
         cmd.args(["--user-agent", user_agent()]);
+        
+        
+        
+        
+        
+        
+        cmd.args(["--silent", "--show-error"]);
 
         match self {
             Self::MimePost { parts } => {
