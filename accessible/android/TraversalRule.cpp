@@ -274,6 +274,7 @@ uint16_t TraversalRule::DefaultMatch(Accessible* aAccessible) {
     case roles::OPTION:
     case roles::SWITCH:
     case roles::MATHML_MATH:
+    case roles::SUMMARY:
       
       
       return nsIAccessibleTraversalRule::FILTER_MATCH |
