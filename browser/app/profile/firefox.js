@@ -2087,14 +2087,6 @@ pref("browser.newtabpage.activity-stream.discoverystream.reportAds.enabled", tru
 
 pref("browser.newtabpage.activity-stream.discoverystream.region-stories-block", "");
 
-#ifdef NIGHTLY_BUILD
-  pref("browser.newtabpage.activity-stream.discoverystream.locale-list-config", "en-US,en-CA,en-GB");
-#else
-  pref("browser.newtabpage.activity-stream.discoverystream.locale-list-config", "");
-#endif
-
-pref("browser.newtabpage.activity-stream.discoverystream.region-stories-config", "US,DE,CA,GB,IE,CH,AT,BE,IN,FR,IT,ES");
-
 
 pref("browser.newtabpage.activity-stream.discoverystream.topicSelection.region-topics-config", "");
 pref("browser.newtabpage.activity-stream.discoverystream.topicSelection.onboarding.enabled", false);
