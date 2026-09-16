@@ -25,6 +25,51 @@
 
 #define AVPACKET_IS_EMPTY(pkt) (!(pkt)->data && !(pkt)->side_data_elems)
 
+typedef struct PacketListEntry {
+    struct PacketListEntry *next;
+    AVPacket pkt;
+} PacketListEntry;
+
+typedef struct PacketList {
+    PacketListEntry *head, *tail;
+} PacketList;
+
+#define FF_PACKETLIST_FLAG_PREPEND (1 << 0) /**< Prepend created AVPacketList instead of appending */
+
+
+
+
+
+
+
+
+
+
+
+
+
+int avpriv_packet_list_put(PacketList *list, AVPacket *pkt,
+                           int (*copy)(AVPacket *dst, const AVPacket *src),
+                           int flags);
+
+
+
+
+
+
+
+
+
+
+
+
+int avpriv_packet_list_get(PacketList *list, AVPacket *pkt);
+
+
+
+
+void avpriv_packet_list_free(PacketList *list);
+
 int ff_side_data_set_prft(AVPacket *pkt, int64_t timestamp);
 
 #endif 

@@ -28,12 +28,11 @@
 #ifndef AVCODEC_VORBIS_PARSER_INTERNAL_H
 #define AVCODEC_VORBIS_PARSER_INTERNAL_H
 
-#include <stdint.h>
-
+#include "avcodec.h"
 #include "vorbis_parser.h"
 
 struct AVVorbisParseContext {
-    const struct AVClass *class;
+    const AVClass *class;
     int extradata_parsed;       
     int valid_extradata;        
     int blocksize[2];           
@@ -43,8 +42,5 @@ struct AVVorbisParseContext {
     int mode_mask;              
     int prev_mask;              
 };
-
-int ff_vorbis_parse_init(AVVorbisParseContext *s,
-                         const uint8_t *extradata, int extradata_size);
 
 #endif 

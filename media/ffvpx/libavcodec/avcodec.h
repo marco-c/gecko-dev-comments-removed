@@ -356,10 +356,6 @@ typedef struct RcOverride{
 
 
 
-#define AV_CODEC_FLAG2_FIXED_FRAME_SIZE (1 << 17)
-
-
-
 
 #define AV_CODEC_FLAG2_SHOW_ALL       (1 << 22)
 
@@ -1055,8 +1051,7 @@ typedef struct AVCodecContext {
     AVChannelLayout ch_layout;
 
     
-
-
+    
 
 
 
@@ -1067,7 +1062,6 @@ typedef struct AVCodecContext {
 
     int frame_size;
 
-    
     
 
 
@@ -1645,6 +1639,19 @@ typedef struct AVCodecContext {
 
      int level;
 
+#if FF_API_CODEC_PROPS
+    
+
+
+
+
+    attribute_deprecated
+    unsigned properties;
+#define FF_CODEC_PROPERTY_LOSSLESS        0x00000001
+#define FF_CODEC_PROPERTY_CLOSED_CAPTIONS 0x00000002
+#define FF_CODEC_PROPERTY_FILM_GRAIN      0x00000004
+#endif
+
     
 
 
@@ -2156,12 +2163,8 @@ const AVClass *avcodec_get_subtitle_rect_class(void);
 
 
 
-
-
 int avcodec_parameters_from_context(struct AVCodecParameters *par,
                                     const AVCodecContext *codec);
-
-
 
 
 
@@ -2390,7 +2393,6 @@ int avcodec_receive_frame_flags(AVCodecContext *avctx, AVFrame *frame, unsigned 
 
 
 int avcodec_receive_frame(AVCodecContext *avctx, AVFrame *frame);
-
 
 
 
@@ -2752,7 +2754,35 @@ typedef struct AVCodecParserContext {
 } AVCodecParserContext;
 
 typedef struct AVCodecParser {
+#if FF_API_PARSER_CODECID
+    int codec_ids[7]; 
+#else
     enum AVCodecID codec_ids[7]; 
+#endif
+#if FF_API_PARSER_PRIVATE
+    
+
+
+
+
+
+
+    attribute_deprecated
+    int priv_data_size;
+    attribute_deprecated
+    int (*parser_init)(AVCodecParserContext *s);
+    
+
+    attribute_deprecated
+    int (*parser_parse)(AVCodecParserContext *s,
+                        AVCodecContext *avctx,
+                        const uint8_t **poutbuf, int *poutbuf_size,
+                        const uint8_t *buf, int buf_size);
+    attribute_deprecated
+    void (*parser_close)(AVCodecParserContext *s);
+    attribute_deprecated
+    int (*split)(AVCodecContext *avctx, const uint8_t *buf, int buf_size);
+#endif
 } AVCodecParser;
 
 
@@ -2766,7 +2796,11 @@ typedef struct AVCodecParser {
 
 const AVCodecParser *av_parser_iterate(void **opaque);
 
+#if FF_API_PARSER_CODECID
+AVCodecParserContext *av_parser_init(int codec_id);
+#else
 AVCodecParserContext *av_parser_init(enum AVCodecID codec_id);
+#endif
 
 
 
