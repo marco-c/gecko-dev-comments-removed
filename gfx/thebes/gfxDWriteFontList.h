@@ -197,6 +197,10 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
   
   virtual ~gfxDWriteFontEntry();
 
+#if MOZ_FONTATIONS
+  void InitSkrifaFontFace() override;
+#endif
+
   bool HasVariationsInternal() override;
   void GetVariationAxesInternal(nsTArray<gfxFontVariationAxis>& aAxes) override;
   void GetVariationInstancesInternal(
