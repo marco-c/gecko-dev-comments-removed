@@ -1123,6 +1123,7 @@ class WorkerPrivate final
   
   
   
+  
   bool UseRemoteDebugger() const { return mUseRemoteDebugger; }
 
   void SetIsQueued(const bool& aQueued);

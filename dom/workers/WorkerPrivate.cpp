@@ -1643,9 +1643,8 @@ nsresult WorkerPrivate::DispatchLockHeld(
 
   
   
-  if (runnable->IsDebuggeeRunnable() && !mDebuggerReady &&
-      !mRemoteDebuggerReady &&
-      (!mRemoteDebuggerRegistered && XRE_IsParentProcess())) {
+  if (runnable->IsDebuggeeRunnable() &&
+      !(mDebuggerReady && mRemoteDebuggerReady)) {
     MOZ_RELEASE_ASSERT(!aSyncLoopTarget);
     mDelayedDebuggeeRunnables.AppendElement(runnable);
     return NS_OK;
@@ -1796,8 +1795,7 @@ void WorkerPrivate::SetIsRemoteDebuggerRegistered(const bool& aRegistered) {
     MOZ_ASSERT(mRemoteDebuggerRegistered != aRegistered);
 
     mRemoteDebuggerRegistered = aRegistered;
-    bool debuggerRegistered = mDebuggerRegistered && mRemoteDebuggerRegistered;
-    if (mRemoteDebuggerReady && mDebuggerReady && debuggerRegistered) {
+    if (mRemoteDebuggerReady && mDebuggerReady) {
       LOGV(
           ("WorkerPrivate::SetIsRemoteDebuggerRegistered [%p] dispatching "
            "the delayed debuggee runnables",
@@ -1856,7 +1854,7 @@ void WorkerPrivate::SetIsRemoteDebuggerReady(const bool& aReady) {
 
   mRemoteDebuggerReady = aReady;
 
-  if (mRemoteDebuggerReady && mDebuggerReady && debuggerRegistered) {
+  if (mRemoteDebuggerReady && mDebuggerReady) {
     LOGV(
         ("WorkerPrivate::SetIsRemoteDebuggerReady [%p] dispatching "
          "the delayed debuggee runnables",
@@ -3384,10 +3382,7 @@ nsresult WorkerPrivate::SetIsDebuggerReady(bool aReady) {
 
   mDebuggerReady = aReady;
 
-  bool debuggerRegistered = mDebuggerRegistered && (mRemoteDebuggerRegistered ||
-                                                    XRE_IsParentProcess());
-
-  if (aReady && debuggerRegistered) {
+  if (mDebuggerReady && mRemoteDebuggerReady) {
     
     
     
