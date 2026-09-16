@@ -447,13 +447,8 @@ class nsCocoaUtils {
 
 
 
-  static bool ShouldZoomOnTitlebarDoubleClick();
 
-  
-
-
-
-  static bool ShouldMinimizeOnTitlebarDoubleClick();
+  static void PerformTitlebarDoubleClickAction(NSWindow* aWindow);
 
   
 

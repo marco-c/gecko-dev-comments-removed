@@ -186,7 +186,13 @@ NSPoint nsCocoaUtils::ScreenLocationForEvent(NSEvent* anEvent) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   
-  if (!anEvent || [anEvent type] == NSEventTypeMouseMoved)
+  
+  
+  
+  
+  if (!anEvent || [anEvent type] == NSEventTypeMouseMoved ||
+      [anEvent type] == NSEventTypeMouseEntered ||
+      [anEvent type] == NSEventTypeMouseExited)
     return [NSEvent mouseLocation];
 
   
@@ -1187,22 +1193,44 @@ static NSString* ActionOnDoubleClickSystemPref() {
   return nil;
 }
 
-@interface NSWindow (NSWindowShouldZoomOnDoubleClick)
+@interface NSWindow (TitlebarDoubleClickAction)
 + (BOOL)_shouldZoomOnDoubleClick;  
++ (BOOL)_shouldFillOnDoubleClick;  
+- (void)_zoomFill:(id)aSender;     
 @end
 
-bool nsCocoaUtils::ShouldZoomOnTitlebarDoubleClick() {
+static bool ShouldZoomOnTitlebarDoubleClick() {
   if ([NSWindow respondsToSelector:@selector(_shouldZoomOnDoubleClick)]) {
     return [NSWindow _shouldZoomOnDoubleClick];
   }
   return [ActionOnDoubleClickSystemPref() isEqualToString:@"Maximize"];
 }
 
-bool nsCocoaUtils::ShouldMinimizeOnTitlebarDoubleClick() {
+static bool ShouldMinimizeOnTitlebarDoubleClick() {
   
   
   
   return [ActionOnDoubleClickSystemPref() isEqualToString:@"Minimize"];
+}
+
+
+
+static bool ShouldFillOnTitlebarDoubleClick() {
+  if ([NSWindow respondsToSelector:@selector(_shouldFillOnDoubleClick)]) {
+    return [NSWindow _shouldFillOnDoubleClick];
+  }
+  return [ActionOnDoubleClickSystemPref() isEqualToString:@"Fill"];
+}
+
+void nsCocoaUtils::PerformTitlebarDoubleClickAction(NSWindow* aWindow) {
+  if (ShouldZoomOnTitlebarDoubleClick()) {
+    [aWindow performZoom:nil];
+  } else if (ShouldMinimizeOnTitlebarDoubleClick()) {
+    [aWindow performMiniaturize:nil];
+  } else if (ShouldFillOnTitlebarDoubleClick() &&
+             [aWindow respondsToSelector:@selector(_zoomFill:)]) {
+    [aWindow _zoomFill:nil];
+  }
 }
 
 static const char* AVMediaTypeToString(AVMediaType aType) {
