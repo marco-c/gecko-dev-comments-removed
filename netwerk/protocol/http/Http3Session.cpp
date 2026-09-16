@@ -957,12 +957,12 @@ nsresult Http3Session::ProcessEvents() {
             
             
             
+            
             mozilla::dom::WebTransportStatsData stats;
-            if (mHttp3Connection->GetWebTransportSessionStats(id, stats)) {
-              wt->OnSessionClosedWithStats(cleanly, status, reason, stats);
-            } else {
-              wt->OnSessionClosed(cleanly, status, reason);
+            if (!mHttp3Connection->GetWebTransportSessionStats(id, stats)) {
+              mHttp3Connection->GetWebTransportTransportStats(stats);
             }
+            wt->OnSessionClosedWithStats(cleanly, status, reason, stats);
           } break;
           case WebTransportEventExternal::Tag::NewStream: {
             LOG(

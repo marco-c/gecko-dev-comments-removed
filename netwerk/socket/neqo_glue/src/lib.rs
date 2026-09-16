@@ -2963,6 +2963,19 @@ pub extern "C" fn neqo_http3conn_webtransport_session_stats(
 
 
 
+#[no_mangle]
+pub extern "C" fn neqo_http3conn_webtransport_transport_stats(
+    conn: &NeqoHttp3Conn,
+    stats: &mut WebTransportSessionStats,
+) {
+    populate_transport_stats(stats, &conn.conn.transport_stats());
+}
+
+
+
+
+
+
 
 
 
