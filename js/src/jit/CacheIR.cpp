@@ -6342,7 +6342,9 @@ ObjOperandId InlinableNativeIRGenerator::emitLoadArgsArray() {
   MOZ_ASSERT(!hasBoundArguments());
 
   if (flags_.getArgFormat() == CallFlags::Spread) {
-    return writer.loadSpreadArgs();
+    ObjOperandId result = writer.loadSpreadArgs();
+    writer.guardArrayIsPacked(result);
+    return result;
   }
 
   MOZ_ASSERT(flags_.getArgFormat() == CallFlags::FunApplyArray);
@@ -7282,6 +7284,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsSuspendedGenerator() {
 
   MOZ_ASSERT(argsLength() == 1);
 
+  if (!arg(0).isObject()) {
+    return AttachDecision::NoAction;
+  }
+
   initializeInputOperand();
 
   
@@ -7290,11 +7296,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsSuspendedGenerator() {
   
   
   ValOperandId valId = loadArgumentIntrinsic(ArgumentKind::Arg0);
+  ObjOperandId objId = writer.guardToObject(valId);
 
   
   
   
-  writer.callIsSuspendedGeneratorResult(valId);
+  writer.isSuspendedGeneratorResult(objId);
 
   trackAttached("IsSuspendedGenerator");
   return AttachDecision::Attach;
