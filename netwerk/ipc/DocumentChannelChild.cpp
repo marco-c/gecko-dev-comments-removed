@@ -327,6 +327,13 @@ IPCResult DocumentChannelChild::RecvRedirectToRealChannel(
   }
 
   
+  if (docShell && loadInfo->GetActivatedFromNavigationalPrefetch()) {
+    if (nsDOMNavigationTiming* timing = docShell->GetNavigationTiming()) {
+      timing->SetWasActivatedFromNavigationalPrefetch();
+    }
+  }
+
+  
   
   
   

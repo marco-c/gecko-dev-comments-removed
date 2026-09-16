@@ -1116,6 +1116,9 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
   openInfo->Prepare();
 
   
+  mTiming = aTiming;
+
+  
   
   
   if (mIsDocumentLoad) {
@@ -1193,7 +1196,6 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
   mLoadStateExternalLoadFlags = aLoadState->LoadFlags();
   mLoadStateInternalLoadFlags = aLoadState->InternalLoadFlags();
   mLoadStateLoadType = aLoadState->LoadType();
-  mTiming = aTiming;
   mSrcdocData = aLoadState->SrcdocData();
   mBaseURI = aLoadState->BaseURI();
   mOriginalUriString = aLoadState->GetOriginalURIString();
