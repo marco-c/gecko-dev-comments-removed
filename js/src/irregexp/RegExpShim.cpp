@@ -10,6 +10,8 @@
 
 #include "mozilla/MemoryReporting.h"
 
+#include <iostream>
+
 #include "irregexp/imported/regexp-macro-assembler.h"
 #include "irregexp/imported/regexp-stack.h"
 
@@ -31,6 +33,8 @@ void PrintF(FILE* out, const char* format, ...) {
   vfprintf(out, format, arguments);
   va_end(arguments);
 }
+
+StdoutStream::StdoutStream() : std::ostream(std::cerr.rdbuf()) {}
 
 
 
@@ -209,6 +213,12 @@ Isolate::~Isolate() {
 const void* ExternalReference::TopOfRegexpStack(Isolate* isolate) {
   return reinterpret_cast<const void*>(
       isolate->regexp_stack()->memory_top_address_address());
+}
+
+
+const void* ExternalReference::RegexpStackPointer(Isolate* isolate) {
+  return reinterpret_cast<const void*>(
+      isolate->regexp_stack()->stack_pointer_address());
 }
 
 

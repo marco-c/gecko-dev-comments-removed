@@ -16,6 +16,59 @@
 #include "irregexp/imported/regexp-macro-assembler.h"
 #include "jit/MacroAssembler.h"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 namespace v8 {
 namespace internal {
 namespace regexp {
@@ -27,7 +80,11 @@ struct FrameData {
 
   
   
+  
+  
+  
   void* backtrackStackBase;
+  size_t initialBacktrackStackPointer;
 
   
   int32_t* matches;    
@@ -168,6 +225,9 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
 
   void CheckBacktrackStackLimit();
 
+  void StoreBacktrackStackToMemory();
+  void LoadBacktrackStackFromMemory(js::jit::Address backtrackStackBaseAddr);
+
  public:
   static bool GrowBacktrackStack(Stack* regexp_stack);
 
@@ -195,6 +255,10 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   js::jit::Address backtrackStackBase() {
     return js::jit::Address(masm_.getStackPointer(),
                             offsetof(FrameData, backtrackStackBase));
+  }
+  js::jit::Address initialBacktrackStackPointer() {
+    return js::jit::Address(masm_.getStackPointer(),
+                            offsetof(FrameData, initialBacktrackStackPointer));
   }
   js::jit::Address matches() {
     return js::jit::Address(masm_.getStackPointer(),

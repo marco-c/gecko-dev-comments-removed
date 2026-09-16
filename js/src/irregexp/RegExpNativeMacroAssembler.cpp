@@ -1315,9 +1315,19 @@ void SMRegExpMacroAssembler::initFrameAndRegs() {
   }
 
   
+  
   masm_.loadPtr(AbsoluteAddress(ExternalReference::TopOfRegexpStack(isolate())),
+                temp1_);
+  masm_.storePtr(temp1_, backtrackStackBase());
+  
+  
+  
+  masm_.loadPtr(AbsoluteAddress(ExternalReference::RegexpStackPointer(isolate())),
                 backtrack_stack_pointer_);
-  masm_.storePtr(backtrack_stack_pointer_, backtrackStackBase());
+  
+  
+  masm_.subPtr(backtrack_stack_pointer_, temp1_);
+  masm_.storePtr(temp1_, initialBacktrackStackPointer());
 }
 
 
@@ -1389,6 +1399,14 @@ void SMRegExpMacroAssembler::exitHandler() {
     masm_.movePtr(temp0_, js::jit::ReturnReg);
   }
 
+  
+  
+  masm_.loadPtr(backtrackStackBase(), backtrack_stack_pointer_);
+  masm_.subPtr(initialBacktrackStackPointer(), backtrack_stack_pointer_);
+  masm_.storePtr(
+      backtrack_stack_pointer_,
+      AbsoluteAddress(ExternalReference::RegexpStackPointer(isolate())));
+
   masm_.freeStack(frameSize_);
 
   
@@ -1455,8 +1473,7 @@ void SMRegExpMacroAssembler::stackOverflowHandler() {
   masm_.pushReturnAddress();
 #endif
 
-  
-  size_t frameOffset = sizeof(void*);
+  StoreBacktrackStackToMemory();
 
   volatileRegs.takeUnchecked(temp0_);
   volatileRegs.takeUnchecked(temp1_);
@@ -1477,19 +1494,30 @@ void SMRegExpMacroAssembler::stackOverflowHandler() {
   masm_.branchTest32(Assembler::Zero, temp0_, temp0_, &overflow_return);
 
   
-  
+  size_t frameOffset = sizeof(void*);
   Address bsbAddress(masm_.getStackPointer(),
                      offsetof(FrameData, backtrackStackBase) + frameOffset);
-  masm_.subPtr(bsbAddress, backtrack_stack_pointer_);
-
-  masm_.loadPtr(AbsoluteAddress(ExternalReference::TopOfRegexpStack(isolate())),
-                temp1_);
-  masm_.storePtr(temp1_, bsbAddress);
-  masm_.addPtr(temp1_, backtrack_stack_pointer_);
+  LoadBacktrackStackFromMemory(bsbAddress);
 
   
   masm_.bind(&overflow_return);
   masm_.ret();
+}
+
+void SMRegExpMacroAssembler::StoreBacktrackStackToMemory() {
+  masm_.storePtr(
+      backtrack_stack_pointer_,
+      AbsoluteAddress(ExternalReference::RegexpStackPointer(isolate())));
+}
+
+void SMRegExpMacroAssembler::LoadBacktrackStackFromMemory(
+    Address backtrackStackBaseAddr) {
+  masm_.loadPtr(AbsoluteAddress(ExternalReference::TopOfRegexpStack(isolate())),
+                backtrack_stack_pointer_);
+  masm_.storePtr(backtrack_stack_pointer_, backtrackStackBaseAddr);
+  masm_.loadPtr(
+      AbsoluteAddress(ExternalReference::RegexpStackPointer(isolate())),
+      backtrack_stack_pointer_);
 }
 
 
