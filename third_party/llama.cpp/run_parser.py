@@ -39,7 +39,11 @@ if __name__ == '__main__':
         'ENABLE_TOOLS': 0,
         'ENABLE_DOCS': 0,
         'ENABLE_NEON': 1,
-        'MOZ_GGML_BACKENDS': "cpu metal"
+        
+        
+        
+        
+        'MOZ_GGML_BACKENDS': "cpu"
     }
 
     platforms = [
@@ -70,7 +74,6 @@ if __name__ == '__main__':
         if system == "mac":
           variables["APPLE"] = 1
           variables["GGML_ACCELERATE"] = 1
-          variables["GGML_METAL"] = 1
 
         cache_variables = []
         pwd = [LLAMA_DIR]
