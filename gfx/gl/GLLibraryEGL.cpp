@@ -87,7 +87,6 @@ static const char* sEGLExtensionNames[] = {
     "EGL_ANGLE_stream_producer_d3d_texture",
     "EGL_KHR_surfaceless_context",
     "EGL_KHR_create_context_no_error",
-    "EGL_MOZ_create_context_provoking_vertex_dont_care",
     "EGL_EXT_swap_buffers_with_damage",
     "EGL_KHR_swap_buffers_with_damage",
     "EGL_EXT_buffer_age",
@@ -446,14 +445,10 @@ static std::shared_ptr<EglDisplay> GetAndInitDisplayForAccelANGLE(
     
   });
 
-  if (gfx::gfxConfig::IsForcedOnByUser(gfx::Feature::D3D11_HW_ANGLE)) {
-    return GetAndInitDisplay(egl, LOCAL_EGL_D3D11_ONLY_DISPLAY_ANGLE,
-                             aProofOfLock);
-  }
-
   std::shared_ptr<EglDisplay> ret;
-  if (d3d11ANGLE.IsEnabled()) {
-    ret = GetAndInitDisplay(egl, LOCAL_EGL_D3D11_ELSE_D3D9_DISPLAY_ANGLE,
+  if (d3d11ANGLE.IsEnabled() ||
+      gfx::gfxConfig::IsForcedOnByUser(gfx::Feature::D3D11_HW_ANGLE)) {
+    ret = GetAndInitDisplay(egl, LOCAL_EGL_D3D11_ONLY_DISPLAY_ANGLE,
                             aProofOfLock);
   }
 

@@ -88,7 +88,6 @@ bool CheckContextLost(const GLContext* gl);
 #define LOCAL_EGL_EXPERIMENTAL_PRESENT_PATH_COPY_ANGLE        0x33AA
 
 
-#define LOCAL_EGL_D3D11_ELSE_D3D9_DISPLAY_ANGLE         ((EGLNativeDisplayType)-2)
 #define LOCAL_EGL_D3D11_ONLY_DISPLAY_ANGLE              ((EGLNativeDisplayType)-3)
 
 
