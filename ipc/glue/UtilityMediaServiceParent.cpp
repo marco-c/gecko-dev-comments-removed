@@ -102,7 +102,7 @@ void UtilityMediaServiceParent::WMFPreloadForSandbox() {
 
 #  if defined(NS_FREE_PERMANENT_DATA)
   
-  UtilityProcessImpl::LoadLibraryOrCrash(L"ole32.dll");
+  UtilityProcessImpl::LoadLibraryOrCrash(L"user32.dll");
 #  endif  
 
   auto rv = wmf::MediaFoundationInitializer::HasInitialized();
