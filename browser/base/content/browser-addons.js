@@ -2023,6 +2023,7 @@ var gUnifiedExtensions = {
   
   _buttonShownBeforeButtonOpen: null,
   _buttonBarHasMouse: false,
+  _panelShownCount: 0,
 
   
   
@@ -2432,6 +2433,8 @@ var gUnifiedExtensions = {
   },
 
   onPanelViewShowing(panelview) {
+    const currentShowCount = ++this._panelShownCount;
+    const isStillShowing = () => currentShowCount === this._panelShownCount;
     const policies = this.getActivePolicies();
 
     
@@ -2461,7 +2464,7 @@ var gUnifiedExtensions = {
         descriptionL10nId: "unified-extensions-empty-content-explain-enable2",
       });
       this.isAtLeastOneExtensionWithPBMOptIn().then(result => {
-        if (!result) {
+        if (!result && isStillShowing()) {
           this._updateEmptyStateBox({
             panelview,
             hidden: false,
@@ -2478,6 +2481,9 @@ var gUnifiedExtensions = {
     } else {
       this._updateEmptyStateBox({ panelview, hidden: true });
       this.getDisabledExtensionsInfo().then(disabledExtensionsInfo => {
+        if (!isStillShowing()) {
+          return;
+        }
         if (disabledExtensionsInfo.isAnyDisabled) {
           this._updateEmptyStateBox({
             panelview,
@@ -2510,7 +2516,7 @@ var gUnifiedExtensions = {
           
           
           
-          const discoverButton = this._createDiscoverButton(panelview);
+          const discoverButton = this._createDiscoverButton();
 
           const manageExtensionsButton = panelview.querySelector(
             "#unified-extensions-manage-extensions"
@@ -2573,6 +2579,7 @@ var gUnifiedExtensions = {
   },
 
   onPanelViewHiding(panelview) {
+    ++this._panelShownCount;
     if (window.closed) {
       return;
     }
