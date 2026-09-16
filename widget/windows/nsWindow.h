@@ -95,7 +95,6 @@ struct WindowStyles {
   static WindowStyles FromHWND(HWND);
 
   constexpr bool operator==(WindowStyles const& that) const = default;
-  constexpr bool operator!=(WindowStyles const& that) const = default;
 
   constexpr WindowStyles operator|(WindowStyles const& that) const {
     return WindowStyles{.style = style | that.style, .ex = ex | that.ex};
@@ -620,7 +619,7 @@ class nsWindow final : public nsIWidget {
 
   void UserActivity();
 
-  DWORD WindowStyle();
+  DWORD WindowStyle() const;
   DWORD WindowExStyle();
 
   
@@ -797,6 +796,19 @@ class nsWindow final : public nsIWidget {
   HICON mIconBig = nullptr;
   HWND mLastKillFocusWindow = nullptr;
   PlatformCompositorWidgetDelegate* mCompositorWidgetDelegate = nullptr;
+
+  
+  bool HasCaption() const;
+
+  struct ResizeMargins {
+    mozilla::LayoutDeviceIntCoord mHorizontal;
+    mozilla::LayoutDeviceIntCoord mVertical;
+  };
+  ResizeMargins DefaultResizeMargins(UINT aDpi) const;
+
+  
+  
+  LayoutDeviceIntMargin ResizeBorderOverhang() const;
 
   LayoutDeviceIntMargin NonClientSizeMargin() const {
     return NonClientSizeMargin(mCustomNonClientMetrics.mOffset);

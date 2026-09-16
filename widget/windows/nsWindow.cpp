@@ -1415,7 +1415,7 @@ static DWORD WindowStylesRemovedForBorderStyle(BorderStyle aStyle) {
 }
 
 
-DWORD nsWindow::WindowStyle() {
+DWORD nsWindow::WindowStyle() const {
   DWORD style;
   switch (mWindowType) {
     case WindowType::Dialog:
@@ -2721,6 +2721,39 @@ LayoutDeviceIntMargin nsWindow::NormalWindowNonClientOffset() const {
 
 
 
+bool nsWindow::HasCaption() const {
+  return bool(mBorderStyle & (BorderStyle::All | BorderStyle::Title |
+                              BorderStyle::Menu | BorderStyle::Default));
+}
+
+nsWindow::ResizeMargins nsWindow::DefaultResizeMargins(UINT aDpi) const {
+  const int32_t padding =
+      HasCaption() ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, aDpi)
+                   : 0;
+  return {WinUtils::GetSystemMetricsForDpi(SM_CXFRAME, aDpi) + padding,
+          WinUtils::GetSystemMetricsForDpi(SM_CYFRAME, aDpi) + padding};
+}
+
+
+
+
+LayoutDeviceIntMargin nsWindow::ResizeBorderOverhang() const {
+  
+  
+  if (!(WindowStyle() & WS_THICKFRAME)) {
+    return {};
+  }
+
+  
+  
+  
+  
+  const UINT dpi = UINT(NSToIntRound(WinUtils::LogToPhysFactor(mWnd) * 96.0));
+  const auto margins = DefaultResizeMargins(dpi);
+  return LayoutDeviceIntMargin(0, margins.mHorizontal, margins.mVertical,
+                               margins.mHorizontal);
+}
+
 bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
   if (!mCustomNonClient) {
     return false;
@@ -2731,9 +2764,7 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
     return false;
   }
 
-  const bool hasCaption =
-      bool(mBorderStyle & (BorderStyle::All | BorderStyle::Title |
-                           BorderStyle::Menu | BorderStyle::Default));
+  const bool hasCaption = HasCaption();
 
   float dpi = GetDPI();
 
@@ -2742,29 +2773,9 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
   
   
   
-  
-  
-  
-  
-  
-  
-  metrics.mHorResizeMargin =
-      WinUtils::GetSystemMetricsForDpi(SM_CXFRAME, dpi) +
-      (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
-                  : 0);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  metrics.mVertResizeMargin =
-      WinUtils::GetSystemMetricsForDpi(SM_CYFRAME, dpi) +
-      (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
-                  : 0);
+  const auto resizeMargins = DefaultResizeMargins(UINT(dpi));
+  metrics.mHorResizeMargin = resizeMargins.mHorizontal;
+  metrics.mVertResizeMargin = resizeMargins.mVertical;
 
   
   
@@ -7061,12 +7072,16 @@ void nsWindow::OnDPIChanged(int32_t x, int32_t y, int32_t width,
       if (screen) {
         int32_t availLeft, availTop, availWidth, availHeight;
         screen->GetAvailRect(&availLeft, &availTop, &availWidth, &availHeight);
+        
+        
+        
+        const LayoutDeviceIntMargin overhang = ResizeBorderOverhang();
         if (mResizeState != MOVING) {
-          x = std::max(x, availLeft);
-          y = std::max(y, availTop);
+          x = std::max(x, availLeft - overhang.left);
+          y = std::max(y, availTop - overhang.top);
         }
-        width = std::min(width, availWidth);
-        height = std::min(height, availHeight);
+        width = std::min(width, availWidth + overhang.LeftRight());
+        height = std::min(height, availHeight + overhang.TopBottom());
       }
     }
 
