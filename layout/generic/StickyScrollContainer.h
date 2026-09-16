@@ -64,6 +64,19 @@ class StickyScrollContainer final {
 
 
 
+  nsPoint ComputePositionIgnoringScrolling(nsIFrame* aFrame) const;
+
+  
+
+
+
+
+  nsPoint ComputeTranslationIgnoringScrolling(const nsIFrame* aFrame) const;
+
+  
+
+
+
   void GetScrollRanges(nsIFrame* aFrame, nsRectAbsolute* aOuter,
                        nsRectAbsolute* aInner) const;
 
@@ -170,6 +183,8 @@ class StickyScrollContainer final {
   StickyLimits ComputeStickyLimits(
       nsIFrame* aFrame, StickyLimitSpace aSpace =
                             StickyLimitSpace::RelativeToCurrentScroll) const;
+
+  nsPoint DoComputePosition(nsIFrame* aFrame, StickyLimitSpace aSpace) const;
 
   ScrollContainerFrame* const mScrollContainerFrame;
   DepthOrderedFrameList mFrames;
