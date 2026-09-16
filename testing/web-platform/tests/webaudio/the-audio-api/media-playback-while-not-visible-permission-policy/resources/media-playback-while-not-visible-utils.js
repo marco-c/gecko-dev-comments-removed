@@ -109,13 +109,15 @@ function showFrame(iframe, type) {
 
 
 
-async function createIframe(t, frameType, base) {
+
+
+async function createIframe(t, frameType, base, hidden = null) {
   if (document.readyState !== 'complete') {
     await new Promise(resolve => window.addEventListener('load', resolve));
   }
 
   const running_state_transition_promise =
-      expectIframeAudioContextStateChangeEvent(t);
+      hidden ? null : expectIframeAudioContextStateChangeEvent(t);
 
   const iframe = document.createElement('iframe');
   if (frameType === 'nested') {
@@ -127,10 +129,16 @@ async function createIframe(t, frameType, base) {
     iframe.src = base + 'audiocontext-frame.html';
   }
 
+  if (hidden) {
+    hideFrame(iframe, hidden);
+  }
+
   document.body.appendChild(iframe);
   await new Promise(resolve => iframe.addEventListener('load', resolve));
   t.add_cleanup(() => iframe.remove());
 
-  assert_equals(await running_state_transition_promise, 'running');
+  if (!hidden) {
+    assert_equals(await running_state_transition_promise, 'running');
+  }
   return iframe;
 }

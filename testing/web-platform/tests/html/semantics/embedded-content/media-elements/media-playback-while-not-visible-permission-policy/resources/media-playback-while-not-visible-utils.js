@@ -117,7 +117,8 @@ async function waitForMediaFrameLoaded(t, iframe) {
 
 
 
-async function createMediaIframe(t, frameType, base, mediaType) {
+
+async function createMediaIframe(t, frameType, base, mediaType, hidden = null) {
   if (document.readyState !== 'complete') {
     await new Promise(resolve => window.addEventListener('load', resolve));
   }
@@ -130,6 +131,10 @@ async function createMediaIframe(t, frameType, base, mediaType) {
     iframe.id = 'media-frame';
     iframe.allow = 'media-playback-while-not-visible \'none\'; autoplay *';
     iframe.src = base + 'media-frame.html?media=' + mediaType;
+  }
+
+  if (hidden) {
+    hideFrame(iframe, hidden);
   }
 
   document.body.appendChild(iframe);
