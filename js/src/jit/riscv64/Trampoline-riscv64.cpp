@@ -304,7 +304,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
     masm.bind(&notOsr);
     
     MOZ_ASSERT(R1.scratchReg() != reg_code);
-    masm.mv(R1.scratchReg(), reg_chain);
+    masm.ma_mv(R1.scratchReg(), reg_chain);
   }
   JitSpew(JitSpew_Codegen, "__Line__: %d", __LINE__);
   
