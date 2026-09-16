@@ -26,7 +26,7 @@
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
 #include "mozilla/glean/DomMediaPlatformsWmfMetrics.h"
-#include "mozilla/layers/CompositeProcessD3D11FencesHolderMap.h"
+#include "mozilla/layers/CompositeProcessFencesHolderMap.h"
 #include "mozilla/layers/D3D11ShareHandleImage.h"
 #include "mozilla/layers/D3D11ZeroCopyTextureImage.h"
 #include "mozilla/layers/FenceD3D11.h"
@@ -326,7 +326,7 @@ static Atomic<uint32_t> sDXVAVideosCount(0);
 class D3D11DXVA2Manager : public DXVA2Manager {
  public:
   D3D11DXVA2Manager();
-  virtual ~D3D11DXVA2Manager();
+  virtual ~D3D11DXVA2Manager() = default;
 
   HRESULT Init(layers::KnowsCompositor* aKnowsCompositor,
                nsACString& aFailureReason, ID3D11Device* aDevice);
@@ -609,8 +609,6 @@ bool D3D11DXVA2Manager::SupportsConfig(const VideoInfo& aInfo,
 D3D11DXVA2Manager::D3D11DXVA2Manager()
     : mZeroCopyUsageInfo(new layers::ZeroCopyUsageInfo) {}
 
-D3D11DXVA2Manager::~D3D11DXVA2Manager() {}
-
 IUnknown* D3D11DXVA2Manager::GetDXVADeviceManager() {
   MutexAutoLock lock(mLock);
   return mDXGIDeviceManager;
@@ -691,7 +689,7 @@ D3D11DXVA2Manager::InitInternal(layers::KnowsCompositor* aKnowsCompositor,
     }
   }
 
-  auto* fencesHolderMap = layers::CompositeProcessD3D11FencesHolderMap::Get();
+  auto* fencesHolderMap = layers::CompositeProcessFencesHolderMap::Get();
   const bool useFence =
       fencesHolderMap && layers::FenceD3D11::IsSupported(mDevice);
   if (useFence) {
@@ -984,6 +982,22 @@ void D3D11DXVA2Manager::BeforeShutdownVideoMFTDecoder() {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static gfx::SurfaceFormat SurfaceFormatFromSubType(const GUID& aSubType) {
   
   if (aSubType == MFVideoFormat_ARGB32) {
@@ -1066,10 +1080,13 @@ D3D11DXVA2Manager::ConfigureForSize(IMFMediaType* aInputType,
   NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
 
   
-  if (aColorDepth > gfx::ColorDepth::COLOR_10) {
+  if (aColorDepth > gfx::ColorDepth::COLOR_10 ||
+      aTransferFunction == gfx::TransferFunction::LINEAR) {
     hr = outputType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_A16B16G16R16F);
     NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
-  } else if (aColorDepth > gfx::ColorDepth::COLOR_8) {
+  } else if (aColorDepth > gfx::ColorDepth::COLOR_8 ||
+             aTransferFunction == gfx::TransferFunction::PQ ||
+             aTransferFunction == gfx::TransferFunction::HLG) {
     hr = outputType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_A2R10G10B10);
     NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
   } else {
@@ -1349,7 +1366,7 @@ HRESULT D3D11DXVA2Manager::CopyTextureToImage(
   }
 
   auto* textureData = client->GetInternalData()->AsD3D11TextureData();
-  auto* fencesHolderMap = CompositeProcessD3D11FencesHolderMap::Get();
+  auto* fencesHolderMap = CompositeProcessFencesHolderMap::Get();
   MOZ_ASSERT(textureData);
   const bool useFence =
       textureData && textureData->mFencesHolderId.isSome() && fencesHolderMap;
