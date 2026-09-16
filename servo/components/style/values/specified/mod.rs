@@ -344,7 +344,7 @@ impl ToComputedValue for Opacity {
     #[inline]
     fn to_computed_value(&self, context: &Context) -> CSSFloat {
         let value = self.0.to_computed_value(context).value();
-        if context.for_smil_animation {
+        if context.for_animation {
             
             
             value

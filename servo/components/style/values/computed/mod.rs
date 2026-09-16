@@ -208,8 +208,7 @@ pub struct Context<'a> {
     
     
     
-    
-    pub for_smil_animation: bool,
+    pub for_animation: bool,
 
     
     pub container_info: Option<ContainerInfo>,
@@ -266,7 +265,7 @@ impl<'a> Context<'a> {
             in_media_query: true,
             in_container_query: false,
             quirks_mode,
-            for_smil_animation: false,
+            for_animation: false,
             container_info: None,
             for_non_inherited_property: false,
             rule_cache_conditions: RefCell::new(&mut conditions),
@@ -308,7 +307,7 @@ impl<'a> Context<'a> {
             in_media_query: false,
             in_container_query: true,
             quirks_mode,
-            for_smil_animation: false,
+            for_animation: false,
             container_info,
             for_non_inherited_property: false,
             rule_cache_conditions: RefCell::new(&mut conditions),
@@ -345,7 +344,7 @@ impl<'a> Context<'a> {
             in_container_query: false,
             quirks_mode,
             container_info: None,
-            for_smil_animation: false,
+            for_animation: false,
             for_non_inherited_property: false,
             rule_cache_conditions: RefCell::new(rule_cache_conditions),
             scope: CascadeLevel::same_tree_author_normal(),
@@ -359,7 +358,6 @@ impl<'a> Context<'a> {
     
     pub fn new_for_animation(
         builder: StyleBuilder<'a>,
-        for_smil_animation: bool,
         quirks_mode: QuirksMode,
         rule_cache_conditions: &'a mut RuleCacheConditions,
         container_size_query: ContainerSizeQuery<'a>,
@@ -373,7 +371,7 @@ impl<'a> Context<'a> {
             in_container_query: false,
             quirks_mode,
             container_info: None,
-            for_smil_animation,
+            for_animation: true,
             for_non_inherited_property: false,
             rule_cache_conditions: RefCell::new(rule_cache_conditions),
             scope: CascadeLevel::same_tree_author_normal(),
@@ -400,7 +398,7 @@ impl<'a> Context<'a> {
             in_container_query: false,
             quirks_mode: stylist.quirks_mode(),
             container_info: None,
-            for_smil_animation: false,
+            for_animation: false,
             for_non_inherited_property: false,
             rule_cache_conditions: RefCell::new(rule_cache_conditions),
             scope: CascadeLevel::same_tree_author_normal(),
