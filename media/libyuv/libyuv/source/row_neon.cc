@@ -292,7 +292,6 @@ void I422ToRGB24Row_NEON(const uint8_t* src_y,
                          int width) {
   asm volatile(
       YUVTORGB_SETUP
-      "vmov.u8     d6, #255                      \n"
       "1:          \n"  
       READYUV422
       "subs        %[width], %[width], #8        \n" YUVTORGB RGBTORGB8
@@ -323,7 +322,6 @@ void I422ToRGB565Row_NEON(const uint8_t* src_y,
                           int width) {
   asm volatile(
       YUVTORGB_SETUP
-      "vmov.u8     d6, #255                      \n"
       "1:          \n"  
       READYUV422 "subs        %[width], %[width], #8        \n" YUVTORGB
           RGBTORGB8 ARGBTORGB565
@@ -494,7 +492,6 @@ void NV12ToRGB24Row_NEON(const uint8_t* src_y,
                          int width) {
   asm volatile(
       YUVTORGB_SETUP
-      "vmov.u8     d6, #255                      \n"
       "1:          \n"  
       READNV12 YUVTORGB RGBTORGB8
       "subs        %[width], %[width], #8        \n"
@@ -516,7 +513,6 @@ void NV21ToRGB24Row_NEON(const uint8_t* src_y,
                          int width) {
   asm volatile(
       YUVTORGB_SETUP
-      "vmov.u8     d6, #255                      \n"
       "1:          \n"  
       READNV21 YUVTORGB RGBTORGB8
       "subs        %[width], %[width], #8        \n"
@@ -538,7 +534,6 @@ void NV12ToRGB565Row_NEON(const uint8_t* src_y,
                           int width) {
   asm volatile(
       YUVTORGB_SETUP
-      "vmov.u8     d6, #255                      \n"
       "1:          \n"  
       READNV12 YUVTORGB RGBTORGB8
       "subs        %[width], %[width], #8        \n" ARGBTORGB565
@@ -1063,7 +1058,7 @@ void MergeAR64Row_NEON(const uint16_t* src_r,
         "+r"(width)      // %5
       : "r"(shift),      // %6
         "r"(mask)        // %7
-      : "memory", "cc", "q0", "q1", "q2", "q3", "q15");
+      : "memory", "cc", "q0", "q1", "q2", "q3", "q14", "q15");
 }
 
 void MergeXR64Row_NEON(const uint16_t* src_r,
@@ -1100,7 +1095,7 @@ void MergeXR64Row_NEON(const uint16_t* src_r,
         "+r"(width)      // %4
       : "r"(shift),      // %5
         "r"(mask)        // %6
-      : "memory", "cc", "q0", "q1", "q2", "q3", "q15");
+      : "memory", "cc", "q0", "q1", "q2", "q3", "q14", "q15");
 }
 
 void MergeARGB16To8Row_NEON(const uint16_t* src_r,
@@ -1894,7 +1889,7 @@ void ARGBToUV444MatrixRow_NEON(const uint8_t* src_argb,
         "r"(&c->kRGBToV),  // %5
         "r"(&c->kAddUV)    // %6
       : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8",
-        "q10", "q11", "q12");
+        "q10", "q11", "q12", "q13");
 }
 
 
@@ -1946,7 +1941,7 @@ void RGBToUV444MatrixRow_NEON(const uint8_t* src_rgb,
         "r"(&c->kRGBToV),  // %5
         "r"(&c->kAddUV)    // %6
       : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
-        "q10", "q11", "q12");
+        "q10", "q11", "q12", "q13");
 }
 
 
@@ -3105,6 +3100,68 @@ void ARGBSubtractRow_NEON(const uint8_t* src_argb,
         "+r"(width)       // %3
       :
       : "cc", "memory", "q0", "q1", "q2", "q3");
+}
+
+
+
+void BlendPlaneRow_NEON(const uint8_t* src0,
+                        const uint8_t* src1,
+                        const uint8_t* alpha,
+                        uint8_t* dst,
+                        int width) {
+  asm volatile(
+      "vmov.u16    q15, #255                     \n"
+      "subs        %4, %4, #32                   \n"
+      "blt         19f                           \n"
+      "1:                                        \n"
+      "vld1.8      {q0, q1}, [%0]!               \n"  
+      "vld1.8      {q2, q3}, [%1]!               \n"  
+      "vld1.8      {q8, q9}, [%2]!               \n"  
+      "subs        %4, %4, #32                   \n"  
+      "vmvn.8      q10, q8                       \n"  
+      "vmvn.8      q11, q9                       \n"  
+      "vmull.u8    q4, d0, d16                   \n"  
+      "pld         [%0, #448]                    \n"
+      "vmull.u8    q5, d1, d17                   \n"  
+      "pld         [%1, #448]                    \n"
+      "vmull.u8    q6, d2, d18                   \n"
+      "pld         [%2, #448]                    \n"
+      "vmull.u8    q7, d3, d19                   \n"
+      "vmlal.u8    q4, d4, d20                   \n"  
+      "vmlal.u8    q5, d5, d21                   \n"  
+      "vmlal.u8    q6, d6, d22                   \n"
+      "vmlal.u8    q7, d7, d23                   \n"
+      "vaddhn.u16  d0, q4, q15                   \n"  
+      "vaddhn.u16  d1, q5, q15                   \n"  
+      "vaddhn.u16  d2, q6, q15                   \n"
+      "vaddhn.u16  d3, q7, q15                   \n"
+      "vst1.8      {q0, q1}, [%3]!               \n"  
+      "bge         1b                            \n"
+      "19:                                       \n"
+      "adds        %4, %4, #32                   \n"
+      "ble         99f                           \n"
+
+      
+      "vld1.8      {q0}, [%0]!                   \n"  
+      "vld1.8      {q1}, [%1]!                   \n"  
+      "vld1.8      {q2}, [%2]!                   \n"  
+      "vmvn.8      q12, q2                       \n"  
+      "vmull.u8    q4, d0, d4                    \n"  
+      "vmull.u8    q5, d1, d5                    \n"  
+      "vmlal.u8    q4, d2, d24                   \n"  
+      "vmlal.u8    q5, d3, d25                   \n"  
+      "vaddhn.u16  d0, q4, q15                   \n"  
+      "vaddhn.u16  d1, q5, q15                   \n"  
+      "vst1.8      {q0}, [%3]!                   \n"  
+      "99:                                       \n"
+      : "+r"(src0),   // %0
+        "+r"(src1),   // %1
+        "+r"(alpha),  // %2
+        "+r"(dst),    // %3
+        "+r"(width)   // %4
+      :
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8",
+        "q9", "q10", "q11", "q12", "q15");
 }
 
 
