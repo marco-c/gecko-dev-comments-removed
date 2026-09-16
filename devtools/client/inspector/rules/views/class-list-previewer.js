@@ -127,9 +127,22 @@ class ClassListPreviewer {
   
 
 
+  get selectionSupportsClasses() {
+    
+    
+    return this.model.currentNode !== null;
+  }
+
+  
+
+
 
   render() {
     this.classesEl.innerHTML = "";
+
+    if (this.addEl) {
+      this.addEl.disabled = !this.selectionSupportsClasses;
+    }
 
     for (const { name, isApplied } of this.model.currentClasses) {
       const checkBox = this.renderCheckBox(name, isApplied);
