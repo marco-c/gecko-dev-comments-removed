@@ -559,7 +559,7 @@ static bool IsNonReplaceableElement(const CanonicalElement& aElement) {
 }
 
 
-void Sanitizer::IsValid(ErrorResult& aRv) {
+void Sanitizer::IsValid(ErrorResult& aRv) const {
   
   
   MOZ_ASSERT(mElements || mRemoveElements,
@@ -803,7 +803,7 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
   }
 }
 
-void Sanitizer::AssertIsValid() {
+void Sanitizer::AssertIsValid() const {
 #ifdef DEBUG
   IgnoredErrorResult rv;
   IsValid(rv);
@@ -1951,9 +1951,6 @@ SanitizerElementAction Sanitizer::SanitizeElementInternal(Element* aElement,
   }
 
   
-
-  
-  
   
   if (CustomElementData* data = aElement->GetCustomElementData();
       data && data->GetIs(aElement)) [[unlikely]] {
@@ -1982,6 +1979,42 @@ SanitizerElementAction Sanitizer::SanitizeElementInternal(Element* aElement,
 
   
   return SanitizerElementAction::Keep;
+}
+
+
+
+
+void Sanitizer::SanitizeElement(Element* aElement, bool aSafe) const {
+  if (mIsDefaultConfig) {
+    AssertNoLists();
+    SanitizeElementInternal<true>(aElement, aSafe);
+    return;
+  }
+  AssertIsValid();
+  SanitizeElementInternal<false>(aElement, aSafe);
+}
+
+SanitizerElementMatch Sanitizer::MatchElement(nsAtom* aLocalName,
+                                              int32_t aNamespaceID,
+                                              bool aSafe) const {
+  if (mIsDefaultConfig) {
+    AssertNoLists();
+    return MatchElementInternal<true>(aLocalName, aNamespaceID, aSafe);
+  }
+  AssertIsValid();
+  return MatchElementInternal<false>(aLocalName, aNamespaceID, aSafe);
+}
+
+bool Sanitizer::ShouldRemoveAttribute(
+    const SanitizerElementMatch& aMatch, nsAtom* aLocalName,
+    int32_t aNamespaceID, FunctionRef<void(nsAString&)> aGetValue) const {
+  MOZ_ASSERT(aMatch.mAction == SanitizerElementAction::Keep);
+  if (mIsDefaultConfig) {
+    return ShouldRemoveAttributeInternal<true>(aMatch, aLocalName, aNamespaceID,
+                                               aGetValue);
+  }
+  return ShouldRemoveAttributeInternal<false>(aMatch, aLocalName, aNamespaceID,
+                                              aGetValue);
 }
 
 

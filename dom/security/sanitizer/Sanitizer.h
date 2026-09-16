@@ -106,13 +106,45 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
 
   void Sanitize(nsINode* aNode, bool aSafe, ErrorResult& aRv);
 
+  
+
+
+
+
+
+
+  void SanitizeElement(Element* aElement, bool aSafe) const;
+
+  
+
+
+
+
+
+
+
+  SanitizerElementMatch MatchElement(nsAtom* aLocalName, int32_t aNamespaceID,
+                                     bool aSafe) const;
+
+  
+
+
+
+
+
+  bool ShouldRemoveAttribute(const SanitizerElementMatch& aMatch,
+                             nsAtom* aLocalName, int32_t aNamespaceID,
+                             FunctionRef<void(nsAString&)> aGetValue) const;
+
+  bool CommentsAllowed() const { return mComments; }
+
  private:
   ~Sanitizer() = default;
 
   void CanonicalizeConfiguration(const SanitizerConfig& aConfig,
                                  bool aAllowCommentsPIsAndDataAttributes,
                                  ErrorResult& aRv);
-  void IsValid(ErrorResult& aRv);
+  void IsValid(ErrorResult& aRv) const;
 
   void SetDefaultConfig();
   void SetConfig(const SanitizerConfig& aConfig,
@@ -157,9 +189,9 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
       sanitizer::CanonicalElementAttributes* aElementAttributes,
       nsAtom* aAttrLocalName, int32_t aAttrNs, bool aSafe) const;
 
-  void AssertIsValid();
+  void AssertIsValid() const;
 
-  void AssertNoLists() {
+  void AssertNoLists() const {
     MOZ_ASSERT(!mElements);
     MOZ_ASSERT(!mRemoveElements);
     MOZ_ASSERT(!mReplaceWithChildrenElements);
