@@ -14,6 +14,8 @@ const PREF_OHTTP_UNIFIED_ADS = "unifiedAds.ohttp.enabled";
 const PREF_REPORT_ADS_ENABLED = "discoverystream.reportAds.enabled";
 const PREF_PROMOCARD_ENABLED = "discoverystream.promoCard.enabled";
 const PREF_PROMOCARD_VISIBLE = "discoverystream.promoCard.visible";
+// @nova-cleanup(remove-pref): Remove PREF_NOVA_ENABLED
+const PREF_NOVA_ENABLED = "nova.enabled";
 
 /**
  * A new banner ad that appears between rows of stories: leaderboard or billboard size.
@@ -51,6 +53,8 @@ export const AdBanner = ({ spoc, dispatch, row, type, prefs }) => {
     prefs[PREF_PROMOCARD_ENABLED] &&
     prefs[PREF_PROMOCARD_VISIBLE];
 
+  // @nova-cleanup(remove-conditional): Remove novaEnabled check
+  const novaEnabled = prefs[PREF_NOVA_ENABLED];
   const sectionsEnabled = prefs[PREF_SECTIONS_ENABLED];
   const ohttpEnabled = prefs[PREF_OHTTP_UNIFIED_ADS];
   const showAdReporting = prefs[PREF_REPORT_ADS_ENABLED];
@@ -105,7 +109,14 @@ export const AdBanner = ({ spoc, dispatch, row, type, prefs }) => {
   }
 
   return (
-    <aside className={adBannerWrapperClassName} style={{ gridRow: clampedRow }}>
+    <aside
+      className={adBannerWrapperClassName}
+      // Omit gridRow for Nova sections to ensure correct keyboard focus order.
+      // @nova-cleanup(remove-conditional): Remove novaEnabled check, keep sectionsEnabled condition
+      style={
+        novaEnabled && sectionsEnabled ? undefined : { gridRow: clampedRow }
+      }
+    >
       <div className={`ad-banner-inner ${spoc.format}`}>
         <SafeAnchor
           className="ad-banner-link"
@@ -125,6 +136,8 @@ export const AdBanner = ({ spoc, dispatch, row, type, prefs }) => {
                 recommended_at: spoc.recommended_at,
                 received_rank: spoc.received_rank,
                 format: spoc.format,
+                // A banner row is ad-only inventory.
+                is_ad_eligible_position: true,
                 ...(spoc.shim?.impression
                   ? { shim: spoc.shim.impression }
                   : {}),
@@ -156,6 +169,7 @@ export const AdBanner = ({ spoc, dispatch, row, type, prefs }) => {
             type={type}
             showAdReporting={showAdReporting}
             toggleActive={toggleActive}
+            novaEnabled={novaEnabled}
           />
         </div>
       </div>
