@@ -18,6 +18,7 @@
 #include "brotli/decode.h"
 #include "keyhi.h"
 #include "mozilla/Base64.h"
+#include "mozilla/BaseProfiler.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RandomNum.h"
@@ -1002,6 +1003,14 @@ static int32_t PlaintextRecv(PRFileDesc* fd, void* buf, int32_t amount,
   return bytesRead;
 }
 
+static int16_t PlaintextPoll(PRFileDesc* fd, int16_t in_flags,
+                             int16_t* out_flags) {
+  
+  
+  AutoProfilerThreadSleep _;
+  return fd->lower->methods->poll(fd->lower, in_flags, out_flags);
+}
+
 nsSSLIOLayerHelpers::~nsSSLIOLayerHelpers() {
   
   
@@ -1079,6 +1088,7 @@ nsresult nsSSLIOLayerHelpers::Init() {
     nsSSLPlaintextLayerIdentity = PR_GetUniqueIdentity("Plaintxext PSM layer");
     nsSSLPlaintextLayerMethods = *PR_GetDefaultIOMethods();
     nsSSLPlaintextLayerMethods.recv = PlaintextRecv;
+    nsSSLPlaintextLayerMethods.poll = PlaintextPoll;
   }
 
   loadVersionFallbackLimit();

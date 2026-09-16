@@ -7,10 +7,6 @@
 
 do_get_profile();
 
-const gCertDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
-  Ci.nsIX509CertDB
-);
-
 var gPrompt = {
   QueryInterface: ChromeUtils.generateQI(["nsIPrompt"]),
 
@@ -57,22 +53,6 @@ add_task(async function run_test() {
     "network.dns.localDomains",
     "requireclientauth.example.com"
   );
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  gCertDB.getCerts();
 
   await asyncStartTLSTestServer("BadCertAndPinningServer", "bad_certs");
   gClientAuthDialogService.certificateNameToUse = "CN=client cert rsa";
