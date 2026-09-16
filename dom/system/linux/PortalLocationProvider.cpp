@@ -296,7 +296,10 @@ PortalLocationProvider::Watch(nsIGeolocationUpdate* aCallback) {
 
 
 
-  mMLSProvider = MakeAndAddRef<MLSFallback>(12000);
+  if (!mMLSProvider) {
+    mMLSProvider = MakeAndAddRef<MLSFallback>(12000);
+  }
+  
   mMLSProvider->Startup(new MLSGeolocationUpdate(aCallback));
 
   return NS_OK;
