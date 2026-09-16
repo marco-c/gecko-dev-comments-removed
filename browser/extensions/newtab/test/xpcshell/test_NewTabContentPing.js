@@ -37,6 +37,7 @@ add_task(async function test_recordEvent_sanitizes_and_buffers() {
     event_source: "card",
     
     section_position: "2",
+    card_column: "3",
   };
 
   
