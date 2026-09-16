@@ -27,8 +27,6 @@ struct LangGroupFontPrefs {
         mDefaultMonospaceFont(StyleGenericFontFamily::Monospace, {0}),
         mDefaultCursiveFont(StyleGenericFontFamily::Cursive, {0}),
         mDefaultFantasyFont(StyleGenericFontFamily::Fantasy, {0}),
-        mDefaultFangsongFont(StyleGenericFontFamily::Fangsong, {0}),
-        mDefaultKaiFont(StyleGenericFontFamily::Kai, {0}),
         mDefaultSystemUiFont(StyleGenericFontFamily::SystemUi, {0}) {
     Initialize();
   }
@@ -64,10 +62,6 @@ struct LangGroupFontPrefs {
         return &mDefaultCursiveFont;
       case StyleGenericFontFamily::Fantasy:
         return &mDefaultFantasyFont;
-      case StyleGenericFontFamily::Fangsong:
-        return &mDefaultFangsongFont;
-      case StyleGenericFontFamily::Kai:
-        return &mDefaultKaiFont;
       case StyleGenericFontFamily::Math:
         
         
@@ -91,8 +85,6 @@ struct LangGroupFontPrefs {
   nsFont mDefaultMonospaceFont;
   nsFont mDefaultCursiveFont;
   nsFont mDefaultFantasyFont;
-  nsFont mDefaultFangsongFont;
-  nsFont mDefaultKaiFont;
   nsFont mDefaultSystemUiFont;
   UniquePtr<LangGroupFontPrefs> mNext;
 
