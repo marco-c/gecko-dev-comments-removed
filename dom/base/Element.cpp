@@ -4212,11 +4212,6 @@ bool Element::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
     return true;
   }
 
-  if (aAttribute == nsGkAtoms::form || aAttribute == nsGkAtoms::_for) {
-    aResult.ParseAtom(aValue);
-    return true;
-  }
-
   if (aNamespaceID == kNameSpaceID_None) {
     if (NS_IS_ATOM_ARRAY_ATTRIBUTE(aAttribute)) {
       aResult.ParseAtomArray(aValue);
@@ -4228,7 +4223,8 @@ bool Element::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
       return true;
     }
 
-    if (aAttribute == nsGkAtoms::aria_activedescendant) {
+    if (aAttribute == nsGkAtoms::form || aAttribute == nsGkAtoms::_for ||
+        aAttribute == nsGkAtoms::aria_activedescendant) {
       
       aResult.ParseAtom(aValue);
       return true;
