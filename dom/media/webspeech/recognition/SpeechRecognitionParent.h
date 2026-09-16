@@ -83,14 +83,16 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
   
   
   
+  
+  
+  
   using BoolPromise = hwinference::PHWInferenceChild::IsModelAvailablePromise;
-  mozilla::ipc::IPCResult RunHWInferenceBoolQueries(
-      const char* aFuncName, const nsTArray<nsCString>& aModelIds,
-      std::function<RefPtr<BoolPromise>(hwinference::HWInferenceChild*,
-                                        const nsCString&)>
+  mozilla::ipc::IPCResult RunHWInferenceBoolQuery(
+      const char* aFuncName,
+      std::function<RefPtr<BoolPromise>(hwinference::HWInferenceChild*)>
           aSendFunc,
       std::function<void(const bool&)> aResolver,
-      MozPromiseRequestHolder<BoolPromise::AllPromiseType>& aRequestHolder);
+      MozPromiseRequestHolder<BoolPromise>& aRequestHolder);
 
   
   
@@ -122,7 +124,6 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
   
   
   nsCString mLanguage MOZ_GUARDED_BY(mLock);
-  nsCString mModelId MOZ_GUARDED_BY(mLock);
   
   
   nsTArray<nsString> mPhrases MOZ_GUARDED_BY(mLock);
@@ -172,20 +173,19 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
   
   
   MozPromiseRequestHolder<
-      hwinference::PHWInferenceChild::IsModelAvailablePromise::AllPromiseType>
+      hwinference::PHWInferenceChild::IsModelAvailablePromise>
       mIsModelAvailableRequest;
   
   MozPromiseRequestHolder<
-      hwinference::PHWInferenceChild::IsModelInstalledPromise::AllPromiseType>
+      hwinference::PHWInferenceChild::IsModelInstalledPromise>
       mIsModelInstalledRequest;
   
   
   MozPromiseRequestHolder<
       hwinference::PHWInferenceChild::IsModelInstalledPromise>
       mRetrieveModelIsInstalledRequest;
-  MozPromiseRequestHolder<
-      hwinference::PHWInferenceChild::InstallModelPromise::AllPromiseType>
-      mInstallModelsRequest;
+  MozPromiseRequestHolder<hwinference::PHWInferenceChild::InstallModelPromise>
+      mInstallModelRequest;
   MozPromiseRequestHolder<hwinference::PHWInferenceChild::GetModelFilePromise>
       mGetModelFileRequest;
 };

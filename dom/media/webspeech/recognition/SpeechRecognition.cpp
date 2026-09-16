@@ -13,7 +13,6 @@
 #include "MediaEnginePrefs.h"
 #include "SpeechRecognitionAlternative.h"
 #include "SpeechRecognitionBackend.h"
-#include "SpeechRecognitionModelMapping.h"
 #include "SpeechRecognitionResult.h"
 #include "SpeechRecognitionResultList.h"
 #include "SpeechTrackListener.h"
@@ -33,7 +32,6 @@
 #include "mozilla/dom/MediaStreamBinding.h"
 #include "mozilla/dom/MediaStreamError.h"
 #include "mozilla/dom/MediaStreamTrackBinding.h"
-#include "mozilla/dom/Navigator.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/SpeechGrammar.h"
@@ -492,16 +490,6 @@ already_AddRefed<Promise> SpeechRecognition::Available(
     return promise.forget();
   }
 
-  
-  
-  
-  for (const nsCString& lang : aOptions.mLangs) {
-    if (SpeechModelFor(lang).isNothing()) {
-      promise->MaybeResolve(AvailabilityStatus::Unavailable);
-      return promise.forget();
-    }
-  }
-
   return SpeechRecognitionBackend::Available(global, aOptions.mLangs);
 }
 
@@ -606,19 +594,13 @@ already_AddRefed<Promise> SpeechRecognition::Install(
 
   
   
+  
+  
+  
+  
   if (aOptions.mLangs.IsEmpty()) {
     promise->MaybeResolve(false);
     return promise.forget();
-  }
-
-  
-  
-  
-  for (const nsCString& lang : aOptions.mLangs) {
-    if (SpeechModelFor(lang).isNothing()) {
-      promise->MaybeResolve(false);
-      return promise.forget();
-    }
   }
 
   bool transactionCreated = false;
@@ -737,43 +719,13 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
   }
 
   
-  
   nsString effectiveLang = mLang;
   if (effectiveLang.IsEmpty()) {
     if (nsCOMPtr<Document> doc = win->GetExtantDoc()) {
       if (Element* root = doc->GetRootElement()) {
         root->GetLang(effectiveLang);
       }
-      if (effectiveLang.IsEmpty()) {
-        if (nsAtom* language = doc->GetContentLanguageAsAtomForStyle()) {
-          language->ToString(effectiveLang);
-        }
-      }
     }
-  }
-
-  
-  
-  
-  
-  
-  if (effectiveLang.IsEmpty()) {
-    if (Document* doc = win->GetExtantDoc()) {
-      doc->WarnOnceAbout(
-          Document::eSpeechRecognitionLangDefaultedToUserLanguage);
-    }
-    win->Navigator()->GetLanguage(effectiveLang);
-  }
-
-  
-  
-  
-  if (!effectiveLang.IsEmpty() &&
-      SpeechModelFor(NS_ConvertUTF16toUTF8(effectiveLang)).isNothing()) {
-    LOGE("No on-device model recognizes this language");
-    DispatchErrorAndEnd(SpeechRecognitionErrorCode::Service_not_allowed,
-                        "No on-device model recognizes this language"_ns);
-    return;
   }
 
   
