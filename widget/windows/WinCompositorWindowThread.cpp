@@ -8,6 +8,7 @@
 #include "mozilla/StaticMonitor.h"
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/WindowsUserHandleValidation.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/layers/SynchronousTask.h"
 #include "transport/runnable_utils.h"
@@ -19,6 +20,19 @@ static StaticRefPtr<WinCompositorWindowThread> sWinCompositorWindowThread;
 
 static StaticMonitor sShutdownMonitor;
 static bool sShutdownComplete MOZ_GUARDED_BY(sShutdownMonitor) = false;
+
+
+
+
+
+
+class CompositorWindowThread final : public base::Thread {
+ public:
+  CompositorWindowThread() : base::Thread("WinCompositor") {}
+
+ protected:
+  void Init() override { ForceToGuiThreadAndFixTebValidateHandlesFlag(); }
+};
 
 
 
@@ -90,7 +104,7 @@ void WinCompositorWindowThread::Start() {
     sWinCompositorWindowThread = nullptr;
   }
 
-  base::Thread* thread = new base::Thread("WinCompositor");
+  base::Thread* thread = new CompositorWindowThread();
   if (!thread->StartWithOptions(options)) {
     delete thread;
     return;
