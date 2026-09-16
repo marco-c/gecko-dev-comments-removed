@@ -14,3 +14,29 @@ export const primaryPaneTabs = {
   PROJECT_SEARCH: "project",
   TRACER: "tracer",
 };
+
+export const sourceTree = {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  itemTypes: {
+    THREAD: "thread",
+    DIRECTORY: "directory",
+    GROUP: "group",
+    SOURCE: "source",
+  },
+};

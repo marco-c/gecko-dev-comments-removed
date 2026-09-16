@@ -3,6 +3,7 @@
 
 
 import { createSelector } from "devtools/client/shared/vendor/reselect";
+import { sourceTree } from "../constants";
 
 
 
@@ -51,7 +52,7 @@ export const getDisplayedSourcesList = createSelector(
   roots => {
     const sources = [];
     function walk(item) {
-      if (item.type == "source") {
+      if (item.type == sourceTree.itemTypes.SOURCE) {
         sources.push(item.source);
       } else {
         for (const child of item.children) {
@@ -132,7 +133,7 @@ function getDirectoryForUniquePath(projectRoot, threadItems) {
 
   function findPathInDirectory(directory, path) {
     for (const child of directory.children) {
-      if (child.type == "directory") {
+      if (child.type == sourceTree.itemTypes.DIRECTORY) {
         
         if (child.path == path) {
           return child;

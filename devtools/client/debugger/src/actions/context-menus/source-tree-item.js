@@ -3,7 +3,7 @@
 
 
 import { showMenu } from "../../context-menu/menu";
-
+import { sourceTree } from "../../constants";
 import {
   isSourceMapIgnoreListEnabled,
   isSourceOnSourceMapIgnoreList,
@@ -59,7 +59,7 @@ export function showSourceTreeItemContextMenu(
       isSourceOnSourceMapIgnoreList(state, item.source);
     const projectRoot = getProjectDirectoryRoot(state);
 
-    if (item.type == "source") {
+    if (item.type == sourceTree.itemTypes.SOURCE) {
       const { source } = item;
       const copySourceUri2 = {
         id: "node-menu-copy-source",
@@ -107,7 +107,7 @@ export function showSourceTreeItemContextMenu(
     }
 
     
-    if (item.type != "source") {
+    if (item.type != sourceTree.itemTypes.SOURCE) {
       addCollapseExpandAllOptions(menuOptions, item, setExpanded);
 
       if (projectRoot == item.uniquePath) {
@@ -295,7 +295,7 @@ function getBlackBoxSourcesGroups(state, item) {
     if (_item.children) {
       _item.children.forEach(i => collectAllSources(list, i));
     }
-    if (_item.type == "source") {
+    if (_item.type == sourceTree.itemTypes.SOURCE) {
       list.push(_item.source);
     }
   }

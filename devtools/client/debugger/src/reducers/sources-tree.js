@@ -25,6 +25,7 @@ const IGNORED_EXTENSIONS = ["svg", "png"];
 import { getRawSourceURL } from "../utils/source";
 import { prefs, features } from "../utils/prefs";
 import { getDisplayURL } from "../utils/sources-tree/getURL";
+import { sourceTree } from "../constants";
 
 import TargetCommand from "resource://devtools/shared/commands/target/target-command.js";
 
@@ -489,7 +490,7 @@ function addSource(threadItems, source, sourceActor) {
   
   
   const existing = directoryItem.children.find(item => {
-    return item.type == "source" && item.source == source;
+    return item.type == sourceTree.itemTypes.SOURCE && item.source == source;
   });
   if (existing) {
     return false;
@@ -526,7 +527,7 @@ function findSourceInThreadItem(source, threadItem) {
   
   if (!parentPath) {
     return groupItem.children.find(item => {
-      return item.type == "source" && item.source == source;
+      return item.type == sourceTree.itemTypes.SOURCE && item.source == source;
     });
   }
 
@@ -536,20 +537,35 @@ function findSourceInThreadItem(source, threadItem) {
   }
 
   return directoryItem.children.find(item => {
-    return item.type == "source" && item.source == source;
+    return item.type == sourceTree.itemTypes.SOURCE && item.source == source;
   });
 }
 
 function sortItems(a, b) {
-  if (a.type == "directory" && b.type == "source") {
+  if (
+    a.type == sourceTree.itemTypes.DIRECTORY &&
+    b.type == sourceTree.itemTypes.SOURCE
+  ) {
     return -1;
-  } else if (b.type == "directory" && a.type == "source") {
+  } else if (
+    b.type == sourceTree.itemTypes.DIRECTORY &&
+    a.type == sourceTree.itemTypes.SOURCE
+  ) {
     return 1;
-  } else if (a.type == "group" && b.type == "group") {
+  } else if (
+    a.type == sourceTree.itemTypes.GROUP &&
+    b.type == sourceTree.itemTypes.GROUP
+  ) {
     return a.groupName.localeCompare(b.groupName);
-  } else if (a.type == "directory" && b.type == "directory") {
+  } else if (
+    a.type == sourceTree.itemTypes.DIRECTORY &&
+    b.type == sourceTree.itemTypes.DIRECTORY
+  ) {
     return a.path.localeCompare(b.path);
-  } else if (a.type == "source" && b.type == "source") {
+  } else if (
+    a.type == sourceTree.itemTypes.SOURCE &&
+    b.type == sourceTree.itemTypes.SOURCE
+  ) {
     return a.source.longName.localeCompare(b.source.longName);
   }
   return 0;
@@ -685,7 +701,7 @@ function createBaseTreeItem({ type, parent, uniquePath, children }) {
 function createThreadTreeItem(thread) {
   return {
     ...createBaseTreeItem({
-      type: "thread",
+      type: sourceTree.itemTypes.THREAD,
       
       parent: null,
       uniquePath: thread,
@@ -702,7 +718,7 @@ function createThreadTreeItem(thread) {
 function createGroupTreeItem(groupName, origin, parent, source) {
   return {
     ...createBaseTreeItem({
-      type: "group",
+      type: sourceTree.itemTypes.GROUP,
       parent,
       uniquePath: `${parent.uniquePath}|${groupName}`,
       
@@ -727,19 +743,20 @@ function createGroupTreeItem(groupName, origin, parent, source) {
 }
 function createDirectoryTreeItem(path, parent) {
   
-  const pathSeparator = parent.type == "directory" ? "/" : "|";
+  const pathSeparator =
+    parent.type == sourceTree.itemTypes.DIRECTORY ? "/" : "|";
 
   
   
   
   const relativePath =
-    parent.type == "directory"
+    parent.type == sourceTree.itemTypes.DIRECTORY
       ? path.replace(parent.path, "").replace(/^\//, "")
       : path;
 
   return {
     ...createBaseTreeItem({
-      type: "directory",
+      type: sourceTree.itemTypes.DIRECTORY,
       parent,
       uniquePath: `${parent.uniquePath}${pathSeparator}${relativePath}`,
       
@@ -757,7 +774,7 @@ function createDirectoryTreeItem(path, parent) {
 function createSourceTreeItem(source, sourceActor, parent) {
   return {
     ...createBaseTreeItem({
-      type: "source",
+      type: sourceTree.itemTypes.SOURCE,
       parent,
       uniquePath: `${parent.uniquePath}|${source.id}`,
       
@@ -819,7 +836,7 @@ function getSourceItemForSelectedLocation(state, selectedLocation) {
 
   const { displayURL } = source;
   function findSourceInItem(item, path) {
-    if (item.type == "source") {
+    if (item.type == sourceTree.itemTypes.SOURCE) {
       
       
       
@@ -834,13 +851,22 @@ function getSourceItemForSelectedLocation(state, selectedLocation) {
       return null;
     }
     
-    if (item.type == "thread" && item.threadActorID != sourceActor?.thread) {
+    if (
+      item.type == sourceTree.itemTypes.THREAD &&
+      item.threadActorID != sourceActor?.thread
+    ) {
       return null;
     }
-    if (item.type == "group" && displayURL.group != item.groupName) {
+    if (
+      item.type == sourceTree.itemTypes.GROUP &&
+      displayURL.group != item.groupName
+    ) {
       return null;
     }
-    if (item.type == "directory" && !path.startsWith(item.path)) {
+    if (
+      item.type == sourceTree.itemTypes.DIRECTORY &&
+      !path.startsWith(item.path)
+    ) {
       return null;
     }
     
