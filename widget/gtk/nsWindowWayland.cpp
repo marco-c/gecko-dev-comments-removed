@@ -638,9 +638,8 @@ nsWindowWayland::WaylandPopupGetPositionFromLayout() {
     popupAlign = popupFrame->GetUntransformedPopupAlignment();
     anchorAlign = popupFrame->GetUntransformedPopupAnchor();
   }
-  if (isRTL) {
-    popupAlign = -popupAlign;
-    anchorAlign = -anchorAlign;
+  if (isRTL && (anchored || isTopContextMenu)) {
+    nsMenuPopupFrame::FlipAnchorForRTL(anchorAlign, popupAlign);
   }
 
   
