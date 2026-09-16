@@ -993,8 +993,11 @@ static nsRect InflateByScrollMargin(const nsRect& aTargetRect,
 nsRect ScrollSnapUtils::GetSnapAreaFor(const nsIFrame* aFrame,
                                        const nsIFrame* aScrolledFrame,
                                        const nsRect& aScrolledRect) {
-  nsRect targetRect = nsLayoutUtils::TransformFrameRectToAncestor(
-      aFrame, aFrame->GetRectRelativeToSelf(), aScrolledFrame);
+  
+  
+  nsRect targetRect = nsLayoutUtils::GetAllInFlowRectsUnion(
+      nsLayoutUtils::FirstContinuationOrIBSplitSibling(aFrame), aScrolledFrame,
+      {nsLayoutUtils::GetAllInFlowRectsFlag::AccountForTransforms});
 
   
   

@@ -7838,7 +7838,10 @@ static void CollectScrollPositionsForSnap(
   }
 
   auto processFrame = [&](nsIFrame* f, ContainingBlockContext aCtx) {
-    if (aCtx == ContainingBlockContext::Direct) {
+    
+    
+    if (aCtx == ContainingBlockContext::Direct &&
+        nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(f)) {
       const nsStyleDisplay* styleDisplay = f->StyleDisplay();
       if (styleDisplay->mScrollSnapAlign.inline_ !=
               StyleScrollSnapAlignKeyword::None ||
