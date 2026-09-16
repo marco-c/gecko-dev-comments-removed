@@ -49,31 +49,45 @@ struct EngineMapping {
   const char* mPBMPref;
 };
 
+
+
+
+
+
+
 constexpr EngineMapping kProtectionMappings[] = {
-    {"trackers", "privacy.trackingprotection.enabled",
-     "privacy.trackingprotection.pbmode.enabled"},
-    {"fingerprinters", "privacy.trackingprotection.fingerprinting.enabled",
-     "privacy.trackingprotection.fingerprinting.enabled"},
-    {"cryptominers", "privacy.trackingprotection.cryptomining.enabled",
-     "privacy.trackingprotection.cryptomining.enabled"},
-    {"social-trackers", "privacy.trackingprotection.socialtracking.enabled",
-     "privacy.trackingprotection.socialtracking.enabled"},
     {"email-trackers", "privacy.trackingprotection.emailtracking.enabled",
      "privacy.trackingprotection.emailtracking.pbmode.enabled"},
+    {"cryptominers", "privacy.trackingprotection.cryptomining.enabled",
+     "privacy.trackingprotection.cryptomining.enabled"},
+    {"fingerprinters", "privacy.trackingprotection.fingerprinting.enabled",
+     "privacy.trackingprotection.fingerprinting.enabled"},
+    {"social-trackers", "privacy.trackingprotection.socialtracking.enabled",
+     "privacy.trackingprotection.socialtracking.enabled"},
+    {"harmful-addon", "privacy.trackingprotection.harmfuladdon.enabled",
+     "privacy.trackingprotection.harmfuladdon.enabled"},
+    {"trackers", "privacy.trackingprotection.enabled",
+     "privacy.trackingprotection.pbmode.enabled"},
 };
 
+
+
+
+
 constexpr EngineMapping kAnnotationMappings[] = {
+    {"cryptominers", "privacy.trackingprotection.annotate_channels",
+     "privacy.trackingprotection.annotate_channels"},
+    {"fingerprinters", "privacy.trackingprotection.annotate_channels",
+     "privacy.trackingprotection.annotate_channels"},
+    {"social-trackers", "privacy.trackingprotection.annotate_channels",
+     "privacy.trackingprotection.annotate_channels"},
+    
+    
     {"trackers", "privacy.trackingprotection.annotate_channels",
      "privacy.trackingprotection.annotate_channels"},
     
     {"trackers-content", "privacy.annotate_channels.strict_list.enabled",
      "privacy.annotate_channels.strict_list.pbmode.enabled"},
-    {"fingerprinters", "privacy.trackingprotection.annotate_channels",
-     "privacy.trackingprotection.annotate_channels"},
-    {"cryptominers", "privacy.trackingprotection.annotate_channels",
-     "privacy.trackingprotection.annotate_channels"},
-    {"social-trackers", "privacy.trackingprotection.annotate_channels",
-     "privacy.trackingprotection.annotate_channels"},
 };
 
 
@@ -89,6 +103,7 @@ constexpr const char* kWatchedPrefs[] = {
     "privacy.trackingprotection.socialtracking.enabled",
     "privacy.trackingprotection.emailtracking.enabled",
     "privacy.trackingprotection.emailtracking.pbmode.enabled",
+    "privacy.trackingprotection.harmfuladdon.enabled",
     "privacy.trackingprotection.allow_list.baseline.enabled",
     "privacy.trackingprotection.allow_list.convenience.enabled",
 };

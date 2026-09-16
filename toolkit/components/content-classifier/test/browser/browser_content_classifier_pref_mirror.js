@@ -41,6 +41,7 @@ const ETP_OFF = {
   "privacy.trackingprotection.fingerprinting.enabled": false,
   "privacy.trackingprotection.cryptomining.enabled": false,
   "privacy.trackingprotection.socialtracking.enabled": false,
+  "privacy.trackingprotection.harmfuladdon.enabled": false,
   "privacy.trackingprotection.emailtracking.enabled": false,
   "privacy.trackingprotection.emailtracking.pbmode.enabled": false,
   "privacy.trackingprotection.allow_list.baseline.enabled": false,
@@ -124,6 +125,7 @@ add_task(async function test_protection_per_feature_mapping() {
     ["privacy.trackingprotection.cryptomining.enabled", "cryptominers"],
     ["privacy.trackingprotection.socialtracking.enabled", "social-trackers"],
     ["privacy.trackingprotection.emailtracking.enabled", "email-trackers"],
+    ["privacy.trackingprotection.harmfuladdon.enabled", "harmful-addon"],
   ];
   for (const [etpPref, engine] of cases) {
     await enableMirror({ [etpPref]: true });
@@ -147,6 +149,7 @@ add_task(async function test_protection_per_feature_mapping() {
 
 
 
+
 add_task(async function test_protection_multiple_features_joined() {
   await enableMirror({
     "privacy.trackingprotection.enabled": true,
@@ -155,7 +158,7 @@ add_task(async function test_protection_multiple_features_joined() {
   });
   is(
     Services.prefs.getStringPref(PROT_ENGINES),
-    "trackers,cryptominers,email-trackers",
+    "email-trackers,cryptominers,trackers",
     "enabled features joined in mapping order"
   );
 });
@@ -174,7 +177,7 @@ add_task(async function test_pbm_prefs_drive_pbmode_list_only() {
   );
   is(
     Services.prefs.getStringPref(PROT_ENGINES_PBM),
-    "trackers,email-trackers",
+    "email-trackers,trackers",
     "PBM prefs map to pbmode protection list"
   );
   is(
@@ -212,12 +215,12 @@ add_task(async function test_annotate_channels_drives_annotation_list() {
   });
   is(
     Services.prefs.getStringPref(ANNO_ENGINES),
-    "trackers,fingerprinters,cryptominers,social-trackers",
+    "cryptominers,fingerprinters,social-trackers,trackers",
     "annotate_channels maps to annotation engines"
   );
   is(
     Services.prefs.getStringPref(ANNO_ENGINES_PBM),
-    "trackers,fingerprinters,cryptominers,social-trackers",
+    "cryptominers,fingerprinters,social-trackers,trackers",
     "annotate_channels gates PBM annotation too"
   );
   is(Services.prefs.getBoolPref(ANNO_ENABLED), true, "annotation enabled");
