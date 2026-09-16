@@ -294,6 +294,9 @@ void SVGForeignObjectFrame::NotifySVGChanged(ChangeFlags aFlags) {
     if (StyleSVGReset()->mX.HasPercent() || StyleSVGReset()->mY.HasPercent()) {
       needNewBounds = true;
       needNewCanvasTM = true;
+    } else if (SVGIntegrationUtils::UsingEffectsForFrame(this)) {
+      
+      needNewBounds = true;
     }
 
     const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);
@@ -349,12 +352,12 @@ void SVGForeignObjectFrame::NotifySVGChanged(ChangeFlags aFlags) {
 
 SVGBBox SVGForeignObjectFrame::GetBBoxContribution(
     const Matrix& aToBBoxUserspace, SVGBBoxFlags aFlags) {
-  SVGForeignObjectElement* content =
+  SVGForeignObjectElement* element =
       static_cast<SVGForeignObjectElement*>(GetContent());
 
   float x, y, w, h;
   SVGGeometryProperty::ResolveAll<SVGT::X, SVGT::Y, SVGT::Width, SVGT::Height>(
-      content, &x, &y, &w, &h);
+      element, &x, &y, &w, &h);
 
   if (w < 0.0f) {
     w = 0.0f;
@@ -362,12 +365,17 @@ SVGBBox SVGForeignObjectFrame::GetBBoxContribution(
   if (h < 0.0f) {
     h = 0.0f;
   }
+  gfx::Rect rect(0.0f, 0.0f, w, h);
+
+  if (aFlags.contains(SVGBBoxFlag::DisregardCSSZoom)) {
+    rect.Scale(1 / Style()->EffectiveZoom().ToFloat());
+  }
 
   if (aToBBoxUserspace.IsSingular()) {
     
     return SVGBBox();
   }
-  return aToBBoxUserspace.TransformBounds(gfx::Rect(0.0, 0.0, w, h));
+  return aToBBoxUserspace.TransformBounds(rect);
 }
 
 

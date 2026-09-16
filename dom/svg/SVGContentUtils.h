@@ -133,6 +133,12 @@ class SVGContentUtils {
   
 
 
+  static bool HasPercentageDependentStroke(
+      const ComputedStyle* aComputedStyle,
+      const SVGContextPaint* aContextPaint);
+  
+
+
 
 
 

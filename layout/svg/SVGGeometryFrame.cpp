@@ -332,14 +332,14 @@ void SVGGeometryFrame::NotifySVGChanged(ChangeFlags aFlags) {
     auto* geom = static_cast<SVGGeometryElement*>(GetContent());
     
     
-    
-    
-    
-    const auto& strokeWidth = StyleSVG()->mStrokeWidth;
-    if (geom->GeometryDependsOnCoordCtx() ||
-        (strokeWidth.IsLengthPercentage() &&
-         strokeWidth.AsLengthPercentage().HasPercent())) {
+    if (geom->GeometryDependsOnCoordCtx()) {
       geom->ClearAnyCachedPath();
+      SVGUtils::ScheduleReflowSVG(this);
+    } else if (SVGContentUtils::HasPercentageDependentStroke(
+                   Style(), SVGContextPaint::GetContextPaint(geom)) ||
+               (StyleSVG()->HasMarker() && geom->IsMarkable()) ||
+               SVGIntegrationUtils::UsingEffectsForFrame(this)) {
+      
       SVGUtils::ScheduleReflowSVG(this);
     }
   }
