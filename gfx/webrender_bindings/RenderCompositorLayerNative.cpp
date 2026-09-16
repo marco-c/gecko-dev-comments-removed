@@ -359,7 +359,11 @@ void RenderCompositorLayerNativeOGL::AttachExternalImage(
   
   
   
-  image->Lock(0, mGL);
+  
+  
+  
+  
+  image->Lock(0, image->AsRenderDMABUFTextureHost() ? nullptr : mGL.get());
 
   RenderCompositorLayerNative::AttachExternalImage(aId, aExternalImage);
 }
