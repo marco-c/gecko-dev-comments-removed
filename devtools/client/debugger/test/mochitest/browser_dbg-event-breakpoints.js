@@ -5,7 +5,6 @@
 "use strict";
 
 add_task(async function () {
-  await pushPref("dom.element.commandfor.enabled", true);
   await pushPref("dom.events.textevent.enabled", true);
   await pushPref("dom.closewatcher.enabled", true);
 
@@ -316,7 +315,7 @@ add_task(async function () {
 });
 
 async function invokeOnElement(selector, action) {
-  await SpecialPowers.focus(gBrowser.selectedBrowser);
+  gBrowser.selectedBrowser.focus();
   await SpecialPowers.spawn(
     gBrowser.selectedBrowser,
     [selector, action],
