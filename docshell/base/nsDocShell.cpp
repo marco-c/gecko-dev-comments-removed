@@ -10342,7 +10342,7 @@ nsresult nsDocShell::CompleteInitialAboutBlankLoad(
 
   
   
-  doc->EndLoad( true);
+  doc->EndLoad();
   
   
   
