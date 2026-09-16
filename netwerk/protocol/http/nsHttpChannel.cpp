@@ -4863,15 +4863,16 @@ void nsHttpChannel::MaybeGenerateNELReport() {
 
   nsAutoCString endpointURL;
   ReportingHeader::GetEndpointForReportIncludeSubdomains(
-      group, channelPrincipal,  true, endpointURL);
+      NS_ConvertUTF16toUTF8(group), channelPrincipal,
+       true, endpointURL);
   if (endpointURL.IsEmpty()) {
     return;
   }
 
   ReportDeliver::ReportData data;
-  data.mType = u"network-error"_ns;
-  data.mGroupName = std::move(group);
-  data.mURL = std::move(url);
+  data.mType = "network-error"_ns;
+  data.mGroupName = NS_ConvertUTF16toUTF8(group);
+  data.mURL = NS_ConvertUTF16toUTF8(url);
   data.mFailures = 0;
   data.mCreationTime = TimeStamp::Now();
 
@@ -4882,7 +4883,7 @@ void nsHttpChannel::MaybeGenerateNELReport() {
   
   
   (void)mRequestHead.GetHeader(nsHttp::User_Agent, userAgent);
-  data.mUserAgent = NS_ConvertUTF8toUTF16(userAgent);
+  data.mUserAgent = std::move(userAgent);
 
   
   ReportDeliver::Fetch(data);
