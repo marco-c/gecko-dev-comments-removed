@@ -158,13 +158,6 @@
 
 
 
-
-
-
-
-
-
-
 #include "mozilla/Maybe.h"
 
 #include <type_traits>
@@ -236,13 +229,8 @@ class AutoAwaitIsKeyword;
 template <class ParseHandler, typename Unit>
 class AutoInParametersOfAsyncFunction;
 
-class MOZ_STACK_CLASS ParserSharedBase {
- public:
-  enum class Kind { Parser };
-
-  ParserSharedBase(FrontendContext* fc, CompilationState& compilationState,
-                   Kind kind);
-  ~ParserSharedBase();
+class MOZ_STACK_CLASS ParserBase : public ErrorReportMixin {
+  using Base = ErrorReportMixin;
 
  public:
   FrontendContext* fc_;
@@ -257,7 +245,10 @@ class MOZ_STACK_CLASS ParserSharedBase {
   
   UsedNameTracker& usedNames_;
 
- public:
+  TokenStreamAnyChars anyChars;
+
+  ScriptSource* ss;
+
   CompilationState& getCompilationState() { return compilationState_; }
 
   ParserAtomsTable& parserAtoms() { return compilationState_.parserAtoms; }
@@ -277,16 +268,6 @@ class MOZ_STACK_CLASS ParserSharedBase {
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dumpAtom(TaggedParserAtomIndex index) const;
 #endif
-};
-
-class MOZ_STACK_CLASS ParserBase : public ParserSharedBase,
-                                   public ErrorReportMixin {
-  using Base = ErrorReportMixin;
-
- public:
-  TokenStreamAnyChars anyChars;
-
-  ScriptSource* ss;
 
  protected:
 #if DEBUG
