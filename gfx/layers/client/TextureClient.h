@@ -619,6 +619,13 @@ class TextureClient : public AtomicRefCountedWithFinalize<TextureClient> {
   TextureData* GetInternalData() { return mData; }
   const TextureData* GetInternalData() const { return mData; }
 
+  
+
+
+
+
+  bool ToSurfaceDescriptor(SurfaceDescriptor& aDescriptor);
+
   uint64_t GetSerial() const { return mSerial; }
   void GetSurfaceDescriptorRemoteDecoder(
       SurfaceDescriptorRemoteDecoder* aOutDesc);
@@ -717,16 +724,6 @@ class TextureClient : public AtomicRefCountedWithFinalize<TextureClient> {
   friend class AtomicRefCountedWithFinalize<TextureClient>;
 
  protected:
-  
-
-
-
-
-
-
-
-  bool ToSurfaceDescriptor(SurfaceDescriptor& aDescriptor);
-
   void LockActor() const;
   void UnlockActor() const;
 
