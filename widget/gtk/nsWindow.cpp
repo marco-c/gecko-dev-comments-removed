@@ -3199,6 +3199,9 @@ void nsWindow::OnContainerFocusInEvent(GdkEventFocus* aEvent) {
     
     
     gFocusWindow = this;
+    if (mIMContext) {
+      mIMContext->OnFocusWindow(this);
+    }
   }
 
   LOG("Events sent from focus in event");
