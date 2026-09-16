@@ -287,7 +287,6 @@ bool gfxPlatformFontList::Initialize(gfxPlatformFontList* aList) {
   sPlatformFontList = aList;
   if (XRE_IsParentProcess() &&
       StaticPrefs::gfx_font_list_omt_enabled_AtStartup() &&
-      StaticPrefs::gfx_e10s_font_list_shared_AtStartup() &&
       !gfxPlatform::InSafeMode()) {
     
     
@@ -784,42 +783,40 @@ bool gfxPlatformFontList::InitFontList() {
   InitializeCodepointsWithNoFonts();
 
   
-  if (StaticPrefs::gfx_e10s_font_list_shared_AtStartup()) {
-    for (const auto& entry : mFontEntries.Values()) {
-      if (!entry) {
-        continue;
-      }
-      AutoWriteLock lock(entry->mLock);
-      entry->mShmemCharacterMap = nullptr;
-      entry->mShmemFace = nullptr;
-      entry->mFamilyName.Truncate();
+  for (const auto& entry : mFontEntries.Values()) {
+    if (!entry) {
+      continue;
     }
-    mFontEntries.Clear();
-    mShmemCharMaps.Clear();
-    bool oldSharedList = SharedFontList() != nullptr;
-    delete mSharedFontList.exchange(new fontlist::FontList(mFontlistInitCount));
-    InitSharedFontListForPlatform();
-    auto* newList = SharedFontList();
-    if (newList && newList->Initialized()) {
-      if (mLocalNameTable.Count()) {
-        newList->SetLocalNames(mLocalNameTable);
-        mLocalNameTable.Clear();
-      }
+    AutoWriteLock lock(entry->mLock);
+    entry->mShmemCharacterMap = nullptr;
+    entry->mShmemFace = nullptr;
+    entry->mFamilyName.Truncate();
+  }
+  mFontEntries.Clear();
+  mShmemCharMaps.Clear();
+  bool oldSharedList = SharedFontList() != nullptr;
+  delete mSharedFontList.exchange(new fontlist::FontList(mFontlistInitCount));
+  InitSharedFontListForPlatform();
+  auto* newList = SharedFontList();
+  if (newList && newList->Initialized()) {
+    if (mLocalNameTable.Count()) {
+      newList->SetLocalNames(mLocalNameTable);
+      mLocalNameTable.Clear();
+    }
+  } else {
+    
+    gfxCriticalNote << "Failed to initialize shared font list, "
+                       "falling back to in-process list.";
+    delete mSharedFontList.exchange(nullptr);
+  }
+  if (oldSharedList && XRE_IsParentProcess()) {
+    
+    if (NS_IsMainThread()) {
+      dom::ContentParent::NotifyUpdatedFonts(true);
     } else {
-      
-      gfxCriticalNote << "Failed to initialize shared font list, "
-                         "falling back to in-process list.";
-      delete mSharedFontList.exchange(nullptr);
-    }
-    if (oldSharedList && XRE_IsParentProcess()) {
-      
-      if (NS_IsMainThread()) {
-        dom::ContentParent::NotifyUpdatedFonts(true);
-      } else {
-        NS_DispatchToMainThread(NS_NewRunnableFunction(
-            "NotifyUpdatedFonts callback",
-            [] { dom::ContentParent::NotifyUpdatedFonts(true); }));
-      }
+      NS_DispatchToMainThread(NS_NewRunnableFunction(
+          "NotifyUpdatedFonts callback",
+          [] { dom::ContentParent::NotifyUpdatedFonts(true); }));
     }
   }
 
@@ -2715,6 +2712,10 @@ nsAtom* gfxPlatformFontList::GetLangGroup(nsAtom* aLanguage) {
       return "cursive";
     case StyleGenericFontFamily::Fantasy:
       return "fantasy";
+    case StyleGenericFontFamily::Fangsong:
+      return "fangsong";
+    case StyleGenericFontFamily::Kai:
+      return "kai";
     case StyleGenericFontFamily::Math:
       return "math";
     case StyleGenericFontFamily::SystemUi:

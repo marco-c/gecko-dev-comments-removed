@@ -46,6 +46,8 @@ static const char* const kGenericFont[] = {
   ".monospace.",
   ".cursive.",
   ".fantasy.",
+  ".fangsong.",
+  ".kai.",
   ".system-ui.",
 };
 
@@ -57,6 +59,8 @@ enum class DefaultFont {
   Monospace,
   Cursive,
   Fantasy,
+  Fangsong,
+  Kai,
   SystemUi,
   COUNT
 };
@@ -110,6 +114,8 @@ void LangGroupFontPrefs::Initialize() {
     &mDefaultMonospaceFont,
     &mDefaultCursiveFont,
     &mDefaultFantasyFont,
+    &mDefaultFangsongFont,
+    &mDefaultKaiFont,
     &mDefaultSystemUiFont,
   };
   
@@ -202,7 +208,7 @@ nsStaticAtom* StaticPresData::GetLangGroup(nsAtom* aLanguage) const {
 }
 
 const LangGroupFontPrefs* StaticPresData::GetFontPrefsForLang(
-    nsAtom* aLanguage, bool* aNeedsToCache) {
+    nsAtom* aLanguage) {
   MOZ_ASSERT(aLanguage);
   MOZ_ASSERT(mLangService);
 
@@ -215,11 +221,6 @@ const LangGroupFontPrefs* StaticPresData::GetFontPrefsForLang(
         return p;
       }
     }
-  }
-
-  if (aNeedsToCache) {
-    *aNeedsToCache = true;
-    return nullptr;
   }
 
   AutoWriteLock lock(mLock);
