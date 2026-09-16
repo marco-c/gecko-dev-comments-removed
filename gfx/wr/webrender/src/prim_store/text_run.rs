@@ -186,6 +186,9 @@ impl intern::Internable for TextRun {
 }
 
 impl InternablePrimitive for TextRun {
+    
+    const SNAP_CLIPS: bool = false;
+
     fn into_key(
         self,
         info: &LayoutPrimitiveInfo,
@@ -664,6 +667,6 @@ fn test_struct_sizes() {
     
     
     assert_eq!(mem::size_of::<TextRun>(), 80, "TextRun size changed");
-    assert_eq!(mem::size_of::<TextRunTemplate>(), 112, "TextRunTemplate size changed");
-    assert_eq!(mem::size_of::<TextRunKey>(), 112, "TextRunKey size changed");
+    assert_eq!(mem::size_of::<TextRunTemplate>(), 96, "TextRunTemplate size changed");
+    assert_eq!(mem::size_of::<TextRunKey>(), 96, "TextRunKey size changed");
 }

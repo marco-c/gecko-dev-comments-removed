@@ -5,7 +5,7 @@
 use api::ColorF;
 use api::{ImageRendering, LineOrientation, PrimitiveFlags};
 use api::units::*;
-use crate::clip::ClipNodeId;
+use crate::clip::ClipLeafId;
 use crate::render_backend::DataStores;
 use crate::space::SnapRounding;
 use crate::quad::QuadTileClassifier;
@@ -98,10 +98,10 @@ impl ClipTaskIndex {
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, MallocSizeOf, Ord, PartialOrd)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct PictureIndex(pub u32);
+pub struct PictureIndex(pub usize);
 
 impl PictureIndex {
-    pub const INVALID: PictureIndex = PictureIndex(u32::MAX);
+    pub const INVALID: PictureIndex = PictureIndex(!0);
 }
 
 
@@ -128,7 +128,6 @@ impl From<&LayoutPrimitiveInfo> for PrimKeyCommonData {
             aligned_aa_edges: info.aligned_aa_edges,
             transformed_aa_edges: info.transformed_aa_edges,
             prim_rect: info.rect.into(),
-            local_clip_rect: info.clip_rect.into(),
         }
     }
 }
@@ -149,9 +148,6 @@ pub struct PrimTemplateCommonData {
     
     
     pub prim_rect: LayoutRect,
-    
-    
-    pub local_clip_rect: LayoutRect,
 }
 
 impl PrimTemplateCommonData {
@@ -161,7 +157,6 @@ impl PrimTemplateCommonData {
             aligned_aa_edges: common.aligned_aa_edges,
             transformed_aa_edges: common.transformed_aa_edges,
             prim_rect: common.prim_rect.into(),
-            local_clip_rect: common.local_clip_rect.into(),
         }
     }
 }
@@ -265,24 +260,6 @@ pub enum PrimitiveKind {
 }
 
 impl PrimitiveKind {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn snaps(&self) -> bool {
-        !matches!(self, PrimitiveKind::TextRun { .. })
-    }
-}
-
-impl PrimitiveKind {
     pub fn as_pic(&self) -> PictureIndex {
         match self {
             PrimitiveKind::Picture { pic_index, .. } => *pic_index,
@@ -310,8 +287,7 @@ pub struct PrimitiveInstance {
     pub kind: PrimitiveKind,
 
     
-    
-    pub clip_node_id: ClipNodeId,
+    pub clip_leaf_id: ClipLeafId,
 }
 
 
@@ -341,11 +317,11 @@ pub struct SnapPolicy {
 impl PrimitiveInstance {
     pub fn new(
         kind: PrimitiveKind,
-        clip_node_id: ClipNodeId,
+        clip_leaf_id: ClipLeafId,
     ) -> Self {
         PrimitiveInstance {
             kind,
-            clip_node_id,
+            clip_leaf_id,
         }
     }
 
@@ -362,8 +338,9 @@ impl PrimitiveInstance {
     
     
     
-    pub fn snap_policy(&self, data_stores: &DataStores) -> SnapPolicy {
-        if !self.kind.snaps() {
+    
+    pub fn snap_policy(&self, snaps: bool, data_stores: &DataStores) -> SnapPolicy {
+        if !snaps {
             return SnapPolicy { rect: SnapRounding::RoundOut, clip: ClipSnap::Exact };
         }
         let rect = match self.kind {
@@ -838,7 +815,7 @@ impl PrimitiveStore {
     pub fn print_picture_tree(&self, root: PictureIndex) {
         use crate::print_tree::PrintTree;
         let mut pt = PrintTree::new("picture tree");
-        self.pictures[root.0 as usize].print(&self.pictures, root, &mut pt);
+        self.pictures[root.0].print(&self.pictures, root, &mut pt);
     }
 }
 
@@ -851,6 +828,12 @@ impl Default for PrimitiveStore {
 
 
 pub trait InternablePrimitive: intern::Internable<InternData = ()> + Sized {
+    
+    
+    
+    
+    const SNAP_CLIPS: bool = true;
+
     
     fn into_key(
         self,
@@ -866,39 +849,6 @@ pub trait InternablePrimitive: intern::Internable<InternData = ()> + Sized {
 
 
 #[test]
-fn device_text_runs_do_not_snap_their_clips() {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    use crate::intern::Handle;
-
-    assert!(
-        !PrimitiveKind::TextRun { data_handle: Handle::INVALID }.snaps(),
-        "device-space text must not snap its clips (bug 2050692)",
-    );
-
-    
-    
-    assert!(
-        PrimitiveKind::Rectangle { data_handle: Handle::INVALID }.snaps(),
-        "a snapping primitive must snap its clips",
-    );
-    assert!(
-        PrimitiveKind::Picture {
-            data_handle: Handle::INVALID,
-            pic_index: PictureIndex::INVALID,
-        }.snaps(),
-        "a picture must snap its clips so image-mask clips stay aligned",
-    );
-}
-
-#[test]
 #[cfg(target_pointer_width = "64")]
 fn test_struct_sizes() {
     use std::mem;
@@ -908,7 +858,7 @@ fn test_struct_sizes() {
     
     
     
-    assert_eq!(mem::size_of::<PrimitiveInstance>(), 20, "PrimitiveInstance size changed");
-    assert_eq!(mem::size_of::<PrimitiveKind>(), 16, "PrimitiveKind size changed");
+    assert_eq!(mem::size_of::<PrimitiveInstance>(), 32, "PrimitiveInstance size changed");
+    assert_eq!(mem::size_of::<PrimitiveKind>(), 24, "PrimitiveKind size changed");
 }
 

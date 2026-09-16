@@ -36,7 +36,7 @@ use crate::composite::CompositeState;
 use crate::profiler::{self, TransactionProfile};
 use crate::renderer::GpuBufferBuilder;
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
-use crate::clip::{snap_local_clip_rect, ClipChainInstance, ClipTree, ClipNodeId};
+use crate::clip::{ClipChainInstance, ClipTree, ClipNodeId};
 use crate::composite::CompositorSurfaceKind;
 use crate::frame_builder::FrameBuilderConfig;
 use crate::picture::ClusterFlags;
@@ -46,7 +46,7 @@ use crate::tile_cache::TileCacheInstance;
 use crate::picture::{PictureScratch, RasterConfig};
 use crate::surface::SurfaceIndex;
 use crate::tile_cache::SubSliceIndex;
-use crate::prim_store::{ClipTaskIndex, PictureIndex, PrimitiveKind};
+use crate::prim_store::{ClipSnap, ClipTaskIndex, PictureIndex, PrimitiveKind};
 use crate::prim_store::{PrimitiveStore, PrimitiveInstance, PrimitiveInstanceIndex};
 use crate::prim_store::storage;
 use crate::prim_store::text_run::TextRunScratch;
@@ -73,7 +73,7 @@ pub struct FrameVisibilityState<'a> {
     pub resource_cache: &'a mut ResourceCache,
     pub frame_gpu_data: &'a mut GpuBufferBuilder,
     pub data_stores: &'a DataStores,
-    pub clip_tree: &'a ClipTree,
+    pub clip_tree: &'a mut ClipTree,
     pub composite_state: &'a mut CompositeState,
     pub rg_builder: &'a mut RenderTaskGraphBuilder,
     pub prim_instances: &'a mut [PrimitiveInstance],
@@ -81,14 +81,6 @@ pub struct FrameVisibilityState<'a> {
     
     
     pub surface_stack: Vec<(PictureIndex, SurfaceIndex)>,
-    
-    
-    
-    
-    
-    
-    
-    pub clip_root_stack: Vec<ClipNodeId>,
     pub profile: &'a mut TransactionProfile,
     pub scratch: &'a mut ScratchBuffer,
     pub visited_pictures: &'a mut[bool],
@@ -106,31 +98,6 @@ impl<'a> FrameVisibilityState<'a> {
     pub fn pop_surface(&mut self) {
         self.surface_stack.pop().unwrap();
     }
-
-    
-    
-    pub fn current_clip_root(&self) -> ClipNodeId {
-        *self.clip_root_stack.last().unwrap()
-    }
-
-    
-    
-    pub fn push_clip_root(&mut self, clip_node_id: ClipNodeId) {
-        self.clip_root_stack.push(clip_node_id);
-    }
-
-    
-    pub fn pop_clip_root(&mut self) {
-        self.clip_root_stack.pop().unwrap();
-    }
-}
-
-
-
-pub fn new_clip_root_stack(mut stack: Vec<ClipNodeId>) -> Vec<ClipNodeId> {
-    stack.clear();
-    stack.push(ClipNodeId::NONE);
-    stack
 }
 
 bitflags! {
@@ -288,11 +255,11 @@ pub fn update_prim_visibility(
     frame_state: &mut FrameVisibilityState,
     tile_cache: &mut Option<&mut TileCacheInstance>,
  ) {
-    if frame_state.visited_pictures[pic_index.0 as usize] {
+    if frame_state.visited_pictures[pic_index.0] {
         return;
     }
-    frame_state.visited_pictures[pic_index.0 as usize] = true;
-    let pic = &store.pictures[pic_index.0 as usize];
+    frame_state.visited_pictures[pic_index.0] = true;
+    let pic = &store.pictures[pic_index.0];
 
     let (surface_index, pop_surface) = match pic.raster_config {
         Some(RasterConfig { surface_index, composite_mode: PictureCompositeMode::TileCache { .. }, .. }) => {
@@ -411,8 +378,11 @@ pub fn update_prim_visibility(
             
             
             let prim_instance = &frame_state.prim_instances[prim_instance_index];
+            let leaf_id = prim_instance.clip_leaf_id;
+            let snaps = frame_state.clip_tree.get_leaf(leaf_id).prim_clip_root
+                != ClipNodeId::INVALID;
 
-            let policy = prim_instance.snap_policy(frame_state.data_stores);
+            let policy = prim_instance.snap_policy(snaps, frame_state.data_stores);
             let unsnapped_pattern_rect = frame_state.data_stores.prim_rect(prim_instance);
             let snapped_pattern_rect =
                 snapper.snap_rect_rounded(&unsnapped_pattern_rect, policy.rect);
@@ -426,34 +396,41 @@ pub fn update_prim_visibility(
             
             
             
-            let snapped_local_clip_rect = snap_local_clip_rect(
-                frame_state.data_stores.local_clip_rect(prim_instance),
-                &snapper,
-                policy.clip,
-            );
+            
+            let leaf = frame_state.clip_tree.get_leaf_mut(leaf_id);
+            let unsnapped = leaf.unsnapped_local_clip_rect;
+            leaf.snapped_local_clip_rect = if unsnapped == LayoutRect::max_rect() {
+                unsnapped
+            } else {
+                match policy.clip {
+                    ClipSnap::Nearest => snapper.snap_rect(&unsnapped),
+                    ClipSnap::Exact => unsnapped,
+                }
+            };
 
             if let PrimitiveKind::Picture { pic_index, .. } = frame_state.prim_instances[prim_instance_index].kind {
-                if !store.pictures[pic_index.0 as usize].is_visible(frame_context.spatial_tree) {
+                if !store.pictures[pic_index.0].is_visible(frame_context.spatial_tree) {
                     continue;
                 }
 
-                let is_passthrough = match store.pictures[pic_index.0 as usize].raster_config {
+                let is_passthrough = match store.pictures[pic_index.0].raster_config {
                     Some(..) => false,
                     None => true,
                 };
 
                 if !is_passthrough {
                     let clip_root = store
-                        .pictures[pic_index.0 as usize]
+                        .pictures[pic_index.0]
                         .clip_root
                         .unwrap_or_else(|| {
                             
                             
-                            frame_state.prim_instances[prim_instance_index].clip_node_id
+                            let leaf_id = frame_state.prim_instances[prim_instance_index].clip_leaf_id;
+                            frame_state.clip_tree.get_leaf(leaf_id).node_id
                         }
                     );
 
-                    frame_state.push_clip_root(clip_root);
+                    frame_state.clip_tree.push_clip_root_node(clip_root);
                 }
 
                 update_prim_visibility(
@@ -473,12 +450,9 @@ pub fn update_prim_visibility(
 
                     continue;
                 } else {
-                    frame_state.pop_clip_root();
+                    frame_state.clip_tree.pop_clip_root();
                 }
             }
-
-            
-            let clip_root = frame_state.current_clip_root();
 
             let prim_instance = &mut frame_state.prim_instances[prim_instance_index];
 
@@ -495,9 +469,7 @@ pub fn update_prim_visibility(
                 visibility_spatial_node_index,
                 &mut clip_snapper,
                 policy.clip,
-                prim_instance.clip_node_id,
-                clip_root,
-                snapped_local_clip_rect,
+                prim_instance.clip_leaf_id,
                 &frame_context.spatial_tree,
                 &frame_state.data_stores.clip,
                 frame_state.clip_tree,
@@ -533,7 +505,7 @@ pub fn update_prim_visibility(
 
             let is_mix_blend_picture = |prim_instance: &PrimitiveInstance| {
                 if let PrimitiveKind::Picture { pic_index, .. } = prim_instance.kind {
-                    let pic = &store.pictures[pic_index.0 as usize];
+                    let pic = &store.pictures[pic_index.0];
 
                     matches!(
                         pic.composite_mode,

@@ -15,7 +15,7 @@ pub mod slice_builder;
 use api::{AlphaType, BorderRadius, ClipMode, ColorF, ColorU, ColorDepth, DebugFlags, ImageKey, ImageRendering};
 use api::{PropertyBinding, PropertyBindingId, PrimitiveFlags, YuvFormat, YuvRangedColorSpace};
 use api::units::*;
-use crate::clip::{clamped_radius, ClipNodeId, ClipItemKind, ClipSpaceConversion, ClipChainInstance, ClipStore, intersect_rounded_rects};
+use crate::clip::{clamped_radius, ClipNodeId, ClipLeafId, ClipItemKind, ClipSpaceConversion, ClipChainInstance, ClipStore, intersect_rounded_rects};
 use crate::composite::{CompositorKind, CompositeState, CompositorSurfaceKind, ExternalSurfaceDescriptor};
 use crate::composite::{ExternalSurfaceDependency, NativeSurfaceId, NativeTileId};
 use crate::composite::{CompositorClipIndex, CompositorTransformIndex};
@@ -217,7 +217,7 @@ pub struct TileCacheParams {
     
     pub shared_clip_node_id: ClipNodeId,
     
-    pub tile_clip_node_id: Option<ClipNodeId>,
+    pub shared_clip_leaf_id: Option<ClipLeafId>,
     
     pub virtual_surface_size: i32,
     
@@ -806,7 +806,7 @@ pub struct TileCacheInstance {
     
     pub shared_clip_node_id: ClipNodeId,
     
-    pub tile_clip_node_id: Option<ClipNodeId>,
+    pub shared_clip_leaf_id: Option<ClipLeafId>,
     
     
     
@@ -899,7 +899,7 @@ impl TileCacheInstance {
             backdrop: BackdropInfo::empty(),
             subpixel_mode: SubpixelMode::Allow,
             shared_clip_node_id: params.shared_clip_node_id,
-            tile_clip_node_id: params.tile_clip_node_id,
+            shared_clip_leaf_id: params.shared_clip_leaf_id,
             current_tile_size: DeviceIntSize::zero(),
             frames_until_size_eval: 0,
             
@@ -1001,7 +1001,7 @@ impl TileCacheInstance {
         self.slice_flags = params.slice_flags;
         self.spatial_node_index = params.spatial_node_index;
         self.background_color = params.background_color;
-        self.tile_clip_node_id = params.tile_clip_node_id;
+        self.shared_clip_leaf_id = params.shared_clip_leaf_id;
         self.shared_clip_node_id = params.shared_clip_node_id;
 
         
@@ -1109,7 +1109,7 @@ impl TileCacheInstance {
         
         
         
-        if let Some(tile_clip_node_id) = self.tile_clip_node_id {
+        if let Some(shared_clip_leaf_id) = self.shared_clip_leaf_id {
             let map_local_to_picture = SpaceMapper::new(
                 self.spatial_node_index,
                 pic_rect,
@@ -1119,9 +1119,13 @@ impl TileCacheInstance {
 
             
             
-            let clip_snap = ClipSnap::Exact;
-
-            let clip_root = frame_state.current_clip_root();
+            
+            let clip_snap = if frame_state.clip_tree.get_leaf(shared_clip_leaf_id).prim_clip_root
+                != ClipNodeId::INVALID {
+                ClipSnap::Nearest
+            } else {
+                ClipSnap::Exact
+            };
 
             frame_state.clip_store.set_active_clips(
                 self.spatial_node_index,
@@ -1129,10 +1133,7 @@ impl TileCacheInstance {
                 surface.visibility_spatial_node_index,
                 &mut clip_snapper,
                 clip_snap,
-                tile_clip_node_id,
-                clip_root,
-                
-                LayoutRect::max_rect(),
+                shared_clip_leaf_id,
                 frame_context.spatial_tree,
                 &frame_state.data_stores.clip,
                 &frame_state.clip_tree,
@@ -2239,7 +2240,7 @@ impl TileCacheInstance {
 
             for (pic_index, surface_index) in surface_stack.iter().rev() {
                 let surface = &surfaces[surface_index.0];
-                let pic = &pictures[pic_index.0 as usize];
+                let pic = &pictures[pic_index.0];
 
                 let map_local_to_parent = SpaceMapper::new_with_target(
                     surface.surface_spatial_node_index,
@@ -2340,7 +2341,7 @@ impl TileCacheInstance {
         match prim_instance.kind {
             PrimitiveKind::Picture { pic_index,.. } => {
                 
-                let pic = &pictures[pic_index.0 as usize];
+                let pic = &pictures[pic_index.0];
                 if let Some(PictureCompositeMode::Filter(Filter::Opacity(binding, _))) = pic.composite_mode {
                     prim_info.opacity_bindings.push(binding.into());
                 }
@@ -2668,7 +2669,7 @@ impl TileCacheInstance {
 
                     let mut surface_info = Vec::new();
                     for (pic_index, surface_index) in surface_stack.iter().rev() {
-                        let pic = &pictures[pic_index.0 as usize];
+                        let pic = &pictures[pic_index.0];
                         surface_info.push((pic.composite_mode.as_ref().unwrap().clone(), *surface_index));
                     }
 
