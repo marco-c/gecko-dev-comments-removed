@@ -2863,13 +2863,8 @@ nsresult HTMLInputElement::SetValueInternal(
 
   
   
-  
-  
-  
-  
-  
-  
-  const bool forcePreserveUndoHistory = mParent && mParent->IsXULElement();
+  const bool forcePreserveUndoHistory = OwnerDoc()->ChromeRulesEnabled() &&
+                                        HasAttr(nsGkAtoms::preserveundohistory);
 
   if (aOptions.contains(ValueSetterOption::BySetUserInputAPI)) {
     mUserChangedSinceFocus = true;
@@ -5718,8 +5713,7 @@ nsChangeHint HTMLInputElement::GetAttributeChangeHint(
   return retval;
 }
 
-NS_IMETHODIMP_(bool)
-HTMLInputElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLInputElement::IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const {
   static const MappedAttributeEntry attributes[] = {
       {nsGkAtoms::align},
       {nullptr},
