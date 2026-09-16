@@ -21,7 +21,8 @@ type SavedTabGroupStateData =
 
 
 
-interface TabSplitViewStateData {
-  id: number;
-  numberOfTabs: number;
+
+interface MozTabbrowserTab {
+  __test_connection_prepared?: boolean;
+  __test_connection_url?: string;
 }
