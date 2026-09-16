@@ -163,13 +163,13 @@ namespace mozilla {
 UniquePtr<PresState> NewPresState() {
   return MakeUnique<PresState>(
        mozilla::void_t(),
-       nsPoint(0, 0),
-       true,
-       1.0,
-       false,
-       false,
-       false,
+       nsPoint(),
        0,
-       0);
+       0,
+       1.0,
+       true,
+       false,
+       false,
+       false);
 }
 }  
