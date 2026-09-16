@@ -2016,7 +2016,7 @@ impl<'a> Cascade<'a> {
                         
                         
                         if let Some(initial_value) = initial_values.get(registration, name) {
-                            return existing_value != initial_value;
+                            return existing_value.attr_tainted || existing_value != initial_value;
                         }
                     },
                     CSSWideKeyword::Unset => {

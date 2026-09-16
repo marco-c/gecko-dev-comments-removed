@@ -83,6 +83,23 @@ impl<'a> Iterator for Iter<'a> {
     }
 }
 
+#[inline]
+fn can_deduplicate_values(
+    a: Option<&ComputedRegisteredValue>,
+    b: Option<&ComputedRegisteredValue>,
+) -> bool {
+    match (a, b) {
+        (Some(a), Some(b)) => {
+            
+            
+            
+            a == b && a.attr_tainted == b.attr_tainted
+        },
+        (None, None) => true,
+        _ => false,
+    }
+}
+
 impl PartialEq for Inner {
     fn eq(&self, other: &Self) -> bool {
         if self.len != other.len {
@@ -100,8 +117,19 @@ impl PartialEq for Inner {
         
         
         
-        if self.own_properties.as_slice() != other.own_properties.as_slice() {
-            return false;
+        
+        
+        {
+            let own = self.own_properties.as_slice();
+            let other = other.own_properties.as_slice();
+            if own.len() != other.len() {
+                return false;
+            }
+            for ((own_k, own_v), (other_k, other_v)) in own.iter().zip(other.iter()) {
+                if own_k != other_k || !can_deduplicate_values(own_v.as_ref(), other_v.as_ref()) {
+                    return false;
+                }
+            }
         }
         self.parent == other.parent
     }

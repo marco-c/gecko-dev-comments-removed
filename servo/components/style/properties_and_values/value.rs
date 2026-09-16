@@ -220,10 +220,8 @@ pub struct Value<Component> {
 
 impl<Component: PartialEq> PartialEq for Value<Component> {
     
-    
-    
     fn eq(&self, other: &Self) -> bool {
-        self.v == other.v && self.attr_tainted == other.attr_tainted
+        self.v == other.v
     }
 }
 
