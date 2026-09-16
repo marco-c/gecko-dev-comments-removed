@@ -81,6 +81,9 @@ add_setup(async function () {
       
       ["browser.ml.modelHub.testing", true],
       
+      
+      ["media.webspeech.recognition.model-download.prompt.testing", true],
+      
       ["media.navigator.streams.fake", true],
       ["media.navigator.permission.disabled", true],
     ],

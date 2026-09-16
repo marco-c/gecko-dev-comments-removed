@@ -10,6 +10,7 @@
 #include "SpeechRecognitionResultList.h"
 #include "js/TypeDecls.h"
 #include "mozilla/DOMEventTargetHelper.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WeakPtr.h"
@@ -17,6 +18,7 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/SpeechRecognitionBinding.h"
 #include "mozilla/dom/SpeechRecognitionErrorEventBinding.h"
+#include "mozilla/hwinference/HWInferenceTypes.h"
 #include "nsCOMPtr.h"
 #include "nsProxyRelease.h"
 #include "nsString.h"
@@ -250,6 +252,12 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   void StartImpl(MediaStreamTrack* aAudioTrack, CallerType aCallerType,
                  ErrorResult& aRv);
   
+  
+  
+  void OnModelInstalled(uint32_t aGeneration,
+                        Maybe<hwinference::ModelInstallResult> aResult,
+                        PendingSession&& aSession);
+  
   void BeginSession(PendingSession&& aSession);
   
   
@@ -273,6 +281,13 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   bool mBackendListening = false;
   
   bool mStartDispatched = false;
+  
+  
+  bool mAwaitingModelInstall = false;
+  
+  
+  
+  uint32_t mSessionGeneration = 0;
 
   nsString mLang;
 
