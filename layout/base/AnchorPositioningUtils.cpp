@@ -789,10 +789,14 @@ nsPoint AnchorPositioningUtils::GetScrollOffsetFor(
   nsPoint offset;
   const bool trackHorizontal = aAxes.contains(PhysicalAxis::Horizontal);
   const bool trackVertical = aAxes.contains(PhysicalAxis::Vertical);
+
   
   
   
-  const auto* absoluteContainingBlock = aPositioned->GetParent();
+  
+  const auto* absoluteContainingBlock =
+      nsLayoutUtils::FirstContinuationOrIBSplitSibling(
+          aPositioned->GetParent());
   if (GetNearestScrollFrame(aPositioned).mScrollContainer ==
       aDefaultAnchorCache.mScrollContainer) {
     
@@ -801,7 +805,9 @@ nsPoint AnchorPositioningUtils::GetScrollOffsetFor(
   
   
   for (const auto* f = aDefaultAnchorCache.mScrollContainer;
-       f && f != absoluteContainingBlock; f = f->GetParent()) {
+       f && nsLayoutUtils::FirstContinuationOrIBSplitSibling(f) !=
+                absoluteContainingBlock;
+       f = f->GetParent()) {
     if (const ScrollContainerFrame* scrollFrame = do_QueryFrame(f)) {
       const auto o = scrollFrame->GetScrollPosition();
       if (trackHorizontal) {
@@ -1207,29 +1213,36 @@ static bool ComputePositionVisibility(
       if (defaultAnchor && AnchorIsEffectivelyHidden(defaultAnchor)) {
         return false;
       }
-      auto* containingBlock = aPositioned->GetParent()->FirstInFlow();
+      auto* containingBlock = nsLayoutUtils::FirstContinuationOrIBSplitSibling(
+          aPositioned->GetParent());
       
       
       
-      if (defaultAnchor &&
-          defaultAnchor->GetParent()->FirstInFlow() != containingBlock) {
+      if (defaultAnchor && nsLayoutUtils::FirstContinuationOrIBSplitSibling(
+                               defaultAnchor->GetParent()) != containingBlock) {
+        
+        
         auto* intersectionRoot = containingBlock;
-        nsRect rootRect = nsLayoutUtils::GetAllInFlowRectsUnion(
-            intersectionRoot, containingBlock,
-            nsLayoutUtils::GetAllInFlowRectsFlag::UseInkOverflowAsBox);
-        if (IsScrolled(intersectionRoot)) {
-          intersectionRoot = intersectionRoot->GetParent();
+        nsRect rootRect;
+        if (IsScrolled(containingBlock)) {
+          intersectionRoot = containingBlock->GetParent();
           ScrollContainerFrame* sc = do_QueryFrame(intersectionRoot);
           rootRect = sc->GetScrollPortRectAccountingForDynamicToolbar();
+        } else {
+          rootRect = nsLayoutUtils::GetAllInFlowRectsUnion(
+              containingBlock, intersectionRoot,
+              nsLayoutUtils::GetAllInFlowRectsFlag::UseInkOverflowAsBox);
         }
+        
+        rootRect = nsLayoutUtils::TransformFrameRectToAncestor(
+            intersectionRoot, rootRect,
+            nsLayoutUtils::GetContainingBlockForClientRect(intersectionRoot));
+
         const auto* doc = aPositioned->PresContext()->Document();
         const nsINode* root =
             intersectionRoot->GetContent()
                 ? static_cast<nsINode*>(intersectionRoot->GetContent())
                 : doc;
-        rootRect = nsLayoutUtils::TransformFrameRectToAncestor(
-            intersectionRoot, rootRect,
-            nsLayoutUtils::GetContainingBlockForClientRect(intersectionRoot));
         const auto input = dom::IntersectionInput{
             .mIsImplicitRoot = false,
             .mRootNode = root,
