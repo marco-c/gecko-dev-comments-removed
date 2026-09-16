@@ -36,9 +36,9 @@ neterror-view-certificate-link = View Certificate
 
 neterror-search-cta-title = This site can’t be reached
 
-# $domain (String) - The host of the address that failed to load, including any
-# subdomains, for example "docs.example.com".
-neterror-search-cta-intro = Could not connect to the server at { $domain }.
+# $hostname (String) - The host of the address that failed to load, including
+# any subdomains, for example "docs.example.com". The host is emphasized.
+neterror-search-cta-intro2 = Could not connect to the server at <strong>{ $hostname }</strong>.
 
 # Heading above the list of recovery hints on the search CTA error page.
 neterror-search-cta-things-to-try = Try these steps:
@@ -58,7 +58,7 @@ neterror-search-cta-hint-search-query = Search the web for <strong>“{ $query }
 # that results open in a new tab.
 neterror-search-cta-search-button =
     .label = Search
-    .accesskey = S
+    .accesskey = c
     .tooltiptext = Opens search results in a new tab
 
 neterror-search-cta-reload-button =

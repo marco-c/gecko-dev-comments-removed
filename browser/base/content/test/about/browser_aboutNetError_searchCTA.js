@@ -19,6 +19,18 @@ const REGISTRABLE_DOMAIN = "doesnotexist-searchcta.com";
 const SEARCH_URL = `https://example.com/?q=${REGISTRABLE_DOMAIN}`;
 const BAD_CERT = "https://expired.example.com/";
 
+
+const SUBDOMAIN_HOST = `bogus.${REGISTRABLE_DOMAIN}`;
+
+const lazy = {};
+
+XPCOMUtils.defineLazyServiceGetter(
+  lazy,
+  "gDNSOverride",
+  "@mozilla.org/network/native-dns-override;1",
+  Ci.nsINativeDNSResolverOverride
+);
+
 add_setup(async function () {
   stubSearchCTASupportedEngine();
   
@@ -100,10 +112,27 @@ add_task(async function test_ctaRendersWhenEnabled() {
           "Search button uses the unbranded fallback icon"
         );
 
+        
+        
         is(
           card.errorIntro.getAttribute("data-l10n-args"),
-          JSON.stringify({ domain: registrableDomain }),
-          "Intro names the registrable domain, not the full host"
+          JSON.stringify({ hostname: card.hostname }),
+          "Intro is given the page's display host"
+        );
+
+        const emphasizedHost = await ContentTaskUtils.waitForCondition(
+          () => card.errorIntro.querySelector("strong"),
+          "Fluent's DOM overlay renders the emphasized host"
+        );
+        is(
+          emphasizedHost.textContent,
+          card.hostname,
+          "Only the host is emphasized, not the whole sentence"
+        );
+        Assert.greater(
+          parseInt(content.getComputedStyle(emphasizedHost).fontWeight, 10),
+          parseInt(content.getComputedStyle(card.errorIntro).fontWeight, 10),
+          "The host renders heavier than the sentence around it"
         );
 
         const hint = card.shadowRoot.querySelector(
@@ -115,9 +144,6 @@ add_task(async function test_ctaRendersWhenEnabled() {
           JSON.stringify({ query: registrableDomain }),
           "The hint names the exact query Search will submit"
         );
-        
-        
-        
         const emphasized = await ContentTaskUtils.waitForCondition(
           () => hint.querySelector("strong"),
           "Fluent's DOM overlay renders the emphasized query"
@@ -160,6 +186,51 @@ add_task(async function test_ctaRendersWhenEnabled() {
   });
 });
 
+
+
+add_task(async function test_introNamesFailedSubdomain() {
+  lazy.gDNSOverride.addIPOverride(SUBDOMAIN_HOST, "N/A");
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [CTA_PREF, true],
+      [FRESHNESS_PREF, ALWAYS_FRESH],
+      
+      
+      ["browser.fixup.alternate.enabled", false],
+    ],
+  });
+
+  const tab = BrowserTestUtils.addTab(gBrowser, `https://${SUBDOMAIN_HOST}/`);
+  gBrowser.selectedTab = tab;
+  const browser = tab.linkedBrowser;
+  try {
+    await BrowserTestUtils.waitForErrorPage(browser);
+    await waitForSettledNetErrorCard(browser);
+    await SpecialPowers.spawn(browser, [SUBDOMAIN_HOST], async host => {
+      const card =
+        content.document.querySelector("net-error-card").wrappedJSObject;
+      is(
+        card.errorIntro.getAttribute("data-l10n-id"),
+        "neterror-search-cta-intro2",
+        "The failed load lands on the search CTA intro"
+      );
+      const emphasized = await ContentTaskUtils.waitForCondition(
+        () => card.errorIntro.querySelector("strong"),
+        "Fluent's DOM overlay renders the emphasized host"
+      );
+      is(
+        emphasized.textContent,
+        host,
+        "The intro names the host that failed, subdomain included"
+      );
+    });
+  } finally {
+    BrowserTestUtils.removeTab(tab);
+    await SpecialPowers.popPrefEnv();
+    lazy.gDNSOverride.clearHostOverride(SUBDOMAIN_HOST);
+  }
+});
+
 add_task(async function test_searchClickOpensNewTab() {
   await withDnsNotFoundPage(true, async browser => {
     const newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, null, true);
@@ -191,7 +262,6 @@ add_task(async function test_genericHintWhenNoSearchButton() {
     action: SEARCH_CTA_ACTIONS.NONE,
     query: "",
     reason: SEARCH_CTA_REASONS.HOST_UNUSABLE,
-    domain: FAILED_HOST,
     hasEngine: false,
   });
   try {
@@ -315,5 +385,61 @@ add_task(async function test_noCtaWhenDisabled() {
       is(card.searchCTAButton, null, "No Search button with the pref off");
       is(card.reloadButton, null, "No Reload button with the pref off");
     });
+  });
+});
+
+add_task(async function test_ctaButtonAccessKeys() {
+  await withDnsNotFoundPage(true, async browser => {
+    await waitForSettledNetErrorCard(browser);
+    await SpecialPowers.spawn(
+      browser,
+      [getAccessKeyModifiers()],
+      async mods => {
+        const card =
+          content.document.querySelector("net-error-card").wrappedJSObject;
+        const searchButton = card.searchCTAButton;
+        const reloadButton = card.reloadButton;
+
+        await ContentTaskUtils.waitForCondition(
+          () => searchButton.accessKey && reloadButton.accessKey,
+          "Waiting for accesskeys to be set by Fluent"
+        );
+
+        is(searchButton.accessKey, "c", "Search button has accesskey 'c'");
+        is(reloadButton.accessKey, "R", "Reload button has accesskey 'R'");
+        isnot(
+          searchButton.accessKey,
+          reloadButton.accessKey,
+          "The two CTA buttons take different access keys"
+        );
+
+        
+        
+        
+        let clickedId = null;
+        const onClick = e => {
+          e.stopPropagation();
+          clickedId = e.target.id;
+        };
+        card.shadowRoot.addEventListener("click", onClick, true);
+
+        EventUtils.synthesizeKey("s", mods, content);
+        is(
+          clickedId,
+          null,
+          "Access key S no longer activates the Search button"
+        );
+
+        clickedId = null;
+        EventUtils.synthesizeKey("c", mods, content);
+        is(
+          clickedId,
+          "searchCTAButton",
+          "Access key c activated the Search button"
+        );
+
+        card.shadowRoot.removeEventListener("click", onClick, true);
+      }
+    );
   });
 });
