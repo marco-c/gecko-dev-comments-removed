@@ -177,4 +177,18 @@ pub trait Element: Sized + Copy + Clone + Debug {
     
     
     fn add_element_unique_hashes(&self, filter: &mut BloomFilter) -> bool;
+
+    
+    
+    
+    
+    fn subtree_filter(&self) -> u64 {
+        u64::MAX
+    }
+
+    
+    #[inline]
+    fn subtree_may_have_hashes(&self, hashes: u64) -> bool {
+        (self.subtree_filter() & hashes) == hashes
+    }
 }

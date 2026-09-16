@@ -492,41 +492,6 @@ pub trait TElement:
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    fn subtree_bloom_filter(&self) -> u64 {
-        u64::MAX
-    }
-
-    
-    fn bloom_may_have_hash(&self, bloom_hash: u64) -> bool {
-        let bloom = self.subtree_bloom_filter();
-        (bloom & bloom_hash) == bloom_hash
-    }
-
-    
-    
-    fn hash_for_bloom_filter(hash: u32) -> u64 {
-        
-        
-        #[cfg(target_pointer_width = "32")]
-        const BLOOM_BITS: u32 = 31;
-
-        #[cfg(target_pointer_width = "64")]
-        const BLOOM_BITS: u32 = 63;
-
-        let mut filter = 1u64;
-        filter |= 1u64 << (1 + (hash % BLOOM_BITS));
-        filter |= 1u64 << (1 + ((hash >> 6) % BLOOM_BITS));
-        filter
-    }
-
-    
     fn slotted_nodes(&self) -> &[Self::ConcreteNode] {
         &[]
     }
