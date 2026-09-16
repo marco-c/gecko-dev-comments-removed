@@ -4332,6 +4332,13 @@ Preferences::CallbackTrieStats Preferences::GetCallbackTrieStatsForTesting() {
   return stats;
 }
 
+
+void Preferences::ReapCallbacksForTesting() {
+  if (sPImpl) {
+    nsPrefBranch::ReapAndCompactCallbacks();
+  }
+}
+
 class PreferenceServiceReporter final : public nsIMemoryReporter {
   ~PreferenceServiceReporter() = default;
 

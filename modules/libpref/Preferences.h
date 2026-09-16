@@ -464,6 +464,11 @@ class Preferences final : public nsIPrefService,
   };
   static CallbackTrieStats GetCallbackTrieStatsForTesting();
 
+  
+  
+  
+  static void ReapCallbacksForTesting();
+
   static void HandleDirty();
 
   
