@@ -136,12 +136,17 @@ class TransactionBuilder final {
 
   void RemovePipeline(PipelineId aPipelineId);
 
-  void SetDisplayList(Epoch aEpoch, wr::WrPipelineId pipeline_id,
+  
+  
+  
+  void SetDisplayList(Epoch aEpoch, wr::IdNamespace aIdNamespace,
+                      wr::WrPipelineId pipeline_id,
                       wr::BuiltDisplayListDescriptor dl_descriptor,
                       wr::Vec<uint8_t>& dl_items_data,
                       wr::Vec<uint8_t>& dl_spatial_tree);
 
-  void ClearDisplayList(Epoch aEpoch, wr::WrPipelineId aPipeline);
+  void ClearDisplayList(Epoch aEpoch, wr::IdNamespace aIdNamespace,
+                        wr::WrPipelineId aPipeline);
 
   void GenerateFrame(const VsyncId& aVsyncId, bool aPresent, bool aTracked,
                      wr::RenderReasons aReasons);
@@ -636,6 +641,15 @@ class DisplayListBuilder final {
   Maybe<wr::WrSpatialId> GetSpatialIdForDefinedLayer(
       const ActiveScrolledRoot* aASR) const;
 
+  
+  
+  
+  
+  
+  
+  
+  wr::LayoutVector2D CurrentAccumulatedScrollOffset();
+
   wr::WrSpatialId DefineScrollLayer(
       const ActiveScrolledRoot* aAsr,
       const layers::ScrollableLayerGuid::ViewID& aViewId,
@@ -698,11 +712,7 @@ class DisplayListBuilder final {
                  bool aPremultipliedAlpha = true,
                  const wr::ColorF& aColor = wr::ColorF{1.0f, 1.0f, 1.0f, 1.0f},
                  bool aPreferCompositorSurface = false,
-                 bool aSupportsExternalCompositing = false,
-                 
-                 
-                 
-                 const Maybe<wr::DeviceIntRect>& aSubRect = Nothing());
+                 bool aSupportsExternalCompositing = false);
 
   void PushRepeatingImage(
       const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,
