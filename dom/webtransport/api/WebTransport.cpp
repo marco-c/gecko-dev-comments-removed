@@ -891,6 +891,11 @@ WebTransportCongestionControl WebTransport::CongestionControl() {
   return WebTransportCongestionControl::Default;
 }
 
+bool WebTransport::SupportsReliableOnly(const GlobalObject& aGlobal) {
+  
+  return false;
+}
+
 void WebTransport::GetProtocol(nsAString& aProtocol) { aProtocol = mProtocol; }
 
 void WebTransport::ResolveDraining() {
