@@ -35,5 +35,12 @@ type UrlbarResultCommand = {
   
 
 
-  children?: UrlbarResultCommand[];
+
+
+  openIn?: "tab" | "container-tab" | "window" | "private-window";
+  
+
+
+
+  submenu?: boolean;
 };
