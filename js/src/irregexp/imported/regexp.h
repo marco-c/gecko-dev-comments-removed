@@ -234,7 +234,11 @@ class GlobalExecRunner final {
 
 class ResultsCache final : public AllStatic {
  public:
-  enum ResultsCacheType { REGEXP_MULTIPLE_INDICES, STRING_SPLIT_SUBSTRINGS };
+  enum ResultsCacheType {
+    REGEXP_MULTIPLE_INDICES,
+    STRING_SPLIT_SUBSTRINGS,
+    REGEXP_SPLIT_SUBSTRINGS
+  };
 
   
   
@@ -252,13 +256,37 @@ class ResultsCache final : public AllStatic {
   static void Clear(Tagged<FixedArray> cache);
 
   static constexpr int kRegExpResultsCacheSize = 0x100;
+  
+  
+  static constexpr int kRegExpSplitResultsCacheSize = 0x400;
 
- private:
+  
+  static_assert(base::bits::IsPowerOfTwo(kRegExpResultsCacheSize));
+  static_assert(base::bits::IsPowerOfTwo(kRegExpSplitResultsCacheSize));
+
   static constexpr int kStringOffset = 0;
   static constexpr int kPatternOffset = 1;
   static constexpr int kArrayOffset = 2;
   static constexpr int kLastMatchOffset = 3;
   static constexpr int kArrayEntriesPerCacheEntry = 4;
+  static_assert(base::bits::IsPowerOfTwo(kArrayEntriesPerCacheEntry));
+
+  static constexpr int SizeForType(ResultsCacheType type) {
+    switch (type) {
+      case REGEXP_SPLIT_SUBSTRINGS:
+        return kRegExpSplitResultsCacheSize;
+      case REGEXP_MULTIPLE_INDICES:
+      case STRING_SPLIT_SUBSTRINGS:
+        return kRegExpResultsCacheSize;
+    }
+  }
+
+  
+  
+  
+  static Address EnterRaw(Isolate* isolate, Address raw_key_string,
+                          Address raw_pattern, Address raw_value_array,
+                          Address raw_last_match_cache);
 };
 
 

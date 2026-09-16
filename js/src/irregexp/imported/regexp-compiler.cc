@@ -4,6 +4,7 @@
 
 #include "irregexp/imported/regexp-compiler.h"
 
+#include <algorithm>
 #include <optional>
 #include <string_view>
 
@@ -340,7 +341,8 @@ Compiler::CompilationResult Compiler::Assemble(
     return CompilationResult::RegExpTooBig();
   };
 
-  ZoneVector<Node*> work_list(zone());
+  const Flags flags_before_emit = flags_;
+  ZoneVector<WorkItem> work_list(zone());
   work_list_ = &work_list;
   Label fail;
   macro_assembler_->set_fail_label(&fail);
@@ -363,11 +365,13 @@ Compiler::CompilationResult Compiler::Assemble(
   macro_assembler_->BindJumpTarget(&fail);
   macro_assembler_->Fail();
   while (!work_list.empty()) {
-    Node* node = work_list.back();
+    WorkItem item = work_list.back();
+    Node* node = item.node;
     TRACE_WITH_NODE(this, "Popping from worklist ", node);
     work_list.pop_back();
     node->set_on_work_list(false);
     if (!node->label()->is_bound()) {
+      set_flags(item.flags);
       if (node->Emit(this, &new_trace).IsError()) {
         work_list_ = nullptr;
         return ReportError();
@@ -379,30 +383,13 @@ Compiler::CompilationResult Compiler::Assemble(
     return ReportError();
   }
 
+  
+  set_flags(flags_before_emit);
+
   DirectHandle<HeapObject> code = macro_assembler_->GetCode(re_data, flags_);
   work_list_ = nullptr;
 
-#ifdef V8_TARGET_LITTLE_ENDIAN
-  
-  
-  
-  constexpr bool kPossiblyAtStart = false;
-  constexpr int kMinChars = 1;
-  constexpr int kMaxChars = 4;
-  int eats_at_least = start->EatsAtLeast(kPossiblyAtStart);
-  if (one_byte_ && eats_at_least >= kMinChars && !IsMultiline(flags_)) {
-    int chars = std::min(eats_at_least, kMaxChars);
-    QuickCheckDetails quick_check(chars);
-    start->GetQuickCheckDetails(&quick_check, this, 0, kPossiblyAtStart,
-                                Node::kRecursionBudget);
-
-    if (!quick_check.cannot_match()) {
-      quick_check.Rationalize(one_byte_);
-      re_data->set_quick_check_mask(quick_check.mask());
-      re_data->set_quick_check_value(quick_check.value());
-    }
-  }
-#endif
+  ComputeQuickCheckFilters(start, re_data);
   return {code, next_register_};
 }
 
@@ -2507,6 +2494,7 @@ EmitResult AssertionNode::EmitBoundaryCheck(Compiler* compiler, Trace* trace) {
   }
   bool at_boundary = (assertion_type_ == AssertionNode::AT_BOUNDARY);
   if (next_is_word_character == Trace::UNKNOWN) {
+    const Flags flags = compiler->flags();
     Label before_non_word;
     Label before_word;
     if (trace->characters_preloaded() != 1) {
@@ -2521,6 +2509,7 @@ EmitResult AssertionNode::EmitBoundaryCheck(Compiler* compiler, Trace* trace) {
                                         at_boundary ? kIsNonWord : kIsWord));
     assembler->GoTo(&ok);
 
+    compiler->set_flags(flags);
     assembler->Bind(&before_word);
     RETURN_IF_ERROR(BacktrackIfPrevious(compiler, trace,
                                         at_boundary ? kIsWord : kIsNonWord));
@@ -3000,6 +2989,254 @@ void AppendClassRangesMatchSet(ClassRanges* cr, Zone* node_zone, Zone* zone,
   ZoneList<CharacterRange> negated(positive.length() + 1, zone);
   CharacterRange::Negate(&positive, &negated, zone);
   for (int i = 0; i < negated.length(); i++) out->Add(negated.at(i), zone);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class FirstCharacterSetBuilder {
+ public:
+  FirstCharacterSetBuilder(Compiler* compiler, Zone* zone,
+                           ZoneList<CharacterRange>* out)
+      : compiler_(compiler), zone_(zone), out_(out) {}
+
+  bool Build(Node* start) { return AddNode(start, 0); }
+
+ private:
+  static constexpr int kBudget = 500;
+
+  bool AddNode(Node* node, int depth) {
+    if (node == nullptr) return false;
+    if (depth > Compiler::kMaxRecursion) return false;
+    if (--budget_ < 0) return false;
+
+    if (AssertionNode* assertion = node->AsAssertionNode()) {
+      
+      return AddNode(assertion->on_success(), depth + 1);
+    }
+    if (ActionNode* action = node->AsActionNode()) {
+      return AddAction(action, depth);
+    }
+    if (ChoiceNode* choice = node->AsChoiceNode()) {
+      return AddChoice(choice, depth);
+    }
+    if (TextNode* text = node->AsTextNode()) return AddText(text);
+    if (EndNode* end = node->AsEndNode()) {
+      
+      
+      
+      
+      if (end->IsBacktrack()) return true;
+      
+      return false;
+    }
+    
+    
+    DCHECK(node->AsBackReferenceNode() != nullptr ||
+           node->AsUnanchoredAdvanceNode() != nullptr);
+    return false;
+  }
+
+  bool AddAction(ActionNode* action, int depth) {
+    switch (action->action_type()) {
+      
+      case ActionNode::STORE_POSITION:
+      case ActionNode::CLEAR_CAPTURES:
+      case ActionNode::SET_REGISTER_FOR_LOOP:
+      case ActionNode::INCREMENT_REGISTER:
+      case ActionNode::EATS_AT_LEAST:
+        return AddNode(action->on_success(), depth + 1);
+      
+      
+      
+      case ActionNode::POSITIVE_SUBMATCH_SUCCESS:
+        return AddNode(action->on_success(), depth + 1);
+      case ActionNode::BEGIN_POSITIVE_SUBMATCH:
+        
+        
+        
+        
+        
+        
+        
+        
+        if (AddNode(action->on_success(), depth + 1)) return true;
+        return AddNode(action->success_node()->on_success(), depth + 1);
+      case ActionNode::BEGIN_NEGATIVE_SUBMATCH:
+        
+        
+        
+        return AddNode(action->on_success(), depth + 1);
+      
+      
+      
+      
+      
+      case ActionNode::MODIFY_FLAGS:
+      
+      case ActionNode::EMPTY_MATCH_CHECK:
+      case ActionNode::RESTORE_POSITION:
+        return false;
+    }
+    UNREACHABLE();
+  }
+
+  bool AddChoice(ChoiceNode* choice, int depth) {
+    
+    
+    if (NegativeLookaroundChoiceNode* negative =
+            choice->AsNegativeLookaroundChoiceNode()) {
+      return AddNode(negative->continue_node(), depth + 1);
+    }
+    
+    
+    
+    DCHECK(!choice->alternatives()->is_empty());
+    for (GuardedAlternative& alt : *choice->alternatives()) {
+      if (!AddNode(alt.node(), depth + 1)) return false;
+    }
+    return true;
+  }
+
+  bool AddText(TextNode* text) {
+    
+    
+    if (text->read_backward()) return false;
+    if (text->elements()->is_empty()) return false;
+    
+    TextElement& elm = text->elements()->at(0);
+    if (elm.text_type() == TextElement::CLASS_RANGES) {
+      
+      
+      AppendClassRangesMatchSet(elm.class_ranges(), text->zone(), zone_, out_);
+      return true;
+    }
+    DCHECK_EQ(elm.text_type(), TextElement::ATOM);
+    base::Vector<const base::uc16> data = elm.atom()->data();
+    if (data.empty()) return false;
+    const base::uc16 c = data[0];
+    if (!IsIgnoreCase(compiler_->flags())) {
+      out_->Add(CharacterRange::Singleton(c), zone_);
+      return true;
+    }
+    
+    
+    unibrow::uchar letters[4];
+    int length = GetCaseIndependentLetters(compiler_->isolate(), c, compiler_,
+                                           letters, 4);
+    
+    
+    
+    if (length == 0) return false;
+    for (int i = 0; i < length; i++) {
+      out_->Add(CharacterRange::Singleton(letters[i]), zone_);
+    }
+    return true;
+  }
+
+  Compiler* const compiler_;
+  Zone* const zone_;
+  ZoneList<CharacterRange>* const out_;
+  int budget_ = kBudget;
+};
+
+
+
+
+bool ComputeFirstCharacterSet(Node* start, Compiler* compiler, Zone* zone,
+                              ZoneList<CharacterRange>* out) {
+  FirstCharacterSetBuilder builder(compiler, zone, out);
+  if (!builder.Build(start)) return false;
+  CharacterRange::Canonicalize(out);
+  return true;
+}
+
+
+
+
+
+
+
+
+void Compiler::ComputeQuickCheckFilters(Node* start,
+                                        DirectHandle<RegExpData> re_data) {
+  
+  
+  
+  
+  if (has_search_prefix()) return;
+
+  constexpr bool kPossiblyAtStart = false;
+  constexpr int kMinChars = 1;
+  constexpr int kMaxChars = 4;
+  int eats_at_least = start->EatsAtLeast(kPossiblyAtStart);
+  if (!one_byte() || eats_at_least < kMinChars || IsMultiline(flags())) {
+    return;
+  }
+
+  bool has_filter = false;
+
+  
+  
+  
+#ifdef V8_TARGET_LITTLE_ENDIAN
+  int chars = std::min(eats_at_least, kMaxChars);
+  QuickCheckDetails quick_check(chars);
+  start->GetQuickCheckDetails(&quick_check, this, 0, kPossiblyAtStart,
+                              Node::kRecursionBudget);
+  if (!quick_check.cannot_match()) {
+    quick_check.Rationalize(one_byte());
+    if (quick_check.mask() != 0) {
+      re_data->set_quick_check_mask(quick_check.mask());
+      re_data->set_quick_check_value(quick_check.value());
+      has_filter = true;
+    }
+  }
+#else
+  USE(kMaxChars);
+#endif
+
+  
+  
+  
+  ZoneList<CharacterRange> first_set(2, zone());
+  if (ComputeFirstCharacterSet(start, this, zone(), &first_set)) {
+    uint32_t accept[RegExpData::kQuickCheckBitsetWords] = {};
+    for (const CharacterRange& range : first_set) {
+      base::uc32 to = std::min<base::uc32>(
+          range.to(), RegExpData::kQuickCheckBitsetChars - 1);
+      for (base::uc32 c = range.from(); c <= to; c++) {
+        auto [word, bit] = RegExpData::QuickCheckBitsetBit(c);
+        accept[word] |= bit;
+      }
+    }
+    bool rejects_anything = false;
+    for (int i = 0; i < RegExpData::kQuickCheckBitsetWords; i++) {
+      re_data->set_quick_check_reject_bitset_word(i, ~accept[i]);
+      rejects_anything |= ~accept[i] != 0;
+    }
+    has_filter |= rejects_anything;
+  }
+
+  if (has_filter) {
+    re_data->set_internal_flags(re_data->internal_flags() |
+                                RegExpData::kHasQuickCheck);
+  }
 }
 
 
@@ -6141,11 +6378,13 @@ class Analysis : public NodeVisitor {
       NegativeLookaroundChoiceNode* that) override {
     DCHECK_EQ(that->alternatives()->length(), 2);  
 
+    Flags header_flags = flags();
     EnsureAnalyzed(that->lookaround_node());
     if (has_failed()) return;
     STATIC_FOR_EACH(
         Propagators::VisitNegativeLookaroundChoiceLookaroundNode(that));
 
+    set_flags(header_flags);
     EnsureAnalyzed(that->continue_node());
     if (has_failed()) return;
     STATIC_FOR_EACH(
@@ -6317,6 +6556,7 @@ Node* Compiler::PreprocessRegExp(CompileData* data, bool is_one_byte) {
     
     
     TRACE_GRAPH("* Add .*? at beginning of unanchored, non-sticky RegExp");
+    has_search_prefix_ = true;
     Node* loop_node = Quantifier::ToNode(
         0, Tree::kInfinity, false,
         zone()->New<ClassRanges>(StandardCharacterSet::kEverything), this,
