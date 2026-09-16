@@ -76,26 +76,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const path = require("path");
 const projectRoot = path.resolve(__dirname, "../../../../");
 const { rewriteChromeUri, rewriteMozSrcUri } = require("./moz-uri-utils.js");
@@ -154,63 +134,14 @@ function resolveCssUri(cssUri, resourcePath) {
 
 
 
-const CSS_MODULE_SCRIPT_IMPORT_REGEX =
-  /import\s+\S+\s+from\s+["'](chrome:\/\/[^"']+?\.css|moz-src:\/\/\/[^"']+?\.css)["']\s+with\s*{\s*type:\s*["']css["']\s*,?\s*}\s*;?/g;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function rewriteCssModuleScriptImports(source) {
-  const handledUris = new Set();
-  const rewrittenSource = source.replace(
-    CSS_MODULE_SCRIPT_IMPORT_REGEX,
-    (statement, cssUri) => {
-      const { localPath, dependencyPath } = resolveCssUri(
-        cssUri,
-        this.resourcePath
-      );
-      if (!localPath) {
-        return statement;
-      }
-      handledUris.add(cssUri);
-      this.addMissingDependency(dependencyPath);
-      return statement
-        .replace(cssUri, `${localPath}?css-module`)
-        .replace(/\s+with\s*{\s*type:\s*["']css["']\s*,?\s*}/, "");
-    }
-  );
-  return { source: rewrittenSource, handledUris };
-}
-
-
-
-
-
 
 
 
 
 async function rewriteCssUris(source) {
-  const { source: sourceAfterModuleScripts, handledUris } =
-    rewriteCssModuleScriptImports.call(this, source);
-
   const cssUriToLocalPath = new Map();
   
-  
-  
-  let cssDependencies = getReferencedCssUris(sourceAfterModuleScripts).filter(
-    cssUri => !handledUris.has(cssUri)
-  );
+  let cssDependencies = getReferencedCssUris(source);
   for (let cssUri of cssDependencies) {
     const { localPath, dependencyPath } = resolveCssUri(
       cssUri,
@@ -224,7 +155,7 @@ async function rewriteCssUris(source) {
     }
   }
   
-  let rewrittenSource = sourceAfterModuleScripts;
+  let rewrittenSource = source;
   for (let [cssUri, localPath] of cssUriToLocalPath.entries()) {
     
     
