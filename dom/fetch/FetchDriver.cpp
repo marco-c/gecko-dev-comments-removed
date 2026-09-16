@@ -714,14 +714,6 @@ nsresult FetchDriver::HttpFetch(
     }
   }
 
-  if (mDocument && mDocument->GetEmbedderElement() &&
-      mDocument->GetEmbedderElement()->IsAnyOfHTMLElements(nsGkAtoms::object,
-                                                           nsGkAtoms::embed)) {
-    nsCOMPtr<nsILoadInfo> loadInfo = chan->LoadInfo();
-    rv = loadInfo->SetIsFromObjectOrEmbed(true);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
   
   
 #ifdef DEBUG
