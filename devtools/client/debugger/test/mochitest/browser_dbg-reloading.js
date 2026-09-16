@@ -10,30 +10,43 @@
 
 "use strict";
 
-add_task(async function () {
-  const dbg = await initDebugger(
-    "ember/quickstart/dist/",
-    "ember-application/index.js"
-  );
 
-  await selectSource(dbg, "ember-application/index.js");
+
+
+const INDEX_URL = `${EXAMPLE_URL}ember/quickstart/dist/assets/ember-application/index.js`;
+
+add_task(async function () {
+  const dbg = await initDebugger("ember/quickstart/dist/", INDEX_URL);
+
+  await selectSource(dbg, INDEX_URL);
 
   info("1. reload and hit breakpoint");
-  await addBreakpoint(dbg, "ember-application/index.js", 4);
-  reload(dbg, "ember/quickstart/dist/");
+  await addBreakpoint(dbg, INDEX_URL, 4);
+  
+  
+  
+  
+  
+  const reloads = [reload(dbg)];
 
   info("2. Wait for sources to appear and then reload");
   await waitForDispatch(dbg.store, "ADD_SOURCES");
-  reload(dbg, "ember/quickstart/dist/");
+  reloads.push(reload(dbg));
 
   info("3. Wait for sources to appear and then reload mid source-maps");
   await waitForDispatch(dbg.store, "ADD_SOURCES");
-  reload(dbg, "ember/quickstart/dist/");
+  reloads.push(reload(dbg));
 
   info(
     "4. wait for the debugger to pause and show that we're in the correct location"
   );
-  await waitForPaused(dbg);
-  const source = findSource(dbg, "ember-application/index.js");
+  
+  await waitForPaused(dbg, null, { shouldWaitForLoadedScopes: false });
+  const source = findSource(dbg, INDEX_URL);
   await assertPausedAtSourceAndLine(dbg, source.id, 4);
+
+  info("5. resume so the pending reloads can complete");
+  await removeBreakpoint(dbg, source.id, 4);
+  await resume(dbg);
+  await Promise.all(reloads);
 });
