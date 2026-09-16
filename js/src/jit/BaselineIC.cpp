@@ -1748,14 +1748,9 @@ bool DoSpreadCallFallback(JSContext* cx, BaselineFrame* frame,
   MaybeTransition(cx, frame, stub);
 
   
-  
-  
-  bool isIndexed = arr.toObject().as<NativeObject>().isIndexed();
-
-  
   bool handled = false;
   if (op != JSOp::SpreadEval && op != JSOp::StrictSpreadEval &&
-      stub->state().canAttachStub() && !isIndexed) {
+      stub->state().canAttachStub()) {
     
     Rooted<ArrayObject*> aobj(cx, &arr.toObject().as<ArrayObject>());
     MOZ_ASSERT(IsPackedArray(aobj));
