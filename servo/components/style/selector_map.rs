@@ -830,6 +830,12 @@ fn specific_bucket_for<'a>(
             )
         },
         Component::Host(ref selector) => {
+            
+            
+            
+            
+            
+            *bucket_matches = BucketMatches::Unknown;
             if let Some(selector) = selector {
                 find_bucket(
                     selector.iter(),
@@ -839,7 +845,6 @@ fn specific_bucket_for<'a>(
                      true,
                 )
             } else {
-                
                 Bucket::Universal
             }
         },
