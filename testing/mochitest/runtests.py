@@ -916,8 +916,8 @@ def checkAndConfigureV4l2loopback(device):
 
     
     
-    KEEP_FORMAT = 0x8000000
-    SUSTAIN_FRAMERATE = 0x8000001
+    KEEP_FORMAT = 0x0098F900
+    SUSTAIN_FRAMERATE = 0x0098F901
     VIDIOC_S_CTRL = 0xC008561C
 
     control = v4l2_control()
@@ -977,6 +977,8 @@ def findTestMediaDevices(log):
         "videotestsrc",
         "pattern=green",
         "num-buffers=1",
+        "!",
+        "imagefreeze",
         "!",
         "v4l2sink",
         f"device={device}",
