@@ -3174,6 +3174,8 @@ pref("devtools.inspector.three-pane-enabled", true);
 
 pref("devtools.inspector.chrome.three-pane-enabled", false);
 
+pref("devtools.inspector.split-orientation", "auto");
+
 pref("devtools.inspector.show_pseudo_elements", false);
 
 pref("devtools.inspector.imagePreviewTooltipSize", 300);
