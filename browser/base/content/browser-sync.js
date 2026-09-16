@@ -493,6 +493,9 @@ this.SyncedTabsPanelList = class SyncedTabsPanelList {
 this.FxAMenuDeviceList = class FxAMenuDeviceList {
   static MAX_RECENT_TABS = 5;
   static MAX_DEVICES = 3;
+  
+  
+  static TAB_REMOVAL_DELAY_MS = 5000;
 
   constructor(devicesList) {
     this.QueryInterface = ChromeUtils.generateQI([
@@ -503,6 +506,7 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
     Services.obs.addObserver(this, SyncedTabs.TOPIC_TABS_CHANGED, true);
     this.devicesList = devicesList;
     this._updateDevicesPromise = Promise.resolve();
+    this._removalTimers = new Set();
 
     this._initDeviceList();
 
@@ -787,11 +791,11 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
     }
   }
 
-  _configureViewAllTabsButton(viewAllBtn, client) {
+  _configureViewAllTabsButton(viewAllBtn, tabCount) {
     let [viewAllMessage] = gSync.fluentStrings.formatMessagesSync([
       {
         id: "fxa-menu-device-view-all-synced-tabs",
-        args: { tabCount: client.tabs.length },
+        args: { tabCount },
       },
     ]);
     viewAllBtn.setAttribute(
@@ -885,11 +889,22 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
     tabsList.hidden = !hasTabs;
     noTabsLabel.hidden = hasTabs;
     viewAllBtn.hidden = !hasTabs;
-    this._configureViewAllTabsButton(viewAllBtn, client);
+    this._configureViewAllTabsButton(viewAllBtn, client.tabs.length);
     
     
     
     footerSeparator.hidden = !hasTabs && !canSendTab;
+
+    this._trackTabCount(tabsList, client.tabs.length, remaining => {
+      if (remaining) {
+        this._configureViewAllTabsButton(viewAllBtn, remaining);
+        return;
+      }
+      tabsList.hidden = true;
+      noTabsLabel.hidden = false;
+      viewAllBtn.hidden = true;
+      footerSeparator.hidden = !canSendTab;
+    });
 
     sendPageBtn.hidden = !canSendTab;
     if (canSendTab) {
@@ -920,24 +935,37 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
     list.appendChild(header);
 
     let recentTabs = this._getRecentTabs(client);
+    let noTabsLabel = document.createXULElement("label");
+    noTabsLabel.classList.add("PanelUI-remotetabs-notabsforclient-label");
+    noTabsLabel.setAttribute(
+      "value",
+      gSync.fluentStrings.formatValueSync("appmenu-remote-tabs-notabs")
+    );
+
     if (recentTabs.length) {
       let tabsList = document.createXULElement("vbox");
       tabsList.classList.add("PanelUI-fxa-menu-device-tabs-list");
       this._populateRecentTabs(tabsList, recentTabs, device);
-      list.appendChild(tabsList);
+      
+      noTabsLabel.hidden = true;
+      list.append(tabsList, noTabsLabel);
 
       let viewAllBtn = document.createXULElement("toolbarbutton");
       viewAllBtn.classList.add("subviewbutton");
       viewAllBtn.setAttribute("closemenu", "none");
-      this._configureViewAllTabsButton(viewAllBtn, client);
+      this._configureViewAllTabsButton(viewAllBtn, client.tabs.length);
       list.appendChild(viewAllBtn);
+
+      this._trackTabCount(tabsList, client.tabs.length, remaining => {
+        if (remaining) {
+          this._configureViewAllTabsButton(viewAllBtn, remaining);
+          return;
+        }
+        tabsList.hidden = true;
+        noTabsLabel.hidden = false;
+        viewAllBtn.hidden = true;
+      });
     } else {
-      let noTabsLabel = document.createXULElement("label");
-      noTabsLabel.classList.add("PanelUI-remotetabs-notabsforclient-label");
-      noTabsLabel.setAttribute(
-        "value",
-        gSync.fluentStrings.formatValueSync("appmenu-remote-tabs-notabs")
-      );
       list.appendChild(noTabsLabel);
     }
 
@@ -1025,20 +1053,8 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
         e.stopPropagation();
 
         let tabContainer = closeBtn.parentNode;
-        let tabList = tabContainer.parentNode;
-
         let undoBtn = tabContainer.querySelector(".remote-tabs-undo-button");
 
-        let prevClose = tabList.querySelector(
-          ".remote-tabs-undo-button:not([hidden])"
-        );
-        if (prevClose) {
-          let prevContainer = prevClose.parentNode;
-          prevContainer.classList.add("tabitem-removed");
-          prevContainer.addEventListener("transitionend", () => {
-            prevContainer.remove();
-          });
-        }
         closeBtn.hidden = true;
         undoBtn.hidden = false;
         
@@ -1048,6 +1064,7 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
           closeBtn.tab.disabled = true;
         }
         SyncedTabsManagement.enqueueTabToClose(device.id, url);
+        this._scheduleTabRowRemoval(tabContainer);
       },
       { closemenu: true }
     );
@@ -1066,10 +1083,11 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
       e => {
         e.stopPropagation();
 
+        let tabContainer = undoBtn.parentNode;
+        this._cancelTabRowRemoval(tabContainer);
+
         undoBtn.hidden = true;
-        let closeBtn = undoBtn.parentNode.querySelector(
-          ".all-tabs-close-button"
-        );
+        let closeBtn = tabContainer.querySelector(".all-tabs-close-button");
         closeBtn.hidden = false;
         if (undoBtn.tab) {
           undoBtn.tab.disabled = false;
@@ -1084,7 +1102,58 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
     return undoBtn;
   }
 
+  
+
+
+
+
+
+  _trackTabCount(tabsList, tabCount, applyTabCount) {
+    tabsList.tabCount = tabCount;
+    tabsList.applyTabCount = applyTabCount;
+  }
+
+  
+
+
+
+
+  _scheduleTabRowRemoval(tabContainer) {
+    let tabsList = tabContainer.parentNode;
+    let timer = setTimeout(() => {
+      this._removalTimers.delete(timer);
+      tabContainer.removalTimer = null;
+      tabContainer.classList.add("tabitem-removed");
+      
+      
+      
+      tabContainer.addEventListener(
+        "transitionend",
+        () => {
+          tabContainer.remove();
+          if (tabsList.applyTabCount) {
+            tabsList.tabCount = Math.max(0, tabsList.tabCount - 1);
+            tabsList.applyTabCount(tabsList.tabCount);
+          }
+        },
+        { once: true }
+      );
+    }, FxAMenuDeviceList.TAB_REMOVAL_DELAY_MS);
+    this._removalTimers.add(timer);
+    tabContainer.removalTimer = timer;
+  }
+
+  _cancelTabRowRemoval(tabContainer) {
+    clearTimeout(tabContainer.removalTimer);
+    this._removalTimers.delete(tabContainer.removalTimer);
+    tabContainer.removalTimer = null;
+  }
+
   destroy() {
+    for (let timer of this._removalTimers) {
+      clearTimeout(timer);
+    }
+    this._removalTimers.clear();
     Services.obs.removeObserver(this, SyncedTabs.TOPIC_TABS_CHANGED);
     this.devicesList = null;
   }
