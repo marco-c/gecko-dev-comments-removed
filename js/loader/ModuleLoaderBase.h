@@ -163,6 +163,7 @@ class ModuleMapKey : public PLDHashEntryHdr {
 
 
 
+
 class ModuleLoaderBase : public nsISupports {
  public:
   
@@ -330,7 +331,10 @@ class ModuleLoaderBase : public nsISupports {
   nsresult RestartModuleLoad(ModuleLoadRequest* aRequest);
 
   
-  nsresult OnFetchComplete(ModuleLoadRequest* aRequest, nsresult aRv);
+  
+  
+  
+  void OnFetchComplete(ModuleLoadRequest* aRequest, nsresult aRv);
 
   
   bool InstantiateModuleGraph(ModuleLoadRequest* aRequest);

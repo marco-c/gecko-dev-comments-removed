@@ -118,23 +118,6 @@ void ModuleLoadRequest::ModuleLoaded() {
   }
 }
 
-void ModuleLoadRequest::LoadFailed() {
-  
-  
-
-  LOG(("ScriptLoadRequest (%p): Module load failed", this));
-
-  if (IsCanceled()) {
-    return;
-  }
-
-  MOZ_ASSERT(IsFetching());
-  MOZ_ASSERT(!mModuleScript);
-
-  Cancel();
-  LoadFinished();
-}
-
 void ModuleLoadRequest::ModuleErrored() {
   
 

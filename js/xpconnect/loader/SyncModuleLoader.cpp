@@ -4,14 +4,14 @@
 
 #include "SyncModuleLoader.h"
 
+#include "mozJSModuleLoader.h"
+#include "nsContentSecurityUtils.h"
 #include "nsISupportsImpl.h"
 
 #include "js/loader/ModuleLoadRequest.h"
-#include "js/RootingAPI.h"          
 #include "js/PropertyAndElement.h"  
+#include "js/RootingAPI.h"          
 #include "js/Value.h"               
-#include "mozJSModuleLoader.h"
-#include "nsContentSecurityUtils.h"
 
 using namespace JS::loader;
 
@@ -100,14 +100,16 @@ void SyncModuleLoader::OnDynamicImportStarted(ModuleLoadRequest* aRequest) {
     MOZ_ASSERT(DynamicImportRequests().Contains(aRequest));
     MOZ_ASSERT(mLoadRequests.isEmpty());
 
-    nsresult rv = OnFetchComplete(aRequest, NS_OK);
-    if (NS_FAILED(rv)) {
+    OnFetchComplete(aRequest, NS_OK);
+    if (!aRequest->mModuleScript) {
+      
+      
+      
       mLoadRequests.CancelRequestsAndClear();
-      CancelDynamicImport(aRequest, rv);
       return;
     }
 
-    rv = ProcessRequests();
+    nsresult rv = ProcessRequests();
     if (NS_FAILED(rv)) {
       CancelDynamicImport(aRequest, rv);
       return;
@@ -242,10 +244,13 @@ nsresult SyncModuleLoader::ProcessRequests() {
   
   while (!mLoadRequests.isEmpty()) {
     RefPtr<ScriptLoadRequest> request = mLoadRequests.StealFirst();
-    nsresult rv = OnFetchComplete(request->AsModuleRequest(), NS_OK);
-    if (NS_FAILED(rv)) {
+    ModuleLoadRequest* moduleRequest = request->AsModuleRequest();
+    OnFetchComplete(moduleRequest, NS_OK);
+    if (!moduleRequest->mModuleScript) {
+      
+      
       mLoadRequests.CancelRequestsAndClear();
-      return rv;
+      return NS_ERROR_FAILURE;
     }
   }
 
