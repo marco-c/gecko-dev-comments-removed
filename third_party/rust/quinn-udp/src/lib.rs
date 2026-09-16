@@ -27,16 +27,28 @@
 #![warn(unreachable_pub)]
 #![warn(clippy::use_self)]
 
-use std::net::{IpAddr, Ipv6Addr, SocketAddr};
-#[cfg(unix)]
-use std::os::unix::io::AsFd;
+use core::time::Duration;
+#[cfg(any(unix, target_os = "wasi"))]
+use std::os::fd::AsFd;
 #[cfg(windows)]
 use std::os::windows::io::AsSocket;
-#[cfg(not(wasm_browser))]
 use std::{
-    sync::Mutex,
-    time::{Duration, Instant},
+    io,
+    net::{IpAddr, Ipv6Addr, SocketAddr},
 };
+#[cfg(target_os = "wasi")]
+use std::{
+    mem::ManuallyDrop,
+    net::UdpSocket,
+    os::fd::{AsRawFd, FromRawFd},
+};
+#[cfg(not(wasm_browser))]
+use std::{sync::Mutex, time::Instant};
+#[cfg(windows)]
+use windows_sys::Win32::Networking::WinSock;
+
+#[cfg(apple_fast)]
+mod apple_fast;
 
 #[cfg(any(unix, windows))]
 mod cmsg;
@@ -45,13 +57,15 @@ mod cmsg;
 #[path = "unix.rs"]
 mod imp;
 
+#[cfg(any(target_os = "linux", target_os = "android"))]
+mod linux;
+
 #[cfg(windows)]
 #[path = "windows.rs"]
 mod imp;
 
-
-#[cfg(not(any(wasm_browser, unix, windows)))]
-#[path = "fallback.rs"]
+#[cfg(target_os = "wasi")]
+#[path = "wasi.rs"]
 mod imp;
 
 #[allow(unused_imports, unused_macros)]
@@ -118,6 +132,10 @@ pub struct RecvMeta {
     pub dst_ip: Option<IpAddr>,
     
     pub interface_index: Option<u32>,
+    
+    
+    
+    pub timestamp: Option<Duration>,
 }
 
 impl Default for RecvMeta {
@@ -130,6 +148,7 @@ impl Default for RecvMeta {
             ecn: None,
             dst_ip: None,
             interface_index: None,
+            timestamp: None,
         }
     }
 }
@@ -171,8 +190,79 @@ impl Transmit<'_> {
 }
 
 
+
+
+
+
+
+#[derive(Debug, Copy, Clone)]
+#[non_exhaustive]
+pub struct TransportError {
+    
+    
+    
+    
+    pub addr: Option<SocketAddr>,
+    
+    pub payload: TransportErrorPayload,
+    
+    pub raw_errno: i32,
+}
+
+impl TransportError {
+    
+    pub fn mtu(&self) -> Option<u32> {
+        match self.payload {
+            TransportErrorPayload::TooBig { mtu } => Some(mtu),
+            _ => None,
+        }
+    }
+}
+
+
+#[derive(Debug, Copy, Clone)]
+#[non_exhaustive]
+pub enum TransportErrorPayload {
+    
+    Unreachable,
+    
+    TooBig {
+        
+        mtu: u32,
+    },
+    
+    Other,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn is_msg_size_err(err: &io::Error) -> bool {
+    #[cfg(unix)]
+    {
+        err.raw_os_error() == Some(libc::EMSGSIZE)
+    }
+    #[cfg(windows)]
+    {
+        err.raw_os_error() == Some(WinSock::WSAEMSGSIZE)
+    }
+    #[cfg(not(any(unix, windows)))]
+    {
+        false
+    }
+}
+
+
 #[cfg(not(wasm_browser))]
-const IO_ERROR_LOG_INTERVAL: Duration = std::time::Duration::from_secs(60);
+const IO_ERROR_LOG_INTERVAL: Duration = Duration::from_secs(60);
 
 
 
@@ -212,7 +302,26 @@ fn log_sendmsg_error(_: &Mutex<Instant>, _: impl core::fmt::Debug, _: &Transmit<
 #[cfg(not(wasm_browser))]
 pub struct UdpSockRef<'a>(socket2::SockRef<'a>);
 
-#[cfg(unix)]
+#[cfg(not(wasm_browser))]
+impl UdpSockRef<'_> {
+    
+    pub fn set_nonblocking(&self, nonblocking: bool) -> io::Result<()> {
+        #[cfg(not(target_os = "wasi"))]
+        self.0.set_nonblocking(nonblocking)?;
+
+        #[cfg(target_os = "wasi")]
+        {
+            
+            
+            let borrowed = ManuallyDrop::new(unsafe { UdpSocket::from_raw_fd(self.0.as_raw_fd()) });
+            borrowed.set_nonblocking(nonblocking)?;
+        }
+
+        Ok(())
+    }
+}
+
+#[cfg(any(unix, target_os = "wasi"))]
 impl<'s, S> From<&'s S> for UdpSockRef<'s>
 where
     S: AsFd,

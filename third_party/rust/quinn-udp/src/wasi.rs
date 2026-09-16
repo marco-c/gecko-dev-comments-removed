@@ -1,11 +1,11 @@
 use std::{
     io::{self, IoSliceMut},
+    mem::MaybeUninit,
     sync::Mutex,
     time::Instant,
 };
 
 use super::{IO_ERROR_LOG_INTERVAL, RecvMeta, Transmit, UdpSockRef, log_sendmsg_error};
-
 
 
 
@@ -17,7 +17,8 @@ pub struct UdpSocketState {
 
 impl UdpSocketState {
     pub fn new(socket: UdpSockRef<'_>) -> io::Result<Self> {
-        socket.0.set_nonblocking(true)?;
+        socket.set_nonblocking(true)?;
+
         let now = Instant::now();
         Ok(Self {
             last_send_error: Mutex::new(now.checked_sub(2 * IO_ERROR_LOG_INTERVAL).unwrap_or(now)),
@@ -35,6 +36,7 @@ impl UdpSocketState {
     
     
     
+    #[deprecated(note = "silences I/O errors; use `UdpSocketState::try_send() instead")]
     pub fn send(&self, socket: UdpSockRef<'_>, transmit: &Transmit<'_>) -> io::Result<()> {
         match send(socket, transmit) {
             Ok(()) => Ok(()),
@@ -61,11 +63,8 @@ impl UdpSocketState {
         
         
         
-        
-        let bufs = unsafe {
-            &mut *(bufs as *mut [IoSliceMut<'_>] as *mut [socket2::MaybeUninitSlice<'_>])
-        };
-        let (len, _flags, addr) = socket.0.recv_from_vectored(bufs)?;
+        let buf = unsafe { &mut *(&mut *bufs[0] as *mut [u8] as *mut [MaybeUninit<u8>]) };
+        let (len, addr) = socket.0.recv_from(buf)?;
         meta[0] = RecvMeta {
             len,
             stride: len,
@@ -73,6 +72,7 @@ impl UdpSocketState {
             ecn: None,
             dst_ip: None,
             interface_index: None,
+            timestamp: None,
         };
         Ok(1)
     }
@@ -121,7 +121,8 @@ fn send(socket: UdpSockRef<'_>, transmit: &Transmit<'_>) -> io::Result<()> {
     socket.0.send_to(
         transmit.contents,
         &socket2::SockAddr::from(transmit.destination),
-    )
+    )?;
+    Ok(())
 }
 
 pub(crate) const BATCH_SIZE: usize = 1;
