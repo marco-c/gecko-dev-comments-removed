@@ -36,8 +36,13 @@
 #include "test/gtest.h"
 
 using ::testing::_;
+using ::testing::AllOf;
 using ::testing::AnyNumber;
 using ::testing::Field;
+using ::testing::Gt;
+using ::testing::InSequence;
+using ::testing::Lt;
+using ::testing::Mock;
 using ::testing::NiceMock;
 using ::testing::Pointee;
 using ::testing::Property;
@@ -407,7 +412,7 @@ TEST_F(PacingControllerTest, CongestionWindowAffectsAudioInTrial) {
   AdvanceTimeUntil(pacer.NextSendTime());
   pacer.ProcessPackets();
   
-  ::testing::Mock::VerifyAndClearExpectations(&callback_);
+  Mock::VerifyAndClearExpectations(&callback_);
   pacer.SetCongested(false);
   EXPECT_CALL(callback_, SendPacket).Times(1);
   AdvanceTimeUntil(pacer.NextSendTime());
@@ -977,7 +982,7 @@ TEST_F(PacingControllerTest, SendsOnlyPaddingWhenCongested) {
                       kPacketSize);
   AdvanceTimeUntil(pacer->NextSendTime());
   pacer->ProcessPackets();
-  ::testing::Mock::VerifyAndClearExpectations(&callback_);
+  Mock::VerifyAndClearExpectations(&callback_);
 
   
   
@@ -996,7 +1001,7 @@ TEST_F(PacingControllerTest, SendsOnlyPaddingWhenCongested) {
     expected_time_until_padding -= 5;
   }
 
-  ::testing::Mock::VerifyAndClearExpectations(&callback_);
+  Mock::VerifyAndClearExpectations(&callback_);
   EXPECT_CALL(callback_, SendPadding(1)).WillOnce(Return(1));
   EXPECT_CALL(callback_, SendPacket(_, _, _, _, true)).Times(1);
   clock_.AdvanceTimeMilliseconds(5);
@@ -1052,6 +1057,136 @@ TEST_F(PacingControllerTest, DoesNotAllowOveruseAfterCongestion) {
   EXPECT_CALL(callback_, SendPacket).Times(0);
   clock_.AdvanceTimeMilliseconds(5);
   pacer->ProcessPackets();
+}
+
+TEST_F(PacingControllerTest, CongestionPausesQueueTimeAging) {
+  InSequence sequence;
+  uint16_t seq_num = 1000;
+  const size_t kPacketSize = 1000;
+  auto pacer = std::make_unique<PacingController>(&clock_, &callback_, trials_);
+  const DataRate kPacingRate = DataRate::KilobitsPerSec(500);
+  pacer->SetPacerConfig(PacerConfig::Create(clock_.CurrentTime(),
+                                            kPacingRate,
+                                            DataRate::Zero()));
+
+  
+  
+  EXPECT_CALL(callback_, SendPacket);
+  pacer->EnqueuePacket(BuildPacket(RtpPacketMediaType::kVideo, kVideoSsrc,
+                                   seq_num++, clock_.TimeInMilliseconds(),
+                                   kPacketSize));
+  AdvanceTimeUntil(pacer->NextSendTime());
+  pacer->ProcessPackets();
+
+  
+  for (int i = 0; i < 5; ++i) {
+    pacer->EnqueuePacket(BuildPacket(RtpPacketMediaType::kVideo, kVideoSsrc,
+                                     seq_num++, clock_.TimeInMilliseconds(),
+                                     kPacketSize));
+  }
+
+  
+  pacer->SetCongested(true);
+
+  
+  
+  
+  
+  EXPECT_CALL(callback_, SendPadding(1)).Times(6);
+  for (int i = 0; i < 6; ++i) {
+    clock_.AdvanceTime(TimeDelta::Millis(500));
+    pacer->ProcessPackets();
+  }
+
+  
+  EXPECT_CALL(callback_, SendPacket(kAudioSsrc, _, _, _, _));
+  pacer->EnqueuePacket(BuildPacket(RtpPacketMediaType::kAudio, kAudioSsrc,
+                                   seq_num++, clock_.TimeInMilliseconds(),
+                                   kPacketSize));
+  AdvanceTimeUntil(pacer->NextSendTime());
+  pacer->ProcessPackets();
+
+  
+  pacer->SetCongested(false);
+
+  
+  
+  
+  EXPECT_THAT(pacer->ExpectedQueueTime(),
+              AllOf(Gt(TimeDelta::Millis(50)), Lt(TimeDelta::Millis(100))));
+
+  
+  
+  
+  EXPECT_CALL(callback_, SendPacket(kVideoSsrc, _, _, _, _)).Times(3);
+  AdvanceTimeUntil(pacer->NextSendTime());
+  pacer->ProcessPackets();
+  EXPECT_EQ(pacer->QueueSizePackets(), 2u);
+
+  
+  EXPECT_THAT(pacer->NextSendTime(), Gt(clock_.CurrentTime()));
+
+  
+  EXPECT_CALL(callback_, SendPacket(kVideoSsrc, _, _, _, _)).Times(2);
+  while (pacer->QueueSizePackets() > 0) {
+    AdvanceTimeUntil(pacer->NextSendTime());
+    pacer->ProcessPackets();
+  }
+}
+
+TEST_F(PacingControllerTest,
+       ExpectedQueueTimeIncreasesWhenPacketsEnqueuedWhileCongested) {
+  uint16_t seq_num = 1000;
+  const size_t kPacketSize = 1000;
+  auto pacer = std::make_unique<PacingController>(&clock_, &callback_, trials_);
+  const DataRate kPacingRate = DataRate::KilobitsPerSec(500);
+  pacer->SetPacerConfig(PacerConfig::Create(clock_.CurrentTime(),
+                                            kPacingRate,
+                                            DataRate::Zero()));
+
+  
+  EXPECT_CALL(callback_, SendPacket);
+  pacer->EnqueuePacket(BuildPacket(RtpPacketMediaType::kVideo, kVideoSsrc,
+                                   seq_num++, clock_.TimeInMilliseconds(),
+                                   kPacketSize));
+  AdvanceTimeUntil(pacer->NextSendTime());
+  pacer->ProcessPackets();
+
+  EXPECT_EQ(pacer->ExpectedQueueTime(), TimeDelta::Zero());
+
+  
+  pacer->SetCongested(true);
+  EXPECT_EQ(pacer->ExpectedQueueTime(), TimeDelta::Zero());
+
+  
+  
+  clock_.AdvanceTime(TimeDelta::Seconds(2));
+  EXPECT_EQ(pacer->ExpectedQueueTime(), TimeDelta::Zero());
+
+  
+  pacer->EnqueuePacket(BuildPacket(RtpPacketMediaType::kVideo, kVideoSsrc,
+                                   seq_num++, clock_.TimeInMilliseconds(),
+                                   kPacketSize));
+  EXPECT_EQ(pacer->ExpectedQueueTime(), TimeDelta::Millis(16));
+
+  
+  
+  clock_.AdvanceTime(TimeDelta::Seconds(3));
+  EXPECT_EQ(pacer->ExpectedQueueTime(), TimeDelta::Millis(16));
+
+  
+  
+  pacer->EnqueuePacket(BuildPacket(RtpPacketMediaType::kVideo, kVideoSsrc,
+                                   seq_num++, clock_.TimeInMilliseconds(),
+                                   kPacketSize));
+  pacer->EnqueuePacket(BuildPacket(RtpPacketMediaType::kVideo, kVideoSsrc,
+                                   seq_num++, clock_.TimeInMilliseconds(),
+                                   kPacketSize));
+  EXPECT_EQ(pacer->ExpectedQueueTime(), TimeDelta::Millis(48));
+
+  
+  pacer->SetCongested(false);
+  EXPECT_EQ(pacer->ExpectedQueueTime(), TimeDelta::Millis(48));
 }
 
 TEST_F(PacingControllerTest, Pause) {
@@ -1118,19 +1253,19 @@ TEST_F(PacingControllerTest, Pause) {
   }
 
   
-  ::testing::Mock::VerifyAndClearExpectations(&callback_);
+  Mock::VerifyAndClearExpectations(&callback_);
   EXPECT_CALL(callback_, SendPadding).WillOnce([](size_t padding) {
     return padding;
   });
   EXPECT_CALL(callback_, SendPacket(_, _, _, _, true)).Times(1);
   clock_.AdvanceTime(kProcessInterval);
   pacer->ProcessPackets();
-  ::testing::Mock::VerifyAndClearExpectations(&callback_);
+  testing::Mock::VerifyAndClearExpectations(&callback_);
 
   
   
   {
-    ::testing::InSequence sequence;
+    InSequence sequence;
     EXPECT_CALL(callback_,
                 SendPacket(ssrc_high_priority, _, capture_time_ms, _, _))
         .Times(packets_to_send_per_interval);
@@ -1699,7 +1834,7 @@ TEST_F(PacingControllerTest, OwnedPacketPrioritizedOnType) {
                                      150));
   }
 
-  ::testing::InSequence seq;
+  InSequence seq;
   EXPECT_CALL(callback,
               SendPacket(Pointee(Property(&RtpPacketToSend::packet_type,
                                           RtpPacketMediaType::kAudio)),
@@ -2021,7 +2156,7 @@ TEST_F(PacingControllerTest, AccountsForAudioEnqueueTime) {
   clock_.AdvanceTime(kPacketPacingTime);
   
   pacer->ProcessPackets();
-  ::testing::Mock::VerifyAndClearExpectations(&callback_);
+  Mock::VerifyAndClearExpectations(&callback_);
 
   
   
@@ -2048,7 +2183,7 @@ TEST_F(PacingControllerTest, NextSendTimeAccountsForPadding) {
                       sequnce_number++, clock_.TimeInMilliseconds(),
                       kPacketSize.bytes());
   pacer->ProcessPackets();
-  ::testing::Mock::VerifyAndClearExpectations(&callback_);
+  Mock::VerifyAndClearExpectations(&callback_);
 
   
   EXPECT_EQ(pacer->NextSendTime() - clock_.CurrentTime(),
@@ -2061,7 +2196,7 @@ TEST_F(PacingControllerTest, NextSendTimeAccountsForPadding) {
                       kPacketSize.bytes());
   EXPECT_EQ(pacer->NextSendTime() - clock_.CurrentTime(), TimeDelta::Zero());
   pacer->ProcessPackets();
-  ::testing::Mock::VerifyAndClearExpectations(&callback_);
+  Mock::VerifyAndClearExpectations(&callback_);
 
   
   EXPECT_EQ(pacer->NextSendTime() - clock_.CurrentTime(),
@@ -2080,7 +2215,7 @@ TEST_F(PacingControllerTest, NextSendTimeAccountsForPadding) {
   EXPECT_CALL(callback_, SendPadding).WillOnce(Return(kPacketSize.bytes()));
   clock_.AdvanceTime(pacer->NextSendTime() - clock_.CurrentTime());
   pacer->ProcessPackets();
-  ::testing::Mock::VerifyAndClearExpectations(&callback_);
+  Mock::VerifyAndClearExpectations(&callback_);
 
   
   
@@ -2119,7 +2254,7 @@ TEST_F(PacingControllerTest, PaddingTargetAccountsForPaddingRate) {
                       kPacketSize.bytes());
   AdvanceTimeUntil(pacer->NextSendTime());
   pacer->ProcessPackets();
-  ::testing::Mock::VerifyAndClearExpectations(&callback_);
+  Mock::VerifyAndClearExpectations(&callback_);
 
   size_t expected_padding_target_bytes =
       (kPaddingTarget * kPacingDataRate).bytes();
@@ -2187,7 +2322,7 @@ TEST_F(PacingControllerTest, GapInPacingDoesntAccumulateBudget) {
                       sequence_number++, clock_.TimeInMilliseconds(),
                       kPackeSize.bytes());
   pacer->ProcessPackets();
-  ::testing::Mock::VerifyAndClearExpectations(&callback_);
+  Mock::VerifyAndClearExpectations(&callback_);
 
   
   clock_.AdvanceTime(2 * kPacketSendTime);
