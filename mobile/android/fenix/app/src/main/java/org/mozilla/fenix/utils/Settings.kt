@@ -3256,6 +3256,13 @@ class Settings(
             default = { DefaultTabManagementFeatureHelper.tabGroupsOnboardingEnabled },
         )
 
+    /** Whether the Tab Groups strip is shown while the active tab is in a group. */
+    var tabGroupsStripEnabled by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_tab_groups_strip),
+            default = { DefaultTabManagementFeatureHelper.tabGroupsStripEnabled },
+        )
+
     /** Whether the Native Share Sheet feature is enabled. */
     var nativeShareSheetEnabled by
         booleanPreference(
@@ -3295,6 +3302,13 @@ class Settings(
         booleanPreference(
             key = appContext.getPreferenceKey(R.string.pref_key_show_voice_search_in_display_toolbar),
             default = { FxNimbus.features.voiceSearchInDisplayMode.value().enabled },
+        )
+
+    /** Whether the current URL should be shown separate from the addressbar when tapped. */
+    var showAddressBarInFocusMode by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_toolbar_focus_mode),
+            default = { FxNimbus.features.addressbarFocusMode.value().enabled },
         )
 
     /** Whether Longfox is enabled. */
