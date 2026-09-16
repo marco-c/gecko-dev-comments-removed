@@ -34,6 +34,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/RequestBinding.h"
 #include "nsContentSecurityManager.h"
+#include "nsContentSecurityUtils.h"
 #include "nsError.h"
 #include "nsIContent.h"
 #include "nsIPrincipal.h"
@@ -105,6 +106,18 @@ void ModuleLoader::DisallowImportMapsForModuleFetch(
   }
 }
 
+
+
+static bool IsResourceDocumentLoadingTrustedURI(ModuleLoadRequest* aRequest) {
+  nsIPrincipal* triggeringPrincipal = aRequest->TriggeringPrincipal();
+  if (!triggeringPrincipal->GetIsContentPrincipal() ||
+      !triggeringPrincipal->SchemeIs("resource")) {
+    return false;
+  }
+
+  return nsContentSecurityUtils::IsTrustedScheme(aRequest->URI());
+}
+
 nsresult ModuleLoader::StartFetch(ModuleLoadRequest* aRequest) {
   if (aRequest->IsRetrievedFromMemoryCache()) {
     DisallowImportMapsForModuleFetch(aRequest);
@@ -116,11 +129,12 @@ nsresult ModuleLoader::StartFetch(ModuleLoadRequest* aRequest) {
   
   
   
-  bool isAboutPageLoadingChromeURI = ScriptLoader::IsAboutPageLoadingChromeURI(
-      aRequest, GetScriptLoader()->GetDocument());
+  bool skipCORSChecks = ScriptLoader::IsAboutPageLoadingChromeURI(
+                            aRequest, GetScriptLoader()->GetDocument()) ||
+                        IsResourceDocumentLoadingTrustedURI(aRequest);
 
   nsContentSecurityManager::CORSSecurityMapping corsMapping =
-      isAboutPageLoadingChromeURI
+      skipCORSChecks
           ? nsContentSecurityManager::CORSSecurityMapping::DISABLE_CORS_CHECKS
           : nsContentSecurityManager::CORSSecurityMapping::REQUIRE_CORS_CHECKS;
 
@@ -220,15 +234,12 @@ void ModuleLoader::OnModuleLoadComplete(ModuleLoadRequest* aRequest) {
 nsresult ModuleLoader::CompileFetchedModule(
     JSContext* aCx, JS::Handle<JSObject*> aGlobal, JS::CompileOptions& aOptions,
     ModuleLoadRequest* aRequest, JS::MutableHandle<JSObject*> aModuleOut) {
-  if (!nsJSUtils::IsScriptable(aGlobal)) {
-    return NS_ERROR_FAILURE;
-  }
-
   switch (aRequest->mModuleType) {
     case JS::ModuleType::Unknown:
       MOZ_CRASH("Unexpected module type");
     case JS::ModuleType::JavaScriptOrWasm:
-      return CompileJavaScriptOrWasmModule(aCx, aOptions, aRequest, aModuleOut);
+      return CompileJavaScriptOrWasmModule(aCx, aGlobal, aOptions, aRequest,
+                                           aModuleOut);
     case JS::ModuleType::JSON:
       return CompileJsonModule(aCx, aOptions, aRequest, aModuleOut);
     case JS::ModuleType::CSS:
@@ -242,9 +253,43 @@ nsresult ModuleLoader::CompileFetchedModule(
   MOZ_CRASH("Unhandled module type");
 }
 
-nsresult ModuleLoader::CompileJavaScriptOrWasmModule(
+
+
+nsresult ModuleLoader::CompileEmptyJavaScriptModule(
     JSContext* aCx, JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
     JS::MutableHandle<JSObject*> aModuleOut) {
+  JS::SourceText<char16_t> srcBuf;
+  if (!srcBuf.init(aCx, u"", 0, JS::SourceOwnership::Borrowed)) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+  RefPtr<JS::Stencil> stencil =
+      JS::CompileModuleScriptToStencil(aCx, aOptions, srcBuf);
+  if (!stencil) {
+    return NS_ERROR_FAILURE;
+  }
+  aRequest->SetStencil(stencil);
+  JS::InstantiateOptions instantiateOptions(aOptions);
+  aModuleOut.set(
+      JS::InstantiateModuleStencil(aCx, instantiateOptions, stencil));
+  return aModuleOut ? NS_OK : NS_ERROR_FAILURE;
+}
+
+nsresult ModuleLoader::CompileJavaScriptOrWasmModule(
+    JSContext* aCx, JS::Handle<JSObject*> aGlobal, JS::CompileOptions& aOptions,
+    ModuleLoadRequest* aRequest, JS::MutableHandle<JSObject*> aModuleOut) {
+  if (!nsJSUtils::IsScriptable(aGlobal)) {
+#ifdef NIGHTLY_BUILD
+    
+    
+    if (aRequest->HasWasmMimeTypeEssence()) {
+      MOZ_ASSERT(aRequest->IsWasmBytes());
+      return NS_ERROR_FAILURE;
+    }
+#endif
+
+    return CompileEmptyJavaScriptModule(aCx, aOptions, aRequest, aModuleOut);
+  }
+
   GetScriptLoader()->CalculateCacheFlag(aRequest);
 
 #ifdef NIGHTLY_BUILD
