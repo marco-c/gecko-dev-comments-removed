@@ -79,9 +79,9 @@ type TabGroupColor =
 interface MozTabbrowserTabGroup extends XULElement {
   
   
-  pinned?: undefined;
-  splitview?: undefined;
-  group?: undefined;
+  pinned: false;
+  splitview: null;
+  group: null;
 
   tabs: MozTabbrowserTab[];
   tabsAndSplitViews: (MozTabbrowserTab | MozTabSplitViewWrapper)[];
@@ -100,8 +100,9 @@ interface MozTabbrowserTabGroup extends XULElement {
 
 interface MozTabbrowserTabGroupLabel extends XULElement {
   
-  pinned?: undefined;
-  splitview?: undefined;
+  
+  pinned: false;
+  splitview: null;
 
   container: any;
   group: MozTabbrowserTabGroup;
@@ -114,14 +115,13 @@ type TabSplitViewStateData = { id: number; numberOfTabs: number };
 
 interface MozTabSplitViewWrapper extends XULElement {
   
-  
-  splitview?: undefined;
+  splitview: null;
 
   tabs: MozTabbrowserTab[];
   splitViewId: number;
   state: TabSplitViewStateData;
   group: MozTabbrowserTabGroup | null;
-  pinned: boolean;
+  pinned: false;
   visible: boolean;
   multiselected: boolean;
   hasActiveTab: boolean;

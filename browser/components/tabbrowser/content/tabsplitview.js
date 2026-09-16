@@ -213,6 +213,16 @@
 
 
 
+
+    get splitview() {
+      return null;
+    }
+
+    
+
+
+
+
     get panels() {
       const panels = [];
       for (const { linkedPanel } of this.#tabs) {

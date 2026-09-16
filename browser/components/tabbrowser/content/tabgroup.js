@@ -119,6 +119,8 @@
       
       this.#labelElement.container = gBrowser.tabContainer;
       this.#labelElement.group = this;
+      this.#labelElement.pinned = false;
+      this.#labelElement.splitview = null;
 
       this.#labelContainerElement.addEventListener("mouseover", this);
       this.#labelContainerElement.addEventListener("mouseout", this);
@@ -495,6 +497,30 @@
         prevLastTabOrSplitView?.removeAttribute(LAST_ITEM_ATTRIBUTE);
         currentLastTabOrSplitView.setAttribute(LAST_ITEM_ATTRIBUTE, true);
       }
+    }
+
+    
+
+
+
+
+
+    get pinned() {
+      return false;
+    }
+
+    
+
+
+    get splitview() {
+      return null;
+    }
+
+    
+
+
+    get group() {
+      return null;
     }
 
     
