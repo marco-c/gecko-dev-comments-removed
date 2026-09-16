@@ -20,7 +20,7 @@ use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use crate::display_item as di;
 use crate::{APZScrollGeneration, HasScrollLinkedEffect, PipelineId, PropertyBinding};
 use crate::gradient_builder::GradientBuilder;
-use crate::color::ColorF;
+use crate::color::{ColorF, ColorU};
 use crate::font::{FontInstanceKey, GlyphInstance, GlyphOptions};
 use crate::image::{ColorDepth, ImageKey};
 use crate::key_types::EdgeMask;
@@ -35,6 +35,22 @@ use crate::units::*;
 
 
 pub const MAX_TEXT_RUN_LENGTH: usize = 2040;
+
+
+
+
+fn color_is_visible(color: ColorF) -> bool {
+    ColorU::from(color).a > 0
+}
+
+
+
+fn rect_is_visible(color: &PropertyBinding<ColorF>) -> bool {
+    match *color {
+        PropertyBinding::Value(color) => color_is_visible(color),
+        PropertyBinding::Binding(..) => true,
+    }
+}
 
 
 
@@ -1364,14 +1380,7 @@ impl DisplayListBuilder {
         bounds: LayoutRect,
         color: ColorF,
     ) {
-        let (common, offset) = self.normalize_common(common);
-        let item = di::DisplayItem::Rectangle(di::RectangleDisplayItem {
-            common,
-            color: PropertyBinding::Value(color),
-            bounds: self.shift_rect(bounds, offset),
-            transformed_aa_edges: EdgeMask::all(),
-        });
-        self.push_item(&item);
+        self.push_rect_with_animation(common, bounds, PropertyBinding::Value(color));
     }
 
     pub fn push_rect_with_animation(
@@ -1380,6 +1389,19 @@ impl DisplayListBuilder {
         bounds: LayoutRect,
         color: PropertyBinding<ColorF>,
     ) {
+        
+        
+        
+        
+        
+        
+        if !rect_is_visible(&color)
+            && self.pending_shadows.is_empty()
+            && !common.flags.contains(di::PrimitiveFlags::CHECKERBOARD_BACKGROUND)
+        {
+            return;
+        }
+
         let (common, offset) = self.normalize_common(common);
         let item = di::DisplayItem::Rectangle(di::RectangleDisplayItem {
             common,
@@ -1417,6 +1439,11 @@ impl DisplayListBuilder {
         color: &ColorF,
         style: di::LineStyle,
     ) {
+        
+        if !color_is_visible(*color) && self.pending_shadows.is_empty() {
+            return;
+        }
+
         let (common, offset) = self.normalize_common(common);
         let area = self.shift_rect(*area, offset);
 
@@ -1513,6 +1540,15 @@ impl DisplayListBuilder {
         color: ColorF,
         glyph_options: Option<GlyphOptions>,
     ) {
+        
+        
+        
+        
+        
+        if !color_is_visible(color) && self.pending_shadows.is_empty() {
+            return;
+        }
+
         let (common, offset) = self.normalize_common(common);
         let item = di::DisplayItem::Text(di::TextDisplayItem {
             common,
@@ -2714,8 +2750,23 @@ impl DisplayListBuilder {
                 None,
             );
 
+            
+            
+            
+            let copies_visible = color_is_visible(s.color);
+
             for p in &parsed {
                 if let Parsed::Draw(entry) = p {
+                    if !copies_visible
+                        && matches!(
+                            entry.item,
+                            di::DisplayItem::Text(..)
+                                | di::DisplayItem::Rectangle(..)
+                                | di::DisplayItem::Line(..)
+                        )
+                    {
+                        continue;
+                    }
                     if let Some(copy) = Self::shadow_copy_of_item(
                         &entry.item,
                         s.offset,
@@ -2734,8 +2785,19 @@ impl DisplayListBuilder {
         }
 
         
+        
         for p in &parsed {
             if let Parsed::Draw(entry) = p {
+                let visible = match entry.item {
+                    di::DisplayItem::Text(ref info) => color_is_visible(info.color),
+                    di::DisplayItem::Rectangle(ref info) => rect_is_visible(&info.color),
+                    di::DisplayItem::Line(ref info) => color_is_visible(info.color),
+                    _ => true,
+                };
+                if !visible {
+                    continue;
+                }
+
                 self.push_item(&entry.item);
                 if matches!(entry.item, di::DisplayItem::Text(..)) {
                     self.push_iter(&entry.glyphs);
