@@ -53,7 +53,7 @@
 #include "clang/Lex/Lexer.h"
 
 void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
-  auto Refcounted = qualType(hasDeclaration(cxxRecordDecl(isRefCounted())));
+  auto Refcounted = qualType(isRefCounted());
   auto StackSmartPtr = ignoreTrivials(declRefExpr(to(varDecl(
       hasAutomaticStorageDuration(), hasType(isSmartPtrToRefCounted())))));
   auto ConstMemberOfThisSmartPtr =
@@ -147,7 +147,7 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
 
   
   
-  auto KnownLiveSimple = anyOf(
+  auto KnownLiveExceptMethods = anyOf(
       
       KnownLiveBase,
       
@@ -156,10 +156,7 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
       
       
       cxxMemberCallExpr(
-          on(anyOf(allOf(hasType(isSmartPtrToRefCounted()), KnownLiveBase),
-                   
-                   
-                   KnownLiveMemberOfParam))),
+          on(allOf(hasType(isSmartPtrToRefCounted()), KnownLiveBase))),
       
       cxxOperatorCallExpr(
           hasAnyOverloadedOperatorName("*", "->"),
@@ -192,6 +189,18 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
                     hasUnaryOperand(allOf(anyOf(hasType(references(Refcounted)),
                                                 hasType(Refcounted)),
                                           ignoreTrivials(KnownLiveBase)))));
+
+  
+  
+  auto KnownLiveSimple =
+      anyOf(KnownLiveExceptMethods,
+            ignoreTrivials(cxxMemberCallExpr(
+                callee(cxxMethodDecl(methodHasKnownLiveAnnotation())),
+                
+                
+                
+                
+                argumentCountIs(0), on(KnownLiveExceptMethods))));
 
   auto KnownLive = anyOf(
       
