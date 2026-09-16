@@ -12,10 +12,6 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 const MAX_ATTEMPTS = 10;
-const FOG_INIT_POLL_MS = 100;
-
-
-const FOG_INIT_MAX_ATTEMPTS = 150;
 
 let gAttempts = 0;
 let gPollingDone;
@@ -49,39 +45,7 @@ this.startup_about_home_paint = class extends ExtensionAPI {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-  async waitForFOGInit() {
-    for (let i = 0; i < FOG_INIT_MAX_ATTEMPTS; i++) {
-      if (Services.fog.initialized) {
-        return true;
-      }
-      await this.wait(FOG_INIT_POLL_MS);
-    }
-    return false;
-  }
-
   async checkForTelemetry() {
-    if (!(await this.waitForFOGInit())) {
-      dump(
-        "TEST-UNEXPECTED-FAIL | startup_about_home_paint | FOG was not " +
-          "initialized in time; cannot read Glean metrics.\n"
-      );
-      gPollingDone();
-      await this.quit();
-      return;
-    }
-
     let measurement =
       Glean.timestamps.aboutHomeTopsitesFirstPaint.testGetValue();
     let win = BrowserWindowTracker.getTopWindow();
