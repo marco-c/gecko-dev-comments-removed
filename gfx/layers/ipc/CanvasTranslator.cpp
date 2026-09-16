@@ -734,7 +734,11 @@ bool CanvasTranslator::ReadNextEvent(EventType& aEventType) {
   mHeader->readerState = State::Waiting;
 
   if (mReaderSemaphore->Wait(Some(mNextEventTimeout))) {
-    MOZ_RELEASE_ASSERT(HasPendingEvent());
+    MOZ_ASSERT(HasPendingEvent());
+    if (!HasPendingEvent()) {
+      mHeader->readerState = State::Failed;
+      return false;
+    }
     MOZ_RELEASE_ASSERT(mHeader->readerState == State::Processing);
     return ReadPendingEvent(aEventType);
   }
@@ -742,7 +746,11 @@ bool CanvasTranslator::ReadNextEvent(EventType& aEventType) {
   
   
   if (!mHeader->readerState.compareExchange(State::Waiting, State::Stopped)) {
-    MOZ_RELEASE_ASSERT(HasPendingEvent());
+    MOZ_ASSERT(HasPendingEvent());
+    if (!HasPendingEvent()) {
+      mHeader->readerState = State::Failed;
+      return false;
+    }
     MOZ_RELEASE_ASSERT(mHeader->readerState == State::Processing);
     
     MOZ_ALWAYS_TRUE(mReaderSemaphore->Wait());
