@@ -1839,6 +1839,14 @@ void nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags) {
   }
 }
 
+void nsRefreshDriver::NotifyWidgetAttached() {
+  if (mOwnTimer || !mActiveTimer) {
+    return;
+  }
+  
+  EnsureTimerStarted(eForceAdjustTimer);
+}
+
 void nsRefreshDriver::StopTimer() {
   if (!mActiveTimer) {
     return;

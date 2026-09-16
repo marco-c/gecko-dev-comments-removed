@@ -200,6 +200,10 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   void SetActivity(bool aIsActive);
 
   
+  
+  void NotifyWidgetAttached();
+
+  
 
 
   nsPresContext* GetPresContext() const;
