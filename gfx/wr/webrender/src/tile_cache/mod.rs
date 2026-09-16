@@ -1119,13 +1119,7 @@ impl TileCacheInstance {
 
             
             
-            
-            let clip_snap = if frame_state.clip_tree.get_leaf(shared_clip_leaf_id).prim_clip_root
-                != ClipNodeId::INVALID {
-                ClipSnap::Nearest
-            } else {
-                ClipSnap::Exact
-            };
+            let clip_snap = ClipSnap::Exact;
 
             let clip_root = frame_state.current_clip_root();
 
