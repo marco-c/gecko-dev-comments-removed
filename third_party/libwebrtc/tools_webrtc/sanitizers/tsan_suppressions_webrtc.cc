@@ -33,10 +33,6 @@ char kTSanDefaultSuppressions[] =
 
     
     
-    "deadlock:webrtc::test::UdpSocketManagerPosixImpl::RemoveSocket\n"
-
-    
-    
     "race:*trace_event_unique_catstatic*\n"
 
     
