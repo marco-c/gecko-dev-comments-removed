@@ -8,9 +8,12 @@
 
 #include <functional>
 
+#include "SpeechModelDownloadPermissionRequest.h"
 #include "SpeechRecognitionModelMapping.h"
 #include "js/Conversions.h"
 #include "mozilla/Logging.h"
+#include "mozilla/StaticPrefs_browser.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WindowGlobalParent.h"
@@ -95,9 +98,11 @@ SpeechModelResolver::AuthorizeDownload(
   SpeechModelIdentifier model{nsCString(aModel), nsCString(aFilename),
                               nsCString(aRevision),
                               SpeechModelSizeMB(aModel, aRevision, aFilename)};
+  nsString progressToken(aProgressToken);
   LOGD("AuthorizeDownload - model={} sizeMB={}", model.ToString().get(),
        model.mSizeMB);
 
+  RefPtr<CanonicalBrowsingContext> bc = aWindow->GetBrowsingContext();
   nsCOMPtr<nsIMLModelDownloadAuthorizationCallback> callback = aCallback;
   std::function<void(bool)> resolve = [callback](bool aAllow) {
     callback->Resolve(aAllow);
@@ -105,8 +110,24 @@ SpeechModelResolver::AuthorizeDownload(
 
   
   
-  CheckInstalled(
-      model, [resolve = std::move(resolve)](bool) mutable { resolve(true); });
+  
+  if (StaticPrefs::browser_ml_modelHub_testing()) {
+    ShowSpeechModelDownloadConsent(model, bc, progressToken,
+                                   std::move(resolve));
+    return NS_OK;
+  }
+
+  
+  CheckInstalled(model,
+                 [model, bc, progressToken,
+                  resolve = std::move(resolve)](bool aInstalled) mutable {
+                   if (aInstalled) {
+                     resolve(true);
+                     return;
+                   }
+                   ShowSpeechModelDownloadConsent(model, bc, progressToken,
+                                                  std::move(resolve));
+                 });
   return NS_OK;
 }
 

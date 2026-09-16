@@ -54,8 +54,9 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
                                       IsModelAvailableResolver&& aResolver);
   ipc::IPCResult RecvIsModelInstalled(const nsTArray<nsCString>& aLanguages,
                                       IsModelInstalledResolver&& aResolver);
-  mozilla::ipc::IPCResult RecvInstallModels(
-      const nsTArray<nsCString>& aLanguages, InstallModelsResolver&& aResolver);
+  ipc::IPCResult RecvInstallModels(const nsTArray<nsCString>& aLanguages,
+                                   uint64_t aInnerWindowId,
+                                   InstallModelsResolver&& aResolver);
   mozilla::ipc::IPCResult RecvInit(const nsCString& aEngineId,
                                    const nsCString& aLanguage,
                                    const nsTArray<nsString>& aPhrases,

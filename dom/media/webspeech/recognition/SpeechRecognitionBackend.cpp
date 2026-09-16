@@ -458,9 +458,10 @@ void SpeechRecognitionBackend::DataCallback(MediaTrackGraph* aGraph,
                                        AssertedCast<int>(sliceFrames));
     if (written < static_cast<int>(sliceFrames)) {
       mFramesDropped += sliceFrames - written;
-      LOGE("Capture ring buffer overflow: wrote {} of {} frames, {}s"
-           " dropped total", written, sliceFrames,
-           double(mFramesDropped) / mGraphRate);
+      LOGE(
+          "Capture ring buffer overflow: wrote {} of {} frames, {}s"
+          " dropped total",
+          written, sliceFrames, double(mFramesDropped) / mGraphRate);
     }
   }
 }
@@ -856,6 +857,13 @@ already_AddRefed<Promise> SpeechRecognitionBackend::Available(
     }
   }
 
+  
+  
+  
+  
+  
+  
+  
   using IsModelInstalledPromise =
       hwinference::PSpeechRecognitionChild::IsModelInstalledPromise;
   using AvailabilityPromise = MozPromise<AvailabilityStatus, nsresult, true>;
@@ -946,7 +954,8 @@ void SpeechRecognitionBackend::CreateSession(
 
 
 already_AddRefed<Promise> SpeechRecognitionBackend::Install(
-    nsIGlobalObject* aGlobal, const nsTArray<nsCString>& aLanguages) {
+    nsIGlobalObject* aGlobal, const nsTArray<nsCString>& aLanguages,
+    uint64_t aInnerWindowId) {
   AssertIsOnMainThread();
 
   if (!aGlobal) {
@@ -969,9 +978,9 @@ already_AddRefed<Promise> SpeechRecognitionBackend::Install(
 
   using InstallPromise = MozPromise<bool, nsresult, true>;
   RunWithTransientSession(
-      [languages = aLanguages.Clone()](
-          hwinference::SpeechRecognitionChild* aChild) mutable {
-        return aChild->SendInstallModels(std::move(languages));
+      [languages = aLanguages.Clone(),
+       aInnerWindowId](hwinference::SpeechRecognitionChild* aChild) mutable {
+        return aChild->SendInstallModels(std::move(languages), aInnerWindowId);
       })
       ->Then(GetMainThreadSerialEventTarget(), __func__,
              [promise](InstallPromise::ResolveOrRejectValue&& aValue) {

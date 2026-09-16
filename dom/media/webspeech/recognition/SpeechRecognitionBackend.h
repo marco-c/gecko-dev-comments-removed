@@ -133,8 +133,14 @@ class SpeechRecognitionBackend {
 
   static already_AddRefed<Promise> Available(
       nsIGlobalObject* aGlobal, const nsTArray<nsCString>& aLanguages);
+  
+  
+  
+  
+  
   static already_AddRefed<Promise> Install(
-      nsIGlobalObject* aGlobal, const nsTArray<nsCString>& aLanguages);
+      nsIGlobalObject* aGlobal, const nsTArray<nsCString>& aLanguages,
+      uint64_t aInnerWindowId);
   static RefPtr<hwinference::PSpeechRecognitionChild::IsModelInstalledPromise>
   IsModelInstalledNative(hwinference::SpeechRecognitionChild* aChild,
                          const nsTArray<nsCString>& aLanguages);

@@ -34,7 +34,11 @@ parent:
   
   async IsModelInstalled(nsCString[] languages) returns (bool installed);
   
-  async InstallModels(nsCString[] languages) returns (bool success);
+  
+  
+  
+  
+  async InstallModels(nsCString[] languages, uint64_t innerWindowId) returns (bool success);
   
   
   
