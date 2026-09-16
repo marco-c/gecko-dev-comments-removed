@@ -89,6 +89,8 @@
 
 #include "test_nr_socket.h"
 
+#include <cstdint>
+
 #include "mozilla/RefPtr.h"
 
 namespace mozilla {
@@ -1065,7 +1067,7 @@ bool TestNrSocket::maybe_send_fake_response(const void* msg, size_t len,
   nr_stun_form_error_response(request.get(), response.get(), 300,
                               (char*)"Try alternate");
 
-  int port = 0;
+  uint16_t port = 0;
   if (nr_transport_addr_get_port(to, &port)) {
     MOZ_CRASH();
   }
@@ -1074,8 +1076,14 @@ bool TestNrSocket::maybe_send_fake_response(const void* msg, size_t len,
     r_log(LOG_GENERIC, LOG_DEBUG,
           "TestNrSocket attempting to add alternate server %s", address.get());
     nr_transport_addr addr;
-    if (NS_WARN_IF(nr_str_port_to_transport_addr(address.Data(), port,
+    if (NS_WARN_IF(nr_str_port_to_transport_addr(address.Data(), nullptr, port,
                                                  IPPROTO_UDP, &addr))) {
+      continue;
+    }
+    
+    
+    
+    if (addr.fqdn[0] != '\0') {
       continue;
     }
     if (nr_stun_message_add_alternate_server_attribute(response.get(), &addr)) {
@@ -1093,19 +1101,19 @@ bool TestNrSocket::maybe_send_fake_response(const void* msg, size_t len,
     
     
     
-    int port = 0;
+    uint16_t port = 0;
     if (nr_transport_addr_get_port(to, &port)) {
       MOZ_CRASH();
     }
     switch (to->ip_version) {
       case NR_IPV4:
-        if (nr_str_port_to_transport_addr("198.51.100.1", port, to->protocol,
-                                          &response_from)) {
+        if (nr_str_port_to_transport_addr("198.51.100.1", nullptr, port,
+                                          to->protocol, &response_from)) {
           MOZ_CRASH();
         }
         break;
       case NR_IPV6:
-        if (nr_str_port_to_transport_addr("::ffff:198.51.100.1", port,
+        if (nr_str_port_to_transport_addr("::ffff:198.51.100.1", nullptr, port,
                                           to->protocol, &response_from)) {
           MOZ_CRASH();
         }

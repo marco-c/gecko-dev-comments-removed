@@ -71,7 +71,7 @@ static bool ToNrIceAddr(nr_transport_addr& addr, NrIceAddr* out) {
   if (r) return false;
   out->host = addrstring;
 
-  int port;
+  uint16_t port;
   r = nr_transport_addr_get_port(&addr, &port);
   if (r) return false;
 
@@ -105,9 +105,7 @@ static bool ToNrIceCandidate(const nr_ice_candidate& candc,
 
   if (!ToNrIceAddr(cand->addr, &out->cand_addr)) return false;
 
-  if (cand->mdns_addr) {
-    out->mdns_addr = cand->mdns_addr;
-  }
+  out->domain_name = cand->addr.fqdn;
 
   if (cand->isock) {
     nr_transport_addr addr;
@@ -285,9 +283,9 @@ nsresult NrIceMediaStream::SetIceCredentials(const std::string& ufrag,
 }
 
 
-nsresult NrIceMediaStream::ParseTrickleCandidate(const std::string& candidate,
-                                                 const std::string& ufrag,
-                                                 const std::string& mdns_addr) {
+nsresult NrIceMediaStream::ParseTrickleCandidate(
+    const std::string& candidate, const std::string& ufrag,
+    const std::string& resolved_address) {
   nr_ice_media_stream* stream = GetStreamForRemoteUfrag(ufrag);
   if (!stream) {
     return NS_ERROR_FAILURE;
@@ -299,7 +297,7 @@ nsresult NrIceMediaStream::ParseTrickleCandidate(const std::string& candidate,
 
   int r = nr_ice_peer_ctx_parse_trickle_candidate(
       ctx_->peer(), stream, const_cast<char*>(candidate.c_str()),
-      mdns_addr.c_str());
+      resolved_address.empty() ? nullptr : resolved_address.c_str());
 
   if (r) {
     if (r == R_ALREADY) {
@@ -349,6 +347,56 @@ nsresult NrIceMediaStream::GetActivePair(int component,
 
   if (localp) *localp = std::move(local);
   if (remotep) *remotep = std::move(remote);
+
+  return NS_OK;
+}
+
+nsresult NrIceMediaStream::GetActivePairAsAttributes(
+    int aComponent, std::string* aLocal, std::string* aRemote) const {
+  if (!stream_) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  nr_ice_candidate* local_cand;
+  nr_ice_candidate* remote_cand;
+  int r = nr_ice_media_stream_get_active(ctx_->peer(), stream_, aComponent,
+                                         &local_cand, &remote_cand);
+  if (r == R_REJECTED) return NS_ERROR_NOT_AVAILABLE;
+  if (r) return NS_ERROR_FAILURE;
+
+  char buf[NR_ICE_MAX_ATTRIBUTE_SIZE];
+
+  
+  
+  
+  
+  
+  
+  if (aLocal) {
+    int obfuscate =
+        (ctx_->ctx()->flags & NR_ICE_CTX_FLAGS_OBFUSCATE_HOST_ADDRESSES) ? 1
+                                                                         : 0;
+    if (nr_ice_format_candidate_attribute(local_cand, buf, sizeof(buf),
+                                          obfuscate)) {
+      return NS_ERROR_FAILURE;
+    }
+    aLocal->assign(buf);
+  }
+
+  
+  
+  
+  if (aRemote) {
+    if (remote_cand->type == PEER_REFLEXIVE) {
+      if (nr_ice_format_candidate_attribute(remote_cand, buf, sizeof(buf),
+                                            0)) {
+        return NS_ERROR_FAILURE;
+      }
+      aRemote->assign(buf);
+    } else {
+      aRemote->assign(remote_cand->label);
+    }
+  }
 
   return NS_OK;
 }

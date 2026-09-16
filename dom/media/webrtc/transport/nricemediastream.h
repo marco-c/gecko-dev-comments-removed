@@ -75,7 +75,7 @@ struct NrIceCandidate {
 
   NrIceAddr cand_addr;
   NrIceAddr local_addr;
-  std::string mdns_addr;
+  std::string domain_name;
   Type type;
   TcpType tcp_type;
   std::string codeword;
@@ -164,7 +164,7 @@ class NrIceMediaStream {
   
   nsresult ParseTrickleCandidate(const std::string& candidate,
                                  const std::string& ufrag,
-                                 const std::string& mdns_addr);
+                                 const std::string& resolved_address);
 
   
   nsresult DisableComponent(int component);
@@ -173,6 +173,12 @@ class NrIceMediaStream {
   
   nsresult GetActivePair(int component, UniquePtr<NrIceCandidate>* local,
                          UniquePtr<NrIceCandidate>* remote);
+
+  
+  
+  
+  nsresult GetActivePairAsAttributes(int aComponent, std::string* aLocal,
+                                     std::string* aRemote) const;
 
   
   

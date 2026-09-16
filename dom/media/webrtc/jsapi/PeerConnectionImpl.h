@@ -927,7 +927,7 @@ class PeerConnectionImpl final
 
   
   struct PendingIceCandidate {
-    std::vector<std::string> mTokenizedCandidate;
+    std::string mCandidate;
     std::string mTransportId;
     std::string mUfrag;
   };

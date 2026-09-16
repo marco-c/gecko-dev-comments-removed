@@ -37,7 +37,30 @@
 
 typedef enum {HOST=1, SERVER_REFLEXIVE, PEER_REFLEXIVE, RELAYED, CTYPE_MAX} nr_ice_candidate_type;
 
-struct nr_ice_candidate_ {
+
+
+
+
+
+
+struct nr_ice_candidate_parsedbits {
+  nr_ice_candidate_type type;
+  nr_socket_tcp_type tcp_type;
+  UCHAR component_id;
+  nr_transport_addr addr;
+  nr_transport_addr base;
+  char *foundation;
+  
+
+
+
+
+  char *raw_addr;
+  char *raw_raddr;
+  UINT4 priority;
+};
+
+struct nr_ice_candidate_ : public nr_ice_candidate_parsedbits {
   char *label;
   char codeword[5];
   int state;
@@ -55,18 +78,9 @@ struct nr_ice_candidate_ {
   nr_socket *osock;                   
   nr_ice_media_stream *stream;        
   nr_ice_component *component;        
-  nr_ice_candidate_type type;         
-  nr_socket_tcp_type tcp_type;
-  UCHAR component_id;                 
-  nr_transport_addr addr;             
-
-  nr_transport_addr base;             
   
 
   UCHAR local_protocol;    
-  char *mdns_addr;                    
-  char *foundation;                   
-  UINT4 priority;                     
   nr_ice_stun_server *stun_server;
   nr_transport_addr stun_server_addr; 
   void *delay_timer;
@@ -113,8 +127,14 @@ void nr_ice_candidate_compute_codeword(nr_ice_candidate *cand);
 int nr_ice_candidate_process_stun(nr_ice_candidate *cand, UCHAR *msg, int len, nr_transport_addr *faddr);
 int nr_ice_candidate_destroy(nr_ice_candidate **candp);
 void nr_ice_candidate_stop_gathering(nr_ice_candidate *cand);
-int nr_ice_format_candidate_attribute(nr_ice_candidate *cand, char *attr, int maxlen, int obfuscate_srflx_addr);
-int nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,char *attr,nr_ice_media_stream *stream,nr_ice_candidate **candp);
+int nr_ice_format_candidate_attribute(nr_ice_candidate *cand, char *attr, int maxlen, int obfuscate_raddr);
+int nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,const char *attr,nr_ice_media_stream *stream,const char* resolved_address,nr_ice_candidate **candp);
+
+
+
+
+
+int nr_ice_parse_candidate_attribute(const char *attr, const char *resolved_address, struct nr_ice_candidate_parsedbits *bits);
 int nr_ice_peer_peer_rflx_candidate_create(nr_ice_ctx *ctx, const char *label, nr_ice_component *comp,nr_transport_addr *addr, nr_ice_candidate **candp);
 int nr_ice_candidate_compute_priority(nr_ice_candidate *cand);
 

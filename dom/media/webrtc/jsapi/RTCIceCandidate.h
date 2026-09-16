@@ -48,8 +48,10 @@ class RTCIceCandidate final : public nsISupports, public nsWrapperCache {
   
   
   
+  
   static already_AddRefed<RTCIceCandidate> FromAttribute(
-      nsIGlobalObject* aGlobal, const nsACString& aAttr, bool aRemote = false);
+      nsIGlobalObject* aGlobal, const nsACString& aAttr,
+      bool aHidePrflx = false);
 
   nsIGlobalObject* GetParentObject() const { return mGlobal; }
   JSObject* WrapObject(JSContext* aCx,
