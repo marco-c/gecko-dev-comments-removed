@@ -746,11 +746,20 @@ void SpeechRecognitionBackend::HandleRecognitionError(
   AssertOnIPCThread();
   LOGE("HandleRecognitionError: {}", nsCString(aError).get());
 
-  DispatchToParentIfAlive(
-      "SpeechRecognitionBackend::HandleRecognitionError",
-      [error = nsCString(aError)](SpeechRecognition* aParent) {
-        aParent->HandleRecognitionErrorFromBackend(error);
-      });
+  
+  
+  
+  
+  
+  DispatchToParentIfAlive("SpeechRecognitionBackend::HandleRecognitionError",
+                          [self = RefPtr{this}, error = nsCString(aError)](
+                              SpeechRecognition* aParent) {
+                            AssertIsOnMainThread();
+                            if (self->mStopped) {
+                              return;
+                            }
+                            aParent->HandleRecognitionErrorFromBackend(error);
+                          });
 }
 
 void SpeechRecognitionBackend::NotifyTrackEnded() {
