@@ -661,15 +661,6 @@ customElements.setElementCreationCallback(
 
 
 
-customElements.setElementCreationCallback("agent-monitor-panel", () => {
-  ChromeUtils.importESModule(
-    "chrome://browser/content/aiwindow/components/agent-monitor-panel.mjs",
-    { global: "current" }
-  );
-});
-
-
-
 for (const smartwindowGroupTabsTag of [
   "smartwindow-group-tabs-card",
   "smartwindow-group-tabs-flyout",
