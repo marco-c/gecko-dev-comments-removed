@@ -244,7 +244,6 @@ impl std::fmt::Debug for ClipLeafId {
 pub struct ClipTree {
     nodes: Vec<ClipTreeNode>,
     leaves: Vec<ClipTreeLeaf>,
-    clip_root_stack: Vec<ClipNodeId>,
 }
 
 impl ClipTree {
@@ -261,9 +260,6 @@ impl ClipTree {
                 }
             ],
             leaves: Vec::new(),
-            clip_root_stack: vec![
-                ClipNodeId::NONE,
-            ],
         }
     }
 
@@ -279,9 +275,6 @@ impl ClipTree {
         });
 
         self.leaves.clear();
-
-        self.clip_root_stack.clear();
-        self.clip_root_stack.push(ClipNodeId::NONE);
     }
 
     
@@ -336,23 +329,6 @@ impl ClipTree {
             clips,
             &mut self.nodes,
         )
-    }
-
-    
-    
-    pub fn current_clip_root(&self) -> ClipNodeId {
-        self.clip_root_stack.last().cloned().unwrap()
-    }
-
-    
-    
-    pub fn push_clip_root_node(&mut self, clip_node_id: ClipNodeId) {
-        self.clip_root_stack.push(clip_node_id);
-    }
-
-    
-    pub fn pop_clip_root(&mut self) {
-        self.clip_root_stack.pop().unwrap();
     }
 
     
@@ -951,7 +927,6 @@ impl ClipTreeBuilder {
         std::mem::replace(&mut self.tree, ClipTree {
             nodes: Vec::new(),
             leaves: Vec::new(),
-            clip_root_stack: Vec::new(),
         })
     }
 
@@ -1558,6 +1533,10 @@ impl ClipStore {
         
         
         
+        clip_root: ClipNodeId,
+        
+        
+        
         
         
         snapped_leaf_clip_rect: LayoutRect,
@@ -1569,7 +1548,6 @@ impl ClipStore {
         self.active_local_clip_rect = None;
         self.active_pic_coverage_rect = PictureRect::max_rect();
 
-        let clip_root = clip_tree.current_clip_root();
         let clip_leaf = clip_tree.get_leaf(clip_leaf_id);
 
         
