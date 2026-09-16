@@ -37,6 +37,14 @@ const { SqlError } = ChromeUtils.importESModule(
 const { AddressStorageMigrator } = ChromeUtils.importESModule(
   "resource://autofill/AddressStorageMigrator.sys.mjs"
 );
+const { FormAutofill } = ChromeUtils.importESModule(
+  "resource://autofill/FormAutofill.sys.mjs"
+);
+
+
+
+
+const UNSUPPORTED_COUNTRY = "XK";
 
 
 
@@ -1457,6 +1465,45 @@ add_task(async function test_a_round_trip_keeps_a_field_rust_cannot_hold() {
     (await s.addresses.get(guids[0]))["some-future-field"],
     "important value",
     "with the field it kept for the client that understands it"
+  );
+
+  await s._finalize();
+});
+
+add_task(async function test_a_copy_back_keeps_an_unsupported_country() {
+  const { s, json, rust } = await nowipeSetup("mig-country-back.json", []);
+  Assert.ok(
+    !FormAutofill.countries.has(UNSUPPORTED_COUNTRY),
+    `${UNSUPPORTED_COUNTRY} has no bundled address metadata`
+  );
+
+  
+  
+  
+  
+  const guid = await rust.add({
+    name: "Blerim Gashi",
+    "street-address": "Rruga C 7",
+    "address-level2": "Prizren",
+    country: UNSUPPORTED_COUNTRY,
+  });
+  Assert.equal(
+    (await rust._get(await rust._store(), guid)).country,
+    UNSUPPORTED_COUNTRY,
+    "Rust holds the code"
+  );
+  Assert.ok(
+    !("country" in (await rust.get(guid))),
+    "and does not report it on read"
+  );
+
+  const migrator = new AddressStorageMigrator(rust, json);
+  Assert.ok(await migrator.maybeRun({ wipe: false }), "the copy completed");
+
+  Assert.equal(
+    json._data.find(record => record.guid == guid).country,
+    UNSUPPORTED_COUNTRY,
+    "the code reached the disk on the other side"
   );
 
   await s._finalize();
