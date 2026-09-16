@@ -2142,6 +2142,9 @@ class Document : public nsINode,
 
 
 
+
+
+
   bool IsFullscreenLeaf();
 
   

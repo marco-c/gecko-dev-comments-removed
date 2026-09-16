@@ -15923,22 +15923,31 @@ bool Document::IsFullscreenLeaf() {
   
   
   
-  return Fullscreen() && CountFullscreenSubDocuments(*this) == 0;
+  Element* fsElement = GetUnretargetedFullscreenElement();
+  if (!fsElement) {
+    return false;
+  }
+
+  Document* subDoc = GetSubDocumentFor(fsElement);
+  if (!subDoc) {
+    return true;
+  }
+
+  return !subDoc->Fullscreen();
 }
 
  Document* Document::GetFullscreenLeaf(Document& aDoc) {
   if (aDoc.IsFullscreenLeaf()) {
     return &aDoc;
   }
-  if (!aDoc.Fullscreen()) {
+  Element* fsElement = aDoc.GetUnretargetedFullscreenElement();
+  if (!fsElement) {
     return nullptr;
   }
-  Document* leaf = nullptr;
-  aDoc.EnumerateSubDocuments([&leaf](Document& aSubDoc) {
-    leaf = GetFullscreenLeaf(aSubDoc);
-    return leaf ? CallState::Stop : CallState::Continue;
-  });
-  return leaf;
+  Document* subDoc = aDoc.GetSubDocumentFor(fsElement);
+  MOZ_ASSERT(subDoc);
+  MOZ_ASSERT(subDoc->Fullscreen());
+  return GetFullscreenLeaf(*subDoc);
 }
 
  Document* Document::GetFullscreenLeaf(Document* aDoc) {
@@ -15953,8 +15962,6 @@ bool Document::IsFullscreenLeaf() {
 
 static CallState ResetFullscreen(Document& aDocument) {
   if (Element* fsElement = aDocument.GetUnretargetedFullscreenElement()) {
-    NS_ASSERTION(CountFullscreenSubDocuments(aDocument) <= 1,
-                 "Should have at most 1 fullscreen subdocument.");
     aDocument.CleanupFullscreenState();
     NS_ASSERTION(!aDocument.Fullscreen(), "Should reset fullscreen");
     DispatchFullscreenChange(aDocument, fsElement);
@@ -16129,7 +16136,8 @@ void Document::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit) {
 
   Document* lastDoc = exitElements.LastElement()->OwnerDoc();
   size_t fullscreenCount = lastDoc->CountFullscreenElements();
-  if (!lastDoc->GetInProcessParentDocument() && fullscreenCount == 1) {
+  if ((!lastDoc->GetInProcessParentDocument() && fullscreenCount == 1) ||
+      GetFullscreenLeaf(lastDoc) != fullScreenDoc) {
     
     
     PendingFullscreenChangeList::Add(std::move(aExit));
@@ -16929,8 +16937,6 @@ void Document::RemoteFrameFullscreenReverted() {
 
 static bool HasFullscreenSubDocument(Document& aDoc) {
   uint32_t count = CountFullscreenSubDocuments(aDoc);
-  NS_ASSERTION(count <= 1,
-               "Fullscreen docs should have at most 1 fullscreen child!");
   return count >= 1;
 }
 
