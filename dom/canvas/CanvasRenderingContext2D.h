@@ -974,12 +974,15 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
 
   RefPtr<mozilla::gfx::Path> mPath;
   RefPtr<mozilla::gfx::PathBuilder> mPathBuilder;
+  RefPtr<mozilla::gfx::PathBuilder> mRecycledPathBuilder;
   mozilla::gfx::BackendType mPathType = mozilla::gfx::BackendType::NONE;
   bool mPathPruned = false;
   mozilla::gfx::Matrix mPathTransform;
   bool mPathTransformDirty = false;
 
   void FlushPathTransform();
+  already_AddRefed<mozilla::gfx::PathBuilder> CreateOrRecyclePathBuilder(
+      mozilla::gfx::FillRule aFillRule);
 
   
 
@@ -1008,6 +1011,10 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
 
 
   bool NeedToApplyFilter() {
+    
+    if (CurrentState().filterChain.IsEmpty()) {
+      return false;
+    }
     return EnsureUpdatedFilter().mPrimitives.Length() > 0;
   }
 
