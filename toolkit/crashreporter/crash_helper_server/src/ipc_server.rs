@@ -81,7 +81,6 @@ impl IPCServer {
         mut connector: IPCConnector,
         breakpad_data: BreakpadData,
         minidump_path: OsString,
-        build_id: String,
     ) -> Result<IPCServer> {
         
         
@@ -97,7 +96,6 @@ impl IPCServer {
         let crash_generator = Box::new(Mutex::new(CrashGenerator::new(
             client_handle.clone(),
             minidump_path.clone(),
-            build_id,
         )));
 
         
