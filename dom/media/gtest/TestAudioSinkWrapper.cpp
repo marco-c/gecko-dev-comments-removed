@@ -296,6 +296,9 @@ class AudioSinkWrapperReuseTest : public ::testing::Test {
   static constexpr long kCallbackFrames = 512;
   
   
+  uint32_t OutputLatencyFrames() const { return mInfo.mAudio.mRate / 10; }
+  
+  
   static constexpr int kMaxDrainCallbacks = 64;
   
   
@@ -445,10 +448,28 @@ class AudioSinkWrapperReuseTest : public ::testing::Test {
   }
 
   
+  
+  
+  
+  
   void PlayFromZeroToSteadyState() {
-    PushAudio(media::TimeUnit::Zero(), kBufferFrames, kPreSeekDataValue);
+    const uint32_t rate = mInfo.mAudio.mRate;
+    const int preSeekCallbacks =
+        static_cast<int>(OutputLatencyFrames() / kCallbackFrames) + 1;
+    const uint32_t framesNeeded =
+        static_cast<uint32_t>(preSeekCallbacks * kCallbackFrames);
+    const uint32_t buffers = (framesNeeded + kBufferFrames - 1) / kBufferFrames;
+    for (uint32_t i = 0; i < buffers; ++i) {
+      PushAudio(
+          media::TimeUnit(CheckedInt64(static_cast<int64_t>(i)) * kBufferFrames,
+                          rate),
+          kBufferFrames, kPreSeekDataValue);
+    }
     Start(media::TimeUnit::Zero());
-    DriveCallback(kCallbackFrames);
+    for (int i = 0; i < preSeekCallbacks; ++i) {
+      ASSERT_EQ(DriveCallback(kCallbackFrames),
+                MockCubebStream::KeepProcessing::Yes);
+    }
   }
 
   
@@ -502,12 +523,19 @@ class AudioSinkWrapperReuseTest : public ::testing::Test {
     
     
     const int steadyStateCallbacks =
-        static_cast<int>((rate / 10) / kCallbackFrames) + 5;
+        static_cast<int>(OutputLatencyFrames() / kCallbackFrames) + 5;
     int64_t framesFed = 0;
     for (int i = 0; i < steadyStateCallbacks; ++i) {
       ASSERT_EQ(DriveCallback(kCallbackFrames),
                 MockCubebStream::KeepProcessing::Yes);
       framesFed += kCallbackFrames;
+      if (framesFed < static_cast<int64_t>(OutputLatencyFrames())) {
+        
+        
+        
+        ExpectClockHeldAt(mWrapper->GetPosition(), aTarget,
+                          "while the carried window drains");
+      }
       
       
       
@@ -517,20 +545,21 @@ class AudioSinkWrapperReuseTest : public ::testing::Test {
 
     
     
-    
-    
-    const media::TimeUnit fedCeiling =
-        aTarget + media::TimeUnit(CheckedInt64(framesFed), rate);
-    ExpectClockNotAhead(mWrapper->GetPosition(), fedCeiling, "in steady state");
+    const int64_t audibleFrames =
+        framesFed - static_cast<int64_t>(OutputLatencyFrames());
+    const media::TimeUnit audiblePosition =
+        aTarget + media::TimeUnit(CheckedInt64(audibleFrames), rate);
 
     
     
     
     
-    const int64_t latencyFrames = rate / 10;
-    const int64_t audibleFrames = framesFed - latencyFrames;
-    const media::TimeUnit audiblePosition =
-        aTarget + media::TimeUnit(CheckedInt64(audibleFrames), rate);
+    ExpectClockNotAhead(mWrapper->GetPosition(), audiblePosition,
+                        "in steady state");
+
+    
+    
+    
     EXPECT_GE(mWrapper->GetPosition().ToSeconds(),
               audiblePosition.ToSeconds() - kClockLeadToleranceSec)
         << "reported clock lags the audible audio in steady state: reported="
@@ -990,13 +1019,13 @@ void AudioSinkWrapperReuseTest::RunSeekResumeClockFollowsAudible(
     ReuseStream aReuse) {
   
   
-  mCubeb->SetDefaultOutputLatencyFrames(mInfo.mAudio.mRate / 10);
+  mCubeb->SetDefaultOutputLatencyFrames(OutputLatencyFrames());
   const media::TimeUnit target = media::TimeUnit::FromSeconds(10);
 
-  PlayFromZeroToSteadyState();
+  ASSERT_NO_FATAL_FAILURE(PlayFromZeroToSteadyState());
   SeekAndResumeAt(target);
   ExpectClockHoldsAtTargetWhileSilent(target, aReuse);
-  ExpectClockFollowsAudioOncePlaying(target);
+  ASSERT_NO_FATAL_FAILURE(ExpectClockFollowsAudioOncePlaying(target));
 }
 
 TEST_F(AudioSinkWrapperReuseTest, SeekResumeClockFollowsAudibleFreshStream) {
@@ -1007,6 +1036,37 @@ TEST_F(AudioSinkWrapperReuseTest, SeekResumeClockFollowsAudibleFreshStream) {
 TEST_F(AudioSinkWrapperReuseTest, SeekResumeClockFollowsAudibleReusedStream) {
   CreateWrapper(ReuseStream::Enabled, MockCubeb::RunningMode::Manual);
   RunSeekResumeClockFollowsAudible(ReuseStream::Enabled);
+}
+
+
+
+
+TEST_F(AudioSinkWrapperReuseTest, SeekResumeAfterPauseIgnoresDiscardedAudio) {
+  CreateWrapper(ReuseStream::Enabled, MockCubeb::RunningMode::Manual);
+  mCubeb->SetDefaultOutputLatencyFrames(OutputLatencyFrames());
+  const media::TimeUnit target = media::TimeUnit::FromSeconds(10);
+
+  ASSERT_NO_FATAL_FAILURE(PlayFromZeroToSteadyState());
+
+  
+  
+  mWrapper->SetPlaying(false);
+  SeekAndResumeAt(target);
+
+  EXPECT_EQ(mInits, 1) << "the stream must be reused, not recreated";
+  EXPECT_EQ(mDestroys, 0) << "the stream must be reused, not recreated";
+
+  ASSERT_EQ(DriveCallback(kCallbackFrames),
+            MockCubebStream::KeepProcessing::Yes);
+  const media::TimeUnit expected =
+      target +
+      media::TimeUnit(CheckedInt64(kCallbackFrames), mInfo.mAudio.mRate);
+  
+  
+  EXPECT_NEAR(mWrapper->GetPosition().ToMicroseconds(),
+              expected.ToMicroseconds(), 1)
+      << "the clock advances by exactly the post-seek callback rather than "
+         "waiting out audio the backend had already discarded";
 }
 
 
