@@ -26,7 +26,7 @@ add_task(async function test_generation_records_a_decision_per_field() {
     const [response] = generateResponses;
     Assert.equal(
       request.threshold,
-      "high",
+      "medium",
       "The recorded threshold is the confidence a value must clear"
     );
     Assert.equal(
@@ -232,7 +232,7 @@ add_task(async function test_a_value_below_the_threshold_is_not_filled() {
       generateFormValues: async (request, { onDispatch }) => {
         onDispatch?.(TEST_MODEL_INFO);
 
-        const confidences = ["medium", "sideways"];
+        const confidences = ["low", "sideways"];
 
         return {
           memories_used: [],
@@ -273,7 +273,7 @@ add_task(async function test_a_rejected_value_does_not_cost_the_round() {
 
         
         
-        const confidences = ["high", "medium"];
+        const confidences = ["medium", "low"];
 
         return {
           memories_used: [],
