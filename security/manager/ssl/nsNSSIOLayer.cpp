@@ -1578,8 +1578,7 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
   
   
   
-  unsigned int additional_shares =
-      StaticPrefs::security_tls_client_hello_send_p256_keyshare();
+  unsigned int additional_shares = 1;
   bool tls13 = range.max >= SSL_LIBRARY_VERSION_TLS_1_3;
 
   AutoTArray<SSLNamedGroup, 8> namedGroups;
@@ -1609,7 +1608,6 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
     return NS_ERROR_FAILURE;
   }
 
-  
   
   
   if (SECSuccess != SSL_SendAdditionalKeyShares(fd, additional_shares)) {
