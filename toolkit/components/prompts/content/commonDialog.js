@@ -158,6 +158,16 @@ function commonDialogOnLoad() {
       ui.loginTextbox,
       args.owningBrowsingContext
     );
+    
+    
+    
+    
+    
+    
+    lazy.ContentAnalysisUtils.setupContentAnalysisEventsForCopyFromElement(
+      document.documentElement,
+      args.owningBrowsingContext
+    );
   }
 
   window.getAttention();
