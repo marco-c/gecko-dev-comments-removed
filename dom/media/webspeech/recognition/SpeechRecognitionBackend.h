@@ -8,13 +8,24 @@
 #define mozilla_dom_SpeechRecognitionBackend_h
 
 #include "AudioSegment.h"
+#include "mozilla/EventTargetCapability.h"
+#include "mozilla/LazyIdleThread.h"
+#include "mozilla/MoveOnlyFunction.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/ThreadSafeWeakPtr.h"
+#include "mozilla/ThreadSafety.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/hwinference/PSpeechRecognitionChild.h"
+#include "mozilla/ipc/Endpoint.h"
 #include "nsIThread.h"
+#include "nsITimer.h"
 #include "nsString.h"
 #include "nsTArray.h"
 
 namespace mozilla::hwinference {
-class HWInferenceManagerChild;
+class SpeechRecognitionChild;
 }  
 
 namespace mozilla {
@@ -30,8 +41,34 @@ namespace mozilla::dom {
 
 class Promise;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class SpeechRecognitionIPCActorUserGuard final {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SpeechRecognitionIPCActorUserGuard)
+
+  SpeechRecognitionIPCActorUserGuard();
+
+ private:
+  ~SpeechRecognitionIPCActorUserGuard();
+};
+
 class SpeechRecognitionBackend
     : public SupportsThreadSafeWeakPtr<SpeechRecognitionBackend> {
+  friend class SpeechRecognitionIPCActorUserGuard;
+
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_MAIN_THREAD(
       SpeechRecognitionBackend)
@@ -71,10 +108,56 @@ class SpeechRecognitionBackend
       nsIGlobalObject* aGlobal, const nsTArray<nsCString>& aLanguages);
   static already_AddRefed<Promise> Install(
       nsIGlobalObject* aGlobal, const nsTArray<nsCString>& aLanguages);
+  static RefPtr<hwinference::PSpeechRecognitionChild::IsModelInstalledPromise>
+  IsModelInstalledNative(hwinference::SpeechRecognitionChild* aChild,
+                         const nsTArray<nsCString>& aLanguages);
 
  private:
   virtual ~SpeechRecognitionBackend();
 
+  
+  void StartSpeechRecognitionSession(const nsCString& aLanguage)
+      MOZ_REQUIRES(sIPCCapability);
+  void StopSpeechRecognitionSession() MOZ_REQUIRES(sIPCCapability);
+  void HandleRecognitionResult(const nsCString& aTranscript, bool aIsFinal,
+                               float aConfidence, TimeStamp aEventTime)
+      MOZ_REQUIRES(sIPCCapability);
+  void HandleRecognitionError(const nsCString& aError)
+      MOZ_REQUIRES(sIPCCapability);
+
+  static void CreateSession(
+      MoveOnlyFunction<void(hwinference::SpeechRecognitionChild*)> aCallback)
+      MOZ_REQUIRES(sMainThreadCapability);
+
+  
+  
+  
+  static void EnsureIPCThread() MOZ_REQUIRES(sMainThreadCapability);
+
+  static void AssertOnIPCThread() MOZ_ASSERT_CAPABILITY(sIPCCapability);
+
+  static void AcquireIPCActorUser() MOZ_REQUIRES(sMainThreadCapability);
+  static void ReleaseIPCActorUser() MOZ_REQUIRES(sMainThreadCapability);
+
+  
+  
+  
+  
+  
+  
+  template <typename SendFunc>
+  static auto RunWithTransientSession(SendFunc&& aSendFunc)
+      MOZ_REQUIRES(sMainThreadCapability);
+
+ public:
+  static StaticAutoPtr<mozilla::EventTargetCapability<nsISerialEventTarget>>
+      sIPCCapability;
+
+ private:
+  
+  
+  
+  static int32_t sIPCActorUsers MOZ_GUARDED_BY(sMainThreadCapability);
   WeakPtr<SpeechRecognition> mParent;
   nsCString mLanguage;
   nsTArray<nsString> mPhrases;
