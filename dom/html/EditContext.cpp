@@ -181,6 +181,12 @@ EditContext::EditContext(nsIGlobalObject* aGlobalObject,
   
   
   mTextContainer->Style()->SetProperty("white-space"_ns, "pre"_ns, ""_ns, aRv);
+  
+  
+  
+  
+  mTextContainer->Style()->SetProperty("position"_ns, "absolute"_ns, ""_ns,
+                                       aRv);
   mSelectionStart = aInit.mSelectionStart;
   mSelectionEnd = aInit.mSelectionEnd;
   UpdateTextInternal(0, 0, aInit.mText, aRv);
@@ -920,6 +926,7 @@ nsresult EditContext::GetCharacterBounds(
               static_cast<const void*>(this), aStart, aEnd,
               mCodepointRectsStartIndex, CodepointRectsEndIndex());
   MOZ_ASSERT(aRects.IsEmpty());
+  MOZ_ASSERT(aStart <= aEnd);
   aStart = std::min(aStart, TextLength());
   aEnd = std::min(aEnd, TextLength());
   enum class CollapseDirection {

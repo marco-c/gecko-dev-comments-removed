@@ -2998,16 +2998,24 @@ nsresult ContentEventHandler::OnQueryCharacterAtPoint(
 
   if (EditContext* editContext = GetEditContext()) {
     AutoTArray<LayoutDeviceIntRect, 8> rects;
-    const uint32_t start = editContext->CharacterBoundsRangeStart();
-    const uint32_t count = editContext->CharacterBoundsLength();
-    rv = editContext->GetCharacterBounds(start, count, rects);
+    
+    
+    const uint32_t start = std::min(editContext->TextLength(),
+                                    editContext->CharacterBoundsRangeStart());
+    const CheckedUint32 checkedEnd =
+        CheckedUint32(start) + editContext->CharacterBoundsLength();
+    const uint32_t end =
+        std::min(checkedEnd.isValid() ? checkedEnd.value() : UINT32_MAX,
+                 editContext->TextLength());
+    rv = editContext->GetCharacterBounds(start, end, rects);
     if (NS_SUCCEEDED(rv)) {
-      for (uint32_t i : IntegerRange(start, start + count)) {
-        if (rects[i - start].Contains(aEvent->mRefPoint)) {
+      for (uint32_t i : IntegerRange(start, end)) {
+        const LayoutDeviceIntRect rect = rects[i - start];
+        if (rect.Contains(aEvent->mRefPoint)) {
           nsAutoString string;
           editContext->GetTextSubstring(i, i + 1, string);
           aEvent->mReply->mOffsetAndData.emplace(i, string);
-          aEvent->mReply->mRect = rects[i];
+          aEvent->mReply->mRect = rect;
           
           
           aEvent->mReply->mTentativeCaretOffset = Some(i);
