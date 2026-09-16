@@ -21,6 +21,7 @@ impl<'a> AutoProfilerLabel<'a> {
     
     
     
+    
     #[inline]
     pub unsafe fn new(
         label: &mut std::mem::MaybeUninit<mozilla::AutoProfilerLabel>,

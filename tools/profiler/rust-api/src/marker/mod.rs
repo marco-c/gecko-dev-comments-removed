@@ -118,8 +118,11 @@
 
 
 pub(crate) mod deserializer_tags_state;
+mod flow_id;
 pub mod options;
 pub mod schema;
+
+pub use flow_id::FlowId;
 
 pub use options::*;
 pub use schema::MarkerSchema;
@@ -292,7 +295,7 @@ unsafe fn transmute_and_stream<T>(
     T: ProfilerMarker,
 {
     let payload_slice = std::slice::from_raw_parts(payload, payload_size);
-    let payload: T = bincode::deserialize(&payload_slice).unwrap();
+    let payload: T = bincode::deserialize(payload_slice).unwrap();
     payload.stream_json_marker_data(json_writer);
 }
 
@@ -399,7 +402,7 @@ macro_rules! lazy_add_marker {
 pub struct Tracing(pub CowString);
 
 impl Tracing {
-    pub fn from_str(s: &'static str) -> Self {
+    pub fn from_static_str(s: &'static str) -> Self {
         Tracing(Cow::Borrowed(s))
     }
 }
@@ -410,7 +413,7 @@ impl ProfilerMarker for Tracing {
     }
 
     fn stream_json_marker_data(&self, json_writer: &mut JSONWriter) {
-        if self.0.len() != 0 {
+        if !self.0.is_empty() {
             json_writer.string_property("category", &self.0);
         }
     }
@@ -540,11 +543,11 @@ macro_rules! auto_profiler_marker {
 
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
-pub struct FlowStackMarker(pub u64);
+pub struct FlowStackMarker(pub FlowId);
 
 impl FlowStackMarker {
     pub fn from_pointer<T>(s: *const T) -> Self {
-        FlowStackMarker(s as usize as u64)
+        FlowStackMarker(FlowId::from(s))
     }
 }
 
@@ -554,17 +557,8 @@ impl ProfilerMarker for FlowStackMarker {
     }
 
     fn stream_json_marker_data(&self, json_writer: &mut JSONWriter) {
-        fn hex_string(id: u64) -> [u8; 16] {
-            let mut buf = [0; 16];
-            let hex_digits = b"0123456789abcdef";
-            for i in 0..16 {
-                buf[i] = hex_digits[(id >> (60 - i * 4)) as usize & 0xf];
-            }
-            buf
-        }
-
         json_writer.unique_string_property("flow", unsafe {
-            std::str::from_utf8_unchecked(&hex_string(self.0))
+            std::str::from_utf8_unchecked(&self.0.to_hex())
         });
     }
 
