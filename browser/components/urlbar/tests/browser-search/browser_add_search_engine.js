@@ -307,7 +307,9 @@ add_task(async function context_after_customize() {
     
     
     await TestUtils.waitForCondition(() => {
-      return window.gURLBar.hasAttribute("breakout");
+      return window.gURLBar.parentNode.style.getPropertyValue(
+        "--urlbar-container-height"
+      );
     });
 
     await UrlbarTestUtils.withContextMenu(window, async popup => {

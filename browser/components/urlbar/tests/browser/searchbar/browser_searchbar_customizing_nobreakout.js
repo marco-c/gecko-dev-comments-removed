@@ -13,11 +13,11 @@ async function assertBreakout(enabled, message) {
   await new Promise(r => setTimeout(r, 0));
 
   let searchbar = document.querySelector("#searchbar-new");
-  if (enabled) {
-    Assert.ok(searchbar.hasAttribute("breakout"), message + ": breakout on");
-  } else {
-    Assert.ok(!searchbar.hasAttribute("breakout"), message + ": breakout off");
-  }
+  Assert.equal(
+    !!searchbar.parentNode.style.getPropertyValue("--urlbar-container-height"),
+    enabled,
+    message + (enabled ? ": breakout on" : ": breakout off")
+  );
 }
 
 add_task(async function test_breakout() {
