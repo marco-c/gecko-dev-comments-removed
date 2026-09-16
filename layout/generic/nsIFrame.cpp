@@ -3037,33 +3037,6 @@ static bool ItemParticipatesIn3DContext(nsIFrame* aAncestor,
   return FrameParticipatesIn3DContext(aAncestor, transformFrame);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-static nsIFrame* BackfaceHidden3DParticipantFor(nsIFrame* aAncestor,
-                                                nsDisplayItem* aItem) {
-  MOZ_ASSERT(aAncestor->Extend3DContext());
-
-  nsIFrame* ancestor = aAncestor->FirstContinuation();
-  for (nsIFrame* frame = aItem->Frame(); frame && frame != ancestor;
-       frame = frame->GetClosestFlattenedTreeAncestorPrimaryFrame()) {
-    if (frame->In3DContextAndBackfaceIsHidden()) {
-      return frame;
-    }
-  }
-  return nullptr;
-}
-
 static void WrapSeparatorTransform(nsDisplayListBuilder* aBuilder,
                                    nsIFrame* aFrame,
                                    nsDisplayList* aNonParticipants,
@@ -3924,20 +3897,6 @@ void nsIFrame::BuildDisplayListForStackingContext(
                                  &participants, index++, &separator);
 
           participants.AppendToTop(item);
-        } else if (nsIFrame* backfaceHidden =
-                       BackfaceHidden3DParticipantFor(this, item)) {
-          
-          
-          
-          
-          WrapSeparatorTransform(aBuilder, this, &nonparticipants,
-                                 &participants, index++, &separator);
-
-          nsDisplayList itemList(aBuilder);
-          itemList.AppendToTop(item);
-          participants.AppendToTop(MakeDisplayItemWithIndex<nsDisplayTransform>(
-              aBuilder, backfaceHidden, index++, &itemList,
-              aBuilder->GetVisibleRect()));
         } else {
           
           
