@@ -29,6 +29,18 @@ registerCleanupFunction(() => NewtabSearchbarTestUtils.formHistory.clear());
 
 
 
+function useEngineWithoutSuggestions() {
+  return SearchTestUtils.updateRemoteSettingsConfig([
+    { identifier: "engine1" },
+  ]);
+}
+
+
+
+
+
+
+
 
 
 
