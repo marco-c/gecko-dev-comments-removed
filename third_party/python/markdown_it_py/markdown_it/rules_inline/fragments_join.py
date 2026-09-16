@@ -30,13 +30,24 @@ def fragments_join(state: StateInline) -> None:
             and state.tokens[curr + 1].type == "text"
         ):
             
-            state.tokens[curr + 1].content = (
-                state.tokens[curr].content + state.tokens[curr + 1].content
-            )
-        else:
-            if curr != last:
-                state.tokens[last] = state.tokens[curr]
+            
+            
+            
+            parts = [state.tokens[curr].content]
+            curr += 1
+            while curr < maximum and state.tokens[curr].type == "text":
+                parts.append(state.tokens[curr].content)
+                curr += 1
+            merged = state.tokens[curr - 1]
+            merged.content = "".join(parts)
+            merged.level = level
+            state.tokens[last] = merged
             last += 1
+            continue
+
+        if curr != last:
+            state.tokens[last] = state.tokens[curr]
+        last += 1
         curr += 1
 
     if curr != last:
