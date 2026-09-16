@@ -430,22 +430,16 @@ impl SpatialNode {
                 
                 
                 
-                
-                
-                let snap_origin = matches!(
-                    info.kind,
-                    ReferenceFrameKind::Transform { snap_origin: true, .. }
-                ) || match info.source_transform {
-                    PropertyBinding::Value(ref value) => ScaleOffset::from_transform(value).is_none(),
-                    PropertyBinding::Binding(..) => false,
-                };
-                let parent_origin = if snap_origin {
-                    snap_offset(
-                        info.origin_in_parent_reference_frame,
-                        state.coordinate_system_relative_scale_offset.scale,
-                    )
-                } else {
-                    info.origin_in_parent_reference_frame
+                let parent_origin = match info.source_transform {
+                    PropertyBinding::Value(ref value)
+                        if ScaleOffset::from_transform(value).is_none() =>
+                    {
+                        snap_offset(
+                            info.origin_in_parent_reference_frame,
+                            state.coordinate_system_relative_scale_offset.scale,
+                        )
+                    }
+                    _ => info.origin_in_parent_reference_frame,
                 };
 
                 let resolved_transform =
@@ -945,7 +939,6 @@ fn test_cst_perspective_relative_scroll() {
         ReferenceFrameKind::Transform {
             is_2d_scale_translation: false,
             should_snap: false,
-            snap_origin: false,
             paired_with_perspective: false,
         },
         LayoutVector2D::zero(),
@@ -1022,7 +1015,6 @@ fn test_cst_perspective_relative_sticky() {
         ReferenceFrameKind::Transform {
             is_2d_scale_translation: false,
             should_snap: false,
-            snap_origin: false,
             paired_with_perspective: false,
         },
         LayoutVector2D::zero(),

@@ -641,15 +641,6 @@ class DisplayListBuilder final {
   Maybe<wr::WrSpatialId> GetSpatialIdForDefinedLayer(
       const ActiveScrolledRoot* aASR) const;
 
-  
-  
-  
-  
-  
-  
-  
-  wr::LayoutVector2D CurrentAccumulatedScrollOffset();
-
   wr::WrSpatialId DefineScrollLayer(
       const ActiveScrolledRoot* aAsr,
       const layers::ScrollableLayerGuid::ViewID& aViewId,

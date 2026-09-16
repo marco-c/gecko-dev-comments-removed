@@ -2493,23 +2493,10 @@ WebRenderCommandsResult nsDisplayImage::CreateWebRenderCommands(
   const int32_t factor = mFrame->PresContext()->AppUnitsPerDevPixel();
   const auto destRect = LayoutDeviceRect::FromAppUnits(destAppUnits, factor);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const auto eso = aBuilder.CurrentAccumulatedScrollOffset();
-  auto snapRect = destRect;
-  snapRect.MoveBy(eso.x, eso.y);
-
   SVGImageContext svgContext;
   Maybe<ImageIntRegion> region;
   IntSize decodeSize = nsLayoutUtils::ComputeImageContainerDrawingParameters(
-      image, mFrame, snapRect, snapRect, aSc, flags, svgContext, region);
+      image, mFrame, destRect, destRect, aSc, flags, svgContext, region);
 
   RefPtr<image::WebRenderImageProvider> provider;
   ImgDrawResult drawResult =
