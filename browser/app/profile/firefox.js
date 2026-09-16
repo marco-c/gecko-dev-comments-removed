@@ -3535,6 +3535,12 @@ pref("first-startup.category-tasks-enabled", true);
   pref("default-browser-agent.enabled", true);
 #endif
 
+#ifdef XP_WIN
+  
+  pref("app.backgroundNotifications.receivePushMessages.perMessageTimeoutMs", 5000);
+  pref("app.backgroundNotifications.receivePushMessages.totalTimeoutMs", 60000);
+#endif
+
 
 #ifdef MOZ_DEV_EDITION
   pref("browser.menu.showViewImageInfo", true);
