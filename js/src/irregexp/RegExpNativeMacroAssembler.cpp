@@ -9,6 +9,7 @@
 #include "irregexp/imported/regexp-macro-assembler-arch.h"
 #include "irregexp/imported/regexp-stack.h"
 #include "irregexp/imported/special-case.h"
+#include "jit/JitZone.h"
 #include "jit/Linker.h"
 #include "jit/PerfSpewer.h"
 #include "vm/MatchPairs.h"
@@ -25,12 +26,14 @@ namespace internal {
 namespace regexp {
 
 using js::MatchPairs;
+using js::jit::ABIType;
 using js::jit::AbsoluteAddress;
 using js::jit::Address;
 using js::jit::AllocatableFloatRegisterSet;
 using js::jit::AllocatableGeneralRegisterSet;
 using js::jit::Assembler;
 using js::jit::BaseIndex;
+using js::jit::CheckUnsafeCallWithABI;
 using js::jit::CodeLocationLabel;
 using js::jit::FloatRegister;
 using js::jit::FloatRegisterSet;
@@ -1182,8 +1185,11 @@ void SMRegExpMacroAssembler::createStackFrame() {
   masm_.branchStackPtrRhs(Assembler::Below, limit_addr, &stack_ok);
 
   
-  masm_.movePtr(ImmWord(int32_t(js::RegExpRunStatus::Error)), temp0_);
-  masm_.jump(&exit_label_);
+  
+  
+  masm_.movePtr(ImmWord(int32_t(js::RegExpRunStatus::Error)),
+                js::jit::ReturnReg);
+  masm_.jump(&exit_overrecursed_label_);
 
   masm_.bind(&stack_ok);
 }
@@ -1377,6 +1383,8 @@ void SMRegExpMacroAssembler::exitHandler() {
       backtrack_stack_pointer_,
       AbsoluteAddress(ExternalReference::RegexpStackPointer(isolate())));
 
+  masm_.bind(&exit_overrecursed_label_);
+
   masm_.freeStack(frameSize_);
 
   
@@ -1419,33 +1427,72 @@ void SMRegExpMacroAssembler::backtrackHandler() {
     return;
   }
   masm_.bind(&backtrack_label_);
+  js::jit::Label interrupt, backtrack;
 #ifdef DEBUG
-  js::jit::Label bailOut;
   
   masm_.branch32(Assembler::NotEqual,
                  AbsoluteAddress(&cx_->isolate->shouldSimulateInterrupt_),
-                 Imm32(0), &bailOut);
+                 Imm32(0), &interrupt);
 #endif
   
   
-  js::jit::Label noInterrupt;
   masm_.branchTest32(
-      Assembler::Zero, AbsoluteAddress(cx_->addressOfInterruptBits()),
-      Imm32(uint32_t(js::InterruptReason::CallbackUrgent)), &noInterrupt);
-#ifdef DEBUG
-  
-  masm_.bind(&bailOut);
-#endif
-  masm_.movePtr(ImmWord(int32_t(js::RegExpRunStatus::Error)), temp0_);
-  masm_.jump(&exit_label_);
-  masm_.bind(&noInterrupt);
+      Assembler::NonZero, AbsoluteAddress(cx_->addressOfInterruptBits()),
+      Imm32(uint32_t(js::InterruptReason::CallbackUrgent)), &interrupt);
 
   
   
+  masm_.bind(&backtrack);
   Pop(temp0_);
   PushBacktrackCodeOffsetPatch(masm_.movWithPatch(ImmPtr(nullptr), temp1_));
   masm_.addPtr(temp1_, temp0_);
   masm_.jump(temp0_);
+
+  
+  
+  masm_.bind(&interrupt);
+  masm_.branch32(Assembler::Equal, canResume(), Imm32(0),
+                 &exit_with_exception_label_);
+
+  StoreBacktrackStackToMemory();
+
+  
+  masm_.moveStackPtrTo(temp1_);
+
+  
+  LiveGeneralRegisterSet volatileRegs(GeneralRegisterSet::Volatile());
+  volatileRegs.takeUnchecked(temp0_);
+  volatileRegs.takeUnchecked(temp1_);
+  volatileRegs.takeUnchecked(backtrack_stack_pointer_);
+  masm_.PushRegsInMask(volatileRegs);
+
+  using Fn = bool (*)(JSContext*, FrameData*);
+  masm_.setupUnalignedABICall(temp0_);
+  masm_.loadJSContext(temp0_);
+  masm_.passABIArg(temp0_);
+  masm_.passABIArg(temp1_);
+  masm_.callWithABI<Fn, ::js::irregexp::HandleRegExpInterrupt>(
+      ABIType::General, CheckUnsafeCallWithABI::DontCheckOther);
+  masm_.storeCallBoolResult(temp0_);
+
+  masm_.PopRegsInMask(volatileRegs);
+
+  
+  
+  
+  LoadBacktrackStackFromMemory(backtrackStackBase());
+  masm_.branchTest32(Assembler::Zero, temp0_, temp0_,
+                     &exit_with_exception_label_);
+
+  
+  masm_.loadPtr(inputString(), temp0_);
+  masm_.loadStringLength(temp0_, input_end_pointer_);
+  masm_.loadStringChars(temp0_, temp1_, encoding());
+  masm_.computeEffectiveAddress(BaseIndex(temp1_, input_end_pointer_, factor()),
+                                input_end_pointer_);
+
+  
+  masm_.jump(&backtrack);
 }
 
 void SMRegExpMacroAssembler::stackOverflowHandler() {
@@ -1599,5 +1646,70 @@ bool SMRegExpMacroAssembler::CanReadUnaligned() const {
 }
 
 }  
+}  
+}  
+
+namespace js {
+namespace irregexp {
+
+bool HandleRegExpInterrupt(JSContext* cx,
+                           v8::internal::regexp::FrameData* frameData) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_RELEASE_ASSERT(frameData->canResume);
+
+  
+  js::jit::AutoInterruptingRegExp interrupting(cx->zone()->jitZone());
+
+  
+  RootedString inputString(cx, frameData->inputString);
+
+#ifdef DEBUG
+  
+  if (IsolateShouldSimulateInterrupt(cx->isolate)) {
+    IsolateClearShouldSimulateInterrupt(cx->isolate);
+    cx->requestInterrupt(InterruptReason::CallbackUrgent);
+  }
+#endif
+
+  
+  bool result = cx->handleInterrupt();
+
+  
+  frameData->inputString = inputString;
+
+  return result;
+}
+
 }  
 }  

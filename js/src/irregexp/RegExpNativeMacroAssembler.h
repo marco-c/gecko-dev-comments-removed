@@ -336,6 +336,7 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   js::jit::NonAssertingLabel exit_label_;
   js::jit::NonAssertingLabel stack_overflow_label_;
   js::jit::NonAssertingLabel exit_with_exception_label_;
+  js::jit::NonAssertingLabel exit_overrecursed_label_;
 
   
   

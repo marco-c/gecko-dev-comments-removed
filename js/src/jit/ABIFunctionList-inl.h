@@ -35,12 +35,10 @@
 #include "jit/Ion.h"          
 #include "jit/JitFrames.h"    
 #include "jit/VMFunctions.h"  
-
-#include "js/CallArgs.h"     
-#include "js/Conversions.h"  
+#include "js/CallArgs.h"      
+#include "js/Conversions.h"   
 
 #include "js/experimental/JitInfo.h"
-
 #include "proxy/Proxy.h"          
 #include "util/PortableMath.h"    
 #include "vm/ArgumentsObject.h"   
@@ -118,6 +116,7 @@ namespace jit {
   _(js::irregexp::CaseInsensitiveCompareNonUnicode)                            \
   _(js::irregexp::CaseInsensitiveCompareUnicode)                               \
   _(js::irregexp::GrowBacktrackStack)                                          \
+  _(js::irregexp::HandleRegExpInterrupt)                                       \
   _(js::irregexp::IsCharacterInRangeArray)                                     \
   _(js::jit::AllocateAndInitTypedArrayBuffer)                                  \
   _(js::jit::AllocateBigIntNoGC)                                               \

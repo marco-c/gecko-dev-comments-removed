@@ -393,9 +393,12 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
 
   
   
-  for (auto regExp = cellIterUnsafe<RegExpShared>(); !regExp.done();
-       regExp.next()) {
-    regExp->discardJitCode();
+  
+  if (!jitZone()->keepRegExpJitCode()) {
+    for (auto regExp = cellIterUnsafe<RegExpShared>(); !regExp.done();
+         regExp.next()) {
+      regExp->discardJitCode();
+    }
   }
 
   
@@ -416,7 +419,7 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
     char discardingBaseline = 'Y';
     char discardingIon = 'Y';
 
-    char discardingRegExp = 'Y';
+    char discardingRegExp = jitZone()->keepRegExpJitCode() ? 'N' : 'Y';
     char discardingNurserySites = options.resetNurseryAllocSites ? 'Y' : 'N';
     char discardingPretenuredSites =
         options.resetPretenuredAllocSites ? 'Y' : 'N';
