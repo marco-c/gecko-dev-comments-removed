@@ -8,13 +8,9 @@
 #include "NotificationUtils.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
-#include "mozilla/glean/DomNotificationMetrics.h"
-#include "mozilla/glean/bindings/Event.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "nsIAlertsService.h"
 #include "nsIServiceWorkerManager.h"
-#include "nsIURIClassifier.h"
-#include "nsNetCID.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla::dom::notification {
@@ -119,40 +115,6 @@ class NotificationCallbacks final : public NotificationCallbacksCommon {
   WeakPtr<NotificationParent> mActor;
 };
 
-using SafeBrowsingPromise = MozPromise<bool, nsresult, false>;
-
-class SafeBrowsingClassificationCallback final
-    : public nsIURIClassifierCallback {
- public:
-  NS_DECL_ISUPPORTS
-
-  SafeBrowsingClassificationCallback() = default;
-
-  already_AddRefed<SafeBrowsingPromise> Promise() {
-    return mPromiseHolder.Ensure(__func__);
-  }
-
-  NS_IMETHOD OnClassifyComplete(nsresult aErrorCode, const nsACString& aList,
-                                const nsACString& aProvider,
-                                const nsACString& aFullHash) override {
-    if (NS_FAILED(aErrorCode)) {
-      mPromiseHolder.Reject(aErrorCode, __func__);
-    } else {
-      mPromiseHolder.Resolve(true, __func__);
-    }
-    return NS_OK;
-  }
-
- private:
-  ~SafeBrowsingClassificationCallback() {
-    mPromiseHolder.RejectIfExists(NS_ERROR_ABORT, __func__);
-  }
-
-  MozPromiseHolder<SafeBrowsingPromise> mPromiseHolder;
-};
-
-NS_IMPL_ISUPPORTS(SafeBrowsingClassificationCallback, nsIURIClassifierCallback)
-
 nsresult NotificationParent::OnAlertShow() {
   if (!mResolver) {
 #ifdef ANDROID
@@ -220,93 +182,54 @@ mozilla::ipc::IPCResult NotificationParent::RecvShow(Maybe<IPCImage>&& aIcon,
   MOZ_ASSERT(mId.IsEmpty(), "ID should not be given for a new notification");
 
   mResolver.emplace(std::move(aResolver));
+  mShowPending = true;
 
   
   
   
-  NotificationPermission permission = GetNotificationPermission(
+  RefPtr permissionPromise = EnsureValidNotificationPermission(
       mArgs.mPrincipal, mArgs.mEffectiveStoragePrincipal,
-      mArgs.mIsSecureContext, PermissionCheckPurpose::NotificationShow);
-  if (permission != NotificationPermission::Granted) {
-    CopyableErrorResult rv;
-    rv.ThrowTypeError("Permission to show Notification denied.");
-    mResolver.take().value()(rv);
-    mDangling = true;
-    return IPC_OK();
-  }
+      mArgs.mIsSecureContext);
+  permissionPromise->Then(
+      GetMainThreadSerialEventTarget(), __func__,
+      [self = RefPtr(this), icon = std::move(aIcon)](Ok) mutable {
+        self->mShowPending = false;
+        
+        
+        
 
-  auto showNotification = [self = RefPtr(this)](Maybe<IPCImage>&& aIcon) {
-    
-    
-    
-    
-    nsresult rv = self->Show(std::move(aIcon));
-    
-    
-    if (NS_FAILED(rv) && self->mResolver) {
-      self->mResolver.take().value()(CopyableErrorResult(rv));
-    }
-    
-    
-  };
+        
+        
+        
+        
+        nsresult rv = self->Show(std::move(icon));
+        
+        
+        if (NS_FAILED(rv) && self->mResolver) {
+          self->mResolver.take().value()(CopyableErrorResult(rv));
+        }
+        
+        
 
-  
-  if (StaticPrefs::dom_webnotifications_block_if_on_safebrowsing()) {
-    nsresult rv = NS_OK;
-    nsCOMPtr<nsIURIClassifier> uriClassifier =
-        do_GetService(NS_URICLASSIFIERSERVICE_CONTRACTID, &rv);
+        
+        if (self->mClosePending) {
+          self->mClosePending = false;
+          self->Unregister();
+          self->Close();
+        }
+      },
+      [self = RefPtr(this)](nsresult) {
+        
+        
+        self->mShowPending = false;
+        self->mClosePending = false;
 
-    if (NS_FAILED(rv) || !uriClassifier) {
-      NS_WARNING("URI classifier unavailable for notification check");
-    } else {
-      RefPtr<SafeBrowsingClassificationCallback> callback =
-          new SafeBrowsingClassificationCallback();
-      RefPtr<SafeBrowsingPromise> promise = callback->Promise();
+        CopyableErrorResult rv;
+        rv.ThrowTypeError("Permission to show Notification denied.");
+        self->mResolver.take().value()(rv);
 
-      bool willClassify = false;
-      rv = uriClassifier->Classify(mArgs.mPrincipal, callback, &willClassify);
-
-      if (NS_SUCCEEDED(rv) && willClassify) {
-        mShowPending = true;
-        promise->Then(
-            GetMainThreadSerialEventTarget(), __func__,
-            [self = RefPtr(this), showNotification,
-             icon = std::move(aIcon)](bool) mutable {
-              self->mShowPending = false;
-
-              
-              
-              
-              showNotification(std::move(icon));
-
-              
-              if (self->mClosePending) {
-                self->mClosePending = false;
-                self->Unregister();
-                self->Close();
-              }
-            },
-            [self = RefPtr(this)](nsresult) {
-              
-              
-              self->mShowPending = false;
-              self->mClosePending = false;
-
-              RemovePermission(self->mArgs.mPrincipal);
-
-              CopyableErrorResult rv;
-              rv.ThrowTypeError("Permission to show Notification denied.");
-              self->mResolver.take().value()(rv);
-
-              self->mDangling = true;
-            });
-
-        return IPC_OK();
-      }
-    }
-  }
-
-  showNotification(std::move(aIcon));
+        self->mDangling = true;
+      });
   return IPC_OK();
 }
 
