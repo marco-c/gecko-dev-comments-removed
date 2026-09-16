@@ -817,6 +817,7 @@ AudioClock::~AudioClock() = default;
 void AudioClock::UpdateFrameHistory(uint32_t aServiced, uint32_t aUnderrun,
                                     bool aAudioThreadChanged) {
 #ifdef XP_MACOSX
+  mHandoff.mTotal += aServiced + aUnderrun;
   if (aAudioThreadChanged) {
     mCallbackInfoQueue.ResetProducerThreadId();
   }
@@ -845,20 +846,17 @@ void AudioClock::UpdateFrameHistory(uint32_t aServiced, uint32_t aUnderrun,
 
 void AudioClock::Rebase(int64_t aBaseOffset) {
 #ifdef XP_MACOSX
+  ApplyQueuedCallbackInfo();
   
   
   
   
-  
-  
-  CallbackInfo info;
-  while (mCallbackInfoQueue.Dequeue(&info, 1)) {
-  }
-  mFrameHistory->Rebase(aBaseOffset);
+  mHandoff.mRebasedThrough = mHandoff.mTotal;
 #else
   MutexAutoLock lock(mMutex);
-  mFrameHistory->Rebase(aBaseOffset);
 #endif
+
+  mFrameHistory->Rebase(aBaseOffset);
 }
 
 int64_t AudioClock::GetPositionInFrames(int64_t aFrames) {
@@ -866,14 +864,28 @@ int64_t AudioClock::GetPositionInFrames(int64_t aFrames) {
   return v.isValid() ? v.value() : -1;
 }
 
-int64_t AudioClock::GetPosition(int64_t frames) {
 #ifdef XP_MACOSX
-  
-  
+void AudioClock::ApplyQueuedCallbackInfo() {
   CallbackInfo info;
   while (mCallbackInfoQueue.Dequeue(&info, 1)) {
+    
+    
+    mHandoff.mSeen += info.TotalFrames();
+    if (mHandoff.mSeen <= mHandoff.mRebasedThrough) {
+      
+      
+      
+      
+      continue;
+    }
     mFrameHistory->Append(info.mServiced, info.mUnderrun, info.mOutputRate);
   }
+}
+#endif
+
+int64_t AudioClock::GetPosition(int64_t frames) {
+#ifdef XP_MACOSX
+  ApplyQueuedCallbackInfo();
 #else
   MutexAutoLock lock(mMutex);
 #endif

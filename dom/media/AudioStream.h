@@ -40,6 +40,10 @@ struct CallbackInfo {
   CallbackInfo() = default;
   CallbackInfo(uint32_t aServiced, uint32_t aUnderrun, uint32_t aOutputRate)
       : mServiced(aServiced), mUnderrun(aUnderrun), mOutputRate(aOutputRate) {}
+
+  
+  uint32_t TotalFrames() const { return mServiced + mUnderrun; }
+
   uint32_t mServiced = 0;
   uint32_t mUnderrun = 0;
   uint32_t mOutputRate = 0;
@@ -98,6 +102,40 @@ class AudioClock {
   uint32_t GetOutputRate() const { return mOutRate; }
 
  private:
+#  ifdef XP_MACOSX
+  
+  
+  
+  
+  
+  
+  void ApplyQueuedCallbackInfo();
+#  endif
+
+  
+  
+  
+  struct FrameHandoff {
+    
+    
+    
+    
+    
+    Atomic<uint64_t> mTotal{0};
+#  ifdef XP_MACOSX
+    
+    
+    
+    uint64_t mSeen = 0;
+
+    
+    
+    
+    uint64_t mRebasedThrough = 0;
+#  endif
+  };
+  FrameHandoff mHandoff;
+
   
   
   Atomic<uint32_t> mOutRate;
@@ -239,6 +277,9 @@ class AudioBufferWriter : public AudioBufferCursor {
 
 
 
+
+
+
 class AudioStream final {
   virtual ~AudioStream();
 
@@ -293,7 +334,6 @@ class AudioStream final {
   
   void SetKeepRunningMode(bool aKeepRunning);
 
-  
   
   
   void RebaseLive();
@@ -445,6 +485,11 @@ class AudioStream final {
   
   
   bool mCubebStarted = false;
+
+  
+  
+  
+  bool mResumeKeptCubebRunning = false;
 };
 
 }  
