@@ -514,13 +514,15 @@ const ScrollMetadata& Axis::GetScrollMetadata() const {
 bool Axis::OverscrollBehaviorAllowsHandoff() const {
   
   
-  return GetOverscrollBehavior() == OverscrollBehavior::Auto;
+  return GetOverscrollBehavior() == OverscrollBehavior::Auto ||
+         GetOverscrollBehavior() == OverscrollBehavior::Chain;
 }
 
 bool Axis::OverscrollBehaviorAllowsOverscrollEffect() const {
   
   
-  return GetOverscrollBehavior() != OverscrollBehavior::None;
+  return GetOverscrollBehavior() == OverscrollBehavior::Auto ||
+         GetOverscrollBehavior() == OverscrollBehavior::Contain;
 }
 
 AxisX::AxisX(AsyncPanZoomController* aAsyncPanZoomController)
