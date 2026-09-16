@@ -2185,12 +2185,14 @@ Element* Element::GetAttrAssociatedElementInternal(nsAtom* aAttr,
     return nullptr;
   }
 
-  Element* resolved = attrEl->ResolveReferenceTarget();
-  if (resolved && aForBindings) {
+  if (aForBindings) {
+    
+    
+    
     return attrEl;
   }
 
-  return resolved;
+  return attrEl->ResolveReferenceTarget();
 }
 
 Element* Element::GetAttrAssociatedElementForBindings(nsAtom* aAttr) const {
