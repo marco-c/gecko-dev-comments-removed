@@ -7,6 +7,7 @@
 #include "MFMediaEngineUtils.h"
 #include "mozilla/EMEUtils.h"
 #include "mozilla/EnumeratedRange.h"
+#include "mozilla/StaticPrefs_media.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
 
@@ -17,6 +18,12 @@ namespace mozilla {
 
 namespace {
 bool IsRecoverableActivationError(HRESULT aError) {
+  
+  
+  if (!StaticPrefs::
+          media_wmf_media_engine_protected_readiness_gate_recovery_enabled()) {
+    return false;
+  }
   
   
   
