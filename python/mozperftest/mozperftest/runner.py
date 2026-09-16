@@ -19,7 +19,6 @@ import json
 import logging
 import os
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
@@ -198,48 +197,10 @@ def run_tools(mach_cmd, kwargs):
     from mozperftest.utils import ON_TRY, install_package
 
     mach_cmd.activate_virtualenv()
-    if sys.version_info[:2] == (3, 9):
-        
-        
-        
-        install_package(
-            mach_cmd.virtualenv_manager,
-            "numpy==1.24.4",
-        )
-
-        install_package(
-            mach_cmd.virtualenv_manager,
-            "scipy==1.10.0",
-        )
-
-        subprocess.check_call([
-            mach_cmd.virtualenv_manager.python_path,
-            "-m",
-            "pip",
-            "install",
-            "opencv-python==4.8.1.78",
-            "--no-deps",
-            "--no-index",
-            "--find-links",
-            "https://pypi.pub.build.mozilla.org/pub/",
-        ])
-
-        subprocess.check_call([
-            mach_cmd.virtualenv_manager.python_path,
-            "-m",
-            "pip",
-            "install",
-            "mozperftest-tools==0.4.4",
-            "--no-deps",
-            "--no-index",
-            "--find-links",
-            "https://pypi.pub.build.mozilla.org/pub/",
-        ])
-    else:
-        install_package(
-            mach_cmd.virtualenv_manager,
-            "mozperftest-tools==0.4.4",
-        )
+    install_package(
+        mach_cmd.virtualenv_manager,
+        "mozperftest-tools==0.4.4",
+    )
 
     log_level = logging.INFO
     if mach_cmd.log_manager.terminal_handler is not None:
