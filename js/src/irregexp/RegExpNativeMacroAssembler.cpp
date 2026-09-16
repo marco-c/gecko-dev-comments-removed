@@ -1224,7 +1224,7 @@ void SMRegExpMacroAssembler::initFrameAndRegs() {
   Register ioDataReg = temp0_;
 
   Register matchesReg = temp1_;
-  masm_.loadPtr(Address(ioDataReg, offsetof(InputOutputData, matches)),
+  masm_.loadPtr(Address(ioDataReg, InputOutputData::offsetOfMatches()),
                 matchesReg);
 
   
@@ -1249,12 +1249,17 @@ void SMRegExpMacroAssembler::initFrameAndRegs() {
 #endif
 
   
-  masm_.loadPtr(Address(ioDataReg, offsetof(InputOutputData, inputStart)),
-                current_position_);
+  Register inputReg = temp1_;
+  masm_.loadPtr(Address(ioDataReg, InputOutputData::offsetOfInput()), inputReg);
+  masm_.storePtr(inputReg, inputString());
 
   
-  masm_.loadPtr(Address(ioDataReg, offsetof(InputOutputData, inputEnd)),
-                input_end_pointer_);
+  masm_.loadStringLength(inputReg, input_end_pointer_);
+  masm_.loadStringChars(inputReg, current_position_, encoding());
+
+  
+  BaseIndex endAddr(current_position_, input_end_pointer_, factor());
+  masm_.computeEffectiveAddress(endAddr, input_end_pointer_);
 
   
   masm_.subPtr(input_end_pointer_, current_position_);
@@ -1264,10 +1269,15 @@ void SMRegExpMacroAssembler::initFrameAndRegs() {
 
   
   Register startIndexReg = temp1_;
-  masm_.loadPtr(Address(ioDataReg, offsetof(InputOutputData, startIndex)),
+  masm_.loadPtr(Address(ioDataReg, InputOutputData::offsetOfStartIndex()),
                 startIndexReg);
   masm_.computeEffectiveAddress(
       BaseIndex(current_position_, startIndexReg, factor()), current_position_);
+
+  
+  masm_.load32(Address(ioDataReg, InputOutputData::offsetOfCanResume()),
+               temp0_);
+  masm_.store32(temp0_, canResume());
 
   
   

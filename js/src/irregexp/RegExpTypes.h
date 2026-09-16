@@ -10,6 +10,8 @@
 
 #include "js/UniquePtr.h"
 
+class JSLinearString;
+
 namespace js {
 class MatchPairs;
 }
@@ -62,35 +64,39 @@ class Stack;
 class StackScope;
 
 struct InputOutputData {
-  const void* inputStart;
-  const void* inputEnd;
+  JSLinearString* input;
 
   
   size_t startIndex;
 
   js::MatchPairs* matches;
 
-  template <typename CharT>
-  InputOutputData(const CharT* inputStart, const CharT* inputEnd,
-                  size_t startIndex, js::MatchPairs* matches)
-      : inputStart(inputStart),
-        inputEnd(inputEnd),
+  
+  
+  
+  
+  uint32_t canResume;
+
+  InputOutputData(JSLinearString* input, size_t startIndex,
+                  js::MatchPairs* matches, bool canResume)
+      : input(input),
         startIndex(startIndex),
-        matches(matches) {}
+        matches(matches),
+        canResume(canResume) {}
 
   
   
-  static constexpr int32_t offsetOfInputStart() {
-    return int32_t(offsetof(InputOutputData, inputStart));
-  }
-  static constexpr int32_t offsetOfInputEnd() {
-    return int32_t(offsetof(InputOutputData, inputEnd));
+  static constexpr int32_t offsetOfInput() {
+    return int32_t(offsetof(InputOutputData, input));
   }
   static constexpr int32_t offsetOfStartIndex() {
     return int32_t(offsetof(InputOutputData, startIndex));
   }
   static constexpr int32_t offsetOfMatches() {
     return int32_t(offsetof(InputOutputData, matches));
+  }
+  static constexpr int32_t offsetOfCanResume() {
+    return int32_t(offsetof(InputOutputData, canResume));
   }
 };
 

@@ -32,6 +32,14 @@ struct FrameData {
   
   int32_t* matches;    
   int32_t numMatches;  
+
+  
+  
+  uint32_t canResume;
+
+  
+  
+  JSString* inputString;
 };
 
 class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
@@ -176,6 +184,9 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   inline js::jit::Scale factor() {
     return mode_ == UC16 ? js::jit::TimesTwo : js::jit::TimesOne;
   }
+  inline js::CharEncoding encoding() {
+    return mode_ == UC16 ? js::CharEncoding::TwoByte : js::CharEncoding::Latin1;
+  }
 
   js::jit::Address inputStart() {
     return js::jit::Address(masm_.getStackPointer(),
@@ -192,6 +203,14 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   js::jit::Address numMatches() {
     return js::jit::Address(masm_.getStackPointer(),
                             offsetof(FrameData, numMatches));
+  }
+  js::jit::Address canResume() {
+    return js::jit::Address(masm_.getStackPointer(),
+                            offsetof(FrameData, canResume));
+  }
+  js::jit::Address inputString() {
+    return js::jit::Address(masm_.getStackPointer(),
+                            offsetof(FrameData, inputString));
   }
 
   

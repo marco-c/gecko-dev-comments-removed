@@ -2394,14 +2394,14 @@ static bool PrepareAndExecuteRegExp(MacroAssembler& masm, Register regexp,
   int32_t matchPairsOffset = ioOffset + int32_t(sizeof(InputOutputData));
   int32_t pairsArrayOffset = matchPairsOffset + int32_t(sizeof(MatchPairs));
 
-  Address inputStartAddress(FramePointer,
-                            ioOffset + InputOutputData::offsetOfInputStart());
-  Address inputEndAddress(FramePointer,
-                          ioOffset + InputOutputData::offsetOfInputEnd());
+  Address inputAddress(FramePointer,
+                       ioOffset + InputOutputData::offsetOfInput());
   Address startIndexAddress(FramePointer,
                             ioOffset + InputOutputData::offsetOfStartIndex());
   Address matchesAddress(FramePointer,
                          ioOffset + InputOutputData::offsetOfMatches());
+  Address canResumeAddress(FramePointer,
+                           ioOffset + InputOutputData::offsetOfCanResume());
 
   Address matchPairsAddress(FramePointer, matchPairsOffset);
   Address pairCountAddress(FramePointer,
@@ -2513,37 +2513,24 @@ static bool PrepareAndExecuteRegExp(MacroAssembler& masm, Register regexp,
   }
 
   
-  
   Register codePointer = temp1;  
-  Register byteLength = temp3;
   {
     Label isLatin1, done;
-    masm.loadStringLength(input, byteLength);
-
     masm.branchLatin1String(input, &isLatin1);
 
     
-    masm.loadStringChars(input, temp2, CharEncoding::TwoByte);
-    masm.storePtr(temp2, inputStartAddress);
     masm.loadPtr(
         Address(regexpReg, RegExpShared::offsetOfJitCode(false)),
         codePointer);
-    masm.lshiftPtr(Imm32(1), byteLength);
     masm.jump(&done);
 
     
     masm.bind(&isLatin1);
-    masm.loadStringChars(input, temp2, CharEncoding::Latin1);
-    masm.storePtr(temp2, inputStartAddress);
     masm.loadPtr(
         Address(regexpReg, RegExpShared::offsetOfJitCode(true)),
         codePointer);
 
     masm.bind(&done);
-
-    
-    masm.addPtr(byteLength, temp2);
-    masm.storePtr(temp2, inputEndAddress);
   }
 
   
@@ -2554,9 +2541,11 @@ static bool PrepareAndExecuteRegExp(MacroAssembler& masm, Register regexp,
   masm.loadPtr(Address(codePointer, JitCode::offsetOfCode()), codePointer);
 
   
+  masm.store32(Imm32(0), canResumeAddress);
   masm.computeEffectiveAddress(matchPairsAddress, temp2);
   masm.storePtr(temp2, matchesAddress);
   masm.storePtr(lastIndex, startIndexAddress);
+  masm.storePtr(input, inputAddress);
 
   
   masm.computeEffectiveAddress(Address(FramePointer, ioOffset), temp2);
