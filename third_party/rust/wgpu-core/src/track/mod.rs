@@ -324,17 +324,16 @@ pub(crate) trait ResourceUses:
     type Selector: fmt::Debug;
 
     
-    fn bits(self) -> u16;
+    fn bits(self) -> u32;
     
     fn any_exclusive(self) -> bool;
-}
 
-
-
-fn invalid_resource_state<T: ResourceUses>(state: T) -> bool {
     
     
-    state.any_exclusive() && !state.bits().is_power_of_two()
+    fn is_invalid(self) -> bool {
+        
+        self.any_exclusive() && self.bits().count_ones() != 1
+    }
 }
 
 

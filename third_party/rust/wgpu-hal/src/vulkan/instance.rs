@@ -173,7 +173,6 @@ unsafe extern "system" fn debug_utils_messenger_callback(
     ))]
     if level == log::Level::Error
         && message_type.contains(vk::DebugUtilsMessageTypeFlagsEXT::VALIDATION)
-        && !error_is_waived(cd.message_id_number)
         && !cts_error_is_waived(cd.message_id_number)
     {
         use alloc::string::ToString as _;
@@ -181,26 +180,6 @@ unsafe extern "system" fn debug_utils_messenger_callback(
     }
 
     vk::FALSE
-}
-
-
-
-
-#[cfg(all(
-    debug_assertions,
-    feature = "internal_error_panic",
-    not(target_vendor = "apple")
-))]
-fn error_is_waived(message_id_number: i32) -> bool {
-    const WAIVED_MESSAGE_IDS: &[i32] = &[
-        
-        
-        
-        
-        0x5c0ec5d6_u32 as i32,
-    ];
-
-    WAIVED_MESSAGE_IDS.contains(&message_id_number)
 }
 
 

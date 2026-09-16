@@ -110,12 +110,11 @@ pub use self::wgl::{AdapterContext, AdapterContextLock, Instance, Surface};
 pub use fence::Fence;
 
 use alloc::{boxed::Box, string::String, string::ToString as _, sync::Arc, vec::Vec};
-use core::{
-    fmt,
-    ops::Range,
-    sync::atomic::{AtomicU32, AtomicU8},
+use core::{fmt, ops::Range};
+use wgpu_sync::{
+    atomic::{AtomicU32, AtomicU8},
+    Mutex,
 };
-use wgpu_sync::Mutex;
 
 use arrayvec::ArrayVec;
 use glow::HasContext;
@@ -473,6 +472,13 @@ pub struct Texture {
 
     
     
+    
+    
+    
+    
+    
+    
+    
     pub drop_guard: Option<crate::DropGuard>,
 }
 
@@ -526,15 +532,22 @@ impl Texture {
     }
 
     
-    fn log_failing_target_heuristics(view_dimension: wgt::TextureViewDimension, target: u32) {
-        let expected_target = match view_dimension {
-            wgt::TextureViewDimension::D1 => glow::TEXTURE_2D,
-            wgt::TextureViewDimension::D2 => glow::TEXTURE_2D,
+    
+    
+    
+    fn target_for_view_dimension(view_dimension: wgt::TextureViewDimension) -> BindTarget {
+        match view_dimension {
+            wgt::TextureViewDimension::D1 | wgt::TextureViewDimension::D2 => glow::TEXTURE_2D,
             wgt::TextureViewDimension::D2Array => glow::TEXTURE_2D_ARRAY,
             wgt::TextureViewDimension::Cube => glow::TEXTURE_CUBE_MAP,
             wgt::TextureViewDimension::CubeArray => glow::TEXTURE_CUBE_MAP_ARRAY,
             wgt::TextureViewDimension::D3 => glow::TEXTURE_3D,
-        };
+        }
+    }
+
+    
+    fn log_failing_target_heuristics(view_dimension: wgt::TextureViewDimension, target: u32) {
+        let expected_target = Self::target_for_view_dimension(view_dimension);
 
         if expected_target == target {
             return;

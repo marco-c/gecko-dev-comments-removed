@@ -31,11 +31,13 @@ mod descriptor;
 mod device;
 mod drm;
 mod instance;
+mod pnext_chain;
 mod sampler;
 mod semaphore_list;
 mod swapchain;
 
 pub use adapter::PhysicalDeviceFeatures;
+pub(crate) use pnext_chain::PnextChain;
 
 use alloc::{boxed::Box, ffi::CString, sync::Arc, vec::Vec};
 use core::{
@@ -320,6 +322,43 @@ impl Surface {
             .expect("Surface should have a native Vulkan swapchain");
         unsafe { swapchain.set_next_present_chain(chain) };
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub unsafe fn set_next_swapchain_create_chain(&self, chain: *mut c_void) {
+        let surface = self
+            .inner
+            .as_any()
+            .downcast_ref::<swapchain::NativeSurface>()
+            .expect("Surface should be a native Vulkan surface");
+        unsafe { surface.set_next_swapchain_create_chain(chain) };
+    }
 }
 
 #[derive(Debug)]
@@ -470,9 +509,19 @@ struct PrivateCapabilities {
     scratch_buffer_alignment: u32,
 
     
+    depth_stencil_swizzle_one_support: bool,
+
+    
     
     
     ray_tracing_pipeline_group_data_size: u32,
+
+    
+    
+    
+    
+    
+    store_op_none: bool,
 }
 
 bitflags::bitflags!(
@@ -545,6 +594,8 @@ struct RenderPassKey {
     depth_stencil: Option<DepthStencilAttachmentKey>,
     sample_count: u32,
     multiview_mask: Option<NonZeroU32>,
+    depth_read_only: bool,
+    stencil_read_only: bool,
 }
 
 struct DeviceShared {
@@ -700,6 +751,11 @@ pub struct Queue {
     relay_semaphores: Mutex<RelaySemaphores>,
     signal_semaphores: Mutex<SemaphoreList>,
     wait_semaphores: Mutex<SemaphoreList>,
+    
+    
+    
+    
+    next_submit_chain: Mutex<Option<PnextChain>>,
 }
 
 impl fmt::Debug for Queue {
@@ -711,6 +767,7 @@ impl fmt::Debug for Queue {
             relay_semaphores: _,
             signal_semaphores: _,
             wait_semaphores: _,
+            next_submit_chain: _,
         } = self;
         f.debug_struct("Queue")
             .field("family_index", family_index)
@@ -846,6 +903,33 @@ pub struct AccelerationStructure {
 }
 
 impl crate::DynAccelerationStructure for AccelerationStructure {}
+
+impl AccelerationStructure {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub unsafe fn raw_handle(&self) -> vk::AccelerationStructureKHR {
+        self.raw
+    }
+}
 
 #[derive(Debug)]
 pub enum TextureMemory {
@@ -1000,7 +1084,7 @@ struct ResourceIdentityFactory<T> {
     #[cfg(not(target_has_atomic = "64"))]
     next_id: Mutex<u64>,
     #[cfg(target_has_atomic = "64")]
-    next_id: core::sync::atomic::AtomicU64,
+    next_id: wgpu_sync::atomic::AtomicU64,
     _phantom: PhantomData<T>,
 }
 
@@ -1010,7 +1094,7 @@ impl<T> ResourceIdentityFactory<T> {
             #[cfg(not(target_has_atomic = "64"))]
             next_id: Mutex::new(0),
             #[cfg(target_has_atomic = "64")]
-            next_id: core::sync::atomic::AtomicU64::new(0),
+            next_id: wgpu_sync::atomic::AtomicU64::new(0),
             _phantom: PhantomData,
         }
     }
@@ -1536,6 +1620,13 @@ impl crate::Queue for Queue {
             &mut vk_timeline_info,
         );
 
+        let submit_chain = self.next_submit_chain.lock().take();
+        if let Some(chain) = submit_chain {
+            
+            
+            vk_info.p_next = unsafe { chain.splice_into(vk_info.p_next) };
+        }
+
         profiling::scope!("vkQueueSubmit");
         unsafe {
             self.device
@@ -1619,6 +1710,33 @@ impl Queue {
     
     pub fn remove_wait_semaphore(&self, semaphore: vk::Semaphore) -> bool {
         self.wait_semaphores.lock().remove(semaphore)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub unsafe fn set_next_submit_chain(&self, chain: *mut c_void) {
+        *self.next_submit_chain.lock() = Some(PnextChain::new(chain));
     }
 }
 

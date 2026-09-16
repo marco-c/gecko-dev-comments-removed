@@ -537,11 +537,6 @@ impl super::Queue {
                                 v,
                             );
                         },
-                        #[cfg(not(web_sys_unstable_apis))]
-                        wgt::ExternalImageSource::VideoFrame(_) => {
-                            unimplemented!("web_sys_unstable_apis is needed for glow")
-                        }
-                        #[cfg(web_sys_unstable_apis)]
                         wgt::ExternalImageSource::VideoFrame(ref v) => unsafe {
                             gl.tex_sub_image_3d_with_video_frame(
                                 dst_target,
@@ -587,7 +582,28 @@ impl super::Queue {
                                 c,
                             );
                         },
-                        wgt::ExternalImageSource::OffscreenCanvas(_) => unreachable!(),
+                        wgt::ExternalImageSource::OffscreenCanvas(ref c) => unsafe {
+                            
+                            
+                            
+                            
+                            
+                            
+                            use wasm_bindgen::JsCast as _;
+                            gl.tex_sub_image_3d_with_html_canvas_element(
+                                dst_target,
+                                copy.dst_base.mip_level as i32,
+                                copy.dst_base.origin.x as i32,
+                                copy.dst_base.origin.y as i32,
+                                z_offset as i32,
+                                copy.size.width as i32,
+                                copy.size.height as i32,
+                                copy.size.depth as i32,
+                                format_desc.external,
+                                format_desc.data_type,
+                                c.unchecked_ref(),
+                            );
+                        },
                     }
                 } else {
                     let dst_target = get_2d_target(dst_target, copy.dst_base.array_layer);
@@ -632,11 +648,6 @@ impl super::Queue {
                                 v,
                             )
                         },
-                        #[cfg(not(web_sys_unstable_apis))]
-                        wgt::ExternalImageSource::VideoFrame(_) => {
-                            unimplemented!("web_sys_unstable_apis is needed for glow")
-                        }
-                        #[cfg(web_sys_unstable_apis)]
                         wgt::ExternalImageSource::VideoFrame(ref v) => unsafe {
                             gl.tex_sub_image_2d_with_video_frame_and_width_and_height(
                                 dst_target,
@@ -676,7 +687,23 @@ impl super::Queue {
                                 c,
                             )
                         },
-                        wgt::ExternalImageSource::OffscreenCanvas(_) => unreachable!(),
+                        wgt::ExternalImageSource::OffscreenCanvas(ref c) => unsafe {
+                            
+                            
+                            
+                            use wasm_bindgen::JsCast as _;
+                            gl.tex_sub_image_2d_with_html_canvas_and_width_and_height(
+                                dst_target,
+                                copy.dst_base.mip_level as i32,
+                                copy.dst_base.origin.x as i32,
+                                copy.dst_base.origin.y as i32,
+                                copy.size.width as i32,
+                                copy.size.height as i32,
+                                format_desc.external,
+                                format_desc.data_type,
+                                c.unchecked_ref(),
+                            )
+                        },
                     }
                 }
 
@@ -696,59 +723,63 @@ impl super::Queue {
                 dst_target,
                 ref copy,
             } => {
-                
                 unsafe { gl.bind_framebuffer(glow::READ_FRAMEBUFFER, Some(self.copy_fbo)) };
-                if is_layered_target(src_target) {
-                    
-                    unsafe {
-                        gl.framebuffer_texture_layer(
-                            glow::READ_FRAMEBUFFER,
-                            glow::COLOR_ATTACHMENT0,
-                            Some(src),
-                            copy.src_base.mip_level as i32,
-                            copy.src_base.array_layer as i32,
-                        )
-                    };
-                } else {
-                    unsafe {
-                        gl.framebuffer_texture_2d(
-                            glow::READ_FRAMEBUFFER,
-                            glow::COLOR_ATTACHMENT0,
-                            src_target,
-                            Some(src),
-                            copy.src_base.mip_level as i32,
-                        )
-                    };
-                }
-
                 unsafe { gl.bind_texture(dst_target, Some(dst)) };
-                if is_layered_target(dst_target) {
-                    unsafe {
-                        gl.copy_tex_sub_image_3d(
-                            dst_target,
-                            copy.dst_base.mip_level as i32,
-                            copy.dst_base.origin.x as i32,
-                            copy.dst_base.origin.y as i32,
-                            get_z_offset(dst_target, &copy.dst_base) as i32,
-                            copy.src_base.origin.x as i32,
-                            copy.src_base.origin.y as i32,
-                            copy.size.width as i32,
-                            copy.size.height as i32,
-                        )
-                    };
-                } else {
-                    unsafe {
-                        gl.copy_tex_sub_image_2d(
-                            get_2d_target(dst_target, copy.dst_base.array_layer),
-                            copy.dst_base.mip_level as i32,
-                            copy.dst_base.origin.x as i32,
-                            copy.dst_base.origin.y as i32,
-                            copy.src_base.origin.x as i32,
-                            copy.src_base.origin.y as i32,
-                            copy.size.width as i32,
-                            copy.size.height as i32,
-                        )
-                    };
+
+                
+                
+                for z in 0..copy.size.depth {
+                    if is_layered_target(src_target) {
+                        
+                        unsafe {
+                            gl.framebuffer_texture_layer(
+                                glow::READ_FRAMEBUFFER,
+                                glow::COLOR_ATTACHMENT0,
+                                Some(src),
+                                copy.src_base.mip_level as i32,
+                                (get_z_offset(src_target, &copy.src_base) + z) as i32,
+                            )
+                        };
+                    } else {
+                        unsafe {
+                            gl.framebuffer_texture_2d(
+                                glow::READ_FRAMEBUFFER,
+                                glow::COLOR_ATTACHMENT0,
+                                get_2d_target(src_target, copy.src_base.array_layer + z),
+                                Some(src),
+                                copy.src_base.mip_level as i32,
+                            )
+                        };
+                    }
+
+                    if is_layered_target(dst_target) {
+                        unsafe {
+                            gl.copy_tex_sub_image_3d(
+                                dst_target,
+                                copy.dst_base.mip_level as i32,
+                                copy.dst_base.origin.x as i32,
+                                copy.dst_base.origin.y as i32,
+                                (get_z_offset(dst_target, &copy.dst_base) + z) as i32,
+                                copy.src_base.origin.x as i32,
+                                copy.src_base.origin.y as i32,
+                                copy.size.width as i32,
+                                copy.size.height as i32,
+                            )
+                        };
+                    } else {
+                        unsafe {
+                            gl.copy_tex_sub_image_2d(
+                                get_2d_target(dst_target, copy.dst_base.array_layer + z),
+                                copy.dst_base.mip_level as i32,
+                                copy.dst_base.origin.x as i32,
+                                copy.dst_base.origin.y as i32,
+                                copy.src_base.origin.x as i32,
+                                copy.src_base.origin.y as i32,
+                                copy.size.width as i32,
+                                copy.size.height as i32,
+                            )
+                        };
+                    }
                 }
             }
             C::CopyBufferToTexture {
@@ -1313,8 +1344,10 @@ impl super::Queue {
                 }
                 if usage.intersects(
                     wgt::TextureUses::COLOR_TARGET
-                        | wgt::TextureUses::DEPTH_STENCIL_READ
-                        | wgt::TextureUses::DEPTH_STENCIL_WRITE,
+                        | wgt::TextureUses::DEPTH_READ
+                        | wgt::TextureUses::DEPTH_WRITE
+                        | wgt::TextureUses::STENCIL_READ
+                        | wgt::TextureUses::STENCIL_WRITE,
                 ) {
                     flags |= glow::FRAMEBUFFER_BARRIER_BIT;
                 }

@@ -1242,7 +1242,9 @@ impl Queue {
         self.device.check_is_valid()?;
 
         let mut needs_flag = false;
-        needs_flag |= matches!(source.source, wgt::ExternalImageSource::OffscreenCanvas(_));
+        
+        
+        
         needs_flag |= source.origin != wgt::Origin2d::ZERO;
         needs_flag |= destination.color_space != wgt::PredefinedColorSpace::Srgb;
         #[allow(clippy::bool_comparison)]

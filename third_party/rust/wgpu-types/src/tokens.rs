@@ -1,6 +1,6 @@
 use macro_rules_attribute::derive;
 
-use crate::{link_to_wgpu_item, ConstDefault};
+use crate::{link_to_wgpu_docs, link_to_wgpu_item, ConstDefault};
 
 
 #[derive(Debug, ConstDefault!, Copy, Clone, Eq, PartialEq)]
@@ -35,7 +35,7 @@ impl ExperimentalFeatures {
     
     
     #[doc = link_to_wgpu_item!(struct Features)]
-    
+    #[doc = link_to_wgpu_docs!(["extensions"]: "documentation/extensions/index.html")]
     pub const unsafe fn enabled() -> Self {
         Self { enabled: true }
     }

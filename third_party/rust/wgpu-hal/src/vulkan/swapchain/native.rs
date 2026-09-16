@@ -12,7 +12,7 @@ use crate::vulkan::{
     swapchain::{
         Surface, SurfaceTextureMetadata, Swapchain, SwapchainSubmissionSemaphoreGuard, WindowHandle,
     },
-    DeviceShared, InstanceShared,
+    DeviceShared, InstanceShared, PnextChain,
 };
 
 pub(crate) struct NativeSurface {
@@ -23,6 +23,12 @@ pub(crate) struct NativeSurface {
     
     #[cfg(windows)]
     hdr_source: Option<crate::auxil::dxgi::hdr::DxgiHdrSource>,
+    
+    
+    
+    
+    
+    next_swapchain_create_chain: Mutex<Option<PnextChain>>,
 }
 
 impl NativeSurface {
@@ -40,11 +46,19 @@ impl NativeSurface {
             instance: Arc::clone(&instance.shared),
             #[cfg(windows)]
             hdr_source: hwnd.map(|wh| crate::auxil::dxgi::hdr::DxgiHdrSource::new(wh.0)),
+            next_swapchain_create_chain: Mutex::new(None),
         }
     }
 
     pub fn as_raw(&self) -> vk::SurfaceKHR {
         self.raw
+    }
+
+    
+    
+    
+    pub unsafe fn set_next_swapchain_create_chain(&self, chain: *mut core::ffi::c_void) {
+        *self.next_swapchain_create_chain.lock() = Some(PnextChain::new(chain));
     }
 }
 
@@ -233,6 +247,13 @@ impl Surface for NativeSurface {
             info = info.push_next(&mut format_list_info);
         }
 
+        let create_chain = self.next_swapchain_create_chain.lock().take();
+        if let Some(chain) = create_chain {
+            
+            
+            info.p_next = unsafe { chain.splice_into(info.p_next) };
+        }
+
         let result = {
             profiling::scope!("vkCreateSwapchainKHR");
             unsafe { functor.create_swapchain(&info, None) }
@@ -372,19 +393,8 @@ pub(crate) struct NativeSwapchain {
     
     
     
-    
-    
-    
-    next_present_chain: Option<PresentChain>,
+    next_present_chain: Option<PnextChain>,
 }
-
-
-struct PresentChain(*mut vk::BaseOutStructure<'static>);
-
-
-
-unsafe impl Send for PresentChain {}
-unsafe impl Sync for PresentChain {}
 
 impl Drop for NativeSwapchain {
     fn drop(&mut self) {
@@ -629,18 +639,10 @@ impl Swapchain for NativeSwapchain {
             vk_info
         };
 
-        if let Some(PresentChain(chain)) = self.next_present_chain.take() {
+        if let Some(chain) = self.next_present_chain.take() {
             
             
-            
-            unsafe {
-                let mut tail = chain;
-                while !(*tail).p_next.is_null() {
-                    tail = (*tail).p_next;
-                }
-                (*tail).p_next = vk_info.p_next.cast_mut().cast();
-                vk_info.p_next = chain.cast();
-            }
+            vk_info.p_next = unsafe { chain.splice_into(vk_info.p_next) };
         }
 
         let suboptimal = {
@@ -700,7 +702,7 @@ impl NativeSwapchain {
     
     
     pub unsafe fn set_next_present_chain(&mut self, chain: *mut core::ffi::c_void) {
-        self.next_present_chain = Some(PresentChain(chain.cast()));
+        self.next_present_chain = Some(PnextChain::new(chain));
     }
 
     

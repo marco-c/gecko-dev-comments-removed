@@ -42,8 +42,6 @@ pub enum ExternalImageSource {
     
     HTMLCanvasElement(web_sys::HtmlCanvasElement),
     
-    
-    
     OffscreenCanvas(web_sys::OffscreenCanvas),
     
     VideoFrame(web_sys::VideoFrame),

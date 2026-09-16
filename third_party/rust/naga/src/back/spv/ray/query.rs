@@ -1584,6 +1584,21 @@ impl BlockContext<'_> {
                     &[query_id, tracker_ids.initialized_tracker],
                 ));
             }
+            crate::RayQueryFunction::Begin => {
+                
+                
+                if self.writer.ray_query_initialization_tracking {
+                    let zero_value = self
+                        .writer
+                        .get_constant_scalar(crate::Literal::U32(RayQueryPoint::empty().bits()));
+
+                    block.body.push(Instruction::store(
+                        tracker_ids.initialized_tracker,
+                        zero_value,
+                        None,
+                    ));
+                }
+            }
         }
     }
 

@@ -318,6 +318,17 @@ fn create_descriptor_pool(
         })
         .collect::<ArrayVec<_, NR_OF_DESCRIPTOR_TYPES>>();
 
+    
+    
+    
+    let mut pool_sizes = pool_sizes;
+    if pool_sizes.is_empty() {
+        pool_sizes.push(vk::DescriptorPoolSize {
+            ty: Dt::SAMPLER,
+            descriptor_count: 1,
+        });
+    }
+
     let mut flags = vk::DescriptorPoolCreateFlags::FREE_DESCRIPTOR_SET;
     if key.update_after_bind {
         flags |= vk::DescriptorPoolCreateFlags::UPDATE_AFTER_BIND;

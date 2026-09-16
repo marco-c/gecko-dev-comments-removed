@@ -1,11 +1,12 @@
 
 
 use bytemuck::{Pod, Zeroable};
+use macro_rules_attribute::derive;
 
 #[cfg(any(feature = "serde", test))]
 use serde::{Deserialize, Serialize};
 
-use crate::{link_to_wgpu_docs, LoadOpDontCare};
+use crate::{link_to_wgpu_docs, ConstDefault, LoadOpDontCare};
 
 #[cfg(doc)]
 use crate::{Features, TextureFormat};
@@ -65,10 +66,23 @@ impl BlendFactor {
     
     
     #[must_use]
-    pub fn ref_second_blend_source(&self) -> bool {
+    pub fn uses_second_blend_source(&self) -> bool {
         match self {
             BlendFactor::Src1
             | BlendFactor::OneMinusSrc1
+            | BlendFactor::Src1Alpha
+            | BlendFactor::OneMinusSrc1Alpha => true,
+            _ => false,
+        }
+    }
+
+    
+    #[must_use]
+    pub fn uses_source_alpha(&self) -> bool {
+        match self {
+            BlendFactor::SrcAlpha
+            | BlendFactor::OneMinusSrcAlpha
+            | BlendFactor::SrcAlphaSaturated
             | BlendFactor::Src1Alpha
             | BlendFactor::OneMinusSrc1Alpha => true,
             _ => false,
@@ -84,12 +98,12 @@ impl BlendFactor {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, ConstDefault!, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum BlendOperation {
     
-    #[default]
+    #[custom(default)]
     Add = 0,
     
     Subtract = 1,
@@ -252,6 +266,8 @@ pub struct ColorWrites(u32);
 
 bitflags::bitflags! {
     impl ColorWrites: u32 {
+        /// Do not write any channels
+        const NONE = 0;
         /// Enable red channel writes
         const RED = 1 << 0;
         /// Enable green channel writes
@@ -278,7 +294,7 @@ impl Default for ColorWrites {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, ConstDefault!, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum PrimitiveTopology {
@@ -295,7 +311,7 @@ pub enum PrimitiveTopology {
     
     
     
-    #[default]
+    #[custom(default)]
     TriangleList = 3,
     
     
@@ -328,14 +344,14 @@ impl PrimitiveTopology {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, ConstDefault!, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum FrontFace {
     
     
     
-    #[default]
+    #[custom(default)]
     Ccw = 0,
     
     
@@ -361,12 +377,12 @@ pub enum Face {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, ConstDefault!, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum PolygonMode {
     
-    #[default]
+    #[custom(default)]
     Fill = 0,
     
     Line = 1,
@@ -379,7 +395,7 @@ pub enum PolygonMode {
 
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, ConstDefault!, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct PrimitiveState {
@@ -442,8 +458,9 @@ pub struct MultisampleState {
     pub alpha_to_coverage_enabled: bool,
 }
 
-impl Default for MultisampleState {
-    fn default() -> Self {
+impl MultisampleState {
+    
+    pub const fn default() -> Self {
         MultisampleState {
             count: 1,
             mask: !0,
@@ -452,19 +469,25 @@ impl Default for MultisampleState {
     }
 }
 
+impl Default for MultisampleState {
+    fn default() -> Self {
+        Self::default() 
+    }
+}
+
 
 
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, ConstDefault!, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum IndexFormat {
     
     Uint16 = 0,
     
-    #[default]
+    #[custom(default)]
     Uint32 = 1,
 }
 
@@ -483,12 +506,12 @@ impl IndexFormat {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, ConstDefault!, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum StencilOperation {
     
-    #[default]
+    #[custom(default)]
     Keep = 0,
     
     Zero = 1,
@@ -557,7 +580,11 @@ impl StencilFaceState {
     }
 }
 
+impl crate::macros::ConstDefaultHelper for StencilFaceState {
+    const DEFAULT: Self = Self::IGNORE;
+}
 impl Default for StencilFaceState {
+    
     fn default() -> Self {
         Self::IGNORE
     }
@@ -568,7 +595,7 @@ impl Default for StencilFaceState {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, ConstDefault!, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum CompareFunction {
@@ -591,7 +618,7 @@ pub enum CompareFunction {
     
     GreaterEqual = 7,
     
-    #[default]
+    #[custom(default)]
     Always = 8,
 }
 
@@ -613,7 +640,7 @@ impl CompareFunction {
 
 
 #[repr(C)]
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, ConstDefault!, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct StencilState {
     
@@ -663,7 +690,7 @@ impl StencilState {
 
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, ConstDefault!)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DepthBiasState {
     
@@ -765,12 +792,12 @@ impl<V: Default> Default for LoadOp<V> {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Default)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, ConstDefault!)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum StoreOp {
     
-    #[default]
+    #[custom(default)]
     Store = 0,
     
     
@@ -879,12 +906,6 @@ impl DepthStencilState {
     pub fn is_stencil_read_only(&self, cull_mode: Option<Face>) -> bool {
         self.stencil.is_read_only(cull_mode)
     }
-
-    
-    #[must_use]
-    pub fn is_read_only(&self, cull_mode: Option<Face>) -> bool {
-        self.is_depth_read_only() && self.is_stencil_read_only(cull_mode)
-    }
 }
 
 
@@ -944,7 +965,7 @@ impl<T> Default for RenderBundleDescriptor<Option<T>> {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, Pod, Zeroable)]
+#[derive(Copy, Clone, Debug, ConstDefault!, Pod, Zeroable)]
 pub struct DrawIndirectArgs {
     
     pub vertex_count: u32,
@@ -968,7 +989,7 @@ impl DrawIndirectArgs {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, Pod, Zeroable)]
+#[derive(Copy, Clone, Debug, ConstDefault!, Pod, Zeroable)]
 pub struct DrawIndexedIndirectArgs {
     
     pub index_count: u32,
@@ -994,7 +1015,7 @@ impl DrawIndexedIndirectArgs {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, Pod, Zeroable)]
+#[derive(Copy, Clone, Debug, ConstDefault!, Pod, Zeroable)]
 pub struct DispatchIndirectArgs {
     
     pub x: u32,

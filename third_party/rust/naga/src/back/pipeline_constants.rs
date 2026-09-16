@@ -64,6 +64,10 @@ pub enum PipelineConstantError {
 
 
 
+
+
+
+
 pub fn process_overrides<'a>(
     module: &'a Module,
     module_info: &'a ModuleInfo,
@@ -901,6 +905,7 @@ fn adjust_stmt(new_pos: &HandleVec<Expression, Handle<Expression>>, stmt: &mut S
                 }
                 crate::RayQueryFunction::ConfirmIntersection => {}
                 crate::RayQueryFunction::Terminate => {}
+                crate::RayQueryFunction::Begin => {}
             }
         }
         Statement::CooperativeStore {

@@ -308,15 +308,8 @@ use core::{
 use bitflags::bitflags;
 use raw_window_handle::DisplayHandle;
 use thiserror::Error;
+use wgpu_sync::Arc;
 use wgt::WasmNotSendSync;
-
-cfg_if::cfg_if! {
-    if #[cfg(supports_ptr_atomics)] {
-        use alloc::sync::Arc;
-    } else if #[cfg(feature = "portable-atomic")] {
-        use portable_atomic_util::Arc;
-    }
-}
 
 
 
@@ -334,26 +327,50 @@ pub const QUERY_SIZE: wgt::BufferAddress = 8;
 pub type Label<'a> = Option<&'a str>;
 pub type MemoryRange = Range<wgt::BufferAddress>;
 pub type FenceValue = u64;
-#[cfg(supports_64bit_atomics)]
-pub type AtomicFenceValue = core::sync::atomic::AtomicU64;
-#[cfg(not(supports_64bit_atomics))]
-pub type AtomicFenceValue = portable_atomic::AtomicU64;
+pub type AtomicFenceValue = wgpu_sync::atomic::AtomicU64;
 
 
-#[cfg(any(gles, vulkan, metal))]
+#[cfg(all(any(gles, vulkan, metal), not(webgl)))]
 pub type DropCallback = Box<dyn FnOnce() + Send + Sync + 'static>;
+
+
+
+
+
+
+#[cfg(webgl)]
+pub type DropCallback = Box<dyn FnOnce() + 'static>;
 
 #[cfg(any(gles, vulkan, metal))]
 pub struct DropGuard {
     callback: Option<DropCallback>,
 }
 
-#[cfg(all(any(gles, vulkan, metal), any(native, Emscripten)))]
+
+
+
+
+#[cfg(all(webgl, send_sync))]
+unsafe impl Send for DropGuard {}
+#[cfg(all(webgl, send_sync))]
+unsafe impl Sync for DropGuard {}
+
+#[cfg(any(gles, vulkan, metal))]
 impl DropGuard {
+    #[cfg(any(native, Emscripten))]
     fn from_option(callback: Option<DropCallback>) -> Option<Self> {
         callback.map(Self::new)
     }
 
+    
+    
+    
+    #[cfg(webgl)]
+    fn external(callback: Option<DropCallback>) -> Self {
+        Self { callback }
+    }
+
+    #[cfg(any(native, Emscripten))]
     fn new(callback: DropCallback) -> Self {
         Self {
             callback: Some(callback),
@@ -570,7 +587,7 @@ impl InstanceError {
     #[allow(dead_code, reason = "may be unused on some platforms")]
     pub(crate) fn with_source(message: String, source: impl Error + Send + Sync + 'static) -> Self {
         cfg_if::cfg_if! {
-            if #[cfg(supports_ptr_atomics)] {
+            if #[cfg(target_has_atomic = "ptr")] {
                 let source = Arc::new(source);
             } else {
                 // TODO(https://github.com/rust-lang/rust/issues/18598): avoid indirection via Box once arbitrary types support unsized coercion
@@ -1203,7 +1220,10 @@ pub trait Device: WasmNotSendSync {
         &self,
         acceleration_structure: <Self::A as Api>::AccelerationStructure,
     );
-    fn tlas_instance_to_bytes(&self, instance: TlasInstance) -> Vec<u8>;
+    
+    
+    
+    fn tlas_instance_to_bytes(&self, instance: TlasInstance, to_extend: &mut Vec<u8>);
 
     fn get_internal_counters(&self) -> wgt::HalCounters;
 
@@ -2245,6 +2265,7 @@ pub struct TextureViewDescriptor<'a> {
     pub dimension: wgt::TextureViewDimension,
     pub usage: wgt::TextureUses,
     pub range: wgt::ImageSubresourceRange,
+    pub swizzle: wgt::TextureComponentSwizzle,
 }
 
 #[derive(Clone, Debug)]
@@ -2816,7 +2837,7 @@ pub struct QueueFamilyOwnershipTransfer {
     pub dst: QueueFamily,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct TextureBarrier<'a, T: DynTexture + ?Sized> {
     pub texture: &'a T,
     pub range: wgt::ImageSubresourceRange,
@@ -2828,6 +2849,17 @@ pub struct TextureBarrier<'a, T: DynTexture + ?Sized> {
     
     
     pub queue_family_ownership_transfer: Option<QueueFamilyOwnershipTransfer>,
+}
+
+impl<'a, T: DynTexture + ?Sized> Clone for TextureBarrier<'a, T> {
+    fn clone(&self) -> Self {
+        Self {
+            texture: self.texture,
+            range: self.range,
+            queue_family_ownership_transfer: self.queue_family_ownership_transfer,
+            usage: self.usage.clone(),
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -2920,6 +2952,8 @@ pub struct DepthStencilAttachment<'a, T: DynTextureView + ?Sized> {
     pub target: Attachment<'a, T>,
     pub depth_ops: AttachmentOps,
     pub stencil_ops: AttachmentOps,
+    pub depth_read_only: bool,
+    pub stencil_read_only: bool,
     pub clear_value: (f32, u32),
 }
 

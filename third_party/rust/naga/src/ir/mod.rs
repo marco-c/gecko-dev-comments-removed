@@ -219,6 +219,19 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 mod block;
 
 use alloc::{boxed::Box, string::String, vec::Vec};
@@ -489,6 +502,10 @@ pub enum BuiltIn {
     
     
     HitKind,
+    
+    
+    
+    HitBarycentrics,
 }
 
 
@@ -1992,6 +2009,14 @@ pub enum RayQueryFunction {
     ConfirmIntersection,
 
     Terminate,
+
+    
+    
+    
+    
+    
+    
+    Begin,
 }
 
 
@@ -2398,6 +2423,12 @@ pub struct FunctionResult {
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct Function {
     
+    
+    
+    
+    
+    
+    
     pub name: Option<String>,
     
     pub arguments: Vec<FunctionArgument>,
@@ -2487,6 +2518,8 @@ pub struct Function {
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct EntryPoint {
+    
+    
     
     
     

@@ -672,10 +672,13 @@ impl FunctionInfo {
                 non_uniform_result: Some(handle),
                 requirements: UniformityRequirements::empty(),
             },
-            E::Load { pointer } => Uniformity {
-                non_uniform_result: self.add_ref(pointer),
-                requirements: UniformityRequirements::empty(),
-            },
+            E::Load { pointer } => {
+                let non_uniform_result = self.add_ref(pointer);
+                Uniformity {
+                    non_uniform_result,
+                    requirements: UniformityRequirements::empty(),
+                }
+            }
             E::ImageSample {
                 image,
                 sampler,
@@ -1139,6 +1142,7 @@ impl FunctionInfo {
                         }
                         crate::RayQueryFunction::ConfirmIntersection => {}
                         crate::RayQueryFunction::Terminate => {}
+                        crate::RayQueryFunction::Begin => {}
                     }
                     FunctionUniformity::new()
                 }

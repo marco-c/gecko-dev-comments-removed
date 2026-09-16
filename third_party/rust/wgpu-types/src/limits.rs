@@ -35,7 +35,11 @@ macro_rules! with_limits {
         $macro_name!(max_sampled_textures_per_shader_stage, Ordering::Less);
         $macro_name!(max_samplers_per_shader_stage, Ordering::Less);
         $macro_name!(max_storage_buffers_per_shader_stage, Ordering::Less);
+        $macro_name!(max_storage_buffers_in_vertex_stage, Ordering::Less);
+        $macro_name!(max_storage_buffers_in_fragment_stage, Ordering::Less);
         $macro_name!(max_storage_textures_per_shader_stage, Ordering::Less);
+        $macro_name!(max_storage_textures_in_vertex_stage, Ordering::Less);
+        $macro_name!(max_storage_textures_in_fragment_stage, Ordering::Less);
         $macro_name!(max_uniform_buffers_per_shader_stage, Ordering::Less);
         $macro_name!(max_binding_array_elements_per_shader_stage, Ordering::Less);
         $macro_name!(
@@ -172,7 +176,31 @@ pub struct Limits {
     
     pub max_storage_buffers_per_shader_stage: u32,
     
+    
+    
+    
+    
+    pub max_storage_buffers_in_vertex_stage: u32,
+    
+    
+    
+    
+    
+    pub max_storage_buffers_in_fragment_stage: u32,
+    
     pub max_storage_textures_per_shader_stage: u32,
+    
+    
+    
+    
+    
+    pub max_storage_textures_in_vertex_stage: u32,
+    
+    
+    
+    
+    
+    pub max_storage_textures_in_fragment_stage: u32,
     
     pub max_uniform_buffers_per_shader_stage: u32,
     
@@ -419,6 +447,10 @@ impl Limits {
     
     
     
+    
+    
+    
+    
     #[must_use]
     pub const fn defaults() -> Self {
         Self {
@@ -434,7 +466,11 @@ impl Limits {
             max_sampled_textures_per_shader_stage: 16,
             max_samplers_per_shader_stage: 16,
             max_storage_buffers_per_shader_stage: 8,
+            max_storage_buffers_in_vertex_stage: 8,
+            max_storage_buffers_in_fragment_stage: 8,
             max_storage_textures_per_shader_stage: 4,
+            max_storage_textures_in_vertex_stage: 4,
+            max_storage_textures_in_fragment_stage: 4,
             max_uniform_buffers_per_shader_stage: 12,
             max_binding_array_elements_per_shader_stage: 0,
             max_binding_array_acceleration_structure_elements_per_shader_stage: 0,
@@ -555,6 +591,10 @@ impl Limits {
     
     
     
+    
+    
+    
+    
     #[must_use]
     pub const fn downlevel_defaults() -> Self {
         Self {
@@ -562,6 +602,8 @@ impl Limits {
             max_texture_dimension_2d: 2048,
             max_texture_dimension_3d: 256,
             max_storage_buffers_per_shader_stage: 4,
+            max_storage_buffers_in_vertex_stage: 4,
+            max_storage_buffers_in_fragment_stage: 4,
             max_uniform_buffer_binding_size: 16 << 10, 
             max_inter_stage_shader_variables: 15,
             max_color_attachments: 4,
@@ -642,12 +684,20 @@ impl Limits {
     
     
     
+    
+    
+    
+    
     #[must_use]
     pub const fn downlevel_webgl2_defaults() -> Self {
         Self {
             max_uniform_buffers_per_shader_stage: 11,
             max_storage_buffers_per_shader_stage: 0,
+            max_storage_buffers_in_vertex_stage: 0,
+            max_storage_buffers_in_fragment_stage: 0,
             max_storage_textures_per_shader_stage: 0,
+            max_storage_textures_in_vertex_stage: 0,
+            max_storage_textures_in_fragment_stage: 0,
             max_dynamic_storage_buffers_per_pipeline_layout: 0,
             max_storage_buffer_binding_size: 0,
             max_vertex_buffer_array_stride: 255,
@@ -695,7 +745,11 @@ impl Limits {
             max_sampled_textures_per_shader_stage: ALLOC_MAX_U32,
             max_samplers_per_shader_stage: ALLOC_MAX_U32,
             max_storage_buffers_per_shader_stage: ALLOC_MAX_U32,
+            max_storage_buffers_in_vertex_stage: ALLOC_MAX_U32,
+            max_storage_buffers_in_fragment_stage: ALLOC_MAX_U32,
             max_storage_textures_per_shader_stage: ALLOC_MAX_U32,
+            max_storage_textures_in_vertex_stage: ALLOC_MAX_U32,
+            max_storage_textures_in_fragment_stage: ALLOC_MAX_U32,
             max_uniform_buffers_per_shader_stage: ALLOC_MAX_U32,
             max_binding_array_elements_per_shader_stage: ALLOC_MAX_U32,
             max_binding_array_sampler_elements_per_shader_stage: ALLOC_MAX_U32,
@@ -963,7 +1017,11 @@ impl Limits {
             max_sampled_textures_per_shader_stage: _,
             max_samplers_per_shader_stage: _,
             max_storage_buffers_per_shader_stage: _,
+            max_storage_buffers_in_vertex_stage: _,
+            max_storage_buffers_in_fragment_stage: _,
             max_storage_textures_per_shader_stage: _,
+            max_storage_textures_in_vertex_stage: _,
+            max_storage_textures_in_fragment_stage: _,
             max_uniform_buffers_per_shader_stage: _,
             max_uniform_buffer_binding_size: _,
             max_storage_buffer_binding_size: _,
@@ -1189,7 +1247,6 @@ bitflags::bitflags! {
         const VIEW_FORMATS = 1 << 19;
 
         /// With this feature not present, there are the following restrictions on `Queue::copy_external_image_to_texture`:
-        /// - The source must not be [`web_sys::OffscreenCanvas`]
         /// - [`CopyExternalImageSourceInfo::origin`] must be zero.
         /// - [`CopyExternalImageDestInfo::color_space`] must be srgb.
         /// - If the source is an [`web_sys::ImageBitmap`]:

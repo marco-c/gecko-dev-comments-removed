@@ -526,6 +526,14 @@ impl<W: Write> Writer<W> {
                     writeln!(self.out, "{level}}}")?;
                 }
             }
+            
+            
+            
+            crate::RayQueryFunction::Begin => {
+                if context.expression.ray_query_initialization_tracking {
+                    writeln!(self.out, "{level}{tracker_expr_name} = 0u;")?;
+                }
+            }
         }
 
         Ok(())

@@ -2970,6 +2970,7 @@ impl Writer {
     
     
     
+    
     fn write_varying(
         &mut self,
         ir_module: &crate::Module,
@@ -2979,6 +2980,25 @@ impl Writer {
         ty: Handle<crate::Type>,
         binding: &crate::Binding,
     ) -> Result<Word, Error> {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let class = match *binding {
+            crate::Binding::BuiltIn(crate::BuiltIn::HitBarycentrics) => {
+                spirv::StorageClass::HitAttributeKHR
+            }
+            _ => class,
+        };
+
         let id = self.id_gen.next();
         let ty_inner = &ir_module.types[ty].inner;
         let needs_polyfill = self.needs_f16_polyfill(ty_inner);
@@ -3210,7 +3230,12 @@ impl Writer {
                         )?;
                         BuiltIn::CullDistance
                     }
-                    Bi::InstanceIndex => BuiltIn::InstanceIndex,
+                    Bi::InstanceIndex => match stage {
+                        crate::ShaderStage::AnyHit | crate::ShaderStage::ClosestHit => {
+                            BuiltIn::InstanceId
+                        }
+                        _ => BuiltIn::InstanceIndex,
+                    },
                     Bi::PointSize => BuiltIn::PointSize,
                     Bi::VertexIndex => BuiltIn::VertexIndex,
                     Bi::DrawIndex => {
@@ -3227,13 +3252,33 @@ impl Writer {
                     Bi::FrontFacing => BuiltIn::FrontFacing,
                     Bi::PrimitiveIndex => {
                         
-                        self.require_any(
-                            "`primitive_index` built-in",
-                            &[spirv::Capability::Geometry],
-                        )?;
+                        
+                        
+                        
+                        
+                        let enabled_by: &[spirv::Capability] = match stage {
+                            
+                            crate::ShaderStage::AnyHit | crate::ShaderStage::ClosestHit => &[],
+                            
+                            crate::ShaderStage::Mesh => &[],
+                            
+                            
+                            crate::ShaderStage::Fragment => &[
+                                spirv::Capability::Geometry,
+                                spirv::Capability::Tessellation,
+                                spirv::Capability::MeshShadingEXT,
+                            ],
+                            
+                            _ => return Err(Error::Validation(
+                                "`primitive_index` built-in is not allowed in this shader stage",
+                            )),
+                        };
+                        self.require_any("`primitive_index` built-in", enabled_by)?;
+
                         if stage == crate::ShaderStage::Mesh {
                             others.push(Decoration::PerPrimitiveEXT);
                         }
+
                         BuiltIn::PrimitiveId
                     }
                     Bi::Barycentric { perspective } => {
@@ -3326,6 +3371,8 @@ impl Writer {
                     Bi::ObjectToWorld => BuiltIn::ObjectToWorldKHR,
                     Bi::WorldToObject => BuiltIn::WorldToObjectKHR,
                     Bi::HitKind => BuiltIn::HitKindKHR,
+                    
+                    Bi::HitBarycentrics => return Ok(BindingDecorations::None),
                 };
 
                 use crate::ScalarKind as Sk;
@@ -3730,6 +3777,15 @@ impl Writer {
             }
         }
         if has_ray_tracing_pipeline {
+            
+            
+            
+            
+            
+            let lang_version = self.lang_version();
+            if lang_version.0 <= 1 && lang_version.1 < 4 {
+                return Err(Error::SpirvVersionTooLow(1, 4));
+            }
             Instruction::extension("SPV_KHR_ray_tracing")
                 .to_words(&mut self.logical_layout.extensions)
         }

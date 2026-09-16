@@ -122,7 +122,10 @@ pub fn map_texture_usage(
         usage.contains(wgt::TextureUsages::RENDER_ATTACHMENT) && is_color,
     );
     u.set(
-        wgt::TextureUses::DEPTH_STENCIL_READ | wgt::TextureUses::DEPTH_STENCIL_WRITE,
+        wgt::TextureUses::DEPTH_WRITE
+            | wgt::TextureUses::DEPTH_READ
+            | wgt::TextureUses::STENCIL_WRITE
+            | wgt::TextureUses::STENCIL_READ,
         usage.contains(wgt::TextureUsages::RENDER_ATTACHMENT) && !is_color,
     );
     u.set(
@@ -144,7 +147,7 @@ pub fn map_texture_usage_for_texture(
     
     map_texture_usage(desc.usage, desc.format.into(), format_features.flags)
         | if desc.format.is_depth_stencil_format() {
-            wgt::TextureUses::DEPTH_STENCIL_WRITE
+            wgt::TextureUses::DEPTH_WRITE | wgt::TextureUses::STENCIL_WRITE
         } else if desc.usage.contains(wgt::TextureUsages::COPY_DST) {
             wgt::TextureUses::COPY_DST 
         } else {

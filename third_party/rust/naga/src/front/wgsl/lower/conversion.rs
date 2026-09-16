@@ -5,11 +5,14 @@ use alloc::{boxed::Box, string::String, vec::Vec};
 use crate::common::wgsl::{TryToWgsl, TypeContext};
 use crate::front::wgsl::error::{
     AutoConversionError, AutoConversionLeafScalarError, ConcretizationFailedError,
+    TypeMismatchError,
 };
 use crate::front::wgsl::Result;
 use crate::{Handle, Span};
 
 impl<'source> super::ExpressionContext<'source, '_, '_> {
+    
+    
     
     
     
@@ -37,17 +40,28 @@ impl<'source> super::ExpressionContext<'source, '_, '_> {
         let goal_inner = goal_ty.inner_with(types);
 
         
+        if self.module.compare_types(expr_resolution, goal_ty) {
+            return Ok(expr);
+        }
+
+        
+        
         
         
         
         
         if !expr_inner.is_abstract(types) {
-            return Ok(expr);
-        }
+            let source_type = self.type_resolution_to_string(expr_resolution);
+            let dest_type = self.type_resolution_to_string(goal_ty);
 
-        
-        if self.module.compare_types(expr_resolution, goal_ty) {
-            return Ok(expr);
+            return Err(Box::new(super::Error::TypeMismatch(Box::new(
+                TypeMismatchError {
+                    dest_span: goal_span,
+                    dest_type,
+                    source_span: expr_span,
+                    source_type,
+                },
+            ))));
         }
 
         let (_expr_scalar, goal_scalar) =

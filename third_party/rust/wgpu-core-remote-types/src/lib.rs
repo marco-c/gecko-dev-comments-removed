@@ -80,6 +80,12 @@ pub struct TextureViewDescriptor<'a> {
     pub usage: Option<wgt::TextureUsages>,
     
     pub range: wgt::ImageSubresourceRange,
+    
+    
+    
+    
+    
+    pub swizzle: wgt::TextureComponentSwizzle,
 }
 
 

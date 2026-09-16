@@ -190,6 +190,75 @@ impl super::Device {
     
     
     
+    
+    
+    
+    
+    
+    #[cfg(webgl)]
+    pub fn texture_from_webgl_handle(
+        &self,
+        handle: web_sys::WebGlTexture,
+        desc: &crate::TextureDescriptor,
+        view_dimension: wgt::TextureViewDimension,
+        drop_callback: Option<crate::DropCallback>,
+    ) -> super::Texture {
+        assert_eq!(
+            view_dimension.compatible_texture_dimension(),
+            desc.dimension,
+            "view_dimension {view_dimension:?} is incompatible with the descriptor's dimension",
+        );
+
+        
+        
+        
+        let raw = unsafe { self.shared.context.lock().register_external_texture(handle) };
+
+        super::Texture {
+            inner: super::TextureInner::Texture {
+                raw,
+                target: super::Texture::target_for_view_dimension(view_dimension),
+            },
+            
+            
+            drop_guard: Some(crate::DropGuard::external(drop_callback)),
+            mip_level_count: desc.mip_level_count,
+            array_layer_count: desc.array_layer_count(),
+            format: desc.format,
+            format_desc: self.shared.describe_texture_format(desc.format),
+            copy_size: desc.copy_extent(),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    #[cfg(webgl)]
+    pub fn webgl_texture_handle(&self, texture: &super::Texture) -> Option<web_sys::WebGlTexture> {
+        match texture.inner {
+            super::TextureInner::Texture { raw, .. } => {
+                self.shared.context.lock().as_web_gl_texture(raw)
+            }
+            _ => None,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(any(native, Emscripten))]
     pub unsafe fn buffer_from_raw(
         &self,
@@ -875,8 +944,10 @@ impl crate::Device for super::Device {
         let gl = &self.shared.context.lock();
 
         let render_usage = wgt::TextureUses::COLOR_TARGET
-            | wgt::TextureUses::DEPTH_STENCIL_WRITE
-            | wgt::TextureUses::DEPTH_STENCIL_READ
+            | wgt::TextureUses::DEPTH_WRITE
+            | wgt::TextureUses::DEPTH_READ
+            | wgt::TextureUses::STENCIL_WRITE
+            | wgt::TextureUses::STENCIL_READ
             | wgt::TextureUses::TRANSIENT;
         let format_desc = self.shared.describe_texture_format(desc.format);
 
@@ -1119,6 +1190,16 @@ impl crate::Device for super::Device {
                 super::TextureInner::ExternalFramebuffer { .. } => {}
                 #[cfg(native)]
                 super::TextureInner::ExternalNativeFramebuffer { .. } => {}
+            }
+        } else {
+            
+            
+            
+            
+            
+            #[cfg(webgl)]
+            if let super::TextureInner::Texture { raw, .. } = texture.inner {
+                self.shared.context.lock().unregister_external_texture(raw);
             }
         }
 
@@ -1805,7 +1886,7 @@ impl crate::Device for super::Device {
     ) {
     }
 
-    fn tlas_instance_to_bytes(&self, _instance: TlasInstance) -> Vec<u8> {
+    fn tlas_instance_to_bytes(&self, _instance: TlasInstance, _to_extend: &mut Vec<u8>) {
         unimplemented!()
     }
 
