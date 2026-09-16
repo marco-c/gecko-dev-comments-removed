@@ -73,16 +73,6 @@ static inline V* FindOrNull(const std::map<K, V*>& dest, const K2& key) {
 }
 
 
-template <typename C, typename K2>
-static inline auto FindPtrOrNull(C& container, const K2& key) {
-  auto itr = container.find(key);
-  using R = decltype(&(itr->second));
-  if (itr == container.end()) return R{nullptr};
-
-  return &(itr->second);
-}
-
-
 
 MOZ_RUNINIT std::map<EffectiveFormat, const FormatInfo*> gFormatInfoMap;
 MOZ_RUNINIT
