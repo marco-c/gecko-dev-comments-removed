@@ -5,6 +5,7 @@ to run text replacements after text join, but before escape join.
 
 For example, `\\:)` shouldn't be replaced with an emoji.
 """
+
 from __future__ import annotations
 
 from ..token import Token
@@ -20,7 +21,10 @@ def text_join(state: StateCore) -> None:
 
         
         new_tokens: list[Token] = []
-        for child_token in inline_token.children or []:
+        children = inline_token.children or []
+        i = 0
+        while i < len(children):
+            child_token = children[i]
             if child_token.type == "text_special":
                 child_token.type = "text"
             if (
@@ -28,7 +32,22 @@ def text_join(state: StateCore) -> None:
                 and new_tokens
                 and new_tokens[-1].type == "text"
             ):
-                new_tokens[-1].content += child_token.content
+                
+                
+                
+                
+                parts = [new_tokens[-1].content, child_token.content]
+                i += 1
+                while i < len(children):
+                    next_token = children[i]
+                    if next_token.type == "text_special":
+                        next_token.type = "text"
+                    if next_token.type != "text":
+                        break
+                    parts.append(next_token.content)
+                    i += 1
+                new_tokens[-1].content = "".join(parts)
             else:
                 new_tokens.append(child_token)
+                i += 1
         inline_token.children = new_tokens

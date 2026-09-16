@@ -236,7 +236,19 @@ def list_block(state: StateBlock, startLine: int, endLine: int, silent: bool) ->
             token.info = state.src[start : posAfterMarker - 1]
 
         
+        checkboxLen = 0
+        if state.md.options.get("tasklists", False) and contentStart < maximum:
+            checked = _detect_task_checkbox(state.src, contentStart, maximum)
+            if checked is not None:
+                token.meta = {"checked": checked}
+                
+                
+                
+                checkboxLen = 4
+
+        
         oldTight = state.tight
+        oldBMark = state.bMarks[startLine]
         oldTShift = state.tShift[startLine]
         oldSCount = state.sCount[startLine]
 
@@ -251,6 +263,12 @@ def list_block(state: StateBlock, startLine: int, endLine: int, silent: bool) ->
         state.tight = True
         state.tShift[startLine] = contentStart - state.bMarks[startLine]
         state.sCount[startLine] = offset
+
+        
+        
+        if checkboxLen:
+            state.bMarks[startLine] = contentStart + checkboxLen
+            state.tShift[startLine] = 0
 
         if contentStart >= maximum and state.isEmpty(startLine + 1):
             
@@ -277,6 +295,8 @@ def list_block(state: StateBlock, startLine: int, endLine: int, silent: bool) ->
 
         state.blkIndent = state.listIndent
         state.listIndent = oldListIndent
+        if checkboxLen:
+            state.bMarks[startLine] = oldBMark
         state.tShift[startLine] = oldTShift
         state.sCount[startLine] = oldSCount
         state.tight = oldTight
@@ -326,6 +346,24 @@ def list_block(state: StateBlock, startLine: int, endLine: int, silent: bool) ->
             break
 
     
+
+    
+    if state.md.options.get("tasklists", False):
+        containsTask = False
+        level = state.tokens[listTokIdx].level
+        for j in range(listTokIdx + 1, len(state.tokens)):
+            tok = state.tokens[j]
+            if (
+                tok.level == level + 1
+                and tok.type == "list_item_open"
+                and tok.meta
+                and "checked" in tok.meta
+            ):
+                tok.attrJoin("class", "task-list-item")
+                containsTask = True
+        if containsTask:
+            state.tokens[listTokIdx].attrJoin("class", "contains-task-list")
+
     if isOrdered:
         token = state.push("ordered_list_close", "ol", -1)
     else:
@@ -343,3 +381,28 @@ def list_block(state: StateBlock, startLine: int, endLine: int, silent: bool) ->
         markTightParagraphs(state, listTokIdx)
 
     return True
+
+
+def _detect_task_checkbox(src: str, pos: int, maximum: int) -> bool | None:
+    """Detect ``[ ]``, ``[x]``, or ``[X]`` at *pos*, followed by whitespace.
+
+    Returns ``True`` (checked), ``False`` (unchecked), or ``None`` (no match).
+    """
+    
+    if pos + 4 > maximum:
+        return None
+    if src[pos] != "[":
+        return None
+    inner = src[pos + 1]
+    if src[pos + 2] != "]":
+        return None
+    if inner == " ":
+        checked = False
+    elif inner in ("x", "X"):
+        checked = True
+    else:
+        return None
+    
+    if src[pos + 3] not in (" ", "\t"):
+        return None
+    return checked

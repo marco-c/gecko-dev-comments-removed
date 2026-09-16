@@ -1,4 +1,7 @@
 
+from __future__ import annotations
+
+from collections.abc import Callable
 import logging
 
 from .state_block import StateBlock
@@ -6,96 +9,138 @@ from .state_block import StateBlock
 LOGGER = logging.getLogger(__name__)
 
 
-def fence(state: StateBlock, startLine: int, endLine: int, silent: bool) -> bool:
-    LOGGER.debug("entering fence: %s, %s, %s, %s", state, startLine, endLine, silent)
+def make_fence_rule(
+    *,
+    markers: tuple[str, ...] = ("~", "`"),
+    token_type: str = "fence",
+    exact_match: bool = False,
+    disallow_marker_in_info: tuple[str, ...] = ("`",),
+    min_markers: int = 3,
+) -> Callable[[StateBlock, int, int, bool], bool]:
+    """Create a fence parsing rule with configurable options.
 
-    haveEndMarker = False
-    pos = state.bMarks[startLine] + state.tShift[startLine]
-    maximum = state.eMarks[startLine]
+    :param markers: Tuple of single characters that can be used as fence markers.
+    :param token_type: The token type name to emit (e.g. "fence", "colon_fence").
+    :param exact_match: If True, the closing fence must have exactly the same
+        number of marker characters as the opening fence (not "at least as many").
+        This enables nesting of fences with different marker counts.
+    :param disallow_marker_in_info: Tuple of marker characters that are not allowed
+        to appear in the info string. The check only applies when the actual opening
+        marker is in this tuple (e.g. a tilde fence is unaffected by ``"`"`` being
+        listed). Per CommonMark, backtick fences cannot have backticks in the info
+        string. Use ``()`` to disable this restriction.
+    :param min_markers: Minimum number of marker characters to form a fence.
+    :return: A block rule function with signature
+        ``(state, startLine, endLine, silent) -> bool``.
+    """
 
-    if state.is_code_block(startLine):
-        return False
+    closing_matcher: Callable[[int, int], bool]
+    if exact_match:
+        
+        closing_matcher = lambda opening_len, closing_len: closing_len == opening_len  
+    else:
+        
+        closing_matcher = lambda opening_len, closing_len: closing_len >= opening_len  
 
-    if pos + 3 > maximum:
-        return False
+    def _fence_rule(
+        state: StateBlock, startLine: int, endLine: int, silent: bool
+    ) -> bool:
+        LOGGER.debug(
+            "entering fence: %s, %s, %s, %s", state, startLine, endLine, silent
+        )
 
-    marker = state.src[pos]
+        haveEndMarker = False
+        pos = state.bMarks[startLine] + state.tShift[startLine]
+        maximum = state.eMarks[startLine]
 
-    if marker not in ("~", "`"):
-        return False
+        if state.is_code_block(startLine):
+            return False
 
-    
-    mem = pos
-    pos = state.skipCharsStr(pos, marker)
+        if pos + min_markers > maximum:
+            return False
 
-    length = pos - mem
+        marker = state.src[pos]
 
-    if length < 3:
-        return False
+        if marker not in markers:
+            return False
 
-    markup = state.src[mem:pos]
-    params = state.src[pos:maximum]
-
-    if marker == "`" and marker in params:
-        return False
-
-    
-    if silent:
-        return True
-
-    
-    nextLine = startLine
-
-    while True:
-        nextLine += 1
-        if nextLine >= endLine:
-            
-            
-            break
-
-        pos = mem = state.bMarks[nextLine] + state.tShift[nextLine]
-        maximum = state.eMarks[nextLine]
-
-        if pos < maximum and state.sCount[nextLine] < state.blkIndent:
-            
-            
-            
-            break
-
-        try:
-            if state.src[pos] != marker:
-                continue
-        except IndexError:
-            break
-
-        if state.is_code_block(nextLine):
-            continue
-
+        
+        mem = pos
         pos = state.skipCharsStr(pos, marker)
 
-        
-        if pos - mem < length:
-            continue
+        length = pos - mem
+
+        if length < min_markers:
+            return False
+
+        markup = state.src[mem:pos]
+        params = state.src[pos:maximum]
+
+        if marker in disallow_marker_in_info and marker in params:
+            return False
 
         
-        pos = state.skipSpaces(pos)
+        if silent:
+            return True
 
-        if pos < maximum:
-            continue
-
-        haveEndMarker = True
         
-        break
+        nextLine = startLine
 
-    
-    length = state.sCount[startLine]
+        while True:
+            nextLine += 1
+            if nextLine >= endLine:
+                
+                
+                break
 
-    state.line = nextLine + (1 if haveEndMarker else 0)
+            pos = mem = state.bMarks[nextLine] + state.tShift[nextLine]
+            maximum = state.eMarks[nextLine]
 
-    token = state.push("fence", "code", 0)
-    token.info = params
-    token.content = state.getLines(startLine + 1, nextLine, length, True)
-    token.markup = markup
-    token.map = [startLine, state.line]
+            if pos < maximum and state.sCount[nextLine] < state.blkIndent:
+                
+                
+                
+                break
 
-    return True
+            try:
+                if state.src[pos] != marker:
+                    continue
+            except IndexError:
+                break
+
+            if state.is_code_block(nextLine):
+                continue
+
+            pos = state.skipCharsStr(pos, marker)
+
+            if not closing_matcher(length, pos - mem):
+                continue
+
+            
+            pos = state.skipSpaces(pos)
+
+            if pos < maximum:
+                continue
+
+            haveEndMarker = True
+            
+            break
+
+        
+        length = state.sCount[startLine]
+
+        state.line = nextLine + (1 if haveEndMarker else 0)
+
+        token = state.push(token_type, "code", 0)
+        token.info = params
+        token.content = state.getLines(startLine + 1, nextLine, length, True)
+        token.markup = markup
+        token.map = [startLine, state.line]
+
+        return True
+
+    return _fence_rule
+
+
+
+fence = make_fence_rule()

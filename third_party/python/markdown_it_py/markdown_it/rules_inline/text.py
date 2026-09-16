@@ -5,42 +5,12 @@ from .state_inline import StateInline
 
 
 
-
-
-
-
-_TerminatorChars = {
-    "\n",
-    "!",
-    "#",
-    "$",
-    "%",
-    "&",
-    "*",
-    "+",
-    "-",
-    ":",
-    "<",
-    "=",
-    ">",
-    "@",
-    "[",
-    "\\",
-    "]",
-    "^",
-    "_",
-    "`",
-    "{",
-    "}",
-    "~",
-}
-
-
 def text(state: StateInline, silent: bool) -> bool:
     pos = state.pos
     posMax = state.posMax
-    while (pos < posMax) and state.src[pos] not in _TerminatorChars:
-        pos += 1
+
+    terminator_char = state.md.inline.terminator_re.search(state.src, pos)
+    pos = terminator_char.start() if terminator_char else posMax
 
     if pos == state.pos:
         return False

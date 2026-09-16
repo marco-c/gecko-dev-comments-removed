@@ -11,7 +11,6 @@ def reference(state: StateBlock, startLine: int, _endLine: int, silent: bool) ->
         "entering reference: %s, %s, %s, %s", state, startLine, _endLine, silent
     )
 
-    lines = 0
     pos = state.bMarks[startLine] + state.tShift[startLine]
     maximum = state.eMarks[startLine]
     nextLine = startLine + 1
@@ -22,51 +21,9 @@ def reference(state: StateBlock, startLine: int, _endLine: int, silent: bool) ->
     if state.src[pos] != "[":
         return False
 
-    
-    
-    while pos < maximum:
-        
-        if state.src[pos] == "]" and state.src[pos - 1] != "\\":
-            if pos + 1 == maximum:
-                return False
-            if state.src[pos + 1] != ":":
-                return False
-            break
-        pos += 1
-
-    endLine = state.lineMax
+    string = state.src[pos : maximum + 1]
 
     
-    terminatorRules = state.md.block.ruler.getRules("reference")
-
-    oldParentType = state.parentType
-    state.parentType = "reference"
-
-    while nextLine < endLine and not state.isEmpty(nextLine):
-        
-        
-        if state.sCount[nextLine] - state.blkIndent > 3:
-            nextLine += 1
-            continue
-
-        
-        if state.sCount[nextLine] < 0:
-            nextLine += 1
-            continue
-
-        
-        terminate = False
-        for terminatorRule in terminatorRules:
-            if terminatorRule(state, nextLine, endLine, True):
-                terminate = True
-                break
-
-        if terminate:
-            break
-
-        nextLine += 1
-
-    string = state.getLines(startLine, nextLine, state.blkIndent, False).strip()
     maximum = len(string)
 
     labelEnd = None
@@ -79,11 +36,20 @@ def reference(state: StateBlock, startLine: int, _endLine: int, silent: bool) ->
             labelEnd = pos
             break
         elif ch == 0x0A:  
-            lines += 1
+            if (lineContent := getNextLine(state, nextLine)) is not None:
+                string += lineContent
+                maximum = len(string)
+                nextLine += 1
         elif ch == 0x5C:  
             pos += 1
-            if pos < maximum and charCodeAt(string, pos) == 0x0A:
-                lines += 1
+            if (
+                pos < maximum
+                and charCodeAt(string, pos) == 0x0A
+                and (lineContent := getNextLine(state, nextLine)) is not None
+            ):
+                string += lineContent
+                maximum = len(string)
+                nextLine += 1
         pos += 1
 
     if (
@@ -97,7 +63,10 @@ def reference(state: StateBlock, startLine: int, _endLine: int, silent: bool) ->
     while pos < maximum:
         ch = charCodeAt(string, pos)
         if ch == 0x0A:
-            lines += 1
+            if (lineContent := getNextLine(state, nextLine)) is not None:
+                string += lineContent
+                maximum = len(string)
+                nextLine += 1
         elif isSpace(ch):
             pass
         else:
@@ -106,20 +75,19 @@ def reference(state: StateBlock, startLine: int, _endLine: int, silent: bool) ->
 
     
     
-    res = state.md.helpers.parseLinkDestination(string, pos, maximum)
-    if not res.ok:
+    destRes = state.md.helpers.parseLinkDestination(string, pos, maximum)
+    if not destRes.ok:
         return False
 
-    href = state.md.normalizeLink(res.str)
+    href = state.md.normalizeLink(destRes.str)
     if not state.md.validateLink(href):
         return False
 
-    pos = res.pos
-    lines += res.lines
+    pos = destRes.pos
 
     
     destEndPos = pos
-    destEndLineNo = lines
+    destEndLineNo = nextLine
 
     
     
@@ -127,7 +95,10 @@ def reference(state: StateBlock, startLine: int, _endLine: int, silent: bool) ->
     while pos < maximum:
         ch = charCodeAt(string, pos)
         if ch == 0x0A:
-            lines += 1
+            if (lineContent := getNextLine(state, nextLine)) is not None:
+                string += lineContent
+                maximum = len(string)
+                nextLine += 1
         elif isSpace(ch):
             pass
         else:
@@ -136,15 +107,23 @@ def reference(state: StateBlock, startLine: int, _endLine: int, silent: bool) ->
 
     
     
-    res = state.md.helpers.parseLinkTitle(string, pos, maximum)
-    if pos < maximum and start != pos and res.ok:
-        title = res.str
-        pos = res.pos
-        lines += res.lines
+    titleRes = state.md.helpers.parseLinkTitle(string, pos, maximum, None)
+    while titleRes.can_continue:
+        if (lineContent := getNextLine(state, nextLine)) is None:
+            break
+        string += lineContent
+        pos = maximum
+        maximum = len(string)
+        nextLine += 1
+        titleRes = state.md.helpers.parseLinkTitle(string, pos, maximum, titleRes)
+
+    if pos < maximum and start != pos and titleRes.ok:
+        title = titleRes.str
+        pos = titleRes.pos
     else:
         title = ""
         pos = destEndPos
-        lines = destEndLineNo
+        nextLine = destEndLineNo
 
     
     while pos < maximum:
@@ -158,7 +137,7 @@ def reference(state: StateBlock, startLine: int, _endLine: int, silent: bool) ->
         
         title = ""
         pos = destEndPos
-        lines = destEndLineNo
+        nextLine = destEndLineNo
         while pos < maximum:
             ch = charCodeAt(string, pos)
             if not isSpace(ch):
@@ -181,7 +160,7 @@ def reference(state: StateBlock, startLine: int, _endLine: int, silent: bool) ->
     if "references" not in state.env:
         state.env["references"] = {}
 
-    state.line = startLine + lines + 1
+    state.line = nextLine
 
     
     if state.md.options.get("inline_definitions", False):
@@ -210,6 +189,47 @@ def reference(state: StateBlock, startLine: int, _endLine: int, silent: bool) ->
             }
         )
 
-    state.parentType = oldParentType
-
     return True
+
+
+def getNextLine(state: StateBlock, nextLine: int) -> None | str:
+    endLine = state.lineMax
+
+    if nextLine >= endLine or state.isEmpty(nextLine):
+        
+        return None
+
+    isContinuation = False
+
+    
+    
+    if state.is_code_block(nextLine):
+        isContinuation = True
+
+    
+    if state.sCount[nextLine] < 0:
+        isContinuation = True
+
+    if not isContinuation:
+        terminatorRules = state.md.block.ruler.getRules("reference")
+        oldParentType = state.parentType
+        state.parentType = "reference"
+
+        
+        terminate = False
+        for terminatorRule in terminatorRules:
+            if terminatorRule(state, nextLine, endLine, True):
+                terminate = True
+                break
+
+        state.parentType = oldParentType
+
+        if terminate:
+            
+            return None
+
+    pos = state.bMarks[nextLine] + state.tShift[nextLine]
+    maximum = state.eMarks[nextLine]
+
+    
+    return state.src[pos : maximum + 1]
