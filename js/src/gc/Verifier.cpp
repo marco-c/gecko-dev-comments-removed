@@ -210,7 +210,7 @@ void gc::GCRuntime::startVerifyPreBarriers() {
 
   number++;
 
-  VerifyPreTracer* trc = js_new<VerifyPreTracer>(rt);
+  UniquePtr<VerifyPreTracer> trc = MakeUnique<VerifyPreTracer>(rt);
   if (!trc) {
     return;
   }
@@ -225,6 +225,16 @@ void gc::GCRuntime::startVerifyPreBarriers() {
 
   ClearMarkBits<AllZonesIter>(this);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  setGrayBitsInvalid();
+
   gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::TRACE_HEAP);
 
   const size_t size = 64 * 1024 * 1024;
@@ -236,13 +246,13 @@ void gc::GCRuntime::startVerifyPreBarriers() {
   trc->term = trc->edgeptr + size;
 
   
-  trc->curnode = MakeNode(trc, JS::GCCellPtr());
+  trc->curnode = MakeNode(trc.get(), JS::GCCellPtr());
 
   MOZ_ASSERT(incrementalState == State::NotActive);
   incrementalState = State::MarkRoots;
 
   
-  traceRuntime(trc, prep);
+  traceRuntime(trc.get(), prep);
 
   VerifyNode* node;
   node = trc->curnode;
@@ -254,10 +264,10 @@ void gc::GCRuntime::startVerifyPreBarriers() {
   while ((char*)node < trc->edgeptr) {
     for (uint32_t i = 0; i < node->count; i++) {
       EdgeValue& e = node->edges[i];
-      VerifyNode* child = MakeNode(trc, e.thing);
+      VerifyNode* child = MakeNode(trc.get(), e.thing);
       if (child) {
         trc->curnode = child;
-        JS::TraceChildren(trc, e.thing);
+        JS::TraceChildren(trc.get(), e.thing);
       }
       if (trc->edgeptr == trc->term) {
         goto oom;
@@ -267,7 +277,7 @@ void gc::GCRuntime::startVerifyPreBarriers() {
     node = NextNode(node);
   }
 
-  verifyPreData = trc;
+  verifyPreData = trc.release();
   incrementalState = State::Mark;
   haveAllImplicitEdges_ = true;
   marker().start();
@@ -281,9 +291,8 @@ void gc::GCRuntime::startVerifyPreBarriers() {
   return;
 
 oom:
+  MOZ_ASSERT(!verifyPreData);
   incrementalState = State::NotActive;
-  js_delete(trc);
-  verifyPreData = nullptr;
 }
 
 static bool IsMarkedOrAllocated(TenuredCell* cell) {
@@ -416,11 +425,6 @@ void gc::GCRuntime::endVerifyPreBarriers() {
   marker().reset();
   resetDelayedMarking();
   resetDeferredWeakMaps();
-
-  
-  
-  
-  setGrayBitsInvalid();
 
   for (AllZonesIter zone(this); !zone.done(); zone.next()) {
     zone->bufferAllocator.clearMarkStateAfterBarrierVerification();
