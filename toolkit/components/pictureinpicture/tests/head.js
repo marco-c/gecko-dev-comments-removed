@@ -992,12 +992,6 @@ async function isVideoMuted(browser, videoID) {
   });
 }
 
-async function getVideoCurrentTime(browser, videoID) {
-  return SpecialPowers.spawn(browser, [videoID], async videoID => {
-    return content.document.getElementById(videoID).currentTime;
-  });
-}
-
 
 
 
