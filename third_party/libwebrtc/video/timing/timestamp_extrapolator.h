@@ -68,7 +68,8 @@ class TimestampExtrapolator {
         "alarm_threshold", &alarm_threshold,
         "acc_drift", &acc_drift,
         "acc_max_error", &acc_max_error,
-        "reset_full_cov_on_alarm", &reset_full_cov_on_alarm);
+        "reset_full_cov_on_alarm", &reset_full_cov_on_alarm,
+        "p00", &p00);
       
     }
 
@@ -128,6 +129,9 @@ class TimestampExtrapolator {
     
     
     bool reset_full_cov_on_alarm = false;
+
+    
+    double p00 = 1.0;
   };
 
   TimestampExtrapolator(Timestamp start, const FieldTrialsView& field_trials);
