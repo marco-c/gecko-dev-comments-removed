@@ -3,18 +3,16 @@
 
 
 
-
-
-{%- for (preprocessor_condition, scaffolding_calls, preprocessor_condition_end) in scaffolding_calls.iter() %}
-{{ preprocessor_condition }}
-{%- for scaffolding_call in scaffolding_calls %}
+{%- for lib in root.libraries() %}
+{{ lib.ifdef_start() }}
+{%- for scaffolding_call in lib.scaffolding_calls %}
 {%- match scaffolding_call.ffi_func.async_data %}
 {%- when None %}
-class {{ scaffolding_call.handler_class_name }} : public UniffiSyncCallHandler {
+class {{ scaffolding_call.handler_class_name() }} : public UniffiSyncCallHandler {
 private:
   
   {%- for arg in scaffolding_call.arguments %}
-  {{ arg.ffi_value_class }} {{ arg.field_name }}{};
+  {{ arg.ffi_value_class }} {{ arg.field_name_cpp() }}{};
   {%- endfor %}
 
   
@@ -31,7 +29,7 @@ public:
     }
     {%- endif %}
     {%- for arg in scaffolding_call.arguments %}
-    {{ arg.field_name }}.Lower(aArgs[{{ loop.index0 }}], aError);
+    {{ arg.field_name_cpp() }}.Lower(aArgs[{{ loop.index0 }}], aError);
     if (aError.Failed()) {
       return;
     }
@@ -44,7 +42,7 @@ public:
     mUniffiReturnValue = {{ return_ty.ffi_value_class }}::FromRust(
       {{ scaffolding_call.ffi_func.name.0 }}(
         {%- for arg in scaffolding_call.arguments %}
-        {{ arg.field_name }}.IntoRust(),
+        {{ arg.field_name_cpp() }}.IntoRust(),
         {%- endfor %}
         aOutStatus
       )
@@ -52,7 +50,7 @@ public:
     {%- else %}
     {{ scaffolding_call.ffi_func.name.0 }}(
       {%- for arg in scaffolding_call.arguments %}
-      {{ arg.field_name }}.IntoRust(),
+      {{ arg.field_name_cpp() }}.IntoRust(),
       {%- endfor %}
       aOutStatus
     );
@@ -70,9 +68,9 @@ public:
   }
 };
 {%- when Some(async_data) %}
-class {{ scaffolding_call.handler_class_name }} : public UniffiAsyncCallHandler {
+class {{ scaffolding_call.handler_class_name() }} : public UniffiAsyncCallHandler {
 public:
-  {{ scaffolding_call.handler_class_name }}() : UniffiAsyncCallHandler(
+  {{ scaffolding_call.handler_class_name() }}() : UniffiAsyncCallHandler(
         {{ async_data.ffi_rust_future_poll.0 }},
         {{ async_data.ffi_rust_future_free.0 }}
     ) { }
@@ -89,8 +87,8 @@ protected:
   
   void LowerArgsAndMakeRustCall(const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
     {%- for arg in scaffolding_call.arguments %}
-    {{ arg.ffi_value_class }} {{ arg.field_name }}{};
-    {{ arg.field_name }}.Lower(aArgs[{{ loop.index0 }}], aError);
+    {{ arg.ffi_value_class }} {{ arg.field_name_cpp() }}{};
+    {{ arg.field_name_cpp() }}.Lower(aArgs[{{ loop.index0 }}], aError);
     if (aError.Failed()) {
       return;
     }
@@ -98,7 +96,7 @@ protected:
 
     mFutureHandle = {{ scaffolding_call.ffi_func.name.0 }}(
       {%- for arg in scaffolding_call.arguments %}
-      {{ arg.field_name }}.IntoRust(){% if !loop.last %},{% endif %}
+      {{ arg.field_name_cpp() }}.IntoRust(){% if !loop.last %},{% endif %}
       {%- endfor %}
     );
   }
@@ -127,21 +125,21 @@ public:
 {%- endmatch %}
 
 {%- endfor %}
-{{ preprocessor_condition_end }}
+{{ lib.ifdef_end() }}
 {%- endfor %}
 
 UniquePtr<UniffiSyncCallHandler> GetSyncCallHandler(uint64_t aId) {
   switch (aId) {
-    {%- for (preprocessor_condition, scaffolding_calls, preprocessor_condition_end) in scaffolding_calls.iter() %}
-{{ preprocessor_condition }}
-    {%- for call in scaffolding_calls %}
+  {%- for lib in root.libraries() %}
+{{ lib.ifdef_start() }}
+    {%- for call in lib.scaffolding_calls %}
     {%- if !call.is_async() %}
     case {{ call.id }}: {
-      return MakeUnique<{{ call.handler_class_name }}>();
+      return MakeUnique<{{ call.handler_class_name() }}>();
     }
     {%- endif %}
     {%- endfor %}
-{{ preprocessor_condition_end }}
+{{ lib.ifdef_end() }}
     {%- endfor %}
 
     default:
@@ -151,16 +149,16 @@ UniquePtr<UniffiSyncCallHandler> GetSyncCallHandler(uint64_t aId) {
 
 UniquePtr<UniffiAsyncCallHandler> GetAsyncCallHandler(uint64_t aId) {
   switch (aId) {
-    {%- for (preprocessor_condition, scaffolding_calls, preprocessor_condition_end) in scaffolding_calls.iter() %}
-{{ preprocessor_condition }}
-    {%- for call in scaffolding_calls %}
+    {%- for lib in root.libraries() %}
+{{ lib.ifdef_start() }}
+    {%- for call in lib.scaffolding_calls %}
     {%- if call.is_async() %}
     case {{ call.id }}: {
-      return MakeUnique<{{ call.handler_class_name }}>();
+      return MakeUnique<{{ call.handler_class_name() }}>();
     }
     {%- endif %}
     {%- endfor %}
-{{ preprocessor_condition_end }}
+{{ lib.ifdef_end() }}
     {%- endfor %}
 
     default:

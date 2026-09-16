@@ -36,7 +36,7 @@ class Callback extends TestCallbackInterface {
 const cbi = new Callback(42);
 
 Assert.equal(
-  UnitTestObjs.uniffiCallbackHandlerUniffiBindingsTestsTestCallbackInterface.hasRegisteredCallbacks(),
+  UnitTestObjs.uniffiCallbackHandlerTestCallbackInterface.hasRegisteredCallbacks(),
   false
 );
 
@@ -77,7 +77,7 @@ delete cbi;
 do_test_pending();
 do_timeout(100, () => {
   Assert.equal(
-    UnitTestObjs.uniffiCallbackHandlerUniffiBindingsTestsTestCallbackInterface.hasRegisteredCallbacks(),
+    UnitTestObjs.uniffiCallbackHandlerTestCallbackInterface.hasRegisteredCallbacks(),
     false
   );
   do_test_finished();

@@ -6,14 +6,16 @@
 
 
 
-{%- for (preprocessor_condition, callback_interfaces, preprocessor_condition_end) in callback_interfaces.iter() %}
-{{ preprocessor_condition }}
+{%- for lib in root.libraries() %}
+{{ lib.ifdef_start() }}
 
-{%- for cbi in callback_interfaces %}
+{%- for cbi in lib.callback_interfaces %}
 {%- if let Some(ffi_value_class) = cbi.ffi_value_class %}
 
 
 extern "C" void {{ cbi.free_fn }}(uint64_t uniffiHandle);
+
+
 
 
 
@@ -72,5 +74,5 @@ class {{ ffi_value_class }} {
 
 {%- endif %}
 {%- endfor %}
-{{ preprocessor_condition_end }}
+{{ lib.ifdef_end() }}
 {%- endfor %}

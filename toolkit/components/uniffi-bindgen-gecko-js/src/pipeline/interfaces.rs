@@ -2,97 +2,69 @@
 
 
 
-
-
 use super::*;
-use heck::{ToSnakeCase, ToUpperCamelCase};
 
-pub fn pass(root: &mut Root) -> Result<()> {
-    root.visit_mut(|int: &mut Interface| {
-        
-        match &int.imp {
-            ObjectImpl::Struct | ObjectImpl::Trait => {
-                
-                
-                int.interface_base_class = InterfaceBaseClass {
-                    name: format!("{}Interface", int.name),
-                    methods: int.methods.clone(),
-                    docstring: int.docstring.clone(),
-                    ..InterfaceBaseClass::default()
-                };
-                int.js_class_name = int.name.clone();
-            }
-            ObjectImpl::CallbackTrait => {
-                
-                
-                int.interface_base_class = InterfaceBaseClass {
-                    name: int.name.clone(),
-                    methods: int.methods.clone(),
-                    docstring: int.docstring.clone(),
-                    ..InterfaceBaseClass::default()
-                };
-                int.js_class_name = format!("{}Impl", int.name);
-            }
-        };
+pub fn map_interface(input: general::Interface, context: &Context) -> Result<Interface> {
+    let imp = input.imp.map_node(context)?;
+    let methods = input.methods.map_node(context)?;
+    let name = input.name.to_upper_camel_case();
 
-        
-        let int_ffi_converter = format!("FfiConverter{}", int.self_type.canonical_name);
-        int.visit_mut(|callable_kind: &mut CallableKind| {
-            if let CallableKind::Method { ffi_converter, .. } = callable_kind {
-                *ffi_converter = int_ffi_converter.clone();
-            };
-        });
-        
-        int.visit_mut(|cons: &mut Constructor| {
-            if cons.name == "new" {
-                cons.name = "init".to_string();
-                cons.visit_mut(|callable: &mut Callable| {
-                    callable.name = "init".to_string();
-                })
-            }
-        });
-        if let Some(vtable) = &mut int.vtable {
-            vtable.interface_name = int.name.clone();
+    let (interface_base_class, js_class_name) = match &imp {
+        ObjectImpl::Trait(kind) if kind.has_foreign() => {
+            
+            
+            (
+                InterfaceBaseClass {
+                    name: name.clone(),
+                    methods: methods.clone(),
+                    docstring: input.docstring.clone(),
+                    js_docstring: js_docstrings::format_docstring(
+                        input.docstring.as_ref().unwrap_or(&name),
+                    ),
+                },
+                format!("{}Impl", name),
+            )
         }
-    });
+        _ => {
+            let interface_name = format!("{}Interface", name);
+            
+            
+            (
+                InterfaceBaseClass {
+                    js_docstring: js_docstrings::format_docstring(
+                        input.docstring.as_ref().unwrap_or(&interface_name),
+                    ),
+                    name: interface_name,
+                    methods: methods.clone(),
+                    docstring: input.docstring.clone(),
+                },
+                name.clone(),
+            )
+        }
+    };
+    let js_docstring = js_docstrings::format_docstring(input.docstring.as_ref().unwrap_or(&name));
+    let self_type = input.self_type.map_node(context)?;
+    let pointer_id = context.pointer_id(self_type.id)?;
+    let vtable = match input.vtable {
+        None => None,
+        Some(v) => Some(callback_interfaces::map_vtable(v, &self_type, context)?),
+    };
 
-    
-    root.cpp_scaffolding.pointer_types = CombinedItems::new(root, |module, ids, items| {
-        let module_name = module.name.clone();
-        module.visit_mut(|int: &mut Interface| {
-            int.object_id = ids.new_id();
-            items.push(PointerType {
-                id: int.object_id,
-                name: format!(
-                    "k{}{}PointerType",
-                    module_name.to_upper_camel_case(),
-                    int.name.to_upper_camel_case()
-                ),
-                ffi_value_class: format!(
-                    "FfiValueObjectHandle{}{}",
-                    module_name.to_upper_camel_case(),
-                    int.name.to_upper_camel_case(),
-                ),
-                label: format!("{}::{}", module_name, int.name),
-                ffi_func_clone: int.ffi_func_clone.clone(),
-                ffi_func_free: int.ffi_func_free.clone(),
-                trait_interface_info: int.vtable.is_some().then(|| PointerTypeTraitInterfaceInfo {
-                    clone_fn: format!(
-                        "callback_clone_{}_{}",
-                        module_name.to_snake_case(),
-                        int.name.to_snake_case(),
-                    ),
-                    free_fn: format!(
-                        "callback_free_{}_{}",
-                        module_name.to_snake_case(),
-                        int.name.to_snake_case(),
-                    ),
-                }),
-            })
-        });
-    });
-    root.cpp_scaffolding
-        .pointer_types
-        .sort_by_key(|call| call.id);
-    Ok(())
+    Ok(Interface {
+        name,
+        js_class_name,
+        interface_base_class,
+        constructors: input.constructors.map_node(context)?,
+        methods,
+        uniffi_trait_methods: input.uniffi_trait_methods.map_node(context)?,
+        trait_impls: input.trait_impls.map_node(context)?,
+        imp: input.imp,
+        docstring: input.docstring,
+        js_docstring,
+        self_type,
+        pointer_id,
+        vtable,
+        ffi_func_clone: input.ffi_func_clone.map_node(context)?,
+        ffi_func_free: input.ffi_func_free.map_node(context)?,
+    })
 }

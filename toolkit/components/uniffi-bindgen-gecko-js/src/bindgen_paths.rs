@@ -3,20 +3,11 @@
 
 
 use anyhow::Result;
-use uniffi_bindgen::{BindgenPaths, BindgenPathsLayer};
+use uniffi_bindgen::BindgenPaths;
+
 
 pub fn gecko_js_bindgen_paths() -> Result<BindgenPaths> {
     let mut paths = BindgenPaths::default();
-    paths.add_layer(ConfigTomlLayer {});
     paths.add_cargo_metadata_layer(false)?;
     Ok(paths)
-}
-
-
-struct ConfigTomlLayer {}
-
-impl BindgenPathsLayer for ConfigTomlLayer {
-    fn get_config(&self, _crate_name: &str) -> Result<Option<toml::Table>> {
-        Ok(Some(toml::from_str(include_str!("../config.toml"))?))
-    }
 }
