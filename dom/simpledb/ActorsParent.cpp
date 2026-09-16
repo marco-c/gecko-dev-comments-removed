@@ -777,6 +777,15 @@ bool Connection::VerifyRequestParams(const SDBRequestParams& aParams) const {
 
   switch (aParams.type()) {
     case SDBRequestParams::TSDBRequestOpenParams: {
+      const auto& name = aParams.get_SDBRequestOpenParams().name();
+
+      
+      
+      if (NS_WARN_IF(name.Contains(u'\0'))) {
+        MOZ_CRASH_UNLESS_FUZZING();
+        return false;
+      }
+
       if (NS_WARN_IF(mOpen)) {
         MOZ_CRASH_UNLESS_FUZZING();
         return false;
