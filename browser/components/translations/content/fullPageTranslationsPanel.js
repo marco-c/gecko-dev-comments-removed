@@ -529,6 +529,12 @@ var FullPageTranslationsPanel = new (class {
   updateUIForReTranslation(isReTranslation) {
     const { restoreButton, fromLabel, fromMenuList, toLabel } = this.elements;
     restoreButton.hidden = !isReTranslation;
+    document.l10n.setAttributes(
+      toLabel,
+      isReTranslation
+        ? "translations-panel-revisit-to-label"
+        : "translations-panel-to-label"
+    );
     
     
     fromLabel.hidden = isReTranslation;
