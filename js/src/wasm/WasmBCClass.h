@@ -941,11 +941,6 @@ struct BaseCompiler final {
   
   
   
-  [[nodiscard]] bool checkStackHeight();
-
-  
-  
-  
   
   
   
