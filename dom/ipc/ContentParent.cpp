@@ -6063,9 +6063,7 @@ ContentParent::AboutToLoadOrigin(nsIPrincipal* aPrincipal) {
 
   MOZ_ASSERT_DEBUG_OR_FUZZING(!aPrincipal->GetIsExpandedPrincipal());
 
-  LoadedOriginSet::Level prev =
-      LoadedOrigins()->AddInternal(aPrincipal,  false);
-  if (prev < LoadedOriginSet::Level::Full) {
+  if (LoadedOrigins()->AddInternal(aPrincipal,  false)) {
     
     
     if (!BlobURLProtocolHandler::IsBlobURLBroadcastPrincipal(aPrincipal)) {
