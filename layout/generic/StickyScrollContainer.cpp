@@ -458,22 +458,15 @@ void StickyScrollContainer::UpdatePositions(nsPoint aScrollPosition,
   OverflowChangedTracker oct;
   oct.SetSubtreeRoot(aSubtreeRoot);
   
-  
-  
-  AutoTArray<nsIFrame*, 8> framesToRemove;
   for (nsIFrame* f : mFrames.IterFromShallowest()) {
-    if (!nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(f)) {
-      
-      
-      framesToRemove.AppendElement(f);
-      continue;
-    }
+    
+    
+    MOZ_ASSERT(nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(f),
+               "Only primary frames should have been registered");
     if (aSubtreeRoot) {
       
       ComputeStickyOffsets(f);
     }
-    
-    
     PositionContinuations(f);
 
     f = f->GetParent();
@@ -483,9 +476,6 @@ void StickyScrollContainer::UpdatePositions(nsPoint aScrollPosition,
         oct.AddFrame(cont, OverflowChangedTracker::CHILDREN_CHANGED);
       }
     }
-  }
-  for (nsIFrame* f : framesToRemove) {
-    mFrames.Remove(f);
   }
   oct.Flush();
 }
