@@ -7455,14 +7455,12 @@ UniquePtr<PresState> ScrollContainerFrame::SaveState() {
 
   
   
-  
   auto scrollAnimationState = ScrollAnimationState();
   bool isScrollAnimating =
       scrollAnimationState.contains(AnimationState::MainThread) ||
       scrollAnimationState.contains(AnimationState::APZPending) ||
       scrollAnimationState.contains(AnimationState::APZRequested);
-  if (!mHasBeenScrolled && !mDidHistoryRestore && !isScrollAnimating &&
-      !mHorizontalOverflow && !mVerticalOverflow) {
+  if (!mHasBeenScrolled && !mDidHistoryRestore && !isScrollAnimating) {
     return nullptr;
   }
 
@@ -7492,8 +7490,6 @@ UniquePtr<PresState> ScrollContainerFrame::SaveState() {
   }
   state->scrollState() = pt;
   state->allowScrollOriginDowngrade() = allowScrollOriginDowngrade;
-  state->horizontalOverflow() = mHorizontalOverflow;
-  state->verticalOverflow() = mVerticalOverflow;
   if (mIsRoot) {
     
     state->resolution() = PresShell()->GetResolution();
@@ -7505,8 +7501,6 @@ NS_IMETHODIMP ScrollContainerFrame::RestoreState(PresState* aState) {
   mRestorePos = aState->scrollState();
   MOZ_ASSERT(mLastScrollOrigin == ScrollOrigin::None);
   mAllowScrollOriginDowngrade = aState->allowScrollOriginDowngrade();
-  mHorizontalOverflow = aState->horizontalOverflow();
-  mVerticalOverflow = aState->verticalOverflow();
   
   
   
