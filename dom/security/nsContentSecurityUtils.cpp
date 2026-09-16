@@ -1376,7 +1376,7 @@ static nsLiteralCString sImgSrcDataBlobAllowList[] = {
     "chrome://browser/content/sidebar/sidebar-opentabs.html"_ns,
     "chrome://browser/content/sidebar/sidebar-syncedtabs.html"_ns,
     "chrome://browser/content/spotlight.html"_ns,
-    "chrome://browser/content/syncedtabs/sidebar.xhtml"_ns,
+    "chrome://browser/content/syncedtabs/sidebar.html"_ns,
     "chrome://browser/content/webext-panels.xhtml"_ns,
     "chrome://devtools/content/application/index.html"_ns,
     "chrome://devtools/content/framework/browser-toolbox/window.html"_ns,
@@ -1422,7 +1422,7 @@ static nsLiteralCString sImgSrcAddonsAllowList[] = {
 
 static nsLiteralCString sImgSrcWildcardAllowList[] = {
     "about:reader"_ns,
-    "chrome://browser/content/syncedtabs/sidebar.xhtml"_ns,
+    "chrome://browser/content/syncedtabs/sidebar.html"_ns,
     
 };
 
@@ -1827,8 +1827,6 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
       
       "about:srcdoc"_ns,
       
-      "about:sync-log"_ns,
-      
       "about:logo"_ns,
       
       
@@ -2143,11 +2141,6 @@ bool nsContentSecurityUtils::ValidateScriptFilename(JSContext* cx,
     return true;
   }
   if (StringBeginsWith(filename, "jar:file://"_ns)) {
-    
-    return true;
-  }
-  if (filename.Equals("about:sync-log"_ns)) {
-    
     
     return true;
   }
