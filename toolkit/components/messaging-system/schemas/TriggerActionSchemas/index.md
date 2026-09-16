@@ -60,8 +60,6 @@ targeting, use separate messages instead.
 - [`tabGroupSaved`](#tabgroupsaved)
 - [`tabGroupCollapsed`](#tabgroupcollapsed)
 - [`activityAfterIdle`](#activityafteridle)
-- [`cookieBannerDetected`](#cookiebannerdetected)
-- [`cookieBannerHandled`](#cookiebannerhandled)
 - [`messagesLoaded`](#messagesloaded)
 - [`pageActionInUrlbar`](#pageactioninurlbar)
 - [`onSearch`](#onsearch)
@@ -253,6 +251,27 @@ let regexPatterns: string[];
   ...
 }
 ```
+
+The trigger context exposes two counters. `visitsCount` is per unique URL, so
+it only grows when the same URL is loaded again. `totalVisitsCount` counts
+every matched visit, so it grows on each matching page load regardless of the
+URL. Pair `totalVisitsCount` with a broad pattern to count all page loads:
+
+```javascript
+{
+  ...
+  trigger: { id: "openURL", patterns: ["*://*/*"] },
+  // Show the message on the third page load of the session.
+  targeting: "totalVisitsCount >= 3"
+  ...
+}
+```
+
+Note that the `openURL` listener is shared by every active `openURL` message,
+and `totalVisitsCount` counts matches against the combined `params`,
+`patterns`, and `regexPatterns` of all of them, not just those of the message
+being evaluated. Only use it with a trigger broad enough that the distinction
+does not matter; prefer `visitsCount` for narrowly scoped triggers.
 
 ### `newSavedLogin`
 
@@ -491,23 +510,6 @@ No params or patterns. The `idleForMilliseconds` context variable is available i
   targeting: "idleForMilliseconds >= 1200000"
 }
 ```
-
-### `cookieBannerDetected`
-
-Happens when the `cookiebannerdetected` window event is dispatched. This event is dispatched when the following conditions are true:
-
-1. The user is presented with a cookie consent banner on the webpage they're viewing,
-2. The domain has a valid ruleset for automatically engaging with the consent banner, and
-3. The user has not explicitly opted in or out of the Cookie Banner Handling feature.
-
-### `cookieBannerHandled`
-
-Happens when the `cookiebannerhandled` window event is dispatched. This event is dispatched when the following conditions are true:
-
-1. The user is presented with a cookie consent banner on the webpage they're viewing,
-2. The domain has a valid ruleset for automatically engaging with the consent banner, and
-3. The user is opted into the Cookie Banner Handling feature (this is by default in private windows), and
-4. Firefox succeeds in automatically engaging with the consent banner.
 
 ### `messagesLoaded`
 
