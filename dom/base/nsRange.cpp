@@ -179,6 +179,39 @@ class MOZ_STACK_CLASS nsRange::AutoNewContentHandler {
 
 
 
+class nsRange::AutoContentWillBeRemovedHandler {
+ public:
+  AutoContentWillBeRemovedHandler(const AbstractRange& aRange,
+                                  nsIContent& aChild)
+      : mRange(aRange), mChild(aChild), mParentNode(aChild.GetParentNode()) {
+    MOZ_ASSERT(mParentNode);
+  }
+
+  
+
+
+  [[nodiscard]] RangeBoundariesAndRoot ComputeNewBoundaries() const {
+    RawRangeBoundary newStart =
+        ComputeNewBoundary(RangeBoundarySide::Start, nullptr);
+    RawRangeBoundary newEnd =
+        ComputeNewBoundary(RangeBoundarySide::End, &newStart);
+    return {std::move(newStart), std::move(newEnd), nullptr};
+  }
+
+ private:
+  [[nodiscard]] RawRangeBoundary ComputeNewBoundary(
+      RangeBoundarySide aSide,
+      const RawRangeBoundary* aAlreadyComputedStartBoundary) const;
+
+  const AbstractRange& mRange;
+  nsIContent& mChild;
+  const nsCOMPtr<nsINode> mParentNode;
+};
+
+
+
+
+
 namespace mozilla {
 extern LazyLogModule sSelectionAPILog;
 extern void LogStackForSelectionAPI();
@@ -816,74 +849,78 @@ void nsRange::ContentInserted(nsIContent* aChild, const ContentInsertInfo&) {
   DoSetRange(newBoundaries.mStart, newBoundaries.mEnd, newBoundaries.mRoot);
 }
 
+RawRangeBoundary nsRange::AutoContentWillBeRemovedHandler::ComputeNewBoundary(
+    RangeBoundarySide aSide,
+    const RawRangeBoundary* aAlreadyComputedStartBoundary) const {
+  MOZ_ASSERT_IF(aSide == RangeBoundarySide::Start,
+                !aAlreadyComputedStartBoundary);
+  MOZ_ASSERT_IF(aSide == RangeBoundarySide::End, aAlreadyComputedStartBoundary);
+
+  nsINode* const container = mRange.GetContainer(aSide);
+  if (mParentNode == container) {
+    
+    
+    nsIContent* const referenceChild = mRange.BoundaryRef(aSide).Ref();
+    if (&mChild == referenceChild) {
+      return {mParentNode, mChild.GetPreviousSibling()};
+    }
+    
+    
+    RawRangeBoundary newBoundary{mParentNode, referenceChild};
+    MOZ_ASSERT(newBoundary.IsStartOfContainer() || !newBoundary.HasOffset());
+    return newBoundary;
+  }
+  
+  
+  
+  
+  
+  if (aSide == RangeBoundarySide::End) {
+    nsINode* const startContainer = mRange.GetStartContainer();
+    nsINode* const endContainer = container;
+    if (startContainer == endContainer) {
+      MOZ_ASSERT(mParentNode != startContainer);
+      if (aAlreadyComputedStartBoundary->IsSet()) {
+        MOZ_ASSERT(aAlreadyComputedStartBoundary->GetContainer() ==
+                   mParentNode);
+        MOZ_ASSERT(aAlreadyComputedStartBoundary->Ref() ==
+                   mChild.GetPreviousSibling());
+        return *aAlreadyComputedStartBoundary;
+      }
+      return RawRangeBoundary{};
+    }
+  }
+  if (container->IsInclusiveDescendantOf(&mChild)) {
+    return RawRangeBoundary{mParentNode, mChild.GetPreviousSibling()};
+  }
+  return RawRangeBoundary{};
+}
+
 void nsRange::ContentWillBeRemoved(nsIContent* aChild,
                                    const ContentRemoveInfo&) {
+  MOZ_ASSERT(aChild);
+  MOZ_ASSERT(aChild->GetParentNode());
   MOZ_ASSERT(mIsPositioned);
 
-  nsINode* container = aChild->GetParentNode();
-  MOZ_ASSERT(container);
+  AutoContentWillBeRemovedHandler handler(*this, *aChild);
+  RangeBoundariesAndRoot newBoundaries = handler.ComputeNewBoundaries();
 
-  nsINode* startContainer = mStart.GetContainer();
-  nsINode* endContainer = mEnd.GetContainer();
-
-  RawRangeBoundary newStart;
-  RawRangeBoundary newEnd;
-  Maybe<bool> gravitateStart;
-  bool gravitateEnd;
-
-  
-  if (container == startContainer) {
+  if (!newBoundaries.HasNewBoundaries()) {
     
-    
-    if (aChild == mStart.Ref()) {
-      newStart = {container, aChild->GetPreviousSibling()};
-    } else {
-      newStart.CopyFrom(mStart, RangeBoundarySetBy::Ref);
-      newStart.InvalidateOffset();
-    }
-  } else {
-    gravitateStart = Some(startContainer->IsInclusiveDescendantOf(aChild));
-    if (gravitateStart.value()) {
-      newStart = {container, aChild->GetPreviousSibling()};
-    }
-  }
-
-  
-  if (container == endContainer) {
-    if (aChild == mEnd.Ref()) {
-      newEnd = {container, aChild->GetPreviousSibling()};
-    } else {
-      newEnd.CopyFrom(mEnd, RangeBoundarySetBy::Ref);
-      newEnd.InvalidateOffset();
-    }
-  } else {
-    if (startContainer == endContainer && gravitateStart.isSome()) {
-      gravitateEnd = gravitateStart.value();
-    } else {
-      gravitateEnd = endContainer->IsInclusiveDescendantOf(aChild);
-    }
-    if (gravitateEnd) {
-      newEnd = {container, aChild->GetPreviousSibling()};
-    }
-  }
-
-  bool newStartIsSet = newStart.IsSet();
-  bool newEndIsSet = newEnd.IsSet();
-  if (newStartIsSet || newEndIsSet) {
-    DoSetRange(
-        newStartIsSet ? newStart : mStart.AsRaw(),
-        newEndIsSet ? newEnd : mEnd.AsRaw(), mRoot, false,
-        
-        
-        RangeBehaviour::KeepDefaultRangeAndCrossShadowBoundaryRanges);
-  } else {
     nsRange::AssertIfMismatchRootAndRangeBoundaries(mStart, mEnd, mRoot);
+  } else {
+    newBoundaries.SetUnsetBoundaries(*this);
+    DoSetRange(newBoundaries.mStart, newBoundaries.mEnd, newBoundaries.mRoot,
+                false,
+               
+               
+               RangeBehaviour::KeepDefaultRangeAndCrossShadowBoundaryRanges);
   }
 
   MOZ_ASSERT(mStart.Ref() != aChild);
   MOZ_ASSERT(mEnd.Ref() != aChild);
 
-  if (container->IsMaybeSelected() &&
+  if (aChild->GetParentNode()->IsMaybeSelected() &&
       aChild
           ->IsDescendantOfClosestCommonInclusiveAncestorForRangeInSelection()) {
     aChild
