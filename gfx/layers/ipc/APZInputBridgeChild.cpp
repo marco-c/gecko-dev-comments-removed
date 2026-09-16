@@ -8,12 +8,14 @@
 #include "mozilla/dom/BrowserParent.h"  
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/ipc/Endpoint.h"
+#include "mozilla/layers/APZCCallbackHelper.h"
 #include "mozilla/layers/APZThreadUtils.h"
 #include "mozilla/layers/DoubleTapToZoom.h"  
 #include "mozilla/layers/GeckoContentController.h"  
 #include "mozilla/layers/KeyboardMap.h"             
 #include "mozilla/layers/RemoteCompositorSession.h"  
 #include "mozilla/layers/SynchronousTask.h"
+#include "nsThreadUtils.h"
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/jni/Utils.h"  
 #endif
@@ -257,6 +259,76 @@ mozilla::ipc::IPCResult APZInputBridgeChild::RecvCallInputBlockCallback(
     mInputBlockCallbacks.erase(it);
   }
 
+  return IPC_OK();
+}
+
+
+void APZInputBridgeChild::NotifyPinchGestureOnMainThread(
+    const PinchGestureType& aType, const LayoutDevicePoint& aFocusPoint,
+    const LayoutDeviceCoord& aSpanChange, const Modifiers& aModifiers) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mCompositorSession && mCompositorSession->GetWidget()) {
+    APZCCallbackHelper::NotifyPinchGesture(aType, aFocusPoint, aSpanChange,
+                                           aModifiers,
+                                           mCompositorSession->GetWidget());
+  }
+}
+
+mozilla::ipc::IPCResult APZInputBridgeChild::RecvNotifyPinchGesture(
+    const PinchGestureType& aType, const ScrollableLayerGuid& aGuid,
+    const LayoutDevicePoint& aFocusPoint, const LayoutDeviceCoord& aSpanChange,
+    const Modifiers& aModifiers) {
+  
+  
+  if (NS_IsMainThread()) {
+    NotifyPinchGestureOnMainThread(aType, aFocusPoint, aSpanChange, aModifiers);
+  } else {
+    NS_DispatchToMainThread(
+        NewRunnableMethod<PinchGestureType, LayoutDevicePoint,
+                          LayoutDeviceCoord, Modifiers>(
+            "layers::APZInputBridgeChild::NotifyPinchGestureOnMainThread", this,
+            &APZInputBridgeChild::NotifyPinchGestureOnMainThread, aType,
+            aFocusPoint, aSpanChange, aModifiers));
+  }
+  return IPC_OK();
+}
+
+
+
+mozilla::ipc::IPCResult APZInputBridgeChild::RecvCancelAutoscroll(
+    const ScrollableLayerGuid::ViewID& aScrollId) {
+  if (NS_IsMainThread()) {
+    APZCCallbackHelper::CancelAutoscroll(aScrollId);
+  } else {
+    NS_DispatchToMainThread(
+        NewRunnableFunction("layers::APZCCallbackHelper::CancelAutoscroll",
+                            &APZCCallbackHelper::CancelAutoscroll, aScrollId));
+  }
+  return IPC_OK();
+}
+
+
+
+void APZInputBridgeChild::NotifyScaleGestureCompleteOnMainThread(float aScale) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mCompositorSession && mCompositorSession->GetWidget()) {
+    APZCCallbackHelper::NotifyScaleGestureComplete(
+        mCompositorSession->GetWidget(), aScale);
+  }
+}
+
+mozilla::ipc::IPCResult APZInputBridgeChild::RecvNotifyScaleGestureComplete(
+    const ScrollableLayerGuid::ViewID& aScrollId, float aScale) {
+  if (NS_IsMainThread()) {
+    NotifyScaleGestureCompleteOnMainThread(aScale);
+  } else {
+    NS_DispatchToMainThread(NewRunnableMethod<float>(
+        "layers::APZInputBridgeChild::NotifyScaleGestureCompleteOnMainThread",
+        this, &APZInputBridgeChild::NotifyScaleGestureCompleteOnMainThread,
+        aScale));
+  }
   return IPC_OK();
 }
 

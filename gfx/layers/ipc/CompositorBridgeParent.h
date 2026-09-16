@@ -501,12 +501,6 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase {
 
 
 
-  static RefPtr<APZCTreeManagerParent> GetApzcTreeManagerParentForRoot(
-      LayersId aContentLayersId);
-  
-
-
-
   static GeckoContentController* GetGeckoContentControllerForRoot(
       LayersId aContentLayersId);
 

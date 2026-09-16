@@ -27,15 +27,15 @@ struct DoubleTapToZoomMetrics;
 
 
 
-class RemoteContentController : public GeckoContentController,
-                                public PAPZParent {
+class RemoteContentController final : public GeckoContentController,
+                                      public PAPZParent {
   using GeckoContentController::APZStateChange;
   using GeckoContentController::TapType;
 
  public:
-  RemoteContentController();
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteContentController, final);
 
-  virtual ~RemoteContentController();
+  RemoteContentController();
 
   void NotifyLayerTransforms(nsTArray<MatrixMessage>&& aTransforms) override;
 
@@ -95,6 +95,8 @@ class RemoteContentController : public GeckoContentController,
   bool IsRemote() override;
 
  private:
+  virtual ~RemoteContentController();
+
   nsCOMPtr<nsISerialEventTarget> mCompositorThread;
   bool mCanSend;
 
@@ -106,7 +108,7 @@ class RemoteContentController : public GeckoContentController,
       TapType aTapType, LayoutDevicePoint aPoint, Modifiers aModifiers,
       ScrollableLayerGuid aGuid, uint64_t aInputBlockId,
       const Maybe<DoubleTapToZoomMetrics>& aDoubleTapToZoomMetrics);
-  void NotifyPinchGestureOnCompositorThread(
+  void NotifyPinchGestureOnGPUProcessMainThread(
       PinchGestureInput::PinchGestureType aType,
       const ScrollableLayerGuid& aGuid, const LayoutDevicePoint& aFocusPoint,
       LayoutDeviceCoord aSpanChange, Modifiers aModifiers);

@@ -11,11 +11,11 @@
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
-#include "mozilla/layers/APZCTreeManagerParent.h"  
 #include "mozilla/layers/APZThreadUtils.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/DoubleTapToZoom.h"
 #include "mozilla/layers/MatrixMessage.h"
+#include "nsThreadUtils.h"
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/jni/Utils.h"
 #endif
@@ -149,19 +149,19 @@ void RemoteContentController::HandleTap(
   }
 }
 
-void RemoteContentController::NotifyPinchGestureOnCompositorThread(
+
+
+void RemoteContentController::NotifyPinchGestureOnGPUProcessMainThread(
     PinchGestureInput::PinchGestureType aType, const ScrollableLayerGuid& aGuid,
     const LayoutDevicePoint& aFocusPoint, LayoutDeviceCoord aSpanChange,
     Modifiers aModifiers) {
-  MOZ_ASSERT(mCompositorThread->IsOnCurrentThread());
+  MOZ_ASSERT(NS_IsMainThread());
 
-  
-  
-  auto apzctmp =
-      CompositorBridgeParent::GetApzcTreeManagerParentForRoot(aGuid.mLayersId);
-  if (apzctmp) {
-    (void)apzctmp->SendNotifyPinchGesture(aType, aGuid, aFocusPoint,
-                                          aSpanChange, aModifiers);
+  auto apzib =
+      CompositorBridgeParent::GetApzInputBridgeParentForRoot(aGuid.mLayersId);
+  if (apzib) {
+    (void)apzib->SendNotifyPinchGesture(aType, aGuid, aFocusPoint, aSpanChange,
+                                        aModifiers);
   }
 }
 
@@ -177,19 +177,19 @@ void RemoteContentController::NotifyPinchGesture(
   
   
   if (XRE_IsGPUProcess()) {
-    if (mCompositorThread->IsOnCurrentThread()) {
-      NotifyPinchGestureOnCompositorThread(aType, aGuid, aFocusPoint,
-                                           aSpanChange, aModifiers);
+    if (NS_IsMainThread()) {
+      NotifyPinchGestureOnGPUProcessMainThread(aType, aGuid, aFocusPoint,
+                                               aSpanChange, aModifiers);
     } else {
-      mCompositorThread->Dispatch(
-          NewRunnableMethod<PinchGestureInput::PinchGestureType,
-                            ScrollableLayerGuid, LayoutDevicePoint,
-                            LayoutDeviceCoord, Modifiers>(
-              "layers::RemoteContentController::"
-              "NotifyPinchGestureOnCompositorThread",
-              this,
-              &RemoteContentController::NotifyPinchGestureOnCompositorThread,
-              aType, aGuid, aFocusPoint, aSpanChange, aModifiers));
+      NS_DispatchToMainThread(NewRunnableMethod<
+                              PinchGestureInput::PinchGestureType,
+                              ScrollableLayerGuid, LayoutDevicePoint,
+                              LayoutDeviceCoord, Modifiers>(
+          "layers::RemoteContentController::"
+          "NotifyPinchGestureOnGPUProcessMainThread",
+          this,
+          &RemoteContentController::NotifyPinchGestureOnGPUProcessMainThread,
+          aType, aGuid, aFocusPoint, aSpanChange, aModifiers));
     }
     return;
   }
@@ -460,20 +460,23 @@ void RemoteContentController::CancelAutoscrollInProcess(
       aGuid.mScrollId));
 }
 
+
+
 void RemoteContentController::CancelAutoscrollCrossProcess(
     const ScrollableLayerGuid& aGuid) {
   MOZ_ASSERT(XRE_IsGPUProcess());
 
-  if (!mCompositorThread->IsOnCurrentThread()) {
-    mCompositorThread->Dispatch(NewRunnableMethod<ScrollableLayerGuid>(
+  if (!NS_IsMainThread()) {
+    NS_DispatchToMainThread(NewRunnableMethod<ScrollableLayerGuid>(
         "layers::RemoteContentController::CancelAutoscrollCrossProcess", this,
         &RemoteContentController::CancelAutoscrollCrossProcess, aGuid));
     return;
   }
 
-  if (auto parent = CompositorBridgeParent::GetApzcTreeManagerParentForRoot(
-          aGuid.mLayersId)) {
-    (void)parent->SendCancelAutoscroll(aGuid.mScrollId);
+  auto apzib =
+      CompositorBridgeParent::GetApzInputBridgeParentForRoot(aGuid.mLayersId);
+  if (apzib) {
+    (void)apzib->SendCancelAutoscroll(aGuid.mScrollId);
   }
 }
 
@@ -509,12 +512,14 @@ void RemoteContentController::NotifyScaleGestureCompleteInProcess(
   }
 }
 
+
+
 void RemoteContentController::NotifyScaleGestureCompleteCrossProcess(
     const ScrollableLayerGuid& aGuid, float aScale) {
   MOZ_ASSERT(XRE_IsGPUProcess());
 
-  if (!mCompositorThread->IsOnCurrentThread()) {
-    mCompositorThread->Dispatch(NewRunnableMethod<ScrollableLayerGuid, float>(
+  if (!NS_IsMainThread()) {
+    NS_DispatchToMainThread(NewRunnableMethod<ScrollableLayerGuid, float>(
         "layers::RemoteContentController::"
         "NotifyScaleGestureCompleteCrossProcess",
         this, &RemoteContentController::NotifyScaleGestureCompleteCrossProcess,
@@ -522,9 +527,10 @@ void RemoteContentController::NotifyScaleGestureCompleteCrossProcess(
     return;
   }
 
-  if (auto parent = CompositorBridgeParent::GetApzcTreeManagerParentForRoot(
-          aGuid.mLayersId)) {
-    (void)parent->SendNotifyScaleGestureComplete(aGuid.mScrollId, aScale);
+  auto apzib =
+      CompositorBridgeParent::GetApzInputBridgeParentForRoot(aGuid.mLayersId);
+  if (apzib) {
+    (void)apzib->SendNotifyScaleGestureComplete(aGuid.mScrollId, aScale);
   }
 }
 
