@@ -32,12 +32,8 @@ typedef enum {
 
 
 
+
     params_kyber768_round3,
-
-    
-
-
-
     params_kyber768_round3_test_mode,
 
     
@@ -66,7 +62,19 @@ typedef enum {
 
     
 
+
+
+
+
+
+
     params_ml_kem512,
+
+    
+
+
+
+    params_ml_kem512_test_mode,
 
 } KyberParams;
 
