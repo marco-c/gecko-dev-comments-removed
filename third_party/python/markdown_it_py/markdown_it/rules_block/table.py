@@ -10,13 +10,6 @@ headerLineRe = re.compile(r"^:?-+:?$")
 enclosingPipesRe = re.compile(r"^\||\|$")
 
 
-
-
-
-
-MAX_AUTOCOMPLETED_CELLS = 0x10000
-
-
 def getLine(state: StateBlock, line: int) -> str:
     pos = state.bMarks[line] + state.tShift[line]
     maximum = state.eMarks[line]
@@ -179,7 +172,6 @@ def table(state: StateBlock, startLine: int, endLine: int, silent: bool) -> bool
     token = state.push("tr_close", "tr", -1)
     token = state.push("thead_close", "thead", -1)
 
-    autocompleted_cells = 0
     nextLine = startLine + 2
     while nextLine < endLine:
         if state.sCount[nextLine] < state.blkIndent:
@@ -203,12 +195,6 @@ def table(state: StateBlock, startLine: int, endLine: int, silent: bool) -> bool
             columns.pop(0)
         if columns and columns[-1] == "":
             columns.pop()
-
-        
-        
-        autocompleted_cells += columnCount - len(columns)
-        if autocompleted_cells > MAX_AUTOCOMPLETED_CELLS:
-            break
 
         if nextLine == startLine + 2:
             token = state.push("tbody_open", "tbody", 1)

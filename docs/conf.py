@@ -62,23 +62,6 @@ myst_enable_extensions = [
 
 
 
-
-
-mermaid_width = "fit-content"
-mermaid_height = "auto"
-
-
-
-
-mermaid_init_config = {
-    "startOnLoad": False,
-    "themeVariables": {
-        "fontSize": "18px",
-    },
-}
-
-
-
 with open(OUR_DIR / "config.yml") as fh:
     config = yaml.safe_load(fh)
     js_source_path = [f"../{path}" for path in config["js_source_paths"]]

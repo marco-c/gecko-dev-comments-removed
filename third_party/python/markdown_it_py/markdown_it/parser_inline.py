@@ -1,11 +1,8 @@
-"""Tokenizes paragraph content."""
-
+"""Tokenizes paragraph content.
+"""
 from __future__ import annotations
 
-from collections.abc import Callable
-import functools
-import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from . import rules_inline
 from .ruler import Ruler
@@ -15,47 +12,6 @@ from .utils import EnvType
 
 if TYPE_CHECKING:
     from markdown_it import MarkdownIt
-
-
-
-
-
-
-_DEFAULT_TERMINATORS: frozenset[str] = frozenset(
-    {
-        "\n",
-        "!",
-        "#",
-        "$",
-        "%",
-        "&",
-        "*",
-        "+",
-        "-",
-        ":",
-        "<",
-        "=",
-        ">",
-        "@",
-        "[",
-        "\\",
-        "]",
-        "^",
-        "_",
-        "`",
-        "{",
-        "}",
-        "~",
-    }
-)
-
-
-
-
-
-@functools.cache
-def _default_terminator_re() -> re.Pattern[str]:
-    return re.compile("[" + re.escape("".join(_DEFAULT_TERMINATORS)) + "]")
 
 
 
@@ -104,30 +60,6 @@ class ParserInline:
         self.ruler2 = Ruler[RuleFuncInline2Type]()
         for name, rule2 in _rules2:
             self.ruler2.push(name, rule2)
-        
-        
-        
-        self._extra_terminator_chars: set[str] = set()
-        
-        self.terminator_re: re.Pattern[str] = _default_terminator_re()
-
-    def add_terminator_char(self, ch: str) -> None:
-        """Register a character that stops the ``text`` rule, allowing inline rules to fire.
-
-        This lets plugins declare which characters their inline rules react to,
-        mirroring the ``MARKER`` mechanism in the Rust markdown-it implementation.
-
-        :param ch: A single character to add to the terminator set.
-        """
-        if ch not in _DEFAULT_TERMINATORS and ch not in self._extra_terminator_chars:
-            self._extra_terminator_chars.add(ch)
-            self.terminator_re = re.compile(
-                "["
-                + re.escape(
-                    "".join(_DEFAULT_TERMINATORS | self._extra_terminator_chars)
-                )
-                + "]"
-            )
 
     def skipToken(self, state: StateInline) -> None:
         """Skip single token by running all rules in validation mode;
