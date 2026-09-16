@@ -93,11 +93,18 @@ impl Default for SnapshotImageKey {
 pub struct ExternalImageId(pub u64);
 
 
+
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct ExternalTextureHandle(pub u64);
+
+
 pub enum ExternalImageSource<'a> {
     
     RawData(&'a [u8]),
     
-    NativeTexture(u32),
+    NativeTexture(ExternalTextureHandle),
     
     Invalid,
 }

@@ -1370,6 +1370,20 @@ impl NativeTileId {
 
 
 
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct NativeSurfaceHandle(pub u64);
+
+impl NativeSurfaceHandle {
+    
+    
+    
+    pub const DEFAULT: Self = NativeSurfaceHandle(0);
+}
+
+
+
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct NativeSurfaceInfo {
@@ -1383,10 +1397,7 @@ pub struct NativeSurfaceInfo {
     
     
     
-    
-    
-    
-    pub fbo_id: u32,
+    pub handle: NativeSurfaceHandle,
 }
 
 #[repr(C)]

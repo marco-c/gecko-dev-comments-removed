@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_RENDERCOMPOSITOR_Layers_H
 #define MOZILLA_GFX_RENDERCOMPOSITOR_Layers_H
 
@@ -60,8 +58,8 @@ class RenderCompositorLayersSWGL : public RenderCompositor {
 
   void CompositorBeginFrame() override {}
   void CompositorEndFrame() override;
-  void Bind(wr::NativeTileId aId, wr::DeviceIntPoint* aOffset, uint32_t* aFboId,
-            wr::DeviceIntRect aDirtyRect,
+  void Bind(wr::NativeTileId aId, wr::DeviceIntPoint* aOffset,
+            uint64_t* aSurfaceHandle, wr::DeviceIntRect aDirtyRect,
             wr::DeviceIntRect aValidRect) override;
   void Unbind() override;
   bool MapTile(wr::NativeTileId aId, wr::DeviceIntRect aDirtyRect,
@@ -82,7 +80,6 @@ class RenderCompositorLayersSWGL : public RenderCompositor {
                   wr::ImageRendering aImageRendering,
                   wr::DeviceIntRect aRoundedClipRect,
                   wr::ClipRadius aClipRadius) override;
-  void EnableNativeCompositor(bool aEnable) override {}
   void DeInit() override {}
 
   void MaybeRequestAllowFrameRecording(bool aWillRecord) override;
@@ -126,7 +123,7 @@ class RenderCompositorLayersSWGL : public RenderCompositor {
    public:
     explicit Surface(wr::DeviceIntSize aTileSize, bool aIsOpaque)
         : mTileSize(aTileSize), mIsOpaque(aIsOpaque) {}
-    virtual ~Surface() {}
+    virtual ~Surface() = default;
 
     gfx::IntSize TileSize() {
       return gfx::IntSize(mTileSize.width, mTileSize.height);

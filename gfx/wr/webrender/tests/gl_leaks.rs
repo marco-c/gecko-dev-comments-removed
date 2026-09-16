@@ -18,7 +18,6 @@ const DEVICE_DIR: &str = "device";
 const ALLOWLIST: &[&str] = &[
     "lib.rs",
     "renderer/init.rs",
-    "renderer/mod.rs",
 ];
 
 

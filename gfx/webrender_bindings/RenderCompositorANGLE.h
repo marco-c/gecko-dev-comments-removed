@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_RENDERCOMPOSITOR_ANGLE_H
 #define MOZILLA_GFX_RENDERCOMPOSITOR_ANGLE_H
 
@@ -89,8 +87,8 @@ class RenderCompositorANGLE final : public RenderCompositor {
   
   void CompositorBeginFrame() override;
   void CompositorEndFrame() override;
-  void Bind(wr::NativeTileId aId, wr::DeviceIntPoint* aOffset, uint32_t* aFboId,
-            wr::DeviceIntRect aDirtyRect,
+  void Bind(wr::NativeTileId aId, wr::DeviceIntPoint* aOffset,
+            uint64_t* aSurfaceHandle, wr::DeviceIntRect aDirtyRect,
             wr::DeviceIntRect aValidRect) override;
   void Unbind() override;
   void BindSwapChain(wr::NativeSurfaceId aId,
@@ -118,7 +116,6 @@ class RenderCompositorANGLE final : public RenderCompositor {
                   wr::ImageRendering aImageRendering,
                   wr::DeviceIntRect aRoundedClipRect,
                   wr::ClipRadius aClipRadius) override;
-  void EnableNativeCompositor(bool aEnable) override;
   bool EnableAsyncScreenshot() override;
   void GetCompositorCapabilities(CompositorCapabilities* aCaps) override;
   void GetWindowProperties(WindowProperties* aProperties) override;
@@ -180,8 +177,6 @@ class RenderCompositorANGLE final : public RenderCompositor {
   Maybe<LayoutDeviceIntSize> mBufferSize;
   bool mUsePartialPresent = false;
   bool mFullRender = false;
-  
-  bool mDisablingNativeCompositor = false;
   bool mFirstPresent = true;
   
   bool mSwapChainUsingAlpha = false;
