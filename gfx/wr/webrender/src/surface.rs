@@ -218,6 +218,10 @@ pub struct SurfaceInfo {
     pub culling_rect: VisRect,
     
     
+    
+    pub culling_rect_projection_failed: bool,
+    
+    
     pub map_local_to_picture: SpaceMapper<LayoutPixel, PicturePixel>,
     
     pub surface_spatial_node_index: SpatialNodeIndex,
@@ -307,9 +311,11 @@ impl SurfaceInfo {
             spatial_tree,
         );
 
+        let mut culling_rect_projection_failed = false;
         let culling_rect = match map_vis_to_root.unmap(&global_culling_rect) {
             Some(rect) => rect,
             None => {
+                culling_rect_projection_failed = true;
                 
                 
                 
@@ -359,6 +365,7 @@ impl SurfaceInfo {
             force_scissor_rect,
             svgfe_source_map: ScaleOffset::identity(),
             culling_rect,
+            culling_rect_projection_failed,
         }
     }
 
