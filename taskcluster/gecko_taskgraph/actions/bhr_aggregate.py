@@ -13,6 +13,9 @@ logger = logging.getLogger(__name__)
 TASK_LABEL = "bhr-aggregate-cron"
 
 
+BUILD_DATE_ROUTE = "index.gecko.v2.mozilla-central.bhr-aggregate.build.{date}"
+
+
 @register_callback_action(
     title="BHR aggregation (custom date)",
     name="bhr-aggregate",
@@ -84,6 +87,28 @@ def bhr_aggregate_action(parameters, graph_config, input, task_group_id, task_id
             env["BHR_AGGREGATE_DATE"] = date
         if sample_size is not None:
             env["BHR_AGGREGATE_SAMPLE_SIZE"] = str(sample_size)
+
+        
+        
+        
+        
+        
+        
+        routes = [
+            route
+            for route in task.task.get("routes", [])
+            if not route.startswith("index.")
+        ]
+        if date:
+            routes.append(BUILD_DATE_ROUTE.format(date=date))
+        task.task["routes"] = routes
+
+        
+        
+        
+        
+        
+        env["BHR_SKIP_TIMESERIES"] = "1"
 
         
         task.task["extra"]["treeherder"]["symbol"] += "-custom"
