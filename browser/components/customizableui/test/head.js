@@ -35,6 +35,22 @@ var { synthesizeDrop, synthesizeMouseAtCenter } = EventUtils;
 
 const kForceOverflowWidthPx = 500;
 
+
+
+
+
+
+
+const kForceOverflowWidgets = [
+  "history-panelmenu",
+  "email-link-button",
+  "panic-button",
+  "print-button",
+  "save-page-button",
+  "open-file-button",
+  "find-button",
+];
+
 function createDummyXULButton(id, label, win = window) {
   let btn = win.document.createXULElement("toolbarbutton");
   btn.id = id;
@@ -555,18 +571,9 @@ function ensureToolbarOverflow(aWindow, shouldCleanup = true) {
   const originalWindowWidth = aWindow.outerWidth;
 
   aWindow.resizeTo(kForceOverflowWidthPx, aWindow.outerHeight);
-  CustomizableUI.addWidgetToArea(
-    "history-panelmenu",
-    CustomizableUI.AREA_NAVBAR,
-    0
-  );
-  CustomizableUI.addWidgetToArea(
-    "email-link-button",
-    CustomizableUI.AREA_NAVBAR,
-    0
-  );
-  CustomizableUI.addWidgetToArea("panic-button", CustomizableUI.AREA_NAVBAR, 0);
-  CustomizableUI.addWidgetToArea("print-button", CustomizableUI.AREA_NAVBAR, 0);
+  for (let widget of kForceOverflowWidgets) {
+    CustomizableUI.addWidgetToArea(widget, CustomizableUI.AREA_NAVBAR, 0);
+  }
 
   if (shouldCleanup) {
     registerCleanupFunction(() => {
@@ -584,8 +591,7 @@ function unensureToolbarOverflow(aWindow, originalWindowWidth) {
   if (originalWindowWidth) {
     aWindow.resizeTo(originalWindowWidth, aWindow.outerHeight);
   }
-  CustomizableUI.removeWidgetFromArea("history-panelmenu");
-  CustomizableUI.removeWidgetFromArea("email-link-button");
-  CustomizableUI.removeWidgetFromArea("panic-button");
-  CustomizableUI.removeWidgetFromArea("print-button");
+  for (let widget of kForceOverflowWidgets) {
+    CustomizableUI.removeWidgetFromArea(widget);
+  }
 }
