@@ -50,8 +50,6 @@ namespace mozilla {
 #ifdef ENABLE_TESTS
 
 
-
-
 struct TestOptions {
   bool logDestructorMarker = false;
   bool triggerBadAlloc = false;

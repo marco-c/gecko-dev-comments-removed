@@ -1,10 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 
-
-
-
-
-
-
+/* Zucchini Partial MAR File Patch Apply Memory Allocation Failure Destructor
+ * Test */
 
 async function run_test() {
   if (!setupTestCommon()) {
@@ -34,13 +34,13 @@ async function run_test() {
   gTestDirs = gTestDirsPartialSuccess;
   setTestFilesAndDirsForFailure();
   await setupUpdaterTest(FILE_PARTIAL_ZUCCHINI_MAR, false);
-  runUpdate(STATE_FAILED_BSPATCH_MEM_ERROR, false, 1, true);
+  runUpdate(STATE_FAILED_BSPATCH_MEM_ERROR, false, USE_EXECV ? 0 : 1, true);
   checkAppBundleModTime();
   await testPostUpdateProcessing();
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateFailure(getApplyDirFile);
-  
-  
+  // Recovering from the bad_alloc unwinds the stack, running the destructors of
+  // the local objects of the zucchini code that was interrupted.
   checkUpdateLogContains(destructorMarkerLog);
   await waitForUpdateXMLFiles();
   await checkUpdateManager(

@@ -19,6 +19,7 @@
 
 #include <cstdio>
 #include <limits>
+#include <memory>
 #include <new>
 #include <string>
 
@@ -99,30 +100,37 @@ void SetLogFunction(LogFunctionPtr aLogFunction) {
   logging::SetLogMessageHandler(LogMessageHandler);
 }
 
+#if !defined(__cpp_exceptions)
+#  error The zucchini interface code requires compiler support for C++ exceptions.
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+#define BEGIN_ENTRY_POINT() try {
+#define END_ENTRY_POINT()                                                 \
+  }                                                                       \
+  catch (const std::bad_alloc&) {                                         \
+    LOG(ERROR) << "std::bad_alloc caught in zucchini.";                   \
+    return status::kStatusOutOfMemory;                                    \
+  }                                                                       \
+  catch (...) {                                                           \
+    LOG(ERROR) << "unknown exception caught in zucchini; this is a bug."; \
+    return status::kStatusFatal;                                          \
+  }
+
 #if BUILDFLAG(IS_WIN)
 #  if !defined(HAVE_SEH_EXCEPTIONS) || !HAVE_SEH_EXCEPTIONS
 #    error Compiler support for SEH is required to build zucchini on Windows.
 #  endif
-
-static constexpr DWORD kMsvcCppExceptionCode = 0xE06D7363;
-
-
-
-
-
-
-
-
-
-#  define BEGIN_ENTRY_POINT()                                              \
-    __try {
-#  define END_ENTRY_POINT()                                                \
-    }                                                                      \
-    __except (GetExceptionInformation()->ExceptionRecord->ExceptionCode == \
-              kMsvcCppExceptionCode) {                                     \
-      LOG(ERROR) << "std::bad_alloc caught in zucchini.";                  \
-      return status::kStatusOutOfMemory;                                   \
-    }
 
 
 
@@ -144,8 +152,6 @@ static constexpr DWORD kMsvcCppExceptionCode = 0xE06D7363;
                  : status::kStatusIoError;                                 \
     }
 #else
-#  define BEGIN_ENTRY_POINT()
-#  define END_ENTRY_POINT()
 #  define BEGIN_PAGE_ERROR_TRY_EXCEPT()
 #  define END_PAGE_ERROR_TRY_EXCEPT()
 #endif  

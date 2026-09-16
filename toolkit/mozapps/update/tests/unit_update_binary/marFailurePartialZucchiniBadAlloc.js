@@ -22,7 +22,7 @@ async function run_test() {
   gTestDirs = gTestDirsPartialSuccess;
   setTestFilesAndDirsForFailure();
   await setupUpdaterTest(FILE_PARTIAL_ZUCCHINI_MAR, false);
-  runUpdate(STATE_FAILED_BSPATCH_MEM_ERROR, false, 1, true);
+  runUpdate(STATE_FAILED_BSPATCH_MEM_ERROR, false, USE_EXECV ? 0 : 1, true);
   checkAppBundleModTime();
   await testPostUpdateProcessing();
   checkPostUpdateRunningFile(false);

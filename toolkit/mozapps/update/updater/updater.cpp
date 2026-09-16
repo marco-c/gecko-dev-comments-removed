@@ -5685,9 +5685,7 @@ int DoUpdate() {
   NS_tchar* rb = buf;
 
 #if defined(MOZ_ZUCCHINI)
-#  if defined(TEST_UPDATER) && defined(XP_WIN)
-  
-  
+#  if defined(TEST_UPDATER)
   zucchini::mozilla::TestOptions options;
   options.logDestructorMarker = EnvHasValue("MOZ_TEST_ZUCCHINI_DTOR_MARKER");
   options.triggerBadAlloc = EnvHasValue("MOZ_TEST_ZUCCHINI_BAD_ALLOC");
