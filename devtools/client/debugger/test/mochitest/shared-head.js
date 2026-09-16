@@ -325,11 +325,11 @@ function getVisibleSelectedFrameColumn(dbg) {
 
 
 
-async function assertLineIsBreakable(dbg, file, line, shouldBeBreakable) {
+async function assertLineIsBreakable(dbg, line, shouldBeBreakable) {
   const el = await getNodeAtEditorGutterLine(dbg, line);
   const lineText = `${line}| ${el.innerText.substring(0, 50)}${
     el.innerText.length > 50 ? "…" : ""
-  } — in ${file}`;
+  }`;
   
   
   if (shouldBeBreakable) {
