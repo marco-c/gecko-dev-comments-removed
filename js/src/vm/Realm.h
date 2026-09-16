@@ -155,7 +155,7 @@ class NewPlainObjectWithPropsCache {
 
 
 
-class MOZ_NON_TEMPORARY_CLASS PlainObjectAssignCache {
+class MOZ_NON_TEMPORARY_CLASS PlainObjectCopyPropsCache {
   SharedShape* emptyToShape_ = nullptr;
   SharedShape* fromShape_ = nullptr;
   SharedShape* newToShape_ = nullptr;
@@ -167,9 +167,9 @@ class MOZ_NON_TEMPORARY_CLASS PlainObjectAssignCache {
 #endif
 
  public:
-  PlainObjectAssignCache() = default;
-  PlainObjectAssignCache(const PlainObjectAssignCache&) = delete;
-  void operator=(const PlainObjectAssignCache&) = delete;
+  PlainObjectCopyPropsCache() = default;
+  PlainObjectCopyPropsCache(const PlainObjectCopyPropsCache&) = delete;
+  void operator=(const PlainObjectCopyPropsCache&) = delete;
 
   SharedShape* lookup(Shape* emptyToShape, Shape* fromShape) const {
     if (emptyToShape_ == emptyToShape && fromShape_ == fromShape) {
@@ -253,9 +253,11 @@ class ObjectRealm {
   
   JS::WeakCache<js::InnerViewTable> innerViews;
 
+  
+  
   using ModuleScriptSourceSet =
       JS::GCHashSet<js::WeakHeapPtr<ScriptSourceObject*>,
-                    js::DefaultHasher<js::WeakHeapPtr<ScriptSourceObject*>>,
+                    js::StableCellHasher<js::WeakHeapPtr<ScriptSourceObject*>>,
                     js::ZoneAllocPolicy>;
   JS::WeakCache<ModuleScriptSourceSet> moduleScriptSources;
 
@@ -279,6 +281,10 @@ class ObjectRealm {
   void finishRoots();
   void trace(JSTracer* trc);
   void sweepAfterMinorGC(JSTracer* trc);
+
+#ifdef JSGC_HASH_TABLE_CHECKS
+  void checkModuleScriptSourcesAfterMovingGC(JS::Zone* zone);
+#endif
 
   void addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
                               size_t* innerViewsArg,
@@ -436,7 +442,12 @@ class JS::Realm : public JS::shadow::Realm {
   js::DtoaCache dtoaCache;
   js::NewProxyCache newProxyCache;
   js::NewPlainObjectWithPropsCache newPlainObjectWithPropsCache;
-  js::PlainObjectAssignCache plainObjectAssignCache;
+  js::PlainObjectCopyPropsCache plainObjectAssignCache;
+
+  
+  
+  
+  js::PlainObjectCopyPropsCache plainObjectSpreadCache;
 
   
   js::MainThreadData<mozilla::TimeStamp> lastAnimationTime;
@@ -589,6 +600,10 @@ class JS::Realm : public JS::shadow::Realm {
   void purge();
 
   void fixupAfterMovingGC(JSTracer* trc);
+
+#ifdef JSGC_HASH_TABLE_CHECKS
+  void checkModuleScriptSourcesAfterMovingGC();
+#endif
 
   void enter() { enterRealmDepthIgnoringJit_++; }
   void leave() {
