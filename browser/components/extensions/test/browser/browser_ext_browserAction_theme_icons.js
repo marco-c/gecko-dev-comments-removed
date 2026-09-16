@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const LIGHT_THEME_COLORS = {
@@ -305,7 +303,16 @@ add_task(async function browseraction_theme_icons_overflow_panel() {
   });
 });
 
-add_task(async function browseraction_theme_icons_dynamic_theme() {
+async function testDynamicTheme({ systemUsesDarkTheme }) {
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.systemUsesDarkTheme", systemUsesDarkTheme ? 1 : 0]],
+  });
+
+  const expectedIcon = systemUsesDarkTheme ? DARK_THEME_ICON : LIGHT_THEME_ICON;
+
   const themeExtension = ExtensionTestUtils.loadExtension({
     manifest: {
       permissions: ["theme"],
@@ -348,7 +355,7 @@ add_task(async function browseraction_theme_icons_dynamic_theme() {
   await extension.startup();
 
   
-  await testBrowserAction(extension, LIGHT_THEME_ICON);
+  await testBrowserAction(extension, expectedIcon);
 
   
   themeExtension.sendMessage("update-theme", LIGHT_THEME_COLORS);
@@ -368,7 +375,18 @@ add_task(async function browseraction_theme_icons_dynamic_theme() {
   await themeExtension.unload();
 
   
-  await testBrowserAction(extension, LIGHT_THEME_ICON);
+  
+  await testBrowserAction(extension, expectedIcon);
 
   await extension.unload();
+
+  await SpecialPowers.popPrefEnv();
+}
+
+add_task(async function browseraction_theme_icons_dynamic_theme_light_system() {
+  await testDynamicTheme({ systemUsesDarkTheme: false });
+});
+
+add_task(async function browseraction_theme_icons_dynamic_theme_dark_system() {
+  await testDynamicTheme({ systemUsesDarkTheme: true });
 });
