@@ -503,6 +503,7 @@ already_AddRefed<Promise> SpeechRecognition::Install(
   
   
   
+  
   if (!doc->ConsumeTransientUserGestureActivation()) {
     aRv.ThrowNotAllowedError("install() requires transient user activation");
     return nullptr;
