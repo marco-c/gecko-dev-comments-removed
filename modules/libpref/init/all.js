@@ -313,11 +313,6 @@ pref("media.videocontrols.keyboard-tab-to-all-controls", true);
   pref("media.peerconnection.ice.proxy_only_if_pbmode", false);
   pref("media.peerconnection.turn.disable", false);
   pref("media.peerconnection.treat_warnings_as_errors", false);
-  #ifdef NIGHTLY_BUILD
-    pref("media.peerconnection.description.legacy.enabled", false);
-  #else
-    pref("media.peerconnection.description.legacy.enabled", true);
-  #endif
 
   
   pref("media.peerconnection.dtls.version.min", 771);
