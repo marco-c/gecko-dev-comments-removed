@@ -317,9 +317,7 @@ def copy_contents(srcdir, dstdir, ignore_dangling_symlinks=False):
 
     
     
-    
-    
-    if (sys.version_info.major < 3 or sys.version_info.minor < 8) or (os.name == "nt"):
+    if os.name == "nt":
         names = os.listdir(srcdir)
         if not os.path.isdir(dstdir):
             os.makedirs(dstdir)

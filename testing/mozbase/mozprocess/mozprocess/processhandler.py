@@ -139,7 +139,7 @@ class ProcessHandlerMixin:
                 "startupinfo": startupinfo,
                 "creationflags": creationflags,
             }
-            if sys.version_info.minor >= 6 and universal_newlines:
+            if universal_newlines:
                 kwargs["universal_newlines"] = universal_newlines
                 kwargs["encoding"] = encoding
             try:
@@ -714,7 +714,7 @@ falling back to not using job objects for managing child processes""",
                             None,
                         )
                     except Exception:
-                        self.debug(
+                        self.info(
                             "Failed to post completion status to IO port (may already be closed)"
                         )
 
@@ -722,7 +722,7 @@ falling back to not using job objects for managing child processes""",
                     if self._procmgrthread.is_alive():
                         self._procmgrthread.join(timeout=10)
                         if self._procmgrthread.is_alive():
-                            self.debug(
+                            self.info(
                                 "Process manager thread still alive after 10s timeout"
                             )
                     self._procmgrthread = None

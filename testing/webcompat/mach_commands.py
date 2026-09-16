@@ -376,7 +376,7 @@ def webcompat_addon(command_context):
     
     
     tmpdir_kwargs = {}
-    if sys.version_info.major >= 3 and sys.version_info.minor >= 10:
+    if sys.version_info >= (3, 10):
         tmpdir_kwargs["ignore_cleanup_errors"] = True
     with tempfile.TemporaryDirectory(**tmpdir_kwargs) as src_copy:
 
