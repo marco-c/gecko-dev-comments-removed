@@ -34,4 +34,3 @@ testWithBigIntTypedArrayConstructors(function(BTA, makeCtorArg) {
   });
 
 });
-
