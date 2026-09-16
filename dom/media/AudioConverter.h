@@ -5,6 +5,10 @@
 #ifndef AudioConverter_h
 #define AudioConverter_h
 
+#include <speex/speex_resampler.h>
+
+#include <type_traits>
+
 #include "MediaInfo.h"
 #include "mozilla/CheckedInt.h"
 
@@ -115,7 +119,8 @@ typedef AudioDataBuffer<AudioConfig::FORMAT_DEFAULT> AudioSampleBuffer;
 
 class AudioConverter {
  public:
-  AudioConverter(const AudioConfig& aIn, const AudioConfig& aOut);
+  AudioConverter(const AudioConfig& aIn, const AudioConfig& aOut,
+                 int aResamplerQuality = SPEEX_RESAMPLER_QUALITY_DEFAULT);
   ~AudioConverter();
 
   
@@ -266,6 +271,8 @@ class AudioConverter {
   
   AutoTArray<uint8_t, AudioConfig::ChannelLayout::MAX_CHANNELS>
       mChannelOrderMap;
+  
+  int mResamplerQuality = SPEEX_RESAMPLER_QUALITY_DEFAULT;
   
 
 
