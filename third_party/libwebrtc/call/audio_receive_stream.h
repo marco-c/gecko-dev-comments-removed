@@ -121,20 +121,17 @@ class AudioReceiveStreamInterface : public MediaReceiveStreamInterface {
   };
 
   struct Config {
-   private:
-    
-    
-    Config(const Config&);
-
    public:
     Config();
+    Config(const Config&) = delete;
     Config& operator=(const Config&) = delete;
     Config(Config&&);
     Config& operator=(Config&&);
     ~Config();
 
     
-    Config Copy() const { return Config(*this); }
+    
+    Config Copy() const;
 
     std::string ToString() const;
 
