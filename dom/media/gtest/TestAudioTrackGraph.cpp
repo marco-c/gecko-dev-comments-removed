@@ -16,6 +16,7 @@
 #include "MockCubeb.h"
 #include "WavDumper.h"
 #include "mozilla/Components.h"
+#include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/GenericFactory.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/SpinEventLoopUntil.h"
@@ -23,6 +24,8 @@
 #include "mozilla/gtest/MozHelpers.h"
 #include "mozilla/gtest/WaitFor.h"
 #include "nsComponentManager.h"
+#include "nsITargetShutdownTask.h"
+#include "nsIThreadInternal.h"
 #include "nsXPCOMPrivate.h"
 
 using namespace mozilla;
@@ -4132,6 +4135,263 @@ TEST(TestAudioTrackGraph, ShutdownMessages)
 
     checkpoint.Call("Final call");
   });
+
+  
+  
+  
+  (void)WaitFor(destroyPromise).unwrap()[0];
+  ProcessEventQueue();
+}
+
+namespace {
+
+
+
+
+
+class MicroTaskDispatcher final : public MicroTaskRunnable {
+ public:
+  MicroTaskDispatcher(MediaTrackGraphImpl* aGraph, const char* aName,
+                      MockFunction<void(const char*)>& aCheckpoint)
+      : mGraph(aGraph), mName(aName), mCheckpoint(aCheckpoint) {}
+
+  MOZ_CAN_RUN_SCRIPT void Run(AutoSlowOperation&) override {
+    MOZ_ALWAYS_SUCCEEDS(mGraph->Dispatch(MakeAndAddRef<TestRunnable>(
+        mName, true, mCheckpoint)));
+  }
+
+ private:
+  MediaTrackGraphImpl* const mGraph;
+  const char* const mName;
+  MockFunction<void(const char*)>& mCheckpoint;
+};
+}  
+
+
+
+
+
+TEST(TestAudioTrackGraph, TailDispatchFromMicroTaskDuringShutdown)
+{
+  MockCubeb* cubeb = new MockCubeb(MockCubeb::RunningMode::Manual);
+  CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
+
+  MediaTrackGraphImpl* graph = MediaTrackGraphImpl::GetInstance(
+      MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
+      CubebUtils::PreferredSampleRate( false),
+      nullptr, AbstractThread::MainThread());
+
+  RefPtr processedTrack = new MockProcessedMediaTrack(graph->GraphRate());
+
+  MockFunction<void(const char* name)> checkpoint;
+  EXPECT_CALL(*processedTrack, AddListenerImpl);
+  EXPECT_CALL(*processedTrack, ProcessInput).Times(AtLeast(1));
+  EXPECT_CALL(*processedTrack, RemoveListenerImpl);
+  {
+    InSequence s;
+    EXPECT_CALL(checkpoint, Call(StrEq("Now manual")));
+    EXPECT_CALL(checkpoint, Call(StrEq("Forced shutdown")));
+    EXPECT_CALL(checkpoint, Call(StrEq("Before main thread cleanup")));
+    EXPECT_CALL(checkpoint, Call(StrEq("After main thread cleanup")));
+
+    
+    
+    
+    EXPECT_CALL(checkpoint, Call(StrEq("MicroTask_OnShutdown::OnDiscard")));
+    EXPECT_CALL(checkpoint, Call(StrEq("~MicroTask_OnShutdown")));
+    EXPECT_CALL(checkpoint, Call(StrEq("MicroTask_AfterShutdown::OnDiscard")));
+    EXPECT_CALL(checkpoint, Call(StrEq("~MicroTask_AfterShutdown")));
+
+    EXPECT_CALL(checkpoint, Call(StrEq("Final call")));
+  }
+
+  const auto QueueMicroTaskDispatch([&](const char* aName) {
+    CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
+    MOZ_RELEASE_ASSERT(ccjs);
+    ccjs->DispatchToMicroTask(
+        MakeAndAddRef<MicroTaskDispatcher>(graph, aName, checkpoint));
+  });
+
+  RefPtr<OnFallbackListener> fallbackListener;
+  DispatchFunction([&] {
+    graph->AddTrack(processedTrack);
+    processedTrack->AddAudioOutput(reinterpret_cast<void*>(1), nullptr);
+    fallbackListener = new OnFallbackListener(processedTrack);
+    processedTrack->AddListener(fallbackListener);
+  });
+
+  RefPtr<SmartMockCubebStream> stream = WaitFor(cubeb->StreamInitEvent());
+  while (stream->State().isNothing()) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+  EXPECT_EQ(*stream->State(), CUBEB_STATE_STARTED);
+  DispatchFunction([&] {
+    while (fallbackListener->OnFallback()) {
+      EXPECT_EQ(stream->ManualDataCallback(WEBAUDIO_BLOCK_SIZE),
+                MockCubebStream::KeepProcessing::Yes);
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    checkpoint.Call("Now manual");
+  });
+
+  auto destroyPromise = TakeN(cubeb->StreamDestroyEvent(), 1);
+  DispatchFunction([&] { graph->ForceShutDown(); });
+
+  DispatchFunction([&] {
+    
+    EXPECT_EQ(stream->ManualDataCallback(0),
+              MockCubebStream::KeepProcessing::No);
+    checkpoint.Call("Forced shutdown");
+  });
+
+  
+  
+  DispatchFunction([&] {
+    QueueMicroTaskDispatch("MicroTask_OnShutdown");
+    checkpoint.Call("Before main thread cleanup");
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+  });
+
+  DispatchFunction([&] {
+    checkpoint.Call("After main thread cleanup");
+    QueueMicroTaskDispatch("MicroTask_AfterShutdown");
+  });
+
+  DispatchFunction([&] {
+    processedTrack->RemoveListener(fallbackListener);
+    processedTrack->Destroy();
+  });
+
+  DispatchFunction([&] { checkpoint.Call("Final call"); });
+
+  (void)WaitFor(destroyPromise).unwrap()[0];
+  ProcessEventQueue();
+}
+
+namespace {
+class TestShutdownTask final : public nsITargetShutdownTask {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+
+  TestShutdownTask(MediaTrackGraphImpl* aGraph,
+                   MockFunction<void(const char*)>& aCheckpoint)
+      : mGraph(aGraph), mCheckpoint(aCheckpoint) {}
+
+  void TargetShutdown() override {
+    EXPECT_TRUE(NS_IsMainThread());
+    
+    
+    EXPECT_TRUE(mGraph->IsOnCurrentThread());
+    mCheckpoint.Call("TargetShutdown");
+  }
+
+ private:
+  ~TestShutdownTask() = default;
+
+  const RefPtr<MediaTrackGraphImpl> mGraph;
+  MockFunction<void(const char*)>& mCheckpoint;
+};
+}  
+
+NS_IMPL_ISUPPORTS(TestShutdownTask, nsITargetShutdownTask)
+
+TEST(TestAudioTrackGraph, TargetShutdownTaskOnMainThread)
+{
+  MockCubeb* cubeb = new MockCubeb(MockCubeb::RunningMode::Manual);
+  CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
+
+  RefPtr<MediaTrackGraphImpl> graph = MediaTrackGraphImpl::GetInstance(
+      MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
+      CubebUtils::PreferredSampleRate( false),
+      nullptr, AbstractThread::MainThread());
+
+  
+  RefPtr processedTrack = new MockProcessedMediaTrack(graph->GraphRate());
+
+  MockFunction<void(const char* name)> checkpoint;
+  EXPECT_CALL(*processedTrack, AddListenerImpl);
+  EXPECT_CALL(*processedTrack, ProcessInput).Times(AtLeast(1));
+  EXPECT_CALL(*processedTrack, RemoveListenerImpl);
+  
+  
+  
+  EXPECT_CALL(checkpoint, Call(StrEq("TargetShutdown")));
+  {
+    InSequence s;
+    EXPECT_CALL(checkpoint, Call(StrEq("Now manual")));
+    EXPECT_CALL(checkpoint, Call(StrEq("Forced shutdown")));
+    EXPECT_CALL(checkpoint, Call(StrEq("Final call")));
+  }
+
+  RefPtr<OnFallbackListener> fallbackListener;
+  DispatchFunction([&] {
+    
+    graph->AddTrack(processedTrack);
+    processedTrack->AddAudioOutput(reinterpret_cast<void*>(1), nullptr);
+    fallbackListener = new OnFallbackListener(processedTrack);
+    processedTrack->AddListener(fallbackListener);
+  });
+
+  RefPtr<SmartMockCubebStream> stream = WaitFor(cubeb->StreamInitEvent());
+  while (stream->State().isNothing()) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+  EXPECT_EQ(*stream->State(), CUBEB_STATE_STARTED);
+  
+  DispatchFunction([&] {
+    while (fallbackListener->OnFallback()) {
+      EXPECT_EQ(stream->ManualDataCallback(WEBAUDIO_BLOCK_SIZE),
+                MockCubebStream::KeepProcessing::Yes);
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    
+    checkpoint.Call("Now manual");
+  });
+
+  RefPtr shutdownTask = new TestShutdownTask(graph, checkpoint);
+  DispatchFunction([&] {
+    MOZ_ALWAYS_SUCCEEDS(graph->Dispatch(NS_NewRunnableFunction(__func__, [&] {
+      
+      EXPECT_TRUE(graph->IsOnCurrentThread());
+      MOZ_ALWAYS_SUCCEEDS(graph->RegisterShutdownTask(shutdownTask));
+    })));
+  });
+
+  auto destroyPromise = TakeN(cubeb->StreamDestroyEvent(), 1);
+  DispatchFunction([&] {
+    
+    EXPECT_EQ(stream->ManualDataCallback(WEBAUDIO_BLOCK_SIZE),
+              MockCubebStream::KeepProcessing::Yes);
+  });
+
+  DispatchFunction([&] { graph->ForceShutDown(); });
+
+  DispatchFunction([&] {
+    
+    EXPECT_EQ(stream->ManualDataCallback(0),
+              MockCubebStream::KeepProcessing::No);
+
+    checkpoint.Call("Forced shutdown");
+  });
+
+  DispatchFunction([&] {
+    processedTrack->RemoveListener(fallbackListener);
+    processedTrack->Destroy();
+  });
+
+  DispatchFunction([&] { checkpoint.Call("Final call"); });
 
   
   

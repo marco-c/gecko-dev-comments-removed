@@ -2085,16 +2085,27 @@ void MediaTrackGraphImpl::RunInStableState(bool aSourceIsMTG) {
         mForceShutDownReceived) {
       
       
+      
+      
+      if (AbstractThread* current = AbstractThread::GetCurrent()) {
+        
+        
+        
+        
+        MonitorAutoUnlock unlock(mMonitor);
+        MOZ_ALWAYS_SUCCEEDS(current->TailDispatchTasksFor(this));
+      }
+      
+      
+      
+      MOZ_ASSERT(LifecycleState() == LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP);
+      MOZ_ASSERT(mForceShutDownReceived);
+      
+      
       for (auto& message : mBackMessageQueue) {
         runnablesToRunDuringShutdown.AppendElement(std::move(message));
       }
       mBackMessageQueue.Clear();
-      
-      
-      
-      
-      
-      MOZ_ASSERT(!AbstractThread::GetCurrent()->HasTailTasksFor(this));
       
       mLifecycleState = LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN;
       nsCOMPtr<nsIRunnable> event = new MediaTrackGraphShutDownRunnable(this);
@@ -4480,7 +4491,14 @@ nsresult MediaTrackGraphImpl::Dispatch(
   return QueueMessageForTailDispatch(event.forget());
 }
 
-bool MediaTrackGraphImpl::IsCurrentThreadIn() const { return OnGraphThread(); }
+bool MediaTrackGraphImpl::IsCurrentThreadIn() const {
+  
+  
+  
+  
+  
+  return OnGraphThreadOrNotRunning();
+}
 
 TaskDispatcher& MediaTrackGraphImpl::TailDispatcher() {
   MOZ_ASSERT(OnGraphThread());
