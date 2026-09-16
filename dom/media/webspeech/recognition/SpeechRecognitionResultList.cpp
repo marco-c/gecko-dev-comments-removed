@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SpeechRecognitionResultList.h"
 
 #include "SpeechRecognition.h"
@@ -50,7 +48,8 @@ uint32_t SpeechRecognitionResultList::Length() const { return mItems.Length(); }
 
 already_AddRefed<SpeechRecognitionResult> SpeechRecognitionResultList::Item(
     uint32_t aIndex) {
-  RefPtr<SpeechRecognitionResult> result = mItems.ElementAt(aIndex);
+  RefPtr<SpeechRecognitionResult> result =
+      mItems.SafeElementAt(aIndex, nullptr);
   return result.forget();
 }
 
