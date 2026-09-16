@@ -182,7 +182,7 @@ add_task(async function () {
       const boxModelInfoBarEl = getBoxModelHighlighterInfoBarEl(boxModelRoot);
       return (
         
-        boxModelInfoBarEl.getAttribute("hidden") === null &&
+        !boxModelInfoBarEl.hasAttribute("hidden") &&
         
         boxModelInfoBarEl.querySelector(".box-model-infobar-id")
           ?.textContent === "#clicky"
@@ -193,8 +193,9 @@ add_task(async function () {
   
   await wait(1000);
   ok(dbg.selectors.getIsCurrentThreadPaused(), "current thread is paused");
-  ok(
-    findElement(dbg, "threadsPaneItemPause", 2).classList.contains("selected"),
+  is(
+    findElement(dbg, "threadsPaneItemPause", 2).getAttribute("aria-pressed"),
+    "true",
     `iframe thread is still selected`
   );
 
