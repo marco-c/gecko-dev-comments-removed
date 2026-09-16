@@ -2330,18 +2330,11 @@ nsIFrame* nsCSSFrameConstructor::ConstructDocElementFrame(
 
   SetUpDocElementContainingBlock(aDocElement);
 
-  
-  
-  
-  if (!mFrameTreeState) {
-    mPresShell->CaptureHistoryState(getter_AddRefs(mFrameTreeState));
-  }
-
   NS_ASSERTION(mDocElementContainingBlock, "Should have parent by now");
   nsFrameConstructorState state(
       mPresShell,
       GetAbsoluteContainingBlock(mDocElementContainingBlock, FIXED_POS),
-      nullptr, nullptr, do_AddRef(mFrameTreeState));
+      nullptr, nullptr);
 
   RefPtr<ComputedStyle> computedStyle =
       ServoStyleSet::ResolveServoStyle(*aDocElement);
@@ -2801,6 +2794,13 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
   } else {
     viewportFrame->AppendFrames(FrameChildListID::Principal,
                                 nsFrameList(newFrame, newFrame));
+  }
+
+  if (ScrollContainerFrame* rootScroll = do_QueryFrame(newFrame)) {
+    if (nsCOMPtr state = mPresShell->GetDocument()->GetLayoutHistoryState();
+        state && state->HasStates()) {
+      rootScroll->RestoreState(state.get());
+    }
   }
 }
 
@@ -4372,11 +4372,6 @@ void nsCSSFrameConstructor::InitAndRestoreFrame(
   
   aNewFrame->Init(aContent, aParentFrame, nullptr);
   aNewFrame->AddStateBits(aState.mAdditionalStateBits);
-
-  if (aState.mFrameState) {
-    
-    RestoreFrameStateFor(aNewFrame, aState.mFrameState);
-  }
 
   if (aAllowCounters == AllowCounters::Yes &&
       mContainStyleScopeManager.AddCounterChanges(aNewFrame)) {
@@ -6303,8 +6298,7 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
   nsFrameConstructorState state(
       mPresShell, GetAbsoluteContainingBlock(insertion.mParentFrame, FIXED_POS),
       GetAbsoluteContainingBlock(insertion.mParentFrame, ABS_POS),
-      GetFloatContainingBlock(insertion.mParentFrame),
-      do_AddRef(mFrameTreeState));
+      GetFloatContainingBlock(insertion.mParentFrame));
 
   
   
@@ -6844,12 +6838,6 @@ bool nsCSSFrameConstructor::ContentWillBeRemoved(nsIContent* aChild,
       }
     }
     return false;
-  }
-
-  if (aKind != RemovalKind::Dom) {
-    
-    
-    CaptureStateForFramesOf(aChild, mFrameTreeState);
   }
 
   InvalidateCanvasIfNeeded(mPresShell, aChild);
@@ -7604,25 +7592,6 @@ nsCSSFrameConstructor::InsertionPoint nsCSSFrameConstructor::GetInsertionPoint(
   }
 
   return {GetContentInsertionFrameFor(insertionElement), insertionElement};
-}
-
-
-
-void nsCSSFrameConstructor::CaptureStateForFramesOf(
-    nsIContent* aContent, nsILayoutHistoryState* aHistoryState) {
-  if (!aHistoryState) {
-    return;
-  }
-  nsIFrame* frame = aContent->GetPrimaryFrame();
-  if (frame == mRootElementFrame) {
-    frame = mRootElementFrame
-                ? GetAbsoluteContainingBlock(mRootElementFrame, FIXED_POS)
-                : GetRootFrame();
-  }
-  for (; frame;
-       frame = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(frame)) {
-    CaptureFrameState(frame, aHistoryState, {});
-  }
 }
 
 static bool IsWhitespaceFrame(nsIFrame* aFrame) {

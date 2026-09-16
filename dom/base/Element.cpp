@@ -55,6 +55,7 @@
 #include "mozilla/ReflowOutput.h"
 #include "mozilla/RelativeTo.h"
 #include "mozilla/ScrollContainerFrame.h"
+#include "mozilla/ScrollState.h"
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/ServoStyleConstsInlines.h"
@@ -3251,43 +3252,45 @@ void Element::UnbindFromTree(UnbindContext& aContext) {
     }
   }
 
-  
-  Document* document = GetComposedDoc();
-
   if (HasPointerLock()) {
     PointerLockManager::Unlock("Element::UnbindFromTree");
   }
-  if (!aContext.IsMove() && mState.HasState(ElementState::FULLSCREEN)) {
-    
-    
-    nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns,
-                                    OwnerDoc(), PropertiesFile::DOM_PROPERTIES,
-                                    "RemovedFullscreenElement");
-    
-    Document::ExitFullscreenInDocTree(OwnerDoc());
-  }
 
+  
+  Document* document = GetComposedDoc();
   MOZ_ASSERT_IF(HasServoData(), document);
   MOZ_ASSERT_IF(HasServoData() && !aContext.IsMove(),
                 IsInNativeAnonymousSubtree());
-  if (document && !aContext.IsMove()) {
-    ClearServoData(document);
-  }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   if (!aContext.IsMove()) {
+    if (mState.HasState(ElementState::FULLSCREEN)) {
+      
+      
+      nsContentUtils::ReportToConsole(
+          nsIScriptError::warningFlag, "DOM"_ns, OwnerDoc(),
+          PropertiesFile::DOM_PROPERTIES, "RemovedFullscreenElement");
+      
+      Document::ExitFullscreenInDocTree(OwnerDoc());
+    }
+    if (document) {
+      ClearServoData(document);
+    }
     if (auto* data = GetAnimationData()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       data->ClearAllAnimationCollections();
+    }
+    if (auto* slots = GetExistingExtendedDOMSlots()) {
+      slots->mSavedScrollState = nullptr;
     }
   }
 
@@ -6106,6 +6109,10 @@ void Element::GetCustomInterface(nsGetterAddRefs<T> aResult) {
       return;
     }
   }
+}
+
+void Element::SetSavedScrollState(UniquePtr<ScrollState> aState) {
+  ExtendedDOMSlots()->mSavedScrollState = std::move(aState);
 }
 
 void Element::ClearServoData(Document* aDoc) {

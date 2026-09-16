@@ -8,27 +8,16 @@
 #define _nsFrameManager_h_
 
 #include "mozilla/Attributes.h"
-#include "nsDebug.h"
 #include "nsFrameList.h"
 
 class nsContainerFrame;
 class nsIFrame;
-class nsILayoutHistoryState;
-class nsPlaceholderFrame;
 class nsWindowSizes;
 
 namespace mozilla {
 struct FrameDestroyContext;
 class PresShell;
 class ViewportFrame;
-
-enum class CaptureStateFlag : uint8_t {
-  
-  
-  ForSessionHistory,
-};
-using CaptureStateFlags = EnumSet<CaptureStateFlag>;
-
 }  
 
 
@@ -72,18 +61,6 @@ class nsFrameManager {
                     nsFrameList&& aFrameList);
 
   void RemoveFrame(DestroyContext&, mozilla::FrameChildListID, nsIFrame*);
-
-  
-
-
-
-
-
-
-
-  void CaptureFrameState(nsIFrame*, nsILayoutHistoryState*,
-                         mozilla::CaptureStateFlags);
-  void RestoreFrameStateFor(nsIFrame* aFrame, nsILayoutHistoryState* aState);
 
   void AddSizeOfIncludingThis(nsWindowSizes& aSizes) const;
 

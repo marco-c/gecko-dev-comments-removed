@@ -1,0 +1,34 @@
+
+
+
+
+#ifndef mozilla_ScrollState_h
+#define mozilla_ScrollState_h
+
+#include <cstdint>
+
+#include "nsPoint.h"
+
+namespace mozilla {
+
+
+
+
+
+
+struct ScrollState {
+  
+  
+  nsPoint mScrollPosition;
+  
+  float mResolution = 1.0f;
+  
+  
+  uint32_t mScrollEventGeneration = 0;
+  uint32_t mScrollEndEventGeneration = 0;
+  bool mAllowScrollOriginDowngrade = true;
+};
+
+}  
+
+#endif

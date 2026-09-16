@@ -4273,7 +4273,7 @@ void PresShell::ClearMouseCapture(nsIFrame* aFrame) {
 }
 
 nsresult PresShell::CaptureHistoryState(nsILayoutHistoryState** aState) {
-  MOZ_ASSERT(nullptr != aState, "null state pointer");
+  MOZ_ASSERT(aState, "null state pointer");
 
   
   
@@ -4298,14 +4298,9 @@ nsresult PresShell::CaptureHistoryState(nsILayoutHistoryState** aState) {
   NS_IF_ADDREF(*aState);
 
   
-  nsIFrame* rootFrame = mFrameConstructor->GetRootFrame();
-  if (!rootFrame) {
-    return NS_OK;
+  if (auto* sf = GetRootScrollContainerFrame()) {
+    sf->SaveState(historyState);
   }
-
-  mFrameConstructor->CaptureFrameState(rootFrame, historyState,
-                                       {CaptureStateFlag::ForSessionHistory});
-
   return NS_OK;
 }
 

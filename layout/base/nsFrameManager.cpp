@@ -6,22 +6,16 @@
 
 #include "nsFrameManager.h"
 
-#include "ChildIterator.h"
-#include "GeckoProfiler.h"
 #include "mozilla/AbsoluteContainingBlock.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/PresState.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/ViewportFrame.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "nsContainerFrame.h"
-#include "nsError.h"
-#include "nsILayoutHistoryState.h"
-#include "nsPlaceholderFrame.h"
+#include "nsContentUtils.h"
 #include "nsWindowSizes.h"
-#include "nscore.h"
 #include "plhash.h"
 
 using namespace mozilla;
@@ -115,56 +109,6 @@ void nsFrameManager::RemoveFrame(DestroyContext& aContext,
                                                            aOldFrame);
   } else {
     parentFrame->RemoveFrame(aContext, aListID, aOldFrame);
-  }
-}
-
-void nsFrameManager::CaptureFrameState(nsIFrame* aFrame,
-                                       nsILayoutHistoryState* aState,
-                                       CaptureStateFlags aFlags) {
-  MOZ_ASSERT(aFrame);
-  MOZ_ASSERT(aState);
-
-  if (ScrollContainerFrame* scrollFrame = do_QueryFrame(aFrame)) {
-    scrollFrame->SaveState(aFlags, aState);
-  }
-
-  
-  for (const auto& childList : aFrame->ChildLists()) {
-    for (nsIFrame* child : childList.mList) {
-      if (child->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
-        
-        continue;
-      }
-      
-      
-      
-      nsIFrame* realChild = nsPlaceholderFrame::GetRealFrameFor(child);
-      
-      
-      
-      
-      
-      
-      if (MOZ_LIKELY(realChild)) {
-        CaptureFrameState(realChild, aState, aFlags);
-      }
-    }
-  }
-}
-
-void nsFrameManager::RestoreFrameStateFor(nsIFrame* aFrame,
-                                          nsILayoutHistoryState* aState) {
-  MOZ_ASSERT(aFrame);
-  MOZ_ASSERT(aState);
-
-  if (!aState->HasStates()) {
-    
-    return;
-  }
-
-  
-  if (ScrollContainerFrame* scrollFrame = do_QueryFrame(aFrame)) {
-    scrollFrame->RestoreState(aState);
   }
 }
 

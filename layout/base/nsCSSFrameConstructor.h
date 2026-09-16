@@ -1977,11 +1977,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                        nsIFrame* aBlockFrame);
 
   
-  
-  void CaptureStateForFramesOf(nsIContent* aContent,
-                               nsILayoutHistoryState* aHistoryState);
-
-  
 
   
 
@@ -2118,14 +2113,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   bool mCountersDirty : 1;
   bool mAlwaysCreateFramesForIgnorableWhitespace : 1;
   bool mRemovingContent : 1;
-
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsILayoutHistoryState> mFrameTreeState;
 };
 
 #endif 
