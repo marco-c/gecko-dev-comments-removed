@@ -75,6 +75,7 @@ use std::fmt::{self, Write};
 
 
 
+
 pub trait ToCss {
     
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
@@ -102,7 +103,7 @@ pub trait ToCss {
     }
 }
 
-impl<'a, T> ToCss for &'a T
+impl<T> ToCss for &T
 where
     T: ToCss + ?Sized,
 {
@@ -536,10 +537,21 @@ pub mod specified {
     
     #[repr(u8)]
     #[derive(
-        Clone, Copy, Debug, Deserialize, Eq, MallocSizeOf, PartialEq, PartialOrd, Serialize, ToShmem,
+        Clone,
+        Copy,
+        Debug,
+        Default,
+        Deserialize,
+        Eq,
+        MallocSizeOf,
+        PartialEq,
+        PartialOrd,
+        Serialize,
+        ToShmem,
     )]
     pub enum AllowedNumericType {
         
+        #[default]
         All,
         
         NonNegative,
@@ -547,13 +559,6 @@ pub mod specified {
         AtLeastOne,
         
         ZeroToOne,
-    }
-
-    impl Default for AllowedNumericType {
-        #[inline]
-        fn default() -> Self {
-            AllowedNumericType::All
-        }
     }
 
     impl AllowedNumericType {
@@ -564,10 +569,10 @@ pub mod specified {
                 return true;
             }
             match *self {
-                AllowedNumericType::All => true,
-                AllowedNumericType::NonNegative => val >= 0.0,
-                AllowedNumericType::AtLeastOne => val >= 1.0,
-                AllowedNumericType::ZeroToOne => val >= 0.0 && val <= 1.0,
+                Self::All => true,
+                Self::NonNegative => val >= 0.0,
+                Self::AtLeastOne => val >= 1.0,
+                Self::ZeroToOne => (0.0..=1.0).contains(&val),
             }
         }
 
@@ -575,10 +580,10 @@ pub mod specified {
         #[inline]
         pub fn clamp(&self, val: f32) -> f32 {
             match *self {
-                AllowedNumericType::All => val,
-                AllowedNumericType::NonNegative => val.max(0.),
-                AllowedNumericType::AtLeastOne => val.max(1.),
-                AllowedNumericType::ZeroToOne => val.max(0.).min(1.),
+                Self::All => val,
+                Self::NonNegative => val.max(0.),
+                Self::AtLeastOne => val.max(1.),
+                Self::ZeroToOne => val.clamp(0., 1.),
             }
         }
     }
