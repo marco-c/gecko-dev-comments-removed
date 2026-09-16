@@ -122,11 +122,11 @@ add_setup(async function setup() {
 async function checkDefaultSearch(privateOn, reInitSearchService) {
   
   Services.prefs.setBoolPref(
-    "browser.search.separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
     privateOn
   );
   Services.prefs.setBoolPref(
-    "browser.search.separatePrivateDefault",
+    "browser.search.separatePrivateDefault.enabled",
     privateOn
   );
 

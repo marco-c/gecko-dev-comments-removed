@@ -24,8 +24,8 @@ add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       [CTA_PREF, true],
-      ["browser.search.separatePrivateDefault.ui.enabled", true],
-      ["browser.search.separatePrivateDefault", true],
+      ["browser.search.separatePrivateDefault.featureGate", true],
+      ["browser.search.separatePrivateDefault.enabled", true],
       
       
       ["browser.netError.searchCTA.connectivityFreshnessMs", 2147483647],

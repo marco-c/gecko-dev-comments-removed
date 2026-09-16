@@ -41,7 +41,7 @@ let expectedIconURL;
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.search.separatePrivateDefault", true],
+      ["browser.search.separatePrivateDefault.enabled", true],
       
       
       ["browser.search.suggest.enabled", true],

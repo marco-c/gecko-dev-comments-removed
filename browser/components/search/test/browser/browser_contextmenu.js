@@ -392,9 +392,9 @@ async function doTest({
 
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.search.separatePrivateDefault", separatePrivateDefault],
+      ["browser.search.separatePrivateDefault.enabled", separatePrivateDefault],
       [
-        "browser.search.separatePrivateDefault.ui.enabled",
+        "browser.search.separatePrivateDefault.featureGate",
         separatePrivateDefaultUiEnabled,
       ],
     ],

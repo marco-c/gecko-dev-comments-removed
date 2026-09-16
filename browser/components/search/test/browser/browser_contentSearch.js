@@ -34,8 +34,8 @@ add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.newtab.preload", false],
-      ["browser.search.separatePrivateDefault.ui.enabled", true],
-      ["browser.search.separatePrivateDefault", true],
+      ["browser.search.separatePrivateDefault.featureGate", true],
+      ["browser.search.separatePrivateDefault.enabled", true],
       
       
       ["browser.settings-redesign.enabled", false],
