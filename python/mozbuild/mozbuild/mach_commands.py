@@ -37,6 +37,7 @@ from mozlog.formatters import MachFormatter
 from mozlog.handlers import ResourceHandler, StreamHandler
 from mozlog.structuredlog import StructuredLogger
 from mozlog.structuredlog import log_actions as get_log_actions
+from packaging.version import Version
 
 from mozbuild.base import (
     BinaryNotFoundException,
@@ -309,8 +310,12 @@ def cargo(
         if not crate_info:
             
             
+            
+            
+            
+            
             crate_info = crates_and_roots["gkrust"]
-            package_arg = f"-p {crate} "
+            package_arg = f"-p {crate} --target={{arch}} "
 
         targets = [
             "force-cargo-library-%s" % cargo_command,
@@ -350,7 +355,7 @@ def cargo(
             append_env["USE_CARGO_JSON_MESSAGE_FORMAT"] = "1"
         if continue_on_error:
             append_env["CARGO_CONTINUE_ON_ERROR"] = "1"
-        if cargo_build_flags:
+        if cargo_build_flags or package_arg:
             append_env["CARGO_NO_AUTO_ARG"] = "1"
 
         ret = command_context._run_make(
@@ -2465,6 +2470,23 @@ def _run_jsshell(command_context, params, debug, debugger, debugger_args):
     )
 
 
+MOZILLA_MACOS_TEAM_ID = "43AQ936H96"
+
+
+def _macos_is_signed_by_mozilla(path):
+    try:
+        proc = subprocess.run(
+            ["codesign", "-dvv", path],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return False
+    m = re.search(r"^TeamIdentifier=(.+)$", proc.stderr, re.MULTILINE)
+    return bool(m) and m.group(1) == MOZILLA_MACOS_TEAM_ID
+
+
 def _run_desktop(
     command_context,
     params,
@@ -2629,6 +2651,50 @@ def _run_desktop(
         "MOZ_DEVELOPER_OBJ_DIR": command_context.topobjdir,
         "RUST_BACKTRACE": "full",
     }
+
+    if (
+        not appdata
+        and sys.platform == "darwin"
+        and conditions.is_firefox(command_context)
+        and "MOZ_APP_DATA" not in os.environ
+        and Version(platform.mac_ver()[0]) >= Version("27")
+    ):
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if macos_open:
+            app_data_protected = not _macos_is_signed_by_mozilla(apppath)
+        else:
+            app_data_dir = os.path.expanduser("~/Library/Application Support/Firefox")
+            app_data_protected = os.path.isdir(app_data_dir) and not os.access(
+                app_data_dir, os.R_OK
+            )
+
+        if app_data_protected:
+            command_context.log(
+                logging.ERROR,
+                "run",
+                {},
+                "Firefox's application data directory could not be read "
+                "due to macOS application data protections. Allow the "
+                "terminal access to Firefox data in macOS Privacy & "
+                "Security -> Files & Folders settings to allow builds launched "
+                "from the CLI to access profile data. Alternatively, use "
+                "`./mach run -a` OR set MOZ_APP_DATA & MOZ_LOCAL_APP_DATA "
+                "environment variables to use an alternate app directory for "
+                "all instances launched from the terminal. See bug 2068208 for "
+                "more information.",
+            )
 
     if appdata:
         if appdata is True:
