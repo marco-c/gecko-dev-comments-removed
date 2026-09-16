@@ -102,7 +102,7 @@ bool PermissionsPolicyUtils::IsSupportedFeature(const nsAString& aFeatureName) {
     }
   }
 
-  return StaticPrefs::dom_security_featurePolicy_experimental_enabled() &&
+  return StaticPrefs::dom_security_permissionsPolicy_experimental_enabled() &&
          IsExperimentalFeature(aFeatureName);
 }
 
@@ -115,7 +115,7 @@ void PermissionsPolicyUtils::ForEachFeature(
     aCallback(sSupportedFeatures[i].mFeatureName);
   }
 
-  if (StaticPrefs::dom_security_featurePolicy_experimental_enabled()) {
+  if (StaticPrefs::dom_security_permissionsPolicy_experimental_enabled()) {
     numFeatures =
         (sizeof(sExperimentalFeatures) / sizeof(sExperimentalFeatures[0]));
     for (uint32_t i = 0; i < numFeatures; ++i) {
@@ -134,7 +134,7 @@ PermissionsPolicyUtils::DefaultAllowListFeature(const nsAString& aFeatureName) {
     }
   }
 
-  if (StaticPrefs::dom_security_featurePolicy_experimental_enabled()) {
+  if (StaticPrefs::dom_security_permissionsPolicy_experimental_enabled()) {
     numFeatures =
         (sizeof(sExperimentalFeatures) / sizeof(sExperimentalFeatures[0]));
     for (uint32_t i = 0; i < numFeatures; ++i) {
@@ -196,7 +196,7 @@ bool PermissionsPolicyUtils::IsFeatureAllowed(Document* aDocument,
   MOZ_ASSERT(aDocument);
 
   
-  if (!StaticPrefs::dom_security_featurePolicy_experimental_enabled() &&
+  if (!StaticPrefs::dom_security_permissionsPolicy_experimental_enabled() &&
       IsExperimentalFeature(aFeatureName)) {
     return true;
   }

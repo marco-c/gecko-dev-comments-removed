@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1256084
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Display Mode</title>
@@ -17,8 +17,8 @@
         SpecialPowers.pushPrefEnv(
           {
             set: [
-              ["dom.security.featurePolicy.header.enabled", true],
-              ["dom.security.featurePolicy.webidl.enabled", true],
+              ["dom.security.permissionsPolicy.header.enabled", true],
+              ["dom.security.permissionsPolicy.webidl.enabled", true],
             ],
           },
           r

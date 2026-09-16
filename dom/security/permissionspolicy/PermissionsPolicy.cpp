@@ -363,7 +363,7 @@ void PermissionsPolicy::MaybeSetAllowedPolicy(const nsAString& aFeatureName) {
   MOZ_ASSERT(PermissionsPolicyUtils::IsSupportedFeature(aFeatureName) ||
              PermissionsPolicyUtils::IsExperimentalFeature(aFeatureName));
   
-  if (!StaticPrefs::dom_security_featurePolicy_experimental_enabled() &&
+  if (!StaticPrefs::dom_security_permissionsPolicy_experimental_enabled() &&
       PermissionsPolicyUtils::IsExperimentalFeature(aFeatureName)) {
     return;
   }
