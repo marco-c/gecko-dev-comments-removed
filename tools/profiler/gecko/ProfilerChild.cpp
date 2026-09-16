@@ -514,6 +514,13 @@ void ProfilerChild::JoinGatherProfileThread() {
 
 void ProfilerChild::ActorDestroy(ActorDestroyReason aActorDestroyReason) {
   mDestroyed = true;
+  if (mAwaitNextChunkManagerUpdateResolver) {
+    
+    
+    std::move(mAwaitNextChunkManagerUpdateResolver)(
+        ProfilerParent::MakeFinalUpdate());
+    mAwaitNextChunkManagerUpdateResolver = nullptr;
+  }
   
   
   JoinGatherProfileThread();
@@ -522,6 +529,11 @@ void ProfilerChild::ActorDestroy(ActorDestroyReason aActorDestroyReason) {
 void ProfilerChild::Destroy() {
   ClearPendingUpdate();
   if (!mDestroyed) {
+    
+    
+    
+    ProcessChunkManagerUpdate(
+        ProfileBufferControlledChunkManager::Update(nullptr));
     Close();
   }
 }
