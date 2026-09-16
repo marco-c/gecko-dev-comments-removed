@@ -2,17 +2,21 @@ use super::TargetInfo;
 
 impl TargetInfo<'_> {
     pub(crate) fn apple_sdk_name(&self) -> &'static str {
-        match (self.os, self.abi) {
-            ("macos", "") => "macosx",
-            ("ios", "") => "iphoneos",
+        match (self.os, self.env) {
+            
+            
+            
+            
+            ("macos", _) => "macosx",
             ("ios", "sim") => "iphonesimulator",
             ("ios", "macabi") => "macosx",
-            ("tvos", "") => "appletvos",
+            ("ios", _) => "iphoneos",
             ("tvos", "sim") => "appletvsimulator",
-            ("watchos", "") => "watchos",
+            ("tvos", _) => "appletvos",
             ("watchos", "sim") => "watchsimulator",
-            ("visionos", "") => "xros",
+            ("watchos", _) => "watchos",
             ("visionos", "sim") => "xrsimulator",
+            ("visionos", _) => "xros",
             (os, _) => panic!("invalid Apple target OS {}", os),
         }
     }
@@ -30,19 +34,23 @@ impl TargetInfo<'_> {
         
         
         
-        match (self.os, self.abi) {
-            ("macos", "") => format!("-mmacosx-version-min={min_version}"),
-            ("ios", "") => format!("-miphoneos-version-min={min_version}"),
+        match (self.os, self.env) {
+            
+            
+            
+            
+            ("macos", _) => format!("-mmacosx-version-min={min_version}"),
             ("ios", "sim") => format!("-mios-simulator-version-min={min_version}"),
             ("ios", "macabi") => format!("-mtargetos=ios{min_version}-macabi"),
-            ("tvos", "") => format!("-mappletvos-version-min={min_version}"),
+            ("ios", _) => format!("-miphoneos-version-min={min_version}"),
             ("tvos", "sim") => format!("-mappletvsimulator-version-min={min_version}"),
-            ("watchos", "") => format!("-mwatchos-version-min={min_version}"),
+            ("tvos", _) => format!("-mappletvos-version-min={min_version}"),
             ("watchos", "sim") => format!("-mwatchsimulator-version-min={min_version}"),
+            ("watchos", _) => format!("-mwatchos-version-min={min_version}"),
             
             
-            ("visionos", "") => format!("-mtargetos=xros{min_version}"),
             ("visionos", "sim") => format!("-mtargetos=xros{min_version}-simulator"),
+            ("visionos", _) => format!("-mtargetos=xros{min_version}"),
             (os, _) => panic!("invalid Apple target OS {}", os),
         }
     }

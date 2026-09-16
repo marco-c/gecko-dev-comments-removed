@@ -1,6 +1,6 @@
 use std::{
     cell::UnsafeCell,
-    ffi::OsStr,
+    ffi::{OsStr, OsString},
     fmt::{self, Write},
     marker::PhantomData,
     mem::MaybeUninit,
@@ -8,6 +8,8 @@ use std::{
     path::Path,
     sync::Once,
 };
+
+use crate::{Error, ErrorKind};
 
 pub(super) struct JoinOsStrs<'a, T> {
     pub(super) slice: &'a [T],
@@ -92,12 +94,10 @@ impl<T> OnceLock<T> {
     }
 
     pub(crate) fn get(&self) -> Option<&T> {
-        if self.is_initialized() {
+        self.is_initialized().then(|| {
             
-            Some(unsafe { self.get_unchecked() })
-        } else {
-            None
-        }
+            unsafe { self.get_unchecked() }
+        })
     }
 }
 
@@ -126,5 +126,33 @@ impl<T> Drop for OnceLock<T> {
             
             unsafe { self.value.get_mut().assume_init_drop() };
         }
+    }
+}
+
+
+
+
+
+
+
+#[allow(clippy::disallowed_methods)] 
+pub(crate) fn cargo_env_var_os(key: &str) -> Option<OsString> {
+    std::env::var_os(key)
+}
+
+pub(crate) fn cargo_env_var(key: &str) -> Result<String, Error> {
+    if let Some(value) = cargo_env_var_os(key) {
+        match value.into_string() {
+            Ok(value) => Ok(value),
+            Err(value) => Err(Error::new(
+                ErrorKind::EnvVarNotFound,
+                format!("environment variable {key} is not valid utf-8: {value:?}"),
+            )),
+        }
+    } else {
+        Err(Error::new(
+            ErrorKind::EnvVarNotFound,
+            format!("environment variable {key} not defined"),
+        ))
     }
 }

@@ -21,6 +21,13 @@ impl TargetInfo<'_> {
         if rustc_target == "armv7-apple-ios" {
             
             return Cow::Borrowed("armv7-apple-ios");
+        } else if rustc_target == "aarch64-unknown-linux-pauthtest" {
+            
+            
+            
+            
+            
+            return Cow::Borrowed("aarch64-unknown-linux-pauthtest");
         } else if self.os == "uefi" {
             
             
@@ -83,21 +90,22 @@ impl TargetInfo<'_> {
             "visionos" => "xros",
             "uefi" => "windows",
             "solid_asp3" | "horizon" | "teeos" | "nuttx" | "espidf" => "none",
-            "nto" => "unknown",    
-            "trusty" => "unknown", 
+            "qnx" | "nto" => "unknown", 
+            "trusty" => "unknown",      
             os => os,
         };
         let version = version.unwrap_or("");
         let env = match self.env {
             "newlib" | "nto70" | "nto71" | "nto71_iosock" | "p1" | "p2" | "relibc" | "sgx"
             | "uclibc" => "",
+            "sim" => "simulator",
             env => env,
         };
         let abi = match self.abi {
-            "sim" => "simulator",
             "llvm" | "softfloat" | "uwp" | "vec-extabi" => "",
             "ilp32" => "_ilp32",
             "abi64" => "",
+            "elfv1" | "elfv2" => "",
             abi => abi,
         };
         Cow::Owned(match (vendor, env, abi) {
@@ -110,6 +118,7 @@ impl TargetInfo<'_> {
 }
 
 #[cfg(test)]
+#[allow(clippy::disallowed_methods)]
 mod tests {
     use std::process::Command;
 
@@ -191,8 +200,8 @@ mod tests {
                 arch: "aarch64",
                 vendor: "apple",
                 os: "ios",
-                env: "",
-                abi: "sim",
+                env: "sim",
+                abi: "",
             }
             .llvm_target("aarch64-apple-ios-sim", Some("14.0")),
             "arm64-apple-ios14.0-simulator"
@@ -266,6 +275,7 @@ mod tests {
     #[test]
     #[ignore = "not yet done"]
     fn llvm_for_all_rustc_targets() {
+        #[allow(clippy::disallowed_methods)]
         let rustc = std::env::var("RUSTC").unwrap_or_else(|_| "rustc".to_string());
 
         let target_list = Command::new(&rustc)

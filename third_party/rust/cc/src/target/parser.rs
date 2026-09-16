@@ -1,6 +1,10 @@
-use std::env;
+use std::mem;
 
-use crate::{target::TargetInfo, utilities::OnceLock, Error, ErrorKind};
+use crate::{
+    target::TargetInfo,
+    utilities::{cargo_env_var, OnceLock},
+    Error, ErrorKind,
+};
 
 #[derive(Debug)]
 struct TargetInfoParserInner {
@@ -15,16 +19,7 @@ struct TargetInfoParserInner {
 impl TargetInfoParserInner {
     fn from_cargo_environment_variables() -> Result<Self, Error> {
         
-        
-        
-        
-        #[allow(clippy::disallowed_methods)]
-        let target_name = env::var("TARGET").map_err(|err| {
-            Error::new(
-                ErrorKind::EnvVarNotFound,
-                format!("failed reading TARGET: {err}"),
-            )
-        })?;
+        let target_name = cargo_env_var("TARGET")?;
 
         
         let (full_arch, _rest) = target_name.split_once('-').ok_or(Error::new(
@@ -32,20 +27,18 @@ impl TargetInfoParserInner {
             format!("target `{target_name}` only had a single component (at least two required)"),
         ))?;
 
-        let cargo_env = |name, fallback: Option<&str>| -> Result<Box<str>, Error> {
-            
-            
-            #[allow(clippy::disallowed_methods)]
-            match env::var(name) {
-                Ok(var) => Ok(var.into_boxed_str()),
-                Err(err) => match fallback {
-                    Some(fallback) => Ok(fallback.into()),
-                    None => Err(Error::new(
-                        ErrorKind::EnvVarNotFound,
-                        format!("did not find fallback information for target `{target_name}`, and failed reading {name}: {err}"),
-                    )),
-                },
-            }
+        let cargo_env = |key, fallback: Option<&str>| match cargo_env_var(key) {
+            Ok(var) => Ok(var.into_boxed_str()),
+            Err(err) => match fallback {
+                Some(fallback) => Ok(fallback.into()),
+                None => Err(Error::new(
+                    ErrorKind::EnvVarNotFound,
+                    format!(
+                        "did not find fallback information for target `{target_name}`: {}",
+                        err.message
+                    ),
+                )),
+            },
         };
 
         
@@ -67,12 +60,24 @@ impl TargetInfoParserInner {
         let arch = cargo_env("CARGO_CFG_TARGET_ARCH", ft.map(|t| t.arch))?;
         let vendor = cargo_env("CARGO_CFG_TARGET_VENDOR", ft.map(|t| t.vendor))?;
         let os = cargo_env("CARGO_CFG_TARGET_OS", ft.map(|t| t.os))?;
-        let env = cargo_env("CARGO_CFG_TARGET_ENV", ft.map(|t| t.env))?;
+        let mut env = cargo_env("CARGO_CFG_TARGET_ENV", ft.map(|t| t.env))?;
         
         
         
-        let abi = cargo_env("CARGO_CFG_TARGET_ABI", ft.map(|t| t.abi))
+        let mut abi = cargo_env("CARGO_CFG_TARGET_ABI", ft.map(|t| t.abi))
             .unwrap_or_else(|_| String::default().into_boxed_str());
+
+        
+        
+        if matches!(&*abi, "macabi" | "sim") {
+            debug_assert!(
+                matches!(&*env, "" | "macabi" | "sim"),
+                "env/abi mismatch: {:?}, {:?}",
+                env,
+                abi,
+            );
+            env = mem::replace(&mut abi, String::default().into_boxed_str());
+        }
 
         Ok(Self {
             full_arch: full_arch.to_string().into_boxed_str(),
@@ -163,6 +168,7 @@ fn parse_arch(full_arch: &str) -> Option<&str> {
         arch if arch.starts_with("nvptx") => "nvptx",
 
         arch if arch.starts_with("bpf") => "bpf", 
+        arch if arch.starts_with("sh4") => "sh4", 
 
         
         arch if arch.starts_with("pulley64") => "pulley64",
@@ -184,6 +190,10 @@ fn parse_arch(full_arch: &str) -> Option<&str> {
         "s390x" => "s390x",
         "xtensa" => "xtensa",
 
+        
+        arch if arch.starts_with("alpha") => "alpha", 
+        "hppa" => "hppa", 
+        arch if arch.starts_with("sh") => "sh", 
         _ => return None,
     })
 }
@@ -213,23 +223,26 @@ fn parse_envabi(last_component: &str) -> Option<(&str, &str)> {
         }
 
         
+        "pauthtest" => ("musl", "pauthtest"),
+
+        
         "msvc" => ("msvc", ""),
         "ohos" => ("ohos", ""),
         "qnx700" => ("nto70", ""),
         "qnx710_iosock" => ("nto71_iosock", ""),
         "qnx710" => ("nto71", ""),
-        "qnx800" => ("nto80", ""),
         "sgx" => ("sgx", ""),
         "threads" => ("threads", ""),
         "mlibc" => ("mlibc", ""),
+        "relibc" => ("relibc", ""),
 
         
         "abi64" => ("", "abi64"),
         "abiv2" => ("", "spe"),
         "eabi" => ("", "eabi"),
         "eabihf" => ("", "eabihf"),
-        "macabi" => ("", "macabi"),
-        "sim" => ("", "sim"),
+        "macabi" => ("macabi", ""),
+        "sim" => ("sim", ""),
         "softfloat" => ("", "softfloat"),
         "spe" => ("", "spe"),
         "x32" => ("", "x32"),
@@ -269,6 +282,18 @@ impl<'a> TargetInfo<'a> {
             ErrorKind::InvalidTarget,
             "target was empty".to_string(),
         ))?;
+
+        if target == "armv7a-vex-v5" || target == "thumbv7a-vex-v5" {
+            return Ok(Self {
+                full_arch,
+                arch: "arm",
+                vendor: "vex",
+                os: "vexos",
+                env: "v5",
+                abi: "eabihf",
+            });
+        }
+
         let arch = parse_arch(full_arch).ok_or_else(|| {
             Error::new(
                 ErrorKind::UnknownTarget,
@@ -340,7 +365,7 @@ impl<'a> TargetInfo<'a> {
         match target {
             
             "i386-apple-ios" | "x86_64-apple-ios" | "x86_64-apple-tvos" => {
-                abi = "sim";
+                env = "sim";
             }
             
             "mips64-openwrt-linux-musl" => {
@@ -389,6 +414,7 @@ impl<'a> TargetInfo<'a> {
             
             "wali" => "unknown",
             "lynx" => "unknown",
+            "oe" => "unknown",
             
             
             vendor => vendor,
@@ -418,6 +444,10 @@ impl<'a> TargetInfo<'a> {
             abi = "elfv2";
         }
 
+        if ["asan", "msan", "tsan"].contains(&abi) {
+            abi = "";
+        }
+
         Ok(Self {
             full_arch,
             arch,
@@ -431,6 +461,7 @@ impl<'a> TargetInfo<'a> {
 
 #[cfg(test)]
 #[allow(unexpected_cfgs)]
+#[allow(clippy::disallowed_methods)]
 mod tests {
     use std::process::Command;
 
@@ -525,6 +556,11 @@ mod tests {
             }
         }
 
+        if matches!(target.abi, "macabi" | "sim") {
+            assert_eq!(target.env, target.abi);
+            target.abi = "";
+        }
+
         target
     }
 
@@ -541,6 +577,7 @@ mod tests {
         ignore = "must enable explicitly with --cfg=rustc_target_test"
     )]
     fn parse_rustc_targets() {
+        #[allow(clippy::disallowed_methods)]
         let rustc = std::env::var("RUSTC").unwrap_or_else(|_| "rustc".to_string());
 
         let target_list = Command::new(&rustc)
@@ -576,5 +613,31 @@ mod tests {
         if has_failure {
             panic!("failed comparing targets");
         }
+    }
+
+    #[test]
+    fn parses_apple_envs_correctly() {
+        assert_eq!(
+            TargetInfo::from_rustc_target("aarch64-apple-ios-macabi").unwrap(),
+            TargetInfo {
+                full_arch: "aarch64",
+                arch: "aarch64",
+                vendor: "apple",
+                os: "ios",
+                env: "macabi",
+                abi: "",
+            }
+        );
+        assert_eq!(
+            TargetInfo::from_rustc_target("aarch64-apple-ios-sim").unwrap(),
+            TargetInfo {
+                full_arch: "aarch64",
+                arch: "aarch64",
+                vendor: "apple",
+                os: "ios",
+                env: "sim",
+                abi: "",
+            }
+        );
     }
 }

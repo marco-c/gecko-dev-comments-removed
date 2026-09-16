@@ -19,6 +19,8 @@ pub(crate) struct RustcCodegenFlags<'a> {
     no_redzone: Option<bool>,
     soft_float: Option<bool>,
     dwarf_version: Option<u32>,
+    stack_protector: Option<&'a str>,
+    linker_plugin_lto: Option<bool>,
 }
 
 impl<'this> RustcCodegenFlags<'this> {
@@ -101,18 +103,27 @@ impl<'this> RustcCodegenFlags<'this> {
         } else {
             Cow::Owned(format!("{prefix}{flag}"))
         };
+        let flag = flag.as_ref();
 
-        fn flag_ok_or<'flag>(
-            flag: Option<&'flag str>,
-            msg: &'static str,
-        ) -> Result<&'flag str, Error> {
-            flag.ok_or(Error::new(ErrorKind::InvalidFlag, msg))
+        fn flag_not_empty_generic<T>(
+            flag: &str,
+            flag_value: Option<T>,
+        ) -> Result<Option<T>, Error> {
+            if let Some(flag_value) = flag_value {
+                Ok(Some(flag_value))
+            } else {
+                Err(Error::new(
+                    ErrorKind::InvalidFlag,
+                    format!("{flag} must have a value"),
+                ))
+            }
         }
+        let flag_not_empty = |flag_value| flag_not_empty_generic(flag, flag_value);
 
-        match flag.as_ref() {
+        match flag {
             
             "-Ccode-model" => {
-                self.code_model = Some(flag_ok_or(value, "-Ccode-model must have a value")?);
+                self.code_model = flag_not_empty(value)?;
             }
             
             "-Cno-vectorize-loops" => self.no_vectorize_loops = true,
@@ -120,21 +131,23 @@ impl<'this> RustcCodegenFlags<'this> {
             "-Cno-vectorize-slp" => self.no_vectorize_slp = true,
             
             "-Cprofile-generate" => {
-                self.profile_generate =
-                    Some(flag_ok_or(value, "-Cprofile-generate must have a value")?);
+                self.profile_generate = flag_not_empty(value)?;
             }
             
             "-Cprofile-use" => {
-                self.profile_use = Some(flag_ok_or(value, "-Cprofile-use must have a value")?);
+                self.profile_use = flag_not_empty(value)?;
             }
             
             "-Ccontrol-flow-guard" => self.control_flow_guard = value.or(Some("true")),
             
+            
+            
             "-Clto" => self.lto = value.or(Some("true")),
             
+            "-Clinker-plugin-lto" => self.linker_plugin_lto = Some(true),
+            
             "-Crelocation-model" => {
-                self.relocation_model =
-                    Some(flag_ok_or(value, "-Crelocation-model must have a value")?);
+                self.relocation_model = flag_not_empty(value)?;
             }
             
             "-Cembed-bitcode" => self.embed_bitcode = value.map_or(Some(true), arg_to_bool),
@@ -150,16 +163,16 @@ impl<'this> RustcCodegenFlags<'this> {
             
             
             "-Zbranch-protection" | "-Cbranch-protection" => {
-                self.branch_protection =
-                    Some(flag_ok_or(value, "-Zbranch-protection must have a value")?);
+                self.branch_protection = flag_not_empty(value)?;
+            }
+            
+            "-Cdwarf-version" => {
+                self.dwarf_version = flag_not_empty_generic(flag, value.and_then(arg_to_u32))?;
             }
             
             
-            "-Zdwarf-version" | "-Cdwarf-version" => {
-                self.dwarf_version = Some(value.and_then(arg_to_u32).ok_or(Error::new(
-                    ErrorKind::InvalidFlag,
-                    "-Zdwarf-version must have a value",
-                ))?);
+            "-Zstack-protector" | "-Cstack-protector" => {
+                self.stack_protector = flag_not_empty(value)?;
             }
             _ => {}
         }
@@ -234,12 +247,10 @@ impl<'this> RustcCodegenFlags<'this> {
             
             
             if let Some(value) = self.force_frame_pointers {
-                let cc_flag = if value {
-                    "-fno-omit-frame-pointer"
-                } else {
-                    "-fomit-frame-pointer"
-                };
-                push_if_supported(cc_flag.into());
+                if value {
+                    push_if_supported("-fno-omit-frame-pointer".into());
+                    push_if_supported("-mno-omit-leaf-frame-pointer".into());
+                }
             }
             
             
@@ -267,6 +278,23 @@ impl<'this> RustcCodegenFlags<'this> {
             if let Some(value) = self.dwarf_version {
                 push_if_supported(format!("-gdwarf-{value}").into());
             }
+            
+            
+            if let Some(value) = self.stack_protector {
+                
+                
+                
+                
+                
+                let cc_flag = match value {
+                    "strong" => Some("-fstack-protector-strong"),
+                    "all" => Some("-fstack-protector-all"),
+                    _ => None,
+                };
+                if let Some(cc_flag) = cc_flag {
+                    push_if_supported(cc_flag.into());
+                }
+            }
         }
 
         
@@ -291,15 +319,14 @@ impl<'this> RustcCodegenFlags<'this> {
                 }
 
                 
-                if let Some(value) = self.lto {
-                    let cc_val = match value {
-                        "y" | "yes" | "on" | "true" | "fat" => Some("full"),
-                        "thin" => Some("thin"),
-                        _ => None,
-                    };
-                    if let Some(cc_val) = cc_val {
-                        push_if_supported(format!("-flto={cc_val}").into());
-                    }
+                if self.linker_plugin_lto.unwrap_or(false) {
+                    
+                    
+                    
+                    
+                    
+                    
+                    push_if_supported("-flto=thin".into());
                 }
                 
                 if let Some(value) = self.control_flow_guard {
@@ -380,6 +407,16 @@ mod tests {
     }
 
     #[test]
+    fn stack_protector() {
+        let expected = RustcCodegenFlags {
+            stack_protector: Some("strong"),
+            ..RustcCodegenFlags::default()
+        };
+        check("-Zstack-protector=strong", &expected);
+        check("-Cstack-protector=strong", &expected);
+    }
+
+    #[test]
     fn three_valid_prefixes() {
         let expected = RustcCodegenFlags {
             lto: Some("true"),
@@ -407,7 +444,8 @@ mod tests {
             "-Crelocation-model=pic",
             "-Csoft-float=yes",
             "-Zbranch-protection=bti,pac-ret,leaf",
-            "-Zdwarf-version=5",
+            "-Cdwarf-version=5",
+            "-Zstack-protector=strong",
             
             
             "--cfg",
@@ -476,7 +514,7 @@ mod tests {
             "-Clink-self-contained=yes",
             "-Clinker=lld",
             "-Clinker-flavor=ld.lld",
-            "-Clinker-plugin-lto=yes",
+            "-Clinker-plugin-lto=/path",
             "-Cllvm-args=foo",
             "-Cmetadata=foo",
             "-Cno-prepopulate-passes",
@@ -515,6 +553,8 @@ mod tests {
                 soft_float: Some(true),
                 branch_protection: Some("bti,pac-ret,leaf"),
                 dwarf_version: Some(5),
+                stack_protector: Some("strong"),
+                linker_plugin_lto: Some(true),
             },
         );
     }

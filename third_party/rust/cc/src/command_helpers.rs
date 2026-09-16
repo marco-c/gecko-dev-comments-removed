@@ -3,20 +3,20 @@
 use std::{
     borrow::Cow,
     collections::hash_map,
-    ffi::OsString,
+    ffi::{OsStr, OsString},
     fmt::Display,
     fs,
     hash::Hasher,
     io::{self, Read, Write},
     path::Path,
-    process::{Child, ChildStderr, Command, Stdio},
+    process::{Child, ChildStderr, Command, Output, Stdio},
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc,
     },
 };
 
-use crate::{Error, ErrorKind, Object};
+use crate::{utilities::cargo_env_var_os, Error, ErrorKind, Object};
 
 #[derive(Clone, Debug)]
 pub(crate) struct CargoOutput {
@@ -66,8 +66,12 @@ impl CargoOutput {
     }
 
     pub(crate) fn print_debug(&self, arg: &dyn Display) {
-        if self.metadata && !self.checked_dbg_var.load(Ordering::Relaxed) {
-            self.checked_dbg_var.store(true, Ordering::Relaxed);
+        if self.metadata
+            && self
+                .checked_dbg_var
+                .compare_exchange(false, true, Ordering::Relaxed, Ordering::Relaxed)
+                .is_ok()
+        {
             println!("cargo:rerun-if-env-changed=CC_ENABLE_DEBUG_OUTPUT");
         }
         if self.debug {
@@ -119,7 +123,7 @@ impl StderrForwarder {
         }
     }
 
-    fn forward_available(&mut self) -> bool {
+    pub(crate) fn forward_available(&mut self) -> bool {
         if let Some((stderr, buffer)) = self.inner.as_mut() {
             loop {
                 
@@ -226,7 +230,7 @@ impl StderrForwarder {
     }
 
     #[cfg(feature = "parallel")]
-    fn forward_all(&mut self) {
+    pub(crate) fn forward_all(&mut self) {
         while !self.forward_available() {}
     }
 
@@ -304,11 +308,7 @@ pub(crate) fn objects_from_files(files: &[Arc<Path>], dst: &Path) -> Result<Vec<
 
         
         
-        
-        
-        
-        #[allow(clippy::disallowed_methods)]
-        let dirname = if let Some(root) = std::env::var_os("CARGO_MANIFEST_DIR") {
+        let dirname = if let Some(root) = cargo_env_var_os("CARGO_MANIFEST_DIR") {
             let root = root.to_string_lossy();
             Cow::Borrowed(dirname.strip_prefix(&*root).unwrap_or(&dirname))
         } else {
@@ -319,6 +319,7 @@ pub(crate) fn objects_from_files(files: &[Arc<Path>], dst: &Path) -> Result<Vec<
         if let Some(extension) = file.extension() {
             hasher.write(extension.to_string_lossy().as_bytes());
         }
+
         let obj = dst
             .join(format!("{:016x}-{}", hasher.finish(), basename))
             .with_extension("o");
@@ -339,29 +340,151 @@ pub(crate) fn objects_from_files(files: &[Arc<Path>], dst: &Path) -> Result<Vec<
     Ok(objects)
 }
 
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug)]
+enum ProbeKind {
+    
+    FamilyDetection,
+    
+    FlagSupportCheck,
+    
+    ArDetection,
+}
+
+impl ProbeKind {
+    
+    const fn out_files_var(self) -> &'static str {
+        match self {
+            Self::FamilyDetection => "CC_SHIM_OUT_FILES_FOR_FAMILY_DETECTION",
+            Self::FlagSupportCheck => "CC_SHIM_OUT_FILES_FOR_FLAG_SUPPORT_CHECK",
+            Self::ArDetection => "CC_SHIM_OUT_FILES_FOR_AR_DETECTION",
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fn set_probe_env<K, V>(cmd: &mut Command, env: &[(K, V)], kind: ProbeKind)
+where
+    K: AsRef<OsStr>,
+    V: AsRef<OsStr>,
+{
+    for (key, value) in env {
+        cmd.env(key.as_ref(), value.as_ref());
+    }
+
+    cmd.env_remove("CC_SHIM_OUT_DIR");
+    match env
+        .iter()
+        .find(|(key, _)| key.as_ref() == OsStr::new(kind.out_files_var()))
+    {
+        Some((_, value)) => cmd.env("CC_SHIM_OUT_FILES", value.as_ref()),
+        None => cmd.env_remove("CC_SHIM_OUT_FILES"),
+    };
+}
+
 pub(crate) fn run(cmd: &mut Command, cargo_output: &CargoOutput) -> Result<(), Error> {
     let mut child = spawn(cmd, cargo_output)?;
     wait_on_child(cmd, &mut child, cargo_output)
 }
 
-pub(crate) fn run_output(cmd: &mut Command, cargo_output: &CargoOutput) -> Result<Vec<u8>, Error> {
+
+
+
+
+
+pub(crate) fn run_silent_on_error(
+    cmd: &mut Command,
+    cargo_output: &CargoOutput,
+) -> Result<(), Error> {
+    let Output {
+        status,
+        stdout: _,
+        stderr,
+    } = spawn_and_wait_for_output(cmd, cargo_output)?;
+
+    cargo_output.print_debug(&status);
+
+    if status.success() {
+        if cargo_output.warnings {
+            stderr
+                .split(|&b| b == b'\n')
+                .map(|line| line.strip_suffix(b"\r").unwrap_or(line))
+                .filter(|line| !line.is_empty())
+                .for_each(write_warning);
+        }
+        Ok(())
+    } else {
+        Err(Error::new(
+            ErrorKind::ToolExecError,
+            format!("command did not execute successfully (status code {status}): {cmd:?}"),
+        ))
+    }
+}
+
+pub(crate) fn spawn_and_wait_for_output(
+    cmd: &mut Command,
+    cargo_output: &CargoOutput,
+) -> Result<Output, Error> {
     
     let mut captured_cargo_output = cargo_output.clone();
     captured_cargo_output.output = OutputKind::Capture;
-    let mut child = spawn(cmd, &captured_cargo_output)?;
+    spawn(cmd, &captured_cargo_output)?
+        .wait_with_output()
+        .map_err(|e| {
+            Error::new(
+                ErrorKind::ToolExecError,
+                format!("failed to wait on spawned child process `{cmd:?}`: {e}"),
+            )
+        })
+}
 
-    let mut stdout = vec![];
-    child
-        .stdout
-        .take()
-        .unwrap()
-        .read_to_end(&mut stdout)
-        .unwrap();
+pub(crate) fn run_output(cmd: &mut Command, cargo_output: &CargoOutput) -> Result<Vec<u8>, Error> {
+    let Output {
+        status,
+        stdout,
+        stderr,
+    } = spawn_and_wait_for_output(cmd, cargo_output)?;
 
-    
-    wait_on_child(cmd, &mut child, cargo_output)?;
+    stderr
+        .split(|&b| b == b'\n')
+        .filter(|part| !part.is_empty())
+        .for_each(write_warning);
 
-    Ok(stdout)
+    cargo_output.print_debug(&status);
+
+    if status.success() {
+        Ok(stdout)
+    } else {
+        Err(Error::new(
+            ErrorKind::ToolExecError,
+            format!("command did not execute successfully (status code {status}): {cmd:?}"),
+        ))
+    }
 }
 
 pub(crate) fn spawn(cmd: &mut Command, cargo_output: &CargoOutput) -> Result<Child, Error> {
@@ -425,37 +548,53 @@ pub(crate) fn command_add_output_file(cmd: &mut Command, dst: &Path, args: CmdAd
     }
 }
 
-#[cfg(feature = "parallel")]
-pub(crate) fn try_wait_on_child(
-    cmd: &Command,
-    child: &mut Child,
-    stdout: &mut dyn io::Write,
-    stderr_forwarder: &mut StderrForwarder,
-) -> Result<Option<()>, Error> {
-    stderr_forwarder.forward_available();
 
-    match child.try_wait() {
-        Ok(Some(status)) => {
-            stderr_forwarder.forward_all();
 
-            let _ = writeln!(stdout, "{}", status);
+pub(crate) trait CommandExt {
+    
+    fn set_family_detection_env<K, V>(&mut self, env: &[(K, V)]) -> &mut Self
+    where
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>;
 
-            if status.success() {
-                Ok(Some(()))
-            } else {
-                Err(Error::new(
-                    ErrorKind::ToolExecError,
-                    format!("command did not execute successfully (status code {status}): {cmd:?}"),
-                ))
-            }
-        }
-        Ok(None) => Ok(None),
-        Err(e) => {
-            stderr_forwarder.forward_all();
-            Err(Error::new(
-                ErrorKind::ToolExecError,
-                format!("failed to wait on spawned child process `{cmd:?}`: {e}"),
-            ))
-        }
+    
+    fn set_flag_supported_env<K, V>(&mut self, env: &[(K, V)]) -> &mut Self
+    where
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>;
+
+    
+    fn set_ar_detection_env<K, V>(&mut self, env: &[(K, V)]) -> &mut Self
+    where
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>;
+}
+
+impl CommandExt for Command {
+    fn set_family_detection_env<K, V>(&mut self, env: &[(K, V)]) -> &mut Self
+    where
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>,
+    {
+        set_probe_env(self, env, ProbeKind::FamilyDetection);
+        self
+    }
+
+    fn set_flag_supported_env<K, V>(&mut self, env: &[(K, V)]) -> &mut Self
+    where
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>,
+    {
+        set_probe_env(self, env, ProbeKind::FlagSupportCheck);
+        self
+    }
+
+    fn set_ar_detection_env<K, V>(&mut self, env: &[(K, V)]) -> &mut Self
+    where
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>,
+    {
+        set_probe_env(self, env, ProbeKind::ArDetection);
+        self
     }
 }

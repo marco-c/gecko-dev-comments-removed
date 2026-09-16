@@ -5,7 +5,7 @@
 
 
 
-use crate::windows::{
+use crate::{
     winapi::{IUnknown, Interface},
     windows_sys::{
         CoInitializeEx, SysFreeString, SysStringLen, BSTR, COINIT_MULTITHREADED, HRESULT, S_FALSE,
@@ -47,7 +47,7 @@ where
     }
     
     fn as_unknown(&self) -> &IUnknown {
-        unsafe { &*(self.0 as *mut IUnknown) }
+        unsafe { &*self.0.cast() }
     }
     
     pub fn cast<U>(&self) -> Result<ComPtr<U>, i32>
@@ -59,7 +59,7 @@ where
         if err < 0 {
             return Err(err);
         }
-        Ok(unsafe { ComPtr::from_raw(obj as *mut U) })
+        Ok(unsafe { ComPtr::from_raw(obj.cast()) })
     }
 }
 impl<T> Deref for ComPtr<T>
