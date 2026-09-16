@@ -1011,6 +1011,11 @@ pub enum DebugCommand {
     
     
     CaptureRenderDoc(Sender<crate::api::debugger::RenderDocReply>),
+    #[cfg(feature = "debugger")]
+    
+    
+    
+    SetSceneDebugOverride(crate::api::debugger::SceneDebugOverride, Sender<Result<(), String>>),
 }
 
 
