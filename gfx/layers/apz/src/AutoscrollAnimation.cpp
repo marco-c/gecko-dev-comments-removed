@@ -10,6 +10,7 @@
 #include "APZCTreeManager.h"
 #include "AsyncPanZoomController.h"
 #include "FrameMetrics.h"
+#include "Units.h"
 #include "mozilla/StaticPrefs_general.h"
 
 namespace mozilla {
@@ -17,15 +18,18 @@ namespace layers {
 
 
 
-static float Accelerate(ScreenCoord curr, ScreenCoord start) {
+
+static float Accelerate(ScreenCoord curr, ScreenCoord start,
+                        const CSSToLayoutDeviceScale& widgetScale) {
   
   
   
-  static const float baseSpeed = 12.0f;
+  constexpr float baseSpeed = 12.0f;
+
   int multiplier =
       std::max(1, int(StaticPrefs::general_autoscroll_speed_multiplier()));
   float speed = std::max(1.0f, baseSpeed * 100 / multiplier);
-  float val = (curr - start) / speed;
+  float val = (curr - start) / (speed * widgetScale.scale);
   if (val > 1) {
     return val * sqrtf(val) - 1;
   }
@@ -49,6 +53,9 @@ bool AutoscrollAnimation::DoSample(FrameMetrics& aFrameMetrics,
   ScreenPoint mouseLocation = treeManager->GetCurrentMousePosition();
 
   
+  const auto widgetScale = treeManager->GetWidgetScale();
+
+  
   
   
 
@@ -69,8 +76,10 @@ bool AutoscrollAnimation::DoSample(FrameMetrics& aFrameMetrics,
   
   
   CSSPoint scrollDelta{
-      Accelerate(mouseLocation.x, mAnchorLocation.x) * timeCompensation,
-      Accelerate(mouseLocation.y, mAnchorLocation.y) * timeCompensation};
+      Accelerate(mouseLocation.x, mAnchorLocation.x, widgetScale) *
+          timeCompensation,
+      Accelerate(mouseLocation.y, mAnchorLocation.y, widgetScale) *
+          timeCompensation};
 
   mApzc.ScrollByAndClamp(scrollDelta);
 
