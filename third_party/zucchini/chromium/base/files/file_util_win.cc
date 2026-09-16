@@ -8,6 +8,9 @@
 
 #include <io.h>
 #include <psapi.h>
+#if defined(MOZ_ZUCCHINI)
+#include <share.h>
+#endif  
 #include <shellapi.h>
 #include <shlobj.h>
 #include <stddef.h>
