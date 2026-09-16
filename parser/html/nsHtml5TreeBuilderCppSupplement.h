@@ -139,6 +139,11 @@ class nsHtml5TreeBuilder::SanitizerState {
     return mDropped.Contains(aElement);
   }
 
+  bool IsReplacedWithChildren(nsIContent* aElement) const {
+    auto entry = mDropped.Lookup(aElement);
+    return entry && entry.Data().mReplaceWithChildren;
+  }
+
   
   
   
@@ -1215,11 +1220,8 @@ void nsHtml5TreeBuilder::appendChildrenToNewParent(
 
   if (mBuilder) {
     nsIContent* newParent = static_cast<nsIContent*>(aNewParent);
-    
-    
-    
     if (MOZ_UNLIKELY(mSanitizerState) &&
-        mSanitizerState->IsDropped(newParent)) {
+        mSanitizerState->IsReplacedWithChildren(newParent)) {
       return;
     }
     nsresult rv = nsHtml5TreeOperation::AppendChildrenToNewParent(
