@@ -46,7 +46,7 @@ use crate::tile_cache::TileCacheInstance;
 use crate::picture::{PictureScratch, RasterConfig};
 use crate::surface::SurfaceIndex;
 use crate::tile_cache::SubSliceIndex;
-use crate::prim_store::{ClipSnap, ClipTaskIndex, PictureIndex, PrimitiveKind};
+use crate::prim_store::{ClipTaskIndex, PictureIndex, PrimitiveKind};
 use crate::prim_store::{PrimitiveStore, PrimitiveInstance, PrimitiveInstanceIndex};
 use crate::prim_store::storage;
 use crate::prim_store::text_run::TextRunScratch;
@@ -397,16 +397,12 @@ pub fn update_prim_visibility(
             
             
             
-            let leaf = frame_state.clip_tree.get_leaf_mut(leaf_id);
-            let unsnapped = leaf.unsnapped_local_clip_rect;
-            leaf.snapped_local_clip_rect = if unsnapped == LayoutRect::max_rect() {
-                unsnapped
-            } else {
-                match policy.clip {
-                    ClipSnap::Nearest => snapper.snap_rect(&unsnapped),
-                    ClipSnap::Exact => unsnapped,
-                }
-            };
+            
+            let snapped_leaf_clip_rect = frame_state.clip_tree.snap_leaf_clip_rect(
+                leaf_id,
+                &snapper,
+                policy.clip,
+            );
 
             if let PrimitiveKind::Picture { pic_index, .. } = frame_state.prim_instances[prim_instance_index].kind {
                 if !store.pictures[pic_index.0].is_visible(frame_context.spatial_tree) {
@@ -470,6 +466,7 @@ pub fn update_prim_visibility(
                 &mut clip_snapper,
                 policy.clip,
                 prim_instance.clip_leaf_id,
+                snapped_leaf_clip_rect,
                 &frame_context.spatial_tree,
                 &frame_state.data_stores.clip,
                 frame_state.clip_tree,

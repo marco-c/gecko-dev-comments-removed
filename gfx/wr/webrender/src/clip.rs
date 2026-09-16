@@ -197,13 +197,8 @@ pub struct ClipTreeLeaf {
     
     
     
+    
     pub unsnapped_local_clip_rect: LayoutRect,
-    
-    
-    
-    
-    
-    pub snapped_local_clip_rect: LayoutRect,
 }
 
 
@@ -387,8 +382,27 @@ impl ClipTree {
     
     
     
-    pub fn get_leaf_mut(&mut self, id: ClipLeafId) -> &mut ClipTreeLeaf {
-        &mut self.leaves[id.0 as usize]
+    
+    
+    
+    
+    
+    pub fn snap_leaf_clip_rect(
+        &self,
+        id: ClipLeafId,
+        snapper: &SpaceSnapper,
+        clip_snap: ClipSnap,
+    ) -> LayoutRect {
+        let unsnapped = self.get_leaf(id).unsnapped_local_clip_rect;
+
+        if unsnapped == LayoutRect::max_rect() {
+            return unsnapped;
+        }
+
+        match clip_snap {
+            ClipSnap::Nearest => snapper.snap_rect(&unsnapped),
+            ClipSnap::Exact => unsnapped,
+        }
     }
 
     
@@ -978,7 +992,6 @@ impl ClipTreeBuilder {
             
             prim_clip_root: ClipNodeId::INVALID,
             unsnapped_local_clip_rect: LayoutRect::max_rect(),
-            snapped_local_clip_rect: LayoutRect::max_rect(),
         });
 
         clip_leaf_id
@@ -1010,7 +1023,6 @@ impl ClipTreeBuilder {
             node_id,
             prim_clip_root,
             unsnapped_local_clip_rect: LayoutRect::max_rect(),
-            snapped_local_clip_rect: LayoutRect::max_rect(),
         });
 
         clip_leaf_id
@@ -1062,7 +1074,6 @@ impl ClipTreeBuilder {
             node_id,
             prim_clip_root,
             unsnapped_local_clip_rect: info.clip_rect,
-            snapped_local_clip_rect: LayoutRect::zero(),
         });
 
         clip_leaf_id
@@ -1544,6 +1555,12 @@ impl ClipStore {
         snapper: &mut SpaceSnapper,
         clip_snap: ClipSnap,
         clip_leaf_id: ClipLeafId,
+        
+        
+        
+        
+        
+        snapped_leaf_clip_rect: LayoutRect,
         spatial_tree: &SpatialTree,
         clip_data_store: &ClipDataStore,
         clip_tree: &ClipTree,
@@ -1563,7 +1580,7 @@ impl ClipStore {
         
         
         
-        let mut local_clip_rect = clip_leaf.snapped_local_clip_rect;
+        let mut local_clip_rect = snapped_leaf_clip_rect;
         let mut current = clip_leaf.node_id;
 
         while current != clip_root && current != ClipNodeId::NONE {
