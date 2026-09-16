@@ -2,12 +2,12 @@
 
 
 
-
 #ifndef GPU_SharedTextureMacIOSurface_H_
 #define GPU_SharedTextureMacIOSurface_H_
 
 #include "mozilla/WeakPtr.h"
 #include "mozilla/gfx/FileHandleWrapper.h"
+#include "mozilla/layers/LayersTypes.h"
 #include "mozilla/webgpu/SharedTexture.h"
 
 class MacIOSurface;
@@ -24,12 +24,12 @@ class SharedTextureMacIOSurface final : public SharedTexture {
       const struct ffi::WGPUTextureFormat aFormat,
       const ffi::WGPUTextureUsages aUsage);
 
-  SharedTextureMacIOSurface(WebGPUParent* aParent,
-                            const ffi::WGPUDeviceId aDeviceId,
-                            const uint32_t aWidth, const uint32_t aHeight,
-                            const struct ffi::WGPUTextureFormat aFormat,
-                            const ffi::WGPUTextureUsages aUsage,
-                            RefPtr<MacIOSurface>&& aSurface);
+  SharedTextureMacIOSurface(
+      WebGPUParent* aParent, const ffi::WGPUDeviceId aDeviceId,
+      const uint32_t aWidth, const uint32_t aHeight,
+      const struct ffi::WGPUTextureFormat aFormat,
+      const ffi::WGPUTextureUsages aUsage, RefPtr<MacIOSurface>&& aSurface,
+      const layers::CompositeProcessFencesHolderId aFencesHolderId);
   virtual ~SharedTextureMacIOSurface();
 
   Maybe<layers::SurfaceDescriptor> ToSurfaceDescriptor() override;
@@ -46,6 +46,7 @@ class SharedTextureMacIOSurface final : public SharedTexture {
   const WeakPtr<WebGPUParent> mParent;
   const RawId mDeviceId;
   const RefPtr<MacIOSurface> mSurface;
+  const layers::CompositeProcessFencesHolderId mFencesHolderId;
 };
 
 }  
