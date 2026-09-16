@@ -35,6 +35,17 @@ parent:
   
   
   async Init(nsCString engineId, nsCString language, nsString[] phrases) returns (bool success);
+  
+  async ProcessAudioData(float[] audioData);
+  
+  async Stop();
+
+child: 
+  
+  async OnRecognitionResult(nsCString transcript, bool isFinal);
+  async OnRecognitionError(nsCString error);
+  
+  async OnSpeechChange(bool speechDetected);
 };
 
 } 

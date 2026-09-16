@@ -20,7 +20,8 @@ class SpeechRecognitionChild final : public PSpeechRecognitionChild {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SpeechRecognitionChild, override)
   using RecognitionResultCallback = std::function<void(const nsCString&, bool)>;
   using RecognitionErrorCallback = std::function<void(const nsCString&)>;
-  using SpeechChangeCallback = std::function<void(bool, TimeStamp)>;
+  using SpeechChangeCallback = std::function<void(bool)>;
+  using DestroyedCallback = std::function<void(SpeechRecognitionChild*)>;
 
   explicit SpeechRecognitionChild(
       already_AddRefed<dom::SpeechRecognitionIPCActorUserGuard>
@@ -29,6 +30,15 @@ class SpeechRecognitionChild final : public PSpeechRecognitionChild {
   void SetResultCallback(RecognitionResultCallback&& aCallback);
   void SetErrorCallback(RecognitionErrorCallback&& aCallback);
   void SetSpeechChangeCallback(SpeechChangeCallback&& aCallback);
+  
+  
+  
+  void SetDestroyedCallback(DestroyedCallback&& aCallback);
+
+  mozilla::ipc::IPCResult RecvOnRecognitionResult(const nsCString& aTranscript,
+                                                  const bool& aIsFinal);
+  mozilla::ipc::IPCResult RecvOnRecognitionError(const nsCString& aError);
+  mozilla::ipc::IPCResult RecvOnSpeechChange(const bool& aSpeechDetected);
 
   void ActorDestroy(ActorDestroyReason aReason) override;
 
@@ -37,6 +47,7 @@ class SpeechRecognitionChild final : public PSpeechRecognitionChild {
   RecognitionResultCallback mResultCallback;
   RecognitionErrorCallback mErrorCallback;
   SpeechChangeCallback mSpeechChangeCallback;
+  DestroyedCallback mDestroyedCallback;
 };
 
 }  

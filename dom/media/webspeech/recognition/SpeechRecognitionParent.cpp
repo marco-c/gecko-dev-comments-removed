@@ -12,10 +12,13 @@
 
 #include "mozilla/Logging.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/hwinference/HWInferenceChild.h"
 #include "mozilla/ipc/FileDescriptorUtils.h"
 #include "mozilla/ipc/ProtocolUtils.h"
@@ -43,6 +46,9 @@ static LazyLogModule gSpeechRecognitionParentLog("SpeechRecognitionParent");
 
 
 static constexpr auto kSpeechRecognitionTask = "speech-recognition"_ns;
+
+
+static constexpr int32_t PARAKEET_SAMPLE_RATE = 16000;
 
 SpeechRecognitionParent::ModelIdentifier
 SpeechRecognitionParent::LanguagesToModelIdentifier(
@@ -166,7 +172,24 @@ SpeechRecognitionParent::SpeechRecognitionParent(
     dom::ContentParentId aContentId)
     : mContentId(aContentId),
       mLock("SpeechRecognitionLock"),
-      mShouldContinueProcessing(false) {}
+      
+      
+      
+      mAudioQueue(PARAKEET_SAMPLE_RATE * 30),
+      mProcessedAudioPos(0) {
+  
+  
+  
+  const int MONO = 1;
+  mRecognitionAudioDumper.Open("SpeechRecognition-Audio-Input", MONO,
+                               PARAKEET_SAMPLE_RATE);
+
+  
+  
+  LoadPreferences();
+}
+
+void SpeechRecognitionParent::LoadPreferences() {}
 
 void SpeechRecognitionParent::RetrieveModel(InitResolver&& aResolver) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -285,9 +308,12 @@ void SpeechRecognitionParent::FetchModelFile(const nsCString& aModelId,
               self->ResolveOrRejectInitOnIPCThread(std::move(aResolver), false);
               return;
             }
-            self->mRecognitionThread->Dispatch(NS_NewRunnableFunction(
+            nsCOMPtr<nsIThread> recognitionThread = self->mRecognitionThread;
+            recognitionThread->Dispatch(NS_NewRunnableFunction(
                 "Initialize parakeet context",
-                [self, aResolver = std::move(aResolver)]() mutable {
+                [self, recognitionThread,
+                 aResolver = std::move(aResolver)]() mutable {
+                  MOZ_ASSERT(recognitionThread->IsOnCurrentThread());
                   self->InitializeParakeetContext(std::move(aResolver));
                 }));
           })
@@ -296,9 +322,6 @@ void SpeechRecognitionParent::FetchModelFile(const nsCString& aModelId,
 
 void SpeechRecognitionParent::InitializeParakeetContext(
     InitResolver&& aResolver) {
-  
-  MOZ_ASSERT(mRecognitionThread->IsOnCurrentThread());
-
   mozilla::llama::LlamaLibWrapper* lib =
       mozilla::llama::LlamaRuntimeLinker::Get();
   if (!lib) {
@@ -346,35 +369,29 @@ void SpeechRecognitionParent::InitializeParakeetContext(
     std::this_thread::sleep_for(std::chrono::milliseconds(testDelayMs));
   }
 
-  
-  
-  
-  
-  
-  if (mActorDestroyed.load()) {
-    LOGD("{} Actor already destroyed, abandoning init", __func__);
+  mozilla::UniquePtr<FILE, mozilla::FCloseDeleter> modelFile;
+  nsCString language;
+  State state;
+  {
+    MutexAutoLock lock(mLock);
+    state = mState;
+    if (state == State::Initializing) {
+      modelFile = std::move(mModelFile);
+      language = mLanguage;
+    }
+  }
+  if (state != State::Initializing) {
+    LOGD("{} Session already torn down, abandoning init", __func__);
+    ResolveOrRejectInitOnIPCThread(std::move(aResolver), false);
     return;
   }
 
-  FILE* modelFile = nullptr;
-  nsCString language;
-  {
-    MutexAutoLock lock(mLock);
-    modelFile = mModelFile.get();
-    language = mLanguage;
-  }
-
-  mCapiCtx = lib->parakeet_capi_load_fd(fileno(modelFile));
+  MOZ_ASSERT(modelFile);
+  mCapiCtx = lib->parakeet_capi_load_fd(fileno(modelFile.get()));
   if (!mCapiCtx) {
     LOGE("{} parakeet_capi_load_fd failed", __func__);
     ResolveOrRejectInitOnIPCThread(std::move(aResolver), false);
     return;
-  }
-  
-  
-  {
-    MutexAutoLock lock(mLock);
-    mModelFile = nullptr;
   }
   const char* langArg = language.IsEmpty() ? nullptr : language.get();
   mCapiStream = lib->parakeet_capi_stream_begin_lang(mCapiCtx, langArg);
@@ -387,11 +404,25 @@ void SpeechRecognitionParent::InitializeParakeetContext(
   }
   if (!mCapiStream) {
     LOGE("{} parakeet_capi_stream_begin_lang failed", __func__);
+    DestroyParakeetContext(lib);
     ResolveOrRejectInitOnIPCThread(std::move(aResolver), false);
     return;
   }
 
-  mShouldContinueProcessing.store(true);
+  {
+    MutexAutoLock lock(mLock);
+    if (mState == State::Initializing) {
+      mState = State::Running;
+    }
+    state = mState;
+  }
+  if (state != State::Running) {
+    LOGD("{} Session torn down during load, abandoning init", __func__);
+    DestroyParakeetContext(lib);
+    ResolveOrRejectInitOnIPCThread(std::move(aResolver), false);
+    return;
+  }
+
   ResolveOrRejectInitOnIPCThread(std::move(aResolver), true);
   LOGD("Parakeet streaming session ready, starting streaming loop");
 
@@ -416,8 +447,22 @@ SpeechRecognitionParent::~SpeechRecognitionParent() {
 void SpeechRecognitionParent::ActorDestroy(ActorDestroyReason aReason) {
   LOGD("{} ActorDestroy called", __func__);
 
-  mShouldContinueProcessing.store(false);
-  mActorDestroyed.store(true);
+  
+  
+  
+  
+  {
+    StaticMutexAutoLock lock(sSessionMutex);
+    if (sActiveSession == this) {
+      LOGD("Clearing active session in ActorDestroy");
+      sActiveSession = nullptr;
+    }
+  }
+
+  {
+    MutexAutoLock lock(mLock);
+    mState = State::Destroyed;
+  }
 
   
   
@@ -430,31 +475,10 @@ void SpeechRecognitionParent::ActorDestroy(ActorDestroyReason aReason) {
   
   
   
+  
   if (mRecognitionThread) {
-    mRecognitionThread->Shutdown();
+    mRecognitionThread->AsyncShutdown();
     mRecognitionThread = nullptr;
-  }
-
-  {
-    MutexAutoLock lock(mLock);
-    if (mModelFile) {
-      mModelFile = nullptr;
-    }
-  }
-
-  if (mCapiStream || mCapiCtx) {
-    mozilla::llama::LlamaLibWrapper* lib =
-        mozilla::llama::LlamaRuntimeLinker::Get();
-    if (lib) {
-      if (mCapiStream) {
-        lib->parakeet_capi_stream_free(mCapiStream);
-      }
-      if (mCapiCtx) {
-        lib->parakeet_capi_free(mCapiCtx);
-      }
-    }
-    mCapiStream = nullptr;
-    mCapiCtx = nullptr;
   }
 }
 
@@ -463,6 +487,13 @@ mozilla::ipc::IPCResult SpeechRecognitionParent::RecvInit(
     const nsTArray<nsString>& aPhrases, InitResolver&& aResolver) {
   LOGD("{} engineId='{}' language='{}'", __func__, aEngineId.get(),
        aLanguage.get());
+
+  {
+    MutexAutoLock lock(mLock);
+    if (mState != State::Idle) {
+      return IPC_FAIL(this, "Init already called");
+    }
+  }
 
   
   {
@@ -478,6 +509,7 @@ mozilla::ipc::IPCResult SpeechRecognitionParent::RecvInit(
 
   {
     MutexAutoLock lock(mLock);
+    mState = State::Initializing;
     mLanguage = aLanguage;
     mPhrases = aPhrases.Clone();
   }
@@ -499,7 +531,191 @@ mozilla::ipc::IPCResult SpeechRecognitionParent::RecvInit(
   return IPC_OK();
 }
 
-void SpeechRecognitionParent::ProcessAudioStreaming() {}
+mozilla::ipc::IPCResult SpeechRecognitionParent::RecvProcessAudioData(
+    nsTArray<float>&& aAudioData) {
+  LOGV("{} {} samples", __func__, aAudioData.Length());
+
+  
+  
+  int length = AssertedCast<int>(aAudioData.Length());
+  if (mAudioQueue.AvailableWrite() < length) {
+    LOGE("Audio queue full, dropping {} samples", length);
+  } else {
+    int written = mAudioQueue.Enqueue(aAudioData.Elements(), length);
+    if (written != length) {
+      LOGE("Audio queue accepted only {} of {} samples", written, length);
+    }
+  }
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult SpeechRecognitionParent::RecvStop() {
+  
+  {
+    StaticMutexAutoLock lock(sSessionMutex);
+    if (sActiveSession == this) {
+      LOGD("Clearing active session in RecvStop");
+      sActiveSession = nullptr;
+    }
+  }
+
+  {
+    MutexAutoLock lock(mLock);
+    if (mState != State::Destroyed) {
+      mState = State::Stopping;
+    }
+  }
+
+  LOGD("Stopping speech recognition session and cleaning up resources");
+  return IPC_OK();
+}
+
+void SpeechRecognitionParent::SignalError(const nsCString& aErrorMessage) {
+  LOGE("Error: {}", aErrorMessage.get());
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "SpeechRecognitionParent::SignalError",
+      [self = RefPtr{this}, aErrorMessage]() {
+        if (!self->SendOnRecognitionError(aErrorMessage)) {
+          LOGE("Counldn't send OnRecognitionError for {}", aErrorMessage);
+        }
+      }));
+}
+
+void SpeechRecognitionParent::ProcessAudioStreaming() {
+  LOGD("{} Starting cache-aware streaming loop", __func__);
+
+  mozilla::llama::LlamaLibWrapper* lib =
+      mozilla::llama::LlamaRuntimeLinker::Get();
+
+  
+  
+  
+  
+  
+  const size_t minFeed = size_t(0.01 * PARAKEET_SAMPLE_RATE);  
+  const size_t maxFeed = size_t(PARAKEET_SAMPLE_RATE);         
+
+  
+  auto stripTags = [](nsCString& aText) {
+    int32_t open;
+    while ((open = aText.FindChar('<')) != kNotFound) {
+      int32_t close = aText.FindChar('>', open);
+      if (close == kNotFound) {
+        break;
+      }
+      aText.Cut(open, close - open + 1);
+    }
+  };
+
+  auto emit = [self = RefPtr{this}](const nsCString& aText, bool aFinal) {
+    if (aText.IsEmpty()) {
+      return;
+    }
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
+        "SpeechRecognitionParent::StreamResult",
+        [self, payload = nsCString(aText), aFinal]() {
+          LOGV("Sending streaming result: '{}' (final={})", payload.get(),
+               aFinal);
+          if (self->CanSend()) {
+            (void)self->SendOnRecognitionResult(payload, aFinal);
+          }
+        }));
+  };
+
+  
+  
+  
+  
+  
+  nsCString pending;
+  auto consume = [&](char* aText, bool aForce) {
+    if (aText) {
+      nsCString delta(aText);
+      lib->parakeet_capi_free_string(aText);
+      stripTags(delta);
+      pending.Append(delta);
+    }
+    if (aForce) {
+      nsCString out(pending);
+      out.Trim(" \t\n\r");
+      pending.Truncate();
+      emit(out,  true);
+      return;
+    }
+    int32_t lastSpace = pending.RFindChar(' ');
+    if (lastSpace == kNotFound) {
+      return;  
+    }
+    nsCString out(Substring(pending, 0, lastSpace));
+    out.Trim(" \t\n\r");
+    if (!out.IsEmpty()) {
+      emit(out,  true);
+    }
+    pending.Cut(0, lastSpace + 1);  
+  };
+
+  nsTArray<float> chunk;
+
+  while (IsRunning()) {
+    size_t available = mAudioQueue.AvailableRead();
+    if (available < minFeed) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      continue;
+    }
+    size_t take = std::min(available, maxFeed);
+    chunk.SetLength(take);
+    size_t got = mAudioQueue.Dequeue(chunk.Elements(), AssertedCast<int>(take));
+    chunk.SetLength(got);
+    mProcessedAudioPos += got;
+
+    
+    mRecognitionAudioDumper.Write(chunk.Elements(), chunk.Length());
+
+    int eou = 0;
+    
+    
+    
+    TimeStamp feedStart = TimeStamp::Now();
+    char* fed = lib->parakeet_capi_stream_feed(mCapiStream, chunk.Elements(),
+                                               AssertedCast<int>(got), &eou);
+    PROFILER_MARKER_TEXT(
+        "Parakeet stream_feed", MEDIA_PLAYBACK,
+        MarkerOptions(MarkerTiming::IntervalUntilNowFrom(feedStart)),
+        nsFmtCString("fed={:.0f}ms queued={:.0f}ms",
+                     1000.0 * got / PARAKEET_SAMPLE_RATE,
+                     1000.0 * available / PARAKEET_SAMPLE_RATE));
+    consume(fed,  false);
+    (void)eou;
+  }
+
+  
+  consume(lib->parakeet_capi_stream_finalize(mCapiStream),  true);
+  LOGD("Streaming loop exiting");
+
+  
+  
+  
+  
+  DestroyParakeetContext(lib);
+}
+
+bool SpeechRecognitionParent::IsRunning() {
+  MutexAutoLock lock(mLock);
+  return mState == State::Running;
+}
+
+void SpeechRecognitionParent::DestroyParakeetContext(
+    mozilla::llama::LlamaLibWrapper* aLib) {
+  if (mCapiStream) {
+    aLib->parakeet_capi_stream_free(mCapiStream);
+    mCapiStream = nullptr;
+  }
+  if (mCapiCtx) {
+    aLib->parakeet_capi_free(mCapiCtx);
+    mCapiCtx = nullptr;
+  }
+}
 
 }  
 

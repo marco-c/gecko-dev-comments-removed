@@ -7,12 +7,12 @@
 #ifndef DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHRECOGNITIONPARENT_H_
 #define DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHRECOGNITIONPARENT_H_
 
-#include <atomic>
 #include <functional>
 
 #include "WavDumper.h"
 #include "mozilla/FileUtils.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/SPSCQueue.h"
 #include "mozilla/ThreadSafety.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Promise.h"
@@ -74,6 +74,9 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
       MOZ_EXCLUDES(mLock);
 
  private:
+  
+  enum class State { Idle, Initializing, Running, Stopping, Destroyed };
+
   ~SpeechRecognitionParent();
   void LoadPreferences();
 
@@ -93,13 +96,19 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
       std::function<void(const bool&)> aResolver,
       MozPromiseRequestHolder<BoolPromise>& aRequestHolder);
 
+  
+  
   void InitializeParakeetContext(InitResolver&& aResolver);
   void RetrieveModel(InitResolver&& aResolver);
   
   
   void FetchModelFile(const nsCString& aModelId, InitResolver&& aResolver);
   
+  
   void ProcessAudioStreaming();
+  bool IsRunning() MOZ_EXCLUDES(mLock);
+  
+  void DestroyParakeetContext(mozilla::llama::LlamaLibWrapper* aLib);
   void SignalError(const nsCString& aErrorMessage);
 
   
@@ -108,6 +117,7 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
       MOZ_GUARDED_BY(sSessionMutex);
 
   Mutex mLock;
+  State mState MOZ_GUARDED_BY(mLock) = State::Idle;
   
   
   nsCString mLanguage MOZ_GUARDED_BY(mLock);
@@ -125,6 +135,10 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
 
   
   
+  mozilla::SPSCQueue<float> mAudioQueue;
+
+  
+  
   nsCOMPtr<nsIThread> mRecognitionThread;
 
   
@@ -134,15 +148,7 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
 
   
   
-  
-  std::atomic<bool> mShouldContinueProcessing;
-
-  
-  
-  
-  
-  
-  std::atomic<bool> mActorDestroyed{false};
+  size_t mProcessedAudioPos;
 
   
   
