@@ -22,6 +22,73 @@ ChromeUtils.defineESModuleGetters(this, {
 
 
 
+const HELP_MENU_ATTRS = [
+  "command",
+  "onclick",
+  "key",
+  "disabled",
+  "accesskey",
+  "label",
+];
+
+
+
+
+
+
+
+const HELP_VIEW_GROUPS = [
+  [
+    "menu_openHelp",
+    "help_reportBrokenSite",
+    "menu_HelpPopup_reportPhishingtoolmenu",
+    "menu_HelpPopup_reportPhishingErrortoolmenu",
+    "helpPolicySupport",
+  ],
+  ["helpSafeMode", "troubleShooting"],
+  ["feedbackPage", "helpSwitchDevice"],
+  ["aboutName", "menu_referralsPage"],
+];
+
+
+
+
+
+
+
+
+function cloneHelpMenuItem(node) {
+  let button = document.createXULElement("toolbarbutton");
+  for (let attrName of HELP_MENU_ATTRS) {
+    if (node.hasAttribute(attrName)) {
+      button.setAttribute(attrName, node.getAttribute(attrName));
+    }
+  }
+
+  
+  
+  let l10nId = node.getAttribute("appmenu-data-l10n-id");
+  if (l10nId) {
+    document.l10n.setAttributes(button, l10nId);
+  }
+
+  if (node.id) {
+    button.id = "appMenu_" + node.id;
+  }
+
+  if (node.id == "help_reportBrokenSite") {
+    button.removeAttribute("command");
+    button.classList.add("subviewbutton-nav");
+    button.setAttribute("closemenu", "none");
+  }
+
+  button.classList.add("subviewbutton");
+  return button;
+}
+
+
+
+
 
 const PanelUI = {
   
@@ -761,7 +828,6 @@ const PanelUI = {
 
     let helpMenu = document.getElementById("menu_HelpPopup");
     let items = this.getElementsByTagName("vbox")[0];
-    let attrs = ["command", "onclick", "key", "disabled", "accesskey", "label"];
 
     
     while (items.firstChild) {
@@ -769,55 +835,36 @@ const PanelUI = {
     }
 
     
-    let menuItems = Array.prototype.slice.call(
-      helpMenu.getElementsByTagName("menuitem")
-    );
-    let fragment = document.createDocumentFragment();
-    for (let node of menuItems) {
+    
+    let remaining = new Set();
+    let byId = new Map();
+    for (let node of helpMenu.getElementsByTagName("menuitem")) {
       if (node.hidden) {
         continue;
       }
-      let button = document.createXULElement("toolbarbutton");
-      
-      for (let attrName of attrs) {
-        if (!node.hasAttribute(attrName)) {
-          continue;
-        }
-        button.setAttribute(attrName, node.getAttribute(attrName));
-      }
-
-      
-      
-      let l10nId = node.getAttribute("appmenu-data-l10n-id");
-      if (l10nId) {
-        document.l10n.setAttributes(button, l10nId);
-      }
-
+      remaining.add(node);
       if (node.id) {
-        button.id = "appMenu_" + node.id;
+        byId.set(node.id, node);
       }
-
-      if (node.id == "help_reportBrokenSite") {
-        button.removeAttribute("command");
-        button.classList.add("subviewbutton-nav");
-        button.setAttribute("closemenu", "none");
-      }
-
-      button.classList.add("subviewbutton");
-      fragment.appendChild(button);
     }
 
-    
-    
-    let helpPolicySupport = fragment.querySelector(
-      "#appMenu_helpPolicySupport"
-    );
-    if (helpPolicySupport) {
-      fragment.insertBefore(
-        helpPolicySupport,
-        fragment.querySelector("#appMenu_menu_HelpPopup_reportPhishingtoolmenu")
-          .nextSibling
-      );
+    let fragment = document.createDocumentFragment();
+    for (let group of HELP_VIEW_GROUPS) {
+      let nodes = group.map(id => byId.get(id)).filter(Boolean);
+      if (!nodes.length) {
+        continue;
+      }
+      if (fragment.firstChild) {
+        fragment.appendChild(document.createXULElement("toolbarseparator"));
+      }
+      for (let node of nodes) {
+        fragment.appendChild(cloneHelpMenuItem(node));
+        remaining.delete(node);
+      }
+    }
+
+    for (let node of remaining) {
+      fragment.appendChild(cloneHelpMenuItem(node));
     }
 
     items.appendChild(fragment);
