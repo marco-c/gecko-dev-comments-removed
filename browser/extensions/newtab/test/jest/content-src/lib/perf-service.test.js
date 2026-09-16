@@ -1,50 +1,94 @@
 
+
+
+
 import { _PerfService } from "content-src/lib/perf-service";
-import { FakePerformance } from "test/unit/utils.js";
+
+
+
+
+
+
+function FakePerformance() {}
+FakePerformance.prototype = {
+  marks: new Map(),
+  now() {
+    return window.performance.now();
+  },
+  timing: { navigationStart: 222222.123 },
+  get timeOrigin() {
+    return 10000.234;
+  },
+  
+  getEntriesByName(name, _type) {
+    if (this.marks.has(name)) {
+      return this.marks.get(name);
+    }
+    return [];
+  },
+  callsToMark: 0,
+
+  mark(name) {
+    let markObj = {
+      name,
+      entryType: "mark",
+      startTime: ++this.callsToMark,
+      duration: 0,
+    };
+
+    if (this.marks.has(name)) {
+      this.marks.get(name).push(markObj);
+      return;
+    }
+
+    this.marks.set(name, [markObj]);
+  },
+};
 
 let perfService;
 
 describe("_PerfService", () => {
-  let sandbox;
   let fakePerfObj;
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox();
     fakePerfObj = new FakePerformance();
     perfService = new _PerfService({ performanceObj: fakePerfObj });
   });
 
   afterEach(() => {
-    sandbox.restore();
+    jest.restoreAllMocks();
   });
 
   describe("#absNow", () => {
     it("should return a number > the time origin", () => {
       const absNow = perfService.absNow();
 
-      assert.isAbove(absNow, perfService.timeOrigin);
+      expect(absNow).toBeGreaterThan(perfService.timeOrigin);
     });
   });
   describe("#getEntriesByName", () => {
     it("should call getEntriesByName on the appropriate Window.performance", () => {
-      sandbox.spy(fakePerfObj, "getEntriesByName");
+      jest.spyOn(fakePerfObj, "getEntriesByName");
 
       perfService.getEntriesByName("monkey", "mark");
 
-      assert.calledOnce(fakePerfObj.getEntriesByName);
-      assert.calledWithExactly(fakePerfObj.getEntriesByName, "monkey", "mark");
+      expect(fakePerfObj.getEntriesByName).toHaveBeenCalledTimes(1);
+      expect(fakePerfObj.getEntriesByName).toHaveBeenCalledWith(
+        "monkey",
+        "mark"
+      );
     });
 
     it("should return entries with the given name", () => {
-      sandbox.spy(fakePerfObj, "getEntriesByName");
+      jest.spyOn(fakePerfObj, "getEntriesByName");
       perfService.mark("monkey");
       perfService.mark("dog");
 
       let marks = perfService.getEntriesByName("monkey", "mark");
 
-      assert.isArray(marks);
-      assert.lengthOf(marks, 1);
-      assert.propertyVal(marks[0], "name", "monkey");
+      expect(Array.isArray(marks)).toBe(true);
+      expect(marks).toHaveLength(1);
+      expect(marks[0]).toHaveProperty("name", "monkey");
     });
   });
 
@@ -54,7 +98,8 @@ describe("_PerfService", () => {
         perfService.getMostRecentAbsMarkStartByName("rheeeet");
       }
 
-      assert.throws(bogusGet, Error, /No marks with the name/);
+      expect(bogusGet).toThrow(Error);
+      expect(bogusGet).toThrow(/No marks with the name/);
     });
 
     it("should return the Number from the most recent mark with the given name + the time origin", () => {
@@ -66,24 +111,24 @@ describe("_PerfService", () => {
       
       
       
-      assert.equal(absMarkStart - perfService.timeOrigin, 2);
+      expect(absMarkStart - perfService.timeOrigin).toBe(2);
     });
   });
 
   describe("#mark", () => {
     it("should call the wrapped version of mark", () => {
-      sandbox.spy(fakePerfObj, "mark");
+      jest.spyOn(fakePerfObj, "mark");
 
       perfService.mark("monkey");
 
-      assert.calledOnce(fakePerfObj.mark);
-      assert.calledWithExactly(fakePerfObj.mark, "monkey");
+      expect(fakePerfObj.mark).toHaveBeenCalledTimes(1);
+      expect(fakePerfObj.mark).toHaveBeenCalledWith("monkey");
     });
   });
 
   describe("#timeOrigin", () => {
     it("should get the origin of the wrapped performance object", () => {
-      assert.equal(perfService.timeOrigin, fakePerfObj.timeOrigin);
+      expect(perfService.timeOrigin).toBe(fakePerfObj.timeOrigin);
     });
   });
 });
