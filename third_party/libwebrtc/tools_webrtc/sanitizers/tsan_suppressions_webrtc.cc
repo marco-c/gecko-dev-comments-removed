@@ -41,10 +41,6 @@ char kTSanDefaultSuppressions[] =
     "race:*trace_event_unique_catstatic*\n"
 
     
-    
-    "race:InitCpuFlags\n"
-
-    
     "race:libpulsecommon*.so\n"
 
     
