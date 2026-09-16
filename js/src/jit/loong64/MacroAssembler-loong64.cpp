@@ -3733,6 +3733,48 @@ static void CompareExchange(MacroAssembler& masm,
   Register scratch = temps.Acquire();
   masm.computeEffectiveAddress(mem, scratch);
 
+  if (LOONG64Flags::HasLamcasExtension()) {
+    MOZ_ASSERT(valueTemp == InvalidReg);
+    MOZ_ASSERT(offsetTemp == InvalidReg);
+    MOZ_ASSERT(maskTemp == InvalidReg);
+
+    
+    masm.ma_move(output, oldval);
+
+    FaultingCodeRange fcr(masm.currentOffset());
+    switch (nbytes) {
+      case 1:
+        masm.as_amcas_db_b(output, scratch, newval);
+        break;
+      case 2:
+        masm.as_amcas_db_h(output, scratch, newval);
+        break;
+      case 4:
+        masm.as_amcas_db_w(output, scratch, newval);
+        break;
+      default:
+        MOZ_CRASH();
+    }
+    if (access) {
+      masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic, fcr);
+    }
+
+    
+    
+    
+    
+    
+    
+    if (!signExtend && nbytes < 4) {
+      if (nbytes == 1) {
+        masm.as_andi(output, output, 0xff);
+      } else {
+        masm.as_bstrpick_d(output, output, 15, 0);
+      }
+    }
+    return;
+  }
+
   Register scratch2 = temps.Acquire();
 
   if (nbytes == 4) {
@@ -3822,6 +3864,18 @@ static void CompareExchange64(MacroAssembler& masm,
   UseScratchRegisterScope temps(masm);
   Register scratch = temps.Acquire();
   masm.computeEffectiveAddress(mem, scratch);
+
+  if (LOONG64Flags::HasLamcasExtension()) {
+    
+    masm.movePtr(expect.reg, output.reg);
+
+    FaultingCodeRange fcr(masm.currentOffset());
+    masm.as_amcas_db_d(output.reg, scratch, replace.reg);
+    if (access) {
+      masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic, fcr);
+    }
+    return;
+  }
 
   Register scratch2 = temps.Acquire();
 
