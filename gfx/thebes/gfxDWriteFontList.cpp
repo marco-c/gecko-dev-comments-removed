@@ -744,8 +744,8 @@ void gfxDWriteFontEntry::InitSkrifaFontFace() {
   
   
   RefPtr<IDWriteFontFileStream> stream;
-  if (FAILED(loader->CreateStreamFromKey(key, keySize,
-                                         getter_AddRefs(stream)))) {
+  if (FAILED(
+          loader->CreateStreamFromKey(key, keySize, getter_AddRefs(stream)))) {
     return;
   }
   uint64_t fileSize;
