@@ -119,12 +119,6 @@ pub struct VisPixel;
 pub type VisRect = Box2D<f32, VisPixel>;
 
 
-pub fn vis_rect_as_world(r: VisRect) -> WorldRect {
-    r.cast_unit()
-}
-
-
-
 #[derive(Hash, Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Tiles;
 pub type TileOffset = Point2D<i32, Tiles>;
@@ -201,6 +195,10 @@ impl TexelRect {
             self.uv1.x,
             self.uv1.y,
         ]
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.uv1.x <= self.uv0.x || self.uv1.y <= self.uv0.y
     }
 }
 
