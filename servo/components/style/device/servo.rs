@@ -333,8 +333,20 @@ impl Device {
         self.extra.all_pointer_capabilities
     }
 
-    pub(crate) fn is_dark_color_scheme(&self, _: ColorSchemeFlags) -> bool {
-        false
+    pub(crate) fn is_dark_color_scheme(&self, color_scheme_flags: ColorSchemeFlags) -> bool {
+        
+        
+        let supports_dark_mode = color_scheme_flags.contains(ColorSchemeFlags::DARK);
+        let supports_light_mode = color_scheme_flags.contains(ColorSchemeFlags::LIGHT);
+
+        
+        if supports_dark_mode != supports_light_mode {
+            return supports_dark_mode;
+        }
+
+        
+        
+        return self.color_scheme() == PrefersColorScheme::Dark;
     }
 
     pub(crate) fn system_color(
@@ -349,7 +361,6 @@ impl Device {
         
         
         if self.is_dark_color_scheme(color_scheme_flags) {
-            
             match system_color {
                 SystemColor::Accentcolor => srgb(10, 132, 255),
                 SystemColor::Accentcolortext => srgb(255, 255, 255),
