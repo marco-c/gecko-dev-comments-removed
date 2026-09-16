@@ -1,0 +1,231 @@
+"use strict";
+
+add_setup(async () => {
+  
+  if (navigator.platform.indexOf("Win") == 0) {
+    await SpecialPowers.pushPrefEnv({
+      set: [["widget.windows.window_occlusion_tracking.enabled", false]],
+    });
+  }
+});
+
+add_task(async () => {
+  
+  const newBrowser = await BrowserTestUtils.openNewBrowserWindow({});
+
+  let event = {
+    direction: SimpleGestureEvent.DIRECTION_LEFT,
+  };
+  ok(!newBrowser.gGestureSupport._shouldDoSwipeGesture(event));
+
+  event = {
+    direction: SimpleGestureEvent.DIRECTION_RIGHT,
+  };
+  ok(!newBrowser.gGestureSupport._shouldDoSwipeGesture(event));
+
+  await BrowserTestUtils.closeWindow(newBrowser);
+});
+
+function createSimpleGestureEvent(type, direction) {
+  let event = document.createEvent("SimpleGestureEvent");
+  event.initSimpleGestureEvent(
+    type,
+    false ,
+    false ,
+    window,
+    0 ,
+    0 ,
+    0 ,
+    0 ,
+    0 ,
+    false ,
+    false ,
+    false ,
+    false ,
+    0 ,
+    null ,
+    0 ,
+    direction,
+    1 
+  );
+  return event;
+}
+
+add_task(async () => {
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.swipeAnimationEnabled", false]],
+  });
+
+  
+  
+  const newWindow = await BrowserTestUtils.openNewBrowserWindow({});
+
+  
+  
+  await TestUtils.waitForCondition(() => {
+    return (
+      
+      
+      newWindow.gHistorySwipeAnimation.isLTR != Services.locale.isAppLocaleRTL
+    );
+  });
+
+  BrowserTestUtils.startLoadingURIString(
+    newWindow.gBrowser.selectedBrowser,
+    "about:mozilla"
+  );
+  await BrowserTestUtils.browserLoaded(
+    newWindow.gBrowser.selectedBrowser,
+    false,
+    "about:mozilla"
+  );
+  BrowserTestUtils.startLoadingURIString(
+    newWindow.gBrowser.selectedBrowser,
+    "about:about"
+  );
+  await BrowserTestUtils.browserLoaded(
+    newWindow.gBrowser.selectedBrowser,
+    false,
+    "about:about"
+  );
+
+  let event = createSimpleGestureEvent(
+    "MozSwipeGestureMayStart",
+    SimpleGestureEvent.DIRECTION_LEFT
+  );
+  newWindow.gGestureSupport._shouldDoSwipeGesture(event);
+
+  
+  is(
+    event.allowedDirections,
+    SimpleGestureEvent.DIRECTION_LEFT,
+    "Allows only swiping to left, i.e. backward"
+  );
+
+  event = createSimpleGestureEvent(
+    "MozSwipeGestureMayStart",
+    SimpleGestureEvent.DIRECTION_RIGHT
+  );
+  newWindow.gGestureSupport._shouldDoSwipeGesture(event);
+  is(
+    event.allowedDirections,
+    SimpleGestureEvent.DIRECTION_LEFT,
+    "Allows only swiping to left, i.e. backward"
+  );
+
+  await BrowserTestUtils.closeWindow(newWindow);
+});
+
+add_task(async () => {
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.swipeAnimationEnabled", true]],
+  });
+
+  
+  
+  const newWindow = await BrowserTestUtils.openNewBrowserWindow({});
+
+  if (!newWindow.gHistorySwipeAnimation._isSupported()) {
+    await BrowserTestUtils.closeWindow(newWindow);
+    return;
+  }
+
+  function sendSwipeSequence(sendEnd) {
+    let event = createSimpleGestureEvent(
+      "MozSwipeGestureMayStart",
+      SimpleGestureEvent.DIRECTION_LEFT
+    );
+    newWindow.gGestureSupport.handleEvent(event);
+
+    event = createSimpleGestureEvent(
+      "MozSwipeGestureStart",
+      SimpleGestureEvent.DIRECTION_LEFT
+    );
+    newWindow.gGestureSupport.handleEvent(event);
+
+    event = createSimpleGestureEvent(
+      "MozSwipeGestureUpdate",
+      SimpleGestureEvent.DIRECTION_LEFT
+    );
+    newWindow.gGestureSupport.handleEvent(event);
+
+    event = createSimpleGestureEvent(
+      "MozSwipeGestureUpdate",
+      SimpleGestureEvent.DIRECTION_LEFT
+    );
+    newWindow.gGestureSupport.handleEvent(event);
+
+    if (sendEnd) {
+      sendSwipeEnd();
+    }
+  }
+  function sendSwipeEnd() {
+    let event = createSimpleGestureEvent(
+      "MozSwipeGestureEnd",
+      SimpleGestureEvent.DIRECTION_LEFT
+    );
+    newWindow.gGestureSupport.handleEvent(event);
+  }
+
+  
+  
+  await TestUtils.waitForCondition(() => {
+    return (
+      
+      
+      newWindow.gHistorySwipeAnimation.isLTR != Services.locale.isAppLocaleRTL
+    );
+  });
+
+  BrowserTestUtils.startLoadingURIString(
+    newWindow.gBrowser.selectedBrowser,
+    "about:mozilla"
+  );
+  await BrowserTestUtils.browserLoaded(
+    newWindow.gBrowser.selectedBrowser,
+    false,
+    "about:mozilla"
+  );
+  BrowserTestUtils.startLoadingURIString(
+    newWindow.gBrowser.selectedBrowser,
+    "about:about"
+  );
+  await BrowserTestUtils.browserLoaded(
+    newWindow.gBrowser.selectedBrowser,
+    false,
+    "about:about"
+  );
+
+  
+  sendSwipeSequence( true);
+
+  
+  await new Promise(r =>
+    window.requestAnimationFrame(() => window.requestAnimationFrame(r))
+  );
+
+  
+  
+  ok(
+    newWindow.gHistorySwipeAnimation._isStoppingAnimation,
+    "should be stopping anim"
+  );
+
+  
+  sendSwipeSequence( false);
+
+  
+  await new Promise(r =>
+    window.requestAnimationFrame(() => window.requestAnimationFrame(r))
+  );
+
+  
+  ok(
+    !newWindow.gHistorySwipeAnimation._isStoppingAnimation,
+    "should not be stopping anim"
+  );
+
+  sendSwipeEnd();
+
+  await BrowserTestUtils.closeWindow(newWindow);
+});
