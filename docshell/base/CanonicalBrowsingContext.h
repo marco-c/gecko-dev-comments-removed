@@ -121,7 +121,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   
   
-  already_AddRefed<WindowGlobalParent> GetEmbedderWindowGlobal() const;
+  already_AddRefed<WindowGlobalParent> GetEmbedderWindowGlobal();
 
   CanonicalBrowsingContext* GetParentCrossChromeBoundary();
   CanonicalBrowsingContext* TopCrossChromeBoundary();
@@ -434,7 +434,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   const JS::Heap<JS::Value>& PermanentKey() { return mPermanentKey; }
   void ClearPermanentKey() { mPermanentKey.setNull(); }
-  void MaybeSetPermanentKey(Element* aEmbedder);
+
+  void SetCrossGroupEmbedderElement(Element* aEmbedder);
 
   
   
@@ -641,6 +642,17 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   uint64_t mEmbedderProcessId;
 
   uint64_t mCrossGroupOpenerId = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint64_t mCrossGroupEmbedderWindowId = 0;
 
   
   
