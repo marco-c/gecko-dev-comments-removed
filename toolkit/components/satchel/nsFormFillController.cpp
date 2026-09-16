@@ -1066,6 +1066,15 @@ nsresult nsFormFillController::KeyDown(Event* aEvent) {
       break;
     }
     case KeyboardEvent_Binding::DOM_VK_ESCAPE: {
+      bool consumed = false;
+      if (isPopupOpen()) {
+        mFocusedPopup->MaybeLeaveSecondaryAction(&consumed);
+      }
+      if (consumed) {
+        aEvent->StopPropagation();
+        aEvent->PreventDefault();
+        return NS_OK;
+      }
       nsCOMPtr<nsIAutoCompleteController> controller = mController;
       controller->HandleEscape(&cancel);
       if (nsFocusManager::GetFocusedElementStatic() != mControlledElement) {
@@ -1106,7 +1115,11 @@ nsresult nsFormFillController::KeyDown(Event* aEvent) {
     
     
     
-    if (k == KeyboardEvent_Binding::DOM_VK_RETURN) {
+    
+    
+    
+    if (k == KeyboardEvent_Binding::DOM_VK_RETURN ||
+        k == KeyboardEvent_Binding::DOM_VK_ESCAPE) {
       aEvent->StopPropagation();
     }
   }
