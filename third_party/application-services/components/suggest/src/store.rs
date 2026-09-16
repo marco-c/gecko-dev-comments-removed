@@ -811,7 +811,15 @@ where
             
             
             
-            Err(_) => Ok(()),
+            Err(e) => {
+                error_support::report_error!(
+                    "suggest-attachment-deserialize",
+                    "Failed to deserialize attachment for record {}: {}",
+                    record.id,
+                    e
+                );
+                Ok(())
+            }
         }
     }
 
