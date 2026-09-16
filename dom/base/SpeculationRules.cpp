@@ -11,9 +11,12 @@
 #include "mozilla/dom/SpeculationRuleSet.h"
 #include "mozilla/dom/SpeculationRulesManager.h"
 #include "mozilla/dom/speculationrules_ffi_generated.h"
+#include "nsContentUtils.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsIFrame.h"
 #include "nsIScriptElement.h"
 #include "nsIURI.h"
+#include "nsTArray.h"
 
 namespace mozilla::dom {
 
@@ -36,6 +39,31 @@ STATIC_ASSERT_REFERRER_POLICY_EQ(Strict_origin_when_cross_origin,
                                  StrictOriginWhenCrossOrigin);
 
 #undef STATIC_ASSERT_REFERRER_POLICY_EQ
+
+extern "C" {
+
+bool Gecko_Element_GetHrefURI(const Element* aElement, nsACString* aSpec) {
+  nsCOMPtr<nsIURI> uri = aElement->GetHrefURI();
+  if (!uri) {
+    return false;
+  }
+  if (NS_FAILED(uri->GetSpec(*aSpec))) {
+    return false;
+  }
+  return true;
+}
+
+SpeculationRulesReferrerPolicy Gecko_Element_GetReferrerPolicy(
+    const Element* aElement) {
+  
+  if (nsContentUtils::HasRelNoReferrer(*aElement)) {
+    return SpeculationRulesReferrerPolicy::NoReferrer;
+  }
+  return static_cast<SpeculationRulesReferrerPolicy>(
+      aElement->GetReferrerPolicyAsEnum());
+}
+
+}  
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(SpeculationRules)
 
@@ -118,11 +146,17 @@ void SpeculationRules::InnerConsiderLoads() {
   }
 
   
+  
+  
+  nsTArray<const Element*> links;
+  FindMatchingLinks(links);
+
+  
   UniquePtr<PrefetchCandidates> prefetchCandidates =
       PrefetchCandidates::Create();
   
   for (auto& entry : mRuleSetsFromScript) {
-    entry.GetData()->ConsiderLoads(prefetchCandidates.get());
+    entry.GetData()->ConsiderLoads(prefetchCandidates.get(), links);
   }
 
   
@@ -136,12 +170,47 @@ void SpeculationRules::InnerConsiderLoads() {
 
   
   
-  
-  
   SpeculationRulesManager* srm = mDocument->EnsureSpeculationRulesManager();
-  for (PrefetchCandidate& candidate : prefetchCandidates->AsArray()) {
-    srm->StartPrefetch(mDocument, candidate);
+  for (const PrefetchCandidate& candidate : prefetchCandidates->AsArray()) {
+    if (candidate.eagerness == Eagerness::Immediate) {
+      srm->StartPrefetch(mDocument, candidate);
+    }
   }
+}
+
+
+void SpeculationRules::FindMatchingLinks(nsTArray<const Element*>& aLinks) {
+  
+  
+  
+  
+  
+  
+  for (Element* element : mLinks) {
+    
+    
+
+    
+    
+    nsIFrame* frame = element->GetPrimaryFrame();
+    if (!frame || frame->IsHiddenByContentVisibilityOnAnyAncestor()) {
+      continue;
+    }
+
+    
+    
+    nsCOMPtr<nsIURI> uri = element->GetHrefURI();
+    if (!uri || !net::SchemeIsHttpOrHttps(uri)) {
+      continue;
+    }
+
+    
+    
+    
+    aLinks.AppendElement(element);
+  }
+
+  
 }
 
 }  
