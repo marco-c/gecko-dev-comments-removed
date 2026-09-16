@@ -476,6 +476,7 @@ already_AddRefed<Promise> SpeechRecognition::Available(
 
   
   if (IsBlockedByAIControls()) {
+    doc->WarnOnceAbout(Document::eSpeechRecognitionBlockedByAIControls);
     promise->MaybeResolve(AvailabilityStatus::Unavailable);
     return promise.forget();
   }
@@ -545,10 +546,18 @@ already_AddRefed<Promise> SpeechRecognition::Install(
     return nullptr;
   }
 
+  
+  
+  
+  
   if (IsBlockedByAIControls()) {
-    aRv.ThrowNotAllowedError(
-        "on-device speech recognition is blocked by the user's AI settings");
-    return nullptr;
+    doc->WarnOnceAbout(Document::eSpeechRecognitionBlockedByAIControls);
+    RefPtr<Promise> promise = Promise::Create(window->AsGlobal(), aRv);
+    if (aRv.Failed()) {
+      return nullptr;
+    }
+    promise->MaybeResolve(false);
+    return promise.forget();
   }
 
   
@@ -648,6 +657,9 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
 
   
   if (IsBlockedByAIControls()) {
+    if (Document* doc = win->GetExtantDoc()) {
+      doc->WarnOnceAbout(Document::eSpeechRecognitionBlockedByAIControls);
+    }
     aRv.ThrowNotAllowedError(
         "on-device speech recognition is blocked by the user's AI settings");
     return;
