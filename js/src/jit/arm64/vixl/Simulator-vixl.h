@@ -577,7 +577,7 @@ class Simulator : public DecoderVisitor {
   
   
   bool MOZ_ALWAYS_INLINE handle_wasm_seg_fault(uintptr_t addr, unsigned numBytes) {
-    if (MOZ_LIKELY(!js::wasm::CodeExists)) {
+    if (MOZ_LIKELY(!js::wasm::CodeExists())) {
       return false;
     }
 
