@@ -123,9 +123,24 @@ static void CutToMaxSignificantDigits(Vector<const char> buffer,
 
 
 
+
+
+static int ClampExponent(int exponent) {
+  const int kMaxExponent = INT_MAX / 2;
+  if (exponent > kMaxExponent) return kMaxExponent;
+  if (exponent < -kMaxExponent) return -kMaxExponent;
+  return exponent;
+}
+
+
+
+
+
+
 static void TrimAndCut(Vector<const char> buffer, int exponent,
                        char* buffer_copy_space, int space_size,
                        Vector<const char>* trimmed, int* updated_exponent) {
+  exponent = ClampExponent(exponent);
   Vector<const char> left_trimmed = TrimLeadingZeros(buffer);
   Vector<const char> right_trimmed = TrimTrailingZeros(left_trimmed);
   exponent += left_trimmed.length() - right_trimmed.length();
@@ -422,6 +437,7 @@ static bool ComputeGuess(Vector<const char> trimmed, int exponent,
     *guess = 0.0;
     return true;
   }
+  exponent = ClampExponent(exponent);
   if (exponent + trimmed.length() - 1 >= kMaxDecimalPower) {
     *guess = Double::Infinity();
     return true;

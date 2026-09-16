@@ -51,13 +51,25 @@ namespace double_conversion {
 
 namespace {
 
-inline char ToLower(char ch) {
-  static const std::ctype<char>& cType =
-      std::use_facet<std::ctype<char> >(std::locale::classic());
-  return cType.tolower(ch);
+
+
+
+inline uint32_t CodeUnit(char ch) {
+  return static_cast<unsigned char>(ch);
 }
 
-inline char Pass(char ch) {
+inline uint32_t CodeUnit(uc16 ch) {
+  return ch;
+}
+
+inline uint32_t ToLower(uint32_t ch) {
+  if (ch > 0x7F) return ch;
+  static const std::ctype<char>& cType =
+      std::use_facet<std::ctype<char> >(std::locale::classic());
+  return static_cast<unsigned char>(cType.tolower(static_cast<char>(ch)));
+}
+
+inline uint32_t Pass(uint32_t ch) {
   return ch;
 }
 
@@ -66,10 +78,12 @@ static inline bool ConsumeSubStringImpl(Iterator* current,
                                         Iterator end,
                                         const char* substring,
                                         Converter converter) {
-  DOUBLE_CONVERSION_ASSERT(converter(**current) == *substring);
+  DOUBLE_CONVERSION_ASSERT(
+      converter(CodeUnit(**current)) == converter(CodeUnit(*substring)));
   for (substring++; *substring != '\0'; substring++) {
     ++*current;
-    if (*current == end || converter(**current) != *substring) {
+    if (*current == end ||
+        converter(CodeUnit(**current)) != converter(CodeUnit(*substring))) {
       return false;
     }
   }
@@ -92,10 +106,13 @@ static bool ConsumeSubString(Iterator* current,
 }
 
 
-inline bool ConsumeFirstCharacter(char ch,
+template <class Char>
+inline bool ConsumeFirstCharacter(Char ch,
                                          const char* str,
                                          bool case_insensitivity) {
-  return case_insensitivity ? ToLower(ch) == str[0] : ch == str[0];
+  const uint32_t c = CodeUnit(ch);
+  const uint32_t first = CodeUnit(str[0]);
+  return case_insensitivity ? ToLower(c) == ToLower(first) : c == first;
 }
 }  
 
@@ -216,7 +233,8 @@ template<class Iterator>
 static bool IsHexFloatString(Iterator start,
                              Iterator end,
                              uc16 separator,
-                             bool allow_trailing_junk) {
+                             bool allow_trailing_junk,
+                             bool allow_trailing_spaces) {
   DOUBLE_CONVERSION_ASSERT(start != end);
 
   Iterator current = start;
@@ -235,16 +253,22 @@ static bool IsHexFloatString(Iterator start,
   }
   if (!saw_digit) return false;
   if (*current != 'p' && *current != 'P') return false;
-  if (Advance(&current, separator, 16, end)) return false;
+  
+  
+  const uc16 kNoSeparator = StringToDoubleConverter::kNoSeparator;
+  if (Advance(&current, kNoSeparator, 16, end)) return false;
   if (*current == '+' || *current == '-') {
-    if (Advance(&current, separator, 16, end)) return false;
+    if (Advance(&current, kNoSeparator, 16, end)) return false;
   }
   if (!isDigit(*current, 10)) return false;
-  if (Advance(&current, separator, 16, end)) return true;
+  if (Advance(&current, kNoSeparator, 16, end)) return true;
   while (isDigit(*current, 10)) {
-    if (Advance(&current, separator, 16, end)) return true;
+    if (Advance(&current, kNoSeparator, 16, end)) return true;
   }
-  return allow_trailing_junk || !AdvanceToNonspace(&current, end);
+  
+  
+  if (allow_trailing_junk) return true;
+  return allow_trailing_spaces && !AdvanceToNonspace(&current, end);
 }
 
 
@@ -259,16 +283,25 @@ static double RadixStringToIeee(Iterator* current,
                                 uc16 separator,
                                 bool parse_as_hex_float,
                                 bool allow_trailing_junk,
+                                bool allow_trailing_spaces,
                                 double junk_string_value,
                                 bool read_as_double,
                                 bool* result_is_junk) {
   DOUBLE_CONVERSION_ASSERT(*current != end);
   DOUBLE_CONVERSION_ASSERT(!parse_as_hex_float ||
-      IsHexFloatString(*current, end, separator, allow_trailing_junk));
+      IsHexFloatString(*current, end, separator, allow_trailing_junk,
+                       allow_trailing_spaces));
 
   const int kDoubleSize = Double::kSignificandSize;
   const int kSingleSize = Single::kSignificandSize;
-  const int kSignificandSize = read_as_double? kDoubleSize: kSingleSize;
+  
+  
+  
+  
+  
+  const bool round_hex_float_to_single = parse_as_hex_float && !read_as_double;
+  const int kSignificandSize =
+      (read_as_double || parse_as_hex_float) ? kDoubleSize : kSingleSize;
 
   *result_is_junk = true;
 
@@ -306,7 +339,10 @@ static double RadixStringToIeee(Iterator* current,
     } else if (parse_as_hex_float && (**current == 'p' || **current == 'P')) {
       break;
     } else {
-      if (allow_trailing_junk || !AdvanceToNonspace(current, end)) {
+      
+      
+      if (allow_trailing_junk ||
+          (allow_trailing_spaces && !AdvanceToNonspace(current, end))) {
         break;
       } else {
         return junk_string_value;
@@ -341,30 +377,47 @@ static double RadixStringToIeee(Iterator* current,
         }
         if (!isDigit(**current, radix)) break;
         zero_tail = zero_tail && **current == '0';
-        if (!post_decimal) exponent += radix_log_2;
-      }
-
-      if (!parse_as_hex_float &&
-          !allow_trailing_junk &&
-          AdvanceToNonspace(current, end)) {
-        return junk_string_value;
-      }
-
-      int middle_value = (1 << (overflow_bits_count - 1));
-      if (dropped_bits > middle_value) {
-        number++;  
-      } else if (dropped_bits == middle_value) {
-        
-        
-        if ((number & 1) != 0 || !zero_tail) {
-          number++;  
+        if (!post_decimal) {
+          if (exponent <= INT_MAX - radix_log_2) {
+            exponent += radix_log_2;
+          } else {
+            exponent = INT_MAX;
+          }
         }
       }
 
-      
-      if ((number & ((int64_t)1 << kSignificandSize)) != 0) {
-        exponent++;
-        number >>= 1;
+      if (!parse_as_hex_float && !allow_trailing_junk) {
+        if (allow_trailing_spaces ? AdvanceToNonspace(current, end)
+                                  : *current != end) {
+          return junk_string_value;
+        }
+      }
+
+      if (round_hex_float_to_single) {
+        
+        
+        
+        
+        if (dropped_bits != 0 || !zero_tail) {
+          number |= 1;
+        }
+      } else {
+        int middle_value = (1 << (overflow_bits_count - 1));
+        if (dropped_bits > middle_value) {
+          number++;  
+        } else if (dropped_bits == middle_value) {
+          
+          
+          if ((number & 1) != 0 || !zero_tail) {
+            number++;  
+          }
+        }
+
+        
+        if ((number & ((int64_t)1 << kSignificandSize)) != 0) {
+          exponent++;
+          number >>= 1;
+        }
       }
       break;
     }
@@ -378,15 +431,19 @@ static double RadixStringToIeee(Iterator* current,
 
   if (parse_as_hex_float) {
     DOUBLE_CONVERSION_ASSERT(**current == 'p' || **current == 'P');
-    Advance(current, separator, radix, end);
+    
+    
+    
+    const uc16 kNoSeparator = StringToDoubleConverter::kNoSeparator;
+    Advance(current, kNoSeparator, radix, end);
     DOUBLE_CONVERSION_ASSERT(*current != end);
     bool is_negative = false;
     if (**current == '+') {
-      Advance(current, separator, radix, end);
+      Advance(current, kNoSeparator, radix, end);
       DOUBLE_CONVERSION_ASSERT(*current != end);
     } else if (**current == '-') {
       is_negative = true;
-      Advance(current, separator, radix, end);
+      Advance(current, kNoSeparator, radix, end);
       DOUBLE_CONVERSION_ASSERT(*current != end);
     }
     int written_exponent = 0;
@@ -396,7 +453,7 @@ static double RadixStringToIeee(Iterator* current,
       if (abs(written_exponent) <= 100 * Double::kMaxExponent) {
         written_exponent = 10 * written_exponent + **current - '0';
       }
-      if (Advance(current, separator, radix, end)) break;
+      if (Advance(current, kNoSeparator, radix, end)) break;
     }
     if (is_negative) written_exponent = -written_exponent;
     exponent += written_exponent;
@@ -411,7 +468,12 @@ static double RadixStringToIeee(Iterator* current,
   }
 
   DOUBLE_CONVERSION_ASSERT(number != 0);
-  double result = Double(DiyFp(number, exponent)).value();
+  
+  
+  
+  
+  
+  double result = ldexp(static_cast<double>(number), exponent);
   return sign ? -result : result;
 }
 
@@ -456,6 +518,11 @@ double StringToDoubleConverter::StringToIeee(
   
   
   int exponent = 0;
+  
+  
+  
+  
+  const int max_exponent = INT_MAX / 2;
   int significant_digits = 0;
   int insignificant_digits = 0;
   bool nonzero_digit_dropped = false;
@@ -527,7 +594,8 @@ double StringToDoubleConverter::StringToIeee(
       if (current == end) return junk_string_value_;  
 
       bool parse_as_hex_float = (flags_ & ALLOW_HEX_FLOATS) &&
-                IsHexFloatString(current, end, separator_, allow_trailing_junk);
+                IsHexFloatString(current, end, separator_, allow_trailing_junk,
+                                 allow_trailing_spaces);
 
       if (!parse_as_hex_float && !isDigit(*current, 16)) {
         return junk_string_value_;
@@ -540,6 +608,7 @@ double StringToDoubleConverter::StringToIeee(
                                            separator_,
                                            parse_as_hex_float,
                                            allow_trailing_junk,
+                                           allow_trailing_spaces,
                                            junk_string_value_,
                                            read_as_double,
                                            &result_is_junk);
@@ -607,7 +676,8 @@ double StringToDoubleConverter::StringToIeee(
           *processed_characters_count = static_cast<int>(current - input);
           return SignedZero(sign);
         }
-        exponent--;  
+        
+        if (exponent > -(max_exponent / 2)) exponent--;  
       }
     }
 
@@ -618,7 +688,7 @@ double StringToDoubleConverter::StringToIeee(
         DOUBLE_CONVERSION_ASSERT(buffer_pos < kBufferSize);
         buffer[buffer_pos++] = static_cast<char>(*current);
         significant_digits++;
-        exponent--;
+        if (exponent > -(max_exponent / 2)) exponent--;
       } else {
         
         nonzero_digit_dropped = nonzero_digit_dropped || *current != '0';
@@ -672,7 +742,6 @@ double StringToDoubleConverter::StringToIeee(
       }
     }
 
-    const int max_exponent = INT_MAX / 2;
     DOUBLE_CONVERSION_ASSERT(-max_exponent / 2 <= exponent && exponent <= max_exponent / 2);
     int num = 0;
     do {
@@ -701,7 +770,15 @@ double StringToDoubleConverter::StringToIeee(
   }
 
   parsing_done:
-  exponent += insignificant_digits;
+  
+  
+  
+  {
+    const int64_t combined =
+        static_cast<int64_t>(exponent) + insignificant_digits;
+    exponent = combined > max_exponent ? max_exponent
+                                       : static_cast<int>(combined);
+  }
 
   if (octal) {
     double result;
@@ -713,6 +790,7 @@ double StringToDoubleConverter::StringToIeee(
                                   separator_,
                                   false, 
                                   allow_trailing_junk,
+                                  allow_trailing_spaces,
                                   junk_string_value_,
                                   read_as_double,
                                   &result_is_junk);

@@ -238,16 +238,31 @@ class DoubleToStringConverter {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
   bool ToShortest(double value, StringBuilder* result_builder) const {
     return ToShortestIeeeNumber(value, result_builder, SHORTEST);
   }
 
+  
+  
+  
+  
+  
+  
   
   bool ToShortestSingle(float value, StringBuilder* result_builder) const {
     return ToShortestIeeeNumber(value, result_builder, SHORTEST_SINGLE);
   }
 
 
+  
   
   
   
@@ -317,11 +332,23 @@ class DoubleToStringConverter {
   
   
   
+  
+  
+  
   MFBT_API bool ToExponential(double value,
                      int requested_digits,
                      StringBuilder* result_builder) const;
 
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   

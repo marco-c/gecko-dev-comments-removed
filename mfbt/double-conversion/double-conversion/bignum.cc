@@ -45,15 +45,9 @@ const Bignum::Chunk& Bignum::RawBigit(const int index) const {
 }
 
 
-template<typename S>
-static int BitSize(const S value) {
-  (void) value;  
-  return 8 * sizeof(value);
-}
-
 
 void Bignum::AssignUInt16(const uint16_t value) {
-  DOUBLE_CONVERSION_ASSERT(kBigitSize >= BitSize(value));
+  DOUBLE_CONVERSION_ASSERT(kBigitSize >= 8 * sizeof(value));
   Zero();
   if (value > 0) {
     RawBigit(0) = value;

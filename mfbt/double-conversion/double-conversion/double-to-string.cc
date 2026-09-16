@@ -180,7 +180,7 @@ bool DoubleToStringConverter::ToShortestIeeeNumber(
     return HandleSpecialValues(value, result_builder);
   }
 
-  int decimal_point;
+  int decimal_point = 0;
   bool sign;
   const int kDecimalRepCapacity = kBase10MaximalLength + 1;
   char decimal_rep[kDecimalRepCapacity];
@@ -216,6 +216,7 @@ bool DoubleToStringConverter::ToFixed(double value,
     return HandleSpecialValues(value, result_builder);
   }
 
+  if (requested_digits < 0) return false;
   if (requested_digits > kMaxFixedDigitsAfterPoint) return false;
 
   
@@ -401,10 +402,16 @@ void DoubleToStringConverter::DoubleToAscii(double v,
   if (mode == PRECISION && requested_digits == 0) {
     vector[0] = '\0';
     *length = 0;
+    *point = 0;
     return;
   }
 
-  if (v == 0) {
+  
+  
+  
+  
+  
+  if (v == 0 || (mode == SHORTEST_SINGLE && static_cast<float>(v) == 0.0f)) {
     vector[0] = '0';
     vector[1] = '\0';
     *length = 1;
