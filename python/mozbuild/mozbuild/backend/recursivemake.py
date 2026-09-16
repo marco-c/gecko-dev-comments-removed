@@ -1815,14 +1815,23 @@ class RecursiveMakeBackend(MakeBackend):
                 
                 
                 self._no_skip["misc"].add(backend_file.relobjdir)
-                backend_file.write(
-                    "misc::\n%s\n"
-                    % "\n".join(
+                rules = []
+                for f in absolute_files:
+                    basename = mozpath.basename(f)
+                    rules.append(
                         "\t$(INSTALL) %s %s"
                         % (make_quote(shell_quote(f)), install_location)
-                        for f in absolute_files
                     )
-                )
+                    
+                    
+                    
+                    
+                    if f.lower().endswith((".dll", ".so", ".dylib")):
+                        rules.append(
+                            "\t$(call py_action,check_binary %s,%s)"
+                            % (basename, mozpath.join(install_location, basename))
+                        )
+                backend_file.write("misc::\n%s\n" % "\n".join(rules))
 
     def _process_final_target_pp_files(self, obj, files, backend_file, name):
         
