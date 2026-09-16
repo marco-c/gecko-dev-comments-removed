@@ -7396,12 +7396,6 @@ void ScrollContainerFrame::ResetScrollInfoIfNeeded(
 }
 
 UniquePtr<PresState> ScrollContainerFrame::SaveState(CaptureStateFlags aFlags) {
-  nsIScrollbarMediator* mediator = do_QueryFrame(GetScrolledFrame());
-  if (mediator) {
-    
-    return nullptr;
-  }
-
   
   
   auto scrollAnimationState = ScrollAnimationState();
