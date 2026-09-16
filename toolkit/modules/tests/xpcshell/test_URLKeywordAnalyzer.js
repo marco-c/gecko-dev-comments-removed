@@ -23,6 +23,15 @@ add_task(function test_blocked_hosts() {
     "http://foo.test/bar", 
     "http://service.local/api", 
     "https://example.invalid/x", 
+    
+    
+    
+    "http://wiki.acme.corp/it-helpdesk-password-reset", 
+    "http://router.home/setup-wizard", 
+    "http://nas.lan/media/movies", 
+    "http://portal.intranet/hr-benefits", 
+    "http://files.private/shared-drive", 
+    "http://gateway.home.arpa/status", 
   ];
   for (const url of blocked) {
     checkAnalyze(url, {
@@ -35,10 +44,27 @@ add_task(function test_blocked_hosts() {
 
 
 
+
+
+add_task(function test_unreserved_suffixes_still_get_a_cta() {
+  checkAnalyze("https://example.comm/winter-deals", {
+    action: SEARCH_CTA_ACTIONS.KEYWORDS,
+    query: "example winter deals",
+    reason: SEARCH_CTA_REASONS.KEYWORDS_FOUND,
+  });
+  checkAnalyze("https://portal.acme.com/helpdesk-password-reset", {
+    action: SEARCH_CTA_ACTIONS.KEYWORDS,
+    query: "portal acme helpdesk password reset",
+    reason: SEARCH_CTA_REASONS.KEYWORDS_FOUND,
+  });
+});
+
+
+
 add_task(function test_descriptive_path_includes_host_tokens() {
   checkAnalyze("https://shop.wildernessgear.com/mountain-hiking-boots", {
     action: SEARCH_CTA_ACTIONS.KEYWORDS,
-    query: "mountain hiking boots shop wildernessgear",
+    query: "shop wildernessgear mountain hiking boots",
     reason: SEARCH_CTA_REASONS.KEYWORDS_FOUND,
   });
 });
@@ -46,10 +72,11 @@ add_task(function test_descriptive_path_includes_host_tokens() {
 add_task(function test_www_is_stripped_from_host_tokens() {
   checkAnalyze("https://www.wildernessgear.com/tents", {
     action: SEARCH_CTA_ACTIONS.KEYWORDS,
-    query: "tents wildernessgear",
+    query: "wildernessgear tents",
     reason: SEARCH_CTA_REASONS.KEYWORDS_FOUND,
   });
 });
+
 
 
 
@@ -58,10 +85,20 @@ add_task(function test_keyword_query_is_capped() {
     "https://sub.wildernessgear.com/alpha-bravo-charlie-delta-echo-foxtrot-golf-hotel-india-juliett",
     {
       action: SEARCH_CTA_ACTIONS.KEYWORDS,
-      query: "alpha bravo charlie delta echo foxtrot golf hotel",
+      query: "sub wildernessgear alpha bravo charlie delta echo foxtrot",
       reason: SEARCH_CTA_REASONS.KEYWORDS_FOUND,
     }
   );
+});
+
+
+
+add_task(function test_word_shared_by_host_and_path_appears_once() {
+  checkAnalyze("https://tents.wildernessgear.com/poles-and-tents", {
+    action: SEARCH_CTA_ACTIONS.KEYWORDS,
+    query: "tents wildernessgear poles",
+    reason: SEARCH_CTA_REASONS.KEYWORDS_FOUND,
+  });
 });
 
 add_task(function test_empty_path_falls_back_to_registrable_domain() {
@@ -92,7 +129,7 @@ add_task(function test_opaque_path_falls_back_to_registrable_domain() {
 add_task(function test_alphanumeric_tokens_strip_digits_in_place() {
   checkAnalyze("https://shop.wildernessgear.com/mp3-covid19-reviews", {
     action: SEARCH_CTA_ACTIONS.KEYWORDS,
-    query: "mp covid reviews shop wildernessgear",
+    query: "shop wildernessgear mp covid reviews",
     reason: SEARCH_CTA_REASONS.KEYWORDS_FOUND,
   });
 });
@@ -104,7 +141,7 @@ add_task(function test_query_string_and_fragment_never_tokenized() {
     "https://shop.wildernessgear.com/tents?token=supersecret#section-2",
     {
       action: SEARCH_CTA_ACTIONS.KEYWORDS,
-      query: "tents shop wildernessgear",
+      query: "shop wildernessgear tents",
       reason: SEARCH_CTA_REASONS.KEYWORDS_FOUND,
     }
   );
