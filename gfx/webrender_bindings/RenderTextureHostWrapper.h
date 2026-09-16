@@ -72,6 +72,9 @@ class RenderTextureHostWrapper final : public RenderTextureHostSWGL {
   void UnlockSWGL() override;
   bool LockSWGLCompositeSurface(void* aContext,
                                 wr::SWGLCompositeSurfaceInfo* aInfo) override;
+  void UnlockSWGLCompositeSurface() override;
+
+  void SetReadFenceFd(UniqueFileHandle&& aFenceFd) override;
 
   
   

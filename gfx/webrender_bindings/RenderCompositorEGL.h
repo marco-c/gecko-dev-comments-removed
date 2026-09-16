@@ -2,13 +2,14 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_RENDERCOMPOSITOR_EGL_H
 #define MOZILLA_GFX_RENDERCOMPOSITOR_EGL_H
 
+#include <list>
+
 #include "GLTypes.h"
 #include "mozilla/webrender/RenderCompositor.h"
+#include "mozilla/webrender/RenderTextureHost.h"
 
 namespace mozilla {
 
@@ -48,6 +49,8 @@ class RenderCompositorEGL : public RenderCompositor {
 
   RefPtr<layers::Fence> GetAndResetReleaseFence() override;
 
+  void MaybeWaitingForPendingReadFence(RenderTextureHost* aTexture) override;
+
  protected:
   EGLSurface CreateEGLSurface();
 
@@ -67,6 +70,8 @@ class RenderCompositorEGL : public RenderCompositor {
   
   
   RefPtr<layers::Fence> mReleaseFence;
+
+  std::list<RefPtr<RenderTextureHost>> mWaitingForPendingReadFence;
 };
 
 }  
