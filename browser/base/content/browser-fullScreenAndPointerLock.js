@@ -503,10 +503,6 @@ var FullScreen = {
     let translate = shiftSize > 0 ? `0 ${shiftSize}px` : "";
     gNavToolbox.classList.toggle("fullscreen-floating-toolbox", shiftSize > 0);
     gNavToolbox.style.translate = translate;
-    gURLBar.style.setProperty("--toolbar-shift-translate", translate);
-    document
-      .getElementById("searchbar-new")
-      ?.style.setProperty("--toolbar-shift-translate", translate);
     if (shiftSize > 0) {
       
       
