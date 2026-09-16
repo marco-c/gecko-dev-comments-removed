@@ -453,6 +453,24 @@ class nsRange final : public mozilla::dom::AbstractRange,
       }
     }
 
+    
+
+
+
+
+
+    void AssignSetBoundariesAndRootFrom(const RangeBoundariesAndRoot aNew) {
+      if (aNew.mStart.IsSet()) {
+        mStart = aNew.mStart;
+      }
+      if (aNew.mEnd.IsSet()) {
+        mEnd = aNew.mEnd;
+      }
+      if (aNew.mRoot) {
+        mRoot = aNew.mRoot;
+      }
+    }
+
     RawRangeBoundary mStart;
     RawRangeBoundary mEnd;
     nsINode* mRoot = nullptr;
@@ -462,12 +480,14 @@ class nsRange final : public mozilla::dom::AbstractRange,
     [[nodiscard]] nsIContent* Get(RangeBoundarySide aSide) const {
       return aSide == RangeBoundarySide::Start ? mStart : mEnd;
     }
+    inline void Clear() { mStart = mEnd = nullptr; }
     [[nodiscard]] inline bool HasSiblings() const { return mStart || mEnd; }
     nsIContent* MOZ_NON_OWNING_REF mStart = nullptr;
     nsIContent* MOZ_NON_OWNING_REF mEnd = nullptr;
   };
 
   class MOZ_STACK_CLASS AutoCharacterDataChangedHandler;
+  class MOZ_STACK_CLASS AutoNewContentHandler;
 
   
   
