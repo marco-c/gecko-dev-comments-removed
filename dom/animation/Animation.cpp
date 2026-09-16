@@ -666,6 +666,7 @@ Nullable<double> Animation::GetOverallProgress() const {
 
 
 void Animation::SetPlaybackRate(double aPlaybackRate) {
+  
   mPendingPlaybackRate.reset();
 
   if (aPlaybackRate == mPlaybackRate) {
@@ -674,10 +675,37 @@ void Animation::SetPlaybackRate(double aPlaybackRate) {
 
   AutoMutationBatchForAnimation mb(*this);
 
-  Nullable<TimeDuration> previousTime = GetCurrentTimeAsDuration();
+  
+  
+  const Nullable<TimeDuration> previousTime = GetCurrentTimeAsDuration();
+
+  
+  
+  const double previousPlaybackRate = CurrentOrPendingPlaybackRate();
+
+  
   mPlaybackRate = aPlaybackRate;
-  if (!HasFiniteTimeline() && !previousTime.IsNull()) {
+
+  
+  
+  if (mTimeline && mTimeline->IsMonotonicallyIncreasing() &&
+      !previousTime.IsNull()) {
+    
+    
+    
     SetCurrentTime(previousTime.Value());
+  } else if (mTimeline && !mTimeline->IsMonotonicallyIncreasing() &&
+             !mStartTime.IsNull() && EffectEnd() != TimeDuration::Forever() &&
+             ((previousPlaybackRate < 0.0 && aPlaybackRate >= 0.0) ||
+              (previousPlaybackRate >= 0.0 && aPlaybackRate < 0.0))) {
+    
+    
+    
+    
+    
+    
+    
+    mStartTime.SetValue(TimeDuration(EffectEnd()) - mStartTime.Value());
   }
 
   
