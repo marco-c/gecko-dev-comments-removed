@@ -1,5 +1,22 @@
 
 
+
+
+
+
+
+window.addEventListener("unhandledrejection", function (event) {
+  if (
+    event.reason instanceof DOMException &&
+    event.reason.name == "AbortError" &&
+    event.reason.message.startsWith(
+      "The fetching process for the media resource was aborted"
+    )
+  ) {
+    event.preventDefault();
+  }
+});
+
 let gMSETestPrefs = [
   ["media.mediasource.enabled", true],
   ["media.audio-max-decode-error", 0],

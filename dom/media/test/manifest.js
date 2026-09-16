@@ -2187,6 +2187,23 @@ function getMajorMimeType(mimetype) {
 }
 
 
+
+
+
+
+window.addEventListener("unhandledrejection", function (event) {
+  if (
+    event.reason instanceof DOMException &&
+    event.reason.name == "AbortError" &&
+    event.reason.message.startsWith(
+      "The fetching process for the media resource was aborted"
+    )
+  ) {
+    event.preventDefault();
+  }
+});
+
+
 function removeNodeAndSource(n) {
   n.remove();
   
