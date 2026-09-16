@@ -853,6 +853,11 @@ async function gotoPref(
   let prevCategory = gLastCategory.category;
 
   
+  if (prevCategory && prevCategory !== category) {
+    gSubDialog.abortDialogs();
+  }
+
+  
   
   scrollOffsets.save();
   scrollOffsets.setView(historyEntryId);

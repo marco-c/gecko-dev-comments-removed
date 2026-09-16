@@ -113,9 +113,7 @@ async function test_osAuth_enabled_behaviour(settingsRedesignEnabled) {
       await openEditPaymentsList(redesignEnabled, browser);
       await reauthObserved; 
 
-      if (!redesignEnabled) {
-        await waitForSubDialogLoad(content, EDIT_CREDIT_CARD_DIALOG_URL);
-      }
+      await waitForSubDialogLoad(content, EDIT_CREDIT_CARD_DIALOG_URL);
     }
   );
 }
@@ -173,11 +171,7 @@ async function openEditPaymentsList(redesignEnabled, browser) {
     );
     await SpecialPowers.spawn(ccManageDialog, [], async () => {
       let selRecords = content.document.getElementById("credit-cards");
-      await EventUtils.synthesizeMouseAtCenter(
-        selRecords.children[0],
-        [],
-        content
-      );
+      EventUtils.synthesizeMouseAtCenter(selRecords.children[0], [], content);
       content.document.querySelector("#edit").click();
     });
   } else {
