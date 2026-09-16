@@ -1039,6 +1039,12 @@ pref("browser.theme.forced-colors-override.enabled", true);
 pref("browser.privateWindowSeparation.enabled", true);
 
 
+pref("browser.privateWindowRedesign.enabled", false);
+
+
+pref("browser.privatebrowsing.introAnimationShown", false);
+
+
 pref("browser.privacySegmentation.preferences.show", false);
 
 pref("browser.sessionhistory.max_entries", 50);

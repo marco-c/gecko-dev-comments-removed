@@ -423,6 +423,31 @@ document.addEventListener("DOMContentLoaded", function () {
 
   
   
+  
+  if (RPMGetBoolPref("browser.privateWindowRedesign.enabled", false)) {
+    const maskIntro = document.getElementById(
+      "about-private-browsing-mask-intro"
+    );
+    const staticLogo = document.getElementById("about-private-browsing-logo");
+    staticLogo.hidden = true;
+    maskIntro.hidden = false;
+
+    const alreadyShown = RPMGetBoolPref(
+      "browser.privatebrowsing.introAnimationShown",
+      false
+    );
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+    if (!alreadyShown && !reduceMotion) {
+      maskIntro.play = true;
+      RPMSetPref("browser.privatebrowsing.introAnimationShown", true);
+    }
+  }
+
+  
+  
   setupMessageConfig();
 
   
