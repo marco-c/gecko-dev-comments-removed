@@ -2501,6 +2501,11 @@ nsresult nsHttpTransaction::HandleContentStart() {
     NS_ENSURE_SUCCESS(rv, rv);
 
     
+    if (!mConnection) {
+      return NS_ERROR_NET_RESET;
+    }
+
+    
     if (reset) {
       LOG(("resetting transaction's response head\n"));
       mHaveAllHeaders = false;
