@@ -115,6 +115,10 @@ function setItem(itemKey, value) {
       store => {
         store.transaction.oncomplete = resolve;
         const req = store.put(value, itemKey);
+        
+        
+        
+        value = null;
         req.onerror = function setItemOnError() {
           console.error("Error in asyncStorage.setItem():", req.error.name);
           reject(
