@@ -1,120 +1,182 @@
 use super::{
-    Backend, Error, ProcessInspector,
+    Error, ProcessInspector,
     maps_reader::{MappingInfo, MapsReaderError},
 };
 use crate::module_reader::ProcessModuleMemoryReader;
 
-use process_backend::local;
+use plain::Plain;
 
 pub type ProcessHandle = libc::pid_t;
 
 #[derive(Debug)]
-pub struct ProcessReader<'a> {
-    process_inspector: &'a ProcessInspector,
-    forced_backend: Option<ForcedBackend>,
-}
-
-#[derive(Debug)]
-enum ForcedBackend {
-    Local(local::ProcessReader),
-}
+pub struct ProcessReader<'a>(&'a dyn ProcessReaderBackend);
 
 impl<'a> ProcessReader<'a> {
-    pub fn new(process_inspector: &'a ProcessInspector) -> Self {
-        Self {
-            process_inspector,
-            forced_backend: None,
-        }
-    }
-    pub fn for_virtual_mem(process_inspector: &'a ProcessInspector) -> Self {
-        let forced_backend = match &process_inspector.backend {
-            Backend::Local { backend, .. } => {
-                ForcedBackend::Local(backend.process_reader_for_virtual_mem())
-            }
-        };
-        Self {
-            process_inspector,
-            forced_backend: Some(forced_backend),
-        }
-    }
-    pub fn for_file(process_inspector: &'a ProcessInspector) -> Result<Self, Error> {
-        let forced_backend = match &process_inspector.backend {
-            Backend::Local { backend, .. } => {
-                ForcedBackend::Local(backend.process_reader_for_file().map_err(Error::Local)?)
-            }
-        };
-        Ok(Self {
-            process_inspector,
-            forced_backend: Some(forced_backend),
-        })
-    }
-    pub fn for_ptrace(process_inspector: &'a ProcessInspector) -> Self {
-        let forced_backend = match &process_inspector.backend {
-            Backend::Local { backend, .. } => {
-                ForcedBackend::Local(backend.process_reader_for_ptrace())
-            }
-        };
-        Self {
-            process_inspector,
-            forced_backend: Some(forced_backend),
-        }
-    }
-
     
     
     
     pub fn read(&self, src: usize, dst: &mut [u8]) -> Result<usize, CopyFromProcessError> {
-        if let Some(forced_backend) = &self.forced_backend {
-            match forced_backend {
-                ForcedBackend::Local(process_reader_backend) => process_reader_backend
-                    .read_at(src, dst)
-                    .map_err(Error::Local),
-            }
-        } else {
-            match &self.process_inspector.backend {
-                Backend::Local {
-                    process_reader_backend,
-                    ..
-                } => process_reader_backend
-                    .read_at(src, dst)
-                    .map_err(Error::Local),
-            }
-        }
-        .map_err(CopyFromProcessError::Backend)
+        self.0.read_at(src, dst)
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn read_exact(
+        &self,
+        mut src: usize,
+        mut dst: &mut [u8],
+    ) -> Result<(), CopyFromProcessError> {
+        if dst.is_empty() {
+            return Ok(());
+        }
+
+        loop {
+            let bytes_read = self.read(src, dst)?;
+            if bytes_read == 0 {
+                return Err(CopyFromProcessError::Backend(Error::UnexpectedEndOfFile));
+            }
+            if bytes_read == dst.len() {
+                return Ok(());
+            }
+            src = src
+                .checked_add(bytes_read)
+                .ok_or(CopyFromProcessError::Backend(Error::AddressOverflowed))?;
+            dst = &mut dst[bytes_read..];
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn read_pod<T: Plain>(&self, address: usize) -> Result<T, CopyFromProcessError> {
+        
+        
+        
+        
+        let mut pod: T = unsafe { core::mem::zeroed() };
+        let bytes = unsafe {
+            core::slice::from_raw_parts_mut(
+                core::ptr::from_mut(&mut pod).cast::<u8>(),
+                size_of::<T>(),
+            )
+        };
+        self.read_exact(address, bytes)?;
+        Ok(pod)
+    }
+
+    
+    
+    pub fn read_pod_vec<T: Plain>(
+        &self,
+        mut address: usize,
+        count: usize,
+    ) -> Result<Vec<T>, CopyFromProcessError> {
+        let mut v = Vec::with_capacity(count);
+        for _ in 0..count {
+            v.push(self.read_pod(address)?);
+            address += std::mem::size_of::<T>();
+        }
+        Ok(v)
+    }
+
+    
+    
+    
+    
+    pub fn read_until(
+        &self,
+        mut address: usize,
+        terminator: u8,
+        buf: &mut Vec<u8>,
+    ) -> Result<usize, CopyFromProcessError> {
+        let start_len = buf.len();
+        let mut b = [0u8];
+        while self.read(address, &mut b)? > 0 {
+            buf.push(b[0]);
+            if b[0] == terminator {
+                break;
+            }
+            address += 1;
+        }
+        Ok(buf.len() - start_len)
+    }
+
     
     pub fn find_module(
         &self,
         module_name: &str,
     ) -> Result<ProcessModuleMemoryReader<'_>, FindModuleError> {
-        MappingInfo::for_pid(self.process_inspector, self.process_inspector.pid, None)?
-            .into_iter()
-            .find_map(|m| {
-                let mmem = ProcessModuleMemoryReader::new(self, m.start_address);
-                let name = m.name.as_ref().and_then(|s| s.to_str())?;
-                if name == module_name {
-                    return Some(mmem);
-                }
-                
-                
-                
-                
-                #[cfg(target_os = "android")]
-                if name.ends_with(".apk") {
-                    if let Ok(so_name) = crate::module_reader::read_soname_from_module(&mmem) {
-                        if so_name == name {
-                            return Some(mmem);
-                        }
-                    }
-                }
+        MappingInfo::for_pid(
+            self.0.process_inspector(),
+            self.0
+                .process_inspector()
+                .pid()
+                .map_err(FindModuleError::GetTargetPidFailed)?,
+            None,
+        )?
+        .into_iter()
+        .find_map(|m| {
+            let mmem = ProcessModuleMemoryReader::new(self, m.start_address);
+            let name = m.name.as_ref().and_then(|s| s.to_str())?;
+            if name == module_name {
+                return Some(mmem);
+            }
+            
+            
+            
+            
+            #[cfg(target_os = "android")]
+            if name.ends_with(".apk")
+                && let Ok(so_name) = crate::module_reader::read_soname_from_module(&mmem)
+                && so_name == name
+            {
+                return Some(mmem);
+            }
 
-                None
-            })
-            .ok_or(FindModuleError::ModuleNotFound)
+            None
+        })
+        .ok_or(FindModuleError::ModuleNotFound)
+    }
+    pub(crate) fn new(backend: &'a dyn ProcessReaderBackend) -> Self {
+        Self(backend)
     }
 }
 
-#[derive(Debug, thiserror::Error, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, thiserror::Error, serde::Serialize)]
 pub enum CopyFromProcessError {
     #[error("an error occurred calling ProcessReader")]
     Backend(Error),
@@ -128,4 +190,11 @@ pub enum FindModuleError {
     ModuleNotFound,
     #[error("Failed to read process module mappings")]
     MappingError(#[from] MapsReaderError),
+    #[error("Failed to get PID of target process")]
+    GetTargetPidFailed(#[source] Error),
+}
+
+pub(crate) trait ProcessReaderBackend: core::fmt::Debug {
+    fn process_inspector(&self) -> &dyn ProcessInspector;
+    fn read_at(&self, src: usize, dst: &mut [u8]) -> Result<usize, CopyFromProcessError>;
 }

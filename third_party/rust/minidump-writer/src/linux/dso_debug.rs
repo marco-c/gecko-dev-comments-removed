@@ -1,3 +1,8 @@
+
+
+
+
+
 use {
     super::{
         auxv::AuxvDumpInfo, minidump_writer::MinidumpWriter, process_inspection::ProcessInspector,
@@ -9,9 +14,15 @@ use {
         },
         minidump_format::*,
     },
+    plain::Plain,
 };
 
 type Result<T> = std::result::Result<T, SectionDsoDebugError>;
+
+#[cfg(not(target_pointer_width = "64"))]
+use goblin::elf32 as elf;
+#[cfg(target_pointer_width = "64")]
+use goblin::elf64 as elf;
 
 cfg_if::cfg_if! {
     if #[cfg(target_pointer_width = "32")] {
@@ -50,54 +61,75 @@ pub enum SectionDsoDebugError {
 }
 
 
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct LinkMap {
     
-
-    l_addr: ElfAddr, 
-
-    l_name: usize, 
-    l_ld: usize,   
-    l_next: usize, 
-    l_prev: usize, 
+    
+    pub(crate) l_addr: ElfAddr,
+    
+    
+    pub(crate) l_name: usize,
+    
+    
+    pub(crate) l_ld: usize,
+    
+    
+    pub(crate) l_next: usize,
+    
+    
+    pub(crate) l_prev: usize,
 }
 
 
 
 
-#[derive(Debug, Clone, Default)]
-#[allow(non_camel_case_types, unused)]
-#[repr(C)]
-enum RState {
-    
-    #[default]
-    RT_CONSISTENT,
-    
-    RT_ADD,
-    
-    RT_DELETE,
-}
+
+
+
+
+
 
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct RDebug {
-    r_version: libc::c_int, 
-    r_map: usize,           
-
     
-
-
-
-
-    r_brk: ElfAddr,
-    r_state: RState,
-    r_ldbase: ElfAddr, 
+    pub(crate) r_version: libc::c_int,
+    
+    
+    pub(crate) r_map: usize,
+    
+    
+    
+    
+    
+    pub(crate) r_brk: ElfAddr,
+    
+    
+    
+    pub(crate) r_state: libc::c_int,
+    
+    pub(crate) r_ldbase: ElfAddr,
 }
 
+
+
+unsafe impl Plain for LinkMap {}
+unsafe impl Plain for RDebug {}
+
 pub fn write_dso_debug_stream(
-    process_inspector: &ProcessInspector,
+    process_inspector: &dyn ProcessInspector,
     buffer: &mut Buffer,
     auxv: &AuxvDumpInfo,
 ) -> Result<MDRawDirectory> {
@@ -146,30 +178,24 @@ pub fn write_dso_debug_stream(
 
     dyn_addr += base as ElfAddr;
 
-    let dyn_size = std::mem::size_of::<goblin::elf::Dyn>();
+    let dyn_size = std::mem::size_of::<elf::dynamic::Dyn>();
     let mut r_debug = 0usize;
     let mut dynamic_length = 0usize;
+    let memory_reader = process_inspector.process_reader();
 
     
     
     
     loop {
-        let dyn_data = MinidumpWriter::copy_from_process(
-            process_inspector,
-            dyn_addr as usize + dynamic_length,
-            dyn_size,
-        )?;
+        let dyn_struct: elf::dynamic::Dyn =
+            memory_reader.read_pod(dyn_addr as usize + dynamic_length)?;
         dynamic_length += dyn_size;
 
-        
-        let (head, body, _tail) = unsafe { dyn_data.align_to::<goblin::elf::Dyn>() };
-        assert!(head.is_empty(), "Data was not aligned");
-        let dyn_struct = &body[0];
-
-        let debug_tag = goblin::elf::dynamic::DT_DEBUG;
-        if dyn_struct.d_tag == debug_tag {
+        #[allow(clippy::useless_conversion)]
+        let d_tag = u64::from(dyn_struct.d_tag);
+        if d_tag == goblin::elf::dynamic::DT_DEBUG {
             r_debug = dyn_struct.d_val as usize;
-        } else if dyn_struct.d_tag == goblin::elf::dynamic::DT_NULL {
+        } else if d_tag == goblin::elf::dynamic::DT_NULL {
             break;
         }
     }
@@ -181,35 +207,15 @@ pub fn write_dso_debug_stream(
     
     
     
-
-    let debug_entry_data = MinidumpWriter::copy_from_process(
-        process_inspector,
-        r_debug,
-        std::mem::size_of::<RDebug>(),
-    )?;
-
-    
-    let (head, body, _tail) = unsafe { debug_entry_data.align_to::<RDebug>() };
-    assert!(head.is_empty(), "Data was not aligned");
-    let debug_entry = &body[0];
+    let debug_entry: RDebug = memory_reader.read_pod(r_debug)?;
 
     
     let mut dso_vec = Vec::new();
     let mut curr_map = debug_entry.r_map;
     while curr_map != 0 {
-        let link_map_data = MinidumpWriter::copy_from_process(
-            process_inspector,
-            curr_map,
-            std::mem::size_of::<LinkMap>(),
-        )?;
-
-        
-        let (head, body, _tail) = unsafe { link_map_data.align_to::<LinkMap>() };
-        assert!(head.is_empty(), "Data was not aligned");
-        let map = &body[0];
-
+        let map: LinkMap = memory_reader.read_pod(curr_map)?;
         curr_map = map.l_next;
-        dso_vec.push(map.clone());
+        dso_vec.push(map);
     }
 
     let mut linkmap_rva = u32::MAX;
