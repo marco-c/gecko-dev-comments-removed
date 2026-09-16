@@ -19,14 +19,30 @@
 
 
 
-const { Multilingual } = ChromeUtils.importESModule(
-  "chrome://browser/content/preferences/config/languages.mjs",
-  { global: "current" }
+
+
+
+
+
+
+
+
+
+
+
+function importIntoWindow(uri) {
+  if (window.closed) {
+    return {};
+  }
+  return ChromeUtils.importESModule(uri, { global: "current" });
+}
+
+const { Multilingual } = importIntoWindow(
+  "chrome://browser/content/preferences/config/languages.mjs"
 );
 
-const { DefaultBrowserHelper } = ChromeUtils.importESModule(
-  "chrome://browser/content/preferences/DefaultBrowserHelper.mjs",
-  { global: "current" }
+const { DefaultBrowserHelper } = importIntoWindow(
+  "chrome://browser/content/preferences/DefaultBrowserHelper.mjs"
 );
 
 ChromeUtils.defineESModuleGetters(this, {
@@ -43,23 +59,15 @@ ChromeUtils.defineESModuleGetters(this, {
     "resource://autofill/FormAutofillPreferences.sys.mjs",
 });
 
-ChromeUtils.importESModule(
-  "chrome://browser/content/preferences/config/accessibility.mjs",
-  { global: "current" }
+importIntoWindow(
+  "chrome://browser/content/preferences/config/accessibility.mjs"
 );
-ChromeUtils.importESModule(
-  "chrome://browser/content/preferences/config/about-firefox.mjs",
-  { global: "current" }
+importIntoWindow(
+  "chrome://browser/content/preferences/config/about-firefox.mjs"
 );
-
-ChromeUtils.importESModule(
-  "chrome://browser/content/preferences/config/appearance.mjs",
-  { global: "current" }
-);
-
-ChromeUtils.importESModule(
-  "chrome://browser/content/preferences/config/tabs-browsing.mjs",
-  { global: "current" }
+importIntoWindow("chrome://browser/content/preferences/config/appearance.mjs");
+importIntoWindow(
+  "chrome://browser/content/preferences/config/tabs-browsing.mjs"
 );
 
 
