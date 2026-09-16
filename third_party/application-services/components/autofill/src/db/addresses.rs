@@ -12,6 +12,7 @@ use crate::db::{
     },
     schema::{ADDRESS_COMMON_COLS, ADDRESS_COMMON_VALS},
 };
+use crate::db::{timestamp_from_millis, with_savepoint, CounterUpdate};
 use crate::error::*;
 
 use rusqlite::{Connection, Transaction};
@@ -92,33 +93,6 @@ pub(crate) fn add_many_addresses_with_meta(
 
 
 
-
-
-
-
-fn with_savepoint<T>(
-    tx: &Transaction<'_>,
-    op: impl FnOnce() -> Result<T>,
-) -> Result<std::result::Result<T, Error>> {
-    tx.execute_batch("SAVEPOINT bulk_record")?;
-    match op() {
-        Ok(value) => {
-            tx.execute_batch("RELEASE bulk_record")?;
-            Ok(Ok(value))
-        }
-        Err(e) => {
-            tx.execute_batch("ROLLBACK TO bulk_record; RELEASE bulk_record")?;
-            Ok(Err(e))
-        }
-    }
-}
-
-
-
-
-
-
-
 pub(crate) fn delete_all_addresses(conn: &Connection) -> Result<()> {
     let tx = conn.unchecked_transaction()?;
     tx.execute("DELETE FROM addresses_data", [])?;
@@ -158,14 +132,6 @@ pub(crate) fn add_many_address_tombstones(
     }
     tx.commit()?;
     Ok(results)
-}
-
-
-
-
-
-fn timestamp_from_millis(millis: i64) -> Timestamp {
-    Timestamp(millis.max(0) as u64)
 }
 
 fn internal_address_from_meta(
@@ -322,6 +288,7 @@ pub(crate) fn update_address(
             country             = :country,
             tel                 = :tel,
             email               = :email,
+            time_last_modified  = :time_last_modified,
             sync_change_counter = sync_change_counter + 1
         WHERE guid              = :guid",
         rusqlite::named_params! {
@@ -335,37 +302,13 @@ pub(crate) fn update_address(
             ":country": address.country,
             ":tel": address.tel,
             ":email": address.email,
+            ":time_last_modified": Timestamp::now(),
             ":guid": guid,
         },
     )?;
 
     tx.commit()?;
     Ok(())
-}
-
-
-pub(crate) enum CounterUpdate {
-    
-    Increment,
-    
-    
-    Leave,
-    
-    Set(i64),
-}
-
-impl CounterUpdate {
-    
-    
-    
-    
-    fn as_sql(&self) -> (&'static str, i64) {
-        match self {
-            Self::Increment => ("sync_change_counter + :counter", 1),
-            Self::Leave => ("sync_change_counter + :counter", 0),
-            Self::Set(counter) => (":counter", *counter),
-        }
-    }
 }
 
 
@@ -677,6 +620,36 @@ mod tests {
     }
 
     #[test]
+    fn test_address_update_refreshes_time_last_modified() -> Result<()> {
+        let db = new_mem_db();
+
+        
+        
+        add_address_with_meta(&db, test_fields("123 Main Street"), test_meta("abc", 0))?;
+        assert_eq!(
+            get_address(&db, &Guid::new("abc"))?
+                .metadata
+                .time_last_modified
+                .as_millis(),
+            3000
+        );
+
+        update_address(&db, &Guid::new("abc"), &test_fields("456 Second Avenue"))?;
+
+        
+        
+        assert!(
+            get_address(&db, &Guid::new("abc"))?
+                .metadata
+                .time_last_modified
+                .as_millis()
+                > 3000
+        );
+
+        Ok(())
+    }
+
+    #[test]
     fn test_address_update_internal_address() -> Result<()> {
         let mut db = new_mem_db();
         let tx = db.transaction()?;
@@ -918,20 +891,56 @@ mod tests {
     }
 
     #[test]
-    fn test_address_add_with_meta_clamps_negative_timestamps() -> Result<()> {
+    fn test_address_add_with_meta_sanitizes_out_of_range_timestamps() -> Result<()> {
         let db = new_mem_db();
 
-        let meta = AddressMeta {
-            guid: "abc".to_string(),
-            time_created: -1,
-            time_last_used: Some(-1),
-            time_last_modified: -1,
-            times_used: 0,
-            sync_change_counter: 0,
-        };
-        add_address_with_meta(&db, test_fields("123 Main Street"), meta)?;
+        
+        
+        
+        
+        for (guid, out_of_range) in [("abc", -1), ("def", 18446744071857664)] {
+            let meta = AddressMeta {
+                guid: guid.to_string(),
+                time_created: out_of_range,
+                time_last_used: Some(out_of_range),
+                time_last_modified: out_of_range,
+                times_used: 0,
+                sync_change_counter: 0,
+            };
+            add_address_with_meta(&db, test_fields("123 Main Street"), meta)?;
 
-        let retrieved = get_address(&db, &Guid::new("abc"))?;
+            let retrieved = get_address(&db, &Guid::new(guid))?;
+            assert_eq!(
+                retrieved.metadata.time_created.as_millis(),
+                0,
+                "{out_of_range} survived"
+            );
+            assert_eq!(retrieved.metadata.time_last_used.as_millis(), 0);
+            assert_eq!(retrieved.metadata.time_last_modified.as_millis(), 0);
+        }
+
+        Ok(())
+    }
+
+    
+    
+    #[test]
+    fn test_address_from_row_sanitizes_corrupt_timestamps() -> Result<()> {
+        let db = new_mem_db();
+
+        let address = add_address(&db, test_fields("123 Main Street"))?;
+        db.execute(
+            
+            
+            "UPDATE addresses_data
+             SET time_created = 18446744071857664,
+                 time_last_used = -1,
+                 time_last_modified = 8640000000000001
+             WHERE guid = :guid",
+            rusqlite::named_params! { ":guid": address.guid },
+        )?;
+
+        let retrieved = get_address(&db, &address.guid)?;
         assert_eq!(retrieved.metadata.time_created.as_millis(), 0);
         assert_eq!(retrieved.metadata.time_last_used.as_millis(), 0);
         assert_eq!(retrieved.metadata.time_last_modified.as_millis(), 0);

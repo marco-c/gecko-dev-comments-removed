@@ -280,7 +280,8 @@
 
 
 
-use crate::{encryption::EncryptorDecryptor, error::*};
+
+use crate::{encryption::EncryptorDecryptor, error::*, util::sanitize_timestamp};
 use rusqlite::Row;
 use serde_derive::*;
 use sync_guid::Guid;
@@ -358,6 +359,23 @@ pub struct LoginMeta {
     pub time_last_used: i64,
     pub times_used: i64,
     pub time_last_breach_alert_dismissed: Option<i64>,
+}
+
+impl LoginMeta {
+    
+    
+    
+    pub(crate) fn sanitize_timestamps(self) -> Self {
+        Self {
+            time_created: sanitize_timestamp(self.time_created),
+            time_password_changed: sanitize_timestamp(self.time_password_changed),
+            time_last_used: sanitize_timestamp(self.time_last_used),
+            time_last_breach_alert_dismissed: self
+                .time_last_breach_alert_dismissed
+                .map(sanitize_timestamp),
+            ..self
+        }
+    }
 }
 
 
@@ -716,7 +734,14 @@ impl EncryptedLogin {
         
         
         
-        Ok(login)
+        
+        
+        
+        
+        Ok(EncryptedLogin {
+            meta: login.meta.sanitize_timestamps(),
+            ..login
+        })
     }
 }
 

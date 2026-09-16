@@ -6,6 +6,7 @@
 use super::Metadata;
 use rusqlite::Row;
 use sync_guid::Guid;
+use types::Timestamp;
 
 #[derive(Debug, Clone, Default)]
 pub struct UpdatableCreditCardFields {
@@ -17,6 +18,58 @@ pub struct UpdatableCreditCardFields {
     
     
     pub cc_type: String,
+}
+
+
+
+
+
+
+#[derive(Debug, Clone, Default)]
+pub struct CreditCardMeta {
+    pub guid: String,
+    pub time_created: i64,
+    pub time_last_used: Option<i64>,
+    pub time_last_modified: i64,
+    pub times_used: i64,
+    
+    pub sync_change_counter: i64,
+}
+
+
+
+#[derive(Debug, Clone, Default)]
+pub struct CreditCardTombstone {
+    pub guid: String,
+    pub time_deleted: i64,
+}
+
+
+#[derive(Debug)]
+pub enum CreditCardBulkTombstoneResultEntry {
+    Success { guid: String },
+    Error { message: String },
+}
+
+
+
+
+#[derive(Debug, Clone, Default)]
+pub struct UpdatableCreditCardFieldsWithMeta {
+    pub fields: UpdatableCreditCardFields,
+    pub meta: CreditCardMeta,
+}
+
+
+
+
+
+
+#[allow(clippy::large_enum_variant)]
+#[derive(Debug)]
+pub enum CreditCardBulkResultEntry {
+    Success { credit_card: CreditCard },
+    Error { message: String },
 }
 
 #[derive(Debug, Clone, Default)]
@@ -91,9 +144,9 @@ impl InternalCreditCard {
             cc_exp_year: row.get("cc_exp_year")?,
             cc_type: row.get("cc_type")?,
             metadata: Metadata {
-                time_created: row.get("time_created")?,
-                time_last_used: row.get("time_last_used")?,
-                time_last_modified: row.get("time_last_modified")?,
+                time_created: row.get::<_, Timestamp>("time_created")?.sanitized(),
+                time_last_used: row.get::<_, Timestamp>("time_last_used")?.sanitized(),
+                time_last_modified: row.get::<_, Timestamp>("time_last_modified")?.sanitized(),
                 times_used: row.get("times_used")?,
                 sync_change_counter: row.get("sync_change_counter")?,
             },

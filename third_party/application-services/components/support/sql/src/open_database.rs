@@ -154,6 +154,10 @@ fn do_open_database_with_flags<CI: ConnectionInitializer, P: AsRef<Path>>(
 
     if open_flags.contains(OpenFlags::SQLITE_OPEN_READ_WRITE) {
         let mut write_schema_version = true;
+        if db_empty {
+            
+            init_for_maintenance(&conn)?;
+        }
         let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
         if db_empty {
             debug!("{}: initializing new database", CI::NAME);
@@ -202,6 +206,22 @@ pub fn open_memory_database_with_flags<CI: ConnectionInitializer>(
     conn_initializer: &CI,
 ) -> Result<Connection> {
     open_database_with_flags(":memory:", flags, conn_initializer)
+}
+
+fn init_for_maintenance(conn: &Connection) -> Result<()> {
+    
+    
+    
+    
+    
+    
+    
+    conn.execute_one("PRAGMA auto_vacuum=incremental")?;
+    
+    
+    
+    conn.execute_one("VACUUM")?;
+    Ok(())
 }
 
 

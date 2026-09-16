@@ -3,7 +3,7 @@
 
 
 use crate::error::{Error, Result};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use url::Url;
 
 
@@ -17,26 +17,6 @@ pub fn slice_up_to(s: &str, max_len: usize) -> &str {
         idx -= 1;
     }
     &s[..idx]
-}
-
-
-
-
-
-
-
-fn unurl_path(p: impl AsRef<Path>) -> PathBuf {
-    p.as_ref()
-        .to_str()
-        .and_then(|s| Url::parse(s).ok())
-        .and_then(|u| {
-            if u.scheme() == "file" {
-                u.to_file_path().ok()
-            } else {
-                None
-            }
-        })
-        .unwrap_or_else(|| p.as_ref().to_owned())
 }
 
 
@@ -57,37 +37,6 @@ pub fn ensure_url_path(p: impl AsRef<Path>) -> Result<Url> {
     }
 }
 
-
-
-
-
-pub fn normalize_path(p: impl AsRef<Path>) -> Result<PathBuf> {
-    let path = unurl_path(p);
-    if let Ok(canonical) = path.canonicalize() {
-        return Ok(canonical);
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let file_name = path
-        .file_name()
-        .ok_or_else(|| Error::IllegalDatabasePath(path.clone()))?;
-
-    let parent = path
-        .parent()
-        .ok_or_else(|| Error::IllegalDatabasePath(path.clone()))?;
-
-    let mut canonical = parent.canonicalize()?;
-    canonical.push(file_name);
-    Ok(canonical)
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -104,16 +53,6 @@ mod test {
         assert_eq!(slice_up_to(s, 7), "abcd");
         assert_eq!(slice_up_to(s, 8), s);
     }
-    #[test]
-    fn test_unurl_path() {
-        assert_eq!(
-            unurl_path("file:///foo%20bar/baz").to_string_lossy(),
-            "/foo bar/baz"
-        );
-        assert_eq!(unurl_path("/foo bar/baz").to_string_lossy(), "/foo bar/baz");
-        assert_eq!(unurl_path("../baz").to_string_lossy(), "../baz");
-    }
-
     #[test]
     fn test_ensure_url() {
         assert_eq!(

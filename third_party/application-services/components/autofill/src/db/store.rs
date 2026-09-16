@@ -6,7 +6,10 @@ use crate::db::models::address::{
     Address, AddressBulkResultEntry, AddressBulkTombstoneResultEntry, AddressTombstone,
     UpdatableAddressFields, UpdatableAddressFieldsWithMeta,
 };
-use crate::db::models::credit_card::{CreditCard, UpdatableCreditCardFields};
+use crate::db::models::credit_card::{
+    CreditCard, CreditCardBulkResultEntry, CreditCardBulkTombstoneResultEntry, CreditCardTombstone,
+    UpdatableCreditCardFields, UpdatableCreditCardFieldsWithMeta,
+};
 use crate::db::models::passport::{Passport, UpdatablePassportFields};
 use crate::db::{
     addresses, credit_cards, credit_cards::CreditCardsDeletionMetrics, passports, AutofillDb,
@@ -88,6 +91,97 @@ impl Store {
     pub fn add_credit_card(&self, fields: UpdatableCreditCardFields) -> ApiResult<CreditCard> {
         let credit_card = credit_cards::add_credit_card(&self.lock_db()?.writer, fields)?;
         Ok(credit_card.into())
+    }
+
+    
+    
+    
+    
+    #[handle_error(Error)]
+    pub fn add_credit_card_with_meta(
+        &self,
+        entry_with_meta: UpdatableCreditCardFieldsWithMeta,
+    ) -> ApiResult<CreditCard> {
+        Ok(credit_cards::add_credit_card_with_meta(
+            &self.lock_db()?.writer,
+            entry_with_meta.fields,
+            entry_with_meta.meta,
+        )?
+        .into())
+    }
+
+    
+    
+    #[handle_error(Error)]
+    pub fn add_many_credit_cards_with_meta(
+        &self,
+        entries_with_meta: Vec<UpdatableCreditCardFieldsWithMeta>,
+    ) -> ApiResult<Vec<CreditCardBulkResultEntry>> {
+        let results = credit_cards::add_many_credit_cards_with_meta(
+            &self.lock_db()?.writer,
+            entries_with_meta,
+        )?;
+        Ok(results
+            .into_iter()
+            .map(|result| match result {
+                Ok(credit_card) => CreditCardBulkResultEntry::Success {
+                    credit_card: credit_card.into(),
+                },
+                Err(message) => CreditCardBulkResultEntry::Error { message },
+            })
+            .collect())
+    }
+
+    
+    
+    #[handle_error(Error)]
+    pub fn add_many_credit_card_tombstones(
+        &self,
+        tombstones: Vec<CreditCardTombstone>,
+    ) -> ApiResult<Vec<CreditCardBulkTombstoneResultEntry>> {
+        let results = credit_cards::add_many_credit_card_tombstones(
+            &self.lock_db()?.writer,
+            tombstones
+                .into_iter()
+                .map(|t| (t.guid, t.time_deleted))
+                .collect(),
+        )?;
+        Ok(results
+            .into_iter()
+            .map(|result| match result {
+                Ok(guid) => CreditCardBulkTombstoneResultEntry::Success { guid },
+                Err(message) => CreditCardBulkTombstoneResultEntry::Error { message },
+            })
+            .collect())
+    }
+
+    
+    
+    
+    
+    
+    
+    #[handle_error(Error)]
+    pub fn delete_all_credit_cards(&self) -> ApiResult<()> {
+        credit_cards::delete_all_credit_cards(&self.lock_db()?.writer)?;
+        Ok(())
+    }
+
+    
+    
+    
+    
+    
+    #[handle_error(Error)]
+    pub fn update_credit_card_with_meta(
+        &self,
+        entry_with_meta: UpdatableCreditCardFieldsWithMeta,
+    ) -> ApiResult<()> {
+        credit_cards::update_credit_card_with_meta(
+            &self.lock_db()?.writer,
+            entry_with_meta.fields,
+            entry_with_meta.meta,
+        )
     }
 
     #[handle_error(Error)]
@@ -196,6 +290,11 @@ impl Store {
             .collect())
     }
 
+    
+    
+    
+    
+    
     
     #[handle_error(Error)]
     pub fn delete_all_addresses(&self) -> ApiResult<()> {

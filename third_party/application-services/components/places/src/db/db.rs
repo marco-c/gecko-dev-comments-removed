@@ -57,14 +57,7 @@ impl ConnectionInitializer for PlacesInitializer {
         Ok(schema::upgrade_from(tx, version)?)
     }
 
-    fn prepare(&self, conn: &Connection, db_empty: bool) -> open_database::Result<()> {
-        
-        
-        if db_empty && !matches!(self.conn_type, ConnectionType::ReadOnly) {
-            conn.execute_one("PRAGMA auto_vacuum=incremental")?;
-            conn.execute_one("VACUUM")?;
-        }
-
+    fn prepare(&self, conn: &Connection, _db_empty: bool) -> open_database::Result<()> {
         let initial_pragmas = "
             -- The value we use was taken from Desktop Firefox, and seems necessary to
             -- help ensure good performance on autocomplete-style queries.

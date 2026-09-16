@@ -11,7 +11,7 @@ pub mod history_metadata;
 pub mod tags;
 
 use crate::db::PlacesDb;
-use crate::error::{warn, Error, InvalidPlaceInfo, Result};
+use crate::error::{Error, InvalidPlaceInfo, Result};
 use crate::ffi::HistoryVisitInfo;
 use crate::ffi::TopFrecentSiteInfo;
 use crate::frecency::{calculate_frecency, DEFAULT_FRECENCY_SETTINGS};
@@ -272,16 +272,7 @@ pub fn run_maintenance_prune(
 
 
 pub fn run_maintenance_vacuum(conn: &PlacesDb) -> Result<()> {
-    let auto_vacuum_setting: u32 = conn.conn_ext_query_one("PRAGMA auto_vacuum")?;
-    if auto_vacuum_setting == 2 {
-        
-        conn.execute_one("PRAGMA incremental_vacuum(2)")?;
-    } else {
-        
-        warn!("run_maintenance_vacuum: Need to run a full vacuum to set auto_vacuum=incremental");
-        conn.execute_one("PRAGMA auto_vacuum=incremental")?;
-        conn.execute_one("VACUUM")?;
-    }
+    sql_support::maintenance::vacuum(conn)?;
     Ok(())
 }
 

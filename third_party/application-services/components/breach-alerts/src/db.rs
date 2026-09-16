@@ -10,11 +10,11 @@ use rusqlite::types::{FromSql, ToSql};
 use rusqlite::Connection;
 use rusqlite::OpenFlags;
 use sql_support::open_database::open_database_with_flags;
+use sql_support::path::normalize_database_path;
 use sql_support::ConnExt;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use url::Url;
 
 
 pub enum BreachAlertsDbInner {
@@ -30,7 +30,7 @@ pub struct BreachAlertsDb {
 impl BreachAlertsDb {
     
     pub fn new(db_path: impl AsRef<Path>) -> Result<Self> {
-        let db_path = normalize_path(db_path)?;
+        let db_path = normalize_database_path(db_path)?;
         Self::new_named(db_path)
     }
 
@@ -147,61 +147,6 @@ pub fn delete_meta(db: &Connection, key: &str) -> Result<()> {
     db.conn()
         .execute_cached("DELETE FROM meta WHERE key = :key", &[(":key", &key)])?;
     Ok(())
-}
-
-
-
-
-
-
-
-
-
-
-
-fn unurl_path(p: impl AsRef<Path>) -> PathBuf {
-    p.as_ref()
-        .to_str()
-        .and_then(|s| Url::parse(s).ok())
-        .and_then(|u| {
-            if u.scheme() == "file" {
-                u.to_file_path().ok()
-            } else {
-                None
-            }
-        })
-        .unwrap_or_else(|| p.as_ref().to_owned())
-}
-
-
-
-
-
-fn normalize_path(p: impl AsRef<Path>) -> Result<PathBuf> {
-    let path = unurl_path(p);
-    if let Ok(canonical) = path.canonicalize() {
-        return Ok(canonical);
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let file_name = path
-        .file_name()
-        .ok_or_else(|| Error::IllegalDatabasePath(path.clone()))?;
-
-    let parent = path
-        .parent()
-        .ok_or_else(|| Error::IllegalDatabasePath(path.clone()))?;
-
-    let mut canonical = parent.canonicalize()?;
-    canonical.push(file_name);
-    Ok(canonical)
 }
 
 

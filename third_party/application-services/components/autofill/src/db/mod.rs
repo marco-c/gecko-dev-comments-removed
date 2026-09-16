@@ -15,12 +15,12 @@ use error_support::error;
 use interrupt_support::{SqlInterruptHandle, SqlInterruptScope};
 use rusqlite::{Connection, OpenFlags};
 use sql_support::open_database;
+use sql_support::path::normalize_database_path;
 use std::sync::Arc;
 use std::{
     ops::{Deref, DerefMut},
     path::{Path, PathBuf},
 };
-use url::Url;
 
 pub struct AutofillDb {
     pub writer: Connection,
@@ -29,7 +29,7 @@ pub struct AutofillDb {
 
 impl AutofillDb {
     pub fn new(db_path: impl AsRef<Path>) -> Result<Self> {
-        let db_path = normalize_path(db_path)?;
+        let db_path = normalize_database_path(db_path)?;
         Self::new_named(db_path)
     }
 
@@ -85,45 +85,69 @@ impl DerefMut for AutofillDb {
     }
 }
 
-fn unurl_path(p: impl AsRef<Path>) -> PathBuf {
-    p.as_ref()
-        .to_str()
-        .and_then(|s| Url::parse(s).ok())
-        .and_then(|u| {
-            if u.scheme() == "file" {
-                u.to_file_path().ok()
-            } else {
-                None
-            }
-        })
-        .unwrap_or_else(|| p.as_ref().to_owned())
+
+
+
+
+
+
+
+
+
+
+pub(crate) fn with_savepoint<T>(
+    tx: &rusqlite::Transaction<'_>,
+    op: impl FnOnce() -> Result<T>,
+) -> Result<std::result::Result<T, Error>> {
+    tx.execute_batch("SAVEPOINT bulk_record")?;
+    match op() {
+        Ok(value) => {
+            tx.execute_batch("RELEASE bulk_record")?;
+            Ok(Ok(value))
+        }
+        Err(e) => {
+            tx.execute_batch("ROLLBACK TO bulk_record; RELEASE bulk_record")?;
+            Ok(Err(e))
+        }
+    }
 }
 
-fn normalize_path(p: impl AsRef<Path>) -> Result<PathBuf> {
-    let path = unurl_path(p);
-    if let Ok(canonical) = path.canonicalize() {
-        return Ok(canonical);
+
+
+
+
+
+
+
+
+
+pub(crate) fn timestamp_from_millis(millis: i64) -> types::Timestamp {
+    types::Timestamp(types::sanitize_timestamp(millis) as u64)
+}
+
+
+pub(crate) enum CounterUpdate {
+    
+    Increment,
+    
+    
+    Leave,
+    
+    Set(i64),
+}
+
+impl CounterUpdate {
+    
+    
+    
+    
+    pub(crate) fn as_sql(&self) -> (&'static str, i64) {
+        match self {
+            Self::Increment => ("sync_change_counter + :counter", 1),
+            Self::Leave => ("sync_change_counter + :counter", 0),
+            Self::Set(counter) => (":counter", *counter),
+        }
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let file_name = path
-        .file_name()
-        .ok_or_else(|| Error::IllegalDatabasePath(path.clone()))?;
-
-    let parent = path
-        .parent()
-        .ok_or_else(|| Error::IllegalDatabasePath(path.clone()))?;
-
-    let mut canonical = parent.canonicalize()?;
-    canonical.push(file_name);
-    Ok(canonical)
 }
 
 pub(crate) mod sql_fns {
