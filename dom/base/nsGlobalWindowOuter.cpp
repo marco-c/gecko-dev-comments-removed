@@ -4891,7 +4891,15 @@ void nsGlobalWindowOuter::FocusOuter(CallerType aCallerType,
   if (treeOwnerAsWin && (canFocus || isActive)) {
     bool isEnabled = true;
     if (NS_SUCCEEDED(treeOwnerAsWin->GetEnabled(&isEnabled)) && !isEnabled) {
-      NS_WARNING("Should not try to set the focus on a disabled window");
+      
+      
+      if (aCallerType == CallerType::System) {
+        if (nsCOMPtr<nsIWidget> widget = treeOwnerAsWin->GetMainWidget()) {
+          widget->SetFocus(nsIWidget::Raise::Yes, aCallerType);
+        }
+      } else {
+        NS_WARNING("Should not try to set the focus on a disabled window");
+      }
       return;
     }
   }
@@ -6933,8 +6941,6 @@ nsresult nsGlobalWindowOuter::OpenInternal(
       do_GetService(NS_WINDOWWATCHER_CONTRACTID, &rv);
   NS_ENSURE_TRUE(wwatch, rv);
 
-  NS_ConvertUTF16toUTF8 name(windowName);
-
   nsCOMPtr<nsPIWindowWatcher> pwwatch(do_QueryInterface(wwatch));
   NS_ENSURE_STATE(pwwatch);
 
@@ -6969,7 +6975,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
     if (!aCalledNoScript) {
       
       
-      rv = pwwatch->OpenWindow2(this, uri, name, options, modifiers,
+      rv = pwwatch->OpenWindow2(this, uri, windowName, options, modifiers,
                                  true, aDialog,
                                 aNavigate, aArguments, isPopupSpamWindow,
                                 forceNoOpener, forceNoReferrer, wwPrintKind,
@@ -6985,7 +6991,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
       
       
       AutoNoJSAPI nojsapi;
-      rv = pwwatch->OpenWindow2(this, uri, name, options, modifiers,
+      rv = pwwatch->OpenWindow2(this, uri, windowName, options, modifiers,
                                  false, aDialog,
                                 aNavigate, aArguments, isPopupSpamWindow,
                                 forceNoOpener, forceNoReferrer, wwPrintKind,

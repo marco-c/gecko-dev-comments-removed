@@ -2429,6 +2429,26 @@ void nsWindow::SetFocus(Raise aRaise, mozilla::dom::CallerType aCallerType) {
   if (aRaise == Raise::Yes && ::IsIconic(toplevelWnd)) {
     ::ShowWindow(toplevelWnd, SW_RESTORE);
   }
+  
+  
+  
+  
+  
+  
+  
+  HWND const rootWnd = ::GetAncestor(mWnd, GA_ROOT);
+  if (aRaise == Raise::Yes && !::IsWindowEnabled(rootWnd)) {
+    HWND const popup = ::GetWindow(rootWnd, GW_ENABLEDPOPUP);
+    if (popup && ::IsWindowVisible(popup)) {
+      if (::SetForegroundWindow(popup)) {
+        ::SetWindowPos(rootWnd, popup, 0, 0, 0, 0,
+                       SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+      }
+    } else {
+      ::SetForegroundWindow(rootWnd);
+    }
+    return;
+  }
   ::SetFocus(mWnd);
 }
 
