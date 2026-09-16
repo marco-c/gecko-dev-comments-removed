@@ -11,7 +11,7 @@ function runTests(algorithmName) {
   [true, false].forEach(function (extractable) {
     
     allValidUsages(data.publicUsages, true).forEach(function (usages) {
-      ['spki', 'jwk', 'raw-public'].forEach(function (format) {
+      data.publicFormats.forEach(function (format) {
         if (format === 'jwk') {
           
           testFormat(
@@ -37,7 +37,7 @@ function runTests(algorithmName) {
 
     
     allValidUsages(data.privateUsages).forEach(function (usages) {
-      ['pkcs8', 'jwk', 'raw-seed'].forEach(function (format) {
+      data.privateFormats.forEach(function (format) {
         testFormat(format, algorithm, data, algorithmName, usages, extractable);
       });
     });

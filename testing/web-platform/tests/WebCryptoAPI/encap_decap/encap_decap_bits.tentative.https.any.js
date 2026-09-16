@@ -3,11 +3,21 @@
 
 
 
+
 function define_bits_tests() {
   var subtle = self.crypto.subtle;
-  var variants = ['ML-KEM-512', 'ML-KEM-768', 'ML-KEM-1024'];
+  var variants = [
+    { name: 'ML-KEM-512', ciphertextLength: 768 },
+    { name: 'ML-KEM-768', ciphertextLength: 1088 },
+    { name: 'ML-KEM-1024', ciphertextLength: 1568 },
+    { name: 'MLKEM768-P256', ciphertextLength: 1153 },
+    { name: 'MLKEM768-X25519', ciphertextLength: 1120 },
+    { name: 'MLKEM1024-P384', ciphertextLength: 1665 },
+  ];
 
-  variants.forEach(function (algorithmName) {
+  variants.forEach(function (variant) {
+    var algorithmName = variant.name;
+
     
     promise_test(async function (test) {
       
@@ -50,24 +60,11 @@ function define_bits_tests() {
         'Shared key should be 32 bytes'
       );
 
-      
-      var expectedCiphertextLength;
-      switch (algorithmName) {
-        case 'ML-KEM-512':
-          expectedCiphertextLength = 768;
-          break;
-        case 'ML-KEM-768':
-          expectedCiphertextLength = 1088;
-          break;
-        case 'ML-KEM-1024':
-          expectedCiphertextLength = 1568;
-          break;
-      }
       assert_equals(
         encapsulatedBits.ciphertext.byteLength,
-        expectedCiphertextLength,
+        variant.ciphertextLength,
         'Ciphertext should be ' +
-          expectedCiphertextLength +
+          variant.ciphertextLength +
           ' bytes for ' +
           algorithmName
       );
