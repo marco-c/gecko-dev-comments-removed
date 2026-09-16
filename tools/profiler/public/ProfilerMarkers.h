@@ -267,22 +267,9 @@ MarkerSchema::getDefaultFormatForType<nsCString>() {
 namespace geckoprofiler::markers {
 
 
-template <size_t N>
-struct MOZ_IMPLICIT MarkerFieldName {
-  char mName[N];
-
-  constexpr MarkerFieldName(const char (&aName)[N]) {
-    for (size_t i = 0; i < N; ++i) {
-      mName[i] = aName[i];
-    }
-  }
-};
-
-
-
-template <MarkerFieldName ArgName, typename ArgType>
+template <const char* ArgName, typename ArgType>
 struct FieldDescription {
-  static constexpr const char* name = ArgName.mName;
+  static constexpr const char* name = ArgName;
   using type = ArgType;
 };
 
@@ -312,8 +299,17 @@ struct SimplePayloadMarkerTemplate
 };
 }  
 
-#define MARKER_GET_ARG_TYPE(arg) \
-  ::geckoprofiler::markers::FieldDescription<#arg, decltype(arg)>
+
+#define DEFINE_FIELD_STRUCT(arg)                                   \
+  static constexpr char defined_name_##arg[] = #arg;               \
+  using FieldDescription##arg =                                    \
+      geckoprofiler::markers::FieldDescription<defined_name_##arg, \
+                                               decltype(arg)>;
+
+#define DEFINE_FIELD_STRUCTS(...) \
+  MOZ_FOR_EACH(DEFINE_FIELD_STRUCT, (), (__VA_ARGS__))
+
+#define MARKER_GET_ARG_TYPE(arg) FieldDescription##arg
 
 
 
@@ -334,6 +330,7 @@ struct SimplePayloadMarkerTemplate
   do {                                                                       \
     static constexpr char marker_name[] = markerName;                        \
     static constexpr char table_label[] = label;                             \
+    DEFINE_FIELD_STRUCTS(__VA_ARGS__)                                        \
     using SimplePayloadMarkerImpl =                                          \
         geckoprofiler::markers::SimplePayloadMarkerTemplate<                 \
             marker_name, table_label,                                        \
