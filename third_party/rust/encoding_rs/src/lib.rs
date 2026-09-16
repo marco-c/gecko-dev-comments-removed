@@ -729,6 +729,22 @@
     feature(portable_simd)
 )]
 
+
+
+
+#![cfg_attr(
+    all(slow_mm_packus_epi16, feature = "simd-accel", target_feature = "sse2"),
+    feature(link_llvm_intrinsics)
+)]
+#![cfg_attr(
+    all(slow_mm_packus_epi16, feature = "simd-accel", target_feature = "sse2"),
+    feature(abi_unadjusted)
+)]
+#![cfg_attr(
+    all(slow_mm_packus_epi16, feature = "simd-accel", target_feature = "sse2"),
+    feature(simd_ffi)
+)]
+
 #[cfg(feature = "alloc")]
 #[cfg_attr(test, macro_use)]
 extern crate alloc;
@@ -4042,15 +4058,13 @@ impl Decoder {
         
         
         
-
         
         
         
-        
-        
-        
-        let bytes: &mut [u8] = unsafe { dst.as_bytes_mut() };
-        let (result, read, written, replaced) = self.decode_to_utf8(src, bytes, last);
+        let mut bytes = scopeguard::guard(unsafe { dst.as_bytes_mut() }, |bytes| {
+            bytes.iter_mut().for_each(|b| *b = 0)
+        });
+        let (result, read, written, replaced) = self.decode_to_utf8(src, &mut bytes, last);
         let len = bytes.len();
         let mut trail = written;
         
@@ -4067,6 +4081,8 @@ impl Decoder {
             bytes[trail] = 0;
             trail += 1;
         }
+        
+        let _ = scopeguard::ScopeGuard::<&mut [u8], _>::into_inner(bytes);
         (result, read, written, replaced)
     }
 
@@ -4164,15 +4180,14 @@ impl Decoder {
         
         
         
-
         
         
         
-        
-        
-        
-        let bytes: &mut [u8] = unsafe { dst.as_bytes_mut() };
-        let (result, read, written) = self.decode_to_utf8_without_replacement(src, bytes, last);
+        let mut bytes = scopeguard::guard(unsafe { dst.as_bytes_mut() }, |bytes| {
+            bytes.iter_mut().for_each(|b| *b = 0)
+        });
+        let (result, read, written) =
+            self.decode_to_utf8_without_replacement(src, &mut bytes, last);
         let len = bytes.len();
         let mut trail = written;
         
@@ -4189,6 +4204,8 @@ impl Decoder {
             bytes[trail] = 0;
             trail += 1;
         }
+        
+        let _ = scopeguard::ScopeGuard::<&mut [u8], _>::into_inner(bytes);
         (result, read, written)
     }
 
@@ -5185,9 +5202,7 @@ cfg_if! {
         target_arch = "riscv32",
         target_arch = "riscv64",
         target_arch = "loongarch64",
-        target_arch = "s390x",
-        target_arch = "powerpc",
-        target_arch = "powerpc64")))] {
+        target_arch = "s390x")))] {
         #[inline(always)]
         unsafe fn pointer_escapes(ptr: *mut MaybeUninit<u8>) {
             // SAFETY:

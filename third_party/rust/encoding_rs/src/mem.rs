@@ -1408,15 +1408,23 @@ pub fn convert_utf16_to_str_partial(src: &[u16], dst: &mut str) -> (usize, usize
     
     
     
-
-    let bytes: &mut [u8] = unsafe { dst.as_bytes_mut() };
-    let (read, written) = convert_utf16_to_utf8_partial(src, bytes);
+    
+    
+    
+    
+    
+    let mut bytes = scopeguard::guard(unsafe { dst.as_bytes_mut() }, |bytes| {
+        bytes.iter_mut().for_each(|b| *b = 0)
+    });
+    let (read, written) = convert_utf16_to_utf8_partial(src, &mut bytes);
     let len = bytes.len();
     let mut trail = written;
     while trail < len && ((bytes[trail] & 0xC0) == 0x80) {
         bytes[trail] = 0;
         trail += 1;
     }
+    
+    let _ = scopeguard::ScopeGuard::<&mut [u8], _>::into_inner(bytes);
     (read, written)
 }
 
