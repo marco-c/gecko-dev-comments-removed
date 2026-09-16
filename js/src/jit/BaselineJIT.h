@@ -412,6 +412,17 @@ void AddSizeOfBaselineData(JSScript* script, mozilla::MallocSizeOf mallocSizeOf,
 
 void ToggleBaselineProfiling(JSContext* cx, bool enable);
 
+
+struct BailoutStubInfo {
+  
+  
+  uint8_t* frameBoundary = nullptr;
+  
+  
+  
+  uint8_t* bailoutStub = nullptr;
+};
+
 struct alignas(uintptr_t) BaselineBailoutInfo {
   
   uint8_t* incomingStack = nullptr;
@@ -420,6 +431,9 @@ struct alignas(uintptr_t) BaselineBailoutInfo {
   
   uint8_t* copyStackTop = nullptr;
   uint8_t* copyStackBottom = nullptr;
+
+  
+  uint32_t numStubInfos = 0;
 
   
   void* resumeFramePtr = nullptr;
