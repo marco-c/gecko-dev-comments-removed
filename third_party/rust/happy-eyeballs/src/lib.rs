@@ -47,7 +47,6 @@
 
 
 
-
 use std::collections::{BTreeMap, HashSet, VecDeque};
 use std::fmt::Debug;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
@@ -82,7 +81,19 @@ pub const CONNECTION_ATTEMPT_DELAY_MULTIPLIER: NonZeroU32 = NonZeroU32::MIN;
 #[derive(Debug, Clone, PartialEq)]
 pub enum Input {
     
-    DnsResult { id: Id, result: DnsResult },
+    
+    
+    
+    
+    
+    
+    
+    
+    DnsResult {
+        id: Id,
+        result: DnsResult,
+        stale: bool,
+    },
 
     
     ConnectionResult { id: Id, result: ConnectionResult },
@@ -199,10 +210,20 @@ impl Debug for TargetName {
 #[must_use]
 pub enum Output {
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     SendDnsQuery {
         id: Id,
         hostname: TargetName,
         record_type: DnsRecordType,
+        allow_stale: bool,
     },
 
     
@@ -301,36 +322,22 @@ impl ServiceInfo {
         port: u16,
         
         
-        ipv4_addrs: Option<&[Ipv4Addr]>,
         
+        ipv4_addrs: Option<Result<&[Ipv4Addr], ()>>,
         
-        ipv6_addrs: Option<&[Ipv6Addr]>,
+        ipv6_addrs: Option<Result<&[Ipv6Addr], ()>>,
         
         
         enabled_http_versions: &HttpVersions,
         ech_enabled: bool,
+        
+        
+        
+        
+        
+        by_name: Option<&str>,
     ) -> Vec<Endpoint> {
         let port = self.port.unwrap_or(port);
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let hint_v6 = match ipv6_addrs {
-            None => self.ipv6_hints.as_slice(),
-            Some(_) => &[],
-        };
-        let hint_v4 = match ipv4_addrs {
-            None => self.ipv4_hints.as_slice(),
-            Some(_) => &[],
-        };
 
         
         
@@ -346,6 +353,63 @@ impl ServiceInfo {
         enabled_http_versions.filter_disabled(&mut versions);
         let http_versions = ConnectionAttemptHttpVersions::from_http_versions(&versions);
 
+        
+        
+        
+        if let Some(origin_host) = by_name {
+            let ech_config = ech_enabled.then(|| self.ech_config.clone()).flatten();
+            
+            
+            
+            
+            let target = self.target_name.as_str().trim_end_matches('.');
+            let host = if target.is_empty() {
+                origin_host
+            } else {
+                target
+            };
+            return http_versions
+                .iter()
+                .map(|&http_version| Endpoint {
+                    target: EndpointTarget::Name {
+                        host: host.to_string(),
+                        port,
+                    },
+                    http_version,
+                    ech_config: ech_config.clone(),
+                })
+                .collect();
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let hint_v6: &[Ipv6Addr] = self.ipv6_hints.as_slice();
+        let hint_v4: &[Ipv4Addr] = self.ipv4_hints.as_slice();
+
         let hints = hint_v6
             .iter()
             .cloned()
@@ -355,29 +419,38 @@ impl ServiceInfo {
                 
                 let ech_config = ech_enabled.then(|| self.ech_config.clone()).flatten();
                 http_versions.iter().map(move |&http_version| Endpoint {
-                    address: SocketAddr::new(ip, port),
+                    target: EndpointTarget::Address(SocketAddr::new(ip, port)),
                     http_version,
                     ech_config: ech_config.clone(),
                 })
             });
 
         let addrs = ipv6_addrs
+            .and_then(Result::ok)
             .unwrap_or(&[])
             .iter()
             .cloned()
             .map(IpAddr::V6)
-            .chain(ipv4_addrs.unwrap_or(&[]).iter().cloned().map(IpAddr::V4))
+            .chain(
+                ipv4_addrs
+                    .and_then(Result::ok)
+                    .unwrap_or(&[])
+                    .iter()
+                    .cloned()
+                    .map(IpAddr::V4),
+            )
             .flat_map(|ip| {
                 
                 let ech_config = ech_enabled.then(|| self.ech_config.clone()).flatten();
                 http_versions.iter().map(move |v| Endpoint {
-                    address: SocketAddr::new(ip, port),
+                    target: EndpointTarget::Address(SocketAddr::new(ip, port)),
                     http_version: *v,
                     ech_config: ech_config.clone(),
                 })
             });
 
-        hints.chain(addrs).collect()
+        
+        addrs.chain(hints).collect()
     }
 }
 
@@ -437,6 +510,8 @@ struct DnsQuery {
     target_name: TargetName,
     record_type: DnsRecordType,
     state: DnsQueryState,
+    
+    refresh: Refresh,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -445,7 +520,22 @@ enum DnsQueryState {
     Completed {
         completed: Instant,
         response: DnsResult,
+        
+        stale: bool,
     },
+}
+
+
+
+#[derive(Debug, Clone, PartialEq)]
+enum Refresh {
+    
+    
+    Idle,
+    
+    InFlight(Id),
+    
+    Done,
 }
 
 impl DnsQuery {
@@ -620,6 +710,60 @@ pub struct NetworkConfig {
     
     
     pub wait_for_preferred_address: bool,
+    
+    
+    
+    pub resolution: ResolutionMode,
+}
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub enum ResolutionMode {
+    
+    
+    #[default]
+    ByIp,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ByName,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ByNameWithHttpsRr,
 }
 
 impl Default for NetworkConfig {
@@ -633,6 +777,7 @@ impl Default for NetworkConfig {
             connection_attempt_delay_multiplier: CONNECTION_ATTEMPT_DELAY_MULTIPLIER,
             ech: true,
             wait_for_preferred_address: true,
+            resolution: ResolutionMode::ByIp,
         }
     }
 }
@@ -688,11 +833,42 @@ impl ConnectionAttempt {
 }
 
 
+
+
+
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum EndpointTarget {
+    
+    Address(SocketAddr),
+    
+    
+    
+    
+    
+    Name { host: String, port: u16 },
+}
+
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Endpoint {
-    pub address: SocketAddr,
+    pub target: EndpointTarget,
     pub http_version: ConnectionAttemptHttpVersions,
     pub ech_config: Option<EchConfig>,
+}
+
+impl Endpoint {
+    
+    
+    pub fn address(&self) -> Option<SocketAddr> {
+        match self.target {
+            EndpointTarget::Address(address) => Some(address),
+            EndpointTarget::Name { .. } => None,
+        }
+    }
 }
 
 
@@ -753,10 +929,17 @@ fn interleave_endpoints(endpoints: Vec<Endpoint>, prefer_v6: bool) -> Vec<Endpoi
         VecDeque<Endpoint>,
     > = BTreeMap::new();
     for endpoint in endpoints {
-        let family = if endpoint.address.is_ipv6() == prefer_v6 {
-            FamilyPreference::Preferred
-        } else {
-            FamilyPreference::Other
+        let family = match &endpoint.target {
+            EndpointTarget::Address(address) => {
+                if address.is_ipv6() == prefer_v6 {
+                    FamilyPreference::Preferred
+                } else {
+                    FamilyPreference::Other
+                }
+            }
+            
+            
+            EndpointTarget::Name { .. } => FamilyPreference::Preferred,
         };
         groups
             .entry((endpoint.http_version, family))
@@ -902,8 +1085,8 @@ impl HappyEyeballs {
         trace!("target={} input={:?}", self.host, input);
 
         match input {
-            Input::DnsResult { id, result } => {
-                self.on_dns_response(id, result, now);
+            Input::DnsResult { id, result, stale } => {
+                self.on_dns_response(id, result, stale, now);
             }
             Input::ConnectionResult { id, result } => {
                 self.on_connection_result(id, result);
@@ -937,16 +1120,40 @@ impl HappyEyeballs {
         }
 
         
-        if let Some(o) = self.send_dns_request() {
-            return Some(o);
-        }
+        match self.network_config.resolution {
+            
+            
+            ResolutionMode::ByIp => {
+                if let Some(o) = self.send_dns_request() {
+                    return Some(o);
+                }
 
-        if let Some(o) = self.send_dns_request_for_target_name() {
-            return Some(o);
-        }
+                if let Some(o) = self.send_dns_request_for_target_name() {
+                    return Some(o);
+                }
 
-        if let Some(o) = self.send_dns_request_for_alt_svc() {
-            return Some(o);
+                if let Some(o) = self.send_dns_request_for_alt_svc() {
+                    return Some(o);
+                }
+
+                if let Some(o) = self.send_dns_refresh() {
+                    return Some(o);
+                }
+            }
+            
+            
+            
+            ResolutionMode::ByNameWithHttpsRr => {
+                if let Some(o) = self.send_dns_request() {
+                    return Some(o);
+                }
+
+                if let Some(o) = self.send_dns_refresh() {
+                    return Some(o);
+                }
+            }
+            
+            ResolutionMode::ByName => {}
         }
 
         if let Some(o) = self.delay(now) {
@@ -1022,9 +1229,12 @@ impl HappyEyeballs {
             return None;
         }
 
+        
+        
+        
+        
         self.dns_queries
             .iter()
-            
             .filter_map(|q| match &q.state {
                 DnsQueryState::Completed { completed, .. } => Some(completed),
                 _ => None,
@@ -1051,8 +1261,14 @@ impl HappyEyeballs {
         }
         .into();
 
-        let record_types = std::iter::once(DnsRecordType::Https)
-            .chain(self.network_config.ip.address_record_types());
+        
+        
+        let address_record_types = (self.network_config.resolution
+            != ResolutionMode::ByNameWithHttpsRr)
+            .then(|| self.network_config.ip.address_record_types())
+            .into_iter()
+            .flatten();
+        let record_types = std::iter::once(DnsRecordType::Https).chain(address_record_types);
         for record_type in record_types {
             if !self
                 .dns_queries
@@ -1065,11 +1281,13 @@ impl HappyEyeballs {
                     target_name: target_name.clone(),
                     record_type,
                     state: DnsQueryState::InProgress,
+                    refresh: Refresh::Idle,
                 });
                 return Some(Output::SendDnsQuery {
                     id,
                     hostname: target_name,
                     record_type,
+                    allow_stale: true,
                 });
             }
         }
@@ -1113,11 +1331,13 @@ impl HappyEyeballs {
             target_name: target_name.clone(),
             record_type,
             state: DnsQueryState::InProgress,
+            refresh: Refresh::Idle,
         });
         Some(Output::SendDnsQuery {
             id,
             hostname: target_name,
             record_type,
+            allow_stale: true,
         })
     }
 
@@ -1153,15 +1373,64 @@ impl HappyEyeballs {
             target_name: target_name.clone(),
             record_type,
             state: DnsQueryState::InProgress,
+            refresh: Refresh::Idle,
         });
         Some(Output::SendDnsQuery {
             id,
             hostname: target_name,
             record_type,
+            allow_stale: true,
         })
     }
 
-    fn on_dns_response(&mut self, id: Id, response: DnsResult, now: Instant) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn send_dns_refresh(&mut self) -> Option<Output> {
+        let idx = self.dns_queries.iter().position(|q| {
+            q.refresh == Refresh::Idle
+                && matches!(q.state, DnsQueryState::Completed { stale: true, .. })
+        })?;
+        let id = self.id_generator.next_id();
+        let query = &mut self.dns_queries[idx];
+        query.refresh = Refresh::InFlight(id);
+        Some(Output::SendDnsQuery {
+            id,
+            hostname: query.target_name.clone(),
+            record_type: query.record_type,
+            allow_stale: false,
+        })
+    }
+
+    fn on_dns_response(&mut self, id: Id, response: DnsResult, stale: bool, now: Instant) {
+        
+        
+        if let Some(query) = self
+            .dns_queries
+            .iter_mut()
+            .find(|q| q.refresh == Refresh::InFlight(id))
+        {
+            
+            
+            debug_assert!(
+                !stale,
+                "got a stale response for refresh query {id:?}, which forbade stale answers"
+            );
+            query.refresh = Refresh::Done;
+            query.state = DnsQueryState::Completed {
+                completed: now,
+                response,
+                stale,
+            };
+            return;
+        }
+
         let Some(query) = self.dns_queries.iter_mut().find(|q| q.id == id) else {
             debug_assert!(false, "got {response:?} for unknown id {id:?}");
             return;
@@ -1175,6 +1444,7 @@ impl HappyEyeballs {
         query.state = DnsQueryState::Completed {
             completed: now,
             response,
+            stale,
         };
     }
 
@@ -1283,6 +1553,10 @@ impl HappyEyeballs {
         move_on |= self.move_on_without_timeout();
         move_on |= self.move_on_with_timeout(now);
         move_on |= matches!(self.host, Host::Ip(_));
+        
+        
+        
+        move_on |= self.network_config.resolution == ResolutionMode::ByName;
         if !move_on {
             return None;
         }
@@ -1386,23 +1660,23 @@ impl HappyEyeballs {
 
         let mut endpoints: Vec<Endpoint> = Vec::new();
         for info in &service_infos {
-            let ipv4_addrs: Option<&[Ipv4Addr]> =
+            let ipv4_addrs: Option<Result<&[Ipv4Addr], ()>> =
                 self.dns_queries.iter().find_map(|q| match &q.state {
                     DnsQueryState::Completed {
                         response: DnsResult::A(result),
                         ..
                     } if q.target_name == info.target_name => {
-                        Some(result.as_deref().unwrap_or_default())
+                        Some(result.as_deref().map_err(|_| ()))
                     }
                     _ => None,
                 });
-            let ipv6_addrs: Option<&[Ipv6Addr]> =
+            let ipv6_addrs: Option<Result<&[Ipv6Addr], ()>> =
                 self.dns_queries.iter().find_map(|q| match &q.state {
                     DnsQueryState::Completed {
                         response: DnsResult::Aaaa(result),
                         ..
                     } if q.target_name == info.target_name => {
-                        Some(result.as_deref().unwrap_or_default())
+                        Some(result.as_deref().map_err(|_| ()))
                     }
                     _ => None,
                 });
@@ -1412,6 +1686,9 @@ impl HappyEyeballs {
                 ipv6_addrs,
                 &self.network_config.http_versions,
                 self.network_config.ech,
+                (self.network_config.resolution == ResolutionMode::ByNameWithHttpsRr)
+                    .then(|| self.origin_host_str())
+                    .flatten(),
             );
             endpoints.extend(interleave_endpoints(bucket, prefer_v6));
         }
@@ -1428,6 +1705,12 @@ impl HappyEyeballs {
     fn failed(&self) -> Option<FailureReason> {
         if self.has_successful_connection()
             || self.dns_queries.iter().any(|q| !q.is_completed())
+            
+            
+            || self
+                .dns_queries
+                .iter()
+                .any(|q| matches!(q.refresh, Refresh::InFlight(_)))
             || self
                 .connection_attempts
                 .iter()
@@ -1441,6 +1724,9 @@ impl HappyEyeballs {
                 .connection_attempts
                 .iter()
                 .any(|a| a.state == ConnectionState::Failed)
+                
+                
+                || self.dns_queries.is_empty()
             {
                 FailureReason::Connection
             } else {
@@ -1501,6 +1787,10 @@ impl HappyEyeballs {
     
     
     
+    
+    
+    
+    
     fn alt_svc_endpoints(&self) -> Vec<Endpoint> {
         let mut endpoints = Vec::new();
         for alt_svc in &self.network_config.alt_svc {
@@ -1512,8 +1802,27 @@ impl HappyEyeballs {
             }
             let port = alt_svc.port.unwrap_or(self.port);
             let http_version: ConnectionAttemptHttpVersions = alt_svc.http_version.into();
+
+            
+            
+            
+            
+            if matches!(
+                self.network_config.resolution,
+                ResolutionMode::ByName | ResolutionMode::ByNameWithHttpsRr
+            ) {
+                if let Some(host) = self.alt_svc_by_name_host(alt_svc) {
+                    endpoints.push(Endpoint {
+                        target: EndpointTarget::Name { host, port },
+                        http_version,
+                        ech_config: None,
+                    });
+                    continue;
+                }
+            }
+
             endpoints.extend(self.alt_svc_addrs(alt_svc).into_iter().map(|ip| Endpoint {
-                address: SocketAddr::new(ip, port),
+                target: EndpointTarget::Address(SocketAddr::new(ip, port)),
                 http_version,
                 ech_config: None,
             }));
@@ -1526,16 +1835,67 @@ impl HappyEyeballs {
     
     fn origin_fallback_endpoints(&self) -> Vec<Endpoint> {
         let http_versions = self.fallback_http_versions();
+
+        
+        
+        
+        
+        if matches!(
+            self.network_config.resolution,
+            ResolutionMode::ByName | ResolutionMode::ByNameWithHttpsRr
+        ) {
+            if let Some(host) = self.origin_host_str() {
+                return http_versions
+                    .iter()
+                    .map(|&http_version| Endpoint {
+                        target: EndpointTarget::Name {
+                            host: host.to_string(),
+                            port: self.port,
+                        },
+                        http_version,
+                        ech_config: None,
+                    })
+                    .collect();
+            }
+        }
+
         self.origin_addrs()
             .into_iter()
             .flat_map(|ip| {
                 http_versions.iter().map(move |&http_version| Endpoint {
-                    address: SocketAddr::new(ip, self.port),
+                    target: EndpointTarget::Address(SocketAddr::new(ip, self.port)),
                     http_version,
                     ech_config: None,
                 })
             })
             .collect()
+    }
+
+    
+    
+    
+    
+    
+    
+    fn origin_host_str(&self) -> Option<&str> {
+        match &self.host {
+            Host::Domain(domain) => Some(domain.trim_end_matches('.')),
+            Host::Ip(_) => None,
+        }
+    }
+
+    
+    
+    
+    
+    fn alt_svc_by_name_host(&self, alt_svc: &AltSvc) -> Option<String> {
+        match &alt_svc.host {
+            Some(host) => host
+                .parse::<IpAddr>()
+                .is_err()
+                .then(|| host.trim_end_matches('.').to_string()),
+            None => self.origin_host_str().map(ToString::to_string),
+        }
     }
 
     
@@ -1581,6 +1941,20 @@ impl HappyEyeballs {
                 return false;
             }
         };
+
+        
+        
+        
+        
+        
+        if self.network_config.resolution == ResolutionMode::ByNameWithHttpsRr {
+            return self
+                .dns_queries
+                .iter()
+                .filter(|q| q.target_name.as_str() == hostname)
+                .filter(|q| q.is_completed())
+                .any(|q| q.record_type == DnsRecordType::Https);
+        }
 
         
         

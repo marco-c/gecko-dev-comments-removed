@@ -11,7 +11,7 @@ use std::{
 
 use happy_eyeballs::{
     CONNECTION_ATTEMPT_DELAY, ConnectionAttemptHttpVersions, DnsRecordType, DnsResult, Endpoint,
-    FailureReason, HappyEyeballs, HttpVersions, Id, Input, IpPreference, NetworkConfig, Output,
+    EndpointTarget, HappyEyeballs, HttpVersions, Id, Input, IpPreference, NetworkConfig, Output,
     RESOLUTION_DELAY,
 };
 
@@ -265,7 +265,6 @@ fn resolution_delay_starts_on_first_response() {
 
 
 
-
 #[test]
 fn https_hints() {
     let (mut now, mut he) = setup();
@@ -279,15 +278,13 @@ fn https_hints() {
     he.expect(out_connection_attempt_delay(), now);
     
     
-    
     he.input(in_dns_aaaa_negative(Id::from(1)), now);
     he.expect(out_connection_attempt_delay(), now);
     he.input(in_dns_a_negative(Id::from(2)), now);
     he.expect(out_connection_attempt_delay(), now);
     
-    
     he.input(in_connection_result_negative(Id::from(3)), now);
-    he.expect(Output::Failed(FailureReason::Connection), now);
+    he.expect(out_attempt_v4_h3(Id::from(4)), now);
 }
 
 
@@ -319,6 +316,80 @@ fn https_v4_hints_move_on_with_timeout() {
         &mut now,
         in_dns_https_positive_v4_hints(Id::from(0)),
         out_attempt_v4_h3(Id::from(3)),
+    );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[test]
+fn empty_a_aaaa_at_resolution_delay_keeps_v6_hint() {
+    const RESOLUTION_DELAY_25MS: Duration = Duration::from_millis(25);
+    let (mut now, mut he) = setup_with_config(NetworkConfig {
+        resolution_delay: RESOLUTION_DELAY_25MS,
+        ..NetworkConfig::default()
+    });
+
+    expect_initial_dns_queries(&mut he, now);
+    he.input(in_dns_https_v6_hint_h1(Id::from(0)), now);
+    he.expect(
+        Output::Timer {
+            duration: RESOLUTION_DELAY_25MS,
+        },
+        now,
+    );
+
+    
+    
+    now += RESOLUTION_DELAY_25MS;
+    he.input(in_dns_aaaa_empty(Id::from(1)), now);
+    he.input(in_dns_a_empty(Id::from(2)), now);
+
+    
+    
+    he.expect(
+        out_attempt(
+            Id::from(3),
+            V6_ADDR.into(),
+            PORT,
+            ConnectionAttemptHttpVersions::H1,
+        ),
+        now,
+    );
+}
+
+
+
+
+
+#[test]
+fn empty_a_aaaa_before_https_v6_hint_keeps_hint() {
+    let (now, mut he) = setup();
+
+    expect_initial_dns_queries(&mut he, now);
+    he.input(in_dns_aaaa_empty(Id::from(1)), now);
+    he.expect(out_resolution_delay(), now);
+    he.input(in_dns_a_empty(Id::from(2)), now);
+    he.expect(out_resolution_delay(), now);
+
+    he.input(in_dns_https_v6_hint_h1(Id::from(0)), now);
+    he.expect(
+        out_attempt(
+            Id::from(3),
+            V6_ADDR.into(),
+            PORT,
+            ConnectionAttemptHttpVersions::H1,
+        ),
+        now,
     );
 }
 
@@ -403,6 +474,7 @@ fn multiple_ips_per_record() {
         Input::DnsResult {
             id: Id::from(1),
             result: DnsResult::Aaaa(Ok(vec![V6_ADDR, V6_ADDR_2, V6_ADDR_3])),
+            stale: false,
         },
         now,
     );
@@ -414,7 +486,7 @@ fn multiple_ips_per_record() {
         Output::AttemptConnection {
             id: Id::from(4),
             endpoint: Endpoint {
-                address: SocketAddr::new(V6_ADDR_2.into(), PORT),
+                target: EndpointTarget::Address(SocketAddr::new(V6_ADDR_2.into(), PORT)),
                 http_version: ConnectionAttemptHttpVersions::H2OrH1,
                 ech_config: None,
             },
