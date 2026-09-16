@@ -231,7 +231,7 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
 
   
   
-  RefPtr<gfxDWriteFontFileStream> mFontFileStream;
+  RefPtr<IDWriteFontFileStream> mFontFileStream;
 
   
   
@@ -242,6 +242,11 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
   DWRITE_FONT_FACE_TYPE mFaceType;
 
   mozilla::Atomic<FontTableCache*> mFontTableCache;
+
+#if MOZ_FONTATIONS
+  
+  void* mFragmentContext = nullptr;
+#endif
 
   int8_t mIsCJK;
   bool mIsSystemFont;

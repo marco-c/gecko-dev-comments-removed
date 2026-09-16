@@ -834,12 +834,13 @@ class gfxFontEntry {
   
   
   
-  void SetSkrifaFont(SkrifaFontRef* aSkrifaFont,
+  
+  bool SetSkrifaFont(SkrifaFontRef* aSkrifaFont,
                      mozilla::MemoryMappedFile&& aSkrifaFontFile);
 
   
   
-  void SetSkrifaFont(SkrifaFontRef* aSkrifaFont);
+  bool SetSkrifaFont(SkrifaFontRef* aSkrifaFont);
 
   
   

@@ -131,26 +131,28 @@ void gfxFontEntry::InitializeFrom(fontlist::Face* aFace,
 }
 
 #ifdef MOZ_FONTATIONS
-void gfxFontEntry::SetSkrifaFont(SkrifaFontRef* aSkrifaFont,
+bool gfxFontEntry::SetSkrifaFont(SkrifaFontRef* aSkrifaFont,
                                  MemoryMappedFile&& aSkrifaFontFile) {
   
   
   if (mSkrifaFontFace.compareExchange(nullptr, aSkrifaFont)) {
     
     mSkrifaFontFile = std::move(aSkrifaFontFile);
-  } else {
-    
-    
-    skrifa_font_delete(aSkrifaFont);
+    return true;
   }
+  
+  
+  skrifa_font_delete(aSkrifaFont);
+  return false;
 }
 
-void gfxFontEntry::SetSkrifaFont(SkrifaFontRef* aSkrifaFont) {
+bool gfxFontEntry::SetSkrifaFont(SkrifaFontRef* aSkrifaFont) {
   
-  MOZ_ASSERT(mIsDataUserFont);
-  if (!mSkrifaFontFace.compareExchange(nullptr, aSkrifaFont)) {
-    skrifa_font_delete(aSkrifaFont);
+  if (mSkrifaFontFace.compareExchange(nullptr, aSkrifaFont)) {
+    return true;
   }
+  skrifa_font_delete(aSkrifaFont);
+  return false;
 }
 #endif
 
