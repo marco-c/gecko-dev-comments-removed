@@ -4,7 +4,6 @@ from tests.classic.perform_actions.support.refine import wait_for_events
 
 
 
-
 DURATION = 200
 
 
