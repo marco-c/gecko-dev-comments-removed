@@ -14,15 +14,19 @@
 #include <cstdint>
 #include <memory>
 
+#include "absl/base/nullability.h"
 #include "api/field_trials_view.h"
 #include "api/sequence_checker.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/video/encoded_frame.h"
 #include "api/video_codecs/video_decoder.h"
 #include "common_video/include/corruption_score_calculator.h"
 #include "modules/video_coding/decoder_database.h"
 #include "modules/video_coding/generic_decoder.h"
 #include "modules/video_coding/timing/timing.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/system/no_unique_address.h"
+#include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
@@ -40,6 +44,10 @@ class VideoReceiver2 {
                  CorruptionScoreCalculator* corruption_score_calculator);
   ~VideoReceiver2();
 
+  
+  
+  void SetDecodeQueue(TaskQueueBase* absl_nullable decode_queue);
+
   void RegisterReceiveCodec(uint8_t payload_type,
                             const VideoDecoder::Settings& decoder_settings);
   void DeregisterReceiveCodec(uint8_t payload_type);
@@ -54,6 +62,36 @@ class VideoReceiver2 {
   int32_t Decode(const EncodedFrame* frame);
 
  private:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  class RTC_LOCKABLE PhasedSequenceChecker {
+   public:
+    PhasedSequenceChecker();
+    ~PhasedSequenceChecker() = default;
+    bool IsCurrent() const;
+    void SetDecodeQueue(TaskQueueBase* absl_nullable decode_queue);
+
+   private:
+#if RTC_DCHECK_IS_ON
+    TaskQueueBase* const construction_queue_;
+    TaskQueueBase* active_queue_;
+#endif
+  };
+
+  PhasedSequenceChecker phased_sequence_checker_;
   RTC_NO_UNIQUE_ADDRESS SequenceChecker construction_sequence_checker_;
   RTC_NO_UNIQUE_ADDRESS SequenceChecker decoder_sequence_checker_;
   Clock* const clock_;
