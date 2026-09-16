@@ -337,7 +337,8 @@ uint64_t Http3WebTransportSession::GetStreamId() const {
 void Http3WebTransportSession::Close(nsresult aResult) {
   LOG(("Http3WebTransportSession::Close %p", this));
   if (RefPtr<WebTransportSessionEventListener> listener = TakeListener()) {
-    listener->OnSessionClosed(NS_SUCCEEDED(aResult), 0, ""_ns);
+    mozilla::dom::WebTransportStatsData emptyStats;
+    listener->OnSessionClosed(NS_SUCCEEDED(aResult), 0, ""_ns, &emptyStats);
   }
   if (mTransaction) {
     mTransaction->Close(aResult);
@@ -353,7 +354,21 @@ void Http3WebTransportSession::Close(nsresult aResult) {
 }
 
 void Http3WebTransportSession::OnClosePending() {
-  mSession->CloseWebTransport(mStreamId, mStatus, mReason);
+  
+  mozilla::dom::WebTransportStatsData stats;
+  if (mSession->CloseWebTransport(mStreamId, mStatus, mReason, stats)) {
+    mCachedStats = stats;
+  }
+}
+
+void Http3WebTransportSession::OnSessionClosedWithStats(
+    bool aCleanly, uint32_t aStatus, const nsACString& aReason,
+    const mozilla::dom::WebTransportStatsData& aStats) {
+  
+  mCachedStats = aStats;
+
+  
+  OnSessionClosed(aCleanly, aStatus, aReason);
 }
 
 void Http3WebTransportSession::OnSessionClosed(bool aCleanly, uint32_t aStatus,
@@ -363,7 +378,8 @@ void Http3WebTransportSession::OnSessionClosed(bool aCleanly, uint32_t aStatus,
     mTransaction = nullptr;
   }
   if (RefPtr<WebTransportSessionEventListener> listener = TakeListener()) {
-    listener->OnSessionClosed(aCleanly, aStatus, aReason);
+    
+    listener->OnSessionClosed(aCleanly, aStatus, aReason, &mCachedStats);
   }
   mRecvState = RECV_DONE;
   mSendState = SEND_DONE;
@@ -384,12 +400,62 @@ void Http3WebTransportSession::CloseSession(uint32_t aStatus,
   if ((mRecvState != CLOSE_PENDING) && (mRecvState != RECV_DONE)) {
     mStatus = aStatus;
     mReason = aReason;
+
+    
+    if (mSession->CloseWebTransport(mStreamId, mStatus, mReason,
+                                    mCachedStats)) {
+      
+    }
+
+    
+    RefPtr<WebTransportSessionEventListener> listener = GetListener();
+    if (listener) {
+      listener->OnSessionClosed(true, mStatus, mReason, &mCachedStats);
+    }
+
     mSession->ConnectSlowConsumer(this);
     mRecvState = CLOSE_PENDING;
     mSendState = SEND_DONE;
   }
   RefPtr<WebTransportSessionEventListener> listener = TakeListener();
   
+}
+
+bool Http3WebTransportSession::CloseSessionAndGetStats(
+    uint32_t aStatus, const nsACString& aReason,
+    mozilla::dom::WebTransportStatsData& aStats) {
+  LOG(("Http3WebTransportSession::CloseSessionAndGetStats stream=%llu",
+       (unsigned long long)mStreamId));
+  if ((mRecvState != CLOSE_PENDING) && (mRecvState != RECV_DONE)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    mStatus = aStatus;
+    mReason = aReason;
+
+    
+    if (mSession->CloseWebTransport(mStreamId, mStatus, mReason, aStats)) {
+      LOG(("  Got stats: bytesSent=%llu, bytesReceived=%llu",
+           (unsigned long long)aStats.bytesSent(),
+           (unsigned long long)aStats.bytesReceived()));
+      mCachedStats = aStats;
+      RefPtr<WebTransportSessionEventListener> listener =
+          TakeListener();  
+      mSession->ConnectSlowConsumer(this);
+      mRecvState = CLOSE_PENDING;
+      mSendState = SEND_DONE;
+      return true;
+    }
+    LOG(("  CloseWebTransport failed"));
+  } else {
+    LOG(("  Wrong state: mRecvState=%d", mRecvState));
+  }
+  return false;
 }
 
 void Http3WebTransportSession::CreateOutgoingBidirectionalStream(

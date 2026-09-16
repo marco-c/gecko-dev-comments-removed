@@ -2,8 +2,6 @@
 
 
 
-#include "mozilla/dom/WebTransportChild.h"
-
 #include "mozilla/dom/WebTransport.h"
 #include "mozilla/dom/WebTransportLog.h"
 
@@ -31,10 +29,11 @@ void WebTransportChild::CloseAll() {
 }
 
 ::mozilla::ipc::IPCResult WebTransportChild::RecvRemoteClosed(
-    const bool& aCleanly, const uint32_t& aCode, const nsACString& aReason) {
+    const bool& aCleanly, const uint32_t& aCode, const nsACString& aReason,
+    const Maybe<WebTransportStatsData>& aStats) {
   if (mTransport) {
     RefPtr<WebTransport> self(mTransport);
-    self->RemoteClosed(aCleanly, aCode, aReason);
+    self->RemoteClosed(aCleanly, aCode, aReason, aStats);
   }
   return IPC_OK();
 }

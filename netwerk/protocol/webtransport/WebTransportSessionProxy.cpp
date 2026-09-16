@@ -101,8 +101,9 @@ nsresult WebTransportSessionProxy::AsyncConnectWithClient(
   }
   auto cleanup = MakeScopeExit([self = RefPtr<WebTransportSessionProxy>(this)] {
     MutexAutoLock lock(self->mMutex);
-    self->mListener->OnSessionClosed(false, 0,
-                                     ""_ns);  
+    mozilla::dom::WebTransportStatsData stats;  
+    self->mListener->OnSessionClosed(false, 0, ""_ns,
+                                     &stats);  
     self->mChannel = nullptr;
     self->mListener = nullptr;
     self->ChangeState(WebTransportSessionProxyState::DONE);
@@ -313,9 +314,38 @@ WebTransportSessionProxy::ExportKeyingMaterial(
   return session->ExportKeyingMaterial(aLabel, aContext, aKeyingMaterial);
 }
 
+bool WebTransportSessionProxy::CloseSessionAndGetStats(
+    uint32_t aStatus, const nsACString& aReason,
+    mozilla::dom::WebTransportStatsData& aStats) {
+  MOZ_ASSERT(OnSocketThread());
+  LOG(("WebTransportSessionProxy::CloseSessionAndGetStats"));
+  MutexAutoLock lock(mMutex);
+
+  if (mState != WebTransportSessionProxyState::ACTIVE ||
+      !mWebTransportSession) {
+    return false;
+  }
+
+  RefPtr<WebTransportSessionBase> session = mWebTransportSession;
+
+  {
+    MutexAutoUnlock unlock(mMutex);
+    Http3WebTransportSession* http3Session =
+        session->GetHttp3WebTransportSession();
+    if (http3Session &&
+        http3Session->CloseSessionAndGetStats(aStatus, aReason, aStats)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 NS_IMETHODIMP
 WebTransportSessionProxy::GetStats() {
   RefPtr<WebTransportSessionBase> session;
+  mozilla::dom::WebTransportStatsData cachedStats;
+  bool useCachedStats = false;
   {
     MutexAutoLock lock(mMutex);
 
@@ -333,11 +363,29 @@ WebTransportSessionProxy::GetStats() {
       return NS_OK;
     }
 
-    if (mState != WebTransportSessionProxyState::ACTIVE ||
-        !mWebTransportSession) {
+    
+    
+    if (mState == WebTransportSessionProxyState::DONE) {
+      if (mHasCachedStats) {
+        LOG(
+            ("WebTransportSessionProxy::GetStats using cached stats - "
+             "connection closed"));
+        useCachedStats = true;
+        cachedStats = mCachedStats;
+      } else {
+        return NS_ERROR_NOT_AVAILABLE;
+      }
+    } else if (mState != WebTransportSessionProxyState::ACTIVE ||
+               !mWebTransportSession) {
       return NS_ERROR_NOT_AVAILABLE;
+    } else {
+      session = mWebTransportSession;
     }
-    session = mWebTransportSession;
+  }
+
+  
+  if (useCachedStats) {
+    return OnStatsAvailable(&cachedStats);
   }
 
   if (!OnSocketThread()) {
@@ -819,7 +867,8 @@ WebTransportSessionProxy::OnStartRequest(nsIRequest* aRequest) {
     }
   }
   if (listener) {
-    listener->OnSessionClosed(false, closeStatus, reason);
+    mozilla::dom::WebTransportStatsData stats;  
+    listener->OnSessionClosed(false, closeStatus, reason, &stats);
   }
   return NS_OK;
 }
@@ -904,8 +953,9 @@ WebTransportSessionProxy::OnStopRequest(nsIRequest* aRequest,
     if (succeeded) {
       listener->OnSessionReady(sessionId);
     } else {
-      listener->OnSessionClosed(false, closeStatus,
-                                reason);  
+      mozilla::dom::WebTransportStatsData stats;  
+      listener->OnSessionClosed(false, closeStatus, reason,
+                                &stats);  
                                           
     }
   }
@@ -1153,15 +1203,27 @@ WebTransportSessionProxy::OnSessionReady(uint64_t ready) {
   return NS_OK;
 }
 
+
+
+
+
 NS_IMETHODIMP
-WebTransportSessionProxy::OnSessionClosed(bool aCleanly, uint32_t aStatus,
-                                          const nsACString& aReason) {
+WebTransportSessionProxy::OnSessionClosed(
+    bool aCleanly, uint32_t aStatus, const nsACString& aReason,
+    mozilla::dom::WebTransportStatsData* aStats) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MutexAutoLock lock(mMutex);
   LOG(
       ("WebTransportSessionProxy::OnSessionClosed %p mState=%d "
        "mStopRequestCalled=%d",
        this, mState, mStopRequestCalled));
+
+  
+  if (!mHasCachedStats) {
+    mHasCachedStats = true;
+    mCachedStats = *aStats;
+  }
+
   
   
   
@@ -1169,8 +1231,9 @@ WebTransportSessionProxy::OnSessionClosed(bool aCleanly, uint32_t aStatus,
     nsCString closeReason(aReason);
     mPendingEvents.AppendElement([self = RefPtr{this}, status(aStatus),
                                   closeReason(std::move(closeReason)),
-                                  cleanly(aCleanly)]() {
-      (void)self->OnSessionClosed(cleanly, status, closeReason);
+                                  cleanly(aCleanly),
+                                  stats = *aStats]() mutable {
+      (void)self->OnSessionClosed(cleanly, status, closeReason, &stats);
     });
     return NS_OK;
   }
@@ -1272,6 +1335,11 @@ WebTransportSessionProxy::OnStatsAvailable(
     
     
     MOZ_ASSERT(mTarget->IsOnCurrentThread());
+    
+    if (aStats) {
+      mHasCachedStats = true;
+      mCachedStats = *aStats;
+    }
     if (!mTarget->IsOnCurrentThread()) {
       return mTarget->Dispatch(
           NS_NewRunnableFunction("WebTransportSessionProxy::OnStatsAvailable",
@@ -1306,6 +1374,7 @@ void WebTransportSessionProxy::CallOnSessionClosed() MOZ_REQUIRES(mMutex) {
   bool cleanly = false;
   nsAutoCString reason;
   uint32_t closeStatus = 0;
+  mozilla::dom::WebTransportStatsData stats;
 
   switch (mState) {
     case WebTransportSessionProxyState::INIT:
@@ -1321,6 +1390,9 @@ void WebTransportSessionProxy::CallOnSessionClosed() MOZ_REQUIRES(mMutex) {
       cleanly = mCleanly;
       reason = mReason;
       closeStatus = mCloseStatus;
+      if (mHasCachedStats) {
+        stats = mCachedStats;
+      }
       ChangeState(WebTransportSessionProxyState::DONE);
       break;
     case WebTransportSessionProxyState::DONE:
@@ -1330,7 +1402,7 @@ void WebTransportSessionProxy::CallOnSessionClosed() MOZ_REQUIRES(mMutex) {
   if (listener) {
     
     MutexAutoUnlock unlock(mMutex);
-    listener->OnSessionClosed(cleanly, closeStatus, reason);
+    listener->OnSessionClosed(cleanly, closeStatus, reason, &stats);
   }
 }
 

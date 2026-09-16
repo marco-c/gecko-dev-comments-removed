@@ -55,11 +55,16 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(WebTransport)
     NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mReceiveStreams entry item");
     cb.NoteXPCOMChild(hashEntry);
   }
+  for (const auto& promise : tmp->mPendingGetStatsPromises) {
+    CycleCollectionNoteChild(cb, promise.get(),
+                             "mPendingGetStatsPromises promise");
+  }
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(WebTransport)
   tmp->mSendStreams.Clear();
   tmp->mReceiveStreams.Clear();
+  tmp->mPendingGetStatsPromises.Clear();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mGlobal)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mUnidirectionalStreams)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mBidirectionalStreams)
@@ -576,8 +581,17 @@ bool WebTransport::ParseURL(const nsAString& aURL) const {
   return true;
 }
 
+
+
+
+
+
+
+
 static void PopulateConnectionStats(WebTransportConnectionStats& aStats,
-                                    const WebTransportStatsData& aSource) {
+                                    const WebTransportStatsData& aSource,
+                                    uint64_t aDroppedIncoming,
+                                    uint64_t aExpiredIncoming) {
   aStats.mBytesSent.Construct(aSource.bytesSent());
   
   
@@ -599,8 +613,8 @@ static void PopulateConnectionStats(WebTransportConnectionStats& aStats,
         static_cast<uint64_t>(aSource.estimatedSendRate()));
   }
   aStats.mAtSendCapacity = aSource.atSendCapacity();
-  aStats.mDatagrams.mDroppedIncoming.Construct(
-      aSource.datagrams().droppedIncoming());
+  aStats.mDatagrams.mDroppedIncoming.Construct(aDroppedIncoming);
+  aStats.mDatagrams.mExpiredIncoming.Construct(aExpiredIncoming);
   aStats.mDatagrams.mExpiredOutgoing.Construct(
       aSource.datagrams().expiredOutgoing());
   aStats.mDatagrams.mLostOutgoing.Construct(aSource.datagrams().lostOutgoing());
@@ -608,7 +622,7 @@ static void PopulateConnectionStats(WebTransportConnectionStats& aStats,
 
 already_AddRefed<Promise> WebTransport::GetStats(ErrorResult& aError) {
   
-  LOG(("GetStats() called"));
+  LOG(("GetStats() called, mClosePending=%d", mClosePending));
 
   
 
@@ -625,17 +639,51 @@ already_AddRefed<Promise> WebTransport::GetStats(ErrorResult& aError) {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  if (mClosePending) {
+    LOG(("GetStats: close is pending, queuing promise (queue size: %zu)",
+         mPendingGetStatsPromises.Length()));
+    mPendingGetStatsPromises.AppendElement(promise);
+    return promise.forget();
+  }
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mState == WebTransportState::CLOSED) {
+    LOG(("GetStats: state is CLOSED, hasCachedStats=%d",
+         mCachedStats.isSome()));
+    RefPtr<Promise> p = promise;
+    if (mCachedStats) {
+      WebTransportStatsData cachedStats = *mCachedStats;
+      uint64_t droppedIncoming = mCachedDroppedIncoming;
+      uint64_t expiredIncoming = mCachedExpiredIncoming;
+      GetCurrentSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
+          "WebTransport::GetStats", [p, cachedStats = std::move(cachedStats),
+                                     droppedIncoming, expiredIncoming]() {
+            WebTransportConnectionStats stats;
+            PopulateConnectionStats(stats, cachedStats, droppedIncoming,
+                                    expiredIncoming);
+            p->MaybeResolve(stats);
+          }));
+    } else {
+      GetCurrentSerialEventTarget()->Dispatch(
+          NS_NewRunnableFunction("WebTransport::GetStats", [p]() {
+            p->MaybeRejectWithInvalidStateError(
+                "No stats available for closed connection");
+          }));
+    }
+    return promise.forget();
+  }
+
   
   
   if (!mChild) {
@@ -683,7 +731,8 @@ void WebTransport::SendGetStatsRequest(Promise* aPromise) {
     return;
   }
   mChild->SendGetStats(
-      [promise = RefPtr(aPromise)](Maybe<WebTransportStatsData>&& aStats) {
+      [promise = RefPtr(aPromise),
+       self = RefPtr(this)](Maybe<WebTransportStatsData>&& aStats) {
         LOG(("GetStats callback: aStats.isSome() = %d", aStats.isSome()));
         if (!aStats) {
           
@@ -702,8 +751,18 @@ void WebTransport::SendGetStatsRequest(Promise* aPromise) {
         
         
         
+        
+        
+        
+        
+        self->mCachedStats = Some(*aStats);
+        
+        self->mCachedDroppedIncoming = 0;
+        self->mCachedExpiredIncoming = 0;
+
         WebTransportConnectionStats stats;
-        PopulateConnectionStats(stats, *aStats);
+        PopulateConnectionStats(stats, *aStats, self->mCachedDroppedIncoming,
+                                self->mCachedExpiredIncoming);
 
         
         promise->MaybeResolve(stats);
@@ -844,9 +903,21 @@ void WebTransport::SetNegotiatedProtocol(const nsACString& aProtocol) {
 }
 
 void WebTransport::RemoteClosed(bool aCleanly, const uint32_t& aCode,
-                                const nsACString& aReason) {
+                                const nsACString& aReason,
+                                const Maybe<WebTransportStatsData>& aStats) {
   LOG(("Server closed: cleanly: %d, code %u, reason %s", aCleanly, aCode,
        PromiseFlatCString(aReason).get()));
+
+  
+  
+  
+  
+  if (!mCachedStats && aStats) {
+    LOG(("Caching stats from RemoteClosed"));
+    mCachedStats = Some(*aStats);
+    mCachedDroppedIncoming = 0;
+  }
+
   
   
   
@@ -954,6 +1025,7 @@ void WebTransport::Close(const WebTransportCloseInfo& aOptions,
   }
   LOG(("Sending Close"));
   MOZ_ASSERT(mChild);
+
   
   
   
@@ -962,6 +1034,8 @@ void WebTransport::Close(const WebTransportCloseInfo& aOptions,
   
   
   
+
+  nsCString reason;
   if (aOptions.mReason.Length() > 1024u) {
     
     
@@ -969,21 +1043,80 @@ void WebTransport::Close(const WebTransportCloseInfo& aOptions,
     
     
     
-    mChild->SendClose(
-        aOptions.mCloseCode,
+    reason =
         Substring(aOptions.mReason, 0,
-                  RewindToPriorUTF8Codepoint(aOptions.mReason.get(), 1024u)));
+                  RewindToPriorUTF8Codepoint(aOptions.mReason.get(), 1024u));
   } else {
-    mChild->SendClose(aOptions.mCloseCode, aOptions.mReason);
-    LOG(("Close sent"));
+    reason = aOptions.mReason;
   }
 
   
+  LOG(("Setting close pending state"));
+  mClosePending = true;
+
   
+  
+  
+  
+  RefPtr<WebTransport> self = this;
   RefPtr<WebTransportError> error =
       new WebTransportError("close()"_ns, WebTransportErrorSource::Session,
                             DOMException_Binding::ABORT_ERR);
-  Cleanup(error, &aOptions, aRv);
+  WebTransportCloseInfo closeInfo;
+  closeInfo.mCloseCode = aOptions.mCloseCode;
+  closeInfo.mReason = aOptions.mReason;
+
+  mChild->SendClose(
+      aOptions.mCloseCode, reason,
+      [self, error, closeInfo](Maybe<WebTransportStatsData>&& aStats) {
+        LOG(("Close callback received"));
+        if (aStats) {
+          LOG(("Caching stats from close: bytesSent=%llu",
+               (unsigned long long)aStats->bytesSent()));
+          self->mCachedStats = Some(*aStats);
+          self->mCachedDroppedIncoming = 0;
+        } else {
+          LOG(("No stats returned from close"));
+          self->mCachedStats = Nothing();
+        }
+
+        
+        LOG(("Resolving %zu pending GetStats promises",
+             self->mPendingGetStatsPromises.Length()));
+        for (auto& promise : self->mPendingGetStatsPromises) {
+          if (self->mCachedStats) {
+            WebTransportConnectionStats stats;
+            PopulateConnectionStats(stats, *self->mCachedStats,
+                                    self->mCachedDroppedIncoming,
+                                    self->mCachedExpiredIncoming);
+            promise->MaybeResolve(stats);
+          } else {
+            promise->MaybeRejectWithInvalidStateError(
+                "No stats available for closed connection");
+          }
+        }
+        self->mPendingGetStatsPromises.Clear();
+
+        self->mClosePending = false;
+      },
+      [self, error, closeInfo](mozilla::ipc::ResponseRejectReason) {
+        LOG(("Close IPC failed"));
+        
+        for (auto& promise : self->mPendingGetStatsPromises) {
+          promise->MaybeRejectWithInvalidStateError("Close IPC failed");
+        }
+        self->mPendingGetStatsPromises.Clear();
+
+        self->mClosePending = false;
+      });
+  LOG(("Close sent"));
+
+  
+  
+  
+  
+  
+  Cleanup(error, &closeInfo, aRv);
   LOG(("Cleanup done"));
 
   

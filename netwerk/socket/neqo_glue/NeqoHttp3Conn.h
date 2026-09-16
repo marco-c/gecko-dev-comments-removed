@@ -163,11 +163,17 @@ class NeqoHttp3Conn final {
                                                      &aHeaders, aSessionId);
   }
 
-  nsresult CloseWebTransport(uint64_t aSessionId, uint32_t aError,
-                             const nsACString& aMessage) {
-    
-    return neqo_http3conn_webtransport_close_session(this, aSessionId, aError,
-                                                     &aMessage, nullptr);
+  bool CloseWebTransport(uint64_t aSessionId, uint32_t aError,
+                         const nsACString& aMessage,
+                         mozilla::dom::WebTransportStatsData& aStats) {
+    WebTransportSessionStats stats{};
+    nsresult rv = neqo_http3conn_webtransport_close_session(
+        this, aSessionId, aError, &aMessage, &stats);
+    if (NS_FAILED(rv)) {
+      return false;
+    }
+    TranslateWebTransportSessionStats(stats, aStats);
+    return true;
   }
 
   nsresult CloseConnectUdp(uint64_t aSessionId, uint32_t aError,
@@ -211,29 +217,7 @@ class NeqoHttp3Conn final {
     if (NS_FAILED(rv)) {
       return false;
     }
-    
-    aStats.bytesSent() = stats.bytes_sent_total;
-    
-    
-    aStats.bytesAcknowledged() = stats.bytes_acked;
-    aStats.packetsSent() = stats.packets_sent;
-    aStats.bytesLost() = stats.bytes_lost;
-    aStats.packetsLost() = stats.packets_lost;
-    aStats.bytesReceived() = stats.bytes_received_total;
-    aStats.packetsReceived() = stats.packets_received;
-    aStats.smoothedRtt() = stats.smoothed_rtt;
-    aStats.rttVariation() = stats.rtt_variation;
-    aStats.minRtt() = stats.min_rtt;
-    aStats.estimatedSendRate() = stats.estimated_send_rate;
-    aStats.atSendCapacity() = stats.at_send_capacity;
-    
-    
-    
-    
-    aStats.datagrams().droppedIncoming() = 0;
-    aStats.datagrams().expiredIncoming() = 0;
-    aStats.datagrams().expiredOutgoing() = stats.datagrams_expired_outgoing;
-    aStats.datagrams().lostOutgoing() = stats.datagrams_lost_outgoing;
+    TranslateWebTransportSessionStats(stats, aStats);
     return true;
   }
 
@@ -275,6 +259,34 @@ class NeqoHttp3Conn final {
   ~NeqoHttp3Conn() = delete;
   NeqoHttp3Conn(const NeqoHttp3Conn&) = delete;
   NeqoHttp3Conn& operator=(const NeqoHttp3Conn&) = delete;
+
+  static void TranslateWebTransportSessionStats(
+      const struct WebTransportSessionStats& aFrom,
+      mozilla::dom::WebTransportStatsData& aTo) {
+    
+    aTo.bytesSent() = aFrom.bytes_sent_total;
+    
+    
+    aTo.bytesAcknowledged() = aFrom.bytes_acked;
+    aTo.packetsSent() = aFrom.packets_sent;
+    aTo.bytesLost() = aFrom.bytes_lost;
+    aTo.packetsLost() = aFrom.packets_lost;
+    aTo.bytesReceived() = aFrom.bytes_received_total;
+    aTo.packetsReceived() = aFrom.packets_received;
+    aTo.smoothedRtt() = aFrom.smoothed_rtt;
+    aTo.rttVariation() = aFrom.rtt_variation;
+    aTo.minRtt() = aFrom.min_rtt;
+    aTo.estimatedSendRate() = aFrom.estimated_send_rate;
+    aTo.atSendCapacity() = aFrom.at_send_capacity;
+    
+    
+    
+    
+    aTo.datagrams().droppedIncoming() = 0;
+    aTo.datagrams().expiredIncoming() = 0;
+    aTo.datagrams().expiredOutgoing() = aFrom.datagrams_expired_outgoing;
+    aTo.datagrams().lostOutgoing() = aFrom.datagrams_lost_outgoing;
+  }
 };
 
 class NeqoEncoder final {

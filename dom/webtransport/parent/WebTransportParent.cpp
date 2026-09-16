@@ -158,21 +158,50 @@ void WebTransportParent::ActorDestroy(ActorDestroyReason aWhy) {
 
 
 IPCResult WebTransportParent::RecvClose(const uint32_t& aCode,
-                                        const nsACString& aReason) {
+                                        const nsACString& aReason,
+                                        CloseResolver&& aResolver) {
   LOG(("Close for %p received, code = %u, reason = %s", this, aCode,
        PromiseFlatCString(aReason).get()));
   if (!mSessionReady) {
     return IPC_FAIL(this, "Close received before session was ready");
   }
+
+  
+  Maybe<WebTransportStatsData> stats;
+  if (mWebTransport) {
+    
+    RefPtr<net::WebTransportSessionProxy> proxy =
+        static_cast<net::WebTransportSessionProxy*>(mWebTransport.get());
+
+    WebTransportStatsData statsData;
+    if (proxy->CloseSessionAndGetStats(aCode, aReason, statsData)) {
+      stats = Some(statsData);
+      LOG(("Retrieved stats from close: bytesSent=%llu",
+           (unsigned long long)statsData.bytesSent()));
+    } else {
+      LOG(("No stats available from close"));
+    }
+  }
+
   {
     MutexAutoLock lock(mMutex);
     MOZ_ASSERT(!mClosed);
     mClosed.Flip();
   }
+
+  
+  LOG(("Returning stats to child: stats.isSome()=%d", stats.isSome()));
+  aResolver(stats);
+
   
   
-  ResolvePendingGetStats(Nothing());
-  mWebTransport->CloseSession(aCode, aReason);
+  
+  ResolvePendingGetStats(stats);
+
+  
+  if (mWebTransport) {
+    mWebTransport->CloseSession(aCode, aReason);
+  }
   Close();
   return IPC_OK();
 }
@@ -637,10 +666,16 @@ WebTransportParent::OnSessionReady(uint64_t aSessionId) {
 
 
 
+
+
+
+
+
 NS_IMETHODIMP
 WebTransportParent::OnSessionClosed(const bool aCleanly,
                                     const uint32_t aErrorCode,
-                                    const nsACString& aReason) {
+                                    const nsACString& aReason,
+                                    WebTransportStatsData* aStats) {
   nsresult rv = NS_OK;
 
   MOZ_ASSERT(mOwningEventTarget);
@@ -679,9 +714,9 @@ WebTransportParent::OnSessionClosed(const bool aCleanly,
         LOG(("[%p] NotifyRemoteClosed to be called later", this));
         
         mExecuteAfterResolverCallback = [self = RefPtr{this}, aCleanly,
-                                         aErrorCode,
+                                         aErrorCode, statsData = *aStats,
                                          reason = nsCString{aReason}]() {
-          self->NotifyRemoteClosed(aCleanly, aErrorCode, reason);
+          self->NotifyRemoteClosed(aCleanly, aErrorCode, reason, statsData);
         };
         return NS_OK;
       }
@@ -691,7 +726,7 @@ WebTransportParent::OnSessionClosed(const bool aCleanly,
     
     
     
-    NotifyRemoteClosed(aCleanly, aErrorCode, aReason);
+    NotifyRemoteClosed(aCleanly, aErrorCode, aReason, *aStats);
   }
 
   return NS_OK;
@@ -739,17 +774,23 @@ NS_IMETHODIMP WebTransportParent::OnResetReceived(uint64_t aStreamId,
   return NS_OK;
 }
 
-void WebTransportParent::NotifyRemoteClosed(bool aCleanly, uint32_t aErrorCode,
-                                            const nsACString& aReason) {
+void WebTransportParent::NotifyRemoteClosed(
+    bool aCleanly, uint32_t aErrorCode, const nsACString& aReason,
+    const WebTransportStatsData& aStats) {
   LOG(("webtransport %p session remote closed cleanly=%d code= %u, reason= %s",
        this, aCleanly, aErrorCode, PromiseFlatCString(aReason).get()));
+
+  
+  Maybe<WebTransportStatsData> stats = Some(aStats);
+
   mSocketThread->Dispatch(NS_NewRunnableFunction(
       __func__, [self = RefPtr{this}, aErrorCode, reason = nsCString{aReason},
-                 aCleanly]() {
+                 aCleanly, stats = std::move(stats)]() {
         
-        self->ResolvePendingGetStats(Nothing());
         
-        (void)self->SendRemoteClosed(aCleanly, aErrorCode, reason);
+        self->ResolvePendingGetStats(stats);
+        
+        (void)self->SendRemoteClosed(aCleanly, aErrorCode, reason, stats);
         
       }));
 }
