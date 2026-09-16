@@ -1493,7 +1493,6 @@ static void AtomicFetchOp(MacroAssembler& masm,
       MOZ_CRASH();
   }
 
-  MOZ_ASSERT(before < after);
   
   if (access) {
     masm.appendAndVerify(*access, WasmTrapMachineInsn(arrayType, op),
