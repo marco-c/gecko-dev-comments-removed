@@ -3,8 +3,9 @@
 
 
 
-use crate::*;
 use jxl_simd::{F32SimdVec, SimdDescriptor};
+
+use crate::*;
 
 #[inline(always)]
 fn idct2d_2_2_impl<D: SimdDescriptor>(d: D, data: &mut [f32]) {

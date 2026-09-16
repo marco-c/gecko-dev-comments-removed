@@ -3,12 +3,10 @@
 
 
 
-use crate::{
-    bit_reader::BitReader,
-    error::{Error, Result},
-    frame::quant_weights,
-    headers::encodings::{Empty, UnconditionalCoder},
-};
+use crate::bit_reader::BitReader;
+use crate::error::{Error, Result};
+use crate::frame::quant_weights;
+use crate::headers::encodings::{Empty, UnconditionalCoder};
 
 pub const NUM_QUANT_TABLES: usize = 17;
 pub const GLOBAL_SCALE_DENOM: usize = 1 << 16;

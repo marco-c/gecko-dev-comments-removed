@@ -3,18 +3,18 @@
 
 
 
-use crate::util::sync::atomic::AtomicBool;
 use std::any::Any;
 use std::fmt::Display;
-
-use crate::error::Result;
-use crate::image::{DataTypeTag, ImageDataType};
-use crate::render::{ErasedLocalState, StageSpecialCase};
-use crate::util::ShiftRightCeil;
+use std::sync::Arc;
 
 use super::save::SaveStage;
 use super::stages::ExtendToImageDimensionsStage;
 use super::{RenderPipelineInOutStage, RenderPipelineInPlaceStage};
+use crate::error::Result;
+use crate::image::{BufferRecycler, DataTypeTag, ImageDataType};
+use crate::render::{ErasedLocalState, StageSpecialCase};
+use crate::util::ShiftRightCeil;
+use crate::util::sync::atomic::AtomicBool;
 
 pub enum Stage<Buffer> {
     InPlace(Box<dyn RunInPlaceStage<Buffer>>),
@@ -112,7 +112,7 @@ pub struct RenderPipelineShared<Buffer> {
     pub stages: Vec<Stage<Buffer>>,
     pub extend_stage_index: Option<usize>,
     pub channel_is_used: Vec<bool>,
-    pub group_scratch_buffers_limit: Option<usize>,
+    pub buffer_recycler: Arc<BufferRecycler>,
 }
 
 impl<Buffer> RenderPipelineShared<Buffer> {
@@ -148,10 +148,15 @@ impl<Buffer> RenderPipelineShared<Buffer> {
         requested_data_type: DataTypeTag,
     ) -> (usize, usize) {
         let ChannelInfo { downsample, ty } = self.channel_info[0][channel];
-        if ty.unwrap() != requested_data_type {
+        
+        
+        
+        
+        if let Some(ty) = ty
+            && ty != requested_data_type
+        {
             panic!(
-                "Invalid pipeline usage: incorrect channel type, requested {:?}, but pipeline wants {ty:?}",
-                requested_data_type
+                "Invalid pipeline usage: incorrect channel type, requested {requested_data_type:?}, but pipeline wants {ty:?}"
             );
         }
         

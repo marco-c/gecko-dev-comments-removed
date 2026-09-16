@@ -3,9 +3,9 @@
 
 
 
-use crate::{error::Result, util::NewWithCapacity};
-
 use super::{ICC_HEADER_SIZE, IccStream};
+use crate::error::Result;
+use crate::util::NewWithCapacity;
 
 fn predict_header(idx: usize, output_size: u32, header: &[u8]) -> u8 {
     match idx {

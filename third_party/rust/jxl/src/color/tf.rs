@@ -3,8 +3,9 @@
 
 
 
-use crate::util::{eval_rational_poly, eval_rational_poly_simd};
 use jxl_simd::{F32SimdVec, SimdDescriptor, SimdMask};
+
+use crate::util::{eval_rational_poly, eval_rational_poly_simd};
 
 
 

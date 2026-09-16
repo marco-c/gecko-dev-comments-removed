@@ -6,6 +6,7 @@
 
 #[inline(always)]
 pub fn mirror(mut v: isize, s: usize) -> usize {
+    debug_assert_ne!(s, 0, "mirror size must be greater than 0");
     
     loop {
         if v < 0 {

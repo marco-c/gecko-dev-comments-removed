@@ -3,15 +3,14 @@
 
 
 
-use internal::{RenderPipelineShared, RunInOutStage, RunInPlaceStage};
 use std::any::Any;
 
-use crate::{
-    api::JxlOutputBuffer,
-    error::Result,
-    image::{Image, ImageDataType},
-    render::buffer_splitter::BufferSplitter,
-};
+use internal::{RenderPipelineShared, RunInOutStage, RunInPlaceStage};
+
+use crate::api::JxlOutputBuffer;
+use crate::error::Result;
+use crate::image::{Image, ImageDataType};
+use crate::render::buffer_splitter::BufferSplitter;
 
 pub mod buffer_splitter;
 mod builder;
@@ -19,7 +18,6 @@ mod channels;
 mod internal;
 pub mod low_memory_pipeline;
 pub mod save;
-mod simd_utils;
 #[cfg(test)]
 mod simple_pipeline;
 pub mod stages;
@@ -47,6 +45,7 @@ pub(crate) type ErasedLocalState = dyn Any + Send + Sync;
 pub enum StageSpecialCase {
     F32ToU8 { channel: usize, bit_depth: u8 },
     ModularToF32 { channel: usize, bit_depth: u8 },
+    Modular16ToF32 { channel: usize, bit_depth: u8 },
 }
 
 
@@ -60,6 +59,7 @@ pub trait RenderPipelineInPlaceStage: Any + std::fmt::Display + Send + Sync {
         
         row: &mut [&mut [Self::Type]],
         state: Option<&mut ErasedLocalState>,
+        previous_call_was_previous_row: bool,
     );
 
     fn init_local_state(&self) -> Result<Option<Box<ErasedLocalState>>> {
@@ -92,6 +92,10 @@ pub trait RenderPipelineInOutStage: Any + std::fmt::Display + Send + Sync {
     const BORDER: (u8, u8);
     const SHIFT: (u8, u8);
 
+    
+    
+    
+    
     fn process_row_chunk(
         &self,
         position: (usize, usize),
@@ -101,6 +105,7 @@ pub trait RenderPipelineInOutStage: Any + std::fmt::Display + Send + Sync {
         
         output_rows: &mut ChannelsMut<Self::OutputT>,
         state: Option<&mut ErasedLocalState>,
+        previous_call_was_previous_row: bool,
     );
 
     fn init_local_state(&self) -> Result<Option<Box<ErasedLocalState>>> {

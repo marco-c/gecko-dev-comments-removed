@@ -3,11 +3,12 @@
 
 
 
-use std::{fmt::Debug, marker::PhantomData};
+use std::fmt::Debug;
+use std::marker::PhantomData;
 
+use super::internal::RawImageBuffer;
+use super::{RawImageRectMut, Rect};
 use crate::image::ImageDataType;
-
-use super::{RawImageRectMut, Rect, internal::RawImageBuffer};
 
 #[derive(Debug)]
 #[repr(transparent)]

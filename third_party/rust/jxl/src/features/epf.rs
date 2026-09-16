@@ -3,16 +3,13 @@
 
 
 
-use crate::util::sync::Arc;
-
-use crate::{
-    error::{Error, Result},
-    frame::{HfMetadata, LfGlobalState},
-    headers::frame_header::{Encoding, FrameHeader},
-    image::Image,
-};
-
 use jxl_transforms::transform_map::*;
+
+use crate::error::{Error, Result};
+use crate::frame::{HfMetadata, LfGlobalState};
+use crate::headers::frame_header::{Encoding, FrameHeader};
+use crate::image::Image;
+use crate::util::sync::Arc;
 
 
 

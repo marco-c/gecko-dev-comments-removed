@@ -3,11 +3,12 @@
 
 
 
+use jxl_simd::{F32SimdVec, simd_function};
+
 use crate::color::tf;
 use crate::headers::color_encoding::CustomTransferFunction;
 use crate::render::stages::from_linear;
 use crate::render::{ErasedLocalState, RenderPipelineInPlaceStage};
-use jxl_simd::{F32SimdVec, simd_function};
 
 
 #[derive(Debug)]
@@ -127,6 +128,7 @@ impl RenderPipelineInPlaceStage for ToLinearStage {
         xsize: usize,
         row: &mut [&mut [f32]],
         _state: Option<&mut ErasedLocalState>,
+        _previous_call_was_previous_row: bool,
     ) {
         to_linear_process_dispatch(&self.tf, xsize, row)
     }

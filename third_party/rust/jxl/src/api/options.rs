@@ -3,6 +3,8 @@
 
 
 
+use crate::api::JxlAuxBoxType;
+
 #[non_exhaustive]
 pub struct JxlDecoderOptions {
     pub adjust_orientation: bool,
@@ -31,6 +33,19 @@ pub struct JxlDecoderOptions {
     
     
     pub scan_frames_only: bool,
+    pub request_aux_boxes: Vec<JxlAuxBoxType>,
+    
+    
+    
+    pub force_level5_splines: bool,
+    
+    
+    
+    pub force_level5_patches: bool,
+    
+    
+    
+    pub force_level5_modular: bool,
 }
 
 impl Default for JxlDecoderOptions {
@@ -45,6 +60,10 @@ impl Default for JxlDecoderOptions {
             high_precision: false,
             premultiply_output: false,
             scan_frames_only: false,
+            request_aux_boxes: Vec::new(),
+            force_level5_splines: true,
+            force_level5_patches: true,
+            force_level5_modular: true,
         }
     }
 }

@@ -3,10 +3,10 @@
 
 
 
+use jxl_simd::{F32SimdVec, I32SimdVec, SimdDescriptor, SimdMask};
+
 use crate::BLOCK_DIM;
 use crate::features::epf::SigmaSource;
-
-use jxl_simd::{F32SimdVec, I32SimdVec, SimdDescriptor, SimdMask};
 
 
 

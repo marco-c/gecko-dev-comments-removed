@@ -3,16 +3,14 @@
 
 
 
-use crate::{
-    bit_reader::BitReader,
-    error::{Error, Result},
-    frame::modular::Predictor,
-    headers::encodings::*,
-};
 use jxl_macros::UnconditionalCoder;
 use num_derive::FromPrimitive;
 
 use super::encodings;
+use crate::bit_reader::BitReader;
+use crate::error::{Error, Result};
+use crate::frame::modular::Predictor;
+use crate::headers::encodings::*;
 
 #[derive(UnconditionalCoder, Debug, PartialEq, Clone)]
 pub struct WeightedHeader {

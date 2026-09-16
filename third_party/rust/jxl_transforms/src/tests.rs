@@ -3,16 +3,14 @@
 
 
 
-use super::*;
+use std::f64::consts::{FRAC_1_SQRT_2, PI, SQRT_2};
+
 use jxl_simd::{test_all_instruction_sets, ScalarDescriptor, SimdDescriptor};
-use rand::Rng;
-use rand::SeedableRng;
+use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha12Rng;
 use test_log::test;
 
-use std::f64::consts::FRAC_1_SQRT_2;
-use std::f64::consts::PI;
-use std::f64::consts::SQRT_2;
+use super::*;
 
 #[inline(always)]
 fn alpha(u: usize) -> f64 {

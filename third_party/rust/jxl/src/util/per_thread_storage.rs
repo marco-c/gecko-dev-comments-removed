@@ -3,10 +3,8 @@
 
 
 
-use std::{
-    fmt::Debug,
-    ops::{Deref, DerefMut},
-};
+use std::fmt::Debug;
+use std::ops::{Deref, DerefMut};
 
 use crate::util::sync::Mutex;
 

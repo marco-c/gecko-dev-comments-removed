@@ -3,10 +3,8 @@
 
 
 
-use crate::{
-    api::ProcessingResult,
-    error::{Error, Result},
-};
+use crate::api::ProcessingResult;
+use crate::error::{Error, Result};
 
 
 pub(crate) const CODESTREAM_SIGNATURE: [u8; 2] = [0xff, 0x0a];

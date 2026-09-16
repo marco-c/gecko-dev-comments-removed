@@ -3,8 +3,9 @@
 
 
 
-use crate::render::{ErasedLocalState, RenderPipelineInPlaceStage};
 use jxl_simd::{F32SimdVec, simd_function};
+
+use crate::render::{ErasedLocalState, RenderPipelineInPlaceStage};
 
 
 
@@ -75,6 +76,7 @@ impl RenderPipelineInPlaceStage for PremultiplyAlphaStage {
         xsize: usize,
         row: &mut [&mut [f32]],
         _state: Option<&mut ErasedLocalState>,
+        _previous_call_was_previous_row: bool,
     ) {
         
         

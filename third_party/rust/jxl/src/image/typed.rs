@@ -3,19 +3,17 @@
 
 
 
-use std::{fmt::Debug, marker::PhantomData};
-
-use crate::{
-    error::Result,
-    image::internal::DistinctRowsIndexes,
-    util::{CACHE_LINE_BYTE_SIZE, tracing_wrappers::*},
-};
+use std::fmt::Debug;
+use std::marker::PhantomData;
 
 use super::{ImageDataType, OwnedRawImage, RawImageRect, RawImageRectMut, Rect};
+use crate::error::Result;
+use crate::image::internal::DistinctRowsIndexes;
+use crate::util::CACHE_LINE_BYTE_SIZE;
+use crate::util::tracing_wrappers::*;
 
 #[repr(transparent)]
 pub struct Image<T: ImageDataType> {
-    
     
     raw: OwnedRawImage,
     _ph: PhantomData<T>,
@@ -23,23 +21,10 @@ pub struct Image<T: ImageDataType> {
 
 impl<T: ImageDataType> Image<T> {
     #[instrument(ret, err)]
-    pub fn new_with_padding(
-        size: (usize, usize),
-        offset: (usize, usize),
-        padding: (usize, usize),
-    ) -> Result<Image<T>> {
-        let s = T::DATA_TYPE_ID.size();
-        let img = OwnedRawImage::new_zeroed_with_padding(
-            (size.0 * s, size.1),
-            (offset.0 * s, offset.1),
-            (padding.0 * s, padding.1),
-        )?;
-        Ok(Self::from_raw(img))
-    }
-
-    #[instrument(ret, err)]
     pub fn new(size: (usize, usize)) -> Result<Image<T>> {
-        Self::new_with_padding(size, (0, 0), (0, 0))
+        let s = T::DATA_TYPE_ID.size();
+        let img = OwnedRawImage::new((size.0 * s, size.1))?;
+        Ok(Self::from_raw(img))
     }
 
     pub fn new_with_value(size: (usize, usize), value: T) -> Result<Image<T>> {
@@ -57,20 +42,6 @@ impl<T: ImageDataType> Image<T> {
         )
     }
 
-    pub fn offset(&self) -> (usize, usize) {
-        (
-            self.raw.byte_offset().0 / T::DATA_TYPE_ID.size(),
-            self.raw.byte_offset().1,
-        )
-    }
-
-    pub fn padding(&self) -> (usize, usize) {
-        (
-            self.raw.byte_padding().0 / T::DATA_TYPE_ID.size(),
-            self.raw.byte_padding().1,
-        )
-    }
-
     pub fn fill(&mut self, v: T) {
         if self.size().0 == 0 {
             return;
@@ -78,20 +49,6 @@ impl<T: ImageDataType> Image<T> {
         for y in 0..self.size().1 {
             self.row_mut(y).fill(v);
         }
-    }
-
-    pub fn get_rect_including_padding_mut(&mut self, rect: Rect) -> ImageRectMut<'_, T> {
-        ImageRectMut::from_raw(
-            self.raw
-                .get_rect_including_padding_mut(rect.to_byte_rect(T::DATA_TYPE_ID)),
-        )
-    }
-
-    pub fn get_rect_including_padding(&mut self, rect: Rect) -> ImageRect<'_, T> {
-        ImageRect::from_raw(
-            self.raw
-                .get_rect_including_padding(rect.to_byte_rect(T::DATA_TYPE_ID)),
-        )
     }
 
     pub fn get_rect_mut(&mut self, rect: Rect) -> ImageRectMut<'_, T> {
@@ -113,10 +70,6 @@ impl<T: ImageDataType> Image<T> {
     pub fn from_raw(raw: OwnedRawImage) -> Self {
         const { assert!(CACHE_LINE_BYTE_SIZE.is_multiple_of(T::DATA_TYPE_ID.size())) };
         assert!(raw.data.is_aligned(T::DATA_TYPE_ID.size()));
-        assert!(
-            raw.byte_offset().0.is_multiple_of(T::DATA_TYPE_ID.size()),
-            "image byte offset must be aligned to element size"
-        );
         Image {
             
             raw,
@@ -154,10 +107,8 @@ impl<T: ImageDataType> Image<T> {
     }
 
     
-    
-    
     #[inline(always)]
-    pub fn distinct_full_rows_mut<I: DistinctRowsIndexes>(&mut self, rows: I) -> I::Output<'_, T> {
+    pub fn distinct_rows_mut<I: DistinctRowsIndexes>(&mut self, rows: I) -> I::Output<'_, T> {
         
         let rows = unsafe { self.raw.data.distinct_rows_mut(rows) };
         
@@ -252,6 +203,14 @@ impl<'a, T: ImageDataType> ImageRectMut<'a, T> {
                 row.len() / T::DATA_TYPE_ID.size(),
             )
         }
+    }
+
+    #[inline(always)]
+    pub fn distinct_rows_mut<I: DistinctRowsIndexes>(&mut self, rows: I) -> I::Output<'_, T> {
+        
+        let rows = unsafe { self.raw.data.distinct_rows_mut(rows) };
+        
+        unsafe { I::transmute_rows(rows) }
     }
 
     pub fn as_rect(&'a self) -> ImageRect<'a, T> {

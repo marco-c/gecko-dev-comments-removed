@@ -14,7 +14,8 @@ mod options;
 mod signature;
 mod xyb_constants;
 
-pub use crate::image::JxlOutputBuffer;
+use std::sync::atomic::{AtomicUsize, Ordering};
+
 pub use color::*;
 pub use data_types::*;
 pub use decoder::*;
@@ -23,7 +24,9 @@ pub use input::*;
 pub use options::*;
 pub use signature::*;
 
-use crate::{error::Result, headers::image_metadata::Orientation};
+use crate::error::Result;
+use crate::headers::image_metadata::Orientation;
+pub use crate::image::JxlOutputBuffer;
 
 
 
@@ -76,5 +79,53 @@ pub struct JxlBasicInfo {
 pub type JxlParallelRunnerFun<'a> = dyn Fn(usize) -> Result<()> + Sync + 'a;
 
 pub trait JxlParallelRunner {
+    
+    
+    
+    
+    
+    
     fn run(&mut self, num: usize, fun: &JxlParallelRunnerFun<'_>) -> Result<()>;
+
+    
+    
+    
+    
+    fn num_threads(&self) -> usize;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn run_ordered(
+        &mut self,
+        num: usize,
+        max_threads: Option<usize>,
+        fun: &JxlParallelRunnerFun<'_>,
+    ) -> Result<()> {
+        let max_threads = max_threads
+            .unwrap_or(usize::MAX)
+            .min(self.num_threads())
+            .min(num);
+        if max_threads <= 1 {
+            for i in 0..num {
+                fun(i)?;
+            }
+            return Ok(());
+        }
+        let next_index = AtomicUsize::new(0);
+        self.run(max_threads, &|_| loop {
+            let t = next_index.fetch_add(1, Ordering::Relaxed);
+            if t >= num {
+                return Ok(());
+            }
+            fun(t)?;
+        })
+    }
 }

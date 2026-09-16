@@ -3,13 +3,14 @@
 
 
 
-use crate::util::sync::{Arc, RwLock};
-
 use rand::SeedableRng;
 use test_log::test;
 
 use super::*;
-use crate::{error::Result, features::epf::SigmaSource, image::Image};
+use crate::error::Result;
+use crate::features::epf::SigmaSource;
+use crate::image::Image;
+use crate::util::sync::{Arc, RwLock};
 
 #[test]
 fn epf0_consistency() -> Result<()> {

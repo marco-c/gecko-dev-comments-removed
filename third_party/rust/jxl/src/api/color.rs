@@ -3,16 +3,15 @@
 
 
 
-use std::{borrow::Cow, fmt};
+use std::borrow::Cow;
+use std::fmt;
 
-use crate::{
-    color::tf::{hlg_to_scene, linear_to_pq_precise, pq_to_linear_precise},
-    error::{Error, Result},
-    headers::color_encoding::{
-        ColorEncoding, ColorSpace, Primaries, RenderingIntent, TransferFunction, WhitePoint,
-    },
-    util::{Matrix3x3, Vector3, inv_3x3_matrix, mul_3x3_matrix, mul_3x3_vector},
+use crate::color::tf::{hlg_to_scene, linear_to_pq_precise, pq_to_linear_precise};
+use crate::error::{Error, Result};
+use crate::headers::color_encoding::{
+    ColorEncoding, ColorSpace, Primaries, RenderingIntent, TransferFunction, WhitePoint,
 };
+use crate::util::{Matrix3x3, Vector3, inv_3x3_matrix, mul_3x3_matrix, mul_3x3_vector};
 
 
 const K_BRADFORD: Matrix3x3<f64> = [
@@ -1076,17 +1075,6 @@ impl JxlColorEncoding {
         write_u32_be(&mut final_icc_profile_data, 0, total_profile_size)?;
 
         
-        let mut final_icc_profile_data: Vec<u8> =
-            Vec::with_capacity(header.len() + tag_table_bytes.len() + tags_data.len());
-        final_icc_profile_data.extend_from_slice(&header);
-        final_icc_profile_data.extend_from_slice(&tag_table_bytes);
-        final_icc_profile_data.extend_from_slice(&tags_data);
-
-        
-        let total_profile_size = final_icc_profile_data.len() as u32;
-        write_u32_be(&mut final_icc_profile_data, 0, total_profile_size)?;
-
-        
         
         let mut profile_for_checksum = final_icc_profile_data.clone();
 
@@ -1624,36 +1612,6 @@ impl TF_HLG {
     }
 
     
-    
-    
-    
-    #[inline]
-    #[allow(dead_code)]
-    fn encoded_from_display(d: f64) -> f64 {
-        Self::oetf(d)
-    }
-
-    
-    fn oetf(mut s: f64) -> f64 {
-        if s == 0.0 {
-            return 0.0;
-        }
-        let original_sign = s.signum();
-        s = s.abs();
-
-        let e = if s <= Self::INV_12 {
-            (3.0 * s).sqrt()
-        } else {
-            Self::A * (12.0 * s - Self::B).ln() + Self::C
-        };
-
-        
-        debug_assert!(e > 0.0);
-
-        e.copysign(original_sign)
-    }
-
-    
     fn inv_oetf(mut e: f64) -> f64 {
         if e == 0.0 {
             return 0.0;
@@ -2043,8 +2001,9 @@ fn tone_map_pixel(
 
 
 fn create_icc_lut_atob_tag_for_xyb(tags: &mut Vec<u8>) -> Result<(), Error> {
-    use super::xyb_constants::*;
     use byteorder::{BigEndian, WriteBytesExt};
+
+    use super::xyb_constants::*;
 
     
     tags.extend_from_slice(b"mAB ");
