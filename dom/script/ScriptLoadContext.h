@@ -91,6 +91,9 @@ class CompileOrDecodeTask : public mozilla::Task {
   
   virtual TaskResult RunTask() MOZ_REQUIRES(mMutex) = 0;
 
+  
+  virtual void CancelTask() {}
+
  public:
   TaskResult Run() final;
 
@@ -146,6 +149,8 @@ class StencilCompileOrDecodeTask : public CompileOrDecodeTask {
   virtual ~StencilCompileOrDecodeTask();
 
   nsresult InitFrontendContext();
+
+  void CancelTask() override;
 
   void DidRunTask(RefPtr<JS::Stencil>&& aStencil) MOZ_REQUIRES(mMutex);
 

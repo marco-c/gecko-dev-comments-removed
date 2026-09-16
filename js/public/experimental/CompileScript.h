@@ -9,6 +9,7 @@
 #define js_experimental_CompileScript_h
 
 #include "jspubtd.h"
+
 #include "js/ErrorReport.h"  
 #include "js/experimental/JSStencil.h"
 #include "js/GCAnnotations.h"
@@ -26,8 +27,12 @@ struct CompilationInput;
 namespace JS {
 using FrontendContext = js::FrontendContext;
 
+enum class AllowCancellingCompilation : bool { No, Yes };
 
-JS_PUBLIC_API JS::FrontendContext* NewFrontendContext();
+
+JS_PUBLIC_API JS::FrontendContext* NewFrontendContext(
+    AllowCancellingCompilation allowCancellingCompilation =
+        AllowCancellingCompilation::No);
 
 
 JS_PUBLIC_API void DestroyFrontendContext(JS::FrontendContext* fc);
@@ -86,6 +91,19 @@ JS_PUBLIC_API bool HadFrontendOutOfMemory(JS::FrontendContext* fc);
 
 
 JS_PUBLIC_API bool HadFrontendAllocationOverflow(JS::FrontendContext* fc);
+
+
+
+
+
+
+
+
+JS_PUBLIC_API void RequestFrontendCompilationCancellation(
+    JS::FrontendContext* fc);
+
+
+JS_PUBLIC_API bool HadFrontendCancelled(JS::FrontendContext* fc);
 
 
 

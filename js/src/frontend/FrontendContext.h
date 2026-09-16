@@ -6,6 +6,7 @@
 #define frontend_FrontendContext_h
 
 #include "mozilla/Assertions.h"  
+#include "mozilla/Atomics.h"     
 #include "mozilla/Attributes.h"  
 #include "mozilla/Maybe.h"       
 
@@ -46,9 +47,12 @@ struct FrontendErrors {
   
   bool extraBindingsAreNotUsed = false;
 
+  
+  bool cancelled = false;
+
   bool hadErrors() const {
     return outOfMemory || overRecursed || allocationOverflow ||
-           extraBindingsAreNotUsed || error;
+           extraBindingsAreNotUsed || cancelled || error;
   }
 
   void clearErrors();
@@ -91,7 +95,15 @@ class FrontendContext {
   
   JS::NativeStackLimit stackLimit_ = JS::NativeStackLimitMax;
 
+  
+  
+  mozilla::Atomic<bool, mozilla::Relaxed> compilationCancellationRequested_{
+      false};
+
 #ifdef DEBUG
+  
+  bool allowCancellingCompilation_ = false;
+
   
   mozilla::Maybe<size_t> stackLimitThreadId_;
 
@@ -117,6 +129,11 @@ class FrontendContext {
 
   void setStackQuota(JS::NativeStackSize stackSize);
   JS::NativeStackLimit stackLimit() const { return stackLimit_; }
+
+  void requestCompilationCancellation();
+  bool isCompilationCancellationRequested() const {
+    return compilationCancellationRequested_;
+  }
 
   bool allocateOwnedPool();
 
@@ -174,6 +191,9 @@ class FrontendContext {
   void onOutOfMemory();
   void onOverRecursed();
 
+  
+  [[nodiscard]] bool checkCompilationCancellation();
+
   void recoverFromOutOfMemory();
 
   const JSErrorFormatString* gcSafeCallback(JSErrorCallback callback,
@@ -184,6 +204,7 @@ class FrontendContext {
   bool hadOutOfMemory() const { return errors_.outOfMemory; }
   bool hadOverRecursed() const { return errors_.overRecursed; }
   bool hadAllocationOverflow() const { return errors_.allocationOverflow; }
+  bool hadCancelled() const { return errors_.cancelled; }
   bool extraBindingsAreNotUsed() const {
     return errors_.extraBindingsAreNotUsed;
   }
@@ -206,6 +227,8 @@ class FrontendContext {
 #endif  
 
 #ifdef DEBUG
+  void setAllowCancellingCompilation() { allowCancellingCompilation_ = true; }
+
   void setNativeStackLimitThread();
   void assertNativeStackLimitThread();
 #endif

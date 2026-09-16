@@ -2409,6 +2409,7 @@ void CompileOrDecodeTask::Cancel() {
   MOZ_ASSERT(!mIsCancelled);
 
   mIsCancelled = true;
+  CancelTask();
   TrackCancelled();
 }
 
@@ -2483,8 +2484,16 @@ StencilCompileOrDecodeTask::~StencilCompileOrDecodeTask() {
   }
 }
 
+void StencilCompileOrDecodeTask::CancelTask() {
+  
+  if (mFrontendContext) {
+    JS::RequestFrontendCompilationCancellation(mFrontendContext);
+  }
+}
+
 nsresult StencilCompileOrDecodeTask::InitFrontendContext() {
-  mFrontendContext = JS::NewFrontendContext();
+  mFrontendContext =
+      JS::NewFrontendContext(JS::AllowCancellingCompilation::Yes);
   if (!mFrontendContext) {
     mIsCancelled = true;
     return NS_ERROR_OUT_OF_MEMORY;
