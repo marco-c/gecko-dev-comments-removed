@@ -185,8 +185,7 @@ impl RuleCache {
         if context
             .builder
             .pseudo
-            .and_then(|p| p.property_restriction())
-            .is_some()
+            .is_some_and(|p| !p.property_restriction().is_empty())
         {
             return None;
         }
@@ -230,7 +229,7 @@ impl RuleCache {
         
         
         
-        if pseudo.and_then(|p| p.property_restriction()).is_some() {
+        if pseudo.is_some_and(|p| !p.property_restriction().is_empty()) {
             return false;
         }
 

@@ -118,7 +118,7 @@ where
 struct DeclarationIterator<'a> {
     
     guards: &'a StylesheetGuards<'a>,
-    restriction: Option<PropertyFlags>,
+    restriction: PropertyFlags,
     
     current_rule_node: Option<&'a StrongRuleNode>,
     
@@ -133,7 +133,7 @@ impl<'a> DeclarationIterator<'a> {
         guards: &'a StylesheetGuards,
         pseudo: Option<&PseudoElement>,
     ) -> Self {
-        let restriction = pseudo.and_then(|p| p.property_restriction());
+        let restriction = pseudo.map_or(PropertyFlags::empty(), |p| p.property_restriction());
         let mut iter = Self {
             guards,
             current_rule_node: Some(rule_node),
@@ -170,13 +170,13 @@ impl<'a> Iterator for DeclarationIterator<'a> {
                     continue;
                 }
 
-                if let Some(restriction) = self.restriction {
+                if !self.restriction.is_empty() {
                     
                     
                     
                     
                     if let PropertyDeclarationId::Longhand(id) = decl.id() {
-                        if !id.flags().contains(restriction)
+                        if !id.flags().contains(self.restriction)
                             && self.priority.cascade_level().origin() != CascadeOrigin::UA
                         {
                             continue;
