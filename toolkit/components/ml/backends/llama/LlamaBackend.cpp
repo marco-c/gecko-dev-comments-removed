@@ -88,6 +88,37 @@ ggml_type GgmlTypeFromKVCacheDtype(LlamaKVCacheDtype aDtype) {
   return GGML_TYPE_F16;
 }
 
+
+
+
+
+
+
+
+
+static bool GpuOffloadUsable(const LlamaLibWrapper* aLib) {
+  static const bool sUsable = [aLib]() {
+    ggml_backend_dev_t dev =
+        aLib->ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_GPU);
+    if (!dev) {
+      dev = aLib->ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_IGPU);
+    }
+    if (!dev) {
+      return false;
+    }
+    
+    
+    
+    ggml_backend_t backend = aLib->ggml_backend_dev_init(dev, nullptr);
+    if (!backend) {
+      return false;
+    }
+    aLib->ggml_backend_free(backend);
+    return true;
+  }();
+  return sUsable;
+}
+
 LlamaBackend::~LlamaBackend() {
   LOGD("Entered {}", __PRETTY_FUNCTION__);
   
@@ -141,6 +172,13 @@ ResultStatus LlamaBackend::Reinitialize(const LlamaModelOptions& aOptions,
   
   llama_model_params modelParams = mLib->llama_model_default_params();
   modelParams.n_gpu_layers = aOptions.mNGpuLayers;
+  if (modelParams.n_gpu_layers > 0 && !GpuOffloadUsable(mLib)) {
+    LOGW(
+        "GPU offload was requested but no usable GPU backend is available "
+        "(none "
+        "present, or it failed to initialize); falling back to CPU.");
+    modelParams.n_gpu_layers = 0;
+  }
   modelParams.use_mmap = aOptions.mUseMmap;
   modelParams.use_mlock = aOptions.mUseMlock;
   modelParams.check_tensors = aOptions.mCheckTensors;
