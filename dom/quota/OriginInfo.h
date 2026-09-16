@@ -30,7 +30,7 @@ class OriginInfo final : public SupportsThreadSafeWeakPtr<OriginInfo> {
 
   OriginInfo(GroupInfo* aGroupInfo, const nsACString& aOrigin,
              const nsACString& aStorageOrigin, bool aIsPrivate,
-             const ClientUsageArray& aClientUsages, int64_t aUsage,
+             const ClientUsageArray& aClientUsages, uint64_t aUsage,
              int64_t aAccessTime, int32_t aMaintenanceDate, bool aPersisted,
              bool aDirectoryExists);
 
@@ -143,13 +143,13 @@ class OriginInfo final : public SupportsThreadSafeWeakPtr<OriginInfo> {
 
   void LockedDirectoryCreated();
 
-  void LockedTruncateUsages(Client::Type aClientType, int64_t aDelta,
+  void LockedTruncateUsages(Client::Type aClientType, uint64_t aDelta,
                             DirtyTrackingAutoLock& aProofOfLock);
 
-  Maybe<bool> LockedUpdateUsages(Client::Type aClientType, int64_t aDelta,
+  Maybe<bool> LockedUpdateUsages(Client::Type aClientType, uint64_t aDelta,
                                  DirtyTrackingAutoLock& aProofOfLock);
 
-  bool LockedUpdateUsagesForEviction(Client::Type aClientType, int64_t aDelta,
+  bool LockedUpdateUsagesForEviction(Client::Type aClientType, uint64_t aDelta,
                                      DirtyTrackingAutoLock& aProofOfLock);
 
   constexpr TimeStamp GetLastModifiedTime() const { return mLastModifiedTime; }
@@ -189,13 +189,7 @@ class OriginInfo final : public SupportsThreadSafeWeakPtr<OriginInfo> {
   void MakeDirty(DirtyTrackingAutoLock& aProofOfLock);
 
   ClientUsageArray mClientUsages;
-
-  
-  
-  
-  
-  
-  int64_t mUsage;
+  uint64_t mUsage;
   TimeStamp mLastModifiedTime;
   bool mMetadataDirty = false;
 };

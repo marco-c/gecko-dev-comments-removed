@@ -20,7 +20,7 @@ namespace mozilla::dom::quota {
 
 #if defined(NIGHTLY_BUILD) || defined(DEBUG)
 bool CheckClientUsagesConsistency(const ClientUsageArray& aClientUsages,
-                                  int64_t aUsage, const nsACString& aContext);
+                                  uint64_t aUsage, const nsACString& aContext);
 #endif  
 
 struct PrincipalMetadata {
@@ -153,19 +153,14 @@ struct OriginStateMetadata {
 
 struct FullOriginMetadata : OriginMetadata, OriginStateMetadata {
   ClientUsageArray mClientUsages;
-
-  
-  
-  
-  
-  int64_t mOriginUsage;
+  uint64_t mOriginUsage;
   uint32_t mQuotaVersion;
 
   FullOriginMetadata() = default;
 
   FullOriginMetadata(OriginMetadata aOriginMetadata,
                      OriginStateMetadata aOriginStateMetadata,
-                     const ClientUsageArray& aClientUsages, int64_t aUsage,
+                     const ClientUsageArray& aClientUsages, uint64_t aUsage,
                      uint32_t aQuotaVersion)
       : OriginMetadata(std::move(aOriginMetadata)),
         OriginStateMetadata(aOriginStateMetadata),
