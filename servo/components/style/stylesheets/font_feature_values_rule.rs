@@ -34,7 +34,7 @@ use thin_vec::ThinVec;
 
 
 
-#[derive(Clone, Debug, PartialEq, ToShmem)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
 pub struct FFVDeclaration<T> {
     
     pub name: Atom,
@@ -62,7 +62,7 @@ pub trait ToGeckoFontFeatureValues {
 }
 
 
-#[derive(Clone, Debug, PartialEq, ToCss, ToShmem)]
+#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 pub struct SingleValue(pub u32);
 
 impl Parse for SingleValue {
@@ -84,7 +84,7 @@ impl ToGeckoFontFeatureValues for SingleValue {
 }
 
 
-#[derive(Clone, Debug, PartialEq, ToCss, ToShmem)]
+#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 pub struct PairValues(pub u32, pub Option<u32>);
 
 impl Parse for PairValues {
@@ -119,7 +119,7 @@ impl ToGeckoFontFeatureValues for PairValues {
 }
 
 
-#[derive(Clone, Debug, PartialEq, ToCss, ToShmem)]
+#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 pub struct VectorValues(#[css(iterable)] pub Vec<u32>);
 
 impl Parse for VectorValues {
@@ -228,7 +228,7 @@ macro_rules! font_feature_values_blocks {
         /// The [`@font-feature-values`][font-feature-values] at-rule.
         ///
         /// [font-feature-values]: https://drafts.csswg.org/css-fonts-3/#at-font-feature-values-rule
-        #[derive(Clone, Debug, PartialEq, ToShmem)]
+        #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
         pub struct FontFeatureValuesRule {
             /// Font family list for @font-feature-values rule.
             /// Family names cannot contain generic families. FamilyName
