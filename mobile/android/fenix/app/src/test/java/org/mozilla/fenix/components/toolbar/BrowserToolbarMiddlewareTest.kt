@@ -52,6 +52,7 @@ import mozilla.components.browser.state.state.content.ShareResourceState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.thumbnails.BrowserThumbnails
+import mozilla.components.browser.thumbnails.facts.BrowserThumbnailsFacts
 import mozilla.components.browser.toolbar.R as toolbarR
 import mozilla.components.compose.browser.toolbar.concept.Action
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton
@@ -103,7 +104,6 @@ import mozilla.components.support.utils.ClipboardHandler
 import mozilla.components.support.utils.INTENT_TYPE_PDF
 import mozilla.components.ui.icons.R as iconsR
 import mozilla.components.ui.tabcounter.R as tabcounterR
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -183,8 +183,6 @@ import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.directionsEq
 import org.mozilla.fenix.helpers.FenixGleanTestRule
-import org.mozilla.fenix.nimbus.AddressbarFocusMode
-import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.summarization.SummarizationNavigator
 import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
@@ -251,11 +249,6 @@ class BrowserToolbarMiddlewareTest {
         settings.shouldUseExpandedToolbar = false
         settings.isTabStripEnabled = false
         settings.enableHomepageTrendingRecentSearch = false
-    }
-
-    @After
-    fun teardown() {
-        FxNimbus.features.addressbarFocusMode.withCachedValue(null)
     }
 
     @Test
@@ -589,7 +582,9 @@ class BrowserToolbarMiddlewareTest {
             )
         }
         verify {
-            thumbnailsFeature.requestScreenshot()
+            thumbnailsFeature.requestScreenshot(
+                trigger = BrowserThumbnailsFacts.CaptureAttemptedTriggers.TAB_COUNTER_CLICK
+            )
         }
     }
 
@@ -623,7 +618,9 @@ class BrowserToolbarMiddlewareTest {
             )
         }
         verify {
-            thumbnailsFeature.requestScreenshot()
+            thumbnailsFeature.requestScreenshot(
+                trigger = BrowserThumbnailsFacts.CaptureAttemptedTriggers.TAB_COUNTER_CLICK
+            )
         }
     }
 
@@ -672,7 +669,7 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN the current tab has search terms WHEN the page origin is clicked THEN start search in the browser screen`() {
-        FxNimbus.features.addressbarFocusMode.withCachedValue(AddressbarFocusMode(enabled = false))
+        settings.showAddressBarInFocusMode = false
         val currentTab = createTab("test.com", searchTerms = "test")
         val browserStore =
             BrowserStore(
@@ -694,7 +691,7 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN addressbar focus mode is enabled WHEN the page origin is clicked THEN start search without prefilling current URL`() {
-        FxNimbus.features.addressbarFocusMode.withCachedValue(AddressbarFocusMode(enabled = true))
+        settings.showAddressBarInFocusMode = true
         val currentTab = createTab("test.com", searchTerms = "test")
         val browserStore =
             BrowserStore(
