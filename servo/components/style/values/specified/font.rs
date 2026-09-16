@@ -1847,8 +1847,7 @@ impl Parse for XLang {
     }
 }
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 
 
 pub struct MozScriptMinSize(pub NoCalcLength);
@@ -1873,8 +1872,7 @@ impl Parse for MozScriptMinSize {
 
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Debug, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
 pub enum MathDepth {
     
     AutoAdd,
@@ -1905,11 +1903,11 @@ impl Parse for MathDepth {
     }
 }
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(
     Clone,
     Copy,
     Debug,
+    MallocSizeOf,
     PartialEq,
     SpecifiedValueInfo,
     ToComputedValue,

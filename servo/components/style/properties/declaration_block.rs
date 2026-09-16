@@ -228,8 +228,7 @@ impl<'a> Iterator for PropertyDeclarationIdSetIterator<'a> {
 }
 
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Default)]
+#[derive(Default, MallocSizeOf)]
 pub struct PropertyDeclarationBlock {
     
     
