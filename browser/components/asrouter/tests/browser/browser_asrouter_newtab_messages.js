@@ -41,103 +41,10 @@ add_setup(async function () {
   );
   Assert.ok(gTestNewTabMessage, "Found a test fxa_cta message to use.");
 
-  
+  gTestPollingNewTabMessage = await PanelTestProvider.getMessages().then(msgs =>
+    msgs.find(msg => msg.id === TEST_POLLING_MESSAGE_ID)
+  );
 
-
-
-
-
-
-  if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "155.0a1") < 0) {
-    gTestPollingNewTabMessage = {
-      id: "TEST_ASROUTER_NEWTAB_MESSAGE_POLL_DEFAULT",
-      template: "newtab_message",
-      content: {
-        messageType: "ASRouterNewTabMessage",
-        imageSrc:
-          
-          "chrome://newtab/content/data/content/assets/kit-in-circle.svg",
-        heading: "Make Firefox your own",
-        body: "Set Firefox as your default browser and pin it so it's always a click away.",
-        hideDismissButton: false,
-        
-        
-        
-        
-        
-        
-        
-        
-        states: [
-          {
-            
-            
-            targeting: "isDefaultBrowserUncached && doesAppNeedPinUncached",
-            content: {
-              primaryButton: null,
-            },
-          },
-          {
-            
-            
-            targeting: "!isDefaultBrowserUncached && !doesAppNeedPinUncached",
-            content: {
-              secondaryButton: null,
-            },
-          },
-          {
-            
-            
-            targeting: "isDefaultBrowserUncached && !doesAppNeedPinUncached",
-            final: true,
-            content: {
-              heading: "You're all set",
-              body: "Firefox is now your default browser and pinned. Thanks!",
-              
-              primaryButton: {
-                label: "Go to settings to try it out!",
-                action: {
-                  type: "OPEN_ABOUT_PAGE",
-                  data: { args: "settings#browserIcon", where: "tab" },
-                },
-              },
-              secondaryButton: null,
-            },
-          },
-        ],
-        
-        
-        
-        primaryButton: {
-          label: "Set as default",
-          type: "default",
-          action: {
-            type: "SET_DEFAULT_BROWSER",
-          },
-        },
-        secondaryButton: {
-          label: "Pin to taskbar",
-          type: "default",
-          action: {
-            type: "PIN_FIREFOX_TO_TASKBAR",
-          },
-        },
-        position: "ABOVE_TOPSITES",
-      },
-      frequency: {
-        lifetime: 3,
-      },
-      trigger: {
-        id: "newtabMessageCheck",
-      },
-      targeting: "true",
-      groups: ["cfr"],
-    };
-  } else {
-    gTestPollingNewTabMessage = await PanelTestProvider.getMessages().then(
-      msgs => msgs.find(msg => msg.id === TEST_POLLING_MESSAGE_ID)
-    );
-  }
   Assert.ok(
     gTestPollingNewTabMessage,
     "Found a test polling newtab message to use."
