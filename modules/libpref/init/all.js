@@ -4089,6 +4089,12 @@ pref("extensions.formautofill.useml.timeoutMS", 120000);
 
 
 
+pref("extensions.formautofill.useml.ignoreFieldTypes", "");
+
+
+
+
+
 pref("extensions.formautofill.useml.features", "[]");
 
 
