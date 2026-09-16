@@ -13,12 +13,12 @@
 #ifndef mozilla_PodOperations_h
 #define mozilla_PodOperations_h
 
-#include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
-
 #include <cstring>
 #include <limits>
 #include <type_traits>
+
+#include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
 
 namespace mozilla {
 
@@ -116,7 +116,16 @@ static MOZ_ALWAYS_INLINE void PodCopy(T* aDst, const T* aSrc, size_t aNElem) {
   }
 #endif
 
+  
+  
+#if defined(__GNUC__) && !defined(__clang__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
   memcpy(aDst, aSrc, aNElem * sizeof(T));
+#if defined(__GNUC__) && !defined(__clang__)
+#  pragma GCC diagnostic pop
+#endif
 }
 
 template <typename T>
