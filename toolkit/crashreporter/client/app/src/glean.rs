@@ -5,82 +5,94 @@
 
 
 use crate::config::{buildid, Config};
-use crate::prefs_parser::find_bool_pref;
-use crate::std::path::Path;
+use crate::prefs_parser::{find_bool_pref, find_string_pref};
 
 const APP_DISPLAY_VERSION: &str = env!("CARGO_PKG_VERSION");
 const TELEMETRY_ENABLED_PREF_KEY: &str = "datareporting.healthreport.uploadEnabled";
+const TELEMETRY_SERVER_PREF_KEY: &str = "toolkit.telemetry.server";
 
 
 pub struct InitOptions {
     pub data_dir: ::std::path::PathBuf,
     pub locale: Option<String>,
+    pub server_endpoint: Option<String>,
     pub upload_enabled: bool,
 }
 
-
-
-
-
-
-
-
-
-
-fn parse_telemetry_enabled_pref(prefs_content: &str) -> Option<bool> {
-    find_bool_pref(prefs_content, TELEMETRY_ENABLED_PREF_KEY)
+struct Prefs {
+    content: String,
 }
 
+impl Prefs {
+    pub fn new<P: AsRef<::std::path::Path>>(profile_dir: P) -> Option<Self> {
+        let prefs_file = profile_dir.as_ref().join("prefs.js");
+        let content = match crate::std::fs::read_to_string(&prefs_file) {
+            Ok(s) => s,
+            Err(e) => {
+                if e.kind() != crate::std::io::ErrorKind::NotFound {
+                    log::error!("failed to read prefs file: {e}");
+                }
+                return None;
+            }
+        };
 
-pub fn determine_telemetry_enabled(profile_dir: Option<&Path>) -> bool {
-    
-    
-    
-    let Some(profile_dir) = profile_dir else {
-        return true;
-    };
-
-    let prefs = profile_dir.join("prefs.js");
-
-    
-    if !prefs.exists() {
-        return true;
+        Some(Prefs { content })
     }
 
-    match crate::std::fs::read_to_string(&prefs) {
-        Ok(prefs_contents) => {
-            parse_telemetry_enabled_pref(&prefs_contents)
-                
-                .unwrap_or(true)
-        }
-        Err(e) => {
-            
-            
-            
-            log::error!(
-                "failed to read prefs file at {} for disabling telemetry: {e}",
-                prefs.display()
-            );
-            true
-        }
+    pub fn telemetry_enabled(&self) -> Option<bool> {
+        find_bool_pref(&self.content, TELEMETRY_ENABLED_PREF_KEY)
+    }
+
+    pub fn telemetry_server(&self) -> Option<&str> {
+        find_string_pref(&self.content, TELEMETRY_SERVER_PREF_KEY)
     }
 }
 
 impl InitOptions {
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(data_dir: ::std::path::PathBuf) -> Self {
+        InitOptions {
+            data_dir,
+            locale: None,
+            server_endpoint: None,
+            upload_enabled: true,
+        }
+    }
+
+    
     pub fn from_config(cfg: &Config) -> Self {
-        let locale = cfg.strings.as_ref().map(|s| s.locale());
         let data_dir = cfg.data_dir().to_owned();
         #[cfg(mock)]
         let data_dir = (&data_dir).into();
 
-        let upload_enabled = determine_telemetry_enabled(cfg.profile_dir.as_deref());
+        let mut opts = Self::new(data_dir);
+        opts.locale = cfg.strings.as_ref().map(|s| s.locale());
+        opts.with_profile_dir(cfg.profile_dir.as_deref())
+    }
 
-        InitOptions {
-            data_dir,
-            locale,
-            upload_enabled,
+    
+    
+    pub fn with_profile_dir<P: AsRef<::std::path::Path>>(mut self, profile_dir: Option<P>) -> Self {
+        if let Some(prefs) = profile_dir.and_then(Prefs::new) {
+            self.server_endpoint = prefs.telemetry_server().map(Into::into);
+            self.upload_enabled = prefs.telemetry_enabled().unwrap_or(true);
+        } else {
+            self.server_endpoint = None;
+            self.upload_enabled = true;
         }
+        self
     }
 
     
@@ -124,7 +136,11 @@ impl InitOptions {
         );
         init_glean.configuration.uploader = Some(Box::new(uploader::Uploader::new()));
         init_glean.configuration.upload_enabled = self.upload_enabled;
+        if self.server_endpoint.is_some() {
+            init_glean.configuration.server_endpoint = self.server_endpoint;
+        }
 
+        
         if cfg!(mock) {
             init_glean.configuration.server_endpoint =
                 Some("https://incoming.glean.example.com".to_owned());
@@ -236,11 +252,33 @@ mod test {
                 "profile_dir/prefs.js",
                 format!(r#"user_pref("datareporting.healthreport.uploadEnabled", {pref_value});"#),
             );
-            let result = mock::builder()
-                .set(MockFS, files)
-                .run(|| determine_telemetry_enabled(Some(Path::new("profile_dir"))));
+            let result = mock::builder().set(MockFS, files).run(|| {
+                Prefs::new(Path::new("profile_dir"))
+                    .unwrap()
+                    .telemetry_enabled()
+                    .unwrap_or(true)
+            });
             assert_eq!(result, pref_value);
         }
+    }
+
+    #[test]
+    fn test_telemetry_server_pref() {
+        use crate::std::{
+            fs::{MockFS, MockFiles},
+            mock,
+            path::Path,
+        };
+
+        let files = MockFiles::new();
+        files.add_dir("profile_dir").add_file(
+            "profile_dir/prefs.js",
+            format!(r#"user_pref("toolkit.telemetry.server", "example.com");"#),
+        );
+        let result = mock::builder()
+            .set(MockFS, files)
+            .run(|| Prefs::new(Path::new("profile_dir")).unwrap());
+        assert_eq!(result.telemetry_server().unwrap(), "example.com");
     }
 }
 

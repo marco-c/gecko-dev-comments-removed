@@ -4,7 +4,7 @@
 
 
 
-use crate::std::{env, io::stdin};
+use crate::std::{env, io::stdin, path::PathBuf};
 use crate::{glean, logging, net::ping};
 
 pub fn main() {
@@ -17,14 +17,15 @@ pub fn main() {
     let extra: serde_json::Value =
         serde_json::from_reader(stdin()).expect("failed to read extra data from stdin");
 
-    let _glean_handle = glean::InitOptions {
-        data_dir: data_path.into(),
-        locale: None,
-        
-        upload_enabled: true,
-    }
-    .init()
-    .expect("failed to acquire Glean store");
+    let profile_dir = extra
+        .get("ProfileDirectory")
+        .and_then(|v| v.as_str())
+        .map(PathBuf::from);
+
+    let _glean_handle = glean::InitOptions::new(data_path.into())
+        .with_profile_dir(profile_dir)
+        .init()
+        .expect("failed to acquire Glean store");
 
     ping::CrashPing {
         extra: &extra,
@@ -42,21 +43,16 @@ pub fn cleanup_main() {
 
     let mut args = env::args_os().skip(2);
     let data_path = args.next().expect("no data path provided");
-    let upload_enabled: bool = args
-        .next()
-        .expect("upload enabled missing")
-        .to_str()
-        .expect("non-unicode upload enabled value")
-        .parse()
-        .expect("invalid upload enabled value");
+    let profile_dir = args.next();
 
-    let _glean_handle = glean::InitOptions {
-        data_dir: data_path.into(),
-        locale: None,
-        upload_enabled,
-    }
-    .init()
-    .expect("failed to acquire Glean store");
+    let _glean_handle = glean::InitOptions::new(data_path.into())
+        .with_profile_dir(profile_dir)
+        .init()
+        .expect("failed to acquire Glean store");
+
+    
+    
+    std::thread::sleep(std::time::Duration::from_secs(2));
 
     
     ::glean::shutdown();
