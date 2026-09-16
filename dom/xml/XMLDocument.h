@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_XMLDocument_h
 #define mozilla_dom_XMLDocument_h
 
@@ -42,7 +40,8 @@ class XMLDocument : public Document {
                                      bool aReset = true) override;
 
   
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual void EndLoad() override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual void EndLoad(
+      bool aFireDOMContentLoadedSync) override;
 
   virtual nsresult Init(nsIPrincipal* aPrincipal,
                         nsIPrincipal* aPartitionedPrincipal) override;

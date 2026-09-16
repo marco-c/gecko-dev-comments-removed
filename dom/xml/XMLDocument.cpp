@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/XMLDocument.h"
 
 #include "mozilla/BasicEvents.h"
@@ -300,11 +298,11 @@ nsresult XMLDocument::StartDocumentLoad(
   return NS_OK;
 }
 
-void XMLDocument::EndLoad() {
+void XMLDocument::EndLoad(bool aFireDOMContentLoadedSync) {
   mChannelIsPending = false;
 
   mSynchronousDOMContentLoaded = mLoadedAsData;
-  Document::EndLoad();
+  Document::EndLoad(aFireDOMContentLoadedSync);
   if (mSynchronousDOMContentLoaded) {
     mSynchronousDOMContentLoaded = false;
     Document::SetReadyStateInternal(Document::READYSTATE_COMPLETE);
