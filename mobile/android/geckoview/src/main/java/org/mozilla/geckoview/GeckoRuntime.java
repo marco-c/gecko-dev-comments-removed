@@ -194,8 +194,13 @@ public final class GeckoRuntime implements Parcelable {
       GeckoNetworkManager.getInstance().start(GeckoAppShell.getApplicationContext());
 
       
-      GeckoAppShell.setIs24HourFormat(
-          DateFormat.is24HourFormat(GeckoAppShell.getApplicationContext()));
+      ThreadUtils.postToBackgroundThread(
+          () -> {
+            
+            
+            GeckoAppShell.setIs24HourFormat(
+                DateFormat.is24HourFormat(GeckoAppShell.getApplicationContext()));
+          });
 
       
       
