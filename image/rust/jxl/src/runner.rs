@@ -101,6 +101,7 @@ struct State {
     outstanding: usize,
     
     
+    
     err: Option<Error>,
 }
 
@@ -313,6 +314,10 @@ impl JxlParallelRunner for PoolRunner {
             Some(pool) => run_in_parallel(pool, num, fun),
             None => (0..num).try_for_each(fun),
         }
+    }
+
+    fn num_threads(&self) -> usize {
+        participant_count()
     }
 }
 
