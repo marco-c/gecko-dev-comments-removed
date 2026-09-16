@@ -3,7 +3,7 @@
 
 
 
-""" This script is an example of why I care so much about Mozharness' 2nd core
+"""This script is an example of why I care so much about Mozharness' 2nd core
 concept, logging.  http://escapewindow.dreamwidth.org/230853.html
 """
 

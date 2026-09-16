@@ -1,8 +1,8 @@
 
 
 
-""" Helpers to build scenarii
-"""
+"""Helpers to build scenarii"""
+
 from condprof.util import logger
 
 _SUPPORTED_MOBILE_BROWSERS = "fenix", "gecko", "firefox"

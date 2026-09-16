@@ -27,9 +27,7 @@ def inline(doc, doctype="html"):
   <body>
     {}
   </body>
-</html>""".format(
-                    doc
-                )
+</html>""".format(doc)
             )
         )
 
@@ -65,7 +63,7 @@ class TestFindElementHTML(MarionetteTestCase):
         parent = self.marionette.find_element(By.ID, "parent")
         child = self.marionette.find_element(By.ID, "child")
         found = parent.find_element(By.TAG_NAME, "p")
-        self.assertEqual(found.tag_name, "P")
+        self.assertEqual(found.tag_name, "p")
         self.assertIsInstance(found, WebElement)
         self.assertEqual(child, found)
 

@@ -303,13 +303,11 @@ class WebToolingBenchmark(Benchmark):
                 test_name = "{}-{}".format(self.name, score_name)
                 
                 mean = sum(values) / len(values)
-                self.suite["subtests"].append(
-                    {
-                        "lowerIsBetter": self.subtests_lower_is_better,
-                        "name": test_name,
-                        "value": mean,
-                    }
-                )
+                self.suite["subtests"].append({
+                    "lowerIsBetter": self.subtests_lower_is_better,
+                    "name": test_name,
+                    "value": mean,
+                })
                 if score_name == "mean":
                     bench_mean = mean
         self.suite["value"] = bench_mean

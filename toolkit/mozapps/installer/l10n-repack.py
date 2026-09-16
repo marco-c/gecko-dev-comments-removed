@@ -13,19 +13,17 @@ import buildconfig
 
 
 
-NON_CHROME = set(
-    [
-        "dictionaries",
-        "defaultagent_localized.ini",
-        "defaults/profile",
-        "defaults/pref*/*-l10n.js",
-        "default.locale",
-        "updater.ini",
-        "extensions/langpack-*@*",
-        "distribution/extensions/langpack-*@*",
-        "**/multilocale.txt",
-    ]
-)
+NON_CHROME = set([
+    "dictionaries",
+    "defaultagent_localized.ini",
+    "defaults/profile",
+    "defaults/pref*/*-l10n.js",
+    "default.locale",
+    "updater.ini",
+    "extensions/langpack-*@*",
+    "distribution/extensions/langpack-*@*",
+    "**/multilocale.txt",
+])
 
 
 def valid_extra_l10n(arg):

@@ -102,7 +102,7 @@ class SelectionManager(object):
 
     ::
 
-        element = marionette.find_element(By.ID, 'input')
+        element = marionette.find_element(By.ID, "input")
         sel = SelectionManager(element)
         sel.move_caret_to_front()
 
@@ -113,7 +113,7 @@ class SelectionManager(object):
 
     def _input_or_textarea(self):
         """Return True if element is either <input> or <textarea>."""
-        return self.element.tag_name in ("INPUT", "TEXTAREA")
+        return self.element.tag_name in ("input", "textarea")
 
     def js_selection_cmd(self):
         """Return a command snippet to get selection object.
@@ -146,9 +146,7 @@ class SelectionManager(object):
               for (let i = 0; i < {0}; ++i) {{
                   sel.modify("move", "{1}", "character");
               }}
-              """.format(
-                offset, "backward" if backward else "forward"
-            )
+              """.format(offset, "backward" if backward else "forward")
         )
 
         self.element.marionette.execute_script(

@@ -1,7 +1,6 @@
 
 
 
-
 from fluent.migrate import COPY_PATTERN
 from fluent.migrate.helpers import transforms_from
 
