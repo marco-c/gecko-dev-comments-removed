@@ -99,9 +99,14 @@ pub trait CustomWindowClass: WindowClass {
             let result = unsafe { W::get(hwnd).as_ref() }
                 .and_then(|data| W::message(data, hwnd, umsg, wparam, lparam));
             if umsg == win::WM_DESTROY {
-                drop(Box::from_raw(
-                    win::GetWindowLongPtrW(hwnd, 0) as *mut RefCell<W>
-                ));
+                
+                
+                
+                let data_ptr = win::SetWindowLongPtrW(hwnd, 0, 0) as *mut RefCell<W>;
+                if !data_ptr.is_null() {
+                    drop(Box::from_raw(data_ptr));
+                }
+                return 0;
             }
             result.unwrap_or_else(|| win::DefWindowProcW(hwnd, umsg, wparam, lparam))
         }
