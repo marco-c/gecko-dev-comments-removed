@@ -4,11 +4,21 @@
 
 "use strict";
 
+
+
+requestLongerTimeout(2);
+
 const MIXED_CONTENT_URL =
   getRootDirectory(gTestPath).replace(
     "chrome://mochitests/content",
     "https://self-signed.example.com"
   ) + "test-mixedcontent-securityerrors.html";
+
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["security.dialog_enable_delay", 0]],
+  });
+});
 
 function getConnectionState() {
   return document.getElementById("identity-popup").getAttribute("connection");
@@ -37,27 +47,44 @@ async function checkIdentityPopup(icon) {
     getPopupContentVerifier().textContent.includes("security exception"),
     "Text shows overridden certificate warning."
   );
+
+  await closeIdentityPopup();
 }
 
-add_task(async function () {
-  await BrowserTestUtils.openNewForegroundTab(gBrowser);
-  
-  await loadBadCertPage(MIXED_CONTENT_URL);
-  await checkIdentityPopup("security-warning.svg");
+async function checkMixedContentCertOverride(feltPrivacyV1) {
+  await SpecialPowers.pushPrefEnv({
+    set: [["security.certerrors.felt-privacy-v1", feltPrivacyV1]],
+  });
+  let tab;
+  try {
+    tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
+    
+    await loadBadCertPage(MIXED_CONTENT_URL, feltPrivacyV1);
+    await checkIdentityPopup("security-warning.svg");
 
-  
-  BrowserTestUtils.startLoadingURIString(
-    gBrowser.selectedBrowser,
-    "https://self-signed.example.com"
-  );
-  await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-  await checkIdentityPopup("security-warning.svg");
+    
+    BrowserTestUtils.startLoadingURIString(
+      gBrowser.selectedBrowser,
+      "https://self-signed.example.com"
+    );
+    await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+    await checkIdentityPopup("security-warning.svg");
+  } finally {
+    
+    let certOverrideService = Cc[
+      "@mozilla.org/security/certoverride;1"
+    ].getService(Ci.nsICertOverrideService);
+    certOverrideService.clearValidityOverride(
+      "self-signed.example.com",
+      -1,
+      {}
+    );
+    if (tab) {
+      BrowserTestUtils.removeTab(tab);
+    }
+    await SpecialPowers.popPrefEnv();
+  }
+}
 
-  
-  let certOverrideService = Cc[
-    "@mozilla.org/security/certoverride;1"
-  ].getService(Ci.nsICertOverrideService);
-  certOverrideService.clearValidityOverride("self-signed.example.com", -1, {});
-
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-});
+add_task(async () => await checkMixedContentCertOverride(true));
+add_task(async () => await checkMixedContentCertOverride(false));
