@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_media_RemoteImageHolder_h
 #define mozilla_dom_media_RemoteImageHolder_h
 
@@ -43,6 +41,7 @@ class RemoteImageHolder final {
   
   already_AddRefed<layers::Image> TransferToImage(
       layers::BufferRecycleBin* aBufferRecycleBin = nullptr);
+  nsCString ToString() const;
 
  private:
   already_AddRefed<layers::Image> DeserializeImage(
