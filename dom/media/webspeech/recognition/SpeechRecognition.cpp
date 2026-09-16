@@ -1329,6 +1329,15 @@ void SpeechRecognition::HandleRecognitionResultFromBackend(
   
   
   
+  
+  
+  
+  
+  if (aIsFinal && !mContinuous && !mRecognitionResults.IsEmpty()) {
+    LOG("Ignoring result - non-continuous session already delivered its final "
+        "result");
+    return;
+  }
 
   if (!aEventTime.IsNull()) {
     mResultLatencyTotal += TimeStamp::Now() - aEventTime;
@@ -1392,6 +1401,15 @@ void SpeechRecognition::HandleRecognitionResultFromBackend(
     mPerf.mFirstResult = Some(TimeStamp::Now() - mPerf.mStart);
   }
   DispatchEvent(*domEvent);
+
+  
+  
+  
+  
+  
+  if (aIsFinal && !mContinuous) {
+    Stop();
+  }
 }
 
 void SpeechRecognition::HandleRecognitionErrorFromBackend(
