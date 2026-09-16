@@ -105,6 +105,11 @@ interface MozTabbrowserTabGroupLabel extends XULElement {
   group: MozTabbrowserTabGroup;
 }
 
+
+
+
+type TabSplitViewStateData = { id: number; numberOfTabs: number };
+
 interface MozTabSplitViewWrapper extends XULElement {
   
   
@@ -112,7 +117,7 @@ interface MozTabSplitViewWrapper extends XULElement {
 
   tabs: MozTabbrowserTab[];
   splitViewId: number;
-  state: { id: number; numberOfTabs: number };
+  state: TabSplitViewStateData;
   group: MozTabbrowserTabGroup | null;
   pinned: boolean;
   visible: boolean;
