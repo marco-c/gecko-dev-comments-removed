@@ -6,10 +6,16 @@
 #include "js/PropertyAndElement.h"  
 #include "jsapi.h"
 #include "mozilla/CycleCollectedJSContext.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/dom/IPCTransferable.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/SimpleGlobalObject.h"
+#include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
+#include "nsITransferable.h"
 #include "nsNetUtil.h"
+#include "nsTArray.h"
 
 using namespace mozilla::dom;
 
@@ -258,4 +264,86 @@ TEST(DOM_Base_ContentUtils, MaybeFixIPv6Host)
     << "Input: '" << testCase.input << "', Expected: '"
     << testCase.expectedOutput << "', Got: '" << host.get() << "'";
   }
+}
+
+
+
+static void AppendStringItem(IPCTransferableData& aData, const char* aFlavor,
+                             const nsAString& aValue) {
+  IPCTransferableDataItem* item = aData.items().AppendElement();
+  item->flavor() = nsCString(aFlavor);
+  item->data() = IPCTransferableDataString{mozilla::ipc::BigBuffer(
+      mozilla::AsBytes(mozilla::Span(aValue.BeginReading(), aValue.Length())))};
+}
+
+static bool TransferableHasFlavor(nsITransferable* aTransferable,
+                                  const char* aFlavor) {
+  nsTArray<nsCString> flavors;
+  EXPECT_TRUE(
+      NS_SUCCEEDED(aTransferable->FlavorsTransferableCanExport(flavors)));
+  return flavors.Contains(nsCString(aFlavor));
+}
+
+static already_AddRefed<nsITransferable> NewTransferable() {
+  nsCOMPtr<nsITransferable> transferable =
+      do_CreateInstance("@mozilla.org/widget/transferable;1");
+  EXPECT_TRUE(transferable);
+  if (transferable) {
+    EXPECT_TRUE(NS_SUCCEEDED(transferable->Init(nullptr)));
+  }
+  return transferable.forget();
+}
+
+
+
+TEST(DOM_Base_ContentUtils, IPCTransferableDataToTransferable)
+{
+  
+  
+  
+  mozilla::Preferences::SetBool("clipboard.imageAsFile.enabled", false);
+
+  IPCTransferableData data;
+  AppendStringItem(data, kTextMime, u"hello"_ns);
+  AppendStringItem(data, kFilePromiseMime, u"promise"_ns);
+  AppendStringItem(data, kFilePromiseURLMime, u"promiseURL"_ns);
+  AppendStringItem(data, kFilePromiseDestFilename, u"promiseDestFilename"_ns);
+  AppendStringItem(data, kFilePromiseDirectoryMime, u"promiseDirectory"_ns);
+
+  nsCOMPtr<nsITransferable> transferable = NewTransferable();
+  ASSERT_TRUE(transferable);
+
+  ASSERT_TRUE(NS_SUCCEEDED(nsContentUtils::IPCTransferableDataToTransferable(
+      data,  true, transferable,
+       true)));
+
+  EXPECT_TRUE(TransferableHasFlavor(transferable, kTextMime))
+      << "known flavor should be preserved";
+  EXPECT_FALSE(TransferableHasFlavor(transferable, kFilePromiseMime))
+      << "kFilePromiseMime should be stripped when filtering";
+  EXPECT_FALSE(TransferableHasFlavor(transferable, kFilePromiseURLMime))
+      << "kFilePromiseURLMime should be stripped when filtering";
+  EXPECT_FALSE(TransferableHasFlavor(transferable, kFilePromiseDestFilename))
+      << "kFilePromiseDestFilename should be stripped when filtering";
+  EXPECT_FALSE(TransferableHasFlavor(transferable, kFilePromiseDirectoryMime))
+      << "kFilePromiseDirectoryMime should be stripped when filtering";
+
+  transferable = NewTransferable();
+  ASSERT_TRUE(transferable);
+
+  
+  ASSERT_TRUE(NS_SUCCEEDED(nsContentUtils::IPCTransferableDataToTransferable(
+      data,  true, transferable,
+       false)));
+
+  EXPECT_TRUE(TransferableHasFlavor(transferable, kTextMime))
+      << "known flavor should be preserved";
+  EXPECT_TRUE(TransferableHasFlavor(transferable, kFilePromiseMime))
+      << "kFilePromiseMime should be stripped when filtering";
+  EXPECT_TRUE(TransferableHasFlavor(transferable, kFilePromiseURLMime))
+      << "kFilePromiseURLMime should be stripped when filtering";
+  EXPECT_TRUE(TransferableHasFlavor(transferable, kFilePromiseDestFilename))
+      << "kFilePromiseDestFilename should be stripped when filtering";
+  EXPECT_TRUE(TransferableHasFlavor(transferable, kFilePromiseDirectoryMime))
+      << "kFilePromiseDirectoryMime should be stripped when filtering";
 }
