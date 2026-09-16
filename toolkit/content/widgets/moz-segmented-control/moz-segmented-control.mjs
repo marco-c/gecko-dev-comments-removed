@@ -47,6 +47,10 @@ export class MozSegmentedControl extends SelectControlBaseElement {
     return this.deck ? "tab" : super.getChildRole();
   }
 
+  getGroupRole() {
+    return this.deck ? "tablist" : super.getGroupRole();
+  }
+
   willUpdate(changedProperties) {
     super.willUpdate(changedProperties);
     if (changedProperties.has("deck")) {
@@ -136,8 +140,14 @@ export class MozSegmentedControlItem extends SelectControlItemMixin(MozButton) {
 
   handleClick(event) {
     event.stopPropagation();
-    super.handleClick();
+    if (this.isDisabled) {
+      return;
+    }
     this.focus();
+    if (this.checked) {
+      return;
+    }
+    super.handleClick();
 
     // Manually dispatch events since we're not using an input.
     this.dispatchEvent(
