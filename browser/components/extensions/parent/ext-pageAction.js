@@ -312,25 +312,38 @@ this.pageAction = class extends ExtensionAPIPersistent {
         return;
       }
 
-      this.popupNode = new PanelPopup(
+      
+      
+      let popup = (this.popupNode = new PanelPopup(
         extension,
         window.document,
         popupURL,
         this.browserStyle
-      );
+      ));
       
-      this.popupNode.panel.addEventListener(
+      popup.panel.addEventListener(
         "popuphiding",
         () => {
           this.popupNode = undefined;
         },
         { once: true }
       );
-      await this.popupNode.contentReady;
-      window.BrowserPageActions.togglePanelForAction(
-        this.browserPageAction,
-        this.popupNode.panel
-      );
+      await popup.contentReady;
+      try {
+        window.BrowserPageActions.togglePanelForAction(
+          this.browserPageAction,
+          popup.panel
+        );
+      } catch (e) {
+        
+        
+        popup.destroy();
+        if (this.popupNode === popup) {
+          this.popupNode = undefined;
+        }
+        ExtensionTelemetry.pageActionPopupOpen.stopwatchCancel(extension, this);
+        throw e;
+      }
       ExtensionTelemetry.pageActionPopupOpen.stopwatchFinish(extension, this);
     } else {
       ExtensionTelemetry.pageActionPopupOpen.stopwatchCancel(extension, this);
