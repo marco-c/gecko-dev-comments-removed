@@ -412,7 +412,9 @@ TEST_F(MAYBE_PipeWireStreamTest, TestModifierFallback) {
   shared_screencast_stream_->StopScreenCastStream();
 }
 
-TEST_F(MAYBE_PipeWireStreamTest, TestOnlyOneInstanceAllowed) {
+
+
+TEST_F(MAYBE_PipeWireStreamTest, TestMultipleInstancesAllowed) {
   
   
   Event waitConnectEvent;
@@ -434,18 +436,11 @@ TEST_F(MAYBE_PipeWireStreamTest, TestOnlyOneInstanceAllowed) {
       std::move(shared_screencast_egl_dmabuf2));
 
   
-  
-  EXPECT_FALSE(shared_screencast_stream2->StartScreenCastStream(2));
-
-  
-  shared_screencast_stream_->StopScreenCastStream();
-
-  
-  
   EXPECT_TRUE(shared_screencast_stream2->StartScreenCastStream(2));
 
   
   shared_screencast_stream2->StopScreenCastStream();
+  shared_screencast_stream_->StopScreenCastStream();
 }
 
 }  
