@@ -42,9 +42,7 @@ def test_lint_file_whitespace_fix(lint, paths, create_temp_file):
 
     path = create_temp_file(contents, "bad.cpp")
     lint([path], fix=True)
-    
-    
-    assert fixed in {3, 4}
+    assert fixed == 3
 
 
 if __name__ == "__main__":
