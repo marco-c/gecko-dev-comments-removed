@@ -127,6 +127,13 @@ bool ModelLoader::realize_weights(ggml_backend_t backend){
     for (auto& pr : ups)
         ggml_backend_tensor_set(pr.first, pr.second, 0, ggml_nbytes(pr.first));
     tensors_.swap(devmap);   
+
+    
+    
+    if (ctx_) {
+        ggml_free(ctx_);
+        ctx_ = nullptr;
+    }
     return true;
 }
 bool ModelLoader::load(const std::string& path){
