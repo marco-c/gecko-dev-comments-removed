@@ -113,7 +113,19 @@ class _SphinxManager:
     def _generate_python_api_docs(self):
         """Generate Python API doc files."""
         out_dir = os.path.join(self.staging_dir, "python")
-        base_args = ["--no-toc", "-o", out_dir]
+        
+        
+        
+        
+        base_args = [
+            "--no-toc",
+            "--suffix",
+            "md",
+            "--templatedir",
+            os.path.join(here, "apidoc_templates"),
+            "-o",
+            out_dir,
+        ]
 
         for p in sorted(self.python_package_dirs):
             full = os.path.join(self.topsrcdir, p)
