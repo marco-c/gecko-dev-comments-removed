@@ -1,10 +1,12 @@
-
-#[macro_use(defer)] extern crate scopeguard;
+#[macro_use(defer)]
+extern crate scopeguard;
 
 use scopeguard::guard;
 
 fn f() {
-    defer!(println!("Called at return or panic"));
+    defer! {
+        println!("Called at return or panic");
+    }
     panic!();
 }
 
