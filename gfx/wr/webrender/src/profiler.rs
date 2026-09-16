@@ -331,7 +331,11 @@ pub const VIS_CLIP_REJECTS: usize = 143;
 
 pub const VIS_CULLING_RECT_FALLBACKS: usize = 144;
 
-pub const NUM_PROFILER_EVENTS: usize = 145;
+
+
+pub const VIS_CLIP_INDETERMINATE: usize = 145;
+
+pub const NUM_PROFILER_EVENTS: usize = 146;
 
 pub struct Profiler {
     counters: Vec<Counter>,
@@ -558,6 +562,7 @@ impl Profiler {
             int("Vis clip projection fails", "", VIS_CLIP_PROJECTION_FAILS, Expected::none()),
             int("Vis clip rejects", "", VIS_CLIP_REJECTS, Expected::none()),
             int("Vis culling rect fallbacks", "", VIS_CULLING_RECT_FALLBACKS, expected(0..1)),
+            int("Vis clip indeterminate", "", VIS_CLIP_INDETERMINATE, Expected::none()),
         ];
 
         let mut counters = Vec::with_capacity(profile_counters.len());
