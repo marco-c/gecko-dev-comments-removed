@@ -93,6 +93,9 @@ class CanvasRenderingContextHelper {
 
   virtual CSSIntSize GetWidthHeight() = 0;
 
+  
+  virtual bool CanCreateContext() const = 0;
+
   CanvasContextType mCurrentContextType;
   nsCOMPtr<nsICanvasRenderingContextInternal> mCurrentContext;
 };

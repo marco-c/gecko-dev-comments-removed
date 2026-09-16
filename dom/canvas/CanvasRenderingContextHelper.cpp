@@ -229,6 +229,10 @@ already_AddRefed<nsISupports> CanvasRenderingContextHelper::GetOrCreateContext(
     } else if (aContextType == CanvasContextType::WebGPU) {
       
     }
+  } else if (!CanCreateContext()) {
+    
+    aRv.ThrowInvalidStateError("Cannot create context for detached canvas.");
+    return nullptr;
   } else {
     
     if (aContextType != mCurrentContextType) return nullptr;
