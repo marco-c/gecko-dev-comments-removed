@@ -7,23 +7,13 @@ import pathlib
 import platform
 import shutil
 import signal
-import subprocess
 import sys
 import time
 
 import mozprocess
 
 from mozperftest.layers import Layer
-from mozperftest.utils import ON_TRY, archive_folder, install_package, temp_dir
-
-"""
-Python dependencies needed for mozperftest have to be installed when running
-via shellscript there is an issue with the way the shellscript runner does
-not have all of the environment variables and system settings
-"""
-INTERNAL_PYPI = "https://pypi.pub.build.mozilla.org/pub/"
-NUMPY_DEPENDENCY = "numpy<2"
-OPENCV_DEPENDENCY = "opencv-python==4.10.0.84"
+from mozperftest.utils import ON_TRY, archive_folder, temp_dir
 
 
 
@@ -122,22 +112,6 @@ class ShellScriptRunner(Layer):
         self.timed_out = False
         self.output_timed_out = False
         self.output_tail = []
-
-    def setup(self):
-        
-        
-        install_package(self.mach_cmd.virtualenv_manager, NUMPY_DEPENDENCY)
-        subprocess.check_call([
-            self.mach_cmd.virtualenv_manager.python_path,
-            "-m",
-            "pip",
-            "install",
-            OPENCV_DEPENDENCY,
-            "--no-deps",
-            "--no-index",
-            "--find-links",
-            INTERNAL_PYPI,
-        ])
 
     def kill(self, proc):
         if "win" in platform.system().lower():

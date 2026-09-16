@@ -163,7 +163,17 @@ def run_tests(mach_cmd, kwargs, client_args):
                     args[key] = value
 
             
-            script_hooks = Hooks(mach_cmd, args.pop("hooks", hooks_file))
+            script_hooks_file = args.pop("hooks", hooks_file)
+            script_hooks = Hooks(mach_cmd, script_hooks_file)
+
+            if script_hooks_file != hooks_file:
+                
+                
+                
+                
+                args["virtualenv"] = mach_cmd.virtualenv_manager
+                script_hooks.run("before_iterations", args)
+                del args["virtualenv"]
 
             flavor = args["flavor"]
             if flavor == "doc":
