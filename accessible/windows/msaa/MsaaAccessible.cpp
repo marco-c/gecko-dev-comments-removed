@@ -71,9 +71,19 @@ MsaaAccessible* MsaaAccessible::Create(Accessible* aAcc) {
     return new ia2AccessibleImage(aAcc);
   }
   if (LocalAccessible* localAcc = aAcc->AsLocal()) {
-    if (localAcc->GetContent() &&
-        localAcc->GetContent()->IsXULElement(nsGkAtoms::menuitem)) {
-      return new MsaaXULMenuitemAccessible(aAcc);
+    if (nsIContent* content = localAcc->GetContent()) {
+      if (content->IsXULElement(nsGkAtoms::menuitem)) {
+        return new MsaaXULMenuitemAccessible(aAcc);
+      }
+      if (content->IsXULElement(nsGkAtoms::box) ||
+          content->IsXULElement(nsGkAtoms::hbox)) {
+        
+        
+        
+        
+        
+        return new MsaaAccessible(aAcc);
+      }
     }
   }
   if (aAcc->IsHyperText()) {
@@ -927,7 +937,7 @@ class AccessibleEnumerator final : public IEnumVARIANT {
 
   AccessibleEnumerator(const AccessibleEnumerator& toCopy)
       : mArray(toCopy.mArray.Clone()), mCurIndex(toCopy.mCurIndex) {}
-  ~AccessibleEnumerator() {}
+  ~AccessibleEnumerator() = default;
 
   
   DECL_IUNKNOWN
