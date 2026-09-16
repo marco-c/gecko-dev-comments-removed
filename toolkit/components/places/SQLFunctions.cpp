@@ -596,6 +596,10 @@ CalculateFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
 
 
   nsCOMPtr<mozIStorageStatement> stmt = DB->GetStatement(
+      
+      
+      
+      "/* do not warn (bug 2055967) */ "
       "WITH "
       "lambda (lambda) AS ( "
       "  SELECT ln(2) / :halfLifeDays "
@@ -638,8 +642,9 @@ CalculateFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
       "  WHERE place_id = :pageId "
       
       "    AND vs.visit_type NOT IN (7, 8, 9) "
-      "  ORDER BY visit_date DESC "
-      "  LIMIT :numSampledVisits "
+      
+      
+      
       "), "
       "virtual_visits AS ( "
       "  SELECT "
@@ -705,11 +710,11 @@ CalculateFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
       "                               AND t.visit_type IN (5,6) "
       "), "
       "bookmark (days, weight) AS ( "
-      "  SELECT dateAdded / 86400000000, :highWeight "
+      
+      "  SELECT max(dateAdded) / 86400000000, :highWeight "
       "  FROM moz_bookmarks "
       "  WHERE fk = :pageId "
-      "  ORDER BY dateAdded DESC "
-      "  LIMIT 1 "
+      "  HAVING count(*) > 0 "
       "), "
       "samples (days, weight) AS ( "
       "  SELECT * FROM bookmark WHERE (SELECT count(*) FROM visits) = 0 "
@@ -860,6 +865,10 @@ CalculateAltFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
 
 
   nsCOMPtr<mozIStorageStatement> stmt = DB->GetStatement(
+      
+      
+      
+      "/* do not warn (bug 2055967) */ "
       "WITH "
       "lambda (lambda) AS ( "
       "  SELECT ln(2) / :halfLifeDays "
@@ -900,8 +909,9 @@ CalculateAltFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
       "    ) AS is_interesting "
       "  FROM moz_historyvisits vs "
       "  WHERE place_id = :pageId "
-      "  ORDER BY visit_date DESC "
-      "  LIMIT :numSampledVisits "
+      
+      
+      
       "), "
       "virtual_visits AS ( "
       "  SELECT "
@@ -966,11 +976,11 @@ CalculateAltFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
       "                               AND t.visit_type IN (5,6) "
       "), "
       "bookmark (days, weight) AS ( "
-      "  SELECT dateAdded / 86400000000, 100 "
+      
+      "  SELECT max(dateAdded) / 86400000000, 100 "
       "  FROM moz_bookmarks "
       "  WHERE fk = :pageId "
-      "  ORDER BY dateAdded DESC "
-      "  LIMIT 1 "
+      "  HAVING count(*) > 0 "
       "), "
       "samples (days, weight) AS ( "
       "  SELECT * FROM bookmark WHERE (SELECT count(*) FROM visits) = 0 "
