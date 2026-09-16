@@ -512,6 +512,7 @@ export type RequestTranslationsPort = (
 ) => Promise<MessagePort>;
 
 export type TranslationsPortMessages =
+  | { type: "TranslationsPort:Close" }
   
   | { type: "TranslationsPort:Passthrough"; translationId: string }
   
