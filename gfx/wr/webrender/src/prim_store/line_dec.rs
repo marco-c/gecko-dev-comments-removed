@@ -12,7 +12,7 @@ use crate::render_task::{RenderTask, RenderTaskKind};
 use crate::render_task_cache::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskParent};
 use crate::render_task_graph::RenderTaskId;
 use crate::scene_building::{IsVisible};
-use crate::frame_builder::{FrameBuildingContext, FrameBuildingState};
+use crate::frame_builder::FrameBuildingState;
 use crate::intern;
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{
@@ -20,7 +20,6 @@ use crate::prim_store::{
     InternablePrimitive, PrimitiveStore,
 };
 use crate::prim_store::PrimitiveKind;
-use crate::spatial_tree::SpatialNodeIndex;
 use crate::util::clamp_to_scale_factor;
 
 
@@ -59,11 +58,14 @@ impl LineDecorationData {
     
     
     
+    
+    
+    
+    
     pub fn prepare(
         &self,
         prim_size: LayoutSize,
-        prim_spatial_node_index: SpatialNodeIndex,
-        frame_context: &FrameBuildingContext,
+        local_to_device_scale: (f32, f32),
         frame_state: &mut FrameBuildingState,
     ) -> Option<(RenderTaskId, LayoutSize)> {
         let cache_key = get_line_decoration_size(
@@ -86,8 +88,7 @@ impl LineDecorationData {
                 );
                 let task = self.allocate_render_task(
                     cache_key,
-                    prim_spatial_node_index,
-                    frame_context,
+                    local_to_device_scale,
                     frame_state,
                 );
 
@@ -100,27 +101,19 @@ impl LineDecorationData {
     fn allocate_render_task(
         &self,
         cache_key: LineDecorationCacheKey,
-        prim_spatial_node_index: SpatialNodeIndex,
-        frame_context: &FrameBuildingContext,
+        local_to_device_scale: (f32, f32),
         frame_state: &mut FrameBuildingState,
     ) -> RenderTaskId {
         
         
-        let scale = frame_context
-            .spatial_tree
-            .get_world_transform(prim_spatial_node_index)
-            .scale_factors();
-
         
         
         
         
         
         
-        
-        
-        let scale_width = clamp_to_scale_factor(scale.0, false);
-        let scale_height = clamp_to_scale_factor(scale.1, false);
+        let scale_width = clamp_to_scale_factor(local_to_device_scale.0, false);
+        let scale_height = clamp_to_scale_factor(local_to_device_scale.1, false);
         
         let scale_factor = LayoutToDeviceScale::new(scale_width.max(scale_height));
 
@@ -304,6 +297,6 @@ fn test_struct_sizes() {
     
     
     assert_eq!(mem::size_of::<LineDecoration>(), 12, "LineDecoration size changed");
-    assert_eq!(mem::size_of::<LineDecorationTemplate>(), 28, "LineDecorationTemplate size changed");
-    assert_eq!(mem::size_of::<LineDecorationKey>(), 16, "LineDecorationKey size changed");
+    assert_eq!(mem::size_of::<LineDecorationTemplate>(), 44, "LineDecorationTemplate size changed");
+    assert_eq!(mem::size_of::<LineDecorationKey>(), 32, "LineDecorationKey size changed");
 }

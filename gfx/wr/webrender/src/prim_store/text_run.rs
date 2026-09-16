@@ -3,7 +3,7 @@
 
 
 use api::{ColorF, FontInstanceFlags, GlyphInstance, RasterSpace};
-use api::units::{LayoutToWorldTransform, DevicePixelScale};
+use api::units::LayoutToWorldTransform;
 use api::units::*;
 use crate::space::SpaceSnapper;
 use crate::scene_building::{IsVisible};
@@ -411,9 +411,10 @@ impl TextRunTemplate {
         &self,
         prim_spatial_node_index: SpatialNodeIndex,
         low_quality_pinch_zoom: bool,
-        device_pixel_scale: DevicePixelScale,
+        surface: &SurfaceInfo,
         spatial_tree: &SpatialTree,
     ) -> RasterSpace {
+        let device_pixel_scale = surface.device_pixel_scale;
         let prim_spatial_node = spatial_tree.get_spatial_node(prim_spatial_node_index);
         if prim_spatial_node.is_ancestor_or_self_zooming && low_quality_pinch_zoom {
             
@@ -438,12 +439,19 @@ impl TextRunTemplate {
             
             
             
-            let root_spatial_node_index = spatial_tree.root_reference_frame_index();
+            
+            
+            
+            
             let scale_factors = spatial_tree
-                .get_relative_transform(prim_spatial_node_index, root_spatial_node_index)
+                .get_relative_transform(
+                    prim_spatial_node_index,
+                    surface.raster_spatial_node_index,
+                )
                 .scale_factors();
 
-            let scale = scale_factors.0.max(scale_factors.1).min(8.0).max(1.0);
+            let device_scale = scale_factors.0.max(scale_factors.1) * device_pixel_scale.0;
+            let scale = device_scale.min(8.0).max(1.0);
             let rounded_up = 2.0f32.powf(scale.log2().ceil());
 
             RasterSpace::Local(rounded_up / device_pixel_scale.0)
@@ -474,7 +482,7 @@ impl TextRunTemplate {
         let raster_space = self.get_raster_space_for_prim(
             spatial_node_index,
             low_quality_pinch_zoom,
-            surface.device_pixel_scale,
+            surface,
             spatial_tree,
         );
 
@@ -659,6 +667,6 @@ fn test_struct_sizes() {
     
     
     assert_eq!(mem::size_of::<TextRun>(), 80, "TextRun size changed");
-    assert_eq!(mem::size_of::<TextRunTemplate>(), 80, "TextRunTemplate size changed");
-    assert_eq!(mem::size_of::<TextRunKey>(), 80, "TextRunKey size changed");
+    assert_eq!(mem::size_of::<TextRunTemplate>(), 96, "TextRunTemplate size changed");
+    assert_eq!(mem::size_of::<TextRunKey>(), 96, "TextRunKey size changed");
 }
