@@ -433,6 +433,62 @@ function finish_cache2_test() {
 
 
 
+function flush_cache2_io() {
+  return new Promise(resolve => {
+    Services.cache2.QueryInterface(Ci.nsICacheTesting).flush({
+      QueryInterface: ChromeUtils.generateQI(["nsIObserver"]),
+      observe() {
+        resolve();
+      },
+    });
+  });
+}
+
+
+
+
+async function restart_cache2() {
+  await flush_cache2_io();
+
+  let testing = Services.cache2.QueryInterface(Ci.nsICacheTesting);
+  testing.shutdownCacheForTesting();
+  testing.startupCacheForTesting();
+
+  await new Promise(wait_for_cache_index);
+}
+
+
+
+
+
+
+
+
+
+async function wait_for_context_eviction() {
+  await flush_cache2_io();
+
+  let cacheDir = getDiskCacheDirectory().path;
+  for (let i = 0; i < 600; i++) {
+    let children = await IOUtils.getChildren(cacheDir);
+    if (!children.some(path => PathUtils.filename(path).startsWith("ce_"))) {
+      return;
+    }
+    await new Promise(resolve => do_timeout(50, resolve));
+  }
+
+  Assert.ok(false, "timed out waiting for the context eviction to finish");
+}
+
+
+async function count_cache2_entry_files() {
+  let dir = getDiskCacheDirectory();
+  dir.append("entries");
+  return (await IOUtils.getChildren(dir.path)).length;
+}
+
+
+
 
 
 
