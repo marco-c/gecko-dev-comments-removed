@@ -1,13 +1,9 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Iterator
-from typing import (
-    Any,
-    Protocol,
-    TypeVar,
-    overload,
-)
+from typing import Protocol
+from typing import Any, Dict, Iterator, List, Optional, TypeVar, Union, overload
+
 
 _T = TypeVar("_T")
 
@@ -24,25 +20,25 @@ class PackageMetadata(Protocol):
     @overload
     def get(
         self, name: str, failobj: None = None
-    ) -> str | None: ...  
+    ) -> Optional[str]: ...  
 
     @overload
-    def get(self, name: str, failobj: _T) -> str | _T: ...  
+    def get(self, name: str, failobj: _T) -> Union[str, _T]: ...  
 
     
     @overload
     def get_all(
         self, name: str, failobj: None = None
-    ) -> list[Any] | None: ...  
+    ) -> Optional[List[Any]]: ...  
 
     @overload
-    def get_all(self, name: str, failobj: _T) -> list[Any] | _T:
+    def get_all(self, name: str, failobj: _T) -> Union[List[Any], _T]:
         """
         Return all values associated with a possibly multi-valued key.
         """
 
     @property
-    def json(self) -> dict[str, str | list[str]]:
+    def json(self) -> Dict[str, Union[str, List[str]]]:
         """
         A JSON-compatible form of the metadata.
         """
@@ -54,11 +50,11 @@ class SimplePath(Protocol):
     """
 
     def joinpath(
-        self, other: str | os.PathLike[str]
+        self, other: Union[str, os.PathLike[str]]
     ) -> SimplePath: ...  
 
     def __truediv__(
-        self, other: str | os.PathLike[str]
+        self, other: Union[str, os.PathLike[str]]
     ) -> SimplePath: ...  
 
     @property

@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import hashlib
 import os
-import tempfile
 from textwrap import dedent
 from typing import IO, TYPE_CHECKING
 from pathlib import Path
@@ -17,6 +16,47 @@ if TYPE_CHECKING:
     from datetime import datetime
 
     from filelock import BaseFileLock
+
+
+def _secure_open_write(filename: str, fmode: int) -> IO[bytes]:
+    
+    flags = os.O_WRONLY
+
+    
+    
+    
+    
+    flags |= os.O_CREAT | os.O_EXCL
+
+    
+    
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+
+    
+    if hasattr(os, "O_BINARY"):
+        flags |= os.O_BINARY
+
+    
+    
+    try:
+        os.remove(filename)
+    except OSError:
+        
+        pass
+
+    
+    
+    
+    
+    fd = os.open(filename, flags, fmode)
+    try:
+        return os.fdopen(fd, "wb")
+
+    except:
+        
+        os.close(fd)
+        raise
 
 
 class _FileCacheMixin:
@@ -82,18 +122,15 @@ class _FileCacheMixin:
         Safely write the data to the given path.
         """
         
-        dirname = os.path.dirname(path)
-        os.makedirs(dirname, self.dirmode, exist_ok=True)
+        try:
+            os.makedirs(os.path.dirname(path), self.dirmode)
+        except OSError:
+            pass
 
         with self.lock_class(path + ".lock"):
             
-            (fd, name) = tempfile.mkstemp(dir=dirname)
-            try:
-                os.write(fd, data)
-            finally:
-                os.close(fd)
-            os.chmod(name, self.filemode)
-            os.replace(name, path)
+            with _secure_open_write(path, self.filemode) as fh:
+                fh.write(data)
 
     def _delete(self, key: str, suffix: str) -> None:
         name = self._fn(key) + suffix

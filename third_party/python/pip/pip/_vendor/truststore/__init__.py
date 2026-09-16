@@ -7,7 +7,7 @@ if _sys.version_info < (3, 10):
 
 
 
-if _sys.version_info < (3, 13) and _sys.implementation.name not in ("cpython", "pypy"):
+if _sys.version_info < (3, 13):
     try:
         import ssl as _ssl
     except ImportError:
@@ -33,4 +33,4 @@ from ._api import SSLContext, extract_from_ssl, inject_into_ssl
 del _api, _sys  
 
 __all__ = ["SSLContext", "inject_into_ssl", "extract_from_ssl"]
-__version__ = "0.10.1"
+__version__ = "0.10.0"

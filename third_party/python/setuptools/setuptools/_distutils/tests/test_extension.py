@@ -6,7 +6,8 @@ import warnings
 from distutils.extension import Extension, read_setup_file
 
 import pytest
-from test.support.warnings_helper import check_warnings
+
+from .compat.py38 import check_warnings
 
 
 class TestExtension:
@@ -62,30 +63,20 @@ class TestExtension:
 
     def test_extension_init(self):
         
-        with pytest.raises(TypeError):
+        with pytest.raises(AssertionError):
             Extension(1, [])
         ext = Extension('name', [])
         assert ext.name == 'name'
 
         
         
-        with pytest.raises(TypeError):
+        with pytest.raises(AssertionError):
             Extension('name', 'file')
-        with pytest.raises(TypeError):
+        with pytest.raises(AssertionError):
             Extension('name', ['file', 1])
         ext = Extension('name', ['file1', 'file2'])
         assert ext.sources == ['file1', 'file2']
         ext = Extension('name', [pathlib.Path('file1'), pathlib.Path('file2')])
-        assert ext.sources == ['file1', 'file2']
-
-        
-        ext = Extension('name', ('file1', 'file2'))  
-        assert ext.sources == ['file1', 'file2']
-        ext = Extension('name', {'file1', 'file2'})  
-        assert sorted(ext.sources) == ['file1', 'file2']
-        ext = Extension('name', iter(['file1', 'file2']))  
-        assert ext.sources == ['file1', 'file2']
-        ext = Extension('name', [pathlib.Path('file1'), 'file2'])  
         assert ext.sources == ['file1', 'file2']
 
         

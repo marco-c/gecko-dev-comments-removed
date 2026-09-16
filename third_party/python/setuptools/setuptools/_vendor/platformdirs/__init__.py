@@ -19,18 +19,18 @@ if TYPE_CHECKING:
     from pathlib import Path
     from typing import Literal
 
-if sys.platform == "win32":
-    from platformdirs.windows import Windows as _Result
-elif sys.platform == "darwin":
-    from platformdirs.macos import MacOS as _Result
-else:
-    from platformdirs.unix import Unix as _Result
-
 
 def _set_platform_dir_class() -> type[PlatformDirsABC]:
+    if sys.platform == "win32":
+        from platformdirs.windows import Windows as Result  
+    elif sys.platform == "darwin":
+        from platformdirs.macos import MacOS as Result  
+    else:
+        from platformdirs.unix import Unix as Result  
+
     if os.getenv("ANDROID_DATA") == "/data" and os.getenv("ANDROID_ROOT") == "/system":
         if os.getenv("SHELL") or os.getenv("PREFIX"):
-            return _Result
+            return Result
 
         from platformdirs.android import _android_folder  
 
@@ -39,20 +39,16 @@ def _set_platform_dir_class() -> type[PlatformDirsABC]:
 
             return Android  
 
-    return _Result
+    return Result
 
 
-if TYPE_CHECKING:
-    
-    PlatformDirs = _Result
-else:
-    PlatformDirs = _set_platform_dir_class()  
+PlatformDirs = _set_platform_dir_class()  
 AppDirs = PlatformDirs  
 
 
 def user_data_dir(
     appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
+    appauthor: str | None | Literal[False] = None,
     version: str | None = None,
     roaming: bool = False,  
     ensure_exists: bool = False,  
@@ -76,7 +72,7 @@ def user_data_dir(
 
 def site_data_dir(
     appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
+    appauthor: str | None | Literal[False] = None,
     version: str | None = None,
     multipath: bool = False,  
     ensure_exists: bool = False,  
@@ -100,7 +96,7 @@ def site_data_dir(
 
 def user_config_dir(
     appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
+    appauthor: str | None | Literal[False] = None,
     version: str | None = None,
     roaming: bool = False,  
     ensure_exists: bool = False,  
@@ -124,7 +120,7 @@ def user_config_dir(
 
 def site_config_dir(
     appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
+    appauthor: str | None | Literal[False] = None,
     version: str | None = None,
     multipath: bool = False,  
     ensure_exists: bool = False,  
@@ -148,7 +144,7 @@ def site_config_dir(
 
 def user_cache_dir(
     appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
+    appauthor: str | None | Literal[False] = None,
     version: str | None = None,
     opinion: bool = True,  
     ensure_exists: bool = False,  
@@ -172,7 +168,7 @@ def user_cache_dir(
 
 def site_cache_dir(
     appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
+    appauthor: str | None | Literal[False] = None,
     version: str | None = None,
     opinion: bool = True,  
     ensure_exists: bool = False,  
@@ -196,7 +192,7 @@ def site_cache_dir(
 
 def user_state_dir(
     appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
+    appauthor: str | None | Literal[False] = None,
     version: str | None = None,
     roaming: bool = False,  
     ensure_exists: bool = False,  
@@ -220,7 +216,7 @@ def user_state_dir(
 
 def user_log_dir(
     appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
+    appauthor: str | None | Literal[False] = None,
     version: str | None = None,
     opinion: bool = True,  
     ensure_exists: bool = False,  
@@ -274,7 +270,7 @@ def user_desktop_dir() -> str:
 
 def user_runtime_dir(
     appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
+    appauthor: str | None | Literal[False] = None,
     version: str | None = None,
     opinion: bool = True,  
     ensure_exists: bool = False,  
@@ -298,7 +294,7 @@ def user_runtime_dir(
 
 def site_runtime_dir(
     appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
+    appauthor: str | None | Literal[False] = None,
     version: str | None = None,
     opinion: bool = True,  
     ensure_exists: bool = False,  
@@ -322,7 +318,7 @@ def site_runtime_dir(
 
 def user_data_path(
     appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
+    appauthor: str | None | Literal[False] = None,
     version: str | None = None,
     roaming: bool = False,  
     ensure_exists: bool = False,  
@@ -346,7 +342,7 @@ def user_data_path(
 
 def site_data_path(
     appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
+    appauthor: str | None | Literal[False] = None,
     version: str | None = None,
     multipath: bool = False,  
     ensure_exists: bool = False,  
@@ -370,7 +366,7 @@ def site_data_path(
 
 def user_config_path(
     appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
+    appauthor: str | None | Literal[False] = None,
     version: str | None = None,
     roaming: bool = False,  
     ensure_exists: bool = False,  
@@ -394,7 +390,7 @@ def user_config_path(
 
 def site_config_path(
     appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
+    appauthor: str | None | Literal[False] = None,
     version: str | None = None,
     multipath: bool = False,  
     ensure_exists: bool = False,  
@@ -418,7 +414,7 @@ def site_config_path(
 
 def site_cache_path(
     appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
+    appauthor: str | None | Literal[False] = None,
     version: str | None = None,
     opinion: bool = True,  
     ensure_exists: bool = False,  
@@ -442,7 +438,7 @@ def site_cache_path(
 
 def user_cache_path(
     appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
+    appauthor: str | None | Literal[False] = None,
     version: str | None = None,
     opinion: bool = True,  
     ensure_exists: bool = False,  
@@ -466,7 +462,7 @@ def user_cache_path(
 
 def user_state_path(
     appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
+    appauthor: str | None | Literal[False] = None,
     version: str | None = None,
     roaming: bool = False,  
     ensure_exists: bool = False,  
@@ -490,7 +486,7 @@ def user_state_path(
 
 def user_log_path(
     appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
+    appauthor: str | None | Literal[False] = None,
     version: str | None = None,
     opinion: bool = True,  
     ensure_exists: bool = False,  
@@ -544,7 +540,7 @@ def user_desktop_path() -> Path:
 
 def user_runtime_path(
     appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
+    appauthor: str | None | Literal[False] = None,
     version: str | None = None,
     opinion: bool = True,  
     ensure_exists: bool = False,  
@@ -568,7 +564,7 @@ def user_runtime_path(
 
 def site_runtime_path(
     appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
+    appauthor: str | None | Literal[False] = None,
     version: str | None = None,
     opinion: bool = True,  
     ensure_exists: bool = False,  

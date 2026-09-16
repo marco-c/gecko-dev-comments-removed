@@ -12,23 +12,26 @@ module."""
 
 
 
-from __future__ import annotations
+
 
 import os
-from collections.abc import Callable
 from distutils._log import log
-from typing import ClassVar
 
-from ..ccompiler import new_compiler, show_compilers
 from ..core import Command
 from ..errors import DistutilsSetupError
 from ..sysconfig import customize_compiler
 
 
+def show_compilers():
+    from ..ccompiler import show_compilers
+
+    show_compilers()
+
+
 class build_clib(Command):
     description = "build C/C++ libraries used by Python extensions"
 
-    user_options: ClassVar[list[tuple[str, str, str]]] = [
+    user_options = [
         ('build-clib=', 'b', "directory to build C/C++ libraries to"),
         ('build-temp=', 't', "directory to put temporary build by-products"),
         ('debug', 'g', "compile with debugging information"),
@@ -36,9 +39,9 @@ class build_clib(Command):
         ('compiler=', 'c', "specify the compiler type"),
     ]
 
-    boolean_options: ClassVar[list[str]] = ['debug', 'force']
+    boolean_options = ['debug', 'force']
 
-    help_options: ClassVar[list[tuple[str, str | None, str, Callable[[], object]]]] = [
+    help_options = [
         ('help-compiler', None, "list available compilers", show_compilers),
     ]
 
@@ -57,7 +60,7 @@ class build_clib(Command):
         self.force = False
         self.compiler = None
 
-    def finalize_options(self) -> None:
+    def finalize_options(self):
         
         
         
@@ -84,11 +87,16 @@ class build_clib(Command):
         
         
 
-    def run(self) -> None:
+    def run(self):
         if not self.libraries:
             return
 
-        self.compiler = new_compiler(compiler=self.compiler, force=self.force)
+        
+        from ..ccompiler import new_compiler
+
+        self.compiler = new_compiler(
+            compiler=self.compiler, dry_run=self.dry_run, force=self.force
+        )
         customize_compiler(self.compiler)
 
         if self.include_dirs is not None:
@@ -103,7 +111,7 @@ class build_clib(Command):
 
         self.build_libraries(self.libraries)
 
-    def check_library_list(self, libraries) -> None:
+    def check_library_list(self, libraries):
         """Ensure that the list of libraries is valid.
 
         `library` is presumably provided as a command option 'libraries'.
@@ -130,7 +138,8 @@ class build_clib(Command):
 
             if '/' in name or (os.sep != '/' and os.sep in name):
                 raise DistutilsSetupError(
-                    f"bad library name '{lib[0]}': may not contain directory separators"
+                    f"bad library name '{lib[0]}': "
+                    "may not contain directory separators"
                 )
 
             if not isinstance(build_info, dict):
@@ -165,7 +174,7 @@ class build_clib(Command):
             filenames.extend(sources)
         return filenames
 
-    def build_libraries(self, libraries) -> None:
+    def build_libraries(self, libraries):
         for lib_name, build_info in libraries:
             sources = build_info.get('sources')
             if sources is None or not isinstance(sources, (list, tuple)):

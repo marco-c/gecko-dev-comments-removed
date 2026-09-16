@@ -15,7 +15,7 @@ class bdist_rpm(orig.bdist_rpm):
 
     distribution: Distribution  
 
-    def run(self) -> None:
+    def run(self):
         SetuptoolsDeprecationWarning.emit(
             "Deprecated command",
             """
