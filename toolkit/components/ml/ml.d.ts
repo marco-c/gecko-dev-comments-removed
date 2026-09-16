@@ -124,6 +124,31 @@ export type EngineOptions<FeatureId extends EngineFeatureIds> =
 
 
 
+export interface EngineCreationInterception {
+  
+  engine: MLEngine<unknown>;
+
+  
+  start: number;
+
+  
+  end: number;
+}
+
+
+
+
+export interface EngineCreationInterceptionOptions {
+  
+  expectedOptions?: Partial<PipelineOptions>;
+
+  
+  overrides?: Partial<PipelineOptions>;
+}
+
+
+
+
 
 
 interface ResourceMeasurement {
