@@ -5,7 +5,13 @@
 "use strict";
 
 
+
+
 requestLongerTimeout(4);
+
+
+
+const PAUSE_OPTIONS = { shouldWaitForLoadedScopes: false };
 
 add_task(async function () {
   const dbg = await initDebugger("doc-sourcemapped.html");
@@ -19,7 +25,7 @@ add_task(async function () {
 });
 
 async function breakpointSteps(dbg, target, fixture, { line, column }, steps) {
-  const filename = `${target}://./${fixture}/input.`;
+  const filename = `${target}://./${fixture}/input.js`;
   const fnName = `${target}-${fixture}`.replace(/-([a-z])/g, (s, c) =>
     c.toUpperCase()
   );
@@ -31,21 +37,30 @@ async function breakpointSteps(dbg, target, fixture, { line, column }, steps) {
     { line, column },
     async source => {
       await runSteps(dbg, source, steps);
-    }
+    },
+    PAUSE_OPTIONS
   );
 
   ok(true, `Ran tests for ${fixture} at line ${line} column ${column}`);
 }
+
+
+
+
+
+
+
+
 
 async function runSteps(dbg, source, steps) {
   for (const [i, [type, position]] of steps.entries()) {
     info(`Step ${i}`);
     switch (type) {
       case "stepOver":
-        await stepOver(dbg);
+        await stepOver(dbg, PAUSE_OPTIONS);
         break;
       case "stepIn":
-        await stepIn(dbg);
+        await stepIn(dbg, PAUSE_OPTIONS);
         break;
       default:
         throw new Error("Unknown stepping type");
@@ -65,15 +80,15 @@ function testStepOverForOf(dbg) {
     dbg,
     "webpack3-babel6",
     "step-over-for-of",
-    { line: 4, column: 2 },
+    { line: 4, column: 3 },
     [
-      ["stepOver", { line: 6, column: 20 }],
-      ["stepOver", { line: 6, column: 2 }],
-      ["stepOver", { line: 7, column: 4 }],
-      ["stepOver", { line: 6, column: 2 }],
-      ["stepOver", { line: 7, column: 4 }],
-      ["stepOver", { line: 6, column: 2 }],
-      ["stepOver", { line: 10, column: 2 }],
+      ["stepOver", { line: 3, column: 32 }],
+      ["stepOver", { line: 3, column: 32 }],
+      ["stepOver", { line: 3, column: 32 }],
+      ["stepOver", { line: 6, column: 21 }],
+      ["stepOver", { line: 6, column: 3 }],
+      ["stepOver", { line: 6, column: 27 }],
+      ["stepOver", { line: 7, column: 5 }],
     ]
   );
 }
@@ -85,16 +100,16 @@ function testStepOverForOfArray(dbg) {
     dbg,
     "webpack3-babel6",
     "step-over-for-of-array",
-    { line: 3, column: 2 },
+    { line: 3, column: 3 },
     [
-      ["stepOver", { line: 5, column: 2 }],
-      ["stepOver", { line: 5, column: 13 }],
-      ["stepOver", { line: 6, column: 4 }],
-      ["stepOver", { line: 5, column: 2 }],
-      ["stepOver", { line: 5, column: 13 }],
-      ["stepOver", { line: 6, column: 4 }],
-      ["stepOver", { line: 5, column: 2 }],
-      ["stepOver", { line: 9, column: 2 }],
+      ["stepOver", { line: 5, column: 21 }],
+      ["stepOver", { line: 5, column: 3 }],
+      ["stepOver", { line: 5, column: 3 }],
+      ["stepOver", { line: 5, column: 14 }],
+      ["stepOver", { line: 6, column: 5 }],
+      ["stepOver", { line: 5, column: 3 }],
+      ["stepOver", { line: 5, column: 3 }],
+      ["stepOver", { line: 5, column: 14 }],
     ]
   );
 }
@@ -106,11 +121,11 @@ function testStepOveForOfClosure(dbg) {
     dbg,
     "webpack3-babel6",
     "step-over-for-of-closure",
-    { line: 6, column: 2 },
+    { line: 6, column: 3 },
     [
-      ["stepOver", { line: 8, column: 20 }],
-      ["stepOver", { line: 8, column: 2 }],
-      ["stepOver", { line: 12, column: 2 }],
+      ["stepOver", { line: 5, column: 32 }],
+      ["stepOver", { line: 5, column: 32 }],
+      ["stepOver", { line: 5, column: 32 }],
     ]
   );
 }
@@ -123,14 +138,14 @@ function testStepOverForOfArrayClosure(dbg) {
     dbg,
     "webpack3-babel6",
     "step-over-for-of-array-closure",
-    { line: 3, column: 2 },
+    { line: 3, column: 3 },
     [
-      ["stepOver", { line: 5, column: 2 }],
-      ["stepOver", { line: 5, column: 13 }],
-      ["stepOver", { line: 5, column: 2 }],
-      ["stepOver", { line: 5, column: 13 }],
-      ["stepOver", { line: 5, column: 2 }],
-      ["stepOver", { line: 9, column: 2 }],
+      ["stepOver", { line: 2, column: 32 }],
+      ["stepOver", { line: 5, column: 21 }],
+      ["stepOver", { line: 5, column: 3 }],
+      ["stepOver", { line: 5, column: 3 }],
+      ["stepOver", { line: 5, column: 14 }],
+      ["stepOver", { line: 5, column: 29 }],
     ]
   );
 }
@@ -140,10 +155,12 @@ function testStepOverFunctionParams(dbg) {
     dbg,
     "webpack3-babel6",
     "step-over-function-params",
-    { line: 6, column: 2 },
+    { line: 6, column: 3 },
     [
-      ["stepOver", { line: 7, column: 2 }],
-      ["stepIn", { line: 2, column: 2 }],
+      ["stepOver", { line: 7, column: 3 }],
+      
+      
+      ["stepIn", { line: 1, column: 66 }],
     ]
   );
 }
@@ -153,7 +170,7 @@ function testStepOverRegeneratorAwait(dbg) {
     dbg,
     "webpack3-babel6",
     "step-over-regenerator-await",
-    { line: 2, column: 2 },
+    { line: 2, column: 3 },
     [
       
       

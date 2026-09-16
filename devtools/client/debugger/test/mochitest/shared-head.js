@@ -974,11 +974,12 @@ async function stepOver(dbg, pauseOptions) {
 
 
 
-async function stepIn(dbg) {
+
+async function stepIn(dbg, pauseOptions) {
   const pauseLine = getVisibleSelectedFrameLine(dbg);
   info(`Stepping in from ${pauseLine}`);
   await dbg.actions.stepIn();
-  return waitForPaused(dbg);
+  return waitForPaused(dbg, null, pauseOptions);
 }
 
 
