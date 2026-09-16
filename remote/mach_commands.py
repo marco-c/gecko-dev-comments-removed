@@ -208,6 +208,11 @@ def run_npm(*args, **kwargs):
     env = os.environ.copy()
     npm, _ = nodeutil.find_npm_executable()
 
+    
+    
+    env["npm_config_audit"] = "false"
+    env["npm_config_fund"] = "false"
+
     if kwargs.get("env"):
         env.update(kwargs["env"])
 
