@@ -27,7 +27,9 @@
 
 #  include <ntstatus.h>
 
-#  include "components/zucchini/exception_filter_helper_win.h"
+#  if defined(HAVE_SEH_EXCEPTIONS)
+#    include "components/zucchini/exception_filter_helper_win.h"
+#  endif  
 
 #  include <io.h>
 #endif  
@@ -127,11 +129,7 @@ void SetLogFunction(LogFunctionPtr aLogFunction) {
     return status::kStatusFatal;                                          \
   }
 
-#if BUILDFLAG(IS_WIN)
-#  if !defined(HAVE_SEH_EXCEPTIONS) || !HAVE_SEH_EXCEPTIONS
-#    error Compiler support for SEH is required to build zucchini on Windows.
-#  endif
-
+#if BUILDFLAG(IS_WIN) && defined(HAVE_SEH_EXCEPTIONS)
 
 
 
@@ -170,7 +168,7 @@ class MappedPatchImpl {
   ~MappedPatchImpl() = default;
   std::optional<MappedFileReader> mFileReader;
   EnsemblePatchReader mPatchReader;
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) && defined(HAVE_SEH_EXCEPTIONS)
   ExceptionFilterHelper mExceptionFilterHelper;
 #endif  
 };
@@ -209,10 +207,10 @@ status::Code MappedPatch::LoadImpl(FILE* aPatchFile, uint32_t* aSourceSize,
     }
     return status::kStatusFileReadError;
   }
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) && defined(HAVE_SEH_EXCEPTIONS)
   mImpl->mExceptionFilterHelper.AddRange(
       {fileReader.data(), fileReader.length()});
-#endif
+#endif  
   BEGIN_PAGE_ERROR_TRY_EXCEPT()
   BufferSource source(fileReader.region());
   auto& patchReader = mImpl->mPatchReader;
@@ -296,10 +294,10 @@ status::Code MappedPatch::ApplyUnsafeImpl(const uint8_t* aCheckedOldImage,
     return status::kStatusFileWriteError;
   }
 
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) && defined(HAVE_SEH_EXCEPTIONS)
   mImpl->mExceptionFilterHelper.AddRange(
       {mappedNew.data(), mappedNew.length()});
-#endif
+#endif  
 
   status::Code result =
       ApplyBufferUnsafe(oldImageView, mImpl->mPatchReader, mappedNew.region());
