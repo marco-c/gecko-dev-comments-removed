@@ -101,7 +101,7 @@ use crate::renderer::GpuBufferBuilderF;
 use crate::spatial_tree::{SceneSpatialTree, SpatialTree, SpatialNodeIndex};
 use crate::ellipse::Ellipse;
 use crate::intern;
-use crate::internal_types::{FastHashMap, FastHashSet, LayoutPrimitiveInfo};
+use crate::internal_types::{FastHashMap, FastHashSet};
 use crate::prim_store::{VisibleMaskImageTile};
 use crate::prim_store::{ClipSnap, RectKey, PolygonKey};
 use crate::render_task::RenderTask;
@@ -171,23 +171,6 @@ impl ClipTreeNode {
 }
 
 
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(MallocSizeOf)]
-pub struct ClipTreeLeaf {
-    
-    
-    
-    
-    
-    
-    
-    
-    pub unsnapped_local_clip_rect: LayoutRect,
-}
-
-
 #[derive(Copy, Clone, PartialEq, MallocSizeOf, Eq, Hash)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -208,14 +191,25 @@ impl std::fmt::Debug for ClipNodeId {
 }
 
 
-#[derive(Copy, Clone, PartialEq, MallocSizeOf, Eq, Hash)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct ClipLeafId(u32);
 
-impl std::fmt::Debug for ClipLeafId {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "#{}", self.0)
+
+
+
+
+
+
+pub fn snap_local_clip_rect(
+    unsnapped: LayoutRect,
+    snapper: &SpaceSnapper,
+    clip_snap: ClipSnap,
+) -> LayoutRect {
+    if unsnapped == LayoutRect::max_rect() {
+        return unsnapped;
+    }
+
+    match clip_snap {
+        ClipSnap::Nearest => snapper.snap_rect(&unsnapped),
+        ClipSnap::Exact => unsnapped,
     }
 }
 
@@ -224,7 +218,6 @@ impl std::fmt::Debug for ClipLeafId {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ClipTree {
     nodes: Vec<ClipTreeNode>,
-    leaves: Vec<ClipTreeLeaf>,
 }
 
 impl ClipTree {
@@ -240,7 +233,6 @@ impl ClipTree {
                     parent: ClipNodeId::NONE,
                 }
             ],
-            leaves: Vec::new(),
         }
     }
 
@@ -255,7 +247,6 @@ impl ClipTree {
             parent: ClipNodeId::NONE,
         });
 
-        self.leaves.clear();
     }
 
     
@@ -332,36 +323,6 @@ impl ClipTree {
     }
 
     
-    pub fn get_leaf(&self, id: ClipLeafId) -> &ClipTreeLeaf {
-        &self.leaves[id.0 as usize]
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn snap_leaf_clip_rect(
-        &self,
-        id: ClipLeafId,
-        snapper: &SpaceSnapper,
-        clip_snap: ClipSnap,
-    ) -> LayoutRect {
-        let unsnapped = self.get_leaf(id).unsnapped_local_clip_rect;
-
-        if unsnapped == LayoutRect::max_rect() {
-            return unsnapped;
-        }
-
-        match clip_snap {
-            ClipSnap::Nearest => snapper.snap_rect(&unsnapped),
-            ClipSnap::Exact => unsnapped,
-        }
-    }
-
     
     #[allow(unused)]
     pub fn print(&self) {
@@ -384,24 +345,8 @@ impl ClipTree {
             pt.end_level();
         }
 
-        fn print_leaf<T: crate::print_tree::PrintTreePrinter>(
-            id: ClipLeafId,
-            leaves: &[ClipTreeLeaf],
-            pt: &mut T,
-        ) {
-            let leaf = &leaves[id.0 as usize];
-
-            pt.new_level(format!("{:?}", id));
-            pt.add_item(format!("unsnapped_local_clip_rect: {:?}", leaf.unsnapped_local_clip_rect));
-            pt.end_level();
-        }
-
         let mut pt = PrintTree::new("clip tree");
         print_node(ClipNodeId::NONE, &self.nodes, &mut pt);
-
-        for i in 0 .. self.leaves.len() {
-            print_leaf(ClipLeafId(i as u32), &self.leaves, &mut pt);
-        }
     }
 
     
@@ -906,7 +851,6 @@ impl ClipTreeBuilder {
         
         std::mem::replace(&mut self.tree, ClipTree {
             nodes: Vec::new(),
-            leaves: Vec::new(),
         })
     }
 
@@ -918,10 +862,6 @@ impl ClipTreeBuilder {
     }
 
     
-    pub fn get_leaf(&self, id: ClipLeafId) -> &ClipTreeLeaf {
-        &self.tree.leaves[id.0 as usize]
-    }
-
     
     pub fn build_for_tile_cache(
         &mut self,
@@ -944,47 +884,25 @@ impl ClipTreeBuilder {
     
     
     
-    pub fn build_for_picture(&mut self) -> ClipLeafId {
-        let clip_leaf_id = ClipLeafId(self.tree.leaves.len() as u32);
-
-        self.tree.leaves.push(ClipTreeLeaf {
-            unsnapped_local_clip_rect: LayoutRect::max_rect(),
-        });
-
-        clip_leaf_id
-    }
-
     
-    pub fn build_for_prim(
-        &mut self,
-        clip_node_id: ClipNodeId,
-        info: &LayoutPrimitiveInfo,
-    ) -> ClipLeafId {
-        
-        
-        
-        
-        #[cfg(debug_assertions)]
-        {
-            let inherited_root = self.clip_stack.last().unwrap().clip_node_id;
-            let mut cur = clip_node_id;
-            while cur != inherited_root && cur != ClipNodeId::NONE {
-                cur = self.tree.nodes[cur.0 as usize].parent;
-            }
-            debug_assert_eq!(
-                cur, inherited_root,
-                "inherited clip root is not an ancestor of the leaf node: clip-stack desync between build_clip_set and build_for_prim",
-            );
+    
+    #[cfg(debug_assertions)]
+    pub fn debug_check_clip_stack(&self, clip_node_id: ClipNodeId) {
+        let inherited_root = self.clip_stack.last().unwrap().clip_node_id;
+        let mut cur = clip_node_id;
+
+        while cur != inherited_root && cur != ClipNodeId::NONE {
+            cur = self.tree.nodes[cur.0 as usize].parent;
         }
 
-        let clip_leaf_id = ClipLeafId(self.tree.leaves.len() as u32);
-
-        self.tree.leaves.push(ClipTreeLeaf {
-            unsnapped_local_clip_rect: info.clip_rect,
-        });
-
-        clip_leaf_id
+        debug_assert_eq!(
+            cur, inherited_root,
+            "inherited clip root is not an ancestor of the prim's clip node: clip-stack desync between build_clip_set and the prim being added",
+        );
     }
+
+    #[cfg(not(debug_assertions))]
+    pub fn debug_check_clip_stack(&self, _clip_node_id: ClipNodeId) {}
 
     
     pub fn find_lowest_common_ancestor(
@@ -1472,8 +1390,7 @@ impl ClipStore {
         
         
         
-        
-        snapped_leaf_clip_rect: LayoutRect,
+        snapped_local_clip_rect: LayoutRect,
         spatial_tree: &SpatialTree,
         clip_data_store: &ClipDataStore,
         clip_tree: &ClipTree,
@@ -1490,7 +1407,7 @@ impl ClipStore {
         
         
         
-        let mut local_clip_rect = snapped_leaf_clip_rect;
+        let mut local_clip_rect = snapped_local_clip_rect;
         let mut current = clip_node_id;
 
         while current != clip_root && current != ClipNodeId::NONE {

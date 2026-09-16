@@ -36,7 +36,7 @@ use crate::composite::CompositeState;
 use crate::profiler::{self, TransactionProfile};
 use crate::renderer::GpuBufferBuilder;
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
-use crate::clip::{ClipChainInstance, ClipTree, ClipNodeId};
+use crate::clip::{snap_local_clip_rect, ClipChainInstance, ClipTree, ClipNodeId};
 use crate::composite::CompositorSurfaceKind;
 use crate::frame_builder::FrameBuilderConfig;
 use crate::picture::ClusterFlags;
@@ -411,7 +411,6 @@ pub fn update_prim_visibility(
             
             
             let prim_instance = &frame_state.prim_instances[prim_instance_index];
-            let leaf_id = prim_instance.clip_leaf_id;
 
             let policy = prim_instance.snap_policy(frame_state.data_stores);
             let unsnapped_pattern_rect = frame_state.data_stores.prim_rect(prim_instance);
@@ -427,10 +426,8 @@ pub fn update_prim_visibility(
             
             
             
-            
-            
-            let snapped_leaf_clip_rect = frame_state.clip_tree.snap_leaf_clip_rect(
-                leaf_id,
+            let snapped_local_clip_rect = snap_local_clip_rect(
+                frame_state.data_stores.local_clip_rect(prim_instance),
                 &snapper,
                 policy.clip,
             );
@@ -500,7 +497,7 @@ pub fn update_prim_visibility(
                 policy.clip,
                 prim_instance.clip_node_id,
                 clip_root,
-                snapped_leaf_clip_rect,
+                snapped_local_clip_rect,
                 &frame_context.spatial_tree,
                 &frame_state.data_stores.clip,
                 frame_state.clip_tree,

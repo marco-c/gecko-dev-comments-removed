@@ -5,7 +5,7 @@
 use api::ColorF;
 use api::{ImageRendering, LineOrientation, PrimitiveFlags};
 use api::units::*;
-use crate::clip::{ClipLeafId, ClipNodeId};
+use crate::clip::ClipNodeId;
 use crate::render_backend::DataStores;
 use crate::space::SnapRounding;
 use crate::quad::QuadTileClassifier;
@@ -128,6 +128,7 @@ impl From<&LayoutPrimitiveInfo> for PrimKeyCommonData {
             aligned_aa_edges: info.aligned_aa_edges,
             transformed_aa_edges: info.transformed_aa_edges,
             prim_rect: info.rect.into(),
+            local_clip_rect: info.clip_rect.into(),
         }
     }
 }
@@ -148,6 +149,9 @@ pub struct PrimTemplateCommonData {
     
     
     pub prim_rect: LayoutRect,
+    
+    
+    pub local_clip_rect: LayoutRect,
 }
 
 impl PrimTemplateCommonData {
@@ -157,6 +161,7 @@ impl PrimTemplateCommonData {
             aligned_aa_edges: common.aligned_aa_edges,
             transformed_aa_edges: common.transformed_aa_edges,
             prim_rect: common.prim_rect.into(),
+            local_clip_rect: common.local_clip_rect.into(),
         }
     }
 }
@@ -307,9 +312,6 @@ pub struct PrimitiveInstance {
     
     
     pub clip_node_id: ClipNodeId,
-
-    
-    pub clip_leaf_id: ClipLeafId,
 }
 
 
@@ -340,12 +342,10 @@ impl PrimitiveInstance {
     pub fn new(
         kind: PrimitiveKind,
         clip_node_id: ClipNodeId,
-        clip_leaf_id: ClipLeafId,
     ) -> Self {
         PrimitiveInstance {
             kind,
             clip_node_id,
-            clip_leaf_id,
         }
     }
 
@@ -908,7 +908,7 @@ fn test_struct_sizes() {
     
     
     
-    assert_eq!(mem::size_of::<PrimitiveInstance>(), 24, "PrimitiveInstance size changed");
+    assert_eq!(mem::size_of::<PrimitiveInstance>(), 20, "PrimitiveInstance size changed");
     assert_eq!(mem::size_of::<PrimitiveKind>(), 16, "PrimitiveKind size changed");
 }
 
