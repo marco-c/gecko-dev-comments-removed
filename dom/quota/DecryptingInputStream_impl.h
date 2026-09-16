@@ -286,6 +286,11 @@ bool DecryptingInputStream<CipherStrategy>::EnsureBuffers() {
     
     
     
+    std::fill(mPlainBuffer.begin(), mPlainBuffer.end(), 0);
+
+    
+    
+    
     (*mBaseSeekableStream)->Seek(NS_SEEK_SET, 0);
   }
 
