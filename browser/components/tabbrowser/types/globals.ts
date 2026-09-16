@@ -15,10 +15,6 @@ type TabGroupStateData =
 type TaskbarTab = any;
 
 
-
-type nsILoadInfo_SchemelessInputType = nsILoadInfo["schemelessInput"];
-
-
 type TabStateData = any;
 
 
