@@ -17,7 +17,7 @@ use crate::gpu_types::{PrimitiveHeaders, ZBufferIdGenerator};
 use crate::gpu_types::QuadSegment;
 use crate::internal_types::{FastHashMap, PlaneSplitter, FrameStamp};
 use crate::invalidation::DirtyRegion;
-use crate::tile_cache::{SliceId, TileCacheInstance};
+use crate::tile_cache::{max_surface_size_for_screen, SliceId, TileCacheInstance};
 use crate::picture::PictureInstance;
 use crate::picture::ResolvedSurfaceTexture;
 use crate::picture::{RasterConfig, PictureScratch};
@@ -114,6 +114,23 @@ pub struct FrameBuildingContext<'a> {
     pub debug_flags: DebugFlags,
     pub fb_config: &'a FrameBuilderConfig,
     pub root_spatial_node_index: SpatialNodeIndex,
+}
+
+impl<'a> FrameBuildingContext<'a> {
+    
+    
+    pub fn max_surface_size(&self) -> usize {
+        
+        
+        if let Some(size) = self.fb_config.max_surface_override {
+            return size;
+        }
+
+        max_surface_size_for_screen(
+            self.global_screen_device_rect.size().round().to_i32(),
+            self.fb_config.max_target_size,
+        )
+    }
 }
 
 pub struct FrameBuildingState<'a> {
@@ -218,7 +235,6 @@ pub struct PictureContext {
     pub pic_index: PictureIndex,
     pub surface_spatial_node_index: SpatialNodeIndex,
     pub raster_spatial_node_index: SpatialNodeIndex,
-    pub visibility_spatial_node_index: SpatialNodeIndex,
     
     pub surface_index: SurfaceIndex,
     pub dirty_region_count: usize,
