@@ -43,10 +43,6 @@ exports.getThreadOptions = async function () {
     logEventBreakpoints: Services.prefs.getBoolPref(
       "devtools.debugger.log-event-breakpoints"
     ),
-    
-    
-    
-    observeAsmJS: true,
     breakpoints: sanitizeBreakpoints(await asyncStore.pendingBreakpoints),
     
     

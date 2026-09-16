@@ -25,9 +25,6 @@ const SUPPORTED_OPTIONS = {
   
   logEventBreakpoints: true,
   
-  
-  observeAsmJS: true,
-  
   observeWasm: true,
   
   pauseOnExceptions: true,
