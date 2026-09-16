@@ -109,7 +109,8 @@ HTMLSelectElement::HTMLSelectElement(
       mAutocompleteAttrState(nsContentUtils::eAutocompleteAttrState_Unknown),
       mAutocompleteInfoState(nsContentUtils::eAutocompleteAttrState_Unknown),
       mIsDoneAddingChildren(!aFromParser),
-      mInhibitStateRestoration(!!(aFromParser & FROM_PARSER_FRAGMENT)) {
+      mInhibitStateRestoration(!!(aFromParser & FROM_PARSER_FRAGMENT)),
+      mDefaultSelectionSet(!aFromParser) {
   SetHasWeirdParserInsertionMode();
   
   AddStatesSilently(ElementState::ENABLED | ElementState::OPTIONAL_ |

@@ -540,7 +540,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   
   bool mUserInteracted : 1 = false;
   
-  bool mDefaultSelectionSet : 1 = false;
+  bool mDefaultSelectionSet : 1;
   
   bool mIsOpenInParentProcess : 1 = false;
   bool mButtonDown : 1 = false;
