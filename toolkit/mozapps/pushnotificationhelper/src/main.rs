@@ -6,6 +6,8 @@
 
 
 
+mod lifecycle;
+
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
@@ -24,6 +26,10 @@ struct Args {
     
     #[arg(long, value_name = "PATH")]
     profile: PathBuf,
+
+    
+    #[arg(long)]
+    stop: bool,
 }
 
 
@@ -46,18 +52,64 @@ fn check_profile(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
+
+
+fn run(profile: &Path) -> ExitCode {
+    
+    
+    
+    let stop = match lifecycle::StopEvent::open(profile) {
+        Ok(stop) => stop,
+        Err(message) => {
+            eprintln!("{PROGRAM}: {message}");
+            return ExitCode::FAILURE;
+        }
+    };
+
+    println!("Starting to fetch notifications 🦀 🦊");
+    println!("profile: {}", profile.display());
+
+    let worker = std::thread::spawn(|| {
+        
+        
+        
+        loop {
+            std::thread::park();
+        }
+    });
+
+    if let Err(message) = stop.wait() {
+        eprintln!("{PROGRAM}: {message}");
+        return ExitCode::FAILURE;
+    }
+
+    
+    
+    
+    drop(worker);
+
+    ExitCode::SUCCESS
+}
+
 fn main() -> ExitCode {
     let args = Args::parse();
+
+    if args.stop {
+        return match lifecycle::signal(&args.profile) {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(message) => {
+                eprintln!("{PROGRAM}: {message}");
+                ExitCode::FAILURE
+            }
+        };
+    }
 
     if let Err(message) = check_profile(&args.profile) {
         eprintln!("{PROGRAM}: {message}");
         return ExitCode::FAILURE;
     }
 
-    println!("Starting to fetch notifications 🦀 🦊");
-    println!("profile: {}", args.profile.display());
-
-    ExitCode::SUCCESS
+    run(&args.profile)
 }
 
 #[cfg(test)]
@@ -91,5 +143,33 @@ mod tests {
         let error = check_profile(&args.profile).unwrap_err();
 
         assert!(error.starts_with("no such directory:"), "{error}");
+    }
+
+    
+    #[test]
+    fn stop_is_off_unless_asked_for() {
+        let args = Args::try_parse_from([PROGRAM, "--profile", r"c:\profiles\a"]).unwrap();
+
+        assert!(!args.stop);
+    }
+
+    #[test]
+    fn stop_is_parsed() {
+        let args =
+            Args::try_parse_from([PROGRAM, "--stop", "--profile", r"c:\profiles\a"]).unwrap();
+
+        assert!(args.stop);
+        assert_eq!(args.profile, PathBuf::from(r"c:\profiles\a"));
+    }
+
+    
+    #[test]
+    fn stop_still_requires_a_profile() {
+        assert!(Args::try_parse_from([PROGRAM, "--stop"]).is_err());
+    }
+
+    #[test]
+    fn stop_takes_no_value() {
+        assert!(Args::try_parse_from([PROGRAM, "--stop=yes", "--profile", r"c:\p"]).is_err());
     }
 }
