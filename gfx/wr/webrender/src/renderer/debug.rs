@@ -12,7 +12,7 @@ use crate::debug_colors;
 use crate::debug_font_data;
 use crate::debug_item::DebugItem;
 use crate::device::{BlendMode, Device, Program, Texture, TextureSlot, VertexDescriptor, ShaderError, VAO};
-use crate::device::{DrawTarget, ReadTarget, TextureFlags};
+use crate::device::{DrawTarget, LoadOp, ReadTarget, RenderPassDescriptor, TextureFlags};
 use crate::device::{TextureFilter, VertexAttribute, VertexAttributeKind, VertexUsageHint};
 use euclid::{rect, Point2D, Rect, Size2D, Transform3D, default};
 use crate::internal_types::{RenderTargetInfo, Swizzle};
@@ -543,7 +543,11 @@ pub fn bind_debug_overlay(
                     external_fbo_id: surface_info.fbo_id,
                     dimensions: surface_size,
                 };
-                device.bind_draw_target(draw_target);
+                device.begin_render_pass(&RenderPassDescriptor {
+                    target: draw_target,
+                    render_area: None,
+                    color_load: LoadOp::DontCare,
+                });
 
                 
                 device.clear_target(
@@ -558,19 +562,32 @@ pub fn bind_debug_overlay(
                 let compositor = compositor_config.layer_compositor().unwrap();
                 compositor.bind_layer(state.layer_index, &[]);
 
+                let draw_target = DrawTarget::new_default(device_size, device.surface_origin_is_top_left());
+                device.begin_render_pass(&RenderPassDescriptor {
+                    target: draw_target,
+                    render_area: None,
+                    color_load: LoadOp::DontCare,
+                });
+
                 device.clear_target(
                     Some([0.0, 0.0, 0.0, 0.0]),
                     None, 
                     None,
                 );
 
-                Some(DrawTarget::new_default(device_size, device.surface_origin_is_top_left()))
+                Some(draw_target)
             }
             CompositorKind::Draw { .. } => {
                 
                 
-                
-                Some(DrawTarget::new_default(device_size, device.surface_origin_is_top_left()))
+                let draw_target = DrawTarget::new_default(device_size, device.surface_origin_is_top_left());
+                device.begin_render_pass(&RenderPassDescriptor {
+                    target: draw_target,
+                    render_area: None,
+                    color_load: LoadOp::Load,
+                });
+
+                Some(draw_target)
             }
         }
     } else {
