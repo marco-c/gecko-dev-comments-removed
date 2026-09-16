@@ -13,6 +13,14 @@
 const CRASH_DRAFT_REL_PATH =
   DIR_RESOURCES + "searchplugins/searchpluginstext0.moz-draft";
 
+
+
+
+
+
+const CRASH_PATCH_DRAFT_REL_PATH =
+  DIR_RESOURCES + "searchplugins/searchpluginspng1.png.moz-draft";
+
 async function run_test() {
   if (!setupTestCommon()) {
     return;
@@ -48,10 +56,17 @@ async function run_test() {
   let draftFile = getApplyDirFile(CRASH_DRAFT_REL_PATH);
   Assert.ok(draftFile.exists(), MSG_SHOULD_EXIST + getMsgPath(draftFile.path));
 
+  let patchDraftFile = getApplyDirFile(CRASH_PATCH_DRAFT_REL_PATH);
+  Assert.ok(
+    patchDraftFile.exists(),
+    MSG_SHOULD_EXIST + getMsgPath(patchDraftFile.path)
+  );
+
   
   
   
   draftFile.remove(false);
+  patchDraftFile.remove(false);
   getApplyDirFile("updating").remove(true);
 
   checkFilesAfterUpdateFailure(

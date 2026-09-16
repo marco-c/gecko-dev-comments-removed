@@ -214,12 +214,6 @@ status::Code MappedPatch::LoadImpl(FILE* aPatchFile, uint32_t* aSourceSize,
       {fileReader.data(), fileReader.length()});
 #endif
   BEGIN_PAGE_ERROR_TRY_EXCEPT()
-#ifdef ENABLE_TESTS
-  ScopedDestructorMarker destructorTester;
-  MaybeTriggerTestBadAlloc();
-  MaybeTriggerTestCheckFailure();
-#endif  
-
   BufferSource source(fileReader.region());
   auto& patchReader = mImpl->mPatchReader;
   if (!patchReader.Initialize(&source)) {
@@ -250,6 +244,16 @@ status::Code MappedPatch::Load(FILE* aPatchFile, uint32_t* aSourceSize,
 static status::Code ApplyBufferUnsafe(ConstBufferView aCheckedOldImage,
                                       const EnsemblePatchReader& aPatchReader,
                                       MutableBufferView aNewImage) {
+#ifdef ENABLE_TESTS
+  
+  
+  
+  
+  ScopedDestructorMarker destructorTester;
+  MaybeTriggerTestBadAlloc();
+  MaybeTriggerTestCheckFailure();
+#endif  
+
   for (const auto& elementPatch : aPatchReader.elements()) {
     ElementMatch match = elementPatch.element_match();
     if (!ApplyElement(match.exe_type(),
