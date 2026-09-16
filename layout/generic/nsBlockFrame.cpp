@@ -1126,14 +1126,8 @@ static uint32_t GetLineClampMaxLines(const StyleLineClamp& aLineClamp) {
   return 0;
 }
 
-inline bool HasLineClampAuto(const StyleLineClamp& aLineClamp) {
-  return aLineClamp.max_lines.kw == mozilla::StyleMaxLinesKeyword::Auto &&
-         !aLineClamp.webkit_legacy;
-}
-
 static bool IsLineClampRoot(const nsBlockFrame* aFrame) {
-  if (!GetLineClampMaxLines(aFrame->StyleDisplay()->mWebkitLineClamp) &&
-      !HasLineClampAuto(aFrame->StyleDisplay()->mWebkitLineClamp)) {
+  if (!GetLineClampMaxLines(aFrame->StyleDisplay()->mWebkitLineClamp)) {
     return false;
   }
 
@@ -1203,12 +1197,11 @@ bool nsBlockFrame::HasAnyFloats() const {
 
 class MOZ_RAII LineClampLineIterator {
  public:
-  LineClampLineIterator(nsBlockFrame* aFrame,
-                        const nsBlockFrame* aLastFrameToExit)
+  LineClampLineIterator(nsBlockFrame* aFrame, const nsBlockFrame* aStopAtFrame)
       : mCur(aFrame->LinesBegin()),
         mEnd(aFrame->LinesEnd()),
         mCurrentFrame(mCur == mEnd ? nullptr : aFrame),
-        mLastFrameToExit(aLastFrameToExit) {
+        mStopAtFrame(aStopAtFrame) {
     if (mCur != mEnd && !mCur->IsInline()) {
       Advance();
     }
@@ -1216,9 +1209,6 @@ class MOZ_RAII LineClampLineIterator {
 
   nsLineBox* GetCurrentLine() { return mCurrentFrame ? mCur.get() : nullptr; }
   nsBlockFrame* GetCurrentFrame() { return mCurrentFrame; }
-  nscoord GetCurrentFrameBOffset() {
-    return mCurrentBlockBStartEdge + mAccumulatedBEndBP;
-  }
 
   
   
@@ -1241,34 +1231,21 @@ class MOZ_RAII LineClampLineIterator {
           mCurrentFrame = nullptr;
           break;
         }
-        if (mCurrentFrame == mLastFrameToExit) {
+        if (mCurrentFrame == mStopAtFrame) {
           mStack.Clear();
           mCurrentFrame = nullptr;
           break;
         }
 
-        std::tie(mCurrentFrame, mCur, mCurrentBlockBStartEdge,
-                 mAccumulatedBEndBP) = mStack.PopLastElement();
+        auto entry = mStack.PopLastElement();
+        mCurrentFrame = entry.first;
+        mCur = entry.second;
         mEnd = mCurrentFrame->LinesEnd();
       } else if (mCur->IsBlock()) {
         if (nsBlockFrame* child = GetAsLineClampDescendant(mCur->mFirstChild)) {
           nsBlockFrame::LineIterator next = mCur;
           ++next;
-          mStack.AppendElement(std::tuple(mCurrentFrame, next,
-                                          mCurrentBlockBStartEdge,
-                                          mAccumulatedBEndBP));
-          if (mCurrentFrame == mLastFrameToExit || mAtLastFrame) {
-            
-            
-            
-            
-            mAccumulatedBEndBP +=
-                child->GetLogicalUsedBorderAndPadding(mWm).BEnd(mWm);
-            mAtLastFrame = true;
-            if (mCur.get()) {
-              mCurrentBlockBStartEdge += mCur.get()->BStart();
-            }
-          }
+          mStack.AppendElement(std::make_pair(mCurrentFrame, next));
           mCur = child->LinesBegin();
           mEnd = child->LinesEnd();
           mCurrentFrame = child;
@@ -1283,8 +1260,6 @@ class MOZ_RAII LineClampLineIterator {
     }
   }
 
-  bool mAtLastFrame = false;
-
   
   
   
@@ -1298,35 +1273,18 @@ class MOZ_RAII LineClampLineIterator {
   nsBlockFrame* mCurrentFrame;
 
   
-  const nsBlockFrame* mLastFrameToExit;
-
-  
-  nscoord mCurrentBlockBStartEdge = 0;
-
-  
-  nscoord mAccumulatedBEndBP = 0;
-
-  WritingMode mWm = mLastFrameToExit->GetWritingMode();
+  const nsBlockFrame* mStopAtFrame;
 
   
   
-  AutoTArray<
-      std::tuple<nsBlockFrame*, nsBlockFrame::LineIterator, nscoord, nscoord>,
-      8>
-      mStack;
+  AutoTArray<std::pair<nsBlockFrame*, nsBlockFrame::LineIterator>, 8> mStack;
 };
 
-bool nsBlockFrame::ClearLineClampEllipsis() {
-  ClearLineClampRootMaxHeight();
-  if (LineClampIsClampedToZero()) {
-    ClearLineClampAutoClampedToZero();
-    return true;
-  }
-
-  if (HasLineClampEllipsis()) {
-    MOZ_ASSERT(!HasLineClampEllipsisDescendant());
-    SetHasLineClampEllipsis(false);
-    for (auto& line : Lines()) {
+static bool ClearLineClampEllipsis(nsBlockFrame* aFrame) {
+  if (aFrame->HasLineClampEllipsis()) {
+    MOZ_ASSERT(!aFrame->HasLineClampEllipsisDescendant());
+    aFrame->SetHasLineClampEllipsis(false);
+    for (auto& line : aFrame->Lines()) {
       if (line.HasLineClampEllipsis()) {
         line.ClearHasLineClampEllipsis();
         break;
@@ -1335,11 +1293,11 @@ bool nsBlockFrame::ClearLineClampEllipsis() {
     return true;
   }
 
-  if (HasLineClampEllipsisDescendant()) {
-    SetHasLineClampEllipsisDescendant(false);
-    for (nsIFrame* f : PrincipalChildList()) {
+  if (aFrame->HasLineClampEllipsisDescendant()) {
+    aFrame->SetHasLineClampEllipsisDescendant(false);
+    for (nsIFrame* f : aFrame->PrincipalChildList()) {
       if (nsBlockFrame* child = GetAsLineClampDescendant(f)) {
-        if (child->ClearLineClampEllipsis()) {
+        if (ClearLineClampEllipsis(child)) {
           return true;
         }
       }
@@ -1348,6 +1306,8 @@ bool nsBlockFrame::ClearLineClampEllipsis() {
 
   return false;
 }
+
+void nsBlockFrame::ClearLineClampEllipsis() { ::ClearLineClampEllipsis(this); }
 
 
 
@@ -2129,13 +2089,8 @@ nsReflowStatus nsBlockFrame::TrialReflow(nsPresContext* aPresContext,
 
   
   
-  
   if (IsLineClampRoot(this)) {
     ClearLineClampEllipsis();
-    SetLineClampRootMaxHeight(std::min(aReflowInput.ComputedMaxBSize(),
-                                       aReflowInput.ComputedBSize()) +
-                              GetLogicalUsedBorderAndPadding(GetWritingMode())
-                                  .BStartEnd(GetWritingMode()));
   }
 
   bool blockStartMarginRoot, blockEndMarginRoot;
@@ -2319,231 +2274,99 @@ bool nsBlockFrame::CheckForCollapsedBEndMarginFromClearanceLine() {
   return false;
 }
 
-Maybe<nsBlockFrame::LineClampTarget> nsBlockFrame::FindLineClampAutoTarget(
-    nscoord aContentBlockEndEdge, const ReflowInput& aReflowInput,
-    nscoord aCollapsingBEndMargin, nsBlockFrame* aLineClampRoot) {
-  if (!aLineClampRoot) {
-    return Nothing();
-  }
-  auto& lineClamp = aLineClampRoot->StyleDisplay()->mWebkitLineClamp;
-  if (lineClamp.max_lines.kw != mozilla::StyleMaxLinesKeyword::Auto ||
-      lineClamp.webkit_legacy) {
-    
-    return Nothing();
-  }
-
-  const WritingMode wm = aLineClampRoot->GetWritingMode();
-
-  
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT(aLineClampRoot->GetLineClampRootMaxHeight());
-  nscoord rootMaxBSize = aLineClampRoot->GetLineClampRootMaxHeight().value() -
-                         aReflowInput.mBOffsetToLineClampRoot -
-                         GetLogicalUsedBorderAndPadding(wm).BEnd(wm) -
-                         aCollapsingBEndMargin;
-
-  nsLineBox* prevLine = nullptr;
-  nsBlockFrame* prevFrame = nullptr;
-  nscoord prevBEdge = 0;
-  for (LineClampLineIterator iter(aLineClampRoot, this);
-       nsLineBox* line = iter.GetCurrentLine(); iter.Next()) {
-    if (line->IsEmpty() && line->BSize() == 0) {
-      continue;
-    }
-
-    nsBlockFrame* frame = iter.GetCurrentFrame();
-
-    const bool bSizeIsDefinite =
-        frame && !frame->StylePosition()
-                      ->BSize(wm, AnchorPosResolutionParams::From(frame))
-                      ->IsAuto();
-    
-    
-    if (bSizeIsDefinite && frame != prevFrame && frame != aLineClampRoot &&
-        !frame->IsPlaceholderFrame()) {
-      
-      if (frame->BSize() + prevBEdge > rootMaxBSize) {
-        return Some(
-            nsBlockFrame::LineClampTarget{prevFrame, prevLine, prevBEdge});
-      }
-
-      
-      
-      
-      nsBlockFrame* nextFrame = frame;
-      nsLineBox* nextLine = nullptr;
-      for (LineClampLineIterator iterInner(frame, frame);
-           nsLineBox* lineInner = iterInner.GetCurrentLine();
-           iterInner.Next()) {
-        nextFrame = iterInner.GetCurrentFrame();
-        nextLine = lineInner;
-      }
-      if (!nextLine) {
-        continue;
-      }
-
-      for (nsLineBox* lineCatchup = nullptr; lineCatchup != nextLine;
-           lineCatchup = iter.GetCurrentLine()) {
-        iter.Next();
-      }
-
-      prevLine = nextLine;
-      prevFrame = nextFrame;
-      prevBEdge = frame->BSize() + prevBEdge;
-      continue;
-    }
-
-    
-    nscoord edge = line->BEnd() + iter.GetCurrentFrameBOffset();
-
-    
-    if (edge > rootMaxBSize) {
-      return Some(nsBlockFrame::LineClampTarget{
-          prevFrame, prevLine, prevBEdge + aCollapsingBEndMargin});
-    }
-
-    prevLine = line;
-    prevFrame = frame;
-    prevBEdge = edge;
-  }
-
-  
-  return Nothing();
-}
-Maybe<nsBlockFrame::LineClampTarget> nsBlockFrame::FindLineClampNumberedTarget(
-    nscoord aContentBlockEndEdge, nscoord aCollapsingBEndMargin,
-    nsBlockFrame* aLineClampRoot) const {
-  if (!aLineClampRoot) {
-    return Nothing();
-  }
-  auto& lineClamp = aLineClampRoot->StyleDisplay()->mWebkitLineClamp;
-  if (lineClamp.max_lines.lines.IsNone() ||
-      lineClamp.max_lines.lines.AsSome() == 0) {
-    
-    return Nothing();
-  }
-  uint32_t numLines = lineClamp.max_lines.lines.AsSome();
+std::pair<nsBlockFrame*, nsLineBox*> FindLineClampTarget(
+    nsBlockFrame* const aRootFrame, const nsBlockFrame* const aStopAtFrame,
+    uint32_t aLineNumber) {
+  MOZ_ASSERT(aLineNumber > 0);
 
   nsLineBox* targetLine = nullptr;
   nsBlockFrame* targetFrame = nullptr;
-  bool foundLineAfterClampTarget = false;
+  bool foundFollowingLine = false;
 
-  for (LineClampLineIterator iter(aLineClampRoot, this);
-       nsLineBox* line = iter.GetCurrentLine(); iter.Next()) {
+  LineClampLineIterator iter(aRootFrame, aStopAtFrame);
+
+  while (nsLineBox* line = iter.GetCurrentLine()) {
+    
+    
     if (line->IsEmpty()) {
+      iter.Next();
       continue;
     }
 
-    if (numLines == 0) {
+    if (aLineNumber == 0) {
       
-      foundLineAfterClampTarget = true;
+      
+      foundFollowingLine = true;
+      break;
     }
 
-    numLines--;
-    if (numLines == 0) {
+    if (--aLineNumber == 0) {
+      
+      
       targetLine = line;
       targetFrame = iter.GetCurrentFrame();
     }
+
+    iter.Next();
   }
 
-  if (targetLine == nullptr || targetFrame == nullptr) {
-    MOZ_ASSERT(targetLine == nullptr && targetFrame == nullptr);
-    return Nothing();
+  if (!foundFollowingLine) {
+    MOZ_ASSERT(!aRootFrame->HasLineClampEllipsis(),
+               "should have been removed earlier");
+    return std::pair(nullptr, nullptr);
   }
-  if (!foundLineAfterClampTarget) {
-    return Nothing();
+
+  MOZ_ASSERT(targetLine);
+  MOZ_ASSERT(targetFrame);
+
+  
+  
+  MOZ_ASSERT(targetFrame == aRootFrame || !aRootFrame->HasLineClampEllipsis(),
+             "line-clamp target mismatch");
+
+  return std::pair(targetFrame, targetLine);
+}
+
+nscoord nsBlockFrame::ApplyLineClamp(nscoord aContentBlockEndEdge,
+                                     nscoord aCollapsingBEndMargin) {
+  auto* root = GetLineClampRoot();
+  if (!root) {
+    return aContentBlockEndEdge;
+  }
+
+  auto lineClamp = GetLineClampMaxLines(root->StyleDisplay()->mWebkitLineClamp);
+  auto [target, line] = FindLineClampTarget(root, this, lineClamp);
+  if (!line) {
+    
+    return aContentBlockEndEdge;
   }
 
   
-  nscoord edge = targetLine->BEnd();
-  for (nsIFrame* f = targetFrame; f; f = f->GetParent()) {
+  line->SetHasLineClampEllipsis();
+  target->SetHasLineClampEllipsis(true);
+
+  
+  nscoord edge = line->BEnd();
+  for (nsIFrame* f = target; f; f = f->GetParent()) {
     MOZ_ASSERT(f->IsBlockFrameOrSubclass(),
                "GetAsLineClampDescendant guarantees this");
+    if (f != target) {
+      static_cast<nsBlockFrame*>(f)->SetHasLineClampEllipsisDescendant(true);
+    }
     if (f == this) {
+      edge += aCollapsingBEndMargin;
       break;
     }
-    if (f == aLineClampRoot) {
+    if (f == root) {
       
-      return Nothing();
+      return aContentBlockEndEdge;
     }
     const auto wm = f->GetWritingMode();
     const nsSize parentSize = f->GetParent()->GetSize();
     edge = f->GetLogicalRect(parentSize).BEnd(wm);
   }
 
-  return Some(nsBlockFrame::LineClampTarget{targetFrame, targetLine,
-                                            edge + aCollapsingBEndMargin});
-}
-
-void nsBlockFrame::ApplyLineClamp(
-    nsBlockFrame::LineClampTarget aLineClampTarget,
-    nsBlockFrame* aLineClampRoot) {
-  auto [targetFrame, targetLine, clampedContentSize] = aLineClampTarget;
-
-  if (aLineClampTarget.IsFullyClampedOut(aLineClampRoot, this)) {
-    SetLineClampAutoClampedToZero();
-    return;
-  }
-  if (targetFrame == nullptr || targetLine == nullptr) {
-    MOZ_ASSERT(targetFrame == nullptr && targetLine == nullptr);
-    return;
-  }
-
-  
-  for (nsIFrame* f = targetFrame; f; f = f->GetParent()) {
-    MOZ_ASSERT(f->IsBlockFrameOrSubclass(),
-               "GetAsLineClampDescendant guarantees this");
-    if (f != targetFrame) {
-      static_cast<nsBlockFrame*>(f)->SetHasLineClampEllipsisDescendant(true);
-    }
-    if (f == this) {
-      break;
-    }
-    if (f == aLineClampRoot) {
-      
-      return;
-    }
-  }
-
-  
-  targetLine->SetHasLineClampEllipsis();
-  targetFrame->SetHasLineClampEllipsis(true);
-
-  return;
-}
-
-
-
-Maybe<nscoord> nsBlockFrame::ApplySmallestLineClamp(
-    Maybe<nsBlockFrame::LineClampTarget> aLineClampAutoTarget,
-    Maybe<nsBlockFrame::LineClampTarget> aLineClampNumberedTarget,
-    nsBlockFrame* aLineClampRoot) {
-  if (!aLineClampAutoTarget && !aLineClampNumberedTarget) {
-    return Nothing();
-  }
-  const nsBlockFrame::LineClampTarget& picked = [&]() {
-    if (aLineClampAutoTarget && aLineClampNumberedTarget) {
-      
-      
-      if (aLineClampAutoTarget.ref().clampedBSize <
-          aLineClampNumberedTarget.ref().clampedBSize) {
-        return aLineClampAutoTarget.ref();
-      }
-      return aLineClampNumberedTarget.ref();
-    }
-    if (aLineClampAutoTarget) {
-      return aLineClampAutoTarget.ref();
-    }
-    return aLineClampNumberedTarget.ref();
-  }();
-
-  ApplyLineClamp(picked, aLineClampRoot);
-  return Some(picked.clampedBSize);
+  return edge;
 }
 
 nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
@@ -2632,16 +2455,7 @@ nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     
     
     
-    
-    nsBlockFrame* lineClampRoot = GetLineClampRoot();
-    const auto numberedLineClampTarget =
-        FindLineClampNumberedTarget(contentBSizeWithBStartBP, 0, lineClampRoot);
-
-    const auto autoLineClampTarget = FindLineClampAutoTarget(
-        contentBSizeWithBStartBP, aReflowInput, 0, lineClampRoot);
-
-    ApplySmallestLineClamp(autoLineClampTarget, numberedLineClampTarget,
-                           lineClampRoot);
+    ApplyLineClamp(contentBSizeWithBStartBP, 0);
 
     finalSize.BSize(wm) = ComputeFinalBSize(aState, contentBSizeWithBStartBP);
 
@@ -2687,30 +2501,16 @@ nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     
     finalSize.BSize(wm) = aReflowInput.AvailableBSize();
   } else if (aState.mReflowStatus.IsComplete()) {
+    const nscoord lineClampedContentBlockEndEdge =
+        ApplyLineClamp(blockEndEdgeOfChildren, aState.mPrevBEndMargin.Get());
+
     const nscoord bpBStart = borderPadding.BStart(wm);
     const nscoord contentBSize = blockEndEdgeOfChildren - bpBStart;
+    const nscoord lineClampedContentBSize =
+        lineClampedContentBlockEndEdge - bpBStart;
 
-    nsBlockFrame* lineClampRoot = GetLineClampRoot();
-    const auto numberedLineClampTarget = FindLineClampNumberedTarget(
-        blockEndEdgeOfChildren, aState.mPrevBEndMargin.Get(), lineClampRoot);
-
-    const nscoord autoBSizeNoClamp =
-        aReflowInput.ApplyMinMaxBSize(contentBSize, aState.mConsumedBSize);
-
-    const auto autoLineClampTarget =
-        FindLineClampAutoTarget(blockEndEdgeOfChildren, aReflowInput,
-                                aState.mPrevBEndMargin.Get(), lineClampRoot);
-
-    nscoord autoBSize;
-    Maybe<nscoord> clampedSize = ApplySmallestLineClamp(
-        autoLineClampTarget, numberedLineClampTarget, lineClampRoot);
-    if (clampedSize) {
-      autoBSize = aReflowInput.ApplyMinMaxBSize(clampedSize.ref() - bpBStart,
-                                                aState.mConsumedBSize);
-    } else {
-      autoBSize = autoBSizeNoClamp;
-    }
-
+    const nscoord autoBSize = aReflowInput.ApplyMinMaxBSize(
+        lineClampedContentBSize, aState.mConsumedBSize);
     if (autoBSize != contentBSize) {
       
       
@@ -4976,10 +4776,6 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
       childReflowInput->mFlags.mMovedBlockFragments = true;
     }
 
-    childReflowInput->mFlags.mIsInLineClampContainer =
-        IsLineClampRoot(this) ||
-        childReflowInput->mParentReflowInput->mFlags.mIsInLineClampContainer;
-
     nsFloatManager::SavedState floatManagerState;
     nsReflowStatus frameReflowStatus;
     do {
@@ -5010,7 +4806,6 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
       }
 
       frameReflowStatus.Reset();
-
       brc.ReflowBlock(availSpace, applyBStartMargin, aState.mPrevBEndMargin,
                       clearance, aLine.get(), *childReflowInput,
                       frameReflowStatus, aState);
@@ -7310,8 +7105,7 @@ static bool StyleEstablishesBFC(const ComputedStyle* aStyle) {
   return disp->IsContainPaint() || disp->IsContainLayout() ||
          disp->mContainerType &
              (StyleContainerType::SIZE | StyleContainerType::INLINE_SIZE) ||
-         ((GetLineClampMaxLines(disp->mWebkitLineClamp) ||
-           disp->mWebkitLineClamp.max_lines.kw == StyleMaxLinesKeyword::Auto) &&
+         (GetLineClampMaxLines(disp->mWebkitLineClamp) &&
           !disp->mWebkitLineClamp.webkit_legacy) ||
          disp->DisplayInside() == StyleDisplayInside::FlowRoot ||
          disp->IsAbsolutelyPositionedStyle() || disp->IsFloatingStyle() ||
@@ -8531,8 +8325,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       
       return false;
     }
-    if ((HasLineClampEllipsis() || HasLineClampEllipsisDescendant() ||
-         LineClampIsClampedToZero()) &&
+    if ((HasLineClampEllipsis() || HasLineClampEllipsisDescendant()) &&
         StaticPrefs::layout_css_webkit_line_clamp_skip_paint()) {
       
       
@@ -8591,53 +8384,49 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
           backplateColor.value());
     };
 
-    if (!(LineClampIsClampedToZero() &&
-          StaticPrefs::layout_css_webkit_line_clamp_skip_paint())) {
-      for (LineIterator line = LinesBegin(); line != line_end; ++line) {
-        const nsRect lineArea = line->InkOverflowRect();
-        const bool lineInLine = line->IsInline();
+    for (LineIterator line = LinesBegin(); line != line_end; ++line) {
+      const nsRect lineArea = line->InkOverflowRect();
+      const bool lineInLine = line->IsInline();
 
-        if ((lineInLine && textOverflowPtr) ||
-            ShouldDescendIntoLine(lineArea)) {
-          DisplayLine(aBuilder, line, lineInLine, aLists, this, textOverflowPtr,
-                      lineCount, depth, drawnLines, foundClamp);
-        }
-
-        if (!lineInLine && !curBackplateArea.IsEmpty()) {
-          
-          
-          
-          MOZ_ASSERT(backplateColor,
-                     "if this master switch is off, curBackplateArea "
-                     "must be empty and we shouldn't get here");
-          AddBackplate();
-          backplateIndex++;
-          curBackplateArea = nsRect();
-        }
-
-        if (!lineArea.IsEmpty()) {
-          if (lineArea.y < lastY || lineArea.YMost() < lastYMost) {
-            nonDecreasingYs = false;
-          }
-          lastY = lineArea.y;
-          lastYMost = lineArea.YMost();
-          if (lineInLine && backplateColor && LineHasVisibleInlineText(line)) {
-            nsRect lineBackplate = GetLineTextArea(line, aBuilder) +
-                                   aBuilder->ToReferenceFrame(this);
-            if (curBackplateArea.IsEmpty()) {
-              curBackplateArea = lineBackplate;
-            } else {
-              curBackplateArea.OrWith(lineBackplate);
-            }
-          }
-        }
-        foundClamp = foundClamp || line->HasLineClampEllipsis();
-        if (foundClamp &&
-            StaticPrefs::layout_css_webkit_line_clamp_skip_paint()) {
-          break;
-        }
-        lineCount++;
+      if ((lineInLine && textOverflowPtr) || ShouldDescendIntoLine(lineArea)) {
+        DisplayLine(aBuilder, line, lineInLine, aLists, this, textOverflowPtr,
+                    lineCount, depth, drawnLines, foundClamp);
       }
+
+      if (!lineInLine && !curBackplateArea.IsEmpty()) {
+        
+        
+        
+        MOZ_ASSERT(backplateColor,
+                   "if this master switch is off, curBackplateArea "
+                   "must be empty and we shouldn't get here");
+        AddBackplate();
+        backplateIndex++;
+        curBackplateArea = nsRect();
+      }
+
+      if (!lineArea.IsEmpty()) {
+        if (lineArea.y < lastY || lineArea.YMost() < lastYMost) {
+          nonDecreasingYs = false;
+        }
+        lastY = lineArea.y;
+        lastYMost = lineArea.YMost();
+        if (lineInLine && backplateColor && LineHasVisibleInlineText(line)) {
+          nsRect lineBackplate = GetLineTextArea(line, aBuilder) +
+                                 aBuilder->ToReferenceFrame(this);
+          if (curBackplateArea.IsEmpty()) {
+            curBackplateArea = lineBackplate;
+          } else {
+            curBackplateArea.OrWith(lineBackplate);
+          }
+        }
+      }
+      foundClamp = foundClamp || line->HasLineClampEllipsis();
+      if (foundClamp &&
+          StaticPrefs::layout_css_webkit_line_clamp_skip_paint()) {
+        break;
+      }
+      lineCount++;
     }
 
     if (GetPrevInFlow() || GetNextInFlow()) {
