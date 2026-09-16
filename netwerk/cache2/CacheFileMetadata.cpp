@@ -552,12 +552,18 @@ nsresult CacheFileMetadata::SetElement(const char* aKey, const char* aValue) {
 
   mLock->Lock().AssertCurrentThreadOwns();
 
-  MarkDirty();
-
   nsresult rv;
 
   const uint32_t keySize = strlen(aKey) + 1;
   char* pos = const_cast<char*>(GetElement(aKey));
+
+  
+  
+  if (!aValue ? !pos : (pos && strcmp(pos, aValue) == 0)) {
+    return NS_OK;
+  }
+
+  MarkDirty();
 
   if (!aValue) {
     
@@ -1197,7 +1203,11 @@ nsresult CacheFileMetadata::ParseMetadata(uint32_t aLogicalDataSize,
     memcpy(mHashArray, mBuf + hashesOffset, mHashArraySize);
   }
 
-  MarkDirty();
+  
+  
+  if (version != kCacheEntryVersion) {
+    MarkDirty(false);
+  }
 
   mElementsSize = metaposOffset - elementsOffset;
   memmove(mBuf, mBuf + elementsOffset, mElementsSize);

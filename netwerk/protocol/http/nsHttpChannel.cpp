@@ -6159,7 +6159,9 @@ void nsHttpChannel::CloseCacheEntry(bool doomOnFailure) {
   } else {
     
     
-    if (mSecurityInfo) {
+    
+    
+    if (mSecurityInfo && mSecurityInfo != mCachedSecurityInfo) {
       mCacheEntry->SetSecurityInfo(mSecurityInfo);
     }
 

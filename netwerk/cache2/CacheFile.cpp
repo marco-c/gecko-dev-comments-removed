@@ -646,6 +646,9 @@ nsresult CacheFile::OnMetadataRead(nsresult aResult) {
                         (mAltDataOffset > mDataSize))) {
           
           mMetadata->InitEmptyMetadata();
+          
+          
+          mMetadata->MarkDirty();
           isNew = true;
           mAltDataOffset = -1;
           mAltDataType.Truncate();
@@ -1179,8 +1182,16 @@ nsresult CacheFile::SetElement(const char* aKey, const char* aValue) {
     return NS_ERROR_FAILURE;
   }
 
-  PostWriteTimer();
-  return mMetadata->SetElement(aKey, aValue);
+  nsresult rv = mMetadata->SetElement(aKey, aValue);
+
+  
+  
+  
+  if (mMetadata->IsDirty()) {
+    PostWriteTimer();
+  }
+
+  return rv;
 }
 
 nsresult CacheFile::VisitMetaData(nsICacheEntryMetaDataVisitor* aVisitor) {
@@ -2566,7 +2577,8 @@ void CacheFile::SetupEncryption() {
   
   
   
-  if (mMemoryOnly || !mMetadata || mMetadata->IsEncrypted() || mDataSize != 0) {
+  if (mMemoryOnly || !mMetadata || mMetadata->IsEncrypted() ||
+      mMetadata->Offset() != 0) {
     return;
   }
 
