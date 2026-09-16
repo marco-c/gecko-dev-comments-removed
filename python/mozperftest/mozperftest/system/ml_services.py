@@ -14,8 +14,8 @@ ALLOWED_HOSTS = [
     
     "model-hub.mozilla.org",
     
-    "mlpa-prod-prod-mozilla.global.ssl.fastly.net",
-    "mlpa-nonprod-stage-mozilla.global.ssl.fastly.net",
+    "mlpa-prod-prod-mozilla.freetls.fastly.net",
+    "mlpa-nonprod-stage-mozilla.freetls.fastly.net",
 ]
 
 PREFS = {
@@ -30,7 +30,7 @@ class MLServices(Layer):
     """
 
     name = "ml-services"
-    activated = True
+    activated = False
 
     def setup(self):
         os.environ["MOZ_REMOTE_SETTINGS_DEVTOOLS"] = "1"
