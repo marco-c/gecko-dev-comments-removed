@@ -801,12 +801,6 @@ module.exports = function (config) {
               functions: 0,
               branches: 0,
             },
-            "content-src/components/Widgets/useMouseDnD.jsx": {
-              statements: 0,
-              lines: 0,
-              functions: 0,
-              branches: 0,
-            },
             
             "content-src/components/Widgets/useCountUp.jsx": {
               statements: 0,
@@ -865,6 +859,12 @@ module.exports = function (config) {
             },
             
             "content-src/lib/panel-list-utils.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/lib/usePointerReorder.jsx": {
               statements: 0,
               lines: 0,
               functions: 0,
