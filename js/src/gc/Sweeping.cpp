@@ -1819,22 +1819,19 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JS::GCContext* gcx,
   
   
 
-  if (areGrayBitsValid()) {
-    for (SweepGroupZonesIter zone(this); !zone.done(); zone.next()) {
+  for (SweepGroupZonesIter zone(this); !zone.done(); zone.next()) {
+    if (areGrayBitsValid()) {
       for (const auto* cell : zone->cellsToAssertNotGray()) {
         if (cell->isMarkedGray()) {
           const char* kind = JS::GCTraceKindToAscii(cell->getTraceKind());
           printf_stderr("AssertCellIsNotGray: Found gray %s %p\n", kind, cell);
           foundUnexpectedGrayCells = true;
+          
+          budget = SliceBudget::unlimited();
         }
       }
-      zone->cellsToAssertNotGray().clearAndFree();
     }
-
-    if (foundUnexpectedGrayCells) {
-      
-      budget = SliceBudget::unlimited();
-    }
+    zone->cellsToAssertNotGray().clearAndFree();
   }
 #endif
 
