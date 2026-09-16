@@ -266,6 +266,24 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
 
       return mDisplay.capturePixels();
     }
+
+    
+
+
+
+
+
+
+    @UiThread
+    @NonNull
+    GeckoResult<Bitmap> captureFullPage() {
+      if (mDisplay == null) {
+        return GeckoResult.fromException(
+            new IllegalStateException("Display must be created before pixels can be captured"));
+      }
+
+      return mDisplay.captureFullPage();
+    }
   }
 
   
@@ -1045,6 +1063,20 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
   @UiThread
   public @NonNull GeckoResult<Bitmap> capturePixels() {
     return mDisplay.capturePixels();
+  }
+
+  
+
+
+
+
+
+
+
+
+  @UiThread
+  public @NonNull GeckoResult<Bitmap> captureFullPage() {
+    return mDisplay.captureFullPage();
   }
 
   
