@@ -47,9 +47,9 @@
 #include "wasm/WasmTypeDecls.h"       
 
 #include "debugger/Script-inl.h"
-#include "gc/Marking-inl.h"       
-#include "vm/BytecodeUtil-inl.h"  
-#include "vm/JSAtomUtils-inl.h"   
+#include "gc/Marking-inl.h"           
+#include "vm/BytecodeIterator-inl.h"  
+#include "vm/JSAtomUtils-inl.h"       
 #include "vm/JSObject-inl.h"  
 #include "vm/JSScript-inl.h"          
 #include "vm/ObjectOperations-inl.h"  
