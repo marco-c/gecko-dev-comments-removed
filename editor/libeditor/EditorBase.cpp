@@ -3488,7 +3488,7 @@ EditorDOMPoint EditorBase::ComputePointToInsertText(
 
 Result<InsertTextResult, nsresult> EditorBase::InsertTextWithTransaction(
     const nsAString& aStringToInsert, const EditorDOMPoint& aPointToInsert,
-    InsertTextTo aInsertTextTo) {
+    InsertTextTo aInsertTextTo, InsertTextFor aPurpose) {
   MOZ_ASSERT_IF(IsTextEditor(),
                 aInsertTextTo == InsertTextTo::ExistingTextNodeIfAvailable);
 
@@ -3504,7 +3504,7 @@ Result<InsertTextResult, nsresult> EditorBase::InsertTextWithTransaction(
 
   EditorDOMPoint pointToInsert =
       ComputePointToInsertText(aPointToInsert, aInsertTextTo);
-  if (ShouldHandleIMEComposition()) {
+  if (ShouldHandleIMEComposition() && InsertingTextForComposition(aPurpose)) {
     if (!pointToInsert.IsInTextNode()) {
       
       RefPtr<nsTextNode> newTextNode = CreateTextNode(u""_ns);
@@ -3522,8 +3522,8 @@ Result<InsertTextResult, nsresult> EditorBase::InsertTextWithTransaction(
       pointToInsert.Set(newTextNode, 0u);
     }
     Result<InsertTextResult, nsresult> insertTextResult =
-        InsertTextIntoTextNodeWithTransaction(aStringToInsert,
-                                              pointToInsert.AsInText());
+        InsertTextIntoTextNodeWithTransaction(
+            aStringToInsert, pointToInsert.AsInText(), aPurpose);
     NS_WARNING_ASSERTION(
         insertTextResult.isOk(),
         "EditorBase::InsertTextIntoTextNodeWithTransaction() failed");
@@ -3533,8 +3533,8 @@ Result<InsertTextResult, nsresult> EditorBase::InsertTextWithTransaction(
   if (pointToInsert.IsInTextNode()) {
     
     Result<InsertTextResult, nsresult> insertTextResult =
-        InsertTextIntoTextNodeWithTransaction(aStringToInsert,
-                                              pointToInsert.AsInText());
+        InsertTextIntoTextNodeWithTransaction(
+            aStringToInsert, pointToInsert.AsInText(), aPurpose);
     NS_WARNING_ASSERTION(
         insertTextResult.isOk(),
         "EditorBase::InsertTextIntoTextNodeWithTransaction() failed");
@@ -3569,23 +3569,24 @@ EditorBase::ComputeInsertedRange(const EditorDOMPointInText& aInsertedPoint,
 
   EditorDOMPointInText endOfInsertion(
       aInsertedPoint.ContainerAs<Text>(),
-      aInsertedPoint.Offset() + aInsertedString.Length());
+      std::min<uint32_t>(aInsertedPoint.Offset() + aInsertedString.Length(),
+                         aInsertedPoint.ContainerAs<Text>()->TextDataLength()));
   return {aInsertedPoint, endOfInsertion};
 }
 
 Result<InsertTextResult, nsresult>
 EditorBase::InsertTextIntoTextNodeWithTransaction(
     const nsAString& aStringToInsert,
-    const EditorDOMPointInText& aPointToInsert) {
+    const EditorDOMPointInText& aPointToInsert, InsertTextFor aPurpose) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(aPointToInsert.IsSetAndValid());
 
   RefPtr<EditTransactionBase> transaction;
-  bool isIMETransaction = false;
-  if (ShouldHandleIMEComposition()) {
+  const bool isIMETransaction =
+      ShouldHandleIMEComposition() && InsertingTextForComposition(aPurpose);
+  if (isIMETransaction) {
     transaction =
         CompositionTransaction::Create(*this, aStringToInsert, aPointToInsert);
-    isIMETransaction = true;
   } else {
     transaction =
         InsertTextTransaction::Create(*this, aStringToInsert, aPointToInsert);
@@ -4404,12 +4405,14 @@ void EditorBase::OnCompositionEnd(
   if (editAction == EditAction::eCancelComposition && placeholderTransaction) {
     const nsTArray<OwningNonNull<EditTransactionBase>>& childTransactions =
         placeholderTransaction->ChildTransactions();
-    MOZ_ASSERT(!childTransactions.IsEmpty());
     
     
     
     
-    if (childTransactions[0]->GetAsCompositionTransaction()) {
+    
+    
+    if (!childTransactions.IsEmpty() &&
+        childTransactions[0]->GetAsCompositionTransaction()) {
       nsCOMPtr<nsITransaction> transaction =
           mTransactionManager->PopUndoStack();
       MOZ_DIAGNOSTIC_ASSERT(transaction == placeholderTransaction);
