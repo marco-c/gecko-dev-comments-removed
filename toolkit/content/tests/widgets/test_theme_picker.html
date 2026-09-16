@@ -17,6 +17,7 @@
       let ThemePicker;
       let ThemePickerStorybookController;
       let ThemePickerDirectController;
+      let ThemePickerRemoteController;
 
       const PREF_SYSTEM_USES_DARK = "ui.systemUsesDarkTheme";
       const PREF_NATIVE_THEME = "browser.theme.native-theme";
@@ -79,6 +80,8 @@
           await import("chrome://global/content/elements/theme-picker-storybook-controller.mjs"));
         ({ ThemePickerDirectController } =
           await import("chrome://global/content/elements/theme-picker-direct-controller.mjs"));
+        ({ ThemePickerRemoteController } =
+          await import("chrome://global/content/elements/theme-picker-remote-controller.mjs"));
 
         originalCreateController = ThemePicker.createController;
         let originalActiveThemeId = Services.prefs.getCharPref(
@@ -393,6 +396,60 @@
         ok(!picker.nativeTheme, "The host native theme is turned off.");
       });
 
+      add_task(
+        async function testRemoteControllerForwardsHostLayoutAndSource() {
+          let host = document.createElement("div");
+          host.addController = () => {};
+          host.layout = "compact";
+          host.setAttribute("installsource", "test-source");
+
+          let details = new Map();
+          for (const eventType of [
+            "ThemePickerUpdateTheme",
+            "ThemePickerUpdateAppearance",
+            "ThemePickerUpdateNativeTheme",
+          ]) {
+            host.addEventListener(eventType, event => {
+              details.set(eventType, event.detail);
+            });
+          }
+
+          let controller = new ThemePickerRemoteController(host);
+          controller.hostConnected();
+          controller.onThemechange({
+            property: "theme",
+            value: "nova-sun@mozilla.org",
+          });
+          controller.onThemechange({ property: "appearance", value: "dark" });
+          controller.onThemechange({ property: "nativeTheme", value: true });
+          host.dispatchEvent(new CustomEvent("themepickershown"));
+          SimpleTest.isDeeply(
+            details.get("ThemePickerUpdateTheme"),
+            { themeId: "nova-sun@mozilla.org", layout: "compact" },
+            "Theme updates carry the host layout."
+          );
+          SimpleTest.isDeeply(
+            details.get("ThemePickerUpdateAppearance"),
+            {
+              appearance: "dark",
+              installsource: "test-source",
+              layout: "compact",
+            },
+            "Appearance updates carry the host source and layout."
+          );
+          SimpleTest.isDeeply(
+            details.get("ThemePickerUpdateNativeTheme"),
+            {
+              nativeTheme: true,
+              installsource: "test-source",
+              layout: "compact",
+            },
+            "Native-theme updates carry the host source and layout."
+          );
+          controller.hostDisconnected();
+        }
+      );
+
       // Selecting a theme delegates to the themes manager and reflects the
       // resulting active theme. The manager's install/enable behavior (which
       // talks to AddonManager) is covered by FirefoxThemesList tests, so it is
@@ -549,6 +606,58 @@
           "Uses aria-label l10n ID when showLabels is false."
         );
       });
+
+      add_task(
+        async function testDirectControllerUpdatesColorsOnOSThemeChange() {
+          useController(ThemePickerDirectController);
+          setThemePrefs({
+            systemUsesDark: null,
+            nativeTheme: false,
+            activeThemeId: "nova-sun@mozilla.org",
+          });
+          let picker = await renderThemePicker();
+
+          is(picker.appearance, "device", "Appearance starts in device mode.");
+
+          let themeItem = picker.shadowRoot.querySelector(
+            "moz-visual-picker-item[value='nova-sun@mozilla.org']"
+          );
+          let themePreview = themeItem.querySelector(".theme-preview");
+          let initialColor = getComputedStyle(themePreview).backgroundColor;
+
+          ok(initialColor, "Theme preview has an initial background color.");
+
+          Services.prefs.setIntPref(PREF_SYSTEM_USES_DARK, 1);
+
+          await waitForCondition(
+            () =>
+              getComputedStyle(themePreview).backgroundColor !== initialColor,
+            "Theme swatch color changes after OS switches to dark mode."
+          );
+
+          let darkColor = getComputedStyle(themePreview).backgroundColor;
+          isnot(
+            darkColor,
+            initialColor,
+            "Theme swatch shows dark variant color in dark mode."
+          );
+
+          Services.prefs.setIntPref(PREF_SYSTEM_USES_DARK, 0);
+
+          await waitForCondition(
+            () =>
+              getComputedStyle(themePreview).backgroundColor === initialColor,
+            "Theme swatch color changes back after OS switches to light mode."
+          );
+
+          let lightColor = getComputedStyle(themePreview).backgroundColor;
+          is(
+            lightColor,
+            initialColor,
+            "Theme swatch shows original light variant color."
+          );
+        }
+      );
     </script>
   </head>
   <body>
