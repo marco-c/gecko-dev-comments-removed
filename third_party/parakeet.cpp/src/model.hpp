@@ -93,6 +93,8 @@ public:
     
     
     const ModelLoader& loader() const { return loader_; }
+    
+    size_t weights_bytes() const { return loader_.weights_bytes(); }
 
     
     Model(const Model&) = delete;

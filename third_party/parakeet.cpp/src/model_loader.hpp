@@ -95,6 +95,8 @@ public:
     
     bool realize_weights(ggml_backend_t backend);
     bool weights_realized() const { return weights_buf_ != nullptr; }
+    
+    size_t weights_bytes() const;
 private:
     
     

@@ -11,6 +11,7 @@
 #include <thread>
 
 #include "SpeechRecognitionModelMapping.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Preferences.h"
@@ -27,6 +28,7 @@
 #include "mozilla/llama/LlamaRuntimeLinker.h"
 #include "nsDebug.h"
 #include "nsIDUtils.h"
+#include "nsIMemoryReporter.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
@@ -51,6 +53,31 @@ static constexpr int32_t PARAKEET_SAMPLE_RATE = 16000;
 
 
 static constexpr size_t kMaxCaptureTimeSamples = 64;
+
+
+
+static Atomic<size_t> sModelWeightsBytes{0};
+
+
+
+class SpeechRecognitionMemoryReporter final : public nsIMemoryReporter {
+ public:
+  NS_DECL_ISUPPORTS
+
+  NS_IMETHOD CollectReports(nsIHandleReportCallback* aHandleReport,
+                            nsISupports* aData, bool aAnonymize) override {
+    MOZ_COLLECT_REPORT("explicit/media/speech-recognition/model-weights",
+                       KIND_NONHEAP, UNITS_BYTES, sModelWeightsBytes,
+                       "Weights of the on-device speech recognition model "
+                       "loaded in this process.");
+    return NS_OK;
+  }
+
+ private:
+  ~SpeechRecognitionMemoryReporter() = default;
+};
+
+NS_IMPL_ISUPPORTS(SpeechRecognitionMemoryReporter, nsIMemoryReporter)
 
 namespace {
 
@@ -370,6 +397,12 @@ SpeechRecognitionParent::SpeechRecognitionParent(
       mAudioQueue(PARAKEET_SAMPLE_RATE * 30),
       mProcessedAudioPos(0),
       mTimingLock("SpeechRecognitionParent::mTimingLock") {
+  static bool sReporterRegistered = false;
+  if (!sReporterRegistered) {
+    sReporterRegistered = true;
+    RefPtr<nsIMemoryReporter> reporter = new SpeechRecognitionMemoryReporter();
+    RegisterStrongMemoryReporter(reporter.forget());
+  }
   
   
   
@@ -580,6 +613,7 @@ void SpeechRecognitionParent::InitializeParakeetContext(
   MOZ_ASSERT(modelFile);
   TimeStamp loadStart = TimeStamp::Now();
   mCapiCtx = lib->parakeet_capi_load_fd(fileno(modelFile.get()));
+  sModelWeightsBytes = lib->parakeet_capi_weights_bytes(mCapiCtx);
   PROFILER_MARKER_TEXT(
       "parakeet_capi_load_fd", MEDIA_PLAYBACK,
       MarkerOptions(MarkerTiming::IntervalUntilNowFrom(loadStart)), language);
@@ -1028,6 +1062,7 @@ bool SpeechRecognitionParent::IsRunning() {
 
 void SpeechRecognitionParent::DestroyParakeetContext(
     mozilla::llama::LlamaLibWrapper* aLib) {
+  sModelWeightsBytes = 0;
   if (mCapiStream) {
     aLib->parakeet_capi_stream_free(mCapiStream);
     mCapiStream = nullptr;
