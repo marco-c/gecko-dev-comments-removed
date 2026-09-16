@@ -4,11 +4,9 @@
 
 
 
-
 async function overrideSiteCategory(t, category) {
   await GleanTest.testResetFOG();
   await MockAlertsService.register(t);
-  await SiteCategory.register(t);
   await SpecialPowers.pushPrefEnv({
     set: [[
       "toolkit.telemetry.site_categories",
