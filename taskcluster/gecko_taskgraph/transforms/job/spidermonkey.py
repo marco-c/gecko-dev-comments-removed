@@ -84,8 +84,7 @@ def generic_worker_spidermonkey(config, job, taskdesc):
         "MOZ_SCM_LEVEL": config.params["level"],
         "SCCACHE_DISABLE": "1",
         "WORK": ".",  
-        "GECKO_PATH": "./src",  
-        "UPLOAD_DIR": "./public/build",
+        "UPLOAD_DIR": "./public/build",  
     })
     if "spidermonkey-platform" in run:
         env["SPIDERMONKEY_PLATFORM"] = run.pop("spidermonkey-platform")
@@ -99,7 +98,7 @@ def generic_worker_spidermonkey(config, job, taskdesc):
     run["using"] = "run-task"
     run["command"] = [
         "c:\\mozilla-build\\msys2\\usr\\bin\\bash.exe "  
-        '"./src/taskcluster/scripts/builder/%s"' % script
+        '"./build/src/taskcluster/scripts/builder/%s"' % script
     ]
 
     configure_taskdesc_for_run(config, job, taskdesc, worker["implementation"])
