@@ -103,6 +103,10 @@ pub struct PtNameAndClassSelector(thin_vec::ThinVec<Atom>);
 
 impl PtNameAndClassSelector {
     
+    
+    const UNIVERSAL_NAME: Atom = atom!("");
+
+    
     pub fn from_name(name: Atom) -> Self {
         Self(thin_vec::thin_vec![name])
     }
@@ -141,7 +145,7 @@ impl PtNameAndClassSelector {
             if matches!(target, Target::Selector)
                 && input.try_parse(|i| i.expect_delim('*')).is_ok()
             {
-                Ok(atom!("*"))
+                Ok(Self::UNIVERSAL_NAME)
             } else {
                 CustomIdent::parse(input, &[]).map(|c| c.0)
             }
@@ -185,7 +189,7 @@ impl PtNameAndClassSelector {
 
         
         
-        let mut result = thin_vec::thin_vec![name.unwrap_or(atom!("*"))];
+        let mut result = thin_vec::thin_vec![name.unwrap_or(Self::UNIVERSAL_NAME)];
         result.append(&mut classes);
 
         Ok(Self(result))
@@ -198,8 +202,7 @@ impl ToCss for PtNameAndClassSelector {
         W: fmt::Write,
     {
         let name = self.name();
-        if name == &atom!("*") {
-            
+        if *name == Self::UNIVERSAL_NAME {
             dest.write_char('*')?;
         } else {
             serialize_atom_identifier(name, dest)?;
@@ -448,8 +451,8 @@ impl PseudoElement {
                 
                 
                 
-                (name_and_class.name() != &atom!("*") || !name_and_class.classes().is_empty())
-                    as u32
+                (name_and_class.name() != &PtNameAndClassSelector::UNIVERSAL_NAME
+                    || !name_and_class.classes().is_empty()) as u32
             },
             _ => 1,
         }
@@ -608,7 +611,7 @@ impl PseudoElement {
                 
                 
                 let s_name = s_name_class.name();
-                if s_name != name.name() && s_name != &atom!("*") {
+                if s_name != name.name() && s_name != &PtNameAndClassSelector::UNIVERSAL_NAME {
                     return false;
                 }
 
