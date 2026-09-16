@@ -25,6 +25,10 @@ struct InvalidationTest {
     op: InvalidationOp,
     file1: PathBuf,
     file2: PathBuf,
+    
+    
+    
+    new_builder: bool,
 }
 
 fn parse_manifest(path: &Path) -> Vec<InvalidationTest> {
@@ -46,14 +50,25 @@ fn parse_manifest(path: &Path) -> Vec<InvalidationTest> {
         }
 
         let tokens: Vec<&str> = line.split_whitespace().collect();
-        if tokens.len() != 3 {
+        if tokens.len() < 3 || tokens.len() > 4 {
             panic!(
-                "{}:{}: expected 'OP file1 file2', got: {}",
+                "{}:{}: expected 'OP file1 file2 [new-builder]', got: {}",
                 path.display(),
                 line_num + 1,
                 line,
             );
         }
+
+        let new_builder = match tokens.get(3) {
+            None => false,
+            Some(&"new-builder") => true,
+            Some(other) => panic!(
+                "{}:{}: unknown option '{}', expected new-builder",
+                path.display(),
+                line_num + 1,
+                other,
+            ),
+        };
 
         let op = match tokens[0] {
             "==" => InvalidationOp::Equal,
@@ -70,6 +85,7 @@ fn parse_manifest(path: &Path) -> Vec<InvalidationTest> {
             op,
             file1: dir.join(tokens[1]),
             file2: dir.join(tokens[2]),
+            new_builder,
         });
     }
 
@@ -118,6 +134,7 @@ impl<'a> TestHarness<'a> {
         self.test_scroll_subpic();
         self.test_clip_promotion();
         self.test_rounded_rect_intersection();
+        self.test_promotion_shapes();
 
         
         let manifest_path = PathBuf::from("invalidation/invalidation.list");
@@ -152,6 +169,9 @@ impl<'a> TestHarness<'a> {
 
             
             self.render_yaml_path(&test.file1);
+            if test.new_builder {
+                self.wrench.drop_dl_builders();
+            }
             
             let results = self.render_yaml_path(&test.file2);
 
@@ -167,10 +187,11 @@ impl<'a> TestHarness<'a> {
                 InvalidationOp::NotEqual => "!=",
             };
 
+            let opts = if test.new_builder { " new-builder" } else { "" };
             if pass {
-                println!("PASS {} {} {}", op_str, file1_str, file2_str);
+                println!("PASS {} {} {}{}", op_str, file1_str, file2_str, opts);
             } else {
-                println!("FAIL {} {} {}", op_str, file1_str, file2_str);
+                println!("FAIL {} {} {}{}", op_str, file1_str, file2_str, opts);
                 failures += 1;
             }
         }
@@ -297,6 +318,61 @@ impl<'a> TestHarness<'a> {
             shape_bottom_right: 1.0,
         };
         assert_eq!(clip.radius, expected_radius, "Combined clip radii");
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    fn test_promotion_shapes(&mut self) {
+        
+        let cases = [
+            ("rounded-clip", true),
+            ("per-corner-radius", true),
+            ("radius-clamped", true),
+            ("two-clips-combined", true),
+            ("rect-and-rounded", true),
+            ("tile-boundary", true),
+            ("larger-than-tile", true),
+            
+            
+            ("elliptical-radius", false),
+            ("corner-shape", false),
+            
+            
+            ("scrolled-clip", true),
+            
+            
+            
+            
+            ("rotated-clip", false),
+            
+            ("nested-clip", false),
+            
+            
+            ("clipped-out", false),
+        ];
+
+        for (name, expect_clip) in cases {
+            let path = PathBuf::from(format!("reftests/compositor/{}.yaml", name));
+            let results = self.render_yaml_path(&path);
+
+            let has_clip = results
+                .pc_debug
+                .slices
+                .values()
+                .any(|slice| slice.compositor_clip.is_some());
+
+            assert_eq!(
+                has_clip, expect_clip,
+                "{}: expected compositor clip on a slice: {}, got: {}",
+                name, expect_clip, has_clip,
+            );
+        }
     }
 
     

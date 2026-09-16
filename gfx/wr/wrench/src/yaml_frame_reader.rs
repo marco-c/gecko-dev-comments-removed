@@ -504,6 +504,19 @@ impl YamlFrameReader {
 
         self.parse_transform_properties(&yaml);
 
+        
+        
+        
+        if let Some(removed) = yaml["remove-pipelines"].as_vec() {
+            let mut txn = Transaction::new();
+            for pipeline in removed {
+                txn.remove_pipeline(
+                    pipeline.as_pipeline_id().expect("remove-pipelines takes pipeline ids"),
+                );
+            }
+            wrench.api.send_transaction(wrench.document_id, txn);
+        }
+
         if let Some(pipelines) = yaml["pipelines"].as_vec() {
             for pipeline in pipelines {
                 let pipeline_id = pipeline["id"].as_pipeline_id().unwrap();

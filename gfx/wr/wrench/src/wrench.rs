@@ -528,6 +528,13 @@ impl Wrench {
         self.dl_builders.insert(pipeline_id, builder);
     }
 
+    
+    
+    
+    pub fn drop_dl_builders(&mut self) {
+        self.dl_builders.clear();
+    }
+
     pub fn set_title(&mut self, extra: &str) {
         self.window_title_to_set = Some(format!(
             "Wrench: {} - {} - {}",
