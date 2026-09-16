@@ -14,7 +14,9 @@ use url::Url as AdsClientUrl;
 use client::AdsClient;
 use http_cache::CachePolicy;
 use mars::ad_request::{AdPlacementRequest, AdRequestFlags};
+pub mod ads_store;
 mod client;
+pub mod common;
 mod ffi;
 pub mod http_cache;
 mod mars;
@@ -39,7 +41,7 @@ uniffi::custom_type!(AdsClientUrl, String, {
 #[derive(uniffi::Object)]
 pub struct MozAdsClient {
     inner: Mutex<AdsClient<MozAdsTelemetryWrapper>>,
-    shutdown_references: ShutdownReferences,
+    shutdown_references: ShutdownReferences<MozAdsTelemetryWrapper>,
 }
 
 #[uniffi::export]
@@ -56,9 +58,12 @@ impl MozAdsClient {
     
     
     
+    
     #[uniffi::method()]
     pub fn shutdown(&self) -> AdsClientApiResult<()> {
-        self.shutdown_references.shutdown();
+        if let Err(e) = self.shutdown_references.shutdown() {
+            error_support::error!("Could not successfully shutdown ads-client: {e}");
+        }
         Ok(())
     }
 

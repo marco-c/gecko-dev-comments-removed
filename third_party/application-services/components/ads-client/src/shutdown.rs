@@ -1,24 +1,54 @@
-use crate::{ffi::telemetry::MozAdsTelemetryWrapper, telemetry::Telemetry};
+use std::sync::Arc;
 
-pub struct ShutdownReferences {
-    telemetry: MozAdsTelemetryWrapper,
+use parking_lot::Mutex;
+
+use crate::{ads_store::AdsStore, telemetry::Telemetry};
+
+pub struct ShutdownReferences<T: Telemetry> {
+    ads_cache_shutdown: AdsStoreShutdown,
+    telemetry: T,
 }
 
-impl ShutdownReferences {
-    pub fn new(telemetry: MozAdsTelemetryWrapper) -> ShutdownReferences {
-        ShutdownReferences { telemetry }
+impl<T: Telemetry> ShutdownReferences<T> {
+    pub fn new(telemetry: T, ads_cache_shutdown: AdsStoreShutdown) -> ShutdownReferences<T> {
+        ShutdownReferences {
+            ads_cache_shutdown,
+            telemetry,
+        }
     }
 
     
     
-    pub fn shutdown(&self) {
+    pub fn shutdown(&self) -> Result<(), rusqlite::Error> {
         
         self.telemetry.shutdown();
+
+        self.ads_cache_shutdown.shutdown()?;
 
         
         
         
         
+
+        Ok(())
+    }
+}
+
+pub struct AdsStoreShutdown(Arc<Mutex<Option<AdsStore>>>);
+impl AdsStoreShutdown {
+    pub fn new(ads_store: Arc<Mutex<Option<AdsStore>>>) -> AdsStoreShutdown {
+        AdsStoreShutdown(ads_store)
+    }
+
+    pub fn shutdown(&self) -> Result<(), rusqlite::Error> {
+        let ads_store = {
+            let mut ads_store_lock = self.0.lock();
+            ads_store_lock.take()
+        };
+        if let Some(ads_store) = ads_store {
+            ads_store.shutdown_db()?;
+        }
+        Ok(())
     }
 }
 
