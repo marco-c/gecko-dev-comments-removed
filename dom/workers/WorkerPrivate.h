@@ -1606,6 +1606,13 @@ class WorkerPrivate final
   
   
   
+  bool mRemoteDebuggerBindingDone MOZ_GUARDED_BY(mMutex);
+  
+  
+  
+  
+  
+  
   
   
   

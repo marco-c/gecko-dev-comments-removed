@@ -1762,6 +1762,7 @@ void WorkerPrivate::BindRemoteWorkerDebuggerChild() {
     MutexAutoLock lock(mMutex);
     MOZ_ASSERT_DEBUG_OR_FUZZING(!mRemoteDebugger);
     mRemoteDebugger = std::move(debugger);
+    mRemoteDebuggerBindingDone = true;
     mDebuggerBindingCondVar.Notify();
   }
 }
@@ -1777,6 +1778,11 @@ void WorkerPrivate::CreateRemoteDebuggerEndpoints() {
   MOZ_ASSERT_DEBUG_OR_FUZZING(!mRemoteDebugger &&
                               !mDebuggerParentEp.IsValid() &&
                               !mDebuggerChildEp.IsValid());
+
+  
+  
+  
+  mRemoteDebuggerBindingDone = false;
 
   (void)NS_WARN_IF(NS_FAILED(PRemoteWorkerDebugger::CreateEndpoints(
       &mDebuggerParentEp, &mDebuggerChildEp)));
@@ -1821,6 +1827,7 @@ void WorkerPrivate::SetIsRemoteDebuggerRegistered(const bool& aRegistered) {
     
     
     mRemoteDebuggerRegistered = aRegistered;
+    mRemoteDebuggerBindingDone = true;
   }
   if (unregisteredDebugger) {
     unregisteredDebugger->Close();
@@ -1888,7 +1895,9 @@ void WorkerPrivate::EnableRemoteDebugger() {
   mozilla::ipc::Endpoint<PRemoteWorkerDebuggerParent> parentEp;
   {
     MutexAutoLock lock(mMutex);
-    if (!mRemoteDebugger) {
+    
+    
+    while (!mRemoteDebuggerBindingDone) {
       mDebuggerBindingCondVar.Wait();
     }
     
@@ -1948,7 +1957,9 @@ void WorkerPrivate::EnableRemoteDebugger() {
     
     
     mProcessDebuggerIPCHandshake = true;
-    if (!mRemoteDebuggerRegistered) {
+    
+    
+    while (!mRemoteDebuggerRegistered && mRemoteDebugger) {
       mDebuggerBindingCondVar.Wait();
     }
     mProcessDebuggerIPCHandshake = false;
@@ -2887,6 +2898,7 @@ WorkerPrivate::WorkerPrivate(
       mChildEp(std::move(aChildEp)),
       mRemoteDebuggerRegistered(false),
       mRemoteDebuggerReady(true),
+      mRemoteDebuggerBindingDone(false),
       mProcessDebuggerIPCHandshake(false),
       mIsQueued(false),
       
