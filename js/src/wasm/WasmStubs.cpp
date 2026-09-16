@@ -2994,6 +2994,11 @@ bool wasm::GenerateContBaseFrameStub(jit::MacroAssembler& masm,
   
   
   
+  masm.freeStackTo(masm.framePushed());
+
+  
+  
+  
   
   
   
