@@ -46,6 +46,19 @@ BUILD_DATE_ROUTE = "index.gecko.v2.mozilla-central.bhr-aggregate.build.{date}"
                     "BHR_AGGREGATE_DATE_OFFSET_DAYS."
                 ),
             },
+            "refill_dates": {
+                "type": "array",
+                "items": {"type": "string", "pattern": "^[0-9]{8}$"},
+                "title": "Roll-up dates to recompute",
+                "description": (
+                    "Build dates whose timeseries entry should be rebuilt from "
+                    "their published artifact. The roll-up keeps whatever a day's "
+                    "first run produced, so days that were backfilled or re-run "
+                    "only reach it when named here. Leave empty unless that is "
+                    "what you are doing; this run then also publishes the daily "
+                    "artifact and roll-up as usual, so do not pin a date with it."
+                ),
+            },
             "sample_size": {
                 "type": "number",
                 "exclusiveMinimum": 0,
@@ -74,6 +87,14 @@ def bhr_aggregate_action(parameters, graph_config, input, task_group_id, task_id
 
     date = input.get("date")
     sample_size = input.get("sample_size")
+    refill_dates = input.get("refill_dates") or []
+
+    if date and refill_dates:
+        raise Exception(
+            "date and refill_dates cannot be combined: a run pinned to a past "
+            "build date must not publish the roll-up, which is shared state "
+            "ending at the most recent day."
+        )
 
     def modifier(task):
         if task.label != TASK_LABEL:
@@ -87,6 +108,17 @@ def bhr_aggregate_action(parameters, graph_config, input, task_group_id, task_id
             env["BHR_AGGREGATE_DATE"] = date
         if sample_size is not None:
             env["BHR_AGGREGATE_SAMPLE_SIZE"] = str(sample_size)
+
+        
+        task.task["extra"]["treeherder"]["symbol"] += "-custom"
+
+        if refill_dates:
+            
+            
+            
+            
+            env["BHR_TIMESERIES_REFILL_DATES"] = ",".join(refill_dates)
+            return task
 
         
         
@@ -109,16 +141,14 @@ def bhr_aggregate_action(parameters, graph_config, input, task_group_id, task_id
         
         
         env["BHR_SKIP_TIMESERIES"] = "1"
-
-        
-        task.task["extra"]["treeherder"]["symbol"] += "-custom"
         return task
 
     logger.info(
-        "Triggering %s with date=%s sample_size=%s",
+        "Triggering %s with date=%s sample_size=%s refill_dates=%s",
         TASK_LABEL,
         date or "(cron default)",
         sample_size if sample_size is not None else "(cron default)",
+        ",".join(refill_dates) or "(none)",
     )
     create_tasks(
         graph_config,
