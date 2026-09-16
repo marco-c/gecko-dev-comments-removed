@@ -2,6 +2,8 @@
 
 
 
+#include <iterator>
+
 #include "ImageContainer.h"
 #include "ImageConversion.h"
 #include "SourceSurfaceRawData.h"
@@ -35,73 +37,6 @@ using mozilla::layers::Image;
 using mozilla::layers::PlanarYCbCrImage;
 using mozilla::layers::SourceSurfaceImage;
 
-class TestRedPlanarYCbCrImage2x2 final : public PlanarYCbCrImage {
- public:
-  explicit TestRedPlanarYCbCrImage2x2(ImageBitmapFormat aFormat) {
-    mSize = IntSize(2, 2);
-    mBufferSize = sizeof(mY) + sizeof(mU) + sizeof(mV);
-    mData.mPictureRect = mozilla::gfx::IntRect(mozilla::gfx::IntPoint(), mSize);
-    mData.mYChannel = mY;
-    mData.mYStride = 2;
-    switch (aFormat) {
-      case ImageBitmapFormat::YUV420P:
-        mData.mChromaSubsampling = ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
-        mData.mCbChannel = mU;
-        mData.mCrChannel = mV;
-        mData.mCbCrStride = 1;
-        break;
-      case ImageBitmapFormat::YUV422P:
-        mData.mChromaSubsampling = ChromaSubsampling::HALF_WIDTH;
-        mData.mCbChannel = mU;
-        mData.mCrChannel = mV;
-        mData.mCbCrStride = 1;
-        break;
-      case ImageBitmapFormat::YUV444P:
-        mData.mChromaSubsampling = ChromaSubsampling::FULL;
-        mData.mCbChannel = mU;
-        mData.mCrChannel = mV;
-        mData.mCbCrStride = 2;
-        break;
-      case ImageBitmapFormat::YUV420SP_NV12:
-        mData.mChromaSubsampling = ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
-        mData.mCbChannel = mU;
-        mData.mCrChannel = mData.mCbChannel + 1;
-        mData.mCbCrStride = 1;
-        mData.mCrSkip = 1;
-        mData.mCbSkip = 1;
-        mU[1] = mV[0];
-        mU[3] = mV[1];
-        break;
-      case ImageBitmapFormat::YUV420SP_NV21:
-        mData.mChromaSubsampling = ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
-        mData.mCrChannel = mU;
-        mData.mCbChannel = mData.mCrChannel + 1;
-        mData.mCbCrStride = 1;
-        mData.mCrSkip = 1;
-        mData.mCbSkip = 1;
-        mU[0] = mV[0];
-        mU[2] = mV[1];
-        break;
-      default:
-        MOZ_CRASH("Unsupported ImageBitmapFormat!");
-        break;
-    }
-  }
-
-  nsresult CopyData(const Data& aData) override {
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-
-  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
-    return 0;
-  }
-
- private:
-  uint8_t mY[4] = {0x52, 0x52, 0x52, 0x52};
-  uint8_t mU[4] = {0x5A, 0x5A, 0x5A, 0x5A};
-  uint8_t mV[4] = {0xEF, 0xEF, 0xEF, 0xEF};
-};
-
 namespace {
 
 
@@ -112,60 +47,116 @@ struct YCbCrValue {
 };
 
 
+constexpr YCbCrValue kYCbCrRed{0x52, 0x5A, 0xEF};
+
+
+IntSize ChromaDivisor(ChromaSubsampling aSubsampling) {
+  switch (aSubsampling) {
+    case ChromaSubsampling::FULL:
+      return IntSize(1, 1);
+    case ChromaSubsampling::HALF_WIDTH:
+      return IntSize(2, 1);
+    case ChromaSubsampling::HALF_WIDTH_AND_HEIGHT:
+      return IntSize(2, 2);
+  }
+  MOZ_CRASH("bad ChromaSubsampling");
+}
 
 
 
-class TestI420Image final : public PlanarYCbCrImage {
+
+
+class TestPlanarYCbCrImage final : public PlanarYCbCrImage {
  public:
-  TestI420Image(const IntSize& aCodedSize, const IntRect& aPictureRect,
-                const YCbCrValue& aBorder, const YCbCrValue& aContent) {
-    MOZ_ASSERT(!aCodedSize.IsEmpty(), "coded size must not be empty");
-    MOZ_ASSERT(!aPictureRect.IsEmpty(), "picture rect must not be empty");
-    MOZ_ASSERT(aPictureRect.x % 2 == 0 && aPictureRect.y % 2 == 0 &&
-                   aPictureRect.width % 2 == 0 && aPictureRect.height % 2 == 0,
-               "picture rect must be even for 4:2:0 chroma alignment");
-    MOZ_ASSERT(IntRect(IntPoint(), aCodedSize).Contains(aPictureRect),
-               "picture rect must fit inside the coded buffer");
+  TestPlanarYCbCrImage(const IntSize& aSize, const YCbCrValue& aColor,
+                       ImageBitmapFormat aFormat = ImageBitmapFormat::YUV420P)
+      : TestPlanarYCbCrImage(aSize, IntRect(IntPoint(), aSize), aColor, aColor,
+                             aFormat) {}
 
-    
-    
-    const IntSize codedChroma =
-        ChromaSize(aCodedSize, ChromaSubsampling::HALF_WIDTH_AND_HEIGHT);
+  TestPlanarYCbCrImage(const IntSize& aCodedSize, const IntRect& aPictureRect,
+                       const YCbCrValue& aBorder, const YCbCrValue& aContent,
+                       ImageBitmapFormat aFormat = ImageBitmapFormat::YUV420P)
+      : mFormat(aFormat), mCodedSize(aCodedSize) {
+    MOZ_ASSERT(!aPictureRect.IsEmpty());
+    MOZ_ASSERT(IntRect(IntPoint(), aCodedSize).Contains(aPictureRect));
+
+    switch (mFormat) {
+      case ImageBitmapFormat::YUV420P:
+      case ImageBitmapFormat::YUV420SP_NV12:
+      case ImageBitmapFormat::YUV420SP_NV21:
+        mData.mChromaSubsampling = ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
+        break;
+      case ImageBitmapFormat::YUV422P:
+        mData.mChromaSubsampling = ChromaSubsampling::HALF_WIDTH;
+        break;
+      case ImageBitmapFormat::YUV444P:
+        mData.mChromaSubsampling = ChromaSubsampling::FULL;
+        break;
+      default:
+        MOZ_CRASH("Unsupported ImageBitmapFormat!");
+    }
+
+    const IntSize chromaSize = ChromaSize(aCodedSize, mData.mChromaSubsampling);
     const CheckedInt<size_t> ySize =
         CheckedInt<size_t>(aCodedSize.width) * aCodedSize.height;
     const CheckedInt<size_t> cSize =
-        CheckedInt<size_t>(codedChroma.width) * codedChroma.height;
+        CheckedInt<size_t>(chromaSize.width) * chromaSize.height;
     MOZ_ASSERT((ySize + cSize * 2).isValid(), "plane sizes are not valid");
-
     mY.SetLength(ySize.value());
-    mU.SetLength(cSize.value());
-    mV.SetLength(cSize.value());
-    memset(mY.Elements(), aBorder.mY, ySize.value());
-    memset(mU.Elements(), aBorder.mCb, cSize.value());
-    memset(mV.Elements(), aBorder.mCr, cSize.value());
-
-    FillRect(mY.Elements(), aCodedSize.width, aPictureRect.x, aPictureRect.y,
-             aPictureRect.width, aPictureRect.height, aContent.mY);
-    FillRect(mU.Elements(), codedChroma.width, aPictureRect.x / 2,
-             aPictureRect.y / 2, aPictureRect.width / 2,
-             aPictureRect.height / 2, aContent.mCb);
-    FillRect(mV.Elements(), codedChroma.width, aPictureRect.x / 2,
-             aPictureRect.y / 2, aPictureRect.width / 2,
-             aPictureRect.height / 2, aContent.mCr);
+    mCb.SetLength(IsInterleaved() ? cSize.value() * 2 : cSize.value());
+    mCr.SetLength(IsInterleaved() ? 0 : cSize.value());
 
     mSize = aPictureRect.Size();
-    mBufferSize = ySize.value() + 2 * cSize.value();
-
+    mBufferSize = (ySize + cSize * 2).value();
     mData.mPictureRect = aPictureRect;
     mData.mYChannel = mY.Elements();
     mData.mYStride = aCodedSize.width;
-    mData.mYSkip = 0;
-    mData.mCbChannel = mU.Elements();
-    mData.mCrChannel = mV.Elements();
-    mData.mCbCrStride = codedChroma.width;
-    mData.mCbSkip = 0;
-    mData.mCrSkip = 0;
-    mData.mChromaSubsampling = ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
+    if (IsInterleaved()) {
+      
+      const bool nv12 = mFormat == ImageBitmapFormat::YUV420SP_NV12;
+      mData.mCbChannel = mCb.Elements() + (nv12 ? 0 : 1);
+      mData.mCrChannel = mCb.Elements() + (nv12 ? 1 : 0);
+      mData.mCbCrStride = 2 * chromaSize.width;
+      mData.mCbSkip = 1;
+      mData.mCrSkip = 1;
+    } else {
+      mData.mCbChannel = mCb.Elements();
+      mData.mCrChannel = mCr.Elements();
+      mData.mCbCrStride = chromaSize.width;
+    }
+
+    Fill(IntRect(IntPoint(), aCodedSize), aBorder);
+    Fill(aPictureRect, aContent);
+  }
+
+  
+  void Fill(const IntRect& aRect, const YCbCrValue& aColor) {
+    const IntSize divisor = ChromaDivisor(mData.mChromaSubsampling);
+    MOZ_ASSERT(aRect.x % divisor.width == 0 && aRect.y % divisor.height == 0);
+    MOZ_ASSERT(aRect.XMost() % divisor.width == 0 ||
+               aRect.XMost() == mCodedSize.width);
+    MOZ_ASSERT(aRect.YMost() % divisor.height == 0 ||
+               aRect.YMost() == mCodedSize.height);
+
+    for (int32_t row = aRect.y; row < aRect.YMost(); ++row) {
+      memset(mData.mYChannel + size_t(row) * mData.mYStride + aRect.x,
+             aColor.mY, aRect.width);
+    }
+    
+    const int32_t left = aRect.x / divisor.width;
+    const int32_t top = aRect.y / divisor.height;
+    const int32_t right = (aRect.XMost() + divisor.width - 1) / divisor.width;
+    const int32_t bottom =
+        (aRect.YMost() + divisor.height - 1) / divisor.height;
+    for (int32_t row = top; row < bottom; ++row) {
+      const size_t offset = size_t(row) * mData.mCbCrStride;
+      for (int32_t col = left; col < right; ++col) {
+        mData.mCbChannel[offset + size_t(col) * (mData.mCbSkip + 1)] =
+            aColor.mCb;
+        mData.mCrChannel[offset + size_t(col) * (mData.mCrSkip + 1)] =
+            aColor.mCr;
+      }
+    }
   }
 
   nsresult CopyData(const Data& aData) override {
@@ -174,17 +165,17 @@ class TestI420Image final : public PlanarYCbCrImage {
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf) const { return 0; }
 
  private:
-  static void FillRect(uint8_t* aPlane, int32_t aStride, int32_t aX, int32_t aY,
-                       int32_t aW, int32_t aH, uint8_t aValue) {
-    for (int32_t row = aY; row < aY + aH; ++row) {
-      memset(aPlane + size_t(row) * aStride + aX, aValue, aW);
-    }
+  bool IsInterleaved() const {
+    return mFormat == ImageBitmapFormat::YUV420SP_NV12 ||
+           mFormat == ImageBitmapFormat::YUV420SP_NV21;
   }
 
- private:
+  const ImageBitmapFormat mFormat;
+  const IntSize mCodedSize;
   nsTArray<uint8_t> mY;
-  nsTArray<uint8_t> mU;
-  nsTArray<uint8_t> mV;
+  
+  nsTArray<uint8_t> mCb;
+  nsTArray<uint8_t> mCr;
 };
 
 }  
@@ -195,8 +186,7 @@ class TestI420Image final : public PlanarYCbCrImage {
 static already_AddRefed<Image> GenerateI420(int32_t aWidth, int32_t aHeight) {
   const IntSize size(aWidth, aHeight);
   const YCbCrValue black{0x10, 0x80, 0x80};
-  return MakeAndAddRef<TestI420Image>(size, IntRect(IntPoint(), size), black,
-                                      black);
+  return MakeAndAddRef<TestPlanarYCbCrImage>(size, black);
 }
 
 static already_AddRefed<SourceSurfaceImage> CreateRedSurfaceImage2x2(
@@ -351,24 +341,24 @@ TEST(MediaImageConversion, ConvertToI420)
       CreateRedSurfaceImage2x2(SurfaceFormat::R5G6B5_UINT16);
   checkImage(imgRgb565, Nothing());
 
-  auto imgYuv420p =
-      MakeRefPtr<TestRedPlanarYCbCrImage2x2>(ImageBitmapFormat::YUV420P);
+  auto imgYuv420p = MakeRefPtr<TestPlanarYCbCrImage>(
+      IntSize(2, 2), kYCbCrRed, ImageBitmapFormat::YUV420P);
   checkImage(imgYuv420p, Some(ImageBitmapFormat::YUV420P));
 
-  auto imgYuv422p =
-      MakeRefPtr<TestRedPlanarYCbCrImage2x2>(ImageBitmapFormat::YUV422P);
+  auto imgYuv422p = MakeRefPtr<TestPlanarYCbCrImage>(
+      IntSize(2, 2), kYCbCrRed, ImageBitmapFormat::YUV422P);
   checkImage(imgYuv422p, Some(ImageBitmapFormat::YUV422P));
 
-  auto imgYuv444p =
-      MakeRefPtr<TestRedPlanarYCbCrImage2x2>(ImageBitmapFormat::YUV444P);
+  auto imgYuv444p = MakeRefPtr<TestPlanarYCbCrImage>(
+      IntSize(2, 2), kYCbCrRed, ImageBitmapFormat::YUV444P);
   checkImage(imgYuv444p, Some(ImageBitmapFormat::YUV444P));
 
-  auto imgYuvNv12 =
-      MakeRefPtr<TestRedPlanarYCbCrImage2x2>(ImageBitmapFormat::YUV420SP_NV12);
+  auto imgYuvNv12 = MakeRefPtr<TestPlanarYCbCrImage>(
+      IntSize(2, 2), kYCbCrRed, ImageBitmapFormat::YUV420SP_NV12);
   checkImage(imgYuvNv12, Some(ImageBitmapFormat::YUV420SP_NV12));
 
-  auto imgYuvNv21 =
-      MakeRefPtr<TestRedPlanarYCbCrImage2x2>(ImageBitmapFormat::YUV420SP_NV21);
+  auto imgYuvNv21 = MakeRefPtr<TestPlanarYCbCrImage>(
+      IntSize(2, 2), kYCbCrRed, ImageBitmapFormat::YUV420SP_NV21);
   checkImage(imgYuvNv21, Some(ImageBitmapFormat::YUV420SP_NV21));
 }
 
@@ -534,7 +524,8 @@ TEST(MediaImageConversion, ConvertToI420HonorsPictureRectOrigin)
   const IntRect picture(16, 8, 32, 32);
   const YCbCrValue border{0x10, 0x20, 0x30};
   const YCbCrValue content{0x80, 0xA0, 0xC0};
-  auto image = MakeRefPtr<TestI420Image>(coded, picture, border, content);
+  auto image =
+      MakeRefPtr<TestPlanarYCbCrImage>(coded, picture, border, content);
 
   const int32_t chromaW = picture.width / 2;
   const int32_t chromaH = picture.height / 2;
@@ -568,7 +559,8 @@ TEST(MediaImageConversion, ConvertToNV12HonorsPictureRectOrigin)
   const IntRect picture(16, 8, 32, 32);
   const YCbCrValue border{0x10, 0x20, 0x30};
   const YCbCrValue content{0x80, 0xA0, 0xC0};
-  auto image = MakeRefPtr<TestI420Image>(coded, picture, border, content);
+  auto image =
+      MakeRefPtr<TestPlanarYCbCrImage>(coded, picture, border, content);
 
   nsTArray<uint8_t> destY;
   nsTArray<uint8_t> destUV;
@@ -585,5 +577,39 @@ TEST(MediaImageConversion, ConvertToNV12HonorsPictureRectOrigin)
   
   for (size_t i = 0; i < destUV.Length(); ++i) {
     EXPECT_EQ(destUV[i], (i % 2 == 0) ? content.mCb : content.mCr);
+  }
+}
+
+
+
+
+TEST(MediaImageConversion, DownscaleNV12SourceKeepsChromaRows)
+{
+  
+  
+  const YCbCrValue quadrants[] = {
+      {0x80, 0x40, 0xC0},  
+      {0x80, 0x40, 0x40},  
+      {0x80, 0xC0, 0x40},  
+      {0x80, 0xC0, 0xC0},  
+  };
+  auto image = MakeRefPtr<TestPlanarYCbCrImage>(
+      IntSize(8, 8), quadrants[0], ImageBitmapFormat::YUV420SP_NV12);
+  
+  
+  for (size_t i = 0; i < std::size(quadrants); ++i) {
+    image->Fill(IntRect(int32_t(i % 2) * 4, int32_t(i / 2) * 4, 4, 4),
+                quadrants[i]);
+  }
+
+  const IntSize dest(4, 4);
+  uint8_t y[16] = {};
+  uint8_t u[4] = {};
+  uint8_t v[4] = {};
+
+  ASSERT_EQ(ConvertToI420(image, y, 4, u, 2, v, 2, dest), NS_OK);
+  for (size_t i = 0; i < std::size(quadrants); ++i) {
+    EXPECT_EQ(u[i], quadrants[i].mCb);
+    EXPECT_EQ(v[i], quadrants[i].mCr);
   }
 }
