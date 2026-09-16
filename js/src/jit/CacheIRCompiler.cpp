@@ -40,7 +40,6 @@
 #include "vm/ArrayBufferViewObject.h"
 #include "vm/BigIntType.h"
 #include "vm/FunctionFlags.h"  
-#include "vm/GeneratorObject.h"
 #include "vm/GetterSetter.h"
 #include "vm/Interpreter.h"
 #include "vm/ObjectFuse.h"
@@ -1579,13 +1578,6 @@ bool CacheIRWriter::stubDataEqualsIgnoringShapeAndOffset(
   }
 
   return true;
-}
-
-HashNumber CacheIRStubKey::hash(const CacheIRStubKey::Lookup& l) {
-  HashNumber hash = mozilla::HashBytes(l.code, l.length);
-  hash = mozilla::AddToHash(hash, uint32_t(l.kind));
-  hash = mozilla::AddToHash(hash, uint32_t(l.engine));
-  return hash;
 }
 
 bool CacheIRStubKey::match(const CacheIRStubKey& entry,
@@ -3728,7 +3720,7 @@ bool CacheIRCompiler::emitInt32URightShiftResult(Int32OperandId lhsId,
   masm.mov(lhs, scratch);
   masm.flexibleRshift32(rhs, scratch);
   if (forceDouble) {
-    ScratchDoubleScope fpscratch(masm);
+    AutoAvailableFloatRegister fpscratch(*this, FloatReg0);
     masm.convertUInt32ToDouble(scratch, fpscratch);
     masm.boxDouble(fpscratch, output.valueReg(), fpscratch);
   } else {
@@ -10408,29 +10400,15 @@ bool CacheIRCompiler::emitConcatStringsResult(StringOperandId lhsId,
   return true;
 }
 
-bool CacheIRCompiler::emitCallIsSuspendedGeneratorResult(ValOperandId valId) {
+bool CacheIRCompiler::emitIsSuspendedGeneratorResult(ObjOperandId objId) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   AutoOutputRegister output(*this);
   AutoScratchRegisterMaybeOutput scratch(allocator, masm, output);
-  AutoScratchRegister scratch2(allocator, masm);
-  ValueOperand input = allocator.useValueRegister(masm, valId);
+  Register obj = allocator.useRegister(masm, objId);
 
   
   Label returnFalse, done;
-  masm.fallibleUnboxObject(input, scratch, &returnFalse);
-
-  
-  masm.branchTestObjClass(Assembler::NotEqual, scratch,
-                          &GeneratorObject::class_, scratch2, scratch,
-                          &returnFalse);
-
-  
-  
-  Address addr(scratch, AbstractGeneratorObject::offsetOfResumeIndexSlot());
-  masm.fallibleUnboxInt32(addr, scratch, &returnFalse);
-  masm.branch32(Assembler::AboveOrEqual, scratch,
-                Imm32(AbstractGeneratorObject::RESUME_INDEX_RUNNING),
-                &returnFalse);
+  masm.branchIfNotSuspendedGenerator(obj, scratch, obj, &returnFalse);
 
   masm.moveValue(BooleanValue(true), output.valueReg());
   masm.jump(&done);
@@ -10761,7 +10739,7 @@ bool CacheIRCompiler::emitAtomicsCompareExchangeResult(
   if (elementType != Scalar::Uint32) {
     masm.tagValue(JSVAL_TYPE_INT32, scratch, output->valueReg());
   } else {
-    ScratchDoubleScope fpscratch(masm);
+    AutoAvailableFloatRegister fpscratch(*this, FloatReg0);
     masm.convertUInt32ToDouble(scratch, fpscratch);
     masm.boxDouble(fpscratch, output->valueReg(), fpscratch);
   }
@@ -10815,7 +10793,7 @@ bool CacheIRCompiler::emitAtomicsReadModifyWriteResult(
   if (elementType != Scalar::Uint32) {
     masm.tagValue(JSVAL_TYPE_INT32, scratch, output.valueReg());
   } else {
-    ScratchDoubleScope fpscratch(masm);
+    AutoAvailableFloatRegister fpscratch(*this, FloatReg0);
     masm.convertUInt32ToDouble(scratch, fpscratch);
     masm.boxDouble(fpscratch, output.valueReg(), fpscratch);
   }
