@@ -1604,14 +1604,20 @@ void ModuleLoaderBase::CancelFetchingModules() {
 }
 
 void ModuleLoaderBase::Shutdown() {
-  CancelAndClearDynamicImports();
-
+  
+  
+  
+  
+  
+  
   for (const auto& entry : mFetchingModules) {
     RefPtr<LoadingRequest> loadingRequest(entry.GetData());
     if (loadingRequest) {
       ResumeWaitingRequests(loadingRequest, false);
     }
   }
+
+  CancelAndClearDynamicImports();
 
   for (const auto& entry : mFetchedModules) {
     if (entry.GetData()) {
