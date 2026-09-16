@@ -1214,6 +1214,109 @@ const TEST_DATA = [
       ],
     },
   },
+  {
+    description: "Deep URL under urlMinPicks is not adaptive autofilled",
+    pref: true,
+    urlMinPicks: 3,
+    visitHistory: ["http://example.com/test"],
+    inputHistory: [
+      { uri: "http://example.com/test", input: "exa" },
+      { uri: "http://example.com/test", input: "exa" },
+    ],
+    userInput: "exa",
+    expected: {
+      autofilled: "example.com/",
+      completed: "http://example.com/",
+      results: [
+        context =>
+          makeVisitResult(context, {
+            uri: "http://example.com/",
+            title: UrlbarTestUtils.trimURL("http://example.com/"),
+            heuristic: true,
+          }),
+        context =>
+          makeVisitResult(context, {
+            uri: "http://example.com/test",
+            title: "test visit for http://example.com/test",
+          }),
+      ],
+    },
+  },
+  {
+    description: "Deep URL at urlMinPicks is adaptive autofilled",
+    pref: true,
+    urlMinPicks: 3,
+    visitHistory: ["http://example.com/test"],
+    inputHistory: [
+      { uri: "http://example.com/test", input: "exa" },
+      { uri: "http://example.com/test", input: "exa" },
+      { uri: "http://example.com/test", input: "exa" },
+    ],
+    userInput: "exa",
+    expected: {
+      autofilled: "example.com/test",
+      completed: "http://example.com/test",
+      results: [
+        context =>
+          makeVisitResult(context, {
+            uri: "http://example.com/test",
+            title: "test visit for http://example.com/test",
+            heuristic: true,
+          }),
+      ],
+    },
+  },
+  {
+    description: "urlMinPicks does not gate adaptive origin autofill",
+    pref: true,
+    urlMinPicks: 3,
+    visitHistory: ["http://example.com/"],
+    inputHistory: [{ uri: "http://example.com/", input: "exa" }],
+    userInput: "exa",
+    expected: {
+      autofilled: "example.com/",
+      completed: "http://example.com/",
+      results: [
+        context =>
+          makeVisitResult(context, {
+            uri: "http://example.com/",
+            title: "test visit for http://example.com/",
+            heuristic: true,
+          }),
+      ],
+    },
+  },
+  {
+    description:
+      "Gated deep URL lets a higher-use adaptive origin win instead of losing adaptive autofill entirely",
+    pref: true,
+    urlMinPicks: 3,
+    visitHistory: ["http://example.com/test", "http://example.com/"],
+    inputHistory: [
+      { uri: "http://example.com/test", input: "exa" },
+      { uri: "http://example.com/", input: "exa" },
+      { uri: "http://example.com/", input: "exa" },
+      { uri: "http://example.com/", input: "exa" },
+    ],
+    userInput: "exa",
+    expected: {
+      autofilled: "example.com/",
+      completed: "http://example.com/",
+      results: [
+        context =>
+          makeVisitResult(context, {
+            uri: "http://example.com/",
+            title: "test visit for http://example.com/",
+            heuristic: true,
+          }),
+        context =>
+          makeVisitResult(context, {
+            uri: "http://example.com/test",
+            title: "test visit for http://example.com/test",
+          }),
+      ],
+    },
+  },
 ];
 
 add_task(async function inputTest() {
@@ -1222,6 +1325,7 @@ add_task(async function inputTest() {
     pref,
     minCharsThreshold,
     useCountThreshold,
+    urlMinPicks,
     source,
     visitHistory,
     inputHistory,
@@ -1248,6 +1352,13 @@ add_task(async function inputTest() {
       );
     }
 
+    if (urlMinPicks !== undefined) {
+      UrlbarPrefs.set("autoFill.adaptiveHistory.urlMinPicks", urlMinPicks);
+    }
+    
+    
+    UrlbarPrefs.set("autoFill.adaptiveHistory.urlPicksAgeDays", 0);
+
     if (visitHistory && visitHistory.length) {
       await PlacesTestUtils.addVisits(
         visitHistory.map(url => ({
@@ -1256,8 +1367,28 @@ add_task(async function inputTest() {
         }))
       );
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const seedCount =
+      urlMinPicks === undefined
+        ? UrlbarPrefs.get("autoFill.adaptiveHistory.urlMinPicks")
+        : 1;
     for (const { uri, input } of inputHistory) {
-      await UrlbarUtils.addToInputHistory(uri, input);
+      let picks = UrlbarShared.isOriginUrl(uri) ? 1 : seedCount;
+      for (let i = 0; i < picks; i++) {
+        await UrlbarUtils.addToInputHistory(uri, input);
+      }
     }
     for (const bookmark of bookmarks || []) {
       await PlacesTestUtils.addBookmarkWithDetails(bookmark);
@@ -1299,11 +1430,14 @@ add_task(async function inputTest() {
     UrlbarPrefs.clear("autoFill.adaptiveHistory.enabled");
     UrlbarPrefs.clear("autoFill.adaptiveHistory.minCharsThreshold");
     UrlbarPrefs.clear("autoFill.adaptiveHistory.useCountThreshold");
+    UrlbarPrefs.clear("autoFill.adaptiveHistory.urlMinPicks");
+    UrlbarPrefs.clear("autoFill.adaptiveHistory.urlPicksAgeDays");
   }
 });
 
 add_task(async function urlCase() {
   UrlbarPrefs.set("autoFill.adaptiveHistory.enabled", true);
+  UrlbarPrefs.set("autoFill.adaptiveHistory.urlMinPicks", 0);
 
   const testVisitFixed = "example.com/ABC/DEF";
   const testVisitURL = `http://${testVisitFixed}`;
@@ -1374,10 +1508,14 @@ add_task(async function urlCase() {
 
   await cleanupPlaces();
   UrlbarPrefs.clear("autoFill.adaptiveHistory.enabled");
+  UrlbarPrefs.clear("autoFill.adaptiveHistory.urlMinPicks");
 });
 
 add_task(async function decayTest() {
   UrlbarPrefs.set("autoFill.adaptiveHistory.enabled", true);
+  
+  
+  UrlbarPrefs.set("autoFill.adaptiveHistory.urlMinPicks", 0);
 
   await PlacesTestUtils.addVisits([
     {
@@ -1451,4 +1589,57 @@ add_task(async function decayTest() {
   await cleanupPlaces();
   UrlbarPrefs.clear("autoFill.adaptiveHistory.enabled");
   UrlbarPrefs.clear("autoFill.adaptiveHistory.useCountThreshold");
+  UrlbarPrefs.clear("autoFill.adaptiveHistory.urlMinPicks");
+});
+
+
+
+
+
+
+add_task(async function urlUseCountThreshold() {
+  const { inputHistoryPicksToUseCount } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/urlbar/UrlbarProviderAutofill.sys.mjs"
+  );
+
+  Assert.equal(
+    inputHistoryPicksToUseCount(0, 14),
+    0,
+    "Zero picks disables the threshold."
+  );
+
+  
+  
+  for (const [picks, expected] of [
+    [1, 1],
+    [2, 1.9],
+    [3, 2.71],
+  ]) {
+    Assert.equal(
+      inputHistoryPicksToUseCount(picks, 0),
+      expected,
+      `${picks} fresh pick(s) reach a use_count of ${expected}.`
+    );
+  }
+
+  
+  let threshold = inputHistoryPicksToUseCount(3, 14);
+  Assert.equal(
+    threshold,
+    2.71 * 0.975 ** 14,
+    "Aging multiplies the fresh use_count by the daily decay rate."
+  );
+
+  
+  
+  Assert.less(
+    threshold,
+    2.71,
+    "Three picks made in one sitting clear the threshold."
+  );
+  Assert.greater(
+    threshold,
+    1.9,
+    "Two picks made in one sitting stay below the threshold."
+  );
 });

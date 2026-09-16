@@ -329,12 +329,14 @@ add_task(async function history() {
     await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
 
     UrlbarPrefs.set("autoFill.adaptiveHistory.enabled", useAdaptiveHistory);
+    UrlbarPrefs.set("autoFill.adaptiveHistory.urlMinPicks", 1);
 
     await triggerAutofillAndPickResult(userInput, autofilled);
 
     assertSearchTelemetryEmpty(histograms.search_hist);
 
     UrlbarPrefs.clear("autoFill.adaptiveHistory.enabled");
+    UrlbarPrefs.clear("autoFill.adaptiveHistory.urlMinPicks");
     await PlacesTestUtils.clearInputHistory();
     await PlacesUtils.history.clear();
   }
@@ -532,6 +534,22 @@ async function doDeletionTest({
     );
 
     await trigger();
+
+    if (expectedScalar) {
+      
+      
+      
+      
+      await TestUtils.waitForCondition(
+        () =>
+          TelemetryTestUtils.getProcessScalars("parent")[
+            "urlbar.autofill_deletion"
+          ] >= expectedScalar,
+        `Waiting for urlbar.autofill_deletion to reach ${expectedScalar}`
+      ).catch(() => {
+        
+      });
+    }
 
     const scalars = TelemetryTestUtils.getProcessScalars("parent", false, true);
     if (expectedScalar) {
