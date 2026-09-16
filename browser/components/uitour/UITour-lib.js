@@ -371,8 +371,14 @@ if (typeof Mozilla == "undefined") {
 
 
 
-  Mozilla.UITour.showNewTab = function () {
-    _sendEvent("showNewTab");
+
+
+
+
+  Mozilla.UITour.showNewTab = function (hash) {
+    _sendEvent("showNewTab", {
+      hash,
+    });
   };
 
   
