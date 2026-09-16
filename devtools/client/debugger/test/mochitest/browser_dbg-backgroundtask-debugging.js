@@ -50,7 +50,9 @@ add_task(async function test_backgroundtask_debugger() {
   await pushPref("devtools.debugger.prompt-connection", false);
 
   
-  Services.prefs.savePrefFile(null);
+  
+  
+  Services.prefs.savePrefFile(Services.dirsvc.get("PrefF", Ci.nsIFile));
 
   
   const p = do_backgroundtask("jsdebugger", {
