@@ -716,6 +716,37 @@ add_task(async function test_create_mode_empty_state_inputs() {
         "Submit is blocked while the form is empty"
       );
 
+      const errorIds = [...shadow.querySelectorAll(".error-message")]
+        .map(node => node.getAttribute("data-l10n-id"))
+        .sort();
+      Assert.deepEqual(
+        errorIds,
+        [
+          "ai-tasks-alert-error-condition-required",
+          "ai-tasks-alert-error-name-required",
+          "ai-tasks-alert-error-no-pages",
+        ],
+        "Empty submit surfaces name, condition and pages errors"
+      );
+      Assert.ok(nameInput.hasAttribute("invalid"), "Name input is invalid");
+      Assert.ok(
+        shadow
+          .querySelector("moz-textarea.monitor-condition-input")
+          .hasAttribute("invalid"),
+        "Condition input is invalid"
+      );
+      Assert.ok(
+        shadow
+          .querySelector("moz-input-url.page-url-input")
+          .hasAttribute("invalid"),
+        "URL input is invalid"
+      );
+      Assert.equal(
+        shadow.activeElement,
+        nameInput,
+        "Focus moves to the first invalid field"
+      );
+
       setValue(nameInput, "Sony Headphone");
       setValue(
         shadow.querySelector("moz-textarea.monitor-condition-input"),
@@ -1160,21 +1191,130 @@ add_task(async function test_invalid_url_shows_error() {
       urlInput.dispatchEvent(new content.Event("input", { bubbles: true }));
       shadow.querySelector("moz-button.add-page-btn").click();
 
-      
       await el.updateComplete;
-      await ContentTaskUtils.waitForCondition(
-        () => shadow.querySelector(".error-message"),
-        "Waiting for error message to appear"
-      );
-
-      Assert.ok(
-        shadow.querySelector(".error-message"),
-        "An invalid URL surfaces an error message"
+      Assert.equal(
+        shadow.querySelector(".error-message")?.getAttribute("data-l10n-id"),
+        "ai-tasks-alert-error-invalid-url",
+        "A value that is not a URL shows the invalid-URL error"
       );
       Assert.equal(
         shadow.querySelectorAll(".page-pills-row ai-website-chip").length,
         0,
         "An invalid URL is not added as a pill"
+      );
+    });
+  });
+});
+
+add_task(async function test_url_missing_scheme_shows_error() {
+  await withTestPage(async browser => {
+    await setProps(browser, {
+      agent: { conditionPresets: [] },
+      mode: "create",
+    });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const el = content.document.getElementById("test-agent-monitor-item");
+      const shadow = el.shadowRoot;
+
+      const urlInput = shadow.querySelector("moz-input-url.page-url-input");
+      urlInput.value = "example.com";
+      urlInput.dispatchEvent(new content.Event("input", { bubbles: true }));
+      shadow.querySelector("moz-button.add-page-btn").click();
+
+      await el.updateComplete;
+      Assert.equal(
+        shadow.querySelector(".error-message")?.getAttribute("data-l10n-id"),
+        "ai-tasks-alert-error-url-scheme",
+        "An address missing its scheme prompts to add https:// or http://"
+      );
+      Assert.equal(
+        shadow.querySelectorAll(".page-pill").length,
+        0,
+        "An address missing its scheme is not added as a pill"
+      );
+    });
+  });
+});
+
+add_task(async function test_submit_handles_uncommitted_url() {
+  await withTestPage(async browser => {
+    await setProps(browser, {
+      agent: { conditionPresets: [] },
+      mode: "create",
+    });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const el = content.document.getElementById("test-agent-monitor-item");
+      const shadow = el.shadowRoot;
+
+      const setValue = (input, value) => {
+        input.value = value;
+        input.dispatchEvent(new content.Event("input", { bubbles: true }));
+        input.dispatchEvent(new content.Event("change", { bubbles: true }));
+      };
+
+      let submitDetail = null;
+      el.addEventListener(
+        "agent-monitor-item:submit",
+        e => (submitDetail = e.detail)
+      );
+
+      setValue(
+        shadow.querySelector("moz-input-text.monitor-name-input"),
+        "Sony Headphone"
+      );
+      setValue(
+        shadow.querySelector("moz-textarea.monitor-condition-input"),
+        "the price drops"
+      );
+
+      const urlInput = shadow.querySelector("moz-input-url.page-url-input");
+      const addButton = shadow.querySelector("moz-button.add-page-btn");
+      const startButton = shadow.querySelector(
+        'moz-button[data-l10n-id="ai-tasks-alert-create-button"]'
+      );
+
+      
+      
+      setValue(urlInput, "https://example.com/product");
+      addButton.click();
+      await el.updateComplete;
+      setValue(urlInput, "not a url");
+
+      
+      startButton.click();
+      await el.updateComplete;
+
+      Assert.equal(
+        submitDetail,
+        null,
+        "An uncommitted invalid url blocks submit even with a valid page added"
+      );
+      Assert.equal(
+        shadow.querySelector(".error-message")?.getAttribute("data-l10n-id"),
+        "ai-tasks-alert-error-invalid-url",
+        "Submit surfaces the uncommitted url's error"
+      );
+      Assert.ok(
+        urlInput.hasAttribute("invalid"),
+        "The url input is marked invalid"
+      );
+      Assert.equal(
+        shadow.activeElement,
+        urlInput,
+        "Focus moves to the url input"
+      );
+
+      
+      setValue(urlInput, "https://example.com/second");
+      startButton.click();
+      await el.updateComplete;
+
+      Assert.deepEqual(
+        submitDetail?.watchUrls,
+        ["https://example.com/product", "https://example.com/second"],
+        "A valid uncommitted url is committed and carried on submit"
       );
     });
   });
@@ -1209,11 +1349,11 @@ add_task(async function test_max_watch_urls_from_host() {
       );
 
       await addUrl("https://example.com/b");
-      await ContentTaskUtils.waitForCondition(
-        () => shadow.querySelector(".error-message"),
-        "Waiting for the max URLs error to appear"
+      Assert.equal(
+        shadow.querySelector(".error-message")?.getAttribute("data-l10n-id"),
+        "ai-tasks-alert-error-max-urls",
+        "Adding past the cap shows the max-pages error"
       );
-
       Assert.equal(
         shadow.querySelectorAll(".page-pills-row ai-website-chip").length,
         1,
@@ -1222,6 +1362,10 @@ add_task(async function test_max_watch_urls_from_host() {
       
       
       
+      await ContentTaskUtils.waitForCondition(
+        () => shadow.querySelector(".error-message")?.textContent.includes("1"),
+        "Waiting for the max URLs error to interpolate the cap"
+      );
       const errorText = shadow
         .querySelector(".error-message")
         .textContent.trim();

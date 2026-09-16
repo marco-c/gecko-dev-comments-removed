@@ -143,8 +143,8 @@ add_task(async function test_dialog_opens() {
 
       
       Assert.ok(
-        startButton.hasAttribute("disabled"),
-        "Start button is initially disabled"
+        !startButton.hasAttribute("disabled"),
+        "Start button is enabled"
       );
 
       
@@ -214,40 +214,54 @@ add_task(async function test_form_validation() {
         'moz-button[data-l10n-id="ai-tasks-alert-create-button"]'
       );
 
+      const errorIds = () =>
+        [...cardShadow.querySelectorAll(".error-message")]
+          .map(el => el.getAttribute("data-l10n-id"))
+          .sort();
+
       
       Assert.ok(
-        startButton.hasAttribute("disabled"),
-        "Start button initially disabled"
+        !startButton.hasAttribute("disabled"),
+        "Start button is enabled"
       );
+
+      startButton.click();
+      await cardJS.updateComplete;
+
+      Assert.deepEqual(
+        errorIds(),
+        [
+          "ai-tasks-alert-error-condition-required",
+          "ai-tasks-alert-error-name-required",
+          "ai-tasks-alert-error-no-pages",
+        ],
+        "Submitting empty surfaces name, condition and pages errors"
+      );
+      Assert.ok(dialog.open, "Dialog stays open while the form is invalid");
 
       
       setInputValue(nameInput, "Test Monitor");
       await cardJS.updateComplete;
-
-      
       Assert.ok(
-        startButton.hasAttribute("disabled"),
-        "Start button still disabled without alert description"
+        !cardShadow.querySelector(
+          "[data-l10n-id='ai-tasks-alert-error-name-required']"
+        ),
+        "Name error clears once a name is entered"
       );
 
-      
       setInputValue(alertTextarea, "Watch for price changes");
       await cardJS.updateComplete;
-
-      
       Assert.ok(
-        startButton.hasAttribute("disabled"),
-        "Start button still disabled without URL"
+        !cardShadow.querySelector(
+          "[data-l10n-id='ai-tasks-alert-error-condition-required']"
+        ),
+        "Condition error clears once a description is entered"
       );
 
-      
       setInputValue(pageInput, "https://example.com");
       await cardJS.updateComplete;
-
-      
       addPageButton.click();
 
-      
       await ContentTaskUtils.waitForCondition(
         () => {
           const pills = cardShadow.querySelectorAll(
@@ -270,6 +284,11 @@ add_task(async function test_form_validation() {
       Assert.ok(
         pagePill.getAttribute("label").includes("example.com"),
         "URL pill should display the domain"
+      );
+
+      Assert.ok(
+        !cardShadow.querySelector(".error-message"),
+        "All errors are cleared once the form is complete"
       );
 
       
