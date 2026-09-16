@@ -194,6 +194,9 @@ export interface MLPerfEngineConfig {
   featureId: string;
 
   
+  metricName?: string;
+
+  
   expectedRuns?: number;
 
   
@@ -219,10 +222,18 @@ export interface MLPerfObservedRunResult {
 
   
   resourcesAfter?: ResourceMeasurement;
+
+  
+  metrics?: {
+    decodingTime?: number;
+    inputTokens?: number;
+    outputTokens?: number;
+  };
 }
 
 
-export interface MLPerfEngineRunObservation extends MLPerfObservedRunResult {
+export interface MLPerfEngineRunObservation
+  extends MLPerfObservedRunResult, MLPerfEngineRunDetails {
   
   featureId: string;
 
@@ -234,6 +245,24 @@ export interface MLPerfEngineRunObservation extends MLPerfObservedRunResult {
 
   
   end: number;
+}
+
+
+export interface MLPerfEngineRunDetails {
+  
+  timeToFirstToken?: number;
+
+  
+  tokensPerSecond?: number;
+
+  
+  decodingTime?: number;
+
+  
+  inputTokens?: number;
+
+  
+  outputTokens?: number;
 }
 
 
@@ -349,6 +378,9 @@ export interface PeakInferenceMemorySampler {
 export interface RunPerfScenarioConfig extends MLPerfTestHarness {
   
   metricPrefix: string;
+
+  
+  metricSuffix?: string;
 
   
   scenario: MLPerfScenario;
