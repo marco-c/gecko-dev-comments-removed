@@ -339,6 +339,12 @@ void CanonicalBrowsingContext::ReplacedBy(
 
   
   
+  if (GetWatchedByDevToolsInternal()) {
+    txn.SetWatchedByDevToolsInternal(true);
+  }
+
+  
+  
   
   if (!aNewContext->EverAttached() ||
       !StaticPrefs::browser_zoom_siteSpecific()) {
