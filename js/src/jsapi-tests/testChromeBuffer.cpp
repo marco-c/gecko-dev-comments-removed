@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Utf8.h"  
 
 #include "js/CallAndConstruct.h"          
@@ -16,9 +14,9 @@
 #include "jsapi-tests/tests.h"
 #include "util/Text.h"
 
-MOZ_RUNINIT static TestJSPrincipals system_principals(1);
+constinit static TestJSPrincipals system_principals(1);
 
-static const JSClass global_class = {
+static constexpr JSClass global_class = {
     "global",
     JSCLASS_IS_GLOBAL | JSCLASS_GLOBAL_FLAGS,
     &JS::DefaultGlobalClassOps,

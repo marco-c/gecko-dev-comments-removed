@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jsapi_tests_tests_h
 #define jsapi_tests_tests_h
 
@@ -300,7 +298,8 @@ class TempFile {
 
 class TestJSPrincipals : public JSPrincipals {
  public:
-  explicit TestJSPrincipals(int rc = 0);
+  explicit constexpr TestJSPrincipals(int rc = 0)
+      : JSPrincipals(JSPrincipals::RefCount(rc)) {}
 
   bool write(JSContext* cx, JSStructuredCloneWriter* writer) override;
 
