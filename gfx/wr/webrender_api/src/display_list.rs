@@ -1731,6 +1731,7 @@ impl DisplayListBuilder {
     
     
     
+    
     fn push_zero_blur_box_shadow(
         &mut self,
         common: &di::CommonItemProperties,
@@ -1791,6 +1792,15 @@ impl DisplayListBuilder {
                     return;
                 }
 
+                
+                
+                
+                
+                
+                
+                
+                
+                
                 clips.push(self.define_clip_rounded_rect_impl(
                     spatial_id,
                     ComplexClipRegion {
@@ -1799,7 +1809,7 @@ impl DisplayListBuilder {
                         inset: LayoutSideOffsets::zero(),
                         mode: ClipMode::ClipOut,
                     },
-                    spread_radius,
+                    0.0,
                 ));
 
                 (shadow_rect, shadow_radius, shadow_inset)
