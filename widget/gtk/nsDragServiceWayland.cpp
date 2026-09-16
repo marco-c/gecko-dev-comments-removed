@@ -199,6 +199,11 @@ bool nsDragSessionWayland::DragDataReceived(ClipboardData& aData,
     
     
     
+    nsDependentCSubstring spec(span.data(), span.Length());
+
+    
+    
+    
     
     
     
@@ -210,13 +215,13 @@ bool nsDragSessionWayland::DragDataReceived(ClipboardData& aData,
     
     
     nsCOMPtr<nsIURI> sourceURI;
-    nsresult rv = NS_NewURI(getter_AddRefs(sourceURI),
-                            (const gchar*)span.data(), nullptr);
+    nsresult rv = NS_NewURI(getter_AddRefs(sourceURI), spec);
     if (NS_SUCCEEDED(rv)) {
       LOGDRAGSERVICE(
           "  TargetDataReceived(): got valid uri for MIME %s - this is bug "
           "in GTK - expected numeric value for portal, got %s\n",
-          GUniquePtr<gchar>(gdk_atom_name(aTarget)).get(), span.data());
+          GUniquePtr<gchar>(gdk_atom_name(aTarget)).get(),
+          PromiseFlatCString(spec).get());
       return false;
     }
     GUniquePtr<char*> uriList(GetURIsFromPortal(span.data(), span.Length()));
