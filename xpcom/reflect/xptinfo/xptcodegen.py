@@ -7,7 +7,6 @@
 
 import functools
 import json
-from collections import OrderedDict
 
 import buildconfig
 from perfecthash import PerfectHash
@@ -208,7 +207,7 @@ def link_to_cpp(interfaces, fd, header_fd):
     consts = []
     domobjects = []
     domobject_cache = {}
-    strings = OrderedDict()
+    strings = {}
 
     def lower_uuid(uuid):
         return (

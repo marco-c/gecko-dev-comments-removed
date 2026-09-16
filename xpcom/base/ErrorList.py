@@ -1,6 +1,5 @@
 
 import json
-from collections import OrderedDict
 
 
 class Mod:
@@ -21,7 +20,7 @@ class Mod:
         Mod.active = None
 
 
-modules = OrderedDict()
+modules = {}
 
 
 
@@ -123,7 +122,7 @@ def SUCCESS(code):
 
 
 
-errors = OrderedDict()
+errors = {}
 
 
 errors["NS_OK"] = 0
