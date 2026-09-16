@@ -1020,6 +1020,23 @@ TEST_F(APZCBasicTester, StartTolerance) {
   TouchUp(apzc, {50, 90}, mcc->Time());
 }
 
+TEST_F(APZCBasicTester, Bug1198900) {
+  
+  
+  
+  MakeApzcWaitForMainThread();
+
+  uint64_t blockId =
+      Wheel(apzc, ScreenIntPoint(100, 50), ScreenPoint(0, 10), mcc->Time())
+          .mInputBlockId;
+  
+  EXPECT_EQ(CSSPoint(0, 0), apzc->GetFrameMetrics().GetVisualScrollOffset());
+
+  apzc->ContentReceivedInputBlock(blockId,  true);
+  
+  EXPECT_EQ(CSSPoint(0, 0), apzc->GetFrameMetrics().GetVisualScrollOffset());
+}
+
 
 
 
