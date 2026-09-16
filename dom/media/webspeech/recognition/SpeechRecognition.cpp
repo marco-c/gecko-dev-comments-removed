@@ -13,6 +13,7 @@
 #include "MediaEnginePrefs.h"
 #include "SpeechRecognitionAlternative.h"
 #include "SpeechRecognitionBackend.h"
+#include "SpeechRecognitionModelMapping.h"
 #include "SpeechRecognitionResult.h"
 #include "SpeechRecognitionResultList.h"
 #include "SpeechTrackListener.h"
@@ -490,6 +491,16 @@ already_AddRefed<Promise> SpeechRecognition::Available(
     return promise.forget();
   }
 
+  
+  
+  
+  for (const nsCString& lang : aOptions.mLangs) {
+    if (SpeechModelFor(lang).isNothing()) {
+      promise->MaybeResolve(AvailabilityStatus::Unavailable);
+      return promise.forget();
+    }
+  }
+
   return SpeechRecognitionBackend::Available(global, aOptions.mLangs);
 }
 
@@ -594,13 +605,19 @@ already_AddRefed<Promise> SpeechRecognition::Install(
 
   
   
-  
-  
-  
-  
   if (aOptions.mLangs.IsEmpty()) {
     promise->MaybeResolve(false);
     return promise.forget();
+  }
+
+  
+  
+  
+  for (const nsCString& lang : aOptions.mLangs) {
+    if (SpeechModelFor(lang).isNothing()) {
+      promise->MaybeResolve(false);
+      return promise.forget();
+    }
   }
 
   bool transactionCreated = false;
@@ -732,6 +749,17 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
         }
       }
     }
+  }
+
+  
+  
+  
+  if (!effectiveLang.IsEmpty() &&
+      SpeechModelFor(NS_ConvertUTF16toUTF8(effectiveLang)).isNothing()) {
+    LOGE("No on-device model recognizes this language");
+    DispatchErrorAndEnd(SpeechRecognitionErrorCode::Service_not_allowed,
+                        "No on-device model recognizes this language"_ns);
+    return;
   }
 
   
