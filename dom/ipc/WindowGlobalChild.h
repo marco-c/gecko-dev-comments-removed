@@ -221,6 +221,10 @@ class WindowGlobalChild final : public WindowGlobalActor,
       GetModelContextToolsResolver&& aResolver);
 
   
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::ipc::IPCResult RecvGetContentMetrics(
+      GetContentMetricsResolver&& aResolver);
+
+  
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvInvokeModelContextTool(
       const nsCString& aToolName, NotNull<StructuredCloneData*> aInput,

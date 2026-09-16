@@ -1923,6 +1923,7 @@ class Element : public FragmentOrElement {
   MOZ_CAN_RUN_SCRIPT void SetScrollLeft(double aScrollLeft);
   MOZ_CAN_RUN_SCRIPT int32_t ScrollWidth();
   MOZ_CAN_RUN_SCRIPT int32_t ScrollHeight();
+  MOZ_CAN_RUN_SCRIPT nsSize GetScrollSize();
   MOZ_CAN_RUN_SCRIPT void MozScrollSnap();
   MOZ_CAN_RUN_SCRIPT int32_t ClientTop() {
     return CSSPixel::FromAppUnits(GetClientAreaRect().y).Rounded();
@@ -2678,6 +2679,7 @@ class Element : public FragmentOrElement {
 
   virtual void RegUnRegAccessKey(bool aDoReg);
 
+ public:
   
   void IsElement() = delete;
   void AsElement() = delete;
@@ -2698,8 +2700,6 @@ class Element : public FragmentOrElement {
 
   MOZ_CAN_RUN_SCRIPT nsRect GetClientAreaRect();
 
-  
-  MOZ_CAN_RUN_SCRIPT nsSize GetScrollSize();
   
   MOZ_CAN_RUN_SCRIPT nsPoint GetScrollOrigin();
   
