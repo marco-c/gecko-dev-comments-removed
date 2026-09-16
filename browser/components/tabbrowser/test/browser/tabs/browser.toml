@@ -662,6 +662,8 @@ skip-if = [
 
 ["browser_tab_splitview_alt_click.js"]
 
+["browser_tab_splitview_content_size.js"]
+
 ["browser_tab_splitview_contextmenu.js"]
 skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1994508
@@ -680,6 +682,8 @@ support-files = ["file_withicon.html"]
 ["browser_tab_splitview_splitter_keyboard.js"]
 
 ["browser_tab_splitview_splitter_keyboard_boundary.js"]
+
+["browser_tab_splitview_tab_height.js"]
 
 ["browser_tab_splitview_tab_order.js"]
 
