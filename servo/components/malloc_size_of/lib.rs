@@ -78,14 +78,14 @@ pub struct MallocSizeOfOps {
 
 impl MallocSizeOfOps {
     pub fn new(
-        size_of: VoidPtrToSizeFn,
-        malloc_enclosing_size_of: Option<VoidPtrToSizeFn>,
-        have_seen_ptr: Option<Box<VoidPtrToBoolFnMut>>,
+        size_of_op: VoidPtrToSizeFn,
+        enclosing_size_of_op: Option<VoidPtrToSizeFn>,
+        have_seen_ptr_op: Option<Box<VoidPtrToBoolFnMut>>,
     ) -> Self {
         MallocSizeOfOps {
-            size_of_op: size_of,
-            enclosing_size_of_op: malloc_enclosing_size_of,
-            have_seen_ptr_op: have_seen_ptr,
+            size_of_op,
+            enclosing_size_of_op,
+            have_seen_ptr_op,
         }
     }
 
@@ -99,9 +99,13 @@ impl MallocSizeOfOps {
         
         
         
-        return ptr as *const usize as usize <= 256;
+        ptr as *const usize as usize <= 256
     }
 
+    
+    
+    
+    
     
     
     pub unsafe fn malloc_size_of<T: ?Sized>(&self, ptr: *const T) -> usize {
@@ -117,6 +121,9 @@ impl MallocSizeOfOps {
         self.enclosing_size_of_op.is_some()
     }
 
+    
+    
+    
     
     
     pub unsafe fn malloc_enclosing_size_of<T>(&self, ptr: *const T) -> usize {
@@ -188,7 +195,7 @@ impl MallocSizeOf for String {
     }
 }
 
-impl<'a, T: ?Sized> MallocSizeOf for &'a T {
+impl<T: ?Sized> MallocSizeOf for &T {
     fn size_of(&self, _ops: &mut MallocSizeOfOps) -> usize {
         
         0
@@ -328,7 +335,7 @@ impl<T> MallocShallowSizeOf for std::collections::VecDeque<T> {
         if ops.has_malloc_enclosing_size_of() {
             if let Some(front) = self.front() {
                 
-                unsafe { ops.malloc_enclosing_size_of(&*front) }
+                unsafe { ops.malloc_enclosing_size_of(front) }
             } else {
                 
                 0
