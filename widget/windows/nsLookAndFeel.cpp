@@ -257,7 +257,10 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme,
                                                 : NS_RGB(0xf9, 0xf9, 0xfb);
         }
       } else {
-        aColor = GetColorForSysColorIndex(COLOR_MENU);
+        
+        
+        
+        aColor = GetColorForSysColorIndex(COLOR_WINDOW);
       }
       return NS_OK;
     }
@@ -413,7 +416,10 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme,
         aColor = kNonNativeMenuText;
         return NS_OK;
       }
-      idx = COLOR_MENUTEXT;
+      
+      
+      
+      idx = COLOR_WINDOWTEXT;
       break;
     case ColorID::Scrollbar:
       idx = COLOR_SCROLLBAR;
