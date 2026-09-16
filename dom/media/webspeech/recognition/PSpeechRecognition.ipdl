@@ -30,6 +30,8 @@ parent:
   
   
   async IsModelAvailable(nsCString[] languages) returns (bool available);
+  
+  async InstallModels(nsCString[] languages) returns (bool success);
 };
 
 } 
