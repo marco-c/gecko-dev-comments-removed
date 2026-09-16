@@ -4,9 +4,10 @@
 
 #![deny(unsafe_code)]
 
+use crate::derives::*;
 use crate::properties::PropertyDeclarationBlock;
 use crate::shared_lock::{Locked, SharedRwLockReadGuard};
-use servo_arc::Arc;
+use servo_arc::{Arc, ArcBorrow};
 use std::io::Write;
 use std::ptr;
 
@@ -19,16 +20,68 @@ use std::ptr;
 #[derive(Clone, Debug)]
 pub struct StyleSource(Arc<Locked<PropertyDeclarationBlock>>);
 
+
+
+
+
+#[derive(Clone, Copy, Debug, MallocSizeOf)]
+pub struct StyleSourceBorrow<'a>(ArcBorrow<'a, Locked<PropertyDeclarationBlock>>);
+
+
+
+malloc_size_of::malloc_size_of_is_0!(StyleSource);
+
 impl PartialEq for StyleSource {
     fn eq(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.0, &other.0)
     }
 }
 
+impl<'a> PartialEq for StyleSourceBorrow<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        ArcBorrow::ptr_eq(&self.0, &other.0)
+    }
+}
+
+impl<'a> StyleSourceBorrow<'a> {
+    
+    #[inline]
+    pub fn from_declarations(decls: ArcBorrow<'a, Locked<PropertyDeclarationBlock>>) -> Self {
+        Self(decls)
+    }
+
+    
+    #[inline]
+    pub fn to_owned(&self) -> StyleSource {
+        StyleSource(self.0.clone_arc())
+    }
+
+    #[inline]
+    pub(super) fn key(&self) -> ptr::NonNull<()> {
+        ptr::NonNull::from(self.0.get()).cast()
+    }
+
+    
+    
+    #[inline]
+    pub fn read<'b>(&self, guard: &'b SharedRwLockReadGuard) -> &'b PropertyDeclarationBlock
+    where
+        'a: 'b,
+    {
+        self.0.get().read_with(guard)
+    }
+}
+
 impl StyleSource {
     #[inline]
     pub(super) fn key(&self) -> ptr::NonNull<()> {
-        self.0.raw_ptr()
+        ptr::NonNull::from(&*self.0).cast()
+    }
+
+    
+    #[inline]
+    pub fn borrow(&self) -> StyleSourceBorrow<'_> {
+        StyleSourceBorrow(self.0.borrow_arc())
     }
 
     
@@ -68,10 +121,13 @@ impl StyleSource {
         
         #[allow(unsafe_code)]
         unsafe {
-            self.0
-                .read_unchecked()
-                .immutable
-                .store(true, Ordering::Relaxed);
+            
+            
+            
+            let immutable = &self.0.read_unchecked().immutable;
+            if !immutable.load(Ordering::Relaxed) {
+                immutable.store(true, Ordering::Relaxed);
+            }
         }
     }
 }

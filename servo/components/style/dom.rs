@@ -937,19 +937,21 @@ pub trait TElement:
 
     
     
-    fn synthesize_presentational_hints_for_legacy_attributes<V>(
+    fn synthesize_presentational_hints_for_legacy_attributes<'a, V>(
         &self,
         visited_handling: VisitedHandlingMode,
         hints: &mut V,
     ) where
-        V: Push<ApplicableDeclarationBlock>;
+        V: Push<ApplicableDeclarationBlock<'a>>,
+        Self: 'a;
 
     
     
     
-    fn synthesize_view_transition_dynamic_rules<V>(&self, _rules: &mut V)
+    fn synthesize_view_transition_dynamic_rules<'a, V>(&self, _rules: &mut V)
     where
-        V: Push<ApplicableDeclarationBlock>,
+        V: Push<ApplicableDeclarationBlock<'a>>,
+        Self: 'a,
     {
     }
 

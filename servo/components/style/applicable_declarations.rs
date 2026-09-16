@@ -5,11 +5,8 @@
 
 
 use crate::derives::*;
-use crate::properties::PropertyDeclarationBlock;
-use crate::rule_tree::{CascadeLevel, RuleCascadeFlags, StyleSource};
-use crate::shared_lock::Locked;
+use crate::rule_tree::{CascadeLevel, RuleCascadeFlags, StyleSourceBorrow};
 use crate::stylesheets::layer_rule::LayerOrder;
-use servo_arc::Arc;
 use smallvec::SmallVec;
 
 
@@ -19,7 +16,7 @@ use smallvec::SmallVec;
 
 
 
-pub type ApplicableDeclarationList = SmallVec<[ApplicableDeclarationBlock; 16]>;
+pub type ApplicableDeclarationList<'a> = SmallVec<[ApplicableDeclarationBlock<'a>; 16]>;
 
 
 
@@ -226,11 +223,10 @@ impl ScopeProximity {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
-pub struct ApplicableDeclarationBlock {
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq)]
+pub struct ApplicableDeclarationBlock<'a> {
     
-    #[ignore_malloc_size_of = "Arc"]
-    pub source: StyleSource,
+    pub source: StyleSourceBorrow<'a>,
     
     
     
@@ -243,28 +239,30 @@ pub struct ApplicableDeclarationBlock {
     pub cascade_priority: CascadePriority,
 }
 
-impl ApplicableDeclarationBlock {
+impl<'a> ApplicableDeclarationBlock<'a> {
     
     
     #[inline]
     pub fn from_declarations(
-        declarations: Arc<Locked<PropertyDeclarationBlock>>,
+        source: StyleSourceBorrow<'a>,
         level: CascadeLevel,
         layer_order: LayerOrder,
     ) -> Self {
-        ApplicableDeclarationBlock {
-            source: StyleSource::from_declarations(declarations),
-            source_order: 0,
-            specificity: 0,
-            scope_proximity: ScopeProximity::infinity(),
-            cascade_priority: CascadePriority::new(level, layer_order, RuleCascadeFlags::empty()),
-        }
+        Self::new(
+            source,
+             0,
+            level,
+             0,
+            layer_order,
+            ScopeProximity::infinity(),
+            RuleCascadeFlags::empty(),
+        )
     }
 
     
     #[inline]
     pub fn new(
-        source: StyleSource,
+        source: StyleSourceBorrow<'a>,
         source_order: u32,
         level: CascadeLevel,
         specificity: u32,
@@ -272,7 +270,7 @@ impl ApplicableDeclarationBlock {
         scope_proximity: ScopeProximity,
         flags: RuleCascadeFlags,
     ) -> Self {
-        ApplicableDeclarationBlock {
+        Self {
             source,
             source_order: source_order & SOURCE_ORDER_MASK,
             specificity,
@@ -308,7 +306,7 @@ impl ApplicableDeclarationBlock {
     
     
     #[inline]
-    pub fn for_rule_tree(self) -> (StyleSource, CascadePriority) {
+    pub fn for_rule_tree(self) -> (StyleSourceBorrow<'a>, CascadePriority) {
         (self.source, self.cascade_priority)
     }
 
@@ -325,4 +323,4 @@ impl ApplicableDeclarationBlock {
 }
 
 
-size_of_test!(ApplicableDeclarationBlock, 24);
+size_of_test!(ApplicableDeclarationBlock<'static>, 24);

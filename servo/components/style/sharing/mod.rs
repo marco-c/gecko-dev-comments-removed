@@ -64,12 +64,12 @@
 
 
 
-use crate::applicable_declarations::ApplicableDeclarationBlock;
 use crate::bloom::StyleBloom;
 use crate::computed_value_flags::ComputedValueFlags;
 use crate::context::{CascadeInputs, SharedStyleContext, StyleContext};
 use crate::dom::{SendElement, TElement, TNode};
 use crate::properties::ComputedValues;
+use crate::rule_tree::StyleSource;
 use crate::selector_map::RelevantAttributes;
 use crate::style_resolver::{PrimaryStyle, ResolvedElementStyles};
 use crate::stylist::Stylist;
@@ -183,7 +183,10 @@ pub struct ValidationData {
     part_list: Option<ThinVec<AtomIdent>>,
 
     
-    pres_hints: Option<ThinVec<ApplicableDeclarationBlock>>,
+    
+    
+    
+    pres_hints: Option<ThinVec<StyleSource>>,
 
     
     parent_style_identity: Option<OpaqueComputedValues>,
@@ -201,7 +204,7 @@ impl ValidationData {
 
     
     
-    pub fn pres_hints<E>(&mut self, element: E) -> &[ApplicableDeclarationBlock]
+    pub fn pres_hints<E>(&mut self, element: E) -> &[StyleSource]
     where
         E: TElement,
     {
@@ -212,7 +215,7 @@ impl ValidationData {
                 VisitedHandlingMode::AllLinksUnvisited,
                 &mut pres_hints,
             );
-            ThinVec::from_iter(pres_hints.drain(..))
+            ThinVec::from_iter(pres_hints.drain(..).map(|d| d.source.to_owned()))
         })
     }
 
@@ -342,7 +345,7 @@ impl<E: TElement> StyleSharingCandidate<E> {
     }
 
     
-    fn pres_hints(&mut self) -> &[ApplicableDeclarationBlock] {
+    fn pres_hints(&mut self) -> &[StyleSource] {
         self.validation_data.pres_hints(self.element)
     }
 
@@ -418,7 +421,7 @@ impl<E: TElement> StyleSharingTarget<E> {
     }
 
     
-    fn pres_hints(&mut self) -> &[ApplicableDeclarationBlock] {
+    fn pres_hints(&mut self) -> &[StyleSource] {
         self.validation_data.pres_hints(self.element)
     }
 
