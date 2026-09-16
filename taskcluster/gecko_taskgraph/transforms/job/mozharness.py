@@ -68,6 +68,7 @@ class MozharnessRunSchema(Schema, kw_only=True):
     
     
     clone_with: Optional[Literal["hg", "git"]] = "git"
+    sparse_profile: Optional[str] = None
     
     
     use_simple_package: bool
