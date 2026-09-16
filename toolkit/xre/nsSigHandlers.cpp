@@ -7,7 +7,6 @@
 
 
 
-
 #include "nsSigHandlers.h"
 
 #ifdef XP_UNIX
@@ -174,21 +173,57 @@ static bool IsCrashyGtkMessage(const nsACString& aMessage) {
     
     return true;
   }
+  if (aMessage.Contains("received an X Window System error"_ns)) {
+    
+    return true;
+  }
   return false;
+}
+
+
+
+
+
+static bool SummarizeXErrorMessage(const nsACString& aMessage,
+                                   nsACString& aSummary) {
+  if (!aMessage.Contains("received an X Window System error"_ns)) {
+    return false;
+  }
+  nsAutoCString summary;
+  for (const auto& line : aMessage.Split('\n')) {
+    nsAutoCString candidate(line);
+    candidate.CompressWhitespace();
+    if (StringBeginsWith(candidate, "The error was "_ns) ||
+        StringBeginsWith(candidate, "(Details: "_ns)) {
+      if (!summary.IsEmpty()) {
+        summary.Append(' ');
+      }
+      summary.Append(candidate);
+    }
+  }
+  if (summary.IsEmpty()) {
+    return false;
+  }
+  aSummary.Assign(summary);
+  return true;
 }
 
 static void HandleGLibMessage(GLogLevelFlags aLogLevel,
                               const nsDependentCString& aMessage) {
   if (MOZ_UNLIKELY(IsCrashyGtkMessage(aMessage))) {
+    nsAutoCString reason;
+    if (!SummarizeXErrorMessage(aMessage, reason)) {
+      reason.Assign(aMessage);
+    }
 #    ifdef MOZ_WAYLAND
     MOZ_CRASH_UNSAFE_PRINTF(
         "(%s) %s Proxy: %s",
-        mozilla::widget::GetDesktopEnvironmentIdentifier().get(),
-        strdup(aMessage.get()), WaylandProxy::GetState());
+        mozilla::widget::GetDesktopEnvironmentIdentifier().get(), reason.get(),
+        WaylandProxy::GetState());
 #    else
     MOZ_CRASH_UNSAFE_PRINTF(
         "(%s) %s", mozilla::widget::GetDesktopEnvironmentIdentifier().get(),
-        strdup(aMessage.get()));
+        reason.get());
 #    endif
   }
 
