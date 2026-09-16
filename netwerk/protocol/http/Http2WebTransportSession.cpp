@@ -89,7 +89,9 @@ void Http2WebTransportSessionImpl::GetStats() {
   
   if (RefPtr<WebTransportSessionEventListener> listener = GetListener()) {
     mozilla::dom::WebTransportStatsData stats;
-    listener->OnStatsAvailable(&stats);
+    nsCOMPtr<nsIWebTransportSessionStats> statsWrapper =
+        new WebTransportSessionStatsWrapper(stats);
+    listener->OnStatsAvailable(statsWrapper);
   }
 }
 
