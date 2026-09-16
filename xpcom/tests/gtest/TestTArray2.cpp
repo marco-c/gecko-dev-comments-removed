@@ -980,18 +980,6 @@ TEST(TArray, test_indexof)
 
 
 
-template <class Array>
-static bool is_heap(const Array& ary, size_t len) {
-  size_t index = 1;
-  while (index < len) {
-    if (ary[index] > ary[(index - 1) >> 1]) return false;
-    index++;
-  }
-  return true;
-}
-
-
-
 
 
 
