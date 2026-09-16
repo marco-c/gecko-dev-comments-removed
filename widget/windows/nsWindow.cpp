@@ -2373,22 +2373,11 @@ void nsWindow::ConstrainPosition(DesktopIntPoint& aPoint) {
   
   
   
-  
-  
-  
-  if (aPoint.y == 0) {
-    auto const xMax = aPoint.x + logWidth;
-    auto const yMax = aPoint.y + logHeight;
-    auto const deltaX = xMax - screenRect.XMost();
-    auto const deltaY = yMax - screenRect.YMost();
-    if (deltaX == deltaY) {
-      if (8 <= deltaX && deltaX <= 16) {
-        
-        
-        return;
-      }
-    }
-  }
+  const LayoutDeviceIntMargin overhang = ResizeBorderOverhang();
+  screenRect.Inflate(DesktopIntMargin(NSToIntRound(overhang.top / dpiScale),
+                                      NSToIntRound(overhang.right / dpiScale),
+                                      NSToIntRound(overhang.bottom / dpiScale),
+                                      NSToIntRound(overhang.left / dpiScale)));
 
   aPoint = ConstrainPositionToBounds(aPoint, {logWidth, logHeight}, screenRect);
 }
