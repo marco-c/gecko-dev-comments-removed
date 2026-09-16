@@ -1601,6 +1601,11 @@ class StackLimitCheck {
 
   
   bool InterruptRequested() {
+#ifdef DEBUG
+    if (cx_->isolate->shouldSimulateInterrupt_) {
+      return true;
+    }
+#endif
     return cx_->hasPendingInterrupt(js::InterruptReason::CallbackUrgent);
   }
 

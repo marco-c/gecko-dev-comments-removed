@@ -1,6 +1,4 @@
 
-
-
 var s0 = "A".repeat(10*1024);
 var interrupted = false;
 gczeal(0);
