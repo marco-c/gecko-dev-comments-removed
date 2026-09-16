@@ -36,14 +36,6 @@ bool IsFrameSizeSupportedForNV12Input(const gfx::IntSize& aSize) {
   return aSize.width % 2 == 0;
 }
 
-static bool IsNotRecordOrHwRequired(const EncoderConfig& aConfig) {
-  
-  
-  
-  return aConfig.mUsage != Usage::Record ||
-         aConfig.mHardwarePreference == HardwarePreference::RequireHardware;
-}
-
 static bool IsNotRealtimeOrHwRequired(const EncoderConfig& aConfig) {
   
   
@@ -79,8 +71,7 @@ bool CanUseWMFHwEncoder(const EncoderConfig& aConfig) {
 
   switch (aConfig.mCodec) {
     case CodecType::H264:
-      return IsNotRecordOrHwRequired(aConfig) &&
-             gfx::gfxVars::UseH264HwEncode();
+      return gfx::gfxVars::UseH264HwEncode();
     case CodecType::VP8:
       return IsNotRealtimeOrHwRequired(aConfig) &&
              gfx::gfxVars::UseVP8HwEncode();
