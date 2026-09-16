@@ -3797,12 +3797,27 @@ void nsHttpConnectionMgr::DoSpeculativeConnectionInternal(
           ("DoSpeculativeConnectionInternal Transport socket creation "
            "failure: %" PRIx32 "\n",
            static_cast<uint32_t>(rv)));
+      
+      
+      if (aTrans->IsForFallback()) {
+        aTrans->InvokeCallback();
+      }
     }
   } else {
     LOG(
         ("DoSpeculativeConnectionInternal Transport ci=%s "
          "not created due to existing connection count:%d",
          aEnt->mConnInfo->HashKey().get(), parallelSpeculativeConnectLimit));
+    
+    
+    
+    
+    
+    
+    
+    if (aTrans->IsForFallback()) {
+      aTrans->InvokeCallback();
+    }
   }
 }
 
