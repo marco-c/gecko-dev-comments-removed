@@ -562,7 +562,7 @@ def make_job_description(config, jobs):
             
             
             for t in config.kind_dependencies_tasks.values():
-                if t.kind != "shippable-l10n-signing":
+                if t.kind != "l10n-signing":
                     continue
                 if t.attributes["build_platform"] != "linux64-shippable":
                     continue
@@ -617,7 +617,7 @@ def make_job_description(config, jobs):
                 
                 
                 if attributes.get("shippable"):
-                    if t.kind != "shippable-l10n-signing":
+                    if t.kind != "l10n-signing":
                         continue
                     if t.attributes["shipping_product"] != job["shipping-product"]:
                         continue

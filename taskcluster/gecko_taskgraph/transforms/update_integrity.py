@@ -179,7 +179,7 @@ def add_to_installer(config, jobs):
                 )
         else:  
             if "linux" in job["attributes"]["build_platform"]:
-                job["fetches"]["shippable-l10n-signing"] = [
+                job["fetches"]["l10n-signing"] = [
                     {"artifact": f"{locale}/target.tar.xz", "extract": False}
                 ]
             elif "mac" in job["attributes"]["build_platform"]:
