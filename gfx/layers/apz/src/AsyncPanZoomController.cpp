@@ -4226,6 +4226,20 @@ void AsyncPanZoomController::HandleFlingOverscroll(
       
       
       if (!IsZero(residualVelocity)) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        StateChangeNotificationBlocker blocker(this);
+        if (mState == OVERSCROLL_ANIMATION) {
+          CancelAnimation(ExcludeOverscroll);
+        }
         mOverscrollEffect->RelieveOverscroll(residualVelocity,
                                              aOverscrollSideBits);
       }
