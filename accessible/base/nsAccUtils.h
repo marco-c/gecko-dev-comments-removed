@@ -314,6 +314,12 @@ class nsAccUtils {
 
   static bool IsValidDetailsTargetForAnchor(const Accessible* aDetails,
                                             const Accessible* aTarget);
+
+  static bool IsARIARoleAllowedOnContentDoc(role aRole) {
+    
+    
+    return aRole == roles::APPLICATION || aRole == roles::DIALOG;
+  }
 };
 
 }  
