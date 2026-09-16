@@ -949,9 +949,13 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
   
   
   
-  
   const size_t minFeed = size_t(0.01 * PARAKEET_SAMPLE_RATE);  
-  const size_t maxFeed = size_t(PARAKEET_SAMPLE_RATE);         
+  
+  
+  
+  const int chunkSamples = lib->parakeet_capi_stream_chunk_samples(mCapiStream);
+  MOZ_ASSERT(chunkSamples != -1);
+  const size_t maxFeed = AssertedCast<size_t>(chunkSamples);
 
   
   auto stripTags = [](nsCString& aText) {
@@ -996,41 +1000,53 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
 
   
   
+  nsCString utterance;
+  float confSum = 0.0f;
+  int wordCount = 0;
+
+  auto meanConfidence = [&]() {
+    return wordCount ? confSum / float(wordCount) : 1.0f;
+  };
+
   
   
-  
-  auto emitFinalizedWords = [&]() {
+  auto drainWords = [&]() {
     parakeet_stream_word* words = nullptr;
     int n = lib->parakeet_capi_stream_drain_words(mCapiStream, &words);
-    int32_t counted = 0;
-    if (n > 0) {
-      nsCString text;
-      float confSum = 0.0f;
-      for (int i = 0; i < n; ++i) {
-        nsCString w(words[i].text ? words[i].text : "");
-        stripTags(w);  
-        w.Trim(" \t\n\r");
-        if (w.IsEmpty()) {
-          continue;
-        }
-        if (!text.IsEmpty()) {
-          text.Append(' ');
-        }
-        text.Append(w);
-        confSum += words[i].conf;
-        ++counted;
-        profiler_add_marker("parakeet word",
-                            geckoprofiler::category::MEDIA_PLAYBACK, {},
-                            ParakeetWordMarker{}, w, words[i].start,
-                            words[i].end, words[i].conf);
-        LOGV("  word '{}' [{:.2f}-{:.2f}] conf={:.2f}", w.get(), words[i].start,
-             words[i].end, words[i].conf);
+    int32_t added = 0;
+    for (int i = 0; i < n; ++i) {
+      nsCString w(words[i].text ? words[i].text : "");
+      stripTags(w);       
+      w.Trim(" \t\n\r");  
+                          
+      if (w.IsEmpty()) {
+        continue;
       }
-      emit(text,  true, counted ? confSum / counted : 1.0f,
-           CaptureTimeForPosition(mProcessedAudioPos), counted);
+      if (!utterance.IsEmpty()) {
+        utterance.Append(' ');
+      }
+      utterance.Append(w);
+      confSum += words[i].conf;
+      ++wordCount;
+      ++added;
+      profiler_add_marker(
+          "parakeet word", geckoprofiler::category::MEDIA_PLAYBACK, {},
+          ParakeetWordMarker{}, w, words[i].start, words[i].end, words[i].conf);
+      LOGV("  word '{}' [{:.2f}-{:.2f}] conf={:.2f}", w.get(), words[i].start,
+           words[i].end, words[i].conf);
     }
     lib->parakeet_capi_free_words(words, n > 0 ? n : 0);
-    return counted;
+    return added;
+  };
+
+  auto flushUtterance = [&]() {
+    
+    
+    emit(utterance,  true, meanConfidence(),
+         CaptureTimeForPosition(mProcessedAudioPos), wordCount);
+    utterance.Truncate();
+    confSum = 0.0f;
+    wordCount = 0;
   };
 
   nsTArray<float> chunk;
@@ -1052,13 +1068,13 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
     
     mRecognitionAudioDumper.Write(chunk.Elements(), chunk.Length());
 
-    int eou = 0;
+    int events = 0;
     
     
     
     TimeStamp feedStart = TimeStamp::Now();
     char* fed = lib->parakeet_capi_stream_feed(mCapiStream, chunk.Elements(),
-                                               AssertedCast<int>(got), &eou);
+                                               AssertedCast<int>(got), &events);
     if (fed) {
       lib->parakeet_capi_free_string(fed);  
     }
@@ -1077,13 +1093,23 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
           100.0 * got / (PARAKEET_SAMPLE_RATE * computeTime.ToSeconds())));
       ++realtimeFactorCount;
     }
-    int32_t committed = emitFinalizedWords();
+    
+    
+    const bool eou = events & PARAKEET_EVENT_EOU;
+    int32_t committed = drainWords();
     profiler_add_marker(
         "parakeet_capi_stream_feed", geckoprofiler::category::MEDIA_PLAYBACK,
         MarkerOptions(MarkerTiming::Interval(feedStart, feedEnd)),
         ParakeetFeedMarker{}, 1000.0 * double(got) / PARAKEET_SAMPLE_RATE,
         1000.0 * double(available) / PARAKEET_SAMPLE_RATE, totalFedMs,
-        committed, eou != 0);
+        committed, eou);
+    if (committed && !eou) {
+      emit(utterance,  false, meanConfidence(),
+           CaptureTimeForPosition(mProcessedAudioPos), wordCount);
+    }
+    if (eou) {
+      flushUtterance();
+    }
   }
 
   
@@ -1092,11 +1118,12 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
   if (tail) {
     lib->parakeet_capi_free_string(tail);
   }
-  int32_t tailWords = emitFinalizedWords();
+  int32_t tailWords = drainWords();
   PROFILER_MARKER_TEXT(
       "parakeet_capi_stream_finalize", MEDIA_PLAYBACK,
       MarkerOptions(MarkerTiming::IntervalUntilNowFrom(finalizeStart)),
       nsFmtCString("{} tail word(s)", tailWords));
+  flushUtterance();
   if (realtimeFactorCount) {
     glean::media_speech_recognition::inference_realtime_factor
         .AccumulateSingleSample(static_cast<uint32_t>(

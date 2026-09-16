@@ -1360,13 +1360,18 @@ void SpeechRecognition::HandleRecognitionResultFromBackend(
   result->SetFinal(aIsFinal);
 
   
-  MOZ_ASSERT(aIsFinal);
+  
   uint32_t resultIndex = mRecognitionResults.Length();
-  mRecognitionResults.AppendElement(result);
+  if (aIsFinal) {
+    mRecognitionResults.AppendElement(result);
+  }
 
   RefPtr<SpeechRecognitionResultList> resultList =
       new SpeechRecognitionResultList(this);
   resultList->mItems.AppendElements(mRecognitionResults);
+  if (!aIsFinal) {
+    resultList->mItems.AppendElement(result);
+  }
 
   RootedDictionary<SpeechRecognitionEventInit> init(RootingCx());
   init.mBubbles = true;

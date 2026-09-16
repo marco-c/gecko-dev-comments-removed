@@ -42,6 +42,9 @@ typedef struct parakeet_ctx parakeet_ctx;
 
 
 
+
+
+
 int parakeet_capi_abi_version(void);
 
 
@@ -218,6 +221,11 @@ char* parakeet_capi_stream_feed(parakeet_stream* s, const float* pcm,
 
 
 char* parakeet_capi_stream_finalize(parakeet_stream* s);
+
+
+
+
+int parakeet_capi_stream_chunk_samples(parakeet_stream* s);
 
 
 

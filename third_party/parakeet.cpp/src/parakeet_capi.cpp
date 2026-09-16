@@ -31,7 +31,9 @@
 
 
 
-#define PARAKEET_CAPI_ABI_VERSION 5
+
+
+#define PARAKEET_CAPI_ABI_VERSION 6
 
 
 struct parakeet_ctx {
@@ -619,6 +621,14 @@ extern "C" char* parakeet_capi_stream_finalize(parakeet_stream* s) {
         s->ctx->last_error = "unknown error";
         return nullptr;
     }
+}
+
+extern "C" int parakeet_capi_stream_chunk_samples(parakeet_stream* s) {
+    if (!s || !s->sess) return -1;
+    if (!s->ctx || !s->ctx->model) return -1;
+    
+    
+    return s->sess->chunk_size() * (int)s->ctx->model->config().hop_length;
 }
 
 extern "C" int parakeet_capi_stream_drain_events(parakeet_stream* s,
