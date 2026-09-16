@@ -3547,11 +3547,6 @@ nsresult CanonicalBrowsingContext::ClearBfcacheByPrincipal(
   MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess());
 
   
-  if (!StaticPrefs::privacy_clearSiteDataHeader_cache_bfcache_enabled()) {
-    return NS_OK;
-  }
-
-  
   
   AutoTArray<RefPtr<BrowsingContextGroup>, 32> groups;
   BrowsingContextGroup::GetAllGroups(groups);
