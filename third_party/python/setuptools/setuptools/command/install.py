@@ -1,23 +1,32 @@
 from __future__ import annotations
 
-import glob
 import inspect
 import platform
 from collections.abc import Callable
-from typing import Any, ClassVar, cast
-
-import setuptools
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from ..dist import Distribution
 from ..warnings import SetuptoolsDeprecationWarning, SetuptoolsWarning
-from .bdist_egg import bdist_egg as bdist_egg_cls
 
 import distutils.command.install as orig
 from distutils.errors import DistutilsArgError
 
+if TYPE_CHECKING:
+    
+    from .easy_install import easy_install as easy_install_cls
+else:
+    easy_install_cls = None
 
 
-_install = orig.install
+def __getattr__(name: str):  
+    if name == "_install":
+        SetuptoolsDeprecationWarning.emit(
+            "`setuptools.command._install` was an internal implementation detail "
+            "that was left in for numpy<1.9 support.",
+            due_date=(2025, 5, 2),  
+        )
+        return orig.install
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 class install(orig.install):
@@ -54,16 +63,14 @@ class install(orig.install):
             standards-based tools.
             """,
             see_url="https://blog.ganssle.io/articles/2021/10/setup-py-deprecated.html",
-            
-            
-            
+            due_date=(2025, 10, 31),
         )
 
         super().initialize_options()
         self.old_and_unmanageable = None
         self.single_version_externally_managed = None
 
-    def finalize_options(self):
+    def finalize_options(self) -> None:
         super().finalize_options()
         if self.root:
             self.single_version_externally_managed = True
@@ -82,19 +89,6 @@ class install(orig.install):
         
         self.path_file = None
         self.extra_dirs = ''
-        return None
-
-    def run(self):
-        
-        if self.old_and_unmanageable or self.single_version_externally_managed:
-            return super().run()
-
-        if not self._called_from_setup(inspect.currentframe()):
-            
-            super().run()
-        else:
-            self.do_egg_install()
-
         return None
 
     @staticmethod
@@ -129,33 +123,6 @@ class install(orig.install):
             return caller_module == 'distutils.dist' and info.function == 'run_commands'
 
         return False
-
-    def do_egg_install(self):
-        easy_install = self.distribution.get_command_class('easy_install')
-
-        cmd = easy_install(
-            self.distribution,
-            args="x",
-            root=self.root,
-            record=self.record,
-        )
-        cmd.ensure_finalized()  
-        cmd.always_copy_from = '.'  
-
-        
-        cmd.package_index.scan(glob.glob('*.egg'))
-
-        self.run_command('bdist_egg')
-        bdist_egg = cast(bdist_egg_cls, self.distribution.get_command_obj('bdist_egg'))
-        args = [bdist_egg.egg_output]
-
-        if setuptools.bootstrap_install_from:
-            
-            args.insert(0, setuptools.bootstrap_install_from)
-
-        cmd.args = args
-        cmd.run(show_deprecation=False)
-        setuptools.bootstrap_install_from = None
 
 
 

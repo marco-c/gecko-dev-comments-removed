@@ -5,7 +5,7 @@ import ssl
 import sys
 import typing
 
-import _ssl  
+import _ssl
 
 from ._ssl_constants import (
     _original_SSLContext,
@@ -22,7 +22,7 @@ else:
     from ._openssl import _configure_context, _verify_peercerts_impl
 
 if typing.TYPE_CHECKING:
-    from pip._vendor.typing_extensions import Buffer
+    from typing_extensions import Buffer
 
 
 _StrOrBytesPath: typing.TypeAlias = str | bytes | os.PathLike[str] | os.PathLike[bytes]
@@ -40,6 +40,23 @@ def inject_into_ssl() -> None:
         import pip._vendor.urllib3.util.ssl_ as urllib3_ssl
 
         setattr(urllib3_ssl, "SSLContext", SSLContext)
+    except ImportError:
+        pass
+
+    
+    
+    
+    
+    try:
+        from pip._vendor.requests import adapters as requests_adapters
+
+        preloaded_context = getattr(requests_adapters, "_preloaded_ssl_context", None)
+        if preloaded_context is not None:
+            setattr(
+                requests_adapters,
+                "_preloaded_ssl_context",
+                SSLContext(ssl.PROTOCOL_TLS_CLIENT),
+            )
     except ImportError:
         pass
 

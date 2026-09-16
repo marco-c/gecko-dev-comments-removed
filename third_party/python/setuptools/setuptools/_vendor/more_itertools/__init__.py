@@ -3,4 +3,4 @@
 from .more import *  
 from .recipes import *  
 
-__version__ = '10.3.0'
+__version__ = '10.8.0'
