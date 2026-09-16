@@ -631,9 +631,7 @@ impl AbsoluteColor {
         
         
         macro_rules! missing_to_zero {
-            ($c:expr) => {{
-                crate::values::normalize($c.unwrap_or(0.0))
-            }};
+            ($c:expr) => {{ crate::values::normalize($c.unwrap_or(0.0)) }};
         }
 
         let components = ColorComponents(
@@ -701,13 +699,7 @@ impl AbsoluteColor {
         
         
         macro_rules! nan_to_missing {
-            ($v:expr) => {{
-                if $v.is_nan() {
-                    None
-                } else {
-                    Some($v)
-                }
-            }};
+            ($v:expr) => {{ if $v.is_nan() { None } else { Some($v) } }};
         }
 
         Self::new(

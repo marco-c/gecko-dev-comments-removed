@@ -5,7 +5,7 @@
 use std::hash::Hash;
 
 use crate::FxHashMap;
-use crate::{parser::Selector, tree::OpaqueElement, SelectorImpl};
+use crate::{SelectorImpl, parser::Selector, tree::OpaqueElement};
 
 
 

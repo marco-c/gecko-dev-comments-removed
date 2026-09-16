@@ -17,7 +17,7 @@ use crate::FxHashMap;
 use std::hash::Hash;
 
 use crate::parser::{RelativeSelector, SelectorKey};
-use crate::{tree::OpaqueElement, SelectorImpl};
+use crate::{SelectorImpl, tree::OpaqueElement};
 
 
 #[derive(Clone, Copy)]

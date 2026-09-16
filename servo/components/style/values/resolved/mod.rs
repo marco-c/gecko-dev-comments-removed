@@ -5,10 +5,10 @@
 
 
 
+use crate::ArcSlice;
 #[cfg(feature = "gecko")]
 use crate::device::Device;
-use crate::properties::{ComputedValues, LonghandId, NonCustomPropertyId};
-use crate::ArcSlice;
+use crate::properties::{ComputedValues, LonghandId, PropertyId};
 use app_units::Au;
 use servo_arc::Arc;
 use smallvec::SmallVec;
@@ -38,7 +38,7 @@ pub struct Context<'a> {
     #[cfg(feature = "gecko")]
     pub element_info: ResolvedElementInfo<'a>,
     
-    pub for_property: NonCustomPropertyId,
+    pub for_property: PropertyId,
     
     
     pub current_longhand: Option<LonghandId>,

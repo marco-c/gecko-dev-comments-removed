@@ -2,9 +2,9 @@
 
 
 
+use crate::Atom;
 use crate::derives::*;
 use crate::values::AtomIdent;
-use crate::Atom;
 
 type Mapping<'a> = (&'a str, &'a str);
 

@@ -7,7 +7,7 @@
 use crate::context::{SharedStyleContext, StyleContext};
 use crate::dom::{TElement, TNode};
 use crate::gecko::wrapper::{GeckoElement, GeckoNode};
-use crate::traversal::{recalc_style_at, DomTraversal};
+use crate::traversal::{DomTraversal, recalc_style_at};
 
 
 

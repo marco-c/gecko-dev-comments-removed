@@ -5,10 +5,10 @@
 
 
 use super::rule::{Descriptors, PropertyRuleName};
+use crate::Atom;
 use crate::derives::*;
 use crate::selector_map::PrecomputedHashMap;
 use crate::stylesheets::UrlExtraData;
-use crate::Atom;
 use cssparser::SourceLocation;
 
 

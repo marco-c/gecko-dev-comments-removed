@@ -4,6 +4,8 @@
 
 
 
+#[cfg(not(feature = "gecko"))]
+use crate::values::Impossible;
 use crate::values::animated::color::Color;
 use crate::values::computed::length::Length;
 #[cfg(feature = "gecko")]
@@ -11,8 +13,6 @@ use crate::values::computed::url::ComputedUrl;
 use crate::values::computed::{Angle, NonNegativeLength, Number};
 use crate::values::generics::effects::Filter as GenericFilter;
 use crate::values::generics::effects::SimpleShadow as GenericSimpleShadow;
-#[cfg(not(feature = "gecko"))]
-use crate::values::Impossible;
 
 
 pub type AnimatedSimpleShadow = GenericSimpleShadow<Color, Length, NonNegativeLength>;

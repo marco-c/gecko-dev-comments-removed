@@ -7,13 +7,13 @@
 
 
 
+use crate::values::CSSFloat;
 use crate::values::animated::{Animate, Procedure};
 use crate::values::computed::angle::Angle;
 use crate::values::computed::url::ComputedUrl;
 use crate::values::computed::{Image, LengthPercentage, Position};
 use crate::values::generics::basic_shape as generic;
 use crate::values::specified::svg_path::{CoordPair, PathCommand, SVGPathPosition};
-use crate::values::CSSFloat;
 
 
 pub use crate::values::generics::basic_shape::FillRule;

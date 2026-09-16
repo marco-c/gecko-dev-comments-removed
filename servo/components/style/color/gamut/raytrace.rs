@@ -5,16 +5,14 @@
 
 
 
-use crate::color::{gamut::MIN_PRECISION, AbsoluteColor, ColorComponents, ColorSpace};
+use crate::color::{AbsoluteColor, ColorComponents, ColorSpace, gamut::MIN_PRECISION};
 
 impl AbsoluteColor {
     
     
     pub fn gamut_map_raytrace(&self, dest_color_space: ColorSpace) -> Self {
         macro_rules! in_range {
-            ($l:expr, $c:expr, $h:expr) => {{
-                $c >= $l && $c <= $h
-            }};
+            ($l:expr, $c:expr, $h:expr) => {{ $c >= $l && $c <= $h }};
         }
 
         const MIN_L: f32 = MIN_PRECISION;

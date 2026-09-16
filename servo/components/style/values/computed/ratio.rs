@@ -4,12 +4,12 @@
 
 
 
+use crate::Zero;
 use crate::values::animated::{Animate, Procedure};
 use crate::values::computed::NonNegativeNumber;
 use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
-use crate::values::generics::ratio::Ratio as GenericRatio;
 use crate::values::generics::NonNegative;
-use crate::Zero;
+use crate::values::generics::ratio::Ratio as GenericRatio;
 use std::cmp::Ordering;
 
 

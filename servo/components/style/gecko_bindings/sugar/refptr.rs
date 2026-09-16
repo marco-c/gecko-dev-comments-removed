@@ -4,8 +4,8 @@
 
 
 
-use crate::gecko_bindings::{bindings, structs};
 use crate::Atom;
+use crate::gecko_bindings::{bindings, structs};
 use servo_arc::Arc;
 use std::fmt::Write;
 use std::marker::PhantomData;

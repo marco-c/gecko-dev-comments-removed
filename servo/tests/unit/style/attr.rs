@@ -3,7 +3,7 @@
 
 
 use app_units::Au;
-use style::attr::{parse_length, AttrValue, LengthPercentageOrAuto};
+use style::attr::{AttrValue, LengthPercentageOrAuto, parse_length};
 use style::values::computed::{CalcLengthPercentage, Percentage};
 
 #[test]
