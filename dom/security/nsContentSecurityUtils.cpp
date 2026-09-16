@@ -2172,21 +2172,11 @@ bool nsContentSecurityUtils::ValidateScriptFilename(JSContext* cx,
     }
   }
 
-  auto kAllowedFilenamesPrefix = {
-      
-      
-      "about:downloads"_ns,
-      
-      "about:preferences"_ns, "about:settings"_ns,
-      
-      
-      
-      "debugger"_ns};
-
-  for (auto allowedFilenamePrefix : kAllowedFilenamesPrefix) {
-    if (StringBeginsWith(filename, allowedFilenamePrefix)) {
-      return true;
-    }
+  
+  
+  
+  if (StringBeginsWith(filename, "debugger"_ns)) {
+    return true;
   }
 
   
