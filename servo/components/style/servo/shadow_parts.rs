@@ -2,6 +2,7 @@
 
 
 
+use crate::derives::*;
 use crate::values::AtomIdent;
 use crate::Atom;
 
@@ -84,7 +85,7 @@ pub fn parse_part_mapping(input: &str) -> Option<Mapping<'_>> {
 }
 
 
-fn parse_mapping_list(input: &str) -> impl Iterator<Item = Mapping> {
+fn parse_mapping_list(input: &str) -> impl Iterator<Item = Mapping<'_>> {
     
     
     let unparsed_mappings = input.split(',');
@@ -191,7 +192,7 @@ mod tests {
 
     #[test]
     fn parse_valid_mapping_list() {
-        let mut mappings = parse_mapping_list("foo: bar, totally-invalid-mapping,,");
+        let mut mappings = parse_mapping_list("foo: bar, totally-invalid-mapping:,,");
 
         
         assert_eq!(
@@ -201,6 +202,6 @@ mod tests {
         );
         
         
-        assert!(mappings.next().is_none(), "No more mappings should exist");
+        assert_eq!(mappings.next(), None, "No more mappings should exist");
     }
 }
