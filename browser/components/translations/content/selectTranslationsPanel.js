@@ -2200,7 +2200,6 @@ var SelectTranslationsPanel = new (class {
 
 
 
-
   async #createTranslator(languagePair) {
     this.console?.log(
       `Creating new Translator (${TranslationsUtils.serializeLanguagePair(languagePair)})`
@@ -2240,18 +2239,23 @@ var SelectTranslationsPanel = new (class {
     TranslationsParent.storeMostRecentTargetLanguage(targetLanguage);
 
     this.#createTranslator(languagePair)
-      .then(translator => {
-        if (
-          this.#shouldContinueTranslation(
-            translationId,
-            sourceLanguage,
-            targetLanguage
-          )
-        ) {
-          this.#changeStateToTranslating();
-          return translator.translate(this.getSourceText());
+      .then(async translator => {
+        try {
+          if (
+            this.#shouldContinueTranslation(
+              translationId,
+              sourceLanguage,
+              targetLanguage
+            )
+          ) {
+            this.#changeStateToTranslating();
+            return await translator.translate(this.getSourceText());
+          }
+
+          return null;
+        } finally {
+          translator.destroy();
         }
-        return null;
       })
       .then(translatedText => {
         if (

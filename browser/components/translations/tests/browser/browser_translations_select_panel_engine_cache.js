@@ -7,8 +7,6 @@
 
 
 
-
-
 add_task(
   async function test_select_translations_panel_translate_sentence_on_open() {
     const { cleanup, runInPage, resolveDownloads } = await loadTestPage({
@@ -26,6 +24,7 @@ add_task(
       downloadHandler: resolveDownloads,
       onOpenPanel: SelectTranslationsTestUtils.assertPanelViewTranslated,
     });
+    await SelectTranslationsTestUtils.waitForPortToClose();
 
     await SelectTranslationsTestUtils.clickDoneButton();
 
@@ -37,6 +36,7 @@ add_task(
       
       onOpenPanel: SelectTranslationsTestUtils.assertPanelViewTranslated,
     });
+    await SelectTranslationsTestUtils.waitForPortToClose();
 
     await SelectTranslationsTestUtils.clickDoneButton();
 
@@ -51,9 +51,30 @@ add_task(
       downloadHandler: resolveDownloads,
       onOpenPanel: SelectTranslationsTestUtils.assertPanelViewTranslated,
     });
+    await SelectTranslationsTestUtils.waitForPortToClose();
 
     await SelectTranslationsTestUtils.clickDoneButton();
 
     await cleanup();
   }
 );
+
+
+
+
+
+add_task(async function test_select_translations_panel_process_idle_timeout() {
+  await SelectTranslationsTestUtils.assertTranslationAfterEngineIdleTimeout({
+    keepProcessAlive: false,
+  });
+});
+
+
+
+
+
+add_task(async function test_select_translations_panel_engine_idle_timeout() {
+  await SelectTranslationsTestUtils.assertTranslationAfterEngineIdleTimeout({
+    keepProcessAlive: true,
+  });
+});
