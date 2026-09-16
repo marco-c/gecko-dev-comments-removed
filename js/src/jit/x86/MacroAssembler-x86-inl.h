@@ -1442,9 +1442,35 @@ void MacroAssembler::maxPtr(Register lhs, ImmWord rhs, Register dest) {
 
 
 
-
 void MacroAssemblerX86::convertUInt32ToDouble(Register src,
                                               FloatRegister dest) {
+  ScratchDoubleScope fpscratch(asMasm());
+
+  
+  
+  
+  
+  
+  loadConstantDoubleZeroHighWord(0x1p52, fpscratch);
+
+  
+  vmovd(src, dest);
+
+  
+  vpor(fpscratch, dest, dest);
+
+  
+  vsubsd(fpscratch, dest, dest);
+}
+
+void MacroAssemblerX86::convertUInt32ToFloat32(Register src,
+                                               FloatRegister dest) {
+  convertUInt32ToDouble(src, dest);
+  convertDoubleToFloat32(dest, dest);
+}
+
+void MacroAssemblerX86::convertUInt32ToDouble(Register src,
+                                              const ScratchDoubleScope& dest) {
   
   subl(Imm32(0x80000000), src);
 
@@ -1454,13 +1480,6 @@ void MacroAssemblerX86::convertUInt32ToDouble(Register src,
   
   
   asMasm().addConstantDouble(2147483648.0, dest);
-}
-
-
-void MacroAssemblerX86::convertUInt32ToFloat32(Register src,
-                                               FloatRegister dest) {
-  convertUInt32ToDouble(src, dest);
-  convertDoubleToFloat32(dest, dest);
 }
 
 void MacroAssemblerX86::unboxValue(const ValueOperand& src, AnyRegister dest,
