@@ -2547,8 +2547,9 @@ MNewArrayObject* ArgumentsReplacer::inlineArgsArray(MInstruction* ins,
       ins->block()->insertBefore(ins, index);
 
       MDefinition* arg = actualArgs->getArg(begin + i);
-      auto* store = MStoreElement::NewUnbarriered(alloc(), elements, index, arg,
-                                                   false);
+      auto* store =
+          MStoreElement::NewNoPreBarrier(alloc(), elements, index, arg,
+                                          false);
       ins->block()->insertBefore(ins, store);
 
       auto* barrier = MPostWriteBarrier::New(alloc(), newArray, arg);
