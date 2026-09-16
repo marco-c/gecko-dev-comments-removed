@@ -408,6 +408,17 @@ void SpeechRecognitionBackend::AttachToTrack(AudioStreamTrack* aTrack) {
   LOG("SpeechRecognitionBackend::AttachToTrack");
 }
 
+void SpeechRecognitionBackend::SetEnabled(bool aEnabled) {
+  AssertIsOnMainThread();
+
+  if (!mTrack) {
+    return;
+  }
+
+  mTrack->GetTrack()->QueueControlMessageWithNoShutdown(
+      [self = RefPtr{this}, aEnabled] { self->mEnabled = aEnabled; });
+}
+
 void SpeechRecognitionBackend::DetachFromTrack() {
   AssertIsOnMainThread();
 
@@ -444,7 +455,7 @@ void SpeechRecognitionBackend::DataCallback(MediaTrackGraph* aGraph,
   
   
   
-  const bool isSilence = aChunk.IsNull();
+  const bool isSilence = aChunk.IsNull() || !mEnabled;
 
   
   

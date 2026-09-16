@@ -128,6 +128,7 @@ class SpeechRecognitionBackend {
       MOZ_REQUIRES(sMainThreadCapability);
   
   void DetachFromTrack() MOZ_REQUIRES(sMainThreadCapability);
+  void SetEnabled(bool aEnabled) MOZ_REQUIRES(sMainThreadCapability);
 
   
   
@@ -279,6 +280,8 @@ class SpeechRecognitionBackend {
   
   
   nsTArray<AudioDataValue> mMonoBuffer;
+  
+  bool mEnabled = false;
   const uint32_t mGraphRate;
   
   
