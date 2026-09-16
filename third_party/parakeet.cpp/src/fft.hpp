@@ -1,0 +1,6 @@
+#pragma once
+#include <vector>
+namespace pk {
+
+void rfft(const std::vector<float>& in, std::vector<float>& re, std::vector<float>& im);
+}

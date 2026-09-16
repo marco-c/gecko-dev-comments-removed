@@ -1,0 +1,34 @@
+#pragma once
+#include <cstdint>
+
+namespace pk {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct TokenInfo {
+    int32_t id;
+    int32_t frame;
+    float   conf;
+    int32_t span;
+};
+
+} 

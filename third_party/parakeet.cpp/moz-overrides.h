@@ -1,0 +1,30 @@
+
+
+
+
+
+#include <cstdlib>
+
+#pragma once
+
+
+
+
+
+
+
+
+
+
+[[noreturn]] inline void abort_with_suppression() {
+  std::abort();
+}
+
+#define throw abort_with_suppression(); if (false)
+
+
+#define try if (true)
+
+
+#define catch(x) \
+    if (static const std::exception e; false)
