@@ -2,12 +2,12 @@
 
 
 
-
 #include "txMozillaTextOutput.h"
 
 #include "mozilla/Encoding.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentFragment.h"
+#include "mozilla/dom/ScriptLoader.h"
 #include "nsCharsetSource.h"
 #include "nsContentCreatorFunctions.h"
 #include "nsContentUtils.h"
@@ -62,7 +62,9 @@ nsresult txMozillaTextOutput::characters(const nsAString& aData, bool aDOE) {
 
 nsresult txMozillaTextOutput::comment(const nsString& aData) { return NS_OK; }
 
-nsresult txMozillaTextOutput::endDocument(nsresult aResult) {
+
+nsresult txMozillaTextOutput::endDocument(nsresult aResult)
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY {
   NS_ENSURE_TRUE(mDocument && mTextParent, NS_ERROR_FAILURE);
 
   RefPtr<nsTextNode> text = new (mDocument->NodeInfoManager())
@@ -86,9 +88,13 @@ nsresult txMozillaTextOutput::endDocument(nsresult aResult) {
   }
   mDocument->SetReadyStateInternal(Document::READYSTATE_INTERACTIVE);
 
-  if (NS_SUCCEEDED(aResult)) {
-    nsCOMPtr<nsITransformObserver> observer = do_QueryReferent(mObserver);
-    if (observer) {
+  if (nsCOMPtr<nsITransformObserver> observer = do_QueryReferent(mObserver)) {
+    if (const RefPtr<ScriptLoader> loader = mDocument->GetScriptLoader()) {
+      loader->ParsingComplete(false);
+      loader->DeferCheckpointReached();
+    }
+
+    if (NS_SUCCEEDED(aResult)) {
       observer->OnTransformDone(mSourceDocument, aResult, mDocument);
     }
   }

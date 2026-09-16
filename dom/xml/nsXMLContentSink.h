@@ -205,6 +205,7 @@ class nsXMLContentSink : public nsContentSink,
   nsTArray<StackNode> mContentStack;
 
   nsCOMPtr<nsIDocumentTransformer> mXSLTProcessor;
+  RefPtr<mozilla::dom::Document> mXSLTResultDocument;
 
   
   
