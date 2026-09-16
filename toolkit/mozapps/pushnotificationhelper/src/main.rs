@@ -6,20 +6,90 @@
 
 
 
+use std::io::ErrorKind;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-fn print_usage() {
-    println!("🦀 🦊");
+use clap::Parser;
+
+const PROGRAM: &str = env!("CARGO_BIN_NAME");
+
+
+
+const PROFILE_MARKER: &str = "compatibility.ini";
+
+#[derive(Parser)]
+#[command(name = PROGRAM, about, disable_version_flag = true)]
+struct Args {
+    
+    #[arg(long, value_name = "PATH")]
+    profile: PathBuf,
+}
+
+
+
+
+fn check_profile(path: &Path) -> Result<(), String> {
+    match path.metadata() {
+        Ok(meta) if meta.is_dir() => {}
+        Ok(_) => return Err(format!("not a directory: {}", path.display())),
+        Err(error) if error.kind() == ErrorKind::NotFound => {
+            return Err(format!("no such directory: {}", path.display()));
+        }
+        Err(error) => return Err(format!("cannot read {}: {error}", path.display())),
+    }
+
+    if !path.join(PROFILE_MARKER).is_file() {
+        return Err(format!("not a Firefox profile: {}", path.display()));
+    }
+
+    Ok(())
 }
 
 fn main() -> ExitCode {
-    let mut args = std::env::args().skip(1);
+    let args = Args::parse();
 
-    match args.next().as_deref() {
-        None => {
-            print_usage();
-            ExitCode::SUCCESS
-        }
-        _ => ExitCode::FAILURE,
+    if let Err(message) = check_profile(&args.profile) {
+        eprintln!("{PROGRAM}: {message}");
+        return ExitCode::FAILURE;
+    }
+
+    println!("Starting to fetch notifications 🦀 🦊");
+    println!("profile: {}", args.profile.display());
+
+    ExitCode::SUCCESS
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use std::ffi::OsStr;
+
+    use clap::CommandFactory;
+
+    
+    
+    
+    #[test]
+    fn the_argument_definition_is_well_formed() {
+        Args::command().debug_assert();
+    }
+
+    
+    
+    #[test]
+    fn a_profile_that_does_not_exist_is_rejected() {
+        let path = std::env::temp_dir().join(format!("{PROGRAM}-missing-{}", std::process::id()));
+        let args = Args::try_parse_from([
+            OsStr::new(PROGRAM),
+            OsStr::new("--profile"),
+            path.as_os_str(),
+        ])
+        .unwrap();
+
+        let error = check_profile(&args.profile).unwrap_err();
+
+        assert!(error.starts_with("no such directory:"), "{error}");
     }
 }
