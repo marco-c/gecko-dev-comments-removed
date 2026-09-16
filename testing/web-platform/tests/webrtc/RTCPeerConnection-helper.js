@@ -170,22 +170,148 @@ function test_never_resolve(testFunc, testName) {
 
 
 
-function exchangeIceCandidates(pc1, pc2) {
-  
-  function doExchange(localPc, remotePc) {
-    localPc.addEventListener('icecandidate', event => {
-      const { candidate } = event;
 
-      
-      
-      if (remotePc.signalingState !== 'closed') {
-        remotePc.addIceCandidate(candidate);
-      }
-    });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function trickleIceCandidates(pcFrom, pcTo) {
+  const _gathered = [];
+  const _delivered = [];
+  const _held = [];
+  const _addIceCandidatePromises = [];
+  let _holding = false;
+
+  function deliver(candidate) {
+    if (candidate?.candidate) {
+      _delivered.push(candidate);
+    }
+    
+    
+    
+    
+    
+    const promise = pcTo.addIceCandidate(candidate).catch(() => {});
+    _addIceCandidatePromises.push(promise);
+    return promise;
   }
 
-  doExchange(pc1, pc2);
-  doExchange(pc2, pc1);
+  function nextEndOfCandidates() {
+    
+    
+    
+    
+    if (pcFrom.iceGatheringState === 'gathering') {
+      throw new Error('nextEndOfCandidates() while gathering is already in ' +
+                      'progress; call this before starting gathering');
+    }
+
+    return new Promise(r => pcFrom.addEventListener("icecandidate", event => {
+      if (!event.candidate) { r(); }
+    }));
+  }
+
+  async function complete() {
+    await nextEndOfCandidates();
+    await Promise.all(_addIceCandidatePromises);
+  }
+
+  function hold() {
+    _holding = true;
+  }
+
+  function release() {
+    _holding = false;
+    return Promise.all(_held.splice(0).map(deliver));
+  }
+
+  pcFrom.addEventListener('icecandidate', ({candidate}) => {
+    
+    
+    if (pcTo.signalingState === 'closed') {
+      return;
+    }
+    if (candidate?.candidate) {
+      _gathered.push(candidate);
+    }
+    if (_holding) {
+      _held.push(candidate);
+    } else {
+      deliver(candidate);
+    }
+  });
+
+  return {
+    gathered: () => _gathered,
+    delivered: () => _delivered,
+    addIceCandidatePromises: () => _addIceCandidatePromises,
+    nextEndOfCandidates,
+    complete,
+    hold,
+    release,
+  };
+}
+
+
+
+
+
+
+
+
+
+
+
+function exchangeIceCandidates(pc1, pc2) {
+  const forward = trickleIceCandidates(pc1, pc2);
+  const backward = trickleIceCandidates(pc2, pc1);
+  const pick = (pc, ifPc1, ifPc2) => {
+    if (pc === pc1) {
+      return ifPc1;
+    }
+    if (pc === pc2) {
+      return ifPc2;
+    }
+    throw new Error('not one of the connections exchanging candidates');
+  };
+  return {
+    from: pc => pick(pc, forward, backward),
+    to: pc => pick(pc, backward, forward),
+    complete: () => Promise.all([forward.complete(), backward.complete()]),
+  };
 }
 
 
@@ -648,6 +774,22 @@ function createPeerConnectionWithCleanup(t) {
   const pc = new RTCPeerConnection();
   t.add_cleanup(() => pc.close());
   return pc;
+}
+
+
+
+
+function createPeerConnectionPairWithCleanup(t, media = []) {
+  const pc1 = createPeerConnectionWithCleanup(t);
+  const pc2 = createPeerConnectionWithCleanup(t);
+  for (const m of media) {
+    if (typeof m == 'string') {
+      pc1.addTransceiver(m);
+    } else {
+      pc1.addTrack(m);
+    }
+  }
+  return [pc1, pc2];
 }
 
 async function createTrackAndStreamWithCleanup(t, kind = 'audio') {
