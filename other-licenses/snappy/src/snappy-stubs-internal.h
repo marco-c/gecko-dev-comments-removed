@@ -304,6 +304,7 @@ class Bits {
   void operator=(const Bits&);
 };
 
+
 #if HAVE_BUILTIN_CTZ
 
 inline int Bits::Log2FloorNonZero(uint32_t n) {
@@ -392,6 +393,7 @@ inline int Bits::FindLSBSetNonZero(uint32_t n) {
 }
 
 #endif  
+
 
 #if HAVE_BUILTIN_CTZ
 

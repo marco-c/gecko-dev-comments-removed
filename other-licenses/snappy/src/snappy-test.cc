@@ -464,7 +464,8 @@ bool ZLib::UncompressChunkDone() {
   
   
   
-  Bytef dummyin, dummyout;
+  Bytef dummyout;
+  Bytef dummyin = 0;
   uLongf dummylen = 0;
   if ( UncompressChunkOrAll(&dummyout, &dummylen, &dummyin, 0, Z_FINISH)
        != Z_OK ) {

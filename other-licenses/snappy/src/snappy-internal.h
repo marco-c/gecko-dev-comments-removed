@@ -46,6 +46,19 @@
 #include <arm_neon.h>
 #endif
 
+#if SNAPPY_RVV_1 || SNAPPY_RVV_0_7
+#define SNAPPY_HAVE_RVV 1
+#include <riscv_vector.h>
+#else
+#define SNAPPY_HAVE_RVV 0
+#endif
+
+#if SNAPPY_RVV_1 || SNAPPY_RVV_0_7
+#define VSETVL_E8M2 __riscv_vsetvl_e8m2
+#define VLE8_V_U8M2 __riscv_vle8_v_u8m2
+#define VSE8_V_U8M2 __riscv_vse8_v_u8m2
+#endif
+
 #if SNAPPY_HAVE_SSSE3 || SNAPPY_HAVE_NEON
 #define SNAPPY_HAVE_VECTOR_BYTE_SHUFFLE 1
 #else
@@ -110,6 +123,8 @@ inline V128 V128_Shuffle(V128 input, V128 shuffle_mask) {
 }
 
 inline V128 V128_DupChar(char c) { return vdupq_n_u8(c); }
+
+
 #endif
 #endif  
 
@@ -118,7 +133,15 @@ inline V128 V128_DupChar(char c) { return vdupq_n_u8(c); }
 class WorkingMemory {
  public:
   explicit WorkingMemory(size_t input_size);
+
+  
+  
+  
+  WorkingMemory(size_t input_size, char* buffer);
   ~WorkingMemory();
+
+  
+  static size_t RequiredSize(size_t input_size);
 
   
   
@@ -130,6 +153,7 @@ class WorkingMemory {
  private:
   char* mem_;        
   size_t size_;      
+  bool owns_mem_;
   uint16_t* table_;  
   char* input_;      
   char* output_;     
@@ -172,9 +196,10 @@ char* CompressFragment(const char* input,
 
 
 
+
 #if !SNAPPY_IS_BIG_ENDIAN && \
     (defined(__x86_64__) || defined(_M_X64) || defined(ARCH_PPC) || \
-     defined(ARCH_ARM))
+     defined(__aarch64__) || (defined(__riscv) && (__riscv_xlen == 64)))
 static inline std::pair<size_t, bool> FindMatchLength(const char* s1,
                                                       const char* s2,
                                                       const char* s2_limit,

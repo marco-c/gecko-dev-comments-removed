@@ -68,10 +68,24 @@ typedef enum {
 
 
 
-snappy_status snappy_compress(const char* input,
-                              size_t input_length,
-                              char* compressed,
-                              size_t* compressed_length);
+
+
+
+
+snappy_status snappy_compress(const char* input, size_t input_length,
+                              char* compressed, size_t* compressed_length);
+
+
+
+
+
+#define SNAPPY_MIN_COMPRESSION_LEVEL 1
+#define SNAPPY_MAX_COMPRESSION_LEVEL 2
+
+snappy_status snappy_compress_with_level(const char* input, size_t input_length,
+                                         int compression_level,
+                                         char* compressed,
+                                         size_t* compressed_length);
 
 
 

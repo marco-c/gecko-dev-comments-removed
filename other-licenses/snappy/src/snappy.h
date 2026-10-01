@@ -50,6 +50,10 @@ namespace snappy {
   class Source;
   class Sink;
 
+namespace internal {
+class WorkingMemory;
+}  
+
   struct CompressionOptions {
     
     
@@ -64,12 +68,60 @@ namespace snappy {
     
     int level = DefaultCompressionLevel();
 
-    constexpr CompressionOptions() = default;
-    constexpr explicit CompressionOptions(int compression_level)
-        : level(compression_level) {}
+      constexpr CompressionOptions() = default;
+      constexpr explicit CompressionOptions(int compression_level)
+          : level(compression_level) {}
+
     static constexpr int MinCompressionLevel() { return 1; }
     static constexpr int MaxCompressionLevel() { return 2; }
     static constexpr int DefaultCompressionLevel() { return 1; }
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  class CompressionContext {
+   public:
+    
+    CompressionContext();
+
+    
+    
+    
+    
+    
+    
+    
+    CompressionContext(void* workspace, size_t workspace_size);
+
+    ~CompressionContext();
+
+    CompressionContext(CompressionContext&& other) noexcept;
+    CompressionContext& operator=(CompressionContext&& other) noexcept;
+
+    CompressionContext(const CompressionContext&) = delete;
+    CompressionContext& operator=(const CompressionContext&) = delete;
+
+    
+    static size_t WorkspaceSize();
+
+   private:
+    friend size_t Compress(Source* reader, Sink* writer,
+                           CompressionOptions options, CompressionContext* ctx);
+
+    
+    
+    
+    void Reset();
+
+    internal::WorkingMemory* working_memory_;
+    bool owns_working_memory_;
   };
 
   
@@ -82,6 +134,11 @@ namespace snappy {
   size_t Compress(Source* reader, Sink* writer);
   size_t Compress(Source* reader, Sink* writer,
                   CompressionOptions options);
+
+  
+  
+  size_t Compress(Source* reader, Sink* writer, CompressionOptions options,
+                  CompressionContext* ctx);
 
   
   
@@ -101,11 +158,13 @@ namespace snappy {
   
   
   
+  
   size_t Compress(const char* input, size_t input_length,
                   std::string* compressed);
   size_t Compress(const char* input, size_t input_length,
                   std::string* compressed, CompressionOptions options);
 
+  
   
   
   
@@ -158,11 +217,23 @@ namespace snappy {
   
   
   
+  
+  
+  
+  
   void RawCompress(const char* input, size_t input_length, char* compressed,
                    size_t* compressed_length);
   void RawCompress(const char* input, size_t input_length, char* compressed,
                    size_t* compressed_length, CompressionOptions options);
+  
+  
+  void RawCompress(const char* input, size_t input_length, char* compressed,
+                   size_t* compressed_length, CompressionOptions options,
+                   CompressionContext* ctx);
 
+  
+  
+  
   
   
   

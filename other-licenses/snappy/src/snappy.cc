@@ -74,7 +74,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
-#include <functional>
+#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
@@ -198,6 +198,12 @@ size_t MaxCompressedLength(size_t source_bytes) {
   
   
   
+  if (source_bytes > (std::numeric_limits<size_t>::max() - 32) / 7 * 6) {
+    return std::numeric_limits<size_t>::max();
+  }
+  
+  
+  
   
   
   
@@ -281,6 +287,8 @@ inline char* IncrementalCopySlow(const char* src, char* op,
 
 
 
+
+
 template <size_t... indexes>
 inline constexpr std::array<char, sizeof...(indexes)> MakePatternMaskBytes(
     int index_offset, int pattern_size, index_sequence<indexes...>) {
@@ -298,7 +306,6 @@ MakePatternMaskBytesTable(int index_offset,
       MakePatternMaskBytes(index_offset, pattern_sizes_minus_one + 1,
                            make_index_sequence<sizeof(V128)>())...};
 }
-
 
 
 
@@ -494,7 +501,6 @@ inline char* IncrementalCopy(const char* src, char* op, char* const op_limit,
           LoadPatternAndReshuffleMask(src, pattern_size);
       V128 pattern = pattern_and_reshuffle_mask.first;
       V128 reshuffle_mask = pattern_and_reshuffle_mask.second;
-
       
       
       
@@ -521,7 +527,6 @@ inline char* IncrementalCopy(const char* src, char* op, char* const op_limit,
           LoadPatternAndReshuffleMask(src, pattern_size);
       V128 pattern = pattern_and_reshuffle_mask.first;
       V128 reshuffle_mask = pattern_and_reshuffle_mask.second;
-
       
       
       
@@ -752,19 +757,36 @@ uint32_t CalculateTableSize(uint32_t input_size) {
 }  
 
 namespace internal {
-WorkingMemory::WorkingMemory(size_t input_size) {
+size_t WorkingMemory::RequiredSize(size_t input_size) {
   const size_t max_fragment_size = std::min(input_size, kBlockSize);
   const size_t table_size = CalculateTableSize(max_fragment_size);
-  size_ = table_size * sizeof(*table_) + max_fragment_size +
-          MaxCompressedLength(max_fragment_size);
-  mem_ = std::allocator<char>().allocate(size_);
+  return table_size * sizeof(uint16_t) + max_fragment_size +
+         MaxCompressedLength(max_fragment_size);
+}
+
+WorkingMemory::WorkingMemory(size_t input_size)
+    : WorkingMemory(input_size,
+                    std::allocator<char>().allocate(RequiredSize(input_size))) {
+  owns_mem_ = true;
+}
+
+WorkingMemory::WorkingMemory(size_t input_size, char* buffer) {
+  assert(buffer != nullptr);
+  assert(reinterpret_cast<uintptr_t>(buffer) % alignof(uint16_t) == 0);
+  const size_t max_fragment_size = std::min(input_size, kBlockSize);
+  const size_t table_size = CalculateTableSize(max_fragment_size);
+  mem_ = buffer;
+  size_ = RequiredSize(input_size);
+  owns_mem_ = false;
   table_ = reinterpret_cast<uint16_t*>(mem_);
   input_ = mem_ + table_size * sizeof(*table_);
   output_ = input_ + max_fragment_size;
 }
 
 WorkingMemory::~WorkingMemory() {
-  std::allocator<char>().deallocate(mem_, size_);
+  if (owns_mem_) {
+    std::allocator<char>().deallocate(mem_, size_);
+  }
 }
 
 uint16_t* WorkingMemory::GetHashTable(size_t fragment_size,
@@ -1227,7 +1249,7 @@ inline bool Copy64BytesWithPatternExtension(ptrdiff_t dst, size_t offset) {
 void MemCopy64(char* dst, const void* src, size_t size) {
   
   constexpr int kShortMemCopy = 32;
-
+  (void)kShortMemCopy;
   assert(size <= 64);
   assert(std::less_equal<const void*>()(static_cast<const char*>(src) + size,
                                         dst) ||
@@ -1246,6 +1268,27 @@ void MemCopy64(char* dst, const void* src, size_t size) {
     data = _mm256_lddqu_si256(static_cast<const __m256i *>(src) + 1);
     _mm256_storeu_si256(reinterpret_cast<__m256i *>(dst) + 1, data);
   }
+  
+#elif defined(__riscv) && SNAPPY_HAVE_RVV
+  
+  unsigned char* dst_ptr = reinterpret_cast<unsigned char*>(dst);
+  const unsigned char* src_ptr = reinterpret_cast<const unsigned char*>(src);
+  size_t remaining_bytes = size;
+  
+  while (remaining_bytes > 0) {
+    
+    
+    size_t vl = VSETVL_E8M2(remaining_bytes);
+    
+    vuint8m2_t vec = VLE8_V_U8M2(src_ptr, vl);
+    
+    VSE8_V_U8M2(dst_ptr, vec, vl);
+    
+    src_ptr += vl;
+    dst_ptr += vl;
+    remaining_bytes -= vl;
+  }
+
 #else
   std::memmove(dst, src, kShortMemCopy);
   
@@ -1345,19 +1388,51 @@ inline size_t AdvanceToNextTagX86Optimized(const uint8_t** ip_p, size_t* tag) {
   return tag_type;
 }
 
+SNAPPY_ATTRIBUTE_ALWAYS_INLINE
+inline size_t AdvanceToNextTagRVOptimized(const uint8_t** ip_p, size_t* tag) {
+  const uint8_t*& ip = *ip_p;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const size_t literal_len = *tag >> 2;
+  const size_t tag_type = *tag & 3;
+  const bool is_literal = (tag_type == 0);
+  const size_t copy_advance = tag_type + 1;
+  const size_t literal_advance = literal_len + 2;
+  const uint8_t* next_ip = is_literal ? (ip + literal_advance) : (ip + copy_advance);
+  *tag = is_literal ? ip[literal_advance - 1] : ip[copy_advance - 1];
+  ip = next_ip;
+  return tag_type;
+}
+
 
 inline uint32_t ExtractOffset(uint32_t val, size_t tag_type) {
   
   
   
 #if defined(__x86_64__)
-  constexpr uint64_t kExtractMasksCombined = 0x0000FFFF00FF0000ull;
+  static constexpr uint64_t kExtractMasksCombined = 0x0000FFFF00FF0000ull;
   uint16_t result;
   memcpy(&result,
          reinterpret_cast<const char*>(&kExtractMasksCombined) + 2 * tag_type,
          sizeof(result));
   return val & result;
-#elif defined(__aarch64__)
+  
+  
+  
+  
+  
+  
+#elif defined(__aarch64__) || (defined(__riscv) && (__riscv_xlen == 64))
   constexpr uint64_t kExtractMasksCombined = 0x0000FFFF00FF0000ull;
   return val & static_cast<uint32_t>(
       (kExtractMasksCombined >> (tag_type * 16)) & 0xFFFF);
@@ -1418,6 +1493,11 @@ std::pair<const uint8_t*, ptrdiff_t> DecompressBranchless(
         uint32_t next;
 #if defined(__aarch64__)
         size_t tag_type = AdvanceToNextTagARMOptimized(&ip, &tag);
+        
+        
+        next = LittleEndian::Load16(old_ip);
+#elif defined(__riscv)
+        size_t tag_type = AdvanceToNextTagRVOptimized(&ip, &tag);
         
         
         next = LittleEndian::Load16(old_ip);
@@ -1624,9 +1704,13 @@ class SnappyDecompressor {
         if (SNAPPY_PREDICT_FALSE(literal_length >= 61)) {
           
           const size_t literal_length_length = literal_length - 60;
+          
+          
+          
+          
           literal_length =
               ExtractLowBytes(LittleEndian::Load32(ip), literal_length_length) +
-              1;
+              size_t{1};
           ip += literal_length_length;
         }
 
@@ -1779,13 +1863,13 @@ static bool InternalUncompressAllTags(SnappyDecompressor* decompressor,
                                       Writer* writer, uint32_t compressed_len,
                                       uint32_t uncompressed_len) {
     int token = 0;
-  Report(token, "snappy_uncompress", compressed_len, uncompressed_len);
 
   writer->SetExpectedLength(uncompressed_len);
 
   
   decompressor->DecompressAllTags(writer);
   writer->Flush();
+  Report(token, "snappy_uncompress", compressed_len, uncompressed_len);
   return (decompressor->eof() && writer->CheckLength());
 }
 
@@ -1798,19 +1882,20 @@ size_t Compress(Source* reader, Sink* writer) {
   return Compress(reader, writer, CompressionOptions{});
 }
 
-size_t Compress(Source* reader, Sink* writer, CompressionOptions options) {
+static size_t InternalCompress(Source* reader, Sink* writer,
+                               CompressionOptions options,
+                               internal::WorkingMemory* wmem) {
   assert(options.level == 1 || options.level == 2);
-  int token = 0;
   size_t written = 0;
   size_t N = reader->Available();
-  assert(N <= 0xFFFFFFFFu);
-  const size_t uncompressed_size = N;
+  
+  if (static_cast<uint64_t>(N) > std::numeric_limits<uint32_t>::max()) {
+    return 0;
+  }
   char ulength[Varint::kMax32];
   char* p = Varint::Encode32(ulength, N);
   writer->Append(ulength, p - ulength);
   written += (p - ulength);
-
-  internal::WorkingMemory wmem(N);
 
   while (N > 0) {
     
@@ -1826,7 +1911,7 @@ size_t Compress(Source* reader, Sink* writer, CompressionOptions options) {
       pending_advance = num_to_read;
       fragment_size = num_to_read;
     } else {
-      char* scratch = wmem.GetScratchInput();
+      char* scratch = wmem->GetScratchInput();
       std::memcpy(scratch, fragment, bytes_read);
       reader->Skip(bytes_read);
 
@@ -1845,7 +1930,7 @@ size_t Compress(Source* reader, Sink* writer, CompressionOptions options) {
 
     
     int table_size;
-    uint16_t* table = wmem.GetHashTable(num_to_read, &table_size);
+    uint16_t* table = wmem->GetHashTable(num_to_read, &table_size);
 
     
     int max_output = MaxCompressedLength(num_to_read);
@@ -1855,25 +1940,87 @@ size_t Compress(Source* reader, Sink* writer, CompressionOptions options) {
     
     
     
-    char* dest = writer->GetAppendBuffer(max_output, wmem.GetScratchOutput());
+    char* dest = writer->GetAppendBuffer(max_output, wmem->GetScratchOutput());
     char* end = nullptr;
-    if (options.level == 1) {
-      end = internal::CompressFragment(fragment, fragment_size, dest, table,
-                                       table_size);
-    } else if (options.level == 2) {
-      end = internal::CompressFragmentDoubleHash(
-          fragment, fragment_size, dest, table, table_size >> 1,
-          table + (table_size >> 1), table_size >> 1);
-    }
+      if (options.level == 1) {
+        end = internal::CompressFragment(fragment, fragment_size, dest, table,
+                                         table_size);
+      } else if (options.level == 2) {
+        end = internal::CompressFragmentDoubleHash(
+            fragment, fragment_size, dest, table, table_size >> 1,
+            table + (table_size >> 1), table_size >> 1);
+      }
+
     writer->Append(dest, end - dest);
     written += (end - dest);
 
     N -= num_to_read;
     reader->Skip(pending_advance);
   }
-
-  Report(token, "snappy_compress", written, uncompressed_size);
   return written;
+}
+
+size_t Compress(Source* reader, Sink* writer, CompressionOptions options) {
+  internal::WorkingMemory wmem(reader->Available());
+  return InternalCompress(reader, writer, options, &wmem);
+}
+
+size_t Compress(Source* reader, Sink* writer, CompressionOptions options,
+                CompressionContext* ctx) {
+  assert(ctx != nullptr);
+  assert(ctx->working_memory_ != nullptr);
+  return InternalCompress(reader, writer, options, ctx->working_memory_);
+}
+
+CompressionContext::CompressionContext()
+    : working_memory_(new internal::WorkingMemory(kBlockSize)),
+      owns_working_memory_(true) {}
+
+size_t CompressionContext::WorkspaceSize() {
+  return sizeof(internal::WorkingMemory) +
+         internal::WorkingMemory::RequiredSize(kBlockSize);
+}
+
+CompressionContext::CompressionContext(void* workspace, size_t workspace_size)
+    : owns_working_memory_(false) {
+  assert(workspace != nullptr);
+  assert(workspace_size >= WorkspaceSize());
+  assert(reinterpret_cast<uintptr_t>(workspace) %
+             alignof(internal::WorkingMemory) ==
+         0);
+  (void)workspace_size;
+  char* base = static_cast<char*>(workspace);
+  working_memory_ = new (base) internal::WorkingMemory(
+      kBlockSize, base + sizeof(internal::WorkingMemory));
+}
+
+void CompressionContext::Reset() {
+  if (working_memory_ == nullptr) return;
+  if (owns_working_memory_) {
+    delete working_memory_;
+  } else {
+    working_memory_->~WorkingMemory();
+  }
+  working_memory_ = nullptr;
+}
+
+CompressionContext::~CompressionContext() { Reset(); }
+
+CompressionContext::CompressionContext(CompressionContext&& other) noexcept
+    : working_memory_(other.working_memory_),
+      owns_working_memory_(other.owns_working_memory_) {
+  other.working_memory_ = nullptr;
+}
+
+CompressionContext& CompressionContext::operator=(
+    CompressionContext&& other) noexcept {
+  if (this != &other) {
+    Reset();
+    working_memory_ = other.working_memory_;
+    owns_working_memory_ = other.owns_working_memory_;
+    other.working_memory_ = nullptr;
+  }
+  return *this;
 }
 
 
@@ -2336,6 +2483,17 @@ void RawCompressFromIOVec(const struct iovec* iov, size_t uncompressed_length,
 
   
   *compressed_length = writer.CurrentDestination() - compressed;
+}
+
+void RawCompress(const char* input, size_t input_length, char* compressed,
+                 size_t* compressed_length, CompressionOptions options,
+                 CompressionContext* ctx) {
+  ByteArraySource reader(input, input_length);
+  UncheckedByteArraySink writer(compressed);
+  Compress(&reader, &writer, options, ctx);
+
+  
+  *compressed_length = (writer.CurrentDestination() - compressed);
 }
 
 size_t Compress(const char* input, size_t input_length,
