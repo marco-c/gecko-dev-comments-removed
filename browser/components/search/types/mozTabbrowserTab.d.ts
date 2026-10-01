@@ -1,5 +1,0 @@
-
-
-declare class MozTabbrowserTab {
-  linkedBrowser: MozBrowser;
-}
