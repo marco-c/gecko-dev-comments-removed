@@ -58,6 +58,12 @@ void MapStack(size_t stackSize);
 
 
 
+
+void* MapAlignedPagesAsStack(size_t length, size_t alignment,
+                             StallAndRetry stallAndRetry = StallAndRetry::No);
+
+
+
 bool DecommitEnabled();
 
 

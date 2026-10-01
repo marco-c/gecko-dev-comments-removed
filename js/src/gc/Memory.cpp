@@ -534,6 +534,30 @@ void MapStack(size_t stackSize) {
 #endif
 }
 
+void* MapAlignedPagesAsStack(size_t length, size_t alignment,
+                             StallAndRetry stallAndRetry) {
+  void* region = MapAlignedPages(length, alignment, stallAndRetry);
+  if (!region) {
+    return nullptr;
+  }
+
+#ifdef __OpenBSD__
+  
+  
+  
+  
+  void* result = MozTaggedAnonymousMmap(
+      region, length, int(PageAccess::ReadWrite),
+      MAP_PRIVATE | MAP_ANON | MAP_FIXED | MAP_STACK, -1, 0, "js-gc-stack");
+  if (result != region) {
+    UnmapPages(region, length);
+    return nullptr;
+  }
+#endif
+
+  return region;
+}
+
 void CheckMemorySubsystemOnShutDown() {
   MOZ_ASSERT(gMappedMemorySizeBytes == 0);
 }
