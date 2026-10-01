@@ -349,6 +349,8 @@ void Zone::discardJitCode(JS::GCContext* gcx,
     return;
   }
 
+  const bool anyRealmPreservingCode = numDiscardedRealms != numRealms;
+
 #ifdef DEBUG
   
   jitZone()->forEachJitScript([](jit::JitScript* jitScript) {
@@ -364,8 +366,15 @@ void Zone::discardJitCode(JS::GCContext* gcx,
 
   jitZone()->forEachJitScript<jit::IncludeDyingScripts>(
       [&](jit::JitScript* jitScript) {
+        
+        
+        
+        
         JSScript* script = jitScript->owningScript();
-        if (script->realm()->jitRealm().isPreservingCode()) {
+        MOZ_ASSERT_IF(anyRealmPreservingCode,
+                      !gc::IsAboutToBeFinalizedUnbarriered(script));
+        if (anyRealmPreservingCode &&
+            script->realm()->jitRealm().isPreservingCode()) {
           
           
           if (resetAllocSites &&
@@ -437,7 +446,7 @@ void Zone::discardJitCode(JS::GCContext* gcx,
   
   
   const bool discardRegExpJitCode =
-      numDiscardedRealms == numRealms && !jitZone()->keepRegExpJitCode();
+      !anyRealmPreservingCode && !jitZone()->keepRegExpJitCode();
   if (discardRegExpJitCode) {
     for (auto regExp = cellIterUnsafe<RegExpShared>(); !regExp.done();
          regExp.next()) {
