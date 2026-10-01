@@ -119,9 +119,6 @@ enum class StyleImageLayerRepeat : uint8_t {
 };
 
 
-enum class StyleMaskMode : uint8_t { Alpha = 0, Luminance, MatchSource };
-
-
 enum class StyleDirection : uint8_t { Ltr, Rtl };
 
 
