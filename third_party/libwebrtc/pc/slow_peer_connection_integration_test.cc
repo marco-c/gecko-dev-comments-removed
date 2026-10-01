@@ -399,10 +399,13 @@ TEST_P(PeerConnectionIntegrationTest, CallTransferredForCaller) {
   
   original_peer->pc()->Close();
 
-  ConnectFakeSignaling();
+  
+  
+  ConnectFakeSignalingForSdpOnly();
   callee()->AddAudioVideoTracks();
   caller()->SetOfferAnswerOptions(IceRestartOfferAnswerOptions());
   caller()->CreateAndSetAndSignalOffer();
+  SetSignalIceCandidates(true);
   ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); }));
   
   MediaExpectations media_expectations;
