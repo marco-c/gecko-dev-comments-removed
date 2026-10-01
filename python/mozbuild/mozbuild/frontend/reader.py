@@ -842,6 +842,9 @@ class BuildReader:
             "testing/mozbase/moztest/tests/data",
             
             "obj*",
+            
+            "artifacts",
+            ".claude/worktrees",
         }
 
         
