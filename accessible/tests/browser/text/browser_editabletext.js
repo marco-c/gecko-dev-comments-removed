@@ -7,6 +7,8 @@
 
 loadScripts({ name: "states.js", dir: MOCHITESTS_DIR });
 
+requestLongerTimeout(2);
+
 async function testEditable(browser, acc, aBefore = "", aAfter = "") {
   async function resetInput() {
     if (acc.childCount <= 1) {
@@ -49,6 +51,7 @@ async function testEditable(browser, acc, aBefore = "", aAfter = "") {
   
   const clearedText =
     acc.role == ROLE_DOCUMENT ||
+    acc.id == DEFAULT_CONTENT_DOC_BODY_ID ||
     acc.attributes.getStringProperty("tag") == "input"
       ? ""
       : "\n";
@@ -224,14 +227,73 @@ addAccessibleTask(
 
 addAccessibleTask(
   ``,
-  async function (browser, docAcc) {
+  async function testRootIsEditable(browser, docAcc) {
     await testEditable(browser, docAcc);
+  },
+  {
+    chrome: true,
+    topLevel: true,
+    contentDocAttrs: { contentEditable: "true" },
+  }
+);
+
+addAccessibleTask(
+  ``,
+  async function testBodyIsEditable(browser, docAcc) {
+    const body = findAccessibleChildByID(docAcc, DEFAULT_CONTENT_DOC_BODY_ID);
+    await testEditable(browser, body);
   },
   {
     chrome: true,
     topLevel: true,
     contentDocBodyAttrs: { contentEditable: "true" },
   }
+);
+
+
+
+
+
+
+addAccessibleTask(
+  ``,
+  async function testBodyBecomesEditable(browser, docAcc) {
+    
+    testStates(docAcc, 0, 0, 0, EXT_STATE_EDITABLE);
+
+    const evs = waitForEvents([
+      [
+        EVENT_STATE_CHANGE,
+        e => {
+          const sc = e.QueryInterface(nsIAccessibleStateChangeEvent);
+          return (
+            e.accessible == docAcc &&
+            sc.isExtraState &&
+            sc.state == EXT_STATE_EDITABLE &&
+            sc.isEnabled
+          );
+        },
+      ],
+      [EVENT_SHOW, DEFAULT_CONTENT_DOC_BODY_ID],
+    ]);
+    
+    await invokeContentTask(browser, [], () => {
+      
+      
+      
+      content.document.body.setAttribute("aria-label", "body");
+      content.document.body.contentEditable = "true";
+    });
+    await evs;
+    const bodyAcc = findAccessibleChildByID(
+      docAcc,
+      DEFAULT_CONTENT_DOC_BODY_ID
+    );
+    await testEditable(browser, bodyAcc);
+
+    testStates(docAcc, 0, EXT_STATE_EDITABLE);
+  },
+  { chrome: true, topLevel: true }
 );
 
 
