@@ -379,49 +379,47 @@ pub trait GpuBackend {
         desc: &ImageDescriptor,
     ) -> Vec<u8>;
 
-    fn bind_vao(&mut self, vao: &VAO);
+    fn create_buffer(&mut self, kind: BufferKind) -> Buffer;
 
-    fn create_vao(&mut self, descriptor: &VertexDescriptor, instance_divisor: u32) -> VAO;
+    fn delete_buffer(&mut self, buffer: Buffer);
 
-    fn delete_vao(&mut self, vao: VAO);
+    
+    fn write_buffer(&mut self, buffer: &mut Buffer, data: &[u8], usage_hint: VertexUsageHint);
 
-    fn create_vao_with_new_instances(
+    
+    
+    fn write_buffer_repeated(
         &mut self,
-        descriptor: &VertexDescriptor,
-        base_vao: &VAO,
-    ) -> VAO;
-
-    fn create_vao_with_shared_instances(
-        &mut self,
-        descriptor: &VertexDescriptor,
-        base_vao: &VAO,
-    ) -> VAO;
-
-    fn update_vao_main_vertices(
-        &mut self,
-        vao: &VAO,
-        vertices: &[u8],
+        buffer: &mut Buffer,
+        data: &[u8],
+        element_size: usize,
+        repeat: NonZeroUsize,
         usage_hint: VertexUsageHint,
     );
 
-    fn update_vao_instances(
+    
+    fn reallocate_buffer(&mut self, buffer: &mut Buffer, size: usize);
+
+    
+    
+    
+    fn write_buffer_unsynchronized(&mut self, buffer: &Buffer, offset: usize, data: &[u8]);
+
+    
+    
+    
+    fn create_vertex_array(
         &mut self,
-        vao: &VAO,
-        instances: &[u8],
-        instance_stride: usize,
-        usage_hint: VertexUsageHint,
-        repeat: Option<NonZeroUsize>,
-    );
+        layout: &VertexDescriptor,
+        vertices: &Buffer,
+        instances: Option<&Buffer>,
+        indices: Option<&Buffer>,
+        instance_divisor: u32,
+    ) -> VertexArray;
 
-    fn update_vao_indices(&mut self, vao: &VAO, indices: &[u8], usage_hint: VertexUsageHint);
+    fn delete_vertex_array(&mut self, vertex_array: VertexArray);
 
-    
-    fn reallocate_vbo(&mut self, vbo: VBOId, size: usize);
-
-    
-    
-    
-    fn update_vbo_data_unsynchronized(&mut self, vbo: VBOId, data: &[u8], offset: usize);
+    fn bind_vertex_array(&mut self, vertex_array: &VertexArray);
 
     fn draw_triangles_u32(&mut self, first_vertex: i32, index_count: i32);
 
@@ -656,35 +654,26 @@ impl Device {
         self.backend.bind_external_texture(slot.into(), external_texture)
     }
 
-    pub fn update_vao_main_vertices<V>(
+    pub fn write_buffer<V>(&mut self, buffer: &mut Buffer, data: &[V], usage_hint: VertexUsageHint) {
+        self.backend.write_buffer(buffer, as_bytes(data), usage_hint)
+    }
+
+    
+    pub fn write_buffer_repeated<V>(
         &mut self,
-        vao: &VAO,
-        vertices: &[V],
+        buffer: &mut Buffer,
+        data: &[V],
+        repeat: NonZeroUsize,
         usage_hint: VertexUsageHint,
     ) {
-        self.backend.update_vao_main_vertices(vao, as_bytes(vertices), usage_hint)
-    }
-
-    
-    pub fn update_vao_instances<V>(
-        &mut self,
-        vao: &VAO,
-        instances: &[V],
-        usage_hint: VertexUsageHint,
-        repeat: Option<NonZeroUsize>,
-    ) {
-        self.backend.update_vao_instances(vao, as_bytes(instances), mem::size_of::<V>(), usage_hint, repeat)
-    }
-
-    pub fn update_vao_indices<I>(&mut self, vao: &VAO, indices: &[I], usage_hint: VertexUsageHint) {
-        self.backend.update_vao_indices(vao, as_bytes(indices), usage_hint)
+        self.backend.write_buffer_repeated(buffer, as_bytes(data), mem::size_of::<V>(), repeat, usage_hint)
     }
 
     
     
     
-    pub fn update_vbo_data_unsynchronized<V>(&mut self, vbo: VBOId, data: &[V], offset: usize) {
-        self.backend.update_vbo_data_unsynchronized(vbo, as_bytes(data), offset)
+    pub fn write_buffer_unsynchronized<V>(&mut self, buffer: &Buffer, offset: usize, data: &[V]) {
+        self.backend.write_buffer_unsynchronized(buffer, offset, as_bytes(data))
     }
 
     
