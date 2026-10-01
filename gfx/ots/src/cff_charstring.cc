@@ -27,6 +27,11 @@ const size_t kMaxSubrNesting = 10;
 
 
 
+
+const uint32_t kMaxCharStringOps = 1024 * 1024 * 64;
+
+
+
 const int32_t dummy_result = INT_MAX;
 
 bool ExecuteCharString(ots::OpenTypeCFF& cff,
@@ -887,6 +892,11 @@ bool ExecuteCharString(ots::OpenTypeCFF& cff,
         return OTS_FAILURE();
       }
       continue;
+    }
+
+    if (++cs_ctx.num_ops > kMaxCharStringOps) {
+      ots::Font* font = cff.GetFont();
+      return OTS_FAILURE_MSG("charstring executes too many ops");
     }
 
     
