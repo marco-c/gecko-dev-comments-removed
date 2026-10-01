@@ -240,6 +240,12 @@ static gfx::IntSize ClampedIntSize(uint32_t aWidth, uint32_t aHeight) {
       static_cast<int32_t>(std::min<uint32_t>(aHeight, INT32_MAX)));
 }
 
+static bool IsLowResolution(const VideoConfiguration& aConfig) {
+  const CheckedInt<uint32_t> pixels =
+      CheckedInt<uint32_t>(aConfig.mWidth) * aConfig.mHeight;
+  return pixels.isValid() && pixels.value() <= kLowResolutionPixelCount;
+}
+
 static CodecType WebrtcMimeToCodecType(const MediaExtendedMIMEType& aMime) {
   const nsCString& mime = aMime.Type().AsString();
   if (mime.EqualsLiteral("video/h264")) {
@@ -1370,6 +1376,33 @@ MediaCapabilities::CheckEncryptedDecodingSupport(
 }
 
 
+
+
+static void CreateRecordEncodingInfo(
+    const MediaEncodingConfiguration& aConfiguration, Promise* aPromise,
+    const Maybe<MediaExtendedMIMEType>& aVideoMime) {
+  
+  MediaCapabilitiesInfo info;
+  info.mSupported = true;
+
+  if (aVideoMime) {
+    MOZ_ASSERT(aConfiguration.mVideo.WasPassed());
+    const auto& v = aConfiguration.mVideo.Value();
+    
+    info.mSmooth = IsSWEncodeSmooth(CodecType::VP8, v);
+    info.mPowerEfficient = IsLowResolution(v);
+  } else {
+    
+    info.mSmooth = true;
+    info.mPowerEfficient = true;
+  }
+
+  
+  LOG("{} -> {}", aConfiguration, info);
+  aPromise->MaybeResolve(std::move(info));
+}
+
+
 already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
     const MediaEncodingConfiguration& aConfiguration, ErrorResult& aRv) {
   RefPtr<Promise> encodePromise = Promise::Create(mParent, aRv);
@@ -1456,8 +1489,33 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
     encodePromise->MaybeResolve(std::move(info));
     return encodePromise.forget();
   }
+  MOZ_ASSERT(videoSupported == CodecSupport::Supported ||
+             audioSupported == CodecSupport::Supported);
 
   
+  
+  switch (aConfiguration.mType) {
+    case MediaEncodingType::Record:
+      CreateRecordEncodingInfo(aConfiguration, encodePromise, videoMime);
+      return encodePromise.forget();
+    case MediaEncodingType::Webrtc:
+      CreateWebRTCEncodingInfo(aConfiguration, encodePromise, videoMime);
+      return encodePromise.forget();
+  }
+  MOZ_ASSERT_UNREACHABLE("Unhandled MediaEncodingType");
+  info.mSupported = false;
+  info.mSmooth = false;
+  info.mPowerEfficient = false;
+  encodePromise->MaybeResolve(std::move(info));
+  return encodePromise.forget();
+}
+
+
+void MediaCapabilities::CreateWebRTCEncodingInfo(
+    const MediaEncodingConfiguration& aConfiguration, Promise* aPromise,
+    const Maybe<MediaExtendedMIMEType>& aVideoMime) {
+  
+  MediaCapabilitiesInfo info;
   info.mSupported = true;
 
   
@@ -1472,7 +1530,7 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
           "MediaCapabilities::EncodingInfo")) {
     
     
-    return encodePromise.forget();
+    return;
   }
 
   RefPtr<TaskQueue> taskQueue =
@@ -1480,19 +1538,16 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
                         "MediaCapabilities::TaskQueue");
   InvokeAsync(
       taskQueue, __func__,
-      [aConfiguration, videoMime, videoSupported, audioMime, audioSupported,
+      [aConfiguration, videoMime = aVideoMime,
        info = std::move(info)]() mutable -> RefPtr<PromiseType> {
         
         
         
         
-        MOZ_ASSERT(audioSupported == CodecSupport::Supported ||
-                   videoSupported == CodecSupport::Supported);
-        (void)audioSupported;
         info.mSmooth = true;
         info.mPowerEfficient = true;
 
-        if (videoSupported != CodecSupport::Supported) {
+        if (!videoMime) {
           LOG("{} -> {}", aConfiguration, info);
           return PromiseType::CreateAndResolve(
               std::move(info), "MediaCapabilities::EncodingInfo");
@@ -1528,12 +1583,6 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
                   const auto& v = aConfiguration.mVideo.Value();
                   const bool hwSupported = aVideoSupport.contains(
                       media::EncodeSupport::HardwareEncode);
-                  const CheckedInt<uint32_t> pixels =
-                      CheckedInt<uint32_t>(v.mWidth) *
-                      CheckedInt<uint32_t>(v.mHeight);
-                  const bool lowResolution =
-                      pixels.isValid() &&
-                      pixels.value() <= kLowResolutionPixelCount;
 
                   
                   
@@ -1565,7 +1614,7 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
                   
                   
                   
-                  info.mPowerEfficient &= (hwSupported || lowResolution);
+                  info.mPowerEfficient &= (hwSupported || IsLowResolution(v));
 
                   LOG("{} -> {}", aConfiguration, info);
                   return PromiseType::CreateAndResolve(
@@ -1581,7 +1630,7 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
       })
       ->Then(
           targetThread, __func__,
-          [encodePromise, workerRef, holder,
+          [encodePromise = RefPtr(aPromise), workerRef, holder,
            aConfiguration](MediaCapabilitiesInfo aInfo) {
             holder->Complete();
             nsIGlobalObject* global = holder->GetParentObject();
@@ -1591,7 +1640,6 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
           },
           [] { MOZ_CRASH("Unexpected"); })
       ->Track(*holder);
-  return encodePromise.forget();
 }
 
 bool MediaCapabilities::CheckTypeForMediaSource(
