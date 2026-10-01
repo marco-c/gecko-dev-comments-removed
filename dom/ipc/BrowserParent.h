@@ -894,7 +894,7 @@ class BrowserParent final : public PBrowserParent,
   
   
   
-  BrowserHost* mBrowserHost;
+  RefPtr<BrowserHost> mBrowserHost;
 
   
   
