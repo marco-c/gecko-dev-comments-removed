@@ -7,6 +7,7 @@
 
 #include "FFmpegDataDecoder.h"
 #include "FFmpegLibWrapper.h"
+#include "SimpleMap.h"
 
 namespace mozilla {
 
@@ -46,9 +47,19 @@ class FFmpegAudioDecoder<LIBAV_VER>
   MediaResult DecodeUsingFFmpeg(AVPacket* aPacket, bool& aDecoded,
                                 MediaRawData* aSample, DecodedData& aResults,
                                 bool* aGotFrame);
+  media::TimeUnit ExtractFramePts(MediaRawData* aSample,
+                                  const media::NullableTimeUnit& aPreviousEnd);
+  
+  
   MediaResult PostProcessOutput(bool aDecoded, MediaRawData* aSample,
                                 DecodedData& aResults, bool* aGotFrame,
-                                int32_t aSubmitted);
+                                int32_t aSubmitted,
+                                media::NullableTimeUnit& aPreviousEnd);
+  RefPtr<FlushPromise> ProcessFlush() override;
+
+  
+  SimpleMap<int64_t, media::TimeUnit> mInputTimes;
+
   const AudioInfo mAudioInfo;
   
   bool mDefaultPlaybackDeviceMono = false;
