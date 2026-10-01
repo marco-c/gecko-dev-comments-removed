@@ -637,6 +637,14 @@ int MediaEngineRemoteVideoSource::DeliverFrame(
     uint8_t* aBuffer, const camera::VideoFrameProperties& aProps) {
   
 
+  
+  
+  
+  const bool dimensionsSwapped =
+      aProps.rotationApplied() &&
+      (aProps.originalRotationRequired() == VideoRotation::kDegree_90 ||
+       aProps.originalRotationRequired() == VideoRotation::kDegree_270);
+
   DesiredSizeInput input{};
   {
     MutexAutoLock lock(mMutex);
@@ -653,8 +661,11 @@ int MediaEngineRemoteVideoSource::DeliverFrame(
         .mCapabilityWidth = cw ? Some(cw) : Nothing(),
         .mCapabilityHeight = ch ? Some(ch) : Nothing(),
         .mCapEngine = mCapEngine,
-        .mInputWidth = aProps.width(),
-        .mInputHeight = aProps.height(),
+        
+        
+        
+        .mInputWidth = dimensionsSwapped ? aProps.height() : aProps.width(),
+        .mInputHeight = dimensionsSwapped ? aProps.width() : aProps.height(),
     };
     if (!mFrameDeliveringTrackingId) {
       mFrameDeliveringTrackingId = Some(mTrackingId);
@@ -662,6 +673,13 @@ int MediaEngineRemoteVideoSource::DeliverFrame(
   }
 
   gfx::IntSize dstSize = CalculateDesiredSize(input);
+
+  
+  
+  
+  if (dimensionsSwapped) {
+    std::swap(dstSize.width, dstSize.height);
+  }
 
   std::function<void()> callback_unused = []() {};
   webrtc::scoped_refptr<webrtc::I420BufferInterface> buffer =
@@ -719,11 +737,12 @@ int MediaEngineRemoteVideoSource::DeliverFrame(
 #ifdef DEBUG
   static uint32_t frame_num = 0;
   LOG_FRAME(
-      "frame {} ({}x{})->({}x{}); rotation {}, rtpTimeStamp {}, ntpTimeMs "
-      "{}, renderTimeMs {}",
+      "frame {} ({}x{})->({}x{}); rotation {} (applied {}), rtpTimeStamp {}, "
+      "ntpTimeMs {}, renderTimeMs {}",
       frame_num++, aProps.width(), aProps.height(), dstSize.width,
-      dstSize.height, static_cast<int>(aProps.rotation()),
-      aProps.rtpTimeStamp(), aProps.ntpTimeMs(), aProps.renderTimeMs());
+      dstSize.height, static_cast<int>(aProps.originalRotationRequired()),
+      aProps.rotationApplied(), aProps.rtpTimeStamp(), aProps.ntpTimeMs(),
+      aProps.renderTimeMs());
 #endif
 
   if (mScaledImageSize != dstSize) {
@@ -749,7 +768,10 @@ int MediaEngineRemoteVideoSource::DeliverFrame(
     mScaledImageSize = image->GetSize();
     segment.AppendWebrtcLocalFrame(image.forget(), mScaledImageSize, mPrincipal,
                                     false, TimeStamp::Now(),
-                                   aProps.captureTime(), aProps.rotation());
+                                   aProps.captureTime(),
+                                   aProps.rotationApplied()
+                                       ? VideoRotation::kDegree_0
+                                       : aProps.originalRotationRequired());
     mTrack->AppendData(&segment);
   }
 
