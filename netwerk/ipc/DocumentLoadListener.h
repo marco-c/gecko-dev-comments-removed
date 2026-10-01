@@ -439,7 +439,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
-  bool MaybeHandleLoadErrorWithURIFixup(nsresult aStatus);
+  MOZ_CAN_RUN_SCRIPT bool MaybeHandleLoadErrorWithURIFixup(nsresult aStatus);
 
   
   

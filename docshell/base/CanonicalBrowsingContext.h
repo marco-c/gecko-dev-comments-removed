@@ -238,9 +238,11 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   
   using BrowsingContext::LoadURI;
+  MOZ_CAN_RUN_SCRIPT
   void FixupAndLoadURIString(const nsAString& aURI,
                              const LoadURIOptions& aOptions,
                              ErrorResult& aError);
+  MOZ_CAN_RUN_SCRIPT
   void LoadURI(nsIURI* aURI, const LoadURIOptions& aOptions,
                ErrorResult& aError);
 

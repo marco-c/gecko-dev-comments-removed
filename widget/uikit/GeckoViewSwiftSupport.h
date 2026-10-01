@@ -10,11 +10,13 @@
 
 
 #ifdef MOZILLA_CLIENT
+#  include <mozilla/Attributes.h>
 #  include <mozilla/Types.h>
 #else
 #  define MOZ_EXPORT
 #  define MOZ_BEGIN_EXTERN_C
 #  define MOZ_END_EXTERN_C
+#  define MOZ_CAN_RUN_SCRIPT_BOUNDARY
 #endif
 
 #import <Foundation/Foundation.h>
@@ -61,7 +63,7 @@
 
 MOZ_BEGIN_EXTERN_C
 
-MOZ_EXPORT id<GeckoViewWindow> GeckoViewOpenWindow(
+MOZ_EXPORT MOZ_CAN_RUN_SCRIPT_BOUNDARY id<GeckoViewWindow> GeckoViewOpenWindow(
     NSString* aId, id<SwiftEventDispatcher> aDispatcher,
     NSDictionary* aInitData, bool aPrivateMode);
 
