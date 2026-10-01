@@ -117,7 +117,8 @@ class ConnectionEntry : public SupportsWeakPtr {
   
   
   
-  const RefPtr<nsHttpConnectionInfo> mConnInfo;
+  
+  RefPtr<nsHttpConnectionInfo> mConnInfo;
 
   bool AvailableForDispatchNow();
 

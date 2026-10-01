@@ -455,13 +455,12 @@ void AltSvcMapping::GetConnectionInfo(
 
   
   
-  if (!mHttps && !mMixedScheme) {
-    ci->SetInsecureScheme(true);
-  }
-  if (StaticPrefs::network_http_happy_eyeballs_enabled() && !pi) {
-    ci->SetHappyEyeballsEnabled(true);
-  }
-  ci->SetPrivate(mPrivate);
+  ci = ci->Mutate()
+           .SetInsecureScheme(!mHttps && !mMixedScheme)
+           .SetHappyEyeballsEnabled(
+               StaticPrefs::network_http_happy_eyeballs_enabled() && !pi)
+           .SetPrivate(mPrivate)
+           .Finalize();
   ci.forget(outCI);
 }
 
@@ -936,12 +935,13 @@ void AltSvcCache::UpdateAltServiceMapping(
   
   
   if (StaticPrefs::network_http_happy_eyeballs_enabled() && !pi) {
-    ci->SetHappyEyeballsEnabled(true);
     
     
-    if (map->IsHttp3()) {
-      ci->SetHttp3Policy(Http3Policy::Only);
-    }
+    ci = ci->Mutate()
+             .SetHappyEyeballsEnabled(true)
+             .SetHttp3Policy(map->IsHttp3() ? Http3Policy::Only
+                                            : ci->GetHttp3Policy())
+             .Finalize();
   }
 
   MOZ_ASSERT(map->HTTPS());
@@ -1181,10 +1181,11 @@ void Http3FirstAltSvcMapping::GetConnectionInfo(
   RefPtr<nsHttpConnectionInfo> ci = new nsHttpConnectionInfo(
       mOriginHost, mOriginPort, mNPNToken, mUsername, pi, originAttributes,
       mAlternateHost, mAlternatePort, mIsHttp3, false);
-  if (StaticPrefs::network_http_happy_eyeballs_enabled() && !pi) {
-    ci->SetHappyEyeballsEnabled(true);
-  }
-  ci->SetPrivate(mPrivate);
+  ci = ci->Mutate()
+           .SetHappyEyeballsEnabled(
+               StaticPrefs::network_http_happy_eyeballs_enabled() && !pi)
+           .SetPrivate(mPrivate)
+           .Finalize();
   ci.forget(outCI);
 }
 

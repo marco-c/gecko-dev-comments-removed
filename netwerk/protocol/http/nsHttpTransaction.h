@@ -435,7 +435,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   
   
-  Mutex mLock{"transaction lock"};
+  mutable Mutex mLock{"transaction lock"};
 
   nsCOMPtr<nsIInterfaceRequestor> mCallbacks MOZ_GUARDED_BY(mLock);
   nsCOMPtr<nsITransportEventSink> mTransportSink;

@@ -1022,7 +1022,7 @@ void ConnectionEntry::MaybeUpdateEchConfig(nsHttpConnectionInfo* aConnInfo) {
   LOG(("ConnectionEntry::MaybeUpdateEchConfig [ci=%s]\n",
        mConnInfo->HashKey().get()));
 
-  mConnInfo->SetEchConfig(echConfig);
+  mConnInfo = mConnInfo->Mutate().SetEchConfig(echConfig).Finalize();
 
   
   
