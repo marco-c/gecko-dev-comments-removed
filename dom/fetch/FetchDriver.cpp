@@ -846,7 +846,9 @@ nsresult FetchDriver::HttpFetch(
     AutoTArray<nsCString, 5> unsafeHeaders;
     mRequest->Headers()->GetUnsafeHeaders(unsafeHeaders);
     nsCOMPtr<nsILoadInfo> loadInfo = chan->LoadInfo();
-    loadInfo->SetCorsPreflightInfo(unsafeHeaders, false);
+    
+    
+    loadInfo->SetCorsPreflightInfo(unsafeHeaders, mRequest->HasStreamBody());
   }
 
   if (mIsTrackingFetch && StaticPrefs::network_http_tailing_enabled() && cos) {

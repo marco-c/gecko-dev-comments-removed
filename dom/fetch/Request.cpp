@@ -6,6 +6,7 @@
 
 #include "js/Value.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/dom/Fetch.h"
 #include "mozilla/dom/FetchUtil.h"
@@ -433,6 +434,28 @@ SafeRefPtr<Request> Request::Constructor(
     }
   }
 
+  
+  
+  const bool hasInitBody =
+      aInit.mBody.WasPassed() && !aInit.mBody.Value().IsNull();
+  const bool hasStreamBody =
+      hasInitBody ? StaticPrefs::dom_fetch_streaming_upload() &&
+                        aInit.mBody.Value().Value().IsReadableStream()
+                  : request->HasStreamBody();
+  if (hasStreamBody) {
+    if (hasInitBody && !aInit.mDuplex.WasPassed()) {
+      aRv.ThrowTypeError(
+          "duplex parameter is required when body is a ReadableStream");
+      return nullptr;
+    }
+    if (request->Mode() != RequestMode::Same_origin &&
+        request->Mode() != RequestMode::Cors) {
+      aRv.ThrowTypeError(
+          "ReadableStream bodies require same-origin or cors mode");
+      return nullptr;
+    }
+  }
+
   if (aInit.mBody.WasPassed()) {
     const Nullable<fetch::OwningBodyInit>& bodyInitNullable =
         aInit.mBody.Value();
@@ -495,6 +518,12 @@ SafeRefPtr<Request> Request::Clone(ErrorResult& aRv) {
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
   }
+
+  
+  
+  
+  
+  MaybeRebindReadableStreamBody();
 
   return MakeSafeRefPtr<Request>(mGlobal, std::move(ir), GetOrCreateSignal());
 }
