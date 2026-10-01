@@ -3,5 +3,6 @@
 
 
 config = {
+    "mozconfig_platform": "android-aarch64",
     "extra_mozconfig_content": ["ac_add_options --enable-geckoview-lite"],
 }
