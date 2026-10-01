@@ -105,6 +105,10 @@ class OverscrollHandoffChain {
 
   
   
+  bool HasAnimatingApzc() const;
+
+  
+  
   
   
   

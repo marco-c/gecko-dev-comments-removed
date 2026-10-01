@@ -1914,6 +1914,13 @@ class AsyncPanZoomController {
 
   
   
+  bool IsAnimationRunning() const {
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    return !!mAnimation;
+  }
+
+  
+  
   bool IsPhysicallyOverscrolled() const;
 
  private:

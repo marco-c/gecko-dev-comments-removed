@@ -490,6 +490,23 @@ APZEventResult InputQueue::ReceivePanGestureInput(
       
       
       
+      
+      
+      
+      if (event.mType == PanGestureInput::PANGESTURE_END &&
+          event.mPanDisplacement == ScreenPoint{}) {
+        RefPtr<const OverscrollHandoffChain> handoffChain =
+            aTarget->BuildOverscrollHandoffChain();
+        if (handoffChain && handoffChain->HasAnimatingApzc()) {
+          INPQ_LOG(
+              "dropping a received zero-delta pan-end while an animation is "
+              "running\n");
+          return result;
+        }
+      }
+      
+      
+      
       INPQ_LOG(
           "transmogrifying pan input %d to PANGESTURE_START for new block %p\n",
           event.mType, block.get());
