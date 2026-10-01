@@ -10,7 +10,8 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
-  TaskbarTabsPin: "resource:///modules/taskbartabs/TaskbarTabsPin.sys.mjs",
+  TaskbarTabsPin:
+    "moz-src:///browser/components/taskbartabs/TaskbarTabsPin.sys.mjs",
 });
 
 add_setup(function test_setup() {
@@ -28,7 +29,7 @@ add_task(async function test_installedCounterMetric() {
   
   
   const { TaskbarTabs } = ChromeUtils.importESModule(
-    "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs"
+    "moz-src:///browser/components/taskbartabs/TaskbarTabs.sys.mjs"
   );
 
   
