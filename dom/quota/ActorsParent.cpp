@@ -3306,6 +3306,20 @@ void QuotaManager::UnloadQuota() {
   
   
   
+  
+  const auto createTransaction =
+      [this](Maybe<mozStorageTransaction>& transaction) {
+        transaction.reset();
+        transaction.emplace(mStorageConnection,  false,
+                            mozIStorageConnection::TRANSACTION_IMMEDIATE);
+        QM_WARNONLY_TRY(MOZ_TO_RESULT(transaction->Start()));
+      };
+  Maybe<mozStorageTransaction> transaction;
+  createTransaction(transaction);
+
+  static const int32_t kTransactionBatchSize = 50;
+  int32_t transactionCount = 0;
+
   {
     MutexAutoLock lock(mQuotaMutex);
 
@@ -3344,6 +3358,7 @@ void QuotaManager::UnloadQuota() {
               DebugOnly<nsresult> rv =
                   SettleDirectoryMetadata2(*originDirectory.ref(), metadata);
               MOZ_ASSERT(NS_FAILED(rv) == metadata.mDirty);
+              ++transactionCount;
             }
           } else if (mCacheRequiresFullScan) {
             
@@ -3354,6 +3369,13 @@ void QuotaManager::UnloadQuota() {
             
             MOZ_ASSERT(mOriginUpserter, "We must have an origin upserter here");
             QM_WARNONLY_TRY(mOriginUpserter->Refresh(metadata));
+            ++transactionCount;
+          }
+
+          if (transactionCount >= kTransactionBatchSize) {
+            QM_WARNONLY_TRY(MOZ_TO_RESULT(transaction->Commit()));
+            createTransaction(transaction);
+            transactionCount = 0;
           }
         }
 
@@ -3374,6 +3396,8 @@ void QuotaManager::UnloadQuota() {
   QM_TRY(MOZ_TO_RESULT(stmt->BindUTF8StringByName("buildId"_ns, *gBuildId)),
          QM_VOID);
   QM_TRY(MOZ_TO_RESULT(stmt->Execute()), QM_VOID);
+
+  QM_TRY(MOZ_TO_RESULT(transaction->Commit()), QM_VOID);
 }
 
 void QuotaManager::RemoveOriginFromCacheForEviction(
