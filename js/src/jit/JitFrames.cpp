@@ -747,9 +747,6 @@ void HandleException(ResumeFromException* rfe) {
   }
 #endif
 
-  JitFrameIter iter(cx->activation()->asJit(),
-                     true);
-
   
   
   
@@ -760,10 +757,11 @@ void HandleException(ResumeFromException* rfe) {
   
   
   Rooted<WasmInstanceObject*> keepAlive(cx);
-  if (iter.isWasm()) {
-    keepAlive = iter.asWasm().instance()->object();
+  if (activation->hasWasmExitFP() && !activation->isWasmTrapping()) {
+    keepAlive = activation->wasmExitInstance()->object();
   }
 
+  JitFrameIter iter(activation,  true);
   CommonFrameLayout* prevJitFrame = nullptr;
   while (!iter.done()) {
     if (iter.isWasm()) {
