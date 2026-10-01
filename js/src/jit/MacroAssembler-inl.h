@@ -10,6 +10,7 @@
 #include "mozilla/FloatingPoint.h"
 
 #include <bit>
+#include <type_traits>
 
 #include "gc/Zone.h"
 #include "jit/CalleeToken.h"
@@ -21,6 +22,7 @@
 #include "vm/JSObject.h"
 #include "vm/ProxyObject.h"
 #include "vm/Runtime.h"
+#include "vm/Stack.h"  
 #include "vm/StringType.h"
 
 #include "jit/ABIFunctionList-inl.h"
@@ -95,6 +97,24 @@ CodeOffset MacroAssembler::PushWithPatch(ImmWord word) {
 
 CodeOffset MacroAssembler::PushWithPatch(ImmPtr imm) {
   return PushWithPatch(ImmWord(uintptr_t(imm.value)));
+}
+
+template <typename... Regs>
+void MacroAssembler::PushRegs(const Regs&... regs) {
+  static_assert((std::is_convertible_v<Regs, Register> && ...));
+  static_assert(sizeof...(Regs) > 0);
+
+  pushRegs(regs...);
+  adjustFrame(int32_t(sizeof...(Regs) * sizeof(intptr_t)));
+}
+
+template <typename... Regs>
+void MacroAssembler::PopRegs(const Regs&... regs) {
+  static_assert((std::is_convertible_v<Regs, Register> && ...));
+  static_assert(sizeof...(Regs) > 0);
+
+  popRegs(regs...);
+  adjustFrame(-int32_t(sizeof...(Regs) * sizeof(intptr_t)));
 }
 
 
@@ -316,6 +336,34 @@ void MacroAssembler::PushCalleeToken(Register callee, bool constructing) {
                   "Non-constructing call requires no tagging");
     Push(callee);
   }
+}
+
+template <typename KindT, typename ValueT>
+void MacroAssembler::pushGeneratorResumeArgsAndFormals(
+    const Address& resumeIndex, const KindT& resumeKind, Register generator,
+    const ValueT& resumeValue, Register nformals) {
+  
+  
+  static_assert(ResumeFrameArgs::NumSlots == 4);
+  static_assert(ResumeFrameArgs::ResumeIndexSlot == 3);
+  static_assert(ResumeFrameArgs::ResumeKindSlot == 2);
+  static_assert(ResumeFrameArgs::GeneratorSlot == 1);
+  static_assert(ResumeFrameArgs::ResumeValueSlot == 0);
+  pushValue(resumeIndex);
+  pushValue(resumeKind);
+  pushValue(JSVAL_TYPE_OBJECT, generator);
+  pushValue(resumeValue);
+
+  
+  
+  Label loop;
+  bind(&loop);
+  {
+    pushValue(UndefinedValue());
+    branchSub32(Assembler::NotSigned, Imm32(1), nformals, &loop);
+  }
+
+  checkStackAlignment();
 }
 
 void MacroAssembler::loadFunctionFromCalleeToken(Address token, Register dest) {
