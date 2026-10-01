@@ -151,6 +151,12 @@ uint32_t DecideAudioPlaybackSampleRate(const AudioInfo& info,
 
 bool IsDefaultPlaybackDeviceMono();
 
+
+void SetOpusOutputChannels(AudioInfo& aInfo);
+
+
+uint32_t AudioPlaybackChannels(const AudioInfo& aInfo);
+
 bool IsVideoContentType(const nsCString& aContentType);
 
 
@@ -219,7 +225,6 @@ struct VideoColorSpace {
   gfx::ColorRange mRange = gfx::ColorRange::LIMITED;
 
   bool operator==(const VideoColorSpace& aOther) const = default;
-  bool operator!=(const VideoColorSpace& aOther) const = default;
 };
 
 

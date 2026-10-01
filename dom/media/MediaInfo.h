@@ -131,6 +131,7 @@ struct Mp3CodecSpecificData final {
 struct OpusCodecSpecificData {
   bool operator==(const OpusCodecSpecificData& rhs) const {
     return mContainerCodecDelayFrames == rhs.mContainerCodecDelayFrames &&
+           mOutputChannels == rhs.mOutputChannels &&
            *mHeadersBinaryBlob == *rhs.mHeadersBinaryBlob;
   }
   
@@ -146,6 +147,13 @@ struct OpusCodecSpecificData {
   
   
   RefPtr<MediaByteBuffer> mHeadersBinaryBlob{new MediaByteBuffer};
+
+  
+  
+  
+  
+  
+  uint32_t mOutputChannels{0};
 };
 
 struct VorbisCodecSpecificData {

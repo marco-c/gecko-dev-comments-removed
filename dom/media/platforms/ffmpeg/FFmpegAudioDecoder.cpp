@@ -107,10 +107,7 @@ RefPtr<MediaDataDecoder::InitPromise> FFmpegAudioDecoder<LIBAV_VER>::Init() {
     
     
     
-    
-    
-    if (mDefaultPlaybackDeviceMono ||
-        DecideAudioPlaybackChannels(mAudioInfo) == 1) {
+    if (mDefaultPlaybackDeviceMono || AudioPlaybackChannels(mAudioInfo) == 1) {
       mLib->av_dict_set(&options, "apply_phase_inv", "false", 0);
     }
     
