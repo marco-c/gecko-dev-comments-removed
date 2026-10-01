@@ -12,10 +12,14 @@
 #define API_PEER_CONNECTION_TRACER_INTERFACE_H_
 
 #include <optional>
+#include <string>
+#include <vector>
 
 #include "absl/strings/string_view.h"
 #include "api/data_channel_interface.h"
 #include "api/jsep.h"
+#include "api/media_stream_interface.h"
+#include "api/media_types.h"
 #include "api/peer_connection_interface.h"
 #include "api/rtc_error.h"
 #include "api/rtp_transceiver_interface.h"
@@ -57,6 +61,13 @@ class RTC_EXPORT PeerConnectionTracerInterface {
   
   
   
+  
+  virtual void OnCreate(
+      const PeerConnectionInterface::RTCConfiguration& configuration) = 0;
+
+  
+  
+  
   virtual void OnCreateOffer(
       const PeerConnectionInterface::RTCOfferAnswerOptions& options) = 0;
   virtual void OnCreateOfferSuccess(
@@ -86,7 +97,6 @@ class RTC_EXPORT PeerConnectionTracerInterface {
   virtual void OnSetRemoteDescriptionSuccess() = 0;
   virtual void OnSetRemoteDescriptionFailure(const RTCError& error) = 0;
 
-  
   
   virtual void OnSetConfiguration(
       const PeerConnectionInterface::RTCConfiguration& configuration) = 0;
@@ -123,6 +133,18 @@ class RTC_EXPORT PeerConnectionTracerInterface {
   
   virtual void OnDataChannel(const DataChannelInterface& channel,
                              std::optional<int> id) = 0;
+
+  
+  
+  
+  
+  virtual void OnAddTransceiver(MediaType media_type,
+                                const MediaStreamTrackInterface* track,
+                                const RtpTransceiverInit& init) = 0;
+
+  
+  virtual void OnAddTrack(const MediaStreamTrackInterface& track,
+                          const std::vector<std::string>& stream_ids) = 0;
 
   
   
