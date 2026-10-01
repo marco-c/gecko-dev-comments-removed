@@ -1317,17 +1317,6 @@ SessionHistoryEntry::GetChildSHEntryIfHasNoDynamicallyAddedChild(
   }
 
   
-
-
-
-
-
-
-  if (SharedInfo()->mExpired && (mInfo->mLoadType == LOAD_RELOAD_NORMAL)) {
-    
-    return nullptr;
-  }
-  
   auto* child = mChildren.SafeElementAt(aChildOffset);
   if (child) {
     
