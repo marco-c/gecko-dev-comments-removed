@@ -32,6 +32,7 @@
 #include "nsIWidget.h"
 #include "nsNetUtil.h"
 #include "nsReadableUtils.h"
+#include "nsThreadUtils.h"
 #include "nsWindow.h"
 #include "nsXULAppAPI.h"
 
@@ -975,9 +976,74 @@ void nsFilePicker::DoneCommon(ResultCode aResult,
     }
   }
 
+  if (aResult != nsIFilePicker::returnCancel && ShouldRunContentAnalysis()) {
+    CheckContentAnalysis(GetSelectedFilesOrFolder())
+        ->Then(
+            GetMainThreadSerialEventTarget(), __func__,
+            [self = RefPtr{this}, callback = aCallback,
+             aResult](nsCOMArray<nsIFile> aAllowedFiles) {
+              if (aAllowedFiles.IsEmpty()) {
+                self->ClearSelection();
+                if (callback) {
+                  callback->Done(nsIFilePicker::returnCancel);
+                }
+                return;
+              }
+              
+              
+              
+              
+              
+              
+              if (self->mMode == nsIFilePicker::modeOpenMultiple) {
+                self->mFiles.Clear();
+                aAllowedFiles.SwapElements(self->mFiles);
+                
+                
+                if (!self->mFileURL.IsEmpty()) {
+                  NS_GetURLSpecFromFile(self->mFiles[0], self->mFileURL);
+                }
+              }
+              if (callback) {
+                callback->Done(aResult);
+              }
+            },
+            [self = RefPtr{this}, callback = aCallback](nsresult aError) {
+              self->ClearSelection();
+              if (callback) {
+                callback->Done(nsIFilePicker::returnCancel);
+              }
+            });
+    return;
+  }
+
   if (aCallback) {
     aCallback->Done(aResult);
   }
+}
+
+nsCOMArray<nsIFile> nsFilePicker::GetSelectedFilesOrFolder() {
+  nsCOMArray<nsIFile> files;
+  if (mMode == nsIFilePicker::modeOpenMultiple) {
+    for (nsIFile* file : mFiles) {
+      if (file) {
+        files.AppendElement(file);
+      }
+    }
+  } else {
+    
+    
+    nsCOMPtr<nsIFile> file;
+    if (NS_SUCCEEDED(GetFile(getter_AddRefs(file))) && file) {
+      files.AppendElement(file);
+    }
+  }
+  return files;
+}
+
+void nsFilePicker::ClearSelection() {
+  mFiles.Clear();
+  mFileURL.Truncate();
 }
 
 #undef LOG
