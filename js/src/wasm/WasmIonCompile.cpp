@@ -5602,31 +5602,78 @@ class FunctionCompiler {
     MDefinition* ref = values.back();
     MOZ_ASSERT(ref->type() == MIRType::WasmAnyRef);
 
-    MDefinition* success = refTest(ref, destType);
-    if (!success) {
+    
+    
+    
+
+    MDefinition* refTestSuccess = refTest(ref, destType);
+    if (!refTestSuccess) {
       return false;
     }
 
-    MTest* test;
-    if (onSuccess) {
-      test = MTest::New(alloc(), success, nullptr, fallthroughBlock);
-      if (!test || !addControlFlowPatch(test, labelRelativeDepth,
-                                        MTest::TrueBranchIndex, branchHint)) {
-        return false;
-      }
-    } else {
-      test = MTest::New(alloc(), success, fallthroughBlock, nullptr);
+    if (!onSuccess) {
+      
+      
+      
+
+      MTest* test =
+          MTest::New(alloc(), refTestSuccess, fallthroughBlock, nullptr);
       if (!test || !addControlFlowPatch(test, labelRelativeDepth,
                                         MTest::FalseBranchIndex, branchHint)) {
         return false;
       }
+      if (!pushDefs(values)) {
+        return false;
+      }
+      curBlock_->end(test);
+      curBlock_ = fallthroughBlock;
+
+      MDefinition* cast = refCast(ref, destType);
+      if (!cast) {
+        return false;
+      }
+      iter().setResult(cast);
+
+      return true;
     }
 
-    if (!pushDefs(values)) {
+    
+    
+    
+
+    MBasicBlock* successBlock = nullptr;
+    if (!newBlock(curBlock_, &successBlock)) {
       return false;
     }
 
+    MTest* test =
+        MTest::New(alloc(), refTestSuccess, successBlock, fallthroughBlock);
+    if (!test) {
+      return false;
+    }
     curBlock_->end(test);
+    curBlock_ = successBlock;
+
+    MDefinition* cast = refCast(ref, destType);
+    if (!cast) {
+      return false;
+    }
+
+    DefVector castValues;
+    if (!castValues.appendAll(values)) {
+      return false;
+    }
+    castValues.back() = cast;
+    if (!pushDefs(castValues)) {
+      return false;
+    }
+
+    MGoto* jump = MGoto::New(alloc());
+    if (!jump || !addControlFlowPatch(jump, labelRelativeDepth,
+                                      MGoto::TargetIndex, branchHint)) {
+      return false;
+    }
+    curBlock_->end(jump);
     curBlock_ = fallthroughBlock;
     return true;
   }
