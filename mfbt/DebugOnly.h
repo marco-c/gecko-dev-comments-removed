@@ -94,7 +94,7 @@ class MOZ_STACK_CLASS DebugOnly {
 
 
 
-  ~DebugOnly() {}
+  ~DebugOnly() {}  
 };
 
 }  

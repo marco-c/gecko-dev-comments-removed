@@ -34,11 +34,13 @@ class MOZ_RAII ReentrancyGuard {
     mEntered = true;
 #endif
   }
-  ~ReentrancyGuard() {
 #ifdef DEBUG
-    mEntered = false;
+  ~ReentrancyGuard() { mEntered = false; }
+#else
+  
+  
+  ~ReentrancyGuard() {}  
 #endif
-  }
 
  private:
   ReentrancyGuard(const ReentrancyGuard&) = delete;
