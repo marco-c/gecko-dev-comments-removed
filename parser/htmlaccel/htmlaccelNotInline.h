@@ -72,6 +72,13 @@ MOZ_NEVER_INLINE uint32_t CountEscapedInAttributeValue(const char16_t* aPtr,
 
 
 
+
+
+
+
+
+
+
 MOZ_NEVER_INLINE int32_t AccelerateDataFastest(const char16_t* aPtr,
                                                const char16_t* aEnd);
 
@@ -96,46 +103,62 @@ MOZ_NEVER_INLINE int32_t AccelerateRawtextLineCol(const char16_t* aPtr,
                                                   const char16_t* aEnd);
 
 
+
+MOZ_NEVER_INLINE int32_t
+AccelerateScriptDataEscapedFastest(const char16_t* aPtr, const char16_t* aEnd);
+
+
+MOZ_NEVER_INLINE int32_t AccelerateScriptDataEscapedViewSource(
+    const char16_t* aPtr, const char16_t* aEnd);
+
+
+MOZ_NEVER_INLINE int32_t
+AccelerateScriptDataEscapedLineCol(const char16_t* aPtr, const char16_t* aEnd);
+
+
 MOZ_NEVER_INLINE int32_t AccelerateCommentFastest(const char16_t* aPtr,
-                                                  const char16_t* aEnd);
+                                                  const char16_t* aEnd,
+                                                  char16_t* aOut);
 
 
 MOZ_NEVER_INLINE int32_t AccelerateCommentViewSource(const char16_t* aPtr,
-                                                     const char16_t* aEnd);
+                                                     const char16_t* aEnd,
+                                                     char16_t* aOut);
 
 
 MOZ_NEVER_INLINE int32_t AccelerateCommentLineCol(const char16_t* aPtr,
-                                                  const char16_t* aEnd);
+                                                  const char16_t* aEnd,
+                                                  char16_t* aOut);
 
 
 
 MOZ_NEVER_INLINE int32_t AccelerateAttributeValueSingleQuotedFastest(
-    const char16_t* aPtr, const char16_t* aEnd);
+    const char16_t* aPtr, const char16_t* aEnd, char16_t* aOut);
 
 
 
 MOZ_NEVER_INLINE int32_t AccelerateAttributeValueSingleQuotedViewSource(
-    const char16_t* aPtr, const char16_t* aEnd);
+    const char16_t* aPtr, const char16_t* aEnd, char16_t* aOut);
 
 
 
 MOZ_NEVER_INLINE int32_t AccelerateAttributeValueSingleQuotedLineCol(
-    const char16_t* aPtr, const char16_t* aEnd);
+    const char16_t* aPtr, const char16_t* aEnd, char16_t* aOut);
 
 
 
 MOZ_NEVER_INLINE int32_t AccelerateAttributeValueDoubleQuotedFastest(
-    const char16_t* aPtr, const char16_t* aEnd);
+    const char16_t* aPtr, const char16_t* aEnd, char16_t* aOut);
 
 
 
 MOZ_NEVER_INLINE int32_t AccelerateAttributeValueDoubleQuotedViewSource(
-    const char16_t* aPtr, const char16_t* aEnd);
+    const char16_t* aPtr, const char16_t* aEnd, char16_t* aOut);
 
 
 
 MOZ_NEVER_INLINE int32_t AccelerateAttributeValueDoubleQuotedLineCol(
-    const char16_t* aPtr, const char16_t* aEnd);
+    const char16_t* aPtr, const char16_t* aEnd, char16_t* aOut);
 
 
 
