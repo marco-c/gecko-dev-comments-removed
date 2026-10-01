@@ -31,6 +31,7 @@ add_task(function test_blocked_action_only_actions() {
     
     "CONFIRM_LAUNCH_ON_LOGIN",
     "PIN_FIREFOX_TO_TASKBAR",
+    "ENABLE_CLOSED_BROWSER_NOTIFICATIONS",
     
     "SET_PREF",
     
