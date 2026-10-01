@@ -7,6 +7,7 @@
 
 #include "MainThreadUtils.h"
 #include "js/ContextOptions.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -179,7 +180,9 @@ class RuntimeService final : public nsIObserver {
   uint32_t ClampedHardwareConcurrency(bool aRFPHardcoded,
                                       bool aRFPTiered) const;
 
-  void CrashIfHanging();
+  
+  
+  Maybe<nsCString> GetHangingWorkersInfo();
 
   bool IsShuttingDown() const { return mShuttingDown; }
 

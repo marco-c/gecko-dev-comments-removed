@@ -1749,12 +1749,12 @@ struct ActiveWorkerStats {
 
 }  
 
-void RuntimeService::CrashIfHanging() {
+Maybe<nsCString> RuntimeService::GetHangingWorkersInfo() {
   MutexAutoLock lock(mMutex);
 
   
   if (!mShuttingDown) {
-    return;
+    return Nothing();
   }
 
   ActiveWorkerStats activeStats;
@@ -1773,7 +1773,7 @@ void RuntimeService::CrashIfHanging() {
 
   if (activeStats.mWorkers + activeStats.mServiceWorkers + inactiveWorkers ==
       0) {
-    return;
+    return Nothing();
   }
 
   nsCString msg;
@@ -1784,8 +1784,7 @@ void RuntimeService::CrashIfHanging() {
                    inactiveWorkers);
   msg.Append(activeStats.mMessage);
 
-  
-  MOZ_CRASH_UNSAFE(strdup(msg.get()));
+  return Some(std::move(msg));
 }
 
 

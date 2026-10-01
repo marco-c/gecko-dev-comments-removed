@@ -40,6 +40,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/IntentionalCrash.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MemoryChecking.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/SpinEventLoopUntil.h"
@@ -233,14 +234,6 @@ void RunWatchdog(void*) {
 
     
     
-    
-    profiler_wait_for_scheduled_dump();
-
-    NoteIntentionalCrash(XRE_GetProcessTypeString());
-
-    CollectShutdownHangAnnotations();
-
-    MaybeSaveShutdownHangProfile();
 
     
     
@@ -264,20 +257,40 @@ void RunWatchdog(void*) {
       }
     }
 
+    printf_stderr("RunWatchdog: Shutdown hanging at step %s.\n",
+                  mozilla::AppShutdown::GetShutdownPhaseName(lastPhase));
+
+    
+    mozilla::Maybe<nsCString> workersMsg;
+    if (mozilla::dom::workerinternals::RuntimeService* runtimeService =
+            mozilla::dom::workerinternals::RuntimeService::GetService()) {
+      workersMsg = runtimeService->GetHangingWorkersInfo();
+    }
+    if (workersMsg) {
+      printf_stderr("RunWatchdog: %s\n", workersMsg->get());
+    }
+
+    
+    
+    
+    profiler_wait_for_scheduled_dump();
+
+    NoteIntentionalCrash(XRE_GetProcessTypeString());
+
+    CollectShutdownHangAnnotations();
+
+    MaybeSaveShutdownHangProfile();
+
     if (lastPhase == mozilla::ShutdownPhase::NotInShutdown) {
       
       CrashReporter::SetMinidumpAnalysisAllThreads();
       MOZ_CRASH("Shutdown hanging before starting any known phase.");
     }
 
-    
-    
-    mozilla::dom::workerinternals::RuntimeService* runtimeService =
-        mozilla::dom::workerinternals::RuntimeService::GetService();
-    if (runtimeService) {
+    if (workersMsg) {
+      CrashReporter::SetMinidumpAnalysisAllThreads();
       
-      
-      runtimeService->CrashIfHanging();
+      MOZ_CRASH_UNSAFE(strdup(workersMsg->get()));
     }
 
     
