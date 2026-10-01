@@ -217,7 +217,7 @@ NS_IMETHODIMP CompositionTransaction::DoTransaction() {
         
         nsresult rv = editorBase->DoDeleteText(*text, 0, deletableLengthInText);
         if (NS_FAILED(rv)) [[unlikely]] {
-          NS_WARNING("EditorBase::DoDeleteText() failed, but ignored");
+          NS_WARNING("EditorBase::DoDeleteText() failed");
           return rv;
         }
         editorBase->RangeUpdaterRef().SelAdjDeleteText(*text, 0,
