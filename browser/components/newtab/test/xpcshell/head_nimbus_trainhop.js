@@ -24,7 +24,6 @@
 const {
   AboutNewTabResourceMapping,
   BUILTIN_ADDON_ID,
-  TRAINHOP_NIMBUS_FEATURE_ID,
   TRAINHOP_NIMBUS_DEPLOYMENT_FEATURE_ID,
   TRAINHOP_NIMBUS_FIRST_STARTUP_FEATURE_ID,
   TRAINHOP_XPI_BASE_URL_PREF,
@@ -269,24 +268,11 @@ function assertTrainhopAddonNimbusExposure({
 
 
 
-
-
 function trainhopEffectiveVersionPref() {
-  const original = Services.prefs.getStringPref(
-    "browser.newtabpage.trainhopAddon.version",
-    ""
-  );
-  const deployment = Services.prefs.getStringPref(
+  return Services.prefs.getStringPref(
     "browser.newtabpage.trainhopAddonDeployment.version",
     ""
   );
-  if (!original) {
-    return deployment;
-  }
-  if (!deployment) {
-    return original;
-  }
-  return Services.vc.compare(original, deployment) >= 0 ? original : deployment;
 }
 
 function assertTrainhopAddonVersionPref(expectedTrainhopAddonVersion) {
@@ -294,8 +280,8 @@ function assertTrainhopAddonVersionPref(expectedTrainhopAddonVersion) {
     trainhopEffectiveVersionPref(),
     expectedTrainhopAddonVersion,
     expectedTrainhopAddonVersion
-      ? "Expect the effective train-hop add-on version (max of the original and deployment prefs) to be set while client is enrolled"
-      : "Expect the effective train-hop add-on version to be empty while client is unenrolled"
+      ? "Expect the train-hop add-on version to be set while client is enrolled"
+      : "Expect the train-hop add-on version to be empty while client is unenrolled"
   );
 }
 

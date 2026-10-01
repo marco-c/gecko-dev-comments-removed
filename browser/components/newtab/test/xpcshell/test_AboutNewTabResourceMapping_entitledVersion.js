@@ -11,7 +11,6 @@
 
 
 
-
 const { AboutNewTabResourceMapping, TRAINHOP_ANY_VERSION_SENTINEL } =
   ChromeUtils.importESModule(
     "resource:///modules/AboutNewTabResourceMapping.sys.mjs"
@@ -25,7 +24,6 @@ const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 
-const TRAINHOP_VERSION_PREF = "browser.newtabpage.trainhopAddon.version";
 const TRAINHOP_DEPLOYMENT_VERSION_PREF =
   "browser.newtabpage.trainhopAddonDeployment.version";
 
@@ -44,12 +42,7 @@ const XPI_VERSION = "9999.0";
 
 
 
-
-
-function getPreferredMappingWithEntitledVersion({
-  trainhopVersion = "",
-  deploymentVersion = "",
-}) {
+function getPreferredMappingWithEntitledVersion({ deploymentVersion = "" }) {
   
   
   
@@ -68,9 +61,6 @@ function getPreferredMappingWithEntitledVersion({
     isPrivileged: true,
   });
 
-  if (trainhopVersion) {
-    Services.prefs.setCharPref(TRAINHOP_VERSION_PREF, trainhopVersion);
-  }
   if (deploymentVersion) {
     Services.prefs.setCharPref(
       TRAINHOP_DEPLOYMENT_VERSION_PREF,
@@ -81,48 +71,10 @@ function getPreferredMappingWithEntitledVersion({
   try {
     return AboutNewTabResourceMapping.getPreferredMapping();
   } finally {
-    Services.prefs.clearUserPref(TRAINHOP_VERSION_PREF);
     Services.prefs.clearUserPref(TRAINHOP_DEPLOYMENT_VERSION_PREF);
     sandbox.restore();
   }
 }
-
-
-
-
-
-add_task(function test_sentinel_in_both_prefs_keeps_xpi() {
-  const { isXPI, version } = getPreferredMappingWithEntitledVersion({
-    trainhopVersion: TRAINHOP_ANY_VERSION_SENTINEL,
-    deploymentVersion: TRAINHOP_ANY_VERSION_SENTINEL,
-  });
-
-  Assert.ok(
-    isXPI,
-    "Expect the installed XPI to stay mapped when both version prefs hold the sentinel"
-  );
-  Assert.equal(
-    version,
-    XPI_VERSION,
-    "Expect the installed train-hop XPI version to be the preferred one"
-  );
-});
-
-add_task(function test_sentinel_in_trainhop_pref_keeps_xpi() {
-  const { isXPI, version } = getPreferredMappingWithEntitledVersion({
-    trainhopVersion: TRAINHOP_ANY_VERSION_SENTINEL,
-  });
-
-  Assert.ok(
-    isXPI,
-    `Expect the installed XPI to stay mapped when only ${TRAINHOP_VERSION_PREF} holds the sentinel`
-  );
-  Assert.equal(
-    version,
-    XPI_VERSION,
-    "Expect the installed train-hop XPI version to be the preferred one"
-  );
-});
 
 add_task(function test_sentinel_in_deployment_pref_keeps_xpi() {
   const { isXPI, version } = getPreferredMappingWithEntitledVersion({
@@ -142,7 +94,7 @@ add_task(function test_sentinel_in_deployment_pref_keeps_xpi() {
 
 add_task(function test_matching_entitled_version_keeps_xpi() {
   const { isXPI, version } = getPreferredMappingWithEntitledVersion({
-    trainhopVersion: XPI_VERSION,
+    deploymentVersion: XPI_VERSION,
   });
 
   Assert.ok(
@@ -161,7 +113,7 @@ add_task(function test_matching_entitled_version_keeps_xpi() {
 
 add_task(function test_lower_entitled_version_falls_back() {
   const { isXPI } = getPreferredMappingWithEntitledVersion({
-    trainhopVersion: "1.0",
+    deploymentVersion: "1.0",
   });
 
   Assert.ok(
@@ -175,19 +127,11 @@ add_task(function test_lower_entitled_version_falls_back() {
 
 add_task(function test_unrecognized_non_version_value_falls_back() {
   const { isXPI } = getPreferredMappingWithEntitledVersion({
-    trainhopVersion: "whatever",
+    deploymentVersion: "whatever",
   });
 
   Assert.ok(
     !isXPI,
     "Expect an unrecognized non-version entitled value to fall back to the built-in"
   );
-});
-
-add_task(function test_sentinel_beats_real_version_in_other_pref() {
-  const { isXPI } = getPreferredMappingWithEntitledVersion({
-    trainhopVersion: TRAINHOP_ANY_VERSION_SENTINEL,
-    deploymentVersion: "1.0",
-  });
-  Assert.ok(isXPI, "Expected the sentinel value to win.");
 });
