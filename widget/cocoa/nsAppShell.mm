@@ -185,6 +185,77 @@ void OnUncaughtException(NSException* aException) {
   [super run];
 }
 
+
+
+
+static bool PiPPlayerHandlesAccessibilityFrontmost() {
+  return mozilla::StaticPrefs::
+      widget_macos_pip_player_accessibility_frontmost_enabled();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+- (void)setAccessibilityFrontmost:(BOOL)aFrontmost {
+  if (aFrontmost && PiPPlayerHandlesAccessibilityFrontmost()) {
+    NSWindow* playerOnActiveSpace = nil;
+    BOOL otherWindowOnActiveSpace = NO;
+    for (NSWindow* window in self.windows) {
+      if (!window.isVisible || !window.isOnActiveSpace) {
+        continue;
+      }
+      if ([window isKindOfClass:[BaseWindow class]] &&
+          (window.styleMask & NSWindowStyleMaskNonactivatingPanel)) {
+        playerOnActiveSpace = window;
+      } else if ([window isKindOfClass:[BaseWindow class]] &&
+                 ![window isKindOfClass:[PopupWindow class]]) {
+        
+        
+        
+        otherWindowOnActiveSpace = YES;
+      }
+    }
+    if (playerOnActiveSpace && !otherWindowOnActiveSpace) {
+      if (!self.isActive) {
+        [self activateIgnoringOtherApps:YES];
+      }
+      if (!playerOnActiveSpace.isKeyWindow) {
+        [playerOnActiveSpace makeKeyAndOrderFront:nil];
+      }
+      return;
+    }
+  }
+  [super setAccessibilityFrontmost:aFrontmost];
+}
+
 - (void)sendEvent:(NSEvent*)anEvent {
   mozilla::BackgroundHangMonitor().NotifyActivity();
   [super sendEvent:anEvent];

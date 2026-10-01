@@ -5244,6 +5244,24 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect,
   
   
   
+  if (mPiPType == PiPType::MediaPiP) {
+    mWindow.styleMask |= NSWindowStyleMaskNonactivatingPanel;
+    
+    
+    
+    
+    
+    mWindow.collectionBehavior |=
+        NSWindowCollectionBehaviorFullScreenAuxiliary |
+        NSWindowCollectionBehaviorFullScreenDisallowsTiling;
+  }
+
+  
+  
+  
+  
+  
+  
   
   
   
@@ -5258,8 +5276,11 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect,
   if ((mWindowType == WindowType::TopLevel ||
        mWindowType == WindowType::Dialog) &&
       (features & NSWindowStyleMaskTitled)) {
+    
+    
+    const bool pipOverFullScreen = mPiPType == PiPType::MediaPiP;
     NSWindowCollectionBehavior fsBehavior =
-        (features & NSWindowStyleMaskResizable)
+        ((features & NSWindowStyleMaskResizable) && !pipOverFullScreen)
             ? (NSWindowCollectionBehaviorFullScreenPrimary |
                NSWindowCollectionBehaviorFullScreenAllowsTiling)
             : (NSWindowCollectionBehaviorFullScreenAuxiliary |
@@ -6119,6 +6140,7 @@ void nsCocoaWindow::HideWindowChrome(bool aShouldHide) {
   }
 
   const BOOL isVisible = mWindow.isVisible;
+  const BOOL wasKey = mWindow.isKeyWindow;
 
   
   NSArray* childWindows = [mWindow childWindows];
@@ -6167,6 +6189,15 @@ void nsCocoaWindow::HideWindowChrome(bool aShouldHide) {
     mIsAnimationSuppressed = true;
     Show(true);
     mIsAnimationSuppressed = wasAnimationSuppressed;
+    
+    
+    
+    
+    
+    
+    if (wasKey && !mWindow.isKeyWindow && mPiPType == PiPType::MediaPiP) {
+      [mWindow makeKeyAndOrderFront:nil];
+    }
   }
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
@@ -6247,6 +6278,12 @@ static bool AlwaysUsesNativeFullScreen() {
   [win setAlphaValue:0];
   [win setIgnoresMouseEvents:YES];
   [win setLevel:NSScreenSaverWindowLevel];
+  
+  
+  
+  win.collectionBehavior = mWindow.collectionBehavior &
+                           (NSWindowCollectionBehaviorCanJoinAllSpaces |
+                            NSWindowCollectionBehaviorFullScreenAuxiliary);
   [win makeKeyAndOrderFront:nil];
 
   auto data = new FullscreenTransitionData(win);
@@ -6311,6 +6348,18 @@ void nsCocoaWindow::CocoaWindowDidEnterFullscreen(bool aFullscreen) {
   mHasStartedNativeFullscreen = false;
   DispatchOcclusionEvent();
 
+  bool restoreKeyToPlayer = false;
+  
+  
+  
+  
+  
+  if (!aFullscreen && mPiPType == PiPType::MediaPiP &&
+      GetSupportsNativeFullscreen()) {
+    SetSupportsNativeFullscreen(false);
+    restoreKeyToPlayer = true;
+  }
+
   
   
   
@@ -6341,6 +6390,20 @@ void nsCocoaWindow::CocoaWindowDidEnterFullscreen(bool aFullscreen) {
 
   
   FinishCurrentTransitionIfMatching(transition);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (restoreKeyToPlayer && NSApp.isActive && mWindow.isVisible &&
+      !mWindow.isKeyWindow) {
+    [mWindow makeKeyAndOrderFront:nil];
+  }
 }
 
 void nsCocoaWindow::UpdateFullscreenState(bool aFullScreen, bool aNativeMode) {
@@ -6375,6 +6438,22 @@ nsresult nsCocoaWindow::DoMakeFullScreen(bool aFullScreen,
                                          bool aUseSystemTransition) {
   if (!mWindow) {
     return NS_OK;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aFullScreen && aUseSystemTransition && mPiPType == PiPType::MediaPiP &&
+      !GetSupportsNativeFullscreen()) {
+    SetSupportsNativeFullscreen(true);
   }
 
   
@@ -8064,6 +8143,23 @@ static NSMutableSet* gSwizzledFrameViewClasses = nil;
 @end
 
 @implementation BaseWindow
+
+
+
+
+
+
+
+
++ (NSUInteger)_validateStyleMask:(NSUInteger)aStyleMask {
+  if (![NSWindow respondsToSelector:@selector(_validateStyleMask:)]) {
+    
+    
+    return aStyleMask;
+  }
+  NSUInteger keep = aStyleMask & NSWindowStyleMaskNonactivatingPanel;
+  return [super _validateStyleMask:(aStyleMask & ~keep)] | keep;
+}
 
 
 

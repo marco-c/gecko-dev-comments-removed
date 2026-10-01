@@ -21,6 +21,15 @@
 
 @end
 
+
+
+
+
+
+static bool IsNonactivatingWindow(NSWindow* aWindow) {
+  return (aWindow.styleMask & NSWindowStyleMaskNonactivatingPanel) != 0;
+}
+
 #pragma mark -
 
 @implementation WindowDataMap
@@ -236,7 +245,8 @@
   id delegate = window.delegate;
   if (!delegate || ![delegate isKindOfClass:[WindowDelegate class]]) {
     [TopLevelWindowData activateInWindowViews:window];
-  } else if (window.isSheet || window.isMainWindow) {
+  } else if (window.isSheet || window.isMainWindow ||
+             IsNonactivatingWindow(window)) {
     [TopLevelWindowData activateInWindow:window];
   }
 }
@@ -247,7 +257,8 @@
   id delegate = window.delegate;
   if (!delegate || ![delegate isKindOfClass:[WindowDelegate class]]) {
     [TopLevelWindowData deactivateInWindowViews:window];
-  } else if (window.isSheet || window.isMainWindow) {
+  } else if (window.isSheet || window.isMainWindow ||
+             IsNonactivatingWindow(window)) {
     [TopLevelWindowData deactivateInWindow:window];
   }
 }
@@ -270,8 +281,11 @@
 - (void)windowResignedMain:(NSNotification*)inNotification {
   NSWindow* window = inNotification.object;
   id delegate = window.delegate;
+  
+  
   if (delegate && [delegate isKindOfClass:[WindowDelegate class]] &&
-      ![window attachedSheet] && ![NSApp modalWindow]) {
+      ![window attachedSheet] && ![NSApp modalWindow] &&
+      !(IsNonactivatingWindow(window) && window.isKeyWindow)) {
     [TopLevelWindowData deactivateInWindow:window];
   }
 }

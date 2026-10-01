@@ -130,6 +130,11 @@ class TextInputHandler;
 
 + (Class)frameViewClassForStyleMask:(NSUInteger)styleMask;
 
+
+
+
++ (NSUInteger)_validateStyleMask:(NSUInteger)aStyleMask;
+
 @end
 
 @interface PopupWindow : BaseWindow <NSPopoverDelegate> {

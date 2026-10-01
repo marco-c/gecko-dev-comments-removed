@@ -23,6 +23,43 @@ async function switchVideoSource(browser, src) {
 
 
 
+
+
+
+
+function assertFullscreenEvent(actual, screen, message) {
+  info(message);
+  
+  
+  
+  
+  isfuzzy(
+    actual.width,
+    screen.width,
+    ACCEPTABLE_DIFFERENCE,
+    `The actual width: ${actual.width}. The expected width: ${screen.width}`
+  );
+  isfuzzy(
+    actual.left,
+    screen.left,
+    ACCEPTABLE_DIFFERENCE,
+    `The actual left: ${actual.left}. The expected left: ${screen.left}`
+  );
+  let expectedBottom = screen.top + screen.height;
+  isfuzzy(
+    actual.top + actual.height,
+    expectedBottom,
+    ACCEPTABLE_DIFFERENCE,
+    `The actual bottom: ${actual.top + actual.height}. The expected bottom: ${expectedBottom}`
+  );
+}
+
+
+
+
+
+
+
 function assertEvent(actual, expected, message) {
   info(message);
   isfuzzy(
@@ -136,15 +173,9 @@ add_task(async function testNoSrcChangeFullscreen() {
       );
 
       actualEvent = resizeEventArray.splice(0, 1)[0];
-      expectedEvent = {
-        width: screen.width,
-        height: screen.height,
-        left: screen.left,
-        top: screen.top,
-      };
-      assertEvent(
+      assertFullscreenEvent(
         actualEvent,
-        expectedEvent,
+        screen,
         "The PiP window has been correctly fullscreened before switching source"
       );
 
@@ -273,15 +304,9 @@ add_task(async function testChangingSameSizeVideoSrcFullscreen() {
       );
 
       actualEvent = resizeEventArray.splice(0, 1)[0];
-      expectedEvent = {
-        width: screen.width,
-        height: screen.height,
-        left: screen.left,
-        top: screen.top,
-      };
-      assertEvent(
+      assertFullscreenEvent(
         actualEvent,
-        expectedEvent,
+        screen,
         "The PiP window has been correctly fullscreened before switching source"
       );
 
@@ -418,15 +443,9 @@ add_task(async function testChangingDifferentSizeVideoSrcFullscreen() {
       );
 
       actualEvent = resizeEventArray.splice(0, 1)[0];
-      expectedEvent = {
-        width: screen.width,
-        height: screen.height,
-        left: screen.left,
-        top: screen.top,
-      };
-      assertEvent(
+      assertFullscreenEvent(
         actualEvent,
-        expectedEvent,
+        screen,
         "The PiP window has been correctly fullscreened before switching source"
       );
 
