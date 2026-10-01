@@ -23,7 +23,6 @@ namespace mozilla {
 
 
 
-
 class AllocPolicy {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AllocPolicy)
 
@@ -48,10 +47,13 @@ class AllocPolicy {
 
 
 
+
 class GlobalAllocPolicy {
  public:
+  enum class Kind { Decoder, Encoder };
   
-  static NotNull<AllocPolicy*> Instance(TrackInfo::TrackType aTrack);
+  static NotNull<AllocPolicy*> Instance(Kind aKind,
+                                        TrackInfo::TrackType aTrack);
 
  private:
   
@@ -95,12 +97,19 @@ class AllocPolicyImpl : public AllocPolicy {
 
 
 
+
 class SingleAllocPolicy : public AllocPolicyImpl {
   using TrackType = TrackInfo::TrackType;
+  using Kind = GlobalAllocPolicy::Kind;
 
  public:
   SingleAllocPolicy(TrackType aTrack, TaskQueue* aOwnerThread)
-      : AllocPolicyImpl(1), mTrack(aTrack), mOwnerThread(aOwnerThread) {}
+      : SingleAllocPolicy(Kind::Decoder, aTrack, aOwnerThread) {}
+  SingleAllocPolicy(Kind aKind, TrackType aTrack, TaskQueue* aOwnerThread)
+      : AllocPolicyImpl(1),
+        mKind(aKind),
+        mTrack(aTrack),
+        mOwnerThread(aOwnerThread) {}
 
   RefPtr<Promise> Alloc() override;
 
@@ -112,6 +121,7 @@ class SingleAllocPolicy : public AllocPolicyImpl {
   class AutoDeallocCombinedToken;
   virtual ~SingleAllocPolicy();
 
+  const Kind mKind;
   const TrackType mTrack;
   RefPtr<TaskQueue> mOwnerThread;
   MozPromiseHolder<Promise> mPendingPromise;
