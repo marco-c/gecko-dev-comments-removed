@@ -13,10 +13,8 @@ typedef intptr_t ssize_t;
 #  include <sys/mman.h>
 #  include <unistd.h>
 #endif
-#ifdef XP_LINUX
-#  include <fcntl.h>
-#  include <stdlib.h>
-#endif
+#include <fcntl.h>
+#include <stdlib.h>
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -285,14 +283,22 @@ class FdReader {
         mData(&mRawBuf, 0),
         mBuf(&mRawBuf, sizeof(mRawBuf)) {
     memcpy(mRawBuf, aOther.mRawBuf, sizeof(mRawBuf));
-    aOther.mFd = -1;
-    aOther.mNeedClose = false;
-    aOther.mData = Buffer();
-    aOther.mBuf = Buffer();
+    aOther.forget();
   }
 
   FdReader& operator=(const FdReader&) = delete;
   FdReader(const FdReader&) = delete;
+
+  FdReader& operator=(FdReader&& aOther) {
+    mFd = aOther.mFd;
+    mNeedClose = aOther.mNeedClose;
+    mData = aOther.mData;
+    mBuf = aOther.mBuf;
+
+    aOther.forget();
+
+    return *this;
+  }
 
   ~FdReader() {
     if (mNeedClose) {
@@ -300,6 +306,15 @@ class FdReader {
     }
   }
 
+ private:
+  void forget() {
+    mFd = -1;
+    mNeedClose = false;
+    mData = Buffer();
+    mBuf = Buffer();
+  }
+
+ public:
   
   Buffer ReadLine() {
     while (true) {
@@ -1068,7 +1083,7 @@ MOZ_RUNINIT static Replay replay;
 
 int main(int argc, const char* argv[]) {
   size_t first_pid = 0;
-  FdReader reader(0);
+  const char* filename = nullptr;
 
   for (int i = 1; i < argc; i++) {
     const char* option = argv[i];
@@ -1078,10 +1093,27 @@ int main(int argc, const char* argv[]) {
     } else if (strcmp(option, "-c") == 0) {
       
       replay.enableMemset();
+    } else if (!filename) {
+      
+      filename = option;
     } else {
       fprintf(stderr, "Unknown command line option: %s\n", option);
       return EXIT_FAILURE;
     }
+  }
+
+  FdReader reader(0);
+  if (filename) {
+#ifdef XP_WIN
+    int fd = _open(filename, _O_RDONLY);
+#else
+    int fd = open(filename, O_RDONLY);
+#endif
+    if (fd < 0) {
+      perror(filename);
+      exit(1);
+    }
+    reader = FdReader(fd, true);
   }
 
   
