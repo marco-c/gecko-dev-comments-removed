@@ -178,20 +178,13 @@ RefPtr<HWInferenceParent> HWInferenceParent::GetSingleton() {
 
   
   
-  
-  
-  
-  
-  if (sInstance && sInstance->mUtilityParent) {
+  if (sInstance && sInstance->CanSend()) {
     RefPtr<ipc::UtilityProcessManager> upm =
         ipc::UtilityProcessManager::GetIfExists();
     if (!upm || upm->GetProcessParent(ipc::SandboxingKind::HW_INFERENCE) !=
-                    sInstance->mUtilityParent) {
+                    sInstance->Manager()) {
       LOGD("{} - evicting instance bound to a gone process", __func__);
-      RefPtr<HWInferenceParent> stale = sInstance;
       sInstance = nullptr;
-      
-      stale->Close();
     }
   }
 
@@ -225,7 +218,6 @@ void HWInferenceParent::ActorDestroy(ActorDestroyReason aReason) {
   
   
   mReadyPromise->Reject(NS_ERROR_NOT_AVAILABLE, __func__);
-  mUtilityParent = nullptr;
   
   
   if (sInstance == this) {
@@ -236,22 +228,12 @@ void HWInferenceParent::ActorDestroy(ActorDestroyReason aReason) {
 nsresult HWInferenceParent::BindToUtilityProcess(
     const RefPtr<ipc::UtilityProcessParent>& aUtilityParent) {
   LOGD("{}", __func__);
-  Endpoint<hwinference::PHWInferenceParent> parentEnd;
-  Endpoint<hwinference::PHWInferenceChild> childEnd;
-  MOZ_ALWAYS_SUCCEEDS(PHWInference::CreateEndpoints(
-      ipc::EndpointProcInfo::Current(), aUtilityParent->OtherEndpointProcInfo(),
-      &parentEnd, &childEnd));
-
-  LOGD("Sending StartHWInferenceService to utility process");
-  if (!aUtilityParent->SendStartHWInferenceService(std::move(childEnd))) {
-    LOGE("Failed to send StartHWInferenceService");
-    MOZ_ASSERT(false, "StartHWInference service failure");
+  if (!aUtilityParent->SendPHWInferenceConstructor(this)) {
+    LOGE("Failed to construct the HWInference actor");
+    MOZ_ASSERT(false, "HWInference actor construction failure");
     return NS_ERROR_FAILURE;
   }
 
-  LOGD("StartHWInferenceService sent successfully, binding parent endpoint");
-  MOZ_ALWAYS_TRUE(parentEnd.Bind(this));
-  mUtilityParent = aUtilityParent;
   mReadyPromise->Resolve(true, __func__);
   return NS_OK;
 }

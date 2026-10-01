@@ -120,11 +120,6 @@ TEST_F(TestUtilityProcess, LaunchAllKinds) {
 
 
 
-
-
-
-
-
 TEST_F(TestUtilityProcess, HWInferenceRelaunchesAfterShutdown) {
   auto manager = UtilityProcessManager::GetSingleton();
   ASSERT_TRUE(manager);
@@ -146,7 +141,6 @@ TEST_F(TestUtilityProcess, HWInferenceRelaunchesAfterShutdown) {
   auto firstPid = manager->ProcessPid(SandboxingKind::HW_INFERENCE);
   ASSERT_TRUE(firstPid.isSome());
 
-  
   
   manager->CleanShutdown(SandboxingKind::HW_INFERENCE);
   auto relaunch = WaitFor(manager->StartHWInference());

@@ -63,10 +63,6 @@ class HWInferenceParent final : public PHWInferenceParent {
   static StaticRefPtr<HWInferenceParent> sInstance;
   ~HWInferenceParent() = default;
 
-  
-  
-  RefPtr<ipc::UtilityProcessParent> mUtilityParent;
-
   const RefPtr<GenericNonExclusivePromise::Private> mReadyPromise =
       new GenericNonExclusivePromise::Private(
           "HWInferenceParent::mReadyPromise");

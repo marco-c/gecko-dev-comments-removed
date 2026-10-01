@@ -95,8 +95,7 @@ class UtilityProcessChild final : public PUtilityProcessChild {
 #endif  
 
 #ifndef ANDROID
-  mozilla::ipc::IPCResult RecvStartHWInferenceService(
-      Endpoint<PHWInferenceChild>&& aEndpoint);
+  already_AddRefed<hwinference::PHWInferenceChild> AllocPHWInferenceChild();
 #endif  
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
