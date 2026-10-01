@@ -58,6 +58,56 @@ async function setTestTopSites() {
   await toggleTopsitesPref();
 }
 
+
+
+
+function topSiteLinkSelector(url) {
+  return `.top-sites-list a.top-site-button[href="${url}"]`;
+}
+
+
+
+
+
+
+
+
+
+
+
+async function waitForTopSiteLink(tabbrowser, url) {
+  await SpecialPowers.spawn(
+    tabbrowser.selectedBrowser,
+    [topSiteLinkSelector(url)],
+    async selector => {
+      await ContentTaskUtils.waitForCondition(
+        () => content.document.querySelector(selector),
+        `Wait for the top site link ${selector}`
+      );
+    }
+  );
+}
+
+
+
+
+
+
+
+
+
+async function openTopSiteInNewTab(tabbrowser, url) {
+  const tabPromise = BrowserTestUtils.waitForNewTab(tabbrowser, url, true);
+  await BrowserTestUtils.synthesizeMouse(
+    topSiteLinkSelector(url),
+    2,
+    2,
+    { accelKey: true },
+    tabbrowser.selectedBrowser
+  );
+  return tabPromise;
+}
+
 async function clearHistoryAndBookmarks() {
   await PlacesUtils.bookmarks.eraseEverything();
   await PlacesUtils.history.clear();

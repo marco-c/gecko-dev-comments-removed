@@ -1,6 +1,11 @@
 
 
 
+
+
+
+const TEST_URL = "https://example.com/";
+
 add_task(async function test_newtab_to_window() {
   await setTestTopSites();
 
@@ -23,33 +28,8 @@ add_task(async function test_newtab_to_window() {
     "about:newtab moved to window"
   );
 
-  
-  await SpecialPowers.spawn(
-    newWindow.gBrowser.selectedBrowser,
-    [],
-    async () => {
-      await ContentTaskUtils.waitForCondition(
-        () => content.document.querySelector(".top-sites a"),
-        "Top site link should appear"
-      );
-    }
-  );
-
-  let tabPromise = BrowserTestUtils.waitForNewTab(
-    newWindow.gBrowser,
-    "https://example.com/",
-    true
-  );
-
-  await BrowserTestUtils.synthesizeMouse(
-    `.top-sites a`,
-    2,
-    2,
-    { accelKey: true },
-    newWindow.gBrowser.selectedBrowser
-  );
-
-  await tabPromise;
+  await waitForTopSiteLink(newWindow.gBrowser, TEST_URL);
+  await openTopSiteInNewTab(newWindow.gBrowser, TEST_URL);
 
   is(newWindow.gBrowser.tabs.length, 2, "second page is opened");
 
