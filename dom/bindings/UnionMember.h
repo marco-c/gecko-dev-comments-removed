@@ -20,13 +20,13 @@ template <class T>
 class UnionMember {
   AlignedStorage2<T> mStorage;
 
-  
-  
-  UnionMember(const UnionMember&) = delete;
-
  public:
   UnionMember() = default;
   ~UnionMember() = default;
+
+  
+  
+  UnionMember(const UnionMember&) = delete;
 
   template <typename... Args>
   T& SetValue(Args&&... args) {

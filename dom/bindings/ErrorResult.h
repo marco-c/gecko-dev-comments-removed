@@ -200,6 +200,11 @@ class TErrorResult {
 
   explicit TErrorResult(nsresult aRv) : TErrorResult() { AssignErrorCode(aRv); }
 
+  
+  
+  TErrorResult(const TErrorResult&) = delete;
+  void operator=(const TErrorResult&) = delete;
+
   operator ErrorResult&();
   operator const ErrorResult&() const;
   operator OOMReporter&();
@@ -211,6 +216,7 @@ class TErrorResult {
   
   void MOZ_MUST_RETURN_FROM_CALLER_IF_THIS_IS_ARG Throw(nsresult rv) {
     MOZ_ASSERT(NS_FAILED(rv), "Please don't try throwing success");
+    ClearUnionData();
     AssignErrorCode(rv);
   }
 
@@ -427,7 +433,10 @@ class TErrorResult {
   
   
   
-  void operator=(nsresult rv) { AssignErrorCode(rv); }
+  void operator=(nsresult rv) {
+    ClearUnionData();
+    AssignErrorCode(rv);
+  }
 
   bool Failed() const { return NS_FAILED(mResult); }
 
@@ -538,6 +547,7 @@ class TErrorResult {
   }
 
   void AssignErrorCode(nsresult aRv) {
+    MOZ_ASSERT(mUnionState == HasNothing);
     MOZ_ASSERT(aRv != NS_ERROR_INTERNAL_ERRORRESULT_TYPEERROR,
                "Use ThrowTypeError()");
     MOZ_ASSERT(aRv != NS_ERROR_INTERNAL_ERRORRESULT_RANGEERROR,
@@ -650,11 +660,6 @@ class TErrorResult {
   
   NS_DECL_OWNINGTHREAD;
 #endif
-
-  
-  
-  TErrorResult(const TErrorResult&) = delete;
-  void operator=(const TErrorResult&) = delete;
 } JS_HAZ_ROOTED;
 
 struct JustAssertCleanupPolicy {

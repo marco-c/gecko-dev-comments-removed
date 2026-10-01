@@ -53,7 +53,7 @@ class TypedArrayCreator;
 
 
 template <typename T>
-[[nodiscard]] std::enable_if_t<std::is_same<T, bool>::value, bool> ToJSValue(
+[[nodiscard]] std::enable_if_t<std::is_same_v<T, bool>, bool> ToJSValue(
     JSContext* aCx, T aArgument, JS::MutableHandle<JS::Value> aValue) {
   
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
@@ -132,7 +132,7 @@ inline bool ToJSValue(JSContext* aCx, double aArgument,
 
 
 template <class T>
-[[nodiscard]] std::enable_if_t<std::is_base_of<nsWrapperCache, T>::value, bool>
+[[nodiscard]] std::enable_if_t<std::is_base_of_v<nsWrapperCache, T>, bool>
 ToJSValue(JSContext* aCx, T& aArgument, JS::MutableHandle<JS::Value> aValue) {
   
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
@@ -145,8 +145,8 @@ ToJSValue(JSContext* aCx, T& aArgument, JS::MutableHandle<JS::Value> aValue) {
 
 namespace binding_detail {
 template <class T>
-[[nodiscard]] std::enable_if_t<
-    std::is_base_of<NonRefcountedDOMObject, T>::value, bool>
+[[nodiscard]] std::enable_if_t<std::is_base_of_v<NonRefcountedDOMObject, T>,
+                               bool>
 ToJSValueFromPointerHelper(JSContext* aCx, T* aArgument,
                            JS::MutableHandle<JS::Value> aValue) {
   
@@ -173,8 +173,8 @@ ToJSValueFromPointerHelper(JSContext* aCx, T* aArgument,
 
 
 template <class T>
-[[nodiscard]] std::enable_if_t<
-    std::is_base_of<NonRefcountedDOMObject, T>::value, bool>
+[[nodiscard]] std::enable_if_t<std::is_base_of_v<NonRefcountedDOMObject, T>,
+                               bool>
 ToJSValue(JSContext* aCx, UniquePtr<T>&& aArgument,
           JS::MutableHandle<JS::Value> aValue) {
   if (!binding_detail::ToJSValueFromPointerHelper(aCx, aArgument.get(),
@@ -190,10 +190,9 @@ ToJSValue(JSContext* aCx, UniquePtr<T>&& aArgument,
 
 template <typename T>
 [[nodiscard]]
-typename std::enable_if<std::is_base_of<AllTypedArraysBase, T>::value,
-                        bool>::type
-ToJSValue(JSContext* aCx, const TypedArrayCreator<T>& aArgument,
-          JS::MutableHandle<JS::Value> aValue) {
+std::enable_if_t<std::is_base_of_v<AllTypedArraysBase, T>, bool> ToJSValue(
+    JSContext* aCx, const TypedArrayCreator<T>& aArgument,
+    JS::MutableHandle<JS::Value> aValue) {
   
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
 
@@ -234,9 +233,9 @@ using ScriptableInterfaceType = typename GetScriptableInterfaceType<T>::Type;
 
 
 template <class T>
-[[nodiscard]] std::enable_if_t<!std::is_base_of<nsWrapperCache, T>::value &&
-                                   !std::is_base_of<CallbackObject, T>::value &&
-                                   std::is_base_of<nsISupports, T>::value,
+[[nodiscard]] std::enable_if_t<!std::is_base_of_v<nsWrapperCache, T> &&
+                                   !std::is_base_of_v<CallbackObject, T> &&
+                                   std::is_base_of_v<nsISupports, T>,
                                bool>
 ToJSValue(JSContext* aCx, T& aArgument, JS::MutableHandle<JS::Value> aValue) {
   
@@ -343,7 +342,7 @@ template <typename T>
 
 
 template <typename T>
-[[nodiscard]] std::enable_if_t<std::is_pointer<T>::value, bool> ToJSValue(
+[[nodiscard]] std::enable_if_t<std::is_pointer_v<T>, bool> ToJSValue(
     JSContext* aCx, T aArgument, JS::MutableHandle<JS::Value> aValue) {
   return ToJSValue(aCx, *aArgument, aValue);
 }

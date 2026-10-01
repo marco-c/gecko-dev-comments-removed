@@ -156,6 +156,10 @@ class Optional_base {
   explicit Optional_base(const T& aValue) { mImpl.emplace(aValue); }
   explicit Optional_base(T&& aValue) { mImpl.emplace(std::move(aValue)); }
 
+  
+  Optional_base(const Optional_base& other) = delete;
+  const Optional_base& operator=(const Optional_base& other) = delete;
+
   bool operator==(const Optional_base<T, InternalType>& aOther) const {
     return mImpl == aOther.mImpl;
   }
@@ -191,11 +195,6 @@ class Optional_base {
   
   
   
-
- private:
-  
-  Optional_base(const Optional_base& other) = delete;
-  const Optional_base& operator=(const Optional_base& other) = delete;
 
  protected:
   Maybe<InternalType> mImpl;
@@ -262,7 +261,7 @@ class Optional<JSObject*> : public Optional_base<JSObject*, JSObject*> {
 
 template <>
 class Optional<JS::Value> {
- private:
+ public:
   Optional() = delete;
 
   explicit Optional(const JS::Value& aValue) = delete;
@@ -307,6 +306,10 @@ class Optional<nsTSubstring<CharT>> {
  public:
   Optional() : mStr(nullptr) {}
 
+  
+  Optional(const Optional& other) = delete;
+  const Optional& operator=(const Optional& other) = delete;
+
   bool WasPassed() const { return !!mStr; }
 
   void operator=(const AString* str) {
@@ -320,10 +323,6 @@ class Optional<nsTSubstring<CharT>> {
   }
 
  private:
-  
-  Optional(const Optional& other) = delete;
-  const Optional& operator=(const Optional& other) = delete;
-
   const AString* mStr;
 };
 
