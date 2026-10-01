@@ -2,8 +2,6 @@
 
 
 
-import requests
-
 from mozbuild.vendor.host_base import BaseHost
 
 
@@ -12,7 +10,7 @@ class GitHubHost(BaseHost):
         """Generic Github API get."""
         repo = self.repo_url.path[1:].strip("/")
         github_api = f"https://api.github.com/repos/{repo}/{path}"
-        req = requests.get(github_api)
+        req = self.session.get(github_api)
         req.raise_for_status()
         return req.json()
 

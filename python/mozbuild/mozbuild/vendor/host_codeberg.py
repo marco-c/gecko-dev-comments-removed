@@ -2,8 +2,6 @@
 
 
 
-import requests
-
 from mozbuild.vendor.host_base import BaseHost
 
 
@@ -15,7 +13,7 @@ class CodebergHost(BaseHost):
         )
         codeberg_api += self.repo_url.path[1:]
         codeberg_api += "/git/commits"
-        req = requests.get("/".join([codeberg_api, revision]))
+        req = self.session.get("/".join([codeberg_api, revision]))
         req.raise_for_status()
         info = req.json()
         return (info["sha"], info["created"])
