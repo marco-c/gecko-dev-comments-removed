@@ -593,7 +593,7 @@ impl<'a> SceneBuilder<'a> {
             &builder.spatial_tree,
             &builder.prim_instances,
             &mut builder.clip_tree_builder,
-            &builder.interners,
+            &builder.interners.clip,
         );
 
         for pic_index in &builder.snapshot_pictures {
@@ -2083,7 +2083,7 @@ impl<'a> SceneBuilder<'a> {
         
         
         if let Some(clip_chain_id) = clip_chain_id {
-            if self.clip_tree_builder.clip_chain_has_complex_clips(clip_chain_id, &self.interners) {
+            if self.clip_tree_builder.clip_chain_has_complex_clips(clip_chain_id, &self.interners.clip) {
                 
                 
                 
@@ -2099,7 +2099,7 @@ impl<'a> SceneBuilder<'a> {
                    !self.sc_stack.is_empty() ||
                    !self.clip_tree_builder.clip_chain_complex_clips_are_promotable(
                        clip_chain_id,
-                       &self.interners,
+                       &self.interners.clip,
                        &self.spatial_tree,
                    )
                 {
@@ -2136,7 +2136,7 @@ impl<'a> SceneBuilder<'a> {
                 
                 if self.tile_cache_builder.is_current_slice_empty() &&
                    self.spatial_tree.is_root_coord_system(spatial_node_index) &&
-                   !self.clip_tree_builder.clip_node_has_complex_clips(clip_node_id, &self.interners)
+                   !self.clip_tree_builder.clip_node_has_complex_clips(clip_node_id, &self.interners.clip)
                 {
                     self.add_tile_cache_barrier_if_needed(SliceFlags::IS_ATOMIC);
                     self.tile_cache_builder.make_current_slice_atomic();
