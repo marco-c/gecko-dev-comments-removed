@@ -31,7 +31,7 @@ async function getButtonState(browser, engineName, expectedWordmark = null) {
           content.document
             .querySelector("moz-urlbar")
             .hasAttribute("variant-a"),
-        "waiting for the bar to be in variant A"
+        "waiting for the search bar to be in variant A"
       );
 
       let button = content.document.querySelector(".searchmode-switcher");
