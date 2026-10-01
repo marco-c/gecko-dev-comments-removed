@@ -113,7 +113,9 @@ class VideoFrameSurface<LIBAV_VER> {
 
   
   
-  bool IsUsedByRenderer() const { return mSurface->IsGlobalRefSet(); }
+  
+  
+  bool IsUsedByRenderer() const { return mUsedByRenderer; }
 
   
   bool IsFFMPEGSurface() const { return !!mLib; }
@@ -127,7 +129,8 @@ class VideoFrameSurface<LIBAV_VER> {
   AVBufferRef* mHWAVBuffer;
   VASurfaceID mFFMPEGSurfaceID;
   bool mHoldByFFmpeg;
-  int32_t mVulkanCopySlotIndex = -1;
+  bool mUsedByRenderer;
+  int32_t mVulkanCopySlotIndex;
 };
 
 
@@ -153,6 +156,10 @@ class VideoFramePool<LIBAV_VER> {
   bool IsVulkanFrameSlotInUseByRenderer(int32_t aSlotIndex);
 
  private:
+  
+  
+  
+  void UpdateRendererUsageLocked() MOZ_REQUIRES(mSurfaceLock);
   RefPtr<VideoFrameSurface<LIBAV_VER>> GetTargetVideoFrameSurfaceLocked(
       const MutexAutoLock& aProofOfLock, VASurfaceID aFFmpegSurfaceID,
       bool aRecycleSurface);
@@ -160,7 +167,7 @@ class VideoFramePool<LIBAV_VER> {
       const MutexAutoLock& aProofOfLock, VASurfaceID aFFMPEGSurfaceID);
   RefPtr<VideoFrameSurface<LIBAV_VER>> GetFreeVideoFrameSurfaceLocked(
       const MutexAutoLock& aProofOfLock);
-  bool ShouldCopySurface();
+  bool ShouldCopySurfaceLocked()  MOZ_REQUIRES(mSurfaceLock);
 
  private:
   

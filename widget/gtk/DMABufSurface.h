@@ -12,6 +12,7 @@
 #include "GLTypes.h"
 #include "ImageContainer.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/Span.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/webgpu/ffi/wgpu.h"
 #include "mozilla/widget/BufferSurface.h"
@@ -149,6 +150,17 @@ class DMABufSurface : public BufferSurface {
   
   
   bool IsGlobalRefSet();
+
+  
+  
+  
+  int GetGlobalRefCountFd();
+
+  
+  
+  
+  static void GetGlobalRefsSet(mozilla::Span<const int> aRefCountFds,
+                               nsTArray<bool>& aRefSet);
 
   
   void GlobalRefAdd();
