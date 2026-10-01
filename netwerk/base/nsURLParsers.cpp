@@ -41,64 +41,6 @@ NS_IMPL_ISUPPORTS(nsNoAuthURLParser, nsIURLParser)
   if (component##Pos) *component##Pos += (offset); \
   PR_END_MACRO
 
-nsresult nsBaseURLParser::ParseAll(const char* spec, int32_t specLen,
-                                   URLParseResult& aOut) {
-  
-  nsresult rv = ParseURL(spec, specLen, &aOut.schemePos, &aOut.schemeLen,
-                         &aOut.authorityPos, &aOut.authorityLen, &aOut.pathPos,
-                         &aOut.pathLen);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  
-  
-  
-  
-  if (aOut.authorityLen > 0) {
-    rv = ParseAuthority(spec + aOut.authorityPos, aOut.authorityLen,
-                        &aOut.usernamePos, &aOut.usernameLen, &aOut.passwordPos,
-                        &aOut.passwordLen, &aOut.hostPos, &aOut.hostLen,
-                        &aOut.port);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    aOut.usernamePos += aOut.authorityPos;
-    aOut.passwordPos += aOut.authorityPos;
-    aOut.hostPos += aOut.authorityPos;
-  }
-
-  
-  
-  
-  if (aOut.pathLen > 0) {
-    rv = ParsePath(spec + aOut.pathPos, aOut.pathLen, &aOut.filepathPos,
-                   &aOut.filepathLen, &aOut.queryPos, &aOut.queryLen,
-                   &aOut.refPos, &aOut.refLen);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    aOut.filepathPos += aOut.pathPos;
-    aOut.queryPos += aOut.pathPos;
-    aOut.refPos += aOut.pathPos;
-
-    if (aOut.filepathLen > 0) {
-      rv = ParseFilePath(spec + aOut.filepathPos, aOut.filepathLen,
-                         &aOut.directoryPos, &aOut.directoryLen,
-                         &aOut.basenamePos, &aOut.basenameLen,
-                         &aOut.extensionPos, &aOut.extensionLen);
-      if (NS_FAILED(rv)) {
-        return rv;
-      }
-      aOut.directoryPos += aOut.filepathPos;
-      aOut.basenamePos += aOut.filepathPos;
-      aOut.extensionPos += aOut.filepathPos;
-    }
-  }
-
-  return NS_OK;
-}
-
 NS_IMETHODIMP
 nsBaseURLParser::ParseURL(const char* spec, int32_t specLen,
                           uint32_t* schemePos, int32_t* schemeLen,

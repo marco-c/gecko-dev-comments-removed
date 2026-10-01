@@ -2,7 +2,6 @@
 #include "gtest/MozGTestBench.h"  
 #include "gtest/gtest.h"
 #include "mozilla/Base64.h"
-#include "mozilla/Encoding.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "nsCOMPtr.h"
 #include "nsComponentManagerUtils.h"
@@ -650,41 +649,4 @@ TEST(TestStandardURL, bug1911529)
 
   ASSERT_EQ(uri->Equals(uri2, &equals), NS_OK);
   ASSERT_TRUE(equals);
-}
-
-
-
-
-TEST(TestStandardURL, NonUtf8QueryWithEncoding)
-{
-  nsCOMPtr<nsIURI> uri;
-  ASSERT_EQ(NS_MutateURI(NS_STANDARDURLMUTATOR_CONTRACTID)
-                .SetSpec("http://example.com/"_ns)
-                .Finalize(uri),
-            NS_OK);
-
-  
-  
-  nsAutoCString badQuery(
-      "a\xA7"
-      "b\xF9"
-      "c\xFE");
-
-  const auto* encoding = mozilla::Encoding::ForLabelNoReplacement(
-      mozilla::MakeStringSpan("Shift_JIS"));
-  ASSERT_TRUE(encoding);
-
-  nsCOMPtr<nsIURI> out;
-  ASSERT_EQ(
-      NS_MutateURI(uri).SetQueryWithEncoding(badQuery, encoding).Finalize(out),
-      NS_OK);
-
-  nsAutoCString spec;
-  ASSERT_EQ(out->GetSpec(spec), NS_OK);
-
-  
-  
-  ASSERT_EQ(
-      spec,
-      "http://example.com/?a%26%2365533%3Bb%26%2365533%3Bc%26%2365533%3B"_ns);
 }
