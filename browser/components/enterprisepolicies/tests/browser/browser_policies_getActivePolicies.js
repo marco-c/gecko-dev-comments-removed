@@ -28,7 +28,8 @@ add_task(async function test_wrong_policies() {
     },
   });
 
-  let expected = {};
+  
+  let expected = { SitePolicies: [] };
 
   Assert.deepEqual(
     await Services.policies.getActivePolicies(),

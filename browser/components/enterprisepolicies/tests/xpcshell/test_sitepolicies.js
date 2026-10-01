@@ -51,6 +51,10 @@ function assertJitState(url, isAllowed) {
   );
 }
 
+add_setup(() => {
+  do_get_profile();
+});
+
 add_task(async function test_isAllowedForSite() {
   
   await setupPolicyEngineWithJson({
