@@ -115,8 +115,6 @@ class AttrArray {
   int32_t IndexOfAttr(const nsAtom* aLocalName) const;
   int32_t IndexOfAttr(const nsAtom* aLocalName, int32_t aNamespaceID) const;
 
-  void Compact();
-
   
   
   void NodeInfoChanged(nsNodeInfoManager* aManager);
@@ -215,14 +213,12 @@ class AttrArray {
 
   void Clear() {
     
-    
     if (HasTaggedBloom()) {
-      mImpl.release();
-    } else {
-      mImpl.reset();
+      return;
     }
-    
-    SetTaggedBloom(0x1ULL);
+    auto bloom = mImpl->mSubtreeBloomFilter;
+    mImpl.reset();
+    SetTaggedBloom(bloom);
   }
 
   
