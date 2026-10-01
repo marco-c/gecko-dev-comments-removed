@@ -54,10 +54,6 @@ async function showCustomizePanel(win) {
 }
 
 add_task(async function test_customize_sidebar_actions() {
-  
-  
-  
-  await SidebarTestUtils.ensureLauncherVisible(window);
   const customizeComponent = await showCustomizePanel(window);
   const sidebar = document.querySelector("sidebar-main");
   let toolEntrypointsCount = sidebar.toolButtons.length;
