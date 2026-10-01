@@ -4,7 +4,7 @@
 "use strict";
 
 const { AddonsBackupResource } = ChromeUtils.importESModule(
-  "resource:///modules/backup/AddonsBackupResource.sys.mjs"
+  "moz-src:///browser/components/backup/resources/AddonsBackupResource.sys.mjs"
 );
 
 

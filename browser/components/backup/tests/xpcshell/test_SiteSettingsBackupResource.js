@@ -4,7 +4,7 @@
 "use strict";
 
 const { SiteSettingsBackupResource } = ChromeUtils.importESModule(
-  "resource:///modules/backup/SiteSettingsBackupResource.sys.mjs"
+  "moz-src:///browser/components/backup/resources/SiteSettingsBackupResource.sys.mjs"
 );
 
 

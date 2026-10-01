@@ -4,7 +4,7 @@
 "use strict";
 
 const { ArchiveUtils } = ChromeUtils.importESModule(
-  "resource:///modules/backup/ArchiveUtils.sys.mjs"
+  "moz-src:///browser/components/backup/ArchiveUtils.sys.mjs"
 );
 
 const string = "🌞🌞🌞🌞";

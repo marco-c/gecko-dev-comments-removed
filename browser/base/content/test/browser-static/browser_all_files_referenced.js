@@ -344,7 +344,7 @@ var allowlist = [
   
   
   {
-    file: "resource://app/modules/backup/CookiesBackupResource.sys.mjs",
+    file: "moz-src:///browser/components/backup/resources/CookiesBackupResource.sys.mjs",
   },
 ];
 

@@ -8,7 +8,7 @@
 
 
 const { SelectableProfileBackupResource } = ChromeUtils.importESModule(
-  "resource:///modules/backup/SelectableProfileBackupResource.sys.mjs"
+  "moz-src:///browser/components/backup/resources/SelectableProfileBackupResource.sys.mjs"
 );
 const { ProfilesDatastoreService } = ChromeUtils.importESModule(
   "moz-src:///toolkit/profile/ProfilesDatastoreService.sys.mjs"

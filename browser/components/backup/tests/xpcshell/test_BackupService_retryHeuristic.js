@@ -4,7 +4,7 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
-  BackupError: "resource:///modules/backup/BackupError.mjs",
+  BackupError: "moz-src:///browser/components/backup/BackupError.mjs",
   ERRORS: "chrome://browser/content/backup/backup-constants.mjs",
   TestUtils: "resource://testing-common/TestUtils.sys.mjs",
 });

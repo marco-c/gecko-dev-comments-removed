@@ -4,7 +4,7 @@
 "use strict";
 
 const { PreferencesBackupResource } = ChromeUtils.importESModule(
-  "resource:///modules/backup/PreferencesBackupResource.sys.mjs"
+  "moz-src:///browser/components/backup/resources/PreferencesBackupResource.sys.mjs"
 );
 const { SearchTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/SearchTestUtils.sys.mjs"

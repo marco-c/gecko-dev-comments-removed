@@ -4,7 +4,7 @@
 "use strict";
 
 const { CookiesBackupResource } = ChromeUtils.importESModule(
-  "resource:///modules/backup/CookiesBackupResource.sys.mjs"
+  "moz-src:///browser/components/backup/resources/CookiesBackupResource.sys.mjs"
 );
 
 
