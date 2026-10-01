@@ -293,6 +293,21 @@ static happy_eyeballs::IpAddr ToIpAddrV6(const NetAddr& aAddr) {
   return ip;
 }
 
+
+
+
+
+static nsresult NormalizeConnectionResult(nsresult aStatus) {
+  if (NS_ERROR_GET_MODULE(aStatus) != NS_ERROR_MODULE_SECURITY) {
+    return aStatus;
+  }
+  PRErrorCode prCode = -static_cast<PRErrorCode>(NS_ERROR_GET_CODE(aStatus));
+  if (mozilla::psm::IsNSSErrorCode(prCode)) {
+    return aStatus;
+  }
+  return ErrorAccordingToNSPR(prCode);
+}
+
 HappyEyeballsConnectionAttempt::ConnResultOutcome
 HappyEyeballsConnectionAttempt::ClassifyConnectionResult(
     nsresult aStatus) const {
@@ -312,6 +327,8 @@ HappyEyeballsConnectionAttempt::ClassifyConnectionResult(
   if (aStatus == NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED) {
     return ConnResultOutcome::AbortTransaction;
   }
+  
+  
   
   
   
@@ -373,6 +390,8 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
     return NS_OK;
   }
 
+  aStatus = NormalizeConnectionResult(aStatus);
+
   if (mPausedForClientAuth && aId == mClientAuthHolderId) {
     mPausedForClientAuth = false;
     mClientAuthHolderId = 0;
@@ -391,19 +410,8 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
       return NS_OK;
     }
     case ConnResultOutcome::AbortTransaction: {
-      nsresult closeReason = aStatus;
-      if (NS_ERROR_GET_MODULE(aStatus) == NS_ERROR_MODULE_SECURITY) {
-        PRErrorCode prCode =
-            -static_cast<PRErrorCode>(NS_ERROR_GET_CODE(aStatus));
-        if (!mozilla::psm::IsNSSErrorCode(prCode)) {
-          
-          
-          
-          closeReason = ErrorAccordingToNSPR(prCode);
-        }
-      }
       TransitionPayload payload;
-      payload.mCloseReason = closeReason;
+      payload.mCloseReason = aStatus;
       Transition(State::AbortTransaction, std::move(payload));
       return NS_OK;
     }
@@ -1218,10 +1226,13 @@ void HappyEyeballsConnectionAttempt::CloseHttpTransaction(
       reason = NS_FAILED(mLastDnsError) ? mLastDnsError : NS_ERROR_UNKNOWN_HOST;
       break;
     case happy_eyeballs::FailureReason::Connection:
-      reason = (NS_FAILED(mLastConnectionError) &&
-                mLastConnectionError != NS_ERROR_NET_RESET)
-                   ? mLastConnectionError
-                   : NS_ERROR_CONNECTION_REFUSED;
+      
+      
+      
+      
+      
+      reason = NS_FAILED(mLastConnectionError) ? mLastConnectionError
+                                               : NS_ERROR_CONNECTION_REFUSED;
       break;
     default:
       MOZ_ASSERT_UNREACHABLE("Unknown FailureReason");

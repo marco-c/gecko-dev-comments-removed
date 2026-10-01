@@ -1620,7 +1620,8 @@ void nsHttpTransaction::Close(nsresult reason) {
        shouldRestartTransactionForHTTPSRR) &&
       (!(mCaps & NS_HTTP_STICKY_CONNECTION) ||
        (mCaps & NS_HTTP_CONNECTION_RESTARTABLE) ||
-       (mEarlyDataDisposition == EARLY_425))) {
+       (mEarlyDataDisposition == EARLY_425) ||
+       CanRestartUpgradeBeforeResponse())) {
     if (mForceRestart) {
       SetRestartReason(TRANSACTION_RESTART_FORCED);
       if (NS_SUCCEEDED(Restart())) {
@@ -3618,6 +3619,17 @@ void nsHttpTransaction::SetHttpTrailers(nsCString& aTrailers) {
 
   MutexAutoLock lock(mLock);
   std::swap(mForTakeResponseTrailers, httpTrailers);
+}
+
+bool nsHttpTransaction::CanRestartUpgradeBeforeResponse() {
+  
+  
+  
+  
+  
+  
+  
+  return !mReceivedData && (IsWebsocketUpgrade() || IsForWebTransport());
 }
 
 bool nsHttpTransaction::IsWebsocketUpgrade() {
