@@ -11,6 +11,7 @@
 #include "PerformanceRecorder.h"
 #include "VideoEngine.h"
 #include "VideoFrameUtils.h"
+#include "api/video/i420_buffer.h"
 #include "api/video/video_frame_buffer.h"
 #include "common/browser_logging/WebRtcLog.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
@@ -769,9 +770,58 @@ void AggregateCapturer::OnFrame(const webrtc::VideoFrame& aVideoFrame) {
         MEDIA_RT);
   }
 
+  if (parentsAndIds.empty()) {
+    
+    
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  const webrtc::VideoRotation originalRotationRequired = aVideoFrame.rotation();
+  bool rotationApplied = false;
+  webrtc::VideoFrame frame = aVideoFrame;
+  if (originalRotationRequired != webrtc::kVideoRotation_0 &&
+      StaticPrefs::media_webrtc_capture_apply_rotation()) {
+    PerformanceRecorder<CopyVideoStage> rec(
+        "AggregateCapturer::ApplyRotation"_ns, mTrackingId, aVideoFrame.width(),
+        aVideoFrame.height());
+    
+    
+    
+    
+    webrtc::scoped_refptr<webrtc::I420BufferInterface> i420 =
+        aVideoFrame.video_frame_buffer()->ToI420();
+    MOZ_DIAGNOSTIC_ASSERT(i420,
+                          "Capture backends are expected to deliver a buffer "
+                          "we can convert to I420; without one we cannot "
+                          "straighten the frame and the consumer gets it "
+                          "sideways.");
+    if (webrtc::scoped_refptr<webrtc::I420Buffer> rotated =
+            i420 ? webrtc::I420Buffer::Rotate(*i420, originalRotationRequired)
+                 : nullptr) {
+      frame = webrtc::VideoFrame::Builder()
+                  .set_video_frame_buffer(std::move(rotated))
+                  .set_rotation(webrtc::kVideoRotation_0)
+                  .set_timestamp_us(aVideoFrame.timestamp_us())
+                  .set_rtp_timestamp(aVideoFrame.rtp_timestamp())
+                  .set_ntp_time_ms(aVideoFrame.ntp_time_ms())
+                  .build();
+      rotationApplied = true;
+      rec.Record();
+    }
+    
+    
+  }
+
   
   camera::VideoFrameProperties properties;
-  VideoFrameUtils::InitFrameBufferProperties(aVideoFrame, properties);
+  VideoFrameUtils::InitFrameBufferProperties(frame, originalRotationRequired,
+                                             rotationApplied, properties);
 
   for (auto it = parentsAndIds.begin(); it != parentsAndIds.end();) {
     const auto& parent = it->first;
@@ -797,10 +847,10 @@ void AggregateCapturer::OnFrame(const webrtc::VideoFrame& aVideoFrame) {
       
       
       PerformanceRecorder<CopyVideoStage> rec(
-          "CamerasParent::VideoFrameToShmem"_ns, mTrackingId,
-          aVideoFrame.width(), aVideoFrame.height());
-      VideoFrameUtils::CopyVideoFrameBuffers(
-          shMemBuffer.GetBytes(), properties.bufferSize(), aVideoFrame);
+          "CamerasParent::VideoFrameToShmem"_ns, mTrackingId, frame.width(),
+          frame.height());
+      VideoFrameUtils::CopyVideoFrameBuffers(shMemBuffer.GetBytes(),
+                                             properties.bufferSize(), frame);
       rec.Record();
       runnable = new DeliverFrameRunnable(
           do_AddRef(parent), mCapEngine, mCaptureId, std::move(ids),
@@ -809,7 +859,7 @@ void AggregateCapturer::OnFrame(const webrtc::VideoFrame& aVideoFrame) {
     if (!runnable) {
       runnable = new DeliverFrameRunnable(do_AddRef(parent), mCapEngine,
                                           mCaptureId, std::move(ids),
-                                          mTrackingId, aVideoFrame, properties);
+                                          mTrackingId, frame, properties);
     }
     nsIEventTarget* target = parent->GetBackgroundEventTarget();
     target->Dispatch(runnable, NS_DISPATCH_NORMAL);
