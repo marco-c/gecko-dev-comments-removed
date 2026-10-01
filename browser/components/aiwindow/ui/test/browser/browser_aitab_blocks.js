@@ -29,7 +29,7 @@ async function withAITabDocument(task, args = []) {
       [AITAB_TEST_PREF, true],
     ],
   });
-  await BrowserTestUtils.withNewTab("about:aitab", async browser => {
+  await BrowserTestUtils.withNewTab("about:smartpage", async browser => {
     await SpecialPowers.spawn(browser, args, task);
   });
   await SpecialPowers.popPrefEnv();
