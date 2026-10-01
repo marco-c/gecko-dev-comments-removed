@@ -707,8 +707,7 @@ fn prepare_quad_impl(
             Some(local_to_device) => local_to_device.map_rect(&local_bounds),
             
             
-            None => frame_state.surfaces[pic_context.surface_index.0]
-                .map_to_device_rect(&clips.coverage_rect()),
+            None => clips.coverage_rect(),
         };
 
         
@@ -754,8 +753,7 @@ fn prepare_quad_impl(
 
     
     
-    let mut clipped_surface_rect = surface
-        .map_to_device_rect(&clips.coverage_rect())
+    let mut clipped_surface_rect = clips.coverage_rect()
         .intersection_unchecked(&surface.clipping_rect)
         .round();
 

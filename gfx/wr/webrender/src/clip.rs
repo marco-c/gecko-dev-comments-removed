@@ -1374,17 +1374,23 @@ impl ClipStore {
 
     
     
+    
+    
+    
+    
+    
     pub fn fill_quad_clips(
         &self,
         dest: &mut QuadClipStack,
         clip_chain: &ClipChainInstance,
+        device_coverage_rect: DeviceRect,
         interned_clips: &ClipDataStore,
     ) {
         self.fill_quad_clips_from_range(dest, clip_chain.clips_range, interned_clips);
 
         dest.set_bounds(
             clip_chain.local_clip_rect,
-            clip_chain.pic_coverage_rect,
+            device_coverage_rect,
             clip_chain.needs_mask,
         );
     }
