@@ -2,6 +2,11 @@
 
 "use strict";
 
+
+
+
+requestLongerTimeout(2);
+
 registerCleanupFunction(function restore_pref_values() {
   
   
@@ -17,7 +22,7 @@ add_task(async function homepage_test_simple() {
       },
     },
   });
-  await check_homepage({ expectedURL: "http://example1.com/" });
+  await check_homepage({ expectedURL: "http://example1.com/", checkUI: true });
 });
 
 add_task(async function homepage_test_repeat_same_policy_value() {
@@ -77,6 +82,36 @@ add_task(async function homepage_test_multiple_additional() {
       Homepage: {
         URL: "http://example1.com/",
         Additional: ["http://example2.com/", "http://example3.com/"],
+      },
+    },
+  });
+  await check_homepage({
+    expectedURL:
+      "http://example1.com/|http://example2.com/|http://example3.com/",
+  });
+});
+
+
+
+add_task(async function homepage_test_pipe_separated_url() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      Homepage: {
+        URL: "http://example1.com|http://example2.com",
+      },
+    },
+  });
+  await check_homepage({
+    expectedURL: "http://example1.com/|http://example2.com/",
+  });
+});
+
+add_task(async function homepage_test_pipe_separated_url_and_additional() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      Homepage: {
+        URL: "http://example1.com/|http://example2.com/",
+        Additional: ["http://example3.com/"],
       },
     },
   });

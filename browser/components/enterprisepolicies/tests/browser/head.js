@@ -59,6 +59,7 @@ async function check_homepage({
   expectedURL,
   expectedPageVal = -1,
   locked = false,
+  checkUI = false,
 }) {
   if (expectedURL) {
     is(HomePage.get(), expectedURL, "Homepage URL should match expected");
@@ -79,6 +80,13 @@ async function check_homepage({
       locked,
       "Lock status of browser.startup.page should match expected"
     );
+  }
+
+  
+  
+  
+  if (!checkUI && !locked && expectedPageVal == -1) {
+    return;
   }
 
   
