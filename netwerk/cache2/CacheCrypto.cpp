@@ -28,7 +28,7 @@ using mozilla::security::lockstore::LockstoreService;
 
 
 static constexpr auto kDekName = "httpcache"_ns;
-static constexpr auto kKekIdentifier = "profileEncryption"_ns;
+static constexpr auto kKekIdentifier = "profile"_ns;
 
 
 
