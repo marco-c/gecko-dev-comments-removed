@@ -454,6 +454,16 @@ describe("ActivityStream", () => {
       expect(PREFS_CONFIG.get(PREF).value).toBe("medium");
     });
   });
+  describe("newtabWallpapers.customWallpaper.library.enabled", () => {
+    
+    
+    it("should default to false", () => {
+      expect(
+        PREFS_CONFIG.get("newtabWallpapers.customWallpaper.library.enabled")
+          .value
+      ).toBe(false);
+    });
+  });
   describe("showTopicsSelection", () => {
     let getStringPrefStub;
     const FEATURE_ENABLED_PREF = "discoverystream.topicSelection.enabled";

@@ -2017,6 +2017,8 @@ pref("browser.newtabpage.activity-stream.newtabWallpapers.enabled", true);
 pref("browser.newtabpage.activity-stream.newtabWallpapers.customColor.enabled", true);
 pref("browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.enabled", true);
 
+pref("browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.library.enabled", true);
+
 
 pref("browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.uuid", "");
 pref("browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.fileSize", 0);
