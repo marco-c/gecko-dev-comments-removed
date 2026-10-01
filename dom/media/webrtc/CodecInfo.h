@@ -30,6 +30,15 @@ SupportsVideoEncodeForWebrtc(const EncoderConfig& aConfig);
 
 
 
+[[nodiscard]] RefPtr<PlatformDecoderModule::SupportsDecoderPromise>
+StrictSupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType& aMime,
+                                   const SupportDecoderParams& aParams);
+
+
+
+
+
+
 
 
 class WebrtcCodecInfo {

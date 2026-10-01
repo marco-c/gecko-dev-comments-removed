@@ -38,6 +38,14 @@ class WebrtcMediaDataDecoder : public WebrtcVideoDecoder {
   static RefPtr<PlatformDecoderModule::SupportsDecoderPromise> Supports(
       webrtc::VideoCodecType aCodecType, SupportDecoderParams aParams);
 
+  
+  
+  
+  
+  
+  static RefPtr<PlatformDecoderModule::SupportsDecoderPromise> StrictSupports(
+      webrtc::VideoCodecType aCodecType, const SupportDecoderParams& aParams);
+
   static bool IsCodecEnabled(webrtc::VideoCodecType aCodecType);
 
   WebrtcMediaDataDecoder(nsACString& aCodecMimeType, TrackingId aTrackingId);
