@@ -8,9 +8,7 @@
 
 #include "nsContentPolicy.h"
 
-#include "mozilla/Components.h"
 #include "mozilla/Logging.h"
-#include "mozilla/Try.h"
 #include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/nsCSPService.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
@@ -33,15 +31,13 @@ NS_IMPL_ISUPPORTS(nsContentPolicy, nsIContentPolicy)
 
 static mozilla::LazyLogModule gConPolLog("nsContentPolicy");
 
-nsContentPolicy::nsContentPolicy() : mPolicies(NS_CONTENTPOLICY_CATEGORY) {}
-
-nsresult nsContentPolicy::Init() {
-  nsresult rv;
-  mCSPService = mozilla::components::CSPService::Service(&rv);
-  MOZ_TRY(rv);
-  mMixedContentBlocker = mozilla::components::MixedContentBlocker::Service(&rv);
-  return rv;
+nsresult NS_NewContentPolicy(nsIContentPolicy** aResult) {
+  *aResult = new nsContentPolicy;
+  NS_ADDREF(*aResult);
+  return NS_OK;
 }
+
+nsContentPolicy::nsContentPolicy() : mPolicies(NS_CONTENTPOLICY_CATEGORY) {}
 
 nsContentPolicy::~nsContentPolicy() = default;
 
@@ -84,12 +80,20 @@ inline nsresult nsContentPolicy::CheckPolicy(CPMethod policyMethod,
 #endif
 
   nsCOMPtr<mozilla::dom::Document> doc;
-  if (nsCOMPtr<nsIContent> node = do_QueryInterface(requestingContext)) {
+  nsCOMPtr<nsIContent> node = do_QueryInterface(requestingContext);
+  if (node) {
     doc = node->OwnerDoc();
-  } else {
+  }
+  if (!doc) {
     doc = do_QueryInterface(requestingContext);
   }
 
+  
+
+
+
+  nsresult rv;
+  const nsCOMArray<nsIContentPolicy>& entries = mPolicies.GetCachedEntries();
   if (doc) {
     if (nsCOMPtr<nsIContentSecurityPolicy> csp =
             PolicyContainer::GetCSP(doc->GetPolicyContainer())) {
@@ -97,25 +101,13 @@ inline nsresult nsContentPolicy::CheckPolicy(CPMethod policyMethod,
     }
   }
 
-  
-
-
-
-
-
-  auto rejects = [&](nsIContentPolicy* policy) {
+  int32_t count = entries.Count();
+  for (int32_t i = 0; i < count; i++) {
     
-    nsresult rv = (policy->*policyMethod)(contentLocation, loadInfo, decision);
-    return NS_SUCCEEDED(rv) && NS_CP_REJECTED(*decision);
-  };
+    rv = (entries[i]->*policyMethod)(contentLocation, loadInfo, decision);
 
-  if (rejects(mCSPService) || rejects(mMixedContentBlocker)) {
-    return NS_OK;
-  }
-
-  const nsCOMArray<nsIContentPolicy>& entries = mPolicies.GetCachedEntries();
-  for (int32_t i = 0; i < entries.Count(); ++i) {
-    if (rejects(entries[i])) {
+    if (NS_SUCCEEDED(rv) && NS_CP_REJECTED(*decision)) {
+      
       return NS_OK;
     }
   }
