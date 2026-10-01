@@ -293,8 +293,16 @@ void DocAccessible::TakeFocus() const {
 already_AddRefed<EditorBase> DocAccessible::GetEditor() const {
   
   
+  
+  
+  
+  
+  dom::Element* editableEl = mDocumentNode->GetBodyElement();
+  if (!editableEl) {
+    editableEl = mDocumentNode->GetRootElement();
+  }
   if (!mDocumentNode->IsInDesignMode() &&
-      (!mContent || !mContent->HasFlag(NODE_IS_EDITABLE))) {
+      (!editableEl || !editableEl->HasFlag(NODE_IS_EDITABLE))) {
     return nullptr;
   }
 
@@ -1093,6 +1101,21 @@ void DocAccessible::ARIAActiveDescendantChanged(LocalAccessible* aAccessible) {
 void DocAccessible::ElementStateChanged(dom::Document* aDocument,
                                         dom::Element* aElement,
                                         dom::ElementState aStateMask) {
+  const bool isEditable =
+      aElement->State().HasState(dom::ElementState::READWRITE);
+  if (aStateMask.HasState(dom::ElementState::READWRITE) &&
+      IsBodyElement(aElement)) {
+    
+    
+    
+    auto event =
+        MakeRefPtr<AccStateChangeEvent>(this, states::EDITABLE, isEditable);
+    FireDelayedEvent(event);
+    event =
+        MakeRefPtr<AccStateChangeEvent>(this, states::READONLY, !isEditable);
+    FireDelayedEvent(event);
+  }
+
   LocalAccessible* accessible =
       aElement == mContent ? this : GetAccessible(aElement);
 
@@ -1102,8 +1125,6 @@ void DocAccessible::ElementStateChanged(dom::Document* aDocument,
 
   if (aStateMask.HasState(dom::ElementState::READWRITE) &&
       !accessible->IsTextField()) {
-    const bool isEditable =
-        aElement->State().HasState(dom::ElementState::READWRITE);
     auto event = MakeRefPtr<AccStateChangeEvent>(accessible, states::EDITABLE,
                                                  isEditable);
     FireDelayedEvent(event);
