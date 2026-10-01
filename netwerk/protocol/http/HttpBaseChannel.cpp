@@ -1199,6 +1199,13 @@ HttpBaseChannel::CloneUploadStream(int64_t* aContentLength,
     return NS_OK;
   }
 
+  
+  
+  if (LoadUploadStreamIsStreaming()) {
+    *aContentLength = -1;
+    return NS_OK;
+  }
+
   nsCOMPtr<nsIInputStream> clonedStream;
   nsresult rv =
       NS_CloneInputStream(mUploadStream, getter_AddRefs(clonedStream));
@@ -1257,6 +1264,18 @@ nsresult HttpBaseChannel::InternalSetUploadStream(
 
     mUploadStream = aUploadStream;
     ExplicitSetUploadStreamLength(aContentLength, aSetContentLengthHeader);
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  if (LoadUploadStreamIsStreaming()) {
+    mUploadStream = aUploadStream;
+    
+    
+    
     return NS_OK;
   }
 
@@ -4994,6 +5013,7 @@ HttpBaseChannel::CloneReplacementChannelConfig(bool aPreserveMethod,
       config.uploadStream = mUploadStream;
     }
     config.uploadStreamLength = mReqContentLength;
+    config.uploadStreamIsStreaming = LoadUploadStreamIsStreaming();
 
     nsAutoCString contentType;
     nsresult rv = mRequestHead.GetHeader(nsHttp::Content_Type, contentType);
@@ -5136,6 +5156,12 @@ HttpBaseChannel::CloneReplacementChannelConfig(bool aPreserveMethod,
       
       
       const nsACString& method = config.method ? *config.method : VoidCString();
+      if (config.uploadStreamIsStreaming) {
+        RefPtr<HttpBaseChannel> baseChan = do_QueryObject(httpChannel);
+        if (baseChan) {
+          baseChan->SetUploadStreamIsStreaming(true);
+        }
+      }
       uploadChannel2->ExplicitSetUploadStream(
           config.uploadStream, ctype, config.uploadStreamLength, method);
     } else if (nsCOMPtr<nsIUploadChannel> uploadChannel =
@@ -5167,6 +5193,7 @@ HttpBaseChannel::ReplacementChannelConfig::ReplacementChannelConfig(
   timedChannelInfo = aInit.timedChannelInfo();
   uploadStream = aInit.uploadStream();
   uploadStreamLength = aInit.uploadStreamLength();
+  uploadStreamIsStreaming = aInit.uploadStreamIsStreaming();
   contentType = aInit.contentType();
   contentLength = aInit.contentLength();
 }
@@ -5183,6 +5210,7 @@ HttpBaseChannel::ReplacementChannelConfig::Serialize() {
   config.uploadStream() =
       uploadStream ? RemoteLazyInputStream::WrapStream(uploadStream) : nullptr;
   config.uploadStreamLength() = uploadStreamLength;
+  config.uploadStreamIsStreaming() = uploadStreamIsStreaming;
   config.contentType() = contentType;
   config.contentLength() = contentLength;
 

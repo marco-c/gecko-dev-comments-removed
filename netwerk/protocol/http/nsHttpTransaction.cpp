@@ -300,7 +300,9 @@ nsresult nsHttpTransaction::Init(
   if (NS_FAILED(rv)) return rv;
 
   mHasRequestBody = !!requestBody;
-  if (mHasRequestBody && !requestContentLength) {
+  
+  
+  if (mHasRequestBody && !requestContentLength && !mRequestBodyIsStreaming) {
     mHasRequestBody = false;
   }
 

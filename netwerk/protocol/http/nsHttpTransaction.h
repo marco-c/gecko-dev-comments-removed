@@ -259,6 +259,15 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   
   
+  void SetRequestBodyIsStreaming(bool aIsStreaming) override {
+    mRequestBodyIsStreaming = aIsStreaming;
+  }
+  bool RequestBodyIsStreaming() const { return mRequestBodyIsStreaming; }
+
+  
+  
+  
+  
   
   void SetSecurityInfo(nsITransportSecurityInfo* aSecurityInfo) {
     MutexAutoLock lock(mLock);
@@ -534,6 +543,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   bool mReceivedData{false};
   bool mStatusEventPending{false};
   bool mHasRequestBody{false};
+  bool mRequestBodyIsStreaming{false};
   bool mProxyConnectFailed{false};
   bool mHttpResponseMatched{false};
   bool mPreserveStream{false};

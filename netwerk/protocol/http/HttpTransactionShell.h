@@ -180,6 +180,11 @@ class HttpTransactionShell : public nsISupports {
 
   virtual void SetIsForWebTransport(bool aIsForWebTransport) = 0;
 
+  
+  
+  
+  virtual void SetRequestBodyIsStreaming(bool aIsStreaming) {}
+
   virtual TimeStamp GetOnStartRequestStartTime() const { return TimeStamp(); }
   virtual TimeStamp GetDataAvailableStartTime() const { return TimeStamp(); }
   virtual TimeStamp GetOnStopRequestStartTime() const { return TimeStamp(); }
