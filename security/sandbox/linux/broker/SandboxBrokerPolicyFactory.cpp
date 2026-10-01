@@ -936,7 +936,7 @@ static void AddV4l2Dependencies(SandboxBroker::Policy* policy) {
 
 #ifdef MOZ_ENABLE_VULKAN_VIDEO
 
-static void AddVulkanDependencies(SandboxBroker::Policy* policy) {
+static void AddVulkanDependencies(SandboxBroker::Policy* policy, int aPid) {
   
   policy->AddTree(rdonly, "/usr/share/vulkan/icd.d");
   policy->AddTree(rdonly, "/usr/local/share/vulkan/icd.d");
@@ -974,6 +974,9 @@ static void AddVulkanDependencies(SandboxBroker::Policy* policy) {
 
   policy->AddPath(rdwr, "/dev/nvidiactl", SandboxBroker::Policy::AddAlways);
   policy->AddPath(rdwr, "/dev/nvidia-uvm", SandboxBroker::Policy::AddAlways);
+  
+  policy->AddPath(rdwr, "/dev/nvidia-uvm-tools",
+                  SandboxBroker::Policy::AddAlways);
   policy->AddPath(rdwr, "/dev/nvidia-modeset",
                   SandboxBroker::Policy::AddAlways);
   
@@ -988,6 +991,9 @@ static void AddVulkanDependencies(SandboxBroker::Policy* policy) {
   
   
   policy->AddPath(rdwr, "/dev/udmabuf", SandboxBroker::Policy::AddAlways);
+
+  
+  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/maps", aPid).get());
 }
 #endif  
 
@@ -1058,7 +1064,7 @@ SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
   
   
   if (gfx::gfxVars::CanUseVulkanHardwareVideoDecoding()) {
-    AddVulkanDependencies(policy.get());
+    AddVulkanDependencies(policy.get(), aPid);
 #  if defined(MOZ_WIDGET_GTK)
     
     

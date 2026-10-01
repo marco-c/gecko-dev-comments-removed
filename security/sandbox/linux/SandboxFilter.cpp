@@ -71,6 +71,10 @@ using namespace sandbox::bpf_dsl;
 #  define MADV_FREE 8
 #endif
 
+#ifndef MADV_COLLAPSE
+#  define MADV_COLLAPSE 25
+#endif
+
 #ifndef PR_SET_PTRACER
 #  define PR_SET_PTRACER 0x59616d61
 #endif
@@ -1979,6 +1983,40 @@ UniquePtr<sandbox::bpf_dsl::Policy> GetMediaSandboxPolicy(
 
 
 class RDDSandboxPolicy final : public SandboxPolicyCommon {
+#ifdef MOZ_ENABLE_VULKAN_VIDEO
+  static bool IsCudaUvmFdBindAddr(const sockaddr* aAddr, socklen_t aLen) {
+    static constexpr char kPrefix[] = "cuda-uvmfd-";
+    static constexpr size_t kPrefixLen = sizeof(kPrefix) - 1;
+    if (!aAddr || aAddr->sa_family != AF_UNIX) {
+      return false;
+    }
+    const size_t minLen = offsetof(sockaddr_un, sun_path) + 1 + kPrefixLen;
+    if (static_cast<size_t>(aLen) < minLen) {
+      return false;
+    }
+    const auto* un = reinterpret_cast<const sockaddr_un*>(aAddr);
+    return un->sun_path[0] == '\0' &&
+           memcmp(un->sun_path + 1, kPrefix, kPrefixLen) == 0;
+  }
+
+  static intptr_t CudaUvmFdTrap(ArgsRef aArgs, void* aux) {
+    switch (aArgs.nr) {
+      case __NR_bind:
+        return IsCudaUvmFdBindAddr(
+                   reinterpret_cast<const sockaddr*>(aArgs.args[1]),
+                   static_cast<socklen_t>(aArgs.args[2]))
+                   ? 0
+                   : -EPERM;
+      case __NR_listen:
+        return 0;
+      case __NR_accept4:
+        return -EAGAIN;
+      default:
+        return -ENOSYS;
+    }
+  }
+#endif
+
  public:
   explicit RDDSandboxPolicy(SandboxBrokerClient* aBroker) {
     mBroker = aBroker;
@@ -2038,7 +2076,9 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
       
       
       case SYS_BIND:
-        return Some(Error(EPERM));
+      case SYS_LISTEN:
+      case SYS_ACCEPT4:
+        return Some(Trap(CudaUvmFdTrap, nullptr));
       
       case SYS_GETSOCKOPT:
       case SYS_SETSOCKOPT:
@@ -2103,6 +2143,10 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
         
         static constexpr unsigned long kUdmabufType =
             static_cast<unsigned long>('u') << _IOC_TYPESHIFT;
+        
+        static constexpr unsigned long kNvidiaUvmInitialize = 0x30000001ul;
+        static constexpr unsigned long kNvidiaUvmDeinitialize = 0x30000002ul;
+        static constexpr unsigned long kNvidiaUvmUnencodedMask = ~0x7FFul;
 #endif
         
         
@@ -2125,6 +2169,10 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
 #ifdef MOZ_ENABLE_VULKAN_VIDEO
             .ElseIf(shifted_type == kNvidiaRmType, Allow())
             .ElseIf(shifted_type == kUdmabufType, Allow())
+            .ElseIf(AnyOf(request == kNvidiaUvmInitialize,
+                          request == kNvidiaUvmDeinitialize,
+                          (request & kNvidiaUvmUnencodedMask) == 0),
+                    Allow())
 #endif
 #ifdef MOZ_ENABLE_V4L2
             .ElseIf(shifted_type == kVideoType, Allow())
@@ -2196,8 +2244,33 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
         return Error(ENOSYS);
 #endif
 #ifdef MOZ_ENABLE_VULKAN_VIDEO
+      CASES_FOR_getrlimit:
       CASES_FOR_getresuid:
       CASES_FOR_getresgid:
+        return Allow();
+
+      case __NR_prlimit64: {
+        
+        
+        
+        Arg<pid_t> pid(0);
+        
+        
+        Arg<uintptr_t> new_limit(2);
+        return If(AllOf(pid == 0, new_limit == 0), Allow())
+            .Else(InvalidSyscall());
+      }
+
+      case __NR_madvise: {
+        Arg<int> advice(2);
+        return If(advice == MADV_COLLAPSE, Allow())
+            .Else(SandboxPolicyCommon::EvaluateSyscall(sysno));
+      }
+
+      
+      case __NR_timerfd_create:
+      case __NR_timerfd_settime:
+      case __NR_timerfd_gettime:
         return Allow();
       CASES_FOR_fcntl: {
         Arg<int> cmd(1);
