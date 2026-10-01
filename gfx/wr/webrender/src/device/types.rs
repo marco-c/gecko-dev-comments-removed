@@ -387,55 +387,29 @@ impl Drop for Program {
     }
 }
 
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum BufferKind {
-    Vertex,
-    Index,
-}
-
-
-
-#[derive(Debug)]
-pub struct Buffer {
+pub struct VAO {
     
     pub(super) id: u32,
-    pub(super) kind: BufferKind,
-    
-    pub(super) size: usize,
-}
-
-impl Drop for Buffer {
-    fn drop(&mut self) {
-        debug_assert!(
-            thread::panicking() || self.id == 0,
-            "renderer::deinit not called"
-        );
-    }
-}
-
-
-#[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
-pub struct BufferId(pub(super) u32);
-
-
-
-pub struct VertexArray {
-    
-    pub(super) id: u32,
-    pub(super) vertices: BufferId,
-    pub(super) instances: Option<BufferId>,
-    pub(super) indices: Option<BufferId>,
+    pub(super) ibo_id: IBOId,
+    pub(super) main_vbo_id: VBOId,
+    pub(super) instance_vbo_id: VBOId,
     pub(super) instance_stride: usize,
+    pub(super) instance_divisor: u32,
+    pub(super) owns_vertices_and_indices: bool,
+    pub(super) owns_instances: bool,
 }
 
-impl VertexArray {
+impl VAO {
     pub fn instance_stride(&self) -> usize {
         self.instance_stride
     }
+
+    pub fn instance_vbo_id(&self) -> VBOId {
+        self.instance_vbo_id
+    }
 }
 
-impl Drop for VertexArray {
+impl Drop for VAO {
     fn drop(&mut self) {
         debug_assert!(
             thread::panicking() || self.id == 0,
@@ -518,6 +492,14 @@ impl<'a> Drop for MappedTransferBuffer<'a> {
 
 #[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
 pub struct TextureId(pub(super) u64);
+
+
+#[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
+pub struct VBOId(pub(super) u32);
+
+
+#[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
+pub struct IBOId(pub(super) u32);
 
 #[derive(Clone, Debug)]
 pub(super) enum ProgramSourceType {
@@ -758,9 +740,11 @@ pub struct DeviceOptions {
     pub upload_method: UploadMethod,
     pub batched_upload_threshold: i32,
     pub cached_programs: Option<Rc<ProgramCache>>,
+    pub allow_texture_storage_support: bool,
     pub allow_texture_swizzling: bool,
     pub dump_shader_source: Option<String>,
     pub surface_origin_is_top_left: bool,
+    pub panic_on_gl_error: bool,
 }
 
 #[derive(Debug)]
@@ -768,7 +752,9 @@ pub struct Capabilities {
     
     pub supports_multisampling: bool,
     
-    pub supports_persistent_upload_buffers: bool,
+    pub supports_copy_image_sub_data: bool,
+    
+    pub supports_buffer_storage: bool,
     
     pub supports_advanced_blend_equation: bool,
     
@@ -778,11 +764,21 @@ pub struct Capabilities {
     pub supports_dual_source_blending: bool,
     
     
-    pub supports_upload_buffer_offsets: bool,
+    pub supports_khr_debug: bool,
+    
+    pub supports_texture_swizzle: bool,
+    
+    
+    pub supports_nonzero_pbo_offsets: bool,
+    
+    pub supports_texture_usage: bool,
     
     pub supports_render_target_partial_update: bool,
     
     pub supports_shader_storage_object: bool,
+    
+    
+    pub requires_batched_texture_uploads: Option<bool>,
     
     
     pub supports_alpha_target_clears: bool,
@@ -793,7 +789,12 @@ pub struct Capabilities {
     
     pub prefers_clear_scissor: bool,
     
+    
+    pub supports_render_target_invalidate: bool,
+    
     pub supports_r8_texture_upload: bool,
+    
+    pub supports_qcom_tiled_rendering: bool,
     
     
     pub uses_native_clip_mask: bool,
@@ -803,7 +804,7 @@ pub struct Capabilities {
     
     
     
-    pub supports_external_textures_in_all_shaders: bool,
+    pub supports_image_external_essl3: bool,
     
     pub supports_texture_rect: bool,
     
@@ -813,6 +814,8 @@ pub struct Capabilities {
     
     
     pub readback_rows_top_down: bool,
+    
+    pub requires_vao_rebind_after_orphaning: bool,
     
     
     

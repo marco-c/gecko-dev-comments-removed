@@ -186,6 +186,9 @@ pub struct WebRenderOptions {
     pub allow_advanced_blend_equation: bool,
     
     
+    pub allow_texture_storage_support: bool,
+    
+    
     
     pub allow_texture_swizzling: bool,
     
@@ -199,6 +202,9 @@ pub struct WebRenderOptions {
     
     pub compositor_config: CompositorConfig,
     pub enable_gpu_markers: bool,
+    
+    
+    pub panic_on_gl_error: bool,
     pub picture_tile_size: Option<DeviceIntSize>,
     pub texture_cache_config: TextureCacheConfig,
     
@@ -279,12 +285,14 @@ impl Default for WebRenderOptions {
             gpu_supports_fast_clears: false,
             allow_dual_source_blending: true,
             allow_advanced_blend_equation: false,
+            allow_texture_storage_support: true,
             allow_texture_swizzling: true,
             clear_caches_with_quads: true,
             dump_shader_source: None,
             surface_origin_is_top_left: false,
             compositor_config: CompositorConfig::default(),
             enable_gpu_markers: true,
+            panic_on_gl_error: false,
             picture_tile_size: None,
             texture_cache_config: TextureCacheConfig::DEFAULT,
             
@@ -360,9 +368,11 @@ pub fn create_webrender_instance(
             upload_method: options.upload_method.clone(),
             batched_upload_threshold: options.batched_upload_threshold,
             cached_programs: options.cached_programs.take(),
+            allow_texture_storage_support: options.allow_texture_storage_support,
             allow_texture_swizzling: options.allow_texture_swizzling,
             dump_shader_source: options.dump_shader_source.take(),
             surface_origin_is_top_left: options.surface_origin_is_top_left,
+            panic_on_gl_error: options.panic_on_gl_error,
         },
     );
 
@@ -569,7 +579,7 @@ pub fn create_webrender_instance(
         gpu_supports_advanced_blend: ext_blend_equation_advanced,
         advanced_blend_is_coherent: ext_blend_equation_advanced_coherent,
         gpu_supports_render_target_partial_update: device.get_capabilities().supports_render_target_partial_update,
-        external_images_require_copy: !device.get_capabilities().supports_external_textures_in_all_shaders,
+        external_images_require_copy: !device.get_capabilities().supports_image_external_essl3,
         batch_lookback_count: WebRenderOptions::BATCH_LOOKBACK_COUNT,
         background_color: Some(options.clear_color),
         compositor_kind,

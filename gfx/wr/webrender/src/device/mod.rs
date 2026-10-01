@@ -13,15 +13,15 @@ pub mod query;
 mod types;
 mod upload;
 
-#[cfg(feature = "capture")]
-use api::{ExternalTextureHandle, ImageDescriptor};
-use api::{ImageBufferKind, ImageFormat, Parameter};
+use api::{ExternalTextureHandle, ImageBufferKind, ImageDescriptor, ImageFormat, Parameter};
 use api::units::*;
 use euclid::default::Transform3D;
+use malloc_size_of::MallocSizeOfOps;
 use std::borrow::Cow;
 use std::mem;
 use std::num::NonZeroUsize;
 use std::ops::{Deref, DerefMut};
+use std::os::raw::c_void;
 use std::ptr;
 use std::rc::Rc;
 use std::slice;
@@ -40,30 +40,8 @@ pub use self::upload::*;
 
 pub enum GpuBackendConfig {
     
-    Gl(GlBackendConfig),
-}
-
-
-pub struct GlBackendConfig {
     
-    
-    pub gl: Rc<dyn gleam::gl::Gl>,
-    
-    
-    pub allow_texture_storage: bool,
-    
-    
-    pub panic_on_error: bool,
-}
-
-impl GlBackendConfig {
-    pub fn new(gl: Rc<dyn gleam::gl::Gl>) -> Self {
-        GlBackendConfig {
-            gl,
-            allow_texture_storage: true,
-            panic_on_error: false,
-        }
-    }
+    Gl(Rc<dyn gleam::gl::Gl>),
 }
 
 
@@ -135,6 +113,8 @@ pub trait GpuBackend {
 
     fn bind_external_texture(&mut self, slot: TextureSlot, external_texture: &ExternalTexture);
 
+    fn reset_read_target(&mut self);
+
     
     
     
@@ -157,13 +137,10 @@ pub trait GpuBackend {
     
     
     
-    
-    
     fn link_program(
         &mut self,
         program: &mut Program,
         descriptor: &VertexDescriptor,
-        samplers: &[(&'static str, TextureSlot)],
     ) -> Result<(), ShaderError>;
 
     
@@ -279,6 +256,8 @@ pub trait GpuBackend {
         features: &[&'static str],
     ) -> (String, String);
 
+    fn bind_shader_samplers(&mut self, program: &Program, bindings: &[(&'static str, TextureSlot)]);
+
     fn set_uniforms(
         &self,
         program: &Program,
@@ -372,7 +351,8 @@ pub trait GpuBackend {
     
     fn upload_texture_immediate(&mut self, texture: &Texture, pixels: &[u8]);
 
-    
+    fn read_pixels(&mut self, img_desc: &ImageDescriptor) -> Vec<u8>;
+
     
     
     
@@ -380,66 +360,61 @@ pub trait GpuBackend {
     
     fn read_pixels_into(
         &mut self,
-        target: ReadTarget,
         rect: FramebufferIntRect,
         format: ImageFormat,
         output: &mut [u8],
     );
 
     
-    
-    fn read_texture(&mut self, texture: &Texture, format: ImageFormat, output: &mut [u8]);
+    fn attach_read_texture_external(
+        &mut self, handle: ExternalTextureHandle, target: ImageBufferKind
+    );
 
-    
-    #[cfg(feature = "capture")]
-    fn read_external_texture(
+    fn attach_read_texture(&mut self, texture: &Texture);
+
+    fn bind_vao(&mut self, vao: &VAO);
+
+    fn create_vao(&mut self, descriptor: &VertexDescriptor, instance_divisor: u32) -> VAO;
+
+    fn delete_vao(&mut self, vao: VAO);
+
+    fn create_vao_with_new_instances(
         &mut self,
-        handle: ExternalTextureHandle,
-        target: ImageBufferKind,
-        desc: &ImageDescriptor,
-    ) -> Vec<u8>;
+        descriptor: &VertexDescriptor,
+        base_vao: &VAO,
+    ) -> VAO;
 
-    fn create_buffer(&mut self, kind: BufferKind) -> Buffer;
-
-    fn delete_buffer(&mut self, buffer: Buffer);
-
-    
-    fn write_buffer(&mut self, buffer: &mut Buffer, data: &[u8], usage_hint: VertexUsageHint);
-
-    
-    
-    fn write_buffer_repeated(
+    fn create_vao_with_shared_instances(
         &mut self,
-        buffer: &mut Buffer,
-        data: &[u8],
-        element_size: usize,
-        repeat: NonZeroUsize,
+        descriptor: &VertexDescriptor,
+        base_vao: &VAO,
+    ) -> VAO;
+
+    fn update_vao_main_vertices(
+        &mut self,
+        vao: &VAO,
+        vertices: &[u8],
         usage_hint: VertexUsageHint,
     );
 
-    
-    fn reallocate_buffer(&mut self, buffer: &mut Buffer, size: usize);
-
-    
-    
-    
-    fn write_buffer_unsynchronized(&mut self, buffer: &Buffer, offset: usize, data: &[u8]);
-
-    
-    
-    
-    fn create_vertex_array(
+    fn update_vao_instances(
         &mut self,
-        layout: &VertexDescriptor,
-        vertices: &Buffer,
-        instances: Option<&Buffer>,
-        indices: Option<&Buffer>,
-        instance_divisor: u32,
-    ) -> VertexArray;
+        vao: &VAO,
+        instances: &[u8],
+        instance_stride: usize,
+        usage_hint: VertexUsageHint,
+        repeat: Option<NonZeroUsize>,
+    );
 
-    fn delete_vertex_array(&mut self, vertex_array: VertexArray);
+    fn update_vao_indices(&mut self, vao: &VAO, indices: &[u8], usage_hint: VertexUsageHint);
 
-    fn bind_vertex_array(&mut self, vertex_array: &VertexArray);
+    
+    fn reallocate_vbo(&mut self, vbo: VBOId, size: usize);
+
+    
+    
+    
+    fn update_vbo_data_unsynchronized(&mut self, vbo: VBOId, data: &[u8], offset: usize);
 
     fn draw_triangles_u32(&mut self, first_vertex: i32, index_count: i32);
 
@@ -479,7 +454,7 @@ pub trait GpuBackend {
     fn echo_driver_messages(&self);
 
     
-    fn report_memory(&self) -> MemoryReport;
+    fn report_memory(&self, size_op_funs: &MallocSizeOfOps, swgl: *mut c_void) -> MemoryReport;
 
     fn depth_targets_memory(&self) -> usize;
 }
@@ -515,7 +490,7 @@ impl DerefMut for Device {
 impl Device {
     pub fn new(config: GpuBackendConfig, options: DeviceOptions) -> Device {
         let backend: Box<dyn GpuBackend> = match config {
-            GpuBackendConfig::Gl(config) => Box::new(GlDevice::new(config, options)),
+            GpuBackendConfig::Gl(gl) => Box::new(GlDevice::new(gl, options)),
         };
         Device {
             backend,
@@ -614,27 +589,10 @@ impl Device {
         base_filename: &'static str,
         features: &[&'static str],
         descriptor: &VertexDescriptor,
-        samplers: &[(&'static str, TextureSlot)],
     ) -> Result<Program, ShaderError> {
         let mut program = self.create_program(base_filename, features)?;
-        self.backend.link_program(&mut program, descriptor, samplers)?;
+        self.link_program(&mut program, descriptor)?;
         Ok(program)
-    }
-
-    pub fn link_program<S>(
-        &mut self,
-        program: &mut Program,
-        descriptor: &VertexDescriptor,
-        samplers: &[(&'static str, S)],
-    ) -> Result<(), ShaderError>
-    where
-        S: Into<TextureSlot> + Copy,
-    {
-        let samplers: Vec<(&'static str, TextureSlot)> = samplers
-            .iter()
-            .map(|&(name, slot)| (name, slot.into()))
-            .collect();
-        self.backend.link_program(program, descriptor, &samplers)
     }
 
     
@@ -674,26 +632,46 @@ impl Device {
         self.backend.bind_external_texture(slot.into(), external_texture)
     }
 
-    pub fn write_buffer<V>(&mut self, buffer: &mut Buffer, data: &[V], usage_hint: VertexUsageHint) {
-        self.backend.write_buffer(buffer, as_bytes(data), usage_hint)
+    pub fn bind_shader_samplers<S>(&mut self, program: &Program, bindings: &[(&'static str, S)])
+    where
+        S: Into<TextureSlot> + Copy,
+    {
+        let bindings: Vec<(&'static str, TextureSlot)> = bindings
+            .iter()
+            .map(|&(name, slot)| (name, slot.into()))
+            .collect();
+        self.backend.bind_shader_samplers(program, &bindings)
     }
 
-    
-    pub fn write_buffer_repeated<V>(
+    pub fn update_vao_main_vertices<V>(
         &mut self,
-        buffer: &mut Buffer,
-        data: &[V],
-        repeat: NonZeroUsize,
+        vao: &VAO,
+        vertices: &[V],
         usage_hint: VertexUsageHint,
     ) {
-        self.backend.write_buffer_repeated(buffer, as_bytes(data), mem::size_of::<V>(), repeat, usage_hint)
+        self.backend.update_vao_main_vertices(vao, as_bytes(vertices), usage_hint)
+    }
+
+    
+    pub fn update_vao_instances<V>(
+        &mut self,
+        vao: &VAO,
+        instances: &[V],
+        usage_hint: VertexUsageHint,
+        repeat: Option<NonZeroUsize>,
+    ) {
+        self.backend.update_vao_instances(vao, as_bytes(instances), mem::size_of::<V>(), usage_hint, repeat)
+    }
+
+    pub fn update_vao_indices<I>(&mut self, vao: &VAO, indices: &[I], usage_hint: VertexUsageHint) {
+        self.backend.update_vao_indices(vao, as_bytes(indices), usage_hint)
     }
 
     
     
     
-    pub fn write_buffer_unsynchronized<V>(&mut self, buffer: &Buffer, offset: usize, data: &[V]) {
-        self.backend.write_buffer_unsynchronized(buffer, offset, as_bytes(data))
+    pub fn update_vbo_data_unsynchronized<V>(&mut self, vbo: VBOId, data: &[V], offset: usize) {
+        self.backend.update_vbo_data_unsynchronized(vbo, as_bytes(data), offset)
     }
 
     
