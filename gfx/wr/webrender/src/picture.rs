@@ -2706,10 +2706,13 @@ pub fn prepare_picture_primitive(
     
     
     
+    
+    
+    
     let needs_mask = !composite_clips.is_empty();
     let surface = &frame_state.surfaces[pic_context.surface_index.0];
     composite_clips.set_bounds(
-        prim_info.clip_chain.local_clip_rect,
+        local_clip_rect,
         surface.map_to_device_rect(&prim_info.clip_chain.pic_coverage_rect),
         surface.clipping_rect,
         needs_mask,
