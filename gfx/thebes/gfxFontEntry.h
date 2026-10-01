@@ -522,16 +522,16 @@ class gfxFontEntry {
 
 
 
-  bool HasVariations();
+  bool HasVariations() MOZ_EXCLUDES(mLock);
   void GetVariationAxes(nsTArray<gfxFontVariationAxis>& aVariationAxes);
   void GetVariationInstances(nsTArray<gfxFontVariationInstance>& aInstances);
 
-  bool HasBoldVariableWeight();
-  bool HasItalicVariation();
-  bool HasSlantVariation();
-  bool HasOpticalSize();
+  bool HasBoldVariableWeight() MOZ_EXCLUDES(mLock);
+  bool HasItalicVariation() MOZ_EXCLUDES(mLock);
+  bool HasSlantVariation() MOZ_EXCLUDES(mLock);
+  bool HasOpticalSize() MOZ_EXCLUDES(mLock);
 
-  void CheckForVariationAxes();
+  void CheckForVariationAxes() MOZ_EXCLUDES(mLock);
 
   
   
@@ -797,7 +797,7 @@ class gfxFontEntry {
   
   
   
-  virtual hb_blob_t* GetFontTableInternal(uint32_t aTag);
+  virtual hb_blob_t* GetFontTableInternal(uint32_t aTag) MOZ_EXCLUDES(mLock);
 
   
   virtual bool HasFontTableInternal(uint32_t aTableTag);

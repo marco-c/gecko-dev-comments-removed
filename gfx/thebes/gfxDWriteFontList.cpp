@@ -503,7 +503,12 @@ hb_blob_t* gfxDWriteFontEntry::GetFontTableInternal(uint32_t aTag) {
   
   
   
-  if (!mFontFace) {
+  RefPtr<IDWriteFontFace> fontFace;
+  {
+    AutoReadLock lock(mLock);
+    fontFace = mFontFace;
+  }
+  if (!fontFace) {
     return gfxFontEntry::GetFontTableInternal(aTag);
   }
 
@@ -511,10 +516,10 @@ hb_blob_t* gfxDWriteFontEntry::GetFontTableInternal(uint32_t aTag) {
   UINT32 size;
   void* context;
   BOOL exists;
-  HRESULT hr = mFontFace->TryGetFontTable(NativeEndian::swapToBigEndian(aTag),
-                                          &data, &size, &context, &exists);
+  HRESULT hr = fontFace->TryGetFontTable(NativeEndian::swapToBigEndian(aTag),
+                                         &data, &size, &context, &exists);
   if (SUCCEEDED(hr) && exists) {
-    FontTableRec* ftr = new FontTableRec(mFontFace, context);
+    FontTableRec* ftr = new FontTableRec(fontFace, context);
     return hb_blob_create(static_cast<const char*>(data), size,
                           HB_MEMORY_MODE_READONLY, ftr, DestroyBlobFunc);
   }
@@ -621,17 +626,26 @@ bool gfxDWriteFontEntry::HasVariationsInternal() {
     return mHasVariations;
   }
 
-  if (!mFontFace) {
-    
-    
-    RefPtr<IDWriteFontFace> fontFace;
-    if (NS_FAILED(CreateFontFace(getter_AddRefs(fontFace)))) {
+  {
+    AutoReadLock lock(mLock);
+    if (mFontFace) {
+      if (mFontFace5) {
+        mHasVariations = mFontFace5->HasVariations();
+      }
       return mHasVariations;
     }
   }
-  if (mFontFace5) {
-    mHasVariations = mFontFace5->HasVariations();
+
+  
+  
+  RefPtr<IDWriteFontFace> fontFace;
+  if (NS_SUCCEEDED(CreateFontFace(getter_AddRefs(fontFace)))) {
+    AutoReadLock lock(mLock);
+    if (mFontFace5) {
+      mHasVariations = mFontFace5->HasVariations();
+    }
   }
+
   return mHasVariations;
 }
 
@@ -643,9 +657,12 @@ void gfxDWriteFontEntry::GetVariationAxesInternal(
   
   
   RefPtr<IDWriteFontResource> resource;
-  HRESULT hr = mFontFace5->GetFontResource(getter_AddRefs(resource));
-  if (FAILED(hr) || !resource) {
-    return;
+  {
+    AutoReadLock lock(mLock);
+    HRESULT hr = mFontFace5->GetFontResource(getter_AddRefs(resource));
+    if (FAILED(hr) || !resource) {
+      return;
+    }
   }
 
   uint32_t count = resource->GetFontAxisCount();
@@ -690,7 +707,11 @@ void gfxDWriteFontEntry::GetVariationInstancesInternal(
 
 #if MOZ_FONTATIONS
 void gfxDWriteFontEntry::InitSkrifaFontFace() {
-  RefPtr<IDWriteFontFace> face = mFontFace;
+  RefPtr<IDWriteFontFace> face;
+  {
+    AutoReadLock lock(mLock);
+    face = mFontFace;
+  }
   if (!face) {
     if (!mFont || FAILED(mFont->CreateFontFace(getter_AddRefs(face)))) {
       return;
@@ -846,6 +867,11 @@ nsresult gfxDWriteFontEntry::CreateFontFace(
                                      (aTag >> 8) & 0xff, aTag & 0xff);
   };
 
+  
+  bool hasVariations = HasVariations();
+
+  AutoWriteLock lock(mLock);
+
   MOZ_SEH_TRY {
     
     if (!mFontFace) {
@@ -896,7 +922,7 @@ nsresult gfxDWriteFontEntry::CreateFontFace(
 
     
     
-    if (mFontFace5 && (HasVariations() || needSimulations)) {
+    if (mFontFace5 && (hasVariations || needSimulations)) {
       RefPtr<IDWriteFontResource> resource;
       HRESULT hr = mFontFace5->GetFontResource(getter_AddRefs(resource));
       if (SUCCEEDED(hr) && resource) {
