@@ -435,7 +435,7 @@ void NavigateEvent::PotentiallyResetFocus() {
       }
     }
     
-    document->SetFocusNavigationStartingPoint(nullptr);
+    document->SetPreviouslyFocusedContent(nullptr);
   }
 }
 
@@ -476,8 +476,7 @@ static void ScrollToBeginningOfDocument(Document& aDocument) {
 
 
 static void RestoreScrollPositionData(Document* aDocument,
-                                      const uint32_t& aLastScrollGeneration,
-                                      SessionHistoryInfo* aHistoryEntry) {
+                                      const uint32_t& aLastScrollGeneration) {
   
   
   
@@ -494,7 +493,8 @@ static void RestoreScrollPositionData(Document* aDocument,
   
   
   
-  docShell->RestoreScrollPositionFromTargetSessionHistoryInfo(aHistoryEntry);
+  docShell->RestoreScrollPositionFromTargetSessionHistoryInfo(
+      docShell->GetActiveSessionHistoryInfo());
 }
 
 
@@ -506,20 +506,9 @@ void NavigateEvent::ProcessScrollBehavior() {
   mInterceptionState = InterceptionState::Scrolled;
 
   
-  if (mNavigationType == NavigationType::Traverse ||
-      mNavigationType == NavigationType::Reload) {
+  if (mNavigationType == NavigationType::Traverse) {
     RefPtr<Document> document = GetAssociatedDocument();
-    
-    
-    
-    
-    
-    
-    RestoreScrollPositionData(
-        document, mLastScrollGeneration,
-        mDestination->GetEntry()
-            ? mDestination->GetEntry()->SessionHistoryInfo()
-            : nullptr);
+    RestoreScrollPositionData(document, mLastScrollGeneration);
     return;
   }
 
