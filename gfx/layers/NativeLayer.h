@@ -111,9 +111,9 @@ class NativeLayerRootSnapshotter : public profiler_screenshots::Window {
   
   
   
-  virtual bool ReadbackPixels(const gfx::IntSize& aReadbackSize,
-                              gfx::SurfaceFormat aReadbackFormat,
-                              const Range<uint8_t>& aReadbackBuffer) = 0;
+  virtual bool ReadbackPixels(
+      const gfx::IntSize& aReadbackSize, gfx::SurfaceFormat aReadbackFormat,
+      const mozilla::Range<uint8_t>& aReadbackBuffer) = 0;
 };
 
 
