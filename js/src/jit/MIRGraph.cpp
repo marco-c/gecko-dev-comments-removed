@@ -1631,6 +1631,24 @@ void jit::AssertBasicGraphCoherency(MIRGraph& graph, bool force) {
           CheckPredecessorImpliesSuccessor(*block, block->getPredecessor(i)));
     }
 
+    if (block->isLoopHeader() && block->hasGeneratorResumeEntry()) {
+      
+      
+      MBasicBlock* preheader = block->loopPredecessor();
+      for (MInstructionIterator ins(preheader->begin());
+           ins != preheader->end(); ins++) {
+        MOZ_ASSERT(ins->isGoto() || ins->isBox() || ins->isConstant() ||
+                   ins->isBeta() || ins->isAssertRange());
+      }
+      
+      
+      for (MInstructionIterator ins(block->begin()); ins != block->end();
+           ins++) {
+        MOZ_ASSERT(ins->isIsResumingGenerator() || ins->isTest() ||
+                   ins->isGoto() || ins->isConstant() || ins->isAssertRange());
+      }
+    }
+
     if (MResumePoint* resume = block->entryResumePoint()) {
       MOZ_ASSERT(!resume->instruction());
       MOZ_ASSERT(resume->block() == *block);

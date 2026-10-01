@@ -2020,7 +2020,10 @@ bool RangeAnalysis::analyzeLoop(const MBasicBlock* header) {
     analyzeLoopPhi(iterationBound, *iter);
   }
 
-  if (!mir->compilingWasm() && !mir->outerInfo().hadBoundsCheckBailout()) {
+  
+  
+  if (!mir->compilingWasm() && !mir->outerInfo().hadBoundsCheckBailout() &&
+      !header->hasGeneratorResumeEntry()) {
     
 
     Vector<MBoundsCheck*, 0, JitAllocPolicy> hoistedChecks(alloc());

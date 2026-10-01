@@ -67,6 +67,9 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   bool alwaysBails_ = false;
 
   
+  bool hasGeneratorResumeEntry_ = false;
+
+  
   
   Frequency frequency_ = Frequency::Unknown;
 
@@ -162,6 +165,12 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
 
   void setAlwaysBails() { alwaysBails_ = true; }
   bool alwaysBails() const { return alwaysBails_; }
+
+  void setHasGeneratorResumeEntry() {
+    MOZ_ASSERT(isPendingLoopHeader());
+    hasGeneratorResumeEntry_ = true;
+  }
+  bool hasGeneratorResumeEntry() const { return hasGeneratorResumeEntry_; }
 
   
   void pick(int32_t depth);

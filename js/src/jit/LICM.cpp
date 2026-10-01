@@ -322,10 +322,19 @@ bool jit::LICM(const MIRGenerator* mir, MIRGraph& graph) {
     
     
     
+    
+    
+    
+    
 
     bool doVisit = true;
     if (canOsr) {
       JitSpew(JitSpew_LICM, "  Skipping loop with header block%u due to OSR",
+              header->id());
+      doVisit = false;
+    } else if (header->hasGeneratorResumeEntry()) {
+      JitSpew(JitSpew_LICM,
+              "  Skipping loop with header block%u due to generator resume",
               header->id());
       doVisit = false;
     } else if (numBlocks > LargestAllowedLoop) {

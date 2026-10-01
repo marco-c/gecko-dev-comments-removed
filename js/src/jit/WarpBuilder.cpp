@@ -1661,6 +1661,8 @@ bool WarpBuilder::build_LoopHead(BytecodeLocation loc) {
   
   
   if (!entries.empty()) {
+    current->setHasGeneratorResumeEntry();
+
     MBasicBlock* body = nullptr;
     if (!startResumePath(current, loc, &body)) {
       return false;
