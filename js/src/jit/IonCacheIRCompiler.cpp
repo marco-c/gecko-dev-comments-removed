@@ -2018,7 +2018,7 @@ void IonIC::attachCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
     return;
   }
 
-  JitZone* jitZone = cx->zone()->jitZone();
+  JitRealm& jitRealm = script()->realm()->jitRealm();
 
   constexpr uint32_t stubDataOffset = sizeof(IonICStub);
   static_assert(stubDataOffset % sizeof(uint64_t) == 0,
@@ -2027,7 +2027,7 @@ void IonIC::attachCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
   
   CacheIRStubKey::Lookup lookup(kind, ICStubEngine::IonIC, writer.codeStart(),
                                 writer.codeLength());
-  CacheIRStubInfo* stubInfo = jitZone->getIonCacheIRStubInfo(lookup);
+  CacheIRStubInfo* stubInfo = jitRealm.getIonCacheIRStubInfo(lookup);
   if (!stubInfo) {
     
     
@@ -2043,7 +2043,7 @@ void IonIC::attachCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
     }
 
     CacheIRStubKey key(stubInfo);
-    if (!jitZone->putIonCacheIRStubInfo(lookup, key)) {
+    if (!jitRealm.putIonCacheIRStubInfo(lookup, key)) {
       return;
     }
   }
@@ -2070,7 +2070,7 @@ void IonIC::attachCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
   
   
   
-  ICStubSpace* stubSpace = script()->realm()->jitRealm().stubSpace();
+  ICStubSpace* stubSpace = jitRealm.stubSpace();
   void* newStubMem = stubSpace->alloc(bytesNeeded);
   if (!newStubMem) {
     return;

@@ -82,10 +82,6 @@ class JitZone {
 
  private:
   
-  using IonCacheIRStubInfoSet =
-      HashSet<CacheIRStubKey, CacheIRStubKey, SystemAllocPolicy>;
-  IonCacheIRStubInfoSet ionCacheIRStubInfoSet_;
-
   
   using BaselineCacheIRStubCodeMap =
       GCHashMap<CacheIRStubKey, WeakHeapPtr<JitCode*>, CacheIRStubKey,
@@ -181,19 +177,6 @@ class JitZone {
     MOZ_ASSERT(!p);
     return baselineCacheIRStubCodes_.add(p, std::move(key), stubCode);
   }
-
-  CacheIRStubInfo* getIonCacheIRStubInfo(const CacheIRStubKey::Lookup& key) {
-    IonCacheIRStubInfoSet::Ptr p = ionCacheIRStubInfoSet_.lookup(key);
-    return p ? p->stubInfo.get() : nullptr;
-  }
-  [[nodiscard]] bool putIonCacheIRStubInfo(const CacheIRStubKey::Lookup& lookup,
-                                           CacheIRStubKey& key) {
-    IonCacheIRStubInfoSet::AddPtr p =
-        ionCacheIRStubInfoSet_.lookupForAdd(lookup);
-    MOZ_ASSERT(!p);
-    return ionCacheIRStubInfoSet_.add(p, std::move(key));
-  }
-  void purgeIonCacheIRStubInfo() { ionCacheIRStubInfoSet_.clearAndCompact(); }
 
   ExecutableAllocator& execAlloc() { return execAlloc_.ref(); }
   const ExecutableAllocator& execAlloc() const { return execAlloc_.ref(); }

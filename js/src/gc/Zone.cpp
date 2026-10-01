@@ -407,7 +407,9 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
 
 
   discardedStubSpace.freeAllAfterMinorGC(this);
-  jitZone()->purgeIonCacheIRStubInfo();
+  for (RealmsInZoneIter r(this); !r.done(); r.next()) {
+    r->jitRealm().purgeIonCacheIRStubInfo();
+  }
 
   
   if (gcx->runtime()->geckoProfiler().enabled()) {
