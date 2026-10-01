@@ -51,6 +51,9 @@ using mozilla::Utf8Unit;
 
 class DynamicImportContextObject;
 
+using ModuleSet =
+    GCHashSet<JSObject*, StableCellHasher<JSObject*>, SystemAllocPolicy>;
+
 static bool ModuleLink(JSContext* cx, Handle<ModuleObject*> module);
 static bool ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> module,
                            MutableHandle<Value> rval);
@@ -73,8 +76,16 @@ static bool LinkAndEvaluateDynamicImport(JSContext* cx, unsigned argc,
                                          Value* vp);
 static bool LinkAndEvaluateDynamicImport(
     JSContext* cx, Handle<DynamicImportContextObject*> context);
+
+static bool DynamicImportResolved(JSContext* cx,
+                                  Handle<DynamicImportContextObject*> context,
+                                  Handle<PromiseObject*> promise);
 static bool DynamicImportResolved(JSContext* cx, unsigned argc, Value* vp);
 static bool DynamicImportRejected(JSContext* cx, unsigned argc, Value* vp);
+
+static bool GatherAsynchronousTransitiveDependencies(
+    JSContext* cx, Handle<ModuleObject*> module, MutableHandle<ModuleSet> seen,
+    MutableHandle<ModuleVector> result);
 
 
 
@@ -686,9 +697,6 @@ class ResolveSetEntry {
 
 using ResolveSet = GCVector<ResolveSetEntry, 0, SystemAllocPolicy>;
 
-using ModuleSet =
-    GCHashSet<ModuleObject*, DefaultHasher<ModuleObject*>, SystemAllocPolicy>;
-
 static bool CyclicModuleResolveExport(JSContext* cx,
                                       Handle<ModuleObject*> module,
                                       Handle<JSAtom*> exportName,
@@ -754,6 +762,24 @@ static bool ContainsElement(Handle<ModuleVector> stack, ModuleObject* module) {
   }
 
   return false;
+}
+
+
+
+static bool AppendUniqueModule(JSContext* cx, MutableHandle<ModuleVector> list,
+                               MutableHandle<ModuleSet> set,
+                               ModuleObject* module) {
+  auto ptr = set.lookupForAdd(module);
+  if (ptr) {
+    return true;
+  }
+
+  if (!set.add(ptr, module) || !list.append(module)) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  return true;
 }
 
 #ifdef DEBUG
@@ -2378,21 +2404,58 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
   index++;
 
   
+  Rooted<ModuleVector> evaluationList(cx);
+  Rooted<ModuleSet> evaluationSet(cx);
+
+  
   
   Rooted<ModuleRequestObject*> required(cx);
   Rooted<ModuleObject*> requiredModule(cx);
   for (const RequestedModule& request : module->requestedModules()) {
     
-    
     required = request.moduleRequest();
-    
-    if (required->phase() != ImportPhase::Evaluation) {
-      continue;
-    }
     requiredModule = GetImportedModule(cx, module, required);
     if (!requiredModule) {
       return false;
     }
+
+    
+    if (required->phase() == ImportPhase::Deferred) {
+      Rooted<ModuleSet> seen(cx);
+      
+      
+      Rooted<ModuleVector> additionalModules(cx);
+      if (!GatherAsynchronousTransitiveDependencies(cx, requiredModule, &seen,
+                                                    &additionalModules)) {
+        return false;
+      }
+
+      
+      
+      for (ModuleObject* m : additionalModules) {
+        
+        
+        if (!AppendUniqueModule(cx, &evaluationList, &evaluationSet, m)) {
+          return false;
+        }
+      }
+    } else if (required->phase() == ImportPhase::Evaluation) {
+      
+      
+      
+      
+      
+      
+      if (!AppendUniqueModule(cx, &evaluationList, &evaluationSet,
+                              requiredModule)) {
+        return false;
+      }
+    }
+  }
+
+  
+  for (ModuleObject* m : evaluationList) {
+    requiredModule = m;
     MOZ_ASSERT(requiredModule->status() >= ModuleStatus::Linked);
 
     
@@ -2425,7 +2488,6 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
         module->setDfsAncestorIndex(std::min(
             module->dfsAncestorIndex(), requiredModule->dfsAncestorIndex()));
       } else {
-        
         
         
         requiredModule = requiredModule->getCycleRoot();
@@ -3030,7 +3092,9 @@ static bool TryStartDynamicModuleImport(JSContext* cx, HandleScript script,
     moduleRequest = ModuleRequestObject::create(
         cx, specifierAtom, JS::ModuleType::JavaScriptOrWasm, phase);
   } else {
-    MOZ_ASSERT(phase == ImportPhase::Evaluation);
+    MOZ_ASSERT(phase == ImportPhase::Evaluation ||
+               phase == ImportPhase::Deferred);
+
     Rooted<ImportAttributeVector> attributes(cx);
     if (!EvaluateDynamicImportOptions(cx, optionsArg, &attributes)) {
       return false;
@@ -3252,6 +3316,68 @@ bool ContinueDynamicImport(JSContext* cx,
 }
 
 
+static bool GatherAsynchronousTransitiveDependencies(
+    JSContext* cx, Handle<ModuleObject*> module, MutableHandle<ModuleSet> seen,
+    MutableHandle<ModuleVector> result) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.check(cx)) {
+    return false;
+  }
+
+  
+  auto ptr = seen.lookupForAdd(module);
+  if (ptr) {
+    return true;
+  }
+
+  
+  if (!seen.add(ptr, module)) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  
+  if (!module->hasCyclicModuleFields()) {
+    return true;
+  }
+
+  
+  
+  if (module->status() == ModuleStatus::Evaluating ||
+      IsModuleSCCEvaluated(module)) {
+    return true;
+  }
+
+  
+  if (module->hasTopLevelAwait()) {
+    if (!result.append(module)) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
+    return true;
+  }
+
+  
+  
+  Rooted<ModuleRequestObject*> request(cx);
+  Rooted<ModuleObject*> requiredModule(cx);
+  for (const RequestedModule& req : module->requestedModules()) {
+    request = req.moduleRequest();
+    requiredModule = GetImportedModule(cx, module, request);
+    if (!requiredModule) {
+      return false;
+    }
+
+    if (!GatherAsynchronousTransitiveDependencies(cx, requiredModule, seen,
+                                                  result)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
 bool LinkAndEvaluateDynamicImport(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   Value value = js::GetFunctionNativeReserved(&args.callee(), 0);
@@ -3261,96 +3387,39 @@ bool LinkAndEvaluateDynamicImport(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
-static bool LinkAndEvaluateDynamicImport(
-    JSContext* cx, Handle<DynamicImportContextObject*> context) {
-  MOZ_ASSERT(context);
+
+
+
+
+static bool DynamicImportResolved(JSContext* cx,
+                                  Handle<DynamicImportContextObject*> context,
+                                  Handle<PromiseObject*> promise) {
   Rooted<ModuleObject*> module(cx, context->module());
-  Rooted<PromiseObject*> promise(cx, context->promise());
 
-  
-  if (!JS::ModuleLink(cx, module)) {
-    
-    
-    
-    
-    return RejectPromiseWithPendingError(cx, promise);
-  }
-  MOZ_ASSERT(!JS_IsExceptionPending(cx));
-
-  
-  MOZ_ASSERT(context->phase() == ImportPhase::Evaluation);
-
-  
-  JS::Rooted<JS::Value> rval(cx);
-  mozilla::DebugOnly<bool> ok = JS::ModuleEvaluate(cx, module, &rval);
-  MOZ_ASSERT_IF(ok, !JS_IsExceptionPending(cx));
-  if (!rval.isObject()) {
-    
-    
-    
-    return RejectPromiseWithPendingError(cx, promise);
-  }
-
-  JS::Rooted<JSObject*> evaluatePromise(cx, &rval.toObject());
-  MOZ_ASSERT(evaluatePromise->is<PromiseObject>());
-
-  
-  
-  RootedValue contextValue(cx, ObjectValue(*context));
-  RootedFunction onFulfilled(cx);
-  onFulfilled = NewHandlerWithExtraValue(cx, DynamicImportResolved, promise,
-                                         contextValue);
-  if (!onFulfilled) {
-    return false;
-  }
-
-  
-  
-  RootedFunction onRejected(cx);
-  onRejected = NewHandlerWithExtraValue(cx, DynamicImportRejected, promise,
-                                        contextValue);
-  if (!onRejected) {
-    return false;
+#ifdef DEBUG
+  if (context->phase() == ImportPhase::Deferred) {
+    MOZ_ASSERT(module->status() == ModuleStatus::Linked ||
+               module->status() == ModuleStatus::EvaluatingAsync ||
+               module->status() == ModuleStatus::Evaluated);
+  } else {
+    MOZ_ASSERT(module->status() == ModuleStatus::EvaluatingAsync ||
+               module->status() == ModuleStatus::Evaluated);
   }
 
   
   
   
-  return JS::AddPromiseReactionsIgnoringUnhandledRejection(
-      cx, evaluatePromise, onFulfilled, onRejected);
-}
-
-
-
-
-
-
-static bool DynamicImportResolved(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  MOZ_ASSERT(args.get(0).isUndefined());
-
-  Rooted<DynamicImportContextObject*> context(
-      cx, ExtraFromHandler<DynamicImportContextObject>(args));
-
-  Rooted<PromiseObject*> promise(cx, TargetFromHandler<PromiseObject>(args));
-
-  Rooted<ModuleObject*> module(cx, context->module());
-  if (module->status() != ModuleStatus::EvaluatingAsync &&
-      module->status() != ModuleStatus::Evaluated) {
-    JS_ReportErrorASCII(
-        cx, "Unevaluated or errored module returned by module resolve hook");
-    return RejectPromiseWithPendingError(cx, promise);
+  if (module->hasCyclicModuleFields() && module->hasCycleRoot() &&
+      module->getCycleRoot()->hasTopLevelCapability()) {
+    MOZ_ASSERT(module->getCycleRoot()
+                   ->maybeTopLevelCapability()
+                   ->as<PromiseObject>()
+                   .state() == JS::PromiseState::Fulfilled);
   }
+#endif
 
   
-  MOZ_ASSERT_IF(module->hasCyclicModuleFields(),
-                module->getCycleRoot()
-                        ->topLevelCapability()
-                        ->as<PromiseObject>()
-                        .state() == JS::PromiseState::Fulfilled);
-
-  
-  RootedObject ns(cx, GetOrCreateModuleNamespace(cx, module));
+  RootedObject ns(cx, GetOrCreateModuleNamespace(cx, module, context->phase()));
   if (!ns) {
     return RejectPromiseWithPendingError(cx, promise);
   }
@@ -3362,10 +3431,40 @@ static bool DynamicImportResolved(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
+  return true;
+};
+
+static bool DynamicImportResolved(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  Rooted<DynamicImportContextObject*> context(
+      cx, ExtraFromHandler<DynamicImportContextObject>(args));
+
+  Rooted<PromiseObject*> promise(cx, TargetFromHandler<PromiseObject>(args));
+  Rooted<ModuleObject*> module(cx, context->module());
+
+  
+  
+  MOZ_ASSERT_IF(context->phase() != ImportPhase::Deferred,
+                args.get(0).isUndefined());
+
+  if (context->phase() != ImportPhase::Deferred) {
+    if (module->status() != ModuleStatus::EvaluatingAsync &&
+        module->status() != ModuleStatus::Evaluated) {
+      JS_ReportErrorASCII(
+          cx, "Unevaluated or errored module returned by module resolve hook");
+      return RejectPromiseWithPendingError(cx, promise);
+    }
+  }
+
+  if (!DynamicImportResolved(cx, context, promise)) {
+    return false;
+  }
+
   
   args.rval().setUndefined();
   return true;
-};
+}
 
 
 
@@ -3532,4 +3631,116 @@ bool js::EvaluateModuleSync(JSContext* cx, Handle<ModuleObject*> module) {
 
   
   return true;
+}
+
+
+static bool LinkAndEvaluateDynamicImport(
+    JSContext* cx, Handle<DynamicImportContextObject*> context) {
+  MOZ_ASSERT(context);
+  Rooted<ModuleObject*> module(cx, context->module());
+  Rooted<PromiseObject*> promise(cx, context->promise());
+
+  
+  if (!JS::ModuleLink(cx, module)) {
+    
+    
+    
+    
+    return RejectPromiseWithPendingError(cx, promise);
+  }
+  MOZ_ASSERT(!JS_IsExceptionPending(cx));
+
+  JS::Rooted<JSObject*> evaluatePromise(cx);
+
+  
+  if (context->phase() == ImportPhase::Deferred) {
+    
+    
+    Rooted<ModuleSet> seen(cx);
+    Rooted<ModuleVector> evaluationList(cx);
+    if (!GatherAsynchronousTransitiveDependencies(cx, module, &seen,
+                                                  &evaluationList)) {
+      return RejectPromiseWithPendingError(cx, promise);
+    }
+
+    
+    
+    
+    if (evaluationList.empty()) {
+      return DynamicImportResolved(cx, context, promise);
+    }
+
+    
+    RootedObjectVector asyncDepsEvaluationPromises(cx);
+    if (!asyncDepsEvaluationPromises.reserve(evaluationList.length())) {
+      return RejectPromiseWithPendingError(cx, promise);
+    }
+
+    
+    
+    Rooted<ModuleObject*> dep(cx);
+    Rooted<JS::Value> rval(cx);
+    for (ModuleObject* depObj : evaluationList) {
+      dep.set(depObj);
+      mozilla::DebugOnly<bool> ok = JS::ModuleEvaluate(cx, dep, &rval);
+      MOZ_ASSERT_IF(ok, !JS_IsExceptionPending(cx));
+      MOZ_ASSERT_IF(!ok, !rval.isObject());
+      if (!rval.isObject()) {
+        return RejectPromiseWithPendingError(cx, promise);
+      }
+
+      asyncDepsEvaluationPromises.infallibleAppend(&rval.toObject());
+    }
+
+    
+    
+    evaluatePromise.set(SafePerformPromiseAll(cx, asyncDepsEvaluationPromises));
+    if (!evaluatePromise) {
+      return RejectPromiseWithPendingError(cx, promise);
+    }
+  } else {
+    
+    
+    MOZ_ASSERT(context->phase() == ImportPhase::Evaluation);
+
+    
+    Rooted<JS::Value> rval(cx);
+    mozilla::DebugOnly<bool> ok = JS::ModuleEvaluate(cx, module, &rval);
+    MOZ_ASSERT_IF(ok, !JS_IsExceptionPending(cx));
+    MOZ_ASSERT_IF(!ok, !rval.isObject());
+    if (!rval.isObject()) {
+      
+      
+      
+      return RejectPromiseWithPendingError(cx, promise);
+    }
+
+    evaluatePromise.set(&rval.toObject());
+    MOZ_ASSERT(evaluatePromise->is<PromiseObject>());
+  }
+
+  
+  
+  RootedValue contextValue(cx, ObjectValue(*context));
+  RootedFunction onFulfilled(cx);
+  onFulfilled = NewHandlerWithExtraValue(cx, DynamicImportResolved, promise,
+                                         contextValue);
+  if (!onFulfilled) {
+    return false;
+  }
+
+  
+  
+  RootedFunction onRejected(cx);
+  onRejected = NewHandlerWithExtraValue(cx, DynamicImportRejected, promise,
+                                        contextValue);
+  if (!onRejected) {
+    return false;
+  }
+
+  
+  
+  
+  return JS::AddPromiseReactionsIgnoringUnhandledRejection(
+      cx, evaluatePromise, onFulfilled, onRejected);
 }

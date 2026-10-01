@@ -219,6 +219,9 @@ class PromiseCombinatorDataHolder : public NativeObject {
     setFixedSlot(Slot_RemainingElements, Int32Value(remainingCount));
     return remainingCount;
   }
+  void setRemainingCount(int32_t count) {
+    setFixedSlot(Slot_RemainingElements, Int32Value(count));
+  }
 
   static PromiseCombinatorDataHolder* New(
       JSContext* cx, JS::Handle<JSObject*> resultPromise,
@@ -3811,6 +3814,15 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
                                              Value* vp);
 
 
+static JSFunction* CreatePromiseAllResolveElement(
+    JSContext* cx, uint32_t index,
+    Handle<PromiseCombinatorDataHolder*> dataHolder) {
+  return NewPromiseCombinatorElementFunction(
+      cx, PromiseAllResolveElementFunction, dataHolder, index,
+      UndefinedHandleValue);
+}
+
+
 
 
 
@@ -3908,9 +3920,8 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
       RootedObject nextPromiseObj(cx, promises[index]);
 
       
-      JSFunction* resolveFunc = NewPromiseCombinatorElementFunction(
-          cx, PromiseAllResolveElementFunction, dataHolder, index,
-          UndefinedHandleValue);
+      JSFunction* resolveFunc =
+          CreatePromiseAllResolveElement(cx, index, dataHolder);
       if (!resolveFunc) {
         return nullptr;
       }
@@ -3962,6 +3973,95 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
                                   values.value())) {
         return nullptr;
       }
+    }
+  }
+
+  
+  return resultCapability.promise();
+}
+
+
+[[nodiscard]] JSObject* js::SafePerformPromiseAll(
+    JSContext* cx, JS::HandleObjectVector promises) {
+  
+  RootedObject promiseCtor(
+      cx, GlobalObject::getOrCreatePromiseConstructor(cx, cx->global()));
+  if (!promiseCtor) {
+    return nullptr;
+  }
+  Rooted<PromiseCapability> resultCapability(cx);
+  if (!NewPromiseCapability(cx, promiseCtor, &resultCapability, false)) {
+    return nullptr;
+  }
+
+  
+  if (promises.empty()) {
+    
+    
+    RootedObject emptyArray(cx, NewDenseEmptyArray(cx));
+    if (!emptyArray) {
+      return nullptr;
+    }
+    RootedValue emptyArrayVal(cx, ObjectValue(*emptyArray));
+    if (!ResolvePromiseInternal(cx, resultCapability.promise(),
+                                emptyArrayVal)) {
+      return nullptr;
+    }
+
+    
+    return resultCapability.promise();
+  }
+
+  uint32_t promiseCount = promises.length();
+
+  
+  Rooted<PromiseCombinatorElements> values(cx);
+  {
+    auto* valuesArray = NewDenseEmptyArray(cx);
+    if (!valuesArray) {
+      return nullptr;
+    }
+    values.initialize(valuesArray);
+  }
+
+  
+  
+  Rooted<PromiseCombinatorDataHolder*> dataHolder(cx);
+  dataHolder = PromiseCombinatorDataHolder::New(
+      cx, resultCapability.promise(), values, resultCapability.resolve());
+  if (!dataHolder) {
+    return nullptr;
+  }
+  dataHolder->setRemainingCount(promiseCount);
+
+  Rooted<PromiseCapability> resultCapabilityWithoutResolving(cx);
+  resultCapabilityWithoutResolving.promise().set(resultCapability.promise());
+
+  
+  
+  for (uint32_t index = 0; index < promiseCount; index++) {
+    
+    if (!values.pushUndefined(cx)) {
+      return nullptr;
+    }
+
+    
+    
+    JSFunction* resolveFunc =
+        CreatePromiseAllResolveElement(cx, index, dataHolder);
+    if (!resolveFunc) {
+      return nullptr;
+    }
+
+    
+    
+    RootedValue resolveFunVal(cx, ObjectValue(*resolveFunc));
+    RootedValue rejectFunVal(cx, ObjectValue(*resultCapability.reject()));
+    Rooted<PromiseObject*> nextPromise(cx,
+                                       &promises[index]->as<PromiseObject>());
+    if (!PerformPromiseThen(cx, nextPromise, resolveFunVal, rejectFunVal,
+                            resultCapabilityWithoutResolving)) {
+      return nullptr;
     }
   }
 
@@ -4730,9 +4830,8 @@ static bool PromiseCombinatorElementFunctionAlreadyCalled(
     }
 
     
-    JSFunction* resolveFunc = NewPromiseCombinatorElementFunction(
-        cx, PromiseAllResolveElementFunction, dataHolder, index,
-        UndefinedHandleValue);
+    JSFunction* resolveFunc =
+        CreatePromiseAllResolveElement(cx, index, dataHolder);
     if (!resolveFunc) {
       return false;
     }

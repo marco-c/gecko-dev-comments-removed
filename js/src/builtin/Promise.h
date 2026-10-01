@@ -112,6 +112,10 @@ extern bool Promise_static_resolve(JSContext* cx, unsigned argc, JS::Value* vp);
                                              JS::HandleObjectVector promises);
 
 
+[[nodiscard]] JSObject* SafePerformPromiseAll(JSContext* cx,
+                                              JS::HandleObjectVector promises);
+
+
 
 
 
