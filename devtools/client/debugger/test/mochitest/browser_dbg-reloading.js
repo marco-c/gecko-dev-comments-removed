@@ -16,6 +16,13 @@
 const INDEX_URL = `${EXAMPLE_URL}ember/quickstart/dist/assets/ember-application/index.js`;
 
 add_task(async function () {
+  
+  
+  
+  
+  
+  await pushPref("dom.script_loader.experimental.navigation_cache", true);
+
   const dbg = await initDebugger("ember/quickstart/dist/", INDEX_URL);
 
   await selectSource(dbg, INDEX_URL);
