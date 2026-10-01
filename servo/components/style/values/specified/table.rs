@@ -3,6 +3,7 @@
 
 
 
+use crate::derives::*;
 
 
 
@@ -34,4 +35,31 @@
 pub enum CaptionSide {
     Top,
     Bottom,
+}
+
+
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum BorderCollapse {
+    Separate,
+    Collapse,
 }
