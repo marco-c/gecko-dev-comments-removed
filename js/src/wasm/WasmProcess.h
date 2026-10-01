@@ -68,6 +68,21 @@ class ThreadSafeCodeBlockMap {
   mozilla::Atomic<const RawCodeBlockVector*> readonlyCodeBlocks_;
   mozilla::Atomic<size_t> numActiveLookups_;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mozilla::Atomic<bool> empty_;
+
   struct CodeBlockPC;
 
   void swapAndWait();
@@ -77,13 +92,30 @@ class ThreadSafeCodeBlockMap {
   ~ThreadSafeCodeBlockMap();
 
   size_t numActiveLookups() const { return numActiveLookups_; }
+  bool empty() const { return empty_; }
 
   bool insert(const CodeBlock* cs);
-  size_t remove(const CodeBlock* cs);
+  void remove(const CodeBlock* cs);
 
   const CodeBlock* lookup(const void* pc,
                           const CodeRange** codeRange = nullptr);
 };
+
+
+
+
+
+
+
+
+extern mozilla::Atomic<ThreadSafeCodeBlockMap*> sThreadSafeCodeBlockMap;
+
+
+
+inline bool CodeExists() {
+  ThreadSafeCodeBlockMap* map = sThreadSafeCodeBlockMap;
+  return map && !map->empty();
+}
 
 
 
@@ -97,11 +129,6 @@ const Code* LookupCode(const void* pc, const CodeRange** codeRange = nullptr);
 
 
 bool InCompiledCode(void* pc);
-
-
-
-
-extern mozilla::Atomic<bool> CodeExists;
 
 
 

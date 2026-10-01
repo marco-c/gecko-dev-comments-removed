@@ -940,7 +940,7 @@ class Simulator {
   
   
   bool MOZ_ALWAYS_INLINE handleWasmSegFault(uint64_t addr, unsigned numBytes) {
-    if (MOZ_LIKELY(!js::wasm::CodeExists)) {
+    if (MOZ_LIKELY(!js::wasm::CodeExists())) {
       return false;
     }
 

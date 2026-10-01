@@ -34,7 +34,6 @@
 using namespace js;
 using namespace wasm;
 
-mozilla::Atomic<bool> wasm::CodeExists(false);
 
 
 
@@ -43,13 +42,7 @@ mozilla::Atomic<bool> wasm::CodeExists(false);
 
 
 
-
-
-
-
-
-static mozilla::Atomic<ThreadSafeCodeBlockMap*> sThreadSafeCodeBlockMap(
-    nullptr);
+mozilla::Atomic<ThreadSafeCodeBlockMap*> wasm::sThreadSafeCodeBlockMap(nullptr);
 
 struct ThreadSafeCodeBlockMap::CodeBlockPC {
   const void* pc;
@@ -69,7 +62,8 @@ ThreadSafeCodeBlockMap::ThreadSafeCodeBlockMap()
     : mutatorsMutex_(mutexid::WasmCodeBlockMap),
       mutableCodeBlocks_(&segments1_),
       readonlyCodeBlocks_(&segments2_),
-      numActiveLookups_(0) {}
+      numActiveLookups_(0),
+      empty_(true) {}
 
 ThreadSafeCodeBlockMap::~ThreadSafeCodeBlockMap() {
   MOZ_RELEASE_ASSERT(numActiveLookups_ == 0);
@@ -119,6 +113,9 @@ bool ThreadSafeCodeBlockMap::insert(const CodeBlock* cs) {
     return false;
   }
 
+  
+  empty_ = false;
+
   swapAndWait();
 
 #ifdef DEBUG
@@ -141,7 +138,7 @@ bool ThreadSafeCodeBlockMap::insert(const CodeBlock* cs) {
   return true;
 }
 
-size_t ThreadSafeCodeBlockMap::remove(const CodeBlock* cs) {
+void ThreadSafeCodeBlockMap::remove(const CodeBlock* cs) {
   LockGuard<Mutex> lock(mutatorsMutex_);
 
   size_t index;
@@ -150,7 +147,6 @@ size_t ThreadSafeCodeBlockMap::remove(const CodeBlock* cs) {
                                  CodeBlockPC(cs->base()), &index));
 
   mutableCodeBlocks_->erase(mutableCodeBlocks_->begin() + index);
-  size_t newCodeBlockCount = mutableCodeBlocks_->length();
 
   swapAndWait();
 
@@ -163,7 +159,9 @@ size_t ThreadSafeCodeBlockMap::remove(const CodeBlock* cs) {
 #endif
 
   mutableCodeBlocks_->erase(mutableCodeBlocks_->begin() + index);
-  return newCodeBlockCount;
+
+  
+  empty_ = mutableCodeBlocks_->empty();
 }
 
 const CodeBlock* ThreadSafeCodeBlockMap::lookup(
@@ -204,11 +202,7 @@ bool wasm::RegisterCodeBlock(const CodeBlock* cs) {
   
   ThreadSafeCodeBlockMap* map = sThreadSafeCodeBlockMap;
   MOZ_RELEASE_ASSERT(map);
-  bool result = map->insert(cs);
-  if (result) {
-    CodeExists = true;
-  }
-  return result;
+  return map->insert(cs);
 }
 
 void wasm::UnregisterCodeBlock(const CodeBlock* cs) {
@@ -219,10 +213,7 @@ void wasm::UnregisterCodeBlock(const CodeBlock* cs) {
   
   ThreadSafeCodeBlockMap* map = sThreadSafeCodeBlockMap;
   MOZ_RELEASE_ASSERT(map);
-  size_t newCount = map->remove(cs);
-  if (newCount == 0) {
-    CodeExists = false;
-  }
+  map->remove(cs);
 }
 
 const CodeBlock* wasm::LookupCodeBlock(
