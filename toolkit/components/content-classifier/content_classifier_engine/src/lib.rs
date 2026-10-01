@@ -2,6 +2,7 @@
 
 
 
+use std::os::raw::c_void;
 use std::sync::Mutex;
 
 use cstr::cstr;
@@ -68,6 +69,36 @@ pub unsafe extern "C" fn content_classifier_engine_destroy(
 ) {
     if !engine.is_null() {
         drop(Box::from_raw(engine));
+    }
+}
+
+
+
+
+pub type ContentClassifierMallocSizeOf = unsafe extern "C" fn(ptr: *const c_void) -> usize;
+
+
+
+#[repr(C)]
+#[derive(Default)]
+pub struct ContentClassifierEngineSizes {
+    
+    
+    
+    pub objects: usize,
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn content_classifier_engine_size_of(
+    engine: *const ContentClassifierFFIEngine,
+    malloc_size_of: ContentClassifierMallocSizeOf,
+) -> ContentClassifierEngineSizes {
+    if engine.is_null() {
+        return ContentClassifierEngineSizes::default();
+    }
+
+    ContentClassifierEngineSizes {
+        objects: malloc_size_of(engine.cast::<c_void>()),
     }
 }
 
