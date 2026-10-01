@@ -753,8 +753,9 @@ class ContentParent final : public PContentParent,
 
 
 
-  static nsClassHashtable<nsGenericHashKey<RemoteType>,
-                          nsTArray<ContentParent*>>* sBrowserContentParents;
+  static mozilla::StaticAutoPtr<
+      nsClassHashtable<nsGenericHashKey<RemoteType>, nsTArray<ContentParent*>>>
+      sBrowserContentParents;
   static mozilla::StaticAutoPtr<LinkedList<ContentParent>> sContentParents;
 
   void AddShutdownBlockers();

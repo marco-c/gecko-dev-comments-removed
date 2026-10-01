@@ -582,7 +582,8 @@ ContentParentsMemoryReporter::CollectReports(
 
 
 
-nsClassHashtable<nsGenericHashKey<RemoteType>, nsTArray<ContentParent*>>*
+StaticAutoPtr<
+    nsClassHashtable<nsGenericHashKey<RemoteType>, nsTArray<ContentParent*>>>
     ContentParent::sBrowserContentParents;
 
 namespace {
@@ -1797,7 +1798,6 @@ void ContentParent::RemoveFromList() {
       }
     }
     if (sBrowserContentParents->IsEmpty()) {
-      delete sBrowserContentParents;
       sBrowserContentParents = nullptr;
     }
   }
