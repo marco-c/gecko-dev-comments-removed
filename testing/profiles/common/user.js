@@ -90,8 +90,6 @@ user_pref("browser.topsites.contile.enabled", false);
 
 user_pref("browser.newtabpage.activity-stream.system.showWeather", false);
 
-user_pref("browser.newtabpage.activity-stream.widgets.system.pictureOfTheDay.enabled", false);
-
 user_pref("browser.newtabpage.activity-stream.newtabWallpapers.enabled", false);
 
 user_pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);

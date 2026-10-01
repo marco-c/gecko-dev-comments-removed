@@ -45,8 +45,6 @@ class BackupTest(MarionetteTestCase):
             
             
             "browser.newtabpage.activity-stream.newtabWallpapers.enabled": False,
-            
-            "browser.newtabpage.activity-stream.widgets.system.pictureOfTheDay.enabled": False,
         })
 
         self.marionette.set_context("chrome")

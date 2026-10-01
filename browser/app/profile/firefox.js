@@ -2009,41 +2009,6 @@ pref("browser.newtabpage.activity-stream.discoverystream.region-weather-config",
 pref("browser.newtabpage.activity-stream.discoverystream.locale-weather-config", "bg,cs,da,de,el,en-CA,en-GB,en-US,es-ES,et,fi,fr,hr,hu,is,it,lv,nb-NO,nl,pl,pt-PT,ro,sk,sl,sv-SE,tr");
 
 
-
-
-
-pref("browser.newtabpage.activity-stream.widgets.system.region-block", "");
-
-
-
-
-pref("browser.newtabpage.activity-stream.widgets.system.lists.region-block", "PL");
-pref("browser.newtabpage.activity-stream.widgets.lists.region-block", "DE,FR,PL,US");
-
-
-
-
-pref("browser.newtabpage.activity-stream.widgets.system.focusTimer.region-block", "PL");
-pref("browser.newtabpage.activity-stream.widgets.focusTimer.region-block", "DE,FR,PL,US");
-
-
-
-
-pref("browser.newtabpage.activity-stream.widgets.system.clocks.region-block", "PL");
-pref("browser.newtabpage.activity-stream.widgets.clocks.region-block", "DE,FR,PL,US");
-
-
-
-
-pref("browser.newtabpage.activity-stream.widgets.system.pictureOfTheDay.region-block", "PL");
-pref("browser.newtabpage.activity-stream.widgets.pictureOfTheDay.region-block", "DE,FR,PL,US");
-
-
-
-pref("browser.newtabpage.activity-stream.widgets.system.crossword.locale-config", "en-CA,en-GB,en-US");
-pref("browser.newtabpage.activity-stream.widgets.system.crossword.region-block", "PL");
-
-
 pref("browser.newtabpage.activity-stream.discoverystream.promoCard.visible", true);
 
 
