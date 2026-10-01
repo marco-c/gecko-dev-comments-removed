@@ -1191,7 +1191,7 @@ void LIRGenerator::visitTest(MTest* test) {
 
 #if defined(ENABLE_JIT_SIMD) &&                            \
     (defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64) || \
-     defined(JS_CODEGEN_ARM64))
+     defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_LOONG64))
   
   
   

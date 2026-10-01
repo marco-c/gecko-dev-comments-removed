@@ -53,6 +53,11 @@ for (let op of ["f32x4.relaxed_min", "f32x4.relaxed_max",
       
       assertEq(result1, 65535);
       assertEq(result2, 65535);
+    } else if (getBuildConfiguration("loong64")) {
+      
+      
+      assertEq(result1, 0);
+      assertEq(result2, 0);
     } else {
       
       
