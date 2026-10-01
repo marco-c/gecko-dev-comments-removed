@@ -396,6 +396,18 @@ class Process extends BaseProcess {
 
     try {
       this.pid = IOUtils.launchProcess(options.arguments, launchOptions);
+    } catch (e) {
+      
+      
+      for (let pipe of this.pipes) {
+        pipe.close();
+      }
+      this.fd.dispose();
+      
+      
+      let error = new Error(`Failed to launch process: ${e.message || e}`);
+      error.errorCode = SubprocessConstants.ERROR_BAD_EXECUTABLE;
+      throw error;
     } finally {
       for (let fd of new Set(fds.values())) {
         fd.dispose();
