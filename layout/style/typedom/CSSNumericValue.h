@@ -86,6 +86,7 @@ class CSSNumericValue : public CSSStyleValue {
   already_AddRefed<CSSNumericValue> Max(
       const Sequence<OwningCSSNumberish>& aValues, ErrorResult& aRv);
 
+  
   bool Equals(const Sequence<OwningCSSNumberish>& aValue);
 
   
@@ -174,6 +175,10 @@ class CSSNumericValue : public CSSStyleValue {
   
   
   StyleUnitValue ToStyleUnitValue(const nsACString& aUnit) const;
+
+  
+  static bool EqualNumericValues(const CSSNumericValue& aValue1,
+                                 const CSSNumericValue& aValue2);
 
  protected:
   virtual ~CSSNumericValue() = default;
