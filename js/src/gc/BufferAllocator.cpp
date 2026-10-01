@@ -728,28 +728,16 @@ void* BufferAllocator::allocInGC(size_t bytes, bool nurseryOwned) {
   MOZ_ASSERT_IF(zone->isGCMarkingOrSweeping(), majorState == State::Marking);
   checkAccess();
 
-  void* result;
   if (IsLargeAllocSize(bytes)) {
-    result = allocLarge(bytes, nurseryOwned, true);
-  } else if (IsSmallAllocSize(bytes)) {
-    result = allocSmall(bytes, nurseryOwned, true);
-  } else {
-    result = allocMedium(bytes, nurseryOwned, true);
+    void* result = allocLarge(bytes, nurseryOwned, true);
+    return result;
   }
 
-  if (!result) {
-    return nullptr;
+  if (IsSmallAllocSize(bytes)) {
+    return allocSmall(bytes, nurseryOwned, true);
   }
 
-  
-  
-  
-  
-  if (nurseryOwned) {
-    markNurseryOwnedAlloc(result, true);
-  }
-
-  return result;
+  return allocMedium(bytes, nurseryOwned, true);
 }
 
 inline Zone* LargeBuffer::zone() {
@@ -2140,8 +2128,16 @@ void* BufferAllocator::allocSmall(size_t bytes, bool nurseryOwned, bool inGC) {
   
   
 
-  MOZ_ASSERT(!region->isMarked(alloc));
   MOZ_ASSERT(IsSmallAlloc(alloc));
+  MOZ_ASSERT(!region->isMarked(alloc));
+
+  
+  
+  
+  
+  if (inGC && nurseryOwned) {
+    region->setMarked(alloc);
+  }
 
   return alloc;
 }
@@ -2222,6 +2218,14 @@ void* BufferAllocator::allocMedium(size_t bytes, bool nurseryOwned, bool inGC) {
   }
 
   setAllocated(alloc, bytes, nurseryOwned, inGC);
+
+  
+  
+  if (inGC && nurseryOwned) {
+    BufferChunk* chunk = BufferChunk::from(alloc);
+    chunk->setMarked(alloc);
+  }
+
   return alloc;
 }
 
@@ -3583,6 +3587,13 @@ void* BufferAllocator::allocLarge(size_t requestedBytes, bool nurseryOwned,
   increaseHeapSize(bytes, nurseryOwned, checkThresholds, false);
 
   MOZ_ASSERT(IsLargeAlloc(alloc));
+
+  
+  
+  if (inGC && nurseryOwned) {
+    buffer->isMarked = true;
+  }
+
   return alloc;
 }
 
