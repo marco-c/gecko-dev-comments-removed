@@ -6434,6 +6434,19 @@ static ReturnCallTrampolineData MakeReturnCallTrampoline(MacroAssembler& masm) {
   masm.append(wasm::CodeRangeUnwindInfo::UseFpLr, masm.currentOffset());
   masm.addToStackPtr(Imm32(sizeof(wasm::Frame)));
   masm.abiret();
+#elif defined(JS_CODEGEN_RISCV64)
+  {
+    
+    
+    AutoForbidPoolsAndNops afp(&masm, 5);
+
+    masm.loadPtr(Address(FramePointer, wasm::Frame::returnAddressOffset()), ra);
+    masm.loadPtr(Address(FramePointer, wasm::Frame::callerFPOffset()),
+                 FramePointer);
+    masm.append(wasm::CodeRangeUnwindInfo::UseFpLr, masm.currentOffset());
+    masm.addToStackPtr(Imm32(sizeof(wasm::Frame)));
+    masm.abiret();
+  }
 #else
   masm.pop(FramePointer);
   masm.append(wasm::CodeRangeUnwindInfo::UseFp, masm.currentOffset());
