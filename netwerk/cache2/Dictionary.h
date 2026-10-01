@@ -20,6 +20,7 @@
 #include "nsICacheStorageVisitor.h"
 #include "nsICryptoHash.h"
 #include "nsIInterfaceRequestor.h"
+#include "nsILoadContextInfo.h"
 #include "nsIObserver.h"
 #include "nsIStreamListener.h"
 #include "nsString.h"
@@ -82,13 +83,19 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   nsresult Prefetch(nsILoadContextInfo* aLoadContextInfo, bool& aShouldSuspend,
                     const std::function<void(nsresult)>& aFunc);
 
+  void SetLoadContextInfo(nsILoadContextInfo* aLoadContextInfo) {
+    mLoadContextInfo = aLoadContextInfo;
+  }
+  nsILoadContextInfo* GetLoadContextInfo() const { return mLoadContextInfo; }
+
   nsCString GetHash() const;
   bool HasHash();
   void SetHash(const nsACString& aHash);
 
   void WriteOnHash();
 
-  void SetOrigin(DictionaryOrigin* aOrigin) { mOrigin = aOrigin; }
+  
+  void SetOrigin(DictionaryOrigin* aOrigin);
 
   const nsCString& GetId() const { return mId; }
 
@@ -236,6 +243,9 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   
   
   nsCString mStoredContentEncoding;
+
+  
+  nsCOMPtr<nsILoadContextInfo> mLoadContextInfo;
 };
 
 
@@ -259,7 +269,8 @@ class DictionaryOriginReader final : public nsICacheEntryOpenCallback,
 
   void Start(
       bool aCreate, DictionaryOrigin* aOrigin, nsACString& aKey, nsIURI* aURI,
-      ExtContentPolicyType aType, DictionaryCache* aCache,
+      ExtContentPolicyType aType, nsILoadContextInfo* aLoadContextInfo,
+      DictionaryCache* aCache,
       const std::function<nsresult(bool, DictionaryCacheEntry*)>& aCallback);
   void FinishMatch();
 
@@ -286,8 +297,14 @@ class DictionaryOrigin : public nsICacheEntryMetaDataVisitor {
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSICACHEENTRYMETADATAVISITOR
 
-  DictionaryOrigin(const nsACString& aOrigin, nsICacheEntry* aEntry)
-      : mOrigin(aOrigin), mEntry(aEntry) {}
+  DictionaryOrigin(const nsACString& aOrigin, nsICacheEntry* aEntry,
+                   nsILoadContextInfo* aLoadContextInfo)
+      : mOrigin(aOrigin), mEntry(aEntry), mLoadContextInfo(aLoadContextInfo) {}
+
+  nsILoadContextInfo* GetLoadContextInfo() const { return mLoadContextInfo; }
+
+  void SetMapKey(const nsACString& aMapKey) { mMapKey = aMapKey; }
+  const nsCString& GetMapKey() const { return mMapKey; }
 
   void SetCacheEntry(nsICacheEntry* aEntry);
   nsresult Write(DictionaryCacheEntry* aDictEntry);
@@ -310,6 +327,9 @@ class DictionaryOrigin : public nsICacheEntryMetaDataVisitor {
 
   nsCString mOrigin;
   nsCOMPtr<nsICacheEntry> mEntry;
+  nsCOMPtr<nsILoadContextInfo> mLoadContextInfo;
+  
+  nsCString mMapKey;
   DictCacheList mEntries;
   
   
@@ -356,21 +376,27 @@ class DictionaryCache final : public nsIObserver {
                     const nsACString& aPattern, nsTArray<nsCString>& aMatchDest,
                     const nsACString& aId, const Maybe<nsCString>& aHash,
                     bool aNewEntry, uint32_t aExpiration,
+                    nsILoadContextInfo* aLoadContextInfo,
                     DictionaryCacheEntry** aDictEntry);
 
   already_AddRefed<DictionaryCacheEntry> AddEntry(
-      nsIURI* aURI, bool aNewEntry, DictionaryCacheEntry* aDictEntry);
+      nsIURI* aURI, bool aNewEntry, nsILoadContextInfo* aLoadContextInfo,
+      DictionaryCacheEntry* aDictEntry);
 
-  static void RemoveDictionaryOMT(const nsACString& aKey);
+  static void RemoveDictionaryOMT(const nsACString& aKey,
+                                  nsILoadContextInfo* aLoadContextInfo);
   
-  static void RemoveOriginFor(const nsACString& aKey);
+  static void RemoveOriginFor(const nsACString& aKey,
+                              nsILoadContextInfo* aLoadContextInfo);
 
   
-  static void RemoveDictionary(const nsACString& aKey);
+  static void RemoveDictionary(const nsACString& aKey,
+                               nsILoadContextInfo* aLoadContextInfo);
   
-  void RemoveOrigin(const nsACString& aOrigin);
+  void RemoveOrigin(const nsACString& aMapKey);
 
-  nsresult RemoveEntry(nsIURI* aURI, const nsACString& aKey);
+  nsresult RemoveEntry(nsIURI* aURI, const nsACString& aKey,
+                       nsILoadContextInfo* aLoadContextInfo);
 
   static void RemoveDictionariesForOrigin(nsIURI* aURI);
   static void RemoveAllDictionaries();
@@ -379,14 +405,17 @@ class DictionaryCache final : public nsIObserver {
   void Clear();
 
   
-  void CorruptHashForTesting(const nsACString& aURI);
+  void CorruptHashForTesting(const nsACString& aURI,
+                             nsILoadContextInfo* aLoadContextInfo);
 
   
-  void ClearDictionaryDataForTesting(const nsACString& aURI);
+  void ClearDictionaryDataForTesting(const nsACString& aURI,
+                                     nsILoadContextInfo* aLoadContextInfo);
 
   
   void GetDictionaryFor(
-      nsIURI* aURI, ExtContentPolicyType aType, nsHttpChannel* aChan,
+      nsIURI* aURI, ExtContentPolicyType aType,
+      nsILoadContextInfo* aLoadContextInfo, nsHttpChannel* aChan,
       void (*aSuspend)(nsHttpChannel*),
       const std::function<nsresult(bool, DictionaryCacheEntry*)>& aCallback);
 
@@ -396,9 +425,18 @@ class DictionaryCache final : public nsIObserver {
   }
 
  private:
-  void RemoveOriginForInternal(const nsACString& aKey);
+  void RemoveOriginForInternal(const nsACString& aKey,
+                               nsILoadContextInfo* aLoadContextInfo);
 
-  static StaticRefPtr<nsICacheStorage> sCacheStorage;
+  static already_AddRefed<nsICacheStorage> GetCacheStorage(
+      nsILoadContextInfo* aLoadContextInfo);
+
+  
+  
+  static void MakeCacheKey(const nsACString& aPrePath,
+                           nsILoadContextInfo* aLoadContextInfo,
+                           nsACString& aKey);
+
   static Atomic<bool, Relaxed> sShutdown;
 
   

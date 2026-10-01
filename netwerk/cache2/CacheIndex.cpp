@@ -897,7 +897,12 @@ nsresult CacheIndex::RemoveEntry(const SHA1Sum::Hash* aHash,
   
   
   if (aClearDictionary) {
-    DictionaryCache::RemoveDictionaryOMT(aKey);
+    nsAutoCString uriSpec;
+    nsCOMPtr<nsILoadContextInfo> lci =
+        CacheFileUtils::ParseKey(aKey, nullptr, &uriSpec);
+    if (lci) {
+      DictionaryCache::RemoveDictionaryOMT(uriSpec, lci);
+    }
   }
 
   StaticMutexAutoLock lock(sLock);

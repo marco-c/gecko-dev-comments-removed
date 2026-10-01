@@ -58,6 +58,13 @@ function makeChan(url, bypassCache = false) {
   return chan;
 }
 
+
+
+function originAttributesForChannel(chan) {
+  let partitionKey = chan.loadInfo.cookieJarSettings.partitionKey;
+  return partitionKey ? { partitionKey } : {};
+}
+
 function channelOpenPromise(chan, intermittentFail = false) {
   return new Promise(resolve => {
     function finish(req, buffer) {
@@ -582,6 +589,7 @@ add_task(async function test_dictionary_hash_mismatch() {
   let dictUrl = `https://localhost:${server.port()}/dict/hash-test`;
   let chan = makeChan(dictUrl);
   let [, data] = await channelOpenPromise(chan);
+  let dictOriginAttributes = originAttributesForChannel(chan);
 
   Assert.equal(
     data,
@@ -608,14 +616,14 @@ add_task(async function test_dictionary_hash_mismatch() {
 
   dump("**** Step 3: Corrupt the dictionary hash\n");
 
-  testingInterface.corruptDictionaryHash(dictUrl);
+  testingInterface.corruptDictionaryHash(dictUrl, dictOriginAttributes);
 
   dump("**** Step 4: Clear dictionary data to force reload from disk\n");
 
   
   
   
-  testingInterface.clearDictionaryDataForTesting(dictUrl);
+  testingInterface.clearDictionaryDataForTesting(dictUrl, dictOriginAttributes);
 
   dump(
     "**** Step 5: Request matching resource - should fail due to hash mismatch\n"

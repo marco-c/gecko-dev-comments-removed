@@ -6520,8 +6520,9 @@ bool nsHttpChannel::ParseDictionary(nsICacheEntry* aEntry,
     uint32_t expTime = 0;
     (void)GetCacheTokenExpirationTime(&expTime);
 
+    RefPtr<LoadContextInfo> lci = GetLoadContextInfo(this);
     dicts->AddEntry(mURI, key, matchVal, matchDestItems, matchIdVal, Some(hash),
-                    aModified, expTime, getter_AddRefs(mDictSaving));
+                    aModified, expTime, lci, getter_AddRefs(mDictSaving));
     
     
     
@@ -6741,7 +6742,8 @@ nsresult nsHttpChannel::DoInstallCacheListener(bool aSaveDecompressed,
              LoadHasAppliedConversion(), this));
         MOZ_DIAGNOSTIC_ASSERT(false, "Can't save dictionary uncompressed");
         mCacheEntry->SetDictionary(nullptr);
-        DictionaryCache::RemoveDictionary(nsCString(mDictSaving->GetURI()));
+        DictionaryCache::RemoveDictionary(nsCString(mDictSaving->GetURI()),
+                                          mDictSaving->GetLoadContextInfo());
         mDictSaving = nullptr;
       }
     }

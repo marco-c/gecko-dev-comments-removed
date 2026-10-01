@@ -686,8 +686,9 @@ nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
       
       
       guard.release();
+      RefPtr<LoadContextInfo> lci = GetLoadContextInfo(aChan);
       mDictionaryCache->GetDictionaryFor(
-          aURI, aType, aChan, aSuspend,
+          aURI, aType, lci, aChan, aSuspend,
           [self = RefPtr(this), aRequest, aCallback](
               bool aNeedsResume, DictionaryCacheEntry* aDict) {
             if (!aDict) {

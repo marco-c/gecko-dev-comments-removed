@@ -1864,13 +1864,13 @@ void CacheEntry::DoomAlreadyRemoved() {
   
   
   LOG(("DoomAlreadyRemoved [entry=%p removed]", this));
-  
   nsAutoCString uriSpec;
   mURI->GetAsciiSpec(uriSpec);
+  nsCOMPtr<nsILoadContextInfo> lci = CacheFileUtils::ParseKey(mStorageID);
   if (mEnhanceID.EqualsLiteral("dict:")) {
-    DictionaryCache::RemoveOriginFor(uriSpec);
+    DictionaryCache::RemoveOriginFor(uriSpec, lci);
   } else {
-    DictionaryCache::RemoveDictionaryOMT(uriSpec);
+    DictionaryCache::RemoveDictionaryOMT(uriSpec, lci);
   }
 
   
