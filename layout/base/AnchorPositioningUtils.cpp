@@ -171,33 +171,51 @@ bool IsFullyStyleableTreeAbidingOrNotPseudoElement(const nsIFrame* aFrame) {
          pseudoElementType == PseudoStyleType::Marker;
 }
 
-size_t GetTopLayerIndex(const nsIFrame* aFrame) {
-  MOZ_ASSERT(aFrame);
+class TopLayerChecker {
+  AutoTArray<dom::Element*, 1> mTopLayer;
+  size_t mPositionedTopLayerIndex;
 
-  const nsIContent* frameContent = aFrame->GetContent();
+  static size_t GetIndex(const nsIFrame* aFrame,
+                         const nsTArray<dom::Element*>& aTopLayers) {
+    MOZ_ASSERT(aFrame);
 
-  if (!frameContent) {
+    const nsIContent* frameContent = aFrame->GetContent();
+
+    if (!frameContent) {
+      return 0;
+    }
+
+    
+    
+    
+    
+
+    for (size_t index = 0; index < aTopLayers.Length(); ++index) {
+      const auto& topLayer = aTopLayers.ElementAt(index);
+      if (nsContentUtils::ContentIsFlattenedTreeDescendantOfForStyle(
+               frameContent,
+               topLayer)) {
+        return 1 + index;
+      }
+    }
+
     return 0;
   }
 
-  
-  
-  
-  
-  const nsTArray<dom::Element*>& topLayers =
-      frameContent->OwnerDoc()->GetTopLayer();
+ public:
+  explicit TopLayerChecker(const nsIFrame* aPositionedFrame)
+      : mTopLayer{
+            aPositionedFrame->GetContent()->OwnerDoc()->GetTopLayer()},
+        mPositionedTopLayerIndex{GetIndex(aPositionedFrame, mTopLayer)} {}
 
-  for (size_t index = 0; index < topLayers.Length(); ++index) {
-    const auto& topLayer = topLayers.ElementAt(index);
-    if (nsContentUtils::ContentIsFlattenedTreeDescendantOfForStyle(
-             frameContent,
-             topLayer)) {
-      return 1 + index;
+  int32_t Compare(const nsIFrame* aPossibleAnchorFrame) {
+    const auto anchorTopLayerIndex = GetIndex(aPossibleAnchorFrame, mTopLayer);
+    if (mPositionedTopLayerIndex == anchorTopLayerIndex) {
+      return 0;
     }
+    return anchorTopLayerIndex < mPositionedTopLayerIndex ? 1 : -1;
   }
-
-  return 0;
-}
+};
 
 bool IsInitialContainingBlock(const nsIFrame* aContainingBlock) {
   
@@ -216,14 +234,14 @@ bool IsContainingBlockGeneratedByElement(const nsIFrame* aContainingBlock) {
 
 bool IsAnchorLaidOutStrictlyBeforeElement(
     const nsIFrame* aPossibleAnchorFrame, const nsIFrame* aPositionedFrame,
-    const nsTArray<const nsIFrame*>& aPositionedFrameAncestors) {
+    const nsTArray<const nsIFrame*>& aPositionedFrameAncestors,
+    TopLayerChecker& aTopLayerChecker) {
   
   
-  const size_t positionedTopLayerIndex = GetTopLayerIndex(aPositionedFrame);
-  const size_t anchorTopLayerIndex = GetTopLayerIndex(aPossibleAnchorFrame);
+  const auto topLayerResult = aTopLayerChecker.Compare(aPossibleAnchorFrame);
 
-  if (anchorTopLayerIndex != positionedTopLayerIndex) {
-    return anchorTopLayerIndex < positionedTopLayerIndex;
+  if (topLayerResult != 0) {
+    return topLayerResult > 0;
   }
 
   
@@ -385,7 +403,8 @@ class LazyAncestorHolder {
 bool IsAcceptableAnchorElement(
     const nsIFrame* aPossibleAnchorFrame, const ScopedNameRef* aName,
     const nsIFrame* aPositionedFrame,
-    LazyAncestorHolder& aPositionedFrameAncestorHolder) {
+    LazyAncestorHolder& aPositionedFrameAncestorHolder,
+    TopLayerChecker& aTopLayerChecker) {
   MOZ_ASSERT(aPossibleAnchorFrame);
   MOZ_ASSERT(aPositionedFrame);
 
@@ -407,7 +426,7 @@ bool IsAcceptableAnchorElement(
   }
   if (!IsAnchorLaidOutStrictlyBeforeElement(
           aPossibleAnchorFrame, aPositionedFrame,
-          aPositionedFrameAncestorHolder.GetAncestors())) {
+          aPositionedFrameAncestorHolder.GetAncestors(), aTopLayerChecker)) {
     return false;
   }
   if (aName && !IsAnchorInScopeForPositionedElement(
@@ -472,6 +491,7 @@ nsIFrame* AnchorPositioningUtils::FindFirstAcceptableAnchor(
     const ScopedNameRef& aName, const nsIFrame* aPositionedFrame,
     const nsTArray<nsIFrame*>& aPossibleAnchorFrames) {
   LazyAncestorHolder positionedFrameAncestorHolder(aPositionedFrame);
+  TopLayerChecker topLayerHolder{aPositionedFrame};
 
   for (auto it = aPossibleAnchorFrames.rbegin();
        it != aPossibleAnchorFrames.rend(); ++it) {
@@ -482,9 +502,13 @@ nsIFrame* AnchorPositioningUtils::FindFirstAcceptableAnchor(
       continue;
     }
 
+    MOZ_ASSERT(aPositionedFrame->GetContent()->OwnerDoc() ==
+                   possibleAnchorFrame->GetContent()->OwnerDoc(),
+               "Anchor and positiond frames in different documents?");
     
     if (IsAcceptableAnchorElement(*it, &aName, aPositionedFrame,
-                                  positionedFrameAncestorHolder)) {
+                                  positionedFrameAncestorHolder,
+                                  topLayerHolder)) {
       return *it;
     }
   }
@@ -873,8 +897,9 @@ auto AnchorPositioningUtils::GetAnchorPosImplicitAnchor(const nsIFrame* aFrame)
     return {};
   }
   LazyAncestorHolder ancestorHolder(aFrame);
+  TopLayerChecker topLayerHolder{aFrame};
   if (!IsAcceptableAnchorElement(anchorFrame,  nullptr, aFrame,
-                                 ancestorHolder)) {
+                                 ancestorHolder, topLayerHolder)) {
     return {};
   }
   return {anchorFrame, kind};
