@@ -1,4 +1,3 @@
-import os
 import unittest
 
 import mozunit
@@ -59,26 +58,6 @@ class TestMozconfigPath(unittest.TestCase):
             "/src/the-app/config/mozconfigs/platform9000/variant",
         )
 
-    def test_manifest(self):
-        """
-        Passing just ``src_mozconfig_manifest`` looks in that file in
-        ``abs_work_dir``, and finds the mozconfig file specified there in
-        ``abs_src_dir``.
-        """
-        script = FakeScriptMixin()
-
-        test_dir = os.path.dirname(__file__)
-        config = {"src_mozconfig_manifest": "helper_files/mozconfig_manifest.json"}
-        abs_src_path = get_mozconfig_path(
-            script,
-            config=config,
-            dirs={
-                "abs_src_dir": "/src",
-                "abs_work_dir": test_dir,
-            },
-        )
-        self.assertEqual(abs_src_path, "/src/path/to/mozconfig")
-
     def test_errors(self):
         script = FakeScriptMixin()
 
@@ -86,8 +65,6 @@ class TestMozconfigPath(unittest.TestCase):
             
             {},
             
-            {"src_mozconfig": "path", "src_mozconfig_manifest": "path"},
-            
             
             {
                 "src_mozconfig": "path",
@@ -107,29 +84,6 @@ class TestMozconfigPath(unittest.TestCase):
             },
             {
                 "src_mozconfig": "path",
-                "app_name": "app",
-                "mozconfig_platform": "platform",
-            },
-            
-            
-            {
-                "src_mozconfig_manifest": "path",
-                "app_name": "app",
-                "mozconfig_platform": "platform",
-                "mozconfig_variant": "variant",
-            },
-            {
-                "src_mozconfig_manifest": "path",
-                "mozconfig_platform": "platform",
-                "mozconfig_variant": "variant",
-            },
-            {
-                "src_mozconfig_manifest": "path",
-                "app_name": "app",
-                "mozconfig_variant": "variant",
-            },
-            {
-                "src_mozconfig_manifest": "path",
                 "app_name": "app",
                 "mozconfig_platform": "platform",
             },
