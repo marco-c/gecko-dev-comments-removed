@@ -399,6 +399,10 @@ pref("browser.overlink-delay", 80);
 
 
 
+pref("browser.shell.desktop-entry-api", "default");
+
+
+
 
 pref("browser.urlbar.ctrlCanonizesURLs", true);
 
