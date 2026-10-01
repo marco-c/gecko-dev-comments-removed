@@ -46,6 +46,11 @@ def define_upstream_artifacts(config, jobs):
         if dep_job.attributes.get("chunk_locales"):
             
             job["attributes"]["chunk_locales"] = dep_job.attributes.get("chunk_locales")
+        elif dep_job.attributes.get("all_locales"):
+            
+            
+            
+            job["attributes"]["all_locales"] = dep_job.attributes.get("all_locales")
 
         
         

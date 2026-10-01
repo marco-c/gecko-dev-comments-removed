@@ -18,7 +18,12 @@ def split_locales(config, jobs):
         dep_job = get_primary_dependency(config, job)
         assert dep_job
 
-        for locale in dep_job.attributes.get("chunk_locales", []):
+        
+        
+        locales = dep_job.attributes.get("chunk_locales") or dep_job.attributes.get(
+            "all_locales", []
+        )
+        for locale in locales:
             locale_job = deepcopy(job)  
             treeherder = locale_job.setdefault("treeherder", {})
             treeherder_group = locale_job.pop("treeherder-group")
