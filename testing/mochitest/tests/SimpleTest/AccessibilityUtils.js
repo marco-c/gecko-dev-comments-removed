@@ -491,7 +491,10 @@ this.AccessibilityUtils = (function () {
       }
       
       
-      if (tab.DOMNode.tabIndex == 0) {
+      if (
+        tab.DOMNode.tabIndex == 0 &&
+        hasFocusableShadowAncestors(tab.DOMNode)
+      ) {
         if (foundFocusable) {
           
           
@@ -508,6 +511,27 @@ this.AccessibilityUtils = (function () {
       }
     }
     return foundFocusable;
+  }
+
+  
+
+
+
+
+
+
+
+
+  function hasFocusableShadowAncestors(node) {
+    let root = node.getRootNode();
+    while (ShadowRoot.isInstance(root)) {
+      const host = root.host;
+      if (host.hasAttribute("tabindex") && host.tabIndex < 0) {
+        return false;
+      }
+      root = host.getRootNode();
+    }
+    return true;
   }
 
   
