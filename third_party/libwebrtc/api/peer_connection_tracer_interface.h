@@ -11,6 +11,8 @@
 #ifndef API_PEER_CONNECTION_TRACER_INTERFACE_H_
 #define API_PEER_CONNECTION_TRACER_INTERFACE_H_
 
+#include <optional>
+
 #include "absl/strings/string_view.h"
 #include "api/data_channel_interface.h"
 #include "api/jsep.h"
@@ -110,11 +112,16 @@ class RTC_EXPORT PeerConnectionTracerInterface {
                                    absl::string_view error_text) = 0;
 
   
-  virtual void OnCreateDataChannel(const DataChannelInterface& channel) = 0;
+  
+  
+  
+  virtual void OnCreateDataChannel(const DataChannelInterface& channel,
+                                   std::optional<int> id) = 0;
 
   
   
-  virtual void OnDataChannel(const DataChannelInterface& channel) = 0;
+  virtual void OnDataChannel(const DataChannelInterface& channel,
+                             std::optional<int> id) = 0;
 
   
   

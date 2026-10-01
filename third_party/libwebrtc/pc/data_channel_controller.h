@@ -130,8 +130,8 @@ class DataChannelController : public SctpDataChannelControllerInterface,
       RTC_RUN_ON(network_thread());
   
   void OnDataChannelOpenMessage(scoped_refptr<SctpDataChannel> channel,
-                                bool ready_to_send)
-      RTC_RUN_ON(signaling_thread());
+                                bool ready_to_send,
+                                int id) RTC_RUN_ON(signaling_thread());
 
   
   
