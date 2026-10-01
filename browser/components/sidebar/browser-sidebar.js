@@ -1011,6 +1011,8 @@ var SidebarController = {
     
     this._box.toggleAttribute("sidebar-positionend", !this._positionStart);
     sidebarMain.toggleAttribute("sidebar-positionend", !this._positionStart);
+    
+    sidebarMain.requestUpdate?.();
     contentArea.toggleAttribute("sidebar-positionend", !this._positionStart);
     sidebarContainer.toggleAttribute(
       "sidebar-positionend",
