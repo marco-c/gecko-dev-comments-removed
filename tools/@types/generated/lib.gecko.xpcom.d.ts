@@ -13992,8 +13992,6 @@ interface nsICookieManager extends nsISupports {
   
   cookieExists(aHost: string, aPath: string, aName: string, aOriginAttributes: any): boolean;
   
-  countCookiesFromHost(aHost: string): u32;
-  
   hasCookiesForSite(aHost: string, aPattern: string): boolean;
   
   getCookiesFromHost(aHost: string, aOriginAttributes: any, aSorted?: boolean): nsICookie[];

@@ -136,7 +136,6 @@ function setCookies(aHost, aNumber, aExpiry) {
 
 
 
-
 function countCookies(aBaseDomain, aHost) {
   
   
@@ -153,11 +152,11 @@ function countCookies(aBaseDomain, aHost) {
   
   let result = cookies.length;
   Assert.equal(
-    Services.cookies.countCookiesFromHost(aBaseDomain, {}),
+    Services.cookies.getCookiesFromHost(aBaseDomain, {}).length,
     cookies.length
   );
   Assert.equal(
-    Services.cookies.countCookiesFromHost(aHost, {}),
+    Services.cookies.getCookiesFromHost(aHost, {}).length,
     cookies.length
   );
 
