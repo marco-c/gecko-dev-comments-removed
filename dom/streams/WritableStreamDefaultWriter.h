@@ -33,8 +33,8 @@ class WritableStreamDefaultWriter final : public nsISupports,
 
   
  public:
-  WritableStream* GetStream() const { return mStream; }
-  void SetStream(WritableStream* aStream) { mStream = aStream; }
+  WritableStream* GetStream() const;
+  void SetStream(WritableStream* aStream);
 
   Promise* ReadyPromise() const { return mReadyPromise; }
   void SetReadyPromise(Promise* aPromise);

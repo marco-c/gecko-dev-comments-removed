@@ -370,6 +370,19 @@ void ReadableStreamDefaultReader::ReleaseLock(ErrorResult& aRv) {
   ReadableStreamDefaultReaderRelease(cx, thisRefPtr, aRv);
 }
 
+ReadableStreamGenericReader::ReadableStreamGenericReader(
+    nsCOMPtr<nsIGlobalObject> aGlobal)
+    : mGlobal(std::move(aGlobal)) {}
+
+void ReadableStreamGenericReader::SetStream(
+    already_AddRefed<ReadableStream> aStream) {
+  mStream = aStream;
+}
+void ReadableStreamGenericReader::SetStream(ReadableStream* aStream) {
+  RefPtr<ReadableStream> stream(aStream);
+  SetStream(stream.forget());
+}
+
 
 already_AddRefed<Promise> ReadableStreamGenericReader::Closed() const {
   

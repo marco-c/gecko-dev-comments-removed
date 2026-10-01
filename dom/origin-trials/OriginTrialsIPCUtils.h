@@ -2,12 +2,11 @@
 
 
 
-
-
 #ifndef mozilla_OriginTrialsIPCUtils_h
 #define mozilla_OriginTrialsIPCUtils_h
 
 #include "ipc/EnumSerializer.h"
+#include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/EnumTypeTraits.h"
 #include "mozilla/OriginTrials.h"
 
