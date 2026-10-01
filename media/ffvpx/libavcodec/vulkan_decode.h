@@ -41,7 +41,7 @@ typedef struct FFVulkanDecodeShared {
     AVVulkanDeviceQueueFamily *qf;
     FFVkExecPool exec_pool;
 
-    AVBufferPool *buf_pool;
+    AVRefStructPool *buf_pool;
 
     VkVideoCapabilitiesKHR caps;
     VkVideoDecodeCapabilitiesKHR dec_caps;
@@ -53,7 +53,7 @@ typedef struct FFVulkanDecodeShared {
 
 typedef struct FFVulkanDecodeContext {
     FFVulkanDecodeShared *shared_ctx;
-    AVBufferRef *session_params;
+    VkVideoSessionParametersKHR *session_params;
 
     int dedicated_dpb; 
     int external_fg;   
@@ -72,13 +72,13 @@ typedef struct FFVulkanDecodeContext {
 
 typedef struct FFVulkanDecodePicture {
     AVFrame                        *dpb_frame;      
+    FFVkVideoDPBImage              *dpb_img;        
 
     struct {
-        VkImageView                     ref[AV_NUM_DATA_POINTERS];        
-        VkImageView                     out[AV_NUM_DATA_POINTERS];        
-        VkImageView                     dst[AV_NUM_DATA_POINTERS];        
-        VkImageAspectFlags              aspect[AV_NUM_DATA_POINTERS];     
-        VkImageAspectFlags              aspect_ref[AV_NUM_DATA_POINTERS]; 
+        VkImageView                     ref;        
+        VkImageView                     out;        
+        VkImageAspectFlags              aspect;     
+        VkImageAspectFlags              aspect_ref; 
     } view;
 
     VkSemaphore                     sem;
@@ -96,12 +96,13 @@ typedef struct FFVulkanDecodePicture {
     VkVideoDecodeInfoKHR            decode_info;
 
     
-    AVBufferRef                    *slices_buf;
+    FFVkImageViews                 *out_views;
+
+    
+    FFVkBuffer                     *slices_buf;
     size_t                          slices_size;
 
     
-    PFN_vkWaitSemaphores            wait_semaphores;
-    PFN_vkDestroyImageView          destroy_image_view;
     PFN_vkInvalidateMappedMemoryRanges invalidate_memory_ranges;
 } FFVulkanDecodePicture;
 
@@ -139,13 +140,6 @@ int ff_vk_decode_prepare_frame(FFVulkanDecodeContext *dec, AVFrame *pic,
 
 
 
-int ff_vk_decode_prepare_frame_sdr(FFVulkanDecodeContext *dec, AVFrame *pic,
-                                   FFVulkanDecodePicture *vkpic, int is_current,
-                                   enum FFVkShaderRepFormat rep_fmt, int alloc_dpb);
-
-
-
-
 int ff_vk_decode_add_slice(AVCodecContext *avctx, FFVulkanDecodePicture *vp,
                            const uint8_t *data, size_t size, int add_startcode,
                            uint32_t *nb_slices, const uint32_t **offsets);
@@ -165,13 +159,7 @@ void ff_vk_decode_free_frame(AVHWDeviceContext *dev_ctx, FFVulkanDecodePicture *
 
 
 
-int ff_vk_get_decode_buffer(FFVulkanDecodeContext *ctx, AVBufferRef **buf,
-                            void *create_pNext, size_t size);
-
-
-
-
-int ff_vk_decode_create_params(AVBufferRef **par_ref, void *logctx, FFVulkanDecodeShared *ctx,
+int ff_vk_decode_create_params(VkVideoSessionParametersKHR **par_ref, void *logctx, FFVulkanDecodeShared *ctx,
                                const VkVideoSessionParametersCreateInfoKHR *session_params_create);
 
 
