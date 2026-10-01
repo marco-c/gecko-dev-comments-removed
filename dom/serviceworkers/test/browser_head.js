@@ -121,6 +121,40 @@ function swm_lookup_reg(swDesc) {
 
 
 
+function countRegistrationsForOrigin(origin) {
+  let count = 0;
+  let regs = SWM.getAllRegistrations();
+  for (let i = 0; i < regs.length; i++) {
+    let reg = regs.queryElementAt(i, Ci.nsIServiceWorkerRegistrationInfo);
+    if (reg.principal.originNoSuffix === origin) {
+      count++;
+    }
+  }
+  return count;
+}
+
+
+
+
+
+
+
+
+
+
+
+async function get_sw_script_cache_names(origin) {
+  return new CacheStorage("chrome", getPrincipal(origin)).keys();
+}
+
+
+
+
+
+
+
+
+
 
 
 
