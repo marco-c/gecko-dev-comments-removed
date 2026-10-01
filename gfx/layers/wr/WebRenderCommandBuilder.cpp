@@ -1107,8 +1107,6 @@ enum class ItemActivity : uint8_t {
   
   Could = 1,
   
-  
-  
   Should = 2,
   
   Must = 3,
@@ -1279,7 +1277,10 @@ static ItemActivity IsItemProbablyActive(
                               aManager, aDisplayListBuilder, aUniformlyScaled);
         
         
-        if (activity < ItemActivity::Must) {
+        
+        
+        
+        if (activity < ItemActivity::Should) {
           return ItemActivity::No;
         }
         return activity;
