@@ -6,216 +6,250 @@
 
 #include "nsMacSharingService.h"
 
-#include "js/Array.h"               
-#include "js/PropertyAndElement.h"  
-#include "jsapi.h"
 #include "mozilla/MacStringHelpers.h"
 #include "nsCocoaUtils.h"
 
+#include "MOZShareURLPasteboardItem.h"
+#include "Units.h"
+#include "mozilla/PresShell.h"
+#include "mozilla/dom/Element.h"
+#include "nsIFrame.h"
+#include "nsIWidget.h"
+#include "nsPresContext.h"
+
+using namespace mozilla;
+
+@interface NSImage (MozTintColor)
+- (NSImage*)imageWithTintColor:(NSColor*)aColor;
+@end
+
 NS_IMPL_ISUPPORTS(nsMacSharingService, nsIMacSharingService)
 
-NSString* const oldRemindersServiceName =
-    @"com.apple.reminders.RemindersShareExtension";
-NSString* const newRemindersServiceName =
-    @"com.apple.reminders.sharingextension";
 
 
 
-NSString* const extensionPrefPanePath =
-    @"/System/Library/PreferencePanes/Extensions.prefPane";
-const UInt32 openSharingSubpaneDescriptorType = 'ptru';
-NSString* const openSharingSubpaneActionKey = @"action";
-NSString* const openSharingSubpaneActionValue = @"revealExtensionPoint";
-NSString* const openSharingSubpaneProtocolKey = @"protocol";
-NSString* const openSharingSubpaneProtocolValue = @"com.apple.share-services";
-
-
-@interface NSSharingService (ExposeName)
-- (id)name;
-@end
 
 
 
-static bool ShouldIgnoreProvider(NSString* aProviderName) {
-  return [aProviderName
-      isEqualToString:@"com.apple.share.System.add-to-safari-reading-list"];
-}
 
 
-@interface SharingServiceDelegate : NSObject <NSSharingServiceDelegate> {
+
+
+
+
+
+@interface SharingServicePickerDelegate
+    : NSObject <NSSharingServicePickerDelegate> {
+  NSSharingServicePicker* mPicker;
   NSUserActivity* mShareActivity;
+  BOOL mIsMultiUrl;
 }
-
-- (void)cleanup;
+- (id)initWithPicker:(NSSharingServicePicker*)aPicker
+            activity:(NSUserActivity*)aActivity
+          isMultiUrl:(BOOL)aIsMultiUrl;
 
 @end
 
-@implementation SharingServiceDelegate
-
-- (id)initWithActivity:(NSUserActivity*)activity {
+@implementation SharingServicePickerDelegate
+- (id)initWithPicker:(NSSharingServicePicker*)aPicker
+            activity:(NSUserActivity*)aActivity
+          isMultiUrl:(BOOL)aIsMultiUrl {
   self = [super init];
-  mShareActivity = [activity retain];
+  mPicker = [aPicker retain];
+  mShareActivity = [aActivity retain];
+  mIsMultiUrl = aIsMultiUrl;
   return self;
 }
 
-- (void)cleanup {
-  [mShareActivity resignCurrent];
-  [mShareActivity invalidate];
-  [mShareActivity release];
-  mShareActivity = nil;
+
+
+- (NSArray<NSSharingService*>*)
+       sharingServicePicker:(NSSharingServicePicker*)aPicker
+    sharingServicesForItems:(NSArray*)aItems
+    proposedSharingServices:(NSArray<NSSharingService*>*)aProposed {
+  NSMutableArray* excluded = [NSMutableArray
+      arrayWithObject:@"com.apple.share.System.add-to-safari-reading-list"];
+  
+  
+  
+  
+  if (mIsMultiUrl) {
+    [excluded addObject:@"com.apple.journal.JournalShareExtension"];
+  }
+  return [aProposed
+      filteredArrayUsingPredicate:[NSPredicate
+                                      predicateWithFormat:@"NOT (name IN %@)",
+                                                          excluded]];
 }
 
-- (void)sharingService:(NSSharingService*)sharingService
-         didShareItems:(NSArray*)items {
-  [self cleanup];
-  [self release];
-}
 
-- (void)sharingService:(NSSharingService*)service
-    didFailToShareItems:(NSArray*)items
-                  error:(NSError*)error {
-  [self cleanup];
+
+- (void)sharingServicePicker:(NSSharingServicePicker*)aPicker
+     didChooseSharingService:(NSSharingService*)aService {
   [self release];
 }
 
 - (void)dealloc {
+  [mShareActivity resignCurrent];
+  [mShareActivity invalidate];
   [mShareActivity release];
+  [mPicker release];
   [super dealloc];
 }
 
 @end
 
-static NSString* NSImageToBase64(const NSImage* aImage) {
-  CGImageRef cgRef = [aImage CGImageForProposedRect:nil context:nil hints:nil];
-  NSBitmapImageRep* bitmapRep =
-      [[NSBitmapImageRep alloc] initWithCGImage:cgRef];
-  [bitmapRep setSize:[aImage size]];
-  NSData* imageData =
-      [bitmapRep representationUsingType:NSBitmapImageFileTypePNG
-                              properties:@{}];
-  NSString* base64Encoded = [imageData base64EncodedStringWithOptions:0];
-  [bitmapRep release];
-  return [NSString stringWithFormat:@"data:image/png;base64,%@", base64Encoded];
+namespace {
+
+
+
+
+
+
+
+static id MakeMultiUrlShareItem(const nsTArray<nsString>& aUrls,
+                                const nsTArray<nsString>& aTitles,
+                                NSString* aShareTitle) {
+  NSMutableArray<NSString*>* urls =
+      [NSMutableArray arrayWithCapacity:aUrls.Length()];
+  for (const auto& u : aUrls) {
+    [urls addObject:nsCocoaUtils::ToNSString(u)];
+  }
+  NSMutableArray<NSString*>* titles =
+      [NSMutableArray arrayWithCapacity:aTitles.Length()];
+  for (const auto& t : aTitles) {
+    [titles addObject:nsCocoaUtils::ToNSString(t)];
+  }
+  MOZShareURLPasteboardItem* pasteboardItem =
+      [[[MOZShareURLPasteboardItem alloc] initWithURLs:urls
+                                                titles:titles] autorelease];
+  if (@available(macOS 13.0, *)) {
+    NSImage* linkImage = [NSImage imageWithSystemSymbolName:@"link"
+                                   accessibilityDescription:nil];
+    NSImageSymbolConfiguration* config = [NSImageSymbolConfiguration
+        configurationWithPointSize:24
+                            weight:NSFontWeightRegular];
+    linkImage = [linkImage imageWithSymbolConfiguration:config];
+    linkImage = [linkImage
+        imageWithTintColor:[[NSColor labelColor] colorWithAlphaComponent:0.50]];
+    return [[[NSPreviewRepresentingActivityItem alloc]
+        initWithItem:pasteboardItem
+               title:aShareTitle
+               image:linkImage
+                icon:nil] autorelease];
+  }
+  return pasteboardItem;
 }
 
-static void SetStrAttribute(JSContext* aCx, JS::Rooted<JSObject*>& aObj,
-                            const char* aKey, NSString* aVal) {
-  nsAutoString strVal;
-  mozilla::CopyNSStringToXPCOMString(aVal, strVal);
-  JS::Rooted<JSString*> title(aCx, JS_NewUCStringCopyZ(aCx, strVal.get()));
-  JS::Rooted<JS::Value> attVal(aCx, JS::StringValue(title));
-  JS_SetProperty(aCx, aObj, aKey, attVal);
-}
 
-nsresult nsMacSharingService::GetSharingProviders(
-    const nsAString& aPageUrl, JSContext* aCx,
-    JS::MutableHandle<JS::Value> aResult) {
-  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  NSURL* url = nsCocoaUtils::ToNSURL(aPageUrl);
-  if (!url) {
-    
+
+static nsresult ResolveAnchorViewRect(mozilla::dom::Element* aAnchor,
+                                      NSView*& aView, NSRect& aRect) {
+  nsIFrame* frame = aAnchor->GetPrimaryFrame();
+  if (!frame) {
+    return NS_ERROR_FAILURE;
+  }
+  nsIWidget* widget = frame->GetNearestWidget();
+  if (!widget) {
+    return NS_ERROR_FAILURE;
+  }
+  NSView* view = (NSView*)widget->GetNativeData(NS_NATIVE_WIDGET);
+  if (!view) {
+    return NS_ERROR_FAILURE;
+  }
+  NSWindow* window = [view window];
+  if (!window) {
     return NS_ERROR_FAILURE;
   }
 
-  NSArray* sharingService = [NSSharingService sharingServicesForItems:@[ url ]];
-  int32_t serviceCount = 0;
-  JS::Rooted<JSObject*> array(aCx, JS::NewArrayObject(aCx, 0));
+  nsRect anchorRectAppUnits = frame->GetScreenRectInAppUnits();
+  nsPresContext* pc = frame->PresContext();
+  int32_t appUnitsPerDevPixel = pc->AppUnitsPerDevPixel();
+  DesktopToLayoutDeviceScale desktopToLayoutScale =
+      pc->DeviceContext()->GetDesktopToDeviceScale();
+  DesktopIntRect anchorRectDesktop = DesktopIntRect::RoundOut(
+      LayoutDeviceRect::FromAppUnits(anchorRectAppUnits, appUnitsPerDevPixel) /
+      desktopToLayoutScale);
 
-  for (NSSharingService* currentService in sharingService) {
-    if (ShouldIgnoreProvider([currentService name])) {
-      continue;
-    }
-    JS::Rooted<JSObject*> obj(aCx, JS_NewPlainObject(aCx));
-
-    SetStrAttribute(aCx, obj, "name", [currentService name]);
-    SetStrAttribute(aCx, obj, "menuItemTitle", currentService.menuItemTitle);
-    SetStrAttribute(aCx, obj, "image", NSImageToBase64(currentService.image));
-
-    JS::Rooted<JS::Value> element(aCx, JS::ObjectValue(*obj));
-    JS_SetElement(aCx, array, serviceCount++, element);
-  }
-
-  aResult.setObject(*array);
-
+  NSRect cocoaScreenRect =
+      nsCocoaUtils::GeckoRectToCocoaRect(anchorRectDesktop);
+  NSRect windowRect = [window convertRectFromScreen:cocoaScreenRect];
+  aView = view;
+  aRect = [view convertRect:windowRect fromView:nil];
   return NS_OK;
-  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
+
+
+
+
+static NSUserActivity* MakeSingleUrlActivity(NSURL* aURL, NSString* aTitle) {
+  if (!aURL) {
+    return nil;
+  }
+  NSUserActivity* activity = [[[NSUserActivity alloc]
+      initWithActivityType:NSUserActivityTypeBrowsingWeb] autorelease];
+  if ([aURL.scheme hasPrefix:@"http"]) {
+    [activity setWebpageURL:aURL];
+  }
+  [activity setEligibleForHandoff:NO];
+  [activity setTitle:aTitle];
+  [activity becomeCurrent];
+  return activity;
+}
+
+}  
 
 NS_IMETHODIMP
-nsMacSharingService::OpenSharingPreferences() {
+nsMacSharingService::ShareUrlWithPicker(mozilla::dom::Element* aAnchor,
+                                        const nsTArray<nsString>& aUrls,
+                                        const nsTArray<nsString>& aTitles,
+                                        const nsAString& aShareTitle) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+  if (!aAnchor || aUrls.IsEmpty()) {
+    return NS_ERROR_INVALID_ARG;
+  }
 
-  NSURL* prefPaneURL = [NSURL fileURLWithPath:extensionPrefPanePath
-                                  isDirectory:YES];
-  NSDictionary* args = @{
-    openSharingSubpaneActionKey : openSharingSubpaneActionValue,
-    openSharingSubpaneProtocolKey : openSharingSubpaneProtocolValue
-  };
-  NSData* data = [NSPropertyListSerialization
-      dataWithPropertyList:args
-                    format:NSPropertyListXMLFormat_v1_0
-                   options:0
-                     error:nil];
-  NSAppleEventDescriptor* descriptor = [[NSAppleEventDescriptor alloc]
-      initWithDescriptorType:openSharingSubpaneDescriptorType
-                        data:data];
-
-  [[NSWorkspace sharedWorkspace] openURLs:@[ prefPaneURL ]
-                  withAppBundleIdentifier:nil
-                                  options:NSWorkspaceLaunchAsync
-           additionalEventParamDescriptor:descriptor
-                        launchIdentifiers:nullptr];
-
-  [descriptor release];
-
-  return NS_OK;
-  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
-}
-
-NS_IMETHODIMP
-nsMacSharingService::ShareUrl(const nsAString& aServiceName,
-                              const nsAString& aPageUrl,
-                              const nsAString& aPageTitle) {
-  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
-
-  NSString* serviceName = nsCocoaUtils::ToNSString(aServiceName);
-  NSSharingService* service =
-      [NSSharingService sharingServiceNamed:serviceName];
-  if (!service) {
+  bool isSingle = aUrls.Length() == 1;
+  NSString* shareTitle = nsCocoaUtils::ToNSString(aShareTitle);
+  NSURL* singleURL = isSingle ? nsCocoaUtils::ToNSURL(aUrls[0]) : nil;
+  if (isSingle && !singleURL) {
     return NS_ERROR_FAILURE;
   }
 
-  NSString* pageTitle = nsCocoaUtils::ToNSString(aPageTitle);
-  [service setSubject:pageTitle];
+  id shareItem =
+      singleURL ? singleURL : MakeMultiUrlShareItem(aUrls, aTitles, shareTitle);
 
-  NSURL* pageUrl = nsCocoaUtils::ToNSURL(aPageUrl);
-  if (!pageUrl) {
-    return NS_ERROR_FAILURE;
-  }
+  NSView* anchorView = nil;
+  NSRect anchorRect = NSZeroRect;
+  nsresult rv = ResolveAnchorViewRect(aAnchor, anchorView, anchorRect);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  NSUserActivity* shareActivity = MakeSingleUrlActivity(singleURL, shareTitle);
+
+  NSSharingServicePicker* picker =
+      [[NSSharingServicePicker alloc] initWithItems:@[ shareItem ]];
+
+  SharingServicePickerDelegate* delegate =
+      [[SharingServicePickerDelegate alloc] initWithPicker:picker
+                                                  activity:shareActivity
+                                                isMultiUrl:!isSingle];
+  
+  
+  
+  [picker setDelegate:delegate];
+  [picker release];
 
   
-  if ([serviceName isEqual:oldRemindersServiceName] ||
-      [serviceName isEqual:newRemindersServiceName]) {
-    NSUserActivity* shareActivity = [[[NSUserActivity alloc]
-        initWithActivityType:NSUserActivityTypeBrowsingWeb] autorelease];
-
-    if ([pageUrl.scheme hasPrefix:@"http"]) {
-      [shareActivity setWebpageURL:pageUrl];
-    }
-
-    [shareActivity setEligibleForHandoff:NO];
-    [shareActivity setTitle:pageTitle];
-    [shareActivity becomeCurrent];
-
-    SharingServiceDelegate* shareDelegate =
-        [[SharingServiceDelegate alloc] initWithActivity:shareActivity];
-    [service setDelegate:shareDelegate];  
-  }
-
-  [service performWithItems:@[ pageUrl ]];
+  
+  
+  
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [picker showRelativeToRect:anchorRect
+                        ofView:anchorView
+                 preferredEdge:NSMinYEdge];
+  });
 
   return NS_OK;
-
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
