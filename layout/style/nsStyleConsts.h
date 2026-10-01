@@ -317,13 +317,6 @@ enum class StyleTextOrientation : uint8_t {
 };
 
 
-
-enum class StyleBoxCollapse : uint8_t {
-  Flex,
-  Legacy,
-};
-
-
 enum class StyleTextCombineUpright : uint8_t {
   None,
   All,
