@@ -2,12 +2,12 @@
 
 
 
-
-
 #ifndef DOM_FS_PARENT_FILESYSTEMQUOTACLIENT_H_
 #define DOM_FS_PARENT_FILESYSTEMQUOTACLIENT_H_
 
+#include "FileSystemCipherKeyManager.h"
 #include "mozilla/dom/quota/Client.h"
+#include "nsTHashMap.h"
 
 namespace mozilla::dom::fs {
 
@@ -17,6 +17,14 @@ class FileSystemQuotaClient : public quota::Client {
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(mozilla::dom::fs::FileSystemQuotaClient,
                                         override)
+
+  
+
+
+
+
+  RefPtr<FileSystemCipherKeyManager> GetOrCreateCipherKeyManager(
+      const quota::OriginMetadata& aOriginMetadata);
 
   Type GetType() override;
 
@@ -62,6 +70,11 @@ class FileSystemQuotaClient : public quota::Client {
   nsCString GetShutdownStatus() const override;
   void ForceKillActors() override;
   void FinalizeShutdown() override;
+
+ private:
+  
+  nsTHashMap<nsCStringHashKey, RefPtr<FileSystemCipherKeyManager>>
+      mCipherKeyManagers;
 };
 
 }  

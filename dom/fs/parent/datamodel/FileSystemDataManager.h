@@ -11,6 +11,7 @@
 #include "mozilla/NotNull.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/ThreadBound.h"
+#include "mozilla/dom/FileSystemCipherKeyManager.h"
 #include "mozilla/dom/FileSystemHelpers.h"
 #include "mozilla/dom/FileSystemTypes.h"
 #include "mozilla/dom/quota/CheckedUnsafePtr.h"
@@ -103,6 +104,16 @@ class FileSystemDataManager
     return ToMaybeRef(mDirectoryLockHandle.get());
   }
 
+  
+
+
+
+
+
+  RefPtr<FileSystemCipherKeyManager> MaybeCipherKeyManager() const {
+    return mCipherKeyManager;
+  }
+
   FileSystemDatabaseManager* MutableDatabaseManagerPtr() const {
     MOZ_ASSERT(mDatabaseManager);
 
@@ -178,6 +189,9 @@ class FileSystemDataManager
   const NotNull<nsCOMPtr<nsISerialEventTarget>> mBackgroundTarget;
   const NotNull<nsCOMPtr<nsIEventTarget>> mIOTarget;
   const NotNull<RefPtr<TaskQueue>> mIOTaskQueue;
+  
+  
+  RefPtr<FileSystemCipherKeyManager> mCipherKeyManager;
   quota::ClientDirectoryLockHandle mDirectoryLockHandle;
   UniquePtr<FileSystemDatabaseManager> mDatabaseManager;
   MozPromiseHolder<BoolPromise> mOpenPromiseHolder;

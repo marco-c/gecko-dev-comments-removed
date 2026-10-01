@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FileSystemQuotaClient.h"
 
 #include "datamodel/FileSystemDatabaseManager.h"
@@ -27,6 +25,20 @@ auto toNSResult = [](const auto& aRv) { return ToNSResult(aRv); };
 
 FileSystemQuotaClient::FileSystemQuotaClient() {
   ::mozilla::ipc::AssertIsOnBackgroundThread();
+}
+
+RefPtr<FileSystemCipherKeyManager>
+FileSystemQuotaClient::GetOrCreateCipherKeyManager(
+    const quota::OriginMetadata& aOriginMetadata) {
+  quota::AssertIsOnIOThread();
+
+  if (!aOriginMetadata.mIsPrivate) {
+    return nullptr;
+  }
+
+  return mCipherKeyManagers.LookupOrInsertWith(aOriginMetadata.mOrigin, [] {
+    return new FileSystemCipherKeyManager("FileSystemCipherKeyManager");
+  });
 }
 
 quota::Client::Type FileSystemQuotaClient::GetType() {
@@ -107,11 +119,30 @@ Result<quota::UsageInfo, nsresult> FileSystemQuotaClient::GetUsageForOrigin(
 void FileSystemQuotaClient::OnOriginClearCompleted(
     const quota::OriginMetadata& aOriginMetadata) {
   quota::AssertIsOnIOThread();
+
+  if (!aOriginMetadata.mIsPrivate) {
+    return;
+  }
+
+  if (auto entry = mCipherKeyManagers.Lookup(aOriginMetadata.mOrigin)) {
+    entry.Data()->Invalidate();
+    entry.Remove();
+  }
 }
 
 void FileSystemQuotaClient::OnRepositoryClearCompleted(
     quota::PersistenceType aPersistenceType) {
   quota::AssertIsOnIOThread();
+
+  if (aPersistenceType != quota::PERSISTENCE_TYPE_PRIVATE) {
+    return;
+  }
+
+  for (const auto& cipherKeyManager : mCipherKeyManagers.Values()) {
+    cipherKeyManager->Invalidate();
+  }
+
+  mCipherKeyManagers.Clear();
 }
 
 void FileSystemQuotaClient::ReleaseIOThreadObjects() {
