@@ -304,6 +304,20 @@ class APZFindFirstScrollableTester : public APZCTreeManagerTester {
     }
   }
 
+  void SetHorizontalRangeOnly(TestAsyncPanZoomController* aApzc) {
+    FrameMetrics& metrics = aApzc->GetFrameMetrics();
+    metrics.SetScrollableRect(
+        CSSRect(0, 0, kFrameSize + kScrollRange, kFrameSize));
+    metrics.SetVisualScrollOffset(CSSPoint(0, 0));
+  }
+
+  void SetAtEndOnBothAxes(TestAsyncPanZoomController* aApzc) {
+    FrameMetrics& metrics = aApzc->GetFrameMetrics();
+    metrics.SetScrollableRect(
+        CSSRect(0, 0, kFrameSize + kScrollRange, kFrameSize + kScrollRange));
+    metrics.SetVisualScrollOffset(CSSPoint(kScrollRange, kScrollRange));
+  }
+
   void SetOverscrollBehavior(TestAsyncPanZoomController* aApzc,
                              StyleOverscrollBehavior aX,
                              StyleOverscrollBehavior aY) {
@@ -326,6 +340,12 @@ class APZFindFirstScrollableTester : public APZCTreeManagerTester {
   PanGestureInput DownwardPan() {
     return PanGestureInput(PanGestureInput::PANGESTURE_PAN, mcc->Time(),
                            ScreenPoint(50, 50), ScreenPoint(0, 10),
+                           MODIFIER_NONE);
+  }
+
+  PanGestureInput DiagonalPan() {
+    return PanGestureInput(PanGestureInput::PANGESTURE_PAN, mcc->Time(),
+                           ScreenPoint(50, 50), ScreenPoint(10, 10),
                            MODIFIER_NONE);
   }
 
@@ -400,5 +420,153 @@ INSTANTIATE_TEST_SUITE_P(ReachableChainStates,
                          APZFindFirstScrollableTableTester,
                          testing::ValuesIn(kTestCases),
                          APZFindFirstScrollableTableTester::PrintFromParam);
+
+
+
+
+
+
+
+
+
+
+
+
+
+TEST_F(APZFindFirstScrollableTester, ScrollableOnTheOtherAxisIsSkipped) {
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
+  CreateThreeLevelChain();
+
+  RefPtr<const OverscrollHandoffChain> chain = BuildChain();
+  PanGestureInput input = DownwardPan();
+
+  
+  ApplyFrameState(mInner, ObAuto(kNoRange));
+  SetHorizontalRangeOnly(mMiddle);
+  SetOverscrollBehavior(mMiddle, StyleOverscrollBehavior::Auto,
+                        StyleOverscrollBehavior::Auto);
+  ASSERT_TRUE(mMiddle->CanScroll(ScrollDirection::eHorizontal));
+  ApplyFrameState(mRoot, ObAuto(kRoom));
+
+  
+  CheckOutcome(chain, input, OverscrollHandoffChain::IncludeOverscroll::Yes,
+               kRoot);
+}
+
+
+TEST_F(APZFindFirstScrollableTester, ContainVsNoneAtRoot) {
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
+  CreateThreeLevelChain();
+
+  RefPtr<const OverscrollHandoffChain> chain = BuildChain();
+  PanGestureInput input = DownwardPan();
+
+  ApplyFrameState(mInner, ObAuto(kNoRange));
+  ApplyFrameState(mMiddle, ObAuto(kNoRange));
+  SetScrollability(mRoot, Scrollability::AtEnd);
+
+  SetOverscrollBehavior(mRoot, StyleOverscrollBehavior::Auto,
+                        StyleOverscrollBehavior::Contain);
+  CheckOutcome(chain, input, OverscrollHandoffChain::IncludeOverscroll::Yes,
+               kRootVertical);
+
+  SetOverscrollBehavior(mRoot, StyleOverscrollBehavior::Auto,
+                        StyleOverscrollBehavior::None);
+  CheckOutcome(chain, input, OverscrollHandoffChain::IncludeOverscroll::Yes,
+               Outcome{ExpectedTarget::NoApzc, HorizontalScrollDirection});
+}
+
+
+TEST_F(APZFindFirstScrollableTester, RootOverscrollStripsZeroDeltaAxis) {
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
+  CreateThreeLevelChain();
+
+  RefPtr<const OverscrollHandoffChain> chain = BuildChain();
+
+  ApplyFrameState(mInner, ObAuto(kNoRange));
+  ApplyFrameState(mMiddle, ObAuto(kNoRange));
+  SetAtEndOnBothAxes(mRoot);
+  SetOverscrollBehavior(mRoot, StyleOverscrollBehavior::Auto,
+                        StyleOverscrollBehavior::Auto);
+
+  ASSERT_EQ(EitherScrollDirection, mRoot->GetOverscrollableDirections());
+
+  
+  PanGestureInput verticalPan = DownwardPan();
+  CheckOutcome(chain, verticalPan,
+               OverscrollHandoffChain::IncludeOverscroll::Yes, kRootVertical);
+
+  
+  PanGestureInput diagonalPan = DiagonalPan();
+  CheckOutcome(chain, diagonalPan,
+               OverscrollHandoffChain::IncludeOverscroll::Yes, kRoot);
+}
+
+
+TEST_F(APZFindFirstScrollableTester, RootOverscrollCannotRestoreBlockedAxis) {
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
+  CreateThreeLevelChain();
+
+  RefPtr<const OverscrollHandoffChain> chain = BuildChain();
+  PanGestureInput input = DiagonalPan();
+
+  
+  SetScrollability(mInner, Scrollability::NoRange);
+  SetOverscrollBehavior(mInner, StyleOverscrollBehavior::Auto,
+                        StyleOverscrollBehavior::None);
+  ApplyFrameState(mMiddle, ObAuto(kNoRange));
+
+  
+  SetAtEndOnBothAxes(mRoot);
+  SetOverscrollBehavior(mRoot, StyleOverscrollBehavior::Auto,
+                        StyleOverscrollBehavior::Auto);
+  ASSERT_EQ(EitherScrollDirection, mRoot->GetOverscrollableDirections());
+
+  
+  CheckOutcome(chain, input, OverscrollHandoffChain::IncludeOverscroll::Yes,
+               Outcome{ExpectedTarget::Root, HorizontalScrollDirection});
+}
+
+
+TEST_F(APZFindFirstScrollableTester, HandoffNarrowsToSingleDirection) {
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
+  CreateThreeLevelChain();
+
+  RefPtr<const OverscrollHandoffChain> chain = BuildChain();
+  PanGestureInput input = DiagonalPan();
+
+  
+  SetScrollability(mInner, Scrollability::NoRange);
+  SetOverscrollBehavior(mInner, StyleOverscrollBehavior::None,
+                        StyleOverscrollBehavior::Auto);
+  ApplyFrameState(mMiddle, ObAuto(kRoom));
+
+  CheckOutcome(chain, input, OverscrollHandoffChain::IncludeOverscroll::Yes,
+               Outcome{ExpectedTarget::Middle, VerticalScrollDirection});
+}
+
+
+TEST_F(APZFindFirstScrollableTester, ProgressiveNarrowingEmptiesDirections) {
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
+  CreateThreeLevelChain();
+
+  RefPtr<const OverscrollHandoffChain> chain = BuildChain();
+  PanGestureInput input = DiagonalPan();
+
+  SetScrollability(mInner, Scrollability::NoRange);
+  SetOverscrollBehavior(mInner, StyleOverscrollBehavior::None,
+                        StyleOverscrollBehavior::Auto);
+  SetScrollability(mMiddle, Scrollability::NoRange);
+  SetOverscrollBehavior(mMiddle, StyleOverscrollBehavior::Auto,
+                        StyleOverscrollBehavior::None);
+  ApplyFrameState(mRoot, ObAuto(kRoom));
+
+  
+  ASSERT_TRUE(mRoot->CanScroll(input));
+
+  
+  CheckOutcome(chain, input, OverscrollHandoffChain::IncludeOverscroll::Yes,
+               kNoneBlocked);
+}
 
 }  
