@@ -15,6 +15,7 @@
 
 
 
+
 use std::ffi::OsStr;
 use std::hash::Hasher;
 use std::os::windows::ffi::OsStrExt;
@@ -25,7 +26,7 @@ use windows_sys::Win32::Foundation::{
     CloseHandle, GetLastError, ERROR_ALREADY_EXISTS, HANDLE, WAIT_OBJECT_0,
 };
 use windows_sys::Win32::System::Threading::{
-    CreateEventW, CreateMutexW, OpenEventW, SetEvent, WaitForSingleObject, EVENT_MODIFY_STATE,
+    CreateEventW, CreateMutexW, OpenEventW, SetEvent, WaitForMultipleObjects, EVENT_MODIFY_STATE,
     INFINITE,
 };
 
@@ -76,7 +77,7 @@ impl ProfileGuard {
     
     
     pub fn acquire(profile: &Path) -> Result<Option<Self>, String> {
-        let name = wide(&object_name("profile", profile)?);
+        let name = wide(&object_name("profile", Some(profile))?);
 
         
         
@@ -94,15 +95,15 @@ impl ProfileGuard {
 }
 
 
-pub struct StopEvent {
+struct Event {
     handle: OwnedHandle,
 }
 
-impl StopEvent {
+impl Event {
     
     
-    pub fn open(profile: &Path) -> Result<Self, String> {
-        let name = wide(&object_name("stop", profile)?);
+    fn create(name: &str) -> Result<Self, String> {
+        let name = wide(name);
 
         
         
@@ -110,23 +111,47 @@ impl StopEvent {
         let handle = OwnedHandle::new(handle)
             .ok_or_else(|| format!("CreateEventW failed: {}", last_error()))?;
 
-        Ok(StopEvent { handle })
+        Ok(Event { handle })
+    }
+}
+
+
+pub struct StopEvent {
+    profile: Event,
+    install: Event,
+}
+
+impl StopEvent {
+    pub fn open(profile: &Path) -> Result<Self, String> {
+        Ok(StopEvent {
+            profile: Event::create(&object_name("stop", Some(profile))?)?,
+            install: Event::create(&object_name("stop", None)?)?,
+        })
     }
 
     
     pub fn wait(&self) -> Result<(), String> {
+        let handles = [self.profile.handle.get(), self.install.handle.get()];
+
         
         
-        match unsafe { WaitForSingleObject(self.handle.get(), INFINITE) } {
-            WAIT_OBJECT_0 => Ok(()),
-            other => Err(format!("WaitForSingleObject returned {other}")),
+        
+        let waited =
+            unsafe { WaitForMultipleObjects(handles.len() as u32, handles.as_ptr(), 0, INFINITE) };
+
+        
+        if waited == WAIT_OBJECT_0 || waited == WAIT_OBJECT_0 + 1 {
+            Ok(())
+        } else {
+            Err(format!("WaitForMultipleObjects returned {waited}"))
         }
     }
 }
 
 
 
-pub fn signal(profile: &Path) -> Result<(), String> {
+
+pub fn send_stop_signal(profile: Option<&Path>) -> Result<(), String> {
     let name = wide(&object_name("stop", profile)?);
 
     
@@ -150,7 +175,8 @@ pub fn signal(profile: &Path) -> Result<(), String> {
 
 
 
-fn object_name(kind: &str, profile: &Path) -> Result<String, String> {
+
+fn object_name(kind: &str, profile: Option<&Path>) -> Result<String, String> {
     let exe = std::env::current_exe().map_err(|e| format!("cannot locate this binary: {e}"))?;
     let install = exe
         .parent()
@@ -158,10 +184,10 @@ fn object_name(kind: &str, profile: &Path) -> Result<String, String> {
 
     let mut hasher = FnvHasher::default();
     hasher.write(path_key(install).as_bytes());
-    
-    
-    hasher.write(&[0]);
-    hasher.write(path_key(profile).as_bytes());
+    if let Some(profile) = profile {
+        hasher.write(&[0]);
+        hasher.write(path_key(profile).as_bytes());
+    }
 
     Ok(format!("{PREFIX}-{kind}-{:016x}", hasher.finish()))
 }
@@ -196,16 +222,32 @@ mod tests {
     #[test]
     fn name_ignores_path_case() {
         assert_eq!(
-            object_name("stop", Path::new(r"c:\profiles\someone")).unwrap(),
-            object_name("stop", Path::new(r"C:\Profiles\SomeOne")).unwrap()
+            object_name("stop", Some(Path::new(r"c:\profiles\someone"))).unwrap(),
+            object_name("stop", Some(Path::new(r"C:\Profiles\SomeOne"))).unwrap()
         );
     }
 
     #[test]
     fn distinct_profiles_get_distinct_names() {
         assert_ne!(
-            object_name("stop", Path::new(r"c:\profiles\a")).unwrap(),
-            object_name("stop", Path::new(r"c:\profiles\b")).unwrap()
+            object_name("stop", Some(Path::new(r"c:\profiles\a"))).unwrap(),
+            object_name("stop", Some(Path::new(r"c:\profiles\b"))).unwrap()
+        );
+    }
+
+    
+    
+    #[test]
+    fn the_broadcast_name_belongs_to_no_profile() {
+        let broadcast = object_name("stop", None).unwrap();
+
+        assert_ne!(
+            broadcast,
+            object_name("stop", Some(Path::new(r"c:\profiles\a"))).unwrap()
+        );
+        assert_ne!(
+            broadcast,
+            object_name("stop", Some(Path::new(r"c:\profiles\b"))).unwrap()
         );
     }
 
@@ -216,8 +258,8 @@ mod tests {
         let profile = Path::new(r"c:\profiles\kinds");
 
         assert_ne!(
-            object_name("profile", profile).unwrap(),
-            object_name("stop", profile).unwrap()
+            object_name("profile", Some(profile)).unwrap(),
+            object_name("stop", Some(profile)).unwrap()
         );
     }
 
@@ -227,7 +269,7 @@ mod tests {
         let event = StopEvent::open(profile).unwrap();
 
         let waiter = std::thread::spawn(move || event.wait());
-        signal(profile).unwrap();
+        send_stop_signal(Some(profile)).unwrap();
 
         waiter.join().unwrap().unwrap();
     }
@@ -239,7 +281,7 @@ mod tests {
         let profile = Path::new(r"c:\profiles\sticky-signal");
         let event = StopEvent::open(profile).unwrap();
 
-        signal(profile).unwrap();
+        send_stop_signal(Some(profile)).unwrap();
 
         event.wait().unwrap();
     }
@@ -250,10 +292,10 @@ mod tests {
         let event = StopEvent::open(mine).unwrap();
         let waiter = std::thread::spawn(move || event.wait());
 
-        signal(Path::new(r"c:\profiles\theirs")).unwrap();
+        send_stop_signal(Some(Path::new(r"c:\profiles\theirs"))).unwrap();
         assert!(!waiter.is_finished(), "another profile's signal woke us");
 
-        signal(mine).unwrap();
+        send_stop_signal(Some(mine)).unwrap();
         waiter.join().unwrap().unwrap();
     }
 

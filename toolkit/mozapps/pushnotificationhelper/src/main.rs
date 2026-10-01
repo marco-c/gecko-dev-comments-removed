@@ -24,8 +24,8 @@ const PROFILE_MARKER: &str = "compatibility.ini";
 #[command(name = PROGRAM, about, disable_version_flag = true)]
 struct Args {
     
-    #[arg(long, value_name = "PATH")]
-    profile: PathBuf,
+    #[arg(long, value_name = "PATH", required_unless_present = "stop")]
+    profile: Option<PathBuf>,
 
     
     #[arg(long)]
@@ -105,7 +105,7 @@ fn main() -> ExitCode {
     let args = Args::parse();
 
     if args.stop {
-        return match lifecycle::signal(&args.profile) {
+        return match lifecycle::send_stop_signal(args.profile.as_deref()) {
             Ok(()) => ExitCode::SUCCESS,
             Err(message) => {
                 eprintln!("{PROGRAM}: {message}");
@@ -114,12 +114,17 @@ fn main() -> ExitCode {
         };
     }
 
-    if let Err(message) = check_profile(&args.profile) {
+    let profile = args
+        .profile
+        .as_deref()
+        .expect("clap requires --profile unless --stop is given");
+
+    if let Err(message) = check_profile(profile) {
         eprintln!("{PROGRAM}: {message}");
         return ExitCode::FAILURE;
     }
 
-    run(&args.profile)
+    run(profile)
 }
 
 #[cfg(test)]
@@ -150,9 +155,17 @@ mod tests {
         ])
         .unwrap();
 
-        let error = check_profile(&args.profile).unwrap_err();
+        let error = check_profile(args.profile.as_deref().unwrap()).unwrap_err();
 
         assert!(error.starts_with("no such directory:"), "{error}");
+    }
+
+    
+    
+    
+    #[test]
+    fn starting_requires_a_profile() {
+        assert!(Args::try_parse_from([PROGRAM]).is_err());
     }
 
     
@@ -169,13 +182,17 @@ mod tests {
             Args::try_parse_from([PROGRAM, "--stop", "--profile", r"c:\profiles\a"]).unwrap();
 
         assert!(args.stop);
-        assert_eq!(args.profile, PathBuf::from(r"c:\profiles\a"));
+        assert_eq!(args.profile, Some(PathBuf::from(r"c:\profiles\a")));
     }
 
     
+    
     #[test]
-    fn stop_still_requires_a_profile() {
-        assert!(Args::try_parse_from([PROGRAM, "--stop"]).is_err());
+    fn stop_without_a_profile_is_allowed() {
+        let args = Args::try_parse_from([PROGRAM, "--stop"]).unwrap();
+
+        assert!(args.stop);
+        assert_eq!(args.profile, None);
     }
 
     #[test]
