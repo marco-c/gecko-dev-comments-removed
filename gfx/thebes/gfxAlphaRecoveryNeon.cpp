@@ -2,8 +2,7 @@
 
 
 
-
 #include "gfxAlphaRecoveryGeneric.h"
 
-template bool gfxAlphaRecoveryGeneric::RecoverAlpha<xsimd::neon>(
+template bool gfxAlphaRecovery::RecoverAlphaGeneric<xsimd::neon>(
     gfxImageSurface* blackSurf, const gfxImageSurface* whiteSurf);
