@@ -197,6 +197,11 @@ bool MediaDecoder::IsInfinite() const {
   return std::isinf(mDuration.match(DurationToDouble()));
 }
 
+bool MediaDecoder::IsLiveStream() const {
+  MOZ_ASSERT(NS_IsMainThread());
+  return GetStateMachine() ? GetStateMachine()->IsLiveStream() : false;
+}
+
 #define INIT_MIRROR(name, val) \
   name(mOwner->AbstractMainThread(), val, "MediaDecoder::" #name " (Mirror)")
 #define INIT_CANONICAL(name, val) \
@@ -1349,7 +1354,9 @@ IntervalType MediaDecoder::GetSeekableImpl() {
   if (!IsMediaSeekable()) {
     return IntervalType();
   }
-  if (!IsTransportSeekable()) {
+  
+  
+  if (!IsTransportSeekable() || (IsLiveStream() && IsInfinite())) {
     return IntervalType(positiveBuffered);
   }
 

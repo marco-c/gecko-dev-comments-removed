@@ -526,7 +526,8 @@ int64_t ChannelMediaResource::CalculateStreamLength() const {
 
   nsCOMPtr<nsIHttpChannel> hc = do_QueryInterface(mChannel);
   if (!hc) {
-    return -1;
+    int64_t length = -1;
+    return NS_SUCCEEDED(mChannel->GetContentLength(&length)) ? length : -1;
   }
 
   bool succeeded = false;
@@ -582,6 +583,7 @@ nsresult ChannelMediaResource::Open(nsIStreamListener** aStreamListener) {
   mSharedInfo->mResources.AppendElement(this);
 
   mIsLiveStream = streamLength < 0;
+  LOG("Open() streamLength={} mIsLiveStream={}", streamLength, mIsLiveStream);
   mListener = new Listener(this, 0, ++mLoadID);
   *aStreamListener = mListener;
   NS_ADDREF(*aStreamListener);
