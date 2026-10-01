@@ -269,11 +269,23 @@ int nr_ice_peer_ctx_remove_pstream(nr_ice_peer_ctx *pctx, nr_ice_media_stream **
   {
     int r,_status;
 
+    
+
+
+    if((*pstreamp)->ice_state == NR_ICE_MEDIA_STREAM_CHECKS_ACTIVE) {
+      pctx->active_streams--;
+      r_log(LOG_ICE,LOG_DEBUG,"ICE-PEER(%s): removing stream %s while it is checking; %d active streams",pctx->label,(*pstreamp)->label,pctx->active_streams);
+    }
+
     STAILQ_REMOVE(&pctx->peer_streams,*pstreamp,nr_ice_media_stream_,entry);
 
     if(r=nr_ice_media_stream_destroy(pstreamp)) {
       ABORT(r);
     }
+
+    
+
+    nr_ice_peer_ctx_react_to_stream_change(pctx);
 
     _status=0;
  abort:
@@ -493,9 +505,45 @@ int nr_ice_peer_ctx_pair_new_trickle_candidate(nr_ice_ctx *ctx, nr_ice_peer_ctx 
 
 
 
-int nr_ice_peer_ctx_start_checks(nr_ice_peer_ctx *pctx)
+
+
+
+
+
+
+
+
+static int nr_ice_peer_ctx_start_next_stream(nr_ice_peer_ctx *pctx)
   {
-    return nr_ice_peer_ctx_start_checks2(pctx, 0);
+    int r;
+    nr_ice_media_stream *str;
+    nr_ice_media_stream *first_frozen = nullptr;
+
+    str=STAILQ_FIRST(&pctx->peer_streams);
+    while(str){
+      if(!str->local_stream->obsolete){
+        if(str->ice_state == NR_ICE_MEDIA_STREAM_CHECKS_ACTIVE)
+          return R_NOT_FOUND;
+
+        if(!first_frozen &&
+            str->ice_state == NR_ICE_MEDIA_STREAM_CHECKS_FROZEN &&
+           !TAILQ_EMPTY(&str->check_list)) {
+          first_frozen = str;
+        }
+      }
+      str=STAILQ_NEXT(str,entry);
+    }
+
+    if(!first_frozen)
+      return R_NOT_FOUND;
+
+    r_log(LOG_ICE,LOG_INFO,"ICE-PEER(%s): starting checks for stream %s",pctx->label,first_frozen->label);
+    if(r=nr_ice_media_stream_unfreeze_pairs(pctx,first_frozen))
+      return r;
+    if(r=nr_ice_media_stream_start_checks(pctx,first_frozen))
+      return r;
+
+    return 0;
   }
 
 
@@ -503,11 +551,7 @@ int nr_ice_peer_ctx_start_checks(nr_ice_peer_ctx *pctx)
 
 
 
-
-
-
-
-int nr_ice_peer_ctx_start_checks2(nr_ice_peer_ctx *pctx, int allow_non_first)
+int nr_ice_peer_ctx_start_checks(nr_ice_peer_ctx *pctx)
   {
     int r,_status;
     nr_ice_media_stream *stream;
@@ -523,59 +567,20 @@ int nr_ice_peer_ctx_start_checks2(nr_ice_peer_ctx *pctx, int allow_non_first)
     pctx->connected_cb_timer = 0;
     pctx->checks_started = 0;
 
-    nr_ice_peer_ctx_check_if_connected(pctx);
-
-    if (pctx->reported_connected) {
+    if(nr_ice_peer_ctx_react_to_stream_change(pctx)){
+      ++started;
+    }
+    else if(pctx->reported_connected){
       r_log(LOG_ICE,LOG_ERR,"ICE(%s): peer (%s) in %s all streams were done",pctx->ctx->label,pctx->label,__FUNCTION__);
       return (0);
     }
-
-    stream=STAILQ_FIRST(&pctx->peer_streams);
-    if(!stream)
-      ABORT(R_FAILED);
-
-    while (stream) {
-      if(!stream->local_stream->obsolete) {
-        assert(stream->ice_state != NR_ICE_MEDIA_STREAM_UNPAIRED);
-
-        if (stream->ice_state == NR_ICE_MEDIA_STREAM_CHECKS_FROZEN) {
-          if(!TAILQ_EMPTY(&stream->check_list))
-            break;
-
-          if(!allow_non_first){
-            
-
-
-
-
-
-
-
-
-
-            r_log(LOG_ICE,LOG_ERR,"ICE(%s): peer (%s) first stream has empty check list",pctx->ctx->label,pctx->label);
-            ABORT(R_FAILED);
-          }
-        }
-      }
-
-      stream=STAILQ_NEXT(stream, entry);
-    }
-
-    if (!stream) {
+    else{
       
-
-
-
       r_log(LOG_ICE,LOG_NOTICE,"ICE(%s): peer (%s) no streams with non-empty check lists",pctx->ctx->label,pctx->label);
     }
-    else if (stream->ice_state == NR_ICE_MEDIA_STREAM_CHECKS_FROZEN) {
-      if(r=nr_ice_media_stream_unfreeze_pairs(pctx,stream))
-        ABORT(r);
-      if(r=nr_ice_media_stream_start_checks(pctx,stream))
-        ABORT(r);
-      ++started;
-    }
+
+    if(STAILQ_EMPTY(&pctx->peer_streams))
+      ABORT(R_FAILED);
 
     stream=STAILQ_FIRST(&pctx->peer_streams);
     while (stream) {
@@ -687,8 +692,11 @@ static void nr_ice_peer_ctx_fire_connected(NR_SOCKET s, int how, void *cb_arg)
 
 
 
-void nr_ice_peer_ctx_check_if_connected(nr_ice_peer_ctx *pctx)
+
+
+int nr_ice_peer_ctx_react_to_stream_change(nr_ice_peer_ctx *pctx)
   {
+    int r;
     nr_ice_media_stream *str;
     int failed=0;
     int succeeded=0;
@@ -709,27 +717,39 @@ void nr_ice_peer_ctx_check_if_connected(nr_ice_peer_ctx *pctx)
       str=STAILQ_NEXT(str,entry);
     }
 
-    if(str)
-      return;  
+    if (!str) {
+      
+      r_log(LOG_ICE,LOG_INFO,"ICE-PEER(%s): all checks completed success=%d fail=%d",pctx->label,succeeded,failed);
 
-    
-    r_log(LOG_ICE,LOG_INFO,"ICE-PEER(%s): all checks completed success=%d fail=%d",pctx->label,succeeded,failed);
+      
+      if(pctx->trickle_grace_period_timer) {
+        r_log(LOG_ICE,LOG_INFO,"ICE(%s): peer (%s) cancelling grace period timer",pctx->ctx->label,pctx->label);
+        NR_async_timer_cancel(pctx->trickle_grace_period_timer);
+        pctx->trickle_grace_period_timer=0;
+      }
 
-    
-    if(pctx->trickle_grace_period_timer) {
-      r_log(LOG_ICE,LOG_INFO,"ICE(%s): peer (%s) cancelling grace period timer",pctx->ctx->label,pctx->label);
-      NR_async_timer_cancel(pctx->trickle_grace_period_timer);
-      pctx->trickle_grace_period_timer=0;
+      
+
+
+      if (!pctx->reported_connected && !failed) {
+        pctx->reported_connected = 1;
+        assert(!pctx->connected_cb_timer);
+        NR_ASYNC_TIMER_SET(0,nr_ice_peer_ctx_fire_connected,pctx,&pctx->connected_cb_timer);
+      }
+    } else {
+      
+
+
+
+      r=nr_ice_peer_ctx_start_next_stream(pctx);
+      if(!r)
+        return 1;
+      if(r!=R_NOT_FOUND){
+        r_log(LOG_ICE,LOG_ERR,"ICE-PEER(%s): couldn't start checks for next stream, error=%d",pctx->label,r);
+      }
     }
 
-    
-
-
-    if (!pctx->reported_connected) {
-      pctx->reported_connected = 1;
-      assert(!pctx->connected_cb_timer);
-      NR_ASYNC_TIMER_SET(0,nr_ice_peer_ctx_fire_connected,pctx,&pctx->connected_cb_timer);
-    }
+    return 0;
   }
 
 
