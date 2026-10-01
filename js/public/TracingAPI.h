@@ -193,10 +193,18 @@ class JS_PUBLIC_API JSTracer {
   
   
   
+  
+  
+  
 #define DEFINE_ON_EDGE_METHOD(name, type, _1, _2) \
   virtual bool on##name##Edge(type** thingp, const char* name) = 0;
   JS_FOR_EACH_TRACEKIND(DEFINE_ON_EDGE_METHOD)
 #undef DEFINE_ON_EDGE_METHOD
+
+  
+  
+  
+  virtual bool onBufferEdge(void** bufferp, const char* name) { return true; }
 
  protected:
   JSTracer(JSRuntime* rt, JS::TracerKind kind,
