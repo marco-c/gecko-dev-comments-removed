@@ -20,6 +20,7 @@
 
 
 
+
 const CURRENT_FILE_DIR = "/browser/accessible/tests/browser/";
 
 
@@ -40,8 +41,10 @@ const CURRENT_CONTENT_DIR = `https://example.com${CURRENT_FILE_DIR}`;
 
 const LOADED_CONTENT_SCRIPTS = new Map();
 
+const DEFAULT_CONTENT_DOC_ID = "body";
 const DEFAULT_CONTENT_DOC_BODY_ID = "body";
 const DEFAULT_IFRAME_ID = "default-iframe-id";
+const DEFAULT_IFRAME_DOC_ID = "default-iframe-body-id";
 const DEFAULT_IFRAME_DOC_BODY_ID = "default-iframe-body-id";
 
 const HTML_MIME_TYPE = "text/html";
@@ -73,7 +76,7 @@ let gIsIframe = false;
 let gIsRemoteIframe = false;
 
 function currentContentDoc() {
-  return gIsIframe ? DEFAULT_IFRAME_DOC_BODY_ID : DEFAULT_CONTENT_DOC_BODY_ID;
+  return gIsIframe ? DEFAULT_IFRAME_DOC_ID : DEFAULT_CONTENT_DOC_ID;
 }
 
 
@@ -540,7 +543,7 @@ function accessibleTask(doc, task, options = {}) {
     if (!options.chrome) {
       onContentDocLoad = waitForEvent(
         EVENT_DOCUMENT_LOAD_COMPLETE,
-        DEFAULT_CONTENT_DOC_BODY_ID
+        DEFAULT_CONTENT_DOC_ID
       );
     }
 
@@ -548,7 +551,7 @@ function accessibleTask(doc, task, options = {}) {
     if (options.remoteIframe && !options.skipFissionDocLoad) {
       onIframeDocLoad = waitForEvent(
         EVENT_DOCUMENT_LOAD_COMPLETE,
-        DEFAULT_IFRAME_DOC_BODY_ID
+        DEFAULT_IFRAME_DOC_ID
       );
     }
 

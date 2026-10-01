@@ -250,7 +250,7 @@ addAccessibleTask(
     await reordered;
     
     const iframeDoc = await TestUtils.waitForCondition(() =>
-      findAccessibleChildByID(topDocAcc, DEFAULT_IFRAME_DOC_BODY_ID)
+      findAccessibleChildByID(topDocAcc, DEFAULT_IFRAME_DOC_ID)
     );
     
     await comparePIDs(browser, gIsRemoteIframe);
