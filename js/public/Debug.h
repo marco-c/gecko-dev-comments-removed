@@ -179,7 +179,7 @@ struct ValueSummary {
   
   
   
-  static const uint32_t VERSION = 2;
+  static const uint32_t VERSION = 3;
 
   
   

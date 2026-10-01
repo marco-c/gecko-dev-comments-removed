@@ -1713,9 +1713,8 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   }
   Condition testPrimitive(Condition cond, Register tag) {
     MOZ_ASSERT(cond == Equal || cond == NotEqual);
-    cmpTag(tag, ImmTag(JS::detail::ValueUpperExclPrimitiveTag));
-    
-    return (cond == Equal) ? Below : AboveOrEqual;
+    cmpTag(tag, ImmTag(JSVAL_TAG_OBJECT));
+    return (cond == Equal) ? NotEqual : Equal;
   }
   Condition testError(Condition cond, Register tag) {
     return testMagic(cond, tag);
