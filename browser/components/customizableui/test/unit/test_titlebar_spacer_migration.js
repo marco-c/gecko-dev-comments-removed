@@ -12,6 +12,12 @@
 
 
 
+
+
+
+
+
+
 const { CustomizableUI } = ChromeUtils.importESModule(
   "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs"
 );
@@ -20,7 +26,9 @@ const { CustomizableUI } = ChromeUtils.importESModule(
 
 const SPRING = "spring";
 
-const PRIOR_MIGRATION_VERSION = 25;
+const VERSION_BEFORE_MIGRATIONS = 25;
+
+const VERSION_AFTER_ALLTABS_ANCHOR = 27;
 const HORIZONTAL_SNAPSHOT_PREF = "browser.uiCustomization.horizontalTabstrip";
 
 const { updateForNewVersion } = CustomizableUI.getTestOnlyInternalProp(
@@ -43,9 +51,14 @@ function getSavedStatePlacements(area) {
 
 
 
-function migrateWithPlacements(placements) {
+
+
+function migrateWithPlacements(
+  placements,
+  currentVersion = VERSION_BEFORE_MIGRATIONS
+) {
   CustomizableUI.setTestOnlyInternalProp("gSavedState", {
-    currentVersion: PRIOR_MIGRATION_VERSION,
+    currentVersion,
     placements,
   });
   updateForNewVersion();
@@ -96,9 +109,93 @@ add_task(async function test_no_alltabs_button() {
   migrateWithPlacements({
     [CustomizableUI.AREA_TABSTRIP]: ["tabbrowser-tabs", "new-tab-button"],
   });
-  Assert.ok(
-    !getSavedStatePlacements(CustomizableUI.AREA_TABSTRIP).includes(SPRING),
-    "No spring is added when there is no alltabs-button to anchor to"
+  Assert.deepEqual(
+    getSavedStatePlacements(CustomizableUI.AREA_TABSTRIP),
+    ["tabbrowser-tabs", "new-tab-button", SPRING],
+    "The spring goes at the end of the tab strip without an alltabs-button"
+  );
+});
+
+add_task(async function test_no_alltabs_button_with_other_widgets() {
+  migrateWithPlacements({
+    [CustomizableUI.AREA_TABSTRIP]: [
+      "tabbrowser-tabs",
+      "new-tab-button",
+      "smartwindow-group-tabs-button",
+      "ext1-browser-action",
+    ],
+  });
+  Assert.deepEqual(
+    getSavedStatePlacements(CustomizableUI.AREA_TABSTRIP),
+    [
+      "tabbrowser-tabs",
+      "new-tab-button",
+      "smartwindow-group-tabs-button",
+      "ext1-browser-action",
+      SPRING,
+    ],
+    "The spring goes past whatever else the user has in the tab strip"
+  );
+});
+
+add_task(async function test_spring_after_the_tabs_counts() {
+  
+  
+  
+  
+  migrateWithPlacements({
+    [CustomizableUI.AREA_TABSTRIP]: [
+      "tabbrowser-tabs",
+      "customizableui-special-spring1",
+      "new-tab-button",
+    ],
+  });
+  Assert.deepEqual(
+    getSavedStatePlacements(CustomizableUI.AREA_TABSTRIP),
+    ["tabbrowser-tabs", "customizableui-special-spring1", "new-tab-button"],
+    "A spring between the tabs and another widget is left to do the job"
+  );
+});
+
+add_task(async function test_spring_before_the_tabs_does_not_count() {
+  
+  
+  migrateWithPlacements({
+    [CustomizableUI.AREA_TABSTRIP]: [
+      "customizableui-special-spring1",
+      "tabbrowser-tabs",
+      "new-tab-button",
+    ],
+  });
+  Assert.deepEqual(
+    getSavedStatePlacements(CustomizableUI.AREA_TABSTRIP),
+    [
+      "customizableui-special-spring1",
+      "tabbrowser-tabs",
+      "new-tab-button",
+      SPRING,
+    ],
+    "A spring further up the tab strip does not stop one being added at the end"
+  );
+});
+
+add_task(async function test_removed_spring_is_not_restored() {
+  
+  
+  migrateWithPlacements(
+    {
+      [CustomizableUI.AREA_TABSTRIP]: [
+        "tabbrowser-tabs",
+        "new-tab-button",
+        "alltabs-button",
+      ],
+    },
+    VERSION_AFTER_ALLTABS_ANCHOR
+  );
+  Assert.deepEqual(
+    getSavedStatePlacements(CustomizableUI.AREA_TABSTRIP),
+    ["tabbrowser-tabs", "new-tab-button", "alltabs-button"],
+    "A spring the user removed is not added back"
   );
 });
 
@@ -120,6 +217,22 @@ add_task(async function test_vertical_tabs_snapshot() {
     getSavedStatePlacements(CustomizableUI.AREA_TABSTRIP),
     [],
     "The live (empty) tabstrip placements are left untouched"
+  );
+
+  Services.prefs.clearUserPref(HORIZONTAL_SNAPSHOT_PREF);
+});
+
+add_task(async function test_vertical_tabs_snapshot_no_alltabs_button() {
+  Services.prefs.setCharPref(
+    HORIZONTAL_SNAPSHOT_PREF,
+    JSON.stringify(["tabbrowser-tabs", "new-tab-button"])
+  );
+  migrateWithPlacements({ [CustomizableUI.AREA_TABSTRIP]: [] });
+
+  Assert.deepEqual(
+    JSON.parse(Services.prefs.getCharPref(HORIZONTAL_SNAPSHOT_PREF)),
+    ["tabbrowser-tabs", "new-tab-button", SPRING],
+    "The snapshot gets a spring at the end without an alltabs-button"
   );
 
   Services.prefs.clearUserPref(HORIZONTAL_SNAPSHOT_PREF);
