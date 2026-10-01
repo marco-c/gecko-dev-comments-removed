@@ -9,6 +9,18 @@
 <resources>
   <!-- The button that appears at the bottom of an error page. -->
   <string name="mozac_browser_errorpages_page_refresh">Ripruvà</string>
+  <!-- The button on an error page that checks whether an archived copy of the unreachable page exists. -->
+  <string name="mozac_browser_errorpages_archive_check_button">Verificà s’ella esiste una versione archiviata</string>
+  <!-- The label shown on the archive button while the archived copy is being looked up. -->
+  <string name="mozac_browser_errorpages_archive_checking">Verificazione di l’archiviu</string>
+  <!-- The message shown when no archived copy of the unreachable page could be found. -->
+  <string name="mozac_browser_errorpages_archive_not_found">Ùn ci hè alcuna versione archiviata.</string>
+  <!-- A link, shown after no archived copy was found, that searches the web for the page instead. -->
+  <string name="mozac_browser_errorpages_archive_search_web">Ricercà nant’à u web.</string>
+  <!-- The message shown when the archive service could not be reached to look up an archived copy. -->
+  <string name="mozac_browser_errorpages_archive_unreachable">Impussibule di cunnettesi à u serviziu d’archiviera.</string>
+  <!-- A link, shown after the archive service could not be reached, that retries the lookup. -->
+  <string name="mozac_browser_errorpages_archive_retry">Pruvà torna.</string>
   <!-- The document title and heading of an error page shown when a website cannot be loaded for an unknown reason. -->
   <string name="mozac_browser_errorpages_generic_title">Ùn si pò compie a richiesta</string>
   <!-- The error message shown when a website cannot be loaded for an unknown reason. -->
@@ -64,7 +76,7 @@
   <!-- The error message shown when a website cannot be loaded because the browser is in offline mode. -->
   <string name="mozac_browser_errorpages_offline_message"><![CDATA[<p>U navigatore funziuneghja in u modu fora di cunnessione è ùn si pò cunnette à l’indirizzu indicatu.</p>\n<ul>\n<li>L’apparechju hè cunnessu à a reta ?</li>\n<li>Sciglite «\u00a0Pruvà torna\u00a0» per cambià ver di u modu in linea è ricaricà a pagina.</li>\n</ul>]]></string>
   <!-- The document title and heading of the error page shown when the browser prevents loading a website on a restricted port. -->
-  <string name="mozac_browser_errorpages_port_blocked_title">Portu ristrintu per raghjone di sicurità</string>
+  <string name="mozac_browser_errorpages_port_blocked_title">Portu ristrintu per raghjoni di sicurità</string>
   <!-- The error message shown when the browser prevents loading a website on a restricted port. -->
   <string name="mozac_browser_errorpages_port_blocked_message"><![CDATA[<p>L’indirizzu richiesta indicheghja un portu (i.e. : <q>mozilla.org:80</q> per u portu 80 nant’à mozilla.org) chì hè di solitu impiegatu per d’<em>altri</em> scopi chè a navigazione nant’à u Web. U navigatore hà abbandunatu a richiesta per a vostra prutezzione è a vostra sicurità.</p>]]></string>
   <!-- The document title and heading of the error page shown when the Internet connection is disrupted while loading a website. -->
