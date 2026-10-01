@@ -640,24 +640,6 @@ class FileID {
 
 
 
-struct LoadedLibraryInfo {
-  LoadedLibraryInfo(const char* aName, unsigned long aBaseAddress,
-                    unsigned long aFirstMappingStart,
-                    unsigned long aLastMappingEnd,
-                    std::optional<std::vector<uint8_t>>&& aElfFileIdentifier)
-      : mName(aName),
-        mBaseAddress(aBaseAddress),
-        mFirstMappingStart(aFirstMappingStart),
-        mLastMappingEnd(aLastMappingEnd),
-        mElfFileIdentifier(std::move(aElfFileIdentifier)) {}
-
-  std::string mName;
-  unsigned long mBaseAddress;
-  unsigned long mFirstMappingStart;
-  unsigned long mLastMappingEnd;
-  std::optional<std::vector<uint8_t>> mElfFileIdentifier;
-};
-
 static std::string IDtoUUIDString(const std::vector<uint8_t>& aIdentifier) {
   std::string uuid = FileID::ConvertIdentifierToUUIDString(aIdentifier);
   
@@ -726,66 +708,98 @@ static SharedLibrary SharedLibraryAtPath(
                        pathStr, std::string{}, "");
 }
 
-static int dl_iterate_callback(struct dl_phdr_info* dl_info, size_t size,
-                               void* data) {
-  auto libInfoList = reinterpret_cast<std::vector<LoadedLibraryInfo>*>(data);
 
-  if (dl_info->dlpi_phnum <= 0) return 0;
+class DLIterateState {
+ public:
+  SharedLibraryInfo& mInfo;
+#if defined(GP_OS_linux)
+  bool mExeNameAssigned = false;
+  const char* mExeName;
+  const unsigned long mExeExeAddr;
+#endif
 
-  unsigned long baseAddress = dl_info->dlpi_addr;
+  DLIterateState(SharedLibraryInfo& aInfo, const char* aExeName,
+                 unsigned long aExeExeAddr)
+      : mInfo(aInfo), mExeName(aExeName), mExeExeAddr(aExeExeAddr) {}
 
-  
-  
-  
-  
-  
-  
-  
-  if (baseAddress == 0) {
+  static int Callback(struct dl_phdr_info* dl_info, size_t size, void* data) {
+    DLIterateState* state = reinterpret_cast<DLIterateState*>(data);
+    return state->CallbackInternal(dl_info, size);
+  }
+
+  int CallbackInternal(struct dl_phdr_info* dl_info, size_t size) {
+    if (dl_info->dlpi_phnum <= 0) {
+      return 0;
+    }
+
+    unsigned long baseAddress = dl_info->dlpi_addr;
+
+    
+    
+    
+    
+    
+    
+    
+    if (baseAddress == 0) {
+      return 0;
+    }
+
+    unsigned long firstMappingStart = -1;
+    unsigned long lastMappingEnd = 0;
+    std::vector<uint8_t> elfFileIdentifier;
+
+    for (size_t i = 0; i < dl_info->dlpi_phnum; i++) {
+      
+      if (dl_info->dlpi_phdr[i].p_type == PT_LOAD) {
+        unsigned long start =
+            dl_info->dlpi_addr + dl_info->dlpi_phdr[i].p_vaddr;
+        unsigned long end = start + dl_info->dlpi_phdr[i].p_memsz;
+        if (start < firstMappingStart) {
+          firstMappingStart = start;
+        }
+        if (end > lastMappingEnd) {
+          lastMappingEnd = end;
+        }
+      }
+
+      
+      
+      if (dl_info->dlpi_phdr[i].p_type == PT_NOTE &&
+          elfFileIdentifier.empty()) {
+        const void* section_start = reinterpret_cast<const void*>(
+            dl_info->dlpi_addr + dl_info->dlpi_phdr[i].p_vaddr);
+        size_t section_length = dl_info->dlpi_phdr[i].p_memsz;
+        FileID::ElfClassBuildIDNoteIdentifier(section_start, section_length,
+                                              elfFileIdentifier);
+      }
+    }
+
+    auto optionalElfFileId =
+        elfFileIdentifier.size() > 0
+            ? std::make_optional(std::move(elfFileIdentifier))
+            : std::nullopt;
+    
+    
+    const char* libName = dl_info->dlpi_name ? dl_info->dlpi_name : "";
+
+#if defined(GP_OS_linux)
+    
+    
+    if (!mExeNameAssigned && firstMappingStart <= mExeExeAddr &&
+        mExeExeAddr <= lastMappingEnd && strlen(libName) == 0) {
+      libName = mExeName;
+      mExeNameAssigned = true;
+    }
+#endif
+
+    mInfo.AddSharedLibrary(SharedLibraryAtPath(
+        libName, firstMappingStart, lastMappingEnd,
+        firstMappingStart - baseAddress, optionalElfFileId));
+
     return 0;
   }
-
-  unsigned long firstMappingStart = -1;
-  unsigned long lastMappingEnd = 0;
-  std::vector<uint8_t> elfFileIdentifier;
-
-  for (size_t i = 0; i < dl_info->dlpi_phnum; i++) {
-    
-    if (dl_info->dlpi_phdr[i].p_type == PT_LOAD) {
-      unsigned long start = dl_info->dlpi_addr + dl_info->dlpi_phdr[i].p_vaddr;
-      unsigned long end = start + dl_info->dlpi_phdr[i].p_memsz;
-      if (start < firstMappingStart) {
-        firstMappingStart = start;
-      }
-      if (end > lastMappingEnd) {
-        lastMappingEnd = end;
-      }
-    }
-
-    
-    
-    if (dl_info->dlpi_phdr[i].p_type == PT_NOTE && elfFileIdentifier.empty()) {
-      const void* section_start = reinterpret_cast<const void*>(
-          dl_info->dlpi_addr + dl_info->dlpi_phdr[i].p_vaddr);
-      size_t section_length = dl_info->dlpi_phdr[i].p_memsz;
-      FileID::ElfClassBuildIDNoteIdentifier(section_start, section_length,
-                                            elfFileIdentifier);
-    }
-  }
-
-  auto optionalElfFileId =
-      elfFileIdentifier.size() > 0
-          ? std::make_optional(std::move(elfFileIdentifier))
-          : std::nullopt;
-  
-  
-  const char* libName = dl_info->dlpi_name ? dl_info->dlpi_name : "";
-  libInfoList->push_back(LoadedLibraryInfo(libName, baseAddress,
-                                           firstMappingStart, lastMappingEnd,
-                                           std::move(optionalElfFileId)));
-
-  return 0;
-}
+};
 
 SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
   SharedLibraryInfo info;
@@ -870,31 +884,14 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
   }
 #endif
 
-  std::vector<LoadedLibraryInfo> libInfoList;
+#if defined(GP_OS_linux)
+  DLIterateState state(info, exeName, exeExeAddr);
+#else
+  DLIterateState state(info);
+#endif
 
   
-  dl_iterate_phdr(dl_iterate_callback, &libInfoList);
-
-#if defined(GP_OS_linux)
-  bool exeNameAssigned = false;
-#endif
-  for (const auto& libInfo : libInfoList) {
-    const char* libraryName = libInfo.mName.c_str();
-#if defined(GP_OS_linux)
-    
-    
-    if (!exeNameAssigned && libInfo.mFirstMappingStart <= exeExeAddr &&
-        exeExeAddr <= libInfo.mLastMappingEnd && libInfo.mName.empty()) {
-      libraryName = exeName;
-      exeNameAssigned = true;
-    }
-#endif
-
-    info.AddSharedLibrary(SharedLibraryAtPath(
-        libraryName, libInfo.mFirstMappingStart, libInfo.mLastMappingEnd,
-        libInfo.mFirstMappingStart - libInfo.mBaseAddress,
-        libInfo.mElfFileIdentifier));
-  }
+  dl_iterate_phdr(DLIterateState::Callback, &state);
 
   return info;
 }
