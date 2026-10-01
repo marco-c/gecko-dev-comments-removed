@@ -4,6 +4,7 @@
 
 package org.mozilla.gecko;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -47,6 +48,8 @@ public class GeckoNetworkManager extends BroadcastReceiver {
   
   private static final String LINK_DATA_CHANGED = "changed";
 
+  
+  @SuppressLint("StaticFieldLeak")
   private static GeckoNetworkManager instance;
 
   

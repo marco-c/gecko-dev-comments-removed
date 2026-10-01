@@ -470,8 +470,8 @@ public class GeckoAppShell {
   
   static final int WAKE_LOCK_STATE_LOCKED_BACKGROUND = 2;
 
-  @SuppressLint("Wakelock") 
   
+  @SuppressLint({"Wakelock", "WakelockTimeout"})
   private static void setWakeLockState(final String lock, final int state) {
     if (sWakeLocks == null) {
       sWakeLocks = new SimpleArrayMap<>(WAKE_LOCKS_COUNT);
