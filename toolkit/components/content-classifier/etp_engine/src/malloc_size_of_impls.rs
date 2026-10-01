@@ -17,6 +17,7 @@ use crate::blocker::Blocker;
 use crate::cosmetic_filter_cache::CosmeticFilterCache;
 use crate::filters::filter_data_context::FilterDataContextRef;
 use crate::flatbuffers::unsafe_tools::VerifiedFlatbufferMemory;
+use crate::resources::ResourceStorage;
 
 
 
@@ -46,6 +47,9 @@ pub struct EngineMemoryBreakdown {
     
     
     pub cosmetic_cache: usize,
+
+    
+    pub resources: usize,
 }
 
 impl EngineMemoryBreakdown {
@@ -86,6 +90,10 @@ impl EngineMemoryBreakdown {
         _cosmetic_cache: &CosmeticFilterCache,
         _ops: &mut MallocSizeOfOps,
     ) {
+    }
+
+    pub(crate) fn add_resources(&mut self, resources: &ResourceStorage, ops: &mut MallocSizeOfOps) {
+        self.resources += resources.backend_size_of(ops);
     }
 }
 

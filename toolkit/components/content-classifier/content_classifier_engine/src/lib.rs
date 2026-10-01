@@ -99,6 +99,8 @@ pub struct ContentClassifierEngineSizes {
     
     
     pub cosmetic_cache: usize,
+    
+    pub resources: usize,
 }
 
 
@@ -128,6 +130,7 @@ pub unsafe extern "C" fn content_classifier_engine_size_of(
         regex_table: breakdown.regex_table,
         enabled_tags: breakdown.enabled_tags,
         cosmetic_cache: breakdown.cosmetic_cache,
+        resources: breakdown.resources,
     }
 }
 
