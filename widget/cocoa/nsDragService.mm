@@ -24,6 +24,7 @@
 #include "nsPoint.h"
 #include "nsPrimitiveHelpers.h"
 #include "nsRect.h"
+#include "nsServiceManagerUtils.h"
 #include "nsString.h"
 #include "nsXPCOM.h"
 
@@ -44,6 +45,45 @@ mozilla::StaticRefPtr<nsIArray> gDraggedTransferables;
 already_AddRefed<nsIDragSession> nsDragService::CreateDragSession() {
   auto sess = MakeRefPtr<nsDragSession>();
   return sess.forget();
+}
+
+
+void nsDragService::EndStaleDragSession() {
+  nsCOMPtr<nsIDragService> service =
+      do_GetService("@mozilla.org/widget/dragservice;1");
+  if (!service) {
+    return;
+  }
+
+  nsCOMPtr<nsIDragSession> session;
+  service->GetCurrentSession(nullptr, getter_AddRefs(session));
+  if (!session) {
+    return;
+  }
+
+  RefPtr<nsDragSession> dragSession =
+      static_cast<nsDragSession*>(session.get());
+  dragSession->EndAsStale();
+}
+
+void nsDragSession::EndAsStale() {
+  
+  
+  
+  if (mEndingSession || mSessionIsSynthesizedForTests) {
+    return;
+  }
+
+  NS_WARNING("Ending a drag session that lost its native drag session.");
+
+  
+  
+  
+  mUserCancelled = true;
+  if (mDataTransfer) {
+    mDataTransfer->SetDropEffectInt(nsIDragService::DRAGDROP_ACTION_NONE);
+  }
+  EndDragSession(true, 0);
 }
 
 NSImage* nsDragSession::ConstructDragImage(nsINode* aDOMNode,
@@ -255,6 +295,14 @@ nsresult nsDragSession::InvokeDragSessionImpl(
       beginDraggingSessionWithItems:[NSArray arrayWithObject:dragItem]
                               event:mNativeDragEvent
                              source:mNativeDragView];
+  if (!mNSDraggingSession) {
+    
+    
+    
+    
+    NS_WARNING("The system refused to begin a native drag session.");
+    return NS_ERROR_FAILURE;
+  }
 
   mNSDraggingSession.animatesToStartingPositionsOnCancelOrFail =
       !mDataTransfer || mDataTransfer->MozShowFailAnimation();

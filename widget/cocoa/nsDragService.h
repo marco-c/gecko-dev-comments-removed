@@ -29,6 +29,10 @@ class nsDragSession : public nsBaseDragSession {
 
   NSDraggingSession* GetNSDraggingSession() { return mNSDraggingSession; }
 
+  
+  
+  MOZ_CAN_RUN_SCRIPT void EndAsStale();
+
   MOZ_CAN_RUN_SCRIPT nsresult
   EndDragSessionImpl(bool aDoneDrag, uint32_t aKeyModifiers) override;
 
@@ -70,6 +74,14 @@ class nsDragSession : public nsBaseDragSession {
 class nsDragService final : public nsBaseDragService {
  public:
   already_AddRefed<nsIDragSession> CreateDragSession() override;
+
+  
+  
+  
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static void EndStaleDragSession();
 };
 
 #endif  

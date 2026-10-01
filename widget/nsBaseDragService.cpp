@@ -1161,6 +1161,13 @@ nsBaseDragService::Suppress() {
 
 NS_IMETHODIMP
 nsBaseDragService::Unsuppress() {
+  MOZ_ASSERT(mSuppressLevel > 0, "Unbalanced call to unsuppress()");
+  if (!mSuppressLevel) {
+    
+    
+    return NS_ERROR_UNEXPECTED;
+  }
+
   --mSuppressLevel;
   LOGI(
       "[%p] %s | mSuppressLevel (after decrement): %u | "

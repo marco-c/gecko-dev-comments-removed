@@ -2327,6 +2327,14 @@ NSEvent* gLastDragMouseDownEvent = nil;
 
   nsAutoRetainCocoaObject kungFuDeathGrip(self);
 
+  
+  
+  
+  nsDragService::EndStaleDragSession();
+  if (!mGeckoChild) {
+    return;
+  }
+
   if ([self maybeRollup:theEvent] ||
       !ChildViewMouseTracker::WindowAcceptsEvent([self window], theEvent, self,
                                                  isClickThrough)) {
@@ -2468,6 +2476,15 @@ NSEvent* gLastDragMouseDownEvent = nil;
   }
 
   nsAutoRetainCocoaObject kungFuDeathGrip(self);
+
+  
+  
+  if (![NSEvent pressedMouseButtons]) {
+    nsDragService::EndStaleDragSession();
+  }
+  if (!mGeckoChild) {
+    return;
+  }
 
   WidgetMouseEvent geckoEvent(true, eMouseMove, mGeckoChild,
                               WidgetMouseEvent::eReal);
