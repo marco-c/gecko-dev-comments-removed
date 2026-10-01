@@ -69,11 +69,21 @@ pub struct TextureSlot(pub usize);
 
 const DEFAULT_TEXTURE: TextureSlot = TextureSlot(0);
 
-#[repr(u32)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum DepthFunction {
-    Always = gl::ALWAYS,
-    Less = gl::LESS,
-    LessEqual = gl::LEQUAL,
+    Always,
+    Less,
+    LessEqual,
+}
+
+impl DepthFunction {
+    fn to_gl(self) -> gl::GLenum {
+        match self {
+            DepthFunction::Always => gl::ALWAYS,
+            DepthFunction::Less => gl::LESS,
+            DepthFunction::LessEqual => gl::LEQUAL,
+        }
+    }
 }
 
 #[repr(u32)]
@@ -247,15 +257,6 @@ fn get_gl_target(target: ImageBufferKind) -> gl::GLuint {
         ImageBufferKind::TextureRect => gl::TEXTURE_RECTANGLE,
         ImageBufferKind::TextureExternal => gl::TEXTURE_EXTERNAL_OES,
         ImageBufferKind::TextureExternalBT709 => gl::TEXTURE_EXTERNAL_OES,
-    }
-}
-
-pub fn from_gl_target(target: gl::GLuint) -> ImageBufferKind {
-    match target {
-        gl::TEXTURE_2D => ImageBufferKind::Texture2D,
-        gl::TEXTURE_RECTANGLE => ImageBufferKind::TextureRect,
-        gl::TEXTURE_EXTERNAL_OES => ImageBufferKind::TextureExternal,
-        _ => panic!("Unexpected target {:?}", target),
     }
 }
 
@@ -437,8 +438,9 @@ impl FBOId {
 #[cfg_attr(feature = "replay", derive(Clone))]
 #[derive(Debug)]
 pub struct ExternalTexture {
-    id: gl::GLuint,
-    target: gl::GLuint,
+    
+    id: u32,
+    target: ImageBufferKind,
     uv_rect: TexelRect,
     image_rendering: ImageRendering,
 }
@@ -451,8 +453,8 @@ impl ExternalTexture {
         image_rendering: ImageRendering,
     ) -> Self {
         ExternalTexture {
-            id: handle.0 as gl::GLuint,
-            target: get_gl_target(target),
+            id: handle.0 as u32,
+            target,
             uv_rect,
             image_rendering,
         }
@@ -483,8 +485,9 @@ bitflags! {
 
 #[derive(Debug)]
 pub struct Texture {
-    id: gl::GLuint,
-    target: gl::GLuint,
+    
+    id: u32,
+    target: ImageBufferKind,
     format: ImageFormat,
     size: DeviceIntSize,
     filter: TextureFilter,
@@ -530,7 +533,7 @@ impl Texture {
     }
 
     pub fn get_target(&self) -> ImageBufferKind {
-        from_gl_target(self.target)
+        self.target
     }
 
     pub fn supports_depth(&self) -> bool {
@@ -592,9 +595,12 @@ impl Drop for Texture {
 }
 
 pub struct Program {
-    id: gl::GLuint,
-    u_transform: gl::GLint,
-    u_texture_size: gl::GLint,
+    
+    id: u32,
+    
+    
+    u_transform: i32,
+    u_texture_size: i32,
     source_info: ProgramSourceInfo,
     is_initialized: bool,
 }
@@ -615,7 +621,8 @@ impl Drop for Program {
 }
 
 pub struct VAO {
-    id: gl::GLuint,
+    
+    id: u32,
     ibo_id: IBOId,
     main_vbo_id: VBOId,
     instance_vbo_id: VBOId,
@@ -646,7 +653,8 @@ impl Drop for VAO {
 
 #[derive(Debug)]
 pub struct TransferBuffer {
-    id: gl::GLuint,
+    
+    id: u32,
     reserved_size: usize,
 }
 
@@ -677,17 +685,21 @@ impl<'a> Drop for MappedTransferBuffer<'a> {
     }
 }
 
+
+
 #[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
-pub struct FBOId(gl::GLuint);
+pub struct FBOId(u32);
 
 #[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
 pub struct RBOId(gl::GLuint);
 
-#[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
-pub struct VBOId(gl::GLuint);
 
 #[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
-struct IBOId(gl::GLuint);
+pub struct VBOId(u32);
+
+
+#[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
+struct IBOId(u32);
 
 #[derive(Clone, Debug)]
 enum ProgramSourceType {
@@ -1590,7 +1602,7 @@ impl From<DrawTarget> for ReadTarget {
             }
             DrawTarget::NativeSurface { handle, offset, .. } => {
                 ReadTarget::NativeSurface {
-                    fbo_id: FBOId(handle.0 as gl::GLuint),
+                    fbo_id: FBOId(handle.0 as u32),
                     offset,
                 }
             }
@@ -2573,7 +2585,7 @@ impl Device {
         } else {
             None
         };
-        self.bind_texture_impl(slot.into(), texture.id, texture.target, set_swizzle, None);
+        self.bind_texture_impl(slot.into(), texture.id, get_gl_target(texture.target), set_swizzle, None);
     }
 
     pub fn bind_external_texture<S>(&mut self, slot: S, external_texture: &ExternalTexture)
@@ -2583,7 +2595,7 @@ impl Device {
         self.bind_texture_impl(
             slot.into(),
             external_texture.id,
-            external_texture.target,
+            get_gl_target(external_texture.target),
             None,
             Some(external_texture.image_rendering),
         );
@@ -2694,7 +2706,7 @@ impl Device {
             },
             DrawTarget::NativeSurface { handle, offset, dimensions, .. } => {
                 (
-                    FBOId(handle.0 as gl::GLuint),
+                    FBOId(handle.0 as u32),
                     device_rect_as_framebuffer_rect(&DeviceIntRect::from_origin_and_size(offset, dimensions)),
                     true
                 )
@@ -2946,9 +2958,10 @@ impl Device {
         }
 
         
+        let gl_target = get_gl_target(target);
         let mut texture = Texture {
             id: self.gl.gen_textures(1)[0],
-            target: get_gl_target(target),
+            target,
             size: DeviceIntSize::new(width, height),
             format,
             filter,
@@ -2959,10 +2972,10 @@ impl Device {
             flags: TextureFlags::default(),
         };
         self.bind_texture(DEFAULT_TEXTURE, &texture, Swizzle::default());
-        self.set_texture_parameters(texture.target, filter);
+        self.set_texture_parameters(gl_target, filter);
 
         if self.capabilities.supports_texture_usage && render_target.is_some() {
-            self.gl.tex_parameter_i(texture.target, gl::TEXTURE_USAGE_ANGLE, gl::FRAMEBUFFER_ATTACHMENT_ANGLE as gl::GLint);
+            self.gl.tex_parameter_i(gl_target, gl::TEXTURE_USAGE_ANGLE, gl::FRAMEBUFFER_ATTACHMENT_ANGLE as gl::GLint);
         }
 
         
@@ -2991,7 +3004,7 @@ impl Device {
         };
         if use_texture_storage {
             self.gl.tex_storage_2d(
-                texture.target,
+                gl_target,
                 mipmap_levels,
                 desc.internal,
                 texture.size.width as gl::GLint,
@@ -2999,7 +3012,7 @@ impl Device {
             );
         } else {
             self.gl.tex_image_2d(
-                texture.target,
+                gl_target,
                 0,
                 desc.internal as gl::GLint,
                 texture.size.width as gl::GLint,
@@ -3081,13 +3094,13 @@ impl Device {
             unsafe {
                 self.gl.copy_image_sub_data(
                     src_texture.id,
-                    src_texture.target,
+                    get_gl_target(src_texture.target),
                     0,
                     src_x as _,
                     src_y as _,
                     0,
                     dest_texture.id,
-                    dest_texture.target,
+                    get_gl_target(dest_texture.target),
                     0,
                     dest_x as _,
                     dest_y as _,
@@ -3190,7 +3203,7 @@ impl Device {
         self.gl.framebuffer_texture_2d(
             gl::DRAW_FRAMEBUFFER,
             gl::COLOR_ATTACHMENT0,
-            texture.target,
+            get_gl_target(texture.target),
             texture.id,
             0,
         );
@@ -3777,7 +3790,7 @@ impl Device {
         self.bind_texture(DEFAULT_TEXTURE, texture, Swizzle::default());
         let desc = self.gl_describe_format(texture.format);
         self.gl.tex_sub_image_2d(
-            texture.target,
+            get_gl_target(texture.target),
             0,
             0,
             0,
@@ -3863,7 +3876,7 @@ impl Device {
 
     pub fn attach_read_texture(&mut self, texture: &Texture) {
         self.bind_scratch_read_target();
-        self.attach_read_texture_raw(texture.id, texture.target)
+        self.attach_read_texture_raw(texture.id, get_gl_target(texture.target))
     }
 
     fn bind_vao_impl(&mut self, id: gl::GLuint) {
@@ -4353,7 +4366,7 @@ impl Device {
             Some(depth_func) => {
                 assert!(self.depth_available, "Enabling depth test without depth target");
                 self.gl.enable(gl::DEPTH_TEST);
-                self.gl.depth_func(depth_func as gl::GLuint);
+                self.gl.depth_func(depth_func.to_gl());
             }
             None => {
                 self.gl.disable(gl::DEPTH_TEST);
@@ -5279,27 +5292,23 @@ impl<'a> TextureUploader<'a> {
 
         let pos = chunk.rect.min;
         let size = chunk.rect.size();
+        let gl_target = get_gl_target(chunk.texture.target);
 
-        match chunk.texture.target {
-            gl::TEXTURE_2D | gl::TEXTURE_RECTANGLE | gl::TEXTURE_EXTERNAL_OES => {
-                device.gl.tex_sub_image_2d_pbo(
-                    chunk.texture.target,
-                    0,
-                    pos.x as _,
-                    pos.y as _,
-                    size.width as _,
-                    size.height as _,
-                    gl_format,
-                    data_type,
-                    chunk.offset,
-                );
-            }
-            _ => panic!("BUG: Unexpected texture target!"),
-        }
+        device.gl.tex_sub_image_2d_pbo(
+            gl_target,
+            0,
+            pos.x as _,
+            pos.y as _,
+            size.width as _,
+            size.height as _,
+            gl_format,
+            data_type,
+            chunk.offset,
+        );
 
         
         if chunk.texture.filter == TextureFilter::Trilinear {
-            device.gl.generate_mipmap(chunk.texture.target);
+            device.gl.generate_mipmap(gl_target);
         }
 
         
