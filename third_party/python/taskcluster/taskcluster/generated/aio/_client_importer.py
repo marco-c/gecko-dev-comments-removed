@@ -15,5 +15,6 @@ from .purgecache import PurgeCache
 from .queue import Queue  
 from .queueevents import QueueEvents  
 from .secrets import Secrets  
+from .webserver import WebServer  
 from .workermanager import WorkerManager  
 from .workermanagerevents import WorkerManagerEvents  
