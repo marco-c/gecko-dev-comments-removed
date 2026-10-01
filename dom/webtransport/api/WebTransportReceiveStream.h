@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_WEBTRANSPORT_API_WEBTRANSPORTRECEIVESTREAM_H_
 #define DOM_WEBTRANSPORT_API_WEBTRANSPORTRECEIVESTREAM_H_
 
@@ -37,7 +35,7 @@ class WebTransportReceiveStream final : public ReadableStream {
   already_AddRefed<Promise> GetStats();
 
  private:
-  ~WebTransportReceiveStream() override { mozilla::DropJSObjects(this); }
+  ~WebTransportReceiveStream() override;
 
   
   

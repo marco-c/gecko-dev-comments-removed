@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/WebTransportReceiveStream.h"
 
 #include "mozilla/dom/ReadableByteStreamController.h"
@@ -30,6 +28,10 @@ WebTransportReceiveStream::WebTransportReceiveStream(nsIGlobalObject* aGlobal,
                      ReadableStream::HoldDropJSObjectsCaller::Explicit),
       mTransport(aTransport) {
   mozilla::HoldJSObjects(this);
+}
+
+WebTransportReceiveStream::~WebTransportReceiveStream() {
+  mozilla::DropJSObjects(this);
 }
 
 

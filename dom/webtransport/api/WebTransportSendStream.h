@@ -45,7 +45,7 @@ class WebTransportSendStream final : public WritableStream {
   already_AddRefed<Promise> GetStats();
 
  private:
-  ~WebTransportSendStream() override { mozilla::DropJSObjects(this); };
+  ~WebTransportSendStream() override;
 
   
   
