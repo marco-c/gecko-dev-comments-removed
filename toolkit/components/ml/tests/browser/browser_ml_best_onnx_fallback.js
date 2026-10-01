@@ -29,6 +29,8 @@ const BEST_ONNX_OPTIONS = {
   modelHubUrlTemplate: "{model}/resolve/{revision}",
 };
 
+add_setup(setupNativeOnnxRuntimeAvailabilityTest);
+
 
 
 

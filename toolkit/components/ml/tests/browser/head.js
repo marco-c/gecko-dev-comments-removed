@@ -101,6 +101,13 @@ async function setup({
   };
 }
 
+function setupNativeOnnxRuntimeAvailabilityTest() {
+  EngineProcess.resetNativeOnnxRuntimeAvailabilityForTests();
+  registerCleanupFunction(() => {
+    EngineProcess.resetNativeOnnxRuntimeAvailabilityForTests();
+  });
+}
+
 function getDefaultWasmRecords(backend) {
   
   
