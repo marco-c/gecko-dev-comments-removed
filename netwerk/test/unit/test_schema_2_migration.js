@@ -154,14 +154,14 @@ function* do_run_test() {
   do_load_profile();
 
   
-  Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), 20);
+  Assert.equal(Services.cookies.getCookiesFromHost("foo.com", {}).length, 20);
 
   
-  Assert.equal(Services.cookies.countCookiesFromHost("bar.com", {}), 0);
+  Assert.equal(Services.cookies.getCookiesFromHost("bar.com", {}).length, 0);
 
   
   
-  Assert.equal(Services.cookies.countCookiesFromHost("baz.com", {}), 1);
+  Assert.equal(Services.cookies.getCookiesFromHost("baz.com", {}).length, 1);
   let cookies = Services.cookies.getCookiesFromHost("baz.com", {});
   let cookie = cookies[0];
   Assert.equal(cookie.expiry, (futureExpiry + 44) * 1000);
@@ -244,10 +244,10 @@ function* do_run_test() {
   yield;
 
   
-  Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), 40);
-  Assert.equal(Services.cookies.countCookiesFromHost("bar.com", {}), 0);
-  Assert.equal(Services.cookies.countCookiesFromHost("baz.com", {}), 1);
-  Assert.equal(Services.cookies.countCookiesFromHost("cat.com", {}), 20);
+  Assert.equal(Services.cookies.getCookiesFromHost("foo.com", {}).length, 40);
+  Assert.equal(Services.cookies.getCookiesFromHost("bar.com", {}).length, 0);
+  Assert.equal(Services.cookies.getCookiesFromHost("baz.com", {}).length, 1);
+  Assert.equal(Services.cookies.getCookiesFromHost("cat.com", {}).length, 20);
 
   do_close_profile(test_generator);
   yield;
@@ -260,10 +260,10 @@ function* do_run_test() {
   do_load_profile();
 
   
-  Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), 40);
-  Assert.equal(Services.cookies.countCookiesFromHost("bar.com", {}), 0);
-  Assert.equal(Services.cookies.countCookiesFromHost("baz.com", {}), 1);
-  Assert.equal(Services.cookies.countCookiesFromHost("cat.com", {}), 20);
+  Assert.equal(Services.cookies.getCookiesFromHost("foo.com", {}).length, 40);
+  Assert.equal(Services.cookies.getCookiesFromHost("bar.com", {}).length, 0);
+  Assert.equal(Services.cookies.getCookiesFromHost("baz.com", {}).length, 1);
+  Assert.equal(Services.cookies.getCookiesFromHost("cat.com", {}).length, 20);
 
   do_close_profile(test_generator);
   yield;
@@ -284,10 +284,10 @@ function* do_run_test() {
   Assert.equal(do_count_cookies(), 61);
 
   
-  Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), 40);
-  Assert.equal(Services.cookies.countCookiesFromHost("bar.com", {}), 0);
-  Assert.equal(Services.cookies.countCookiesFromHost("baz.com", {}), 1);
-  Assert.equal(Services.cookies.countCookiesFromHost("cat.com", {}), 20);
+  Assert.equal(Services.cookies.getCookiesFromHost("foo.com", {}).length, 40);
+  Assert.equal(Services.cookies.getCookiesFromHost("bar.com", {}).length, 0);
+  Assert.equal(Services.cookies.getCookiesFromHost("baz.com", {}).length, 1);
+  Assert.equal(Services.cookies.getCookiesFromHost("cat.com", {}).length, 20);
 
   do_close_profile(test_generator);
   yield;

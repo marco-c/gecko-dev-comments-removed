@@ -115,7 +115,7 @@ add_task(async function test_basic_eviction() {
 
 function verifyCookies(names, uri) {
   Assert.equal(
-    Services.cookies.countCookiesFromHost(uri.host, {}),
+    Services.cookies.getCookiesFromHost(uri.host, {}).length,
     names.length
   );
   let actual_cookies = [];

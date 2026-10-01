@@ -878,10 +878,10 @@ TEST(TestCookie, TestCookieMain)
   GetACookieNoHttp(cookieService, "http://cookiemgr.test/foo/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_NOT_CONTAIN, "test2=yes"));
   
-  uint32_t hostCookies = 0;
-  EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CountCookiesFromHostNative(
-      "cookiemgr.test"_ns, &attrs, &hostCookies)));
-  EXPECT_EQ(hostCookies, 2u);
+  nsTArray<RefPtr<nsICookie>> hostCookies;
+  EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->GetCookiesFromHostNative(
+      "cookiemgr.test"_ns, &attrs, false, hostCookies)));
+  EXPECT_EQ(hostCookies.Length(), 2u);
   
   bool found;
   EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CookieExistsNative(
@@ -891,9 +891,10 @@ TEST(TestCookie, TestCookieMain)
   
   PR_Sleep(4 * PR_TicksPerSecond());
   
-  EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CountCookiesFromHostNative(
-      "cookiemgr.test"_ns, &attrs, &hostCookies)));
-  EXPECT_EQ(hostCookies, 1u);
+  hostCookies.Clear();
+  EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->GetCookiesFromHostNative(
+      "cookiemgr.test"_ns, &attrs, false, hostCookies)));
+  EXPECT_EQ(hostCookies.Length(), 1u);
   EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CookieExistsNative(
       "cookiemgr.test"_ns, "/foo"_ns, "test2"_ns, &attrs, &found)));
   EXPECT_FALSE(found);
