@@ -272,9 +272,7 @@ void RDDProcessManager::DestroyProcess() {
 
   
   
-  RDDProcessHost* process = mProcess;
-  mProcess = nullptr;
-
+  RefPtr<RDDProcessHost> process = mProcess.forget();
   process->Shutdown();
   mProcessToken = 0;
   mRDDChild = nullptr;

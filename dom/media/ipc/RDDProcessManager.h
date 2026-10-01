@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef _include_dom_media_ipc_RDDProcessManager_h_
 #define _include_dom_media_ipc_RDDProcessManager_h_
 #include "mozilla/MozPromise.h"
@@ -113,7 +111,7 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
   uint32_t mNumUnexpectedCrashes = 0;
 
   
-  RDDProcessHost* mProcess = nullptr;
+  RefPtr<RDDProcessHost> mProcess;
   uint64_t mProcessToken = 0;
   RDDChild* mRDDChild = nullptr;
   

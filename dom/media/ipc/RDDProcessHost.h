@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef _include_dom_media_ipc_RDDProcessHost_h_
 #define _include_dom_media_ipc_RDDProcessHost_h_
 #include "mozilla/UniquePtr.h"
@@ -108,8 +106,6 @@ class RDDProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   void KillHard(const char* aReason);
 
-  void DestroyProcess();
-
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   static bool sLaunchWithMacSandbox;
 
@@ -140,13 +136,6 @@ class RDDProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   void RejectPromise();
   void ResolvePromise();
 
-  
-  
-  
-  
-  
-  
-  const RefPtr<media::Refcountable<bool>> mLiveToken;
   RefPtr<GenericNonExclusivePromise::Private> mLaunchPromise;
   bool mLaunchPromiseSettled = false;
   

@@ -95,6 +95,11 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
 
   bool IsConnected() const { return !!mGPUChild; }
 
+  bool IsLaunchOomError() const {
+    MonitorAutoLock lock(mMonitor);
+    return mLaunchOomError;
+  }
+
   
   
   
@@ -134,13 +139,13 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   bool CompleteInitSynchronously();
 
+  void OnProcessLaunchError(const base::LaunchError aError) override;
+
   
   void OnChannelClosed();
 
   
   void KillHard(bool aGenerateMinidump);
-
-  void DestroyProcess();
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   static bool sLaunchWithMacSandbox;
@@ -164,16 +169,9 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
 
   bool mShutdownRequested;
   bool mChannelClosed;
+  bool mLaunchOomError MOZ_GUARDED_BY(mMonitor) = false;
 
   TimeStamp mLaunchTime;
-
-  
-  
-  
-  
-  
-  
-  const RefPtr<media::Refcountable<bool>> mLiveToken;
 
 #ifdef MOZ_WIDGET_ANDROID
   

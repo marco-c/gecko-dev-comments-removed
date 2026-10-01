@@ -2,10 +2,8 @@
 
 
 
-
-
 #ifndef GMPProcessParent_h
-#define GMPProcessParent_h 1
+#define GMPProcessParent_h
 
 #include "base/basictypes.h"
 #include "base/file_path.h"
@@ -25,8 +23,6 @@ class GMPProcessParent final : public mozilla::ipc::GeckoChildProcessHost {
   
   
   bool Launch(int32_t aTimeoutMs);
-
-  void Delete(nsCOMPtr<nsIRunnable> aCallback = nullptr);
 
   bool CanShutdown() override { return true; }
   const std::string& GetPluginFilePath() { return mGMPPath; }
@@ -59,10 +55,7 @@ class GMPProcessParent final : public mozilla::ipc::GeckoChildProcessHost {
  private:
   ~GMPProcessParent();
 
-  void DoDelete();
-
   std::string mGMPPath;
-  nsCOMPtr<nsIRunnable> mDeletedCallback;
 
   
   bool mUseXpcom;

@@ -115,8 +115,6 @@ class UtilityProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   void StartForceKillTimer();
 
-  void DestroyProcess();
-
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   
   bool IsMacSandboxLaunchEnabled() override { return mDisableOSActivityMode; }
@@ -153,14 +151,6 @@ class UtilityProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
 #if defined(MOZ_WMF_CDM) && defined(MOZ_SANDBOX)
   void EnanbleMFCDMTelemetryEventIfNeeded() const;
 #endif
-
-  
-  
-  
-  
-  
-  
-  const RefPtr<media::Refcountable<bool>> mLiveToken;
 
   RefPtr<LaunchPromiseType::Private> mLaunchPromise{};
   bool mLaunchPromiseSettled = false;
