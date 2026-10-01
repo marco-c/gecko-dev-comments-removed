@@ -75,6 +75,23 @@ class MOZ_STACK_CLASS TransformReferenceBox final {
   
   TransformReferenceBox(const TransformReferenceBox&) = delete;
 
+  enum { Unzoomed };
+
+  TransformReferenceBox(const nsIFrame* aFrame, decltype(Unzoomed))
+      : TransformReferenceBox(aFrame) {
+    mNeedsUnzooming = true;
+  }
+
+  TransformReferenceBox(const nsIFrame* aFrame,
+                        const nsRect& aFallbackDimensions,
+                        mozilla::StyleZoom aEffectiveZoom, decltype(Unzoomed))
+      : TransformReferenceBox(aFrame, aFallbackDimensions) {
+    mNeedsUnzooming = true;
+    if (!aFrame) {
+      mBox = aEffectiveZoom.Unzoom(mBox);
+    }
+  }
+
   void Init(const nsIFrame* aFrame) {
     MOZ_ASSERT(!mFrame && !mIsCached);
     mFrame = aFrame;
@@ -121,7 +138,22 @@ class MOZ_STACK_CLASS TransformReferenceBox final {
   const nsIFrame* mFrame = nullptr;
   nsRect mBox;
   bool mIsCached = false;
+
+  
+  
+  
+  bool mNeedsUnzooming = false;
+
+  
+  
 };
+
+
+
+
+
+
+enum class Zoomed : bool { No, Yes };
 
 float ProcessTranslatePart(
     const mozilla::LengthPercentage& aValue, TransformReferenceBox* aRefBox,
@@ -130,12 +162,18 @@ float ProcessTranslatePart(
 void ProcessInterpolateMatrix(mozilla::gfx::Matrix4x4& aMatrix,
                               const mozilla::StyleTransformOperation& aOp,
                               TransformReferenceBox& aBounds,
-                              mozilla::StyleZoom aEffectiveZoom);
+                              mozilla::StyleZoom aEffectiveZoom,
+                              Zoomed aIsZoomed);
 
 void ProcessAccumulateMatrix(mozilla::gfx::Matrix4x4& aMatrix,
                              const mozilla::StyleTransformOperation& aOp,
                              TransformReferenceBox& aBounds,
-                             mozilla::StyleZoom aEffectiveZoom);
+                             mozilla::StyleZoom aEffectiveZoom,
+                             Zoomed aIsZoomed);
+
+
+
+
 
 
 
@@ -148,7 +186,8 @@ void ProcessAccumulateMatrix(mozilla::gfx::Matrix4x4& aMatrix,
 mozilla::gfx::Matrix4x4 ReadTransforms(const mozilla::StyleTransform& aList,
                                        TransformReferenceBox& aBounds,
                                        float aAppUnitsPerMatrixUnit,
-                                       mozilla::StyleZoom aEffectiveZoom);
+                                       mozilla::StyleZoom aEffectiveZoom,
+                                       Zoomed aIsZoomed);
 
 
 
@@ -156,7 +195,8 @@ mozilla::gfx::Matrix4x4 ReadTransforms(
     const mozilla::StyleTranslate&, const mozilla::StyleRotate&,
     const mozilla::StyleScale&, const mozilla::ResolvedMotionPathData* aMotion,
     const mozilla::StyleTransform&, TransformReferenceBox& aRefBox,
-    float aAppUnitsPerMatrixUnit, mozilla::StyleZoom aEffectiveZoom);
+    float aAppUnitsPerMatrixUnit, mozilla::StyleZoom aEffectiveZoom,
+    Zoomed aIsZoomed);
 
 
 
