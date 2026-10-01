@@ -764,6 +764,20 @@ RegExpRunStatus RegExpShared::execute(JSContext* cx,
         return RegExpRunStatus::Error;
       }
       if (cx->hasAnyPendingInterrupt()) {
+        if (!cx->isExceptionPending() &&
+            re->isCompiled(input->hasLatin1Chars(),
+                           RegExpShared::CodeKind::Jitcode)) {
+          
+          
+          
+          
+          
+          
+          
+          MOZ_ASSERT(cx->hadUncatchableException());
+          return RegExpRunStatus::Error;
+        }
+
         if (!CheckForInterrupt(cx)) {
           return RegExpRunStatus::Error;
         }
