@@ -520,6 +520,36 @@ class Longhand(Property):
 
     
     
+    NO_BORROWED_GETTER = {
+        "font-size",
+        "-x-lang",
+        "font-feature-settings",
+        "font-variation-settings",
+        
+        "flex-grow",
+        "flex-shrink",
+        "stroke-miterlimit",
+        "-moz-box-flex",
+        
+        "backdrop-filter",
+        "box-shadow",
+        "filter",
+        "text-shadow",
+    }
+
+    def has_borrowed_getter(self):
+        if self.logical:
+            return False
+        if self.vector and not self.vector.simple_bindings:
+            return False
+        
+        
+        if self.keyword:
+            return False
+        return self.name not in self.NO_BORROWED_GETTER
+
+    
+    
     def logical_mapping_data(self, data):
         if not self.logical:
             return []

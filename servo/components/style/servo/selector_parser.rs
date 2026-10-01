@@ -301,7 +301,7 @@ impl PseudoElement {
     
     
     pub fn should_exist(&self, style: &ComputedValues) -> bool {
-        let display = style.get_box().clone_display();
+        let display = *style.get_box().get_display();
         if display == Display::None {
             return false;
         }
