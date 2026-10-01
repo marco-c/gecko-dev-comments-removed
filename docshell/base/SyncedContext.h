@@ -72,16 +72,24 @@ enum class CanSet {
   Custom,
 };
 
+template <typename T>
 struct FieldInfo {
   
   bool mTopOnly = false;
 
   
   CanSet mCanSet = CanSet::ParentOnly;
+
+  
+  static T SyncedFieldDefault() { return T{}; }
+  T (*mDefault)() = &FieldInfo::SyncedFieldDefault;
 };
 
 
-constexpr FieldInfo FieldInfoOrDefault(FieldInfo aInfo = {}) { return aInfo; }
+template <typename T>
+constexpr FieldInfo<T> FieldInfoOrDefault(FieldInfo<T> aInfo = {}) {
+  return aInfo;
+}
 
 
 
@@ -89,16 +97,17 @@ template <size_t I, size_t S>
 struct Empty {};
 
 
-template <size_t I, typename T>
+template <typename C, size_t I, typename T>
 struct Field {
-  T mField{};
+  static constexpr T (*sDefault)() = C::FieldIndexToInfo(Index<I>{}).mDefault;
+  T mField = sDefault();
 };
 
 
 
-template <size_t I, typename T, size_t S>
+template <typename C, size_t I, typename T, size_t S>
 using SizedField = std::conditional_t<((sizeof(T) > 8) ? 8 : sizeof(T)) == S,
-                                      Field<I, T>, Empty<I, S>>;
+                                      Field<C, I, T>, Empty<I, S>>;
 
 
 
@@ -323,21 +332,22 @@ using FieldSetterType = typename GetFieldSetterType<T>::SetterArg;
 
 #define MOZ_DECL_SYNCED_FIELD_INHERIT(name, type, ...) \
  public                                                \
-  syncedcontext::SizedField<IDX_##name, type, Size>,
+  syncedcontext::SizedField<Context, IDX_##name, type, Size>,
 
 #define MOZ_DECL_SYNCED_CONTEXT_BASE_FIELD_GETTER(name, type, ...) \
   type& Get(FieldIndex<IDX_##name>) {                              \
-    return Field<IDX_##name, type>::mField;                        \
+    return Field<Context, IDX_##name, type>::mField;               \
   }                                                                \
   const type& Get(FieldIndex<IDX_##name>) const {                  \
-    return Field<IDX_##name, type>::mField;                        \
+    return Field<Context, IDX_##name, type>::mField;               \
   }
 
-#define MOZ_DECL_SYNCED_CONTEXT_FIELDINFO_GET(name, type, ...)                \
-  static constexpr ::mozilla::dom::syncedcontext::FieldInfo FieldIndexToInfo( \
-      FieldIndex<IDX_##name>) {                                               \
-    using CanSet [[maybe_unused]] = mozilla::dom::syncedcontext::CanSet;      \
-    return ::mozilla::dom::syncedcontext::FieldInfoOrDefault(__VA_ARGS__);    \
+#define MOZ_DECL_SYNCED_CONTEXT_FIELDINFO_GET(name, type, ...)           \
+  static constexpr ::mozilla::dom::syncedcontext::FieldInfo<type>        \
+  FieldIndexToInfo(FieldIndex<IDX_##name>) {                             \
+    using CanSet [[maybe_unused]] = mozilla::dom::syncedcontext::CanSet; \
+    return ::mozilla::dom::syncedcontext::FieldInfoOrDefault<type>(      \
+        __VA_ARGS__);                                                    \
   }
 
 
@@ -347,6 +357,8 @@ using FieldSetterType = typename GetFieldSetterType<T>::SetterArg;
 
 #define MOZ_DECL_SYNCED_CONTEXT(clazz, eachfield)                              \
  public:                                                                       \
+  using Context = clazz;                                                       \
+                                                                               \
   /* Index constants for referring to each field in generic code */            \
   enum FieldIndexes {                                                          \
     eachfield(MOZ_DECL_SYNCED_CONTEXT_FIELD_INDEX) SYNCED_FIELD_COUNT          \
@@ -391,12 +403,12 @@ using FieldSetterType = typename GetFieldSetterType<T>::SetterArg;
                                                           SYNCED_FIELD_COUNT>; \
                                                                                \
  protected:                                                                    \
-  friend class ::mozilla::dom::syncedcontext::Transaction<clazz>;              \
+  friend class ::mozilla::dom::syncedcontext::Transaction<Context>;            \
   ::mozilla::dom::syncedcontext::FieldStorage<FieldValues> mFields;            \
                                                                                \
  public:                                                                       \
   /* Transaction types for bulk mutations */                                   \
-  using BaseTransaction = ::mozilla::dom::syncedcontext::Transaction<clazz>;   \
+  using BaseTransaction = ::mozilla::dom::syncedcontext::Transaction<Context>; \
   class Transaction final : public BaseTransaction {                           \
    public:                                                                     \
     eachfield(MOZ_DECL_SYNCED_CONTEXT_TRANSACTION_SET)                         \
