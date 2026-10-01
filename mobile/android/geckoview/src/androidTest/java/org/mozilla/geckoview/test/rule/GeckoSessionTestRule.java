@@ -3118,6 +3118,10 @@ public class GeckoSessionTestRule implements TestRule {
 
 
 
+
+
+
+
   public <T> void addExternalDelegateDuringNextWait(
       @NonNull final Class<T> delegate,
       @NonNull final DelegateRegistrar<T> register,
