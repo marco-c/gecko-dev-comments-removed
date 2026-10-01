@@ -248,6 +248,20 @@ class DocAccessible : public HyperTextAccessible,
 
 
 
+  bool IsRootContent(nsINode* aNode) const;
+
+  
+
+
+
+  LocalAccessible* GetAccessibleOrDocument(nsINode* aNode) const;
+
+  
+
+
+
+
+
   LocalAccessible* GetAccessible(nsINode* aNode) const;
 
   
