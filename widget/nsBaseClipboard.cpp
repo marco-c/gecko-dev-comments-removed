@@ -5,6 +5,7 @@
 #include "nsBaseClipboard.h"
 
 #include "ContentAnalysis.h"
+#include "mozilla/AutoRestore.h"
 #include "mozilla/Components.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
@@ -531,6 +532,19 @@ nsresult nsBaseClipboard::SetDataImpl(
     }
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mMutatingNativeClipboard) {
+    MOZ_CLIPBOARD_LOG("%s: rejecting re-entrant write.", __FUNCTION__);
+    return finish(NS_ERROR_IN_PROGRESS);
+  }
+
   const auto& clipboardCache = mCaches[aWhichClipboard];
   MOZ_ASSERT(clipboardCache);
   if (aTransferable == clipboardCache->GetTransferable() &&
@@ -581,7 +595,11 @@ nsresult nsBaseClipboard::SetDataImpl(
     
     RejectPendingAsyncSetDataRequestIfAny(aWhichClipboard);
     SanitizeForClipboard(aTransferable);
-    rv = SetNativeClipboardData(aTransferable, aWhichClipboard);
+    {
+      mozilla::AutoRestore<bool> mutating(mMutatingNativeClipboard);
+      mMutatingNativeClipboard = true;
+      rv = SetNativeClipboardData(aTransferable, aWhichClipboard);
+    }
     mIgnoreEmptyNotification = false;
   }
   if (NS_FAILED(rv)) {
@@ -1018,11 +1036,22 @@ NS_IMETHODIMP nsBaseClipboard::EmptyClipboard(ClipboardType aWhichClipboard) {
     return NS_ERROR_FAILURE;
   }
 
+  if (mMutatingNativeClipboard) {
+    
+    
+    MOZ_CLIPBOARD_LOG("%s: rejecting re-entrant empty.", __FUNCTION__);
+    return NS_ERROR_IN_PROGRESS;
+  }
+
   
   
   CancelPendingCopy(aWhichClipboard, NS_ERROR_ABORT);
 
-  EmptyNativeClipboardData(aWhichClipboard);
+  {
+    mozilla::AutoRestore<bool> mutating(mMutatingNativeClipboard);
+    mMutatingNativeClipboard = true;
+    EmptyNativeClipboardData(aWhichClipboard);
+  }
 
   const auto& clipboardCache = mCaches[aWhichClipboard];
   MOZ_ASSERT(clipboardCache);
