@@ -10,27 +10,22 @@
 
 
 
-let defaultLocale = getLocaleBaseName(new Intl.NumberFormat().resolvedOptions().locale);
-
-let supportedNumberingSystems = ["latn", "arab"].filter(nu =>
-  new Intl.NumberFormat(defaultLocale + "-u-nu-" + nu)
-    .resolvedOptions().numberingSystem === nu
-);
-
-let options = [
-    {key: "nu", property: "numberingSystem", type: "string", values: supportedNumberingSystems},
+var options = [
+    {key: "kn", property: "numeric", type: "boolean", values: [true, false]},
+    {key: "kf", property: "caseFirst", type: "string", values: ["upper", "lower", "false"]}
 ];
 
 options.forEach(function (option) {
-    let numberFormat, opt, result;
+    var defaultLocale = getLocaleBaseName(new Intl.Collator().resolvedOptions().locale);
+    var collator, opt, result;
     
     
-    let supportedValues = [];
+    var supportedValues = [];
     option.values.forEach(function (value) {
         opt = {};
         opt[option.property] = value;
-        numberFormat = new Intl.NumberFormat([defaultLocale], opt);
-        result = numberFormat.resolvedOptions()[option.property];
+        collator = new Intl.Collator([defaultLocale], opt);
+        result = collator.resolvedOptions()[option.property];
         if (result !== undefined && supportedValues.indexOf(result) === -1) {
             supportedValues.push(result);
         }
@@ -38,14 +33,14 @@ options.forEach(function (option) {
     
     
     supportedValues.forEach(function (value) {
-        numberFormat = new Intl.NumberFormat([defaultLocale + "-u-" + option.key + "-" + value]);
-        result = numberFormat.resolvedOptions()[option.property];
+        collator = new Intl.Collator([defaultLocale + "-u-" + option.key + "-" + value]);
+        result = collator.resolvedOptions()[option.property];
         assert.sameValue(result, value, "Property " + option.property + " couldn't be set through locale extension key " + option.key + ".");
     });
     
     
     supportedValues.forEach(function (value) {
-        let otherValue;
+        var otherValue;
         option.values.forEach(function (possibleValue) {
             if (possibleValue !== value) {
                 otherValue = possibleValue;
@@ -54,10 +49,9 @@ options.forEach(function (option) {
         if (otherValue !== undefined) {
             opt = {};
             opt[option.property] = value;
-            numberFormat = new Intl.NumberFormat([defaultLocale + "-u-" + option.key + "-" + otherValue], opt);
-            result = numberFormat.resolvedOptions()[option.property];
+            collator = new Intl.Collator([defaultLocale + "-u-" + option.key + "-" + otherValue], opt);
+            result = collator.resolvedOptions()[option.property];
             assert.sameValue(result, value, "Options value for property " + option.property + " doesn't override locale extension key " + option.key + ".");
         }
     });
 });
-

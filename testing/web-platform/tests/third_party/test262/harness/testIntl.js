@@ -43,6 +43,7 @@
 
 
 
+
 function testWithIntlConstructors(f) {
   var constructors = ["Collator", "NumberFormat", "DateTimeFormat"];
 
@@ -1816,6 +1817,28 @@ function isCanonicalizedStructurallyValidLanguageTag(locale) {
 
 
 
+
+
+
+
+
+
+
+function getLocaleBaseName(locale) {
+  var subtags = locale.split("-");
+  
+  
+  for (var i = 1; i < subtags.length; i++) {
+    if (subtags[i].length === 1) {
+      return subtags.slice(0, i).join("-");
+    }
+  }
+  return locale;
+}
+
+
+
+
 function getInvalidLocaleArguments() {
   function CustomError() {}
 
@@ -2387,7 +2410,7 @@ function testNumberFormat(locales, numberingSystems, options, testData) {
   locales.forEach(function (locale) {
     numberingSystems.forEach(function (numbering) {
       var digits = numberingSystemDigits[numbering];
-      var format = new Intl.NumberFormat([locale + "-u-nu-" + numbering], options);
+      var format = new Intl.NumberFormat([getLocaleBaseName(locale) + "-u-nu-" + numbering], options);
 
       function getPatternParts(positive) {
         var n = positive ? 1.1 : -1.1;

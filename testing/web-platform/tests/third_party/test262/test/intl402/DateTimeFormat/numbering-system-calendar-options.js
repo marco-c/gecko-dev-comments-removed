@@ -10,27 +10,33 @@
 
 
 
-let defaultLocale = getLocaleBaseName(new Intl.NumberFormat().resolvedOptions().locale);
+let defaultLocale = getLocaleBaseName(new Intl.DateTimeFormat().resolvedOptions().locale);
 
 let supportedNumberingSystems = ["latn", "arab"].filter(nu =>
-  new Intl.NumberFormat(defaultLocale + "-u-nu-" + nu)
+  new Intl.DateTimeFormat(defaultLocale + "-u-nu-" + nu)
     .resolvedOptions().numberingSystem === nu
+);
+
+let supportedCalendars = ["gregory", "chinese"].filter(ca =>
+  new Intl.DateTimeFormat(defaultLocale + "-u-ca-" + ca)
+    .resolvedOptions().calendar === ca
 );
 
 let options = [
     {key: "nu", property: "numberingSystem", type: "string", values: supportedNumberingSystems},
+    {key: "ca", property: "calendar", type: "string", values: supportedCalendars}
 ];
 
 options.forEach(function (option) {
-    let numberFormat, opt, result;
+    let dateTimeFormat, opt, result;
     
     
     let supportedValues = [];
     option.values.forEach(function (value) {
         opt = {};
         opt[option.property] = value;
-        numberFormat = new Intl.NumberFormat([defaultLocale], opt);
-        result = numberFormat.resolvedOptions()[option.property];
+        dateTimeFormat = new Intl.DateTimeFormat([defaultLocale], opt);
+        result = dateTimeFormat.resolvedOptions()[option.property];
         if (result !== undefined && supportedValues.indexOf(result) === -1) {
             supportedValues.push(result);
         }
@@ -38,8 +44,8 @@ options.forEach(function (option) {
     
     
     supportedValues.forEach(function (value) {
-        numberFormat = new Intl.NumberFormat([defaultLocale + "-u-" + option.key + "-" + value]);
-        result = numberFormat.resolvedOptions()[option.property];
+        dateTimeFormat = new Intl.DateTimeFormat([defaultLocale + "-u-" + option.key + "-" + value]);
+        result = dateTimeFormat.resolvedOptions()[option.property];
         assert.sameValue(result, value, "Property " + option.property + " couldn't be set through locale extension key " + option.key + ".");
     });
     
@@ -54,10 +60,9 @@ options.forEach(function (option) {
         if (otherValue !== undefined) {
             opt = {};
             opt[option.property] = value;
-            numberFormat = new Intl.NumberFormat([defaultLocale + "-u-" + option.key + "-" + otherValue], opt);
-            result = numberFormat.resolvedOptions()[option.property];
+            dateTimeFormat = new Intl.DateTimeFormat([defaultLocale + "-u-" + option.key + "-" + otherValue], opt);
+            result = dateTimeFormat.resolvedOptions()[option.property];
             assert.sameValue(result, value, "Options value for property " + option.property + " doesn't override locale extension key " + option.key + ".");
         }
     });
 });
-
