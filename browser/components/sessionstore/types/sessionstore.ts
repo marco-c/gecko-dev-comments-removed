@@ -18,11 +18,3 @@ type ClosedTabGroupStateData =
   import("../TabGroupState.sys.mjs").ClosedTabGroupStateData;
 type SavedTabGroupStateData =
   import("../TabGroupState.sys.mjs").SavedTabGroupStateData;
-
-
-
-
-interface MozTabbrowserTab {
-  __test_connection_prepared?: boolean;
-  __test_connection_url?: string;
-}
