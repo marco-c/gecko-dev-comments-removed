@@ -2,9 +2,44 @@
 
 const lazy = {};
 
+const SPONSORED_TILE_SELECTOR = '.top-sites [data-is-sponsored-link="true"]';
+
 ChromeUtils.defineESModuleGetters(lazy, {
   DEFAULT_TOP_SITES: "resource://newtab/lib/TopSitesFeed.sys.mjs",
 });
+
+
+
+
+
+
+
+
+
+
+async function waitForSponsoredTopSites(browser, count) {
+  await SpecialPowers.spawn(
+    browser,
+    [SPONSORED_TILE_SELECTOR, count],
+    async (selector, expected) => {
+      await ContentTaskUtils.waitForCondition(
+        () => content.document.querySelectorAll(selector).length === expected,
+        `Wait for ${expected} sponsored top sites`
+      );
+      Assert.equal(
+        content.document.querySelectorAll(selector).length,
+        expected,
+        `The page shows ${expected} sponsored top sites`
+      );
+    }
+  );
+}
+
+
+
+
+
+
 
 async function newtabWithSponsoredTopsites(callback = () => {}) {
   
@@ -31,21 +66,11 @@ async function newtabWithSponsoredTopsites(callback = () => {}) {
   );
 
   
-  await TestUtils.waitForCondition(
-    () =>
-      SpecialPowers.spawn(
-        browser,
-        [],
-        () =>
-          content.document.querySelector(
-            '.top-sites [data-is-sponsored-link="true"]'
-          ) !== null
-      ),
-    "Should find sponsored topsites after pref re-broadcast"
-  );
+  
+  await waitForSponsoredTopSites(browser, 2);
 
   try {
-    await SpecialPowers.spawn(browser, [], callback);
+    await callback(browser);
   } finally {
     BrowserTestUtils.removeTab(tab);
   }
@@ -105,52 +130,35 @@ add_setup(async function () {
 });
 
 add_task(async function test_dismiss() {
-  await newtabWithSponsoredTopsites(async () => {
-    await ContentTaskUtils.waitForCondition(
-      () =>
-        content.document.querySelector(
-          '.top-sites [data-is-sponsored-link="true"]'
-        ),
-      "Should find a visible sponsored topsite"
+  await newtabWithSponsoredTopsites(async browser => {
+    await SpecialPowers.spawn(
+      browser,
+      [SPONSORED_TILE_SELECTOR],
+      async selector => {
+        const contextMenuDiv = content.document.querySelector(
+          `${selector} + div`
+        );
+
+        const contextMenuButton = contextMenuDiv.querySelector(
+          ".context-menu-button"
+        );
+
+        contextMenuButton.click();
+
+        await ContentTaskUtils.waitForCondition(
+          () => contextMenuDiv.querySelector("panel-list"),
+          "Should find context menu after clicking button"
+        );
+
+        const contextMenu = contextMenuDiv.querySelector("panel-list");
+
+        
+        const dismissButton = contextMenu.children.item(3);
+
+        dismissButton.click();
+      }
     );
 
-    let topsitesList = content.document.querySelectorAll("li.top-site-outer");
-
-    Assert.equal(topsitesList.length, 4, "Should have 4 topsites by default");
-
-    const contextMenuDiv = content.document.querySelector(
-      '.top-sites [data-is-sponsored-link="true"] + div'
-    );
-
-    const contextMenuButton = contextMenuDiv.querySelector(
-      ".context-menu-button"
-    );
-
-    contextMenuButton.click();
-
-    await ContentTaskUtils.waitForCondition(
-      () => contextMenuDiv.querySelector("panel-list"),
-      "Should find context menu after clicking button"
-    );
-
-    const contextMenu = contextMenuDiv.querySelector("panel-list");
-
-    
-    const dismissButton = contextMenu.children.item(3);
-
-    dismissButton.click();
-
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelectorAll("li.top-site-outer").length === 3,
-      "Should find only 3 topsites"
-    );
-
-    topsitesList = content.document.querySelectorAll("li.top-site-outer");
-
-    Assert.equal(
-      topsitesList.length,
-      3,
-      "Should have 3 topsites after dismiss"
-    );
+    await waitForSponsoredTopSites(browser, 1);
   });
 });
