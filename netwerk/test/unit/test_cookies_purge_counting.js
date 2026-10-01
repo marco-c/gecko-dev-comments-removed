@@ -44,8 +44,8 @@ add_task(async function test_purge_counting() {
     }
   }
 
-  let validCookies = Services.cookies.cookies.length; 
-  Assert.equal(validCookies, totalCookies);
+  let validCookies = Services.cookies.cookies.length;
+  Assert.equal(validCookies, 0, "Expired cookies are not exposed");
 
   
   const cv = Services.cookies.add(

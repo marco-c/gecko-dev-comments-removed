@@ -51,7 +51,7 @@ add_task(async function test_purge_counting_per_host() {
   );
 
   
-  let validCookies = Services.cookies.countCookiesFromHost(host, {}); 
+  let validCookies = Services.cookies.countCookiesFromHost(host, {});
   Assert.equal(validCookies, cookieCountMax);
 
   
