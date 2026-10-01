@@ -767,6 +767,49 @@ Tester.prototype = {
     }
   },
 
+  
+  
+  
+  get _shouldCheckForLeaks() {
+    return (
+      AppConstants.RELEASE_OR_BETA ||
+      AppConstants.DEBUG ||
+      AppConstants.MOZ_CODE_COVERAGE ||
+      AppConstants.ASAN ||
+      AppConstants.TSAN
+    );
+  },
+
+  
+  _releaseResourcesKeptAliveUntilShutdown() {
+    if (gConfig.testRoot != "browser") {
+      return;
+    }
+
+    
+    if (AppConstants.MOZ_APP_NAME != "seamonkey") {
+      
+      
+      
+      
+      let sidebar = document.getElementById("sidebar");
+      if (sidebar) {
+        sidebar.setAttribute("src", "about:blank");
+        sidebar.docShell?.createAboutBlankDocumentViewer(null, null);
+      }
+    }
+
+    
+    let { BackgroundPageThumbs } = ChromeUtils.importESModule(
+      "resource://gre/modules/BackgroundPageThumbs.sys.mjs"
+    );
+    BackgroundPageThumbs._destroy();
+
+    if (window.gBrowser) {
+      NewTabPagePreloading.removePreloadedBrowser(window);
+    }
+  },
+
   _shutdownCleanup(aCallback) {
     let start = ChromeUtils.now();
     Cu.schedulePreciseShrinkingGC(() => {
@@ -781,6 +824,19 @@ Tester.prototype = {
       });
       aCallback();
     });
+  },
+
+  
+  
+  
+  async _collectAndCheckForLeakedWindows(excludeCurrentTest = false) {
+    await new Promise(resolve => this._shutdownCleanup(resolve));
+    
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => this._shutdownCleanup(resolve));
+
+    await this._checkForLeakedWindows(excludeCurrentTest);
   },
 
   async _checkForLeakedWindows(excludeCurrentTest = false) {
@@ -1404,44 +1460,12 @@ Tester.prototype = {
     
     this.SimpleTest.waitForFocus(() => {
       if (this.done) {
-        if (
-          !AppConstants.RELEASE_OR_BETA &&
-          !AppConstants.DEBUG &&
-          !AppConstants.MOZ_CODE_COVERAGE &&
-          !AppConstants.ASAN &&
-          !AppConstants.TSAN
-        ) {
+        if (!this._shouldCheckForLeaks) {
           this.finish();
           return;
         }
 
-        
-        
-        
-        if (gConfig.testRoot == "browser") {
-          
-          if (AppConstants.MOZ_APP_NAME != "seamonkey") {
-            
-            
-            
-            
-            let sidebar = document.getElementById("sidebar");
-            if (sidebar) {
-              sidebar.setAttribute("src", "about:blank");
-              sidebar.docShell?.createAboutBlankDocumentViewer(null, null);
-            }
-          }
-
-          
-          let { BackgroundPageThumbs } = ChromeUtils.importESModule(
-            "resource://gre/modules/BackgroundPageThumbs.sys.mjs"
-          );
-          BackgroundPageThumbs._destroy();
-
-          if (window.gBrowser) {
-            NewTabPagePreloading.removePreloadedBrowser(window);
-          }
-        }
+        this._releaseResourcesKeptAliveUntilShutdown();
 
         
         
@@ -1468,14 +1492,7 @@ Tester.prototype = {
         barrier.wait().then(() => {
           Services.ppmm.broadcastAsyncMessage("browser-test:collect-request");
 
-          this._shutdownCleanup(() => {
-            setTimeout(() => {
-              this._shutdownCleanup(async () => {
-                await this._checkForLeakedWindows();
-                this.finish();
-              });
-            }, 1000);
-          });
+          this._collectAndCheckForLeakedWindows().then(() => this.finish());
         });
 
         return;
@@ -1872,11 +1889,14 @@ Tester.prototype = {
               );
               
               
+              
+              
               self.ClickChecks.forgetMouseDownState();
-              self._shutdownCleanup(async () => {
-                await self._checkForLeakedWindows(true);
-                self.finish();
-              });
+              if (self._shouldCheckForLeaks) {
+                self._releaseResourcesKeptAliveUntilShutdown();
+                await self._collectAndCheckForLeakedWindows(true);
+              }
+              self.finish();
             }
           },
           gTimeoutSeconds * 1000,
