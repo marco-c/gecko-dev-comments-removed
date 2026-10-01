@@ -39,7 +39,7 @@ namespace xsimd
 
 
 
-    template <class T, size_t Align = std::conditional<std::is_same<unsupported, default_arch>::value, common, default_arch>::type::alignment()>
+    template <class T, size_t Align = std::conditional_t<std::is_same_v<unsupported, default_arch>, common, default_arch>::alignment()>
     class aligned_allocator
     {
     public:
