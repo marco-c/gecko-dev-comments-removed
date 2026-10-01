@@ -335,8 +335,8 @@ function generateErrors() {
 
 
 function legacyType(node) {
-  if (node.format === "uri") {
-    return node.pattern ? "origin" : "URL";
+  if (node.format === "moz-url") {
+    return node.pattern?.includes("://") ? "origin" : "URL";
   }
   if (node.contentMediaType === "application/json") {
     if (Array.isArray(node.type)) {
@@ -370,7 +370,7 @@ function legacySchemaForDisplay(node) {
 
   if (node.anyOf) {
     
-    if (node.anyOf.some(branch => branch.format === "uri")) {
+    if (node.anyOf.some(branch => branch.format === "moz-url")) {
       return { type: "URLorEmpty" };
     }
     

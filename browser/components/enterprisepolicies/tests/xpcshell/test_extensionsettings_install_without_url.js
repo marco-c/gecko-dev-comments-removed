@@ -344,6 +344,7 @@ add_task(async function test_update_hash_mismatch_does_not_install() {
 });
 
 
+
 add_task(
   {
     pref_set: [
@@ -357,7 +358,7 @@ add_task(
 
     const errorLogged = TestUtils.consoleMessageObserved(msg =>
       msg.wrappedJSObject.arguments[0]?.includes(
-        `update_url for ${id} is not a valid URL`
+        'update_url: String does not match format "moz-url"'
       )
     );
 
@@ -482,7 +483,7 @@ add_task(async function test_update_url_with_placeholders_fails_validation() {
 
   const schemaErrorLogged = TestUtils.consoleMessageObserved(msg =>
     msg.wrappedJSObject.arguments[0]?.includes(
-      'update_url: String does not match format "uri"'
+      "update_url: String does not match pattern."
     )
   );
 
