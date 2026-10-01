@@ -50,3 +50,8 @@ pref("pdfjs.enableOptimizedPartialRendering", true);
 
 
 pref("pdfjs.enableSignatureVerification", false);
+
+#ifdef MOZ_THUNDERBIRD
+  
+  pref("pdfjs.enableSelectionRendering", false);
+#endif
