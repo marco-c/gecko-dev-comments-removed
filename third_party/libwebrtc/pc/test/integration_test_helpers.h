@@ -719,8 +719,13 @@ class PeerConnectionIntegrationWrapper : public PeerConnectionObserver,
   
   int audio_packets_stat_ = 0;
   double audio_delay_stat_ = 0.0;
+  
   uint64_t audio_samples_stat_ = 0;
   uint64_t audio_concealed_stat_ = 0;
+  
+  
+  uint64_t initial_audio_samples_stat_ = 0;
+  uint64_t initial_audio_concealed_stat_ = 0;
   std::string rtp_stats_id_;
   bool audio_delay_stats_percentage_checked_ = false;
 

@@ -580,6 +580,8 @@ void PeerConnectionIntegrationWrapper::StartWatchingDelayStats() {
   audio_delay_stat_ = *rtp_stats->relative_packet_arrival_delay;
   audio_samples_stat_ = *rtp_stats->total_samples_received;
   audio_concealed_stat_ = *rtp_stats->concealed_samples;
+  initial_audio_samples_stat_ = audio_samples_stat_;
+  initial_audio_concealed_stat_ = audio_concealed_stat_;
 }
 
 void PeerConnectionIntegrationWrapper::UpdateDelayStats(std::string tag,
@@ -633,15 +635,20 @@ void PeerConnectionIntegrationWrapper::UpdateDelayStats(std::string tag,
   
   
   
-  if (delta_samples >= 2000) {
+  
+  auto total_samples =
+      *rtp_stats->total_samples_received - initial_audio_samples_stat_;
+  auto total_concealed =
+      *rtp_stats->concealed_samples - initial_audio_concealed_stat_;
+  if (total_samples >= 2000) {
     audio_delay_stats_percentage_checked_ = true;
 #if !defined(NDEBUG)
-    EXPECT_LT(1.0 * delta_concealed / delta_samples, 0.99)
-        << "Concealed " << delta_concealed << " of " << delta_samples
+    EXPECT_LT(1.0 * total_concealed / total_samples, 0.99)
+        << "Concealed " << total_concealed << " of " << total_samples
         << " samples";
 #else
-    EXPECT_LT(1.0 * delta_concealed / delta_samples, 0.7)
-        << "Concealed " << delta_concealed << " of " << delta_samples
+    EXPECT_LT(1.0 * total_concealed / total_samples, 0.7)
+        << "Concealed " << total_concealed << " of " << total_samples
         << " samples";
 #endif
   }
