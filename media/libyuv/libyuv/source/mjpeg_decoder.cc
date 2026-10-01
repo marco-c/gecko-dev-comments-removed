@@ -65,7 +65,7 @@ void ErrorHandler(jpeg_common_struct* cinfo);
 void OutputHandler(jpeg_common_struct* cinfo);
 
 MJpegDecoder::MJpegDecoder()
-    : has_scanline_padding_(LIBYUV_FALSE),
+    : has_scanline_padding_(false),
       num_outbufs_(0),
       scanlines_(NULL),
       scanlines_sizes_(NULL),
@@ -78,9 +78,7 @@ MJpegDecoder::MJpegDecoder()
   decompress_struct_->err = jpeg_std_error(&error_mgr_->base);
   
   error_mgr_->base.error_exit = &ErrorHandler;
-#ifndef DEBUG_MJPEG
   error_mgr_->base.output_message = &OutputHandler;
-#endif
 #endif
   decompress_struct_->client_data = NULL;
   source_mgr_->init_source = &init_source;
@@ -104,9 +102,9 @@ MJpegDecoder::~MJpegDecoder() {
   DestroyOutputBuffers();
 }
 
-LIBYUV_BOOL MJpegDecoder::LoadFrame(const uint8_t* src, size_t src_len) {
+bool MJpegDecoder::LoadFrame(const uint8_t* src, size_t src_len) {
   if (!ValidateJpeg(src, src_len)) {
-    return LIBYUV_FALSE;
+    return false;
   }
 
   buf_.data = src;
@@ -117,12 +115,12 @@ LIBYUV_BOOL MJpegDecoder::LoadFrame(const uint8_t* src, size_t src_len) {
   if (setjmp(error_mgr_->setjmp_buffer)) {
     
     
-    return LIBYUV_FALSE;
+    return false;
   }
 #endif
   if (jpeg_read_header(decompress_struct_, TRUE) != JPEG_HEADER_OK) {
     
-    return LIBYUV_FALSE;
+    return false;
   }
   AllocOutputBuffers(GetNumComponents());
   for (int i = 0; i < num_outbufs_; ++i) {
@@ -156,10 +154,10 @@ LIBYUV_BOOL MJpegDecoder::LoadFrame(const uint8_t* src, size_t src_len) {
     }
 
     if (GetComponentStride(i) != GetComponentWidth(i)) {
-      has_scanline_padding_ = LIBYUV_TRUE;
+      has_scanline_padding_ = true;
     }
   }
-  return LIBYUV_TRUE;
+  return true;
 }
 
 static int DivideAndRoundUp(int numerator, int denominator) {
@@ -236,36 +234,36 @@ int MJpegDecoder::GetComponentSize(int component) {
   return GetComponentWidth(component) * GetComponentHeight(component);
 }
 
-LIBYUV_BOOL MJpegDecoder::UnloadFrame() {
+bool MJpegDecoder::UnloadFrame() {
 #ifdef HAVE_SETJMP
   if (setjmp(error_mgr_->setjmp_buffer)) {
     
     
-    return LIBYUV_FALSE;
+    return false;
   }
 #endif
   jpeg_abort_decompress(decompress_struct_);
-  return LIBYUV_TRUE;
+  return true;
 }
 
 
-LIBYUV_BOOL MJpegDecoder::DecodeToBuffers(uint8_t** planes,
-                                          int dst_width,
-                                          int dst_height) {
+bool MJpegDecoder::DecodeToBuffers(uint8_t** planes,
+                                   int dst_width,
+                                   int dst_height) {
   if (dst_width != GetWidth() || dst_height > GetHeight()) {
     
-    return LIBYUV_FALSE;
+    return false;
   }
 #ifdef HAVE_SETJMP
   if (setjmp(error_mgr_->setjmp_buffer)) {
     
     
     
-    return LIBYUV_FALSE;
+    return false;
   }
 #endif
   if (!StartDecode()) {
-    return LIBYUV_FALSE;
+    return false;
   }
   SetScanlinePointers(databuf_);
   int lines_left = dst_height;
@@ -279,7 +277,7 @@ LIBYUV_BOOL MJpegDecoder::DecodeToBuffers(uint8_t** planes,
     while (skip >= GetImageScanlinesPerImcuRow()) {
       if (!DecodeImcuRow()) {
         FinishDecode();
-        return LIBYUV_FALSE;
+        return false;
       }
       skip -= GetImageScanlinesPerImcuRow();
     }
@@ -288,7 +286,7 @@ LIBYUV_BOOL MJpegDecoder::DecodeToBuffers(uint8_t** planes,
       
       if (!DecodeImcuRow()) {
         FinishDecode();
-        return LIBYUV_FALSE;
+        return false;
       }
       for (int i = 0; i < num_outbufs_; ++i) {
         
@@ -311,7 +309,7 @@ LIBYUV_BOOL MJpegDecoder::DecodeToBuffers(uint8_t** planes,
        lines_left -= GetImageScanlinesPerImcuRow()) {
     if (!DecodeImcuRow()) {
       FinishDecode();
-      return LIBYUV_FALSE;
+      return false;
     }
     for (int i = 0; i < num_outbufs_; ++i) {
       int scanlines_to_copy = GetComponentScanlinesPerImcuRow(i);
@@ -325,7 +323,7 @@ LIBYUV_BOOL MJpegDecoder::DecodeToBuffers(uint8_t** planes,
     
     if (!DecodeImcuRow()) {
       FinishDecode();
-      return LIBYUV_FALSE;
+      return false;
     }
     for (int i = 0; i < num_outbufs_; ++i) {
       int scanlines_to_copy =
@@ -338,24 +336,24 @@ LIBYUV_BOOL MJpegDecoder::DecodeToBuffers(uint8_t** planes,
   return FinishDecode();
 }
 
-LIBYUV_BOOL MJpegDecoder::DecodeToCallback(CallbackFunction fn,
-                                           void* opaque,
-                                           int dst_width,
-                                           int dst_height) {
+bool MJpegDecoder::DecodeToCallback(CallbackFunction fn,
+                                    void* opaque,
+                                    int dst_width,
+                                    int dst_height) {
   if (dst_width != GetWidth() || dst_height > GetHeight()) {
     
-    return LIBYUV_FALSE;
+    return false;
   }
 #ifdef HAVE_SETJMP
   if (setjmp(error_mgr_->setjmp_buffer)) {
     
     
     
-    return LIBYUV_FALSE;
+    return false;
   }
 #endif
   if (!StartDecode()) {
-    return LIBYUV_FALSE;
+    return false;
   }
   SetScanlinePointers(databuf_);
   int lines_left = dst_height;
@@ -365,7 +363,7 @@ LIBYUV_BOOL MJpegDecoder::DecodeToCallback(CallbackFunction fn,
     while (skip >= GetImageScanlinesPerImcuRow()) {
       if (!DecodeImcuRow()) {
         FinishDecode();
-        return LIBYUV_FALSE;
+        return false;
       }
       skip -= GetImageScanlinesPerImcuRow();
     }
@@ -373,7 +371,7 @@ LIBYUV_BOOL MJpegDecoder::DecodeToCallback(CallbackFunction fn,
       
       if (!DecodeImcuRow()) {
         FinishDecode();
-        return LIBYUV_FALSE;
+        return false;
       }
       for (int i = 0; i < num_outbufs_; ++i) {
         
@@ -400,7 +398,7 @@ LIBYUV_BOOL MJpegDecoder::DecodeToCallback(CallbackFunction fn,
        lines_left -= GetImageScanlinesPerImcuRow()) {
     if (!DecodeImcuRow()) {
       FinishDecode();
-      return LIBYUV_FALSE;
+      return false;
     }
     (*fn)(opaque, databuf_, databuf_strides_, GetImageScanlinesPerImcuRow());
   }
@@ -408,7 +406,7 @@ LIBYUV_BOOL MJpegDecoder::DecodeToCallback(CallbackFunction fn,
     
     if (!DecodeImcuRow()) {
       FinishDecode();
-      return LIBYUV_FALSE;
+      return false;
     }
     (*fn)(opaque, databuf_, databuf_strides_, lines_left);
   }
@@ -468,12 +466,11 @@ void ErrorHandler(j_common_ptr cinfo) {
   longjmp(mgr->setjmp_buffer, 1);
 }
 
-#ifndef DEBUG_MJPEG
 
 void OutputHandler(j_common_ptr cinfo) {
   (void)cinfo;
 }
-#endif
+
 #endif  
 
 void MJpegDecoder::AllocOutputBuffers(int num_outbufs) {
@@ -516,29 +513,29 @@ void MJpegDecoder::DestroyOutputBuffers() {
 }
 
 
-LIBYUV_BOOL MJpegDecoder::StartDecode() {
+bool MJpegDecoder::StartDecode() {
   decompress_struct_->raw_data_out = TRUE;
   decompress_struct_->dct_method = JDCT_IFAST;  
   decompress_struct_->dither_mode = JDITHER_NONE;
   
-  decompress_struct_->do_fancy_upsampling = (boolean)(LIBYUV_FALSE);
+  decompress_struct_->do_fancy_upsampling = (boolean)(0);
   
-  decompress_struct_->enable_2pass_quant = (boolean)(LIBYUV_FALSE);
+  decompress_struct_->enable_2pass_quant = (boolean)(0);
   
-  decompress_struct_->do_block_smoothing = (boolean)(LIBYUV_FALSE);
+  decompress_struct_->do_block_smoothing = (boolean)(0);
 
   if (!jpeg_start_decompress(decompress_struct_)) {
     
-    return LIBYUV_FALSE;
+    return false;
   }
-  return LIBYUV_TRUE;
+  return true;
 }
 
-LIBYUV_BOOL MJpegDecoder::FinishDecode() {
+bool MJpegDecoder::FinishDecode() {
   
   
   jpeg_abort_decompress(decompress_struct_);
-  return LIBYUV_TRUE;
+  return true;
 }
 
 void MJpegDecoder::SetScanlinePointers(uint8_t** data) {
@@ -551,7 +548,7 @@ void MJpegDecoder::SetScanlinePointers(uint8_t** data) {
   }
 }
 
-inline LIBYUV_BOOL MJpegDecoder::DecodeImcuRow() {
+inline bool MJpegDecoder::DecodeImcuRow() {
   return (unsigned int)(GetImageScanlinesPerImcuRow()) ==
          jpeg_read_raw_data(decompress_struct_, scanlines_,
                             GetImageScanlinesPerImcuRow());

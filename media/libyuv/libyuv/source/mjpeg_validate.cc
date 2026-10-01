@@ -18,7 +18,7 @@ extern "C" {
 #endif
 
 
-static LIBYUV_BOOL ScanEOI(const uint8_t* src_mjpg, size_t src_size_mjpg) {
+static int ScanEOI(const uint8_t* src_mjpg, size_t src_size_mjpg) {
   if (src_size_mjpg >= 2) {
     const uint8_t* end = src_mjpg + src_size_mjpg - 1;
     const uint8_t* it = src_mjpg;
@@ -29,34 +29,34 @@ static LIBYUV_BOOL ScanEOI(const uint8_t* src_mjpg, size_t src_size_mjpg) {
         break;
       }
       if (it[1] == 0xd9) {
-        return LIBYUV_TRUE;  
+        return 1;  
       }
       ++it;  
     }
   }
   
-  return LIBYUV_FALSE;
+  return 0;
 }
 
 
-LIBYUV_BOOL ValidateJpeg(const uint8_t* src_mjpg, size_t src_size_mjpg) {
+int ValidateJpeg(const uint8_t* src_mjpg, size_t src_size_mjpg) {
   
   const size_t kMaxJpegSize = 0x7fffffffull;
   const size_t kBackSearchSize = 1024;
   if (src_size_mjpg < 64 || src_size_mjpg > kMaxJpegSize || !src_mjpg) {
     
-    return LIBYUV_FALSE;
+    return 0;
   }
   
   if (src_mjpg[0] != 0xff || src_mjpg[1] != 0xd8 || src_mjpg[2] != 0xff) {
     
-    return LIBYUV_FALSE;
+    return 0;
   }
 
   
   if (src_size_mjpg > kBackSearchSize) {
     if (ScanEOI(src_mjpg + src_size_mjpg - kBackSearchSize, kBackSearchSize)) {
-      return LIBYUV_TRUE;  
+      return 1;  
     }
     
     src_size_mjpg = src_size_mjpg - kBackSearchSize + 1;

@@ -11,6 +11,9 @@
 #ifndef INCLUDE_LIBYUV_PLANAR_FUNCTIONS_H_
 #define INCLUDE_LIBYUV_PLANAR_FUNCTIONS_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "libyuv/basic_types.h"
 
 
@@ -48,12 +51,14 @@ void Convert16To8Plane(const uint16_t* src_y,
                        int width,
                        int height);
 
+
+
 LIBYUV_API
 void Convert8To16Plane(const uint8_t* src_y,
                        int src_stride_y,
                        uint16_t* dst_y,
                        int dst_stride_y,
-                       int scale,  
+                       int bits,  
                        int width,
                        int height);
 
@@ -476,16 +481,19 @@ int UYVYToNV12(const uint8_t* src_uyvy,
 
 
 LIBYUV_API
-int NV21ToNV12(const uint8_t* src_y,
+int NV12ToNV21(const uint8_t* src_y,
                int src_stride_y,
-               const uint8_t* src_vu,
-               int src_stride_vu,
+               const uint8_t* src_uv,
+               int src_stride_uv,
                uint8_t* dst_y,
                int dst_stride_y,
-               uint8_t* dst_uv,
-               int dst_stride_uv,
+               uint8_t* dst_vu,
+               int dst_stride_vu,
                int width,
                int height);
+
+
+#define NV21ToNV12 NV12ToNV21
 
 LIBYUV_API
 int YUY2ToY(const uint8_t* src_yuy2,
@@ -1077,8 +1085,8 @@ int I420Interpolate(const uint8_t* src0_y,
 
 
 LIBYUV_API
-int ARGBShuffle(const uint8_t* src_bgra,
-                int src_stride_bgra,
+int ARGBShuffle(const uint8_t* src_argb,
+                int src_stride_argb,
                 uint8_t* dst_argb,
                 int dst_stride_argb,
                 const uint8_t* shuffler,

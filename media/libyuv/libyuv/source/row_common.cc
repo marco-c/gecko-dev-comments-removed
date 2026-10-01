@@ -13,7 +13,6 @@
 #include <assert.h>
 #include <string.h>  
 
-#include "libyuv/basic_types.h"
 #include "libyuv/convert_argb.h"       
 #include "libyuv/convert_from_argb.h"  
 
@@ -27,9 +26,6 @@ extern "C" {
 #else
 #define STATIC_CAST(type, expr) (type)(expr)
 #endif
-
-
-
 
 
 
@@ -1788,7 +1784,6 @@ MAKEYUVCONSTANTS(V2020, YG, YB, UB, UG, VG, VR)
   int r16 = y1 + (vi * vr)
 #endif
 
-#if defined(LIBYUV_UNBIASED_DATA)
 #if defined(__aarch64__) || defined(__arm__) || defined(__riscv)
 #define LOAD_YUV_CONSTANTS_AR30            \
   int ub = yuvconstants->kUVCoeff[0];      \
@@ -1807,9 +1802,6 @@ MAKEYUVCONSTANTS(V2020, YG, YB, UB, UG, VG, VR)
   int vr = yuvconstants->kUVToR[1];  \
   int yg = yuvconstants->kYToRgb[0]; \
   int yb = yuvconstants->kYBiasToRgb[0] - 24
-#endif
-#else
-#define LOAD_YUV_CONSTANTS_AR30 LOAD_YUV_CONSTANTS
 #endif
 
 
@@ -2830,16 +2822,15 @@ void MirrorSplitUVRow_C(const uint8_t* src_uv,
 
 void ARGBMirrorRow_C(const uint8_t* src, uint8_t* dst, int width) {
   int x;
-  const uint32_t* src32 = (const uint32_t*)(src);
-  uint32_t* dst32 = (uint32_t*)(dst);
-  src32 += width - 1;
-  for (x = 0; x < width - 1; x += 2) {
-    dst32[x] = src32[0];
-    dst32[x + 1] = src32[-1];
-    src32 -= 2;
-  }
-  if (width & 1) {
-    dst32[width - 1] = src32[0];
+  const uint8_t* s = src + (ptrdiff_t)(width - 1) * 4;
+  uint8_t* d = dst;
+  for (x = 0; x < width; ++x) {
+    d[0] = s[0];
+    d[1] = s[1];
+    d[2] = s[2];
+    d[3] = s[3];
+    s -= 4;
+    d += 4;
   }
 }
 
@@ -3250,15 +3241,14 @@ void Convert16To8Row_C(const uint16_t* src_y,
 }
 
 
-
 void Convert8To16Row_C(const uint8_t* src_y,
                        uint16_t* dst_y,
-                       int scale,
+                       int bits,
                        int width) {
   int x;
-  scale *= 0x0101;  
+  int shift = 16 - bits;
   for (x = 0; x < width; ++x) {
-    dst_y[x] = (src_y[x] * scale) >> 16;
+    dst_y[x] = (src_y[x] * 0x0101) >> shift;
   }
 }
 

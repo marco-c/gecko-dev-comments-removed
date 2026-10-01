@@ -8,8 +8,6 @@
 
 
 
-#include "libyuv/basic_types.h"
-
 #include "libyuv/compare_row.h"
 #include "libyuv/row.h"
 

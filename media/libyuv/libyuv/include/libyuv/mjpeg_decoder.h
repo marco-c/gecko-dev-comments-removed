@@ -11,6 +11,9 @@
 #ifndef INCLUDE_LIBYUV_MJPEG_DECODER_H_
 #define INCLUDE_LIBYUV_MJPEG_DECODER_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "libyuv/basic_types.h"
 
 #ifdef __cplusplus
@@ -26,7 +29,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
-LIBYUV_BOOL ValidateJpeg(const uint8_t* sample, size_t sample_size);
+int ValidateJpeg(const uint8_t* sample, size_t sample_size);
 
 #ifdef __cplusplus
 }  
@@ -85,7 +88,7 @@ class LIBYUV_API MJpegDecoder {
   
   
   
-  LIBYUV_BOOL LoadFrame(const uint8_t* src, size_t src_len);
+  bool LoadFrame(const uint8_t* src, size_t src_len);
 
   
   int GetWidth();
@@ -129,7 +132,7 @@ class LIBYUV_API MJpegDecoder {
 
   
   
-  LIBYUV_BOOL UnloadFrame();
+  bool UnloadFrame();
 
   
   
@@ -138,16 +141,16 @@ class LIBYUV_API MJpegDecoder {
   
   
   
-  LIBYUV_BOOL DecodeToBuffers(uint8_t** planes, int dst_width, int dst_height);
+  bool DecodeToBuffers(uint8_t** planes, int dst_width, int dst_height);
 
   
   
   
   
-  LIBYUV_BOOL DecodeToCallback(CallbackFunction fn,
-                               void* opaque,
-                               int dst_width,
-                               int dst_height);
+  bool DecodeToCallback(CallbackFunction fn,
+                        void* opaque,
+                        int dst_width,
+                        int dst_height);
 
   
   static JpegSubsamplingType JpegSubsamplingTypeHelper(
@@ -159,11 +162,11 @@ class LIBYUV_API MJpegDecoder {
   void AllocOutputBuffers(int num_outbufs);
   void DestroyOutputBuffers();
 
-  LIBYUV_BOOL StartDecode();
-  LIBYUV_BOOL FinishDecode();
+  bool StartDecode();
+  bool FinishDecode();
 
   void SetScanlinePointers(uint8_t** data);
-  LIBYUV_BOOL DecodeImcuRow();
+  bool DecodeImcuRow();
 
   int GetComponentScanlinePadding(int component);
 
@@ -177,7 +180,7 @@ class LIBYUV_API MJpegDecoder {
 
   
   
-  LIBYUV_BOOL has_scanline_padding_;
+  bool has_scanline_padding_;
 
   
   int num_outbufs_;  

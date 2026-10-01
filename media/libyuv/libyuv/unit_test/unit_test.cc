@@ -52,18 +52,18 @@ static const int32_t FLAGS_libyuv_cpu_info = 0;
 
 
 #if !defined(__native_client__) && !defined(_M_ARM)
-static LIBYUV_BOOL TestEnv(const char* name) {
+static bool TestEnv(const char* name) {
   const char* var = getenv(name);
   if (var) {
     if (var[0] != '0') {
-      return LIBYUV_TRUE;
+      return true;
     }
   }
-  return LIBYUV_FALSE;
+  return false;
 }
 #else  
-static LIBYUV_BOOL TestEnv(const char*) {
-  return LIBYUV_FALSE;
+static bool TestEnv(const char*) {
+  return false;
 }
 #endif
 

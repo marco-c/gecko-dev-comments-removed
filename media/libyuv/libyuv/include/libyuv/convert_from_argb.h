@@ -11,6 +11,8 @@
 #ifndef INCLUDE_LIBYUV_CONVERT_FROM_ARGB_H_
 #define INCLUDE_LIBYUV_CONVERT_FROM_ARGB_H_
 
+#include <stdint.h>
+
 #include "libyuv/basic_types.h"
 
 #ifdef __cplusplus
@@ -409,6 +411,52 @@ int ARGBToNV12(const uint8_t* src_argb,
 
 LIBYUV_API
 int ARGBToNV12Matrix(const uint8_t* src_argb,
+                     int src_stride_argb,
+                     uint8_t* dst_y,
+                     int dst_stride_y,
+                     uint8_t* dst_uv,
+                     int dst_stride_uv,
+                     const struct ArgbConstants* argbconstants,
+                     int width,
+                     int height);
+
+
+LIBYUV_API
+int ARGBToNV16(const uint8_t* src_argb,
+               int src_stride_argb,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+
+LIBYUV_API
+int ARGBToNV16Matrix(const uint8_t* src_argb,
+                     int src_stride_argb,
+                     uint8_t* dst_y,
+                     int dst_stride_y,
+                     uint8_t* dst_uv,
+                     int dst_stride_uv,
+                     const struct ArgbConstants* argbconstants,
+                     int width,
+                     int height);
+
+
+LIBYUV_API
+int ARGBToNV24(const uint8_t* src_argb,
+               int src_stride_argb,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+
+LIBYUV_API
+int ARGBToNV24Matrix(const uint8_t* src_argb,
                      int src_stride_argb,
                      uint8_t* dst_y,
                      int dst_stride_y,
