@@ -18,6 +18,7 @@
 #include "api/jsep.h"
 #include "api/peer_connection_interface.h"
 #include "api/rtc_error.h"
+#include "api/rtp_transceiver_interface.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -122,6 +123,10 @@ class RTC_EXPORT PeerConnectionTracerInterface {
   
   virtual void OnDataChannel(const DataChannelInterface& channel,
                              std::optional<int> id) = 0;
+
+  
+  
+  virtual void OnTrack(const RtpTransceiverInterface& transceiver) = 0;
 
   
   
