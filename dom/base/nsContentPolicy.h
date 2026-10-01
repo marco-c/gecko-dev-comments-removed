@@ -5,6 +5,7 @@
 #ifndef _nsContentPolicy_h_
 #define _nsContentPolicy_h_
 
+#include "nsCOMPtr.h"
 #include "nsCategoryCache.h"
 #include "nsIContentPolicy.h"
 
@@ -19,12 +20,19 @@ class nsContentPolicy : public nsIContentPolicy {
 
   nsContentPolicy();
 
+  nsresult Init();
+
  protected:
   virtual ~nsContentPolicy();
 
  private:
   
   nsCategoryCache<nsIContentPolicy> mPolicies;
+
+  
+  
+  nsCOMPtr<nsIContentPolicy> mCSPService;
+  nsCOMPtr<nsIContentPolicy> mMixedContentBlocker;
 
   
   using CPMethod = decltype(&nsIContentPolicy::ShouldProcess);
