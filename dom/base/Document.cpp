@@ -8772,7 +8772,7 @@ void Document::MozSetImageElement(const nsAString& aImageElementId,
   }
 }
 
-void Document::DispatchContentLoadedEvents(bool aFinishSync) {
+void Document::DispatchContentLoadedEvents() {
   
   
 
@@ -8884,19 +8884,6 @@ void Document::DispatchContentLoadedEvents(bool aFinishSync) {
     }
   }
 
-  if (aFinishSync) {
-    FinishDOMContentLoaded();
-    return;
-  }
-
-  
-  nsCOMPtr<nsIRunnable> ev =
-      NewRunnableMethod("Document::FinishDOMContentLoaded", this,
-                        &Document::FinishDOMContentLoaded);
-  Dispatch(ev.forget());
-}
-
-void Document::FinishDOMContentLoaded() {
   if (mSetCompleteAfterDOMContentLoaded) {
     SetReadyStateInternal(ReadyState::READYSTATE_COMPLETE);
     mSetCompleteAfterDOMContentLoaded = false;
@@ -8905,7 +8892,7 @@ void Document::FinishDOMContentLoaded() {
   UnblockOnload(true);
 }
 
-void Document::EndLoad(bool aFireDOMContentLoadedSync) {
+void Document::EndLoad() {
   bool turnOnEditing =
       mParser && (IsInDesignMode() || mContentEditableCount > 0);
 
@@ -8953,7 +8940,7 @@ void Document::EndLoad(bool aFireDOMContentLoadedSync) {
   }
   mDidCallBeginLoad = false;
 
-  UnblockDOMContentLoaded(aFireDOMContentLoadedSync);
+  UnblockDOMContentLoaded();
 
   if (turnOnEditing) {
     EditingStateChanged();
@@ -8978,7 +8965,7 @@ void Document::EndLoad(bool aFireDOMContentLoadedSync) {
   }
 }
 
-void Document::UnblockDOMContentLoaded(bool aFireSync) {
+void Document::UnblockDOMContentLoaded() {
   MOZ_ASSERT(mBlockDOMContentLoaded);
   if (--mBlockDOMContentLoaded != 0 || mDidFireDOMContentLoaded) {
     return;
@@ -8989,28 +8976,17 @@ void Document::UnblockDOMContentLoaded(bool aFireSync) {
 
   mDidFireDOMContentLoaded = true;
 
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(IsInitialDocument() || mReadyState == READYSTATE_INTERACTIVE);
-
-  
-  if (mSynchronousDOMContentLoaded) {
-    MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
-    DispatchContentLoadedEvents( true);
-    return;
+  if (!mSynchronousDOMContentLoaded) {
+    MOZ_RELEASE_ASSERT(NS_IsMainThread());
+    MOZ_ASSERT(!IsInitialDocument());
+    nsCOMPtr<nsIRunnable> ev =
+        NewRunnableMethod("Document::DispatchContentLoadedEvents", this,
+                          &Document::DispatchContentLoadedEvents);
+    Dispatch(ev.forget());
+  } else {
+    DispatchContentLoadedEvents();
   }
-
-  if (aFireSync &&
-      StaticPrefs::dom_document_domcontentloaded_synchronous_enabled()) {
-    nsContentUtils::AddScriptRunner(
-        NewRunnableMethod<bool>("Document::DispatchContentLoadedEvents", this,
-                                &Document::DispatchContentLoadedEvents, false));
-    return;
-  }
-
-  MOZ_ASSERT(!IsInitialDocument());
-  Dispatch(NewRunnableMethod<bool>("Document::DispatchContentLoadedEvents",
-                                   this, &Document::DispatchContentLoadedEvents,
-                                   true));
 }
 
 void Document::ElementStateChanged(Element* aElement, ElementState aStateMask) {
@@ -15346,8 +15322,7 @@ class UnblockParsingPromiseHandler final : public PromiseNativeHandler {
       
       
       
-      
-      mDocument->UnblockDOMContentLoaded( false);
+      mDocument->UnblockDOMContentLoaded();
       mDocument->UnblockOnload(false);
     }
     mParser = nullptr;

@@ -40,8 +40,7 @@ class XMLDocument : public Document {
                                      bool aReset = true) override;
 
   
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual void EndLoad(
-      bool aFireDOMContentLoadedSync) override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual void EndLoad() override;
 
   virtual nsresult Init(nsIPrincipal* aPrincipal,
                         nsIPrincipal* aPartitionedPrincipal) override;

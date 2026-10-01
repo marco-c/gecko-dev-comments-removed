@@ -392,8 +392,9 @@ add_task(async function test_css_order() {
     
     
     
-    Assert.ok(
-      ["", "3"].includes(style.getPropertyValue("--css-end-23")),
+    Assert.equal(
+      style.getPropertyValue("--css-end-23"),
+      "",
       "end_3.css (cached, blocked on end_2.css) does not block frame.onload"
     );
   });
