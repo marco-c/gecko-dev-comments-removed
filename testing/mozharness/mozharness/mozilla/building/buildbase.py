@@ -559,6 +559,9 @@ items from that key's value."
         
         
         env = copy.deepcopy(super().query_env(**kwargs))
+        env["MOZCONFIG"] = os.path.join(
+            self.query_abs_dirs()["abs_src_dir"], ".mozconfig"
+        )
 
         if self.query_is_nightly():
             
@@ -592,12 +595,10 @@ items from that key's value."
         """assign mozconfig."""
         dirs = self.query_abs_dirs()
 
-        try:
-            abs_mozconfig_path = get_mozconfig_path(
-                script=self, config=self.config, dirs=dirs
-            )
-        except MozconfigPathError as e:
-            self.fatal(e.msg)
+        src_mozconfig = os.environ.get("MOZCONFIG")
+        if not src_mozconfig:
+            self.fatal("MOZCONFIG is not set in the environment")
+        abs_mozconfig_path = os.path.join(dirs["abs_src_dir"], src_mozconfig)
 
         self.info(f"Use mozconfig: {abs_mozconfig_path}")
 
