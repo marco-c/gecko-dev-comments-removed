@@ -79,6 +79,10 @@ class FetchChild final : public PFetchChild, public AbortFollower {
 
   
   void Shutdown();
+
+  
+  
+  bool MaybeRejectWithAbortReason();
   void ActorDestroy(ActorDestroyReason aReason) override;
 
   RefPtr<ThreadSafeWorkerRef> mWorkerRef;
