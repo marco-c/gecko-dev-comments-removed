@@ -913,7 +913,7 @@ UniqueContentParentKeepAlive ContentParent::GetUsedBrowserProcess(
     
     preallocated->mRemoteType = aRemoteType;
     preallocated->LoadedOrigins()->SetRemoteType(preallocated->mRemoteType);
-    preallocated->AddToPool(GetOrCreatePool(aRemoteType));
+    preallocated->AddToPool();
 
     
     if (!preallocated->IsLaunching()) {
@@ -1000,7 +1000,7 @@ UniqueContentParentKeepAlive ContentParent::GetNewOrUsedLaunchingBrowserProcess(
     PreallocatedProcessManager::AddBlocker(aRemoteType, contentParent.get());
 
     
-    contentParent->AddToPool(GetOrCreatePool(aRemoteType));
+    contentParent->AddToPool();
 
     MOZ_LOG(
         ContentParent::GetLog(), LogLevel::Debug,
@@ -1740,11 +1740,11 @@ void ContentParent::ShutDownMessageManager() {
   mMessageManager = nullptr;
 }
 
-void ContentParent::AddToPool(nsTArray<ContentParent*>& aPool) {
+void ContentParent::AddToPool() {
   MOZ_DIAGNOSTIC_ASSERT(!mIsInPool);
   AssertAlive();
   MOZ_DIAGNOSTIC_ASSERT(!mCalledKillHard);
-  aPool.AppendElement(this);
+  GetOrCreatePool(mRemoteType).AppendElement(this);
   mIsInPool = true;
 }
 
