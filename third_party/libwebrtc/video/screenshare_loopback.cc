@@ -8,10 +8,10 @@
 
 
 
-#include <stdio.h>
-
+#include <cstdio>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/flags/flag.h"
@@ -25,10 +25,8 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/string_encode.h"
-#include "system_wrappers/include/field_trial.h"
 #include "test/gtest.h"
 #include "test/run_test.h"
-#include "test/test_flags.h"
 #include "video/video_quality_test.h"
 
 using ::webrtc::BitrateConstraints;
@@ -382,12 +380,9 @@ int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
   absl::ParseCommandLine(argc, argv);
 
-  webrtc::LogMessage::SetLogToStderr(absl::GetFlag(FLAGS_logs));
-
-  
-  
-  const std::string field_trials = absl::GetFlag(FLAGS_force_fieldtrials);
-  webrtc::field_trial::InitFieldTrialsFromString(field_trials.c_str());
+  webrtc::LoggingConfig config;
+  config.set_log_to_stderr(absl::GetFlag(FLAGS_logs));
+  webrtc::InitializeLogging(std::move(config));
 
   webrtc::test::RunTest(Loopback);
   return 0;

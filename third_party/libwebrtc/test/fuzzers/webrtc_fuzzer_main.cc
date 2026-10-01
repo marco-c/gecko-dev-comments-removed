@@ -14,6 +14,7 @@
 
 #include <cstddef>
 #include <span>
+#include <utility>
 
 #include "rtc_base/logging.h"
 #include "test/fuzzers/fuzz_data_helper.h"
@@ -27,7 +28,10 @@ void InitializeWebRtcFuzzDefaults() {
 
 
 #if !defined(WEBRTC_CHROMIUM_BUILD)
-  webrtc::LogMessage::LogToDebug(webrtc::LS_NONE);
+  webrtc::LoggingConfig config;
+  config.set_min_severity(webrtc::LS_NONE);
+  config.set_debug_severity(webrtc::LS_NONE);
+  webrtc::InitializeLogging(std::move(config));
 #endif  
 
   g_initialized = true;
