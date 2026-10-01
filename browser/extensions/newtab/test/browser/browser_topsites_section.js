@@ -8,25 +8,16 @@ const { SearchService } = ChromeUtils.importESModule(
 test_newtab({
   before: setTestTopSites,
   
-  test: async function topsites_edit() {
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".top-sites .context-menu-button"),
-      "Should find a visible topsite context menu button [topsites_edit]"
+  test: async function topsites_edit(testTopSite) {
+    const tile = await content.waitForTopSite(testTopSite);
+
+    tile.querySelector(".context-menu-button").click();
+
+    const editBtn = await content.waitForPanelItem(
+      tile,
+      "newtab-menu-edit-topsites"
     );
-
-    
-    content.document.querySelector(".top-sites .context-menu-button").click();
-
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".top-sites panel-list panel-item"),
-      "Should find a visible topsite context menu [topsites_edit]"
-    );
-
-    
-    const topsitesAddBtn = content.document
-      .querySelectorAll(".top-sites panel-list panel-item")
-      .item(1);
-    topsitesAddBtn.click();
+    editBtn.click();
 
     await ContentTaskUtils.waitForCondition(
       () => content.document.querySelector(".topsite-form"),
@@ -317,32 +308,21 @@ test_newtab({
 test_newtab({
   before: setTestTopSites,
   
-  test: async function topsites_add() {
+  test: async function topsites_add(testTopSite) {
     let nativeInputValueSetter = Object.getOwnPropertyDescriptor(
       content.window.HTMLInputElement.prototype,
       "value"
     ).set;
     let event = new content.Event("input", { bubbles: true });
 
-    
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".top-sites .context-menu-button"),
-      "Should find a visible topsite context menu button [topsites_add]"
+    const tile = await content.waitForTopSite(testTopSite);
+
+    tile.querySelector(".context-menu-button").click();
+
+    const topsitesAddBtn = await content.waitForPanelItem(
+      tile,
+      "newtab-menu-edit-topsites"
     );
-
-    content.document.querySelector(".top-sites .context-menu-button").click();
-
-    
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".top-sites panel-list panel-item"),
-      "Should find a visible topsite context menu [topsites_add]"
-    );
-
-    
-    
-    const topsitesAddBtn = content.document
-      .querySelectorAll(".top-sites panel-list panel-item")
-      .item(1);
 
     topsitesAddBtn.click();
 
@@ -383,27 +363,17 @@ test_newtab({
     addBtn.click();
 
     
-    await ContentTaskUtils.waitForCondition(
-      () =>
-        content.document.querySelector("[href='https://bugzilla.mozilla.org']"),
-      "No Topsite found"
+    const addedTile = await content.waitForTopSite(
+      "https://bugzilla.mozilla.org"
     );
 
     
-    let topsiteContextBtn = content.document.querySelector(
-      ".top-sites-list li:nth-child(1) .context-menu-button"
-    );
-    topsiteContextBtn.click();
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".top-sites-list panel-list"),
-      "No context menu found"
-    );
+    addedTile.querySelector(".context-menu-button").click();
 
-    
-    
-    const dismissBtn = content.document
-      .querySelectorAll(".top-sites panel-list panel-item")
-      .item(5);
+    const dismissBtn = await content.waitForPanelItem(
+      addedTile,
+      "newtab-menu-dismiss"
+    );
     dismissBtn.click();
 
     

@@ -82,12 +82,12 @@ async function setTestTopSites() {
     false,
   ]);
   
-  
   await pushPrefs([
     "browser.newtabpage.activity-stream.default.sites",
-    "https://example.com/",
+    TEST_TOP_SITE,
   ]);
   await toggleTopsitesPref();
+  return TEST_TOP_SITE;
 }
 
 
@@ -257,6 +257,46 @@ function addContentHelpers() {
       return [...panelList.children].filter(
         child => child.localName === "panel-item"
       );
+    },
+
+    
+
+
+
+
+
+
+
+    async waitForTopSite(url) {
+      const selector = `.top-site-outer:has(a.top-site-button[href="${url}"])`;
+      await ContentTaskUtils.waitForCondition(
+        () => document.querySelector(selector),
+        `Wait for the ${url} top site tile`
+      );
+      return document.querySelector(selector);
+    },
+
+    
+
+
+
+
+
+
+
+
+
+    async waitForPanelItem(tile, l10nId) {
+      const item = () =>
+        [...tile.querySelectorAll("panel-item")].find(
+          candidate =>
+            candidate.querySelector("[data-l10n-id]")?.dataset.l10nId === l10nId
+        );
+      await ContentTaskUtils.waitForCondition(
+        item,
+        `Wait for the ${l10nId} menu item`
+      );
+      return item();
     },
   });
 }
