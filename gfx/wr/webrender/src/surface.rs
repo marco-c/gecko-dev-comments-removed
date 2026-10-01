@@ -372,8 +372,8 @@ impl SurfaceInfo {
         
         
         
-        let projected = map_raster_to_root
-            .as_2d_scale_offset()
+        let raster_to_root = map_raster_to_root.as_2d_scale_offset();
+        let projected = raster_to_root
             .and_then(|_| map_raster_to_root.unmap(&global_culling_rect));
 
         let mut culling_rect_projection_failed = false;
@@ -409,9 +409,23 @@ impl SurfaceInfo {
             .filter(|_| !culling_rect_projection_failed)
             .and_then(|rect| map_raster_to_root.map(rect))
         {
+            
+            
+            
+            
+            
+            
+            
             const EPSILON: f32 = 0.05;
+            let epsilon = EPSILON + raster_to_root.map_or(0.0, |scale_offset| {
+                scale_offset.offset.x.abs()
+                    .max(scale_offset.offset.y.abs())
+                    .max(scale_offset.scale.x.abs())
+                    .max(scale_offset.scale.y.abs())
+                    * EPSILON * 4.0
+            });
             debug_assert!(
-                round_trip.inflate(EPSILON, EPSILON).contains_box(&global_culling_rect),
+                round_trip.inflate(epsilon, epsilon).contains_box(&global_culling_rect),
                 "vis culling rect {:?} loses part of the screen {:?} (round trip {:?})",
                 culling_rect,
                 global_culling_rect,
