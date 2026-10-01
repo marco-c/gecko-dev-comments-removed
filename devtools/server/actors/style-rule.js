@@ -1680,7 +1680,8 @@ class StyleRuleActor extends Actor {
 
 
 
-  getCssExplainersData(expression, pseudo, inheritedNode) {
+
+  getCssExplainersData(property, expression, pseudo, inheritedNode) {
     let element = inheritedNode?.rawNode || this.currentlySelectedElement;
     
     
@@ -1688,7 +1689,12 @@ class StyleRuleActor extends Actor {
       element =
         SharedCssLogic.getBindingElementAndPseudo(element).bindingElement;
     }
-    return InspectorUtils.getComputationSteps(expression, element, pseudo);
+    return InspectorUtils.getComputationSteps(
+      property,
+      expression,
+      element,
+      pseudo
+    );
   }
 }
 exports.StyleRuleActor = StyleRuleActor;
