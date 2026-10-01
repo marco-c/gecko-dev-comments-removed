@@ -375,6 +375,10 @@ async function getFormReview(win, browser) {
 
 async function fillFormReview(win, browser) {
   const { reviewBrowser } = await getFormReview(win, browser);
+  await fillReviewedForm(reviewBrowser);
+}
+
+async function fillReviewedForm(reviewBrowser) {
   
   
   await scrollFormReviewFieldsToBottom(reviewBrowser);
