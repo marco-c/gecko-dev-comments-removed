@@ -1097,7 +1097,18 @@ static bool CyclicModuleResolveExport(JSContext* cx,
         
         
         
-        name = cx->names().star_namespace_star_;
+        
+        
+        if (moduleRequest->phase() == ImportPhase::Deferred) {
+          name = cx->names().star_deferred_namespace_star_;
+        } else {
+          
+          
+          MOZ_ASSERT(moduleRequest->phase() == ImportPhase::Evaluation);
+          
+          
+          name = cx->names().star_namespace_star_;
+        }
         return CreateResolvedBindingObject(cx, importedModule, name, result);
       } else {
         name = e.importName();
@@ -1532,9 +1543,13 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
 
     
     
-    if (bindingName == cx->names().star_namespace_star_) {
+    if (bindingName == cx->names().star_namespace_star_ ||
+        bindingName == cx->names().star_deferred_namespace_star_) {
       bindingModule = binding->module();
-      bindingNs = GetOrCreateModuleNamespace(cx, bindingModule);
+      ImportPhase phase = bindingName == cx->names().star_namespace_star_
+                              ? ImportPhase::Evaluation
+                              : ImportPhase::Deferred;
+      bindingNs = GetOrCreateModuleNamespace(cx, bindingModule, phase);
       if (!bindingNs) {
         return false;
       }
@@ -1577,8 +1592,8 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
     
     if (in.importNameValueType() == ImportNameValueType::Namespace) {
       
-      ModuleNamespaceObject* ns =
-          GetOrCreateModuleNamespace(cx, importedModule);
+      ModuleNamespaceObject* ns = GetOrCreateModuleNamespace(
+          cx, importedModule, moduleRequest->phase());
       if (!ns) {
         return false;
       }
@@ -1636,11 +1651,18 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
       bindingName = binding->bindingName();
 
       
-      if (bindingName == cx->names().star_namespace_star_) {
+      
+      if (bindingName == cx->names().star_namespace_star_ ||
+          bindingName == cx->names().star_deferred_namespace_star_) {
+        
+        
+        ImportPhase phase = bindingName == cx->names().star_namespace_star_
+                                ? ImportPhase::Evaluation
+                                : ImportPhase::Deferred;
         
         
         Rooted<ModuleNamespaceObject*> ns(
-            cx, GetOrCreateModuleNamespace(cx, sourceModule));
+            cx, GetOrCreateModuleNamespace(cx, sourceModule, phase));
         if (!ns) {
           return false;
         }
@@ -2067,12 +2089,11 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
   for (const RequestedModule& request : module->requestedModules()) {
     required = request.moduleRequest();
     
-    if (required->phase() != ImportPhase::Evaluation) {
+    if (required->phase() == ImportPhase::Source) {
       continue;
     }
     
     
-    MOZ_ASSERT(required->phase() == ImportPhase::Evaluation);
     requiredModule = GetImportedModule(cx, module, required);
     if (!requiredModule) {
       return false;
