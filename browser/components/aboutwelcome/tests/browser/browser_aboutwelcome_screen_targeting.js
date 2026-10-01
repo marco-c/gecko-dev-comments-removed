@@ -12,6 +12,23 @@ const { OnboardingMessageProvider } = ChromeUtils.importESModule(
   "resource:///modules/asrouter/OnboardingMessageProvider.sys.mjs"
 );
 
+const { ClientEnvironmentBase } = ChromeUtils.importESModule(
+  "resource://gre/modules/components-utils/ClientEnvironment.sys.mjs"
+);
+
+
+
+
+
+const OS_WITHOUT_PIN_PROMPT = { isWindows: false };
+const OS_WITH_WIN_PIN_PROMPT = {
+  isWindows: true,
+  windowsBuildNumber: 22621,
+  windowsUBR: 2400,
+};
+const OS_MAC = { isMac: true, isWindows: false };
+const OS_WINDOWS_ONE_CLICK_DEFAULT = { isMac: false, isWindows: true };
+
 function makeSplashScreen() {
   const message = OnboardingMessageProvider.getPreonboardingMessages().find(
     m => m.id === "NEW_USER_TOU_ONBOARDING"
@@ -113,6 +130,7 @@ add_task(async function test_aboutwelcome_mr_template_easy_setup_default() {
   await pushPrefs(["browser.shell.checkDefaultBrowser", true]);
   sandbox.stub(ShellService, "doesAppNeedPin").returns(true);
   sandbox.stub(ShellService, "isDefaultBrowser").returns(false);
+  sandbox.stub(ClientEnvironmentBase, "os").get(() => OS_WITHOUT_PIN_PROMPT);
 
   await clearHistoryAndBookmarks();
 
@@ -139,6 +157,7 @@ add_task(async function test_aboutwelcome_mr_template_easy_setup_needs_pin() {
   await pushPrefs(["browser.shell.checkDefaultBrowser", true]);
   sandbox.stub(ShellService, "doesAppNeedPin").returns(true);
   sandbox.stub(ShellService, "isDefaultBrowser").returns(true);
+  sandbox.stub(ClientEnvironmentBase, "os").get(() => OS_WITHOUT_PIN_PROMPT);
 
   await clearHistoryAndBookmarks();
 
@@ -162,6 +181,45 @@ add_task(async function test_aboutwelcome_mr_template_easy_setup_needs_pin() {
 
 
 
+
+
+
+
+add_task(
+  async function test_aboutwelcome_mr_template_easy_setup_win_os_pin_prompt() {
+    const sandbox = sinon.createSandbox();
+    await pushPrefs(
+      ["browser.shell.checkDefaultBrowser", true],
+      ["browser.bypassAutoTriggerActions", false]
+    );
+    sandbox.stub(ShellService, "doesAppNeedPin").returns(true);
+    sandbox.stub(ShellService, "isDefaultBrowser").returns(false);
+    sandbox.stub(ShellService, "isOneClickSetDefaultEnabled").returns(true);
+    sandbox.stub(ClientEnvironmentBase, "os").get(() => OS_WITH_WIN_PIN_PROMPT);
+
+    await clearHistoryAndBookmarks();
+
+    const { browser, cleanup } = await openMRAboutWelcome();
+
+    await test_screen_content(
+      browser,
+      "renders easy setup with only default checkbox when Windows will show its own pin prompt",
+      
+      ["main.AW_EASY_SETUP", "#checkbox-2"],
+      
+      ["#checkbox-1"]
+    );
+
+    await cleanup();
+    await popPrefs();
+    sandbox.restore();
+  }
+);
+
+
+
+
+
 add_task(
   async function test_aboutwelcome_mr_template_easy_setup_needs_default() {
     const sandbox = sinon.createSandbox();
@@ -169,6 +227,7 @@ add_task(
     sandbox.stub(ShellService, "doesAppNeedPin").returns(false);
     sandbox.stub(ShellService, "doesAppNeedStartMenuPin").returns(false);
     sandbox.stub(ShellService, "isDefaultBrowser").returns(false);
+    sandbox.stub(ClientEnvironmentBase, "os").get(() => OS_WITHOUT_PIN_PROMPT);
 
     await clearHistoryAndBookmarks();
 
@@ -181,6 +240,250 @@ add_task(
       ["main.AW_EASY_SETUP", "#checkbox-2"],
       
       ["#checkbox-1"]
+    );
+
+    await cleanup();
+    await popPrefs();
+    sandbox.restore();
+  }
+);
+
+
+
+
+
+
+
+add_task(
+  async function test_aboutwelcome_mr_template_easy_setup_mac_auto_default() {
+    const sandbox = sinon.createSandbox();
+    await pushPrefs(
+      ["browser.shell.checkDefaultBrowser", true],
+      ["browser.bypassAutoTriggerActions", false]
+    );
+    sandbox.stub(ShellService, "doesAppNeedPin").returns(true);
+    sandbox.stub(ShellService, "isDefaultBrowser").returns(false);
+    sandbox.stub(ShellService, "isOneClickSetDefaultEnabled").returns(false);
+    sandbox.stub(ClientEnvironmentBase, "os").get(() => OS_MAC);
+
+    await clearHistoryAndBookmarks();
+
+    const { browser, cleanup } = await openMRAboutWelcome();
+
+    await test_screen_content(
+      browser,
+      "renders easy setup with only pin checkbox on macOS",
+      
+      ["main.AW_EASY_SETUP", "#checkbox-1"],
+      
+      ["#checkbox-2"]
+    );
+
+    await cleanup();
+    await popPrefs();
+    sandbox.restore();
+  }
+);
+
+
+
+
+
+
+
+
+
+add_task(
+  async function test_aboutwelcome_mr_template_easy_setup_windows_one_click_shows_checkbox() {
+    const sandbox = sinon.createSandbox();
+    await pushPrefs(
+      ["browser.shell.checkDefaultBrowser", true],
+      ["browser.bypassAutoTriggerActions", false]
+    );
+    sandbox.stub(ShellService, "doesAppNeedPin").returns(true);
+    sandbox.stub(ShellService, "isDefaultBrowser").returns(false);
+    sandbox.stub(ShellService, "isOneClickSetDefaultEnabled").returns(true);
+    sandbox
+      .stub(ClientEnvironmentBase, "os")
+      .get(() => OS_WINDOWS_ONE_CLICK_DEFAULT);
+
+    await clearHistoryAndBookmarks();
+
+    const { browser, cleanup } = await openMRAboutWelcome();
+
+    await test_screen_content(
+      browser,
+      "renders easy setup with both checkboxes when Windows one-click set default is enabled",
+      
+      ["main.AW_EASY_SETUP", "#checkbox-1", "#checkbox-2"],
+      
+      []
+    );
+
+    await cleanup();
+    await popPrefs();
+    sandbox.restore();
+  }
+);
+
+
+
+
+
+
+
+
+add_task(
+  async function test_aboutwelcome_mr_template_easy_setup_windows_no_one_click_auto_default() {
+    const sandbox = sinon.createSandbox();
+    await pushPrefs(
+      ["browser.shell.checkDefaultBrowser", true],
+      ["browser.bypassAutoTriggerActions", false]
+    );
+    sandbox.stub(ShellService, "doesAppNeedPin").returns(true);
+    sandbox.stub(ShellService, "isDefaultBrowser").returns(false);
+    sandbox.stub(ShellService, "isOneClickSetDefaultEnabled").returns(false);
+    sandbox
+      .stub(ClientEnvironmentBase, "os")
+      .get(() => OS_WINDOWS_ONE_CLICK_DEFAULT);
+
+    await clearHistoryAndBookmarks();
+
+    const { browser, cleanup } = await openMRAboutWelcome();
+
+    await test_screen_content(
+      browser,
+      "renders easy setup with only pin checkbox when Windows one-click set default is not enabled",
+      
+      ["main.AW_EASY_SETUP", "#checkbox-1"],
+      
+      ["#checkbox-2"]
+    );
+
+    await cleanup();
+    await popPrefs();
+    sandbox.restore();
+  }
+);
+
+
+
+
+
+
+
+
+add_task(
+  async function test_aboutwelcome_mr_template_easy_setup_hidden_when_default_auto_handled() {
+    const sandbox = sinon.createSandbox();
+    await pushPrefs(
+      ["browser.shell.checkDefaultBrowser", true],
+      ["browser.bypassAutoTriggerActions", false]
+    );
+    sandbox.stub(ShellService, "doesAppNeedPin").returns(false);
+    sandbox.stub(ShellService, "doesAppNeedStartMenuPin").returns(false);
+    sandbox.stub(ShellService, "isDefaultBrowser").returns(false);
+    sandbox.stub(ShellService, "isOneClickSetDefaultEnabled").returns(false);
+    sandbox.stub(ClientEnvironmentBase, "os").get(() => OS_MAC);
+
+    await clearHistoryAndBookmarks();
+
+    const { browser, cleanup } = await openMRAboutWelcome();
+
+    await test_screen_content(
+      browser,
+      "does not render easy setup when default is auto-handled and pin isn't needed",
+      
+      ["main.AW_IMPORT_SETTINGS_EMBEDDED"],
+      
+      ["main.AW_EASY_SETUP", "#checkbox-1", "#checkbox-2"]
+    );
+
+    await cleanup();
+    await popPrefs();
+    sandbox.restore();
+  }
+);
+
+
+
+
+
+
+
+
+add_task(
+  async function test_aboutwelcome_mr_template_easy_setup_bypass_auto_trigger_actions() {
+    const sandbox = sinon.createSandbox();
+    await pushPrefs(
+      ["browser.shell.checkDefaultBrowser", true],
+      ["browser.bypassAutoTriggerActions", true]
+    );
+    sandbox.stub(ShellService, "doesAppNeedPin").returns(true);
+    sandbox.stub(ShellService, "isDefaultBrowser").returns(false);
+    sandbox.stub(ShellService, "isOneClickSetDefaultEnabled").returns(false);
+    sandbox.stub(ClientEnvironmentBase, "os").get(() => OS_MAC);
+
+    await clearHistoryAndBookmarks();
+
+    const { browser, cleanup } = await openMRAboutWelcome();
+
+    await test_screen_content(
+      browser,
+      "renders easy setup with both checkboxes when auto-triggered actions are bypassed",
+      
+      ["main.AW_EASY_SETUP", "#checkbox-1", "#checkbox-2"],
+      
+      []
+    );
+
+    await cleanup();
+    await popPrefs();
+    sandbox.restore();
+  }
+);
+
+
+
+
+
+
+
+
+add_task(
+  async function test_aboutwelcome_mr_template_restore_cta_when_easy_setup_skipped() {
+    const sandbox = sinon.createSandbox();
+    await pushPrefs(
+      ["browser.shell.checkDefaultBrowser", true],
+      ["browser.bypassAutoTriggerActions", false],
+      ["browser.backup.restore.enabled", true]
+    );
+    sandbox.stub(ShellService, "doesAppNeedPin").returns(true);
+    sandbox.stub(ShellService, "isDefaultBrowser").returns(true);
+    sandbox.stub(ShellService, "isOneClickSetDefaultEnabled").returns(true);
+    sandbox.stub(ClientEnvironmentBase, "os").get(() => OS_WITH_WIN_PIN_PROMPT);
+    sandbox
+      .stub(ASRouterTargeting.Environment, "backupRestoreEnabled")
+      .get(() => true);
+    
+    sandbox
+      .stub(ASRouterTargeting.Environment, "backupsInfo")
+      .get(() => Promise.resolve({ found: false }));
+
+    await clearHistoryAndBookmarks();
+
+    const { browser, cleanup } = await openMRAboutWelcome();
+
+    await test_screen_content(
+      browser,
+      "renders the restore from backup CTA on the import screen when easy setup is skipped",
+      
+      [
+        "main.AW_IMPORT_SETTINGS_EMBEDDED",
+        "button[data-l10n-id='restore-from-backup-secondary-top-button']",
+      ],
+      
+      ["main.AW_EASY_SETUP"]
     );
 
     await cleanup();
