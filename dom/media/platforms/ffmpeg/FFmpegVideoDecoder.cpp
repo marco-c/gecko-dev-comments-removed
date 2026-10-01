@@ -789,17 +789,6 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitV4L2Decoder() {
   StaticMutexAutoLock mon(sMutex);
 
   
-  
-  if (mAcceleratedFormats.Length()) {
-    if (!IsFormatAccelerated(mCodecID)) {
-      FFMPEG_LOG("  Format {} is not accelerated",
-                 mLib->avcodec_get_name(mCodecID));
-      return NS_ERROR_NOT_AVAILABLE;
-    }
-    FFMPEG_LOG("  Format {} is accelerated", mLib->avcodec_get_name(mCodecID));
-  }
-
-  
   AVCodec* codec = FindVideoHardwareAVCodec(mLib, mCodecID);
   if (!codec) {
     FFMPEG_LOG("No appropriate v4l2 codec found");
@@ -837,15 +826,6 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitV4L2Decoder() {
   if (mLib->avcodec_open2(mCodecContext, codec, nullptr) < 0) {
     FFMPEG_LOG("  Couldn't initialise V4L2 decoder");
     return NS_ERROR_DOM_MEDIA_FATAL_ERR;
-  }
-
-  
-  if (mAcceleratedFormats.IsEmpty()) {
-    
-    
-    
-    
-    mAcceleratedFormats.AppendElement(mCodecID);
   }
 
   AdjustHWDecodeLogging();
