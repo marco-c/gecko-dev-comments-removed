@@ -254,10 +254,11 @@ NSSTrustDomain_FindTokensByURI(
     count = nssList_Count(td->tokenList);
     tokens = nss_ZNEWARRAY(NULL, NSSToken *, count + 1);
     if (!tokens) {
+        NSSRWLock_UnlockRead(td->tokensLock);
         return NULL;
     }
     for (tok = (NSSToken *)nssListIterator_Start(td->tokens);
-         tok != (NSSToken *)NULL;
+         tok != (NSSToken *)NULL && i < count;
          tok = (NSSToken *)nssListIterator_Next(td->tokens)) {
         if (nssToken_IsPresent(tok)) {
             slotinfo = tok->pk11slot;
@@ -376,27 +377,6 @@ NSSTrustDomain_ImportEncodedCertificateChain(
     NSSCertificate *rvOpt[],
     PRUint32 maximumOpt, 
     NSSArena *arenaOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSPrivateKey *
-NSSTrustDomain_ImportEncodedPrivateKey(
-    NSSTrustDomain *td,
-    NSSBER *ber,
-    NSSItem *passwordOpt, 
-    NSSCallback *uhhOpt,
-    NSSToken *destination)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSPublicKey *
-NSSTrustDomain_ImportEncodedPublicKey(
-    NSSTrustDomain *td,
-    NSSBER *ber)
 {
     nss_SetError(NSS_ERROR_NOT_FOUND);
     return NULL;
@@ -1145,55 +1125,6 @@ loser:
     nssPKIObjectCollection_Destroy(collection);
     nssSlotArray_Destroy(slots);
     return rvCRLs;
-}
-
-NSS_IMPLEMENT PRStatus
-NSSTrustDomain_GenerateKeyPair(
-    NSSTrustDomain *td,
-    NSSAlgorithmAndParameters *ap,
-    NSSPrivateKey **pvkOpt,
-    NSSPublicKey **pbkOpt,
-    PRBool privateKeyIsSensitive,
-    NSSToken *destination,
-    NSSCallback *uhhOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return PR_FAILURE;
-}
-
-NSS_IMPLEMENT NSSSymmetricKey *
-NSSTrustDomain_GenerateSymmetricKey(
-    NSSTrustDomain *td,
-    NSSAlgorithmAndParameters *ap,
-    PRUint32 keysize,
-    NSSToken *destination,
-    NSSCallback *uhhOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSSymmetricKey *
-NSSTrustDomain_GenerateSymmetricKeyFromPassword(
-    NSSTrustDomain *td,
-    NSSAlgorithmAndParameters *ap,
-    NSSUTF8 *passwordOpt, 
-    NSSToken *destinationOpt,
-    NSSCallback *uhhOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSSymmetricKey *
-NSSTrustDomain_FindSymmetricKeyByAlgorithmAndKeyID(
-    NSSTrustDomain *td,
-    NSSOID *algorithm,
-    NSSItem *keyID,
-    NSSCallback *uhhOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
 }
 
 NSS_IMPLEMENT NSSCryptoContext *

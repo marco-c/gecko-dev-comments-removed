@@ -1,9 +1,9 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-
-
-
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
                                                                         
                               
   <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
@@ -249,22 +249,6 @@ reference  should be kept to the decoded certificate, which would then be
 accessed by  a type-specific API (e.g., NSSX509_GetSubjectName).</li>
  
 </ol>
- <br>
- <a href="http://lxr.mozilla.org/mozilla/ident?i=NSSUserCertificate">NSSUserCertificate</a>
- <br>
- 
-<ol>
-   <li>Should this be a typedef of NSSCertificate?&nbsp; This implies  that 
- any function that requires an   NSSUserCertificate   would fail when  called 
- with a certificate lacking a private key. </li>
- 
-</ol>
- <a href="http://lxr.mozilla.org/mozilla/ident?i=NSSPrivateKey">NSSPrivateKey</a>
- <br>
- <a href="http://lxr.mozilla.org/mozilla/ident?i=NSSPublicKey">NSSPublicKey</a>
- <br>
- <a href="http://lxr.mozilla.org/mozilla/ident?i=NSSSymmetricKey">NSSSymmetricKey</a>
- <br>
  <a href="http://lxr.mozilla.org/mozilla/ident?i=NSSTrustDomain">NSSTrustDomain</a>
  <br>
                     A trust domain is "the field in which certificates may

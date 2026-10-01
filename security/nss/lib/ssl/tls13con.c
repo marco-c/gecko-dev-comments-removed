@@ -1369,7 +1369,8 @@ tls13_HandleKeyUpdate(sslSocket *ss, PRUint8 *b, unsigned int length)
     }
     if (!(update == update_requested ||
           update == update_not_requested)) {
-        FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_KEY_UPDATE, decode_error);
+        
+        FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_KEY_UPDATE, illegal_parameter);
         return SECFailure;
     }
 
@@ -3310,7 +3311,11 @@ tls13_HandleCertificateRequest(sslSocket *ss, PRUint8 *b, PRUint32 length)
     }
 
     
-    if (ss->opt.enablePostHandshakeAuth) {
+    
+
+
+
+    if (ss->opt.enablePostHandshakeAuth && !IS_DTLS(ss)) {
         rv = TLS13_CHECK_HS_STATE(ss, SSL_ERROR_RX_UNEXPECTED_CERT_REQUEST,
                                   wait_cert_request, idle_handshake);
     } else {
@@ -6074,6 +6079,23 @@ tls13_FinishHandshake(sslSocket *ss)
 
 
 
+
+static SECStatus
+tls13_UpdatePostHandshakeHashesFrom(sslSocket *ss, unsigned int offset)
+{
+    unsigned int len = SSL_BUFFER_LEN(&ss->sec.ci.sendBuf);
+
+    if (len < offset) {
+        PORT_Assert(0);
+        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+        return SECFailure;
+    }
+    return ssl3_UpdatePostHandshakeHashes(
+        ss, SSL_BUFFER_BASE(&ss->sec.ci.sendBuf) + offset, len - offset);
+}
+
+
+
 static SECStatus
 tls13_SendClientSecondFlight(sslSocket *ss)
 {
@@ -6106,9 +6128,7 @@ tls13_SendClientSecondFlight(sslSocket *ss)
     }
 
     if (ss->firstHsDone) {
-        rv = ssl3_UpdatePostHandshakeHashes(ss,
-                                            SSL_BUFFER_BASE(&ss->sec.ci.sendBuf) + offset,
-                                            SSL_BUFFER_LEN(&ss->sec.ci.sendBuf) - offset);
+        rv = tls13_UpdatePostHandshakeHashesFrom(ss, offset);
         if (rv != SECSuccess) {
             goto alert_error; 
         }
@@ -6138,9 +6158,7 @@ tls13_SendClientSecondFlight(sslSocket *ss)
         }
 
         if (ss->firstHsDone) {
-            rv = ssl3_UpdatePostHandshakeHashes(ss,
-                                                SSL_BUFFER_BASE(&ss->sec.ci.sendBuf) + offset,
-                                                SSL_BUFFER_LEN(&ss->sec.ci.sendBuf) - offset);
+            rv = tls13_UpdatePostHandshakeHashesFrom(ss, offset);
             if (rv != SECSuccess) {
                 goto alert_error; 
             }

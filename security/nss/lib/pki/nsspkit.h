@@ -53,53 +53,6 @@ typedef struct NSSCertificateStr NSSCertificate;
 
 
 
-typedef NSSCertificate NSSUserCertificate;
-
-
-
-
-
-
-
-
-
-struct NSSPrivateKeyStr;
-typedef struct NSSPrivateKeyStr NSSPrivateKey;
-
-
-
-
-
-
-struct NSSPublicKeyStr;
-typedef struct NSSPublicKeyStr NSSPublicKey;
-
-
-
-
-
-
-struct NSSSymmetricKeyStr;
-typedef struct NSSSymmetricKeyStr NSSSymmetricKey;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 struct NSSTrustDomainStr;

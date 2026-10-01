@@ -736,10 +736,17 @@ loser:
     return NULL;
 }
 
+
+
 PK11SymKey *
 dkcb(void *arg, SECAlgorithmID *algid)
 {
-    return (PK11SymKey *)arg;
+    PK11SymKey *bulkkey = (PK11SymKey *)arg;
+
+    if (bulkkey == NULL) {
+        return NULL;
+    }
+    return PK11_ReferenceSymKey(bulkkey);
 }
 
 static SECStatus
@@ -1569,10 +1576,6 @@ main(int argc, char **argv)
                 SECU_PrintError(progName, "problem encrypting");
                 exitstatus = 1;
             }
-            if (encryptOptions.bulkkey) {
-                PK11_FreeSymKey(encryptOptions.bulkkey);
-                encryptOptions.bulkkey = NULL;
-            }
             break;
         case ENVELOPE: 
             envelopeOptions.options = &options;
@@ -1670,6 +1673,10 @@ main(int argc, char **argv)
 loser:
     if (cmsg)
         NSS_CMSMessage_Destroy(cmsg);
+    if (encryptOptions.bulkkey) {
+        PK11_FreeSymKey(encryptOptions.bulkkey);
+        encryptOptions.bulkkey = NULL;
+    }
     if (outFile != stdout)
         fclose(outFile);
 

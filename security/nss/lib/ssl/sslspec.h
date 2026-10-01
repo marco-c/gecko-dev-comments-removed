@@ -139,7 +139,9 @@ typedef struct DTLSRecvdRecordsStr {
 
 struct ssl3CipherSpecStr {
     PRCList link;
-    PRUint8 refCt;
+    
+
+    PRUint32 refCt;
 
     SSLSecretDirection direction;
     SSL3ProtocolVersion version;

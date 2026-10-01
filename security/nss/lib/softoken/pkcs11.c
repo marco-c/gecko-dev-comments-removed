@@ -4629,11 +4629,24 @@ NSC_InitToken(CK_SLOT_ID slotID, CK_CHAR_PTR pPin,
 
 
             if (object) {
+                SFTKSessionObject *so = sftk_narrowToSessionObject(object);
+
                 slot->sessObjHashTable[i] = object->next;
 
                 if (object->next)
                     object->next->prev = NULL;
                 object->next = object->prev = NULL;
+                
+
+
+
+
+                if (so && so->session) {
+                    PORT_Assert(sftkqueue_is_queued(&so->sessionList, 0,
+                                                    so->session->objects, 0));
+                    sftkqueue_delete(&so->sessionList, 0,
+                                     so->session->objects, 0);
+                }
             }
             if (object)
                 sftk_FreeObject(object);
@@ -4949,7 +4962,7 @@ NSC_CloseSession(CK_SESSION_HANDLE hSession)
         sftkqueue_delete(session, hSession, slot->head, slot->sessHashSize);
         
 
-        PORT_Assert(session->refCount > 1);
+        PORT_ReleaseAssert(session->refCount > 1);
         session->refCount--;
     }
     PR_Unlock(lock);

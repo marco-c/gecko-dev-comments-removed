@@ -7,6 +7,8 @@
 #include <memory>
 #include "nss.h"
 #include "pk11pub.h"
+#include "secoid.h"
+#include "secpkcs5.h"
 
 #include "gtest/gtest.h"
 #include "nss_scoped_ptrs.h"
@@ -179,6 +181,88 @@ TEST_F(Pkcs11Pbkdf2Test, DeriveKnown2) {
 TEST_F(Pkcs11Pbkdf2Test, KeyLenSizes) {
   
   KeySizes(SEC_OID_HMAC_SHA256);
+}
+
+
+
+
+static SECAlgorithmID MakePbkdf2AlgId(uint8_t* params,
+                                       unsigned int params_len) {
+  SECAlgorithmID algid = {};
+  SECOidData* oid = SECOID_FindOIDByTag(SEC_OID_PKCS5_PBKDF2);
+  if (oid) {
+    algid.algorithm = oid->oid;
+  }
+  algid.parameters.type = siBuffer;
+  algid.parameters.data = params;
+  algid.parameters.len = params_len;
+  return algid;
+}
+
+
+
+
+
+TEST_F(Pkcs11Pbkdf2Test, MalformedIterationOverflow) {
+  
+  uint8_t params[] = {
+    0x30, 0x15,                                                      
+    0x04, 0x08, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x11, 0x22,    
+    0x02, 0x09, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     
+    0x00,                                                            
+  };
+  
+
+  SECAlgorithmID algid = MakePbkdf2AlgId(params, sizeof(params));
+  ScopedSECItem result(PK11_ParamFromAlgid(&algid));
+  EXPECT_FALSE(result);
+}
+
+
+TEST_F(Pkcs11Pbkdf2Test, MalformedIterationZeroLength) {
+  
+  uint8_t params[] = {
+    0x30, 0x0c,                                                      
+    0x04, 0x08, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x11, 0x22,    
+    0x02, 0x00,                                                      
+  };
+  
+
+  SECAlgorithmID algid = MakePbkdf2AlgId(params, sizeof(params));
+  ScopedSECItem result(PK11_ParamFromAlgid(&algid));
+  EXPECT_FALSE(result);
+}
+
+
+
+TEST_F(Pkcs11Pbkdf2Test, MalformedKeyLengthOverflow) {
+  
+  uint8_t params[] = {
+    0x30, 0x19,                                                      
+    0x04, 0x08, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x11, 0x22,    
+    0x02, 0x02, 0x10, 0x00,                                          
+    0x02, 0x09, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     
+    0x00,                                                            
+  };
+  
+
+  SECAlgorithmID algid = MakePbkdf2AlgId(params, sizeof(params));
+  EXPECT_EQ(-1, SEC_PKCS5GetKeyLength(&algid));
+}
+
+
+TEST_F(Pkcs11Pbkdf2Test, MalformedKeyLengthZeroLength) {
+  
+  uint8_t params[] = {
+    0x30, 0x10,                                                      
+    0x04, 0x08, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x11, 0x22,    
+    0x02, 0x02, 0x10, 0x00,                                          
+    0x02, 0x00,                                                      
+  };
+  
+
+  SECAlgorithmID algid = MakePbkdf2AlgId(params, sizeof(params));
+  EXPECT_EQ(-1, SEC_PKCS5GetKeyLength(&algid));
 }
 
 }  

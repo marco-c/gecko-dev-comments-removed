@@ -295,17 +295,6 @@ __CERT_AddTempCertToPerm(CERTCertificate *cert, char *nickname,
     nssCertificateStore_Unlock(context->certStore, &lockTrace, &unlockTrace);
 
     
-
-    if (c->id.data == NULL) {
-        SECItem *keyID = pk11_mkcertKeyID(cert);
-        if (keyID) {
-            nssItem_Create(c->object.arena, &c->id, keyID->len, keyID->data);
-            SECITEM_FreeItem(keyID, PR_TRUE);
-        }
-        
-    }
-
-    
     slot = PK11_GetInternalKeySlot();
     internal = PK11Slot_GetNSSToken(slot);
     if (!internal) {
@@ -447,6 +436,10 @@ CERT_NewTempCertificate(CERTCertDBHandle *handle, SECItem *derCert,
                    derSerial.data);
     PORT_Free(derSerial.data);
 
+    if (nssCertificate_SetCertKeyID(c) != PR_SUCCESS) {
+        goto loser;
+    }
+
     if (nickname) {
         c->object.tempName =
             nssUTF8_Create(c->object.arena, nssStringType_UTF8String,
@@ -480,8 +473,7 @@ CERT_NewTempCertificate(CERTCertDBHandle *handle, SECItem *derCert,
     CERT_UnlockCertTempPerm(cc);
     return cc;
 loser:
-    
-    nssPKIObject_Destroy(&c->object);
+    nssCertificate_Destroy(c);
     return NULL;
 }
 
