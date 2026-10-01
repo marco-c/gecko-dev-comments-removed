@@ -306,6 +306,19 @@ nsresult nsHttpTransaction::Init(
     mHasRequestBody = false;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIInputStream> requestBodyClone;
+  if (mHasRequestBody && NS_SUCCEEDED(NS_CloneInputStream(
+                             requestBody, getter_AddRefs(requestBodyClone)))) {
+    requestBody = requestBodyClone;
+  }
+
   requestContentLength += mReqHeaderBuf.Length();
 
   if (mHasRequestBody) {
