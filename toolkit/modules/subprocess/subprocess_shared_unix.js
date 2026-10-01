@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 
@@ -61,7 +59,7 @@ var libc = new Library("libc", LIBC_CHOICES, {
     ctypes.int,
     ctypes.int ,
     ctypes.int ,
-    ctypes.int ,
+    "...",
   ],
 
   getcwd: [
