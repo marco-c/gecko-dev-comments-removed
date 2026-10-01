@@ -161,27 +161,28 @@ class VideoFramePool<LIBAV_VER> {
   
   void UpdateRendererUsageLocked() MOZ_REQUIRES(mSurfaceLock);
   RefPtr<VideoFrameSurface<LIBAV_VER>> GetTargetVideoFrameSurfaceLocked(
-      const MutexAutoLock& aProofOfLock, VASurfaceID aFFmpegSurfaceID,
-      bool aRecycleSurface);
+      VASurfaceID aFFmpegSurfaceID, bool aRecycleSurface)
+      MOZ_REQUIRES(mSurfaceLock);
   RefPtr<VideoFrameSurface<LIBAV_VER>> GetFFmpegVideoFrameSurfaceLocked(
-      const MutexAutoLock& aProofOfLock, VASurfaceID aFFMPEGSurfaceID);
-  RefPtr<VideoFrameSurface<LIBAV_VER>> GetFreeVideoFrameSurfaceLocked(
-      const MutexAutoLock& aProofOfLock);
-  bool ShouldCopySurfaceLocked()  MOZ_REQUIRES(mSurfaceLock);
+      VASurfaceID aFFMPEGSurfaceID) MOZ_REQUIRES(mSurfaceLock);
+  RefPtr<VideoFrameSurface<LIBAV_VER>> GetFreeVideoFrameSurfaceLocked()
+      MOZ_REQUIRES(mSurfaceLock);
+  bool ShouldCopySurfaceLocked() MOZ_REQUIRES(mSurfaceLock);
 
  private:
   
-  Mutex mSurfaceLock MOZ_UNANNOTATED;
-  nsTArray<RefPtr<VideoFrameSurface<LIBAV_VER>>> mDMABufSurfaces;
+  Mutex mSurfaceLock;
+  nsTArray<RefPtr<VideoFrameSurface<LIBAV_VER>>> mDMABufSurfaces
+      MOZ_GUARDED_BY(mSurfaceLock);
   
   
   
-  int mMaxFFMPEGPoolSize;
+  int mMaxFFMPEGPoolSize MOZ_GUARDED_BY(mSurfaceLock);
   
   
-  Maybe<bool> mTextureCreationWorks;
+  Maybe<bool> mTextureCreationWorks MOZ_GUARDED_BY(mSurfaceLock);
   
-  bool mTextureCopyWorks = true;
+  bool mTextureCopyWorks MOZ_GUARDED_BY(mSurfaceLock) = true;
 };
 
 }  
