@@ -157,6 +157,37 @@ class EditorBase : public nsIEditor,
 
 
 
+
+
+
+  bool MayHaveBeforeInputEventListenersForTelemetry() const {
+    if (const nsPIDOMWindowInner* window = GetInnerWindow()) {
+      return window->HasBeforeInputEventListenersForTelemetry();
+    }
+    return false;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  bool MutationObserverHasObservedNodeForTelemetry() const {
+    if (const nsPIDOMWindowInner* window = GetInnerWindow()) {
+      return window->MutationObserverHasObservedNodeForTelemetry();
+    }
+    return false;
+  }
+
+  
+
+
+
   [[nodiscard]] static bool TreatAsUserInput(nsIPrincipal* aPrincipal);
 
   PresShell* GetPresShell() const;
