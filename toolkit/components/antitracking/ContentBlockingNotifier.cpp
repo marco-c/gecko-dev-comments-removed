@@ -297,18 +297,20 @@ void NotifyBlockingDecision(nsIChannel* aTrackingChannel,
     return;
   }
 
-  
-  
-  
   if (aRejectedReason ==
       nsIWebProgressListener::STATE_COOKIES_PARTITIONED_TRACKER) {
+    ContentBlockingNotifier::OnEvent(
+        aTrackingChannel, true,
+        nsIWebProgressListener::STATE_COOKIES_PARTITIONED_TRACKER,
+        trackingOrigin);
+    
     return;
   }
 
   uint32_t classificationFlags =
       classifiedChannel->GetThirdPartyClassificationFlags();
-  if (classificationFlags & nsIClassifiedChannel::ClassificationFlags::
-                                CLASSIFIED_ANY_BASIC_TRACKING) {
+  if (classificationFlags &
+      nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_TRACKING) {
     ContentBlockingNotifier::OnEvent(
         aTrackingChannel, false,
         nsIWebProgressListener::STATE_COOKIES_LOADED_TRACKER, trackingOrigin);
