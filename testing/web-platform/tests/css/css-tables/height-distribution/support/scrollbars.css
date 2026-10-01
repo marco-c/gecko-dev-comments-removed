@@ -1,4 +1,4 @@
-
+/* This makes the scrollbars visible on mac, both to humans and screenshots.*/
 
 ::-webkit-scrollbar {
     -webkit-appearance: none;
@@ -6,5 +6,8 @@
 
 ::-webkit-scrollbar-track {
     background-color: #eee;
-    border-radius: 8px;
+}
+
+html {
+  scrollbar-color: #eee #eee;
 }
