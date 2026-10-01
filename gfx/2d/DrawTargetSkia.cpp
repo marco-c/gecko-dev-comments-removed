@@ -823,9 +823,6 @@ void DrawTargetSkia::DrawSurfaceWithShadow(SourceSurface* aSurface,
   mCanvas->save();
   mCanvas->resetMatrix();
 
-  SkPaint paint;
-  paint.setBlendMode(GfxOpToSkiaOp(aOperator));
-
   
   
   
@@ -833,28 +830,36 @@ void DrawTargetSkia::DrawSurfaceWithShadow(SourceSurface* aSurface,
   
   
   
-
-  SkPaint shadowPaint;
-  shadowPaint.setBlendMode(GfxOpToSkiaOp(aOperator));
-
-  auto shadowDest = IntPoint::Round(aDest + aShadow.mOffset);
-
-  sk_sp<SkImageFilter> blurFilter(
-      SkImageFilters::Blur(aShadow.mSigma, aShadow.mSigma, nullptr));
-
-  shadowPaint.setImageFilter(blurFilter);
-  shadowPaint.setColor(ColorToSkColor(aShadow.mColor, 1.0f));
 
   
   
   
   if (sk_sp<SkImage> alphaImage = ExtractAlphaImage(image, true)) {
-    mCanvas->drawImage(alphaImage, shadowDest.x, shadowDest.y,
-                       SkSamplingOptions(SkFilterMode::kLinear), &shadowPaint);
+    SkPaint shadowPaint;
+    shadowPaint.setBlendMode(GfxOpToSkiaOp(aOperator));
+    shadowPaint.setColor(ColorToSkColor(aShadow.mColor, 1.0f));
+    auto shadowDest = IntPoint::Round(aDest + aShadow.mOffset);
+    SkPoint offset = SkPoint::Make(0, 0);
+    sk_sp<SkImage> blurred(GaussianBlur::BlurAlphaMask(
+        alphaImage.get(), Point(aShadow.mSigma, aShadow.mSigma), offset));
+    if (blurred) {
+      mCanvas->drawImage(
+          blurred, shadowDest.x + offset.x(), shadowDest.y + offset.y(),
+          SkSamplingOptions(SkFilterMode::kLinear), &shadowPaint);
+    } else {
+      sk_sp<SkImageFilter> blurFilter(
+          SkImageFilters::Blur(aShadow.mSigma, aShadow.mSigma, nullptr));
+      shadowPaint.setImageFilter(blurFilter);
+      mCanvas->drawImage(alphaImage, shadowDest.x, shadowDest.y,
+                         SkSamplingOptions(SkFilterMode::kLinear),
+                         &shadowPaint);
+    }
   }
 
   if (aSurface->GetFormat() != SurfaceFormat::A8) {
     
+    SkPaint paint;
+    paint.setBlendMode(GfxOpToSkiaOp(aOperator));
     auto dest = IntPoint::Round(aDest);
     mCanvas->drawImage(image, dest.x, dest.y,
                        SkSamplingOptions(SkFilterMode::kLinear), &paint);
