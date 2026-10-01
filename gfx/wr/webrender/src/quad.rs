@@ -697,10 +697,13 @@ fn prepare_quad_impl(
         };
 
         
+        
+        
         if device_bounds.width() > MIN_AA_SEGMENTS_SIZE
             && device_bounds.height() > MIN_AA_SEGMENTS_SIZE
             && local_bounds.width() > MIN_AA_SEGMENTS_SIZE
-            && local_bounds.height() > MIN_AA_SEGMENTS_SIZE {
+            && local_bounds.height() > MIN_AA_SEGMENTS_SIZE
+            && !pattern.kind.requires_backdrop_readback() {
             quad_flags |= QuadFlags::USE_AA_SEGMENTS;
         }
 
