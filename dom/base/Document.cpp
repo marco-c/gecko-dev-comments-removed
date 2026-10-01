@@ -19072,7 +19072,9 @@ void Document::SetUserHasInteracted() {
           ("Document %p has been interacted by user.", this));
 
   
-  bool alreadyHadUserInteractionPermission =
+  
+  
+  const bool hadPriorUserInteraction =
       ContentBlockingUserInteraction::Exists(NodePrincipal());
   MaybeStoreUserInteractionAsPermission();
 
@@ -19102,9 +19104,7 @@ void Document::SetUserHasInteracted() {
     wgc->SendUpdateDocumentHasUserInteracted(true);
   }
 
-  if (alreadyHadUserInteractionPermission) {
-    MaybeAllowStorageForOpenerAfterUserInteraction();
-  }
+  MaybeAllowStorageForOpenerAfterUserInteraction(hadPriorUserInteraction);
 }
 
 BrowsingContext* Document::GetBrowsingContext() const {
@@ -19281,7 +19281,8 @@ void Document::SetDocTreeHadMedia() {
   }
 }
 
-void Document::MaybeAllowStorageForOpenerAfterUserInteraction() {
+void Document::MaybeAllowStorageForOpenerAfterUserInteraction(
+    bool aHadPriorUserInteraction) {
   if (!CookieJarSettings()->GetRejectThirdPartyContexts()) {
     return;
   }
@@ -19359,17 +19360,20 @@ void Document::MaybeAllowStorageForOpenerAfterUserInteraction() {
   MOZ_ASSERT(identityHandler);
   identityHandler->IsContinuationWindow()->Then(
       GetCurrentSerialEventTarget(), __func__,
-      [self, openerBC](const MozPromise<bool, nsresult,
-                                        true>::ResolveOrRejectValue& result) {
+      [self, openerBC, aHadPriorUserInteraction](
+          const MozPromise<bool, nsresult, true>::ResolveOrRejectValue&
+              result) {
         if (!result.IsResolve() || !result.ResolveValue()) {
           if (XRE_IsParentProcess()) {
             (void)StorageAccessAPIHelper::AllowAccessForOnParentProcess(
                 self->NodePrincipal(), openerBC,
-                ContentBlockingNotifier::eOpenerAfterUserInteraction);
+                ContentBlockingNotifier::eOpenerAfterUserInteraction, nullptr,
+                Some(aHadPriorUserInteraction));
           } else {
             (void)StorageAccessAPIHelper::AllowAccessForOnChildProcess(
                 self->NodePrincipal(), openerBC,
-                ContentBlockingNotifier::eOpenerAfterUserInteraction);
+                ContentBlockingNotifier::eOpenerAfterUserInteraction, nullptr,
+                Some(aHadPriorUserInteraction));
           }
         }
       });
