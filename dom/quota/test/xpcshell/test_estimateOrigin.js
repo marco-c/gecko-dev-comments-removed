@@ -42,24 +42,26 @@ async function testSteps() {
 
   info("Verifying origin estimations");
 
+  
+  
   await verifyOriginEstimation(
     getPrincipal("https://foo1.example1.com"),
-    300,
+    100,
     groupLimitBytes
   );
   await verifyOriginEstimation(
     getPrincipal("https://foo2.example1.com"),
-    300,
+    200,
     groupLimitBytes
   );
   await verifyOriginEstimation(
     getPrincipal("https://foo1.example2.com"),
-    700,
+    300,
     groupLimitBytes
   );
   await verifyOriginEstimation(
     getPrincipal("https://foo2.example2.com"),
-    700,
+    400,
     groupLimitBytes
   );
 
@@ -70,10 +72,57 @@ async function testSteps() {
 
   info("Verifying origin estimation");
 
+  
+  
   await verifyOriginEstimation(
     getPrincipal("https://foo2.example2.com"),
-    1000,
+    400,
     globalLimitBytes
+  );
+
+  info("Writing to an unrelated group");
+
+  await fillOrigin(getPrincipal("https://foo1.example3.com"), 500);
+
+  info("Verifying the persisted origin does not observe the unrelated write");
+
+  await verifyOriginEstimation(
+    getPrincipal("https://foo2.example2.com"),
+    400,
+    globalLimitBytes
+  );
+
+  info("Filling the default and temporary repositories of a single origin");
+
+  
+  
+  
+  await fillOrigin(getPrincipal("https://foo1.example4.com"), 100);
+  await fillOrigin(getPrincipal("https://foo1.example4.com"), 50, "temporary");
+
+  info("Verifying the estimate sums default and temporary repository usage");
+
+  await verifyOriginEstimation(
+    getPrincipal("https://foo1.example4.com"),
+    150,
+    groupLimitBytes
+  );
+
+  info("Filling the private repository of a private-browsing origin");
+
+  
+  
+  await fillOrigin(
+    getPrincipal("https://foo1.example5.com", { privateBrowsingId: 1 }),
+    75
+  );
+
+  info("Verifying the estimate reports private repository usage");
+
+  await verifyOriginEstimation(
+    getPrincipal("https://foo1.example5.com", { privateBrowsingId: 1 }),
+    75,
+    groupLimitBytes
   );
 
   finishTest();

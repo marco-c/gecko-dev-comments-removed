@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ServiceWorkerQuotaUtils.h"
 
 #include "MainThreadUtils.h"
@@ -24,6 +22,7 @@
 using mozilla::dom::quota::QuotaManagerService;
 
 namespace mozilla::dom {
+
 
 
 
@@ -124,8 +123,8 @@ void QuotaUsageChecker::Start() {
 
   
   nsCOMPtr<nsIQuotaRequest> request;
-  if (NS_WARN_IF(
-          NS_FAILED(qms->Estimate(mPrincipal, getter_AddRefs(request))))) {
+  if (NS_WARN_IF(NS_FAILED(
+          qms->EstimateGroupUsage(mPrincipal, getter_AddRefs(request))))) {
     return;
   }
   request->SetCallback(this);

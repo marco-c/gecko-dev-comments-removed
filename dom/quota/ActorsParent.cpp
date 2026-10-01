@@ -8399,7 +8399,8 @@ std::pair<uint64_t, uint64_t> QuotaManager::GetUsageAndLimitForEstimate(
     const OriginMetadata& aOriginMetadata) {
   AssertIsOnIOThread();
 
-  int64_t totalGroupUsage = 0;
+  int64_t originUsage = 0;
+  bool persisted = false;
 
   {
     MutexAutoLock lock(mQuotaMutex);
@@ -8408,31 +8409,83 @@ std::pair<uint64_t, uint64_t> QuotaManager::GetUsageAndLimitForEstimate(
     if (mGroupInfoPairs.Get(aOriginMetadata.mGroup, &pair)) {
       for (const PersistenceType type : kBestEffortPersistenceTypes) {
         RefPtr<GroupInfo> groupInfo = pair->LockedGetGroupInfo(type);
-        if (groupInfo) {
-          if (type == PERSISTENCE_TYPE_DEFAULT) {
-            RefPtr<OriginInfo> originInfo =
-                groupInfo->LockedGetOriginInfo(aOriginMetadata.mOrigin);
+        if (!groupInfo) {
+          continue;
+        }
 
-            
-            
-            
-            if (originInfo && originInfo->LockedPersisted()) {
-              
-              
-              return std::pair(QM_CLAMP_TO_ZERO(originInfo->LockedUsage()),
-                               mTemporaryStorageLimit);
-            }
-          }
+        RefPtr<OriginInfo> originInfo =
+            groupInfo->LockedGetOriginInfo(aOriginMetadata.mOrigin);
+        if (!originInfo) {
+          continue;
+        }
 
-          AssertNoOverflow(totalGroupUsage, groupInfo->mUsage);
-          totalGroupUsage += groupInfo->mUsage;
+        
+        
+        
+        
+        
+        
+        
+        AssertNoOverflow(originUsage, originInfo->LockedUsage());
+        originUsage += originInfo->LockedUsage();
+
+        if (type == PERSISTENCE_TYPE_DEFAULT && originInfo->LockedPersisted()) {
+          persisted = true;
         }
       }
     }
   }
 
   
-  return std::pair(QM_CLAMP_TO_ZERO(totalGroupUsage), GetGroupLimit());
+  
+  
+  
+  
+  
+  return std::pair(QM_CLAMP_TO_ZERO(originUsage),
+                   persisted ? mTemporaryStorageLimit : GetGroupLimit());
+}
+
+std::pair<uint64_t, uint64_t> QuotaManager::GetGroupUsageAndLimitForEstimate(
+    const OriginMetadata& aOriginMetadata) {
+  AssertIsOnIOThread();
+
+  int64_t groupUsage = 0;
+
+  {
+    MutexAutoLock lock(mQuotaMutex);
+
+    GroupInfoPair* pair;
+    if (mGroupInfoPairs.Get(aOriginMetadata.mGroup, &pair)) {
+      for (const PersistenceType type : kBestEffortPersistenceTypes) {
+        RefPtr<GroupInfo> groupInfo = pair->LockedGetGroupInfo(type);
+        if (!groupInfo) {
+          continue;
+        }
+
+        if (type == PERSISTENCE_TYPE_DEFAULT) {
+          RefPtr<OriginInfo> originInfo =
+              groupInfo->LockedGetOriginInfo(aOriginMetadata.mOrigin);
+
+          
+          
+          
+          
+          if (originInfo && originInfo->LockedPersisted()) {
+            return std::pair(QM_CLAMP_TO_ZERO(originInfo->LockedUsage()),
+                             mTemporaryStorageLimit);
+          }
+        }
+
+        AssertNoOverflow(groupUsage, groupInfo->mUsage);
+        groupUsage += groupInfo->mUsage;
+      }
+    }
+  }
+
+  
+  
+  return std::pair(QM_CLAMP_TO_ZERO(groupUsage), GetGroupLimit());
 }
 
 uint64_t QuotaManager::GetOriginUsage(
