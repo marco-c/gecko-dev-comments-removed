@@ -356,10 +356,10 @@ main-context-menu-send-to-mobile-2 =
 
 ## Displayed within the send tab submenu to prompt users to sign in, enable sync, pair a device, or troubleshoot device issues.
 
-main-context-menu-send-to-mobile-sign-in = Sign in to send tabs
+main-context-menu-send-to-mobile-sign-in = Sign in to Send Tabs
 main-context-menu-send-to-mobile-enable-sync2 = Enable sync to send a tab
 main-context-menu-send-to-mobile-connect-phone2 = Connect your phone
-main-context-menu-send-to-mobile-device-missing2 = Don’t see your device?
+main-context-menu-send-to-mobile-device-missing2 = Don’t See Your Device?
 main-context-menu-send-to-mobile-sign-in-from-link = Sign in to Send a Link
 main-context-menu-send-to-mobile-sign-in-from-page = Sign in to Send a Page
 main-context-menu-send-to-mobile-enable-sync3 = Turn on Sync to Send Tabs
@@ -468,8 +468,11 @@ main-context-menu-inspect =
     .label = Inspect
     .accesskey = Q
 
-main-context-menu-inspect-a11y-properties =
+# This item only shows for DevTools users, so its access key may be the same
+# as another item's, such as "Copy Image".
+main-context-menu-inspect-a11y-properties2 =
     .label = Inspect Accessibility Properties
+    .accesskey = y
 
 main-context-menu-eme-learn-more =
     .label = Learn more about DRM…
