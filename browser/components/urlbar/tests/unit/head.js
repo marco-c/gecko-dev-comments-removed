@@ -463,6 +463,9 @@ async function cleanupPlaces() {
 
 
 
+
+
+
 function makeBookmarkResult(
   queryContext,
   {
@@ -476,6 +479,7 @@ function makeBookmarkResult(
     lastVisit = undefined,
     isPinned = undefined,
     isSponsored = undefined,
+    isBlockable = undefined,
     providerName = undefined,
   }
 ) {
@@ -509,6 +513,9 @@ function makeBookmarkResult(
   }
   if (isSponsored !== undefined) {
     payload.isSponsored = isSponsored;
+  }
+  if (isBlockable !== undefined) {
+    payload.isBlockable = isBlockable;
   }
 
   return new UrlbarResult({
@@ -931,6 +938,9 @@ function makeSearchResult(
 
 
 
+
+
+
 function makeVisitResult(
   queryContext,
   {
@@ -946,6 +956,7 @@ function makeVisitResult(
     lastVisit = undefined,
     isPinned = undefined,
     isSponsored = undefined,
+    isBlockable = undefined,
   }
 ) {
   let payload = {
@@ -979,6 +990,10 @@ function makeVisitResult(
     payload.helpUrl =
       Services.urlFormatter.formatURLPref("app.support.baseURL") +
       "awesome-bar-result-menu";
+  }
+
+  if (isBlockable !== undefined) {
+    payload.isBlockable = isBlockable;
   }
 
   if (iconUri) {
@@ -1127,6 +1142,7 @@ async function check_results({
     controller: {
       removeResult() {},
     },
+    clearTopSitesCache() {},
   });
 
   if (incompleteSearch) {
