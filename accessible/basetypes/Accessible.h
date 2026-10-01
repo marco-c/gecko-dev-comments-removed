@@ -8,6 +8,7 @@
 #include "Units.h"
 #include "mozilla/a11y/AccTypes.h"
 #include "mozilla/a11y/Role.h"
+#include "nsISupportsImpl.h"
 #include "nsRect.h"
 #include "nsStringFwd.h"
 
@@ -171,6 +172,12 @@ class Accessible {
              uint8_t aRoleMapEntryIndex);
 
  public:
+  
+  
+  
+  
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
+
   
 
 
