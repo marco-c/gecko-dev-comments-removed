@@ -387,29 +387,55 @@ impl Drop for Program {
     }
 }
 
-pub struct VAO {
-    
-    pub(super) id: u32,
-    pub(super) ibo_id: IBOId,
-    pub(super) main_vbo_id: VBOId,
-    pub(super) instance_vbo_id: VBOId,
-    pub(super) instance_stride: usize,
-    pub(super) instance_divisor: u32,
-    pub(super) owns_vertices_and_indices: bool,
-    pub(super) owns_instances: bool,
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum BufferKind {
+    Vertex,
+    Index,
 }
 
-impl VAO {
+
+
+#[derive(Debug)]
+pub struct Buffer {
+    
+    pub(super) id: u32,
+    pub(super) kind: BufferKind,
+    
+    pub(super) size: usize,
+}
+
+impl Drop for Buffer {
+    fn drop(&mut self) {
+        debug_assert!(
+            thread::panicking() || self.id == 0,
+            "renderer::deinit not called"
+        );
+    }
+}
+
+
+#[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
+pub struct BufferId(pub(super) u32);
+
+
+
+pub struct VertexArray {
+    
+    pub(super) id: u32,
+    pub(super) vertices: BufferId,
+    pub(super) instances: Option<BufferId>,
+    pub(super) indices: Option<BufferId>,
+    pub(super) instance_stride: usize,
+}
+
+impl VertexArray {
     pub fn instance_stride(&self) -> usize {
         self.instance_stride
     }
-
-    pub fn instance_vbo_id(&self) -> VBOId {
-        self.instance_vbo_id
-    }
 }
 
-impl Drop for VAO {
+impl Drop for VertexArray {
     fn drop(&mut self) {
         debug_assert!(
             thread::panicking() || self.id == 0,
@@ -492,14 +518,6 @@ impl<'a> Drop for MappedTransferBuffer<'a> {
 
 #[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
 pub struct TextureId(pub(super) u64);
-
-
-#[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
-pub struct VBOId(pub(super) u32);
-
-
-#[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
-pub struct IBOId(pub(super) u32);
 
 #[derive(Clone, Debug)]
 pub(super) enum ProgramSourceType {
