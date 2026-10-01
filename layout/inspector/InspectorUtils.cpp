@@ -1665,4 +1665,43 @@ void InspectorUtils::GetComputationSteps(GlobalObject& aGlobalObject,
                             percentageBasis, &aResult);
 }
 
+
+void InspectorUtils::GetSubstitutedValue(GlobalObject& aGlobalObject,
+                                         const nsACString& aExpression,
+                                         Element& aElement,
+                                         const nsAString& aPseudo,
+                                         nsACString& aResult) {
+  Document* doc = aElement.GetComposedDoc();
+  if (!doc) {
+    
+    
+    aResult.SetIsVoid(true);
+    return;
+  }
+
+  auto pseudo = PseudoStyleRequest::Parse(
+      aPseudo, aElement.OwnerDoc()->DefaultStyleAttrURLData());
+  if (!pseudo) {
+    
+    
+    aResult.SetIsVoid(true);
+    return;
+  }
+
+  RefPtr<const ComputedStyle> computedStyle =
+      GetCleanComputedStyleForElement(&aElement, *pseudo);
+  if (!computedStyle) {
+    
+    
+    
+    
+    aResult.SetIsVoid(true);
+    return;
+  }
+
+  Servo_GetSubstitutedValue(&aExpression, &aElement, pseudo->mType,
+                            computedStyle, doc->EnsureStyleSet().RawData(),
+                            &aResult);
+}
+
 }  
