@@ -35,12 +35,12 @@
 #include "gfxFontFeatures.h"      
 #include "gfxFontSrcPrincipal.h"  
 #include "gfxFontSrcURI.h"        
+#include "gfxFontVariations.h"    
 #include "mozilla/Assertions.h"  
-#include "mozilla/HashFunctions.h"      
-#include "mozilla/TimeStamp.h"          
-#include "mozilla/gfx/FontVariation.h"  
-#include "nsDebug.h"                    
-#include "nsIReferrerInfo.h"            
+#include "mozilla/HashFunctions.h"  
+#include "mozilla/TimeStamp.h"      
+#include "nsDebug.h"                
+#include "nsIReferrerInfo.h"        
 
 class gfxFont;
 class gfxUserFontSet;
@@ -474,10 +474,10 @@ class gfxUserFontSet {
       }
 
       static uint32_t HashVariations(
-          const nsTArray<mozilla::gfx::FontVariation>& aVariations) {
+          const nsTArray<gfxFontVariation>& aVariations) {
         return mozilla::HashBytes(
             aVariations.Elements(),
-            aVariations.Length() * sizeof(mozilla::gfx::FontVariation));
+            aVariations.Length() * sizeof(gfxFontVariation));
       }
 
       RefPtr<gfxFontSrcURI> mURI;

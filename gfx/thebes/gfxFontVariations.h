@@ -5,11 +5,14 @@
 #ifndef GFX_FONT_VARIATIONS_H
 #define GFX_FONT_VARIATIONS_H
 
-#include "mozilla/gfx/FontVariation.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "nsString.h"
 #include "nsTArray.h"
 
-typedef mozilla::gfx::FontVariation gfxFontVariation;
+
+
+
+using gfxFontVariation = mozilla::StyleVariationValue<float>;
 
 
 
