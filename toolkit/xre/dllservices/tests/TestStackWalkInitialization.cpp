@@ -2,12 +2,11 @@
 
 
 
-
-
 #include "nsWindowsHelpers.h"
 #include "mozilla/Array.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/ScopeExit.h"
+#include "mozilla/StackWalkThread.h"
+#include "mozilla/StackWalk_windows.h"
 #include "mozilla/WindowsStackWalkInitialization.h"
 
 #include <windows.h>
@@ -115,33 +114,56 @@ void TestLockCollectionAndValidation(
   TEST_PASS(L"Collected and validated locks successfully\n");
 }
 
-DWORD WINAPI LookupThreadProc(LPVOID aEvents) {
-  auto events = reinterpret_cast<nsAutoHandle*>(aEvents);
-  auto& lookupThreadReady = events[0];
-  auto& initiateLookup = events[1];
-  auto& lookupThreadDone = events[2];
+void CountStackFrame(uint32_t, void*, void*, void* aClosure) {
+  ++*reinterpret_cast<uint32_t*>(aClosure);
+}
 
-  
-  ::SetEvent(lookupThreadReady);
-
-  
-  if (::WaitForSingleObject(initiateLookup, MAX_TIMEOUT_MS) == WAIT_OBJECT_0) {
-    
-    DWORD64 imageBase;
-    ::RtlLookupFunctionEntry(reinterpret_cast<DWORD64>(LookupThreadProc),
-                             &imageBase, nullptr);
-
-    
-    ::SetEvent(lookupThreadDone);
-  }
-
-  return 0;
+uint32_t WalkOwnStack() {
+  uint32_t frames = 0;
+  MozStackWalkThread(CountStackFrame, 0, &frames, nullptr, nullptr);
+  return frames;
 }
 
 
+static SRWLOCK* gStackWalkLocks[2];
 
 
-void TestLocksPreventLookup(const mozilla::Array<void*, 2>& aStackWalkLocks) {
+
+struct MOZ_RAII AutoHoldStackWalkLocks {
+  AutoHoldStackWalkLocks() {
+    if (!::TryAcquireSRWLockExclusive(gStackWalkLocks[0])) {
+      TEST_FAILED(L"Failed to acquire lock 0\n");
+    }
+    if (!::TryAcquireSRWLockExclusive(gStackWalkLocks[1])) {
+      ::ReleaseSRWLockExclusive(gStackWalkLocks[0]);
+      TEST_FAILED(L"Failed to acquire lock 1\n");
+    }
+  }
+
+  ~AutoHoldStackWalkLocks() {
+    ::ReleaseSRWLockExclusive(gStackWalkLocks[1]);
+    ::ReleaseSRWLockExclusive(gStackWalkLocks[0]);
+  }
+};
+
+
+
+
+
+struct WorkerState {
+  nsAutoHandle* mEvents;
+  uint32_t mBaselineFrames;
+  uint32_t mFrames;
+};
+
+
+
+
+
+
+template <typename Blocker>
+bool RunWorkerWhileBlocked(LPTHREAD_START_ROUTINE aWorkerStartRoutine,
+                           WorkerState& aState) {
   nsAutoHandle events[3]{};
   for (int i = 0; i < 3; ++i) {
     nsAutoHandle event(::CreateEventW(nullptr,  TRUE,
@@ -151,60 +173,139 @@ void TestLocksPreventLookup(const mozilla::Array<void*, 2>& aStackWalkLocks) {
     }
     events[i].swap(event);
   }
+  aState.mEvents = events;
 
-  auto& lookupThreadReady = events[0];
-  auto& initiateLookup = events[1];
-  auto& lookupThreadDone = events[2];
-
-  nsAutoHandle lookupThread(::CreateThread(nullptr, 0, LookupThreadProc,
-                                           reinterpret_cast<void*>(events), 0,
-                                           nullptr));
-  if (!lookupThread) {
-    TEST_FAILED(L"Failed to create lookup thread\n");
+  nsAutoHandle workerThread(
+      ::CreateThread(nullptr, 0, aWorkerStartRoutine, &aState, 0, nullptr));
+  if (!workerThread) {
+    TEST_FAILED(L"Failed to create worker thread\n");
   }
 
-  if (::WaitForSingleObject(lookupThreadReady, MAX_TIMEOUT_MS) !=
-      WAIT_OBJECT_0) {
-    TEST_FAILED(L"Lookup thread did not signal the lookupThreadReady event\n");
+  auto& ready = events[0];
+  auto& go = events[1];
+  auto& done = events[2];
+
+  if (::WaitForSingleObject(ready, MAX_TIMEOUT_MS) != WAIT_OBJECT_0) {
+    TEST_FAILED(L"Worker thread did not become ready\n");
   }
 
-  mozilla::Array<SRWLOCK*, 2> stackWalkLocks{
-      reinterpret_cast<SRWLOCK*>(aStackWalkLocks[0]),
-      reinterpret_cast<SRWLOCK*>(aStackWalkLocks[1])};
-  if (!::TryAcquireSRWLockExclusive(stackWalkLocks[0])) {
-    TEST_FAILED(L"Failed to acquire lock 0\n");
-  }
-  if (!::TryAcquireSRWLockExclusive(stackWalkLocks[1])) {
-    ::ReleaseSRWLockExclusive(stackWalkLocks[0]);
-    TEST_FAILED(L"Failed to acquire lock 1\n");
-  }
-
+  bool workerStarted;
+  bool workerCompleted;
   {
-    auto onExitScope = mozilla::MakeScopeExit([&stackWalkLocks]() {
-      ::ReleaseSRWLockExclusive(stackWalkLocks[1]);
-      ::ReleaseSRWLockExclusive(stackWalkLocks[0]);
-    });
+    Blocker blocker;
 
-    if (!::SetEvent(initiateLookup)) {
-      TEST_FAILED(L"Failed to signal the initiateLookup event\n");
-    }
-
-    if (::WaitForSingleObject(lookupThreadDone, MAX_TIMEOUT_MS) !=
-        WAIT_TIMEOUT) {
-      TEST_FAILED(
-          L"Lookup thread was not stuck during lookup while we acquired the "
-          L"locks exclusively\n");
-    }
+    workerStarted = ::SetEvent(go);
+    workerCompleted =
+        workerStarted &&
+        ::WaitForSingleObject(done, MAX_TIMEOUT_MS) == WAIT_OBJECT_0;
   }
 
-  if (::WaitForSingleObject(lookupThreadDone, MAX_TIMEOUT_MS) !=
-      WAIT_OBJECT_0) {
+  if (!workerStarted) {
+    TEST_FAILED(L"Failed to signal the worker thread\n");
+  }
+
+  
+  
+  
+  if (::WaitForSingleObject(workerThread, MAX_TIMEOUT_MS) != WAIT_OBJECT_0) {
+    TEST_FAILED(L"Worker thread did not exit after being unblocked\n");
+  }
+
+  return workerCompleted;
+}
+
+DWORD WINAPI LookupThreadProc(LPVOID aParam) {
+  auto state = reinterpret_cast<WorkerState*>(aParam);
+  auto& ready = state->mEvents[0];
+  auto& go = state->mEvents[1];
+  auto& done = state->mEvents[2];
+
+  ::SetEvent(ready);
+
+  if (::WaitForSingleObject(go, MAX_TIMEOUT_MS) == WAIT_OBJECT_0) {
+    
+    DWORD64 imageBase;
+    ::RtlLookupFunctionEntry(reinterpret_cast<DWORD64>(LookupThreadProc),
+                             &imageBase, nullptr);
+
+    ::SetEvent(done);
+  }
+
+  return 0;
+}
+
+
+
+
+void TestLocksPreventLookup() {
+  WorkerState state{};
+  if (RunWorkerWhileBlocked<AutoHoldStackWalkLocks>(LookupThreadProc, state)) {
     TEST_FAILED(
-        L"Lookup thread did not signal the lookupThreadDone event after locks "
-        L"were released\n");
+        L"Lookup thread was not stuck during lookup while we acquired the "
+        L"locks exclusively\n");
   }
 
   TEST_PASS(L"Locks prevented lookup while acquired exclusively\n");
+}
+
+DWORD WINAPI WalkThreadProc(LPVOID aParam) {
+  auto state = reinterpret_cast<WorkerState*>(aParam);
+  auto& ready = state->mEvents[0];
+  auto& go = state->mEvents[1];
+  auto& done = state->mEvents[2];
+
+  state->mBaselineFrames = WalkOwnStack();
+
+  ::SetEvent(ready);
+
+  if (::WaitForSingleObject(go, MAX_TIMEOUT_MS) == WAIT_OBJECT_0) {
+    state->mFrames = WalkOwnStack();
+    ::SetEvent(done);
+  }
+
+  return 0;
+}
+
+
+
+
+void CheckWorkerCouldNotWalk(const WorkerState& aState, bool aWalkCompleted) {
+  if (!aState.mBaselineFrames) {
+    TEST_FAILED(L"Baseline stack walk captured no frames\n");
+  }
+  if (!aWalkCompleted) {
+    TEST_FAILED(L"Stack walk did not complete while it was blocked\n");
+  }
+  if (aState.mFrames) {
+    TEST_FAILED(L"Stack walk captured frames while it was blocked\n");
+  }
+}
+
+
+
+
+void TestSuppressionPreventsWalking() {
+  WorkerState state{};
+  bool walkCompleted =
+      RunWorkerWhileBlocked<AutoSuppressStackWalking>(WalkThreadProc, state);
+
+  CheckWorkerCouldNotWalk(state, walkCompleted);
+
+  TEST_PASS(
+      L"Suppression prevented walking on another thread while both locks "
+      L"were free\n");
+}
+
+
+
+void TestLocksPreventWalking() {
+  WorkerState state{};
+  bool walkCompleted =
+      RunWorkerWhileBlocked<AutoHoldStackWalkLocks>(WalkThreadProc, state);
+
+  CheckWorkerCouldNotWalk(state, walkCompleted);
+
+  TEST_PASS(L"Held locks prevented walking without suppressions\n");
 }
 
 int wmain(int argc, wchar_t* argv[]) {
@@ -213,7 +314,13 @@ int wmain(int argc, wchar_t* argv[]) {
   mozilla::Array<void*, 2> stackWalkLocks;
   TestLockCollectionAndValidation(stackWalkLocks);
 
-  TestLocksPreventLookup(stackWalkLocks);
+  InitializeStackWalkLocks(stackWalkLocks);
+  gStackWalkLocks[0] = reinterpret_cast<SRWLOCK*>(stackWalkLocks[0]);
+  gStackWalkLocks[1] = reinterpret_cast<SRWLOCK*>(stackWalkLocks[1]);
+
+  TestLocksPreventLookup();
+  TestSuppressionPreventsWalking();
+  TestLocksPreventWalking();
 
   return 0;
 }
