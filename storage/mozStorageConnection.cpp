@@ -1322,10 +1322,11 @@ nsresult Connection::initialize(nsIFileURL* aFileURL) {
         hasKey = true;
       }
     }
-    
-    
-    SetDatabaseEncrypted(hasKey);
   }
+  
+  
+  
+  SetDatabaseEncrypted(hasKey);
 
   
   
@@ -1415,6 +1416,22 @@ nsresult Connection::initializeInternal() {
   if (srv != SQLITE_OK) {
     return convertResultCode(srv);
   }
+
+  
+  
+  
+  
+  
+  
+#if !defined(ANDROID) && !defined(HAVE_64BIT_BUILD)
+  if (mDatabaseEncrypted) {
+    srv = executeSql(mDBConn,
+                     MOZ_STORAGE_UNIQUIFY_QUERY_STR "PRAGMA temp_store = 2;");
+    if (srv != SQLITE_OK) {
+      return convertResultCode(srv);
+    }
+  }
+#endif
 
   
   srv = registerFunctions(mDBConn);

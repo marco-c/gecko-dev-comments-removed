@@ -92,6 +92,9 @@ DEFINES['SQLITE_OMIT_BUILTIN_TEST'] = True
 
 
 
+
+
+
 if CONFIG['OS_TARGET'] == 'Android':
     
     DEFINES['SQLITE_TEMP_STORE'] = 3
