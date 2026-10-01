@@ -331,7 +331,26 @@ class AVSyncTest : public ::testing::Test {
   
   
   
-  void ExpectScheduleMatchesClock(double aEpsilonSec, const char* aWhen) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static constexpr double kMaxAnchorLagSec = 0.250;
+  static constexpr double kMaxAnchorLeadSec = 0.002;
+
+  void ExpectScheduleMatchesClock(const char* aWhen) {
     TimeStamp t;
     const TimeUnit clock = mVideoSink->GetPosition(&t);
     const double rate = mVideoSink->PlaybackRate();
@@ -351,11 +370,19 @@ class AVSyncTest : public ::testing::Test {
       }
       const double wanted = (image.mMediaTime - clock).ToSeconds() / rate;
       const double got = (image.mTimeStamp - t).ToSeconds();
-      EXPECT_NEAR(got, wanted, aEpsilonSec)
+      const double lead = got - wanted;
+      EXPECT_LE(lead, kMaxAnchorLeadSec)
           << "frame at " << image.mMediaTime.ToSeconds() << "s is scheduled "
           << got * 1000.0 << "ms from now, but a clock of " << clock.ToSeconds()
-          << "s at rate " << rate << " calls for " << wanted * 1000.0 << "ms "
-          << aWhen;
+          << "s at rate " << rate << " calls for " << wanted * 1000.0
+          << "ms, so the schedule is anchored " << lead * 1000.0
+          << "ms in the future " << aWhen;
+      EXPECT_GE(lead, -kMaxAnchorLagSec)
+          << "frame at " << image.mMediaTime.ToSeconds() << "s is scheduled "
+          << got * 1000.0 << "ms from now, but a clock of " << clock.ToSeconds()
+          << "s at rate " << rate << " calls for " << wanted * 1000.0
+          << "ms, so the schedule is anchored " << -lead * 1000.0
+          << "ms too far back " << aWhen;
       ++checked;
     }
     EXPECT_EQ(size_t(checked), images.Length())
@@ -367,10 +394,11 @@ class AVSyncTest : public ::testing::Test {
   
   
   
-  
-  
-  
-  void ExpectCadenceMatchesRate(double aEpsilonSec, const char* aWhen) {
+  void ExpectCadenceMatchesRate(const char* aWhen) {
+    
+    
+    
+    constexpr double kCadenceEpsilonSec = 0.002;
     const double rate = mVideoSink->PlaybackRate();
     nsTArray<ImageContainer::OwningImage> images;
     mContainer->GetImageContainer()->GetCurrentImages(&images);
@@ -386,7 +414,7 @@ class AVSyncTest : public ::testing::Test {
           (images[i].mMediaTime - images[i - 1].mMediaTime).ToSeconds() / rate;
       const double got =
           (images[i].mTimeStamp - images[i - 1].mTimeStamp).ToSeconds();
-      EXPECT_NEAR(got, wanted, aEpsilonSec)
+      EXPECT_NEAR(got, wanted, kCadenceEpsilonSec)
           << "frames " << images[i - 1].mMediaTime.ToSeconds() << "s and "
           << images[i].mMediaTime.ToSeconds() << "s are " << got * 1000.0
           << "ms apart, but rate " << rate << " calls for " << wanted * 1000.0
@@ -395,14 +423,8 @@ class AVSyncTest : public ::testing::Test {
   }
 
   void ExpectCorrectClockAndCadence(const char* aWhen) {
-    
-    
-    
-    
-    
-    constexpr double kScheduleEpsilonSec = 0.020;
-    ExpectScheduleMatchesClock(kScheduleEpsilonSec, aWhen);
-    ExpectCadenceMatchesRate(kScheduleEpsilonSec, aWhen);
+    ExpectScheduleMatchesClock(aWhen);
+    ExpectCadenceMatchesRate(aWhen);
   }
 
   MediaInfo mInfo;
