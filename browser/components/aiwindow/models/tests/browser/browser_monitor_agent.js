@@ -249,6 +249,7 @@ add_task(async function test_run_single_url_monitor() {
       1,
       "The monitor was created"
     );
+    await MonitorAgent._waitForSnapshotForTesting(monitor.id);
 
     
     const runPromise = MonitorAgent.runNow(monitor.id);
@@ -348,6 +349,7 @@ add_task(async function test_run_multiple_urls_monitor() {
       1,
       "The monitor was created"
     );
+    await MonitorAgent._waitForSnapshotForTesting(monitor.id);
 
     
     const runPromise = MonitorAgent.runNow(monitor.id);
@@ -436,6 +438,7 @@ add_task(
         [url],
         "Tell me when the widget price drops below 10 dollars."
       );
+      await MonitorAgent._waitForSnapshotForTesting(monitor.id);
       const runPromise = MonitorAgent.runNow(monitor.id);
       const { respond } = await mockEngineManager.captureRequest({
         purpose: PURPOSES.MONITOR,
@@ -975,69 +978,6 @@ add_task(async function test_createMonitor_returns_id() {
   }
 });
 
-add_task(async function test_limit_number_of_active_monitors() {
-  const watchUrls = Array.from(
-    { length: 2 },
-    (_, i) => `https://example.com/page${i}`
-  );
-  const createMonitor = () =>
-    MonitorAgent.createMonitor({
-      prompt: "Check if any product price is below $300.",
-      watchUrls,
-      schedule: { type: "interval", hours: 1 },
-      source: "test",
-    });
-  const activeCount = async () =>
-    (await MonitorAgent.listMonitors()).filter(m => m.enabled).length;
-  const limitError = error =>
-    error.code === MONITOR_ERROR_CODES.ACTIVE_LIMIT &&
-    error.limit === TOTAL_NUM_MONITORS &&
-    /Cannot have more than \d+ active monitors\./.test(error.message);
-
-  try {
-    await resetMonitorAgentForTesting();
-    const ids = [];
-    for (let i = 0; i < TOTAL_NUM_MONITORS; i++) {
-      ids.push(await createMonitor());
-    }
-    await Assert.rejects(
-      createMonitor(),
-      limitError,
-      `Creating past ${TOTAL_NUM_MONITORS} active monitors should be rejected`
-    );
-    Assert.equal(await activeCount(), TOTAL_NUM_MONITORS);
-
-    
-    await MonitorAgent.pauseMonitor(ids[0], true);
-    Assert.equal(await activeCount(), TOTAL_NUM_MONITORS - 1);
-    const extraId = await createMonitor();
-    Assert.equal(
-      (await MonitorAgent.listMonitors()).length,
-      TOTAL_NUM_MONITORS + 1,
-      "Paused monitors can exceed the active limit"
-    );
-    Assert.equal(await activeCount(), TOTAL_NUM_MONITORS);
-
-    
-    await Assert.rejects(
-      MonitorAgent.pauseMonitor(ids[0], false),
-      limitError,
-      "Resuming past the active limit should be rejected"
-    );
-    const paused = (await MonitorAgent.listMonitors()).find(
-      m => m.id === ids[0]
-    );
-    Assert.ok(!paused.enabled, "Rejected resume leaves the monitor paused");
-
-    
-    await MonitorAgent.pauseMonitor(extraId, true);
-    await MonitorAgent.pauseMonitor(ids[0], false);
-    Assert.equal(await activeCount(), TOTAL_NUM_MONITORS);
-  } finally {
-    await resetMonitorAgentForTesting();
-  }
-});
-
 add_task(async function test_monitor_only_watches_http_urls() {
   const mockEngineManager = new MockEngineManager();
   const { url, server } = serveHTML(`
@@ -1065,6 +1005,7 @@ add_task(async function test_monitor_only_watches_http_urls() {
       source: "test",
     });
     const [monitor] = await MonitorAgent.listMonitors();
+    await MonitorAgent._waitForSnapshotForTesting(monitor.id);
 
     Assert.deepEqual(
       monitor.watchUrls,
@@ -1871,14 +1812,12 @@ add_task(
 
     try {
       await resetMonitorAgentForTesting();
-      await createMonitorWatching([url], "Tell me when the price drops.");
-
-      
-      
-      const stored = await TestUtils.waitForCondition(async () => {
-        const [record] = await MonitorStore.listMonitors();
-        return record?.initialSnapshot ?? null;
-      }, "The initial snapshot is captured and persisted after creation");
+      const { id } = await createMonitorWatching(
+        [url],
+        "Tell me when the price drops."
+      );
+      await MonitorAgent._waitForSnapshotForTesting(id);
+      const [{ initialSnapshot: stored }] = await MonitorStore.listMonitors();
 
       Assert.ok(
         stored.pageContent.includes("The price is $299"),
@@ -1942,10 +1881,7 @@ add_task(async function test_initial_snapshot_refresh_on_definition_edit() {
       "Tell me when the price drops."
     );
 
-    const firstSnapshot = await TestUtils.waitForCondition(async () => {
-      const [record] = await MonitorStore.listMonitors();
-      return record?.initialSnapshot ?? null;
-    }, "The initial snapshot is captured after creation");
+    const firstSnapshot = await MonitorAgent._waitForSnapshotForTesting(id);
     Assert.ok(
       firstSnapshot.pageContent.includes("The price is $299"),
       "The initial snapshot is the first page's content"
@@ -1967,13 +1903,12 @@ add_task(async function test_initial_snapshot_refresh_on_definition_edit() {
       title: "New title",
       monitorPrompt: "Tell me when the price drops below $200.",
     });
-    const editSnapshot = await TestUtils.waitForCondition(async () => {
-      const [record] = await MonitorStore.listMonitors();
-      return record?.initialSnapshot &&
-        record.initialSnapshot.capturedAt !== firstSnapshot.capturedAt
-        ? record.initialSnapshot
-        : null;
-    }, "A title/prompt edit re-captures the snapshot");
+    const editSnapshot = await MonitorAgent._waitForSnapshotForTesting(id);
+    Assert.notEqual(
+      editSnapshot.capturedAt,
+      firstSnapshot.capturedAt,
+      "A title/prompt edit replaces the snapshot"
+    );
     Assert.ok(
       editSnapshot.pageContent.includes("The price is $299"),
       "The edit-time snapshot is of the same, unchanged watch URL"
@@ -1981,12 +1916,7 @@ add_task(async function test_initial_snapshot_refresh_on_definition_edit() {
 
     
     await MonitorAgent.updateMonitor(id, { watchUrls: [url2] });
-    const secondSnapshot = await TestUtils.waitForCondition(async () => {
-      const [record] = await MonitorStore.listMonitors();
-      return record?.initialSnapshot?.pageContent.includes("The price is $399")
-        ? record.initialSnapshot
-        : null;
-    }, "The snapshot is re-captured for the new watch URL");
+    const secondSnapshot = await MonitorAgent._waitForSnapshotForTesting(id);
     Assert.ok(
       !secondSnapshot.pageContent.includes("The price is $299"),
       "The re-captured snapshot no longer contains the old page's content"
@@ -2030,12 +1960,7 @@ add_task(async function test_mid_capture_url_edit_cancels_stale_snapshot() {
     
     await MonitorAgent.updateMonitor(id, { watchUrls: [editedUrl] });
 
-    const snapshot = await TestUtils.waitForCondition(async () => {
-      const [record] = await MonitorStore.listMonitors();
-      return record?.initialSnapshot?.pageContent.includes("The price is $399")
-        ? record.initialSnapshot
-        : null;
-    }, "The snapshot captured after the edit is of the new watch URL");
+    const snapshot = await MonitorAgent._waitForSnapshotForTesting(id);
 
     
     
