@@ -260,44 +260,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   void SetHasSMILTimeEventListeners() { mMayHaveSMILTimeEventListener = true; }
 
   
-
-
-
-
-
-  bool HasBeforeInputEventListenersForTelemetry() const {
-    return mMayHaveBeforeInputEventListenerForTelemetry;
-  }
-
-  
-
-
-
-  void SetHasBeforeInputEventListenersForTelemetry() {
-    mMayHaveBeforeInputEventListenerForTelemetry = true;
-  }
-
-  
-
-
-
-
-
-
-
-  bool MutationObserverHasObservedNodeForTelemetry() const {
-    return mMutationObserverHasObservedNodeForTelemetry;
-  }
-
-  
-
-
-
-  void SetMutationObserverHasObservedNodeForTelemetry() {
-    mMutationObserverHasObservedNodeForTelemetry = true;
-  }
-
-  
   
   
   
@@ -688,10 +650,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   bool mMayHavePointerRawUpdateEventListener = false;
   bool mMayHaveTransitionEventListener = false;
   bool mMayHaveSMILTimeEventListener = false;
-  
-  
-  bool mMayHaveBeforeInputEventListenerForTelemetry = false;
-  bool mMutationObserverHasObservedNodeForTelemetry = false;
 
   
   nsCOMPtr<nsPIDOMWindowOuter> mOuterWindow;
