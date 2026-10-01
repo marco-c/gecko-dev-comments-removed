@@ -6,10 +6,11 @@
 #include "ContentClassifierFeatureUtils.h"
 #include "ContentClassifierService.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
+#include "mozilla/net/UrlClassifierCommon.h"
 #include "nsIEffectiveTLDService.h"
 #include "nsNetUtil.h"
+#include "nsContentUtils.h"
 #include "mozilla/Components.h"
-#include "mozIThirdPartyUtil.h"
 
 namespace mozilla {
 
@@ -38,46 +39,33 @@ ContentClassifierEngineResult ContentClassifierEngine::CheckNetworkRequest(
   bool important = false;
   nsCString exception;
 
+  const nsCString& sourceHostname = mFeature.mUseTopWindowAsSource
+                                        ? aRequest.mTopWindowHostname
+                                        : aRequest.mSourceHostname;
+  const bool thirdParty = mFeature.mUseTopWindowAsSource
+                              ? aRequest.mThirdParty
+                              : aRequest.mThirdPartyToSource;
+
   nsresult rv = content_classifier_engine_check_network_request_preparsed(
-      mEngine, &aRequest.mUrl, &aRequest.mSchemelessSite,
-      &aRequest.mSourceSchemelessSite, &aRequest.mRequestType,
-      aRequest.mThirdParty, aPreviouslyMatched, &matched, &important,
-      &exception);
+      mEngine, &aRequest.mUrl, &aRequest.mHostname, &sourceHostname,
+      &aRequest.mRequestType, thirdParty, aPreviouslyMatched, &matched,
+      &important, &exception);
   return ContentClassifierEngineResult(matched, !exception.IsEmpty(), important,
                                        rv, mFeature);
 }
 
 ContentClassifierRequest::ContentClassifierRequest(nsIChannel* aChannel)
-    : mThirdParty(true), mValid(false) {
+    : mThirdParty(true), mThirdPartyToSource(true), mValid(false) {
   nsCOMPtr<nsIURI> uri;
   nsresult rv = aChannel->GetURI(getter_AddRefs(uri));
-  if (NS_FAILED(rv)) return;
+  if (NS_FAILED(rv) || !uri) return;
 
   rv = uri->GetSpec(mUrl);
-  if (NS_FAILED(rv)) return;
-
-  nsCString host;
-  rv = uri->GetHost(host);
-  if (NS_FAILED(rv)) return;
-
-  nsCOMPtr<nsIEffectiveTLDService> eTLDService =
-      components::EffectiveTLD::Service();
-  if (!eTLDService) return;
-
-  rv = eTLDService->GetSchemelessSiteFromHost(host, mSchemelessSite);
   if (NS_FAILED(rv)) return;
 
   nsCOMPtr<nsILoadInfo> loadInfo;
   rv = aChannel->GetLoadInfo(getter_AddRefs(loadInfo));
   if (NS_FAILED(rv)) return;
-
-  
-  
-  
-  nsCOMPtr<nsIPrincipal> loadingPrincipal = loadInfo->GetLoadingPrincipal();
-  if (loadingPrincipal) {
-    (void)loadingPrincipal->GetBaseDomain(mSourceSchemelessSite);
-  }
 
   ExtContentPolicyType contentPolicyType =
       loadInfo->GetExternalContentPolicyType();
@@ -124,20 +112,169 @@ ContentClassifierRequest::ContentClassifierRequest(nsIChannel* aChannel)
       mRequestType.AssignLiteral("other");
       break;
   }
-
-  nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
-      components::ThirdPartyUtil::Service();
-  if (!thirdPartyUtil) {
-    return;
-  }
-  rv = thirdPartyUtil->IsThirdPartyChannel(aChannel, nullptr, &mThirdParty);
-  if (NS_FAILED(rv)) {
-    mThirdParty = true;
-  }
-
   mPrivateBrowsing = NS_UsePrivateBrowsing(aChannel);
 
   mIsNonRecommendedAddon = IsNonRecommendedAddonFromLoadInfo(loadInfo);
+
+  mValid = true;
+
+  
+  
+  
+  
+  nsCOMPtr<nsIURI> innermostURI = NS_GetInnermostURI(uri);
+  if (!innermostURI) return;
+
+  nsCString host;
+  rv = innermostURI->GetHost(host);
+  if (NS_FAILED(rv)) return;
+  
+  
+  mHostname = host;
+  nsContentUtils::MaybeFixIPv6Host(mHostname);
+
+  nsCOMPtr<nsIEffectiveTLDService> eTLDService =
+      components::EffectiveTLD::Service();
+  if (!eTLDService) return;
+
+  rv = eTLDService->GetSchemelessSiteFromHost(host, mSchemelessSite);
+  if (NS_FAILED(rv)) return;
+
+  
+  
+  nsCOMPtr<nsIURI> topWindowURI;
+  if (NS_SUCCEEDED(net::UrlClassifierCommon::GetTopWindowURI(
+          aChannel, getter_AddRefs(topWindowURI))) &&
+      topWindowURI) {
+    nsCOMPtr<nsIURI> innermostTopURI = NS_GetInnermostURI(topWindowURI);
+    if (innermostTopURI) {
+      nsCString topHost;
+      if (NS_SUCCEEDED(innermostTopURI->GetHost(topHost))) {
+        mTopWindowHostname = topHost;
+        nsContentUtils::MaybeFixIPv6Host(mTopWindowHostname);
+        rv = eTLDService->GetSchemelessSiteFromHost(topHost,
+                                                    mTopWindowSchemelessSite);
+        if (NS_FAILED(rv)) {
+          mTopWindowSchemelessSite.Truncate();
+        }
+      }
+    }
+  }
+
+  
+  
+  
+  
+  nsCOMPtr<nsIPrincipal> loadingPrincipal = loadInfo->GetLoadingPrincipal();
+  if (loadingPrincipal) {
+    if (NS_FAILED(nsContentUtils::GetHostOrIPv6WithBrackets(loadingPrincipal,
+                                                            mSourceHostname))) {
+      mSourceHostname.Truncate();
+    }
+    rv = loadingPrincipal->GetBaseDomain(mSourceSchemelessSite);
+    if (NS_FAILED(rv)) return;
+  }
+
+  
+  
+  
+  
+  
+  mThirdParty = loadInfo->GetIsThirdPartyContextToTopWindow();
+  mThirdPartyToSource = !mSchemelessSite.Equals(mSourceSchemelessSite);
+}
+
+static bool IsValidRequestType(const nsACString& aRequestType) {
+  return aRequestType.EqualsLiteral("csp_report") ||
+         aRequestType.EqualsLiteral("document") ||
+         aRequestType.EqualsLiteral("font") ||
+         aRequestType.EqualsLiteral("image") ||
+         aRequestType.EqualsLiteral("media") ||
+         aRequestType.EqualsLiteral("object") ||
+         aRequestType.EqualsLiteral("ping") ||
+         aRequestType.EqualsLiteral("script") ||
+         aRequestType.EqualsLiteral("stylesheet") ||
+         aRequestType.EqualsLiteral("subdocument") ||
+         aRequestType.EqualsLiteral("websocket") ||
+         aRequestType.EqualsLiteral("xmlhttprequest") ||
+         aRequestType.EqualsLiteral("other");
+}
+
+ContentClassifierRequest::ContentClassifierRequest(
+    const nsACString& aUrl, const nsACString& aSourceUrl,
+    const nsACString& aTopWindowUrl, const nsACString& aRequestType,
+    bool aPrivateBrowsing, bool aForceThirdPartyToTop,
+    bool aIsNonRecommendedAddon)
+    : mRequestType(aRequestType),
+      mThirdParty(false),
+      mThirdPartyToSource(true),
+      mPrivateBrowsing(aPrivateBrowsing),
+      mValid(false),
+      mIsNonRecommendedAddon(aIsNonRecommendedAddon) {
+  if (!IsValidRequestType(aRequestType)) return;
+
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = NS_NewURI(getter_AddRefs(uri), aUrl);
+  if (NS_FAILED(rv)) return;
+
+  rv = uri->GetSpec(mUrl);
+  if (NS_FAILED(rv)) return;
+
+  nsCString host;
+  rv = uri->GetHost(host);
+  if (NS_FAILED(rv)) return;
+  mHostname = host;
+  nsContentUtils::MaybeFixIPv6Host(mHostname);
+
+  nsCOMPtr<nsIEffectiveTLDService> eTLDService =
+      components::EffectiveTLD::Service();
+  if (!eTLDService) return;
+
+  rv = eTLDService->GetSchemelessSiteFromHost(host, mSchemelessSite);
+  if (NS_FAILED(rv)) return;
+
+  if (!aSourceUrl.IsEmpty()) {
+    nsCOMPtr<nsIURI> sourceUri;
+    rv = NS_NewURI(getter_AddRefs(sourceUri), aSourceUrl);
+    if (NS_FAILED(rv)) return;
+
+    nsCString sourceHost;
+    rv = sourceUri->GetHost(sourceHost);
+    if (NS_FAILED(rv)) return;
+    mSourceHostname = sourceHost;
+    nsContentUtils::MaybeFixIPv6Host(mSourceHostname);
+
+    rv = eTLDService->GetSchemelessSiteFromHost(sourceHost,
+                                                mSourceSchemelessSite);
+    if (NS_FAILED(rv)) return;
+
+    mThirdPartyToSource = !mSchemelessSite.Equals(mSourceSchemelessSite);
+  }
+
+  if (!aTopWindowUrl.IsEmpty()) {
+    nsCOMPtr<nsIURI> topUri;
+    rv = NS_NewURI(getter_AddRefs(topUri), aTopWindowUrl);
+    if (NS_FAILED(rv)) return;
+
+    nsCString topHost;
+    rv = topUri->GetHost(topHost);
+    if (NS_FAILED(rv)) return;
+    mTopWindowHostname = topHost;
+    nsContentUtils::MaybeFixIPv6Host(mTopWindowHostname);
+
+    rv = eTLDService->GetSchemelessSiteFromHost(topHost,
+                                                mTopWindowSchemelessSite);
+    if (NS_FAILED(rv)) {
+      mTopWindowSchemelessSite.Truncate();
+      return;
+    }
+
+    mThirdParty = !mSchemelessSite.Equals(mTopWindowSchemelessSite);
+  }
+
+  if (aForceThirdPartyToTop) {
+    mThirdParty = true;
+  }
 
   mValid = true;
 }

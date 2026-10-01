@@ -53,8 +53,15 @@ class ContentClassifierRequest {
   nsCString mUrl;
   nsCString mSchemelessSite;
   nsCString mSourceSchemelessSite;
+  nsCString mTopWindowSchemelessSite;
+  
+  
+  nsCString mHostname;
+  nsCString mSourceHostname;
+  nsCString mTopWindowHostname;
   nsCString mRequestType;
   bool mThirdParty = false;
+  bool mThirdPartyToSource = false;
   bool mPrivateBrowsing = false;
   bool mValid = false;
   bool mIsNonRecommendedAddon = false;
@@ -67,6 +74,12 @@ class ContentClassifierRequest {
   bool IsNonRecommendedAddon() const { return mIsNonRecommendedAddon; }
 
   explicit ContentClassifierRequest(nsIChannel* aChannel);
+
+  ContentClassifierRequest(const nsACString& aUrl, const nsACString& aSourceUrl,
+                           const nsACString& aTopWindowUrl,
+                           const nsACString& aRequestType,
+                           bool aPrivateBrowsing, bool aForceThirdParty,
+                           bool aIsNonRecommendedAddon);
 };
 
 class ContentClassifierEngine final {
