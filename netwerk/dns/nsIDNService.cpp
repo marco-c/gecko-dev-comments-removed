@@ -13,6 +13,7 @@
 #include "mozilla/intl/UnicodeProperties.h"
 #include "mozilla/intl/UnicodeScriptCodes.h"
 #include "nsCRT.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsNetUtil.h"
 #include "nsReadableUtils.h"
 #include "nsServiceManagerUtils.h"
@@ -105,6 +106,7 @@ nsresult nsIDNService::Init() {
   InitDigitConfusables();
   InitCyrillicLatinConfusables();
   InitThaiLatinConfusables();
+  InitAllowedLimitedUseScripts();
   return NS_OK;
 }
 
@@ -232,6 +234,22 @@ void nsIDNService::InitThaiLatinConfusables() {
   mThaiLatinConfusables.Insert(0x0E40);  
   mThaiLatinConfusables.Insert(0x0E41);  
   mThaiLatinConfusables.Insert(0x0E50);  
+}
+
+void nsIDNService::InitAllowedLimitedUseScripts() {
+  nsAutoCString allowed;
+  if (NS_FAILED(Preferences::GetCString(
+          "network.idn.allowed_limited_use_scripts", allowed))) {
+    return;
+  }
+  for (const nsACString& token :
+       nsCCharSeparatedTokenizer(allowed, ',').ToRange()) {
+    nsAutoCString tokStr(token);
+    Script script = UnicodeProperties::GetScriptCodeFromString(tokStr.get());
+    if (script != Script::UNKNOWN) {
+      mAllowedLimitedUseScripts.AppendElement(script);
+    }
+  }
 }
 
 nsIDNService::nsIDNService() { MOZ_ASSERT(NS_IsMainThread()); }
@@ -421,7 +439,18 @@ bool nsIDNService::IsLabelSafe(mozilla::Span<const char32_t> aLabel,
 
     IdentifierStatus idStatus = GetIdentifierStatus(ch);
     if (idStatus == IDSTATUS_RESTRICTED) {
-      return false;
+      
+      
+      
+      if (UnicodeProperties::HasSingleIdentifierType(
+              ch, UnicodeProperties::IdentifierType::LimitedUse) &&
+          mAllowedLimitedUseScripts.Contains(
+              UnicodeProperties::GetScriptCode(ch))) {
+        
+        idStatus = IDSTATUS_ALLOWED;
+      } else {
+        return false;
+      }
     }
     MOZ_ASSERT(idStatus == IDSTATUS_ALLOWED);
 
