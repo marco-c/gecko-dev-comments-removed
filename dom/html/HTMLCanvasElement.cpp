@@ -527,6 +527,15 @@ void HTMLCanvasElement::Destroy() {
   }
 }
 
+void HTMLCanvasElement::DestroyContent() {
+  
+  
+  if (!mOffscreenCanvas && mCurrentContext) {
+    mCurrentContext->OnWindowDestroy();
+  }
+  nsGenericHTMLElement::DestroyContent();
+}
+
 NS_IMPL_CYCLE_COLLECTION_CLASS(HTMLCanvasElement)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(HTMLCanvasElement,
@@ -772,8 +781,8 @@ nsMapRuleToAttributesFunc HTMLCanvasElement::GetAttributeMappingFunction()
   return &MapAttributesIntoRule;
 }
 
-NS_IMETHODIMP_(bool)
-HTMLCanvasElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLCanvasElement::IsNoNamespaceAttrMapped(
+    const nsAtom* aAttribute) const {
   static const MappedAttributeEntry attributes[] = {
       {nsGkAtoms::width}, {nsGkAtoms::height}, {nullptr}};
   static const MappedAttributeEntry* const map[] = {attributes,
