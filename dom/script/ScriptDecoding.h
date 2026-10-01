@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ScriptDecoding_h
 #define mozilla_dom_ScriptDecoding_h
 
@@ -19,13 +17,14 @@
 #include "mozilla/Encoding.h"    
 #include "mozilla/Span.h"        
 #include "mozilla/UniquePtr.h"   
+#include "mozilla/Utf8.h"
 
 namespace mozilla::dom {
 
 template <typename Unit>
 struct ScriptDecoding {
-  static_assert(std::is_same<Unit, char16_t>::value ||
-                    std::is_same<Unit, Utf8Unit>::value,
+  static_assert(std::is_same_v<Unit, char16_t> ||
+                    std::is_same_v<Unit, Utf8Unit>,
                 "must be either UTF-8 or UTF-16");
 };
 

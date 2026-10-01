@@ -195,6 +195,9 @@ class MOZ_STACK_CLASS AutoJSAPI : protected ScriptSettingsStackEntry {
 
   ~AutoJSAPI();
 
+  AutoJSAPI(const AutoJSAPI&) = delete;
+  AutoJSAPI& operator=(const AutoJSAPI&) = delete;
+
   
   
   
@@ -298,9 +301,6 @@ class MOZ_STACK_CLASS AutoJSAPI : protected ScriptSettingsStackEntry {
  private:
   void InitInternal(nsIGlobalObject* aGlobalObject, JSObject* aGlobal,
                     JSContext* aCx, bool aIsMainThread);
-
-  AutoJSAPI(const AutoJSAPI&) = delete;
-  AutoJSAPI& operator=(const AutoJSAPI&) = delete;
 };
 
 
