@@ -2969,7 +2969,9 @@ void nsPresContext::UpdateDynamicToolbarOffset(ScreenIntCoord aOffset) {
     return;
   }
 
-  if (IsKeyboardVisibleOnOverlaysContent()) {
+  dom::InteractiveWidget interactiveWidget = mDocument->InteractiveWidget();
+  if (interactiveWidget == InteractiveWidget::OverlaysContent &&
+      GetKeyboardHeight() > 0) {
     
     
     
@@ -3019,9 +3021,9 @@ ScreenIntCoord nsPresContext::GetKeyboardHeight() const {
   return mvm ? mvm->GetKeyboardHeight() : ScreenIntCoord(0);
 }
 
-bool nsPresContext::IsKeyboardVisibleOnOverlaysContent() const {
-  return GetKeyboardHeight() > 0 &&
-         mDocument->InteractiveWidget() == InteractiveWidget::OverlaysContent;
+bool nsPresContext::IsKeyboardHiddenOrResizesContentMode() const {
+  return GetKeyboardHeight() == 0 ||
+         mDocument->InteractiveWidget() == InteractiveWidget::ResizesContent;
 }
 
 DynamicToolbarState nsPresContext::GetDynamicToolbarState() const {

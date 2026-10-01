@@ -4009,8 +4009,9 @@ ScreenPoint APZCTreeManager::ComputeFixedMarginsOffset(
   
   
   
-  
-  if (IsKeyboardVisibleOnOverlaysContent(aProofOfMapLock)) {
+  if (IsSoftwareKeyboardVisible(aProofOfMapLock) &&
+      InteractiveWidgetMode(aProofOfMapLock) !=
+          dom::InteractiveWidget::ResizesContent) {
     return ScreenPoint(0, 0);
   }
 

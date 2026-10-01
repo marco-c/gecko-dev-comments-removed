@@ -889,15 +889,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
       MOZ_REQUIRES(mMapLock) {
     mInteractiveWidget = aInteractiveWidgetMode;
   }
-  
-  
-  
-  bool IsKeyboardVisibleOnOverlaysContent(
-      const MutexAutoLock& aProofOfMapLock) const MOZ_REQUIRES(mMapLock) {
-    return IsSoftwareKeyboardVisible(aProofOfMapLock) &&
-           InteractiveWidgetMode(aProofOfMapLock) ==
-               dom::InteractiveWidget::OverlaysContent;
-  }
 
  protected:
   
