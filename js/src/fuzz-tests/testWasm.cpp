@@ -14,7 +14,6 @@
 #include "vm/GlobalObject.h"
 #include "vm/Interpreter.h"
 #include "vm/TypedArrayObject.h"
-
 #include "wasm/WasmCompile.h"
 #include "wasm/WasmFeatures.h"
 #include "wasm/WasmIonCompile.h"
@@ -33,7 +32,8 @@ extern JSContext* gCx;
 
 static bool gIsWasmSmith = false;
 extern "C" {
-size_t gluesmith(uint8_t* data, size_t size, uint8_t* out, size_t maxsize);
+bool gluesmith(const uint8_t* data, size_t size, uint8_t** out_bytes,
+               size_t* out_bytes_len);
 }
 
 
@@ -527,23 +527,19 @@ static int testWasmSmithFuzz(const uint8_t* buf, size_t size) {
   
   
   
-  
-  
   const size_t maxInputSize = 1024;
   const size_t maxModuleSize = 4096;
 
-  size_t maxModules = size / maxInputSize + 1;
+  if (size == 0) {
+    return 0;
+  }
 
   
-  uint8_t* out =
-      new uint8_t[1 + maxModules * (maxModuleSize + sizeof(uint16_t))];
+  Bytes out;
+  if (!out.append(buf[0])) {
+    return 0;
+  }
 
-  auto deleteGuard = mozilla::MakeScopeExit([&] { delete[] out; });
-
-  
-  out[0] = buf[0];
-
-  size_t outIndex = 1;
   size_t currentIndex = 1;
 
   while (currentIndex < size) {
@@ -563,27 +559,34 @@ static int testWasmSmithFuzz(const uint8_t* buf, size_t size) {
     
     inSize = remaining >= inSize ? inSize : remaining;
 
-    size_t outSize =
-        gluesmith((uint8_t*)&buf[currentIndex], inSize,
-                  out + outIndex + sizeof(uint16_t), maxModuleSize);
+    uint8_t* moduleBytes = nullptr;
+    size_t moduleSize = 0;
+    if (!gluesmith(&buf[currentIndex], inSize, &moduleBytes, &moduleSize)) {
+      break;
+    }
+    UniquePtr<uint8_t[], JS::FreePolicy> moduleGuard(moduleBytes);
 
-    if (!outSize) {
+    if (moduleSize > maxModuleSize) {
       break;
     }
 
     currentIndex += inSize;
 
     
-    *(uint16_t*)(&out[outIndex]) = (uint16_t)outSize;
-    outIndex += sizeof(uint16_t) + outSize;
+    uint16_t moduleSize16 = moduleSize;
+    if (!out.append(reinterpret_cast<uint8_t*>(&moduleSize16),
+                    sizeof(moduleSize16)) ||
+        !out.append(moduleBytes, moduleSize)) {
+      return 0;
+    }
   }
 
   
-  if (outIndex == 1) {
+  if (out.length() == 1) {
     return 0;
   }
 
-  return testWasmFuzz(out, outIndex);
+  return testWasmFuzz(out.begin(), out.length());
 }
 
 MOZ_FUZZING_INTERFACE_RAW(testWasmInit, testWasmFuzz, Wasm);
