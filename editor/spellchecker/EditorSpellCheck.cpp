@@ -43,6 +43,7 @@
 #include "nsStringFwd.h"            
 #include "nsStyleUtil.h"            
 #include "nsXULAppAPI.h"            
+#include "nsCharSeparatedTokenizer.h"
 
 namespace mozilla {
 
