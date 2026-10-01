@@ -974,18 +974,16 @@ gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, SVGBBoxFlags aFlags,
   return bbox;
 }
 
-gfxPoint SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(const nsIFrame* aFrame) {
+CSSPoint SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(const nsIFrame* aFrame) {
   if (!aFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
     
     
-    return gfxPoint();
+    return {};
   }
 
   
   if (FrameDoesNotIncludePositionInTM(aFrame)) {
-    return nsLayoutUtils::RectToGfxRect(aFrame->GetRect(),
-                                        AppUnitsPerCSSPixel())
-        .TopLeft();
+    return CSSRect::FromAppUnits(aFrame->GetRect()).TopLeft();
   }
 
   
@@ -995,10 +993,11 @@ gfxPoint SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(const nsIFrame* aFrame) {
                               ->ChildToUserSpaceTransform();
     NS_ASSERTION(!transform.HasNonTranslation(),
                  "we're relying on this being an offset-only transform");
-    return transform.GetTranslation();
+    auto translation = transform.GetTranslation();
+    return CSSPoint(translation.x, translation.y);
   }
 
-  return gfxPoint();
+  return {};
 }
 
 static gfxRect GetBoundingBoxRelativeRect(const SVGAnimatedLength* aXYWH,

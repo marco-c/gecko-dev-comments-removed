@@ -343,7 +343,7 @@ class SVGUtils final {
 
 
 
-  static gfxPoint FrameSpaceInCSSPxToUserSpaceOffset(const nsIFrame* aFrame);
+  static CSSPoint FrameSpaceInCSSPxToUserSpaceOffset(const nsIFrame* aFrame);
 
   
 

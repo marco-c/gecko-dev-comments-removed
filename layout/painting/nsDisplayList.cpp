@@ -8114,7 +8114,7 @@ gfxRect nsDisplayEffectsBase::BBoxInUserSpace() const {
   return SVGUtils::GetBBox(mFrame);
 }
 
-gfxPoint nsDisplayEffectsBase::UserSpaceOffset() const {
+CSSPoint nsDisplayEffectsBase::UserSpaceOffset() const {
   return SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(mFrame);
 }
 
@@ -8388,11 +8388,20 @@ static Maybe<wr::WrClipChainId> CreateSimpleClipRegion(
 
   wr::WrClipId clipId{};
 
+  
+  
+  
+  nsPoint toReferenceFrame = aDisplayItem.ToReferenceFrame();
+  if (frame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
+    toReferenceFrame -= CSSPixel::ToAppUnits(
+        SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(frame));
+  }
+
   switch (shape.tag) {
     case StyleBasicShape::Tag::Rect: {
       const nsRect rect =
           ShapeUtils::ComputeInsetRect(shape.AsRect().rect, refBox) +
-          aDisplayItem.ToReferenceFrame();
+          toReferenceFrame;
 
       nsRectCornerRadii radii;
       if (ShapeUtils::ComputeRectRadii(shape.AsRect().round, refBox, rect,
@@ -8420,9 +8429,9 @@ static Maybe<wr::WrClipChainId> CreateSimpleClipRegion(
         radii = {radius, radius};
       }
 
-      nsRect ellipseRect(aDisplayItem.ToReferenceFrame() + center -
-                             nsPoint(radii.width, radii.height),
-                         radii * 2);
+      nsRect ellipseRect(
+          toReferenceFrame + center - nsPoint(radii.width, radii.height),
+          radii * 2);
 
       nsRectCornerRadii ellipseRadii;
       for (const auto corner : AllPhysicalHalfCorners()) {
