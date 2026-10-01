@@ -42,7 +42,20 @@
           this.getAttribute("fluent-remote-id"),
           this.fluentAttributeValues
         );
+        
+        RemoteL10n.l10n.translateFragment(this._content);
       }
+    }
+
+    
+
+
+
+
+
+    setVariable(name, value) {
+      this.setAttribute(`fluent-variable-${name}`, value);
+      this.render();
     }
 
     static get observedAttributes() {
@@ -54,8 +67,9 @@
     }
 
     connectedCallback() {
+      
+      
       if (this.shadowRoot) {
-        this.render();
         return;
       }
 
@@ -64,7 +78,6 @@
       shadowRoot.appendChild(this._content);
 
       this.render();
-      RemoteL10n.l10n.translateFragment(this._content);
     }
   }
 
