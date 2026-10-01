@@ -120,7 +120,16 @@ nsresult Http2Stream::GenerateHeaders(nsCString& aCompressedData,
   int64_t clVal = session->Compressor()->GetParsedContentLength();
   if (clVal != -1) {
     mRequestBodyLenRemaining = clVal;
+  } else if (nsHttpTransaction* trans = HttpTransaction();
+             trans && trans->RequestBodyIsStreaming()) {
+    
+    
+    
+    
+    
+    mRequestBodyLenRemaining = -1;
   }
+  
 
   
   

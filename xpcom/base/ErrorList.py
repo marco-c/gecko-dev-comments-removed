@@ -372,6 +372,10 @@ with modules["NETWORK"]:
     
     
     errors["NS_ERROR_OS_LOCAL_NETWORK_ACCESS_DENIED"] = FAILURE(95)
+    
+    
+    
+    errors["NS_ERROR_NET_BODY_NOT_REPLAYABLE"] = FAILURE(96)
 
     
     

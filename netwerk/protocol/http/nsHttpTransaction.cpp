@@ -774,7 +774,8 @@ void nsHttpTransaction::OnTransportStatus(nsITransport* transport,
 
     
     
-    progressMax = mRequestSize;
+    
+    progressMax = mRequestBodyIsStreaming ? -1 : mRequestSize;
   } else {
     progress = 0;
     progressMax = 0;
@@ -824,6 +825,18 @@ nsresult nsHttpTransaction::ReadSegments(nsAHttpSegmentReader* reader,
   if (mTransactionDone) {
     *countRead = 0;
     return mStatus;
+  }
+
+  
+  
+  if (mRequestBodyIsStreaming && mConnection &&
+      mConnection->Version() < HttpVersion::v2_0) {
+    LOG(
+        ("nsHttpTransaction::ReadSegments %p streaming upload needs HTTP/2 or "
+         "HTTP/3, got version %u\n",
+         this, static_cast<uint32_t>(mConnection->Version())));
+    *countRead = 0;
+    return NS_ERROR_NET_BODY_NOT_REPLAYABLE;
   }
 
   if (!m0RTTInProgress) {
@@ -1966,6 +1979,20 @@ nsresult nsHttpTransaction::Restart() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
   
+  
+  if (mRequestBodyIsStreaming) {
+    int64_t position = 0;
+    nsCOMPtr<nsITellableStream> tellable = do_QueryInterface(mRequestStream);
+    if (!tellable || NS_FAILED(tellable->Tell(&position)) || position != 0) {
+      LOG(
+          ("nsHttpTransaction::Restart %p streaming request body already "
+           "started, cannot replay it; failing transaction\n",
+           this));
+      return NS_ERROR_NET_RESET;
+    }
+  }
+
+  
   if (++mRestartCount >= gHttpHandler->MaxRequestAttempts()) {
     LOG(("reached max request attempts, failing transaction @%p\n", this));
     return NS_ERROR_NET_RESET;
@@ -2577,7 +2604,13 @@ nsresult nsHttpTransaction::HandleContentStart() {
           
           
           
-          if (!mRestartCount && !(mCaps & NS_HTTP_STICKY_CONNECTION)) {
+          
+          
+          
+          
+          
+          if (!mRestartCount && !(mCaps & NS_HTTP_STICKY_CONNECTION) &&
+              !mRequestBodyIsStreaming) {
             mCaps &= ~NS_HTTP_ALLOW_KEEPALIVE;
             mForceRestart = true;  
             return NS_ERROR_NET_RESET;

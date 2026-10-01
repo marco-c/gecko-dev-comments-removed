@@ -252,6 +252,11 @@ nsresult Http2StreamBase::ReadSegments(nsAHttpSegmentReader* reader,
              "complete, "
              "mUpstreamState=%x\n",
              this, mStreamID, mUpstreamState));
+        
+        
+        if (mRequestBodyLenRemaining < 0) {
+          mRequestBodyLenRemaining = 0;
+        }
         if (mSentFin) {
           ChangeState(UPSTREAM_COMPLETE);
         } else {
@@ -1261,11 +1266,18 @@ nsresult Http2StreamBase::OnReadSegment(const char* buf, uint32_t count,
       if (!dataLength && mRequestBodyLenRemaining) {
         return NS_BASE_STREAM_WOULD_BLOCK;
       }
-      if (dataLength > mRequestBodyLenRemaining) {
-        return NS_ERROR_UNEXPECTED;
+      
+      
+      
+      if (mRequestBodyLenRemaining >= 0) {
+        if (static_cast<int64_t>(dataLength) > mRequestBodyLenRemaining) {
+          return NS_ERROR_UNEXPECTED;
+        }
+        mRequestBodyLenRemaining -= dataLength;
+        GenerateDataFrameHeader(dataLength, !mRequestBodyLenRemaining);
+      } else {
+        GenerateDataFrameHeader(dataLength, false);
       }
-      mRequestBodyLenRemaining -= dataLength;
-      GenerateDataFrameHeader(dataLength, !mRequestBodyLenRemaining);
       ChangeState(SENDING_BODY);
       [[fallthrough]];
 

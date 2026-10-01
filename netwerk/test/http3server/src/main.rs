@@ -114,6 +114,24 @@ impl Http3TestServer {
         }
     }
 
+    fn respond_to_post(
+        &mut self,
+        stream: Http3OrWebTransportStream,
+        received_len: usize,
+        now: Instant,
+    ) {
+        let default_ret = b"Hello World".to_vec();
+        stream
+            .send_headers(&[
+                Header::new(":status", "200"),
+                Header::new("cache-control", "no-cache"),
+                Header::new("x-data-received-length", received_len.to_string()),
+                Header::new("content-length", default_ret.len().to_string()),
+            ])
+            .unwrap();
+        self.new_response(stream, default_ret, now);
+    }
+
     fn new_response(&mut self, stream: Http3OrWebTransportStream, mut data: Vec<u8>, now: Instant) {
         if data.len() == 0 {
             let _ = stream.stream_close_send(now);
@@ -449,8 +467,15 @@ impl HttpServer for Http3TestServer {
                                     .unwrap();
                                 self.new_response(stream, vec![b'a'; 8000], now);
                             } else if path == b"/post" {
-                                
-                                self.posts.insert(stream, 0);
+                                if fin {
+                                    
+                                    
+                                    
+                                    self.respond_to_post(stream, 0, now);
+                                } else {
+                                    
+                                    self.posts.insert(stream, 0);
+                                }
                             } else if path == b"/priority_mirror" {
                                 if let Some(priority) =
                                     headers.iter().find(|h| h.name() == "priority")
@@ -596,16 +621,7 @@ impl HttpServer for Http3TestServer {
                     }
                     if fin {
                         if let Some(r) = self.posts.remove(&stream) {
-                            let default_ret = b"Hello World".to_vec();
-                            stream
-                                .send_headers(&[
-                                    Header::new(":status", "200"),
-                                    Header::new("cache-control", "no-cache"),
-                                    Header::new("x-data-received-length", r.to_string()),
-                                    Header::new("content-length", default_ret.len().to_string()),
-                                ])
-                                .unwrap();
-                            self.new_response(stream, default_ret, now);
+                            self.respond_to_post(stream, r, now);
                         }
                     }
                 }
@@ -939,15 +955,19 @@ impl Http3ReverseProxyServer {
         let client = Client::builder(hyper_util::rt::TokioExecutor::new()).build_http();
         let resp = client.request(request).await?;
         out_header.push(Header::new(":status", resp.status().as_str()));
-        for (key, value) in resp.headers() {
-            out_header.push(Header::new(
-                key.as_str().to_ascii_lowercase(),
-                match value.to_str() {
-                    Ok(str) => str,
-                    _ => "",
-                },
-            ));
-        }
+        out_header.extend(resp.headers().iter().filter_map(|(key, value)| {
+            let name = key.as_str().to_ascii_lowercase();
+            
+            
+            
+            if matches!(
+                name.as_str(),
+                "connection" | "keep-alive" | "proxy-connection" | "transfer-encoding" | "upgrade"
+            ) {
+                return None;
+            }
+            Some(Header::new(name, value.to_str().unwrap_or("")))
+        }));
 
         let mut body = resp.into_body();
         while let Some(frame) = body.frame().await {
