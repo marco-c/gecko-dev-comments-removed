@@ -1131,11 +1131,12 @@ ServiceWorkerManager::SendPushEvent(const nsACString& aOriginAttributes,
     
     
     
-    return SendPushEvent(aOriginAttributes, aScope, u""_ns,
-                         Some(aDataBytes.Clone()));
+    SendPushEvent(aOriginAttributes, aScope, u""_ns, Some(aDataBytes.Clone()));
+    return NS_OK;
   }
   MOZ_ASSERT(optional_argc == 0);
-  return SendPushEvent(aOriginAttributes, aScope, u""_ns, Nothing());
+  SendPushEvent(aOriginAttributes, aScope, u""_ns, Nothing());
+  return NS_OK;
 }
 
 nsresult ServiceWorkerManager::SendCookieChangeEvent(
@@ -1161,15 +1162,20 @@ nsresult ServiceWorkerManager::SendCookieChangeEvent(
       aCookie, aCookieDeleted, registration);
 }
 
-nsresult ServiceWorkerManager::SendPushEvent(
+RefPtr<PushHandledPromise> ServiceWorkerManager::SendPushEvent(
     const nsACString& aOriginAttributes, const nsACString& aScope,
     const nsAString& aMessageId, const Maybe<nsTArray<uint8_t>>& aData) {
   OriginAttributes attrs;
   if (!attrs.PopulateFromSuffix(aOriginAttributes)) {
-    return NS_ERROR_INVALID_ARG;
+    return PushHandledPromise::CreateAndReject(NS_ERROR_INVALID_ARG, __func__);
   }
 
-  nsCOMPtr<nsIPrincipal> principal = MOZ_TRY(ScopeToPrincipal(aScope, attrs));
+  auto principalOrErr = ScopeToPrincipal(aScope, attrs);
+  if (NS_WARN_IF(principalOrErr.isErr())) {
+    return PushHandledPromise::CreateAndReject(principalOrErr.unwrapErr(),
+                                               __func__);
+  }
+  nsCOMPtr<nsIPrincipal> principal = principalOrErr.unwrap();
 
   
   
@@ -1177,14 +1183,14 @@ nsresult ServiceWorkerManager::SendPushEvent(
   RefPtr<ServiceWorkerRegistrationInfo> registration =
       GetRegistration(principal, aScope);
   if (NS_WARN_IF(!registration)) {
-    return NS_ERROR_FAILURE;
+    return PushHandledPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 
   MOZ_DIAGNOSTIC_ASSERT(registration->Scope().Equals(aScope));
 
   ServiceWorkerInfo* serviceWorker = registration->GetActive();
   if (NS_WARN_IF(!serviceWorker)) {
-    return NS_ERROR_FAILURE;
+    return PushHandledPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 
   return serviceWorker->WorkerPrivate()->SendPushEvent(aMessageId, aData,
