@@ -45,7 +45,7 @@ export class RealtimeSuggestProvider extends SuggestProvider {
     throw new Error("Trying to access the base class, must be overridden");
   }
 
-  getViewUpdateForPayloadItem(_item, _index) {
+  getViewUpdateForPayloadItem(_item, _index, _controller) {
     throw new Error("Trying to access the base class, must be overridden");
   }
 
@@ -519,7 +519,7 @@ export class RealtimeSuggestProvider extends SuggestProvider {
     ];
   }
 
-  getViewUpdate(result) {
+  getViewUpdate(result, controller) {
     let { items } = result.payload;
     let hasMultipleItems = items.length > 1;
 
@@ -531,7 +531,10 @@ export class RealtimeSuggestProvider extends SuggestProvider {
 
     for (let i = 0; i < items.length; i++) {
       let item = items[i];
-      Object.assign(update, this.getViewUpdateForPayloadItem(item, i));
+      Object.assign(
+        update,
+        this.getViewUpdateForPayloadItem(item, i, controller)
+      );
     }
 
     return update;
@@ -578,6 +581,12 @@ export class RealtimeSuggestProvider extends SuggestProvider {
     return commands;
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   * @param {string} searchString
+   */
   onEngagement(queryContext, controller, details, searchString) {
     switch (details.result.payload.source) {
       case "merino":
@@ -605,8 +614,9 @@ export class RealtimeSuggestProvider extends SuggestProvider {
       }
       case "not_interested": {
         lazy.UrlbarPrefs.set(this.suggestPref, false);
-        result.acknowledgeDismissalL10n = this.acknowledgeDismissalL10n;
-        controller.removeResult(result);
+        controller.removeResult(result, {
+          acknowledgeDismissalL10n: this.acknowledgeDismissalL10n,
+        });
         break;
       }
       case "show_less_frequently": {
@@ -643,16 +653,18 @@ export class RealtimeSuggestProvider extends SuggestProvider {
           "quicksuggest.realtimeOptIn.dismissTypes",
           this.realtimeType
         );
-        details.result.acknowledgeDismissalL10n = this.acknowledgeDismissalL10n;
-        controller.removeResult(details.result);
+        controller.removeResult(details.result, {
+          acknowledgeDismissalL10n: this.acknowledgeDismissalL10n,
+        });
         break;
       }
       case "not_interested": {
         lazy.UrlbarPrefs.set("suggest.realtimeOptIn", false);
-        details.result.acknowledgeDismissalL10n = {
-          id: "urlbar-result-dismissal-acknowledgment-all",
-        };
-        controller.removeResult(details.result);
+        controller.removeResult(details.result, {
+          acknowledgeDismissalL10n: {
+            id: "urlbar-result-dismissal-acknowledgment-all",
+          },
+        });
         break;
       }
     }

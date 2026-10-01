@@ -153,7 +153,7 @@ add_task(async function ui_single() {
   Assert.equal(items.length, 1);
   let target = TEST_MERINO_SINGLE[0].custom_details.yelp.values[0];
   assertItemUI(items[0], {
-    image: target.image_url,
+    image: UrlbarTestUtils.makeMozRemoteImageUrl(target.image_url),
     title: target.name,
     address: target.address,
     pricing: target.pricing,
@@ -228,7 +228,7 @@ add_task(async function ui_multi() {
     info(`Check the item[${i}]`);
     let target = TEST_MERINO_MULTI[0].custom_details.yelp.values[i];
     assertItemUI(items[i], {
-      image: target.image_url,
+      image: UrlbarTestUtils.makeMozRemoteImageUrl(target.image_url),
       title: target.name,
       address: target.address,
       pricing: target.pricing,
@@ -259,7 +259,7 @@ add_task(async function activate_multi() {
     let item = items[index];
 
     let newTabOpened = BrowserTestUtils.waitForNewTab(gBrowser, value.url);
-    await EventUtils.synthesizeMouseAtCenter(item, {}, item.documentGlobal);
+    EventUtils.synthesizeMouseAtCenter(item, {}, item.documentGlobal);
     let newTab = await newTabOpened;
     Assert.ok(true, `Expected URL is loaded [${value.url}]`);
     BrowserTestUtils.removeTab(newTab);
@@ -285,7 +285,7 @@ add_task(async function activate_multi() {
     let item = items[index];
 
     let newTabOpened = BrowserTestUtils.waitForNewTab(gBrowser, value.url);
-    await EventUtils.synthesizeMouseAtCenter(item, {}, item.documentGlobal);
+    EventUtils.synthesizeMouseAtCenter(item, {}, item.documentGlobal);
     let newTab = await newTabOpened;
     Assert.ok(true, `Expected URL is loaded [${value.url}]`);
     BrowserTestUtils.removeTab(newTab);
@@ -297,7 +297,7 @@ add_task(async function activate_multi() {
 });
 
 function assertItemUI(item, expected) {
-  Assert.equal(
+  UrlbarTestUtils.checkImageUrl(
     item.querySelector(".urlbarView-realtime-image").src,
     expected.image
   );

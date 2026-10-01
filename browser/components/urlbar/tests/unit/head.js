@@ -1089,14 +1089,13 @@ function makeGlobalActionsResult({
 
 
 
-
 async function check_results({
   context,
   incompleteSearch,
   autofilled,
   completed,
   matches = [],
-  conditionalPayloadProperties = {},
+  payloadRules = {},
 } = {}) {
   if (!context) {
     return;
@@ -1184,7 +1183,7 @@ async function check_results({
   
   let optionalDateValidator = {
     optional: true,
-    custom(resultIndex, actualResult, payloadKey) {
+    validate(resultIndex, actualResult, payloadKey) {
       if (matches[resultIndex].payload[payloadKey] === 0) {
         Assert.ok(
           !actualResult.payload[payloadKey],
@@ -1212,7 +1211,13 @@ async function check_results({
   
   
   
-  conditionalPayloadProperties = {
+  
+  
+  
+  
+  
+  
+  payloadRules = {
     bookmarkDateMs: optionalDateValidator,
     frecency: { optional: true },
     lastVisit: optionalDateValidator,
@@ -1224,7 +1229,18 @@ async function check_results({
     
     viewTemplate: { optional: true },
     viewUpdate: { optional: true },
-    ...conditionalPayloadProperties,
+    icon: {
+      validate(resultIndex, actualResult, _payloadKey) {
+        let actualIcon = actualResult.payload.icon;
+        let expectedIcon = matches[resultIndex].payload.icon;
+        if (!actualIcon || !expectedIcon) {
+          return false;
+        }
+        UrlbarTestUtils.checkImageUrl(actualIcon, expectedIcon);
+        return true;
+      },
+    },
+    ...payloadRules,
   };
 
   for (let i = 0; i < matches.length; i++) {
@@ -1282,16 +1298,16 @@ async function check_results({
       let actualKeys = new Set(Object.keys(actual.payload));
 
       for (let key of actualKeys.union(expectedKeys)) {
-        let condition = conditionalPayloadProperties[key];
+        let rule = payloadRules[key];
 
-        if (condition?.custom?.(i, actual, key)) {
+        if (rule?.validate?.(i, actual, key)) {
           
           continue;
         }
 
         if (
-          condition?.ignore ||
-          (condition?.optional && !expected.payload.hasOwnProperty(key))
+          rule?.ignore ||
+          (rule?.optional && !expected.payload.hasOwnProperty(key))
         ) {
           continue;
         }

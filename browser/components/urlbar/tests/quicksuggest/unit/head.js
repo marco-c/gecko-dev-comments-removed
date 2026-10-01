@@ -616,7 +616,7 @@ async function doResultCheckTest({ env, tests }) {
     nimbus,
     histories,
     context,
-    conditionalPayloadProperties,
+    payloadRules,
     expected,
     merinoSuggestions = null,
   } of tests) {
@@ -646,7 +646,7 @@ async function doResultCheckTest({ env, tests }) {
 
     await check_results({
       context,
-      conditionalPayloadProperties,
+      payloadRules,
       matches: expected,
     });
 
@@ -831,16 +831,10 @@ async function doDismissTest({ env, tests }) {
   await QuickSuggestTestUtils.forceSync();
 
   
-  for (let {
-    context,
-    conditionalPayloadProperties,
-    targetIndex,
-    before,
-    after,
-  } of tests) {
+  for (let { context, payloadRules, targetIndex, before, after } of tests) {
     await check_results({
       context,
-      conditionalPayloadProperties,
+      payloadRules,
       matches: before.results,
     });
 
@@ -859,7 +853,7 @@ async function doDismissTest({ env, tests }) {
     
     await check_results({
       context,
-      conditionalPayloadProperties,
+      payloadRules,
       matches: after.results,
     });
 
