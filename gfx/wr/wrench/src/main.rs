@@ -19,6 +19,7 @@ extern crate tracy_rs;
 pub const AU_PER_DEV_PX: f32 = 60.0;
 
 mod angle;
+mod bench;
 mod blob;
 #[cfg(target_os = "windows")]
 mod composite;
@@ -46,6 +47,7 @@ use glutin::context::{ContextApi, ContextAttributesBuilder, NotCurrentGlContext,
 use glutin::display::{GetGlDisplay, GlDisplay};
 use glutin::surface::{GlSurface, Surface, SurfaceAttributesBuilder, SwapInterval, WindowSurface};
 use glutin_winit::DisplayBuilder;
+use crate::bench::{BenchHarness, BenchInput, BenchMode, BenchOptions};
 use crate::perf::PerfHarness;
 use crate::rawtest::RawtestHarness;
 use crate::reftest::{ReftestHarness, ReftestOptions};
@@ -660,6 +662,7 @@ struct ShowState {
 
 
 enum ThingToBuild {
+    Yaml(YamlFrameReader),
     Ready(Box<dyn WrenchThing>),
     LoadCapture(PathBuf),
 }
@@ -692,6 +695,9 @@ struct WrenchApp {
     subcommand: String,
 
     
+    compositor_clips: Option<bool>,
+
+    
     reftest_specific: Option<PathBuf>,
     reftest_fuzz: Option<f64>,
 
@@ -711,6 +717,9 @@ struct WrenchApp {
     perf_as_csv: bool,
     perf_warmup_frames: Option<usize>,
     perf_sample_count: Option<usize>,
+
+    
+    bench: Option<(BenchInput, BenchOptions)>,
 
     
     compare_first: String,
@@ -808,7 +817,7 @@ impl ApplicationHandler for WrenchApp {
 
         let needs_frame_notifier = matches!(
             self.subcommand.as_str(),
-            "perf" | "reftest" | "png" | "rawtest" | "test_invalidation"
+            "perf" | "bench" | "reftest" | "png" | "rawtest" | "test_invalidation"
         );
         let (notifier, rx) = if needs_frame_notifier {
             let (n, r) = create_notifier();
@@ -840,6 +849,7 @@ impl ApplicationHandler for WrenchApp {
             self.dump_shader_source.clone(),
             notifier,
             layer_compositor,
+            self.compositor_clips,
         );
 
         if let Some(ui_str) = &self.profiler_ui {
@@ -856,7 +866,16 @@ impl ApplicationHandler for WrenchApp {
 
         match self.subcommand.as_str() {
             "show" => {
+                
+                
+                
+                
+                let mut is_yaml = false;
                 let thing: Box<dyn WrenchThing> = match self.thing_to_build.take() {
+                    Some(ThingToBuild::Yaml(reader)) => {
+                        is_yaml = true;
+                        Box::new(reader) as Box<dyn WrenchThing>
+                    }
                     Some(ThingToBuild::Ready(t)) => t,
                     Some(ThingToBuild::LoadCapture(path)) => {
                         let mut documents = wrench.api.load_capture(path, None);
@@ -870,6 +889,9 @@ impl ApplicationHandler for WrenchApp {
 
                 let mut debug_flags = DebugFlags::empty();
                 debug_flags.set(DebugFlags::DISABLE_BATCHING, self.show_no_batch);
+                let compositor_clips = self.compositor_clips.unwrap_or(!is_yaml);
+                debug_flags.set(DebugFlags::DISABLE_COMPOSITOR_CLIPS, !compositor_clips);
+                wrench.set_compositor_clips_enabled(compositor_clips);
 
                 if cfg!(target_os = "android") {
                     debug_flags.toggle(DebugFlags::PROFILER_DBG);
@@ -938,6 +960,13 @@ impl ApplicationHandler for WrenchApp {
                 );
                 let base_manifest = Path::new(&self.perf_benchmark);
                 harness.run(base_manifest, &self.perf_filename, self.perf_as_csv);
+                wrench.shut_down(rx);
+                event_loop.exit();
+            }
+            "bench" => {
+                let rx = rx.unwrap();
+                let (input, options) = self.bench.take().unwrap();
+                BenchHarness::new(&mut wrench, &mut window, &rx, options).run(input);
                 wrench.shut_down(rx);
                 event_loop.exit();
             }
@@ -1188,6 +1217,11 @@ fn build_app(args: clap::ArgMatches, proxy: Option<EventLoopProxy<()>>) -> Wrenc
     let color_target_init = args.is_present("color_target_init");
     let precache = args.is_present("precache");
     let profiler_ui = args.value_of("profiler_ui").map(String::from);
+    let compositor_clips = args.value_of("compositor_clips").map(|s| match s {
+        "true" | "1" | "yes" | "on" => true,
+        "false" | "0" | "no" | "off" => false,
+        _ => panic!("Unexpected --compositor-clips value {}", s),
+    });
 
     let opengles_version = (3u8, 0u8);
     let opengl_version = (3u8, 2u8);
@@ -1231,7 +1265,7 @@ fn build_app(args: clap::ArgMatches, proxy: Option<EventLoopProxy<()>>) -> Wrenc
         } else if input_path.as_path().is_dir() {
             ThingToBuild::LoadCapture(input_path)
         } else {
-            ThingToBuild::Ready(Box::new(YamlFrameReader::new_from_show_args(m)) as Box<dyn WrenchThing>)
+            ThingToBuild::Yaml(YamlFrameReader::new_from_show_args(m))
         };
         (Some(thing), no_block, no_batch)
     } else {
@@ -1271,6 +1305,30 @@ fn build_app(args: clap::ArgMatches, proxy: Option<EventLoopProxy<()>>) -> Wrenc
         };
 
     
+    let bench = args.subcommand_matches("bench").map(|m| {
+        let input = BenchInput::from_path(m.value_of("INPUT").map(PathBuf::from).unwrap());
+        let options = BenchOptions {
+            mode: if m.is_present("scene-build") {
+                BenchMode::SceneBuild
+            } else if m.is_present("render") && !m.is_present("frame-build") {
+                BenchMode::RenderOnly
+            } else {
+                BenchMode::FrameBuild
+            },
+            render: m.is_present("render"),
+            gpu_sync: m.is_present("gpu-sync"),
+            gpu_queries: m.is_present("gpu-queries"),
+            iterations: m.value_of("iterations").map(|s| s.parse::<usize>().expect("Invalid iteration count")).unwrap_or(100),
+            warmup: m.value_of("warmup").map(|s| s.parse::<usize>().expect("Invalid warmup count")).unwrap_or(10),
+            all_counters: m.is_present("counters"),
+            csv: m.value_of("csv").map(PathBuf::from),
+            save: m.value_of("save").map(PathBuf::from),
+            baseline: m.value_of("baseline").map(PathBuf::from),
+        };
+        (input, options)
+    });
+
+    
     let (compare_first, compare_second) = if let Some(m) = args.subcommand_matches("compare_perf") {
         (m.value_of("first_filename").unwrap().to_owned(),
          m.value_of("second_filename").unwrap().to_owned())
@@ -1282,10 +1340,11 @@ fn build_app(args: clap::ArgMatches, proxy: Option<EventLoopProxy<()>>) -> Wrenc
         size, vsync, angle, software, using_compositor, gl_request, headless,
         res_path, use_optimized_shaders, rebuild, no_subpixel_aa, verbose,
         no_scissor, no_batch_global, color_target_init, precache, dump_shader_source, profiler_ui,
-        subcommand, reftest_specific, reftest_fuzz,
+        subcommand, compositor_clips, reftest_specific, reftest_fuzz,
         thing_to_build, show_no_block, show_no_batch,
         png_reader, png_surface, png_output_path,
         perf_benchmark, perf_filename, perf_as_csv, perf_warmup_frames, perf_sample_count,
+        bench,
         compare_first, compare_second,
         proxy,
         window: None, wrench: None, rx: None, show_state: None, exit_code: 0,
@@ -1374,7 +1433,7 @@ fn run_headless(args: clap::ArgMatches) -> i32 {
 
     let needs_frame_notifier = matches!(
         app.subcommand.as_str(),
-        "perf" | "reftest" | "png" | "rawtest" | "test_invalidation"
+        "perf" | "bench" | "reftest" | "png" | "rawtest" | "test_invalidation"
     );
     let (notifier, rx) = if needs_frame_notifier {
         let (n, r) = create_notifier();
@@ -1400,6 +1459,7 @@ fn run_headless(args: clap::ArgMatches) -> i32 {
         app.dump_shader_source.clone(),
         notifier,
         None,
+        app.compositor_clips,
     );
 
     if let Some(ui_str) = &app.profiler_ui {
@@ -1450,6 +1510,13 @@ fn run_headless(args: clap::ArgMatches) -> i32 {
             );
             let base_manifest = Path::new(&app.perf_benchmark);
             harness.run(base_manifest, &app.perf_filename, app.perf_as_csv);
+            wrench.shut_down(rx);
+            0
+        }
+        "bench" => {
+            let rx = rx.unwrap();
+            let (input, options) = app.bench.take().unwrap();
+            BenchHarness::new(&mut wrench, &mut window, &rx, options).run(input);
             wrench.shut_down(rx);
             0
         }
