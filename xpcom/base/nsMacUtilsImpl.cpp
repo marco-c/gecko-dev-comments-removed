@@ -70,11 +70,11 @@ static Atomic<TCSMStatus> sTCSMStatus(TCSM_Unknown);
 
 #if defined(MOZ_SANDBOX) || defined(__aarch64__)
 
-
-static nsresult ClearCachedAppPathOnShutdown() {
-  MOZ_ASSERT(NS_IsMainThread());
-  ClearOnShutdown(&sCachedAppPath);
-  return NS_OK;
+static void ClearCachedAppPathOnShutdown() {
+  mozilla::RunOnShutdown([] {
+    StaticMutexAutoLock lock(sCachedAppPathMutex);
+    sCachedAppPath = nullptr;
+  });
 }
 
 
