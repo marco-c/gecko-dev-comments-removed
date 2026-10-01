@@ -2,4 +2,6 @@
 
 
 
-config = {}
+config = {
+    "app_name": "browser",
+}

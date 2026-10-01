@@ -48,9 +48,11 @@ config = {
         "LC_ALL": "C",
         "PATH": "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin",
     },
+    "mozconfig_variant": "nightly",
     
     
     
     "platform": "linux64",
+    "mozconfig_platform": "linux64",
     
 }
