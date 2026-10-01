@@ -48,18 +48,28 @@ test_newtab({
 test_newtab({
   before: setDefaultTopSites,
   
-  test: async function defaultTopSites_dismiss() {
+  test: async function defaultTopSites_dismiss(defaultTopSites) {
     const siteSelector =
       ".top-site-outer:not(.search-shortcut, .placeholder, .add-button-tile)";
+    
+    
+    
+    
+    const shortcutSelector = ".top-site-outer.search-shortcut";
+    const count = selector =>
+      content.document.querySelectorAll(selector).length;
     await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(siteSelector),
-      "Topsite tippytop icon not found"
+      () =>
+        count(siteSelector) + count(shortcutSelector) >= defaultTopSites.length,
+      "Wait for the configured top sites to render"
     );
 
-    
-    const defaultTopSitesNumber =
-      content.document.querySelectorAll(siteSelector).length;
-    Assert.equal(defaultTopSitesNumber, 5, "5 top sites are loaded by default");
+    const defaultTopSitesNumber = count(siteSelector);
+    Assert.equal(
+      defaultTopSitesNumber,
+      defaultTopSites.length - count(shortcutSelector),
+      "Every configured top site that is not a search shortcut is loaded"
+    );
 
     
     
@@ -89,8 +99,8 @@ test_newtab({
     );
 
     await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelectorAll(siteSelector).length === 4,
-      "4 top sites are displayed after one of them is dismissed"
+      () => count(siteSelector) === defaultTopSitesNumber - 1,
+      "One fewer top site is displayed after one of them is dismissed"
     );
   },
   async after() {
