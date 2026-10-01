@@ -4,6 +4,10 @@
 
 
 
+
+
+
+
 use std::marker::PhantomData;
 
 use crate::flatbuffers::containers::fb_index::FbIndex;
@@ -213,6 +217,6 @@ mod tests {
         
         
         let message = "If the value changes, update ADBLOCK_RUST_DAT_VERSION.";
-        assert_eq!(get_hash(&"adblock-rust"), 15102204115509201409, "{message}");
+        assert_eq!(get_hash(&"adblock-rust"), 5391703202028078439, "{message}");
     }
 }

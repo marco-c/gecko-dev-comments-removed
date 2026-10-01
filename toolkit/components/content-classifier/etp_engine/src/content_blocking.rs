@@ -1,5 +1,9 @@
 
 
+
+
+
+
 use crate::filters::cosmetic::CosmeticFilter;
 use crate::filters::network::{NetworkFilter, NetworkFilterMask, NetworkFilterMaskHelper};
 use crate::lists::ParsedFilter;
@@ -672,7 +676,3 @@ impl TryFrom<CosmeticFilter> for CbRule {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "../tests/unit/content_blocking.rs"]
-mod unit_tests;

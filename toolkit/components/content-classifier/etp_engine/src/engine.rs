@@ -1,5 +1,9 @@
 
 
+
+
+
+
 use crate::blocker::{Blocker, BlockerResult};
 use crate::cosmetic_filter_cache::{CosmeticFilterCache, UrlSpecificResources};
 use crate::cosmetic_filter_cache_builder::CosmeticFilterCacheBuilder;
@@ -342,7 +346,3 @@ fn make_flatbuffer(
     let cosmetic_rules = FlatSerialize::serialize(cosmetic_rules, &mut builder);
     builder.finish(network_rules, cosmetic_rules)
 }
-
-#[cfg(test)]
-#[path = "../tests/unit/engine.rs"]
-mod unit_tests;

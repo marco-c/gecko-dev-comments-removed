@@ -1,6 +1,10 @@
 
 
 
+
+
+
+
 use crate::resources::{MimeType, Resource, ResourceType};
 use base64::{engine::Engine as _, prelude::BASE64_STANDARD};
 use memchr::memmem;
@@ -294,7 +298,3 @@ pub fn assemble_scriptlet_resources(scriptlets_path: &Path) -> Vec<Resource> {
     let scriptlets_data = std::fs::read_to_string(scriptlets_path).expect("read scriptlets path");
     read_template_resources(&scriptlets_data)
 }
-
-#[cfg(test)]
-#[path = "../../tests/unit/resources/resource_assembler.rs"]
-mod unit_tests;

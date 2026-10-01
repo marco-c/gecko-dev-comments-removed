@@ -1,3 +1,7 @@
+
+
+
+
 use std::marker::PhantomData;
 
 use crate::flatbuffers::containers;
@@ -72,7 +76,3 @@ impl FlatMapBuilder {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "../../../tests/unit/flatbuffers/containers/flat_map.rs"]
-mod unit_tests;

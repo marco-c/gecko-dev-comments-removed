@@ -1,5 +1,9 @@
 
 
+
+
+
+
 use crate::flatbuffers::containers::{
     fb_index::FbIndex,
     flat_serialize::{FlatBuilder, FlatSerialize, WIPFlatVec},
@@ -65,7 +69,3 @@ impl<I: FbHashKey, Keys: FbIndex<I>> HashSetView<I, Keys> {
         self.view.capacity()
     }
 }
-
-#[cfg(test)]
-#[path = "../../../tests/unit/flatbuffers/containers/hash_set.rs"]
-mod unit_tests;

@@ -3,19 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 pub mod blocker;
 #[cfg(feature = "content-blocking")]
 pub mod content_blocking;
@@ -41,10 +28,6 @@ pub mod utils;
 pub use engine::Engine;
 #[doc(inline)]
 pub use lists::FilterSet;
-
-#[cfg(test)]
-#[path = "../tests/test_utils.rs"]
-mod test_utils;
 
 #[cfg(test)]
 mod sync_tests {

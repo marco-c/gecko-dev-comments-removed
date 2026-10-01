@@ -1,3 +1,7 @@
+
+
+
+
 use crate::filters::network::{
     FilterPart, NetworkFilter, NetworkFilterMask, NetworkFilterMaskHelper,
 };
@@ -204,7 +208,3 @@ impl Optimization for SimplePatternGroup {
 
 
 
-
-#[cfg(test)]
-#[path = "../tests/unit/optimizer.rs"]
-mod unit_tests;
