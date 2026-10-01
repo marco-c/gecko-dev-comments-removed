@@ -48,7 +48,7 @@ class AddressRadixTree {
 
  public:
   
-  constexpr AddressRadixTree() {}
+  constexpr AddressRadixTree() = default;
 
   bool Init() MOZ_REQUIRES(gInitLock) MOZ_EXCLUDES(mLock);
 
