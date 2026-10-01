@@ -93,7 +93,7 @@ this.tabGroups = class extends ExtensionAPIPersistent {
   PERSISTENT_EVENTS = {
     onCreated({ fire }) {
       let onCreate = event => {
-        if (event.detail.isAdoptingGroup) {
+        if (event.detail.adopting) {
           
           return;
         }
@@ -124,7 +124,7 @@ this.tabGroups = class extends ExtensionAPIPersistent {
         fire.async(this.convert(event.originalTarget));
       };
       let onCreate = event => {
-        if (!event.detail.isAdoptingGroup) {
+        if (!event.detail.adopting) {
           
           return;
         }
