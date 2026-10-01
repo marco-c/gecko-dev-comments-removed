@@ -5,6 +5,7 @@
 #include "MediaTransportHandler.h"
 
 #include "MediaTransportHandlerIPC.h"
+#include "nsITimer.h"
 #include "transport/dtlsidentity.h"
 #include "transport/nricemediastream.h"
 #include "transport/nriceresolver.h"
@@ -54,6 +55,12 @@ static const char* mthLogTag = "MediaTransportHandler";
 #  undef LOGTAG
 #endif
 #define LOGTAG mthLogTag
+
+
+
+
+
+static constexpr uint32_t kOldFlowGraceMs = 2000;
 
 class MediaTransportHandlerSTS : public MediaTransportHandler,
                                  public sigslot::has_slots<> {
@@ -129,9 +136,66 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
       const RefPtr<DtlsIdentity>& aDtlsIdentity, bool aDtlsClient,
       const DtlsDigestList& aDigests, bool aPrivacyRequested);
 
+  
+  
+  
+  
   struct Transport {
+    Transport() = default;
+    Transport(const Transport&) = delete;
+    Transport& operator=(const Transport&) = delete;
+
+    RefPtr<TransportFlow> GetCurrent(bool aIsRtcp) const {
+      return (aIsRtcp && mRtcpFlow) ? mRtcpFlow : mFlow;
+    }
+    RefPtr<TransportFlow> GetOld(bool aIsRtcp) const {
+      return (aIsRtcp && mOldRtcpFlow) ? mOldRtcpFlow : mOldFlow;
+    }
+    
+    
+    RefPtr<TransportFlow> GetSendFlow(bool aIsRtcp) const;
+    TransportLayer::State CurrentDtlsState(bool aIsRtcp) const;
+
+    
+    
+    void DeprecateCurrentFlows();
+    
+    void CloseOldFlows();
+
+    struct DtlsState {
+      DtlsState() = default;
+      DtlsState(DtlsState&&) = default;
+      DtlsState& operator=(DtlsState&&) = default;
+      
+      DtlsState(const DtlsState& aOther);
+      DtlsState& operator=(const DtlsState& aOther);
+      bool operator==(const DtlsState& aOther) const = default;
+
+      TransportLayer::State mState = TransportLayer::TS_NONE;
+      nsTArray<nsTArray<uint8_t>> mRemoteCerts;
+    };
+    
+    
+    Maybe<DtlsState> UpdateDtlsState(bool aIsRtcp);
+    
+    Maybe<std::string> UpdateAlpn();
+
     RefPtr<TransportFlow> mFlow;
     RefPtr<TransportFlow> mRtcpFlow;
+    
+    RefPtr<TransportFlow> mOldFlow;
+    RefPtr<TransportFlow> mOldRtcpFlow;
+    
+    
+    
+    nsCOMPtr<nsITimer> mCloseTimer;
+    
+    
+    DtlsDigestList mDigests;
+    
+    
+    std::string mUfrag;
+
     
     
     
@@ -149,6 +213,13 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
     
     
     dom::RTCIceTransportState mIceState = dom::RTCIceTransportState::New;
+
+   private:
+    DtlsState ComputeDtlsState(bool aIsRtcp) const;
+
+    DtlsState mReportedDtlsState;
+    DtlsState mReportedRtcpState;
+    std::string mReportedAlpn;
   };
 
   using MediaTransportHandler::OnAlpnNegotiated;
@@ -174,6 +245,18 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
                         uint16_t aErrorCode, const std::string& aErrorText);
   void OnStateChange(TransportLayer* aLayer, TransportLayer::State);
   void OnRtcpStateChange(TransportLayer* aLayer, TransportLayer::State);
+  
+  
+  
+  
+  void UpdateReportedState(const std::string& aTransportId, bool aIsRtcp);
+  
+  
+  
+  
+  
+  void ScheduleOldFlowClose(const std::string& aTransportId, uint32_t aDelayMs);
+  void CloseOldFlows(const std::string& aTransportId);
   void PacketReceived(TransportLayer* aLayer, MediaPacket& aPacket);
   void EncryptedPacketSending(TransportLayer* aLayer, MediaPacket& aPacket);
   RefPtr<TransportFlow> GetTransportFlow(const std::string& aTransportId,
@@ -682,7 +765,31 @@ void MediaTransportHandlerSTS::ActivateTransport(
           return;
         }
 
-        Transport transport = mTransports[aTransportId];
+        Transport& transport = mTransports[aTransportId];
+
+        if (transport.mFlow) {
+          
+          if (transport.mUfrag != aUfrag) {
+            
+            
+            transport.CloseOldFlows();
+            if (transport.mDigests != aDigests) {
+              
+              
+              stream->AdvanceDtlsId();
+              transport.DeprecateCurrentFlows();
+            }
+          } else if (transport.mDigests != aDigests) {
+            
+            
+            CSFLogError(LOGTAG,
+                        "%s: Ignoring remote DTLS fingerprint change without "
+                        "an ICE restart on transport %s",
+                        mIceCtx->name().c_str(), aTransportId.c_str());
+          }
+        }
+        transport.mUfrag = aUfrag;
+
         if (!transport.mFlow) {
           transport.mFlow =
               CreateTransportFlow(aTransportId, false, dtlsIdentity,
@@ -690,6 +797,7 @@ void MediaTransportHandlerSTS::ActivateTransport(
           if (!transport.mFlow) {
             return;
           }
+          transport.mDigests = aDigests;
           TransportLayer* dtls =
               transport.mFlow->GetLayer(TransportLayerDtls::ID());
           dtls->SignalStateChange.connect(
@@ -719,7 +827,8 @@ void MediaTransportHandlerSTS::ActivateTransport(
           stream->DisableComponent(2);
         }
 
-        mTransports[aTransportId] = std::move(transport);
+        UpdateReportedState(aTransportId,  false);
+        UpdateReportedState(aTransportId,  true);
       },
       [](const std::string& aError) {});
 }
@@ -1531,19 +1640,126 @@ void MediaTransportHandlerSTS::GetIceStats(
   }
 }
 
+static TransportLayerDtls* GetDtlsLayer(const RefPtr<TransportFlow>& aFlow) {
+  return aFlow ? static_cast<TransportLayerDtls*>(
+                     aFlow->GetLayer(TransportLayerDtls::ID()))
+               : nullptr;
+}
+
+static TransportLayer::State GetDtlsState(const RefPtr<TransportFlow>& aFlow) {
+  TransportLayerDtls* dtls = GetDtlsLayer(aFlow);
+  return dtls ? dtls->state() : TransportLayer::TS_NONE;
+}
+
+RefPtr<TransportFlow> MediaTransportHandlerSTS::Transport::GetSendFlow(
+    bool aIsRtcp) const {
+  RefPtr<TransportFlow> current = GetCurrent(aIsRtcp);
+  RefPtr<TransportFlow> old = GetOld(aIsRtcp);
+  if (GetDtlsState(current) == TransportLayer::TS_OPEN) {
+    return current;
+  }
+  if (GetDtlsState(old) == TransportLayer::TS_OPEN) {
+    return old;
+  }
+  return current ? current : old;
+}
+
+TransportLayer::State MediaTransportHandlerSTS::Transport::CurrentDtlsState(
+    bool aIsRtcp) const {
+  return GetDtlsState(GetCurrent(aIsRtcp));
+}
+
+void MediaTransportHandlerSTS::Transport::DeprecateCurrentFlows() {
+  mOldFlow = std::move(mFlow);
+  mOldRtcpFlow = std::move(mRtcpFlow);
+}
+
+void MediaTransportHandlerSTS::Transport::CloseOldFlows() {
+  if (mCloseTimer) {
+    mCloseTimer->Cancel();
+    mCloseTimer = nullptr;
+  }
+  mOldFlow = nullptr;
+  mOldRtcpFlow = nullptr;
+}
+
+MediaTransportHandlerSTS::Transport::DtlsState
+MediaTransportHandlerSTS::Transport::ComputeDtlsState(bool aIsRtcp) const {
+  DtlsState result;
+  result.mState = CurrentDtlsState(aIsRtcp);
+  const bool currentOpen = result.mState == TransportLayer::TS_OPEN;
+  const bool currentDead = result.mState == TransportLayer::TS_ERROR ||
+                           result.mState == TransportLayer::TS_CLOSED;
+  const bool oldOpen = GetDtlsState(GetOld(aIsRtcp)) == TransportLayer::TS_OPEN;
+
+  
+  
+  
+  if (!currentOpen && !currentDead && oldOpen) {
+    result.mState = TransportLayer::TS_OPEN;
+  }
+
+  if (result.mState == TransportLayer::TS_OPEN && !aIsRtcp) {
+    
+    TransportLayerDtls* connected =
+        GetDtlsLayer(currentOpen ? GetCurrent(aIsRtcp) : GetOld(aIsRtcp));
+    if (NS_WARN_IF(!connected)) {
+      MOZ_ASSERT(false);
+    } else {
+      result.mRemoteCerts = connected->GetPeerCertChainDer();
+    }
+  }
+  return result;
+}
+
+Maybe<MediaTransportHandlerSTS::Transport::DtlsState>
+MediaTransportHandlerSTS::Transport::UpdateDtlsState(bool aIsRtcp) {
+  DtlsState newState = ComputeDtlsState(aIsRtcp);
+  DtlsState& currentState = aIsRtcp ? mReportedRtcpState : mReportedDtlsState;
+  if (newState == currentState) {
+    return Nothing();
+  }
+  currentState = newState;
+  return Some(std::move(newState));
+}
+
+MediaTransportHandlerSTS::Transport::DtlsState::DtlsState(
+    const DtlsState& aOther)
+    : mState(aOther.mState) {
+  
+  
+  for (const auto& cert : aOther.mRemoteCerts) {
+    mRemoteCerts.AppendElement(cert.Clone());
+  }
+}
+
+MediaTransportHandlerSTS::Transport::DtlsState&
+MediaTransportHandlerSTS::Transport::DtlsState::operator=(
+    const DtlsState& aOther) {
+  DtlsState copy(aOther);
+  return *this = std::move(copy);
+}
+
+Maybe<std::string> MediaTransportHandlerSTS::Transport::UpdateAlpn() {
+  TransportLayerDtls* connected = GetDtlsLayer(GetSendFlow(false));
+  if (!connected || connected->state() != TransportLayer::TS_OPEN) {
+    return Nothing();
+  }
+  std::string alpn = connected->GetNegotiatedAlpn();
+  if (alpn.empty() || alpn == mReportedAlpn) {
+    return Nothing();
+  }
+  mReportedAlpn = alpn;
+  return Some(std::move(alpn));
+}
+
 RefPtr<TransportFlow> MediaTransportHandlerSTS::GetTransportFlow(
     const std::string& aTransportId, bool aIsRtcp) const {
   auto it = mTransports.find(aTransportId);
   if (it == mTransports.end()) {
     return nullptr;
   }
-
-  if (aIsRtcp) {
-    return it->second.mRtcpFlow ? it->second.mRtcpFlow : it->second.mFlow;
-    ;
-  }
-
-  return it->second.mFlow;
+  return it->second.GetSendFlow(aIsRtcp);
 }
 
 RefPtr<TransportFlow> MediaTransportHandlerSTS::CreateTransportFlow(
@@ -1764,44 +1980,133 @@ dom::RTCErrorParams GetErrorInfo(const TransportLayerDtls& aDtlsLayer) {
 }
 
 void MediaTransportHandlerSTS::OnStateChange(TransportLayer* aLayer,
-                                             TransportLayer::State aState) {
-  nsTArray<nsTArray<uint8_t>> remoteCerts;
-
+                                             TransportLayer::State) {
   MOZ_ASSERT(aLayer->id() == TransportLayerDtls::ID());
-  Maybe<dom::RTCErrorParams> error;
-  TransportLayerDtls* dtlsLayer = static_cast<TransportLayerDtls*>(aLayer);
-  if (aState == TransportLayer::TS_OPEN) {
-    OnAlpnNegotiated(dtlsLayer->GetNegotiatedAlpn());
-    remoteCerts = dtlsLayer->GetPeerCertChainDer();
-  } else if (aState == TransportLayer::TS_ERROR) {
-    error = Some(GetErrorInfo(*dtlsLayer));
-  }
-
-  
-  
-  MediaTransportHandler::OnStateChange(
-      aLayer->flow_id(), aState, std::move(remoteCerts), std::move(error));
+  UpdateReportedState(aLayer->flow_id(),  false);
 }
 
 void MediaTransportHandlerSTS::OnRtcpStateChange(TransportLayer* aLayer,
-                                                 TransportLayer::State aState) {
+                                                 TransportLayer::State) {
   MOZ_ASSERT(aLayer->id() == TransportLayerDtls::ID());
-  Maybe<dom::RTCErrorParams> error;
-  TransportLayerDtls* dtlsLayer = static_cast<TransportLayerDtls*>(aLayer);
-  if (aState == TransportLayer::TS_ERROR) {
-    error = Some(GetErrorInfo(*dtlsLayer));
+  UpdateReportedState(aLayer->flow_id(),  true);
+}
+
+void MediaTransportHandlerSTS::UpdateReportedState(
+    const std::string& aTransportId, bool aIsRtcp) {
+  auto it = mTransports.find(aTransportId);
+  if (it == mTransports.end()) {
+    return;
+  }
+  Transport& transport = it->second;
+
+  if (!aIsRtcp && transport.mOldFlow) {
+    switch (transport.CurrentDtlsState(aIsRtcp)) {
+      case TransportLayer::TS_OPEN:
+        ScheduleOldFlowClose(aTransportId, kOldFlowGraceMs);
+        break;
+      case TransportLayer::TS_ERROR:
+      case TransportLayer::TS_CLOSED:
+        
+        
+        
+        
+        ScheduleOldFlowClose(aTransportId, 0);
+        
+        
+        
+        return;
+      case TransportLayer::TS_NONE:
+      case TransportLayer::TS_INIT:
+      case TransportLayer::TS_CONNECTING:
+        break;
+    }
   }
 
-  MediaTransportHandler::OnRtcpStateChange(aLayer->flow_id(), aState,
-                                           std::move(error));
+  if (!aIsRtcp) {
+    if (Maybe<std::string> alpn = transport.UpdateAlpn()) {
+      OnAlpnNegotiated(*alpn);
+    }
+  }
+
+  Maybe<Transport::DtlsState> newState = transport.UpdateDtlsState(aIsRtcp);
+  if (!newState) {
+    return;
+  }
+
+  Maybe<dom::RTCErrorParams> error;
+  if (newState->mState == TransportLayer::TS_ERROR) {
+    
+    auto dtlsLayer = GetDtlsLayer(transport.GetCurrent(aIsRtcp));
+    if (NS_WARN_IF(!dtlsLayer)) {
+      MOZ_ASSERT(false);
+    } else {
+      error = Some(GetErrorInfo(*dtlsLayer));
+    }
+  }
+
+  if (aIsRtcp) {
+    MediaTransportHandler::OnRtcpStateChange(aTransportId, newState->mState,
+                                             std::move(error));
+  } else {
+    MediaTransportHandler::OnStateChange(aTransportId, newState->mState,
+                                         std::move(newState->mRemoteCerts),
+                                         std::move(error));
+  }
+}
+
+void MediaTransportHandlerSTS::ScheduleOldFlowClose(
+    const std::string& aTransportId, uint32_t aDelayMs) {
+  auto it = mTransports.find(aTransportId);
+  if (it == mTransports.end() || !it->second.mOldFlow) {
+    return;
+  }
+  Transport& transport = it->second;
+  if (transport.mCloseTimer) {
+    
+    if (aDelayMs) {
+      
+      return;
+    }
+    
+    transport.mCloseTimer->Cancel();
+  }
+  NS_NewTimerWithCallback(
+      getter_AddRefs(transport.mCloseTimer),
+      [this, self = RefPtr<MediaTransportHandlerSTS>(this),
+       aTransportId](nsITimer*) { CloseOldFlows(aTransportId); },
+      aDelayMs, nsITimer::TYPE_ONE_SHOT,
+      "MediaTransportHandlerSTS::CloseOldFlows"_ns, mStsThread);
+}
+
+void MediaTransportHandlerSTS::CloseOldFlows(const std::string& aTransportId) {
+  auto it = mTransports.find(aTransportId);
+  if (it == mTransports.end() || !it->second.mOldFlow) {
+    return;
+  }
+  CSFLogInfo(LOGTAG, "Closing old DTLS association on transport %s",
+             aTransportId.c_str());
+  it->second.CloseOldFlows();
+  if (mIceCtx) {
+    if (RefPtr<NrIceMediaStream> stream = mIceCtx->GetStream(aTransportId)) {
+      stream->CloseOldStream();
+    }
+  }
+  UpdateReportedState(aTransportId,  false);
+  UpdateReportedState(aTransportId,  true);
 }
 
 void MediaTransportHandlerSTS::PacketReceived(TransportLayer* aLayer,
                                               MediaPacket& aPacket) {
   MEDIA_TRANSPORT_HANDLER_PACKET_RECEIVED(aPacket);
   if (auto it = mTransports.find(aLayer->flow_id()); it != mTransports.end()) {
-    it->second.mBytesReceived += aPacket.len();
-    it->second.mPacketsReceived += 1;
+    Transport& transport = it->second;
+    transport.mBytesReceived += aPacket.len();
+    transport.mPacketsReceived += 1;
+    if (transport.mOldFlow && transport.mFlow &&
+        transport.mFlow->GetLayer(aLayer->id()) == aLayer) {
+      
+      ScheduleOldFlowClose(std::string(aLayer->flow_id()), 0);
+    }
   }
   OnPacketReceived(std::string(aLayer->flow_id()), std::move(aPacket));
 }

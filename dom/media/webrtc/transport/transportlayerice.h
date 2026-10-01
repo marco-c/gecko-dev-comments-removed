@@ -36,7 +36,7 @@ class TransportLayerIce : public TransportLayer {
   void IceReady(NrIceMediaStream* stream);
   void IceFailed(NrIceMediaStream* stream);
   void IcePacketReceived(NrIceMediaStream* stream, int component,
-                         MediaPacket& packet);
+                         uint32_t dtls_id, MediaPacket& packet);
 
   
   sigslot::signal2<TransportLayer*, MediaPacket&> SignalPacketSending;
@@ -49,6 +49,11 @@ class TransportLayerIce : public TransportLayer {
 
   RefPtr<NrIceMediaStream> stream_;
   int component_;
+  
+  
+  
+  
+  uint32_t dtls_id_;
 };
 
 }  

@@ -2108,6 +2108,14 @@ JsepSession::Result JsepSessionImpl::ValidateRemoteDescription(
       return Result(dom::PCError::InvalidAccessError);
     }
 
+    if (mSdpHelper.FingerprintsDiffer(newMsection, oldMsection) && !differ) {
+      JSEP_SET_ERROR(
+          "Remote description changes the DTLS fingerprint without changing "
+          "the ICE credentials (i.e. without an ICE restart), which is not "
+          "permitted (see RFC 9429 section 5.11)");
+      return Result(dom::PCError::InvalidAccessError);
+    }
+
     
     if (!iceCredsDiffer.isSome()) {
       

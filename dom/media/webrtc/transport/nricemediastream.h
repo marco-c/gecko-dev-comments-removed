@@ -193,7 +193,23 @@ class NrIceMediaStream {
   
 
   
-  nsresult SendPacket(int component_id, const unsigned char* data, size_t len);
+  nsresult SendPacket(int component_id, const unsigned char* data, size_t len,
+                      uint32_t aDtlsId);
+
+  
+  
+  
+  
+  
+  
+  uint32_t GetDtlsId() const;
+  void AdvanceDtlsId();
+  
+  
+  
+  
+  
+  void CloseOldStream();
 
   
   void Ready(nr_ice_media_stream* stream);
@@ -235,7 +251,7 @@ class NrIceMediaStream {
 
   sigslot::signal1<NrIceMediaStream*> SignalReady;   
   sigslot::signal1<NrIceMediaStream*> SignalFailed;  
-  sigslot::signal3<NrIceMediaStream*, int, MediaPacket&>
+  sigslot::signal4<NrIceMediaStream*, int, uint32_t, MediaPacket&>
       SignalPacketReceived;  
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(NrIceMediaStream);
@@ -255,6 +271,10 @@ class NrIceMediaStream {
   const size_t components_;
   nr_ice_media_stream* stream_;
   nr_ice_media_stream* old_stream_;
+  uint32_t DtlsIdForStream(nr_ice_media_stream* aStream) const;
+  uint32_t dtls_id_ = 0;
+  uint32_t old_dtls_id_ = 0;
+  uint32_t next_dtls_id_ = 1;
   const std::string id_;
 };
 

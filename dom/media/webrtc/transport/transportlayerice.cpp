@@ -62,7 +62,8 @@ namespace mozilla {
 
 MOZ_MTLOG_MODULE("mtransport")
 
-TransportLayerIce::TransportLayerIce() : stream_(nullptr), component_(0) {
+TransportLayerIce::TransportLayerIce()
+    : stream_(nullptr), component_(0), dtls_id_(0) {
   
 }
 
@@ -89,6 +90,9 @@ void TransportLayerIce::SetParameters(RefPtr<NrIceMediaStream> stream,
 }
 
 void TransportLayerIce::PostSetup() {
+  
+  
+  dtls_id_ = stream_->GetDtlsId();
   stream_->SignalReady.connect(this, &TransportLayerIce::IceReady);
   stream_->SignalFailed.connect(this, &TransportLayerIce::IceFailed);
   stream_->SignalPacketReceived.connect(this,
@@ -100,7 +104,8 @@ void TransportLayerIce::PostSetup() {
 
 TransportResult TransportLayerIce::SendPacket(MediaPacket& packet) {
   CheckThread();
-  nsresult res = stream_->SendPacket(component_, packet.data(), packet.len());
+  nsresult res =
+      stream_->SendPacket(component_, packet.data(), packet.len(), dtls_id_);
   int len = packet.len();
   
   SignalPacketSending(this, packet);
@@ -143,11 +148,12 @@ void TransportLayerIce::IceFailed(NrIceMediaStream* stream) {
 }
 
 void TransportLayerIce::IcePacketReceived(NrIceMediaStream* stream,
-                                          int component, MediaPacket& packet) {
+                                          int component, uint32_t dtls_id,
+                                          MediaPacket& packet) {
   CheckThread();
   
   
-  if (component_ != component) return;
+  if (component_ != component || dtls_id_ != dtls_id) return;
 
   MOZ_MTLOG(ML_DEBUG, LAYER_INFO << "PacketReceived(" << stream->name() << ","
                                  << component << "," << packet.len() << ")");
