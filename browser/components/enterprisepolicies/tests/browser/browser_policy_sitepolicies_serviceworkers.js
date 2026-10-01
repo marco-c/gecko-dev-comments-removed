@@ -78,12 +78,16 @@ async function goBack(browser) {
 
 
 
+
+
 async function assertEntryInBFCache(sh, index, expectedUrl, description) {
-  await TestUtils.waitForCondition(
-    () => sh.getEntryAtIndex(index).URI.spec == expectedUrl,
-    `Waiting for ${description}`
-  );
-  Assert.ok(sh.getEntryAtIndex(index).isInBFCache, description);
+  await TestUtils.waitForCondition(() => {
+    let entry = sh.getEntryAtIndex(index);
+    return entry.URI.spec == expectedUrl && entry.isInBFCache;
+  }, `Waiting for ${description}`);
+  let entry = sh.getEntryAtIndex(index);
+  Assert.equal(entry.URI.spec, expectedUrl, `${description} (correct entry)`);
+  Assert.ok(entry.isInBFCache, description);
 }
 
 add_task(async function test_serviceworker_api_hidden_on_blocked_site() {
