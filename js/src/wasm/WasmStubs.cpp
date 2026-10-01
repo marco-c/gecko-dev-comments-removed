@@ -1950,6 +1950,10 @@ static bool GenerateImportFunction(jit::MacroAssembler& masm,
   masm.wasmCallImport(desc, CalleeDesc::import(funcImportInstanceOffset));
 
   
+  
+  masm.freeStackTo(framePushed);
+
+  
   masm.loadPtr(
       Address(masm.getStackPointer(), framePushed - sizeOfInstanceSlot),
       InstanceReg);
