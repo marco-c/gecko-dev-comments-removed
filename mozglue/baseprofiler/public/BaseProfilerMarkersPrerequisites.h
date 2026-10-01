@@ -925,17 +925,6 @@ class MarkerSchema {
   };
 
   
-  struct GraphField {
-    
-    
-    const char* Key = nullptr;
-    GraphType Type = GraphType::Line;
-    
-    
-    Maybe<GraphColor> Color;
-  };
-
-  
   
   
   
@@ -1298,8 +1287,6 @@ struct BaseMarkerType {
 
   static constexpr MarkerSchema::PayloadField PayloadFields[0] = {};
 
-  static constexpr MarkerSchema::GraphField GraphFields[0] = {};
-
   
   
   
@@ -1313,10 +1300,6 @@ struct BaseMarkerType {
           "PayloadField requires a non-null Key and an InputTy other than "
           "Undefined");
     }
-    if constexpr (std::extent_v<decltype(T::GraphFields)>) {
-      static_assert(CheckGraphFields(T::GraphFields),
-                    "GraphField requires a non-null Key");
-    }
     if constexpr (T::UseSpecialFrontendLocation) {
       static_assert(!MarkerHasLocations<T>::value,
                     "Set either Locations or UseSpecialFrontendLocation, not "
@@ -1326,12 +1309,10 @@ struct BaseMarkerType {
       
       static_assert(!T::AllLabels && !T::ChartLabel && !T::TableLabel &&
                         !T::TooltipLabel && !T::ColorField &&
-                        !T::IsStackBased && !T::Description &&
-                        !std::extent_v<decltype(T::GraphFields)>,
+                        !T::IsStackBased && !T::Description,
                     "UseSpecialFrontendLocation ignores the display schema, so "
                     "do not set AllLabels, ChartLabel, TableLabel, "
-                    "TooltipLabel, ColorField, IsStackBased, Description or "
-                    "GraphFields");
+                    "TooltipLabel, ColorField, IsStackBased or Description");
       return MS{MS::SpecialFrontendLocation{}};
     } else {
       static_assert(MarkerHasLocations<T>::value,
@@ -1361,13 +1342,6 @@ struct BaseMarkerType {
                                    field.Flags);
         } else {
           schema.AddKeyFormat(field.Key, field.Fmt, field.Flags);
-        }
-      }
-      for (const MS::GraphField& graph : T::GraphFields) {
-        if (graph.Color) {
-          schema.AddChartColor(graph.Key, graph.Type, *graph.Color);
-        } else {
-          schema.AddChart(graph.Key, graph.Type);
         }
       }
       if constexpr (T::Description) {
@@ -1415,17 +1389,6 @@ struct BaseMarkerType {
         return false;
       }
       if (field.InputTy == MarkerSchema::InputType::Undefined) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  template <std::size_t N>
-  static constexpr bool CheckGraphFields(
-      const MarkerSchema::GraphField (&aGraphFields)[N]) {
-    for (const auto& field : aGraphFields) {
-      if (field.Key == nullptr) {
         return false;
       }
     }
