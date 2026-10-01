@@ -16,7 +16,10 @@ function run_test() {
 
   
   let distroDir = gProfD.clone();
-  distroDir.leafName = "distribution";
+  distroDir.append("distribution");
+  if (!distroDir.exists()) {
+    distroDir.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
+  }
   let iniFile = distroDir.clone();
   iniFile.append("distribution.ini");
   if (iniFile.exists()) {
@@ -33,10 +36,8 @@ function run_test() {
 }
 
 registerCleanupFunction(function () {
-  
-  
   let iniFile = gProfD.clone();
-  iniFile.leafName = "distribution";
+  iniFile.append("distribution");
   iniFile.append("distribution.ini");
   if (iniFile.exists()) {
     iniFile.remove(false);
