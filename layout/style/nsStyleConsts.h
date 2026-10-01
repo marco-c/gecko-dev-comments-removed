@@ -16,12 +16,6 @@
 namespace mozilla {
 
 
-enum class StyleBoxOrient : uint8_t {
-  Horizontal,
-  Vertical,
-};
-
-
 enum class StyleBoxPack : uint8_t {
   Start,
   Center,
