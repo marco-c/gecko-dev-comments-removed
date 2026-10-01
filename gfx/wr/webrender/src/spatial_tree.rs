@@ -11,7 +11,7 @@ use crate::internal_types::{FastHashMap, FrameMemory};
 use crate::print_tree::{PrintableTree, PrintTree, PrintTreePrinter};
 use crate::scene::SceneProperties;
 use crate::spatial_node::{ReferenceFrameInfo, SpatialNode, SpatialNodeDescriptor, SpatialNodeType, StickyFrameInfo};
-use crate::spatial_node::{ScrollFrameKind, SceneSpatialNode, SpatialNodeInfo};
+use crate::spatial_node::{ScrollFrameInfo, ScrollFrameKind, SceneSpatialNode, SpatialNodeInfo};
 use crate::util::{FastTransform, LayoutToWorldFastTransform, MatrixHelpers, ScaleOffset, scale_factors};
 use smallvec::SmallVec;
 use crate::util::TransformedRectKind;
@@ -91,6 +91,26 @@ const MIN_SCROLLABLE_AMOUNT: f32 = 0.01;
 
 
 const MIN_SCROLL_ROOT_SIZE: f32 = 128.0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fn is_real_scroll_root(info: &ScrollFrameInfo) -> bool {
+    (info.scrollable_size.width > MIN_SCROLLABLE_AMOUNT ||
+     info.scrollable_size.height > MIN_SCROLLABLE_AMOUNT) &&
+    info.viewport_rect.width() > MIN_SCROLL_ROOT_SIZE &&
+    info.viewport_rect.height() > MIN_SCROLL_ROOT_SIZE
+}
 
 impl SpatialNodeIndex {
     pub fn new(index: usize) -> Self {
@@ -298,27 +318,8 @@ impl SceneSpatialTree {
                             
                             
                             
-                            if !current_scroll_root_is_sticky {
-                                
-                                
-                                
-                                
-                                if info.scrollable_size.width > MIN_SCROLLABLE_AMOUNT ||
-                                   info.scrollable_size.height > MIN_SCROLLABLE_AMOUNT {
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    if info.viewport_rect.width() > MIN_SCROLL_ROOT_SIZE &&
-                                       info.viewport_rect.height() > MIN_SCROLL_ROOT_SIZE {
-                                        
-                                        
-                                        real_scroll_root = node_index;
-                                    }
-                                }
+                            if !current_scroll_root_is_sticky && is_real_scroll_root(info) {
+                                real_scroll_root = node_index;
                             }
                         }
                     }
@@ -336,6 +337,20 @@ impl SceneSpatialTree {
             outermost_scroll_root
         } else {
             real_scroll_root
+        }
+    }
+
+    
+    
+    
+    
+    
+    pub fn is_slice_worthy_scroll_root(&self, spatial_node_index: SpatialNodeIndex) -> bool {
+        match self.get_node_info(spatial_node_index).node_type {
+            SpatialNodeType::ScrollFrame(ref info) if info.frame_kind == ScrollFrameKind::Explicit => {
+                is_real_scroll_root(info)
+            }
+            _ => true,
         }
     }
 

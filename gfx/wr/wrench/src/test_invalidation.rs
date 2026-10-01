@@ -133,6 +133,7 @@ impl<'a> TestHarness<'a> {
         self.test_composite_nop();
         self.test_scroll_subpic();
         self.test_clip_promotion();
+        self.test_redundant_scroll_root();
         self.test_rounded_rect_intersection();
         self.test_promotion_shapes();
 
@@ -282,6 +283,26 @@ impl<'a> TestHarness<'a> {
 
         let slices = results.pc_debug.slices.len();
         assert!(slices > 1, "Expected multiple slices");
+    }
+
+    
+    
+    
+    
+    fn test_redundant_scroll_root(&mut self) {
+        let results = self.render_yaml("real_scroll_root");
+        assert!(
+            results.pc_debug.slices.len() > 1,
+            "Expected a real scroll root to get its own slice",
+        );
+
+        for name in ["redundant_scroll_root_small", "redundant_scroll_root_zero_range"] {
+            let results = self.render_yaml(name);
+            assert_eq!(
+                results.pc_debug.slices.len(), 1,
+                "Expected a single slice for {}", name,
+            );
+        }
     }
 
     
