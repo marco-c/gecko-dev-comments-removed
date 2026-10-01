@@ -270,7 +270,8 @@ template <size_t N>
 void CreateDataDescForPayload(PayloadBuffer& aBuffer,
                               EVENT_DATA_DESCRIPTOR& aDescriptor,
                               const char (&aPayload)[N]) {
-  EventDataDescCreate(&aDescriptor, aPayload, N + 1);
+  
+  EventDataDescCreate(&aDescriptor, aPayload, N);
 }
 
 struct BaseEventStorage {
