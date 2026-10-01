@@ -52,6 +52,39 @@ namespace mozilla::profiler {
 
 
 
+struct NativeAllocationMarker
+    : public mozilla::BaseMarkerType<NativeAllocationMarker> {
+  static constexpr const char* Name = "Native allocation";
+  static constexpr bool UseSpecialFrontendLocation = true;
+
+  using MS = mozilla::MarkerSchema;
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"size", MS::InputType::Int64, nullptr, MS::Format::Bytes},
+      {"memoryAddress", MS::InputType::Int64, nullptr, MS::Format::Integer},
+      {"threadId", MS::InputType::Int64, nullptr, MS::Format::Integer},
+  };
+
+  static void TranslateMarkerInputToSchema(void* aContext, int64_t aSize,
+                                           uintptr_t aMemoryAddress,
+                                           ProfilerThreadId aThreadId) {
+    ETW::OutputMarkerSchema(aContext, NativeAllocationMarker{}, aSize,
+                            static_cast<int64_t>(aMemoryAddress),
+                            static_cast<int64_t>(aThreadId.ToNumber()));
+  }
+
+  static void StreamJSONMarkerData(
+      mozilla::baseprofiler::SpliceableJSONWriter& aWriter, int64_t aSize,
+      uintptr_t aMemoryAddress, ProfilerThreadId aThreadId) {
+    
+    
+    
+    
+    StreamJSONMarkerDataImpl(aWriter, aSize,
+                             static_cast<int64_t>(aMemoryAddress),
+                             static_cast<int64_t>(aThreadId.ToNumber()));
+  }
+};
+
 
 
 static bool profiler_add_native_allocation_marker(int64_t aSize,
@@ -71,28 +104,6 @@ static bool profiler_add_native_allocation_marker(int64_t aSize,
   if (profiler_is_locked_on_current_thread()) {
     return false;
   }
-
-  struct NativeAllocationMarker {
-    static constexpr mozilla::Span<const char> MarkerTypeName() {
-      return mozilla::MakeStringSpan("Native allocation");
-    }
-    static void StreamJSONMarkerData(
-        mozilla::baseprofiler::SpliceableJSONWriter& aWriter, int64_t aSize,
-        uintptr_t aMemoryAddress, ProfilerThreadId aThreadId) {
-      aWriter.IntProperty("size", aSize);
-      aWriter.IntProperty("memoryAddress",
-                          static_cast<int64_t>(aMemoryAddress));
-      
-      
-      
-      
-      aWriter.IntProperty("threadId",
-                          static_cast<int64_t>(aThreadId.ToNumber()));
-    }
-    static mozilla::MarkerSchema MarkerTypeDisplay() {
-      return mozilla::MarkerSchema::SpecialFrontendLocation{};
-    }
-  };
 
   profiler_add_marker("Native allocation", geckoprofiler::category::OTHER,
                       {MarkerThreadId::MainThread(), MarkerStack::Capture()},
