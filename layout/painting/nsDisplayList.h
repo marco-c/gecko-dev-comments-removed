@@ -1673,21 +1673,10 @@ class nsDisplayListBuilder {
 
 
   struct WeakFrameRegion {
-    
-
-
-
-
-    struct WeakFrameWrapper {
-      explicit WeakFrameWrapper(nsIFrame* aFrame)
-          : mWeakFrame(new WeakFrame(aFrame)), mFrame(aFrame) {}
-
-      UniquePtr<WeakFrame> mWeakFrame;
-      void* mFrame;
-    };
-
     nsTHashSet<void*> mFrameSet;
-    nsTArray<WeakFrameWrapper> mFrames;
+    
+    
+    nsTArray<std::pair<WeakFrame, void*>> mFrames;
     nsTArray<pixman_box32_t> mRects;
 
     template <typename RectType>
@@ -1697,7 +1686,7 @@ class nsDisplayListBuilder {
       }
 
       mFrameSet.Insert(aFrame);
-      mFrames.AppendElement(WeakFrameWrapper(aFrame));
+      mFrames.EmplaceBack(aFrame, aFrame);
       mRects.AppendElement(nsRegion::RectToBox(aRect));
     }
 
