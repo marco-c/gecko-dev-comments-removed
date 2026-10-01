@@ -19,6 +19,7 @@ namespace mozilla::dom {
 
 
 
+
 class Win32SerialParityCheckStream final : public nsIAsyncInputStream {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
