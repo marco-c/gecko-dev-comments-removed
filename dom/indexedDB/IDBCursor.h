@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_idbcursor_h_
 #define mozilla_dom_idbcursor_h_
 
@@ -244,6 +242,8 @@ class IDBTypedCursor : public IDBCursor {
   }
 
   bool IsSourceDeleted() const;
+
+  bool CheckContinueState(ErrorResult& aRv) const;
 
  protected:
   virtual ~IDBTypedCursor() override;
