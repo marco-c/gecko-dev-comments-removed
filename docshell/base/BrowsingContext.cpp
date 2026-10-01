@@ -315,6 +315,11 @@ bool BrowsingContext::IsOwnedByProcess() const {
          !nsDocShell::Cast(mDocShell)->WillChangeProcess();
 }
 
+bool BrowsingContext::IsScriptClosable() const {
+  return GetTopLevelCreatedByWebContent() ||
+         (mChildSessionHistory && mChildSessionHistory->Count() == 1);
+}
+
 bool BrowsingContext::SameOriginWithTop() {
   MOZ_ASSERT(IsInProcess());
   
@@ -2171,20 +2176,31 @@ bool BrowsingContext::RemoveRootFromBFCacheSync() {
   return false;
 }
 
-nsresult BrowsingContext::CheckSandboxFlags(nsDocShellLoadState* aLoadState) {
+nsresult BrowsingContext::EnsureSourceSandboxAllowsNavigation(
+    nsDocShellLoadState* aLoadState, bool aForClose) {
   const auto& sourceBC = aLoadState->SourceBrowsingContext();
   if (sourceBC.IsNull()) {
     return NS_OK;
   }
+  return EnsureSourceSandboxAllowsNavigation(sourceBC.GetMaybeDiscarded(),
+                                             aForClose);
+}
 
+nsresult BrowsingContext::EnsureSourceSandboxAllowsNavigation(
+    BrowsingContext* aSourceBC, bool aForClose) {
   
   
   
   
   
   
-  BrowsingContext* bc = sourceBC.GetMaybeDiscarded();
-  if (!bc || bc->IsSandboxedFrom(this)) {
+  if (!aSourceBC || aSourceBC->IsSandboxedFrom(this)) {
+    nsPrintfCString msg(
+        "Blocked attempt to %s another window from a sandboxed frame.",
+        aForClose ? "close" : "navigate");
+    nsContentUtils::ReportToConsoleNonLocalized(
+        NS_ConvertUTF8toUTF16(msg), nsIScriptError::errorFlag, "Window"_ns,
+        aSourceBC ? aSourceBC->GetExtantDocument() : nullptr);
     return NS_ERROR_DOM_SECURITY_ERR;
   }
   return NS_OK;
@@ -2314,7 +2330,7 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
   
   
   
-  MOZ_TRY(CheckSandboxFlags(aLoadState));
+  MOZ_TRY(EnsureSourceSandboxAllowsNavigation(aLoadState));
   SetTriggeringAndInheritPrincipals(aLoadState->TriggeringPrincipal(),
                                     aLoadState->PrincipalToInherit(),
                                     aLoadState->GetLoadIdentifier());
@@ -2475,7 +2491,7 @@ nsresult BrowsingContext::InternalLoad(nsDocShellLoadState* aLoadState) {
   
   
   
-  MOZ_TRY(CheckSandboxFlags(aLoadState));
+  MOZ_TRY(EnsureSourceSandboxAllowsNavigation(aLoadState));
 
   const auto& sourceBC = aLoadState->SourceBrowsingContext();
 
@@ -2736,6 +2752,16 @@ void BrowsingContext::Close(CallerType aCallerType, ErrorResult& aError) {
     return;
   }
 
+  if (RefPtr<nsGlobalWindowInner> callerInner =
+          nsContentUtils::IncumbentInnerWindow()) {
+    if (BrowsingContext* callerBC = callerInner->GetBrowsingContext()) {
+      if (NS_FAILED(EnsureSourceSandboxAllowsNavigation(callerBC, true))) {
+        return;
+      }
+    }
+  }
+
+  
   
   
   

@@ -410,6 +410,9 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   bool IsDiscarded() const { return mIsDiscarded; }
 
   
+  bool IsScriptClosable() const;
+
+  
   
   bool AncestorsAreCurrent() const;
 
@@ -494,7 +497,10 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   
   
   
-  nsresult CheckSandboxFlags(nsDocShellLoadState* aLoadState);
+  nsresult EnsureSourceSandboxAllowsNavigation(BrowsingContext* aSourceBC,
+                                               bool aForClose = false);
+  nsresult EnsureSourceSandboxAllowsNavigation(nsDocShellLoadState* aLoadState,
+                                               bool aForClose = false);
 
   
   
