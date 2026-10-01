@@ -685,6 +685,13 @@ nsresult nsHttpChannel::PrepareToConnect() {
                     }
                     return;
                   }
+                  if (!self->mDictDecompress) {
+                    
+                    
+                    
+                    
+                    return;
+                  }
                   MOZ_ASSERT(self->mDictDecompress->DictionaryReady());
                   if (self->mSuspendedForDictionary) {
                     LOG(
