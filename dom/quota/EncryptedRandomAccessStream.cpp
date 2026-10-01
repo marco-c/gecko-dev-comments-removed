@@ -28,7 +28,7 @@ namespace mozilla::dom::quota {
 
 NS_IMPL_QUERY_INTERFACE(EncryptedRandomAccessStreamBase, nsIRandomAccessStream,
                         nsIInputStream, nsIOutputStream, nsISeekableStream,
-                        nsITellableStream)
+                        nsITellableStream, nsIFileMetadata)
 
 NS_IMPL_ADDREF(EncryptedRandomAccessStreamBase)
 
@@ -593,6 +593,10 @@ NS_IMETHODIMP EncryptedRandomAccessStreamBase::SetEOF() {
   mTotalBlockCount = targetBlockIndex + 1;  
 
   
+  
+  
+
+  
   const auto newPhysicalSize = CheckedInt64(mTotalBlockCount) * sBlockSize;
   if (!newPhysicalSize.isValid()) {
     return NS_ERROR_FILE_TOO_BIG;
@@ -607,6 +611,36 @@ NS_IMETHODIMP EncryptedRandomAccessStreamBase::SetEOF() {
   }
 
   return NS_OK;
+}
+
+NS_IMETHODIMP EncryptedRandomAccessStreamBase::GetSize(int64_t* aResult) {
+  if (mClosed) {
+    return NS_BASE_STREAM_CLOSED;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  *aResult = static_cast<int64_t>(mLogicalSize);
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP EncryptedRandomAccessStreamBase::GetLastModified(int64_t*) {
+  
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP EncryptedRandomAccessStreamBase::GetFileDescriptor(
+    PRFileDesc** aResult) {
+  
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 bool EncryptedRandomAccessStreamBase::Deserialize(
