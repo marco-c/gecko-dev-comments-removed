@@ -15,6 +15,7 @@
 #include "NumericTools.h"
 #include "Point.h"
 #include "Tools.h"
+#include "fmt/ostream.h"
 #include "mozilla/Maybe.h"
 
 namespace mozilla {
@@ -586,5 +587,18 @@ struct RoundedRect {
 
 }  
 }  
+
+template <class Units>
+struct fmt::formatter<mozilla::gfx::IntMarginTyped<Units>>
+    : fmt::ostream_formatter {};
+template <class Units, class F>
+struct fmt::formatter<mozilla::gfx::MarginTyped<Units, F>>
+    : fmt::ostream_formatter {};
+template <class Units>
+struct fmt::formatter<mozilla::gfx::IntRectTyped<Units>>
+    : fmt::ostream_formatter {};
+template <class Units, class F>
+struct fmt::formatter<mozilla::gfx::RectTyped<Units, F>>
+    : fmt::ostream_formatter {};
 
 #endif 

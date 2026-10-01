@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsRegion_h_
 #define nsRegion_h_
 
@@ -13,6 +11,7 @@
 #include <ostream>  
 #include <utility>  
 
+#include "fmt/ostream.h"
 #include "mozilla/ArrayView.h"      
 #include "mozilla/gfx/MatrixFwd.h"  
 #include "nsCoord.h"                
@@ -2222,7 +2221,7 @@ class BaseIntRegion {
   MOZ_IMPLICIT BaseIntRegion(const Rect& aRect) : mImpl(ToRect(aRect)) {}
   explicit BaseIntRegion(mozilla::gfx::ArrayView<pixman_box32_t> aRects)
       : mImpl(aRects) {}
-  BaseIntRegion(const BaseIntRegion& aRegion) : mImpl(aRegion.mImpl) {}
+  BaseIntRegion(const BaseIntRegion& aRegion) = default;
   BaseIntRegion(BaseIntRegion&& aRegion) : mImpl(std::move(aRegion.mImpl)) {}
   Derived& operator=(const Rect& aRect) {
     mImpl = ToRect(aRect);
@@ -2528,5 +2527,11 @@ class IntRegionTyped
 }  
 
 typedef mozilla::gfx::IntRegion nsIntRegion;
+
+template <>
+struct fmt::formatter<nsRegion> : fmt::ostream_formatter {};
+template <class Units>
+struct fmt::formatter<mozilla::gfx::IntRegionTyped<Units>>
+    : fmt::ostream_formatter {};
 
 #endif
