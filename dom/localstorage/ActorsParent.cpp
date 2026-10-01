@@ -1132,6 +1132,13 @@ Result<UsageInfo, nsresult> LoadUsageFile(nsIFile& aUsageFile) {
   QM_TRY_INSPECT(const uint64_t& usage,
                  MOZ_TO_RESULT_INVOKE_MEMBER(binaryStream, Read64));
 
+  
+  
+  
+  
+  QM_TRY(OkIf(usage < static_cast<uint64_t>(INT64_MAX)),
+         Err(NS_ERROR_FILE_CORRUPTED));
+
   return UsageInfo{DatabaseUsageType(Some(usage))};
 }
 
@@ -3002,6 +3009,51 @@ Result<int64_t, nsresult> GetUsage(mozIStorageConnection& aConnection,
   QM_TRY(OkIf(stmt), Err(NS_ERROR_FAILURE));
 
   QM_TRY_RETURN(MOZ_TO_RESULT_INVOKE_MEMBER(stmt, GetInt64, 0));
+}
+
+
+
+
+Result<int64_t, nsresult> RecomputeUsage(mozIStorageConnection& aConnection) {
+  MOZ_ASSERT(IsOnIOThread() || IsOnGlobalConnectionThread());
+
+  QM_TRY_INSPECT(const auto& stmt,
+                 CreateAndExecuteSingleStepStatement<
+                     SingleStepResult::ReturnNullIfNoResult>(
+                     aConnection,
+                     "SELECT total(utf16Length(key) + utf16_length) "
+                     "FROM data;"_ns));
+
+  QM_TRY(OkIf(stmt), Err(NS_ERROR_FAILURE));
+
+  QM_TRY_RETURN(MOZ_TO_RESULT_INVOKE_MEMBER(stmt, GetInt64, 0));
+}
+
+
+
+
+
+
+nsresult UpdateUsage(mozIStorageConnection& aConnection, nsIFile* aUsageFile,
+                     nsIFile* aUsageJournalFile, int64_t aUsage) {
+  MOZ_ASSERT(IsOnIOThread() || IsOnGlobalConnectionThread());
+  MOZ_ASSERT(aUsage >= 0);
+
+  QM_TRY_INSPECT(
+      const auto& stmt,
+      MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
+          nsCOMPtr<mozIStorageStatement>, aConnection, CreateStatement,
+          "UPDATE database SET usage = :usage;"_ns));
+
+  QM_TRY(MOZ_TO_RESULT(stmt->BindInt64ByName("usage"_ns, aUsage)));
+
+  QM_TRY(MOZ_TO_RESULT(stmt->Execute()));
+
+  QM_TRY(MOZ_TO_RESULT(UpdateUsageFile(aUsageFile, aUsageJournalFile, aUsage)));
+
+  QM_TRY(MOZ_TO_RESULT(aUsageJournalFile->Remove( false)));
+
+  return NS_OK;
 }
 
 void ShadowWritesPrefChangedCallback(const char* aPrefName, void* aClosure) {
@@ -8543,14 +8595,15 @@ Result<UsageInfo, nsresult> QuotaClient::InitOrigin(
                                    *file, *usageFile, aOriginMetadata.mOrigin,
                                    [] {}, maybeCipherKey));
 
+                
+                
+                
+                
                 QM_TRY_INSPECT(const int64_t& usage,
-                               GetUsage(*connection,
-                                         nullptr));
+                               RecomputeUsage(*connection));
 
-                QM_TRY(MOZ_TO_RESULT(
-                    UpdateUsageFile(usageFile, usageJournalFile, usage)));
-
-                QM_TRY(MOZ_TO_RESULT(usageJournalFile->Remove(false)));
+                QM_TRY(MOZ_TO_RESULT(UpdateUsage(*connection, usageFile,
+                                                 usageJournalFile, usage)));
 
                 MOZ_ASSERT(usage >= 0);
                 return UsageInfo{DatabaseUsageType(Some(uint64_t(usage)))};
