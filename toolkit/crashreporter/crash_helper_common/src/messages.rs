@@ -19,13 +19,17 @@ use windows_sys::Win32::System::Diagnostics::Debug::{CONTEXT, EXCEPTION_RECORD};
 use crate::{
     breakpad::Pid, ipc_connector::CONNECTOR_ANCILLARY_DATA_LEN,
     platform::PROCESS_RENDEZVOUS_ANCILLARY_DATA_LEN, AncillaryData, BreakpadString, GeckoChildId,
-    ProcessHandle,
+    ProcessHandle, RawThreadHandle, ThreadHandle,
 };
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+use crate::{AsRawThreadHandle, FromRawThreadHandle};
 
 #[derive(Debug, Error)]
 pub enum MessageError {
     #[error("Nul terminator found within a string")]
     InteriorNul(#[from] NulError),
+    #[error("The message contained invalid ancillary data")]
+    InvalidAncillary,
     #[error("The message contained an invalid payload")]
     InvalidData,
     #[error("Message kind is invalid")]
@@ -49,34 +53,34 @@ pub enum Kind {
     SetCrashReportPath = 1,
     
     
-    
     TransferMinidump = 2,
-    TransferMinidumpReply = 3,
     
-    GenerateMinidump = 4,
-    GenerateMinidumpReply = 5,
+    GenerateMinidump = 3,
+    
+    
+    MinidumpReply = 4,
     
     
     
     
     #[cfg(target_os = "windows")]
-    WindowsErrorReporting = 6,
+    WindowsErrorReporting = 5,
     #[cfg(target_os = "windows")]
-    WindowsErrorReportingReply = 7,
+    WindowsErrorReportingReply = 6,
     
     
     #[cfg(any(target_os = "android", target_os = "linux"))]
-    RegisterAuxvInfo = 8,
+    RegisterAuxvInfo = 7,
     #[cfg(any(target_os = "android", target_os = "linux"))]
-    UnregisterAuxvInfo = 9,
+    UnregisterAuxvInfo = 8,
     
     
     
-    RegisterChildProcess = 10,
+    RegisterChildProcess = 9,
     
     
     
-    ProcessRendezVous = 11,
+    ProcessRendezVous = 10,
 }
 
 
@@ -345,20 +349,102 @@ impl Message for TransferMinidump {
 
 
 
-pub struct TransferMinidumpReply {
+const GENERATE_MINIDUMP_ANCILLARY_DATA_LEN: usize =
+    if cfg!(any(target_os = "ios", target_os = "macos")) {
+        1
+    } else {
+        0
+    };
+
+pub struct GenerateMinidump {
+    pub id: GeckoChildId,
+    pub target_thread: ThreadHandle,
+}
+
+impl GenerateMinidump {
+    pub fn new(id: GeckoChildId, target_thread: ThreadHandle) -> Self {
+        Self { id, target_thread }
+    }
+}
+
+impl Message for GenerateMinidump {
+    fn kind() -> Kind {
+        Kind::GenerateMinidump
+    }
+
+    fn payload_size(&self) -> usize {
+        size_of::<GeckoChildId>()
+            + if GENERATE_MINIDUMP_ANCILLARY_DATA_LEN == 0 {
+                size_of::<RawThreadHandle>()
+            } else {
+                0
+            }
+    }
+
+    fn ancillary_data_len(&self) -> usize {
+        GENERATE_MINIDUMP_ANCILLARY_DATA_LEN
+    }
+
+    fn encode(self) -> (Bytes, Bytes, Vec<AncillaryData>) {
+        let header = Header::encode(Self::kind(), self.payload_size());
+        let mut payload = BytesMut::with_capacity(self.payload_size());
+        payload.put_i32_ne(self.id);
+        #[cfg(not(any(target_os = "ios", target_os = "macos")))]
+        payload.put_i32_ne(self.target_thread.as_raw_handle());
+
+        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        let ancillary_data = vec![crate::MachPortRight::Send(self.target_thread)];
+        #[cfg(not(any(target_os = "ios", target_os = "macos")))]
+        let ancillary_data = vec![];
+
+        (header, payload.freeze(), ancillary_data)
+    }
+
+    fn decode(data: Vec<u8>, ancillary_data: Vec<AncillaryData>) -> Result<Self, MessageError> {
+        #[allow(clippy::absurd_extreme_comparisons)]
+        if ancillary_data.len() > GENERATE_MINIDUMP_ANCILLARY_DATA_LEN {
+            return Err(MessageError::UnexpectedAncillaryData);
+        }
+
+        let mut data = Bytes::from(data);
+        let id = data.try_get_i32_ne()?;
+        #[cfg(not(any(target_os = "ios", target_os = "macos")))]
+        let target_thread = unsafe { ThreadHandle::from_raw_handle(data.try_get_i32_ne()?) };
+        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        let target_thread = {
+            let Some(task_right) = ancillary_data.into_iter().next() else {
+                return Err(MessageError::MissingAncillary);
+            };
+
+            match task_right {
+                crate::MachPortRight::Send(task_right) => task_right,
+                _ => {
+                    return Err(MessageError::InvalidAncillary);
+                }
+            }
+        };
+
+        Ok(Self { id, target_thread })
+    }
+}
+
+
+
+
+pub struct MinidumpReply {
     pub path: OsString,
     pub error: Option<CString>,
 }
 
-impl TransferMinidumpReply {
-    pub fn new(path: OsString, error: Option<CString>) -> TransferMinidumpReply {
-        TransferMinidumpReply { path, error }
+impl MinidumpReply {
+    pub fn new(path: OsString, error: Option<CString>) -> Self {
+        Self { path, error }
     }
 }
 
-impl Message for TransferMinidumpReply {
+impl Message for MinidumpReply {
     fn kind() -> Kind {
-        Kind::TransferMinidumpReply
+        Kind::MinidumpReply
     }
 
     fn payload_size(&self) -> usize {
@@ -397,10 +483,7 @@ impl Message for TransferMinidumpReply {
         (header, payload.freeze(), vec![])
     }
 
-    fn decode(
-        data: Vec<u8>,
-        ancillary_data: Vec<AncillaryData>,
-    ) -> Result<TransferMinidumpReply, MessageError> {
+    fn decode(data: Vec<u8>, ancillary_data: Vec<AncillaryData>) -> Result<Self, MessageError> {
         if !ancillary_data.is_empty() {
             return Err(MessageError::UnexpectedAncillaryData);
         }
@@ -419,7 +502,7 @@ impl Message for TransferMinidumpReply {
             None
         };
 
-        Ok(TransferMinidumpReply::new(path, error))
+        Ok(Self::new(path, error))
     }
 }
 
