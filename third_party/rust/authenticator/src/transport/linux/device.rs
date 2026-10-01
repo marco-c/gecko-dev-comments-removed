@@ -9,13 +9,27 @@ use crate::transport::hid::HIDDevice;
 use crate::transport::platform::{hidraw, monitor};
 use crate::transport::{FidoDevice, FidoProtocol, HIDError, SharedSecret};
 use crate::u2ftypes::U2FDeviceInfo;
-use crate::util::from_unix_result;
+use crate::util::{from_unix_result, io_err};
 use std::fs::OpenOptions;
 use std::hash::{Hash, Hasher};
 use std::io;
 use std::io::{Read, Write};
 use std::os::unix::io::AsRawFd;
 use std::path::PathBuf;
+
+
+
+
+
+
+
+
+
+
+
+
+
+const READ_TIMEOUT: i32 = 2000;
 
 #[derive(Debug)]
 pub struct Device {
@@ -50,6 +64,23 @@ impl Hash for Device {
 
 impl Read for Device {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        
+        let mut pfd = libc::pollfd {
+            fd: self.fd.as_raw_fd(),
+            events: libc::POLLIN,
+            revents: 0,
+        };
+        let nfds = unsafe { libc::poll(&mut pfd, 1, READ_TIMEOUT) };
+        if nfds == -1 || pfd.revents & libc::POLLERR != 0 {
+            return Err(io::Error::last_os_error());
+        }
+        if pfd.revents & libc::POLLNVAL != 0 {
+            return Err(io::Error::from_raw_os_error(libc::EBADF));
+        }
+        if nfds == 0 || pfd.revents & libc::POLLIN == 0 {
+            return Err(io_err("no response from device"));
+        }
+
         let bufp = buf.as_mut_ptr() as *mut libc::c_void;
         let rv = unsafe { libc::read(self.fd.as_raw_fd(), bufp, buf.len()) };
         from_unix_result(rv as usize)

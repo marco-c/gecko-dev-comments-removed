@@ -52,7 +52,7 @@ pub use status_update::{
     BioEnrollmentCmd, CredManagementCmd, InteractiveRequest, InteractiveUpdate, StatusPinUv,
     StatusUpdate,
 };
-pub use transport::{FidoDevice, FidoDeviceIO, FidoProtocol, VirtualFidoDevice};
+pub use transport::{BlinkResult, FidoDevice, FidoDeviceIO, FidoProtocol, VirtualFidoDevice};
 
 
 bitflags! {
