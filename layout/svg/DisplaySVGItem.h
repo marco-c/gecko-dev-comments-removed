@@ -32,11 +32,14 @@ class DisplaySVGItem : public nsPaintedDisplayItem {
 
   void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
 
-  
-  
   nsRect GetBounds(nsDisplayListBuilder* aBuilder, bool* aSnap) const override {
-    *aSnap = false;
-    return mFrame->InkOverflowRectRelativeToSelf() + ToReferenceFrame();
+    if (aBuilder->IsForEventDelivery()) {
+      
+      
+      *aSnap = false;
+      return mFrame->InkOverflowRectRelativeToSelf() + ToReferenceFrame();
+    }
+    return nsPaintedDisplayItem::GetBounds(aBuilder, aSnap);
   }
 };
 
