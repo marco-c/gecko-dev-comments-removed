@@ -9,6 +9,7 @@
 #include "Pivot.h"
 #include "Relation.h"
 #include "TextLeafRange.h"
+#include "mozilla/Monitor.h"
 #include "mozilla/a11y/CacheConstants.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/a11y/DocManager.h"
@@ -48,6 +49,48 @@ static constexpr uint64_t kNecessaryBoundsDomains =
     CacheDomain::ScrollPosition | CacheDomain::APZ;
 static constexpr uint64_t kNecessaryStateDomains =
     CacheDomain::State | CacheDomain::Viewport;
+
+void RemoteAccessible::AssertActiveThread() const {
+#ifdef ANDROID
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!(NS_IsMainThread() && IsDoc())) {
+    nsAccessibilityService::GetAndroidMonitor().AssertCurrentThreadOwns();
+  }
+#else
+  MOZ_ASSERT(NS_IsMainThread());
+#endif
+}
+
+NS_IMETHODIMP_(MozExternalRefCountType) RemoteAccessible::AddRef(void) {
+  MOZ_ASSERT_TYPE_OK_FOR_REFCOUNTING(RemoteAccessible)
+  MOZ_ASSERT(int32_t(mRefCnt) >= 0, "illegal refcnt");
+  AssertActiveThread();
+  ++mRefCnt;
+  NS_LOG_ADDREF(this, mRefCnt, "RemoteAccessible", sizeof(*this));
+  return mRefCnt;
+}
+
+NS_IMETHODIMP_(MozExternalRefCountType) RemoteAccessible::Release(void) {
+  MOZ_ASSERT(int32_t(mRefCnt) > 0, "dup release");
+  AssertActiveThread();
+  --mRefCnt;
+  NS_LOG_RELEASE(this, mRefCnt, "RemoteAccessible");
+  if (mRefCnt == 0) {
+    mRefCnt = 1; 
+    delete this;
+    return 0;
+  }
+  return mRefCnt;
+}
 
 void RemoteAccessible::Shutdown() {
   MOZ_DIAGNOSTIC_ASSERT(!IsDoc());

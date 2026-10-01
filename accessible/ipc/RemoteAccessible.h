@@ -38,8 +38,17 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
   
   
   
-  NS_INLINE_DECL_VIRTUAL_REFCOUNTING_WITH_DESTROY(RemoteAccessible,
-                                                  delete (this), override)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  NS_IMETHOD_(MozExternalRefCountType) AddRef(void) override;
+  NS_IMETHOD_(MozExternalRefCountType) Release(void) override;
 
   virtual bool IsRemote() const override { return true; }
 
@@ -525,6 +534,12 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
       mChildren[idx]->mIndexInParent = idx;
     }
   }
+
+  
+  
+  void AssertActiveThread() const;
+
+  nsAutoRefCnt mRefCnt;
 
   RefPtr<RemoteAccessible> mParent;
 
