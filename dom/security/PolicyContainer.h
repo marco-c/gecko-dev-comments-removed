@@ -16,6 +16,7 @@ class PolicyContainerArgs;
 }
 
 namespace mozilla::dom {
+class ConnectionAllowlists;
 class Document;
 class IntegrityPolicyWAICT;
 }  
@@ -80,6 +81,13 @@ class PolicyContainer : public nsIPolicyContainer {
 
   
   
+  mozilla::dom::ConnectionAllowlists* GetConnectionAllowlists() const;
+  void SetConnectionAllowlists(mozilla::dom::ConnectionAllowlists* aAllowlists);
+  static mozilla::dom::ConnectionAllowlists* GetConnectionAllowlists(
+      const nsIPolicyContainer* aPolicyContainer);
+
+  
+  
   
   
   
@@ -90,6 +98,7 @@ class PolicyContainer : public nsIPolicyContainer {
   nsCOMPtr<nsIContentSecurityPolicy> mCSP;
   nsCOMPtr<nsIIntegrityPolicy> mIntegrityPolicy;
   RefPtr<mozilla::dom::IntegrityPolicyWAICT> mIntegrityPolicyWAICT;
+  RefPtr<mozilla::dom::ConnectionAllowlists> mConnectionAllowlists;
   nsILoadInfo::IPAddressSpace mIPAddressSpace = nsILoadInfo::Unknown;
 
  protected:
