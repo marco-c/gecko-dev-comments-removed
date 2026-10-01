@@ -20,13 +20,17 @@ const MenuItem = require("resource://devtools/client/framework/menu-item.js");
 
 
 
+
+
 function showMenu(items, options) {
   if (items.length === 0) {
     return;
   }
 
   
-  const menu = new Menu();
+  const menu = new Menu({
+    accesskeyConflictsBug: options.accesskeyConflictsBug,
+  });
   items.forEach(item => {
     if (item == "-") {
       item = { type: "separator" };
@@ -36,7 +40,9 @@ function showMenu(items, options) {
     const subItems = item.submenu;
 
     if (subItems) {
-      const subMenu = new Menu();
+      const subMenu = new Menu({
+        accesskeyConflictsBug: options.accesskeyConflictsBug,
+      });
       subItems.forEach(subItem => {
         subMenu.append(new MenuItem(subItem));
       });
