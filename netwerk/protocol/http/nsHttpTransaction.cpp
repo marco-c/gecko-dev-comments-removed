@@ -3033,11 +3033,17 @@ TimingStruct nsHttpTransaction::Timings() {
 
 void nsHttpTransaction::BootstrapTimings(TimingStruct times) {
   mozilla::MutexAutoLock lock(mLock);
-  TimeStamp savedRequestStart = mTimings.requestStart;
-  mTimings = times;
-  if (!savedRequestStart.IsNull() && mTimings.requestStart.IsNull()) {
-    mTimings.requestStart = savedRequestStart;
-  }
+  
+  
+  
+  
+  
+  mTimings.domainLookupStart = times.domainLookupStart;
+  mTimings.domainLookupEnd = times.domainLookupEnd;
+  mTimings.connectStart = times.connectStart;
+  mTimings.tcpConnectEnd = times.tcpConnectEnd;
+  mTimings.secureConnectionStart = times.secureConnectionStart;
+  mTimings.connectEnd = times.connectEnd;
 
   
   
@@ -3079,17 +3085,18 @@ void nsHttpTransaction::Apply0RTTTimingOverride() {
   mLock.AssertCurrentThreadOwns();
   
   
-  if (mEarlyDataDisposition != EARLY_ACCEPTED || mEarlyDataSentTime.IsNull()) {
+  
+  
+  
+  if (mEarlyDataDisposition != EARLY_ACCEPTED || mEarlyDataSentTime.IsNull() ||
+      mTimings.connectStart.IsNull()) {
     return;
   }
   
   
   
   
-  TimeStamp early = mEarlyDataSentTime;
-  if (!mTimings.connectStart.IsNull() && early < mTimings.connectStart) {
-    early = mTimings.connectStart;
-  }
+  TimeStamp early = std::max(mEarlyDataSentTime, mTimings.connectStart);
   mTimings.connectEnd = early;
   mTimings.requestStart = early;
 }

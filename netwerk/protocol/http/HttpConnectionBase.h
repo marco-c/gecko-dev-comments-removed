@@ -159,6 +159,9 @@ class HttpConnectionBase : public nsSupportsWeakReference {
                                   TimeStamp tcpConnectEnd,
                                   TimeStamp secureConnectionStart = TimeStamp(),
                                   TimeStamp connectEnd = TimeStamp());
+  
+  
+  void HandOffConnectPhase(nsAHttpTransaction* aTrans);
 
   virtual bool IsPersistent() = 0;
   virtual bool IsReused() = 0;
@@ -218,8 +221,11 @@ class HttpConnectionBase : public nsSupportsWeakReference {
   
   bool mHasFirstHttpTransaction{false};
 
-  bool mBootstrappedTimingsSet{false};
+  
+  
+  
   TimingStruct mBootstrappedTimings;
+  bool mConnectPhaseHandedOff{false};
 
   Mutex mCallbacksLock{"nsHttpConnection::mCallbacksLock"};
   nsMainThreadPtrHandle<nsIInterfaceRequestor> mCallbacks

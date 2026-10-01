@@ -222,6 +222,12 @@ class DnsAndConnectSocket final : public ConnectionAttempt,
   bool mSkipDnsResolution = false;
   bool mProxyNotTransparent = false;
   bool mProxyTransparentResolvesHost = false;
+
+  
+  
+  
+  
+  TimingStruct mObservedTimings;
 };
 
 }  

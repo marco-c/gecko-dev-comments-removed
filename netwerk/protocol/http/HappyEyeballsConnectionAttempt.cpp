@@ -1429,28 +1429,6 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
   LOG(("Got connUDP:%p transactionAlreadyOnConn=%d", aConn,
        aTransactionAlreadyOnConn));
 
-  if (!mFirstConnectionStart.IsNull()) {
-    TimingStruct connectTimings;
-    FillConnectTimings( true, connectTimings);
-    aConn->SetConnectBootstrapTimings(
-        connectTimings.connectStart, connectTimings.tcpConnectEnd,
-        connectTimings.secureConnectionStart, connectTimings.connectEnd);
-
-    if (aTransactionAlreadyOnConn) {
-      
-      
-      
-      nsHttpTransaction* trans =
-          mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
-      if (trans) {
-        TimingStruct timings;
-        DnsLookupTimings(timings.domainLookupStart, timings.domainLookupEnd);
-        FillConnectTimings( true, timings);
-        trans->BootstrapTimings(timings);
-      }
-    }
-  }
-
   mConnMgrDelegate->InsertIntoActiveConns(entry, aConn);
 
   if (!aTransactionAlreadyOnConn) {
@@ -1528,21 +1506,16 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
   if (!dnsLookupStart.IsNull()) {
     mOutputConn->SetDnsBootstrapTimings(dnsLookupStart, dnsLookupEnd);
   }
-
   
   
   
-  
-  
-  if (mOutputTrans && mTransaction) {
-    if (nsHttpTransaction* realTransaction =
-            mTransaction->QueryHttpTransaction()) {
-      TimingStruct timings;
-      DnsLookupTimings(timings.domainLookupStart, timings.domainLookupEnd);
-      FillConnectTimings( mOutputConn->UsingHttp3(), timings);
-      timings.transactionPending = realTransaction->GetPendingTime();
-      realTransaction->BootstrapTimings(timings);
-    }
+  if (!mFirstConnectionStart.IsNull()) {
+    TimingStruct connectTimings;
+    FillConnectTimings( mOutputConn->UsingHttp3(),
+                       connectTimings);
+    mOutputConn->SetConnectBootstrapTimings(
+        connectTimings.connectStart, connectTimings.tcpConnectEnd,
+        connectTimings.secureConnectionStart, connectTimings.connectEnd);
   }
   mOutputTrans = nullptr;
 
@@ -1608,6 +1581,17 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
   
   
   bool alreadyOnConn = mZeroRttHandle->HadWinner() || restartedFallback0Rtt;
+
+  
+  
+  
+  
+  
+  
+  if (alreadyOnConn && mTransaction) {
+    mOutputConn->HandOffConnectPhase(mTransaction);
+  }
+
   if (!mOutputConn->UsingHttp3()) {
     
     

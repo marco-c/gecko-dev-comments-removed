@@ -19,6 +19,7 @@
 #include "HttpConnectionBase.h"
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "nsHttpHandler.h"
+#include "nsHttpTransaction.h"
 #include "nsIClassOfService.h"
 #include "nsIOService.h"
 #include "nsISocketTransport.h"
@@ -36,13 +37,11 @@ HttpConnectionBase::HttpConnectionBase() {
 }
 
 void HttpConnectionBase::BootstrapTimings(TimingStruct times) {
-  mBootstrappedTimingsSet = true;
   mBootstrappedTimings = times;
 }
 
 void HttpConnectionBase::SetDnsBootstrapTimings(TimeStamp domainLookupStart,
                                                 TimeStamp domainLookupEnd) {
-  mBootstrappedTimingsSet = true;
   mBootstrappedTimings.domainLookupStart = domainLookupStart;
   mBootstrappedTimings.domainLookupEnd = domainLookupEnd;
 }
@@ -50,7 +49,6 @@ void HttpConnectionBase::SetDnsBootstrapTimings(TimeStamp domainLookupStart,
 void HttpConnectionBase::SetConnectBootstrapTimings(
     TimeStamp connectStart, TimeStamp tcpConnectEnd,
     TimeStamp secureConnectionStart, TimeStamp connectEnd) {
-  mBootstrappedTimingsSet = true;
   mBootstrappedTimings.connectStart = connectStart;
   if (!tcpConnectEnd.IsNull()) {
     mBootstrappedTimings.tcpConnectEnd = tcpConnectEnd;
@@ -61,6 +59,33 @@ void HttpConnectionBase::SetConnectBootstrapTimings(
   if (!connectEnd.IsNull()) {
     mBootstrappedTimings.connectEnd = connectEnd;
   }
+}
+
+void HttpConnectionBase::HandOffConnectPhase(nsAHttpTransaction* aTrans) {
+  
+  
+  nsHttpTransaction* hTrans =
+      aTrans->IsNullTransaction() ? nullptr : aTrans->QueryHttpTransaction();
+  if (!hTrans) {
+    return;
+  }
+
+  
+  
+  
+  if (mConnectPhaseHandedOff) {
+    
+    
+    
+    hTrans->BootstrapTimings(TimingStruct());
+  } else if (!mBootstrappedTimings.connectStart.IsNull()) {
+    hTrans->BootstrapTimings(mBootstrappedTimings);
+  }
+  
+  
+
+  mConnectPhaseHandedOff = true;
+  mBootstrappedTimings = TimingStruct();
 }
 
 void HttpConnectionBase::SetSecurityCallbacks(

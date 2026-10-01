@@ -418,6 +418,7 @@ DnsAndConnectSocket::OnLookupComplete(nsICancelable* request, nsIDNSRecord* rec,
   }
 
   if (IsPrimary(request) && NS_SUCCEEDED(status)) {
+    mObservedTimings.domainLookupEnd = TimeStamp::Now();
     mTransaction->OnTransportStatus(nullptr, NS_NET_STATUS_RESOLVED_HOST, 0);
   }
 
@@ -809,6 +810,13 @@ DnsAndConnectSocket::OnTransportStatus(nsITransport* trans, nsresult status,
       
       
       
+      if (status == NS_NET_STATUS_CONNECTING_TO) {
+        mObservedTimings.connectStart = TimeStamp::Now();
+      } else if (status == NS_NET_STATUS_CONNECTED_TO &&
+                 mObservedTimings.tcpConnectEnd.IsNull()) {
+        mObservedTimings.tcpConnectEnd = TimeStamp::Now();
+        mObservedTimings.connectEnd = mObservedTimings.tcpConnectEnd;
+      }
       mTransaction->OnTransportStatus(trans, status, progress);
     }
   }
@@ -1115,10 +1123,13 @@ nsresult DnsAndConnectSocket::TransportSetup::SetupConn(
        "Created new nshttpconnection %p %s\n",
        conn.get(), dnsAndSock->mIsHttp3 ? "using http3" : ""));
 
+  
+  
+  
+  
   NullHttpTransaction* nullTrans = transaction->QueryNullTransaction();
-  if (nullTrans) {
-    conn->BootstrapTimings(nullTrans->Timings());
-  }
+  conn->BootstrapTimings(nullTrans ? nullTrans->Timings()
+                                   : dnsAndSock->mObservedTimings);
 
   
   
@@ -1379,6 +1390,7 @@ nsresult DnsAndConnectSocket::TransportSetup::ResolveHost(
   }
 
   if (!mIsBackup) {
+    dnsAndSock->mObservedTimings.domainLookupStart = TimeStamp::Now();
     dnsAndSock->mTransaction->OnTransportStatus(
         nullptr, NS_NET_STATUS_RESOLVING_HOST, 0);
   }

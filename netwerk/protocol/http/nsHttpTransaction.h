@@ -150,6 +150,9 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   bool ChannelPipeFull() { return mWaitingOnPipeOut; }
 
   
+  
+  
+  
   void BootstrapTimings(TimingStruct times);
   void SetConnectStart(mozilla::TimeStamp timeStamp, bool onlyIfNull = false);
   void SetConnectEnd(mozilla::TimeStamp timeStamp, bool onlyIfNull = false);
