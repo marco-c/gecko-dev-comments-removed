@@ -11289,8 +11289,6 @@ void nsIFrame::ComputePreserve3DChildrenOverflow(
   
   
 
-  nsRect childVisual;
-  nsRect childScrollable;
   for (const auto& childList : ChildLists()) {
     for (nsIFrame* child : childList.mList) {
       
