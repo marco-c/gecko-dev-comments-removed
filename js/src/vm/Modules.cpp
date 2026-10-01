@@ -104,6 +104,21 @@ JS_PUBLIC_API void JS::SetModuleMetadataHook(JSRuntime* rt,
 }
 
 
+static ModuleObject* GetEnclosingModule(JSScript* script) {
+  
+  
+  MOZ_ASSERT(script->hasBytecode());
+
+  for (Scope* scope = script->bodyScope(); scope; scope = scope->enclosing()) {
+    if (scope->is<ModuleScope>()) {
+      return scope->as<ModuleScope>().module();
+    }
+  }
+
+  return nullptr;
+}
+
+
 
 static ModuleObject* ReferrerModuleOrNull(Handle<Value> referrer) {
   if (!referrer.isObject()) {
@@ -122,11 +137,14 @@ static ModuleObject* ReferrerModuleOrNull(Handle<Value> referrer) {
 
 
 
+
+
+
 static Value ReferrerValueForScript(JSScript* script) {
   MOZ_ASSERT(script, "a dynamic import call always has a running script");
 
-  if (script->isModule()) {
-    return ObjectValue(*script->module());
+  if (ModuleObject* module = GetEnclosingModule(script)) {
+    return ObjectValue(*module);
   }
 
   return script->sourceObject()->getPrivate();
