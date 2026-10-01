@@ -6,7 +6,7 @@ import tempfile
 
 import pytest
 
-from mozlog.structuredlog import StructuredLogger
+from mozlog import structured
 from ..testloader import (
     DirectoryHashChunker,
     IDHashChunker,
@@ -23,6 +23,7 @@ here = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(here, os.pardir, os.pardir, os.pardir))
 from manifest.manifest import Manifest as WPTManifest
 
+structured.set_default_logger(structured.structuredlog.StructuredLogger("TestLoader"))
 
 TestFilter.__test__ = False
 TestLoader.__test__ = False
@@ -59,7 +60,7 @@ def manifest():
 
 
 
-def test_loader_h2_tests(logger):
+def test_loader_h2_tests():
     manifest_json = {
         "items": {
             "testharness": {
@@ -83,13 +84,13 @@ def test_loader_h2_tests(logger):
     subsuites[""] = Subsuite("", config={})
 
     
-    loader = TestLoader(logger, {manifest: {"metadata_path": ""}}, ["testharness"], None, subsuites)
+    loader = TestLoader({manifest: {"metadata_path": ""}}, ["testharness"], None, subsuites)
     assert "testharness" in loader.tests[""]
     assert len(loader.tests[""]["testharness"]) == 2
     assert len(loader.disabled_tests[""]) == 0
 
     
-    loader = TestLoader(logger, {manifest: {"metadata_path": ""}}, ["testharness"], None, subsuites, include_h2=False)
+    loader = TestLoader({manifest: {"metadata_path": ""}}, ["testharness"], None, subsuites, include_h2=False)
     assert "testharness" in loader.tests[""]
     assert len(loader.tests[""]["testharness"]) == 1
     assert "testharness" in loader.disabled_tests[""]
@@ -200,7 +201,7 @@ def test_tag_filter():
     assert not filter(Tagged({'b'}))
 
 
-def test_loader_filter_tags(logger):
+def test_loader_filter_tags():
     manifest_json = {
         "items": {
             "testharness": {
@@ -250,11 +251,11 @@ def test_loader_filter_tags(logger):
 
 
         
-        loader = TestLoader(logger, {manifest: {"metadata_path": metadata_path}}, ["testharness"], None, subsuites)
+        loader = TestLoader({manifest: {"metadata_path": metadata_path}}, ["testharness"], None, subsuites)
         assert len(loader.tests[""]["testharness"]) == 4
 
         
-        loader = TestLoader(logger, {manifest: {"metadata_path": metadata_path}}, ["testharness"], None, subsuites,
+        loader = TestLoader({manifest: {"metadata_path": metadata_path}}, ["testharness"], None, subsuites,
                             test_filters=[TagFilter({"test-include"}, {})])
         assert len(loader.tests[""]["testharness"]) == 2
         assert loader.tests[""]["testharness"][0].id == "/a/bar.html"
@@ -263,13 +264,13 @@ def test_loader_filter_tags(logger):
         assert loader.tests[""]["testharness"][1].tags == {"dir:b", "test-include", "test-exclude"}
 
         
-        loader = TestLoader(logger, {manifest: {"metadata_path": metadata_path}}, ["testharness"], None, subsuites,
+        loader = TestLoader({manifest: {"metadata_path": metadata_path}}, ["testharness"], None, subsuites,
                             test_filters=[TagFilter({}, {"test-exclude"})])
         assert len(loader.tests[""]["testharness"]) == 3
         assert all(test.id != "/b/baz.html" for test in loader.tests[""]["testharness"])
 
         
-        loader = TestLoader(logger, {manifest: {"metadata_path": metadata_path}}, ["testharness"], None, subsuites,
+        loader = TestLoader({manifest: {"metadata_path": metadata_path}}, ["testharness"], None, subsuites,
                             test_filters=[TagFilter({"test-include"}, {"test-exclude"})])
         assert len(loader.tests[""]["testharness"]) == 1
         assert loader.tests[""]["testharness"][0].id == "/a/bar.html"
@@ -277,18 +278,18 @@ def test_loader_filter_tags(logger):
 
         
 
-        loader = TestLoader(logger, {manifest: {"metadata_path": metadata_path}}, ["testharness"], None, subsuites,
+        loader = TestLoader({manifest: {"metadata_path": metadata_path}}, ["testharness"], None, subsuites,
                             test_filters=[TagFilter({"test-include"}, {"test-include"})])
         assert len(loader.tests[""]["testharness"]) == 0
 
-        loader = TestLoader(logger, {manifest: {"metadata_path": metadata_path}}, ["testharness"], None, subsuites,
+        loader = TestLoader({manifest: {"metadata_path": metadata_path}}, ["testharness"], None, subsuites,
                             test_filters=[TagFilter({"test-include", "test-exclude"}, {"test-include"})])
         assert len(loader.tests[""]["testharness"]) == 0
 
 
-def test_chunk_hash(manifest, logger: StructuredLogger):
-    chunker1 = PathHashChunker(logger, total_chunks=2, chunk_number=1)
-    chunker2 = PathHashChunker(logger, total_chunks=2, chunk_number=2)
+def test_chunk_hash(manifest):
+    chunker1 = PathHashChunker(total_chunks=2, chunk_number=1)
+    chunker2 = PathHashChunker(total_chunks=2, chunk_number=2)
     
     
     items = sorted([*chunker1(manifest), *chunker2(manifest)],
@@ -304,9 +305,9 @@ def test_chunk_hash(manifest, logger: StructuredLogger):
     assert {test.id for test in tests} == {"/a/foo.html?b", "/a/foo.html?c"}
 
 
-def test_chunk_id_hash(manifest, logger: StructuredLogger):
-    chunker1 = IDHashChunker(logger, total_chunks=2, chunk_number=1)
-    chunker2 = IDHashChunker(logger, total_chunks=2, chunk_number=2)
+def test_chunk_id_hash(manifest):
+    chunker1 = IDHashChunker(total_chunks=2, chunk_number=1)
+    chunker2 = IDHashChunker(total_chunks=2, chunk_number=2)
     items = []
     for test_type, test_path, tests in [*chunker1(manifest), *chunker2(manifest)]:
         assert len(tests) > 0
@@ -327,9 +328,9 @@ def test_chunk_id_hash(manifest, logger: StructuredLogger):
     assert test.id == "/a/foo.html?c"
 
 
-def test_chunk_dir_hash(manifest, logger: StructuredLogger):
-    chunker1 = DirectoryHashChunker(logger, total_chunks=2, chunk_number=1)
-    chunker2 = DirectoryHashChunker(logger, total_chunks=2, chunk_number=2)
+def test_chunk_dir_hash(manifest):
+    chunker1 = DirectoryHashChunker(total_chunks=2, chunk_number=1)
+    chunker2 = DirectoryHashChunker(total_chunks=2, chunk_number=2)
     
     
     empty_chunk, chunk_a = sorted([
