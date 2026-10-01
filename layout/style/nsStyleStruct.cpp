@@ -3308,12 +3308,7 @@ void nsStyleUI::TriggerImageLoads(Document& aDocument,
 nsChangeHint nsStyleUI::CalcDifference(const nsStyleUI& aNewData) const {
   
   
-  
-  
-  
-  
-  const auto kPointerEventsHint =
-      nsChangeHint_NeedReflow | nsChangeHint_SchedulePaint;
+  const auto kPointerEventsHint = nsChangeHint_SchedulePaint;
 
   nsChangeHint hint = nsChangeHint(0);
   if (mCursor != aNewData.mCursor) {

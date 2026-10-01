@@ -3379,31 +3379,12 @@ void SVGTextFrame::ReflowSVG() {
   TextRenderedRunIterator it(
       this, TextRenderedRunIterator::RenderedRunFilter::AllFrames);
   for (TextRenderedRun run = it.Current(); run.mFrame; run = it.Next()) {
-    TextRenderedRun::GeometryFlags runFlags;
-    if (!run.mFrame->StyleSVG()->mFill.kind.IsNone()) {
-      runFlags += TextRenderedRun::GeometryFlag::IncludeFill;
-    }
-    if (SVGUtils::HasStroke(run.mFrame)) {
+    TextRenderedRun::GeometryFlags runFlags{
+        TextRenderedRun::GeometryFlag::IncludeFill};
+    if (!run.mFrame->StyleSVG()->mStroke.kind.IsNone()) {
       runFlags += TextRenderedRun::GeometryFlag::IncludeStroke;
     }
-    
-    
-    
-    
-    
-    
-    SVGHitTestFlags hitTestFlags =
-        SVGUtils::GetGeometryHitTestFlags(run.mFrame);
-    if (hitTestFlags.contains(SVGHitTestFlag::Fill)) {
-      runFlags += TextRenderedRun::GeometryFlag::IncludeFill;
-    }
-    if (hitTestFlags.contains(SVGHitTestFlag::Stroke)) {
-      runFlags += TextRenderedRun::GeometryFlag::IncludeStroke;
-    }
-
-    if (!runFlags.isEmpty()) {
-      r.UnionEdges(run.GetUserSpaceRect(presContext, runFlags));
-    }
+    r.UnionEdges(run.GetUserSpaceRect(presContext, runFlags));
   }
 
   if (r.IsEmpty()) {

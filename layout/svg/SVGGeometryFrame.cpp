@@ -272,24 +272,24 @@ void SVGGeometryFrame::ReflowSVG() {
   SVGBBoxFlags flags = {SVGBBoxFlag::IncludeFillGeometry,
                         SVGBBoxFlag::IncludeStroke, SVGBBoxFlag::IncludeMarkers,
                         SVGBBoxFlag::EstimateStrokeBounds};
-
-  
-  
-  
-  
-  
-  
-  SVGHitTestFlags hitTestFlags = SVGUtils::GetGeometryHitTestFlags(this);
-  if (hitTestFlags.contains(SVGHitTestFlag::Fill)) {
-    flags += SVGBBoxFlag::IncludeFillGeometry;
-  }
-  if (hitTestFlags.contains(SVGHitTestFlag::Stroke)) {
+  float inkOverflowInflation = 0.0f;
+  if (!StyleSVG()->mStroke.kind.IsNone()) {
     flags += SVGBBoxFlag::IncludeStrokeGeometry;
+  } else {
+    
+    
+    inkOverflowInflation = SVGUtils::GetStrokeWidth(
+        this, SVGContextPaint::GetContextPaint(GetContent()));
   }
-
-  SVGBBox extent = GetBBoxContribution({}, flags).ToThebesRect();
-  mRect = nsLayoutUtils::RoundGfxRectToAppRect((const Rect&)extent,
+  SVGBBox extent = GetBBoxContribution({}, flags);
+  mRect = nsLayoutUtils::RoundGfxRectToAppRect(extent.ToThebesRect(),
                                                AppUnitsPerCSSPixel());
+
+  const nsRect scrollableOverflow(nsPoint(), mRect.Size());
+  nsRect inkOverflow(nsPoint(), mRect.Size());
+  if (inkOverflowInflation > 0.0f) {
+    inkOverflow.Inflate(CSSPixel::ToAppUnits(inkOverflowInflation));
+  }
 
   if (HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     
@@ -298,8 +298,7 @@ void SVGGeometryFrame::ReflowSVG() {
     SVGObserverUtils::UpdateEffects(this);
   }
 
-  nsRect overflow = nsRect(nsPoint(0, 0), mRect.Size());
-  OverflowAreas overflowAreas(overflow, overflow);
+  OverflowAreas overflowAreas(inkOverflow, scrollableOverflow);
   FinishAndStoreOverflow(overflowAreas, mRect.Size());
 
   RemoveStateBits(NS_FRAME_FIRST_REFLOW | NS_FRAME_IS_DIRTY |

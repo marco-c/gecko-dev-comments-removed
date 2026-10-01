@@ -29,10 +29,15 @@ class DisplaySVGItem : public nsPaintedDisplayItem {
 
   void HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
                HitTestState* aState, nsTArray<nsIFrame*>* aOutFrames) override;
-  
-
 
   void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
+
+  
+  
+  nsRect GetBounds(nsDisplayListBuilder* aBuilder, bool* aSnap) const override {
+    *aSnap = false;
+    return mFrame->InkOverflowRectRelativeToSelf() + ToReferenceFrame();
+  }
 };
 
 }  
