@@ -102,8 +102,6 @@ pub enum InvalidationReason {
     
     Content,
     
-    CompositorKindChanged,
-    
     ValidRectChanged,
     
     ScaleChanged,

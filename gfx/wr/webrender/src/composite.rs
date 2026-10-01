@@ -436,13 +436,6 @@ impl Default for CompositorKind {
 }
 
 impl CompositorKind {
-    pub fn get_virtual_surface_size(&self) -> i32 {
-        match self {
-            CompositorKind::Draw { .. } | CompositorKind::Layer {  .. }=> 0,
-            CompositorKind::Native { capabilities, .. } => capabilities.virtual_surface_size,
-        }
-    }
-
     pub fn should_redraw_on_invalidation(&self) -> bool {
         match self {
             CompositorKind::Draw { max_partial_present_rects, .. } => {
@@ -1421,8 +1414,6 @@ impl Default for WindowProperties {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct CompositorCapabilities {
     
-    pub virtual_surface_size: i32,
-    
     pub redraw_on_invalidation: bool,
     
     
@@ -1441,7 +1432,6 @@ impl Default for CompositorCapabilities {
         
         
         CompositorCapabilities {
-            virtual_surface_size: 0,
             redraw_on_invalidation: false,
             
             

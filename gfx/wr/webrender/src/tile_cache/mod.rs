@@ -224,8 +224,6 @@ pub struct TileCacheParams {
     
     pub tile_clip_node_id: Option<ClipNodeId>,
     
-    pub virtual_surface_size: i32,
-    
     
     
     pub image_surface_count: usize,
@@ -825,13 +823,6 @@ pub struct TileCacheInstance {
     frames_until_size_eval: usize,
     
     
-    
-    
-    
-    
-    pub virtual_offset: DeviceIntPoint,
-    
-    
     compare_cache: FastHashMap<PrimitiveComparisonKey, PrimitiveCompareResult>,
     
     
@@ -915,11 +906,6 @@ impl TileCacheInstance {
             tile_clip_node_id: params.tile_clip_node_id,
             current_tile_size: DeviceIntSize::zero(),
             frames_until_size_eval: 0,
-            
-            virtual_offset: DeviceIntPoint::new(
-                params.virtual_surface_size / 2,
-                params.virtual_surface_size / 2,
-            ),
             compare_cache: FastHashMap::default(),
             tile_size_override: None,
             external_native_surface_cache: FastHashMap::default(),
@@ -1409,60 +1395,6 @@ impl TileCacheInstance {
             min: TileOffset::new(x0, y0),
             max: TileOffset::new(x1, y1),
         };
-
-        
-        
-        
-        
-
-        let virtual_surface_size = frame_context.config.compositor_kind.get_virtual_surface_size();
-        
-        
-        if virtual_surface_size > 0 {
-            
-            let tx0 = self.virtual_offset.x + x0 * self.current_tile_size.width;
-            let ty0 = self.virtual_offset.y + y0 * self.current_tile_size.height;
-            let tx1 = self.virtual_offset.x + (x1+1) * self.current_tile_size.width;
-            let ty1 = self.virtual_offset.y + (y1+1) * self.current_tile_size.height;
-
-            let need_new_virtual_offset = tx0 < 0 ||
-                                          ty0 < 0 ||
-                                          tx1 >= virtual_surface_size ||
-                                          ty1 >= virtual_surface_size;
-
-            if need_new_virtual_offset {
-                
-                
-                
-                self.virtual_offset = DeviceIntPoint::new(
-                    (virtual_surface_size/2) - ((x0 + x1) / 2) * self.current_tile_size.width,
-                    (virtual_surface_size/2) - ((y0 + y1) / 2) * self.current_tile_size.height,
-                );
-
-                
-                
-                for sub_slice in &mut self.sub_slices {
-                    for tile in sub_slice.tiles.values_mut() {
-                        if let Some(TileSurface::Texture { descriptor: SurfaceTextureDescriptor::Native { ref mut id, .. }, .. }) = tile.surface {
-                            if let Some(id) = id.take() {
-                                frame_state.resource_cache.destroy_compositor_tile(id);
-                                tile.surface = None;
-                                
-                                
-                                tile.invalidate(None, InvalidationReason::CompositorKindChanged);
-                            }
-                        }
-                    }
-
-                    
-                    
-                    if let Some(native_surface) = sub_slice.native_surface.take() {
-                        frame_state.resource_cache.destroy_compositor_surface(native_surface.opaque);
-                        frame_state.resource_cache.destroy_compositor_surface(native_surface.alpha);
-                    }
-                }
-            }
-        }
 
         
         if new_tile_rect != self.tile_rect {

@@ -588,7 +588,6 @@ impl<'a> SceneBuilder<'a> {
 
         
         let (tile_cache_config, tile_cache_pictures) = builder.tile_cache_builder.build(
-            &builder.config,
             &mut builder.prim_store,
             &builder.spatial_tree,
             &builder.prim_instances,
