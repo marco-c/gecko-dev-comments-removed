@@ -39,7 +39,7 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
   
   
   NS_INLINE_DECL_VIRTUAL_REFCOUNTING_WITH_DESTROY(RemoteAccessible,
-                                                  delete (this))
+                                                  delete (this), override)
 
   virtual bool IsRemote() const override { return true; }
 
