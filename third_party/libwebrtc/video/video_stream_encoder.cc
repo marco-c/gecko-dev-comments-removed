@@ -245,32 +245,6 @@ bool RequiresEncoderReset(const VideoCodec& prev_send_codec,
 
 
 
-VideoBitrateAllocation UpdateAllocationFromEncoderInfo(
-    const VideoBitrateAllocation& allocation,
-    const VideoEncoder::EncoderInfo& encoder_info) {
-  if (allocation.get_sum_bps() == 0) {
-    return allocation;
-  }
-  VideoBitrateAllocation new_allocation;
-  for (size_t si = 0; si < kMaxSpatialLayers; ++si) {
-    if (encoder_info.fps_allocation[si].size() == 1 &&
-        allocation.IsSpatialLayerUsed(si)) {
-      
-      
-      new_allocation.SetBitrate(si, 0, allocation.GetSpatialLayerSum(si));
-    } else {
-      for (size_t ti = 0; ti < kMaxTemporalStreams; ++ti) {
-        if (allocation.HasBitrate(si, ti))
-          new_allocation.SetBitrate(si, ti, allocation.GetBitrate(si, ti));
-      }
-    }
-  }
-  new_allocation.set_bw_limited(allocation.is_bw_limited());
-  return new_allocation;
-}
-
-
-
 
 
 VideoLayersAllocation CreateVideoLayersAllocation(
@@ -1834,15 +1808,6 @@ void VideoStreamEncoder::SetEncoderRates(
       sink_->OnVideoLayersAllocationUpdated(CreateVideoLayersAllocation(
           send_codec_, rate_settings.rate_control, encoder_->GetEncoderInfo()));
     }
-  }
-  if (allocation_cb_type_ ==
-      BitrateAllocationCallbackType::kVideoBitrateAllocation) {
-    sink_->OnBitrateAllocationUpdated(
-        
-        
-        UpdateAllocationFromEncoderInfo(
-            rate_settings.rate_control.target_bitrate,
-            encoder_->GetEncoderInfo()));
   }
 }
 

@@ -82,11 +82,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
                            private EncodedImageCallback,
                            public VideoSourceRestrictionsListener {
  public:
-  
-  
   enum class BitrateAllocationCallbackType {
     kNone,
-    kVideoBitrateAllocation,
     kVideoLayersAllocation
   };
   VideoStreamEncoder(

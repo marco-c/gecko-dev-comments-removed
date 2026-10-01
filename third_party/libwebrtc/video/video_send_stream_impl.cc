@@ -38,8 +38,6 @@
 #include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
 #include "api/video/encoded_image.h"
-#include "api/video/video_bitrate_allocation.h"
-#include "api/video/video_codec_constants.h"
 #include "api/video/video_codec_type.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_frame_type.h"
@@ -70,7 +68,6 @@
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/trace_event.h"
-#include "system_wrappers/include/clock.h"
 #include "video/adaptation/overuse_frame_detector.h"
 #include "video/config/video_encoder_config.h"
 #include "video/encoder_rtcp_feedback.h"
@@ -83,11 +80,6 @@
 namespace webrtc {
 namespace internal {
 namespace {
-
-
-constexpr int kMaxVbaSizeDifferencePercent = 10;
-
-constexpr int64_t kMaxVbaThrottleTimeMs = 500;
 
 constexpr TimeDelta kEncoderTimeOut = TimeDelta::Seconds(2);
 
@@ -191,18 +183,6 @@ std::optional<AlrExperimentSettings> GetAlrSettings(
   return AlrExperimentSettings::CreateFromFieldTrial(
       field_trials,
       AlrExperimentSettings::kStrictPacingAndProbingExperimentName);
-}
-
-bool SameStreamsEnabled(const VideoBitrateAllocation& lhs,
-                        const VideoBitrateAllocation& rhs) {
-  for (size_t si = 0; si < kMaxSpatialLayers; ++si) {
-    for (size_t ti = 0; ti < kMaxTemporalStreams; ++ti) {
-      if (lhs.HasBitrate(si, ti) != rhs.HasBitrate(si, ti)) {
-        return false;
-      }
-    }
-  }
-  return true;
 }
 
 
@@ -760,55 +740,6 @@ void VideoSendStreamImpl::SignalEncoderTimedOut() {
   }
 }
 
-void VideoSendStreamImpl::OnBitrateAllocationUpdated(
-    const VideoBitrateAllocation& allocation) {
-  
-  
-  auto task = [this, allocation] {
-    RTC_DCHECK_RUN_ON(&thread_checker_);
-    if (encoder_target_rate_.IsZero()) {
-      return;
-    }
-    int64_t now_ms = env_.clock().TimeInMilliseconds();
-    if (video_bitrate_allocation_context_) {
-      
-      
-      
-      
-      const VideoBitrateAllocation& last =
-          video_bitrate_allocation_context_->last_sent_allocation;
-      const bool is_similar =
-          allocation.get_sum_bps() >= last.get_sum_bps() &&
-          allocation.get_sum_bps() <
-              (last.get_sum_bps() * (100 + kMaxVbaSizeDifferencePercent)) /
-                  100 &&
-          SameStreamsEnabled(allocation, last);
-      if (is_similar &&
-          (now_ms - video_bitrate_allocation_context_->last_send_time_ms) <
-              kMaxVbaThrottleTimeMs) {
-        
-        video_bitrate_allocation_context_->throttled_allocation = allocation;
-        return;
-      }
-    } else {
-      video_bitrate_allocation_context_.emplace();
-    }
-
-    video_bitrate_allocation_context_->last_sent_allocation = allocation;
-    video_bitrate_allocation_context_->throttled_allocation.reset();
-    video_bitrate_allocation_context_->last_send_time_ms = now_ms;
-
-    
-    rtp_video_sender_->OnBitrateAllocationUpdated(allocation);
-  };
-  if (!worker_queue_->IsCurrent()) {
-    worker_queue_->PostTask(
-        SafeTask(worker_queue_safety_.flag(), std::move(task)));
-  } else {
-    task();
-  }
-}
-
 void VideoSendStreamImpl::OnVideoLayersAllocationUpdated(
     VideoLayersAllocation allocation) {
   
@@ -938,12 +869,6 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
       disable_padding_ = false;
       
       SignalEncoderActive();
-    }
-    
-    
-    auto& context = video_bitrate_allocation_context_;
-    if (context && context->throttled_allocation) {
-      OnBitrateAllocationUpdated(*context->throttled_allocation);
     }
   };
   worker_queue_->PostTask(
