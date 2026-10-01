@@ -146,6 +146,11 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
 
   nsAtom* GetFontPaletteAtom() const { return mFontPalette._0.AsAtom(); }
 
+  nsAtom* GetLangAtom() const {
+    auto* atom = mLanguage.AsAtom();
+    return atom == nsGkAtoms::empty ? nullptr : atom;
+  }
+
   nsFont mFont;
 
   
@@ -184,7 +189,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
   
   mozilla::NonNegativeLength mScriptUnconstrainedSize;
   mozilla::Length mScriptMinSize;
-  RefPtr<nsAtom> mLanguage;
+  mozilla::StyleXLang mLanguage;
 };
 
 struct nsStyleImageLayers {

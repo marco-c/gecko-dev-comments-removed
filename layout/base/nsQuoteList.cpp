@@ -64,7 +64,7 @@ nsString nsQuoteNode::Text() {
       }
     }
     const intl::Quotes* quotes =
-        intl::QuotesForLang(frame->StyleFont()->mLanguage);
+        intl::QuotesForLang(frame->StyleFont()->GetLangAtom());
     
     
     if (!quotes) {

@@ -429,7 +429,6 @@ class Longhand(Property):
     
     NO_BORROWED_GETTER = {
         "font-size",
-        "-x-lang",
         "font-feature-settings",
         "font-variation-settings",
     }
