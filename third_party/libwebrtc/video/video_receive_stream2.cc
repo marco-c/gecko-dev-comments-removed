@@ -243,6 +243,8 @@ VideoReceiveStream2::VideoReceiveStream2(
       config_(std::move(config)),
       remote_ssrc_(config_.rtp.remote_ssrc),
       renderer_(config_.renderer),
+      on_frame_delivered_callback_(
+          std::move(config_.on_frame_delivered_callback)),
       decoder_factory_(config_.decoder_factory),
       require_frame_encryption_(
           config_.crypto_options.sframe.require_frame_encryption),
@@ -823,20 +825,30 @@ int VideoReceiveStream2::GetBaseMinimumPlayoutDelayMs() const {
 }
 
 void VideoReceiveStream2::OnFrame(const VideoFrame& video_frame) {
+  
+  
+  
+  
+  Timestamp now = env_.clock().CurrentTime();
+
+  
+  
+  const RtpPacketInfos& packet_infos = video_frame.packet_infos();
+  
+  
+  
+  if (on_frame_delivered_callback_ != nullptr && !packet_infos.empty()) {
+    on_frame_delivered_callback_(packet_infos, now);
+  }
+
   renderer_->OnFrame(video_frame);
 
   
   
-  RtpPacketInfos packet_infos = video_frame.packet_infos();
-
   
   
   
-  
-  
-  
-  
-  VideoFrameMetaData frame_meta(video_frame, env_.clock().CurrentTime());
+  VideoFrameMetaData frame_meta(video_frame, now);
   call_->worker_thread()->PostTask(
       SafeTask(task_safety_.flag(), [frame_meta, packet_infos, this]() {
         RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
