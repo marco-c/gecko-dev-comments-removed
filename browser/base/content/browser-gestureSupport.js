@@ -229,6 +229,14 @@ var gGestureSupport = {
 
 
   _shouldDoSwipeGesture: function GS__shouldDoSwipeGesture(aEvent) {
+    
+    
+    
+    
+    if (document.documentElement.hasAttribute("cropped-mini-window")) {
+      return false;
+    }
+
     const leftCommand = this._getCommand(aEvent, ["swipe", "left"]);
     const rightCommand = this._getCommand(aEvent, ["swipe", "right"]);
 
