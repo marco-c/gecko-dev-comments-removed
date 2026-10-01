@@ -114,7 +114,10 @@ this,
 
 for (let type of ['f32', 'f64']) {
     for (let func of ['ceil', 'floor', 'nearest', 'trunc']) {
-        if (getBuildConfiguration("arm64")) {
+        
+        
+        
+        if (getBuildConfiguration("arm64") || getBuildConfiguration("loong64")) {
             continue;
         }
         test(`(module
