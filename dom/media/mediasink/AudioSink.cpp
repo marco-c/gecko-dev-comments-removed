@@ -337,6 +337,11 @@ RefPtr<MediaSink::EndedPromise> AudioSink::ResetForReuse(
              "Nothing may be pushed while the sink is stopped for a seek");
   SINK_LOG("ResetForReuse to start time {}", aStartTime.ToMicroseconds());
 
+  
+  
+  
+  mProcessedSPSCQueue->ResetProducerThreadId();
+
   ApplyPlaybackParams(aParams);
 
   
