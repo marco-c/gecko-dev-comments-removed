@@ -324,7 +324,7 @@ def getDocUia():
     
     hwnd = getFirefoxHwnd()
     root = uiaClient.ElementFromHandle(hwnd)
-    doc = findUiaByDomId(root, "body")
+    doc = findUiaByDomId(root, "default-content-doc-id")
     if not doc:
         
         
