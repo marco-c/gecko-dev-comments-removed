@@ -63,9 +63,16 @@ class SerialPort final : public DOMEventTargetHelper {
   
   bool Connected() const { return mPhysicallyPresent; }
 
-  bool IsForgotten() const {
-    return mForgottenState == ForgottenState::Forgotten;
-  }
+  enum class State : uint8_t {
+    Closed,
+    Opening,
+    Opened,
+    Closing,
+    Forgetting,
+    Forgotten,
+  };
+
+  bool IsForgotten() const { return mState == State::Forgotten; }
 
   
   
@@ -109,24 +116,29 @@ class SerialPort final : public DOMEventTargetHelper {
  private:
   ~SerialPort() override;
 
+  enum class StreamCloseMode : uint8_t {
+    
+    
+    Graceful,
+    
+    
+    Forced,
+  };
+
   MOZ_CAN_RUN_SCRIPT ReadableStream* CreateReadableStream();
   MOZ_CAN_RUN_SCRIPT WritableStream* CreateWritableStream();
   void CloseAfterStreamsClosed();
   void SettleClosePromise(nsresult aResult);
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> CloseStreams();
-  void NotifySharingStateChanged(bool aConnected);
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> CloseStreams(
+      StreamCloseMode aMode);
   void UpdateWorkerRef();
 
   RefPtr<Serial> mSerial;
   IPCSerialPortInfo mInfo;
-  
-  bool mIsOpen = false;
+  State mState = State::Closed;
   
   bool mPhysicallyPresent = true;
   bool mHasShutdown = false;
-  
-  enum class ForgottenState { NotForgotten, Forgetting, Forgotten };
-  ForgottenState mForgottenState = ForgottenState::NotForgotten;
   uint32_t mBufferSize = 0;
   uint32_t mPipeCapacity = 0;
 

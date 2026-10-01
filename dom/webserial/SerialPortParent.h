@@ -40,7 +40,6 @@ class SerialPortParent final : public PSerialPortParent {
       const RefPtr<mozilla::ipc::DataPipeSender>& aReadPipeSender);
   mozilla::ipc::IPCResult RecvAttachWritePipe(
       const RefPtr<mozilla::ipc::DataPipeReceiver>& aWritePipeReceiver);
-  mozilla::ipc::IPCResult RecvUpdateSharingState(bool aConnected);
   mozilla::ipc::IPCResult RecvClone(
       mozilla::ipc::Endpoint<PSerialPortParent>&& aEndpoint);
 
@@ -66,7 +65,9 @@ class SerialPortParent final : public PSerialPortParent {
   void StopReadPump();
   void DestroyPlatformReader();
   void StopWritePump();
-  void NotifySharingStateChanged(bool aConnected);
+  
+  
+  void NotifySharingStateChanged();
   void StartReadPump(
       already_AddRefed<mozilla::ipc::DataPipeSender> aReadPipeSender);
   void StartWritePump(
@@ -75,10 +76,6 @@ class SerialPortParent final : public PSerialPortParent {
   const nsString mPortId;
   const uint64_t mBrowserId;
   bool mIsOpen = false;
-  
-  
-  
-  bool mSharingConnected = false;
   uint32_t mPipeCapacity = 0;
   
   
