@@ -664,6 +664,26 @@ class MDefinition : public MNode {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   Range* range() const {
     MOZ_ASSERT(type() != MIRType::None);
     return range_;
