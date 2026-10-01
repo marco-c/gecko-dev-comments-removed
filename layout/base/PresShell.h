@@ -86,6 +86,7 @@ class ReflowCountMgr;
 
 namespace mozilla {
 class AccessibleCaretEventHub;
+struct AnchorPosAnchorInfo;
 class FallbackRenderer;
 class GeckoMVMContext;
 class nsDisplayList;
@@ -817,7 +818,8 @@ class PresShell final : public nsStubDocumentObserver,
 
   
   nsIFrame* GetAnchorPosAnchor(const ScopedNameRef& aName,
-                               const nsIFrame* aPositionedFrame) const;
+                               const nsIFrame* aPositionedFrame,
+                               uint32_t aPositionedFrameTreeDepth) const;
   void CollectAnchorNames(const nsIFrame* aPositionedFrame,
                           nsTArray<nsString>& aResult);
   void AddAnchorPosAnchor(Span<const StyleAtom> aNames, nsIFrame* aFrame);
@@ -3322,7 +3324,8 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   
-  nsTHashMap<RefPtr<const nsAtom>, nsTArray<nsIFrame*>> mAnchorPosAnchors;
+  nsTHashMap<RefPtr<const nsAtom>, nsTArray<AnchorPosAnchorInfo>>
+      mAnchorPosAnchors;
   nsTArray<nsIFrame*> mAnchorPosPositioned;
 
   
