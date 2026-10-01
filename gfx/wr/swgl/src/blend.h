@@ -389,6 +389,10 @@ static Float swgl_AASlope = 0.0f;
 
 
 
+static float swgl_AAMaxCoverage = 256.0f;
+
+
+
 template <typename P>
 static ALWAYS_INLINE int get_aa_opaque_start(P* buf) {
   return max(int((P*)swgl_OpaqueStart - buf), 0);
@@ -437,7 +441,7 @@ static PREFER_INLINE WideRGBA8 blend_pixels(uint32_t* buf, PackedRGBA8 pdst,
       Float delta = swgl_AASlope * float(offset);             \
       Float dist = clamp(min(swgl_LeftAADist + delta.x,       \
                              swgl_RightAADist + delta.y),     \
-                         0.0f, 256.0f);                       \
+                         0.0f, swgl_AAMaxCoverage);           \
       auto aa = pack_pixels_##format(dist, 1.0f);             \
       body;                                                   \
     }                                                         \
@@ -591,6 +595,13 @@ static PREFER_INLINE WideRGBA8 blend_pixels(uint32_t* buf, PackedRGBA8 pdst,
     WideRGBA32F srcA = alphas(srcF);
     WideRGBA32F dstF = CONVERT(dst, WideRGBA32F);
     WideRGBA32F dstA = alphas(dstF);
+    
+    
+    
+    
+    
+    srcF = min(srcF, srcA);
+    dstF = min(dstF, dstA);
     return pack_pixels_RGBA8(
         srcA * set_alphas(
                    min(dstA, dstF * srcA * recip_or(srcA - srcF, 255.0f)),
