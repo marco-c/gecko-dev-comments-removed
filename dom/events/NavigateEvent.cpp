@@ -476,7 +476,8 @@ static void ScrollToBeginningOfDocument(Document& aDocument) {
 
 
 static void RestoreScrollPositionData(Document* aDocument,
-                                      const uint32_t& aLastScrollGeneration) {
+                                      const uint32_t& aLastScrollGeneration,
+                                      SessionHistoryInfo* aHistoryEntry) {
   
   
   
@@ -493,8 +494,7 @@ static void RestoreScrollPositionData(Document* aDocument,
   
   
   
-  docShell->RestoreScrollPositionFromTargetSessionHistoryInfo(
-      docShell->GetActiveSessionHistoryInfo());
+  docShell->RestoreScrollPositionFromTargetSessionHistoryInfo(aHistoryEntry);
 }
 
 
@@ -506,9 +506,20 @@ void NavigateEvent::ProcessScrollBehavior() {
   mInterceptionState = InterceptionState::Scrolled;
 
   
-  if (mNavigationType == NavigationType::Traverse) {
+  if (mNavigationType == NavigationType::Traverse ||
+      mNavigationType == NavigationType::Reload) {
     RefPtr<Document> document = GetAssociatedDocument();
-    RestoreScrollPositionData(document, mLastScrollGeneration);
+    
+    
+    
+    
+    
+    
+    RestoreScrollPositionData(
+        document, mLastScrollGeneration,
+        mDestination->GetEntry()
+            ? mDestination->GetEntry()->SessionHistoryInfo()
+            : nullptr);
     return;
   }
 
