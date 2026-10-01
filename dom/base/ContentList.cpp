@@ -1046,6 +1046,12 @@ void LabelsNodeList::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
     SetDirty();
     return;
   }
+
+  
+  if (aAttribute == nsGkAtoms::id && aNameSpaceID == kNameSpaceID_None) {
+    SetDirty();
+    return;
+  }
 }
 
 void LabelsNodeList::ContentAppended(nsIContent* aFirstNewContent,
