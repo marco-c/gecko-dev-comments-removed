@@ -607,7 +607,8 @@ add_task(
   }
 );
 
-add_task(async function test_dragstart_below_splitview_does_not_grab() {
+add_task(async function test_dragstart_below_splitview_grabs_splitview() {
+  
   
   
   const tab2 = await addTab("data:text/plain,tab2");
@@ -619,35 +620,45 @@ add_task(async function test_dragstart_below_splitview_does_not_grab() {
   const arrowScrollbox = gBrowser.tabContainer.arrowScrollbox;
   const scrollboxRect = arrowScrollbox.getBoundingClientRect();
   const splitViewRect = splitView.getBoundingClientRect();
+  const tab2Rect = tab2.getBoundingClientRect();
   Assert.greater(
-    scrollboxRect.bottom,
+    tab2Rect.bottom,
     splitViewRect.bottom,
-    "The scrollbox extends below the split view wrapper"
+    "The tab reaches below the split view wrapper"
   );
 
   
-  const srcX =
-    splitViewRect.left + splitViewRect.width / 2 - scrollboxRect.left;
-  const srcY =
-    (splitViewRect.bottom + scrollboxRect.bottom) / 2 - scrollboxRect.top;
-
-  info("Drag horizontally through the bottom margin of split view wrapper.");
   
-  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
+  const srcX = tab2Rect.left + tab2Rect.width / 2 - scrollboxRect.left;
+  const srcY = (splitViewRect.bottom + tab2Rect.bottom) / 2 - scrollboxRect.top;
+
+  let dragStart = BrowserTestUtils.waitForEvent(
+    gBrowser.tabContainer,
+    "dragstart"
+  );
+  info("Drag horizontally through the tab strip below the split view wrapper.");
   await EventUtils.synthesizePlainDragAndDrop({
     srcElement: arrowScrollbox,
     srcX,
     srcY,
     stepX: 9,
     stepY: 0,
-    expectCancelDragStart: true,
   });
-  AccessibilityUtils.resetEnv();
+  let { target } = await dragStart;
+  Assert.equal(
+    target.closest(".tabbrowser-tab"),
+    tab2,
+    "Dragging below the split view wrapper grabs the tab above"
+  );
+  Assert.ok(
+    !gBrowser.tabContainer.hasAttribute("movingtab"),
+    "tab strip state is no longer in drag-drop mode"
+  );
 
   Assert.deepEqual(
     gBrowser.tabs,
     tabOrder,
-    "Tab order is unchanged after dragging below the split view wrapper"
+    "Tab order is unchanged after dropping without a target"
   );
 
   splitView.close();
