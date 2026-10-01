@@ -770,14 +770,27 @@ void WebrtcVideoConduit::OnControlConfigChange() {
           
           
           
+          
+          
+          
+          
+          
+          Maybe<double> levelMaxFps;
+          if (codecConstraints.maxMbps && codecConstraints.maxFs) {
+            levelMaxFps = Some(static_cast<double>(codecConstraints.maxMbps) /
+                               codecConstraints.maxFs);
+          }
           video_stream.max_framerate = static_cast<int>(([&]() {
-            if (codecConstraints.maxFps && encodingConstraints.maxFps) {
-              return std::min(*codecConstraints.maxFps,
-                              *encodingConstraints.maxFps);
+            Maybe<double> fps;
+            for (const auto& candidate :
+                 {codecConstraints.maxFps, encodingConstraints.maxFps,
+                  levelMaxFps}) {
+              if (!candidate) {
+                continue;
+              }
+              fps = fps ? Some(std::min(*fps, *candidate)) : candidate;
             }
-            return codecConstraints.maxFps
-                .orElse([&] { return encodingConstraints.maxFps; })
-                .valueOr(-1);
+            return fps.valueOr(-1);
           })());
 
           

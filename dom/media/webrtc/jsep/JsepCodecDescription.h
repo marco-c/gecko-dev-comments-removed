@@ -9,7 +9,10 @@
 #include <set>
 #include <string>
 
+#include "mozilla/Casting.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/media/webrtc/AV1FmtpParser.h"
+#include "mozilla/media/webrtc/H264FmtpParser.h"
 #include "mozilla/net/DataChannelProtocol.h"
 #include "nsCRT.h"
 #include "nsString.h"
@@ -1093,8 +1096,9 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
 
       
       if (!h264Params.level_asymmetry_allowed) {
-        SetSaneH264Level(std::min(GetSaneH264Level(h264Params.profile_level_id),
-                                  GetSaneH264Level(mProfileLevelId)),
+        SetSaneH264Level(ClampToSupportedH264Level(std::min(
+                             GetSaneH264Level(h264Params.profile_level_id),
+                             GetSaneH264Level(mProfileLevelId))),
                          &mProfileLevelId);
       }
 
@@ -1108,8 +1112,26 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
         mSpropParameterSets = h264Params.sprop_parameter_sets;
         
         if (h264Params.level_asymmetry_allowed) {
-          SetSaneH264Level(GetSaneH264Level(h264Params.profile_level_id),
+          SetSaneH264Level(ClampToSupportedH264Level(
+                               GetSaneH264Level(h264Params.profile_level_id)),
                            &mProfileLevelId);
+        }
+        
+        
+        
+        
+        
+        if (Maybe<H264MacroblockLimits> levelLimits =
+                H264MacroblockLimitsForLevel(SaneH264LevelToH264Level(
+                    GetSaneH264Level(mProfileLevelId)))) {
+          if (!mConstraints.maxFs ||
+              mConstraints.maxFs > levelLimits->mMaxMacroblocksPerFrame) {
+            mConstraints.maxFs = levelLimits->mMaxMacroblocksPerFrame;
+          }
+          if (!mConstraints.maxMbps ||
+              mConstraints.maxMbps > levelLimits->mMaxMacroblocksPerSecond) {
+            mConstraints.maxMbps = levelLimits->mMaxMacroblocksPerSecond;
+          }
         }
       } else {
         
@@ -1136,6 +1158,15 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
       
       if (mDirection == sdp::kSend) {
         mAv1Config = Av1Config(GetAv1Parameters(mDefaultPt, remoteMsection));
+        
+        
+        
+        if (Maybe<AV1BlockLimits> levelLimits =
+                AV1BlockLimitsForLevel(mAv1Config.LevelIdxOrDefault())) {
+          mConstraints.maxFs = levelLimits->mMaxFs;
+          mConstraints.maxMbps =
+              SaturatingCast<uint32_t>(levelLimits->mMaxBlocksPerSecond);
+        }
       }
     }
 
@@ -1199,6 +1230,31 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
     }
 
     *profileLevelId = (*profileLevelId & ~levelMask) | level;
+  }
+
+  
+  
+  static H264_LEVEL SaneH264LevelToH264Level(uint32_t saneLevel) {
+    if (saneLevel == 0xAB) {
+      return H264_LEVEL::H264_LEVEL_1_b;
+    }
+    return static_cast<H264_LEVEL>(saneLevel >> 4);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  static uint32_t ClampToSupportedH264Level(uint32_t aSaneLevel) {
+    if (H264MacroblockLimitsForLevel(SaneH264LevelToH264Level(aSaneLevel))) {
+      return aSaneLevel;
+    }
+    
+    
+    return GetSaneH264Level(0x640034);
   }
 
   enum Subprofile {

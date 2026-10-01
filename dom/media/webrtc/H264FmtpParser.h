@@ -7,6 +7,7 @@
 
 #include "H264.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "mozilla/ResultVariant.h"
 #include "nsStringFwd.h"
@@ -36,11 +37,22 @@ struct H264FmtpParams {
   }
 };
 
+
+
+struct H264MacroblockLimits {
+  uint32_t mMaxMacroblocksPerFrame;
+  uint32_t mMaxMacroblocksPerSecond;
+};
+
 #ifdef MOZ_WEBRTC
 
 
 
 H264FmtpParams ParseH264Fmtp(const nsACString& aMimeString);
+
+
+
+Maybe<H264MacroblockLimits> H264MacroblockLimitsForLevel(H264_LEVEL aLevel);
 
 
 
@@ -51,6 +63,11 @@ H264FmtpParams ParseH264Fmtp(const nsACString& aMimeString);
 inline H264FmtpParams ParseH264Fmtp(const nsACString&) {
   MOZ_ASSERT_UNREACHABLE("ParseH264Fmtp called in non-MOZ_WEBRTC build");
   return {};
+}
+inline Maybe<H264MacroblockLimits> H264MacroblockLimitsForLevel(H264_LEVEL) {
+  MOZ_ASSERT_UNREACHABLE(
+      "H264MacroblockLimitsForLevel called in non-MOZ_WEBRTC build");
+  return Nothing();
 }
 inline bool H264LevelFits(H264_LEVEL, uint32_t, uint32_t, double) {
   MOZ_ASSERT_UNREACHABLE("H264LevelFits called in non-MOZ_WEBRTC build");

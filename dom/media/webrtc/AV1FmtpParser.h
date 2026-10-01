@@ -8,6 +8,7 @@
 #include <cstdint>
 
 #include "mozilla/Assertions.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "mozilla/ResultVariant.h"
 #include "nsStringFwd.h"
@@ -33,11 +34,26 @@ struct AV1FmtpParams {
   }
 };
 
+
+
+
+
+struct AV1BlockLimits {
+  uint32_t mMaxFs;
+  uint64_t mMaxBlocksPerSecond;
+};
+
 #ifdef MOZ_WEBRTC
 
 
 
 AV1FmtpParams ParseAV1Fmtp(const nsACString& aMimeString);
+
+
+
+
+
+Maybe<AV1BlockLimits> AV1BlockLimitsForLevel(uint8_t aLevelIdx);
 
 
 
@@ -49,6 +65,11 @@ AV1FmtpParams ParseAV1Fmtp(const nsACString& aMimeString);
 inline AV1FmtpParams ParseAV1Fmtp(const nsACString&) {
   MOZ_ASSERT_UNREACHABLE("ParseAV1Fmtp called in non-MOZ_WEBRTC build");
   return {};
+}
+inline Maybe<AV1BlockLimits> AV1BlockLimitsForLevel(uint8_t) {
+  MOZ_ASSERT_UNREACHABLE(
+      "AV1BlockLimitsForLevel called in non-MOZ_WEBRTC build");
+  return Nothing();
 }
 inline bool AV1LevelFits(uint8_t, uint32_t, uint32_t, double) {
   MOZ_ASSERT_UNREACHABLE("AV1LevelFits called in non-MOZ_WEBRTC build");

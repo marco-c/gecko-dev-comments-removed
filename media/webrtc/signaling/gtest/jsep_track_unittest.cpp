@@ -346,7 +346,20 @@ class JsepTrackTest : public JsepTrackTestBase {
     ASSERT_EQ(a.mChannels, b.mChannels) << MSG;
     ASSERT_NE(a.mDirection, b.mDirection) << MSG;
     
-    ASSERT_EQ(a.mConstraints, b.mConstraints) << MSG;
+    
+    
+    
+    
+    
+    
+    ASSERT_EQ(a.mConstraints.maxWidth, b.mConstraints.maxWidth) << MSG;
+    ASSERT_EQ(a.mConstraints.maxHeight, b.mConstraints.maxHeight) << MSG;
+    ASSERT_EQ(a.mConstraints.maxFps, b.mConstraints.maxFps) << MSG;
+    ASSERT_EQ(a.mConstraints.maxBr, b.mConstraints.maxBr) << MSG;
+    ASSERT_EQ(a.mConstraints.maxPps, b.mConstraints.maxPps) << MSG;
+    ASSERT_EQ(a.mConstraints.maxCpb, b.mConstraints.maxCpb) << MSG;
+    ASSERT_EQ(a.mConstraints.maxDpb, b.mConstraints.maxDpb) << MSG;
+    ASSERT_EQ(a.mConstraints.scaleDownBy, b.mConstraints.scaleDownBy) << MSG;
 #undef MSG
 
     if (a.Type() == SdpMediaSection::kVideo) {

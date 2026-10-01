@@ -4227,6 +4227,16 @@ TEST_F(JsepSessionTest, TestH264Negotiation) {
   const JsepVideoCodecDescription* offererVideoSendCodec(
       static_cast<const JsepVideoCodecDescription*>(offererSendCodec.get()));
   ASSERT_EQ((uint32_t)0x42e01f, offererVideoSendCodec->mProfileLevelId);
+  
+  
+  
+  Maybe<H264MacroblockLimits> expectedLimits =
+      H264MacroblockLimitsForLevel(H264_LEVEL::H264_LEVEL_3_1);
+  ASSERT_TRUE(expectedLimits);
+  ASSERT_EQ(expectedLimits->mMaxMacroblocksPerFrame,
+            offererVideoSendCodec->mConstraints.maxFs);
+  ASSERT_EQ(expectedLimits->mMaxMacroblocksPerSecond,
+            offererVideoSendCodec->mConstraints.maxMbps);
 
   UniquePtr<JsepCodecDescription> offererRecvCodec;
   GetCodec(*mSessionOff, 0, sdp::kRecv, 0, 0, &offererRecvCodec);
@@ -4395,6 +4405,13 @@ TEST_F(JsepSessionTest, TestAV1NegotiationAsymmetricLevel) {
       static_cast<const JsepVideoCodecDescription*>(offererSendCodec.get()));
   
   ASSERT_EQ(5U, offererVideoSendCodec->mAv1Config.LevelIdxOrDefault());
+  
+  
+  Maybe<AV1BlockLimits> expectedLimits = AV1BlockLimitsForLevel(5);
+  ASSERT_TRUE(expectedLimits);
+  ASSERT_EQ(expectedLimits->mMaxFs, offererVideoSendCodec->mConstraints.maxFs);
+  ASSERT_EQ(SaturatingCast<uint32_t>(expectedLimits->mMaxBlocksPerSecond),
+            offererVideoSendCodec->mConstraints.maxMbps);
 
   UniquePtr<JsepCodecDescription> offererRecvCodec;
   GetCodec(*mSessionOff, 0, sdp::kRecv, 0, 0, &offererRecvCodec);

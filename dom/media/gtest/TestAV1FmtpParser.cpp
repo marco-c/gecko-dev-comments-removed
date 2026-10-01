@@ -226,3 +226,28 @@ TEST(AV1LevelFits, MaximumParametersAlwaysFits)
 {
   EXPECT_TRUE(AV1LevelFits(31, 999999, 999999, 999));
 }
+
+TEST(AV1BlockLimitsForLevel, KnownLevel)
+{
+  
+  
+  Maybe<AV1BlockLimits> limits = AV1BlockLimitsForLevel(0);
+  ASSERT_TRUE(limits.isSome());
+  EXPECT_EQ(limits->mMaxFs, 576u);
+  EXPECT_EQ(limits->mMaxBlocksPerSecond, 17280u);
+}
+
+TEST(AV1BlockLimitsForLevel, UndefinedButNamedLevel)
+{
+  EXPECT_TRUE(AV1BlockLimitsForLevel(2).isNothing());
+}
+
+TEST(AV1BlockLimitsForLevel, ReservedLevel)
+{
+  EXPECT_TRUE(AV1BlockLimitsForLevel(25).isNothing());
+}
+
+TEST(AV1BlockLimitsForLevel, MaximumParametersImposesNoLimit)
+{
+  EXPECT_TRUE(AV1BlockLimitsForLevel(31).isNothing());
+}

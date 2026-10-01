@@ -90,41 +90,59 @@ AV1FmtpParams ParseAV1Fmtp(const nsACString& aMimeString) {
   return out;
 }
 
+namespace {
+struct AV1LevelConstraint {
+  uint8_t mLevelIdx;
+  uint32_t mMaxPicSize;
+  uint32_t mMaxHSize;
+  uint32_t mMaxVSize;
+  uint64_t mMaxDisplayRate;
+};
+}  
+
+
+
+
+
+
+static constexpr AV1LevelConstraint kAV1LevelConstraints[] = {
+    {0, 147456, 2048, 1152, 4423680},         
+    {1, 278784, 2816, 1584, 8363520},         
+    {4, 665856, 4352, 2448, 19975680},        
+    {5, 1065024, 5504, 3096, 31950720},       
+    {8, 2359296, 6144, 3456, 70778880},       
+    {9, 2359296, 6144, 3456, 141557760},      
+    {12, 8912896, 8192, 4352, 267386880},     
+    {13, 8912896, 8192, 4352, 534773760},     
+    {14, 8912896, 8192, 4352, 1069547520},    
+    {15, 8912896, 8192, 4352, 1069547520},    
+    {16, 35651584, 16384, 8704, 1069547520},  
+    {17, 35651584, 16384, 8704, 2139095040},  
+    {18, 35651584, 16384, 8704, 4278190080},  
+    {19, 35651584, 16384, 8704, 4278190080},  
+};
+
+Maybe<AV1BlockLimits> AV1BlockLimitsForLevel(uint8_t aLevelIdx) {
+  if (aLevelIdx == 31) {
+    
+    return Nothing();
+  }
+  for (const auto& c : kAV1LevelConstraints) {
+    if (c.mLevelIdx == aLevelIdx) {
+      
+      
+      return Some(AV1BlockLimits{c.mMaxPicSize / 256, c.mMaxDisplayRate / 256});
+    }
+  }
+  return Nothing();
+}
+
 bool AV1LevelFits(uint8_t aLevelIdx, uint32_t aWidth, uint32_t aHeight,
                   double aFramerate) {
   if (aLevelIdx == 31) {
     
     return true;
   }
-
-  struct AV1LevelConstraint {
-    uint8_t mLevelIdx;
-    uint32_t mMaxPicSize;
-    uint32_t mMaxHSize;
-    uint32_t mMaxVSize;
-    uint64_t mMaxDisplayRate;
-  };
-  
-  
-  
-  
-  
-  static constexpr AV1LevelConstraint kAV1LevelConstraints[] = {
-      {0, 147456, 2048, 1152, 4423680},         
-      {1, 278784, 2816, 1584, 8363520},         
-      {4, 665856, 4352, 2448, 19975680},        
-      {5, 1065024, 5504, 3096, 31950720},       
-      {8, 2359296, 6144, 3456, 70778880},       
-      {9, 2359296, 6144, 3456, 141557760},      
-      {12, 8912896, 8192, 4352, 267386880},     
-      {13, 8912896, 8192, 4352, 534773760},     
-      {14, 8912896, 8192, 4352, 1069547520},    
-      {15, 8912896, 8192, 4352, 1069547520},    
-      {16, 35651584, 16384, 8704, 1069547520},  
-      {17, 35651584, 16384, 8704, 2139095040},  
-      {18, 35651584, 16384, 8704, 4278190080},  
-      {19, 35651584, 16384, 8704, 4278190080},  
-  };
 
   for (const auto& c : kAV1LevelConstraints) {
     if (c.mLevelIdx != aLevelIdx) {

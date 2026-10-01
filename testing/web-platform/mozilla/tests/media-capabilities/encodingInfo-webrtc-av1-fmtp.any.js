@@ -37,8 +37,8 @@ promise_test(async () => {
       contentType: 'video/AV1;level-idx=5',
     },
   });
-  assert_false(info.supported);
-}, 'encodingInfo: AV1 explicit level-idx=5 (3.1) at 1080p exceeds the level cap and is unsupported');
+  assert_true(info.supported);
+}, 'encodingInfo: AV1 explicit level-idx=5 (3.1) at 1080p exceeds the level cap but is supported (downscaled)');
 
 promise_test(async () => {
   const info = await navigator.mediaCapabilities.encodingInfo({
@@ -158,8 +158,8 @@ promise_test(async () => {
       contentType: 'video/AV1;level-idx=1',
     },
   });
-  assert_false(info.supported);
-}, 'encodingInfo: AV1 level-idx=1 (2.1) at 3840x2160 exceeds the level cap and is unsupported');
+  assert_true(info.supported);
+}, 'encodingInfo: AV1 level-idx=1 (2.1) at 3840x2160 exceeds the level cap but is supported (downscaled)');
 
 promise_test(async () => {
   const info = await navigator.mediaCapabilities.encodingInfo({

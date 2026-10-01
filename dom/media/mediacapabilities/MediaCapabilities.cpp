@@ -272,6 +272,21 @@ static InfoType UnsupportedInfo() {
 
 
 
+static bool WebrtcVideoTierUndefined(const MediaExtendedMIMEType& aMime) {
+  if (WebrtcMimeToCodecType(aMime) != CodecType::AV1) {
+    return false;
+  }
+  const auto fmtp = ParseAV1Fmtp(aMime.OriginalString());
+  MOZ_ASSERT(!fmtp.HasInvalidParam());
+  return fmtp.mTier.isOk() && fmtp.mTier.inspect() == 1 &&
+         fmtp.mLevelIdx.isOk() && fmtp.mLevelIdx.inspect() < 8;
+}
+
+
+
+
+
+
 
 
 static bool WebrtcVideoExceedsLevel(const MediaExtendedMIMEType& aMime,
@@ -288,16 +303,9 @@ static bool WebrtcVideoExceedsLevel(const MediaExtendedMIMEType& aMime,
     case CodecType::AV1: {
       const auto fmtp = ParseAV1Fmtp(aMime.OriginalString());
       MOZ_ASSERT(!fmtp.HasInvalidParam());
-      if (fmtp.mLevelIdx.isErr()) {
-        return false;
-      }
-      const uint8_t levelIdx = fmtp.mLevelIdx.inspect();
-      
-      
-      if (fmtp.mTier.isOk() && fmtp.mTier.inspect() == 1 && levelIdx < 8) {
-        return true;
-      }
-      return !AV1LevelFits(levelIdx, aVideo.mWidth, aVideo.mHeight, framerate);
+      return fmtp.mLevelIdx.isOk() &&
+             !AV1LevelFits(fmtp.mLevelIdx.inspect(), aVideo.mWidth,
+                           aVideo.mHeight, framerate);
     }
     default:
       return false;
@@ -734,7 +742,8 @@ void MediaCapabilities::CreateWebRTCDecodingInfo(
 
         const auto& v = aConfiguration.mVideo.Value();
         const auto& mime = videoContainer->ExtendedType();
-        if (WebrtcVideoExceedsLevel(mime, v)) {
+        if (WebrtcVideoTierUndefined(mime) ||
+            WebrtcVideoExceedsLevel(mime, v)) {
           auto unsupported = UnsupportedInfo<MediaCapabilitiesDecodingInfo>();
           LOG("{} -> {}", aConfiguration, unsupported);
           return PromiseType::CreateAndResolve(
@@ -1489,7 +1498,11 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
 
         MOZ_ASSERT(aConfiguration.mVideo.WasPassed());
         const auto& v = aConfiguration.mVideo.Value();
-        if (WebrtcVideoExceedsLevel(*videoMime, v)) {
+        
+        
+        
+        
+        if (WebrtcVideoTierUndefined(*videoMime)) {
           auto unsupported = UnsupportedInfo<MediaCapabilitiesInfo>();
           LOG("{} -> {}", aConfiguration, unsupported);
           return PromiseType::CreateAndResolve(
