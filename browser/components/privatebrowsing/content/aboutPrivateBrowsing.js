@@ -409,7 +409,36 @@ document.addEventListener("DOMContentLoaded", function () {
     window.PrivateBrowsingRecordClick("InfoLink");
   });
 
-  if (RPMGetBoolPref("browser.nova.enabled", false)) {
+  const isNovaEnabled = RPMGetBoolPref("browser.nova.enabled", false);
+  const isPrivateWindowRedesignEnabled =
+    window.PrivateBrowsingRedesignEnabled?.();
+
+  
+  if (isPrivateWindowRedesignEnabled && isNovaEnabled) {
+    
+    document.getElementById("info-title").hidden = true;
+    const subheader = document.querySelector(".nova-subheader");
+    if (subheader) {
+      document.l10n.setAttributes(
+        subheader,
+        "about-private-browsing-private-window-redesign-subheader"
+      );
+    }
+    document.getElementById("info-body").hidden = true;
+    document.getElementById("private-browsing-myths").hidden = true;
+
+    const basicsLink = document.getElementById("private-window-basics");
+    basicsLink.hidden = false;
+    basicsLink.addEventListener("click", async e => {
+      e.preventDefault();
+      window.PrivateBrowsingRecordClick("PrivateWindowBasicsLink");
+      
+      await RPMSendAsyncMessage("TRIGGER_MESSAGING_EVENT", {
+        id: "privateWindowBasicsLinkClick",
+      });
+    });
+  } else if (isNovaEnabled) {
+    
     document.getElementById("info-title").hidden = true;
     document.l10n.setAttributes(
       document.getElementById("info-body"),
