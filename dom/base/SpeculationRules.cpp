@@ -234,16 +234,6 @@ void SpeculationRules::EnactCandidates(nsIURI* aURL, Eagerness aTriggerLevel) {
   }
 }
 
-void SpeculationRules::AddLink(Element* aElement) {
-  mLinks.Insert(aElement);
-  ConsiderLoads();
-}
-
-void SpeculationRules::RemoveLink(Element* aElement) {
-  mLinks.Remove(aElement);
-  ConsiderLoads();
-}
-
 
 void SpeculationRules::FindMatchingLinks(nsTArray<const Element*>& aLinks) {
   
