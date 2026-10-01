@@ -630,7 +630,6 @@ nsresult nsXMLContentSink::CloseElement(nsIContent* aContent) {
   
   if (nsIContent::RequiresDoneAddingChildren(nodeInfo->NamespaceID(),
                                              nodeInfo->NameAtom())) {
-    nsAutoScriptBlocker scriptBlocker;
     aContent->DoneAddingChildren(HaveNotifiedForCurrentContent());
   }
 
