@@ -5,12 +5,15 @@
 use std::cmp;
 use std::collections::{hash_map, HashMap};
 use std::ffi;
+use std::mem;
 use std::path;
 use std::sync::{Arc, Condvar, Mutex, Weak};
+use std::thread;
 use std::time::{Duration, Instant};
 
 use bits::{
-    BackgroundCopyManager, BitsJob, BitsJobPriority, BitsProxyUsage, BG_S_PARTIAL_COMPLETE, E_FAIL,
+    is_bits_error, BackgroundCopyManager, BitsJob, BitsJobPriority, BitsJobState, BitsProxyUsage,
+    BG_S_PARTIAL_COMPLETE, E_FAIL,
 };
 use guid_win::Guid;
 
@@ -45,6 +48,14 @@ fn format_error(bcm: &BackgroundCopyManager, error: comedy::HResult) -> HResultM
         } else {
             format!("{}", error)
         },
+    }
+}
+
+
+fn with_retry_failure(first: HResultMessage, retry: HResultMessage) -> HResultMessage {
+    HResultMessage {
+        hr: first.hr,
+        message: format!("{} (retry failed: {})", first.message, retry.message),
     }
 }
 
@@ -308,6 +319,42 @@ pub struct InProcessMonitor {
     guid: Guid,
     last_status_time: Option<Instant>,
     last_url: Option<ffi::OsString>,
+    connection: Option<MonitorConnection>,
+}
+
+
+
+
+
+
+
+
+struct MonitorConnection {
+    bcm: mem::ManuallyDrop<BackgroundCopyManager>,
+    thread: thread::ThreadId,
+}
+
+unsafe impl Send for MonitorConnection {}
+
+impl MonitorConnection {
+    fn new(bcm: BackgroundCopyManager) -> MonitorConnection {
+        MonitorConnection {
+            bcm: mem::ManuallyDrop::new(bcm),
+            thread: thread::current().id(),
+        }
+    }
+
+    fn is_current_thread(&self) -> bool {
+        self.thread == thread::current().id()
+    }
+}
+
+impl Drop for MonitorConnection {
+    fn drop(&mut self) {
+        if self.is_current_thread() {
+            unsafe { mem::ManuallyDrop::drop(&mut self.bcm) }
+        }
+    }
 }
 
 
@@ -378,6 +425,7 @@ impl InProcessMonitor {
             vars,
             last_status_time: None,
             last_url: None,
+            connection: None,
         };
 
         Ok((monitor, control))
@@ -391,6 +439,12 @@ impl InProcessMonitor {
 
         let started = Instant::now();
         let timeout_end = started + timeout;
+
+        
+        let mut cached = self
+            .connection
+            .take()
+            .filter(MonitorConnection::is_current_thread);
 
         {
             let mut s = self.vars.1.lock().unwrap();
@@ -454,53 +508,93 @@ impl InProcessMonitor {
         
         self.last_status_time = Some(Instant::now());
 
-        let bcm = match BackgroundCopyManager::connect() {
-            Ok(bcm) => bcm,
-            Err(e) => {
-                
-                self.vars.1.lock().unwrap().shutdown = true;
+        let mut first_error: Option<HResultMessage> = None;
+        loop {
+            let reused = cached.is_some();
+            let connection = match cached.take() {
+                Some(connection) => connection,
+                None => match BackgroundCopyManager::connect_with_timeout(BCM_CONNECT_TIMEOUT) {
+                    Ok(bcm) => MonitorConnection::new(bcm),
+                    Err(e) => {
+                        
+                        self.vars.1.lock().unwrap().shutdown = true;
 
-                
-                
-                return Ok(Err(HResultMessage {
-                    hr: e.code(),
-                    message: format!("{}", e),
-                }));
-            }
-        };
-
-        Ok((|| {
-            let mut job = bcm.get_job_by_guid(&self.guid)?;
-
-            let status = job.get_status()?;
-            let url = job.get_first_file()?.get_remote_name()?;
-
-            Ok(JobStatus {
-                state: status.state,
-                progress: status.progress,
-                error_count: status.error_count,
-                error: status.error.map(|e| JobError {
-                    context: e.context,
-                    context_str: e.context_str,
-                    error: HResultMessage {
-                        hr: e.error,
-                        message: e.error_str,
-                    },
-                }),
-                times: status.times,
-                url: if self.last_url.is_some() && *self.last_url.as_ref().unwrap() == url {
-                    None
-                } else {
-                    self.last_url = Some(url);
-                    self.last_url.clone()
+                        
+                        
+                        let error = HResultMessage {
+                            hr: e.code(),
+                            message: format!("{}", e),
+                        };
+                        return Ok(Err(match first_error {
+                            Some(first) => with_retry_failure(first, error),
+                            None => error,
+                        }));
+                    }
                 },
-            })
-        })()
-        .map_err(|e| {
-            
-            self.vars.1.lock().unwrap().shutdown = true;
-            format_error(&bcm, e)
-        }))
+            };
+
+            match self.query_status(&connection.bcm) {
+                Ok(status) => {
+                    
+                    
+                    
+                    match status.state {
+                        BitsJobState::Error
+                        | BitsJobState::Transferred
+                        | BitsJobState::Acknowledged
+                        | BitsJobState::Cancelled => {}
+                        _ => self.connection = Some(connection),
+                    }
+                    return Ok(Ok(status));
+                }
+                Err(e) => {
+                    let error = format_error(&connection.bcm, e);
+
+                    
+                    
+                    
+                    if reused && !is_bits_error(error.hr) {
+                        first_error = Some(error);
+                        continue;
+                    }
+
+                    
+                    self.vars.1.lock().unwrap().shutdown = true;
+                    return Ok(Err(match first_error {
+                        Some(first) => with_retry_failure(first, error),
+                        None => error,
+                    }));
+                }
+            }
+        }
+    }
+
+    fn query_status(&mut self, bcm: &BackgroundCopyManager) -> Result<JobStatus, comedy::HResult> {
+        let mut job = bcm.get_job_by_guid(&self.guid)?;
+
+        let status = job.get_status()?;
+        let url = job.get_first_file()?.get_remote_name()?;
+
+        Ok(JobStatus {
+            state: status.state,
+            progress: status.progress,
+            error_count: status.error_count,
+            error: status.error.map(|e| JobError {
+                context: e.context,
+                context_str: e.context_str,
+                error: HResultMessage {
+                    hr: e.error,
+                    message: e.error_str,
+                },
+            }),
+            times: status.times,
+            url: if self.last_url.is_some() && *self.last_url.as_ref().unwrap() == url {
+                None
+            } else {
+                self.last_url = Some(url);
+                self.last_url.clone()
+            },
+        })
     }
 }
 
