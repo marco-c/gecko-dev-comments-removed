@@ -11,13 +11,13 @@ import java.util.Locale
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.Converted
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.clickSystemHomeScreenShortcutAddButton
 import org.mozilla.fenix.helpers.AppAndSystemHelper.runWithAppLocaleChanged
 import org.mozilla.fenix.helpers.DataGenerationHelper.setTextToClipBoard
 import org.mozilla.fenix.helpers.FenixTestRule
-import org.mozilla.fenix.helpers.FxNimbusHelper
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MockBrowserDataHelper.addCustomSearchEngine
 import org.mozilla.fenix.helpers.MockBrowserDataHelper.createBookmarkItem
@@ -57,6 +57,12 @@ class SettingsSearchTest {
     @get:Rule val searchMockServerRule = SearchMockServerRule()
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2203333
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.SettingsSearchTest#verifySearchSettingsMenuItemsTest"],
+        bug = 2074094,
+        since = "2026-09",
+    )
+    @Critical
     @Test
     fun verifySearchSettingsMenuItemsTest() {
         homeScreen(composeTestRule) {}
@@ -126,7 +132,6 @@ class SettingsSearchTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/233586
     @Test
     fun verifyEnabledUrlAutocompleteToggleTest() {
-        FxNimbusHelper.updateAddressBarFocusModeStatus(false)
         // Currently part of an experiment https://bugzilla.mozilla.org/show_bug.cgi?id=1842106
         // Check if "Top domain" suggestions for the address bar's autocomplete are enabled
         if (FxNimbus.features.suggestShippedDomains.value().enabled) {
@@ -169,7 +174,6 @@ class SettingsSearchTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2660692
     @Test
     fun verifyDisabledUrlAutocompleteToggleTest() {
-        FxNimbusHelper.updateAddressBarFocusModeStatus(false)
         // Currently part of an experiment https://bugzilla.mozilla.org/show_bug.cgi?id=1842106
         // Check if "Top domain" suggestions for the address bar's autocomplete are enabled
         if (FxNimbus.features.suggestShippedDomains.value().enabled) {
