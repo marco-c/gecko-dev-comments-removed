@@ -461,17 +461,24 @@ nsresult nsAppShellService::JustCreateTopWindow(
 
   RefPtr<AppWindow> window = new AppWindow(aChromeMask);
 
-#ifdef XP_WIN
   
   
   
-  if (nsCOMPtr<nsIBaseWindow> baseWin = do_QueryInterface(aParent)) {
-    nsCOMPtr<nsIWidget> widget = baseWin->GetMainWidget();
-    if (widget && widget->SizeMode() == nsSizeMode_Fullscreen) {
-      window->IgnoreXULSizeMode(true);
+  
+  
+  
+  bool shouldIgnoreXULSizeMode =
+      aChromeMask & nsIWebBrowserChrome::CHROME_SUPPRESS_INITIAL_FULLSCREEN;
+  if (!shouldIgnoreXULSizeMode) {
+    if (nsCOMPtr<nsIBaseWindow> baseWin = do_QueryInterface(aParent)) {
+      nsCOMPtr<nsIWidget> widget = baseWin->GetMainWidget();
+      shouldIgnoreXULSizeMode =
+          widget && widget->SizeMode() == nsSizeMode_Fullscreen;
     }
   }
-#endif
+  if (shouldIgnoreXULSizeMode) {
+    window->IgnoreXULSizeMode(true);
+  }
 
   widget::InitData widgetInitData;
   if (aIsHiddenWindow) {

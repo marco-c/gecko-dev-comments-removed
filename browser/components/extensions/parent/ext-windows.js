@@ -418,7 +418,11 @@ this.windows = class extends ExtensionAPIPersistent {
               "resizable",
               "minimizable",
               "titlebar",
-              "close"
+              "close",
+              
+              
+              
+              "suppressinitialfullscreen"
             );
             if (createData.left === null && createData.top === null) {
               features.push("centerscreen");
