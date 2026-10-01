@@ -1122,11 +1122,6 @@ uint8_t* PushMessageData::GetContentsCopy() {
 
 
 void PushMessageData::SetUseCounterIfDeclarative(JSContext* aCx) {
-  if (StaticPrefs::dom_push_declarative_enabled()) {
-    
-    
-    return;
-  }
   
   
   
