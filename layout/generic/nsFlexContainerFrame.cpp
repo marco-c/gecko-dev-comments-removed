@@ -6599,7 +6599,7 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
       
       
       const auto stretchedStyleCrossSize =
-          StyleSize::FromAppUnits(nsLayoutUtils::ComputeStretchBSize(
+          StyleSize::FromAppUnits(nsLayoutUtils::ComputeStretchSize(
               aInput.mPercentageBasisForChildren->BSize(flexWM), offsets.margin,
               offsets.BorderPadding(), childStylePos->mBoxSizing));
       

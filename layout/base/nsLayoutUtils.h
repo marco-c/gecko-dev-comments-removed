@@ -1749,9 +1749,10 @@ class nsLayoutUtils {
 
 
 
-  static inline nscoord ComputeStretchBSize(
-      nscoord aSizeToFill, nscoord aMargin, nscoord aBorderPadding,
-      mozilla::StyleBoxSizing aBoxSizing) {
+  static inline nscoord ComputeStretchSize(nscoord aSizeToFill,
+                                           nscoord aMargin,
+                                           nscoord aBorderPadding,
+                                           mozilla::StyleBoxSizing aBoxSizing) {
     NS_ASSERTION(aSizeToFill != NS_UNCONSTRAINEDSIZE,
                  "We don't handle situations with unconstrained "
                  "aSizeToFill; caller should handle that!");
@@ -1765,16 +1766,15 @@ class nsLayoutUtils {
   static inline nscoord ComputeStretchContentBoxBSize(nscoord aSizeToFill,
                                                       nscoord aMargin,
                                                       nscoord aBorderPadding) {
-    return ComputeStretchBSize(aSizeToFill, aMargin, aBorderPadding,
-                               mozilla::StyleBoxSizing::ContentBox);
+    return ComputeStretchSize(aSizeToFill, aMargin, aBorderPadding,
+                              mozilla::StyleBoxSizing::ContentBox);
   }
-  
-  
   
   static inline nscoord ComputeStretchContentBoxISize(nscoord aSizeToFill,
                                                       nscoord aMargin,
                                                       nscoord aBorderPadding) {
-    return std::max(0, aSizeToFill - aMargin - aBorderPadding);
+    return ComputeStretchSize(aSizeToFill, aMargin, aBorderPadding,
+                              mozilla::StyleBoxSizing::ContentBox);
   }
 
   

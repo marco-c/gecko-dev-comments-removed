@@ -6830,7 +6830,7 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
     if (styleBSizeConsideringOverrides->BehavesLikeStretchOnBlockAxis() &&
         aCBSize.BSize(aWM) != NS_UNCONSTRAINEDSIZE) {
       
-      nscoord stretchBSize = nsLayoutUtils::ComputeStretchBSize(
+      nscoord stretchBSize = nsLayoutUtils::ComputeStretchSize(
           aCBSize.BSize(aWM), aMargin.BSize(aWM), aBorderPadding.BSize(aWM),
           stylePos->mBoxSizing);
       
@@ -7208,36 +7208,28 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
 nscoord nsIFrame::ComputeBSizeValueAsPercentageBasis(
     const StyleSize& aStyleBSize, const StyleSize& aStyleMinBSize,
     const StyleMaxSize& aStyleMaxBSize, nscoord aCBBSize,
-    nscoord aContentEdgeToBoxSizingBSize) {
+    nscoord aContentEdgeToBoxSizingBSize, nscoord aMargin,
+    nscoord aBorderPadding) {
   if (nsLayoutUtils::IsAutoBSize(aStyleBSize, aCBBSize)) {
     return NS_UNCONSTRAINEDSIZE;
   }
 
-  
-  
-  
-  
-  
-  
-  const nscoord dummyMargin = 0;
-  const nscoord dummyBorderPadding = 0;
-
   const nscoord bSize = nsLayoutUtils::ComputeBSizeValueHandlingStretch(
-      aCBBSize, dummyMargin, dummyBorderPadding, aContentEdgeToBoxSizingBSize,
+      aCBBSize, aMargin, aBorderPadding, aContentEdgeToBoxSizingBSize,
       aStyleBSize);
 
   const nscoord minBSize =
       nsLayoutUtils::IsAutoBSize(aStyleMinBSize, aCBBSize)
           ? 0
           : nsLayoutUtils::ComputeBSizeValueHandlingStretch(
-                aCBBSize, dummyMargin, dummyBorderPadding,
+                aCBBSize, aMargin, aBorderPadding,
                 aContentEdgeToBoxSizingBSize, aStyleMinBSize);
 
   const nscoord maxBSize =
       nsLayoutUtils::IsAutoBSize(aStyleMaxBSize, aCBBSize)
           ? NS_UNCONSTRAINEDSIZE
           : nsLayoutUtils::ComputeBSizeValueHandlingStretch(
-                aCBBSize, dummyMargin, dummyBorderPadding,
+                aCBBSize, aMargin, aBorderPadding,
                 aContentEdgeToBoxSizingBSize, aStyleMaxBSize);
 
   return CSSMinMax(bSize, minBSize, maxBSize);
