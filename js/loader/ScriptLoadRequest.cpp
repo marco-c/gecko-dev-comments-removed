@@ -85,7 +85,8 @@ NS_IMPL_CYCLE_COLLECTION_TRACE_END
 ScriptLoadRequest::ScriptLoadRequest(ScriptKind aKind,
                                      const SRIMetadata& aIntegrity,
                                      nsIURI* aReferrer,
-                                     LoadContextBase* aContext)
+                                     LoadContextBase* aContext,
+                                     const mozilla::Encoding* aClassicScriptHintEncoding)
     : mKind(aKind),
       mState(State::CheckingCache),
       mFetchSourceOnly(false),
@@ -98,7 +99,8 @@ ScriptLoadRequest::ScriptLoadRequest(ScriptKind aKind,
       mIntegrity(aIntegrity),
       mReferrer(aReferrer),
       mLoadContext(aContext),
-      mEarlyHintPreloaderId(0) {
+      mEarlyHintPreloaderId(0),
+      mClassicScriptHintEncoding(aClassicScriptHintEncoding) {
   if (mLoadContext) {
     mLoadContext->SetRequest(this);
   }
@@ -118,6 +120,7 @@ void ScriptLoadRequest::Cancel() {
   mState = State::Canceled;
   if (HasScriptLoadContext()) {
     GetScriptLoadContext()->MaybeCancelOffThreadScript();
+    GetScriptLoadContext()->MaybeUnblockOnload();
   }
 }
 
@@ -232,14 +235,13 @@ void ScriptLoadRequest::SetCacheEntry(LoadedScript* aLoadedScript,
 
 void ScriptLoadRequest::NoCacheEntryFound(
     mozilla::dom::ReferrerPolicy aReferrerPolicy,
-    ScriptFetchOptions* aFetchOptions, nsIURI* aURI,
-    const mozilla::Encoding* aClassicScriptFallbackEncoding) {
+    ScriptFetchOptions* aFetchOptions, nsIURI* aURI) {
   MOZ_ASSERT(IsCheckingCache());
   MOZ_ASSERT(mKind != ScriptKind::eEvent, "eEvent is only for ScriptFetchInfo");
   MOZ_ASSERT(!IsRetrievedFromMemoryCache());
 
   mFetchInfo = new ScriptFetchInfo(mKind, aReferrerPolicy, aFetchOptions, aURI);
-  mLoadedScript = new LoadedScript(mKind, aURI, aClassicScriptFallbackEncoding);
+  mLoadedScript = new LoadedScript(mKind, aURI);
   mState = State::Fetching;
 }
 

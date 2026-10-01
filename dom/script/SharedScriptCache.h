@@ -12,6 +12,7 @@
 #include "js/loader/ScriptKind.h"            
 #include "js/loader/ScriptLoadRequest.h"     
 #include "mozilla/CORSMode.h"                
+#include "mozilla/Encoding.h"                
 #include "mozilla/HashTable.h"               
 #include "mozilla/MemoryReporting.h"         
 #include "mozilla/Mutex.h"                   
@@ -46,7 +47,7 @@ class ScriptHashKey : public PLDHashEntryHdr {
         mKind(aKey.mKind),
         mCORSMode(aKey.mCORSMode),
         mReferrerPolicy(aKey.mReferrerPolicy),
-        mClassicScriptFallbackEncoding(aKey.mClassicScriptFallbackEncoding) {
+        mClassicScriptHintEncoding(aKey.mClassicScriptHintEncoding) {
     MOZ_COUNT_CTOR(ScriptHashKey);
   }
 
@@ -60,28 +61,28 @@ class ScriptHashKey : public PLDHashEntryHdr {
         mKind(std::move(aKey.mKind)),
         mCORSMode(std::move(aKey.mCORSMode)),
         mReferrerPolicy(std::move(aKey.mReferrerPolicy)),
-        mClassicScriptFallbackEncoding(
-            std::move(aKey.mClassicScriptFallbackEncoding)) {
+        mClassicScriptHintEncoding(std::move(aKey.mClassicScriptHintEncoding)) {
     MOZ_COUNT_CTOR(ScriptHashKey);
   }
 
-  ScriptHashKey(ScriptLoader* aLoader, JS::loader::ScriptKind aKind,
+  ScriptHashKey(ScriptLoader* aLoader,
+                const JS::loader::ScriptLoadRequest* aRequest,
                 mozilla::dom::ReferrerPolicy aReferrerPolicy,
                 const JS::loader::ScriptFetchOptions* aFetchOptions,
-                const nsCOMPtr<nsIURI> aURI,
-                const Encoding* aClassicScriptFallbackEncoding);
+                const nsCOMPtr<nsIURI> aURI);
   explicit ScriptHashKey(const ScriptLoadData& aLoadData);
 
   
   
-  static Maybe<ScriptHashKey> FromStringsForLookup(const nsACString& aKey,
-                                                   const nsACString& aURI);
+  static Maybe<ScriptHashKey> FromStringsForLookup(
+      const nsACString& aKey, const nsACString& aURI,
+      const mozilla::Encoding* aClassicScriptHintEncoding);
 
  private:
   ScriptHashKey(nsIURI* aURI, nsIPrincipal* aPartitionPrincipal,
                 JS::loader::ScriptKind aKind, CORSMode aCORSMode,
                 mozilla::dom::ReferrerPolicy aReferrerPolicy,
-                const Encoding* aClassicScriptFallbackEncoding)
+                const mozilla::Encoding* aClassicScriptHintEncoding)
       : PLDHashEntryHdr(),
         mURI(aURI),
         mPartitionPrincipal(aPartitionPrincipal),
@@ -89,7 +90,7 @@ class ScriptHashKey : public PLDHashEntryHdr {
         mKind(aKind),
         mCORSMode(aCORSMode),
         mReferrerPolicy(aReferrerPolicy),
-        mClassicScriptFallbackEncoding(aClassicScriptFallbackEncoding) {
+        mClassicScriptHintEncoding(aClassicScriptHintEncoding) {
     MOZ_COUNT_CTOR(ScriptHashKey);
   }
 
@@ -146,7 +147,8 @@ class ScriptHashKey : public PLDHashEntryHdr {
 
   
   
-  const Encoding* mClassicScriptFallbackEncoding;
+  
+  const mozilla::Encoding* mClassicScriptHintEncoding = nullptr;
 };
 
 class ScriptLoadData final
@@ -266,6 +268,7 @@ class SharedScriptCache final
 
   static bool GetCachedScriptSource(JSContext* aCx, const nsACString& aKey,
                                     const nsACString& aURI,
+                                    const nsACString& aClassicScriptHintCharset,
                                     JS::MutableHandle<JS::Value> aRetval);
 
   static void PrepareForLastCC();

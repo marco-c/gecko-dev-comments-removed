@@ -707,8 +707,8 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
   if (mWorkerRef->Private()->WorkerType() == WorkerType::Classic ||
       IsDebuggerScript()) {
     request = new ScriptLoadRequest(ScriptKind::eClassic, SRIMetadata(),
-                                    nullptr,  
-                                    loadContext);
+                                     nullptr, loadContext,
+                                     nullptr);
   } else {
     
     
@@ -742,12 +742,7 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
   
   request->mURL = NS_ConvertUTF16toUTF8(aScriptURL);
 
-  
-  request->NoCacheEntryFound(
-      referrerPolicy, fetchOptions, uri,
-      request->IsModuleRequest()
-          ? nullptr
-          : static_cast<const mozilla::Encoding*>(UTF_8_ENCODING));
+  request->NoCacheEntryFound(referrerPolicy, fetchOptions, uri);
 
   return request.forget();
 }

@@ -28,18 +28,21 @@
 namespace mozilla::dom {
 
 ScriptHashKey::ScriptHashKey(
-    ScriptLoader* aLoader, JS::loader::ScriptKind aKind,
+    ScriptLoader* aLoader, const JS::loader::ScriptLoadRequest* aRequest,
     mozilla::dom::ReferrerPolicy aReferrerPolicy,
     const JS::loader::ScriptFetchOptions* aFetchOptions,
-    const nsCOMPtr<nsIURI> aURI, const Encoding* aClassicScriptFallbackEncoding)
+    const nsCOMPtr<nsIURI> aURI)
     : PLDHashEntryHdr(),
       mURI(aURI),
       mPartitionPrincipal(aLoader->PartitionedPrincipal()),
       mLoaderPrincipal(aLoader->LoaderPrincipal()),
-      mKind(aKind),
+      mKind(aRequest->mKind),
       mCORSMode(aFetchOptions->mCORSMode),
-      mReferrerPolicy(aReferrerPolicy),
-      mClassicScriptFallbackEncoding(aClassicScriptFallbackEncoding) {
+      mReferrerPolicy(aReferrerPolicy) {
+  if (mKind == JS::loader::ScriptKind::eClassic) {
+    mClassicScriptHintEncoding = aRequest->mClassicScriptHintEncoding;
+  }
+
   MOZ_COUNT_CTOR(ScriptHashKey);
 }
 
@@ -73,16 +76,15 @@ bool ScriptHashKey::KeyEquals(const ScriptHashKey& aKey) const {
     return false;
   }
 
-  if (mClassicScriptFallbackEncoding != aKey.mClassicScriptFallbackEncoding) {
-    return false;
+  
+  if (mKind == JS::loader::ScriptKind::eClassic) {
+    if (mClassicScriptHintEncoding != aKey.mClassicScriptHintEncoding) {
+      return false;
+    }
   }
 
   return true;
 }
-
-
-
-static constexpr char KeyEncodingSeparator = '/';
 
 void ScriptHashKey::ToStringForLookup(nsACString& aResult) {
   aResult.Truncate();
@@ -148,13 +150,6 @@ void ScriptHashKey::ToStringForLookup(nsACString& aResult) {
       break;
   }
 
-  if (mClassicScriptFallbackEncoding) {
-    nsAutoCString name;
-    mClassicScriptFallbackEncoding->Name(name);
-    aResult.Append(name);
-  }
-  aResult.Append(KeyEncodingSeparator);
-
   nsAutoCString partitionPrincipal;
   BasePrincipal::Cast(mPartitionPrincipal)->ToJSON(partitionPrincipal);
   aResult.Append(partitionPrincipal);
@@ -162,7 +157,8 @@ void ScriptHashKey::ToStringForLookup(nsACString& aResult) {
 
 
 Maybe<ScriptHashKey> ScriptHashKey::FromStringsForLookup(
-    const nsACString& aKey, const nsACString& aURI) {
+    const nsACString& aKey, const nsACString& aURI,
+    const mozilla::Encoding* aClassicScriptHintEncoding) {
   if (aKey.Length() < 22) {
     return Nothing();
   }
@@ -223,26 +219,8 @@ Maybe<ScriptHashKey> ScriptHashKey::FromStringsForLookup(
     return Nothing();
   }
 
-  static constexpr int32_t EncodingStartPos = 21;
-
-  int32_t sep = aKey.FindChar(KeyEncodingSeparator, EncodingStartPos);
-  if (sep == kNotFound) {
-    return Nothing();
-  }
-
-  const Encoding* encoding;
-  if (sep == EncodingStartPos) {
-    encoding = nullptr;
-  } else {
-    encoding = Encoding::ForLabel(
-        Substring(aKey, EncodingStartPos, sep - EncodingStartPos));
-    if (!encoding) {
-      return Nothing();
-    }
-  }
-
   nsCOMPtr<nsIPrincipal> partitionPrincipal =
-      BasePrincipal::FromJSON(Substring(aKey, sep + 1));
+      BasePrincipal::FromJSON(Substring(aKey, 21));
   if (!partitionPrincipal) {
     return Nothing();
   }
@@ -254,7 +232,7 @@ Maybe<ScriptHashKey> ScriptHashKey::FromStringsForLookup(
   }
 
   return Some(ScriptHashKey(uri, partitionPrincipal, kind, corsMode,
-                            referrerPolicy, encoding));
+                            referrerPolicy, aClassicScriptHintEncoding));
 }
 
 NS_IMPL_ISUPPORTS(ScriptLoadData, nsISupports)
@@ -265,9 +243,8 @@ ScriptLoadData::ScriptLoadData(ScriptLoader* aLoader,
                                JS::loader::LoadedScript* aLoadedScript)
     : mExpirationTime(aExpirationTime),
       mLoader(aLoader),
-      mKey(aLoader, aRequest->mKind, aRequest->ReferrerPolicy(),
-           aRequest->FetchOptions(), aLoadedScript->GetURI(),
-           aRequest->MaybeClassicScriptFallbackEncoding()),
+      mKey(aLoader, aRequest, aRequest->ReferrerPolicy(),
+           aRequest->FetchOptions(), aLoadedScript->GetURI()),
       mLoadedScript(aLoadedScript),
       mNetworkMetadata(aRequest->mNetworkMetadata) {}
 
@@ -365,14 +342,20 @@ void SharedScriptCache::Invalidate() {
 
 bool SharedScriptCache::GetCachedScriptSource(
     JSContext* aCx, const nsACString& aKey, const nsACString& aURI,
+    const nsACString& aClassicScriptHintCharset,
     JS::MutableHandle<JS::Value> aRetval) {
   if (!sSingleton) {
     aRetval.setUndefined();
     return true;
   }
 
-  Maybe<ScriptHashKey> maybeKey =
-      ScriptHashKey::FromStringsForLookup(aKey, aURI);
+  const Encoding* classicScriptHintEncoding = nullptr;
+  if (!aClassicScriptHintCharset.IsEmpty()) {
+    classicScriptHintEncoding = Encoding::ForLabel(aClassicScriptHintCharset);
+  }
+
+  Maybe<ScriptHashKey> maybeKey = ScriptHashKey::FromStringsForLookup(
+      aKey, aURI, classicScriptHintEncoding);
   if (!maybeKey) {
     aRetval.setUndefined();
     return true;
