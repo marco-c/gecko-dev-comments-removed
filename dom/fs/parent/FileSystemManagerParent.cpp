@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FileSystemManagerParent.h"
 
 #include "FileSystemDatabaseManager.h"
@@ -128,6 +126,12 @@ mozilla::ipc::IPCResult FileSystemManagerParent::RecvGetAccessHandle(
   AssertIsOnIOTarget();
   MOZ_ASSERT(mDataManager);
 
+  
+  if (mDataManager->OriginMetadataRef().mIsPrivate) {
+    aResolver(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return IPC_OK();
+  }
+
   EntryId entryId = aRequest.entryId();
 
   FileSystemAccessHandle::Create(mDataManager, entryId)
@@ -197,6 +201,12 @@ mozilla::ipc::IPCResult FileSystemManagerParent::RecvGetWritable(
     FileSystemGetWritableRequest&& aRequest, GetWritableResolver&& aResolver) {
   AssertIsOnIOTarget();
   MOZ_ASSERT(mDataManager);
+
+  
+  if (mDataManager->OriginMetadataRef().mIsPrivate) {
+    aResolver(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return IPC_OK();
+  }
 
   const fs::FileMode mode = mDataManager->GetMode(aRequest.keepData());
 
@@ -276,6 +286,13 @@ mozilla::ipc::IPCResult FileSystemManagerParent::RecvGetWritable(
 IPCResult FileSystemManagerParent::RecvGetFile(
     FileSystemGetFileRequest&& aRequest, GetFileResolver&& aResolver) {
   AssertIsOnIOTarget();
+  MOZ_ASSERT(mDataManager);
+
+  
+  if (mDataManager->OriginMetadataRef().mIsPrivate) {
+    aResolver(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return IPC_OK();
+  }
 
   
   

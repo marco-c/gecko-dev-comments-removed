@@ -2,13 +2,12 @@
 
 
 
-
-
 #include "mozilla/dom/FileSystemManager.h"
 
 #include "FileSystemBackgroundRequestHandler.h"
 #include "fs/FileSystemRequestHandler.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/FileSystemManagerChild.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/StorageManager.h"
@@ -99,10 +98,14 @@ void FileSystemManager::BeginRequest(
 
   MOZ_ASSERT(mGlobal);
 
+  const bool fsOnPrivateBrowsingEnabled =
+      StaticPrefs::dom_fs_privateBrowsing_enabled();
+
   nsICookieJarSettings* cookieJarSettings = mGlobal->GetCookieJarSettings();
   nsIPrincipal* unpartitionedPrincipal = mGlobal->PrincipalOrNull();
   if (NS_WARN_IF(!cookieJarSettings) || NS_WARN_IF(!unpartitionedPrincipal) ||
-      NS_WARN_IF(unpartitionedPrincipal->GetIsInPrivateBrowsing())) {
+      (!fsOnPrivateBrowsingEnabled &&
+       NS_WARN_IF(unpartitionedPrincipal->GetIsInPrivateBrowsing()))) {
     
     
     
@@ -115,6 +118,8 @@ void FileSystemManager::BeginRequest(
 
   
   const bool allowed = access == StorageAccess::eAllow ||
+                       (fsOnPrivateBrowsingEnabled &&
+                        access == StorageAccess::ePrivateBrowsing) ||
                        StoragePartitioningEnabled(access, cookieJarSettings);
   if (NS_WARN_IF(!allowed)) {
     aFailure(NS_ERROR_DOM_SECURITY_ERR);
