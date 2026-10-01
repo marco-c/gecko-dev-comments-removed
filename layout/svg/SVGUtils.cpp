@@ -838,7 +838,20 @@ gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, SVGBBoxFlags aFlags,
         return gfxRect();
       }
 
-      return ThebesRect(text->GetSubtreeBBox(aFrame, {}, aFlags));
+      gfxRect rec = text->TransformFrameRectFromTextChild(
+          aFrame->GetRectRelativeToSelf(), aFrame);
+
+      
+      
+      
+      rec += ThebesPoint(
+          CSSPoint::FromAppUnits(text->GetPosition()).ToUnknownPoint());
+
+      if (aFlags.contains(SVGBBoxFlag::DisregardCSSZoom)) {
+        rec.Scale(1 / aFrame->Style()->EffectiveZoom().ToFloat());
+      }
+
+      return rec;
     }
   }
 
