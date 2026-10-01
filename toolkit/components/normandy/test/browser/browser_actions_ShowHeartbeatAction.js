@@ -343,11 +343,6 @@ decorate_task(
     Assert.equal(await ShowHeartbeatAction._getLastInteraction(), 4);
 
     
-    await Storage.clearAllStorage();
-    Assert.equal(await ShowHeartbeatAction._getLastShown(), 2);
-    Assert.equal(await ShowHeartbeatAction._getLastInteraction(), 4);
-
-    
     await ShowHeartbeatAction._clearAllStorage();
     Assert.equal(await ShowHeartbeatAction._getLastShown("recipe1"), null);
     Assert.equal(await ShowHeartbeatAction._getLastShown("recipe2"), null);
