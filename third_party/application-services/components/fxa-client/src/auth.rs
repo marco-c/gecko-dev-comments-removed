@@ -113,6 +113,20 @@ impl FirefoxAccount {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn reset_auth_recheck_timer(&self) {
+        self.internal.lock().reset_auth_recheck_timer()
+    }
+
+    
     pub fn simulate_temporary_auth_token_issue(&self) {
         self.internal.lock().simulate_temporary_auth_token_issue()
     }

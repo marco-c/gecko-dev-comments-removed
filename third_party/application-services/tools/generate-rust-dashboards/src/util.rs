@@ -2,6 +2,8 @@
 
 
 
+use crate::schema::{FieldConfigOverrideColor, FieldConfigOverrideProperty};
+
 pub fn slug(text: &str) -> String {
     text.replace(|ch: char| !ch.is_alphanumeric(), "-")
         .to_ascii_lowercase()
@@ -51,5 +53,51 @@ where
 {
     fn join(self, sep: &str) -> String {
         self.map(I::into).collect::<Vec<String>>().join(sep)
+    }
+}
+
+
+pub fn dashboard_count_color(index: usize, for_unique_users: bool) -> FieldConfigOverrideProperty {
+    
+    
+    
+    
+    let color = match (index % 10, for_unique_users) {
+        
+        (0, false) => "#DC1D1A",
+        (0, true) => "#F18A88",
+        
+        (1, false) => "#1B88D0",
+        (1, true) => "#85C5EF",
+        
+        (2, false) => "#F1DD25",
+        (2, true) => "#F8EE93",
+        
+        (3, false) => "#3CB575",
+        (3, true) => "#9ADDB9",
+        
+        (4, false) => "#6F3AA4",
+        (4, true) => "#B895DA",
+        
+        (5, false) => "#A44A3F",
+        (5, true) => "#D8A19A",
+        
+        (6, false) => "#FE9000",
+        (6, true) => "#FFC880",
+        
+        (7, false) => "#84dd63",
+        (7, true) => "#C2EEB2",
+        
+        (8, false) => "#E980FC",
+        (8, true) => "#F4C1FD",
+        
+        (9, false) => "#242331",
+        (9, true) => "#8482A6",
+        _ => unreachable!(),
+    };
+    FieldConfigOverrideProperty::Color {
+        value: FieldConfigOverrideColor::Fixed {
+            fixed_color: color.into(),
+        },
     }
 }

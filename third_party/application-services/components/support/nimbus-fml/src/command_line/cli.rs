@@ -34,6 +34,9 @@ pub enum Command {
     Validate(Validate),
 
     
+    Lint(Lint),
+
+    
     Channels(Channels),
 
     
@@ -117,6 +120,40 @@ pub struct Validate {
 
     #[command(flatten)]
     pub loader_info: LoaderInfo,
+}
+
+#[derive(Args)]
+pub struct Lint {
+    
+    #[arg(value_name = "INPUT", required_unless_present = "list")]
+    pub input: Option<String>,
+
+    #[command(flatten)]
+    pub loader_info: LoaderInfo,
+
+    
+    #[arg(long, value_name = "LINT")]
+    pub allow: Vec<String>,
+
+    
+    #[arg(long, value_name = "LINT")]
+    pub deny: Vec<String>,
+
+    
+    #[arg(long)]
+    pub error_on_warning: bool,
+
+    
+    #[arg(long)]
+    pub include_imports: bool,
+
+    
+    #[arg(long)]
+    pub json: bool,
+
+    
+    #[arg(long)]
+    pub list: bool,
 }
 
 #[derive(Args)]

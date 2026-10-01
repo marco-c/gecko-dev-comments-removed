@@ -249,6 +249,19 @@ impl<'a> RetryingAccount<'a> {
             }
         }
     }
+
+    
+    
+    pub fn should_recheck_auth(&self) -> bool {
+        self.inner.should_recheck_auth()
+    }
+
+    
+    
+    
+    pub fn reset_auth_recheck_timer(&mut self) {
+        self.inner.reset_auth_recheck_timer();
+    }
 }
 
 #[cfg(test)]

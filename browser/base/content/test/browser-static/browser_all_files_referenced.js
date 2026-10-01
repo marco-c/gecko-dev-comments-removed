@@ -134,6 +134,10 @@ var gExceptionPaths = [
 
   
   
+  "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustFxcontainers.sys.mjs",
+
+  
+  
   "chrome://browser/skin/illustrations/market-opt-in.svg",
 
   
