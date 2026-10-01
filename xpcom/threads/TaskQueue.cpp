@@ -179,9 +179,6 @@ nsIEventTarget::FeatureFlags TaskQueue::GetFeatures() {
   if (target) {
     supports = target->GetFeatures();
   }
-  if (SupportsTailDispatch()) {
-    supports |= SUPPORTS_TAIL_DISPATCH;
-  }
   
   
   
