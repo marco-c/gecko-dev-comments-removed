@@ -80,7 +80,7 @@ class BaseProfilerCount {
     
   }
 
-  virtual ~BaseProfilerCount() {}
+  virtual ~BaseProfilerCount() = default;
 
   struct CountSample {
     int64_t count;
