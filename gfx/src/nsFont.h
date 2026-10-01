@@ -77,7 +77,8 @@ struct nsFont final {
 
   
   
-  uint8_t opticalSizing = NS_FONT_OPTICAL_SIZING_AUTO;
+  mozilla::StyleFontOpticalSizing opticalSizing =
+      mozilla::StyleFontOpticalSizing::Auto;
 
   
   mozilla::StyleFontSynthesis synthesisWeight =
