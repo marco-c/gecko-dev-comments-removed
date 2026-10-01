@@ -12,6 +12,13 @@
 
 #define SHELL_BRAND_PROPERTIES_URI "chrome://branding/locale/brand.properties"
 
+struct JSContext;
+
+namespace mozilla::dom {
+class Promise;
+}
+
+
 
 
 
@@ -34,6 +41,16 @@ class nsShellService : public nsIToolkitShellService {
 
 
   NS_IMETHOD IsDefaultBrowser(bool aForAllTypes, bool* aIsDefaultBrowser) = 0;
+
+  
+
+
+
+
+
+
+  nsresult IsDefaultBrowserAsync(bool aForAllTypes, JSContext* aContext,
+                                 mozilla::dom::Promise** _retval);
 };
 
 #endif  
