@@ -293,7 +293,14 @@ class SchedulableTrickleCandidate {
     if (timer_handle_) NR_async_timer_cancel(timer_handle_);
   }
 
+  
+  
   void Schedule(unsigned int ms) {
+    MOZ_ASSERT(!in_attributes_);
+    if (candidate_.empty()) {
+      std::cerr << "Dropping candidate for stream " << stream_ << std::endl;
+      return;
+    }
     std::cerr << "Scheduling " << Candidate() << " in " << ms << "ms"
               << std::endl;
     test_utils_->SyncDispatchToSTS(
@@ -304,6 +311,18 @@ class SchedulableTrickleCandidate {
     MOZ_ASSERT(!timer_handle_);
     NR_ASYNC_TIMER_SET(ms, Trickle_cb, this, &timer_handle_);
   }
+
+  
+  
+  
+  
+  
+  void PutInAttributes() {
+    MOZ_ASSERT(!timer_handle_);
+    in_attributes_ = true;
+  }
+
+  bool InAttributes() const { return in_attributes_ && !candidate_.empty(); }
 
   static void Trickle_cb(NR_SOCKET s, int how, void* cb_arg) {
     static_cast<SchedulableTrickleCandidate*>(cb_arg)->Trickle();
@@ -333,6 +352,7 @@ class SchedulableTrickleCandidate {
   std::string candidate_;
   std::string ufrag_;
   void* timer_handle_;
+  bool in_attributes_ = false;
   MtransportTestUtils* test_utils_;
 
   DISALLOW_COPY_ASSIGN(SchedulableTrickleCandidate);
@@ -735,6 +755,16 @@ class IceTestPeer : public sigslot::has_slots<> {
   size_t received() { return received_; }
   size_t sent() { return sent_; }
 
+  
+  
+  int active_streams_s() { return ice_ctx_->peer()->active_streams; }
+  int active_streams() {
+    int result;
+    test_utils_->SyncDispatchToSTS(
+        WrapRunnableRet(&result, this, &IceTestPeer::active_streams_s));
+    return result;
+  }
+
   void RestartIce() {
     test_utils_->SyncDispatchToSTS(
         WrapRunnable(this, &IceTestPeer::RestartIce_s));
@@ -802,6 +832,13 @@ class IceTestPeer : public sigslot::has_slots<> {
             ++it;
           }
         }
+        for (const auto* candidate : controlled_trickle_candidates_[i]) {
+          if (candidate->InAttributes()) {
+            std::cerr << name_ << " Adding staged remote candidate: "
+                      << candidate->Candidate() << std::endl;
+            attributes.push_back(candidate->Candidate());
+          }
+        }
         auto credentials = mIceCredentials[aStream->GetId()];
         res = aStream->ConnectToPeer(credentials.first, credentials.second,
                                      attributes);
@@ -840,10 +877,18 @@ class IceTestPeer : public sigslot::has_slots<> {
   
   
   
-  std::vector<SchedulableTrickleCandidate*>& ControlTrickle(size_t stream) {
+  
+  
+  
+  std::vector<SchedulableTrickleCandidate*>& ControlTrickle(
+      size_t stream, IceTestPeer* remote = nullptr) {
     std::cerr << "Doing controlled trickle for stream " << stream << std::endl;
 
-    std::vector<std::string> attributes = remote_->GetAttributes(stream);
+    if (!remote) {
+      remote = remote_;
+    }
+    MOZ_RELEASE_ASSERT(remote);
+    std::vector<std::string> attributes = remote->GetAttributes(stream);
 
     for (const auto& attribute : attributes) {
       if (attribute.find("candidate:") != std::string::npos) {
@@ -3648,6 +3693,27 @@ void AddNonPairableCandidates(
 void DropTrickleCandidates(
     std::vector<SchedulableTrickleCandidate*>& candidates) {}
 
+
+void FilterTrickleCandidates(
+    std::vector<SchedulableTrickleCandidate*>& candidates,
+    CandidateFilter filter) {
+  for (auto* candidate : candidates) {
+    candidate->Candidate() = filter(candidate->Candidate());
+  }
+}
+
+void PutInAttributes(std::vector<SchedulableTrickleCandidate*>& candidates) {
+  for (auto* candidate : candidates) {
+    candidate->PutInAttributes();
+  }
+}
+
+void TrickleNow(std::vector<SchedulableTrickleCandidate*>& candidates) {
+  for (auto* candidate : candidates) {
+    candidate->Schedule(0);
+  }
+}
+
 TEST_F(WebRtcIceConnectTest, TestConnectTrickleAddStreamDuringICE) {
   NrIceCtx::GlobalConfig config;
   config.mTcpEnabled = false;
@@ -3792,6 +3858,138 @@ TEST_F(WebRtcIceConnectTest, RemoveStreamDuringConnect) {
   RealisticTrickleDelay(p2_->ControlTrickle(0));
   RealisticTrickleDelay(p1_->ControlTrickle(1));
   RealisticTrickleDelay(p2_->ControlTrickle(1));
+  RemoveStream(0);
+  WaitForConnected(1000);
+}
+
+
+
+
+
+TEST_F(WebRtcIceConnectTest, RemoveStreamDuringConnectAsymmetric) {
+  NrIceCtx::GlobalConfig config;
+  config.mTcpEnabled = false;
+  NrIceCtx::InitializeGlobals(config);
+  AddStream(1);
+  AddStream(1);
+  ASSERT_TRUE(Gather());
+  ConnectTrickle();
+  RealisticTrickleDelay(p1_->ControlTrickle(0));
+  RealisticTrickleDelay(p2_->ControlTrickle(0));
+  RealisticTrickleDelay(p1_->ControlTrickle(1));
+  RealisticTrickleDelay(p2_->ControlTrickle(1));
+  p1_->RemoveStream(0);
+  ASSERT_TRUE_WAIT(p1_->is_ready(1) && p2_->is_ready(1), kDefaultTimeout);
+  p2_->RemoveStream(0);
+  WaitForConnected(1000);
+}
+
+
+
+
+TEST_F(WebRtcIceConnectTest, RemoveCheckingStreamUpdatesActiveStreamCount) {
+  NrIceCtx::GlobalConfig config;
+  config.mTcpEnabled = false;
+  NrIceCtx::InitializeGlobals(config);
+  AddStream(1);
+  AddStream(1);
+  ASSERT_TRUE(Gather());
+  ConnectTrickle();
+  RealisticTrickleDelay(p1_->ControlTrickle(0));
+  RealisticTrickleDelay(p2_->ControlTrickle(0));
+  ASSERT_TRUE_WAIT(p1_->is_ready(0) && p2_->is_ready(0), kDefaultTimeout);
+
+  
+  
+  p1_->ParseCandidate(1, kUnreachableHostIceCandidate, "");
+  p2_->ParseCandidate(1, kUnreachableHostIceCandidate, "");
+  ASSERT_EQ(1, p1_->active_streams());
+  ASSERT_EQ(1, p2_->active_streams());
+
+  RemoveStream(1);
+  ASSERT_EQ(0, p1_->active_streams());
+  ASSERT_EQ(0, p2_->active_streams());
+}
+
+
+
+
+
+TEST_F(WebRtcIceConnectTest, RemoveFirstStreamStartsFrozenStream) {
+  NrIceCtx::GlobalConfig config;
+  config.mTcpEnabled = false;
+  NrIceCtx::InitializeGlobals(config);
+  AddStream(1);
+  AddStream(1);
+  ASSERT_TRUE(Gather());
+  
+  
+  for (auto [peer, remote] : {std::make_pair(p1_.get(), p2_.get()),
+                              std::make_pair(p2_.get(), p1_.get())}) {
+    auto& stream0 = peer->ControlTrickle(0, remote);
+    FilterTrickleCandidates(stream0, SabotageHostCandidateAndDropReflexive);
+    PutInAttributes(stream0);
+    PutInAttributes(peer->ControlTrickle(1, remote));
+  }
+  ConnectTrickle();
+  ASSERT_FALSE(p1_->is_ready(1));
+  ASSERT_FALSE(p2_->is_ready(1));
+
+  RemoveStream(0);
+  ASSERT_TRUE_WAIT(p1_->is_ready(1) && p2_->is_ready(1), kDefaultTimeout);
+  WaitForConnected(1000);
+}
+
+
+
+
+TEST_F(WebRtcIceConnectTest, FirstStreamFailsStartsFrozenStream) {
+  NrIceCtx::GlobalConfig config;
+  config.mTcpEnabled = false;
+  
+  config.mStunClientMaxTransmits = 3;
+  config.mTrickleIceGracePeriod = 1000;
+  NrIceCtx::InitializeGlobals(config);
+  AddStream(1);
+  AddStream(1);
+  ASSERT_TRUE(Gather());
+  for (auto [peer, remote] : {std::make_pair(p1_.get(), p2_.get()),
+                              std::make_pair(p2_.get(), p1_.get())}) {
+    auto& stream0 = peer->ControlTrickle(0, remote);
+    FilterTrickleCandidates(stream0, SabotageHostCandidateAndDropReflexive);
+    PutInAttributes(stream0);
+    PutInAttributes(peer->ControlTrickle(1, remote));
+  }
+  ConnectTrickle();
+  ASSERT_FALSE(p1_->is_ready(1));
+  ASSERT_FALSE(p2_->is_ready(1));
+
+  ASSERT_TRUE_WAIT(p1_->is_ready(1) && p2_->is_ready(1), kDefaultTimeout);
+  ASSERT_TRUE(p1_->ice_failed());
+  ASSERT_TRUE(p2_->ice_failed());
+}
+
+
+
+
+TEST_F(WebRtcIceConnectTest, RemoveFirstStreamStartsFrozenStreamTrickle) {
+  NrIceCtx::GlobalConfig config;
+  config.mTcpEnabled = false;
+  NrIceCtx::InitializeGlobals(config);
+  AddStream(1);
+  AddStream(1);
+  ASSERT_TRUE(Gather());
+  ConnectTrickle();
+  for (auto* peer : {p1_.get(), p2_.get()}) {
+    auto& stream0 = peer->ControlTrickle(0);
+    FilterTrickleCandidates(stream0, SabotageHostCandidateAndDropReflexive);
+    TrickleNow(stream0);
+    TrickleNow(peer->ControlTrickle(1));
+  }
+  ASSERT_TRUE_WAIT(p1_->is_ready(1) && p2_->is_ready(1), kDefaultTimeout);
+  ASSERT_FALSE(p1_->is_ready(0));
+  ASSERT_FALSE(p2_->is_ready(0));
+
   RemoveStream(0);
   WaitForConnected(1000);
 }
