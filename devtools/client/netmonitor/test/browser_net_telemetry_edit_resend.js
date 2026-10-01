@@ -3,8 +3,6 @@
 
 "use strict";
 
-const ALL_CHANNELS = Ci.nsITelemetry.DATASET_ALL_CHANNELS;
-
 
 
 
@@ -31,11 +29,7 @@ add_task(async function () {
   store.dispatch(Actions.batchEnable(false));
 
   
-  Services.telemetry.clearEvents();
-
-  
-  const snapshot = Services.telemetry.snapshotEvents(ALL_CHANNELS, true);
-  ok(!snapshot.parent, "No events have been logged for the main process");
+  Services.fog.testResetFOG();
 
   
   const waitForEvents = waitForNetworkEvents(monitor, 1);
@@ -47,7 +41,7 @@ add_task(async function () {
   const waitForHeaders = waitUntil(() =>
     document.querySelector(".headers-overview")
   );
-  EventUtils.sendMouseEvent({ type: "mousedown" }, firstRequest);
+  clickOnRequestRow(firstRequest);
   await waitForHeaders;
   await waitForRequestData(store, ["requestHeaders", "responseHeaders"]);
   EventUtils.sendMouseEvent({ type: "contextmenu" }, firstRequest);
@@ -59,13 +53,7 @@ add_task(async function () {
 
   await waitForNetworkEvents(monitor, 1);
 
-  
-  checkTelemetryEvent(
-    {},
-    {
-      method: "edit_resend",
-    }
-  );
+  is(1, Glean.devtoolsMain.editResendNetmonitor.testGetValue());
 
   await teardown(monitor);
 });

@@ -21,10 +21,7 @@ add_task(async function () {
   
   await performRequests(monitor, tab, 1);
 
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[0]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[0]);
 
   const requestItem = getSortedRequests(store.getState())[0];
 
@@ -45,6 +42,23 @@ add_task(async function () {
   await waitForClipboardPromise(async function setup() {
     await selectContextMenuItem(monitor, "request-list-context-copy-url");
   }, requestItem.url);
+
+  info(
+    "Check that URL isn't copied to clipboard when hitting CmdOrCtrl+C in input"
+  );
+  
+  document.querySelector(".devtools-filterinput").focus();
+
+  await SimpleTest.promiseClipboardChange(
+    
+    null,
+    () => synthesizeKeyShortcut("CmdOrCtrl+C"),
+    null,
+    
+    1000,
+    
+    true
+  );
 
   await teardown(monitor);
 });

@@ -31,7 +31,7 @@ add_task(async function () {
   requestItem.scrollIntoView();
   EventUtils.sendMouseEvent({ type: "mouseover" }, requestsListStatus);
   await waitUntil(() => requestsListStatus.title);
-  await waitForDOMIfNeeded(requestItem, ".requests-list-timings-total");
+  await waitForDOM(requestItem, ".requests-list-timings-total");
 
   await verifyRequestItemTarget(
     document,
@@ -46,10 +46,7 @@ add_task(async function () {
   );
 
   wait = waitForDOM(document, "#headers-panel");
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[0]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[0]);
   await wait;
 
   wait = waitForDOM(document, "#response-panel .data-header");

@@ -157,12 +157,7 @@ async function testScriptOverrideWithOptions(options) {
     monitor,
     scriptRequest,
     overrideFileName,
-    OVERRIDDEN_SCRIPT,
-    
-    
-    Services.prefs.getBoolPref(
-      "dom.script_loader.experimental.navigation_cache"
-    ) && options.enableCache
+    OVERRIDDEN_SCRIPT
   );
 
   
@@ -318,7 +313,7 @@ add_task(async function testStylesheetOverrideWithCache() {
 });
 
 async function assertOverriddenResponseTab(doc, request, overrideFileName) {
-  EventUtils.sendMouseEvent({ type: "mousedown" }, request);
+  clickOnRequestRow(request);
   await waitFor(
     () => doc.querySelector("#response-tab"),
     "Wait for the response tab to be displayed"

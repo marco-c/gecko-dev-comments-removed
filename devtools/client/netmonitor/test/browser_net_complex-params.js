@@ -27,7 +27,7 @@ add_task(async function () {
   );
 
   
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requestListItems[0]);
+  clickOnRequestRow(requestListItems[0]);
   clickOnSidebarTab(document, "request");
 
   await testRequestWithFormattedView(
@@ -118,7 +118,7 @@ async function testRequestWithFormattedView(
   
   const wait = waitForDOM(document, "#request-panel .data-header");
   let waitForContent = waitForDOM(document, "#request-panel .properties-view");
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requestListItem);
+  clickOnRequestRow(requestListItem);
   await Promise.all([wait, waitForContent]);
 
   const tabpanel = document.querySelector("#request-panel");
@@ -245,7 +245,7 @@ async function testRequestWithOnlyRawDataView(
   
   const wait = waitForDOM(document, "#request-panel .data-header");
   const waitForContent = waitForDOM(document, "#request-panel .cm-content");
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requestListItem);
+  clickOnRequestRow(requestListItem);
   await Promise.all([wait, waitForContent]);
 
   const tabpanel = document.querySelector("#request-panel");
@@ -286,7 +286,7 @@ async function testRequestWithOnlyRawDataView(
 async function testRequestWithoutRequestData(monitor, requestListItem) {
   const { document } = monitor.panelWin;
 
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requestListItem);
+  clickOnRequestRow(requestListItem);
 
   const tabpanel = document.querySelector("#request-panel");
 

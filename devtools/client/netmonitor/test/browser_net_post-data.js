@@ -36,7 +36,7 @@ add_task(async function () {
     const requestsListStatus = requestItem.querySelector(".status-code");
     EventUtils.sendMouseEvent({ type: "mouseover" }, requestsListStatus);
     await waitUntil(() => requestsListStatus.title);
-    await waitForDOMIfNeeded(requestItem, ".requests-list-timings-total");
+    await waitForDOM(requestItem, ".requests-list-timings-total");
   }
 
   await verifyRequestItemTarget(
@@ -76,10 +76,7 @@ add_task(async function () {
     document,
     "#request-panel .raw-data-toggle-input .devtools-checkbox-toggle"
   );
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[0]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[0]);
   clickOnSidebarTab(document, "request");
   await wait;
   await testParamsTab("urlencoded");
@@ -90,10 +87,7 @@ add_task(async function () {
     document,
     "#request-panel .cm-content"
   );
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[1]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[1]);
   await Promise.all([waitForHeader, waitForSourceEditor]);
   await testParamsTab("multipart");
 

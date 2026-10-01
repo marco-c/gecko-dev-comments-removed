@@ -71,7 +71,7 @@ add_task(async function () {
   await wait;
 
   
-  await waitForDOMIfNeeded(document, ".request-list-item", 4);
+  await waitForDOM(document, ".request-list-item", 4);
 
   let requestItems = document.querySelectorAll(".request-list-item");
   
@@ -93,7 +93,7 @@ add_task(async function () {
     "The fourth request was not blocked"
   );
 
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requestItems[0]);
+  clickOnRequestRow(requestItems[0]);
   
   await toggleBlockedUrl(requestItems[0], monitor, store, "unblock");
 
@@ -115,7 +115,7 @@ add_task(async function () {
   );
   await wait;
 
-  await waitForDOMIfNeeded(document, ".request-list-item", 5);
+  await waitForDOM(document, ".request-list-item", 5);
   requestItems = document.querySelectorAll(".request-list-item");
   ok(
     !checkRequestListItemBlocked(requestItems[4]),

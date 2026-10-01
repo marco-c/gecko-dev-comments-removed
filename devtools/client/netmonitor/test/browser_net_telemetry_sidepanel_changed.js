@@ -3,8 +3,6 @@
 
 "use strict";
 
-const ALL_CHANNELS = Ci.nsITelemetry.DATASET_ALL_CHANNELS;
-
 
 
 
@@ -19,11 +17,7 @@ add_task(async function () {
   store.dispatch(Actions.batchEnable(false));
 
   
-  Services.telemetry.clearEvents();
-
-  
-  const snapshot = Services.telemetry.snapshotEvents(ALL_CHANNELS, true);
-  ok(!snapshot.parent, "No events have been logged for the main process");
+  Services.fog.testResetFOG();
 
   
   const waitForEvents = waitForNetworkEvents(monitor, 1);
@@ -35,10 +29,7 @@ add_task(async function () {
   const waitForHeaders = waitUntil(() =>
     document.querySelector(".headers-overview")
   );
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[0]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[0]);
   await waitForHeaders;
   await waitForRequestData(store, ["requestHeaders", "responseHeaders"]);
 
@@ -47,15 +38,10 @@ add_task(async function () {
   clickOnSidebarTab(document, "cookies");
   await waitForRequestData(store, ["requestCookies", "responseCookies"]);
 
-  checkTelemetryEvent(
-    {
-      oldpanel: "headers",
-      newpanel: "cookies",
-    },
-    {
-      method: "sidepanel_changed",
-    }
-  );
+  const events = Glean.devtoolsMain.sidepanelChangedNetmonitor.testGetValue();
+  is(1, events.length);
+  is("headers", events[0].extra.oldpanel);
+  is("cookies", events[0].extra.newpanel);
 
   return teardown(monitor);
 });
