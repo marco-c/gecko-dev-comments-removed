@@ -212,18 +212,17 @@ already_AddRefed<CacheCrypto> CacheCrypto::LoadFromKeystore(
     return nullptr;
   }
 
-  
-  
-  
-  auto deks = aLockstore->DoListDeks();
-  if (deks.isErr()) {
-    LOG(("CacheCrypto::LoadFromKeystore() - could not list DEKs [rv=%" PRIx32
-         "]",
-         static_cast<uint32_t>(deks.unwrapErr())));
-    return nullptr;
-  }
+  auto dek = aLockstore->DoGetDek(kDekName, kekRef.inspect());
+  if (dek.isErr()) {
+    
+    
+    
+    
+    
+    
+    
+    (void)aLockstore->DoDeleteDek(kDekName);
 
-  if (!deks.inspect().Contains(kDekName)) {
     
     
     
@@ -231,14 +230,15 @@ already_AddRefed<CacheCrypto> CacheCrypto::LoadFromKeystore(
                                            true, kKeyLength);
     if (NS_FAILED(rv)) {
       LOG(
-          ("CacheCrypto::LoadFromKeystore() - could not mint the DEK "
+          ("CacheCrypto::LoadFromKeystore() - could not create the DEK "
            "[rv=%" PRIx32 "]",
            static_cast<uint32_t>(rv)));
       return nullptr;
     }
+
+    dek = aLockstore->DoGetDek(kDekName, kekRef.inspect());
   }
 
-  auto dek = aLockstore->DoGetDek(kDekName, kekRef.inspect());
   if (dek.isErr()) {
     LOG(("CacheCrypto::LoadFromKeystore() - could not read the DEK [rv=%" PRIx32
          "]",
