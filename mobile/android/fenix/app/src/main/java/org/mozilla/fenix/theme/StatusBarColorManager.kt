@@ -34,8 +34,8 @@ import org.mozilla.fenix.wallpapers.Wallpaper
  * @param activity The [Activity] to set the status bar color on.
  * @param appStore The [AppStore] used to observe the wallpaper state.
  * @param settings The [Settings] used to read whether the tab strip is enabled.
- * @param tabStripStatusBarView View class that sets the status bar background with the tab strip
- * gradient when the tab strip is visible.
+ * @param tabStripStatusBarView View class that sets the status bar background with the tab strip gradient when the tab
+ *   strip is visible.
  * @param mainDispatcher The [CoroutineDispatcher] used to observe wallpaper changes.
  */
 class StatusBarColorManager(
@@ -70,8 +70,9 @@ class StatusBarColorManager(
         wallpaperScope = null
 
         when {
-            // Don't show the gradient if tab strip is not enabled or private mode is enabled.
-            !settings.isTabStripEnabled || themeManager.currentTheme.isPrivate -> {
+            // Don't show the status bar gradient if tab strip is not enabled, shown at the bottom
+            // or private mode is enabled.
+            !settings.isTabStripEnabled || settings.shouldUseBottomTabStrip || themeManager.currentTheme.isPrivate -> {
                 tabStripStatusBarView.hide()
             }
 
@@ -94,27 +95,29 @@ class StatusBarColorManager(
     /**
      * Observe the wallpaper and search state while on the homepage and show the tab strip gradient accordingly.
      *
-     * For edge-to-edge wallpaper, show the tab strip gradient only when a search is active.
-     * Otherwise, [HomepageEdgeToEdgeFeature] allows the wallpaper to show through the status bar.
-     * For any other wallpaper, the gradient is always shown.
+     * For edge-to-edge wallpaper, show the tab strip gradient only when a search is active. Otherwise,
+     * [HomepageEdgeToEdgeFeature] allows the wallpaper to show through the status bar. For any other wallpaper, the
+     * gradient is always shown.
      */
     private fun observeHomepageGradient() {
-        wallpaperScope = appStore.flowScoped(
-            owner = activity as? LifecycleOwner,
-            dispatcher = mainDispatcher,
-        ) { flow ->
-            flow.map { state ->
-                state.wallpaperState.currentWallpaper != Wallpaper.EdgeToEdge ||
-                    (state.searchState.isSearchActive && state.searchState.sourceTabId != null)
-            }
-                .distinctUntilChanged()
-                .collect { shouldShowGradient ->
-                    if (shouldShowGradient) {
-                        tabStripStatusBarView.show()
-                    } else {
-                        tabStripStatusBarView.hide()
+        wallpaperScope =
+            appStore.flowScoped(
+                owner = activity as? LifecycleOwner,
+                dispatcher = mainDispatcher,
+            ) { flow ->
+                flow
+                    .map { state ->
+                        state.wallpaperState.currentWallpaper != Wallpaper.EdgeToEdge ||
+                            (state.searchState.isSearchActive && state.searchState.sourceTabId != null)
                     }
-                }
-        }
+                    .distinctUntilChanged()
+                    .collect { shouldShowGradient ->
+                        if (shouldShowGradient) {
+                            tabStripStatusBarView.show()
+                        } else {
+                            tabStripStatusBarView.hide()
+                        }
+                    }
+            }
     }
 }
