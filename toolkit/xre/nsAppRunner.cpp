@@ -3184,6 +3184,17 @@ static ReturnAbortOnError ShowProfileSelector(
                            kTelemetryEnv);
 }
 
+
+
+
+static bool ShouldSkipProfileDialogForWebAuth() {
+#if defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
+  return WasLaunchedByAuthenticationServices();
+#else
+  return false;
+#endif
+}
+
 static bool gDoMigration = false;
 static bool gDoProfileReset = false;
 constinit static nsCOMPtr<nsIToolkitProfile> gResetOldProfile;
@@ -5685,7 +5696,9 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   
   
   if (wasDefaultSelection) {
-    if (!mProfileSvc->GetStartWithLastProfile()) {
+    if (ShouldSkipProfileDialogForWebAuth()) {
+      rv = NS_OK;
+    } else if (!mProfileSvc->GetStartWithLastProfile()) {
       
       rv = ShowProfileManager(mProfileSvc, mNativeApp);
     } else if (profile && profile->GetShowProfileSelector()) {

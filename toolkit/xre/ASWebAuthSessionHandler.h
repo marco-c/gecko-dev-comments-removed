@@ -1,0 +1,16 @@
+
+
+
+
+#ifndef ASWebAuthSessionHandler_h
+#define ASWebAuthSessionHandler_h
+
+void RegisterASWebAuthSessionHandler();
+void RegisterASWebAuthSessionObservers();
+
+
+
+
+bool WasLaunchedByAuthenticationServices();
+
+#endif  
