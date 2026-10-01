@@ -996,11 +996,6 @@ impl FontSize {
     #[inline]
     pub fn quantize_font_size(size: CSSPixelLength) -> CSSPixelLength {
         
-        if size.px() < 1024.0 {
-            return CSSPixelLength::from(app_units::Au::from_f32_px(size.px()));
-        }
-
-        
         
         
         
@@ -1016,8 +1011,7 @@ impl FontSize {
         }
         let d = size.px() * SCALE_PLUS_ONE;
         let t = d - size.px();
-        
-        CSSPixelLength::from(app_units::Au::from_f32_px(d - t))
+        CSSPixelLength::new(d - t)
     }
 }
 
