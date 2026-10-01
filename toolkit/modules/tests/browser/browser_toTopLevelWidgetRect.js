@@ -39,7 +39,7 @@ add_task(async function test_toTopLevelWidgetRect() {
   EventUtils.synthesizeMouseAtPoint(
     positionInBrowser.x / window.devicePixelRatio,
     positionInBrowser.y / window.devicePixelRatio,
-    { type: "mousedown", button: 1 }
+    { button: 1 }
   );
   await mouseDownPromise;
 
