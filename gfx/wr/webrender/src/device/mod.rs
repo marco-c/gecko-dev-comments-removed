@@ -38,6 +38,14 @@ pub use self::upload::*;
 
 
 
+pub enum GpuBackendConfig {
+    
+    
+    Gl(Rc<dyn gleam::gl::Gl>),
+}
+
+
+
 
 
 
@@ -480,9 +488,12 @@ impl DerefMut for Device {
 }
 
 impl Device {
-    pub fn new(gl: Rc<dyn gleam::gl::Gl>, options: DeviceOptions) -> Device {
+    pub fn new(config: GpuBackendConfig, options: DeviceOptions) -> Device {
+        let backend: Box<dyn GpuBackend> = match config {
+            GpuBackendConfig::Gl(gl) => Box::new(GlDevice::new(gl, options)),
+        };
         Device {
-            backend: Box::new(GlDevice::new(gl, options)),
+            backend,
             pending_state: RenderState::default(),
             #[cfg(debug_assertions)]
             pipeline_bound: false,

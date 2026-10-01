@@ -16,17 +16,14 @@ const GL_BACKEND: &str = "device/gl.rs";
 
 
 
-const ALLOWLIST: &[&str] = &[
-    "lib.rs",
-    "renderer/init.rs",
-    
-    "device/mod.rs",
-];
+const ALLOWLIST: &[&str] = &[];
 
 
 const PERMANENT_ALLOWLIST: &[&str] = &[
     
     "compositor/sw_compositor.rs",
+    
+    "device/mod.rs",
 ];
 
 fn is_ident_char(c: u8) -> bool {

@@ -174,7 +174,7 @@ impl Window {
             DeviceIntSize::new(size.width as i32, size.height as i32)
         };
         let notifier = Box::new(Notifier::new(proxy.clone()));
-        let (renderer, sender) = webrender::create_webrender_instance(gl.clone(), notifier, opts, None).unwrap();
+        let (renderer, sender) = webrender::create_webrender_instance(webrender::GpuBackendConfig::Gl(gl.clone()), notifier, opts, None).unwrap();
         let mut api = sender.create_api();
         let document_id = api.add_document(device_size);
 
@@ -305,6 +305,7 @@ impl Window {
 
         txn.set_display_list(
             self.epoch,
+            self.api.get_namespace_id(),
             builder.end(),
         );
         txn.set_root_pipeline(self.pipeline_id);

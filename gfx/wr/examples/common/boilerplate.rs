@@ -250,7 +250,7 @@ impl<'a, E: Example> ApplicationHandler for App<'a, E> {
         };
         let notifier = Box::new(Notifier::new(self.proxy.clone()));
         let (mut renderer, sender) = webrender::create_webrender_instance(
-            gl.clone(),
+            webrender::GpuBackendConfig::Gl(gl.clone()),
             notifier,
             opts,
             None,
@@ -277,7 +277,7 @@ impl<'a, E: Example> ApplicationHandler for App<'a, E> {
             pipeline_id,
             document_id,
         );
-        txn.set_display_list(epoch, builder.end());
+        txn.set_display_list(epoch, api.get_namespace_id(), builder.end());
         txn.set_root_pipeline(pipeline_id);
         txn.generate_frame(0, true, false, RenderReasons::empty());
         api.send_transaction(document_id, txn);
@@ -417,7 +417,7 @@ impl<'a, E: Example> ApplicationHandler for App<'a, E> {
                 self.pipeline_id,
                 document_id,
             );
-            txn.set_display_list(self.epoch, builder.end());
+            txn.set_display_list(self.epoch, api.get_namespace_id(), builder.end());
             txn.generate_frame(0, true, false, RenderReasons::empty());
         }
         api.send_transaction(document_id, txn);
