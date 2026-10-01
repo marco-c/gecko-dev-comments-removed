@@ -7,6 +7,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/TimeStamp.h"
 
 #include <stddef.h>
 #include <utility>
@@ -36,6 +37,14 @@ class JitRealm {
       HashSet<CacheIRStubKey, CacheIRStubKey, SystemAllocPolicy>;
   IonCacheIRStubInfoSet ionCacheIRStubInfoSet_;
 
+  
+  
+  mozilla::TimeStamp lastDiscardedCodeTime_;
+
+  
+  
+  bool gcPreserveCode_ = false;
+
  public:
   BaselineCompileQueue& baselineCompileQueue() { return baselineCompileQueue_; }
 
@@ -53,6 +62,16 @@ class JitRealm {
     return ionCacheIRStubInfoSet_.add(p, std::move(key));
   }
   void purgeIonCacheIRStubInfo() { ionCacheIRStubInfoSet_.clearAndCompact(); }
+
+  void setPreservingCode(bool preserving) { gcPreserveCode_ = preserving; }
+  bool isPreservingCode() const { return gcPreserveCode_; }
+
+  mozilla::TimeStamp lastDiscardedCodeTime() const {
+    return lastDiscardedCodeTime_;
+  }
+  void setLastDiscardedCodeTime(mozilla::TimeStamp time) {
+    lastDiscardedCodeTime_ = time;
+  }
 
   void removeFromCompileQueue(JSScript* script) {
     baselineCompileQueue_.remove(script);
