@@ -4412,6 +4412,10 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
 
   
   
+  QM_TRY(OkIf(!IsShuttingDown()), NS_ERROR_ABORT);
+
+  
+  
   
   
   
@@ -4478,6 +4482,10 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
 
   for (auto& info : renameAndInitInfos) {
     QM_TRY(([&]() -> Result<Ok, nsresult> {
+      if (NS_WARN_IF(IsShuttingDown())) {
+        RETURN_STATUS_OR_RESULT(statusKeeper, NS_ERROR_ABORT);
+      }
+
       QM_TRY(
           ([&directory, &info, this, aPersistenceType, &aOriginFunc,
             &cacheMap]() -> Result<Ok, nsresult> {
