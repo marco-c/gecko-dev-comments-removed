@@ -129,13 +129,23 @@ mozilla::ipc::RandomAccessStreamParams FileRandomAccessStream::Serialize(
     nsIInterfaceRequestor* aCallbacks) {
   MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
   MOZ_RELEASE_ASSERT(!mDeserialized);
-  MOZ_ASSERT(mOpenParams.localFile);
 
-  QuotaManager* quotaManager = QuotaManager::Get();
-  MOZ_ASSERT(quotaManager);
+  
+  
+  
+  
+  
+  
+  RefPtr<QuotaObject> quotaObject = mQuotaObject;
+  if (!quotaObject) {
+    MOZ_ASSERT(mOpenParams.localFile);
 
-  RefPtr<QuotaObject> quotaObject = quotaManager->GetQuotaObject(
-      mPersistenceType, mOriginMetadata, mClientType, mOpenParams.localFile);
+    QuotaManager* quotaManager = QuotaManager::Get();
+    MOZ_ASSERT(quotaManager);
+
+    quotaObject = quotaManager->GetQuotaObject(
+        mPersistenceType, mOriginMetadata, mClientType, mOpenParams.localFile);
+  }
   MOZ_ASSERT(quotaObject);
 
   IPCQuotaObject ipcQuotaObject = quotaObject->Serialize(aCallbacks);
