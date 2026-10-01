@@ -65,6 +65,10 @@ using namespace mozilla::net;
 
 
 
+static const unsigned int NEGATIVE_RECORD_LIFETIME = 60;
+
+
+
 
 
 
@@ -630,21 +634,6 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
             glean::dns::lookup_method.AccumulateSingleSample(
                 METHOD_NETWORK_FIRST);
           }
-          
-          
-          
-          
-          
-          
-          
-          
-          nsLiteralCString missReason =
-              rec->mValidStart.IsNull() ? "absent"_ns
-              : (rec->CheckExpiration(now) == nsHostRecord::EXP_EXPIRED)
-                  ? "expired"_ns
-                  : "refresh"_ns;
-          glean::dns::cache_miss_reason.Get(RecordFamilyLabel(rec), missReason)
-              .Add(1);
           if (NS_FAILED(rv) && callback->isInList()) {
             callback->remove();
           } else {
@@ -1313,13 +1302,9 @@ void nsHostResolver::PrepareRecordExpirationAddrRecord(
   MOZ_ASSERT(((bool)rec->addr_info) != rec->negative);
   mQueue.mLock.AssertCurrentThreadOwns();
   if (!rec->addr_info) {
-    
-    
-    unsigned int negativeLifetime =
-        StaticPrefs::network_dnsNegativeCacheExpiration();
-    rec->SetExpiration(TimeStamp::NowLoRes(), negativeLifetime, 0);
+    rec->SetExpiration(TimeStamp::NowLoRes(), NEGATIVE_RECORD_LIFETIME, 0);
     LOG(("Caching host [%s] negative record for %u seconds.\n", rec->host.get(),
-         negativeLifetime));
+         NEGATIVE_RECORD_LIFETIME));
     return;
   }
 

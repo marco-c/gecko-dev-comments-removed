@@ -70,31 +70,22 @@ void HostRecordQueue::AddToEvictionQ(
     RefPtr<nsHostRecord> head = mEvictionQ.popFirst();
     aDB.Remove(*static_cast<nsHostKey*>(head.get()));
 
-    
-    TimeDuration age = TimeStamp::NowLoRes() - head->mValidStart;
-    bool stillValid =
-        head->CheckExpiration(TimeStamp::Now()) != nsHostRecord::EXP_EXPIRED;
     if (!head->negative) {
-      if (head->IsAddrRecord()) {
+      
+      TimeDuration age = TimeStamp::NowLoRes() - head->mValidStart;
+      if (aRec->IsAddrRecord()) {
         glean::dns::cleanup_age.AccumulateRawDuration(age);
-        if (stillValid) {
-          glean::dns::premature_eviction.AccumulateRawDuration(age);
-        }
       } else {
         glean::dns::by_type_cleanup_age.AccumulateRawDuration(age);
-        if (stillValid) {
+      }
+      if (head->CheckExpiration(TimeStamp::Now()) !=
+          nsHostRecord::EXP_EXPIRED) {
+        if (aRec->IsAddrRecord()) {
+          glean::dns::premature_eviction.AccumulateRawDuration(age);
+        } else {
           glean::dns::by_type_premature_eviction.AccumulateRawDuration(age);
         }
       }
-    } else {
-      
-      
-      
-      
-      glean::dns::negative_eviction
-          .Get(RecordFamilyLabel(head),
-               stillValid ? "premature"_ns : "expired"_ns)
-          .Add(1);
     }
   }
 }
