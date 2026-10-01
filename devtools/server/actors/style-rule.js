@@ -603,23 +603,33 @@ class StyleRuleActor extends Actor {
           const registeredProperty = registeredProperties.find(
             prop => prop.name === decl.name
           );
-          if (
-            registeredProperty &&
-            
-            
-            !decl.value.includes("attr(") &&
-            !decl.value.includes("env(") &&
-            !decl.value.includes("var(") &&
-            !InspectorUtils.valueMatchesSyntax(
-              targetDocument,
-              decl.value,
-              registeredProperty.syntax
-            )
-          ) {
-            
-            decl.invalidAtComputedValueTime = true;
-            
-            decl.syntax = registeredProperty.syntax;
+          if (registeredProperty) {
+            const declarationValue = decl.value;
+            let substitutedValue = null;
+            if (
+              declarationValue.includes("var(") ||
+              declarationValue.includes("attr(") ||
+              declarationValue.includes("env(")
+            ) {
+              substitutedValue = InspectorUtils.getSubstitutedValue(
+                declarationValue,
+                this.pageStyle.selectedElement,
+                this._pseudoElement
+              );
+            }
+
+            if (
+              !InspectorUtils.valueMatchesSyntax(
+                targetDocument,
+                substitutedValue || declarationValue,
+                registeredProperty.syntax
+              )
+            ) {
+              
+              decl.invalidAtComputedValueTime = true;
+              
+              decl.syntax = registeredProperty.syntax;
+            }
           }
 
           
