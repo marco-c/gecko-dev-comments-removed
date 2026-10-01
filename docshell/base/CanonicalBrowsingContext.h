@@ -179,7 +179,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   void NotifyOnHistoryReload(
-      bool aForceReload, bool& aCanReload,
+      uint32_t aReloadFlags, bool& aCanReload,
       Maybe<NotNull<RefPtr<nsDocShellLoadState>>>& aLoadState,
       Maybe<bool>& aReloadActiveEntry);
 
@@ -326,8 +326,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   void AddLoadingSessionHistoryEntry(uint64_t aLoadId,
                                      SessionHistoryEntry* aEntry);
 
-  void GetLoadingSessionHistoryInfoFromParent(
-      Maybe<LoadingSessionHistoryInfo>& aLoadingInfo);
+  void AdoptChildSHEntry(Maybe<LoadingSessionHistoryInfo>& aLoadingInfo);
 
   MOZ_CAN_RUN_SCRIPT
   void HistoryCommitIndexAndLength();

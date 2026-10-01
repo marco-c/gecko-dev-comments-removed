@@ -1094,14 +1094,13 @@ bool nsDocShell::MaybeHandleSubframeHistory(
             loadGroup->RemoveRequest(stopDetector, nullptr, NS_OK);
             parentDoc->UnblockOnload(false);
           };
-          contentChild->SendGetLoadingSessionHistoryInfoFromParent(
+          contentChild->SendAdoptChildSHEntry(
               mBrowsingContext, std::move(resolve), std::move(reject));
           return true;
         }
       } else {
         Maybe<LoadingSessionHistoryInfo> info;
-        mBrowsingContext->Canonical()->GetLoadingSessionHistoryInfoFromParent(
-            info);
+        mBrowsingContext->Canonical()->AdoptChildSHEntry(info);
         if (info.isSome()) {
           aLoadState->SetLoadingSessionHistoryInfo(info.value());
           
@@ -3999,7 +3998,6 @@ nsresult nsDocShell::ReloadNavigable(
   
   RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
   MOZ_LOG(gSHLog, LogLevel::Debug, ("nsDocShell %p Reload", this));
-  bool forceReload = IsForceReloadType(loadType);
   if (!XRE_IsParentProcess()) {
     ++mPendingReloadCount;
     nsCOMPtr<nsIDocumentViewer> viewer(mDocumentViewer);
@@ -4029,7 +4027,7 @@ nsresult nsDocShell::ReloadNavigable(
     }
 
     ContentChild::GetSingleton()->SendNotifyOnHistoryReload(
-        mBrowsingContext, forceReload,
+        mBrowsingContext, aReloadFlags,
         [docShell, doc, loadType, browsingContext, currentURI, referrerInfo,
          loadGroup, stopDetector](
             std::tuple<bool, Maybe<NotNull<RefPtr<nsDocShellLoadState>>>,
@@ -4081,7 +4079,7 @@ nsresult nsDocShell::ReloadNavigable(
     Maybe<bool> reloadingActiveEntry;
     if (!mBrowsingContext->IsDiscarded()) {
       mBrowsingContext->Canonical()->NotifyOnHistoryReload(
-          forceReload, canReload, loadState, reloadingActiveEntry);
+          aReloadFlags, canReload, loadState, reloadingActiveEntry);
     }
     if (canReload) {
       if (loadState.isSome()) {

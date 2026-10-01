@@ -1755,20 +1755,6 @@ nsresult nsSHistory::Reload(uint32_t aReloadFlags,
                             nsTArray<LoadEntryResult>& aLoadResults) {
   MOZ_ASSERT(aLoadResults.IsEmpty());
 
-  uint32_t loadType;
-  if (aReloadFlags & nsIWebNavigation::LOAD_FLAGS_BYPASS_PROXY &&
-      aReloadFlags & nsIWebNavigation::LOAD_FLAGS_BYPASS_CACHE) {
-    loadType = LOAD_RELOAD_BYPASS_PROXY_AND_CACHE;
-  } else if (aReloadFlags & nsIWebNavigation::LOAD_FLAGS_BYPASS_PROXY) {
-    loadType = LOAD_RELOAD_BYPASS_PROXY;
-  } else if (aReloadFlags & nsIWebNavigation::LOAD_FLAGS_BYPASS_CACHE) {
-    loadType = LOAD_RELOAD_BYPASS_CACHE;
-  } else if (aReloadFlags & nsIWebNavigation::LOAD_FLAGS_CHARSET_CHANGE) {
-    loadType = LOAD_RELOAD_CHARSET_CHANGE;
-  } else {
-    loadType = LOAD_RELOAD_NORMAL;
-  }
-
   
   
   
@@ -1779,10 +1765,7 @@ nsresult nsSHistory::Reload(uint32_t aReloadFlags,
     return NS_OK;
   }
 
-  
-  if (IsForceReloadType(loadType)) {
-    RemoveFrameEntries(mEntries[mIndex]);
-  }
+  uint32_t loadType = PrepareReloadEntry(mEntries[mIndex], aReloadFlags);
 
   nsresult rv =
       LoadEntry( nullptr, mIndex, loadType,
@@ -2256,6 +2239,28 @@ void nsSHistory::RemoveEntries(nsTArray<nsID>& aIDs, int32_t aStartIndex,
   }
 }
 
+uint32_t nsSHistory::PrepareReloadEntry(nsISHEntry* aEntry,
+                                        uint32_t aReloadFlags) {
+  uint32_t loadType;
+  if (aReloadFlags & nsIWebNavigation::LOAD_FLAGS_BYPASS_PROXY &&
+      aReloadFlags & nsIWebNavigation::LOAD_FLAGS_BYPASS_CACHE) {
+    loadType = LOAD_RELOAD_BYPASS_PROXY_AND_CACHE;
+  } else if (aReloadFlags & nsIWebNavigation::LOAD_FLAGS_BYPASS_PROXY) {
+    loadType = LOAD_RELOAD_BYPASS_PROXY;
+  } else if (aReloadFlags & nsIWebNavigation::LOAD_FLAGS_BYPASS_CACHE) {
+    loadType = LOAD_RELOAD_BYPASS_CACHE;
+  } else if (aReloadFlags & nsIWebNavigation::LOAD_FLAGS_CHARSET_CHANGE) {
+    loadType = LOAD_RELOAD_CHARSET_CHANGE;
+  } else {
+    loadType = LOAD_RELOAD_NORMAL;
+  }
+  aEntry->SetLoadType(loadType);
+  if (IsForceReloadType(loadType)) {
+    RemoveFrameEntries(aEntry);
+  }
+  return loadType;
+}
+
 void nsSHistory::RemoveFrameEntries(nsISHEntry* aEntry) {
   auto* entry = aEntry->GetAsSessionHistoryEntry();
   int32_t count = entry->GetChildCount();
@@ -2268,6 +2273,10 @@ void nsSHistory::RemoveFrameEntries(nsISHEntry* aEntry) {
     }
   }
   RemoveEntries(ids, mIndex);
+  if (MOZ_UNLIKELY(mIndex < 0)) {
+    
+    RemoveFromSessionHistoryEntry(entry, ids);
+  }
 }
 
 void nsSHistory::RemoveDynEntries(int32_t aIndex, nsISHEntry* aEntry) {

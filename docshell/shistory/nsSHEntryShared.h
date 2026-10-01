@@ -144,6 +144,8 @@ class SHEntrySharedParentState : public SHEntrySharedState {
   bool mDynamicallyCreated = false;
 
   
+  
+  
   bool mExpired = false;
 };
 
