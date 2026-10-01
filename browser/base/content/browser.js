@@ -5156,8 +5156,12 @@ var FirefoxViewHandler = {
       viewURL = `${viewURL}#${section}`;
     }
     
+    
+    
     if (
       this.tab &&
+      !this.tab.linkedBrowser.browsingContext.currentWindowGlobal
+        .isInitialDocument &&
       this.tab.linkedBrowser.currentURI.spec.split("#")[0] != viewURL
     ) {
       gBrowser.removeTab(this.tab);
