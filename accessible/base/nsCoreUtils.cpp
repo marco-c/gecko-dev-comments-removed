@@ -587,7 +587,8 @@ bool nsCoreUtils::IsDisplayContents(nsIContent* aContent) {
   return element && element->IsDisplayContents();
 }
 
-bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent) {
+bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent,
+                                                  bool* aIsSubtreeHidden) {
   auto* element = Element::FromNodeOrNull(aContent);
   if (!element) {
     return false;
@@ -615,6 +616,11 @@ bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent) {
   
   
   if (!element->GetPrimaryFrame() && !element->IsDisplayContents()) {
+    
+    
+    if (aIsSubtreeHidden) {
+      *aIsSubtreeHidden = true;
+    }
     return false;
   }
 
@@ -628,8 +634,18 @@ bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent) {
     if (nsIFrame* f = c->GetPrimaryFrame()) {
       if (f->HidesContent(nsIFrame::IncludeContentVisibility::Hidden) ||
           f->IsHiddenByContentVisibilityOnAnyAncestor(
-              nsIFrame::IncludeContentVisibility::Hidden) ||
-          !f->StyleVisibility()->IsVisible() || f->StyleUI()->IsInert()) {
+              nsIFrame::IncludeContentVisibility::Hidden)) {
+        if (aIsSubtreeHidden) {
+          
+          
+          *aIsSubtreeHidden = true;
+        }
+        return false;
+      }
+      if (!f->StyleVisibility()->IsVisible() || f->StyleUI()->IsInert()) {
+        
+        
+        
         return false;
       }
       break;

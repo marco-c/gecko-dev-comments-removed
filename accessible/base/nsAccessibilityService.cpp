@@ -1306,7 +1306,8 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     if (!frame->StyleVisibility()->IsVisible() || frame->StyleUI()->IsInert()) {
       return nullptr;
     }
-  } else if (nsCoreUtils::CanCreateAccessibleWithoutFrame(content)) {
+  } else if (nsCoreUtils::CanCreateAccessibleWithoutFrame(content,
+                                                          aIsSubtreeHidden)) {
     
     
     const nsRoleMapEntry* roleMapEntry = nullptr;
@@ -1362,9 +1363,13 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     }
     return newAcc;
   } else {
-    if (aIsSubtreeHidden) {
-      *aIsSubtreeHidden = true;
-    }
+    
+    
+    
+    
+    
+    
+    
     return nullptr;
   }
 

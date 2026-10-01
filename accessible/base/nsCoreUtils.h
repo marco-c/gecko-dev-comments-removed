@@ -317,7 +317,17 @@ class nsCoreUtils {
   static void DispatchAccEvent(RefPtr<nsIAccessibleEvent> aEvent);
 
   static bool IsDisplayContents(nsIContent* aContent);
-  static bool CanCreateAccessibleWithoutFrame(nsIContent* aContent);
+
+  
+
+
+
+
+
+
+
+  static bool CanCreateAccessibleWithoutFrame(nsIContent* aContent,
+                                              bool* aIsSubtreeHidden = nullptr);
 
   
 
