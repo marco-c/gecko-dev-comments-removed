@@ -331,14 +331,6 @@ bool IsValidARIAHidden(nsIContent* aContent);
 
 
 
-
-
-bool IsValidARIAHidden(DocAccessible* aDocAcc);
-
-
-
-
-
 bool ShouldIgnoreARIAHidden(nsIContent* aContent);
 
 
