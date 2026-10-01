@@ -4302,6 +4302,7 @@ mozilla::ipc::IPCResult ContentParent::RecvConstructPopupBrowser(
 
   
   if (NS_WARN_IF(!BindPBrowserEndpoint(std::move(aBrowserEp), parent))) {
+    cpm->UnregisterRemoteFrame(parent);
     return IPC_FAIL(this, "BindPBrowserEndpoint failed");
   }
 
