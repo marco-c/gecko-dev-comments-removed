@@ -280,14 +280,6 @@ enum class StyleTextWrapStyle : uint8_t {
 };
 
 
-enum class StyleRubyAlign : uint8_t {
-  Start,
-  Center,
-  SpaceBetween,
-  SpaceAround,
-};
-
-
 enum class StyleTextCombineUpright : uint8_t {
   None,
   All,
