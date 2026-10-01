@@ -9508,9 +9508,6 @@ class MRotate : public MBinaryInstruction, public NoTypePolicy::Data {
         isLeftRotate_(isLeftRotate) {
     setMovable();
     setResultType(type);
-    
-    
-    setGuard();
   }
 
  public:
