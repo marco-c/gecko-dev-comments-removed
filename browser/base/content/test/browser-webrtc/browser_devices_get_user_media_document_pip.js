@@ -4,6 +4,12 @@
 
 
 
+const { DOMFullscreenTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/DOMFullscreenTestUtils.sys.mjs"
+);
+
+DOMFullscreenTestUtils.init(this, window);
+
 
 
 
@@ -288,4 +294,48 @@ add_task(async function testCameraOnOpenerPromptsInOpener() {
   );
 
   await cleanUp(tab, pipWin);
+});
+
+add_task(async function testFullscreenOpenerKeepsItsPrompt() {
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["full-screen-api.exit-on.windowRaise", false]],
+  });
+
+  let [tab, pipWin] = await openTabWithPiP();
+
+  
+  
+  await SimpleTest.promiseFocus(window);
+  await DOMFullscreenTestUtils.changeFullscreen(tab.linkedBrowser, true);
+  ok(document.fullscreenElement, "opener is in DOM fullscreen");
+
+  await SimpleTest.promiseFocus(pipWin);
+  ok(document.fullscreenElement, "opener is still in DOM fullscreen");
+
+  await requestCaptureFromPiP(pipWin, "opener", "screen");
+  await TestUtils.waitForCondition(
+    () =>
+      PopupNotifications.getNotification(
+        "webRTC-shareDevices",
+        tab.linkedBrowser
+      ),
+    "prompt stays on the opener browser"
+  );
+  ok(
+    !pipWin.PopupNotifications.getNotification("webRTC-shareDevices"),
+    "prompt is not redirected to the PiP while the opener is fullscreen"
+  );
+
+  
+  
+  PopupNotifications.getNotification(
+    "webRTC-shareDevices",
+    tab.linkedBrowser
+  ).remove();
+  await DOMFullscreenTestUtils.changeFullscreen(tab.linkedBrowser, false);
+  await cleanUp(tab, pipWin);
+  await SpecialPowers.popPrefEnv();
 });
