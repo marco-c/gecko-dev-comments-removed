@@ -19,6 +19,33 @@
 namespace mozilla {
 namespace a11y {
 
+
+
+
+
+
+
+static LocalAccessible* MaybeAdjustDocumentFocusTarget(
+    LocalAccessible* aTarget) {
+  if (!aTarget) {
+    return aTarget;
+  }
+  DocAccessible* document = aTarget->Document();
+  if (document && document->IsBodyElement(aTarget->GetContent())) {
+    return document;
+  }
+  return aTarget;
+}
+
+
+
+
+static LocalAccessible* FocusTargetFor(DocAccessible* aDocument,
+                                       nsINode* aNode) {
+  return MaybeAdjustDocumentFocusTarget(
+      aDocument->GetAccessibleEvenIfNotInMapOrContainer(aNode));
+}
+
 FocusManager::FocusManager() = default;
 
 FocusManager::~FocusManager() = default;
@@ -44,8 +71,7 @@ LocalAccessible* FocusManager::FocusedLocalAccessible() const {
   if (focusedNode) {
     DocAccessible* doc =
         GetAccService()->GetDocAccessible(focusedNode->OwnerDoc());
-    return doc ? doc->GetAccessibleEvenIfNotInMapOrContainer(focusedNode)
-               : nullptr;
+    return doc ? FocusTargetFor(doc, focusedNode) : nullptr;
   }
 
   return nullptr;
@@ -250,6 +276,7 @@ void FocusManager::ForceFocusEvent() {
 void FocusManager::DispatchFocusEvent(DocAccessible* aDocument,
                                       LocalAccessible* aTarget) {
   MOZ_ASSERT(aDocument, "No document for focused accessible!");
+  aTarget = MaybeAdjustDocumentFocusTarget(aTarget);
   if (aDocument) {
     auto event =
         MakeRefPtr<AccEvent>(nsIAccessibleEvent::EVENT_FOCUS, aTarget,
@@ -279,16 +306,14 @@ void FocusManager::ProcessDOMFocus(nsINode* aTarget) {
       GetAccService()->GetDocAccessible(aTarget->OwnerDoc());
   if (!document) return;
 
-  LocalAccessible* target =
-      document->GetAccessibleEvenIfNotInMapOrContainer(aTarget);
+  LocalAccessible* target = FocusTargetFor(document, aTarget);
   if (target) {
     
     
     nsINode* focusedNode = FocusedDOMNode();
     if (!focusedNode) return;
 
-    LocalAccessible* DOMFocus =
-        document->GetAccessibleEvenIfNotInMapOrContainer(focusedNode);
+    LocalAccessible* DOMFocus = FocusTargetFor(document, focusedNode);
     if (target != DOMFocus) return;
 
     LocalAccessible* activeItem = target->CurrentItem();
@@ -307,7 +332,8 @@ void FocusManager::ProcessFocusEvent(AccEvent* aEvent) {
 
   
   
-  LocalAccessible* target = aEvent->GetAccessible();
+  LocalAccessible* target =
+      MaybeAdjustDocumentFocusTarget(aEvent->GetAccessible());
   MOZ_ASSERT(!target->IsDefunct());
   if (target != mActiveItem) {
     
@@ -316,8 +342,7 @@ void FocusManager::ProcessFocusEvent(AccEvent* aEvent) {
     nsINode* focusedNode = FocusedDOMNode();
     if (!focusedNode) return;
 
-    LocalAccessible* DOMFocus =
-        document->GetAccessibleEvenIfNotInMapOrContainer(focusedNode);
+    LocalAccessible* DOMFocus = FocusTargetFor(document, focusedNode);
     if (target != DOMFocus) return;
 
     LocalAccessible* activeItem = target->CurrentItem();
