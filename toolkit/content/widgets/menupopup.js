@@ -10,6 +10,10 @@
   const { AppConstants } = ChromeUtils.importESModule(
     "resource://gre/modules/AppConstants.sys.mjs"
   );
+  const lazy = {};
+  ChromeUtils.defineESModuleGetters(lazy, {
+    checkAccessKeys: "chrome://global/content/elements/accesskey-check.mjs",
+  });
 
   
   
@@ -43,6 +47,19 @@
     
     
     
+    { mozSystemGroup: true }
+  );
+
+  document.addEventListener(
+    "popupshown",
+    function (e) {
+      if (
+        e.target.nodeName == "menupopup" &&
+        e.target.ownerDocument == document
+      ) {
+        lazy.checkAccessKeys(e.target);
+      }
+    },
     { mozSystemGroup: true }
   );
 
