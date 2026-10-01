@@ -909,6 +909,16 @@ nsresult nsSocketTransport::InitWithConnectedSocket(PRFileDesc* fd,
   opt.value.non_blocking = true;
   PR_SetSocketOption(fd, &opt);
 
+  
+  
+  
+  
+  if (addr->raw.family == AF_INET || addr->raw.family == AF_INET6) {
+    opt.option = PR_SockOpt_NoDelay;
+    opt.value.no_delay = true;
+    PR_SetSocketOption(fd, &opt);
+  }
+
   SOCKET_LOG(
       ("nsSocketTransport::InitWithConnectedSocket [this=%p addr=%s:%hu]\n",
        this, mHost.get(), mPort));
