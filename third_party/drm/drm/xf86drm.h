@@ -11,26 +11,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef _XF86DRM_H_
 #define _XF86DRM_H_
 
