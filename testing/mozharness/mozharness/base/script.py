@@ -697,11 +697,10 @@ class ScriptMixin(PlatformMixin):
                 
                 
                 
-                bundle.extract(entry, path=extract_to)
+                fname = bundle.extract(entry, path=extract_to)
 
                 
                 
-                fname = os.path.realpath(os.path.join(extract_to, entry))
                 try:
                     
                     mode = bundle.getinfo(entry).external_attr >> 16 & 0x1FF
