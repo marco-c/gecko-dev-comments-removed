@@ -230,8 +230,15 @@ ASWebAuthSessionRequestWrapper::Cancel() {
   mozilla::CopyNSStringToXPCOMString(request.UUID.UUIDString, uuidXPCOM);
   NS_DispatchToMainThread(NS_NewRunnableFunction(
       "ASWebAuthSessionHandler::cancelHandling",
-      [request = [request retain], uuidXPCOM = nsString(uuidXPCOM)]() {
+      [uuidXPCOM = nsString(uuidXPCOM)]() {
+        
+        
+        nsCOMPtr<nsIASWebAuthSessionRequest> queued =
+            sPendingBeginRequests.GetWeak(uuidXPCOM);
         sPendingBeginRequests.Remove(uuidXPCOM);
+        if (queued) {
+          queued->Cancel();
+        }
 
         nsCOMPtr<nsIObserverService> obsServ =
             mozilla::services::GetObserverService();
@@ -239,12 +246,6 @@ ASWebAuthSessionRequestWrapper::Cancel() {
           obsServ->NotifyObservers(nullptr, "aswebauthsession-request-cancel",
                                    uuidXPCOM.get());
         }
-
-        
-        
-        
-        CancelRequestObject(request);
-        [request release];
       }));
 }
 
