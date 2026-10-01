@@ -3131,7 +3131,8 @@ nsresult NS_ShouldSecureUpgrade(
   }
   
   
-  if (nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackURL(aURI)) {
+  
+  if (nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(aURI)) {
     aShouldUpgrade = false;
     return NS_OK;
   }

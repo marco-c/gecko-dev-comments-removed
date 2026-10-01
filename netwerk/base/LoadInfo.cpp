@@ -342,12 +342,16 @@ LoadInfo::LoadInfo(
     if (nsMixedContentBlocker::IsUpgradableContentType(
             mInternalContentPolicyType)) {
       
+      
+      
+      
       nsCOMPtr<nsIPrincipal> precursorPrincipal =
           mLoadingPrincipal->GetPrecursorPrincipal();
       nsCOMPtr<nsIPrincipal> requestingPrincipal =
           precursorPrincipal ? precursorPrincipal : mLoadingPrincipal;
       if (requestingPrincipal->GetIsOriginPotentiallyTrustworthy() &&
-          !requestingPrincipal->GetIsLoopbackHost()) {
+          !requestingPrincipal->GetIsLoopbackHost() &&
+          !requestingPrincipal->GetIsSecureContextAllowlistedHost()) {
         if (StaticPrefs::security_mixed_content_upgrade_display_content()) {
           mBrowserUpgradeInsecureRequests = true;
         } else {

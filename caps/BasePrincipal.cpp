@@ -1143,6 +1143,30 @@ BasePrincipal::GetIsLoopbackHost(bool* aRes) {
 }
 
 NS_IMETHODIMP
+BasePrincipal::GetIsSecureContextAllowlistedHost(bool* aRes) {
+  AssertIsOnMainThread();
+  *aRes = false;
+
+  
+  
+  
+  nsAutoCString scheme;
+  if (NS_FAILED(GetScheme(scheme)) ||
+      (!scheme.EqualsLiteral("http") && !scheme.EqualsLiteral("ws"))) {
+    return NS_OK;
+  }
+
+  nsAutoCString host;
+  
+  if (NS_FAILED(GetHost(host))) {
+    return NS_OK;
+  }
+
+  *aRes = nsMixedContentBlocker::IsPotentiallyTrustworthyAllowlistedHost(host);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 BasePrincipal::GetAboutModuleFlags(uint32_t* flags) {
   AssertIsOnMainThread();
   *flags = 0;

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsMixedContentBlocker_h_
 #define nsMixedContentBlocker_h_
 
@@ -51,6 +49,9 @@ class nsMixedContentBlocker : public nsIContentPolicy,
   static bool IsPotentiallyTrustworthyLoopbackHost(
       const nsACString& aAsciiHost);
   static bool IsPotentiallyTrustworthyLoopbackURL(nsIURI* aURL);
+  
+  
+  static bool IsPotentiallyTrustworthyAllowlistedHost(const nsACString& aHost);
   static bool IsPotentiallyTrustworthyOnion(nsIURI* aURL);
   static bool IsPotentiallyTrustworthyOrigin(nsIURI* aURI);
 

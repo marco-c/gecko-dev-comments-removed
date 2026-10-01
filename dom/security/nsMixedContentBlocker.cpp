@@ -291,6 +291,19 @@ void nsMixedContentBlocker::Shutdown() {
   }
 }
 
+bool nsMixedContentBlocker::IsPotentiallyTrustworthyAllowlistedHost(
+    const nsACString& aHost) {
+  nsAutoCString allowlist;
+  GetSecureContextAllowList(allowlist);
+  for (const nsACString& allowedHost :
+       nsCCharSeparatedTokenizer(allowlist, ',').ToRange()) {
+    if (aHost.Equals(allowedHost)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(nsIURI* aURI) {
   
   
@@ -344,13 +357,8 @@ bool nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(nsIURI* aURI) {
     return false;
   }
 
-  nsAutoCString allowlist;
-  GetSecureContextAllowList(allowlist);
-  for (const nsACString& allowedHost :
-       nsCCharSeparatedTokenizer(allowlist, ',').ToRange()) {
-    if (host.Equals(allowedHost)) {
-      return true;
-    }
+  if (IsPotentiallyTrustworthyAllowlistedHost(host)) {
+    return true;
   }
 
   
