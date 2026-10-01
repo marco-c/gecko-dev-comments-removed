@@ -537,8 +537,14 @@ def target_tasks_mozilla_central(full_task_graph, parameters, graph_config):
         
         
         
+        
+        
+        
         is_regular_opt = (
-            family == "android" and not shippable and not ccov
+            family == "android"
+            and not shippable
+            and not ccov
+            and "nightlyasrelease" not in build_platform
         ) or "-" not in build_platform
 
         if build_type != "opt" or not is_regular_opt:
