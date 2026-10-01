@@ -38,7 +38,7 @@ pub struct ImageCacheKey {
 
 
 
-pub use api::key_types::StretchSizeKey;
+pub use api::key_types::{StretchSizeKey, SubRectKey};
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -89,6 +89,7 @@ pub struct ImageData {
     pub color: ColorF,
     pub image_rendering: ImageRendering,
     pub alpha_type: AlphaType,
+    pub sub_rect: Option<SubRectKey>,
 }
 
 impl From<Image> for ImageData {
@@ -100,6 +101,7 @@ impl From<Image> for ImageData {
             tile_spacing: image.tile_spacing.into(),
             image_rendering: image.image_rendering,
             alpha_type: image.alpha_type,
+            sub_rect: image.sub_rect,
         }
     }
 }
@@ -263,6 +265,79 @@ pub fn prepare_image_quads(
                 }
             }
 
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let mut pattern_rect = prim_rect;
+            let mut stretch_size = stretch_size;
+            if let Some(sub_frac) = image_data.sub_rect {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                let axis = |min: f32, max: f32, extent: i32| {
+                    let extent = extent as f32;
+                    let tolerance = 4.0 * extent * f32::EPSILON;
+                    let snap = |v: f32| {
+                        let rounded = v.round();
+                        if (v - rounded).abs() <= tolerance { rounded } else { v }
+                    };
+                    let mut lo = snap((min * extent).max(0.0)).floor();
+                    let mut hi = snap((max * extent).min(extent)).ceil();
+                    if hi - lo < 1.0 {
+                        lo = lo.min(extent - 1.0).max(0.0);
+                        hi = (lo + 1.0).min(extent);
+                    }
+                    (lo, hi)
+                };
+                let (x0, x1) = axis(sub_frac.min.x, sub_frac.max.x, size.width);
+                let (y0, y1) = axis(sub_frac.min.y, sub_frac.max.y, size.height);
+                let sub_rect = DeviceRect {
+                    min: point2(x0, y0),
+                    max: point2(x1, y1),
+                };
+
+                if !sub_rect.is_empty() {
+                    src_task_id = frame_state.rg_builder.add_sub_rect(src_task_id, &sub_rect);
+
+                    
+                    
+                    
+                    let sx = stretch_size.width / size.width as f32;
+                    let sy = stretch_size.height / size.height as f32;
+                    pattern_rect = LayoutRect {
+                        min: point2(prim_rect.min.x + x0 * sx, prim_rect.min.y + y0 * sy),
+                        max: point2(prim_rect.min.x + x1 * sx, prim_rect.min.y + y1 * sy),
+                    };
+                    stretch_size = pattern_rect.size();
+                }
+            }
+
             let image_pattern = ImagePattern {
                 src_task_id,
                 src_is_opaque,
@@ -307,7 +382,11 @@ pub fn prepare_image_quads(
             quad::prepare_repeatable_quad(
                 &image_pattern,
                 &QuadDescriptor {
-                    pattern_rect: prim_rect,
+                    
+                    
+                    
+                    
+                    pattern_rect,
                     bounds,
                     aligned_aa_edges: common_data.aligned_aa_edges,
                     transformed_aa_edges: common_data.transformed_aa_edges,
@@ -677,9 +756,9 @@ fn test_struct_sizes() {
     
     
     
-    assert_eq!(mem::size_of::<Image>(), 36, "Image size changed");
-    assert_eq!(mem::size_of::<ImageTemplate>(), 84, "ImageTemplate size changed");
-    assert_eq!(mem::size_of::<ImagePrimKey>(), 72, "ImagePrimKey size changed");
+    assert_eq!(mem::size_of::<Image>(), 56, "Image size changed");
+    assert_eq!(mem::size_of::<ImageTemplate>(), 104, "ImageTemplate size changed");
+    assert_eq!(mem::size_of::<ImagePrimKey>(), 92, "ImagePrimKey size changed");
     assert_eq!(mem::size_of::<YuvImage>(), 32, "YuvImage size changed");
     assert_eq!(mem::size_of::<YuvImageTemplate>(), 104, "YuvImageTemplate size changed");
     assert_eq!(mem::size_of::<YuvImagePrimKey>(), 68, "YuvImagePrimKey size changed");

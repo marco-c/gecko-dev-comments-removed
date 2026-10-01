@@ -473,6 +473,19 @@ impl<U> From<Size2D<f32, U>> for SizeKey {
 
 
 
+
+
+
+#[derive(Copy, Debug, Clone, MallocSizeOf, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct SubRectKey {
+    pub min: PointKey,
+    pub max: PointKey,
+}
+
+
+
+
+
 #[derive(Copy, Debug, Default, Clone, MallocSizeOf, PartialEq, Eq, Hash, Serialize, Deserialize, PeekPoke)]
 pub struct StretchSizeKey {
     pub size: SizeKey,

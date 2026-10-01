@@ -20,7 +20,7 @@ use crate::{
 use crate::key_types::{
     BorderRadiusAu, ConicGradientParams, GradientStopKey, NinePatchDescriptor,
     NormalBorderAu, PrimKeyCommonData, RadialGradientParams, SizeKey, StretchSizeKey,
-    VectorKey,
+    SubRectKey, VectorKey,
 };
 use crate::units::{LayoutSideOffsetsAu, TileOffset};
 use app_units::Au;
@@ -75,6 +75,10 @@ pub struct Image {
     pub color: ColorU,
     pub image_rendering: ImageRendering,
     pub alpha_type: AlphaType,
+    
+    
+    
+    pub sub_rect: Option<SubRectKey>,
 }
 
 
