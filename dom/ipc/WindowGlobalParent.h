@@ -124,7 +124,7 @@ class WindowGlobalParent final : public WindowContext,
   
   BrowserParent* GetBrowserParent() const;
 
-  ContentParent* GetContentParent();
+  ContentParent* GetContentParent() const;
 
   
   
