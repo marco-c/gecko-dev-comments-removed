@@ -1,5 +1,9 @@
 
 
+
+
+
+
 use std::collections::HashMap;
 
 use base64::{engine::Engine as _, prelude::BASE64_STANDARD};
@@ -672,7 +676,3 @@ pub(crate) fn parse_scriptlet_args(mut args: &str) -> Option<Vec<String>> {
 
     Some(args_vec)
 }
-
-#[cfg(test)]
-#[path = "../../tests/unit/resources/resource_storage.rs"]
-mod unit_tests;

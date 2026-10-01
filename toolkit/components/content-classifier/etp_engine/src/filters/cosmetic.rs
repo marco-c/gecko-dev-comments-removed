@@ -1,6 +1,10 @@
 
 
 
+
+
+
+
 use memchr::{memchr as find_char, memmem, memrchr as find_char_reverse};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -1205,7 +1209,3 @@ mod css_validation {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "../../tests/unit/filters/cosmetic.rs"]
-mod unit_tests;

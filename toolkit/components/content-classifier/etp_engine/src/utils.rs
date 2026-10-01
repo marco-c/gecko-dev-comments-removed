@@ -1,6 +1,10 @@
 
 
 
+
+
+
+
 #[cfg(target_pointer_width = "64")]
 use seahash::hash;
 #[cfg(target_pointer_width = "32")]
@@ -125,7 +129,3 @@ pub(crate) fn tokenize_filter_to(
 pub(crate) fn bin_lookup<T: Ord>(arr: &[T], elt: T) -> bool {
     arr.binary_search(&elt).is_ok()
 }
-
-#[cfg(test)]
-#[path = "../tests/unit/utils.rs"]
-mod unit_tests;

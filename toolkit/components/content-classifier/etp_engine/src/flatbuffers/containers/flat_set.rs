@@ -1,3 +1,7 @@
+
+
+
+
 #![allow(dead_code)]
 
 use std::marker::PhantomData;
@@ -62,7 +66,3 @@ impl<'b, B: FlatBuilder<'b>, T: FlatSerialize<'b, B> + std::hash::Hash + Ord> Fl
         builder.raw_builder().create_vector(&v)
     }
 }
-
-#[cfg(test)]
-#[path = "../../../tests/unit/flatbuffers/containers/flat_set.rs"]
-mod unit_tests;

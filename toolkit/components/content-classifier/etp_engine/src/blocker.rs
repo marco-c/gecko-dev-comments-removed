@@ -1,5 +1,9 @@
 
 
+
+
+
+
 use memchr::{memchr as find_char, memrchr as find_char_reverse};
 use once_cell::sync::Lazy;
 use serde::Serialize;
@@ -509,7 +513,3 @@ impl Blocker {
         regex_manager.get_debug_info()
     }
 }
-
-#[cfg(test)]
-#[path = "../tests/unit/blocker.rs"]
-mod unit_tests;

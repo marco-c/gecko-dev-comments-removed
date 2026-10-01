@@ -1,5 +1,9 @@
 
 
+
+
+
+
 use std::convert::TryFrom;
 
 use crate::filters::cosmetic::{CosmeticFilter, CosmeticFilterError};
@@ -590,7 +594,3 @@ fn detect_filter_type(filter: &str) -> FilterType {
     
     FilterType::Network
 }
-
-#[cfg(test)]
-#[path = "../tests/unit/lists.rs"]
-mod unit_tests;

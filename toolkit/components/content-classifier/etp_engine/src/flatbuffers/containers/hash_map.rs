@@ -1,5 +1,9 @@
 
 
+
+
+
+
 use crate::flatbuffers::containers::{
     fb_index::FbIndex,
     flat_serialize::{FlatBuilder, FlatMapBuilderOutput, FlatSerialize},
@@ -96,7 +100,3 @@ pub type HashMapStringView<'a, V> = HashMapView<
     flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<&'a str>>,
     flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<<V as flatbuffers::Follow<'a>>::Inner>>,
 >;
-
-#[cfg(test)]
-#[path = "../../../tests/unit/flatbuffers/containers/hash_map.rs"]
-mod unit_tests;

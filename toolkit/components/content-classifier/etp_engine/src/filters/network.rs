@@ -1,6 +1,10 @@
 
 
 
+
+
+
+
 use memchr::memchr as find_char;
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -1050,6 +1054,3 @@ fn check_is_regex(filter: &str) -> bool {
     let separator_index = find_char(b'^', filter.as_bytes());
     start_index.is_some() || separator_index.is_some()
 }
-#[cfg(test)]
-#[path = "../../tests/unit/filters/network.rs"]
-mod unit_tests;

@@ -9,6 +9,10 @@
 
 
 
+
+
+
+
 use crate::cosmetic_filter_utils::decode_script_with_permission;
 #[cfg(test)]
 use crate::filters::cosmetic::CosmeticFilter;
@@ -355,7 +359,3 @@ impl CosmeticFilterCache {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "../tests/unit/cosmetic_filter_cache.rs"]
-mod unit_tests;

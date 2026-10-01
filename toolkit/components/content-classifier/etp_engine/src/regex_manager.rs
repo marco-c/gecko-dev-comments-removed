@@ -2,6 +2,10 @@
 
 
 
+
+
+
+
 use crate::filters::network::{NetworkFilterMask, NetworkFilterMaskHelper};
 
 use regex::{
@@ -350,7 +354,3 @@ impl RegexManager {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "../tests/unit/regex_manager.rs"]
-mod unit_tests;

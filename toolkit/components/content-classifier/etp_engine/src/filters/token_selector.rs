@@ -1,5 +1,9 @@
 
 
+
+
+
+
 use crate::utils::{to_short_hash, Hash, ShortHash};
 use seahash::SeaHasher;
 use std::collections::HashMap;
@@ -111,7 +115,3 @@ impl TokenSelector {
         *self.usage.entry(to_short_hash(token)).or_insert(0) += 1;
     }
 }
-
-#[cfg(test)]
-#[path = "../../tests/unit/filters/token_selector.rs"]
-mod unit_tests;

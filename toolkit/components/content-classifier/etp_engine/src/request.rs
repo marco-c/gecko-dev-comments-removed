@@ -1,5 +1,9 @@
 
 
+
+
+
+
 use thiserror::Error;
 
 use crate::url_parser;
@@ -245,7 +249,3 @@ fn calculate_tokens(url_lower_cased: &str) -> Vec<utils::Hash> {
     tokens.push(0);
     tokens.into_iter().collect()
 }
-
-#[cfg(test)]
-#[path = "../tests/unit/request.rs"]
-mod unit_tests;

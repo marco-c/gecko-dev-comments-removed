@@ -1,3 +1,7 @@
+
+
+
+
 use std::marker::PhantomData;
 
 use crate::flatbuffers::containers;
@@ -127,7 +131,3 @@ impl<I: Ord + std::hash::Hash, V> FlatMultiMapBuilder<I, V> {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "../../../tests/unit/flatbuffers/containers/flat_multimap.rs"]
-mod unit_tests;

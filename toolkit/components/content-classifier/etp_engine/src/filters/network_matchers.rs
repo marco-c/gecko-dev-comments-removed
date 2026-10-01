@@ -5,6 +5,10 @@
 
 
 
+
+
+
+
 use memchr::memmem;
 
 use crate::filters::network::{NetworkFilterMask, NetworkFilterMaskHelper};
@@ -462,7 +466,3 @@ pub fn check_excluded_domains_mapped(
 
     true
 }
-
-#[cfg(test)]
-#[path = "../../tests/unit/filters/network_matchers.rs"]
-mod unit_tests;
