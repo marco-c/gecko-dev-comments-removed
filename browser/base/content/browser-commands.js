@@ -381,8 +381,11 @@ var BrowserCommands = {
       (event.ctrlKey || event.metaKey || event.altKey) &&
       gBrowser.selectedTab.pinned
     ) {
-      if (gBrowser.visibleTabs.length > gBrowser.pinnedTabCount) {
-        gBrowser.tabContainer.selectedIndex = gBrowser.pinnedTabCount;
+      let firstVisibleUnpinnedTab = gBrowser.visibleTabs.find(
+        tab => !tab.pinned
+      );
+      if (firstVisibleUnpinnedTab) {
+        gBrowser.selectedTab = firstVisibleUnpinnedTab;
       }
       return;
     }
