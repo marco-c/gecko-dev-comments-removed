@@ -19,6 +19,8 @@ const { MLPerfTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/MLPerfTestUtils.sys.mjs"
 );
 
+MLPerfTestUtils.init(this);
+
 
 
 
@@ -232,8 +234,6 @@ add_task(async function test_link_preview_keypoints_perf() {
   );
 
   await MLPerfTestUtils.runPerfScenario({
-    info,
-    Assert,
     metricPrefix: METRIC_PREFIX,
     scenario: generateKeyPointsOnce,
     engines: [{ featureId: "link-preview" }],

@@ -338,7 +338,7 @@ export interface MLPerfAssertions {
 }
 
 
-export interface MLPerfTestHarness {
+export interface MLPerfTestContext {
   
 
 
@@ -348,6 +348,13 @@ export interface MLPerfTestHarness {
 
   
   Assert: MLPerfAssertions;
+
+  
+
+
+
+
+  registerCleanupFunction(cleanup: () => void): void;
 }
 
 
@@ -375,7 +382,7 @@ export interface PeakInferenceMemorySampler {
 }
 
 
-export interface RunPerfScenarioConfig extends MLPerfTestHarness {
+export interface RunPerfScenarioConfig {
   
   metricPrefix: string;
 
