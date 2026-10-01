@@ -197,6 +197,9 @@ public final class HttpChannelDataSource extends BaseDataSource implements HttpD
 
     final WebResponse response;
     try {
+      
+      
+      
       response = mChannelProvider.openChannel(builder.build()).poll();
     } catch (final InterruptedException e) {
       Thread.currentThread().interrupt();
