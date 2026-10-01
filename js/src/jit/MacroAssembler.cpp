@@ -7439,12 +7439,12 @@ FaultingCodeRange MacroAssembler::branchWasmRefIsSubtypeAny(
     
     
     
-    MOZ_ASSERT_IF(signalNullChecks && fcr.isValid(), canOmitNullCheck);
-    MOZ_ASSERT_IF(signalNullChecks && !fcr.isValid(), !canOmitNullCheck);
+    MOZ_ASSERT_IF(!oom() && signalNullChecks,
+                  canOmitNullCheck == fcr.isValid());
 
     
     
-    MOZ_ASSERT_IF(!signalNullChecks, !fcr.isValid());
+    MOZ_ASSERT_IF(!oom() && !signalNullChecks, !fcr.isValid());
   }));
 
   
