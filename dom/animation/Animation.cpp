@@ -1424,6 +1424,25 @@ TimeStamp Animation::ElapsedTimeToTimeStamp(
     const StickyTimeDuration& aElapsedTime) const {
   TimeDuration delay =
       mEffect ? mEffect->NormalizedTiming().Delay() : TimeDuration();
+  if (MOZ_UNLIKELY((delay == -TimeDuration::Forever() &&
+                    aElapsedTime == TimeDuration::Forever()) ||
+                   (delay == TimeDuration::Forever() &&
+                    aElapsedTime == -TimeDuration::Forever()))) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return GetTimelineCurrentTimeAsTimeStamp();
+  }
   return AnimationTimeToTimeStamp(aElapsedTime + delay);
 }
 
