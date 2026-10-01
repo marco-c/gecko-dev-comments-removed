@@ -7,6 +7,7 @@
 
 #include <functional>
 
+#include "mozilla/Maybe.h"
 #include "nsFrameLoader.h"
 #include "nsISupports.h"
 
@@ -79,7 +80,16 @@ class nsFrameLoaderOwner : public nsISupports {
   MOZ_CAN_RUN_SCRIPT
   void SubframeCrashed();
 
-  void RestoreFrameLoaderFromBFCache(nsFrameLoader* aNewFrameLoader);
+  
+  
+  
+  
+  bool RestoreFrameLoaderFromBFCache(nsFrameLoader* aNewFrameLoader);
+
+  
+  
+  MOZ_CAN_RUN_SCRIPT
+  void DispatchLayerTreeEvent();
 
   MOZ_CAN_RUN_SCRIPT
   void UpdateFocusAndMouseEnterStateAfterFrameLoaderChange();
@@ -118,6 +128,20 @@ class nsFrameLoaderOwner : public nsISupports {
 
   void ChangeFrameLoaderCommon(mozilla::dom::Element* aOwner,
                                bool aRetainPaint);
+
+  
+  
+  struct LayerState {
+    bool mRenderLayers;
+    bool mPreserveLayers;
+    bool mPriorityHint;
+    bool mHasLayers;
+  };
+  mozilla::Maybe<LayerState> GetLayerState() const;
+
+  
+  
+  bool TransferLayerState(const mozilla::Maybe<LayerState>& aOldLayerState);
 
   MOZ_CAN_RUN_SCRIPT
   void UpdateFocusAndMouseEnterStateAfterFrameLoaderChange(

@@ -1398,7 +1398,8 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
     
     
 
-    frameLoaderOwner->RestoreFrameLoaderFromBFCache(aFrameLoader);
+    bool layersChanged =
+        frameLoaderOwner->RestoreFrameLoaderFromBFCache(aFrameLoader);
     
     
     
@@ -1412,6 +1413,10 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
     }
 
     loadingBC->ReactivateDocuments(aEntry, currentSHEntry);
+
+    if (layersChanged) {
+      frameLoaderOwner->DispatchLayerTreeEvent();
+    }
 
     
     

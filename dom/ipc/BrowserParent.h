@@ -708,6 +708,13 @@ class BrowserParent final : public PBrowserParent,
   bool GetPriorityHint();
   void SetPriorityHint(bool aPriorityHint);
   void PreserveLayers(bool aPreserveLayers);
+  bool IsPreservingLayers() const { return mIsPreservingLayers; }
+  
+  
+  
+  
+  void TransferLayerState(bool aRenderLayers, bool aPreserveLayers,
+                          bool aPriorityHint);
   void NotifyResolutionChanged();
   void NotifyTransparencyChanged();
 
