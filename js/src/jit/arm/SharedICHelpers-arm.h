@@ -44,9 +44,10 @@ inline void EmitBaselineLeaveStubFrame(MacroAssembler& masm) {
   masm.loadPtr(stubAddr, ICStubReg);
 
   masm.mov(FramePointer, StackPointer);
+  masm.Pop(FramePointer);
 
   
-  masm.PopRegs(FramePointer, ICTailCallReg);
+  masm.Pop(ICTailCallReg);
 
   
   ScratchRegisterScope scratch(masm);

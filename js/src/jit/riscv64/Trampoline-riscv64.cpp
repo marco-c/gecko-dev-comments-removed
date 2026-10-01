@@ -394,13 +394,17 @@ uint32_t JitRuntime::generatePreBarrier(JSContext* cx, MacroAssembler& masm,
   Register temp1 = a0;
   Register temp2 = a2;
   Register temp3 = a3;
-  masm.pushRegs(temp1, temp2, temp3);
+  masm.push(temp1);
+  masm.push(temp2);
+  masm.push(temp3);
 
   Label noBarrier;
   masm.emitPreBarrierFastPath(type, temp1, temp2, temp3, &noBarrier);
 
   
-  masm.popRegs(temp3, temp2, temp1);
+  masm.pop(temp3);
+  masm.pop(temp2);
+  masm.pop(temp1);
 
   LiveRegisterSet save;
   save.set() = RegisterSet(GeneralRegisterSet(Registers::VolatileMask),
@@ -419,7 +423,9 @@ uint32_t JitRuntime::generatePreBarrier(JSContext* cx, MacroAssembler& masm,
   masm.ret();
 
   masm.bind(&noBarrier);
-  masm.popRegs(temp3, temp2, temp1);
+  masm.pop(temp3);
+  masm.pop(temp2);
+  masm.pop(temp1);
   masm.abiret();
 
   return offset;
@@ -456,11 +462,10 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
   
   
   
+  masm.pushReturnAddress();
+
   
-  
-  masm.pushRegs(LinkRegister, FramePointer);
-  
-  masm.adjustFrame(sizeof(intptr_t));
+  masm.Push(FramePointer);
   masm.moveStackPtrTo(FramePointer);
   masm.loadJSContext(cxreg);
   masm.enterExitFrame(cxreg, regs.getAny(), id);

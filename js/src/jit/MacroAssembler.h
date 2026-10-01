@@ -565,15 +565,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
       DEFINED_ON(arm, mips64, x86_shared, loong64, riscv64, wasm32);
 
   
-  
-  template <typename... Regs>
-  inline void PushRegs(const Regs&... regs);
-  
-  
-  template <typename... Regs>
-  inline void PopRegs(const Regs&... regs);
-
-  
   void adjustStack(int amount);
   void freeStack(uint32_t amount);
 

@@ -143,12 +143,11 @@ bool CodeGeneratorShared::generatePrologue() {
   MOZ_ASSERT(!gen->compilingWasm());
 
 #ifdef JS_USE_LINK_REGISTER
-  
-  masm.pushRegs(LinkRegister, FramePointer);
-#else
+  masm.pushReturnAddress();
+#endif
+
   
   masm.push(FramePointer);
-#endif
   masm.moveStackPtrTo(FramePointer);
 
   
