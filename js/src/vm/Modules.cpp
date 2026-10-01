@@ -64,7 +64,7 @@ static bool TryStartDynamicModuleImport(JSContext* cx, HandleScript script,
                                         HandleValue optionsArg,
                                         HandleObject promise,
                                         ImportPhase phase);
-static bool ContinueDynamicImport(JSContext* cx, Handle<JSObject*> referrer,
+static bool ContinueDynamicImport(JSContext* cx,
                                   Handle<PromiseObject*> promiseCapability,
                                   Handle<ModuleObject*> module,
                                   ImportPhase phase, bool usePromise);
@@ -194,7 +194,7 @@ JS_PUBLIC_API bool JS::FinishLoadingImportedModule(
   
   MOZ_ASSERT(object->is<PromiseObject>());
   Rooted<PromiseObject*> promise(cx, &object->as<PromiseObject>());
-  return ContinueDynamicImport(cx, referrerModule, promise, module,
+  return ContinueDynamicImport(cx, promise, module,
                                moduleRequest->as<ModuleRequestObject>().phase(),
                                usePromise);
 }
@@ -3058,21 +3058,16 @@ bool js::OnModuleEvaluationFailure(JSContext* cx,
 
 
 
-
-
-
-
 class DynamicImportContextObject : public NativeObject {
  public:
-  enum { ReferrerSlot = 0, PromiseSlot, ModuleSlot, PhaseSlot, SlotCount };
+  enum { PromiseSlot = 0, ModuleSlot, PhaseSlot, SlotCount };
 
   static const JSClass class_;
 
   [[nodiscard]] static DynamicImportContextObject* create(
-      JSContext* cx, Handle<JSObject*> referrer, Handle<PromiseObject*> promise,
+      JSContext* cx, Handle<PromiseObject*> promise,
       Handle<ModuleObject*> module, ImportPhase phase);
 
-  JSObject* referrer() const;
   PromiseObject* promise() const;
   ModuleObject* module() const;
   ImportPhase phase() const;
@@ -3087,30 +3082,18 @@ const JSClass DynamicImportContextObject::class_ = {
 
 
 DynamicImportContextObject* DynamicImportContextObject::create(
-    JSContext* cx, Handle<JSObject*> referrer, Handle<PromiseObject*> promise,
-    Handle<ModuleObject*> module, ImportPhase phase) {
+    JSContext* cx, Handle<PromiseObject*> promise, Handle<ModuleObject*> module,
+    ImportPhase phase) {
   Rooted<DynamicImportContextObject*> self(
       cx, NewObjectWithGivenProto<DynamicImportContextObject>(cx, nullptr));
   if (!self) {
     return nullptr;
   }
 
-  if (referrer) {
-    self->initReservedSlot(ReferrerSlot, ObjectValue(*referrer));
-  }
   self->initReservedSlot(PromiseSlot, ObjectValue(*promise));
   self->initReservedSlot(ModuleSlot, ObjectValue(*module));
   self->initReservedSlot(PhaseSlot, Int32Value(int32_t(phase)));
   return self;
-}
-
-JSObject* DynamicImportContextObject::referrer() const {
-  Value value = getReservedSlot(ReferrerSlot);
-  if (value.isUndefined()) {
-    return nullptr;
-  }
-
-  return &value.toObject();
 }
 
 PromiseObject* DynamicImportContextObject::promise() const {
@@ -3142,7 +3125,7 @@ ImportPhase DynamicImportContextObject::phase() const {
 
 
 
-bool ContinueDynamicImport(JSContext* cx, Handle<JSObject*> referrer,
+bool ContinueDynamicImport(JSContext* cx,
                            Handle<PromiseObject*> promiseCapability,
                            Handle<ModuleObject*> module, ImportPhase phase,
                            bool usePromise) {
@@ -3180,8 +3163,8 @@ bool ContinueDynamicImport(JSContext* cx, Handle<JSObject*> referrer,
   
   
   Rooted<DynamicImportContextObject*> context(
-      cx, DynamicImportContextObject::create(cx, referrer, promiseCapability,
-                                             module, phase));
+      cx,
+      DynamicImportContextObject::create(cx, promiseCapability, module, phase));
   if (!context) {
     return RejectPromiseWithPendingError(cx, promiseCapability);
   }
