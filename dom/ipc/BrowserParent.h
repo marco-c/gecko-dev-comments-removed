@@ -188,6 +188,10 @@ class BrowserParent final : public PBrowserParent,
   
   BrowserHost* GetBrowserHost() const;
 
+  bool IsEmbedded() const {
+    return mBrowserHost || mBrowserBridgeParent || mFrameElement;
+  }
+
   ParentShowInfo GetShowInfo();
 
   

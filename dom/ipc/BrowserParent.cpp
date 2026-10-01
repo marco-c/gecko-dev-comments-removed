@@ -4187,16 +4187,14 @@ void BrowserParent::LiveResizeStopped() { SuppressDisplayport(false); }
 void BrowserParent::SetBrowserBridgeParent(BrowserBridgeParent* aBrowser) {
   
   
-  MOZ_ASSERT(!aBrowser ||
-             (!mBrowserBridgeParent && !mBrowserHost && !mFrameElement));
+  MOZ_RELEASE_ASSERT(!aBrowser || !IsEmbedded());
   mBrowserBridgeParent = aBrowser;
 }
 
 void BrowserParent::SetBrowserHost(BrowserHost* aBrowser) {
   
   
-  MOZ_ASSERT(!aBrowser ||
-             (!mBrowserBridgeParent && !mBrowserHost && !mFrameElement));
+  MOZ_RELEASE_ASSERT(!aBrowser || !IsEmbedded());
   mBrowserHost = aBrowser;
 }
 

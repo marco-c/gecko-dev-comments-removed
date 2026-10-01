@@ -5568,6 +5568,16 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindow(
   RefPtr<BrowserParent> newTab = BrowserParent::GetFrom(aNewTab);
   MOZ_ASSERT(newTab);
 
+  
+  
+  
+  
+  
+  if (newTab->IsEmbedded() || newTab->IsDestroyed() ||
+      newTab->CreatingWindow()) {
+    return IPC_FAIL(this, "New tab is not a fresh unembedded PBrowser");
+  }
+
   auto destroyNewTabOnError = MakeScopeExit([&] {
     
     if (!cwi.windowOpened() || NS_FAILED(rv)) {
