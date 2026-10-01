@@ -52,11 +52,6 @@ enum class StyleBoxShadowType : uint8_t {
   Inset,
 };
 
-enum class StyleColumnSpan : uint8_t {
-  None,
-  All,
-};
-
 
 
 enum class StyleGeometryBox : uint8_t {
