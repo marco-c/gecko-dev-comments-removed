@@ -1835,12 +1835,8 @@ void VideoStreamEncoder::SetEncoderRates(
           send_codec_, rate_settings.rate_control, encoder_->GetEncoderInfo()));
     }
   }
-  if ((allocation_cb_type_ ==
-       BitrateAllocationCallbackType::kVideoBitrateAllocation) ||
-      (encoder_config_.content_type ==
-           VideoEncoderConfig::ContentType::kScreen &&
-       allocation_cb_type_ == BitrateAllocationCallbackType::
-                                  kVideoBitrateAllocationWhenScreenSharing)) {
+  if (allocation_cb_type_ ==
+      BitrateAllocationCallbackType::kVideoBitrateAllocation) {
     sink_->OnBitrateAllocationUpdated(
         
         

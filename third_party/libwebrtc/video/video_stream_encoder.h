@@ -85,8 +85,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   
   
   enum class BitrateAllocationCallbackType {
+    kNone,
     kVideoBitrateAllocation,
-    kVideoBitrateAllocationWhenScreenSharing,
     kVideoLayersAllocation
   };
   VideoStreamEncoder(

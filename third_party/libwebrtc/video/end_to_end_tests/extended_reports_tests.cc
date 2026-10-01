@@ -205,35 +205,17 @@ class RtcpXrObserver : public test::EndToEndTest {
   SimulatedNetworkInterface* send_simulated_network_ = nullptr;
 };
 
-TEST_F(ExtendedReportsEndToEndTest,
-       TestExtendedReportsWithRrtrWithoutTargetBitrate) {
+TEST_F(ExtendedReportsEndToEndTest, TestExtendedReportsWithRrtr) {
   RtcpXrObserver test(true, false,
                       false,
                       VideoEncoderConfig::ContentType::kRealtimeVideo);
   RunBaseTest(&test);
 }
 
-TEST_F(ExtendedReportsEndToEndTest,
-       TestExtendedReportsWithoutRrtrWithoutTargetBitrate) {
+TEST_F(ExtendedReportsEndToEndTest, TestExtendedReportsWithoutRrtr) {
   RtcpXrObserver test(false, false,
                       false,
                       VideoEncoderConfig::ContentType::kRealtimeVideo);
-  RunBaseTest(&test);
-}
-
-TEST_F(ExtendedReportsEndToEndTest,
-       TestExtendedReportsWithRrtrWithTargetBitrate) {
-  RtcpXrObserver test(true, true,
-                      false,
-                      VideoEncoderConfig::ContentType::kScreen);
-  RunBaseTest(&test);
-}
-
-TEST_F(ExtendedReportsEndToEndTest,
-       TestExtendedReportsWithoutRrtrWithTargetBitrate) {
-  RtcpXrObserver test(false, true,
-                      false,
-                      VideoEncoderConfig::ContentType::kScreen);
   RunBaseTest(&test);
 }
 
@@ -248,6 +230,7 @@ TEST_F(ExtendedReportsEndToEndTest,
 
 TEST_F(ExtendedReportsEndToEndTest,
        TestExtendedReportsCanSignalZeroTargetBitrate) {
+  field_trials().Set("WebRTC-Target-Bitrate-Rtcp", "Enabled");
   RtcpXrObserver test(false, true,
                       true,
                       VideoEncoderConfig::ContentType::kScreen,
