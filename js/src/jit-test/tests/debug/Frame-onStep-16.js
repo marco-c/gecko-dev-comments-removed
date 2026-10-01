@@ -10,10 +10,15 @@ function test(fnStr) {
   g.eval(fnStr);
 
   dbg.onDebuggerStatement = function(frame) {
-        frame.onStep = function() {
-      let {lineNumber, isEntryPoint} = frame.script.getOffsetLocation(frame.offset);
-      if (isEntryPoint) {
+    let previousLine = -1;
+    frame.onStep = function() {
+      let lineNumber = frame.script.getOffsetMetadata(frame.offset).lineNumber;
+      
+      
+      
+      if (lineNumber !== previousLine) {
         log += lineNumber + ' ';
+        previousLine = lineNumber;
       }
     };
   };
@@ -21,14 +26,16 @@ function test(fnStr) {
   g.eval("f(23);");
 }
 
-test("function f(x) {\n" +    
-     "    debugger;\n" +      
-     "    return 23 + x;\n" + 
-     "}\n");                  
-assertEq(log, '3 3 4 ');
+test(`function f(x) {     // 1
+    debugger;             // 2
+    return 23 + x;        // 3
+}                         // 4
+`);
+assertEq(log, '3 4 ');
 
-test("function f(x) {\n" +    
-     "    debugger;\n" +      
-     "    return;\n" +        
-     "}\n");                  
+test(`function f(x) {     // 1
+    debugger;             // 2
+    return;               // 3
+}                         // 4
+`);
 assertEq(log, '3 4 ');

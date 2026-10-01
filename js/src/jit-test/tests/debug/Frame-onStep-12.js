@@ -41,10 +41,10 @@ g.eval("function nothing() { }\n");
 
 var log = '';
 dbg.onDebuggerStatement = function(frame) {
-  let debugLine = frame.script.getOffsetLocation(frame.offset).lineNumber;
+  let debugLine = frame.script.getOffsetMetadata(frame.offset).lineNumber;
   frame.onStep = function() {
-    let foundLine = this.script.getOffsetLocation(this.offset).lineNumber;
-    if (this.script.getLineOffsets(foundLine).indexOf(this.offset) >= 0) {
+    let foundLine = this.script.getOffsetMetadata(this.offset).lineNumber;
+    if (this.script.getPossibleBreakpointOffsets({ line: foundLine }).indexOf(this.offset) >= 0) {
       log += (foundLine - debugLine).toString(16);
     }
   };
@@ -61,13 +61,17 @@ function testOne(name, body, expected) {
 
 
 
+
+
+
+
 testOne("testTryFinally",
         `try {
            ${bitOfCode}
          } finally {            // +6
          }                      // +7
          nothing();             // +8
-        `, "1689");
+        `, "189");
 
 
 testOne("testTryCatch",
@@ -87,7 +91,7 @@ testOne("testCatchFinally",
          } finally {            // +6
          }                      // +7
          nothing();             // +8
-        `, "1689");
+        `, "189");
 
 
 testOne("testFinally",

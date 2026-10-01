@@ -717,7 +717,7 @@ class ThreadActor extends Actor {
       
       
       
-      meta = script.getAllColumnOffsets()[0];
+      meta = { offset: script.mainOffset };
     }
 
     if (!meta) {

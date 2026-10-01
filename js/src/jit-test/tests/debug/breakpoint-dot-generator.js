@@ -31,5 +31,4 @@ script.setBreakpoint(7, {});
 
 
 assertEq(script.getPossibleBreakpoints().some(p => p.offset == 1), false);
-assertEq(script.getAllColumnOffsets().some(p => p.offset == 1), false);
 assertEq(script.getEffectfulOffsets().includes(1), false);

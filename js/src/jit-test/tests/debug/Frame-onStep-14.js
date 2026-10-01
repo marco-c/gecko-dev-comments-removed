@@ -30,7 +30,12 @@ var badStep = false;
 function test(s, okLine) {
   dbg.onDebuggerStatement = function(frame) {
     frame.onStep = function() {
-      let thisLine = this.script.getOffsetLocation(this.offset).lineNumber;
+      
+      
+      if (!this.script.getOffsetMetadata(this.offset).isBreakpoint) {
+        return;
+      }
+      let thisLine = this.script.getOffsetMetadata(this.offset).lineNumber;
       
       if (thisLine > 3) {
         assertEq(thisLine, okLine)

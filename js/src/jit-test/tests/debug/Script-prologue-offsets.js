@@ -15,16 +15,16 @@ dbg.onEnterFrame = function(frame) {
   assertEq(prologueData.isStepStart, false);
 
   
-  let location = frame.script.getOffsetLocation(0);
-  assertEq(location.isEntryPoint, false);
+  
+  
   if (count == 0) {
     
-    assertEq(location.lineNumber, 3);
-    assertEq(location.columnNumber, 5);
+    assertEq(prologueData.lineNumber, 2);
+    assertEq(prologueData.columnNumber, 18);
   } else {
     
-    assertEq(location.lineNumber, 5);
-    assertEq(location.columnNumber, 18);
+    assertEq(prologueData.lineNumber, 5);
+    assertEq(prologueData.columnNumber, 18);
   }
 
   
