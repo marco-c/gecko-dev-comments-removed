@@ -2,4 +2,7 @@
 
 
 
-config = {}
+config = {
+    "mozconfig_platform": "android-arm",
+    "extra_mozconfig_content": ["ac_add_options --enable-geckoview-lite"],
+}

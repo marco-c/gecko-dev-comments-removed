@@ -2,4 +2,7 @@
 
 
 
-config = {}
+config = {
+    "mozconfig_platform": "android-x86_64",
+    "extra_mozconfig_content": ["ac_add_options --enable-geckoview-lite"],
+}
