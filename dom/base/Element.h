@@ -2674,6 +2674,10 @@ class Element : public FragmentOrElement {
   void VerifySubtreeBloomFilter() const;
 #endif
 
+  
+  void IsElement() = delete;
+  void AsElement() = delete;
+
  protected:
   
 
@@ -2693,11 +2697,6 @@ class Element : public FragmentOrElement {
 
 
   virtual void RegUnRegAccessKey(bool aDoReg);
-
- public:
-  
-  void IsElement() = delete;
-  void AsElement() = delete;
 
  private:
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
