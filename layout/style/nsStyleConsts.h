@@ -137,14 +137,6 @@ enum class StyleDirection : uint8_t { Ltr, Rtl };
 static constexpr uint8_t kWritingModeSidewaysMask = 4;
 
 
-enum class StyleFlexDirection : uint8_t {
-  Row,
-  RowReverse,
-  Column,
-  ColumnReverse,
-};
-
-
 enum class StyleGridTrackBreadth : uint8_t {
   MaxContent = 1,
   MinContent = 2,
