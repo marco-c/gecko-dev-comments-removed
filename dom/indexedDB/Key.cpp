@@ -910,6 +910,8 @@ static Result<Ok, nsresult> ProcessArrayBufferOrView(
   MOZ_CRASH("ArrayBufferOrView must be ArrayBuffer or ArrayBufferView!");
 }
 
+
+
 Result<Ok, nsresult> Key::EncodeBinary(
     const JS::ArrayBufferOrView& aArrayBufferOrView, uint8_t aTypeOffset) {
   
@@ -918,12 +920,6 @@ Result<Ok, nsresult> Key::EncodeBinary(
   
   
 
-  
-  
-  
-  
-  
-  
   
   if (aArrayBufferOrView.isDetached()) {
     return Err(NS_ERROR_DOM_INDEXEDDB_DATA_ERR);
