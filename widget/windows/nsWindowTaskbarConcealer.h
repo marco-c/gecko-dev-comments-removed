@@ -33,6 +33,12 @@ class nsWindow::TaskbarConcealer {
   static void OnWindowShown(nsWindow* aWin);
 
   
+  
+  
+  
+  static void OnFullscreenWillBeEntered(nsWindow* aWin);
+
+  
   static void OnFullscreenChanged(nsWindow* aWin, bool enteredFullscreen);
 
   

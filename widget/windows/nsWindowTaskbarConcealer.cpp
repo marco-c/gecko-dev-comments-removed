@@ -356,6 +356,13 @@ void TaskbarConcealerImpl::MarkAsHidingTaskbar(HWND aWnd, bool aMark) {
   
   
   
+  
+  
+  
+  
+  
+  
+  
   bool forceUseNonRudeHWND =
       !aMark && ::IsWindowVisible(aWnd) &&
       StaticPrefs::widget_windows_fullscreen_set_nonrudehwnd();
@@ -470,6 +477,17 @@ void nsWindow::TaskbarConcealer::OnWindowShown(nsWindow* aWin) {
   }
 
   OnWindowMaximized(aWin,  true);
+}
+
+void nsWindow::TaskbarConcealer::OnFullscreenWillBeEntered(nsWindow* aWin) {
+  MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
+          ("==> OnFullscreenWillBeEntered() for HWND %p; removing NonRudeHWND",
+           aWin->mWnd));
+
+  
+  
+  
+  ::RemovePropW(aWin->mWnd, L"NonRudeHWND");
 }
 
 void nsWindow::TaskbarConcealer::OnFullscreenChanged(nsWindow* aWin,
