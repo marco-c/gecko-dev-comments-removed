@@ -15,8 +15,10 @@
 #include <atomic>
 #include <math.h>
 #include <memory>
+#include <new>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <thread>
 
 #include "common.h"
@@ -67,4 +69,34 @@ TEST(cubeb, triple_buffer)
 
   buffer.invalidate();
   ASSERT_FALSE(buffer.updated());
+}
+
+
+
+
+
+TEST(cubeb, triple_buffer_read_before_write)
+{
+  struct AB {
+    uint64_t a;
+    uint64_t b;
+  };
+
+  alignas(triple_buffer<AB>) uint8_t mem[sizeof(triple_buffer<AB>)];
+  memset(mem, 0xab, sizeof(mem));
+  
+  
+  auto * buffer = new (mem) triple_buffer<AB>;
+
+  AB ab = buffer->read();
+  ASSERT_EQ(ab.a, 0u);
+  ASSERT_EQ(ab.b, 0u);
+
+  
+  buffer->invalidate();
+  ab = buffer->read();
+  ASSERT_EQ(ab.a, 0u);
+  ASSERT_EQ(ab.b, 0u);
+
+  buffer->~triple_buffer();
 }

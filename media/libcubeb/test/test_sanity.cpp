@@ -10,9 +10,13 @@
 #endif
 #include "cubeb/cubeb.h"
 #include <atomic>
+#include <chrono>
+#include <condition_variable>
 #include <math.h>
+#include <mutex>
 #include <stdio.h>
 #include <string.h>
+#include <thread>
 
 
 
@@ -686,6 +690,127 @@ TEST(cubeb, drain)
 
   got_drain = 0;
   do_drain = 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define ERRORING_CALLBACK_ITERATIONS 10
+#define ERRORING_CALLBACK_TIMEOUT_S 30
+
+static std::atomic<int> erroring_callback_count;
+
+static long
+test_erroring_data_callback(cubeb_stream * stm, void * user_ptr,
+                            const void * , void * outputbuffer,
+                            long nframes)
+{
+  EXPECT_TRUE(stm && user_ptr == &dummy && outputbuffer && nframes > 0);
+  erroring_callback_count++;
+  
+
+  return -1;
+}
+
+
+
+struct erroring_callback_state {
+  cubeb * ctx;
+  cubeb_stream_params params;
+  uint32_t latency;
+  std::mutex mutex;
+  std::condition_variable cond;
+  bool done = false;
+};
+
+static void
+start_stop_with_erroring_callback(erroring_callback_state * state)
+{
+  for (int i = 0; i < ERRORING_CALLBACK_ITERATIONS; ++i) {
+    cubeb_stream * stream = NULL;
+    int r = cubeb_stream_init(state->ctx, &stream, "test", NULL, NULL, NULL,
+                              &state->params, state->latency,
+                              test_erroring_data_callback, test_state_callback,
+                              &dummy);
+    if (r != CUBEB_OK || !stream) {
+      return;
+    }
+
+    erroring_callback_count = 0;
+    cubeb_stream_start(stream);
+
+    
+
+
+
+    if (i % 2) {
+      for (int j = 0; j < 100 && erroring_callback_count.load() == 0; ++j) {
+        delay(1);
+      }
+    }
+
+    cubeb_stream_stop(stream);
+    cubeb_stream_start(stream);
+    cubeb_stream_destroy(stream);
+  }
+}
+
+TEST(cubeb, stop_stream_with_erroring_callback)
+{
+  int r;
+  cubeb * ctx;
+
+  r = common_init(&ctx, "test_sanity");
+  ASSERT_EQ(r, CUBEB_OK);
+  ASSERT_NE(ctx, nullptr);
+
+  auto * state = new erroring_callback_state();
+  state->ctx = ctx;
+  state->params.format = STREAM_FORMAT;
+  state->params.rate = STREAM_RATE;
+  state->params.channels = STREAM_CHANNELS;
+  state->params.layout = STREAM_LAYOUT;
+  state->params.prefs = CUBEB_STREAM_PREF_NONE;
+  state->latency = STREAM_LATENCY;
+
+  std::thread([state] {
+    start_stop_with_erroring_callback(state);
+    cubeb_destroy(state->ctx);
+    {
+      std::lock_guard<std::mutex> lock(state->mutex);
+      state->done = true;
+      state->cond.notify_one();
+    }
+  }).detach();
+
+  bool done;
+  {
+    std::unique_lock<std::mutex> lock(state->mutex);
+    done = state->cond.wait_for(
+        lock, std::chrono::seconds(ERRORING_CALLBACK_TIMEOUT_S),
+        [state] { return state->done; });
+  }
+
+  
+
+  ASSERT_TRUE(done) << "cubeb_stream_start/stop did not return within "
+                    << ERRORING_CALLBACK_TIMEOUT_S
+                    << "s: the backend is likely waiting for a stream state "
+                       "that will never be reached.";
+  delete state;
 }
 
 TEST(cubeb, DISABLED_eos_during_prefill)

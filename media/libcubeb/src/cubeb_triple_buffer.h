@@ -71,7 +71,9 @@ private:
     }
     return was_updated;
   }
-  T storage[3];
+  
+  
+  T storage[3] = {};
   
   const uint8_t BACK_INDEX_MASK = 0b11;
   

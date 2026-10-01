@@ -58,7 +58,7 @@ PodZero(T * destination, size_t count)
   memset(destination, 0, count * sizeof(T));
 }
 
-namespace {
+namespace detail {
 template <typename T, typename Trait>
 void
 Copy(T * destination, const T * source, size_t count, Trait)
@@ -86,10 +86,10 @@ void
 Copy(T * destination, const T * source, size_t count)
 {
   assert(destination && source);
-  Copy(destination, source, count, typename std::is_trivial<T>::type());
+  detail::Copy(destination, source, count, typename std::is_trivial<T>::type());
 }
 
-namespace {
+namespace detail {
 template <typename T, typename Trait>
 void
 ConstructDefault(T * destination, size_t count, Trait)
@@ -116,7 +116,8 @@ void
 ConstructDefault(T * destination, size_t count)
 {
   assert(destination);
-  ConstructDefault(destination, count, typename std::is_arithmetic<T>::type());
+  detail::ConstructDefault(destination, count,
+                           typename std::is_arithmetic<T>::type());
 }
 
 template <typename T> class auto_array {
