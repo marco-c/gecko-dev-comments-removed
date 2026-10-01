@@ -10,11 +10,13 @@
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsContentUtils.h"
 #include "nsDirectoryServiceUtils.h"
+#include "nsEscape.h"
 #include "nsIFile.h"
 #include "nsIFileChannel.h"
 #include "nsIFileURL.h"
 #include "nsIMIMEService.h"
 #include "nsNetUtil.h"
+#include "nsTArray.h"
 #include "nsURLHelper.h"
 #include "prio.h"
 
@@ -92,10 +94,64 @@ RefPtr<RemoteStreamPromise> MozNewTabWallpaperProtocolHandler::NewStream(
       aChildURI, resolvedSpec, "image/jpeg"_ns);
 }
 
+
+
+
+
+static bool IsSafeComponent(const nsACString& aComponent) {
+  
+  return !aComponent.IsEmpty() && !aComponent.EqualsLiteral(".") &&
+         !aComponent.EqualsLiteral("..") &&
+         aComponent.FindChar('/') == kNotFound &&
+         aComponent.FindChar('\\') == kNotFound &&
+         aComponent.FindChar('\0') == kNotFound;
+}
+
+
+
+
+
+
+
+
+static bool SplitWallpaperPath(const nsACString& aPathname,
+                               nsTArray<nsCString>& aSegments) {
+  if (aPathname.IsEmpty() || aPathname.EqualsLiteral("/")) {
+    return true;
+  }
+
+  if (aPathname.First() != '/') {
+    return false;
+  }
+
+  
+  nsAutoCString path(Substring(aPathname, 1));
+
+  for (const nsACString& encoded : path.Split('/')) {
+    nsAutoCString segment(encoded);
+    NS_UnescapeURL(segment);
+
+    if (!IsSafeComponent(segment)) {
+      return false;
+    }
+
+    aSegments.AppendElement(segment);
+  }
+
+  return true;
+}
+
 bool MozNewTabWallpaperProtocolHandler::ResolveSpecialCases(
     const nsACString& aHost, const nsACString& aPath,
     const nsACString& aPathname, nsACString& aResult) {
-  if (aHost.IsEmpty()) {
+  
+  
+  if (!IsSafeComponent(aHost)) {
+    return false;
+  }
+
+  nsTArray<nsCString> segments;
+  if (!SplitWallpaperPath(aPathname, segments)) {
     return false;
   }
 
@@ -103,8 +159,12 @@ bool MozNewTabWallpaperProtocolHandler::ResolveSpecialCases(
     
     
     
+    
     aResult.Assign("file://");
     aResult.Append(aHost);
+    if (!segments.IsEmpty()) {
+      aResult.Append(aPathname);
+    }
     return true;
   } else {
     
@@ -123,6 +183,14 @@ bool MozNewTabWallpaperProtocolHandler::ResolveSpecialCases(
     rv = file->AppendNative(nsCString(aHost));
     if (NS_FAILED(rv)) {
       return false;
+    }
+
+    
+    for (const nsCString& segment : segments) {
+      rv = file->AppendNative(segment);
+      if (NS_FAILED(rv)) {
+        return false;
+      }
     }
 
     nsCOMPtr<nsIURI> uri;
