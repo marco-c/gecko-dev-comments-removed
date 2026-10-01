@@ -10072,8 +10072,17 @@ nsFrameState nsGridContainerFrame::ComputeSelfSubgridMasonryBits() const {
   nsFrameState bits = NS_FRAME_STATE_NONE;
   const auto* pos = StylePosition();
 
-  
-  if (pos->mGridTemplateRows.IsMasonry()) {
+  if (StyleDisplay()->DisplayInside() == StyleDisplayInside::GridLanes) {
+    
+    
+    
+    if (!pos->mGridTemplateRows.IsNone()) {
+      bits |= NS_STATE_GRID_IS_COL_MASONRY;
+    } else {
+      bits |= NS_STATE_GRID_IS_ROW_MASONRY;
+    }
+  } else if (pos->mGridTemplateRows.IsMasonry()) {
+    
     bits |= NS_STATE_GRID_IS_ROW_MASONRY;
   } else if (pos->mGridTemplateColumns.IsMasonry()) {
     bits |= NS_STATE_GRID_IS_COL_MASONRY;
