@@ -36,6 +36,12 @@ class RTC_EXPORT DatagramConnection : public RefCountInterface {
   enum class WireProtocol {
     kDtls,
     kDtlsSrtp,
+    
+    
+    
+    
+    
+    kDtlsWithFeedback,
   };
 
   using PacketId = uint32_t;
