@@ -73,11 +73,14 @@ async function sendMessage(ext, msg, data = undefined) {
   await ext.awaitMessage("done");
 }
 
-add_setup(() =>
+add_setup(() => {
   SpecialPowers.pushPrefEnv({
     set: [["layout.css.devPixelsPerPx", 1]],
-  })
-);
+  });
+  if (Services.prefs.getBoolPref("sidebar.revamp", false)) {
+    Services.prefs.setCharPref("sidebar.visibility", "always-show");
+  }
+});
 registerCleanupFunction(() => SpecialPowers.popPrefEnv());
 
 add_task(async function sidebar_initial_install() {
@@ -122,17 +125,6 @@ add_task(async function sidebar__install_closed() {
   tempExtData.manifest.sidebar_action.open_at_install = false;
   let extension = ExtensionTestUtils.loadExtension(tempExtData);
   await extension.startup();
-
-  if (Services.prefs.getBoolPref("sidebar.revamp", false)) {
-    
-    
-    await BrowserTestUtils.waitForMutationCondition(
-      SidebarController.sidebarMain,
-      { attributes: true, attributeFilter: ["hidden"] },
-      () => !SidebarController.sidebarMain.hidden,
-      { msg: `Sidebar launcher element should be un-hidden` }
-    );
-  }
 
   
   ok(sidebarBox.hidden, "sidebar box is hidden");

@@ -41,6 +41,15 @@ class TestLastUsedSidebarPanel(MarionetteTestCase):
         )
         return not hidden
 
+    def is_launcher_visible(self):
+        hidden = self.marionette.execute_script(
+            """
+            const window = BrowserWindowTracker.getTopWindow();
+            return window.document.getElementById("sidebar-container").hidden;
+            """
+        )
+        return not hidden
+
     def get_current_sidebar_id(self):
         return self.marionette.execute_script(
             """
@@ -49,9 +58,15 @@ class TestLastUsedSidebarPanel(MarionetteTestCase):
             """
         )
 
-    def test_panel_reopened_legacy(self):
+    def test_panel_reopened(self):
+        
+        
+        
         self.assertFalse(
             self.is_sidebar_panel_visible(), "The sidebar panel is not initially shown"
+        )
+        self.assertFalse(
+            self.is_launcher_visible(), "The sidebar launcher is not initially shown"
         )
         self.assertFalse(
             self.get_current_sidebar_id(), "The sidebar panel has no current ID"
@@ -71,8 +86,21 @@ class TestLastUsedSidebarPanel(MarionetteTestCase):
         )
 
         
+        
         self.click_toolbar_button()
 
+        self.assertTrue(self.is_launcher_visible(), "The sidebar launcher is now shown")
+        self.assertTrue(
+            self.is_sidebar_panel_visible(), "The sidebar panel is still open"
+        )
+
+        
+        
+        self.click_toolbar_button()
+
+        self.assertFalse(
+            self.is_launcher_visible(), "The sidebar launcher is hidden again"
+        )
         self.assertFalse(
             self.is_sidebar_panel_visible(), "The sidebar panel is now closed"
         )
@@ -83,6 +111,11 @@ class TestLastUsedSidebarPanel(MarionetteTestCase):
         self.assertFalse(
             self.is_sidebar_panel_visible(), "The sidebar panel is initially closed"
         )
+        self.assertFalse(
+            self.is_launcher_visible(), "The sidebar launcher is initially hidden"
+        )
+        
+        
         self.click_toolbar_button()
 
         Wait(self.marionette).until(
