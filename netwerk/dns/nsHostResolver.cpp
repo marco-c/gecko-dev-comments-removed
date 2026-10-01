@@ -13,6 +13,7 @@
 
 #include <stdlib.h>
 
+#include <algorithm>
 #include <ctime>
 
 #include "GetAddrInfo.h"
@@ -633,6 +634,21 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
             glean::dns::lookup_method.AccumulateSingleSample(
                 METHOD_NETWORK_FIRST);
           }
+          
+          
+          
+          
+          
+          
+          
+          
+          nsLiteralCString missReason =
+              rec->mValidStart.IsNull() ? "absent"_ns
+              : (rec->CheckExpiration(now) == nsHostRecord::EXP_EXPIRED)
+                  ? "expired"_ns
+                  : "refresh"_ns;
+          glean::dns::cache_miss_reason.Get(RecordFamilyLabel(rec), missReason)
+              .Add(1);
           if (NS_FAILED(rv) && callback->isInList()) {
             callback->remove();
           } else {
@@ -1339,12 +1355,9 @@ static bool different_rrset(AddrInfo* rrset1, AddrInfo* rrset2) {
     return true;
   }
 
-  nsTArray<NetAddr> orderedSet1 = rrset1->Addresses().Clone();
-  nsTArray<NetAddr> orderedSet2 = rrset2->Addresses().Clone();
-  orderedSet1.Sort();
-  orderedSet2.Sort();
-
-  bool eq = orderedSet1 == orderedSet2;
+  bool eq = std::is_permutation(
+      rrset1->Addresses().begin(), rrset1->Addresses().end(),
+      rrset2->Addresses().begin(), rrset2->Addresses().end());
   if (!eq) {
     LOG(("different_rrset true due to content change\n"));
   } else {
