@@ -6,6 +6,7 @@
 #define js_loader_LoadedScript_h
 
 #include "mozilla/dom/SRIMetadata.h"  
+#include "mozilla/Encoding.h" 
 #include "mozilla/Maybe.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/MemoryReporting.h"
@@ -409,10 +410,14 @@ class LoadedScript final : public nsISupports {
     return mSerializedStencilOffset;
   }
 
+  static constexpr size_t EncodingHeaderSize = 16;
+
   void SetAlignedSRILength(size_t aAlignedSRILength) {
     MOZ_ASSERT(CanHaveSRIOnly() || CanHaveSRIAndSerializedStencil());
     MOZ_ASSERT(JS::IsTranscodingBytecodeOffsetAligned(aAlignedSRILength));
-    mSerializedStencilOffset = aAlignedSRILength;
+    static_assert(ENCODING_NAME_MAX_LENGTH < EncodingHeaderSize,
+                  "The encoding name should fit the fixed-length header");
+    mSerializedStencilOffset = aAlignedSRILength + EncodingHeaderSize;
   }
 
   bool HasNoSRIOrSRIAndSerializedStencil() const {
@@ -592,6 +597,13 @@ class LoadedScript final : public nsISupports {
   
   
   
+  
+  
+  
+  
+  
+  
+  
   TranscodeBuffer mSRIAndSerializedStencil;
 
   
@@ -604,6 +616,11 @@ class LoadedScript final : public nsISupports {
   
   
   nsCOMPtr<nsICacheEntryWriteHandle> mCacheEntry;
+
+  
+  
+  
+  const mozilla::Encoding* mClassicScriptEncoding = nullptr;
 };
 
 
