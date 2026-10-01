@@ -101,6 +101,11 @@ class APZCCallbackHelper {
   static void InitializeRootDisplayport(nsIFrame* aFrame);
 
   
+
+
+  static void EnsureDisplayportSizeOnPopupRoot(nsIFrame* aFrame);
+
+  
   static nsPresContext* GetPresContextForContent(nsIContent* aContent);
 
   

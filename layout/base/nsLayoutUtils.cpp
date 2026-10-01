@@ -3116,10 +3116,9 @@ void nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
   
   
   if (aFrame->IsMenuPopupFrame() &&
-      nsLayoutUtils::AsyncPanZoomEnabled(aFrame) &&
-      !DisplayPortUtils::HasDisplayPort(aFrame->GetContent())) {
+      nsLayoutUtils::AsyncPanZoomEnabled(aFrame)) {
     MOZ_ASSERT(XRE_IsParentProcess());
-    APZCCallbackHelper::InitializeRootDisplayport(aFrame);
+    APZCCallbackHelper::EnsureDisplayportSizeOnPopupRoot(aFrame);
   }
 
   nsRegion visibleRegion;
