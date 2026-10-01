@@ -65,6 +65,18 @@ class ServoComputedData {
   
   explicit ServoComputedData(const ServoComputedDataForgotten aValue);
 
+  
+  
+  
+  
+  
+  
+  
+  ServoComputedData& operator=(const ServoComputedData&) = delete;
+  ServoComputedData(const ServoComputedData&) = delete;
+  ServoComputedData&& operator=(const ServoComputedData&&) = delete;
+  ServoComputedData(const ServoComputedData&&) = delete;
+
 #define SERVO_STYLE_STRUCT_ACCESSOR(name_)                        \
   const nsStyle##name_* name_;                                    \
   const nsStyle##name_* Style##name_() const MOZ_NONNULL_RETURN { \
@@ -105,18 +117,6 @@ class ServoComputedData {
   mozilla::StyleZoom effective_zoom;
   
   mozilla::StyleComputedValueFlags flags;
-
-  
-  
-  
-  
-  
-  
-  
-  ServoComputedData& operator=(const ServoComputedData&) = delete;
-  ServoComputedData(const ServoComputedData&) = delete;
-  ServoComputedData&& operator=(const ServoComputedData&&) = delete;
-  ServoComputedData(const ServoComputedData&&) = delete;
 };
 
 #endif  

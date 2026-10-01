@@ -13,6 +13,10 @@
 #ifndef NSDISPLAYITEMTYPES_H_
 #define NSDISPLAYITEMTYPES_H_
 
+#include <cstdint>
+
+#include "nsDebug.h"
+
 enum class DisplayItemType : uint8_t {
   TYPE_ZERO = 0, 
 

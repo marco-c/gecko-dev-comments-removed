@@ -134,6 +134,11 @@ class FrameProperties {
   }
 
   
+  
+  FrameProperties(const FrameProperties&) = delete;
+  FrameProperties& operator=(const FrameProperties&) = delete;
+
+  
 
 
   bool IsEmpty() const { return mProperties.IsEmpty(); }
@@ -264,11 +269,6 @@ class FrameProperties {
   }
 
  private:
-  
-  
-  FrameProperties(const FrameProperties&) = delete;
-  FrameProperties& operator=(const FrameProperties&) = delete;
-
   inline void SetInternal(UntypedDescriptor aProperty, uint64_t aValue,
                           const nsIFrame* aFrame);
 

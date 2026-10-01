@@ -743,6 +743,9 @@ class LogicalPoint {
   }
 
   
+  LogicalPoint() = delete;
+
+  
 
 
   nscoord I(WritingMode aWritingMode) const  
@@ -924,9 +927,6 @@ class LogicalPoint {
 #endif
 
   
-  LogicalPoint() = delete;
-
-  
   
   
   nscoord I() const  
@@ -992,6 +992,8 @@ class LogicalSize {
       BSize() = aPhysicalSize.height;
     }
   }
+
+  LogicalSize() = delete;
 
   void SizeTo(WritingMode aWritingMode, nscoord aISize, nscoord aBSize) {
     CHECK_WRITING_MODE(aWritingMode);
@@ -1118,8 +1120,6 @@ class LogicalSize {
 
  private:
   friend class LogicalRect;
-
-  LogicalSize() = delete;
 
 #ifdef DEBUG
   WritingMode GetWritingMode() const { return mWritingMode; }
@@ -1269,6 +1269,8 @@ class LogicalMargin {
       }
     }
   }
+
+  LogicalMargin() = delete;
 
   nscoord IStart(WritingMode aWritingMode) const  
   {
@@ -1535,8 +1537,6 @@ class LogicalMargin {
  private:
   friend class LogicalRect;
 
-  LogicalMargin() = delete;
-
 #ifdef DEBUG
   WritingMode GetWritingMode() const { return mWritingMode; }
 #else
@@ -1658,6 +1658,8 @@ class LogicalRect {
       mBSize = aRect.Height();
     }
   }
+
+  LogicalRect() = delete;
 
   
 
@@ -2036,8 +2038,6 @@ class LogicalRect {
   }
 
  private:
-  LogicalRect() = delete;
-
 #ifdef DEBUG
   WritingMode GetWritingMode() const { return mWritingMode; }
 #else

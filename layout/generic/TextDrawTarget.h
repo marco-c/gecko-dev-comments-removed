@@ -179,7 +179,7 @@ class TextDrawTarget : public DrawTarget {
         aBuffer.mNumGlyphs);
     
     
-    typedef std::remove_reference<decltype(aBuffer.mGlyphs[0])>::type GlyphType;
+    typedef std::remove_reference_t<decltype(aBuffer.mGlyphs[0])> GlyphType;
     
     
     static_assert(
@@ -196,10 +196,10 @@ class TextDrawTarget : public DrawTarget {
                 offsetof(decltype(glyphs[0].point), x) &&
             offsetof(decltype(aBuffer.mGlyphs[0].mPosition), y) ==
                 offsetof(decltype(glyphs[0].point), y) &&
-            std::is_standard_layout<
-                std::remove_reference<decltype(aBuffer.mGlyphs[0])>>::value &&
-            std::is_standard_layout<
-                std::remove_reference<decltype(glyphs[0])>>::value &&
+            std::is_standard_layout_v<
+                std::remove_reference<decltype(aBuffer.mGlyphs[0])>> &&
+            std::is_standard_layout_v<
+                std::remove_reference<decltype(glyphs[0])>> &&
             sizeof(aBuffer.mGlyphs[0]) == sizeof(glyphs[0]) &&
             sizeof(aBuffer.mGlyphs[0].mPosition) == sizeof(glyphs[0].point),
         "glyph buf types don't match");
