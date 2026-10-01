@@ -2,18 +2,42 @@
 
 
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
+use std::sync::LazyLock;
 
 
+pub static TOPOBJDIR: LazyLock<PathBuf> = LazyLock::new(|| env_path("MOZ_TOPOBJDIR"));
 
-#[inline(always)]
-const fn const_path(s: &'static str) -> &'static std::path::Path {
-    unsafe { &*(s as *const str as *const std::path::Path) }
+pub static TOPSRCDIR: LazyLock<PathBuf> = LazyLock::new(|| env_path("MOZ_TOPSRCDIR"));
+
+fn env_path(var: &str) -> PathBuf {
+    std::env::var_os(var)
+        .unwrap_or_else(|| panic!("{} is not set", var))
+        .into()
 }
 
-pub const TOPOBJDIR: &Path = const_path(config::TOPOBJDIR);
 
-pub const TOPSRCDIR: &Path = const_path(config::TOPSRCDIR);
+pub struct Flags(LazyLock<Vec<&'static str>>);
+
+impl Flags {
+    pub const fn new(f: fn() -> Vec<&'static str>) -> Self {
+        Flags(LazyLock::new(f))
+    }
+}
+
+impl<'a> IntoIterator for &'a Flags {
+    type Item = &'a &'static str;
+    type IntoIter = std::slice::Iter<'a, &'static str>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
+    }
+}
+
+
+pub(crate) fn objdir_flag(prefix: &str, suffix: &str) -> &'static str {
+    format!("{prefix}{}{suffix}", TOPOBJDIR.display()).leak()
+}
 
 pub mod config {
     include!(env!("BUILDCONFIG_RS"));
@@ -23,7 +47,7 @@ pub mod config {
 
 
 pub fn link_nss() {
-    let dist = PathBuf::from(TOPOBJDIR).join("dist");
+    let dist = TOPOBJDIR.join("dist");
     println!(
         "cargo:rustc-link-search=native={}",
         dist.join("bin").display()
@@ -46,14 +70,14 @@ pub fn link_nss() {
 
 pub fn link_nss_rustlib() {
     link_nss();
-    let dist_lib = PathBuf::from(TOPOBJDIR).join("dist").join("lib");
+    let dist_lib = TOPOBJDIR.join("dist").join("lib");
     println!("cargo:rustc-link-search=native={}", dist_lib.display());
     println!("cargo:rustc-link-lib=static=mozpkix");
     println!("cargo:rustc-link-lib=static=pure_virtual");
 }
 
 pub fn link_sqlite() {
-    let dist = PathBuf::from(TOPOBJDIR).join("dist");
+    let dist = TOPOBJDIR.join("dist");
     println!(
         "cargo:rustc-link-search=native={}",
         dist.join("bin").display()
