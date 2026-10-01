@@ -125,6 +125,7 @@ function watchUnlockState(emitChange) {
 document.addEventListener("paneshown", event => {
   if (event.detail?.category === "paneBrowserIcon") {
     refreshUnlockState();
+    lazy.CustomIconManager.refreshTaskbarButtons();
   }
 });
 
@@ -313,7 +314,7 @@ SettingGroupManager.registerGroups({
     ],
   },
   browserIconBonus: {
-    l10nId: "appearance-browser-icon-bonus-group",
+    l10nId: "appearance-browser-icon-bonus-group2",
     headingLevel: 2,
     items: [
       {
