@@ -32,6 +32,10 @@ use std::mem;
 use std::os::windows::ffi::OsStringExt;
 use std::ptr;
 use std::result;
+use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::mpsc;
+use std::thread;
+use std::time::Duration;
 
 use comedy::com::{create_instance_local_server, CoTaskMem, ComRef, INIT_MTA};
 use comedy::error::{HResult, ResultExt};
@@ -40,7 +44,7 @@ use filetime_win::FileTime;
 use guid_win::Guid;
 use winapi::shared::minwindef::DWORD;
 use winapi::shared::ntdef::{HRESULT, LANGIDFROMLCID, ULONG};
-use winapi::shared::winerror::S_FALSE;
+use winapi::shared::winerror::{HRESULT_FROM_WIN32, S_FALSE};
 use winapi::um::bits::{
     IBackgroundCopyError, IBackgroundCopyFile, IBackgroundCopyJob, IBackgroundCopyManager,
     IEnumBackgroundCopyFiles, IEnumBackgroundCopyJobs, BG_JOB_PRIORITY, BG_JOB_PRIORITY_FOREGROUND,
@@ -63,6 +67,12 @@ pub use status::{
 use wide::ToWideNull;
 
 pub use winapi::shared::winerror::E_FAIL;
+
+
+
+pub const E_BCM_CONNECT_TIMEOUT: HRESULT = 0xA004_0201_u32 as HRESULT;
+
+pub const E_BCM_CONNECT_STUCK: HRESULT = 0xA004_0202_u32 as HRESULT;
 
 #[repr(u32)]
 #[derive(Copy, Clone, Debug)]
@@ -89,6 +99,24 @@ type Result<T> = result::Result<T, HResult>;
 
 pub struct BackgroundCopyManager(ComRef<IBackgroundCopyManager>);
 
+fn ensure_mta() -> Result<()> {
+    INIT_MTA.with(|com| match com {
+        Err(e) => Err(e.clone()),
+        Ok(_) => Ok(()),
+    })
+}
+
+
+
+static STUCK_ACTIVATIONS: AtomicU32 = AtomicU32::new(0);
+const MAX_STUCK_ACTIVATIONS: u32 = 2;
+
+unsafe fn manager_from_address(address: usize) -> BackgroundCopyManager {
+    BackgroundCopyManager(ComRef::from_raw(ptr::NonNull::new_unchecked(
+        address as *mut IBackgroundCopyManager,
+    )))
+}
+
 impl BackgroundCopyManager {
     
     
@@ -103,13 +131,11 @@ impl BackgroundCopyManager {
     
     
     pub fn connect() -> Result<BackgroundCopyManager> {
-        INIT_MTA.with(|com| {
-            if let Err(e) = com {
-                return Err(e.clone());
-            }
-            Ok(())
-        })?;
+        ensure_mta()?;
 
+        
+        
+        
         
         
         
@@ -121,6 +147,69 @@ impl BackgroundCopyManager {
             winapi::um::bits::BackgroundCopyManager,
             IBackgroundCopyManager,
         >()?))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn connect_with_timeout(timeout: Duration) -> Result<BackgroundCopyManager> {
+        ensure_mta()?;
+
+        if STUCK_ACTIVATIONS.load(Ordering::Acquire) >= MAX_STUCK_ACTIVATIONS {
+            return Err(HResult::new(E_BCM_CONNECT_STUCK).function("connect_with_timeout"));
+        }
+
+        let (sender, receiver) = mpsc::sync_channel(0);
+        let spawned = thread::Builder::new()
+            .name("BitsConnect".into())
+            .spawn(move || {
+                
+                let result = ensure_mta()
+                    .and_then(|_| {
+                        create_instance_local_server::<
+                            winapi::um::bits::BackgroundCopyManager,
+                            IBackgroundCopyManager,
+                        >()
+                    })
+                    .map(|bcm| bcm.into_raw().as_ptr() as usize);
+                
+                
+                
+                if let Err(mpsc::SendError(result)) = sender.send(result) {
+                    if let Ok(address) = result {
+                        drop(unsafe { manager_from_address(address) });
+                    }
+                    STUCK_ACTIVATIONS.fetch_sub(1, Ordering::AcqRel);
+                }
+            });
+        if let Err(e) = spawned {
+            let code = e
+                .raw_os_error()
+                .map(|code| HRESULT_FROM_WIN32(code as u32))
+                .unwrap_or(E_FAIL);
+            return Err(HResult::new(code).function("thread::Builder::spawn"));
+        }
+
+        match receiver.recv_timeout(timeout) {
+            Ok(Ok(address)) => Ok(unsafe { manager_from_address(address) }),
+            Ok(Err(e)) => Err(e),
+            Err(mpsc::RecvTimeoutError::Timeout) => {
+                STUCK_ACTIVATIONS.fetch_add(1, Ordering::AcqRel);
+                Err(HResult::new(E_BCM_CONNECT_TIMEOUT).function("CoCreateInstance"))
+            }
+            Err(mpsc::RecvTimeoutError::Disconnected) => {
+                Err(HResult::new(E_FAIL).function("connect_with_timeout"))
+            }
+        }
     }
 
     
