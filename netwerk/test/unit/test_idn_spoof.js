@@ -110,7 +110,6 @@ let testCases = [
   
   
   
-  ["xn--dfe0tte.ca", "\u1456\u14c2\u14ef.ca", kUnsafe],
   
   ["xn--4ljxa2bb4a6bxb.ma", "\u2d5c\u2d49\u2d3c\u2d49\u2d4f\u2d30\u2d56.ma", kUnsafe],
   
@@ -606,6 +605,17 @@ let testCases = [
   ["xn--sn8a.com", "\ua50b.com", kUnsafe],
   
   ["xn--58db0a9q.com", "\u13df\u13aa\u13a1\u13a0.com", kUnsafe],
+
+  
+  
+  ["xn--9tfky.id", "\u1B29\u1B2E\u1B36.id", kSafe],
+  
+  ["xn--dfe0tte.ca", "\u1456\u14c2\u14ef.ca", kSafe],
+  
+  ["xn--wl9ajab7b7cvf.id", "\uA997\uA992\uA9A2\uA9C0\uA997\uA9AE.id", kSafe],
+  
+  ["xn--qsbf0b.com", "\u07D2\u07DE\u07CF.com", kSafe],
+
   
   
   ["xn--5ya.com", "\u03e7.com", kUnsafe],
@@ -725,7 +735,6 @@ let testCases = [
   ["xn--ab-cob.com", "a\u02bcb.com", kUnsafe],
   
   ["xn--ab-jom.com", "a\u144ab.com", kUnsafe],
-  ["xn--xcec9s.com", "\u1401\u144a\u1402.com", kUnsafe],
 
   
   
