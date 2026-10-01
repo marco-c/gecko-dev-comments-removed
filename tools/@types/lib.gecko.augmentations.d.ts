@@ -13,6 +13,7 @@ declare global {
   const MozElements: Readonly<{
     MozElementMixin<T extends MozElementBase>(base: T): T;
     TabsBase: typeof TabsBase;
+    MozTab: typeof MozTab;
   }>;
 
   class MozXULElement extends XULElement implements MozElementBase {
@@ -31,8 +32,7 @@ declare global {
     selectedIndex: number;
     
     
-    
-    findNextTab<T extends Element>(
+    findNextTab<T extends MozTab>(
       startTab: T,
       opts?: {
         direction?: number;
@@ -41,6 +41,14 @@ declare global {
         filter?: (tab: T) => boolean;
       }
     ): T | null;
+  }
+
+  
+  
+  
+  class MozTab extends MozXULElement {
+    readonly selected: boolean;
+    linkedPanel: string;
   }
 
   type MozBrowser =
