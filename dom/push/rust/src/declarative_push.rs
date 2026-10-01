@@ -4,6 +4,7 @@
 
 use nsstring::nsString;
 use serde::{Deserialize, Deserializer};
+use thin_vec::ThinVec;
 
 #[derive(Clone, Copy, Deserialize, Default)]
 #[repr(u8)]
@@ -19,23 +20,33 @@ pub enum DeclarativePushDir {
 
 
 
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum Forgiving<T> {
+    Ok(T),
+    #[allow(dead_code)]
+    WrongType(serde_json::Value),
+}
+
+
+
 
 
 fn forgiving_deserialize<'a, T: Deserialize<'a> + Default, D: Deserializer<'a>>(
     deserializer: D,
 ) -> Result<T, D::Error> {
-    #[derive(Deserialize)]
-    #[serde(untagged)]
-    enum Forgiving<T> {
-        Ok(T),
-        #[allow(dead_code)]
-        WrongType(serde_json::Value),
-    }
     let result: Forgiving<T> = Deserialize::deserialize(deserializer)?;
     Ok(match result {
         Forgiving::Ok(value) => value,
         _ => T::default(),
     })
+}
+
+#[repr(C)]
+pub struct DeclarativePushAction {
+    action: nsString,
+    title: nsString,
+    navigate: nsString,
 }
 
 #[repr(C)]
@@ -46,9 +57,27 @@ pub struct DeclarativePushData {
     body: nsString,
     icon: nsString,
     tag: nsString,
+    actions: ThinVec<DeclarativePushAction>,
     dir: DeclarativePushDir,
     silent: bool,
     require_interaction: bool,
+}
+
+#[derive(Deserialize)]
+struct ActionJSON {
+    action: String,
+    title: String,
+    navigate: String,
+}
+
+impl ActionJSON {
+    fn to_ffi(self) -> DeclarativePushAction {
+        DeclarativePushAction {
+            action: nsString::from(&self.action),
+            title: nsString::from(&self.title),
+            navigate: nsString::from(&self.navigate),
+        }
+    }
 }
 
 
@@ -71,6 +100,8 @@ struct NotificationJSON {
     silent: bool,
     #[serde(default, deserialize_with = "forgiving_deserialize")]
     requireInteraction: bool,
+    #[serde(default, deserialize_with = "forgiving_deserialize")]
+    actions: Vec<Forgiving<ActionJSON>>,
 }
 
 
@@ -101,6 +132,21 @@ fn parse_declarative_push_option(data: &[u8]) -> Option<DeclarativePushData> {
         tag: nsString::from(&notification.tag),
         silent: notification.silent,
         require_interaction: notification.requireInteraction,
+        
+        
+        
+        
+        
+        
+        
+        actions: notification
+            .actions
+            .into_iter()
+            .filter_map(|action| match action {
+                Forgiving::Ok(value) => Some(value.to_ffi()),
+                Forgiving::WrongType(_) => None,
+            })
+            .collect(),
     })
 }
 
