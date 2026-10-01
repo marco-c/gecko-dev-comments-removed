@@ -291,6 +291,7 @@ class nsDocShell final : public nsDocLoader,
   
   
   
+  MOZ_CAN_RUN_SCRIPT
   nsresult ForceRefreshURIFromTimer(nsIURI* aURI, nsIPrincipal* aPrincipal,
                                     uint32_t aDelay, nsITimer* aTimer);
 
@@ -978,11 +979,12 @@ class nsDocShell final : public nsDocLoader,
       nsDocShellLoadState* aLoadState,
       mozilla::Maybe<mozilla::dom::UserNavigationInvolvement> aUserInvolvement);
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult LoadHistoryEntry(
       const mozilla::dom::LoadingSessionHistoryInfo& aEntry, uint32_t aLoadType,
       bool aUserActivation, bool aNotifiedBeforeUnloadListeners,
       bool aIsResumingInterceptedNavigation);
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  MOZ_CAN_RUN_SCRIPT
   nsresult LoadHistoryEntry(nsDocShellLoadState* aLoadState, uint32_t aLoadType,
                             bool aLoadingCurrentEntry);
   nsresult GetHttpChannel(nsIChannel* aChannel, nsIHttpChannel** aReturn);
@@ -1011,6 +1013,7 @@ class nsDocShell final : public nsDocLoader,
 
   
   
+  MOZ_CAN_RUN_SCRIPT
   nsresult PerformRetargeting(nsDocShellLoadState* aLoadState);
 
   
@@ -1063,6 +1066,7 @@ class nsDocShell final : public nsDocLoader,
   
   nsresult CheckDisallowedJavascriptLoad(nsDocShellLoadState* aLoadState);
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult LoadURI(nsDocShellLoadState* aLoadState, bool aSetNavigating,
                    bool aContinueHandlingSubframeHistory);
 
