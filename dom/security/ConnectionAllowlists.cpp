@@ -9,9 +9,15 @@
 
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_security.h"
+#include "mozilla/dom/ConnectionAllowlistViolationReportBody.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/ReportingUtils.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/net/SFV.h"
 #include "mozilla/net/URLPatternGlue.h"
+#include "nsGlobalWindowInner.h"
+#include "nsIGlobalObject.h"
+#include "nsILoadInfo.h"
 #include "nsNetUtil.h"
 #include "nsScriptSecurityManager.h"
 #include "nsString.h"
@@ -230,7 +236,7 @@ bool ConnectionAllowlists::ShouldBlockURL(nsIURI* aURI,
 
     
     
-    
+    ReportViolation(AsVariant(aURI), aLoadInfo, *allowlist);
 
     
     if (allowlist->mDisposition == Disposition::Enforce) {
@@ -241,6 +247,70 @@ bool ConnectionAllowlists::ShouldBlockURL(nsIURI* aURI,
 
   
   return false;
+}
+
+
+
+void ConnectionAllowlists::ReportViolation(
+    const Variant<nsIURI*, nsCString>& aResource, nsILoadInfo* aLoadInfo,
+    const Allowlist& aAllowlist) {
+  
+  if (aAllowlist.mReportingEndpoint.IsEmpty()) {
+    return;
+  }
+
+  
+  
+  
+  RefPtr<nsGlobalWindowInner> window =
+      nsGlobalWindowInner::GetInnerWindowWithId(aLoadInfo->GetInnerWindowID());
+  if (!window) {
+    LOG("Not reporting a violation, no global for the load.");
+    return;
+  }
+
+  Document* doc = window->GetExtantDoc();
+  if (NS_WARN_IF(!doc) || NS_WARN_IF(!doc->GetDocumentURI())) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  nsAutoCString url;
+  ReportingUtils::StripURL(doc->GetDocumentURI(), url);
+
+  
+  
+  
+  nsAutoCString connection;
+  if (aResource.is<nsIURI*>()) {
+    nsCOMPtr<nsIURI> uri = aResource.as<nsIURI*>();
+    ReportingUtils::StripURL(uri, connection);
+  } else {
+    connection = aResource.as<nsCString>();
+  }
+
+  
+  
+  
+  
+  
+  
+  RefPtr<ConnectionAllowlistViolationReportBody> violation =
+      new ConnectionAllowlistViolationReportBody(
+          window, url, connection, aAllowlist.mSerializedPatterns.Clone(),
+          aAllowlist.mDisposition == Disposition::Enforce
+              ? ConnectionAllowlistDisposition::Enforce
+              : ConnectionAllowlistDisposition::Report);
+
+  
+  
+  
+  ReportingUtils::Report(window, nsGkAtoms::connection_allowlist,
+                         aAllowlist.mReportingEndpoint, url, violation);
 }
 
 void ConnectionAllowlists::Allowlist::ToEntryArgs(
