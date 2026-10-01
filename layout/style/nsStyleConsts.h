@@ -92,12 +92,6 @@ enum class StyleGeometryBox : uint8_t {
 };
 
 
-enum class StyleFloatEdge : uint8_t {
-  ContentBox,
-  MarginBox,
-};
-
-
 enum class StyleHyphens : uint8_t {
   None,
   Manual,

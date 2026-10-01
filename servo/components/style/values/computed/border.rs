@@ -26,6 +26,7 @@ use thin_vec::ThinVec;
 
 pub use crate::values::specified::border::BorderImageRepeat;
 pub use crate::values::specified::border::BoxDecorationBreak;
+pub use crate::values::specified::border::FloatEdge;
 
 
 pub type LineWidth = Au;
