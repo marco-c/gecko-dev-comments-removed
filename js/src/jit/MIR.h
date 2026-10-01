@@ -4105,6 +4105,7 @@ class MBitOr : public MBinaryBitwiseInstruction {
   INSTRUCTION_HEADER(BitOr)
   TRIVIAL_NEW_WRAPPERS
 
+  MDefinition* foldsTo(TempAllocator& alloc) override;
   MDefinition* foldIfZero(size_t operand) override {
     return getOperand(1 -
                       operand);  
