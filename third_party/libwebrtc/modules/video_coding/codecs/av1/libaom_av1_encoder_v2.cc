@@ -10,6 +10,7 @@
 
 #include "modules/video_coding/codecs/av1/libaom_av1_encoder_v2.h"
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -70,7 +71,8 @@ using aom_img_ptr = std::unique_ptr<aom_image_t, decltype(&aom_img_free)>;
 
 namespace {
 
-constexpr int kMaxQp = 63;
+constexpr int kMaxQuantizer = 63;
+constexpr int kMaxQp = 255;
 constexpr int kNumBuffers = 8;
 constexpr int kMaxReferences = 3;
 constexpr int kMinEffortLevel = -2;  
@@ -514,7 +516,7 @@ aom_svc_params_t GetSvcParams(
             
             
             
-            max_quantizers_view[flat_layer_id] = kMaxQp;
+            max_quantizers_view[flat_layer_id] = kMaxQuantizer;
             min_quantizers_view[flat_layer_id] = 0;
           } else if constexpr (std::is_same_v<T, Cqp>) {
             
@@ -527,10 +529,21 @@ aom_svc_params_t GetSvcParams(
             layer_target_bitrate_view[last_temporal_layer_in_spatial_layer_id] =
                 1;
             layer_target_bitrate_view[flat_layer_id] = 1;
-            max_quantizers_view[flat_layer_id] = arg.target_qp;
-            min_quantizers_view[flat_layer_id] = arg.target_qp;
-            RTC_LOG(LS_VERBOSE) << __FUNCTION__ << " svc_params.qp["
-                                << flat_layer_id << "]=" << arg.target_qp;
+            
+            
+            
+            
+            
+            int target_qp =
+                (arg.target_qp > 0 && arg.target_qp < 4) ? 4 : arg.target_qp;
+            int quantizer = std::clamp(target_qp / 4, 0, kMaxQuantizer);
+            max_quantizers_view[flat_layer_id] = quantizer;
+            min_quantizers_view[flat_layer_id] = quantizer;
+            
+            
+            RTC_LOG(LS_WARNING)
+                << __FUNCTION__ << " svc_params.qp[" << flat_layer_id
+                << "]=" << arg.target_qp << " (quantizer=" << quantizer << ")";
           }
         },
         settings.rate_options());
@@ -860,7 +873,7 @@ void LibaomAv1EncoderV2::Encode(
     while (const aom_codec_cx_pkt_t* pkt =
                aom_codec_get_cx_data(&ctx_, &iter)) {
       if (pkt->kind == AOM_CODEC_CX_FRAME_PKT && pkt->data.frame.sz > 0) {
-        SET_OR_RETURN(AOME_GET_LAST_QUANTIZER_64, &result.encoded_qp);
+        SET_OR_RETURN(AOME_GET_LAST_QUANTIZER, &result.encoded_qp);
         result.frame_type = pkt->data.frame.flags & AOM_FRAME_IS_KEY
                                 ? VideoEncoderInterface::FrameType::kKeyframe
                                 : VideoEncoderInterface::FrameType::kDeltaFrame;

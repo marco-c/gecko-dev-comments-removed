@@ -11,35 +11,13 @@
 #ifndef VIDEO_CORRUPTION_DETECTION_EVALUATION_QP_PARSER_H_
 #define VIDEO_CORRUPTION_DETECTION_EVALUATION_QP_PARSER_H_
 
-#include <cstddef>
-#include <cstdint>
-#include <memory>
-#include <optional>
-#include <span>
-
-#include "api/video/video_codec_type.h"
-#include "modules/video_coding/utility/av1_qp_parser.h"
-#include "modules/video_coding/utility/qp_parser.h"
+#include "test/qp_parser_for_test.h"
 
 namespace webrtc {
 
 
-
-
-class GenericQpParser {
- public:
-  GenericQpParser();
-  ~GenericQpParser();
-
-  std::optional<uint32_t> Parse(VideoCodecType codec_type,
-                                size_t spatial_idx,
-                                std::span<const uint8_t> frame_data,
-                                int operating_point = 0);
-
- private:
-  std::unique_ptr<Av1QpParser> av1_parser_;
-  QpParser non_av1_parsers_;
-};
+using GenericQpParser [[deprecated("Use QpParserForTest instead.")]] =
+    QpParserForTest;
 
 }  
 

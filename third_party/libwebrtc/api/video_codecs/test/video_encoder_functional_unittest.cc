@@ -86,16 +86,6 @@ using StaticEncoderSettings =
     VideoEncoderFactoryInterface::StaticEncoderSettings;
 using FrameEncodeSettings = VideoEncoderInterface::FrameEncodeSettings;
 
-constexpr Resolution kDefaultResolution = {.width = 640, .height = 360};
-
-inline Resolution GetResolution(const VideoFrame& frame) {
-  return {.width = frame.width(), .height = frame.height()};
-}
-
-MATCHER(HasBitstreamAndMetaData, "") {
-  return !arg.bitstream.empty() && std::holds_alternative<EncodedData>(arg.res);
-}
-
 
 
 Resolution Scale(Resolution resolution, Rational factor, int alignment = 1) {
