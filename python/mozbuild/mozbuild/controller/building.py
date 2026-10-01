@@ -1487,22 +1487,6 @@ class BuildDriver(MozbuildObject):
                     if make_dir is None and make_target is None:
                         return 1
 
-                    if (
-                        config.is_artifact_build
-                        and target.startswith("installers-")
-                        and config.substs.get("MOZ_USE_LEGACY_L10N")
-                    ):
-                        
-                        self.log(
-                            logging.ERROR,
-                            "build_error",
-                            {},
-                            "Localized Builds are not supported with Artifact Builds enabled.\n"
-                            "You should disable Artifact Builds (Use --disable-compile-environment "
-                            "in your mozconfig instead) then re-build to proceed.",
-                        )
-                        return 1
-
                     
                     
                     
