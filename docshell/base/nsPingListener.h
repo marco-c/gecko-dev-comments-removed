@@ -5,6 +5,7 @@
 #ifndef nsPingListener_h_
 #define nsPingListener_h_
 
+#include "nsILoadGroup.h"
 #include "nsIStreamListener.h"
 #include "nsIReferrerInfo.h"
 #include "nsCOMPtr.h"
@@ -17,7 +18,6 @@ class DocGroup;
 
 class nsIContent;
 class nsIDocShell;
-class nsILoadGroup;
 class nsITimer;
 class nsIURI;
 
@@ -27,7 +27,7 @@ class nsPingListener final : public nsIStreamListener {
   NS_DECL_NSIREQUESTOBSERVER
   NS_DECL_NSISTREAMLISTENER
 
-  nsPingListener() {}
+  nsPingListener() = default;
 
   void SetLoadGroup(nsILoadGroup* aLoadGroup) { mLoadGroup = aLoadGroup; }
 

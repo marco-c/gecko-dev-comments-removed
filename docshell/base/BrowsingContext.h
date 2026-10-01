@@ -1252,6 +1252,11 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
       return GetBrowsingContext()->Release();
     }
 
+    
+    
+    template <size_t I, typename T>
+    bool CanSet(FieldIndex<I>, const T&, ContentParent*) = delete;
+
    protected:
     friend class RemoteLocationProxy;
     BrowsingContext* GetBrowsingContext() override {
@@ -1272,11 +1277,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void ActivenessChanged(bool aIsActive);
 
   using CanSetResult = syncedcontext::CanSetResult;
-
-  
-  
-  template <size_t I, typename T>
-  bool CanSet(FieldIndex<I>, const T&, ContentParent*) = delete;
 
   
   
