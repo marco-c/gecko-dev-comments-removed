@@ -2667,6 +2667,7 @@ pub fn prepare_picture_primitive(
     
     
     let mut local_transform;
+    let mut raster_mapping = None;
     let (local_clip_rect, transform) = if is_same_coord_system {
         (prim_info.clip_chain.local_clip_rect, quad_transform)
     } else {
@@ -2697,6 +2698,7 @@ pub fn prepare_picture_primitive(
             pic_context.raster_spatial_node_index,
             quad_transform.device_pixel_scale(),
         );
+        raster_mapping = Some((map_local_to_raster, local_to_raster_so));
 
         (adjusted_clip_rect, &mut local_transform)
     };
@@ -2789,7 +2791,14 @@ pub fn prepare_picture_primitive(
         
         
         for shadow in shadows {
-            let shadow_rect = pic_local_rect.translate(shadow.offset);
+            
+            
+            let mut shadow_rect = pic_local_rect.translate(shadow.offset);
+            if let Some((ref map_local_to_raster, ref local_to_raster_so)) = raster_mapping {
+                if let Some(raster_shadow_rect) = map_local_to_raster.map(&shadow_rect) {
+                    shadow_rect = local_to_raster_so.unmap_rect(&raster_shadow_rect);
+                }
+            }
             let shadow_pattern = ShadowPattern {
                 src_task_id: pic_task_id,
                 color: shadow.color,
