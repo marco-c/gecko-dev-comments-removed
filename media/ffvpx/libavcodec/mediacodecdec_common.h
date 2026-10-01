@@ -71,6 +71,13 @@ typedef struct MediaCodecDecContext {
     atomic_int serial;
 
     bool use_ndk_codec;
+
+    
+
+
+    const AVChannelLayout *codec_ch_layouts;
+    const uint8_t (*codec_ch_offsets)[8];
+    const uint8_t *ch_offsets;
 } MediaCodecDecContext;
 
 int ff_mediacodec_dec_init(AVCodecContext *avctx,
