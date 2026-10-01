@@ -230,10 +230,6 @@ class nsHttpTransaction final : public nsAHttpTransaction,
 
   bool IsWebsocketUpgrade();
 
-  
-  
-  bool CanRestartUpgradeBeforeResponse();
-
   void OnProxyConnectComplete(ProxyConnectResponseHead* aResponseHead) override;
   void SetFlat407Headers(const nsACString& aHeaders);
 
