@@ -2266,10 +2266,8 @@ void Document::ReportPageLoadEvent() {
 
 void Document::AccumulatePageLoadTelemetry() {
   
-  
   if (!ShouldIncludeInTelemetry() || !IsTopLevelContentDocument() ||
-      !GetNavigationTiming() ||
-      !GetNavigationTiming()->DocShellHasBeenActiveSinceNavigationStart()) {
+      !GetNavigationTiming()) {
     return;
   }
 
@@ -2281,6 +2279,19 @@ void Document::AccumulatePageLoadTelemetry() {
   if (!timedChannel) {
     return;
   }
+
+  mPageLoadMetricsAccumulated = true;
+
+  
+  
+  
+  
+  
+  Maybe<bool> loadedInForeground = GetNavigationTiming()->LoadedInForeground();
+  if (loadedInForeground) {
+    mPageloadEventData.set_loadedInForeground(*loadedInForeground);
+  }
+  mPageLoadWasForeground = loadedInForeground.valueOr(false);
 
   bool isCacheHit = false;
   if (nsCOMPtr<nsICacheInfoChannel> cacheInfoChannel =
@@ -2395,22 +2406,9 @@ void Document::AccumulatePageLoadTelemetry() {
     }
   }
 
-  TimeStamp asyncOpen;
-  timedChannel->GetAsyncOpen(&asyncOpen);
-  if (asyncOpen) {
-    glean::perf::dns_first_byte.Get(dnsKey).AccumulateRawDuration(
-        responseStart - asyncOpen);
-  }
-
   
   if (TimeStamp firstContentfulComposite =
           GetNavigationTiming()->GetFirstContentfulCompositeTimeStamp()) {
-    glean::performance_pageload::fcp.AccumulateRawDuration(
-        firstContentfulComposite - navigationStart);
-
-    glean::performance_pageload::fcp_responsestart.AccumulateRawDuration(
-        firstContentfulComposite - responseStart);
-
     TimeDuration fcpTime = firstContentfulComposite - navigationStart;
     if (fcpTime > zeroDuration) {
       mPageloadEventData.set_fcpTime(
@@ -2421,12 +2419,6 @@ void Document::AccumulatePageLoadTelemetry() {
   
   if (TimeStamp loadEventStart =
           GetNavigationTiming()->GetLoadEventStartTimeStamp()) {
-    glean::performance_pageload::load_time.AccumulateRawDuration(
-        loadEventStart - navigationStart);
-
-    glean::performance_pageload::load_time_responsestart.AccumulateRawDuration(
-        loadEventStart - responseStart);
-
     TimeDuration responseTime = responseStart - navigationStart;
     if (responseTime > zeroDuration) {
       mPageloadEventData.set_responseTime(
@@ -2466,6 +2458,36 @@ void Document::AccumulatePageLoadTelemetry() {
             static_cast<uint32_t>(tlsHandshakeTime.ToMilliseconds()));
       }
     }
+  }
+
+  
+  if (!mPageLoadWasForeground) {
+    return;
+  }
+
+  TimeStamp asyncOpen;
+  timedChannel->GetAsyncOpen(&asyncOpen);
+  if (asyncOpen) {
+    glean::perf::dns_first_byte.Get(dnsKey).AccumulateRawDuration(
+        responseStart - asyncOpen);
+  }
+
+  if (TimeStamp firstContentfulComposite =
+          GetNavigationTiming()->GetFirstContentfulCompositeTimeStamp()) {
+    glean::performance_pageload::fcp.AccumulateRawDuration(
+        firstContentfulComposite - navigationStart);
+
+    glean::performance_pageload::fcp_responsestart.AccumulateRawDuration(
+        firstContentfulComposite - responseStart);
+  }
+
+  if (TimeStamp loadEventStart =
+          GetNavigationTiming()->GetLoadEventStartTimeStamp()) {
+    glean::performance_pageload::load_time.AccumulateRawDuration(
+        loadEventStart - navigationStart);
+
+    glean::performance_pageload::load_time_responsestart.AccumulateRawDuration(
+        loadEventStart - responseStart);
   }
 }
 
@@ -18173,10 +18195,14 @@ void Document::ReportLCP() {
     return;
   }
 
-  const nsDOMNavigationTiming* timing = GetNavigationTiming();
+  
+  
+  if (!mPageLoadMetricsAccumulated || !mPageLoadWasForeground) {
+    return;
+  }
 
-  if (!ShouldIncludeInTelemetry() || !IsTopLevelContentDocument() || !timing ||
-      !timing->DocShellHasBeenActiveSinceNavigationStart()) {
+  const nsDOMNavigationTiming* timing = GetNavigationTiming();
+  if (!timing) {
     return;
   }
 

@@ -5967,6 +5967,13 @@ class Document : public nsINode,
   PageloadEventData mPageloadEventData;
 
   
+  
+  
+  
+  bool mPageLoadMetricsAccumulated = false;
+  bool mPageLoadWasForeground = false;
+
+  
   void ReportPageLoadEvent();
 
   

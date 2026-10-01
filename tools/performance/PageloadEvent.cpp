@@ -63,6 +63,20 @@ PageloadEventType GetPageloadEventType() {
                 "kDomainSamplingInterval should always be higher than "
                 "kNormalSamplingInterval");
 
+  
+#ifdef DEBUG
+  
+  
+  if (mozilla::Preferences::GetBool(
+          "dom.pageload_event.testing.always_send_domain", false)) {
+    return PageloadEventType::kDomain;
+  }
+#endif
+  if (mozilla::Preferences::GetBool(
+          "dom.pageload_event.testing.always_send_normal", false)) {
+    return PageloadEventType::kNormal;
+  }
+
   Maybe<uint64_t> rand = mozilla::RandomUint64();
   if (rand.isSome()) {
     uint64_t result =
@@ -492,6 +506,7 @@ void PageloadEventData::SendAsPageLoadDomainEvent() {
   extra.isFirstDailyLoad = mozilla::Some(this->mIsFirstDailyLoad);
   extra.httpVer = this->httpVer;
   extra.sameOriginNav = this->sameOriginNav;
+  extra.loadedInForeground = this->loadedInForeground;
   extra.documentFeatures = this->documentFeatures;
   extra.loadType = this->loadType;
   extra.isActiveClient = this->isActiveClient;

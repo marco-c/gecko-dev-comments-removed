@@ -6,6 +6,7 @@
 #define nsDOMNavigationTiming_h_
 
 #include "mozilla/BaseProfilerMarkersPrerequisites.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/RelativeTimeline.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WeakPtr.h"
@@ -204,10 +205,6 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
     return timing.forget();
   }
 
-  bool DocShellHasBeenActiveSinceNavigationStart() const {
-    return mDocShellHasBeenActiveSinceNavigationStart;
-  }
-
   bool WasActivatedFromNavigationalPrefetch() const {
     return mWasActivatedFromNavigationalPrefetch;
   }
@@ -216,6 +213,14 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
   }
 
   mozilla::TimeStamp LoadEventEnd() { return mLoadEventEnd; }
+
+  
+  
+  
+  
+  mozilla::Maybe<bool> LoadedInForeground() const {
+    return mForegroundAtLoadEventStart;
+  }
 
  private:
   friend class nsDocShell;
@@ -228,6 +233,8 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
   mozilla::TimeStamp GetUnloadEventEndTimeStamp() const;
 
   bool IsTopLevelContentDocumentInContentProcess() const;
+
+  bool DocShellIsActive() const;
 
   
   
@@ -259,8 +266,15 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
 
   mozilla::TimeStamp mTTFI;
 
+  
+  
+  
+  
   bool mDocShellHasBeenActiveSinceNavigationStart;
   bool mWasActivatedFromNavigationalPrefetch = false;
+
+  
+  mozilla::Maybe<bool> mForegroundAtLoadEventStart;
 
   friend struct IPC::ParamTraits<nsDOMNavigationTiming*>;
 };
