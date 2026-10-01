@@ -255,14 +255,16 @@ bool IsAnchorLaidOutStrictlyBeforeElement(
   
   
   const nsIFrame* anchorContainingBlock = aPossibleAnchorFrame->GetParent();
+  const auto* positionedContainingBlockFirstContinuation =
+      nsLayoutUtils::FirstContinuationOrIBSplitSibling(
+          positionedContainingBlock);
 
   
   
   
   
   if (nsLayoutUtils::FirstContinuationOrIBSplitSibling(anchorContainingBlock) !=
-      nsLayoutUtils::FirstContinuationOrIBSplitSibling(
-          positionedContainingBlock)) {
+      positionedContainingBlockFirstContinuation) {
     
     
     if (positionedContainingBlock->IsViewportFrame() &&
@@ -271,9 +273,7 @@ bool IsAnchorLaidOutStrictlyBeforeElement(
                                                    aPossibleAnchorFrame);
     }
 
-    auto isLastContainingBlockOrderable =
-        [&aPositionedFrame, &aPositionedFrameAncestors, &anchorContainingBlock,
-         &positionedContainingBlock]() -> bool {
+    auto isLastContainingBlockOrderable = [&]() -> bool {
       const nsIFrame* it = anchorContainingBlock;
       while (it) {
         const nsIFrame* parentContainingBlock = it->GetParent();
@@ -283,8 +283,7 @@ bool IsAnchorLaidOutStrictlyBeforeElement(
 
         if (nsLayoutUtils::FirstContinuationOrIBSplitSibling(
                 parentContainingBlock) ==
-            nsLayoutUtils::FirstContinuationOrIBSplitSibling(
-                positionedContainingBlock)) {
+            positionedContainingBlockFirstContinuation) {
           return !it->IsAbsolutelyPositioned() ||
                  nsLayoutUtils::CompareTreePosition(it, aPositionedFrame,
                                                     aPositionedFrameAncestors,
