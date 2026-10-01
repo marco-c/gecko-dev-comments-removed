@@ -54,12 +54,12 @@ async function openContextMenuForSelector(browser, selector) {
   
   
   
-  let eventDetails = { type: "mousedown", button: 2 };
-  await EventUtils.synthesizeMouseAtPoint(offsetX, offsetY, eventDetails);
+  let eventDetails = { button: 2 };
+  EventUtils.synthesizeMouseAtPoint(offsetX, offsetY, eventDetails);
 
   
   eventDetails = { type: "contextmenu", button: 2 };
-  await EventUtils.synthesizeMouseAtPoint(offsetX, offsetY, eventDetails);
+  EventUtils.synthesizeMouseAtPoint(offsetX, offsetY, eventDetails);
 
   await SpecialPowers.spawn(browser, [], async () => {
     await content.contextmenuPromise;
