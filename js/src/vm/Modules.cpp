@@ -64,7 +64,7 @@ static bool TryStartDynamicModuleImport(JSContext* cx, HandleScript script,
                                         HandleValue optionsArg,
                                         HandleObject promise,
                                         ImportPhase phase);
-static bool ContinueDynamicImport(JSContext* cx, Handle<JSScript*> referrer,
+static bool ContinueDynamicImport(JSContext* cx, Handle<JSObject*> referrer,
                                   Handle<PromiseObject*> promiseCapability,
                                   Handle<ModuleObject*> module,
                                   ImportPhase phase, bool usePromise);
@@ -104,8 +104,37 @@ JS_PUBLIC_API void JS::SetModuleMetadataHook(JSRuntime* rt,
 }
 
 
+
+static ModuleObject* ReferrerModuleOrNull(Handle<Value> referrer) {
+  if (!referrer.isObject()) {
+    return nullptr;
+  }
+
+  JSObject* object = &referrer.toObject();
+  if (!object->is<ModuleObject>()) {
+    return nullptr;
+  }
+
+  return &object->as<ModuleObject>();
+}
+
+
+
+
+
+static Value ReferrerValueForScript(JSScript* script) {
+  MOZ_ASSERT(script, "a dynamic import call always has a running script");
+
+  if (script->isModule()) {
+    return ObjectValue(*script->module());
+  }
+
+  return script->sourceObject()->getPrivate();
+}
+
+
 JS_PUBLIC_API bool JS::FinishLoadingImportedModule(
-    JSContext* cx, Handle<JSScript*> referrer, Handle<JSObject*> moduleRequest,
+    JSContext* cx, Handle<Value> referrer, Handle<JSObject*> moduleRequest,
     Handle<Value> payload, Handle<JSObject*> result, bool usePromise) {
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
@@ -128,13 +157,13 @@ JS_PUBLIC_API bool JS::FinishLoadingImportedModule(
     return FinishLoadingImportedModuleFailedWithPendingException(cx, payload);
   }
 
-  if (referrer && referrer->isModule()) {
+  
+  Rooted<ModuleObject*> referrerModule(cx, ReferrerModuleOrNull(referrer));
+  if (referrerModule) {
     
-
     
     
-    
-    LoadedModuleMap& loadedModules = referrer->module()->loadedModules();
+    LoadedModuleMap& loadedModules = referrerModule->loadedModules();
     if (auto record = loadedModules.lookup(moduleRequest)) {
       
       MOZ_ASSERT(record->value() == module);
@@ -165,7 +194,7 @@ JS_PUBLIC_API bool JS::FinishLoadingImportedModule(
   
   MOZ_ASSERT(object->is<PromiseObject>());
   Rooted<PromiseObject*> promise(cx, &object->as<PromiseObject>());
-  return ContinueDynamicImport(cx, referrer, promise, module,
+  return ContinueDynamicImport(cx, referrerModule, promise, module,
                                moduleRequest->as<ModuleRequestObject>().phase(),
                                usePromise);
 }
@@ -513,6 +542,18 @@ JS_PUBLIC_API JSScript* JS::GetModuleScript(JS::HandleObject moduleRecord) {
   }
 
   return module.script();
+}
+
+JS_PUBLIC_API JS::Value JS::GetReferrerPrivate(Handle<Value> referrer) {
+  AssertHeapIsIdle();
+
+  if (ModuleObject* module = ReferrerModuleOrNull(referrer)) {
+    return module->scriptSourceObject()->getPrivate();
+  }
+
+  
+  
+  return referrer;
 }
 
 JS_PUBLIC_API JSObject* JS::GetModuleObject(HandleScript moduleScript) {
@@ -863,11 +904,7 @@ static void ThrowUnexpectedModuleStatus(JSContext* cx, ModuleStatus status) {
 }
 
 
-
-
-
-
-bool js::HostLoadImportedModule(JSContext* cx, Handle<JSScript*> referrer,
+bool js::HostLoadImportedModule(JSContext* cx, Handle<Value> referrer,
                                 Handle<JSObject*> moduleRequest,
                                 Handle<Value> hostDefined,
                                 Handle<Value> payload, uint32_t lineNumber,
@@ -1721,7 +1758,7 @@ static bool InnerModuleLoading(JSContext* cx,
         
         
         
-        Rooted<JSScript*> referrer(cx, module->script());
+        Rooted<Value> referrer(cx, ObjectValue(*module));
         Rooted<Value> hostDefined(cx, state->hostDefined());
         Rooted<Value> payload(cx, ObjectValue(*state));
         if (!HostLoadImportedModule(cx, referrer, moduleRequest, hostDefined,
@@ -2963,7 +3000,8 @@ static bool TryStartDynamicModuleImport(JSContext* cx, HandleScript script,
   
   
   RootedValue payload(cx, ObjectValue(*promise));
-  (void)HostLoadImportedModule(cx, script, moduleRequest,
+  Rooted<Value> referrer(cx, ReferrerValueForScript(script));
+  (void)HostLoadImportedModule(cx, referrer, moduleRequest,
                                JS::UndefinedHandleValue, payload);
 
   return true;
@@ -3031,10 +3069,10 @@ class DynamicImportContextObject : public NativeObject {
   static const JSClass class_;
 
   [[nodiscard]] static DynamicImportContextObject* create(
-      JSContext* cx, Handle<JSScript*> referrer, Handle<PromiseObject*> promise,
+      JSContext* cx, Handle<JSObject*> referrer, Handle<PromiseObject*> promise,
       Handle<ModuleObject*> module, ImportPhase phase);
 
-  JSScript* referrer() const;
+  JSObject* referrer() const;
   PromiseObject* promise() const;
   ModuleObject* module() const;
   ImportPhase phase() const;
@@ -3049,7 +3087,7 @@ const JSClass DynamicImportContextObject::class_ = {
 
 
 DynamicImportContextObject* DynamicImportContextObject::create(
-    JSContext* cx, Handle<JSScript*> referrer, Handle<PromiseObject*> promise,
+    JSContext* cx, Handle<JSObject*> referrer, Handle<PromiseObject*> promise,
     Handle<ModuleObject*> module, ImportPhase phase) {
   Rooted<DynamicImportContextObject*> self(
       cx, NewObjectWithGivenProto<DynamicImportContextObject>(cx, nullptr));
@@ -3058,7 +3096,7 @@ DynamicImportContextObject* DynamicImportContextObject::create(
   }
 
   if (referrer) {
-    self->initReservedSlot(ReferrerSlot, PrivateGCThingValue(referrer));
+    self->initReservedSlot(ReferrerSlot, ObjectValue(*referrer));
   }
   self->initReservedSlot(PromiseSlot, ObjectValue(*promise));
   self->initReservedSlot(ModuleSlot, ObjectValue(*module));
@@ -3066,13 +3104,13 @@ DynamicImportContextObject* DynamicImportContextObject::create(
   return self;
 }
 
-JSScript* DynamicImportContextObject::referrer() const {
+JSObject* DynamicImportContextObject::referrer() const {
   Value value = getReservedSlot(ReferrerSlot);
   if (value.isUndefined()) {
     return nullptr;
   }
 
-  return static_cast<JSScript*>(value.toGCThing());
+  return &value.toObject();
 }
 
 PromiseObject* DynamicImportContextObject::promise() const {
@@ -3104,7 +3142,7 @@ ImportPhase DynamicImportContextObject::phase() const {
 
 
 
-bool ContinueDynamicImport(JSContext* cx, Handle<JSScript*> referrer,
+bool ContinueDynamicImport(JSContext* cx, Handle<JSObject*> referrer,
                            Handle<PromiseObject*> promiseCapability,
                            Handle<ModuleObject*> module, ImportPhase phase,
                            bool usePromise) {

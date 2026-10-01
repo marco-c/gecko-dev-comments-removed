@@ -15,6 +15,10 @@ namespace JS {
 
 
 
+
+
+
+
 extern JS_PUBLIC_API void SetScriptPrivate(JSScript* script,
                                            const JS::Value& value);
 

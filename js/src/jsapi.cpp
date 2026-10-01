@@ -28,6 +28,7 @@
 #include "builtin/Eval.h"
 #include "builtin/JSON.h"
 #include "builtin/Math.h"
+#include "builtin/ModuleObject.h"
 #include "builtin/Promise.h"
 #include "builtin/Symbol.h"
 #include "frontend/FrontendContext.h"  
@@ -2791,6 +2792,11 @@ JS_PUBLIC_API JSString* JS_DecompileFunction(JSContext* cx,
 
 JS_PUBLIC_API void JS::SetScriptPrivate(JSScript* script,
                                         const JS::Value& value) {
+  
+  
+  
+  MOZ_ASSERT_IF(value.isObject(), !value.toObject().is<js::ModuleObject>());
+
   JSRuntime* rt = script->zone()->runtimeFromMainThread();
   script->sourceObject()->setPrivate(rt, value);
 }
