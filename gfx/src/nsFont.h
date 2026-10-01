@@ -73,7 +73,7 @@ struct nsFont final {
   uint8_t smoothing = NS_FONT_SMOOTHING_AUTO;
 
   
-  uint8_t kerning = NS_FONT_KERNING_AUTO;
+  mozilla::StyleFontKerning kerning = mozilla::StyleFontKerning::Auto;
 
   
   
