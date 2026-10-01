@@ -196,7 +196,7 @@ MediaResult MP4AudioInfo::Update(const Mp4parseTrackInfo* aTrack,
           encoderDelayFrameCount);
     }
 
-    uint64_t mediaFrameCount = 0;
+    Maybe<uint64_t> mediaFrameCount;
     
     if (aIndices) {
       MP4SampleIndex::Indice firstIndice = {0};
@@ -213,10 +213,10 @@ MediaResult MP4AudioInfo::Update(const Mp4parseTrackInfo* aTrack,
         
         
         
-        mediaFrameCount =
-            lastIndice.end_composition - firstIndice.start_composition;
+        mediaFrameCount.emplace(lastIndice.end_composition -
+                                firstIndice.start_composition);
         LOG("AAC stream in MP4 container, total media duration is {} frames",
-            mediaFrameCount);
+            mediaFrameCount.value());
       } else {
         LOG("AAC stream in MP4 container, couldn't determine total media time");
       }

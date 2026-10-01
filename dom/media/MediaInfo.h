@@ -8,6 +8,7 @@
 #include "ImageTypes.h"
 #include "MediaData.h"
 #include "TimeUnits.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Variant.h"
@@ -78,7 +79,9 @@ struct AacCodecSpecificData {
 
   
   
-  uint64_t mMediaFrameCount{0};
+  
+  
+  Maybe<uint64_t> mMediaFrameCount;
 
   
   

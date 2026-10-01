@@ -216,9 +216,9 @@ TEST(MatroskaDemuxer, AACFrameCountNotParsed)
             ASSERT_TRUE(
                 audioInfo->mCodecSpecificConfig.is<AacCodecSpecificData>());
             
-            EXPECT_EQ(audioInfo->mCodecSpecificConfig.as<AacCodecSpecificData>()
-                          .mMediaFrameCount,
-                      0u);
+            EXPECT_TRUE(
+                audioInfo->mCodecSpecificConfig.as<AacCodecSpecificData>()
+                    .mMediaFrameCount.isNothing());
             RefPtr<MediaTrackDemuxer> audioTrack =
                 demuxer->GetTrackDemuxer(TrackInfo::kAudioTrack, 0);
             audioTrack->GetSamples()->Then(
