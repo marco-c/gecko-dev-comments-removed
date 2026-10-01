@@ -47,7 +47,6 @@ struct DeserializedEdge {
   DeserializedEdge(DeserializedEdge&& rhs);
   DeserializedEdge& operator=(DeserializedEdge&& rhs);
 
- private:
   DeserializedEdge(const DeserializedEdge&) = delete;
   DeserializedEdge& operator=(const DeserializedEdge&) = delete;
 };
@@ -90,7 +89,7 @@ struct DeserializedNode {
         scriptFilename(filename),
         descriptiveTypeName(descriptiveName),
         owner(&owner) {}
-  virtual ~DeserializedNode() {}
+  virtual ~DeserializedNode() = default;
 
   DeserializedNode(DeserializedNode&& rhs)
       : id(rhs.id),
@@ -111,6 +110,9 @@ struct DeserializedNode {
     return *this;
   }
 
+  DeserializedNode(const DeserializedNode&) = delete;
+  DeserializedNode& operator=(const DeserializedNode&) = delete;
+
   
   
   virtual JS::ubi::Node getEdgeReferent(const DeserializedEdge& edge);
@@ -130,10 +132,6 @@ struct DeserializedNode {
         scriptFilename(nullptr),
         descriptiveTypeName(nullptr),
         owner(nullptr) {}
-
- private:
-  DeserializedNode(const DeserializedNode&) = delete;
-  DeserializedNode& operator=(const DeserializedNode&) = delete;
 };
 
 static inline js::HashNumber hashIdDerivedFromPtr(uint64_t id) {
