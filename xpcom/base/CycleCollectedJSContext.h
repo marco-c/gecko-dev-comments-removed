@@ -180,7 +180,7 @@ class MOZ_STACK_CLASS MustConsumeMicroTask : public MayConsumeMicroTask {
   friend MustConsumeMicroTask DequeueNextDebuggerMicroTask(JSContext* aCx);
 
   ~MustConsumeMicroTask() override {
-    if (!mMicroTask.isUndefined()) {
+    if (!IsConsumed()) {
       MOZ_CRASH("Didn't consume MicroTask");
     }
   }
@@ -190,12 +190,17 @@ class MOZ_STACK_CLASS MustConsumeMicroTask : public MayConsumeMicroTask {
   MustConsumeMicroTask& operator=(const MustConsumeMicroTask&) = delete;
   MustConsumeMicroTask(MustConsumeMicroTask&& other)
       : MayConsumeMicroTask(other.mMicroTask) {
-    other.mMicroTask.setUndefined();
+    other.markAsConsumed();
   }
   MustConsumeMicroTask& operator=(MustConsumeMicroTask&& other) noexcept {
+    
+    MOZ_ASSERT(this->IsConsumed());
+
     if (this != &other) {
       mMicroTask = other.mMicroTask;
-      other.mMicroTask.setUndefined();
+
+      
+      other.markAsConsumed();
     }
     return *this;
   }
@@ -225,7 +230,7 @@ class MOZ_STACK_CLASS MustConsumeMicroTask : public MayConsumeMicroTask {
   
   void IgnoreJSMicroTask() {
     MOZ_ASSERT(IsJSMicroTask());
-    mMicroTask.setUndefined();
+    markAsConsumed();
   }
 
   
@@ -236,7 +241,7 @@ class MOZ_STACK_CLASS MustConsumeMicroTask : public MayConsumeMicroTask {
       
       NS_ABORT_OOM(0);
     }
-    mMicroTask.setUndefined();
+    markAsConsumed();
   }
 
   bool RunAndConsumeJSMicroTask(JSContext* aCx) {
@@ -245,13 +250,16 @@ class MOZ_STACK_CLASS MustConsumeMicroTask : public MayConsumeMicroTask {
         aCx, JS::ToMaybeWrappedJSMicroTask(mMicroTask));
     MOZ_ASSERT(task);
     bool v = JS::RunJSMicroTask(aCx, task);
-    mMicroTask.setUndefined();
+    markAsConsumed();
     return v;
   }
 
  private:
   explicit MustConsumeMicroTask(JS::GenericMicroTask aMicroTask)
       : MayConsumeMicroTask(aMicroTask) {}
+
+  
+  void markAsConsumed() { mMicroTask.setUndefined(); }
 };
 
 
