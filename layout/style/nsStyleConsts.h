@@ -135,14 +135,6 @@ enum class StyleWindowDragging : uint8_t {
 };
 
 
-enum class StyleOrient : uint8_t {
-  Inline,
-  Block,
-  Horizontal,
-  Vertical,
-};
-
-
 enum class StyleImageLayerRepeat : uint8_t {
   NoRepeat = 0x00,
   RepeatX,
