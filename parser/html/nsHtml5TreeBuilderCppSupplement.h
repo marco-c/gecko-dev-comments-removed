@@ -150,26 +150,50 @@ class nsHtml5TreeBuilder::SanitizerState {
   
   
   
-  bool RedirectClone(nsIContent* aClone, nsIContent* aParent) {
+  bool RedirectClone(nsIContent* aClone) {
     auto entry = mDropped.Lookup(aClone);
     if (!entry || !entry.Data().mReplaceWithChildren) {
       return false;
     }
     entry.Data().mLocationResolved = true;
-    entry.Data().mLocation = LocationFor(aParent);
+    mPendingRedirects.AppendElement(aClone);
     return true;
   }
 
   
   
   
-  void MoveRedirection(nsIContent* aElement, nsIContent* aParent,
-                       nsIContent* aBefore = nullptr) {
-    auto entry = mDropped.Lookup(aElement);
-    if (!entry || !entry.Data().mLocation.mParent) {
-      return;
+  void DeferRedirect(nsIContent* aFurthestBlock) {
+    auto entry = mDropped.Lookup(aFurthestBlock);
+    if (entry && entry.Data().mReplaceWithChildren &&
+        entry.Data().mLocation.mParent) {
+      mPendingRedirects.AppendElement(aFurthestBlock);
     }
-    entry.Data().mLocation = LocationFor(aParent, aBefore);
+  }
+
+  
+  
+  
+  void RedirectPending(nsIContent* aParent, nsIContent* aBefore = nullptr) {
+    for (nsIContent* element : mPendingRedirects) {
+      mDropped.Lookup(element).Data().mLocation = LocationFor(aParent, aBefore);
+    }
+    mPendingRedirects.ClearAndRetainStorage();
+  }
+
+  
+  
+  
+  
+  
+  bool RedirectIntoClone(nsIContent* aElement, nsIContent* aClone) {
+    auto entry = mDropped.Lookup(aElement);
+    if (!entry || !entry.Data().mReplaceWithChildren ||
+        !entry.Data().mLocation.mParent) {
+      return false;
+    }
+    entry.Data().mLocation = LocationFor(aClone);
+    return true;
   }
 
   
@@ -254,6 +278,9 @@ class nsHtml5TreeBuilder::SanitizerState {
   
   
   nsTHashMap<nsPtrHashKey<nsIContent>, Dropped> mDropped;
+  
+  
+  AutoTArray<nsIContent*, 4> mPendingRedirects;
   const mozilla::dom::Sanitizer* const mSanitizer;
   const bool mSafe;
   
@@ -284,22 +311,35 @@ void nsHtml5TreeBuilder::SetSanitizer(mozilla::dom::Sanitizer* aSanitizer,
   }
 }
 
-bool nsHtml5TreeBuilder::SanitizerRedirectsCloneImpl(
-    nsIContent* aClone, nsIContent* aCommonAncestor) {
-  return mSanitizerState->RedirectClone(aClone, aCommonAncestor);
+bool nsHtml5TreeBuilder::SanitizerRedirectsCloneImpl(nsIContent* aClone) {
+  return mSanitizerState->RedirectClone(aClone);
 }
 
-void nsHtml5TreeBuilder::SanitizerRedirectFurthestBlockImpl(
-    nsIContent* aFurthestBlock, nsIContent* aParent) {
-  mSanitizerState->MoveRedirection(aFurthestBlock, aParent);
+void nsHtml5TreeBuilder::SanitizerDeferRedirectImpl(
+    nsIContent* aFurthestBlock) {
+  mSanitizerState->DeferRedirect(aFurthestBlock);
 }
 
-void nsHtml5TreeBuilder::SanitizerRedirectFurthestBlockToFosterParentImpl(
-    nsIContent* aFurthestBlock, nsIContent* aTable, nsIContent* aStackParent) {
+void nsHtml5TreeBuilder::SanitizerRedirectPendingImpl(nsIContent* aParent) {
+  mSanitizerState->RedirectPending(aParent);
+}
+
+void nsHtml5TreeBuilder::SanitizerRedirectPendingToFosterParentImpl(
+    nsIContent* aTable, nsIContent* aStackParent) {
   SanitizerState::Location foster =
       SanitizerState::FosterLocation(aStackParent, aTable);
-  mSanitizerState->MoveRedirection(aFurthestBlock, foster.mParent,
-                                   foster.mBefore);
+  mSanitizerState->RedirectPending(foster.mParent, foster.mBefore);
+}
+
+void nsHtml5TreeBuilder::SanitizerRedirectBelowFormattingCloneImpl(
+    int32_t aClonePos) {
+  nsIContent* clone = static_cast<nsIContent*>(stack[aClonePos]->node);
+  for (int32_t i = aClonePos + 1; i <= currentPtr; ++i) {
+    if (!mSanitizerState->RedirectIntoClone(
+            static_cast<nsIContent*>(stack[i]->node), clone)) {
+      return;
+    }
+  }
 }
 
 bool nsHtml5TreeBuilder::SanitizerDropsTemplateTokenImpl(

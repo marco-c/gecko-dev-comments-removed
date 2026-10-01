@@ -222,12 +222,9 @@ void SetSanitizer(mozilla::dom::Sanitizer* aSanitizer, bool aSafe);
 
 
 
-
-bool sanitizerRedirectsClone(nsIContentHandle* aClone,
-                             nsIContentHandle* aCommonAncestor) {
+bool sanitizerRedirectsClone(nsIContentHandle* aClone) {
   return MOZ_UNLIKELY(mSanitizerState) &&
-         SanitizerRedirectsCloneImpl(static_cast<nsIContent*>(aClone),
-                                     static_cast<nsIContent*>(aCommonAncestor));
+         SanitizerRedirectsCloneImpl(static_cast<nsIContent*>(aClone));
 }
 
 
@@ -235,24 +232,42 @@ bool sanitizerRedirectsClone(nsIContentHandle* aClone,
 
 
 
-
-
-void sanitizerRedirectFurthestBlock(nsIContentHandle* aFurthestBlock,
-                                    nsIContentHandle* aParent) {
+void sanitizerDeferRedirect(nsIContentHandle* aFurthestBlock) {
   if (MOZ_UNLIKELY(mSanitizerState)) {
-    SanitizerRedirectFurthestBlockImpl(static_cast<nsIContent*>(aFurthestBlock),
-                                       static_cast<nsIContent*>(aParent));
+    SanitizerDeferRedirectImpl(static_cast<nsIContent*>(aFurthestBlock));
   }
 }
 
-void sanitizerRedirectFurthestBlockToFosterParent(
-    nsIContentHandle* aFurthestBlock, nsIContentHandle* aTable,
-    nsIContentHandle* aStackParent) {
+
+
+
+
+
+
+void sanitizerRedirectPending(nsIContentHandle* aParent) {
   if (MOZ_UNLIKELY(mSanitizerState)) {
-    SanitizerRedirectFurthestBlockToFosterParentImpl(
-        static_cast<nsIContent*>(aFurthestBlock),
+    SanitizerRedirectPendingImpl(static_cast<nsIContent*>(aParent));
+  }
+}
+
+void sanitizerRedirectPendingToFosterParent(nsIContentHandle* aTable,
+                                            nsIContentHandle* aStackParent) {
+  if (MOZ_UNLIKELY(mSanitizerState)) {
+    SanitizerRedirectPendingToFosterParentImpl(
         static_cast<nsIContent*>(aTable),
         static_cast<nsIContent*>(aStackParent));
+  }
+}
+
+
+
+
+
+
+
+void sanitizerRedirectBelowFormattingClone(int32_t aClonePos) {
+  if (MOZ_UNLIKELY(mSanitizerState)) {
+    SanitizerRedirectBelowFormattingCloneImpl(aClonePos);
   }
 }
 
@@ -271,12 +286,13 @@ bool sanitizerDropsTemplateToken(nsHtml5HtmlAttributes* aAttributes) {
 
 
 
-MOZ_NEVER_INLINE bool SanitizerRedirectsCloneImpl(nsIContent* aClone,
-                                                  nsIContent* aCommonAncestor);
-MOZ_NEVER_INLINE void SanitizerRedirectFurthestBlockImpl(
-    nsIContent* aFurthestBlock, nsIContent* aParent);
-MOZ_NEVER_INLINE void SanitizerRedirectFurthestBlockToFosterParentImpl(
-    nsIContent* aFurthestBlock, nsIContent* aTable, nsIContent* aStackParent);
+MOZ_NEVER_INLINE bool SanitizerRedirectsCloneImpl(nsIContent* aClone);
+MOZ_NEVER_INLINE void SanitizerDeferRedirectImpl(nsIContent* aFurthestBlock);
+MOZ_NEVER_INLINE void SanitizerRedirectPendingImpl(nsIContent* aParent);
+MOZ_NEVER_INLINE void SanitizerRedirectPendingToFosterParentImpl(
+    nsIContent* aTable, nsIContent* aStackParent);
+MOZ_NEVER_INLINE void SanitizerRedirectBelowFormattingCloneImpl(
+    int32_t aClonePos);
 MOZ_NEVER_INLINE bool SanitizerDropsTemplateTokenImpl(
     nsHtml5HtmlAttributes* aAttributes);
 MOZ_NEVER_INLINE void SanitizedAppendElement(nsIContent* aChild,

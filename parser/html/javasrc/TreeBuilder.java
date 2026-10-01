@@ -4537,6 +4537,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
             int bookmark = formattingEltListPos;
             int nodePos = furthestBlockPos;
             StackNode<T> lastNode = furthestBlock; 
+            
             int j = 0;
             for (;;) {
                 ++j;
@@ -4602,6 +4603,8 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                 
                 
                 
+                
+                
                 detachFromParent(lastNode.node);
                 appendElement(lastNode.node, nodeFromStackWithBlinkCompat(nodePos));
                 lastNode = node;
@@ -4612,9 +4615,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
             if (commonAncestor.isFosterParenting()) {
                 fatal();
                 detachFromParent(lastNode.node);
-                insertIntoFosterParent(lastNode.node
-                        
-                        );
+                insertIntoFosterParent(lastNode.node);
             } else {
                 
                 
@@ -4648,6 +4649,11 @@ public abstract class TreeBuilder<T> implements TokenHandler,
             
             
             insertIntoStack(formattingClone, furthestBlockPos);
+            
+            
+            
+            
+            
         }
         return true;
     }
@@ -4967,9 +4973,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         return instance;
     }
 
-    private void insertIntoFosterParent(T child
-            
-            ) throws SAXException {
+    private void insertIntoFosterParent(T child) throws SAXException {
         int tablePos = findLastOrRoot(TreeBuilder.TABLE);
         int templatePos = findLastOrRoot(TreeBuilder.TEMPLATE);
 
