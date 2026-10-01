@@ -295,12 +295,6 @@ enum class StyleTextSecurity : uint8_t {
 };
 
 
-enum class StyleTopLayer : uint8_t {
-  None,
-  Auto,
-};
-
-
 enum class StyleVisibility : uint8_t {
   Hidden,
   Visible,
