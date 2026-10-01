@@ -51,10 +51,9 @@ inline void EmitBaselineLeaveStubFrame(MacroAssembler& masm) {
       ICStubReg);
 
   masm.movePtr(FramePointer, StackPointer);
-  masm.Pop(FramePointer);
 
   
-  masm.Pop(ICTailCallReg);
+  masm.PopRegs(FramePointer, ICTailCallReg);
 
   
   {
