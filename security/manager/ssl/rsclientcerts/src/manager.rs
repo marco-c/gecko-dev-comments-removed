@@ -7,8 +7,27 @@ use rsclientcerts_util::error::{Error, ErrorType};
 use rsclientcerts_util::error_here;
 use std::collections::{BTreeMap, BTreeSet};
 use std::convert::TryInto;
+use std::ffi::c_void;
 
 use crate::cryptoki::{CryptokiCert, CryptokiTrust};
+
+
+
+pub type FindObjectsCallback = Option<
+    unsafe extern "C" fn(
+        typ: u8,
+        data_len: usize,
+        data: *const u8,
+        extra_len: usize,
+        extra: *const u8,
+        ctx: *mut c_void,
+    ),
+>;
+
+
+
+pub type SignCallback =
+    Option<unsafe extern "C" fn(data_len: usize, data: *const u8, ctx: *mut c_void)>;
 
 pub trait CryptokiObject {
     fn matches(&self, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool;

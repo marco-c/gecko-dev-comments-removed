@@ -76,6 +76,13 @@ bool LoadOSClientCertsModule();
 
 
 
+bool LoadRemoteCertsModule();
+
+
+
+
+
+
 
 
 

@@ -338,6 +338,7 @@ Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
         if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
           return;
         }
+        AutoSearchingForCertificates _;
         
         
         
@@ -1739,6 +1740,20 @@ bool LoadOSClientCertsModule() {
   return false;
 #endif
 }
+
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+extern "C" {
+
+
+
+CK_RV RemoteCerts_C_GetFunctionList(CK_FUNCTION_LIST_PTR_PTR ppFunctionList);
+}  
+
+bool LoadRemoteCertsModule() {
+  return LoadUserModuleFromXul(kRemoteCertsModuleName.get(),
+                               RemoteCerts_C_GetFunctionList);
+}
+#endif  
 
 bool LoadLoadableRoots(const nsCString& dir) {
   int unusedModType;
