@@ -89,48 +89,30 @@ add_task(async function test() {
         newTabBrowser,
         [TESTS],
         async function (contentTESTS) {
-          let document = content.document;
-
-          function waitForRender() {
-            return new Promise(resolve => {
-              document.addEventListener(
-                "pagerendered",
-                function onPageRendered(e) {
-                  if (e.detail.pageNumber !== 1) {
-                    return;
-                  }
-
-                  document.removeEventListener(
-                    "pagerendered",
-                    onPageRendered,
-                    true
-                  );
-                  resolve();
-                },
-                true
-              );
-            });
-          }
+          const { document } = content;
 
           
           Assert.ok(
-            content.document.querySelector("div#viewer"),
+            document.querySelector("div#viewer"),
             "document content has viewer UI"
           );
 
-          let initialWidth, previousWidth;
-          initialWidth = previousWidth = parseInt(
-            content.getComputedStyle(
-              content.document.querySelector("div.page[data-page-number='1']")
-            ).width
+          const pageZoomScale = document.querySelector("select#scaleSelect");
+          const pageContainer = document.querySelector(
+            "div.page[data-page-number='1']"
           );
+          const getPageWidth = () =>
+            parseInt(content.getComputedStyle(pageContainer).width);
 
-          for (let subTest of contentTESTS) {
+          const initialWidth = getPageWidth();
+          let previousWidth = initialWidth;
+
+          for (const subTest of contentTESTS) {
             
-            var ev;
+            let el, ev;
             if (subTest.action.selector) {
               
-              var el = document.querySelector(subTest.action.selector);
+              el = document.querySelector(subTest.action.selector);
               Assert.ok(
                 el,
                 "Element '" + subTest.action.selector + "' has been found"
@@ -153,25 +135,18 @@ add_task(async function test() {
               el = content;
             }
 
+            
             el.dispatchEvent(ev);
-            await waitForRender();
-
-            var pageZoomScale =
-              content.document.querySelector("select#scaleSelect");
-
-            
-            var zoomValue =
-              pageZoomScale.options[pageZoomScale.selectedIndex].innerHTML;
-
-            let pageContainer = content.document.querySelector(
-              "div.page[data-page-number='1']"
-            );
-            let actualWidth = parseInt(
-              content.getComputedStyle(pageContainer).width
-            );
+            const selectedOption =
+              pageZoomScale.options[pageZoomScale.selectedIndex];
+            await document.l10n.translateElements([selectedOption]);
 
             
-            let computedZoomValue =
+            const zoomValue = selectedOption.textContent;
+            const actualWidth = getPageWidth();
+
+            
+            const computedZoomValue =
               parseInt((actualWidth / initialWidth).toFixed(2) * 100) + "%";
             Assert.equal(
               computedZoomValue,
@@ -180,7 +155,7 @@ add_task(async function test() {
             );
 
             
-            let zoom = (actualWidth - previousWidth) * subTest.expectedZoom;
+            const zoom = (actualWidth - previousWidth) * subTest.expectedZoom;
             Assert.greater(zoom, 0, subTest.message);
 
             previousWidth = actualWidth;
@@ -192,88 +167,86 @@ add_task(async function test() {
   );
 });
 
-
-
-
-function waitForRoundTrip(browser) {
-  return SpecialPowers.spawn(browser, [], () => {});
-}
-
-async function waitForRenderAndGetWidth(newTabBrowser) {
-  return SpecialPowers.spawn(newTabBrowser, [], async function () {
-    function waitForRender(document) {
-      return new Promise(resolve => {
-        document.addEventListener(
-          "pagerendered",
-          function onPageRendered(e) {
-            if (e.detail.pageNumber !== 1) {
-              return;
-            }
-
-            document.removeEventListener("pagerendered", onPageRendered, true);
-            resolve();
-          },
-          true
-        );
-      });
-    }
-    
-    Assert.ok(
-      content.document.querySelector("div#viewer"),
-      "document content has viewer UI"
-    );
-
-    await waitForRender(content.document);
-
-    return parseInt(
+function getPageWidth(browser) {
+  return SpecialPowers.spawn(browser, [], () =>
+    parseInt(
       content.getComputedStyle(
         content.document.querySelector("div.page[data-page-number='1']")
       ).width
-    );
-  });
+    )
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function waitForPageWidth(browser, width, direction) {
+  return SpecialPowers.spawn(
+    browser,
+    [width, direction],
+    async function (expectedWidth, expectedDirection) {
+      const { ContentTaskUtils } = ChromeUtils.importESModule(
+        "resource://testing-common/ContentTaskUtils.sys.mjs"
+      );
+      const getWidth = () =>
+        parseInt(
+          content.getComputedStyle(
+            content.document.querySelector("div.page[data-page-number='1']")
+          ).width
+        );
+      await ContentTaskUtils.waitForCondition(() => {
+        const currentWidth = getWidth();
+        switch (expectedDirection) {
+          case "bigger":
+            return currentWidth > expectedWidth;
+          case "smaller":
+            return currentWidth < expectedWidth;
+          default:
+            return currentWidth === expectedWidth;
+        }
+      }, `Page must become ${expectedDirection} than ${expectedWidth}px`);
+
+      return getWidth();
+    }
+  );
 }
 
 add_task(async function test_browser_zoom() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
     async function (newTabBrowser) {
-      const promise = waitForPdfJS(
-        newTabBrowser,
-        TESTROOT + "file_pdfjs_test.pdf"
-      );
-      await BrowserTestUtils.waitForContentEvent(
-        newTabBrowser,
-        "documentloaded",
-        false,
-        null,
-        true
-      );
+      await waitForPdfJS(newTabBrowser, TESTROOT + "file_pdfjs_test.pdf");
 
-      const initialWidth = await waitForRenderAndGetWidth(newTabBrowser);
-      await promise;
+      const initialWidth = await getPageWidth(newTabBrowser);
 
       
-      let newWidthPromise = waitForRenderAndGetWidth(newTabBrowser);
-      await waitForRoundTrip(newTabBrowser);
       FullZoom.enlarge();
       Assert.greater(
-        await newWidthPromise,
+        await waitForPageWidth(newTabBrowser, initialWidth, "bigger"),
         initialWidth,
         "Zoom in makes the page bigger."
       );
 
       
-      newWidthPromise = waitForRenderAndGetWidth(newTabBrowser);
-      await waitForRoundTrip(newTabBrowser);
       FullZoom.reset();
-      is(await newWidthPromise, initialWidth, "Zoom reset restores page.");
+      is(
+        await waitForPageWidth(newTabBrowser, initialWidth, "same"),
+        initialWidth,
+        "Zoom reset restores page."
+      );
 
       
-      newWidthPromise = waitForRenderAndGetWidth(newTabBrowser);
-      await waitForRoundTrip(newTabBrowser);
       FullZoom.reduce();
       Assert.less(
-        await newWidthPromise,
+        await waitForPageWidth(newTabBrowser, initialWidth, "smaller"),
         initialWidth,
         "Zoom out makes the page smaller."
       );
