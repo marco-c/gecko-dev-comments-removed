@@ -164,6 +164,7 @@ class MockOnCompleteFrameCallback
 constexpr uint32_t kSsrc = 111;
 constexpr int kPayloadType = 100;
 constexpr int kRedPayloadType = 125;
+constexpr TimeDelta kMaxWaitForKeyframe = TimeDelta::Millis(200);
 
 std::unique_ptr<RtpPacketReceived> CreateRtpPacketReceived() {
   constexpr uint16_t kSequenceNumber = 222;
@@ -199,9 +200,9 @@ class RtpVideoStreamReceiver2Test : public ::testing::Test,
     rtp_receive_statistics_ = ReceiveStatistics::Create(&env_.clock());
     rtp_video_stream_receiver_ = std::make_unique<RtpVideoStreamReceiver2>(
         env_, TaskQueueBase::Current(), &mock_transport_, nullptr, nullptr,
-        &config_, rtp_receive_statistics_.get(), nullptr, nullptr,
-        &nack_periodic_processor_, &mock_on_complete_frame_callback_, nullptr,
-        nullptr, nullptr);
+        &config_, kMaxWaitForKeyframe, rtp_receive_statistics_.get(), nullptr,
+        nullptr, &nack_periodic_processor_, &mock_on_complete_frame_callback_,
+        nullptr, nullptr, nullptr);
     rtp_video_stream_receiver_->AddReceiveCodec(kPayloadType,
                                                 kVideoCodecGeneric, {},
                                                 false);
@@ -780,18 +781,8 @@ TEST_F(RtpVideoStreamReceiver2Test,
 
 
 
-
-
-
-
-
-
-
-
 TEST_F(RtpVideoStreamReceiver2Test, RecoversAfterLargeSequenceNumberJump) {
   const CopyOnWriteBuffer data("1234");
-  
-  
   mock_on_complete_frame_callback_.AppendExpectedBitstream(data);
 
   auto inject = [&](uint16_t seq, uint32_t rtp_timestamp, bool keyframe) {
@@ -800,26 +791,19 @@ TEST_F(RtpVideoStreamReceiver2Test, RecoversAfterLargeSequenceNumberJump) {
     rtp_packet.SetSequenceNumber(seq);
     rtp_packet.SetTimestamp(rtp_timestamp);
     rtp_packet.SetSsrc(kSsrc);
-    RTPVideoHeader video_header = GetGenericVideoHeader(
-        keyframe ? VideoFrameType::kVideoFrameKey
-                 : VideoFrameType::kVideoFrameDelta);
+    RTPVideoHeader video_header =
+        GetGenericVideoHeader(keyframe ? VideoFrameType::kVideoFrameKey
+                                       : VideoFrameType::kVideoFrameDelta);
     rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
         data, rtp_packet, video_header);
   };
 
-  
-  
-  
-  
-  
-  
-  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame).Times(145);
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame)
+      .Times(7)
+      .WillRepeatedly([&](EncodedFrame* frame) {
+        rtp_video_stream_receiver_->FrameDecoded(frame->Id());
+      });
 
-  
-  
-  
-  
-  
   uint16_t seq = 60'000;
   uint32_t ts = 90'000;
   inject(seq, ts, true);
@@ -828,15 +812,226 @@ TEST_F(RtpVideoStreamReceiver2Test, RecoversAfterLargeSequenceNumberJump) {
   }
 
   
-  
-  
-  
   seq += 40'000;
   ts += 40'000u * 3'000u;
   inject(seq, ts, true);
-  for (int i = 0; i < 140; ++i) {
+  for (int i = 0; i < 2; ++i) {
     inject(++seq, ts += 3'000, false);
   }
+
+  EXPECT_THAT(rtcp_packet_parser_.pli()->num_packets(), Eq(0));
+}
+
+TEST_F(RtpVideoStreamReceiver2Test,
+       RetriesKeyframeRequestAfterLargeSequenceNumberJump) {
+  const CopyOnWriteBuffer data("1234");
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(data);
+
+  auto inject = [&](uint16_t seq, uint32_t rtp_timestamp, bool keyframe,
+                    bool starts_frame = true) {
+    RtpPacketReceived rtp_packet;
+    rtp_packet.SetPayloadType(kPayloadType);
+    rtp_packet.SetSequenceNumber(seq);
+    rtp_packet.SetTimestamp(rtp_timestamp);
+    rtp_packet.SetSsrc(kSsrc);
+    RTPVideoHeader video_header =
+        GetGenericVideoHeader(keyframe ? VideoFrameType::kVideoFrameKey
+                                       : VideoFrameType::kVideoFrameDelta);
+    video_header.is_first_packet_in_frame = starts_frame;
+    rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+        data, rtp_packet, video_header);
+  };
+
+  int num_complete_frames = 0;
+  ON_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame)
+      .WillByDefault([&](EncodedFrame* frame) {
+        ++num_complete_frames;
+        rtp_video_stream_receiver_->FrameDecoded(frame->Id());
+      });
+
+  uint16_t seq = 60'000;
+  uint32_t ts = 90'000;
+  inject(seq, ts, true);
+  EXPECT_THAT(num_complete_frames, Eq(1));
+
+  seq += 40'000;
+  ts += 40'000u * 3'000u;
+  
+  
+  inject(seq, ts, false, false);
+  EXPECT_THAT(rtcp_packet_parser_.pli()->num_packets(), Eq(1));
+  EXPECT_THAT(num_complete_frames, Eq(1));
+
+  
+  
+  time_controller_.AdvanceTime(kMaxWaitForKeyframe - TimeDelta::Millis(1));
+  inject(++seq, ts += 3'000, false);
+  EXPECT_THAT(rtcp_packet_parser_.pli()->num_packets(), Eq(1));
+  EXPECT_THAT(num_complete_frames, Eq(1));
+
+  
+  inject(50'000, 80'000, true);
+  EXPECT_THAT(num_complete_frames, Eq(1));
+
+  
+  time_controller_.AdvanceTime(TimeDelta::Millis(2));
+  inject(++seq, ts += 3'000, false);
+  EXPECT_THAT(rtcp_packet_parser_.pli()->num_packets(), Eq(2));
+  EXPECT_THAT(num_complete_frames, Eq(1));
+
+  
+  inject(++seq, ts += 3'000, true);
+  EXPECT_THAT(num_complete_frames, Eq(2));
+  inject(++seq, ts += 3'000, false);
+  EXPECT_THAT(num_complete_frames, Eq(3));
+}
+
+TEST_F(RtpVideoStreamReceiver2Test,
+       DoesNotResetForSingleSeverelyReorderedOldPacket) {
+  const CopyOnWriteBuffer data("1234");
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(data);
+
+  auto inject = [&](uint16_t seq, uint32_t rtp_timestamp, bool keyframe) {
+    RtpPacketReceived rtp_packet;
+    rtp_packet.SetPayloadType(kPayloadType);
+    rtp_packet.SetSequenceNumber(seq);
+    rtp_packet.SetTimestamp(rtp_timestamp);
+    rtp_packet.SetSsrc(kSsrc);
+    rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+        data, rtp_packet,
+        GetGenericVideoHeader(keyframe ? VideoFrameType::kVideoFrameKey
+                                       : VideoFrameType::kVideoFrameDelta));
+  };
+
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame)
+      .Times(3)
+      .WillRepeatedly([&](EncodedFrame* frame) {
+        rtp_video_stream_receiver_->FrameDecoded(frame->Id());
+      });
+
+  inject(60'000, 90'000, true);
+  inject(60'001, 93'000, false);
+
+  
+  
+  inject(30'000, 80'000, false);
+  inject(60'002, 96'000, false);
+  EXPECT_THAT(rtcp_packet_parser_.pli()->num_packets(), Eq(0));
+}
+
+TEST_F(RtpVideoStreamReceiver2Test,
+       PaddingDoesNotMoveUnwrapperAcrossLargeDiscontinuity) {
+  const CopyOnWriteBuffer data("1234");
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(data);
+  rtp_video_stream_receiver_->StartReceive();
+
+  auto inject = [&](uint16_t seq, uint32_t rtp_timestamp, bool keyframe) {
+    RtpPacketReceived rtp_packet;
+    rtp_packet.SetPayloadType(kPayloadType);
+    rtp_packet.SetSequenceNumber(seq);
+    rtp_packet.SetTimestamp(rtp_timestamp);
+    rtp_packet.SetSsrc(kSsrc);
+    rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+        data, rtp_packet,
+        GetGenericVideoHeader(keyframe ? VideoFrameType::kVideoFrameKey
+                                       : VideoFrameType::kVideoFrameDelta));
+  };
+
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame)
+      .Times(3)
+      .WillRepeatedly([&](EncodedFrame* frame) {
+        rtp_video_stream_receiver_->FrameDecoded(frame->Id());
+      });
+
+  inject(60'000, 90'000, true);
+
+  
+  
+  RtpPacketReceived padding;
+  padding.SetPayloadType(kPayloadType);
+  padding.SetSequenceNumber(34'464);
+  padding.SetTimestamp(120'090'000);
+  padding.SetSsrc(kSsrc);
+  rtp_video_stream_receiver_->OnRtpPacket(padding);
+  EXPECT_THAT(rtcp_packet_parser_.pli()->num_packets(), Eq(0));
+
+  inject(34'465, 120'093'000, true);
+  inject(34'466, 120'096'000, false);
+}
+
+TEST_F(RtpVideoStreamReceiver2Test,
+       DoesNotEnterRecoveryForNormalSequenceNumberWrap) {
+  const CopyOnWriteBuffer data("1234");
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(data);
+
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame)
+      .Times(4)
+      .WillRepeatedly([&](EncodedFrame* frame) {
+        rtp_video_stream_receiver_->FrameDecoded(frame->Id());
+      });
+
+  uint32_t ts = 90'000;
+  for (uint16_t seq :
+       {uint16_t{65'534}, uint16_t{65'535}, uint16_t{0}, uint16_t{1}}) {
+    RtpPacketReceived rtp_packet;
+    rtp_packet.SetPayloadType(kPayloadType);
+    rtp_packet.SetSequenceNumber(seq);
+    rtp_packet.SetTimestamp(ts);
+    rtp_packet.SetSsrc(kSsrc);
+    rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+        data, rtp_packet,
+        GetGenericVideoHeader(seq == 65'534
+                                  ? VideoFrameType::kVideoFrameKey
+                                  : VideoFrameType::kVideoFrameDelta));
+    ts += 3'000;
+  }
+  EXPECT_THAT(rtcp_packet_parser_.pli()->num_packets(), Eq(0));
+}
+
+TEST_F(RtpVideoStreamReceiver2Test,
+       StaleFrameDecodedAfterRecoveryDoesNotClearNewSequenceEpoch) {
+  const CopyOnWriteBuffer data("1234");
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(data);
+  int64_t stale_picture_id = -1;
+
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame)
+      .WillOnce([&](EncodedFrame* frame) {
+        rtp_video_stream_receiver_->FrameDecoded(frame->Id());
+      })
+      .WillOnce([&](EncodedFrame* frame) { stale_picture_id = frame->Id(); })
+      .WillOnce([&](EncodedFrame* frame) {
+        rtp_video_stream_receiver_->FrameDecoded(frame->Id());
+      })
+      .WillOnce([&](EncodedFrame* frame) {
+        rtp_video_stream_receiver_->FrameDecoded(frame->Id());
+      });
+
+  auto inject = [&](uint16_t seq, uint32_t rtp_timestamp, bool keyframe) {
+    RtpPacketReceived rtp_packet;
+    rtp_packet.SetPayloadType(kPayloadType);
+    rtp_packet.SetSequenceNumber(seq);
+    rtp_packet.SetTimestamp(rtp_timestamp);
+    rtp_packet.SetSsrc(kSsrc);
+    rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+        data, rtp_packet,
+        GetGenericVideoHeader(keyframe ? VideoFrameType::kVideoFrameKey
+                                       : VideoFrameType::kVideoFrameDelta));
+  };
+
+  uint16_t seq = 60'000;
+  uint32_t ts = 90'000;
+  inject(seq, ts, true);
+  inject(++seq, ts += 3'000, false);
+
+  seq += 40'000;
+  ts += 40'000u * 3'000u;
+  inject(seq, ts, true);
+  ASSERT_NE(stale_picture_id, -1);
+
+  
+  
+  rtp_video_stream_receiver_->FrameDecoded(stale_picture_id);
+  inject(++seq, ts += 3'000, false);
 }
 
 TEST_F(RtpVideoStreamReceiver2Test,
@@ -1728,9 +1923,9 @@ TEST_F(RtpVideoStreamReceiver2Test, TransformFrame) {
               RegisterTransformedFrameSinkCallback(_, config_.rtp.remote_ssrc));
   auto receiver = std::make_unique<RtpVideoStreamReceiver2>(
       env_, TaskQueueBase::Current(), &mock_transport_, nullptr, nullptr,
-      &config_, rtp_receive_statistics_.get(), nullptr, nullptr,
-      &nack_periodic_processor_, &mock_on_complete_frame_callback_, nullptr,
-      mock_frame_transformer, nullptr);
+      &config_, kMaxWaitForKeyframe, rtp_receive_statistics_.get(), nullptr,
+      nullptr, &nack_periodic_processor_, &mock_on_complete_frame_callback_,
+      nullptr, mock_frame_transformer, nullptr);
   receiver->AddReceiveCodec(kPayloadType, kVideoCodecGeneric, {},
                             false);
 
@@ -1761,9 +1956,9 @@ TEST_F(RtpVideoStreamReceiver2Test, TransformFrameWithAbsoluteCaptureTime) {
               RegisterTransformedFrameSinkCallback(_, config_.rtp.remote_ssrc));
   auto receiver = std::make_unique<RtpVideoStreamReceiver2>(
       env_, TaskQueueBase::Current(), &mock_transport_, nullptr, nullptr,
-      &config_, rtp_receive_statistics_.get(), nullptr, nullptr,
-      &nack_periodic_processor_, &mock_on_complete_frame_callback_, nullptr,
-      mock_frame_transformer, nullptr);
+      &config_, kMaxWaitForKeyframe, rtp_receive_statistics_.get(), nullptr,
+      nullptr, &nack_periodic_processor_, &mock_on_complete_frame_callback_,
+      nullptr, mock_frame_transformer, nullptr);
   receiver->AddReceiveCodec(kPayloadType, kVideoCodecGeneric, {},
                             false);
 
