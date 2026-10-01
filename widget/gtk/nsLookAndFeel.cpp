@@ -37,6 +37,7 @@
 #include "mozilla/glean/WidgetGtkMetrics.h"
 #include "nsAppShell.h"
 #include "nsCSSColorUtils.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsGtkUtils.h"
 #include "nsString.h"
 #include "nsStyleConsts.h"
@@ -1279,7 +1280,7 @@ static void GetSystemFontInfo(GtkStyleContext* aStyle, nsString* aFontName,
       FontWeight::FromInt(pango_font_description_get_weight(desc));
 
   
-  aFontStyle->stretch = FontStretch::NORMAL;
+  aFontStyle->width = FontWidth::NORMAL;
 
   float size = float(pango_font_description_get_size(desc)) / PANGO_SCALE;
 

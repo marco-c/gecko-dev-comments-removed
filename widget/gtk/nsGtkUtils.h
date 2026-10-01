@@ -7,6 +7,8 @@
 
 #include <glib.h>
 
+#include <cstdint>
+
 
 
 template <class T>
