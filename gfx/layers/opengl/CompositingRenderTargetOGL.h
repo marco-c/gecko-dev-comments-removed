@@ -5,6 +5,7 @@
 #ifndef MOZILLA_GFX_COMPOSITINGRENDERTARGETOGL_H
 #define MOZILLA_GFX_COMPOSITINGRENDERTARGETOGL_H
 
+#include "GLContext.h"
 #include "GLContextTypes.h"             
 #include "GLDefs.h"                     
 #include "mozilla/Assertions.h"         

@@ -31,8 +31,9 @@ struct PointerEventsConsumableFlags;
 
 
 enum class BrowserGestureResponse : bool {
-  NotConsumed = 0,  
-  Consumed = 1,  
+  NotConsumed = false,  
+  Consumed =
+      true,  
 };
 
 enum class APZHandledPlace : uint8_t {

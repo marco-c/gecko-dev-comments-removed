@@ -29,7 +29,7 @@ class DepthAndStencilBuffer final : public SupportsWeakPtr {
                                               const uint32_t samples,
                                               bool depth, bool stencil);
 
-  RefPtr<GLContext> gl() const { return mWeakGL.get(); }
+  RefPtr<GLContext> gl() const;
 
   
   uint64_t EstimateMemory() const {

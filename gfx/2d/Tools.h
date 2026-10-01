@@ -93,7 +93,7 @@ struct AlignedArray final {
     
     
     
-    static_assert(std::is_trivially_destructible<T>::value,
+    static_assert(std::is_trivially_destructible_v<T>,
                   "Destructors must be invoked for this type");
 #if 0
     for (size_t i = 0; i < mCount; ++i) {
