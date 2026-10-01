@@ -190,9 +190,6 @@ ComputedTiming AnimationEffect::GetComputedTimingAt(
     
     
     result.mPhase = ComputedTiming::AnimationPhase::Active;
-    
-    
-    
     result.mActiveTime = localTime - aTiming.Delay();
   }
 
