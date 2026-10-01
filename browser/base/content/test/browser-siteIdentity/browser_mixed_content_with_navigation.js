@@ -1,0 +1,129 @@
+
+
+
+
+
+
+
+
+
+const kBaseURI = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content",
+  "https://example.com"
+);
+const kSecureURI = kBaseURI + "dummy_page.html";
+
+const kTestcases = [
+  {
+    uri: kBaseURI + "file_mixedPassiveContent.html",
+    expectErrorPage: false,
+    expectedIdentityMode: "mixedDisplayContent",
+  },
+  {
+    uri: kBaseURI + "file_mixedActiveContent_1.html",
+    expectErrorPage: false,
+    expectedIdentityMode: "mixedActiveBlocked",
+  },
+  {
+    uri: "https://expired.example.com",
+    expectErrorPage: true,
+    expectedIdentityMode: "certErrorPage",
+  },
+];
+
+add_task(async function () {
+  for (let testcase of kTestcases) {
+    await run_testcase(testcase);
+  }
+});
+
+async function run_testcase(testcase) {
+  await SpecialPowers.pushPrefEnv({
+    set: [["security.mixed_content.upgrade_display_content", false]],
+  });
+  
+  
+  
+  
+  await BrowserTestUtils.withNewTab("about:blank", async browser => {
+    
+    BrowserTestUtils.startLoadingURIString(browser, testcase.uri);
+    if (!testcase.expectErrorPage) {
+      await BrowserTestUtils.browserLoaded(browser, false, testcase.uri);
+    } else {
+      await BrowserTestUtils.waitForErrorPage(browser);
+    }
+    let identityMode = window.document.getElementById("identity-box").classList;
+    ok(
+      identityMode.contains(testcase.expectedIdentityMode),
+      `identity should be ${testcase.expectedIdentityMode}`
+    );
+
+    
+    BrowserTestUtils.startLoadingURIString(browser, kSecureURI);
+    await BrowserTestUtils.browserLoaded(browser, false, kSecureURI);
+    let secureIdentityMode =
+      window.document.getElementById("identity-box").className;
+    is(secureIdentityMode, "verifiedDomain", "identity should be secure now");
+
+    
+    browser.webNavigation.goBack();
+    if (!testcase.expectErrorPage) {
+      await BrowserTestUtils.browserStopped(browser, testcase.uri);
+    } else {
+      await BrowserTestUtils.waitForErrorPage(browser);
+    }
+    let identityModeAgain =
+      window.document.getElementById("identity-box").classList;
+    ok(
+      identityModeAgain.contains(testcase.expectedIdentityMode),
+      `identity should again be ${testcase.expectedIdentityMode}`
+    );
+  });
+
+  
+  
+  await BrowserTestUtils.withNewTab(kSecureURI, async browser => {
+    let secureIdentityMode =
+      window.document.getElementById("identity-box").className;
+    is(secureIdentityMode, "verifiedDomain", "identity should start as secure");
+
+    
+    BrowserTestUtils.startLoadingURIString(browser, testcase.uri);
+    if (!testcase.expectErrorPage) {
+      await BrowserTestUtils.browserLoaded(browser, false, testcase.uri);
+    } else {
+      await BrowserTestUtils.waitForErrorPage(browser);
+    }
+    let identityMode = window.document.getElementById("identity-box").classList;
+    ok(
+      identityMode.contains(testcase.expectedIdentityMode),
+      `identity should be ${testcase.expectedIdentityMode}`
+    );
+
+    
+    browser.webNavigation.goBack();
+    await BrowserTestUtils.browserStopped(browser, kSecureURI);
+    let secureIdentityModeAgain =
+      window.document.getElementById("identity-box").className;
+    is(
+      secureIdentityModeAgain,
+      "verifiedDomain",
+      "identity should be secure again"
+    );
+
+    
+    browser.webNavigation.goForward();
+    if (!testcase.expectErrorPage) {
+      await BrowserTestUtils.browserStopped(browser, testcase.uri);
+    } else {
+      await BrowserTestUtils.waitForErrorPage(browser);
+    }
+    let identityModeAgain =
+      window.document.getElementById("identity-box").classList;
+    ok(
+      identityModeAgain.contains(testcase.expectedIdentityMode),
+      `identity should again be ${testcase.expectedIdentityMode}`
+    );
+  });
+}

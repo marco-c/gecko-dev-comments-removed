@@ -20,7 +20,7 @@ onmessage = event => {
       break;
     case "socialtracking":
       createIframe(
-        "https://social-tracking.example.org/browser/browser/base/content/test/protectionsUI/cookieServer.sjs"
+        "https://social-tracking.example.org/browser/browser/base/content/test/browser-protectionsUI/cookieServer.sjs"
       );
       break;
     case "cryptomining":
@@ -38,7 +38,7 @@ onmessage = event => {
       break;
     case "cookie":
       createIframe(
-        "https://trackertest.org/browser/browser/base/content/test/protectionsUI/cookieServer.sjs"
+        "https://trackertest.org/browser/browser/base/content/test/browser-protectionsUI/cookieServer.sjs"
       );
       break;
     case "first-party-cookie":
@@ -47,24 +47,24 @@ onmessage = event => {
       
       createIframe(
         
-        "http://not-tracking.example.com/browser/browser/base/content/test/protectionsUI/cookieServer.sjs"
+        "http://not-tracking.example.com/browser/browser/base/content/test/browser-protectionsUI/cookieServer.sjs"
       );
       break;
     case "third-party-cookie":
       createIframe(
-        "https://test1.example.org/browser/browser/base/content/test/protectionsUI/cookieServer.sjs"
+        "https://test1.example.org/browser/browser/base/content/test/browser-protectionsUI/cookieServer.sjs"
       );
       break;
     case "image":
       createImage(
         
-        "https://itisatracker.org/browser/browser/base/content/test/protectionsUI/cookieServer.sjs?type=image-no-cookie"
+        "https://itisatracker.org/browser/browser/base/content/test/browser-protectionsUI/cookieServer.sjs?type=image-no-cookie"
       );
       break;
     case "window-open":
       window.win = window.open(
         
-        "http://trackertest.org/browser/browser/base/content/test/protectionsUI/cookieServer.sjs",
+        "http://trackertest.org/browser/browser/base/content/test/browser-protectionsUI/cookieServer.sjs",
         "_blank",
         "width=100,height=100"
       );

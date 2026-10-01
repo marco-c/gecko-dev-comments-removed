@@ -1,0 +1,65 @@
+"use strict";
+
+
+
+
+add_task(async function test_toolbar_element_restyles_on_activation() {
+  let restyles = {
+    win1: {},
+    win2: {},
+  };
+
+  
+  let win1 = await BrowserTestUtils.openNewBrowserWindow();
+  await new Promise(resolve => waitForFocus(resolve, win1));
+
+  
+  let win2 = await BrowserTestUtils.openNewBrowserWindow();
+  await new Promise(resolve => waitForFocus(resolve, win2));
+
+  
+  
+  
+  win1.focus();
+  win2.focus();
+
+  
+  win1.getComputedStyle(win1.document.firstElementChild);
+  win2.getComputedStyle(win2.document.firstElementChild);
+
+  
+  
+  
+  Services.focus.clearFocus(win1);
+  Services.focus.clearFocus(win2);
+
+  let utils1 = SpecialPowers.getDOMWindowUtils(win1);
+  restyles.win1.initial = utils1.restyleGeneration;
+
+  let utils2 = SpecialPowers.getDOMWindowUtils(win2);
+  restyles.win2.initial = utils2.restyleGeneration;
+
+  
+  win1.focus();
+  restyles.win1.activate = utils1.restyleGeneration;
+  restyles.win2.deactivate = utils2.restyleGeneration;
+
+  
+  win2.focus();
+  restyles.win2.activate = utils2.restyleGeneration;
+  restyles.win1.deactivate = utils1.restyleGeneration;
+
+  is(
+    restyles.win1.activate - restyles.win1.deactivate,
+    0,
+    "No elements restyled when re-activating/deactivating a window"
+  );
+  is(
+    restyles.win2.activate - restyles.win2.deactivate,
+    0,
+    "No elements restyled when re-activating/deactivating a window"
+  );
+
+  await BrowserTestUtils.closeWindow(win1);
+  await BrowserTestUtils.closeWindow(win2);
+});
