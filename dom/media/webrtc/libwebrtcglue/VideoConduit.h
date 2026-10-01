@@ -8,6 +8,7 @@
 #include "MediaConduitInterface.h"
 #include "RtpRtcpConfig.h"
 #include "RunningStat.h"
+#include "modules/rtp_rtcp/source/source_tracker.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DataMutex.h"
@@ -404,6 +405,10 @@ class WebrtcVideoConduit : public VideoSessionConduit,
   
   
   webrtc::VideoReceiveStreamInterface* mRecvStream = nullptr;
+
+  
+  
+  webrtc::SourceTracker mSourceTracker;
 
   
   webrtc::VideoSendStream* mSendStream = nullptr;

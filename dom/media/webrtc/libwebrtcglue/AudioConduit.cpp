@@ -35,6 +35,7 @@
 #include "api/call/transport.h"
 #include "api/media_types.h"
 #include "api/rtp_headers.h"
+#include "api/rtp_packet_infos.h"
 #include "api/rtp_parameters.h"
 #include "api/transport/rtp/rtp_source.h"
 #include "audio/audio_receive_stream.h"
@@ -44,6 +45,7 @@
 #include "jsapi/RTCStatsReport.h"
 #include "media/base/media_constants.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "modules/rtp_rtcp/source/source_tracker.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/StateWatching.h"
@@ -187,6 +189,7 @@ WebrtcAudioConduit::WebrtcAudioConduit(
       mSendTransport(this),
       mRecvTransport(this),
       mRecvStream(nullptr),
+      mSourceTracker(webrtc::Clock::GetRealTimeClockOnlyUseForRelativeTime()),
       mSendStreamConfig(&mSendTransport),
       mSendStream(nullptr),
       mSendStreamRunning(false),
@@ -704,9 +707,7 @@ void WebrtcAudioConduit::OnRtpReceived(webrtc::RtpPacketReceived&& aPacket,
   
   
   
-  if (mRecvStream) {
-    mCanonicalRtpSources = mRecvStream->GetSources();
-  }
+  mCanonicalRtpSources = mSourceTracker.GetSources();
 
   mRtpPacketEvent.Notify();
   if (mCall->Call()) {
@@ -1086,8 +1087,26 @@ void WebrtcAudioConduit::CreateRecvStream() {
     return;
   }
 
-  mRecvStream =
-      mCall->Call()->CreateAudioReceiveStream(mRecvStreamConfig.Copy());
+  
+  
+  
+  webrtc::AudioReceiveStreamInterface::Config config = mRecvStreamConfig.Copy();
+  
+  
+  
+  
+  
+  config.on_frame_delivered_callback =
+      [self = RefPtr<WebrtcAudioConduit>(this)](
+          const webrtc::RtpPacketInfos& aPacketInfos,
+          webrtc::Timestamp aTimestamp) {
+        self->mCallThread->Dispatch(NS_NewRunnableFunction(
+            "WebrtcAudioConduit::OnFrameDelivered",
+            [self, aPacketInfos, aTimestamp] {
+              self->mSourceTracker.OnFrameDelivered(aPacketInfos, aTimestamp);
+            }));
+      };
+  mRecvStream = mCall->Call()->CreateAudioReceiveStream(std::move(config));
   
   mRecvStream->SetBaseMinimumPlayoutDelayMs(mJitterBufferTargetMs);
 }

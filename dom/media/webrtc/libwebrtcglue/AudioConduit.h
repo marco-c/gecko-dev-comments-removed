@@ -6,6 +6,7 @@
 #define AUDIO_SESSION_H_
 
 #include "MediaConduitInterface.h"
+#include "modules/rtp_rtcp/source/source_tracker.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/RWLock.h"
 #include "mozilla/ReentrantMonitor.h"
@@ -225,6 +226,10 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   
   
   webrtc::AudioReceiveStreamInterface* mRecvStream;
+
+  
+  
+  webrtc::SourceTracker mSourceTracker;
 
   
   webrtc::AudioSendStream::Config mSendStreamConfig;

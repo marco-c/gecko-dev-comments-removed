@@ -48,6 +48,7 @@
 #include "api/call/transport.h"
 #include "api/media_types.h"
 #include "api/rtp_headers.h"
+#include "api/rtp_packet_infos.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
 #include "api/transport/bitrate_settings.h"
@@ -71,6 +72,7 @@
 #include "media/base/media_constants.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "modules/rtp_rtcp/source/source_tracker.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/MozPromise.h"
@@ -403,6 +405,7 @@ WebrtcVideoConduit::WebrtcVideoConduit(
       mSendSinkProxy(this),
       mEngineTransmitting(false),
       mEngineReceiving(false),
+      mSourceTracker(webrtc::Clock::GetRealTimeClockOnlyUseForRelativeTime()),
       mVideoLatencyTestEnable(aOptions.mVideoLatencyTestEnable),
       mMinBitrate(aOptions.mMinBitrate),
       mStartBitrate(aOptions.mStartBitrate),
@@ -1115,8 +1118,26 @@ void WebrtcVideoConduit::CreateRecvStream() {
 
   mRecvStreamConfig.decoder_factory = mDecoderFactory.get();
 
-  mRecvStream =
-      mCall->Call()->CreateVideoReceiveStream(mRecvStreamConfig.Copy());
+  
+  
+  
+  webrtc::VideoReceiveStreamInterface::Config config = mRecvStreamConfig.Copy();
+  
+  
+  
+  
+  
+  config.on_frame_delivered_callback =
+      [self = RefPtr<WebrtcVideoConduit>(this)](
+          const webrtc::RtpPacketInfos& aPacketInfos,
+          webrtc::Timestamp aTimestamp) {
+        self->mCallThread->Dispatch(NS_NewRunnableFunction(
+            "WebrtcVideoConduit::OnFrameDelivered",
+            [self, aPacketInfos, aTimestamp] {
+              self->mSourceTracker.OnFrameDelivered(aPacketInfos, aTimestamp);
+            }));
+      };
+  mRecvStream = mCall->Call()->CreateVideoReceiveStream(std::move(config));
   
   mRecvStream->SetBaseMinimumPlayoutDelayMs(mJitterBufferTargetMs);
 
@@ -1677,9 +1698,7 @@ void WebrtcVideoConduit::OnRtpReceived(webrtc::RtpPacketReceived&& aPacket,
   
   
   
-  if (mRecvStream) {
-    mCanonicalRtpSources = mRecvStream->GetSources();
-  }
+  mCanonicalRtpSources = mSourceTracker.GetSources();
 
   mRtpPacketEvent.Notify();
   if (mCall->Call()) {
