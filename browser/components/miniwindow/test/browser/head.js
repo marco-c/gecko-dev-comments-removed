@@ -110,3 +110,17 @@ function parseTranslate(transform) {
     ? { x: parseFloat(m[1]), y: m[2] !== undefined ? parseFloat(m[2]) : 0 }
     : null;
 }
+
+
+
+
+
+
+
+async function popWholeTabForTest(tab) {
+  let opened = BrowserTestUtils.domWindowOpenedAndLoaded(null);
+  let winPromise = MiniWindowManager.popTab(tab);
+  let miniWin = await opened;
+  await winPromise;
+  return miniWin;
+}
