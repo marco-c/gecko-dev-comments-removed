@@ -184,59 +184,42 @@ class WebCryptoTask : public CancelableRunnable {
   nsresult mRv;
 };
 
-class ClearException {
- public:
-  explicit ClearException(JSContext* aCx) : mCx(aCx) {}
 
-  ~ClearException() { JS_ClearPendingException(mCx); }
+class GenerateAsymmetricKeyTask : public WebCryptoTask {
+ public:
+  GenerateAsymmetricKeyTask(nsIGlobalObject* aGlobal, JSContext* aCx,
+                            const nsString& aAlgName,
+                            const ObjectOrString& aAlgorithm, bool aExtractable,
+                            const Sequence<nsString>& aKeyUsages);
+
+ protected:
+  
+  
+  GenerateAsymmetricKeyTask(nsIGlobalObject* aGlobal, JSContext* aCx,
+                            const ObjectOrString& aAlgorithm, bool aExtractable,
+                            const Sequence<nsString>& aKeyUsages);
+
+  UniquePLArenaPool mArena;
+  UniquePtr<CryptoKeyPair> mKeyPair;
+  nsString mAlgName;
+  CK_MECHANISM_TYPE mMechanism;
+  PK11RSAGenParams mRsaParams;
+  SECKEYDHParams mDhParams;
+  CK_ML_KEM_PARAMETER_SET_TYPE mMLKEMParameterSet;
+  nsString mNamedCurve;
+
+  virtual nsresult DoCrypto() override;
+  virtual void Resolve() override;
+  virtual void Cleanup() override;
 
  private:
-  JSContext* mCx;
+  void Init(nsIGlobalObject* aGlobal, JSContext* aCx, const nsString& aAlgName,
+            const ObjectOrString& aAlgorithm, bool aExtractable,
+            const Sequence<nsString>& aKeyUsages);
+
+  UniqueSECKEYPublicKey mPublicKey;
+  UniqueSECKEYPrivateKey mPrivateKey;
 };
-
-template <class OOS>
-nsresult GetAlgorithmName(JSContext* aCx, const OOS& aAlgorithm,
-                          nsString& aName) {
-  ClearException ce(aCx);
-
-  if (aAlgorithm.IsString()) {
-    
-    aName.Assign(aAlgorithm.GetAsString());
-  } else {
-    
-    JS::Rooted<JS::Value> value(aCx,
-                                JS::ObjectValue(*aAlgorithm.GetAsObject()));
-    Algorithm alg;
-
-    if (!alg.Init(aCx, value)) {
-      return NS_ERROR_DOM_TYPE_MISMATCH_ERR;
-    }
-
-    aName = alg.mName;
-  }
-
-  if (!NormalizeToken(aName, aName)) {
-    return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
-  }
-
-  return NS_OK;
-}
-
-template <class T, class OOS>
-nsresult Coerce(JSContext* aCx, T& aTarget, const OOS& aAlgorithm) {
-  ClearException ce(aCx);
-
-  if (!aAlgorithm.IsObject()) {
-    return NS_ERROR_DOM_SYNTAX_ERR;
-  }
-
-  JS::Rooted<JS::Value> value(aCx, JS::ObjectValue(*aAlgorithm.GetAsObject()));
-  if (!aTarget.Init(aCx, value)) {
-    return NS_ERROR_DOM_TYPE_MISMATCH_ERR;
-  }
-
-  return NS_OK;
-}
 
 }  
 
