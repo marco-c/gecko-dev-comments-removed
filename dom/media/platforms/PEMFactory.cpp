@@ -4,6 +4,7 @@
 
 #include "PEMFactory.h"
 
+#include "AllocationPolicy.h"
 #include "PlatformEncoderModule.h"
 
 #ifdef MOZ_APPLEMEDIA
@@ -493,13 +494,17 @@ RefPtr<PEMSupportsEncoderPromise> PEMFactory::SupportsAsync(
           });
 }
 
-RefPtr<PEMSupportsEncoderPromise> PEMFactory::StrictSupportsAsync(
-    const EncoderConfig& aConfig, const RefPtr<TaskQueue>& aTaskQueue) {
-  return CreateEncoderAsync(aConfig, aTaskQueue)
+
+
+static RefPtr<PEMSupportsEncoderPromise> StrictSupportsAsyncWithToken(
+    PEMFactory* aFactory, const EncoderConfig& aConfig,
+    const RefPtr<TaskQueue>& aTaskQueue, RefPtr<AllocPolicy::Token>&& aToken) {
+  return aFactory->CreateEncoderAsync(aConfig, aTaskQueue)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [codec = aConfig.mCodec](PlatformEncoderModule::CreateEncoderPromise::
-                                       ResolveOrRejectValue&& aValue)
+          [codec = aConfig.mCodec, token = std::move(aToken)](
+              PlatformEncoderModule::CreateEncoderPromise::
+                  ResolveOrRejectValue&& aValue)
               -> RefPtr<PEMSupportsEncoderPromise> {
             if (aValue.IsReject()) {
               
@@ -513,7 +518,7 @@ RefPtr<PEMSupportsEncoderPromise> PEMFactory::StrictSupportsAsync(
             return encoder->Init()->Then(
                 GetCurrentSerialEventTarget(),
                 "PEMFactory::StrictSupportsAsync",
-                [encoder, codec](
+                [encoder, codec, token](
                     MediaDataEncoder::InitPromise::ResolveOrRejectValue&& aInit)
                     -> RefPtr<PEMSupportsEncoderPromise> {
                   EncodeSupportSet support{};
@@ -535,14 +540,42 @@ RefPtr<PEMSupportsEncoderPromise> PEMFactory::StrictSupportsAsync(
                         encoder->GetDescriptionName().get());
                   }
                   
+                  
                   return encoder->Shutdown()->Then(
                       GetCurrentSerialEventTarget(), __func__,
-                      [encoder, support] {
+                      [encoder, token, support] {
                         return PEMSupportsEncoderPromise::CreateAndResolve(
                             support, "PEMFactory::StrictSupportsAsync");
                       });
                 });
           });
+}
+
+RefPtr<PEMSupportsEncoderPromise> PEMFactory::StrictSupportsAsync(
+    const EncoderConfig& aConfig, const RefPtr<TaskQueue>& aTaskQueue,
+    AllocPolicy* aPolicy) {
+  const TrackInfo::TrackType track = aConfig.IsAudio()
+                                         ? TrackInfo::TrackType::kAudioTrack
+                                         : TrackInfo::TrackType::kVideoTrack;
+  RefPtr<AllocPolicy> policy =
+      aPolicy
+          ? aPolicy
+          : GlobalAllocPolicy::Instance(GlobalAllocPolicy::Kind::Encoder, track)
+                .get();
+  return policy->Alloc()->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [self = RefPtr{this}, aConfig,
+       aTaskQueue](RefPtr<AllocPolicy::Token> aToken) {
+        return StrictSupportsAsyncWithToken(self, aConfig, aTaskQueue,
+                                            std::move(aToken));
+      },
+      [codec = aConfig.mCodec]() {
+        LOG("StrictSupportsAsync(%s): allocation policy expired, reporting "
+            "unsupported",
+            EnumValueToString(codec));
+        return PEMSupportsEncoderPromise::CreateAndResolve(
+            EncodeSupportSet{}, "PEMFactory::StrictSupportsAsync");
+      });
 }
 
 EncodeSupportSet PEMFactory::SupportsCodec(CodecType aCodec) const {

@@ -41,8 +41,10 @@ StrictSupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType& aMime,
 
 RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
 StrictSupportsVideoEncodeForWebrtc(const EncoderConfig& aConfig,
-                                   const RefPtr<TaskQueue>& aTaskQueue) {
-  return WebrtcVideoEncoderFactory::StrictSupportsCodec(aConfig, aTaskQueue);
+                                   const RefPtr<TaskQueue>& aTaskQueue,
+                                   AllocPolicy* aPolicy) {
+  return WebrtcVideoEncoderFactory::StrictSupportsCodec(aConfig, aTaskQueue,
+                                                        aPolicy);
 }
 
 

@@ -128,8 +128,9 @@ MediaDataCodec::SupportsEncoderCodec(const EncoderConfig& aConfig) {
 
 
 RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
-MediaDataCodec::StrictSupportsEncoderCodec(
-    const EncoderConfig& aConfig, const RefPtr<TaskQueue>& aTaskQueue) {
+MediaDataCodec::StrictSupportsEncoderCodec(const EncoderConfig& aConfig,
+                                           const RefPtr<TaskQueue>& aTaskQueue,
+                                           AllocPolicy* aPolicy) {
   
   
   if (aConfig.mCodec != CodecType::H264 && aConfig.mCodec != CodecType::VP8 &&
@@ -139,7 +140,7 @@ MediaDataCodec::StrictSupportsEncoderCodec(
   }
   const CodecType codec = aConfig.mCodec;
   return MakeRefPtr<PEMFactory>()
-      ->StrictSupportsAsync(aConfig, aTaskQueue)
+      ->StrictSupportsAsync(aConfig, aTaskQueue, aPolicy)
       ->Map(GetCurrentSerialEventTarget(), __func__,
             AdjustWebrtcEncodeSupportFunctionForCodec(codec));
 }

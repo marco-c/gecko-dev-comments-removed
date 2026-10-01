@@ -15,6 +15,7 @@
 #include "api/video_codecs/video_encoder_factory.h"
 
 namespace mozilla {
+class AllocPolicy;
 class EncoderConfig;
 class MediaExtendedMIMEType;
 struct SupportDecoderParams;
@@ -142,9 +143,11 @@ class WebrtcVideoEncoderFactory : public GmpPluginNotifierInterface,
   
   
   
+  
   static RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
   StrictSupportsCodec(const EncoderConfig& aConfig,
-                      const RefPtr<TaskQueue>& aTaskQueue);
+                      const RefPtr<TaskQueue>& aTaskQueue,
+                      AllocPolicy* aPolicy);
 
   void DisconnectAll() override { mInternalFactory->DisconnectAll(); }
 
