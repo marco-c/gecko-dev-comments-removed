@@ -475,6 +475,7 @@ pub fn scope_selector_list_is_trivial(list: &SelectorList<SelectorImpl>) -> bool
         
         
         
+        
         let mut iter = selector.iter();
         loop {
             for c in iter.by_ref() {
@@ -482,6 +483,9 @@ pub fn scope_selector_list_is_trivial(list: &SelectorList<SelectorImpl>) -> bool
                     Component::ID(_)
                     | Component::Nth(_)
                     | Component::NthOf(_)
+                    | Component::AttributeInNoNamespaceExists { .. }
+                    | Component::AttributeInNoNamespace { .. }
+                    | Component::AttributeOther(_)
                     | Component::Has(_) => return false,
                     Component::Is(list) | Component::Where(list) | Component::Negation(list)
                         if !scope_selector_list_is_trivial(list) =>
