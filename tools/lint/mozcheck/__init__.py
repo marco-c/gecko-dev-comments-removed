@@ -37,10 +37,32 @@ def _get_mozcheck_target_dir(root, topobjdir):
     return os.path.join(root, "tools", "lint", "mozcheck", "target")
 
 
+
+
+_binary_cache = {}
+
+
 def _find_mozcheck_binary(log, root, topobjdir=None):
+    key = (root, topobjdir)
+    if key not in _binary_cache:
+        binary = _resolve_mozcheck_binary(log, root, topobjdir)
+        if not binary:
+            return None
+        _binary_cache[key] = binary
+    return _binary_cache[key]
+
+
+def _resolve_mozcheck_binary(log, root, topobjdir=None):
     exe = ".exe" if sys.platform == "win32" else ""
 
     
+    
+    
+    if fetches_dir := os.environ.get("MOZ_FETCHES_DIR"):
+        fetched = os.path.join(fetches_dir, "mozcheck", "mozcheck" + exe)
+        if os.path.isfile(fetched):
+            return fetched
+
     
     
     
