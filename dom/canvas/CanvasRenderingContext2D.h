@@ -745,9 +745,6 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   void TransformCurrentPath(const mozilla::gfx::Matrix& aTransform);
 
   
-  void FillRuleChanged();
-
-  
 
 
 
