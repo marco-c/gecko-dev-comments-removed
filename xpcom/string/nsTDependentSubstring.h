@@ -96,6 +96,8 @@ class MOZ_GSL_POINTER nsTDependentSubstring : public nsTSubstring<T> {
   
   nsTDependentSubstring(const nsTDependentSubstring&) = default;
 
+ private:
+  
   void operator=(const self_type&) =
       delete;  
 };

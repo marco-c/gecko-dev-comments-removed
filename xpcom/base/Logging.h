@@ -34,9 +34,6 @@ class LogModule {
  public:
   ~LogModule() { ::free(mName); }
 
-  LogModule(LogModule&) = delete;
-  LogModule& operator=(const LogModule&) = delete;
-
   
 
 
@@ -133,6 +130,9 @@ class LogModule {
 
   explicit LogModule(const char* aName, LogLevel aLevel)
       : mName(strdup(aName)), mLevel(aLevel) {}
+
+  LogModule(LogModule&) = delete;
+  LogModule& operator=(const LogModule&) = delete;
 
   char* mName;
 

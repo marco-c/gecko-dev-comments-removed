@@ -6,7 +6,6 @@
 #define nsTStringHasher_h_
 
 #include "mozilla/HashTable.h"  
-#include "nsTString.h"
 
 namespace mozilla {
 
