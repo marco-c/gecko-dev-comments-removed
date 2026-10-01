@@ -342,7 +342,7 @@ var gBrowserInit = {
     if (
       !window.toolbar.visible ||
       window.document.documentElement.hasAttribute("taskbartab") ||
-      window.document.documentElement.hasAttribute("mini-window")
+      window.document.documentElement.hasAttribute("cropped-mini-window")
     ) {
       
       gURLBar.readOnly = true;
