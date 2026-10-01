@@ -18,6 +18,15 @@ add_task(async function test_newtab_enabled() {
     "did not get blank for default about:home"
   );
 
+  registerCleanupFunction(async () => {
+    
+    
+    
+    await SpecialPowers.popPrefEnv();
+    NewTabPagePreloading.removePreloadedBrowser(window);
+    ok(!gBrowser.preloadedBrowser, "left no preloaded newtab behind");
+  });
+
   await SpecialPowers.pushPrefEnv({
     set: [["browser.newtabpage.enabled", false]],
   });
