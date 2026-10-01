@@ -4,8 +4,36 @@
 
 
 
+use crate::derives::*;
 use crate::values::generics::column::GenericColumnCount;
 use crate::values::specified::PositiveInteger;
 
 
 pub type ColumnCount = GenericColumnCount<PositiveInteger>;
+
+
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum ColumnFill {
+    Balance,
+    Auto,
+}
