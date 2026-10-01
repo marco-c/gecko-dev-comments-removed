@@ -4138,7 +4138,13 @@ pref("extensions.formautofill.creditCards.ignoreAutocompleteOff", true);
 
 
 
-pref("extensions.formautofill.creditCards.cvv.enabled", false);
+
+
+pref("extensions.formautofill.creditCards.cvv.supported", "off");
+
+
+
+pref("extensions.formautofill.creditCards.cvv.enabled", true);
 
 
 pref("extensions.formautofill.creditCards.supportedCountries", "US,CA,GB,FR,DE,IT,ES,AT,BE,PL");

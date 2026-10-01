@@ -32,6 +32,12 @@ add_setup(async function () {
     FormAutofillUtils.setOSAuthEnabled(oldOSAuth);
   });
 
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.formautofill.creditCards.cvv.supported", "on"]],
+  });
+
   await removeAllRecords();
   await setStorage(TEST_CARD_WITH_CSC);
 });

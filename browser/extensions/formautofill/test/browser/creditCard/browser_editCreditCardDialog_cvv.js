@@ -11,6 +11,12 @@ function getSecurityCodeField(win) {
 }
 
 add_setup(async function () {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.formautofill.creditCards.cvv.supported", "on"]],
+  });
+
   let { formAutofillStorage } = ChromeUtils.importESModule(
     "resource://autofill/FormAutofillStorage.sys.mjs"
   );
