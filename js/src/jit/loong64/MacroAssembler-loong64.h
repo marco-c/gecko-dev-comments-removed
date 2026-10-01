@@ -373,10 +373,11 @@ class MacroAssemblerLOONG64 : public Assembler {
 
   
   
+  
   void minMaxDouble(FloatRegister srcDest, FloatRegister other, bool handleNaN,
-                    bool isMax);
+                    bool handleZero, bool isMax);
   void minMaxFloat32(FloatRegister srcDest, FloatRegister other, bool handleNaN,
-                     bool isMax);
+                     bool handleZero, bool isMax);
 
   FaultingCodeRange loadDouble(const Address& addr, FloatRegister dest);
   FaultingCodeRange loadDouble(const BaseIndex& src, FloatRegister dest);
