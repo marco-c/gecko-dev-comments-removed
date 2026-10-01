@@ -102,8 +102,8 @@ window.onload = function () {
       <li>Release the drag, then the keys</li>
       <li>Check that the correct drop effect is produced in each case. If the mouse cursor can change to indicate the final type of drop effect that will take place, it should change to the relevant type (the one in bold) once the modifier keys are pressed.</li>
     </ol>
-    
-    
+    <!-- Windows Explorer uses Ctrl for copy, Shift for move, Alt or Ctrl+Shift for link. -->
+    <!-- Anything else invalidates the modifiers, and reverts to default. -->
     <table>
       <caption>Windows</caption>
       <thead>
@@ -120,17 +120,17 @@ window.onload = function () {
         <tr><td>Ctrl+Alt+Shift</td><td><strong>link</strong></td></tr>
       </tbody>
     </table>
-    
-    
-    
-    
+    <!-- KDE Konqueror uses Ctrl for copy, Shift for move, Ctrl+Shift for link. -->
+    <!-- Anything else is ignored completely, and has no effect on the modifier sequence. -->
+    <!-- Gnome Nautilus uses Ctrl for copy, Shift for move, Ctrl+Shift for link (and Alt to open a context menu). -->
+    <!-- Anything else (including Alt when combined with other modifiers) is ignored completely, and has no effect on the modifier sequence. -->
     <table>
       <caption>Unix/Linux</caption>
       <thead>
         <tr><th>Modifier</th><th>Drop effect</th></tr>
       </thead>
       <tbody>
-        <tr><td><strong>none</td><td><strong>link</strong></td></tr>
+        <tr><td><strong>none</strong></td><td><strong>link</strong></td></tr>
         <tr><td>Ctrl</td><td>link=&gt;copy=&gt;<strong>none</strong></td></tr>
         <tr><td>Shift</td><td>link=&gt;move=&gt;<strong>none</strong></td></tr>
         <tr><td>Alt</td><td><strong>link</strong></td></tr>
@@ -140,15 +140,15 @@ window.onload = function () {
         <tr><td>Ctrl+Alt+Shift</td><td><strong>link</strong></td></tr>
       </tbody>
     </table>
-    
-    
+    <!-- Mac Finder uses Option for copy, Command for move, Command+Option for link. -->
+    <!-- Anything else is ignored completely, and has no effect on the modifier sequence. -->
     <table>
       <caption>Mac</caption>
       <thead>
         <tr><th>Modifier</th><th>Drop effect</th></tr>
       </thead>
       <tbody>
-        <tr><td><strong>none</td><td><strong>link</strong></td></tr>
+        <tr><td><strong>none</strong></td><td><strong>link</strong></td></tr>
         <tr><td>Ctrl</td><td><strong>link</strong></td></tr>
         <tr><td>Shift</td><td><strong>link</strong></td></tr>
         <tr><td>Option/alt</td><td>link=&gt;copy=&gt;<strong>none</strong></td></tr>
