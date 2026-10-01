@@ -11,7 +11,7 @@ use crate::{APZScrollGeneration, HasScrollLinkedEffect, PipelineId, PropertyBind
 use crate::serde::{Serialize, Deserialize};
 use crate::color::ColorF;
 use crate::image::{ColorDepth, ImageKey};
-use crate::key_types::EdgeMask;
+use crate::key_types::{EdgeMask, StretchSizeKey};
 use crate::units::*;
 use std::hash::{Hash, Hasher};
 
@@ -155,7 +155,6 @@ pub enum DisplayItem {
     RadialGradient(RadialGradientDisplayItem),
     ConicGradient(ConicGradientDisplayItem),
     Image(ImageDisplayItem),
-    RepeatingImage(RepeatingImageDisplayItem),
     YuvImage(YuvImageDisplayItem),
     BackdropFilter(BackdropFilterDisplayItem),
 
@@ -201,7 +200,6 @@ pub enum DebugDisplayItem {
     RadialGradient(RadialGradientDisplayItem),
     ConicGradient(ConicGradientDisplayItem),
     Image(ImageDisplayItem),
-    RepeatingImage(RepeatingImageDisplayItem),
     YuvImage(YuvImageDisplayItem),
     BackdropFilter(BackdropFilterDisplayItem),
 
@@ -1958,7 +1956,6 @@ pub struct IframeDisplayItem {
 
 
 
-
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct ImageDisplayItem {
     pub common: CommonItemProperties,
@@ -1966,24 +1963,10 @@ pub struct ImageDisplayItem {
     
     
     pub bounds: LayoutRect,
-    pub image_key: ImageKey,
-    pub image_rendering: ImageRendering,
-    pub alpha_type: AlphaType,
-    
-    pub color: ColorF,
-}
-
-
-
-#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
-pub struct RepeatingImageDisplayItem {
-    pub common: CommonItemProperties,
     
     
     
-    pub bounds: LayoutRect,
-    
-    pub stretch_size: LayoutSize,
+    pub stretch_size: StretchSizeKey,
     
     pub tile_spacing: LayoutSize,
     pub image_key: ImageKey,
@@ -2436,7 +2419,6 @@ impl DisplayItem {
             DisplayItem::Gradient(..) => "gradient",
             DisplayItem::Iframe(..) => "iframe",
             DisplayItem::Image(..) => "image",
-            DisplayItem::RepeatingImage(..) => "repeating_image",
             DisplayItem::Line(..) => "line",
             DisplayItem::PopReferenceFrame => "pop_reference_frame",
             DisplayItem::PopStackingContext => "pop_stacking_context",

@@ -442,7 +442,7 @@ impl From<WorldPoint> for PointKey {
 
 
 
-#[derive(Copy, Debug, Clone, MallocSizeOf, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Debug, Default, Clone, MallocSizeOf, PartialEq, Serialize, Deserialize, PeekPoke)]
 pub struct SizeKey {
     w: f32,
     h: f32,
@@ -473,7 +473,7 @@ impl<U> From<Size2D<f32, U>> for SizeKey {
 
 
 
-#[derive(Copy, Debug, Clone, MallocSizeOf, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Copy, Debug, Default, Clone, MallocSizeOf, PartialEq, Eq, Hash, Serialize, Deserialize, PeekPoke)]
 pub struct StretchSizeKey {
     pub size: SizeKey,
     pub fills_width: bool,
