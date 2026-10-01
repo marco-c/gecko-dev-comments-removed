@@ -1779,6 +1779,11 @@ nsresult nsSHistory::Reload(uint32_t aReloadFlags,
     return NS_OK;
   }
 
+  
+  if (IsForceReloadType(loadType)) {
+    RemoveFrameEntries(mEntries[mIndex]);
+  }
+
   nsresult rv =
       LoadEntry( nullptr, mIndex, loadType,
                 HIST_CMD_RELOAD, aLoadResults,  false,
@@ -2556,7 +2561,11 @@ mozilla::dom::SessionHistoryEntry* nsSHistory::FindAdjacentEntryFor(
       FindParent(ancestors, static_cast<SessionHistoryEntry*>(nextEntry.get()));
   if (foundParent) {
     for (const auto& child : foundParent->Children()) {
-      if (child && child->DocshellID() == aEntry->DocshellID()) {
+      
+      
+      
+      if (child && child != aEntry &&
+          child->DocshellID() == aEntry->DocshellID()) {
         return child;
       }
     }
