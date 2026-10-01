@@ -121,13 +121,6 @@ bool TraversalRule::IsFlatSubtree(const Accessible* aAccessible) {
   return true;
 }
 
-bool TraversalRule::HasName(const Accessible* aAccessible) {
-  nsAutoString name;
-  aAccessible->Name(name);
-  name.CompressWhitespace();
-  return !name.IsEmpty();
-}
-
 uint16_t TraversalRule::LinkMatch(Accessible* aAccessible) {
   if (aAccessible->Role() == roles::LINK &&
       (aAccessible->State() & states::LINKED) != 0) {
@@ -219,9 +212,14 @@ uint16_t TraversalRule::DefaultMatch(Accessible* aAccessible) {
       break;
     case roles::TEXT_LEAF:
     case roles::GRAPHIC:
-      
-      if (HasName(aAccessible)) {
-        return nsIAccessibleTraversalRule::FILTER_MATCH;
+      {
+        nsAutoString name;
+        aAccessible->Name(name);
+        name.CompressWhitespace();
+        if (!name.IsEmpty()) {
+          
+          return nsIAccessibleTraversalRule::FILTER_MATCH;
+        }
       }
       break;
     case roles::STATICTEXT:
@@ -234,7 +232,7 @@ uint16_t TraversalRule::DefaultMatch(Accessible* aAccessible) {
     case roles::COLUMNHEADER:
     case roles::ROWHEADER:
     case roles::STATUSBAR:
-      if ((aAccessible->ChildCount() > 0 || HasName(aAccessible)) &&
+      if ((aAccessible->ChildCount() > 0 || !aAccessible->NameIsEmpty()) &&
           (IsSingleLineage(aAccessible) || IsFlatSubtree(aAccessible))) {
         return nsIAccessibleTraversalRule::FILTER_MATCH |
                nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
@@ -280,6 +278,13 @@ uint16_t TraversalRule::DefaultMatch(Accessible* aAccessible) {
       return nsIAccessibleTraversalRule::FILTER_MATCH |
              nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
     default:
+      if ((aAccessible->State() & states::FOCUSABLE) &&
+          !aAccessible->NameIsEmpty()) {
+        
+        
+        
+        return nsIAccessibleTraversalRule::FILTER_MATCH;
+      }
       break;
   }
 
