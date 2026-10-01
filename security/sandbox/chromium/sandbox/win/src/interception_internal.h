@@ -87,6 +87,13 @@ struct PatchClientResultData {
 
 #pragma pack(pop)
 
+
+
+inline size_t GetDllInterceptionDataSize(size_t num_functions) {
+  return offsetof(DllInterceptionData, thunks) +
+         num_functions * sizeof(ThunkData);
+}
+
 }  
 
 #endif  

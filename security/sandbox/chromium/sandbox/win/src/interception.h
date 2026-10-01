@@ -158,6 +158,10 @@ class InterceptionManager {
 
   
   
+  void ReserveBaseIfUnpatchable(const std::wstring& dll, size_t num_functions);
+
+  
+  
   
   
   

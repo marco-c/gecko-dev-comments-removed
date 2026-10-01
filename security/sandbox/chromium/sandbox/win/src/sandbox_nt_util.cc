@@ -56,51 +56,69 @@ inline char* AlignToBoundary(void* ptr, size_t increment) {
 
 
 
+class FreeSpaceNearTo {
+  
+  static constexpr size_t kMaxNearToDistance = 0x80000000ULL;
 
-void* AllocateNearTo(void* source, size_t size) {
-  
-  const size_t kMaxSize = 0x80000000ULL;
-  
-  
-  if (!source)
-    return nullptr;
-  
-  if (size > kMaxSize)
-    return nullptr;
-
-  
-  char* base = AlignToBoundary(source, 0);
-  if (!base)
-    return nullptr;
-  
-  const char* top_address = base + kMaxSize;
-
-  while (base < top_address) {
+ public:
+  FreeSpaceNearTo(void* source, size_t size) : size_(size) {
     
-    STACK_UNINITIALIZED MEMORY_BASIC_INFORMATION mem_info;
-    NTSTATUS status = sandbox::GetNtExports()->QueryVirtualMemory(
-        NtCurrentProcess, base, MemoryBasicInformation, &mem_info,
-        sizeof(mem_info), nullptr);
-    if (!NT_SUCCESS(status))
-      break;
-
-    if ((mem_info.State == MEM_FREE) && (mem_info.RegionSize >= size)) {
-      
-      
-      
-      void* ret_base = mem_info.BaseAddress;
-      status = sandbox::GetNtExports()->AllocateVirtualMemory(
-          NtCurrentProcess, &ret_base, 0, &size, MEM_COMMIT | MEM_RESERVE,
-          PAGE_READWRITE);
-      
-      if (NT_SUCCESS(status))
-        return ret_base;
+    
+    if (!source || size > kMaxNearToDistance) {
+      return;
     }
 
+    next_ = AlignToBoundary(source, 0);
+    if (next_) {
+      top_ = next_ + kMaxNearToDistance;
+    }
+  }
+
+  
+  
+  void* Next() {
+    while (next_ && next_ < top_) {
+      
+      STACK_UNINITIALIZED MEMORY_BASIC_INFORMATION mem_info;
+      NTSTATUS status = sandbox::GetNtExports()->QueryVirtualMemory(
+          NtCurrentProcess, next_, MemoryBasicInformation, &mem_info,
+          sizeof(mem_info), nullptr);
+      if (!NT_SUCCESS(status)) {
+        break;
+      }
+
+      
+      DCHECK_NT(mem_info.BaseAddress == next_);
+      char* candidate = next_;
+
+      
+      next_ = AlignToBoundary(mem_info.BaseAddress, mem_info.RegionSize);
+      if (mem_info.State == MEM_FREE && mem_info.RegionSize >= size_) {
+        return candidate;
+      }
+    }
+    return nullptr;
+  }
+
+ private:
+  char* next_ = nullptr;
+  const char* top_ = nullptr;
+  size_t size_;
+};
+
+
+void* AllocateNearTo(void* source, size_t size) {
+  FreeSpaceNearTo search(source, size);
+  while (void* candidate = search.Next()) {
     
-    base = AlignToBoundary(mem_info.BaseAddress, mem_info.RegionSize);
-    if (!base)
-      break;
+    
+    NTSTATUS status = sandbox::GetNtExports()->AllocateVirtualMemory(
+        NtCurrentProcess, &candidate, 0, &size, MEM_COMMIT | MEM_RESERVE,
+        PAGE_READWRITE);
+    
+    if (NT_SUCCESS(status)) {
+      return candidate;
+    }
   }
   return nullptr;
 }
@@ -194,6 +212,15 @@ static_assert(offsetof(PARTIAL_TEB, ProcessEnvironmentBlock) ==
 }  
 
 namespace sandbox {
+
+bool CanAllocateNearTo(void* source, size_t size) {
+#if defined(_WIN64)
+  return FreeSpaceNearTo(source, size).Next() != nullptr;
+#else
+  
+  return true;
+#endif  
+}
 
 
 void* g_heap = nullptr;

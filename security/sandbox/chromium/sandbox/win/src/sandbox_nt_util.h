@@ -116,6 +116,10 @@ std::optional<base::span<const uint8_t>> GetGlobalDelegateData();
 
 const NtExports* GetNtExports();
 
+
+
+bool CanAllocateNearTo(void* source, size_t size);
+
 enum RequiredAccess { READ, WRITE };
 
 
