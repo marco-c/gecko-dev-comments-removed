@@ -24,7 +24,11 @@ from gecko_taskgraph.util.hash import hash_paths
 
 CACHE_TYPE = "toolchains.v3"
 
-MACOS_SETUP = "taskcluster/scripts/misc/macos-setup.sh"
+SOURCED_HELPERS = {
+    "taskcluster/scripts/misc/macos-setup.sh": ("macosx64-sdk",),
+    "taskcluster/scripts/misc/vs-setup.sh": ("vs", "win64-vs"),
+    "taskcluster/scripts/misc/vs-cleanup.sh": ("vs", "win64-vs"),
+}
 
 
 class ToolchainRunSchema(Schema, kw_only=True):
@@ -82,11 +86,12 @@ def get_digest_data(config, run, taskdesc, fetches):
     env = taskdesc["worker"].get("env", {})
     
     
-    if any(t.startswith("macosx64-sdk") for t in fetches.get("toolchain", [])) and any(
-        f.endswith(".sh") and "macos-setup.sh" in Path(GECKO, f).read_text()
-        for f in files
-    ):
-        files.append(MACOS_SETUP)
+    scripts = [Path(GECKO, f).read_text() for f in files if f.endswith(".sh")]
+    for helper, sdk_fetches in SOURCED_HELPERS.items():
+        if any(t.startswith(sdk_fetches) for t in fetches.get("toolchain", [])) and any(
+            os.path.basename(helper) in s for s in scripts
+        ):
+            files.append(helper)
     
     tooltool_manifest = env.get("TOOLTOOL_MANIFEST")
     if tooltool_manifest:
