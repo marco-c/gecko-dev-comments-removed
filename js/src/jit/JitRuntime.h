@@ -79,12 +79,10 @@ class BaselineICFallbackCode {
   OffsetArray offsets_ = {};
 
   
-  
-  using BailoutReturnArray =
+  using BailoutStubArray =
       mozilla::EnumeratedArray<BailoutReturnKind, uint32_t,
                                size_t(BailoutReturnKind::Count)>;
-  BailoutReturnArray bailoutReturnOffsets_ = {};
-  BailoutReturnArray bailoutStubOffsets_ = {};
+  BailoutStubArray bailoutStubOffsets_ = {};
 
  public:
   BaselineICFallbackCode() = default;
@@ -95,17 +93,11 @@ class BaselineICFallbackCode {
     offsets_[kind] = offset;
   }
   void initCode(JitCode* code) { code_ = code; }
-  void initBailoutReturnOffset(BailoutReturnKind kind, uint32_t offset) {
-    bailoutReturnOffsets_[kind] = offset;
-  }
   void initBailoutStubOffset(BailoutReturnKind kind, uint32_t offset) {
     bailoutStubOffsets_[kind] = offset;
   }
   TrampolinePtr addr(BaselineICFallbackKind kind) const {
     return TrampolinePtr(code_->raw() + offsets_[kind]);
-  }
-  uint8_t* bailoutReturnAddr(BailoutReturnKind kind) const {
-    return code_->raw() + bailoutReturnOffsets_[kind];
   }
   uint8_t* bailoutStubAddr(BailoutReturnKind kind) const {
     return code_->raw() + bailoutStubOffsets_[kind];

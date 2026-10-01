@@ -213,7 +213,6 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
   bool isPrologueBailout();
   bool isGeneratorResumePrologueBailout();
   jsbytecode* getResumePC();
-  void* getStubReturnAddress();
   uint8_t* getBailoutStubAddr();
 
   uint32_t exprStackSlots() const { return exprStackSlots_; }
@@ -1028,8 +1027,10 @@ bool BaselineStackBuilder::finishOuterFrame() {
     return false;
   }
 
-  uint8_t* retAddr = baselineInterp.retAddrForIC(op_);
-  return writePtr(retAddr, "ReturnAddr");
+  
+  
+  
+  return writePtr(static_cast<void*>(nullptr), "ReturnAddr");
 }
 
 template <typename GetSlot>
@@ -1211,9 +1212,9 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
   }
 
   
-  void* baselineCallReturnAddr = getStubReturnAddress();
-  MOZ_ASSERT(baselineCallReturnAddr);
-  if (!writePtr(baselineCallReturnAddr, "ReturnAddr")) {
+  
+  
+  if (!writePtr(static_cast<void*>(nullptr), "ReturnAddr")) {
     return false;
   }
 
@@ -1390,28 +1391,6 @@ bool BaselineStackBuilder::validateFrame() {
                                  expectedSlots);
 }
 #endif
-
-void* BaselineStackBuilder::getStubReturnAddress() {
-  const BaselineICFallbackCode& code =
-      cx_->runtime()->jitRuntime()->baselineICFallbackCode();
-
-  if (IsGetPropOp(op_)) {
-    return code.bailoutReturnAddr(BailoutReturnKind::GetProp);
-  }
-  if (IsSetPropOp(op_)) {
-    return code.bailoutReturnAddr(BailoutReturnKind::SetProp);
-  }
-  if (IsGetElemOp(op_)) {
-    return code.bailoutReturnAddr(BailoutReturnKind::GetElem);
-  }
-
-  
-  MOZ_ASSERT(IsInvokeOp(op_) && !IsSpreadOp(op_));
-  if (IsConstructOp(op_)) {
-    return code.bailoutReturnAddr(BailoutReturnKind::New);
-  }
-  return code.bailoutReturnAddr(BailoutReturnKind::Call);
-}
 
 uint8_t* BaselineStackBuilder::getBailoutStubAddr() {
   const BaselineICFallbackCode& code =
