@@ -1916,18 +1916,38 @@ class ProcessesTabView extends RowSet {
     
     
     let actionCell = row.children[3];
-    let closeButton = document.createElement("span");
-    closeButton.className = "action-icon close-icon";
-    closeButton.setAttribute("role", "button");
-    closeButton.setAttribute("tabindex", "0");
-    document.l10n.setAttributes(closeButton, "about-processes-shutdown-tab");
-    actionCell.appendChild(closeButton);
+    let unloadButton = document.createElement("span");
+    unloadButton.className = "action-icon unload-icon";
+    unloadButton.setAttribute("role", "button");
+    unloadButton.setAttribute("tabindex", "0");
+    document.l10n.setAttributes(unloadButton, "about-processes-unload-tab");
+    actionCell.appendChild(unloadButton);
+    row.unloadButton = unloadButton;
 
     return row;
   }
 
   _updateRow(row, tabData) {
     row.tabData = tabData;
+
+    
+    row.classList.toggle("killed", !!tabData.discarded);
+    if (tabData.discarded) {
+      row.classList.remove("killing");
+      row.removeAttribute("aria-busy");
+    }
+    
+    
+    
+    
+    row.unloadButton.classList.toggle("unload-icon", !tabData.discarded);
+    row.unloadButton.classList.toggle("go-to-tab-icon", !!tabData.discarded);
+    document.l10n.setAttributes(
+      row.unloadButton,
+      tabData.discarded
+        ? "about-processes-go-to-tab"
+        : "about-processes-unload-tab"
+    );
 
     let [nameCell, memoryCell, cpuCell] = row.children;
     nameCell.className = "name favicon";
@@ -2102,8 +2122,16 @@ class ProcessesTabController {
   }
 
   _handleActivate(target) {
-    if (target.classList.contains("close-icon")) {
-      this._closeRow(target.closest("tr.tab-row"));
+    
+    
+    if (!target.classList.contains("action-icon")) {
+      return;
+    }
+    let row = target.closest("tr.tab-row");
+    if (row.tabData.discarded) {
+      this._navigateToTab(row);
+    } else {
+      this._unloadRow(row);
     }
   }
 
@@ -2114,16 +2142,19 @@ class ProcessesTabController {
   }
 
   
-  _closeRow(row) {
+  
+  
+  async _unloadRow(row) {
+    row.classList.add("killing");
+    row.setAttribute("aria-busy", "true");
     let { tab, tabbrowser } = row.tabData;
-    tabbrowser.removeTab(tab, { skipPermitUnload: true, animate: false });
-    
-    
-    
-    
-    
-    this._view._removeRow(row);
-    this.update();
+    await tabbrowser.explicitUnloadTabs([tab]);
+    if (!tab.hasAttribute("discarded")) {
+      
+      
+      row.classList.remove("killing");
+      row.removeAttribute("aria-busy");
+    }
   }
 
   
