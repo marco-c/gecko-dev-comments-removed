@@ -12,6 +12,9 @@ def main(request, response):
         headers.append((b"Access-Control-Allow-Origin", b"*"))
         headers.append((b"Access-Control-Expose-Headers",
                         b"Server-Timing, Timing-Allow-Origin"))
+    if b"redirect" in request.GET:
+        headers.append((b"Location", request.GET.first(b"redirect")))
+        return 302, headers, b""
 
     
     png_data = decodebytes(
