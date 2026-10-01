@@ -18,7 +18,13 @@
 #define wasm_process_h
 
 #include "mozilla/Atomics.h"
+#include "mozilla/Attributes.h"
 
+#include <stddef.h>
+
+#include "js/AllocPolicy.h"
+#include "js/Vector.h"
+#include "threading/Mutex.h"
 #include "wasm/WasmMemory.h"
 
 namespace js {
@@ -29,11 +35,55 @@ class CodeRange;
 class CodeBlock;
 class TagType;
 
+using RawCodeBlockVector = Vector<const CodeBlock*, 0, SystemAllocPolicy>;
+
 #ifdef ENABLE_WASM_JSPI
 extern const TagType* sJSPromiseTagType;
 #endif
 extern const TagType* sWrappedJSValueTagType;
 static constexpr uint32_t WrappedJSValueTagType_ValueOffset = 0;
+
+
+
+
+
+
+
+
+
+
+class ThreadSafeCodeBlockMap {
+  
+  
+
+  Mutex mutatorsMutex_ MOZ_UNANNOTATED;
+
+  RawCodeBlockVector segments1_;
+  RawCodeBlockVector segments2_;
+
+  
+  
+
+  RawCodeBlockVector* mutableCodeBlocks_;
+  mozilla::Atomic<const RawCodeBlockVector*> readonlyCodeBlocks_;
+  mozilla::Atomic<size_t> numActiveLookups_;
+
+  struct CodeBlockPC;
+
+  void swapAndWait();
+
+ public:
+  ThreadSafeCodeBlockMap();
+  ~ThreadSafeCodeBlockMap();
+
+  size_t numActiveLookups() const { return numActiveLookups_; }
+
+  bool insert(const CodeBlock* cs);
+  size_t remove(const CodeBlock* cs);
+
+  const CodeBlock* lookup(const void* pc,
+                          const CodeRange** codeRange = nullptr);
+};
 
 
 
