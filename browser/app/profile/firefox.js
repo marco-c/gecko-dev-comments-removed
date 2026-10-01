@@ -2033,6 +2033,12 @@ pref("browser.newtabpage.activity-stream.widgets.system.clocks.region-block", "P
 pref("browser.newtabpage.activity-stream.widgets.clocks.region-block", "DE,FR,PL,US");
 
 
+
+
+pref("browser.newtabpage.activity-stream.widgets.system.pictureOfTheDay.region-block", "PL");
+pref("browser.newtabpage.activity-stream.widgets.pictureOfTheDay.region-block", "DE,FR,PL,US");
+
+
 pref("browser.newtabpage.activity-stream.discoverystream.promoCard.visible", true);
 
 
