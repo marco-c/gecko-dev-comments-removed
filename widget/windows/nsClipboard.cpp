@@ -370,6 +370,9 @@ nsresult nsClipboard::SetupNativeDataObject(
   mozilla::widget::WebCustomFormatMap webCustomFormatMap;
   uint32_t webCustomFormatIndex = 0;
 
+  bool hasText = false;
+  bool hasFilePromise = false;
+
   
   
   for (uint32_t i = 0; i < flavors.Length(); i++) {
@@ -404,6 +407,11 @@ nsresult nsClipboard::SetupNativeDataObject(
     SET_FORMATETC(fe, format, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL);
     dObj->AddDataFlavor(flavorStr.get(), &fe);
 
+    if (flavorStr.EqualsLiteral(kFilePromiseMime) ||
+        flavorStr.EqualsLiteral(kFilePromiseURLMime)) {
+      hasFilePromise = true;
+    }
+
     
     
     
@@ -413,9 +421,7 @@ nsresult nsClipboard::SetupNativeDataObject(
       FORMATETC textFE;
       SET_FORMATETC(textFE, CF_TEXT, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL);
       dObj->AddDataFlavor(kTextMime, &textFE);
-      if (aMightNeedToFlush) {
-        *aMightNeedToFlush = MightNeedToFlush::Yes;
-      }
+      hasText = true;
     } else if (flavorStr.EqualsLiteral(kHTMLMime)) {
       
       
@@ -487,6 +493,20 @@ nsresult nsClipboard::SetupNativeDataObject(
                     DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
       dObj->AddDataFlavor(kFilePromiseMime, &shortcutFE);
     }
+  }
+
+  if (aMightNeedToFlush) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    *aMightNeedToFlush = hasText && !hasFilePromise ? MightNeedToFlush::Yes
+                                                    : MightNeedToFlush::No;
   }
 
   if (!webCustomFormatMap.IsEmpty()) {
