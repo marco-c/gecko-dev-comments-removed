@@ -593,6 +593,28 @@ add_task(async function testActivationMousedown() {
 });
 
 
+
+add_task(async function testActivationMouseup() {
+  await openPopup();
+  await expectFocusAfterKey("ArrowDown", gMainButton1);
+  let events = [];
+  let listener = e => events.push(e.type);
+  for (let type of ["mousedown", "mouseup", "click"]) {
+    gMainButton1.addEventListener(type, listener);
+  }
+  EventUtils.synthesizeKey(" ");
+  Assert.deepEqual(
+    events,
+    ["mousedown", "mouseup", "click"],
+    "mouseup dispatched between mousedown and click"
+  );
+  for (let type of ["mousedown", "mouseup", "click"]) {
+    gMainButton1.removeEventListener(type, listener);
+  }
+  await hidePopup();
+});
+
+
 async function testTabArrowsEmbeddedDoc(aView, aEmbedder) {
   await openPopup();
   await showSubView(aView);
