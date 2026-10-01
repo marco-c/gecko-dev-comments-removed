@@ -7,13 +7,13 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/gfx/Point.h"
+#include "mozilla/gfx/Types.h"
 #include "nsError.h"
 
 namespace mozilla {
 
 namespace gfx {
 class SourceSurface;
-enum class SurfaceFormat : int8_t;
 }  
 
 namespace layers {
@@ -42,9 +42,18 @@ already_AddRefed<gfx::SourceSurface> GetSourceSurface(layers::Image* aImage);
 
 
 
-nsresult ConvertToI420(layers::Image* aImage, uint8_t* aDestY, int aDestStrideY,
-                       uint8_t* aDestU, int aDestStrideU, uint8_t* aDestV,
-                       int aDestStrideV, const gfx::IntSize& aDestSize);
+
+
+
+
+
+
+nsresult ConvertToI420(
+    layers::Image* aImage, uint8_t* aDestY, int aDestStrideY, uint8_t* aDestU,
+    int aDestStrideU, uint8_t* aDestV, int aDestStrideV,
+    const gfx::IntSize& aDestSize,
+    gfx::YUVColorSpace aDestYUVColorSpace = gfx::YUVColorSpace::BT601,
+    gfx::ColorRange aDestColorRange = gfx::ColorRange::LIMITED);
 
 
 
@@ -52,9 +61,13 @@ nsresult ConvertToI420(layers::Image* aImage, uint8_t* aDestY, int aDestStrideY,
 
 
 
-nsresult ConvertToNV12(layers::Image* aImage, uint8_t* aDestY, int aDestStrideY,
-                       uint8_t* aDestUV, int aDestStrideUV,
-                       gfx::IntSize aDestSize);
+
+
+nsresult ConvertToNV12(
+    layers::Image* aImage, uint8_t* aDestY, int aDestStrideY, uint8_t* aDestUV,
+    int aDestStrideUV, gfx::IntSize aDestSize,
+    gfx::YUVColorSpace aDestYUVColorSpace = gfx::YUVColorSpace::BT601,
+    gfx::ColorRange aDestColorRange = gfx::ColorRange::LIMITED);
 
 
 
